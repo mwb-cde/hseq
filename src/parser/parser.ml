@@ -442,6 +442,19 @@ let token_info tbl t=
        | _ -> x))
       toks
       
+  let primed_id inf toks =
+    let comp x =
+      match x with 
+	PrimedID _ -> true
+      | _ -> false
+    and mk x =
+      match x with 
+	PrimedID s -> get_type s inf
+      | _ -> failwith "parser: expected type variable"
+    in 
+    try Pkit.get comp mk toks
+    with No_match -> raise (ParsingError "expected type variable")
+
   let mk_short_id id inf toks =
     (long_id id inf >> (fun x -> Basic.name x)) toks
 
@@ -471,21 +484,21 @@ let token_info tbl t=
 		mk_type_binary_constr inf, mk_type_unary_constr inf) toks) 
   and atomic_types inf toks =
       ((
-       ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
-	  >> (fun x -> fst (snd x)))
-     || ((!$(Sym PRIME) -- short_id id inf )
-	   >> (fun (_, x) -> get_type x inf))
+      primed_id inf
      || num_type inf
      || bool_type inf
-     || (((long_id id inf) -- 
-	    (optional 
-	       ((!$(Sym ORB) -- ((comma_list (inner_types inf))
-				   -- (!$(Sym CRB))))
-		  >> (fun (_, (args, _)) -> args))))
-	   >> (fun (i, a) -> 
+     ||
+	 (((optional
+	     ((!$(Sym ORB) -- ((comma_list (inner_types inf))
+				 -- (!$(Sym CRB))))
+		>> (fun (_, (args, _)) -> args)))
+	    -- (long_id id inf))
+	   >> (fun (a, i) -> 
 	     match a with
 	       None -> Gtypes.mk_def i []
 	     | Some(ts) -> Gtypes.mk_def i ts))
+     ||((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
+	  >> (fun x -> fst (snd x)))
      || (other_type_parsers inf) 
      || error ~msg:"unknown construct in type.")
 	 toks)

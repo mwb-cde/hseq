@@ -123,6 +123,7 @@ module Simputils=
    Use [base.some] if no value is found.
    [base.some] constant is defined in theory [base].
  *)
+(* moved to drule.ml
     let make_consts qs env = 
       let make_aux q=
 	try Term.find (Basic.Bound q) env
@@ -130,7 +131,7 @@ module Simputils=
 	  Not_found -> Logicterm.mksome
       in 
       List.map make_aux qs
-
+*)
 
   end
 

@@ -280,7 +280,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
       (thenl 
 	 [ 
 	   flatten_tac;
-	   Logic.Rules.rewrite_any ~dir:false ~simple:true 
+	   Logic.Rules.rewrite_any 
 	     [Logic.RRThm(get_iff_equals_ax())] 1;
 	   cut_thm "bool_cases"; allE <<x_1>>;
 	   unfold "iff" 1; disjI;
@@ -366,7 +366,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
       in 
       let g1=
 	Logic.Rules.rewrite_any_info 
-	  info ~dir:true ~simple:true 
+	  info 
 	  [Logic.RRThm(thm)] tg_idx g
       in g1
 
@@ -375,7 +375,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
    |- a -->  |- b
  *)
     let thm_rewrite scp rl thm=
-      Logic.ThmRules.rewrite_conv scp ~dir:true ~simple:true [rl] thm
+      Logic.ThmRules.rewrite_conv scp [rl] thm
 
 (** [many_conj_conv thm]:
    Break conjunctions in theorem [thm] to a list of theorems

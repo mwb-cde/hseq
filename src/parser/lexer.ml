@@ -100,6 +100,7 @@ end
       Key of keys 
     | Sym of symbols 
     | ID of Basic.ident (* * (token_info)option *)
+    | PrimedID of string
     | NUM of string 
     | BOOL of bool 
     | EOF 
@@ -127,6 +128,7 @@ end
     | Key EX -> "EXISTS"
     | Key LAM -> "LAMBDA"
     | ID(s) -> (Basic.string_fnid s)
+    | PrimedID s -> ("'"^s)
     | NUM(n) -> n
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
@@ -154,6 +156,7 @@ end
     | Key EX -> "EXISTS"
     | Key LAM -> "LAMBDA"
     | ID(s) -> (Basic.string_fnid s)
+    | PrimedID(s) -> ("'"^s)
     | NUM(n) -> n
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
@@ -343,6 +346,8 @@ let rec junkn n str=
      ((c>= 'a') & (c <='z'))
     or ((c>= 'A') & (c<='Z'))
 
+let is_prime c = (c = '\'')
+
   let is_num str =
     if (stream_test is_digit  str)
     then true
@@ -450,6 +455,18 @@ let match_alpha symtable inp =
     in (true, tok)
   else (false, null_tok)
 *)
+
+let match_primed_identifier symtable inp=
+  if(stream_test is_prime inp)
+  then 
+    (ignore(Stream.next inp);
+    let stra = get_alpha inp
+    in 
+    if(String.length stra)=0
+    then (false, null_tok)
+    else (true, PrimedID stra))
+  else (false, null_tok)
+
 (* match_identifier:
    match a string 
    beginning with an alphabetic character
@@ -502,6 +519,8 @@ let get_sep_list init_test body_test sep_test strm=
     (get_aux();  (* read the identifiers from the stream *)
      List.rev (!strlist))
   else []
+
+
 
 (* is_identifier_char c: true if character c can appear in an identifier *)
 
@@ -622,22 +641,29 @@ let rec lex symtable str=
       in lex symtable newstrm
    else 
  *)
-(* try alpha-numeric (identifier) *)
-    let is_alpha_tok, alpha_tok = match_identifier symtable str
+   (* try primed identifier *)
+    let is_primedid_tok, primedid_tok = 
+      match_primed_identifier symtable str
     in 
-    if is_alpha_tok 
-    then 
-      alpha_tok
+    if(is_primedid_tok) 
+    then primedid_tok
     else 
-(* not an identifier, try for a symbol/keyword *)
-      let key, tok= match_keywords symtable str 
+(* try alpha-numeric (identifier) *)
+      let is_alpha_tok, alpha_tok = match_identifier symtable str
       in 
-      if key then tok
+      if is_alpha_tok 
+      then 
+	alpha_tok
       else 
+(* not an identifier, try for a symbol/keyword *)
+	let key, tok= match_keywords symtable str 
+	in 
+	if key then tok
+	else 
 
 (* not a symbol/keyword, so try other lexers (numbers, bools, etc) *)
 	  other str
- 
+	    
 
 (*
    let lexfn symtab strm = 

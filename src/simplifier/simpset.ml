@@ -277,8 +277,7 @@ module Simpset =
       in 
       rebuild_qnt Basic.All qs 
 	(Logicterm.mkimplies (dest_option cnd)
-	   (Rewrite.rewrite_univs scp ~dir:true ~simple:true 
-	      [rrtrm] qb))
+	   (Rewrite.rewrite (Rewrite.control scp) [rrtrm] qb))
 	
 (** [form_cond_rewrite scp rl fm]:
    for rewrite rule [rl]=|-l=r,

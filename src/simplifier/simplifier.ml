@@ -193,11 +193,15 @@ module Simplifier =
       match t with
 	Logic.RRThm(th) ->
 	  Logic.Rules.cut_info info th g
-      | Logic.Asm(i) ->
-	  Logic.Rules.copy_asm_info info i g
+      | Logic.Asm(x) ->
+	  Logic.Rules.copy_asm_info info 
+	    (Logic.fident_to_index x (Logic.get_sqnt g)) g
+
+(*
       | Logic.Tagged(tg) ->
 	  Logic.Rules.copy_asm_info info 
 	    (Logic.tag_to_index tg (Logic.get_sqnt g)) g
+*)
 
     let prep_cond_tac cntrl values thm g =
       let info = ref (Logic.Rules.make_tag_record [] [] [])
@@ -261,7 +265,7 @@ module Simplifier =
 	  in 
 	  if(sqnt_solved cgltg ng2)
 	  then 
-	    (ncntrl, Logic.Tagged(rftg), ng2)
+	    (ncntrl, Logic.Asm(Drule.ftag rftg), ng2)
 	  else raise No_change
 
 (*
@@ -347,6 +351,44 @@ module Simplifier =
 	then (nc, nt, ng)
 	else raise No_change
 
+(**
+   [simp_prep_tac [control] i g]: 
+   Prepare goal [g] for the simplifier.
+   Formula to be simplified is tagged [i].
+   returns
+   [(ncontrol, ng)]
+   where 
+   [ng] is the prepared goal
+   [ncontrol]
+     is the new control recording formulas added/modified by simp_prep_tac
+
+   N.B.
+   Currently this does nothing except strip the quantifiers off
+   formula [i].
+*)
+    let simp_prep_tac control tag g= 
+      let sqnt= Logic.get_sqnt g
+      in 
+      let is_asm =
+	try
+	  (ignore(Logic.get_tagged_asm tag sqnt); true)
+	with _ -> false
+      in 
+      let fid = Logic.FTag tag
+      in 
+      let (newcontrol, newgoal)=
+	if(is_asm)
+	then 
+	  try 
+	    (control, Tactics.repeat (Logic.Rules.existI_full None fid) g)
+	  with _ -> (control, g)
+	else 
+	  try 
+	    (control, Tactics.repeat (Logic.Rules.allI_full None fid) g)
+	  with _ -> (control, g)
+      in 
+      (newcontrol, newgoal)
+
 (* simp_tac: toplevel for simplifier
 
    basic_simp_tac: workhorse of simplifier
@@ -357,11 +399,19 @@ module Simplifier =
     let is_true t = Term.is_true t
 
     let rec basic_simp_tac cntrl set ft goal=
-      let tac ctrl tg g=
+      let prove_cond_tac ctrl tg g=
+	let init_simp_tac ctrl0 tg0 g0=
+	  let (ctrl1, g1) = simp_prep_tac ctrl0 tg0 g0
+	  in 
+	  basic_simp_tac ctrl1 set tg0 g1
+	in 
 	Tactics.orl
-	  [Tactics.thenl
-	     [basic_simp_tac ctrl set tg;
-	      Logic.Rules.trueR_full None (Logic.FTag tg)];
+	  [
+	   Tactics.thenl
+	     [
+	      init_simp_tac ctrl tg;
+	      Logic.Rules.trueR_full None (Logic.FTag tg)
+	    ];
 	   Logic.Rules.trueR_full None (Logic.FTag tg)] g
       in 
       let sqnt=Logic.get_sqnt goal
@@ -382,7 +432,8 @@ module Simplifier =
 	    (let (bcntrl, nb, bg) = find_rrs ctrl b g
 	    in 
 	    try 
-	      find_all_matches bcntrl tyenv set tac (Qnt(k, q, nb)) bg
+	      find_all_matches bcntrl tyenv set 
+		prove_cond_tac (Qnt(k, q, nb)) bg
 	    with No_change -> (bcntrl, Qnt(k, q, nb), bg))
 	| Basic.Typed(tt, ty) -> find_rrs ctrl tt g
 	| Basic.App(f, a)->
@@ -391,11 +442,12 @@ module Simplifier =
 	    let (acntrl, na, nag)= (find_rrs fcntrl a nfg)
 	    in 
 	    try 
-	      find_all_matches acntrl tyenv set tac (App(nf, na)) nag
+	      find_all_matches acntrl tyenv set 
+		prove_cond_tac (App(nf, na)) nag
 	    with No_change -> (acntrl, App(nf, na), nag))
 	| _ -> 
 	    (try 
-	      find_all_matches ctrl tyenv set tac t g
+	      find_all_matches ctrl tyenv set prove_cond_tac t g
 	    with No_change -> (ctrl, t, g))
       in
       let trm=
@@ -535,15 +587,15 @@ module Simplifier =
       (* get the first sequent *)
       let sqnt = 
 	try (Logic.get_sqnt gl)
-	with _ -> raise Not_found
+	with _ -> raise (Result.error "full_simp_tac: No such formula in goal")
       in 
       (* prepare the subgoal for simplification *)
-      let prepared_goal = 
+      let (prepared_cntrl, prepared_goal) = 
 	(try 
-	  let tmp=initial_flatten_tac [tg] gl
+	  let tmp=simp_prep_tac cntrl tg gl
 	  in (chng:=true; tmp)
 	with 
-	  No_change -> gl
+	  No_change -> (cntrl, gl)
 	| err -> 
 	    raise 
 	       (Result.error "simp_tac: stage 1"))
@@ -551,7 +603,7 @@ module Simplifier =
       (* invoke the simplifier *)
       let simped_goal = 
 	(try 
-	  (basic_simp_tac cntrl simpset tg prepared_goal)
+	  (basic_simp_tac prepared_cntrl simpset tg prepared_goal)
 	with No_change -> (chng:=false; gl))
       in 
       (* clean up afterwards *)
@@ -576,12 +628,15 @@ module Simplifier =
     let empty_simp () = simp_set:=empty_set()
 
 (* user-level version of full_simp_tac *)
-    let simp_tac i gl=
+    let simp_tac ?(i=1) gl=
       let cntrl = mk_control()
       in 
       let tg=Logic.index_to_tag i (Logic.get_sqnt gl)
       in 
+(*
       basic_simp_tac cntrl (!simp_set) tg gl
+*)
+      full_simp_tac cntrl (!simp_set) tg gl
 
  end
 

@@ -53,6 +53,7 @@ type tok =
     Key of keys
   | Sym of symbols
   | ID of Basic.ident (* * token_info option*)
+  | PrimedID of string
   | NUM of string
   | BOOL of bool
   | EOF
