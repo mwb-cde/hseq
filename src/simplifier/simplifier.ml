@@ -43,7 +43,7 @@ module Data =
 (**
    [simpset]: the simpset being used. Assumptions may be added to this
    during the course of simplification
-*)
+ *)
 	 simpset:Simpset.simpset;
 
 (** [cond_tac]: the tactic used to prove conditions of rewrite rules *)
@@ -156,25 +156,24 @@ let strip_rrs rrs=
 (* utility tactics *)
 
 
+let cleanup = ref true
+
 (*
    [clean_up_tac ctrl g]
    
    Clean up after simplification.
    Delete all assumptions listed in [ctrl.asms].
-*)
+ *)
 
-let rec clean_aux_tac tags g=
-  match tags with
-    [] -> g
-  | x::xs ->
-      let ng=
-	try
-	  foreach (Logic.Rules.delete None (Logic.FTag x)) g
-	with _ -> g
-      in clean_aux_tac xs ng
+
+let clean_aux_tac tags g =
+  each tags (fun x -> Logic.Rules.delete None (Logic.FTag x)) g
 
 let clean_up_tac ctrl g=
-  clean_aux_tac (Data.get_asms ctrl) g
+  if (!cleanup) 
+  then clean_aux_tac (Data.get_asms ctrl) g
+  else (skip g)
+
 
 (** [cut_rr_rule info t g]
    Put rule [t] into first subgoal of [g].
@@ -206,26 +205,28 @@ let cut_rr_rule info t g =
    in [cgltg] tagged [cftg] and rewrite-rule in [rgltg] tagged [rrftg].
    Add [rrftg] to [cntrl], getting [ncntrl].
 
-   return [(ncntrl, [cgltg; rgltg], [cftg; rrftg], g3)].
+   return g3
+   ret=(ncntrl, [cgltg; rgltg], [cftg; rrftg])
  *)
 
-let prep_cond_tac cntrl values thm goal =
+(*
+let set_option x data= x:=Some(data)
+let Lib.dest_option ?err x = 
+  match x with
+    (Some x) -> x
+  | _ -> 
+      (match err with
+	None -> failwith "dest_option"
+      | (Some e) -> raise e)
+*)
+
+let prep_cond_tac cntrl ret values thm goal =
   let info =Drule.mk_info()
   in
-   try 
-    let (rrftg, goal1)=
-      (let ng = cut_rr_rule (Some(info)) thm goal
-      in 
-      let rrftg=Lib.get_one (Drule.formulas info) No_change
-      in (rrftg, ng))
+  try 
+    let tac1 g1 = cut_rr_rule (Some(info)) thm g1
     in 
-    let (cgltg, rgltg, cftg, goal2)=
-      let ng= 
-	foreach
-	  ((allA_list (ftag rrftg) values)
-	     ++ (Logic.Rules.implA (Some(info)) (ftag rrftg))) 
-	  goal1
-      in 
+    let add_data rrftg x=
       let (cgltg, rgltg)= 
 	Lib.get_two (Drule.subgoals info)
 	  (Failure "prep_cond_tac: goals")
@@ -234,11 +235,19 @@ let prep_cond_tac cntrl values thm goal =
 	Lib.get_one (Drule.formulas info)
 	  (Failure "prep_cond_tac: forms")
       in 
-      (cgltg, rgltg, cftg, ng)
-    in
-    let ncntrl= Data.add_asm cntrl rrftg
+      let ncntrl= Data.add_asm cntrl rrftg
+      in 
+      Lib.set_option ret  (ncntrl, (cgltg, rgltg), (cftg, rrftg))
     in 
-    (ncntrl, (cgltg, rgltg), (cftg, rrftg), goal2)
+    let tac2 g2 =
+      let rrftg=Lib.get_one (Drule.formulas info) No_change
+      in 
+      seq[allA_list (ftag rrftg) values;
+	  Logic.Rules.implA (Some(info)) (ftag rrftg);
+	  add_info_tac (add_data rrftg) info
+	] g2
+    in 
+    (tac1 ++ tac2) goal
   with _ -> raise No_change
 
 
@@ -256,43 +265,64 @@ let prep_cond_tac cntrl values thm goal =
    and new goal.
  *)
 
-let rec prove_cond cntrl values entry goal = 
+let restrict_tac p tac g=
+  let ng = tac g
+  in 
+  if(p ng) then ng else raise (Failure "restric_tac")
+
+let rec prove_cond_tac cntrl ret values entry goal = 
   let (qs, cnd, _, _, thm)=entry
   in 
   match cnd with
-    None -> (cntrl, thm, (skip goal))
+    None -> Lib.set_option ret (cntrl, thm); (skip goal)
   | Some(_) -> 
-      let (ncntrl, rftg, ng1) = 
-	let (ncntrl1, (cgltg1, rgltg1), (cftg1, rftg1), ng)=
-	  prep_cond_tac cntrl values thm goal
-	in 
-	(ncntrl1, rftg1,
-	 foreach 
-	   ((fun n -> 
-	     (Tag.equal cgltg1 (Drule.node_tag n)))
-	      --> 
-		(fun g -> 
-		  let tac=Data.get_tactic ncntrl1
-		  in 
-		  (tac ncntrl1 cftg1) g)) ng)
+      let ret1=ref None
       in 
-      (* check for subgoals *)
-      match (Drule.branch_subgoals ng1) with
-      | [] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
-      | [sqnt] ->  
-	  (* add assumption as a rule, 
-	     to avoid having to prove it again *)
-	  let form=Logic.drop_tag(Logic.Sequent.get_tagged_asm rftg sqnt)
-	  in 
-	  let rule = 
-	    Simpset.make_rule 
-	      (Logic.Asm (Drule.ftag rftg)) 
-	      (Formula.dest_form form)
-	  in 
-	  (Data.add_simp_rule ncntrl rule,
-	   Logic.Asm(Drule.ftag rftg), ng1)
-      | _ -> (* >1 subgoals = failure *)
-	  raise No_change
+      let tac1 g1= prep_cond_tac cntrl ret1 values thm g1
+      in 
+      let tac2 g2=
+	let (ncntrl1, (cgltg1, rgltg1), (cftg1, rftg1))
+	    = Lib.dest_option ~err:(Failure "prove_cond_tac: 1") (!ret1)
+	in 
+	((fun n -> 
+	  (Tag.equal cgltg1 (Drule.node_tag n)))
+	   --> 
+	     (fun g3 -> 
+	       let tac=Data.get_tactic ncntrl1
+	       in 
+	       seq 
+		 [tac ncntrl1 cftg1;
+		  add_info_tac 
+		    (fun x -> ret:=(Some x))
+		    (ncntrl1, Logic.Asm(Drule.ftag rftg1))]
+		 g3)) g2
+      in 
+      let tac2_pred br=
+	match (Drule.branch_subgoals br) with
+	  [] -> true
+	| [ _ ] -> true
+	| _ -> false
+      in 
+      let tac3 g3 = restrict_tac tac2_pred tac2 g3
+      in 
+      let tac4 g4=
+	let (ncntrl1, (cgltg1, rgltg1), (cftg1, rftg1))
+	    = Lib.dest_option ~err:(Failure "prove_cond_tac: 2") (!ret1)
+	in 
+	let form=
+	  Logic.drop_tag(Logic.Sequent.get_tagged_asm 
+			   rftg1 (Drule.sequent g4))
+	in 
+	let rule = 
+	  Simpset.make_rule 
+	    (Logic.Asm (Drule.ftag rftg1)) 
+	    (Formula.dest_form form)
+	in 
+	add_info_tac (fun x -> ret := Some x)
+	  (Data.add_simp_rule ncntrl1 rule,
+	   Logic.Asm(Drule.ftag rftg1)) g4
+      in
+      seq [tac1; (tac3++tac4)] goal
 
 
 (*
@@ -316,7 +346,7 @@ let match_rewrite scp tyenv tenv varp lhs rhs trm =
 
    returns rewritten term, matched rules and new goal.
  *)
-let find_basic cntrl tyenv rl trm g=
+let find_basic cntrl ret tyenv rl trm g=
   let (qs, c, lhs, rhs, thm)=rl
   in 
   let tenv=Term.empty_subst()
@@ -329,9 +359,14 @@ let find_basic cntrl tyenv rl trm g=
   in 
   let values=Drule.make_consts qs ntenv
   in 
-  let (ncntrl, rr, ng)=prove_cond cntrl values rl g
+  let ret1=ref None
   in 
-  (ncntrl, ntyenv, nt, rr, ng)
+  let ng=prove_cond_tac cntrl ret1 values rl g
+  in 
+  let (ncntrl, rr) = Lib.dest_option ~err:(Failure "find_basic: 1") (!ret1)
+  in 
+  Lib.set_option ret (ncntrl, ntyenv, nt, rr);
+  ng
 
 (** [find_match scp tyenv rslt set tac trm g]
    Find rule in simpset [set] which matches term [trm] in goal [g].
@@ -353,13 +388,11 @@ let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
       [] -> (ret:=None; raise No_change)
     | (rl::nxt) ->
 	try 
-	  find_basic cntrl tyenv rl t g
+	  find_basic cntrl ret tyenv rl t g
 	with _ -> find_aux nxt t g
   in 
-  let (ncntrl, ntyenv, nt, rr, ng) = 
-    find_aux (lookup (Data.get_simpset cntrl) trm) trm goal
-  in 
-  ret:=(Some(ncntrl, ntyenv, nt, rr)); ng
+  find_aux (lookup (Data.get_simpset cntrl) trm) trm goal
+
 
 (** [find_all_matches scp tyenv rslt set tac trm g]
 
@@ -375,26 +408,37 @@ let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
    repeat until find_match fails. 
    Return result and last sucessfull goal.
  *)
-let rec find_all_matches cntrl tyenv trm branch=
+
+let rec find_all_matches_tac cntrl ret tyenv trm node =
   let chng = ref false
+  and ret1 = ref None
   in 
   let rec find_aux c ty t g= 
-    (let ret1=ref None
+    let tac2 g2=
+      match (!ret1) with
+	None -> 
+	  Lib.set_option ret (c, ty, t); 
+	  skip g
+      | Some (cntrl1, tyenv1, t1, r1) -> 
+	  (chng:=true; 
+	   Lib.set_option ret ((Data.add_rule cntrl1 r1), tyenv, t1);
+	   ((find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 || skip) g2))
     in 
     try
-      let ng=foreach (find_match_tac c ty ret1 t) g
-      in 
-      match (!ret1) with
-	None -> (c, ty, t, g)
-      | Some (cntrl1, tyenv1, t1, r1) -> 
-	  (chng:=true;
-	   find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 ng)
-    with _ -> (c, ty, t, g))
+      seq
+	[(find_match_tac c ty ret1 t 
+	|| (fun g3 -> ret1:=None ; skip g3)); 
+	 tac2] g
+    with _ -> Lib.set_option ret (c, ty, t); (skip g)
   in 
-  let (nc, ntyenv, nt, ng)=find_aux cntrl tyenv trm branch
-  in 
+  let ng=find_aux cntrl tyenv trm node
+  in
   if(!chng)
-  then (nc, ntyenv, nt, ng)
+  then 
+    match !ret with
+      None -> ng
+    | Some(nc, ntyenv, nt) ->
+	(Lib.set_option ret (nc, ntyenv, nt); ng)
   else raise No_change
 
 (**
@@ -412,7 +456,7 @@ let rec find_all_matches cntrl tyenv trm branch=
    Currently this does nothing except strip the quantifiers off
    formula [i].
  *)
-let simp_prep_tac control tag g= 
+let simp_prep_tac control ret tag g= 
   let sqnt= Drule.sequent g
   in 
   let is_asm =
@@ -434,7 +478,8 @@ let simp_prep_tac control tag g=
 	(control, Tactics.repeat (Logic.Rules.allC None fid) g)
       with _ -> (control, skip g)
   in 
-  (newcontrol, newgoal)
+  Lib.set_option ret newcontrol;
+  newgoal
 
 (* basic_simp_tac: toplevel for simplifier
 
@@ -465,91 +510,131 @@ let get_form t sqnt =
    Term.substitution is used to keep track of changing term
    as rewrites are found
  *)
-let rec find_rrs_bottom_up ctrl tyenv t g=
+let rec find_rrs_bottom_up_tac ctrl ret tyenv t g=
   match t with
     Basic.Qnt(k, q, b) -> 
-      (let (bcntrl, btyenv, nb, bg) = 
-	find_rrs_bottom_up ctrl tyenv b g
+      (let ret1 = ref None
       in 
-      try 
-	find_all_matches bcntrl btyenv (Qnt(k, q, nb)) bg
-      with No_change -> (bcntrl, btyenv, Qnt(k, q, nb), bg))
-  | Basic.Typed(tt, ty) -> find_rrs_bottom_up ctrl tyenv tt g
+      seq[(find_rrs_bottom_up_tac ctrl ret1 tyenv b);
+	  (fun g1 -> 
+	    let (bcntrl, btyenv, nb) = 
+	      Lib.get_option (!ret1) (ctrl, tyenv, b)
+	    in 
+	    ret1:=None;
+	    let g2= 
+	      (find_all_matches_tac bcntrl ret1 btyenv (Qnt(k, q, nb)) 
+	     || skip) g1
+	    in 
+	    Lib.set_option ret 
+	      (Lib.get_option (!ret1) (bcntrl, btyenv, Qnt(k, q, nb)));
+	    g2)] g)
+  | Basic.Typed(tt, ty) -> find_rrs_bottom_up_tac ctrl ret tyenv tt g
   | Basic.App(f, a)->
-      (let (fcntrl, ftyenv, nf, nfg) = 
-	find_rrs_bottom_up ctrl tyenv f g
+      (let ret1 = ref None
       in 
-      let (acntrl, atyenv, na, nag) = 
-	find_rrs_bottom_up fcntrl ftyenv a nfg
-      in 
-      try 
-	find_all_matches acntrl atyenv (App(nf, na)) nag
-      with No_change -> (acntrl, atyenv, App(nf, na), nag))
-  | _ -> 
+      seq [find_rrs_bottom_up_tac ctrl ret1 tyenv f;
+	   (fun g1 ->
+	     let (fcntrl, ftyenv, nf)=
+	       Lib.get_option (!ret1) (ctrl, tyenv, f)
+	     in 
+	     ret1:=None;
+	     seq[find_rrs_bottom_up_tac fcntrl ret1 ftyenv a;
+		 (fun g2 -> 
+		   let (acntrl, atyenv, na) = 
+		     Lib.get_option (!ret1)
+		       (fcntrl, ftyenv, a)
+		   in 
+		   let g3=
+		     (find_all_matches_tac acntrl ret1 atyenv (App(nf, na)) 
+		    || skip) g2
+		   in 
+		   Lib.set_option ret
+		     (Lib.get_option (!ret1) (acntrl, atyenv, App(nf, na)));
+		   g3)] g1)] g)
+  | _ ->  
       (try 
-	find_all_matches ctrl tyenv t g
-      with No_change -> (ctrl, tyenv, t, g))
+	find_all_matches_tac ctrl ret tyenv t g
+      with No_change -> 
+	(Lib.set_option ret (ctrl, tyenv, t); skip g))
 
 (* 
    [find_rrs_top_down cntr t g]
 
    Top-down search through term [t] for rewrite rules to apply.
  *)
-let rec find_rrs_top_down ctrl tyenv trm g=
-  let find_td_aux tyenv1 cntrl1 trm1 g=
+let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
+  let find_td_aux ret1 tyenv1 cntrl1 trm1 g=
     match trm1 with
       Basic.Qnt(k, q, b) -> 
-	(let (bcntrl, btyenv, nb, bg) = 
-	  find_rrs_top_down  cntrl1 tyenv1 b g
+	(let ret2=ref None 
 	in 
-	(bcntrl, btyenv, Qnt(k, q, nb), bg))
-    | Basic.Typed(tt, ty) -> find_rrs_top_down  cntrl1 tyenv1 tt g
+	let bg=find_rrs_top_down_tac cntrl1 ret2 tyenv1 b g
+	in 
+	let (bcntrl, btyenv, nb) = 
+	  Lib.get_option (!ret2) (cntrl1, tyenv1, b)
+	in 
+	Lib.set_option ret1 (bcntrl, btyenv, Basic.Qnt(k, q, nb)); bg)
+    | Basic.Typed(tt, ty) -> 
+	find_rrs_top_down_tac cntrl1 ret1 tyenv1 tt g
     | Basic.App(f, a)->
-	(let (fcntrl, ftyenv, nf, nfg) = 
-	  find_rrs_top_down  cntrl1 tyenv1 f g
+	(let ret2=ref None
 	in 
-	let (acntrl, atyenv, na, nag) = 
-	  find_rrs_top_down  fcntrl ftyenv a nfg
-	in 
-	(acntrl, atyenv, App(nf, na), nag))
-    | _ -> (cntrl1, tyenv1, trm1, g)
+	seq[find_rrs_top_down_tac cntrl1 ret2 tyenv1 f;
+	    (fun g1->
+	      let (fcntrl, ftyenv, nf) = 
+		Lib.get_option (!ret2) (cntrl1, tyenv1, f)
+	      in 
+	      ret2:=None;
+	      let nag=find_rrs_top_down_tac fcntrl ret2 ftyenv a g1
+	      in 
+	      let (acntrl, atyenv, na) = 
+		Lib.get_option (!ret2) (fcntrl, ftyenv, a)
+	      in 
+	      Lib.set_option ret1 (acntrl, atyenv, App(nf, na)); nag)] g)
+    | _ -> (Lib.set_option ret1 (cntrl1, tyenv1, trm1); skip g)
   in
-  let (nctrl, ntyenv, ntrm, ng) = 
-    (try 
-      find_all_matches ctrl tyenv trm g
-    with No_change -> (ctrl, tyenv, trm, g))
+  let ret1=ref None 
   in 
-  find_td_aux ntyenv nctrl ntrm ng
+  let ng = 
+    seq
+      [(find_all_matches_tac ctrl ret1 tyenv trm || skip);
+       (fun g -> 
+	 let (nctrl, ntyenv, ntrm)=
+	   Lib.get_option (!ret1) (ctrl, tyenv, trm)
+	 in 
+	 find_td_aux ret1 ntyenv nctrl ntrm g)] goal
+  in 
+  Lib.set_option ret (Lib.get_option (!ret1) (ctrl, tyenv, trm)); ng
 
 
-let rec basic_simp_link ft cntrl goal=
+let rec basic_simp_tac cntrl ret ft goal=
   let chng=ref false
   in 
-  let tyenv=Drule.branch_tyenv goal
+  let tyenv=Drule.typenv_of goal
   in 
-  let sqnt = 
-    match (Drule.branch_subgoals goal) with
-      [x] -> x
-    | _ -> raise (Failure "basic_simp_link: too many subgoals")
+  let sqnt = Drule.sequent goal
   in 
   let trm=
     Formula.dest_form (Logic.drop_tag (get_form ft sqnt))
   in 
-  let (ncntrl, ntyenv, ntrm, ngoal)= 
+  let ret1=ref None
+  in
+  let tac1 = 
     let rr_cntrl = Data.get_control cntrl
     in 
     if (rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
     then 
-      find_rrs_bottom_up cntrl tyenv trm goal
+      find_rrs_bottom_up_tac cntrl ret1 tyenv trm
     else
-      find_rrs_top_down cntrl tyenv trm goal
+      find_rrs_top_down_tac cntrl ret1 tyenv trm
   in 
-  let rrs=List.rev (ncntrl.Data.rules)
-  in 
-  if rrs=[]
-  then raise No_change
-  else 
-    let goal1=
+  let tac2 g2 = 
+    let (ncntrl, ntyenv, ntrm) =  
+      Lib.dest_option ~err:(Failure "basic_simp_tac: 1") (!ret1)
+    in let rrs=List.rev (ncntrl.Data.rules)
+    in 
+    if rrs=[] then raise No_change
+    else 
       let rr_cntrl0 = Data.get_control cntrl
       in 
       let rr_cntrl = 
@@ -558,19 +643,15 @@ let rec basic_simp_link ft cntrl goal=
 	  ~max:None
 	  ~strat:rr_cntrl0.Rewrite.rr_strat
       in 
+      Lib.set_option ret ncntrl;
       (try
-	Tactics.foreach 
-	  (Logic.Rules.rewrite None ~ctrl:rr_cntrl rrs (ftag ft)) ngoal
+	Logic.Rules.rewrite None ~ctrl:rr_cntrl rrs (ftag ft) g2
       with _ -> raise No_change)
-    in 
-    (ncntrl, goal1)
+  in 
+  seq[tac1 ; tac2] goal
 
     (* Clean up afterwards *)
 (*     clean_up_tac ncntrl goal1 *)
-
-let basic_simp_tac cntrl ft goal=
-  let (_, g) = basic_simp_link ft cntrl (skip goal)
-  in g
 
 (**
    [prove_cond_tac ctrl tg g]: The tactic used to prove the conditions of
@@ -578,16 +659,21 @@ let basic_simp_tac cntrl ft goal=
 
    Apply [simp_prep_tac] then [basic_simp_tac].
    Then apply [Logic.Rules.trueR] to solve goal.
-*) 
+ *) 
 let prove_cond_tac ctrl tg goal=
   Tactics.orl
     [
      Logic.Rules.trueR None (Logic.FTag tg);
      (fun g -> 
        let init_simp_tac ctrl0 tg0 g0=
-	 let (ctrl1, g1) = simp_prep_tac ctrl0 tg0 g0
+	 let ret=ref None
 	 in 
-	 Tactics.foreach(basic_simp_tac ctrl1 tg0) g1
+	 seq [simp_prep_tac ctrl0 ret tg0;
+	      fun g2 -> 
+		let ctrl1 = 
+		  Lib.dest_option ~err:(Failure "prove_cond_tac: 1") (!ret)
+		in 
+		basic_simp_tac ctrl1 ret tg0 g2] g0
        in 
        Tactics.seq
 	 [
@@ -624,12 +710,11 @@ let initial_flatten_tac fts goal=
 
 
 
-
 (**
    [once_simp_tac cntrl set l g]
 
    Simplify formula [label] with [set], once.
-*)
+ *)
 let once_simp_tac cntrl set l goal =
   let tag=Logic.label_to_tag l (Drule.sequent goal)
   in 
@@ -639,18 +724,20 @@ let once_simp_tac cntrl set l goal =
   in
   let data2 = Data.set_simpset data1 set
   in 
-  let (ncntrl, goal1) =
-    chain (fun cdata -> simp_prep_tac cdata tag)
-      [ basic_simp_link tag ] data2 goal
+  let ret=ref None
   in 
-  let goal2 = goal1
-  in goal2
-
-
- (* Clean up afterwards *)
-(* 
-   (foreach (clean_up_tac ncntrl) goal1)
-*)
+  seq [simp_prep_tac data2 ret tag;
+       (fun g -> 
+	 let ncntrl = 
+	   Lib.dest_option ~err:(Failure "once_simp_tac: 1") (!ret)
+	 in 
+	 ret:=None; basic_simp_tac ncntrl ret tag g);
+       (fun g-> 
+	 let ncntrl = 
+	   Lib.dest_option ~err:(Failure "once_simp_tac: 2") (!ret)
+	 in 
+	 clean_up_tac ncntrl g)	   
+     ] goal
 
 
 (* simp_tac i st:
@@ -673,18 +760,22 @@ let simp_tac cntrl set l goal=
   in
   let data2 = Data.set_simpset data1 set
   in 
-  let (ncntrl, goal1) =
-    iter_chain (fun cdata -> simp_prep_tac cdata tag)
-      (basic_simp_link tag) data2 goal
+  let ret=ref None
   in 
-  let goal2 = goal1
-  in goal2
-
-
- (* Clean up afterwards *)
-(* 
-   (foreach (clean_up_tac ncntrl) goal1)
-*)
+  seq [simp_prep_tac data2 ret tag;
+       repeat
+	 (fun g -> 
+	   let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 1") (!ret)
+	   in 
+	   ret:=None; 
+	   try 
+	     basic_simp_tac ncntrl ret tag g
+	   with e -> 
+	     (Lib.set_option ret ncntrl; raise e));
+       (fun g ->
+	 let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 2") (!ret)
+	 in 
+	 clean_up_tac ncntrl g)] goal
 
 
 (* 
@@ -700,37 +791,38 @@ let simp_tac cntrl set l goal=
    Not_found if no formula tagged tg in subgoal
    No_change if not change is made
  *)
-let full_simp_tac cntrl simpset tg gl=
-  let chng=ref false
-  in
-  (* get the first sequent *)
-  let sqnt = 
-    try (Drule.sequent gl)
-    with _ -> raise (Result.error "full_simp_tac: No such formula in goal")
-  in 
-  let cntrl1=Data.set_simpset cntrl simpset
-  in 
-  (* prepare the subgoal for simplification *)
-  let (prepared_cntrl, prepared_goal) = 
-    (try 
-      let tmp= simp_prep_tac cntrl1 tg gl
-      in (chng:=true; tmp)
-    with 
-      No_change -> (cntrl1, (skip gl))
-    | err -> 
-	raise (Result.error "simp_tac: stage 1"))
-  in 
-  (* invoke the simplifier *)
-  let simped_goal = 
-    (try 
-      Tactics.foreach
-	(basic_simp_tac prepared_cntrl tg) prepared_goal
-    with No_change -> (chng:=false; skip gl))
-  in 
-  (* clean up afterwards *)
-  let ret_goal=simped_goal
-  in 
-  if(!chng) 
-  then ret_goal
-  else raise No_change
-
+(*
+   let full_simp_tac cntrl simpset tg gl=
+   let chng=ref false
+   in
+   (* get the first sequent *)
+   let sqnt = 
+   try (Drule.sequent gl)
+   with _ -> raise (Result.error "full_simp_tac: No such formula in goal")
+   in 
+   let cntrl1=Data.set_simpset cntrl simpset
+   in 
+   (* prepare the subgoal for simplification *)
+   let (prepared_cntrl, prepared_goal) = 
+   (try 
+   let tmp= simp_prep_tac cntrl1 tg gl
+   in (chng:=true; tmp)
+   with 
+   No_change -> (cntrl1, (skip gl))
+   | err -> 
+   raise (Result.error "simp_tac: stage 1"))
+   in 
+   (* invoke the simplifier *)
+   let simped_goal = 
+   (try 
+   Tactics.foreach
+   (basic_simp_tac prepared_cntrl tg) prepared_goal
+   with No_change -> (chng:=false; skip gl))
+   in 
+   (* clean up afterwards *)
+   let ret_goal=simped_goal
+   in 
+   if(!chng) 
+   then ret_goal
+   else raise No_change
+ *)
