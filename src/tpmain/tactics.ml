@@ -1,4 +1,3 @@
-1
 open Logic
 
 type tactic = Logic.rule
@@ -353,6 +352,18 @@ let apply_if pred tac n =
    (synonym for apply_if)
  *)
 let (-->) = apply_if
+
+
+(**
+   [each xs tac] apply [tac] to each [x] in [xs]
+*)
+let rec each l tac goal = 
+  let rec each_aux ls g=
+    match ls with 
+      [] -> skip g
+    | (x::xs) -> (tac x ++ each_aux xs) g
+  in 
+  each_aux l goal
 
 
 let rewrite_control 

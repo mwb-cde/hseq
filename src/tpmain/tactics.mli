@@ -192,8 +192,11 @@ type tactical = tactic
    satisfied by the node.
 
    [pred --> tac]: Synonym for [apply_if pred tac].   
+
+   [each xs tac]: Apply [tac] to each [x] in [xs] in order.
+   For [xs = [y1; y2; .. ; yn]], 
+   returns [(tac y1) ++ (tac y2) ++ .. ++ (tac yn)]
 *)
-  
 val repeat : tactic -> tactic
 val (++) : tactic -> tactic -> tactic
 val seq : tactic list -> tactic 
@@ -206,7 +209,7 @@ val (--) : tactic ->  tactic list -> tactic
 val apply_if : (Logic.node -> bool) -> tactic -> tactic
 val (-->) : (Logic.node -> bool) -> tactic -> tactic
 
-
+val each: 'a list -> ('a -> tactic) -> tactic
 
 (** [gen_rewrite_tac info dir rules f]
 
