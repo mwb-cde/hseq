@@ -224,6 +224,16 @@ let get_option x d=
   | Some(y) -> y
 
 
+let set_int_option i = Some(i)
+let get_int_option x =
+  match x with 
+    None -> raise (Invalid_argument "get_int_option")
+  | Some i -> i
+let compare_int_option x n =
+  match x with
+    None -> false
+  | Some i -> i=n
+
 let date ()= Unix.time()
 let nice_date f= 
   let tm = Unix.localtime f

@@ -77,7 +77,9 @@ val named_add:
 *)
 val get_option : 'a option -> 'a -> 'a
 
-
+val set_int_option : int -> int option
+val get_int_option : int option -> int
+val compare_int_option: int option -> int -> bool
 
 (** [date]: used to ensure dependencies among theory files *)
 val date: unit -> float
