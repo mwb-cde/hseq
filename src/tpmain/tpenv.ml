@@ -138,14 +138,14 @@ let remove_type_pp id =
 let get_term_printer id=
   Printer.get_term_printer (pp_info()) id
 let add_term_printer id printer=
-  Printer.add_term_printer (pp_info()) id printer
+  Printer.add_term_printer (pp_info()) id (printer (pp_info()))
 let remove_term_printer id=
   Printer.remove_term_printer (pp_info()) id
 
 let get_type_printer id=
   Printer.get_type_printer (pp_info()) id
 let add_type_printer id printer=
-  Printer.add_type_printer (pp_info()) id printer
+  Printer.add_type_printer (pp_info()) id (printer (pp_info()))
 let remove_type_printer id=
   Printer.remove_type_printer (pp_info()) id
 
@@ -186,7 +186,8 @@ let catch_parse_error e a =
     Pkit.ParsingError x ->
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
-let mkterm_unchecked tyenv pt = pt
+
+let mkterm_unchecked tyenv pt = Term.set_names (scope()) pt
 
 let read str= 
   mkterm (scope()) 
