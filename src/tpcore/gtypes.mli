@@ -379,7 +379,7 @@ val set_name : scope -> gtype -> gtype
 (* in_thy_scope: check that all types are in scope of given theory *)
 (* first argument is for memoised *)
 
-val in_thy_scope: (string, bool)Lib.substype
+val in_scope: (string, bool)Lib.substype
   -> scope ->thy_id -> gtype -> bool
 
 (* utility functions *)

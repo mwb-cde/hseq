@@ -111,4 +111,4 @@ let catch_error info depth f a =
   with x -> print_error info depth x
 
 let warning s =
-  Format.printf "@[%s@]@." s
+  Format.printf "@[%s@]" s

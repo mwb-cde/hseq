@@ -105,12 +105,15 @@ val check_types: Gtypes.scope -> Basic.term -> unit
    Does not raise errors if identifiers not found in scope.
    This function needed to deal with the type of skolem constants.
  *)
-
+(*
 val set_exact_types: Gtypes.scope -> Basic.term -> Basic.term
+*)
 
+(*
 val assign_types: Gtypes.scope -> Basic.term -> Basic.term
     
 val typecheck_aux:
     Gtypes.scope ->
       int ref * (Basic.ident * int, bool) Hashtbl.t ->
 	Gtypes.substitution -> Basic.gtype -> Basic.term -> Gtypes.substitution
+*)

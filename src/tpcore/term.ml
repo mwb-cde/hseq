@@ -994,56 +994,18 @@ class termError s ts =
       Format.printf "@[%s@ @[" (self#msg()); 
       Printer.print_sep_list 
 	(print st, ",") (self#get());
-      Format.printf "@]@]@."
+      Format.printf "@]@]"
   end
 let mk_termError s t = ((new termError s t):>error)
 
 let termError s t = mk_error((new termError s t):>error)
 let addtermError s t es = raise (add_error (termError s t) es)
 
-(* [set_names_types scp thy trm]
+(**
+   [set_names_types scp thy trm]
    find and set long identifiers and types for variables in [trm]
    theory is [thy] if no long identifier can be found in scope [scp]
  *)
-
-(*
-let set_names scp trm=
-  let term_memo = Lib.empty_env()
-  in 
-  let lookup_id n = 
-    (try (Lib.find n term_memo)
-    with Not_found -> 
-      let nth = 
-	try 
-	  (scp.thy_of Basic.fn_id n) 
-	with _ -> Basic.null_thy      (* scp.curr_thy *)
-      in ignore(Lib.add n nth term_memo); nth)
-  in 
-  let rec set_aux t=
-    match t with
-      Id(id, ty) -> 
-	let th, n = Basic.dest_fnid id
-	in 
-	let nth = 
-	  (if th=Basic.null_thy
-	  then lookup_id n 
-	  else th)
-	in 
-	let nid = Basic.mk_long nth n
-	in Id(nid, ty)
-    | Free(n, ty) -> 
-	(try 
-	  (let nth = lookup_id n
-	  in 
-	  let nid = Basic.mk_long nth n
-	  in Id(nid, ty))
-	with Not_found -> t)
-    | Qnt(qnt, q, b) -> Qnt(qnt, q, set_aux b)
-    | Typed(tt, tty) -> Typed(set_aux tt, tty)
-    | App(f, a) -> App(set_aux f, set_aux a)
-    | _ -> t
-  in set_aux trm
-*)
 
 let set_names scp trm=
   let term_memo = Lib.empty_env()
@@ -1081,7 +1043,7 @@ let set_names scp trm=
   in set_aux trm
 
 
-let in_thy_scope memo scp th trm =
+let in_scope memo scp th trm =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
@@ -1092,15 +1054,15 @@ let in_thy_scope memo scp th trm =
     match t with
       Id(id, ty) -> 
 	  ignore(lookup_id (thy_of_id id));
-	Gtypes.in_thy_scope memo scp th ty
+	Gtypes.in_scope memo scp th ty
     | Qnt(_, _, b) ->
-	ignore(Gtypes.in_thy_scope memo scp th (get_qnt_type t));
+	ignore(Gtypes.in_scope memo scp th (get_qnt_type t));
 	in_scp_aux b
     | Bound(_) ->
-	Gtypes.in_thy_scope memo scp th (get_qnt_type t)
+	Gtypes.in_scope memo scp th (get_qnt_type t)
     | Typed(tr, ty) ->
 	ignore(in_scp_aux tr);
-	Gtypes.in_thy_scope memo scp th ty
+	Gtypes.in_scope memo scp th ty
     | App(a, b) ->
 	ignore(in_scp_aux a);
 	in_scp_aux b

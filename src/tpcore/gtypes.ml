@@ -356,15 +356,10 @@ class typeError s ts=
     val trms = (ts: gtype list)
     method get() = ts
     method print st = 
-      Format.open_box 0; 
-      Format.print_string (self#msg()); 
-      Format.print_space();
-      Format.open_box 0; 
+      Format.printf "@[%s@ " (self#msg()); 
       Printer.print_sep_list 
 	(print st, ",") (self#get());
-      Format.close_box();
-      Format.close_box();
-      Format.print_newline()
+      Format.printf "@]"
   end
 let typeError s t = (mk_error((new typeError s t):>error))
 let addtypeError s t es= 
@@ -1113,7 +1108,7 @@ let set_name scp trm =
   in set_aux trm
 
 
-(* in_thy_scope memo scp th ty:
+(* in_scope memo scp th ty:
 
    Check that ty is in valid for theory th.
    Every type constructor must be in scope of th.
@@ -1122,7 +1117,7 @@ let set_name scp trm =
    in scope, it is added to memo.
  *)
 
-let in_thy_scope memo scp th ty =
+let in_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 

@@ -299,7 +299,7 @@ val set_names: Gtypes.scope  -> term -> term
 
 (* check that term is in scope:
    all identifiers and types must be declared in the given scope *)
-val in_thy_scope: (string, bool)Lib.substype 
+val in_scope: (string, bool)Lib.substype 
   -> Gtypes.scope -> Basic.thy_id -> term -> bool
 
 (* simple ordering on terms *)
