@@ -7,7 +7,6 @@
 
 (*
 #load "cli.cmo";;
-#load "bool_tacs.cmo";;
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
@@ -26,11 +25,12 @@
 open Goals;;
 open Commands;;
 open Tactics;;
-open Bool_tacs;;
+open Boollib;;
 
 let _ =
   Format.open_box 0;
-  Format.print_string "Initialising\n";
+  Format.print_string "Initialising";
+  Format.print_newline();
   Format.close_box();
   Tpenv.add_thy_path "./thys";
   Tpenv.add_thy_path "../thys";
