@@ -1,0 +1,267 @@
+(* Types and their manipulation *)
+
+open Basic
+open Lib
+
+    type ('idtyp, 'tfun, 'tcons) pre_typ =
+      	Var of 'idtyp
+      | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
+      | Base of 'tcons
+
+(* representation of types *)
+    type gtype = 
+	((string ref, Basic.typ_const, Basic.base_typ)pre_typ)
+
+(* representation of types for storage on disk *)
+    type stype = 
+	((string * int), Basic.typ_const, Basic.base_typ) pre_typ
+
+(* records for type definitions *)
+
+    type typedef_record =
+	{name: string; 
+	  args : string list; 
+	  alias: gtype option;
+	  characteristics: string list}
+
+    type stypedef_record =
+	{sname: string; 
+	  sargs : string list; 
+	  salias: stype option;
+	  scharacteristics: string list}
+
+(* record scopes and type definitions (e.g. for typechecking) *)
+
+    type scope =  (* was typ_env *)
+      	{ curr_thy : thy_id;
+	  typeof_fn : fnident -> gtype; 
+	  typ_defn: fnident -> typedef_record;
+	  thy_of : id_selector -> string -> thy_id;
+    	  prec_of: id_selector -> fnident -> int;
+	  thy_in_scope : thy_id -> thy_id -> bool}
+
+val empty_scope : unit -> scope
+val add_to_scope: scope -> (fnident * gtype) list -> scope
+val extend_scope: scope -> (fnident -> gtype) -> scope
+
+
+(* get definition of a type *)
+    val get_typdef: scope -> fnident -> typedef_record
+
+    val string_gtype :  gtype -> string
+
+(* conversion to and from disk representation *)
+    val from_save: stype -> gtype
+    val from_save_env : 
+	((string * int)* (string ref)) list ref
+      -> stype -> gtype
+
+    val to_save: gtype -> stype
+    val to_save_env: (string ref* (string *int)) list ref 
+      -> gtype -> stype
+
+    val to_save_rec: typedef_record -> stypedef_record
+    val from_save_rec: stypedef_record -> typedef_record
+
+(* equality between types (uses Dequals test) *)
+    val equality: gtype -> gtype -> bool
+
+    val safe_equal: gtype -> gtype -> bool
+
+
+(* constructors/destructors/recognisers for types *)
+
+(* basic types *)
+
+    val mk_null : unit -> gtype 
+    val is_null: gtype -> bool
+
+    val mk_bool : gtype
+    val mk_num : gtype
+
+(* variable types *)
+
+    val mk_var : string -> gtype
+    val dest_var : gtype -> string  ref
+    val get_var : gtype -> string
+
+(* function types *)
+    val mk_fun : gtype -> gtype -> gtype
+    val mkfun_from_list: gtype list -> gtype -> gtype
+
+(* recognisers *)
+    val varp : gtype -> bool
+    val constrp : gtype  -> bool
+    val basep : gtype  -> bool
+
+(* compare types *)
+
+    val eqvar : gtype -> gtype -> bool
+    val eqbase : gtype -> gtype -> bool
+    val eqconstr : gtype -> gtype -> bool
+
+(* destruct function type *)
+    val arg_type : gtype -> gtype
+    val ret_type : gtype -> gtype
+    val chase_ret_type : gtype -> gtype
+
+(* Defined types *)
+
+    val mk_def: Basic.fnident -> gtype list -> gtype
+val dest_def: gtype -> (Basic.fnident* gtype list)
+
+(* unification and subsitution *)
+
+    exception Occurs
+    exception Unify
+
+(* type of substitutions *)
+
+module type RHASHKEYS=
+  sig 
+    type t = gtype
+    val equal : t -> t -> bool
+    val hash: t -> int
+  end
+module type RHASH = (Hashtbl.S with type key = (gtype))
+module Rhash: RHASH
+type substitution = (gtype)Rhash.t
+
+(* make a substitution with arbitrary or given size *)
+    val empty_subst : unit -> substitution
+    val subst_sz: int -> substitution
+
+(* type of primitive constructs *)
+    val typeof_cnst  : Basic.const_ty -> gtype
+    val typeof_conn  : Basic.conns_ty -> gtype
+
+(* occurs check  *)
+(* occurs is a shallow check.
+   occurs_env takes context into account 
+   and is the version used for unification *)
+
+    val occurs :  gtype -> gtype -> unit
+    val occurs_env :  substitution-> gtype -> gtype -> unit
+
+val bind_occs : gtype -> gtype -> substitution -> unit
+
+(* copy a type, making new variables in the type *)
+(* ie: (copy_type t) is equivalent but not equal to t *)
+
+val copy_type_env: substitution -> gtype -> gtype 
+val copy_type: gtype -> gtype 
+
+(* unification *)
+(* unify two types, returning the substitution*)
+    val unify : scope -> gtype -> gtype  -> substitution 
+
+(* unify two types in a given context/subsitution, 
+   return a new subsitution *)
+
+    val unify_env : scope -> gtype -> gtype 
+	-> substitution -> substitution 
+
+(*  unify two types in a given context/subsitution, 
+    return a new subsitution
+    the left type is copied using copy_type.
+    i.e. unify_env_unique_left sc l r s
+    is equivalent to
+    unify_env sc (copy_type l) r s
+    this function is used for rewriting with multiple terms.
+    Defunct: use unify_for_rewrite
+ *)
+
+val unify_env_unique_left:  scope -> gtype -> gtype 
+	-> substitution -> substitution 
+
+(* remove bindings from a failed attempt at unification *)
+val remove_bindings: gtype list -> substitution -> substitution
+
+(*  unify two types in a given context/subsitution, 
+    return a new subsitution
+    the left type is copied using copy_type.
+    i.e. unify_for_rewrite sc l r s
+    is equivalent to
+    unify_env sc (copy_type l) r s
+    this function is used for rewriting with multiple terms.
+ *)
+
+val unify_for_rewrite:  
+    scope -> gtype -> gtype 
+      -> substitution       
+	  -> gtype list ref  -> gtype list
+
+(* get most general unifier for a type and subsitution *)
+    val mgu : gtype  -> substitution -> gtype
+
+(* matching *)
+    val matching :scope -> gtype -> gtype -> gtype
+    val matches : scope -> gtype -> gtype -> bool
+
+
+(* look up types in a subsitution *)
+
+    val lookup_var : gtype -> substitution -> gtype
+    val lookup_ty : gtype -> substitution -> gtype
+    val lookup : gtype -> substitution -> gtype
+
+(* check_defn l r: test defintion of l as alias for r *)
+(* check_decln l: consistency check on declaration of type l *) 
+
+    val check_defn : scope -> gtype -> gtype -> bool
+    val check_decln : gtype  -> bool
+
+    val print_subst : substitution -> unit
+
+(* get the definition of a type from the scope if it exists *)
+(* raises Not_found if not definition*)
+    val get_defn : scope -> gtype -> gtype
+
+(* test for well-defined types *)
+    val well_defined : scope -> ?args: (string)list -> gtype -> unit
+    val quick_well_defined : scope -> 
+      (fnident *int, bool) Hashtbl.t -> gtype -> unit
+
+(* Error reporting *)
+
+    class typeError : string -> gtype list ->
+      object
+      inherit Result.error
+      val trms : gtype list
+      method get : unit -> gtype list
+    end
+    val typeError : string -> gtype list -> exn
+    val addtypeError : string ->gtype list -> exn -> 'a
+
+(* pretty printer *)
+
+val print_type_info : Corepp.pp_state -> int -> gtype -> unit
+val print_type : Corepp.pp_state -> gtype -> unit
+
+(* set names in a type to their long form *)
+
+val set_name : scope -> gtype -> gtype
+
+(* in_thy_scope: check that all types are in scope of given theory *)
+(* first argument is for memoised *)
+
+val in_thy_scope: (string, bool)Lib.substype
+    -> scope ->thy_id -> gtype -> bool
+
+(* utility functions *)
+(* mknew_type n: 
+   make a new type variable with name (int_to_name !n);
+   increment n;
+   return new type
+*)
+
+val mk_typevar: int ref -> gtype
+
+(* mgu_rename inf env nenv ty: 
+   get mgu of ty, renaming type variables with mk_typevar inf
+   env is type environement found e.g. by typechecking
+   nenv is environment storing the new type variables
+*)
+
+val mgu_rename: int ref -> substitution -> substitution 
+  -> gtype -> gtype

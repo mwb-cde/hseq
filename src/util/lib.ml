@@ -1,0 +1,172 @@
+(* library function *)
+
+(* Array iteration *)
+
+let iteri fn gt =
+  let rec iteri_aux i =
+    (fn i gt); if i>0 then iteri_aux (i-1) else ()
+  in iteri_aux ((Array.length gt) -1);;
+
+let rec list_string f sep x =
+  match x with 
+    [] -> ""
+  | (b::[]) -> (f b)
+  | (b::bs) -> (f b)^sep^(list_string f sep bs);;
+
+
+let rec take x =
+  match x with
+    (0, bs) -> []
+  | (n, []) -> []
+  | (n, (b::bs)) -> b::(take(n-1, bs))
+
+let rec drop x =
+  match x with
+    (0, bs) -> bs
+  | (n, []) -> []
+  | (n,  b::bs) -> (drop(n-1, bs))
+
+let delete_nth i x =
+  let j=if i-1<0 then 0 else (i-1)
+  in 
+  (take (j, x)@ (drop(j+1, x)))
+
+let replace_nth i x y=
+  let j=if i-1<0 then 0 else (i-1)
+  in 
+  (take (j, x)@ (y::(drop(j+1, x))))
+
+let splice_nth i x y=
+  let j=if i-1<0 then 0 else (i-1)
+  in 
+  (take (j, x)@ y@ (drop(j+1, x)))
+
+let rec assoc p ls =
+  match ls with
+    [] -> raise Not_found
+  | (y::ys)  -> if p y then y else assoc p ls
+
+let rec assocp p x ls = 
+  match ls with
+    [] -> raise Not_found
+  | (y::ys) -> if (p x (fst y)) then (snd y) else assocp p x ys
+
+let rec filter p ls =
+  match ls with
+    [] -> []
+  | y::ys -> if (p y) then filter p ys else (y::filter p ys)
+
+(* get nth with wraparound to 0 *)
+
+let wrap_around x i  =
+  match x with 
+    [] -> raise (Failure "get_nth: empty list")
+  | _ ->   i mod (List.length x)
+
+let get_nth x i  =
+  match x with 
+    [] -> raise (Failure "get_nth: empty list")
+  | _ ->   if (List.length x) > i+1 then List.nth x i else List.nth x 0
+
+let rec move_right al =
+  match al with
+    ([], []) -> al
+  | (bl, []) -> move_right ([], List.rev bl)
+  | (bl, c::cl) -> (c::bl, cl)
+
+let rec move_left al =
+  match al with
+    ([], []) -> al
+  | ([], cl) -> (move_left (List.rev cl, []))
+  | (b::bl, cl) -> (bl, b::cl)
+
+
+let ($) x y = fun a -> x (y a)
+
+let index p xs =
+  let rec index_aux xs i =
+    match xs with 
+      [] -> raise Not_found
+    | y::ys -> if (p y) then i else index_aux ys (i+1)
+  in index_aux xs 0
+
+
+
+
+(* substitution types *)
+
+type ('a,'b)substype = ('a, 'b)Hashtbl.t
+
+let empty_env() = Hashtbl.create 13
+let env_size i = Hashtbl.create i
+
+let find x env = Hashtbl.find env x
+let bind_env t r env = (Hashtbl.remove env t; Hashtbl.add env t r)
+let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
+let add t r env = 
+  try (Hashtbl.find env t)
+  with Not_found -> ((Hashtbl.add env t r); r)
+let member t env = try (Hashtbl.find env t; true) with Not_found -> false
+let remove t env = Hashtbl.remove env t
+
+let rec chase varp x env =
+  try 
+    let t = Hashtbl.find env x
+    in if (varp t) then (chase varp t env) else t
+  with Not_found -> x
+
+let fullchase varp x env =
+  let t1 = chase varp x env 
+  in if varp t1 then x else t1
+
+
+(* remove duplicates from a list *)
+
+let remove_dups ls =
+  let cache = Hashtbl.create (List.length ls)
+  in 
+  let rec remove_aux xs rs =
+    match xs with
+      [] -> List.rev rs
+    | (y::ys) -> 
+	if member y cache 
+    	then remove_aux ys rs
+	else ((Hashtbl.add cache y None); remove_aux ys (y::rs))
+  in remove_aux ls []
+
+
+
+let find_char c max x=
+  let rec find_aux i =
+    if i >= max 
+    then max
+    else 
+      (if x.[i]=c 
+      then i
+      else find_aux (i+1))
+  in find_aux 0
+      
+
+let chop_at c x =
+  let max = String.length x
+  in let indx= find_char c max x
+  in 
+  if indx < max 
+  then ((String.sub x 0 indx), (String.sub x (indx+1) (((max -1)- indx))))
+  else ("", x)
+
+let int_to_name i =
+  let numchars=26
+  and codea=int_of_char 'a'
+  in 
+  let ch=i mod numchars
+  and rm=i / numchars
+  in 
+  let ld= String.make 1 (char_of_int (codea+ch))
+  in
+  if (rm=0)
+  then
+    ld
+  else 
+    ld^(string_of_int rm)
+
