@@ -305,7 +305,7 @@ let print_constr ppstate id=
 
 let lookup_constr ppstate id = 
   match id with
-    Basic.Defined n -> Printer.get ppstate n
+    Basic.Defined n -> Printer.get_record ppstate n
   | Basic.Func -> 
       Printer.mk_record 6 Printer.infix None
 
@@ -314,9 +314,9 @@ let find_printer ppstate id =
     Basic.Defined n -> raise Not_found
   | Basic.Func -> raise Not_found
 
-let pplookup_id ppstate id =
+let pplookup ppstate id =
   try
-    (Printer.get ppstate.Printer.type_info id)
+    (Printer.get_record ppstate.Printer.type_info id)
   with Not_found -> 
     Printer.mk_record 
       Printer.default_type_prec
@@ -346,14 +346,14 @@ let rec print_type ppstate pr t =
   print_aux ppstate pr t;
   Format.close_box ()
 and print_defined ppstate prec (f, args) =
-  let pprec = pplookup_id ppstate f
+  let pprec = pplookup ppstate f
   in 
-(*  try 
-   let printer = Printer.get_printer f
+  try 
+   let printer = Printer.get_printer ppstate f
    in 
    printer prec (f, args)
    with Not_found -> 
- *)    if(Printer.is_infix pprec.Printer.fixity)
+     if(Printer.is_infix pprec.Printer.fixity)
  then 
    (match args with
      [] -> ()
@@ -361,7 +361,7 @@ and print_defined ppstate prec (f, args) =
        Printer.print_bracket prec (pprec.Printer.prec) "(";
        print_type ppstate (pprec.Printer.prec) lf;
        Printer.print_space();
-       Printer.print_identifier (pplookup_id ppstate) f;
+       Printer.print_identifier (pplookup ppstate) f;
        Printer.print_space();
        Printer.print_list 
 	 (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
@@ -374,7 +374,7 @@ and print_defined ppstate prec (f, args) =
      (Printer.print_bracket prec (pprec.Printer.prec) "(";
       Format.print_cut();
       Printer.print_suffix 
-	((fun pr -> Printer.print_identifier (pplookup_id ppstate)), 
+	((fun pr -> Printer.print_identifier (pplookup ppstate)), 
 	 (fun pr l-> 
 	   match l with 
 	     [] -> ()
@@ -386,7 +386,7 @@ and print_defined ppstate prec (f, args) =
    else 
      Format.print_cut();
   Printer.print_prefix
-    ((fun pr -> Printer.print_identifier (pplookup_id ppstate)),
+    ((fun pr -> Printer.print_identifier (pplookup ppstate)),
      (fun pr l -> 
        match l with 
 	 [] -> ()

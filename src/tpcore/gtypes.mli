@@ -312,15 +312,20 @@ val addtypeError : string ->gtype list -> exn -> 'a
    Pretty printing information for types.
    Added printers have type [(Basic.type_const * Gtypes list) printer].
 *)
+
 (*
-type ppinfo = (Basic.ident * gtype list) Printer.info
-*)
+type ppinfo = 
+     (Basic.ident * gtype list) Printer.info
+*)     
+
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)
       ctr: int ref; (* used to generate variable names *)
     }
 val empty_printer_info: unit -> printer_info
+
+val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
 
 (**
 [print_type_inf ppstate tbl prec ty]

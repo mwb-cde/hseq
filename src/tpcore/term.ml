@@ -809,9 +809,9 @@ let rec print_termlist prenv x =
 (* pretty printing *)
 
 
-let pplookup_id ppstate id =
+let pplookup ppstate id =
   try
-    (Printer.get ppstate.Printer.term_info id)
+    (Printer.get_record ppstate.Printer.term_info id)
   with Not_found -> 
     Printer.mk_record 
       Printer.default_term_prec
@@ -845,8 +845,8 @@ let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
      (fun pr l -> 
        Printer.print_list
 	 (argpr pr, Printer.print_space) l),
-     (pplookup_id ppstate),
-     Printer.get_printer)
+     (pplookup ppstate),
+     Printer.get_printer ppstate)
     prec (f, args)
 
 let print_typed_term tpr ppstate prec (trm, ty)=
@@ -877,7 +877,7 @@ let rec print_term ppstate prec x =
   match x with
     Var(n, ty) -> 
       Printer.print_identifier 
-	(pplookup_id ppstate) n;
+	(pplookup ppstate) n;
       Format.print_cut()
   | Bound(n) -> 
       Format.print_string ((get_binder_name x));
@@ -901,7 +901,7 @@ let rec print_term ppstate prec x =
 	    print_fn_app 
 	      ((fun _ -> 
 		Printer.print_identifier 
-		  (pplookup_id ppstate)),
+		  (pplookup ppstate)),
 	       print_term ppstate)
 	      ppstate prec (n, args))
 	  else 

@@ -230,6 +230,7 @@ val retype_pretty: Gtypes.substitution -> term
 
 (* Pretty printing *)
 
+val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
 val print_term : Printer.ppinfo -> int -> term Printer.printer
 
 (* 
