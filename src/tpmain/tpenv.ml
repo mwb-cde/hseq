@@ -187,20 +187,22 @@ let catch_parse_error e a =
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
 
-let mkterm_unchecked tyenv pt = Term.set_names (scope()) pt
+let mkterm_raw tyenv pt = Term.set_names (scope()) pt
+let mkterm_unchecked tyenv pt =  pt
+
 
 let read str= 
   mkterm (scope()) 
     (catch_parse_error Parser.read_term str)
 
 let read_unchecked  x=
-  mkterm_unchecked (scope()) 
+  mkterm_raw (scope()) 
     (catch_parse_error Parser.read_term x)
 
 let read_defn x =
   let (l, r)= 
     catch_parse_error (Parser.read defn_parser) x
-  in (l, mkterm_unchecked (scope()) r)
+  in (l, r)
 
 let read_type_defn x =
   let (l, args, r)= 

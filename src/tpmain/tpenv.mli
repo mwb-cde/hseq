@@ -64,6 +64,7 @@ val on_load_thy: Theory.thy -> unit
    typecheck term [trm] in scope [scp]
 *)
 val mkterm : Gtypes.scope -> Basic.term -> Basic.term
+val mkterm_raw : Gtypes.scope -> Basic.term -> Basic.term
 val mkterm_unchecked : Gtypes.scope -> Basic.term -> Basic.term
 val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
