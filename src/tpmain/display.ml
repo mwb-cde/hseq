@@ -60,6 +60,9 @@ let print_sqnt sq =
    print_newline();
    close_box())
 
+let print_subgoal (sg:Logic.subgoal)=
+  print_sqnt (Logic.subgoal_nth_sqnt 0 sg)
+
 
 let print_thm t = 
   open_box 0; print_string "|- ";
