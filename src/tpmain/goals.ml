@@ -52,7 +52,7 @@ let mk_dummy_fntype n=
     (Gtypes.mk_typevar i)
 
 let goal trm = 
-  let f = Formula.mk_form (Global.scope()) (Global.mk_term (Global.scope()) trm)
+  let f = Formula.make (Global.scope()) (Global.mk_term (Global.scope()) trm)
   in 
   prflist:= [mk_goal  (Global.scope()) f];
   (!save_hook()); top()
@@ -62,13 +62,13 @@ let apply ?report tac goal=
 
 let prove_goal scp trm tac =
   mk_thm 
-    (apply tac (mk_goal scp (Formula.mk_form (Global.scope()) trm)))
+    (apply tac (mk_goal scp (Formula.make (Global.scope()) trm)))
 
 let prove trm tac = prove_goal (Global.scope()) trm tac
 
 let by_list trm tacl =
   let fg=mk_goal (Global.scope()) 
-      (Formula.mk_form (Global.scope()) trm)
+      (Formula.make (Global.scope()) trm)
   in 
   let rec by_aux ts g =
       match ts with 

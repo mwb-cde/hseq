@@ -84,7 +84,7 @@ let get_cond_rule_false_ax ()=
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
 let simple_rewrite_conv scp rule trm=
-  let rule_trm =(Formula.dest_form (Logic.dest_thm rule))
+  let rule_trm =(Formula.dest (Logic.dest_thm rule))
   in 
   let rvars, rbody = Term.strip_qnt Basic.All rule_trm
   in 
@@ -172,7 +172,7 @@ let simple_asm_rewrite_tac rule asm node=
   let (_, f)=Logic.get_label_asm asm sqnt
   and scp = Drule.scope_of node
   in 
-  let thm=simple_rewrite_conv scp rule (Formula.dest_form f)
+  let thm=simple_rewrite_conv scp rule (Formula.dest f)
   in 
   once_rewrite_tac [thm] ~f:asm node
 
@@ -230,7 +230,7 @@ let negate_concl info c goal=
    test [thm] is of the form |- a and b and ... and z 
  *)
 let is_many_conj thm=
-  let thmtrm=Formula.dest_form (Logic.dest_thm thm)
+  let thmtrm=Formula.dest (Logic.dest_thm thm)
   in 
   Logicterm.is_conj thmtrm
 
@@ -586,7 +586,7 @@ and do_neg_exists_rule (scp, thm, (qs, c, a)) =
 	"do_neg_exists_rule: Not an unconditional negated existential quantifier"
 
 and single_thm_to_rules scp thm = 
-  let (qs, c, a) = strip_qnt_cond (Formula.dest_form (Logic.dest_thm thm))
+  let (qs, c, a) = strip_qnt_cond (Formula.dest (Logic.dest_thm thm))
   in 
   apply_first 
     [
@@ -621,10 +621,10 @@ let thm_to_rules scp thm =
  *)
 let make_thm_rule thm=
   Simpset.make_rule 
-    (Logic.RRThm thm) (Formula.dest_form (Logic.dest_thm thm))
+    (Logic.RRThm thm) (Formula.dest (Logic.dest_thm thm))
 (*
    let qs, c, l, r=
-   Simpset.dest_rr_rule (Formula.dest_form (Logic.dest_thm thm))
+   Simpset.dest_rr_rule (Formula.dest (Logic.dest_thm thm))
    in 
    (qs, c, l, r, Logic.RRThm thm)
  *)
@@ -778,7 +778,7 @@ and neg_exists_rule_asm (tg, (qs, c, a)) g=
 
 and single_asm_to_rule tg goal = 
   let trm = 
-    Formula.dest_form
+    Formula.dest
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
 	    (Drule.sequent goal)))
@@ -801,7 +801,7 @@ let asm_to_rules tg ret goal =
 
 let simpset_add_asm sset tg g=
   let trm = 
-    Formula.dest_form
+    Formula.dest
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
 	    (Drule.sequent g)))
@@ -957,7 +957,7 @@ let prepare_asms data ams except goal=
  *)
 let make_simp_asm tg goal=
   let trm = 
-    Formula.dest_form
+    Formula.dest
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
 	    (Drule.sequent goal)))
@@ -984,7 +984,7 @@ let make_simp_asms tags except goal =
    in [ts], ignoring those for which [except] is true.
  *)
 let make_simp_asm_rule tg form=
-  let trm =  Formula.dest_form form
+  let trm =  Formula.dest form
   in 
   Simpset.make_rule (Logic.Asm (Drule.ftag tg)) trm
 
@@ -1017,7 +1017,7 @@ let test_apply_tac info ttac tg goal=
       [] -> raise Not_found
     | (tst, tac)::tts ->
 	if(tst 
-	     (Formula.dest_form
+	     (Formula.dest
 		(Logic.drop_tag 
 		   (Logic.Sequent.get_tagged_asm tg 
 		      (Drule.sequent goal)))))
@@ -1103,7 +1103,7 @@ let prep_asm_rule info tg g=
 let term_cond_rewrite scp rl fm =
   let qs, cnd, qb=strip_qnt_cond fm
   in 
-  let rrtrm = Formula.dest_form (Logic.dest_thm rl)
+  let rrtrm = Formula.dest (Logic.dest_thm rl)
   in 
   let cond = dest_option cnd
   in 
@@ -1121,7 +1121,7 @@ let term_cond_rewrite scp rl fm =
    in scope [scp]
  *)
 let form_cond_rewrite scp rl fm =
-  Formula.mk_form scp 
-    (term_cond_rewrite scp rl (Formula.dest_form fm))
+  Formula.make scp 
+    (term_cond_rewrite scp rl (Formula.dest fm))
 
 *)

@@ -415,7 +415,7 @@ let bool_tac g=
 
 let hyp_conc_thm f = 
   let (qnts, t)=
-    Term.strip_qnt Basic.All (Formula.dest_form f)
+    Term.strip_qnt Basic.All (Formula.dest f)
   in
   if (Logicterm.is_implies t)
   then
@@ -427,7 +427,7 @@ let hyp_conc_thm f =
 let match_mp_rule0 thm i sq=
   let (qnts, a, b) = hyp_conc_thm (Logic.dest_thm thm)
   and c = 
-    Formula.dest_form (Drule.get_cncl i sq)
+    Formula.dest (Drule.get_cncl i sq)
   and scp = Drule.scope_of sq
   and tyenv = Drule.typenv_of sq
   in 
@@ -461,7 +461,7 @@ let match_mp_tac thm ?c g =
 let match_mp_sqnt_rule0 j i sq=
   let (qnts, a, b) = 
     hyp_conc_thm (Drule.get_asm j sq)
-  and c = Formula.dest_form (Drule.get_cncl i sq)
+  and c = Formula.dest (Drule.get_cncl i sq)
   and scp = Drule.scope_of sq
   in 
   let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
@@ -888,7 +888,7 @@ module Rules=
    [conjunctL scp << l and r >> = l]
  *)
     let conjunctL scp thm = 
-      let trm = Formula.dest_form (Logic.dest_thm thm)
+      let trm = Formula.dest (Logic.dest_thm thm)
       in 
       if not (Logicterm.is_conj trm)
       then raise (Result.error "conjunct1: not a conjunction")
@@ -922,7 +922,7 @@ module Rules=
    [conjunctL scp << l and r >> = r]
  *)
     let conjunctR scp thm = 
-      let trm = Formula.dest_form (Logic.dest_thm thm)
+      let trm = Formula.dest (Logic.dest_thm thm)
       in 
       if not (Logicterm.is_conj trm)
       then raise (Result.error "conjunct1: not a conjunction")
@@ -956,7 +956,7 @@ module Rules=
  *)
     let conjuncts scp thm =
       let is_conj_thm thm = 
-	Logicterm.is_conj (Formula.dest_form (Logic.dest_thm thm))
+	Logicterm.is_conj (Formula.dest (Logic.dest_thm thm))
       in 
       let rec conjuncts_aux scp thm result = 
 	if not(is_conj_thm thm)
@@ -977,7 +977,7 @@ module Rules=
    apply conversion [conv] to theorem [thm]
  *)
 let conv_rule scp conv thm =
-  let rule = conv scp (Formula.dest_form (Logic.dest_thm thm))
+  let rule = conv scp (Formula.dest (Logic.dest_thm thm))
   in 
   Rules.once_rewrite_rule scp [rule] thm
 

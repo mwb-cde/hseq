@@ -281,7 +281,7 @@ let declare ?pp trm =
 *)
 
 let new_axiom ?(simp=false) n trm =
-  let t = Logic.mk_axiom (Formula.mk_form (Global.scope()) trm)
+  let t = Logic.mk_axiom (Formula.make (Global.scope()) trm)
   and props = if simp then [Theory.simp_property] else []
   in 
   Thydb.add_axiom n t props (theories()); t

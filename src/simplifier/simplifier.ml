@@ -163,7 +163,7 @@ module Data =
 let strip_rrs rrs=
   let strip_rr x = 
     match x with
-      Logic.RRThm x -> Formula.dest_form (Logic.dest_thm x)
+      Logic.RRThm x -> Formula.dest (Logic.dest_thm x)
     |	 _ -> failwith "simp_tac"
   in 
   (List.map strip_rr rrs)
@@ -323,7 +323,7 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	let rule = 
 	  Simpset.make_rule 
 	    (Logic.Asm (Drule.ftag rftg1)) 
-	    (Formula.dest_form form)
+	    (Formula.dest form)
 	in 
 	data_tac (fun x -> ret := Some x)
 	  (Data.add_simp_rule ncntrl1 rule,
@@ -622,7 +622,7 @@ let rec basic_simp_tac cntrl ret ft goal=
   let sqnt = Drule.sequent goal
   in 
   let trm=
-    Formula.dest_form (Logic.drop_tag (get_form ft sqnt))
+    Formula.dest (Logic.drop_tag (get_form ft sqnt))
   in 
   let ret1=ref None
   in

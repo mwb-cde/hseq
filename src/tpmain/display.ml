@@ -28,7 +28,7 @@ let print_term x =
 
 let print_formula x = 
   open_box 0;
-  Term.print (Global.pp_info()) (Formula.dest_form x);
+  Term.print (Global.pp_info()) (Formula.dest x);
   close_box()
 
 let rec print_type x = 
