@@ -1,14 +1,46 @@
 (* term rewriting *)
-(* two versions with a single core. 
-   The first uses lists of rewrite rules, the second term nets *)
 
+(** [type rule] 
+
+   Rewrite rules:
+
+   [Rule t]: simple rewrite rule.
+   [Ordered t p]: Rewrite rule with ordering [p].
+
+   Constructors:
+
+   [rule t]: make simple rule from term [t].
+   [orule t p]: make ordered rule from term [t] and order [p].
+
+
+   Destructors:
+
+   [term_of r]: Term of rule [r].
+   [rule_of r]: Ordering of rule [r]. raise [Failure] if [r] is not ordered.
+*)
+
+type order = (Basic.term -> Basic.term -> bool)
+
+type rule = 
+    Rule of Basic.term
+  | Ordered of (Basic.term * order)
+
+val rule : Basic.term -> rule
+val orule : Basic.term -> order -> rule
+
+val term_of : rule -> Basic.term 
+val order_of : rule -> order
 
 (* rewrite control, rules and databases *)
+(*
 type rewrite_rules = (Basic.binders list * Basic.term * Basic.term)
-
+*)
+type rewrite_rules = 
+    (Basic.binders list * Basic.term * Basic.term * order option)
 type rewriteDB = 
     Net_rr of rewrite_rules Net.net 
   | List_rr of rewrite_rules list
+
 
 type direction  (* = LeftRight | RightLeft *)
 val leftright: direction
@@ -33,6 +65,8 @@ val control :
     -> max:int option
       -> control
 
+val default_control: control
+
 (**
    [limit_reached d]
    [true] iff d=Some 0
@@ -48,7 +82,7 @@ val match_rewrite :
     Gtypes.scope -> 
       control -> Gtypes.substitution ->
 	(Basic.term -> bool) -> Basic.term -> 
-	  Basic.term -> Basic.term -> 
+	  Basic.term -> order option -> Basic.term -> 
 	    (Basic.term* Gtypes.substitution)
 
 (** [is_free_binder]
@@ -65,8 +99,9 @@ val rewrite_list :
     Gtypes.scope -> 
       control -> bool ref 
 	-> Gtypes.substitution
-	  -> (Basic.binders list * Basic.term * Basic.term) list ->
-	    Basic.term -> (Basic.term * Gtypes.substitution)
+	  -> (Basic.binders list 
+		* Basic.term * Basic.term * order option) list 
+	    ->  Basic.term -> (Basic.term * Gtypes.substitution)
 
 (** [rewrite_eqs]
    rewrite using a list of partialy deconstructed rewrite rules 
@@ -76,7 +111,7 @@ val rewrite_eqs :
     Gtypes.scope -> 
       control
       -> Gtypes.substitution
-	-> (Basic.binders list * Basic.term)list 
+	-> (Basic.binders list * Basic.term * Basic.term * order option)list 
 	  -> Basic.term -> (Basic.term * Gtypes.substitution )
 
 (** [rewrite]
@@ -88,14 +123,24 @@ val rewrite_eqs :
  *)
 val rewrite :
     Gtypes.scope -> 
-      control -> Basic.term list -> Basic.term ->  Basic.term
+      control -> rule list -> Basic.term ->  Basic.term
 
 val rewrite_env : 
     Gtypes.scope -> 
       control 
       -> Gtypes.substitution
-	-> Basic.term list -> Basic.term 
+	-> rule list -> Basic.term 
 	  -> (Basic.term * Gtypes.substitution)
+
+
+val dest_lr_rule: 
+    rule 
+  -> (Basic.binders list * Basic.term * Basic.term * order option)
+
+val dest_rl_rule: 
+    rule 
+  -> (Basic.binders list * Basic.term * Basic.term * order option)
+
 
 
 (** [rewrite_net]
@@ -116,7 +161,7 @@ val rewrite_env :
 val match_rr_list: 
     Gtypes.scope -> control -> Gtypes.substitution
       -> bool ref 
-	-> (Basic.binders list * Basic.term * Basic.term) list 
+	-> (Basic.binders list * Basic.term * Basic.term * order option) list 
 	  -> Basic.term
 	    -> (Basic.term * Gtypes.substitution * control)
 		
