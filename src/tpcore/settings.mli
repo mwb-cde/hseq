@@ -1,9 +1,8 @@
 (* 
    Settings:
    Put installation dependent settings in here 
+
 *)
-
-
 (* File and directory settings *)
 (* 
    base_dir:
@@ -11,19 +10,33 @@
    all other directories are set relative to this
 *)
 
-val base_dir: string
+val get_base_dir: unit -> string
+val set_base_dir: string -> unit
+
+(* [base_dir_var]: Environment variable to query for base directory *)
+val base_dir_var: string
 
 (* 
-   make_filename f: make file name f relative to the base directory
+   [make_filename f]: make file name f relative to the base directory
+   [make_directory f]: make directory path f relative to the base
+   directory
 *)
 val make_filename: string -> string
+val make_directory: string -> string
 
 (* 
-   init_file: name of file to execute to initialise the system
+   [init_file]: name of file to execute to initialise the system
    the file name used will be contructed as base_dir^init_file
 *)
-   
 val init_file: string
+
+(* 
+   [include_dir ()]: Directory to search for headers.
+   [lib_dir ()]: Directory to search for library files.
+*)
+val include_dir : unit -> string
+val libs_dir : unit -> string
+val thys_dir : unit -> string
 
 (* 
    File suffixes:

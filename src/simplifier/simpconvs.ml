@@ -6,509 +6,63 @@ let log_tac x g = log x; Tactics.skip g
 (* 
    Function to prepare theorems and assumptions being added to a simpset.
  *)
-(*
-   #load "simputils.cmo";;
-   #load "simpset.cmo";;
-   #load "simplifier.cmo";;
-   let _ = Boollib.BaseTheory.init(); Tpenv.init()
- *)
-(*
-module Simpconvs =
-  struct
-*)
-    open Simputils
+open Simputils
 
-    open Boollib
-    open Tactics
+open Boollib
+open Boollib.Props
+open Boollib.Convs
+open Boollib.Rules
+
+open Tactics
 
 
-(* 
-   [make_n_ax()]: prove theorem n
-   [get_n_ax()]: get theorem n, proving it if necessary
 
-   [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
- *)
-    let make_iff_equals_ax ()=
-      let iff_l1= 
-	Goals.prove << !x y: (x = y ) => (x => y) >>
-	(flatten_tac ++ replace_tac ++ basic)
-      in 
-      let iff_l2 = Goals.prove
-	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
-	(flatten_tac
-	   ++ (cut_thm "bool_cases" ++ allA <<x_1>>)
-	   ++ (cut_thm "bool_cases" ++ allA <<y_1>>)
-	   ++ split_tac 
-	   ++ 
-	   alt 
-	   [(replace_tac ++ (basic || trivial));
-            (basic || trivial);
-	    (replace_tac ++ eq_tac)])
-      in 
-      let iff_l3 = 
-	Goals.prove << !x y: (x iff y) iff (x = y) >>
-	  ((flatten_tac ++ unfold "iff" ~f:(!!1) 
-	      ++ conjC ++ flatten_tac)
-	     --
-	     [cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-		 ++ split_tac ++ alt [ basic; flatten_tac ++ basic ];
-	      split_tac ++ flatten_tac ++ replace_tac ++ basic])
-      in 
-      Goals.prove <<!x y: (x iff y) = (x = y)>>
-      ((flatten_tac ++ cut iff_l2
-	  ++ inst_tac [<<x_1 iff y_1>>; <<x_1 = y_1>>]
-	  ++ split_tac)
-	 --
-	 [flatten_tac
-	    ++ cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-		++ unfold "iff" ~f:(!~2)
-		++ (implA --  [basic; basic]);
-	  flatten_tac
-	    ++ replace_tac
-	    ++ unfold "iff" ~f:(!! 1)
-	    ++ split_tac ++ flatten_tac ++ basic;
-	  replace_tac
-	    ++ eq_tac])
-
-    let iff_equals_ax = ref None
-    let get_iff_equals_ax ()=
-      match !iff_equals_ax with
-	None -> 
-	  let nthm = make_iff_equals_ax()
-	  in 
-	  iff_equals_ax := Some(nthm);
-	  nthm
-      | Some(x) -> x
-
-
-(*
-   [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
- *)
-    let make_equals_iff_ax ()=
-      Goals.prove << !x y: (x = y) = (x iff y) >>
-      (flatten_tac 
-	 ++ (rewrite_tac [get_iff_equals_ax()])
-	 ++ eq_tac)
-
-    let equals_iff_ax = ref None
-    let get_equals_iff_ax ()=
-      match !equals_iff_ax with
-	None -> 
-	  let nthm = make_equals_iff_ax()
-	  in 
-	  equals_iff_ax := Some(nthm);
-	  nthm
-      | Some(x) -> x
 
 
 (**
-   [bool_eq_ax]: |- !x y: x iff y = ((x => y) and (y=>x))
- *)
-    let make_bool_eq_ax () = 
-      Goals.prove << !x y: (x=y) = ((x => y) and (y => x)) >>
-      (flatten_tac 
-	 ++ rewrite_tac [get_equals_iff_ax()]
-	 ++ unfold "iff"
-	 ++ (split_tac ++ flatten_tac ++ split_tac ++ flatten_tac ++ basic))
-
-    let bool_eq_ax = ref None
-    let get_bool_eq_ax ()=
-      match !bool_eq_ax with
-	None -> 
-	  let nthm = make_bool_eq_ax()
-	  in 
-	  bool_eq_ax := Some(nthm);
-	  nthm
-      | Some(x) -> x
-	    
-
-(**
-   [double_not_ax]: |- ! x: x = (not (not x))
- *)
-    let make_double_not_ax () = 
-      Goals.prove << !x: x=(not (not x)) >> 
-      (flatten_tac ++ rewrite_tac [get_bool_eq_ax()]
-	 ++ split_tac ++ flatten_tac ++ basic)
-
-    let double_not_ax = ref None
-    let get_double_not_ax ()=
-      match !double_not_ax with
-	None -> 
-	  let nthm = make_double_not_ax()
-	  in 
-	  double_not_ax := Some(nthm);
-	  nthm
-      | Some(x) -> x
-
-(** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-
-let neg_all_conv scp trm=
-  if(not (Logicterm.is_neg trm))
-  then failwith "neg_all_conv: not a negation"
-  else 
-    let (_, trmbody) = Term.dest_unop trm
-    in 
-    let (aqvars, aqbody) = Term.strip_qnt Basic.All trmbody
-    in 
-    (match aqvars with 
-      [] -> 
-	failwith 
-	  "neg_all_conv: body of negation is not universally quantified"
-    | _ -> ());
-    let eqvars = 
-      List.map 
-	(fun b ->
-	  let (_, n, ty) = Basic.dest_binding b
-	  in Basic.mk_binding Basic.Ex n ty) 
-	aqvars
-    in 
-    let eqbody =
-      let nsubst = 
-	List.fold_left2 
-	  (fun s l r -> Term.bind l r s)
-	  (Term.empty_subst())
-	  (List.map Term.mk_bound aqvars)
-	  (List.map Term.mk_bound eqvars)
-      in 
-      Term.subst nsubst aqbody
-    in 
-    let newterm= 
-      Term.rename 
-	(Drule.rebuild_qnt Basic.Ex eqvars (Logicterm.mk_not eqbody))
-    in 
-    let goal_term = 
-      Logicterm.mk_equality trm newterm
-    in 
-    let info = Drule.mk_info()
-    in
-    let proof g= 
-      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-	   Logic.Rules.conjC None (fnum 1)
-	     --
-	     [
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_all_conv: 1")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negA (Some(info)) (ftag atag);
-		   log_tac "negA: 1";
-		   (fun g2-> 
-		     let ctag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.allC (Some info) (ftag ctag2));
-			(fun g3 -> 
-			Boollib.inst_concl ~c:(ftag ctag)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			log_tac "negC: 1.1";
-			Logic.Rules.negC (Some info) (ftag ctag);
-			log_tac "negC: 1.2";
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_all_conv: 3")
-			  in 
-			  ignore(Drule.empty_info info);
-			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
-		      ] g2)] g1)];
-	      
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_all_conv: 4")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negC (Some(info)) (ftag ctag);
-		   log_tac "negC: 2";
-		   (fun g2-> 
-		     let atag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.existA (Some info) (ftag atag));
-			(fun g3 -> 
-			Boollib.inst_asm ~a:(ftag atag2)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negA (Some info) (ftag atag);
-			log_tac "negA: 2";
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_all_conv: 3")
-			  in 
-			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
-		      ] g2)] g1)]]
-    ] g
-    in 
-    Goals.prove_goal scp goal_term proof
-
-
-
-(** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-
-let neg_exists_conv scp trm=
-  if(not (Logicterm.is_neg trm))
-  then failwith "neg_all_conv: not a negation"
-  else 
-    let (_, trmbody) = Term.dest_unop trm
-    in 
-    let (eqvars, eqbody) = Term.strip_qnt Basic.Ex trmbody
-    in 
-    (match eqvars with 
-      [] -> 
-	failwith 
-	  "neg_all_conv: body of negation is not universally quantified"
-    | _ -> ());
-    let aqvars = 
-      List.map 
-	(fun b ->
-	  let (_, n, ty) = Basic.dest_binding b
-	  in Basic.mk_binding Basic.All n ty) 
-	eqvars
-    in 
-    let aqbody =
-      let nsubst = 
-	List.fold_left2 
-	  (fun s l r -> Term.bind l r s)
-	  (Term.empty_subst())
-	  (List.map Term.mk_bound eqvars)
-	  (List.map Term.mk_bound aqvars)
-      in 
-      Term.subst nsubst eqbody
-    in 
-    let newterm= 
-      Term.rename 
-	(Drule.rebuild_qnt Basic.All aqvars (Logicterm.mk_not aqbody))
-    in 
-    let goal_term = 
-      Logicterm.mk_equality trm newterm
-    in 
-    let info = Drule.mk_info()
-    in
-    let proof g= 
-      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-	   Logic.Rules.conjC None (fnum 1)
-	     --
-	     [
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_exists_conv: 1")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negA (Some(info)) (ftag atag);
-		   log_tac "negA: 1";
-		   (fun g2-> 
-		     let ctag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.allC (Some info) (ftag ctag));
-			(fun g3 -> 
-			  Boollib.inst_concl ~c:(ftag ctag2)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			log_tac "negC: 1.1";
-			Logic.Rules.negC (Some info) (ftag ctag);
-			log_tac "negC: 1.2";
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_exists_conv: 3")
-			  in 
-			  ignore(Drule.empty_info info);
-			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
-		      ] g2)] g1)];
-	      
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_exists_conv: 4")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negC (Some(info)) (ftag ctag);
-		   log_tac "negC: 2";
-		   (fun g2-> 
-		     let atag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_exists_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.existA (Some info) (ftag atag2));
-			(fun g3 -> 
-			Boollib.inst_asm ~a:(ftag atag)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negA (Some info) (ftag atag);
-			log_tac "negA: 2";
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_exists_conv: 3")
-			  in 
-			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
-		      ] g2)] g1)]]
-    ] g
-    in 
-    Goals.prove_goal scp goal_term proof
-
-(* 
-   [rule_true_ax]:  |- !x: x = (x=true) 
- *)
-    let make_rule_true_ax ()= 
-      let rule_true_l1 =  
-	Goals.prove <<!x: (x=true) => x>> 
-	(flatten_tac ++ replace_tac ++ trivial)
-      in
-      let rule_true_l2 = 
-	Goals.prove <<!x: x => (x=true)>>
-	((flatten_tac ++ (cut_thm "bool_cases") ++ (allA << x_1 >>) ++ disjA)
-	   -- 
-	   [basic;
-	    rewrite_tac [Commands.lemma "false_def"]
-	      ++ replace_tac ++ flatten_tac])
-      in
-      let rule_true_l3 = 
-	Goals.prove <<! x: x iff (x=true)>>
-	  ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
-	     --
-	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
-	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
-      in 
-      Logic.ThmRules.rewrite_conv (Global.scope()) 
-	[get_iff_equals_ax()] rule_true_l3
-
-    let rule_true_ax = ref None
-
-    let get_rule_true_ax ()= 
-      match !rule_true_ax with
-	None -> 
-	  let nthm =make_rule_true_ax()
-	  in 
-	  rule_true_ax:=Some(nthm);
-	  nthm
-      | Some(t) -> t
-
-(*
-   rule_false_ax: !x: (not x) = (x=false)
- *)
-    let make_rule_false_ax ()= 
-      Goals.prove <<! x : (not x)=(x=false)>>
-      ((flatten_tac 
-	  ++ once_rewrite_tac [get_equals_iff_ax()]
-	  ++ unfold "iff"
-	  ++ split_tac ++ flatten_tac)
-	 -- 
-	 [
-	  cut_thm "bool_cases" ++ inst_tac [<<x_1>>]
-	    ++
-	    (split_tac 
-	       ++ replace_tac 
-	       ++ (trivial || eq_tac));
-	  replace_tac ++ trivial])
-
-    let rule_false_ax = ref None
-    let get_rule_false_ax ()= 
-      match !rule_false_ax with
-	None -> 
-	  let nthm =make_rule_false_ax()
-	  in 
-	  rule_false_ax:=Some(nthm);
-	  nthm
-      | Some(t) -> t
-
-(*
    [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
  *)
-    let make_cond_rule_true_ax()=
-      Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
-      (flatten_tac
-	 ++ cut (get_rule_true_ax()) ++ inst_tac [<< y_1 >>]
-	 ++ once_replace_tac
-	 ++ eq_tac)
+let make_cond_rule_true_ax()=
+  Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
+  (flatten_tac
+     ++ cut (get_rule_true_ax()) ++ inst_tac [<< y_1 >>]
+     ++ once_replace_tac
+     ++ eq_tac)
 
-    let cond_rule_true_ax = ref None
-    let get_cond_rule_true_ax ()= 
-      match !cond_rule_true_ax with
-	None -> 
-	  let nthm =make_cond_rule_true_ax()
-	  in 
-	  cond_rule_true_ax:=Some(nthm);
-	  nthm
-      | Some(t) -> t
+let cond_rule_true_ax = ref None
+let get_cond_rule_true_ax ()= 
+  match !cond_rule_true_ax with
+    None -> 
+      let nthm =make_cond_rule_true_ax()
+      in 
+      cond_rule_true_ax:=Some(nthm);
+      nthm
+  | Some(t) -> t
 
 
-(*
+(**
    [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
  *)
-    let make_cond_rule_false_ax()=
-      Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
-      (flatten_tac
-	 ++ cut (get_rule_false_ax()) ++ inst_tac [<< y_1 >>]
-	 ++ once_replace_tac
-	 ++ eq_tac)
+let make_cond_rule_false_ax()=
+  Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
+  (flatten_tac
+     ++ cut (get_rule_false_ax()) ++ inst_tac [<< y_1 >>]
+     ++ once_replace_tac
+     ++ eq_tac)
 
-    let cond_rule_false_ax = ref None
-    let get_cond_rule_false_ax ()= 
-      match !cond_rule_false_ax with
-	None -> 
-	  let nthm =make_cond_rule_false_ax()
-	  in 
-	  cond_rule_false_ax:=Some(nthm);
-	  nthm
-      | Some(t) -> t
+let cond_rule_false_ax = ref None
+let get_cond_rule_false_ax ()= 
+  match !cond_rule_false_ax with
+    None -> 
+      let nthm =make_cond_rule_false_ax()
+      in 
+      cond_rule_false_ax:=Some(nthm);
+      nthm
+  | Some(t) -> t
 
 
 (** {c6} Rewriting applied inside topmost universal quantifiers *)
 
-(** [once_rewrite_rule scp rules thm]: 
-   rewrite [thm] with [rules] once.
- *)
-    let once_rewrite_rule scp rules thm =
-      let ctrl = {Formula.default_rr_control with Rewrite.depth=Some(1)}
-      in 
-      Logic.ThmRules.rewrite_conv ~ctrl:ctrl scp rules thm
-
-
-(** [conv_rule scp conv thm]
-   apply conversion [conv] to theorem [thm]
- *)
-    let conv_rule scp conv thm =
-      let rule = conv scp (Formula.dest_form (Logic.dest_thm thm))
-      in 
-      once_rewrite_rule scp [rule] thm
 
 (**
    [simple_rewrite_conv scp rule trm]
@@ -523,67 +77,67 @@ let neg_exists_conv scp trm=
    ->
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
-    let simple_rewrite_conv scp rule trm=
-      let rule_trm =(Formula.dest_form (Logic.dest_thm rule))
-      in 
-      let rvars, rbody = Term.strip_qnt Basic.All rule_trm
-      in 
-      let rlhs, rrhs = Logicterm.dest_equality rbody
-      in 
-      let trmvars, trmbody = Term.strip_qnt Basic.All trm
-      in 
-      let info = Drule.mk_info()
-      in 
-      let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
-      in 
-      let new_goal =
-	Term.rename
-	  (Logicterm.mk_equality 
-	     (Drule.rebuild_qnt Basic.All trmvars trmbody)
-	     (Drule.rebuild_qnt Basic.All trmvars (Term.subst env rrhs)))
-      in 
-      let proof g= 
-	seq
-	  [
-	   once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-	   Logic.Rules.conjC None (fnum 1)
-	     --
-	     [
-	      seq
-		[Logic.Rules.implC (Some info) (fnum 1);
-		 (fun g1-> 
-		   let atag, ctag = 
-		     Lib.get_two (Drule.formulas info) 
-		       (Failure "simple_rewrite_conv: 1")
-		   in 
-		   seq 
-		     [repeat (Logic.Rules.allC (Some info) (ftag ctag));
-		      (fun g2 -> 
-			let trms = List.rev (Drule.constants info)
-			in 
-			seq
-			  [inst_asm ~a:(ftag atag) trms;
-			   once_rewrite_tac ~f:(ftag atag) [rule];
-			   basic] g2)] g1)];
-	      seq 
-		[(data_tac (fun () -> ignore(Drule.empty_info info)) ());
-		 Logic.Rules.implC (Some info) (fnum 1);
-		 (fun g1 -> 
-		   let atag, ctag = Lib.get_two (Drule.formulas info) 
-		       (Failure "simple_rewrite_conv: 1")
+let simple_rewrite_conv scp rule trm=
+  let rule_trm =(Formula.dest_form (Logic.dest_thm rule))
+  in 
+  let rvars, rbody = Term.strip_qnt Basic.All rule_trm
+  in 
+  let rlhs, rrhs = Logicterm.dest_equality rbody
+  in 
+  let trmvars, trmbody = Term.strip_qnt Basic.All trm
+  in 
+  let info = Drule.mk_info()
+  in 
+  let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
+  in 
+  let new_goal =
+    Term.rename
+      (Logicterm.mk_equality 
+	 (Drule.rebuild_qnt Basic.All trmvars trmbody)
+	 (Drule.rebuild_qnt Basic.All trmvars (Term.subst env rrhs)))
+  in 
+  let proof g= 
+    seq
+      [
+       once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+       Logic.Rules.conjC None (fnum 1)
+	 --
+	 [
+	  seq
+	    [Logic.Rules.implC (Some info) (fnum 1);
+	     (fun g1-> 
+	       let atag, ctag = 
+		 Lib.get_two (Drule.formulas info) 
+		   (Failure "simple_rewrite_conv: 1")
+	       in 
+	       seq 
+		 [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		  (fun g2 -> 
+		    let trms = List.rev (Drule.constants info)
+		    in 
+		    seq
+		      [inst_asm ~a:(ftag atag) trms;
+		       once_rewrite_tac ~f:(ftag atag) [rule];
+		       basic] g2)] g1)];
+	  seq 
+	    [(data_tac (fun () -> ignore(Drule.empty_info info)) ());
+	     Logic.Rules.implC (Some info) (fnum 1);
+	     (fun g1 -> 
+	       let atag, ctag = Lib.get_two (Drule.formulas info) 
+		   (Failure "simple_rewrite_conv: 1")
 
-		   in 
-		   seq 
-		     [repeat (Logic.Rules.allC (Some info) (ftag ctag));
-		      (fun g2 -> 
-			let trms = List.rev (Drule.constants info)
-			in 
-			seq
-			  [inst_asm ~a:(ftag atag) trms;
-			   once_rewrite_tac ~f:(ftag ctag) [rule];
-			   basic] g2)] g1)]]] g
-      in 
-      Goals.prove_goal scp new_goal proof;;
+	       in 
+	       seq 
+		 [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		  (fun g2 -> 
+		    let trms = List.rev (Drule.constants info)
+		    in 
+		    seq
+		      [inst_asm ~a:(ftag atag) trms;
+		       once_rewrite_tac ~f:(ftag ctag) [rule];
+		       basic] g2)] g1)]]] g
+  in 
+  Goals.prove_goal scp new_goal proof;;
 
 
 (**
@@ -1002,9 +556,9 @@ and do_neg_all_rule (scp, thm, (qs, c, a)) =
     None -> 
       if (is_neg_all (qs, c, a))
       then 
-	  let thm1= once_rewrite_rule scp [neg_all_conv scp a] thm
-	  in 
-	  single_thm_to_rules (scp: Gtypes.scope) (thm1: Logic.thm)
+	let thm1= once_rewrite_rule scp [neg_all_conv scp a] thm
+	in 
+	single_thm_to_rules (scp: Gtypes.scope) (thm1: Logic.thm)
       else failwith "do_neg_all_rule: Not a negated universal quantifier"
   | Some _ ->  
       failwith 
@@ -1063,11 +617,11 @@ let make_thm_rule thm=
   Simpset.make_rule 
     (Logic.RRThm thm) (Formula.dest_form (Logic.dest_thm thm))
 (*
-  let qs, c, l, r=
-    Simpset.dest_rr_rule (Formula.dest_form (Logic.dest_thm thm))
-  in 
-  (qs, c, l, r, Logic.RRThm thm)
-*)
+   let qs, c, l, r=
+   Simpset.dest_rr_rule (Formula.dest_form (Logic.dest_thm thm))
+   in 
+   (qs, c, l, r, Logic.RRThm thm)
+ *)
 
 (**
    [thm_to_entries scp thm]: convert a theorem to a list of 
@@ -1114,9 +668,9 @@ let simpset_add_thms scp set thms =
    info: [] [tg] []
  *)
 (*
-let asm_rewrite thm tg g=
-  simple_asm_rewrite_tac thm (Drule.ftag tg) g
-*)
+   let asm_rewrite thm tg g=
+   simple_asm_rewrite_tac thm (Drule.ftag tg) g
+ *)
 let asm_rewrite thm tg g=
   once_rewrite_tac [thm] ~f:(Drule.ftag tg) g
 
@@ -1150,7 +704,7 @@ let asm_rewrite thm tg g=
    [asm_to_rules tg ret g]: Toplevel conversion function.  Convert
    assumption [tg] of goal [g] to one or more rules.  The tag of each
    rule (including [tg]) generated from [tg] is stored in [ret].
-*)
+ *)
 
 let rec accept_asm (tg, (qs, c, a)) g =
   if(is_constant (qs, c, a))
@@ -1209,8 +763,8 @@ and neg_exists_rule_asm (tg, (qs, c, a)) g=
     None -> 
       if (is_neg_exists (qs, c, a))
       then 
-	  (asm_rewrite (neg_exists_conv scp a) tg 
-	     ++ single_asm_to_rule tg) g
+	(asm_rewrite (neg_exists_conv scp a) tg 
+	   ++ single_asm_to_rule tg) g
       else failwith "neg_exists_rule_asm: Not a negated existential quantifier"
   | Some _ ->  
       failwith 
@@ -1260,7 +814,7 @@ let simpset_add_asm sset tg g=
    [!data] to the list of pairs [(c, a)] where [c] is the tag of the
    original conclusion and [a] is the tag of the new assumption (which
    is to be used as a simp rule).
-*)
+ *)
 let prepare_concl data except c goal =
   if(except c)
   then skip goal
@@ -1293,31 +847,31 @@ let prepare_concl data except c goal =
        ] goal
 
 (*
-let prepare_concl data except c goal =
-  if(except c)
-  then skip goal
-  else 
-    let info=Drule.mk_info()
-    and data_fn a = data:=(c, a)::(!data)
-    in 
-    seq [Logic.Rules.copy_cncl (Some info) (Drule.ftag c); 
-	 (fun g -> 
-	   let c1 = 
-	     Lib.get_one (Drule.formulas info) 
-	       (Failure "Simplib.prepare_concl")
-	   in 
-	   ignore(Drule.empty_info info);
-	   negate_concl (Some info) (Drule.ftag c1) g); 
-	 (fun g ->
-	   let a=
-	     Lib.get_one (Drule.formulas info) 
-	       (Failure "Simplib.prepare_concl")
-	   in 
-	   seq 
-	     [single_asm_to_rule a;
-	      data_tac data_fn a] g)
-       ] goal
-*)
+   let prepare_concl data except c goal =
+   if(except c)
+   then skip goal
+   else 
+   let info=Drule.mk_info()
+   and data_fn a = data:=(c, a)::(!data)
+   in 
+   seq [Logic.Rules.copy_cncl (Some info) (Drule.ftag c); 
+   (fun g -> 
+   let c1 = 
+   Lib.get_one (Drule.formulas info) 
+   (Failure "Simplib.prepare_concl")
+   in 
+   ignore(Drule.empty_info info);
+   negate_concl (Some info) (Drule.ftag c1) g); 
+   (fun g ->
+   let a=
+   Lib.get_one (Drule.formulas info) 
+   (Failure "Simplib.prepare_concl")
+   in 
+   seq 
+   [single_asm_to_rule a;
+   data_tac data_fn a] g)
+   ] goal
+ *)
 
 let prepare_concls data cs except goal=
   let d=ref []
@@ -1335,7 +889,7 @@ let prepare_concls data cs except goal=
    [except] is true. Set [!data] to the list of pairs [(a, na)] where
    [a] is the tag of the original assumption and [na] is the tag of the
    new assumption generated from [a].
-*)
+ *)
 
 let prepare_asm data except a goal =
   if(except a)
@@ -1362,24 +916,24 @@ let prepare_asm data except a goal =
        ] goal
 
 (*
-let prepare_asm data except a goal =
-  if(except a)
-  then skip goal
-  else 
-    let info=Drule.mk_info()
-    and data_fn a1 = data:=(a, a1)::(!data)
-    in 
-    seq [Logic.Rules.copy_asm (Some info) (Drule.ftag a); 
-	 (fun g ->
-	   let a1=
-	     Lib.get_one (Drule.formulas info) 
-	       (Failure "Simplib.prepare_asm")
-	   in 
-	   seq 
-	     [single_asm_to_rule a1;
-	      data_tac data_fn a1] g)
-       ] goal
-*)
+   let prepare_asm data except a goal =
+   if(except a)
+   then skip goal
+   else 
+   let info=Drule.mk_info()
+   and data_fn a1 = data:=(a, a1)::(!data)
+   in 
+   seq [Logic.Rules.copy_asm (Some info) (Drule.ftag a); 
+   (fun g ->
+   let a1=
+   Lib.get_one (Drule.formulas info) 
+   (Failure "Simplib.prepare_asm")
+   in 
+   seq 
+   [single_asm_to_rule a1;
+   data_tac data_fn a1] g)
+   ] goal
+ *)
 
 let prepare_asms data ams except goal=
   let d=ref []
@@ -1394,7 +948,7 @@ let prepare_asms data ams except goal=
 
    Make a list of simp rules from the assumptions with tags 
    in [ts], ignoring those for which [except] is true.
-*)
+ *)
 let make_simp_asm tg goal=
   let trm = 
     Formula.dest_form
@@ -1422,7 +976,7 @@ let make_simp_asms tags except goal =
 
    Make a list of simp rules from the tagged formulas
    in [ts], ignoring those for which [except] is true.
-*)
+ *)
 let make_simp_asm_rule tg form=
   let trm =  Formula.dest_form form
   in 
@@ -1442,7 +996,7 @@ let make_simp_asm_rules except forms =
 
 
 (* OLD STUFF *)
-
+(*
 (** [test_apply_tac info ttacs tg goal]
 
    [ttacs] is a list of test-tactic pairs.
@@ -1564,82 +1118,4 @@ let form_cond_rewrite scp rl fm =
   Formula.mk_form scp 
     (term_cond_rewrite scp rl (Formula.dest_form fm))
 
-(*
-end
 *)
-(* Previously in simpset.ml *)
-(*
-
-   open Simpset;;
-
-
-   let scope () = Global.scope();;
-
-   let saxiom str = 
-   Logic.mk_axiom 
-   (Formula.form_of_term (scope()) (Global.read str));;
-
-   let get_tags asms g=
-   let sqnt=Logic.get_sqnt g
-   in 
-   List.map (fun i -> Logic.Sequent.index_to_tag i sqnt) asms;;
-
-(*
-   let mk_entry asm g=
-   make_asm_entry (get_tags asm g) [] g;;
- *)   
-(*
-   let mk_goal str= 
-   Logic.mk_goal (scope()) 
-   (Formula.mk_form (scope()) (read str));;
-
-   goal <<(!a b: a=>b) => true>>;;
-   by  implI;;
-   let gl=curr_goal(top());;
-   let sqnt=curr_sqnt gl;;
-   let thm=saxiom "!a: a= (a=true)";;
-   let scp=Logic.scope_of sqnt;;
-   let info=ref (Logic.Rules.make_tag_record [][][]);;
-   let ftg=Logic.index_to_tag (-1) sqnt;;
-
-   let g= implI (mk_goal "(!a b: a iff b) => true");;
- *)
-
-   let scp=scope();;
-
-   let rl=saxiom "!a: a= (a=true)";;
-   let thm=saxiom"(!a b: a=>b)";;
-
-
- *)
-(*
-   let scope = Global.scope()
-
-   let naxiom t= Logic.mk_axiom (Formula.mk_form (Global.scope()) t)
-
-
-   let axioms = List.map naxiom
-   [
-   << !x: (true and x) = x>>;
-   <<!x: (x and true) = x>>;
-
-   <<!x: (false and x) = false>>;
-   <<!x: (x and false) = false>>;
-
-   <<!x: (true or x) = true>>;
-   <<!x: (x or true) = true>>;
-   <<!x: (false or x) = x>>;
-   <<!x: (x or false) = x>>;
-
-   <<(not false) = true>>;
-   <<(not true) = false>>;
-
-   <<!x: (not (not x))=x>>;
-   << !x y: (x => y) = ((not x) or y)>>;
-
-   << (!x: true) = true >>;
-   << (!x: false) = false>>;
-
-   << ! x: (x=x)=true>>;
-   ];;
- *)

@@ -55,31 +55,36 @@ let setcur_thy thdb thy =
   then thdb 
   else (ignore(add_thy thdb thy); thdb)
 
+
 let load_theory thdb name prot thfn filefn buildfn =
   let test_date tim thy = 
-    if (Theory.get_date thy)<tim then () 
-    else raise (Result.error 
-      	("Imported theory "^(Theory.get_name thy)
-	 ^" is more recent than "
-	 ^" its importing theory"))
+    if (Theory.get_date thy) <= tim then () 
+    else 
+      raise (Result.error 
+      	       ("Imported theory "^(Theory.get_name thy)
+		^" is more recent than"
+		^" its importing theory"))
   and test_protection thy =
     if prot 
     then 
-      if (Theory.get_protection thy) then ()
-      else raise (Result.error 
-	  ("Imported theory "^(Theory.get_name thy)^" is not complete"))
+      if (Theory.get_protection thy) 
+      then ()
+      else 
+	raise 
+	  (Result.error 
+	     ("Imported theory "^(Theory.get_name thy)
+	      ^" is not complete"))
     else ()
   in 
   let load_thy tim x =
     let fname = filefn x
     in 
-    let thy = 
-      Theory.load_theory fname
+    let thy = Theory.load_theory fname
     in 
     test_protection thy;
-    test_date tim thy; 
+    test_date tim thy;
     if(not (is_loaded x thdb))
-    then (ignore(add_thy thdb thy); thfn thy)
+    then (ignore(add_thy thdb thy); thfn (Theory.contents thy))
     else ();
     thy
   in 
@@ -87,8 +92,6 @@ let load_theory thdb name prot thfn filefn buildfn =
     buildfn x;
     let thy = get_thy thdb x
     in 
-    test_protection thy;
-    test_date tim thy;
     thy
   in 
   let rec load_aux tim ls imps=
@@ -108,8 +111,7 @@ let load_theory thdb name prot thfn filefn buildfn =
 	      (if List.mem x imps then imps else (x::imps)))
 	  else 
 	    let thy = 
-	      (try 
-		load_thy tim x
+	      (try load_thy tim x
 	      with _ -> build_thy tim x);
 	    in 
 	    load_aux tim xs 
@@ -126,12 +128,15 @@ let load_theory thdb name prot thfn filefn buildfn =
 	(Theory.get_parents thy) [Theory.get_name thy]
     in List.rev imprts)
   else 
-    (let thy = Theory.load_theory (filefn name)
+    (let thy = 
+      let current_time = Lib.date()
+      in 
+      (try load_thy current_time name
+      with _ -> build_thy current_time name)
     in 
     (test_protection thy; 
      (if(not (is_loaded name thdb))
-     then (ignore(add_thy thdb thy);
-	   thfn thy)
+     then (ignore(add_thy thdb thy); thfn (Theory.contents thy))
      else ());
      (let imprts = 
        (load_aux (Theory.get_date thy)
@@ -161,46 +166,29 @@ let set_importing thdb  =
     (name :: (mk_importing thdb));
   thdb
 
-
-let add_axiom s th thdb= Theory.add_axiom s th thdb.curr
-let add_thm s th thdb = Theory.add_thm s th thdb.curr
+let add_axiom s th ps thdb= Theory.add_axiom s th ps thdb.curr
+let add_thm s th ps thdb = Theory.add_thm s th ps thdb.curr
 
 let add_pp_rec idsel n ppr thdb = 
   Theory.add_pp_rec idsel n ppr thdb.curr
 
-
-(*
-   let add_type_rec s tr thdb = Theory.add_type_rec s tr thdb.curr
- *)
 let add_type_rec tr thdb = Theory.add_type_rec tr thdb.curr
 
-let add_defn_rec s ty def inf pr thdb =
-  Theory.add_defn_rec s ty def inf pr thdb.curr
+let add_defn_rec s ty def inf pr ps thdb =
+  Theory.add_defn_rec s ty def inf pr ps thdb.curr
 
-let add_defn s ty def thdb =
-  Theory.add_defn s ty def thdb.curr
+let add_defn s ty def ps thdb =
+  Theory.add_defn s ty def ps thdb.curr
 
-let add_decln_rec dcl pr thdb =
+let add_decln_rec dcl pr ps thdb =
   let s, ty = Defn.dest_decln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty pr thdb.curr
+  Theory.add_decln_rec (Basic.name s) ty pr ps thdb.curr
 
-let add_decln dcl thdb =
+let add_decln dcl ps thdb =
   let s, ty = Defn.dest_decln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty 0 thdb.curr
-
-
-(*
-   let add_defn_rec s ar ty def inf pr thdb =
-   Theory.add_defn_rec s ar ty def inf pr thdb.curr
-
-   let add_defn s ty def thdb =
-   Theory.add_defn s ty def thdb.curr
-
-   let add_decln_rec s ar ty thdb =
-   Theory.add_decln_rec s ar ty thdb.curr
- *)
+  Theory.add_decln_rec (Basic.name s) ty 0 ps thdb.curr
 
 let find f tdb =
   let rec find_aux ls =
@@ -285,7 +273,6 @@ let get_type_rec th n tdb=
   else quick_find get_aux th tdb
 
 
-
 let get_lemma th n tdb =
   let get_aux cur =
     try 
@@ -310,11 +297,6 @@ let get_id_type th n tdb =
   (let r = (get_defn_rec th n tdb)
   in r.Theory.typ)
 
-(*
-   let get_id_arity th n tdb = 
-   (let r =  get_defn_rec th n tdb
-   in r.Theory.arity)
- *)
 let id_is_infix th n tdb = 
   (let r =  get_defn_rec th n tdb
   in r.Theory.infix)

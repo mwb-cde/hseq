@@ -1,9 +1,15 @@
 (* theories: a record of identifier and type definitions and declarations,
    their theorems and the parent theories *)
 
-(*
-   exception Error of string
- *)
+(**
+   [type property]: Properties of theorems. Properties are exceptions
+   ([property=exn]), to allow new properties to be declared. 
+
+   [simp: property]: Mark as of interest to the simplifier.
+*)
+
+type property = exn
+val simp_property: property
 
 (* identifier records *)
 
@@ -12,14 +18,27 @@ type id_record =
      typ: Basic.gtype;
      def: Logic.thm option;
      infix: bool;
-     prec: int 
+     prec: int ;
+     dprops : property list
    }
-type save_record =
+type id_save_record =
     {
      sty: Basic.gtype;
      sdef: Logic.saved_thm option;
      sinfix: bool;
-     sprec: int 
+     sprec: int ;
+     sdprops: property list
+   }
+
+type thm_record =
+    {
+     thm: Logic.thm;
+     props: property list
+   }
+type thm_save_record =
+    {
+     sthm: Logic.saved_thm;
+     sprops: property list
    }
 
 (*
@@ -35,16 +54,16 @@ type thy
    Information stored in a theory.
    Used to directly query parts of a theory (such as for printing)
    without being able to alter the theory.
- *)
-
+*)
 type contents=
     {
      cname: string;
      cprotection: bool;
      cdate: float;
      cparents: string list;
-     caxioms: (string * Logic.thm) list;
-     ctheorems: (string * Logic.thm) list;
+     cfiles: string list;
+     caxioms: (string * thm_record) list;
+     ctheorems: (string * thm_record) list;
      cdefns: (string * id_record) list;
      ctyps: (string * Gtypes.typedef_record) list;
      ctype_pps: (string * Printer.record) list;
@@ -58,9 +77,13 @@ val get_name : thy -> string
 val get_parents: thy -> string list
 val add_parents: string list -> thy -> unit
 val get_protection : thy -> bool
+val set_protection : thy -> unit
 val get_date : thy -> float
 
-val set_protection : thy -> unit
+val get_files: thy -> string list
+val set_files: string list -> thy -> unit
+val add_file: string -> thy -> unit
+val remove_file: string -> thy -> unit
 
 (* add/remove PP record *)
 
@@ -84,11 +107,9 @@ val get_pplist:
  *)
 
 (* add/get/test components *)
-val add_axiom : string -> Logic.thm -> thy -> unit
-val add_thm : string -> Logic.thm -> thy -> unit
-(*
-   val add_type_rec : string -> Gtypes.typedef_record -> thy -> unit
- *)
+val add_axiom : string -> Logic.thm -> property list -> thy -> unit
+val add_thm : string -> Logic.thm -> property list -> thy -> unit
+
 val add_type_rec : Logic.cdefn -> thy -> unit
 
 val get_type_rec : string -> thy -> Gtypes.typedef_record 
@@ -102,16 +123,30 @@ val id_exists : string -> thy -> bool
 
 val add_defn_rec :
     string -> Basic.gtype 
-      -> Logic.thm option -> bool -> int -> thy -> unit
-val add_defn : string -> Basic.gtype -> Logic.thm -> thy -> unit
-val add_decln_rec : string  -> Basic.gtype -> int -> thy -> unit
+      -> Logic.thm option -> bool -> int 
+	-> property list -> thy -> unit
+val add_defn : 
+    string -> Basic.gtype -> Logic.thm 
+	-> property list
+	  -> thy -> unit
+val add_decln_rec : 
+    string  -> Basic.gtype -> int -> property list -> thy -> unit
+
+val get_axiom_rec : string -> thy -> thm_record
+val get_theorem_rec : string -> thy -> thm_record
+
 val get_axiom : string -> thy -> Logic.thm
 val get_theorem : string -> thy -> Logic.thm
 
+val set_defn_props: string -> property list -> thy -> unit
+val set_theorem_props: string -> property list -> thy -> unit
+val set_axiom_props: string -> property list -> thy -> unit
+
+
 val to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 val from_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
-val to_save : id_record -> save_record
-val from_save : save_record -> id_record
+val to_save : id_record -> id_save_record
+val from_save : id_save_record -> id_record
 
 (* primitive input/output of theories *)
 val output_theory : out_channel -> thy -> unit

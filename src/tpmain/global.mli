@@ -93,7 +93,12 @@ val load_base_thy: unit -> unit
 
 (* function to invoke when loading theories from disk *)
 
-val on_load_thy: Theory.thy -> unit
+val load_use_theory_files: Theory.contents -> unit
+val load_functions : (Theory.contents -> unit) list ref
+val init_load_functions: unit -> unit
+val add_load_fn : (Theory.contents -> unit) -> unit
+
+val on_load_thy: Theory.contents -> unit
 
 (* parsing functions *)
 (* does error handling (from exception to Result.Error)

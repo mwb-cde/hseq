@@ -71,7 +71,9 @@ let scope() =
 let thy_suffix = "."^Settings.thy_suffix
 
 (* search directories *)
-let thy_path = ref ["."]
+let thy_path = ref []
+
+let init_thy_path() = thy_path := ["."; Settings.thys_dir()]
 let get_thy_path ()= !thy_path
 let add_thy_path x = thy_path:=(x::!thy_path)
 let set_thy_path x = thy_path:=x
@@ -82,6 +84,8 @@ let thy_dir = ref "."
 let set_thy_dir n = thy_dir := !n
 let get_thy_dir () = !thy_dir
 let get_cdir () = Sys.getcwd ()
+
+let init_paths() = init_thy_path()
 
 (** [find_file x]: Find file [x] in the theory path. 
    
@@ -228,11 +232,34 @@ let add_type_record id rcrd =
   in 
   add_type_pp id pr fx repr
 
+let load_use_theory_files th = 
+     List.iter (Unsafe.load_use_file) th.Theory.cfiles
+
+let default_load_functions = 
+  [
+(* load files *)
+   load_use_theory_files; 
+(* add type PP information *)
+   (fun th -> 
+     List.iter 
+       (fun (id, rcrd) -> 
+	 add_type_record (Basic.mk_long th.Theory.cname id) rcrd)
+       th.Theory.ctype_pps) ;
+(* add term PP information *)
+   (fun th -> 
+     List.iter 
+       (fun (id, rcrd) -> 
+	 add_id_record (Basic.mk_long th.Theory.cname id) rcrd) 
+       th.Theory.cid_pps)
+ ]
+
+let load_functions = ref default_load_functions
+let init_load_functions () = load_functions:=default_load_functions
+let add_load_fn f = load_functions:=(f::!load_functions)
+
+(* on_load_thy: run load_functions, in reverse order *)
 let on_load_thy th =
-  List.iter (fun (id, rcrd) -> add_id_record id rcrd) 
-    (Theory.get_pplist Basic.fn_id th);
-  List.iter (fun (id, rcrd) -> add_type_record id rcrd) 
-    (Theory.get_pplist Basic.type_id th); ()
+  List.iter (fun f -> f th) (List.rev !load_functions)
 
 let mk_term scp pt = 
   let tenv = 
@@ -351,7 +378,9 @@ let init_list =
     [
      init_theoryDB;
      sym_init;
-     pp_init
+     pp_init;
+     init_load_functions;
+     init_paths
    ]
 
 let add_init x = init_list:=(x::!init_list)

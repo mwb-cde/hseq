@@ -37,10 +37,64 @@ let empty_set() =
   }
 
 
-(** [lt x y]:
-   less than ordering of term
+(** [termnet_lt varp x y]:
+
+   Less than ordering of terms for use with Net.insert. Makes
+   variables (for which [varp] is true) larger than any other term.
  *)
-let lt x y =term_gt (rule_rhs y) (rule_rhs x)
+(*
+let lt var x y =term_gt (rule_rhs y) (rule_rhs x)
+*)
+
+let rec lt_var varp x y=
+  let (x_is_var, y_is_var) = (varp x, varp y)
+  in 
+  match x_is_var, y_is_var with
+    (false, true) -> true
+  | (true, false) -> false
+  | _ -> term_lt varp x y
+and term_lt varp t1 t2 = 
+  let atom_lt (a1, ty1) (a2, ty2) =  a1<a2
+  and bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
+  in 
+  match (t1, t2) with
+    Typed (trm, _), _ -> lt_var varp trm t2
+  | _, Typed (trm, _) -> lt_var varp t1 trm
+  | (Const c1, Const c2) -> Basic.const_lt c1 c2
+  | (Const _ , _ ) -> true
+  | (Id _, Const _) -> false
+  | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Id _, _) -> true
+  | (Bound _, Const _) -> false
+  | (Bound _, Id _) -> false
+  | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Bound _ , _ ) -> true
+  | (Free _, Const _) -> false
+  | (Free _, Id _) -> false
+  | (Free _, Bound _) -> false
+  | (Free (n1, _), Free (n2, _)) -> n1<n2
+  | (Free _, _) -> true
+  | (App _, Const _) -> false
+  | (App _, Id _) -> false
+  | (App _, Bound _) -> false
+  | (App _, Free _) -> false
+  | (App(f1, a1), App (f2, a2)) -> 
+      if lt_var varp f1 f2 then true
+      else if lt_var varp f2 f1 then false
+      else lt_var varp a1 a2
+  | (App _, _) -> true
+  | (Qnt _, Const _) -> false
+  | (Qnt _, Id _) -> false
+  | (Qnt _, Bound _) -> false
+  | (Qnt _, Free _) -> false
+  | (Qnt _, App _) -> false
+  | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
+      if (lt_var varp b1 b2) 
+      then (bound_lt (dest_binding q1) (dest_binding q2))
+      else false
+and 
+ termnet_lt varp x y = lt_var varp (rule_rhs y) (rule_rhs x)
+
 
 (** [add_rule rl s]:
 
@@ -86,22 +140,24 @@ let set_rr_order rr order=
 let add_rule rl s=
   let (vs, cond, l, r, src)=rl
   in 
+  let varp = is_variable vs
+  in 
   if(Simputils.equal_upto_vars (Rewrite.is_free_binder vs) l r)
   then 
     let order =
       try 
 	get_rr_order src
-      with _ -> term_lt
+      with _ -> Term.term_lt
     in 
     let rl1=(vs, cond, l, r, set_rr_order src order)
     in 
     { 
-      basic=Net.insert lt (is_variable vs) (s.basic) l rl1;
+      basic=Net.insert (termnet_lt varp) varp (s.basic) l rl1;
       next=s.next
     }
   else 
     { 
-      basic=Net.insert lt (is_variable vs) (s.basic) l rl;
+      basic=Net.insert (termnet_lt varp) varp (s.basic) l rl;
       next=s.next
     }
 

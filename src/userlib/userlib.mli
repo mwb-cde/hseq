@@ -1,7 +1,21 @@
-(* user level commands *) 
+(*
+
+   UserLib: User level commands.
+
+   Principally to define theories and to carry out interactive proofs.
+
+   UserLib is needed to allow simplification rules to be added by commands
+   such as prove_thm. 
+
+   Most commands here simply call the necessary function in a
+   different module.
+*)
+
+
+(* from Commands *)
 
 (* Infixes *)
-type fixity = Parserkit.Info.fixity
+type fixity = Commands.fixity
 val nonfix: fixity  (* use this as the default *)
 val prefix: fixity
 val suffix: fixity
@@ -12,11 +26,6 @@ val infixn: fixity  (* infix, non-associative *)
 (* error handling *)
 val catch_errors : ('a -> 'b) -> 'a -> 'b
 
-(* get current theories *)
-val theories : unit -> Thydb.thydb
-val curr_theory : unit -> Theory.thy
-val get_theory_name : 'a -> string
-
 (** [theory n]: Get the theory named [n] if it is in the theory database.
    if [n=""], get the current theory.
 *)
@@ -25,7 +34,6 @@ val theory : string -> Theory.thy
 (* save/load theories *)
 val save_theory : Theory.thy -> bool -> unit
 val load_theory : string -> unit
-val load_theory_as_cur : string -> unit
 
 (* begin/restart/suspend/finish a theory *)
 
@@ -50,22 +58,6 @@ val open_theory : string -> unit
 val close_theory : unit -> unit
 val end_theory : ?save:bool -> unit -> unit
 
-(* new_theory renamed to begin_theory *)
-
-(* Parsing/Printing manipulation *)
-
-val add_pp_rec: Basic.id_selector -> Basic.ident -> Printer.record -> unit
-val add_term_pp: Basic.ident -> int -> fixity -> string option -> unit
-val add_type_pp: Basic.ident -> int -> fixity -> string option -> unit
-
-val remove_pp_rec : Basic.id_selector -> Basic.ident -> unit
-val remove_term_pp : Basic.ident -> unit
-val remove_type_pp : Basic.ident -> unit
-
-val get_pp_rec : Basic.id_selector -> Basic.ident 
-  -> (int * fixity * string option)
-val get_term_pp : Basic.ident -> (int * fixity * string option)
-val get_type_pp : Basic.ident -> (int * fixity * string option)
 
 (* declare and define types and definitions *)
 (**
@@ -75,8 +67,6 @@ val get_type_pp : Basic.ident -> (int * fixity * string option)
 val new_type :
     ?pp:(int*fixity*string option) 
     -> (string * string list * Basic.gtype option) -> unit
-
-(* new_defn/define define an identifier *)
 
 (* [define ?simp term pp]
    full definition of an identifier:
@@ -145,20 +135,14 @@ val qed : string -> Logic.thm
 
    [?simp]: whether to use the theorem as a simplifier rule.
 *)
-
 val prove_thm : 
     ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
 
 (* store a given theorem under the given name *)
 val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 
-(* apply a tactic to the current sub-goal in a proof attempt *)
-val by : Tactics.tactic -> Goals.prf
-
-(* user-level function to get the current scope *)
+(** Get the current scope *)
 val scope: unit -> Gtypes.scope
 
-(* user level parsing of string *)
-val read : string -> Basic.term
-val read_defn : string -> ((string * (string * Basic.gtype) list) * Basic.term)
-val read_unchecked : string -> Basic.term
+(* apply a tactic to the current sub-goal in a proof attempt *)
+val by : Tactics.tactic -> Goals.prf

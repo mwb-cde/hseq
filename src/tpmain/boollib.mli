@@ -39,8 +39,10 @@ module BoolPP :
 end
 
 
-(* derived tactics, some of which depend on theorems already having been
-   proved *)
+(*
+   Tactics, some of which depend on theorems already having been
+   proved.
+*)
 
 (* prove goals of the form A|- x=x, C *)
     val eq_tac :  Tactics.tactic
@@ -203,3 +205,95 @@ val back_tac:
 val cut_back_tac:
     ?info:Logic.info -> Logic.thm 
       -> ?c:Logic.label -> Tactics.tactic
+
+
+
+module Props : 
+sig
+
+(**
+   [make_n_ax()]: prove theorem n
+   [get_n_ax()]: get theorem n, proving it if necessary
+*)
+
+(**
+   [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
+*)
+val make_iff_equals_ax : unit -> Logic.thm
+val iff_equals_ax : Logic.thm option ref
+val get_iff_equals_ax : unit -> Logic.thm
+
+(**
+   [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
+*)
+val make_equals_iff_ax : unit -> Logic.thm
+val equals_iff_ax : Logic.thm option ref
+val get_equals_iff_ax : unit -> Logic.thm
+
+(**
+   [bool_eq_ax]: |- !x y: x iff y = ((x => y) and (y=>x))
+ *)
+val make_bool_eq_ax : unit -> Logic.thm
+val bool_eq_ax : Logic.thm option ref
+val get_bool_eq_ax : unit -> Logic.thm
+
+(**
+   [double_not_ax]: |- ! x: x = (not (not x))
+ *)
+val make_double_not_ax : unit -> Logic.thm
+val double_not_ax : Logic.thm option ref
+val get_double_not_ax : unit -> Logic.thm
+
+(**
+   [rule_true_ax]:  |- !x: x = (x=true) 
+ *)
+val make_rule_true_ax : unit -> Logic.thm
+val rule_true_ax : Logic.thm option ref
+val get_rule_true_ax : unit -> Logic.thm
+
+(**
+   rule_false_ax: !x: (not x) = (x=false)
+ *)
+val make_rule_false_ax : unit -> Logic.thm
+val rule_false_ax : Logic.thm option ref
+val get_rule_false_ax : unit -> Logic.thm
+end
+
+(** [conv_rule scp conv thm]
+   apply conversion [conv] to theorem [thm]
+ *)
+
+val conv_rule :
+    Gtypes.scope ->
+      (Gtypes.scope -> Basic.term -> Logic.thm) -> Logic.thm -> Logic.thm
+
+module Rules:
+sig
+(** 
+   Rules: Functions to construct theorems from other theorems.
+   These may depend on the theorems in Props.
+*)
+
+(** [once_rewrite_rule scp rules thm]: 
+   rewrite [thm] with [rules] once.
+*)
+val once_rewrite_rule :
+    Gtypes.scope -> Logic.thm list -> Logic.thm -> Logic.thm
+
+end
+
+module Convs:
+sig
+(** 
+   Convs: Conversions on boolean operators.
+   These may depend on the theorems in Props.
+*)
+
+(** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
+val neg_all_conv: Gtypes.scope -> Basic.term -> Logic.thm
+
+(** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
+val neg_exists_conv: Gtypes.scope -> Basic.term -> Logic.thm
+
+end
+

@@ -11,3 +11,16 @@
    it may be possible to use Toploop.toplevel_startup_hook
    for a rather less tricksy approach
 *)
+
+
+(**
+   [load_init()]: Load the initialising file.
+*)
+val load_init: unit -> unit
+
+(* 
+   [init()]: Initialise the system. This is normally called from the
+   initialising file loaded with [load_init()].
+ *)
+val init: unit -> unit
+

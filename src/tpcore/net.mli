@@ -114,9 +114,10 @@ val add:
 
 (** [insert order varp net t r]:
 
-   Add data [r], indexed by term [t] with variables identified by [varp]
-   to [net]. Data [r] is stored in the order defined by order.
-   Replaces but doesn't remove previous bindings of [t]
+   Add data [r], indexed by term [t] with variables identified by
+   [varp] to [net]. Data [r] is stored in the order defined by order
+   (smaller terms first).  Replaces but doesn't remove previous
+   bindings of [t]
 *)
 val insert: 
     ('a -> 'a -> bool) ->

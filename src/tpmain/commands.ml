@@ -73,19 +73,25 @@ let parents ns =
   Theory.add_parents ns (curr_theory());
   Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
 
+let add_file f =
+  Theory.add_file f (curr_theory())
+
+let remove_file f =
+  Theory.remove_file f (curr_theory())
+
 let begin_theory n parents= 
   if n = "" 
   then (raise (Result.error "No theory name"))
   else 
-    let thy = (Theory.mk_thy n)
-    in 
     let importing=
       try
 	((Global.get_base_name())::parents)
       with Not_found -> parents
     in 
-    Global.set_cur_thy thy;
     List.iter load_parent_theory importing;
+    let thy = (Theory.mk_thy n)
+    in 
+    Global.set_cur_thy thy;
     Theory.add_parents importing thy;
     Thydb.add_importing importing (theories())
 
@@ -188,14 +194,16 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
       
-let define ?pp ((name, args), r)=
+let define ?pp ?(simp=false) ((name, args), r)=
   let ndef=
     Defn.mk_defn (Global.scope()) 
       (Basic.mk_long (Global.get_cur_name()) name) args r
   in 
+  let props = if simp then [] else [Theory.simp_property]
+  in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
-  Thydb.add_defn (Basic.name n) ty d (theories()); 
+  Thydb.add_defn (Basic.name n) ty d props (theories()); 
   (match pp with 
     None -> ()
   | Some(prec, fx, repr) -> add_term_pp n prec fx repr);
@@ -216,7 +224,7 @@ let declare ?pp trm =
       in 
       let dcl = Defn.mk_decln (Global.scope()) id ty
       in 
-      Thydb.add_decln dcl (theories()); (id, ty)
+      Thydb.add_decln dcl [] (theories()); (id, ty)
     with _ -> raise (Result.error ("Badly formed declaration"))
   in 
   match pp with 
@@ -263,11 +271,11 @@ let declare ?pp trm =
       (n, ty)
 *)
 
-let new_axiom n trm =
+let new_axiom ?(simp=false) n trm =
   let t = Logic.mk_axiom 
       (Formula.form_of_term (Global.scope()) trm)
-  in Thydb.add_axiom n t (theories()); t
-
+  and props = if simp then [Theory.simp_property] else []
+  in Thydb.add_axiom n t props (theories()); t
 
 let axiom id =
   let t, n = Global.read_identifier id
@@ -297,19 +305,21 @@ let lemma id =
 let qed n = 
   let t = Goals.result() 
   in 
-  Thydb.add_thm n (Goals.result()) (theories()); t
+  Thydb.add_thm n (Goals.result()) [] (theories()); t
 
-let prove_theorem n t tacs =
+let save_thm ?(simp=false) n th =
+  let props = if simp then [Theory.simp_property] else []
+  in 
+  catch_errors 
+    (fun x -> Thydb.add_thm n th props x; th) (theories())
+
+let prove_thm ?(simp=false) n t tacs =
   catch_errors
     (fun x -> 
-      let nt = Goals.by_list t tacs
+      let th = Goals.by_list t tacs
       in 
-      (Thydb.add_thm n nt x); nt)
-    (theories())
-
-let save_theorem n th =
-  catch_errors 
-    (fun x -> Thydb.add_thm n th x; th) (theories())
+      ignore(save_thm ~simp:simp n th); th)
+    ()
 
 let by x = 
   (catch_errors Goals.by_com) x

@@ -2,12 +2,6 @@
    Start up file loaded when the TP system starts.
 *)
 
-#directory "/home/mw/src/tp/src";;
-#directory "/home/mw/src/tp/src/include";;
-
-(*
-#load "cli.cmo";;
-*)
 
 (*#install_printer Term.simple_term_printer;;*)
 
@@ -25,7 +19,8 @@
 #install_printer Display.print_theory;;
 
 open Goals;;
-open Commands;;
+(* open Commands;; *)
+open Userlib;;
 open Tactics;;
 open Boollib;;
 open Simplib;;
@@ -35,7 +30,7 @@ let _ =
   Format.print_string "Initialising";
   Format.print_newline();
   Format.close_box();
+  Init.init();
   Global.add_thy_path "./thys";
-  Global.add_thy_path "../thys";
-  Global.init()
+  Global.add_thy_path "../thys"
 

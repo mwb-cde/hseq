@@ -8,7 +8,7 @@ export OCLIBS=nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 export OPTLIBS=nums.cmxa unix.cmxa
 export OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" -I +camlp4
 
-INSTALLDIR=${HOME}/bin
+INSTALLDIR ?= ./bin
 
 OCAMLC=ocamlc ${OPTIONS} 
 
@@ -16,11 +16,12 @@ BAREMAKE=make
 MAKE=make INCLUDE='${INCLUDE}' LIB='${LIB}' OPTIONS='${OPTIONS}'
 
 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
+#OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
+OCAMLlink=${OCAMLC} -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCLIBS} 
 
-BINFILE=fmcaml
-OPTFILE=fmcaml.opt
+BINFILE=hseq
+OPTFILE=hseq.opt
 
 .SUFFIXES: .mli .cmi
 .SUFFIXES: .ml .cmo
@@ -67,11 +68,17 @@ SIMPLIFIEROPT=simplifier.cmxa
 NUMBERSCODE=numbers.cma
 NUMBERSOPT=numbers.cmxa
 
+USERLIBCODE=userlib.cma
+USERLIBOPT=userlib.cmxa
+
+
 CODE= ${QUOTECODE} ${UTILCODE} ${TPCORECODE} ${LOGICCODE} \
-	${PARSERCODE}  ${TPMAINCODE} ${SIMPLIFIERCODE} ${NUMBERSCODE}
+	${PARSERCODE}  ${TPMAINCODE} ${SIMPLIFIERCODE} ${NUMBERSCODE} \
+	${USERLIBCODE}
 
 CODEOPT= ${QUOTECODE} ${UTILOPT} ${TPCOREOPT} ${LOGICOPT} \
-	${PARSEROPT} ${TPMAINOPT} ${SIMPLIFIEROPT} ${NUMBERSOPT}
+	${PARSEROPT} ${TPMAINOPT} ${SIMPLIFIEROPT} ${NUMBERSOPT} \
+	${USERLIBOPT}
 
 OTHER=
 
@@ -107,6 +114,9 @@ ${SIMPLIFIERCODE}: ${TPMAINCODE}
 ${NUMBERSCODE}: ${TPMAINCODE}
 	cd numbers; $(MAKE) install
 
+${USERLIBCODE}: ${TPMAINCODE}
+	cd userlib; $(MAKE) install
+
 # optimised libraries
 
 ${UTILOPT}:
@@ -130,20 +140,23 @@ ${SIMPLIFIEROPT}: ${TPMAINOPT}
 ${NUMBERSOPT}: ${TPMAINOPT}
 	cd main; $(MAKE) opt
 
+${USERLIBOPT}: ${TPMAINOPT}
+	cd userlib; $(MAKE) opt
+
 # executables
 
-mkfmcaml: mkfmcaml.ml
-	${OCAMLC} -o mkfmcaml mkfmcaml.ml
+mkhseq: mkhseq.ml
+	${OCAMLC} -o mkhseq mkhseq.ml
 
-fmcaml: ${CODE} ${OTHER}
-	ocamlmktop -custom  -o ${BINFILE} \
+hseq: ${CODE} ${OTHER}
+	ocamlmktop  -o ${BINFILE} \
 	${INCLUDE} ${LIB} ${OCLIBS} ${CODE} ${OTHER}
 
-theories: fmcaml fm.ml build_thys.ml ${THYFILE}
-	echo '#use "build_thys.ml";;' | ./fmcaml
+theories: hseq fm.ml build_thys.ml ${THYFILE}
+	echo '#use "build_thys.ml";;' | ./hseq
 
-install: fmcaml
-	mv ${BINFILE} ${INSTALLDIR}/${BINFILE}
+install: hseq
+	cp ${BINFILE} ${INSTALLDIR}/${BINFILE}
 
 THYFILE=base_thy.ml bool_thy.ml bool_prop.ml
 
@@ -174,7 +187,7 @@ libclean: clean
 
 .PHONY: reallyclean
 reallyclean: clean libclean
-	rm -f fmcaml
+	rm -f hseq
 	rm -f depend
 	cd quote; $(BAREMAKE) reallyclean
 	cd util; $(BAREMAKE) reallyclean
@@ -184,6 +197,7 @@ reallyclean: clean libclean
 	cd tpmain; $(BAREMAKE) reallyclean
 	cd numbers; $(BAREMAKE) reallyclean
 	cd simplifier; $(BAREMAKE) reallyclean
+	cd userlib; $(BAREMAKE) reallyclean
 	cd include; $(BAREMAKE) reallyclean
 	cd libs; $(BAREMAKE) reallyclean
 

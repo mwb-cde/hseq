@@ -50,7 +50,7 @@
 
    return the list of importings for the new theory.
 *)
-val load_theory : thydb -> string -> bool -> (Theory.thy -> unit) 
+val load_theory : thydb -> string -> bool -> (Theory.contents -> unit) 
       -> (string -> string) -> (string -> unit) -> string list
 
 (* build the importing list of the current theory *)
@@ -58,18 +58,22 @@ val load_theory : thydb -> string -> bool -> (Theory.thy -> unit)
     val set_importing : thydb -> thydb
 
 (* add/extract components to the current theory *)
-    val add_axiom : string -> Logic.thm -> thydb -> unit
-    val add_thm : string -> Logic.thm -> thydb -> unit
-(*
-    val add_type_rec: string -> Gtypes.typedef_record -> thydb->unit
-*)
+    val add_axiom : 
+	string -> Logic.thm -> Theory.property list -> thydb -> unit
+    val add_thm : 
+	string -> Logic.thm -> Theory.property list -> thydb -> unit
+
     val add_type_rec: Logic.cdefn -> thydb->unit
 
-    val add_defn : string -> Basic.gtype -> Logic.thm -> thydb -> unit
-    val add_decln_rec :Defn.decln -> int -> thydb -> unit
-    val add_decln :Defn.decln -> thydb -> unit
+    val add_defn : 
+	string -> Basic.gtype -> Logic.thm -> Theory.property list 
+	  -> thydb -> unit
+    val add_decln_rec :Defn.decln -> int -> Theory.property list
+      -> thydb -> unit
+    val add_decln :Defn.decln 
+      -> Theory.property list -> thydb -> unit
     val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
-       -> bool -> int -> thydb -> unit
+       -> bool -> int -> Theory.property list -> thydb -> unit
 
 (* get the type record of a type in a named theory *)
     val get_type_rec: string -> string -> thydb -> Gtypes.typedef_record
