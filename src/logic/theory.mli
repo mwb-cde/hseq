@@ -31,9 +31,13 @@
         theorems: (string, Logic.thm) Hashtbl.t;
         defns: (string, id_record) Hashtbl.t;
       	typs: (string, Gtypes.typedef_record) Hashtbl.t;
+      	mutable type_pps: (string * Basic.PP.record) list;
+      	mutable id_pps: (string * Basic.PP.record) list }
+
+(*
       	mutable type_pps: (string * Corepp.pp_rec) list;
       	mutable id_pps: (string * Corepp.pp_rec) list }
-
+*)
 (* make a theory and get its properties *)
 
     val mk_thy : string -> thy
@@ -49,12 +53,24 @@
 
 (* add/remove PP record *)
 
+val add_pp_rec: 
+    Basic.id_selector -> string -> Basic.PP.record
+      -> thy -> unit
+val get_pp_rec: 
+    Basic.id_selector -> string  -> thy -> Basic.PP.record
+val remove_pp_rec : Basic.id_selector -> string -> thy -> unit
+val get_pplist: 
+    Basic.id_selector -> thy
+      -> (Basic.ident * Basic.PP.record) list
+
+(*
 val add_pp_rec: Basic.id_selector -> string -> Corepp.pp_rec
   -> thy -> unit
 val get_pp_rec: Basic.id_selector -> string  -> thy  -> Corepp.pp_rec
 val remove_pp_rec : Basic.id_selector -> string -> thy -> unit
 val get_pplist: Basic.id_selector -> thy
-  -> (Basic.fnident * Corepp.pp_rec) list
+  -> (Basic.ident * Corepp.pp_rec) list
+*)
 
 (* add/get/test components *)
     val add_axiom : string -> Logic.thm -> thy -> unit

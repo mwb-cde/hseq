@@ -24,7 +24,7 @@ type saved_thm
 type tagged_form = (Tag.t* Formula.form)
 
 (*  type skolem_cnst*)
-type skolem_cnst = (Basic.fnident * (int * Gtypes.gtype))
+type skolem_cnst = (Basic.ident * (int * Gtypes.gtype))
 
 type skolem_type
 type sqnt
@@ -59,8 +59,8 @@ type fident =
  *)
 
 type cdefn =
-    TypeDef of Basic.fnident * string list * Gtypes.gtype option
-  | TermDef of Basic.fnident * Gtypes.gtype
+    TypeDef of Basic.ident * string list * Gtypes.gtype option
+  | TermDef of Basic.ident * Gtypes.gtype
 	* (string*Gtypes.gtype) list * thm option
 	
 (* theorem destructors  and constructors *)
@@ -78,10 +78,10 @@ val from_save: saved_thm -> thm
 
 (* skolem variables/constants are used for quantifier rules *)
 
-val get_sklm_name: skolem_cnst -> Basic.fnident
+val get_sklm_name: skolem_cnst -> Basic.ident
 val get_sklm_indx: skolem_cnst -> int
 val get_sklm_type: skolem_cnst -> Gtypes.gtype
-val get_new_sklm: Basic.fnident -> Gtypes.gtype -> skolem_type 
+val get_new_sklm: Basic.ident -> Gtypes.gtype -> skolem_type 
   -> (Term.term * skolem_type)
 
 val sqntError : string ->  exn
@@ -514,9 +514,9 @@ module Defns :
       val is_termdef: cdefn -> bool
 
       val dest_typedef: cdefn ->
-	Basic.fnident * string list * Gtypes.gtype option
+	Basic.ident * string list * Gtypes.gtype option
       val dest_termdef: cdefn -> 
-	Basic.fnident * Gtypes.gtype * (string* Gtypes.gtype) list * thm option
+	Basic.ident * Gtypes.gtype * (string* Gtypes.gtype) list * thm option
 
       val mk_typedef: Gtypes.scope 
 	-> string -> string list -> Gtypes.gtype option -> cdefn
@@ -529,7 +529,7 @@ module Defns :
 
 type skolem_info=
     {
-     name: Basic.fnident;
+     name: Basic.ident;
      ty: Gtypes.gtype;
      tyenv: Gtypes.substitution;
      scope: Gtypes.scope;
@@ -539,9 +539,9 @@ type skolem_info=
 val mk_new_skolem: 
     skolem_info
   -> Term.term * Gtypes.gtype 
-      * (Basic.fnident * (int * Gtypes.gtype)) list 
+      * (Basic.ident * (int * Gtypes.gtype)) list 
       * Gtypes.substitution * (string * int) list
 
 val add_sklms_to_scope: 
-    (Basic.fnident * ('a * Gtypes.gtype)) list ->
+    (Basic.ident * ('a * Gtypes.gtype)) list ->
     Gtypes.scope -> Gtypes.scope

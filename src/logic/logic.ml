@@ -29,7 +29,7 @@ type saved_thm =
 
 type tagged_form = (Tag.t* form)
 
-type skolem_cnst = (Basic.fnident * (int * Gtypes.gtype))
+type skolem_cnst = (Basic.ident * (int * Gtypes.gtype))
 type skolem_type = skolem_cnst list
 
 (* 
@@ -74,9 +74,9 @@ type conv = thm list -> thm list
  *)
 
 type cdefn =
-    TypeDef of Basic.fnident * string list * Gtypes.gtype option
+    TypeDef of Basic.ident * string list * Gtypes.gtype option
   | TermDef of 
-      Basic.fnident * Gtypes.gtype
+      Basic.ident * Gtypes.gtype
 	* (string*Gtypes.gtype) list * thm option
 
 let mk_axiom t = Axiom t
@@ -227,7 +227,7 @@ let new_weak_type n names=
 
 type skolem_info=
     {
-     name: Basic.fnident;
+     name: Basic.ident;
      ty: Gtypes.gtype;
      tyenv: Gtypes.substitution;
      scope: Gtypes.scope;

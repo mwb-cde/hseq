@@ -473,6 +473,6 @@ let rewrite_net_env scp tyenv rrnet f =
 
 
 (*    let print_formlist = Term.print_termlist*)
-let print inf x = Term.print_term inf (term_of_form x)
+let print inf x = Term.print inf (term_of_form x)
 
 

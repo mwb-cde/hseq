@@ -144,7 +144,7 @@ let token_info tbl t=
 
   let mk_vartyp inf = 
     Gtypes.mk_var
-      ("_typ"^(string_of_int (get_type_indx inf)))
+      ("typ"^(string_of_int (get_type_indx inf)))
 
   let lookup_name n inf = 
    List.assoc n !(inf.bound_names)

@@ -16,16 +16,16 @@ type decln
 (*
     val destdefn : defn -> Formula.form
 *) 
-   val dest_decln : decln -> Basic.fnident * Gtypes.gtype
+   val dest_decln : decln -> Basic.ident * Gtypes.gtype
 
 (* destruct a term of the form (f a1 a2 ..)=G to (f, [a1; a2; ..]) *)
     val get_lhs : Term.term -> 
-      Basic.fnident * (Basic.fnident * Gtypes.gtype) list   
+      Basic.ident * (Basic.ident * Gtypes.gtype) list   
 
 (* function declarations of the type (f: ty) *)
     val mkdecln :
       Gtypes.scope ->
-      Basic.fnident -> Gtypes.gtype -> decln
+      Basic.ident -> Gtypes.gtype -> decln
 
 (* make the type of a defined term *)
     val mk_defn_type :

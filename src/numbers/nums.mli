@@ -1,17 +1,17 @@
 val raiseError : string -> Term.term list -> 'a
 
 val num_thy : string
-val plusid : Basic.fnident
-val minusid : Basic.fnident
-val multid : Basic.fnident
-val negid : Basic.fnident
-val maxid : Basic.fnident
-val minid : Basic.fnident
+val plusid : Basic.ident
+val minusid : Basic.ident
+val multid : Basic.ident
+val negid : Basic.ident
+val maxid : Basic.ident
+val minid : Basic.ident
 
-val gtid : Basic.fnident
-val geqid : Basic.fnident
-val ltid : Basic.fnident
-val leqid : Basic.fnident
+val gtid : Basic.ident
+val geqid : Basic.ident
+val ltid : Basic.ident
+val leqid : Basic.ident
 
 val numterm_to_expr :
     int * (int * Term.term) list ->

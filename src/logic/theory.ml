@@ -10,17 +10,24 @@
     type save_record= {sty: Gtypes.gtype; sdef: Logic.saved_thm option; 
 		       sinfix: bool; sprec: int}
 
-    type thy = {name: string;
-		 mutable protection: bool;
-		 mutable date: float;
-		 mutable parents:  string list;
-		 axioms: (string, Logic.thm) Hashtbl.t;
-		 theorems: (string, Logic.thm) Hashtbl.t;
-		 defns: (string, id_record) Hashtbl.t;
-      		 typs: (string, Gtypes.typedef_record) Hashtbl.t;
-		 mutable type_pps: (string * Corepp.pp_rec) list;
+    type thy = 
+	{
+	 name: string;
+	 mutable protection: bool;
+	 mutable date: float;
+	 mutable parents:  string list;
+	 axioms: (string, Logic.thm) Hashtbl.t;
+	 theorems: (string, Logic.thm) Hashtbl.t;
+	 defns: (string, id_record) Hashtbl.t;
+      	 typs: (string, Gtypes.typedef_record) Hashtbl.t;
+	 mutable type_pps: (string * Basic.PP.record) list;
+	 mutable id_pps: (string * Basic.PP.record) list
+       }
+(*
+		mutable type_pps: (string * Corepp.pp_rec) list;
 		 mutable id_pps: (string * Corepp.pp_rec) list
 	       }
+*)
 
     let mk_thy n = {name=n; 
 		     protection=false;
@@ -54,6 +61,7 @@
     let set_protection thy = 
       thy.protection<-true;
       set_date thy
+
 
 let add_pp_rec idsel n ppr thy=
   if not (get_protection thy)

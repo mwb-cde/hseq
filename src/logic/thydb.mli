@@ -64,15 +64,18 @@ val load_theory : thydb -> string -> bool -> (Theory.thy -> unit)
 
 (* add/extract PP records *)
 
-val add_pp_rec: Basic.id_selector  -> string -> Corepp.pp_rec
-  -> thydb  -> unit
-val get_pp_rec: Basic.id_selector -> string  -> string  -> thydb
-  -> Corepp.pp_rec
-val remove_pp_rec : Basic.id_selector -> string -> string 
-  -> thydb -> unit
+val add_pp_rec: 
+    Basic.id_selector  -> string -> Basic.PP.record
+      -> thydb  -> unit
+val get_pp_rec: 
+    Basic.id_selector -> string  -> string  -> thydb
+      -> Basic.PP.record
+val remove_pp_rec : 
+    Basic.id_selector -> string -> string 
+      -> thydb -> unit
 
 val get_pplist: Basic.id_selector -> string -> thydb 
-  -> (Basic.fnident * Corepp.pp_rec) list
+  -> (Basic.ident * Basic.PP.record) list
   
 (* find a theory and apply a function *)
     val find : (Theory.thy -> 'a) -> thydb -> 'a

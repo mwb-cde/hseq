@@ -1,7 +1,7 @@
 
     open Basic
 	
-    type decln = (Basic.fnident* Gtypes.gtype)
+    type decln = (Basic.ident* Gtypes.gtype)
 
     let dest_decln (id, ty) = id, ty
 

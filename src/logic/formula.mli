@@ -75,7 +75,7 @@ val dest_form: form -> Term.term
 
     val is_fun: form -> bool
     val is_var : form-> bool
-    val get_var_id : form-> Basic.fnident
+    val get_var_id : form-> Basic.ident
     val get_var_type : form-> Gtypes.gtype
 
     val is_app : form -> bool
@@ -179,4 +179,4 @@ val rewrite_net_env :
 	-> form -> (form * Gtypes.substitution)
 
 (* print a formula in a given PP state *)
-val print : Corepp.pp_state -> form -> unit
+ val print : Basic.PP.info -> form -> unit 

@@ -216,7 +216,6 @@ let print_type_info ppstate pr t =
 	print_defined old_pr n args
     | Gtypes.Constr(Basic.Func, args) ->
 	print_func args
-
   and print_defined oldprec f args =
     let print_infix pp_rec pr ls =
       Format.open_box 0;

@@ -37,8 +37,8 @@ OPTLIB=parser.cmxa
 .cmx.cmxa:
 	ocamlopt -a ${INCLUDE} $<
 
-HEADERS = parserkit.cmi lexer.cmi parser.cmi 
-CODE = parserkit.cmo lexer.cmo parser.cmo 
+HEADERS = lexer.cmi parser.cmi 
+CODE = lexer.cmo parser.cmo 
 OPTCODE = lexers.cmx termlex.cmx termlexer.cmx parsers.cmx tparser.cmx
 
 all: ${HEADERS} ${CODE}
