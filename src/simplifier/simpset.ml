@@ -183,7 +183,7 @@ let rec join s1 s2 =
 let split s1=
   match s1.next with 
     None ->
-      raise (Failure "Simpset.split")
+      raise (Failure "split")
   | Some x -> 
       ({basic=s1.basic;
 	next=None}, x)
@@ -273,3 +273,100 @@ let print ppinfo set =
   Format.printf "@[<v>[{";
   print_aux ppinfo set;
   Format.printf "}]@]"
+
+
+(** [make_thm_rule thm]:
+   make rule from theorem [thm]
+ *)
+let make_thm_rule thm=
+  make_rule (Logic.RRThm thm) (Logic.term_of thm)
+
+(** [add_simp_rule scp set rls]
+   add (properly formed rules) [rls] to set [set]
+   in scope [scp]
+ *)
+let add_simp_rule sset entries=
+  List.fold_left (fun s e-> add_rule e s) sset entries
+
+(**
+   [thm_to_entries scp thm]: convert a theorem to a list of 
+   simpset entries.
+ *)   
+let thm_to_entries scp thm=
+  let rules = Simpconvs.thm_to_rules scp thm
+  in 
+  List.map make_thm_rule rules
+
+(**
+   [simpset_add_thm scp sset thm]: add rewrites from [thm] to
+   simpset [sset].
+ *)   
+let simpset_add_thm scp sset thm=
+  let entries = thm_to_entries scp thm
+  in 
+  add_simp_rule sset entries
+
+let simpset_add_thms scp set thms =
+  List.fold_left (simpset_add_thm scp) set thms
+
+let simpset_add_asm sset tg g=
+  let trm = 
+    Formula.term_of
+      (Logic.drop_tag 
+	 (Logic.Sequent.get_tagged_asm tg 
+	    (Drule.sequent g)))
+  in 
+  let rule = make_rule (Logic.Asm (Drule.ftag tg)) trm
+  in 
+  add_simp_rule sset [rule]
+
+
+(** [make_simp_asms ts except goal]
+
+   Make a list of simp rules from the assumptions with tags 
+   in [ts], ignoring those for which [except] is true.
+ *)
+let make_simp_asm tg goal=
+  let trm = 
+    Formula.term_of
+      (Logic.drop_tag 
+	 (Logic.Sequent.get_tagged_asm tg 
+	    (Drule.sequent goal)))
+  in 
+  let rule = make_rule (Logic.Asm (Drule.ftag tg)) trm
+  in 
+  (tg, rule)
+
+let make_simp_asms tags except goal = 
+  let rec make_aux xs rslt=
+    match xs with
+      [] -> List.rev rslt
+    | t::ts -> 
+	if(except t) 
+	then make_aux ts rslt
+	else make_aux ts ((make_simp_asm t goal)::rslt)
+  in 
+  make_aux tags []
+
+(** [make_simp_asm_rules ts except goal]
+
+   Make a list of simp rules from the tagged formulas
+   in [ts], ignoring those for which [except] is true.
+ *)
+let make_simp_asm_rule tg form=
+  let trm =  Formula.term_of form
+  in 
+  make_rule (Logic.Asm (Drule.ftag tg)) trm
+
+let make_simp_asm_rules except forms = 
+  let rec make_aux xs rslt=
+    match xs with
+      [] -> List.rev rslt
+    | (t, f)::fs -> 
+	if(except (t, f)) 
+	then make_aux fs rslt
+	else make_aux fs ((make_simp_asm_rule t f)::rslt)
+  in 
+  make_aux forms []
+
+

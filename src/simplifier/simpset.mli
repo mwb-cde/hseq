@@ -84,3 +84,57 @@ val print_rule_net: Printer.ppinfo -> rule Net.net -> unit
 
 val print_aux: Printer.ppinfo -> simpset -> unit
 val print: Printer.ppinfo -> simpset -> unit
+
+
+
+(**
+   {6 Adding/removing rules to a simpset.}
+*)
+
+(** [make_thm_rule thm]: make rule from theorem [thm]
+ *)
+val make_thm_rule :
+    Logic.thm ->
+      rule
+val thm_to_entries :
+    Gtypes.scope ->
+      Logic.thm ->
+	rule list
+
+
+(** 
+   [add_simp_rule set rules]: Add [rules] to simpset [set].
+   [simp_add_thm scp set thms]: Add theorem [thm] to simpset [set].
+   [simp_add_thms scp set thms]: Add theorems [thms] to simpset [set].
+*)
+val add_simp_rule :
+    simpset -> rule list -> simpset
+val simpset_add_thm :
+    Gtypes.scope -> simpset -> Logic.thm -> simpset
+val simpset_add_thms :
+    Gtypes.scope -> simpset -> Logic.thm list -> simpset
+
+
+val simpset_add_asm: 
+    simpset -> Tag.t -> Logic.node -> simpset
+
+val make_simp_asm :
+  Tag.t ->
+  Logic.node ->
+  Tag.t *
+      rule
+val make_simp_asms :
+  Tag.t list ->
+  (Tag.t -> bool) ->
+  Logic.node ->
+  (Tag.t *
+     rule ) list
+
+val make_simp_asm_rule :
+  Tag.t 
+  -> Formula.form
+      -> rule
+val make_simp_asm_rules :
+    (Tag.t * Formula.form -> bool) 
+  -> (Tag.t * Formula.form) list 
+      -> rule list

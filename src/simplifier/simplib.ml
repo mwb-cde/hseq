@@ -10,7 +10,7 @@ let std_ss() = !std_simpset
 let set_std_ss s = std_simpset:=s
 let empty_simp () = set_std_ss (Simpset.empty_set())
 let add_simps thms = 
-  set_std_ss (Simpconvs.simpset_add_thms (Global.scope()) (std_ss()) thms)
+  set_std_ss (Simpset.simpset_add_thms (Global.scope()) (std_ss()) thms)
 let add_simp thm = add_simps [thm]
 
 
@@ -68,7 +68,7 @@ let simp_tac
       [] -> uset1
     | _ -> 
 	let s = 
-	  Simpconvs.simpset_add_thms 
+	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
 	in Simpset.join s uset1
   in 
@@ -108,7 +108,7 @@ let once_simp_tac
       [] -> uset1
     | _ -> 
 	let s = 
-	  Simpconvs.simpset_add_thms 
+	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
 	in Simpset.join s uset1
   in 

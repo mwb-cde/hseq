@@ -163,7 +163,7 @@ module Data =
 let strip_rrs rrs=
   let strip_rr x = 
     match x with
-      Logic.RRThm x -> Formula.dest (Logic.dest_thm x)
+      Logic.RRThm x -> (Logic.term_of x)
     |	 _ -> failwith "simp_tac"
   in 
   (List.map strip_rr rrs)
@@ -323,7 +323,7 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	let rule = 
 	  Simpset.make_rule 
 	    (Logic.Asm (Drule.ftag rftg1)) 
-	    (Formula.dest form)
+	    (Formula.term_of form)
 	in 
 	data_tac (fun x -> ret := Some x)
 	  (Data.add_simp_rule ncntrl1 rule,
@@ -622,7 +622,7 @@ let rec basic_simp_tac cntrl ret ft goal=
   let sqnt = Drule.sequent goal
   in 
   let trm=
-    Formula.dest (Logic.drop_tag (get_form ft sqnt))
+    Formula.term_of (Logic.drop_tag (get_form ft sqnt))
   in 
   let ret1=ref None
   in
@@ -809,11 +809,11 @@ let make_concl_entries_tac ret tags except goal=
 *)
 let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
   let concl_rules = 
-    Simpconvs.make_simp_asm_rules 
+    Simpset.make_simp_asm_rules 
       (fun x -> not (Tag.equal tag (dfst x))) 
       concl_forms
   in 
-  let set=Simpconvs.add_simp_rule (Data.get_simpset cntrl) concl_rules
+  let set=Simpset.add_simp_rule (Data.get_simpset cntrl) concl_rules
   in 
   let cntrl1=Data.set_simpset cntrl set
   in 
@@ -892,9 +892,9 @@ let simp_tac cntrl asms except l goal=
 	  and the tags of the new formulas.
 	*)
 	   let rules = 
-	     Simpconvs.make_simp_asm_rules (fun _ -> false) (dsnd(!asm_rules))
+	     Simpset.make_simp_asm_rules (fun _ -> false) (dsnd(!asm_rules))
 	   in 
-	   let set1 = Simpconvs.add_simp_rule set rules
+	   let set1 = Simpset.add_simp_rule set rules
 	   in 
 	   let data2=
 	     Data.set_asms data1
@@ -972,11 +972,11 @@ let simp_tac cntrl asms except l goal=
 *)
 let once_simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
   let concl_rules = 
-    Simpconvs.make_simp_asm_rules 
+    Simpset.make_simp_asm_rules 
       (fun x -> not (Tag.equal tag (dfst x))) 
       concl_forms
   in 
-  let set=Simpconvs.add_simp_rule (Data.get_simpset cntrl) concl_rules
+  let set=Simpset.add_simp_rule (Data.get_simpset cntrl) concl_rules
   in 
   let cntrl1=Data.set_simpset cntrl set
   in 
@@ -1055,9 +1055,9 @@ let once_simp_tac cntrl asms except l goal=
 	  and the tags of the new formulas.
 	*)
 	   let rules = 
-	     Simpconvs.make_simp_asm_rules (fun _ -> false) (dsnd(!asm_rules))
+	     Simpset.make_simp_asm_rules (fun _ -> false) (dsnd(!asm_rules))
 	   in 
-	   let set1 = Simpconvs.add_simp_rule set rules
+	   let set1 = Simpset.add_simp_rule set rules
 	   in 
 	   let data2=
 	     Data.set_asms data1

@@ -11,7 +11,8 @@ let log_tac x g = log x; Tactics.skip g
 
 (* 
    Function to prepare theorems and assumptions being added to a simpset.
- *)
+*)
+
 open Simputils
 
 open Boollib
@@ -21,13 +22,9 @@ open Boollib.Rules
 
 open Tactics
 
-
-
-
-
 (**
    [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
- *)
+*)
 let make_cond_rule_true_ax()=
   Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
   (flatten_tac
@@ -69,7 +66,6 @@ let get_cond_rule_false_ax ()=
 
 (** {c6} Rewriting applied inside topmost universal quantifiers *)
 
-
 (**
    [simple_rewrite_conv scp rule trm]
 
@@ -84,7 +80,7 @@ let get_cond_rule_false_ax ()=
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
 let simple_rewrite_conv scp rule trm=
-  let rule_trm =(Formula.dest (Logic.dest_thm rule))
+  let rule_trm =(Logic.term_of rule)
   in 
   let rvars, rbody = Term.strip_qnt Basic.All rule_trm
   in 
@@ -172,10 +168,9 @@ let simple_asm_rewrite_tac rule asm node=
   let (_, f)=Logic.get_label_asm asm sqnt
   and scp = Drule.scope_of node
   in 
-  let thm=simple_rewrite_conv scp rule (Formula.dest f)
+  let thm=simple_rewrite_conv scp rule (Formula.term_of f)
   in 
   once_rewrite_tac [thm] ~f:asm node
-
 
 
 (** 
@@ -183,27 +178,6 @@ let simple_asm_rewrite_tac rule asm node=
    convert theorems to rewriting rules.
  *)
 
-(** [many_conj_conv thm]:
-   Break conjunctions in theorem [thm] to a list of theorems
-
-   |- a and b and c and 
-   -->
-   |- a ; |- b ; |- c ; ..
- *)
-(*
-let many_conj_conv thm=
-  let rec many_aux t ths=
-    if(Formula.is_conj (Logic.dest_thm t))
-    then 
-      match (Logic.ThmRules.conjE_conv t) with 
-	[a; b] ->
-	  many_aux a (many_aux b ths)
-      | _ -> raise 
-	    (Logic.logicError "many_conj_conv: unknown error" 
-	       [Logic.dest_thm t])
-    else t::ths
-  in many_aux thm []
-*)
 
 (** [negate_concl info t g]:
    Negate conclusion [t], making it assumption tagged [t'].
@@ -230,7 +204,7 @@ let negate_concl info c goal=
    test [thm] is of the form |- a and b and ... and z 
  *)
 let is_many_conj thm=
-  let thmtrm=Formula.dest (Logic.dest_thm thm)
+  let thmtrm=Logic.term_of thm
   in 
   Logicterm.is_conj thmtrm
 
@@ -251,7 +225,6 @@ let is_negation (vars, cnd, main)=
  *)
 let is_equality (vars, cnd, main)=
   Logicterm.is_equality main
-
 
 (*
    Two types of rule: theorems and assumptions 
@@ -279,7 +252,7 @@ let is_equality (vars, cnd, main)=
  *)
 
 
-(* Utility functions *)
+(** {6c Utility functions} *)
 
 (** [find_variables is_var vars trm]
    find all subterms [t] of [trm] s.t. [(is_var t)] is true.
@@ -385,8 +358,7 @@ let strip_qnt_cond t =
 
 (* conversions for manipulating rules *)
 
-(** Functions to make simp rules from theorems *)
-
+(** {6c Functions to make simp rules from theorems} *)
 
 (**
    [thm_to_rule scp thm]: convert theorem [thm] to a list of theorems suitable 
@@ -436,51 +408,6 @@ let rec app_first fs x =
     [] -> failwith "app_first"
   | f::ffs -> try f x with _ -> app_first ffs x
 
-(** Functions to test and convert a specific type of theorem 
-
-   The tests.
-
-   [is_constant t]: [t] is a boolean constant (true/false)
-   or in the form [l=r] where [r] is a boolean constant.
-
-   [is_neg_all t]: [t] is in the form [not ! a: b]
-   
-   [is_neg_exists t]: [t] is in the form [not ? a: b]
-
-   [is_rr_equality t]: [t] is a proper rewrite rule, in the form 
-   |- a=b or in the form |- c=>a=b
-   where all free variables in c and b also occur in a.
-
-   The conversion functions.
-
-   [accept_all_thms]: convert |- a to |- a=true 
-
-   [do_rr_equality]: accept |- l=r or |= c=> l=r 
-
-   [do_fact_rule]: 
-   convert |- a to |- a=true 
-   and  |- c=> a to |- c => a=true
-
-   [do_neg_rule]: convert |- not a to |- a=false 
-   and |- c=> not a to |- c=> a=false
-
-   [do_neg_all_rule]: convert |- not (!a: b) to |- ?a: not b
-   then convert the new theorem.
-
-   [do_neg_exists_rule]: convert |- not (?a: b) to |- !a: not b
-   then convert the new theorem.
-
-   [do_conj_rule]: convert  |- a and b to |- a and |- b.
-
-   [single_thm_to_rules scp thm]:
-   convert a theorem stating a single fact to a rewrite-rule.
-
-   [multi_thm_to_rules scp thm]:
-   convert a theorem stating many facts to a list of rewrite-rules.
-
-   [thm_to_rules scp thm]: Toplevel conversion function.
-   Convert theorem [thm] to a list of rules
- *)
 
 (* The tests on terms *)
 
@@ -586,7 +513,7 @@ and do_neg_exists_rule (scp, thm, (qs, c, a)) =
 	"do_neg_exists_rule: Not an unconditional negated existential quantifier"
 
 and single_thm_to_rules scp thm = 
-  let (qs, c, a) = strip_qnt_cond (Formula.dest (Logic.dest_thm thm))
+  let (qs, c, a) = strip_qnt_cond (Logic.term_of thm)
   in 
   apply_first 
     [
@@ -615,67 +542,16 @@ let thm_to_rules scp thm =
   in 
   List.map (single_thm_to_rules scp) thmlst
 
-
-(** [make_thm_rule thm]:
-   make rule from theorem [thm]
- *)
-let make_thm_rule thm=
-  Simpset.make_rule 
-    (Logic.RRThm thm) (Formula.dest (Logic.dest_thm thm))
-(*
-   let qs, c, l, r=
-   Simpset.dest_rr_rule (Formula.dest (Logic.dest_thm thm))
-   in 
-   (qs, c, l, r, Logic.RRThm thm)
- *)
-
-(**
-   [thm_to_entries scp thm]: convert a theorem to a list of 
-   simpset entries.
- *)   
-let thm_to_entries scp thm=
-  let rules = thm_to_rules scp thm
-  in 
-  List.map make_thm_rule rules
-
-(**
-   [simpset_add_thm scp sset thm]: add rewrites from [thm] to
-   simpset [sset].
- *)   
-let add_simp_rule sset entries=
-  List.fold_left (fun s e-> Simpset.add_rule e s) sset entries
-
-let simpset_add_thm scp sset thm=
-  let entries = thm_to_entries scp thm
-  in 
-  add_simp_rule sset entries
-
-let simpset_add_thms scp set thms =
-  List.fold_left (simpset_add_thm scp) set thms
-
-(** [add_simp_rule scp set rls]
-   add (properly formed rules) [rls] to set [set]
-   in scope [scp]
- *)
-
-
-(** {6c} Converting assumptions to rewrite rules *)
-
+(** {6c Converting assumptions to rewrite rules} *)
 
 (** 
-   [asm_rewrite info thm tg g]:
+   [asm_rewrite thm tg g]:
 
    Rewrite assumption [tg] with rule [thm] = |- a=b
 
    tg:a, asms |- concl
    -->
    tg:b, asms |- concl
-
-   info: [] [tg] []
- *)
-(*
-   let asm_rewrite thm tg g=
-   simple_asm_rewrite_tac thm (Drule.ftag tg) g
  *)
 let asm_rewrite thm tg g=
   once_rewrite_tac [thm] ~f:(Drule.ftag tg) g
@@ -778,7 +654,7 @@ and neg_exists_rule_asm (tg, (qs, c, a)) g=
 
 and single_asm_to_rule tg goal = 
   let trm = 
-    Formula.dest
+    Formula.term_of
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
 	    (Drule.sequent goal)))
@@ -798,18 +674,6 @@ and single_asm_to_rule tg goal =
 let asm_to_rules tg ret goal = 
   ret := [tg];
   single_asm_to_rule tg goal
-
-let simpset_add_asm sset tg g=
-  let trm = 
-    Formula.dest
-      (Logic.drop_tag 
-	 (Logic.Sequent.get_tagged_asm tg 
-	    (Drule.sequent g)))
-  in 
-  let rule = Simpset.make_rule (Logic.Asm (Drule.ftag tg)) trm
-  in 
-  add_simp_rule sset [rule]
-
 
 (* 
    [prepare_concls data cs except g]
@@ -852,32 +716,6 @@ let prepare_concl data except c goal =
 	      data_tac data_fn ()] g)
        ] goal
 
-(*
-   let prepare_concl data except c goal =
-   if(except c)
-   then skip goal
-   else 
-   let info=Drule.mk_info()
-   and data_fn a = data:=(c, a)::(!data)
-   in 
-   seq [Logic.Rules.copy_cncl (Some info) (Drule.ftag c); 
-   (fun g -> 
-   let c1 = 
-   Lib.get_one (Drule.formulas info) 
-   (Failure "Simplib.prepare_concl")
-   in 
-   ignore(Drule.empty_info info);
-   negate_concl (Some info) (Drule.ftag c1) g); 
-   (fun g ->
-   let a=
-   Lib.get_one (Drule.formulas info) 
-   (Failure "Simplib.prepare_concl")
-   in 
-   seq 
-   [single_asm_to_rule a;
-   data_tac data_fn a] g)
-   ] goal
- *)
 
 let prepare_concls data cs except goal=
   let d=ref []
@@ -921,26 +759,6 @@ let prepare_asm data except a goal =
 	      data_tac data_fn ()] g)
        ] goal
 
-(*
-   let prepare_asm data except a goal =
-   if(except a)
-   then skip goal
-   else 
-   let info=Drule.mk_info()
-   and data_fn a1 = data:=(a, a1)::(!data)
-   in 
-   seq [Logic.Rules.copy_asm (Some info) (Drule.ftag a); 
-   (fun g ->
-   let a1=
-   Lib.get_one (Drule.formulas info) 
-   (Failure "Simplib.prepare_asm")
-   in 
-   seq 
-   [single_asm_to_rule a1;
-   data_tac data_fn a1] g)
-   ] goal
- *)
-
 let prepare_asms data ams except goal=
   let d=ref []
   in 
@@ -950,178 +768,3 @@ let prepare_asms data ams except goal=
      data_tac (fun () -> data:=!d) ()
    ] goal
 
-(** [make_simp_asms ts except goal]
-
-   Make a list of simp rules from the assumptions with tags 
-   in [ts], ignoring those for which [except] is true.
- *)
-let make_simp_asm tg goal=
-  let trm = 
-    Formula.dest
-      (Logic.drop_tag 
-	 (Logic.Sequent.get_tagged_asm tg 
-	    (Drule.sequent goal)))
-  in 
-  let rule = Simpset.make_rule (Logic.Asm (Drule.ftag tg)) trm
-  in 
-  (tg, rule)
-
-let make_simp_asms tags except goal = 
-  let rec make_aux xs rslt=
-    match xs with
-      [] -> List.rev rslt
-    | t::ts -> 
-	if(except t) 
-	then make_aux ts rslt
-	else make_aux ts ((make_simp_asm t goal)::rslt)
-  in 
-  make_aux tags []
-
-
-(** [make_simp_asm_rules ts except goal]
-
-   Make a list of simp rules from the tagged formulas
-   in [ts], ignoring those for which [except] is true.
- *)
-let make_simp_asm_rule tg form=
-  let trm =  Formula.dest form
-  in 
-  Simpset.make_rule (Logic.Asm (Drule.ftag tg)) trm
-
-let make_simp_asm_rules except forms = 
-  let rec make_aux xs rslt=
-    match xs with
-      [] -> List.rev rslt
-    | (t, f)::fs -> 
-	if(except (t, f)) 
-	then make_aux fs rslt
-	else make_aux fs ((make_simp_asm_rule t f)::rslt)
-  in 
-  make_aux forms []
-
-
-
-(* OLD STUFF *)
-(*
-(** [test_apply_tac info ttacs tg goal]
-
-   [ttacs] is a list of test-tactic pairs.
-   Each test is applied to asm tagged [tg] in first subgoal of [goal].
-   The tactic [tac] of the first test to suceed is applied to [goal].
-   [info] is passed to [tac].
-   raises Not_found if no tactic matches.
- *)
-let test_apply_tac info ttac tg goal=
-  let rec app_aux ts=
-    match ts with 
-      [] -> raise Not_found
-    | (tst, tac)::tts ->
-	if(tst 
-	     (Formula.dest
-		(Logic.drop_tag 
-		   (Logic.Sequent.get_tagged_asm tg 
-		      (Drule.sequent goal)))))
-	then 
-	  tac info tg goal
-	else 
-	  app_aux tts 
-  in 
-  app_aux ttac 
-
-(** [prep_asm_rule info tg goal]:
-
-   Prepare assumption [tg] to be used as a rewrite rule.
- *)
-
-
-(** [is_cond_fact t]
-   [t] is of the form [a=>b] where [b] isn't an equality
- *)
-let is_cond_true_fact trm=
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  if(Logicterm.is_implies t)
-  then 
-    (let (_, args)=Term.dest_fun t
-    in 
-    let (asm, cncl)=Lib.get_two args (Not_found)
-    in 
-    not((Logicterm.is_equality cncl) or (Logicterm.is_neg cncl)))
-  else false
-
-let is_cond_false_fact trm=
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  if(Logicterm.is_implies t)
-  then 
-    (let (_, args)=Term.dest_fun t
-    in 
-    try 
-      let (asm, cncl)=Lib.get_two args (Not_found)
-      in 
-      (Logicterm.is_neg cncl)
-    with _ -> false)
-  else false
-
-let is_false_fact trm= 
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  Logicterm.is_neg t
-
-let is_true_fact t= true
-
-let cond_true_asm_to_rule info tg g=
-  asm_rewrite (get_cond_rule_true_ax()) tg g
-
-let cond_false_asm_to_rule info tg g=
-  asm_rewrite (get_cond_rule_false_ax()) tg g
-
-let false_asm_to_rule info tg g=
-  asm_rewrite (get_rule_false_ax()) tg g
-
-let true_asm_to_rule info tg g=
-  asm_rewrite (get_rule_true_ax()) tg g
-
-
-let asm_rule_makers=
-  [
-   (is_cond_false_fact, cond_false_asm_to_rule);
-   (is_cond_true_fact, cond_true_asm_to_rule);
-   (is_false_fact, false_asm_to_rule);
-   (is_true_fact, true_asm_to_rule)
- ]
-
-let prep_asm_rule info tg g=
-  test_apply_tac info asm_rule_makers tg g
-
-
-(** [term_cond_rewrite scp rl fm]:
-   for rewrite rule [rl]=|-l=r,
-   rewrite conditional term [fm]= c=>a=l to c=>a=r
-   in scope [scp]
- *)
-let term_cond_rewrite scp rl fm =
-  let qs, cnd, qb=strip_qnt_cond fm
-  in 
-  let rrtrm = Formula.dest (Logic.dest_thm rl)
-  in 
-  let cond = dest_option cnd
-  in 
-  Drule.rebuild_qnt Basic.All qs 
-    (Logicterm.mk_implies cond
-       (Rewrite.rewrite scp
-	  (Rewrite.control 
-	     ~dir:Rewrite.rightleft
-	     ~strat:Rewrite.BottomUp
-	     ~max:None) [Rewrite.rule rrtrm] qb))
-    
-(** [form_cond_rewrite scp rl fm]:
-   for rewrite rule [rl]=|-l=r,
-   rewrite conditional formula [fm]= c=>a=l to c=>a=r
-   in scope [scp]
- *)
-let form_cond_rewrite scp rl fm =
-  Formula.make scp 
-    (term_cond_rewrite scp rl (Formula.dest fm))
-
-*)

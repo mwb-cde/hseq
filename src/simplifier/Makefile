@@ -1,7 +1,7 @@
 # Header, code and optimised code files
 
-HEADERS = simputils.cmi simpset.cmi simpconvs.cmi simplifier.cmi simplib.cmi
-CODE = simputils.cmo simpset.cmo simpconvs.cmo simplifier.cmo simplib.cmo
+HEADERS = simputils.cmi simpconvs.cmi simpset.cmi simplifier.cmi simplib.cmi
+CODE = simputils.cmo simpconvs.cmo simpset.cmo simplifier.cmo simplib.cmo
 OPTCODE = simputils.cmx simpset.cmx simpconvs.cmo simplifier.cmx simplib.cmx
 
 LIBFILE= simplifier.cma
