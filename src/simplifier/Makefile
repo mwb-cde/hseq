@@ -1,8 +1,8 @@
 # Header, code and optimised code files
 
-HEADERS = prop.cmi supinf.cmi nums.cmi
-CODE = prop.cmo supinf.cmo nums.cmo
-OPTCODE = prop.cmx supinf.cmx nums.cmx
+HEADERS = simputils.cmi simpset.cmi simplifier.cmi
+CODE = simputils.cmo simpset.cmo simplifier.cmo
+OPTCODE = simputils.cmx simpset.cmx simplifier.cmx
 
 LIBFILE= simplifier.cma
 OPTLIB= simplifier.cmxa

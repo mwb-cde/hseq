@@ -1,3 +1,7 @@
+(* 
+   Function to prepare theorems and assumptions being added to a simpset.
+*)
+
 module Simpconvs =
   struct
 
@@ -93,7 +97,7 @@ let simple_rewrite_rule scp rule thm=
  *)
 
 let make_iff_equals_ax ()=
-  let iff_l1 = prove_goal <<!x y: (x = y ) => (x => y)>>
+  let iff_l1 = prove_goal << !x y: (x = y ) => (x => y) >>
     (seq[flatten_tac; replace_tac ~asms:[!~ 2] ~f:(!~1); basic])
   in 
   let iff_l2 = prove_goal
@@ -472,5 +476,320 @@ let asm_rule_makers=
 let prep_asm_rule info tg g=
   test_apply_tac info asm_rule_makers tg g
 
+(* Previously in  simpset.ml *)
+
+(* needed properties *)
+
+(*
+   let iff_equals_ax = saxiom "! a b: (a iff b)=(a=b)"
+   let rule_false_ax = saxiom "! a : (not a)=(a=false)"
+   let rule_true_ax = saxiom "! a : a=(a=true)"
+ *)
+
+(* prepare simplifier rules *)
+
+(*
+   Two types of rule: theorems and assumptions 
+   for both: a formula f is transformed to T(f) as follows:
+
+   T(x and y) = T(x), T(y)
+   T(x iff y) = T(x=y), if this results in a rewrite rule
+   T(not x) = x=false
+   T(x) = x=true
+
+   conditional formulas: 
+   T(c=>x) transformed as above 
+   except 
+   T(c=>(x and y)) = c=>(x and y)
+
+   rewrite rules:
+   T(x=y) = x=y, if all variables in y also occur in x 
+   = (x=y)=true
+
+   T(c=>x=y) 
+   = c=>(x=y), if all variables in y and c occur in x
+   = c=>((x=y)=true), if variables in y don't occur in x 
+   and all variables in c occur in x
+   = (c=>x=y)=true, otherwise
+ *)
+
+
+(* utility functions *)
+
+
+(** [find_variables is_var vars trm]
+   find all subterms [t] of [trm] s.t. [(is_var t)] is true.
+   add [t] to [vars]
+   return [vars]
+*)
+    let find_variables is_var vars trm=
+      let rec find_aux env t=
+	match t with
+	  Basic.Qnt(_, _, b) ->
+	    find_aux env b
+	| Basic.Bound(q) ->
+	    if(is_var q)
+	    then 
+	      (try ignore(Term.find t env); env
+	      with 
+		Not_found ->
+		  (Term.bind t t env))
+	    else env
+	| Basic.Typed(tr, _) -> find_aux env tr
+	| Basic.App(f, a) -> 
+	    let nv=find_aux env f
+	    in find_aux nv a
+	| _ -> env
+      in find_aux vars trm
+
+(** [check_variables is_var vars trm]
+   check that all subterms [t] of [trm] s.t. [is_var t] 
+   is in [vars]
+*)   
+    let check_variables is_var vars trm=
+      let rec check_aux t=
+	match t with
+	  Basic.Qnt(_, _, b) ->
+	    check_aux b
+	| Basic.Bound(q) ->
+	    if(is_var q)
+	    then 
+	      ignore(Term.find t vars)
+	    else ()
+	| Basic.Typed(tr, _) -> check_aux tr
+	| Basic.App(f, a) -> check_aux f; check_aux a
+	| _ -> ()
+      in check_aux trm
+
+(**  [is_rr_rule qs c l r]: 
+
+   Check that [c=>(l=r)] is a rewrite rule.
+
+   All variables (in [qs]) occuring in [c] or [r] must also occur in [l]
+   return: [(cnd, rhs)]
+   where 
+   [cnd]= [Some(true)] iff all variables in [c] occur in [l]
+      = [None] if no condition
+   [rhs]= [Some(true)] iff all variables in [r] occur in [l]
+      = [None] if no [rhs]
+ *)
+    let is_rr_rule qs c l r=
+      let is_var b=List.mem b qs
+      and rret=ref (Some true)
+      and cret=ref (Some true)
+      in
+      let vars=find_variables is_var (Term.empty_subst()) l
+      in 
+      (* check rhs *)
+      (try
+	match r with 
+	  None -> rret:=None | 
+	  Some (rhs) -> check_variables is_var vars rhs;
+      with Not_found -> rret:=(Some false));
+      (* check cond (if any) *)
+      (try
+	(match c with 
+	  None -> rret:=None 
+	| Some(cnd) -> check_variables is_var vars cnd)
+      with Not_found -> cret:=(Some false));
+      (!cret, !rret)
+
+(* [dest_rr_rule trm]: 
+   Split rule [trm] into binders, condition, lhs, rhs 
+   rules are of the form:
+   [c=>(l=r)] or [l=r]
+ *)
+    let dest_rr_rule trm =
+      (* Get leading quantifiers *)
+      let (qs, t1)=strip_qnt (Basic.All) trm 
+      in 
+      (* test for conditional equalities *)
+      let (cnd, rl)=
+	if (is_implies t1)         
+	then (* is conditional *)
+	  (let (asm, cncl)=dest_implies t1
+	  in 
+	  (Some(asm), cncl))
+	else  (* is not conditional *)
+	  (None, t1)
+      in 
+      (* break the equality *)
+      if (Logicterm.is_equality rl)
+      then 
+	let (lhs, rhs)=Logicterm.dest_equality rl
+	in (qs, cnd, lhs, rhs)
+      else 
+	  raise (Failure 
+		   ("Not an equality or a conditional equality\n"))
+
+(** [strip_qnt_cond trm]
+   split rule [trm] into variable binders, condition, equality
+   rules are of the form:
+   a=>c
+   c
+ *)
+    let strip_qnt_cond t =
+      let (qs, t1)=strip_qnt (Basic.All) t  (* get leading quantifiers *)
+      in 
+      if (is_implies t1)         (* deal with conditional equalities *)
+      then 
+	(let (_, args)=dest_fun t1
+	in 
+	match args with
+	  [a; c] -> (qs, Some a, c)
+	| _  -> 
+	    raise 
+	      (termError "strip_qnt_cond: not a valid implication" [t]))
+      else
+	(qs, None, t1)
+
+
+(* conversions for manipulating rules *)
+
+
+(** [term_cond_rewrite scp rl fm]:
+   for rewrite rule [rl]=|-l=r,
+   rewrite conditional term [fm]= c=>a=l to c=>a=r
+   in scope [scp]
+ *)
+    let term_cond_rewrite scp rl fm =
+      let qs, cnd, qb=strip_qnt_cond fm
+      in 
+      let rrtrm = Formula.dest_form (Logic.dest_thm rl)
+      in 
+      rebuild_qnt Basic.All qs 
+	(Logicterm.mk_implies (dest_option cnd)
+	   (Rewrite.rewrite scp
+	      (Rewrite.control 
+		 ~dir:Rewrite.rightleft
+		 ~strat:Rewrite.BottomUp
+		 ~max:None) [rrtrm] qb))
+	
+(** [form_cond_rewrite scp rl fm]:
+   for rewrite rule [rl]=|-l=r,
+   rewrite conditional formula [fm]= c=>a=l to c=>a=r
+   in scope [scp]
+ *)
+    let form_cond_rewrite scp rl fm =
+      Formula.mk_form scp 
+	(term_cond_rewrite scp rl (Formula.dest_form fm))
+
+(* functions to make simp rules from assumptions *)
+
+
+    let monitor = ref None
+
+(* make_entry t:
+   y -> y=true
+   x=y -> x=y        (if a rr rule)
+   -> (x=y)=true (otherwise)
+   c=>x=y -> c=>x=y        (if a rr rule)
+   -> (c=>x=y)=true (otherwise)
+ *)   
+
+
+(* addition of rules *)
+
+(** [is_valid_rule rl]:
+   true if [th] is a valid rule
+*)
+
+(** [make_rule src]:
+   make rule from theorem or assumption [src] in scope [scp]
+*)
+    let make_rule rl=
+      match rl with
+	Logic.RRThm(th) -> 
+	  let qs, c, l, r=
+	    dest_rr_rule (Formula.dest_form (Logic.dest_thm th))
+	  in 
+	  (qs, c, l, r, rl)
+      | _ -> failwith "make_rule: can only handle theorems"
+
+
+(** [add_simp_rule scp set rls]
+   add (properly formed rules) [rls] to set [set]
+   in scope [scp]
+*)
+    let add_simp_rule scp sset src =
+      let nset=ref sset
+      in 
+      let rec add_aux thms =
+	match thms with
+	  [] -> !nset
+	| rl::ts -> 
+	    nset:=add_rule (make_rule rl) (!nset);
+	    add_aux ts
+      in 
+      add_aux src
+
+(*
+    let add_sqnt_asms sset asms sqnt =
+      let nset=ref sset
+      in 
+      let rec get_asms nasms bl= 
+	match nasms with 
+	  [] -> List.rev bl
+	| ((_, (_, _, _, _, Logic.Tagged(t))) ::na) 
+	  -> get_asms nasms (t::bl)
+	| _ -> failwith "add_sqnt_asms.get_asms"
+      in 
+      let rec add_aux asml =
+	match asml with
+	  [] -> ()
+	| rl::ts -> 
+	    nset:=add_rule rl (!nset);
+	    add_aux ts
+      in 
+      let (ents, ng)=make_asm_entry asms [] sqnt
+      in 
+      add_aux ents;
+      (!nset, get_asms ents, ng)
+*)
+
+
 end
+
+(* Previously in simpset.ml *)
+
+   open Simpset;;
+
+
+   let scope () = Tpenv.scope();;
+
+   let saxiom str = 
+   Logic.mk_axiom 
+   (Formula.form_of_term (scope()) (Tpenv.read str));;
+
+   let get_tags asms g=
+   let sqnt=Logic.get_sqnt g
+   in 
+   List.map (fun i -> Logic.Sequent.index_to_tag i sqnt) asms;;
+
+(*
+   let mk_entry asm g=
+   make_asm_entry (get_tags asm g) [] g;;
+*)   
+(*
+   let mk_goal str= 
+   Logic.mk_goal (scope()) 
+   (Formula.mk_form (scope()) (read str));;
+
+   goal <<(!a b: a=>b) => true>>;;
+   by  implI;;
+   let gl=curr_goal(top());;
+   let sqnt=curr_sqnt gl;;
+   let thm=saxiom "!a: a= (a=true)";;
+   let scp=Logic.scope_of sqnt;;
+   let info=ref (Logic.Rules.make_tag_record [][][]);;
+   let ftg=Logic.index_to_tag (-1) sqnt;;
+
+   let g= implI (mk_goal "(!a b: a iff b) => true");;
+*)
+
+   let scp=scope();;
+
+   let rl=saxiom "!a: a= (a=true)";;
+   let thm=saxiom"(!a b: a=>b)";;
+
 
