@@ -5,6 +5,16 @@ module Pkit=Parserkit.Grammars
       let matches = Lexer.match_tokens
     end)
 
+(* default precedence, fixity and associativity  *)
+let default_term_prec = 0
+let default_term_assoc = Parserkit.Info.non_assoc
+let default_term_fixity=Parserkit.Info.nonfix
+
+let default_type_prec = 0
+let default_type_assoc = Parserkit.Info.non_assoc
+let default_type_fixity= Parserkit.Info.nonfix
+
+
 module Grammars  =
 struct
 
@@ -173,13 +183,15 @@ let token_info tbl t=
   let mk_token_info x =
     match x with
       Some(_, f, p) ->  {fixity=f; prec=p}
-    | _ -> {fixity = nonfix; prec=0}
+    | _ -> {fixity = default_term_fixity; 
+	    prec=default_term_prec}
 
   let mk_type_token_info tbl t=
     match (token_info tbl t) with
       Some(_, f, p)-> 
 	{fixity=f; prec=p}
-    | _ -> {fixity=nonfix; prec=0}
+    | _ -> {fixity=default_type_fixity; 
+	    prec=default_type_prec}
 
   let mk_empty_inf tbl type_tbl= 
     { 

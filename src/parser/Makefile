@@ -37,8 +37,8 @@ OPTLIB=parser.cmxa
 .cmx.cmxa:
 	ocamlopt -a ${INCLUDE} $<
 
-HEADERS = parserkit.cmi lexer.cmi parser.cmi
-CODE = parserkit.cmo lexer.cmo parser.cmo
+HEADERS = parserkit.cmi lexer.cmi parser.cmi 
+CODE = parserkit.cmo lexer.cmo parser.cmo 
 OPTCODE = lexers.cmx termlex.cmx termlexer.cmx parsers.cmx tparser.cmx
 
 all: ${HEADERS} ${CODE}
@@ -64,6 +64,8 @@ ${OPTLIB}: ${HEADERS} ${OPTCODE}
 		ocamlopt -o parser.cmxa -a ${INCLUDE} ${OPTCODE}
 
 opt: ${OPTLIB}
+
+printer: printer.cmi printer.cmo
 
 depend: 
 	ocamldep  *.ml* > depend
