@@ -70,6 +70,16 @@ module Utility:
       val (?%): Lexer.tok -> Basic.gtype phrase
     end
 
+(**
+   [typdef_data]:
+   Information returned by the typedef parsers 
+*)
+    type typedef_data =
+	NewType of (string * (string list))
+      | TypeAlias of (string * (string list) * Basic.gtype)
+      | Subtype of (string * (string list) 
+		      * Basic.gtype * Basic.term)
+
 module Grammars :
     sig
       type input = Pkit.input
@@ -185,9 +195,12 @@ val antiquote_parser : string phrase
       val types : infotyp -> Basic.gtype phrase
       val inner_types : infotyp -> Basic.gtype Pkit.phrase
       val atomic_types : infotyp -> Basic.gtype phrase
+(*
       val typedef :
 	  infotyp ->
 	    (string * string list option * Basic.gtype option)  phrase
+*)
+
       val mk_comb : Basic.term -> Basic.term list -> Basic.term
       val id_type_opt :
 	  (infotyp -> 'a Pkit.phrase) ->
@@ -209,6 +222,21 @@ val antiquote_parser : string phrase
       val primary : infotyp -> Basic.term phrase
       val lhs : infotyp -> (string * (string * Basic.gtype) list) phrase
       val args_opt : infotyp -> (string * Basic.gtype) list phrase
+
+(* Definitions *)
+
+(* Type definition *)
+      val simple_typedef :
+	  infotyp ->
+	    (string * string list option * Basic.gtype option)  phrase
+      val subtypedef: 
+	  infotyp -> 
+	    (string * string list option * Basic.gtype * Basic.term)  phrase
+      val typedef :
+	  infotyp -> (typedef_data)  phrase
+
+
+(* Term definition *)
       val defn :
 	  infotyp ->
 	    ((string * (string * Basic.gtype) list) * Basic.term) phrase
@@ -281,10 +309,11 @@ val init : unit -> unit
 (*
 val reset : unit -> unit
 *)
+
 (* 
    Parsers
    read a given phrase followed by an end of file/string
- *)
+*)
 
 (* mk_info: utility function *)
 val mk_info : unit -> Grammars.infotyp
@@ -296,8 +325,13 @@ val parse : 'a Pkit.phrase -> Pkit.input -> 'a
 
 val identifier_parser : Pkit.input -> Basic.ident
 
+(*
 val typedef_parser :
     Pkit.input -> string * string list option * Basic.gtype option
+*)
+val typedef_parser :
+    Pkit.input -> typedef_data
+
 val type_parser : Pkit.input -> Basic.gtype
 
 val defn_parser :

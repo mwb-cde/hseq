@@ -34,6 +34,17 @@ struct
 end
 
 
+(**
+   [typdef_data]:
+   Information returned by the typedef parsers 
+*)
+    type typedef_data =
+	NewType of (string * (string list))
+      | TypeAlias of (string * (string list) * Basic.gtype)
+      | Subtype of (string * (string list) 
+		      * Basic.gtype * Basic.term)
+
+
 module Grammars  =
   struct
 
@@ -687,24 +698,9 @@ module Grammars  =
       type_parsers_list:=List.remove_assoc n (!type_parsers_list)
 
 
-(** 
-   [typedef inf]
-   Parse a type definition.
-   Grammar:
-   ('(' {primed_id}* ')')? short_id ( '=' type )?
-*)
-    let typedef inf toks = 
-      (((optional 
-	  ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-	     >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
-	 -- 
-	 ((short_id type_id inf)
-	    -- 
-	    (optional 
-	       (((!$(mk_symbol Logicterm.equalssym))
-		   -- (types inf)) >> (fun (_, x) -> x)))))
-	 >> (fun (args, (name, defn)) -> (name, args, defn))) toks
 
+(*
+*)
 
 (**********
 *
@@ -1033,6 +1029,61 @@ module Grammars  =
 	  >> (fun (l, r) -> (l, r)))
      || (error ~msg:"Badly formed definition"))
 	toks
+
+
+(** 
+   [typedef inf]
+   Parse a type definition.
+   Grammar:
+   typedef ::= simple_typedef
+            | subtypedef
+
+   simple_typedef::= ('(' {primed_id}* ')')? short_id ( '=' type )?
+   subtypedef ::= type ':' term
+*)
+
+    let simple_typedef inf toks = 
+      (((optional 
+	  ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
+	     >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
+	 -- 
+	 ((short_id type_id inf)
+	    -- 
+	    (optional 
+	       (((!$(mk_symbol Logicterm.equalssym))
+		   -- (types inf)) >> (fun (_, x) -> x)))))
+	 >> (fun (args, (name, defn)) 
+	   -> (name, args, defn))) toks
+
+
+    let subtypedef inf toks = 
+      let lhs inp= 
+	((optional 
+	    ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
+	       >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
+	   -- 
+	   (short_id type_id inf)) inp
+      and rhs inp = 
+	(((types inf)
+	    -- (!$(Sym COLON))
+	    -- (form inf))
+	   >> (fun ((ty, _), f) -> (ty, f))) inp
+      in 
+      ((lhs -- (!$(mk_symbol Logicterm.equalssym)) -- rhs) 
+	>> (fun (((args, name), _), (ty, trm)) 
+	    -> (name, args, ty, trm))) toks
+
+
+    let typedef inf toks = 
+      (((subtypedef inf) >>
+	(fun (n, args, dtyp, set) -> 
+	  Subtype(n, Lib.get_option args [], dtyp, set)))
+     ||
+       ((simple_typedef inf) >> 
+	(fun (n, args, dtyp) -> 
+	  match dtyp with
+	    None -> NewType (n, Lib.get_option args [])
+	  | (Some dt) -> TypeAlias(n, Lib.get_option args [], dt)))) toks
 
   end
 
