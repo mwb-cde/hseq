@@ -224,22 +224,9 @@ let get_option x d=
   | Some(y) -> y
 
 
-(*
-module Tag=
-  struct
-(* 
-   Tags: 
-   unique identifiers with which to identify
-   sequents in a goal and formulas in a sequent
- *)
-    type t=string ref
-
-    let named x = ref x
-    let name x = !x
-
-    let null=ref ""
-    let create() = ref ""
-
-    let equal x y = x==y
-  end
-*)
+let date ()= Unix.time()
+let nice_date f= 
+  let tm = Unix.localtime f
+  in 
+  (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_yday, 
+   tm.Unix.tm_hour, tm.Unix.tm_min)

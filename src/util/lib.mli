@@ -78,17 +78,12 @@ val named_add:
 val get_option : 'a option -> 'a -> 'a
 
 
-(*
-(* tags *)
-module Tag:
-    sig
-      type t
 
-      val named: string->t
-      val name: t->string
-      val null:t
-      val create: unit->t
+(** [date]: used to ensure dependencies among theory files *)
+val date: unit -> float
 
-      val equal: t->t->bool
-    end
+(* 
+   [nice_date f]
+   return date [f] in form [(year, month, day, hour, min)]
 *)
+val nice_date: float -> (int * int * int * int * int)
