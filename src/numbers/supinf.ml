@@ -220,22 +220,28 @@ let mk_or a b = Prop.mk_or a b
 
 (* put comparisons in form using only less-than-or-equals *)
 
-let expand_comp t a b = 
+let expand_comp t = 
   match t with
-    Leq -> mk_leq a b
-  | Lt -> mk_leq (inc a) b
-  | Equals -> mk_and(mk_leq a b) (mk_leq b a)
-  | Geq -> mk_leq b a
-  | Gt -> mk_leq (inc b) a
+    (Leq, a, b) -> mk_leq a b
+  | (Lt, a, b) -> mk_leq (inc a) b
+  | (Equals, a, b) -> mk_and (mk_leq a b) (mk_leq b a)
+  | (Geq, a, b) -> mk_leq b a
+  | (Gt, a, b) -> mk_leq (inc b) a
 
-let expand_neg_comp t a b =   (* not (a comp b) *)
+let expand_neg_comp t =   (* not (a comp b) *)
   match t with
-    Leq -> expand_comp Gt a b         (* not (a<=b) -> a>b *)
-  | Lt -> mk_leq b a                  (* not (a<b) -> b<=a *)
-  | Equals ->                         (* not (a=b) -> a<b or b<a *)
-	(mk_or (expand_comp Lt a b) (expand_comp Lt b a))
-  | Geq -> expand_comp Lt a b         (* not (a>=b) -> a<b *)
-  | Gt -> mk_leq a b                  (* not (a>b) -> a<=b *)
+    (Leq, a, b) -> expand_comp (Gt, a, b)         (* not (a<=b) -> a>b *)
+  | (Lt, a, b) -> mk_leq b a                  (* not (a<b) -> b<=a *)
+  | (Equals, a, b) ->                         (* not (a=b) 
+						 -> 
+						 not (a<=b and b<=a)
+					         -> a>b or b>a
+					       *)
+	(mk_or 
+	   (expand_comp (Gt, a, b)) 
+	   (expand_comp (Gt, b, a)))
+  | (Geq, a, b) -> expand_comp (Lt, a, b)         (* not (a>=b) -> a<b *)
+  | (Gt, a, b) -> mk_leq a b                  (* not (a>b) -> a<=b *)
 
 
 (* put boolexpr into DNF form (expanding comparisons on the fly) *)
@@ -247,47 +253,50 @@ let expand_neg_comp t a b =   (* not (a comp b) *)
 
 (* push_conj x y -> x or y with conjunctions pushed into x and y *)
 
-(*
-open Prop
-
 let rec push_conj x y =          
   match (x, y) with
-    Or(a, b), _ -> Or(push_conj a y, push_conj b y)
-  | _, Or(a, b) -> Or(push_conj x a, push_conj x b)
-  | Bool (true), _ -> y
-  | _, Bool(true) -> x
-  | Bool(false), _ -> Bool(false)
-  | _, Bool(false) -> Bool(false)
-  | _ -> And(x, y)
+    Prop.Or(a, b), _ -> Prop.Or(push_conj a y, push_conj b y)
+  | _, Prop.Or(a, b) -> Prop.Or(push_conj x a, push_conj x b)
+  | Prop.Bool (true), _ -> y
+  | _, Prop.Bool(true) -> x
+  | Prop.Bool(false), _ -> Prop.Bool(false)
+  | _, Prop.Bool(false) -> Prop.Bool(false)
+  | _ -> Prop.And(x, y)
 
 (* make a dnf as a bool expr rather than a list of lists *)
 let mk_dnf_as_bexpr x =
   let rec dnf_top n p t =
     match t with
-      Bool b -> Bool(if n then (not b) else b)
-    | Comp(f, a, b) -> 
-      	if n then expand_neg_comp f a b
-      	else expand_comp f a b
-    | Not a -> dnf_top (not n) p a
-    | And(a, b) -> 
+      Prop.Bool b -> Prop.Bool(if n then (not b) else b)
+    | Prop.Bexpr(f) -> 
+      	if n 
+	then (expand_neg_comp f)
+      	else (expand_comp f)
+    | Prop.Var a -> t
+    | Prop.Equals(a, b) ->
+	dnf_top n p (Prop.Iff(a, b))
+    | Prop.Not a -> dnf_top (not n) p a
+    | Prop.And(a, b) -> 
       	if n 
       	then dnf_top (not n) p (mk_or (mk_not a) (mk_not b))
       	else 
 	  let na = (dnf_top n p a)
-	  in push_conj na (dnf_top n (Bool true) b)
-    | Or(a, b) -> 
+	  in push_conj na (dnf_top n (Prop.Bool true) b)
+    | Prop.Or(a, b) -> 
       	if n
       	then 
 	  dnf_top (not n) p (mk_and (mk_not a) (mk_not b))
       	else
 	  (mk_or(dnf_top n p a) (dnf_top n p b))
-    | Implies(a, b) -> dnf_top n p (mk_or (mk_not a) b)
-    | Iff(a, b) -> 
+    | Prop.Implies(a, b) -> dnf_top n p (mk_or (mk_not a) b)
+    | Prop.Iff(a, b) -> 
 	dnf_top n p (Prop.mk_and (Prop.mk_implies a b) (Prop.mk_implies b a))
-  in dnf_top false (mk_true()) x
-*)
+  in dnf_top false (Prop.mk_true()) x
 
+(*
 let mk_dnf_as_expr x =  Prop.dnf_to_disj (Prop.mk_dnf x)
+*)
+let mk_dnf_as_expr x =  mk_dnf_as_bexpr x
 
 let mk_ilp x =
 let rec ilp_conj x rs =
@@ -1166,7 +1175,7 @@ let remove_trivial_ineqs s =
 	  with Unknown -> true)
 	and nvs = (vars_of_env nb (vars_of_env  na VarSet.empty))
 	in 
-	if is_valid = false
+	if not(is_valid)
 	then raise Infeasible
 	else 
 	  if VarSet.is_empty nvs then
@@ -1211,32 +1220,53 @@ let solve_ineq_conj s =
   in 
   let solns = apply_elim ns nvs
   in 
-  if has_integer_solns solns
-  then solns
-  else raise Infeasible
+  match solns with
+    [] -> []
+  | _ -> 
+      if (has_integer_solns solns)
+      then solns
+      else raise Infeasible
 
 (*
-  for list of conjunction of inequalities ineqs:
+  for disjuntion list of conjunctions of inequalities ineqs:
    try to solve each 
-   if any fails then list of conjunctions is invalid 
-   (and therefore original formula is valid)
-   if all succeed then list is valid and original is invalid.
-   raise Has_solution if any conjunction is valid
+   if any succeeds then list of disjunctions is valid 
+   (and therefore original formula is invalid)
+   if all fail then list is invalid and original is valid.
+
+   return first set of solutions to make one of the conjunctions valid
+   (and original formula invalid).
+
+   raise Infeasible if all disjunctions are invalid (and original 
+   formula is valid).
+
    raise Possible_solution if any conjunction has real but not integer solns.
-  return true if all conjunctions are invalid.
 *)
 
+(*
 let rec solve_inequalities ineqs =
   match ineqs with
-    [] -> []
+    [] -> raise Infeasible
   | (x::xs) ->
       try
-	(let sln =solve_ineq_conj x
-	in 
-	raise (Has_solution sln))
+	solve_ineq_conj x
       with
 	Infeasible -> solve_inequalities xs
       |	a -> raise a
+*)
+let solve_inequalities ineqs =
+  let rec solve_aux eqs =
+    match eqs with
+      [] -> raise Infeasible
+    | (x::xs) ->
+	try 
+	  solve_ineq_conj x
+	with 
+	  Infeasible -> solve_aux xs 
+	| Has_solution soln -> soln
+	| err -> raise err
+  in 
+  solve_aux ineqs 
 
 (* decide t: 
    top level function.
@@ -1246,17 +1276,18 @@ let rec solve_inequalities ineqs =
    if valid raise Has_solutions with solutions.
    if undecidable raise Possible_solutions.
 *)
-
 let decide t =
   let ilps = 
     Lang.mk_ilp (Lang.mk_dnf_as_expr (Prop.mk_not  t))
   in 
   try 
-    ignore(solve_inequalities ilps); true
+    let solns =  solve_inequalities ilps
+    in 
+    raise (Has_solution solns)
   with 
-    (Has_solution x) -> raise (Has_solution x)
-  | (Possible_solution x) -> raise (Possible_solution x)
-  | x -> raise x
+    (Has_solution x) -> false
+  | (Possible_solution x) -> false
+  | Infeasible -> true
 
 let soln f a =
   try f a 

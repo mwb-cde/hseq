@@ -4,7 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
-val raiseError : string -> Basic.term list -> 'a
+val error : string -> Basic.term list -> exn
 
 val num_thy : string
 val plusid : Basic.ident
@@ -20,8 +20,9 @@ val ltid : Basic.ident
 val leqid : Basic.ident
 
 val numterm_to_expr :
-    int * (int * Basic.term) list ->
-  Gtypes.scope -> Basic.term -> (Supinf.expr * (int * (int * Basic.term) list) )
+    int * (int * Basic.term) list 
+  -> Gtypes.scope -> Basic.term 
+    -> (Supinf.expr * (int * (int * Basic.term) list) )
 
 val bool_type : Basic.gtype
 
@@ -57,6 +58,22 @@ val boolexpr_to_term :
 val simp_term_basic : Gtypes.scope -> Basic.term -> Basic.term
 val simp_term_rewrite : Gtypes.scope -> Basic.term -> Basic.term
 val simp_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
+
 val decide_term_basic : Gtypes.scope -> Basic.term -> bool
 val decide_term : Gtypes.scope -> Basic.term -> Basic.term
 val decide_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
+
+(**
+   [simp_conv scp t]: Conversion to simplify term [t].
+   Term [t] must be in the set which can be dealt which by SupInf.
+   Returns a theorem of the form [ |- t=t' ] where [t'] is the 
+   simplified term.
+
+   [decide_conv scp t]: Conversion to decide
+   Term [t] must be in the set which can be dealt which by SupInf.
+
+   Returns a theorem of the form [ |- t=t' ] where [t'] is 
+   either true or false.
+*)
+val simp_conv: Gtypes.scope -> Basic.term -> Logic.thm
+val decide_conv: Gtypes.scope -> Basic.term -> Logic.thm

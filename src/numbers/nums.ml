@@ -11,7 +11,7 @@
    to a boolexpr
 *)
 
-let raiseError s l = raise (Term.termError s l)
+let error s l = Term.term_error s l
 
 let num_type = Gtypes.mk_num
 
@@ -38,18 +38,19 @@ let mk_mult x =
     [a] -> Supinf.Mult (Num.num_of_int 1, a)
   | [Supinf.Val(a); b] -> Supinf.Mult(a, b)
   | [a; Supinf.Val(b)] -> Supinf.Mult(b, a)
-  | _ -> raiseError "mult: Badly formed integer expression" []
+  | _ -> raise (error "mult: Badly formed integer expression" [])
 
 let mk_minus x = 
   match x with 
     [a] -> Supinf.Mult(Num.minus_num Supinf.one_num, a)
   | [a; b] -> mk_plus [a; Supinf.Mult(Num.minus_num Supinf.one_num, b)]
-  | _ -> raiseError "minus: Badly formed integer expression" []
+  | _ -> raise (error "minus: Badly formed integer expression" [])
 
 let mk_negate x = 
   match x with
     [a] -> Supinf.Mult (Num.num_of_int (-1), a)
-  | _ -> raiseError "negate: Badly formed integer expression" []
+  | _ -> raise (error "negate: Badly formed integer expression" [])
+
 let num_thy = "nums"
 let plusid = Basic.mk_long num_thy "plus"
 let minusid = Basic.mk_long num_thy "minus"
@@ -57,7 +58,6 @@ let multid = Basic.mk_long num_thy "mult"
 let negid = Basic.mk_long num_thy "negate"
 let maxid = Basic.mk_long num_thy "max"
 let minid = Basic.mk_long num_thy "min"
-
 
 let num_fns =
   [ plusid, mk_plus;  
@@ -77,7 +77,7 @@ let numterm_to_expr var_env scp t =
     match x with
       Basic.Id(f, ty) -> 
 	if (Gtypes.is_var ty)
-	then raiseError "Variable type in term" [x]
+	then raise (error "Variable type in term" [x])
 	else 
 	  (Typing.typecheck scp x (num_type);
 	   let c, e=add_var (!env) x
@@ -85,28 +85,28 @@ let numterm_to_expr var_env scp t =
 	   Supinf.Var(c))
     | Basic.Free(n, ty) -> 
 	if (Gtypes.is_var ty)
-	then raiseError "Variable type in term" [x]
+	then raise (error "Variable type in term" [x])
 	else 
 	  (Typing.typecheck scp x (num_type);
 	   let c, e=add_var (!env) x
 	   in env:=e;
 	   Supinf.Var(c))
     | Basic.Typed(y, ty) -> conv_aux y
-    | Basic.Qnt(_) -> raiseError "Badly formed integer expression" [x]
+    | Basic.Qnt(_) -> raise (error "Badly formed integer expression" [x])
     | Basic.Const(Basic.Cnum(i)) -> Supinf.Val(i)
-    | Basic.Const(_) -> raiseError "Badly formed integer expression" [x]
+    | Basic.Const(_) -> raise (error "Badly formed integer expression" [x])
     | Basic.App(_, _) ->
 	let f, args = Term.dest_fun x
 	in 
 	let cnstr = 
 	  try get_num_fn f
 	  with Not_found -> 
-	    (raiseError "Badly formed integer expression" [x])
+	    raise (error "Badly formed integer expression" [x])
 	in 
 	cnstr (List.map conv_aux args)
     | Basic.Bound(_) ->
 	(try Supinf.Var(get_var !env x)
-	with Not_found -> raiseError "Badly formed integer expression" [x])
+	with Not_found -> raise (error "Badly formed integer expression" [x]))
   in 
   let nume = conv_aux t
   in 
@@ -161,9 +161,9 @@ let compterm_to_compexpr env scp fnid args=
 	in let (nb, nenv) = numterm_to_expr env scp b
 	in (cnstr na nb, nenv))
       with Not_found -> 
-	raiseError "Unknown comparison function" [Term.mk_fun fnid args])
+	raise (error "Unknown comparison function" [Term.mk_fun fnid args]))
   | _ -> 
-      raiseError "Badly formed expression" [Term.mk_fun fnid args]
+      raise (error "Badly formed expression" [Term.mk_fun fnid args])
 
 
 let bool_type = Gtypes.mk_bool
@@ -187,7 +187,7 @@ let strip_univs scp bvar_env var_env t =
 	(try
 	  (Typing.typecheck scp nx (bool_type);
 	   benv:=snd(add_var !benv nx))
-	with _ -> raiseError "Badly formed expression" [t])))
+	with _ -> raise (error "Badly formed expression" [t]))))
   in
   List.iter add_qntvar rqnts;
   (rqnts, b, !benv, !nenv)
@@ -196,32 +196,32 @@ let strip_univs scp bvar_env var_env t =
 let mk_not x =
   match x with
     [a] -> Prop.mk_not a
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 let mk_and x =
   match x with
     [a; b] -> Prop.mk_and a b
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 let mk_or x =
   match x with
     [a; b] -> Prop.mk_or a b
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 let mk_implies x =
   match x with
     [a; b] -> Prop.mk_implies a b
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 let mk_iff x =
   match x with
     [a; b] -> Prop.mk_iff a b
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 let mk_bool_equals x =
   match x with
     [a; b] -> Prop.mk_equals a b
-  | _ -> raiseError "Badly formed expression" []
+  | _ -> raise (error "Badly formed expression" [])
 
 
 let bool_fns =
@@ -260,7 +260,7 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
     match x with
       Basic.Id(f, ty) -> 
 	if (Gtypes.is_var ty)
-	then raiseError "Variable type in term" [x]
+	then raise (error "Variable type in term" [x])
 	else 
 	  (Typing.typecheck scp x (bool_type);
 	   let c, e=add_var (!benv) x
@@ -268,18 +268,18 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
 	   Prop.Var(c))
     | Basic.Free(n, ty) -> 
 	if (Gtypes.is_var ty)
-	then raiseError "Variable type in term" [x]
+	then raise (error "Variable type in term" [x])
 	else 
 	  (Typing.typecheck scp x (bool_type);
 	   let c, e=add_var (!benv) x
 	   in benv:=e;
 	   Prop.Var(c))
     | Basic.Typed(y, ty) -> conv_aux y
-    | Basic.Qnt(_) -> raiseError "Badly formed expression" [x]
+    | Basic.Qnt(_) -> raise (error "Badly formed expression" [x])
     | Basic.Const(Basic.Cbool(b)) -> 
 	if b then Prop.mk_true() else Prop.mk_false()
     | Basic.Const(_) -> 
-	raiseError "Badly formed expression (Const)" [x]
+	raise (error "Badly formed expression (Const)" [x])
     | Basic.App(_, args) ->
 	let f, args = Term.dest_fun x
 	in 
@@ -293,12 +293,12 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
 	      in 
 	      nenv:=tnenv; ne)
 	    with _ -> 
-	      (raiseError "Badly formed expression (App)" [x]))
+	      (raise (error "Badly formed expression (App)" [x])))
     | Basic.Bound(b) ->
 	let (q, _, qty) = Basic.dest_binding b
 	in 
 	if (Gtypes.is_var qty)
-	then raiseError "Variable type in bound term" [x]
+	then raise (error "Variable type in bound term" [x])
 	else 
 	  match q with
 	    Basic.All -> 
@@ -306,7 +306,7 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
 		 let c, e=add_var (!benv) x
 		 in benv:=e;
 		 Prop.Var(c))
-	  | _ -> raiseError "Badly formed expression (Bound)" [x]
+	  | _ -> raise (error "Badly formed expression (Bound)" [x])
   in (conv_aux t, !benv, !nenv)
 
 (* term_to_boolexpr scp t *)
@@ -334,7 +334,7 @@ let expr_to_numterm env t =
 	Term.mk_fun maxid (List.map conv_aux args)
     | Supinf.Min(args) ->
 	Term.mk_fun minid (List.map conv_aux args)
-    | _ -> raiseError "Invalid expression" []
+    | _ -> raise (error "Invalid expression" [])
   in conv_aux t
 
 (* compexpr_to_term: conversion expression to comparison *)
@@ -433,7 +433,7 @@ let decide_term_basic scp t =
   try
     Supinf.decide e
   with Supinf.Possible_solution _ -> 
-    raiseError "Numbers: Undecidable term" [t]
+    raise (error "Numbers: Undecidable term" [t])
 
 
 (* decide_term scp t: 
@@ -451,9 +451,25 @@ let decide_term scp t =
    return the rule as an axiom
    or raise an exception
 *)
+let decide_rewrite scp f =
+  let nt = Formula.term_of f
+  in 
+  Logic.mk_axiom (Formula.make scp (decide_term scp nt))
 
 let decide_rewrite scp f =
   let nt = Formula.term_of f
   in 
   Logic.mk_axiom (Formula.make scp (decide_term scp nt))
 
+
+let simp_conv scp trm = 
+  let nt = simp_term_basic scp trm
+  in 
+  Logic.mk_axiom (Formula.make scp nt)
+
+
+let decide_conv scp trm = 
+  let nt = 
+    Logicterm.mk_equality trm (Term.mk_bool (decide_term_basic scp trm))
+  in 
+  Logic.mk_axiom (Formula.make scp nt)
