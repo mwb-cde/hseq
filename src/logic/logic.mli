@@ -50,6 +50,14 @@ module Skolem:
 
     end
 
+type label = 
+    FNum of int
+  | FTag of Tag.t
+
+type rr_type = 
+    Asm of label
+  | RRThm of thm
+
 module Sequent:
     sig
       type t
@@ -62,6 +70,49 @@ module Sequent:
       val sklm_cnsts: t -> Skolem.skolem_cnst list
       val sqnt_tyvars: t -> Basic.gtype list
       val sqnt_tag: t->Tag.t
+
+(**
+   [split_at_?cond? x]
+   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
+   and [c] is element satisfying [?cond?].
+
+   @raise Not_found if no element of [x] satisifies the condition.
+
+   [split_at_index i x]:
+   [c] is the [i]th element of [x] (counting from 0).
+
+   [split_at p x]:
+   [c] is the first element of [x] such that [p x] is true.
+
+   [split_at_tag t x]:
+   [c] is the formula in [x] tagged with [t].
+
+   [split_at_label t x]:
+   [c] is the formula in [x] labelled [l].
+*)
+val split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
+val split_at: ('a -> bool) -> 'a list -> ('a list * 'a * 'a list)
+val split_at_tag: 
+    Tag.t -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+val split_at_label: 
+    label -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+
+(*
+   [split_at_asm lbl x]:
+   [split_at_concl lbl x]:
+
+   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
+   and [c] is the formula in [x] identified by label [lbl].
+
+   [split_at_asm lbl x]:
+   raise Not_found if [lbl=FNum i] and i>=0
+
+   [split_at_concl lbl x]:
+   raise Not_found if [lbl=FNum i] and i<0
+*)
+
 
 (* get/delete/copy particular assumptions/conclusions *)
       val get_asm : int -> t -> tagged_form
@@ -91,24 +142,12 @@ type goal
 (* conversion: a function from a theorem to one or more theorems *)
 type conv= thm list -> thm list
 
-(* label: sequent formula identifiers *)
 
-type label = 
-    FNum of int
-  | FTag of Tag.t
+
 
 val label_to_tag: label -> Sequent.t -> Tag.t
 val label_to_index: label -> Sequent.t -> int
 
-(*
-   rr_type: where to get rewrite rule from
-   Asm : numbered assumption
-   Tagged: tagged assumption
-   RRThm: given theorem
- *)
-type rr_type = 
-    Asm of label
-  | RRThm of thm
 
 (* 
    cdefn:
@@ -559,7 +598,19 @@ module Rules:
    where ctrl is the rewriting control.
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
+
+
+   rewriteA ctrl simple thms j sq: rewrite assumption j
+   rewriteC ctrl simple thms j sq: rewrite conclusion j
+
  *)
+      val rewriteA : info option 
+	-> ?ctrl:Rewrite.control
+	  -> rr_type list -> label -> rule
+      val rewriteC : info option 
+	-> ?ctrl:Rewrite.control
+	  -> rr_type list -> label -> rule
+
       val rewrite : info option 
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> rule
