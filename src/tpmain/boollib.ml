@@ -1,8 +1,8 @@
 (*-----
- Name: boollib.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: boollib.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 
 open Drule
@@ -20,45 +20,45 @@ module BaseTheory=
 
       ignore
 	(declare
-	(read_unchecked ((Basic.name Logicterm.equalsid)^": 'a -> 'a -> bool"))
-	~pp:(1000, infixl, Some"="));
+	   (read_unchecked ((Basic.name Logicterm.equalsid)^": 'a -> 'a -> bool"))
+	   ~pp:(1000, infixl, Some"="));
       ignore
 	(declare
-	(read_unchecked ((Basic.name Logicterm.notid)^": bool -> bool"))
-	~pp:(110, prefix, Some "not"));
+	   (read_unchecked ((Basic.name Logicterm.notid)^": bool -> bool"))
+	   ~pp:(110, prefix, Some "not"));
       ignore
 	(declare
-	(read_unchecked ((Basic.name Logicterm.andid)^":bool->bool->bool"))
-	~pp:(105, infixl, Some "and")); 
+	   (read_unchecked ((Basic.name Logicterm.andid)^":bool->bool->bool"))
+	   ~pp:(105, infixl, Some "and")); 
       ignore
 	(define
-	(read_defn ((Basic.name Logicterm.orid)
-		    ^" x y = (not ((not x) and (not y)))"))
-	~pp:(105, infixl, Some "or"));
+	   (read_defn ((Basic.name Logicterm.orid)
+		       ^" x y = (not ((not x) and (not y)))"))
+	   ~pp:(105, infixl, Some "or"));
       ignore
 	(define
-	(read_defn ((Basic.name Logicterm.impliesid)
-		    ^" x y = (not x) or y"))
-	~pp:(104, infixl, Some "=>"));
+	   (read_defn ((Basic.name Logicterm.impliesid)
+		       ^" x y = (not x) or y"))
+	   ~pp:(104, infixl, Some "=>"));
       ignore
 	(define
-	(read_defn ((Basic.name Logicterm.iffid)
-		    ^" x y = (x => y) and (y => x)"))
-	~pp:(104, infixl, Some "iff"));
+	   (read_defn ((Basic.name Logicterm.iffid)
+		       ^" x y = (x => y) and (y => x)"))
+	   ~pp:(104, infixl, Some "iff"));
       ignore(new_axiom "false_def" << false = (not true)>>);
       ignore(new_axiom "eq_refl" <<!x: x=x>>);
       ignore(new_axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
       ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
       ignore(new_axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
       ignore(define
-	  <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))>>);
+	       <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))>>);
       ignore(define <:def< any = epsilon (%a: true)>>);
       ignore(end_theory ~save:false ())
 	
 
     let init() = Global.set_base_thy_builder builder
 
-end
+  end
 
 module BoolPP = 
   struct
@@ -74,17 +74,17 @@ module BoolPP =
 
     let ifthenelse_parser inf=
       ((seq
-      [?$(Lexer.Sym (Lexer.OTHER "IF"));
-	 Parser.Grammars.form inf;
-       ?$(Lexer.Sym(Lexer.OTHER "THEN"));
-       Parser.Grammars.form inf;
-       ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
-       Parser.Grammars.form inf])
+	  [?$(Lexer.Sym (Lexer.OTHER "IF"));
+	   Parser.Grammars.form inf;
+	   ?$(Lexer.Sym(Lexer.OTHER "THEN"));
+	   Parser.Grammars.form inf;
+	   ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
+	   Parser.Grammars.form inf])
 	 >>
        (fun l -> 
 	 match l with 
 	   [_; test; _; tbr; _; fbr] ->
-	       Term.mk_fun ifthenelse_id [test; tbr; fbr]
+	     Term.mk_fun ifthenelse_id [test; tbr; fbr]
 	 | _ -> raise (ParsingError "Error parsing if-then-else")))
 	
 
@@ -129,7 +129,7 @@ module BoolPP =
 
     let init_ifthenelse_printer()=
       Global.add_term_printer ifthenelse_id
-      ifthenelse_printer
+	ifthenelse_printer
 
     let init_ifthenelse()=
       init_ifthenelse_parser();
@@ -218,14 +218,14 @@ let falseR ?a goal =
   let info = Drule.mk_info()
   in 
   ((Tactics.rewrite_tac [th] ~f:af)
-    ++
-    (fun g -> 
-      Logic.Rules.negA (Some info) af g)
-       ++
-       (fun g -> 
-	 let c=Lib.get_one (Drule.formulas info) (Failure "falseR")
-	 in 
-	 Logic.Rules.trueR None (ftag c) g)) goal
+     ++
+     (fun g -> 
+       Logic.Rules.negA (Some info) af g)
+     ++
+     (fun g -> 
+       let c=Lib.get_one (Drule.formulas info) (Failure "falseR")
+       in 
+       Logic.Rules.trueR None (ftag c) g)) goal
 
 let trivial ?f g =  
   try (Tactics.trueR ?c:f || falseR ?a:f) g
@@ -235,8 +235,8 @@ let false_rule0 a sq =
   let  thm = lemma "base.false_def"
   in 
   seq [(Tactics.rewrite_tac [thm] ~f:a); 
-	 Logic.Rules.negA None a; 
-	 trivial] sq
+       Logic.Rules.negA None a; 
+       trivial] sq
 
 let false_rule ?a goal =
   let af =
@@ -278,8 +278,8 @@ let split_conc () =
 let rec split_tac g=
   ((alt [ Drule.foreach_conc (split_conc()); 
 	  Drule.foreach_asm (split_asm()) ])
-    ++
-    (split_tac || skip)) g
+     ++
+     (split_tac || skip)) g
 
 let inst_asm_rule i l sqnt=
   let rec rule ys sqs = 
@@ -325,12 +325,12 @@ let inst_tac ?f l g=
       (try 
 	let ft = (Drule.first_asm (Formula.is_all) sqnt)
 	in inst_asm ~a:ft l g
-	with Not_found -> 
-	  (try 
-	    let ft= Drule.first_concl (Formula.is_exists) sqnt
-	    in inst_concl ~c:ft l g
-	  with _ -> 
-	    raise (Logic.logicError "inst_tac: No instansiatable formula" [])))
+      with Not_found -> 
+	(try 
+	  let ft= Drule.first_concl (Formula.is_exists) sqnt
+	  in inst_concl ~c:ft l g
+	with _ -> 
+	  raise (Logic.logicError "inst_tac: No instansiatable formula" [])))
   | Some x -> 
       (try inst_asm ~a:x l g
       with Not_found -> inst_concl ~c:x l g)
@@ -347,49 +347,49 @@ let inst_tac ?f l g=
    g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
 
    info: [g, g'] [t]
-*)
-    let cases_tac_thm = ref None
+ *)
+let cases_tac_thm = ref None
 
-    let get_cases_thm ()=
-      match !cases_tac_thm with
-	None ->
-	  let nthm =
-	    try 
-	      Commands.lemma "boolean.cases_thm"
-	    with Not_found -> 
-	       (Goals.prove <<!P: (not P) or P>>
-		(allC ++ disjC ++ negC ++ basic))
-	  in 
-	  cases_tac_thm := Some(nthm);
-	  nthm
-      | Some(t) -> t
+let get_cases_thm ()=
+  match !cases_tac_thm with
+    None ->
+      let nthm =
+	try 
+	  Commands.lemma "boolean.cases_thm"
+	with Not_found -> 
+	  (Goals.prove <<!P: (not P) or P>>
+	   (allC ++ disjC ++ negC ++ basic))
+      in 
+      cases_tac_thm := Some(nthm);
+      nthm
+  | Some(t) -> t
 
-    let cases_full_tac inf (t:Basic.term) g= 
-      let thm = 
-	try get_cases_thm()
-	with e -> 
-	  raise 
-	    (Result.add_error 
-	       (Result.error "cases_full_tac: can't build cases theorem") e)
-      and tinf=Drule.mk_info()
-      in 
-      let g1=Logic.Rules.cut (Some tinf) thm g
-      in 
-      let ttag=Lib.get_one ((!tinf).Logic.forms) (Failure "case_info")
-      in 
-      let g2=
-	foreach
-	(seq
-	  [Logic.Rules.allA None t (ftag ttag);
-	   Logic.Rules.disjA (Some tinf) (ftag ttag)
-	     -- [Logic.Rules.negA None (ftag ttag); skip]]) g1
-      in 
-      let ng1, ng2=Lib.get_two (!tinf).Logic.goals (Failure "case_info")
-      in 
-      Logic.add_info inf [ng1;ng2] [ttag] [];
-      g2
+let cases_full_tac inf (t:Basic.term) g= 
+  let thm = 
+    try get_cases_thm()
+    with e -> 
+      raise 
+	(Result.add_error 
+	   (Result.error "cases_full_tac: can't build cases theorem") e)
+  and tinf=Drule.mk_info()
+  in 
+  let g1=Logic.Rules.cut (Some tinf) thm g
+  in 
+  let ttag=Lib.get_one ((!tinf).Logic.forms) (Failure "case_info")
+  in 
+  let g2=
+    foreach
+      (seq
+	 [Logic.Rules.allA None t (ftag ttag);
+	  Logic.Rules.disjA (Some tinf) (ftag ttag)
+	    -- [Logic.Rules.negA None (ftag ttag); skip]]) g1
+  in 
+  let ng1, ng2=Lib.get_two (!tinf).Logic.goals (Failure "case_info")
+  in 
+  Logic.add_info inf [ng1;ng2] [ttag] [];
+  g2
 
-    let cases_tac ?info (x:Basic.term) g = cases_full_tac info x g
+let cases_tac ?info (x:Basic.term) g = cases_full_tac info x g
 
 
 
@@ -487,7 +487,7 @@ let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
 
 (* 
    Modus ponens
-*)
+ *)
 let mp_tac ?a ?a1 g=
   let typenv = Drule.typenv_of g
   and sqnt = Drule.sequent g
@@ -521,7 +521,7 @@ let mp_tac ?a ?a1 g=
       Not_found -> 
 	raise 
 	  (Term.termError ("mp_tac: no matching formula in assumptions") 
-	   [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
+	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
   in 
   let info= Drule.mk_info()
   in 
@@ -542,7 +542,7 @@ let mp_tac ?a ?a1 g=
 	   (ftag (Lib.get_one (Drule.formulas info) 
 		    (Failure "mp_tac2.2")))) g3
   in 
-   (tac1++ (tac2 ++ tac3)) g 
+  (tac1++ (tac2 ++ tac3)) g 
 
 
 (*
@@ -556,7 +556,7 @@ let mp_tac ?a ?a1 g=
 
    info [] [thm_tag] []
    where tag [thm_tag] identifies the theorem in the sequent.
-*)
+ *)
 let cut_mp_tac ?info thm ?a g=
   let info1 = Drule.mk_info()
   and f_label = 
@@ -577,7 +577,7 @@ let cut_mp_tac ?info thm ?a g=
   let g3= (tac1++tac2) g
   in 
   (Logic.add_info info [] (Drule.formulas info1) [];
-  g3)
+   g3)
     
 
 (* 
@@ -587,7 +587,7 @@ let cut_mp_tac ?info thm ?a g=
    where 
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
-*)
+ *)
 let back_tac ?info ?a ?c g=
   let typenv = Drule.typenv_of g
   and sqnt = Drule.sequent g
@@ -623,7 +623,7 @@ let back_tac ?info ?a ?c g=
       Not_found -> 
 	raise (Term.termError 
 		 ("back_tac: no matching formula in conclusion") 
-	   [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
+		 [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
   in 
   let info1= Drule.mk_info()
   in 
@@ -650,11 +650,11 @@ let back_tac ?info ?a ?c g=
      [Lib.get_nth (Drule.subgoals info1) 0]
      [Lib.get_nth (Drule.formulas info1) 0]
      [];
-  g4)
+   g4)
 
 (*
    [back_tac ?info thm ?a]
-*)
+ *)
 let cut_back_tac ?info thm ?c g=
   let info1 = Drule.mk_info()
   and c_label = 
@@ -676,17 +676,17 @@ let cut_back_tac ?info thm ?c g=
 
 
 module Props =
-struct
+  struct
 (** 
    Props: Basic boolean properties. 
-*)
+ *)
 
 (**
    [make_n_ax()]: prove theorem n
    [get_n_ax()]: get theorem n, proving it if necessary
 
    [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
-*)
+ *)
     let make_iff_equals_ax ()=
       let iff_l1= 
 	Goals.prove << !x y: (x = y ) => (x => y) >>
@@ -742,7 +742,7 @@ struct
 
 (**
    [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
-*)
+ *)
     let make_equals_iff_ax ()=
       Goals.prove << !x y: (x = y) = (x iff y) >>
       (flatten_tac 
@@ -800,7 +800,7 @@ struct
 
 (**
    [rule_true_ax]:  |- !x: x = (x=true) 
-*)
+ *)
     let make_rule_true_ax ()= 
       let rule_true_l1 =  
 	Goals.prove <<!x: (x=true) => x>> 
@@ -821,7 +821,7 @@ struct
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
       in 
-      Logic.ThmRules.rewrite_conv (Global.scope()) 
+      Logic.Rules.rewrite_conv (Global.scope()) 
 	[get_iff_equals_ax()] rule_true_l3
 
     let rule_true_ax = ref None
@@ -863,274 +863,375 @@ struct
 	  nthm
       | Some(t) -> t
 
-end
+  end
 
 
 module Rules=
-struct
+  struct
 (** 
    Rules: Functions to construct theorems from other theorems.
    These may depend on the theorems in Props.
-*)
+ *)
 
 (** [once_rewrite_rule scp rules thm]: 
    rewrite [thm] with [rules] once.
-*)
+ *)
     let once_rewrite_rule scp rules thm =
       let ctrl = {Formula.default_rr_control with Rewrite.depth=Some(1)}
       in 
-      Logic.ThmRules.rewrite_conv ~ctrl:ctrl scp rules thm
-end
+      Logic.Rules.rewrite_conv ~ctrl:ctrl scp rules thm
+
+
+(*
+   [conjunctL scp thm]
+   Get the left hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = l]
+ *)
+    let conjunctL scp thm = 
+      let trm = Formula.dest_form (Logic.dest_thm thm)
+      in 
+      if not (Logicterm.is_conj trm)
+      then raise (Result.error "conjunct1: not a conjunction")
+      else 
+	let (_, lhs, rhs) = Term.dest_binop trm
+	in 
+	let info = Drule.mk_info()
+	in 
+	let proof l g =
+	  seq [Logic.Rules.cut (Some info) thm;
+	       (fun g1 -> 
+		 let ttag = 
+		   Lib.get_one (Drule.formulas info) 
+		     (Result.error "conjunctL")
+		 in 
+		 ignore(Drule.empty_info info);
+		 Logic.Rules.conjA (Some info) (ftag ttag) g1);
+	       (fun g1 -> 
+		 let (ltag, rtag)=
+		   Lib.get_two (Drule.formulas info) 
+		     (Result.error "conjunctL")
+		 in 
+		 Logic.Rules.basic None (ftag ltag) l g1)] g
+	in 
+	Goals.prove_goal scp lhs (proof (fnum 1))
+
+	  
+(*
+   [conjunctR scp thm]
+   Get the right hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = r]
+ *)
+    let conjunctR scp thm = 
+      let trm = Formula.dest_form (Logic.dest_thm thm)
+      in 
+      if not (Logicterm.is_conj trm)
+      then raise (Result.error "conjunct1: not a conjunction")
+      else 
+	let (_, lhs, rhs) = Term.dest_binop trm
+	in 
+	let info = Drule.mk_info()
+	in 
+	let proof l g =
+	  seq [Logic.Rules.cut (Some info) thm;
+	       (fun g1 -> 
+		 let ttag = 
+		   Lib.get_one (Drule.formulas info) 
+		     (Result.error "conjunctL")
+		 in 
+		 ignore(Drule.empty_info info);
+		 Logic.Rules.conjA (Some info) (ftag ttag) g1);
+	       (fun g1 -> 
+		 let (ltag, rtag)=
+		   Lib.get_two (Drule.formulas info) 
+		     (Result.error "conjunctL")
+		 in 
+		 Logic.Rules.basic None (ftag rtag) l g1)] g
+	in 
+	Goals.prove_goal scp rhs (proof (fnum 1))
+
+(*
+   [conjuncts scp thm]
+   break theorem [thm] into the list of conjuncts.
+   [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
+ *)
+    let conjuncts scp thm =
+      let is_conj_thm thm = 
+	Logicterm.is_conj (Formula.dest_form (Logic.dest_thm thm))
+      in 
+      let rec conjuncts_aux scp thm result = 
+	if not(is_conj_thm thm)
+	then thm::result
+	else 
+	  let lhs = conjunctL scp thm 
+	  and rhs = conjunctR scp thm 
+	  in 
+	  let result1=conjuncts_aux scp rhs result
+	  in 
+	  conjuncts_aux scp lhs result1
+      in 
+      conjuncts_aux scp thm []
+
+  end
 
 (** [conv_rule scp conv thm]
    apply conversion [conv] to theorem [thm]
  *)
-    let conv_rule scp conv thm =
-      let rule = conv scp (Formula.dest_form (Logic.dest_thm thm))
-      in 
-      Rules.once_rewrite_rule scp [rule] thm
+let conv_rule scp conv thm =
+  let rule = conv scp (Formula.dest_form (Logic.dest_thm thm))
+  in 
+  Rules.once_rewrite_rule scp [rule] thm
 
 module Convs=
-struct
+  struct
 (** 
    Convs: Conversions on boolean operators.
    These may depend on the theorems in Props.
-*)
+ *)
 
-open Props
+    open Props
 
 (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-let neg_all_conv scp trm=
-  if(not (Logicterm.is_neg trm))
-  then failwith "neg_all_conv: not a negation"
-  else 
-    let (_, trmbody) = Term.dest_unop trm
-    in 
-    let (aqvars, aqbody) = Term.strip_qnt Basic.All trmbody
-    in 
-    (match aqvars with 
-      [] -> 
-	failwith 
-	  "neg_all_conv: body of negation is not universally quantified"
-    | _ -> ());
-    let eqvars = 
-      List.map 
-	(fun b ->
-	  let (_, n, ty) = Basic.dest_binding b
-	  in Basic.mk_binding Basic.Ex n ty) 
-	aqvars
-    in 
-    let eqbody =
-      let nsubst = 
-	List.fold_left2 
-	  (fun s l r -> Term.bind l r s)
-	  (Term.empty_subst())
-	  (List.map Term.mk_bound aqvars)
-	  (List.map Term.mk_bound eqvars)
-      in 
-      Term.subst nsubst aqbody
-    in 
-    let newterm= 
-      Term.rename 
-	(Drule.rebuild_qnt Basic.Ex eqvars (Logicterm.mk_not eqbody))
-    in 
-    let goal_term = 
-      Logicterm.mk_equality trm newterm
-    in 
-    let info = Drule.mk_info()
-    in
-    let proof g= 
-      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-	   Logic.Rules.conjC None (fnum 1)
-	     --
-	     [
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_all_conv: 1")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negA (Some(info)) (ftag atag);
-		   (fun g2-> 
-		     let ctag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.allC (Some info) (ftag ctag2));
-			(fun g3 -> 
-			inst_concl ~c:(ftag ctag)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negC (Some info) (ftag ctag);
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_all_conv: 3")
-			  in 
-			  ignore(Drule.empty_info info);
-			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
-		      ] g2)] g1)];
-	      
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_all_conv: 4")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negC (Some(info)) (ftag ctag);
-		   (fun g2-> 
-		     let atag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.existA (Some info) (ftag atag));
-			(fun g3 -> 
-			inst_asm ~a:(ftag atag2)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negA (Some info) (ftag atag);
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_all_conv: 3")
-			  in 
-			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
-		      ] g2)] g1)]]
-    ] g
-    in 
-    Goals.prove_goal scp goal_term proof
+    let neg_all_conv scp trm=
+      if(not (Logicterm.is_neg trm))
+      then failwith "neg_all_conv: not a negation"
+      else 
+	let (_, trmbody) = Term.dest_unop trm
+	in 
+	let (aqvars, aqbody) = Term.strip_qnt Basic.All trmbody
+	in 
+	(match aqvars with 
+	  [] -> 
+	    failwith 
+	      "neg_all_conv: body of negation is not universally quantified"
+	| _ -> ());
+	let eqvars = 
+	  List.map 
+	    (fun b ->
+	      let (_, n, ty) = Basic.dest_binding b
+	      in Basic.mk_binding Basic.Ex n ty) 
+	    aqvars
+	in 
+	let eqbody =
+	  let nsubst = 
+	    List.fold_left2 
+	      (fun s l r -> Term.bind l r s)
+	      (Term.empty_subst())
+	      (List.map Term.mk_bound aqvars)
+	      (List.map Term.mk_bound eqvars)
+	  in 
+	  Term.subst nsubst aqbody
+	in 
+	let newterm= 
+	  Term.rename 
+	    (Drule.rebuild_qnt Basic.Ex eqvars (Logicterm.mk_not eqbody))
+	in 
+	let goal_term = 
+	  Logicterm.mk_equality trm newterm
+	in 
+	let info = Drule.mk_info()
+	in
+	let proof g= 
+	  seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+	       Logic.Rules.conjC None (fnum 1)
+		 --
+		 [
+		  seq 
+		    [Logic.Rules.implC (Some info) (fnum 1);
+		     (fun g1 ->
+		       let atag, ctag = 
+			 Lib.get_two (Drule.formulas info) 
+			   (Failure "neg_all_conv: 1")
+		       in 
+		       ignore(Drule.empty_info info);
+		       seq
+			 [
+			  Logic.Rules.negA (Some(info)) (ftag atag);
+			  (fun g2-> 
+			    let ctag2 = 
+			      Lib.get_one (Drule.formulas info)
+				(Failure "neg_all_conv: 2")
+			    in 
+			    ignore(Drule.empty_info info);
+			    seq
+			      [repeat (Logic.Rules.allC 
+					 (Some info) (ftag ctag2));
+			       (fun g3 -> 
+				 inst_concl ~c:(ftag ctag)
+				   (List.rev (Drule.constants info)) g3);
+			       data_tac 
+				 (fun () -> ignore(Drule.empty_info info)) ();
+			       Logic.Rules.negC (Some info) (ftag ctag);
+			       (fun g3 ->
+				 let atag3 = 
+				   Lib.get_one (Drule.formulas info)
+				     (Failure "neg_all_conv: 3")
+				 in 
+				 ignore(Drule.empty_info info);
+				 Logic.Rules.basic 
+				   None (ftag atag3) (ftag ctag2) g3)
+			     ] g2)] g1)];
+		  
+		  seq 
+		    [Logic.Rules.implC (Some info) (fnum 1);
+		     (fun g1 ->
+		       let atag, ctag = 
+			 Lib.get_two (Drule.formulas info) 
+			   (Failure "neg_all_conv: 4")
+		       in 
+		       ignore(Drule.empty_info info);
+		       seq
+			 [
+			  Logic.Rules.negC (Some(info)) (ftag ctag);
+			  (fun g2-> 
+			    let atag2 = 
+			      Lib.get_one (Drule.formulas info)
+				(Failure "neg_all_conv: 2")
+			    in 
+			    ignore(Drule.empty_info info);
+			    seq
+			      [repeat (Logic.Rules.existA 
+					 (Some info) (ftag atag));
+			       (fun g3 -> 
+				 inst_asm ~a:(ftag atag2)
+				   (List.rev (Drule.constants info)) g3);
+			       data_tac 
+				 (fun () -> ignore(Drule.empty_info info)) ();
+			       Logic.Rules.negA (Some info) (ftag atag);
+			       (fun g3 ->
+				 let atag3 = 
+				   Lib.get_one (Drule.formulas info)
+				     (Failure "neg_all_conv: 3")
+				 in 
+				 Logic.Rules.basic 
+				   None (ftag atag2) (ftag atag3) g3)
+			     ] g2)] g1)]]
+	     ] g
+	in 
+	Goals.prove_goal scp goal_term proof
 
 (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-let neg_exists_conv scp trm=
-  if(not (Logicterm.is_neg trm))
-  then failwith "neg_exists_conv: not a negation"
-  else 
-    let (_, trmbody) = Term.dest_unop trm
-    in 
-    let (eqvars, eqbody) = Term.strip_qnt Basic.Ex trmbody
-    in 
-    (match eqvars with 
-      [] -> 
-	failwith 
-	  "neg_all_conv: body of negation is not universally quantified"
-    | _ -> ());
-    let aqvars = 
-      List.map 
-	(fun b ->
-	  let (_, n, ty) = Basic.dest_binding b
-	  in Basic.mk_binding Basic.All n ty) 
-	eqvars
-    in 
-    let aqbody =
-      let nsubst = 
-	List.fold_left2 
-	  (fun s l r -> Term.bind l r s)
-	  (Term.empty_subst())
-	  (List.map Term.mk_bound eqvars)
-	  (List.map Term.mk_bound aqvars)
-      in 
-      Term.subst nsubst eqbody
-    in 
-    let newterm= 
-      Term.rename 
-	(Drule.rebuild_qnt Basic.All aqvars (Logicterm.mk_not aqbody))
-    in 
-    let goal_term = 
-      Logicterm.mk_equality trm newterm
-    in 
-    let info = Drule.mk_info()
-    in
-    let proof g= 
-      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-	   Logic.Rules.conjC None (fnum 1)
-	     --
-	     [
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_exists_conv: 1")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negA (Some(info)) (ftag atag);
-		   (fun g2-> 
-		     let ctag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_all_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.allC (Some info) (ftag ctag));
-			(fun g3 -> 
-			  inst_concl ~c:(ftag ctag2)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negC (Some info) (ftag ctag);
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_exists_conv: 3")
-			  in 
-			  ignore(Drule.empty_info info);
-			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
-		      ] g2)] g1)];
-	      
-	      seq 
-	      [Logic.Rules.implC (Some info) (fnum 1);
-	      (fun g1 ->
-		let atag, ctag = 
-		  Lib.get_two (Drule.formulas info) 
-		    (Failure "neg_exists_conv: 4")
-		in 
-		ignore(Drule.empty_info info);
-		seq
-		  [
-		   Logic.Rules.negC (Some(info)) (ftag ctag);
-		   (fun g2-> 
-		     let atag2 = 
-		       Lib.get_one (Drule.formulas info)
-			 (Failure "neg_exists_conv: 2")
-		     in 
-		     ignore(Drule.empty_info info);
-		     seq
-		       [repeat (Logic.Rules.existA (Some info) (ftag atag2));
-			(fun g3 -> 
-			inst_asm ~a:(ftag atag)
-			  (List.rev (Drule.constants info)) g3);
-			data_tac 
-			  (fun () -> ignore(Drule.empty_info info)) ();
-			Logic.Rules.negA (Some info) (ftag atag);
-			(fun g3 ->
-			  let atag3 = 
-			    Lib.get_one (Drule.formulas info)
-			      (Failure "neg_exists_conv: 3")
-			  in 
-			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
-		      ] g2)] g1)]]
-    ] g
-    in 
-    Goals.prove_goal scp goal_term proof
+    let neg_exists_conv scp trm=
+      if(not (Logicterm.is_neg trm))
+      then failwith "neg_exists_conv: not a negation"
+      else 
+	let (_, trmbody) = Term.dest_unop trm
+	in 
+	let (eqvars, eqbody) = Term.strip_qnt Basic.Ex trmbody
+	in 
+	(match eqvars with 
+	  [] -> 
+	    failwith 
+	      "neg_all_conv: body of negation is not universally quantified"
+	| _ -> ());
+	let aqvars = 
+	  List.map 
+	    (fun b ->
+	      let (_, n, ty) = Basic.dest_binding b
+	      in Basic.mk_binding Basic.All n ty) 
+	    eqvars
+	in 
+	let aqbody =
+	  let nsubst = 
+	    List.fold_left2 
+	      (fun s l r -> Term.bind l r s)
+	      (Term.empty_subst())
+	      (List.map Term.mk_bound eqvars)
+	      (List.map Term.mk_bound aqvars)
+	  in 
+	  Term.subst nsubst eqbody
+	in 
+	let newterm= 
+	  Term.rename 
+	    (Drule.rebuild_qnt Basic.All aqvars (Logicterm.mk_not aqbody))
+	in 
+	let goal_term = 
+	  Logicterm.mk_equality trm newterm
+	in 
+	let info = Drule.mk_info()
+	in
+	let proof g= 
+	  seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+	       Logic.Rules.conjC None (fnum 1)
+		 --
+		 [
+		  seq 
+		    [Logic.Rules.implC (Some info) (fnum 1);
+		     (fun g1 ->
+		       let atag, ctag = 
+			 Lib.get_two (Drule.formulas info) 
+			   (Failure "neg_exists_conv: 1")
+		       in 
+		       ignore(Drule.empty_info info);
+		       seq
+			 [
+			  Logic.Rules.negA (Some(info)) (ftag atag);
+			  (fun g2-> 
+			    let ctag2 = 
+			      Lib.get_one (Drule.formulas info)
+				(Failure "neg_all_conv: 2")
+			    in 
+			    ignore(Drule.empty_info info);
+			    seq
+			      [repeat (Logic.Rules.allC 
+					 (Some info) (ftag ctag));
+			       (fun g3 -> 
+				 inst_concl ~c:(ftag ctag2)
+				   (List.rev (Drule.constants info)) g3);
+			       data_tac 
+				 (fun () -> ignore(Drule.empty_info info)) ();
+			       Logic.Rules.negC (Some info) (ftag ctag);
+			       (fun g3 ->
+				 let atag3 = 
+				   Lib.get_one (Drule.formulas info)
+				     (Failure "neg_exists_conv: 3")
+				 in 
+				 ignore(Drule.empty_info info);
+				 Logic.Rules.basic None 
+				   (ftag atag3) (ftag ctag2) g3)
+			     ] g2)] g1)];
+		  
+		  seq 
+		    [Logic.Rules.implC (Some info) (fnum 1);
+		     (fun g1 ->
+		       let atag, ctag = 
+			 Lib.get_two (Drule.formulas info) 
+			   (Failure "neg_exists_conv: 4")
+		       in 
+		       ignore(Drule.empty_info info);
+		       seq
+			 [
+			  Logic.Rules.negC (Some(info)) (ftag ctag);
+			  (fun g2-> 
+			    let atag2 = 
+			      Lib.get_one (Drule.formulas info)
+				(Failure "neg_exists_conv: 2")
+			    in 
+			    ignore(Drule.empty_info info);
+			    seq
+			      [repeat 
+				 (Logic.Rules.existA 
+				    (Some info) (ftag atag2));
+			       (fun g3 -> 
+				 inst_asm ~a:(ftag atag)
+				   (List.rev (Drule.constants info)) g3);
+			       data_tac 
+				 (fun () -> ignore(Drule.empty_info info)) ();
+			       Logic.Rules.negA (Some info) (ftag atag);
+			       (fun g3 ->
+				 let atag3 = 
+				   Lib.get_one (Drule.formulas info)
+				     (Failure "neg_exists_conv: 3")
+				 in 
+				 Logic.Rules.basic 
+				   None (ftag atag2) (ftag atag3) g3)
+			     ] g2)] g1)]]
+	     ] g
+	in 
+	Goals.prove_goal scp goal_term proof
 
 
-end
+
+  end
 
 (* More tactics *)
 

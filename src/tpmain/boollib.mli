@@ -286,6 +286,24 @@ sig
 val once_rewrite_rule :
     Gtypes.scope -> Logic.thm list -> Logic.thm -> Logic.thm
 
+
+(*
+   [conjunctL scp thm]
+   Get the left hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = l]
+
+   [conjunctR scp thm]
+   Get the right hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = r]
+
+   [conjuncts scp thm]
+   break theorem [thm] into the list of conjuncts.
+   [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
+ *)
+  val conjunctL : Gtypes.scope -> Logic.thm -> Logic.thm 
+  val conjunctR : Gtypes.scope -> Logic.thm -> Logic.thm 
+  val conjuncts : Gtypes.scope -> Logic.thm -> Logic.thm list 
+
 end
 
 module Convs:
@@ -300,6 +318,7 @@ val neg_all_conv: Gtypes.scope -> Basic.term -> Logic.thm
 
 (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
 val neg_exists_conv: Gtypes.scope -> Basic.term -> Logic.thm
+
 
 end
 
