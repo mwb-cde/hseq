@@ -74,13 +74,15 @@ val skip : tactic
 val foreach: tactic -> Logic.branch -> Logic.branch
 val fail: ?err:exn -> tactic 
 
-(** [add_info_tac f info g]
+(** [data_tac f info g]
 
    Tactic to add information to [info].
 
    Apply [f info] then [skip].
+
+(renamed from add_info_tac).
 *)
-val add_info_tac:
+val data_tac:
     ('a -> unit) -> 'a  -> tactic
 
 (**
@@ -174,8 +176,8 @@ type tactical = tactic
    resulting from the previous tactic.
    Fails if [tacl] is empty.
 
-   [orl tacl]: Apply each tactic in [tacl], in sequence, until one succeeds.
-   Fails if no tactic succeeds.
+   [alt tacl]: Apply each tactic in [tacl], in sequence, until one succeeds.
+   Fails if no tactic succeeds. (Renamed from [orl].)
 
    [tac1 || tac2]: Apply [tac1], if that fails, apply [tac2].
    (=[orl [tac1; tac2]]
@@ -200,7 +202,7 @@ type tactical = tactic
 val repeat : tactic -> tactic
 val (++) : tactic -> tactic -> tactic
 val seq : tactic list -> tactic 
-val orl:  tactic list -> tactic 
+val alt:  tactic list -> tactic 
 val (||) : tactic -> tactic -> tactic
 
 val thenl : tactic ->  tactic list -> tactic 

@@ -28,13 +28,13 @@ let skip = Drule.skip
 let foreach = Drule.foreach
 
 
-(** [add_info_tac f info g]
+(** [data_tac f info g]
 
    Tactic to add information to [info].
 
    Apply [f info] then [skip].
 *)
-let add_info_tac f info g= f info; skip g
+let data_tac f info g= f info; skip g
 
 
 let find_basic sq = 
@@ -264,18 +264,18 @@ let rec repeat tac g =
   app_aux (tac g)
 *)
 (*
-   [orl tacl g]
+   [alt tacl g]
    apply first tactic of [tacl] which succeeds.
    raise error if none succeeds.
  *)
-let orl tacl g = 
-  let rec orl_aux ts =
+let alt tacl g = 
+  let rec alt_aux ts =
     match ts with
-      [] -> raise (Result.error "orl: no successful tactic")
+      [] -> raise (Result.error "alt: no successful tactic")
     | (x::xs) ->
 	try x g
-	with _ -> orl_aux xs
-  in orl_aux tacl 
+	with _ -> alt_aux xs
+  in alt_aux tacl 
 
 let (||) tac1 tac2 g=
   (try tac1 g
@@ -432,7 +432,7 @@ let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
 		asm_tags)
 	  then fun g -> (skip g)
 	  else 
-	    orl [Logic.Rules.rewrite None ~ctrl:ctrl rules x; skip])
+	    alt [Logic.Rules.rewrite None ~ctrl:ctrl rules x; skip])
 	goal
   | Some (x) ->
       Logic.Rules.rewrite None ~ctrl:ctrl rules x goal

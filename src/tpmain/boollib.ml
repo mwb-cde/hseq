@@ -259,7 +259,7 @@ let conc_elims () =
 
 let rec flatten_tac g =
   repeat
-    (Tactics.orl 
+    (Tactics.alt 
        [ Drule.foreach_conc (conc_elims()); 
 	 Drule.foreach_asm (asm_elims())]) g
 
@@ -273,7 +273,7 @@ let split_conc () =
    (is_iff, iffC_rule)]
 
 let rec split_tac g=
-  ((orl [ Drule.foreach_conc (split_conc()); 
+  ((alt [ Drule.foreach_conc (split_conc()); 
 	  Drule.foreach_asm (split_asm()) ])
     ++
     (split_tac || skip)) g
