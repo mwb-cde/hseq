@@ -222,11 +222,13 @@ let make ?env scp t=
 	      "Formula.make: Can't make formula, not a closed term" [t]))
   in 
   try
-    let tyenv = 
-      Typing.typecheck_env scp (Gtypes.empty_subst()) t1 (Gtypes.mk_null())
+    let tyenv = Lib.apply_option (fun x -> !x) env (Gtypes.empty_subst())
     in 
-    (Lib.apply_option (fun x -> x:=tyenv) env ();
-    Term.retype_pretty tyenv t1)
+    let tyenv1 = 
+      Typing.typecheck_env scp tyenv t1 (Gtypes.mk_null())
+    in 
+    (Lib.apply_option (fun x -> x:=tyenv1) env ();
+    Term.retype_pretty tyenv1 t1)
   with x -> 
     raise (Result.add_error x 
 	     (Term.termError "Formula.make: incorrect types" [t1]))

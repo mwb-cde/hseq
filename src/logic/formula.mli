@@ -35,7 +35,9 @@ val form_of_term: Gtypes.scope -> Basic.term -> form
  mk_form: make a formula from an arbitrary term.
    resets all types in the term 
 *)
+(*
 val mk_form: Gtypes.scope -> Basic.term -> form
+*)
 
 (*
    [close_term scp trm]: close term [trm] in scope [scp].
@@ -54,7 +56,8 @@ val close_term: Gtypes.scope -> Basic.term -> Basic.term
    associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
    2. Fail if any bound variable in [trm] occurs outside its binding term.
    4. Fail if any identifier is not in scope.
-   4. Typecheck resulting term, to set correct types. 
+   4. Typecheck resulting term, to set correct types. If [?env] is
+      given, pass it to the typechecker.
    5. return resulting formula built from resulting term.  If [?env]
       is given, set it to the type substitution obtained from typechecking.
 
@@ -72,7 +75,9 @@ val in_thy_scope_memo:
 val in_thy_scope:  Gtypes.scope -> Basic.thy_id -> form -> bool
 
 (* formula destructor *)
+(*
 val dest_form: form -> Basic.term
+*)
 
 (* apply a predicate to a term *)
 (*

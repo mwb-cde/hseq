@@ -1280,7 +1280,7 @@ module Rules=
       check_term (Sequent.scope_of sq) nt;
       let nasm = (ftag, (Formula.mk_form scp nt))
 *)
-      let nt = Formula.dest_form nf
+      let nt = Formula.dest nf
       in 
       let nasm = (ftag, (Formula.make scp nt))
       in 
@@ -2094,7 +2094,9 @@ module Rules=
     let inst_term sq tyenv t trm =
       let scp = Sequent.scope_of sq
       in 
-      let fm1 = Formula.make scp trm
+      let mtyenv = ref tyenv
+      in 
+      let fm1 = Formula.make ~env:mtyenv scp trm
       in 
       let ntrm1= Formula.dest fm1
       in 
@@ -2307,7 +2309,7 @@ module Rules=
 		  raise 
 		    (logicError "Rewrite: can't find tagged assumption" []))
 	    in 
-	    ft xs ((Rewrite.rule (Formula.dest_form asm))::rslt)
+	    ft xs ((Rewrite.rule (Formula.dest asm))::rslt)
 	|  (OAsm(x, order)::xs) ->
 	    let asm=
 	      (try 
@@ -2317,18 +2319,18 @@ module Rules=
 		  raise 
 		    (logicError "Rewrite: can't find tagged assumption" []))
 	    in 
-	    ft xs ((Rewrite.orule (Formula.dest_form asm) order)::rslt)
+	    ft xs ((Rewrite.orule (Formula.dest asm) order)::rslt)
 	| ((RRThm(x))::xs) -> 
 	    (try 
-	      (check_term_memo memo scp (Formula.dest_form (dest_thm x)));
-	      ft xs ((Rewrite.rule (Formula.dest_form (dest_thm x)))::rslt)
+	      (check_term_memo memo scp (Formula.dest (dest_thm x)));
+	      ft xs ((Rewrite.rule (Formula.dest (dest_thm x)))::rslt)
 	    with 
 	      _ -> ft xs rslt)
 	| ((ORRThm(x, order))::xs) -> 
 	    (try 
-	      (check_term_memo memo scp (Formula.dest_form (dest_thm x)));
+	      (check_term_memo memo scp (Formula.dest (dest_thm x)));
 	      ft xs 
-		((Rewrite.orule (Formula.dest_form (dest_thm x)) order)
+		((Rewrite.orule (Formula.dest (dest_thm x)) order)
 		 ::rslt)
 	    with 
 	      _ -> ft xs rslt)
@@ -2417,7 +2419,7 @@ module Rules=
 	      (List.map 
 		 (fun x -> 
 		   Rewrite.rule 
-		     (Formula.dest_form (dest_thm x))) rrl) f
+		     (Formula.dest (dest_thm x))) rrl) f
 	  in mk_theorem nt
 	with x -> raise 
 	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
