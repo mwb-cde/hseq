@@ -2064,93 +2064,9 @@ module Rules=
       try betaC info i g
       with Not_found -> betaA info i g
 
-(*
-    let beta0 inf i sq = 
-      let (ft, t) = 
-	if i>0 then Sequent.get_cncl i sq else Sequent.get_asm i sq
-      in 
-      let nt = 
-	(ft,
-	 try 
-	   Formula.beta_reduce (Sequent.scope_of sq) t
-	 with x -> raise 
-	     (Result.add_error(logicError "Beta reduction" [t]) x))
-      in 
-      add_info inf [] [ft] [];
-      if i> 0 
-      then mk_subgoal
-	  (Sequent.sqnt_tag sq, 
-	   Sequent.sqnt_env sq, 
-	   (Sequent.asms sq), 
-	   Sequent.replace_cncl i (Sequent.concls sq) nt)
-      else mk_subgoal
-	  (Sequent.sqnt_tag sq, 
-	   Sequent.sqnt_env sq, 
-	   Sequent.replace_asm i (Sequent.asms sq) nt, 
-	   Sequent.concls sq)
-
-    let beta info i g = 
-      let sq=get_sqnt g
-      in 
-      simple_sqnt_apply (beta0 info (dest_label i sq)) g
-*)
-
-(* name_rule: introduce a new name in the sqnt as a synonym for a term  *)
-(* name id trm:
-   Asm|-Cncl -> t:id=trm, Asm|-Cncl
-
-   the long name thy.id must be unique (where thy is the current theory name)
-   info: [] [t] []
- *)
-
-(*
-   let name_rule0 inf id trm tyenv sq =
-   let scp = Sequent.scope_of sq
-   in 
-   let long_id = Basic.mk_long scp.Gtypes.curr_thy id
-   in 
-   let ntrm=set_names scp trm
-   in 
-   check_term scp ntrm;
-   try 
-   ignore(scp.Gtypes.typeof_fn long_id);
-   raise (logicError "Name already exists in scope" [])
-   with 
-   Not_found ->
-   let nty = Gtypes.mk_var "name_typ"
-   in 
-   let ntyenv= Typing.typecheck_env scp tyenv ntrm nty
-   in 
-   let rty=Gtypes.mgu nty ntyenv
-   in 
-   let nscp= Gtypes.extend_scope scp 
-   (fun x-> if x=long_id then rty else scp.Gtypes.typeof_fn x)
-   and ft=Tag.create()
-   in
-   let nform=
-   Formula.form_of_term nscp
-   (Logicterm.mk_equality (Term.mk_var long_id) ntrm)
-   in 
-   let nasm =  (ft, nform)
-   in 
-   let gtyenv = 
-   Gtypes.extract_bindings 
-   (Sequent.sqnt_tyvars sq) ntyenv tyenv
-   in 
-   add_info inf [] [ft] [];
-   (mk_subgoal(Sequent.sqnt_tag sq, 
-   Sequent.sqnt_env sq,
-   nasm::(Sequent.asms sq), 
-   Sequent.concls sq), 
-   gtyenv)
-
-   let name_rule inf id trm sqnt = 
-   sqnt_apply (name_rule0 inf id trm) sqnt
-
- *)
-
 (* instantiation terms *)  
 
+(*
     let prep_inst_term scp tyenv trm expty=
       let ntrm=set_names scp trm
       in 
@@ -2167,6 +2083,20 @@ module Rules=
       let ntrm0 = set_names sklm_scp trm
       in 
       let ntrm1= Typing.set_exact_types sklm_scp ntrm0
+      in 
+      let ntrm2, ntyenv2=Formula.inst_env scp [] tyenv t ntrm1
+      in 
+      let ntyenv3=Formula.typecheck_env scp ntyenv2 ntrm2 
+	  (Gtypes.mk_var "inst_ty")
+      in ntrm2, ntyenv3
+*)
+
+    let inst_term sq tyenv t trm =
+      let scp = Sequent.scope_of sq
+      in 
+      let fm1 = Formula.make scp trm
+      in 
+      let ntrm1= Formula.dest fm1
       in 
       let ntrm2, ntyenv2=Formula.inst_env scp [] tyenv t ntrm1
       in 
@@ -2219,6 +2149,7 @@ module Rules=
    asm |- t:P(c), concl where c is a given term
    info: [] [t] []
  *)
+(*
     let existC0 inf trm i tyenv sq =
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
       in
@@ -2248,24 +2179,17 @@ module Rules=
 			   (logicError "existC:" [t]) x)
       else 
 	raise (logicError "Not an existential quantifier" [t])
+*)
 
-    let existC inf trm i g = 
-      sqnt_apply (existC0 inf trm i) g
-
-
-(*
     let existC0 inf trm i tyenv sq =
-      let (ft, t)=(Sequent.get_cncl i sq)
+      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
+      in
+      let (ft, t)=concl
       in 
       if (Formula.is_exists t) 
       then 
 	try 
-      	  (let trm1, tyenv1 =
-	    prep_inst_term (Sequent.scope_of sq) 
-	      tyenv trm (Formula.get_binder_type t)
-      	  in 
-	  is_inst_term sq trm1;
-	  let trm2, tyenv2 = inst_term sq tyenv1 t trm1
+	  let trm2, tyenv2 = inst_term sq tyenv t trm
 	  in 
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
@@ -2275,16 +2199,15 @@ module Rules=
 	     (Sequent.sqnt_tag sq, 
 	      Sequent.sqnt_env sq, 
 	      Sequent.asms sq, 
-	      (Sequent.replace_cncl i (Sequent.concls sq) (ft, trm2))),
-	   gtyenv))
+	      join_up lconcls ((ft, trm2)::rconcls)),
+	   gtyenv)
 	with x -> raise (Result.add_error
 			   (logicError "existC:" [t]) x)
       else 
 	raise (logicError "Not an existential quantifier" [t])
 
     let existC inf trm i g = 
-      sqnt_apply (existC0 inf trm (dest_label i (get_sqnt g))) g
-*)
+      sqnt_apply (existC0 inf trm i) g
 
 (* allA i sq
    t:!x. P(c), asm |-  concl
@@ -2292,6 +2215,7 @@ module Rules=
    t:P(c'), asm |- concl   where c' is a given term
    info: [] [t] []
  *)
+(*
     let allA0 inf trm i tyenv sq =
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
       in 
@@ -2322,24 +2246,16 @@ module Rules=
 		    (logicError "allA: " [t]) x))
       else 
 	raise (logicError "Not a universal quantifier" [t])
-
-    let allA inf trm i g = 
-      sqnt_apply (allA0 inf trm i) g
-
-
-(*
+*)
     let allA0 inf trm i tyenv sq =
-      let (ft, t)=(Sequent.get_asm i sq)
+      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
+      in 
+      let (ft, t)=asm
       in 
       if (Formula.is_all t) 
       then 
 	try 
-	  (let trm1, tyenv1=
-	    prep_inst_term (Sequent.scope_of sq) tyenv 
-	      trm (Formula.get_binder_type t)
-	  in 
-	  is_inst_term sq trm1;
-	  let ntrm, tyenv2 = inst_term sq tyenv1 t trm1
+	  (let ntrm, tyenv2 = inst_term sq tyenv t trm
 	  in 
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
@@ -2348,7 +2264,7 @@ module Rules=
 	  (mk_subgoal
 	     (Sequent.sqnt_tag sq, 
 	      Sequent.sqnt_env sq, 
-	      (Sequent.replace_asm i (Sequent.asms sq) (ft, ntrm)),
+	      join_up lasms ((ft, ntrm)::rasms),
 	      Sequent.concls sq)),
 	  gtyenv)
 	with x -> 
@@ -2357,10 +2273,9 @@ module Rules=
       else 
 	raise (logicError "Not a universal quantifier" [t])
 
-    let allA inf trm i g = 
-      sqnt_apply (allA0 inf trm (dest_label i (get_sqnt g))) g
-*)
 
+    let allA inf trm i g = 
+      sqnt_apply (allA0 inf trm i) g
 
 (*
    rewrite ctrl simple thms j sq:

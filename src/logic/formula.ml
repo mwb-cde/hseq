@@ -201,7 +201,7 @@ let close_term scp trm=
     | Qnt(qnt, q, b) -> 
 	let qnts1 = Term.bind (Bound(q)) true_term qnts
 	in 
-	Qnt(qnt, q, set_aux qnts b)
+	Qnt(qnt, q, set_aux qnts1 b)
     | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
