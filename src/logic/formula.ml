@@ -340,23 +340,28 @@ let eta_conv scp f ty x =
 
 (* Rewriting: normal rewrite followed by check for close_term *)
 
+let mk_rr_control dir= 
+  Rewrite.control 
+    ~strat:Rewrite.TopDown
+    ~dir:Rewrite.leftright
+    ~max:None
+
 let rewrite scp ?(dir=Rewrite.leftright) rrs t = 
   let nt = 
-    Rewrite.rewrite
-      (Rewrite.control scp ~dir:dir) rrs t
+    Rewrite.rewrite scp (mk_rr_control dir ) rrs t
   in 
   form_of_term scp nt
 
 let rewrite_simple scp ?(dir=Rewrite.leftright) rrs t = 
-  let nt = Rewrite.rewrite
-      (Rewrite.control ~dir:dir scp) rrs t
+  let nt = Rewrite.rewrite scp
+      (mk_rr_control dir) rrs t
   in 
   form_of_term scp nt
 
 let rewrite_env scp ?(dir=Rewrite.leftright) tyenv rrs t = 
   let nt, ntyenv = 
-    Rewrite.rewrite_env 
-      (Rewrite.control ~dir:dir scp) tyenv rrs t
+    Rewrite.rewrite_env scp
+      (mk_rr_control dir) tyenv rrs t
   in 
   (form_of_term scp nt, ntyenv)
 

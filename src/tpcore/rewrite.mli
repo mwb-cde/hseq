@@ -21,7 +21,7 @@ val bottomup : strategy
 
 type control =
     { 
-      scope: Gtypes.scope;
+(*      scope: Gtypes.scope; *)
       depth: int option; (** (Some i): maximum number of times to rewrite is i,
 			    None : unlimited rewriting (default) *)
       rr_dir: direction;
@@ -29,8 +29,10 @@ type control =
     }
 
 val control : 
-    ?max:int -> ?dir:direction 
-      -> ?strat : strategy -> Gtypes.scope -> control
+    dir:direction 
+      -> strat : strategy 
+	-> max:int option
+	    -> control
 
 (**
    [limit_reached d]
@@ -44,6 +46,7 @@ val limit_reached: int option -> bool
    Returns new term and updated type environment (substitution)
  *)
 val match_rewrite : 
+    Gtypes.scope -> 
     control -> Gtypes.substitution ->
       (Basic.term -> bool) -> Basic.term -> 
 	Basic.term -> Basic.term -> 
@@ -59,7 +62,9 @@ val is_free_binder : Basic.binders list -> Basic.term -> bool
    rewrite using a list of deconstructed rewrite rules 
    return type environment built up during rewriting 
  *)
-val rewrite_list : control -> bool ref 
+val rewrite_list : 
+    Gtypes.scope -> 
+control -> bool ref 
   -> Gtypes.substitution
     -> (Basic.binders list * Basic.term * Basic.term) list ->
       Basic.term -> (Basic.term * Gtypes.substitution)
@@ -69,6 +74,7 @@ val rewrite_list : control -> bool ref
    return type environment built up during rewriting 
  *)
 val rewrite_eqs : 
+    Gtypes.scope -> 
     control
   -> Gtypes.substitution
     -> (Basic.binders list * Basic.term)list 
@@ -82,9 +88,11 @@ val rewrite_eqs :
    return new term and the new type environment contructed during rewriting.
  *)
 val rewrite :
+    Gtypes.scope -> 
     control -> Basic.term list -> Basic.term ->  Basic.term
 
 val rewrite_env : 
+    Gtypes.scope -> 
     control 
   -> Gtypes.substitution
     -> Basic.term list -> Basic.term 
