@@ -72,7 +72,7 @@ let simple_rewrite_conv scp rule thm=
     in 
     Formula.mk_form scp
       (rebuild_qnt Basic.All tvars 
-	 (Logicterm.mkequal tbody (Term.subst env rrhs)))
+	 (Logicterm.mk_equal tbody (Term.subst env rrhs)))
   in 
   let rvars, rbody = 
     Term.strip_qnt Basic.All (Formula.dest_form (Logic.dest_thm rule))
@@ -124,7 +124,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
     let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs tbody
     in 
       (rebuild_qnt Basic.All tvars 
-	 (Logicterm.mkequal tbody (Term.subst env rrhs)))
+	 (Logicterm.mk_equal tbody (Term.subst env rrhs)))
   in 
   let atag=Logic.label_to_tag asm sqnt
   in 
@@ -413,7 +413,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
 	Formula.dest_form 
 	  (Logic.drop_tag (Logic.get_tagged_cncl t (Logic.get_sqnt g)))
       in 
-      let newtrm = Logicterm.mknot ctrm
+      let newtrm = Logicterm.mk_not ctrm
       in 
       let inf1, g1=
 	apply_tag (fun x -> cases_full_tac (Some x) newtrm) g

@@ -276,7 +276,7 @@ module Simpset =
       let rrtrm = Formula.dest_form (Logic.dest_thm rl)
       in 
       rebuild_qnt Basic.All qs 
-	(Logicterm.mkimplies (dest_option cnd)
+	(Logicterm.mk_implies (dest_option cnd)
 	   (Rewrite.rewrite (Rewrite.control scp) [rrtrm] qb))
 	
 (** [form_cond_rewrite scp rl fm]:

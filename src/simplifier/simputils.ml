@@ -128,7 +128,7 @@ module Simputils=
       let make_aux q=
 	try Term.find (Basic.Bound q) env
 	with 
-	  Not_found -> Logicterm.mksome
+	  Not_found -> Logicterm.mk_some
       in 
       List.map make_aux qs
 *)
