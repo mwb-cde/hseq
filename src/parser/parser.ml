@@ -49,6 +49,7 @@ let token_table_reset tbl=
    should fail if token already exists
    (but doesn't *fixme* )
 *)
+
 let token_table_add tbl s tok=
   Hashtbl.add (tbl.table) s tok
 (*
@@ -862,6 +863,15 @@ let reset()=
   let term_parser inp=
     parse (Grammars.form (mk_info ())) inp
 
+(* User defined parsers *)
+
+let term_parser_list ()= !(Grammars.other_parsers_list)
+let add_term_parser = Grammars.add_parser
+let remove_term_parser = Grammars.remove_parser
+
+let type_parser_list ()= !(Grammars.other_type_parsers_list)
+let add_type_parser = Grammars.add_type_parser
+let remove_type_parser = Grammars.remove_type_parser
 
 (* readers: read and parse a string *)
 
