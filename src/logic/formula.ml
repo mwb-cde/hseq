@@ -96,9 +96,13 @@ let retype tenv x = Term.retype tenv x
 let binding_set_names memo scp binding =
   let (qnt, qname, qtype) = Basic.dest_binding binding
   in 
-  Basic.mk_binding qnt qname (Gtypes.set_name ~memo:memo scp qtype)
+  Basic.mk_binding qnt qname 
+    (Gtypes.set_name ~strict:true ~memo:memo scp qtype)
 
 let resolve_closed_term scp trm=
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:true ~memo:memo s t
+  in 
   let true_term = Term.mk_short_var "true"
   and curr_thy = scp.Gtypes.curr_thy
   in 
@@ -148,7 +152,7 @@ let resolve_closed_term scp trm=
 	in 	
 	let ty1=
 	  try
-	    Gtypes.set_name ~memo:type_thy_memo scp ty
+	    set_type_name type_thy_memo scp ty
 	  with err ->
 	    raise (Term.add_term_error "Invalid type" [t] err)
 	in 
@@ -175,7 +179,7 @@ let resolve_closed_term scp trm=
 	  in 
 	  let ty1=
 	    try
-	      Gtypes.set_name ~memo:type_thy_memo scp ty
+	      set_type_name type_thy_memo scp ty
 	    with err ->
 	      raise (Term.add_term_error "Invalid type" [t] err)
 	  in 

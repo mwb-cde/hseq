@@ -142,6 +142,9 @@ let check_args_unique ags=
 
    [extend_scope_identifier scp id typ]: extend scope [scp] with term
    named [id] of type [typ].
+
+   [extend_scope_terms scp declns]: extend scope [scp] with terms 
+   declared in declns.
  *)
 let extend_scope_typedef scp id args=
   let record = 
@@ -175,6 +178,34 @@ let extend_scope_identifier scp id typ =
     if (sel = fn_id) 
     then 
       if(n = id) then raise Not_found
+      else scp.Gtypes.prec_of sel n
+    else scp.Gtypes.prec_of sel n
+  in 
+  {scp with 
+   Gtypes.typeof_fn = typeof_fn;
+   Gtypes.thy_of = thy_of;
+   Gtypes.prec_of = prec_of}
+
+
+let extend_scope_terms scp declns =
+  let thy_of sel n =
+    if (sel = fn_id) then 
+      try 
+	let (id, _) = List.find (fun (y, _) -> n = (name y)) declns
+	in 
+	Basic.thy_of_id id
+      with Not_found ->  scp.Gtypes.thy_of sel n
+    else scp.Gtypes.thy_of sel n
+  and 
+      typeof_fn n = 
+	  try Gtypes.copy_type (List.assoc n declns)
+	  with Not_found -> scp.Gtypes.typeof_fn n
+  and 
+      prec_of sel n = 
+    if (sel = fn_id) 
+    then 
+      if (List.mem_assoc n declns)
+      then raise Not_found 
       else scp.Gtypes.prec_of sel n
     else scp.Gtypes.prec_of sel n
   in 

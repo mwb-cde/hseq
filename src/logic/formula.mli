@@ -22,9 +22,6 @@ type substitution = Term.substitution
  *)
 val is_closed: Basic.term list -> Basic.term -> bool
 (*
-val term_of_form : form -> Basic.term
-*)
-(*
    [resolve_closed_term scp trm]:
    
    1. Replace each free variable [Var(x, _)] in [trm] with the term

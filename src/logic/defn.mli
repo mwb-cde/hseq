@@ -90,6 +90,9 @@ val extend_scope_typedef:
 val extend_scope_identifier:
     Gtypes.scope -> Basic.ident -> Basic.gtype -> Gtypes.scope
 
+val extend_scope_terms:
+    Gtypes.scope -> (Basic.ident * Basic.gtype) list -> Gtypes.scope
+
 
 (*
  *  Type definition. 

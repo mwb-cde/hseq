@@ -60,11 +60,23 @@ module Skolem =
   struct
 
     type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+(*
+   type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
+*)
     type skolem_type = skolem_cnst list
+
+    let make_sklm x ty i = (x, (i, ty))
 
     let get_sklm_name (x, (_, _)) = x
     let get_sklm_indx (_, (i, _)) = i
     let get_sklm_type (_, (_, t)) = t
+
+    let decln_of_sklm x= (get_sklm_name x, get_sklm_type x)
+(*
+    let get_sklm_name ((x, _), _) = x
+    let get_sklm_indx ((_, _),i) = i
+    let get_sklm_type ((_, t), _) = t
+*)
 
     let get_old_sklm n sklms =  (n, List.assoc n sklms)
 
@@ -78,13 +90,18 @@ module Skolem =
 	in let nindx = ((get_sklm_indx oldsk)+1)
 	in let nnam = 
 	  mk_long (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
-	in ((Term.mk_typed_var nnam t),
-	    ((nnam,(nindx, t))::sklms)))
+	in (Term.mk_typed_var nnam t, (make_sklm nnam t nindx)::sklms))
       with Not_found -> 
 	let nn =  (mk_long (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
 	in 
 	((Term.mk_typed_var nn t), (nn, (1, t))::sklms)
 
+    let add_skolems_to_scope sklms scp =
+      let declns = List.map decln_of_sklm sklms
+      in 
+      Defn.extend_scope_terms scp declns
+
+(*
     let add_skolems_to_scope sklms scp =
       { scp with
 	Gtypes.typeof_fn = 
@@ -106,7 +123,7 @@ module Skolem =
 	    with Not_found -> scp.Gtypes.thy_of sel x
 	  else scp.Gtypes.thy_of sel x)
       }
-	
+*)	
     let add_skolem_to_scope sv sty scp =
       let svname=Basic.name (Term.get_var_id sv)
       in 
@@ -2153,7 +2170,6 @@ and
 	let (rid, rty) = dest_termdecln rep_decln
 	and (aid, aty) = dest_termdecln abs_decln
 	in
-
 	let nscp2= Defn.extend_scope_identifier nscp0 rid rty
 	in 
 	Defn.extend_scope_identifier nscp2 aid aty

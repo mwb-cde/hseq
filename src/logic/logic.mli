@@ -22,6 +22,9 @@ module Skolem:
     sig
 
       type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+(*
+      type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
+*)
       type skolem_type
 
       type skolem_info=
@@ -39,13 +42,16 @@ module Skolem:
       val get_sklm_name: skolem_cnst -> Basic.ident
       val get_sklm_indx: skolem_cnst -> int
       val get_sklm_type: skolem_cnst -> Basic.gtype
-      val get_new_sklm: Basic.ident -> Basic.gtype -> skolem_type 
+      val decln_of_sklm: skolem_cnst -> (Basic.ident * Basic.gtype)
+
+      val get_new_sklm: 
+	  Basic.ident -> Basic.gtype -> skolem_type
 	-> (Basic.term * skolem_type)
 
       val mk_new_skolem: 
 	  skolem_info
 	-> Basic.term * Basic.gtype 
-	    * (Basic.ident * (int * Basic.gtype)) list 
+	    * skolem_type
 	    * Gtypes.substitution * (string * int) list
 
       val add_skolem_to_scope: 
@@ -53,8 +59,7 @@ module Skolem:
 	    -> Gtypes.scope -> Gtypes.scope
 
       val add_skolems_to_scope: 
-	  (Basic.ident * ('a * Basic.gtype)) list ->
-	    Gtypes.scope -> Gtypes.scope
+	  skolem_cnst list -> Gtypes.scope -> Gtypes.scope
 
     end
 
