@@ -17,7 +17,7 @@ val print_node: Logic.node -> unit
 val print_branch: Logic.branch -> unit
 
 val print_thm: Logic.thm -> unit
-val print_defn: Defn.defn -> unit
+val print_defn: Logic.cdefn -> unit
 
 val print_prf: Goals.prf -> unit
 

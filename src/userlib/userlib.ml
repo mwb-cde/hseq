@@ -35,7 +35,7 @@ let define ?pp ?(simp=false) df =
   in 
   if simp
   then 
-    (let (_, _, thm) = Defn.dest_defn ret
+    (let (_, _, thm) = Logic.Defns.dest_termdef ret
     in 
     Simplib.add_simp thm; ret)
   else ret

@@ -162,7 +162,7 @@ let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
 
 let new_type ?pp (n, args, def) = 
-  let trec = Logic.Defns.mk_typedef (Global.scope()) n args def 
+  let trec = Logic.Defns.mk_typealias (Global.scope()) n args def 
   in 
   Thydb.add_type_rec trec (theories());
   (match pp with 
@@ -202,15 +202,23 @@ let dest_defn_term trm=
       
 let define ?pp ?(simp=false) ((name, args), r)=
   let ndef=
+    Logic.Defns.mk_termdef (Global.scope()) 
+      (Basic.mk_long (Global.get_cur_name()) name) args r
+
+(*
     Defn.mk_defn (Global.scope()) 
       (Basic.mk_long (Global.get_cur_name()) name) args r
+*)
   in 
   let props = 
     if simp
     then [Theory.simp_property]
     else []
   in 
+(*
   let (n, ty, d)= Defn.dest_defn ndef
+*)
+  let (n, ty, d)= Logic.Defns.dest_termdef ndef
   in 
   Thydb.add_defn (Basic.name n) ty d props (theories()); 
   (match pp with 
@@ -231,7 +239,7 @@ let declare ?pp trm =
       in 
       let id = Basic.mk_long (Global.get_cur_name()) v
       in 
-      let dcl = Defn.mk_decln (Global.scope()) id ty
+      let dcl = Logic.Defns.mk_termdecln (Global.scope()) v ty
       in 
       Thydb.add_decln dcl [] (theories()); (id, ty)
     with _ -> raise (Result.error ("Badly formed declaration"))

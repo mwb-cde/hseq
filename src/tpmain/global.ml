@@ -273,7 +273,8 @@ let mk_term scp pt =
   in 
   let nt = Term.retype_pretty tenv pt
   in 
-  Typing.check_types scp nt; nt
+(*  Typing.check_types scp nt;   *)
+  nt
 
 (* parser functions and error handling *)
 
@@ -292,7 +293,6 @@ let mk_term_raw tyenv trm =
   Term.retype tyenv trm1
 
 let mk_term_unchecked tyenv pt =  pt
-
 
 let read str= 
   mk_term (scope()) 

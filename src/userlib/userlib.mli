@@ -87,7 +87,7 @@ val define :
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ((string * (string * Basic.gtype) list) * Basic.term) 
-  -> Defn.defn
+  -> Logic.cdefn
 
 (* 
    [declare trm pp]

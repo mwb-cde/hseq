@@ -64,17 +64,38 @@ let print_prf p =
        print_sqnt (Goals.curr_sqnt p)));
   Format.printf "@]"
 
+let print_termdefn def = 
+    let n, ty, th = Logic.Defns.dest_termdef def
+    in 
+    Format.printf "@[";
+    Format.printf "@[";
+    print_fnident (Basic.mk_long Basic.null_thy (Basic.name n));
+    Format.printf ":@ ";
+    print_type ty;
+    Format.printf "@],@ ";
+    print_thm th;
+    Format.printf "@]"
+
+let print_termdecln def = 
+    let n, ty = Logic.Defns.dest_termdecln def
+    in 
+    Format.printf "@[";
+    print_fnident (Basic.mk_long Basic.null_thy (Basic.name n));
+    Format.printf ":@ ";
+    print_type ty;
+    Format.printf "@]"
+
+
 let print_defn def =
-  let n, ty, th = Defn.dest_defn def
-  in 
-  Format.printf "@[";
-  Format.printf "@[";
-  print_fnident (Basic.mk_long Basic.null_thy (Basic.name n));
-  Format.printf ":@ ";
-  print_type ty;
-  Format.printf "@],@ ";
-  print_thm th;
-  Format.printf "@]"
+  Logic.print_cdefn (Global.pp_info()) def
+(*
+  if(Logic.Defns.is_termdef def)
+  then print_termdefn def
+  else 
+    if (Logic.Defns.is_termdecln def)
+    then print_termdecln def
+    else ()
+*)
   
 let print_subst tenv f= 
   Format.printf "@[<2>";
