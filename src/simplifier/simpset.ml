@@ -40,15 +40,44 @@ let lt (_, _, _, x, _) (_, _, _, y, _)=term_gt y x
 
 (** [add_rule rl s]:
 
-   add rule [rl] to set [s]
+   Add rule [rl= c=>(l=r)] to set [s]
+
+   If rule could lead to looping ([Simpconvs.equals_upto_vars l
+   r] is true) then make rule an ordered rewrite 
+   (not implemented, currently [add_rule] just prints a warning and 
+   returns the set [s]).
  *)
-let add_rule rl s=
-  let (vs, _, l, _, _)=rl
+
+let print_rule (vars, cond, lhs, rhs, src)=
+  let trm = 
+    Drule.rebuild_qnt Basic.All vars
+      (match cond with
+	None -> (Logicterm.mk_equality lhs rhs)
+      | Some c -> (Logicterm.mk_implies c (Logicterm.mk_equality lhs rhs)))
   in 
-  { 
-    basic=Termnet.insert lt (is_variable vs) (s.basic) l rl;
-    next=s.next
-  }
+  Format.open_box 0;
+  (match src with
+    Logic.Asm _ -> Format.print_string "(assumption) "
+  | Logic.RRThm _ -> Format.print_string "(theorem) ");
+  Display.print_term trm;
+  Format.close_box();
+  Format.print_newline()
+
+let add_rule rl s=
+  let (vs, _, l, r, _)=rl
+  in 
+  if(Simputils.equal_upto_vars (Rewrite.is_free_binder vs) l r)
+  then 
+    (Format.open_box 0;
+     Format.print_string "Ignoring looping rule: ";
+     Format.close_box();
+     print_rule rl;
+     s)
+  else 
+    { 
+      basic=Termnet.insert lt (is_variable vs) (s.basic) l rl;
+      next=s.next
+    }
 
 (** [lookup trm s]:
 
