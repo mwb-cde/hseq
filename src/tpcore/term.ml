@@ -667,7 +667,7 @@ let rec string_term_prec i x =
   | Bound(_) -> "?"^(get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Qnt(k, q, body) -> 
-      let ti = (Basic.prec_qnt k)
+      let ti = (Printer.prec_qnt k)
       in 
       if ti <= i 
       then ("("^(quant_string (Basic.binder_kind q))
@@ -745,7 +745,7 @@ let rec string_term_inf inf i x =
 			 (Basic.binder_type x)))
 	    " " qnts)^": "
       in 
-      let ti = (Basic.prec_qnt (Basic.binder_kind q))
+      let ti = (Printer.prec_qnt (Basic.binder_kind q))
       in 
       if ti < i 
       then ("("^qnts_str^(string_term_inf inf ti (b))^")")
@@ -858,7 +858,6 @@ let rec print_termlist prenv x =
 
 (* pretty printing *)
 
-
 let pplookup ppstate id =
   try
     (Printer.get_record ppstate.Printer.terms id)
@@ -887,7 +886,8 @@ let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
 	(fnpr, 
 	 (fun pr l -> 
 	   Printer.print_list
-	     (argpr pr, Printer.print_space) l),
+(*	     (argpr pr, Printer.print_space) l), *)
+	     (argpr Printer.fun_app_prec, Printer.print_space) l), 
 	 (pplookup ppstate))
   in 
   printer prec (f, args)
@@ -958,12 +958,12 @@ let rec print_term ppstate prec x =
       in 
       let (qnts, b) = (strip_qnt qnt x)
       in 
-      let ti = (Basic.prec_qnt (qnt))
+      let ti = (Printer.prec_qnt (qnt))
       in 
       Format.printf "@[";
       Printer.print_bracket prec ti "(";
       Format.printf "@[<hov 3>";
-      print_qnts ppstate prec (qnt, qnts); 
+      print_qnts ppstate ti (qnt, qnts); 
       Printer.print_space ();
       print_term ppstate ti b;
       Format.printf "@]";

@@ -44,7 +44,9 @@ val const_leq: const_ty -> const_ty -> bool
 
 (* precedence of constructs and quantifiers *)
     val prec_con : conns_ty -> int
+(*
     val prec_qnt : quant_ty -> int
+*)
 
     val conns_string : conns_ty -> string
     val connc_string : conns_ty -> string list -> string

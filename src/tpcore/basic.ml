@@ -101,7 +101,9 @@ let std_prec f =
 
 let prec_qnt q = 
   match q with 
-    Lambda -> 0
+    Lambda -> 100
+  | All -> 101
+  | Ex -> 102
   | _ -> 0
 
 let conns_string x =
