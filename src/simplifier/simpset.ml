@@ -232,9 +232,9 @@ module Simpset =
 	  (None, t1)
       in 
       (* break the equality *)
-      if (is_equal rl)
+      if (Logicterm.is_equality rl)
       then 
-	let (lhs, rhs)=dest_equal rl
+	let (lhs, rhs)=Logicterm.dest_equality rl
 	in (qs, cnd, lhs, rhs)
       else 
 	  raise (Failure 
@@ -277,7 +277,11 @@ module Simpset =
       in 
       rebuild_qnt Basic.All qs 
 	(Logicterm.mk_implies (dest_option cnd)
-	   (Rewrite.rewrite (Rewrite.control scp) [rrtrm] qb))
+	   (Rewrite.rewrite scp
+	      (Rewrite.control 
+		 ~dir:Rewrite.rightleft
+		 ~strat:Rewrite.BottomUp
+		 ~max:None) [rrtrm] qb))
 	
 (** [form_cond_rewrite scp rl fm]:
    for rewrite rule [rl]=|-l=r,
@@ -374,7 +378,7 @@ module Simpset =
    let get_tags asms g=
    let sqnt=Logic.get_sqnt g
    in 
-   List.map (fun i -> Logic.index_to_tag i sqnt) asms;;
+   List.map (fun i -> Logic.Sequent.index_to_tag i sqnt) asms;;
 
 (*
    let mk_entry asm g=

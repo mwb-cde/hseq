@@ -122,7 +122,7 @@ module Simplifier =
       then raise No_change
       else 
 	(let chng=ref false
-	and st=Logic.sqnt_tag (Logic.get_sqnt g)
+	and st=Logic.Sequent.sqnt_tag (Logic.get_sqnt g)
 	in 
 	let rec rule_aux fg =
 	  let chng_aux=ref false
@@ -152,19 +152,19 @@ module Simplifier =
 
    Push theorem (copy an assumption) into sequent.
    Instantiate outermost quantifiers [qs] with values from [env].
-   Apply implE to create new sequent with condition as conclusion 
+   Apply implA to create new sequent with condition as conclusion 
    to prove.
  *)
 
 (** [allE_list i vs g]
    Instantiate formula [i] of goal [g] with value [vs]
 *)
-    let allE_list i vs g =
+    let allA_list i vs g =
       let rec inst_aux xs sq=
 	match xs with 
 	  [] -> sq
 	| (c::cs) -> 
-	    let nsq=Logic.Rules.allE c i sq
+	    let nsq=Logic.Rules.allA None c i sq
 	    in 
 	    inst_aux cs nsq
       in 
@@ -192,37 +192,30 @@ module Simplifier =
     let cut_rr_rule info t g =
       match t with
 	Logic.RRThm(th) ->
-	  Logic.Rules.cut_info info th g
+	  Logic.Rules.cut info th g
       | Logic.Asm(x) ->
-	  Logic.Rules.copy_asm_info info 
-	    (Logic.label_to_index x (Logic.get_sqnt g)) g
+	  Logic.Rules.copy_asm info x g
 
-(*
-      | Logic.Tagged(tg) ->
-	  Logic.Rules.copy_asm_info info 
-	    (Logic.tag_to_index tg (Logic.get_sqnt g)) g
-*)
 
     let prep_cond_tac cntrl values thm g =
-      let info = ref (Logic.Rules.make_tag_record [] [] [])
+      let info =Drule.mk_info()
       in
       try 
-	let g1=cut_rr_rule info thm g
+	let g1=cut_rr_rule (Some(info)) thm g
 	in 
-	let rrftg= get_one (!info).Logic.Rules.forms (No_change)
+	let rrftg= Lib.get_one (!info).Logic.forms (No_change)
 	in 
-	let g2=allE_list (Logic.tag_to_index rrftg (Logic.get_sqnt g1)) 
-	    values g1
+	let g2=allA_list (ftag rrftg) values g1
 	in 
-	let g3=Logic.Rules.implE_info info 
-	    (Logic.tag_to_index rrftg (Logic.get_sqnt g2)) g2
+	let g3=Logic.Rules.implA (Some(info)) (ftag rrftg) g2
 	in 
 	let (cgltg, rgltg)= 
-	  get_two (!info).Logic.Rules.goals (Failure "prep_cond_tac: goals")
+	  Lib.get_two (!info).Logic.goals 
+	    (Failure "prep_cond_tac: goals")
 	in 
 	let cftg=
-	  get_one (!info).Logic.Rules.forms (Failure
-					       "prep_cond_tac: forms")
+	  Lib.get_one (!info).Logic.forms 
+	    (Failure "prep_cond_tac: forms")
 	in 
 	let ncntrl= cntrl_add_asm cntrl rrftg
 	in 
@@ -252,9 +245,9 @@ module Simplifier =
 	    prep_cond_tac cntrl values thm g
 	  in 
 	  let (cgltg, rgltg)=
-	    get_two glinfo (Failure "prove_cond_rule: 1")
+	    Lib.get_two glinfo (Failure "prove_cond_rule: 1")
 	  and (cftg, rftg)=
-	    get_two forminfo (Failure "prove_cond_rule: 1")
+	    Lib.get_two forminfo (Failure "prove_cond_rule: 1")
 	  in 
 	  let ng1=Logic.goal_focus cgltg ng
 	  in 
@@ -293,7 +286,7 @@ module Simplifier =
 	in 
 	let tenv=Term.empty_subst()
 	in 
-	let scp=Logic.scope_of (Logic.get_sqnt g)
+	let scp=Logic.Sequent.scope_of (Logic.get_sqnt g)
 	in 
 	let (ntyenv, ntenv, nt)=
 	  match_rewrite scp tyenv tenv
@@ -371,7 +364,7 @@ module Simplifier =
       in 
       let is_asm =
 	try
-	  (ignore(Logic.get_tagged_asm tag sqnt); true)
+	  (ignore(Logic.Sequent.get_tagged_asm tag sqnt); true)
 	with _ -> false
       in 
       let fid = Logic.FTag tag
@@ -380,11 +373,12 @@ module Simplifier =
 	if(is_asm)
 	then 
 	  try 
-	    (control, Tactics.repeat (Logic.Rules.existI_full None fid) g)
+	    (control, 
+	     Tactics.repeat (Logic.Rules.existA None fid) g)
 	  with _ -> (control, g)
 	else 
 	  try 
-	    (control, Tactics.repeat (Logic.Rules.allI_full None fid) g)
+	    (control, Tactics.repeat (Logic.Rules.allC None fid) g)
 	  with _ -> (control, g)
       in 
       (newcontrol, newgoal)
@@ -407,12 +401,12 @@ module Simplifier =
 	in 
 	Tactics.orl
 	  [
-	   Tactics.thenl
+	   Tactics.seq
 	     [
 	      init_simp_tac ctrl tg;
-	      Logic.Rules.trueR_full None (Logic.FTag tg)
+	      Logic.Rules.trueR None (Logic.FTag tg)
 	    ];
-	   Logic.Rules.trueR_full None (Logic.FTag tg)] g
+	   Logic.Rules.trueR None (Logic.FTag tg)] g
       in 
       let sqnt=Logic.get_sqnt goal
       in 
@@ -451,7 +445,9 @@ module Simplifier =
 	    with No_change -> (ctrl, t, g))
       in
       let trm=
-	Formula.dest_form(Logic.drop_tag(Logic.get_tagged_form ft sqnt))
+	Formula.dest_form
+	  (Logic.drop_tag
+	     (Logic.Sequent.get_tagged_form ft sqnt))
       in 
       let (ncntrl, ntrm, ngoal)= find_rrs cntrl trm goal
       in 
@@ -461,7 +457,7 @@ module Simplifier =
       then raise No_change
       else 
 	(try
-	  Logic.Rules.rewrite rrs (Logic.tag_to_index ft sqnt) ngoal
+	  Logic.Rules.rewrite None rrs (ftag ft) ngoal
 	with _ -> raise No_change)
 
 (*
@@ -474,11 +470,11 @@ module Simplifier =
    let initial_flatten ft g=
    let conc_elims =
    [Logic.Rules.trueR ft;
-   Logic.Rules.allI ft]
+   Logic.Rules.allC ft]
    and asm_elims = 
-   [	Bool_tacs.false_rule0 ft;
-   Logic.Rules.conjE ft; 
-   Logic.Rules.existI ft]
+   [Boollib.false_rule ft;
+   Logic.Rules.conjA None ft; 
+   Logic.Rules.existA None ft]
    in 
    repeat_for_sqnt 
    (Tactics.orl 
@@ -548,18 +544,17 @@ module Simplifier =
    put conclusions into assumptions (by negation)
  *)
 
-
       let simp_asm_elims = 
-	[(Formula.is_false, false_rule0);
-	  (Formula.is_conj, Logic.Rules.conjE); 
-	  (Formula.is_neg, Logic.Rules.negA); 
-	  (Formula.is_exists, Logic.Rules.existI)]
+	[(Formula.is_false, (fun x -> Boollib.false_rule ~a:x));
+	  (Formula.is_conj, Logic.Rules.conjA None); 
+	  (Formula.is_neg, Logic.Rules.negA None); 
+	  (Formula.is_exists, Logic.Rules.existA None)]
 
       let simp_conc_elims =
 	[
-	 (Formula.is_true, Logic.Rules.trueR);
-	 (Formula.is_disj, Logic.Rules.disjE);
-	 (Formula.is_all, Logic.Rules.allI)]
+	 (Formula.is_true, Logic.Rules.trueR None);
+	 (Formula.is_disj, Logic.Rules.disjC None);
+	 (Formula.is_all, Logic.Rules.allC None)]
 
      let initial_flatten_tac fts goal=
       (repeat_for_sqnt 
@@ -631,7 +626,7 @@ module Simplifier =
     let simp_tac ?(i=1) gl=
       let cntrl = mk_control()
       in 
-      let tg=Logic.index_to_tag i (Logic.get_sqnt gl)
+      let tg=Logic.Sequent.index_to_tag i (Logic.get_sqnt gl)
       in 
 (*
       basic_simp_tac cntrl (!simp_set) tg gl

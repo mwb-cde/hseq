@@ -41,7 +41,7 @@ module Simputils=
       try
 	ignore(List.find 
 		 (fun x->Tag.equal st x) 
-		 (Logic.get_all_goal_tags g));
+		 (Logic.get_subgoal_tags g));
 	false
       with Not_found ->true
 
@@ -58,7 +58,7 @@ module Simputils=
    return new goal and tag record of tactic
  *)
     let apply_tag tac g =
-      let inf=ref (Logic.Rules.make_tag_record [] [] [])
+      let inf=Drule.mk_info()
       in 
       let ng = tac inf g
       in 
@@ -71,11 +71,11 @@ module Simputils=
    fail if more than [n] new formulas (tags) are generated
 *)
     let apply_get_formula_tag n tac g =
-      let inf=ref (Logic.Rules.make_tag_record [] [] [])
+      let inf= Drule.mk_info()
       in 
       let ng = tac inf g
       in 
-      let ntg = (!inf).Logic.Rules.forms
+      let ntg = (!inf).Logic.forms
       in 
       if(List.length ntg)>n 
       then
@@ -90,7 +90,7 @@ module Simputils=
     let apply_get_single_formula_tag tac g =
       let ts, ng=apply_get_formula_tag 1 tac g
       in 
-      (get_one ts (Failure "too many tags"), ng)
+      (Lib.get_one ts (Failure "too many tags"), ng)
 
 (** [rebuild_qnt k qs b]
    rebuild quantified term of kind k from quantifiers [qs] and body [b]
@@ -104,15 +104,15 @@ module Simputils=
 	[] -> b
       | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
 
-(** [allE_list i vs g]
-   apply [allE] to formula [i] using terms [vs]
+(** [allA_list i vs g]
+   apply [allA] to formula [i] using terms [vs]
  *)
-    let allE_list i vs g =
+    let allA_list i vs g =
       let rec inst_aux xs sq=
 	match xs with 
 	  [] -> sq
 	| (c::cs) -> 
-	    let nsq=Logic.Rules.allE_full None c i sq
+	    let nsq=Logic.Rules.allA None c i sq
 	    in 
 	    inst_aux cs nsq
       in 
