@@ -9,82 +9,11 @@ type saved_thm =
     Saxiom of saved_form
   | Stheorem of saved_form
 
-type tagged_form = (Tag.t* form)
-
-type skolem_cnst = (Basic.ident * (int * Basic.gtype))
-type skolem_type = skolem_cnst list
-
-(* 
-   A sequent is made up of
-   a unique tag
-   information about skolem constants (the sqnt_env)
-   a list of tagged formulas: the assumptions
-   a list of tagged formulas: the conclusions
- *)
-(* 
-   A sqnt_env is made up of
-   the shared type variables (Gtypes.WeakVar) that may be used in the sequent
-   information for constructing names of weak types
-   the skolem constants (Term.Meta) that may be used in the sequent
-   the scope of the sequent
- *)
-type sqnt_env = 
-    {
-     sklms: skolem_type; 
-     sqscp : Gtypes.scope;
-     tyvars: Basic.gtype list;
-     tynames: (string * int) list;
-   }
-type sqnt = (Tag.t* sqnt_env * tagged_form list * tagged_form list)
-
-(* 
-   A goal is made up of
-   a list of sequents: the sub-goals still to be proved
-   a type environment: the bindings of the shared type variables 
-   which occur in the goals sequents.
-   a formula: the theorem which is to be proved
- *)
-type goal =  Goal of (sqnt list * Gtypes.substitution * form)
-
-type rule = goal -> goal
-type conv = thm list -> thm list 
-
-(* 
-   cdefn:
-   Checked Definitions: 
-   checking of type and term definitions and declarations
- *)
-
-type cdefn =
-    TypeDef of Basic.ident * string list * Basic.gtype option
-  | TermDef of 
-      Basic.ident * Basic.gtype
-	* (string*Basic.gtype) list * thm option
-
 let mk_axiom t = Axiom t
-let mk_theorem t = Theorem t
-
-(* label: sequent formula identifiers *)
-
-type label = 
-    FNum of int
-  | FTag of Tag.t
-
-(*
-   rr_type: where to get rewrite rule from
-   Asm : numbered assumption
-   Tagged: tagged assumption
-   RRThm: given theorem
- *)
-type rr_type = 
-    Asm of label
-  | RRThm of thm
-
-(* theorem recognisers/destructors *)
-
 let is_axiom t = match t with (Axiom _) -> true | _ -> false
-let is_thm t = match t with (Theorem _) -> true | _ -> false
 
+let mk_theorem t = Theorem t
+let is_thm t = match t with (Theorem _) -> true | _ -> false
 let dest_thm x = 
   match x with 
     Axiom f -> f
@@ -104,72 +33,92 @@ let string_thm x = string_form (dest_thm x)
 
 (* Error handling *)
 
-let mklogicError s t = 
+let mk_logicError s t = 
   ((new Term.termError s 
       (List.map Formula.term_of_form t)):>Result.error)
 let logicError s t = 
   Result.mk_error((new Term.termError s 
-		    (List.map Formula.term_of_form t)):>Result.error)
+		     (List.map Formula.term_of_form t)):>Result.error)
 let addlogicError s t es = 
   raise (Result.add_error (logicError s t) es)
 
+let sqntError s = 
+  Result.mk_error(new Result.error s)
+let addsqntError s es = 
+  raise (Result.add_error (sqntError s) es)
 
 (* Skolem constants *)
+module Skolem = 
+  struct
 
-let get_sklm_name (x, (_, _)) = x
-let get_sklm_indx (_, (i, _)) = i
-let get_sklm_type (_, (_, t)) = t
+    type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+    type skolem_type = skolem_cnst list
 
-let get_old_sklm n sklms =  (n, List.assoc n sklms)
+    let get_sklm_name (x, (_, _)) = x
+    let get_sklm_indx (_, (i, _)) = i
+    let get_sklm_type (_, (_, t)) = t
 
-let is_sklm n sklms = 
-  try ignore(get_old_sklm n sklms); true
-  with Not_found -> false
+    let get_old_sklm n sklms =  (n, List.assoc n sklms)
 
-let get_new_sklm n t sklms = 
-  try 
-    (let oldsk = get_old_sklm n sklms
-    in let nindx = ((get_sklm_indx oldsk)+1)
-    in let nnam = 
-      mklong (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
-    in ((Term.mk_typed_var nnam t),
-	((nnam,(nindx, t))::sklms)))
-  with Not_found -> 
-    let nn =  (mklong (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
-    in 
-    ((Term.mk_typed_var nn t), (nn, (1, t))::sklms)
+    let is_sklm n sklms = 
+      try ignore(get_old_sklm n sklms); true
+      with Not_found -> false
 
-let add_sklms_to_scope sklms scp =
-  Gtypes.extend_scope scp 
-    (fun x -> 
-      let y =
-	(if (thy_of_id x)=null_thy
-	then mklong scp.Gtypes.curr_thy (name x)
-	else x)
+    let get_new_sklm n t sklms = 
+      try 
+	(let oldsk = get_old_sklm n sklms
+	in let nindx = ((get_sklm_indx oldsk)+1)
+	in let nnam = 
+	  mk_long (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
+	in ((Term.mk_typed_var nnam t),
+	    ((nnam,(nindx, t))::sklms)))
+      with Not_found -> 
+	let nn =  (mk_long (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
+	in 
+	((Term.mk_typed_var nn t), (nn, (1, t))::sklms)
+
+    let add_skolems_to_scope sklms scp =
+      { scp with
+	Gtypes.typeof_fn = 
+	(fun x ->
+	  (let y =
+	    (if (thy_of_id x)=null_thy
+	    then mk_long scp.Gtypes.curr_thy (name x)
+	    else x)
+	  in 
+	  try get_sklm_type (get_old_sklm y sklms)
+	  with Not_found -> scp.Gtypes.typeof_fn x));
+	Gtypes.thy_of=
+	(fun sel x-> 
+	  if(sel = Basic.fn_id)
+	  then 
+	    try 
+	      ignore(List.assoc (Basic.mk_long scp.Gtypes.curr_thy x) sklms);
+	      scp.Gtypes.curr_thy
+	    with Not_found -> scp.Gtypes.thy_of sel x
+	  else scp.Gtypes.thy_of sel x)
+      }
+	
+    let add_skolem_to_scope sv sty scp =
+      let svname=Basic.name (Term.get_var_id sv)
       in 
-      get_sklm_type (get_old_sklm y sklms))
-
-(* 
-   Skolem Constants
- *)
-
-(**
-   [new_weak_type n names]
-
-   Make a new weak type with a name derived from [n] and [names].
-   Return this type and the updated names.
-*)
-
-let new_weak_type n names=
-  (* get the index of the name (if any) *)
-  let nm_int=
-    try List.assoc n names
-    with Not_found -> 0
-  in 
-  let nnames = Lib.replace n (nm_int+1) names
-  in 
-  let nm_s = (n^(Lib.int_to_name nm_int))
-  in (nm_s, nnames)
+      { scp with
+	Gtypes.typeof_fn = 
+	(fun x ->
+	  let id_thy = thy_of_id x
+	  in 
+	  if (id_thy=null_thy) or (id_thy=scp.Gtypes.curr_thy)
+	  then 
+	    (if (name x) = svname
+	    then sty
+	    else scp.Gtypes.typeof_fn x)
+	  else scp.Gtypes.typeof_fn x);
+	Gtypes.thy_of=
+	(fun sel x-> 
+	  if(sel = Basic.fn_id) & x = svname
+	  then scp.Gtypes.curr_thy
+	  else scp.Gtypes.thy_of sel x)
+      }
 
 (** [mk_new_skolem scp n ty]
 
@@ -178,62 +127,113 @@ let new_weak_type n names=
    return the new identifier, its type and the updated 
    information for skolem building
  *)
-type skolem_info=
+    type skolem_info=
+	{
+	 name: Basic.ident;
+	 ty: Basic.gtype;
+	 tyenv: Gtypes.substitution;
+	 scope: Gtypes.scope;
+	 skolems: skolem_type;
+	 tylist: (string*int) list
+       }
+
+(**
+   [new_weak_type n names]
+
+   Make a new weak type with a name derived from [n] and [names].
+   Return this type and the updated names.
+ *)
+    let new_weak_type n names=
+      (* get the index of the name (if any) *)
+      let nm_int=
+	try List.assoc n names
+	with Not_found -> 0
+      in 
+      let nnames = Lib.replace n (nm_int+1) names
+      in 
+      let nm_s = (n^(Lib.int_to_name nm_int))
+      in (nm_s, nnames)
+
+    let mk_new_skolem info=
+      (* tyname: if ty is a variable then use its name for the
+	 weak variable otherwise use the empty string
+       *)
+      let tyname x=
+	if Gtypes.is_var info.ty 
+	then new_weak_type (Gtypes.get_var info.ty) info.tylist
+	else new_weak_type (x^"_ty") info.tylist
+      in
+      (* make the weak type *)
+      let mk_nty x=
+	let ty_name, nnames=tyname x
+	in 
+	let tty=Gtypes.mk_weak ty_name
+	in 
+	(* unify the weak type with the given type *)
+	let ntyenv=Gtypes.unify_env info.scope tty info.ty info.tyenv
+	in 
+	(Gtypes.mgu tty ntyenv, ntyenv, nnames)
+      in 
+      try 
+	(* see if name is already associated with a skolem *)
+	let oldsk = get_old_sklm info.name info.skolems
+	in 
+	(* get new index for skolem named n *)
+	let nindx = (get_sklm_indx oldsk)+1
+	in 
+	(* make the new identifier *)
+	let nnam = 
+	  mk_long 
+	    (thy_of_id info.name) 
+	    ((name info.name)^"_"^(string_of_int nindx))
+	in 
+	let nty, ntyenv, new_names=mk_nty (name nnam)
+	in 
+	(Term.mk_typed_var nnam nty, nty, (nnam, (nindx, nty))::info.skolems, 
+	 ntyenv, new_names)
+      with Not_found -> 
+	let nnam=
+	  mk_long 
+	    (thy_of_id info.name) ((name info.name)^"_"^(string_of_int 1))
+	in 
+	let nty, ntyenv, new_names=mk_nty (name nnam)
+	in 
+	(Term.mk_typed_var nnam nty, nty, (nnam, (1, nty))::info.skolems, 
+	 ntyenv, new_names)
+  end
+
+(* 
+   A sequent is made up of
+   a unique tag
+   information about skolem constants (the sqnt_env)
+   a list of tagged formulas: the assumptions
+   a list of tagged formulas: the conclusions
+ *)
+type tagged_form = (Tag.t* form)
+
+let form_tag (t, _) = t
+let sqnt_form (_, f) = f
+
+(* mk_sqnt x: |- x  (with x to be proved)*) 
+let mk_sqnt_form f = (Tag.create(), f)
+
+(* 
+   A sqnt_env is made up of
+   the shared type variables (Gtypes.WeakVar) that may be used in the sequent
+   information for constructing names of weak types
+   the skolem constants that may be used in the sequent
+   the scope of the sequent
+*)
+type sqnt_env = 
     {
-     name: Basic.ident;
-     ty: Basic.gtype;
-     tyenv: Gtypes.substitution;
-     scope: Gtypes.scope;
-     skolems: skolem_type;
-     tylist: (string*int) list
+     sklms: Skolem.skolem_type; 
+     sqscp : Gtypes.scope;
+     tyvars: Basic.gtype list;
+     tynames: (string * int) list;
    }
 
-let mk_new_skolem info=
-  (* tyname: if ty is a variable then use its name for the
-     weak variable otherwise use the empty string
-   *)
-  let tyname x=
-    if Gtypes.is_var info.ty 
-    then new_weak_type (Gtypes.get_var info.ty) info.tylist
-    else new_weak_type (x^"_ty") info.tylist
-  in
-  (* make the weak type *)
-  let mk_nty x=
-    let ty_name, nnames=tyname x
-    in 
-    let tty=Gtypes.mk_weak ty_name
-    in 
-    (* unify the weak type with the given type *)
-    let ntyenv=Gtypes.unify_env info.scope tty info.ty info.tyenv
-    in 
-    (Gtypes.mgu tty ntyenv, ntyenv, nnames)
-  in 
-  try 
-    (* see if name is already associated with a skolem *)
-    let oldsk = get_old_sklm info.name info.skolems
-    in 
-    (* get new index for skolem named n *)
-    let nindx = (get_sklm_indx oldsk)+1
-    in 
-    (* make the new identifier *)
-    let nnam = 
-      mklong 
-	(thy_of_id info.name) 
-	((name info.name)^"_"^(string_of_int nindx))
-    in 
-    let nty, ntyenv, new_names=mk_nty (name nnam)
-    in 
-    (Term.mk_typed_var nnam nty, nty, (nnam, (nindx, nty))::info.skolems, 
-     ntyenv, new_names)
-  with Not_found -> 
-    let nnam=
-      mklong 
-	(thy_of_id info.name) ((name info.name)^"_"^(string_of_int 1))
-    in 
-    let nty, ntyenv, new_names=mk_nty (name nnam)
-    in 
-    (Term.mk_typed_var nnam nty, nty, (nnam, (1, nty))::info.skolems, 
-     ntyenv, new_names)
+type sqnt = (Tag.t * sqnt_env * tagged_form list * tagged_form list)
+
 
 (* Sequent manipulation *)
 
@@ -244,15 +244,35 @@ let sklm_cnsts (_, e, _, _) = e.sklms
 let scope_of (_, e, _, _) = e.sqscp
 let sqnt_tyvars (_, e, _, _)=e.tyvars
 let sqnt_tynames (_, e, _, _)=e.tynames
-(*let sqnt_consts (_, e, _, _)=e.consts*)
 let sqnt_tag(t, _, _, _) = t
 
-let form_tag (t, _) = t
-let sqnt_form (_, f) = f
+(* 
+   A goal is made up of
+   a list of sequents: the sub-goals still to be proved
+   a type environment: the bindings of the shared type variables 
+   which occur in the goals sequents.
+   a formula: the theorem which is to be proved
+*)
+type goal =  Goal of (sqnt list * Gtypes.substitution * form)
 
-(* mk_sqnt x: |- x  (with x to be proved)*) 
+type rule = goal -> goal
+type conv = thm list -> thm list 
 
-let mk_sqnt_form f = (Tag.create(), f)
+(* label: sequent formula identifiers *)
+
+type label = 
+    FNum of int
+  | FTag of Tag.t
+
+(*
+   rr_type: where to get rewrite rule from
+   Asm : numbered assumption
+   Tagged: tagged assumption
+   RRThm: given theorem
+ *)
+type rr_type = 
+    Asm of label
+  | RRThm of thm
 
 let mk_sqnt_env sks scp tyvs names=
   {sklms=sks; sqscp=scp; tyvars=tyvs; tynames=names}
@@ -266,6 +286,8 @@ let new_sqnt scp x =
   mk_sqnt (Tag.create()) env [] [mk_sqnt_form x]
 
 let sqnt_scope sq = scope_of sq
+let thy_of_sqnt sq = (scope_of sq).Gtypes.curr_thy
+
 
 let get_asm i sq = 
   let (t, f) = try (List.nth (asms sq) ((-i)-1)) with _ -> raise Not_found
@@ -292,7 +314,6 @@ let get_tagged_asm t sq =
 	else get_aux xs
   in 
   get_aux (asms sq)
-
 
 let get_tagged_cncl t sq = 
   let rec get_aux ccs = 
@@ -365,13 +386,6 @@ let label_to_index f sq=
   | FTag(x) -> tag_to_index x sq
 
 
-let sqntError s = 
-  Result.mk_error(new Result.error s)
-let addsqntError s es = 
-  raise (Result.add_error (sqntError s) es)
-
-let thy_of_sq sq = (scope_of sq).Gtypes.curr_thy
-
 (* Subgoals *)
 exception No_subgoals
 
@@ -394,8 +408,8 @@ let get_sqnt g=
   | _ -> raise (Result.error "get_sqnt: No subgoals")
 
 let goal_tyenv (Goal(_, e, _)) = e
-
 let get_goal (Goal(_, _, f)) = f
+let get_subgoals (Goal(sq, tyenv, _)) = sq
 
 let get_subgoal_tags (Goal(sqs, _, _)) = List.map sqnt_tag sqs
 
@@ -403,6 +417,32 @@ let goal_has_subgoals g =
   match g with 
     (Goal([], _, _)) -> false
   | (Goal(_, _, _)) -> true
+
+
+let num_of_subgoals x = 
+  match x with
+    (Goal(sqs, _, _)) -> List.length sqs
+
+let get_nth_subgoal_sqnt i (Goal(sq, _, _)) =
+  try (List.nth sq i)
+  with _ -> 
+    raise Not_found (*(sqntError "get_nth_subgoal: invalid argument")*)
+
+(*
+let get_all_goal_tags (Goal(sqs, _, _))=
+  List.map sqnt_tag sqs
+*) 
+
+let get_goal_tag g =
+  match g with
+    (Goal(x::_, _, _))-> sqnt_tag x
+  | _ -> raise Not_found
+
+let mk_goal scp f = 
+  let nf= Formula.typecheck scp f (Gtypes.mk_bool)
+  in 
+  Goal([new_sqnt scp nf], Gtypes.empty_subst(), nf)
+
 
 let goal_focus t (Goal(sqnts, tyenv, f)) =
   let rec focus sqs rslt=
@@ -417,15 +457,14 @@ let goal_focus t (Goal(sqnts, tyenv, f)) =
 let rotate_subgoals_left n (Goal(sqnts, tyenv, f)) =
   if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
   then 
-  Goal(Lib.rotate_left n sqnts, tyenv, f)
+    Goal(Lib.rotate_left n sqnts, tyenv, f)
   else raise No_subgoals
 
 let rotate_subgoals_right n (Goal(sqnts, tyenv, f)) =
   if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
   then 
-  Goal(Lib.rotate_right n sqnts, tyenv, f)
+    Goal(Lib.rotate_right n sqnts, tyenv, f)
   else raise No_subgoals
-
 
 let apply_nth r i g = 
   match g with 
@@ -433,32 +472,6 @@ let apply_nth r i g =
       let nsgs = r (try (List.nth sgs i) with _ -> raise Not_found)
       in Goal(Lib.splice_nth i sgs [nsgs], tyenv, f)
 
-let get_tyenv (Goal(_, tyenv, _)) = tyenv
-
-let num_of_subgoals x = 
-  match x with
-    (Goal(sqs, _, _)) -> List.length sqs
-
-let get_subgoals (Goal(sq, tyenv, _)) = sq
-
-let get_nth_subgoal_sqnt i (Goal(sq, _, _)) =
-  try (List.nth sq i)
-  with _ -> 
-    raise Not_found (*(sqntError "get_nth_subgoal: invalid argument")*)
-
-
-let get_all_goal_tags (Goal(sqs, _, _))=
-  List.map sqnt_tag sqs
-
-let get_goal_tag g =
-  match g with
-    (Goal(x::_, _, _))-> sqnt_tag x
-  | _ -> raise Not_found
-
-let mk_goal scp f = 
-  let nf= Formula.typecheck scp f (Gtypes.mk_bool)
-  in 
-  Goal([new_sqnt scp nf], Gtypes.empty_subst(), nf)
 
 let mk_thm g = 
   match g with 
@@ -467,9 +480,8 @@ let mk_thm g =
 
 
 let print_thm pp t = 
-  Format.open_box 2; 
-  Format.print_string "|-";
-  Format.print_space();
+  Format.open_box 3; 
+  Format.print_string "|- ";
   Term.print pp (Formula.term_of_form (dest_thm t));
   Format.close_box()
 
@@ -477,27 +489,27 @@ let print_thm pp t =
 (* goals: new goals produced by rule *)
 (* forms: new forms produced by rule *)
 (* terms: new constants produced by rule *)
-    type tag_record = 
-	{ 
-	  goals:Tag.t list; 
-	  forms : Tag.t list;
-	  terms: Basic.term list
-	}
-    type info = tag_record ref
+type tag_record = 
+    { 
+      goals:Tag.t list; 
+      forms : Tag.t list;
+      terms: Basic.term list
+    }
+type info = tag_record ref
 
-    let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
-    let add_to_record r gs fs ts =
-      make_tag_record (gs@r.goals) (fs@r.forms) (ts@r.terms)
+let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
+let add_to_record r gs fs ts =
+  make_tag_record (gs@r.goals) (fs@r.forms) (ts@r.terms)
 
-    let do_info info gs fs ts=
-      match info with
-	None -> ()
-      | Some(v) -> v:=make_tag_record gs fs ts
+let do_info info gs fs ts=
+  match info with
+    None -> ()
+  | Some(v) -> v:=make_tag_record gs fs ts
 
-    let add_info info gs fs ts=
-      match info with
-	None -> ()
-      | Some(v) -> v:=add_to_record (!v) gs fs ts
+let add_info info gs fs ts=
+  match info with
+    None -> ()
+  | Some(v) -> v:=add_to_record (!v) gs fs ts
 
 
 module Rules=
@@ -547,11 +559,11 @@ module Rules=
     let mk_subgoal sq = [sq]
 
 (* 
-    let goal_apply r g = 
-      match g with 
-	Goal([], _, _) -> raise (sqntError "No subgoals")
-      |(Goal(sqs, tyenv, f)) -> r g	
-*)
+   let goal_apply r g = 
+   match g with 
+   Goal([], _, _) -> raise (sqntError "No subgoals")
+   |(Goal(sqs, tyenv, f)) -> r g	
+ *)
 
     let postpone g = 
       match g with
@@ -696,6 +708,26 @@ module Rules=
 	[t1] -> t1
       | _ -> raise (logicError "get_one" x)
 
+(* [set_names scp trm]
+   Try to match free variables in term [trm] with identifiers 
+   defined in the scope of sequent [sq]
+   Return the term with the resolved names.
+ *)
+    let set_names scp trm = Term.set_names scp trm
+
+(*
+   [check_term sq trm]
+   Check that term [trm] is in the scope [scope].
+ *)
+    let check_term_memo memo scp trm=
+      (if (Term.in_thy_scope memo scp (scp.Gtypes.curr_thy) trm)
+      then ()
+      else (raise (Term.termError "Badly formed formula" [trm])))
+
+    let check_term scp trm=
+      check_term_memo (Lib.empty_env()) scp trm
+
+
 (* cut x sq: adds theorem x to assumptions of sq 
 
    asm |- cncl      --> t:x, asm |- cncl
@@ -703,18 +735,21 @@ module Rules=
  *)
 
     let cut0 info x sq=
-      let nt = dest_thm x
-      and scp = scope_of sq
+      let scp = scope_of sq
       and ftag = Tag.create()
       in 
-      let nasm = (ftag, nt)
+      let nf = (dest_thm x)
+      in 
+      let nt = set_names scp (Formula.dest_form nf)
+      in 
+      check_term (scope_of sq) nt;
+      let nasm = (ftag, (Formula.mk_form scp nt))
       in 
       try 
-	ignore(Formula.in_thy_scope scp (scp.Gtypes.curr_thy) nt);
 	add_info info [] [ftag] [];
 	mk_subgoal(sqnt_tag sq, sqnt_env sq, nasm::(asms sq), concls sq)
       with 
-	x -> (addlogicError "Not in scope of sequent" [nt] x)
+	x -> (addlogicError "Not in scope of sequent" [nf] x)
 
     let cut info x sqnt = simple_sqnt_apply (cut0 info x) sqnt
 
@@ -977,17 +1012,20 @@ module Rules=
 	(let (nv, nty)=(Formula.get_binder_name t, Formula.get_binder_type t)
 	in 
 	let sv, sty, nsklms, styenv, ntynms=
-	  mk_new_skolem 
+	  Skolem.mk_new_skolem 
 	    {
-	     name=(mklong (thy_of_sq sq) nv);
-	     ty=nty;
-	     tyenv=tyenv;
-	     scope=scope_of sq;
-	     skolems=sklm_cnsts sq;
-	     tylist=sqnt_tynames sq
+	     Skolem.name=(mk_long (thy_of_sqnt sq) nv);
+	     Skolem.ty=nty;
+	     Skolem.tyenv=tyenv;
+	     Skolem.scope=scope_of sq;
+	     Skolem.skolems=sklm_cnsts sq;
+	     Skolem.tylist=sqnt_tynames sq
 	   }
 	in 
-	let nscp = add_sklms_to_scope nsklms (scope_of sq)
+(*
+   let nscp = add_sklms_to_scope nsklms (scope_of sq)
+ *)
+	let nscp = Skolem.add_skolem_to_scope sv sty (scope_of sq)
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
@@ -1030,18 +1068,20 @@ module Rules=
 	(let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
 	in 
 	let sv, sty, nsklms, styenv, ntynms=
-	  mk_new_skolem
+	  Skolem.mk_new_skolem
 	    {
-	     name=(mklong (thy_of_sq sq) nv);
-	     ty=nty;
-	     tyenv=tyenv;
-	     scope=scope_of sq;
-	     skolems=sklm_cnsts sq;
-	     tylist=sqnt_tynames sq
+	     Skolem.name=(mk_long (thy_of_sqnt sq) nv);
+	     Skolem.ty=nty;
+	     Skolem.tyenv=tyenv;
+	     Skolem.scope=scope_of sq;
+	     Skolem.skolems=sklm_cnsts sq;
+	     Skolem.tylist=sqnt_tynames sq
 	   }
 	in 
-	let nscp = add_sklms_to_scope nsklms (scope_of sq)
-	in 
+	let nscp = Skolem.add_skolem_to_scope sv sty (scope_of sq)
+(*
+   let nscp = add_sklms_to_scope nsklms (scope_of sq)
+ *)	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)
@@ -1123,11 +1163,15 @@ module Rules=
    info: [] [t] []
  *)
 
+
     let name_rule0 inf id trm tyenv sq =
       let scp = scope_of sq
       in 
-      let long_id = Basic.mklong scp.Gtypes.curr_thy id
+      let long_id = Basic.mk_long scp.Gtypes.curr_thy id
       in 
+      let ntrm=set_names scp trm
+      in 
+      check_term scp ntrm;
       try 
 	ignore(scp.Gtypes.typeof_fn long_id);
 	raise (logicError "Name already exists in scope" [])
@@ -1135,7 +1179,7 @@ module Rules=
 	Not_found ->
 	  let nty = Gtypes.mk_var "name_typ"
 	  in 
-	  let ntyenv= Typing.typecheck_env scp tyenv trm nty
+	  let ntyenv= Typing.typecheck_env scp tyenv ntrm nty
 	  in 
 	  let rty=Gtypes.mgu nty ntyenv
 	  in 
@@ -1143,15 +1187,17 @@ module Rules=
 	      (fun x-> if x=long_id then rty else scp.Gtypes.typeof_fn x)
 	  and ft=Tag.create()
 	  in
-	  let ntrm = 
-	    (ft, Formula.form_of_term nscp
-	       (Logicterm.mkequal (Term.mkvar long_id) trm))
+	  let nform=
+	    Formula.form_of_term nscp
+	      (Logicterm.mk_equality (Term.mk_var long_id) ntrm)
+	  in 
+	  let nasm =  (ft, nform)
 	  in 
 	  let gtyenv = Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
 	  in 
 	  add_info inf [] [ft] [];
 	  (mk_subgoal(sqnt_tag sq, sqnt_env sq,
-		      ntrm::(asms sq), 
+		      nasm::(asms sq), 
 		      concls sq), gtyenv)
 
     let name_rule inf id trm sqnt = 
@@ -1160,14 +1206,20 @@ module Rules=
 
 (* instantiation terms *)  
 
-    let is_inst_term sq tyenv trm expty =
-      Typing.typecheck_env (scope_of sq) tyenv trm expty
+    let prep_inst_term scp tyenv trm expty=
+      let ntrm=set_names scp trm
+      in 
+      (ntrm, Typing.typecheck_env scp tyenv ntrm expty)
+
+    let is_inst_term sq trm=
+      check_term (scope_of sq) trm
 
     let inst_term sq tyenv t trm =
       let scp = scope_of sq
-      and sklm_scp = add_sklms_to_scope (sklm_cnsts sq) (scope_of sq)
       in 
-      let ntrm0 = Term.set_names scp trm
+      let sklm_scp = Skolem.add_skolems_to_scope (sklm_cnsts sq) scp
+      in 
+      let ntrm0 = set_names sklm_scp trm
       in 
       let ntrm1= Typing.set_exact_types sklm_scp ntrm0
       in 
@@ -1179,9 +1231,9 @@ module Rules=
 
     let set_term_sklm_types sq t = 
       Typing.set_exact_types 
-	(add_sklms_to_scope (sklm_cnsts sq) (Gtypes.empty_scope())) t
+	(Skolem.add_skolems_to_scope (sklm_cnsts sq) (Gtypes.empty_scope())) t
 
-(* assume i j sq: asm i is alpha-equal to cncl j of sq, 
+(* basic i j sq: asm i is alpha-equal to cncl j of sq, 
 
    asm, a_{i}, asm' |- concl, c_{j}, concl' 
    -->
@@ -1189,12 +1241,12 @@ module Rules=
    info: [] []
  *)
 
-    let assume0 inf i j tyenv sq = 
+    let basic0 inf i j tyenv sq = 
       let scp = scope_of sq
       and (_, asm) = get_asm i sq
       and (_, cncl) = get_cncl j sq
       in 
-      if(Formula.alpha_convp scp asm cncl)
+      if(Formula.alpha_equals scp asm cncl)
       then 
 	(add_info inf [] [] []; raise (Solved_subgoal tyenv))
       else 
@@ -1202,10 +1254,10 @@ module Rules=
 		  [sqnt_form (get_asm i sq); 
 		   sqnt_form (get_cncl j sq)]))
 
-    let assume inf i j g = 
+    let basic inf i j g = 
       let sq=get_sqnt g
       in 
-      sqnt_apply (assume0 inf (dest_label i sq) (dest_label j sq)) g
+      sqnt_apply (basic0 inf (dest_label i sq) (dest_label j sq)) g
 
 
 (* existE i sq
@@ -1221,16 +1273,18 @@ module Rules=
       if (Formula.is_exists t) 
       then 
 	try 
-      	  (let tyenv1 = is_inst_term sq tyenv trm (Formula.get_binder_type t)
+      	  (let trm1, tyenv1 =
+	    prep_inst_term (scope_of sq) tyenv trm (Formula.get_binder_type t)
       	  in 
-      	  let nt, ntyenv = inst_term sq tyenv1 t trm
-      	  in 
-	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
+	  is_inst_term sq trm1;
+	  let trm2, tyenv2 = inst_term sq tyenv1 t trm1
+	  in 
+	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) tyenv2 tyenv
 	  in 
 	  add_info inf [] [ft] [];
       	  (mk_subgoal
 	     (sqnt_tag sq, sqnt_env sq, asms sq, 
-	      (replace_cncl i (concls sq) (ft, nt))),
+	      (replace_cncl i (concls sq) (ft, trm2))),
 	   gtyenv))
 	with x -> raise (Result.add_error
 			   (logicError "existE:" [t]) x)
@@ -1253,16 +1307,19 @@ module Rules=
       if (Formula.is_all t) 
       then 
 	try 
-	  (let tenv = is_inst_term sq tyenv trm (Formula.get_binder_type t)
+	  (let trm1, tyenv1=
+	    prep_inst_term (scope_of sq) tyenv 
+	      trm (Formula.get_binder_type t)
 	  in 
-	  let nt, ntyenv = inst_term sq tenv t trm
+	  is_inst_term sq trm1;
+	  let ntrm, tyenv2 = inst_term sq tyenv1 t trm1
 	  in 
-	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
+	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) tyenv2 tyenv
 	  in 
 	  add_info inf [] [ft] [];
 	  (mk_subgoal
 	     (sqnt_tag sq, sqnt_env sq, 
-	      (replace_asm i (asms sq) (ft, nt)), concls sq)),
+	      (replace_asm i (asms sq) (ft, ntrm)), concls sq)),
 	  gtyenv)
 	with x -> 
 	  (raise (Result.add_error
@@ -1274,7 +1331,7 @@ module Rules=
       sqnt_apply (allE0 inf trm (dest_label i (get_sqnt g))) g
 
 
-(* rewrite_any dir simple thms j sq:
+(* rewrite dir simple thms j sq:
    list of theorems or assumptions containing x=y
    asm |- t:P(x), concl
    -->
@@ -1303,12 +1360,14 @@ module Rules=
 	    in 
 	    ft xs ((sqnt_form tgdasm)::rslt)
 	| ((RRThm(x))::xs) -> 
-	    if (in_thy_scope_memo memo scp thyname (dest_thm x))
-	    then ft xs ((dest_thm x)::rslt)
-	    else ft xs rslt
+	    try 
+	      (check_term_memo memo scp (Formula.dest_form (dest_thm x)));
+	      ft xs ((dest_thm x)::rslt)
+	    with 
+	      _ -> ft xs rslt
       in ft rls []
 
-    let rewrite_any0 inf dir simple rls j tyenv sq=
+    let rewrite0 inf dir simple rls j tyenv sq=
       let scp = scope_of sq
       in 
       let r=filter_rules scp rls j sq
@@ -1316,7 +1375,7 @@ module Rules=
       in 
       try
 	(let nt, ntyenv = 
-	    Formula.rewrite_env scp ~dir:dir tyenv r t
+	  Formula.rewrite_env scp ~dir:dir tyenv r t
 	in 
 	let gtyenv = Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
 	in 
@@ -1332,9 +1391,9 @@ module Rules=
       with x -> raise 
 	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
-    let rewrite_any inf ?(dir=Rewrite.leftright) ?(simple=false) rls j g=
+    let rewrite inf ?(dir=Rewrite.leftright) ?(simple=false) rls j g=
       sqnt_apply 
-	(rewrite_any0 inf dir simple rls 
+	(rewrite0 inf dir simple rls 
 	   (dest_label j (get_sqnt g))) g
 
 
@@ -1424,6 +1483,16 @@ module ThmRules=
 
   end
 
+(* 
+   cdefn:
+   Checked Definitions: 
+   checking of type and term definitions and declarations
+*)
+type cdefn =
+    TypeDef of Basic.ident * string list * Basic.gtype option
+  | TermDef of 
+      Basic.ident * Basic.gtype
+	* (string*Basic.gtype) list * thm option
 
 (* Defns: functions for checking definitions and declarations *)
 module Defns =
@@ -1466,7 +1535,7 @@ module Defns =
 	    if (List.exists (fun a -> a=x) xs) 
 	    then raise 
 		(Result.error 
-		("Identifier "^x^" appears twice in argument list"))
+		   ("Identifier "^x^" appears twice in argument list"))
 	    else check_aux xs 
       in 
       check_aux ags
@@ -1491,7 +1560,7 @@ module Defns =
 	    with 
 	      _ -> raise (Gtypes.typeError "Badly formed definition" [a]))
       in 
-      (TypeDef((Basic.mklong th n), ags, dfn))
+      (TypeDef((Basic.mk_long th n), ags, dfn))
 
 
 (* mk_termdef scp n ty args d:

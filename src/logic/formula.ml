@@ -44,7 +44,7 @@ let rec is_closed_scope env t =
       if not((Basic.binder_kind q)=k)
       then raise (Term.termError "Not closed" [t])
       else 
-	(Term.table_add (Basic.Bound(q)) (Term.mkbool true) env;
+	(Term.table_add (Basic.Bound(q)) (Term.mk_bool true) env;
 	 is_closed_scope env b;
 	 Term.table_remove (Basic.Bound(q)) env)
   | Basic.Bound(_) -> 
@@ -64,7 +64,7 @@ let is_closed vs t =
   List.iter 
     (fun x -> 
       if ((Term.is_bound x) or (Term.is_free x))
-      then ignore(Term.table_add x (Term.mkbool true) tbl)
+      then ignore(Term.table_add x (Term.mk_bool true) tbl)
       else ()) vs;
   try is_closed_scope tbl t; true
   with _ -> false
@@ -97,7 +97,7 @@ let is_form scp t =
 	if(qnt=Basic.binder_kind q)
 	then 
 	  (lookup_ty (Term.get_binder_type x);
-	   ignore(Term.table_add (Basic.Bound(q)) (Term.mkbool true) qnt_env);
+	   ignore(Term.table_add (Basic.Bound(q)) (Term.mk_bool true) qnt_env);
 	   in_scope b;
 	   Term.table_remove (Basic.Bound(q)) qnt_env)
 	else raise Not_found
@@ -106,6 +106,7 @@ let is_form scp t =
     | Basic.App(l, r) -> in_scope l; in_scope r
     | Basic.Typed(tt, ty) ->
 	lookup_ty ty; in_scope tt
+    | Basic.Free _ -> raise Not_found
     | _ -> ()
   in 
   try 
@@ -114,10 +115,14 @@ let is_form scp t =
 
 
 let in_thy_scope_memo memo scp th f =
-  Term.in_thy_scope memo scp th (term_of_form f)
+  if (Term.in_thy_scope memo scp th (term_of_form f))
+  then true
+  else raise (Term.termError "Badly formed formula" [term_of_form f])
 
 let in_thy_scope scp th f =
-  Term.in_thy_scope (Lib.empty_env()) scp th (term_of_form f)
+  if (Term.in_thy_scope (Lib.empty_env()) scp th (term_of_form f))
+  then true
+  else raise (Term.termError "Badly formed formula" [term_of_form f])
 
 let retype tenv x = Term.retype tenv x
 
@@ -146,12 +151,12 @@ let form_of_term scp t0 =
 (* Formula recognisers, constructors and destructors *)
 
 let is_fun= Term.is_fun
-let mk_fun = Term.mkfun
+let mk_fun = Term.mk_fun
 let dest_fun = Term.dest_fun
 
 let is_var  = Term.is_var
 let mk_typed_var = Term.mk_typed_var
-let mkvar n = mk_typed_var n (Gtypes.mk_null())
+let mk_var n = mk_typed_var n (Gtypes.mk_null())
 let dest_var  =  Term.dest_var 
 let get_var_id vt= fst (dest_var vt)
 let get_var_type vt= snd (dest_var vt)
@@ -169,13 +174,13 @@ let rec mk_comb x y =
   | t::ts -> mk_comb (mk_app x t) ts
 
 let is_const = Term.is_const 
-let mk_const = Term.mkconst
+let mk_const = Term.mk_const
 let dest_const =  Term.dest_const
 
-let mk_num = Term.mknum
+let mk_num = Term.mk_num
 let dest_num = Term.destnum 
 
-let mk_bool = Term.mkbool
+let mk_bool = Term.mk_bool
 let dest_bool = Term.destbool 
 
 let is_true x= try dest_bool x with _ -> false
@@ -187,41 +192,41 @@ let is_fun_name s t =
   with _ -> false
 
 let is_neg = Logicterm.is_neg 
-let mk_neg  = Logicterm.mknot
+let mk_neg  = Logicterm.mk_not
 let dest_neg f = 
   if is_neg f
   then match dest_fun f with (_, x) -> x
   else raise (Term.termError "dest_neg" [f])
       
 let is_conj = Logicterm.is_conj 
-let mk_conj = Logicterm.mkand
+let mk_conj = Logicterm.mk_and
 let dest_conj f = 
   if is_conj f
   then match dest_fun f with (_, x) -> x
   else raise (Term.termError "dest_conj" [f])
 
 let is_disj = Logicterm.is_disj 
-let mk_disj = Logicterm.mkor
+let mk_disj = Logicterm.mk_or
 let dest_disj f = 
   if is_disj f
   then match dest_fun f with (_, x) -> x
   else raise (Term.termError "dest_disj" [f])
 
+let mk_implies = Logicterm.mk_implies
 let is_implies = Logicterm.is_implies 
-let mk_implies = Logicterm.mkimplies
 let dest_implies f = 
   if is_implies f
   then match dest_fun f with (_, x) -> x
   else raise (Term.termError "dest_implies" [f])
 
-let is_equals = Logicterm.is_equal 
-let mk_equals  = Logicterm.mkequal
-let dest_equals f =  
-  if is_equals f
+let mk_equality  = Logicterm.mk_equality
+let is_equality = Logicterm.is_equality
+let dest_equality f =  
+  if is_equality f
   then match dest_fun f with 
     (_, [a; b]) -> (a, b)
-  |	_ -> raise (Term.termError "dest_equals" [f])
-  else raise (Term.termError "dest_equals" [f])
+  |	_ -> raise (Term.termError "dest_equality" [f])
+  else raise (Term.termError "dest_equality" [f])
 
 (*
    if is_equals f
@@ -237,19 +242,19 @@ let dest_qnt f =
 
 let is_all = Logicterm.is_all 
 let mk_all scp x f = 
-  form_of_term scp (Logicterm.mkall scp x  f)
+  form_of_term scp (Logicterm.mk_all scp x  f)
 let mk_typed_all scp x ty f= 
-  form_of_term scp (Logicterm.mkall_ty scp x ty f)
+  form_of_term scp (Logicterm.mk_all_ty scp x ty f)
 
 let is_exists = Logicterm.is_exists 
-let mk_exists = Logicterm.mkex
-let mk_typed_exists = Logicterm.mkex_ty 
+let mk_exists = Logicterm.mk_ex
+let mk_typed_exists = Logicterm.mk_ex_ty 
 
 let is_qnt t = (is_all t) or (is_exists t)
 
 let is_lambda = Logicterm.is_lambda
-let mk_lambda = Logicterm.mklam
-let mk_typed_lambda = Logicterm.mklam_ty
+let mk_lambda = Logicterm.mk_lam
+let mk_typed_lambda = Logicterm.mk_lam_ty
 
 (* Typecheck and reset types of formula *)
 
@@ -266,7 +271,7 @@ let typecheck scp f expty=
 let simple_typecheck scp f expty= 
   ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
 
-let mkiff = Logicterm.mkiff
+let mk_iff = Logicterm.mk_iff
 
 let unify scp asmf conclf =
   let asm = term_of_form asmf
@@ -332,8 +337,8 @@ let inst scp vs t r =
 
 let equals = Term.equals
 
-let alpha_convp = Logicterm.alpha_convp 
-let alpha_equals = Logicterm.alpha_convp 
+(* let alpha_convp = Logicterm.alpha_convp  *)
+let alpha_equals = Logicterm.alpha_equals
 
 let beta_convp = Logicterm.beta_convp
 let beta_conv scp x =  form_of_term scp (Logicterm.beta_conv x)
@@ -388,7 +393,7 @@ let empty_db th = Net.empty()
 let dest_rr dir f =
   let (qs, t) = Term.strip_qnt (Basic.All)  f
   in 
-  let (a, b) = Logicterm.dest_equal t
+  let (a, b) = Logicterm.dest_equality t
   in 
   if dir then (qs, a, b) else (qs, b, a)
 

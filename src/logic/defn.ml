@@ -10,8 +10,10 @@ let dest_defn (Defn x) = x
 let rec mk_all_from_list scp b qnts =
   match qnts with 
     [] -> b
+  | (Basic.Free(n, ty)::qs) ->
+      mk_all_from_list scp (Logicterm.mk_all_ty scp n ty b) qs
   | (Basic.Id(n, ty)::qs) ->
-      mk_all_from_list scp (Logicterm.mkall_ty scp (name n) ty b) qs
+      raise (Term.termError "mk_all_from_list, got a Basic.id" qnts)
   | _ -> raise (Term.termError "Invalid argument, mk_all_from_list" qnts)
 
 
@@ -41,7 +43,7 @@ let get_lhs t =
       raise (Term.termError "Defn: parameters must be free variables" [])
 
 
-let mkdecln scp name ty =
+let mk_decln scp name ty =
   try
     let t=scp.Gtypes.typeof_fn name
     in raise (Term.termError "Name exists in scope" 
@@ -52,7 +54,7 @@ let mk_defn_type env atys rty rfrs =
   match atys with
     [] -> rty
   |	ts -> 
-      (Gtypes.mkfun_from_list
+      (Gtypes.mk_fun_from_list
 	 (List.map
 	    (fun (x, ty) -> 
 	      Gtypes.mgu 
@@ -70,22 +72,23 @@ let rec check_free_vars tyenv name ls =
       else (ignore(tyenv.Gtypes.typeof_fn n); 
 	    check_free_vars tyenv name fvs)
 	  
-let mkdefn scp name args rhs = 
+let mk_defn scp name args rhs = 
   let ps = 
     List.map 
-      (fun (x, y) -> 
-	Term.mk_typed_var (Basic.mkname x) y) args 
-  in let rty = Typing.typeof scp rhs
+      (fun (x, y) -> Term.mk_free x y) args 
+  in let rhs1=Term.set_names scp rhs
+  in let rty = Typing.typeof scp rhs1
   in let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
-  in let lhs = Term.mkcomb (Term.mk_typed_var name nty) ps
+  in let lhs = Term.mk_comb (Term.mk_typed_var name nty) ps
   in let ndn = 
-    mk_all_from_list scp (Logicterm.mkequal lhs rhs) (List.rev ps) 
+    mk_all_from_list scp (Logicterm.mk_equality lhs rhs1) (List.rev ps) 
   in
   let rfrees = 
-    try Term.get_free_vars ndn
-    with Not_found -> 
-      raise (Term.termError 
-	       "Free variables not allowed in definition" [ndn])
+      match Term.get_free_vars ndn with
+	[] -> ()
+      | _ ->
+	  raise (Term.termError 
+		   "Free variables not allowed in definition" [ndn])
   in 
   let nscp = (Gtypes.add_to_scope scp [name, nty])
   in 

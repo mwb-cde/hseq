@@ -91,8 +91,9 @@ let load_theory thdb name prot thfn filefn =
 	    in 
 	    test_protection thy;
 	    test_date tim thy; 
-	    ignore(add_thy thdb thy); 
-	    thfn thy;
+	    (if(not (is_loaded x thdb))
+	    then (ignore(add_thy thdb thy); thfn thy)
+	    else ());
 	    load_aux tim xs 
 	      (load_aux (Theory.get_date thy)
 		 (Theory.get_parents thy) (x::imps)))))
@@ -110,8 +111,10 @@ let load_theory thdb name prot thfn filefn =
     (let thy = Theory.load_theory (filefn name)
     in 
     (test_protection thy; 
-     ignore(add_thy thdb thy);
-     thfn thy;
+     (if(not (is_loaded name thdb))
+     then (ignore(add_thy thdb thy);
+	   thfn thy)
+     else ());
      (let imprts = 
        (load_aux (Theory.get_date thy)
 	  (Theory.get_parents thy) [Theory.get_name thy])

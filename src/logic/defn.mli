@@ -23,7 +23,7 @@ val get_lhs : Basic.term ->
   Basic.ident * (Basic.ident * Basic.gtype) list   
 
 (* function declarations of the type (f: ty) *)
-val mkdecln :
+val mk_decln :
     Gtypes.scope ->
       Basic.ident -> Basic.gtype -> decln
 
@@ -34,16 +34,19 @@ val mk_defn_type :
 	Basic.gtype -> ('a * Basic.gtype) list -> Basic.gtype
 
 (* make a definition *)
-(* [mkdefn scp id args t]
+(* [mk_defn scp id args t]
    scp is the scope of the definition
    id is the identifier
    args are the list of parameters identifiers and types 
    t is the body of the definition 
  *)
 
-val mkdefn :
+val mk_defn :
     Gtypes.scope ->
       Basic.ident->
 	(string * Basic.gtype) list -> Basic.term 
 	  -> defn
 
+
+val mk_all_from_list: Gtypes.scope -> Basic.term 
+  -> Basic.term list ->  Basic.term

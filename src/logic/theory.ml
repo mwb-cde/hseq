@@ -103,7 +103,7 @@ let get_pplist idsel thy =
     if idsel = Basic.fn_id
     then thy.id_pps else thy.type_pps
   and tn = thy.name 
-  in List.map (fun (x, y) -> (Basic.mklong tn x , y)) ppl
+  in List.map (fun (x, y) -> (Basic.mk_long tn x , y)) ppl
 
 let add_axiom n ax thy =
   if not (get_protection thy)
@@ -240,12 +240,12 @@ let from_save sr =
 
 
 let output_theory oc thy = 
-  let mksave f xs = List.map (fun (x, y) -> (x, f y)) xs
+  let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
   in 
-  let saxs = mksave Logic.to_save (to_list thy.axioms)
-  and sthms = mksave Logic.to_save (to_list thy.theorems)
-  and sdefs = mksave to_save (to_list thy.defns)
-  and stypes = mksave Gtypes.to_save_rec (to_list thy.typs)
+  let saxs = mk_save Logic.to_save (to_list thy.axioms)
+  and sthms = mk_save Logic.to_save (to_list thy.theorems)
+  and sdefs = mk_save to_save (to_list thy.defns)
+  and stypes = mk_save Gtypes.to_save_rec (to_list thy.typs)
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
   in output_value oc 
@@ -309,15 +309,9 @@ let contents thy =
 
 let print_section title = 
   Format.open_box 0;
-  Format.print_string "-----";
-  Format.close_box();
-  Format.print_newline();
-  Format.open_box 0;
+  Format.print_string "-----\n";
   Format.print_string title;
-  Format.close_box();
-  Format.print_newline();
-  Format.open_box 0;
-  Format.print_string "-----";    
+  Format.print_string "\n-----";    
   Format.close_box();
   Format.print_newline()
 

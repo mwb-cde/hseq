@@ -9,28 +9,32 @@ type saved_form
 type substitution = Term.substitution
 
 (* conversion between terms and formulas *)
-(* is_closed ts f:
+(*
+   is_closed ts f:
    true iff all bound variables in [f] are in the body 
    of a quantifier or occur in ts
  *)
 val is_closed: Basic.term list -> Basic.term -> bool
 val term_of_form : form -> Basic.term
 
-(* form_of_term: make a formula from a closed term
-   with all types and identifers correct *)
+(*
+   form_of_term: make a formula from a closed term
+   with all types and identifers correct 
+*)
 val form_of_term: Gtypes.scope -> Basic.term -> form
 
-(* mk_form: make a formula from an arbitrary.
-   resets all types in the term *)
-
+(*
+ mk_form: make a formula from an arbitrary term.
+   resets all types in the term 
+*)
 val mk_form: Gtypes.scope -> Basic.term -> form
 
 val string_form : form -> string
 
 (* check that a given formula is in the scope of an identified theory *)
-val in_thy_scope_memo: (string, bool) Lib.substype ->
-  Gtypes.scope -> Basic.thy_id -> form -> bool
-
+val in_thy_scope_memo: 
+    (string, bool) Lib.substype ->
+      Gtypes.scope -> Basic.thy_id -> form -> bool
 val in_thy_scope:  Gtypes.scope -> Basic.thy_id -> form -> bool
 
 (* formula destructor *)
@@ -39,7 +43,7 @@ val dest_form: form -> Basic.term
 (* apply a predicate to a term *)
 (*
    exception TermCheck of Basic.term
- *)
+*)
 val check_term: (Basic.term -> bool) -> Basic.term -> unit
 
 (* instantiate a quantified formula with a given term *)
@@ -81,7 +85,6 @@ val get_var_type : form-> Basic.gtype
 val is_app : form -> bool
 val is_const : form -> bool
 
-(*    val dest_num : form -> int *)
 val dest_num : form -> Num.num
 val dest_bool : form -> bool
 
@@ -101,9 +104,8 @@ val dest_disj: form -> form list
 val is_implies : form -> bool
 val dest_implies: form -> form list
 
-
-val is_equals : form -> bool
-val dest_equals: form -> (form * form)
+val is_equality : form -> bool
+val dest_equality: form -> (form * form)
 
 val get_binder_name : form -> string
 val get_binder_type: form -> Basic.gtype
@@ -129,11 +131,8 @@ val retype: Gtypes.substitution
 
 (* equality with pointers *)
 val equals : form -> form -> bool
-(* renamed to equals
-   val equality : form -> form -> bool
- *)
+
 (* equality under alpha conversion *)
-val alpha_convp : Gtypes.scope -> form -> form -> bool 
 
 (* alpha_equals: equality under alpha conversion
    (renaming of alpha_convp)
@@ -157,12 +156,6 @@ val rewrite_env :
     Gtypes.scope -> ?dir:Rewrite.direction
       -> Gtypes.substitution 
 	-> form list-> form -> (form * Gtypes.substitution)
-(*
-val rewrite_simple_env : 
-    Gtypes.scope -> ?dir:bool 
-      -> Gtypes.substitution 
-	-> form list-> form -> (form*Gtypes.substitution)
-*)
 (*
    type rulesDB 
 

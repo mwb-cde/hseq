@@ -5,7 +5,8 @@
     exception Importing
 
     type thydb 
-(*=
+(*
+   thydb=
       { db: (string, Theory.thy) Hashtbl.t;
         mutable curr: Theory.thy;
         mutable importing: string list 

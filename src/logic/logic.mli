@@ -9,10 +9,48 @@ type saved_thm
 
 type tagged_form = (Tag.t* Formula.form)
 
-(*  type skolem_cnst*)
-type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+module Skolem:
+    sig
 
-type skolem_type
+(*  type skolem_cnst*)
+      type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+      type skolem_type
+
+      type skolem_info=
+	  {
+	   name: Basic.ident;
+	   ty: Basic.gtype;
+	   tyenv: Gtypes.substitution;
+	   scope: Gtypes.scope;
+	   skolems: skolem_type;
+	   tylist: (string*int) list
+	 } 
+
+(* skolem variables/constants are used for quantifier rules *)
+
+      val get_sklm_name: skolem_cnst -> Basic.ident
+      val get_sklm_indx: skolem_cnst -> int
+      val get_sklm_type: skolem_cnst -> Basic.gtype
+      val get_new_sklm: Basic.ident -> Basic.gtype -> skolem_type 
+	-> (Basic.term * skolem_type)
+
+
+      val mk_new_skolem: 
+	  skolem_info
+	-> Basic.term * Basic.gtype 
+	    * (Basic.ident * (int * Basic.gtype)) list 
+	    * Gtypes.substitution * (string * int) list
+
+      val add_skolem_to_scope: 
+	  Basic.term -> Basic.gtype 
+	    -> Gtypes.scope -> Gtypes.scope
+
+      val add_skolems_to_scope: 
+	  (Basic.ident * ('a * Basic.gtype)) list ->
+	    Gtypes.scope -> Gtypes.scope
+
+    end
+
 type sqnt
 
 type goal
@@ -65,13 +103,6 @@ val from_save: saved_thm -> thm
 
 (* Sequents *)
 
-(* skolem variables/constants are used for quantifier rules *)
-
-val get_sklm_name: skolem_cnst -> Basic.ident
-val get_sklm_indx: skolem_cnst -> int
-val get_sklm_type: skolem_cnst -> Basic.gtype
-val get_new_sklm: Basic.ident -> Basic.gtype -> skolem_type 
-  -> (Basic.term * skolem_type)
 
 val sqntError : string ->  exn
 val addsqntError : string -> exn -> 'a
@@ -81,7 +112,7 @@ val addsqntError : string -> exn -> 'a
 val asms : sqnt -> tagged_form list
 val concls : sqnt -> tagged_form list
 val scope_of: sqnt -> Gtypes.scope
-val sklm_cnsts: sqnt -> skolem_cnst list
+val sklm_cnsts: sqnt -> Skolem.skolem_cnst list
 val sqnt_tyvars: sqnt -> Basic.gtype list
 val sqnt_tag: sqnt->Tag.t
 
@@ -119,7 +150,9 @@ val get_sqnt:goal -> sqnt
 val goal_tyenv: goal -> Gtypes.substitution
 
 (* get tags of all subgoals *)
+(*
 val get_all_goal_tags: goal -> Tag.t list
+*)
 
 (* get tag of first subgoal *)
 val get_goal_tag: goal -> Tag.t
@@ -143,7 +176,7 @@ val goal_focus: Tag.t->rule
 
 (* rotate subgoals left and right
    raise No_subgoals if no subgoals
-*)
+ *)
 val rotate_subgoals_left : int -> goal -> goal
 val rotate_subgoals_right : int -> goal -> goal
 
@@ -160,7 +193,7 @@ val mk_thm : goal -> thm
 
 (* errors *)
 
-val mklogicError: string ->Formula.form list -> Result.error
+val mk_logicError: string ->Formula.form list -> Result.error
 val logicError : string -> Formula.form list -> exn
 val addlogicError : string -> Formula.form list -> exn -> 'a
 
@@ -193,8 +226,26 @@ val add_info:
     info option ->
       Tag.t list-> Tag.t list -> Basic.term list -> unit
 
+
+
 module Rules:
     sig
+
+(** [check_term scp trm]
+   Ensure that term [trm] is in the scope [scp].
+   All identifiers must be bound to a quantifier or defined/declared 
+   in a theory. 
+   Free variables are not permitted.
+ *)
+      val check_term: Gtypes.scope -> Basic.term -> unit
+
+(**
+   [check_term_memo]
+   Memoised version of [check_term].
+ *)
+      val check_term_memo: 
+	  (string, bool) Lib.substype -> Gtypes.scope -> Basic.term -> unit
+
 
 (* apply a rule to a goal *)
 (*      val goal_apply : rule -> goal -> goal *)
@@ -260,13 +311,13 @@ module Rules:
  *)
       val cut : info option -> thm -> rule
 
-(* assume i j sq: if asm i is alpha-equal to cncl j of sq, 
+(* basic i j sq: if asm i is alpha-equal to cncl j of sq, 
 
    asm, a_{i}, asm' |- concl, c_{j}, concl' 
    -->
    true if a_{i}=c_{j}
  *)
-      val assume : info option -> label -> label -> rule
+      val basic : info option -> label -> label -> rule
 
 (* 
    conjI i sq: 
@@ -378,7 +429,7 @@ module Rules:
       val name_rule : info option -> string -> Basic.term -> rule
 
 
-(* rewrite_any dir thms j sq:
+(* rewrite dir thms j sq:
    list of theorems or assumptions containing x=y
    asm |- P(x), concl
    -->
@@ -387,7 +438,7 @@ module Rules:
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
  *)
-      val rewrite_any : info option 
+      val rewrite : info option 
 	-> ?dir:Rewrite.direction -> ?simple:bool 
 	  -> rr_type list -> label -> rule
 
@@ -402,7 +453,7 @@ module ThmRules:
 
 (* conversions which apply to only one theorem 
    (e.g. conjE_conv |- a and b  --> [|- a; |- b])
-*)
+ *)
       val conjE_conv: thm-> thm list
       val allI_conv: Gtypes.scope -> Basic.term -> conv
       val eta_conv: Gtypes.scope -> Formula.form -> conv
@@ -435,22 +486,3 @@ module Defns :
 	  -> string list -> thm option -> cdefn
 
     end
-
-type skolem_info=
-    {
-     name: Basic.ident;
-     ty: Basic.gtype;
-     tyenv: Gtypes.substitution;
-     scope: Gtypes.scope;
-     skolems: skolem_type;
-     tylist: (string*int) list
-   } 
-val mk_new_skolem: 
-    skolem_info
-  -> Basic.term * Basic.gtype 
-      * (Basic.ident * (int * Basic.gtype)) list 
-      * Gtypes.substitution * (string * int) list
-
-val add_sklms_to_scope: 
-    (Basic.ident * ('a * Basic.gtype)) list ->
-      Gtypes.scope -> Gtypes.scope
