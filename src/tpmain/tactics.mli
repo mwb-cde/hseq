@@ -77,18 +77,18 @@ val lift : Logic.label -> tactic
    which will succeed 
 *)
 
-val conjI : ?c: Logic.label -> tactic
-val conjE : ?a: Logic.label -> tactic
-val disjI : ?a: Logic.label -> tactic
-val disjE : ?c: Logic.label -> tactic
-val negA : ?a: Logic.label -> tactic
+val conjC : ?c: Logic.label -> tactic
+val conjA : ?a: Logic.label -> tactic
+val disjC : ?c: Logic.label -> tactic
+val disjA : ?a: Logic.label -> tactic
 val negC : ?c: Logic.label -> tactic
-val implI : ?c: Logic.label -> tactic
-val implE : ?a: Logic.label -> tactic
-val existI : ?a: Logic.label -> tactic
-val existE : ?c: Logic.label -> Basic.term -> tactic 
-val allI : ?c: Logic.label -> tactic
-val allE : ?a: Logic.label -> Basic.term -> tactic
+val negA : ?a: Logic.label -> tactic
+val implC : ?c: Logic.label -> tactic
+val implA : ?a: Logic.label -> tactic
+val existA : ?a: Logic.label -> tactic
+val existC : ?c: Logic.label -> Basic.term -> tactic 
+val allC : ?c: Logic.label -> tactic
+val allA : ?a: Logic.label -> Basic.term -> tactic
 
 (*
    beta conversion 

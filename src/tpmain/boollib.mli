@@ -38,8 +38,8 @@ val cut_thm: string -> Tactics.tactic
 (* test and rules for Iff *)
 val is_iff: Formula.form -> bool
 
-(* val iffI_rule: Logic.label -> Logic.rule *)
-val iffI: ?c:Logic.label -> Tactics.tactic
+(* val iffC_rule: Logic.label -> Logic.rule *)
+val iffC: ?c:Logic.label -> Tactics.tactic
 
 val asm_elims : 
     unit -> ((Formula.form->bool) * (Logic.label -> Logic.rule)) list

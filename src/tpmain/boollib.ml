@@ -126,7 +126,7 @@ let is_iff f =
        = (Basic.mk_long "base" "iff"))
   with _ -> false
 
-let iffI_rule i goal = 
+let iffC_rule i goal = 
   let sqnt=Logic.get_sqnt goal
   in 
   let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
@@ -136,16 +136,16 @@ let iffI_rule i goal =
     (seq 
        [Tactics.rewrite_tac [lemma "boolean.iff_def"]
 	  ~dir:leftright ~f:(ftag t);
-	Logic.Rules.conjI None (ftag t);
-	Logic.Rules.implI None (ftag t)]) goal
+	Logic.Rules.conjC None (ftag t);
+	Logic.Rules.implC None (ftag t)]) goal
 
-let iffI ?c g = 
+let iffC ?c g = 
   let cf = 
     match c with
       Some x -> x
     | _ -> (first_concl is_iff (Logic.get_sqnt g))
   in 
-  iffI_rule cf g
+  iffC_rule cf g
 
 let false_rule0 a sq =
   let  thm = lemma "base.false_def"
@@ -165,16 +165,16 @@ let false_rule ?a goal =
 let asm_elims () = 
   [ (Formula.is_false, (fun x -> false_rule ~a:x));
     (Formula.is_neg, Logic.Rules.negA None);  
-    (Formula.is_conj, Logic.Rules.conjE None); 
-    (Formula.is_exists, Logic.Rules.existI None)]
+    (Formula.is_conj, Logic.Rules.conjA None); 
+    (Formula.is_exists, Logic.Rules.existA None)]
 
 let conc_elims () =
   [
    (Formula.is_true, Logic.Rules.trueR None);
    (Formula.is_neg, Logic.Rules.negC None); 
-   (Formula.is_disj, Logic.Rules.disjE None);
-   (Formula.is_implies, Logic.Rules.implI None);
-   (Formula.is_all, Logic.Rules.allI None)]
+   (Formula.is_disj, Logic.Rules.disjC None);
+   (Formula.is_implies, Logic.Rules.implC None);
+   (Formula.is_all, Logic.Rules.allC None)]
 
 let rec flatten_tac g =
   repeat
@@ -184,12 +184,12 @@ let rec flatten_tac g =
 
 
 let split_asm () = 
-  [(Formula.is_disj, Logic.Rules.disjI None);  
-   (Formula.is_implies, Logic.Rules.implE None)]
+  [(Formula.is_disj, Logic.Rules.disjA None);  
+   (Formula.is_implies, Logic.Rules.implA None)]
 
 let split_conc () =
-  [(Formula.is_conj, Logic.Rules.conjI None); 
-   (is_iff, iffI_rule)]
+  [(Formula.is_conj, Logic.Rules.conjC None); 
+   (is_iff, iffC_rule)]
 
 let split_tac g=
   repeat
@@ -203,7 +203,7 @@ let inst_asm_rule i l sqnt=
       [] -> sqs
     | (x::xs) -> 
 	let nsqnt=
-	  (Logic.Rules.allE None x i) sqs
+	  (Logic.Rules.allA None x i) sqs
 	in rule xs nsqnt
   in rule l sqnt
 
@@ -221,7 +221,7 @@ let inst_concl_rule i l sqnt=
       [] -> sqs
     | (x::xs) -> 
 	let nsqnt=
-	  (Logic.Rules.existE None x i) sqs
+	  (Logic.Rules.existC None x i) sqs
 	in rule xs nsqnt
   in rule l sqnt
 
@@ -259,7 +259,7 @@ let cases_tac0 (x:Basic.term) g=
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.cases_thm"))
   in 
-  seq [cut thm; allE x; disjI; negA; postpone] g
+  seq [cut thm; allA x; disjA; negA; postpone] g
 
 let cases_tac x = cases_tac0 x
 
@@ -338,7 +338,7 @@ let match_mp_rule0 thm i sq=
        seq
 	 [inst_tac ~f:af ncnsts; 
 	  Tactics.cut thm; 
-	  Logic.Rules.implE None af;
+	  Logic.Rules.implA None af;
 	  Logic.Rules.postpone; 
 	  Tactics.unify_tac ~a:af ~c:i] g)) sq
 
@@ -362,7 +362,7 @@ let match_mp_sqnt_rule0 j i sq=
   let ncnsts = make_consts qnts qenv
   and info =Drule.mk_info()
   in 
-  (((inst_tac ~f:j ncnsts) ++ Logic.Rules.implE (Some info) j)
+  (((inst_tac ~f:j ncnsts) ++ Logic.Rules.implA (Some info) j)
      ++
      (fun g->
        let gtl, gtr=
@@ -438,7 +438,7 @@ let mp_tac ?a ?f g=
 	  Unify.unify ~typenv:typenv scp varp lhs l
 	in 
 	let tmp_g=
-	  Drule.inst_list (Logic.Rules.allE None) 
+	  Drule.inst_list (Logic.Rules.allA None) 
 	    (Drule.make_consts vs subst) mpform_tag g
 	in 
 	if (Logicterm.is_implies 
@@ -513,7 +513,7 @@ let mp_tac ?a ?f g=
     iseq 
       ~initial:([], [], [])
       [(fun info (_, fs, _) ->
-	Logic.Rules.implE (Some info) mpform_tag);
+	Logic.Rules.implA (Some info) mpform_tag);
        (fun info (_, fs, _) ->
 	 Logic.Rules.basic (Some info) mpasm_tag 
 	   (ftag (Lib.get_one fs (Failure "mp_tac: basic"))))]

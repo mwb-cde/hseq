@@ -56,49 +56,49 @@ let postpone = Logic.Rules.postpone
 
 let cut th = Logic.Rules.cut None th
 
-let implI ?c sq =
+let implC ?c sq =
   let cf=
     match c with
       Some x -> x
     | _ -> (Drule.first_concl Formula.is_implies (Logic.get_sqnt sq))
   in 
-  Logic.Rules.implI None cf sq
+  Logic.Rules.implC None cf sq
 
-let implE ?a sq =
+let implA ?a sq =
   let af=
     match a with 
       (Some x) -> x
     | _ -> (Drule.first_asm Formula.is_implies (Logic.get_sqnt sq))
   in 
-  Logic.Rules.implE None af sq
+  Logic.Rules.implA None af sq
 
-let conjI ?c sq =
+let conjC ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_conj (Logic.get_sqnt sq))
-  in Logic.Rules.conjI None cf sq
+  in Logic.Rules.conjC None cf sq
 
-let conjE ?a sq =
+let conjA ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_conj (Logic.get_sqnt sq))
-  in Logic.Rules.conjE None af sq
+  in Logic.Rules.conjA None af sq
 
-let disjI ?a sq =
+let disjA ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_disj (Logic.get_sqnt sq))
-  in Logic.Rules.disjI None af sq
+  in Logic.Rules.disjA None af sq
 
-let disjE ?c sq =
+let disjC ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_disj (Logic.get_sqnt sq))
-  in Logic.Rules.disjE None cf sq
+  in Logic.Rules.disjC None cf sq
 
 let negC ?c sq =
   let cf=
@@ -114,19 +114,19 @@ let negA ?a sq =
     | _ -> (Drule.first_asm Formula.is_neg (Logic.get_sqnt sq))
   in Logic.Rules.negA None af sq
 
-let allI ?c sq =
+let allC ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_all (Logic.get_sqnt sq))
-  in Logic.Rules.allI None cf sq
+  in Logic.Rules.allC None cf sq
 
-let existI ?a sq =
+let existA ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_exists (Logic.get_sqnt sq))
-  in Logic.Rules.existI None af sq
+  in Logic.Rules.existA None af sq
 
 let trueR ?c sq =
   let cf=
@@ -137,19 +137,19 @@ let trueR ?c sq =
 
 let trivial = trueR
 
-let allE ?a trm sq =
+let allA ?a trm sq =
   let af=
     match a with
       Some x -> x
     | _ ->  (Drule.first_asm Formula.is_all (Logic.get_sqnt sq))
-  in Logic.Rules.allE None trm af sq
+  in Logic.Rules.allA None trm af sq
 
-let existE ?c trm sq =
+let existC ?c trm sq =
   let cf=
     match c with
       (Some x) -> x
     | _ -> (Drule.first_concl Formula.is_exists (Logic.get_sqnt sq))
-  in Logic.Rules.existE None trm cf sq
+  in Logic.Rules.existC None trm cf sq
 
 let deleten ns sq = 
   let rec del_aux l s=
@@ -221,12 +221,12 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   let g1 = 
     match asm_vars with
       [] -> g
-    | _ -> Drule.inst_list (Logic.Rules.allE info) asm_consts a g
+    | _ -> Drule.inst_list (Logic.Rules.allA info) asm_consts a g
   in 
   let g2 = 
     match concl_vars with
       [] -> g1
-    | _ -> Drule.inst_list (Logic.Rules.existE info) concl_consts c g1
+    | _ -> Drule.inst_list (Logic.Rules.existC info) concl_consts c g1
   in 
   try 
     Logic.Rules.basic info a c g2
