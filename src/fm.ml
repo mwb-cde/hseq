@@ -1,3 +1,7 @@
+(* 
+   Start up file loaded when the TP system starts.
+*)
+
 #directory "/home/mw/src/tp/src";;
 #directory "/home/mw/src/tp/src/include";;
 
@@ -22,11 +26,6 @@ let _ =
   Tpenv.add_thy_path "thys";
   Tpenv.add_thy_path "../thys"
 
-(*
-Tpenv.init();;
-Tpenv.add_thy_path "thys";;
-Tpenv.add_thy_path "../thys";;
-*)
 
 open Goals;;
 open Commands;;
