@@ -11,6 +11,7 @@
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
+
 #install_printer Display.print_term;;
 #install_printer Display.print_type;;
 #install_printer Display.print_sqnt;;
