@@ -1,0 +1,400 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename hseq-quickstart.info
+@settitle HSeq Quick Start
+
+@c %**end of header
+
+@c Local definitions
+@include localdefs.texi
+
+@copying
+Copyright @copyright{} 2006, M. Wahab
+@end copying
+
+@titlepage
+@title @HSeq{} Quick Start
+@author M. Wahab <mwb.cde@googlemail.com>
+
+@page
+@vskip 0pt plus lfill
+@insertcopying
+@end titlepage
+
+@ifnottex
+@node Top
+@top HSeq Quick Start
+@insertcopying
+@end ifnottex
+
+
+@HSeq{} is a tactical theorem prover for a typed, higher order logic
+based on the sequent calculus. A @emph{term} is a @emph{formula} of
+the logic if it is well-formed in a particular @emph{scope}.  A scope
+is a record of term and type definitions and declarations. A
+@emph{theorem} is a formula which has been proved to be a true
+statement. A proof is constructed by stating a @emph{goal} and
+applying @emph{tactics} to reduce the goal to @emph{true}. A tactic
+reduces a goal to sub-goals; if there are no sub-goals, the tactic
+proves the goal. An @emph{axiom} is a formula asserted to be true
+without proof. Theorems, definitions and declarations are stored in
+@emph{theories} which provide the scope for other theories and for
+constructing formulas of the logic.
+
+@heading Interaction with OCaml
+
+@HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
+From the command line, @code{hseq @var{options}} starts the
+interactive interpreter, where @var{options} are the options to pass
+to the OCaml system. @code{hseqb @var{options} @var{file}} executes
+@var{file} as a script.
+
+The OCaml preprocessor is used to embed @HSeq{} terms, types and
+definitions as quotations in OCaml expressions.  For string @var{str},
+the quotation @code{<< str >>} parses @var{str} as a term and the
+quotation @code{<<: str >>} is parsed as a type.  The quotation
+@code{<:def< str >>} parses @var{str} as a term definition and the
+quotation @code{<:def<: str >>} parses @var{str} as a type definition
+or declaration.
+
+@code{reset()} resets the @HSeq{} system to its initial state.
+
+@heading Types
+
+A type has OCaml type @code{Basic.gtype} and is a @emph{type
+variable}, a @emph{type constructor} or a @emph{weak type variable}.
+A type @code{'a} is a type variable of name @emph{a}.  A type
+@code{'_a} is a weak type variable of name @emph{a}.  A type
+@code{(t1, @dots{}, t@var{n})f} is a constructed type with constructor
+@emph{f} and @var{n} arguments. If there are no arguments the type is
+in the form @code{f}. If identifier @emph{f} is in the form
+@code{@var{T}.@var{n}} then it is constructor named @var{n} declared
+in the theory named @var{T}. If @emph{f} is @code{@var{n}}, the scope
+of the type is searched for a theory @var{T} in which @var{n} is
+declared.
+
+A weak type variable is a type variable which cannot match a type
+variable, only other weak type variable or type constructors. Weak
+type variables occur only in sequents. If a weak type variable @var{v}
+is bound to a type @var{t} in a sequent, all instances of @var{v} are
+bound to @var{t}. Weak type variables are treated as ordinary type
+variables by the parser.
+
+The standard types are: @code{bool}, the booleans; @code{'a -> 'b},
+functions from @code{'a} to @code{'b}; @code{('a)set}, sets of
+@code{'a} and @code{'a * 'b}, the product of @code{'a} and @code{'b}.
+
+@heading Terms
+
+A term has OCaml type @code{Basic.term} and is an identifier, a free
+variable, a bound variable, a binding term or a function application.
+The boolean true and false are @code{true} and @code{false}; a
+function application is @code{f a} and has lower priority than other
+operators; negation is @code{~a} or @code{not a}; conjunction is
+@code{a & b} or @code{a and b}; disjunction is @code{a | b} or @code{a
+or b}; implication is @code{a => b}; boolean equivalence is @code{a
+iff b}. Equality is @code{a = b} and has higher priority than the
+boolean operators. The type @var{ty} of a term @var{t} can be
+explicitly stated by enclosing the specification in brackets as the
+form @code{(@var{t}:@var{ty})}.
+
+A term identifier @var{f} is either in the form @code{@var{T}.@var{n}}
+or @var{n}. For @code{@var{T}.@var{n}}, the identifier is the name
+@var{n} declared in the theory named @var{T}. If @var{f} is
+@var{n}, the scope of the term is searched for a list of
+theories in which @var{n} is defined or declared. The name @var{n} is
+resolved by choosing the first declaration or definition which matches
+the type of @var{f}.
+
+Standard binding terms are lambda-abstraction, universal and
+existential quantification. A binding term (with some symbol
+@var{SYM}) is written @code{@var{SYM} x : F} and binds variable
+@code{x} in term @code{F}. The binding generalizes to a list of
+variables: @code{@var{SYM} x1 x2 @dots{} xn : F} binds variables
+@code{x1}, @code{x2}, @dots{}, @code{xn} in term @code{F}.  A lambda
+term is @code{% x: F}; universal quantification is @code{! x: F} and
+existential quantification is @code{? x: F}. The choice operator is
+@code{@@ x: F} and the unique existential binding is @code{?! x: F}.
+The variable @code{x} can be typed in which case it is written with
+brackets as @code{(x: ty)}.  For example, @code{! x (y: bool) z : ?
+(A:('a)set): (y and z) | (x = A)}.
+
+@heading Interactive Proofs
+
+In sequent @code{@var{asm} |- @var{concl}}, @var{asm} is the list of
+assumptions and @var{concl} is the list of conclusions. The
+assumptions and the conclusions are the @emph{formulas} of the
+sequent. The terms sequent and sub-goal will be used interchangeably.
+
+When a sequent is displayed, the assumptions are printed before the
+conclusions, separated by a line.  Each assumption is printed with a
+negative integer, starting with @code{-1} and each assumption is
+printed with a positive integer, starting with @code{1}. The
+@emph{first assumption} is numbered @code{-1}, the @emph{first
+conclusion} is numbered @code{1}.
+
+Each sequent formula can be identified by a unique @emph{label}. A
+string @var{str} can be set as the label for a formula, in which case
+the label is referred by the OCaml expression @code{!$
+@var{str}}. When a string is set as the label of a sequent formula, it
+replaces the integer normally displayed with the formula.
+
+For interactive proofs, command @code{goal @var{t}} sets term @var{t}
+as the goal to be proved. @code{by @var{tac}} applies tactic @var{tac}
+to the current subgoal. @code{undo()} drops the result of the last
+@code{by} command. @code{top()} displays the current sub-goal.
+
+Function @code{prove @var{t} @var{tac}} proves the theorem built from
+term @var{t} using tactic @var{tac}, failing if the tactic fails.
+
+@heading Tactics
+
+Tactics are generally named with suffix '_tac'. Tactics ending with a
+'A' act on the assumptions of a sub-goal. Tactics ending with 'C' act
+on the conclusions. Optional arguments are generally named @var{a} for
+an assumption, @var{c} for a conclusion, @var{f} for an assumption or
+conclusion and @var{inst} for a list of terms.
+
+The basic tactics are @code{conjA}, @code{conjC}, @code{disjA},
+@code{disjC}, @code{implA}, @code{implC}, @code{negA}, @code{negC},
+@code{existA}, @code{existC}, @code{allA}, @code{allC} which eliminate
+conjunctions, disjunctions, implications, negation and existential and
+universal quantifiers. @code{betaA}, @code{betaC} and
+@code{beta_tac} beta reduce formulas.
+
+@code{basic} solves sub-goals of the form @code{t, @var{asm}|- t,
+@var{concl}} (a formula appearing in both assumptions and
+conclusions). @code{trivial} solves subgoals in which @code{true}
+appears in the conclusions or @code{false} appears in the
+assumptions. @code{eq_tac} solves subgoals in which term @code{x=x}
+appears in the conclusions.
+
+@code{flatten_tac} eliminates basic boolean operators without
+splitting the sub-goal. @code{split_tac} eliminates the basic boolean
+operators, splitting the sub-goal. @code{scatter_tac} combines
+@code{flatten_tac} and @code{split_tac}. @code{blast_tac} is
+@code{scatter_tac} followed by @code{basic}. 
+
+@code{iffA} and @code{iffC} eliminate boolean equivalence and
+@code{equals_tac} replaces equality (=) between booleans with boolean
+equivalence (iff).
+
+@code{instA}, @code{instC} instantiate assumptions and conclusions
+with a given list of terms. @code{inst_tac} first tries @code{instA}
+then @code{instC}. @code{specA}, @code{specC} and @code{spec_tac}
+specialize assumptions and conclusions.
+
+A theorem is introduced as an assumption using @code{cut}. The
+optional argument @code{inst} can be used to instantiate the
+assumption with values. 
+
+The order of assumptions and conclusions can be significant for
+tactics which search for a formula.  @code{liftA @var{l}} and
+@code{liftC @var{l}} lift the assumption or conclusion labelled
+@var{l} to the front of the list of assumptions or conclusions.
+@code{copyA @var{l}} and @code{copyC @var{l}} copy the assumption or
+conclusion with label @var{l}. @code{deleteA @var{l}} and
+@code{deleteC @var{l}} delete the assumption or conclusion labelled
+@var{l}.
+
+@code{match_asm @var{t} tac} and @code{match_concl @var{t} @var{tac}}
+search the sequent for an assumption or conclusion matching the term
+@var{t}, applying @code{@var{tac} @var{l}} where @var{l} is the label
+of the matched formula. Free variables in @var{t} match sub-terms in
+the assumptions/conclusions. Example: @samp{match_asm << !x y z: A =>
+C >> liftA}.
+
+@code{nameA @var{str} @var{l}} and @code{nameC @var{str} @var{l}} set
+string @var{str} as the label of the assumption or conclusion with
+label @var{l}. These should be used in conjunction with
+@code{match_asm} and @code{match_concl}.
+
+@code{back_tac} matches a possibly quantified assumption of the from
+@code{a => c} with a conclusion of the form @code{c}, replacing the
+conclusion with @code{a}. @code{mp_tac} matches a possibly quantified
+assumption of the from @code{a => c} with an assumption of the form
+@code{a}, replacing it with assumption @code{c}.  @code{cut_back_tac}
+and @code{cut_mp_tac} operate with theorems of the form @code{a=>c}
+(which may be universally quantified).
+
+@code{show @var{t} @var{tac}} introduces term @var{t} as an assumption,
+using tactic @var{tac} to prove the truth of @var{t}. @code{cases_tac
+@var{t}} introduces a case split on the truth of term
+@var{t}. @code{case_of @var{t}} introduces a case split on the
+possible values of term @var{t}.
+
+@code{induct_tac @var{thm}} begins a proof by induction on a
+conclusion of the form @code{! x .. y : R => A}. Tactic
+@code{induct_on @var{n}} begins a proof by induction on the quantified
+variable named @var{n}, failing if there is no such variable in the
+conclusions or no appropriate induction theorem. The induction theorem
+used depends on the type of variable @var{n}.
+
+@heading Rewriting and Simplification
+
+Tactics @code{rewriteA_tac}, @code{rewriteC_tac} and
+@code{rewrite_tac} rewrite assumptions, conclusions and sequent
+formulas with a list of rewrite rules, provided as theorems.  Tactics
+@code{once_rewriteA_tac}, @code{once_rewriteC_tac} and
+@code{once_rewrite_tac} apply a rewrite once. @code{replace_tac} and
+@code{once_replace_tac} rewrite formulas with rules from the
+assumptions. @code{unfold @var{n}} unfolds the definition of the term
+named @var{n}. The rewrite tactics take an optional argument
+@code{dir} to specify the rewriting direction. Possible values are
+@code{rightleft} or @code{leftright}.
+
+The main simplification tactics are @code{simpA_tac},
+@code{simpC_tac}, @code{simp_all_tac} and
+@code{simp_tac}. @code{simpA_tac} simplifies the assumptions, starting
+with the first, @code{simpC_tac} simplifies the conclusions, starting
+with the last. @code{simp_all_tac} simplifies the assumptions,
+starting with the first, and then the conclusions, starting with the
+last. In all cases both formulas which aren't simplified and formulas
+which have been simplified are used as simplification rules on other
+formulas. @code{simp_tac} takes an optional formula label. If the label
+is given, then @code{simp_tac} is either @code{simpC_tac} or
+@code{simpA_tac}, otherwise it is @code{simpC_tac}.
+
+The simplification tactics use the standard simplification rules,
+obtained by calling @code{std_ss()}. The simplification tactics ending
+with @code{_tac} take a list of theorems to use as additional
+simplification rules. Tactics @code{simpA}, @code{simpC},
+@code{simp_all} and @code{simp} are short-hand for the simplification
+tactics with no additional rules (@code{simp = simp_tac []}).
+
+@heading Sequencing Tactics
+
+@code{skip} is the tactic that does nothing and always
+succeeds. @code{fail} is the tactic that does nothing and always
+fails.
+
+The sequential composition of tactics is @code{seq[@var{tac1};
+@var{tac2}; @dots{}; @var{tacn}]}. The tactics are applied in sequence
+starting with @var{tac1} and each tactic @var{tac(i+1)} is applied to
+all the sub-goals generated by @var{taci}. The sequence continues
+until all tactics have been applied, the goal is solved or a tactic
+fails.
+
+The alternation between tactics is @code{alt[@var{tac1}; @var{tac2};
+@dots{}; @var{tacn}]}. Each tactic is tried in sequence, starting
+with @var{tac1}, until one of the tactics succeeds. The alternation
+fails if all the tactics fail. 
+
+@code{@var{tac1}++@var{tac2}} is shorthand for @code{seq[@var{tac1};
+@var{tac2}]}. @code{@var{tac1}//@var{tac2}} is shorthand for
+@code{alt[@var{tac1}; @var{tac2}]}.
+
+Branching tactical @code{@var{tac} -- [@var{tac1}; @dots{};
+@var{tacn}]} applies tactic @var{tac}. Each tactic @var{taci} is then
+applied to the @var{i}'th resulting sub-goal. All sub-goals are then
+combined (in the order they were generated) to form the final list of
+sub-goals. If there are more sub-goals than tactics, the extra
+sub-goals are added to the end of the final list (as if the list of
+tactics was padded with @code{skip}). If there are more tactics than
+sub-goals, the extra tactics are ignored.
+
+@heading Theories
+
+A theory @var{T} is built from a @emph{script file} named
+@code{@var{T}Script.ml} and is saved to a @emph{theory file} named
+@code{@var{T}.tho}.  A theory may depend on other theories (its
+@emph{parents}). When a theory is built or loaded from file, its
+parents are also loaded. If the parent of a theory does not have a
+theory file, it is rebuilt from its script file. All theories must be
+younger than the theories they depend on and theories are
+automatically rebuilt if necessary. 
+
+A theory is either @emph{closed} or @emph{writable}. A closed theory
+can be the parent of other theories but cannot be modified. A writable
+theory can be modified but cannot be used as the parent of another
+theory.
+
+The main theory for @HSeq{} is called @code{Main} and is automatically
+set as a parent for each new theory.
+
+@code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]} begins a
+theory named @var{n} with parents @var{p1}, @dots{},
+@var{pn}. @code{end_theory()} ends the currently open theory, marking
+it as closed and saving it to a theory file. 
+
+@code{add_file @var{n}} marks file @var{n} as a library to be loaded
+when the theory is loaded. If @var{n} ends with suffix @code{.ml}, it
+is loaded using @code{#use}. If @var{n} ends with suffix @code{.cmi}
+or @code{.cmo} it is loaded with @code{#load}.  @code{compile
+@var{path} @var{n}} compiles file @var{n} with the standard @HSeq{}
+libraries. @var{path} is the list of additional include directories to
+use.
+
+@code{declare << @var{D} >>} declares a term. @var{D} should be in the
+form @code{@var{n}:@var{ty}} where @var{n} is the identifier and
+@var{ty} the type. Note that @code{declare} uses the term quotation
+parser (@code{<< @dots{} >>}) not the definition quotation parser.
+Example: @code{declare <:def< and:(bool -> bool -> bool) >>}.
+
+@code{define <:def< @var{D} >>} defines a term. @var{D} must
+be in the form @code{@var{n} @var{a1} @dots{} @var{an} = @var{T}}
+where @var{n} is the identifier being defined, @var{a1} @dots{}
+@var{an} are the parameters and @var{T} the body of the definition.
+Example: @code{define <:def< or x y = (not (not x) and (not y)) >>}.
+
+@code{typedef <:def<: @var{D} >>} declares or defines a type
+constructor.  @code{typedef <:def<: @var{ty} >>} declares the new type
+@var{ty} constructor. @code{typedef <:def<: @var{ty1} = @var{ty2} >>}
+declares @var{ty1} to be an alias for type @var{ty2}.  Example:
+(declaration) @code{typedef <:def<: bool >>} and (aliasing)
+@code{typedef <:def<: ('a)set = ('a -> bool)>>}.
+
+@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred}
+>>} defines @var{ty1} as the subtype of type @var{ty2} containing
+elements which satisfy term @var{pred} (which should have type
+@code{@var{ty2} -> bool}). Existence theorem @var{T} must be in the
+form @code{?x: @var{pred} x}. Example: @code{typedef <:def<: ('a,
+'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
+
+The declaration and definition commands take an optional argument
+named @code{pp} to specify printer-parser information. This sets the
+precedence, fixity and the symbol to use for the identifier or
+constructor. Fixity values are @code{prefix}, @code{infixl} (infix,
+left associative), @code{infixr} (infix, right associative),
+@code{infixn} (infix, non-associative) and @code{suffix}.
+
+@code{axiom @var{T}} declares term @var{T} as an axiom. 
+
+@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]} adds term
+@var{T} as a theorem using list of tactics as a proof. A goal is
+constructed from term @var{T} and each tactic in the list is applied,
+in order, to the first subgoal. 
+
+Note that the list of tactics used by @code{theorem} is an
+unstructured proof: the tactics are always applied to the first
+sub-goal, as they are in interactive proofs. This makes it easier to
+transfer interactive proofs to a batch proof.
+
+@code{axiom} and @code{theorem} take the optional argument @code{simp}
+which marks the axiom/theorem for use as a simplification rule.
+
+@heading Information Access
+
+@code{theory @var{x}} displays theory @var{n}. If @var{x} is
+the empty string (@code{""}), the current theory is displayed.
+
+@code{defn @var{x}} gets the defining theorem for term @var{x}. If
+@var{x} is in the form @code{@var{T}.@var{n}}, it identifies term
+@var{n} from theory @var{T}, otherwise the scope is searched for a
+definition of @var{x}.
+
+@code{thm @var{x}} get the theorem named @var{x}. Note that axioms are
+theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
+identifies theorem @var{n} from theory @var{T}, otherwise the scope is
+searched for a theorem named @var{x}.
+
+@code{scope()} get the current scope. 
+
+@code{goal_scope()} get the scope of the current goal (in an
+interactive proof).
+
+@c
+@c End of document
+@c
+
+@bye

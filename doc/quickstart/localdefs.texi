@@ -1,0 +1,62 @@
+@c
+@c Macro definitions for hseq.texi
+@c
+
+@c @HSeq: the name of the program
+
+@macro HSeq{}
+HSeq
+@end macro
+
+@c
+@c Definitions for tactic description.
+@c
+
+@macro TypedName{NAME, TYPE}
+@code{\NAME\: \TYPE\}
+@end macro
+
+@macro Float{TEXT}
+@display
+\TEXT\
+@end display
+@end macro
+
+@macro Sqnt{ASM, CONCL}
+@code{\ASM\|-\CONCL\}
+@end macro
+
+@c Headings
+
+@macro Synopsis{}
+@heading Synopsis
+@end macro
+
+@macro Description{}
+@heading Description
+@end macro
+
+@macro GoalInfo{}
+@heading Goal Information
+@end macro
+
+@macro Failure{}
+@heading Failure
+@end macro
+
+@macro Example{}
+@heading Example
+@end macro
+
+@macro Notes{}
+@heading Notes
+@end macro
+
+@macro Uses{}
+@heading Uses
+@end macro
+
+@macro SeeAlso{}
+@heading See Also
+@end macro
+

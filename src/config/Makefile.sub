@@ -1,0 +1,439 @@
+#####
+# Makefile for building sub-directories
+#
+# Should be called with an instance of Makefile.def
+#####
+
+#-include Makefile.def
+
+##
+# Directories
+##
+
+# SRCDIR: The source directory (relative to a sub-directory).
+SRCDIR = ..
+
+# BUILDDIR: The top of the build directory (relative to a sub-directory).
+BUILDDIR = $(SRCDIR)/..
+
+# CONFIGDIR: The configuration directory
+CONFIGDIR = $(BUILDDIR)/config
+
+# TOPCONFIGDIR: The toplevel configuration directory
+TOPCONFIGDIR = $(BUILDDIR)/config
+
+# CONFIGFILE: The configuration file
+CONFIGFILE = $(TOPCONFIGDIR)/data.make
+
+# HEADERSDIR: The location of the compiled header files
+HEADERSDIR = $(SRCDIR)/lib
+
+# LIBDIR: The location of the compiled files
+LIBDIR = $(SRCDIR)/lib
+
+# DOCDIR: Source code documentation directory
+DOCDIR = $(SRCDIR)/doc
+
+# SRCCONFIGDIR: The source directory configuration
+SRCCONFIGDIR ?= $(SRCDIR)/config
+
+# STDDEFS_FILE: Common definitions
+STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
+
+###
+# Configuration variables
+# Set by data.make
+###
+
+# Read from $(CONFIGFILE)
+ifdef CONFIGFILE
+-include $(CONFIGFILE)
+endif
+
+# Variables which are set in $(CONFIGFILE)
+Bin ?= 
+Prefix ?= 
+BinDir ?= 
+BaseDir ?= 
+IncludeDir ?= 
+LibDir ?= 
+ThyDir ?= 
+
+# IBINFILE: The installed binary
+IBINFILE ?= $(BINFILE)
+
+# IPREFIX: The installation prefix
+IPREFIX ?= $(Prefix)
+
+# IBINDIR: Installation binary directory
+IBINDIR ?= $(BinDir)
+
+# IBASEDIR: Installation directory
+IBASEDIR ?= $(strip $(BaseDir))
+
+# ILIBDIR: Installation library directory
+ILIBDIR ?= $(LibDir)
+
+# ITHYDIR: Installation theory directory
+ITHYDIR ?= $(ThyDir)
+
+# IDOCDIR: Installation documentation directory
+IDOCDIR ?= $(IBASEDIR)/doc/source
+
+# FAST: whether to use the fast compilers
+ifndef FAST
+export FAST := $(FastCompilers)
+endif
+
+# NATIVE: Whether to build the native code library
+ifndef NATIVE
+export NATIVE := $(NativeCompilers)
+endif
+
+##
+# Load the standard settings
+##
+
+# CMDSFILE: The location of the commands file
+CMDSFILE = $(TOPCONFIGDIR)/Makefile.os
+
+## Include the standard settings
+include $(STDDEFS_FILE)
+
+
+####
+# Variables set in Makefile.def
+###
+
+###
+# Header, code and optimised code files
+###
+
+# FILES: The list of file names
+FILES ?=
+
+# HEADERS: the list of header (.cmi) files 
+HEADERS ?= $(call interface,$(FILES))
+
+# MLHEADERS: the list of ML header (.mli) files 
+MLHEADERS ?= $(call header,$(FILES))
+
+# MLFILES: the list of ML (.ml) files 
+MLFILES ?= $(call mlfile,$(FILES))
+
+# CODE: the list of byte code (.cmo) files 
+CODE ?= $(call bytecode,$(FILES))
+
+# NATCODE: the list of native code (.cmx) files 
+NATCODE ?= $(call natcode,$(FILES)) $(call objcode,$(FILES))
+
+###
+# Generated libraries
+###
+
+# LIBFILES: The list of library files built
+LIBFILES ?= 
+
+# BYTELIBS: The list of library (.cma) files built
+BYTELIBS ?= $(call bytelib,$(LIBFILES))
+
+# NATLIBS: The list of native code library (.cmxa) files built
+NATLIBS ?= $(call natlib,$(LIBFILES)) $(call objlib,$(LIBFILES))
+
+###
+# Documentation
+###
+
+DOCTYPE ?= -html
+
+# DOCFILES: File from which documentation is to be built
+DOCFILES ?= $(MLHEADERS)
+
+# DOCDATA: File to be emitted as a link
+DOCDATA ?= 
+
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV ?= 
+
+
+###
+# End of Makefile.def variables
+###
+
+## The name of the module being built
+MODULE_NAME ?= HSeq
+
+##
+# Compiler settings
+##
+
+# PPCODE: The preprocessor code
+PPCODE ?= $(LIBDIR)/tpquote.cma
+
+# PPOPTIONS: Preprocessor options 
+# To avoid using the preprocessor, 
+# set PPOPTIONS = "" (i.e. an empty value)
+PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
+
+# DOCLOAD: The previous documentation link
+ifeq '$(DOCPREV)' '' 
+DOCLOAD = 
+else
+DOCLOAD = -load "$(DOCDIR)/$(DOCPREV)"
+endif
+
+# DOCDUMP The documentation link
+ifeq '$(DOCDATA)' '' 
+DOCDUMP = 
+else
+DOCDUMP = -dump "$(DOCDIR)/$(DOCDATA)"
+endif
+
+## Set the options
+
+# OPTIONS: The compiler options
+OPTIONS = $(PPOPTIONS)
+
+# INCLUDE: The include directives
+INCLUDE = -I $(HEADERSDIR) 
+
+# Compiler options
+OCAMLC_OPTIONS = $(OPTIONS) $(INCLUDE)
+OCAMLOPT_OPTIONS = -for-pack $(MODULE_NAME) $(OPTIONS) $(INCLUDE)
+
+# Linker options
+OCAMLLINK_OPTIONS = -custom $(INCLUDE)
+OCAMLOPTLINK_OPTIONS = $(INCLUDE)
+
+# Toplevel linker options
+OCAMLMKTOP_OPTIONS = -custom $(INCLUDE) 
+
+# ocamldep options
+OCAMLDEP_OPTIONS = $(OPTIONS)
+
+# ocamldoc options
+OCAMLDOC_OPTIONS = $(OPTIONS) $(INCLUDE)
+
+# OCAMLCPP : the preprocesor options
+OCAMLCPP_OPTIONS = -I$(TOPCONFIGDIR) $(INCLUDE)
+
+
+###
+# Build targets
+###
+
+#
+# BUILD_TARGETS: targets to build
+# INSTALL_TARGETS: targets to install
+#
+
+ifneq '$(LIBFILES)' ''
+# build the library
+BUILD_TARGETS := build-bytelib 
+INSTALL_TARGETS := install-bytelib
+
+ifeq '$(NATIVE)' 'true'
+
+BUILD_TARGETS := $(BUILD_TARGETS) build-natlib
+INSTALL_TARGETS := $(INSTALL_TARGETS) install-natlib
+
+endif
+
+else
+# build the code files only
+BUILD_TARGETS := build-bytecode
+INSTALL_TARGETS := install-bytecode
+
+ifeq '$(NATIVE)' 'true'
+
+BUILD_TARGETS := $(BUILD_TARGETS) build-natcode
+INSTALL_TARGETS := $(INSTALL_TARGETS) install-natcode
+
+endif
+
+endif
+
+
+## File names
+
+BYTE_CODE := $(call bytecode,$(FILES))
+NAT_CODE := $(call natcode,$(FILES))
+OBJ_CODE := $(call objcode,$(FILES))
+
+BYTE_LIB := $(call bytelib,$(LIBFILES))
+NAT_LIB := $(call natlib,$(LIBFILES))
+OBJ_LIB := $(call objlib,$(LIBFILES))
+
+
+## Arguments
+#
+# BUILD_CODE: The code files to build
+# INSTALL_CODE: The code files to install
+#
+# BUILD_LIBS: The library files to build
+# INSTALL_LIB: The library files to install
+#
+
+### The files to build and install
+
+#BUILD_CODE := $(BYTE_CODE)
+#INSTALL_CODE := $(BUILD_CODE)
+#BUILD_LIBS := $(BYTE_LIB)
+#INSTALL_LIBS := $(BUILD_LIBS)
+
+### Whether to build the native code library
+
+#ifeq '$(NATIVE)' 'true'
+
+#BUILD_CODE := $(BUILD_CODE) $(NAT_CODE)
+#INSTALL_CODE := $(INSTALL_CODE) $(NAT_CODE) $(OBJ_CODE)
+#BUILD_LIBS := $(BUILD_LIBS) $(NAT_LIB)
+#INSTALL_LIBS := $(BUILD_LIBS) $(OBJ_LIB)
+
+#endif
+
+#$(warning "BUILD_CODE = $(BUILD_CODE)")
+#$(warning "INSTALL_CODE = $(INSTALL_CODE)")
+#$(warning "BUILD_LIBS = $(BUILD_LIBS)")
+#$(warning "INSTALL_LIBS = $(INSTALL_LIBS)")
+
+#$(warning "BUILD_TARGETS = $(BUILD_TARGETS)")
+#$(warning "INSTALL_TARGETS = $(INSTALL_TARGETS)")
+
+## 
+# The targets
+##
+
+# all: Build everything
+all: build-headers $(BUILD_TARGETS)
+
+## Building
+
+# build-headers: Build the headers
+build-headers: $(HEADERS)
+
+# build-code: Build the library
+build-code: build-headers $(BUILD_TARGETS)
+
+# build-bytecode: Build the byte-code
+build-bytecode: build-headers $(BYTE_CODE)
+
+# build-natcode: Build the native-code
+build-natcode: build-headers $(NAT_CODE)
+
+# build-bytelib: Build the byte-code library
+build-bytelib: build-headers $(BYTE_LIB)
+
+# build-natlib: Build the native-code library
+build-natlib: build-headers $(NAT_LIB)
+
+# lib: Build the library files
+lib: build-code
+
+# The byte-code library
+$(BYTE_LIB): $(HEADERS) $(BYTE_CODE)
+	$(OCAMLlink) $(INCLUDE) -o $(BYTE_LIB) $(BYTE_CODE)
+
+# The native-code library
+$(NAT_LIB): $(HEADERS) $(NAT_CODE)
+	$(OCAMLOPTlink) $(INCLUDE) -o $(NAT_LIB) $(NAT_CODE)
+
+## Installing
+
+# install-headers: install the headers
+install-headers: build-headers
+	$(COPY) $(HEADERS) $(HEADERSDIR)
+	$(COPY) $(MLHEADERS) $(HEADERSDIR)
+
+# install-code: install the code
+install-code: install-headers $(INSTALL_TARGETS)
+#	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
+
+# install-bytecode: install the byte-code
+install-bytecode: build-bytecode 
+	$(COPY) $(BYTE_CODE) $(LIBDIR)
+
+# install-natcode: install the native-code
+install-natcode: build-natcode
+	$(COPY) $(NAT_CODE) $(OBJ_CODE) $(LIBDIR)
+
+# install-lib: install the library
+install-lib: install-headers build-code
+	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
+
+# install-bytelib: install the byte-code library
+install-bytelib: install-headers build-bytelib
+	$(COPY) $(BYTE_LIB) $(LIBDIR)
+
+# install-natlib: install the native-code library
+install-natlib: install-headers build-natlib
+	$(COPY) $(NAT_LIB) $(OBJ_LIB) $(LIBDIR)
+
+# install-other: install any other files specified 
+#   in INSTALL_OTHER_FILES 
+install-other: 
+ifdef INSTALL_OTHER_FILES
+	$(COPY) $(INSTALL_OTHER_FILES) $(LIBDIR)
+endif
+
+# install: Install the library and header files.
+ifdef CUSTOM_INSTALL
+	$(CUSTOM_INSTALL)
+else	
+install: install-code install-other
+endif
+
+# installopt: Install the native code library and header files.
+#installopt: opt
+#ifdef CUSTOM_OPTINSTALL
+#	$(CUSTOM_OPTINSTALL)
+#else	
+#	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
+#	$(COPY) $(HEADERS) $(HEADERSDIR)
+#	$(COPY) $(MLHEADERS) $(HEADERSDIR)
+#endif
+
+## Documentation
+
+#doc: Generate the code documentation
+doc: $(DOCFILES)
+ifneq ($(strip $(DOCFILES)), "")
+	$(OCAMLDOC) $(DOCLOAD) $(DOCDUMP) \
+		$(INCLUDE) $(DOCTYPE) $(DOCOPTIONS) \
+		-d $(DOCDIR) $(DOCFILES)
+endif
+
+##
+# Libraries
+##
+
+##
+# Cleaning files
+##
+
+clean:
+	$(RM) *.cmo *.cmx *.o *~
+
+libclean: 
+	$(RM) *.cmi *.cma *.cmxa
+
+reallyclean: clean libclean
+	$(RM) depend
+
+##
+# Dependencies
+#
+# Define NODEPEND to prevent using depend
+##
+
+depend: $(MLHEADERS) $(MLFILES)
+	-$(OCAMLDEP) $(MLHEADERS) $(MLFILES) > depend
+
+ifndef NODEPEND
+include depend
+endif
+
+
+
+

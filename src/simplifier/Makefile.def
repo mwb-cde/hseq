@@ -1,0 +1,43 @@
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub and OMakefile.sub
+# This is a template to be copied into each directory to be built.
+#####
+
+####
+# The variables to be set in Makefile.def
+###
+
+###
+# Header, byte code and native code files
+###
+
+# FILES: The list of file names
+FILES = simputils simpconvs simpset simplifier \
+	simptacs simplib
+
+###
+# Generated libraries
+###
+
+# LIBFILE: The list of library files built
+# LIBFILES = simplifier
+
+###
+# Documentation
+###
+
+DOCTYPE = -html
+
+# DOCDATA: File to be emitted as a link
+DOCDATA = simplifier.data
+
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV = boollib.data
+
+
+###
+# End of Makefile.def variables
+###

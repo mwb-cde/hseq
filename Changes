@@ -1,0 +1,41 @@
+HSeq Jan09
+----------
+
++ Move to LGPL.v3
+
+HSeq Dec08
+----------
+
++ Update to work with OCaml 3.11 which is now the minimum requirement.
+
+* Rework Unify.matches_rewrite and the functions it relies on to make
+  it more discriminating.
+
+* Fix loop when resolving and loading theory dependencies.
+
+* Remove OMakefile support.
+
+HSeq Mar07
+----------
+
+* Simplify matching function Unify.matches_rewrite. 
+
+HSeq May06
+----------
+
++ Added executable hseqb to handle scripts.
+
++ Split the system into a library and toplevel part.
+  Library named hseq.
+  Toplevel made up of tpquote.cma (the quotation expander),
+  and hseqtop.cma (the interface to the OCaml toplevel).
+
++ Added induction tactics induct_tac and induct_on
+	
+* Fixed soundness bug in rewriter and simplifier. Matching function
+  Unify.matches_rewrite succeeded when it should have failed.
+	
+HSeq Mar06
+----------
+	
+Initial Release

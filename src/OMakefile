@@ -1,0 +1,730 @@
+########################################################################
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this file, to deal in the File without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the File, and to permit persons to whom the
+# File is furnished to do so, subject to the following condition:
+#
+# THE FILE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE FILE OR
+# THE USE OR OTHER DEALINGS IN THE FILE.
+
+########################################################################
+
+###
+# OMakefile
+# Author: M Wahab <mwahab@users.sourceforge.net>
+# Copyright M Wahab 2006
+###
+
+##
+# Settings
+##
+
+INSTALL_INTERFACES = true
+
+###
+# Variables
+###
+
+# MODULE: The name of the module to contain the library
+MODULE = HSeq
+
+# LIBFILE: The name of the library
+LIBFILE = hseq
+
+# INITFILE: The name of the initialising file
+INITFILE = hseqstart.ml
+
+# OCINCLUDE: Required OCaml include directories
+OCINCLUDE = +camlp4
+
+# OCLIBS: Required OCaml libraries.
+OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+
+##
+# Variables for the library
+##
+
+# QUOTEDIR: The sub-directory for the quotation expander
+QUOTEDIR = $(dir quote)
+
+# SUBDIRS: The sub-directories to build (in order)
+SUBDIRS = util tpcore logic parser tpmain \
+	booleans simplifier numbers userlib
+
+# HSEQCODE: The code to link in to build the library (in order)
+HSEQCODE = util tpcore logic parser tpmain booleans simplifier \
+	numbers userlib 
+
+##
+# Variables for the top-level
+##
+
+# TLNAME: The name of the toplevel to build
+TLNAME = $(Program hseq)
+
+# TLDIRS: The sub-directories to build the top-level
+TOPLEVELDIR = $(dir hseqtop)
+
+# TLFILES: The code to link in to build the toplevel (in order)
+TLFILES = $(LIBFILE).cma tpquote.cma hseqtop.cma
+
+##
+# Variables for the tools
+##
+
+# TOOLS: The list of tools
+TOOLS = hseqb hseqc
+
+TOOLPROGS= $(Program $(TOOLS))
+
+##
+# Standard variables for the documentation
+##
+
+# DOCTYPE: The type of documentation to generate
+if $(not $(defined DOCTYPE))
+  DOCTYPE = -html
+  export
+
+# DOCOPTIONS: Additional options to pass to the generator
+if $(not $(defined DOCOPTIONS))
+  DOCOPTIONS = -html
+  export
+
+##
+# Constants
+##
+
+# SRCDIR: The source directory
+SRCDIR = $(CWD)
+
+# HEADERSDIR: The location of the compiled header files
+HEADERSDIR = $(dir lib)
+
+# LIBDIR: The location of the included compiled files
+LIBDIR = $(dir lib)
+
+# OBJDIR: The location of the compiled files
+OBJDIR = $(dir objects)
+
+# TOOLSDIR: The directory containing the tools
+TOOLSDIR = $(dir tools)
+
+# DOCDIR: Source code documentation directory
+DOCDIR = $(dir doc)
+
+# SUBDATA: The name of the Makefile with the definitions for each
+# subdirectory
+SUBDATA = Makefile.def
+
+SRCCONFIG = $(dir config)
+
+# Add the library directory to the include directories
+OCAMLINCLUDES += $(LIBDIR) $(OCINCLUDE) $(dir $(SUBDIRS))
+
+# Add the installation directory to the list of include directories,
+# to make the compiled system look in the installation directory
+# for its header files.
+# Using OCAMLFLAGS is a hack to avoid passing the directory to ocamldep
+# since the directory may not exist when the system is compiled.
+
+OCAMLFLAGS += -I $(ILIBDIR)
+
+##
+# local targets
+##
+
+.PHONY: build-code
+.PHONY: build-library
+.PHONY: build-toplevel
+.PHONY: build-tools
+
+.PHONY: install-library
+.PHONY: install-toplevel
+.PHONY: install-tools
+
+# srcdoc: Build documentation 
+.PHONY: srcdoc
+
+##
+# Non-code Subdirectories
+##
+
+.SUBDIRS: $(DOCDIR)
+  clean:
+    $(RM) *.data
+    $(RM) *.html *.css
+    $(RM) *.info
+    $(RM) *.cmi *.mli *.cmo *.cmx *.o
+    $(RM) *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa *.a
+
+  reallyclean: clean libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
+
+
+##
+# Standard targets
+##
+
+
+## FullClean: Targets to clean a subdirectory
+
+FullClean (c, l, r) =
+  clean:
+    $(RM) *.cmo *.cmx *.o *~ 
+    if $(not $(equal $(c), ""))
+      $(RM) $(c)
+
+  libclean: clean
+    $(RM) *.cmi *.cma *.cmxa 
+    if $(not $(equal $(l), ""))
+      $(RM) $(l)
+
+  reallyclean: libclean
+    if $(not $(equal $(r), ""))
+      $(RM) $(r)
+
+StdClean () = 
+  clean:
+    $(RM) *.cmo *.cmx *.o *~
+
+  libclean: clean
+    $(RM) *.cmi *.cma *.cmxa *.a
+
+  reallyclean: libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
+
+## Copy: copy files into directory
+Copy(files, dst) =
+  IFILES = $(filter-exists $(files))  
+  $(COPY) $(IFILES) $(dst)
+
+## filter_pred(pred, l): 
+# Remove any elements in l which fail predicate pred
+filter_pred(pred, lst) =
+  X[] = .
+  foreach(fl, $(lst))
+    if $(pred $(fl))
+      X += $(fl)
+      export
+  return ($(X))
+
+## StdInstall: Build and install targets from a subdirectory
+
+StdInstall(tag, install-files, target) =
+  $(tag): $(install-files)
+    section
+      IFILES = $(filter-exists $(install-files))
+      $(COPY) $(IFILES) $(target)
+
+## BuildInstall: Build and install targets from a subdirectory
+
+BuildInstall(tag, build_files, install_files, target) =
+  $(tag):
+    section rule
+      if $(not $(file-exists $(build_files)))
+          $(tag): $(build_files)
+            $(Copy $(install_files), $(target))
+      else
+          $(tag): 
+            $(Copy $(install_files), $(target))
+
+
+## MakeInstall: Build and install targets from a subdirectory
+
+MakeInstall(tag, build_files, install_files, target) =
+  $(tag): $(build_files)
+       $(Copy $(install_files), $(target))
+
+## StdDoc: Build and install the documentation for a subdirectory
+
+StdDoc(tag, dfiles, prev, data) =
+  emptyseq [] = 
+  docincludes = $`(mapprefix -I, $(OCAMLINCLUDES))
+  docfiles = $(Header $(dfiles))
+  if $(not $(equal $(array $(prev)), $(emptyseq)))
+    docprev = $(DOCDIR)/$(prev)
+    docload = -load $(docprev)
+    export
+  else 
+    docprev = 
+    docload = 
+    export
+  if $(not $(equal $(array $(data)), $(emptyseq)))
+    docdata = $(DOCDIR)/$(data)
+    docdump = -dump $(docdata)
+    export
+  else 
+    docdata = 
+    docdump = 
+    export
+  section rule
+    if $(not $(equal $(array $(data)), $(emptyseq)))
+      $(tag) $(docdata): $(docfiles) $(docprev)
+        $(OCAMLDOC) $(docload) $(docdump) \
+        $(docincludes) $(DOCTYPE) -d $(DOCDIR) $(docfiles)
+    else
+      $(tag): $(docfiles)
+
+## The sources for a list of files
+
+Source(files) =
+  X = $(addsuffix .ml, $(files))
+  return $(X)
+
+## The headers for a list of files
+
+Header(files) =
+  X = $(addsuffix .mli, $(files))
+  return $(X)
+
+## The interfaces for a list of files
+
+Interface(files) =
+  X = $(addsuffix .cmi, $(files))
+  return $(X)
+
+## The object code for a list of files
+
+ByteCode(files) =
+  return $(addsuffix .cmo, $(files))
+NatCode(files) =
+  return $(addsuffix .cmx, $(files))
+ObjCode(files) =
+  return $(addsuffix .o, $(files))
+
+Code(files) =
+  X = $(ByteCode $(files))
+  if $(NATIVE_ENABLED)
+     X += $(NatCode $(files)) $(ObjCode $(files))
+     export
+  return $(X)
+
+## The libraries to be built
+
+ByteLib(name) = 
+  return $(name).cma
+
+NatLib(name) = 
+ return ($(name).cmxa)
+ObjLib(name) = 
+ return ($(name).cmxa $(name).a)
+
+Lib(name) =
+  X = $(ByteLib $(name))
+  if $(NATIVE_ENABLED)
+     X += $(NatLib $(name)) 
+     export
+  return $(X)
+
+## ReadVar(var, sub): The value of variable var set in directory sub
+ReadVar(var, sub) =
+   X =
+   include $(addprefix $(sub)/, $(SUBDATA))
+   section
+     X = $(getvar $(var))
+     export
+   return $(X)
+
+## PrintVar(vars): Print the values of variables vars
+PrintVar(vars) =
+  foreach(name, $(vars))
+    val = $(string $(getvar $(name)))
+    eprintln($(name) = $(val))
+
+## GetFileList: Get the list of files from each subdirectory, in order
+
+GetFileList(subdirs) =
+  FileList = 
+  foreach (sub, $(subdirs))
+    F = 
+    F = $(ReadVar FILES, $(sub))
+    FileList += $(addprefix $(SRCDIR)/$(sub)/,$(F))
+    export
+  return($(FileList))
+
+    
+##
+# Preprocessor setting
+##
+
+# The theorem prover quotation expander
+PPNAME = tpquote
+PPOBJ = $(PPNAME).cma
+
+PPCODE = $(addprefix $(LIBDIR)/, $(PPOBJ))
+QUOTE_PPCODE = $(addprefix $(QUOTEDIR)/, $(PPOBJ))
+
+#PPCODE = $(file $(addprefix $(LIBDIR)/, $(PPOBJ)))
+#PPCODE = $(LIBDIR)/$(PPNAME).cma
+
+# OCAMLCPP : set the preprocesor
+OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
+	-I$(CONFIGDIR) 
+
+%.ml: %.mlp
+  $(OCAMLCPP) -impl $< -o $@
+
+##
+# Build the quotation expander
+##
+
+.SUBDIRS: $(QUOTEDIR)
+
+  # Settings
+  PPOPTIONS = -pp "camlp4o q_MLast.cmo pa_extend.cmo"
+  OCAMLFLAGS += $(PPOPTIONS) 
+  OCAMLDEPFLAGS += $(PPOPTIONS) 
+
+  # Don't try to build a native code expander
+  NATIVE_ENABLED = false
+  BYTE_ENABLED = true
+
+  # Documentation settings
+  DOCPREV = ""
+  DOCDATA = ""
+
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  # Targets
+
+  StdClean()
+  OCamlLibrary($(LIBFILES), $(FILES))
+
+  BuildInstall($(PPCODE), \
+	$(Lib $(LIBFILES)), \
+	$(Lib $(LIBFILES)) $(Header $(FILES)) $(Interface $(FILES)), \
+	$(LIBDIR))
+
+  StdDoc(srcdoc, $(FILES), $(DOCPREV), $(DOCDATA))
+
+## Set up the quotation system
+
+LocalOCamlGeneratedFiles($(PPCODE))
+PPOPTIONS = -pp "camlp4o -I $(LIBDIR) q_MLast.cmo $(PPOBJ) pa_extend.cmo"
+
+OCAMLFLAGS += $(PPOPTIONS) 
+OCAMLDEPFLAGS += $(PPOPTIONS) 
+OCAML_LINK_FLAGS += $(OCINCLUDE)
+
+MKTOPINCLUDES = $(OCINCLUDE) $(LIBDIR)
+MKTOPLIBS = $(OCLIBS)
+MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(MKTOPLIBS)
+
+##
+# Build the Library
+##
+
+## Variables
+
+FILES = $(GetFileList $(SUBDIRS))
+BASEFILES = $(basename $(FILES))
+
+BYTEMODULE = $(ByteCode $(MODULE))
+MODULEINTF = $(Interface $(MODULE))
+
+HSEQLIB = $(Lib $(LIBFILE)) 
+HSEQBYTELIB = $(ByteLib $(LIBFILE))
+HSEQNATLIB = $(NatLib $(LIBFILE))
+HSEQOBJLIB = $(ObjLib $(LIBFILE))
+
+FULLHSEQLIB = $(HSEQBYTELIB) $(HSEQNATLIB) $(HSEQOBJLIB)
+
+HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
+
+## How to build the subdirectories
+
+.SUBDIRS: $(SUBDIRS) 
+  # Settings
+  OCAMLOPTFLAGS += -for-pack $(MODULE)
+
+  # Get the subdirectory data
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  HEADERS = $(Header $(FILES))
+  SOURCES = $(Source $(FILES)) 
+  INTERFACES = $(Interface $(FILES))
+  CODE = $(Code $(FILES))
+#  LIBRARY = $(Lib $(LIBFILES))
+
+  # Targets
+
+  StdClean()
+  StdDoc(srcdoc, $(FILES), $(DOCPREV), $(DOCDATA))
+
+## How to build the object library
+
+.PHONY: build-objects
+
+.SUBDIRS: $(OBJDIR) 
+  # How to clean 
+  clean:
+    $(RM) *.cmi *.mli *.ml *.cmo 
+    $(RM) *.cmx *.o *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa *.a
+
+  reallyclean: clean libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
+
+  # Functions
+
+  # InstallIntf: Install interfaces in the obj directory
+  InstallIntf(files, dst) =
+    # Interfaces
+    get_interfaces = $(Interface $(files))
+    make_interfaces = $(basename $(get_interfaces))
+
+    $(make_interfaces): $(get_interfaces)
+      $(COPY) $(get_interfaces) $(dst)
+
+  # InstallCode: Install the code in the obj directory
+  InstallCode(files, dst) =
+    # Interfaces
+    get_interfaces = $(Interface $(files))
+    make_interfaces = $(basename $(get_interfaces))
+
+    # byte files
+    byte_files = $(ByteCode $(files))
+    make_byte_files = $(basename $(byte_files))
+    effects_files = 
+
+    # native code files
+    nat_files = $(NatCode $(files))
+    obj_files = $(ObjCode $(files))
+    make_nat_files = $(basename $(nat_files))
+
+    make_files = $(make_byte_files)
+    get_files = $(byte_files)
+
+    if $(NATIVE_ENABLED)
+      make_files += $(make_nat_files)
+      get_files += $(nat_files) $(obj_files)
+      effects_files += $(basename $(obj_files))
+      export
+
+    $(make_files): $(make_interfaces) $(get_files) :effects: $(effects_files)
+      $(COPY) $(get_files) $(dst)
+
+
+  # BuildModule: build the module 
+  BuildModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+    byte_module = $(ByteCode $(name))
+    byte_code = $(ByteCode $(files))    
+
+    nat_module = $(NatCode $(name))
+    obj_module = $(ObjCode $(name))
+    nat_code = $(NatCode $(files)) 
+    obj_code = $(ObjCode $(files))
+
+    build_module = $(byte_module)
+    build_code = $(byte_code)
+    effects_file = $(module_intf)
+    
+    if $(NATIVE_ENABLED)
+      build_module += $(nat_module) $(obj_module)
+      build_code += $(nat_code)
+      effects_file += $(obj_module)
+      export
+
+    $(build_module): $(build_code) :effects: $(effects_file)
+      $(OCAMLLINK) -pack -o $(byte_module) $(byte_code)
+      if $(NATIVE_ENABLED)
+        $(OCAMLOPTLINK) -pack -o $(nat_module) $(nat_code)
+
+  # BuildByteModule: build the module 
+  BuildByteModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+    byte_module = $(ByteCode $(name))
+    byte_code = $(ByteCode $(files))    
+
+    build_module = $(byte_module)
+    build_code = $(byte_code)
+    effects_file = $(module_intf)
+    
+    $(build_module): $(build_code) :effects: $(effects_file)
+      $(OCAMLLINK) -pack -o $(byte_module) $(byte_code)
+
+  # BuildNatModule: build the native code module 
+  BuildNatModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+
+    nat_module = $(NatCode $(name))
+    obj_module = $(ObjCode $(name))
+    nat_code = $(NatCode $(files)) 
+    obj_code = $(ObjCode $(files))
+
+    build_module = $(nat_module) $(obj_module)
+    build_code = $(nat_code)
+    effects_file = $(module_intf) $(obj_module)
+    
+    $(build_module): $(build_code) :effects: $(effects_file)
+       $(OCAMLOPTLINK) -pack -o $(nat_module) $(nat_code)
+
+
+  # Variables
+
+  LHSEQBYTELIB = $(addprefix $(OBJDIR)/, $(HSEQBYTELIB))
+  LHSEQNATLIB = $(addprefix $(OBJDIR)/, $(HSEQNATLIB))
+
+  ALLHEADERS = $(Header $(FILES))
+
+  # Build targets
+
+  InstallIntf($(FILES), $(OBJDIR))
+  InstallCode($(FILES), $(OBJDIR))
+
+  BuildByteModule($(MODULE), $(BASEFILES))
+  BuildNatModule($(MODULE), $(BASEFILES))
+
+  $(MODULEINTF): $(BYTEMODULE)
+
+  OCamlLibrary($(LIBFILE), $(MODULE))
+
+  BuildInstall($(HSEQLIBCODE), \
+    $(HSEQLIB), \
+    $(FULLHSEQLIB) $(MODULEINTF) $(ALLHEADERS), \
+    $(LIBDIR))
+
+## How to build the library
+
+.SUBDIRS: $(LIBDIR) 
+  # How to clean the library
+  clean:
+    $(RM) *.cmi *.mli *.ml *.cmo 
+    $(RM) *.cmx *.o *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa *.a
+
+  reallyclean: clean libclean
+    $(RM) $(filter-proper-targets $(ls R, .)) 
+
+
+build-library: $(HSEQLIBCODE)
+
+install-library: $(HSEQLIBCODE) make-ilibdir
+  section
+    LFILES = *.cma *.cmxa *.a *.cmi *.mli $(INITFILE)
+    FLFILES = $(filter-exists $(glob $(addprefix $(LIBDIR)/, $(LFILES))))
+    $(COPY) $(FLFILES) $(ILIBDIR)
+
+##
+# Build the top-level
+## 
+
+TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
+
+BTLNAME = $(addprefix $(TOPLEVELDIR)/, $(TLNAME))
+STLNAME = $(addprefix $(SRCDIR)/, $(TLNAME))
+
+.SUBDIRS: $(TOPLEVELDIR)
+  # Don't try to build a native code top-level
+  NATIVE_ENABLED = false
+  BYTE_ENABLED = true
+
+  # Settings
+
+  # Local settings
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  LIBRARY = $(Lib $(LIBFILES))
+  INTERFACES = $(Interface $(FILES))
+  HEADERS = $(Header $(FILES))
+
+  LLIBRARY = $(addprefix $(LIBDIR)/, $(LIBRARY))
+  
+  # Dependencies 
+
+  $(INTERFACES): $(HSEQLIBCODE)
+
+  # Targets
+
+  StdClean()
+  OCamlLibrary($(LIBFILES), $(FILES))
+
+  BuildInstall($(LLIBRARY), \
+        $(HSEQLIBCODE) $(LIBRARY), \
+        $(LIBRARY) $(HEADERS) $(INTERFACES) $(INITFILE), \
+        $(LIBDIR))
+
+$(STLNAME): $(TLCODE)
+    $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(TLFILES)
+
+build-toplevel: $(STLNAME)
+
+install-toplevel: build-toplevel make-ibindir make-ilibdir
+  -$(COPY) $(TLNAME) $(IBINDIR)
+#  -$(COPY) $(INITFILE) $(ILIBDIR)
+
+##
+# The tools directory has its own OMakefile
+##
+
+.SUBDIRS: $(TOOLSDIR)
+
+build-tools: $`(mapprefix $(SRCDIR)/, $(TOOLPROGS))
+
+install-tools: build-tools make-ibindir
+  Copy ($(TOOLPROGS), $(IBINDIR))
+# -$(COPY) $(TOOLPROGS) $(IBINDIR)
+
+##
+# Build the documentation
+##
+
+EXCLUDE_FILES = CVS Makefile OMakefile OMakefile.omc
+
+install-srcdoc: srcdoc make-isdocdir
+  section
+    alst = $(glob $(DOCDIR)/*)
+    foreach (name, $(alst))
+      if $(not $(mem $(basename $(name)), $(EXCLUDE_FILES)))
+        if $(test ! -d $(name))
+          $(COPY) $(name) $(ISDOCDIR)
+
+##
+# The top build targets
+##
+
+build-hseq: build-library build-toplevel build-tools
+
+install-hseq: install-library install-toplevel install-tools
+
+##
+# Cleaning files
+##
+
+FullClean("", $(TLNAME), \
+  $(filter-proper-targets $(ls R, .)) \
+  $(TOOLPROGS))
+
+##
+# The default target
+##
+
+.DEFAULT: build-hseq

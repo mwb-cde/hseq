@@ -1,0 +1,73 @@
+Installation
+============
+
+Requirements: 
+  OCaml version 3.11
+
+To build:
+  GNU Make on Unix 
+
+Build:
+------
+
+From the toplevel directory: 
+1) Run the configuration script:
+	ocaml configure.ml
+
+   This generates files config/data.make and config/configure.data
+
+   Options for configure.ml:
+	--help:      See the list of options and their default values.
+	--basedir d: Set the installation directory to d
+                     default:/usr/local/lib/hseq
+	--bindir d:  Install the binary in directory d
+        --fast (true/false): 
+                     Use the fast byte-code compiler (ocamlc.opt)
+                     default:false (use ocamlc)
+        --native (true/false):
+                     Build native-code libraries.
+
+   Examples:
+	ocaml configure.ml --help,
+
+	ocaml configure.ml --bindir /usr/local/bin
+	(put the binary in /usr/local/bin)
+
+	ocaml configure.ml --fast true --basedir `pwd` 
+	(make the installation directory the same as the build directory
+	and use the fast compilers)
+
+2) Build the system:
+	make
+
+3) Install the system:
+	make install
+
+4) Build and install documentation (optional, recommended)
+	make install-doc
+
+5) Build and install source code documentation (optional, recommended)
+	make install-srcdoc
+
+6) Clean up
+	make clean
+
+
+Notes:
+------
+
+Building the documentation requires the GNU Texinfo system.
+
+Filenames with spaces should be passed to the configure.ml script as
+a string. For example, /a/b c/d should be passed as "/a/b c/d"
+
+AFTER INSTALLATION
+==================
+
+The binary is named "hseq" and can be moved to a different location,
+such as a directory in the system path.
+
+The installation directory can be changed after the system is built
+provided the environment variable "HSEQ" is set to the new directory.
+
+
