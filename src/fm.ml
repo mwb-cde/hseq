@@ -31,10 +31,7 @@ open Simplib;;
 open Userlib;;
 
 let _ =
-  Format.open_box 0;
-  Format.print_string "Initialising";
-  Format.print_newline();
-  Format.close_box();
+  Format.printf "@[Initialising@]@.";
   Init.init();
   Global.add_thy_path "./thys";
   Global.add_thy_path "../thys"
