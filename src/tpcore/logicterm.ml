@@ -64,7 +64,7 @@ let alpha_convp_aux scp trmenv s t =
 	then env
 	else raise (termError "alpha_convp_aux" [t1;t2])
     | (Bound(q1), Bound(q2)) ->
-	if equality (chase (fun x->true) t1 env) 
+	if equals (chase (fun x->true) t1 env) 
 	    (chase (fun x->true) t2 env) 
 	then env
 	else raise (termError "alpha_convp_aux" [t1;t2])
@@ -82,7 +82,7 @@ let alpha_convp_aux scp trmenv s t =
     | (Typed(trm, _), _) -> alpha_aux trm t2 env
     | (_, Typed(trm, _)) -> alpha_aux t1 trm env
     | _ -> 
-	(if equality t1 t2 then env
+	(if equals t1 t2 then env
 	else raise (termError "alpha_convp_aux" [t1;t2]))
   in alpha_aux s t trmenv
     

@@ -75,10 +75,13 @@ val to_save_rec: typedef_record -> stypedef_record
 val from_save_rec: stypedef_record -> typedef_record
 
 (* equality between types (uses Dequals test) *)
+val equals: gtype -> gtype -> bool
+
+(* renamed to equals
 val equality: gtype -> gtype -> bool
+*)
 
 val safe_equal: gtype -> gtype -> bool
-
 
 (* constructors/destructors/recognisers for types *)
 
@@ -106,10 +109,19 @@ val mk_fun : gtype -> gtype -> gtype
 val mkfun_from_list: gtype list -> gtype -> gtype
 
 (* recognisers *)
-val varp : gtype -> bool
-val constrp : gtype  -> bool
-val basep : gtype  -> bool
-val weakp : gtype -> bool
+
+val is_var : gtype -> bool
+val is_constr : gtype  -> bool
+val is_base : gtype  -> bool
+val is_weak : gtype -> bool
+
+(*
+renamed:
+val varp : gtype -> bool  to is_var 
+val constrp : gtype  -> bool to is_constr 
+val basep : gtype  -> bool to is_base
+val weakp : gtype -> bool to is_weak
+*)
 
 (* compare types *)
 
@@ -117,7 +129,7 @@ val weakp : gtype -> bool
    val eqvar : gtype -> gtype -> bool 
    val eqbase : gtype -> gtype -> bool
    val eqconstr : gtype -> gtype -> bool
- *)
+*)
 
 (* destruct function type *)
 val arg_type : gtype -> gtype
@@ -153,10 +165,6 @@ module TypeTreeData:
       type key=gtype
       val equals : key -> key -> bool
     end
-
-(*
-   type substitution = (gtype)Rhash.t
- *)
 
 type substitution
 
@@ -205,7 +213,7 @@ val unify_env : scope -> gtype -> gtype
    unify_env sc (copy_type l) r s
    this function is used for rewriting with multiple terms.
    Defunct: use unify_for_rewrite
- *)
+*)
 
 val unify_env_unique_left:  scope -> gtype -> gtype 
   -> substitution -> substitution 

@@ -176,34 +176,35 @@ let rec string_gtype x =
   | Base(b) -> string_btype b
   | WeakVar(a) -> "_"^(!a)
 
-let varp t  = 
+let is_var t  = 
   match t with
     Var _ -> true
   | _ -> false
 
-let weakp t  = 
+let is_weak t  = 
   match t with
     WeakVar _ -> true
   | _ -> false
 
-let any_varp t= (varp t) or (weakp t)
+(*renamed any_varp to is_any_var *)
+let is_any_var t= (is_var t) or (is_weak t)
 
-let constrp t = 
+let is_constr t = 
   match t with
     Constr _ -> true
   | _ -> false
 
-let funcp t = 
+let is_func t = 
   match t with
     Constr (Func, _) -> true
   | _ -> false
 
-let definedp t = 
+let is_defined t = 
   match t with
     Constr (Defined _ , _) -> true
   | _ -> false
 
-let basep t  = 
+let is_base t  = 
   match t with
     Base _ -> true
   | _ -> false
@@ -292,7 +293,7 @@ let rec chase_ret_type t=
 
 (* substitution types *)
 
-let rec equality x y = 
+let rec equals x y = 
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
   |	(Constr(f1, args1), Constr(f2, args2))
@@ -300,7 +301,7 @@ let rec equality x y =
       (try
 	((List.iter2 
 	    (fun a b -> 
-	      if (equality a b) 
+	      if (equals a b) 
 	      then () 
 	      else raise (Failure ""))
 	    args1 args2); true)
@@ -308,7 +309,6 @@ let rec equality x y =
   | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
   | (_, _) -> x=y)
 
-let equals x y = equality x y
 
 let rec safe_equal x y = 
   (match (x, y) with
@@ -327,8 +327,8 @@ let rec safe_equal x y =
   | (_, _) -> x=y)
 
 let eqvar v1 v2 = 
-  if (varp v1) & (varp v2) 
-  then equality v1 v2
+  if (is_var v1) & (is_var v2) 
+  then equals v1 v2
   else raise (Failure "Not a variable")
 
 (* save types *)
@@ -404,7 +404,7 @@ module type RHASHKEYS=
 module Rhashkeys:RHASHKEYS=
   struct
     type t = gtype
-    let equal = equality
+    let equal = equals
     let hash= Hashtbl.hash
   end
 module type RHASH = (Hashtbl.S with type key = (gtype))
@@ -416,7 +416,7 @@ module Rhash:RHASH= Hashtbl.Make(Rhashkeys)
 module TypeTreeData=
   struct 
     type key=gtype
-    let equals = equality
+    let equals = equals
   end
 
 module TypeTree=Treekit.BTree(TypeTreeData)      
@@ -443,7 +443,7 @@ let rec lookup_ty t env =
   try
     (let nt = (lookup t env)
     in 
-    if any_varp nt then 
+    if is_any_var nt then 
       lookup_ty nt env
     else nt)
   with Not_found -> t
@@ -451,7 +451,7 @@ let rec lookup_ty t env =
 
 let lookup_var ty env =
   let rec chase t =
-    if any_varp t
+    if is_any_var t
     then
       try (chase (lookup t env))
       with Not_found -> t
@@ -467,7 +467,7 @@ let extract_bindings tyvars src dst=
 	    try lookup_var x src
 	    with Not_found -> x
 	  in 
-	  if any_varp y
+	  if is_any_var y
 	  then extract_aux xs r
 	  else extract_aux xs (bind x y r)
   in extract_aux tyvars dst
@@ -477,7 +477,7 @@ let rec occurs ty1 ty2 =
     (Var(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
   | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
   | (_, _) ->
-      if (equality ty1 ty2)
+      if (equals ty1 ty2)
       then raise (typeError ("occurs: ") [ty1;ty2])
       else ()
 
@@ -488,18 +488,18 @@ let rec occurs_env tenv ty1 ty2 =
   match (nty1, nty2) with
     (Var(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
   | (Var(_), _)->
-      if (equality nty1 nty2)
+      if (equals nty1 nty2)
       then raise (typeError ("occurs: ") [nty1;nty2])
       else ()
   | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
   | (WeakVar(_), _)->
-      if (equality nty1 nty2)
+      if (equals nty1 nty2)
       then raise (typeError ("occurs: ") [nty1;nty2])
       else ()
   | (Constr(_, l), _) -> 
       List.iter (fun x-> occurs_env tenv x nty2) l
   | _ -> 
-      if (equality nty1 nty2)
+      if (equals nty1 nty2)
       then raise (typeError ("occurs: ") [nty1;nty2])
       else ()
 
@@ -536,12 +536,12 @@ let copy_type t =
   in nty
 
 let bind_var t r env = 
-  if any_varp t then bind t r env 
+  if is_any_var t then bind t r env 
   else 
     raise (typeError "bind_var: Can't bind a non variable" [t; r])
 
 let bind_occs t1 t2 env =
-  if any_varp t1
+  if is_any_var t1
   then 
     (let r1 = lookup_var t1 env
     and r2 = (lookup_var t2 env)
@@ -657,21 +657,21 @@ let unify_env scp t1 t2 nenv =
             x ->(addtypeError "x: Can't unify types" [s; t] x)))
   (* Variables, bind if not equal, but test for occurence *)
     | (Var(_), Var(_)) -> 
-	if equality s t 
+	if equals s t 
 	then env
 	else bind_occs s t env
     | (Var(_), _) -> bind_occs s t env
     | (_, Var(_)) -> bind_occs t s env
 (* Weak variables, don't bind to variables *)
     | (WeakVar(_), WeakVar(_)) -> 
-	if equality s t 
+	if equals s t 
 	then env
 	else bind_occs s t env
     | (WeakVar(_), _) -> bind_occs s t env
     | (_, WeakVar(_)) -> bind_occs t s env
-(* All other types, try for equality *)
+(* All other types, try for equals *)
     | _ -> 
-	if equality s t then env
+	if equals s t then env
 	else (raise (typeError "Can't unify types" [s; t]))
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
@@ -739,20 +739,20 @@ let unify_env_unique_left scp t1 t2 nenv =
 	      raise (Failure ("Can't unify " ^(string_gtype s)
 			      ^" with " ^(string_gtype t))))))
     | (Var(_), Var(_)) ->
-	if equality s t 
+	if equals s t 
 	then senv
 	else bind_occs s t senv
     | (Var(v1), x) -> bind_occs s x senv
     | (x, Var(v2)) -> bind_occs t x senv
     | (WeakVar(_), WeakVar(_)) ->
-	if equality s t 
+	if equals s t 
 	then senv
 	else bind_occs s t senv
     | (WeakVar(v1), x) -> bind_occs s x senv
     | (x, WeakVar(v2)) -> bind_occs t x senv
 
     | _ -> 
-	if equality s t then senv
+	if equals s t then senv
 	else raise (Failure ("Can't unify " ^(string_gtype s)
 			     ^" with " ^(string_gtype t)))
   in
@@ -806,21 +806,21 @@ let unify_for_rewrite scp t1 t2 env =
 	      raise (Failure ("Can't unify " ^(string_gtype s)
 			      ^" with " ^(string_gtype t))))))
     | (Var(_), Var(_)) ->
-	if equality s t 
+	if equals s t 
 	then senv
 	else bind_occs s t senv
     | (Var(v1), x) -> bind_occs s x senv
     | (x, Var(v2)) -> bind_occs t x senv
 	  (* Weak variables are tried after the variables *)
     | (WeakVar(_), WeakVar(_)) -> 
-	if equality s t 
+	if equals s t 
 	then senv
 	else bind_occs s t senv
     | (WeakVar(_), x) -> bind_occs s x senv
     | (x, WeakVar(_)) -> bind_occs t x senv
 	  (* unify constants *)
     | _ -> 
-	if equality s t then senv
+	if equals s t then senv
 	else raise (Failure ("Can't unify " ^(string_gtype s)
 			     ^" with " ^(string_gtype t)))
   in
@@ -837,13 +837,13 @@ let rec mgu t env =
     Var(a) -> 
       (let nt = lookup_var t env 
       in 
-      if varp nt 
+      if is_var nt 
       then nt 
       else mgu nt env)
   | WeakVar(a) -> 
       (let nt = lookup_var t env 
       in 
-      if any_varp nt 
+      if is_any_var nt 
       then nt 
       else mgu nt env)
   | Constr(f, l) -> 
@@ -875,19 +875,19 @@ let matching_env scp t1 t2 nenv =
             Not_found -> (match_aux s (get_defn scp t) env)
           | x -> (addtypeError "Can't match types" [s; t] x)))
     | (Var(_), Var(_)) ->
-	if equality s t 
+	if equals s t 
 	then env
 	else bind_occs s t env
     | (Var(v1), x) -> bind_occs s x env
     | (_, Var(_)) -> env
     | (WeakVar(_), WeakVar(_)) ->
-	if equality s t 
+	if equals s t 
 	then env
 	else bind_occs s t env
     | (WeakVar(v1), x) -> bind_occs s x env
     | (_, WeakVar(_)) -> env
     | _ -> 
-	if equality s t then env
+	if equals s t then env
 	else (raise (typeError "Can't match types" [s; t]))
   in
   match_aux t1 t2 nenv (* try to match t1 and t2 *)
@@ -906,7 +906,6 @@ let matches_env scp tyenv t1 t2 =
 let matches scp t1 t2=
   try ignore(matching_env scp t1 t2 (empty_subst())) ; true
   with _ -> false
-
 
 
 (* Consistency tests for type definitions 
@@ -949,7 +948,7 @@ let check_args args =
     ignore
       (List.fold_left
 	 (fun ev x-> 
-	   if (varp x) & (not (member x tenv))
+	   if (is_var x) & (not (member x tenv))
 	   then (bind x true ev)
 	   else raise Not_found)
 	 tenv args); true
@@ -964,7 +963,7 @@ let check_args args =
 *)
 
 let check_defn  scp l r =
-  if (definedp l) then 
+  if (is_defined l) then 
     let n, largs = dest_def l 
     in 
     if(has_defn scp n) then false
@@ -979,7 +978,7 @@ let check_defn  scp l r =
 (* check_decln l: consistency check on declaration of type l *)
 
 let check_decln l =
-  if (definedp l) then 
+  if (is_defined l) then 
     let n, largs = dest_def l 
     in try (ignore(check_args largs); true)
     with Not_found -> false
@@ -1045,11 +1044,6 @@ let rec quick_well_defined scp cache t =
 		   ("quick_well_defined:"^(string_gtype t)))))
   |	Constr(f, args) ->
       List.iter (quick_well_defined scp cache) args
-(*
-  | WeakVar _ -> 
-	  raise (Invalid_argument 
-		   ("quick_well_defined:"^(string_gtype t)))
-*)
   |	x -> ()
 
 
@@ -1173,13 +1167,13 @@ let mgu_rename_env inf env nenv typ =
       Var(_) ->
 	(let nt=lookup_var ty env
 	in 
-	if(varp nt)
+	if(is_var nt)
 	then new_name_env tenv nt
 	else rename_aux tenv nt)
     | WeakVar(_) ->
 	(let nt=lookup_var ty env
 	in 
-	if(weakp nt) then (nt, env)
+	if(is_weak nt) then (nt, env)
 	else rename_aux tenv nt)
     | Constr(f, args) -> 
 	let renv=ref tenv
@@ -1211,13 +1205,13 @@ let mgu_rename_env inf tyenv name_env typ =
       Var(_) ->
 	let nt=lookup_var ty tyenv
 	in 
-	if (equality ty nt)
+	if (equals ty nt)
 	then new_name_env nenv nt
 	else rename_aux nenv nt
     | WeakVar(_) ->
 	(let nt=lookup_var ty tyenv
 	in 
-	if(weakp nt) then (nt, nenv)
+	if(is_weak nt) then (nt, nenv)
 	else rename_aux nenv nt)
     | Constr(f, args) -> 
 	let renv=ref nenv

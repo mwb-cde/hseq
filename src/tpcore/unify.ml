@@ -7,7 +7,7 @@ exception Occurs
 exception Unify of string
 
 let rec occurs s t =
-  if Term.equality s t then raise Occurs
+  if Term.equals s t then raise Occurs
   else 
     match t with
       App(f, a) -> occurs s f; occurs s a
@@ -61,7 +61,7 @@ let unify_fullenv scp tyenv env varp trm1 trm2 =
     in 
     if (varp s) 
     then
-      if (equality s t) then ()
+      if (equals s t) then ()
       else (bind_occs s t env; add_binding s; ())
     else 
       if (varp t) 
@@ -95,7 +95,7 @@ let unify_fullenv scp tyenv env varp trm1 trm2 =
 	    if c1=c2 then ()
 	    else raise (termError "unify_aux: const" [t1;t2])
 	| (_, _) -> 
-	    if Term.equality s t 
+	    if Term.equals s t 
 	    then () else raise (termError "unify_aux: default" [t1;t2]))
   in 
   try (unify_aux trm1 trm2; env)
@@ -130,7 +130,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
     in 
     if (varp s) 
     then
-      if (equality s t) then (tyenv, env)
+      if (equals s t) then (tyenv, env)
       else (tyenv, bind_occs s t env)
     else 
       if (varp t) 
@@ -170,7 +170,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	    if c1=c2 then (tyenv, env)
 	    else raise (termError "unify_aux: const" [t1;t2])
 	| (_, _) -> 
-	    if Term.equality s t 
+	    if Term.equals s t 
 	    then (tyenv, env)
 	    else raise (termError "unify_aux: default" [t1;t2]))
   in 
@@ -205,7 +205,7 @@ let unify scp varp trm1 trm2 =
    else 
    (match (s, t) with
    (Bound(q1), Bound(q2)) ->
-   (if  (Term.equality s t)                     (* q1==q2  *)
+   (if  (Term.equals s t)                     (* q1==q2  *)
    then ()
    else 
    if Term.binder_equiv scp s t then ()
@@ -230,7 +230,7 @@ let unify scp varp trm1 trm2 =
    raiseError ("Can't match name "^(string_term s)
    ^" with name "^(string_term t))
    | (_, _) -> 
-   if Term.equality s t then  ()
+   if Term.equals s t then  ()
    else raiseError ("Can't match term "^(string_term s)
    ^" with term "^(string_term t)))
    in find_match term1 term2
@@ -284,11 +284,11 @@ let unify_fullenv_rewrite scp tyenv env varp trm1 trm2 =
     in 
     if (varp s) 
     then 
-      (if (equality s t) then () 
+      (if (equals s t) then () 
       else (bind_occs s t env; add_binding s; ()))
     else 
       if (varp t) 
-      then if(equality s t) then () 
+      then if(equals s t) then () 
       else (bind_occs t s env; add_binding t; ())
       else
 	(match (s, t) with
@@ -320,7 +320,7 @@ let unify_fullenv_rewrite scp tyenv env varp trm1 trm2 =
 	    if c1=c2 then ()
 	    else raise (termError "unify_full: const" [t1;t2])
 	| (_, _) -> 
-	    if Term.equality s t 
+	    if Term.equals s t 
 	    then () else raise (termError "unify_full: default" [t1;t2]))
   in 
   try 
@@ -359,11 +359,11 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
     in 
     if (varp s) 
     then 
-      (if (equality s t) then (tyenv, env)
+      (if (equals s t) then (tyenv, env)
       else (tyenv, bind_occs s t env))
     else 
       if (varp t) 
-      then if(equality s t) then (tyenv, env) 
+      then if(equals s t) then (tyenv, env) 
       else (tyenv, bind_occs t s env)
       else
 	(match (s, t) with
@@ -403,7 +403,7 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	    if c1=c2 then (tyenv, env)
 	    else raise (termError "unify_full: const" [t1;t2])
 	| (_, _) -> 
-	    if Term.equality s t 
+	    if Term.equals s t 
 	    then (tyenv, env) 
 	    else raise (termError "unify_full: default" [t1;t2]))
   in 

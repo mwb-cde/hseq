@@ -22,14 +22,14 @@ let mk_binding qn qv qt
 let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
 
 
-let rec equality x y = 
+let rec equals x y = 
   (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
-      (equality f1 f2) & (equality arg1 arg2)
+      (equals f1 f2) & (equals arg1 arg2)
   | (Bound(q1), Bound(q2)) -> q1==q2
-  | (Qnt(qn1, b1), Qnt(qn2, b2)) -> qn1==qn2 & (equality b1 b2)
+  | (Qnt(qn1, b1), Qnt(qn2, b2)) -> qn1==qn2 & (equals b1 b2)
   | (Typed(t1, ty1), Typed(t2, ty2)) ->
-      ty1=ty2  & (equality t1 t2)
+      ty1=ty2  & (equals t1 t2)
   | (_, _) -> x=y)
 
 (* simple pretty printing  and error handling *)
@@ -145,10 +145,6 @@ let get_args t =
 (* Substitutions for terms *)
 
 type subst_alt= Rename | No_rename | Unknown
-(*
-type subst_terms = 
-      Rename of term | No_rename of term | Unknown of term 
-*)
 
 type subst_terms = ST of term * (subst_alt ref)
 
@@ -172,7 +168,7 @@ module type TERMHASHKEYS=
 module Termhashkeys:TERMHASHKEYS=
   struct
     type t = term
-    let equal = equality
+    let equal = equals
     let hash= Hashtbl.hash
   end
 module type TERMHASH = (Hashtbl.S with type key = (term))
@@ -190,24 +186,14 @@ let table_member x env =
   try ignore(table_find x env); true
   with Not_found -> false
 
-(* USING HASHTABLES *)
 
-(*
-type substitution = (subst_terms)Termhash.t
-
-let empty_subst() = Termhash.create 5
-let subst_size i = Termhash.create i
-let basic_find x env = Termhash.find env x
-let basic_rebind t r env 
-    = (Termhash.remove env t; Termhash.add env t r)
-*)
-
+(* Substitution *)
 (* Using balanced trees *)
 
 module TermTreeData=
   struct
     type key=term
-    let equals=equality
+    let equals=equals
   end
 
 module TermTree=Treekit.BTree(TermTreeData)
@@ -221,48 +207,23 @@ let subst_size i = TermTree.nil
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
 
-(*
-let find x env =
-  let st=basic_find x env 
-  in 
-  match st_choice st with
-    Rename(t) -> t
-  | No_rename(t) -> t
-  | Unknown(t) -> t
-*)
 let find x env =
   let st=basic_find x env 
   in 
   st_term st 
 
-(*
-let term_of_substterm x =
-  match x with
-    Rename(t) -> t
-  | No_rename(t) -> t
-  | Unknown(t) -> t
-*)
 
 let term_of_substterm x = st_term x
 
-(* Hashtables
-let bind_env t r env = (Termhash.remove env t; Termhash.add env t (Unknown r))
-let bind t r env = (Termhash.remove env t; Termhash.add env t (Unknown r); env)
-let add t r env = 
-  try (find t env)
-  with Not_found -> (ignore(bind t r env); r)
-let remove t env = Termhash.remove env t
-let quiet_remove t env = (try Termhash.remove env t with _ -> ())
-*)
-
-(*
-let bind t r env = TermTree.replace env t (Unknown(r))
-*)
 let bind t r env = TermTree.replace env t (sterm r Unknown)
-
 let add t r env = bind t r env
 let remove t env = TermTree.delete env t
 let quiet_remove t env = (try remove t env with _ -> env)
+
+(* [chase varp x env]
+   Find the end of the chain of bindings for [x] in [env]
+   where [varp] determines what is a variable.
+*)
 
 let rec chase varp x env =
   try 
@@ -273,7 +234,6 @@ let rec chase varp x env =
 let fullchase varp x env =
   let t1 = chase varp x env 
   in if varp t1 then x else t1
-
 
 (* Rename terms: 
    renames the variables in a term t which are bound by  
@@ -327,7 +287,11 @@ let rename_silent env t =
     rename_env (Gtypes.empty_subst()) env  t
   with No_quantifier -> (t, Gtypes.empty_subst(), env)
 
-(* rename t: rename term t, raise No_quantifier if no change *)
+(* 
+   [rename t]
+   rename term [t], raise [No_quantifier] if no change 
+   (carry out alpha conversion on [t])
+*)
 
 let rename t = 
   try
@@ -352,33 +316,9 @@ let do_rename env x nb =
 
 let replace env x =  do_rename env x (basic_find x env)
 
-(*  match nb with
-   Rename(t) -> rename t
-   | No_rename(t) -> t
-   | Unknown(t) -> 
-   try 
-   (let nt = rename t
-   in 
-   ignore(basic_rebind x (Rename t) env);
-   nt)
-   with No_quantifier -> 
-   ignore(basic_rebind x (No_rename t) env); t
- *)
-
-
-(*
-let rec subst_env env trm =
-  try 
-    let nt = replace env trm 
-    in subst_env env nt
-  with Not_found ->
-    (match trm with
-      Qnt(q, b) ->  Qnt(q, subst_env env b)
-    | App(f, a) -> App(subst_env env f, subst_env env a)
-    | Typed(t, ty) -> Typed(subst_env env t, ty)
-    | _ -> trm)
+(* [subst env trm]
+   carry out substitutions of [env] in [trm]
 *)
-
 let rec subst env trm =
   try 
     let nt= replace env trm 
@@ -406,7 +346,7 @@ let chase_var varp x env =
   in 
   let nb = chase_var_aux (sterm x Unknown)
   in 
-  if not (equality x (term_of_substterm nb))
+  if not (equals x (term_of_substterm nb))
   then do_rename env x nb
   else x
 
@@ -455,13 +395,6 @@ let is_meta trm =
   | _ -> false
   
 let get_binder t = !(dest_bound t)
-(*
-   let get_binder_name x =
-   match x with
-   Bound(n) -> (!n).qvar
-   | Qnt(n, b) -> (!n).qvar
-   | _ -> raise (Failure "Not a binder")
- *)
 
 let get_binder_type x =
   match x with
@@ -570,8 +503,6 @@ let is_true t =
     (Const (Cbool true)) -> true 
   | _ -> false
 
-(*  let is_true t = destbool t *)
-
 let dest_qnt t=
   match t with 
     (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
@@ -610,26 +541,6 @@ let get_free_binders t =
   in 
   free_aux t; !qnts
 
-
-(*
-   let rec subst_qnt_env tyenv env trm=
-   let 
-   let rec subst_aux t =
-   (match t with
-   Var(n, ty) -> 
-   if (is_var t) & ((get_var_id t)=n) 
-   & (Gtypes.matches tyenv (get_var_type t) ty)
-   then r
-   else trm
-   |	Bound(q) -> 
-   | Qnt(q, body) -> Qnt(q, subst_aux  body)
-   | App(f, a) -> App(subst_aux f, 
-   subst_aux a)
-   | Typed(tt, ty) -> Typed(subst_aux tt, ty)
-   | _ -> trm)
-   in subst_aux tm
- *)
-
 (* instantiate a quantified formula t with term r *)
 
 let subst_quick t r trm = 
@@ -643,11 +554,11 @@ let inst t r =
     subst_quick (Bound(q)) r b)
   else raise (Failure "inst: not a quantified formula")
 
-(*
+(* [subst_qnt_var]
    specialised form of substitution for constructing quantified terms. 
    replaces only free variables and only if name and type match the
    quantifying term.
- *)
+*)
 
 let subst_qnt_var scp env trm =
   let rec subst_aux t=
@@ -744,7 +655,6 @@ let rec string_term_prec i x =
        ^(Gtypes.string_gtype ty)^")")
 
 
-
 let string_term x = string_term_prec 0 x
 
 let string_infix f ls =
@@ -820,7 +730,6 @@ let rec print_termlist prenv x =
     [] -> print_string ""
   | [p] -> print prenv p
   | (p::ps) -> (print prenv p; print_string ", "; print_termlist prenv ps)
-
 
 
 (* pretty printing *)

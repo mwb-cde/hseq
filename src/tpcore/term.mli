@@ -31,11 +31,14 @@ val binder_equality: binders -> binders -> bool
 val binder_equiv : scope -> term -> term -> bool
 
 (* equality of terms *)
-val equality : term -> term -> bool
+val equals : term -> term -> bool
+(* renamed to equals
+   val equality : term -> term -> bool
+ *)
 
 (* 
    Hashtables with a term as the key
-*)
+ *)
 
 module type TERMHASHKEYS=
   sig 
@@ -56,43 +59,42 @@ val table_add : term -> 'a -> 'a table -> unit
 val table_rebind : term -> 'a -> 'a table -> unit
 
 (* rename bound variables in term (alpha-conversion) *)
-
-
 val rename: term -> term
 
 (* The type of term substitutions *)
 
-
+(* [TermTree]
+   Trees indexed by terms
+ *)
 module TermTreeData: Treekit.TreeData
 
 module TermTree: 
-  sig
-    val eql : 'a -> 'a -> bool
-    val lessthan : 'a -> 'a -> bool
-    type depth_t = int
-    and 'a t =
-      'a Treekit.BTree(TermTreeData).t =
-        Nil
-      | Branch of ((TermTreeData.key * 'a) list * 'a t * 'a t * depth_t)
-    val nil : 'a t
-    val create : (TermTreeData.key * 'a) list -> 'a t -> 'a t -> 'a t
-    val data : 'a t -> (TermTreeData.key * 'a) list
-    val left : 'a t -> 'a t
-    val right : 'a t -> 'a t
-    val depth : 'a t -> depth_t
-    val balance : 'a t -> 'a t
-    val add : 'a t -> TermTreeData.key -> 'a -> 'a t
-    val replace : 'a t -> TermTreeData.key -> 'a -> 'a t
-    val delete : 'a t -> TermTreeData.key -> 'a t
-    val find : 'a t -> TermTreeData.key -> 'a
-    val find_all : 'a t -> TermTreeData.key -> 'a list
-    val mem : 'a t -> TermTreeData.key -> bool
-    val iter : (TermTreeData.key -> 'a -> 'b) -> 'a t -> unit
-    val to_list : 'a t -> (TermTreeData.key * 'a) list list
-  end
+    sig
+      val eql : 'a -> 'a -> bool
+      val lessthan : 'a -> 'a -> bool
+      type depth_t = int
+      and 'a t =
+	  'a Treekit.BTree(TermTreeData).t =
+          Nil
+	| Branch of ((TermTreeData.key * 'a) list * 'a t * 'a t * depth_t)
+      val nil : 'a t
+      val create : (TermTreeData.key * 'a) list -> 'a t -> 'a t -> 'a t
+      val data : 'a t -> (TermTreeData.key * 'a) list
+      val left : 'a t -> 'a t
+      val right : 'a t -> 'a t
+      val depth : 'a t -> depth_t
+      val balance : 'a t -> 'a t
+      val add : 'a t -> TermTreeData.key -> 'a -> 'a t
+      val replace : 'a t -> TermTreeData.key -> 'a -> 'a t
+      val delete : 'a t -> TermTreeData.key -> 'a t
+      val find : 'a t -> TermTreeData.key -> 'a
+      val find_all : 'a t -> TermTreeData.key -> 'a list
+      val mem : 'a t -> TermTreeData.key -> bool
+      val iter : (TermTreeData.key -> 'a -> 'b) -> 'a t -> unit
+      val to_list : 'a t -> (TermTreeData.key * 'a) list list
+    end
 
 type substitution 
-(*  = (subst_terms)TermTree.t *)
 
 (* construct subsitutions *)
 val empty_subst: unit -> substitution
@@ -102,16 +104,12 @@ val subst_size: int -> substitution
 val find: term -> substitution -> term
 val bind: term -> term -> substitution -> substitution
 
-(*
-val bind_env: term -> term -> substitution -> unit
-val add: term -> term -> substitution -> substitution
-*)
 val remove: term -> substitution -> substitution
 val quiet_remove: term -> substitution -> substitution
 
 val chase: (term -> bool) -> term -> substitution -> term
-val fullchase: (Termhash.key -> bool) 
-  -> term -> substitution -> term
+val fullchase: 
+    (Termhash.key -> bool) -> term -> substitution -> term
 val chase_var: (term -> bool) -> term -> substitution -> term
 val replace: substitution -> term -> term
 
@@ -119,13 +117,6 @@ val replace: substitution -> term -> term
 val subst : substitution -> term -> term 
 val subst_quick : term -> term -> term -> term
 
-(*
-val subst_env : substitution ->   term -> term
-val subst : term -> term -> term -> term
-*)
-(*
-   val subst_mgu : (term -> bool) -> substitution ->   term -> term
- *)
 (* get free variables in a term (constructed with Var) *)
 val get_free_vars : term -> (Basic.fnident *gtype) list
 
@@ -194,14 +185,9 @@ val is_const : term-> bool
 val mkconst : Basic.const_ty -> term
 val dest_const : term-> Basic.const_ty
 
-(*
-   val mknum : int -> term
-   val destnum : term-> int
- *)
 val mknum : Num.num -> term
 val destnum : term -> Num.num
 val mk_int : int -> term
-
 
 val mkbool : bool -> term
 val destbool : term-> bool
