@@ -81,6 +81,13 @@ val set_int_option : int -> int option
 val get_int_option : int option -> int
 val compare_int_option: int option -> int -> bool
 
+(** [apply_option f a d]
+   
+   Apply to [f] to option [a].
+   if [a] is [Some i] then return [f i] else return [d].
+*)
+val apply_option: ('a -> 'b) -> 'a option -> 'b -> 'b
+
 (** [date]: used to ensure dependencies among theory files *)
 val date: unit -> float
 
@@ -90,31 +97,30 @@ val date: unit -> float
 *)
 val nice_date: float -> (int * int * int * int * int)
 
-
-(** [get_one l e] 
-   get first element of list [l].
+(**
+   [get_one l e]: Get first element of list [l].
    raise exception [e] if length of [l] is empty.
-*)
-val get_one : 'a list -> exn -> 'a
 
-(** [get_two l e] 
-   get first two elements of list [l].
+   [get_two l e]: Get first two elements of list [l].
    raise exception [e] if length of [l] < 2.
 *)
+val get_one : 'a list -> exn -> 'a
 val get_two : 'a list -> exn -> ('a * 'a)
 
 
 val split_at : int -> 'a list -> ('a list * 'a list)
 
-(** [rotate_left n l]
-   rotate list [l] [n] places left 
+(**
+   [rotate_left n l]: Rotate list [l] [n] places left 
+
+   [rotate_right n l]: Rotate list [l] [n] places right 
 *)
 val rotate_left : int -> 'a list -> 'a list
-
-
-(** [rotate_right n l]
-   rotate list [l] [n] places right 
-*)
 val rotate_right : int -> 'a list -> 'a list
 
 
+(** 
+   [apply_nth n f l d]: Apply [f] to [n]th element of list.
+   If list [l] is empty, return [d].
+*)
+val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b

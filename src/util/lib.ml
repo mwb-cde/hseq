@@ -236,6 +236,11 @@ let compare_int_option x n =
     None -> false
   | Some i -> i=n
 
+let apply_option f x d=
+  match x with
+    None -> d
+  | Some i -> f i
+
 let date ()= Unix.time()
 let nice_date f= 
   let tm = Unix.localtime f
@@ -296,5 +301,8 @@ let rotate_right num lst=
     in 
     List.append rs ls
       
-
+let apply_nth n f l d =
+  match l with 
+    [] -> d
+  | _ -> f (List.nth l n)
 
