@@ -24,6 +24,26 @@ struct
   let nil = Nil
   let create x l r = Branch(x, l, r)
 
+
+(*
+   tree information/manipulation
+*)
+
+  let data tr = 
+    match tr with
+      Nil -> (failwith "Tree.data: invalid argument")
+    | Branch(x, _, _) -> x
+
+  let left tr = 
+    match tr with
+      Nil -> (failwith "Tree.left: invalid argument")
+    | Branch(_, l, _) -> l
+
+  let right tr = 
+    match tr with
+      Nil -> (failwith "Tree.right: invalid argument")
+    | Branch(_, _, r) -> r
+
 (*
    add tr k d:
    add binding of d to k in tree tr
@@ -172,6 +192,7 @@ struct
 	  else (k, d)::(remove_aux ds)
     in remove_aux ys
 
+
   let add_rightmost dst src =
     let rec add_aux tr =
       match tr with 
@@ -200,6 +221,44 @@ struct
      | _ -> failwith "Tree.remove"
      in 
      remove_aux tree
+
+(* delete tree key
+
+   removes the data currently bound to key in tree
+   does nothing if key is not in tree
+*)
+
+  let rec split tr=
+    match tr with
+      Nil -> failwith "Tree.split"
+    | Branch(data, tr1, Nil) -> (data, tr1)
+    | Branch(data, tr1, tr2) ->
+	let rdata, rtr=split tr2
+	in 
+	(rdata, Branch(data, tr1, rtr))
+
+  let join tr1 tr2 = 
+    match tr1 with
+      Nil -> tr2
+    | _ -> 
+      let data, ntr=split tr1
+      in 
+      Branch(data, ntr, tr2)
+
+  let rec delete tr key =
+    match tr with
+      Nil -> tr
+    | Branch((k, y)::data, l, r) ->
+	if (eql key k)
+	then 
+	  (match (list_remove key ((k, y)::data)) with
+	    [] -> join l r
+	  | nlst -> Branch(nlst, l, r))
+	else 
+	  if(lessthan key k)
+	  then Branch((k, y)::data, delete l key, r)
+	  else Branch((k, y)::data, l, delete r key)
+    | Branch([], _, _) -> failwith ("Tree.delete")
 
 
 (* 
@@ -243,7 +302,21 @@ struct
     in 
     iter_aux tree []   
 
-end;;
+(* to_list tree:
+   return a list of the (lists of) elements in the
+   tree in descending order
+*)
+
+  let to_list tree=
+    let rec to_list_aux tr rslt=
+      match tr with
+	Nil -> rslt
+      | Branch(data, l, r)
+	  -> to_list_aux r (data::(to_list_aux l rslt))
+    in 
+    to_list_aux tree []
+
+end
 
 
 (* Balanced lookup trees *)
@@ -298,6 +371,9 @@ struct
     match t with
       Nil -> (failwith "BTree.dec_depth: invalid argument")
     | Branch(x, l, r, d) -> Branch(x, l, r, d-i)
+
+
+  let max_depth t1 t2=max (depth t1) (depth t2)
 
 (*
    tree rotation
@@ -437,9 +513,9 @@ let rotl tr =
 	 else 
 	   if(sl<=0)
 	   then (* rhs is deeper *)
-               shiftln t ((max leftd rightd)-absl) 
+               shiftln t (absl-1) 
 	   else (* lhs is deeper *)
-               shiftrn t ((max leftd rightd)-absl)
+               shiftrn t (absl-1)
 
 (*
    add tr k d:
@@ -588,6 +664,63 @@ let rotl tr =
      in 
      remove_aux tree
 
+
+(* delete tree key
+
+   removes the data currently bound to key in tree
+   does nothing if key is not in tree
+*)
+
+  let rec split tr=
+    match tr with
+      Nil -> failwith "Tree.split"
+    | Branch(data, tr1, Nil, _) -> 
+	(data, tr1)
+    | Branch(data, tr1, tr2, _) ->
+	let ndata, nright=split tr2
+	and nleft=tr1
+	in 
+	let ntree=Branch(data, nleft, nright, (max_depth nleft nright)+1)
+	in 
+	(ndata, balance ntree)
+
+  let join tr1 tr2 = 
+    match tr1 with
+      Nil -> tr2
+    | _ -> 
+      let data, nleft=split tr1
+      and nright=tr2
+      in 
+      let ntree=Branch(data, nleft, nright,
+		       (max_depth nleft nright)+1)
+      in 
+      balance ntree
+
+  let delete tree key =
+    let rec delete_aux tr =
+    match tr with
+      Nil -> Nil
+    | Branch((k, y)::data, l, r, dp) ->
+	let ntree=
+	  if (eql key k)
+	  then 
+	    (match (list_remove key ((k, y)::data)) with
+	      [] -> join l r
+	    | nlst -> Branch(nlst, l, r, dp))
+	  else 
+	    (let nleft, nright=
+	      if(lessthan key k)
+	      then (delete_aux l, r)
+	      else (l, delete_aux r)
+	    in 
+	    Branch((k, y)::data, nleft, nright, 
+		   (max_depth nleft nright)+1))
+	in 
+	balance ntree
+    | Branch([], _, _, _) -> failwith ("Tree.delete")
+    in 
+    delete_aux tree
+
 (* 
    find tree key
    finds the current binding of key in tree
@@ -707,6 +840,20 @@ let rotl tr =
     in 
     iter_aux tree []   
 
+(* to_list tree:
+   return a list of the (lists of) elements in the
+   tree in descending order
+*)
+
+  let to_list tree=
+    let rec to_list_aux tr rslt=
+      match tr with
+	Nil -> rslt
+      | Branch(data, l, r, _)
+	  -> to_list_aux r (data::(to_list_aux l rslt))
+    in 
+    to_list_aux tree []
+
 end;;
 
 (* tests *)
@@ -751,4 +898,7 @@ let iterfn k d =
 let addfn sum k d =
   sum:=(!sum)+d;;
 
-
+let t1=delete (!t) "i" ;;
+let t2=delete t1 "g";;
+let t3=delete (delete t1 "e") "a";;
+let t4=right t3;;

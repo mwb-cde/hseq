@@ -20,6 +20,15 @@ module Tree :
 	  Nil 
 	| Branch of ( (A.key * 'a) list * ('a)t * ('a)t)
 
+(* data tr: get the data at the current branch *)
+      val data : 'a t -> (A.key * 'a) list
+
+(* left tr: get left branch of tree *)
+      val left : 'a t -> 'a t
+
+(* right tr: get right branch of tree *)
+      val right : 'a t -> 'a t
+
 (* nil: make an empty tree *)
       val nil : 'a t
 
@@ -72,7 +81,15 @@ module Tree :
    does nothing if key is not in tree
 
 *)
-      val remove : 'a t -> A.key -> 'a t
+(*      val remove : 'a t -> A.key -> 'a t *)
+
+(*
+   delet tree key
+
+   removes the data currently bound to key in tree
+   does nothing if key is not in tree
+*)
+      val delete : 'a t -> A.key -> 'a t
 
 (* 
    iter tree fn:
@@ -82,6 +99,13 @@ module Tree :
 *)
 
       val iter : (A.key -> 'a -> 'b) -> 'a t -> unit
+
+
+(* to_list tree:
+   return a list of the (lists of) elements in the
+   tree in descending order
+*)
+      val to_list: 'a t -> (A.key * 'a) list list
 
     end
 
@@ -152,7 +176,18 @@ module BTree :
    is by putting subtree r at the rightmost point of subtree l,
    then rebalancing at every level
 *)
-      val remove : 'a t -> A.key -> 'a t
+(*       val remove : 'a t -> A.key -> 'a t*)
+
+(*
+   remove tree key
+
+   removes the data currently bound to key in tree
+   does nothing if key is not in tree
+   removal of Branch(x, l, r, d) 
+   is by putting subtree r at the rightmost point of subtree l,
+   then rebalancing at every level
+*)
+       val delete : 'a t -> A.key -> 'a t
 
 (* 
    find tree key
@@ -182,4 +217,10 @@ module BTree :
 *)
 
       val iter : (A.key -> 'a -> 'b) -> 'a t -> unit
+
+(* to_list tree:
+   return a list of the (lists of) elements in the
+   tree in descending order
+*)
+      val to_list: 'a t -> (A.key * 'a) list list
     end
