@@ -3,8 +3,9 @@
 
 (*
 #load "cli.cmo";;
-#load "bool_tacs.cmo";;
 *)
+#load "bool_tacs.cmo";;
+
 
 #install_printer Term.simple_term_printer;;
 (*#install_printer Printer.print_term;;*)
