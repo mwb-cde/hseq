@@ -35,7 +35,7 @@ let _ =
   Format.print_string "Initialising";
   Format.print_newline();
   Format.close_box();
-  Tpenv.add_thy_path "./thys";
-  Tpenv.add_thy_path "../thys";
-  Tpenv.init()
+  Global.add_thy_path "./thys";
+  Global.add_thy_path "../thys";
+  Global.init()
 

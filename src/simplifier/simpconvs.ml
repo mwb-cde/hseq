@@ -407,7 +407,7 @@ let neg_exists_conv scp trm=
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
       in 
-      Logic.ThmRules.rewrite_conv (Tpenv.scope()) 
+      Logic.ThmRules.rewrite_conv (Global.scope()) 
 	[get_iff_equals_ax()] rule_true_l3
 
     let rule_true_ax = ref None
@@ -1573,11 +1573,11 @@ end
    open Simpset;;
 
 
-   let scope () = Tpenv.scope();;
+   let scope () = Global.scope();;
 
    let saxiom str = 
    Logic.mk_axiom 
-   (Formula.form_of_term (scope()) (Tpenv.read str));;
+   (Formula.form_of_term (scope()) (Global.read str));;
 
    let get_tags asms g=
    let sqnt=Logic.get_sqnt g
@@ -1613,9 +1613,9 @@ end
 
  *)
 (*
-   let scope = Tpenv.scope()
+   let scope = Global.scope()
 
-   let naxiom t= Logic.mk_axiom (Formula.mk_form (Tpenv.scope()) t)
+   let naxiom t= Logic.mk_axiom (Formula.mk_form (Global.scope()) t)
 
 
    let axioms = List.map naxiom

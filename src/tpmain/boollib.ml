@@ -49,7 +49,7 @@ module BaseTheory=
       ignore(define <:def< some = epsilon (%a: true)>>)
 	
 
-    let init() = Tpenv.set_base_thy_builder builder
+    let init() = Global.set_base_thy_builder builder
 
 end
 
@@ -128,7 +128,7 @@ module BoolPP =
 	  Term.simple_print_fn_app ppstate cprec (f, args)
 
     let init_ifthenelse_printer()=
-      Tpenv.add_term_printer ifthenelse_id
+      Global.add_term_printer ifthenelse_id
       ifthenelse_printer
 
     let init_ifthenelse()=
@@ -704,7 +704,7 @@ let init_boollib()=
   BoolPP.init_ifthenelse()
 
 
-let _ = Tpenv.add_init init_boollib
+let _ = Global.add_init init_boollib
 
 
 

@@ -15,15 +15,15 @@ let catch_errors f a =
   (try f a 
   with 
     Result.Error e -> 
-      Result.print_error (Tpenv.pp_info()) (-1) (Result.Error e); 
+      Result.print_error (Global.pp_info()) (-1) (Result.Error e); 
       raise(Result.Error e)
   | x -> raise x)
 
-let theories () = Tpenv.get_theories()
+let theories () = Global.get_theories()
 
-let read x = catch_errors Tpenv.read x
+let read x = catch_errors Global.read x
 
-let curr_theory () = Tpenv.get_cur_thy()
+let curr_theory () = Global.get_cur_thy()
 let get_theory_name thy = Theory.get_name (curr_theory())
 
 let theory name = 
@@ -33,7 +33,7 @@ let theory name =
 
 let save_theory thy prot= 
   let fname = Filename.concat
-      (Tpenv.get_cdir()) ((get_theory_name thy)^(Tpenv.thy_suffix))
+      (Global.get_cdir()) ((get_theory_name thy)^(Global.thy_suffix))
   in let oc = open_out fname
   in 
   Theory.export_theory oc thy prot;
@@ -43,10 +43,10 @@ let load_theory n =
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
-  in let filefn fname = Tpenv.find_thy_file fname
+  in let filefn fname = Global.find_thy_file fname
   in 
   ignore(Thydb.load_theory (theories()) n false 
-	   Tpenv.on_load_thy Tpenv.find_thy_file Tpenv.build_thy_file)
+	   Global.on_load_thy Global.find_thy_file Global.build_thy_file)
 
 let load_parent_theory n = 
   let rec chop n = 
@@ -54,18 +54,18 @@ let load_parent_theory n =
     in if t=n then n else chop t
   in 
   ignore(Thydb.load_theory (theories()) n true 
-	   Tpenv.on_load_thy Tpenv.find_thy_file Tpenv.build_thy_file)
+	   Global.on_load_thy Global.find_thy_file Global.build_thy_file)
 
 let load_theory_as_cur n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
-  in let filefn fname = Tpenv.find_thy_file fname
+  in let filefn fname = Global.find_thy_file fname
   in let imprts=
-    (Thydb.load_theory (theories()) n false Tpenv.on_load_thy 
-       Tpenv.find_thy_file Tpenv.build_thy_file)
+    (Thydb.load_theory (theories()) n false Global.on_load_thy 
+       Global.find_thy_file Global.build_thy_file)
   in 
-  (Tpenv.set_cur_thy (Thydb.get_thy (theories()) n);
+  (Global.set_cur_thy (Thydb.get_thy (theories()) n);
    Thydb.add_importing imprts (theories()))
 
 let parents ns = 
@@ -81,10 +81,10 @@ let begin_theory n parents=
     in 
     let importing=
       try
-	((Tpenv.get_base_name())::parents)
+	((Global.get_base_name())::parents)
       with Not_found -> parents
     in 
-    Tpenv.set_cur_thy thy;
+    Global.set_cur_thy thy;
     List.iter load_parent_theory importing;
     Theory.add_parents importing thy;
     Thydb.add_importing importing (theories())
@@ -118,8 +118,8 @@ let end_theory ?(save=true) () =
 let add_pp_rec selector id rcrd=
   Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
-  then Tpenv.add_term_pp_record id rcrd
-  else Tpenv.add_type_pp_record id rcrd
+  then Global.add_term_pp_record id rcrd
+  else Global.add_type_pp_record id rcrd
       
 let add_term_pp id prec fx repr=
   let rcrd=Printer.mk_record prec fx repr
@@ -135,28 +135,28 @@ let remove_pp_rec selector id =
   Thydb.remove_pp_rec selector 
     (Basic.thy_of_id id) (Basic.name id) (theories());
   if(selector=Basic.fn_id)
-  then Tpenv.remove_term_pp id
-  else Tpenv.remove_type_pp id 
+  then Global.remove_term_pp id
+  else Global.remove_type_pp id 
 
 let remove_term_pp id = remove_pp_rec Basic.type_id id
 let remove_type_pp id = remove_pp_rec Basic.type_id id
 
 let get_pp_rec selector id=
   if(selector=Basic.fn_id)
-  then Tpenv.get_term_pp id
-  else Tpenv.get_type_pp id 
+  then Global.get_term_pp id
+  else Global.get_type_pp id 
 
 let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
 
 let new_type ?pp (n, args, def) = 
-  let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
+  let trec = Logic.Defns.mk_typedef (Global.scope()) n args def 
   in 
   Thydb.add_type_rec trec (theories());
   (match pp with 
     None -> ()
   | Some(prec, fx, repr) -> 
-      let lname = Basic.mk_long (Tpenv.get_cur_name()) n
+      let lname = Basic.mk_long (Global.get_cur_name()) n
       in 
       add_type_pp lname prec fx repr)
 
@@ -190,8 +190,8 @@ let dest_defn_term trm=
       
 let define ?pp ((name, args), r)=
   let ndef=
-    Defn.mk_defn (Tpenv.scope()) 
-      (Basic.mk_long (Tpenv.get_cur_name()) name) args r
+    Defn.mk_defn (Global.scope()) 
+      (Basic.mk_long (Global.get_cur_name()) name) args r
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
@@ -212,9 +212,9 @@ let declare ?pp trm =
 	| Basic.Typed(Basic.Id(i, _), t) -> (Basic.name i, t)
 	| _ -> raise (Failure "Badly formed declaration")
       in 
-      let id = Basic.mk_long (Tpenv.get_cur_name()) v
+      let id = Basic.mk_long (Global.get_cur_name()) v
       in 
-      let dcl = Defn.mk_decln (Tpenv.scope()) id ty
+      let dcl = Defn.mk_decln (Global.scope()) id ty
       in 
       Thydb.add_decln dcl (theories()); (id, ty)
     with _ -> raise (Result.error ("Badly formed declaration"))
@@ -225,7 +225,7 @@ let declare ?pp trm =
       let longname = 
 	if (Basic.thy_of_id n) = Basic.null_thy 
 	then 
-	  (Basic.mk_long (Tpenv.get_cur_name()) (Basic.name n))
+	  (Basic.mk_long (Global.get_cur_name()) (Basic.name n))
 	else n
       in 
       add_term_pp longname prec fx repr;
@@ -240,11 +240,11 @@ let declare ?pp trm =
       let id =
 	if(Term.is_free v)
 	then (Basic.mk_long 
-		(Tpenv.get_cur_name()) 
+		(Global.get_cur_name()) 
 		(Term.get_free_name v))
 	else Term.get_var_id v
       in 
-      let dcl=Defn.mk_decln (Tpenv.scope()) id ty
+      let dcl=Defn.mk_decln (Global.scope()) id ty
       in 
       Thydb.add_decln dcl (theories());
       (id, ty))
@@ -256,7 +256,7 @@ let declare ?pp trm =
       let longname = 
 	if (Basic.thy_of_id n) = Basic.null_thy 
 	then 
-	  (Basic.mk_long (Tpenv.get_cur_name()) (Basic.name n))
+	  (Basic.mk_long (Global.get_cur_name()) (Basic.name n))
 	else n
       in 
       add_term_pp longname prec fx repr;
@@ -265,30 +265,30 @@ let declare ?pp trm =
 
 let new_axiom n trm =
   let t = Logic.mk_axiom 
-      (Formula.form_of_term (Tpenv.scope()) trm)
+      (Formula.form_of_term (Global.scope()) trm)
   in Thydb.add_axiom n t (theories()); t
 
 
 let axiom id =
-  let t, n = Tpenv.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_axiom t n thys
 
 let theorem id =
-  let t, n = Tpenv.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_theorem t n thys
 
 let defn id =
-  let t, n = Tpenv.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_defn t n thys
 
 let lemma id =
-  let t, n = Tpenv.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in 
@@ -314,8 +314,8 @@ let save_theorem n th =
 let by x = 
   (catch_errors Goals.by_com) x
 
-let scope () = Tpenv.scope();;
+let scope () = Global.scope();;
 
-let read x= Tpenv.read x
-let read_unchecked  x= Tpenv.read_unchecked x
-let read_defn  x= Tpenv.read_defn x
+let read x= Global.read x
+let read_unchecked  x= Global.read_unchecked x
+let read_defn  x= Global.read_defn x

@@ -17,25 +17,25 @@ let print_fnident x = Printer.print_ident x
 
 let print_term x = 
   open_box 0;
-  Term.print (Tpenv.pp_info()) x;
+  Term.print (Global.pp_info()) x;
   close_box()
 
 let print_formula x = 
   open_box 0;
-  Term.print (Tpenv.pp_info()) (Formula.dest_form x);
+  Term.print (Global.pp_info()) (Formula.dest_form x);
   close_box()
 
 let rec print_type x = 
   open_box 0; 
-  Gtypes.print (Tpenv.pp_info())  x; 
+  Gtypes.print (Global.pp_info())  x; 
   close_box()
 
 let print_sqnt x = 
-  Logic.print_sqnt (Tpenv.pp_info()) x
+  Logic.print_sqnt (Global.pp_info()) x
 let print_node x = 
-  Logic.print_node (Tpenv.pp_info()) x
+  Logic.print_node (Global.pp_info()) x
 let print_branch x = 
-  Logic.print_branch (Tpenv.pp_info()) x
+  Logic.print_branch (Global.pp_info()) x
     
 
 let print_thm t = 
@@ -98,7 +98,7 @@ let print_subst tenv f=
   Format.print_newline()
     
 
-let print_error r = (r#print) (Tpenv.pp_info())
+let print_error r = (r#print) (Global.pp_info())
 
 let print_theory x = 
-  Theory.print (Tpenv.pp_info()) x
+  Theory.print (Global.pp_info()) x

@@ -46,9 +46,9 @@ let mk_dummy_fntype n=
     (Gtypes.mk_typevar i)
 
 let goal trm = 
-  let f = Formula.mk_form (Tpenv.scope()) (Tpenv.mk_term (Tpenv.scope()) trm)
+  let f = Formula.mk_form (Global.scope()) (Global.mk_term (Global.scope()) trm)
   in 
-  prflist:= [mk_goal  (Tpenv.scope()) f];
+  prflist:= [mk_goal  (Global.scope()) f];
   (!save_hook()); top()
 
 let apply ?report tac goal=
@@ -56,13 +56,13 @@ let apply ?report tac goal=
 
 let prove_goal scp trm tac =
   mk_thm 
-    (apply tac (mk_goal scp (Formula.mk_form (Tpenv.scope()) trm)))
+    (apply tac (mk_goal scp (Formula.mk_form (Global.scope()) trm)))
 
-let prove trm tac = prove_goal (Tpenv.scope()) trm tac
+let prove trm tac = prove_goal (Global.scope()) trm tac
 
 let by_list trm tacl =
-  let fg=mk_goal (Tpenv.scope()) 
-      (Formula.mk_form (Tpenv.scope()) trm)
+  let fg=mk_goal (Global.scope()) 
+      (Formula.mk_form (Global.scope()) trm)
   in 
   let rec by_aux ts g =
       match ts with 
@@ -86,7 +86,7 @@ let report node branch =
 	Format.print_string ")";
 	Format.close_box();
 	Format.print_newline();
-	Logic.print_sqnt (Tpenv.pp_info()) y;
+	Logic.print_sqnt (Global.pp_info()) y;
 	Format.print_newline();
 	print_subgoals (i+1) ys
   in 

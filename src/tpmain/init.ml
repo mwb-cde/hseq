@@ -21,7 +21,7 @@
    Initialises the TP environment.
 *)
 
-let tp_init() = Tpenv.init()
+let tp_init() = Global.init()
 
 (*
    init()

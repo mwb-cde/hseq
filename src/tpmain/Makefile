@@ -1,10 +1,10 @@
 # Header, code and optimised code files
 
-HEADERS = tpenv.cmi drule.cmi tactics.cmi goals.cmi commands.cmi \
+HEADERS = global.cmi drule.cmi tactics.cmi goals.cmi commands.cmi \
 	display.cmi boollib.cmi cli.cmi init.cmi
-CODE = tpenv.cmo drule.cmo tactics.cmo goals.cmo commands.cmo \
+CODE = global.cmo drule.cmo tactics.cmo goals.cmo commands.cmo \
 	display.cmo boollib.cmo cli.cmo init.cmo
-OPTCODE = tpenv.cmx drule.cmx tactics.cmx goals.cmx commands.cmx \
+OPTCODE = global.cmx drule.cmx tactics.cmx goals.cmx commands.cmx \
 	display.cmx boollib.cmx cli.cmx init.cmx
 
 LIBFILE=tpmain.cma
