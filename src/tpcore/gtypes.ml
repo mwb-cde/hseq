@@ -282,10 +282,6 @@ let rec chase_ret_type t=
 
 (* pretty printing *)
 
-(* mk_typevar n: 
-   
-   Make a new type variable.
-*)
 
 type printer_info=
     { 
@@ -301,27 +297,37 @@ let mk_typevar n =
   n:=(!n)+1; nty
 
 
-let print_type_info ppstate info pr t = 
-  let new_name_env x=
-    try
-      (let tmp=lookup x ((!info).tbl) 
-      in 
-      if (is_var tmp) or (is_weak tmp)
-      then tmp
-      else raise Not_found)
-    with 
-      Not_found ->
-	(let newty=mk_typevar ((!info).ctr)
-	in 
-	info:={ (!info) with tbl=bind x newty ((!info).tbl) };
-	newty)
-  in 
-  let rec print_aux prec x =
+let print_constr ppstate id=
+  match id with
+    Basic.Defined n -> Printer.print_identifier ppstate n
+  | Basic.Func ->
+      Printer.print_string "->"
+
+let lookup_constr ppstate id = 
+  match id with
+    Basic.Defined n -> Printer.get ppstate n
+  | Basic.Func -> 
+      Printer.mk_record 6 Printer.infix None
+
+let find_printer ppstate id = 
+  match id with 
+    Basic.Defined n -> raise Not_found
+  | Basic.Func -> raise Not_found
+
+let pplookup_id ppstate id =
+  try
+    (Printer.get ppstate.Printer.type_info id)
+  with Not_found -> 
+    Printer.mk_record 
+      Printer.default_type_prec
+      Printer.default_type_fixity
+      None
+
+let rec print_type ppstate pr t = 
+  let print_aux ppstate pr x=
     match x with
       Var(_) -> 
-	let nt=new_name_env x
-	in 
-	Format.print_string ("'"^(get_var nt));
+	Format.print_string ("'"^(get_var x));
 	Format.print_cut()
     | WeakVar(_) -> 
 	Format.print_string ("'_"^(get_weak x));
@@ -329,90 +335,80 @@ let print_type_info ppstate info pr t =
     | Base(b) -> 
 	Format.print_string (Basic.string_btype b);
 	Format.print_cut()
-    | Constr(Basic.Defined n, args) ->  (* not infix *)
-	print_defined pr n args;
+    | Constr(Defined op, args) -> 
+	print_defined ppstate pr (op, args);
 	Format.print_cut()
-    | Constr(Basic.Func, args) ->
-	print_func args;
+    | Constr(Func, args) -> 
+	print_func ppstate pr args;
 	Format.print_cut()
-  and print_defined oldprec f args =
-    let print_infix pr repr ls =
-      (Format.open_box 2;
-      (match ls with
-	[] -> 
-	  Printer.print_identifier f repr
-      | l::rargs ->
-	  print_aux pr l;
-	  Format.print_cut();
-	  Printer.print_identifier f repr;
-	  Printer.list_print 
-	    (print_aux pr) 
-	    (fun _ -> Format.print_space()) rargs);
-      Format.close_box())
-    and print_suffix pr repr ls =
-      (Format.open_box 2;
-       Printer.list_print 
-	 (print_aux pr) 
-	 (fun _ -> Format.print_space()) ls;
-       Format.print_cut();
-       Printer.print_identifier f repr;
-       Format.close_box())
-    in 
-    let prec, fixity, repr=Printer.get_type_info ppstate f
-    in 
-    Format.open_box 2;
-    Printer.print_bracket prec oldprec "(";
-    if(Printer.is_infix fixity) 
-    then 
-      print_infix prec repr args  
-    else 
-      if (Printer.is_suffix fixity)
-      then print_suffix prec repr args
-      else 
-	(Printer.print_identifier f repr;
-	 match args with
-	   [] -> ()
-	 | _ -> 
-	     Format.open_box 2;
-	     Format.print_string "(";
-	     Printer.list_print 
-	       (print_aux pr) 
-	       (fun _ -> 
-		 Format.print_string ","; 
-		 Format.print_space()) args;
-	     Format.print_string ")";
-	     Format.close_box());
-    Printer.print_bracket prec oldprec ")";
-    Format.close_box()
-  and print_func args  =
-    match args with
-      a1::a2::rst ->
-	Format.open_box 2;
-	print_aux 0 a1; 
-	Format.print_cut();
-	Format.print_string "->";
-	print_aux 0 a2;
-	Format.close_box()
-    | _ -> 
-	Format.open_box 2;
-	Format.print_string "->";
-	Format.print_cut();
-	Format.print_string "(";
-	Format.print_cut();
-	Printer.list_print 
-	  (print_aux 0) 
-	  (fun _ -> Format.print_string ","; Format.print_space()) args;
-	Format.print_string ")";
-	Format.close_box ()
-  in 
-  print_aux pr t
-
-let print st x =
-  let tyinfo = ref (empty_printer_info())
   in 
   Format.open_box 2;
-  print_type_info st tyinfo 0 x; 
+  print_aux ppstate pr t;
   Format.close_box ()
+and print_defined ppstate prec (f, args) =
+  let pprec = pplookup_id ppstate f
+  in 
+(*  try 
+   let printer = Printer.get_printer f
+   in 
+   printer prec (f, args)
+   with Not_found -> 
+ *)    if(Printer.is_infix pprec.Printer.fixity)
+ then 
+   (match args with
+     [] -> ()
+   | (lf::rs) -> 
+       Printer.print_bracket prec (pprec.Printer.prec) "(";
+       print_type ppstate (pprec.Printer.prec) lf;
+       Printer.print_space();
+       Printer.print_identifier (pplookup_id ppstate) f;
+       Printer.print_space();
+       Printer.print_list 
+	 (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
+	 rs; 
+       Format.print_cut();
+       Printer.print_bracket prec (pprec.Printer.prec) ")")
+ else 
+   if(Printer.is_suffix pprec.Printer.fixity)
+   then 
+     (Printer.print_bracket prec (pprec.Printer.prec) "(";
+      Format.print_cut();
+      Printer.print_suffix 
+	((fun pr -> Printer.print_identifier (pplookup_id ppstate)), 
+	 (fun pr l-> 
+	   match l with 
+	     [] -> ()
+	   |_ -> Printer.print_sep_list
+		 (print_type ppstate pr, ",") l))
+	(pprec.Printer.prec) (f, args);
+      Format.print_cut();
+      Printer.print_bracket prec (pprec.Printer.prec) ")")
+   else 
+     Format.print_cut();
+  Printer.print_prefix
+    ((fun pr -> Printer.print_identifier (pplookup_id ppstate)),
+     (fun pr l -> 
+       match l with 
+	 [] -> ()
+       | _ -> 
+	   Printer.print_string "(";
+	   Printer.print_sep_list
+	     (print_type ppstate pr, ",") l;
+	   Printer.print_string ")"))
+    (pprec.Printer.prec) (f, args);
+  Format.print_cut();
+and print_func ppstate prec args =
+  Printer.print_infix
+    ((fun _ _ -> Printer.print_string "->"),
+     (fun pr l -> 
+       Printer.print_bracket pr prec "(";
+       Printer.print_list 
+	 (print_type ppstate pr, Printer.print_space) l;
+       Printer.print_bracket pr prec ")"))
+    prec (Func, args)
+
+let print ppinfo x =
+  print_type ppinfo 0 x
 
 (* Error handling *)
 
@@ -425,10 +421,8 @@ class typeError s ts=
       Format.open_box 0; Format.print_string (self#msg()); 
       Format.print_break 1 2;
       Format.open_box 0; 
-      Printer.list_print (print st) 
-	(fun _ -> Format.print_string ","; 
-          Format.print_break 1 2; )
-	(self#get());
+      Printer.print_sep_list 
+	(print (Printer.empty_ppinfo()), ",") (self#get());
       Format.close_box();
       Format.close_box();
   end
@@ -497,7 +491,7 @@ let from_save_rec record =
 (* 
    USING HASHTABLES FOR SUBSTITUTION
    IS WRONG AND SHOULD BE REMOVED
-*)
+ *)
 
 module type RHASHKEYS=
   sig 
@@ -547,15 +541,15 @@ let extract_bindings tyvars src dst=
     match vs with
       [] -> r
     | (x::xs) -> 
-	  let y= 
-	    try lookup_var x src
-	    with Not_found -> x
-	  in 
-	  if is_any_var y
-	  then extract_aux xs r
-	  else extract_aux xs (bind x y r)
+	let y= 
+	  try lookup_var x src
+	  with Not_found -> x
+	in 
+	if is_any_var y
+	then extract_aux xs r
+	else extract_aux xs (bind x y r)
   in extract_aux tyvars dst
-	  
+    
 let rec occurs ty1 ty2 =
   match (ty1, ty2) with
     (Var(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
@@ -598,22 +592,22 @@ let rec copy_type_env env trm=
 	  let nt=mk_var (!x)
 	  in 
 	  (nt, bind trm nt env))
-    | Constr(f, args) ->
-	let renv = ref env
-	in 
-	let nargs = 
-	  List.map
-	    (fun t ->
-	      let nt, ne= copy_type_env (!renv) t
-	      in renv:=ne; nt) 
-	    args
-	in 
-	(Constr(f, nargs), !renv)
-    | WeakVar(x) -> 
-	(try (lookup trm env, env)
-	with 
-	  Not_found -> (trm, env))
-    | _ -> (trm, env)
+  | Constr(f, args) ->
+      let renv = ref env
+      in 
+      let nargs = 
+	List.map
+	  (fun t ->
+	    let nt, ne= copy_type_env (!renv) t
+	    in renv:=ne; nt) 
+	  args
+      in 
+      (Constr(f, nargs), !renv)
+  | WeakVar(x) -> 
+      (try (lookup trm env, env)
+      with 
+	Not_found -> (trm, env))
+  | _ -> (trm, env)
 
 let copy_type t =
   let nty, _ = copy_type_env (empty_subst()) t
@@ -644,11 +638,11 @@ let rec subst t env =
 
 (* rewrite_subst t env: 
 
-Rewrite t, using substitution env.  
+   Rewrite t, using substitution env.  
 
-Only used to rewrite the rhs of a definition,
-instantiating its variables with the values of the given arguments.
-*)
+   Only used to rewrite the rhs of a definition,
+   instantiating its variables with the values of the given arguments.
+ *)
 
 
 let rec rewrite_subst t env =
@@ -698,10 +692,10 @@ let get_defn tyenv t =
 
 
 let rec remove_bindings ls env =
-    match ls with
-      [] -> env
-    | (s::bs) -> 
-	remove_bindings bs (delete s env)
+  match ls with
+    [] -> env
+  | (s::bs) -> 
+      remove_bindings bs (delete s env)
 
 
 (* unify_env scp t1 t2 nenv:
@@ -710,7 +704,7 @@ let rec remove_bindings ls env =
    
    Scope scp is used lookup definitions of constructors occuring 
    in t1 or t2 (if necessary).
-*)
+ *)
 
 let unify_env scp t1 t2 nenv =  
   let rec unify_aux ty1 ty2 env=
@@ -739,7 +733,7 @@ let unify_env scp t1 t2 nenv =
 		in unify_aux s t1 env)
 	  with
             x ->(addtypeError "x: Can't unify types" [s; t] x)))
-  (* Variables, bind if not equal, but test for occurence *)
+	  (* Variables, bind if not equal, but test for occurence *)
     | (Var(_), Var(_)) -> 
 	if equals s t 
 	then env
@@ -764,8 +758,8 @@ let unify_env scp t1 t2 nenv =
 
    Unify types t1 and t2, returning the substitution needed.
    Raise typeError unification fails
-*)
-   
+ *)
+    
 let unify scp t1 t2 =
   unify_env scp t1 t2 (empty_subst())
 
@@ -846,7 +840,7 @@ let unify_env_unique_left scp t1 t2 nenv =
    unify_for_rewrite: same as unify_env_unique_left
    except it returns a list of the bindings made
    if any error, removes bindings and raises exception 
-*)
+ *)
 
 let unify_for_rewrite scp t1 t2 env = 
   let varenv= empty_subst()
@@ -914,7 +908,7 @@ let unify_for_rewrite scp t1 t2 env =
 
    Get most general unifier for type t and substitution env.
    Replaces variables in t with their bindings in env.
-*)
+ *)
 
 let rec mgu t env =
   match t with 
@@ -937,7 +931,7 @@ let rec mgu t env =
 (* matching_env scp t1 t2 nenv:
 
    Like unify_env but only variables in type t1 can be bound.
-*)
+ *)
 
 let matching_env scp t1 t2 nenv =  
   let rec match_aux ty1 ty2 env=
@@ -995,15 +989,15 @@ let matches scp t1 t2=
 (* Consistency tests for type definitions 
 
    Weak variables are not permitted in any definition (type or term)
-*)
+ *)
 
 (* check_term n vs t: 
    for definition (n vs = t)
    test name n and arguments vs for definition t 
    fails 
-     if a variable occurs in t which is not in the list vs
-     or name n occurs in t (a recursive definition)
-*)
+   if a variable occurs in t which is not in the list vs
+   or name n occurs in t (a recursive definition)
+ *)
 
 let rec check_term scp n vs t = 
   match t with
@@ -1012,8 +1006,8 @@ let rec check_term scp n vs t =
       if n=m then raise Not_found
       else 
 (*	if (has_defn scp n) then raise Not_found
-	else 
-*)
+   else 
+ *)
 	List.iter (check_term scp n vs) args
   | Constr(_, args) -> 
       List.iter (check_term scp n vs) args
@@ -1023,7 +1017,7 @@ let rec check_term scp n vs t =
 
 (* check_args args: 
    test each a in args is a variable and occurs only once 
-*)
+ *)
 
 let check_args args =
   let tenv = empty_subst()
@@ -1044,7 +1038,7 @@ let check_args args =
    or if the definition is recursive
    or if the arguments occur on the lhs more than once
    or if there are variables in the rhs which are not in the arguments
-*)
+ *)
 
 let check_defn  scp l r =
   if (is_defined l) then 
@@ -1198,7 +1192,7 @@ let set_name scp trm =
 
    The function is memoised: if a constructor name is found to be 
    in scope, it is added to memo.
-*)
+ *)
 
 let in_thy_scope memo scp th ty =
   let lookup_id n = 
@@ -1226,46 +1220,46 @@ let in_thy_scope memo scp th ty =
    Replace variables in typ with their bindings in substitution env.
    If a variable isn't bound in env, then it is renamed and bound
    to that name in nenv (which is checked before a new name is created).
-*)
+ *)
 
 (*
-let mgu_rename_env inf env nenv typ =
-  let new_name_env tenv x =
-    try (lookup x env, tenv)
-    with 
-      Not_found ->
-	(let newty=mk_typevar inf
-	in 
-	(newty, bind_var x newty tenv))
-  in 
-  let rec rename_aux (tenv: substitution) ty=
-    match ty with
-      Var(_) ->
-	(let nt=lookup_var ty env
-	in 
-	if(is_var nt)
-	then new_name_env tenv nt
-	else rename_aux tenv nt)
-    | WeakVar(_) ->
-	(let nt=lookup_var ty env
-	in 
-	if(is_weak nt) then (nt, env)
-	else rename_aux tenv nt)
-    | Constr(f, args) -> 
-	let renv=ref tenv
-	in 
-	let nargs=
-	  List.map
-	    (fun t -> 
-	      let nt, ne=rename_aux (!renv) t
-	      in 
-	      renv:=ne; nt) args
-	in 
-	(Constr(f, nargs), !renv)
-    | _ -> (ty, tenv)
-  in 
-  rename_aux nenv typ
-*)
+   let mgu_rename_env inf env nenv typ =
+   let new_name_env tenv x =
+   try (lookup x env, tenv)
+   with 
+   Not_found ->
+   (let newty=mk_typevar inf
+   in 
+   (newty, bind_var x newty tenv))
+   in 
+   let rec rename_aux (tenv: substitution) ty=
+   match ty with
+   Var(_) ->
+   (let nt=lookup_var ty env
+   in 
+   if(is_var nt)
+   then new_name_env tenv nt
+   else rename_aux tenv nt)
+   | WeakVar(_) ->
+   (let nt=lookup_var ty env
+   in 
+   if(is_weak nt) then (nt, env)
+   else rename_aux tenv nt)
+   | Constr(f, args) -> 
+   let renv=ref tenv
+   in 
+   let nargs=
+   List.map
+   (fun t -> 
+   let nt, ne=rename_aux (!renv) t
+   in 
+   renv:=ne; nt) args
+   in 
+   (Constr(f, nargs), !renv)
+   | _ -> (ty, tenv)
+   in 
+   rename_aux nenv typ
+ *)
 
 let mgu_rename_env inf tyenv name_env typ =
   let new_name_env nenv x =

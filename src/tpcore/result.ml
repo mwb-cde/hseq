@@ -14,7 +14,7 @@ let errorkind = mk_new_kind()
 class message s=
   object (self)
     method msg () = s
-    method print (x: Printer.info) = 
+    method print (x: Printer.ppinfo) = 
       open_box 0; print_string (self#msg()); close_box ()
   end
 
@@ -31,7 +31,6 @@ class errormsg =
 
 exception Error of error list
 
-
 let mkError e = Error[(e:>error)]
 let addError e x = 
   match x with 
@@ -45,7 +44,6 @@ let catchError e x =
   | _ -> raise x
 
 let raiseError s = raise (mkError (new error s))
-
 
 let print_error st dpth e = 
   let rec print_aux es d=

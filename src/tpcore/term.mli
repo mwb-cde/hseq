@@ -202,21 +202,41 @@ val get_fun: term -> term
 val flatten_app : term -> term list
 val get_fun_args: term -> (term* term list)
 
-(* pretty printer *)
 
-(* val print_term_aux : Printer.info -> int -> term -> unit *)
-val print_term_aux : 
-    Printer.info 
-  -> Gtypes.printer_info ref -> int -> term -> unit 
+(* Retyping *)
+
+(* reset the types in a term using a given context/subsitution *)
+(* substitutes variables with their concrete type in the context *)
+val retype: Gtypes.substitution -> term -> term
+
+(* [retype_pretty]
+   as for retype, make substitution for type variables
+   but also replace other type variables with new, prettier names 
+
+   retype_pretty_env: 
+   like retype_pretty but also return the substitution storing
+   from the bindings/replacements generated during retyping.
+ *)
+
+val retype_pretty_env: Gtypes.substitution -> term 
+  -> (term * Gtypes.substitution)
 (*
-val print_term : Printer.info -> term -> unit
-val simple_term_printer: term -> unit
+   val retype_pretty: Gtypes.substitution -> term -> term
 *)
+
+val retype_pretty: Gtypes.substitution -> term 
+  -> term 
+
+
+(* Pretty printing *)
+
+val print_term : Printer.ppinfo -> int -> term Printer.printer
+
 (* 
    print_term renamed to print,
    simple_term_printer renamed to print_simple
 *)
-val print : Printer.info -> term -> unit
+val print : Printer.ppinfo -> term -> unit
 val print_simple: term -> unit
    
 (* Error handling *)

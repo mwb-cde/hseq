@@ -17,20 +17,16 @@ class typingError s ts tys=
       print_string "Terms: ";
       Format.print_break 1 2;
       Format.open_box 0; 
-      Printer.list_print (Term.print st) 
-	(fun _ -> Format.print_string ","; 
-	  Format.print_break 1 2; 
-	  Format.close_box(); Format.open_box 0)
+      Printer.print_sep_list 
+	(Term.print_term st 0, ",")
 	(self#get_terms());
       Format.close_box();
       Format.open_box 0;
       Format.print_break 1 2;
       print_string "Gtypes: ";
       Format.open_box 0; 
-      Printer.list_print (Gtypes.print st) 
-	(fun _ -> Format.print_string ","; 
-	  Format.print_break 1 2; 
-	  Format.close_box(); Format.open_box 0)
+      Printer.print_sep_list
+	(Gtypes.print_type st 0, ",")
 	(self#get_types());
       Format.close_box();
       Format.close_box();
@@ -76,6 +72,7 @@ let typeof scp t =
   let ty, _ = typeof_env scp (Gtypes.empty_subst()) (ref 0) t
   in ty
 
+(*
 let retype tyenv t=
   let qenv=Term.empty_table()
   in 
@@ -151,6 +148,7 @@ let retype_pretty_env typenv trm=
 let retype_pretty typenv trm = 
   let nt, _ = retype_pretty_env typenv trm
   in nt
+*)
     
 let settype_top scp (inf, cache) f typenv exty et =
   let rec settype_aux expty t env =

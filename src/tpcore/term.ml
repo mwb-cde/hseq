@@ -76,8 +76,8 @@ class basictermError s ts =
     method print st = 
       Format.open_box 0; print_string ((self#msg())^" "); 
       Format.open_box 0; 
-      Printer.list_print print_simple
-	(fun _ -> print_string ","; Format.close_box(); Format.open_box 0)
+      Printer.print_sep_list 
+	(print_simple, ",")
 	(self#get());
       Format.close_box();
       Format.close_box();
@@ -721,11 +721,84 @@ let rec string_term_inf inf i x =
 let string_inf_term inf x = string_term_inf inf 0 x
 
 
+let retype tyenv t=
+  let qenv=empty_table()
+  in 
+  let rec retype_aux t =
+    match t with
+      Var(n, ty) -> Var(n, Gtypes.mgu ty tyenv)
+    | Bound(q) -> 
+	(try table_find t qenv
+	with Not_found -> t)
+    | Const(c) -> t
+    | Typed(trm, ty) -> retype_aux trm
+    | App(f, a) -> 
+	App(retype_aux f, retype_aux a)
+    | Qnt(q, b) ->
+	(let (_, oqnt, oqnm, oqty, _) = dest_qnt t
+	in 
+	let nty = Gtypes.mgu oqty tyenv
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	table_add (Bound(q)) (Bound(nq)) qenv;
+	let rt= Qnt(nq, retype_aux b)
+	in 
+	table_remove (Bound(q)) qenv; rt)
+  in 
+  retype_aux t
+
+(* retype_pretty: 
+   as for retype, make substitution for type variables
+   but also replace other type variables with new, prettier names 
+ *)
+
+let retype_pretty_env typenv trm=
+  let inf=ref 0
+  in 
+  let qenv=empty_table()
+  in 
+  let rec retype_aux t name_env =
+    match t with
+      Var(n, ty) -> 
+	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
+	in 
+	(Var(n, nt), nenv1)
+    | Bound(q) -> (table_find t qenv, name_env)
+    | Const(c) -> (t, name_env)
+    | Typed(trm, ty) -> retype_aux trm name_env
+    | App(f, a) -> 
+	let nf, nenv1=retype_aux f name_env
+	in let na, nenv2=retype_aux a nenv1
+	in 
+	(App(nf, na), nenv2)
+    | Qnt(q, b) ->
+	(let (_, oqnt, oqnm, oqty, _) = dest_qnt t
+	in 
+	let nty, nenv1 =Gtypes.mgu_rename_env inf typenv name_env oqty
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	table_add (Bound(q)) (Bound(nq)) qenv;
+	let nb, nenv2=retype_aux b nenv1
+	in let rt= Qnt(nq, nb)
+	in 
+	table_remove (Bound(q)) qenv; (rt, nenv2))
+  in 
+  retype_aux trm (Gtypes.empty_subst())
+
+
+let retype_pretty typenv trm = 
+  let nt, _ = retype_pretty_env typenv trm
+  in nt
+
+(*
 let print prenv x = 
   Format.open_box 2;
   print_string 
     (string_inf_term  prenv x);
   Format.close_box()
+*)
 
 let rec print_termlist prenv x =
   match x with 
@@ -735,6 +808,15 @@ let rec print_termlist prenv x =
 
 (* pretty printing *)
 
+
+let pplookup_id ppstate id =
+  try
+    (Printer.get ppstate.Printer.term_info id)
+  with Not_found -> 
+    Printer.mk_record 
+      Printer.default_term_prec
+      Printer.default_term_fixity
+      None
 
 let print_meta qnt =
   let _, qv, qty = dest_binding qnt 
@@ -746,13 +828,56 @@ let print_meta qnt =
   Format.print_string ")";
   Format.close_box()
 
+let print_typed_name ppstate (n, ty)=
+  Format.open_box 2;
+  Printer.print_string "(";
+  Printer.print_string n;
+  Format.print_cut();
+  Printer.print_string ": ";
+  Gtypes.print (ppstate) ty;
+  Printer.print_string ")";
+  Format.close_box()
 
-let rec print_term_aux ppstate tyinfo i x =
+
+let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
+  Printer.print_operator
+    (fnpr, 
+     (fun pr l -> 
+       Printer.print_list
+	 (argpr pr, Printer.print_space) l),
+     (pplookup_id ppstate),
+     Printer.get_printer)
+    prec (f, args)
+
+let print_typed_term tpr ppstate prec (trm, ty)=
+  Format.open_box 2;
+  Printer.print_string "(";
+  tpr ppstate prec trm;
+  Printer.print_string ")";
+  Format.print_cut();
+  Printer.print_string ": ";
+  Gtypes.print_type ppstate 0 ty;
+  Format.close_box()
+
+let print_qnt ppstate q =
+  let _, qvar, qtyp = dest_binding q 
+  in 
+  print_typed_name ppstate (qvar, qtyp)
+
+let print_qnts ppstate prec (qnt, qs) =
+  Printer.print_string (Basic.quant_string qnt);
+  Printer.print_list
+    (print_qnt ppstate, 
+     Printer.print_space) 
+    qs;
+  Printer.print_string ":";
+  Format.print_cut()
+
+let rec print_term ppstate prec x =
   match x with
     Var(n, ty) -> 
-      (let _, _, repr = Printer.get_term_info ppstate n
-      in 
-      Printer.print_identifier n repr);
+      Printer.print_identifier 
+	(pplookup_id ppstate) n;
       Format.print_cut()
   | Bound(n) -> 
       Format.print_string ((get_binder_name x));
@@ -761,25 +886,31 @@ let rec print_term_aux ppstate tyinfo i x =
       Format.print_string (Basic.string_const c);
       Format.print_cut()
   | Typed (trm, ty) -> 
-      print_typed_term ppstate tyinfo i trm ty;
+      print_typed_term print_term ppstate prec (trm, ty);
       Format.print_cut()
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
       (match args with 
-	[] -> print_term_aux ppstate tyinfo i f
+	[] -> print_term ppstate prec f
       | _ -> 
 	  (if is_var f 
-	  then (print_fn_app ppstate tyinfo i f args)
+	  then 
+	    (let n, ty=dest_var f
+	    in 
+	    print_fn_app 
+	      ((fun _ -> 
+		Printer.print_identifier 
+		  (pplookup_id ppstate)),
+	       print_term ppstate)
+	      ppstate prec (n, args))
 	  else 
 	    (Format.open_box 2;
-	     Format.print_string "(";
-	     print_term_aux ppstate tyinfo i f;
-	     Format.print_space();
-	     Printer.list_print 
-	       (print_term_aux ppstate tyinfo i)
-	       (fun () -> Format.print_space()) args;
-	     Format.print_string")";
+	     Printer.print_string "(";
+	     Printer.print_list
+	       (print_term ppstate prec, Printer.print_space)
+	       (f::args);
+	     Printer.print_string ")";
 	     Format.close_box())));
       Format.print_cut()
   | Qnt(q, body) -> 
@@ -787,99 +918,20 @@ let rec print_term_aux ppstate tyinfo i x =
       in 
       let (qnts, b) = (strip_qnt qnt x)
       in 
-      let print_qnts qs =
-	Format.print_string (Basic.quant_string qnt);
-	Printer.list_print (print_qnt ppstate tyinfo)
-	  (fun () -> Format.print_space()) qnts;
-	Format.print_string ":";
-	Format.print_cut();
-      in 
       let ti = (Basic.prec_qnt (qnt))
       in 
       Format.open_box 3;
-      Printer.print_bracket ti i "(";
-      print_qnts qnts;
-      Format.print_space();
-      print_term_aux ppstate tyinfo ti b;
-      Printer.print_bracket ti i ")";
+      Printer.print_bracket prec ti "(";
+      print_qnts ppstate prec (qnt, qnts); 
+      Printer.print_space ();
+      print_term ppstate ti b;
+      Printer.print_bracket prec ti ")";
       Format.close_box();
       Format.print_cut()
-and 
-    print_fn_app ppstate tyinfo i f args=
-  let print_infix repr ti args =
-    match args with
-      (l::rargs) -> 
-	(Format.open_box 2;
-	 print_term_aux ppstate tyinfo ti l;
-	 Format.print_space();
-	 print_term_aux ppstate tyinfo ti f;
-	 Format.print_space();
-	 Printer.list_print (print_term_aux ppstate tyinfo ti)
-	   (fun () -> Format.print_space()) rargs;
-	 Format.close_box();
-	 Format.print_cut())
-    | _ -> 
-	Format.open_box 2;
-	Printer.list_print (print_term_aux ppstate tyinfo ti)
-	  (fun () -> Format.print_space()) args;
-	 Format.print_space();
-	print_term_aux ppstate tyinfo ti f;
-	Format.close_box();
-	Format.print_cut()
-  and print_suffix ti args =
-    Format.open_box 2;
-    (Printer.list_print (print_term_aux ppstate tyinfo ti)
-       (fun () -> Format.print_space()) args);
-    Format.print_space();
-    print_term_aux ppstate tyinfo ti f;
-    Format.close_box();
-    Format.print_cut()
-  in 
-  let name, _= dest_var f
-  in let pr, fixity, repr = Printer.get_term_info ppstate name
-  in let ti = if pr <= i then pr else i
-  in
-  Printer.print_bracket pr i "(";
-  (if (Printer.is_infix fixity) 
-  then print_infix repr ti args
-  else 
-    if (Printer.is_suffix fixity)
-    then print_suffix ti args
-    else Printer.list_print 
-	(print_term_aux ppstate tyinfo ti)
-	(fun () -> Format.print_space()) (f::args));
-  Printer.print_bracket pr i ")";
-  Format.print_cut()
-and 
-    print_typed_term ppstate tyinfo i trm ty=
-  Format.open_box 2;
-  Format.print_string "(";
-  print_term_aux ppstate tyinfo i trm;
-  Format.print_string ")";
-  Format.print_cut();
-  Format.print_string ": ";
-  Gtypes.print_type_info ppstate tyinfo 0 ty;
-  Format.close_box()
-and 
-    print_typed_name ppstate tyinfo n ty=
-  Format.open_box 2;
-  Format.print_string "(";
-  Format.print_string n;
-  Format.print_cut();
-  Format.print_string ": ";
-  Gtypes.print_type_info ppstate tyinfo 0ty;
-  Format.print_string ")";
-  Format.close_box()
-and print_qnt ppstate tyinfo q =
-  let _, qvar, qtyp = dest_binding q 
-  in 
-  print_typed_name ppstate tyinfo qvar qtyp
 
 let print ppstate x = 
-  let tyinfo=ref (Gtypes.empty_printer_info())
-  in 
   Format.open_box 0;
-  print_term_aux ppstate tyinfo 0 x;
+  print_term ppstate 0 (retype_pretty (Gtypes.empty_subst()) x);
   Format.close_box()
 
 (* Error handling *)
@@ -893,11 +945,8 @@ class termError s ts =
       Format.open_box 0; print_string ((self#msg())^" "); 
       Format.print_newline();
       Format.open_box 0; 
-      Printer.list_print (print st) 
-	(fun _ -> Format.print_string ","; 
-	  Format.print_break 1 2; 
-	  Format.close_box(); Format.open_box 0)
-	(self#get());
+      Printer.print_sep_list 
+	(print st, ",") (self#get());
       Format.close_box();
       Format.close_box();
   end

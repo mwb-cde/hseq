@@ -38,6 +38,7 @@ val simple_typecheck_env: Gtypes.scope
     -> Term.term   -> Gtypes.gtype 
       -> Gtypes.substitution
 	  
+(*
 (* reset the types in a term using a given context/subsitution *)
 (* substitutes variables with their concrete type in the context *)
 val retype: Gtypes.substitution -> Term.term -> Term.term
@@ -59,7 +60,7 @@ val retype_pretty_env: Gtypes.substitution -> Term.term
 
 val retype_pretty: Gtypes.substitution -> Term.term 
   -> Term.term 
-
+*)
 
 (* Assign the variable types in a term their required type
    to ensure well typed term, returning the required subsititution 

@@ -307,6 +307,14 @@ val addtypeError : string ->gtype list -> exn -> 'a
    val print_type : Basic.PP.info -> gtype -> unit
 *)
 
+(** 
+   [ppinfo]
+   Pretty printing information for types.
+   Added printers have type [(Basic.type_const * Gtypes list) printer].
+*)
+(*
+type ppinfo = (Basic.ident * gtype list) Printer.info
+*)
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)
@@ -321,12 +329,11 @@ Rename type variables, using table [tbl], generating consistent pretty
 variable names.
 Update [tbl] with the new substitution of new names for old 
 *)
-val print_type_info : 
-    Printer.info -> printer_info ref 
-      -> int -> gtype -> unit
 
 (* print_type renamed to print *)
-val print : Printer.info -> gtype -> unit
+val print_type : Printer.ppinfo -> int -> gtype Printer.printer
+
+val print : Printer.ppinfo -> gtype Printer.printer
 
 (* set names in a type to their long form *)
 

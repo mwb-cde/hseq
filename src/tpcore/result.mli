@@ -10,18 +10,18 @@ class message :
     string ->
       object 
 	method msg : unit -> string 
-	method print : Printer.info -> unit 
+	method print : Printer.ppinfo -> unit 
       end
 class error :
     string ->
       object 
 	method msg : unit -> string 
-	method print : Printer.info -> unit 
+	method print : Printer.ppinfo -> unit 
       end
 class errormsg :
   object 
     method msg : unit -> string 
-    method print : Printer.info -> unit 
+    method print : Printer.ppinfo -> unit 
   end
 exception Error of error list
 
@@ -32,7 +32,7 @@ val catchError : error -> exn -> exn
 val raiseError : string -> 'a
 
 (* basic printer *)
-val print_error : Printer.info -> int -> exn -> unit
+val print_error : Printer.ppinfo -> int -> exn -> unit
 
 
 (* warnings *)
