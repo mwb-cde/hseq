@@ -23,6 +23,11 @@
 #install_printer Display.print_defn;;
 #install_printer Display.print_theory;;
 
+open Goals;;
+open Commands;;
+open Tactics;;
+open Bool_tacs;;
+
 let _ =
   Format.open_box 0;
   Format.print_string "Initialising\n";
@@ -31,7 +36,3 @@ let _ =
   Tpenv.add_thy_path "../thys";
   Tpenv.init()
 
-open Goals;;
-open Commands;;
-open Tactics;;
-open Bool_tacs;;
