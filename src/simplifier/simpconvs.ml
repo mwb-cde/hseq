@@ -1,3 +1,8 @@
+let log_message = ref None
+let log x = log_message:=Some x
+
+let log_tac x g = log x; Tactics.skip g
+
 (* 
    Function to prepare theorems and assumptions being added to a simpset.
  *)
@@ -137,6 +142,250 @@ module Simpconvs =
 	  nthm
       | Some(x) -> x
 
+(** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
+
+let neg_all_conv scp trm=
+  if(not (Logicterm.is_neg trm))
+  then failwith "neg_all_conv: not a negation"
+  else 
+    let (_, trmbody) = Term.dest_unop trm
+    in 
+    let (aqvars, aqbody) = Term.strip_qnt Basic.All trmbody
+    in 
+    (match aqvars with 
+      [] -> 
+	failwith 
+	  "neg_all_conv: body of negation is not universally quantified"
+    | _ -> ());
+    let eqvars = 
+      List.map 
+	(fun b ->
+	  let (_, n, ty) = Basic.dest_binding b
+	  in Basic.mk_binding Basic.Ex n ty) 
+	aqvars
+    in 
+    let eqbody =
+      let nsubst = 
+	List.fold_left2 
+	  (fun s l r -> Term.bind l r s)
+	  (Term.empty_subst())
+	  (List.map Term.mk_bound aqvars)
+	  (List.map Term.mk_bound eqvars)
+      in 
+      Term.subst nsubst aqbody
+    in 
+    let newterm= 
+      Term.rename 
+	(Drule.rebuild_qnt Basic.Ex eqvars (Logicterm.mk_not eqbody))
+    in 
+    let goal_term = 
+      Logicterm.mk_equality trm newterm
+    in 
+    let info = Drule.mk_info()
+    in
+    let proof g= 
+      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+	   Logic.Rules.conjC None (fnum 1)
+	     --
+	     [
+	      seq 
+	      [Logic.Rules.implC (Some info) (fnum 1);
+	      (fun g1 ->
+		let atag, ctag = 
+		  Lib.get_two (Drule.formulas info) 
+		    (Failure "neg_all_conv: 1")
+		in 
+		ignore(Drule.empty_info info);
+		seq
+		  [
+		   Logic.Rules.negA (Some(info)) (ftag atag);
+		   log_tac "negA: 1";
+		   (fun g2-> 
+		     let ctag2 = 
+		       Lib.get_one (Drule.formulas info)
+			 (Failure "neg_all_conv: 2")
+		     in 
+		     ignore(Drule.empty_info info);
+		     seq
+		       [repeat (Logic.Rules.allC (Some info) (ftag ctag2));
+			(fun g3 -> 
+			Boollib.inst_concl ~c:(ftag ctag)
+			  (List.rev (Drule.constants info)) g3);
+			add_info_tac 
+			  (fun () -> ignore(Drule.empty_info info)) ();
+			log_tac "negC: 1.1";
+			Logic.Rules.negC (Some info) (ftag ctag);
+			log_tac "negC: 1.2";
+			(fun g3 ->
+			  let atag3 = 
+			    Lib.get_one (Drule.formulas info)
+			      (Failure "neg_all_conv: 3")
+			  in 
+			  ignore(Drule.empty_info info);
+			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
+		      ] g2)] g1)];
+	      
+	      seq 
+	      [Logic.Rules.implC (Some info) (fnum 1);
+	      (fun g1 ->
+		let atag, ctag = 
+		  Lib.get_two (Drule.formulas info) 
+		    (Failure "neg_all_conv: 4")
+		in 
+		ignore(Drule.empty_info info);
+		seq
+		  [
+		   Logic.Rules.negC (Some(info)) (ftag ctag);
+		   log_tac "negC: 2";
+		   (fun g2-> 
+		     let atag2 = 
+		       Lib.get_one (Drule.formulas info)
+			 (Failure "neg_all_conv: 2")
+		     in 
+		     ignore(Drule.empty_info info);
+		     seq
+		       [repeat (Logic.Rules.existA (Some info) (ftag atag));
+			(fun g3 -> 
+			Boollib.inst_asm ~a:(ftag atag2)
+			  (List.rev (Drule.constants info)) g3);
+			add_info_tac 
+			  (fun () -> ignore(Drule.empty_info info)) ();
+			Logic.Rules.negA (Some info) (ftag atag);
+			log_tac "negA: 2";
+			(fun g3 ->
+			  let atag3 = 
+			    Lib.get_one (Drule.formulas info)
+			      (Failure "neg_all_conv: 3")
+			  in 
+			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
+		      ] g2)] g1)]]
+    ] g
+    in 
+    Goals.prove_goal scp goal_term proof
+
+
+
+(** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
+
+let neg_exists_conv scp trm=
+  if(not (Logicterm.is_neg trm))
+  then failwith "neg_all_conv: not a negation"
+  else 
+    let (_, trmbody) = Term.dest_unop trm
+    in 
+    let (eqvars, eqbody) = Term.strip_qnt Basic.Ex trmbody
+    in 
+    (match eqvars with 
+      [] -> 
+	failwith 
+	  "neg_all_conv: body of negation is not universally quantified"
+    | _ -> ());
+    let aqvars = 
+      List.map 
+	(fun b ->
+	  let (_, n, ty) = Basic.dest_binding b
+	  in Basic.mk_binding Basic.All n ty) 
+	eqvars
+    in 
+    let aqbody =
+      let nsubst = 
+	List.fold_left2 
+	  (fun s l r -> Term.bind l r s)
+	  (Term.empty_subst())
+	  (List.map Term.mk_bound eqvars)
+	  (List.map Term.mk_bound aqvars)
+      in 
+      Term.subst nsubst eqbody
+    in 
+    let newterm= 
+      Term.rename 
+	(Drule.rebuild_qnt Basic.All aqvars (Logicterm.mk_not aqbody))
+    in 
+    let goal_term = 
+      Logicterm.mk_equality trm newterm
+    in 
+    let info = Drule.mk_info()
+    in
+    let proof g= 
+      seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+	   Logic.Rules.conjC None (fnum 1)
+	     --
+	     [
+	      seq 
+	      [Logic.Rules.implC (Some info) (fnum 1);
+	      (fun g1 ->
+		let atag, ctag = 
+		  Lib.get_two (Drule.formulas info) 
+		    (Failure "neg_exists_conv: 1")
+		in 
+		ignore(Drule.empty_info info);
+		seq
+		  [
+		   Logic.Rules.negA (Some(info)) (ftag atag);
+		   log_tac "negA: 1";
+		   (fun g2-> 
+		     let ctag2 = 
+		       Lib.get_one (Drule.formulas info)
+			 (Failure "neg_all_conv: 2")
+		     in 
+		     ignore(Drule.empty_info info);
+		     seq
+		       [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+			(fun g3 -> 
+			  Boollib.inst_concl ~c:(ftag ctag2)
+			  (List.rev (Drule.constants info)) g3);
+			add_info_tac 
+			  (fun () -> ignore(Drule.empty_info info)) ();
+			log_tac "negC: 1.1";
+			Logic.Rules.negC (Some info) (ftag ctag);
+			log_tac "negC: 1.2";
+			(fun g3 ->
+			  let atag3 = 
+			    Lib.get_one (Drule.formulas info)
+			      (Failure "neg_exists_conv: 3")
+			  in 
+			  ignore(Drule.empty_info info);
+			  Logic.Rules.basic None (ftag atag3) (ftag ctag2) g3)
+		      ] g2)] g1)];
+	      
+	      seq 
+	      [Logic.Rules.implC (Some info) (fnum 1);
+	      (fun g1 ->
+		let atag, ctag = 
+		  Lib.get_two (Drule.formulas info) 
+		    (Failure "neg_exists_conv: 4")
+		in 
+		ignore(Drule.empty_info info);
+		seq
+		  [
+		   Logic.Rules.negC (Some(info)) (ftag ctag);
+		   log_tac "negC: 2";
+		   (fun g2-> 
+		     let atag2 = 
+		       Lib.get_one (Drule.formulas info)
+			 (Failure "neg_exists_conv: 2")
+		     in 
+		     ignore(Drule.empty_info info);
+		     seq
+		       [repeat (Logic.Rules.existA (Some info) (ftag atag2));
+			(fun g3 -> 
+			Boollib.inst_asm ~a:(ftag atag)
+			  (List.rev (Drule.constants info)) g3);
+			add_info_tac 
+			  (fun () -> ignore(Drule.empty_info info)) ();
+			Logic.Rules.negA (Some info) (ftag atag);
+			log_tac "negA: 2";
+			(fun g3 ->
+			  let atag3 = 
+			    Lib.get_one (Drule.formulas info)
+			      (Failure "neg_exists_conv: 3")
+			  in 
+			  Logic.Rules.basic None (ftag atag2) (ftag atag3) g3)
+		      ] g2)] g1)]]
+    ] g
+    in 
+    Goals.prove_goal scp goal_term proof
+
 (* 
    [rule_true_ax]:  |- !x: x = (x=true) 
  *)
@@ -150,7 +399,8 @@ module Simpconvs =
 	((flatten_tac ++ (cut_thm "bool_cases") ++ (allA << x_1 >>) ++ disjA)
 	   -- 
 	   [basic;
-	    rewrite_tac [Commands.lemma "false_def"]++replace_tac ++ flatten_tac])
+	    rewrite_tac [Commands.lemma "false_def"]
+	      ++ replace_tac ++ flatten_tac])
       in
       let rule_true_l3 = 
 	Goals.prove <<! x: x iff (x=true)>>
