@@ -380,8 +380,8 @@ let get_alpha str =
   let test c= (is_alpha c) or (is_special_alpha c) or (is_digit c)
   in 
   get_while test str
-    
 
+(*
 let mk_id str = Lib.chop_at '.' str      
 
 let match_alpha symtable inp =
@@ -403,7 +403,7 @@ let match_alpha symtable inp =
       with Not_found ->  mk_ident (Basic.mklong th n)
     in (true, tok)
   else (false, null_tok)
-
+*)
 (* match_identifier:
    match a string 
    beginning with an alphabetic character
@@ -460,7 +460,7 @@ let get_sep_list init_test body_test sep_test strm=
 
 let is_identifier_char c = (is_alpha c) or (is_special_alpha c) or (is_digit c)
 
-let match_identifier symtable inp =
+let match_identifier inp =
   if (stream_test is_alpha inp)
   then 
     match (get_sep_list is_alpha is_identifier_char is_dot inp) with
@@ -501,105 +501,7 @@ let match_keywords symtable strm =
     with Not_found -> (false, null_tok)
 
 
-(* 
-   match_symbolic symtbl strm
-   try to match an identifier formed from symbolic characters.
-   identifier can have a theory identifier, but this must be
-   alpha_numeric.
 
-   symbolic identifiers are those made up of characters
-   in symbolic_chars.
-
-   the symbol table symtbl is checked for a matching keyword, 
-   which will take precedence.
-*)
-
-(*
-let symbolic_chars = ['#'; '?'; '+'; '*'; '/';  
-		      '='; '>'; '<'; '&'; '%'; '@'; 
-		      '!'; ','; ':'; '_'; '|'; '~'; '-'];;
-
-let is_symbolic c = List.mem c symbolic_chars
-
-let get_while test strm=
-  let buff=ref []
-  in 
-  let rec get_aux () = 
-    if(stream_empty strm)
-    then ()
-    else
-      let c=stream_peek strm
-      in 
-      if (test c) 
-      then
-	(ignore(Stream.next strm); buff:=c::(!buff); get_aux())
-      else ()
-  in 
-  get_aux(); 
-  string_implode (List.rev (!buff))
-
-let alt_get_alpha strm =
-  let th= ref None
-  and nm = ref None
-  in 
-  let alpha_test c= (is_alpha c) or (is_special_alpha c) or (is_digit c)
-  in 
-  let just_alpha()= get_while alpha_test strm 
-  in 
-  let alpha_symbolic ()=
-      (ignore(Stream.next strm);   (* remove it from the input stream *)
-       if(is_alpha (stream_peek strm))  (* next is alpha-numeric *)
-       then 
-	 get_while alpha_test strm
-       else
-	if (is_symbolic (stream_peek strm))  (* next is symbolic *) 
-	then
-	  get_while is_symbolic strm
-	else 
-	  raise (Lexing (0, 0)))
-  in 
-  let rslt =
-    (if(is_alpha (stream_peek strm))
-    then  (* either th.nm or nm *)
-      (th:=Some(just_alpha()); 
-       if is_dot (stream_peek strm) (* got a dot *)	
-       then 
-	 nm:=Some(alpha_symbolic())
-       else
-	 (nm:=!th; th:=None))
-    else 
-      (* symbolic identifer *)
-      nm:=Some(alpha_symbolic()))
-  in 
-  (!th, !nm)
-
-let get_symbolic strm= 
-  match (alt_get_alpha strm) with
-    (th, None) -> raise (Lexing (0, 0))
-  | (th, Some(nm)) -> (th, nm)
-
-let match_alpha_symbolic symtable strm inp=
-  let match_aux() =
-    if(is_symbolic (stream_peek inp))
-    then 
-      let tok =
-	(let th, n = get_symbolic inp 
-	in 
-	match th with
-	  None -> 
-	    (try 
-	      let sym_tok=find_sym symtable n
-	      in 
-	      sym_tok
-	    with Not_found ->  mk_ident (Basic.mkname n))
-	| Some(t) -> mk_ident (Basic.mklong t n))
-      in (true, tok)
-    else (false, null_tok)
-  in   
-      try
-	match_aux()
-      with Lexing _-> (false, null_tok)
-*)
 
 (* toplevel lexing functions *)
 
@@ -625,13 +527,7 @@ let match_alpha_symbolic symtable strm inp=
       if key then tok
       else 
 (* not a symbol, try alpha-numeric (identifier) *)
-(*
-	let is_alpha_tok, alpha_tok = match_alpha symtable str
-	in 
-	if is_alpha_tok then alpha_tok
-	else 
-*)
-	let is_alpha_tok, alpha_tok = match_identifier symtable str
+	let is_alpha_tok, alpha_tok = match_identifier str
 	in 
 	if is_alpha_tok then alpha_tok
 	else 

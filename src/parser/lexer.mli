@@ -152,9 +152,12 @@ val get_sep_list:
 
 val get_alpha : char Stream.t -> string
 val get_while: (char -> bool) -> char Stream.t -> string
-val match_alpha : symtable -> char Stream.t -> bool * tok
 
-val match_identifier : symtable -> char Stream.t -> bool * tok
+(*
+val match_alpha : symtable -> char Stream.t -> bool * tok
+*)
+
+val match_identifier : char Stream.t -> bool * tok
 
 val match_keywords : symtable -> char Stream.t -> bool * tok
 
