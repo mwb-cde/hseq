@@ -403,7 +403,9 @@ let add scp dir fs (t, net) =
   let nnet =   
     (List.fold_left 
        (fun n (qs, a, b) -> 
-      	 Net.enter (is_free_binder qs) (a, (qs, a, b)) n) net rs)
+	 Net.add (is_free_binder qs) n a (qs, a, b)) net rs)
+      	 (* Net.enter (is_free_binder qs) (a, (qs, a, b)) n) net rs*)
+
   in nnet
 
 let rewrite_net scp  rrnet f =
