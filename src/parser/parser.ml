@@ -481,11 +481,11 @@ module Grammars  =
  *)
     let mk_type_binary_constr inf t=
       let lookup x =
-	try inf.token_info x
+	try inf.type_token_info x
 	with Not_found -> None
       in 
       match t with
-	Sym RIGHTARROW -> Gtypes.mk_fun
+(*	Sym RIGHTARROW -> Gtypes.mk_fun *)
       | ID(s) -> (fun x y -> Gtypes.mk_def s [x;y])
       | _ ->
 	  match (lookup t) with
@@ -501,7 +501,7 @@ module Grammars  =
  *)
     let mk_type_unary_constr inf t=
       let lookup x =
-	try inf.token_info x
+	try inf.type_token_info x
 	with Not_found -> None
       in 
       match t with
@@ -529,7 +529,7 @@ module Grammars  =
       let comp x= 
 	match x with 
 	  ID _ -> true
-	| Sym(RIGHTARROW) -> true
+(*	| Sym(RIGHTARROW) -> true *)
 	| _ -> 
 	    match (get_info x) with
 	      Some (name, _, _) -> true
@@ -537,7 +537,7 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
-	| Sym(RIGHTARROW) -> Basic.mk_name "->"
+(*	| Sym(RIGHTARROW) -> Basic.mk_name "->" *)
 	| _ -> 
 	    (match (get_info x) with
 	      Some(name, _, _) -> name
@@ -1060,7 +1060,7 @@ let syms_list =
    ("(", Sym ORB);
    (")", Sym CRB); 
    (",", Sym COMMA);
-   ("->", Sym RIGHTARROW); 
+(*    ("->", Sym RIGHTARROW);  *)
    ("'", Sym PRIME);
    (":", Sym COLON);
    ("true", BOOL true); ("false", BOOL false);
@@ -1086,7 +1086,9 @@ let type_reserved_words =  []
 let token_info_list = [ ]
 
 let type_token_info_list =
-  [ (Sym RIGHTARROW, Some(Basic.null_id, infix right_assoc, 6)) ]
+  [
+(* (Sym RIGHTARROW, Some(Basic.null_id, infix right_assoc, 6)) *)
+ ]
 
 (* Symbol tables *)
 
@@ -1149,7 +1151,7 @@ let add_token id sym fx pr=
 
 let add_type_token id sym fx pr=
   add_symbol sym (Sym (OTHER sym));
-  remove_type_token_info (Sym(OTHER sym))
+  add_type_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
 
 let remove_token sym=
   remove_symbol sym;

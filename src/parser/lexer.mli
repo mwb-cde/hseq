@@ -7,7 +7,7 @@ type symbols =
   | COMMA
   | ORB
   | CRB
-  | RIGHTARROW
+(*  | RIGHTARROW *)
   | PRIME
   | COLON
   | OTHER of string

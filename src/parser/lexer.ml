@@ -4,7 +4,9 @@
   exception Lexing of (int * int)
 
   type symbols =
-      DOT | COMMA | ORB | CRB | RIGHTARROW | PRIME | COLON 
+      DOT | COMMA | ORB | CRB 
+(*    |  RIGHTARROW *)
+    | PRIME | COLON 
     | OTHER of string
     | NULL_SYMBOL
 
@@ -37,7 +39,7 @@
     | Sym COMMA -> ","
     | Sym ORB -> "("
     | Sym CRB -> ")"
-    | Sym RIGHTARROW -> "->"
+(*    | Sym RIGHTARROW -> "->" *)
     | Sym PRIME -> "'"
     | Sym COLON -> ":"
     | Sym (OTHER s) -> s
@@ -64,7 +66,7 @@
     | Sym COMMA -> ","
     | Sym ORB -> "("
     | Sym CRB -> ")"
-    | Sym RIGHTARROW -> "->"
+(*    | Sym RIGHTARROW -> "->" *)
     | Sym PRIME -> "'"
     | Sym COLON -> ":"
     | Sym (OTHER s) -> s
