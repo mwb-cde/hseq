@@ -147,13 +147,15 @@ val beta_reduce : Gtypes.scope -> form -> form
 val eta_conv: Gtypes.scope -> form -> Basic.gtype -> form -> form
 
 (* rewriting *)
+val default_rr_control : Rewrite.control
+
 val rewrite : 
-Gtypes.scope -> ?dir:Rewrite.direction 
+Gtypes.scope -> ?ctrl:Rewrite.control
   -> form list-> form -> form
 
 (* rewriting with a given type environment *)
 val rewrite_env : 
-    Gtypes.scope -> ?dir:Rewrite.direction
+    Gtypes.scope -> ?ctrl:Rewrite.control
       -> Gtypes.substitution 
 	-> form list-> form -> (form * Gtypes.substitution)
 (*

@@ -548,17 +548,18 @@ module Rules:
       val name_rule : info option -> string -> Basic.term -> rule
 
 
-(* rewrite dir thms j sq:
+(* rewrite ctrl thms j sq:
    list of theorems or assumptions containing x=y
    asm |- P(x), concl
    -->
    asm |- P(y), concl
-   where dir is =true for right-left and false for left-right
+
+   where ctrl is the rewriting control.
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
  *)
       val rewrite : info option 
-	-> ?dir:Rewrite.direction -> ?simple:bool 
+	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> rule
 
     end
@@ -582,7 +583,7 @@ module ThmRules:
 
 (* rewrite_conv: apply rewrite, fail if any rewrite fails *)
       val rewrite_conv: 
-	  Gtypes.scope -> ?dir:Rewrite.direction
+	  Gtypes.scope -> ?ctrl:Rewrite.control
 	    -> thm list -> thm -> thm
     end
 

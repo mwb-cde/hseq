@@ -285,8 +285,8 @@ module Sequent=
       let rec get_aux ams = 
 	match ams with
 	  [] -> raise Not_found
-	| x::xs -> 
-	    if Tag.equal (form_tag x) t then x
+	| (xt, xf)::xs -> 
+	    if Tag.equal xt t then (xt, rename xf)
 	    else get_aux xs
       in 
       get_aux (asms sq)
@@ -295,8 +295,8 @@ module Sequent=
       let rec get_aux ccs = 
 	match ccs with
 	  [] -> raise Not_found
-	| x::xs -> 
-	    if Tag.equal (form_tag x) t then x
+	| (xt, xf)::xs -> 
+	    if Tag.equal xt t then (xt, rename xf)
 	    else get_aux xs
       in 
       get_aux (concls sq)
@@ -1218,9 +1218,11 @@ module Rules=
       simple_sqnt_apply (implC0  inf (dest_label i (get_sqnt g))) g
 
 (* implA i sq
-   g| t:a-> b,asms |-cncl 
+   g| t:a => b,asms |-cncl 
    -->
-   g'| asms |- t:a, cncl  and  g| t:b, asms |- cncl
+   g'| asms |- t:a, cncl  
+   and  
+   g| t:b, asms |- cncl
 
    info: [g'; g]  [t]
 
@@ -1610,12 +1612,12 @@ module Rules=
       sqnt_apply (allA0 inf trm (dest_label i (get_sqnt g))) g
 
 
-(* rewrite dir simple thms j sq:
+(* rewrite ctrl simple thms j sq:
    list of theorems or assumptions containing x=y
    asm |- t:P(x), concl
    -->
    asm |- t:P(y), concl
-   where dir is =true for right-left and false for left-right
+   where ctrl is the rewrite control
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
    info: [] [t] []
@@ -1646,7 +1648,7 @@ module Rules=
 	      _ -> ft xs rslt
       in ft rls []
 
-    let rewrite0 inf dir simple rls j tyenv sq=
+    let rewrite0 inf ctrl rls j tyenv sq=
       let scp = Sequent.scope_of sq
       in 
       let r=filter_rules scp rls j sq
@@ -1655,7 +1657,7 @@ module Rules=
       in 
       try
 	(let nt, ntyenv = 
-	  Formula.rewrite_env scp ~dir:dir tyenv r t
+	  Formula.rewrite_env scp ~ctrl:ctrl tyenv r t
 	in 
 	let gtyenv = 
 	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
@@ -1678,9 +1680,11 @@ module Rules=
       with x -> raise 
 	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
-    let rewrite inf ?(dir=Rewrite.leftright) ?(simple=false) rls j g=
+    let rewrite inf ?ctrl rls j g=
+      let rrc = Lib.get_option ctrl Formula.default_rr_control
+      in 
       sqnt_apply 
-	(rewrite0 inf dir simple rls 
+	(rewrite0 inf rrc rls 
 	   (dest_label j (get_sqnt g))) g
 
 
@@ -1755,13 +1759,13 @@ module ThmRules=
       with e -> 
 	raise (Result.add_error (logicError "eta_conv" []) e)
 
-    let rewrite_conv scp ?(dir=Rewrite.leftright) rrl thm =
+    let rewrite_conv scp ?(ctrl=Formula.default_rr_control) rrl thm =
       let conv_aux t = 
 	try 
 	  let f= dest_thm t
 	  and rs=List.map (fun x -> Formula.rename (dest_thm x)) rrl
 	  in 
-	  let nt =  (Formula.rewrite ~dir:dir scp rs f)
+	  let nt =  (Formula.rewrite ~ctrl:ctrl scp rs f)
 	  in mk_same_thm t nt
 	with x -> raise 
 	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
@@ -1896,10 +1900,9 @@ let print_sqnt ppinfo sq =
   in 
   (match sq_asms with
     [] -> ()
-   | _ -> (print_asm (-1) sq_asms;
-	   Format.open_box 0;
-	   Format.print_string ("----------------------"); 
-	   Format.close_box();
-	   Format.print_newline()));
-   print_cncl 1 sq_concls;
-   Format.print_newline()
+   | _ -> print_asm (-1) sq_asms);
+  Format.open_box 0;
+  Format.print_string ("----------------------"); 
+  Format.close_box();
+  Format.print_newline();
+  print_cncl 1 sq_concls
