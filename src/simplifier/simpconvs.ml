@@ -2,22 +2,265 @@
    Function to prepare theorems and assumptions being added to a simpset.
  *)
 (*
-
    #load "simputils.cmo";;
    #load "simpset.cmo";;
    #load "simplifier.cmo";;
-
    let _ = Boollib.BaseTheory.init(); Tpenv.init()
  *)
+(*
+module Simpconvs =
+  struct
+*)
+    open Simputils
+
+    open Boollib
+    open Tactics
+
+
+
+
+(* 
+   [make_n_ax()]: prove theorem n
+   [get_n_ax()]: get theorem n, proving it if necessary
+
+   [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
+ *)
+    let make_iff_equals_ax ()=
+      let iff_l1= 
+	Goals.prove << !x y: (x = y ) => (x => y) >>
+	(flatten_tac ++ replace_tac ++ basic)
+      in 
+      let iff_l2 = Goals.prove
+	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
+	(flatten_tac
+	   ++ (cut_thm "bool_cases" ++ allA <<x_1>>)
+	   ++ (cut_thm "bool_cases" ++ allA <<y_1>>)
+	   ++ split_tac 
+	   ++ 
+	   orl 
+	   [(replace_tac ++ (basic || trivial));
+            (basic || trivial);
+	    (replace_tac ++ eq_tac)])
+      in 
+      let iff_l3 = 
+	Goals.prove << !x y: (x iff y) iff (x = y) >>
+	  ((flatten_tac ++ unfold "iff" ~f:(!!1) 
+	      ++ conjC ++ flatten_tac)
+	     --
+	     [cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
+		 ++ split_tac ++ orl [ basic; flatten_tac ++ basic ];
+	      split_tac ++ flatten_tac ++ replace_tac ++ basic])
+      in 
+      Goals.prove <<!x y: (x iff y) = (x = y)>>
+      ((flatten_tac ++ cut iff_l2
+	  ++ inst_tac [<<x_1 iff y_1>>; <<x_1 = y_1>>]
+	  ++ split_tac)
+	 --
+	 [flatten_tac
+	    ++ cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
+		++ unfold "iff" ~f:(!~2)
+		++ (implA --  [basic; basic]);
+	  flatten_tac
+	    ++ replace_tac
+	    ++ unfold "iff" ~f:(!! 1)
+	    ++ split_tac ++ flatten_tac ++ basic;
+	  replace_tac
+	    ++ eq_tac])
+
+    let iff_equals_ax = ref None
+    let get_iff_equals_ax ()=
+      match !iff_equals_ax with
+	None -> 
+	  let nthm = make_iff_equals_ax()
+	  in 
+	  iff_equals_ax := Some(nthm);
+	  nthm
+      | Some(x) -> x
+
 
 (*
-   module Simpconvs =
-   struct
+   [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
  *)
-open Simputils
+    let make_equals_iff_ax ()=
+      Goals.prove << !x y: (x = y) = (x iff y) >>
+      (flatten_tac 
+	 ++ (rewrite_tac [get_iff_equals_ax()])
+	 ++ eq_tac)
 
-open Boollib
-open Tactics
+    let equals_iff_ax = ref None
+    let get_equals_iff_ax ()=
+      match !equals_iff_ax with
+	None -> 
+	  let nthm = make_equals_iff_ax()
+	  in 
+	  equals_iff_ax := Some(nthm);
+	  nthm
+      | Some(x) -> x
+
+
+(**
+   [bool_eq_ax]: |- !x y: x iff y = ((x => y) and (y=>x))
+ *)
+    let make_bool_eq_ax () = 
+      Goals.prove << !x y: (x=y) = ((x => y) and (y => x)) >>
+      (flatten_tac 
+	 ++ rewrite_tac [get_equals_iff_ax()]
+	 ++ unfold "iff"
+	 ++ (split_tac ++ flatten_tac ++ split_tac ++ flatten_tac ++ basic))
+
+    let bool_eq_ax = ref None
+    let get_bool_eq_ax ()=
+      match !bool_eq_ax with
+	None -> 
+	  let nthm = make_bool_eq_ax()
+	  in 
+	  bool_eq_ax := Some(nthm);
+	  nthm
+      | Some(x) -> x
+	    
+
+(**
+   [double_not_ax]: |- ! x: x = (not (not x))
+ *)
+    let make_double_not_ax () = 
+      Goals.prove << !x: x=(not (not x)) >> 
+      (flatten_tac ++ rewrite_tac [get_bool_eq_ax()]
+	 ++ split_tac ++ flatten_tac ++ basic)
+
+    let double_not_ax = ref None
+    let get_double_not_ax ()=
+      match !double_not_ax with
+	None -> 
+	  let nthm = make_double_not_ax()
+	  in 
+	  double_not_ax := Some(nthm);
+	  nthm
+      | Some(x) -> x
+
+(* 
+   [rule_true_ax]:  |- !x: x = (x=true) 
+ *)
+    let make_rule_true_ax ()= 
+      let rule_true_l1 =  
+	Goals.prove <<!x: (x=true) => x>> 
+	(flatten_tac ++ replace_tac ++ trivial)
+      in
+      let rule_true_l2 = 
+	Goals.prove <<!x: x => (x=true)>>
+	((flatten_tac ++ (cut_thm "bool_cases") ++ (allA << x_1 >>) ++ disjA)
+	   -- 
+	   [basic;
+	    rewrite_tac [Commands.lemma "false_def"]++replace_tac ++ flatten_tac])
+      in
+      let rule_true_l3 = 
+	Goals.prove <<! x: x iff (x=true)>>
+	  ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
+	     --
+	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
+	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
+      in 
+      Logic.ThmRules.rewrite_conv (Tpenv.scope()) 
+	[get_iff_equals_ax()] rule_true_l3
+
+    let rule_true_ax = ref None
+
+    let get_rule_true_ax ()= 
+      match !rule_true_ax with
+	None -> 
+	  let nthm =make_rule_true_ax()
+	  in 
+	  rule_true_ax:=Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+(*
+   rule_false_ax: !x: (not x) = (x=false)
+ *)
+    let make_rule_false_ax ()= 
+      Goals.prove <<! x : (not x)=(x=false)>>
+      ((flatten_tac 
+	  ++ once_rewrite_tac [get_equals_iff_ax()]
+	  ++ unfold "iff"
+	  ++ split_tac ++ flatten_tac)
+	 -- 
+	 [
+	  cut_thm "bool_cases" ++ inst_tac [<<x_1>>]
+	    ++
+	    (split_tac 
+	       ++ replace_tac 
+	       ++ (trivial || eq_tac));
+	  replace_tac ++ trivial])
+
+    let rule_false_ax = ref None
+    let get_rule_false_ax ()= 
+      match !rule_false_ax with
+	None -> 
+	  let nthm =make_rule_false_ax()
+	  in 
+	  rule_false_ax:=Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+(*
+   [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
+ *)
+    let make_cond_rule_true_ax()=
+      Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
+      (flatten_tac
+	 ++ cut (get_rule_true_ax()) ++ inst_tac [<< y_1 >>]
+	 ++ once_replace_tac
+	 ++ eq_tac)
+
+    let cond_rule_true_ax = ref None
+    let get_cond_rule_true_ax ()= 
+      match !cond_rule_true_ax with
+	None -> 
+	  let nthm =make_cond_rule_true_ax()
+	  in 
+	  cond_rule_true_ax:=Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+
+(*
+   [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
+ *)
+    let make_cond_rule_false_ax()=
+      Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
+      (flatten_tac
+	 ++ cut (get_rule_false_ax()) ++ inst_tac [<< y_1 >>]
+	 ++ once_replace_tac
+	 ++ eq_tac)
+
+    let cond_rule_false_ax = ref None
+    let get_cond_rule_false_ax ()= 
+      match !cond_rule_false_ax with
+	None -> 
+	  let nthm =make_cond_rule_false_ax()
+	  in 
+	  cond_rule_false_ax:=Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+
+(** {c6} Rewriting applied inside topmost universal quantifiers *)
+
+(** [once_rewrite_rule scp rules thm]: 
+   rewrite [thm] with [rules] once.
+ *)
+    let once_rewrite_rule scp rules thm =
+      let ctrl = {Formula.default_rr_control with Rewrite.depth=Some(1)}
+      in 
+      Logic.ThmRules.rewrite_conv ~ctrl:ctrl scp rules thm
+
+
+(** [conv_rule scp conv thm]
+   apply conversion [conv] to theorem [thm]
+ *)
+    let conv_rule scp conv thm =
+      let rule = conv scp (Formula.dest_form (Logic.dest_thm thm))
+      in 
+      once_rewrite_rule scp [rule] thm
 
 (**
    [simple_rewrite_conv scp rule trm]
@@ -25,57 +268,83 @@ open Tactics
    Form an equality from term [trm=!x .. y: body] and [rule=(l=r)] by
    descending through topmost universal quantifiers of [trm] and
    applying rewrite once only to the body of [trm]. Return the theorem
-   stating the equality [trm=(!x.. y: (body=r))].
+   stating the equality [(!x..y: body)=(!x.. y: (body=r))].
 
    e.g 
-   [rewrite_simple |- ! a: a = true,  |- !x y z: (f x y z) ]
+   [simple_rewrite_conv |- ! a: a = true,  |- !x y z: (f x y z) ]
    ->
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
-let simple_rewrite_conv scp rule trm=
-  let rule_trm =(Formula.dest_form (Logic.dest_thm rule))
-  in 
-  let rvars, rbody = 
-    Term.strip_qnt Basic.All rule_trm
-  in 
-  let rlhs, rrhs = Logicterm.dest_equality rbody
-  in 
-  let trmvars, trmbody = Term.strip_qnt Basic.All trm
-  in 
-  let info = Drule.mk_info()
-  in 
-  let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
-  in 
-  let new_goal =
-    Drule.rebuild_qnt Basic.All trmvars 
-      (Logicterm.mk_equality trmbody (Term.subst env rrhs))
-  in 
-  let proof g= 
-    (let g1=repeat (Logic.Rules.allC None (fnum 1)) g
-    in let g2= foreach (Logic.Rules.cut (Some info) rule) g1
-    in let g3=
-      let atag = 
-	Logic.FTag(Lib.get_one (!info.Logic.forms) (Failure "get_one"))
-      and ctag = Logic.FNum 1
+    let simple_rewrite_conv scp rule trm=
+      let rule_trm =(Formula.dest_form (Logic.dest_thm rule))
       in 
-      foreach 
-	((fun n -> 
-	  (Drule.inst_list 
-	     (Logic.Rules.allA None) 
-	     (Drule.unify_concl_for_consts Basic.All ~c:ctag rule_trm n)
-	     atag) n)
-	   ++ (Logic.Rules.basic None atag ctag)) g2
-    in g3)
-  in 
-  Goals.prove_goal scp new_goal proof;;
+      let rvars, rbody = Term.strip_qnt Basic.All rule_trm
+      in 
+      let rlhs, rrhs = Logicterm.dest_equality rbody
+      in 
+      let trmvars, trmbody = Term.strip_qnt Basic.All trm
+      in 
+      let info = Drule.mk_info()
+      in 
+      let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
+      in 
+      let new_goal =
+	Term.rename
+	  (Logicterm.mk_equality 
+	     (Drule.rebuild_qnt Basic.All trmvars trmbody)
+	     (Drule.rebuild_qnt Basic.All trmvars (Term.subst env rrhs)))
+      in 
+      let proof g= 
+	seq
+	  [
+	   once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+	   Logic.Rules.conjC None (fnum 1)
+	     --
+	     [
+	      seq
+		[Logic.Rules.implC (Some info) (fnum 1);
+		 (fun g1-> 
+		   let atag, ctag = 
+		     Lib.get_two (Drule.formulas info) 
+		       (Failure "simple_rewrite_conv: 1")
+		   in 
+		   seq 
+		     [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		      (fun g2 -> 
+			let trms = List.rev (Drule.constants info)
+			in 
+			seq
+			  [inst_asm ~a:(ftag atag) trms;
+			   once_rewrite_tac ~f:(ftag atag) [rule];
+			   basic] g2)] g1)];
+	      seq 
+		[(add_info_tac (fun () -> ignore(Drule.empty_info info)) ());
+		 Logic.Rules.implC (Some info) (fnum 1);
+		 (fun g1 -> 
+		   let atag, ctag = Lib.get_two (Drule.formulas info) 
+		       (Failure "simple_rewrite_conv: 1")
+
+		   in 
+		   seq 
+		     [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		      (fun g2 -> 
+			let trms = List.rev (Drule.constants info)
+			in 
+			seq
+			  [inst_asm ~a:(ftag atag) trms;
+			   once_rewrite_tac ~f:(ftag ctag) [rule];
+			   basic] g2)] g1)]]] g
+      in 
+      Goals.prove_goal scp new_goal proof;;
+
 
 (**
    [simple_rewrite_rule scp rule thm]
 
-   Apply [simple_rewrite_conv] to theore [thm].
+   Apply [simple_rewrite_conv] to theorem [thm].
  *)
 let simple_rewrite_rule scp rule thm=
-  simple_rewrite_conv scp rule (Formula.dest_form (Logic.dest_thm thm))
+  conv_rule scp (fun s -> simple_rewrite_conv s rule) thm
 
 (**
    [simple_asm_rewrite_tac rule asm]
@@ -99,191 +368,6 @@ let simple_asm_rewrite_tac rule asm node=
   in 
   once_rewrite_tac [thm] ~f:asm node
 
-(* 
-   [make_n_ax()]: prove theorem n
-   [get_n_ax()]: get theorem n, proving it if necessary
-
-   [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
- *)
-let make_iff_equals_ax ()=
-  let iff_l1= 
-    Goals.prove << !x y: (x = y ) => (x => y) >>
-    (flatten_tac ++ replace_tac ++ basic)
-  in 
-  let iff_l2 = Goals.prove
-      <<!x y: ((x => y) and (y => x)) => (x=y)>>
-    (flatten_tac
-       ++ (cut_thm "bool_cases" ++ allA <<x_1>>)
-       ++ (cut_thm "bool_cases" ++ allA <<y_1>>)
-       ++ split_tac 
-       ++ 
-       orl 
-       [(replace_tac ++ (basic || trivial));
-        (basic || trivial);
-	(replace_tac ++ eq_tac)])
-  in 
-  let iff_l3 = 
-    Goals.prove << !x y: (x iff y) iff (x = y) >>
-      ((flatten_tac ++ unfold "iff" ~f:(!!1) 
-	  ++ conjC ++ flatten_tac)
-	 --
-	 [cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-	     ++ split_tac ++ orl [ basic; flatten_tac ++ basic ];
-	  split_tac ++ flatten_tac ++ replace_tac ++ basic])
-  in 
-  Goals.prove <<!x y: (x iff y) = (x = y)>>
-  ((flatten_tac ++ cut iff_l2
-      ++ inst_tac [<<x_1 iff y_1>>; <<x_1 = y_1>>]
-      ++ split_tac)
-     --
-     [flatten_tac
-	++ cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-	    ++ unfold "iff" ~f:(!~2)
-	    ++ (implA --  [basic; basic]);
-      flatten_tac
-	++ replace_tac
-	++ unfold "iff" ~f:(!! 1)
-	++ split_tac ++ flatten_tac ++ basic;
-      replace_tac
-	++ eq_tac])
-
-let iff_equals_ax = ref None
-let get_iff_equals_ax ()=
-  match !iff_equals_ax with
-    None -> 
-      let nthm = make_iff_equals_ax()
-      in 
-      iff_equals_ax := Some(nthm);
-      nthm
-  | Some(x) -> x
-
-
-(*
-   [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
- *)
-let make_equals_iff_ax ()=
-  Goals.prove << !x y: (x = y) = (x iff y) >>
-  (flatten_tac 
-     ++ (rewrite_tac [get_iff_equals_ax()])
-     ++ eq_tac)
-
-
-let equals_iff_ax = ref None
-let get_equals_iff_ax ()=
-  match !equals_iff_ax with
-    None -> 
-      let nthm = make_equals_iff_ax()
-      in 
-      equals_iff_ax := Some(nthm);
-      nthm
-  | Some(x) -> x
-
-
-(* 
-   [rule_true_ax]:  |- !x: x = (x=true) 
- *)
-let make_rule_true_ax ()= 
-  let rule_true_l1 =  
-    Goals.prove <<!x: (x=true) => x>> 
-    (flatten_tac ++ replace_tac ++ trivial)
-  in
-  let rule_true_l2 = 
-    Goals.prove <<!x: x => (x=true)>>
-    ((flatten_tac ++ (cut_thm "bool_cases") ++ (allA << x_1 >>) ++ disjA)
-       -- 
-       [basic;
-	rewrite_tac [Commands.lemma "false_def"]++replace_tac ++ flatten_tac])
-  in
-  let rule_true_l3 = 
-    Goals.prove <<! x: x iff (x=true)>>
-      ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
-	 --
-	 [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
-	  cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
-  in 
-  Logic.ThmRules.rewrite_conv (Tpenv.scope()) 
-    [get_iff_equals_ax()] rule_true_l3
-
-let rule_true_ax = ref None
-
-let get_rule_true_ax ()= 
-  match !rule_true_ax with
-    None -> 
-      let nthm =make_rule_true_ax()
-      in 
-      rule_true_ax:=Some(nthm);
-      nthm
-  | Some(t) -> t
-
-(*
-   rule_false_ax: !x: (not x) = (x=false)
- *)
-let make_rule_false_ax ()= 
-  Goals.prove <<! x : (not x)=(x=false)>>
-  ((flatten_tac 
-      ++ once_rewrite_tac [get_equals_iff_ax()]
-      ++ unfold "iff"
-      ++ split_tac ++ flatten_tac)
-     -- 
-     [
-      cut_thm "bool_cases" ++ inst_tac [<<x_1>>]
-	++
-	(split_tac 
-	   ++ replace_tac 
-	   ++ (trivial || eq_tac));
-      replace_tac ++ trivial])
-
-let rule_false_ax = ref None
-let get_rule_false_ax ()= 
-  match !rule_false_ax with
-    None -> 
-      let nthm =make_rule_false_ax()
-      in 
-      rule_false_ax:=Some(nthm);
-      nthm
-  | Some(t) -> t
-
-(*
-   [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
- *)
-let make_cond_rule_true_ax()=
-  Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
-  (flatten_tac
-     ++ cut (get_rule_true_ax()) ++ inst_tac [<< y_1 >>]
-     ++ once_replace_tac
-     ++ eq_tac)
-
-let cond_rule_true_ax = ref None
-let get_cond_rule_true_ax ()= 
-  match !cond_rule_true_ax with
-    None -> 
-      let nthm =make_cond_rule_true_ax()
-      in 
-      cond_rule_true_ax:=Some(nthm);
-      nthm
-  | Some(t) -> t
-
-
-(*
-   [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
- *)
-let make_cond_rule_false_ax()=
-  Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
-  (flatten_tac
-     ++ cut (get_rule_false_ax()) ++ inst_tac [<< y_1 >>]
-     ++ once_replace_tac
-     ++ eq_tac)
-
-let cond_rule_false_ax = ref None
-let get_cond_rule_false_ax ()= 
-  match !cond_rule_false_ax with
-    None -> 
-      let nthm =make_cond_rule_false_ax()
-      in 
-      cond_rule_false_ax:=Some(nthm);
-      nthm
-  | Some(t) -> t
-
 
 (** 
    [asm_rewrite info thm tg g]:
@@ -299,18 +383,10 @@ let get_cond_rule_false_ax ()=
 let asm_rewrite thm tg g=
   simple_asm_rewrite_tac thm (Drule.ftag tg) g
 
-(*
-   Logic.Rules.rewrite
-   info 
-   [Logic.RRThm(thm)] (Drule.ftag tg) g
+(** 
+   {c6} Functions manipulating theorems, needed to
+   convert theorems to rewriting rules.
  *)
-
-(** [thm_rewrite scp rl thm]:
-   Rewrite theorem [thm] with rule [rl]=|- a=b in scope [scp]
-   |- a -->  |- b
- *)
-let thm_rewrite scp rl thm=
-  Logic.ThmRules.rewrite_conv scp [rl] thm
 
 (** [many_conj_conv thm]:
    Break conjunctions in theorem [thm] to a list of theorems
@@ -319,7 +395,6 @@ let thm_rewrite scp rl thm=
    -->
    |- a ; |- b ; |- c ; ..
  *)
-
 let many_conj_conv thm=
   let rec many_aux t ths=
     if(Formula.is_conj (Logic.dest_thm t))
@@ -335,86 +410,23 @@ let many_conj_conv thm=
 
 
 (** [negate_concl info t g]:
-   Copy conclusion with tag [t], 
-   negate it, making it assumption tagged [t'].
+   Negate conclusion [t], making it assumption tagged [t'].
 
    asms|- t:c, cncl
    -->
-   g'| t':~c, asms |- t:c, cncl
-   info [g'] [t'] []
+   t':~c, asms |- cncl
+   info [] [t'] []
  *)
-let negate_concl info concl node=
-  let inf=Drule.mk_info()
-  and inf1=Drule.mk_info()
+let negate_concl info c goal=
+  let inf= Drule.mk_info()
   in 
-  let sqnt=Drule.sequent node
+  let add_fn x = 
+    Logic.add_info info [] (Drule.formulas x) []
   in 
-  let trm = 
-    Formula.dest_form (Logic.drop_tag (Drule.get_tagged_cncl concl node))
-  in 
-  let tac1 g1 =
-    (Boollib.cases_tac ~info:inf (Logicterm.mk_not trm)) g1
-  in 
-  let tac2 g2 =
-    let ntag1=
-      Lib.get_one (Drule.formulas inf)
-	(Failure "negate_concl: failed at case split")
-    and ng1, ng2= Lib.get_two (Drule.subgoals inf)
-	(Failure "negate_concl: failed at case split information 1")
-    in 
-    ((fun n -> 
-      (Tag.equal (Drule.node_tag n) ng1))
-       -->
-	 ((Logic.Rules.negC (Some(inf1)) (ftag ntag1))
-	    ++
-	    (fun g ->
-	      let atag1=
-		Lib.get_one (Drule.formulas inf1)
-		  (Failure "negate_concl: failed at negC")
-	      in 
-	      (Logic.Rules.basic None (ftag atag1) concl) g)
-	    ++ 
-	    (fail 
-	       ~err:(Failure "negate_concl: faile to proved case split"))))
-      g2  
-  in 
-  let add_info_fn inf3 =
-    let ntag1=
-      Lib.get_one (Drule.formulas inf)
-	(Failure "negate_concl: failed at case split 1")
-    and ng1, ng2= Lib.get_two (Drule.subgoals inf)
-	(Failure "negate_concl: failed at case split information 2")
-    in 
-    Logic.add_info inf3 [ng2] [ntag1] []
-  in 
-  (tac1 
-     ++ tac2
-     ++ (add_info_tac add_info_fn info)) node
+  seq [ once_rewrite_tac [get_double_not_ax()] ~f:c;
+	Logic.Rules.negC (Some inf) c;
+	add_info_tac add_fn inf] goal
 
-(** [test_apply_tac info ttacs tg goal]
-
-   [ttacs] is a list of test-tactic pairs.
-   Each test is applied to asm tagged [tg] in first subgoal of [goal].
-   The tactic [tac] of the first test to suceed is applied to [goal].
-   [info] is passed to [tac].
-   raises Not_found if no tactic matches.
- *)
-let test_apply_tac info ttac tg goal=
-  let rec app_aux ts=
-    match ts with 
-      [] -> raise Not_found
-    | (tst, tac)::tts ->
-	if(tst 
-	     (Formula.dest_form
-		(Logic.drop_tag 
-		   (Logic.Sequent.get_tagged_asm tg 
-		      (Drule.sequent goal)))))
-	then 
-	  tac info tg goal
-	else 
-	  app_aux tts 
-  in 
-  app_aux ttac 
 
 (** Tests on theorems *)
 
@@ -445,74 +457,6 @@ let is_equality (vars, cnd, main)=
   Logicterm.is_equality main
 
 
-(** [prep_asm_rule info tg goal]:
-
-   Prepare assumption [tg] to be used as a rewrite rule.
- *)
-
-(** [is_cond_fact t]
-   [t] is of the form [a=>b] where [b] isn't an equality
- *)
-let is_cond_true_fact trm=
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  if(Logicterm.is_implies t)
-  then 
-    (let (_, args)=Term.dest_fun t
-    in 
-    let (asm, cncl)=Lib.get_two args (Not_found)
-    in 
-    not((Logicterm.is_equality cncl) or (Logicterm.is_neg cncl)))
-  else false
-
-let is_cond_false_fact trm=
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  if(Logicterm.is_implies t)
-  then 
-    (let (_, args)=Term.dest_fun t
-    in 
-    try 
-      let (asm, cncl)=Lib.get_two args (Not_found)
-      in 
-      (Logicterm.is_neg cncl)
-    with _ -> false)
-  else false
-
-let is_false_fact trm= 
-  let (_, t)=Term.strip_qnt Basic.All trm 
-  in 
-  Logicterm.is_neg t
-
-let is_true_fact t= true
-
-let cond_true_asm_to_rule info tg g=
-  asm_rewrite (get_cond_rule_true_ax()) tg g
-
-let cond_false_asm_to_rule info tg g=
-  asm_rewrite (get_cond_rule_false_ax()) tg g
-
-let false_asm_to_rule info tg g=
-  asm_rewrite (get_rule_false_ax()) tg g
-
-let true_asm_to_rule info tg g=
-  asm_rewrite (get_rule_true_ax()) tg g
-
-
-let asm_rule_makers=
-  [
-   (is_cond_false_fact, cond_false_asm_to_rule);
-   (is_cond_true_fact, cond_true_asm_to_rule);
-   (is_false_fact, false_asm_to_rule);
-   (is_true_fact, true_asm_to_rule)
- ]
-
-let prep_asm_rule info tg g=
-  test_apply_tac info asm_rule_makers tg g
-
-
-(* prepare simplifier rules *)
-
 (*
    Two types of rule: theorems and assumptions 
    for both: a formula f is transformed to T(f) as follows:
@@ -539,8 +483,7 @@ let prep_asm_rule info tg g=
  *)
 
 
-(* utility functions *)
-
+(* Utility functions *)
 
 (** [find_variables is_var vars trm]
    find all subterms [t] of [trm] s.t. [(is_var t)] is true.
@@ -608,13 +551,13 @@ let is_rr_rule qs c l r=
   (* check rhs *)
   (try
     match r with 
-      None -> rret:=None | 
-      Some (rhs) -> check_variables is_var vars rhs;
+      None -> rret:=None 
+    | Some (rhs) -> check_variables is_var vars rhs;
   with Not_found -> rret:=(Some false));
   (* check cond (if any) *)
   (try
     (match c with 
-      None -> rret:=None 
+      None -> cret:=None 
     | Some(cnd) -> check_variables is_var vars cnd)
   with Not_found -> cret:=(Some false));
   (!cret, !rret)
@@ -646,6 +589,305 @@ let strip_qnt_cond t =
 
 (* conversions for manipulating rules *)
 
+(** Functions to make simp rules from theorems *)
+
+
+(**
+   [thm_to_rule scp thm]: convert theorem [thm] to a list of theorems suitable 
+   for rewriting.
+
+   Conversion:
+   |- l=r   ->  no change, if all variables in [r] also occur in [l])
+   -> |- (l=r)=true, otherwise
+
+   |- c => l = r -> no change, if all variables in [r] and [c] 
+   also occur in [l]
+   -> |- (c=> l = r)=true, otherwise
+
+   |- a -> |- a=true
+   |- c=> a -> |- c => a=true
+   |- not a ->  |- a=false
+   |- c=> not a -> |- c => a = false
+   |- a and b -> |- a; |- b
+   |- false -> not true
+ *)
+
+(** 
+   [check_for_constant t]
+   check whether [t] is a boolean constant (true/false)
+   or in the form [l=r] where [r] is a boolean constant.
+ *)
+let check_for_constant t=
+  let r = 
+    if(Logicterm.is_equality t)
+    then 
+      let (_, _, x) = Term.dest_binop t in x
+    else t
+  in 
+  (List.exists (Term.equals r) [Term.mk_bool true; Term.mk_bool false])
+
+(** 
+   [apply_by_test lst x]
+
+   Apply each function in [lst], return the result of the first to 
+   succeed.
+
+   Fail if all functions in [lst] fail.
+ *)
+let rec apply_by_test lst x=
+  match lst with
+    [] -> raise (Failure "apply_by_test")
+  | f::ts -> 
+      try (f x) with _ -> apply_by_test ts x
+
+(** Functions to test and convert a specific type of theorem 
+   [accept_all_thms]: convert |- a to |- a=true 
+
+   [do_rr_equality]: accept |- l=r or |= c=> l=r 
+
+   [do_fact_rule]: 
+   convert |- a to |- a=true 
+   and  |- c=> a to |- c => a=true
+
+   [do_neg_rule]: convert |- not a to |- a=false 
+   and |- c=> not a to |- c=> a=false
+
+   [do_conj_rule]: convert  |- a and b to |- a and |- b.
+
+   [single_thm_to_rules scp thm]:
+   convert a theorem stating a single fact to a rewrite-rule.
+
+   [multi_thm_to_rules scp thm]:
+   convert a theorem stating many facts to a list of rewrite-rules.
+
+   [thm_to_rules scp thm]: Toplevel conversion function.
+   Convert theorem [thm] to a list of rules
+ *)
+
+let rec accept_all_thms (scp, thm, (qs, c, a))= 
+  if(check_for_constant a)
+  then thm
+  else once_rewrite_rule scp [get_rule_true_ax()] thm 
+
+let do_rr_equality (scp, thm, (qs, c, a)) =
+  if(Logicterm.is_equality a)
+  then 
+    let (_, lhs, rhs)= Term.dest_binop a
+    in 
+    match (is_rr_rule qs c lhs (Some rhs)) with
+      (Some(true), Some(true)) -> thm
+    | (None, Some(true)) -> thm
+    | _ -> failwith "is_rr_equality"
+  else failwith "is_rr_equality"
+
+let do_fact_rule (scp, thm, (qs, c, a)) = 
+  if(not (Logicterm.is_equality a))
+  then 
+    match (is_rr_rule qs c a None) with
+      (None, _) -> 
+	if(check_for_constant a)
+	then thm
+	else simple_rewrite_rule scp (get_rule_true_ax()) thm
+    | (Some(true), _) -> 
+	if(check_for_constant a)
+	then thm
+	else simple_rewrite_rule scp (get_cond_rule_true_ax()) thm
+    | _ -> failwith "do_fact_rule"
+  else failwith "do_fact_rule"
+
+let do_neg_rule (scp, thm, (qs, c, a)) = 
+  if(not (Logicterm.is_equality a))
+  then 
+    match (is_rr_rule qs c a None) with
+      (None, _) -> 
+	simple_rewrite_rule scp (get_rule_false_ax()) thm
+    | (Some(true), _) -> 
+	simple_rewrite_rule scp (get_cond_rule_false_ax()) thm
+    | _ -> failwith "do_neg_rule"
+  else failwith "do_neg_rule"
+
+let single_thm_to_rules scp thm = 
+  let (qs, c, a) = strip_qnt_cond (Formula.dest_form (Logic.dest_thm thm))
+  in 
+  apply_by_test 
+    [
+     do_rr_equality;
+     do_neg_rule;
+     do_fact_rule;
+     accept_all_thms
+   ] (scp, thm, (qs, c, a))
+
+
+let do_conj_rule scp thm=
+  if(is_many_conj thm)
+  then many_conj_conv thm
+  else failwith "do_conj_rule: not a conjunction"
+
+let rec apply_get_list f ls result = 
+  match ls with 
+    [] -> result
+  | (x::xs) -> 
+      try 
+	apply_get_list f xs (apply_get_list f (f x) result)
+      with _ -> apply_get_list f xs (x::result)
+
+let rec app_first fs x =
+  match fs with
+    [] -> failwith "app_first"
+  | f::ffs -> try f x with _ -> app_first ffs x
+
+let rec multi_thm_to_rules scp thm = 
+  let fs x= app_first [do_conj_rule scp] x
+  in 
+  List.rev(apply_get_list fs [thm] [])
+
+let thm_to_rules scp thm = 
+  let thmlst=multi_thm_to_rules scp thm
+  in 
+  List.map (single_thm_to_rules scp) thmlst
+
+
+(** [make_thm_rule thm]:
+   make rule from theorem [thm]
+ *)
+let make_thm_rule thm=
+  let qs, c, l, r=
+    Simpset.dest_rr_rule (Formula.dest_form (Logic.dest_thm thm))
+  in 
+  (qs, c, l, r, Logic.RRThm thm)
+
+(** [add_simp_rule scp set rls]
+   add (properly formed rules) [rls] to set [set]
+   in scope [scp]
+ *)
+    
+(*
+   let add_simp_rule sset src =
+   let nset=ref sset
+   in 
+   let rec add_aux thms =
+   match thms with
+   [] -> !nset
+   | rl::ts -> 
+   nset:=Simpset.add_rule rl (!nset);
+   add_aux ts
+   in 
+   add_aux src
+ *)
+
+(**
+   [thm_to_entries scp thm]: convert a theorem to a list of 
+   simpset entries.
+ *)   
+let thm_to_entries scp thm=
+  let rules = thm_to_rules scp thm
+  in 
+  List.map make_thm_rule rules
+
+(**
+   [simpset_add_thm scp sset thm]: add rewrites from [thm] to
+   simpset [sset].
+ *)   
+let add_simp_rule sset entries=
+  List.fold_left (fun s e-> Simpset.add_rule e s) sset entries
+
+let simpset_add_thm scp sset thm=
+  let entries = thm_to_entries scp thm
+  in 
+  add_simp_rule sset entries
+
+(** {6c} Converting assumptions to rewrite rules *)
+
+(** [test_apply_tac info ttacs tg goal]
+
+   [ttacs] is a list of test-tactic pairs.
+   Each test is applied to asm tagged [tg] in first subgoal of [goal].
+   The tactic [tac] of the first test to suceed is applied to [goal].
+   [info] is passed to [tac].
+   raises Not_found if no tactic matches.
+ *)
+let test_apply_tac info ttac tg goal=
+  let rec app_aux ts=
+    match ts with 
+      [] -> raise Not_found
+    | (tst, tac)::tts ->
+	if(tst 
+	     (Formula.dest_form
+		(Logic.drop_tag 
+		   (Logic.Sequent.get_tagged_asm tg 
+		      (Drule.sequent goal)))))
+	then 
+	  tac info tg goal
+	else 
+	  app_aux tts 
+  in 
+  app_aux ttac 
+
+(** [prep_asm_rule info tg goal]:
+
+   Prepare assumption [tg] to be used as a rewrite rule.
+ *)
+
+(** [is_cond_fact t]
+   [t] is of the form [a=>b] where [b] isn't an equality
+ *)
+let is_cond_true_fact trm=
+  let (_, t)=Term.strip_qnt Basic.All trm 
+  in 
+  if(Logicterm.is_implies t)
+  then 
+    (let (_, args)=Term.dest_fun t
+    in 
+    let (asm, cncl)=Lib.get_two args (Not_found)
+    in 
+    not((Logicterm.is_equality cncl) or (Logicterm.is_neg cncl)))
+  else false
+
+let is_cond_false_fact trm=
+  let (_, t)=Term.strip_qnt Basic.All trm 
+  in 
+  if(Logicterm.is_implies t)
+  then 
+    (let (_, args)=Term.dest_fun t
+    in 
+    try 
+      let (asm, cncl)=Lib.get_two args (Not_found)
+      in 
+      (Logicterm.is_neg cncl)
+    with _ -> false)
+  else false
+
+let is_false_fact trm= 
+  let (_, t)=Term.strip_qnt Basic.All trm 
+  in 
+  Logicterm.is_neg t
+
+let is_true_fact t= true
+
+let cond_true_asm_to_rule info tg g=
+  asm_rewrite (get_cond_rule_true_ax()) tg g
+
+let cond_false_asm_to_rule info tg g=
+  asm_rewrite (get_cond_rule_false_ax()) tg g
+
+let false_asm_to_rule info tg g=
+  asm_rewrite (get_rule_false_ax()) tg g
+
+let true_asm_to_rule info tg g=
+  asm_rewrite (get_rule_true_ax()) tg g
+
+
+let asm_rule_makers=
+  [
+   (is_cond_false_fact, cond_false_asm_to_rule);
+   (is_cond_true_fact, cond_true_asm_to_rule);
+   (is_false_fact, false_asm_to_rule);
+   (is_true_fact, true_asm_to_rule)
+ ]
+
+let prep_asm_rule info tg g=
+  test_apply_tac info asm_rule_makers tg g
+
 
 (** [term_cond_rewrite scp rl fm]:
    for rewrite rule [rl]=|-l=r,
@@ -676,56 +918,9 @@ let form_cond_rewrite scp rl fm =
   Formula.mk_form scp 
     (term_cond_rewrite scp rl (Formula.dest_form fm))
 
-(* functions to make simp rules from assumptions *)
-
-
-(* make_entry t:
-   y -> y=true
-   x=y -> x=y        (if a rr rule)
-   -> (x=y)=true (otherwise)
-   c=>x=y -> c=>x=y        (if a rr rule)
-   -> (c=>x=y)=true (otherwise)
- *)   
-
-
-(* addition of rules *)
-
-(** [is_valid_rule rl]:
-   true if [th] is a valid rule
- *)
-
-(** [make_rule src]:
-   make rule from theorem or assumption [src] in scope [scp]
- *)
-let make_thm_rule rl=
-  match rl with
-    Logic.RRThm(th) -> 
-      let qs, c, l, r=
-	Simpset.dest_rr_rule (Formula.dest_form (Logic.dest_thm th))
-      in 
-      (qs, c, l, r, rl)
-  | _ -> failwith "make_rule: can only handle theorems"
-
-
-(** [add_simp_rule scp set rls]
-   add (properly formed rules) [rls] to set [set]
-   in scope [scp]
- *)
-let add_simp_rule sset src =
-  let nset=ref sset
-  in 
-  let rec add_aux thms =
-    match thms with
-      [] -> !nset
-    | rl::ts -> 
-	nset:=Simpset.add_rule (make_thm_rule rl) (!nset);
-	add_aux ts
-  in 
-  add_aux src
-
 (*
-   end
- *)
+end
+*)
 (* Previously in simpset.ml *)
 (*
 
@@ -770,4 +965,35 @@ let add_simp_rule sset src =
    let thm=saxiom"(!a b: a=>b)";;
 
 
+ *)
+(*
+   let scope = Tpenv.scope()
+
+   let naxiom t= Logic.mk_axiom (Formula.mk_form (Tpenv.scope()) t)
+
+
+   let axioms = List.map naxiom
+   [
+   << !x: (true and x) = x>>;
+   <<!x: (x and true) = x>>;
+
+   <<!x: (false and x) = false>>;
+   <<!x: (x and false) = false>>;
+
+   <<!x: (true or x) = true>>;
+   <<!x: (x or true) = true>>;
+   <<!x: (false or x) = x>>;
+   <<!x: (x or false) = x>>;
+
+   <<(not false) = true>>;
+   <<(not true) = false>>;
+
+   <<!x: (not (not x))=x>>;
+   << !x y: (x => y) = ((not x) or y)>>;
+
+   << (!x: true) = true >>;
+   << (!x: false) = false>>;
+
+   << ! x: (x=x)=true>>;
+   ];;
  *)
