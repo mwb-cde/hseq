@@ -62,7 +62,13 @@ val asm_elims :
 val conc_elims : 
     unit -> ((Formula.form->bool) * (Logic.label -> Logic.rule)) list
 
+(*
 val false_rule:  ?a:Logic.label -> Logic.rule
+*)
+val falseR:  ?a:Logic.label -> Tactics.tactic
+
+val trivial : ?f:Logic.label -> Tactics.tactic
+
 
 (* [flatten_tac]
 
@@ -110,6 +116,9 @@ val inst_asm_rule : Logic.label -> Basic.term list -> Tactics.tactic
 *)
 val cases_full_tac : Logic.info option -> Basic.term -> Tactics.tactic
 val cases_tac: ?info:Logic.info -> Basic.term -> Tactics.tactic
+
+val get_cases_thm: unit -> Logic.thm
+
 
 (* convert boolean equality to iff *)
 val equals_tac: ?f:Logic.label -> Tactics.tactic

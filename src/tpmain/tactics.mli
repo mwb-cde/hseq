@@ -74,13 +74,23 @@ val skip : tactic
 val foreach: tactic -> Logic.branch -> Logic.branch
 val fail: ?err:exn -> tactic 
 
+(** [add_info_tac f info g]
+
+   Tactic to add information to [info].
+
+   Apply [f info] then [skip].
+*)
+val add_info_tac:
+    ('a -> unit) -> 'a  -> tactic
+
 (**
    [trivial]: Prove the sequent [  A |-C_{1}, true, C_{n} ].
 
    [basic]: Prove the sequent [  A_{1}, x, A_{m}  |-C_{1}, y, C_{n} ],
    where [x] and [y] are alpha-equal.
 *)
-val trivial : ?c:Logic.label -> tactic
+val trueR : ?c:Logic.label -> tactic
+
 val basic : tactic
 
 (** 
@@ -236,11 +246,19 @@ val once_rewrite_tac:
    If [asms] is not given, use all assumptions 
    of the form [l=r] or [!x1 .. xn: l = r].
    Doesn't rewrite the used assumptions.
+
+   [once_replace_tac info asms f]
+
+   replace exactly once.
 *)
 val replace_tac: 
     ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.rule
+
+val once_replace_tac: 
+    ?asms:Logic.label list 
+  -> ?f:Logic.label -> Logic.rule
 
 (** [is_rewrite_formula f] 
    test whether [f] is an equality or a universally quantified 

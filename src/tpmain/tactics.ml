@@ -28,6 +28,16 @@ let lift id g = Logic.Rules.lift None id g
 let skip = Drule.skip
 let foreach = Drule.foreach
 
+
+(** [add_info_tac f info g]
+
+   Tactic to add information to [info].
+
+   Apply [f info] then [skip].
+*)
+let add_info_tac f info g= f info; skip g
+
+
 let find_basic sq = 
   let ams = Logic.Sequent.asms sq
   and cncs = Logic.Sequent.concls sq
@@ -416,6 +426,12 @@ let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   | Some (x) ->
       Logic.Rules.rewrite None ~ctrl:ctrl rules x goal
 
+
+let once_replace_tac ?asms ?f goal=
+  let ctrl=
+    {Formula.default_rr_control with Rewrite.depth=Some 1}
+  in 
+  replace_tac ~ctrl ?asms:asms ?f:f goal
 
 (* pattern matching tacticals *)
 

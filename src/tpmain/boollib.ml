@@ -196,6 +196,36 @@ let iffC ?c g =
   in 
   iffC_rule cf g
 
+
+let get_false_def() = Commands.lemma "false_def"
+
+let falseR ?a goal =
+  let af=
+    match a with 
+      Some x -> x
+    | _ -> (Drule.first_asm Formula.is_false (Drule.sequent goal))
+  in 
+  let th=
+    try get_false_def()
+    with Not_found -> 
+      raise 
+	(Result.error 
+	   "falseR: Can't find needed theorem false_def: |- false = not true")
+  in 
+  let info = Drule.mk_info()
+  in 
+  ((Tactics.rewrite_tac [th] ~f:af)
+    ++
+    (fun g -> 
+      Logic.Rules.negA (Some info) af g)
+       ++
+       (fun g -> 
+	 let c=Lib.get_one (Drule.formulas info) (Failure "falseR")
+	 in 
+	 Logic.Rules.trueR None (ftag c) g)) goal
+
+let trivial ?f g =  (Tactics.trueR ?c:f || falseR ?a:f) g
+
 let false_rule0 a sq =
   let  thm = lemma "base.false_def"
   in 
