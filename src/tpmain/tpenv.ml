@@ -119,21 +119,35 @@ let remove_term_pp id =
 
 let get_type_pp id=
   Printer.get_type_info (pp_info()) id
-
 let add_type_pp id prec fixity repr=
   Printer.add_type_info (pp_info()) id prec fixity repr
-
 let add_type_pp_record id rcrd=
   Printer.add_type_record (pp_info()) id rcrd
 
+(*
 let remove_type_pp id=
   Printer.remove_type_info (pp_info()) id
+*)
 
 let remove_type_pp id =
   let (_, _, sym) = get_type_pp id
   in 
   Printer.remove_type_info (pp_info()) id;
   Parser.remove_type_token (Lib.get_option sym (name id))
+
+let get_term_printer id=
+  Printer.get_term_printer (pp_info()) id
+let add_term_printer id printer=
+  Printer.add_term_printer (pp_info()) id printer
+let remove_term_printer id=
+  Printer.remove_term_printer (pp_info()) id
+
+let get_type_printer id=
+  Printer.get_type_printer (pp_info()) id
+let add_type_printer id printer=
+  Printer.add_type_printer (pp_info()) id printer
+let remove_type_printer id=
+  Printer.remove_type_printer (pp_info()) id
 
 
 (* Functions to add PP information when a theory is loaded *)

@@ -2,6 +2,7 @@
 open Basic
 
 val print_term : Basic.term -> unit
+val print_formula : Formula.form -> unit
 val print_type : Basic.gtype -> unit
 val print_theory: Theory.thy -> unit
 

@@ -20,6 +20,11 @@ let print_term x =
   Term.print (Tpenv.pp_info()) x;
   close_box()
 
+let print_formula x = 
+  open_box 0;
+  Term.print (Tpenv.pp_info()) (Formula.dest_form x);
+  close_box()
+
 let rec print_type x = 
   open_box 0; 
   Gtypes.print (Tpenv.pp_info())  x; 
