@@ -7,6 +7,9 @@ val print_type : Basic.gtype -> unit
 val print_theory: Theory.thy -> unit
 
 val print_sqnt: Logic.Sequent.t -> unit
+val print_node: Logic.node -> unit
+val print_branch: Logic.branch -> unit
+
 val print_thm: Logic.thm -> unit
 val print_defn: Defn.defn -> unit
 

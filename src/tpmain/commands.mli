@@ -93,11 +93,16 @@ val define_full : Basic.term -> (int*fixity*string option)
   -> Defn.defn
 val define : Basic.term -> Defn.defn
 *)
+
+(*
 val define_full : ((string * (string * Basic.gtype) list) * Basic.term)
   -> (int*fixity*string option) 
     -> Defn.defn
+*)
 val define : 
-    ((string * (string * Basic.gtype) list) * Basic.term) -> Defn.defn
+    ?pp:(int*fixity*string option) 
+  -> ((string * (string * Basic.gtype) list) * Basic.term) 
+  -> Defn.defn
 
 (* 
    [declare_full str pp]
@@ -115,8 +120,11 @@ val define :
 val declare_full_string : string -> (int* fixity* string option) 
   -> (Basic.ident * Basic.gtype)
 *)
-val declare_full : Basic.term -> (int* fixity* string option) 
-  -> (Basic.ident * Basic.gtype)
+(*
+val declare_full : 
+    Basic.term -> (int* fixity* string option) 
+      -> (Basic.ident * Basic.gtype)
+*)
 
 (* 
    [declare str]
@@ -126,16 +134,15 @@ val declare_full : Basic.term -> (int* fixity* string option)
 (*
 val declare_string : string -> (Basic.ident * Basic.gtype)
 *)
-val declare : Basic.term -> (Basic.ident * Basic.gtype)
+val declare : 
+    ?pp:(int* fixity* string option) 
+  -> Basic.term -> (Basic.ident * Basic.gtype)
 
 (*
    [new_axiom id thm]
    declare thm a new axiom with name id.
 *)
 
-(*
-val new_axiom_string : string -> string -> Logic.thm
-*)
 val new_axiom : string -> Basic.term -> Logic.thm
 (* [axiom/theorem/defn id] 
    get the axiom/theorem/definition named id

@@ -43,15 +43,16 @@ let load_theory n =
     in if t=n then n else chop t
   in let filefn fname = Tpenv.find_thy_file fname
   in 
-  ignore(Thydb.load_theory (theories()) n false Tpenv.on_load_thy filefn)
+  ignore(Thydb.load_theory (theories()) n false 
+	   Tpenv.on_load_thy Tpenv.find_thy_file Tpenv.build_thy_file)
 
 let load_parent_theory n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
-  in let filefn fname = Tpenv.find_thy_file fname
   in 
-  ignore(Thydb.load_theory (theories()) n true Tpenv.on_load_thy filefn)
+  ignore(Thydb.load_theory (theories()) n true 
+	   Tpenv.on_load_thy Tpenv.find_thy_file Tpenv.build_thy_file)
 
 let load_theory_as_cur n = 
   let rec chop n = 
@@ -59,7 +60,8 @@ let load_theory_as_cur n =
     in if t=n then n else chop t
   in let filefn fname = Tpenv.find_thy_file fname
   in let imprts=
-    (Thydb.load_theory (theories()) n false Tpenv.on_load_thy filefn)
+    (Thydb.load_theory (theories()) n false Tpenv.on_load_thy 
+       Tpenv.find_thy_file Tpenv.build_thy_file)
   in 
   (Tpenv.set_cur_thy (Thydb.get_thy (theories()) n);
    Thydb.add_importing imprts (theories()))
@@ -181,15 +183,20 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
     
-let define ((name, args), r)=
+let define ?pp ((name, args), r)=
   let ndef=
     Defn.mk_defn (Tpenv.scope()) 
       (Basic.mk_long (Tpenv.get_cur_name()) name) args r
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
-  Thydb.add_defn (Basic.name n) ty d (theories()); ndef
+  Thydb.add_defn (Basic.name n) ty d (theories()); 
+  (match pp with 
+    None -> ()
+  | Some(prec, fx, repr) -> add_term_pp n prec fx repr);
+  ndef
 
+(*
 let define_full trm pp=
   let ndef=define trm 
   in 
@@ -199,24 +206,40 @@ let define_full trm pp=
   in 
   add_term_pp n prec fx repr); 
   ndef
+*)
 
-let declare trm = 
-  try 
-    (let (v, ty)=Term.dest_typed trm
-    in 
-    let id =
-      if(Term.is_free v)
-      then (Basic.mk_long 
-	      (Tpenv.get_cur_name()) 
-	      (Term.get_free_name v))
-      else Term.get_var_id v
-    in 
-    let dcl=Defn.mk_decln (Tpenv.scope()) id ty
-    in 
-    Thydb.add_decln dcl (theories());
-    (id, ty))
-  with _ -> raise (Result.error ("Badly formed declaration"))
+let declare ?pp trm = 
+  let n, ty=
+    try 
+      (let (v, ty)=Term.dest_typed trm
+      in 
+      let id =
+	if(Term.is_free v)
+	then (Basic.mk_long 
+		(Tpenv.get_cur_name()) 
+		(Term.get_free_name v))
+	else Term.get_var_id v
+      in 
+      let dcl=Defn.mk_decln (Tpenv.scope()) id ty
+      in 
+      Thydb.add_decln dcl (theories());
+      (id, ty))
+    with _ -> raise (Result.error ("Badly formed declaration"))
+  in 
+  match pp with 
+    None -> (n, ty)
+  | Some(prec, fx, repr) ->
+      let longname = 
+	if (Basic.thy_of_id n) = Basic.null_thy 
+	then 
+	  (Basic.mk_long (Tpenv.get_cur_name()) (Basic.name n))
+	else n
+      in 
+      add_term_pp longname prec fx repr;
+      (n, ty)
+      
 
+(*
 let declare_full trm pp =
   let n, ty=declare trm
   in 
@@ -230,6 +253,7 @@ let declare_full trm pp =
   in 
   add_term_pp longname prec fx repr;
   (n, ty)
+*)
 
 (*
 let declare_string str = 

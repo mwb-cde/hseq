@@ -1,3 +1,19 @@
+module BaseTheory:
+    sig
+      (*
+	 A minimal base theory which can be used if no other 
+	 theory can be found
+       *)
+
+      val builder:unit -> unit
+
+  (** 
+     [init()]: call [Tpenv.set_base_thy_builder builder].
+   *)
+      val init: unit -> unit
+
+    end
+
 (** Parser-Printer for If-Then-else *)
 module BoolPP :
   sig

@@ -32,6 +32,10 @@ let rec print_type x =
 
 let print_sqnt x = 
   Logic.print_sqnt (Tpenv.pp_info()) x
+let print_node x = 
+  Logic.print_node (Tpenv.pp_info()) x
+let print_branch x = 
+  Logic.print_branch (Tpenv.pp_info()) x
     
 
 let print_thm t = 

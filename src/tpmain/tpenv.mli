@@ -49,12 +49,45 @@ val get_thy_path : unit -> string list
 val add_thy_path : string -> unit
 val set_thy_path: string list -> unit
 val remove_from_path: string -> unit
+
+(** [find_file x]: Find file [x] in the theory path. 
+   
+   raise [Not_found] if not found
+*)
+
+val build_thy_file: string -> unit
 val find_thy_file: string -> string
 
 val get_cdir : unit -> string
 
 (* current scope  *)
 val scope : unit -> Gtypes.scope
+
+
+(*
+   [load_base_thy()]
+   try to load the base theory 
+   if successful:
+   make it the current theory.
+   set the base theory name ([set_base_name(...)])
+
+   if unsuccessful:
+   use an empty theory as the current theory.
+   if [!base_thy_builder=Some(f)] 
+   then call [f]
+   otherwise clear the base theory name ([clear_base_name()])
+
+   [get_base_thy_builder()]
+   [set_base_thy_builder f]
+
+   Set/get value of base_thy_builder.
+*)
+
+val set_base_thy_builder : (unit -> unit) -> unit
+val get_base_thy_builder : unit -> (unit -> unit) option
+
+val load_base_thy: unit -> unit
+
 
 (* build PP record *)
 

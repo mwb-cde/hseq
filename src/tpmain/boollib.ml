@@ -3,11 +3,60 @@ open Drule
 open Commands
 open Tactics
 
-(* Support for if-then-else *)
+module BaseTheory=
+  struct
 
-(** Parser-Printer for If-Then-else *)
+    (* A minimal base theory *)
+
+    let builder() =
+      begin_theory "base" [];
+      ignore
+	(declare
+	(read_unchecked ((Basic.name Logicterm.equalsid)^": 'a -> 'a -> bool"))
+	~pp:(1000, infixl, Some"="));
+      ignore
+	(declare
+	(read_unchecked ((Basic.name Logicterm.notid)^": bool -> bool"))
+	~pp:(110, prefix, Some "not"));
+      ignore
+	(declare
+	(read_unchecked ((Basic.name Logicterm.andid)^":bool->bool->bool"))
+	~pp:(105, infixl, Some "and")); 
+      ignore
+	(define
+	(read_defn ((Basic.name Logicterm.orid)
+		    ^" x y = (not ((not x) and (not y)))"))
+	~pp:(105, infixl, Some "or"));
+      ignore
+	(define
+	(read_defn ((Basic.name Logicterm.impliesid)
+		    ^" x y = (not x) or y"))
+	~pp:(104, infixl, Some "=>"));
+      ignore
+	(define
+	(read_defn ((Basic.name Logicterm.iffid)
+		    ^" x y = (x => y) and (y => x)"))
+	~pp:(104, infixl, Some "iff"));
+      ignore(new_axiom "false_def" << false = (not true)>>);
+      ignore(new_axiom "eq_sym" <<!x: x=x>>);
+      ignore(new_axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
+      ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
+      ignore(new_axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
+      ignore(define
+	  <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))>>);
+      ignore(define <:def< some = epsilon (%a: true)>>)
+	
+
+    let init() = Tpenv.set_base_thy_builder builder
+
+end
+
 module BoolPP = 
   struct
+
+(* Support for if-then-else *)
+(** Parser-Printer for If-Then-else *)
+
     open Parser.Pkit
     open Parser.Utility
     open Lexer
@@ -195,7 +244,7 @@ let rec split_tac g=
   ((orl [ Drule.foreach_conc (split_conc()); 
 	  Drule.foreach_asm (split_asm()) ])
     ++
-    (split_tac || skip)) g;;
+    (split_tac || skip)) g
 
 let inst_asm_rule i l sqnt=
   let rec rule ys sqs = 
@@ -264,7 +313,7 @@ let inst_tac ?f l g=
 
    info: [g, g'] [t]
 *)
-    let cases_tac_thm = ref None;;
+    let cases_tac_thm = ref None
 
     let get_cases_thm ()=
       match !cases_tac_thm with
