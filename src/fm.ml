@@ -15,6 +15,8 @@
 #install_printer Display.print_formula;;
 #install_printer Display.print_type;;
 #install_printer Display.print_sqnt;;
+#install_printer Display.print_node;;
+#install_printer Display.print_branch;;
 #install_printer Display.print_thm;;
 #install_printer Display.print_prf;;
 #install_printer Display.print_fnident;;
