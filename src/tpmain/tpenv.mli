@@ -74,15 +74,15 @@ val read_identifier: string -> Basic.ident
 
 (* 
    [tp_pp_info]
-   The system PP information store (of size Basic.PP.default_info_size).
+   The system PP information store (of size Printer.default_info_size).
  *)
-val tp_pp_info: Basic.PP.info ref
+val tp_pp_info: Printer.info ref
 
 (**
    [pp_info()]
    Get the system PP information store
  *)
-val pp_info : unit -> Basic.PP.info
+val pp_info : unit -> Printer.info
 
 (**
    [pp_reset()]
@@ -94,7 +94,7 @@ val pp_reset: unit -> unit
    [pp_set info]
    Set the system PP information store to [info]
  *)
-val pp_set : Basic.PP.info -> unit
+val pp_set : Printer.info -> unit
 
 (** get/set/remove PP information for identifiers*)
 
@@ -114,7 +114,7 @@ val pp_set : Basic.PP.info -> unit
 
    @return [(default_term_prec, default_term_fixity, None)] if id is not found.
  *)
-val get_term_pp : Basic.ident -> (int * Basic.PP.fixity * string option)   
+val get_term_pp : Basic.ident -> (int * Printer.fixity * string option)   
 
 (**
    [add_term_pp id prec fixity repr]
@@ -126,7 +126,7 @@ val get_term_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
    @param repr representation (if any).
  *)
 val add_term_pp : 
-    Basic.ident -> int -> Basic.PP.fixity 
+    Basic.ident -> int -> Printer.fixity 
       -> string option -> unit
 
 (**
@@ -136,7 +136,7 @@ val add_term_pp :
    @param rcrd PP record
  *)
 val add_term_pp_record : 
-    Basic.ident -> Basic.PP.record -> unit
+    Basic.ident -> Printer.record -> unit
 
 (**
    [remove_term_pp id]
@@ -161,7 +161,7 @@ val remove_term_pp : Basic.ident -> unit
    [fixity] is fixity
    [repr] is representation to use (if any)
  *)
-val get_type_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
+val get_type_pp : Basic.ident -> (int * Printer.fixity * string option)
 
 (**
    [add_type_pp id prec fixity repr]
@@ -174,7 +174,7 @@ val get_type_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
  *)
 
 val add_type_pp : 
-    Basic.ident -> int -> Basic.PP.fixity -> string option -> unit
+    Basic.ident -> int -> Printer.fixity -> string option -> unit
 
 (**
    [add_type_pp_record id rcrd]
@@ -183,7 +183,7 @@ val add_type_pp :
    @param rcrd PP record
  *)
 val add_type_pp_record : 
-    Basic.ident -> Basic.PP.record -> unit
+    Basic.ident -> Printer.record -> unit
 
 (**
    [remove_type_pp id]
@@ -207,3 +207,17 @@ val add_init: (unit-> unit) -> unit
 
 (* function to call to initialise system *)
 val init : unit -> unit
+
+(* list of reset functions *)
+
+val reset_list: (unit -> unit) list ref
+val add_reset: (unit-> unit) -> unit
+
+(* reset(): function to call to reset system 
+
+   calls al functions in reset_list then
+   call init()
+*)
+val reset : unit -> unit
+
+

@@ -24,7 +24,7 @@ let theories () = Tpenv.get_theories()
 let read x = catch_errors Tpenv.read x
 
 let curr_theory () = (Tpenv.get_cur_thy())
-let get_theory_name thy = (curr_theory()).Theory.name
+let get_theory_name thy = Theory.get_name (curr_theory())
 
 let save_theory thy prot= 
   if not (Theory.get_protection thy)
@@ -64,7 +64,8 @@ let load_theory_as_cur n =
   (Tpenv.set_cur_thy (Thydb.getthy (theories()) n);
    Thydb.add_importing imprts (theories()))
 
-let new_theory n = 
+
+let begin_theory n = 
   if n = "" 
   then (raiseError "No theory name")
   else 
@@ -74,6 +75,8 @@ let new_theory n =
     then Theory.add_parents [Tpenv.base_thy_name] (thy)
     else ());
     Tpenv.set_cur_thy thy
+
+let new_theory n = begin_theory n
 
 let open_theory n =
   if n = "" 
@@ -90,6 +93,13 @@ let end_theory() =
   then (raiseError "At base theory")
   else save_theory (curr_theory()) true
 
+
+let parents ns = 
+  List.iter load_parent_theory ns;
+  Theory.add_parents ns (curr_theory());
+  Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
+
+
 let add_pp_rec selector id rcrd=
   Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
@@ -97,12 +107,12 @@ let add_pp_rec selector id rcrd=
   else Tpenv.add_type_pp_record id rcrd
     
 let add_term_pp id prec fx repr=
-  let rcrd=Basic.PP.mk_record prec fx repr
+  let rcrd=Printer.mk_record prec fx repr
   in 
   add_pp_rec Basic.fn_id id rcrd
 
 let add_type_pp id prec fx repr=
-  let rcrd=Basic.PP.mk_record prec fx repr
+  let rcrd=Printer.mk_record prec fx repr
   in 
   add_pp_rec Basic.type_id id rcrd
 
@@ -124,12 +134,68 @@ let get_pp_rec selector id=
 let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
 
+let new_type_term (n, args, def) = 
+  let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
+  in 
+  Thydb.add_type_rec trec (theories())
 
 let new_type st = 
   let (n, args, def)= Tpenv.read_type_defn st
   in 
+  new_type_term (n, args, def)
+(*
   let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
-  in Thydb.add_type_rec trec (theories())
+  in 
+  Thydb.add_type_rec trec (theories())
+*)
+(*
+   [dest_defn_term trm]
+
+   for a term [trm] of the form [f a1 a2 ... an = r] where [n>=0]
+   return (f, [a1; a2; ...; an], r)
+
+   for all other terms, raise Failure.
+*)
+let dest_defn_term trm=
+  let err()= failwith "Badly formed definition"
+  in 
+  if Logicterm.is_equal trm 
+  then
+    let (lhs, rhs)=Logicterm.dest_equal trm
+    in 
+    let (f, args) =
+      if(Term.is_fun lhs)
+      then Term.dest_fun lhs
+      else 
+	if(Term.is_var lhs)
+	then (Term.get_var_id lhs, [])
+	else err()
+    in 
+    let rargs=List.map Term.dest_var args
+    in
+    (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
+  else err()
+    
+let define_term trm=
+  let (name, args, r) = dest_defn_term trm
+  in 
+  let ndef=
+    Defn.mkdefn (Tpenv.scope()) 
+      (Basic.mklong (Tpenv.get_cur_name()) name) args r
+  in 
+  let (n, ty, d)= Defn.dest_defn ndef
+  in 
+  Thydb.add_defn (Basic.name n) ty d (theories()); ndef
+
+let define_term_full trm pp=
+  let ndef=define_term trm 
+  in 
+  let (n, ty, d)= Defn.dest_defn ndef
+  in 
+  (let (prec, fx, repr) = pp
+  in 
+  add_term_pp n prec fx repr); 
+  ndef
 
 let define str= 
   let ((name, args), r)=Tpenv.read_defn str
@@ -151,6 +217,31 @@ let define_full str pp=
   in 
   add_term_pp n prec fx repr); 
   ndef
+
+let declare_term trm = 
+  try 
+    (let (v, ty)=Term.dest_typed trm
+    in let (n, _)=Term.dest_var v
+    in 
+    let dcl=Defn.mkdecln (Tpenv.scope()) n ty
+    in 
+    Thydb.add_decln dcl (theories());
+    (n, ty))
+  with _ -> raiseError ("Badly formed declaration")
+
+let declare_term_full trm pp =
+  let n, ty=declare_term trm
+  in 
+  let (prec, fx, repr) = pp
+  in 
+  let longname = 
+    if (Basic.thy_of_id n) = Basic.null_thy 
+    then 
+      (Basic.mklong (Tpenv.get_cur_name()) (Basic.name n))
+    else n
+  in 
+  add_term_pp longname prec fx repr;
+  (n, ty)
 
 let declare str = 
   let t=Tpenv.read_unchecked str
@@ -179,6 +270,10 @@ let declare_full str pp =
   add_term_pp longname prec fx repr;
   (n, ty)
 
+let new_axiom_term n trm =
+  let t = Logic.mk_axiom 
+      (Formula.form_of_term (Tpenv.scope()) trm)
+  in Thydb.add_axiom n t (theories()); t
 
 let new_axiom n str =
   let t = Logic.mk_axiom 
@@ -210,11 +305,6 @@ let lemma id =
   in 
   Thydb.get_lemma t n thys
 
-let parents ns = 
-  List.iter load_parent_theory ns;
-  Theory.add_parents ns (curr_theory());
-  Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
-
 let qed n = 
   let t = Goals.result() 
   in 
@@ -228,14 +318,11 @@ let prove_theorem n t tacs =
       (Thydb.add_thm n nt x); nt)
     (theories())
 
-
 let save_theorem n th =
   catch_errors 
     (fun x -> Thydb.add_thm n th x; th) (theories())
-    
 
 let by x = 
   (catch_errors Goals.by_com) x
-
 
 let scope () = Tpenv.scope();;

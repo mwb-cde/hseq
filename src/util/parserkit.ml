@@ -92,6 +92,13 @@ module type TOKENS =
   sig 
     type tokens
     val matches : tokens -> tokens -> bool
+
+(*
+   [string_of_token]
+   Used for error reporting only.
+   If necessary use [(fun x _ -> "")].
+*)
+    val string_of_token : tokens -> string
   end
 
 
@@ -173,7 +180,9 @@ module Grammars:GRAMMARS=
       if test t
       then 
 	(fn t, Input.accept inp)
-      else raise (ParsingError "Unexpected symbol")
+      else 
+	raise (ParsingError 
+		 ("Unexpected symbol "^(ParseTokens.string_of_token t)))
 
     let (!$) tok inp = get (fun t -> matches tok t) (fun t -> t) inp
 
@@ -187,7 +196,7 @@ module Grammars:GRAMMARS=
 
     let (!!) ph toks = 
       try (ph toks) 
-      with ParsingError m -> failwith("Parsing error: "^m)
+      with ParsingError m -> failwith(m)
 
     let (--) ph1 ph2 toks = 
       	let (x, toks2)=(ph1 toks)

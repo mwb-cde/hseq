@@ -12,9 +12,10 @@ let base_thy ()= Theory.mk_thy empty_thy_name
 let thdb() = Thydb.emptydb (base_thy ())
 let theories = ref (thdb())
 
-
 let get_theories () = !theories
 let set_theories thdb = theories:=thdb
+
+let reset_thydb () = set_theories (thdb())
 
 let get_cur_thy () = Thydb.getcur (!theories)
 let get_cur_name () = Theory.get_name (get_cur_thy ())
@@ -80,17 +81,14 @@ let find_thy_file f =
 	then nf else find_aux ts
   in find_aux (get_thy_path())
 
-(*
-let typenv()=  stdtypenv()
-*)
 
 (* Pretty printing and Parsing*)
 
 (* tp_pp_info: Printer Table *)
-let tp_pp_info=ref (Basic.PP.empty_info())
+let tp_pp_info=ref (Printer.empty_info())
 let pp_info() = !tp_pp_info 
 let pp_set info = tp_pp_info:=info
-let pp_reset () = pp_set (Basic.PP.empty_info())
+let pp_reset () = pp_set (Printer.empty_info())
 let pp_init() = pp_reset()
 
 (* tp_sym_info: Parser symbol table *)
@@ -99,85 +97,56 @@ let sym_info() = Parser.symtable()
 let sym_reset () = Parser.reset()
 
 let get_term_pp id=
-  Basic.PP.get_term_info (pp_info()) id
+  Printer.get_term_info (pp_info()) id
 
 let add_term_pp id prec fixity repr=
-  Basic.PP.add_term_info (pp_info()) id prec fixity repr;
+  Printer.add_term_info (pp_info()) id prec fixity repr;
   Parser.add_token id (Lib.get_option repr (name id)) fixity prec
 
 let add_term_pp_record id rcrd=
-  Basic.PP.add_term_record (pp_info()) id rcrd;
+  Printer.add_term_record (pp_info()) id rcrd;
   Parser.add_token 
     id 
-    (Lib.get_option rcrd.Basic.PP.repr (name id)) 
-    (rcrd.Basic.PP.fixity)
-    (rcrd.Basic.PP.prec)
+    (Lib.get_option rcrd.Printer.repr (name id)) 
+    (rcrd.Printer.fixity)
+    (rcrd.Printer.prec)
 
 let remove_term_pp id =
   let (_, _, sym) = get_term_pp id
   in 
-  Basic.PP.remove_term_info (pp_info()) id;
+  Printer.remove_term_info (pp_info()) id;
   Parser.remove_token (Lib.get_option sym (name id))
 
 let get_type_pp id=
-  Basic.PP.get_type_info (pp_info()) id
+  Printer.get_type_info (pp_info()) id
 
 let add_type_pp id prec fixity repr=
-  Basic.PP.add_type_info (pp_info()) id prec fixity repr
+  Printer.add_type_info (pp_info()) id prec fixity repr
 
 let add_type_pp_record id rcrd=
-  Basic.PP.add_type_record (pp_info()) id rcrd
+  Printer.add_type_record (pp_info()) id rcrd
 
 let remove_type_pp id=
-  Basic.PP.remove_type_info (pp_info()) id
+  Printer.remove_type_info (pp_info()) id
 
 let remove_type_pp id =
   let (_, _, sym) = get_type_pp id
   in 
-  Basic.PP.remove_type_info (pp_info()) id;
+  Printer.remove_type_info (pp_info()) id;
   Parser.remove_type_token (Lib.get_option sym (name id))
 
-(*
-   parser/printer information on reserved identifiers  
- *)
-
-(* reserved words *)
-
-(*
-let base_id_list = 
-  [Logicterm.notid, 5, false, "";
-   Logicterm.andid, 4, true, "and";
-   Logicterm.orid, 3, true, "or";
-   Logicterm.iffid, 1, true, "iff";
-   Logicterm.impliesid, 1, true, "=>";
-   Logicterm.equalsid, 6, true, "="]
-
-let base_type_list = []
-
-let build_id_info () =
-  List.iter 
-    (fun (sym, id, fx, pr) -> 
-      add_term_pp id pr fx (if sym="" then None else Some(sym)))
-    Parser.reserved_words
-
-let build_type_info () =
-  List.iter 
-    (fun (id, pr, fx, trn) -> 
-      add_type_pp id pr fx (if trn="" then None else Some(trn)))
-    base_type_list
-*)
 
 (* Functions to add PP information when a theory is loaded *)
 
 let add_id_record id rcrd =
   let pr, fx, repr = 
-    rcrd.Basic.PP.prec, rcrd.Basic.PP.fixity, rcrd.Basic.PP.repr
+    rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
   in 
   add_term_pp id pr fx repr
 
 let add_type_record id rcrd =
   let pr, fx, repr = 
-    rcrd.Basic.PP.prec, rcrd.Basic.PP.fixity, rcrd.Basic.PP.repr
+    rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
   in 
   add_type_pp id pr fx repr
 
@@ -251,6 +220,7 @@ let load_base_thy ()=
   with _ -> theories:=(thdb())
 
 let init_theoryDB () = load_base_thy()
+let reset_theoryDB () = reset_thydb()
 
 (* list of initialising functions *)
 
@@ -260,11 +230,22 @@ let init_list =
      pp_init;
      sym_init;
      init_theoryDB 
-(*     build_id_info; build_type_info *)
    ]
 
 let add_init x = init_list:=(x::!init_list)
 
 let init ()=
   List.iter (fun x -> x()) (!init_list)
+
+(* reseting functions *)
+
+let reset_list = ref []
+
+let add_reset x= reset_list:= x::(!reset_list)
+
+let reset() = 
+  List.iter(fun x -> x()) (!reset_list);
+  init()
+
+
 

@@ -70,7 +70,19 @@ module Info :
 module type TOKENS =
   sig 
     type tokens 
+(*
+   [matches t1 t2]
+   [true] iff token [t1] should be considered a match for token [t2].
+*)
     val matches : tokens -> tokens -> bool 
+
+(*
+   [string_of_token]
+   Used for error reporting only.
+   If necessary use [(fun x _ -> "")].
+*)
+    val string_of_token : tokens -> string
+
   end
 
 module type GRAMMARS =

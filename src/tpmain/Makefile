@@ -1,11 +1,11 @@
 # Header, code and optimised code files
 
 HEADERS = tpenv.cmi drule.cmi tactics.cmi goals.cmi commands.cmi \
-	printer.cmi bool_tacs.cmi cli.cmi init.cmi
+	display.cmi bool_tacs.cmi cli.cmi init.cmi
 CODE = tpenv.cmo drule.cmo tactics.cmo goals.cmo commands.cmo \
-	printer.cmo bool_tacs.cmo cli.cmo init.cmo
+	display.cmo bool_tacs.cmo cli.cmo init.cmo
 OPTCODE = tpenv.cmx drule.cmx tactics.cmx goals.cmx commands.cmx \
-	printer.cmx bool_tacs.cmx cli.cmx init.cmx
+	display.cmx bool_tacs.cmx cli.cmx init.cmx
 
 LIBFILE=tpmain.cma
 OPTLIB=tpmain.cmxa
