@@ -240,3 +240,57 @@ let nice_date f=
   in 
   (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_yday, 
    tm.Unix.tm_hour, tm.Unix.tm_min)
+
+let get_one ls err=
+  match ls with
+    x::_ -> x
+  | _ -> raise err
+	
+let get_two ls err=
+  match ls with
+    x::y::_ -> (x, y)
+  | _ -> raise err
+
+let split_at num lst=
+  let rec split_aux ctr rs ls =
+    match rs with
+      [] -> 
+	if ctr = 0 
+	then (List.rev ls, rs)
+	else raise (Invalid_argument "split_at")
+    | (x::xs) ->
+	if ctr = 0 then (List.rev ls, rs)
+	else 
+	  split_aux (ctr-1) xs (x::ls)
+  in 
+  split_aux num lst []
+
+let rotate_left num lst=
+  if num = 0 then lst
+  else 
+    let size = List.length lst
+    in 
+    let n = 
+      if num > size
+      then (num mod size)
+      else num
+    in 
+    let ls, rs = split_at n lst
+    in 
+    List.append rs ls
+
+
+let rotate_right num lst=
+  if num = 0 then lst
+  else 
+    let size = List.length lst
+    in 
+    let n = 
+      if num > size
+      then size - (num mod size)
+      else size - num
+    in 
+    let ls, rs = split_at n lst
+    in 
+    List.append rs ls
+      

@@ -89,3 +89,30 @@ val date: unit -> float
    return date [f] in form [(year, month, day, hour, min)]
 *)
 val nice_date: float -> (int * int * int * int * int)
+
+
+(** [get_one l e] 
+   get first element of list [l].
+   raise exception [e] if length of [l] is empty.
+*)
+val get_one : 'a list -> exn -> 'a
+
+(** [get_two l e] 
+   get first two elements of list [l].
+   raise exception [e] if length of [l] < 2.
+*)
+val get_two : 'a list -> exn -> ('a * 'a)
+
+
+val split_at : int -> 'a list -> ('a list * 'a list)
+
+(** [rotate_left n l]
+   rotate list [l] [n] places left 
+*)
+val rotate_left : int -> 'a list -> 'a list
+
+
+(** [rotate_right n l]
+   rotate list [l] [n] places right 
+*)
+val rotate_right : int -> 'a list -> 'a list
