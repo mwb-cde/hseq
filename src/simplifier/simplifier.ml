@@ -38,25 +38,31 @@ module Control =
  *)
     type t =
 	{
+(* [cond_tac]: the tactic used to prove conditions of rewrite rules *)
+	 cond_tac: t -> Tag.t -> Tactics.tactic;
 (** conds: max. no. of conditions to try and prove at once *)
-	 conds: int;  
+	   conds: int;  
 (** rr_depth: max. no. of rr rules to apply at one level *)
-	 rr_depth: int;
+	   rr_depth: int;
 (** asms: assumptions generated during the course of simplification *)
-	 asms: Tag.t list;
+	   asms: Tag.t list;
 (** rules: 
    rewrite rules to pass to the rewriter (the result of the simplifier)
  *)
-	 rules: Logic.rr_type list
+	   rules: Logic.rr_type list
        }
 
-    let make cd rd a rs= 
+    let make tac cd rd a rs= 
       {
+       cond_tac=tac;
        conds=cd;
        rr_depth=rd;
        asms=a;
        rules=rs
      }
+
+    let set_tactic cntrl tac=
+      {cntrl with cond_tac = tac}
 
     let set_conds cntrl d=
       {cntrl with conds=d}
@@ -70,8 +76,12 @@ module Control =
     let set_rules cntrl ds=
       {cntrl with rules=ds}
 
+    let get_tactic cntrl=cntrl.cond_tac
+
     let add_asm cntrl a=
       set_asms cntrl (a::(cntrl.asms))
+
+    let get_asms cntrl =cntrl.asms
 
     let dec_cond_depth cntrl=
       set_conds cntrl ((cntrl.conds)-1)
@@ -79,10 +89,8 @@ module Control =
     let add_rule cntrl r=
       set_rules cntrl (r::(cntrl.rules))
 
-(** [mk_control()]
-   The default control information 
- *)
-    let default ()= make 50 50 [] [] 
+(** [default]: The default control information  *)
+    let default = make (fun _ _ -> skip) 50 50 [] [] 
 
   end
 
@@ -117,6 +125,26 @@ let strip_rrs rrs=
 (* utility tactics *)
 
 
+(*
+   [clean_up_tac ctrl g]
+   
+   Clean up after simplification.
+   Delete all assumptions listed in [ctrl.asms].
+*)
+
+let rec clean_aux_tac tags g=
+  match tags with
+    [] -> g
+  | x::xs ->
+      let ng=
+	try
+	  foreach (Logic.Rules.delete None (Logic.FTag x)) g
+	with _ -> g
+      in clean_aux_tac xs ng
+
+let clean_up_tac ctrl g=
+  clean_aux_tac (Control.get_asms ctrl) g
+
 (** [cut_rr_rule info t g]
    Put rule [t] into first subgoal of [g].
    If [t] is a theorem, it is cut into the goal.
@@ -149,29 +177,37 @@ let cut_rr_rule info t g =
 
    return [(ncntrl, [cgltg; rgltg], [cftg; rrftg], g3)].
  *)
-let prep_cond_tac cntrl values thm g =
+
+let prep_cond_tac cntrl values thm goal =
   let info =Drule.mk_info()
   in
-  try 
-    let g1=cut_rr_rule (Some(info)) thm g
+   try 
+    let (rrftg, goal1)=
+      (let ng = cut_rr_rule (Some(info)) thm goal
+      in 
+      let rrftg=Lib.get_one (Drule.formulas info) No_change
+      in (rrftg, ng))
     in 
-    let rrftg=Lib.get_one (Drule.formulas info) No_change
-    in 
-    let g2=foreach (allA_list (ftag rrftg) values) g1
-    in 
-    let g3=foreach (Logic.Rules.implA (Some(info)) (ftag rrftg)) g2
-    in 
-    let (cgltg, rgltg)= 
-      Lib.get_two (Drule.subgoals info)
-	(Failure "prep_cond_tac: goals")
-    in 
-    let cftg=
-      Lib.get_one (Drule.formulas info)
-	(Failure "prep_cond_tac: forms")
-    in 
+    let (cgltg, rgltg, cftg, goal2)=
+      let ng= 
+	foreach
+	  ((allA_list (ftag rrftg) values)
+	     ++ (Logic.Rules.implA (Some(info)) (ftag rrftg))) 
+	  goal1
+      in 
+      let (cgltg, rgltg)= 
+	Lib.get_two (Drule.subgoals info)
+	  (Failure "prep_cond_tac: goals")
+      in 
+      let cftg=
+	Lib.get_one (Drule.formulas info)
+	  (Failure "prep_cond_tac: forms")
+      in 
+      (cgltg, rgltg, cftg, ng)
+    in
     let ncntrl= Control.add_asm cntrl rrftg
     in 
-    (ncntrl, (cgltg, rgltg), (cftg, rrftg), g3)
+    (ncntrl, (cgltg, rgltg), (cftg, rrftg), goal2)
   with _ -> raise No_change
 
 
@@ -188,24 +224,32 @@ let prep_cond_tac cntrl values thm g =
    Return RRInfo of the theorem/assumption to use as i rewriting
    and new goal.
  *)
-let rec prove_cond_rule cntrl tac values entry g = 
+
+let rec prove_cond cntrl values entry goal = 
   let (qs, cnd, _, _, thm)=entry
   in 
   match cnd with
-    None -> (cntrl, thm, (skip g))
-  | Some(cd) -> 
-      let (ncntrl, (cgltg, rgltg), (cftg, rftg), ng)=
-	prep_cond_tac cntrl values thm g
+    None -> (cntrl, thm, (skip goal))
+  | Some(_) -> 
+      let (ncntrl, rftg, ng1) = 
+	let (ncntrl1, (cgltg1, rgltg1), (cftg1, rftg1), ng)=
+	  prep_cond_tac cntrl values thm goal
+	in 
+	(ncntrl1, rftg1,
+	 foreach 
+	   ((fun n -> 
+	     (Tag.equal cgltg1 (Drule.node_tag n)))
+	      --> 
+		(fun g -> 
+		  let tac=Control.get_tactic ncntrl1
+		  in 
+		  (tac ncntrl1 cftg1) g)) ng)
       in 
-      let ng1= 
-	try 
-	  foreach (tac ncntrl cftg) ng
-	with _ -> ng
-      in 
-      if(sqnt_solved cgltg ng1)
-      then 
-	(ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
-      else raise No_change
+      (* check for subgoals *)
+      match (Drule.branch_subgoals ng1) with
+	[] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
+      | [x] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
+      | _ -> raise No_change
 
 (*
    match_rewrite:
@@ -214,7 +258,8 @@ let rec prove_cond_rule cntrl tac values entry g =
 let match_rewrite scp tyenv tenv varp lhs rhs trm = 
   try
     (let ntyenv, nenv=
-      Unify.unify_fullenv_rewrite scp tyenv tenv varp lhs trm
+      Unify.unify_fullenv_rewrite 
+	scp tyenv (Term.empty_subst()) varp lhs trm
     in 
     (ntyenv, nenv, Term.subst tenv rhs))
   with x -> (failwith "match_rewrite")
@@ -227,7 +272,7 @@ let match_rewrite scp tyenv tenv varp lhs rhs trm =
 
    returns rewritten term, matched rules and new goal.
  *)
-let find_basic cntrl tyenv tac rl trm g=
+let find_basic cntrl tyenv rl trm g=
   let (qs, c, lhs, rhs, thm)=rl
   in 
   let tenv=Term.empty_subst()
@@ -240,9 +285,9 @@ let find_basic cntrl tyenv tac rl trm g=
   in 
   let values=Drule.make_consts qs ntenv
   in 
-  let (ncntrl, rr, ng)=prove_cond_rule cntrl tac values rl g
+  let (ncntrl, rr, ng)=prove_cond cntrl values rl g
   in 
-  (ncntrl, nt, rr, ng)
+  (ncntrl, ntyenv, nt, rr, ng)
 
 (** [find_match scp tyenv rslt set tac trm g]
    Find rule in simpset [set] which matches term [trm] in goal [g].
@@ -256,28 +301,21 @@ let find_basic cntrl tyenv tac rl trm g=
    set tac g].  If sucessful, set [ret] to the rewritten term,
    matching rule and new goal.
 
-   raise No_change if no matches.
+   raise No_change and set [ret:=None] if no matches.
  *)
-let find_match cntrl tyenv set tac ret trm (goal: Logic.node)=
+
+let find_match cntrl tyenv set ret trm (goal: Logic.node)=
   let rec find_aux rls t g= 
     match rls with
-      [] -> raise No_change
+      [] -> (ret:=None; raise No_change)
     | (rl::nxt) ->
 	try 
-	  find_basic cntrl tyenv tac rl t g
+	  find_basic cntrl tyenv rl t g
 	with _ -> find_aux nxt t g
   in 
-  let (ncntrl, nt, rr, ng) = find_aux (lookup set trm) trm goal
+  let (ncntrl, ntyenv, nt, rr, ng) = find_aux (lookup set trm) trm goal
   in 
-  ret:=(Some(ncntrl, nt, rr)); ng
-
-
-(*
-   let find_match_tac ret c tyenv set tac t g=
-   let (ncntrl, nt, rr, ng) = find_match c tyenv set tac t g
-   in 
-   ret:=(Some(ncntrl, nt, rr)); ng
- *)
+  ret:=(Some(ncntrl, ntyenv, nt, rr)); ng
 
 (** [find_all_matches scp tyenv rslt set tac trm g]
 
@@ -293,34 +331,27 @@ let find_match cntrl tyenv set tac ret trm (goal: Logic.node)=
    repeat until find_match fails. 
    Return result and last sucessfull goal.
  *)
-let rec find_all_matches cntrl tyenv set tac trm branch=
+
+let rec find_all_matches cntrl tyenv set trm branch=
   let chng = ref false
-  and ret=ref (cntrl, trm)
   in 
-  let rec find_aux g= 
-    (let (c, t) = (!ret)
+  let rec find_aux c ty t g= 
+    (let ret1=ref None
     in 
-    let ret1=ref None
-    in 
-    (try
-      let ng=foreach (find_match c tyenv set tac ret1 t) g
+    try
+      let ng=foreach (find_match c ty set ret1 t) g
       in 
-      let (ncntrl, nt, nr) = 
-	match (!ret1) with
-	  None -> raise (Failure "find_all_matches: No matches")
-	| (Some x) -> x
-      in 
-      chng:=true;
-      ret:=(Control.add_rule cntrl nr, nt);
-      find_aux ng
-    with _ -> g))
+      match (!ret1) with
+	None -> (c, ty, t, g)
+      | Some (cntrl1, tyenv1, t1, r1) -> 
+	  (chng:=true;
+	   find_aux (Control.add_rule cntrl1 r1) tyenv1 t1 ng)
+    with _ -> (c, ty, t, g))
   in 
-  let ng=find_aux branch
-  in 
-  let (nc, nt)=(!ret)
+  let (nc, ntyenv, nt, ng)=find_aux cntrl tyenv trm branch
   in 
   if(!chng)
-  then (nc, nt, ng)
+  then (nc, ntyenv, nt, ng)
   else raise No_change
 
 (**
@@ -371,109 +402,133 @@ let simp_prep_tac control tag g=
  *)
 let is_true t = Term.is_true t
 
+(**
+   [get_form t n]:
+   Get formula tagged [t] from node [n].
+   First try conclusions, then try assumptions.
+
+   raise [Not_found] if not found.
+ *)
+let get_form t n = 
+  try 
+    Drule.get_tagged_cncl t n
+  with Not_found -> Drule.get_tagged_asm t n
+
+
+(**
+   [find_rrs_bottom_up ctrl t g]
+
+   Make list of rewrite rules using unification
+   Term.substitution is used to keep track of changing term
+   as rewrites are found
+ *)
+let rec find_rrs_bottom_up set ctrl tyenv t g=
+  match t with
+    Basic.Qnt(k, q, b) -> 
+      (let (bcntrl, btyenv, nb, bg) = 
+	find_rrs_bottom_up set ctrl tyenv b g
+      in 
+      try 
+	find_all_matches bcntrl btyenv set (Qnt(k, q, nb)) bg
+      with No_change -> (bcntrl, btyenv, Qnt(k, q, nb), bg))
+  | Basic.Typed(tt, ty) -> find_rrs_bottom_up set ctrl tyenv tt g
+  | Basic.App(f, a)->
+      (let (fcntrl, ftyenv, nf, nfg) = 
+	find_rrs_bottom_up set ctrl tyenv f g
+      in 
+      let (acntrl, atyenv, na, nag) = 
+	find_rrs_bottom_up set fcntrl ftyenv a nfg
+      in 
+      try 
+	find_all_matches acntrl atyenv set (App(nf, na)) nag
+      with No_change -> (acntrl, atyenv, App(nf, na), nag))
+  | _ -> 
+      (try 
+	find_all_matches ctrl tyenv set t g
+      with No_change -> (ctrl, tyenv, t, g))
+
+(* 
+   [find_rrs_top_down cntr t g]
+
+   Top-down search through term [t] for rewrite rules to apply.
+ *)
+let rec find_rrs_top_down set ctrl tyenv trm g=
+  let find_td_aux tyenv1 cntrl1 trm1 g=
+    match trm1 with
+      Basic.Qnt(k, q, b) -> 
+	(let (bcntrl, btyenv, nb, bg) = 
+	  find_rrs_top_down set cntrl1 tyenv1 b g
+	in 
+	(bcntrl, btyenv, Qnt(k, q, nb), bg))
+    | Basic.Typed(tt, ty) -> find_rrs_top_down set cntrl1 tyenv1 tt g
+    | Basic.App(f, a)->
+	(let (fcntrl, ftyenv, nf, nfg) = 
+	  find_rrs_top_down set cntrl1 tyenv1 f g
+	in 
+	let (acntrl, atyenv, na, nag) = 
+	  find_rrs_top_down set fcntrl ftyenv a nfg
+	in 
+	(acntrl, atyenv, App(nf, na), nag))
+    | _ -> (cntrl1, tyenv1, trm1, g)
+  in
+  let (nctrl, ntyenv, ntrm, ng) = 
+    (try 
+      find_all_matches ctrl tyenv set trm g
+    with No_change -> (ctrl, tyenv, trm, g))
+  in 
+  find_td_aux ntyenv nctrl ntrm ng
+
 
 let rec basic_simp_tac cntrl set ft goal=
-  let sqnt=Drule.sequent goal
-  in 
   let chng=ref false
   in 
-  let tyenv=Gtypes.empty_subst()
+  let tyenv=Drule.typenv_of goal
   in 
-  (* [prove_cond_tac]
-     The tactic used to prove conditions.
-   *)
-  let prove_cond_tac ctrl tg g=
-    let init_simp_tac ctrl0 tg0 g0=
-      let (ctrl1, g1) = simp_prep_tac ctrl0 tg0 g0
-      in 
-      Tactics.foreach(basic_simp_tac ctrl1 set tg0) g1
-    in 
-    Tactics.orl
-      [
-       Tactics.seq
-	 [
-	  init_simp_tac ctrl tg;
-	  Logic.Rules.trueR None (Logic.FTag tg)
-	];
-       Logic.Rules.trueR None (Logic.FTag tg)] g
-  in 
-(* 
-   find_rrs_bottom_up: scope -> Term.substitution -> rule_set -> term
-   make list of rewrite rules using unification
-   Term.substitution is used to keep track of changing term
-   as rewrites are found
- *)
-  let rec find_rrs_bottom_up ctrl t g=
-    match t with
-      Basic.Qnt(k, q, b) -> 
-	(let (bcntrl, nb, bg) = find_rrs_bottom_up ctrl b g
-	in 
-	try 
-	  find_all_matches bcntrl tyenv set 
-	    prove_cond_tac (Qnt(k, q, nb)) bg
-	with No_change -> (bcntrl, Qnt(k, q, nb), bg))
-    | Basic.Typed(tt, ty) -> find_rrs_bottom_up ctrl tt g
-    | Basic.App(f, a)->
-	(let (fcntrl, nf, nfg) = (find_rrs_bottom_up ctrl f g)
-	in 
-	let (acntrl, na, nag)= (find_rrs_bottom_up fcntrl a nfg)
-	in 
-	try 
-	  find_all_matches acntrl tyenv set 
-	    prove_cond_tac (App(nf, na)) nag
-	with No_change -> (acntrl, App(nf, na), nag))
-    | _ -> 
-	(try 
-	  find_all_matches ctrl tyenv set prove_cond_tac t g
-	with No_change -> (ctrl, t, g))
-  in
-(* 
-   find_rrs_top_down: scope -> Term.substitution -> rule_set -> term
-   make list of rewrite rules using unification
-   Term.substitution is used to keep track of changing term
-   as rewrites are found
- *)
-  let rec find_rrs_top_down ctrl t g=
-    let find_td_aux c t g=
-      match t with
-	Basic.Qnt(k, q, b) -> 
-	  (let (bcntrl, nb, bg) = find_rrs_top_down ctrl b g
-	  in 
-	  (bcntrl, Qnt(k, q, nb), bg))
-      | Basic.Typed(tt, ty) -> find_rrs_top_down ctrl tt g
-      | Basic.App(f, a)->
-	  (let (fcntrl, nf, nfg) = (find_rrs_top_down ctrl f g)
-	  in 
-	  let (acntrl, na, nag)= (find_rrs_top_down fcntrl a nfg)
-	  in 
-	  (acntrl, App(nf, na), nag))
-      | _ -> (ctrl, t, g)
-    in
-    (try 
-      let (nctrl, ntrm, ng) = 
-	find_all_matches ctrl tyenv set prove_cond_tac t g
-      in 
-      find_td_aux nctrl ntrm ng
-    with No_change -> (ctrl, t, g))
-      
-  in
   let trm=
-    Formula.dest_form
-      (Logic.drop_tag
-	 (Logic.Sequent.get_tagged_form ft sqnt))
+    Formula.dest_form (Logic.drop_tag (get_form (ftag ft) goal))
   in 
-  let (ncntrl, ntrm, ngoal)= find_rrs_top_down cntrl trm (skip goal)
+  let (ncntrl, ntyenv, ntrm, ngoal)= 
+    find_rrs_top_down set
+      (Control.set_tactic cntrl (prove_cond_tac set))  (* TEMPORARY HACK *)
+      tyenv
+      trm (skip goal)
   in 
   let rrs=List.rev (ncntrl.Control.rules)
   in 
   if rrs=[]
   then raise No_change
   else 
-    (try
-      Tactics.foreach (Logic.Rules.rewrite None rrs (ftag ft)) ngoal
-    with _ -> raise No_change)
+    let goal1=
+      (try
+	Tactics.foreach (Logic.Rules.rewrite None rrs (ftag ft)) ngoal
+      with _ -> raise No_change)
+    in 
+    (* Clean up afterwards *)
+    clean_up_tac ncntrl goal1
 
+(**
+   [prove_cond_tac set ctrl tg g]: The tactic used to prove the conditions of
+   rewrite rules.
 
+   Apply [simp_prep_tac] then [basic_simp_tac].
+   Then apply [Logic.Rules.trueR] to solve goal.
+*) 
+and prove_cond_tac set ctrl tg goal=
+  Tactics.orl
+    [
+     Logic.Rules.trueR None (Logic.FTag tg);
+     (fun g -> 
+       let init_simp_tac ctrl0 tg0 g0=
+	 let (ctrl1, g1) = simp_prep_tac ctrl0 tg0 g0
+	 in 
+	 Tactics.foreach(basic_simp_tac ctrl1 set tg0) g1
+       in 
+       Tactics.seq
+	 [
+	  init_simp_tac ctrl tg;
+	  Logic.Rules.trueR None (Logic.FTag tg)
+	] g)
+   ] goal
 
 
 (* inital_flatten_tac fts g:
@@ -541,8 +596,7 @@ let full_simp_tac cntrl simpset tg gl=
     with 
       No_change -> (cntrl, (skip gl))
     | err -> 
-	raise 
-	  (Result.error "simp_tac: stage 1"))
+	raise (Result.error "simp_tac: stage 1"))
   in 
   (* invoke the simplifier *)
   let simped_goal = 
