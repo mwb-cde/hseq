@@ -33,7 +33,7 @@ let tp_init() = Tpenv.init()
 let init() = 
   let initfile=Settings.make_filename Settings.init_file
   in
-  tp_init();
+(*  tp_init(); *)
   Unsafe.use_file ~silent:false initfile
 
 (* 

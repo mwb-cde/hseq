@@ -30,24 +30,23 @@ let rec print_type x =
   Gtypes.print (Tpenv.pp_info())  x; 
   close_box()
 
-
 let print_sqnt sq = 
   let rec print_asm i afl= 
     match afl with 
       [] -> ()
     | (s::als) -> 
-	(print_string ("["^(string_of_int i)^"] ");
-	 open_box 0;
-	 print_term (Formula.term_of_form s);
-	 close_box(); 
-	 print_newline(); 
-	 print_asm (i-1) als)
+	 (open_box 0;
+	  print_string ("["^(string_of_int i)^"] ");
+	  print_term (Formula.term_of_form s);
+	  close_box(); 
+	  print_newline(); 
+	  print_asm (i-1) als)
   and print_cncl i cfl =
     match cfl with
       [] -> ()
     | (s::cls) -> 
-	(print_string ("["^(string_of_int i)^"] ");
-	 open_box 0;
+	(open_box 0;
+	 print_string ("["^(string_of_int i)^"] ");
 	 print_term  (Formula.term_of_form s);
 	 close_box(); 
 	 print_newline(); 
@@ -79,17 +78,20 @@ let print_prf p =
   let subgls = Logic.num_of_subgoals g
   in 
   open_box 0; 
-  print_string "Goal: "; print_term 
+  print_string "Goal: "; 
+  print_term 
     (Formula.term_of_form (Logic.get_goal g));
-  print_newline();
   close_box();
   (match subgls with
-    0 -> (open_box 0; print_string "No subgoals"; close_box())
+    0 -> (open_box 0; 
+	  print_newline();
+	  print_string "No subgoals"; 
+	  close_box())
   | _ -> 
       (open_box 0;
        print_newline();
        print_subgoals subgls;
-       force_newline();
+       print_newline();
        close_box ();
        print_sqnt (Goals.curr_sqnt p)))
 
@@ -117,7 +119,9 @@ let print_subst tenv f=
   close_box()
 
 let print_error r =
-  (r#print) (Tpenv.pp_info())
+  open_box 0;
+  (r#print) (Tpenv.pp_info());
+  close_box()
 
 let print_theory x = 
   open_box 0;

@@ -3,166 +3,235 @@ open Logic
 
 type tactic = Logic.rule
 
+let fnum = Drule.fnum
+let ftag = Drule.ftag
+let (!!) = fnum
+
+let leftright=Rewrite.leftright
+let rightleft = Rewrite.rightleft
+
 let rule_tac r g =  r g
 
-let rotateA g 
-    = Logic.Rules.rotate_asms g
-let rotateC g 
-    = Logic.Rules.rotate_cncls  g
+let rotateA ?info g = Logic.Rules.rotate_asms info g
+let rotateC ?info g = Logic.Rules.rotate_cncls info g
 
-let copy_asm i g 
-    = rule_tac (Logic.Rules.copy_asm i) g
-let copy_concl i g 
-    = rule_tac (Logic.Rules.copy_cncl i) g
+let copy_asm ?info i g 
+    = Logic.Rules.copy_asm info i g
+let copy_concl ?info i g 
+    = Logic.Rules.copy_cncl info i g
 
-let lift id g = 
-  if (id<0) then Logic.Rules.lift_asm (Logic.FNum id) g
-  else Logic.Rules.lift_concl (Logic.FNum id) g
+let lift ?info id g = Logic.Rules.lift info id g
 
 let skip g= g
 
-let trivial = rule_tac Drule.trueR
-
 let find_basic sq = 
-  let ams = Drule.asm_forms sq
+  let ams = Logic.asms sq
+  and cncs = Logic.concls sq
   in 
-  let rec find_basic_aux xs i =
+  let rec find_basic_aux xs =
     match xs with
       [] -> raise Not_found
-    | c::cs -> 
+    | (t, c)::cs -> 
 	try 
-	  (-(Drule.first 
-	       (fun x-> Formula.alpha_convp 
-		   (Logic.scope_of sq) x c) ams), i)
-	with Not_found -> find_basic_aux cs (i+1)
-  in find_basic_aux (Drule.concl_forms sq) 1
+	  ((Drule.first 
+	     (fun x-> Formula.alpha_convp 
+		 (Logic.scope_of sq) x c) ams), 
+	   ftag t)
+	with Not_found -> find_basic_aux cs 
+  in 
+  find_basic_aux cncs
 
-let basic0 sqnt = 
+let basic ?info sqnt = 
   let sq=Logic.get_sqnt sqnt
   in 
   try
     let a,c = find_basic sq
-    in Logic.Rules.unify a c sqnt
+    in Logic.Rules.assume info a c sqnt
   with Not_found -> raise (Result.error "Not basic")
-
-let basic sqnt = rule_tac basic0 sqnt
 
 let postpone = Logic.Rules.postpone
 
-let unify_tac i j=  (Logic.Rules.unify i j)
-let cut th =  (Logic.Rules.cut th)
+let cut ?info th = Logic.Rules.cut info th
 
+let implI ?info ?c sq =
+  let cf=
+    match c with
+      Some x -> x
+    | _ -> (Drule.first_concl Formula.is_implies (Logic.get_sqnt sq))
+  in 
+  Logic.Rules.implI info cf sq
 
-let implI0 sq =
-  let c=Drule.first_concl Formula.is_implies (Logic.get_sqnt sq)
-  in Logic.Rules.implI c sq
+let implE ?info ?a sq =
+  let af=
+    match a with 
+      (Some x) -> x
+    | _ -> (Drule.first_asm Formula.is_implies (Logic.get_sqnt sq))
+  in 
+  Logic.Rules.implE info af sq
 
-let implE0 sq =
-  let c=Drule.first_asm Formula.is_implies (Logic.get_sqnt sq)
-  in Logic.Rules.implE c sq
+let conjI ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_conj (Logic.get_sqnt sq))
+  in Logic.Rules.conjI info cf sq
 
-let conjI0 sq =
-  let c=Drule.first_concl Formula.is_conj (Logic.get_sqnt sq)
-  in Logic.Rules.conjI c sq
+let conjE ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_conj (Logic.get_sqnt sq))
+  in Logic.Rules.conjE info af sq
 
-let conjE0 sq =
-  let c=Drule.first_asm Formula.is_conj (Logic.get_sqnt sq)
-  in Logic.Rules.conjE c sq
+let disjI ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_disj (Logic.get_sqnt sq))
+  in Logic.Rules.disjI info af sq
 
-let disjI0 sq =
-  let c=Drule.first_asm Formula.is_disj (Logic.get_sqnt sq)
-  in Logic.Rules.disjI c sq
+let disjE ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_disj (Logic.get_sqnt sq))
+  in Logic.Rules.disjE info cf sq
 
-let disjE0 sq =
-  let c=Drule.first_concl Formula.is_disj (Logic.get_sqnt sq)
-  in Logic.Rules.disjE c sq
+let negC ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_neg (Logic.get_sqnt sq))
+  in Logic.Rules.negC info cf sq
 
-let negC0 sq =
-  let c=Drule.first_concl Formula.is_neg (Logic.get_sqnt sq)
-  in Logic.Rules.negC c sq
+let negA ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_neg (Logic.get_sqnt sq))
+  in Logic.Rules.negA info af sq
 
-let negA0 sq =
-  let c=Drule.first_asm Formula.is_neg (Logic.get_sqnt sq)
-  in Logic.Rules.negA c sq
+let allI ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_all (Logic.get_sqnt sq))
+  in Logic.Rules.allI info cf sq
 
-let allI0 sq =
-  let c=Drule.first_concl Formula.is_all (Logic.get_sqnt sq)
-  in Logic.Rules.allI c sq
+let existI ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_exists (Logic.get_sqnt sq))
+  in Logic.Rules.existI info af sq
 
-let existI0 sq =
-  let c=Drule.first_asm Formula.is_exists (Logic.get_sqnt sq)
-  in Logic.Rules.existI c sq
+let trueR ?info ?c sq =
+  let cf=
+    match c with 
+      Some x -> x
+    | _ -> (Drule.first_concl Formula.is_true (Logic.get_sqnt sq))
+  in Logic.Rules.trueR info cf sq
 
+let trivial = trueR
 
-let mp_tac0 sq = 
-  Drule.mp_basic_rule 
-    (Drule.first_asm Formula.is_implies (Logic.get_sqnt sq)) sq
+let allE ?info ?a trm sq =
+  let af=
+    match a with
+      Some x -> x
+    | _ ->  (Drule.first_asm Formula.is_all (Logic.get_sqnt sq))
+  in Logic.Rules.allE info trm af sq
 
-let mp_tac sq = rule_tac mp_tac0 sq
+let existE ?info ?c trm sq =
+  let cf=
+    match c with
+      (Some x) -> x
+    | _ -> (Drule.first_concl Formula.is_exists (Logic.get_sqnt sq))
+  in Logic.Rules.existE info trm cf sq
 
+let deleten ?info ns sq = 
+  let rec del_aux l s=
+    match l with
+      [] -> s
+    | (x::xs) -> del_aux xs (Logic.Rules.delete info x s)
+  in del_aux ns sq
 
-let trueR0 sq =
-  let c=Drule.first_concl Formula.is_true (Logic.get_sqnt sq)
-  in Logic.Rules.trueR c sq
+let delete ?info i =  (Logic.Rules.delete info i)
 
+let beta_tac ?info ?f= 
+    match f with
+    (Some x) -> Logic.Rules.beta info x
+    | _ -> (Drule.foreach_once (fun x -> Logic.Rules.beta info x))
 
-let conjI = rule_tac  conjI0
-let conjE = rule_tac conjE0
+let rewrite_thm ?info ths ?(dir=leftright) f goal=
+  Logic.Rules.rewrite_any info ~dir:dir 
+    (List.map (fun x -> Logic.RRThm x) ths) f goal
 
-let disjI = rule_tac disjI0
-let disjE = rule_tac disjE0
+let replace ?info i j =
+  (Logic.Rules.rewrite_any info 
+     ~dir:Rewrite.leftright [Asm i] j)
 
-let negA = rule_tac  negA0
-let negC = rule_tac  negC0
+let replace_rl ?info i j =
+  (Logic.Rules.rewrite_any info 
+     ~dir:Rewrite.leftright [Asm i] j)
 
-let implI = rule_tac  implI0
-let implE = rule_tac  implE0
-
-(*     let mp_tac = rule_tac Drule.mp_rule *)
-
-let allI = rule_tac  allI0
 
 (*
-let allE str = 
-  let t=Tpenv.read_unchecked str
-  in rule_tac (Drule.allE t)
+   [unify_tac a c g]
+   unify assumption [a] with conclusion [c]
 *)
-let allE trm =  rule_tac (Drule.allE trm)
+let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
+  let sqnt=Logic.get_sqnt g
+  in 
+  let asm = 
+    try 
+      Formula.dest_form 
+	(Logic.drop_tag (Logic.get_asm (Logic.fident_to_index a sqnt) sqnt))
+    with Not_found ->
+      raise(Result.error "unify_tac: assumption not found")
+  and concl = 
+    try 
+      Formula.dest_form
+	(Logic.drop_tag (Logic.get_cncl (Logic.fident_to_index c sqnt) sqnt))
+    with Not_found ->
+      raise(Result.error "unify_tac: conclusion not found")
+  in 
+  let asm_vars, asm_body = 
+    Term.strip_qnt (Basic.All) asm
+  and concl_vars, concl_body = 
+    Term.strip_qnt (Basic.Ex) concl
+  in 
+  let asm_varp x = (Rewrite.is_free_binder asm_vars x) 
+  and concl_varp x = (Rewrite.is_free_binder concl_vars x) 
+  in 
+  let varp x = (asm_varp x) or (concl_varp x)
+  and scope = Logic.scope_of sqnt
+  in 
+  let env1 = 
+    try  (* unify asm and concl *)
+      Unify.unify scope varp asm concl
+    with _ -> 
+      try (* unify asm and concl_body with concl_vars *)
+	Unify.unify scope concl_varp asm concl_body
+      with _ -> 
+	try (* unify asm_body and concl with asm_vars *)
+	  Unify.unify scope asm_varp asm_body concl
+	with _ -> 
+	  try (* unify asm_body and concl_body with all vars *)
+	    Unify.unify scope asm_varp asm_body concl_body
+	  with _ -> 
+	    raise (Result.error "unify_tac: can't unify formulas")
+  in 
+  let asm_consts = Drule.make_consts asm_vars env1
+  and concl_consts = Drule.make_consts concl_vars env1
+  in 
+  let g1 = Drule.inst_list (Logic.Rules.allE info) asm_consts a g
+  in 
+  let g2 = Drule.inst_list (Logic.Rules.existE info) concl_consts c g
+  in 
+  try 
+    Logic.Rules.assume info a c g2
+  with _ -> g2
 
-let existI = rule_tac existI0  
-
-(*
-let existE str= 
-  let t= Tpenv.read_unchecked str
-  in rule_tac (Drule.existE t)
-*)
-let existE trm= rule_tac (Drule.existE trm)
-
-
-let beta i =  (Logic.Rules.beta i)
-
-let delete i =  (Logic.Rules.delete i)
-
-let beta_tac = rule_tac 
-    (Drule.foreach_once Logic.Rules.beta)
-
-let replace i j =
-  (Logic.Rules.rewrite ~dir:true [i] j)
-
-let replace_rl i j =
-  (Logic.Rules.rewrite ~dir:false [i] j)
-
-
-
-let get_one ls err=
-  match ls with
-    x::_ -> x
-  | _ -> raise err
-	
-let get_two ls err=
-  match ls with
-    x::y::_ -> (x, y)
-  | _ -> raise err
 
 (* tacticals *)
 
@@ -250,12 +319,6 @@ let thenl rls sq =
 let (++) tac1 tac2 g =
   thenl [tac1; tac2] g
 
-(*
-*)
-
-(*
-let apply_list ts g = Logic.Rules.apply_list ts g
-*)
 
 (* apply_list rules sq:
    applies rules, in order, to each subgoal resulting from

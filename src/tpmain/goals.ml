@@ -71,9 +71,8 @@ let goal_string st = goal (read st)
 (*(Tpenv.mk_thyinfo())*)
 
 let prove_goal trm tac =
-  mk_thm (Logic.Rules.goal_apply tac 
-	    (mk_goal  (Tpenv.scope()) 
-	       (Formula.mk_form (Tpenv.scope()) trm)))
+  mk_thm (tac (mk_goal  (Tpenv.scope()) 
+		 (Formula.mk_form (Tpenv.scope()) trm)))
 (*
 let prove_goal_string st tac= prove_goal (read st) tac
 *)
@@ -87,7 +86,7 @@ let by_list trm tacs =
     | t::ts -> 
 	if Logic.goal_has_subgoals g
     	then 
-	  by_aux ts (try (Logic.Rules.goal_apply t g) with _ -> g)
+	  by_aux ts (try (t g) with _ -> g)
 	else g
   in 
   mk_thm (by_aux tacs fg)
@@ -99,7 +98,7 @@ let by_list_string st tacs =by_list (read st) tacs
 let by_com tac =
   let p = top()
   in 
-  (let g = (Logic.Rules.goal_apply tac (curr_goal p))
+  (let g = (tac (curr_goal p))
   in 
   (if (num_of_subgoals g)=0 
   then prflist:= g::(!prflist)
@@ -113,7 +112,7 @@ let postpone() =
   match (!prflist) with
     [] -> raise (Result.error "No goal")
   |	_ -> 
-      (let ng = Logic.Rules.goal_postpone (pop_plist())
+      (let ng = Logic.Rules.postpone (pop_plist())
       in 
       push_plist ng)
 

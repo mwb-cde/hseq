@@ -9,30 +9,33 @@
     val unfold : string -> int -> Tactics.tactic
 
 (* rewrite with a named theorem *)
-    val rewrite_thm : string -> int -> Tactics.tactic
+    val rewrite_thm : string -> Logic.fident -> Tactics.tactic
 
 (* rewrite with a named theorem *)
-    val rewrite_dir : bool -> Logic.thm list -> int -> Tactics.tactic
+    val rewrite_dir : Rewrite.direction
+      -> Logic.thm list -> Logic.fident -> Tactics.tactic
 
 (* rewrite left-right/right-left with a named theorem *)
 
-val rewrite_rl: string -> int -> Tactics.tactic
-val rewrite_lr: string -> int -> Tactics.tactic
+val rewrite_rl: string -> Logic.fident -> Tactics.tactic
+val rewrite_lr: string -> Logic.fident -> Tactics.tactic
 
 (* rewrite with a given theorem *)
-    val rewrite : Logic.thm -> int -> Tactics.tactic
+    val rewrite : Logic.thm -> Logic.fident -> Tactics.tactic
 
 (* test and rules for Iff *)
 val is_iff: Formula.form -> bool
-val iffI_rule: int -> Logic.rule
-val iffI: Tactics.tactic
+val iffI_rule: Logic.fident -> Logic.rule
+val iffI: ?c:Logic.fident -> Tactics.tactic
 
 
-val asm_elims : unit -> ((Formula.form->bool) * (int -> Logic.rule)) list
-val conc_elims : unit -> ((Formula.form->bool) * (int -> Logic.rule)) list
+val asm_elims : 
+    unit -> ((Formula.form->bool) * (Logic.fident -> Logic.rule)) list
+val conc_elims : 
+    unit -> ((Formula.form->bool) * (Logic.fident -> Logic.rule)) list
 
-val false_rule0: int -> Logic.rule
-val false_rule:  Logic.rule
+val false_rule0: Logic.fident -> Logic.rule
+val false_rule:  ?a:Logic.fident -> Logic.rule
 
 (* flatten_tac: logical simplification of a sequent without
    creating new sequents *)
@@ -45,11 +48,9 @@ val false_rule:  Logic.rule
 (* [inst_tac i consts] instantiate assumption (if [i<0]) or conclusion
    with list of constants *)
 
-val inst_rule : string list -> int -> Logic.rule
-val inst_term_rule : Basic.term list -> int -> Logic.rule
-val inst_tac: string list -> int -> Tactics.tactic 
-val inst_asm : string list -> Tactics.tactic
-val inst_concl : string list -> Tactics.tactic
+val inst_tac: Logic.fident -> Basic.term list -> Tactics.tactic 
+val inst_asm : ?a:Logic.fident -> Basic.term list -> Tactics.tactic
+val inst_concl : ?c:Logic.fident -> Basic.term list -> Tactics.tactic
 
 (* cases tactics *)
 
@@ -57,7 +58,7 @@ val cases_tac0: Basic.term -> Tactics.tactic
 val cases_tac: string -> Tactics.tactic
 
 (* convert boolean equality to iff *)
-val equals_tac: int -> Tactics.tactic
+val equals_tac: ?f:Logic.fident -> Tactics.tactic
 
 (* tactics for trivial boolean *)
 val false_tac: Tactics.tactic
@@ -68,4 +69,3 @@ val bool_tac:  Tactics.tactic
 val match_mp_tac: Logic.thm -> int -> Tactics.tactic
 
 val back_mp_tac: int -> int -> Tactics.tactic
-

@@ -68,6 +68,32 @@ let get_cdir () = Sys.getcwd ()
 
 let thy_suffix = "."^Settings.thy_suffix
 
+(*
+   [build_thy_file f]: 
+   build a theory by useing file f.
+*)
+
+let build_thy_file f=  
+  let tf = f^Settings.script_suffix
+  in 
+  let rec find_aux ths =
+    match ths with
+      [] -> raise Not_found
+    | (t::ts) ->
+	let nf = Filename.concat t tf
+	in 
+	if Sys.file_exists nf 
+	then nf 
+	else find_aux ts
+  in 
+  let script=
+    try 
+      find_aux (get_thy_path())
+    with Not_found ->
+      raise (Result.error ("Can't find script to build theory "^f))
+  in 
+  Unsafe.use_file ~silent:false script
+
 let find_thy_file f =
   let tf = f^thy_suffix
   in 
@@ -78,8 +104,20 @@ let find_thy_file f =
 	let nf = Filename.concat t tf
 	in 
 	if Sys.file_exists nf 
-	then nf else find_aux ts
-  in find_aux (get_thy_path())
+	then nf 
+	else find_aux ts
+  in 
+  try 
+    find_aux (get_thy_path())
+  with Not_found -> 
+    try
+      Result.warning ("Can't find theory "^f);
+      Result.warning ("Trying to build theory "^f);
+      build_thy_file f;
+      Result.warning ("Built theory "^f);
+      find_aux (get_thy_path())
+    with _ -> 
+      raise (Result.error ("Can't find theory "^f))
 
 
 (* Pretty printing and Parsing*)
@@ -231,7 +269,7 @@ let load_base_thy ()=
       Thydb.load_theory(get_theories()) 
 	base_thy_name false on_load_thy find_thy_file
     in 
-    set_cur_thy(Thydb.getthy (get_theories()) base_thy_name);
+    set_cur_thy(Thydb.get_thy (get_theories()) base_thy_name);
     Thydb.add_importing imprts (get_theories())
   with _ -> theories:=(thdb())
 
@@ -243,15 +281,15 @@ let reset_theoryDB () = reset_thydb()
 let init_list = 
   ref 
     [
-     pp_init;
+     init_theoryDB;
      sym_init;
-     init_theoryDB 
+     pp_init
    ]
 
 let add_init x = init_list:=(x::!init_list)
 
 let init ()=
-  List.iter (fun x -> x()) (!init_list)
+  List.iter (fun x -> x()) (List.rev (!init_list))
 
 (* reseting functions *)
 

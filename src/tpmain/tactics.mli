@@ -3,25 +3,44 @@
 
 type tactic = Logic.rule
 
+(* fident functions *)
+
+val fnum: int -> Logic.fident
+val ftag: Tag.t -> Logic.fident
+
+val (!!): int -> Logic.fident
+
+(* rewriting direction *)
+val leftright : Rewrite.direction
+val rightleft : Rewrite.direction
+
 (* conversion from rule to tactic *)
 
-val rule_tac :
-    Logic.rule -> tactic
+val rotateA : (?info: Logic.info) -> tactic
+val rotateC : (?info: Logic.info) -> tactic
 
-val rotateA : tactic
-val rotateC : tactic
+val copy_asm : (?info: Logic.info) -> Logic.fident -> tactic
+val copy_concl : (?info: Logic.info) -> Logic.fident -> tactic
 
-val copy_asm : int -> tactic
-val copy_concl : int -> tactic
+(* delete a list of assumptions/conclusions *)
+val deleten: ?info:Logic.info -> Logic.fident list -> Logic.rule
 
-val trivial : tactic
+val trivial : ?info: Logic.info -> (?c:Logic.fident) -> tactic
 val skip : tactic
-val basic : tactic
+val basic : ?info:Logic.info -> tactic
 val postpone: tactic
 
-val cut : Logic.thm -> tactic
-val unify_tac : int -> int -> tactic
+val cut : (?info: Logic.info) -> Logic.thm -> tactic
 
+(*
+   [unify_tac a c g]
+   unify assumption [a] with conclusion [c]
+*)
+val unify_tac : ?info: Logic.info ->  
+  ?a:Logic.fident -> ?c:Logic.fident -> Logic.rule
+(*
+val unify_tac : Logic.fident -> Logic.fident -> tactic
+*)
 (*
    [lift id sqnt]
    Move assumption/conclusion with identifier [id] to 
@@ -30,79 +49,46 @@ val unify_tac : int -> int -> tactic
    Raise Not_found if identified formula is not in 
    assumptions/conclusions.
 *)
-val lift : int -> tactic
+val lift : ?info:Logic.info -> Logic.fident -> tactic
 
 (* 
    the following apply the basic rules to the first assumption/conclusion
    which will succeed 
 *)
 
-val conjI : tactic
-val conjE : tactic
-val disjI : tactic
-val disjE : tactic
-val negA : tactic
-val negC : tactic
-val implI : tactic
-val implE : tactic
-val mp_tac : tactic
-val existI : tactic
-(* val existE : string -> tactic *)
-val existE : Basic.term -> tactic 
-val allI : tactic
-(* val allE : string -> tactic *)
-val allE : Basic.term -> tactic
+val conjI : ?info: Logic.info -> (?c: Logic.fident) -> tactic
+val conjE : ?info: Logic.info -> (?a: Logic.fident) -> tactic
+val disjI : ?info: Logic.info -> (?a: Logic.fident) -> tactic
+val disjE : ?info: Logic.info -> (?c: Logic.fident) -> tactic
+val negA : ?info: Logic.info -> (?a: Logic.fident) -> tactic
+val negC : ?info: Logic.info -> (?c: Logic.fident) -> tactic
+val implI : ?info: Logic.info -> (?c: Logic.fident) -> tactic
+val implE : ?info: Logic.info -> (?a: Logic.fident) -> tactic
+val existI : ?info: Logic.info -> (?a: Logic.fident) -> tactic
+val existE : ?info: Logic.info -> (?c: Logic.fident) -> Basic.term -> tactic 
+val allI : ?info: Logic.info -> (?c: Logic.fident) -> tactic
+val allE : ?info: Logic.info -> (?a: Logic.fident) -> Basic.term -> tactic
 
-(* beta conversion 
+(*
+   beta conversion 
    to given asumption/conclusion
    or search for suitable assumption/conclusion
 *)
-val beta:  int -> tactic
-val beta_tac :  tactic
+val beta_tac : ?info: Logic.info -> (?f:Logic.fident) -> tactic
+
+(* rewrite with a list of theorems *)
+val rewrite_thm: 
+    ?info: Logic.info -> 
+      Logic.thm list -> ?dir:Rewrite.direction
+	-> Logic.fident -> Logic.rule
 
 (* rewrite from asumption *)
-val replace: int -> int -> tactic
-val replace_rl: int -> int -> tactic
+val replace: ?info: Logic.info -> Logic.fident -> Logic.fident -> tactic
+val replace_rl: ?info: Logic.info -> Logic.fident -> Logic.fident -> tactic
 
 (* delete assumption or conclusion *)
-val delete: int -> tactic 
+val delete: ?info:Logic.info -> Logic.fident -> tactic 
 
-(** [get_one l e] 
-   get single element of list [l].
-   raise exception [e] if length of [l] ~= 1
-*)
-val get_one : 'a list -> exn -> 'a
-
-(** [get_two l e] 
-   get both elements of list [l].
-   raise exception [e] if length of [l] ~= s
-*)
-val get_two : 'a list -> exn -> ('a * 'a)
-
-(*
-(** Cases tactic *)
-
-(** [get_case_thm]
-   get boolean cases theorem
-*)
-    val get_case_thm : unit -> Logic.thm
-
-(** [cases_tac_info_tac t]
-   introduce cases of [t] into goal.
-   creates new subgoal in which to prove [x]
-
-   g|asm |- cncl      
-   --> 
-   g'|asm |- t:x, cncl, g| t:x, asm |- cncl 
-
-   info: [g', g] [t] []
- *)
-    val cases_info_tac :
-      Logic.Rules.tag_info option -> Basic.term -> Logic.goal -> Logic.goal
-    val cases_tac: 
-      Basic.term -> Logic.goal -> Logic.goal
-
-*)
 (* tacticals *)
 
 type tactical = tactic 

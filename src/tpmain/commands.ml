@@ -61,7 +61,7 @@ let load_theory_as_cur n =
   in let imprts=
     (Thydb.load_theory (theories()) n false Tpenv.on_load_thy filefn)
   in 
-  (Tpenv.set_cur_thy (Thydb.getthy (theories()) n);
+  (Tpenv.set_cur_thy (Thydb.get_thy (theories()) n);
    Thydb.add_importing imprts (theories()))
 
 
