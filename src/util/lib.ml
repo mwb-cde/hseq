@@ -254,7 +254,7 @@ let date ()= Unix.time()
 let nice_date f= 
   let tm = Unix.localtime f
   in 
-  (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_yday, 
+  (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_mday, 
    tm.Unix.tm_hour, tm.Unix.tm_min)
 
 let get_one ls err=
