@@ -10,27 +10,27 @@ class typingError s ts tys=
     method get_types () = typs
     method print st = 
       Format.open_box 0; 
-      Format.open_box 0; 
       print_string (self#msg());
-      Format.print_break 1 2;
+      (match (self#get_terms()) with 
+	[] -> ()
+      | ts -> 
+	  (Format.print_newline();
+	   print_string "Terms: ";
+	   Format.open_box 0; 
+	   Printer.print_sep_list 
+	     (Term.print_term st 0, ",") ts;
+	   Format.close_box()));
+      (match (self#get_types()) with 
+	[] -> ()
+      | ts -> 
+	  (Format.print_newline();
+	   print_string "Gtypes: ";
+	   Format.open_box 0; 
+	   Printer.print_sep_list
+	     (Gtypes.print_type st 0, ",") ts;
+	   Format.close_box()));
       Format.print_newline();
-      Format.open_box 0; 
-      print_string "Terms: ";
-      Format.print_break 1 2;
-      Format.open_box 0; 
-      Printer.print_sep_list 
-	(Term.print_term st 0, ",")
-	(self#get_terms());
-      Format.close_box();
-      Format.open_box 0;
-      Format.print_break 1 2;
-      print_string "Gtypes: ";
-      Format.open_box 0; 
-      Printer.print_sep_list
-	(Gtypes.print_type st 0, ",")
-	(self#get_types());
-      Format.close_box();
-      Format.close_box();
+      Format.close_box()
   end
 let typingError s tr ty= 
   Result.mkError((new typingError s tr ty):>Result.error)

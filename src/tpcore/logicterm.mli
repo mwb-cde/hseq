@@ -62,6 +62,7 @@ val eta_conv: term -> Basic.gtype -> term -> term
 (* closed terms (every bound variable occurs within its binding term *)
 val is_closed : term -> bool
 val is_closed_scope: substitution -> term -> bool
+val is_closed_aux: substitution -> term -> unit
 
 (* close a term:
    constructs outermost universal quantifier for every

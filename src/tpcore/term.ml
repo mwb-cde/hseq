@@ -775,7 +775,21 @@ let retype_pretty_env typenv trm=
 	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
 	in 
 	(Id(n, nt), nenv1)
-    | Bound(q) -> (table_find t qenv, name_env)
+    | Bound(q) -> 
+	(let ntrm, nenv=
+	  try (table_find t qenv, name_env)
+	  with Not_found ->
+	    let qnt, qnm, qty = Basic.dest_binding q
+	    in 
+	    let nty, nenv1=
+	      Gtypes.mgu_rename_env inf typenv name_env qty
+	    in 
+	    let nq=mk_binding qnt qnm nty
+	    in 
+	    table_add (Bound q) (Bound nq) qenv;
+	    (Bound nq, nenv1)
+	in 
+	(ntrm, nenv))
     | Const(c) -> (t, name_env)
     | Typed(trm, ty) -> retype_aux trm name_env
     | App(f, a) -> 
@@ -822,7 +836,7 @@ let rec print_termlist prenv x =
 
 let pplookup ppstate id =
   try
-    (Printer.get_record ppstate.Printer.term_info id)
+    (Printer.get_record ppstate.Printer.terms id)
   with Not_found -> 
     Printer.mk_record 
       Printer.default_term_prec
@@ -853,7 +867,7 @@ let print_typed_name ppstate (n, ty)=
 let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
   let printer =
     try
-      Printer.get_printer (ppstate.Printer.term_info) f
+      Printer.get_printer (ppstate.Printer.terms) f
     with Not_found -> 
       Printer.print_operator
 	(fnpr, 
@@ -957,12 +971,14 @@ class termError s ts =
     val trms = (ts :term list)
     method get() = trms
     method print st = 
-      Format.open_box 0; print_string ((self#msg())^" "); 
-      Format.print_newline();
+      Format.open_box 0; 
+      print_string ((self#msg())^" "); 
+      Format.print_space();
       Format.open_box 0; 
       Printer.print_sep_list 
 	(print st, ",") (self#get());
       Format.close_box();
+      Format.print_newline();
       Format.close_box();
   end
 let mktermError s t = ((new termError s t):>error)

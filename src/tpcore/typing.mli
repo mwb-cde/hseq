@@ -62,11 +62,12 @@ val retype_pretty: Gtypes.substitution -> Basic.term
   -> Basic.term 
 *)
 
-(* Assign the variable types in a term their required type
+(*
+   Assign the variable types in a term their required type
    to ensure well typed term, returning the required subsititution 
    Also checks that defined types are valid and well defined in the given 
-   scope.*)
-
+   scope.
+*)
 val settype: Gtypes.scope -> Basic.term  -> Gtypes.substitution
 
 (* Assign the variable types in a term their required type

@@ -319,7 +319,7 @@ let find_printer ppstate id =
 
 let pplookup ppstate id =
   try
-    (Printer.get_record (ppstate.Printer.type_info) id)
+    (Printer.get_record (ppstate.Printer.types) id)
   with Not_found -> 
     Printer.mk_record 
       Printer.default_type_prec
@@ -352,7 +352,7 @@ and print_defined ppstate prec (f, args) =
   let pprec = pplookup ppstate f
   in 
   try 
-    let printer = Printer.get_printer (ppstate.Printer.type_info) f
+    let printer = Printer.get_printer (ppstate.Printer.types) f
     in 
     printer prec (f, args)
   with Not_found -> 
@@ -421,13 +421,15 @@ class typeError s ts=
     val trms = (ts: gtype list)
     method get() = ts
     method print st = 
-      Format.open_box 0; Format.print_string (self#msg()); 
-      Format.print_break 1 2;
+      Format.open_box 0; 
+      Format.print_string (self#msg()); 
+      Format.print_space();
       Format.open_box 0; 
       Printer.print_sep_list 
 	(print st, ",") (self#get());
       Format.close_box();
-      Format.close_box();
+      Format.print_newline();
+      Format.close_box()
   end
 let typeError s t = (mkError((new typeError s t):>error))
 let addtypeError s t es= raise (addError ((new typeError s t):>error) es)
