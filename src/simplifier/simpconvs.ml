@@ -7,7 +7,6 @@ struct
     | Some(y) -> y
 
 let make_iff_equals_ax ()=
-
   let iff_l1 = prove_goal "!x y: (x = y ) => (x => y)"
       (thenl[flatten_tac; replace (-2) (-1); basic])
   in 
@@ -33,7 +32,6 @@ let make_iff_equals_ax ()=
        replace (-1) (-3); flatten_tac;
        replace (-1) 1; replace (-2) 1; eq_tac])
   in 
-
   let iff_l3 = 
     prove_goal "!x y: (x iff y) iff (x = y)"
       (thenl[

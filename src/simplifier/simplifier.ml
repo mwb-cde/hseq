@@ -119,8 +119,6 @@ let repeat_for_sqnt rl g=
     else raise No_change)
 	
 
-	
-
 (*
    prep_cond_tac: 
    push a theorem into a sequent,
@@ -349,7 +347,6 @@ let initial_flatten ft g=
 	   Drule.foreach_asm_except fts asm_elims]) g
 
 
-
 (* inital_flatten_tac fts g:
    prepare sequent for simplification
    flatten all except formulas with tag in fts
@@ -478,7 +475,7 @@ let simp_prep_tac ets st g=
    - put conclusions into assumption by negation (** not done yet **)
    - make assumption entries
    - simplify
-   - delete termporary assumptions
+   - delete temporary assumptions
    - flatten sequent
 *)
 
@@ -492,33 +489,50 @@ let simp_tac set i g =
   basic_simp_tac (mk_control()) set ft st g
 *)
 
-(*
-let simp_tac ets st g=
-  let aset = empty_set()
-  in 
-  let chng=ref false
-  in 
-  let retg=
-    if(sqnt_solved st g)
-    then g
-    else 
-      let ng = 
-	try 
-	  let tmp=initial_flatten_tac ets g
-	  in (chng:=true; tmp)
-	with _ -> g
-      in 
-      if(sqnt_solved st ng)
-      then ng
-      else 
-	try 
-	  let tmp=simp_flatten_tac ft ng
-	  in chng:=true; tmp
-	with _ -> ng
-  in 
-  if(!chng) then retg
-  else raise No_change
+(* 
+   full_simp_tac cntrl sset tg gl
+   cntrl: control
+   sset: simpset to use
+   tg: tag formula to simplifier
+   gl: goal
+
+   simplifies formula tg in the first subgoal of goal
+
+   raises
+   Not_found if no formula tagged tg in subgoal
+   No_change if not change is made
 *)
+   
+
+let full_simp_tac cntrl sset tg gl=
+  let chng=ref false
+  in
+  (* get the first sequent *)
+  let sqnt = 
+    try (Logic.get_sqnt gl)
+    with _ -> raise Not_found
+  in 
+  (* prepare the subgoal for simplification *)
+  let prepared_goal = 
+    try 
+      let tmp=initial_flatten_tac [tg] gl
+      in (chng:=true; tmp)
+    with 
+      No_change -> gl
+    | err -> 
+	raise (Result.addError (new Result.error("simp_tac: stage 1")) err)
+  in 
+  (* invoke the simplifier *)
+  let simped_goal = 
+    basic_simp_tac cntrl sset tg sqnt prepared_goal
+  in 
+  (* clean up afterwards *)
+  let ret_goal=simped_goal
+  in 
+  if(!chng) then ret_goal
+  else raise No_change
+
+
 
 (* tests *)
 
@@ -532,11 +546,18 @@ let add_simp thm =
 (* empty_simp: empty simp set *)
 let empty_simp () = simp_set:=empty_set()
 
+(* user-level version of full_simp_tac *)
+let simp_tac i gl=
+  let cntrl = mk_control()
+  in 
+  let tg=Logic.index_to_tag i (Logic.get_sqnt gl)
+  in 
+  full_simp_tac cntrl (!simp_set) tg gl
+
 end
 
+open Simplifier;;
 
-
-(* 
 let axioms = 
 [
 "!x: (true and x) = x";
@@ -565,8 +586,7 @@ let axioms =
 ] 
 
 let setup()=
-  List.iter (fun x-> add_simp (saxiom x)) axioms
-
+  add_simp(List.map saxiom axioms)
 
 let t="!x y : (not (false and x)) => (x or (y or true))";;
 let t1= "!x:(false and x)";;
@@ -574,6 +594,7 @@ let t2= "not (not false)";;
 let t3= "!f g: 1 = 2";;
 let t4="!f x y: (x=y) => ((f x)=(f y))";;
 
-add_simp (saxiom "!f g x: true => (1=2)");;
+add_simp [(saxiom "!f g x: true => (1=2)")];;
+(*
 let rrs() = List.map read axioms;;
 *)

@@ -23,6 +23,7 @@ module Input:
    is_empty inp: true iff inp is empty 
 *)
     val is_empty : 'a t -> bool
+
 (* look inp: 
    get first element in input inp but don't remove it from input 
 *)

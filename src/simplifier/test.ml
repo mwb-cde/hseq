@@ -144,16 +144,16 @@ let case_info inf (x:Term.term) g=
   in 
   let ng1, ng2=get_two (!tinf).Logic.Rules.goals (Failure "case_info")
   in 
-  Logic.Rules.do_tag_info (Some inf) [ng1;ng2] [nt];
-  g2
+  Logic.Rules.do_tag_info (Some inf) [ng1;ng2] [nt]; g2
 
 
 (* *)
+
+(*
 #use "simplifier.ml";;
 
-
 open Simplifier
-
+*)
 
 
 

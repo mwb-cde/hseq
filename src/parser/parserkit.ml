@@ -126,7 +126,6 @@ module type GRAMMARS =
 
       type token_info = 
 	  { fixity: Info.fixity;
-(*	    assoc: Info.associativity; *)
 	    prec: int
 	  }
 
@@ -153,7 +152,6 @@ module Grammars:GRAMMARS=
 
     type token_info = 
 	  { fixity: Info.fixity;
-(*	    assoc: Info.associativity; *)
 	    prec: int
 	  }
 
@@ -267,12 +265,12 @@ module Grammars:GRAMMARS=
 		then list_binary prec 
 		    (list_left inf.prec tok (x, Input.accept inp))
 		else (x, inp)
-      and list_right prec tok (x, inp)=
+      and list_left prec tok (x, inp)=
 	let nx, ninp=
 	  list_binary prec ((chunk >>binop tok x) inp)
 	in 
 	(nx, ninp)
-      and list_left prec tok (x, inp)=
+      and list_right prec tok (x, inp)=
 	let nx, ninp=
 	  list_binary prec (chunk inp)
 	in

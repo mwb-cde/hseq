@@ -33,25 +33,15 @@ module Grammars :
 
   type infotyp = 
       { 
-	scope: Gtypes.scope;
 	(* term information *)
 	bound_names: (string* Term.term) list ref;
 	token_info: Pkit.token -> Pkit.token_info;
         (* type information *)
       	typ_indx : int ref;
-	typ_names: (string, Gtypes.gtype)Lib.substype;
+	typ_names: (string* Gtypes.gtype)list ref;
         type_token_info: Pkit.token -> Pkit.token_info
       }
 
-(* preivous infotyp
-    type infotyp = {
-      scope : Gtypes.scope;
-      typ_indx : int ref;
-      typ_names : (string, Gtypes.gtype) Lib.substype;
-      token_info : Pkit.token -> Pkit.token_info;
-      type_token_info : Pkit.token -> Pkit.token_info;
-    } 
-*)
     val string_of_tok : Lexer.tok -> string
     val string_tokens : Lexer.tok list -> string
     val get_type_indx : infotyp -> int
@@ -71,8 +61,7 @@ module Grammars :
     val mk_token_info : Lexer.tok -> Pkit.token_info
     val mk_type_token_info : Lexer.tok -> Pkit.token_info
     val mk_empty_inf : Gtypes.scope -> infotyp
-    val mk_inf : Gtypes.scope -> infotyp
-    val scope_of_inf : infotyp -> Gtypes.scope
+    val mk_inf : unit -> infotyp
 
     val error : 'a phrase
 
@@ -122,6 +111,15 @@ module Grammars :
       (infotyp -> 'a Pkit.phrase) ->
       infotyp -> ('a * Gtypes.gtype) phrase
     val optional_type : infotyp -> Gtypes.gtype option phrase
+
+(*
+   term_identifier: 
+   parse an identifier that might appear in a quantified term
+*)
+    val term_identifier: infotyp -> Term.term phrase
+(* form:
+   toplevel of term phrase
+*)
     val form : infotyp -> Term.term phrase
     val formula : infotyp -> Term.term phrase
     val typed_primary : infotyp -> Term.term phrase
@@ -186,28 +184,27 @@ val init : unit -> unit
 *)
 
 (* mk_info: utility function *)
-val mk_info : Gtypes.scope -> Grammars.infotyp
+val mk_info : unit -> Grammars.infotyp
+
+type 'a parser = Pkit.input -> 'a
+type 'a phrase = 'a Pkit.phrase
 
 val parse : 'a Pkit.phrase -> Pkit.input -> 'a
 
-val identifier_parser : Gtypes.scope -> Pkit.input -> Basic.fnident
+val identifier_parser : Pkit.input -> Basic.fnident
 
 val typedef_parser :
-  Gtypes.scope ->
   Pkit.input -> string * string list option * Gtypes.gtype option
-val type_parser : Gtypes.scope -> Pkit.input -> Gtypes.gtype
+val type_parser : Pkit.input -> Gtypes.gtype
 
 val defn_parser :
-  Gtypes.scope ->
   Pkit.input -> (string * (string * Gtypes.gtype) list) * Term.term
-val term_parser : Gtypes.scope -> Pkit.input -> Term.term
+val term_parser : Pkit.input -> Term.term
 
 (* readers: read and parse a string *)
-val read: 
-    (Gtypes.scope -> (Pkit.input -> 'a)) 
-  -> Gtypes.scope -> string -> 'a
-val read_term : Gtypes.scope -> string -> Term.term
-val read_type : Gtypes.scope -> string -> Gtypes.gtype
+val read:  'a parser -> string -> 'a
+val read_term : string -> Term.term
+val read_type : string -> Gtypes.gtype
 
 val test_lex : string -> Lexer.tok Parserkit.Input.t
 val test : string -> Term.term

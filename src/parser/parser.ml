@@ -17,13 +17,12 @@ struct
 
   type infotyp = 
       { 
-	scope: Gtypes.scope;
 	(* term information *)
 	bound_names: (string* Term.term) list ref;
 	token_info: token -> Pkit.token_info;
         (* type information *)
       	typ_indx : int ref;
-	typ_names: (string, Gtypes.gtype)Lib.substype;
+	typ_names: (string* Gtypes.gtype) list ref;
         type_token_info: token -> Pkit.token_info
       }
 
@@ -61,14 +60,20 @@ struct
     with Not_found -> Term.mkshort_var n)
   let clear_names inf = inf.bound_names:=[]
 
-(*   let lookup n inf = Lib.find n inf.typ_names *)
-  let lookup_type_name n inf = Lib.find n inf.typ_names 
-  let add_type_name n ty inf = Lib.add n ty inf.typ_names
+  let lookup_type_name n inf = 
+    List.assoc n !(inf.typ_names)
+
+  let add_type_name n ty inf = 
+    inf.typ_names := (n, ty)::!(inf.typ_names); ty
+
   let get_type n inf = 
     (try lookup_type_name n inf 
     with Not_found -> 
       add_type_name n (Gtypes.mk_var n) inf)
-  let clear_type_names inf = Hashtbl.clear inf.typ_names
+
+  let clear_type_names inf = 
+    inf.typ_names:=[]
+
 
   let mk_token_info t=
     let f, p= Lexer.token_info t
@@ -82,28 +87,22 @@ struct
 
   let mk_empty_inf scp = 
     { 
-      scope=scp;
-
       bound_names = ref [];
       token_info = mk_token_info;
 
       typ_indx = ref 0;
-      typ_names = Lib.empty_env ();
+      typ_names = ref [];
       type_token_info = mk_type_token_info
     }
 
-  let mk_inf scp = 
+  let mk_inf () = 
     { 
-      scope=scp;
       bound_names = ref [];
       token_info = mk_token_info;
       typ_indx = ref 0;
-      typ_names = Lib.empty_env ();
+      typ_names = ref [];
       type_token_info = mk_type_token_info
     }
-
-
-  let scope_of_inf inf = inf.scope
 
   let rec alternates phl inf toks= 
     match phl with
@@ -301,65 +300,6 @@ struct
     ( (( !$(Sym COLON) -- (types inf)) >> (fun (_, ty) -> Some(ty)))
     || (empty >> (fun x -> None))) 
 
-(*
-(* term parser, using substitution to deal with bound variables *)
-  let rec form inf toks =
-    (
-     ((formula inf)-- (listof (formula inf)))
-       >> (fun (x, y) -> mkcomb x y)
-    ) toks
-  and formula inf toks= 
-    (
-     operators(typed_primary inf, inf.token_info, 
-	     mk_conn Basic.fn_id inf, mk_prefix Basic.fn_id inf)
-    ) toks
-  and typed_primary inf toks =
-      (
-       ((primary inf) --  (optional_type inf))
-	 >> 
-       (fun (t, pty) -> 
-	 match pty with None -> t | Some(ty) -> mktyped t ty)
-      ) toks
-  and
-      primary inf toks = 
-    (
-     ( (( !$ (Sym ORB) -- ((form inf) -- !$(Sym CRB))))
-	 >> (fun (_, (x, _)) ->  x))
-   || (( !$ (Key ALL) 
-           -- ((id_type_op short_id inf)
-		 -- ((listof (id_type_op short_id inf))
-		       -- (!$(Sym COLON) -- (form inf)))))
-	 >> (fun (_, (v, (vs, (_, b)))) -> 
-	   (Logicterm.mkall_ty (scope_of_inf inf) (fst v) (snd v) 
-	      (List.fold_right (fun (x, y) -> 
-		Logicterm.mkall_ty (scope_of_inf inf) x y) vs b))))
-   || (( !$ (Key EX) 
-          -- ((id_type_op short_id inf)
-		-- ((listof (id_type_op short_id inf))
-		      -- (!$(Sym COLON) -- (form inf)))))
-	>> (fun (_, ((v, vt), (vs, (_, b)))) -> 
-	  (Logicterm.mkex_ty (scope_of_inf inf) v vt 
-	     (List.fold_right 
-		(fun (x, y) -> Logicterm.mkex_ty (scope_of_inf inf) x y) 
-		vs b))))
-   || (( !$ (Key LAM) 
-           -- ((id_type_op short_id inf)
-		 -- ((listof (id_type_op short_id inf))
-		       -- (!$(Sym COLON) -- (form inf)))))
-	 >> (fun (_, ((v, vt), (vs, (_, b)))) -> 
-	   (Logicterm.mklam_ty (scope_of_inf inf) v  vt 
-	      (List.fold_right 
-		 (fun (x, y) -> Logicterm.mklam_ty (scope_of_inf inf)x y) 
-		 vs b))))
-   || ((id_type_op long_id inf)  >> 
-       (fun ((n, i), t) -> mk_typed_var (Basic.mklong n i) t))
-   || (number >> (fun x -> mknum x))
-   || (boolean >> (fun x -> mkbool x))
-   || (other_parsers inf)
-   || (error)
-    ) toks
-*)
-
 (* 
    Term parser, 
    keeps a record of bound records 
@@ -400,6 +340,27 @@ struct
 	let nt=Term.Qnt(dest_bound y, b)
 	in 
 	drop_name x inf; nt) xs body
+
+(* term_identifer inf:
+   parse a possibly typed identifer satifying
+      id | "(" id ":" type ")" 
+   lookup identifier in inf, to check if it is a bound variable
+   if not, it is a free variable
+*)
+
+   let term_identifier inf toks =
+   ((id_type_op long_id inf) 
+   >>
+   (fun ((n, i), t) -> 
+   let nid=Basic.mklong n i
+   in 
+   if(Basic.is_short_id nid)
+   then 
+   try lookup_name i inf
+   with Not_found -> mk_typed_var nid t
+   else 
+   mk_typed_var nid t)) toks
+
 
   let rec form inf toks =
     (
@@ -469,16 +430,7 @@ struct
 	 ->
 	   qnt_term_remove_names inf xs body))
 (* id | "(" id ":" type ")" *)
-   || ((id_type_op long_id inf)  >> 
-       (fun ((n, i), t) -> 
-	 let nid=Basic.mklong n i
-	 in 
-	 if(Basic.is_short_id nid)
-	 then 
-	   try lookup_name i inf
-	   with Not_found -> mk_typed_var nid t
-	 else 
-	   mk_typed_var nid t))
+   || (term_identifier inf)
 (*
      number
    | boolean
@@ -512,6 +464,9 @@ end
 open Lexer
 open Logicterm
 
+type 'a parser = Pkit.input -> 'a
+type 'a phrase = 'a Pkit.phrase
+
 (* token fixity and associativity (exactly the same as in Lexer) *)
 
 type fixity=Parserkit.Info.fixity
@@ -535,24 +490,6 @@ let right_assoc=Parserkit.Info.right_assoc
   let lam_qnts = [("%", Key LAM); 
 		  "lambda", Key LAM]
 
-(*
-  let not_ops = [("~", mk_full_ident notid prefix non_assoc 10); 
-		 ("not",mk_full_ident notid prefix non_assoc 10)]
-  let and_ops = [("&", mk_full_ident andid infix left_assoc 9); 
-		 ("and", mk_full_ident andid infix left_assoc 9)]
-
-  let or_ops =  [("|", mk_full_ident orid infix left_assoc 9); 
-		 ("or", mk_full_ident orid infix left_assoc 9)]
-
-  let implies_ops = [("=>", 
-		      mk_full_ident impliesid infix left_assoc 5); 
-		     ("implies", 
-		      mk_full_ident impliesid infix right_assoc 5)]
-  let iff_ops = [("<=>", mk_full_ident iffid infix left_assoc 4); 
-		 ("iff", mk_full_ident iffid infix left_assoc 4)]
-  let equals_ops = [("=", 
-		     mk_full_ident equalsid infix left_assoc 3)]
-*)
 
 (* reserved words *)
 
@@ -625,41 +562,37 @@ let init ()=
    read a given phrase followed by an end of file/string
 *)
 
-let mk_info = Grammars.mk_inf
+  let mk_info = Grammars.mk_inf
 
   let parse ph inp = Pkit.parse ph EOF inp
 
-  let identifier_parser scp inp =
-    parse (Grammars.long_id (mk_info scp)) inp
+  let identifier_parser inp =
+    parse (Grammars.long_id (mk_info ())) inp
 
-  let typedef_parser scp inp =
-    parse (Grammars.typedef (mk_info scp)) inp
-  let type_parser scp inp =
-    parse (Grammars.types (mk_info scp)) inp
+  let typedef_parser inp =
+    parse (Grammars.typedef (mk_info ())) inp
+  let type_parser inp =
+    parse (Grammars.types (mk_info ())) inp
 
-  let defn_parser scp inp = 
-    parse (Grammars.defn (mk_info scp)) inp
-  let term_parser scp inp=
-    parse (Grammars.form (mk_info scp)) inp
+  let defn_parser inp = 
+    parse (Grammars.defn (mk_info ())) inp
+  let term_parser inp=
+    parse (Grammars.form (mk_info ())) inp
 
 
 (* readers: read and parse a string *)
 
-let read ph scp str =
-  Lexer.reader (scan (symtable())) (ph scp) str
+let read ph str =
+  Lexer.reader (scan (symtable())) ph str
 
-let read_term scp str = 
-  read term_parser scp str
+let read_term str = 
+  read term_parser str
 
-let read_type scp str = 
-  read type_parser scp str
+let read_type str = 
+  read type_parser str
 
 let test_lex str = scan (symtable()) (Stream.of_string str);;
 let test str =  
   reader (scan (symtable()))
-    (term_parser (Gtypes.empty_scope()))
+    term_parser 
     str
-
-
-
-
