@@ -15,6 +15,8 @@ OPTCODE = settings.cmx basic.cmx corepp.cmx result.cmx \
 	gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
 	typing.cmx unify.cmx net.cmx rewrite.cmx 
 
+DOCFILES = gtypes.mli term.mli termnet.mli
+
 
 LIBFILE=tpcore.cma
 OPTLIB=tpcore.cmxa
@@ -69,6 +71,8 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${INCLUDE} -html -d ../doc ${DOCFILES}
 
 # libraries
 

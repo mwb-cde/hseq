@@ -126,8 +126,8 @@ let get_from_net lbl net=
 (* lookup_list: 
    Lookup using a list of terms to construct the path of labels
    to the required data.
-   Data is returned as a list of terms, in reverse order that
-   they were found.
+   List of data is returned in in reverse order that
+   it is built.
    Variables in the net are matched against terms
    after other labels are tried. This means that the terms
    best matching the indexing term are returned first.
@@ -249,7 +249,7 @@ let update f varp net trm =
    Replaces but doesn't remove previous bindings of t
  *)
 
-let add_to_list t r ls = (t, r)::ls
+let add_to_list t r ls = r::ls
 let add varp net t r=
   let add_aux net = 
     match net with 
@@ -258,26 +258,53 @@ let add varp net t r=
   in 
   update add_aux varp net t 
 
-(* delete varp net t:
+(* insert order varp net t r:
 
-   Remove term bound to t in net. Fails silently if t is not found.
+   Add data r, indexed by term t with variables identified by varp
+   to net. Store in order given by predicate order.
+
+   Replaces but doesn't remove previous bindings of t
+ *)
+
+let insert_in_list order r ls = 
+  let rec insert_aux ts =
+    match ts with
+      [] -> [r]
+    | x::tts -> 
+	if(order x r)  (* x<r *)
+	then x::(insert_aux tts)
+	else x::ts
+  in insert_aux ls
+
+let insert order varp net t r=
+  let order_aux net = 
+    match net with 
+      Node(ds, ls, vn) -> 
+	Node(insert_in_list order r ds, ls, vn)
+  in 
+  update order_aux varp net t 
+
+(* delete varp net t test:
+
+   Remove data indexed by t in net and satisfying test. 
+   Fails silently if t is not found.
 
    Needs the same varp as used to add the term to the net.
 
  *)
 
-let rec delete_from_list trm ls =
+let rec delete_from_list trm test ls =
   match ls with
     [] -> []
-  | ((t, r)::ts) -> 
-      if(Term.equality trm t)
+  | (t::ts) -> 
+      if(test t)
       then ts
-      else (t, r)::(delete_from_list trm ts)
+      else t::(delete_from_list trm test ts)
 
-let delete varp net trm = 
+let delete varp net trm test = 
   let delete_aux nt=
     match nt with
       Node(ds, ls, vn) -> 
-	Node(delete_from_list trm ds, ls, vn)
+	Node(delete_from_list trm test ds, ls, vn)
   in 
   update delete_aux varp net trm

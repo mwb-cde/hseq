@@ -1,17 +1,24 @@
-(* 
+(*
+   Author: Matthew Wahab
+   Date: March 4, 2004
+*)
+
+
+(**
    Term Nets
 
-   Store data indexed by a term.  
+   Structures to store data indexed by a term.  
 
    Lookup is by inexact matching of a given term against those
-   indexing the data. Resulting list of terms-data pair would then be
+   indexing the data. Resulting list of data pair would then be
    subject to more exact mactching (such as unification) to select
    required data.
 
-   Used to cut the number of terms that need to be
-   considered by (more expensive) exact matching.
- *) 
+   Used to cut the number of elements that need to be
+   considered by more expensive exact matching.
+*) 
 
+(** type [label]: Used to index data *)
 type label = 
     Var 
   | App
@@ -20,36 +27,37 @@ type label =
   | Const of Basic.const_ty 
   | Cname of Basic.fnident
 
-(* 'a net : Node data, rest of net, Var tagged net (if any) *)
 
+(** type ['a net] : Node data, rest of net, Var tagged net (if any) *)
 type 'a net =  
-    Node of ('a list                  (* data held at this node *)
-	       * (label * 'a net) list  (* nets tagged by labels *)
-	       * ('a net) option )           (* net tagged by Var *)
+    Node of ('a list                  
+(* data held at this node *)
+	       * (label * 'a net) list  
+(* nets tagged by labels *)
+	       * ('a net) option )           
+(* net tagged by Var *)
 
-
-(* Empty nets *)
+(** Make an empty net *)
 val empty: unit -> 'a net
+(** Test for an empty net. *)
 val is_empty: 'a net -> bool
 
-
-(* 
-   label varp t:
-   Return the label for term t. Not used, term_to_label is better.
- *)
-
+(**
+   [label varp t]:
+   Return the label for term t. Not used, [term_to_label] is better.
+*)
 val label: (Term.term -> bool) -> Term.term -> label
 
-(*
-   term_to_label varp t:
+(**
+   [term_to_label varp t]:
 
-   Return the label for term t together with the remainder
+   Return the label for term [t] together with the remainder
    of the the term as a list of terms.
 
-   varp determines which terms are treated as variables.
+   [varp] determines which terms are treated as variables.
 
-   rst is the list of terms built up by repeated calls
-   to term_to_label. Initially, it should be [].
+   [rst] is the list of terms built up by repeated calls
+   to [term_to_label]. Initially, it should be [\[\]].
 
    examples:
    
@@ -61,64 +69,66 @@ val label: (Term.term -> bool) -> Term.term -> label
    -->
    [Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]
  *)
-
 val term_to_label : 
     (Term.term -> bool) -> Term.term -> Term.term list 
       -> (label * Term.term list)
 
 
-(* update f net trm:
+(** [update f net trm]:
 
-   Apply function f to the subnet of net identified by trm to update
+   Apply function [f] to the subnet of [net] identified by [trm] to update
    the subnet. Propagate the changes through the net. 
-   If applying function f results in an empty subnet, than remove
+   If applying function [f] results in an empty subnet, than remove
    these subnets.
  *)
 val update: 
     ('a net -> 'a net) -> (Term.term -> bool) 
       -> 'a net -> Term.term -> 'a net
 
+(** Functions to use Nets *)
 
-(* Functions to use Nets *)
+(** [lookup net t]:
 
-(* lookup net t:
-
-   Return the list of items indexed by terms matching term t.
+   Return the list of items indexed by terms matching term [t].
    Orderd with the best matches first. 
 
-   Term t1 is a better match than term t2 if
-   variables in t1 occur deeper in its term structure than
-   those for t2.
-
-   e.g. with variable x and t=(f 1 2), t1=(f x y) is a better match
-   than t2=(x 1 2) because x occurs deeper in t1 than in t2. (t1 is
-   likely to be rejected by exact matching more quickly than t2 would
-   be.)
-
+   Term t1 is a better match than term t2 if variables in t1 occur
+   deeper in its term structure than those for t2.  e.g. with variable
+   x and t=(f 1 2), t1=(f x y) is a better match than t2=(x 1 2)
+   because x occurs deeper in t1 than in t2. (t1 is likely to be
+   rejected by exact matching more quickly than t2 would be.)
  *)
-	  
 val lookup: 'a net -> Term.term -> 'a list
 
-(* add varp net t r:
+(** [add varp net t r]:
 
-   Add term r, indexed by term t with variables identified by varp
-   to net.
-
-   Replaces but doesn't remove previous bindings of t
- *)
+   Add [r], indexed by term [t] with variables identified by [varp]
+   to [net].
+   Replaces but doesn't remove previous bindings of [t].
+*)
 val add: 
-    (Term.term -> bool) -> (Term.term * 'a) net 
+    (Term.term -> bool) -> 'a net 
       -> Term.term -> 'a
-	-> (Term.term * 'a) net
+	-> 'a net
 
-(* delete varp net t:
+(** [insert order varp net t r]:
 
-   Remove term bound to t in net. Fails silently if t is not found.
+   Add data [r], indexed by term [t] with variables identified by [varp]
+   to [net]. Data [r] is stored in the order defined by order.
+   Replaces but doesn't remove previous bindings of [t]
+*)
+val insert: 
+    ('a -> 'a -> bool) ->
+      (Term.term -> bool) -> 'a net 
+	-> Term.term -> 'a
+	  -> 'a net
 
-   Needs the same varp as used to add the term to the net.
- *)
+(** [delete varp net t test]:
 
-val delete: 
-    (Term.term -> bool) -> (Term.term * 'a) net -> Term.term 
-      -> (Term.term * 'a) net
+   Remove data indexed by [t] in net and satisfying test.  Fails
+   silently if [t] is not found.  Needs the same [varp] as used to add
+   the term to the net.  
+*) 
+val delete: (Term.term -> bool) -> 'a net
+   -> Term.term -> ('a -> bool) -> 'a net
 

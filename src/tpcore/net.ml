@@ -1,143 +1,310 @@
+(* 
+   Term Nets
+
+   Store data indexed by a term.  
+
+   Lookup is by inexact matching of a given term against those
+   indexing the data. Resulting list of terms-data pair would then be
+   subject to more exact mactching (such as unification) to select
+   required data.
+
+   Used to cut the number of terms that need to be
+   considered by (more expensive) exact matching.
+ *) 
+
+type label = 
+    Var 
+  | App
+  | Bound of Basic.quant_ty
+  | Quant of Basic.quant_ty
+  | Const of Basic.const_ty 
+  | Cname of Basic.fnident
+
+(* 'a net : Node data, rest of net, Var tagged net (if any) *)
+
+type 'a net =  
+    Node of ('a list                  (* data held at this node *)
+	       * (label * 'a net) list  (* nets tagged by labels *)
+	       * ('a net) option )           (* net tagged by Var *)
+
+let empty() = Node([], [], None)
+
+let is_empty n = 
+  match n with
+    Node ([], [], None) -> true
+  | _ -> false
+
+(* 
+   label varp t:
+
+   Return the label for term t. Not used, term_to_label is better.
+ *)
 
 
-  type term_label = 
-      Var | Bound | App | Exist | All | Lam 
-    | Const of Basic.const_ty 
-    | Cname of Basic.fnident
-
-  type 'a net = 
-      Tip of 'a list
-    |  Node of (term_label * 'a net) list
-
-  let rec var_label_of varp trm =
-    if varp trm then Var 
-    else 
+let rec label varp trm = 
+  if(varp trm) then Var
+  else
     match trm with
-      Term.Bound _ -> Bound
-    | Term.Qnt _ -> 
-	if Logicterm.is_all trm then All
-	else if Logicterm.is_exists trm then Exist
-	else Lam
-    | Term.App _ -> App
-    | Term.Typed(t, _) -> var_label_of varp t
-    | Term.Const(c) -> Const c
-    | Term.Var(v, _) -> Cname(v)
+      Term.Var(id, _) -> Cname(id)
+    | Term.Qnt(q, b) ->  
+	let qnt, _, _ =Term.dest_binding q
+	in 
+	Quant(qnt)
+    | Term.Bound(q) -> 
+	let qnt, _, _ =Term.dest_binding q
+	in 
+	Bound(qnt)
+    | Term.Const(c) ->Const(c)
+    | Term.Typed(t, _) -> label varp t
+    | Term.App(l, r) -> App
 
-  let label_of trm = var_label_of (fun x-> false) trm
 
-  let empty() = (Node [])
-  let is_empty n = 
-    match n with Node [] -> true | _ -> false
+(*
+   term_to_label varp t rst:
 
-  let get_edge label n = 
-    match n with
-      (Node edges) ->
-	(try let  net = (List.assoc label edges) in net
-	with Not_found -> empty())
-    | (Tip _) -> Result.raiseError ("get_edge: tips have no edges")
+   Return the label for term t together with the remainder
+   of the the term as a list of terms.
 
-(* itlist = List.fold_right *)
+   varp determines which terms are treated as variables.
 
-  let rec follow tm net = 
-    let label= label_of tm
-    in 
-    let nets = 
-      match label with 
-      	Var -> []
-      |	Lam -> follow (Term.get_qnt_body tm) (get_edge Lam net)
-      |	All -> follow (Term.get_qnt_body tm) (get_edge All net)
-      |	Exist -> follow (Term.get_qnt_body tm) (get_edge Exist net)
-      |	App -> let (l, r)=Term.dest_app tm
-	       in (List.fold_right 
-		     (fun i a ->  List.append (follow l i) a)
-		     (follow r (get_edge App net)) [])
-      |	_ -> [get_edge label net]
-    in Lib.filter (is_empty) ((get_edge Var net)::nets)
+   rst is the list of terms built up by repeated calls
+   to term_to_label. Initially, it should be [].
+   
 
-  let lookup tm net =
-    List.fold_right 
-      (fun x a ->
-      match x with Tip l -> List.append l a | Node _ -> a)
-      (follow tm net) []
+   examples:
+   
+   ?y: ! x: (x or z) and y  (with variable z)
+   -->
+   [Qnt(?); Qnt(!); App; App; Bound(!); Var; Bound(?)]
 
-  let rec overwrite (a, b) xs = 
-      match xs with 
-	[] -> [(a, b)]
-      |	(x, y)::rst -> 
-	  if (x=a) 
-	  then ((a, b)::rst) 
-	  else ((x, y)::(overwrite (a, b) rst))
+   ?y: ! x: (x or z) and y  (with no variables,  z is free)
+   -->
+   [Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]
+ *)
 
-  let get_tip_list x =
-    match x with 
-      Tip l -> l
-    | Node _ -> []
+let rec term_to_label varp trm rst=
+  if (varp trm)
+  then (Var, rst)
+  else 
+    match trm with
+      Term.Var(id, _) -> (Cname(id), rst)
+    | Term.Qnt(q, b) -> 
+	let qnt, _, _ =Term.dest_binding q
+	in 
+	(Quant(qnt), b::rst)
+    | Term.Bound(q) -> 
+	let qnt, _, _ =Term.dest_binding q
+	in 
+	(Bound(qnt), rst)
+    | Term.Const(c) -> 
+	(Const(c), rst)
+    | Term.Typed(t, _) ->
+	term_to_label varp t rst
+    | Term.App(l, r) ->
+	(App, l::r::rst)
 
-  let rec net_update varp elem defd tm net =
-      match net with
-	Tip _ -> Result.raiseError "net_update: cannot update a tip"
-      |	Node(edges) ->
-	  (let exec_defd l n =
-	    (match l with 
-	      [] -> Tip (elem :: (get_tip_list n))
-	    | (h::rst) -> net_update varp elem rst h n)
-	  and label() = var_label_of varp tm
-	  in let child() = get_edge (label()) net
+
+(* lookup varp n t: 
+   lookup term t in net n,
+   returning list of possible replacements
+ *)
+
+let rec get_from_list lbl netl=
+  match netl with
+    [] -> raise Not_found
+  | ((key, d)::xs) -> 
+      if lbl=key
+      then d
+      else get_from_list lbl xs
+
+let get_from_net lbl net=
+  match (lbl, net) with
+    (Var, Node(_, _, None)) -> raise Not_found
+  | (Var, Node(_, _, Some(vn))) -> vn
+  | (_, Node(data, nl, _)) -> get_from_list lbl nl
+
+(* lookup_list: 
+   Lookup using a list of terms to construct the path of labels
+   to the required data.
+   List of data is returned in in reverse order that
+   it is built.
+   Variables in the net are matched against terms
+   after other labels are tried. This means that the terms
+   best matching the indexing term are returned first.
+   t1 is a better match than t2 if variables in t1 occur
+   deeper in the term structure than in t2.
+   terms are found first.
+   Returns the empty list if no data found
+ *)
+
+let rec lookup_list varp net trms= 
+  let rec lookup_aux nt tlist rslt=
+    match (tlist, nt) with
+      ([], Node(data, _, _)) -> List.rev_append data rslt
+    | (t::ts, Node(_, [], None)) -> rslt
+    | (t::ts, Node(ds, ns, Some(vn))) ->
+	(* look up in the labels first *)
+	let slist = lookup_aux (Node(ds, ns, None)) (t::ts) rslt
+	in 
+	(* then lookup in the variable tagged net *)
+	lookup_aux vn ts slist
+    | (t::ts, Node(_, ns, _)) ->
+	let label, nxt=term_to_label varp t ts
+	in 
+	let nnet = 
+	  try get_from_net label nt
+	  with Not_found -> empty()
+	in 
+	lookup_aux nnet nxt rslt
+  in 
+  List.rev (lookup_aux net trms [])
+
+(* lookup net t:
+
+   Return the list of items indexed by terms matching term t.
+   Orderd with the best matches first. 
+
+   Term t1 is a better match than term t2 if
+   variables in t1 occur deeper in its term structure than
+   those for t2.
+
+   e.g. with variable x and t=(f 1 2), t1=(f x y) is a better match
+   than t2=(x 1 2) because x occurs deeper in t1 than in t2. (t1 is
+   likely to be rejected by exact matching more quickly than t2 would
+   be.)
+
+ *)
+let lookup net trm = lookup_list (fun x -> false) net [trm]
+
+(* update f net trm:
+
+   Apply function f to the subnet of net identified by trm to update
+   the subnet. Propagate the changes through the net. 
+   If applying function f results in an empty subnet, than remove
+   these subnets.
+ *)
+
+(* update_label lbl f net:
+
+   apply function f to the subnet of net labeled lbl.
+
+   If lbl=Var, it is apply to the variable net part of the Node tuple.
+   If applying f to a labelled subnet results in an empty net
+   then that label-net pair is removed from net.
+
+   Usage: f should be function of the form
+   f (Node data, lnet, vnet) = Node(g data, lnet vnet)
+   (applying a function g to the data part of the net)
+ *)
+
+let update_label lbl (f: 'a net -> 'a net) net =
+  let rec app_aux nl =
+    match nl with
+      [] -> 
+	let nnet = f (empty())
+	in 
+	if is_empty nnet then []
+	else [(lbl, nnet)]
+    | (l, n)::rst -> 
+	if(l=lbl) 
+	then 
+	  let nnet= f n 
 	  in 
-	  let new_child ()=
-	    (match label() with 
-	      App -> 
-		(let (l, r)=Term.dest_app tm
-		in net_update varp elem (l::defd) r (child()))
-	    | Lam -> net_update varp elem defd (Term.get_qnt_body tm) (child())
-	    | All -> net_update varp elem defd (Term.get_qnt_body tm) (child())
-	    | Exist -> 
-		net_update varp elem defd (Term.get_qnt_body tm) (child())
-	    | _ -> exec_defd defd (child()))
-	  in Node(overwrite (label(), new_child()) edges))
-
-let enter varp (tm, elem) net = net_update varp elem [] tm net
-
-
-(* ordered insert into a list *)
-
-let cons_ord lt t ls =
-  let rec cons_aux ys =
-    match ys with
-      [] -> [t]
-    | (y::yys) -> 
-	if (lt t y)
-	then (t::ys) 
-	else (y::(cons_aux yys))
-  in cons_aux ls
-
-let rec net_update_ord lt varp elem defd tm net =
-  match net with
-    Tip _ -> Result.raiseError "net_update_ord: cannot update a tip"
-  | Node(edges) ->
-      (let exec_defd l n =
-	(match l with 
-	  [] -> Tip (cons_ord lt elem (get_tip_list n))
-	| (h::rst) -> net_update_ord lt varp elem rst h n)
-      and label() = var_label_of varp tm
-      in let child() = get_edge (label()) net
+	  if is_empty nnet 
+	  then rst
+	  else (l, nnet)::rst
+	else 
+	  (l, n)::(app_aux rst)
+  in 
+  match (lbl, net) with
+    (Var, Node(d, xs, Some (vn))) -> 
+      let nnet=f vn 
       in 
-      let new_child ()=
-	(match label() with 
-	  App -> 
-	    (let (l, r)=Term.dest_app tm
-	    in net_update_ord lt varp elem (l::defd) r (child()))
-	| Lam -> 
-	    net_update_ord lt varp elem defd 
-	      (Term.get_qnt_body tm) (child())
-	| All -> 
-	    net_update_ord lt varp elem defd 
-	      (Term.get_qnt_body tm) (child())
-	| Exist -> 
-	    net_update_ord lt varp elem defd 
-	      (Term.get_qnt_body tm) (child())
-	| _ -> exec_defd defd (child()))
-      in Node(overwrite (label(), new_child()) edges))
-	
-let insert lt varp (tm, elem) net = 
-  net_update_ord lt varp elem [] tm net
+      if is_empty nnet then Node(d, xs, None)
+      else Node(d, xs, Some nnet)
+  | (Var, Node(d, xs, None)) ->
+      let nnet = f (empty())
+      in 
+      if is_empty nnet then Node(d, xs, None)
+      else Node(d, xs, Some nnet)
+  | (_, Node(d, xs, vn)) -> 
+      Node(d, app_aux xs, vn)
+
+let update f varp net trm =
+  let rec update_aux rst nt =
+    match rst with
+      [] -> f nt
+    | t::ts -> 
+	(let lbl, nxt=term_to_label varp t ts
+	in 
+	update_label lbl (update_aux nxt) nt)
+  in 
+  update_aux [trm] net
+
+(* add varp net t r:
+
+   Add term r, indexed by term t with variables identified by varp
+   to net.
+
+   Replaces but doesn't remove previous bindings of t
+ *)
+
+let add_to_list t r ls = r::ls
+let add varp net t r=
+  let add_aux net = 
+    match net with 
+      Node(ds, ls, vn) -> 
+	Node(add_to_list t r ds, ls, vn)
+  in 
+  update add_aux varp net t 
+
+(* insert order varp net t r:
+
+   Add data r, indexed by term t with variables identified by varp
+   to net. Store in order given by predicate order.
+
+   Replaces but doesn't remove previous bindings of t
+ *)
+
+let insert_in_list order r ls = 
+  let rec insert_aux ts =
+    match ts with
+      [] -> [r]
+    | x::tts -> 
+	if(order x r)  (* x<r *)
+	then x::(insert_aux tts)
+	else x::ts
+  in insert_aux ls
+
+let insert order varp net t r=
+  let order_aux net = 
+    match net with 
+      Node(ds, ls, vn) -> 
+	Node(insert_in_list order r ds, ls, vn)
+  in 
+  update order_aux varp net t 
+
+(* delete varp net t test:
+
+   Remove data indexed by t in net and satisfying test. 
+   Fails silently if t is not found.
+
+   Needs the same varp as used to add the term to the net.
+
+ *)
+
+let rec delete_from_list trm test ls =
+  match ls with
+    [] -> []
+  | (t::ts) -> 
+      if(test t)
+      then ts
+      else t::(delete_from_list trm test ts)
+
+let delete varp net trm test = 
+  let delete_aux nt=
+    match nt with
+      Node(ds, ls, vn) -> 
+	Node(delete_from_list trm test ds, ls, vn)
+  in 
+  update delete_aux varp net trm

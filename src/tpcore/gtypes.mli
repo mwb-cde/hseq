@@ -7,6 +7,17 @@ open Lib
       	Var of 'idtyp
       | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
       | Base of 'tcons
+      | WeakVar of 'idtyp
+(** 
+   WeekVar x: binds to anything except a variable.
+
+   Isn't (usually) renamed.
+
+   Is used in a sequent calculus when a variable type x can occur
+   in more than one sequent. If x is bound in one sequent, it must
+   be have that binding in every sequent in which it occurs. (Like 
+   week types in ML)
+*)
 
 (* representation of types *)
     type gtype = 
@@ -85,6 +96,11 @@ val extend_scope: scope -> (fnident -> gtype) -> scope
     val dest_var : gtype -> string  ref
     val get_var : gtype -> string
 
+(* weak variables *)
+    val mk_weak : string -> gtype
+    val dest_weak : gtype -> string  ref
+    val get_weak : gtype -> string
+
 (* function types *)
     val mk_fun : gtype -> gtype -> gtype
     val mkfun_from_list: gtype list -> gtype -> gtype
@@ -93,12 +109,14 @@ val extend_scope: scope -> (fnident -> gtype) -> scope
     val varp : gtype -> bool
     val constrp : gtype  -> bool
     val basep : gtype  -> bool
+    val weakp : gtype -> bool
 
 (* compare types *)
 
-    val eqvar : gtype -> gtype -> bool
+(*    val eqvar : gtype -> gtype -> bool 
     val eqbase : gtype -> gtype -> bool
     val eqconstr : gtype -> gtype -> bool
+*)
 
 (* destruct function type *)
     val arg_type : gtype -> gtype

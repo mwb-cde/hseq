@@ -75,7 +75,10 @@ let rec make_rewrites_aux xs net=
   match xs with
     [] -> net
   | ((vs, key, rep)::rst) -> make_rewrites_aux rst
+	(Net.add (is_free_binder vs) net key (vs, key, rep))
+(*
 	(Net.enter (is_free_binder vs) (key, (vs, key, rep)) net)
+*)
 
 let make_rewrites xs = make_rewrites_aux (List.rev xs) (Net.empty())
 
@@ -122,7 +125,7 @@ let rec match_rewrite_list scp tyenv chng net trm =
   in 
   let rs=
     match net with
-      (Net_rr n) -> Net.lookup trm n
+      (Net_rr n) -> Net.lookup n trm
     | (List_rr r) -> r
   in 
   let ntrm=match_rr_list scp tyenv cn rs trm
