@@ -342,7 +342,9 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
   check_type_name scp id;
   check_args_unique args;
   check_well_defined scp args dtype;
-  let new_setp = make_witness_type scp dtype setP
+  let setp0=Formula.term_of (Formula.make scp setP)
+  in 
+  let new_setp = make_witness_type scp dtype setp0
   in 
   let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
   and abs_ty = 
