@@ -31,7 +31,6 @@ let end_theory = Commands.end_theory
 (*
 let new_type=Commands.new_type
 *)
-let typedef=Commands.typedef
 
 let define ?pp ?(simp=false) df =
   let ret = Commands.define ?pp ~simp:simp df
@@ -74,6 +73,22 @@ let save_thm ?(simp=false) n thm =
   if simp 
   then (Simplib.add_simp ret; ret)
   else ret
+
+let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef = 
+  let defn = 
+    Commands.typedef ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
+  in 
+  (if (simp && (Logic.Defns.is_subtype defn))
+  then 
+    let tyrec = Logic.Defns.dest_subtype defn
+    in 
+    let rt_thm= tyrec.Logic.rep_type
+    and rti_thm= tyrec.Logic.rep_type_inverse
+    and ati_thm= tyrec.Logic.abs_type_inverse
+    in 
+    List.iter Simplib.add_simp [rt_thm; rti_thm; ati_thm]
+  else ());
+  defn
 
 let scope = Commands.scope
 
