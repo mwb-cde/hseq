@@ -19,24 +19,26 @@ val unify_env: Gtypes.scope   -> Term.substitution
 
 val unify_fullenv: Gtypes.scope -> Gtypes.substitution
   -> Term.substitution -> (Term.term -> bool)  
-    -> Term.term -> Term.term -> Term.substitution
+    -> Term.term -> Term.term -> (Gtypes.substitution * Term.substitution)
 
 (*
-  unify_fullenv_rewrite:
-  A version of unify_fullenv for rewriting.
-  [unify_fullenv_rewrite scp tenv env varp trm1 trm2]
-  is equivalent to
-  [unify_fullenv scp tenv env varp trm1' trm2]
-  where [trm1'] is obtained from [trm1] by applying [Gtypes.copy_type]
-  to each type in [trm1].
-  usage: trm1 is normally the lhs of a rewrite rule which is to be
-  applied to trm2. 
-*)
+   unify_fullenv_rewrite:
+   A version of unify_fullenv for rewriting.
+   [unify_fullenv_rewrite scp tenv env varp trm1 trm2]
+   is equivalent to
+   [unify_fullenv scp tenv env varp trm1' trm2]
+   where [trm1'] is obtained from [trm1] by applying [Gtypes.copy_type]
+   to each type in [trm1].
+   usage: trm1 is normally the lhs of a rewrite rule which is to be
+   applied to trm2. 
+   returns both type and term substitutions
+ *)
 
-val unify_fullenv_rewrite: Gtypes.scope 
-  -> Gtypes.substitution  -> Term.substitution 
+val unify_fullenv_rewrite: 
+    Gtypes.scope -> Gtypes.substitution  -> Term.substitution 
     -> (Term.term -> bool) 
-      -> Term.term -> Term.term -> Term.substitution
+      -> Term.term -> Term.term 
+	-> (Gtypes.substitution * Term.substitution)
 
 (* simple wrapper for unify_fullenv_rewrite which constructs 
    and empty type substitution *)

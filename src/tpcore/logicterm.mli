@@ -14,8 +14,6 @@ open Term
 
 val someid: Basic.fnident  (* base.some=base.epsilon(%x: x) *)
 
-
-
 val is_neg: term -> bool
 val is_conj: term -> bool
 val is_disj: term -> bool

@@ -45,9 +45,21 @@ val retype: Gtypes.substitution -> Term.term -> Term.term
 (* retype_pretty: 
    as for retype, make substitution for type variables
    but also replace other type variables with new, prettier names 
+
+   retype_pretty_env: 
+   like retype_pretty but also return the substitution storing
+   from the bindings/replacements generated during retyping.
 *)
 
+val retype_pretty_env: Gtypes.substitution -> Term.term 
+  -> (Term.term * Gtypes.substitution)
+(*
 val retype_pretty: Gtypes.substitution -> Term.term -> Term.term
+*)
+
+val retype_pretty: Gtypes.substitution -> Term.term 
+  -> Term.term 
+
 
 (* Assign the variable types in a term their required type
    to ensure well typed term, returning the required subsititution 
@@ -64,10 +76,11 @@ val settype: Gtypes.scope -> Term.term  -> Gtypes.substitution
 (* infer_types is an alternative to settype but not actually used *)
 
 val infer_aux : 
-   int ref * (Basic.fnident * int, bool) Hashtbl.t ->
-     Gtypes.scope -> Gtypes.substitution -> Term.term -> Gtypes.gtype
+   int ref * (Basic.fnident * int, bool) Hashtbl.t 
+    -> Gtypes.scope -> Gtypes.substitution -> Term.term 
+      -> (Gtypes.gtype * Gtypes.substitution )
  val infer_types_env: Gtypes.scope -> Gtypes.substitution 
-   -> Term.term -> Gtypes.gtype
+   -> Term.term -> (Gtypes.gtype* Gtypes.substitution)
 
  val infer_types: Gtypes.scope -> Term.term -> Gtypes.gtype
 

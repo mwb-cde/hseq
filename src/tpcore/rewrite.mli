@@ -17,12 +17,17 @@ type rewriteDB =
     val find_match :
       Gtypes.scope -> Gtypes.substitution ->
       (Term.term -> bool) ->
-      Term.term -> Term.term -> Term.substitution -> unit
+      Term.term -> Term.term -> Term.substitution 
+	-> Gtypes.substitution
 
-(* try to rewrite a term using a given rewrite rule *)
-    val match_rewrite : Gtypes.scope -> Gtypes.substitution ->
-      (Term.term -> bool) -> Term.term -> 
-	Term.term -> Term.term -> Term.term
+(* try to rewrite a term using a given rewrite rule
+   returns new term and updated type environment (substitution)
+*)
+    val match_rewrite : 
+	Gtypes.scope -> Gtypes.substitution ->
+	  (Term.term -> bool) -> Term.term -> 
+	    Term.term -> Term.term -> 
+	      (Term.term* Gtypes.substitution)
 
 (* utility function to construct a predicate which tests 
    for variables in unification *)

@@ -117,6 +117,8 @@ val dest_def: gtype -> (Basic.fnident* gtype list)
 
 (* type of substitutions *)
 
+(* Gtypes.Rhash: hashtables with gtype as the key *)
+
 module type RHASHKEYS=
   sig 
     type t = gtype
@@ -125,7 +127,19 @@ module type RHASHKEYS=
   end
 module type RHASH = (Hashtbl.S with type key = (gtype))
 module Rhash: RHASH
+
+(* Lookup trees with a gtype as key *)
+module TypeTreeData:
+  sig
+    type key=gtype
+    val equals : key -> key -> bool
+  end
+
+(*
 type substitution = (gtype)Rhash.t
+*)
+
+type substitution
 
 (* make a substitution with arbitrary or given size *)
     val empty_subst : unit -> substitution
@@ -135,21 +149,24 @@ type substitution = (gtype)Rhash.t
     val typeof_cnst  : Basic.const_ty -> gtype
     val typeof_conn  : Basic.conns_ty -> gtype
 
-(* occurs check  *)
-(* occurs is a shallow check.
+(* occurs check  
+   occurs is a shallow check.
    occurs_env takes context into account 
-   and is the version used for unification *)
+   and is the version used for unification 
+   both raise typeError on failure, 
+   and are silent on success.
+*)
 
     val occurs :  gtype -> gtype -> unit
     val occurs_env :  substitution-> gtype -> gtype -> unit
 
-val bind_occs : gtype -> gtype -> substitution -> unit
+val bind_occs : gtype -> gtype -> substitution -> substitution
 
 (* copy a type, making new variables in the type *)
 (* ie: (copy_type t) is equivalent but not equal to t *)
 
-val copy_type_env: substitution -> gtype -> gtype 
-val copy_type: gtype -> gtype 
+val copy_type_env: substitution -> gtype -> (gtype * substitution)
+val copy_type: gtype -> gtype
 
 (* unification *)
 (* unify two types, returning the substitution*)
@@ -188,16 +205,18 @@ val remove_bindings: gtype list -> substitution -> substitution
 
 val unify_for_rewrite:  
     scope -> gtype -> gtype 
-      -> substitution       
-	  -> gtype list ref  -> gtype list
+      -> substitution -> substitution
 
 (* get most general unifier for a type and subsitution *)
     val mgu : gtype  -> substitution -> gtype
 
 (* matching *)
     val matching :scope -> gtype -> gtype -> gtype
-    val matches : scope -> gtype -> gtype -> bool
 
+    val matches_env : scope -> substitution 
+      -> gtype -> gtype -> (bool * substitution)
+
+    val matches : scope -> gtype -> gtype -> bool
 
 (* look up types in a subsitution *)
 
@@ -259,9 +278,14 @@ val mk_typevar: int ref -> gtype
 
 (* mgu_rename inf env nenv ty: 
    get mgu of ty, renaming type variables with mk_typevar inf
-   env is type environement found e.g. by typechecking
-   nenv is environment storing the new type variables
+   env is type substitution found e.g. by typechecking
+   nenv is substitution to store the new type variables
+
+   returns the new type and updated nenv
 *)
 
+val mgu_rename_env: int ref -> substitution -> substitution 
+  -> gtype -> (gtype * substitution)
+
 val mgu_rename: int ref -> substitution -> substitution 
-  -> gtype -> gtype
+  -> gtype -> gtype 
