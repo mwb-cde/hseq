@@ -1,6 +1,7 @@
 module Simplifier =
   struct
 
+    open Basic
     open Term
     open Logicterm
 
@@ -19,18 +20,15 @@ module Simplifier =
 	  print_string ((self#msg())^" "); 
 	  Format.print_newline();
 	  Format.open_box 0; 
-	  Printer.list_print (Term.print st) 
-	    (fun _ -> Format.print_string ","; 
-	      Format.print_break 1 2; 
-	      Format.close_box(); Format.open_box 0)
+	  Printer.print_sep_list ((Term.print st), ",")
 	    (self#get());
 	  Format.close_box();
 	  Format.close_box();
       end
 
-    let error s t = Result.mkError((new simpError s t):>Result.error)
-    let addError s t e =
-      Result.addError e (error s t) 
+    let mk_error s t = Result.mk_error((new simpError s t):>Result.error)
+    let add_error s t e =
+      Result.add_error e (mk_error s t) 
 
     exception No_change
 
@@ -44,7 +42,7 @@ module Simplifier =
 (** rr_depth: max. no. of rr rules to apply at one level *)
 	 rr_depth: int;
 (** asms: assumptions generated during the course of simplification *)
-	 asms: Logic.Tag.t list;
+	 asms: Tag.t list;
 (** rules: 
    rewrite rules to pass to the rewriter (the result of the simplifier)
 *)
@@ -380,14 +378,14 @@ module Simplifier =
       in 
       let rec find_rrs ctrl t g=
 	match t with
-	  Term.Qnt(q, b) -> 
+	  Basic.Qnt(k, q, b) -> 
 	    (let (bcntrl, nb, bg) = find_rrs ctrl b g
 	    in 
 	    try 
-	      find_all_matches bcntrl tyenv set tac (Qnt(q, nb)) bg
-	    with No_change -> (bcntrl, Qnt(q, nb), bg))
-	| Term.Typed(tt, ty) -> find_rrs ctrl tt g
-	| Term.App(f, a)->
+	      find_all_matches bcntrl tyenv set tac (Qnt(k, q, nb)) bg
+	    with No_change -> (bcntrl, Qnt(k, q, nb), bg))
+	| Basic.Typed(tt, ty) -> find_rrs ctrl tt g
+	| Basic.App(f, a)->
 	    (let (fcntrl, nf, nfg) = (find_rrs ctrl f g)
 	    in 
 	    let (acntrl, na, nag)= (find_rrs fcntrl a nfg)
@@ -548,12 +546,12 @@ module Simplifier =
 	  No_change -> gl
 	| err -> 
 	    raise 
-	      (Result.addError (new Result.error("simp_tac: stage 1")) err))
+	       (Result.error "simp_tac: stage 1"))
       in 
       (* invoke the simplifier *)
       let simped_goal = 
 	(try 
-	  (basic_simp_tac simpset tg prepared_goal)
+	  (basic_simp_tac cntrl simpset tg prepared_goal)
 	with No_change -> (chng:=false; gl))
       in 
       (* clean up afterwards *)

@@ -8,6 +8,169 @@ module Simpconvs =
 	None -> raise (Failure "dest_option")
       | Some(y) -> y
 
+
+(** [case_tac x sq]
+
+   adds formula x to assumptions of sq, 
+   creates new subgoal in which to prove x
+
+   g|asm |- cncl      --> g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
+
+   info: [g, g'] [t]
+ *)
+    let cases_tac_thm = ref None
+
+    let get_cases_thm ()=
+      match !cases_tac_thm with
+	None ->
+	  let nthm =
+	    try 
+	      Commands.lemma "boolean.cases_thm"
+	    with Not_found -> 
+	      (Goals.prove_goal <<!P: (not P) or P>>
+	       (thenl [flatten_tac; basic]))
+	  in 
+	  cases_tac_thm := Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+
+    let cases_full_tac inf (x:Basic.term) g= 
+      let thm =  get_cases_thm()
+      and tinf=ref(Logic.Rules.make_tag_record [] [] [])
+      in 
+      let g1=Logic.Rules.cut_full (Some tinf) thm g
+      in 
+      let nt=get_one ((!tinf).Logic.Rules.forms) (Failure "case_info")
+      in 
+      let g2=
+	thenl[
+	Logic.Rules.allE_full None x (Logic.FTag nt);
+	Logic.Rules.disjI_full (Some tinf) (Logic.FTag nt);
+	Logic.Rules.negA_full None (Logic.FTag nt) ] g1
+      in 
+      let ng1, ng2=get_two (!tinf).Logic.Rules.goals (Failure "case_info")
+      in 
+      Logic.Rules.do_tag_info inf [ng1;ng2] [nt] [];
+      g2
+
+    let cases_tac (x:Basic.term) g= cases_full_tac None x g
+
+(**
+   [simple_rewrite_conv scp rule thm]
+   rewrite theorem [thm] with [rule]
+   by descending through topmost universal quantifiers and applying
+   rewrite once only to the body of [thm].
+   i.e. 
+   [rewrite_simple << ! a: a = true >> << !x y z: (f x y z) >>]
+   ->
+   [ << ! x y z: (f x y z) = true >> ]
+*)
+let simple_rewrite_conv scp rule thm=
+  let make_goal (rvars, rlhs, rrhs) (tvars, tbody) = 
+    let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs tbody
+    in 
+    Formula.mk_form scp
+      (rebuild_qnt Basic.All tvars 
+	 (Logicterm.mkequal tbody (Term.subst env rrhs)))
+  in 
+  let rvars, rbody = 
+    Term.strip_qnt Basic.All (Formula.dest_form (Logic.dest_thm rule))
+  in 
+  let rlhs, rrhs = Logicterm.dest_equal rbody
+  in 
+  let tvars, tbody = 
+    Term.strip_qnt Basic.All (Formula.dest_form (Logic.dest_thm thm))
+  in 
+  let info = ref (Logic.Rules.make_tag_record [] [] [])
+  in 
+  let goal = 
+    Logic.mk_goal (scope()) (make_goal (rvars, rlhs, rrhs) (tvars, tbody))
+  in 
+  let sqnt=Logic.get_sqnt goal
+  in 
+  let g1=repeat (Logic.Rules.allI_full None (Logic.FNum 1)) goal
+  in let g2= Logic.Rules.cut_full (Some info) rule g1
+  in let g3=
+    let atag = 
+      Logic.FTag(get_one (!info.Logic.Rules.forms) (Failure "get_one"))
+    and ctag = Logic.FNum 1
+    in 
+    Logic.Rules.unify_full None atag ctag g2
+  in 
+  Logic.mk_thm g3
+
+
+(**
+   [simple_asm_rewrite_tac scp info rule asm]
+   rewrite assumption [asm] with [rule]
+   by descending through topmost universal quantifiers and applying
+   rewrite once only to the body of [asm].
+   i.e. 
+  
+   rule=|- asm = rhs
+   asm, A |- C 
+   -->
+   t':rhs, asm, A |- C
+
+   info = [] [t'] []
+ *)
+let simple_asm_rewrite_tac inf rule asm goal=
+  let sqnt=Logic.get_sqnt goal
+  in 
+  let scp = Logic.scope_of sqnt
+  in
+  let make_goal (rvars, rlhs, rrhs) (tvars, tbody) = 
+    let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs tbody
+    in 
+      (rebuild_qnt Basic.All tvars 
+	 (Logicterm.mkequal tbody (Term.subst env rrhs)))
+  in 
+  let atag=Logic.fident_to_tag asm sqnt
+  in 
+  let athm=
+    try
+      Logic.drop_tag (Logic.get_tagged_asm atag sqnt)
+    with Not_found -> 
+      raise (Result.error "simple_asm_rewrite_tac: No such assumption")
+  in 
+  let rvars, rbody = 
+    Term.strip_qnt Basic.All (Formula.dest_form (Logic.dest_thm rule))
+  in 
+  let rlhs, rrhs = Logicterm.dest_equal rbody
+  in 
+  let tvars, tbody = 
+    Term.strip_qnt Basic.All (Formula.dest_form athm)
+  in 
+  let info = ref (Logic.Rules.make_tag_record [] [] [])
+  in 
+  let g0 = 
+    cases_full_tac (Some info)
+      (make_goal (rvars, rlhs, rrhs) (tvars, tbody)) goal
+  in 
+  let (disch_goal, ret_goal) = 
+    get_two (!info.Logic.Rules.goals) (Failure "Getting goal tags")
+  and ret_form = 
+    get_one (!info.Logic.Rules.forms) (Failure "Getting formula tag")
+  in 
+  let g1=repeat (Logic.Rules.allI_full None (Logic.FNum 1)) g0
+  in 
+  let g2= Logic.Rules.cut_full (Some info) rule g1
+  in 
+  let g3=
+    let atag = 
+      Logic.FTag(get_one (!info.Logic.Rules.forms) (Failure "get_one"))
+    and ctag = Logic.FNum 1
+    in 
+    Logic.Rules.unify_full None atag ctag g2
+  in 
+  if(sqnt_solved disch_goal g3)
+  then 
+    (Logic.Rules.do_tag_info inf [ret_goal] [ret_form] []; g3)
+  else 
+    raise (Result.error "simple_asm_rewrite_tac: Failed");;
+
+
 (* 
    iff_equals_ax:  !x y: (x iff y) = (x = y)
 
@@ -186,53 +349,6 @@ module Simpconvs =
       | Some(t) -> t
 
 
-
-(** [case_tac x sq]
-
-   adds formula x to assumptions of sq, 
-   creates new subgoal in which to prove x
-
-   g|asm |- cncl      --> g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
-
-   info: [g, g'] [t]
- *)
-    let cases_tac_thm = ref None
-
-    let get_cases_thm ()=
-      match !cases_tac_thm with
-	None ->
-	  let nthm =
-	    try 
-	      Commands.lemma "boolean.cases_thm"
-	    with Not_found -> 
-	      (Goals.prove_goal <<!P: (not P) or P>>
-	       (thenl [flatten_tac; basic]))
-	  in 
-	  cases_tac_thm := Some(nthm);
-	  nthm
-      | Some(t) -> t
-
-
-    let cases_full_tac inf (x:Term.term) g= 
-      let thm =  get_cases_thm()
-      and tinf=ref(Logic.Rules.make_tag_record [] [] [])
-      in 
-      let g1=Logic.Rules.cut_full (Some tinf) thm g
-      in 
-      let nt=get_one ((!tinf).Logic.Rules.forms) (Failure "case_info")
-      in 
-      let g2=
-	thenl[
-	Logic.Rules.allE_full None x (Logic.FTag nt);
-	Logic.Rules.disjI_full (Some tinf) (Logic.FTag nt);
-	Logic.Rules.negA_full None (Logic.FTag nt) ] g1
-      in 
-      let ng1, ng2=get_two (!tinf).Logic.Rules.goals (Failure "case_info")
-      in 
-      Logic.Rules.do_tag_info inf [ng1;ng2] [nt] [];
-      g2
-
-    let cases_tac (x:Term.term) g= cases_full_tac None x g
 
 
 (** [asm_rewrite info thm tg g]:

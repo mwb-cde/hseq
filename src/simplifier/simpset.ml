@@ -1,6 +1,7 @@
 module Simpset =
   struct
 
+    open Basic
     open Term
     open Logicterm
     open Simpconvs
@@ -142,9 +143,9 @@ module Simpset =
     let find_variables is_var vars trm=
       let rec find_aux env t=
 	match t with
-	  Term.Qnt(_, b) ->
+	  Basic.Qnt(_, _, b) ->
 	    find_aux env b
-	| Term.Bound(q) ->
+	| Basic.Bound(q) ->
 	    if(is_var q)
 	    then 
 	      (try ignore(Term.find t env); env
@@ -152,8 +153,8 @@ module Simpset =
 		Not_found ->
 		  (Term.bind t t env))
 	    else env
-	| Term.Typed(tr, _) -> find_aux env tr
-	| Term.App(f, a) -> 
+	| Basic.Typed(tr, _) -> find_aux env tr
+	| Basic.App(f, a) -> 
 	    let nv=find_aux env f
 	    in find_aux nv a
 	| _ -> env
@@ -166,15 +167,15 @@ module Simpset =
     let check_variables is_var vars trm=
       let rec check_aux t=
 	match t with
-	  Term.Qnt(_, b) ->
+	  Basic.Qnt(_, _, b) ->
 	    check_aux b
-	| Term.Bound(q) ->
+	| Basic.Bound(q) ->
 	    if(is_var q)
 	    then 
 	      ignore(Term.find t vars)
 	    else ()
-	| Term.Typed(tr, _) -> check_aux tr
-	| Term.App(f, a) -> check_aux f; check_aux a
+	| Basic.Typed(tr, _) -> check_aux tr
+	| Basic.App(f, a) -> check_aux f; check_aux a
 	| _ -> ()
       in check_aux trm
 
@@ -274,7 +275,7 @@ module Simpset =
       in 
       let rrtrm = Formula.dest_form (Logic.dest_thm rl)
       in 
-      rebuild_qnt qs 
+      rebuild_qnt Basic.All qs 
 	(Logicterm.mkimplies (dest_option cnd)
 	   (Rewrite.rewrite_univs scp ~dir:true ~simple:true 
 	      [rrtrm] qb))

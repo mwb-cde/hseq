@@ -51,7 +51,7 @@ module Simputils=
     let sqnt_solved st g =
       try
 	ignore(List.find 
-		 (fun x->Logic.Tag.equal st x) 
+		 (fun x->Tag.equal st x) 
 		 (Logic.get_all_goal_tags g));
 	false
       with Not_found ->true
@@ -103,13 +103,17 @@ module Simputils=
       in 
       (get_one ts (Failure "too many tags"), ng)
 
-(** [rebuild_qnt qs b]
-   rebuild quantified term from quantifiers [qs] and body [b]
+(** [rebuild_qnt k qs b]
+   rebuild quantified term of kind k from quantifiers [qs] and body [b]
+
+   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
+   ->
+   [ << !x y z : b >> ]
  *)
-    let rec rebuild_qnt qs b=
+    let rec rebuild_qnt k qs b=
       match qs with
 	[] -> b
-      | (x::xs) -> Term.Qnt(x, rebuild_qnt xs b)
+      | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
 
 (** [allE_list i vs g]
    apply [allE] to formula [i] using terms [vs]
@@ -132,7 +136,7 @@ module Simputils=
  *)
     let make_consts qs env = 
       let make_aux q=
-	try Term.find (Bound q) env
+	try Term.find (Basic.Bound q) env
 	with 
 	  Not_found -> Logicterm.mksome
       in 
@@ -140,3 +144,4 @@ module Simputils=
 
 
   end
+
