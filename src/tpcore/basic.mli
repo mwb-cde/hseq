@@ -82,7 +82,22 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
 (* representation of types *)
 type gtype = 
     ((string ref, typ_const, base_typ)pre_typ)
+(* representation of types for storage on disk *)
+(*
+type stype = 
+    ((string * int), typ_const, base_typ) pre_typ
+*)
 
+(* conversion to and from disk representation *)
+(*
+val from_save: stype -> gtype
+val from_save_env : 
+    ((string * int)* (string ref)) list ref
+  -> stype -> gtype
+val to_save: gtype -> stype
+val to_save_env: (string ref* (string *int)) list ref 
+  -> gtype -> stype
+*)
 
 (* Records for quantifiers *)
 type q_type =

@@ -1163,9 +1163,6 @@ let rec quick_well_defined scp cache t =
       List.iter (quick_well_defined scp cache) args
 *)
 
-
-
-
 (* Debugging *)
 
 let print_subst tenv = 
@@ -1178,13 +1175,24 @@ let print_subst tenv =
   Format.printf "@]"
 
 
-(* set names in a type to their long form *)
+(* [set_name ?strict ?memo scp typ]:
+   Set names in type [typ] to their long form.
 
-let set_name ?(memo=Lib.empty_env()) scp trm = 
+   if [strict=true], fail if any type name doesn't occur in scope [scp].
+ *)
+
+let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm = 
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-      let nth = try (scp.thy_of Basic.type_id n) with _ -> scp.curr_thy
+      let nth =
+	try (scp.thy_of Basic.type_id n) 
+	with Not_found -> 
+	  if(strict)
+	  then raise 
+	      (type_error "Type doesn't occur in scope" 
+		 [mk_def (Basic.mk_name n) []])
+	  else scp.curr_thy
       in ignore(Lib.add n nth memo); nth)
   in 
   let rec set_aux t =

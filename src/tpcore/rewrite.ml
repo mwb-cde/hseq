@@ -340,7 +340,7 @@ let rewrite_env scope ctrl tyenv rrl trm=
     then 
       List.map dest_lr_rule rrl
     else 
-      List.map dest_lr_rule rrl
+      List.map dest_rl_rule rrl
   in 
   rewrite_eqs scope ctrl tyenv rs trm
 

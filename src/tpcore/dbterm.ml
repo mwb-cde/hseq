@@ -6,11 +6,11 @@
 
   open Gtypes
 
-  type binder = {quant: Basic.quant_ty; qvar: string; qtyp: stype}
+  type binder = {quant: Basic.quant_ty; qvar: string; qtyp: Gtypes.stype}
 
   type dbterm =
-      Id of Basic.ident * stype
-    | Free of string * stype
+      Id of Basic.ident * Gtypes.stype
+    | Free of string * Gtypes.stype
     | Qnt of Basic.quant_ty * binder * dbterm
     | Bound of int
     | App of dbterm * dbterm

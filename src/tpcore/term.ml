@@ -1008,6 +1008,7 @@ let add_term_error s t es = raise (add_error (term_error s t) es)
    theory is [thy] if no long identifier can be found in scope [scp]
  *)
 
+(*
 let set_names scp trm=
   let term_memo = Lib.empty_env()
   in 
@@ -1042,6 +1043,99 @@ let set_names scp trm=
     | App(f, a) -> App(set_aux f, set_aux a)
     | _ -> t
   in set_aux trm
+*)
+
+let binding_set_names memo scp binding =
+  let (qnt, qname, qtype) = Basic.dest_binding binding
+  in 
+  Basic.mk_binding qnt qname 
+    (Gtypes.set_name ~strict:false ~memo:memo scp qtype)
+
+let set_names scp trm=
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:false ~memo:memo s t
+  in 
+  let curr_thy = scp.Gtypes.curr_thy
+  in 
+  let id_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env()
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
+  in 
+  let lookup_id n = 
+    try 
+      Lib.find n id_memo
+    with Not_found -> 
+      let nth = (scp.Gtypes.thy_of Basic.fn_id n) 
+      in (ignore(Lib.add n nth id_memo); nth)
+  in 
+  let lookup_type id = 
+    try 
+      Gtypes.copy_type (Lib.find id type_memo)
+    with Not_found -> 
+      let nty = scp.Gtypes.typeof_fn id
+      in 
+      (ignore(Lib.add id nty type_memo); nty)
+  in 
+  let rec set_aux qnts t=
+    match t with
+      Id(id, ty) -> 
+	let th, n = Basic.dest_fnid id
+	in 
+	let nid = 
+	  if(th = Basic.null_thy)
+	  then 
+	      let nth = lookup_id n
+	      in 
+	      Basic.mk_long nth n
+	  else id
+	in 
+	let ty1= set_type_name type_thy_memo scp ty
+	in 
+	let nty =  
+	  (try Some(lookup_type id)
+	  with Not_found -> None)
+	in 	
+	let ret_id = 
+	  match nty with
+	    None -> Id(nid, ty1)
+	  | Some(xty) -> Typed(Id(nid, xty), ty1)
+	in 
+	ret_id
+    | Free(n, ty) -> 
+	(let nth = try Some(lookup_id n) with Not_found -> None
+	in 
+	let ty1= set_type_name type_thy_memo scp ty
+	in 
+	match nth with
+	  None -> Free(n, ty1)
+	| Some(nth1) -> 
+	    let nid = Basic.mk_long nth1 n
+	    in 
+	    let nty = 
+	      try Some(lookup_type nid)
+	      with Not_found -> None
+	    in 
+	    match nty with
+	      None -> Id(nid, ty1)
+	    | Some(xty) -> Typed(Id(nid, xty), ty1))
+    | Qnt(qnt, q, b) -> 
+	let nq = binding_set_names type_thy_memo scp q
+	in 
+	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	Qnt(qnt, nq, set_aux qnts1 b)
+    | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
+    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+    | Bound(q) -> 
+	(try
+	  (find (Bound(q)) qnts)
+	with Not_found -> 
+	  raise (term_error 
+		   "Bound variable occurs outside binding" [t]))
+
+    | _ -> t
+  in set_aux (empty_subst()) trm
 
 
 let in_scope memo scp th trm =

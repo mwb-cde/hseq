@@ -397,8 +397,9 @@ val print : Printer.ppinfo -> gtype Printer.printer
 
 (* set names in a type to their long form *)
 val set_name : 
-    ?memo:(string, Basic.thy_id)Hashtbl.t
-  -> scope -> gtype -> gtype
+    ?strict:bool
+  -> ?memo:(string, Basic.thy_id)Hashtbl.t
+    -> scope -> gtype -> gtype
 
 (* in_thy_scope: check that all types are in scope of given theory *)
 (* first argument is for memoised *)

@@ -1,19 +1,19 @@
 # Header, code and optimised code files
 
 HEADERS = defaults.cmi settings.cmi basic.cmi printer.cmi result.cmi \
-	settings.cmi basic.cmi result.cmi \
+	settings.cmi basic.cmi result.cmi scope.cmi \
 	gtypes.cmi term.cmi logicterm.cmi dbterm.cmi \
 	net.cmi \
 	typing.cmi unify.cmi net.cmi rewrite.cmi 
 
 CODE =  defaults.cmo settings.cmo basic.cmo printer.cmo result.cmo \
-	gtypes.cmo term.cmo logicterm.cmo dbterm.cmo \
+	scope.cmo gtypes.cmo term.cmo logicterm.cmo dbterm.cmo \
 	net.cmo \
 	typing.cmo unify.cmo net.cmo rewrite.cmo 
 
 
 OPTCODE = settings.cmx basic.cmx printer.cmx result.cmx \
-	gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
+	scope.cmx gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
 	typing.cmx unify.cmx net.cmx rewrite.cmx 
 
 DOCFILES = gtypes.mli term.mli net.mli
