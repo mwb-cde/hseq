@@ -96,6 +96,9 @@ let get_term_pp id=
 let add_term_pp id prec fixity repr=
   Basic.PP.add_term_info (pp_info()) id prec fixity repr
 
+let add_term_pp_record id rcrd=
+  Basic.PP.add_term_record (pp_info()) id rcrd
+
 let remove_term_pp id =
   Basic.PP.remove_term_info (pp_info()) id
 
@@ -104,6 +107,9 @@ let get_type_pp id=
 
 let add_type_pp id prec fixity repr=
   Basic.PP.add_type_info (pp_info()) id prec fixity repr
+
+let add_type_pp_record id rcrd=
+  Basic.PP.add_type_record (pp_info()) id rcrd
 
 let remove_type_pp id=
   Basic.PP.remove_type_info (pp_info()) id

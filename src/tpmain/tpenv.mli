@@ -123,6 +123,15 @@ val get_term_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
 	    -> string option -> unit
 
 (**
+   [add_term_pp_record id rcrd]
+   add pretty printing record for identifer occuring in a term.
+   @param id identifier to add.
+   @param rcrd PP record
+*)
+      val add_term_pp_record : 
+	  Basic.ident -> Basic.PP.record -> unit
+
+(**
    [remove_term_pp id]
    remove pretty printing information for identifer occuring in a term.
    @param id identifier to remove.
@@ -156,6 +165,15 @@ val get_type_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
 
 val add_type_pp : 
     Basic.ident -> int -> Basic.PP.fixity -> string option -> unit
+
+(**
+   [add_type_pp_record id rcrd]
+   add pretty printing record for identifer occuring in a type.
+   @param id identifier to add.
+   @param rcrd PP record
+*)
+      val add_type_pp_record : 
+	  Basic.ident -> Basic.PP.record -> unit
 
 (**
    [remove_type_pp id]

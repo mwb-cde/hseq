@@ -148,8 +148,7 @@ let new_full_defn str infx prec trans =
     let pprc = (Basic.PP.mk_record prec Basic.PP.infix (Some trans))
     in 
     Thydb.add_pp_rec (Basic.fn_id) n pprc (theories());
-    Tpenv.add_term_pp (Basic.mklong (Tpenv.get_cur_name()) n) 
-      prec Basic.PP.infix (Some trans)
+    Tpenv.add_term_pp_record (Basic.mklong (Tpenv.get_cur_name()) n) pprc
   else ();
   (n, ty, d)
 
@@ -169,7 +168,7 @@ let new_full_decln sl sty inf prec trans=
       else n
     in 
     Thydb.add_pp_rec (Basic.fn_id) (Basic.name n) pprc (theories());
-    Tpenv.add_term_pp longname prec Basic.PP.infix (Some trans)
+    Tpenv.add_term_pp_record longname pprc
   else ();
   (n, ty)
 
