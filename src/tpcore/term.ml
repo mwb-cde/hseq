@@ -38,7 +38,7 @@ let simple_term_printer trm=
   let rec print_aux t =
     match t with
       Var(n, ty) -> Format.print_string(Basic.string_fnid n)
-    | Bound(n) -> Format.print_string ("_"^(!n.qvar))
+    | Bound(n) -> Format.print_string (".."^(!n.qvar))
     | Const(c) -> Format.print_string (Basic.string_const c)
     | Typed (trm, ty) ->
 	Format.print_string "(";
@@ -287,7 +287,7 @@ let rename_env typenv trmenv trm =
   let copy_binder q tyenv= 
     let nt, nev=copy_type_env tyenv (!q.qtyp)
     in 
-    (mk_binding (!q.quant) (!q.qvar) nt, tyenv)
+    (mk_binding (!q.quant) (!q.qvar) nt, nev)
   and has_quantifier = ref false
   in 
   let rec rename_aux t tyenv env=
@@ -298,12 +298,12 @@ let rename_env typenv trmenv trm =
     | Qnt(q, b) -> 
       	let nq, tyenv1 = copy_binder q tyenv
       	in 
-	let nb, tyenv2, env2=rename_aux b tyenv1 env
+	let env1=bind (Bound(q)) (Bound(nq)) env
+	in 
+	let nb, tyenv2, env2=rename_aux b tyenv1 env1
 	in 
 	has_quantifier:=true;
-      	(Qnt(nq, nb),
-	 tyenv2,
-	 bind (Bound(q)) (Bound(nq)) env2)
+      	(Qnt(nq, nb), tyenv2, env2)
     | Typed(b, ty) -> 
 	let nb, tyenv1, env1 = rename_aux b tyenv env
 	in 
@@ -382,7 +382,8 @@ let rec subst_env env trm =
 let rec subst env trm =
   try 
     let nt= replace env trm 
-    in subst env nt
+    in 
+    subst env nt
   with Not_found ->
     (match trm with
       Qnt(q, b) ->  Qnt(q, subst env b)
@@ -631,10 +632,8 @@ let get_free_binders t =
 
 (* instantiate a quantified formula t with term r *)
 
-
 let subst_quick t r trm = 
-  (subst (bind t r (empty_subst())) trm)
-
+  subst (bind t r (empty_subst())) trm
 
 let inst t r =
   if is_qnt t 

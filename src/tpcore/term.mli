@@ -57,11 +57,42 @@ val table_rebind : term -> 'a -> 'a table -> unit
 
 (* rename bound variables in term (alpha-conversion) *)
 
+
 val rename: term -> term
 
 (* The type of term substitutions *)
 
+
+module TermTreeData: Treekit.TreeData
+
+module TermTree: 
+  sig
+    val eql : 'a -> 'a -> bool
+    val lessthan : 'a -> 'a -> bool
+    type depth_t = int
+    and 'a t =
+      'a Treekit.BTree(TermTreeData).t =
+        Nil
+      | Branch of ((TermTreeData.key * 'a) list * 'a t * 'a t * depth_t)
+    val nil : 'a t
+    val create : (TermTreeData.key * 'a) list -> 'a t -> 'a t -> 'a t
+    val data : 'a t -> (TermTreeData.key * 'a) list
+    val left : 'a t -> 'a t
+    val right : 'a t -> 'a t
+    val depth : 'a t -> depth_t
+    val balance : 'a t -> 'a t
+    val add : 'a t -> TermTreeData.key -> 'a -> 'a t
+    val replace : 'a t -> TermTreeData.key -> 'a -> 'a t
+    val delete : 'a t -> TermTreeData.key -> 'a t
+    val find : 'a t -> TermTreeData.key -> 'a
+    val find_all : 'a t -> TermTreeData.key -> 'a list
+    val mem : 'a t -> TermTreeData.key -> bool
+    val iter : (TermTreeData.key -> 'a -> 'b) -> 'a t -> unit
+    val to_list : 'a t -> (TermTreeData.key * 'a) list list
+  end
+
 type substitution 
+(*  = (subst_terms)TermTree.t *)
 
 (* construct subsitutions *)
 val empty_subst: unit -> substitution
@@ -229,3 +260,6 @@ val term_lt: term -> term -> bool
 
 val term_leq: term -> term -> bool
 val term_gt: term -> term -> bool
+
+
+

@@ -231,10 +231,8 @@ val mgu : gtype  -> substitution -> gtype
 
 (* matching *)
 val matching :scope -> gtype -> gtype -> gtype
-
 val matches_env : scope -> substitution 
   -> gtype -> gtype -> (bool * substitution)
-
 val matches : scope -> gtype -> gtype -> bool
 
 (* look up types in a subsitution *)
@@ -242,6 +240,14 @@ val matches : scope -> gtype -> gtype -> bool
 val lookup_var : gtype -> substitution -> gtype
 val lookup_ty : gtype -> substitution -> gtype
 val lookup : gtype -> substitution -> gtype
+
+(* 
+   [extract_bindings vars src dst]
+   extract bindings variables in [var] from 
+   [src] substitution, store them in [dst] substitution 
+*)
+val extract_bindings: gtype list -> substitution -> substitution 
+    -> substitution
 
 (* check_defn l r: test defintion of l as alias for r *)
 (* check_decln l: consistency check on declaration of type l *) 
@@ -255,8 +261,22 @@ val print_subst : substitution -> unit
 (* raises Not_found if not definition*)
 val get_defn : scope -> gtype -> gtype
 
-(* test for well-defined types *)
+(* 
+   [well_defined scp args ty]
+   test [ty] for well-definednes.
+   every constructor occuring in [ty] must be defined.
+   weak variables are not permitted in [ty]
+*)
 val well_defined : scope -> ?args: (string)list -> gtype -> unit
+
+(* 
+   [quick_well_defined scp tbl ty]:
+   test [ty] to make sure it is well-defined.
+   weak variables can occur in [ty].
+
+   [tbl] is memo of found constructors (and the number of their
+   parameters
+*)
 val quick_well_defined : scope -> 
   (fnident *int, bool) Hashtbl.t -> gtype -> unit
 
@@ -295,14 +315,17 @@ val in_thy_scope: (string, bool)Lib.substype
 
 val mk_typevar: int ref -> gtype
 
-(* mgu_rename inf env nenv ty: 
-   get mgu of ty, renaming type variables with mk_typevar inf
-   env is type substitution found e.g. by typechecking
-   nenv is substitution to store the new type variables
+(* [mgu_rename inf env nenv ty] 
+
+   Replace variables in [ty] with their bindings in substitution [env].
+   If a variable isn't bound in [env], then it is renamed and bound
+   to that name in [nenv] (which is checked before a new name is created).
+
+   [env] is type substitution found e.g. by typechecking
+   [nenv] is substitution in which to store the new type variables
 
    returns the new type and updated nenv
  *)
-
 val mgu_rename_env: int ref -> substitution -> substitution 
   -> gtype -> (gtype * substitution)
 

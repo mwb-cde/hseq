@@ -92,7 +92,7 @@ let print_type_info ppstate pr t =
   let rec print_aux old_pr x =
     match x with
       Var(_) -> Format.print_string ("'"^(get_var x))
-    | WeakVar(_) -> Format.print_string ("_"^(get_var x))
+    | WeakVar(_) -> Format.print_string ("_"^(get_weak x))
     | Base(b) -> Format.print_string (Basic.string_btype b)
     | Constr(Basic.Defined n, [a1; a2])  (* possible infix *)
       ->
@@ -458,6 +458,20 @@ let lookup_var ty env =
     else t
   in chase ty
 
+let extract_bindings tyvars src dst=
+  let rec extract_aux vs r=
+    match vs with
+      [] -> r
+    | (x::xs) -> 
+	  let y= 
+	    try lookup_var x src
+	    with Not_found -> x
+	  in 
+	  if any_varp y
+	  then extract_aux xs r
+	  else extract_aux xs (bind x y r)
+  in extract_aux tyvars dst
+	  
 let rec occurs ty1 ty2 =
   match (ty1, ty2) with
     (Var(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
@@ -1021,8 +1035,9 @@ let rec quick_well_defined scp cache t =
 	  (let recrd=get_typdef scp n
 	  in 
 	  if nargs=(List.length recrd.args)
-	  then (Hashtbl.add cache (n, nargs) true ; 
-		List.iter (quick_well_defined scp cache) args)
+	  then 
+	    (Hashtbl.add cache (n, nargs) true ; 
+	     List.iter (quick_well_defined scp cache) args)
 	  else raise 
 	      (Invalid_argument ("quick_well_defined: "^(string_gtype t))))
 	with Not_found -> 
@@ -1030,9 +1045,11 @@ let rec quick_well_defined scp cache t =
 		   ("quick_well_defined:"^(string_gtype t)))))
   |	Constr(f, args) ->
       List.iter (quick_well_defined scp cache) args
+(*
   | WeakVar _ -> 
 	  raise (Invalid_argument 
 		   ("quick_well_defined:"^(string_gtype t)))
+*)
   |	x -> ()
 
 
@@ -1141,6 +1158,7 @@ let mk_typevar n =
    to that name in nenv (which is checked before a new name is created).
 *)
 
+(*
 let mgu_rename_env inf env nenv typ =
   let new_name_env tenv x =
     try (lookup x env, tenv)
@@ -1177,6 +1195,44 @@ let mgu_rename_env inf env nenv typ =
     | _ -> (ty, tenv)
   in 
   rename_aux nenv typ
+*)
+
+let mgu_rename_env inf tyenv name_env typ =
+  let new_name_env nenv x =
+    try (lookup x nenv, nenv)
+    with 
+      Not_found ->
+	let newty=mk_typevar inf
+	in 
+	(newty, bind_var x newty nenv)
+  in 
+  let rec rename_aux (nenv: substitution) ty=
+    match ty with
+      Var(_) ->
+	let nt=lookup_var ty tyenv
+	in 
+	if (equality ty nt)
+	then new_name_env nenv nt
+	else rename_aux nenv nt
+    | WeakVar(_) ->
+	(let nt=lookup_var ty tyenv
+	in 
+	if(weakp nt) then (nt, nenv)
+	else rename_aux nenv nt)
+    | Constr(f, args) -> 
+	let renv=ref nenv
+	in 
+	let nargs=
+	  List.map
+	    (fun t -> 
+	      let nt, ne=rename_aux (!renv) t
+	      in 
+	      renv:=ne; nt) args
+	in 
+	(Constr(f, nargs), !renv)
+    | _ -> (ty, nenv)
+  in 
+  rename_aux name_env typ
 
 
 let mgu_rename inf env nenv typ =

@@ -11,7 +11,7 @@ let eq_tac0 sqnt =
     try lemma "base.eq_sym"
     with Not_found -> 
       (Result.raiseError "Can't find required lemma base.eq_sym")
-  in rule_tac (Logic.Rules.thenl [cut th; unify_tac (-1) a]) sqnt
+  in rule_tac (thenl [cut th; unify_tac (-1) a]) sqnt
 
 let eq_tac sqnt = rule_tac eq_tac0 sqnt
 
@@ -20,7 +20,7 @@ let eq_tac sqnt = rule_tac eq_tac0 sqnt
     let unfold str i sqnt= 
       let j= if i<0 then i-1 else i
       in
-      rule_tac(Logic.Rules.thenl[cut (defn str); replace (-1) j; delete (-1)]) sqnt
+      rule_tac(thenl[cut (defn str); replace (-1) j; delete (-1)]) sqnt
 
     let rewrite_thm str i= 
      Drule.rewrite_thm [lemma str] true i
@@ -34,7 +34,7 @@ let eq_tac sqnt = rule_tac eq_tac0 sqnt
     let rewrite th i= 
       let j= if i<0 then i-1 else i
       in
-      rule_tac(Logic.Rules.thenl[(cut th);(replace (-1) j); delete (-1)])
+      rule_tac(thenl[(cut th);(replace (-1) j); delete (-1)])
 
     let rewrite_dir dir thms i= 
       Tactics.rule_tac (Drule.rewrite_thm thms dir i)
@@ -56,7 +56,7 @@ let iffI_rule i sq =
   in
   if not (is_iff f) then (Result.raiseError "iffI_rule")
   else 
-      (Logic.Rules.thenl 
+      (thenl 
 	 [Drule.rewrite_thm [lemma "boolean.iff_def"] true i;
 	   Logic.Rules.conjI i;
 	   Logic.Rules.implI i]) sq
@@ -68,7 +68,7 @@ let iffI g =
 let false_rule0 a sq =
   let  thm = lemma "base.false_def"
   in 
-  rule_tac(Logic.Rules.thenl
+  rule_tac(thenl
 	     [(Drule.rewrite_thm [thm] true a); 
 	       Logic.Rules.negA a; Logic.Rules.trueR 1]) sq
 
@@ -109,7 +109,7 @@ let rec flatten_tac g =
 let rec flatten_tac g =
   rule_tac(repeat
 	     (rule_tac
-	 	(Logic.Rules.orl 
+	 	(Tactics.orl 
 		   [ Drule.foreach_conc (conc_elims()); 
 		     Drule.foreach_asm (asm_elims())]))) g
 
@@ -124,8 +124,8 @@ let split_conc () =
     (is_iff, iffI_rule)]
 
 let split_tac g=
-    Logic.Rules.repeat
-       (Logic.Rules.apply_list 
+    repeat
+       (apply_list 
 	     [ Drule.foreach_conc (split_conc()); 
 	       Drule.foreach_asm (split_asm())]) g
 
@@ -238,7 +238,7 @@ let match_mp_rule0 thm i sq=
   in 
   let ncnsts = List.map (fun x -> lookup (Term.Bound x) qenv) qnts
   in 
-  (Logic.Rules.thenl 
+  (thenl 
      [Logic.Rules.cut thm; inst_term_rule ncnsts (-1); Logic.Rules.implE (-1);
       Logic.Rules.postpone; Logic.Rules.unify (-1) i]) sq
 
@@ -261,7 +261,7 @@ let match_mp_sqnt_rule0 j i sq=
   in 
   let ncnsts =List.rev(List.map (fun x -> lookup (Term.Bound x) qenv) qnts)
   in 
-  Logic.Rules.thenl 
+  thenl 
     [inst_term_rule ncnsts j; Logic.Rules.implE j;
       Logic.Rules.postpone; Logic.Rules.unify j i] sq
 

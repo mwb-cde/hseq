@@ -4,26 +4,26 @@
 
 class typingError: string -> Term.term list -> Gtypes.gtype list ->
   object
-  inherit Result.error 
-  method get_terms: unit -> Term.term list
-  method get_types: unit -> Gtypes.gtype list
-end
+    inherit Result.error 
+    method get_terms: unit -> Term.term list
+    method get_types: unit -> Gtypes.gtype list
+  end
 val typingError: string -> Term.term list -> Gtypes.gtype list -> exn
 val addtypingError: string -> Term.term list -> Gtypes.gtype list -> exn -> 'a
 
 (* construct type of a term *)
-    val typeof : Gtypes.scope -> Term.term -> Gtypes.gtype
+val typeof : Gtypes.scope -> Term.term -> Gtypes.gtype
 
 (* typechecking functions:
    the typecheck is deep:  type are tested for well-definedness
    and type inference is carried out.
    This is used e.g. to check that a term (and all its subterms)
    is type-correct in a given scope.
-*)
+ *)
 
 (* check a given term has the expected type *)
-    val typecheck: Gtypes.scope -> Term.term 
-      -> Gtypes.gtype -> unit
+val typecheck: Gtypes.scope -> Term.term 
+  -> Gtypes.gtype -> unit
 
 (* check a given term has the expected type 
    in a given context/substitution  *) 
@@ -49,12 +49,12 @@ val retype: Gtypes.substitution -> Term.term -> Term.term
    retype_pretty_env: 
    like retype_pretty but also return the substitution storing
    from the bindings/replacements generated during retyping.
-*)
+ *)
 
 val retype_pretty_env: Gtypes.substitution -> Term.term 
   -> (Term.term * Gtypes.substitution)
 (*
-val retype_pretty: Gtypes.substitution -> Term.term -> Term.term
+   val retype_pretty: Gtypes.substitution -> Term.term -> Term.term
 *)
 
 val retype_pretty: Gtypes.substitution -> Term.term 
@@ -76,16 +76,16 @@ val settype: Gtypes.scope -> Term.term  -> Gtypes.substitution
 (* infer_types is an alternative to settype but not actually used *)
 
 val infer_aux : 
-   int ref * (Basic.fnident * int, bool) Hashtbl.t 
-    -> Gtypes.scope -> Gtypes.substitution -> Term.term 
-      -> (Gtypes.gtype * Gtypes.substitution )
- val infer_types_env: Gtypes.scope -> Gtypes.substitution 
-   -> Term.term -> (Gtypes.gtype* Gtypes.substitution)
+    int ref * (Basic.fnident * int, bool) Hashtbl.t 
+  -> Gtypes.scope -> Gtypes.substitution -> Term.term 
+    -> (Gtypes.gtype * Gtypes.substitution )
+val infer_types_env: Gtypes.scope -> Gtypes.substitution 
+  -> Term.term -> (Gtypes.gtype* Gtypes.substitution)
 
- val infer_types: Gtypes.scope -> Term.term -> Gtypes.gtype
+val infer_types: Gtypes.scope -> Term.term -> Gtypes.gtype
 
 (* check that types in the term are well defined *)
-    val check_types: Gtypes.scope -> Term.term -> unit
+val check_types: Gtypes.scope -> Term.term -> unit
 
 (* [set_exact_types scp term]
    get and set the exact types of identifiers (Term.Var) in term [trm]
@@ -100,4 +100,8 @@ val infer_aux :
 val set_exact_types: Gtypes.scope -> Term.term -> Term.term
 
 val assign_types: Gtypes.scope -> Term.term -> Term.term
-	
+    
+val typecheck_aux:
+    Gtypes.scope ->
+      int ref * (Basic.fnident * int, bool) Hashtbl.t ->
+	Gtypes.substitution -> Gtypes.gtype -> Term.term -> Gtypes.substitution

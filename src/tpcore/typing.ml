@@ -79,10 +79,12 @@ let typeof scp t =
 let retype tyenv t=
   let qenv=Term.empty_table()
   in 
-  let rec retype_aux  t =
+  let rec retype_aux t =
     match t with
       Var(n, ty) -> Var(n, Gtypes.mgu ty tyenv)
-    | Bound(q) -> Term.table_find t qenv
+    | Bound(q) -> 
+	(try Term.table_find t qenv
+	with Not_found -> t)
     | Const(c) -> t
     | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
@@ -145,6 +147,7 @@ let retype_pretty_env typenv trm=
    let nt, _ = retype_pretty_env typenv trm
    in nt
  *)
+
 let retype_pretty typenv trm = 
   let nt, _ = retype_pretty_env typenv trm
   in nt
