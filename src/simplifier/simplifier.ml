@@ -195,7 +195,7 @@ module Simplifier =
 	  Logic.Rules.cut_info info th g
       | Logic.Asm(x) ->
 	  Logic.Rules.copy_asm_info info 
-	    (Logic.fident_to_index x (Logic.get_sqnt g)) g
+	    (Logic.label_to_index x (Logic.get_sqnt g)) g
 
 (*
       | Logic.Tagged(tg) ->

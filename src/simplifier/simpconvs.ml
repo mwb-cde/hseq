@@ -126,7 +126,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
       (rebuild_qnt Basic.All tvars 
 	 (Logicterm.mkequal tbody (Term.subst env rrhs)))
   in 
-  let atag=Logic.fident_to_tag asm sqnt
+  let atag=Logic.label_to_tag asm sqnt
   in 
   let athm=
     try
