@@ -3,7 +3,6 @@ open Drule
 open Commands
 open Tactics
 
-
 let eq_tac0 sqnt = 
   let a = first_concl Formula.is_equals (Logic.get_sqnt sqnt)
   in 
@@ -20,28 +19,8 @@ let cut_thm str = (cut (lemma str))
 let unfold str i sqnt= 
   let j= if i<0 then i-1 else i
   in
-  (thenl[cut (defn str); replace (fnum(-1)) (fnum j); 
+  (thenl[cut (defn str); replace_tac [(fnum(-1))] ~f:(fnum j); 
 	 delete (fnum (-1))]) sqnt
-
-let rewrite_thm str i= 
-  Tactics.rewrite_thm [lemma str] ~dir:leftright i
-
-let rewrite_rl str i= 
-  Tactics.rewrite_thm[lemma str] ~dir:rightleft i
-
-let rewrite_lr str i= 
-  Tactics.rewrite_thm[lemma str] ~dir:leftright i
-
-let rewrite th i= 
-  Tactics.rewrite_thm[th] i
-(*
-  let j= if i<0 then i-1 else i
-  in
-  thenl[(cut th);(replace (-1) j); delete (fnum (-1))]
-*)
-
-let rewrite_dir dir thms i= 
-  Tactics.rewrite_thm thms ~dir:dir i
 
 (* iffI_rule i sq:
    asm |- a iff b, cncl 
@@ -58,12 +37,13 @@ let is_iff f =
 let iffI_rule i goal = 
   let sqnt=Logic.get_sqnt goal
   in 
-  let t, f = Logic.get_tagged_cncl (Logic.fident_to_tag i sqnt) sqnt
+  let t, f = Logic.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
   in
   if not (is_iff f) then (raise (Result.error "iffI_rule"))
   else 
     (thenl 
-       [Tactics.rewrite_thm [lemma "boolean.iff_def"] ~dir:leftright (ftag t);
+       [Tactics.rewrite_tac [lemma "boolean.iff_def"]
+	  ~dir:leftright ~f:(ftag t);
 	Logic.Rules.conjI None (ftag t);
 	Logic.Rules.implI None (ftag t)]) goal
 
@@ -78,7 +58,7 @@ let iffI ?c g =
 let false_rule0 a sq =
   let  thm = lemma "base.false_def"
   in 
-  thenl [(Tactics.rewrite_thm [thm]  a); 
+  thenl [(Tactics.rewrite_tac [thm] ~f:a); 
 	 Logic.Rules.negA None a; 
 	 trivial] sq
 
@@ -91,16 +71,10 @@ let false_rule ?a goal =
     false_rule0 af goal 
 
 let asm_elims () = 
-  [	(Formula.is_false, (fun x -> false_rule ~a:x));
+  [ (Formula.is_false, (fun x -> false_rule ~a:x));
     (Formula.is_neg, Logic.Rules.negA None);  
     (Formula.is_conj, Logic.Rules.conjE None); 
-(*	(Formula.is_implies, Drule.mp_basic_rule); *)
     (Formula.is_exists, Logic.Rules.existI None)]
-
-
-(*
-   (fun x -> Logic.Rules.orl[Drule.mp_basic_rule x; Logic.Rules.implE x]));
- *)
 
 let conc_elims () =
   [
@@ -109,15 +83,6 @@ let conc_elims () =
    (Formula.is_disj, Logic.Rules.disjE None);
    (Formula.is_implies, Logic.Rules.implI None);
    (Formula.is_all, Logic.Rules.allI None)]
-
-(*
-   let rec flatten_tac g =
-   rule_tac(repeat
-   (rule_tac
-   (Logic.Rules.apply_list 
-   [ Drule.foreach_conc (conc_elims()); 
-   Drule.foreach_asm (asm_elims())]))) g
- *)
 
 let rec flatten_tac g =
   repeat
@@ -132,7 +97,6 @@ let split_asm () =
 
 let split_conc () =
   [(Formula.is_conj, Logic.Rules.conjI None); 
-   (Formula.is_disj, Logic.Rules.disjE None);
    (is_iff, iffI_rule)]
 
 let split_tac g=
@@ -151,6 +115,14 @@ let inst_asm_rule i l sqnt=
 	in rule xs nsqnt
   in rule l sqnt
 
+let inst_asm ?a l g=
+  let af = 
+    match a with 
+      Some x -> x
+    | _ -> (Drule.first_asm (Formula.is_all) (Logic.get_sqnt g))
+  in 
+  inst_asm_rule af l g
+
 let inst_concl_rule i l sqnt=
   let rec rule ys sqs = 
     match ys with 
@@ -160,30 +132,6 @@ let inst_concl_rule i l sqnt=
 	    (Logic.Rules.existE None x i) sqs
 	in rule xs nsqnt
   in rule l sqnt
-
-(*
-let inst_term_rule i l sqnt=
-  let rec rule ys sqs = 
-    match ys with 
-      [] -> sqs
-    | (x::xs) -> 
-	let nsqnt=
-	  if (i<0) 
-	  then 
-	    (Logic.Rules.allE x i) sqs
-	  else 
-	    (Logic.Rules.existE x i) sqs
-	in rule xs nsqnt
-  in rule l sqnt
-*)
-
-let inst_asm ?a l g=
-  let af = 
-    match a with 
-      Some x -> x
-    | _ -> (Drule.first_asm (Formula.is_all) (Logic.get_sqnt g))
-  in 
-  inst_asm_rule af l g
 
 let inst_concl ?c l g=
   let cf = 
@@ -197,7 +145,7 @@ let inst_tac f l g=
   let sqnt = Logic.get_sqnt g
   in 
   try 
-    ignore(Logic.get_fident_asm f sqnt);
+    ignore(Logic.get_label_asm f sqnt);
     inst_asm ~a:f l g
   with Not_found -> inst_concl ~c:f l g
 
@@ -208,10 +156,9 @@ let cases_tac0 (x:Basic.term) g=
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.cases_thm"))
   in 
-  thenl
-	     [cut thm; allE x; disjI; negA; postpone] g
+  thenl [cut thm; allE x; disjI; negA; postpone] g
 
-let cases_tac x = cases_tac0 (Tpenv.read_unchecked x)
+let cases_tac x = cases_tac0 x
 
 let equals_tac ?f g =
   let ff =
@@ -234,7 +181,7 @@ let equals_tac ?f g =
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.equals_bool"))
   in 
-  (rewrite thm ff g)
+  (Logic.Rules.rewrite_any None [Logic.RRThm thm] ff g)
 
 let false_tac g = false_rule g
 
@@ -270,42 +217,57 @@ let hyp_conc_thm f =
 let match_mp_rule0 thm i sq=
   let (qnts, a, b) = hyp_conc_thm (Logic.dest_thm thm)
   and c = 
-    Formula.dest_form (snd (Logic.get_cncl i (Logic.get_sqnt sq)))
-  and scp = Logic.scope_of (Logic.get_sqnt sq)
-  and lookup y env = (try Term.find y env with Not_found -> y)
+    Formula.dest_form (Drule.get_cncl i sq)
+  and scp = Drule.scope_of sq
   in 
   let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
   in 
-  let ncnsts = List.map (fun x -> lookup (Basic.Bound x) qenv) qnts
+  let ncnsts = Drule.make_consts qnts qenv
+  and info = Drule.mk_info()
   in 
-  (thenl 
-     [Tactics.cut thm; inst_tac (fnum(-1)) ncnsts; 
-      Logic.Rules.implE None (fnum (-1));
-      Logic.Rules.postpone; 
-      Tactics.unify_tac ~a:(fnum(-1)) ~c:(fnum i)]) sq
+  ((Tactics.cut ~info:info thm)
+    ++
+    (fun g -> 
+      let af = ftag(Lib.get_one (Drule.subgoals info) 
+		      (Failure "match_mp_rule"))
+      in
+      thenl
+	[inst_tac af ncnsts; 
+	 Tactics.cut thm; 
+	 Logic.Rules.implE None af;
+	 Logic.Rules.postpone; 
+	 Tactics.unify_tac ~a:af ~c:i] g)) sq
 
-let match_mp_tac thm i g = match_mp_rule0 thm i g
+let match_mp_tac thm ?c g = 
+  let cf=
+  match c with
+    None ->  (fnum 1)
+  | Some x -> x 
+  in 
+  match_mp_rule0 thm cf g
 
-(*
-   rule_tac(Logic.Rules.thenl[match_mp_rule0 thm i; 
-   Logic.Rules.postpone; Logic.Rules.unify (-1) i]) g
- *)
 
 let match_mp_sqnt_rule0 j i sq=
-  let (qnts, a, b) = hyp_conc_thm 
-      (snd (Logic.get_asm j (Logic.get_sqnt sq)))
-  and c = Formula.dest_form 
-      (snd (Logic.get_cncl i (Logic.get_sqnt sq)))
-  and scp = Logic.scope_of (Logic.get_sqnt sq)
-  and lookup y env = (try Term.find y env with Not_found -> y)
+  let (qnts, a, b) = 
+    hyp_conc_thm (Drule.get_asm j sq)
+  and c = Formula.dest_form (Drule.get_cncl i sq)
+  and scp = Drule.scope_of sq
   in 
   let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
   in 
-  let ncnsts =List.rev(List.map (fun x -> lookup (Basic.Bound x) qenv) qnts)
+  let ncnsts = make_consts qnts qenv
+  and info =Drule.mk_info()
   in 
-  thenl 
-    [inst_tac (fnum j) ncnsts; Logic.Rules.implE None (fnum j);
-     Logic.Rules.postpone; 
-     Tactics.unify_tac ~a:(fnum j) ~c:(fnum i)] sq
+  (((inst_tac j ncnsts) ++ Logic.Rules.implE (Some info) j)
+     ++
+     (fun g->
+       let gtl, gtr=
+	 Lib.get_two (Drule.subgoals info) 
+	   (Failure "match_mp_sqnt_rule")
+       in 
+       thenl
+	 [Logic.goal_focus gtr;
+	  Tactics.unify_tac ~a:j ~c:i;
+	  Logic.goal_focus gtl] g)) sq
 
-let back_mp_tac j i g =match_mp_sqnt_rule0 j i g
+let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g

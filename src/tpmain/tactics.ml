@@ -162,17 +162,6 @@ let beta_tac ?info ?f=
     (Some x) -> Logic.Rules.beta info x
     | _ -> (Drule.foreach_once (fun x -> Logic.Rules.beta info x))
 
-let rewrite_thm ?info ths ?(dir=leftright) f goal=
-  Logic.Rules.rewrite_any info ~dir:dir 
-    (List.map (fun x -> Logic.RRThm x) ths) f goal
-
-let replace ?info i j =
-  (Logic.Rules.rewrite_any info 
-     ~dir:Rewrite.leftright [Asm i] j)
-
-let replace_rl ?info i j =
-  (Logic.Rules.rewrite_any info 
-     ~dir:Rewrite.leftright [Asm i] j)
 
 
 (*
@@ -185,13 +174,13 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   let asm = 
     try 
       Formula.dest_form 
-	(Logic.drop_tag (Logic.get_asm (Logic.fident_to_index a sqnt) sqnt))
+	(Logic.drop_tag (Logic.get_asm (Logic.label_to_index a sqnt) sqnt))
     with Not_found ->
       raise(Result.error "unify_tac: assumption not found")
   and concl = 
     try 
       Formula.dest_form
-	(Logic.drop_tag (Logic.get_cncl (Logic.fident_to_index c sqnt) sqnt))
+	(Logic.drop_tag (Logic.get_cncl (Logic.label_to_index c sqnt) sqnt))
     with Not_found ->
       raise(Result.error "unify_tac: conclusion not found")
   in 
@@ -342,3 +331,56 @@ let apply_list fs g =
   in if !chng then ngs else (fail g)
 
 
+
+let rewrite_control 
+    ?(max=None) ?(strat=Rewrite.topdown) dir=
+  Rewrite.control ~max:max ~dir:dir ~strat:strat 
+
+let gen_rewrite_tac ?info ctrl rules ?f goal=
+  match f with
+    None -> 
+      Drule.foreach_once 
+	(fun x -> 
+	  Logic.Rules.rewrite_any 
+	    info ~dir:(ctrl.Rewrite.rr_dir) rules x) goal
+  | Some (x) ->
+      Logic.Rules.rewrite_any 
+	info ~dir:(ctrl.Rewrite.rr_dir) rules x goal
+      
+
+let rewrite_tac ?info ?(dir=leftright) ths ?f goal=
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  match f with
+    None -> 
+      Drule.foreach_formula
+	[(fun x -> true),
+	 (fun x -> 
+	   orl[Logic.Rules.rewrite_any info ~dir:dir rules x;
+	       skip]) 
+       ]
+	goal
+  | Some (x) ->
+      Logic.Rules.rewrite_any info ~dir:dir rules x goal
+
+let replace_tac ?info ?(dir=leftright) asms ?f goal =
+  let rules = (List.map (fun x -> Logic.Asm x) asms) 
+  in 
+  match f with
+    None -> 
+      let sqnt = Drule.sequent goal
+      in 
+      let tags = 
+	(List.map (fun i -> Logic.label_to_tag i sqnt) asms)
+      in 
+      Drule.foreach_once
+	(fun x -> 
+	   if (List.exists 
+		 (fun y -> Tag.equal (Logic.label_to_tag x sqnt) y)
+		 tags)
+	   then fun g -> g
+	   else 
+	     orl [Logic.Rules.rewrite_any info ~dir:dir rules x; skip])
+	goal
+  | Some (x) ->
+      Logic.Rules.rewrite_any info ~dir:dir rules x goal
