@@ -117,7 +117,7 @@ val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
 *)
 
 (**
-   [asm_mp_tac ~a ~f]
+   [mp_tac ~a ~f]
 
    Modus ponens.
    if [a] is [l=>r] and [f] is [l],
@@ -127,7 +127,7 @@ val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
    instantiate all of the [x1 .. xn] from [f] before 
    reducing.
 
-   [mp_tac ?info thm ?a]
+   [cut_mp_tac ?info thm ?a]
 
    Apply modus ponens to theorem [thm] and assumption [a].
    [thm] must be a (possibly quantified) implication [!x1 .. xn: l=>r]
@@ -138,12 +138,12 @@ val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
    info [] [thm_tag] []
    where tag [thm_tag] identifies the theorem in the sequent.
 *)
-val asm_mp_tac: ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
-val mp_tac:?info:Logic.info -> Logic.thm 
+val mp_tac: ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
+val cut_mp_tac:?info:Logic.info -> Logic.thm 
     -> ?a:Logic.label -> Tactics.tactic
 
 (**
-   [asm_back_tac ~a ~c]
+   [back_tac ~a ~c]
    
    Match, backward tactic.
 
@@ -163,7 +163,7 @@ val mp_tac:?info:Logic.info -> Logic.thm
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
 
-   [back_tac ?info thm ?c]
+   [cut_back_tac ?info thm ?c]
    Cut theorem [thm] into the sequent and apply [asm_back_tac] 
    to the theorem and conclusion [c].
 
@@ -172,9 +172,9 @@ val mp_tac:?info:Logic.info -> Logic.thm
 
    info: as for [asm_back_tac].
 *)
-val asm_back_tac: 
+val back_tac: 
     ?info:Logic.info ->  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
 
-val back_tac:
+val cut_back_tac:
     ?info:Logic.info -> Logic.thm 
       -> ?c:Logic.label -> Tactics.tactic

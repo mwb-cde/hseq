@@ -29,27 +29,50 @@ val scope_of : Logic.node -> Gtypes.scope
 val typenv_of : Logic.node -> Gtypes.substitution
 
 
-(** [get_asm i g]
-   get assumption [i] of first sequent of goal [g]
+(** [get_asm i g]:
+   Get assumption [i] of first sequent of goal [g].
+
+   [get_cncl i g]:
+   Get conclusion [i] of first sequent of goal [g].
  *)
 val get_asm: Logic.label -> Logic.node -> Formula.form
-
-(** [get_cncl i g]
-   get conclusion [i] of first sequent of goal [g]
- *)
 val get_cncl: Logic.label -> Logic.node -> Formula.form
 
-(**
-   [has_subgoals b]
-   test whether a branch has subgoals.
-   returns [true] if b has subgoals, [false] otherwise
+(** [get_tagged_asm i g]:
+   Get assumption [i] of first sequent of goal [g].
+
+   [get_tagged_cncl i g]:
+   Get conclusion [i] of first sequent of goal [g].
  *)
-val has_subgoals : Logic.branch -> bool
+val get_tagged_asm: Logic.label -> Logic.node -> Logic.tagged_form
+val get_tagged_cncl: Logic.label -> Logic.node -> Logic.tagged_form
+
+
+(** 
+   [sqnt_tag n]: Get tag of the sequent of node n.
+ *)
+val sqnt_tag : Logic.Sequent.t -> Tag.t
 
 (** 
    [node_tag n]: Get tag of the sequent of node n.
  *)
 val node_tag : Logic.node -> Tag.t
+
+(** [branch_tag b]: Tag of branch [b].
+
+   [branch_typenv b]: type environment of branch [b].
+
+   [branch_subgoals b]: subgoals of branch [b].
+
+   [has_subgoals b]: [true] if [b] has subgoals, [false] otherwise
+
+   [num_subgoals b]: number of subgoals in branch [b]
+ *)
+val branch_tag: Logic.branch -> Tag.t
+val branch_tyenv: Logic.branch -> Gtypes.substitution
+val branch_subgoals: Logic.branch -> Logic.Sequent.t list
+val has_subgoals : Logic.branch -> bool
+val num_subgoals : Logic.branch -> int
 
 (** [mk_info()]
    make an empty information record.
@@ -103,7 +126,7 @@ val seq : Logic.rule -> Logic.rule -> Logic.rule
 
 (* 
    Utility tactics
-*)
+ *)
 (**
    [inst_list rule cs id goal]: 
    instantiate formula [id] in [goal] with constants [cs]
@@ -184,14 +207,14 @@ val foreach_once :
 
    raise [Not_found] if no formula can be found which satisfies all the
    conditions.
-*)
+ *)
 val find_qnt_opt:
     ?exclude:(Logic.tagged_form -> bool)
-    -> Basic.quant_ty
-      -> ?f:Tag.t
-	-> (Basic.term -> bool)
-	  -> Logic.tagged_form list
-	    -> (Tag.t * Basic.binders list * Basic.term)
+  -> Basic.quant_ty
+    -> ?f:Tag.t
+      -> (Basic.term -> bool)
+	-> Logic.tagged_form list
+	  -> (Tag.t * Basic.binders list * Basic.term)
 
 (*
    [unify_sqnt_form varp trm ?f forms]
@@ -203,13 +226,13 @@ val find_qnt_opt:
  *)
 val unify_sqnt_form:
     Gtypes.substitution 
-    -> Gtypes.scope
-	-> (Basic.term -> bool)
-	    -> Basic.term
-		-> ?exclude:(Logic.tagged_form -> bool)
-		  -> ?f:Tag.t
-		    -> Logic.tagged_form list 
-			-> (Tag.t * Term.substitution)
+  -> Gtypes.scope
+    -> (Basic.term -> bool)
+      -> Basic.term
+	-> ?exclude:(Logic.tagged_form -> bool)
+	  -> ?f:Tag.t
+	    -> Logic.tagged_form list 
+	      -> (Tag.t * Term.substitution)
 
 
 (**
@@ -220,7 +243,7 @@ val unify_sqnt_form:
    determines which terms can be bound by unification.
 
    raise Not_found if no match.
-*)
+ *)
 val match_formulas: 
     Gtypes.substitution
   -> Gtypes.scope -> (Basic.term -> bool) 
@@ -289,7 +312,7 @@ val rebuild_qnt:
    [find_formula p fs]: Return the first formula in [fs] to satisfy [p].
 
    raise Not_found if no such formula.
-*)
+ *)
 val find_formula : ('a -> bool) -> 'a list -> 'a
 (*
    [find_asm p n]: 
@@ -299,7 +322,7 @@ val find_formula : ('a -> bool) -> 'a list -> 'a
    Return the first conclusion of [n] to satisfy [p].
 
    raise Not_found if no such formula.
-*)
+ *)
 val find_asm:
     ((Logic.tagged_form) -> bool) -> Logic.node -> Logic.tagged_form
 
@@ -314,12 +337,12 @@ val find_concl:
    quantifiers of [trm].
 
    raise Not_found, if no unifiable formula found.
-*)
+ *)
 val unify_formula_for_consts:
     Gtypes.substitution
-    -> Gtypes.scope
-      -> (Basic.binders list * Basic.term) 
-	-> Basic.term -> Basic.term list
+  -> Gtypes.scope
+    -> (Basic.binders list * Basic.term) 
+      -> Basic.term -> Basic.term list
 
 (**
    [unify_concl_for_consts ?c trm g]
@@ -329,11 +352,11 @@ val unify_formula_for_consts:
    to the conclusion by instantiating the topmost quantifiers of trm.
 
    [trm] must be universally quantified.
-*)
+ *)
 val unify_concl_for_consts:
     Basic.quant_ty
-    -> ?c:Logic.label
-	-> Basic.term -> Logic.node -> Basic.term list
+  -> ?c:Logic.label
+    -> Basic.term -> Logic.node -> Basic.term list
 
 (**
    [unify_asm_for_consts ?a qnt trm g]
@@ -343,8 +366,8 @@ val unify_concl_for_consts:
    to the conclusion by instantiating the topmost quantifiers of trm.
 
    [trm] must be quantified by [qnt].
-*)
+ *)
 val unify_asm_for_consts:
     Basic.quant_ty
-    -> ?a:Logic.label
-	-> Basic.term -> Logic.node -> Basic.term list
+  -> ?a:Logic.label
+    -> Basic.term -> Logic.node -> Basic.term list

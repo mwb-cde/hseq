@@ -426,7 +426,7 @@ let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
 (* 
    Modus ponens
 *)
-let asm_mp_tac ?a ?a1 g=
+let mp_tac ?a ?a1 g=
   let typenv = Drule.typenv_of g
   and sqnt = Drule.sequent g
   in 
@@ -441,7 +441,7 @@ let asm_mp_tac ?a ?a1 g=
       find_qnt_opt Basic.All ?f:a_tag 
 	Logicterm.is_implies (Drule.asms_of sqnt)
     with Not_found -> 
-      raise (Logic.logicError ("asm_mp_tac: no implications in assumptions") 
+      raise (Logic.logicError ("mp_tac: no implications in assumptions") 
 	       [])
   in
   let (_, mp_lhs, mp_rhs) = Term.dest_binop mp_form
@@ -458,7 +458,7 @@ let asm_mp_tac ?a ?a1 g=
     with 
       Not_found -> 
 	raise 
-	  (Term.termError ("asm_mp_tac: no matching formula in assumptions") 
+	  (Term.termError ("mp_tac: no matching formula in assumptions") 
 	   [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
   in 
   let info= Drule.mk_info()
@@ -478,13 +478,13 @@ let asm_mp_tac ?a ?a1 g=
        --> 
 	 Logic.Rules.basic (Some info) (ftag a1_label)
 	   (ftag (Lib.get_one (Drule.formulas info) 
-		    (Failure "asm_mp_tac2.2")))) g3
+		    (Failure "mp_tac2.2")))) g3
   in 
    (tac1++ (tac2 ++ tac3)) g 
 
 
 (*
-   [mp_tac ?info thm ?a]
+   [cut_mp_tac ?info thm ?a]
 
    Apply modus ponens to theorem [thm] and assumption [a].
    [thm] must be a (possibly quantified) implication [!x1 .. xn: l=>r]
@@ -495,7 +495,7 @@ let asm_mp_tac ?a ?a1 g=
    info [] [thm_tag] []
    where tag [thm_tag] identifies the theorem in the sequent.
 *)
-let mp_tac ?info thm ?a g=
+let cut_mp_tac ?info thm ?a g=
   let info1 = Drule.mk_info()
   and f_label = 
     Lib.apply_option 
@@ -507,10 +507,10 @@ let mp_tac ?info thm ?a g=
   let tac2 g2 = 
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
-	(Logic.logicError "mp_tac: Failed to cut theorem" 
+	(Logic.logicError "cut_mp_tac: Failed to cut theorem" 
 	   [Logic.dest_thm thm])
     in 
-    asm_mp_tac ~a:(ftag a_tag) ?a1:f_label g2)
+    mp_tac ~a:(ftag a_tag) ?a1:f_label g2)
   in 
   let g3= (tac1++tac2) g
   in 
@@ -526,7 +526,7 @@ let mp_tac ?info thm ?a g=
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
 *)
-let asm_back_tac ?info ?a ?c g=
+let back_tac ?info ?a ?c g=
   let typenv = Drule.typenv_of g
   and sqnt = Drule.sequent g
   in 
@@ -542,7 +542,7 @@ let asm_back_tac ?info ?a ?c g=
       Drule.find_qnt_opt Basic.All ?f:a_tag 
 	Logicterm.is_implies (Drule.asms_of sqnt)
     with Not_found -> 
-      raise (Logic.logicError ("asm_back_tac: no implications in assumptions") 
+      raise (Logic.logicError ("back_tac: no implications in assumptions") 
 	       [])
   in
   let (_, back_lhs, back_rhs) = Term.dest_binop back_form
@@ -560,7 +560,7 @@ let asm_back_tac ?info ?a ?c g=
     with 
       Not_found -> 
 	raise (Term.termError 
-		 ("asm_back_tac: no matching formula in conclusion") 
+		 ("back_tac: no matching formula in conclusion") 
 	   [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
   in 
   let info1= Drule.mk_info()
@@ -593,7 +593,7 @@ let asm_back_tac ?info ?a ?c g=
 (*
    [back_tac ?info thm ?a]
 *)
-let back_tac ?info thm ?c g=
+let cut_back_tac ?info thm ?c g=
   let info1 = Drule.mk_info()
   and c_label = 
     Lib.apply_option 
@@ -605,10 +605,10 @@ let back_tac ?info thm ?c g=
   let tac2 g2 = 
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
-	(Logic.logicError "back_tac: Failed to cut theorem" 
+	(Logic.logicError "cut_back_tac: Failed to cut theorem" 
 	   [Logic.dest_thm thm])
     in 
-    asm_back_tac ?info:info ~a:(ftag a_tag) ?c:c_label) g2
+    back_tac ?info:info ~a:(ftag a_tag) ?c:c_label) g2
   in 
   (tac1++tac2) g
 

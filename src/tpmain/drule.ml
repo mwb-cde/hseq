@@ -18,12 +18,24 @@ let typenv_of n = Logic.Subgoals.node_tyenv n
 let get_asm i g= Logic.drop_tag(Logic.get_label_asm i (sequent g))
 let get_cncl i g= Logic.drop_tag(Logic.get_label_cncl i (sequent g))
 
+let get_tagged_asm i g= Logic.get_label_asm i (sequent g)
+let get_tagged_cncl i g= Logic.get_label_cncl i (sequent g)
+
+
+let sqnt_tag  = Logic.Sequent.sqnt_tag
+let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
+
+let branch_tag b = Logic.Subgoals.branch_tag b
+let branch_tyenv b = Logic.Subgoals.branch_tyenv b
+let branch_subgoals b = Logic.Subgoals.branch_sqnts b
+
 let has_subgoals b=
-  match (Logic.Subgoals.branch_sqnts b) with
+  match (branch_subgoals b) with
     [] -> false
   | _ -> true
 
-let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
+let num_subgoals b = List.length (branch_subgoals b) 
+
 
 let mk_info () = ref (Logic.make_tag_record[] [] [])
 let empty_info info = (info:=(Logic.make_tag_record[] [] []); info)
