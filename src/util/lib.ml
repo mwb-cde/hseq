@@ -1,4 +1,4 @@
-(* library function *)
+(* library functions *)
 
 (* Array iteration *)
 
