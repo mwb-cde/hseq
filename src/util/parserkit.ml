@@ -118,13 +118,13 @@ module type GRAMMARS =
 
       val empty : ('a list)phrase
       val next_token : token phrase 
-      val error: (?msg:string) -> (token -> string) -> 'a phrase
+      val error: ?msg:string -> (token -> string) -> 'a phrase
 
       val get: (token -> bool) -> (token -> 'a) -> 'a phrase
       val (!$) : token -> token phrase
       val (!!) : 'a phrase -> 'a phrase
       val (--) : ('a)phrase -> ('b)phrase -> ('a*'b) phrase
-      val ($--) : ('a) phrase -> ('c)phrase -> ('c) phrase
+      val (--%) : ('a) phrase -> ('c)phrase -> ('c) phrase
       val (>>): ('a)phrase -> ('a -> 'b) -> ('b)phrase
 
       val optional: ('a)phrase -> ('a option) phrase
@@ -240,7 +240,7 @@ module Grammars:GRAMMARS=
 
 
 
-    let ($--) a ph toks = 
+    let (--%) a ph toks = 
       ((a -- (!!ph)) >> fun (_, x) -> x) toks
     
 
@@ -252,11 +252,11 @@ module Grammars:GRAMMARS=
       ((ph -- (repeat ph)) >> (fun (x, y) -> x::y)) toks
 
     let list0 ph sep = 
-      (((ph -- (repeat (sep $-- ph))) >> (fun (x, y) -> x::y))
+      (((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))
      || empty) 
 
     let list1 ph sep =
-      ((ph -- (repeat (sep $-- ph))) >> (fun (x, y) -> x::y))
+      ((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))
 
     let optional ph toks =
       try 

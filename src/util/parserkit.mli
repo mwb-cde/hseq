@@ -102,7 +102,7 @@ module type GRAMMARS =
    Read a token, fail, raising ParsingError.
    Message for ParsingError.
 *)
-      val error: (?msg:string) -> (token -> string) -> 'a phrase
+      val error: ?msg:string -> (token -> string) -> 'a phrase
 
 (* 
    [get pred f]
@@ -130,7 +130,7 @@ module type GRAMMARS =
    [ph1 $-- ph2 ]
    Parse and discard [ph1] then [ph2].
 *)
-      val ( $-- ) : 'a phrase -> 'b phrase -> 'b phrase
+      val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
 
 (*
    [ph >> f]

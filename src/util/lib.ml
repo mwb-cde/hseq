@@ -92,7 +92,9 @@ let rec move_left al =
   | (b::bl, cl) -> (bl, b::cl)
 
 
+(*
 let ($) x y = fun a -> x (y a)
+*)
 
 let index p xs =
   let rec index_aux xs i =

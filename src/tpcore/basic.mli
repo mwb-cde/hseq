@@ -11,8 +11,8 @@ val null_id: ident
 val is_null_id: ident -> bool
 val thy_of_id : ident -> thy_id
 val name: ident -> string
-val mklong: string -> string -> ident
-val mkname: string -> ident
+val mk_long: string -> string -> ident
+val mk_name: string -> ident
 val is_short_id: ident -> bool
 val string_fnid: ident -> string
 val dest_fnid: ident -> (string * string)

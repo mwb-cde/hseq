@@ -106,7 +106,7 @@ val get_weak : gtype -> string
 
 (* function types *)
 val mk_fun : gtype -> gtype -> gtype
-val mkfun_from_list: gtype list -> gtype -> gtype
+val mk_fun_from_list: gtype list -> gtype -> gtype
 val dest_constr : gtype -> (Basic.typ_const * gtype list)
 
 (* recognisers *)
@@ -347,7 +347,7 @@ val in_thy_scope: (string, bool)Lib.substype
   -> scope ->thy_id -> gtype -> bool
 
 (* utility functions *)
-(* mknew_type n: 
+(* mk_new_type n: 
    make a new type variable with name (int_to_name !n);
    increment n;
    return new type

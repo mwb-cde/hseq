@@ -198,12 +198,12 @@ let rewrite_eqs scope ctrl tyenv rrl trm =
     if ctrl.rr_dir=LeftRight
     then rewrite_list scope ctrl chng tyenv
 	(List.map (fun (qs, b)-> 
-	  let (lhs, rhs) = Logicterm.dest_equal b 
+	  let (lhs, rhs) = Logicterm.dest_equality b 
 	  in (qs, lhs, rhs)) rrl) trm
     else 
       rewrite_list scope ctrl chng tyenv
 	(List.map (fun (qs, b) -> 
-	  let (lhs, rhs)= Logicterm.dest_equal b 
+	  let (lhs, rhs)= Logicterm.dest_equality b 
 	  in (qs, rhs, lhs)) rrl) trm
   in 
   if !chng 

@@ -3,25 +3,6 @@ open Basic
 open Gtypes
 open Result
 
-(*
-type q_type = {quant: quant_ty; qvar: string; qtyp: gtype}
-
-type binders = q_type ref
-
-type term =
-    Var of ident* gtype
-  | Qnt of q_type ref * term
-  | Bound of q_type ref
-  | Const of const_ty
-  | Typed of term * Gtypes.gtype
-  | App of term * term
-
-let binder_equality x y = x==y
-let mk_binding qn qv qt 
-    = ref{quant=qn; qvar=qv; qtyp=qt}
-let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
-*)
-
 let rec equals x y = 
   (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
@@ -35,13 +16,12 @@ let rec equals x y =
 
 (* simple pretty printing  and error handling *)
 
-(*
-let simple_term_printer trm= 
-*)
 let print_simple trm=
   let rec print_aux t =
     match t with
-      Id(n, ty) -> Format.print_string(Basic.string_fnid n)
+      Id(n, ty) -> 
+	let (th, x) = Basic.dest_fnid n
+	in Format.print_string (th^"."^x)
     | Bound(n) -> Format.print_string (".."^(binder_name n))
     | Free(n, ty) -> Format.print_string n
     | Const(c) -> Format.print_string (Basic.string_const c)
@@ -375,7 +355,7 @@ let subst_mgu varp env trm =
 let get_free_vars trm = 
   let rec get_free_vars_aux t ts =
     match t with 
-      Id(x, ty) -> (x, ty)::ts
+      Free(x, ty) -> t::ts
     | Qnt(k, q, b) -> get_free_vars_aux b ts
     | App(f, a) -> get_free_vars_aux a (get_free_vars_aux f ts)
     | Typed(tr, ty) ->get_free_vars_aux tr ts
@@ -387,7 +367,7 @@ let is_bound x =
   match x with 
     Bound _ -> true
   | _ -> false
-let mkbound n = (Bound n)
+let mk_bound n = (Bound n)
 
 let dest_bound t = 
   match t with 
@@ -399,14 +379,19 @@ let is_free x =
   match x with 
     Free _ -> true
   | _ -> false
-let mkfree n ty= Free(n, ty)
+let mk_free n ty= Free(n, ty)
 
 let dest_free t = 
   match t with 
     Free(n, ty) -> (n, ty)
   | _ -> raise (Failure "Not a free variable")
 
-let mkmeta n ty = Bound (mk_binding Meta n ty)
+let get_free_name t = 
+  match t with 
+    Free(n, ty) -> n
+  | _ -> raise (Failure "Not a free variable")
+
+let mk_meta n ty = Bound (mk_binding Meta n ty)
 let is_meta trm = 
   match trm with
     Bound (q) ->
@@ -428,8 +413,8 @@ let is_var x =
     Id _ -> true
   | _ -> false
 let mk_typed_var n t= (Id(n, t))
-let mkvar n = mk_typed_var n (Gtypes.mk_null ())
-let mkshort_var n = mkvar (mkname n)
+let mk_var n = mk_typed_var n (Gtypes.mk_null ())
+let mk_short_var n = mk_var (mk_name n)
 let dest_var vt =
   match vt with
     (Id (n, t)) -> (n, t)
@@ -442,7 +427,7 @@ let is_bound x =
   match x with 
     Bound _ -> true
   | _ -> false
-let mkbound n = (Bound n)
+let mk_bound n = (Bound n)
 
 let dest_bound t = 
   match t with 
@@ -454,16 +439,16 @@ let is_app x =
     App _ -> true
   | _ -> false
 
-let mkapp f a= (App(f, a))
+let mk_app f a= (App(f, a))
 let dest_app t = 
   match t with 
     (App(f, a)) -> (f, a)
   | _ -> raise (Failure "Not a function")
 
-let rec mkcomb x y = 
+let rec mk_comb x y = 
   match y with 
     [] -> x
-  | t::ts -> mkcomb (mkapp x t) ts
+  | t::ts -> mk_comb (mk_app x t) ts
 
 let get_args x =
   let rec get_args_aux t rs =
@@ -472,8 +457,8 @@ let get_args x =
     |	x -> rs
   in get_args_aux x []
 
-let mkfun f args = 
-  mkcomb (Id(f, Gtypes.mk_var 
+let mk_fun f args = 
+  mk_comb (Id(f, Gtypes.mk_var 
 		("_"^(Basic.string_fnid f)^"_ty"))) args
 let is_fun t =
   (is_app t) & is_var (get_fun t)
@@ -488,7 +473,7 @@ let is_typed x =
   match x with 
     Typed (_, _) -> true
   | _ -> false
-let mktyped t ty= Typed(t, ty)
+let mk_typed t ty= Typed(t, ty)
 let dest_typed t = 
   match t with 
     Typed(trm, ty) -> (trm, ty)
@@ -498,7 +483,7 @@ let is_const x =
   match x with 
     Const _ -> true
   | _ -> false
-let mkconst c = (Const c)
+let mk_const c = (Const c)
 
 let dest_const t =
   match t with
@@ -506,14 +491,14 @@ let dest_const t =
   | _ -> raise (Failure "Not a constant")
 
 
-let mknum n = mkconst(Cnum n)
+let mk_num n = mk_const(Cnum n)
 let destnum n = 
   match (dest_const n) with
     (Cnum c) -> c
   | _ -> raise (Failure "Not a number")
-let mk_int n = mkconst(Cnum (Num.num_of_int n))
+let mk_int n = mk_const(Cnum (Num.num_of_int n))
 
-let mkbool b = mkconst(Cbool b)
+let mk_bool b = mk_const(Cbool b)
 let destbool b = 
   match (dest_const b) with 
     (Cbool c) -> c
@@ -546,7 +531,7 @@ let get_qnt_body t =
 let get_free_binders t =
   let memo = empty_table()
   and qnts = ref []
-  and trtrm = mkbool true
+  and trtrm = mk_bool true
   in 
   let rec free_aux x =
     match x with
@@ -591,21 +576,26 @@ let subst_qnt_var scp env trm =
 	  (let r = Lib.find n env
 	  in ignore(Gtypes.unify scp ty (get_binder_type r)); r)
 	with _ -> t)
+    | Free(n, ty) -> 
+	(try 
+	  (let r = Lib.find (mk_name n) env
+	  in ignore(Gtypes.unify scp ty (get_binder_type r)); r)
+	with _ -> t)
     | (Typed(tt, ty)) -> Typed(subst_aux tt, ty)
     | (App(f, a)) -> App(subst_aux f, subst_aux a)
     | Qnt(k, q, b) -> Qnt(k, q, subst_aux b)
     | _ -> t
   in subst_aux trm
 
-let mktyped_qnt scp q ty n b =
+let mk_typed_qnt scp q ty n b =
   let t=mk_binding q n ty
   in 
   let nb=subst_qnt_var scp
-      (Lib.bind (mkname n) (Bound t) (Lib.empty_env())) b
+      (Lib.bind (mk_name n) (Bound t) (Lib.empty_env())) b
   in Qnt(q, t, nb)
 
-let mkqnt tyenv q n b =
-  mktyped_qnt tyenv q (Gtypes.mk_null()) n b
+let mk_qnt tyenv q n b =
+  mk_typed_qnt tyenv q (Gtypes.mk_null()) n b
 
 let binder_equiv tyenv s t = 
   match (s, t) with
@@ -1018,7 +1008,7 @@ class termError s ts =
       Format.print_newline();
       Format.close_box();
   end
-let mktermError s t = ((new termError s t):>error)
+let mk_termError s t = ((new termError s t):>error)
 
 let termError s t = mk_error((new termError s t):>error)
 let addtermError s t es = raise (add_error (termError s t) es)
@@ -1028,6 +1018,7 @@ let addtermError s t es = raise (add_error (termError s t) es)
    theory is [thy] if no long identifier can be found in scope [scp]
  *)
 
+(*
 let set_names scp trm=
   let term_memo = Lib.empty_env()
   in 
@@ -1050,13 +1041,57 @@ let set_names scp trm=
 	  then lookup_id n 
 	  else th)
 	in 
-	let nid = Basic.mklong nth n
+	let nid = Basic.mk_long nth n
 	in Id(nid, ty)
+    | Free(n, ty) -> 
+	(try 
+	  (let nth = lookup_id n
+	  in 
+	  let nid = Basic.mk_long nth n
+	  in Id(nid, ty))
+	with Not_found -> t)
     | Qnt(qnt, q, b) -> Qnt(qnt, q, set_aux b)
     | Typed(tt, tty) -> Typed(set_aux tt, tty)
     | App(f, a) -> App(set_aux f, set_aux a)
     | _ -> t
   in set_aux trm
+*)
+
+let set_names scp trm=
+  let term_memo = Lib.empty_env()
+  in 
+  let lookup_id n = 
+    try 
+      Lib.find n term_memo
+    with Not_found -> 
+      let nth = (scp.thy_of Basic.fn_id n) 
+      in (ignore(Lib.add n nth term_memo); nth)
+  in 
+  let rec set_aux t=
+    match t with
+      Id(id, ty) -> 
+	let th, n = Basic.dest_fnid id
+	in 
+	if(th = Basic.null_thy)
+	then 
+	  try 
+	    (let nth = lookup_id n
+	    in Id((Basic.mk_long nth n), ty))
+	  with Not_found -> Free(n, ty)
+	else t
+    | Free(n, ty) -> 
+	(try 
+	  (let nth = lookup_id n
+	  in 
+	  let nid = Basic.mk_long nth n
+	  in Id(nid, ty))
+	with Not_found -> t)
+    | Qnt(qnt, q, b) -> Qnt(qnt, q, set_aux b)
+    | Typed(tt, tty) -> Typed(set_aux tt, tty)
+    | App(f, a) -> App(set_aux f, set_aux a)
+    | _ -> t
+  in set_aux trm
+
 
 let in_thy_scope memo scp th trm =
   let lookup_id n = 
@@ -1068,7 +1103,7 @@ let in_thy_scope memo scp th trm =
   let rec in_scp_aux t =
     match t with
       Id(id, ty) -> 
-	ignore(lookup_id (thy_of_id id));
+	  ignore(lookup_id (thy_of_id id));
 	Gtypes.in_thy_scope memo scp th ty
     | Qnt(_, _, b) ->
 	ignore(Gtypes.in_thy_scope memo scp th (get_qnt_type t));
@@ -1081,6 +1116,7 @@ let in_thy_scope memo scp th trm =
     | App(a, b) ->
 	ignore(in_scp_aux a);
 	in_scp_aux b
+    | Free(_) -> raise Not_found
     | _ -> true
   in 
   try ignore(in_scp_aux trm); true

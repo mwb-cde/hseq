@@ -6,8 +6,8 @@ let null_id = ("", "")
 let is_null_id x = x=null_id
 let thy_of_id (t, _) = t
 let name (_, n) = n
-let mklong t n = (t, n)
-let mkname n = (null_thy, n)
+let mk_long t n = (t, n)
+let mk_name n = (null_thy, n)
 let is_short_id (t, _) = t=null_thy
 
 type id_selector = bool

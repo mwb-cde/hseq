@@ -198,11 +198,11 @@ let is_base t  =
 
 (* constructurs *)
 
-let mkbase x = (Base x)
+let mk_base x = (Base x)
 
-let mk_bool = (mkbase Bool)
-let mk_num = (mkbase Num)
-let mk_ind = (mkbase Ind)
+let mk_bool = (mk_base Bool)
+let mk_num = (mk_base Num)
+let mk_ind = (mk_base Ind)
 
 let mk_var n = (Var (ref n))
 
@@ -223,25 +223,25 @@ let is_null =
   function (Var(x)) -> (!x)=""
     | _ -> false
 
-let mkconstr f l = Constr(f, l)
+let mk_constr f l = Constr(f, l)
 let destconstr t = 
   match t with
     Constr(f, l) -> (f, l)
   | _ -> raise (Failure "Not a constructor type")
 
-let mk_fun l r = mkconstr Func [l; r]
-let rec mkfun_from_list l r = 
+let mk_fun l r = mk_constr Func [l; r]
+let rec mk_fun_from_list l r = 
   match l with
     [] -> raise (Failure "No argument types")
   | [t] -> mk_fun t r
-  | t::ts -> mk_fun t (mkfun_from_list ts r)
+  | t::ts -> mk_fun t (mk_fun_from_list ts r)
 
 let rec dest_constr ty = 
   match ty with 
     Constr(f, args) -> (f, args)
   | _ -> raise (Failure "Not a constructed type")
 
-let mk_def n args = mkconstr (Defined n) args
+let mk_def n args = mk_constr (Defined n) args
 let dest_def t = 
   match t with
     Constr(Defined n, args) -> (n, args)
@@ -1149,12 +1149,12 @@ let typeof_cnst c =
   |	Cnum _ -> mk_num
   | Cbool _ -> mk_bool
 
-let bin_ty a1 a2 r = (mkfun_from_list [a1; a2] r)
+let bin_ty a1 a2 r = (mk_fun_from_list [a1; a2] r)
 
 let typeof_conn c =
   match c with
-    Not -> mkfun_from_list [mk_bool] mk_bool
-  | x -> mkfun_from_list 
+    Not -> mk_fun_from_list [mk_bool] mk_bool
+  | x -> mk_fun_from_list 
 	[mk_bool; mk_bool] mk_bool
 
 (* set names in a type to their long form *)
@@ -1178,7 +1178,7 @@ let set_name scp trm =
 	  then lookup_id n
 	  else th)
 	in 
-	let nid=Basic.mklong nth n
+	let nid=Basic.mk_long nth n
 	in Constr(Defined nid, List.map set_aux args)
     | Constr(f, args) ->
 	Constr(f, List.map set_aux args)

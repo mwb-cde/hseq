@@ -461,7 +461,7 @@ module Simplifier =
       then raise No_change
       else 
 	(try
-	  Logic.Rules.rewrite_any rrs (Logic.tag_to_index ft sqnt) ngoal
+	  Logic.Rules.rewrite rrs (Logic.tag_to_index ft sqnt) ngoal
 	with _ -> raise No_change)
 
 (*

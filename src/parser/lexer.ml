@@ -24,9 +24,6 @@
     | BOOL of bool 
     | EOF 
     | NULL
-(*
-    | ANTIQUOTE of string 
-*)
 
   exception Error
   exception Lexer
@@ -454,10 +451,10 @@ let match_identifier symtable inp =
 	let rtok =
 	  (try
 	    find_sym symtable n
-	  with Not_found -> mk_ident(Basic.mkname n))
+	  with Not_found -> mk_ident(Basic.mk_name n))
 	in 
 	(true, rtok)
-    | [th;n] -> (true, mk_ident (Basic.mklong th n))
+    | [th;n] -> (true, mk_ident (Basic.mk_long th n))
     | _ -> raise (Lexing(0, 0)) 
   else (false, null_tok)
 
@@ -490,40 +487,6 @@ let match_keywords symtable strm =
       (true, tok)
     with Not_found -> (false, null_tok)
 
-(* [match_antiquote tbl strm]
-   read characters from stream strm,
-   if first is the antiquote char 
-   then read up to the next antiquote character.
-
-   The anti-quotation char is Lexer.antiquote_char. This can be
-   set to a different value (with Parser.set_antiquote) than 
-   the default, at the expense of breaking all the code which 
-   relied on its original value.
-
-   ANTIQUOTES NOT CURRENTLY SUPPORTED
-*)
-
-(*
-let dest_ANTIQUOTE t=
-  match t with
-    ANTIQUOTE(s) -> s
-  | _ -> raise (Result.error "Error dealing with antiquotation.")
-
-let match_antiquote symtable strm =
-  if stream_empty strm 
-  then (true, eof_tok)
-  else 
-    let first_char = List.hd(Stream.npeek 1 strm)
-    in 
-    if (first_char = get_antiquote())
-    then 
-      (Stream.junk strm;
-      let strng=get_while (fun c-> c!=(get_antiquote())) strm
-      in 
-      Stream.junk strm;
-      (true, ANTIQUOTE(strng)))
-    else (false, null_tok)
-*)
 
 (* toplevel lexing functions *)
 
@@ -544,19 +507,6 @@ let rec lex symtable str=
   if empty 
   then empty_tk
   else 
-(* try for an antiquote *)
-(* not currently supported *)
-(*
-    let antiquote, aqtok= match_antiquote symtable str 
-    in 
-    if antiquote 
-    then
-      let evalstrng=dest_ANTIQUOTE aqtok
-      in let loc= (0, 0)
-      in let newstrm = Stream.of_string <:expr< $evalstrng$ >>
-      in lex symtable newstrm
-   else 
-*)
    (* try primed identifier *)
     let is_primedid_tok, primedid_tok = 
       match_primed_identifier symtable str

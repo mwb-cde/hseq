@@ -21,7 +21,7 @@ module Pkit :
 	   -> 'a -> ('b list)phrase
 
       val optional : 'a phrase -> 'a option phrase
-      val ( $-- ) : 'a phrase -> 'b phrase -> 'b phrase
+      val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
       val repeat : 'a phrase -> 'a list phrase
       type token_info = {
 	  fixity : Parserkit.Info.fixity;

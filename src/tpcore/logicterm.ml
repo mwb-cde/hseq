@@ -4,46 +4,46 @@ open Term
 
 let base_thy = "base"
 
-let notid = Basic.mklong base_thy "not"
-let andid = Basic.mklong base_thy "and"
-let orid = Basic.mklong base_thy "or"
-let impliesid = Basic.mklong base_thy "implies"
-let iffid = Basic.mklong base_thy "iff"
-let equalsid = Basic.mklong base_thy "equals"
+let notid = Basic.mk_long base_thy "not"
+let andid = Basic.mk_long base_thy "and"
+let orid = Basic.mk_long base_thy "or"
+let impliesid = Basic.mk_long base_thy "implies"
+let iffid = Basic.mk_long base_thy "iff"
+let equalsid = Basic.mk_long base_thy "equals"
 let equalssym = "="
 
-let someid = Basic.mklong base_thy "some"
+let someid = Basic.mk_long base_thy "some"
 
-let mknot t = mkfun notid [t]
-let mkand l r = mkfun andid [l; r]
-let mkor l r = mkfun orid [l; r]
-let mkimplies l r = mkfun impliesid [l; r]
-let mkiff l r = mkfun iffid [l; r]
-let mkequal l r = mkfun equalsid [l; r]
+let mk_not t = mk_fun notid [t]
+let mk_and l r = mk_fun andid [l; r]
+let mk_or l r = mk_fun orid [l; r]
+let mk_implies l r = mk_fun impliesid [l; r]
+let mk_iff l r = mk_fun iffid [l; r]
+let mk_equality l r = mk_fun equalsid [l; r]
 
 let is_neg t = try(fst(dest_fun t) = notid) with _ -> false
 let is_conj t = try(fst(dest_fun t) = andid) with _ -> false
 let is_disj t = try( fst(dest_fun t) = orid) with _ -> false
 let is_implies t = try (fst(dest_fun t) = impliesid) with _ -> false
-let is_equal t = try (fst(dest_fun t) = equalsid) with _ -> false
+let is_equality t = try (fst(dest_fun t) = equalsid) with _ -> false
 
-let dest_equal t = 
-  if is_equal t 
+let dest_equality t = 
+  if is_equality t 
   then 
     (match snd(dest_fun t) with
       [l; r] -> (l, r)
     |	_ -> raise (termError "Badly formed equality" [t]))
   else raise (Result.error "Not an equality")
 
-let mkall tyenv n b= mkqnt tyenv Basic.All n b
-let mkex tyenv n b= mkqnt tyenv Basic.Ex n b
-let mklam tyenv n b= mkqnt tyenv Basic.Lambda n b
+let mk_all tyenv n b= mk_qnt tyenv Basic.All n b
+let mk_ex tyenv n b= mk_qnt tyenv Basic.Ex n b
+let mk_lam tyenv n b= mk_qnt tyenv Basic.Lambda n b
 
-let mkall_ty tyenv n ty b= mktyped_qnt tyenv Basic.All ty n b
-let mkex_ty tyenv n ty b= mktyped_qnt tyenv Basic.Ex ty n b
-let mklam_ty tyenv n ty b= mktyped_qnt tyenv Basic.Lambda ty n b
+let mk_all_ty tyenv n ty b= mk_typed_qnt tyenv Basic.All ty n b
+let mk_ex_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Ex ty n b
+let mk_lam_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Lambda ty n b
 
-let mksome=Term.mkvar someid
+let mk_some=Term.mk_var someid
 
 let is_all t = 
   ((is_qnt t) &
@@ -156,7 +156,7 @@ let rec is_closed_aux env t =
   | Typed(a, _) -> 
       is_closed_aux env a
   | Qnt(_, q, b) -> 
-      let nenv=bind (Bound(q)) (mkbool true) env
+      let nenv=bind (Bound(q)) (mk_bool true) env
       in 
       is_closed_aux nenv b
   | Bound(q) -> 

@@ -5,13 +5,16 @@
    unify terms l and r in scope scp
    use predicate p to determine what counts as a variable for unification *)
 
-val unify: Gtypes.scope -> (Basic.term -> bool) 
-  -> Basic.term -> Basic.term -> Term.substitution
+val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
+  -> Gtypes.scope -> (Basic.term -> bool) 
+    -> Basic.term -> Basic.term -> Term.substitution
 
 (* unify_env: unify terms in a given context 
    if unification fails, any bindings made are removed *)
 
-val unify_env: Gtypes.scope  -> Term.substitution
+val unify_env: 
+    ?typenv:Gtypes.substitution
+  -> Gtypes.scope  -> Term.substitution
   -> (Basic.term -> bool) -> Basic.term -> Basic.term 
     -> Term.substitution 
 

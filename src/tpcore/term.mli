@@ -122,7 +122,7 @@ val subst : substitution -> term -> term
 val subst_quick : term -> term -> term -> term
 
 (* get free variables in a term (constructed with Var) *)
-val get_free_vars : term -> (Basic.ident *gtype) list
+val get_free_vars : term -> term list
 
 (* get bound vars with no matching binders *)
 val get_free_binders : term -> binders list
@@ -139,9 +139,9 @@ val dest_qnt :
 (* constructors/destructors for quanitifed terms *)
 val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
-val mkqnt : scope -> 
+val mk_qnt : scope -> 
   Basic.quant_ty -> string -> term -> term
-val mktyped_qnt : scope -> 
+val mk_typed_qnt : scope -> 
   Basic.quant_ty -> Basic.gtype -> string -> term -> term
 
 (* conversion to a string *)
@@ -157,48 +157,49 @@ val inst : term -> term -> term
 (* constructors/destructors/reconisers for terms *)
 
 val is_var : term-> bool
-val mkvar : Basic.ident -> term
-val mkshort_var :string -> term
+val mk_var : Basic.ident -> term
+val mk_short_var :string -> term
 val mk_typed_var : Basic.ident -> Basic.gtype -> term
 val dest_var : term-> Basic.ident * Basic.gtype
 val get_var_id : term-> Basic.ident
 val get_var_type : term-> Basic.gtype
 
 val is_bound : term-> bool
-val mkbound : binders -> term
+val mk_bound : binders -> term
 val dest_bound : term-> binders
 
 val is_free : term-> bool
-val mkfree : string -> Basic.gtype -> term
+val mk_free : string -> Basic.gtype -> term
 val dest_free : term-> (string * Basic.gtype)
+val get_free_name : term-> string
 
-val mkmeta : string -> Basic.gtype -> term
+val mk_meta : string -> Basic.gtype -> term
 val is_meta : term -> bool
 
 val is_qnt : term-> bool
 
 val is_fun : term-> bool
-val mkfun : Basic.ident -> term list -> term
+val mk_fun : Basic.ident -> term list -> term
 val dest_fun : term-> Basic.ident * term list
 
 val is_app : term-> bool
-val mkapp : term -> term  -> term
+val mk_app : term -> term  -> term
 val dest_app : term-> term * term 
-val mkcomb: term -> term list -> term
+val mk_comb: term -> term list -> term
 
 val is_typed : term-> bool
-val mktyped : term -> Basic.gtype -> term
+val mk_typed : term -> Basic.gtype -> term
 val dest_typed : term-> term* Basic.gtype
 
 val is_const : term-> bool
-val mkconst : Basic.const_ty -> term
+val mk_const : Basic.const_ty -> term
 val dest_const : term-> Basic.const_ty
 
-val mknum : Num.num -> term
+val mk_num : Num.num -> term
 val destnum : term -> Num.num
 val mk_int : int -> term
 
-val mkbool : bool -> term
+val mk_bool : bool -> term
 val destbool : term-> bool
 val is_true :term-> bool
 
@@ -265,7 +266,7 @@ class termError : string -> term list ->
     val trms : term list
     method get : unit -> term list
   end
-val mktermError: string -> term list -> Result.error
+val mk_termError: string -> term list -> Result.error
 val termError : string -> term list -> exn
 val addtermError : string -> term list -> exn -> 'a
 

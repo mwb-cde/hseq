@@ -39,3 +39,14 @@ val thy_suffix: string
    theory building script.
 *)
 val script_suffix: string
+
+
+(** 
+   [set_nice_sequent x]
+   if [x] is [true], print sequents with assumption indices prefixed by 
+   [!nice_sequent_prefix].
+   if [x] is false, print sequent assumption indices as negative numbers.
+*)
+val nice_sequent_prefix : string ref
+val set_nice_sequent: bool -> unit
+val get_nice_sequent: unit -> bool

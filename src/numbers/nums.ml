@@ -45,12 +45,12 @@ let mk_negate x =
     [a] -> Supinf.Mult (Num.num_of_int (-1), a)
   | _ -> raiseError "negate: Badly formed integer expression" []
 let num_thy = "nums"
-let plusid = Basic.mklong num_thy "plus"
-let minusid = Basic.mklong num_thy "minus"
-let multid = Basic.mklong num_thy "mult"
-let negid = Basic.mklong num_thy "negate"
-let maxid = Basic.mklong num_thy "max"
-let minid = Basic.mklong num_thy "min"
+let plusid = Basic.mk_long num_thy "plus"
+let minusid = Basic.mk_long num_thy "minus"
+let multid = Basic.mk_long num_thy "mult"
+let negid = Basic.mk_long num_thy "negate"
+let maxid = Basic.mk_long num_thy "max"
+let minid = Basic.mk_long num_thy "min"
 
 
 let num_fns =
@@ -112,10 +112,10 @@ let mk_geq a b = Prop.mk_bexpr(Supinf.Geq, a, b)
 let mk_lt a b = Prop.mk_bexpr(Supinf.Lt, a, b)
 let mk_leq a b = Prop.mk_bexpr(Supinf.Leq, a, b)
 
-let gtid = Basic.mklong num_thy "greater"
-let geqid = Basic.mklong num_thy "geq"
-let ltid = Basic.mklong num_thy "less"
-let leqid = Basic.mklong num_thy "leq"
+let gtid = Basic.mk_long num_thy "greater"
+let geqid = Basic.mk_long num_thy "geq"
+let ltid = Basic.mk_long num_thy "less"
+let leqid = Basic.mk_long num_thy "leq"
 
 let comp_fns =
   [ gtid, mk_gt; 
@@ -123,7 +123,7 @@ let comp_fns =
     ltid, mk_lt;
     leqid, mk_leq]
     
-(*Basic.mklong num_thy "equals", mk_equals;  *)
+(*Basic.mk_long num_thy "equals", mk_equals;  *)
 
 let is_equals scp ty f a b = 
   if f=Logicterm.equalsid
@@ -155,9 +155,9 @@ let compterm_to_compexpr env scp fnid args=
 	in let (nb, nenv) = numterm_to_expr env scp b
 	in (cnstr na nb, nenv))
       with Not_found -> 
-	raiseError "Unknown comparison function" [Term.mkfun fnid args])
+	raiseError "Unknown comparison function" [Term.mk_fun fnid args])
   | _ -> 
-      raiseError "Badly formed expression" [Term.mkfun fnid args]
+      raiseError "Badly formed expression" [Term.mk_fun fnid args]
 
 
 let bool_type = Gtypes.mk_bool
@@ -278,8 +278,8 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
 	let f, args = Term.dest_fun x
 	in 
 	(try 
-	  let mker= (get_bool_fn scp f args)
-	  in mker (List.map conv_aux args)
+	  let mk_er= (get_bool_fn scp f args)
+	  in mk_er (List.map conv_aux args)
 	with 
 	  Not_found -> 
 	    try 
@@ -317,17 +317,17 @@ let term_to_boolexpr scp t =
 let expr_to_numterm env t =
   let rec conv_aux e =
     match e with
-      Supinf.Val(v) -> Term.mknum(Num.integer_num v)
+      Supinf.Val(v) -> Term.mk_num(Num.integer_num v)
     | Supinf.Var(i) -> get_index env i
     | Supinf.Plus(args) ->
-	Term.mkfun plusid (List.map conv_aux args)
+	Term.mk_fun plusid (List.map conv_aux args)
     | Supinf.Mult(v, arg) ->
-	Term.mkfun multid 
-	  [(Term.mknum(Num.integer_num v)); conv_aux arg]
+	Term.mk_fun multid 
+	  [(Term.mk_num(Num.integer_num v)); conv_aux arg]
     | Supinf.Max(args) ->
-	Term.mkfun maxid (List.map conv_aux args)
+	Term.mk_fun maxid (List.map conv_aux args)
     | Supinf.Min(args) ->
-	Term.mkfun minid (List.map conv_aux args)
+	Term.mk_fun minid (List.map conv_aux args)
     | _ -> raiseError "Invalid expression" []
   in conv_aux t
 
@@ -336,20 +336,20 @@ let expr_to_numterm env t =
 let compexpr_to_term env cfn a b =
   match cfn with
     Supinf.Equals -> 
-      Term.mkfun 
+      Term.mk_fun 
 	Logicterm.equalsid 
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
   | Supinf.Leq -> 
-      Term.mkfun leqid 
+      Term.mk_fun leqid 
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
   | Supinf.Lt -> 
-      Term.mkfun ltid
+      Term.mk_fun ltid
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
   | Supinf.Gt -> 
-      Term.mkfun gtid
+      Term.mk_fun gtid
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
   | Supinf.Geq -> 
-      Term.mkfun geqid
+      Term.mk_fun geqid
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
 
 (* boolexpr_to_bterm *)
@@ -357,18 +357,18 @@ let compexpr_to_term env cfn a b =
 let boolexpr_to_bterm benv nenv e =
   let rec conv_aux t =
     match t with
-      Prop.Bool(b) -> Term.mkbool b
-    | Prop.Not(a) -> Logicterm.mknot (conv_aux a)
+      Prop.Bool(b) -> Term.mk_bool b
+    | Prop.Not(a) -> Logicterm.mk_not (conv_aux a)
     | Prop.And(a, b) -> 
-	Logicterm.mkand (conv_aux a) (conv_aux b)
+	Logicterm.mk_and (conv_aux a) (conv_aux b)
     | Prop.Or(a, b) -> 
-	Logicterm.mkor (conv_aux a) (conv_aux b)
+	Logicterm.mk_or (conv_aux a) (conv_aux b)
     | Prop.Implies(a, b) -> 
-	Logicterm.mkimplies (conv_aux a) (conv_aux b)
+	Logicterm.mk_implies (conv_aux a) (conv_aux b)
     | Prop.Iff(a, b) -> 
-	Logicterm.mkiff (conv_aux a) (conv_aux b)
+	Logicterm.mk_iff (conv_aux a) (conv_aux b)
     | Prop.Equals(a, b) -> 
-	Logicterm.mkequal (conv_aux a) (conv_aux b)
+	Logicterm.mk_equality (conv_aux a) (conv_aux b)
     | Prop.Bexpr(c, a, b) -> 
 	compexpr_to_term nenv c a b
     | Prop.Var(i) -> get_index benv i
@@ -400,7 +400,7 @@ let simp_term_basic scp t=
 let simp_term_rewrite scp t =
   let nt = simp_term_basic scp t
   in 
-  Logicterm.mkequal t nt
+  Logicterm.mk_equality t nt
 
 (* simp_rewrite: 
    build a rewrite rule for simplifying the given formula
@@ -413,7 +413,7 @@ let simp_rewrite scp f =
   let nt = simp_term_basic scp t
   in 
   Logic.mk_axiom 
-    (Formula.mk_form scp (Logicterm.close_term (Logicterm.mkequal t nt)))
+    (Formula.mk_form scp (Logicterm.close_term (Logicterm.mk_equality t nt)))
       
 
 (* decide_term_basic: 
@@ -437,7 +437,7 @@ let decide_term_basic scp t =
 
 let decide_term scp t =
   Logicterm.close_term 
-    (Logicterm.mkequal t (Term.mkbool (decide_term_basic scp t)))
+    (Logicterm.mk_equality t (Term.mk_bool (decide_term_basic scp t)))
 
 
 (* decide_rewrite scp f: 

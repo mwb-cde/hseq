@@ -13,7 +13,7 @@ val get_nth: 'a list -> int -> 'a
 val splice_nth : int -> 'a list -> 'a list -> 'a list
 val move_right : 'a list * 'a list -> 'a list * 'a list 
 val move_left : 'a list * 'a list -> 'a list * 'a list 
-val ($) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
+(* val ($) : ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b*)
 val index: ('a -> bool) -> 'a list -> int
 val filter: ('a -> bool) -> 'a list -> 'a list
 val assocp: ('a -> 'a -> bool) -> 'a -> ('a* 'b) list -> 'b

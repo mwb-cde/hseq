@@ -41,7 +41,7 @@ module Simpconvs =
       in 
       let g1=Logic.Rules.cut_full (Some tinf) thm g
       in 
-      let nt=get_one ((!tinf).Logic.Rules.forms) (Failure "case_info")
+      let nt=Lib.get_one ((!tinf).Logic.Rules.forms) (Failure "case_info")
       in 
       let g2=
 	thenl[
@@ -49,7 +49,7 @@ module Simpconvs =
 	Logic.Rules.disjI_full (Some tinf) (Logic.FTag nt);
 	Logic.Rules.negA_full None (Logic.FTag nt) ] g1
       in 
-      let ng1, ng2=get_two (!tinf).Logic.Rules.goals (Failure "case_info")
+      let ng1, ng2=Lib.get_two (!tinf).Logic.Rules.goals (Failure "case_info")
       in 
       Logic.Rules.do_tag_info inf [ng1;ng2] [nt] [];
       g2
@@ -93,7 +93,7 @@ let simple_rewrite_conv scp rule thm=
   in let g2= Logic.Rules.cut_full (Some info) rule g1
   in let g3=
     let atag = 
-      Logic.FTag(get_one (!info.Logic.Rules.forms) (Failure "get_one"))
+      Logic.FTag(Lib.get_one (!info.Logic.Rules.forms) (Failure "get_one"))
     and ctag = Logic.FNum 1
     in 
     Logic.Rules.unify_full None atag ctag g2
@@ -149,9 +149,9 @@ let simple_asm_rewrite_tac inf rule asm goal=
       (make_goal (rvars, rlhs, rrhs) (tvars, tbody)) goal
   in 
   let (disch_goal, ret_goal) = 
-    get_two (!info.Logic.Rules.goals) (Failure "Getting goal tags")
+    Lib.get_two (!info.Logic.Rules.goals) (Failure "Getting goal tags")
   and ret_form = 
-    get_one (!info.Logic.Rules.forms) (Failure "Getting formula tag")
+    Lib.get_one (!info.Logic.Rules.forms) (Failure "Getting formula tag")
   in 
   let g1=repeat (Logic.Rules.allI_full None (Logic.FNum 1)) g0
   in 
@@ -159,7 +159,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
   in 
   let g3=
     let atag = 
-      Logic.FTag(get_one (!info.Logic.Rules.forms) (Failure "get_one"))
+      Logic.FTag(Lib.get_one (!info.Logic.Rules.forms) (Failure "get_one"))
     and ctag = Logic.FNum 1
     in 
     Logic.Rules.unify_full None atag ctag g2
@@ -419,9 +419,9 @@ let simple_asm_rewrite_tac inf rule asm goal=
 	apply_tag (fun x -> cases_full_tac (Some x) newtrm) g
       in 
       let ogt, ngt=
-	get_two inf1.Logic.Rules.goals  
+	Lib.get_two inf1.Logic.Rules.goals  
 	  (Logic.logicError "negate_concl failed creating subgoal" [])
-      and ntag=get_one inf1.Logic.Rules.forms
+      and ntag=Lib.get_one inf1.Logic.Rules.forms
 	  (Logic.logicError "negate_concl failed creating formula" [])
       in 
       let g2=
@@ -507,7 +507,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
       then 
 	(let (_, args)=Term.dest_fun t
 	in 
-	let (asm, cncl)=get_two args (Not_found)
+	let (asm, cncl)=Lib.get_two args (Not_found)
 	in 
 	not((Logicterm.is_equal cncl) or (Logicterm.is_neg cncl)))
       else false
@@ -520,7 +520,7 @@ let simple_asm_rewrite_tac inf rule asm goal=
 	(let (_, args)=Term.dest_fun t
 	in 
 	try 
-	  let (asm, cncl)=get_two args (Not_found)
+	  let (asm, cncl)=Lib.get_two args (Not_found)
 	  in 
 	  (Logicterm.is_neg cncl)
 	with _ -> false)

@@ -31,7 +31,7 @@ module Simputils=
       in
       if(f=Logicterm.impliesid)
       then 
-	get_two args (Failure "dest_implies: too many arguments")
+	Lib.get_two args (Failure "dest_implies: too many arguments")
       else raise (Failure "dest_implies: not an implication")
 
 (** [sqnt_solved st g]: 
@@ -69,7 +69,7 @@ module Simputils=
    apply tactic [tac] to goal [g]
    return tags of formulas
    fail if more than [n] new formulas (tags) are generated
- *)
+*)
     let apply_get_formula_tag n tac g =
       let inf=ref (Logic.Rules.make_tag_record [] [] [])
       in 

@@ -94,13 +94,30 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   in 
   unify_aux typenv trmenv trm1 trm2
 
-let unify_env scp env varp trm1 trm2 =
+let unify_env ?typenv scp env varp trm1 trm2 =
+  let tye = 
+    match typenv with 
+      None -> Gtypes.empty_subst()
+    | Some x -> x
+  in 
   let rettypenv, retenv= 
-    unify_fullenv scp (Gtypes.empty_subst()) env varp trm1 trm2
+    unify_fullenv scp tye env varp trm1 trm2
   in retenv
 
-let unify scp varp trm1 trm2 = 
-  unify_env scp (Term.empty_subst()) varp trm1 trm2
+let unify ?typenv ?initial scp varp trm1 trm2 = 
+  let tye = 
+    match typenv with 
+      None -> Gtypes.empty_subst()
+    | Some x -> x
+  and subst = 
+    match initial with
+      None -> Term.empty_subst()
+    | Some x -> x
+  in 
+  let rettypenv, retenv= 
+    unify_fullenv scp tye subst varp trm1 trm2
+  in 
+  retenv
 
 (*   
    let matches_full scp varp tyenv env term1 term2 =
@@ -222,7 +239,7 @@ let unify scp varp trm1 trm2 =
    (Gtypes.unify_for_rewrite scp ty1 ty2 tyenv type_bindings;
    unify_aux tt1 tt2; ())
    with x -> 
-   raise (catchError (mktermError "unify_full: typed" [t1;t2]) x))
+   raise (catchError (mk_termError "unify_full: typed" [t1;t2]) x))
    |	(Typed(tt1, _), x) -> unify_aux tt1 x; ()
    |	(x, Typed(tt2, _)) -> unify_aux x tt2; ()
    | (Var(n1, ty1), Var(n2, ty2)) ->

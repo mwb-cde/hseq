@@ -20,34 +20,34 @@ val is_neg: term -> bool
 val is_conj: term -> bool
 val is_disj: term -> bool
 val is_implies: term -> bool
-val is_equal: term -> bool
+val is_equality: term -> bool
 
-val mknot: term -> term
-val mkand: term -> term -> term
-val mkor: term -> term -> term
-val mkimplies: term -> term -> term
-val mkequal: term -> term -> term
-val mkiff: term -> term -> term
+val mk_not: term -> term
+val mk_and: term -> term -> term
+val mk_or: term -> term -> term
+val mk_implies: term -> term -> term
+val mk_equality: term -> term -> term
+val mk_iff: term -> term -> term
 
-val mkall : scope -> string -> term -> term
-val mkex : scope -> string -> term -> term
-val mklam : scope -> string -> term -> term
+val mk_all : scope -> string -> term -> term
+val mk_ex : scope -> string -> term -> term
+val mk_lam : scope -> string -> term -> term
     
 (* make typed quantifiers *)
-val mkall_ty : scope -> string -> Basic.gtype -> term -> term
-val mkex_ty : scope -> string -> Basic.gtype -> term -> term
-val mklam_ty : scope -> string -> Basic.gtype -> term -> term
+val mk_all_ty : scope -> string -> Basic.gtype -> term -> term
+val mk_ex_ty : scope -> string -> Basic.gtype -> term -> term
+val mk_lam_ty : scope -> string -> Basic.gtype -> term -> term
 
 val is_all: term-> bool
 val is_exists : term -> bool
 val is_lambda: term-> bool
 
-val dest_equal : term -> (term * term)
+val dest_equality : term -> (term * term)
 
-val mksome: term
+val mk_some: term
 
 (* equality under alpha conversion *)
-val alpha_convp : scope -> term -> term -> bool 
+(* val alpha_convp : scope -> term -> term -> bool  *)
 (* alpha_equals: equality under alpha conversion 
    (renaming of alpha_convp)
  *)

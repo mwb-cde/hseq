@@ -22,7 +22,7 @@ struct
     open Pkit
 
     let (?$) tok =
-      ((!$ tok) >> (fun _ -> Term.mkshort_var (Lexer.string_of_token tok)))
+      ((!$ tok) >> (fun _ -> Term.mk_short_var (Lexer.string_of_token tok)))
     let (?%) tok =
       ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
 end
@@ -83,7 +83,7 @@ module Grammars  =
    ("Parsing information for "^(message_of_token s)^" already exists")
    with 
    Not_found -> Hashtbl.add (tbl.table) s tok
- *)
+*)
 
     let token_table_find tbl s=
       let mfind =
@@ -225,9 +225,15 @@ module Grammars  =
    if there is no term associated with [n] 
    then return an unqualified identifier.
  *)
+(*
     let get_term n inf = 
       (try lookup_name n inf 
-      with Not_found -> Term.mkshort_var n)
+      with Not_found -> Term.mk_short_var n)
+*)
+    let get_term n inf = 
+      (try lookup_name n inf 
+      with Not_found -> Term.mk_free n (Gtypes.mk_null()))
+
 (**
    [clear_names inf]
    Clear the bound names of [inf]
@@ -359,17 +365,6 @@ module Grammars  =
       with _ -> raise (ParsingError str)
 
 
-(** [none inp]
-   synonymous with [Parserkit.empty]
-*)
-(*    let none inp = empty inp *)
-
-(*
-    let comma_list ph toks= 
-      ( ((ph -- (repeat (!$(Sym COMMA) $-- ph))) 
-	   >> (fun (x, y) -> x::y))
-      ||  empty) toks
-*)
     let comma_list ph toks=
       list0 ph (!$(Sym COMMA)) toks
 
@@ -378,13 +373,6 @@ module Grammars  =
     let rec repeat_term ph term toks =
       (((ph -- (repeat_term ph term )) >> (fun (x, y) -> x ::y))
      || (term >> (fun _ -> []))) toks
-
-
-(*    let tlistof ph tm toks= 
-      ( ((ph -- (repeat_term ph tm))
-	   >> (fun (x, y) -> (x::y)))
-      || (tm >> (fun x -> []))) toks
-*)
 
 (** 
    Identifier parsers.
@@ -549,7 +537,7 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
-	| Sym(RIGHTARROW) -> Basic.mkname "->"
+	| Sym(RIGHTARROW) -> Basic.mk_name "->"
 	| _ -> 
 	    (match (get_info x) with
 	      Some(name, _, _) -> name
@@ -582,7 +570,7 @@ module Grammars  =
 *)
     let bool_type info toks =
       try 
-	((named_id info type_id (Basic.mkname "bool"))
+	((named_id info type_id (Basic.mk_name "bool"))
 	   >> (fun _ -> Gtypes.mk_bool)) toks
       with No_match -> raise (ParsingError "Not a boolean type")
 
@@ -592,7 +580,7 @@ module Grammars  =
 *)
     let num_type info toks =
       try 
-	((named_id info type_id (Basic.mkname "num"))
+	((named_id info type_id (Basic.mk_name "num"))
 	   >> (fun _ -> Gtypes.mk_num)) toks
       with No_match -> raise (ParsingError "Not a number type")
 
@@ -652,9 +640,6 @@ module Grammars  =
 	 ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
 	    >> (fun x -> fst (snd x))))
      ]
-(*
-    let core_type_parsers =  []
-*)
 (**
    Support for adding type parsers.
 *)
@@ -736,11 +721,11 @@ module Grammars  =
       in 
       match t with 
 	ID(i) -> 
-	  (fun x y -> Term.mkfun i [x; y])       
+	  (fun x y -> Term.mk_fun i [x; y])       
       | _ -> 
 	  match (lookup t) with
 	    Some (name, _, _) ->
-	      (fun x y -> Term.mkfun name [x; y])
+	      (fun x y -> Term.mk_fun name [x; y])
 	  | _ ->
 	      raise (ParsingError ((string_of_tok t)^" is not a connective"))
 
@@ -756,11 +741,11 @@ module Grammars  =
       in 
       match t with 
 	ID(i) -> 
-	  (fun x -> Term.mkfun i [x])
+	  (fun x -> Term.mk_fun i [x])
       | _ -> 
 	  match (lookup t) with
 	    Some(name, _, _) -> 
-	      (fun x -> Term.mkfun name [x])
+	      (fun x -> Term.mk_fun name [x])
 	  | _ -> 
 	      raise (ParsingError ((string_of_tok t)^" is not a prefix"))
 
@@ -774,7 +759,7 @@ module Grammars  =
 	(qnt: Basic.quant_ty) (xs : (string* Basic.gtype) list) =
       List.map 
 	(fun (n, ty) -> 
-	  let b_id=Term.mkbound(Basic.mk_binding qnt n ty)
+	  let b_id=Term.mk_bound(Basic.mk_binding qnt n ty)
 	  in 
 	  add_name n b_id inf;
 	  (n, b_id)) xs
@@ -805,7 +790,7 @@ module Grammars  =
     let rec mk_comb x y = 
       match y with 
 	[] -> x
-      | t::ts -> mk_comb (mkapp x t) ts
+      | t::ts -> mk_comb (mk_app x t) ts
 
 (** [number]
    Read a number.
@@ -874,39 +859,15 @@ module Grammars  =
       ((id_type_opt (long_id id) inf) 
 	 >>
        (fun ((n, i), t) -> 
-	 let nid=Basic.mklong n i
+	 let nid=Basic.mk_long n i
 	 in 
 	 if(Basic.is_short_id nid)
 	 then 
-	   try lookup_name i inf
-	   with Not_found -> mk_typed_var nid t
+	   (try (lookup_name i inf)
+	   with Not_found -> mk_free i t)
 	 else 
 	   mk_typed_var nid t)) toks
 
-(* 
-   Support for Ocaml anti-quotation.
-   An anti-quotation expression must evaluate to a term 
-   ANTI-QUOTATION NOT SUPPORTED
- *)
-(*
-   let antiquote_parser inp = 
-   let comp x= match x with ANTIQUOTE _ -> true | _ -> false
-   and mk x =
-   match x with 
-   ANTIQUOTE s -> let loc = (0, 0) in <:expr< $s$ >>
-   | _ -> raise (ParsingError "parser: Not an antiquote")
-   in 
-   try
-   get comp mk inp
-   with No_match -> raise (ParsingError "parser: Not an antiquote")
- *)
-
-
-(**
-   [core_term_parser_list]
-
-   The primary term parsers are stored in a named list.
-*)
 
 (**
    [form]/[formula]/[type_primary]/[primary]
@@ -942,7 +903,7 @@ module Grammars  =
        ((primary inf) --  (optional_type inf))
 	 >> 
        (fun (t, pty) -> 
-	 match pty with None -> t | Some(ty) -> mktyped t ty)
+	 match pty with None -> t | Some(ty) -> mk_typed t ty)
       ) toks
     and
 	primary inf toks = 
@@ -964,9 +925,9 @@ module Grammars  =
 (* id '(' id ':' type ')' *)
 	"identifier", term_identifier;
 (*   | number *)
-	"number", (fun _ -> (number >> (fun x -> mknum x)));
+	"number", (fun _ -> (number >> (fun x -> mk_num x)));
 (*   | boolean *)
-	"boolean", (fun _ -> (boolean >> (fun x -> mkbool x)));
+	"boolean", (fun _ -> (boolean >> (fun x -> mk_bool x)));
 	"bracketed_term",
 (* '(' form ')' *)
 	(fun inf -> 
@@ -1141,7 +1102,7 @@ let type_token_table=Grammars.token_table_new()
 (* add_symbol sym tok:
    add sym as symbol representing token tok.
    fail silently if sym already exists
- *)
+*)
 let add_symbol sym tok=
   try
     symbols:=Lexer.add_sym (!symbols) sym tok
@@ -1204,12 +1165,6 @@ let init_symbols()=
   symbols:=(mk_symtable symtable_size);
   List.iter (fun (s, t) ->  add_symbol s t) syms_list
     
-(*
-let init_token_table()=
-  Grammars.token_table.reset token_table;
-  List.iter (fun (sym, id, fx, pr) -> add_token id sym fx pr) reserved_words;
-  List.iter (fun (tok, inf) -> add_token_info tok inf) token_info_list
-*)
 let init_token_table()=
   Grammars.token_table_reset token_table
 
@@ -1242,7 +1197,7 @@ let reset()=
 (* 
    Parsers
    read a given phrase followed by an end of file/string
- *)
+*)
 
 let mk_info ()= Grammars.mk_inf token_table type_token_table
 
