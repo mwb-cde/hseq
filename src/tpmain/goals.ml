@@ -62,21 +62,21 @@ let read_unchecked  x= Tpenv.read_unchecked x
 (*(Tpenv.mk_thyinfo()) *)
 
 let goal st = 
-  let f = Formula.mk_form (Tpenv.typenv()) (read st)
+  let f = Formula.mk_form (Tpenv.scope()) (read st)
   in 
-  prflist:= [mk_goal  (Tpenv.typenv()) f];
+  prflist:= [mk_goal  (Tpenv.scope()) f];
   (!save_hook()); top()
 
 (*(Tpenv.mk_thyinfo())*)
 
 let prove_goal st tac =
   mk_thm (Logic.Rules.goal_apply tac 
-	    (mk_goal  (Tpenv.typenv()) 
-	       (Formula.mk_form (Tpenv.typenv()) (read st))))
+	    (mk_goal  (Tpenv.scope()) 
+	       (Formula.mk_form (Tpenv.scope()) (read st))))
 
 let by_list st tacs =
-  let fg=mk_goal (Tpenv.typenv()) 
-      (Formula.mk_form (Tpenv.typenv()) (read st))
+  let fg=mk_goal (Tpenv.scope()) 
+      (Formula.mk_form (Tpenv.scope()) (read st))
   in 
   let rec by_aux tcs g= 
     match tcs with

@@ -1,5 +1,16 @@
 open Result
 
+(* Infixes *)
+
+type fixity = Parserkit.Info.fixity
+let nonfix=Parserkit.Info.nonfix 
+let prefix=Parserkit.Info.prefix
+let suffix=Parserkit.Info.suffix
+let infixl=Parserkit.Info.infix Parserkit.Info.left_assoc
+let infixr=Parserkit.Info.infix Parserkit.Info.right_assoc
+let infixn=Parserkit.Info.infix Parserkit.Info.non_assoc
+
+
 let catch_errors f a =
   (try f a 
   with 
@@ -19,15 +30,12 @@ let save_theory thy prot=
   if not (Theory.get_protection thy)
   then 
     (let fname = Filename.concat
-	(Tpenv.get_cdir()) ((get_theory_name thy)^".thy")
+	(Tpenv.get_cdir()) ((get_theory_name thy)^(Tpenv.thy_suffix))
     in let oc = open_out fname
     in 
     Theory.export_theory oc thy prot;
     close_out oc)
   else raiseError ("Theory "^(Theory.get_name thy)^" is protected")
-
-      (*if prot then (Theory.set_protection thy) else ();
-	 Theory.output_theory oc thy; *)
 
 let load_theory n = 
   let rec chop n = 
@@ -57,8 +65,15 @@ let load_theory_as_cur n =
    Thydb.add_importing imprts (theories()))
 
 let new_theory n = 
-  if n = "" then (raiseError "No theory name")
-  else Tpenv.set_cur_thy (Theory.mk_thy n)
+  if n = "" 
+  then (raiseError "No theory name")
+  else 
+    let thy = (Theory.mk_thy n)
+    in 
+    (if(n!=Tpenv.base_thy_name)
+    then Theory.add_parents [Tpenv.base_thy_name] (thy)
+    else ());
+    Tpenv.set_cur_thy thy
 
 let open_theory n =
   if n = "" 
@@ -75,106 +90,99 @@ let end_theory() =
   then (raiseError "At base theory")
   else save_theory (curr_theory()) true
 
-(*
-   let mk_typedef_rec n ags d cs =
-   {Gtypes.name = n;
-   Gtypes.args = ags;
-   Gtypes.alias = d;
-   Gtypes.characteristics = cs}
+let add_pp_rec selector id rcrd=
+  Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
+  if(selector=Basic.fn_id)
+  then Tpenv.add_term_pp_record id rcrd
+  else Tpenv.add_type_pp_record id rcrd
+    
+let add_term_pp id prec fx repr=
+  let rcrd=Basic.PP.mk_record prec fx repr
+  in 
+  add_pp_rec Basic.fn_id id rcrd
 
-   let new_type st = 
-   let (n, args, def)= Tpenv.read_type_defn st
-   in 
-   let trec = mk_typedef_rec n args def []
-   in Thydb.add_type_rec n trec (theories())
- *)
+let add_type_pp id prec fx repr=
+  let rcrd=Basic.PP.mk_record prec fx repr
+  in 
+  add_pp_rec Basic.type_id id rcrd
+
+let remove_pp_rec selector id =
+  Thydb.remove_pp_rec selector 
+    (Basic.thy_of_id id) (Basic.name id) (theories());
+  if(selector=Basic.fn_id)
+  then Tpenv.remove_term_pp id
+  else Tpenv.remove_type_pp id 
+
+let remove_term_pp id = remove_pp_rec Basic.type_id id
+let remove_type_pp id = remove_pp_rec Basic.type_id id
+
+let get_pp_rec selector id=
+  if(selector=Basic.fn_id)
+  then Tpenv.get_term_pp id
+  else Tpenv.get_type_pp id 
+
+let get_term_pp id=get_pp_rec Basic.fn_id id
+let get_type_pp id=get_pp_rec Basic.type_id id
+
 
 let new_type st = 
   let (n, args, def)= Tpenv.read_type_defn st
   in 
-  let trec = Logic.Defns.mk_typedef (Tpenv.typenv()) n args def 
+  let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
   in Thydb.add_type_rec trec (theories())
 
-let new_defn str =
-  let ((name,args), r) = Tpenv.read_defn str
-  in 
-  let (n, ty, d) = Defn.mkdefn (Tpenv.typenv()) name args r
-  in 
-  Theory.add_defn n ty d (curr_theory()); 
-  (n, ty, d)
-
-let define str = 
+let define str= 
   let ((name, args), r)=Tpenv.read_defn str
   in 
-  let (n, ty, d)= Defn.mkdefn (Tpenv.typenv()) name args r
-  in (Thydb.add_defn n ty d (theories());
-      (n, ty, d))
-
-let new_infix_defn str priority=
-  let ((name, args), r) = Tpenv.read_defn str
-  in let (n, ty, d) = Defn.mkdefn (Tpenv.typenv()) name args r
+  let ndef=
+    Defn.mkdefn (Tpenv.scope()) 
+      (Basic.mklong (Tpenv.get_cur_name()) name) args r
   in 
-  Thydb.add_defn_rec n ty (Some d) true priority 
-    (theories());
-  Tpenv.add_term_pp
-    (Basic.mklong (Tpenv.get_cur_name()) n) priority Basic.PP.infix None;
-  (n, ty, d)
-
-let new_decl sl sty =
-  let l =  Tpenv.read_identifier sl
-  and ty = Tpenv.read_fulltype sty
+  let (n, ty, d)= Defn.dest_defn ndef
   in 
-  let dcl = (Defn.mkdecln (Tpenv.typenv()) l ty)
-  in Thydb.add_decln_rec dcl 0 (theories())
+  Thydb.add_defn (Basic.name n) ty d (theories()); ndef
 
-let declare str =
-  let t = Tpenv.read_unchecked str
+let define_full str pp=
+  let ndef=define str
   in 
-  try
+  let (n, ty, d)= Defn.dest_defn ndef
+  in 
+  (let (prec, fx, repr) = pp
+  in 
+  add_term_pp n prec fx repr); 
+  ndef
+
+let declare str = 
+  let t=Tpenv.read_unchecked str
+  in 
+  try 
     (let (v, ty)=Term.dest_typed t
-    in let (n, _) = Term.dest_var v
-    in let dcl= (Defn.mkdecln (Tpenv.typenv()) n ty)
+    in let (n, _)=Term.dest_var v
     in 
-    Thydb.add_decln_rec dcl 0 (theories()))
-  with _ -> (raiseError "Badly formed declaration")
+    let dcl=Defn.mkdecln (Tpenv.scope()) n ty
+    in 
+    Thydb.add_decln dcl (theories());
+    (n, ty))
+  with _ -> raiseError ("Badly formed declaration: "^str)
 
-let new_full_defn str infx prec trans =
-  let ((name, args), r) = Tpenv.read_defn str
+let declare_full str pp =
+  let n, ty=declare str 
   in 
-  let (n, ty, d) = Defn.mkdefn (Tpenv.typenv()) name args r
+  let (prec, fx, repr) = pp
   in 
-  Thydb.add_defn_rec n ty (Some d) infx prec (theories());
-  if infx then
-    let pprc = (Basic.PP.mk_record prec Basic.PP.infix (Some trans))
-    in 
-    Thydb.add_pp_rec (Basic.fn_id) n pprc (theories());
-    Tpenv.add_term_pp_record (Basic.mklong (Tpenv.get_cur_name()) n) pprc
-  else ();
-  (n, ty, d)
-
-let new_full_decln sl sty inf prec trans=
-  let l = Tpenv.read_identifier sl
-  and ty = Tpenv.read_fulltype sty
+  let longname = 
+    if (Basic.thy_of_id n) = Basic.null_thy 
+    then 
+      (Basic.mklong (Tpenv.get_cur_name()) (Basic.name n))
+    else n
   in 
-  let n, ty = Defn.dest_decln (Defn.mkdecln (Tpenv.typenv()) l ty)
-  in Thydb.add_defn_rec 
-    (Basic.name l) ty None inf prec (theories());
-  if inf then
-    let pprc = (Basic.PP.mk_record prec Basic.PP.infix (Some trans))
-    and longname = 
-      if (Basic.thy_of_id n) = Basic.null_thy 
-      then 
-	(Basic.mklong (Tpenv.get_cur_name()) (Basic.name n))
-      else n
-    in 
-    Thydb.add_pp_rec (Basic.fn_id) (Basic.name n) pprc (theories());
-    Tpenv.add_term_pp_record longname pprc
-  else ();
+  add_term_pp longname prec fx repr;
   (n, ty)
+
 
 let new_axiom n str =
   let t = Logic.mk_axiom 
-      (Formula.form_of_term (Tpenv.typenv()) (Tpenv.read str))
+      (Formula.form_of_term (Tpenv.scope()) (Tpenv.read str))
   in Thydb.add_axiom n t (theories()); t
 
 let axiom id =
@@ -212,15 +220,6 @@ let qed n =
   in 
   Thydb.add_thm n (Goals.result()) (theories()); t
 
-(*
-   let prove_theorem n t tacs =
-   catch_errors
-   (fun x -> 
-   let nt = Goals.prove_goal t ((Tactics.apply_list tacs))
-   in 
-   (Thydb.add_thm n nt x); nt)
-   (theories())
- *)
 let prove_theorem n t tacs =
   catch_errors
     (fun x -> 
@@ -239,4 +238,4 @@ let by x =
   (catch_errors Goals.by_com) x
 
 
-let scope () = Tpenv.typenv();;
+let scope () = Tpenv.scope();;

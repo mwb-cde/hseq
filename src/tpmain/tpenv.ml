@@ -19,7 +19,7 @@ let set_theories thdb = theories:=thdb
 let get_cur_thy () = Thydb.getcur (!theories)
 let get_cur_name () = Theory.get_name (get_cur_thy ())
 
-let stdtypenv() =
+let scope() =
   let thy_name = (get_cur_name())
   in 
   {Gtypes.curr_thy = thy_name;
@@ -65,10 +65,10 @@ let set_thy_dir n = thy_dir := !n
 let get_thy_dir () = !thy_dir
 let get_cdir () = Sys.getcwd ()
 
-let thy_suffix = Settings.thy_suffix
+let thy_suffix = "."^Settings.thy_suffix
 
 let find_thy_file f =
-  let tf = f^"."^thy_suffix
+  let tf = f^thy_suffix
   in 
   let rec find_aux ths =
     match ths with
@@ -80,27 +80,44 @@ let find_thy_file f =
 	then nf else find_aux ts
   in find_aux (get_thy_path())
 
-let typenv ()=  stdtypenv()
+(*
+let typenv()=  stdtypenv()
+*)
 
-(* Pretty printing *)
+(* Pretty printing and Parsing*)
 
+(* tp_pp_info: Printer Table *)
 let tp_pp_info=ref (Basic.PP.empty_info())
-
 let pp_info() = !tp_pp_info 
 let pp_set info = tp_pp_info:=info
 let pp_reset () = pp_set (Basic.PP.empty_info())
+let pp_init() = pp_reset()
+
+(* tp_sym_info: Parser symbol table *)
+let sym_init() = Parser.init()
+let sym_info() = Parser.symtable()
+let sym_reset () = Parser.reset()
 
 let get_term_pp id=
   Basic.PP.get_term_info (pp_info()) id
 
 let add_term_pp id prec fixity repr=
-  Basic.PP.add_term_info (pp_info()) id prec fixity repr
+  Basic.PP.add_term_info (pp_info()) id prec fixity repr;
+  Parser.add_token id (Lib.get_option repr (name id)) fixity prec
 
 let add_term_pp_record id rcrd=
-  Basic.PP.add_term_record (pp_info()) id rcrd
+  Basic.PP.add_term_record (pp_info()) id rcrd;
+  Parser.add_token 
+    id 
+    (Lib.get_option rcrd.Basic.PP.repr (name id)) 
+    (rcrd.Basic.PP.fixity)
+    (rcrd.Basic.PP.prec)
 
 let remove_term_pp id =
-  Basic.PP.remove_term_info (pp_info()) id
+  let (_, _, sym) = get_term_pp id
+  in 
+  Basic.PP.remove_term_info (pp_info()) id;
+  Parser.remove_token (Lib.get_option sym (name id))
 
 let get_type_pp id=
   Basic.PP.get_type_info (pp_info()) id
@@ -114,6 +131,11 @@ let add_type_pp_record id rcrd=
 let remove_type_pp id=
   Basic.PP.remove_type_info (pp_info()) id
 
+let remove_type_pp id =
+  let (_, _, sym) = get_type_pp id
+  in 
+  Basic.PP.remove_type_info (pp_info()) id;
+  Parser.remove_type_token (Lib.get_option sym (name id))
 
 (*
    parser/printer information on reserved identifiers  
@@ -121,6 +143,7 @@ let remove_type_pp id=
 
 (* reserved words *)
 
+(*
 let base_id_list = 
   [Logicterm.notid, 5, false, "";
    Logicterm.andid, 4, true, "and";
@@ -140,52 +163,9 @@ let build_id_info () =
 let build_type_info () =
   List.iter 
     (fun (id, pr, fx, trn) -> 
-	add_type_pp id pr fx (if trn="" then None else Some(trn)))
+      add_type_pp id pr fx (if trn="" then None else Some(trn)))
     base_type_list
-
-(*
-let get_id_info x =  get_pp x id_pp_info
-let add_id_info x pr = 
- add_pp x pr id_pp_info
-
-let remove_id_info x = remove_pp x id_pp_info
-
-let get_type_info x = get_pp x type_pp_info
-let add_type_info x pr = add_pp x pr type_pp_info
-let remove_type_info x = remove_pp x type_pp_info
-
-let empty_pp_rec= Corepp.empty_pp_rec()
 *)
-
-(*
-let base_pp_state () = 
-  { Corepp.id_info = 
-    (fun x -> try get_id_info x  with Not_found -> empty_pp_rec) ;
-    Corepp.type_info = 
-    (fun x -> try get_type_info x with Not_found -> empty_pp_rec)
-  } 
-*)
-
-(*
-let is_infix idsel name =
-  let precrd = 
-    (try
-      if idsel = Basic.fn_id 
-      then get_id_info name
-      else get_type_info name
-    with Not_found -> empty_pp_rec)
-  in precrd.Corepp.infix
-
-let prec_of idsel name =
-  let precrd = 
-    (try
-      if idsel = Basic.fn_id 
-      then get_id_info name
-      else get_type_info name
-    with Not_found -> empty_pp_rec)
-  in precrd.Corepp.prec
-*)
-
 
 (* Functions to add PP information when a theory is loaded *)
 
@@ -207,7 +187,6 @@ let on_load_thy th =
   List.iter (fun (id, rcrd) -> add_type_record id rcrd) 
     (Theory.get_pplist Basic.type_id th); ()
 
-
 let mkterm scp pt = 
   let tenv = 
     Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
@@ -228,17 +207,17 @@ let catch_parse_error e a =
 let mkterm_unchecked tyenv pt = pt
 
 let read str= 
-  mkterm (typenv()) 
+  mkterm (scope()) 
     (catch_parse_error Parser.read_term str)
 
 let read_unchecked  x=
-  mkterm_unchecked (typenv()) 
+  mkterm_unchecked (scope()) 
     (catch_parse_error Parser.read_term x)
 
 let read_defn x =
   let (l, r)= 
     catch_parse_error (Parser.read defn_parser) x
-  in (l, mkterm_unchecked (typenv()) r)
+  in (l, mkterm_unchecked (scope()) r)
 
 let read_type_defn x =
   let (l, args, r)= 
@@ -278,9 +257,10 @@ let init_theoryDB () = load_base_thy()
 let init_list = 
   ref 
     [
-     init_theoryDB; 
-     Parser.init;
-     build_id_info; build_type_info
+     pp_init;
+     sym_init;
+     init_theoryDB 
+(*     build_id_info; build_type_info *)
    ]
 
 let add_init x = init_list:=(x::!init_list)

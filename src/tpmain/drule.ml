@@ -268,12 +268,13 @@ let foreach_conc_except excpt rs sq =
   in 
   if !chng then rslt else Result.raiseError "No change")
 
+
 (*
-   let foreach_in_sq ars crs sq =
-   Logic.Rules.thenl
-   [Logic.Rules.orl [foreach_conc crs; Logic.Rules.skip]; 
-   Logic.Rules.orl [foreach_asm ars; Logic.Rules.skip]] sq
- *)
+let foreach_in_sq ars crs sq =
+  thenl
+    [Logic.Rules.orl [foreach_conc crs; Logic.Rules.skip]; 
+     Logic.Rules.orl [foreach_asm ars; Logic.Rules.skip]] sq
+*)
 
 let foreach_conc_once r sq =
   let chng = ref false

@@ -1,5 +1,14 @@
 (* user level commands *) 
 
+(* Infixes *)
+type fixity = Parserkit.Info.fixity
+val nonfix: fixity  (* use this as the default *)
+val prefix: fixity
+val suffix: fixity
+val infixl: fixity  (* infix, left associative *)
+val infixr: fixity  (* infix, right associative *)
+val infixn: fixity  (* infix, non-associative *)
+
 (* error handling *)
 val catch_errors : ('a -> 'b) -> 'a -> 'b
 
@@ -32,6 +41,21 @@ val mk_typedef_rec :
   string list -> Gtypes.gtype option -> string list -> Gtypes.typedef_record
 *)
 
+(* Parsing/Printing manipulation *)
+
+val add_pp_rec: Basic.id_selector -> Basic.ident -> Basic.PP.record -> unit
+val add_term_pp: Basic.ident -> int -> fixity -> string option -> unit
+val add_type_pp: Basic.ident -> int -> fixity -> string option -> unit
+
+val remove_pp_rec : Basic.id_selector -> Basic.ident -> unit
+val remove_term_pp : Basic.ident -> unit
+val remove_type_pp : Basic.ident -> unit
+
+val get_pp_rec : Basic.id_selector -> Basic.ident 
+  -> (int * fixity * string option)
+val get_term_pp : Basic.ident -> (int * fixity * string option)
+val get_type_pp : Basic.ident -> (int * fixity * string option)
+
 (* declare and define types and definitions *)
 (* new_type "t" declares type t, 
    new_type "ty1=ty2" defines ty1 as a synonym for ty2.
@@ -39,25 +63,38 @@ val mk_typedef_rec :
 val new_type : string -> unit
 
 (* new_defn/define define an identifier *)
-val new_defn : string -> string * Gtypes.gtype * Logic.thm
-val define : string -> string * Gtypes.gtype * Logic.thm
 
-(* fuller version of definiiton*)
-val new_infix_defn : string -> int -> string * Gtypes.gtype * Logic.thm
-
-(* declare an identifier *)
-val new_decl : string -> string -> unit
-val declare : string ->unit
-
-(* full definition of an identifier:
+(* [define_full str pp]
+   full definition of an identifier:
    parameters in order are definition, is infix, precedence 
-   and PP representation *)
-val new_full_defn : string -> bool -> int -> string
-  -> string * Gtypes.gtype * Logic.thm
+   and PP representation 
 
-(* full declaration of an identifier *)
-val new_full_decln :
-  string -> string -> bool -> int -> string -> Basic.ident * Gtypes.gtype
+   [define str]
+   definition of an identifier.
+   
+   Both return name, type and definition.
+*)
+
+val define_full : string -> (int*fixity*string option) 
+  -> Defn.defn
+val define : string -> Defn.defn
+
+(* 
+   [declare_full str pp]
+   full declaration of identifier  
+   including PP information 
+
+   return name and type.
+ *)
+val declare_full : string -> (int* fixity* string option) 
+  -> (Basic.ident * Gtypes.gtype)
+
+(* 
+   [declare str]
+   declare an identifier 
+   return name and type.
+*)
+val declare : string -> (Basic.ident * Gtypes.gtype)
 
 (* [new_axiom id thm]
    declare thm a new axiom with name id. *)

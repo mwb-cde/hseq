@@ -21,8 +21,7 @@
    Initialises the TP environment.
 *)
 
-let tp_init() = 
-  Tpenv.init()
+let tp_init() = Tpenv.init()
 
 (*
    init()
@@ -35,8 +34,7 @@ let init() =
   let initfile=Settings.make_filename Settings.init_file
   in
   tp_init();
-  Toploop.use_file
-    Format.std_formatter initfile
+  ignore(Toploop.use_file Format.std_formatter initfile)
 
 (* 
    ocaml-3.06 specific code.
@@ -45,7 +43,6 @@ let init() =
    then restore Toploop.parse_toplevel_phrase to original (ocaml) value
    once init() has been called.
 *)
-
 
 let init_3_06() = 
   let tmp_parse_toplevel_phrase = !Toploop.parse_toplevel_phrase
@@ -56,7 +53,6 @@ let init_3_06() =
    Toploop.parse_toplevel_phrase:=tmp_parse_toplevel_phrase;
    tmp_parse_toplevel_phrase l)
 
-
 (* 
    ocaml-3.07 specific code.
 
@@ -64,16 +60,17 @@ let init_3_06() =
    Call init() after all other OCaml initialisation has been done.
 *)
 
+
+let init_3_07() =  init_3_06()
+
 (*
-let init_3_07() = 
-   let startup () = 
-     !Toploop.toplevel_startup_hook(); 
-      init()
-   in 
-   Toploop.toplevel_startup_hook:=startup()
+let init_3_07() =  let startup () = 
+    (!Toploop.toplevel_startup_hook(); init())
+  in 
+  Toploop.toplevel_startup_hook:=startup
 *)
-(* 
-   starting_mesg().
+(*
+    starting_mesg().
    Print a Starting Up message.
 *)
 
@@ -89,5 +86,4 @@ let starting_mesg()=
 
 let _ = 
   starting_mesg();
-  init_3_06()        (* use ocaml-3.06 code *)
-  (* init_3_07() *)   (* use ocaml-3.07 code *)
+  init_3_06()       (* use ocaml-3.06 code (even for ocaml-3.07) *) 

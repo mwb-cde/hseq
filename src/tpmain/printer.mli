@@ -1,15 +1,12 @@
 (* functions for printing types/terms/errors etc *)
 open Basic
 
-(*
-  val print_termlist : Term.term list -> unit
-*)
-
   val print_term : Term.term -> unit
   val print_type : Gtypes.gtype -> unit
 
   val print_sqnt: Logic.sqnt -> unit
   val print_thm: Logic.thm -> unit
+val print_defn: Defn.defn -> unit
 
   val print_prf: Goals.prf -> unit
 
