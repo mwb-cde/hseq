@@ -22,7 +22,7 @@ let print_term x =
 
 let rec print_type x = 
   open_box 0; 
-  Gtypes.print_type_info (Tpenv.pp_info()) 0 x; 
+  Gtypes.print (Tpenv.pp_info())  x; 
   close_box()
 
 

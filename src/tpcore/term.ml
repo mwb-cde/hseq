@@ -747,7 +747,7 @@ let print_meta qnt =
   Format.close_box()
 
 
-let rec print_term_aux ppstate i x =
+let rec print_term_aux ppstate tyinfo i x =
   match x with
     Var(n, ty) -> 
       (let _, _, repr = Printer.get_term_info ppstate n
@@ -761,23 +761,23 @@ let rec print_term_aux ppstate i x =
       Format.print_string (Basic.string_const c);
       Format.print_cut()
   | Typed (trm, ty) -> 
-      print_typed_term ppstate i trm ty;
+      print_typed_term ppstate tyinfo i trm ty;
       Format.print_cut()
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
       (match args with 
-	[] -> print_term_aux ppstate i f
+	[] -> print_term_aux ppstate tyinfo i f
       | _ -> 
 	  (if is_var f 
-	  then print_fn_app ppstate i f args
+	  then (print_fn_app ppstate tyinfo i f args)
 	  else 
 	    (Format.open_box 2;
 	     Format.print_string "(";
-	     print_term_aux ppstate i f;
+	     print_term_aux ppstate tyinfo i f;
 	     Format.print_space();
 	     Printer.list_print 
-	       (print_term_aux ppstate i)
+	       (print_term_aux ppstate tyinfo i)
 	       (fun () -> Format.print_space()) args;
 	     Format.print_string")";
 	     Format.close_box())));
@@ -789,7 +789,7 @@ let rec print_term_aux ppstate i x =
       in 
       let print_qnts qs =
 	Format.print_string (Basic.quant_string qnt);
-	Printer.list_print (print_qnt ppstate)
+	Printer.list_print (print_qnt ppstate tyinfo)
 	  (fun () -> Format.print_space()) qnts;
 	Format.print_string ":";
 	Format.print_cut();
@@ -800,38 +800,38 @@ let rec print_term_aux ppstate i x =
       Printer.print_bracket ti i "(";
       print_qnts qnts;
       Format.print_space();
-      print_term_aux ppstate ti b;
+      print_term_aux ppstate tyinfo ti b;
       Printer.print_bracket ti i ")";
       Format.close_box();
       Format.print_cut()
 and 
-    print_fn_app ppstate i f args=
+    print_fn_app ppstate tyinfo i f args=
   let print_infix repr ti args =
     match args with
       (l::rargs) -> 
 	(Format.open_box 2;
-	 print_term_aux ppstate ti l;
+	 print_term_aux ppstate tyinfo ti l;
 	 Format.print_space();
-	 print_term_aux ppstate ti f;
+	 print_term_aux ppstate tyinfo ti f;
 	 Format.print_space();
-	 Printer.list_print (print_term_aux ppstate ti)
+	 Printer.list_print (print_term_aux ppstate tyinfo ti)
 	   (fun () -> Format.print_space()) rargs;
 	 Format.close_box();
 	 Format.print_cut())
     | _ -> 
 	Format.open_box 2;
-	Printer.list_print (print_term_aux ppstate ti)
+	Printer.list_print (print_term_aux ppstate tyinfo ti)
 	  (fun () -> Format.print_space()) args;
 	 Format.print_space();
-	print_term_aux ppstate ti f;
+	print_term_aux ppstate tyinfo ti f;
 	Format.close_box();
 	Format.print_cut()
   and print_suffix ti args =
     Format.open_box 2;
-    (Printer.list_print (print_term_aux ppstate ti)
+    (Printer.list_print (print_term_aux ppstate tyinfo ti)
        (fun () -> Format.print_space()) args);
     Format.print_space();
-    print_term_aux ppstate ti f;
+    print_term_aux ppstate tyinfo ti f;
     Format.close_box();
     Format.print_cut()
   in 
@@ -846,38 +846,40 @@ and
     if (Printer.is_suffix fixity)
     then print_suffix ti args
     else Printer.list_print 
-	(print_term_aux ppstate ti)
+	(print_term_aux ppstate tyinfo ti)
 	(fun () -> Format.print_space()) (f::args));
   Printer.print_bracket pr i ")";
   Format.print_cut()
 and 
-    print_typed_term ppstate i trm ty=
+    print_typed_term ppstate tyinfo i trm ty=
   Format.open_box 2;
   Format.print_string "(";
-  print_term_aux ppstate i trm;
+  print_term_aux ppstate tyinfo i trm;
   Format.print_string ")";
   Format.print_cut();
   Format.print_string ": ";
-  Gtypes.print ppstate ty;
+  Gtypes.print_type_info ppstate tyinfo 0 ty;
   Format.close_box()
 and 
-    print_typed_name ppstate n ty=
+    print_typed_name ppstate tyinfo n ty=
   Format.open_box 2;
   Format.print_string "(";
   Format.print_string n;
   Format.print_cut();
   Format.print_string ": ";
-  Gtypes.print ppstate ty;
+  Gtypes.print_type_info ppstate tyinfo 0ty;
   Format.print_string ")";
   Format.close_box()
-and print_qnt ppstate q =
+and print_qnt ppstate tyinfo q =
   let _, qvar, qtyp = dest_binding q 
   in 
-  print_typed_name ppstate qvar qtyp
+  print_typed_name ppstate tyinfo qvar qtyp
 
-let print inf x = 
+let print ppstate x = 
+  let tyinfo=ref (Gtypes.empty_printer_info())
+  in 
   Format.open_box 0;
-  print_term_aux inf 0 x;
+  print_term_aux ppstate tyinfo 0 x;
   Format.close_box()
 
 (* Error handling *)

@@ -73,8 +73,80 @@ let extend_scope scp f =
 
 let get_typdef tyenv r =  tyenv.typ_defn r (* (get_typenv()) r *)
 
+let is_var t  = 
+  match t with
+    Var _ -> true
+  | _ -> false
 
-(* pretty printing *)
+let is_weak t  = 
+  match t with
+    WeakVar _ -> true
+  | _ -> false
+
+
+(* substitution *)
+(* substitution types *)
+(* Using balanced trees *)
+(* The right way to do it *)
+
+let rec equals x y = 
+  (match (x, y) with
+    (Var(v1), Var(v2)) -> (v1==v2)
+  |	(Constr(f1, args1), Constr(f2, args2))
+    -> (f1=f2) &
+      (try
+	((List.iter2 
+	    (fun a b -> 
+	      if (equals a b) 
+	      then () 
+	      else raise (Failure ""))
+	    args1 args2); true)
+      with _ -> false)
+  | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
+  | (_, _) -> x=y)
+
+
+let rec safe_equal x y = 
+  (match (x, y) with
+    (Var(v1), Var(v2)) -> (v1==v2)
+  |	(Constr(f1, args1), Constr(f2, args2))
+    -> (f1=f2) &
+      (try
+	((List.iter2 
+	    (fun a b -> 
+	      if (safe_equal a b) 
+	      then () 
+	      else raise (Failure ""))
+	    args1 args2); true)
+      with _ -> false)
+  | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
+  | (_, _) -> x=y)
+
+let eqvar v1 v2 = 
+  if (is_var v1) & (is_var v2) 
+  then equals v1 v2
+  else raise (Failure "Not a variable")
+
+
+module TypeTreeData=
+  struct 
+    type key=gtype
+    let equals = equals
+  end
+
+module TypeTree=Treekit.BTree(TypeTreeData)      
+
+type substitution = (gtype)TypeTree.t
+
+let lookup t env = TypeTree.find env t
+let member t env = try lookup t env ; true with Not_found -> false
+
+let subst_sz s= TypeTree.nil
+let empty_subst ()= TypeTree.nil
+let bind t r env = TypeTree.replace env t r
+let bind_env = bind
+let delete t env = TypeTree.delete env t
+let subst_iter =TypeTree.iter
 
 let get_var t = 
   match t with 
@@ -88,120 +160,6 @@ let get_weak t =
 
 
 
-let print_type_info ppstate pr t = 
-  let rec print_aux old_pr x =
-    match x with
-      Var(_) -> 
-	Format.print_string ("'"^(get_var x));
-	Format.print_cut()
-    | WeakVar(_) -> 
-	Format.print_string ("_"^(get_weak x));
-	Format.print_cut()
-    | Base(b) -> 
-	Format.print_string (Basic.string_btype b);
-	Format.print_cut()
-    | Constr(Basic.Defined n, args) ->  (* not infix *)
-	print_defined old_pr n args;
-	Format.print_cut()
-    | Constr(Basic.Func, args) ->
-	print_func args;
-	Format.print_cut()
-  and print_defined oldprec f args =
-    let print_infix pr repr ls =
-      (Format.open_box 2;
-      (match ls with
-	[] -> 
-	  Printer.print_identifier f repr
-      | l::rargs ->
-	  print_aux pr l;
-	  Format.print_cut();
-	  Printer.print_identifier f repr;
-	  Printer.list_print 
-	    (print_aux pr) 
-	    (fun _ -> Format.print_space()) rargs);
-      Format.close_box())
-    and print_suffix pr repr ls =
-      (Format.open_box 2;
-       Printer.list_print 
-	 (print_aux pr) 
-	 (fun _ -> Format.print_space()) ls;
-       Format.print_cut();
-       Printer.print_identifier f repr;
-       Format.close_box())
-    in 
-    let prec, fixity, repr=Printer.get_type_info ppstate f
-    in 
-    Format.open_box 2;
-    Printer.print_bracket prec oldprec "(";
-    if(Printer.is_infix fixity) 
-    then 
-      print_infix prec repr args  
-    else 
-      if (Printer.is_suffix fixity)
-      then print_suffix prec repr args
-      else 
-	(Printer.print_identifier f repr;
-	 match args with
-	   [] -> ()
-	 | _ -> 
-	     Format.open_box 2;
-	     Format.print_string "(";
-	     Printer.list_print 
-	       (print_aux pr) 
-	       (fun _ -> 
-		 Format.print_string ","; 
-		 Format.print_space()) args;
-	     Format.print_string ")";
-	     Format.close_box());
-    Printer.print_bracket prec oldprec ")";
-    Format.close_box()
-  and print_func args  =
-    match args with
-      a1::a2::rst ->
-	Format.open_box 2;
-	print_aux 0 a1; 
-	Format.print_cut();
-	Format.print_string "->";
-	print_aux 0 a2;
-	Format.close_box()
-    | _ -> 
-	Format.open_box 2;
-	Format.print_string "->";
-	Format.print_cut();
-	Format.print_string "(";
-	Format.print_cut();
-	Printer.list_print 
-	  (print_aux 0) 
-	  (fun _ -> Format.print_string ","; Format.print_space()) args;
-	Format.print_string ")";
-	Format.close_box ()
-  in 
-  print_aux pr t
-
-let print st x =
-  Format.open_box 2; print_type_info st 0 x; Format.close_box ()
-
-(* Error handling *)
-
-class typeError s ts=
-  object (self)
-    inherit Result.error s
-    val trms = (ts: gtype list)
-    method get() = ts
-    method print st = 
-      Format.open_box 0; Format.print_string (self#msg()); 
-      Format.print_break 1 2;
-      Format.open_box 0; 
-      Printer.list_print (print st) 
-	(fun _ -> Format.print_string ","; 
-          Format.print_break 1 2; )
-	(self#get());
-      Format.close_box();
-      Format.close_box();
-  end
-let typeError s t = (mkError((new typeError s t):>error))
-let addtypeError s t es= raise (addError ((new typeError s t):>error) es)
-
 
 let rec string_gtype x =
   match x with
@@ -211,15 +169,6 @@ let rec string_gtype x =
   | Base(b) -> string_btype b
   | WeakVar(a) -> "_"^(!a)
 
-let is_var t  = 
-  match t with
-    Var _ -> true
-  | _ -> false
-
-let is_weak t  = 
-  match t with
-    WeakVar _ -> true
-  | _ -> false
 
 (*renamed any_varp to is_any_var *)
 let is_any_var t= (is_var t) or (is_weak t)
@@ -330,45 +279,162 @@ let rec chase_ret_type t=
     Constr(Func, l::r::[]) -> chase_ret_type r
   | x -> x
 
-(* substitution types *)
 
-let rec equals x y = 
-  (match (x, y) with
-    (Var(v1), Var(v2)) -> (v1==v2)
-  |	(Constr(f1, args1), Constr(f2, args2))
-    -> (f1=f2) &
-      (try
-	((List.iter2 
-	    (fun a b -> 
-	      if (equals a b) 
-	      then () 
-	      else raise (Failure ""))
-	    args1 args2); true)
-      with _ -> false)
-  | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
-  | (_, _) -> x=y)
+(* pretty printing *)
+
+(* mk_typevar n: 
+   
+   Make a new type variable.
+*)
+
+type printer_info=
+    { 
+      tbl: substitution; (* used to store pretty replacement variable names *)
+      ctr: int ref; (* used to generate variable names *)
+    }
+let empty_printer_info()=
+  {tbl=empty_subst(); ctr=ref 0}
+
+let mk_typevar n =
+  let nty=Var(ref(int_to_name (!n)))
+  in
+  n:=(!n)+1; nty
 
 
-let rec safe_equal x y = 
-  (match (x, y) with
-    (Var(v1), Var(v2)) -> (v1==v2)
-  |	(Constr(f1, args1), Constr(f2, args2))
-    -> (f1=f2) &
-      (try
-	((List.iter2 
-	    (fun a b -> 
-	      if (safe_equal a b) 
-	      then () 
-	      else raise (Failure ""))
-	    args1 args2); true)
-      with _ -> false)
-  | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
-  | (_, _) -> x=y)
+let print_type_info ppstate info pr t = 
+  let new_name_env x=
+    try
+      (let tmp=lookup x ((!info).tbl) 
+      in 
+      if (is_var tmp) or (is_weak tmp)
+      then tmp
+      else raise Not_found)
+    with 
+      Not_found ->
+	(let newty=mk_typevar ((!info).ctr)
+	in 
+	info:={ (!info) with tbl=bind x newty ((!info).tbl) };
+	newty)
+  in 
+  let rec print_aux prec x =
+    match x with
+      Var(_) -> 
+	let nt=new_name_env x
+	in 
+	Format.print_string ("'"^(get_var nt));
+	Format.print_cut()
+    | WeakVar(_) -> 
+	Format.print_string ("'_"^(get_weak x));
+	Format.print_cut()
+    | Base(b) -> 
+	Format.print_string (Basic.string_btype b);
+	Format.print_cut()
+    | Constr(Basic.Defined n, args) ->  (* not infix *)
+	print_defined pr n args;
+	Format.print_cut()
+    | Constr(Basic.Func, args) ->
+	print_func args;
+	Format.print_cut()
+  and print_defined oldprec f args =
+    let print_infix pr repr ls =
+      (Format.open_box 2;
+      (match ls with
+	[] -> 
+	  Printer.print_identifier f repr
+      | l::rargs ->
+	  print_aux pr l;
+	  Format.print_cut();
+	  Printer.print_identifier f repr;
+	  Printer.list_print 
+	    (print_aux pr) 
+	    (fun _ -> Format.print_space()) rargs);
+      Format.close_box())
+    and print_suffix pr repr ls =
+      (Format.open_box 2;
+       Printer.list_print 
+	 (print_aux pr) 
+	 (fun _ -> Format.print_space()) ls;
+       Format.print_cut();
+       Printer.print_identifier f repr;
+       Format.close_box())
+    in 
+    let prec, fixity, repr=Printer.get_type_info ppstate f
+    in 
+    Format.open_box 2;
+    Printer.print_bracket prec oldprec "(";
+    if(Printer.is_infix fixity) 
+    then 
+      print_infix prec repr args  
+    else 
+      if (Printer.is_suffix fixity)
+      then print_suffix prec repr args
+      else 
+	(Printer.print_identifier f repr;
+	 match args with
+	   [] -> ()
+	 | _ -> 
+	     Format.open_box 2;
+	     Format.print_string "(";
+	     Printer.list_print 
+	       (print_aux pr) 
+	       (fun _ -> 
+		 Format.print_string ","; 
+		 Format.print_space()) args;
+	     Format.print_string ")";
+	     Format.close_box());
+    Printer.print_bracket prec oldprec ")";
+    Format.close_box()
+  and print_func args  =
+    match args with
+      a1::a2::rst ->
+	Format.open_box 2;
+	print_aux 0 a1; 
+	Format.print_cut();
+	Format.print_string "->";
+	print_aux 0 a2;
+	Format.close_box()
+    | _ -> 
+	Format.open_box 2;
+	Format.print_string "->";
+	Format.print_cut();
+	Format.print_string "(";
+	Format.print_cut();
+	Printer.list_print 
+	  (print_aux 0) 
+	  (fun _ -> Format.print_string ","; Format.print_space()) args;
+	Format.print_string ")";
+	Format.close_box ()
+  in 
+  print_aux pr t
 
-let eqvar v1 v2 = 
-  if (is_var v1) & (is_var v2) 
-  then equals v1 v2
-  else raise (Failure "Not a variable")
+let print st x =
+  let tyinfo = ref (empty_printer_info())
+  in 
+  Format.open_box 2;
+  print_type_info st tyinfo 0 x; 
+  Format.close_box ()
+
+(* Error handling *)
+
+class typeError s ts=
+  object (self)
+    inherit Result.error s
+    val trms = (ts: gtype list)
+    method get() = ts
+    method print st = 
+      Format.open_box 0; Format.print_string (self#msg()); 
+      Format.print_break 1 2;
+      Format.open_box 0; 
+      Printer.list_print (print st) 
+	(fun _ -> Format.print_string ","; 
+          Format.print_break 1 2; )
+	(self#get());
+      Format.close_box();
+      Format.close_box();
+  end
+let typeError s t = (mkError((new typeError s t):>error))
+let addtypeError s t es= raise (addError ((new typeError s t):>error) es)
+
 
 (* save types *)
 
@@ -449,28 +515,7 @@ module Rhashkeys:RHASHKEYS=
 module type RHASH = (Hashtbl.S with type key = (gtype))
 module Rhash:RHASH= Hashtbl.Make(Rhashkeys)
 
-(* Using balanced trees *)
-(* The right way to do it *)
 
-module TypeTreeData=
-  struct 
-    type key=gtype
-    let equals = equals
-  end
-
-module TypeTree=Treekit.BTree(TypeTreeData)      
-
-type substitution = (gtype)TypeTree.t
-
-let lookup t env = TypeTree.find env t
-let member t env = try lookup t env ; true with Not_found -> false
-
-let subst_sz s= TypeTree.nil
-let empty_subst ()= TypeTree.nil
-let bind t r env = TypeTree.replace env t r
-let bind_env = bind
-let delete t env = TypeTree.delete env t
-let subst_iter =TypeTree.iter
 
 (* Type unification and matching *)
 
@@ -1086,6 +1131,8 @@ let rec quick_well_defined scp cache t =
   |	x -> ()
 
 
+
+
 (* Debugging *)
 
 let print_subst tenv = 
@@ -1173,16 +1220,6 @@ let in_thy_scope memo scp th ty =
   in 
   try in_scp_aux ty ; true
   with Not_found -> false
-
-(* mk_typevar n: 
-   
-   Make a new type variable.
-*)
-
-let mk_typevar n =
-  let nty=mk_var(int_to_name (!n))
-  in
-  n:=(!n)+1; nty
 
 (* mgu_rename_env inf env env nenv typ:
 
