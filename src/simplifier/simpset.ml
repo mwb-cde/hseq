@@ -18,13 +18,13 @@ let dest_rule (vs, cnd, lhs, rhs, rr)=(vs, cnd, lhs, rhs, rr)
 
 
 (** 
-   [simp_set]:
+   [simpset]:
    set of simplifier rules 
  *)
-type simp_set = 
+type simpset = 
     { 
       basic: rule Termnet.net;          (* global rules *)
-      next: simp_set option             (* next simp_set *)
+      next: simpset option             (* next simpset *)
     } 
 
 let empty_set() = 
@@ -77,7 +77,7 @@ let rec join s1 s2 =
        next=Some(join x s2)}
 
 (** [split s]
-   Split simp_set [s] into two parts.
+   Split simpset [s] into two parts.
    fails if [s] is not joined to another set.
  *)
 let split s1=
@@ -89,3 +89,40 @@ let split s1=
 	next=None}, x)
 	
 
+
+(* [dest_rr_rule trm]: 
+   Split rule [trm] into binders, condition, lhs, rhs 
+   rules are of the form:
+   [c=>(l=r)] or [l=r]
+ *)
+    let dest_rr_rule trm =
+      (* Get leading quantifiers *)
+      let (qs, t1)=Term.strip_qnt Basic.All trm 
+      in 
+      (* test for conditional equalities *)
+      let (cnd, rl)=
+	if (Logicterm.is_implies t1)         
+	then (* is conditional *)
+	  (let (asm, cncl)=Simputils.dest_implies t1
+	  in 
+	  (Some(asm), cncl))
+	else  (* is not conditional *)
+	  (None, t1)
+      in 
+      (* break the equality *)
+      if (Logicterm.is_equality rl)
+      then 
+	let (lhs, rhs)=Logicterm.dest_equality rl
+	in (qs, cnd, lhs, rhs)
+      else 
+	  raise (Failure 
+		   ("Not an equality or a conditional equality\n"))
+
+
+(** [make_rule rl]:
+   make rule from theorem or assumption [src] in scope [scp]
+*)
+    let make_rule rl trm=
+      let qs, c, l, r= dest_rr_rule trm
+      in 
+      (qs, c, l, r, rl)
