@@ -181,6 +181,11 @@ let set_antiquote c = antiquote_char:=c
 (* token information *)
 
   let mk_ident s = ID(s)
+  let dest_ID t = 
+    match t with 
+      ID(s) -> s
+    | _ -> failwith ("dest_ident: Not an ID token")
+
   let mk_symbol s = Sym(OTHER s)
 
 (* 
@@ -468,7 +473,8 @@ let match_alpha symtable inp =
 let get_sep_list init_test body_test sep_test strm=
   let strlist=ref []
   in 
-(* is_sep: look for a seperator followed by 
+(*
+   is_sep: look for a seperator followed by 
    an initial character. 
 *)
   let is_sep stm =
@@ -501,12 +507,21 @@ let get_sep_list init_test body_test sep_test strm=
 
 let is_identifier_char c = (is_alpha c) or (is_special_alpha c) or (is_digit c)
 
-let match_identifier inp =
+let match_identifier symtable inp =
   if (stream_test is_alpha inp)
   then 
     match (get_sep_list is_alpha is_identifier_char is_dot inp) with
       [] -> (false, null_tok)
-    | [n] -> (true, mk_ident (Basic.mkname n))
+    | [n] -> 
+	(* unqualified identifier may be a symbol/keyword *)
+	(* so check in the symbol table for a token to return *)
+	(* if not found, make an unqualified identifier token *)
+	let rtok =
+	  (try
+	    find_sym symtable n
+	  with Not_found -> mk_ident(Basic.mkname n))
+	in 
+	(true, rtok)
     | [th;n] -> (true, mk_ident (Basic.mklong th n))
     | _ -> raise (Lexing(0, 0)) 
   else (false, null_tok)
@@ -539,8 +554,6 @@ let match_keywords symtable strm =
       junkn sz strm;
       (true, tok)
     with Not_found -> (false, null_tok)
-
-
 
 (* [match_antiquote tbl strm]
    read characters from stream strm,
@@ -607,18 +620,21 @@ let rec lex symtable str=
       in let loc= (0, 0)
       in let newstrm = Stream.of_string <:expr< $evalstrng$ >>
       in lex symtable newstrm
+   else 
+ *)
+(* try alpha-numeric (identifier) *)
+    let is_alpha_tok, alpha_tok = match_identifier symtable str
+    in 
+    if is_alpha_tok 
+    then 
+      alpha_tok
     else 
-*)
-(* try for a symbol/keyword *)
+(* not an identifier, try for a symbol/keyword *)
       let key, tok= match_keywords symtable str 
       in 
       if key then tok
       else 
-(* not a symbol, try alpha-numeric (identifier) *)
-	let is_alpha_tok, alpha_tok = match_identifier str
-	in 
-	if is_alpha_tok then alpha_tok
-	else 
+
 (* not a symbol/keyword, so try other lexers (numbers, bools, etc) *)
 	  other str
  

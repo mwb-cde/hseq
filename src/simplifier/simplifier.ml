@@ -34,23 +34,58 @@ module Simplifier =
 
     exception No_change
 
-(* control: 
-   cond_depth: (* maximum number of conditions at one go *)
+(* [type control]
+   Information used by and built up during simplification.
  *)
-
     type control =
 	{
-	 cond_depth: int
+(** conds: max. no. of conditions to try and prove at once *)
+	 conds: int;  
+(** rr_depth: max. no. of rr rules to apply at one level *)
+	 rr_depth: int;
+(** asms: assumptions generated during the course of simplification *)
+	 asms: Logic.Tag.t list;
+(** rules: 
+   rewrite rules to pass to the rewriter (the result of the simplifier)
+*)
+	 rules: Logic.rr_type list
        }
 
-    let mk_control () = 
-      {cond_depth=50}
+    let mk_cntrl cd rd a rs= 
+      {
+       conds=cd;
+       rr_depth=rd;
+       asms=a;
+       rules=rs
+     }
 
-    let dec_cond_depth set=
-      if(set.cond_depth=0) then set
-      else
-	{cond_depth=(set.cond_depth -1)}
-	  
+    let cntrl_set_conds cntrl d=
+      {cntrl with conds=d}
+
+    let cntrl_set_rr_depth cntrl d=
+      {cntrl with rr_depth=d}
+
+    let cntrl_set_asms cntrl ds=
+      {cntrl with asms=ds}
+
+    let cntrl_set_rules cntrl ds=
+      {cntrl with rules=ds}
+
+    let cntrl_add_asm cntrl a=
+      cntrl_set_asms cntrl (a::(cntrl.asms))
+
+
+    let cntrl_dec_cond_depth cntrl=
+      cntrl_set_conds cntrl ((cntrl.conds)-1)
+
+    let cntrl_add_rule cntrl r=
+      cntrl_set_rules cntrl (r::(cntrl.rules))
+
+(** [mk_control()]
+   The default control information 
+*)
+    let mk_control ()= mk_cntrl 50 50 [] [] 
+
 (* simplifier actions:
 
    simple actions (no conditional rewrites):
@@ -166,7 +201,7 @@ module Simplifier =
 	  Logic.Rules.copy_asm_info info 
 	    (Logic.tag_to_index tg (Logic.get_sqnt g)) g
 
-    let prep_cond_tac values thm g =
+    let prep_cond_tac cntrl values thm g =
       let info = ref (Logic.Rules.make_tag_record [] [] [])
       in
       try 
@@ -187,7 +222,9 @@ module Simplifier =
 	  get_one (!info).Logic.Rules.forms (Failure
 					       "prep_cond_tac: forms")
 	in 
-	([cgltg;rgltg], [cftg; rrftg], g3)
+	let ncntrl= cntrl_add_asm cntrl rrftg
+	in 
+	(ncntrl, [cgltg;rgltg], [cftg; rrftg], g3)
       with _ -> raise No_change
 
 (** 
@@ -203,14 +240,14 @@ module Simplifier =
    Return RRInfo of the theorem/assumption to use as i rewriting
    and new goal.
 *)
-
-    let rec prove_cond_rule tac values entry g = 
+    let rec prove_cond_rule cntrl tac values entry g = 
       let (qs, cnd, _, _, thm)=entry
       in 
       match cnd with
-	None -> (thm, g)
+	None -> (cntrl, thm, g)
       | Some(cd) -> 
-	  let (glinfo, forminfo, ng)=prep_cond_tac values thm g
+	  let (ncntrl, glinfo, forminfo, ng)=
+	    prep_cond_tac cntrl values thm g
 	  in 
 	  let (cgltg, rgltg)=
 	    get_two glinfo (Failure "prove_cond_rule: 1")
@@ -219,11 +256,14 @@ module Simplifier =
 	  in 
 	  let ng1=Logic.goal_focus cgltg ng
 	  in 
-	  let ng2= try (tac cftg ng1) with _ -> ng1
+	  let ng2= 
+	    try 
+	      (tac ncntrl cftg ng1) 
+	    with _ -> ng1
 	  in 
 	  if(sqnt_solved cgltg ng2)
 	  then 
-	    (Logic.Tagged(rftg), ng2)
+	    (ncntrl, Logic.Tagged(rftg), ng2)
 	  else raise No_change
 
 (*
@@ -246,11 +286,12 @@ module Simplifier =
 
    returns rewritten term, matched rules and new goal.
 *)
-
-    let find_basic scp tyenv tac rl trm g=
+    let find_basic cntrl tyenv tac rl trm g=
 	let (qs, c, lhs, rhs, thm)=rl
 	in 
 	let tenv=Term.empty_subst()
+	in 
+	let scp=Logic.scope_of (Logic.get_sqnt g)
 	in 
 	let (ntyenv, ntenv, nt)=
 	  match_rewrite scp tyenv tenv
@@ -258,9 +299,9 @@ module Simplifier =
 	in 
 	let values=make_consts qs ntenv
 	in 
-	let (rr, ng)=prove_cond_rule tac values rl g
+	let (ncntrl, rr, ng)=prove_cond_rule cntrl tac values rl g
 	in 
-	(nt, rr, ng)
+	(ncntrl, nt, rr, ng)
 
 (** [find_match scp tyenv rslt set tac trm g]
    Find rule in simpset [set] which match term [trm] in goal [g].
@@ -271,13 +312,13 @@ module Simplifier =
    returns rewritten term, matching rule and new goal.
    raise No_change if no matches.
 *)
-      let find_match scp tyenv rslt set tac trm goal=
+      let find_match cntrl tyenv set tac trm goal=
 	let rec find_aux rls t g= 
 	  match rls with
 	    [] -> raise No_change
 	  | (rl::nxt) ->
 	      try 
-		find_basic scp tyenv tac rl t g
+		find_basic cntrl tyenv tac rl t g
 	      with _ -> find_aux nxt t g
 	in 
 	find_aux (lookup set trm) trm goal
@@ -290,25 +331,23 @@ module Simplifier =
    puts matched rules into rslt
    returns rewritten term, matched rules and new goal.
 *)
-      let rec find_all_matches scp tyenv rslt set tac trm goal=
+      let rec find_all_matches cntrl tyenv set tac trm goal=
 	let chng = ref false
 	in 
-	let rec find_aux t g= 
+	let rec find_aux c t g= 
 	  try 
-	    (let (nt, nr, ng)=
-	      find_match scp tyenv rslt set tac t g
+	    (let (ncntrl, nt, nr, ng)=
+	      find_match c tyenv set tac t g
 	    in 
 	    chng:=true;
-	    rslt:=nr::(!rslt);
-	    find_aux nt ng)
-	  with _ -> (t, g)
+	    find_aux (cntrl_add_rule cntrl nr) nt ng)
+	  with _ -> (c, t, g)
 	in 
-	let (nt, ng)=find_aux trm goal
+	let (nc, nt, ng)=find_aux cntrl trm goal
 	in 
 	if(!chng)
-	then (nt, ng)
+	then (nc, nt, ng)
 	else raise No_change
-
 
 (* simp_tac: toplevel for simplifier
 
@@ -317,22 +356,17 @@ module Simplifier =
    where ft is tag of formula to work on
    and st is tag of sequent to work on
  *)
-
     let is_true t = Term.is_true t
 
-    let rec basic_simp_tac set ft goal=
-      let tac tg g=
+    let rec basic_simp_tac cntrl set ft goal=
+      let tac ctrl tg g=
 	Tactics.orl
 	  [Tactics.thenl
-	     [basic_simp_tac set tg;
+	     [basic_simp_tac ctrl set tg;
 	      Logic.Rules.trueR_full None (Logic.FTag tg)];
 	   Logic.Rules.trueR_full None (Logic.FTag tg)] g
       in 
       let sqnt=Logic.get_sqnt goal
-      in 
-      let goal_scope g = Logic.scope_of (Logic.get_sqnt g)
-      in 
-      let rslt=ref[]
       in 
       let chng=ref false
       in 
@@ -344,36 +378,34 @@ module Simplifier =
    as rewrites are found
 *)
       in 
-      let rec find_rrs t g=
+      let rec find_rrs ctrl t g=
 	match t with
 	  Term.Qnt(q, b) -> 
-	    (let nb, bg = find_rrs b g
+	    (let (bcntrl, nb, bg) = find_rrs ctrl b g
 	    in 
 	    try 
-	      find_all_matches 
-		 (goal_scope bg) tyenv rslt set tac (Qnt(q, nb)) bg
-	    with No_change -> (Qnt(q, nb), bg))
-	| Term.Typed(tt, ty) -> find_rrs tt g
+	      find_all_matches bcntrl tyenv set tac (Qnt(q, nb)) bg
+	    with No_change -> (bcntrl, Qnt(q, nb), bg))
+	| Term.Typed(tt, ty) -> find_rrs ctrl tt g
 	| Term.App(f, a)->
-	    (let nf, nfg = (find_rrs f g)
+	    (let (fcntrl, nf, nfg) = (find_rrs ctrl f g)
 	    in 
-	    let na, nag= (find_rrs a nfg)
+	    let (acntrl, na, nag)= (find_rrs fcntrl a nfg)
 	    in 
 	    try 
-	      find_all_matches 
-		 (goal_scope nag) tyenv rslt set tac (Term.App(nf, na)) nag
-	    with No_change -> (App(nf, na), nag))
+	      find_all_matches acntrl tyenv set tac (App(nf, na)) nag
+	    with No_change -> (acntrl, App(nf, na), nag))
 	| _ -> 
 	    (try 
-	      find_all_matches (goal_scope g) tyenv rslt set tac t g
-	    with No_change -> (t, g))
+	      find_all_matches ctrl tyenv set tac t g
+	    with No_change -> (ctrl, t, g))
       in
       let trm=
 	Formula.dest_form(Logic.drop_tag(Logic.get_tagged_form ft sqnt))
       in 
-      let (ntrm, ngoal)= find_rrs trm goal
+      let (ncntrl, ntrm, ngoal)= find_rrs cntrl trm goal
       in 
-      let rrs=List.rev (!rslt)
+      let rrs=List.rev (ncntrl.rules)
       in 
       if rrs=[]
       then raise No_change
@@ -382,10 +414,11 @@ module Simplifier =
 	  Logic.Rules.rewrite_any rrs (Logic.tag_to_index ft sqnt) ngoal
 	with _ -> raise No_change)
 
-(* 
+(*
    initial flatten
    flatten a goal, try to prove trivial (true/false) facts
  *)
+
 
 (*
    let initial_flatten ft g=
@@ -550,7 +583,7 @@ module Simplifier =
       in 
       let tg=Logic.index_to_tag i (Logic.get_sqnt gl)
       in 
-      basic_simp_tac (!simp_set) tg gl
+      basic_simp_tac cntrl (!simp_set) tg gl
 
  end
 

@@ -153,6 +153,17 @@ let replace_rl i j =
   (Logic.Rules.rewrite ~dir:false [i] j)
 
 
+
+let get_one ls err=
+  match ls with
+    x::_ -> x
+  | _ -> raise err
+	
+let get_two ls err=
+  match ls with
+    x::y::_ -> (x, y)
+  | _ -> raise err
+
 (* tacticals *)
 
 type tactical =  tactic 

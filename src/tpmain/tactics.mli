@@ -22,7 +22,6 @@ val postpone: tactic
 val cut : Logic.thm -> tactic
 val unify_tac : int -> int -> tactic
 
-
 (*
    [lift id sqnt]
    Move assumption/conclusion with identifier [id] to 
@@ -68,6 +67,42 @@ val replace_rl: int -> int -> tactic
 (* delete assumption or conclusion *)
 val delete: int -> tactic 
 
+(** [get_one l e] 
+   get single element of list [l].
+   raise exception [e] if length of [l] ~= 1
+*)
+val get_one : 'a list -> exn -> 'a
+
+(** [get_two l e] 
+   get both elements of list [l].
+   raise exception [e] if length of [l] ~= s
+*)
+val get_two : 'a list -> exn -> ('a * 'a)
+
+(*
+(** Cases tactic *)
+
+(** [get_case_thm]
+   get boolean cases theorem
+*)
+    val get_case_thm : unit -> Logic.thm
+
+(** [cases_tac_info_tac t]
+   introduce cases of [t] into goal.
+   creates new subgoal in which to prove [x]
+
+   g|asm |- cncl      
+   --> 
+   g'|asm |- t:x, cncl, g| t:x, asm |- cncl 
+
+   info: [g', g] [t] []
+ *)
+    val cases_info_tac :
+      Logic.Rules.tag_info option -> Term.term -> Logic.goal -> Logic.goal
+    val cases_tac: 
+      Term.term -> Logic.goal -> Logic.goal
+
+*)
 (* tacticals *)
 
 type tactical = tactic 

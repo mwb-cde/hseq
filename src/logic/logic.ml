@@ -1402,51 +1402,30 @@ module Rules=
    info: [] []
  *)
 
-(*
-   let unify0 inf i j tyenv sq = 
-   let scp = scope_of sq
-   and (_, asm) = get_asm i sq
-   and (_, cncl) = get_cncl j sq
-   in 
-   try
-   ((ignore(Formula.unify_env scp tyenv asm cncl); 
-   do_tag_info inf [] [] [];
-   raise No_subgoals)) 
-   with x -> 
-   try
-   ((ignore(Formula.alpha_convp scp asm cncl); 
-   do_tag_info inf [] [] [];
-   raise No_subgoals)) 
-   with x->
-   raise (Result.catchError
-   (mklogicError "Can't unify assumption with conclusion"
-   [sqnt_form (get_asm i sq); 
-   sqnt_form (get_cncl j sq)]) x)
- *)
 
     let unify0 inf i j tyenv sq = 
       let scp = scope_of sq
       and (_, asm) = get_asm i sq
       and (_, cncl) = get_cncl j sq
       in 
-      try
-	let (ntyenv, _) = Formula.unify_env scp tyenv asm cncl
-	in 
-	let gtyenv = Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv 
-	in 
-	do_tag_info inf [] [] [];
-	raise (Solved_subgoal ntyenv)
-      with x -> 
-	try
-	  (ignore(Formula.alpha_convp scp asm cncl); 
-	   do_tag_info inf [] [] [];
-	   raise (Solved_subgoal tyenv))
-	with x->
-	  raise (Result.catchError
-		   (mklogicError "Can't unify assumption with conclusion"
-		      [sqnt_form (get_asm i sq); 
-		       sqnt_form (get_cncl j sq)]) x)
-	    
+      let (unify_rslt, gtyenv)=
+	(try 
+	  let (ntyenv, _) = Formula.unify_env scp tyenv asm cncl
+	  in 
+	  (true,  Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv )
+	with _ -> (false, tyenv))
+      in 
+      if(unify_rslt)
+      then (do_tag_info inf [] [] []; raise (Solved_subgoal gtyenv))
+      else 
+	if(Formula.alpha_convp scp asm cncl)
+	then 
+	  (do_tag_info inf [] [] []; raise (Solved_subgoal tyenv))
+	else 
+	  (raise (logicError "Can't unify assumption with conclusion"
+		    [sqnt_form (get_asm i sq); 
+		     sqnt_form (get_cncl j sq)]))
+
     let unify i j sqnt = sqnt_apply (unify0 None i j) sqnt
     let unify_info inf i j sqnt = 
       sqnt_apply (unify0 (Some inf) i j) sqnt

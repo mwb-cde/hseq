@@ -17,7 +17,7 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
    in more than one sequent. If x is bound in one sequent, it must
    be have that binding in every sequent in which it occurs. (Like 
    week types in ML)
-*)
+ *)
 
 (* representation of types *)
 type gtype = 
@@ -78,8 +78,8 @@ val from_save_rec: stypedef_record -> typedef_record
 val equals: gtype -> gtype -> bool
 
 (* renamed to equals
-val equality: gtype -> gtype -> bool
-*)
+   val equality: gtype -> gtype -> bool
+ *)
 
 val safe_equal: gtype -> gtype -> bool
 
@@ -117,12 +117,12 @@ val is_base : gtype  -> bool
 val is_weak : gtype -> bool
 
 (*
-renamed:
-val varp : gtype -> bool  to is_var 
-val constrp : gtype  -> bool to is_constr 
-val basep : gtype  -> bool to is_base
-val weakp : gtype -> bool to is_weak
-*)
+   renamed:
+   val varp : gtype -> bool  to is_var 
+   val constrp : gtype  -> bool to is_constr 
+   val basep : gtype  -> bool to is_base
+   val weakp : gtype -> bool to is_weak
+ *)
 
 (* compare types *)
 
@@ -130,7 +130,7 @@ val weakp : gtype -> bool to is_weak
    val eqvar : gtype -> gtype -> bool 
    val eqbase : gtype -> gtype -> bool
    val eqconstr : gtype -> gtype -> bool
-*)
+ *)
 
 (* destruct function type *)
 val arg_type : gtype -> gtype
@@ -214,7 +214,7 @@ val unify_env : scope -> gtype -> gtype
    unify_env sc (copy_type l) r s
    this function is used for rewriting with multiple terms.
    Defunct: use unify_for_rewrite
-*)
+ *)
 
 val unify_env_unique_left:  scope -> gtype -> gtype 
   -> substitution -> substitution 
@@ -254,9 +254,9 @@ val lookup : gtype -> substitution -> gtype
    [extract_bindings vars src dst]
    extract bindings variables in [var] from 
    [src] substitution, store them in [dst] substitution 
-*)
+ *)
 val extract_bindings: gtype list -> substitution -> substitution 
-    -> substitution
+  -> substitution
 
 (* check_defn l r: test defintion of l as alias for r *)
 (* check_decln l: consistency check on declaration of type l *) 
@@ -275,7 +275,7 @@ val get_defn : scope -> gtype -> gtype
    test [ty] for well-definednes.
    every constructor occuring in [ty] must be defined.
    weak variables are not permitted in [ty]
-*)
+ *)
 val well_defined : scope -> ?args: (string)list -> gtype -> unit
 
 (* 
@@ -285,7 +285,7 @@ val well_defined : scope -> ?args: (string)list -> gtype -> unit
 
    [tbl] is memo of found constructors (and the number of their
    parameters
-*)
+ *)
 val quick_well_defined : scope -> 
   (ident *int, bool) Hashtbl.t -> gtype -> unit
 
@@ -303,11 +303,12 @@ val addtypeError : string ->gtype list -> exn -> 'a
 (* pretty printer *)
 
 (*
-val print_type_info : Basic.PP.info -> int -> gtype -> unit
-val print_type : Basic.PP.info -> gtype -> unit
+   val print_type_info : Basic.PP.info -> int -> gtype -> unit
+   val print_type : Basic.PP.info -> gtype -> unit
 *)
 
 val print_type_info : Printer.info -> int -> gtype -> unit
+
 (* print_type renamed to print *)
 val print : Printer.info -> gtype -> unit
 
