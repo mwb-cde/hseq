@@ -8,8 +8,7 @@ module type TreeData =
     val equals : key -> key -> bool
   end
 
-(* Standard Trees *)
-module Tree :
+module type TreeType=
 functor (A : TreeData) ->
   sig
 
@@ -109,9 +108,12 @@ functor (A : TreeData) ->
 
   end
 
+(* Standard Trees *)
+module Tree : TreeType
+
 (* BTree: balanced lookup trees *)
 
-module BTree :
+module type BTreeType=
 functor (A : TreeData) ->
   sig
     val eql : 'a -> 'a -> bool
@@ -222,3 +224,5 @@ functor (A : TreeData) ->
  *)
     val to_list: 'a t -> (A.key * 'a) list list
   end
+
+module BTree : BTreeType
