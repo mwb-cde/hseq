@@ -340,19 +340,23 @@ let eta_conv scp f ty x =
 
 (* Rewriting: normal rewrite followed by check for close_term *)
 
-let rewrite scp ?(dir=true) rrs t = 
-  let nt = Rewrite.rewrite_univs ~dir:dir scp rrs t
+let rewrite scp ?(dir=Rewrite.leftright) rrs t = 
+  let nt = 
+    Rewrite.rewrite
+      (Rewrite.control scp ~dir:dir) rrs t
   in 
   form_of_term scp nt
 
-let rewrite_simple scp ?(dir=true) rrs t = 
-  let nt = Rewrite.rewrite_univs ~dir:dir ~simple:true scp rrs t
+let rewrite_simple scp ?(dir=Rewrite.leftright) rrs t = 
+  let nt = Rewrite.rewrite
+      (Rewrite.control ~dir:dir scp) rrs t
   in 
   form_of_term scp nt
 
-let rewrite_env scp ?(dir=true) tyenv rrs t = 
+let rewrite_env scp ?(dir=Rewrite.leftright) tyenv rrs t = 
   let nt, ntyenv = 
-    Rewrite.rewrite_univs_env ~dir:dir scp tyenv rrs t
+    Rewrite.rewrite_env 
+      (Rewrite.control ~dir:dir scp) tyenv rrs t
   in 
   (form_of_term scp nt, ntyenv)
 
@@ -395,16 +399,19 @@ let add scp dir fs (t, net) =
 
   in nnet
 
+(*
 let rewrite_net scp  rrnet f =
-  let nt = Rewrite.rewrite_net scp (Rewrite.Net_rr rrnet) (term_of_form f)
+  let nt = 
+    Rewrite.rewrite_net (Rewrite.control scp)
+      (Rewrite.Net_rr rrnet) (term_of_form f)
   in form_of_term scp nt
 
 let rewrite_net_env scp tyenv rrnet f =
   let nt, ntyenv = 
-    Rewrite.rewrite_net_env scp tyenv 
+    Rewrite.rewrite_net_env (Rewrite.control scp) tyenv 
       (Rewrite.Net_rr rrnet) (term_of_form f)
   in (form_of_term scp nt, ntyenv)
-
+*)
 
 (*    let print_formlist = Term.print_termlist*)
 let print inf x = Term.print inf (term_of_form x)

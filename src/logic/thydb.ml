@@ -16,7 +16,7 @@ let imported th thdb = List.mem th thdb.importing
 let is_loaded name thdb = 
   Lib.member name thdb.db
 
-let addthy thdb thy = 
+let add_thy thdb thy = 
   let name = Theory.get_name thy
   in 
   if is_loaded name thdb
@@ -28,8 +28,8 @@ let remove_thy thdb n=
   then raise (Result.error ("Theory "^n^" is current theory"))
   else Hashtbl.remove thdb.db n
 
-let getthy thdb name = Lib.find name thdb.db
-let get_parents thdb s = Theory.get_parents (getthy thdb s)
+let get_thy thdb name = Lib.find name thdb.db
+let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
 
 let rec filter p xs =
@@ -43,7 +43,7 @@ let add_importing ls thdb =
 
 let setcur thdb name = 
   try
-    thdb.curr<- (getthy thdb name); 
+    thdb.curr<- (get_thy thdb name); 
     thdb.importing<-[name];
     thdb
   with Not_found -> raise (Result.error ("Can' find theory "^name))
@@ -53,13 +53,14 @@ let setcur_thy thdb thy =
   thdb.importing<-[Theory.get_name thy];
   if is_loaded (Theory.get_name thy)  thdb
   then thdb 
-  else (ignore(addthy thdb thy); thdb)
+  else (ignore(add_thy thdb thy); thdb)
 
 let load_theory thdb name prot thfn filefn =
   let test_date tim thy = 
     if (Theory.get_date thy)<tim then () 
     else raise (Result.error 
-      	("Imported theory "^(Theory.get_name thy)^" is more recent than "
+      	("Imported theory "^(Theory.get_name thy)
+	 ^" is more recent than "
 	 ^" its importing theory"))
   and test_protection thy =
     if prot 
@@ -78,7 +79,7 @@ let load_theory thdb name prot thfn filefn =
 	else 
 	  (if is_loaded x thdb
 	  then 
-	    (let thy = getthy thdb x 
+	    (let thy = get_thy thdb x 
 	    in 
 	    test_protection thy;
 	    test_date tim thy;
@@ -90,7 +91,7 @@ let load_theory thdb name prot thfn filefn =
 	    in 
 	    test_protection thy;
 	    test_date tim thy; 
-	    ignore(addthy thdb thy); 
+	    ignore(add_thy thdb thy); 
 	    thfn thy;
 	    load_aux tim xs 
 	      (load_aux (Theory.get_date thy)
@@ -98,7 +99,7 @@ let load_theory thdb name prot thfn filefn =
   in 
   (if is_loaded name thdb
   then 
-    (let thy=getthy thdb name
+    (let thy=get_thy thdb name
     in 
     test_protection thy;
     let imprts = 
@@ -109,7 +110,7 @@ let load_theory thdb name prot thfn filefn =
     (let thy = Theory.load_theory (filefn name)
     in 
     (test_protection thy; 
-     ignore(addthy thdb thy);
+     ignore(add_thy thdb thy);
      thfn thy;
      (let imprts = 
        (load_aux (Theory.get_date thy)
@@ -185,13 +186,13 @@ let find f tdb =
     match ls with 
       [] -> raise Importing
     | x::xs ->
-	try f (getthy tdb x)
+	try f (get_thy tdb x)
 	with Not_found -> find_aux xs
   in find_aux tdb.importing
 
 let quick_find f th tdb =
   if imported th tdb
-  then f (getthy tdb th)
+  then f (get_thy tdb th)
   else raise Not_found
 
 let find_apply f tdb=
@@ -318,13 +319,12 @@ let find_to_apply memo f thy_name thdb =
 	if Lib.member n memo 
 	then find_aux ns
 	else 
-	  (let th = getthy thdb n
+	  (let th = get_thy thdb n
 	  in 
 	  (ignore(Lib.add n true memo);
 	   try f th
 	   with _ -> find_aux (get_parents thdb n)))
   in find_aux [thy_name]
-
 
 let thy_in_scope th1 th2 thdb =   (* true if th2 is in scope of th1 *)
   let memo = empty_memo()
@@ -334,7 +334,6 @@ let thy_in_scope th1 th2 thdb =   (* true if th2 is in scope of th1 *)
     else raise Not_found
   in try (find_to_apply memo is_in_scope th1 thdb; true)
   with Not_found -> false
-
 
 let thy_of name th thdb =
   let is_thy_of thy =

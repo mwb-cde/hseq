@@ -1,11 +1,9 @@
 (* theorems and rules of the logic *)
 (* rules are based on a sequent calculus *)
 
-
 (* theorems of the logic *)
 type thm
 type saved_thm
-
 
 (* sequents and goals of the sequent calculus *)
 
@@ -23,17 +21,6 @@ type rule= goal -> goal
 (* conversion: a function from a theorem to one or more theorems *)
 type conv= thm list -> thm list
 
-(*
-   rr_type: where to get rewrite rule from
-   Asm : numbered assumption
-   Tagged: tagged assumption
-   RRThm: given theorem
- *)
-
-type rr_type = 
-    Asm of int 
-  | Tagged of Tag.t
-  | RRThm of thm
 
 (* fident: sequent formula identifiers *)
 
@@ -42,8 +29,21 @@ type fident =
   | FTag of Tag.t
 
 val fident_to_tag: fident -> sqnt -> Tag.t
+val fident_to_index: fident -> sqnt -> int
 
-(* cdefn:
+
+(*
+   rr_type: where to get rewrite rule from
+   Asm : numbered assumption
+   Tagged: tagged assumption
+   RRThm: given theorem
+ *)
+type rr_type = 
+    Asm of fident
+  | RRThm of thm
+
+(* 
+   cdefn:
    Checked Definitions: 
    checking of type and term definitions and declarations
  *)
@@ -53,14 +53,13 @@ type cdefn =
   | TermDef of Basic.ident * Basic.gtype
 	* (string*Basic.gtype) list * thm option
 	
-(* theorem destructors  and constructors *)
+(* theorem destructors and constructors *)
 (* (axioms do not need to be proved) *)
 
 val mk_axiom : Formula.form -> thm
 
 val dest_thm : thm -> Formula.form
 val string_thm: thm -> string
-
 val to_save: thm -> saved_thm
 val from_save: saved_thm -> thm
 
@@ -102,11 +101,15 @@ val get_tagged_asm : Tag.t -> sqnt -> tagged_form
 val get_tagged_cncl : Tag.t -> sqnt -> tagged_form
 val get_tagged_form: Tag.t -> sqnt -> tagged_form
 
+(* get tagged assumptions/conclusions *)
+val get_fident_asm : fident -> sqnt -> tagged_form
+val get_fident_cncl : fident -> sqnt -> tagged_form
+val get_fident_form: fident -> sqnt -> tagged_form
+
 (* assumption/conclusion tag <-> index *)
 
 val tag_to_index : Tag.t -> sqnt -> int
 val index_to_tag : int -> sqnt -> Tag.t 
-
 
 (* manipulation of subgoals *)
 
@@ -117,7 +120,8 @@ val goal_tyenv: goal -> Gtypes.substitution
 
 (* get tags of all subgoals *)
 val get_all_goal_tags: goal -> Tag.t list
-(* get tag of first subgoals *)
+
+(* get tag of first subgoal *)
 val get_goal_tag: goal -> Tag.t
 
 (* make a goal from a formula  *)
@@ -137,11 +141,10 @@ val get_goal : goal -> Formula.form
 (* put the tagged sqnt at the front, raise Not_found if not found *)
 val goal_focus: Tag.t->rule
 
-(* 
+(**
    [mk_goal scp f]
    Make formula [f] a goal to be proved in scope [scp] 
  *)
-
 val mk_goal : Gtypes.scope -> Formula.form -> goal
 
 (* make a theorem from an established goal *)
@@ -157,35 +160,38 @@ val addlogicError : string -> Formula.form list -> exn -> 'a
 (* Printing *)
 val print_thm: Printer.ppinfo -> thm -> unit
 
-module Rules:
-    sig
-
-(* apply a rule to a goal *)
-      val goal_apply : rule -> goal -> goal
-      val goal_postpone: goal -> goal
-      val postpone :  goal -> goal
-
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
 (* forms: new forms produced by rule *)
 (* terms: new constants produced by rule *)
-      type tag_record = 
-	  { 
-	    goals:Tag.t list; 
-	    forms : Tag.t list;
-	    terms: Basic.term list
-	  }
-      type tag_info = tag_record ref
+type tag_record = 
+    { 
+      goals:Tag.t list; 
+      forms : Tag.t list;
+      terms: Basic.term list
+    }
+type info = tag_record ref
 
-      val make_tag_record: 
-	  Tag.t list 
-	-> Tag.t list 
-	  -> Basic.term list 
-	    -> tag_record
+val make_tag_record: 
+    Tag.t list 
+  -> Tag.t list 
+    -> Basic.term list 
+      -> tag_record
 
-      val do_tag_info: 
-	  tag_info option ->
-	    Tag.t list-> Tag.t list -> Basic.term list -> unit
+val do_info: 
+    info option ->
+      Tag.t list-> Tag.t list -> Basic.term list -> unit
+
+val add_info: 
+    info option ->
+      Tag.t list-> Tag.t list -> Basic.term list -> unit
+
+module Rules:
+    sig
+
+(* apply a rule to a goal *)
+(*      val goal_apply : rule -> goal -> goal *)
+      val postpone :  goal -> goal
 
 
 (*
@@ -199,77 +205,60 @@ module Rules:
    assumptions/conclusions.
 
    [lift] tries lift_asm then tries lift_concl.
+   Doesn't change the formula tag.
  *)
-      val lift_asm : fident -> rule
-      val lift_concl : fident -> rule
-      val lift : fident -> rule
-
+      val lift_asm : info option -> fident -> rule
+      val lift_concl : info option -> fident -> rule
+      val lift : info option -> fident -> rule
 
 (* copy_asm i: 
    .., Ai, ..|- C
    ->
-   .., Ai, Ai, .. |- C*)
-
-      val copy_asm : int -> rule
-      val copy_asm_info : tag_info -> int -> rule
-      val copy_asm_full : tag_info option -> fident -> rule
+   .., Ai, Ai, .. |- C
+ *)
+      val copy_asm : info option -> fident -> rule
 
 (* copy_cncl i: 
    A|- .., Ci, ..
    ->
-   A|- .., Ci, Ci, ..*)
-
-      val copy_cncl : int -> rule
-      val copy_cncl_info : tag_info -> int -> rule
-      val copy_cncl_full : tag_info option -> fident -> rule
+   A|- .., Ci, Ci, ..
+ *)
+      val copy_cncl : info option -> fident -> rule
 
 (* rotate assumptions conclusions *)
 
 (* rotate_asm
    A1, A2 .., An |-
    ->
-   A2, .., An, A1 |-*)
-
-      val rotate_asms: rule
-      val rotate_asms_info: tag_info -> rule
+   A2, .., An, A1 |-
+ *)
+      val rotate_asms: info option -> rule
 
 (* rotate_cncls:
    A|- C1, C2 .., Cn
    ->
-   A|-  C2, .., Cn, C1*)
-
-      val rotate_cncls : rule
-      val rotate_cncls_info : tag_info -> rule
+   A|-  C2, .., Cn, C1
+ *)
+      val rotate_cncls : info option -> rule
 
 (* logic rules  *)
 
 (* delete x sq: delete assumption (x<0) or conclusion (x>0) from sq*)
-      val delete : int -> rule
-      val delete_info : tag_info -> int -> rule
-      val delete_full : tag_info option -> fident -> rule
+      val delete : info option -> fident -> rule
 
 (* cut x sq: adds theorem x to assumptions of sq 
 
    asm |- cncl      --> x, asm |- cncl
  *)
+      val cut : info option -> thm -> rule
 
-      val cut : thm -> rule
-      val cut_info : tag_info -> thm -> rule
-
-      val cut_full : tag_info option -> thm -> rule
-
-(* unify i j sq: if asm i unifies  with cncl j of sq, 
-   then result is the theorem concl j 
+(* assume i j sq: if asm i is alpha-equal to cncl j of sq, 
 
    asm, a_{i}, asm' |- concl, c_{j}, concl' 
    -->
    true if a_{i}=c_{j}
  *)
-
-      val unify : int -> int -> rule
-      val unify_info : tag_info -> int -> int -> rule
-
-      val unify_full : tag_info option -> fident -> fident -> rule
+      val assume : info option -> fident -> fident -> rule
 
 (* 
    conjI i sq: 
@@ -278,11 +267,7 @@ module Rules:
    asm |- a                tag(t1)
    and asm |- b            tag(t2)
  *)
-
-      val conjI: int -> rule
-      val conjI_info: tag_info -> int -> rule
-
-      val conjI_full: tag_info option -> fident -> rule
+      val conjI: info option -> fident -> rule
 
 (* 
    conjE i sq: 
@@ -290,10 +275,7 @@ module Rules:
    -->
    a, b, asm |- concl 
  *)
-
-      val conjE: int -> rule
-      val conjE_info: tag_info -> int -> rule
-      val conjE_full: tag_info option -> fident -> rule
+      val conjE: info option -> fident -> rule
 
 (*
    disjI i sq: 
@@ -302,49 +284,35 @@ module Rules:
    a, asm |- concl      tag(t1)
    and b, asm |- concl  tag(t2)
  *)
-
-      val disjI: int -> rule
-      val disjI_info: tag_info -> int -> rule
-      val disjI_full: tag_info option -> fident -> rule
+      val disjI: info option -> fident -> rule
 
 (* disjE i sq: 
    asm |- a\/b, concl   
    -->
-   asm |- a, b, concl *)
-
-      val disjE: int -> rule
-      val disjE_info: tag_info -> int -> rule
-      val disjE_full: tag_info option -> fident -> rule
+   asm |- a, b, concl 
+ *)
+      val disjE: info option -> fident -> rule
 
 (* negA i sq:
    ~a, asms |- concl
    -->
    asms |- a, concl
  *)
-
-      val negA: int -> rule
-      val negA_info: tag_info -> int -> rule
-      val negA_full: tag_info option-> fident -> rule
+      val negA: info option-> fident -> rule
 
 (* negC i sq:
    asms |- ~c, concl
    -->
    c, asms |- concl
  *)
-
-      val negC: int -> rule
-      val negC_info: tag_info -> int -> rule
-      val negC_full: tag_info option -> fident -> rule
+      val negC: info option -> fident -> rule
 
 (* implI i sq
    asms |- a-> b, cncl 
    -->
    a, asms |- b, cncl
  *)
-
-      val implI: int -> rule
-      val implI_info: tag_info -> int -> rule
-      val implI_full: tag_info option -> fident -> rule
+      val implI: info option -> fident -> rule
 
 (* implE i sq
    a-> b,asms |-cncl  tag(t)
@@ -353,63 +321,45 @@ module Rules:
    and 
    b, asms |- cncl    tag(t2)
  *)
-
-      val implE: int -> rule
-      val implE_info: tag_info -> int -> rule
-      val implE_full: tag_info option -> fident -> rule
+      val implE: info option -> fident -> rule
 
 (* allI i sq
    asm |- !x. P(c), concl
    -->
    asm |- P(c'), concl   where c' is a new identifier
  *)
-
-      val allI : int -> rule
-      val allI_info : tag_info -> int -> rule
-      val allI_full : tag_info option -> fident -> rule
+      val allI : info option -> fident -> rule
 
 (* allE i sq
    !x. P(c), asm |-  concl
    -->
    P(c'), asm |- concl   where c' is a given term
  *)
-
-      val allE : Basic.term -> int -> rule
-      val allE_info : tag_info -> Basic.term -> int -> rule
-      val allE_full : tag_info option -> Basic.term -> fident -> rule
+      val allE : info option -> Basic.term -> fident -> rule
 
 (* existI i sq
    ?x. P(c), asm |- concl
    -->
    P(c'), asm |- concl   where c' is a new identifier
  *)
-      val existI : int -> rule
-      val existI_info : tag_info -> int -> rule
-      val existI_full : tag_info option -> fident -> rule
+      val existI : info option -> fident -> rule
 
 (* existE i sq
    asm |- ?x. P(c), concl
    -->
    asm |- P(c'), concl   where c' is a given term
  *)
-
-      val existE : Basic.term -> int -> rule
-      val existE_info : tag_info -> Basic.term -> int -> rule
-      val existE_full : tag_info option  -> Basic.term -> fident -> rule
+      val existE : info option  -> Basic.term -> fident -> rule
 
 
 (* beta i sq:  (beta reduction of asm (i<0) or concl (i>0) in sq) *)
-      val beta: int -> rule
-      val beta_info : tag_info -> int -> rule
+      val beta : info option -> fident -> rule
 
 (* trueR i sq
    asm |- true, concl
    --> true
  *)
-
-      val trueR: int -> rule
-      val trueR_info: tag_info -> int -> rule
-      val trueR_full: tag_info option -> fident -> rule
+      val trueR: info option -> fident -> rule
 
 (* name_rule: introduce a new name in the sqnt as a synonym for a term  *)
 (* name id trm:
@@ -418,10 +368,7 @@ module Rules:
    the long name thy.id must be unique (where thy is the current theory name)
 
  *)
-
-      val name_rule: string -> Basic.term -> rule
-      val name_rule_info : tag_info -> string -> Basic.term -> rule
-      val name_rule_full : tag_info option -> string -> Basic.term -> rule
+      val name_rule : info option -> string -> Basic.term -> rule
 
 
 (* rewrite_any dir thms j sq:
@@ -433,35 +380,9 @@ module Rules:
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
  *)
-
-      val rewrite_any: ?dir:bool -> ?simple:bool -> rr_type list -> int -> rule
-      val rewrite_any_info : tag_info -> ?dir:bool -> ?simple:bool 
-	-> rr_type list -> int -> rule
-
-      val rewrite_any_full : tag_info option -> ?dir:bool -> ?simple:bool 
-	-> rr_type list -> fident -> rule
-
-(* rewrite dir i j  sq
-   x=y, asm |- P(x), concl
-   -->
-   x=y, asm |- P(y), concl
-   where dir is =true for right-left and false for left-right
- *)
-
-      val rewrite : ?dir:bool -> int list -> int -> rule
-      val rewrite_info : tag_info -> ?dir:bool -> int list -> int -> rule
-
-(* rewrite_thms dir thms j sq:
-   list of theorems containing x=y
-   asm |- P(x), concl
-   -->
-   asm |- P(y), concl
-   where dir is =true for right-left and false for left-right
-   theorems must be in scope.
- *)
-
-      val rewrite_thms: ?dir:bool -> thm list -> int -> rule
-      val rewrite_thms_info: tag_info -> ?dir:bool -> thm list -> int -> rule
+      val rewrite_any : info option 
+	-> ?dir:Rewrite.direction -> ?simple:bool 
+	  -> rr_type list -> fident -> rule
 
     end
 
@@ -483,7 +404,7 @@ module ThmRules:
 (* conversions which apply to all theorems in the list *)
 
 (* rewrite_conv: apply rewrite, fail if any rewrite fails *)
-      val rewrite_conv: Gtypes.scope -> ?dir:bool -> ?simple:bool
+      val rewrite_conv: Gtypes.scope -> ?dir:Rewrite.direction -> ?simple:bool
 	-> thm list -> thm -> thm
 
 (* rewriting with nets in subgoals in theorems *)

@@ -101,6 +101,7 @@ val dest_disj: form -> form list
 val is_implies : form -> bool
 val dest_implies: form -> form list
 
+
 val is_equals : form -> bool
 val dest_equals: form -> (form * form)
 
@@ -147,13 +148,13 @@ val beta_reduce : Gtypes.scope -> form -> form
 val eta_conv: Gtypes.scope -> form -> Basic.gtype -> form -> form
 
 (* rewriting *)
-val rewrite : Gtypes.scope -> ?dir:bool -> form list-> form -> form
-(*
-val rewrite_simple : Gtypes.scope -> ?dir:bool -> form list-> form -> form
-*)
+val rewrite : 
+Gtypes.scope -> ?dir:Rewrite.direction 
+  -> form list-> form -> form
+
 (* rewriting with a given type environment *)
 val rewrite_env : 
-    Gtypes.scope -> ?dir:bool 
+    Gtypes.scope -> ?dir:Rewrite.direction
       -> Gtypes.substitution 
 	-> form list-> form -> (form * Gtypes.substitution)
 (*
@@ -171,6 +172,7 @@ val rewrite_simple_env :
    val add: Gtypes.scope -> bool -> form list -> rulesDB -> rulesDB
  *)
 
+(*
 val rewrite_net : Gtypes.scope -> Rewrite.rewrite_rules Net.net 
   -> form -> form
 
@@ -178,6 +180,7 @@ val rewrite_net_env :
     Gtypes.scope -> Gtypes.substitution 
       -> Rewrite.rewrite_rules Net.net 
 	-> form -> (form * Gtypes.substitution)
+*)
 
 (* print a formula in a given PP state *)
 val print : Printer.ppinfo -> form -> unit 

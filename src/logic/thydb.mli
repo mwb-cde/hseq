@@ -22,9 +22,9 @@
     val is_loaded : string -> thydb -> bool
 
 (* add/remove/extract theories and their properties *)
-    val addthy : thydb -> Theory.thy -> Theory.thy
+    val add_thy : thydb -> Theory.thy -> Theory.thy
     val remove_thy : thydb -> string -> unit
-    val getthy : thydb -> string -> Theory.thy
+    val get_thy : thydb -> string -> Theory.thy
     val get_parents : thydb -> string -> string list
     val filter : ('a -> bool) -> 'a list -> 'a list
 
