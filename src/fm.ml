@@ -5,7 +5,7 @@
 ----*)
 
 (* 
-   Start up file loaded when the TP system starts.
+   Start up file loaded when the system starts.
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
