@@ -51,7 +51,38 @@ module Skolem:
 
     end
 
-type sqnt
+module Sequent:
+sig
+  type t
+
+(* information from a sequent *)
+
+val asms : t -> tagged_form list
+val concls : t -> tagged_form list
+val scope_of: t -> Gtypes.scope
+val sklm_cnsts: t -> Skolem.skolem_cnst list
+val sqnt_tyvars: t -> Basic.gtype list
+val sqnt_tag: t->Tag.t
+
+(* get/delete/copy particular assumptions/conclusions *)
+val get_asm : int -> t -> tagged_form
+val get_cncl : int -> t -> tagged_form
+
+val delete_asm : int -> tagged_form list  -> tagged_form list
+val delete_cncl : int -> tagged_form list  -> tagged_form list
+
+
+(* get tagged assumptions/conclusions *)
+val get_tagged_asm : Tag.t -> t -> tagged_form
+val get_tagged_cncl : Tag.t -> t -> tagged_form
+val get_tagged_form: Tag.t -> t -> tagged_form
+
+(* assumption/conclusion tag <-> index *)
+
+val tag_to_index : Tag.t -> t -> int
+val index_to_tag : int -> t -> Tag.t 
+
+end
 
 type goal
 type rule= goal -> goal 
@@ -59,15 +90,14 @@ type rule= goal -> goal
 (* conversion: a function from a theorem to one or more theorems *)
 type conv= thm list -> thm list
 
-
 (* label: sequent formula identifiers *)
 
 type label = 
     FNum of int
   | FTag of Tag.t
 
-val label_to_tag: label -> sqnt -> Tag.t
-val label_to_index: label -> sqnt -> int
+val label_to_tag: label -> Sequent.t -> Tag.t
+val label_to_index: label -> Sequent.t -> int
 
 
 (*
@@ -85,7 +115,6 @@ type rr_type =
    Checked Definitions: 
    checking of type and term definitions and declarations
  *)
-
 type cdefn =
     TypeDef of Basic.ident * string list * Basic.gtype option
   | TermDef of Basic.ident * Basic.gtype
@@ -107,52 +136,25 @@ val from_save: saved_thm -> thm
 val sqntError : string ->  exn
 val addsqntError : string -> exn -> 'a
 
-(* information from a sequent *)
-
-val asms : sqnt -> tagged_form list
-val concls : sqnt -> tagged_form list
-val scope_of: sqnt -> Gtypes.scope
-val sklm_cnsts: sqnt -> Skolem.skolem_cnst list
-val sqnt_tyvars: sqnt -> Basic.gtype list
-val sqnt_tag: sqnt->Tag.t
-
-(* get/delete/copy particular assumptions/conclusions *)
-val get_asm : int -> sqnt -> tagged_form
-val get_cncl : int -> sqnt -> tagged_form
-
-val delete_asm : int -> tagged_form list  -> tagged_form list
-val delete_cncl : int -> tagged_form list  -> tagged_form list
-
 (* tag of formula *)
-val tag_of_form: tagged_form -> Tag.t
+(* val tag_of_form: tagged_form -> Tag.t *)
+val form_tag: tagged_form -> Tag.t 
 val drop_tag: tagged_form -> Formula.form
 
 (* get tagged assumptions/conclusions *)
-val get_tagged_asm : Tag.t -> sqnt -> tagged_form
-val get_tagged_cncl : Tag.t -> sqnt -> tagged_form
-val get_tagged_form: Tag.t -> sqnt -> tagged_form
+val get_label_asm : label -> Sequent.t -> tagged_form
+val get_label_cncl : label -> Sequent.t -> tagged_form
+val get_label_form: label -> Sequent.t -> tagged_form
 
-(* get tagged assumptions/conclusions *)
-val get_label_asm : label -> sqnt -> tagged_form
-val get_label_cncl : label -> sqnt -> tagged_form
-val get_label_form: label -> sqnt -> tagged_form
-
-(* assumption/conclusion tag <-> index *)
-
-val tag_to_index : Tag.t -> sqnt -> int
-val index_to_tag : int -> sqnt -> Tag.t 
 
 (* manipulation of subgoals *)
 
 val has_subgoals: goal -> bool
-val get_sqnt:goal -> sqnt
+val get_sqnt:goal -> Sequent.t
 
 val goal_tyenv: goal -> Gtypes.substitution
 
 (* get tags of all subgoals *)
-(*
-val get_all_goal_tags: goal -> Tag.t list
-*)
 
 (* get tag of first subgoal *)
 val get_goal_tag: goal -> Tag.t
@@ -162,8 +164,8 @@ val get_goal_tag: goal -> Tag.t
 (* val num_of_subsqnts: goal -> int *)
 val num_of_subgoals: goal -> int
 
-val get_subgoals: goal -> sqnt list
-val get_nth_subgoal_sqnt: int -> goal-> sqnt
+val get_subgoals: goal -> Sequent.t list
+val get_nth_subgoal_sqnt: int -> goal-> Sequent.t
 val goal_has_subgoals: goal -> bool
 
 val get_subgoal_tags : goal -> Tag.t list
