@@ -70,9 +70,20 @@ val end_theory : ?save:bool -> unit -> unit
    [new_type <<:! t>>] declares type t, 
    [new_type <<:! ty1=ty2 >>] declares type ty1 as a synonym for ty2 
 *)
+(*
 val new_type :
     ?pp:(int*fixity*string option) 
     -> (string * string list * Basic.gtype option) -> unit
+*)
+
+val typedef:
+    ?pp:(int*fixity*string option) 
+    -> ?simp:bool
+      -> ?thm:Logic.thm
+	-> ?rep:string -> ?abs:string
+	-> Parser.typedef_data
+	-> Logic.cdefn
+
 
 (* [define ?simp term pp]
    full definition of an identifier:

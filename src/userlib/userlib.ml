@@ -28,7 +28,10 @@ let open_theory = Commands.open_theory
 let close_theory = Commands.close_theory
 let end_theory = Commands.end_theory
 
+(*
 let new_type=Commands.new_type
+*)
+let typedef=Commands.typedef
 
 let define ?pp ?(simp=false) df =
   let ret = Commands.define ?pp ~simp:simp df
