@@ -68,6 +68,7 @@ val string_of_token : tok -> string
 val match_tokens : tok -> tok -> bool
 
 val mk_ident : Basic.ident -> tok
+val mk_symbol : string -> tok
 
 type symbol_table=(string, tok)Hashtbl.t
 type symtable = (char * int Counter.t) list * symbol_table

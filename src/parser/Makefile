@@ -1,13 +1,12 @@
-INCLUDE= -I .. -I ../include 
+INCLUDE= -I .. -I ../include
 LIBDIR= 
 
 HEADERSDIR=../include
 INSTALLDIR=../libs
 
-OCLIBS=
+OCLIBS=-I +camlp4 camlp4o.cma q_MLast.cmo pa_extend.cmo 
 OPTLIBS=
-#OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
-OPTIONS=
+OPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4
 
 OCAMLC=ocamlc ${OPTIONS} 
 OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
@@ -37,7 +36,7 @@ OPTLIB=parser.cmxa
 .cmx.cmxa:
 	ocamlopt -a ${INCLUDE} $<
 
-HEADERS = lexer.cmi parser.cmi 
+HEADERS = lexer.cmi parser.cmi
 CODE = lexer.cmo parser.cmo 
 OPTCODE = lexers.cmx termlex.cmx termlexer.cmx parsers.cmx tparser.cmx
 

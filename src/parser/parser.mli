@@ -225,6 +225,9 @@ val add_type_token_info : Lexer.tok -> Grammars.token_info -> unit
 val add_token: Basic.ident -> string -> fixity -> int -> unit
 val add_type_token: Basic.ident -> string -> fixity -> int -> unit
 
+val remove_token : string -> unit
+val remove_type_token : string -> unit
+
 (* init: call init() before using lexer, to install reserved words *)
 
 val init : unit -> unit
@@ -238,7 +241,7 @@ val reset : unit -> unit
 (* mk_info: utility function *)
 val mk_info : unit -> Grammars.infotyp
 
-type 'a parser = Pkit.input -> 'a
+type 'a parse = Pkit.input -> 'a
 type 'a phrase = 'a Pkit.phrase
 
 val parse : 'a Pkit.phrase -> Pkit.input -> 'a
@@ -268,9 +271,9 @@ val add_term_parser :  Lib.position -> string
   -> (Grammars.infotyp -> Term.term phrase)
     -> unit
 
-	(* remove_term_parser s: 
-	   remove term parser named s, raise Not_found if not present 
-	 *)
+(* [remove_term_parser s]
+   remove term parser named [s], raise [Not_found] if not present 
+ *)
 val remove_term_parser :  string -> unit
 
 (* type_parser_list: list of added type parsers *)
@@ -292,7 +295,7 @@ val add_type_parser :  Lib.position -> string
 val remove_type_parser :  string -> unit
 
 (* readers: read and parse a string *)
-val read:  'a parser -> string -> 'a
+val read:  'a parse -> string -> 'a
 val read_term : string -> Term.term
 val read_type : string -> Gtypes.gtype
 

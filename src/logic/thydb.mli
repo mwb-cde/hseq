@@ -56,6 +56,7 @@ val load_theory : thydb -> string -> bool -> (Theory.thy -> unit)
 
     val add_defn : string -> Gtypes.gtype -> Logic.thm -> thydb -> unit
     val add_decln_rec :Defn.decln -> int -> thydb -> unit
+    val add_decln :Defn.decln -> thydb -> unit
     val add_defn_rec : string-> Gtypes.gtype -> Logic.thm option 
        -> bool -> int -> thydb -> unit
 

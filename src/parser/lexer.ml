@@ -141,6 +141,7 @@ end
 (* token information *)
 
   let mk_ident s = ID(s)
+  let mk_symbol s = Sym(OTHER s)
 
 (* 
    symtable:  

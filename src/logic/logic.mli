@@ -254,18 +254,6 @@ module Rules:
 
       val cut_full : tag_info option -> thm -> rule
 
-(*
-(* case x sq: adds formula x to assumptions of sq, 
-   creates new subgoal in which to prove x
-
-   asm |- cncl      --> x, asm |- cncl , asm |- x, cncl
- *)
-
-      val case : Formula.form -> rule
-      val case_info : tag_info -> Formula.form -> rule
-      val case_full : tag_info option-> Formula.form -> rule
-*)
-
 (* unify i j sq: if asm i unifies  with cncl j of sq, 
    then result is the theorem concl j 
 

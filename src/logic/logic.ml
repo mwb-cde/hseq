@@ -794,40 +794,6 @@ module Rules=
     let cut_info info x sqnt = simple_sqnt_apply (cut0 (Some info) x) sqnt
     let cut_full info x sqnt = simple_sqnt_apply (cut0 info x) sqnt
 
-(* case x sq: adds formula x to assumptions of sq, 
-   creates new subgoal in which to prove x
-
-   g| asm |- cncl      --> g| t:x, asm |- cncl , g'|asm |- t:x, cncl
-
-   info: [g, g'] [t]
- *)
-
-    let case0 info nt sq=
-      let scp = scope_of sq
-      and ftag = Tag.create()
-      and tagl=sqnt_tag sq
-      and tagr=Tag.create()
-      in 
-      let ntrm=(ftag, nt)
-      in 
-      try 
-	ignore(Formula.in_thy_scope scp (scp.Gtypes.curr_thy) nt);
-	do_tag_info info [tagl; tagr] [ftag] [];
-	[mk_sqnt tagl (sqnt_env sq) (ntrm::(asms sq)) (concls sq);
-	 mk_sqnt tagr (sqnt_env sq) (asms sq) (ntrm::concls sq)]
-(*
-	[(tagl, sqnt_env sq, ntrm::(asms sq), concls sq);
-	 (tagr, sqnt_env sq, (asms sq), ntrm::concls sq)]
-*)
-      with 
-	x -> (addlogicError "Not in scope of sequent" [nt] x)
-
-    let case x sqnt = simple_sqnt_apply (case0 None x) sqnt
-    let case_info info x sqnt = 
-      simple_sqnt_apply (case0 (Some info) x) sqnt
-    let case_full info x sqnt = 
-      simple_sqnt_apply (case0 info x) sqnt
-
 (* 
    delete x sq: delete assumption (x<0) or conclusion (x>0) from sq
    info: [] []

@@ -221,7 +221,12 @@ let token_info tbl t=
 	with 
 	  ParsingError _ -> (alternates phs inf toks))
 
-  let error toks =  raise (ParsingError "Error")
+  let error inp =  
+    try 
+      let tok, _ = next_token inp
+      in 
+      raise (ParsingError ("Error at token "^(string_of_token tok)))
+    with _ -> raise (ParsingError "Error")
 
   let mk_type_binary_constr inf t=
     let lookup x =
@@ -684,17 +689,27 @@ let token_info tbl t=
    || (error)
     ) toks
 
-      
+  let message m _ =  raise (ParsingError m)
+
   let rec lhs inf toks=
-    ((( (id_type_op (mk_short_id id) inf) -- (args_opt inf))
-	>> (fun ((n, t) , args) -> (n, args))) toks)
+    ((((id_type_op (mk_short_id id) inf) 
+	 -- (args_opt inf))
+	>> (fun ((n, t) , args) -> (n, args))) 
+    || error )
+       toks
   and args_opt inf toks= 
-    (tlistof (id_type_op (short_id id) inf) 
-       (!$(mk_ident Logicterm.equalsid))) toks
+   ( repeat_term
+      (id_type_op (short_id id) inf) 
+(*      (!$(mk_ident Logicterm.equalsid)) *)
+      (!$(mk_symbol Logicterm.equalssym))
+    || error)
+      toks
   and defn inf toks =
-    ( (( ((lhs inf) -- (form inf))
-	   >> (fun (l,  r) -> (l, r)))
-     || error) toks)
+     (
+      (((lhs inf) -- (form inf))
+	   >> (fun (l, r) -> (l, r)))
+    || (message "Badly formed defintion"))
+      toks
 
 
 end
@@ -706,8 +721,8 @@ end
 open Lexer
 open Logicterm
 
-type 'a parser = Pkit.input -> 'a
-type 'a phrase = 'a Pkit.phrase
+type ('a)parse = Pkit.input -> 'a
+type ('a)phrase = 'a Pkit.phrase
 
 (* token fixity and associativity (exactly the same as in Lexer) *)
 
@@ -760,7 +775,7 @@ let type_reserved_words =  []
 let token_info_list = [ ]
 
 let type_token_info_list =
-  [ (Sym RIGHTARROW, Some(Basic.null_id, infix left_assoc, 6)) ]
+  [ (Sym RIGHTARROW, Some(Basic.null_id, infix right_assoc, 6)) ]
 
 (* Symbol tables *)
 
@@ -771,7 +786,6 @@ let symtable()= !symbols
 
 let token_table=Grammars.token_table_new()
 let type_token_table=Grammars.token_table_new()
-
 
 let find_symbol sym= Lexer.find_sym (!symbols) sym
 
@@ -821,6 +835,10 @@ let remove_token sym=
   remove_symbol sym;
   remove_token_info (Sym(OTHER sym))
 
+let remove_type_token sym=
+  remove_symbol sym;
+  remove_type_token_info (Sym(OTHER sym))
+
 (* set up a symbol table with the built in tokens *)
 
 let init_symbols()=
@@ -839,8 +857,9 @@ let init_type_token_table()=
    
 let init_symtab ()=
   init_symbols();
-  init_token_table();
   init_type_token_table()
+(*  init_token_table(); *)
+
 
 let init ()= init_symtab ()
 
