@@ -76,7 +76,6 @@ module PP :
       val prefix : Parserkit.Info.fixity
       val suffix : Parserkit.Info.fixity
 
-
 (* 
    Default precedence, fixity and associativity 
    for parsing and printing terms and types

@@ -919,7 +919,7 @@ let rec print_term_aux ppstate i x =
       Basic.PP.print_bracket ti i ")"
 and 
     print_fn_app ppstate i f args=
-  let print_infix ti args =
+  let print_infix repr ti args =
     match args with
       (l::rargs) -> 
 	(print_term_aux ppstate ti l;
@@ -948,12 +948,12 @@ and
   in
   Basic.PP.print_bracket pr i "(";
   (if (Basic.PP.is_infix fixity) 
-  then print_infix ti args
+  then print_infix repr ti args
   else 
     if (Basic.PP.is_suffix fixity)
     then print_suffix ti args
     else Basic.PP.list_print (print_term_aux ppstate ti)
-	(fun () -> Format.print_space()) args);
+	(fun () -> Format.print_space()) (f::args));
   Basic.PP.print_bracket pr i ")"
 and 
     print_typed_term ppstate i trm ty=

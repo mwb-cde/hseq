@@ -156,15 +156,12 @@ let print_type_info ppstate pr t =
     let print_infix pr repr ls =
       (Format.open_box 0;
       (match ls with
-	l::rargs ->
+	[] -> 
+	  Basic.PP.print_identifier f repr
+      | l::rargs ->
 	  print_aux pr l;
 	  Basic.PP.print_identifier f repr;
-	  Basic.PP.list_print (print_aux pr) (fun _ -> " ") rargs;
-      | _ -> 
-	  Basic.PP.print_identifier f repr;
-	  print_string "(";
-	  Basic.PP.list_print (print_aux pr) (fun _ -> ", ") ls;
-	  print_string ")");
+	  Basic.PP.list_print (print_aux pr) (fun _ -> " ") rargs);
       Format.close_box())
     and print_suffix pr repr ls =
       (Format.open_box 0;
@@ -183,9 +180,14 @@ let print_type_info ppstate pr t =
       then print_suffix prec repr args
       else 
 	(Basic.PP.print_identifier f repr;
-	 Format.print_string "(";
-	 Basic.PP.list_print (print_aux pr) (fun _ -> ", ") args;
-	 Format.print_string ")");
+	 match args with
+	   [] -> ()
+	 | _ -> 
+	     Format.print_string "(";
+	     Basic.PP.list_print 
+	       (print_aux pr) 
+	       (fun _ -> Format.print_string ", ") args;
+	     Format.print_string ")");
     Basic.PP.print_bracket prec oldprec ")";
     Format.close_box()
   and print_func args  =
@@ -313,6 +315,10 @@ let rec mkfun_from_list l r =
   | [t] -> mk_fun t r
   | t::ts -> mk_fun t (mkfun_from_list ts r)
 
+let rec dest_constr ty = 
+  match ty with 
+    Constr(f, args) -> (f, args)
+  | _ -> raise (Failure "Not a constructed type")
 
 let mk_def n args = mkconstr (Defined n) args
 let dest_def t = 

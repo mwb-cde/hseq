@@ -8,7 +8,7 @@ let init_file = "fm.ml"
 
 (* suffixes *)
 
-let thy_suffix="thy"
+let thy_suffix="tho"
 
 
 

@@ -5,12 +5,13 @@ open Gtypes
 open Term
 
 (* identifiers/recognisers/constructors for basic logic functions *)
-  val notid : Basic.ident
-  val andid : Basic.ident
-  val orid : Basic.ident
-  val iffid : Basic.ident
-  val impliesid : Basic.ident
-  val equalsid : Basic.ident
+val notid : Basic.ident
+val andid : Basic.ident
+val orid : Basic.ident
+val iffid : Basic.ident
+val impliesid : Basic.ident
+val equalsid : Basic.ident
+val equalssym : string (* PP symbol for equals ("=") *)
 
 val someid: Basic.ident  (* base.some=base.epsilon(%x: x) *)
 
@@ -45,21 +46,21 @@ val dest_equal : term -> (term * term)
 val mksome: term
 
 (* equality under alpha conversion *)
-    val alpha_convp : scope -> term -> term -> bool 
+val alpha_convp : scope -> term -> term -> bool 
 (* alpha_equals: equality under alpha conversion 
    (renaming of alpha_convp)
-*)
-    val alpha_equals : scope -> term -> term -> bool 
+ *)
+val alpha_equals : scope -> term -> term -> bool 
 (* beta reduction *)
-    val beta_convp:  term -> bool
-    val beta_conv:  term -> term
-    val beta_reduce :  term -> term
+val beta_convp:  term -> bool
+val beta_conv:  term -> term
+val beta_reduce :  term -> term
 (* eta abstraction *)
-    val eta_conv: term -> Gtypes.gtype -> term -> term
+val eta_conv: term -> Gtypes.gtype -> term -> term
 
 (* closed terms (every bound variable occurs within its binding term *)
-    val is_closed : term -> bool
-    val is_closed_scope: substitution -> term -> bool
+val is_closed : term -> bool
+val is_closed_scope: substitution -> term -> bool
 
 (* close a term:
    constructs outermost universal quantifier for every

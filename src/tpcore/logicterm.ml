@@ -9,6 +9,7 @@ let orid = Basic.mklong base_thy "or"
 let impliesid = Basic.mklong base_thy "implies"
 let iffid = Basic.mklong base_thy "iff"
 let equalsid = Basic.mklong base_thy "equals"
+let equalssym = "="
 
 let someid = Basic.mklong base_thy "some"
 

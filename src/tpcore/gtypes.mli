@@ -107,6 +107,7 @@ val get_weak : gtype -> string
 (* function types *)
 val mk_fun : gtype -> gtype -> gtype
 val mkfun_from_list: gtype list -> gtype -> gtype
+val dest_constr : gtype -> (Basic.typ_const * gtype list)
 
 (* recognisers *)
 
