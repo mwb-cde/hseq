@@ -64,14 +64,14 @@ val mk_implies: term -> term -> term
 val mk_equality: term -> term -> term
 val mk_iff: term -> term -> term
 
-val mk_all : scope -> string -> term -> term
-val mk_ex : scope -> string -> term -> term
-val mk_lam : scope -> string -> term -> term
+val mk_all : Scope.t -> string -> term -> term
+val mk_ex : Scope.t -> string -> term -> term
+val mk_lam : Scope.t -> string -> term -> term
     
 (* make typed quantifiers *)
-val mk_all_ty : scope -> string -> Basic.gtype -> term -> term
-val mk_ex_ty : scope -> string -> Basic.gtype -> term -> term
-val mk_lam_ty : scope -> string -> Basic.gtype -> term -> term
+val mk_all_ty : Scope.t -> string -> Basic.gtype -> term -> term
+val mk_ex_ty : Scope.t -> string -> Basic.gtype -> term -> term
+val mk_lam_ty : Scope.t -> string -> Basic.gtype -> term -> term
 
 val is_all: term-> bool
 val is_exists : term -> bool
@@ -87,11 +87,11 @@ val mk_any: term
    (renaming of alpha_convp)
  *)
 val alpha_convp_full : 
-    scope 
+    Scope.t 
   -> Gtypes.substitution -> term -> term 
     -> Gtypes.substitution
-val alpha_convp : scope -> term -> term -> Gtypes.substitution
-val alpha_equals : scope -> term -> term -> bool 
+val alpha_convp : Scope.t -> term -> term -> Gtypes.substitution
+val alpha_equals : Scope.t -> term -> term -> bool 
 (* beta reduction *)
 val beta_convp:  term -> bool
 val beta_conv:  term -> term

@@ -12,7 +12,7 @@
    use predicate p to determine what counts as a variable for unification *)
 
 val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
-  -> Gtypes.scope -> (Basic.term -> bool) 
+  -> Scope.t -> (Basic.term -> bool) 
     -> Basic.term -> Basic.term -> Term.substitution
 
 (* unify_env: unify terms in a given context 
@@ -20,7 +20,7 @@ val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
 
 val unify_env: 
     ?typenv:Gtypes.substitution
-  -> Gtypes.scope  -> Term.substitution
+  -> Scope.t  -> Term.substitution
   -> (Basic.term -> bool) -> Basic.term -> Basic.term 
     -> Term.substitution 
 
@@ -28,7 +28,7 @@ val unify_env:
    if unification fails, any bindings made are removed *) 
 
 val unify_fullenv: 
-    Gtypes.scope 
+    Scope.t 
   -> Gtypes.substitution
     -> Term.substitution 
       -> (Basic.term -> bool) -> Basic.term -> Basic.term 
@@ -48,7 +48,7 @@ val unify_fullenv:
  *)
 
 val unify_fullenv_rewrite: 
-    Gtypes.scope -> Gtypes.substitution  -> Term.substitution 
+    Scope.t -> Gtypes.substitution  -> Term.substitution 
     -> (Basic.term -> bool) 
       -> Basic.term -> Basic.term 
 	-> (Gtypes.substitution * Term.substitution)
@@ -56,6 +56,6 @@ val unify_fullenv_rewrite:
 (* simple wrapper for unify_fullenv_rewrite which constructs 
    and empty type substitution *)
 
-val unify_env_rewrite: Gtypes.scope 
+val unify_env_rewrite: Scope.t 
   -> Term.substitution -> (Basic.term -> bool) 
     -> Basic.term -> Basic.term -> Term.substitution

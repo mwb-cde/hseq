@@ -30,7 +30,7 @@ val add_typing_error:
 
 
 (* construct type of a term *)
-val typeof : Gtypes.scope -> Basic.term -> Basic.gtype
+val typeof : Scope.t -> Basic.term -> Basic.gtype
 
 (* typechecking functions:
    the typecheck is deep:  type are tested for well-definedness
@@ -40,18 +40,18 @@ val typeof : Gtypes.scope -> Basic.term -> Basic.gtype
  *)
 
 (* check a given term has the expected type *)
-val typecheck: Gtypes.scope -> Basic.term 
+val typecheck: Scope.t -> Basic.term 
   -> Basic.gtype -> unit
 
 (* check a given term has the expected type 
    in a given context/substitution  *) 
 
-val typecheck_env: Gtypes.scope  
+val typecheck_env: Scope.t  
   -> Gtypes.substitution
     -> Basic.term   -> Basic.gtype 
       -> Gtypes.substitution
 	  
-val simple_typecheck_env: Gtypes.scope  
+val simple_typecheck_env: Scope.t  
   -> Gtypes.substitution
     -> Basic.term   -> Basic.gtype 
       -> Gtypes.substitution
@@ -86,7 +86,7 @@ val retype_pretty: Gtypes.substitution -> Basic.term
    Also checks that defined types are valid and well defined in the given 
    scope.
 *)
-val settype: Gtypes.scope -> Basic.term  -> Gtypes.substitution
+val settype: Scope.t -> Basic.term  -> Gtypes.substitution
 
 (* Assign the variable types in a term their required type
    to ensure well typed term, returning the required subsititution 
@@ -98,15 +98,15 @@ val settype: Gtypes.scope -> Basic.term  -> Gtypes.substitution
 
 val infer_aux : 
     int ref * (Basic.ident * int, bool) Hashtbl.t 
-  -> Gtypes.scope -> Gtypes.substitution -> Basic.term 
+  -> Scope.t -> Gtypes.substitution -> Basic.term 
     -> (Basic.gtype * Gtypes.substitution )
-val infer_types_env: Gtypes.scope -> Gtypes.substitution 
+val infer_types_env: Scope.t -> Gtypes.substitution 
   -> Basic.term -> (Basic.gtype* Gtypes.substitution)
 
-val infer_types: Gtypes.scope -> Basic.term -> Basic.gtype
+val infer_types: Scope.t -> Basic.term -> Basic.gtype
 
 (* check that types in the term are well defined *)
-val check_types: Gtypes.scope -> Basic.term -> unit
+val check_types: Scope.t -> Basic.term -> unit
 
 (* [set_exact_types scp term]
    get and set the exact types of identifiers (Term.Id) in term [trm]
@@ -118,14 +118,14 @@ val check_types: Gtypes.scope -> Basic.term -> unit
    This function needed to deal with the type of skolem constants.
  *)
 (*
-val set_exact_types: Gtypes.scope -> Basic.term -> Basic.term
+val set_exact_types: Scope.t -> Basic.term -> Basic.term
 *)
 
 (*
-val assign_types: Gtypes.scope -> Basic.term -> Basic.term
+val assign_types: Scope.t -> Basic.term -> Basic.term
     
 val typecheck_aux:
-    Gtypes.scope ->
+    Scope.t ->
       int ref * (Basic.ident * int, bool) Hashtbl.t ->
 	Gtypes.substitution -> Basic.gtype -> Basic.term -> Gtypes.substitution
 *)

@@ -38,7 +38,7 @@ val dest_binding : binders ->
   (Basic.quant_ty * string * Gtypes.gtype)
 val binder_equality: binders -> binders -> bool
 *)
-val binder_equiv : scope -> term -> term -> bool
+val binder_equiv : Scope.t -> term -> term -> bool
 
 (* equality of terms *)
 val equals : term -> term -> bool
@@ -146,9 +146,9 @@ val dest_qnt :
 (* constructors/destructors for quanitifed terms *)
 val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
-val mk_qnt : scope -> 
+val mk_qnt : Scope.t -> 
   Basic.quant_ty -> string -> term -> term
-val mk_typed_qnt : scope -> 
+val mk_typed_qnt : Scope.t -> 
   Basic.quant_ty -> Basic.gtype -> string -> term -> term
 
 (* conversion to a string *)
@@ -297,12 +297,12 @@ val add_term_error : string -> term list -> exn -> 'a
    if a term is free (not defined in any theory),
    its theory is set to Basic.null_thy.
 *)
-val set_names: Gtypes.scope  -> term -> term
+val set_names: Scope.t  -> term -> term
 
 (* check that term is in scope:
    all identifiers and types must be declared in the given scope *)
 val in_scope: (string, bool)Lib.substype 
-  -> Gtypes.scope -> Basic.thy_id -> term -> bool
+  -> Scope.t -> Basic.thy_id -> term -> bool
 
 (* simple ordering on terms *)
 

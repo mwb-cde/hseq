@@ -85,7 +85,7 @@ val limit_reached: int option -> bool
    Returns new term and updated type environment (substitution)
  *)
 val match_rewrite : 
-    Gtypes.scope -> 
+    Scope.t -> 
       control -> Gtypes.substitution ->
 	(Basic.term -> bool) -> Basic.term -> 
 	  Basic.term -> order option -> Basic.term -> 
@@ -102,7 +102,7 @@ val is_free_binder : Basic.binders list -> Basic.term -> bool
    return type environment built up during rewriting 
  *)
 val rewrite_list : 
-    Gtypes.scope -> 
+    Scope.t -> 
       control -> bool ref 
 	-> Gtypes.substitution
 	  -> (Basic.binders list 
@@ -114,7 +114,7 @@ val rewrite_list :
    return type environment built up during rewriting 
  *)
 val rewrite_eqs : 
-    Gtypes.scope -> 
+    Scope.t -> 
       control
       -> Gtypes.substitution
 	-> (Basic.binders list * Basic.term * Basic.term * order option)list 
@@ -128,11 +128,11 @@ val rewrite_eqs :
    return new term and the new type environment contructed during rewriting.
  *)
 val rewrite :
-    Gtypes.scope -> 
+    Scope.t -> 
       control -> rule list -> Basic.term ->  Basic.term
 
 val rewrite_env : 
-    Gtypes.scope -> 
+    Scope.t -> 
       control 
       -> Gtypes.substitution
 	-> rule list -> Basic.term 
@@ -165,7 +165,7 @@ val dest_rl_rule:
 
 
 val match_rr_list: 
-    Gtypes.scope -> control -> Gtypes.substitution
+    Scope.t -> control -> Gtypes.substitution
       -> bool ref 
 	-> (Basic.binders list * Basic.term * Basic.term * order option) list 
 	  -> Basic.term
@@ -173,21 +173,21 @@ val match_rr_list:
 		
 
 val match_rewrite_list: 
-    Gtypes.scope -> control -> Gtypes.substitution
+    Scope.t -> control -> Gtypes.substitution
       -> bool ref 
 	-> rewriteDB 
 	  -> Basic.term 
 	    -> (Basic.term * Gtypes.substitution * control)
 
 val rewrite_list_topdown:
-    Gtypes.scope -> control -> Gtypes.substitution
+    Scope.t -> control -> Gtypes.substitution
       -> bool ref 
 	-> rewriteDB 
 	  -> Basic.term 
 	    -> (Basic.term * Gtypes.substitution * control)
 
 val rewrite_list_bottomup:
-    Gtypes.scope -> control -> Gtypes.substitution
+    Scope.t -> control -> Gtypes.substitution
       -> bool ref 
 	-> rewriteDB 
 	  -> Basic.term 

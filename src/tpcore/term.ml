@@ -1055,7 +1055,7 @@ let set_names scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:false ~memo:memo s t
   in 
-  let curr_thy = scp.Gtypes.curr_thy
+  let curr_thy = Scope.thy_of scp
   in 
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env()
@@ -1066,14 +1066,14 @@ let set_names scp trm=
     try 
       Lib.find n id_memo
     with Not_found -> 
-      let nth = (scp.Gtypes.thy_of Basic.fn_id n) 
+      let nth = Scope.thy_of_term scp n
       in (ignore(Lib.add n nth id_memo); nth)
   in 
   let lookup_type id = 
     try 
       Gtypes.copy_type (Lib.find id type_memo)
     with Not_found -> 
-      let nty = scp.Gtypes.typeof_fn id
+      let nty = Scope.type_of scp id 
       in 
       (ignore(Lib.add id nty type_memo); nty)
   in 
@@ -1142,7 +1142,7 @@ let in_scope memo scp th trm =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-      if (scp.thy_in_scope th n)
+      if (Scope.in_scope_of scp th n)
       then Lib.add n true memo else raise Not_found)
   in
   let rec in_scp_aux t =

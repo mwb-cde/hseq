@@ -36,11 +36,13 @@ type stype =
 
 (* records for type definitions *)
 
-type typedef_record =
+type typedef_record = Scope.type_record
+(*
     {name: string; 
      args : string list; 
      alias: gtype option;
      characteristics: string list}
+*)
 
 type stypedef_record =
     {sname: string; 
@@ -50,6 +52,7 @@ type stypedef_record =
 
 (* record scopes and type definitions (e.g. for typechecking) *)
 
+(*
 type scope =  (* was typ_env *)
     { curr_thy : thy_id;
       typeof_fn : ident -> gtype; 
@@ -61,10 +64,13 @@ type scope =  (* was typ_env *)
 val empty_scope : unit -> scope
 val add_to_scope: scope -> (ident * gtype) list -> scope
 val extend_scope: scope -> (ident -> gtype) -> scope
-
-
 (* get definition of a type *)
 val get_typdef: scope -> ident -> typedef_record
+
+*)
+
+(* get definition of a type *)
+val get_typdef: Scope.t -> ident -> typedef_record
 
 val string_gtype :  gtype -> string
 
@@ -232,12 +238,12 @@ val copy_type: gtype -> gtype
 
 (* unification *)
 (* unify two types, returning the substitution*)
-val unify : scope -> gtype -> gtype  -> substitution 
+val unify : Scope.t -> gtype -> gtype  -> substitution 
 
 (* unify two types in a given context/subsitution, 
    return a new subsitution *)
 
-val unify_env : scope -> gtype -> gtype 
+val unify_env : Scope.t -> gtype -> gtype 
   -> substitution -> substitution 
 
 (*  unify two types in a given context/subsitution, 
@@ -250,7 +256,7 @@ val unify_env : scope -> gtype -> gtype
    Defunct: use unify_for_rewrite
  *)
 
-val unify_env_unique_left:  scope -> gtype -> gtype 
+val unify_env_unique_left:  Scope.t -> gtype -> gtype 
   -> substitution -> substitution 
 
 (* remove bindings from a failed attempt at unification *)
@@ -266,18 +272,18 @@ val remove_bindings: gtype list -> substitution -> substitution
  *)
 
 val unify_for_rewrite:  
-    scope -> gtype -> gtype 
+    Scope.t -> gtype -> gtype 
       -> substitution -> substitution
 
 (* get most general unifier for a type and subsitution *)
 val mgu : gtype  -> substitution -> gtype
 
 (* matching *)
-val matching :scope -> gtype -> gtype -> gtype
+val matching :Scope.t -> gtype -> gtype -> gtype
 val matches_env : 
-    scope -> substitution 
+    Scope.t -> substitution 
       -> gtype -> gtype -> substitution
-val matches : scope -> gtype -> gtype -> bool
+val matches : Scope.t -> gtype -> gtype -> bool
 
 (* look up types in a subsitution *)
 
@@ -296,14 +302,14 @@ val extract_bindings: gtype list -> substitution -> substitution
 (* check_defn l r: test defintion of l as alias for r *)
 (* check_decln l: consistency check on declaration of type l *) 
 
-val check_defn : scope -> gtype -> gtype -> bool
+val check_defn : Scope.t -> gtype -> gtype -> bool
 val check_decln : gtype  -> bool
 
 val print_subst : substitution -> unit
 
-(* get the definition of a type from the scope if it exists *)
+(* get the definition of a type from the Scope.t if it exists *)
 (* raises Not_found if not definition*)
-val get_defn : scope -> gtype -> gtype
+val get_defn : Scope.t -> gtype -> gtype
 
 (* 
    [get_var_names ty]: 
@@ -326,7 +332,7 @@ val normalize_vars : gtype -> gtype
 
    Fails if [ty] contains a weak variable.
 *)
-val check_decl_type: scope -> Basic.gtype -> unit
+val check_decl_type: Scope.t -> Basic.gtype -> unit
 
 (* 
    [well_defined scp args ty]
@@ -335,7 +341,7 @@ val check_decl_type: scope -> Basic.gtype -> unit
    weak variables are not permitted in [ty]
    args: (optional) check variables are in the list of args 
  *)
-val well_defined : scope -> (string)list -> gtype -> unit
+val well_defined : Scope.t -> (string)list -> gtype -> unit
 
 (* 
    [quick_well_defined scp tbl ty]:
@@ -345,7 +351,7 @@ val well_defined : scope -> (string)list -> gtype -> unit
    [tbl] is memo of found constructors (and the number of their
    parameters
  *)
-val quick_well_defined : scope -> 
+val quick_well_defined : Scope.t -> 
   (ident *int, bool) Hashtbl.t -> gtype -> unit
 
 (* Error reporting *)
@@ -399,13 +405,13 @@ val print : Printer.ppinfo -> gtype Printer.printer
 val set_name : 
     ?strict:bool
   -> ?memo:(string, Basic.thy_id)Hashtbl.t
-    -> scope -> gtype -> gtype
+    -> Scope.t -> gtype -> gtype
 
-(* in_thy_scope: check that all types are in scope of given theory *)
+(* in_thy_scope: check that all types are in Scope.t of given theory *)
 (* first argument is for memoised *)
 
-val in_scope: (string, bool)Lib.substype
-  -> scope ->thy_id -> gtype -> bool
+val in_scope: 
+    (string, bool)Lib.substype -> Scope.t ->thy_id -> gtype -> bool
 
 (* utility functions *)
 (* mk_new_type n: 

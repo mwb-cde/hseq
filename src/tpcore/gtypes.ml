@@ -10,11 +10,15 @@ open Result
 
 type stype = ((string * int), typ_const, base_typ) pre_typ
 
+type typedef_record = Scope.type_record
+
+(*
 type typedef_record =
     {name: string; 
      args : string list; 
      alias: gtype option;
      characteristics: string list}
+*)
 
 type stypedef_record =
     {sname: string; 
@@ -22,6 +26,7 @@ type stypedef_record =
      salias: stype option;
      scharacteristics: string list}
 
+(*
 type scope = 
     {curr_thy: Basic.thy_id;
      typeof_fn : ident -> gtype; 
@@ -70,6 +75,10 @@ let extend_scope scp f =
     thy_in_scope = scp.thy_in_scope}
 
 let get_typdef tyenv r =  tyenv.typ_defn r (* (get_typenv()) r *)
+*)
+
+let get_typdef scp r =  
+  Scope.defn_of scp r
 
 let is_var t  = 
   match t with
@@ -395,13 +404,13 @@ let to_save ty = to_save_aux (ref 0) (ref []) ty
 let to_save_env env ty = to_save_aux (ref 0) env ty
 
 let to_save_rec record = 
-  {sname=record.name;
-   sargs = record.args;
+  {sname=record.Scope.name;
+   sargs = record.Scope.args;
    salias = 
-   (match record.alias with
+   (match record.Scope.alias with
      None -> None
    | Some(t) -> Some(to_save t));
-   scharacteristics = record.characteristics}
+   scharacteristics = record.Scope.characteristics}
 
 let rec from_save_aux env ty =
   match ty with
@@ -422,13 +431,15 @@ let from_save ty = from_save_aux (ref[]) ty
 let from_save_env env ty = from_save_aux env ty
 
 let from_save_rec record = 
-  {name=record.sname;
-   args = record.sargs;
-   alias = 
+  {
+   Scope.name=record.sname;
+   Scope.args = record.sargs;
+   Scope.alias = 
    (match record.salias with
      None -> None
    | Some(t) -> Some(from_save t));
-   characteristics = record.scharacteristics}
+   Scope.characteristics = record.scharacteristics
+ }
 
 (* 
    USING HASHTABLES FOR SUBSTITUTION
@@ -618,7 +629,7 @@ let has_record tyenv t =
 
 let has_defn tyenv n = 
   (try
-    (match (get_typdef tyenv  n).alias with 
+    (match (get_typdef tyenv  n).Scope.alias with 
       None -> false | _ -> true)
   with Not_found -> false)
 
@@ -627,9 +638,9 @@ let get_defn tyenv t =
     Constr(Defined n, args) ->
       let recrd = get_typdef tyenv n 
       in 
-      (match recrd.alias with
+      (match recrd.Scope.alias with
 	None -> raise Not_found
-      |	Some(gt) -> rewrite_defn args (recrd.args)  gt)
+      |	Some(gt) -> rewrite_defn args (recrd.Scope.args)  gt)
   | _ -> raise Not_found
 
 
@@ -1064,7 +1075,7 @@ let rec well_defined scp args t =
     match t with 
       Constr(Defined n, nargs) ->
 	(try 
-          (let recrd=scp.typ_defn n
+          (let recrd=Scope.defn_of scp n
           in 
 	  List.iter well_def nargs)
 	with Not_found -> 
@@ -1090,7 +1101,7 @@ let check_decl_type scp ty=
     match t with 
       Constr(Defined n, nargs) ->
 	(try 
-          (let recrd=scp.typ_defn n
+          (let recrd=Scope.defn_of scp n
           in 
 	  List.iter check_aux nargs)
 	with Not_found -> 
@@ -1146,7 +1157,7 @@ let rec quick_well_defined scp cache t =
 	(try 
 	  (let recrd=get_typdef scp n
 	  in 
-	  if nargs=(List.length recrd.args)
+	  if nargs=(List.length recrd.Scope.args)
 	  then 
 	    (Hashtbl.add cache (n, nargs) true ; 
 	     List.iter (quick_well_defined scp cache) args)
@@ -1186,13 +1197,13 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
     (try (Lib.find n memo)
     with Not_found -> 
       let nth =
-	try (scp.thy_of Basic.type_id n) 
+	try (Scope.thy_of_term scp n) 
 	with Not_found -> 
 	  if(strict)
 	  then raise 
 	      (type_error "Type doesn't occur in scope" 
 		 [mk_def (Basic.mk_name n) []])
-	  else scp.curr_thy
+	  else Scope.thy_of scp
       in ignore(Lib.add n nth memo); nth)
   in 
   let rec set_aux t =
@@ -1223,7 +1234,7 @@ let in_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-      if (scp.thy_in_scope th n)
+      if (Scope.in_scope_of scp th n)
       then Lib.add n true memo else raise Not_found)
   in
   let rec in_scp_aux t =

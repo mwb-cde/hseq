@@ -106,7 +106,7 @@ let settype_top scp (inf, cache) f typenv exty et =
     match t with
       Id(n, ty) -> 
 	(try                         (* get the identifier's type *)
-	  let nt = (scp.Gtypes.typeof_fn n) 
+	  let nt = (Scope.type_of scp n) 
 	  in 
           (* check given type *) 
 	  Gtypes.quick_well_defined scp cache ty; 
@@ -369,7 +369,7 @@ let rec infer_aux (inf, cache) scp env t =
   match t with
     Id(n, ty) -> 
       (try                         (* get the identifier's type *)
-	let nt =  (scp.Gtypes.typeof_fn n) 
+	let nt = Scope.type_of scp n
 	in 
 	Gtypes.quick_well_defined scp cache ty; (* check type *) 
 	let env1=Gtypes.unify_env scp ty nt env (* unify with given type *)
@@ -437,7 +437,7 @@ let set_exact_types scp trm =
     match t with
       Id(id, _) -> 
 	(try
-	  (let ty = scp.Gtypes.typeof_fn id
+	  (let ty = Scope.type_of scp id
 	  in (Id(id, ty)))
 	with Not_found -> t)
     | Qnt(k, q, b) -> Qnt(k, q, set_aux b)
@@ -452,7 +452,7 @@ let assign_types scp trm =
     match t with
       Id(id, _) -> 
 	(try
-	  (let ty = scp.Gtypes.typeof_fn id
+	  (let ty = Scope.type_of scp id
 	  in (Id(id, ty)))
 	with Not_found -> 
 	  raise (Term.term_error "assign_types: Unknown identifier" [t]))
