@@ -414,7 +414,7 @@ let simp_term_rewrite scp t =
 *)
 
 let simp_rewrite scp f =
-  let t =(Formula.term_of_form f)
+  let t =(Formula.term_of f)
   in 
   let nt = simp_term_basic scp t
   in 
@@ -453,7 +453,7 @@ let decide_term scp t =
 *)
 
 let decide_rewrite scp f =
-  let nt = Formula.term_of_form f
+  let nt = Formula.term_of f
   in 
   Logic.mk_axiom (Formula.make scp (decide_term scp nt))
 
