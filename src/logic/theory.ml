@@ -175,7 +175,7 @@ let add_type_rec tr thy =
   in 
   if not (get_protection thy)
   then 
-    let (lid, args, df)=Logic.Defns.dest_typedef tr
+    let (lid, args, df)=Logic.Defns.dest_typealias tr
     in 
     let id=Basic.name lid
     in 

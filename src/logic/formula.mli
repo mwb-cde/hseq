@@ -25,14 +25,14 @@ val is_closed: Basic.term list -> Basic.term -> bool
 val term_of_form : form -> Basic.term
 *)
 (*
-   [close_term scp trm]: close term [trm] in scope [scp].
+   [resolve_closed_term scp trm]:
    
    1. Replace each free variable [Var(x, _)] in [trm] with the term
    associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
 
    2. Fail if any bound variable in [trm] occurs outside its binding term.
 *)
-val close_term: Gtypes.scope -> Basic.term -> Basic.term
+val resolve_closed_term: Gtypes.scope -> Basic.term -> Basic.term
 
 (*
    [make ?env scp trm]: make a formula from term [trm] in scope [scp].

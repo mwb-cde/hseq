@@ -195,12 +195,12 @@ let add_defn s ty def ps thdb =
   Theory.add_defn s ty def ps thdb.curr
 
 let add_decln_rec dcl pr ps thdb =
-  let s, ty = Defn.dest_decln dcl
+  let s, ty = Logic.Defns.dest_termdecln dcl
   in 
   Theory.add_decln_rec (Basic.name s) ty pr ps thdb.curr
 
 let add_decln dcl ps thdb =
-  let s, ty = Defn.dest_decln dcl
+  let s, ty = Logic.Defns.dest_termdecln dcl
   in 
   Theory.add_decln_rec (Basic.name s) ty 0 ps thdb.curr
 

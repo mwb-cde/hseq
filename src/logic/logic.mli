@@ -159,14 +159,45 @@ val label_to_tag: label -> Sequent.t -> Tag.t
 val label_to_index: label -> Sequent.t -> int
 
 (**
-   [cdefn]:
-   Checked Definitions.  
+   [cdecln]: Checked term declarations.
+   Checking of type and term definitions and declarations
+
+   [cdefn]: Checked Definitions.  
    Checking of type and term definitions and declarations
  *)
-type cdefn =
-    TypeDef of Basic.ident * string list * Basic.gtype option
-  | TermDef of Basic.ident * Basic.gtype
+type cdefn
+(*
+    TypeAlias of 
+      Basic.ident * string list * Basic.gtype option
+  | TypeDef of ctypedef
+  | TermDecln of Basic.ident * Basic.gtype
+  | TermDef of 
+      Basic.ident * Basic.gtype
 	* (string*Basic.gtype) list * thm option
+*)
+type ctypedef =
+    {
+     type_name : Basic.ident;  (* name of new type *)
+     type_args : string list;  (* arguments of new type *)
+     type_rep: cdefn;          (* representation function *)
+     type_thm: thm;          (* subtype theorem *)
+     type_set: Formula.form       (* defining set *)
+   }
+      
+type saved_cdefn =
+    STypeAlias of Basic.ident * string list * Gtypes.stype option
+  | STypeDef of saved_ctypedef
+  | STermDecln of Basic.ident * Gtypes.stype
+  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+and saved_ctypedef =
+    {
+     stype_name : Basic.ident;  (* name of new type *)
+     stype_args : string list;  (* arguments of new type *)
+     stype_rep: saved_cdefn;          (* representation function *)
+     stype_thm: saved_thm;          (* subtype theorem *)
+     stype_set: Formula.saved_form      (* defining set *)
+   }
+
 	
 (** 
    Theorem destructors and constructors
@@ -718,20 +749,75 @@ open Rules
 module Defns :
     sig
 
-      val is_typedef: cdefn -> bool
+      val to_saved_cdefn: cdefn -> saved_cdefn
+      val from_saved_cdefn: saved_cdefn -> cdefn 
+
+(* Term definition *)
       val is_termdef: cdefn -> bool
-
-      val dest_typedef: cdefn ->
-	Basic.ident * string list * Basic.gtype option
       val dest_termdef: cdefn -> 
-	Basic.ident * Basic.gtype * (string* Basic.gtype) list * thm option
+	Basic.ident * Basic.gtype * thm
+      val mk_termdef: 
+	  Gtypes.scope 
+	-> Basic.ident
+	  -> (string * Basic.gtype) list -> Basic.term -> cdefn
 
-      val mk_typedef: Gtypes.scope 
+(* 
+   [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
+   scope [scp].
+   Fails if identifier [name] is already defined in [scp]
+   or if [ty] is not well defined.
+*)
+      val is_termdecln: cdefn -> bool
+      val dest_termdecln: cdefn 
+	-> Basic.ident * Basic.gtype 
+      val mk_termdecln:
+	  Gtypes.scope -> string -> Basic.gtype -> cdefn
+
+(*Type definition: alias *)
+      val is_typealias: cdefn -> bool
+      val dest_typealias: cdefn ->
+	Basic.ident * string list * Basic.gtype option
+      val mk_typealias: Gtypes.scope 
 	-> string -> string list -> Basic.gtype option -> cdefn
 
-      val mk_termdef: Gtypes.scope 
-	-> string -> Basic.gtype 
-	  -> string list -> thm option -> cdefn
+(*Type definition: subtype *)
+      val is_subtype: cdefn -> bool
+      val dest_subtype: cdefn -> ctypedef
+
+(*
+   mk_subtype scp name args d setP rep:
+   - check name doesn't exist already
+   - check all arguments in args are unique
+   - check def is well defined 
+   (all constructors exist and variables are in the list of arguments)
+   - ensure setP has type (d -> bool)
+   - declare rep as a function of type (d -> n)
+   - make subtype property from setp and rep.
+ *)
+
+
+(*
+   [prove_subtype_exists scp setp thm]
+   Use [thm] to prove the goal << ?x. setp x >> (built by mk_subtype_exists).
+
+   [mk_subtype_thm scp setp rep]:
+   make the subtype theorem
+   << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
+      and 
+      (!x: (setp x) = (?x1: x=(rep x1)))>>
+*)
+      val prove_subtype_exists: 
+	  Gtypes.scope -> Basic.term -> thm -> thm
+      val mk_subtype_thm: 
+	  Gtypes.scope -> Basic.term -> Basic.ident -> thm
+
+      val mk_subtype: 
+	  Gtypes.scope -> string -> string list 
+	    -> Basic.gtype -> Basic.term -> string
+	      -> thm  (* existance *)
+		-> cdefn
+
+
 
     end
 
@@ -740,6 +826,8 @@ module Defns :
 (** Printing *)
 
 val print_thm: Printer.ppinfo -> thm -> unit
+
+val print_cdefn: Printer.ppinfo -> cdefn -> unit
 
 (**
    [print_sqnt ppinfo sq]

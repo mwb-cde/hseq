@@ -1,8 +1,8 @@
 # Header, code and optimised code files
 
-HEADERS = formula.cmi logic.cmi defn.cmi theory.cmi thydb.cmi
+HEADERS = formula.cmi defn.cmi logic.cmi theory.cmi thydb.cmi
 
-CODE = formula.cmo logic.cmo defn.cmo theory.cmo thydb.cmo
+CODE = formula.cmo defn.cmo logic.cmo theory.cmo thydb.cmo
 
 OPTCODE = formula.cmx defn.cmx logic.cmx theory.cmx thydb.cmx
 

@@ -1,8 +1,8 @@
 (*-----
- Name: logic.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: logic.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 open Basic
 open Formula
@@ -48,9 +48,9 @@ let string_thm x = string_form (formula_of x)
 (* Error handling *)
 
 (*
-let mk_logic_error s t = 
-  (Term.term_error s (List.map Formula.term_of t))
-*)
+   let mk_logic_error s t = 
+   (Term.term_error s (List.map Formula.term_of t))
+ *)
 let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es = 
   raise (Result.add_error (logic_error s t) es)
@@ -371,7 +371,7 @@ module Sequent=
 
    [split_at_concl lbl x]:
    raise Not_found if [lbl=FNum i] and i<0
-*)
+ *)
     let split_at_asm l fs = 
       match l with
 	FNum i -> 
@@ -465,8 +465,8 @@ module Sequent=
  *)
 type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
 (*
-type conv = thm list -> thm list 
-*)
+   type conv = thm list -> thm list 
+ *)
 
 let get_label_asm t sq = 
   match t with
@@ -505,7 +505,7 @@ exception No_subgoals
 (* 
    Solved_subgoal tyenv:
    solved a subgoal, creating new goal type environment tyenv
-*)
+ *)
 exception Solved_subgoal of Gtypes.substitution
 
 let has_subgoals g = 
@@ -648,7 +648,7 @@ module Subgoals=
    [env1 + env2].
 
    raise [Failure] if a variable ends up bound to itself.
-*)
+ *)
     let merge_tyenvs env1 env2 = 
       let env3 = ref env1
       in 
@@ -668,7 +668,7 @@ module Subgoals=
    Merge the type environment of [b], resulting from applying a tactic
    to [n], with the type environment of [n].  Make a new branch with
    the components of [b] but with the new type environment.
-*)
+ *)
     let merge_tac_tyenvs n b =
       let ntyenv = node_tyenv n
       in 
@@ -679,7 +679,7 @@ module Subgoals=
       let nbtyenv = 
 	try merge_tyenvs btyenv ntyenv
 	with _ -> 
-	    raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
+	  raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
       in 
       mk_branch btag nbtyenv bsqnts
 
@@ -696,13 +696,13 @@ module Subgoals=
    4. If the tag of [b'] is not [ticket] then fail.
 
    5. Merge the type environment of [b'] with [n']. (This may be
-      unnecessary.)
+   unnecessary.)
    (Almost certainly unnecessary so not done.)
 
    6. Return the branch formed from [b'] with the tag of [node].
 
    raise logic_error on failure.
-*)
+ *)
     let apply tac node = 
       let ticket = Tag.create()
       in 
@@ -715,11 +715,11 @@ module Subgoals=
       else 
 	replace_branch_tag b1 (node_tag n1)
 (*
-	let b2 = merge_tac_tyenvs n1 b1
-	in 
-	replace_branch_tag b2 (node_tag n1)
-*)
-      
+   let b2 = merge_tac_tyenvs n1 b1
+   in 
+   replace_branch_tag b2 (node_tag n1)
+ *)
+	  
 (*
    [apply_to_node tac (Node(tyenv, sqnt))]
 
@@ -932,7 +932,7 @@ module Rules=
    apply function (f: sqnt -> sqnt list) to the first subgoal of g
    Like sqnt_apply but does not change [tyenv] of [g].
    Used for rules which do not alter the type environment.
-*)
+ *)
     let sqnt_apply r g = Subgoals.rule_apply r g
     let simple_sqnt_apply r g = Subgoals.simple_rule_apply r g
 
@@ -1072,8 +1072,8 @@ module Rules=
    Return the term with the resolved names.
  *)
 (*
-    let set_names scp trm = Term.set_names scp trm
-*)
+   let set_names scp trm = Term.set_names scp trm
+ *)
 
 (*
    [check_term sq trm]
@@ -1568,10 +1568,10 @@ module Rules=
       in 
       add_info inf [] [ft] [];
       mk_subgoal
-	  (Sequent.sqnt_tag sq, 
-	   Sequent.sqnt_env sq, 
-	   join_up lasms (nt::rasms),
-	   Sequent.concls sq)
+	(Sequent.sqnt_tag sq, 
+	 Sequent.sqnt_env sq, 
+	 join_up lasms (nt::rasms),
+	 Sequent.concls sq)
 
     let betaA info i g = 
       simple_sqnt_apply (betaA0 info i) g
@@ -1631,22 +1631,22 @@ module Rules=
       and (lasms, asm, rasms) = split_at_asm i (Sequent.asms sq)
       and (lconcls, concl, rconcls) = split_at_concl j (Sequent.concls sq)
       in 
-	let tyenv1 = 
-	  try
-	    Formula.alpha_equals_match 
-	      scp tyenv (drop_tag asm) (drop_tag concl)
-	  with _ -> 
-	    (raise (logic_error "Assumption not equal to conclusion"
-		      [drop_tag asm; drop_tag concl]))
-	in 
-	let tyenv2=
-	  try 
-	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
-	  with _ -> 
-	    (raise (logic_error "basic: Inconsistent types"
-		      [drop_tag asm; drop_tag concl]))
-	in 
-	(add_info inf [] [] []; raise (Solved_subgoal tyenv2))
+      let tyenv1 = 
+	try
+	  Formula.alpha_equals_match 
+	    scp tyenv (drop_tag asm) (drop_tag concl)
+	with _ -> 
+	  (raise (logic_error "Assumption not equal to conclusion"
+		    [drop_tag asm; drop_tag concl]))
+      in 
+      let tyenv2=
+	try 
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
+	with _ -> 
+	  (raise (logic_error "basic: Inconsistent types"
+		    [drop_tag asm; drop_tag concl]))
+      in 
+      (add_info inf [] [] []; raise (Solved_subgoal tyenv2))
 
     let basic inf i j g = 
       sqnt_apply (basic0 inf i j) g
@@ -1747,7 +1747,7 @@ module Rules=
 	|  (Asm(x)::xs) ->
 	    let asm=
 	      (try 
-		 drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
+		drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
 	      with 
 		Not_found -> 
 		  raise 
@@ -1757,7 +1757,7 @@ module Rules=
 	|  (OAsm(x, order)::xs) ->
 	    let asm=
 	      (try 
-		 drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+		drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
 	      with 
 		Not_found -> 
 		  raise 
@@ -1795,12 +1795,12 @@ module Rules=
 	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
 	in 
 	add_info inf [] [ft] [];
-	  (mk_subgoal
-	     (Sequent.sqnt_tag sq, 
-	      Sequent.sqnt_env sq, 
-	      join_up lasms ((ft, nt)::rasms),
-	      Sequent.concls sq), 
-	   gtyenv))
+	(mk_subgoal
+	   (Sequent.sqnt_tag sq, 
+	    Sequent.sqnt_env sq, 
+	    join_up lasms ((ft, nt)::rasms),
+	    Sequent.concls sq), 
+	 gtyenv))
       with x -> raise 
 	  (Result.add_error (logic_error "rewriting" [t]) x)
 
@@ -1848,7 +1848,7 @@ module Rules=
 (*
    [rewrite_rule scp ctrl rrl thm]
    rewrite theorem [thm] with rules [rrl] in scope [scp].
-*)
+ *)
     let rewrite_rule scp ?(ctrl=Formula.default_rr_control) rrl thm =
       let conv_aux t = 
 	try 
@@ -1869,90 +1869,285 @@ module Rules=
 open Rules
 
 (* 
-   cdefn:
-   Checked Definitions: 
+   cdefn:  Checked Definitions: 
    checking of type and term definitions and declarations
- *)
+
+   scdefn: version of cdefn suitable for disk storage.
+*)
 type cdefn =
-    TypeDef of Basic.ident * string list * Basic.gtype option
+    TypeAlias of Basic.ident * string list * Basic.gtype option
+  | TypeDef of ctypedef
+  | TermDecln of Basic.ident * Basic.gtype
   | TermDef of 
-      Basic.ident * Basic.gtype
-	* (string*Basic.gtype) list * thm option
+      Basic.ident * Basic.gtype	* thm 
+and ctypedef =
+    {
+     type_name : Basic.ident;  (* name of new type *)
+     type_args : string list;  (* arguments of new type *)
+     type_rep: cdefn;          (* representation function *)
+     type_thm: thm;          (* subtype theorem *)
+     type_set: Formula.form      (* defining set *)
+   }
+
+type saved_cdefn =
+    STypeAlias of Basic.ident * string list * Gtypes.stype option
+  | STypeDef of saved_ctypedef
+  | STermDecln of Basic.ident * Gtypes.stype
+  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+and saved_ctypedef =
+    {
+     stype_name : Basic.ident;  (* name of new type *)
+     stype_args : string list;  (* arguments of new type *)
+     stype_rep: saved_cdefn;          (* representation function *)
+     stype_thm: saved_thm;          (* subtype theorem *)
+     stype_set: Formula.saved_form      (* defining set *)
+   }
+
 
 (* Defns: functions for checking definitions and declarations *)
 module Defns =
   struct
 
-    let is_typedef x = 
-      match x with 
-	TypeDef _ -> true
-      | _ -> false
-
-    let is_termdef x = 
-      match x with 
-	TermDef _ -> true
-      | _ -> false
-
-    let dest_typedef x =
-      match x with 
-	TypeDef (id, args, def) -> (id, args, def)
-      | _ -> failwith "Not a term definition"
-
-    let dest_termdef x =
-      match x with 
-	TermDef (id, ty, args, thm) -> (id, ty, args, thm)
-      | _ -> failwith "Not a term definition"
+    let defn_error s t = Term.term_error s (List.map Formula.term_of t)
+    let add_defn_error s t es = 
+      raise (Result.add_error (defn_error s t) es)
 
 
-(* mk_typedef scp n args d:
-   - check n doesn't exist already
-   - check all arguments in args are unique
-   if defining n as d
-   - check d is well defined 
-   (all constructors exist and variables are in the list of arguments)
- *)
+let rec to_saved_cdefn td = 
+  match td with
+    TypeAlias (id, sl, ty) ->
+      (match ty with 
+	None -> STypeAlias (id, sl, None)
+      | Some t -> STypeAlias (id, sl, Some(Gtypes.to_save t)))
+  | TermDecln (id, ty) -> 
+      STermDecln (id, Gtypes.to_save ty)
+  | TermDef (id, ty, thm) ->
+      STermDef (id, Gtypes.to_save ty, to_save thm)
+  | TypeDef ctdef ->
+      STypeDef (to_saved_ctypedef ctdef)
+and
+    to_saved_ctypedef x = 
+      {
+       stype_name = x.type_name;
+       stype_args = x.type_args;
+       stype_rep = to_saved_cdefn x.type_rep;
+       stype_thm = to_save x.type_thm;
+       stype_set = Formula.to_save x.type_set
+     }
 
-    let check_args_unique ags=
-      let rec check_aux ys=
-	match ys with
-	  [] -> ()
-	| (x::xs) -> 
-	    if (List.exists (fun a -> a=x) xs) 
-	    then raise 
-		(Result.error 
-		   ("Identifier "^x^" appears twice in argument list"))
-	    else check_aux xs 
-      in 
-      check_aux ags
+let rec from_saved_cdefn td = 
+  match td with
+    STypeAlias (id, sl, ty) ->
+      (match ty with 
+	None -> TypeAlias (id, sl, None)
+      | Some t -> TypeAlias (id, sl, Some(Gtypes.from_save t)))
+  | STermDecln (id, ty) -> 
+      TermDecln (id, Gtypes.from_save ty)
+  | STermDef (id, ty, thm) ->
+      TermDef (id, Gtypes.from_save ty, from_save thm)
+  | STypeDef ctdef ->
+      TypeDef (from_saved_ctypedef ctdef)
+and
+    from_saved_ctypedef x = 
+      {
+       type_name = x.stype_name;
+       type_args = x.stype_args;
+       type_rep = from_saved_cdefn x.stype_rep;
+       type_thm = from_save x.stype_thm;
+       type_set = Formula.from_save x.stype_set
+     }
 
-    let check_type_defn scp arguments ty =
-      try 
-	Gtypes.well_defined scp ~args:arguments ty
-      with
-	x -> raise (Gtypes.add_type_error "Badly formed type" [ty] x)
-
-    let mk_typedef scp n ags d =
-      let th = scp.Gtypes.curr_thy
-      in 
-      let args = check_args_unique ags
-      in 
-      let dfn = 
-	match d with
-	  None -> None
-	| Some(a) -> 
-	    (try check_type_defn scp ags a; Some(a)
-	    with err -> 
-	      raise (Gtypes.add_type_error "Badly formed definition" [a] err))
-      in 
-      (TypeDef((Basic.mk_long th n), ags, dfn))
 
 
 (* mk_termdef scp n ty args d:
    - check n doesn't exist already
    - check all arguments in args are unique
  *)
+    let is_termdef x = 
+      match x with 
+	TermDef _ -> true
+      | _ -> false
 
-    let mk_termdef scp n ty args d = failwith "mk_termdef is undefined"
+    let dest_termdef x =
+      match x with 
+	TermDef (id, ty, thm) -> (id, ty, thm)
+      | _ -> raise (defn_error "Not a term definition" [])
+
+    let mk_termdef scp n args d = 
+      let (id, ty, frm) = Defn.mk_defn scp n args d
+      in 
+      let thm = mk_axiom frm
+      in 
+      TermDef(id, ty, thm)
+
+(* 
+   [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
+   scope [scp].
+   Fails if identifier [name] is already defined in [scp]
+   or if [ty] is not well defined.
+*)
+    let is_termdecln x = 
+      match x with 
+	TermDecln _ -> true
+      | _ -> false
+
+    let dest_termdecln x =
+      match x with 
+	TermDecln (id, ty) -> (id, ty)
+      | _ -> raise (defn_error "Not a term declaration" [])
+
+    let mk_termdecln scp n ty =
+      let name = Basic.mk_long (scp.Gtypes.curr_thy) n
+      in 
+      let (id, typ) = Defn.mk_decln scp name ty
+      in 
+      TermDecln(id, typ)
+
+(*
+   Type definitions
+ *)
+
+(* Type aliasing *)
+
+(* mk_typealias scp n args d:
+   - check n doesn't exist already
+   - check all arguments in args are unique
+   if defining n as d
+   - check d is well defined 
+   (all constructors exist and variables are in the list of arguments)
+ *)
+    let is_typealias x = 
+      match x with 
+	TypeAlias _ -> true
+      | _ -> false
+
+    let dest_typealias x =
+      match x with 
+	TypeAlias (id, args, def) -> (id, args, def)
+      | _ -> raise (defn_error "Not a term definition" [])
+
+
+(*
+   mk_typealias scp n args d:
+   - check n doesn't exist already
+   - check all arguments in args are unique
+   if defining n as d
+   - check d is well defined 
+   (all constructors exist and variables are in the list of arguments)
+ *)
+    let mk_typealias scp n ags d =
+      let th = scp.Gtypes.curr_thy
+      in 
+      let args = Defn.check_args_unique ags
+      in 
+      let dfn = 
+	match d with
+	  None -> None
+	| Some(a) -> 
+	    (try 
+	      Gtypes.well_defined scp ags a;
+	      Some(a)
+	    with err -> 
+	      raise (Gtypes.add_type_error "Badly formed definition" [a] err))
+      in 
+      TypeAlias((Basic.mk_long th n), ags, dfn)
+
+(* Type definition: subtype *)
+
+(*
+   mk_subtype scp name args d setP rep:
+   - check name doesn't exist already
+   - check all arguments in args are unique
+   - check def is well defined 
+   (all constructors exist and variables are in the list of arguments)
+   - ensure setP has type (d -> bool)
+   - declare rep as a function of type (d -> n)
+   - make subtype property from setp and rep.
+ *)
+
+    let is_subtype x = 
+      match x with 
+	TypeDef _ -> true
+      | _ -> false
+
+    let dest_subtype x =
+      match x with 
+	TypeDef ctd -> ctd
+      | _ -> raise (defn_error "Not a term definition" [])
+
+    let mk_subtype_thm scp setp rep =
+      mk_axiom (Formula.make scp (Defn.mk_subtype_prop setp rep))
+
+(*
+   [prove_subtype_exists scp setp thm]
+   Use [thm] to prove the goal << ?x. setp x >> (built by mk_subtype_exists).
+
+   [thm] should be of the form << ?x. setp x >> otherwise 
+   the proof will fail.
+ *)
+    let prove_subtype_exists scp setp thm=
+      let goal_form = Formula.make scp (Defn.mk_subtype_exists setp)
+      in 
+      let gl = mk_goal scp goal_form
+      in 
+      let info = ref (make_tag_record [] [] [])
+      in 
+      let tac1 =
+	(fun g -> Rules.cut (Some info) thm g)
+      in 
+      let tac2 =
+	(fun g ->
+	  let a = FTag (List.hd ((!info).forms))
+	  and c = FNum 1
+	  in 
+	  Rules.basic None a c g)
+      in 
+      let gl1=Subgoals.apply_to_goal tac1 gl
+      in 
+      let gl2=Subgoals.apply_to_goal tac2 gl1
+      in 
+      mk_thm gl2
+
+    let mk_subtype scp name args dtype setp rep_name exist_thm =
+      let th = scp.Gtypes.curr_thy
+      in 
+      let rep_id = Basic.mk_long th rep_name
+      and type_id = Basic.mk_long th name
+      in 
+      (* run checks and get the subtype property *)
+      let dtype1 = Gtypes.set_name scp dtype
+      in
+      let (rep_ty, new_setp, subtype_prop) =
+	Defn.mk_subtype scp name args dtype1 setp rep_id
+      in 
+      (* try to prove the subtype exists *)
+      let does_exist_thm = prove_subtype_exists scp new_setp exist_thm
+      in 
+      (* temporarily extend the scope with the new type and rep identifier *)
+      (* nscp0: scope with new type *)
+      let nscp0 = Defn.extend_scope_typedef scp type_id args 
+      in 
+      (* declare the the rep function *)
+      let rep_decln = mk_termdecln nscp0 rep_name rep_ty
+      in 
+      (* nscp1: scope with new type and rep identifier *)
+      let nscp1 = 
+	let (nid, nty) = dest_termdecln rep_decln
+	in
+	Defn.extend_scope_identifier nscp0 nid nty
+      in 
+      (* make the subtype representation theorem *)
+      let subtype_thm = 
+	mk_subtype_thm nscp1 new_setp rep_id
+      in 
+      TypeDef
+      {
+       type_name = type_id;
+       type_args = args; 
+       type_rep = rep_decln;
+       type_thm = subtype_thm;
+       type_set = Formula.make scp new_setp
+     }
 
   end
 
@@ -2025,3 +2220,62 @@ let print_branch ppstate branch=
 	(if(len>1) then "subgoal" else "subgoals");
       print_subgoals 1 sqnts);
   Format.printf "@]"
+
+
+let print_termdefn ppinfo (n, ty, th) = 
+    Format.printf "@[";
+    Format.printf "@[";
+    Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+    Format.printf ":@ ";
+    Gtypes.print ppinfo ty;
+    Format.printf "@],@ ";
+    print_thm ppinfo th;
+    Format.printf "@]"
+
+let print_termdecln ppinfo (n, ty) = 
+    Format.printf "@[";
+    Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+    Format.printf ":@ ";
+    Gtypes.print ppinfo ty;
+    Format.printf "@]"
+
+let print_typealias ppinfo (n, args, ty) = 
+  let named_ty = 
+    Gtypes.mk_constr 
+      (Basic.Defined n)
+      (List.map (fun x -> Gtypes.mk_var x) args)
+  in 
+  Format.printf "@[";
+  Gtypes.print ppinfo named_ty;
+  (match ty with
+    None -> ()
+  | (Some t) -> 
+      Format.printf "=@,";
+      Gtypes.print ppinfo t);
+  Format.printf "@]"
+
+let rec print_subtype ppinfo x =  
+  let named_ty = 
+    Gtypes.mk_constr 
+      (Basic.Defined x.type_name)
+      (List.map (fun x -> Gtypes.mk_var x) x.type_args)
+  in 
+  Format.printf "@[<v>";
+  Format.printf "@[";
+  Gtypes.print ppinfo named_ty;
+  Format.printf "@ <=@ ";
+  Formula.print ppinfo x.type_set;
+  Format.printf "@]@,";
+  Format.printf "@[";
+  print_cdefn ppinfo x.type_rep;
+  Format.printf "@]@,";
+  print_thm ppinfo x.type_thm;
+  Format.printf "@]"
+and
+  print_cdefn ppinfo x = 
+  match x with
+    TypeAlias (n, args, ty) -> 
+      print_typealias ppinfo (n, args, ty)
+  | TypeDef y -> print_subtype ppinfo y
+  | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
+  | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th)

@@ -74,9 +74,9 @@ val load_theory : thydb -> string -> bool -> (Theory.contents -> unit)
     val add_defn : 
 	string -> Basic.gtype -> Logic.thm -> Theory.property list 
 	  -> thydb -> unit
-    val add_decln_rec :Defn.decln -> int -> Theory.property list
+    val add_decln_rec :Logic.cdefn -> int -> Theory.property list
       -> thydb -> unit
-    val add_decln :Defn.decln 
+    val add_decln :Logic.cdefn
       -> Theory.property list -> thydb -> unit
     val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
        -> bool -> int -> Theory.property list -> thydb -> unit

@@ -90,14 +90,22 @@ let in_scope scp th f =
 let retype tenv x = Term.retype tenv x
 
 (*
-   [close_term scp trm]: close term [trm] in scope [scp].
+   [resolve_closed_term scp trm]: 
+   resolve names and types in closed term [trm] in scope [scp].
 *)
-let close_term scp trm=
+let binding_set_names memo scp binding =
+  let (qnt, qname, qtype) = Basic.dest_binding binding
+  in 
+  Basic.mk_binding qnt qname (Gtypes.set_name ~memo:memo scp qtype)
+
+let resolve_closed_term scp trm=
   let true_term = Term.mk_short_var "true"
   and curr_thy = scp.Gtypes.curr_thy
   in 
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env()
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
   in 
   let lookup_id n = 
     try 
@@ -106,53 +114,97 @@ let close_term scp trm=
       let nth = (scp.Gtypes.thy_of Basic.fn_id n) 
       in (ignore(Lib.add n nth id_memo); nth)
   in 
+  let lookup_type id = 
+    try 
+      Gtypes.copy_type (Lib.find id type_memo)
+    with Not_found -> 
+      let ty = (scp.Gtypes.typeof_fn id) 
+      in (ignore(Lib.add id ty type_memo); ty)
+  in 
   let rec set_aux qnts t=
     match t with
       Id(id, ty) -> 
 	let th, n = Basic.dest_fnid id
 	in 
+	let nid = 
 	  if(th = Basic.null_thy)
 	  then 
 	    try 
-	      (let nth = lookup_id n
-	      in Id((Basic.mk_long nth n), ty))
+	      let nth = lookup_id n
+	      in 
+	      Basic.mk_long nth n
 	    with Not_found -> 
 	      raise 
-		(Term.term_error 
-		   "Formula.make: term not in scope" [t])
-	  else 
-	    (if (Term.in_scope scope_memo scp curr_thy t)
-	    then t
-	    else 
-	      raise 
-		(Term.term_error 
-		   "Formula.make: term not in scope" [t]))
+		(Term.term_error "Formula.make: term not in scope" [t])
+	  else id
+	in 
+	let nty =  
+	  try 
+	    lookup_type id
+	  with Not_found -> 
+	    raise 
+	      (Term.term_error 
+		 "Formula.make: Can't find type for term" [t])
+	in 	
+	let ty1=
+	  try
+	    Gtypes.set_name ~memo:type_thy_memo scp ty
+	  with err ->
+	    raise (Term.add_term_error "Invalid type" [t] err)
+	in 
+	let ret_id = Typed(Id(nid, nty), ty1)
+	in 
+	(if (Term.in_scope scope_memo scp curr_thy ret_id)
+	then ret_id
+	else 
+	  raise 
+	    (Term.term_error 
+	       "Formula.make: term not in scope" [t]))
     | Free(n, ty) -> 
 	(try 
 	  let nth = lookup_id n
 	  in 
 	  let nid = Basic.mk_long nth n
 	  in 
-	  set_aux qnts (Id(nid, ty))
-	with Not_found -> t)
+	  let nty = 
+	    try lookup_type nid
+	    with Not_found -> 
+	      raise 
+		(Term.term_error 
+		   "Formula.make: Can't find type for term" [t])
+	  in 
+	  let ty1=
+	    try
+	      Gtypes.set_name ~memo:type_thy_memo scp ty
+	    with err ->
+	      raise (Term.add_term_error "Invalid type" [t] err)
+	  in 
+	  set_aux qnts (Typed(Id(nid, nty), ty1))
+	with Not_found -> 
+	  raise 
+	    (Term.term_error 
+	       "Formula.make: can't resolve free variable" [t]))
     | Qnt(qnt, q, b) -> 
-	let qnts1 = Term.bind (Bound(q)) true_term qnts
+	let nq = binding_set_names type_thy_memo scp q
 	in 
-	Qnt(qnt, q, set_aux qnts1 b)
+	let qnts1 = Term.bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	Qnt(qnt, nq, set_aux qnts1 b)
     | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
-	if Term.member t qnts
-	then t
-	else 
+	(try
+	  (Term.find (Bound(q)) qnts)
+	with Not_found -> 
 	  raise (Term.term_error 
-		   "Bound variable occurs outside binding" [t])
+		   "Bound variable occurs outside binding" [t]))
+
     | _ -> t
   in set_aux (Term.empty_subst()) trm
 
 let make ?env scp t= 
   let t1=
-    try close_term scp t
+    try resolve_closed_term scp t
     with x -> raise
 	(Result.add_error x
 	   (Term.term_error 
@@ -164,8 +216,10 @@ let make ?env scp t=
     let tyenv1 = 
       Typing.typecheck_env scp tyenv t1 (Gtypes.mk_null())
     in 
-    (Lib.apply_option (fun x -> x:=tyenv1) env ();
-    Term.retype_pretty tyenv1 t1)
+    Term.retype tyenv1 t1
+
+(*    (Lib.apply_option (fun x -> x:=tyenv1) env ();
+    Term.retype_pretty tyenv1 t1) *)
   with x -> 
     raise (Result.add_error x 
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
