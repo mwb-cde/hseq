@@ -56,6 +56,13 @@ end
 (* unfold a definition *)
     val unfold : ?f:Logic.label -> string -> Tactics.tactic
 
+(* [cut_inst_tac thm vals]: cut theorem [thm], instantiate it with [vals].
+   Fail if [cut thm] fails or if there are more terms in [vals] then there
+   are toplevel universal quantifiers in [thm].
+*)
+val cut_inst_tac: 
+    ?info:Logic.info -> Logic.thm -> Basic.term list -> Tactics.tactic
+
 (* cut a named theorem *)
 val cut_thm: string -> Tactics.tactic
 

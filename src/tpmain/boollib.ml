@@ -163,7 +163,6 @@ let eq_tac ?c g =
 	 in 
 	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
-let cut_thm str = (cut (lemma str))
 
 let unfold ?f str g= 
   let th = 
@@ -708,6 +707,24 @@ let cut_back_tac ?info thm ?c g=
   in 
   (tac1++tac2) g
 
+
+let cut_inst_tac ?info thm vals goal = 
+  let data = Drule.mk_info()
+  in 
+  let tac1 = (fun g -> Logic.Rules.cut (Some data) thm g)
+  in 
+  let tac2 g = 
+    let a=Lib.get_one (Drule.formulas data) (Failure "cut_inst_tac")
+    in 
+    Logic.add_info info [] [a] [];
+    inst_asm_rule (Drule.ftag a) vals g
+  in 
+  let goal1 = (tac1 ++ tac2) goal
+  in 
+  goal1
+
+
+let cut_thm str = (cut (lemma str))
 
 module Props =
   struct
