@@ -34,7 +34,6 @@ module Skolem:
       val get_new_sklm: Basic.ident -> Basic.gtype -> skolem_type 
 	-> (Basic.term * skolem_type)
 
-
       val mk_new_skolem: 
 	  skolem_info
 	-> Basic.term * Basic.gtype 
@@ -52,37 +51,37 @@ module Skolem:
     end
 
 module Sequent:
-sig
-  type t
+    sig
+      type t
 
 (* information from a sequent *)
 
-val asms : t -> tagged_form list
-val concls : t -> tagged_form list
-val scope_of: t -> Gtypes.scope
-val sklm_cnsts: t -> Skolem.skolem_cnst list
-val sqnt_tyvars: t -> Basic.gtype list
-val sqnt_tag: t->Tag.t
+      val asms : t -> tagged_form list
+      val concls : t -> tagged_form list
+      val scope_of: t -> Gtypes.scope
+      val sklm_cnsts: t -> Skolem.skolem_cnst list
+      val sqnt_tyvars: t -> Basic.gtype list
+      val sqnt_tag: t->Tag.t
 
 (* get/delete/copy particular assumptions/conclusions *)
-val get_asm : int -> t -> tagged_form
-val get_cncl : int -> t -> tagged_form
+      val get_asm : int -> t -> tagged_form
+      val get_cncl : int -> t -> tagged_form
 
-val delete_asm : int -> tagged_form list  -> tagged_form list
-val delete_cncl : int -> tagged_form list  -> tagged_form list
+      val delete_asm : int -> tagged_form list  -> tagged_form list
+      val delete_cncl : int -> tagged_form list  -> tagged_form list
 
 
 (* get tagged assumptions/conclusions *)
-val get_tagged_asm : Tag.t -> t -> tagged_form
-val get_tagged_cncl : Tag.t -> t -> tagged_form
-val get_tagged_form: Tag.t -> t -> tagged_form
+      val get_tagged_asm : Tag.t -> t -> tagged_form
+      val get_tagged_cncl : Tag.t -> t -> tagged_form
+      val get_tagged_form: Tag.t -> t -> tagged_form
 
 (* assumption/conclusion tag <-> index *)
 
-val tag_to_index : Tag.t -> t -> int
-val index_to_tag : int -> t -> Tag.t 
+      val tag_to_index : Tag.t -> t -> int
+      val index_to_tag : int -> t -> Tag.t 
 
-end
+    end
 
 type goal
 type rule= goal -> goal 
@@ -98,7 +97,6 @@ type label =
 
 val label_to_tag: label -> Sequent.t -> Tag.t
 val label_to_index: label -> Sequent.t -> int
-
 
 (*
    rr_type: where to get rewrite rule from
@@ -137,7 +135,6 @@ val sqntError : string ->  exn
 val addsqntError : string -> exn -> 'a
 
 (* tag of formula *)
-(* val tag_of_form: tagged_form -> Tag.t *)
 val form_tag: tagged_form -> Tag.t 
 val drop_tag: tagged_form -> Formula.form
 
@@ -148,26 +145,17 @@ val get_label_form: label -> Sequent.t -> tagged_form
 
 
 (* manipulation of subgoals *)
-
 val has_subgoals: goal -> bool
 val get_sqnt:goal -> Sequent.t
 
 val goal_tyenv: goal -> Gtypes.substitution
 
-(* get tags of all subgoals *)
-
 (* get tag of first subgoal *)
 val get_goal_tag: goal -> Tag.t
-
-(* make a goal from a formula  *)
-
-(* val num_of_subsqnts: goal -> int *)
 val num_of_subgoals: goal -> int
-
 val get_subgoals: goal -> Sequent.t list
 val get_nth_subgoal_sqnt: int -> goal-> Sequent.t
 val goal_has_subgoals: goal -> bool
-
 val get_subgoal_tags : goal -> Tag.t list
 
 (* manipulating goals *)
@@ -179,9 +167,8 @@ val goal_focus: Tag.t->rule
 (* rotate subgoals left and right
    raise No_subgoals if no subgoals
  *)
-val rotate_subgoals_left : int -> goal -> goal
+val rotate_subgoals_left : int -> goal -> goal 
 val rotate_subgoals_right : int -> goal -> goal
-
 
 (**
    [mk_goal scp f]
@@ -229,7 +216,6 @@ val add_info:
       Tag.t list-> Tag.t list -> Basic.term list -> unit
 
 
-
 module Rules:
     sig
 
@@ -251,7 +237,7 @@ module Rules:
 
 (* apply a rule to a goal *)
 (*      val goal_apply : rule -> goal -> goal *)
-      val postpone :  goal -> goal
+      val postpone :  rule
 
 
 (*
