@@ -32,3 +32,7 @@ val type_char: char ref
    [init()]
    Set up quotation parsing.
 *)
+
+val test_astexpander_fn : (string -> MLast.expr) ref
+
+

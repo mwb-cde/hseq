@@ -146,10 +146,16 @@ let pattexpander str =
 
 let pattexpander str = failwith "Pattern expander not implemented"
 
+(* 
+   Tester
+*)
+let test_astexpander_fn = ref (fun _ -> failwith "test_astexpander")
+let test_astexpander x = (!test_astexpander_fn) x
 
 let init() = 
   Quotation.add "def" (Quotation.ExAst (def_astexpander, pattexpander));
   Quotation.add "tp" (Quotation.ExAst (std_astexpander, pattexpander));
+  Quotation.add "test" (Quotation.ExAst (test_astexpander, pattexpander));
   Quotation.default:="tp"
 
 let _ = init()
