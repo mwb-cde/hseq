@@ -6,7 +6,7 @@ val print_formula : Formula.form -> unit
 val print_type : Basic.gtype -> unit
 val print_theory: Theory.thy -> unit
 
-val print_sqnt: Logic.sqnt -> unit
+val print_sqnt: Logic.Sequent.t -> unit
 val print_thm: Logic.thm -> unit
 val print_defn: Defn.defn -> unit
 

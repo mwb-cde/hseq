@@ -24,12 +24,12 @@ let curr_sqnt p =
     g -> (Logic.get_nth_subgoal_sqnt 0 g)
 
 let get_asm i = 
-  let (ft, nt)= Logic.get_asm i (curr_sqnt (top()))
+  let (ft, nt)= Logic.Sequent.get_asm i (curr_sqnt (top()))
   in 
   (ft, Formula.term_of_form nt)
 
 let get_concl i = 
-  let (ft, nt)= Logic.get_cncl i (curr_sqnt (top()))
+  let (ft, nt)= Logic.Sequent.get_cncl i (curr_sqnt (top()))
   in 
   (ft, Formula.term_of_form nt)
 

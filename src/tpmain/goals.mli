@@ -23,7 +23,7 @@
     val pop_plist : unit -> prf
 
 (* the current sequent *)
-    val curr_sqnt : prf -> Logic.sqnt
+    val curr_sqnt : prf -> Logic.Sequent.t
 
 (* start a proof attempt *)
     val goal : Basic.term -> prf

@@ -3,13 +3,13 @@ let ftag t = (Logic.FTag t)
 let fnum n = (Logic.FNum n)
 
 let asm_forms sq = 
-  List.map Logic.drop_tag (Logic.asms sq)
+  List.map Logic.drop_tag (Logic.Sequent.asms sq)
 
 let concl_forms sq = 
-  List.map Logic.drop_tag (Logic.concls sq)
+  List.map Logic.drop_tag (Logic.Sequent.concls sq)
 
 let sequent g = Logic.get_sqnt g
-let scope_of g = Logic.scope_of (sequent g)
+let scope_of g = Logic.Sequent.scope_of (sequent g)
 
 let get_asm i g= Logic.drop_tag(Logic.get_label_asm i (sequent g))
 let get_cncl i g= Logic.drop_tag(Logic.get_label_cncl i (sequent g))
@@ -78,10 +78,10 @@ let first p xs =
   ftag(first_aux xs)
 
 let first_asm p sq =
-  (first p (Logic.asms sq))
+  (first p (Logic.Sequent.asms sq))
 
 let first_concl p sq =
-  (first p (Logic.concls sq))
+  (first p (Logic.Sequent.concls sq))
 
 
 let rec find_rule t rs =
@@ -155,7 +155,7 @@ let foreach_conc rs sq =
   let chng=ref false
   in 
   let rec each_safe i nsq =
-    if (List.length (Logic.concls (Logic.get_sqnt nsq)))>= i 
+    if (List.length (Logic.Sequent.concls (Logic.get_sqnt nsq)))>= i 
     then 
       try
 	(let rl = 
@@ -200,7 +200,7 @@ let foreach_conc_except excpt rs sq =
   let chng=ref false
   in 
   let rec each_safe i nsq =
-    if (List.length (Logic.concls (Logic.get_sqnt nsq)))>= i 
+    if (List.length (Logic.Sequent.concls (Logic.get_sqnt nsq)))>= i 
     then 
       try
 	let (ft, fc)=Logic.get_label_cncl (fnum i) (Logic.get_sqnt nsq)
@@ -239,7 +239,7 @@ let foreach_except excpt rs g=
 let foreach_conc_once r sq =
   let chng = ref false
   in let rec each_once i sq =
-    if (List.length (Logic.concls (Logic.get_sqnt sq)))>= i
+    if (List.length (Logic.Sequent.concls (Logic.get_sqnt sq)))>= i
     then 
       (try 
 	(let rsl = r (fnum i) sq
@@ -254,7 +254,7 @@ let foreach_conc_once r sq =
 let foreach_asm_once r sq =
   let chng = ref false
   in let rec each_once i sq =
-    if (List.length (Logic.asms (Logic.get_sqnt sq)))>= i
+    if (List.length (Logic.Sequent.asms (Logic.get_sqnt sq)))>= i
     then 
       (try
 	(let rsl = r (fnum (-i)) sq
@@ -333,8 +333,8 @@ let match_formulas typenv scp varp t fs=
    for the match.
 *)
 let match_asm typenv t sq=
-  let scp = Logic.scope_of sq
-  and asms = Logic.asms sq
+  let scp = Logic.Sequent.scope_of sq
+  and asms = Logic.Sequent.asms sq
   in 
   let t1 = Term.set_names scp t
   in let vars = Term.get_free_vars t1
@@ -358,8 +358,8 @@ let match_asm typenv t sq=
    for the match.
 *)
 let match_concl typenv t sq=
-  let scp = Logic.scope_of sq
-  and concls = Logic.concls sq
+  let scp = Logic.Sequent.scope_of sq
+  and concls = Logic.Sequent.concls sq
   in let t1=Term.set_names scp t
   in let vars = Term.get_free_vars t1
   in let varp x = 

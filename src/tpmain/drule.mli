@@ -6,13 +6,13 @@ val ftag : Tag.t -> Logic.label
 val fnum : int -> Logic.label
 
 (* untagged formulas of a sequent *)
-val asm_forms : Logic.sqnt -> Formula.form list
-val concl_forms : Logic.sqnt -> Formula.form list
+val asm_forms : Logic.Sequent.t -> Formula.form list
+val concl_forms : Logic.Sequent.t -> Formula.form list
 
 (** [sequent g]
    get first subgoal of of goal [g].
 *)
-val sequent : Logic.goal -> Logic.sqnt
+val sequent : Logic.goal -> Logic.Sequent.t
 
 (** [scope_of g]
    get scope of first subgoal of of goal [g].
@@ -85,8 +85,8 @@ val inst_list :
    Search starts at (-1)/1 
 *)
 val first : ('a -> bool) -> (Tag.t * 'a) list -> Logic.label
-val first_asm : (Formula.form -> bool) -> Logic.sqnt -> Logic.label
-val first_concl : (Formula.form -> bool) -> Logic.sqnt -> Logic.label
+val first_asm : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
+val first_concl : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
 
 (* first rule which can be applied to an assumption/conclusion *)
 
@@ -168,7 +168,7 @@ val match_formulas:
 *)
 val match_asm : 
     Gtypes.substitution
-  -> Basic.term -> Logic.sqnt -> Logic.label
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
 
 (** [match_concl t sq]
    Find a match for [t] in the assumptions of [sq].
@@ -183,7 +183,7 @@ val match_asm :
 *)
 val match_concl :     
     Gtypes.substitution
-  -> Basic.term -> Logic.sqnt -> Logic.label
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
 
 
 

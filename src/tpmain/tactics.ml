@@ -28,8 +28,8 @@ let lift id g = Logic.Rules.lift None id g
 let skip g= g
 
 let find_basic sq = 
-  let ams = Logic.asms sq
-  and cncs = Logic.concls sq
+  let ams = Logic.Sequent.asms sq
+  and cncs = Logic.Sequent.concls sq
   in 
   let rec find_basic_aux xs =
     match xs with
@@ -38,7 +38,7 @@ let find_basic sq =
 	try 
 	  ((Drule.first 
 	     (fun x-> Formula.alpha_equals
-		 (Logic.scope_of sq) x c) ams), 
+		 (Logic.Sequent.scope_of sq) x c) ams), 
 	   ftag t)
 	with Not_found -> find_basic_aux cs 
   in 
@@ -177,13 +177,15 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   let asm = 
     try 
       Formula.dest_form 
-	(Logic.drop_tag (Logic.get_asm (Logic.label_to_index a sqnt) sqnt))
+	(Logic.drop_tag (Logic.Sequent.get_asm 
+			   (Logic.label_to_index a sqnt) sqnt))
     with Not_found ->
       raise(Result.error "unify_tac: assumption not found")
   and concl = 
     try 
       Formula.dest_form
-	(Logic.drop_tag (Logic.get_cncl (Logic.label_to_index c sqnt) sqnt))
+	(Logic.drop_tag (Logic.Sequent.get_cncl 
+			   (Logic.label_to_index c sqnt) sqnt))
     with Not_found ->
       raise(Result.error "unify_tac: conclusion not found")
   in 
@@ -196,7 +198,7 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   and concl_varp x = (Rewrite.is_free_binder concl_vars x) 
   in 
   let varp x = (asm_varp x) or (concl_varp x)
-  and scope = Logic.scope_of sqnt
+  and scope = Logic.Sequent.scope_of sqnt
   in 
   let env1 = 
     try  (* unify asm and concl *)
@@ -403,7 +405,7 @@ let replace_tac ?(dir=leftright) ?asms ?f goal =
   in 
   let asm_tags=
     match asms with
-      None -> find_equality_asms (Logic.asms sqnt) []
+      None -> find_equality_asms (Logic.Sequent.asms sqnt) []
     | Some xs -> (List.map (fun i -> Logic.label_to_tag i sqnt) xs)
   in 
   let rules = (List.map (fun x -> Logic.Asm (ftag x)) asm_tags) 

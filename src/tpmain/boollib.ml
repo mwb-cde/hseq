@@ -129,7 +129,7 @@ let is_iff f =
 let iffI_rule i goal = 
   let sqnt=Logic.get_sqnt goal
   in 
-  let t, f = Logic.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
+  let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
   in
   if not (is_iff f) then (raise (Result.error "iffI_rule"))
   else 
@@ -475,7 +475,7 @@ let mp_tac ?a ?f g=
   let typenv = Logic.goal_tyenv g
   and sqnt = Drule.sequent g
   in 
-  let scp = Logic.scope_of sqnt
+  let scp = Logic.Sequent.scope_of sqnt
   in 
   let mpform_tag =  (* find the implication in the assumptions *)
     match a with
@@ -502,7 +502,7 @@ let mp_tac ?a ?f g=
     match f with
       None -> 
 	(try
-	  (Drule.match_formulas typenv scp varp l (Logic.asms sqnt))
+	  (Drule.match_formulas typenv scp varp l (Logic.Sequent.asms sqnt))
 	with Not_found -> 
 	  raise (Term.termError ("mp_tac: no match") [mpform]))
     | Some x -> x
@@ -519,7 +519,9 @@ let mp_tac ?a ?f g=
 	   (ftag (Lib.get_one fs (Failure "mp_tac: basic"))))]
       g
   in 
-  if(Tag.equal (Logic.sqnt_tag (sequent g1)) (Logic.sqnt_tag sqnt))
+  if(Tag.equal 
+       (Logic.Sequent.sqnt_tag (sequent g1)) 
+       (Logic.Sequent.sqnt_tag sqnt))
   then g1
   else raise (Logic.logicError "mp_tac: failed" [])
 
