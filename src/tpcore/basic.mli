@@ -5,6 +5,8 @@ type thy_id = string
 type fnident = (thy_id* string)
 
 val null_thy: thy_id
+val null_id: fnident
+val is_null_id: fnident -> bool
 val thy_of_id : fnident -> thy_id
 val name: fnident -> string
 val mklong: string -> string -> fnident

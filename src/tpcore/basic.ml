@@ -2,6 +2,8 @@ type thy_id = string
 type fnident = (thy_id* string)
 
 let null_thy = ""
+let null_id = ("", "")
+let is_null_id x = x=null_id
 let thy_of_id (t, _) = t
 let name (_, n) = n
 let mklong t n = (t, n)

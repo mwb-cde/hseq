@@ -16,12 +16,12 @@
 #install_printer Printer.print_fnident;;
 #install_printer Printer.print_error;;
 
+
 let _ =
   print_string "fm.ml: initialising\n";
   Tpenv.init();
   Tpenv.add_thy_path "thys";
   Tpenv.add_thy_path "../thys"
-
 
 (*
 Tpenv.init();;
