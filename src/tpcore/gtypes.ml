@@ -12,70 +12,11 @@ type stype = ((string * int), typ_const, base_typ) pre_typ
 
 type typedef_record = Scope.type_record
 
-(*
-type typedef_record =
-    {name: string; 
-     args : string list; 
-     alias: gtype option;
-     characteristics: string list}
-*)
-
 type stypedef_record =
     {sname: string; 
      sargs : string list; 
      salias: stype option;
      scharacteristics: string list}
-
-(*
-type scope = 
-    {curr_thy: Basic.thy_id;
-     typeof_fn : ident -> gtype; 
-       typ_defn: ident -> typedef_record;
-	 thy_of:  id_selector ->string -> thy_id;
-	   prec_of: id_selector -> ident -> int;
-	     thy_in_scope: thy_id -> thy_id -> bool}
-
-let empty_typenv ()=
-  { curr_thy = Basic.null_thy;
-    typeof_fn = (fun x-> raise Not_found);
-    typ_defn = (fun x-> raise Not_found);
-    thy_of = (fun x y -> raise Not_found);
-    prec_of = (fun x y -> -1);
-    thy_in_scope =(fun x y-> false)
-  }
-
-let empty_scope ()=
-  {curr_thy = Basic.null_thy; 
-   typeof_fn = (fun x-> raise Not_found);
-   typ_defn = (fun x-> raise Not_found);
-   thy_of = (fun x y -> raise Not_found);
-   prec_of = (fun x y -> -1);
-   thy_in_scope = (fun x y -> false)}
-
-let add_to_scope scp ls =
-  { curr_thy= scp.curr_thy;
-    typeof_fn = 
-    (fun x ->
-      try (List.assoc x ls)
-      with _ -> scp.typeof_fn x);
-    typ_defn = scp.typ_defn;
-    thy_of = scp.thy_of;
-    prec_of = scp.prec_of;
-    thy_in_scope = scp.thy_in_scope}
-
-let extend_scope scp f =
-  { curr_thy = scp.curr_thy;
-    typeof_fn = 
-    (fun x ->
-      try f x 
-      with _ -> scp.typeof_fn x);
-    typ_defn = scp.typ_defn;
-    thy_of = scp.thy_of;
-    prec_of = scp.prec_of;
-    thy_in_scope = scp.thy_in_scope}
-
-let get_typdef tyenv r =  tyenv.typ_defn r (* (get_typenv()) r *)
-*)
 
 let get_typdef scp r =  
   Scope.defn_of scp r
@@ -131,7 +72,6 @@ let eqvar v1 v2 =
   if (is_var v1) & (is_var v2) 
   then equals v1 v2
   else raise (Failure "Not a variable")
-
 
 module TypeTreeData=
   struct 
@@ -374,13 +314,6 @@ let type_error s t = (mk_error((new typeError s t):>error))
 let add_type_error s t es= 
   raise (add_error (type_error s t) es)
 
-(*
-let typeError s t = (mk_error((new typeError s t):>error))
-let addtypeError s t es= 
-  raise (add_error (typeError s t) es)
-*)
-
-
 (* save types *)
 
 let rec to_save_aux inf env ty =
@@ -443,8 +376,8 @@ let from_save_rec record =
 
 (* 
    USING HASHTABLES FOR SUBSTITUTION
-   IS WRONG AND SHOULD BE REMOVED
- *)
+   IS WRONG AND SHOULD BE STOPPED.
+*)
 
 module type RHASHKEYS=
   sig 
@@ -461,8 +394,6 @@ module Rhashkeys:RHASHKEYS=
   end
 module type RHASH = (Hashtbl.S with type key = (gtype))
 module Rhash:RHASH= Hashtbl.Make(Rhashkeys)
-
-
 
 (* Type unification and matching *)
 
@@ -595,7 +526,7 @@ let rec subst t env =
 
    Only used to rewrite the rhs of a definition,
    instantiating its variables with the values of the given arguments.
- *)
+*)
 
 
 let rec rewrite_subst t env =
@@ -958,17 +889,9 @@ let rec check_term scp n vs t =
   | Constr(Defined m, args) -> 
       if n=m then raise Not_found
       else 
-(*	if (has_defn scp n) then raise Not_found
-   else 
- *)
 	List.iter (check_term scp n vs) args
-(*
-  | Constr(_, args) -> 
-      List.iter (check_term scp n vs) args
-*)
   | WeakVar _ -> raise Not_found
   | x -> ()
-
 
 (* check_args args: 
    test each a in args is a variable and occurs only once 
@@ -1064,9 +987,9 @@ let normalize_vars typ=
   in typ1
 
 (* 
-   [well_defined scp args t]: ensure that all constructors in [t] are declared.
-
-    args: check variables are in the list of args 
+   [well_defined scp args t]: ensure that all constructors in [t] are
+   declared.
+   args: check variables are in the list of args
 *)
 let rec well_defined scp args t =
   let lookup_var x= List.find (fun y -> x=y) args
@@ -1113,35 +1036,6 @@ let check_decl_type scp ty=
   check_aux ty
 
 (*
-let rec well_defined scp ?args t =
-  let lookup_fn = ref (fun x -> ())
-  in 
-  let lookup a = (!lookup_fn) a
-  in 
-  let rec well_def t = 
-    match t with 
-      Constr(Defined n, args) ->
-	(try 
-          (let recrd=get_typdef scp n
-          in 
-          if (List.length args)=(List.length recrd.args)
-          then (List.iter well_def args)
-          else raise (Invalid_argument ("well_defined:"^(string_gtype t))))
-	with Not_found -> 
-	  raise (Invalid_argument ("well_defined: "^(string_gtype t))))
-    | Var(v) -> lookup (!v)
-    | WeakVar(v) -> 
-	raise (Invalid_argument ("well_defined:"^(string_gtype t)))
-    | _ -> ()
-  in 
-  match args with 
-    None -> well_def t
-  | Some(xs) -> 
-      lookup_fn:=(fun x -> ignore(List.find (fun y -> x=y) xs));
-      well_def t
-*)
-
-(*
    quick_well_defined: memoised, simpler version of well_defined
    no argument testing
 *)
@@ -1168,11 +1062,6 @@ let rec quick_well_defined scp cache t =
 		   ("quick_well_defined, not found: "
 		      ^(Basic.string_fnid n)^" in "^(string_gtype t)))))
   |	x -> ()
-
-(*
-  |	Constr(f, args) ->
-      List.iter (quick_well_defined scp cache) args
-*)
 
 (* Debugging *)
 
@@ -1255,46 +1144,6 @@ let in_scope memo scp th ty =
    If a variable isn't bound in env, then it is renamed and bound
    to that name in nenv (which is checked before a new name is created).
  *)
-
-(*
-   let mgu_rename_env inf env nenv typ =
-   let new_name_env tenv x =
-   try (lookup x env, tenv)
-   with 
-   Not_found ->
-   (let newty=mk_typevar inf
-   in 
-   (newty, bind_var x newty tenv))
-   in 
-   let rec rename_aux (tenv: substitution) ty=
-   match ty with
-   Var(_) ->
-   (let nt=lookup_var ty env
-   in 
-   if(is_var nt)
-   then new_name_env tenv nt
-   else rename_aux tenv nt)
-   | WeakVar(_) ->
-   (let nt=lookup_var ty env
-   in 
-   if(is_weak nt) then (nt, env)
-   else rename_aux tenv nt)
-   | Constr(f, args) -> 
-   let renv=ref tenv
-   in 
-   let nargs=
-   List.map
-   (fun t -> 
-   let nt, ne=rename_aux (!renv) t
-   in 
-   renv:=ne; nt) args
-   in 
-   (Constr(f, nargs), !renv)
-   | _ -> (ty, tenv)
-   in 
-   rename_aux nenv typ
- *)
-
 let mgu_rename_env inf tyenv name_env typ =
   let new_name_env nenv x =
     try (lookup x nenv, nenv)

@@ -190,7 +190,9 @@ module TermTree=Treekit.BTree(TermTreeData)
 type substitution = (subst_terms)TermTree.t
 
 let empty_subst() = TermTree.nil
+(*
 let subst_size i = TermTree.nil
+*)
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
 
@@ -198,7 +200,6 @@ let find x env =
   let st=basic_find x env 
   in 
   st_term st 
-
 
 let term_of_substterm x = st_term x
 
@@ -554,7 +555,10 @@ let get_free_binders t =
   in 
   free_aux t; !qnts
 
-
+let mk_qnt b t=
+  let (qnt, _, _) = Basic.dest_binding b 
+  in 
+  Qnt(qnt, b, t)
 
 let dest_unop t =
   match (dest_fun t) with
@@ -579,12 +583,12 @@ let inst t r =
     subst_quick (Bound(q)) r b)
   else raise (Failure "inst: not a quantified formula")
 
+
 (* [subst_qnt_var]
    specialised form of substitution for constructing quantified terms. 
    replaces only free variables and only if name and type match the
    quantifying term.
 *)
-
 let subst_qnt_var scp env trm =
   let rec subst_aux t=
     match t with
@@ -604,15 +608,15 @@ let subst_qnt_var scp env trm =
     | _ -> t
   in subst_aux trm
 
-let mk_typed_qnt scp q ty n b =
+let mk_typed_qnt_name scp q ty n b =
   let t=mk_binding q n ty
   in 
   let nb=subst_qnt_var scp
       (Lib.bind (mk_name n) (Bound t) (Lib.empty_env())) b
   in Qnt(q, t, nb)
 
-let mk_qnt tyenv q n b =
-  mk_typed_qnt tyenv q (Gtypes.mk_null()) n b
+let mk_qnt_name tyenv q n b =
+  mk_typed_qnt_name tyenv q (Gtypes.mk_null()) n b
 
 let binder_equiv tyenv s t = 
   match (s, t) with

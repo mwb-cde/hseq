@@ -5,7 +5,7 @@
 ----*)
 
 type thy_id = string
-type ident = (thy_id* string)
+type ident = (thy_id * string)
 
 let null_thy = ""
 let null_id = ("", "")
@@ -26,14 +26,6 @@ let string_fnid n =
 
 
 let dest_fnid (t, n) = (t, n)
-
-type conns_ty =
-    Not
-  | And
-  | Or
-  | Implies
-  | Iff
-  | Equal
 
 type quant_ty =
     All
@@ -76,18 +68,6 @@ let string_const c=
   | Cnum n -> (Num.string_of_num n) 
   | Cbool b -> (string_of_bool b)
 
-type fns =
-    Name of ident
-
-let prec_con c =
-  match c with
-    Equal -> 1
-  | Not -> 2
-  | And -> 3
-  | Or -> 3
-  | Iff -> 4
-  | Implies -> 5
-
 let std_prec f =
   match f with
     "equals" -> 1
@@ -106,25 +86,6 @@ let prec_qnt q =
   | Ex -> 102
   | _ -> 0
 
-let conns_string x =
-  match x with
-    Not -> "not"
-  | And -> "and"
-  | Or -> "or"
-  | Implies -> "=>"
-  | Iff -> "<=>"
-  | Equal -> "="
-
-let connc_string c args =
-  match c with 
-    Not -> "not "^(List.hd args)^""
-  | And -> (List.hd args)^" and "^(List.hd (List.tl args))
-  | Or -> (List.hd args)^" or "^(List.hd (List.tl args))
-  | Implies -> (List.hd args)^" => "^(List.hd (List.tl args))
-  | Iff -> (List.hd args)^" <=> "^(List.hd (List.tl args))
-  | Equal -> (List.hd args)^" = "^(List.hd (List.tl args))
-
-
 let quant_string x =
   match x with 
     All -> "!"
@@ -132,9 +93,6 @@ let quant_string x =
   | Lambda -> "%"
   | Meta -> "*??*"
 
-let fns_string x = 
-  match x with
-    Name n -> string_fnid n
 
 (* Types *)
 

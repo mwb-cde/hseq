@@ -4,52 +4,20 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Term representation and their basic manipulation *)
+(** Term representation and their basic manipulation *)
 
 open Basic
 open Gtypes
 
-(*
-(* Records for quantifiers *)
-type q_type =
-    { quant: Basic.quant_ty;
-      qvar: string;
-      qtyp: Gtypes.gtype}
-
-(* the type of binding quantifers *)
-(* primitive quanitifiers are All, Exists and Lambda *)
-
-type binders
-
-(* the representation of a term *)
-type term =
-    Var of Basic.ident * gtype
-  | Qnt of binders * term
-  | Bound of binders
-  | Const of Basic.const_ty
-  | Typed of term * Gtypes.gtype
-  | App of term * term
-*)
-(*
-(* construct/destruct/compare bindings *)
-val mk_binding : Basic.quant_ty -> string -> Gtypes.gtype
-  -> binders
-val dest_binding : binders -> 
-  (Basic.quant_ty * string * Gtypes.gtype)
-val binder_equality: binders -> binders -> bool
-*)
 val binder_equiv : Scope.t -> term -> term -> bool
 
 (* equality of terms *)
 val equals : term -> term -> bool
-(* renamed to equals
-   val equality : term -> term -> bool
- *)
 
-(* 
+(**
+   [Termhash]:
    Hashtables with a term as the key
- *)
-
+*)
 module type TERMHASHKEYS=
   sig 
     type t = term
@@ -71,13 +39,13 @@ val table_rebind : term -> 'a -> 'a table -> unit
 (* rename bound variables in term (alpha-conversion) *)
 val rename: term -> term
 
-(* The type of term substitutions *)
+(** Substitution in terms *)
 
-(* [TermTree]
+(**
+   [TermTree]
    Trees indexed by terms
- *)
+*)
 module TermTreeData: Treekit.TreeData
-
 module TermTree: 
     sig
       val eql : 'a -> 'a -> bool
@@ -104,19 +72,25 @@ module TermTree:
       val to_list : 'a t -> (TermTreeData.key * 'a) list list
     end
 
+(**
+   [substitution]: the type of term substitutions.
+*)
 type substitution 
 
-(* construct subsitutions *)
+(** subsitution construction *)
 val empty_subst: unit -> substitution
+(*
 val subst_size: int -> substitution
+*)
 
 (* lookup/add/remove term from a substitution *)
 val find: term -> substitution -> term
 val bind: term -> term -> substitution -> substitution
 val member: term -> substitution -> bool
-
 val remove: term -> substitution -> substitution
+(*
 val quiet_remove: term -> substitution -> substitution
+*)
 
 val chase: (term -> bool) -> term -> substitution -> term
 val fullchase: 
@@ -143,12 +117,24 @@ val get_binder_type : term -> gtype
 val dest_qnt :
     term -> binders * Basic.quant_ty * string * Basic.gtype * term
 
-(* constructors/destructors for quanitifed terms *)
+(* constructors/destructors for quantified terms *)
 val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
-val mk_qnt : Scope.t -> 
+
+
+(**
+   [mk_qnt_name scp qnt name t]: make a quantified term, with
+   quantifier [qnt], from term [t], replacing all free variables in [t]
+   with name [name] with the new bound variable.
+
+   [mk_typed_qnt_name scp qnt ty name t]: make a quantified term, with
+   quantifier [qnt], from term [t], replacing all free variables in
+   [t] with name [name] with the bound variable. Set the type of the
+   quantifier to [ty].
+*)
+val mk_qnt_name : Scope.t -> 
   Basic.quant_ty -> string -> term -> term
-val mk_typed_qnt : Scope.t -> 
+val mk_typed_qnt_name : Scope.t -> 
   Basic.quant_ty -> Basic.gtype -> string -> term -> term
 
 (* conversion to a string *)
@@ -184,6 +170,11 @@ val mk_meta : string -> Basic.gtype -> term
 val is_meta : term -> bool
 
 val is_qnt : term-> bool
+(**
+   [mk_qnt scp b t]: make a quantified term, from bound variable [b]
+   and term [t]. The quantifier type matches the bound variable [b].
+*) 
+val mk_qnt : binders -> term -> term
 
 val is_fun : term-> bool
 val mk_fun : Basic.ident -> term list -> term
@@ -234,11 +225,14 @@ val dest_binop : Basic.term -> (Basic.ident * Basic.term * Basic.term)
 
 (* Retyping *)
 
-(* reset the types in a term using a given context/subsitution *)
-(* substitutes variables with their concrete type in the context *)
+(*
+   Reset the types in a term using a given context/subsitution 
+   substitutes variables with their concrete type in the context 
+*)
 val retype: Gtypes.substitution -> term -> term
 
-(* [retype_pretty]
+(*
+   [retype_pretty]
    as for retype, make substitution for type variables
    but also replace other type variables with new, prettier names 
 
@@ -249,13 +243,9 @@ val retype: Gtypes.substitution -> term -> term
 
 val retype_pretty_env: Gtypes.substitution -> term 
   -> (term * Gtypes.substitution)
-(*
-   val retype_pretty: Gtypes.substitution -> term -> term
-*)
 
 val retype_pretty: Gtypes.substitution -> term 
   -> term 
-
 
 (* Pretty printing *)
 
@@ -270,10 +260,6 @@ val print_term : Printer.ppinfo -> int -> term Printer.printer
 val simple_print_fn_app: 
     Printer.ppinfo -> int -> (Basic.ident * term list) Printer.printer
 
-(* 
-   print_term renamed to print,
-   simple_term_printer renamed to print_simple
-*)
 val print : Printer.ppinfo -> term -> unit
 val print_simple: term -> unit
    
@@ -285,9 +271,6 @@ class termError : string -> term list ->
     val trms : term list
     method get : unit -> term list
   end
-(*
-val mk_termError: string -> term list -> Result.error
-*)
 val term_error : string -> term list -> exn
 val add_term_error : string -> term list -> exn -> 'a
 
@@ -299,26 +282,28 @@ val add_term_error : string -> term list -> exn -> 'a
 *)
 val set_names: Scope.t  -> term -> term
 
-(* check that term is in scope:
-   all identifiers and types must be declared in the given scope *)
+(*
+   check that term is in scope:
+   all identifiers and types must be declared in the given scope 
+*)
 val in_scope: (string, bool)Lib.substype 
   -> Scope.t -> Basic.thy_id -> term -> bool
 
-(* simple ordering on terms *)
+(* Simple ordering on terms 
+   [compare_term] uses built-in ocaml compare.
 
-val compare_term: term -> term -> int (* uses ocaml built-in compare *)
-(* the following use compare_term *)
+   [less_than]: uses [compare_term].
+*)
+val compare_term: term -> term -> int 
 val less_than : term -> term  -> bool
 val least: term list -> term
 
-(* 
-   more complex ordering on terms:
+(**
+   [term_lt]: more complex ordering on terms.
    Const < Var <  Bound < App < Qnt
    (Typed t1) < t2 iff t1<t2
- *)
-
+*)
 val term_lt: term -> term -> bool
-
 val term_leq: term -> term -> bool
 val term_gt: term -> term -> bool
 
@@ -332,7 +317,6 @@ val term_gt: term -> term -> bool
  *)
 val rebuild_qnt: 
     quant_ty -> binders list -> term -> term
-
 
 (**
    [close_term qnt free trm]: Close term [trm]. Make variables bound

@@ -36,7 +36,9 @@ val dest_fun_ty : gtype -> (gtype * gtype)
 
 (** type of primitive constructs *)
 val typeof_cnst  : Basic.const_ty -> gtype
+(*
 val typeof_conn  : Basic.conns_ty -> gtype
+*)
 
 (** {c6 Terms} *)
 

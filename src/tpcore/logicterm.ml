@@ -71,12 +71,13 @@ let typeof_cnst c =
 
 let bin_ty a1 a2 r = (mk_fun_ty_from_list [a1; a2] r)
 
+(*
 let typeof_conn c =
   match c with
     Not -> mk_fun_ty_from_list [Gtypes.mk_bool] Gtypes.mk_bool
   | x -> mk_fun_ty_from_list 
 	[Gtypes.mk_bool; Gtypes.mk_bool] Gtypes.mk_bool
-
+*)
 
 (* Terms *)
 
@@ -114,13 +115,13 @@ let dest_equality t =
     |	_ -> raise (term_error "Badly formed equality" [t]))
   else raise (Result.error "Not an equality")
 
-let mk_all tyenv n b= mk_qnt tyenv Basic.All n b
-let mk_ex tyenv n b= mk_qnt tyenv Basic.Ex n b
-let mk_lam tyenv n b= mk_qnt tyenv Basic.Lambda n b
+let mk_all tyenv n b= mk_qnt_name tyenv Basic.All n b
+let mk_ex tyenv n b= mk_qnt_name tyenv Basic.Ex n b
+let mk_lam tyenv n b= mk_qnt_name tyenv Basic.Lambda n b
 
-let mk_all_ty tyenv n ty b= mk_typed_qnt tyenv Basic.All ty n b
-let mk_ex_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Ex ty n b
-let mk_lam_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Lambda ty n b
+let mk_all_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.All ty n b
+let mk_ex_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Ex ty n b
+let mk_lam_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Lambda ty n b
 
 let mk_any=Term.mk_var anyid
 

@@ -85,7 +85,6 @@ functor (A : TreeData) ->
 
    removes the data currently bound to key in tree
    does nothing if key is not in tree
-
  *)
 (*      val remove : 'a t -> A.key -> 'a t *)
 
