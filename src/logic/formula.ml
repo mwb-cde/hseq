@@ -123,7 +123,9 @@ let mk_form scp t=
     let nt=Term.set_names scp t
     in 
     (try
-      let env = Typing.settype scp nt
+(*      let env = Typing.settype scp nt *)
+      let env = 
+	Typing.typecheck_env scp (Gtypes.empty_subst()) nt (Gtypes.mk_null())
       in Term.retype_pretty env nt
     with x -> Term.addtermError "mk_form: incorrect types" [nt] x)
   else raise (Term.termError "mk_form: Not a closed term" [t])
