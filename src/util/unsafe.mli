@@ -9,6 +9,13 @@
 *)
 
 (**
+   [use_string str]: Evaluate string [str] as an ml expression.
+
+   raise Failure if evaluating [str] fails for any reason.
+*)
+val use_string: string -> unit
+
+(**
    [use_file ?silent name]
 
    Use file [name] as a script. Equivalent to [#use name].

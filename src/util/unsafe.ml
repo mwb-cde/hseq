@@ -8,6 +8,21 @@
    Utility functions which depend on unsafe/undocumented features.
 *)
 
+(* Ocaml 3.07 version
+let use_string st =  
+  ignore(List.map 
+     (Toploop.execute_phrase true Format.std_formatter) 
+     ((!Toploop.parse_use_file ) (Lexing.from_string st)))
+*)
+
+let use_string st =  
+ try
+   ignore
+     (Toploop.execute_phrase true Format.std_formatter 
+     ((!Toploop.parse_toplevel_phrase) (Lexing.from_string st)))
+ with _ -> failwith ("use_string "^st);;
+
+
 let use_file ?(silent=false) f = 
   if(silent)
   then ignore(Toploop.use_silently Format.std_formatter f)
