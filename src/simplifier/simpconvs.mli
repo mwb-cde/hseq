@@ -27,7 +27,9 @@ val simple_asm_rewrite_tac :
     Logic.thm -> Logic.label -> Logic.node -> Logic.Subgoals.branch
 val asm_rewrite :
     Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
+(*
 val many_conj_conv : Logic.thm -> Logic.thm list
+*)
 val negate_concl :
     Logic.info option ->
       Logic.label -> Logic.Subgoals.node -> Logic.Subgoals.branch
@@ -82,10 +84,10 @@ val do_neg_exists_rule :
     (Basic.binders list * Basic.term option * Basic.term) -> Logic.thm
 
 val single_thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm
-val do_conj_rule : 'a -> Logic.thm -> Logic.thm list
+val do_conj_rule : Gtypes.scope -> Logic.thm -> Logic.thm list
 val apply_get_list : ('a -> 'a list) -> 'a list -> 'a list -> 'a list
 val app_first : ('a -> 'b) list -> 'a -> 'b
-val multi_thm_to_rules : 'a -> Logic.thm -> Logic.thm list
+val multi_thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm list
 val thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm list
 val make_thm_rule :
     Logic.thm ->

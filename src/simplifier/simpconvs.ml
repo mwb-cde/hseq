@@ -190,6 +190,7 @@ let simple_asm_rewrite_tac rule asm node=
    -->
    |- a ; |- b ; |- c ; ..
  *)
+(*
 let many_conj_conv thm=
   let rec many_aux t ths=
     if(Formula.is_conj (Logic.dest_thm t))
@@ -202,7 +203,7 @@ let many_conj_conv thm=
 	       [Logic.dest_thm t])
     else t::ths
   in many_aux thm []
-
+*)
 
 (** [negate_concl info t g]:
    Negate conclusion [t], making it assumption tagged [t'].
@@ -600,7 +601,7 @@ and single_thm_to_rules scp thm =
 
 and do_conj_rule scp thm=
   if(is_many_conj thm)
-  then many_conj_conv thm
+  then Boollib.Rules.conjuncts scp thm
   else failwith "do_conj_rule: not a conjunction"
 
 
