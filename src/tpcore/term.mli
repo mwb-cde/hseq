@@ -107,6 +107,7 @@ val subst_size: int -> substitution
 (* lookup/add/remove term from a substitution *)
 val find: term -> substitution -> term
 val bind: term -> term -> substitution -> substitution
+val member: term -> substitution -> bool
 
 val remove: term -> substitution -> substitution
 val quiet_remove: term -> substitution -> substitution
@@ -314,4 +315,21 @@ val term_leq: term -> term -> bool
 val term_gt: term -> term -> bool
 
 
+(** [rebuild_qnt k qs b]
+   rebuild quantified term of kind k from quantifiers [qs] and body [b]
 
+   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
+   ->
+   [ << !x y z : b >> ]
+ *)
+val rebuild_qnt: 
+    quant_ty -> binders list -> term -> term
+
+
+(**
+   [close_term qnt free trm]: Close term [trm]. Make variables bound
+   to quantifiers of kind [qnt] to replace free variables and bound
+   variables with no binding quantifier and for which [free] is true.
+ *)
+val close_term: 
+    quant_ty -> (term -> bool) -> term -> term

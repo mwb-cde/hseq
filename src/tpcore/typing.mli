@@ -73,7 +73,8 @@ val settype: Gtypes.scope -> Basic.term  -> Gtypes.substitution
 (* Assign the variable types in a term their required type
    to ensure well typed term, returning the required subsititution 
    Also checks that defined types are valid and well defined in the given 
-   scope.*)
+   scope.
+*)
 
 (* infer_types is an alternative to settype but not actually used *)
 
@@ -90,7 +91,7 @@ val infer_types: Gtypes.scope -> Basic.term -> Basic.gtype
 val check_types: Gtypes.scope -> Basic.term -> unit
 
 (* [set_exact_types scp term]
-   get and set the exact types of identifiers (Term.Var) in term [trm]
+   get and set the exact types of identifiers (Term.Id) in term [trm]
    Unlike settype, does not do type inference nor does it make 
    copies of the types found in scope [scp].
    The types assigned to an identifier are the exact type of that

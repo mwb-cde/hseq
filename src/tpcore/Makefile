@@ -3,12 +3,12 @@
 HEADERS = settings.cmi basic.cmi printer.cmi result.cmi \
 	settings.cmi basic.cmi result.cmi \
 	gtypes.cmi term.cmi logicterm.cmi dbterm.cmi \
-	termnet.cmi \
+	net.cmi \
 	typing.cmi unify.cmi net.cmi rewrite.cmi 
 
 CODE =  settings.cmo basic.cmo printer.cmo result.cmo \
 	gtypes.cmo term.cmo logicterm.cmo dbterm.cmo \
-	termnet.cmo \
+	net.cmo \
 	typing.cmo unify.cmo net.cmo rewrite.cmo 
 
 
@@ -16,7 +16,7 @@ OPTCODE = settings.cmx basic.cmx printer.cmx result.cmx \
 	gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
 	typing.cmx unify.cmx net.cmx rewrite.cmx 
 
-DOCFILES = gtypes.mli term.mli termnet.mli
+DOCFILES = gtypes.mli term.mli net.mli
 
 
 LIBFILE=tpcore.cma

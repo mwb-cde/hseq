@@ -47,7 +47,7 @@ let rec label varp trm =
   else
     match trm with
       Basic.Id(id, _) -> Cname(id)
-    | Basic.Free(n, _) -> Cfree(n)
+    | Basic.Free(id, _) -> Cfree(id)
     | Basic.Qnt(qnt, q, b) ->  
 	Quant(qnt)
     | Basic.Bound(q) -> 

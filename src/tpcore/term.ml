@@ -220,6 +220,11 @@ let bind t r env = TermTree.replace env t (sterm r Unknown)
 let add t r env = bind t r env
 let remove t env = TermTree.delete env t
 let quiet_remove t env = (try remove t env with _ -> env)
+let member t env = 
+  try ignore(find t env); true
+  with Not_found -> false
+      
+      
 
 (* [chase varp x env]
    Find the end of the chain of bindings for [x] in [env]
@@ -1251,3 +1256,60 @@ let rec term_leq t1 t2 =
       else bound_leq (dest_binding q1) (dest_binding q2)
 
 let term_gt t1 t2 = not (term_leq t2 t1)
+
+
+let rec rebuild_qnt k qs b=
+  match qs with
+    [] -> b
+  | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
+
+(**
+   [close_term qnt free trm]: Close term [trm]. Make variables bound
+   to quantifiers of kind [qnt] to replace free variables and bound
+   variables with no binding quantifier and for which [free] is true.
+ *)
+let close_term qnt free trm=
+  let rec close_aux env vs t=
+    match t with
+      Basic.Id _ -> (t, env, vs)
+    | Basic.Bound(_) -> 
+	if(member t env)
+	then (t, env, vs)
+	else 
+	  if(free t) 
+	  then (t, env, t::vs) 
+	  else (t, env, vs)
+    | Basic.Free(_) -> (t, env, t::vs)
+    | Basic.App(f, a) ->
+	let f1, env1, vs1 = close_aux env vs f
+	in 
+	let a1, env2, vs2= close_aux env1 vs1 a
+	in 
+	(Basic.App(f1, a1), env2, vs2)
+    | Basic.Qnt(k, q, b) ->
+	let (b1, env1, vs1) = 
+	  close_aux (bind (Basic.Bound(q)) (Basic.Bound(q)) env) vs b
+	in (Basic.Qnt(k, q, b1), env, vs1)
+    | Basic.Const _ -> (t, env, vs)
+    | Basic.Typed(b, ty) ->
+	let b1, env1, vs1 = close_aux env vs b
+	in 
+	(Basic.Typed(b1, ty), env1, vs1)
+  in 
+  let (nt, env, vars) =  close_aux (empty_subst()) [] trm
+  in 
+  let make_qnts qnt (env, ctr, bs) t =
+    let qname = Lib.int_to_name ctr
+    in 
+    let qty = Gtypes.mk_var qname
+    in 
+    let qbind = Basic.mk_binding qnt qname qty
+    in 
+    let qtrm = mk_bound qbind
+    in 
+    (bind t qtrm env, ctr+1, qbind::bs)
+  in 
+  let sb, _, binders = 
+    List.fold_left (make_qnts qnt) (empty_subst(), 0, []) vars
+  in 
+  rebuild_qnt qnt (List.rev binders) (subst sb trm)
