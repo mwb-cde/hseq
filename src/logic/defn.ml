@@ -54,7 +54,7 @@ let mk_defn_type env atys rty rfrs =
   match atys with
     [] -> rty
   |	ts -> 
-      (Gtypes.mk_fun_from_list
+      (Logicterm.mk_fun_ty_from_list
 	 (List.map
 	    (fun (x, ty) -> 
 	      Gtypes.mgu 

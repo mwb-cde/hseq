@@ -1431,7 +1431,7 @@ module Rules=
    info: [] [t] []
  *)
 
-
+(*
     let name_rule0 inf id trm tyenv sq =
       let scp = Sequent.scope_of sq
       in 
@@ -1475,6 +1475,7 @@ module Rules=
     let name_rule inf id trm sqnt = 
       sqnt_apply (name_rule0 inf id trm) sqnt
 
+*)
 
 (* instantiation terms *)  
 

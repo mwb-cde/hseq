@@ -544,9 +544,11 @@ module Rules:
 
    the long name thy.id must be unique (where thy is the current theory name)
 
+   DEPRECATED, TO BE REMOVED.
  *)
+(*
       val name_rule : info option -> string -> Basic.term -> rule
-
+*)
 
 (* rewrite ctrl thms j sq:
    list of theorems or assumptions containing x=y
