@@ -34,7 +34,7 @@ let init() =
   let initfile=Settings.make_filename Settings.init_file
   in
   tp_init();
-  ignore(Toploop.use_file Format.std_formatter initfile)
+  Unsafe.use_file ~silent:false initfile
 
 (* 
    ocaml-3.06 specific code.

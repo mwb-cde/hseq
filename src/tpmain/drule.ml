@@ -178,7 +178,7 @@ let foreach_asm rs sq =
 let foreach_asm_except excpt rs sq = 
   let exclude t =
     try 
-      ignore(List.find (fun x -> Logic.Tag.equal t x) excpt);
+      ignore(List.find (fun x -> Tag.equal t x) excpt);
       true
     with Not_found -> false
   in 
@@ -237,7 +237,7 @@ let foreach_conc rs sq =
 let foreach_conc_except excpt rs sq = 
   let exclude t =
     try 
-      ignore(List.find (fun x -> Logic.Tag.equal t x) excpt);
+      ignore(List.find (fun x -> Tag.equal t x) excpt);
       true
     with Not_found -> false
   in 

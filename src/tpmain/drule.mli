@@ -60,7 +60,7 @@ val foreach_asm :
     ((Formula.form -> bool) * (int -> Logic.rule)) list ->
       Logic.rule
 
-val foreach_asm_except : Logic.Tag.t list->
+val foreach_asm_except : Tag.t list->
   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
     Logic.rule
 
@@ -68,7 +68,7 @@ val foreach_conc :
     ((Formula.form -> bool) * (int -> Logic.rule)) list ->
       Logic.rule
 
-val foreach_conc_except : Logic.Tag.t list -> 
+val foreach_conc_except : Tag.t list -> 
   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
     Logic.rule
 

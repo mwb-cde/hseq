@@ -58,5 +58,5 @@
     val read_unchecked : string -> Term.term
 
 (* user-level utility functions *)
-val get_asm: int -> (Logic.Tag.t * Term.term)
-val get_concl: int -> (Logic.Tag.t * Term.term)
+val get_asm: int -> (Tag.t * Term.term)
+val get_concl: int -> (Tag.t * Term.term)
