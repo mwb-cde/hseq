@@ -20,7 +20,8 @@ module BaseTheory=
 
       ignore
 	(declare
-	   (read_unchecked ((Basic.name Logicterm.equalsid)^": 'a -> 'a -> bool"))
+	   (read_unchecked ((Basic.name Logicterm.equalsid)
+			    ^": 'a -> 'a -> bool"))
 	   ~pp:(1000, infixl, Some"="));
       ignore
 	(declare
@@ -1256,7 +1257,11 @@ let equals_tac ?f g =
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.equals_bool"))
   in 
+  once_rewrite_tac [thm] ~f:ff g
+
+(*
   (Logic.Rules.rewrite None [Logic.RRThm thm] ff g)
+*)
 
 (***
  *
