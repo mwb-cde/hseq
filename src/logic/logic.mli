@@ -158,7 +158,8 @@ val mklogicError: string ->Formula.form list -> Result.error
 val logicError : string -> Formula.form list -> exn
 val addlogicError : string -> Formula.form list -> exn -> 'a
 
-
+(* Printing *)
+val print_thm: Printer.info -> thm -> unit
 
 module Rules:
     sig

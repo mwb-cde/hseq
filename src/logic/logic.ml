@@ -475,6 +475,12 @@ let mk_thm g =
   | _ -> raise (logicError "Not a theorem" [])
 
 
+let print_thm pp t = 
+  Format.open_box 3; 
+  print_string "|- ";
+  Term.print pp (Formula.term_of_form (dest_thm t));
+  Format.close_box();
+
 module Rules=
   struct
 

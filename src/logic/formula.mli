@@ -179,4 +179,4 @@ val rewrite_net_env :
 	-> form -> (form * Gtypes.substitution)
 
 (* print a formula in a given PP state *)
- val print : Basic.PP.info -> form -> unit 
+ val print : Printer.info -> form -> unit 

@@ -4,11 +4,13 @@
 
     exception Importing
 
-    type thydb =
+    type thydb 
+(*=
       { db: (string, Theory.thy) Hashtbl.t;
         mutable curr: Theory.thy;
-        mutable importing: string list }
-
+        mutable importing: string list 
+      }
+*)
     val emptydb : Theory.thy -> thydb
 
 (* get current theory/database of theories *)
@@ -66,17 +68,17 @@ val load_theory : thydb -> string -> bool -> (Theory.thy -> unit)
 (* add/extract PP records *)
 
 val add_pp_rec: 
-    Basic.id_selector  -> string -> Basic.PP.record
+    Basic.id_selector  -> string -> Printer.record
       -> thydb  -> unit
 val get_pp_rec: 
     Basic.id_selector -> string  -> string  -> thydb
-      -> Basic.PP.record
+      -> Printer.record
 val remove_pp_rec : 
     Basic.id_selector -> string -> string 
       -> thydb -> unit
 
 val get_pplist: Basic.id_selector -> string -> thydb 
-  -> (Basic.ident * Basic.PP.record) list
+  -> (Basic.ident * Printer.record) list
   
 (* find a theory and apply a function *)
     val find : (Theory.thy -> 'a) -> thydb -> 'a
