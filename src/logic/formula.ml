@@ -138,13 +138,11 @@ let mk_form scp t=
     let nt=Term.set_names scp t
     in 
     (try
-(*      let env = Typing.settype scp nt *)
       let env = 
 	Typing.typecheck_env scp (Gtypes.empty_subst()) nt (Gtypes.mk_null())
       in Term.retype_pretty env nt
     with x -> Term.addtermError "mk_form: incorrect types" [nt] x)
   else raise (Term.termError "mk_form: Not a closed term" [t])
-
 
 let form_of_term scp t0 = 
   let t=Term.set_names scp t0
@@ -248,7 +246,7 @@ let dest_qnt f =
 
 let is_all = Logicterm.is_all 
 let mk_all scp x f = 
-  form_of_term scp (Logicterm.mk_all scp x  f)
+  form_of_term scp (Logicterm.mk_all scp x f)
 let mk_typed_all scp x ty f= 
   form_of_term scp (Logicterm.mk_all_ty scp x ty f)
 
@@ -343,7 +341,16 @@ let inst scp vs t r =
 
 let equals = Term.equals
 
-(* let alpha_convp = Logicterm.alpha_convp  *)
+(* let alpha_equals_match = Logicterm.alpha_convp_full*)
+let alpha_equals_match scp tyenv asmf conclf= 
+  let asm = term_of_form asmf
+  and concl = term_of_form conclf
+  and varp x = false
+  in 
+  let ret, _ = 
+    Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp asm concl
+  in ret
+
 let alpha_equals = Logicterm.alpha_equals
 
 let beta_convp = Logicterm.beta_convp

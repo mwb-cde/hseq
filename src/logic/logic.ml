@@ -2182,18 +2182,27 @@ module Rules=
    true if a_{i}=c_{j}
    info: [] []
  *)
-
     let basic0 inf i j tyenv sq = 
       let scp = Sequent.scope_of sq
       and (lasms, asm, rasms) = split_at_asm i (Sequent.asms sq)
       and (lconcls, concl, rconcls) = split_at_concl j (Sequent.concls sq)
       in 
-      if(Formula.alpha_equals scp (drop_tag asm) (drop_tag concl))
-      then 
-	(add_info inf [] [] []; raise (Solved_subgoal tyenv))
-      else 
-	(raise (logicError "Assumption not equal to conclusion"
-		  [drop_tag asm; drop_tag concl]))
+	let tyenv1 = 
+	  try
+	    Formula.alpha_equals_match 
+	      scp tyenv (drop_tag asm) (drop_tag concl)
+	  with _ -> 
+	    (raise (logicError "Assumption not equal to conclusion"
+		      [drop_tag asm; drop_tag concl]))
+	in 
+	let tyenv2=
+	  try 
+	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
+	  with _ -> 
+	    (raise (logicError "basic: Inconsistent types"
+		      [drop_tag asm; drop_tag concl]))
+	in 
+	(add_info inf [] [] []; raise (Solved_subgoal tyenv2))
 
     let basic inf i j g = 
       sqnt_apply (basic0 inf i j) g
@@ -2475,9 +2484,11 @@ module Rules=
    rewrite theorem [thm] with rules [rrl] in scope [scp].
 *)
     let rewrite_conv scp ?(ctrl=Formula.default_rr_control) rrl thm =
+(*
       let mk_same_thm t f = 
       if (is_axiom t) then mk_axiom f else mk_theorem f
       in 
+*)
       let conv_aux t = 
 	try 
 	  let f= dest_thm t
@@ -2487,7 +2498,7 @@ module Rules=
 		 (fun x -> 
 		   Rewrite.rule 
 		     (Formula.dest_form (dest_thm x))) rrl) f
-	  in mk_same_thm t nt
+	  in mk_theorem nt
 	with x -> raise 
 	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
       in 

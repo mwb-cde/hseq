@@ -27,7 +27,9 @@ val term_of_form : form -> Basic.term
    form_of_term: make a formula from a closed term
    with all types and identifers correct 
 *)
+(*
 val form_of_term: Gtypes.scope -> Basic.term -> form
+*)
 
 (*
  mk_form: make a formula from an arbitrary term.
@@ -143,6 +145,9 @@ val equals : form -> form -> bool
 (* alpha_equals: equality under alpha conversion
    (renaming of alpha_convp)
  *)
+val alpha_equals_match : 
+    Gtypes.scope -> Gtypes.substitution 
+      -> form -> form -> Gtypes.substitution
 val alpha_equals : Gtypes.scope -> form -> form -> bool 
 
 (* beta reduction *)
