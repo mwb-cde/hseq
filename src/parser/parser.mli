@@ -41,7 +41,7 @@ module Grammars :
       type 'a phrase = 'a Pkit.phrase
 
       type token_info =
-	  (Basic.fnident
+	  (Basic.ident
 	     * Parserkit.Info.fixity 
 	     * int) option
 
@@ -110,20 +110,20 @@ module Grammars :
 (*
    id: identifiers which occur in terms
  *)
-      val id : infotyp -> Basic.fnident phrase
+      val id : infotyp -> Basic.ident phrase
 
 (*
    type_id: identifiers which occur in types
  *)
-      val type_id : infotyp -> Basic.fnident phrase
+      val type_id : infotyp -> Basic.ident phrase
 
 (*
    named_id: get a specific identifer
  *)
       val named_id : 
 	  infotyp 
-	-> (infotyp -> Basic.fnident phrase)
-	  -> Basic.fnident -> Basic.fnident phrase
+	-> (infotyp -> Basic.ident phrase)
+	  -> Basic.ident -> Basic.ident phrase
 
       val number : Num.num phrase
       val boolean : bool phrase
@@ -135,11 +135,11 @@ module Grammars :
       val repeat_term : 'a phrase -> 'b phrase -> 'a list phrase
       val tlistof :
 	  'a phrase -> 'b phrase -> 'a list phrase
-      val short_id : (infotyp -> Basic.fnident phrase) 
+      val short_id : (infotyp -> Basic.ident phrase) 
 	-> infotyp -> string phrase
-      val long_id : (infotyp -> Basic.fnident phrase)
-	-> infotyp -> Basic.fnident phrase
-      val mk_short_id : (infotyp -> Basic.fnident phrase)
+      val long_id : (infotyp -> Basic.ident phrase)
+	-> infotyp -> Basic.ident phrase
+      val mk_short_id : (infotyp -> Basic.ident phrase)
 	-> infotyp -> string phrase
       val types : infotyp -> Gtypes.gtype phrase
       val inner_types : infotyp -> Gtypes.gtype Pkit.phrase
@@ -195,7 +195,7 @@ val syms_list : (string * Lexer.tok) list
    list of reserved words, their symbols and properties 
  *)
 val reserved_words: 
-    (string * Basic.fnident
+    (string * Basic.ident
        * Parserkit.Info.fixity 
        * int) list
     
@@ -222,8 +222,8 @@ val remove_symbol : string -> unit
 val add_token_info : Lexer.tok -> Grammars.token_info -> unit
 val add_type_token_info : Lexer.tok -> Grammars.token_info -> unit
 
-val add_token: Basic.fnident -> string -> fixity -> int -> unit
-val add_type_token: Basic.fnident -> string -> fixity -> int -> unit
+val add_token: Basic.ident -> string -> fixity -> int -> unit
+val add_type_token: Basic.ident -> string -> fixity -> int -> unit
 
 (* init: call init() before using lexer, to install reserved words *)
 
@@ -243,7 +243,7 @@ type 'a phrase = 'a Pkit.phrase
 
 val parse : 'a Pkit.phrase -> Pkit.input -> 'a
 
-val identifier_parser : Pkit.input -> Basic.fnident
+val identifier_parser : Pkit.input -> Basic.ident
 
 val typedef_parser :
     Pkit.input -> string * string list option * Gtypes.gtype option

@@ -92,14 +92,14 @@ end
   type keys = ALL | EX | LAM 
 	
   type token_info = 
-      (Basic.fnident   (* identifiers represented by symbols *)
+      (Basic.ident   (* identifiers represented by symbols *)
 	 * Parserkit.Info.fixity      
 	 * int)     (* precedence *)
 
   type tok = 
       Key of keys 
     | Sym of symbols 
-    | ID of Basic.fnident (* * (token_info)option *)
+    | ID of Basic.ident (* * (token_info)option *)
     | NUM of string 
     | BOOL of bool 
     | EOF 

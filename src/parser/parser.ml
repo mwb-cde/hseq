@@ -31,7 +31,7 @@ struct
 *)
 
 type token_info =
-    (Basic.fnident
+    (Basic.ident
       * Parserkit.Info.fixity 
       * int) option
 

@@ -45,14 +45,14 @@ type symbols =
 type keys = ALL | EX | LAM
 
 type token_info = 
-    Basic.fnident
+    Basic.ident
       * Parserkit.Info.fixity 
       * int
 
 type tok =
     Key of keys
   | Sym of symbols
-  | ID of Basic.fnident (* * token_info option*)
+  | ID of Basic.ident (* * token_info option*)
   | NUM of string
   | BOOL of bool
   | EOF
@@ -67,7 +67,7 @@ val string_of_token : tok -> string
 
 val match_tokens : tok -> tok -> bool
 
-val mk_ident : Basic.fnident -> tok
+val mk_ident : Basic.ident -> tok
 
 type symbol_table=(string, tok)Hashtbl.t
 type symtable = (char * int Counter.t) list * symbol_table
