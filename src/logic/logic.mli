@@ -41,6 +41,8 @@ type fident =
     FNum of int
   | FTag of Tag.t
 
+val fident_to_tag: fident -> sqnt -> Tag.t
+
 (* cdefn:
    Checked Definitions: 
    checking of type and term definitions and declarations

@@ -115,7 +115,7 @@ let logicError s t =
   Result.mk_error((new Term.termError s 
 		    (List.map Formula.term_of_form t)):>Result.error)
 let addlogicError s t es = 
-  raise (Result.add_error ((mklogicError s t):>Result.error) es)
+  raise (Result.add_error (logicError s t) es)
 
 
 (* Skolem constants *)
@@ -379,7 +379,7 @@ let fident_to_tag f sq=
 let sqntError s = 
   Result.mk_error(new Result.error s)
 let addsqntError s es = 
-  raise (Result.add_error (new Result.error s) es)
+  raise (Result.add_error (sqntError s) es)
 
 let thy_of_sq sq = (scope_of sq).Gtypes.curr_thy
 
@@ -1279,7 +1279,7 @@ module Rules=
 	 try 
 	   Formula.beta_reduce (scope_of sq) t
 	 with x -> raise 
-	     (Result.add_error(mklogicError "Beta reduction" [t]) x))
+	     (Result.add_error(logicError "Beta reduction" [t]) x))
       in 
       do_tag_info inf [] [ft] [];
       if i> 0 
@@ -1443,7 +1443,7 @@ module Rules=
 	      (replace_cncl i (concls sq) (ft, nt))),
 	   gtyenv))
 	with x -> raise (Result.add_error
-			   (mklogicError "existE:" [t]) x)
+			   (logicError "existE:" [t]) x)
       else 
 	raise (logicError "Not an existential quantifier" [t])
 
@@ -1480,7 +1480,7 @@ module Rules=
 	  gtyenv)
 	with x -> 
 	  (raise (Result.add_error
-		    (mklogicError "allE: " [t]) x))
+		    (logicError "allE: " [t]) x))
       else 
 	raise (logicError "Not a universal quantifier" [t])
 
@@ -1581,7 +1581,7 @@ module Rules=
 	     (sqnt_tag sq, sqnt_env sq, 
 	      replace_asm j (asms sq) (ft, nt), concls sq), gtyenv))
       with x -> raise 
-	  (Result.add_error (mklogicError"rewriting" (t::r)) x)
+	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
     let rewrite_any ?(dir=true) ?(simple=false) rls j sqnt
 	= sqnt_apply (rewrite_any0 None dir simple rls j) sqnt
@@ -1623,7 +1623,7 @@ module Rules=
 	  mk_subgoal
 	    (sqnt_tag sq, sqnt_env sq, replace_asm j (asms sq) nt, concls sq))
       with x -> raise 
-	  (Result.add_error (mklogicError"rewriting" (t::r)) x)
+	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
 
 (*
@@ -1676,7 +1676,7 @@ module Rules=
 	  mk_subgoal
 	    (sqnt_tag sq, sqnt_env sq, replace_asm j (asms sq) nt, concls sq))
       with x -> raise 
-	  (Result.add_error (mklogicError"rewriting" (t::r)) x)
+	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
 (*
    let rewrite_thms ?(dir=true) thms j sqnt
@@ -1719,7 +1719,7 @@ module ThmRules=
 	in (List.map (mk_same_thm t) fs))
       with x -> raise 
 	  (Result.add_error 
-	     (mklogicError "Not a conjunction" [f]) x))
+	     (logicError "Not a conjunction" [f]) x))
 
     let allI_conv scp trm ts=
       let t = get_one_thm ts
@@ -1737,7 +1737,7 @@ module ThmRules=
 	  [mk_same_thm t nf])
 	with x -> 
 	  raise (Result.add_error
-		   (mklogicError "allE_conv:" [f]) x)
+		   (logicError "allE_conv:" [f]) x)
       else raise (logicError "allE_conv:" [f])
 
     let beta_conv scp ts =
@@ -1748,7 +1748,7 @@ module ThmRules=
 	in let nt = (Formula.beta_conv scp f)
 	in [mk_same_thm t nt]
       with x -> raise 
-	  (Result.add_error (mklogicError "beta_conv" []) x)
+	  (Result.add_error (logicError "beta_conv" []) x)
 
     let eta_conv scp x ts =
       let t = get_one_thm ts
@@ -1759,7 +1759,7 @@ module ThmRules=
 		       (Typing.typeof scp (Formula.term_of_form x)) f)
 	in [mk_same_thm t nt]
       with e -> 
-	raise (Result.add_error (mklogicError "eta_conv" []) e)
+	raise (Result.add_error (logicError "eta_conv" []) e)
 
     let rewrite_conv scp ?(dir=true) ?(simple=false) rrl thm =
       let conv_aux t = 
@@ -1775,7 +1775,7 @@ module ThmRules=
 	      (Formula.rewrite ~dir:dir scp rs f)
 	  in mk_same_thm t nt
 	with x -> raise 
-	    (Result.add_error(mklogicError "rewrite_conv" [dest_thm t]) x)
+	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
       in 
       conv_aux thm
 
