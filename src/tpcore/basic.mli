@@ -172,6 +172,16 @@ module PP :
 	    -> string option -> unit
 
 (**
+   [add_term_record info id record]
+   add pretty printing record for identifer occuring in a term.
+   @param info PP information.
+   @param id identifier to add.
+   @param record PP record
+*)
+      val add_term_record : 
+	  info -> ident -> record -> unit
+
+(**
    [remove_term_info info id]
    remove pretty printing information for identifer occuring in a term.
    @param info PP information.
@@ -207,6 +217,16 @@ module PP :
 *)
       val add_type_info : 
 	  info -> ident -> int -> fixity -> string option -> unit
+
+(**
+   [add_type_record info id record]
+   add pretty printing record for identifer occuring in a type.
+   @param info PP information.
+   @param id identifier to add.
+   @param record PP record
+*)
+      val add_type_record:
+	  info -> ident -> record -> unit
 
 (**
    [remove_type_info info id]

@@ -235,11 +235,13 @@ module PP =
     let remove_term_info inf id =
       Hashtbl.remove (inf.term_info) id
 	
+    let add_term_record inf id rcrd=
+      Hashtbl.add (inf.term_info) id rcrd
+
     let add_term_info inf id pr fx rp =
       let r={prec=pr; fixity=fx; repr=rp}
       in 
       Hashtbl.add (inf.term_info) id r
-
 
     let get_type_info info id =
       try 
@@ -256,6 +258,9 @@ module PP =
       let r={prec=pr; fixity=fx; repr=rp}
       in 
       Hashtbl.add (inf.type_info) id r
+
+    let add_type_record inf id rcrd =
+      Hashtbl.add (inf.type_info) id rcrd
 
 
     let rec list_print f sep x =
