@@ -14,6 +14,7 @@ type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 
 type skolem_type
 type sqnt
+type subgoal
 
 type goal
 type rule= goal -> goal 
@@ -129,7 +130,11 @@ val get_goal_tag: goal -> Tag.t
 (* val num_of_subsqnts: goal -> int *)
 val num_of_subgoals: goal -> int
 
-val get_subgoals: goal -> sqnt list
+val subgoal_nth_sqnt : int -> subgoal -> sqnt
+
+val get_subgoals: goal -> subgoal list
+val get_nth_subgoal: int -> goal -> subgoal
+
 val get_nth_subgoal_sqnt: int -> goal-> sqnt
 val goal_has_subgoals: goal -> bool
 

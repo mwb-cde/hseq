@@ -21,6 +21,7 @@ type skolem_type = skolem_cnst list
    a list of tagged formulas: the assumptions
    a list of tagged formulas: the conclusions
  *)
+
 (* 
    A sqnt_env is made up of
    the shared type variables (Gtypes.WeakVar) that may be used in the sequent
@@ -44,7 +45,9 @@ type sqnt = (Tag.t* sqnt_env * tagged_form list * tagged_form list)
    which occur in the goals sequents.
    a formula: the theorem which is to be proved
  *)
-type goal =  Goal of (sqnt list * Gtypes.substitution * form)
+
+type subgoal = Subgoal of (Tag.t * sqnt list)
+type goal =  Goal of (subgoal list * Gtypes.substitution * form)
 
 type rule = goal -> goal
 type conv = thm list -> thm list 
@@ -112,7 +115,6 @@ let logicError s t =
 		    (List.map Formula.term_of_form t)):>Result.error)
 let addlogicError s t es = 
   raise (Result.add_error (logicError s t) es)
-
 
 (* Skolem constants *)
 
@@ -235,6 +237,22 @@ let mk_new_skolem info=
     (Term.mk_typed_var nnam nty, nty, (nnam, (1, nty))::info.skolems, 
      ntyenv, new_names)
 
+(* Subgoal manipulation *)
+let mk_subgoal sq = Subgoal (Tag.create(), sq)
+
+let subgoal_sqnts (Subgoal (_, sqs)) = sqs
+let subgoal_tag (Subgoal (t, _)) = t
+(* get_subgoal_sqnt: take first sequent of subgoal of goal *)
+let get_subgoal_sqnt sg=
+  match sg with
+    (Subgoal (_, s::_)) -> s
+  | _ -> raise (Result.error "get_subgoal_sqnt: No subgoals")
+
+let subgoal_has_sqnts sg=
+  match sg with
+    (Subgoal (_, [])) -> false
+  | _ -> true
+
 (* Sequent manipulation *)
 
 let asms (_, _, asl, _) = asl
@@ -244,7 +262,6 @@ let sklm_cnsts (_, e, _, _) = e.sklms
 let scope_of (_, e, _, _) = e.sqscp
 let sqnt_tyvars (_, e, _, _)=e.tyvars
 let sqnt_tynames (_, e, _, _)=e.tynames
-(*let sqnt_consts (_, e, _, _)=e.consts*)
 let sqnt_tag(t, _, _, _) = t
 
 let form_tag (t, _) = t
@@ -258,12 +275,8 @@ let mk_sqnt_env sks scp tyvs names=
   {sklms=sks; sqscp=scp; tyvars=tyvs; tynames=names}
 
 let mk_sqnt tg env ps cs= (tg, env, ps, cs)
-let dest_sqnt (tg, env, ps, cs) = (tg, env, ps, cs)
 
-let new_sqnt scp x = 
-  let env=mk_sqnt_env [] scp [] []
-  in 
-  mk_sqnt (Tag.create()) env [] [mk_sqnt_form x]
+let dest_sqnt (tg, env, ps, cs) = (tg, env, ps, cs)
 
 let sqnt_scope sq = scope_of sq
 
@@ -386,27 +399,31 @@ let has_subgoals g =
     Goal([], _, _) -> false
   | _ -> true
 
-(* get_sqnt: take first subgoal of goal *)
 
-let get_sqnt g=
+(* get_subgoal: take first subgoal of goal *)
+let get_subgoal g= 
   match g with
-    Goal(s::_, _, f) -> s
-  | _ -> raise (Result.error "get_sqnt: No subgoals")
+    Goal (s::_, _, f) -> s
+  | _ -> raise (Result.error "get_subgoal: No subgoals")
+
+(* get_sqnt: take first sequent of subgoal of goal *)
+let get_sqnt g =
+  get_subgoal_sqnt (get_subgoal g)
 
 let goal_tyenv (Goal(_, e, _)) = e
 
-let combine_subgoals a b = a@b
-
 let get_goal (Goal(_, _, f)) = f
 
-let get_subgoal_tags (Goal(sqs, _, _)) = List.map sqnt_tag sqs
+let get_subgoal_tags g=
+  match g with
+    (Goal(sqs, _, _)) -> List.map subgoal_tag sqs
 
 let goal_focus t (Goal(sqnts, tyenv, f)) =
   let rec focus sqs rslt=
     match sqs with
       [] -> raise Not_found
     | (x::xs) -> 
-	if Tag.equal t (sqnt_tag x) 
+	if Tag.equal t (subgoal_tag x) 
 	then (x::((List.rev rslt)@xs))
 	else focus xs (x::rslt)
   in Goal(focus sqnts [], tyenv, f)
@@ -421,14 +438,24 @@ let get_tyenv (Goal(_, tyenv, _)) = tyenv
 
 let num_of_subgoals x = 
   match x with
-    (Goal(sqs, _, _)) -> List.length sqs
+    (Goal(sqs, _, _)) -> 
+      (List.fold_left (fun a b-> (a + (List.length (subgoal_sqnts b)))) 0 sqs)
 
 let get_subgoals (Goal(sq, tyenv, _)) = sq
 
-let get_nth_subgoal_sqnt i (Goal(sq, _, _)) =
+let subgoal_nth_sqnt i (Subgoal (_, sqs))=
+  try
+    List.nth sqs i
+  with 
+    _ -> raise Not_found
+
+let get_nth_subgoal i (Goal(sq, _, _)) =
   try (List.nth sq i)
   with _ -> 
     raise Not_found (*(sqntError "get_nth_subgoal: invalid argument")*)
+
+let get_nth_subgoal_sqnt i g =
+  subgoal_nth_sqnt i (get_nth_subgoal 0 g)
 
 let goal_has_subgoals g =
   match g with 
@@ -436,17 +463,27 @@ let goal_has_subgoals g =
   | (Goal(_, _, _)) -> true
 
 let get_all_goal_tags (Goal(sqs, _, _))=
-  List.map sqnt_tag sqs
+  List.map subgoal_tag sqs
 
 let get_goal_tag g =
   match g with
-    (Goal(x::_, _, _))-> sqnt_tag x
+    (Goal(x::_, _, _))-> subgoal_tag x
   | _ -> raise Not_found
+
+let new_sqnt scp nf =
+  let env=mk_sqnt_env [] scp [] []
+  in 
+  mk_sqnt (Tag.create()) env [] [mk_sqnt_form nf]
+
+let new_subgoal scp nf =
+  let nsq=new_sqnt scp nf
+  in 
+  Subgoal (Tag.create(), [nsq])
 
 let mk_goal scp f = 
   let nf= Formula.typecheck scp f (Gtypes.mk_bool)
   in 
-  Goal([new_sqnt scp nf], Gtypes.empty_subst(), nf)
+  Goal([new_subgoal scp nf], Gtypes.empty_subst(), nf)
 
 let mk_thm g = 
   match g with 
@@ -504,12 +541,33 @@ module Rules=
 (* sqnt_apply f g:
    apply function f to the first subgoal of g
  *)
+
+    let subgoal_apply 
+	tyenv 
+	(r:Gtypes.substitution -> sqnt -> (sqnt list * Gtypes.substitution)) 
+	sg =
+      let nsg, ntyenv =
+	match sg with
+	  Subgoal (_, []) -> raise No_subgoals
+	| Subgoal (t, (x::xs)) ->
+	    try 
+	      (let ng, nenv=r tyenv x
+	      in 
+	      match ng with
+		[] -> ([Subgoal(t, xs)], nenv)
+	      | _ -> ([mk_subgoal ng; Subgoal (t, xs)], nenv))
+	    with No_subgoals -> ([Subgoal(t, xs)], tyenv)
+	    | Solved_subgoal ngenv -> ([Subgoal(t, xs)], ngenv)
+
+      in 
+      ((List.filter subgoal_has_sqnts nsg), ntyenv)
+
     let sqnt_apply r g =
       match g with 
 	Goal([], _, f) -> raise No_subgoals
       | Goal(x::xs, tyenv, f) -> 
 	  (try 
-	    let ng, ntyenv=r tyenv x
+	    let ng, ntyenv=subgoal_apply tyenv r x
 	    in 
 	    Goal(ng@xs, ntyenv, f)
 	  with No_subgoals -> Goal(xs, tyenv, f)
@@ -520,25 +578,41 @@ module Rules=
    Like sqnt_apply but does not change [tyenv] of [g].
    Used for rules which do not alter the type environment.
  *)
-    let simple_sqnt_apply r g =
+
+
+    let simple_subgoal_apply 
+	tyenv 
+	(r:sqnt -> sqnt list)
+	sg =
+      let nsg, ntyenv =
+	match sg with
+	  Subgoal (_, []) -> raise No_subgoals
+	| Subgoal (t, (x::xs)) ->
+	    try 
+	      (let ng=r x
+	      in 
+	      match ng with
+		[] -> ([Subgoal(t, xs)], tyenv)
+	      | _ -> ([mk_subgoal ng; Subgoal (t, xs)], tyenv))
+	    with No_subgoals -> ([Subgoal(t, xs)], tyenv)
+	    | Solved_subgoal ngenv -> ([Subgoal(t, xs)], ngenv)
+
+      in 
+      ((List.filter subgoal_has_sqnts nsg), ntyenv)
+
+
+    let simple_sqnt_apply (r:sqnt -> sqnt list) g =
       match g with 
 	Goal([], _, f) -> raise No_subgoals
       | Goal(x::xs, tyenv, f) -> 
 	  try 
-	    let ng=r x
+	    let (nsg, ntyenv)=simple_subgoal_apply tyenv r x
 	    in 
-	    Goal(ng@xs, tyenv, f)
-	  with No_subgoals -> Goal(xs, tyenv, f)
-	  | Solved_subgoal ntyenv -> Goal(xs, ntyenv, f)
+	    Goal(nsg@xs, ntyenv, f)
+	  with 
+	    No_subgoals -> Goal(xs, tyenv, f)
+	  | Solved_subgoal ngenv -> Goal(xs, ngenv, f)
 
-    let mk_subgoal sq = [sq]
-
-(* 
-    let goal_apply r g = 
-      match g with 
-	Goal([], _, _) -> raise (sqntError "No subgoals")
-      |(Goal(sqs, tyenv, f)) -> r g	
-*)
 
     let postpone g = 
       match g with
@@ -582,7 +656,6 @@ module Rules=
 	 (sqnt_tag sq) (sqnt_env sq) 
 	 (lift_tagged id (asms sq)) (concls sq)]
 	
-
     let lift_asm info f g =
       simple_sqnt_apply (lift_asm_sq info f) g
 
@@ -614,9 +687,9 @@ module Rules=
       let nb = (nt, sqnt_form na)
       in 
       add_info info [] [nt] [];
-      mk_subgoal (sqnt_tag sq, sqnt_env sq,
-		  Lib.splice_nth (-i) (asms sq) [nb; na],
-		  concls sq)
+      [mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	 (Lib.splice_nth (-i) (asms sq) [nb; na])
+	 (concls sq)]
 
     let copy_asm info i g = 
       let sq=get_sqnt g
@@ -636,9 +709,8 @@ module Rules=
       let nb = (nt, sqnt_form nc)
       in 
       add_info info [] [nt] [];
-      mk_subgoal(sqnt_tag sq, sqnt_env sq,
-		 asms sq,
-		 Lib.splice_nth (i) (concls sq) [nb; nc])
+      [mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	 (asms sq) (Lib.splice_nth (i) (concls sq) [nb; nc])]
 
     let copy_cncl inf i g = 
       let sq=get_sqnt g
@@ -655,8 +727,9 @@ module Rules=
       in
       add_info info [] [] [];
       match hs with 
-	[] -> mk_subgoal(sqnt_tag sq, sqnt_env sq, hs, concls sq)
-      | h::hys -> mk_subgoal(sqnt_tag sq, sqnt_env sq, hys@[h], concls sq)
+	[] -> [mk_sqnt (sqnt_tag sq) (sqnt_env sq) hs (concls sq)]
+      | h::hys -> 
+	  [mk_sqnt (sqnt_tag sq) (sqnt_env sq) (hys@[h]) (concls sq)]
 
     let rotate_asms info sqnt = 
       simple_sqnt_apply (rotate_asms0 info) sqnt
@@ -665,8 +738,8 @@ module Rules=
       let cs = concls sq in
       add_info inf [] [] [];
       match cs with 
-	[] -> mk_subgoal(sqnt_tag sq, sqnt_env sq, asms sq, cs)
-      | c::cns -> mk_subgoal(sqnt_tag sq, sqnt_env sq, asms sq, cns@[c])
+	[] -> [mk_sqnt (sqnt_tag sq) (sqnt_env sq) (asms sq) cs]
+      | c::cns -> [mk_sqnt (sqnt_tag sq) (sqnt_env sq) (asms sq) (cns@[c])]
 
     let rotate_cncls inf sqnt = 
       simple_sqnt_apply (rotate_cncls0 inf) sqnt
@@ -699,7 +772,7 @@ module Rules=
       try 
 	ignore(Formula.in_thy_scope scp (scp.Gtypes.curr_thy) nt);
 	add_info info [] [ftag] [];
-	mk_subgoal(sqnt_tag sq, sqnt_env sq, nasm::(asms sq), concls sq)
+	[mk_sqnt (sqnt_tag sq) (sqnt_env sq) (nasm::(asms sq)) (concls sq)]
       with 
 	x -> (addlogicError "Not in scope of sequent" [nt] x)
 
@@ -713,13 +786,11 @@ module Rules=
     let delete0 inf x sq=
       let ng=
 	if x>0 then 
-	  mk_subgoal (sqnt_tag sq, sqnt_env sq, 
-		      asms sq, 
-		      delete_cncl x (concls sq))
+	  [mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	     (asms sq) (delete_cncl x (concls sq))]
 	else 
-	  mk_subgoal (sqnt_tag sq, sqnt_env sq, 
-		      delete_asm x (asms sq), 
-		      concls sq)
+	  [mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	    (delete_asm x (asms sq)) (concls sq)]
       in 
       add_info inf [] [] [];
       ng
@@ -789,9 +860,8 @@ module Rules=
 	and asm2=(ft2, t2)
 	in 
 	add_info inf [] [ft1; ft2] [];
-	mk_subgoal (sqnt_tag sq, sqnt_env sq, 
-		    asm1::asm2::(delete_asm i (asms sq)), 
-		    concls sq))
+	[mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	   (asm1::asm2::(delete_asm i (asms sq))) (concls sq)])
       else raise (logicError "Not a conjunction" [t])
 
     let conjE inf i g = 
@@ -843,9 +913,9 @@ module Rules=
 	and cncl2=(ft2, t2)
 	in 
 	add_info inf [] [ft1; ft2] [];
-	mk_subgoal 
-	  (sqnt_tag sq, sqnt_env sq, asms sq, 
-	   cncl1::cncl2::(delete_cncl i (concls sq))))
+	[mk_sqnt
+	  (sqnt_tag sq) (sqnt_env sq) (asms sq)
+	  (cncl1::cncl2::(delete_cncl i (concls sq)))])
       else raise (logicError "Not a disjunction" [t])
 
     let disjE inf i g = 
@@ -867,9 +937,9 @@ module Rules=
 	let cncl1=(ft, t1)
 	in 
 	add_info inf [] [ft] [];
-	mk_subgoal (sqnt_tag sq, sqnt_env sq, 
-		    delete_asm i (asms sq), 
-		    cncl1::(concls sq)))
+	[mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+		    (delete_asm i (asms sq))
+		    (cncl1::(concls sq))])
       else raise (logicError "Not a negation"[t])
 
     let negA inf i g = 
@@ -892,9 +962,8 @@ module Rules=
 	let asm1=(ft, t1)
 	in 
 	add_info inf [] [ft] [];
-	mk_subgoal (sqnt_tag sq, sqnt_env sq,
-		    asm1::(asms sq), 
-		    delete_cncl i (concls sq)))
+	[mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	   (asm1::(asms sq)) (delete_cncl i (concls sq))])
       else raise (logicError "Not a negation"[t])
 
     let negC inf i g = 
@@ -919,9 +988,9 @@ module Rules=
 	and cncl = (ft1, t2)
 	in 
 	add_info inf [] [ft2; ft1] [];
-	mk_subgoal
-	  (sqnt_tag sq, sqnt_env sq, asm::(asms sq), 
-	   (replace_cncl i (concls sq) cncl)))
+	[mk_sqnt
+	  (sqnt_tag sq) (sqnt_env sq) (asm::(asms sq))
+	   (replace_cncl i (concls sq) cncl)])
       else raise (logicError "Not an implication" [t])
 
     let implI inf i g = 
@@ -1005,10 +1074,8 @@ module Rules=
 	in 
 	(* build the subgoal and return information *)
 	add_info inf [] [ft] [];
-	(mk_subgoal(sqnt_tag sq, 
-		    mk_sqnt_env nsklms nscp nsqtys ntynms,
-		    asms sq, 
-		    replace_cncl i (concls sq) (ft, ncncl)), gtyenv))
+	([mk_sqnt (sqnt_tag sq) (mk_sqnt_env nsklms nscp nsqtys ntynms)
+	   (asms sq) (replace_cncl i (concls sq) (ft, ncncl))], gtyenv))
       else raise (logicError "Not a universal quantifier" [t])
 
     let allI inf i g = 
@@ -1057,11 +1124,12 @@ module Rules=
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
 	add_info inf [] [ft] [];
-	(mk_subgoal
-	   (sqnt_tag sq, 
-	    mk_sqnt_env nsklms nscp nsqtys ntynms,
-            replace_asm i (asms sq) (ft, nasm), 
-	    concls sq)), gtyenv)
+	([mk_sqnt
+	   (sqnt_tag sq)
+	    (mk_sqnt_env nsklms nscp nsqtys ntynms)
+            (replace_asm i (asms sq) (ft, nasm))
+	    (concls sq)], 
+	 gtyenv))
       else raise (logicError "Not an existential quantifier" [t])
 
     let existI inf i g = 
@@ -1106,10 +1174,13 @@ module Rules=
       in 
       add_info inf [] [ft] [];
       if i> 0 
-      then mk_subgoal
-	  (sqnt_tag sq, sqnt_env sq, (asms sq), replace_cncl i (concls sq) nt)
-      else mk_subgoal
-	  (sqnt_tag sq, sqnt_env sq, replace_asm i (asms sq) nt, concls sq)
+      then 
+	([mk_sqnt (sqnt_tag sq)
+	    (sqnt_env sq) (asms sq) (replace_cncl i (concls sq) nt)])
+      else 
+	([mk_sqnt 
+	  (sqnt_tag sq) (sqnt_env sq) 
+	    (replace_asm i (asms sq) nt) (concls sq)])
 
     let beta info i g = 
       let sq=get_sqnt g
@@ -1152,9 +1223,9 @@ module Rules=
 	  let gtyenv = Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
 	  in 
 	  add_info inf [] [ft] [];
-	  (mk_subgoal(sqnt_tag sq, sqnt_env sq,
-		      ntrm::(asms sq), 
-		      concls sq), gtyenv)
+	  ([mk_sqnt (sqnt_tag sq) (sqnt_env sq)
+	      (ntrm::(asms sq)) (concls sq)],
+	   gtyenv)
 
     let name_rule inf id trm sqnt = 
       sqnt_apply (name_rule0 inf id trm) sqnt
@@ -1230,9 +1301,9 @@ module Rules=
 	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
 	  in 
 	  add_info inf [] [ft] [];
-      	  (mk_subgoal
-	     (sqnt_tag sq, sqnt_env sq, asms sq, 
-	      (replace_cncl i (concls sq) (ft, nt))),
+      	  ([mk_sqnt
+	     (sqnt_tag sq) (sqnt_env sq) (asms sq) 
+	      (replace_cncl i (concls sq) (ft, nt))],
 	   gtyenv))
 	with x -> raise (Result.add_error
 			   (logicError "existE:" [t]) x)
@@ -1262,10 +1333,10 @@ module Rules=
 	  let gtyenv=Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
 	  in 
 	  add_info inf [] [ft] [];
-	  (mk_subgoal
-	     (sqnt_tag sq, sqnt_env sq, 
-	      (replace_asm i (asms sq) (ft, nt)), concls sq)),
-	  gtyenv)
+	  ([mk_sqnt
+	     (sqnt_tag sq) (sqnt_env sq)
+	      (replace_asm i (asms sq) (ft, nt)) (concls sq)],
+	  gtyenv))
 	with x -> 
 	  (raise (Result.add_error
 		    (logicError "allE: " [t]) x))
@@ -1324,13 +1395,15 @@ module Rules=
 	in 
 	add_info inf [] [ft] [];
 	if j>=0 then
-	  (mk_subgoal
-	     (sqnt_tag sq, sqnt_env sq, asms sq, 
-	      replace_cncl j (concls sq) (ft, nt)), gtyenv)
+	  ([mk_sqnt
+	     (sqnt_tag sq) (sqnt_env sq) (asms sq)
+	      (replace_cncl j (concls sq) (ft, nt))],
+	   gtyenv)
 	else 
-	  (mk_subgoal
-	     (sqnt_tag sq, sqnt_env sq, 
-	      replace_asm j (asms sq) (ft, nt), concls sq), gtyenv))
+	  ([mk_sqnt
+	     (sqnt_tag sq) (sqnt_env sq)
+	      (replace_asm j (asms sq) (ft, nt)) (concls sq)],
+	   gtyenv))
       with x -> raise 
 	  (Result.add_error (logicError"rewriting" (t::r)) x)
 
