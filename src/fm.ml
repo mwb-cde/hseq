@@ -19,10 +19,11 @@
 #install_printer Printer.print_fnident;;
 #install_printer Printer.print_error;;
 #install_printer Printer.print_defn;;
+#install_printer Printer.print_theory;;
 
 
 let _ =
-  print_string "fm.ml: initialising\n";
+  Format.print_string "fm.ml: initialising\n";
   Tpenv.add_thy_path "./thys";
   Tpenv.add_thy_path "../thys";
   Tpenv.init()

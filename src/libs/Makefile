@@ -2,7 +2,8 @@ clean:
 	rm -f *.cmi
 	rm -f *.mli
 	rm -f *.cmo
-	rm -f *.cmx  *.o
+	rm -f *.cmx 
+	rm -f *.o
 	rm -f *~
 
 libclean: 

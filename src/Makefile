@@ -14,7 +14,9 @@ INSTALLDIR=${HOME}/bin
 
 OCAMLC=ocamlc ${OPTIONS} 
 
+BAREMAKE=make
 MAKE=make INCLUDE='${INCLUDE}' LIB='${LIB}' OPTIONS='${OPTIONS}'
+
 
 OCAMLlink=${OCANMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCLIBS} 
@@ -146,33 +148,36 @@ clean:
 	rm -f *.cmo
 	rm -f *.cmx  *.o
 	rm -f *~
-	cd include; $(MAKE) clean
-	cd quote; $(MAKE) clean
-	cd util; $(MAKE) clean
-	cd tpcore; $(MAKE) clean
-	cd parser; $(MAKE) clean
-	cd logic; $(MAKE) clean
-	cd tpmain; $(MAKE) clean
-	cd numbers; $(MAKE) clean
+	cd include; $(BAREMAKE) clean
+	cd quote; $(BAREMAKE) clean
+	cd util; $(BAREMAKE) clean
+	cd tpcore; $(BAREMAKE) clean
+	cd parser; $(BAREMAKE) clean
+	cd logic; $(BAREMAKE) clean
+	cd tpmain; $(BAREMAKE) clean
+	cd numbers; $(BAREMAKE) clean
 
 .PHONY: libclean
 libclean: clean
 	rm -f *.cmi
 	rm -f *.cma *.cmxa
-	cd include; $(MAKE) libclean
-	cd libs; $(MAKE) libclean
+	cd include; $(BAREMAKE) libclean
+	cd libs; $(BAREMAKE) libclean
 
 .PHONY: reallyclean
 reallyclean: clean libclean
 	rm -f fmcaml
 	rm -f depend
-	cd quote; $(MAKE) reallyclean
-	cd util; $(MAKE) reallyclean
-	cd tpcore; $(MAKE) reallyclean
-	cd parser; $(MAKE) reallyclean
-	cd logic; $(MAKE) reallyclean
-	cd tpmain; $(MAKE) reallyclean
-	cd numbers; $(MAKE) reallyclean
+	cd quote; $(BAREMAKE) reallyclean
+	cd util; $(BAREMAKE) reallyclean
+	cd tpcore; $(BAREMAKE) reallyclean
+	cd parser; $(BAREMAKE) reallyclean
+	cd logic; $(BAREMAKE) reallyclean
+	cd tpmain; $(BAREMAKE) reallyclean
+	cd numbers; $(BAREMAKE) reallyclean
+	cd include; $(BAREMAKE) reallyclean
+	cd libs; $(BAREMAKE) reallyclean
+
 
 .PHONY: commit
 commit:
