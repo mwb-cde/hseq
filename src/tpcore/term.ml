@@ -22,17 +22,17 @@ let mk_binding qn qv qt
 let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
 
 (*
-let rec equality x y = Dequals.is_equal x y
-*)
+   let rec equality x y = Dequals.is_equal x y
+ *)
 let rec equality x y = 
-    (match (x, y) with
-     (App(f1, arg1), App(f2, arg2))->
-       (equality f1 f2) & (equality arg1 arg2)
-    | (Bound(q1), Bound(q2)) -> q1==q2
-    | (Qnt(qn1, b1), Qnt(qn2, b2)) -> qn1==qn2 & (equality b1 b2)
-    | (Typed(t1, ty1), Typed(t2, ty2)) ->
-	ty1=ty2  & (equality t1 t2)
-    | (_, _) -> x=y)
+  (match (x, y) with
+    (App(f1, arg1), App(f2, arg2))->
+      (equality f1 f2) & (equality arg1 arg2)
+  | (Bound(q1), Bound(q2)) -> q1==q2
+  | (Qnt(qn1, b1), Qnt(qn2, b2)) -> qn1==qn2 & (equality b1 b2)
+  | (Typed(t1, ty1), Typed(t2, ty2)) ->
+      ty1=ty2  & (equality t1 t2)
+  | (_, _) -> x=y)
 
 
 (* simple pretty printing  and error handling *)
@@ -69,8 +69,8 @@ let simple_term_printer trm=
 	Format.close_box ();
   in print_aux trm
 
-  class basictermError s ts =
-    object (self)
+class basictermError s ts =
+  object (self)
     inherit Result.error s
     val trms = (ts :term list)
     method get() = trms
@@ -83,57 +83,90 @@ let simple_term_printer trm=
       Format.close_box();
       Format.close_box();
   end
-  let basicError s t = mkError((new basictermError s t):>error)
+let basicError s t = mkError((new basictermError s t):>error)
 
-  let get_binder_name x =
-    match x with
-      Bound(n) -> (!n).qvar
-    | Qnt(n, b) -> (!n).qvar
-    | _ -> raise (basicError "Not a binder" [x])
+let get_binder_name x =
+  match x with
+    Bound(n) -> (!n).qvar
+  | Qnt(n, b) -> (!n).qvar
+  | _ -> raise (basicError "Not a binder" [x])
 
 
-  let dest_qnt t=
-    match t with 
-      (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
-    | _  -> raise (Failure "Not a quantifier")
+let dest_qnt t=
+  match t with 
+    (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
+  | _  -> raise (Failure "Not a quantifier")
 
-  let is_qnt x = 
-    match x with 
-      Qnt _ -> true
-    | _ -> false
+let is_qnt x = 
+  match x with 
+    Qnt _ -> true
+  | _ -> false
 
-  let strip_qnt q trm =
-    let rec strip_aux t qs=
-      if is_qnt t 
-      then
-	(let (bind, qnt, _, _, b) = dest_qnt t
-	in 
-	(if qnt=q 
-	then (strip_aux b (bind::qs))
-        else (qs, t)))
-      else (qs, t)
-    in 
-    let qnts, nt= strip_aux trm []
-    in (List.rev qnts, nt)
+let strip_qnt q trm =
+  let rec strip_aux t qs=
+    if is_qnt t 
+    then
+      (let (bind, qnt, _, _, b) = dest_qnt t
+      in 
+      (if qnt=q 
+      then (strip_aux b (bind::qs))
+      else (qs, t)))
+    else (qs, t)
+  in 
+  let qnts, nt= strip_aux trm []
+  in (List.rev qnts, nt)
 
-  let rec get_fun t =
+
+(* 
+   flatten_app: flatten an application to a list
+   that is: (((f a1) a2) a3) -> [f; a1; a2; a3]
+   and (((f a1) (g a2)) a3) -> [f; a1; (g a2); a3]
+ *)
+
+let rec flatten_app trm =
+  let rec flat_aux t rslt =
     match t with
-      App(f, a) -> 
-	(match f with
-	  App(f1, a1) -> get_fun f
-	| x -> x)
-    | x -> raise (Failure "Not an application")
+      App(l, r) -> flat_aux l (r::rslt)
+    | _ -> t::rslt
+  in 
+  (flat_aux trm [])
 
-  let get_args x =
-    let rec get_args_aux t rs =
-      match t with 
-	App(f, a) -> get_args_aux f (a::rs)
-      |	x -> rs
-    in get_args_aux x []
+let get_fun_args t =
+  match (flatten_app t) with
+    [] -> failwith "Term.get_fun_args"
+  | f::args -> (f,args)
 
+let get_fun t = 
+  let (f, _) = get_fun_args t
+  in f
 
+let get_args t = 
+  let (_, args) = get_fun_args t
+  in args
+    
+(*
+   let rec get_fun t =
+   match t with
+   App(f, a) -> 
+   (match f with
+   App(f1, a1) -> get_fun f
+   | x -> x)
+   | x -> raise (Failure "Not an application")
+
+   let get_args x =
+   let rec get_args_aux t rs =
+   match t with 
+   App(f, a) -> get_args_aux f (a::rs)
+   |	x -> rs
+   in get_args_aux x []
+ *)
 
 (* Substitutions for terms *)
+
+(* 
+   USING HASHTABLES 
+   THIS IS WRONG AND MUST BE REMOVED
+*)
 
 module type TERMHASHKEYS=
   sig 
@@ -147,20 +180,42 @@ module Termhashkeys:TERMHASHKEYS=
     type t = term
     let equal = equality
     let hash= Hashtbl.hash
-end
+  end
 module type TERMHASH = (Hashtbl.S with type key = (term))
 module Termhash:TERMHASH= Hashtbl.Make(Termhashkeys)
 
+(* Using balanced trees *)
+
+module TermTreeData=
+  struct
+    type key=term
+    let equals=equality
+  end
+
+module TermTree=Treekit.BTree(TermTreeData)
+
 type subst_terms = Rename of term | No_rename of term | Unknown of term 
+
+(* USING HASHTABLES *)
+
 type substitution = (subst_terms)Termhash.t
 
 let empty_subst() = Termhash.create 5
 let subst_size i = Termhash.create i
-
-
 let basic_find x env = Termhash.find env x
 let basic_rebind t r env 
     = (Termhash.remove env t; Termhash.add env t r)
+
+
+(* USING TREES *)
+(*
+type substitution = (subst_terms)TermTree.t
+
+let empty_subst() = TermTree.nil
+let subst_size i = TermTree.nil
+let basic_find x env = Termhash.find env x
+let basic_rebind t r env = TermTree.replace env t r
+*)
 
 let find x env =
   match basic_find x env with
@@ -193,10 +248,11 @@ let fullchase varp x env =
   in if varp t1 then x else t1
 
 
-(* Rename terms: *)
-(* renames the variables in a term t which are bound by  *)
-(*   a binder in t *)
-(* needs substitutions *)
+(* Rename terms: 
+   renames the variables in a term t which are bound by  
+   a binder in t 
+   needs substitutions 
+*)
 
 exception No_quantifier
 
@@ -214,9 +270,9 @@ let rename_env env tyenv trm =
 	has_quantifier:=true;
       	bind_env (Bound(q)) (Bound(nq)) env;
       	Qnt(nq, rename_aux b)
-  | Typed(b, ty) -> Typed(rename_aux b, ty)
-  | App(f, a) -> App(rename_aux f, rename_aux a)
-  | _ -> t
+    | Typed(b, ty) -> Typed(rename_aux b, ty)
+    | App(f, a) -> App(rename_aux f, rename_aux a)
+    | _ -> t
   in 
   let t = rename_aux trm
   in 
@@ -256,17 +312,17 @@ let do_rename env x nb =
 let replace env x =  do_rename env x (basic_find x env)
 
 (*  match nb with
-    Rename(t) -> rename t
-  | No_rename(t) -> t
-  | Unknown(t) -> 
-      try 
-    	(let nt = rename t
-	in 
-	ignore(basic_rebind x (Rename t) env);
-	nt)
-      with No_quantifier -> 
-	ignore(basic_rebind x (No_rename t) env); t
-*)
+   Rename(t) -> rename t
+   | No_rename(t) -> t
+   | Unknown(t) -> 
+   try 
+   (let nt = rename t
+   in 
+   ignore(basic_rebind x (Rename t) env);
+   nt)
+   with No_quantifier -> 
+   ignore(basic_rebind x (No_rename t) env); t
+ *)
 
 
 let rec subst_env env trm =
@@ -301,15 +357,15 @@ let chase_var varp x env =
 
 let subst_mgu varp env trm = 
   let rec mgu_aux t=
-  try 
-    let nt = replace env (chase_var varp t env)
-    in mgu_aux nt
-  with Not_found ->
-    (match trm with
-      Qnt(q, b) ->  Qnt(q, mgu_aux b)
-    | App(f, a) -> App(mgu_aux f, mgu_aux a)
-    | Typed(t, ty) -> Typed(mgu_aux t, ty)
-    | _ -> trm)
+    try 
+      let nt = replace env (chase_var varp t env)
+      in mgu_aux nt
+    with Not_found ->
+      (match trm with
+	Qnt(q, b) ->  Qnt(q, mgu_aux b)
+      | App(f, a) -> App(mgu_aux f, mgu_aux a)
+      | Typed(t, ty) -> Typed(mgu_aux t, ty)
+      | _ -> trm)
   in mgu_aux trm
 
 let get_free_vars trm = 
@@ -323,150 +379,150 @@ let get_free_vars trm =
   in get_free_vars_aux trm []
 
 
-  let is_bound x = 
-    match x with 
-      Bound _ -> true
-    | _ -> false
-  let mkbound n = (Bound n)
+let is_bound x = 
+  match x with 
+    Bound _ -> true
+  | _ -> false
+let mkbound n = (Bound n)
 
-  let dest_bound t = 
-    match t with 
-      Bound(n) -> n
-    | _ -> raise (Failure "Not a binder")
+let dest_bound t = 
+  match t with 
+    Bound(n) -> n
+  | _ -> raise (Failure "Not a binder")
 
-  let get_binder t = !(dest_bound t)
+let get_binder t = !(dest_bound t)
 (*
-  let get_binder_name x =
-    match x with
-      Bound(n) -> (!n).qvar
-    | Qnt(n, b) -> (!n).qvar
-    | _ -> raise (Failure "Not a binder")
-*)
+   let get_binder_name x =
+   match x with
+   Bound(n) -> (!n).qvar
+   | Qnt(n, b) -> (!n).qvar
+   | _ -> raise (Failure "Not a binder")
+ *)
 
-  let get_binder_type x =
-    match x with
-      Bound(n) -> (!n).qtyp
-    | Qnt(n, b) -> (!n).qtyp
-    | _ -> raise (Failure "Not a binder")
+let get_binder_type x =
+  match x with
+    Bound(n) -> (!n).qtyp
+  | Qnt(n, b) -> (!n).qtyp
+  | _ -> raise (Failure "Not a binder")
 
-  let is_var x = 
-    match x with 
-      Var _ -> true
-    | _ -> false
-  let mk_typed_var n t= (Var(n, t))
-  let mkvar n = mk_typed_var n (Gtypes.mk_null ())
+let is_var x = 
+  match x with 
+    Var _ -> true
+  | _ -> false
+let mk_typed_var n t= (Var(n, t))
+let mkvar n = mk_typed_var n (Gtypes.mk_null ())
 let mkshort_var n = mkvar (mkname n)
-  let dest_var vt =
-    match vt with
-      (Var (n, t)) -> (n, t)
-    | _ -> raise (Failure "Not a variable")
+let dest_var vt =
+  match vt with
+    (Var (n, t)) -> (n, t)
+  | _ -> raise (Failure "Not a variable")
 
-  let get_var_id vt= fst (dest_var vt)
-  let get_var_type vt= snd (dest_var vt)
+let get_var_id vt= fst (dest_var vt)
+let get_var_type vt= snd (dest_var vt)
 
-  let is_bound x = 
-    match x with 
-      Bound _ -> true
-    | _ -> false
-  let mkbound n = (Bound n)
+let is_bound x = 
+  match x with 
+    Bound _ -> true
+  | _ -> false
+let mkbound n = (Bound n)
 
-  let dest_bound t = 
+let dest_bound t = 
+  match t with 
+    Bound(n) -> n
+  | _ -> raise (Failure "Not a binder")
+
+let is_app x = 
+  match x with 
+    App _ -> true
+  | _ -> false
+
+let mkapp f a= (App(f, a))
+let dest_app t = 
+  match t with 
+    (App(f, a)) -> (f, a)
+  | _ -> raise (Failure "Not a function")
+
+let rec mkcomb x y = 
+  match y with 
+    [] -> x
+  | t::ts -> mkcomb (mkapp x t) ts
+
+let get_args x =
+  let rec get_args_aux t rs =
     match t with 
-      Bound(n) -> n
-    | _ -> raise (Failure "Not a binder")
+      App(f, a) -> get_args_aux f (a::rs)
+    |	x -> rs
+  in get_args_aux x []
 
-  let is_app x = 
-    match x with 
-      App _ -> true
-    | _ -> false
+let mkfun f args = 
+  mkcomb (Var(f, Gtypes.mk_var 
+		("_"^(Basic.string_fnid f)^"_ty"))) args
+let is_fun t =
+  (is_app t) & is_var (get_fun t)
 
-  let mkapp f a= (App(f, a))
-  let dest_app t = 
-    match t with 
-      (App(f, a)) -> (f, a)
-    | _ -> raise (Failure "Not a function")
-
-  let rec mkcomb x y = 
-    match y with 
-      [] -> x
-    | t::ts -> mkcomb (mkapp x t) ts
-
-  let get_args x =
-    let rec get_args_aux t rs =
-      match t with 
-	App(f, a) -> get_args_aux f (a::rs)
-      |	x -> rs
-    in get_args_aux x []
-
-  let mkfun f args = 
-    mkcomb (Var(f, Gtypes.mk_var 
-		  ("_"^(Basic.string_fnid f)^"_ty"))) args
-  let is_fun t =
-    (is_app t) & is_var (get_fun t)
-
-  let dest_fun t = 
-    if is_fun t 
-    then (fst(dest_var (get_fun t)), get_args t)
-    else raise (Failure "Not a function")
+let dest_fun t = 
+  if is_fun t 
+  then (fst(dest_var (get_fun t)), get_args t)
+  else raise (Failure "Not a function")
 
 
-  let is_typed x = 
-    match x with 
-      Typed (_, _) -> true
-    | _ -> false
-  let mktyped t ty= Typed(t, ty)
-  let dest_typed t = 
-    match t with 
-      Typed(trm, ty) -> (trm, ty)
-    | _ -> raise (Failure "Not a typed term")
+let is_typed x = 
+  match x with 
+    Typed (_, _) -> true
+  | _ -> false
+let mktyped t ty= Typed(t, ty)
+let dest_typed t = 
+  match t with 
+    Typed(trm, ty) -> (trm, ty)
+  | _ -> raise (Failure "Not a typed term")
 
-  let is_const x = 
-    match x with 
-      Const _ -> true
-    | _ -> false
-  let mkconst c = (Const c)
+let is_const x = 
+  match x with 
+    Const _ -> true
+  | _ -> false
+let mkconst c = (Const c)
 
-  let dest_const t =
-    match t with
-      Const c -> c
-    | _ -> raise (Failure "Not a constant")
+let dest_const t =
+  match t with
+    Const c -> c
+  | _ -> raise (Failure "Not a constant")
 
 
-  let mknum n = mkconst(Cnum n)
-  let destnum n = 
-    match (dest_const n) with
-      (Cnum c) -> c
-    | _ -> raise (Failure "Not a number")
+let mknum n = mkconst(Cnum n)
+let destnum n = 
+  match (dest_const n) with
+    (Cnum c) -> c
+  | _ -> raise (Failure "Not a number")
 let mk_int n = mkconst(Cnum (Num.num_of_int n))
 
-  let mkbool b = mkconst(Cbool b)
-  let destbool b = 
-    match (dest_const b) with 
-      (Cbool c) -> c
-    | _ -> raise (Failure "Not a boolean")
+let mkbool b = mkconst(Cbool b)
+let destbool b = 
+  match (dest_const b) with 
+    (Cbool c) -> c
+  | _ -> raise (Failure "Not a boolean")
 
-  let is_true t = 
-    match t with 
-      (Const (Cbool true)) -> true 
-    | _ -> false
+let is_true t = 
+  match t with 
+    (Const (Cbool true)) -> true 
+  | _ -> false
 
 (*  let is_true t = destbool t *)
 
-  let dest_qnt t=
-    match t with 
-      (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
-    | _  -> raise (Failure "Not a quantifier")
+let dest_qnt t=
+  match t with 
+    (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
+  | _  -> raise (Failure "Not a quantifier")
 
-  let get_qnt_type t =
-    match t with 
-      Qnt(qb, b) -> (!qb).qtyp
-    | Bound(qb) -> (!qb).qtyp
-    | _ -> raise (Failure "not a quantifier")
+let get_qnt_type t =
+  match t with 
+    Qnt(qb, b) -> (!qb).qtyp
+  | Bound(qb) -> (!qb).qtyp
+  | _ -> raise (Failure "not a quantifier")
 
-  let get_qnt_body t = 
-    match t with 
-      Qnt(qb, b) -> b
-    | _ -> raise (Failure "Not a quantified formula")
+let get_qnt_body t = 
+  match t with 
+    Qnt(qb, b) -> b
+  | _ -> raise (Failure "Not a quantified formula")
 
 
 let get_free_binders t =
@@ -492,23 +548,23 @@ let get_free_binders t =
 
 
 (*
-let rec subst_qnt_env tyenv env trm=
-  let 
-  let rec subst_aux t =
-    (match t with
-      Var(n, ty) -> 
-	if (is_var t) & ((get_var_id t)=n) 
-	    & (Gtypes.matches tyenv (get_var_type t) ty)
-	then r
-	else trm
-      |	Bound(q) -> 
-      | Qnt(q, body) -> Qnt(q, subst_aux  body)
-      | App(f, a) -> App(subst_aux f, 
-			 subst_aux a)
-      | Typed(tt, ty) -> Typed(subst_aux tt, ty)
-      | _ -> trm)
-  in subst_aux tm
-*)
+   let rec subst_qnt_env tyenv env trm=
+   let 
+   let rec subst_aux t =
+   (match t with
+   Var(n, ty) -> 
+   if (is_var t) & ((get_var_id t)=n) 
+   & (Gtypes.matches tyenv (get_var_type t) ty)
+   then r
+   else trm
+   |	Bound(q) -> 
+   | Qnt(q, body) -> Qnt(q, subst_aux  body)
+   | App(f, a) -> App(subst_aux f, 
+   subst_aux a)
+   | Typed(tt, ty) -> Typed(subst_aux tt, ty)
+   | _ -> trm)
+   in subst_aux tm
+ *)
 
 (* instantiate a quantified formula t with term r *)
 
@@ -525,9 +581,8 @@ let inst t r =
     subst (Bound(q)) r b)
   else raise (Failure "inst: not a quantified formula")
 
-
 (*
- specialised form of substitution for constructing quantified terms. 
+   specialised form of substitution for constructing quantified terms. 
    replaces only free variables and only if name and type match the
    quantifying term.
 *)
@@ -547,95 +602,95 @@ let subst_qnt_var scp env trm =
   in subst_aux trm
 
 let mktyped_qnt scp q ty n b =
-    let t=mk_binding q n ty
-    in 
-    let nb=subst_qnt_var scp
-	(Lib.bind (mkname n) (Bound t) (Lib.empty_env())) b
-    in Qnt(t, nb)
+  let t=mk_binding q n ty
+  in 
+  let nb=subst_qnt_var scp
+      (Lib.bind (mkname n) (Bound t) (Lib.empty_env())) b
+  in Qnt(t, nb)
 
-  let mkqnt tyenv q n b =
-    mktyped_qnt tyenv q (Gtypes.mk_null()) n b
+let mkqnt tyenv q n b =
+  mktyped_qnt tyenv q (Gtypes.mk_null()) n b
 
 
 
-  let binder_equiv tyenv s t = 
-    match (s, t) with
-      (Bound(b1), Bound(b2)) ->
-	let (qnt1, _, ty1) =dest_binding b1
-	and (qnt2, _, ty2) =dest_binding b2
-	in 
-	if (qnt1 = qnt2) 
-	then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-	else false
-    | (Qnt(b1, _), Qnt(b2, _)) ->
-	let (qnt1, _, ty1) =dest_binding b1
-	and (qnt2, _, ty2) =dest_binding b2
-	in 
-	if (qnt1 = qnt2) 
-	then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-	else false
-    | _ -> false
+let binder_equiv tyenv s t = 
+  match (s, t) with
+    (Bound(b1), Bound(b2)) ->
+      let (qnt1, _, ty1) =dest_binding b1
+      and (qnt2, _, ty2) =dest_binding b2
+      in 
+      if (qnt1 = qnt2) 
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+  | (Qnt(b1, _), Qnt(b2, _)) ->
+      let (qnt1, _, ty1) =dest_binding b1
+      and (qnt2, _, ty2) =dest_binding b2
+      in 
+      if (qnt1 = qnt2) 
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+  | _ -> false
 
 
 (* Debugging and printing *)
 
-  let string_typed_name n t = 
-    ("("^n^": "^(Gtypes.string_gtype t)^")")
+let string_typed_name n t = 
+  ("("^n^": "^(Gtypes.string_gtype t)^")")
 
-  let rec string_term_basic t =
-    match t with
-      Var(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
-    | Bound(_) -> "?"^(get_binder_name t)
-    | Const(c) -> string_const c
-    | App(t1, t2) ->
-	let f=get_fun t 
-	and args = get_args t 
-	in 
-	("("^(string_term_basic f)^" ("
-	      ^(Lib.list_string (string_term_basic ) ", " args)^"))")
+let rec string_term_basic t =
+  match t with
+    Var(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
+  | Bound(_) -> "?"^(get_binder_name t)
+  | Const(c) -> string_const c
+  | App(t1, t2) ->
+      let f=get_fun t 
+      and args = get_args t 
+      in 
+      ("("^(string_term_basic f)^" ("
+       ^(Lib.list_string (string_term_basic ) ", " args)^"))")
 
-    | Qnt(q, body) -> 
-	(quant_string (!q).quant)
-	^" ("^(string_typed_name (!q).qvar (!q).qtyp)^"): "
-	^(string_term_basic body)
-    | Typed (trm, ty) -> 
-	("("^(string_term_basic trm)^": "
-	 ^(Gtypes.string_gtype ty)^")")
+  | Qnt(q, body) -> 
+      (quant_string (!q).quant)
+      ^" ("^(string_typed_name (!q).qvar (!q).qtyp)^"): "
+      ^(string_term_basic body)
+  | Typed (trm, ty) -> 
+      ("("^(string_term_basic trm)^": "
+       ^(Gtypes.string_gtype ty)^")")
 
-  let rec string_term_prec i x =
-    match x with
-      Var(n, ty) -> (Basic.string_fnid n)
-    | Bound(_) -> "?"^(get_binder_name x)
-    | Const(c) -> Basic.string_const c
-    | Qnt(q, body) -> 
-	let ti = (Basic.prec_qnt (!q.quant))
-	in 
-	if ti <= i 
-	then ("("^(quant_string (!q.quant))
-	      ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
-	      ^(string_term_prec ti (body))^")")
-	else 
-	  ((quant_string (!q.quant))
-	      ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
-	      ^(string_term_prec ti (body)))
-    | App(t1, t2) ->
-	let f=get_fun x 
-	and args = get_args x
-	in 
-	("("^(string_term_prec i f)^" "
-	      ^(list_string (string_term_prec i) " " args)^")")
-    | Typed (trm, ty) -> 
-	("("^(string_term_prec i trm)^": "
-	 ^(Gtypes.string_gtype ty)^")")
+let rec string_term_prec i x =
+  match x with
+    Var(n, ty) -> (Basic.string_fnid n)
+  | Bound(_) -> "?"^(get_binder_name x)
+  | Const(c) -> Basic.string_const c
+  | Qnt(q, body) -> 
+      let ti = (Basic.prec_qnt (!q.quant))
+      in 
+      if ti <= i 
+      then ("("^(quant_string (!q.quant))
+	    ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
+	    ^(string_term_prec ti (body))^")")
+      else 
+	((quant_string (!q.quant))
+	 ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
+	 ^(string_term_prec ti (body)))
+  | App(t1, t2) ->
+      let f=get_fun x 
+      and args = get_args x
+      in 
+      ("("^(string_term_prec i f)^" "
+       ^(list_string (string_term_prec i) " " args)^")")
+  | Typed (trm, ty) -> 
+      ("("^(string_term_prec i trm)^": "
+       ^(Gtypes.string_gtype ty)^")")
 
 
 
-  let string_term x = string_term_prec 0 x
+let string_term x = string_term_prec 0 x
 
-  let string_infix f ls =
-    match ls with
-      [l;r] -> (l^f^r)
-    | _ -> raise (Failure ("Too many arguments to infix "^f^"."))
+let string_infix f ls =
+  match ls with
+    [l;r] -> (l^f^r)
+  | _ -> raise (Failure ("Too many arguments to infix "^f^"."))
 
 let cfun_string c =
   match c with 
@@ -647,64 +702,64 @@ let cfun_string c =
   | "equals" -> "="
   | x -> x
 
-  let rec string_term_inf inf i x =
-    match x with
-      Var(n, ty) -> (cfun_string (string_fnid n))
-    | Bound(_) -> (get_binder_name x)
-    | Const(c) -> Basic.string_const c
-    | Typed (trm, ty) ->
-	("("^(string_term_inf inf i trm)^": "
-	 ^(Gtypes.string_gtype ty)^")")
-    | App(t1, t2) ->
-	let f=get_fun x 
-	and args = get_args x
+let rec string_term_inf inf i x =
+  match x with
+    Var(n, ty) -> (cfun_string (string_fnid n))
+  | Bound(_) -> (get_binder_name x)
+  | Const(c) -> Basic.string_const c
+  | Typed (trm, ty) ->
+      ("("^(string_term_inf inf i trm)^": "
+       ^(Gtypes.string_gtype ty)^")")
+  | App(t1, t2) ->
+      let f=get_fun x 
+      and args = get_args x
+      in 
+      if is_var f 
+      then 
+	(let name= fst (dest_var f)
 	in 
-	if is_var f 
+	let pr = (try (fst(inf) name) with _ -> -1)
+	in let ti = if pr <=i then pr else i
+	in if (try (snd(inf)) name with _ -> false)
 	then 
-	  (let name= fst (dest_var f)
-	  in 
-	  let pr = (try (fst(inf) name) with _ -> -1)
-	  in let ti = if pr <=i then pr else i
-	  in if (try (snd(inf)) name with _ -> false)
-	  then 
-	    (string_infix (cfun_string (string_fnid name))
-	       (List.map (string_term_inf inf ti) args))
-	  else 
-	    ("("^(string_term_inf inf i f)^" "
-	     ^(list_string (string_term_inf inf i) " " args)^")"))
+	  (string_infix (cfun_string (string_fnid name))
+	     (List.map (string_term_inf inf ti) args))
 	else 
 	  ("("^(string_term_inf inf i f)^" "
-	      ^(list_string (string_term_inf inf i) " " args)^")")
-    | Qnt(q, body) -> 
-	let qnt = !q.quant
-	in let (qnts, b) = (strip_qnt qnt x)
-	in let qnts_str = 
-	  (quant_string qnt)
-	  ^(list_string 
-	      (fun x -> (string_typed_name (!x.qvar) (!x.qtyp)))
-	      " " qnts)^": "
-	in 
-	let ti = (Basic.prec_qnt (!q.quant))
-	in 
-	if ti < i 
-	then ("("^qnts_str^(string_term_inf inf ti (b))^")")
-	else
-	  (qnts_str^(string_term_inf inf ti (b)))
+	   ^(list_string (string_term_inf inf i) " " args)^")"))
+      else 
+	("("^(string_term_inf inf i f)^" "
+	 ^(list_string (string_term_inf inf i) " " args)^")")
+  | Qnt(q, body) -> 
+      let qnt = !q.quant
+      in let (qnts, b) = (strip_qnt qnt x)
+      in let qnts_str = 
+	(quant_string qnt)
+	^(list_string 
+	    (fun x -> (string_typed_name (!x.qvar) (!x.qtyp)))
+	    " " qnts)^": "
+      in 
+      let ti = (Basic.prec_qnt (!q.quant))
+      in 
+      if ti < i 
+      then ("("^qnts_str^(string_term_inf inf ti (b))^")")
+      else
+	(qnts_str^(string_term_inf inf ti (b)))
 
- let string_inf_term inf x = string_term_inf inf 0 x
+let string_inf_term inf x = string_term_inf inf 0 x
 
 
-  let print prenv x = 
-    Format.open_box 0;
-    print_string 
-      (string_inf_term  prenv x);
-    Format.close_box()
+let print prenv x = 
+  Format.open_box 0;
+  print_string 
+    (string_inf_term  prenv x);
+  Format.close_box()
 
-  let rec print_termlist prenv x =
-    match x with 
-      [] -> print_string ""
-    | [p] -> print prenv p
-    | (p::ps) -> (print prenv p; print_string ", "; print_termlist prenv ps)
+let rec print_termlist prenv x =
+  match x with 
+    [] -> print_string ""
+  | [p] -> print prenv p
+  | (p::ps) -> (print prenv p; print_string ", "; print_termlist prenv ps)
 
 
 
@@ -716,118 +771,118 @@ let print_identifier pprec x=
     None -> Basic.name x
   | Some(s) -> s)
 
-  let rec print_term_aux ppstate i x =
-    match x with
-      Var(n, ty) -> 
-	(let pprec = ppstate.Corepp.id_info n
+let rec print_term_aux ppstate i x =
+  match x with
+    Var(n, ty) -> 
+      (let pprec = ppstate.Corepp.id_info n
+      in 
+      print_identifier pprec n)
+  | Bound(n) -> Format.print_string ((get_binder_name x))
+  | Const(c) -> Format.print_string (Basic.string_const c)
+  | Typed (trm, ty) ->
+      Format.print_string "(";
+      Format.open_box 0;
+      print_term_aux ppstate i trm;
+      Format.close_box();
+      Format.print_string ": ";
+      Format.print_string (Gtypes.string_gtype ty);
+      Format.print_string ")"
+  | App(t1, t2) ->
+      let f=get_fun x 
+      and args = get_args x
+      in 
+      if is_var f 
+      then 
+	(let name= fst (dest_var f)
 	in 
-	print_identifier pprec n)
-    | Bound(n) -> Format.print_string ((get_binder_name x))
-    | Const(c) -> Format.print_string (Basic.string_const c)
-    | Typed (trm, ty) ->
-	Format.print_string "(";
-	Format.open_box 0;
-	print_term_aux ppstate i trm;
-	Format.close_box();
-	Format.print_string ": ";
-	Format.print_string (Gtypes.string_gtype ty);
-	Format.print_string ")"
-    | App(t1, t2) ->
-	let f=get_fun x 
-	and args = get_args x
+	let pp_rec = ppstate.id_info name 
 	in 
-	if is_var f 
+	let pr = pp_rec.prec
+	in let ti = if pr <= i then pr else i
+	in
+	if pr<=i then Format.print_string "("
+	else ();
+	if pp_rec.infix
 	then 
-	  (let name= fst (dest_var f)
-	  in 
-	  let pp_rec = ppstate.id_info name 
-	  in 
-	  let pr = pp_rec.prec
-	  in let ti = if pr <= i then pr else i
-	  in
-	  if pr<=i then Format.print_string "("
-	  else ();
-	  if pp_rec.infix
-	  then 
-	    (match args with
-	      [l;r] -> 
-		(print_term_aux ppstate ti l;
-		 Format.print_break 1 2;
-		 print_term_aux ppstate ti f;
-		 Format.print_break 1 2;
-		 print_term_aux ppstate ti r)
-	    | _ -> (print_term_aux ppstate ti f;
-		    Format.print_break 1 2;
-		    list_print 
-		      (print_term_aux ppstate ti)
-		      (fun () -> Format.print_break 1 2)
-		      args))
-	  else 
-	    (Format.print_string "(";
-	     print_term_aux ppstate ti f;
-	     Format.print_break 1 2;
-	     list_print 
-	       (print_term_aux ppstate ti)
-	       (fun () -> Format.print_break 1 2) args;
-	     Format.print_string")");
-	  if pr<=i then Format.print_string ")"  else ())
+	  (match args with
+	    [l;r] -> 
+	      (print_term_aux ppstate ti l;
+	       Format.print_break 1 2;
+	       print_term_aux ppstate ti f;
+	       Format.print_break 1 2;
+	       print_term_aux ppstate ti r)
+	  | _ -> (print_term_aux ppstate ti f;
+		  Format.print_break 1 2;
+		  list_print 
+		    (print_term_aux ppstate ti)
+		    (fun () -> Format.print_break 1 2)
+		    args))
 	else 
-	    (Format.print_string "(";
-	     print_term_aux ppstate i  f;
-	     Format.print_break 1 2;
-	     list_print 
-	       (print_term_aux ppstate i)
-	       (fun () -> Format.print_break 1 2) args;
-	     Format.print_string")")
-    | Qnt(q, body) -> 
-	let (_, qnt, qvar, qtyp, _) = dest_qnt x
-	in let (qnts, b) = (strip_qnt qnt x)
-	in let print_qnt q =
-	  Format.open_box 0; 
-	  Format.print_break 1 2;
-	  Format.print_string (string_typed_name (!q.qvar) (!q.qtyp));
-	  Format.close_box();
-	in 
-	let print_qnts qs =
-	  Format.print_string (Basic.quant_string qnt);
-	  Corepp.list_print 
-	    (print_qnt) (fun () -> Format.print_break 1 2) 
-	    qnts;
-	  Format.print_string ": ";
-	  Format.print_cut()
-	in 
-	let ti = (Basic.prec_qnt (qnt))
-	in 
-	if ti < i 
-	then
-	  (Format.open_box 0;
-	   Format.print_string "(";
-	   Format.open_box 0; 
-	   Format.print_break 0 2;
-	   print_qnts qnts;
-	   Format.close_box();
-	   Format.open_box 0;
-	   print_term_aux ppstate ti b;
-	   Format.close_box();
-	   Format.print_string ")";
-	  Format.close_box())
-	else 
- 	  (Format.open_box 0; Format.print_break 0 2;
-	   print_qnts qnts; Format.print_break 1 2;
-	   print_term_aux ppstate ti b;
-	   Format.close_box())
+	  (Format.print_string "(";
+	   print_term_aux ppstate ti f;
+	   Format.print_break 1 2;
+	   list_print 
+	     (print_term_aux ppstate ti)
+	     (fun () -> Format.print_break 1 2) args;
+	   Format.print_string")");
+	if pr<=i then Format.print_string ")"  else ())
+      else 
+	(Format.print_string "(";
+	 print_term_aux ppstate i  f;
+	 Format.print_break 1 2;
+	 list_print 
+	   (print_term_aux ppstate i)
+	   (fun () -> Format.print_break 1 2) args;
+	 Format.print_string")")
+  | Qnt(q, body) -> 
+      let (_, qnt, qvar, qtyp, _) = dest_qnt x
+      in let (qnts, b) = (strip_qnt qnt x)
+      in let print_qnt q =
+	Format.open_box 0; 
+	Format.print_break 1 2;
+	Format.print_string (string_typed_name (!q.qvar) (!q.qtyp));
+	Format.close_box();
+      in 
+      let print_qnts qs =
+	Format.print_string (Basic.quant_string qnt);
+	Corepp.list_print 
+	  (print_qnt) (fun () -> Format.print_break 1 2) 
+	  qnts;
+	Format.print_string ": ";
+	Format.print_cut()
+      in 
+      let ti = (Basic.prec_qnt (qnt))
+      in 
+      if ti < i 
+      then
+	(Format.open_box 0;
+	 Format.print_string "(";
+	 Format.open_box 0; 
+	 Format.print_break 0 2;
+	 print_qnts qnts;
+	 Format.close_box();
+	 Format.open_box 0;
+	 print_term_aux ppstate ti b;
+	 Format.close_box();
+	 Format.print_string ")";
+	 Format.close_box())
+      else 
+ 	(Format.open_box 0; Format.print_break 0 2;
+	 print_qnts qnts; Format.print_break 1 2;
+	 print_term_aux ppstate ti b;
+	 Format.close_box())
 
 
-  let  print_term ppstate x = 
-    Format.open_box 0;
-    print_term_aux ppstate 0 x;
-    Format.close_box()
+let  print_term ppstate x = 
+  Format.open_box 0;
+  print_term_aux ppstate 0 x;
+  Format.close_box()
 
 
 (* Error handling *)
 
-  class termError s ts =
-    object (self)
+class termError s ts =
+  object (self)
     inherit Result.error s
     val trms = (ts :term list)
     method get() = trms
@@ -843,15 +898,15 @@ let print_identifier pprec x=
       Format.close_box();
       Format.close_box();
   end
-  let mktermError s t = ((new termError s t):>error)
+let mktermError s t = ((new termError s t):>error)
 
-  let termError s t = mkError((new termError s t):>error)
-  let addtermError s t es = raise (addError ((new termError s t):>error) es)
+let termError s t = mkError((new termError s t):>error)
+let addtermError s t es = raise (addError ((new termError s t):>error) es)
 
 (* [set_names_types scp thy trm]
    find and set long identifiers and types for variables in [trm]
    theory is [thy] if no long identifier can be found in scope [scp]
-*)
+ *)
 
 let set_names scp trm=
   let term_memo = Lib.empty_env()
@@ -871,7 +926,7 @@ let set_names scp trm=
 	let th, n = Basic.dest_fnid id
 	in 
 	let nth = (if th=Basic.null_thy
-	           then lookup_id n else th)
+	then lookup_id n else th)
 	in 
 	let nid = Basic.mklong nth n
 	in Var(nid, ty)
@@ -885,8 +940,8 @@ let in_thy_scope memo scp th trm =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-	if (scp.thy_in_scope th n)
-	then Lib.add n true memo else raise Not_found)
+      if (scp.thy_in_scope th n)
+      then Lib.add n true memo else raise Not_found)
   in
   let rec in_scp_aux t =
     match t with
@@ -929,12 +984,12 @@ let least ts =
    more complex ordering on terms:
    Const < Var <  Bound < App < Qnt
    (Typed t1) < t2 iff t1<t2
-*)
+ *)
 
 let rec term_lt t1 t2 = 
   let atom_lt (a1, ty1) (a2, ty2) =  a1<a2
   and 
-  bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
+      bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
   in 
   match (t1, t2) with
     Typed (trm, _), _ -> term_lt trm t2
@@ -969,7 +1024,7 @@ let rec term_lt t1 t2 =
 let rec term_leq t1 t2 = 
   let atom_leq (a1, ty1) (a2, ty2) =  a1<=a2 
   and 
-  bound_leq (q1, n1, ty1) (q2, n2, ty2) =  n1<=n2 & q1<=q2
+      bound_leq (q1, n1, ty1) (q2, n2, ty2) =  n1<=n2 & q1<=q2
   in 
   match (t1, t2) with
     Typed (trm, _), _ -> term_leq trm t2

@@ -156,6 +156,8 @@ val replace: substitution -> term -> term
 (* get function identifier and arguments of an application *)
     val get_args: term -> term list
     val get_fun: term -> term
+val flatten_app : term -> term list
+val get_fun_args: term -> (term* term list)
 
 (* pretty printer *)
 
