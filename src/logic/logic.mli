@@ -1,18 +1,6 @@
 (* theorems and rules of the logic *)
 (* rules are based on a sequent calculus *)
 
-(* tags *)
-module Tag:
-    sig
-      type t
-
-      val named: string->t
-      val name: t->string
-      val null:t
-      val create: unit->t
-
-      val equal: t->t->bool
-    end
 
 (* theorems of the logic *)
 type thm
