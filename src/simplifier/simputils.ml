@@ -6,17 +6,6 @@ module Simputils=
     open Term
     open Logicterm
 
-(*
-    let get_one ls err=
-      match ls with
-	x::_ -> x
-      | _ -> raise err
-
-    let get_two ls err=
-      match ls with
-	x::y::rst -> (x, y)
-      | _ -> raise err
-*)
     let dest_rrthm t = 
       match t with 
 	Logic.RRThm (x) -> x

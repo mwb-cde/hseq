@@ -722,7 +722,7 @@ let token_info tbl t=
   let rec lhs inf toks=
     ((((id_type_op (mk_short_id id) inf) 
 	 -- (args_opt inf))
-	>> (fun ((n, t) , args) -> (n, args))) 
+	>> (fun ((n, t), args) -> (n, args))) 
     || error ~msg:"badly formed identifier for definition.")
        toks
   and args_opt inf toks= 
