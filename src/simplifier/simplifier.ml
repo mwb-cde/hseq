@@ -38,28 +38,42 @@ module Control =
  *)
     type t =
 	{
-(* [cond_tac]: the tactic used to prove conditions of rewrite rules *)
+(**
+   [simpset]: the simpset being used. Assumptions may be added to this
+   during the course of simplification
+*)
+	 simpset:Simpset.simpset;
+
+(** [cond_tac]: the tactic used to prove conditions of rewrite rules *)
 	 cond_tac: t -> Tag.t -> Tactics.tactic;
+
 (** conds: max. no. of conditions to try and prove at once *)
 	   conds: int;  
+
 (** rr_depth: max. no. of rr rules to apply at one level *)
 	   rr_depth: int;
+
 (** asms: assumptions generated during the course of simplification *)
 	   asms: Tag.t list;
+
 (** rules: 
    rewrite rules to pass to the rewriter (the result of the simplifier)
  *)
 	   rules: Logic.rr_type list
        }
 
-    let make tac cd rd a rs= 
+    let make sset tac cd rd a rs= 
       {
+       simpset=sset;
        cond_tac=tac;
        conds=cd;
        rr_depth=rd;
        asms=a;
        rules=rs
      }
+
+    let set_simpset cntrl set=
+      {cntrl with simpset = set}
 
     let set_tactic cntrl tac=
       {cntrl with cond_tac = tac}
@@ -76,6 +90,7 @@ module Control =
     let set_rules cntrl ds=
       {cntrl with rules=ds}
 
+    let get_simpset cntrl=cntrl.simpset
     let get_tactic cntrl=cntrl.cond_tac
 
     let add_asm cntrl a=
@@ -89,8 +104,13 @@ module Control =
     let add_rule cntrl r=
       set_rules cntrl (r::(cntrl.rules))
 
+    let add_simp_rule cntrl rule=
+      set_simpset cntrl
+	(Simpset.add_rule rule (get_simpset cntrl))
+
 (** [default]: The default control information  *)
-    let default = make (fun _ _ -> skip) 50 50 [] [] 
+    let default = 
+      make (Simpset.empty_set()) (fun _ _ -> skip) 50 50 [] [] 
 
   end
 
@@ -247,9 +267,22 @@ let rec prove_cond cntrl values entry goal =
       in 
       (* check for subgoals *)
       match (Drule.branch_subgoals ng1) with
-	[] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
-      | [x] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
-      | _ -> raise No_change
+      | [] -> (ncntrl, Logic.Asm(Drule.ftag rftg), ng1)
+      | [sqnt] ->  
+	  (* add assumption as a rule, 
+	     to avoid having to prove it again *)
+	  let form=Logic.drop_tag(Logic.Sequent.get_tagged_asm rftg sqnt)
+	  in 
+	  let rule = 
+	    Simpset.make_rule 
+	      (Logic.Asm (Drule.ftag rftg)) 
+	      (Formula.dest_form form)
+	  in 
+	  (Control.add_simp_rule ncntrl rule,
+	   Logic.Asm(Drule.ftag rftg), ng1)
+      | _ -> (* >1 subgoals = failure *)
+	  raise No_change
+
 
 (*
    match_rewrite:
@@ -303,8 +336,7 @@ let find_basic cntrl tyenv rl trm g=
 
    raise No_change and set [ret:=None] if no matches.
  *)
-
-let find_match cntrl tyenv set ret trm (goal: Logic.node)=
+let find_match cntrl tyenv ret trm (goal: Logic.node)=
   let rec find_aux rls t g= 
     match rls with
       [] -> (ret:=None; raise No_change)
@@ -313,7 +345,8 @@ let find_match cntrl tyenv set ret trm (goal: Logic.node)=
 	  find_basic cntrl tyenv rl t g
 	with _ -> find_aux nxt t g
   in 
-  let (ncntrl, ntyenv, nt, rr, ng) = find_aux (lookup set trm) trm goal
+  let (ncntrl, ntyenv, nt, rr, ng) = 
+    find_aux (lookup (Control.get_simpset cntrl) trm) trm goal
   in 
   ret:=(Some(ncntrl, ntyenv, nt, rr)); ng
 
@@ -331,15 +364,14 @@ let find_match cntrl tyenv set ret trm (goal: Logic.node)=
    repeat until find_match fails. 
    Return result and last sucessfull goal.
  *)
-
-let rec find_all_matches cntrl tyenv set trm branch=
+let rec find_all_matches cntrl tyenv trm branch=
   let chng = ref false
   in 
   let rec find_aux c ty t g= 
     (let ret1=ref None
     in 
     try
-      let ng=foreach (find_match c ty set ret1 t) g
+      let ng=foreach (find_match c ty ret1 t) g
       in 
       match (!ret1) with
 	None -> (c, ty, t, g)
@@ -422,29 +454,29 @@ let get_form t n =
    Term.substitution is used to keep track of changing term
    as rewrites are found
  *)
-let rec find_rrs_bottom_up set ctrl tyenv t g=
+let rec find_rrs_bottom_up ctrl tyenv t g=
   match t with
     Basic.Qnt(k, q, b) -> 
       (let (bcntrl, btyenv, nb, bg) = 
-	find_rrs_bottom_up set ctrl tyenv b g
+	find_rrs_bottom_up ctrl tyenv b g
       in 
       try 
-	find_all_matches bcntrl btyenv set (Qnt(k, q, nb)) bg
+	find_all_matches bcntrl btyenv (Qnt(k, q, nb)) bg
       with No_change -> (bcntrl, btyenv, Qnt(k, q, nb), bg))
-  | Basic.Typed(tt, ty) -> find_rrs_bottom_up set ctrl tyenv tt g
+  | Basic.Typed(tt, ty) -> find_rrs_bottom_up ctrl tyenv tt g
   | Basic.App(f, a)->
       (let (fcntrl, ftyenv, nf, nfg) = 
-	find_rrs_bottom_up set ctrl tyenv f g
+	find_rrs_bottom_up ctrl tyenv f g
       in 
       let (acntrl, atyenv, na, nag) = 
-	find_rrs_bottom_up set fcntrl ftyenv a nfg
+	find_rrs_bottom_up fcntrl ftyenv a nfg
       in 
       try 
-	find_all_matches acntrl atyenv set (App(nf, na)) nag
+	find_all_matches acntrl atyenv (App(nf, na)) nag
       with No_change -> (acntrl, atyenv, App(nf, na), nag))
   | _ -> 
       (try 
-	find_all_matches ctrl tyenv set t g
+	find_all_matches ctrl tyenv t g
       with No_change -> (ctrl, tyenv, t, g))
 
 (* 
@@ -452,28 +484,28 @@ let rec find_rrs_bottom_up set ctrl tyenv t g=
 
    Top-down search through term [t] for rewrite rules to apply.
  *)
-let rec find_rrs_top_down set ctrl tyenv trm g=
+let rec find_rrs_top_down ctrl tyenv trm g=
   let find_td_aux tyenv1 cntrl1 trm1 g=
     match trm1 with
       Basic.Qnt(k, q, b) -> 
 	(let (bcntrl, btyenv, nb, bg) = 
-	  find_rrs_top_down set cntrl1 tyenv1 b g
+	  find_rrs_top_down  cntrl1 tyenv1 b g
 	in 
 	(bcntrl, btyenv, Qnt(k, q, nb), bg))
-    | Basic.Typed(tt, ty) -> find_rrs_top_down set cntrl1 tyenv1 tt g
+    | Basic.Typed(tt, ty) -> find_rrs_top_down  cntrl1 tyenv1 tt g
     | Basic.App(f, a)->
 	(let (fcntrl, ftyenv, nf, nfg) = 
-	  find_rrs_top_down set cntrl1 tyenv1 f g
+	  find_rrs_top_down  cntrl1 tyenv1 f g
 	in 
 	let (acntrl, atyenv, na, nag) = 
-	  find_rrs_top_down set fcntrl ftyenv a nfg
+	  find_rrs_top_down  fcntrl ftyenv a nfg
 	in 
 	(acntrl, atyenv, App(nf, na), nag))
     | _ -> (cntrl1, tyenv1, trm1, g)
   in
   let (nctrl, ntyenv, ntrm, ng) = 
     (try 
-      find_all_matches ctrl tyenv set trm g
+      find_all_matches ctrl tyenv trm g
     with No_change -> (ctrl, tyenv, trm, g))
   in 
   find_td_aux ntyenv nctrl ntrm ng
@@ -487,9 +519,11 @@ let rec basic_simp_tac cntrl set ft goal=
   let trm=
     Formula.dest_form (Logic.drop_tag (get_form (ftag ft) goal))
   in 
+  let cntrl1=Control.set_simpset cntrl set
+  in 
   let (ncntrl, ntyenv, ntrm, ngoal)= 
-    find_rrs_top_down set
-      (Control.set_tactic cntrl (prove_cond_tac set))  (* TEMPORARY HACK *)
+    find_rrs_top_down
+      (Control.set_tactic cntrl1 prove_cond_tac)  (* TEMPORARY HACK *)
       tyenv
       trm (skip goal)
   in 
@@ -507,13 +541,15 @@ let rec basic_simp_tac cntrl set ft goal=
     clean_up_tac ncntrl goal1
 
 (**
-   [prove_cond_tac set ctrl tg g]: The tactic used to prove the conditions of
+   [prove_cond_tac ctrl tg g]: The tactic used to prove the conditions of
    rewrite rules.
 
    Apply [simp_prep_tac] then [basic_simp_tac].
    Then apply [Logic.Rules.trueR] to solve goal.
 *) 
-and prove_cond_tac set ctrl tg goal=
+and prove_cond_tac ctrl tg goal=
+  let set = Control.get_simpset ctrl
+  in 
   Tactics.orl
     [
      Logic.Rules.trueR None (Logic.FTag tg);
