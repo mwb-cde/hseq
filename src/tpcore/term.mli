@@ -168,6 +168,10 @@ val is_bound : term-> bool
 val mkbound : binders -> term
 val dest_bound : term-> binders
 
+val is_free : term-> bool
+val mkfree : string -> Basic.gtype -> term
+val dest_free : term-> (string * Basic.gtype)
+
 val mkmeta : string -> Basic.gtype -> term
 val is_meta : term -> bool
 
@@ -237,6 +241,14 @@ val retype_pretty: Gtypes.substitution -> term
 
 val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
 val print_term : Printer.ppinfo -> int -> term Printer.printer
+
+(**
+   [simple_print_fn_app]
+   utility function for user defined pretty-printers.
+   print an application as 'f a1 a2 .. an'
+*)
+val simple_print_fn_app: 
+    Printer.ppinfo -> int -> (Basic.ident * term list) Printer.printer
 
 (* 
    print_term renamed to print,

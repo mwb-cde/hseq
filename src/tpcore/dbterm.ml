@@ -4,6 +4,7 @@
 
   type dbterm =
       Id of Basic.ident * stype
+    | Free of string * stype
     | Qnt of Basic.quant_ty * binder * dbterm
     | Bound of int
     | App of dbterm * dbterm
@@ -14,6 +15,7 @@
   let rec of_term_aux env qnts t= 
     match t with
       Basic.Id(n, ty) -> Id(n, (Gtypes.to_save_env env ty))
+    | Basic.Free(n, ty) -> Free(n, (Gtypes.to_save_env env ty))
     | Basic.Const(c) -> Const(c)
     | Basic.App(f, a) -> App(of_term_aux env qnts f, of_term_aux env qnts a)
     | Basic.Typed (trm, ty) -> of_term_aux env qnts trm
@@ -30,6 +32,7 @@
   let rec to_term_aux env qnts t =
     match t with
       Id(n, ty) -> Basic.Id(n, Gtypes.from_save_env env ty)
+    | Free(n, ty) -> Basic.Free(n, Gtypes.from_save_env env ty)
     | Const(c) -> Basic.Const(c)
     | App(f, a) -> Basic.App(to_term_aux env qnts f, to_term_aux env qnts a)
     | Bound(q) -> Basic.Bound(List.nth qnts q)

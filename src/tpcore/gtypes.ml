@@ -285,7 +285,6 @@ let rec chase_ret_type t=
 (* pretty printing *)
 
 
-
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)

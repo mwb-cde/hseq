@@ -43,6 +43,7 @@ let print_simple trm=
     match t with
       Id(n, ty) -> Format.print_string(Basic.string_fnid n)
     | Bound(n) -> Format.print_string (".."^(binder_name n))
+    | Free(n, ty) -> Format.print_string n
     | Const(c) -> Format.print_string (Basic.string_const c)
     | Typed (trm, ty) ->
 	Format.print_string "(";
@@ -393,6 +394,18 @@ let dest_bound t =
     Bound(n) -> n
   | _ -> raise (Failure "Not a binder")
 
+
+let is_free x = 
+  match x with 
+    Free _ -> true
+  | _ -> false
+let mkfree n ty= Free(n, ty)
+
+let dest_free t = 
+  match t with 
+    Free(n, ty) -> (n, ty)
+  | _ -> raise (Failure "Not a free variable")
+
 let mkmeta n ty = Bound (mk_binding Meta n ty)
 let is_meta trm = 
   match trm with
@@ -621,6 +634,7 @@ let string_typed_name n t =
 let rec string_term_basic t =
   match t with
     Id(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
+  | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name t)
   | Const(c) -> string_const c
   | App(t1, t2) ->
@@ -642,6 +656,7 @@ let rec string_term_basic t =
 let rec string_term_prec i x =
   match x with
     Id(n, ty) -> (Basic.string_fnid n)
+  | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Qnt(k, q, body) -> 
@@ -688,6 +703,7 @@ let cfun_string c =
 let rec string_term_inf inf i x =
   match x with
     Id(n, ty) -> (cfun_string (string_fnid n))
+  | Free(n, ty) -> n
   | Bound(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Typed (trm, ty) ->
@@ -738,6 +754,7 @@ let retype tyenv t=
   let rec retype_aux t =
     match t with
       Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
+    | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv)
     | Bound(q) -> 
 	(try table_find t qenv
 	with Not_found -> t)
@@ -775,6 +792,10 @@ let retype_pretty_env typenv trm=
 	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
 	in 
 	(Id(n, nt), nenv1)
+    | Free(n, ty) -> 
+	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
+	in 
+	(Free(n, nt), nenv1)
     | Bound(q) -> 
 	(let ntrm, nenv=
 	  try (table_find t qenv, name_env)
@@ -863,7 +884,6 @@ let print_typed_name ppstate (n, ty)=
   Printer.print_string ")";
   Format.close_box()
 
-
 let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
   let printer =
     try
@@ -908,6 +928,9 @@ let rec print_term ppstate prec x =
       Printer.print_identifier 
 	(pplookup ppstate) n;
       Format.print_cut()
+  | Free(n, ty) -> 
+      Format.print_string n; 
+      Format.print_cut()
   | Bound(n) -> 
       Format.print_string ((get_binder_name x));
       Format.print_cut()
@@ -921,7 +944,10 @@ let rec print_term ppstate prec x =
       let f, args=get_fun_args x 
       in 
       (match args with 
-	[] -> print_term ppstate prec f
+	[] -> 
+	  (Format.open_box 0;
+	   print_term ppstate prec f;
+	   Format.close_box())
       | _ -> 
 	  (if is_var f 
 	  then 
@@ -931,16 +957,19 @@ let rec print_term ppstate prec x =
 	      ((fun _ -> 
 		Printer.print_identifier 
 		  (pplookup ppstate)),
-	       print_term ppstate)
+	      (fun p t-> 
+		Format.open_box 0; 
+		print_term ppstate p t; 
+		Format.close_box()))
 	      ppstate prec (n, args))
 	  else 
-	    (Format.open_box 2;
-	     Printer.print_string "(";
+	    (Printer.print_string "(";
+	     Format.open_box 2;
 	     Printer.print_list
 	       (print_term ppstate prec, Printer.print_space)
 	       (f::args);
-	     Printer.print_string ")";
-	     Format.close_box())));
+	     Format.close_box();
+	     Printer.print_string ")")));
       Format.print_cut()
   | Qnt(qnt, q, body) -> 
       let (_, _, qvar, qtyp, _) = dest_qnt x
@@ -949,19 +978,27 @@ let rec print_term ppstate prec x =
       in 
       let ti = (Basic.prec_qnt (qnt))
       in 
-      Format.open_box 3;
       Printer.print_bracket prec ti "(";
+      Format.open_box 3;
       print_qnts ppstate prec (qnt, qnts); 
       Printer.print_space ();
       print_term ppstate ti b;
-      Printer.print_bracket prec ti ")";
       Format.close_box();
+      Printer.print_bracket prec ti ")";
       Format.print_cut()
 
 let print ppstate x = 
   Format.open_box 0;
   print_term ppstate 0 (retype_pretty (Gtypes.empty_subst()) x);
   Format.close_box()
+
+let simple_print_fn_app ppstate prec (f, args)=
+  Printer.print_operator
+    ((fun _ -> Printer.print_identifier (pplookup ppstate)),
+     (fun pr l -> 
+       Printer.print_list
+	 (print_term ppstate pr, Printer.print_space) l),
+     (pplookup ppstate)) prec (f, args)
 
 (* Error handling *)
 
@@ -1088,17 +1125,24 @@ let rec term_lt t1 t2 =
   | (Bound _, Id _) -> false
   | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
+  | (Free _, Const _) -> false
+  | (Free _, Id _) -> false
+  | (Free _, Bound _) -> false
+  | (Free (n1, _), Free (n2, _)) -> n1<n2
+  | (Free _, _) -> true
   | (App _, Const _) -> false
-  | (App _, Bound _) -> false
   | (App _, Id _) -> false
+  | (App _, Bound _) -> false
+  | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
       if term_lt f1 f2 then true
       else if term_lt f2 f1 then false
       else term_lt a1 a2
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
-  | (Qnt _, Bound _) -> false
   | (Qnt _, Id _) -> false
+  | (Qnt _, Bound _) -> false
+  | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
   | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
       if(term_lt b1 b2) then true
@@ -1122,16 +1166,23 @@ let rec term_leq t1 t2 =
   | (Bound _, Id _) -> false
   | (Bound b1, Bound b2) -> bound_leq (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
+  | (Free _, Const _) -> false
+  | (Free _, Id _) -> false
+  | (Free _, Bound _) -> false
+  | (Free (n1, _), Free (n2, _)) -> n1<=n2
+  | (Free _, _) -> true
   | (App _, Const _) -> false
   | (App _, Id _) -> false
   | (App _, Bound _) -> false
+  | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
       if term_leq f1 f2 then term_leq a1 a2
       else false
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
-  | (Qnt _, Bound _) -> false
   | (Qnt _, Id _) -> false
+  | (Qnt _, Bound _) -> false
+  | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
   | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
       if(term_leq b1 b2) then true

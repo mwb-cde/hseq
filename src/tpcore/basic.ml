@@ -146,12 +146,13 @@ type gtype = (string ref, typ_const, base_typ)pre_typ
 type q_type = {quant: quant_ty; qvar: string; qtyp: gtype}
 type binders = q_type ref
 type term =
-    Id of ident* gtype   (* was   Var of ident* gtype *)
-  | Qnt of quant_ty * binders * term (* was  Qnt of q_type ref * term *)
+    Id of ident* gtype  
   | Bound of q_type ref
+  | Free of string * gtype
+  | App of term * term
+  | Qnt of quant_ty * binders * term 
   | Const of const_ty
   | Typed of term * gtype
-  | App of term * term
 
 (* Binder operations *)
 let binder_equality x y = x==y

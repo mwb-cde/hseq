@@ -26,6 +26,7 @@ type label =
   | Quant of Basic.quant_ty
   | Const of Basic.const_ty 
   | Cname of Basic.ident
+  | Cfree of string
 
 
 (** type ['a net] : Node data, rest of net, Var tagged net (if any) *)

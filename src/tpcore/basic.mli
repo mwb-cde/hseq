@@ -91,12 +91,13 @@ type binders
 
 (* the representation of a term *)
 type term =
-    Id of ident* gtype   (* was   Var of ident* gtype *)
-  | Qnt of quant_ty * binders * term
-  | Bound of binders
-  | Const of const_ty
-  | Typed of term * gtype
-  | App of term * term
+    Id of ident* gtype   (* Identifiers *)
+  | Bound of binders     (* Bound variables *)
+  | Free of string * gtype      (* Free variables *)
+  | App of term * term    (* Function application *)
+  | Qnt of quant_ty * binders * term (* Binding terms *)
+  | Const of const_ty     (* Constants *)
+  | Typed of term * gtype  (* Typed terms *)
 
 val mk_binding : quant_ty -> string -> gtype
   -> binders

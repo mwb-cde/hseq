@@ -9,6 +9,7 @@
 
     type dbterm =
       	Id of Basic.ident * stype
+      | Free of string * stype
       | Qnt of Basic.quant_ty* binder * dbterm
       | Bound of int
       | App of dbterm * dbterm

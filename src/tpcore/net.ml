@@ -19,6 +19,7 @@ type label =
   | Quant of Basic.quant_ty
   | Const of Basic.const_ty 
   | Cname of Basic.ident
+  | Cfree of string
 
 (* 'a net : Node data, rest of net, Var tagged net (if any) *)
 
@@ -46,6 +47,7 @@ let rec label varp trm =
   else
     match trm with
       Basic.Id(id, _) -> Cname(id)
+    | Basic.Free(n, _) -> Cfree(n)
     | Basic.Qnt(qnt, q, b) ->  
 	Quant(qnt)
     | Basic.Bound(q) -> 
@@ -86,6 +88,7 @@ let rec term_to_label varp trm rst=
   else 
     match trm with
       Basic.Id(id, _) -> (Cname(id), rst)
+    | Basic.Free(n, _) -> (Cfree(n), rst)
     | Basic.Qnt(qnt, q, b) -> 
 	(Quant(qnt), b::rst)
     | Basic.Bound(q) -> 

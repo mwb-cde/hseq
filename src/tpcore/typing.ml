@@ -42,6 +42,7 @@ let typeof_env scp typenv inf trm =
   let rec typeof_aux t env =
     match t with
       Id(n, ty) -> (Gtypes.mgu ty env, env)
+    | Free(n, ty) -> (Gtypes.mgu ty env, env)
     | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Const(c) -> (Gtypes.typeof_cnst c, env)
     | Qnt(Basic.Lambda, q, b) -> 
@@ -88,6 +89,9 @@ let settype_top scp (inf, cache) f typenv exty et =
           (* unify with expected type *)
 	  Gtypes.unify_env scp nt expty env1
 	with Not_found -> (f inf env expty t))  (* error handler *)
+    | Free(n, ty) ->
+	(Gtypes.quick_well_defined scp cache ty;
+	Gtypes.unify_env scp ty expty env)
     | Bound(q) -> 
 	(let ty = get_binder_type t
 	in
@@ -147,6 +151,9 @@ let typecheck_aux scp (inf, cache) typenv exty et =
   let rec type_aux expty t env=
     match t with
       Id(n, ty) -> 
+	Gtypes.quick_well_defined scp cache ty; (* check given type *) 
+	Gtypes.unify_env scp ty expty env     (* unify with expected type *)
+    | Free(n, ty) -> 
 	Gtypes.quick_well_defined scp cache ty; (* check given type *) 
 	Gtypes.unify_env scp ty expty env     (* unify with expected type *)
     | Bound(q) -> 
@@ -238,6 +245,9 @@ let rec infer_aux (inf, cache) scp env t =
 	in (ty, env1)
       with Not_found -> 
 	raise (typingError "Typecheck: unknown identifier" [t] []))
+  | Free(n, ty) -> 
+      Gtypes.quick_well_defined scp cache ty;
+      (ty, env)
   | Bound(q) -> 
       let ty = get_binder_type t
       in

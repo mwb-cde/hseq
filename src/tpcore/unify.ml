@@ -74,6 +74,10 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	    if n1=n2 
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
 	    else raise (termError "unify_aux: var" [t1;t2])
+	| (Free(n1, ty1), Free(n2, ty2)) ->
+	    if n1=n2 
+	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
+	    else raise (termError "unify_aux: var" [t1;t2])
 	| (Bound(q1), Bound(q2)) ->
 	    let qtst, qtyenv=eq_binder tyenv q1 q2
 	    in 
@@ -294,6 +298,13 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
 	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
+	    if n1=n2 
+	    then 
+	      let tyenv1=Gtypes.unify_for_rewrite scp ty1 ty2 tyenv
+	      in 
+	      (tyenv1, env)
+	    else raise (termError "unify_full: var"[t1;t2])
+	| (Free(n1, ty1), Free(n2, ty2)) ->
 	    if n1=n2 
 	    then 
 	      let tyenv1=Gtypes.unify_for_rewrite scp ty1 ty2 tyenv
