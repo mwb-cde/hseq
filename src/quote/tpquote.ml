@@ -73,7 +73,7 @@ let def_check_string str =
   let rec check i =
     if i<size 
     then
-      let ch=String.get str i
+     let ch=String.get str i
       in 
       if is_space ch
       then check (i+1)
