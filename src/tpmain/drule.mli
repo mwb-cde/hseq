@@ -11,70 +11,108 @@ val concl_forms : Logic.Sequent.t -> Formula.form list
 
 (** [sequent g]
    get first subgoal of of goal [g].
-*)
-val sequent : Logic.goal -> Logic.Sequent.t
+ *)
+(*
+   val sequent : Logic.goal -> Logic.Sequent.t
+ *)
+val sequent : Logic.node -> Logic.Sequent.t
 
 (** [scope_of g]
    get scope of first subgoal of of goal [g].
-*)
-val scope_of : Logic.goal -> Gtypes.scope
+ *)
+val scope_of : Logic.node -> Gtypes.scope
+
+(** [typenv_of n]
+   get type environment of node [n].
+ *)
+val typenv_of : Logic.node -> Gtypes.substitution
+
 
 (** [get_asm i g]
    get assumption [i] of first sequent of goal [g]
-*)
-val get_asm: Logic.label -> Logic.goal -> Formula.form
+ *)
+val get_asm: Logic.label -> Logic.node -> Formula.form
 
 (** [get_cncl i g]
    get conclusion [i] of first sequent of goal [g]
-*)
-val get_cncl: Logic.label -> Logic.goal -> Formula.form
+ *)
+val get_cncl: Logic.label -> Logic.node -> Formula.form
 
+(**
+   [has_subgoals b]
+   test whether a branch has subgoals.
+   returns [true] if b has subgoals, [false] otherwise
+ *)
+val has_subgoals : Logic.branch -> bool
+
+(** 
+   [node_tag n]
+   get tag of the sequent of node n.
+ *)
+val node_tag : Logic.node -> Tag.t
 
 (** [mk_info()]
    make an empty information record.
-*)
+ *)
 val mk_info: unit -> Logic.info
 
 (** [empty_info inf]
    empty information record [inf]
-*)
+ *)
 val empty_info: Logic.info -> Logic.info
 
 (** [subgoals info]
    get subgoals of [info].
    equivalent to [(!info).goals]
-*)
+ *)
 val subgoals: Logic.info -> Tag.t list
 
 (** [formulas info]
    get formulas of [info].
    equivalent to [(!info).forms]
-*)
+ *)
 val formulas: Logic.info -> Tag.t list
 
 (** [constants info]
    get constants of [info].
    equivalent to [(!info).terms]
-*)
+ *)
 val constants: Logic.info -> Basic.term list
-
 
 (** [make_consts l sb]
    make a list of terms suitable for instantiating a quantifier.
    [l] is the list of binders to be instantiated.
    [sb] stores the terms to be used (typically found by substitution)
-*)
+ *)
 val make_consts: 
     Basic.binders list -> Term.substitution -> Basic.term list
 
 (**
+   Tactics needed for primitive tactic building.
+   [skip node]: Do nothing. Useful for converting a node to a branch.
+
+   [foreach tac branch]: Apply [tac] to each node of branch.
+
+   [seq tac1 tac2 node]: Apply tactic [tac1] to [node] then [tac2] to
+   each of the resulting subgoals.  If [tac1] solves the goal (no
+   subgoals), then [tac2] is not used.
+ *)
+val skip : Logic.rule
+val foreach : Logic.rule -> Logic.branch -> Logic.branch
+val seq : Logic.rule -> Logic.rule -> Logic.rule
+
+(* 
+   Utility tactics
+*)
+(**
    [inst_list rule cs id goal]: 
    instantiate formula [id] in [goal] with constants [cs]
    using tactic [rule].
-*)
+   do nothing if [cs] is empty.
+ *)
 val inst_list : 
     (Basic.term -> Logic.label -> Logic.rule)
-    -> Basic.term list -> Logic.label -> Logic.rule
+  -> Basic.term list -> Logic.label -> Logic.rule
 
 (* Search functions *)
 
@@ -83,7 +121,7 @@ val inst_list :
    satisfying predicate [p] 
 
    Search starts at (-1)/1 
-*)
+ *)
 val first : ('a -> bool) -> (Tag.t * 'a) list -> Logic.label
 val first_asm : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
 val first_concl : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
@@ -120,11 +158,11 @@ val foreach_except:
 	Logic.rule
 
 (*
-val foreach_in_sq :
-    ((Formula.form -> bool) * (int -> Logic.rule)) list ->
-      ((Formula.form -> bool) * (int -> Logic.rule)) list ->
-	Logic.rule
-*)
+   val foreach_in_sq :
+   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
+   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
+   Logic.rule
+ *)
 
 (* apply rules once *)
 val foreach_conc_once :
@@ -134,28 +172,22 @@ val foreach_asm_once :
 val foreach_once :
     (Logic.label -> Logic.rule) -> Logic.rule
 
-(** [foreach_subgoal l r g]
-   Apply rule [r] to each subgoal of goal [g] with a label in list [l].
-   The rule is applied to the subgoal in the order they appear in [l].
-*)
-val foreach_subgoal: 
-    Tag.t list -> Logic.rule -> Logic.rule
+(**
+   [match_formulas scp varp t fs]
 
-(** [match_formulas scp varp t fs]
-   Match a list of tagged formulas 
-   Return the tag of the first formula in [fs] to unify 
-   with term [t] in scope [scp].
-   [varp] determines which terms can be bound by unification.
+   Match a list of tagged formulas .  Return the tag of the first
+   formula in [fs] to unify with term [t] in scope [scp].  [varp]
+   determines which terms can be bound by unification.
 
    raise Not_found if no match.
 *)
-
 val match_formulas: 
     Gtypes.substitution
   -> Gtypes.scope -> (Basic.term -> bool) 
-      -> Basic.term -> Logic.tagged_form list -> Logic.label
+    -> Basic.term -> Logic.tagged_form list -> Logic.label
 
 (** [match_asm t sq]
+
    Find a match for [t] in the assumptions of [sq].
    Return the tag of the first formula in the assumptions to unify 
    with term [t] in the scope of sequent [sq].
@@ -165,12 +197,13 @@ val match_formulas:
    Only free variables are bound in the matching process.
    e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
    for the match.
-*)
+ *)
 val match_asm : 
     Gtypes.substitution
   -> Basic.term -> Logic.Sequent.t -> Logic.label
 
 (** [match_concl t sq]
+
    Find a match for [t] in the assumptions of [sq].
    Return the tag of the first formula in the assumptions to unify 
    with term [t] in the scope of sequent [sq].
@@ -180,25 +213,24 @@ val match_asm :
    Only free variables are bound in the matching process.
    e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
    for the match.
-*)
+ *)
 val match_concl :     
     Gtypes.substitution
   -> Basic.term -> Logic.Sequent.t -> Logic.label
-
 
 
 (* Predicates on terms *)
 (**
    [qnt_opt_of qnt p t]
    apply predicate [p] to [b] where [(_, b)=strip_qnt qnt t].
-*)
+ *)
 val qnt_opt_of: 
     Basic.quant_ty -> (Basic.term -> bool) -> Basic.term -> bool
 (**
    [dest_qnt_opt qnt d t]
    return [(vs, (d b))] 
    where [(vs, b)=strip_qnt qnt t].
-*)
+ *)
 val dest_qnt_opt: 
     Basic.quant_ty 
   -> (Basic.term -> 'a) -> Basic.term -> (Basic.binders list * 'a) 

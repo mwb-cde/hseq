@@ -30,52 +30,17 @@ let rec print_type x =
   Gtypes.print (Tpenv.pp_info())  x; 
   close_box()
 
-
-let print_sqnt sq = 
-  let nice = Settings.get_nice_sequent()
-  in let nice_prefix = 
-    if nice then (!Settings.nice_sequent_prefix)
-    else "-"
-  in 
-  let string_of_asm_index i =  (nice_prefix^(string_of_int (-i)))
-  in 
-  let string_of_concl_index i = string_of_int i
-  in 
-  let rec print_asm i afl= 
-    match afl with 
-      [] -> ()
-    | (s::als) -> 
-	 (open_box 0;
-	  Format.print_string ("["^(string_of_asm_index i)^"] ");
-	  print_term (Formula.term_of_form s);
-	  close_box(); 
-	  print_newline(); 
-	  print_asm (i-1) als)
-  and print_cncl i cfl =
-    match cfl with
-      [] -> ()
-    | (s::cls) -> 
-	(open_box 0;
-	 Format.print_string ("["^(string_of_concl_index i)^"] ");
-	 print_term  (Formula.term_of_form s);
-	 close_box(); 
-	 print_newline(); 
-	 (print_cncl (i+1) cls))
-  in 
-  (Format.print_newline();
-   print_asm (-1) (Drule.asm_forms sq); 
-   Format.open_box 0;
-   Format.print_string ("----------------------"); 
-   Format.close_box();
-   print_newline();
-   print_cncl 1  (Drule.concl_forms sq);
-   print_newline())
-
+let print_sqnt x = 
+  open_box 0;
+  Logic.print_sqnt (Tpenv.pp_info()) x;
+  close_box()
+    
 
 let print_thm t = 
   open_box 3; Format.print_string "|- ";
   print_term (Formula.term_of_form (Logic.dest_thm t));
   close_box()
+
 
 let print_prf p = 
   let print_subgoals i = 

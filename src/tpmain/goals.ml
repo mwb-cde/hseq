@@ -12,6 +12,8 @@ let prflist = ref([]: prf list)
 let curr_goal p = p
 let top () = List.hd !prflist
 
+let drop()=prflist:=[]
+
 let pop_plist () = 
   let p = List.hd !prflist
   in (prflist:=List.tl !prflist); p
@@ -50,29 +52,74 @@ let goal trm =
   (!save_hook()); top()
 
 let prove_goal trm tac =
-  mk_thm (tac (mk_goal  (Tpenv.scope()) 
-		 (Formula.mk_form (Tpenv.scope()) trm)))
+  mk_thm 
+    (Logic.Subgoals.apply_to_goal tac 
+       (mk_goal 
+	  (Tpenv.scope()) 
+	  (Formula.mk_form (Tpenv.scope()) trm)))
 
-let by_list trm tacs =
+let by_list trm tacl =
   let fg=mk_goal (Tpenv.scope()) 
       (Formula.mk_form (Tpenv.scope()) trm)
   in 
-  let rec by_aux tcs g= 
-    match tcs with
-      [] -> g
-    | t::ts -> 
-	if Logic.goal_has_subgoals g
-    	then 
-	  by_aux ts (try (t g) with _ -> g)
-	else g
+  let rec by_aux ts g =
+      match ts with 
+	[] -> g
+      | (x::xs) -> 
+	  if Logic.has_subgoals g
+	  then by_aux xs (Logic.Subgoals.apply_to_goal x g)
+	  else g
   in 
-  mk_thm (by_aux tacs fg)
+   mk_thm (by_aux tacl fg)
 
+
+let report node branch = 
+  let rec print_subgoals i gs = 
+    match gs with 
+      [] -> ()
+    | (y::ys) -> 
+	Format.open_box 0;
+	Format.print_string "(Subgoal ";
+	Format.print_int i;
+	Format.print_string ")";
+	Format.close_box();
+	Format.print_newline();
+	Logic.print_sqnt (Tpenv.pp_info()) y;
+	Format.print_newline();
+	print_subgoals (i+1) ys
+  in 
+  let sqnts = Logic.Subgoals.branch_sqnts branch
+  in 
+  let nsqnts = 
+    List.filter 
+      (fun sq -> 
+	not (Tag.equal (Drule.node_tag node) (Logic.Sequent.sqnt_tag sq))) 
+      sqnts
+  in 
+  match sqnts with
+    [] -> 
+      Format.open_box 0;
+      Format.print_string "Subgoal solved";
+      Format.close_box(); 
+      Format.print_newline()
+  | _ -> 
+      let len=(List.length nsqnts)
+      in 
+      if(len>0)
+      then 
+	(Format.open_box 0;
+	 Format.print_int (List.length sqnts);
+	 Format.print_string " subgoals";
+	 Format.close_box(); 
+	 Format.print_newline();
+	 print_subgoals 1 sqnts)
+      else ()
 
 let by_com tac =
   let p = top()
   in 
-  (let g = (tac (curr_goal p))
+  (let g = 
+    Logic.Subgoals.apply_to_goal ~report:report tac (curr_goal p)
   in 
   (if (num_of_subgoals g)=0 
   then prflist:= g::(!prflist)
@@ -81,12 +128,11 @@ let by_com tac =
    (!save_hook()));
   top())
 
-
 let postpone() =
   match (!prflist) with
     [] -> raise (Result.error "No goal")
   |	_ -> 
-      (let ng = Logic.Rules.postpone (pop_plist())
+      (let ng = Logic.postpone (pop_plist())
       in 
       push_plist ng)
 

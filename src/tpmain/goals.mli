@@ -19,6 +19,13 @@
 
 (* the current proof attempt *)
     val top : unit -> prf
+
+(** [drop()]
+
+   Drop the current proof.
+*)
+val drop : unit -> unit
+
 (* go back *)
     val pop_plist : unit -> prf
 
