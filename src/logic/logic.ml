@@ -64,9 +64,9 @@ type cdefn =
 let mk_axiom t = Axiom t
 let mk_theorem t = Theorem t
 
-(* fident: sequent formula identifiers *)
+(* label: sequent formula identifiers *)
 
-type fident = 
+type label = 
     FNum of int
   | FTag of Tag.t
 
@@ -77,7 +77,7 @@ type fident =
    RRThm: given theorem
  *)
 type rr_type = 
-    Asm of fident
+    Asm of label
   | RRThm of thm
 
 (* theorem recognisers/destructors *)
@@ -309,20 +309,20 @@ let get_tagged_form t sq =
     get_tagged_asm t sq
   with Not_found -> get_tagged_cncl t sq
 
-let get_fident_asm t sq = 
+let get_label_asm t sq = 
   match t with
     FTag x -> get_tagged_asm x sq
   | FNum x -> get_asm x sq
 
-let get_fident_cncl t sq = 
+let get_label_cncl t sq = 
   match t with
     FTag x -> get_tagged_cncl x sq
   | FNum x -> get_cncl x sq
 
-let get_fident_form t sq=
+let get_label_form t sq=
   try 
-    get_fident_asm t sq
-  with Not_found -> get_fident_cncl t sq
+    get_label_asm t sq
+  with Not_found -> get_label_cncl t sq
 
 let tag_to_index t sq =
   let rec index_aux fs i = 
@@ -349,17 +349,17 @@ let index_to_tag i sq =
   then index_aux (asms sq)  (-i)
   else index_aux (concls sq) i
 
-let dest_fident f sq=
+let dest_label f sq=
   match f with
     FNum(x) -> x
   | FTag(x) -> tag_to_index x sq
 
-let fident_to_tag f sq=
+let label_to_tag f sq=
   match f with
     FNum(x) -> index_to_tag x sq
   | FTag(x) -> x
 
-let fident_to_index f sq=
+let label_to_index f sq=
   match f with
     FNum(x) -> x
   | FTag(x) -> tag_to_index x sq
@@ -399,6 +399,11 @@ let get_goal (Goal(_, _, f)) = f
 
 let get_subgoal_tags (Goal(sqs, _, _)) = List.map sqnt_tag sqs
 
+let goal_has_subgoals g =
+  match g with 
+    (Goal([], _, _)) -> false
+  | (Goal(_, _, _)) -> true
+
 let goal_focus t (Goal(sqnts, tyenv, f)) =
   let rec focus sqs rslt=
     match sqs with
@@ -408,6 +413,19 @@ let goal_focus t (Goal(sqnts, tyenv, f)) =
 	then (x::((List.rev rslt)@xs))
 	else focus xs (x::rslt)
   in Goal(focus sqnts [], tyenv, f)
+
+let rotate_subgoals_left n (Goal(sqnts, tyenv, f)) =
+  if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
+  then 
+  Goal(Lib.rotate_left n sqnts, tyenv, f)
+  else raise No_subgoals
+
+let rotate_subgoals_right n (Goal(sqnts, tyenv, f)) =
+  if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
+  then 
+  Goal(Lib.rotate_right n sqnts, tyenv, f)
+  else raise No_subgoals
+
 
 let apply_nth r i g = 
   match g with 
@@ -428,10 +446,6 @@ let get_nth_subgoal_sqnt i (Goal(sq, _, _)) =
   with _ -> 
     raise Not_found (*(sqntError "get_nth_subgoal: invalid argument")*)
 
-let goal_has_subgoals g =
-  match g with 
-    (Goal([], _, _)) -> false
-  | (Goal(_, _, _)) -> true
 
 let get_all_goal_tags (Goal(sqs, _, _))=
   List.map sqnt_tag sqs
@@ -573,7 +587,7 @@ module Rules=
       nf::nfs
 
     let lift_asm_sq info f sq = 
-      let id = fident_to_tag f sq
+      let id = label_to_tag f sq
       in 
       add_info info [] [id] [];
       [mk_sqnt 
@@ -585,7 +599,7 @@ module Rules=
       simple_sqnt_apply (lift_asm_sq info f) g
 
     let lift_concl_sq info f sq = 
-      let id = fident_to_tag f sq
+      let id = label_to_tag f sq
       in 
       add_info info [] [id] [];
       [mk_sqnt 
@@ -619,7 +633,7 @@ module Rules=
     let copy_asm info i g = 
       let sq=get_sqnt g
       in 
-      simple_sqnt_apply (copy_asm0 info (dest_fident i sq)) g
+      simple_sqnt_apply (copy_asm0 info (dest_label i sq)) g
 
 (* copy_cncl i: 
    A|- .., t:Ci, ..
@@ -641,7 +655,7 @@ module Rules=
     let copy_cncl inf i g = 
       let sq=get_sqnt g
       in 
-      simple_sqnt_apply (copy_cncl0 inf (dest_fident i sq)) g
+      simple_sqnt_apply (copy_cncl0 inf (dest_label i sq)) g
 
 
 (* rotate asms/cncls:
@@ -723,7 +737,7 @@ module Rules=
       ng
 
     let delete inf x g = 
-      simple_sqnt_apply (delete0 inf (dest_fident x (get_sqnt g))) g
+      simple_sqnt_apply (delete0 inf (dest_label x (get_sqnt g))) g
 
 (* conjI i sq: 
    g| asm |- t:(a /\ b), concl   
@@ -752,7 +766,7 @@ module Rules=
       else raise (logicError "Not a conjunct" [t])
 
     let conjI inf i g = 
-      simple_sqnt_apply (conjI0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (conjI0 inf (dest_label i (get_sqnt g))) g
 
 (* conjE i sq: 
    t:a/\ b, asm |- concl   
@@ -779,7 +793,7 @@ module Rules=
       else raise (logicError "Not a conjunction" [t])
 
     let conjE inf i g = 
-      simple_sqnt_apply (conjE0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (conjE0 inf (dest_label i (get_sqnt g))) g
 
 (* disjI i sq: 
    g| t:a\/b, asm |-  concl   
@@ -806,7 +820,7 @@ module Rules=
       else raise (logicError "Not a disjunction" [t])
 
     let disjI inf i g = 
-      simple_sqnt_apply (disjI0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (disjI0 inf (dest_label i (get_sqnt g))) g
 
 (* disjE i sq: 
    asm |- t:a\/b, concl   
@@ -833,7 +847,7 @@ module Rules=
       else raise (logicError "Not a disjunction" [t])
 
     let disjE inf i g = 
-      simple_sqnt_apply (disjE0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (disjE0 inf (dest_label i (get_sqnt g))) g
 
 (* negA i sq:
    t:~a, asms |- concl
@@ -857,7 +871,7 @@ module Rules=
       else raise (logicError "Not a negation"[t])
 
     let negA inf i g = 
-      simple_sqnt_apply (negA0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (negA0 inf (dest_label i (get_sqnt g))) g
 
 (* negC i sq:
    asms |- t:~c, concl
@@ -882,7 +896,7 @@ module Rules=
       else raise (logicError "Not a negation"[t])
 
     let negC inf i g = 
-      simple_sqnt_apply (negC0  inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (negC0  inf (dest_label i (get_sqnt g))) g
 
 (* implI i sq
    asms |- t:a-> b, cncl 
@@ -909,7 +923,7 @@ module Rules=
       else raise (logicError "Not an implication" [t])
 
     let implI inf i g = 
-      simple_sqnt_apply (implI0  inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (implI0  inf (dest_label i (get_sqnt g))) g
 
 (* implE i sq
    g| t:a-> b,asms |-cncl 
@@ -941,16 +955,15 @@ module Rules=
       else raise (logicError "Not an implication" [t])
 
     let implE info i g = 
-      simple_sqnt_apply (implE0 info (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (implE0 info (dest_label i (get_sqnt g))) g
 
 (* allI i sq
-   asm |- t:!x. P(c), concl
+   asm |- t:!x. P(x), concl
    -->
-   asm |- t:P(c'), concl   where c' is a new identifier
+   asm |- t:P(c), concl   where c is a new identifier
 
-   info: [] [t]
+   info: [] [t] [c]
  *)
-
 
     let allI0 inf i tyenv sq =
       (* get the conclusion and its tag *)
@@ -988,7 +1001,7 @@ module Rules=
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
 	(* build the subgoal and return information *)
-	add_info inf [] [ft] [];
+	add_info inf [] [ft] [sv];
 	(mk_subgoal(sqnt_tag sq, 
 		    mk_sqnt_env nsklms nscp nsqtys ntynms,
 		    asms sq, 
@@ -996,13 +1009,13 @@ module Rules=
       else raise (logicError "Not a universal quantifier" [t])
 
     let allI inf i g = 
-      sqnt_apply (allI0 inf (dest_fident i (get_sqnt g))) g
+      sqnt_apply (allI0 inf (dest_label i (get_sqnt g))) g
 
 (* existI i sq
-   t:?x. P(c), asm |- concl
+   t:?x. P(x), asm |- concl
    -->
-   t:P(c'), asm |- concl   where c' is a new identifier
-   info: [] [t]
+   t:P(c), asm |- concl   where c is a new identifier
+   info: [] [t] [c]
  *)
 
     let existI0 inf i tyenv sq =
@@ -1040,7 +1053,7 @@ module Rules=
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
-	add_info inf [] [ft] [];
+	add_info inf [] [ft] [sv];
 	(mk_subgoal
 	   (sqnt_tag sq, 
 	    mk_sqnt_env nsklms nscp nsqtys ntynms,
@@ -1049,7 +1062,7 @@ module Rules=
       else raise (logicError "Not an existential quantifier" [t])
 
     let existI inf i g = 
-      sqnt_apply (existI0 inf (dest_fident i (get_sqnt g))) g
+      sqnt_apply (existI0 inf (dest_label i (get_sqnt g))) g
 
 (* trueR i sq
    t:asm |- true, concl
@@ -1068,7 +1081,7 @@ module Rules=
 	raise (logicError "Not trivial" [t])
 
     let trueR inf i g = 
-      simple_sqnt_apply (trueR0 inf (dest_fident i (get_sqnt g))) g
+      simple_sqnt_apply (trueR0 inf (dest_label i (get_sqnt g))) g
 
 (* beta i sq:  (beta reduction of asm (i<0) or concl (i>0) in sq)
    t:(%x.P(x))(c), asm |- concl
@@ -1098,7 +1111,7 @@ module Rules=
     let beta info i g = 
       let sq=get_sqnt g
       in 
-      simple_sqnt_apply (beta0 info (dest_fident i sq)) g
+      simple_sqnt_apply (beta0 info (dest_label i sq)) g
 
 
 (* name_rule: introduce a new name in the sqnt as a synonym for a term  *)
@@ -1106,7 +1119,7 @@ module Rules=
    Asm|-Cncl -> t:id=trm, Asm|-Cncl
 
    the long name thy.id must be unique (where thy is the current theory name)
-   info: [] [t]
+   info: [] [t] []
  *)
 
     let name_rule0 inf id trm tyenv sq =
@@ -1191,14 +1204,14 @@ module Rules=
     let assume inf i j g = 
       let sq=get_sqnt g
       in 
-      sqnt_apply (assume0 inf (dest_fident i sq) (dest_fident j sq)) g
+      sqnt_apply (assume0 inf (dest_label i sq) (dest_label j sq)) g
 
 
 (* existE i sq
    asm |- t:?x. P(c), concl
    -->
-   asm |- t:P(c'), concl   where c' is a given term
-   info: [] [t]
+   asm |- t:P(c), concl where c is a given term
+   info: [] [t] []
  *)
 
     let existE0 inf trm i tyenv sq =
@@ -1224,13 +1237,13 @@ module Rules=
 	raise (logicError "Not an existential quantifier" [t])
 
     let existE inf trm i g = 
-      sqnt_apply (existE0 inf trm (dest_fident i (get_sqnt g))) g
+      sqnt_apply (existE0 inf trm (dest_label i (get_sqnt g))) g
 
 (* allE i sq
    t:!x. P(c), asm |-  concl
    -->
    t:P(c'), asm |- concl   where c' is a given term
-   info: [] [t]
+   info: [] [t] []
  *)
 
     let allE0 inf trm i tyenv sq =
@@ -1257,7 +1270,7 @@ module Rules=
 	raise (logicError "Not a universal quantifier" [t])
 
     let allE inf trm i g = 
-      sqnt_apply (allE0 inf trm (dest_fident i (get_sqnt g))) g
+      sqnt_apply (allE0 inf trm (dest_label i (get_sqnt g))) g
 
 
 (* rewrite_any dir simple thms j sq:
@@ -1268,7 +1281,7 @@ module Rules=
    where dir is =true for right-left and false for left-right
    theorems must be in scope.
    silently discards theorems not in scope and assumptions which don't exist
-   info: [] [t]
+   info: [] [t] []
  *)
 
     let filter_rules scp rls j sq= 
@@ -1281,7 +1294,7 @@ module Rules=
 	|  (Asm(x)::xs) ->
 	    let tgdasm=
 	      (try 
-		get_tagged_asm (fident_to_tag x sq) sq
+		get_tagged_asm (label_to_tag x sq) sq
 	      with 
 		Not_found -> 
 		  raise 
@@ -1321,7 +1334,7 @@ module Rules=
     let rewrite_any inf ?(dir=Rewrite.leftright) ?(simple=false) rls j g=
       sqnt_apply 
 	(rewrite_any0 inf dir simple rls 
-	   (dest_fident j (get_sqnt g))) g
+	   (dest_label j (get_sqnt g))) g
 
 
   end
