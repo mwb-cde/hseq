@@ -85,10 +85,10 @@ let find_thy_file f =
 (* Pretty printing and Parsing*)
 
 (* tp_pp_info: Printer Table *)
-let tp_pp_info=ref (Printer.empty_info())
+let tp_pp_info=ref (Printer.empty_ppinfo())
 let pp_info() = !tp_pp_info 
 let pp_set info = tp_pp_info:=info
-let pp_reset () = pp_set (Printer.empty_info())
+let pp_reset () = pp_set (Printer.empty_ppinfo())
 let pp_init() = pp_reset()
 
 (* tp_sym_info: Parser symbol table *)
@@ -160,7 +160,7 @@ let mkterm scp pt =
   let tenv = 
     Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
   in 
-  let nt = Typing.retype_pretty tenv pt
+  let nt = Term.retype_pretty tenv pt
   in 
   Typing.check_types scp nt; nt
 

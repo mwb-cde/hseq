@@ -80,13 +80,13 @@ val read_identifier: string -> Basic.ident
    [tp_pp_info]
    The system PP information store (of size Printer.default_info_size).
  *)
-val tp_pp_info: Printer.info ref
+val tp_pp_info: Printer.ppinfo ref
 
 (**
    [pp_info()]
    Get the system PP information store
  *)
-val pp_info : unit -> Printer.info
+val pp_info : unit -> Printer.ppinfo
 
 (**
    [pp_reset()]
@@ -98,7 +98,7 @@ val pp_reset: unit -> unit
    [pp_set info]
    Set the system PP information store to [info]
  *)
-val pp_set : Printer.info -> unit
+val pp_set : Printer.ppinfo -> unit
 
 (** get/set/remove PP information for identifiers*)
 
