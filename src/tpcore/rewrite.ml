@@ -20,7 +20,6 @@ let is_bottonup t =
 
 type control =
     { 
-(*      scope: Gtypes.scope; *)
       depth: int option; (** (Some i): maximum number of times to rewrite is i,
 			    None : unlimited rewriting (default) *)
       rr_dir: direction;
@@ -28,10 +27,16 @@ type control =
     }
 
 let control ~dir ~strat ~max = 
-  { (* scope = scp; *) depth=max; rr_dir=dir; rr_strat=strat }
+  { depth=max; rr_dir=dir; rr_strat=strat }
 
 let limit_reached d = 
   match d with Some 0 -> true | _ -> false
+
+let decr_depth ctrl = 
+  match ctrl.depth with 
+    None -> ctrl 
+  | Some x -> 
+      {ctrl with depth=Lib.set_int_option(x-1)}
 
 let varp, funp, constp, is_app, is_typed, qntp=
   Term.is_bound, Term.is_fun, Term.is_const, 
@@ -95,101 +100,116 @@ let match_rewrite scope ctrl tyenv varp lhs rhs trm =
    rewriting with a choice of rewrites 
    rewrite_list_aux qs (t, rs) t2 
    replaces t with some r in rs in trm if matching in binders qs 
-*)
-
+ *)
 let rec match_rr_list scope ctrl tyenv chng rs trm = 
-  match rs with
-    [] -> (trm, tyenv)
-  | (qs, lhs, rhs)::nxt ->
-      let (ntrm, ntyenv), fl = 
-	(try 
-	  match_rewrite scope ctrl tyenv (is_free_binder qs) lhs rhs trm, true
-	with _ -> (trm, tyenv), false)
-      in 
-      if fl 
-      then (chng:=true; (ntrm, ntyenv))
-      else 
-	match_rr_list scope ctrl ntyenv chng nxt trm
+  if (limit_reached (ctrl.depth))
+  then (trm, tyenv, ctrl)
+  else 
+    (match rs with
+      [] -> (trm, tyenv, ctrl)
+    | (qs, lhs, rhs)::nxt ->
+	let (ntrm, ntyenv), fl = 
+	  (try 
+	    (match_rewrite scope ctrl tyenv 
+	       (is_free_binder qs) lhs rhs trm, 
+	     true)
+	  with _ -> (trm, tyenv), false)
+	in 
+	if fl 
+	then (chng:=true; (ntrm, ntyenv, decr_depth ctrl))
+	else 
+	  match_rr_list scope ctrl ntyenv chng nxt trm)
 
 let rec match_rewrite_list scope ctrl tyenv chng net trm =
-  let cn=ref false 
-  in 
-  let rs=
-    match net with
-      (Net_rr n) -> Net.lookup n trm
-    | (List_rr r) -> r 
-  in 
-  let ntrm, ntyenv=match_rr_list scope ctrl tyenv cn rs trm
-  in 
-  if (!cn) 
-  then 
-    (chng:=true; 
-     match_rewrite_list scope ctrl ntyenv chng net ntrm)
-  else
-    ntrm, ntyenv
+  if(limit_reached ctrl.depth)
+  then (trm, tyenv, ctrl)
+  else 
+    (let cn=ref false 
+    in 
+    let rs=
+      match net with
+	(Net_rr n) -> Net.lookup n trm
+      | (List_rr r) -> r 
+    in 
+    let ntrm, ntyenv, nctrl=match_rr_list scope ctrl tyenv cn rs trm
+    in 
+    if (!cn) 
+    then 
+      (chng:=true; 
+       match_rewrite_list scope nctrl ntyenv chng net ntrm)
+    else
+      (ntrm, ntyenv, nctrl))
 
 let rewrite_list_topdown scope ctrl tyenv chng net trm = 
-  let rec rewrite_subterm env t=
-    match t with
-      Basic.Qnt(qnt, q, b) -> 
-	let nb, benv = rewrite_aux env b
-	in 
-	(Basic.Qnt(qnt, q, nb), benv)
-    |	Basic.App(f, a)->
-	let nf, fenv = (rewrite_aux env f)
-	in
-	let na, aenv = (rewrite_aux fenv a)
-	in 
-	(Basic.App(nf, na), aenv)
-    | Basic.Typed(tt, ty) -> rewrite_aux env tt
-    | _ -> (t, env)
-  and rewrite_aux env t = 
-    let nt, nenv= match_rewrite_list scope ctrl env chng net t
-    in 
-    rewrite_subterm nenv nt
+  let rec rewrite_subterm ctrl env t=
+    if(limit_reached ctrl.depth)
+    then (t, env, ctrl)
+    else 
+      (match t with
+	Basic.Qnt(qnt, q, b) -> 
+	  let nb, benv, bctrl = rewrite_aux ctrl env b
+	  in 
+	  (Basic.Qnt(qnt, q, nb), benv, bctrl)
+      |	Basic.App(f, a)->
+	  let nf, fenv, fctrl = (rewrite_aux ctrl env f)
+	  in
+	  let na, aenv, actrl = (rewrite_aux fctrl fenv a)
+	  in 
+	  (Basic.App(nf, na), aenv, actrl)
+      | Basic.Typed(tt, ty) -> rewrite_aux ctrl env tt
+      | _ -> (t, env, ctrl))
+  and rewrite_aux ctrl env t = 
+    if(limit_reached ctrl.depth)
+    then (t, env, ctrl)
+    else 
+      (let nt, nenv, nctrl= match_rewrite_list scope ctrl env chng net t
+      in 
+      rewrite_subterm nctrl nenv nt)
   in 
-  rewrite_aux tyenv trm
-
-
+  rewrite_aux ctrl tyenv trm
 
 let rewrite_list_bottomup scope ctrl tyenv chng net trm = 
-  let rec rewrite_aux env t=
-    match t with
-      Basic.Qnt(qnt, q, b) -> 
-	(let nb, benv = rewrite_aux env b
-	in 
-	match_rewrite_list scope ctrl benv chng net (Qnt(qnt, q, nb)))
-    |	Basic.App(f, a)->
-	  (let nf, fenv = 
-	    (rewrite_aux env f)
-	  in
-	  let na, aenv = 
-	    (rewrite_aux fenv a)
+  let rec rewrite_aux ctrl env t=
+    if(limit_reached (ctrl.depth))
+    then (t, env, ctrl)
+    else 
+      (match t with
+	Basic.Qnt(qnt, q, b) -> 
+	  (let nb, benv, nctrl = rewrite_aux ctrl env b
 	  in 
-	  match_rewrite_list scope ctrl aenv chng net (Basic.App(nf, na)))
-    | Basic.Typed(tt, ty) -> 
-	rewrite_aux env tt
-    | _ -> 
-	match_rewrite_list scope ctrl env chng net t
+	  match_rewrite_list scope nctrl benv chng net (Qnt(qnt, q, nb)))
+      |	Basic.App(f, a)->
+	  (let nf, fenv, fctrl = 
+	    (rewrite_aux ctrl env f)
+	  in
+	  let na, aenv, actrl= 
+	    (rewrite_aux fctrl fenv a)
+	  in 
+	  match_rewrite_list scope actrl aenv chng net (Basic.App(nf, na)))
+      | Basic.Typed(tt, ty) -> 
+	  rewrite_aux ctrl env tt
+      | _ -> 
+	  match_rewrite_list scope ctrl env chng net t)
   in 
-  rewrite_aux tyenv trm
+  rewrite_aux ctrl tyenv trm
 
 (* using term nets of rewrites *)
 
 let rewrite_list scope ctrl chng tyenv rs trm = 
   let nt=Net_rr(make_rewrites rs)
   in 
-  if(is_topdown (ctrl.rr_strat))
-  then 
-    rewrite_list_topdown scope ctrl tyenv chng nt trm
-  else 
-    rewrite_list_bottomup scope ctrl tyenv chng nt trm
-
+  let (nt, ntyenv, _) = 
+    if(is_topdown (ctrl.rr_strat))
+    then 
+      rewrite_list_topdown scope ctrl tyenv chng nt trm
+    else 
+      rewrite_list_bottomup scope ctrl tyenv chng nt trm
+  in (nt, ntyenv)
 
 (*
    rewrite with equality eqtrm: "l=r" -> (l, r) 
    left-right if dir=true, right-left otherwise
-*)
+ *)
 
 let rewrite_eqs scope ctrl tyenv rrl trm =
   let chng = ref false
@@ -231,7 +251,7 @@ let rewrite scope ctrl rrl trm =
 let rewrite_net_env scope ctrl tyenv rn trm = 
   let chng = ref false
   in 
-  let nt, nenv = 
+  let nt, nenv, _ = 
     if(is_topdown ctrl.rr_strat)
     then rewrite_list_topdown scope ctrl tyenv chng rn trm
     else rewrite_list_bottomup scope ctrl tyenv chng rn trm

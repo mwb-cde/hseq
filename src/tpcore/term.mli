@@ -213,6 +213,18 @@ val flatten_app : term -> term list
 val get_fun_args: term -> (term* term list)
 
 
+(**
+   [dest_unop t]: Destruct unary operator [t], return the identifier
+   and argument.
+
+   [dest_binop t]: Destruct binary operator [t], return the identifier
+   and two arguments.
+
+   raise [Failure] if not enough arguments.
+*)
+val dest_unop : Basic.term -> (Basic.ident * Basic.term)
+val dest_binop : Basic.term -> (Basic.ident * Basic.term * Basic.term)
+
 (* Retyping *)
 
 (* reset the types in a term using a given context/subsitution *)

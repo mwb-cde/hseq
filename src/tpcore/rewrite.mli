@@ -21,7 +21,6 @@ val bottomup : strategy
 
 type control =
     { 
-(*      scope: Gtypes.scope; *)
       depth: int option; (** (Some i): maximum number of times to rewrite is i,
 			    None : unlimited rewriting (default) *)
       rr_dir: direction;
@@ -30,9 +29,9 @@ type control =
 
 val control : 
     dir:direction 
-      -> strat : strategy 
-	-> max:int option
-	    -> control
+  -> strat : strategy 
+    -> max:int option
+      -> control
 
 (**
    [limit_reached d]
@@ -47,10 +46,10 @@ val limit_reached: int option -> bool
  *)
 val match_rewrite : 
     Gtypes.scope -> 
-    control -> Gtypes.substitution ->
-      (Basic.term -> bool) -> Basic.term -> 
-	Basic.term -> Basic.term -> 
-	  (Basic.term* Gtypes.substitution)
+      control -> Gtypes.substitution ->
+	(Basic.term -> bool) -> Basic.term -> 
+	  Basic.term -> Basic.term -> 
+	    (Basic.term* Gtypes.substitution)
 
 (** [is_free_binder]
    utility function to construct a predicate which tests 
@@ -64,10 +63,10 @@ val is_free_binder : Basic.binders list -> Basic.term -> bool
  *)
 val rewrite_list : 
     Gtypes.scope -> 
-control -> bool ref 
-  -> Gtypes.substitution
-    -> (Basic.binders list * Basic.term * Basic.term) list ->
-      Basic.term -> (Basic.term * Gtypes.substitution)
+      control -> bool ref 
+	-> Gtypes.substitution
+	  -> (Basic.binders list * Basic.term * Basic.term) list ->
+	    Basic.term -> (Basic.term * Gtypes.substitution)
 
 (** [rewrite_eqs]
    rewrite using a list of partialy deconstructed rewrite rules 
@@ -75,10 +74,10 @@ control -> bool ref
  *)
 val rewrite_eqs : 
     Gtypes.scope -> 
-    control
-  -> Gtypes.substitution
-    -> (Basic.binders list * Basic.term)list 
-      -> Basic.term -> (Basic.term * Gtypes.substitution )
+      control
+      -> Gtypes.substitution
+	-> (Basic.binders list * Basic.term)list 
+	  -> Basic.term -> (Basic.term * Gtypes.substitution )
 
 (** [rewrite]
    rewrite using a list of universally quantified rewrite rules.
@@ -89,26 +88,56 @@ val rewrite_eqs :
  *)
 val rewrite :
     Gtypes.scope -> 
-    control -> Basic.term list -> Basic.term ->  Basic.term
+      control -> Basic.term list -> Basic.term ->  Basic.term
 
 val rewrite_env : 
     Gtypes.scope -> 
-    control 
-  -> Gtypes.substitution
-    -> Basic.term list -> Basic.term 
-      -> (Basic.term * Gtypes.substitution)
+      control 
+      -> Gtypes.substitution
+	-> Basic.term list -> Basic.term 
+	  -> (Basic.term * Gtypes.substitution)
 
 
 (** [rewrite_net]
    rewrite using a database of rewrite rules 
  *)
 (*
-val rewrite_net: control -> rewriteDB -> Basic.term -> Basic.term
+   val rewrite_net: control -> rewriteDB -> Basic.term -> Basic.term
 
-val rewrite_net_env: 
-    control 
-  -> Gtypes.substitution 
-    -> rewriteDB 
-      -> Basic.term 
-	-> (Basic.term * Gtypes.substitution)
-*)
+   val rewrite_net_env: 
+   control 
+   -> Gtypes.substitution 
+   -> rewriteDB 
+   -> Basic.term 
+   -> (Basic.term * Gtypes.substitution)
+ *)
+
+
+val match_rr_list: 
+    Gtypes.scope -> control -> Gtypes.substitution
+      -> bool ref 
+	-> (Basic.binders list * Basic.term * Basic.term) list 
+	  -> Basic.term
+	    -> (Basic.term * Gtypes.substitution * control)
+		
+
+val match_rewrite_list: 
+    Gtypes.scope -> control -> Gtypes.substitution
+      -> bool ref 
+	-> rewriteDB 
+	  -> Basic.term 
+	    -> (Basic.term * Gtypes.substitution * control)
+
+val rewrite_list_topdown:
+    Gtypes.scope -> control -> Gtypes.substitution
+      -> bool ref 
+	-> rewriteDB 
+	  -> Basic.term 
+	    -> (Basic.term * Gtypes.substitution * control)
+
+val rewrite_list_bottomup:
+    Gtypes.scope -> control -> Gtypes.substitution
+      -> bool ref 
+	-> rewriteDB 
+	  -> Basic.term 
+	    -> (Basic.term * Gtypes.substitution * control)

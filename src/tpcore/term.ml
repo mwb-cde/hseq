@@ -549,6 +549,18 @@ let get_free_binders t =
   in 
   free_aux t; !qnts
 
+
+
+let dest_unop t =
+  match (dest_fun t) with
+    (id, x::_) -> (id, x)
+  | _ -> raise (Failure "not a unary operator")
+
+let dest_binop t =
+  match (dest_fun t) with
+    (id, x::y::_) -> (id, x, y)
+  | _ -> raise (Failure "not a binary operator")
+
 (* instantiate a quantified formula t with term r *)
 
 let subst_quick t r trm = 
