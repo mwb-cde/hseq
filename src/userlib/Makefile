@@ -1,8 +1,8 @@
 # Header, code and optimised code files
 
-HEADERS = userlib.cmi
-CODE = userlib.cmo
-OPTCODE = userlib.cmx
+HEADERS = userlib.cmi cli.cmi 
+CODE = userlib.cmo cli.cmo
+OPTCODE = userlib.cmx cli.cmx
 
 LIBFILE= userlib.cma
 OPTLIB= userlib.cmxa
