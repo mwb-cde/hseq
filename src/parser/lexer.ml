@@ -1,84 +1,3 @@
-module Counter=
-struct
-(* counter: keep track of how many instances of a thing there are *)
-
-(* counter: list of items and the number of times they've been added *)
-
-  type ('a)t=('a * int) list
-
-
-(* construct, recogniser *)
-
-   let empty () = []
-
-   let is_empty l = match l with [] -> true | _ -> false
-
-(* add x to list lst:
-   if x is in lst, increment the count,
-   other wise add x to lst, set count to 1
-*)
-
-  let add x lst=
-    let rec add_aux ls=
-      match ls with 
-	[] -> [(x, 1)]
-      |	(s, nm)::xs -> 
-	  if s=x
-	  then (s, nm+1)::xs
-	  else 
-	    if s<x
-	    then (x, 1)::(s, nm)::xs
-	    else (s, nm)::(add_aux xs)
-    in 
-    add_aux lst
-
-(* remove x from list lst:
-   if x is not in lst, do nothing
-
-   if x is in lst, decrement the count,
-   if new count is 0, remove x from the list
-*)
-
-  let remove x lst=
-    let rec remove_aux ls=
-      match ls with 
-	[] -> []
-      |	(s, nm)::xs -> 
-	  if s=x 
-	  then 
-	    (if nm=1 then xs
-	    else (s, nm-1)::xs)
-	  else 
-	    if s<x 
-	    then (s, nm)::xs
-	    else (s, nm)::(remove_aux xs)
-    in 
-    remove_aux lst
-
-(* find x in list lst:
-   if x is not in lst, raise Not_found
-
-   if x is in lst, return the size
-*)
-
-  let find x lst=
-    let rec find_aux ls =
-      match ls with 
-	[] -> raise Not_found
-      | (s, nm) :: xs ->
-	  if(s=x)
-	  then 
-	    nm
-	  else
-	    if(s>x)
-	    then 
-	      raise Not_found
-	    else 
-	      find_aux xs
-    in 
-    find_aux lst
-
-end
 
   open Logicterm
 
@@ -105,7 +24,9 @@ end
     | BOOL of bool 
     | EOF 
     | NULL
-(*    | ANTIQUOTE of string *)
+(*
+    | ANTIQUOTE of string 
+*)
 
   exception Error
   exception Lexer
@@ -122,7 +43,7 @@ end
     | Sym RIGHTARROW -> "->"
     | Sym PRIME -> "'"
     | Sym COLON -> ":"
-    | Sym (OTHER s) -> ("Sym("^s^")")
+    | Sym (OTHER s) -> s
     | Sym NULL_SYMBOL -> "(null_symbol)"
     | Key ALL -> "ALL"
     | Key EX -> "EXISTS"
@@ -133,7 +54,6 @@ end
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
     | NULL -> "null"
-(*    | ANTIQUOTE(s) -> ("ANTIQUOTE("^s^")")*)
 
 (* 
    [message_of_token tok]
@@ -161,15 +81,11 @@ end
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
     | NULL -> "null"
-(*    | ANTIQUOTE(s) -> ("ANTIQUOTE("^s^")")*)
-
 
 (* 
    Support for OCaml antiquotation 
    Not supported
-*)
-(*
-let antiquote_char=ref '$'
+let antiquote_char=ref '^'
 let get_antiquote ()= !antiquote_char
 let set_antiquote c = antiquote_char:=c
 *)
@@ -268,7 +184,7 @@ let set_antiquote c = antiquote_char:=c
     Hashtbl.remove tbl s;
     (remove_char_info (String.get s 0) (String.length s) ls, tbl)
 
-  let find_char_info c lst=Counter.find c lst
+  let find_char_info c lst=List.assoc c lst
 
   let largest_sym c (ls, _) = 
     match (find_char_info c ls) with
@@ -607,7 +523,7 @@ let match_antiquote symtable strm =
       Stream.junk strm;
       (true, ANTIQUOTE(strng)))
     else (false, null_tok)
-*)	
+*)
 
 (* toplevel lexing functions *)
 
@@ -640,7 +556,7 @@ let rec lex symtable str=
       in let newstrm = Stream.of_string <:expr< $evalstrng$ >>
       in lex symtable newstrm
    else 
- *)
+*)
    (* try primed identifier *)
     let is_primedid_tok, primedid_tok = 
       match_primed_identifier symtable str
@@ -660,10 +576,8 @@ let rec lex symtable str=
 	in 
 	if key then tok
 	else 
-
 (* not a symbol/keyword, so try other lexers (numbers, bools, etc) *)
 	  other str
-	    
 
 (*
    let lexfn symtab strm = 
