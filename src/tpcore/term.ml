@@ -76,7 +76,7 @@ class basictermError s ts =
     method print st = 
       Format.open_box 0; print_string ((self#msg())^" "); 
       Format.open_box 0; 
-      Basic.PP.list_print print_simple
+      Printer.list_print print_simple
 	(fun _ -> print_string ","; Format.close_box(); Format.open_box 0)
 	(self#get());
       Format.close_box();
@@ -722,7 +722,7 @@ let string_inf_term inf x = string_term_inf inf 0 x
 
 
 let print prenv x = 
-  Format.open_box 0;
+  Format.open_box 2;
   print_string 
     (string_inf_term  prenv x);
   Format.close_box()
@@ -735,13 +735,6 @@ let rec print_termlist prenv x =
 
 (* pretty printing *)
 
-(*
-let print_identifier pprec x=
-  Format.print_string( 
-  match pprec.repr with
-    None -> Basic.name x
-  | Some(s) -> s)
-*)
 
 let print_meta qnt =
   let _, qv, qty = dest_binding qnt 
@@ -753,125 +746,14 @@ let print_meta qnt =
   Format.print_string ")";
   Format.close_box()
 
-(*
-let rec print_term_aux ppstate i x =
-  match x with
-    Var(n, ty) -> 
-      (let _, _, repr = Basic.PP.get_term_info ppstate n
-      in 
-      Basic.PP.print_identifier n repr)
-  | Bound(n) -> 
-      if(is_meta x) 
-      then print_meta n
-      else (Format.print_string ((get_binder_name x)))
-  | Const(c) -> Format.print_string (Basic.string_const c)
-  | Typed (trm, ty) ->
-      Format.print_string "(";
-      Format.open_box 0;
-      print_term_aux ppstate i trm;
-      Format.close_box();
-      Format.print_string ": ";
-      Format.print_string (Gtypes.string_gtype ty);
-      Format.print_string ")"
-  | App(t1, t2) ->
-      let f=get_fun x 
-      and args = get_args x
-      in 
-      if is_var f 
-      then 
-	(let name= fst (dest_var f)
-	in 
-	let pr, fxty, repr = Basic.PP.get_term_info ppstate name 
-	in let ti = if pr <= i then pr else i
-	in
-	if pr<=i then Format.print_string "("
-	else ();
-	if Basic.PP.is_infix fxty
-	then 
-	  (match args with
-	    [l;r] -> 
-	      (print_term_aux ppstate ti l;
-	       Format.print_break 1 2;
-	       print_term_aux ppstate ti f;
-	       Format.print_break 1 2;
-	       print_term_aux ppstate ti r)
-	  | _ -> (print_term_aux ppstate ti f;
-		  Format.print_break 1 2;
-		  list_print 
-		    (print_term_aux ppstate ti)
-		    (fun () -> Format.print_break 1 2)
-		    args))
-	else 
-	  (Format.print_string "(";
-	   print_term_aux ppstate ti f;
-	   Format.print_break 1 2;
-	   list_print 
-	     (print_term_aux ppstate ti)
-	     (fun () -> Format.print_break 1 2) args;
-	   Format.print_string")");
-	if pr<=i then Format.print_string ")"  else ())
-      else 
-	(Format.print_string "(";
-	 print_term_aux ppstate i  f;
-	 Format.print_break 1 2;
-	 list_print 
-	   (print_term_aux ppstate i)
-	   (fun () -> Format.print_break 1 2) args;
-	 Format.print_string")")
-  | Qnt(q, body) -> 
-      let (_, qnt, qvar, qtyp, _) = dest_qnt x
-      in let (qnts, b) = (strip_qnt qnt x)
-      in let print_qnt q =
-	Format.open_box 0; 
-	Format.print_break 1 2;
-	Format.print_string (string_typed_name (!q.qvar) (!q.qtyp));
-	Format.close_box();
-      in 
-      let print_qnts qs =
-	Format.print_string (Basic.quant_string qnt);
-	Corepp.list_print 
-	  (print_qnt) (fun () -> Format.print_break 1 2) 
-	  qnts;
-	Format.print_string ": ";
-	Format.print_cut()
-      in 
-      let ti = (Basic.prec_qnt (qnt))
-      in 
-      if ti < i 
-      then
-	(Format.open_box 0;
-	 Format.print_string "(";
-	 Format.open_box 0; 
-	 Format.print_break 0 2;
-	 print_qnts qnts;
-	 Format.close_box();
-	 Format.open_box 0;
-	 print_term_aux ppstate ti b;
-	 Format.close_box();
-	 Format.print_string ")";
-	 Format.close_box())
-      else 
- 	(Format.open_box 0; Format.print_break 0 2;
-	 print_qnts qnts; Format.print_break 1 2;
-	 print_term_aux ppstate ti b;
-	 Format.close_box())
-
-
-let  print_term ppstate x = 
-  Format.open_box 0;
-  print_term_aux ppstate 0 x;
-  Format.close_box()
-*)
-
-
 
 let rec print_term_aux ppstate i x =
   match x with
     Var(n, ty) -> 
-      (let _, _, repr = Basic.PP.get_term_info ppstate n
+      (let _, _, repr = Printer.get_term_info ppstate n
       in 
-      Basic.PP.print_identifier n repr;
-      Format.print_cut())
+      Printer.print_identifier n repr);
+      Format.print_cut()
   | Bound(n) -> 
       Format.print_string ((get_binder_name x));
       Format.print_cut()
@@ -879,7 +761,8 @@ let rec print_term_aux ppstate i x =
       Format.print_string (Basic.string_const c);
       Format.print_cut()
   | Typed (trm, ty) -> 
-      print_typed_term ppstate i trm ty
+      print_typed_term ppstate i trm ty;
+      Format.print_cut()
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
@@ -889,14 +772,16 @@ let rec print_term_aux ppstate i x =
 	  (if is_var f 
 	  then print_fn_app ppstate i f args
 	  else 
-	    (Format.print_string "(";
+	    (Format.open_box 2;
+	     Format.print_string "(";
 	     print_term_aux ppstate i f;
 	     Format.print_space();
-	     Basic.PP.list_print 
+	     Printer.list_print 
 	       (print_term_aux ppstate i)
 	       (fun () -> Format.print_space()) args;
 	     Format.print_string")";
-	     Format.print_cut())))
+	     Format.close_box())));
+      Format.print_cut()
   | Qnt(q, body) -> 
       let (_, qnt, qvar, qtyp, _) = dest_qnt x
       in 
@@ -904,71 +789,83 @@ let rec print_term_aux ppstate i x =
       in 
       let print_qnts qs =
 	Format.print_string (Basic.quant_string qnt);
-	(Basic.PP.list_print (print_qnt ppstate)
-	   (fun () -> Format.print_space()) qnts);
+	Printer.list_print (print_qnt ppstate)
+	  (fun () -> Format.print_space()) qnts;
 	Format.print_string ":";
+	Format.print_cut();
       in 
       let ti = (Basic.prec_qnt (qnt))
       in 
-      Basic.PP.print_bracket ti i "(";
-      Format.open_box 0; 
+      Format.open_box 3;
+      Printer.print_bracket ti i "(";
       print_qnts qnts;
       Format.print_space();
       print_term_aux ppstate ti b;
-      Format.close_box(); 
-      Basic.PP.print_bracket ti i ")"
+      Printer.print_bracket ti i ")";
+      Format.close_box();
+      Format.print_cut()
 and 
     print_fn_app ppstate i f args=
   let print_infix repr ti args =
     match args with
       (l::rargs) -> 
-	(print_term_aux ppstate ti l;
+	(Format.open_box 2;
+	 print_term_aux ppstate ti l;
 	 Format.print_space();
 	 print_term_aux ppstate ti f;
 	 Format.print_space();
-	 Basic.PP.list_print (print_term_aux ppstate ti)
-	   (fun () -> Format.print_space()) rargs);
-	Format.print_cut()
+	 Printer.list_print (print_term_aux ppstate ti)
+	   (fun () -> Format.print_space()) rargs;
+	 Format.close_box();
+	 Format.print_cut())
     | _ -> 
-	Basic.PP.list_print (print_term_aux ppstate ti)
+	Format.open_box 2;
+	Printer.list_print (print_term_aux ppstate ti)
 	  (fun () -> Format.print_space()) args;
 	 Format.print_space();
-	 print_term_aux ppstate ti f;
+	print_term_aux ppstate ti f;
+	Format.close_box();
 	Format.print_cut()
   and print_suffix ti args =
-    (Basic.PP.list_print (print_term_aux ppstate ti)
+    Format.open_box 2;
+    (Printer.list_print (print_term_aux ppstate ti)
        (fun () -> Format.print_space()) args);
     Format.print_space();
     print_term_aux ppstate ti f;
+    Format.close_box();
     Format.print_cut()
   in 
   let name, _= dest_var f
-  in let pr, fixity, repr = Basic.PP.get_term_info ppstate name
+  in let pr, fixity, repr = Printer.get_term_info ppstate name
   in let ti = if pr <= i then pr else i
   in
-  Basic.PP.print_bracket pr i "(";
-  (if (Basic.PP.is_infix fixity) 
+  Printer.print_bracket pr i "(";
+  (if (Printer.is_infix fixity) 
   then print_infix repr ti args
   else 
-    if (Basic.PP.is_suffix fixity)
+    if (Printer.is_suffix fixity)
     then print_suffix ti args
-    else Basic.PP.list_print (print_term_aux ppstate ti)
+    else Printer.list_print 
+	(print_term_aux ppstate ti)
 	(fun () -> Format.print_space()) (f::args));
-  Basic.PP.print_bracket pr i ")"
+  Printer.print_bracket pr i ")";
+  Format.print_cut()
 and 
     print_typed_term ppstate i trm ty=
-  Format.open_box 0;
+  Format.open_box 2;
   Format.print_string "(";
   print_term_aux ppstate i trm;
+  Format.print_string ")";
+  Format.print_cut();
   Format.print_string ": ";
   Gtypes.print ppstate ty;
-  Format.print_string ")";
   Format.close_box()
 and 
     print_typed_name ppstate n ty=
-  Format.open_box 0;
+  Format.open_box 2;
   Format.print_string "(";
   Format.print_string n;
+  Format.print_cut();
   Format.print_string ": ";
   Gtypes.print ppstate ty;
   Format.print_string ")";
@@ -977,7 +874,6 @@ and print_qnt ppstate q =
   let _, qvar, qtyp = dest_binding q 
   in 
   print_typed_name ppstate qvar qtyp
-  
 
 let print inf x = 
   Format.open_box 0;
@@ -995,7 +891,7 @@ class termError s ts =
       Format.open_box 0; print_string ((self#msg())^" "); 
       Format.print_newline();
       Format.open_box 0; 
-      Basic.PP.list_print (print st) 
+      Printer.list_print (print st) 
 	(fun _ -> Format.print_string ","; 
 	  Format.print_break 1 2; 
 	  Format.close_box(); Format.open_box 0)

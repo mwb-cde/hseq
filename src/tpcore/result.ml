@@ -3,7 +3,7 @@ open Format
   class message s=
   object (self)
   method msg () = s
-  method print (x: Basic.PP.info) = 
+  method print (x: Printer.info) = 
     open_box 0; print_string (self#msg()); close_box ()
   end
 

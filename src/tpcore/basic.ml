@@ -151,6 +151,11 @@ let string_tconst x l =
 
 
 let date ()= Unix.time()
+let nice_date f= 
+  let tm = Unix.localtime f
+  in 
+  (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_yday, 
+   tm.Unix.tm_hour, tm.Unix.tm_min)
 
 
 (* Pretty Printer *)
@@ -178,6 +183,23 @@ module PP =
     let default_type_prec = 0
     let default_type_assoc = Parserkit.Info.non_assoc
     let default_type_fixity= Parserkit.Info.nonfix
+
+(* string representation of fixity (for printing) *)
+   let assoc_to_string a =
+     match a with
+       Parserkit.Info.Leftassoc -> "left associative"
+     | Parserkit.Info.Rightassoc -> "right associative"
+     | Parserkit.Info.Nonassoc -> "non-associative"
+
+   let fixity_to_string fx=
+     match fx with
+       Parserkit.Info.Nonfix -> "nonfix"
+     | Parserkit.Info.Prefix -> "prefix"
+     | Parserkit.Info.Suffix -> "suffix"
+     | Parserkit.Info.Infix(a) -> 
+	 ("infix ("^(assoc_to_string a)^")")
+	 
+   
 
 (* fixity tests *)
 

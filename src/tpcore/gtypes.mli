@@ -307,9 +307,9 @@ val print_type_info : Basic.PP.info -> int -> gtype -> unit
 val print_type : Basic.PP.info -> gtype -> unit
 *)
 
-val print_type_info : Basic.PP.info -> int -> gtype -> unit
+val print_type_info : Printer.info -> int -> gtype -> unit
 (* print_type renamed to print *)
-val print : Basic.PP.info -> gtype -> unit
+val print : Printer.info -> gtype -> unit
 
 (* set names in a type to their long form *)
 

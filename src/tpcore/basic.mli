@@ -60,9 +60,16 @@ val const_leq: const_ty -> const_ty -> bool
 
 val date: unit -> float
 
+(* 
+   [nice_date f]
+   return date [f] in form [(year, month, day, hour, min)]
+*)
+val nice_date: float -> (int * int * int * int * int)
+
 
 (* Pretty printer *)
 
+(*
 module PP :
     sig
 
@@ -88,6 +95,9 @@ module PP :
       val default_type_assoc: Parserkit.Info.associativity
       val default_type_fixity: Parserkit.Info.fixity
 
+(* string representation of fixity (for printing) *)
+      val assoc_to_string : Parserkit.Info.associativity -> string
+      val fixity_to_string: Parserkit.Info.fixity -> string
 (*
       val prec_of: pp_state -> id_selector -> ident ->  int
       val fixity_of: pp_state -> id_selector -> ident ->  fixity
@@ -275,5 +285,4 @@ module PP :
       val print_identifier: ident -> string option -> unit
 
     end
-
-
+*)

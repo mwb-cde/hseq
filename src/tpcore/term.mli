@@ -204,16 +204,16 @@ val get_fun_args: term -> (term* term list)
 
 (* pretty printer *)
 
-val print_term_aux : Basic.PP.info -> int -> term -> unit
+val print_term_aux : Printer.info -> int -> term -> unit
 (*
-val print_term : Basic.PP.info -> term -> unit
+val print_term : Printer.info -> term -> unit
 val simple_term_printer: term -> unit
 *)
 (* 
    print_term renamed to print,
    simple_term_printer renamed to print_simple
 *)
-val print : Basic.PP.info -> term -> unit
+val print : Printer.info -> term -> unit
 val print_simple: term -> unit
    
 (* Error handling *)

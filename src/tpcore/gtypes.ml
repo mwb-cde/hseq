@@ -87,129 +87,99 @@ let get_weak t =
   | _ -> raise (Failure "Not a weak variable")
 
 
-(*
-let print_type_info ppstate pr t = 
-  let rec print_aux old_pr x =
-    match x with
-      Var(_) -> Format.print_string ("'"^(get_var x))
-    | WeakVar(_) -> Format.print_string ("_"^(get_weak x))
-    | Base(b) -> Format.print_string (Basic.string_btype b)
-    | Constr(Basic.Defined n, [a1; a2])  (* possible infix *)
-      ->
-	(let prec, fxty, repr = Basic.PP.get_type_info ppstate n
-	in 
- 	let brckt=prec<old_pr
-	in 
-	(Format.open_box 0;
-	 if Basic.PP.is_infix fxty
-	 then (if brckt then Format.print_string "(" else ();
-	       print_aux prec a1; 
-	       Format.print_string " ";
-	       Basic.PP.print_identifier n repr;
-	       Format.print_string " ";
-	       print_aux prec a2;
-	       if brckt then Format.print_string ")" else ())
-	 else (Basic.PP.print_identifier n repr;
-	       Format.print_string "(";
-	       Basic.PP.list_print (print_aux prec) (fun _ -> ", ") [a1;a2];
-	       Format.print_string ")");
-	 Format.close_box ()))
-    | Constr(Basic.Defined n, args) ->  (* not infix *)
-	(let prec, fxty, repr=Basic.PP.get_type_info ppstate n
-	in 
-	(Format.open_box 0;
-	 Basic.PP.print_identifier n repr;
-	 Format.print_string "(";
-	 Basic.PP.list_print (print_aux prec ) (fun _ -> ", ") args;
-	 Format.print_string ")";
-	 Format.close_box ()))
-    | Constr(Basic.Func, [a1; a2]) ->  (* not infix *)
-	Format.open_box 0;
-	print_aux 0 a1; 
-	Format.print_string "->";
-	print_aux 0 a2;
-	Format.close_box()
-    | Constr(Basic.Func, args) ->  (* not infix *)	      
-	(Format.open_box 0;
-	 Format.print_string "->";
-	 Format.print_string "(";
-	 Basic.PP.list_print (print_aux 0) (fun _ -> ", ") args;
-	 Format.print_string ")";
-	 Format.close_box ())
-  in print_aux pr t
-
-let print_type st x =
-  Format.open_box 0; print_type_info st 0 x; Format.close_box ()
-*)
 
 let print_type_info ppstate pr t = 
   let rec print_aux old_pr x =
     match x with
-      Var(_) -> Format.print_string ("'"^(get_var x))
-    | WeakVar(_) -> Format.print_string ("_"^(get_weak x))
-    | Base(b) -> Format.print_string (Basic.string_btype b)
+      Var(_) -> 
+	Format.print_string ("'"^(get_var x));
+	Format.print_cut()
+    | WeakVar(_) -> 
+	Format.print_string ("_"^(get_weak x));
+	Format.print_cut()
+    | Base(b) -> 
+	Format.print_string (Basic.string_btype b);
+	Format.print_cut()
     | Constr(Basic.Defined n, args) ->  (* not infix *)
-	print_defined old_pr n args
+	print_defined old_pr n args;
+	Format.print_cut()
     | Constr(Basic.Func, args) ->
-	print_func args
+	print_func args;
+	Format.print_cut()
   and print_defined oldprec f args =
     let print_infix pr repr ls =
-      (Format.open_box 0;
+      (Format.open_box 2;
       (match ls with
 	[] -> 
-	  Basic.PP.print_identifier f repr
+	  Printer.print_identifier f repr
       | l::rargs ->
 	  print_aux pr l;
-	  Basic.PP.print_identifier f repr;
-	  Basic.PP.list_print (print_aux pr) (fun _ -> " ") rargs);
+	  Format.print_cut();
+	  Printer.print_identifier f repr;
+	  Printer.list_print 
+	    (print_aux pr) 
+	    (fun _ -> Format.print_space()) rargs);
       Format.close_box())
     and print_suffix pr repr ls =
-      (Format.open_box 0;
-       Basic.PP.list_print (print_aux pr) (fun _ -> " ") ls;
-       Basic.PP.print_identifier f repr;
+      (Format.open_box 2;
+       Printer.list_print 
+	 (print_aux pr) 
+	 (fun _ -> Format.print_space()) ls;
+       Format.print_cut();
+       Printer.print_identifier f repr;
        Format.close_box())
     in 
-    let prec, fixity, repr=Basic.PP.get_type_info ppstate f
+    let prec, fixity, repr=Printer.get_type_info ppstate f
     in 
-    Format.open_box 0;
-    Basic.PP.print_bracket prec oldprec "(";
-    if(Basic.PP.is_infix fixity) 
-    then print_infix prec repr args 
+    Format.open_box 2;
+    Printer.print_bracket prec oldprec "(";
+    if(Printer.is_infix fixity) 
+    then 
+      print_infix prec repr args  
     else 
-      if (Basic.PP.is_suffix fixity)
+      if (Printer.is_suffix fixity)
       then print_suffix prec repr args
       else 
-	(Basic.PP.print_identifier f repr;
+	(Printer.print_identifier f repr;
 	 match args with
 	   [] -> ()
 	 | _ -> 
+	     Format.open_box 2;
 	     Format.print_string "(";
-	     Basic.PP.list_print 
+	     Printer.list_print 
 	       (print_aux pr) 
-	       (fun _ -> Format.print_string ", ") args;
-	     Format.print_string ")");
-    Basic.PP.print_bracket prec oldprec ")";
+	       (fun _ -> 
+		 Format.print_string ","; 
+		 Format.print_space()) args;
+	     Format.print_string ")";
+	     Format.close_box());
+    Printer.print_bracket prec oldprec ")";
     Format.close_box()
   and print_func args  =
     match args with
       a1::a2::rst ->
-	Format.open_box 0;
+	Format.open_box 2;
 	print_aux 0 a1; 
+	Format.print_cut();
 	Format.print_string "->";
 	print_aux 0 a2;
 	Format.close_box()
     | _ -> 
-	Format.open_box 0;
+	Format.open_box 2;
 	Format.print_string "->";
+	Format.print_cut();
 	Format.print_string "(";
-	Basic.PP.list_print (print_aux 0) (fun _ -> ", ") args;
+	Format.print_cut();
+	Printer.list_print 
+	  (print_aux 0) 
+	  (fun _ -> Format.print_string ","; Format.print_space()) args;
 	Format.print_string ")";
 	Format.close_box ()
   in 
   print_aux pr t
 
 let print st x =
-  Format.open_box 0; print_type_info st 0 x; Format.close_box ()
+  Format.open_box 2; print_type_info st 0 x; Format.close_box ()
 
 (* Error handling *)
 
@@ -222,7 +192,7 @@ class typeError s ts=
       Format.open_box 0; Format.print_string (self#msg()); 
       Format.print_break 1 2;
       Format.open_box 0; 
-      Basic.PP.list_print (print st) 
+      Printer.list_print (print st) 
 	(fun _ -> Format.print_string ","; 
           Format.print_break 1 2; )
 	(self#get());
