@@ -3,6 +3,11 @@ open Formula
 
 module Tag=
   struct
+(* 
+   Tags: 
+   unique identifiers with which to identify
+   sequents in a goal and formulas in a sequent
+*)
     type t=string ref
 
     let named x = ref x
@@ -27,11 +32,11 @@ type tagged_form = (Tag.t* form)
 type skolem_cnst = (Basic.fnident * (int * Gtypes.gtype))
 type skolem_type = skolem_cnst list
 
-type sqnt_env = {sklms: skolem_type; sqenv : Gtypes.scope}
-
-(*
-   type sqnt = (Tag.t* sqnt_env * form list * form list)
- *)
+type sqnt_env = 
+    {
+     sklms: skolem_type; 
+     sqenv : Gtypes.scope
+   }
 
 type sqnt = (Tag.t* sqnt_env * tagged_form list * tagged_form list)
 
@@ -40,7 +45,8 @@ type rule = goal -> goal
 
 type conv = thm list -> thm list 
 
-(* cdefn:
+(* 
+   cdefn:
    Checked Definitions: 
    checking of type and term definitions and declarations
  *)
@@ -72,6 +78,8 @@ type rr_type =
 type fident = 
     FNum of int
   | FTag of Tag.t
+
+(* theorem recognisers/destructors *)
 
 let is_axiom t = match t with (Axiom _) -> true | _ -> false
 let is_thm t = match t with (Theorem _) -> true | _ -> false
@@ -111,8 +119,7 @@ let get_sklm_name (x, (_, _)) = x
 let get_sklm_indx (_, (i, _)) = i
 let get_sklm_type (_, (_, t)) = t
 
-let get_old_sklm n sklms = 
-  (n, List.assoc  n sklms)
+let get_old_sklm n sklms =  (n, List.assoc  n sklms)
 
 let is_sklm n sklms = 
   try ignore(get_old_sklm n sklms); true
@@ -303,6 +310,17 @@ let mk_thm g =
 module Rules=
   struct
 
+(* 
+   Rules:
+   The implementation of the rules of the sequent calculus
+
+   Information:
+   Each tactic implementing a basic rule produces information about 
+   the tags of the formulas affected by applying the rule.
+   e.g. applying conjunction introduction to [a and b], produces 
+   the tags for the two new formulas [a] and [b]
+ *)
+
     let sqnt_apply r g =
       match g with 
 	Goal([], f) -> raise No_subgoals
@@ -331,14 +349,20 @@ module Rules=
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
 (* forms: new forms produced by rule *)
-    type tag_record = { goals:Tag.t list; forms : Tag.t list;}
+(* terms: new constants produced by rule *)
+    type tag_record = 
+	{ 
+	  goals:Tag.t list; 
+	  forms : Tag.t list;
+	  terms: Term.term list
+	}
     type tag_info = tag_record ref
 
-    let make_tag_record gs fs = {goals=gs; forms=fs}
-    let do_tag_info info gs fs =
+    let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
+    let do_tag_info info gs fs ts=
       match info with
 	None -> ()
-      | Some(v) -> v:=make_tag_record gs fs
+      | Some(v) -> v:=make_tag_record gs fs ts
 
 (* composition of rules *)
 
@@ -442,7 +466,7 @@ module Rules=
       in
       let nb = (nt, sqnt_form na)
       in 
-      do_tag_info info [] [nt];
+      do_tag_info info [] [nt] [];
       mk_subgoal (sqnt_tag sq, env sq,
 		  Lib.splice_nth (-i) (asms sq) [nb; na],
 		  concls sq)
@@ -468,7 +492,7 @@ module Rules=
       in 
       let nb = (nt, sqnt_form nc)
       in 
-      do_tag_info info [] [nt];
+      do_tag_info info [] [nt] [];
       mk_subgoal(sqnt_tag sq, env sq,
 		 asms sq,
 		 Lib.splice_nth (i) (concls sq) [nb; nc])
@@ -489,7 +513,7 @@ module Rules=
     let rotate_asms0 info sq = 
       let hs = asms sq 
       in
-      do_tag_info info [] [];
+      do_tag_info info [] [] [];
       match hs with 
 	[] -> mk_subgoal(sqnt_tag sq, env sq, hs, concls sq)
       | h::hys -> mk_subgoal(sqnt_tag sq, env sq, hys@[h], concls sq)
@@ -499,7 +523,7 @@ module Rules=
 
     let rotate_cncls0 inf sq =
       let cs = concls sq in
-      do_tag_info inf [] [];
+      do_tag_info inf [] [] [];
       match cs with 
 	[] -> mk_subgoal(sqnt_tag sq, env sq, asms sq, cs)
       | c::cns -> mk_subgoal(sqnt_tag sq, env sq, asms sq, cns@[c])
@@ -534,7 +558,7 @@ module Rules=
       in 
       try 
 	ignore(Formula.in_thy_scope scp (scp.Gtypes.curr_thy) nt);
-	do_tag_info info [] [ftag];
+	do_tag_info info [] [ftag] [];
 	mk_subgoal(sqnt_tag sq, env sq, nasm::(asms sq), concls sq)
       with 
 	x -> (addlogicError "Not in scope of sequent" [nt] x)
@@ -546,7 +570,7 @@ module Rules=
 (* case x sq: adds formula x to assumptions of sq, 
    creates new subgoal in which to prove x
 
-   g|asm |- cncl      --> g| t:x, asm |- cncl , g'|asm |- t:x, cncl
+   g| asm |- cncl      --> g| t:x, asm |- cncl , g'|asm |- t:x, cncl
 
    info: [g, g'] [t]
  *)
@@ -561,7 +585,7 @@ module Rules=
       in 
       try 
 	ignore(Formula.in_thy_scope scp (scp.Gtypes.curr_thy) nt);
-	do_tag_info info [tagl; tagr] [ftag];
+	do_tag_info info [tagl; tagr] [ftag] [];
 	[(tagl, env sq, ntrm::(asms sq), concls sq);
 	 (tagr, env sq, (asms sq), ntrm::concls sq)]
       with 
@@ -571,7 +595,8 @@ module Rules=
     let case_info info x sqnt = sqnt_apply (case0 (Some info) x) sqnt
     let case_full info x sqnt = sqnt_apply (case0 info x) sqnt
 
-(* delete x sq: delete assumption (x<0) or conclusion (x>0) from sq
+(* 
+   delete x sq: delete assumption (x<0) or conclusion (x>0) from sq
    info: [] []
  *)
 
@@ -582,7 +607,7 @@ module Rules=
 	else 
 	  mk_subgoal (sqnt_tag sq, env sq, delete_asm x (asms sq), concls sq)
       in 
-      do_tag_info inf [] [];
+      do_tag_info inf [] [] [];
       ng
 
     let delete x sqnt = sqnt_apply (delete0 None x) sqnt
@@ -591,7 +616,8 @@ module Rules=
     let delete_full inf x g = 
       sqnt_apply (delete0 inf (dest_fident x (get_sqnt g))) g
 
-(* basic i j sq: compares asm i with cncl j of sq, 
+(* 
+   basic i j sq: compares asm i with cncl j of sq, 
    if equal then result is the theorem concl j 
 
    asm, a_{i}, asm' |- concl, c_{j}, concl' 
@@ -625,7 +651,7 @@ module Rules=
 	and tagl=sqnt_tag sq
 	and tagr=Tag.create()
 	in 
-	do_tag_info inf [tagl; tagr] [ft1];
+	do_tag_info inf [tagl; tagr] [ft1] [];
 	[(tagl, env sq, asms sq, cnl1); 
 	 (tagr, env sq, asms sq, cnl2)])
       else raise (logicError "Not a conjunct" [t])
@@ -654,7 +680,7 @@ module Rules=
 	let asm1=(ft1, t1)
 	and asm2=(ft2, t2)
 	in 
-	do_tag_info inf [] [ft1; ft2];
+	do_tag_info inf [] [ft1; ft2] [];
 	mk_subgoal(
 	sqnt_tag sq, env sq, asm1::asm2::(delete_asm i (asms sq)), concls sq))
       else raise (logicError "Not a conjunction" [t])
@@ -684,7 +710,7 @@ module Rules=
 	and tagl=sqnt_tag sq
 	and tagr=Tag.create()
 	in 
-	do_tag_info inf [tagl; tagr] [ft];
+	do_tag_info inf [tagl; tagr] [ft] [];
 	[(tagl, env sq, asm1, concls sq); 
 	 (tagr, env sq, asm2, concls sq)])
       else raise (logicError "Not a disjunction" [t])
@@ -712,7 +738,7 @@ module Rules=
 	let cncl1=(ft1, t1)
 	and cncl2=(ft2, t2)
 	in 
-	do_tag_info inf [] [ft1; ft2];
+	do_tag_info inf [] [ft1; ft2] [];
 	mk_subgoal 
 	  (sqnt_tag sq, env sq, asms sq, 
 	   cncl1::cncl2::(delete_cncl i (concls sq))))
@@ -739,7 +765,7 @@ module Rules=
 	in 
 	let cncl1=(ft, t1)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	mk_subgoal
 	  (sqnt_tag sq, env sq, delete_asm i (asms sq), cncl1::(concls sq)))
       else raise (logicError "Not a negation"[t])
@@ -765,7 +791,7 @@ module Rules=
 	in 
 	let asm1=(ft, t1)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	mk_subgoal
 	  (sqnt_tag sq, env sq, asm1::(asms sq), delete_cncl i (concls sq)))
       else raise (logicError "Not a negation"[t])
@@ -793,7 +819,7 @@ module Rules=
 	let asm =(ft2, t1)
 	and cncl = (ft1, t2)
 	in 
-	do_tag_info inf [] [ft2; ft1];
+	do_tag_info inf [] [ft2; ft1] [];
 	mk_subgoal
 	  (sqnt_tag sq, env sq, asm::(asms sq), 
 	   (replace_cncl i (concls sq) cncl)))
@@ -828,7 +854,7 @@ module Rules=
 	and tagl=Tag.create()
 	and tagr=sqnt_tag sq
 	in 
-	do_tag_info info [tagl; tagr] [ft];
+	do_tag_info info [tagl; tagr] [ft] [];
 	[(tagl, env sq, asm1, cncl1); 
 	 (tagr, env sq, asm2, concls sq)])
       else raise (logicError "Not an implication" [t])
@@ -842,6 +868,8 @@ module Rules=
    asm |- t:!x. P(c), concl
    -->
    asm |- t:P(c'), concl   where c' is a new identifier
+
+   info: [] [t]
  *)
 
     let add_sklms_to_scope sklms scp =
@@ -867,7 +895,7 @@ module Rules=
 	in 
 	let ncncl = (ft, Formula.inst nscp t sv)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	mk_subgoal(sqnt_tag sq, {sklms=nsklms; sqenv=nscp},
 		   asms sq, 
 		   replace_cncl i (concls sq) ncncl))
@@ -899,7 +927,7 @@ module Rules=
 	in 
 	let nasm=(ft, Formula.inst nscp t sv)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	mk_subgoal
 	  (sqnt_tag sq, {sklms=nsklms; sqenv = nscp},
            replace_asm i (asms sq) nasm, 
@@ -922,7 +950,7 @@ module Rules=
       in 
       if (Formula.is_true t)
       then 
-	(do_tag_info inf [] [];
+	(do_tag_info inf [] [] [];
 	 raise No_subgoals)
       else 
 	raise (logicError "Not trivial" [t])
@@ -949,7 +977,7 @@ module Rules=
 	 with x -> raise 
 	     (Result.catchError(mklogicError "Beta reduction" [t]) x))
       in 
-      do_tag_info inf [] [ft];
+      do_tag_info inf [] [ft] [];
       if i> 0 
       then mk_subgoal
 	  (sqnt_tag sq, env sq, (asms sq), replace_cncl i (concls sq) nt)
@@ -991,7 +1019,7 @@ module Rules=
 	    (ft, Formula.form_of_term nscp
 	       (Logicterm.mkequal (Term.mkvar long_id) trm))
 	  in 
-	  do_tag_info inf [] [ft];
+	  do_tag_info inf [] [ft] [];
 	  mk_subgoal(sqnt_tag sq, {sklms=(sklm_cnsts sq); sqenv=nscp},
 		     ntrm::(asms sq), concls sq)
 
@@ -1040,12 +1068,12 @@ module Rules=
       in 
       try
 	((ignore(Formula.unify tyenv asm cncl); 
-	  do_tag_info inf [] [];
+	  do_tag_info inf [] [] [];
 	  raise No_subgoals)) 
       with x -> 
 	try
 	  ((ignore(Formula.alpha_convp tyenv asm cncl); 
-	    do_tag_info inf [] [];
+	    do_tag_info inf [] [] [];
 	    raise No_subgoals)) 
 	with x->
 	  raise (Result.catchError
@@ -1079,7 +1107,7 @@ module Rules=
       	  in 
       	  let nt = (ft, inst_term sq t trm)
       	  in 
-	  do_tag_info inf [] [ft];
+	  do_tag_info inf [] [ft] [];
       	  mk_subgoal
 	    (sqnt_tag sq, env sq, asms sq, (replace_cncl i (concls sq) nt)))
 	with x -> raise (Result.catchError
@@ -1111,7 +1139,7 @@ module Rules=
 	  in 
 	  let nt = (ft, inst_term  sq t trm)
 	  in 
-	  do_tag_info inf [] [ft];
+	  do_tag_info inf [] [ft] [];
 	  mk_subgoal
 	    (sqnt_tag sq, env sq,  (replace_asm i (asms sq) nt), concls sq)) 
 	with x -> 
@@ -1180,7 +1208,7 @@ module Rules=
 	  else 
 	    (ft, Formula.rewrite ~dir:dir tyenv r t)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	if j>=0 then
 	  mk_subgoal
 	    (sqnt_tag sq, env sq, asms sq, replace_cncl j (concls sq) nt)
@@ -1222,7 +1250,7 @@ module Rules=
       try
 	(let nt = (ft, Formula.rewrite ~dir:dir tyenv r t)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	if j>=0 then
 	  mk_subgoal
 	    (sqnt_tag sq, env sq, asms sq, replace_cncl j (concls sq) nt)
@@ -1275,7 +1303,7 @@ module Rules=
       try
 	(let nt = (ft, Formula.rewrite ~dir:dir tyenv r t)
 	in 
-	do_tag_info inf [] [ft];
+	do_tag_info inf [] [ft] [];
 	if j>=0 then
 	  mk_subgoal
 	    (sqnt_tag sq, env sq, asms sq, replace_cncl j (concls sq) nt)

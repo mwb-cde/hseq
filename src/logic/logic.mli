@@ -165,13 +165,19 @@ sig
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
 (* forms: new forms produced by rule *)
-  type tag_record = { goals:Tag.t list; forms : Tag.t list;}
+(* terms: new constants produced by rule *)
+    type tag_record = 
+	{ 
+	  goals:Tag.t list; 
+	  forms : Tag.t list;
+	  terms: Term.term list
+	}
   type tag_info = tag_record ref
 
-  val make_tag_record: Tag.t list-> Tag.t list -> tag_record
+  val make_tag_record: Tag.t list-> Tag.t list -> Term.term list -> tag_record
   val do_tag_info: 
       tag_info option ->
-	Tag.t list-> Tag.t list -> unit
+	Tag.t list-> Tag.t list -> Term.term list -> unit
 
 (* functions for combining rules *)
 

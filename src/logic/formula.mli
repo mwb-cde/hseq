@@ -130,6 +130,17 @@ val dest_qnt : form -> Term.binders * Term.term
     val rewrite : Gtypes.scope -> ?dir:bool -> form list-> form -> form
     val rewrite_simple : Gtypes.scope -> ?dir:bool -> form list-> form -> form
 
+(* rewriting with a given type environment *)
+    val rewrite_env : 
+	Gtypes.scope -> ?dir:bool 
+	  -> Gtypes.substitution 
+	    -> form list-> form -> (form * Gtypes.substitution)
+
+    val rewrite_simple_env : 
+	Gtypes.scope -> ?dir:bool 
+	    -> Gtypes.substitution 
+	      -> form list-> form -> (form*Gtypes.substitution)
+
 (*
 type rulesDB 
 
@@ -141,6 +152,11 @@ val add: Gtypes.scope -> bool -> form list -> rulesDB -> rulesDB
 
 val rewrite_net : Gtypes.scope -> Rewrite.rewrite_rules Net.net 
   -> form -> form
+
+val rewrite_net_env : 
+    Gtypes.scope -> Gtypes.substitution 
+      -> Rewrite.rewrite_rules Net.net 
+	-> form -> (form * Gtypes.substitution)
 
 (* print a formula in a given PP state *)
 val print : Corepp.pp_state -> form -> unit

@@ -377,6 +377,18 @@ let rewrite_simple scp ?(dir=true) rrs t =
   in 
   form_of_term scp nt
 
+let rewrite_env scp ?(dir=true) tyenv rrs t = 
+  let nt, ntyenv = 
+    Rewrite.rewrite_univs_env ~dir:dir scp tyenv rrs t
+  in 
+  (form_of_term scp nt, ntyenv)
+
+let rewrite_simple_env scp ?(dir=true) tyenv rrs t = 
+  let nt, ntyenv = 
+    Rewrite.rewrite_univs_env ~dir:dir ~simple:true scp tyenv rrs t
+  in 
+  (form_of_term scp nt, ntyenv)
+
 (* Rewriting with nets *)
 
 type rulesDB = Rewrite.rewriteDB
@@ -411,6 +423,12 @@ let add scp dir fs (t, net) =
 let rewrite_net scp  rrnet f =
   let nt = Rewrite.rewrite_net scp (Rewrite.Net_rr rrnet) (term_of_form f)
   in form_of_term scp nt
+
+let rewrite_net_env scp tyenv rrnet f =
+  let nt, ntyenv = 
+    Rewrite.rewrite_net_env scp tyenv 
+      (Rewrite.Net_rr rrnet) (term_of_form f)
+  in (form_of_term scp nt, ntyenv)
 
 
 (*    let print_formlist = Term.print_termlist*)
