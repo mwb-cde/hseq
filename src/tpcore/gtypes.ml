@@ -283,6 +283,7 @@ let rec chase_ret_type t=
 (* pretty printing *)
 
 
+
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)
@@ -316,7 +317,7 @@ let find_printer ppstate id =
 
 let pplookup ppstate id =
   try
-    (Printer.get_record ppstate.Printer.type_info id)
+    (Printer.get_record (ppstate.Printer.type_info) id)
   with Not_found -> 
     Printer.mk_record 
       Printer.default_type_prec
@@ -349,54 +350,54 @@ and print_defined ppstate prec (f, args) =
   let pprec = pplookup ppstate f
   in 
   try 
-   let printer = Printer.get_printer ppstate f
-   in 
-   printer prec (f, args)
-   with Not_found -> 
-     if(Printer.is_infix pprec.Printer.fixity)
- then 
-   (match args with
-     [] -> ()
-   | (lf::rs) -> 
-       Printer.print_bracket prec (pprec.Printer.prec) "(";
-       print_type ppstate (pprec.Printer.prec) lf;
-       Printer.print_space();
-       Printer.print_identifier (pplookup ppstate) f;
-       Printer.print_space();
-       Printer.print_list 
-	 (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
-	 rs; 
-       Format.print_cut();
-       Printer.print_bracket prec (pprec.Printer.prec) ")")
- else 
-   if(Printer.is_suffix pprec.Printer.fixity)
-   then 
-     (Printer.print_bracket prec (pprec.Printer.prec) "(";
-      Format.print_cut();
-      Printer.print_suffix 
-	((fun pr -> Printer.print_identifier (pplookup ppstate)), 
-	 (fun pr l-> 
-	   match l with 
-	     [] -> ()
-	   |_ -> Printer.print_sep_list
-		 (print_type ppstate pr, ",") l))
-	(pprec.Printer.prec) (f, args);
-      Format.print_cut();
-      Printer.print_bracket prec (pprec.Printer.prec) ")")
-   else 
-     Format.print_cut();
-  Printer.print_prefix
-    ((fun pr -> Printer.print_identifier (pplookup ppstate)),
-     (fun pr l -> 
-       match l with 
-	 [] -> ()
-       | _ -> 
-	   Printer.print_string "(";
-	   Printer.print_sep_list
-	     (print_type ppstate pr, ",") l;
-	   Printer.print_string ")"))
-    (pprec.Printer.prec) (f, args);
-  Format.print_cut();
+    let printer = Printer.get_printer (ppstate.Printer.type_info) f
+    in 
+    printer prec (f, args)
+  with Not_found -> 
+    if(Printer.is_infix pprec.Printer.fixity)
+    then 
+      (match args with
+	[] -> ()
+      | (lf::rs) -> 
+	  Printer.print_bracket prec (pprec.Printer.prec) "(";
+	  print_type ppstate (pprec.Printer.prec) lf;
+	  Printer.print_space();
+	  Printer.print_identifier (pplookup ppstate) f;
+	  Printer.print_space();
+	  Printer.print_list 
+	    (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
+	    rs; 
+	  Format.print_cut();
+	  Printer.print_bracket prec (pprec.Printer.prec) ")")
+    else 
+      if(Printer.is_suffix pprec.Printer.fixity)
+      then 
+	(Printer.print_bracket prec (pprec.Printer.prec) "(";
+	 Format.print_cut();
+	 Printer.print_suffix 
+	   ((fun pr -> Printer.print_identifier (pplookup ppstate)), 
+	    (fun pr l-> 
+	      match l with 
+		[] -> ()
+	      |_ -> Printer.print_sep_list
+		    (print_type ppstate pr, ",") l))
+	   (pprec.Printer.prec) (f, args);
+	 Format.print_cut();
+	 Printer.print_bracket prec (pprec.Printer.prec) ")")
+      else 
+	Format.print_cut();
+    Printer.print_prefix
+      ((fun pr -> Printer.print_identifier (pplookup ppstate)),
+       (fun pr l -> 
+	 match l with 
+	   [] -> ()
+	 | _ -> 
+	     Printer.print_string "(";
+	     Printer.print_sep_list
+	       (print_type ppstate pr, ",") l;
+	     Printer.print_string ")"))
+      (pprec.Printer.prec) (f, args);
+    Format.print_cut();
 and print_func ppstate prec args =
   Printer.print_infix
     ((fun _ _ -> Printer.print_string "->"),
@@ -422,7 +423,7 @@ class typeError s ts=
       Format.print_break 1 2;
       Format.open_box 0; 
       Printer.print_sep_list 
-	(print (Printer.empty_ppinfo()), ",") (self#get());
+	(print st, ",") (self#get());
       Format.close_box();
       Format.close_box();
   end

@@ -313,10 +313,6 @@ val addtypeError : string ->gtype list -> exn -> 'a
    Added printers have type [(Basic.type_const * Gtypes list) printer].
 *)
 
-(*
-type ppinfo = 
-     (Basic.ident * gtype list) Printer.info
-*)     
 
 type printer_info=
     { 

@@ -840,14 +840,18 @@ let print_typed_name ppstate (n, ty)=
 
 
 let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
-  Printer.print_operator
-    (fnpr, 
-     (fun pr l -> 
-       Printer.print_list
-	 (argpr pr, Printer.print_space) l),
-     (pplookup ppstate),
-     Printer.get_printer ppstate)
-    prec (f, args)
+  let printer =
+    try
+      Printer.get_printer (ppstate.Printer.term_info) f
+    with Not_found -> 
+      Printer.print_operator
+	(fnpr, 
+	 (fun pr l -> 
+	   Printer.print_list
+	     (argpr pr, Printer.print_space) l),
+	 (pplookup ppstate))
+  in 
+  printer prec (f, args)
 
 let print_typed_term tpr ppstate prec (trm, ty)=
   Format.open_box 2;
