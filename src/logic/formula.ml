@@ -152,6 +152,87 @@ let form_of_term scp t0 =
   in 
   Term.retype_pretty tenv t
 
+(*
+   [close_term scp trm]: close term [trm] in scope [scp].
+*)
+let close_term scp trm=
+  let true_term = Term.mk_short_var "true"
+  and curr_thy = scp.Gtypes.curr_thy
+  in 
+  let id_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env()
+  in 
+  let lookup_id n = 
+    try 
+      Lib.find n id_memo
+    with Not_found -> 
+      let nth = (scp.Gtypes.thy_of Basic.fn_id n) 
+      in (ignore(Lib.add n nth id_memo); nth)
+  in 
+  let rec set_aux qnts t=
+    match t with
+      Id(id, ty) -> 
+	let th, n = Basic.dest_fnid id
+	in 
+	  if(th = Basic.null_thy)
+	  then 
+	    try 
+	      (let nth = lookup_id n
+	      in Id((Basic.mk_long nth n), ty))
+	    with Not_found -> 
+	      raise 
+		(Term.termError 
+		   "Formula.make: term not in scope" [t])
+	  else 
+	    (if (Term.in_thy_scope scope_memo scp curr_thy t)
+	    then t
+	    else 
+	      raise 
+		(Term.termError 
+		   "Formula.make: term not in scope" [t]))
+    | Free(n, ty) -> 
+	(try 
+	  let nth = lookup_id n
+	  in 
+	  let nid = Basic.mk_long nth n
+	  in 
+	  set_aux qnts (Id(nid, ty))
+	with Not_found -> t)
+    | Qnt(qnt, q, b) -> 
+	let qnts1 = Term.bind (Bound(q)) true_term qnts
+	in 
+	Qnt(qnt, q, set_aux qnts b)
+    | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
+    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+    | Bound(q) -> 
+	if Term.member t qnts
+	then t
+	else 
+	  raise (Term.termError 
+		   "Bound variable occurs outside binding" [t])
+    | _ -> t
+  in set_aux (Term.empty_subst()) trm
+
+let make ?env scp t= 
+  let t1=
+    try close_term scp t
+    with x -> raise
+	(Result.add_error x
+	   (Term.termError 
+	      "Formula.make: Can't make formula, not a closed term" [t]))
+  in 
+  try
+    let tyenv = 
+      Typing.typecheck_env scp (Gtypes.empty_subst()) t1 (Gtypes.mk_null())
+    in 
+    (Lib.apply_option (fun x -> x:=tyenv) env ();
+    Term.retype_pretty tyenv t1)
+  with x -> 
+    raise (Result.add_error x 
+	     (Term.termError "Formula.make: incorrect types" [t1]))
+
+let dest f = f
+
 (* Formula recognisers, constructors and destructors *)
 
 let is_fun= Term.is_fun

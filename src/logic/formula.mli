@@ -37,6 +37,32 @@ val form_of_term: Gtypes.scope -> Basic.term -> form
 *)
 val mk_form: Gtypes.scope -> Basic.term -> form
 
+(*
+   [close_term scp trm]: close term [trm] in scope [scp].
+   
+   1. Replace each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
+
+   2. Fail if any bound variable in [trm] occurs outside its binding term.
+*)
+val close_term: Gtypes.scope -> Basic.term -> Basic.term
+
+(*
+   [make ?env scp trm]: make a formula from term [trm] in scope [scp].
+   
+   1. Replace each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
+   2. Fail if any bound variable in [trm] occurs outside its binding term.
+   4. Fail if any identifier is not in scope.
+   4. Typecheck resulting term, to set correct types. 
+   5. return resulting formula built from resulting term.  If [?env]
+      is given, set it to the type substitution obtained from typechecking.
+
+   [dest frm]: Formula destructor.
+*)
+val make: ?env:Gtypes.substitution ref -> Gtypes.scope -> Basic.term -> form
+val dest: form -> Basic.term
+
 val string_form : form -> string
 
 (* check that a given formula is in the scope of an identified theory *)

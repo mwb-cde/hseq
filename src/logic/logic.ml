@@ -1274,10 +1274,15 @@ module Rules=
       in 
       let nf = (dest_thm x)
       in 
+(*
       let nt = set_names scp (Formula.dest_form nf)
       in 
       check_term (Sequent.scope_of sq) nt;
       let nasm = (ftag, (Formula.mk_form scp nt))
+*)
+      let nt = Formula.dest_form nf
+      in 
+      let nasm = (ftag, (Formula.make scp nt))
       in 
       try 
 	add_info info [] [ftag] [];
