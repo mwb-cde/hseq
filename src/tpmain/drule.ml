@@ -331,10 +331,7 @@ let dest_qnt_opt qnt d t=
   in 
   (vs, d b)
 
-let rec rebuild_qnt k qs b=
-  match qs with
-    [] -> b
-  | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
+let rec rebuild_qnt k qs b= Term.rebuild_qnt k qs b
 
 (* 
    [find_qnt_opt ?exclude qnt ?f pred forms]

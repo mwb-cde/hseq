@@ -17,29 +17,40 @@ val theories : unit -> Thydb.thydb
 val curr_theory : unit -> Theory.thy
 val get_theory_name : 'a -> string
 
+(** [theory n]: Get the theory named [n] if it is in the theory database.
+   if [n=""], get the current theory.
+*)
+val theory : string -> Theory.thy
+
 (* save/load theories *)
 val save_theory : Theory.thy -> bool -> unit
 val load_theory : string -> unit
 val load_theory_as_cur : string -> unit
 
 (* begin/restart/suspend/finish a theory *)
-(* begin_theory begins a new theory,
-   open_theory loads a theory from disk 
-   (allowing a theory to be defined in series of sessions)
-   it fails if the theory is protected,
-   close_theory saves the theory to disk but does not protect it,
-   end_theory saves the theory to disk and protects it 
-*)
 
+(** 
+   [begin_theory th ths]: begin new theory named [th] with parents [ths].
+
+   [open_theory th]: load theory [th] for use as the current theory.
+   This allows a theory to be defined in a series of sessions.
+   [open_theory] fails if theory [th] is protected.
+
+   [close_theory ()]: save the current theory to disk, but don't protect
+   it. Calling [close_theory] allows the theory to be opened with
+   [open_theory] but not to be a parent to a theory.
+
+   [end_theory ~save ()]: end the current theory (protect it from being
+   extended) and save it to disk (if [save=true]) and protect
+   it. Calling [end_theory] allows the theory to be used as a parent
+   to subsequent theories. [save] is [true] by default.
+*)
 val begin_theory : string -> string list -> unit
 val open_theory : string -> unit
 val close_theory : unit -> unit
-val end_theory : unit -> unit
+val end_theory : ?save:bool -> unit -> unit
 
 (* new_theory renamed to begin_theory *)
-(*
-val new_theory : string->unit 
-*)
 
 (* Parsing/Printing manipulation *)
 
@@ -57,53 +68,22 @@ val get_term_pp : Basic.ident -> (int * fixity * string option)
 val get_type_pp : Basic.ident -> (int * fixity * string option)
 
 (* declare and define types and definitions *)
-(* 
-   new_type "t" declares type t, 
-   new_type "ty1=ty2" defines ty1 as a synonym for ty2.
-
-   new_type_term <<:! t>> declares type t, 
-   new_type_term <<:! ty1=ty2 >> declares type ty1 as a synonym for ty2 
-
-   N.B. when dealing with a string [str] use
-   [new_type_term (Tpenv.read_type_defn str)]
+(**
+   [new_type <<:! t>>] declares type t, 
+   [new_type <<:! ty1=ty2 >>] declares type ty1 as a synonym for ty2 
 *)
-(*
-val new_type :
-    ?pp:(int*fixity*string option) 
-  ->  string -> unit
-*)
-
 val new_type :
     ?pp:(int*fixity*string option) 
     -> (string * string list * Basic.gtype option) -> unit
 
 (* new_defn/define define an identifier *)
 
-(* [define_full str pp]
+(* [define term pp]
    full definition of an identifier:
    parameters in order are definition, is infix, precedence 
    and PP representation 
 
-   [define str]
-   definition of an identifier.
-   
-   Both return name, type and definition.
-
-   [*_term] versions take a term rather than a string and
-   will eventually become the default.
-   [*_string] versions take a string rather than a term and
-   will eventually be removed.
-*)
-(*
-val define_full : Basic.term -> (int*fixity*string option) 
-  -> Defn.defn
-val define : Basic.term -> Defn.defn
-*)
-
-(*
-val define_full : ((string * (string * Basic.gtype) list) * Basic.term)
-  -> (int*fixity*string option) 
-    -> Defn.defn
+   return name, type and definition.
 *)
 val define : 
     ?pp:(int*fixity*string option) 
@@ -111,35 +91,15 @@ val define :
   -> Defn.defn
 
 (* 
-   [declare_full str pp]
-   full declaration of identifier  
-   including PP information 
+   [declare trm pp]
+   full declaration of identifier [trm], including PP information 
 
-   return name and type.
+   [trm] is either a free variable ([Free(n, ty)]), a typed free variable 
+   [Typed(Free(n, _), ty)], an identifier ([Id(n, ty)]) or a typed identifier 
+   ([Typed(Id(n, _), ty)]). 
 
-   [*_term] versions take a term rather than a string and
-   will eventually become the default.
-   [*_string] versions take a string rather than a term and
-   will eventually be removed.
+   returns name [n] and type [ty].
  *)
-(*
-val declare_full_string : string -> (int* fixity* string option) 
-  -> (Basic.ident * Basic.gtype)
-*)
-(*
-val declare_full : 
-    Basic.term -> (int* fixity* string option) 
-      -> (Basic.ident * Basic.gtype)
-*)
-
-(* 
-   [declare str]
-   declare an identifier 
-   return name and type.
-*)
-(*
-val declare_string : string -> (Basic.ident * Basic.gtype)
-*)
 val declare : 
     ?pp:(int* fixity* string option) 
   -> Basic.term -> (Basic.ident * Basic.gtype)
@@ -148,20 +108,22 @@ val declare :
    [new_axiom id thm]
    declare thm a new axiom with name id.
 *)
-
 val new_axiom : string -> Basic.term -> Logic.thm
-(* [axiom/theorem/defn id] 
-   get the axiom/theorem/definition named id
-   id can be a long identifier (of the form th.name) *)
 
+(**
+   [axiom/theorem/defn id] 
+   get the axiom/theorem/definition named id
+   id can be a long identifier (of the form th.name) 
+*)
 val axiom : string -> Logic.thm
 val theorem : string -> Logic.thm
 val defn : string -> Logic.thm
 
-(* [lemma id] 
+(**
+   [lemma id] 
    get the axiom or theorem or definition named id
-   id can be a long identifier (of the form th.name) *)
-
+   id can be a long identifier (of the form th.name) 
+*)
 val lemma : string -> Logic.thm
 
 (* declare parents of the current theory *)

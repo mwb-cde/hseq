@@ -8,7 +8,8 @@ let empty_thy_name = "(empty)"
 (* An anonymous theory *)
 let anon_thy ()= Theory.mk_thy empty_thy_name
 
-(* base_thy:
+(**
+   base_thy:
    The theory on which all user theories are based
 *)
 let base_name = ref (Some("Main"))
@@ -250,7 +251,13 @@ let catch_parse_error e a =
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
 
-let mk_term_raw tyenv pt = Term.set_names (scope()) pt
+let mk_term_raw tyenv trm = 
+  let trm1=Term.set_names (scope()) trm
+  in 
+  let tyenv = Typing.settype (scope()) trm1
+  in 
+  Term.retype tyenv trm1
+
 let mk_term_unchecked tyenv pt =  pt
 
 
