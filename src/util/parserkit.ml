@@ -118,21 +118,30 @@ module type GRAMMARS =
 
       val empty : ('a list)phrase
       val next_token : token phrase 
+      val error: (?msg:string) -> (token -> string) -> 'a phrase
 
       val get: (token -> bool) -> (token -> 'a) -> 'a phrase
       val (!$) : token -> token phrase
-      val (||) : 'a phrase -> 'a phrase -> 'a phrase
       val (!!) : 'a phrase -> 'a phrase
       val (--) : ('a)phrase -> ('b)phrase -> ('a*'b) phrase
+      val ($--) : ('a) phrase -> ('c)phrase -> ('c) phrase
       val (>>): ('a)phrase -> ('a -> 'b) -> ('b)phrase
-      val orl : ('b) phrase list -> ('b) phrase 
 
       val optional: ('a)phrase -> ('a option) phrase
-      val ($--) : ('a) phrase -> ('c)phrase -> ('c) phrase
       val repeat : ('b) phrase -> ('b list) phrase
+      val multiple: ('b) phrase -> ('b list) phrase
+      val list0 : ('a) phrase -> 'b phrase -> ('a list) phrase
+      val list1 : ('a) phrase -> 'b phrase -> ('a list) phrase
+
+      val (||) : 'a phrase -> 'a phrase -> 'a phrase
+      val alt : ('b) phrase list -> ('b) phrase 
       val named_alt : 
 	  ('a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
+      val seq : ('b phrase) list -> ('b list)phrase
+      val named_seq : 
+	  ('a -> ('b)phrase) Lib.named_list 
+	   -> ('a -> ('b list)phrase)
 
       type token_info = 
 	  { 
@@ -170,7 +179,6 @@ module Grammars:GRAMMARS=
 
     let empty inp = ([], inp)
 
-
     let get test fn inp =
       let t = 
 	try
@@ -188,6 +196,19 @@ module Grammars:GRAMMARS=
 
     let next_token inp  =
       get (fun t -> true) (fun t -> t) inp
+
+    let error ?msg tok_to_str inp =  
+      let str=
+	match msg with None -> ""
+	| Some(m) -> (": "^m)
+      in 
+      try 
+	let tok, _ = next_token inp
+	in 
+	raise 
+	  (ParsingError
+	     ("Error at "^(tok_to_str tok)^str))
+      with _ -> raise (ParsingError str)
 
     let (||) ph1 ph2 = 
       (fun toks -> 
@@ -210,19 +231,32 @@ module Grammars:GRAMMARS=
       	let (x, toks2) = ph toks
       	in (f x, toks2))
 
-    let rec orl phl toks= 
+    let rec alt phl toks= 
       match phl with
 	[] -> raise (ParsingError "No alternative parsers")
       |	(ph::phs) -> 
 	  (try ph toks 
-	  with ParsingError _ -> (orl phs toks))
+	  with ParsingError _ -> (alt phs toks))
+
+
 
     let ($--) a ph toks = 
       ((a -- (!!ph)) >> fun (_, x) -> x) toks
     
+
     let rec repeat ph toks =
       (((ph -- (repeat ph)) >> (fun (x, y) -> x::y))
      || empty) toks
+
+    let rec multiple ph toks=
+      ((ph -- (repeat ph)) >> (fun (x, y) -> x::y)) toks
+
+    let list0 ph sep = 
+      (((ph -- (repeat (sep $-- ph))) >> (fun (x, y) -> x::y))
+     || empty) 
+
+    let list1 ph sep =
+      ((ph -- (repeat (sep $-- ph))) >> (fun (x, y) -> x::y))
 
     let optional ph toks =
       try 
@@ -237,6 +271,32 @@ module Grammars:GRAMMARS=
 	  (try (ph inf) toks 
 	  with ParsingError _ -> (named_alt phs inf toks))
 
+    let seq phl inp= 
+      let rec seq_aux l r toks=
+	match l with
+	  [] -> (List.rev r, toks)
+	| (ph::phs) -> 
+	    let (x, toks1)=ph toks
+	    in 
+	    seq_aux phs (x::r) toks1
+      in 
+      match phl with
+	[] -> raise (ParsingError "No parsers in sequence")
+      | _ -> seq_aux phl [] inp
+
+    let named_seq phl info inp= 
+      let rec seq_aux l r toks=
+	match l with
+	  [] -> (List.rev r, toks)
+	| ((_, ph)::phs) -> 
+	    let (x, toks1)= ph info toks
+	    in 
+	    seq_aux phs (x::r) toks1
+      in 
+      match phl with
+	[] -> raise (ParsingError "No parsers in sequence")
+      | _ -> seq_aux phl [] inp
+      
 
 (* operators (ph, info, binop, unaryop) inp: 
    precedence parsing of binary and unary operators.
