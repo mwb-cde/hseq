@@ -88,8 +88,9 @@
       in 
       let tenv=Typing.settype nscp ndn
       in 
-      ignore(Typing.typecheck_env nscp tenv ndn Gtypes.mk_bool);
-      (name, Gtypes.mgu_rename (ref 0) tenv (Gtypes.empty_subst()) nty, 
+      let tenv1=Typing.typecheck_env nscp tenv ndn Gtypes.mk_bool
+      in 
+      (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
        Logic.mk_axiom (Formula.mk_form nscp (Typing.retype tenv ndn)))
 
 

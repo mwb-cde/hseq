@@ -50,7 +50,6 @@ val dest_form: form -> Term.term
 
 (* (basiclly term) substitution *)
     val empty_subst: unit -> substitution
-    val subst_size: int -> substitution
     val subst : Gtypes.scope -> substitution -> form -> form
 
 (* rename bound variables *)
