@@ -125,6 +125,7 @@ val mk_symtable : int -> 'a list * ('b, 'c) Hashtbl.t
 
 val stream_empty : 'a Stream.t -> bool
 val stream_peek : 'a Stream.t -> 'a
+val stream_test : ('a -> bool) -> 'a Stream.t -> bool
 
 val string_implode : char list -> string
 val junkn : int -> 'a Stream.t -> unit
@@ -139,34 +140,32 @@ val is_special_alpha : char -> bool
 val is_digit : char -> bool
 val is_alpha : char -> bool
 val is_num : char Stream.t -> bool
-val is_idstr : char Stream.t -> bool
+val is_identifier_char : char  -> bool
+val is_dot : char  -> bool
 
 val get_num : char Stream.t -> tok
 val other : char Stream.t -> tok
 
-val mk_id : string -> string * string
-
-val match_keywords :
-  (char * (int * 'a) list) list * (string, tok) Hashtbl.t ->
-  char Stream.t -> bool * tok
+val get_sep_list: 
+    (char->bool) -> (char->bool) -> (char->bool)
+	->  char Stream.t -> string list
 
 val get_alpha : char Stream.t -> string
-val match_alpha : 'a * (string, tok) Hashtbl.t -> char Stream.t -> bool * tok
+val get_while: (char -> bool) -> char Stream.t -> string
+val match_alpha : symtable -> char Stream.t -> bool * tok
+
+val match_identifier : symtable -> char Stream.t -> bool * tok
+
+val match_keywords : symtable -> char Stream.t -> bool * tok
 
 val skip_space : char Stream.t -> unit
 
 val is_empty : 'a Stream.t -> bool * tok
 
-val lex :
-  (char * (int * 'a) list) list * (string, tok) Hashtbl.t ->
-  char Stream.t -> tok
+val lex : symtable -> char Stream.t -> tok
 
-val lexfn :
-  (char * (int * 'a) list) list * (string, tok) Hashtbl.t ->
-  char Stream.t -> tok
+val lexfn : symtable -> char Stream.t -> tok
 
-val scan :
-  (char * (int * 'a) list) list * (string, tok) Hashtbl.t ->
-  char Stream.t -> tok Parserkit.Input.t
+val scan : symtable ->char Stream.t -> tok Parserkit.Input.t
 
 val reader : (char Stream.t -> 'a) -> ('a -> 'b) -> string -> 'b

@@ -264,6 +264,11 @@ let stream_peek s =
     None -> raise Not_found
   | Some(c) -> c
 
+let stream_test tst s = 
+  match (Stream.peek s) with
+    None -> false
+  | Some(c) -> tst c
+
 let string_implode cs =
   String.concat "" (List.map (fun x -> String.make 1 x) cs)
 
@@ -276,12 +281,14 @@ let rec junkn n str=
 
   let white_space =  [' '; '\n'; '\t'; '\r']
   let special  =  ['_'; '\''; '.'] 
-  let special_alpha  =  ['_'; '?'; '.'; '\''] 
+  let special_alpha  =  ['_'; '?'; '\''] 
 
   let is_negate_char c = (c= '-')
   let is_space c = List.mem c white_space
   let is_special c = List.mem c special
   let is_special_alpha c=  List.mem c special_alpha
+
+  let is_dot c = (c='.')
 
   let is_digit c =
     ((c>= '0') & (c <='9'))
@@ -291,10 +298,10 @@ let rec junkn n str=
     or ((c>= 'A') & (c<='Z'))
 
   let is_num str =
-    if is_digit (stream_peek str)
+    if (stream_test is_digit  str)
     then true
     else 
-      if (is_negate_char (stream_peek str))
+      if (stream_test is_negate_char str)
       then 
 	(let cs=(Stream.npeek 2 str)
 	in 
@@ -302,14 +309,6 @@ let rec junkn n str=
 	  [n; c] -> ((is_negate_char n) & (is_digit c))
 	|	 _ -> false)
       else false
-
-  let is_idstr str =
-    let c=stream_peek str
-    in 
-    (is_alpha c) 
-      or (is_digit c) 
-      or (is_special c)
-
 
   let get_num str =
     let tok=ref []
@@ -325,80 +324,289 @@ let rec junkn n str=
 	      tok:=c::(!tok); get_aux())
 	else ()
     in 
-    (if(is_negate_char (stream_peek str))
+    (if(stream_test is_negate_char str)
     then (ignore(Stream.next str); tok:=['-']; get_aux())
     else get_aux());
     NUM (string_implode (List.rev (!tok)))
       
 
-  let other str = 
-    if is_num str  
-    then get_num str 
-    else raise Error
+let other str = 
+  if is_num str  
+  then get_num str 
+  else raise Error
 
-  let mk_id str = Lib.chop_at '.' str
 
-  let match_keywords symtable strm =
-    if stream_empty strm 
-    then (true, eof_tok)
-    else 
-      try 
-	let first_char = List.hd(Stream.npeek 1 strm)
-	in 
-	let strng=
-	  string_implode (Stream.npeek (largest_sym first_char symtable) strm)
-	in 
-	let (sz, tok)=lookup_sym symtable strng
-	in 
-	junkn sz strm;
-	(true, tok)
-      with Not_found -> (false, null_tok)
+let match_keywords symtable strm =
+  if stream_empty strm 
+  then (true, eof_tok)
+  else 
+    try 
+      let first_char = List.hd(Stream.npeek 1 strm)
+      in 
+      let strng=
+	string_implode (Stream.npeek (largest_sym first_char symtable) strm)
+      in 
+      let (sz, tok)=lookup_sym symtable strng
+      in 
+      junkn sz strm;
+      (true, tok)
+    with Not_found -> (false, null_tok)
 
-      
-  let get_alpha str =
-    let tok=ref []
+
+
+(* get_while test strm: 
+   read the initial string made up of the characters satisfying test.
+*)
+
+let get_while test strm=
+  let buff=ref []
+  in 
+  let rec get_aux () = 
+    if(stream_empty strm)
+    then ()
+    else
+      let c=stream_peek strm
+      in 
+      if (test c) 
+      then
+	(ignore(Stream.next strm); buff:=c::(!buff); get_aux())
+      else ()
+  in 
+  get_aux(); 
+  string_implode (List.rev (!buff))
+
+
+let get_alpha str = 
+  let test c= (is_alpha c) or (is_special_alpha c) or (is_digit c)
+  in 
+  get_while test str
+    
+
+let mk_id str = Lib.chop_at '.' str      
+
+let match_alpha symtable inp =
+  if (is_alpha (stream_peek inp))
+  then 
+    let stra = get_alpha inp
     in 
-    let rec get_aux () =
-      if(stream_empty str)
-      then ()
-      else 
-	let c=stream_peek str
-	in 
-	if(is_alpha c) or (is_special_alpha c) or (is_digit c)
-	then (ignore(Stream.next str); 
-	      tok:=c::(!tok); get_aux())
-	else ()
+    let th, n=mk_id stra
     in 
-    get_aux(); 
-    string_implode (List.rev (!tok))
+    let tok = 
+      try
+	if th=""    (* no theory identifier *)
+	then        (* so check whether n is a symbol *)
+	  let sym_tok=find_sym symtable n
+	  in 
+	  sym_tok
+	else 
+	  mk_ident (Basic.mklong th n)
+      with Not_found ->  mk_ident (Basic.mklong th n)
+    in (true, tok)
+  else (false, null_tok)
 
-  let match_alpha symtable inp =
-    if (is_alpha (stream_peek inp))
+(* match_identifier:
+   match a string 
+   beginning with an alphabetic character
+   and continuing with alpha-numeric or special character.
+   string may have more than one identifier, seperated 
+   by character satisfying is_dot
+*)
+
+(*
+   get_sep_list init body sep strm
+   read a list of strings from strm
+   each string must begin with character satisfying init
+   and contain characters satisfying body.
+   list must be seperated by a single character satisfying sep
+
+   the list is returned with the strings in the order that
+   they appear in the stream 
+   ( "abcd.efgh" -> ["abcd"; "efgh"] )
+*)
+
+let get_sep_list init_test body_test sep_test strm=
+  let strlist=ref []
+  in 
+(* is_sep: look for a seperator followed by 
+   an initial character. 
+*)
+  let is_sep stm =
+    match (Stream.npeek 2 stm) with
+      [x; y] -> 
+	if(sep_test x) & (init_test y)
+	then 
+	  true
+	else false
+    | _ -> false
+  in 
+  let rec get_aux () =
+    (* get the identifier from the stream *)
+    strlist:=(get_while body_test strm)::!(strlist);
+    (* test for a seperator *)
+    if(is_sep strm)
     then 
-      let stra = get_alpha inp
+      (* got a seperator followed by an identifier *)
+	(ignore (Stream.next strm); (* drop the seperator *)
+	 get_aux())                 (* and go round again *)
+    else()                    (* no seperator, so bail out *)
+  in 
+  if(stream_test init_test strm)   (* got an identifier *)
+  then 
+    (get_aux();  (* read the identifiers from the stream *)
+     List.rev (!strlist))
+  else []
+
+(* is_identifier_char c: true if character c can appear in an identifier *)
+
+let is_identifier_char c = (is_alpha c) or (is_special_alpha c) or (is_digit c)
+
+let match_identifier symtable inp =
+  if (stream_test is_alpha inp)
+  then 
+    match (get_sep_list is_alpha is_identifier_char is_dot inp) with
+      [] -> (false, null_tok)
+    | [n] -> (true, mk_ident (Basic.mkname n))
+    | [th;n] -> (true, mk_ident (Basic.mklong th n))
+    | _ -> raise (Lexing(0, 0)) 
+  else (false, null_tok)
+
+
+let rec skip_space str =
+  if stream_empty str then ()
+  else 
+    (if (stream_test is_space str) 
+    then (ignore(Stream.next str); skip_space str)
+    else ())
+
+(* 
+   match_keywords tbl strm
+   read characters from stream strm,
+   try to match them with a keyword in symbol table tbl
+*)
+
+let match_keywords symtable strm =
+  if stream_empty strm 
+  then (true, eof_tok)
+  else 
+    try 
+      let first_char = List.hd(Stream.npeek 1 strm)
       in 
-      let th, n=mk_id stra
+      let strng=
+	string_implode (Stream.npeek (largest_sym first_char symtable) strm)
       in 
-      let tok = 
-	try
-	  if th=""    (* no theory identifier *)
-	  then        (* so check whether n is a symbol *)
-	    let sym_tok=find_sym symtable n
-	    in 
-	    sym_tok
-	  else 
-	    mk_ident (Basic.mklong th n)
-	with Not_found ->  mk_ident (Basic.mklong th n)
+      let (sz, tok)=lookup_sym symtable strng
+      in 
+      junkn sz strm;
+      (true, tok)
+    with Not_found -> (false, null_tok)
+
+
+(* 
+   match_symbolic symtbl strm
+   try to match an identifier formed from symbolic characters.
+   identifier can have a theory identifier, but this must be
+   alpha_numeric.
+
+   symbolic identifiers are those made up of characters
+   in symbolic_chars.
+
+   the symbol table symtbl is checked for a matching keyword, 
+   which will take precedence.
+*)
+
+(*
+let symbolic_chars = ['#'; '?'; '+'; '*'; '/';  
+		      '='; '>'; '<'; '&'; '%'; '@'; 
+		      '!'; ','; ':'; '_'; '|'; '~'; '-'];;
+
+let is_symbolic c = List.mem c symbolic_chars
+
+let get_while test strm=
+  let buff=ref []
+  in 
+  let rec get_aux () = 
+    if(stream_empty strm)
+    then ()
+    else
+      let c=stream_peek strm
+      in 
+      if (test c) 
+      then
+	(ignore(Stream.next strm); buff:=c::(!buff); get_aux())
+      else ()
+  in 
+  get_aux(); 
+  string_implode (List.rev (!buff))
+
+let alt_get_alpha strm =
+  let th= ref None
+  and nm = ref None
+  in 
+  let alpha_test c= (is_alpha c) or (is_special_alpha c) or (is_digit c)
+  in 
+  let just_alpha()= get_while alpha_test strm 
+  in 
+  let alpha_symbolic ()=
+      (ignore(Stream.next strm);   (* remove it from the input stream *)
+       if(is_alpha (stream_peek strm))  (* next is alpha-numeric *)
+       then 
+	 get_while alpha_test strm
+       else
+	if (is_symbolic (stream_peek strm))  (* next is symbolic *) 
+	then
+	  get_while is_symbolic strm
+	else 
+	  raise (Lexing (0, 0)))
+  in 
+  let rslt =
+    (if(is_alpha (stream_peek strm))
+    then  (* either th.nm or nm *)
+      (th:=Some(just_alpha()); 
+       if is_dot (stream_peek strm) (* got a dot *)	
+       then 
+	 nm:=Some(alpha_symbolic())
+       else
+	 (nm:=!th; th:=None))
+    else 
+      (* symbolic identifer *)
+      nm:=Some(alpha_symbolic()))
+  in 
+  (!th, !nm)
+
+let get_symbolic strm= 
+  match (alt_get_alpha strm) with
+    (th, None) -> raise (Lexing (0, 0))
+  | (th, Some(nm)) -> (th, nm)
+
+let match_alpha_symbolic symtable strm inp=
+  let match_aux() =
+    if(is_symbolic (stream_peek inp))
+    then 
+      let tok =
+	(let th, n = get_symbolic inp 
+	in 
+	match th with
+	  None -> 
+	    (try 
+	      let sym_tok=find_sym symtable n
+	      in 
+	      sym_tok
+	    with Not_found ->  mk_ident (Basic.mkname n))
+	| Some(t) -> mk_ident (Basic.mklong t n))
       in (true, tok)
     else (false, null_tok)
+  in   
+      try
+	match_aux()
+      with Lexing _-> (false, null_tok)
+*)
 
+(* toplevel lexing functions *)
 
-  let rec skip_space str =
-    if stream_empty str then ()
-    else 
-      (if is_space (stream_peek str) 
-      then (ignore(Stream.next str); skip_space str)
-      else ())
+(*
+ lex symtab strm:
+   read token from stream strm, with symbol table symtab
+*)
 
   let is_empty str =
     if(stream_empty str)
@@ -411,23 +619,26 @@ let rec junkn n str=
     in 
     if empty then empty_tk
     else 
-      let is_alpha_tok, alpha_tok = match_alpha symtable str
+(* try for a symbol/keyword *)
+      let key, tok= match_keywords symtable str 
       in 
-      if is_alpha_tok then alpha_tok
+      if key then tok
       else 
-	let key, tok= match_keywords symtable str 
+(* not a symbol, try alpha-numeric (identifier) *)
+(*
+	let is_alpha_tok, alpha_tok = match_alpha symtable str
 	in 
-	if key then tok
+	if is_alpha_tok then alpha_tok
 	else 
+*)
+	let is_alpha_tok, alpha_tok = match_identifier symtable str
+	in 
+	if is_alpha_tok then alpha_tok
+	else 
+(* not a symbol/keyword, so try other lexers (numbers, bools, etc) *)
 	  other str 
  
 
-(* toplevel lexing functions *)
-
-(*
- lex symtab strm:
-   read token from stream strm, with symbol table symtab
-*)
    let lexfn symtab strm = 
      let first=Stream.count strm
      in 
