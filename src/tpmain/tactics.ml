@@ -122,15 +122,22 @@ let implE = rule_tac  implE0
 
 let allI = rule_tac  allI0
 
+(*
 let allE str = 
   let t=Tpenv.read_unchecked str
   in rule_tac (Drule.allE t)
+*)
+let allE trm =  rule_tac (Drule.allE trm)
 
 let existI = rule_tac existI0  
 
+(*
 let existE str= 
   let t= Tpenv.read_unchecked str
   in rule_tac (Drule.existE t)
+*)
+let existE trm= rule_tac (Drule.existE trm)
+
 
 let beta i =  (Logic.Rules.beta i)
 

@@ -48,9 +48,11 @@ val implI : tactic
 val implE : tactic
 val mp_tac : tactic
 val existI : tactic
-val existE : string -> tactic
+(* val existE : string -> tactic *)
+val existE : Term.term -> tactic 
 val allI : tactic
-val allE : string -> tactic
+(* val allE : string -> tactic *)
+val allE : Term.term -> tactic
 
 (* beta conversion 
    to given asumption/conclusion
