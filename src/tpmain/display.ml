@@ -28,7 +28,7 @@ let print_term x =
 
 let print_formula x = 
   open_box 0;
-  Term.print (Global.pp_info()) (Formula.dest x);
+  Term.print (Global.pp_info()) (Formula.term_of x);
   close_box()
 
 let rec print_type x = 
@@ -53,7 +53,7 @@ let print_prf p =
   Format.printf "@[<v>Goal ";
   Format.printf "@[";
   print_term 
-    (Formula.term_of_form (Logic.get_goal g));
+    (Formula.term_of (Logic.get_goal g));
   Format.printf "@]@,";
   (match subgls with
     0 -> Format.printf "@[No subgoals@]@,"

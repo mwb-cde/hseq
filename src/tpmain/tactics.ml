@@ -192,14 +192,14 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   in 
   let asm = 
     try 
-      Formula.dest 
+      Formula.term_of 
 	(Logic.drop_tag (Logic.Sequent.get_asm 
 			   (Logic.label_to_index a sqnt) sqnt))
     with Not_found ->
       raise(Result.error "unify_tac: assumption not found")
   and concl = 
     try 
-      Formula.dest
+      Formula.term_of
 	(Logic.drop_tag (Logic.Sequent.get_cncl 
 			   (Logic.label_to_index c sqnt) sqnt))
     with Not_found ->
@@ -418,7 +418,7 @@ let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
       [] -> List.rev rst
     | (l, af)::xs -> 
 	(if (Drule.qnt_opt_of Basic.All 
-	       (Logicterm.is_equality) (Formula.dest af))
+	       (Logicterm.is_equality) (Formula.term_of af))
 	then find_equality_asms xs (l::rst)
 	else find_equality_asms xs rst)
   in 

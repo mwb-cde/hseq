@@ -173,7 +173,7 @@ let unfold ?f str g=
 
 let is_iff f = 
   try 
-    (fst (Term.dest_fun (Formula.term_of_form f)) = Logicterm.iffid)
+    (fst (Term.dest_fun (Formula.term_of f)) = Logicterm.iffid)
   with _ -> false
 
 let iffC_rule i goal = 
@@ -415,7 +415,7 @@ let bool_tac g=
 
 let hyp_conc_thm f = 
   let (qnts, t)=
-    Term.strip_qnt Basic.All (Formula.dest f)
+    Term.strip_qnt Basic.All (Formula.term_of f)
   in
   if (Logicterm.is_implies t)
   then
@@ -425,9 +425,9 @@ let hyp_conc_thm f =
   else (qnts, Term.mk_bool true, t)
 
 let match_mp_rule0 thm i sq=
-  let (qnts, a, b) = hyp_conc_thm (Logic.dest_thm thm)
+  let (qnts, a, b) = hyp_conc_thm (Logic.formula_of thm)
   and c = 
-    Formula.dest (Drule.get_cncl i sq)
+    Formula.term_of (Drule.get_cncl i sq)
   and scp = Drule.scope_of sq
   and tyenv = Drule.typenv_of sq
   in 
@@ -461,7 +461,7 @@ let match_mp_tac thm ?c g =
 let match_mp_sqnt_rule0 j i sq=
   let (qnts, a, b) = 
     hyp_conc_thm (Drule.get_asm j sq)
-  and c = Formula.dest (Drule.get_cncl i sq)
+  and c = Formula.term_of (Drule.get_cncl i sq)
   and scp = Drule.scope_of sq
   in 
   let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
@@ -570,7 +570,7 @@ let cut_mp_tac ?info thm ?a g=
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
 	(Logic.logicError "cut_mp_tac: Failed to cut theorem" 
-	   [Logic.dest_thm thm])
+	   [Logic.formula_of thm])
     in 
     mp_tac ~a:(ftag a_tag) ?a1:f_label g2)
   in 
@@ -668,7 +668,7 @@ let cut_back_tac ?info thm ?c g=
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
 	(Logic.logicError "cut_back_tac: Failed to cut theorem" 
-	   [Logic.dest_thm thm])
+	   [Logic.formula_of thm])
     in 
     back_tac ?info:info ~a:(ftag a_tag) ?c:c_label) g2
   in 
@@ -821,7 +821,7 @@ module Props =
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
       in 
-      Logic.Rules.rewrite_conv (Global.scope()) 
+      Logic.Rules.rewrite_rule (Global.scope()) 
 	[get_iff_equals_ax()] rule_true_l3
 
     let rule_true_ax = ref None
@@ -879,7 +879,7 @@ module Rules=
     let once_rewrite_rule scp rules thm =
       let ctrl = {Formula.default_rr_control with Rewrite.depth=Some(1)}
       in 
-      Logic.Rules.rewrite_conv ~ctrl:ctrl scp rules thm
+      Logic.Rules.rewrite_rule ~ctrl:ctrl scp rules thm
 
 
 (*
@@ -888,7 +888,7 @@ module Rules=
    [conjunctL scp << l and r >> = l]
  *)
     let conjunctL scp thm = 
-      let trm = Formula.dest (Logic.dest_thm thm)
+      let trm = Logic.term_of thm
       in 
       if not (Logicterm.is_conj trm)
       then raise (Result.error "conjunct1: not a conjunction")
@@ -922,7 +922,7 @@ module Rules=
    [conjunctL scp << l and r >> = r]
  *)
     let conjunctR scp thm = 
-      let trm = Formula.dest (Logic.dest_thm thm)
+      let trm = Logic.term_of thm
       in 
       if not (Logicterm.is_conj trm)
       then raise (Result.error "conjunct1: not a conjunction")
@@ -956,7 +956,7 @@ module Rules=
  *)
     let conjuncts scp thm =
       let is_conj_thm thm = 
-	Logicterm.is_conj (Formula.dest (Logic.dest_thm thm))
+	Logicterm.is_conj (Logic.term_of thm)
       in 
       let rec conjuncts_aux scp thm result = 
 	if not(is_conj_thm thm)
@@ -977,7 +977,7 @@ module Rules=
    apply conversion [conv] to theorem [thm]
  *)
 let conv_rule scp conv thm =
-  let rule = conv scp (Formula.dest (Logic.dest_thm thm))
+  let rule = conv scp (Logic.term_of thm)
   in 
   Rules.once_rewrite_rule scp [rule] thm
 

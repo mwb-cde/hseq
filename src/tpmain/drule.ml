@@ -357,14 +357,14 @@ let find_qnt_opt ?exclude qnt ?f pred forms =
 	      if Tag.equal t x
 	      then 
 		(if (qnt_opt_of qnt pred
-		       (Formula.dest sf))
-		then (t, (Formula.dest sf))
+		       (Formula.term_of sf))
+		then (t, (Formula.term_of sf))
 		else raise Not_found)
 	      else find_aux rst
 	  | None -> 
 	      if (qnt_opt_of qnt pred
-		    (Formula.dest sf))
-	      then (t, (Formula.dest sf))
+		    (Formula.term_of sf))
+	      then (t, (Formula.term_of sf))
 	      else find_aux rst)
   in 
   let (tag, trm) = find_aux forms
@@ -397,13 +397,13 @@ let unify_sqnt_form typenv scp varp trm ?exclude ?f forms =
 	      then 
 		(try 
 		  (t, Unify.unify ~typenv:typenv scp varp trm
-		     (Formula.dest sf))
+		     (Formula.term_of sf))
 		with _ -> raise Not_found)
 	      else find_aux rst
 	  | None -> 
 	      (try 
 		(t, Unify.unify ~typenv:typenv scp varp trm
-		   (Formula.dest sf))
+		   (Formula.term_of sf))
 	      with _ -> find_aux rst))
   in 
   let (tag, subst) = find_aux forms
@@ -438,7 +438,7 @@ let match_formulas typenv scp varp t fs=
 	  let tg, f = tf
 	  in
 	  ignore(Unify.unify ~typenv:typenv scp 
-		   varp t (Formula.dest f));
+		   varp t (Formula.term_of f));
 	  tg
 	with _ -> match_aux tfs
   in
@@ -554,14 +554,14 @@ let unify_concl_for_consts qnt ?c trm n=
 		 (Rewrite.is_free_binder vars) body x);true
 	  with _ -> false)
 	in 
-	find_concl (fun (_, f) -> unifies (Formula.dest f)) n
+	find_concl (fun (_, f) -> unifies (Formula.term_of f)) n
     | Some(x) -> 
 	let sqnt = sequent n
 	in 
 	Logic.Sequent.get_tagged_cncl 
 	  (Logic.label_to_tag x sqnt) sqnt
   in 
-  unify_formula_for_consts tyenv scp (vars, body) (Formula.dest f)
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
 
 
 (**
@@ -590,11 +590,11 @@ let unify_asm_for_consts qnt ?a trm n=
 		  (Rewrite.is_free_binder vars) body x);true
 	   with _ -> false)
 	  in 
-	  find_asm (fun (_, f) -> unifies (Formula.dest f)) n
+	  find_asm (fun (_, f) -> unifies (Formula.term_of f)) n
     | Some(x) ->
 	let sqnt = sequent n
 	in 
 	Logic.Sequent.get_tagged_asm
 	  (Logic.label_to_tag x sqnt) sqnt
   in 
-  unify_formula_for_consts tyenv scp (vars, body) (Formula.dest f)
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)

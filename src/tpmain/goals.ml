@@ -34,12 +34,12 @@ let curr_sqnt p =
 let get_asm i = 
   let (ft, nt)= Logic.Sequent.get_asm i (curr_sqnt (top()))
   in 
-  (ft, Formula.term_of_form nt)
+  (ft, Formula.term_of nt)
 
 let get_concl i = 
   let (ft, nt)= Logic.Sequent.get_cncl i (curr_sqnt (top()))
   in 
-  (ft, Formula.term_of_form nt)
+  (ft, Formula.term_of nt)
 
 let mk_dummy_fntype n=
   let rec mk_dum m j=

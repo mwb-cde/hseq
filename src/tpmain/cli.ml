@@ -6,12 +6,6 @@
 
 open Lib
 
-let use_string st =  
-  ignore(List.map 
-     (Toploop.execute_phrase true Format.std_formatter) 
-     ((!Toploop.parse_use_file ) (Lexing.from_string st)))
-
-
   let history = ref []
 
   let should_save = ref false 
@@ -19,15 +13,25 @@ let use_string st =
 
   let clear ()= history := []
 
-
   let signal () = should_save:=true
 
 let read_input () = input_line stdin
 
+(*
 let catch_errors f arg =
   try Commands.catch_errors f arg
   with x -> 
     (Format.printf "@[%s@]@." (Printexc.to_string x))
+*)
+let catch_errors f a =
+  try f a 
+  with _ -> ()
+
+(*
+let catch_errors f arg =
+  try Commands.catch_errors f arg
+  with _ -> ()
+*)
 
   let get_input () = 
     Format.printf "@[> @]@?";
@@ -38,10 +42,12 @@ let catch_errors f arg =
       should_save:=false;
       let str= get_input()
       in 
-      use_string str;
-      if !should_save 
-      then history:=str::(!history)
-      else ()
+      (try
+	Unsafe.use_string str;
+	if !should_save 
+	then history:=str::(!history)
+	else ()
+      with _ -> Format.printf "@[Input error@]@.")
     done
 
   let stop ()= 
