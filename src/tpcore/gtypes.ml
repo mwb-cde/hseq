@@ -74,19 +74,8 @@ let extend_scope scp f =
 
 let get_typdef tyenv r =  tyenv.typ_defn r (* (get_typenv()) r *)
 
-(*
-   type type_env = fnident -> typedef_record
-   let empty_typing () = (fun x -> raise Not_found)
-
-   let cur_typenv= ref (empty_typing())
-   let set_typenv typenv = cur_typenv:=typenv
-   let get_typenv () = !cur_typenv
- *)
-
-
 
 (* pretty printing *)
-
 
 let get_var t = 
   match t with 
@@ -242,7 +231,6 @@ let dest_weak t =
   | _ -> raise (Failure "Not a weak variable")
 
 
-
 let mk_null () = (mk_var "")
 let is_null = 
   function (Var(x)) -> (!x)=""
@@ -304,10 +292,6 @@ let rec chase_ret_type t=
 
 (* substitution types *)
 
-(*
-   let rec equality x y = 
-   Dequals.is_equal x y
- *)
 let rec equality x y = 
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
@@ -323,6 +307,8 @@ let rec equality x y =
       with _ -> false)
   | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
   | (_, _) -> x=y)
+
+let equals x y = equality x y
 
 let rec safe_equal x y = 
   (match (x, y) with
@@ -358,10 +344,11 @@ let rec to_save_aux inf env ty =
 	  in 
 	  env:= ((id, nid)::(!env)); nid)
       in Var(nty)
-  |	Constr(f, ats) ->
+  | Constr(f, ats) ->
       Constr(f, List.map (to_save_aux inf env) ats)
-  |	Base(b) -> Base(b)
-  | WeakVar _ -> raise (typeError "Can't save a weak variable" [ty])
+  | Base(b) -> Base(b)
+  | WeakVar _ -> 
+      raise (typeError "Can't save a weak variable" [ty])
 
 let to_save ty = to_save_aux (ref 0) (ref []) ty
 let to_save_env env ty = to_save_aux (ref 0) env ty
@@ -385,7 +372,7 @@ let rec from_save_aux env ty =
 	  in 
 	  (env:=(id, nid)::(!env)); nid)
       in Var(nty)
-  |	Constr(f, ats) ->
+  | Constr(f, ats) ->
       Constr(f, List.map(from_save_aux env) ats)
   | Base(b) -> Base(b)
   | WeakVar _ -> raise (typeError "Can't load a weak variable" [])
@@ -402,10 +389,10 @@ let from_save_rec record =
    | Some(t) -> Some(from_save t));
    characteristics = record.scharacteristics}
 
-
-(* USING HASHTABLES 
-   THIS IS WRONG AND MUST BE REMOVED
- *)
+(* 
+   USING HASHTABLES FOR SUBSTITUTION
+   IS WRONG AND SHOULD BE REMOVED
+*)
 
 module type RHASHKEYS=
   sig 
@@ -422,20 +409,6 @@ module Rhashkeys:RHASHKEYS=
   end
 module type RHASH = (Hashtbl.S with type key = (gtype))
 module Rhash:RHASH= Hashtbl.Make(Rhashkeys)
-
-(*
-type substitution = (gtype)Rhash.t
-
-let lookup t env = Rhash.find env t
-let member t env = try lookup t env ; true with Not_found -> false
-
-let bind_env t r env = (Rhash.remove env t; Rhash.add env t r)
-let subst_sz s= Rhash.create s
-let empty_subst ()= Rhash.create 5
-let bind t r env = (Rhash.remove env t; Rhash.add env t r; r)
-let delete t env = Rhash.remove env t
-let subst_iter =Rhash.iter
-*)
 
 (* Using balanced trees *)
 (* The right way to do it *)
@@ -459,7 +432,6 @@ let bind t r env = TypeTree.replace env t r
 let bind_env = bind
 let delete t env = TypeTree.delete env t
 let subst_iter =TypeTree.iter
-
 
 (* Type unification and matching *)
 
@@ -485,23 +457,6 @@ let lookup_var ty env =
       with Not_found -> t
     else t
   in chase ty
-
-(* raise Occurs *)
-
-(*
-   let rec occurs vt t =
-   match vt with
-   Var(a) -> 
-   (match t with
-   Var(_) ->  
-   if equality vt t 
-   then raise (typeError ("occurs: ") [vt;t])
-   else ()
-   | Constr(f, l) ->
-   List.iter (occurs vt) l
-   | x -> ())
-   | _ -> ()
- *)
 
 let rec occurs ty1 ty2 =
   match (ty1, ty2) with
@@ -533,7 +488,6 @@ let rec occurs_env tenv ty1 ty2 =
       if (equality nty1 nty2)
       then raise (typeError ("occurs: ") [nty1;nty2])
       else ()
-
 
 (* copy_type t: make a copy of type t, which differs from t in the vars *)
 
@@ -582,7 +536,6 @@ let bind_occs t1 t2 env =
   else 
     raise (typeError "bind_occs: Can't bind a non variable" [t1; t2])
 
-
 let rec subst t env =
   match t with 
     Var(a) -> (lookup_var t env)
@@ -591,30 +544,24 @@ let rec subst t env =
       Constr(f, List.map (fun x-> subst x env) l)
   | x -> x
 
+(* rewrite_subst t env: 
+
+Rewrite t, using substitution env.  
+
+Only used to rewrite the rhs of a definition,
+instantiating its variables with the values of the given arguments.
+*)
+
 
 let rec rewrite_subst t env =
   match t with 
     Var(a) -> 
-      (try Lib.find (!a) env
-      with Not_found -> 
-	raise (typeError "rewrite_subst: Can't find parameter" [t]))
-  | Constr(f, l) -> 
-      Constr(f, List.map (fun x-> rewrite_subst x env) l)
+      (try Lib.find (!a) env 
+      with Not_found -> raise
+	  (typeError "rewrite_subst: Can't find parameter" [t])) 
+  | Constr(f, l)
+    -> Constr(f, List.map (fun x-> rewrite_subst x env) l) 
   | x -> x
-
-(*
-   let rewrite_defn dargs largs t=
-   if (List.length dargs)=(List.length largs)
-   then 
-   (let tenv = Lib.empty_env() 
-   in 
-   let env_of_args ()= 
-   ((List.iter2 
-   (fun x y -> 
-   (Hashtbl.add tenv (mk_var x) y )) largs dargs))
-   in (env_of_args(); rewrite_subst t tenv))
-   else raise (Failure "Wrong number of arguments")
- *)
 
 let rewrite_defn given_args rcrd_args t=
   if (List.length rcrd_args)=(List.length given_args)
@@ -635,7 +582,6 @@ let has_record tyenv t =
       with _ -> false)
   | _ -> false
 
-	
 let has_defn tyenv n = 
   (try
     (match (get_typdef tyenv  n).alias with 
@@ -653,66 +599,19 @@ let get_defn tyenv t =
   | _ -> raise Not_found
 
 
-(*
-let remove_bindings ls env =
-  let rec remove_aux ds =
-    match ds with
-      [] -> env
-    | (s::bs) -> 
-	delete s env; 
-	remove_aux bs
-  in 
-  remove_aux ls
-*)
 let rec remove_bindings ls env =
     match ls with
       [] -> env
     | (s::bs) -> 
 	remove_bindings bs (delete s env)
 
-(*
-let unify_env tyenv t1 t2 env =  
-  let bindings = ref([])
-  in 
-  let add_binding a = bindings:=(a::!bindings)
-  in 
-  let rec unify_aux ty1 ty2 =
-    let s = lookup_var ty1 env
-    and t = lookup_var ty2 env
-    in 
-    match (s, t) with
-      (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
-	then 
-	  (try 
-	    (List.iter2
-	       (fun x y -> unify_aux x y) args1 args2)
-	  with 
-	    x -> addtypeError "Can't unify types" [s; t] x)
-	else 
-	  (try 
-	    (try 
-	      let s1=get_defn tyenv s
-	      in unify_aux s1 t
-	    with 
-              Not_found -> 
-		let t1= get_defn tyenv t
-		in unify_aux s t1)
-	  with
-            x ->(addtypeError "x: Can't unify types" [s; t] x)))
-    | (Var(_), Var(_)) ->
-	if equality s t 
-	then ()
-	else bind_occs s t env; add_binding s
-    | (Var(_), _) -> bind_occs s t env; add_binding s
-    | (_, Var(_)) -> bind_occs t s env; add_binding t
-    | _ -> 
-	if equality s t then () 
-	else (raise (typeError "Can't unify types" [s; t]))
-  in
-  try ((unify_aux t1 t2); env) (* try to unify t1 and t2 *)
-  with x ->                    (* if can't unify, remove bindings *)
-    (ignore(remove_bindings (!bindings) env); raise x)
+
+(* unify_env scp t1 t2 nenv:
+
+   Unify types t1 and t2, adding new bindings to substitution nenv.
+   
+   Scope scp is used lookup definitions of constructors occuring 
+   in t1 or t2 (if necessary).
 *)
 
 let unify_env scp t1 t2 nenv =  
@@ -763,6 +662,12 @@ let unify_env scp t1 t2 nenv =
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
 
+(* unify scp t1 t2:
+
+   Unify types t1 and t2, returning the substitution needed.
+   Raise typeError unification fails
+*)
+   
 let unify scp t1 t2 =
   unify_env scp t1 t2 (empty_subst())
 
@@ -775,58 +680,6 @@ let unify scp t1 t2 =
    is equivalent to
    [unify_env scope (copy_type t1) t2 env]
  *)
-
-(*
-let unify_env_unique_left scp t1 t2 env =  
-  let varenv= empty_subst()
-  and bindings = ref([])
-  in 
-  let add_binding a = bindings:=(a::!bindings)
-  in 
-  let rec unify_aux ty1 ty2 =
-    let s = 
-      let s1=                (* make fresh variable if needed *)
-      	match ty1 with
-	  (Var(x)) -> 
-	    (try  (lookup_var ty1 env)
-	    with Not_found -> bind ty1 (mk_var (!x)) env)
-	| _ -> ty1
-      in lookup_var s1 env
-    and t = lookup_var ty2 env
-    in 
-    match (s, t) with
-      (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
-	then 
-	  (try 
-	    (List.iter2
-	       (fun x y -> unify_aux x y) args1 args2)
-	  with 
-	    _ -> raise (Failure ("Can't unify " ^(string_gtype s)
-				 ^" with " ^(string_gtype t))))
-	else 
-	  (try (unify_aux (get_defn scp s) t)
-	  with _ ->
-	    (try
-	      (unify_aux s (get_defn scp t))
-	    with _ ->
-	      raise (Failure ("Can't unify " ^(string_gtype s)
-			      ^" with " ^(string_gtype t))))))
-    | (Var(_), Var(_)) ->
-	if equality s t 
-	then ()
-	else bind_occs s t env; add_binding s
-    | (Var(v1), x) -> bind_occs s x env; add_binding s
-    | (x, Var(v2)) -> bind_occs t x env; add_binding t
-    | _ -> 
-	if equality s t then () 
-	else raise (Failure ("Can't unify " ^(string_gtype s)
-			     ^" with " ^(string_gtype t)))
-  in
-  try ((unify_aux t1 t2); env) (* try to unify t1 and t2 *)
-  with x ->                    (* if can't unify, remove bindings *)
-    (ignore(remove_bindings (!bindings) env); raise x)
-*)
 
 let unify_env_unique_left scp t1 t2 nenv =  
   let varenv= empty_subst()
@@ -895,63 +748,7 @@ let unify_env_unique_left scp t1 t2 nenv =
    unify_for_rewrite: same as unify_env_unique_left
    except it returns a list of the bindings made
    if any error, removes bindings and raises exception 
- *)
-(*
-
-let unify_for_rewrite scp t1 t2 env bindings=  
-  let varenv= empty_subst()
-  in 
-  let copy_ty ty1 env =
-    match ty1 with
-      (Var(x)) -> 
-	(try  (lookup_var ty1 env, env)
-	with Not_found -> 
-	  let nt=mk_var (!x)
-	  in (nt, bind ty1 nt env))
-    | _ -> (ty1, env)
-  in 
-  let rec unify_aux ty1 ty2 env =
-    let s, senv = 
-      let s1, s1env=                (* make fresh variable if needed *)
-	copy_ty ty1 env
-      in (lookup_var s1 s1env, s1env)
-    in 
-    let t = lookup_var ty2 senv
-    in 
-    match (s, t) with
-      (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
-	then 
-	  (try 
-	    (List.fold_left2
-	       (fun ev x y -> unify_aux x y ev) senv args1 args2)
-	  with 
-	    _ -> raise (Failure ("Can't unify " ^(string_gtype s)
-				 ^" with " ^(string_gtype t))))
-	else 
-	  (try (unify_aux (get_defn scp s) t senv)
-	  with _ ->
-	    (try
-	      (unify_aux s (get_defn scp t) senv)
-	    with _ ->
-	      raise (Failure ("Can't unify " ^(string_gtype s)
-			      ^" with " ^(string_gtype t))))))
-    | (Var(_), Var(_)) ->
-	if equality s t 
-	then senv
-	else bind_occs s t senv
-    | (Var(v1), x) -> bind_occs s x senv
-    | (x, Var(v2)) -> bind_occs t x senv
-    | _ -> 
-	if equality s t then senv
-	else raise (Failure ("Can't unify " ^(string_gtype s)
-			     ^" with " ^(string_gtype t)))
-  in
-  ignore(unify_aux t1 t2 env) (* try to unify t1 and t2 *)
-    ; []  (* Redo, without bogus bindings list*)
-
 *)
-
 
 let unify_for_rewrite scp t1 t2 env = 
   let varenv= empty_subst()
@@ -1015,6 +812,12 @@ let unify_for_rewrite scp t1 t2 env =
   in
   unify_aux t1 t2 env (* try to unify t1 and t2 *)
 
+(* mgu t env:
+
+   Get most general unifier for type t and substitution env.
+   Replaces variables in t with their bindings in env.
+*)
+
 let rec mgu t env =
   match t with 
     Var(a) -> 
@@ -1033,43 +836,9 @@ let rec mgu t env =
       Constr(f, List.map (fun x-> mgu x env) l)
   | x -> x
 
-(*
-let matching_env scp t1 t2 env =  
-  let bindings = ref([])
-  in 
-  let add_binding a = bindings:=(a::!bindings)
-  in 
-  let rec match_aux ty1 ty2 =
-    let s = lookup_var ty1 env
-    and t =  ty2 
-    in 
-    match (s, t) with
-      (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
-	then 
-	  (try 
-	    (List.iter2
-	       (fun x y -> match_aux x y) args1 args2)
-	  with 
-	    x -> addtypeError "Can't match types" [s; t] x)
-	else 
-	  (try match_aux (get_defn scp s) t
-	  with 
-            Not_found -> (match_aux s (get_defn scp t))
-          | x -> (addtypeError "Can't match types" [s; t] x)))
-    | (Var(_), Var(_)) ->
-	if equality s t 
-	then ()
-	else bind_occs s t env; add_binding s
-    | (Var(v1), x) -> bind_occs s x env; add_binding s
-    | (_, Var(_)) -> ()
-    | _ -> 
-	if equality s t then () 
-	else (raise (typeError "Can't match types" [s; t]))
-  in
-  try ((match_aux t1 t2); env) (* try to match t1 and t2 *)
-  with x ->                    (* if can't match, remove bindings *)
-    (ignore(remove_bindings (!bindings) env); raise x)
+(* matching_env scp t1 t2 nenv:
+
+   Like unify_env but only variables in type t1 can be bound.
 *)
 
 let matching_env scp t1 t2 nenv =  
@@ -1109,32 +878,9 @@ let matching_env scp t1 t2 nenv =
   in
   match_aux t1 t2 nenv (* try to match t1 and t2 *)
 
-(*
-   let matching_env scp t1 t2 env =
-   let rec match_aux ty1 ty2 =
-   let s=lookup_var ty1 env
-   and t = ty2
-   in 
-   (match (s, t) with
-   (Var(_), _) -> bind s t env
-   | (_, Var(_)) -> ()
-   | (Constr(f1, args1), (Constr(f2, args2))) ->
-   if f1=f2 
-   then
-   (try
-   (List.iter2
-   (fun x y -> match_aux x y)
-   args1 args2)
-   with _ -> raise Match)
-   |	_ -> if equality s t then () else raise Match)
-   in 
-   ((match_aux t1 t2); (mgu t1 env))
- *)
-
 let matching scp t1 t2 =
   let tenv = empty_subst ()
   in 
-(*  ((matching_env scp t1 t2 tenv); (mgu t1 tenv))*)
   (ignore(unify_env scp t1 t2 tenv); (mgu t1 tenv))
 
 let matches_env scp tyenv t1 t2 = 
@@ -1146,6 +892,8 @@ let matches_env scp tyenv t1 t2 =
 let matches scp t1 t2=
   try ignore(matching_env scp t1 t2 (empty_subst())) ; true
   with _ -> false
+
+
 
 (* Consistency tests for type definitions 
 
@@ -1175,39 +923,6 @@ let rec check_term scp n vs t =
   | WeakVar _ -> raise Not_found
   | x -> ()
 
-
-(* check_args: ensure all arguments are variable types *)
-
-(*
-   let check_args args =
-   let tenv = Lib.env_size 1 
-   in 
-   try
-   (List.iter 
-   (fun x-> 
-   if (varp x) & (not (member x tenv))
-   then
-   (Hashtbl.add tenv x true)
-   else raise Not_found)
-   args);
-   true
-   with Not_found -> false
- *)
-(*
-let check_args args =
-  let tenv = empty_subst()
-  in 
-  try
-    (List.iter 
-       (fun x-> 
-	 if (varp x) & (not (member x tenv))
-	 then
-	   (bind x true tenv)
-	 else raise Not_found)
-       args);
-    true
-  with Not_found -> false
-*)
 
 (* check_args args: 
    test each a in args is a variable and occurs only once 
@@ -1256,22 +971,6 @@ let check_decln l =
     with Not_found -> false
   else false
 
-(*
-   let rec well_defined scp t =
-   match t with 
-   Constr(Defined n, args) ->
-   (try 
-   (let recrd=get_typdef scp n
-   in 
-   if (List.length args)=(List.length recrd.args)
-   then (List.iter (well_defined scp) args)
-   else raise (Invalid_argument ("well_defined:"^(string_gtype t))))
-   with Not_found -> 
-   raise (Invalid_argument ("well_defined: "^(string_gtype t))))
-   |	Constr(f, args) ->
-   List.iter (well_defined scp) args
-   |	x -> ()
- *)
 
 (* well_defined t: ensure that all constructors in t are declared *)
 (* args: (optional) check variables are in the list of args *)
@@ -1366,7 +1065,6 @@ let typeof_conn c =
   | x -> mkfun_from_list 
 	[mk_bool; mk_bool] mk_bool
 
-
 (* set names in a type to their long form *)
 
 let set_name scp trm = 
@@ -1396,6 +1094,15 @@ let set_name scp trm =
   in set_aux trm
 
 
+(* in_thy_scope memo scp th ty:
+
+   Check that ty is in valid for theory th.
+   Every type constructor must be in scope of th.
+
+   The function is memoised: if a constructor name is found to be 
+   in scope, it is added to memo.
+*)
+
 let in_thy_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
@@ -1417,36 +1124,21 @@ let in_thy_scope memo scp th ty =
   try in_scp_aux ty ; true
   with Not_found -> false
 
+(* mk_typevar n: 
+   
+   Make a new type variable.
+*)
+
 let mk_typevar n =
   let nty=mk_var(int_to_name (!n))
   in
   n:=(!n)+1; nty
 
-(*
-let mgu_rename inf env nenv typ =
-  let new_name x =
-    try (lookup x nenv)
-    with 
-      Not_found ->
-	(let newty=mk_typevar inf
-	in 
-	bind_var x newty nenv;
-	newty)
-  in 
-  let rec rename_aux ty=
-    match ty with
-      Var(_) ->
-	(let nt=lookup_var ty env
-	in 
-	if(varp nt)
-	then new_name nt
-	else 
-	  rename_aux nt)
-    | Constr(f, args) -> 
-	Constr(f, List.map rename_aux args)
-    | _ -> ty
-  in 
-  rename_aux typ
+(* mgu_rename_env inf env env nenv typ:
+
+   Replace variables in typ with their bindings in substitution env.
+   If a variable isn't bound in env, then it is renamed and bound
+   to that name in nenv (which is checked before a new name is created).
 *)
 
 let mgu_rename_env inf env nenv typ =
@@ -1470,10 +1162,7 @@ let mgu_rename_env inf env nenv typ =
 	(let nt=lookup_var ty env
 	in 
 	if(weakp nt) then (nt, env)
-	else 
-	  if(varp nt)
-	  then new_name_env tenv nt
-	  else rename_aux tenv nt)
+	else rename_aux tenv nt)
     | Constr(f, args) -> 
 	let renv=ref tenv
 	in 

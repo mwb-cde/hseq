@@ -34,14 +34,18 @@ type rewriteDB =
     val is_free_binder : Term.binders list -> Term.term -> bool
 
 (* rewrite using a list of deconstructed rewrite rules *)
-    val rewrite_list :Gtypes.scope -> bool ref ->  
-      (Term.binders list * Term.term * Term.term) list ->
-       Term.term -> Term.term
+(* return type environment built up during rewriting *)
+    val rewrite_list :Gtypes.scope -> bool ref 
+      -> Gtypes.substitution
+	  -> (Term.binders list * Term.term * Term.term) list ->
+	      Term.term -> (Term.term * Gtypes.substitution)
 
 (* rewrite using a list of partialy deconstructed rewrite rules *)
-    val rewrite_eqs :  Gtypes.scope -> bool ->
-      (Term.binders list * Term.term)list -> 
-	Term.term -> Term.term
+(* return type environment built up during rewriting *)
+    val rewrite_eqs :  Gtypes.scope -> bool 
+      -> Gtypes.substitution
+	  -> (Term.binders list * Term.term)list 
+	    -> Term.term -> (Term.term * Gtypes.substitution )
 
 (* rewrite using a universally quantified rewrite rule *)
 (* dir: true for left to right, false for right to left *)
@@ -53,9 +57,28 @@ type rewriteDB =
 val rewrite_univ : Gtypes.scope ->  ?dir:bool -> ?simple:bool->
     Term.term -> Term.term -> Term.term
 
+val rewrite_univ_env : 
+    Gtypes.scope ->  ?dir:bool -> ?simple:bool
+	-> Gtypes.substitution 
+	  -> Term.term -> Term.term -> (Term.term * Gtypes.substitution)
+
 (* rewrite using a list of universally quantified rewrite rules *)
-    val rewrite_univs : Gtypes.scope -> ?dir:bool -> ?simple:bool ->
-      Term.term list -> Term.term ->  Term.term
+    val rewrite_univs : 
+	Gtypes.scope -> ?dir:bool -> ?simple:bool ->
+	  Term.term list -> Term.term ->  Term.term
+
+    val rewrite_univs_env : 
+	Gtypes.scope -> ?dir:bool -> ?simple:bool 
+	  -> Gtypes.substitution
+	    -> Term.term list -> Term.term 
+	      -> (Term.term * Gtypes.substitution)
 
 (* rewrite using a database of rewrite rules *)
 val rewrite_net: Gtypes.scope -> rewriteDB -> Term.term -> Term.term
+
+val rewrite_net_env: 
+    Gtypes.scope 
+      -> Gtypes.substitution 
+	-> rewriteDB 
+	  -> Term.term 
+	    -> (Term.term * Gtypes.substitution)

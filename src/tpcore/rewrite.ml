@@ -108,7 +108,7 @@ type rewriteDB =
 
 let rec match_rr_list scp tyenv chng rs trm = 
   match rs with
-    [] -> trm
+    [] -> (trm, tyenv)
   | (qs, lhs, rhs)::nxt ->
       let (ntrm, ntyenv), fl = 
 	(try 
@@ -116,7 +116,7 @@ let rec match_rr_list scp tyenv chng rs trm =
 	with _ -> (trm, tyenv), false)
       in 
       if fl 
-      then (chng:=true; ntrm)
+      then (chng:=true; (ntrm, ntyenv))
       else 
 	match_rr_list scp ntyenv chng nxt trm
 
@@ -128,36 +128,36 @@ let rec match_rewrite_list scp tyenv chng net trm =
       (Net_rr n) -> Net.lookup n trm
     | (List_rr r) -> r
   in 
-  let ntrm=match_rr_list scp tyenv cn rs trm
+  let ntrm, ntyenv=match_rr_list scp tyenv cn rs trm
   in 
   if (!cn) 
   then 
     (chng:=true; 
-     match_rewrite_list scp tyenv chng net ntrm)
+     match_rewrite_list scp ntyenv chng net ntrm)
   else
-    ntrm
+    ntrm, ntyenv
 
 let rewrite_list_aux scp tyenv chng net trm = 
-  let rec rewrite_aux t=
+  let rec rewrite_aux env t=
     match t with
       Term.Qnt(q, b) -> 
-	(let nb = rewrite_aux b
+	(let nb, benv = rewrite_aux env b
 	in 
-	match_rewrite_list scp tyenv chng net (Qnt(q, nb)))
+	match_rewrite_list scp benv chng net (Qnt(q, nb)))
     | Term.Typed(tt, ty) -> 
-	rewrite_aux tt
+	rewrite_aux env tt
     |	Term.App(f, a)->
-	(let nf = 
-	  (rewrite_aux f)
+	(let nf, fenv = 
+	  (rewrite_aux env f)
 	in
-	let na = 
-	  (rewrite_aux a)
+	let na, aenv = 
+	  (rewrite_aux fenv a)
 	in 
-	match_rewrite_list scp tyenv chng net (Term.App(nf, na)))
+	match_rewrite_list scp aenv chng net (Term.App(nf, na)))
     | _ -> 
-	match_rewrite_list scp tyenv chng net t
+	match_rewrite_list scp env chng net t
   in 
-  rewrite_aux trm
+  rewrite_aux tyenv trm
 
 (*  try
    rewrite_aux trm
@@ -166,10 +166,10 @@ let rewrite_list_aux scp tyenv chng net trm =
  *)
 (* using term nets of rewrites *)
 
-let rewrite_list scp chng rs trm = 
+let rewrite_list scp chng tyenv rs trm = 
   let nt=Net_rr(make_rewrites rs)
   in 
-  rewrite_list_aux scp (Gtypes.empty_subst()) chng nt trm
+  rewrite_list_aux scp tyenv chng nt trm
 
 (*
    let rec rewrite_list_aux  scp tyenv chng net trm = 
@@ -202,9 +202,17 @@ let rewrite_list scp chng rs trm =
 let rewrite_net scp rn trm = 
   let chng = ref false
   in 
-  let nt = rewrite_list_aux scp (Gtypes.empty_subst()) chng rn trm
+  let nt, _ = rewrite_list_aux scp (Gtypes.empty_subst()) chng rn trm
   in 
   if !chng then nt 
+  else raise (termError "rewrite_net: no change" [trm])
+
+let rewrite_net_env scp tyenv rn trm = 
+  let chng = ref false
+  in 
+  let nt, nenv = rewrite_list_aux scp tyenv chng rn trm
+  in 
+  if !chng then (nt, nenv)
   else raise (termError "rewrite_net: no change" [trm])
 
 
@@ -217,16 +225,16 @@ let rewrite_net scp rn trm =
    left-right if dir=true, right-left otherwise
  *)
 
-let rewrite_eqs scp dir rrl trm =
+let rewrite_eqs scp dir tyenv rrl trm =
   let chng = ref false
   in 
   let r =
     if dir
-    then rewrite_list scp chng
+    then rewrite_list scp chng tyenv
 	(List.map (fun (qs, b)-> 
 	  let (lhs, rhs) =  
 	    Logicterm.dest_equal b in (qs, lhs, rhs)) rrl) trm
-    else rewrite_list scp chng
+    else rewrite_list scp chng tyenv
 	(List.map 
 	   (fun (qs, b) -> 
 	     let (lhs, rhs)=
@@ -239,6 +247,7 @@ let rewrite_eqs scp dir rrl trm =
 
 (* simple rewriting: rewrite topdown once only  *)
 
+(*
 let simple_rewrite_list scp chng rs trm = 
   let tyenv = Gtypes.empty_subst()
   in 
@@ -264,24 +273,49 @@ let simple_rewrite_list scp chng rs trm =
   try
     rewrite_aux trm
   with x -> (Term.addtermError "rewrite failed for term" [trm] x)
+*)
 
-let simple_rewrite_eqs scp dir rrl trm =
+let simple_rewrite_list scp chng tyenv rs trm = 
+  let rec rewrite_aux env tr = 
+    match tr with
+      Term.Typed(tt, ty) -> 
+	rewrite_aux env tt
+    | Term.Qnt(q, b) ->
+	let ntrm, nenv = match_rr_list scp env chng rs tr
+	in 
+	if (!chng) 
+	then 
+	  (ntrm, nenv)
+	else 
+	  (let nb, benv= rewrite_aux nenv b
+	  in 
+	  if(!chng)
+	  then (Term.Qnt(q, nb), benv)
+	  else 
+	    raise (Term.termError "No match for rewrite" [tr]))
+    | _ -> match_rr_list scp env chng rs tr 
+  in 
+  try
+    rewrite_aux tyenv trm
+  with x -> (Term.addtermError "rewrite failed for term" [trm] x)
+
+let simple_rewrite_eqs scp dir tyenv rrl trm =
   let chng = ref false
   in 
-  let r =
+  let r, ntyenv =
     if dir
-    then simple_rewrite_list scp chng
+    then simple_rewrite_list scp chng tyenv
 	(List.map (fun (qs, b)-> 
 	  let (a, b) =  Logicterm.dest_equal b in (qs, a, b)) rrl) 
 	trm
-    else simple_rewrite_list scp chng
+    else simple_rewrite_list scp chng tyenv
 	(List.map 
 	   (fun (qs, b) -> 
 	     let (a, b)=Logicterm.dest_equal b in (qs, b, a)) rrl)
 	trm
   in 
   if !chng 
-  then r
+  then r, ntyenv
   else raise (termError "Matching" [trm])
 
 
@@ -292,11 +326,27 @@ let simple_rewrite_eqs scp dir rrl trm =
 
 let rewrite_univs scp ?(dir=true) ?(simple=false) rrl trm=
   let rs = List.map (strip_qnt Basic.All) rrl
+  and tyenv = Gtypes.empty_subst()
   in 
-  if simple then simple_rewrite_eqs scp dir rs trm
-  else rewrite_eqs scp dir rs trm
+  let nt, ntyenv= 
+    if simple 
+    then simple_rewrite_eqs scp dir tyenv rs trm
+    else rewrite_eqs scp dir tyenv rs trm
+  in nt
 
 let rewrite_univ scp ?(dir=true) ?(simple=false) rr trm = 
   rewrite_univs scp ~dir:dir ~simple:simple[rr] trm
+
+let rewrite_univs_env scp ?(dir=true) ?(simple=false) tyenv rrl trm=
+  let rs = List.map (strip_qnt Basic.All) rrl
+  in 
+  let nt, ntyenv=
+    if simple 
+    then simple_rewrite_eqs scp dir tyenv rs trm
+    else rewrite_eqs scp dir tyenv rs trm
+  in (nt, ntyenv)
+
+let rewrite_univ_env scp ?(dir=true) ?(simple=false) tyenv rr trm = 
+  rewrite_univs_env scp ~dir:dir ~simple:simple tyenv [rr] trm
 
 
