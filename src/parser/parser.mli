@@ -79,16 +79,51 @@ type token_info =
 
     val alternates : (infotyp -> 'a phrase) list  -> infotyp -> 'a phrase
 
+(*
     val other_type_parsers_list : (infotyp -> (Gtypes.gtype phrase)) list ref
     val add_type_parser : 
 	(infotyp -> (Gtypes.gtype phrase)) -> unit
     val other_type_parsers : infotyp -> (Gtypes.gtype phrase)
+*)
+    val other_type_parsers_list : 
+	(infotyp -> (Gtypes.gtype phrase)) Lib.named_list ref
 
+(* add_type_parser pos n ph:
+   add type parser ph named n, in relative position pos 
+*)
+    val add_type_parser : 
+	Lib.position -> string  -> 
+	(infotyp -> (Gtypes.gtype phrase)) -> unit
+
+ (* remove_type_parser s: 
+    remove type parser named s, raise Not_found if not present 
+ *)
+    val remove_type_parser: string -> unit
+
+    val other_type_parsers : infotyp -> (Gtypes.gtype phrase)
+
+(*
     val other_parsers_list :
       (infotyp -> Term.term phrase) list ref
     val add_parser :
       (infotyp -> Term.term phrase) -> unit
+*)
+    val other_parsers_list :
+      (infotyp -> Term.term phrase) Lib.named_list ref
+
+(* add_parser pos n ph:
+   add term parser ph named n, in relative position pos 
+*)
+    val add_parser :  Lib.position -> string
+      -> (infotyp -> Term.term phrase)  -> unit
+
+ (* remove_parser s: 
+    remove term parser named s, raise Not_found if not present 
+ *)
+    val remove_parser :  string -> unit
+
     val other_parsers : infotyp ->Term.term phrase
+
     val mk_type_binary_constr :
 	infotyp -> 
 	  Lexer.tok -> Gtypes.gtype -> Gtypes.gtype -> Gtypes.gtype

@@ -122,7 +122,9 @@ module type GRAMMARS =
       val optional: ('a)phrase -> ('a option) phrase
       val ($--) : ('a) phrase -> ('c)phrase -> ('c) phrase
       val repeat : ('b) phrase -> ('b list) phrase
-	  
+      val named_alt : 
+	  ('a -> ('b)phrase) Lib.named_list 
+	   -> ('a -> ('b)phrase)
 
       type token_info = 
 	  { 
@@ -214,6 +216,13 @@ module Grammars:GRAMMARS=
 	((ph >> (fun x->(Some x))) toks)
       with 
 	(ParsingError _)  -> (None, toks)
+
+    let rec named_alt phl inf toks= 
+      match phl with
+	[] -> raise (ParsingError "No alternative parsers")
+      |	((_, ph)::phs) -> 
+	  (try (ph inf) toks 
+	  with ParsingError _ -> (named_alt phs inf toks))
 
 
 (* operators (ph, info, binop, unaryop) inp: 

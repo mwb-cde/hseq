@@ -210,21 +210,6 @@ let token_info tbl t=
 
   let error toks =  raise (ParsingError "Error")
 
-  let other_type_parsers_list  =  ref []
-
-  let add_type_parser ph = 
-    other_type_parsers_list:=ph::!other_type_parsers_list
-
-  let other_type_parsers inf toks = 
-    alternates (!other_type_parsers_list) inf toks
-
-  let other_parsers_list  = ref [(fun x-> error)]
-
-  let add_parser ph = 
-    other_parsers_list:=(ph::!other_parsers_list)
-  let other_parsers inf toks = 
-    alternates (!other_parsers_list) inf toks
-
   let mk_type_binary_constr inf t=
     let lookup x =
       try inf.token_info x
@@ -435,6 +420,26 @@ let token_info tbl t=
   let mk_short_id id inf toks =
     (long_id id inf >> (fun x -> Basic.name x)) toks
 
+(*
+   core_type_parsers
+     | num_type inf
+     | bool_type inf 
+*)
+
+  let core_type_parsers =  []
+
+  let other_type_parsers_list  =  ref core_type_parsers
+
+  let add_type_parser pos n ph = 
+    other_type_parsers_list:=
+      Lib.named_add (!other_type_parsers_list) pos n ph
+
+  let remove_type_parser n =
+    other_type_parsers_list:=List.remove_assoc n (!other_type_parsers_list)
+
+  let other_type_parsers inf toks = 
+    named_alt (!other_type_parsers_list) inf toks
+
   let rec inner_types inf toks =
     (operators (atomic_types inf, 
 		(fun x -> mk_token_info (inf.type_token_info x)), 
@@ -443,10 +448,10 @@ let token_info tbl t=
       ((
        ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
 	  >> (fun x -> fst (snd x)))
-     || ((num_type inf) >> (fun x -> x))
-     || ((bool_type inf >> (fun x -> x)))
      || ((!$(Sym PRIME) -- short_id id inf )
 	   >> (fun (_, x) -> get_type x inf))
+     || num_type inf
+     || bool_type inf
      || (((long_id id inf) -- 
 	    (optional 
 	       ((!$(Sym ORB) -- ((comma_list (inner_types inf))
@@ -456,7 +461,7 @@ let token_info tbl t=
 	     match a with
 	       None -> Gtypes.mk_def i []
 	     | Some(ts) -> Gtypes.mk_def i ts))
-(*    || (other_type_parsers inf) *)
+     || (other_type_parsers inf) 
      || error)
 	 toks)
 
@@ -556,12 +561,42 @@ let token_info tbl t=
    else 
    mk_typed_var nid t)) toks
 
+(* term parsers *)
+(* primary term parsers by named list *)
+  let core_term_parser_list = 
+     [ 
+(* id "(" id ":" type ")" *)
+      "identifier", term_identifier;
+(*   | number *)
+      "number", (fun _ -> (number >> (fun x -> mknum x)));
+(*   | boolean *)
+    "boolean", (fun _ -> (boolean >> (fun x -> mkbool x)))
+     ]
+
+  let other_parsers_list  = ref core_term_parser_list
+  let other_parsers inf toks = 
+    named_alt (!other_parsers_list) inf toks
+  let add_parser pos n ph = 
+    other_parsers_list:=Lib.named_add (!other_parsers_list) pos n ph
+
+  let remove_parser n = 
+    other_parsers_list:=List.remove_assoc n (!other_parsers_list)
+
+
+(*
+  let other_parsers inf toks = 
+    alternates (!other_parsers_list) inf toks
+*)
+
+
+(* topmost term parser *)
 
   let rec form inf toks =
     (
      ((formula inf)-- (listof (formula inf)))
        >> (fun (x, y) -> mkcomb x y)
     ) toks
+
   and formula inf toks= 
     (
      operators(typed_primary inf, 
@@ -625,16 +660,13 @@ let token_info tbl t=
        (fun ((xs:(string*Term.term)list), body)
 	 ->
 	   qnt_term_remove_names inf xs body))
-(* id | "(" id ":" type ")" *)
-   || (term_identifier inf)
-(*
-     number
+(* | id 
+   | "(" id ":" type ")" 
+   |  number
    | boolean
    | alternative_parsers
    | error 
 *)
-   || (number >> (fun x -> mknum x))
-   || (boolean >> (fun x -> mkbool x))
    || (other_parsers inf)
    || (error)
     ) toks
