@@ -173,9 +173,23 @@ let add_type_rec tr thy =
      Gtypes.alias = d;
      Gtypes.characteristics = cs}
   in 
+  let dest_tydef tydef= 
+    if(Logic.Defns.is_typealias tydef)
+    then 
+      Logic.Defns.dest_typealias tydef
+    else
+      if(Logic.Defns.is_subtype tydef)
+      then 
+	let ctyrec=Logic.Defns.dest_subtype tydef
+	in 
+	(ctyrec.Logic.type_name, ctyrec.Logic.type_args, None)
+      else
+	raise 
+	  (Result.error "Theory.add_type_rec: Expected a type definition")
+  in 
   if not (get_protection thy)
   then 
-    let (lid, args, df)=Logic.Defns.dest_typealias tr
+    let (lid, args, df)=dest_tydef tr
     in 
     let id=Basic.name lid
     in 

@@ -175,6 +175,20 @@ type cdefn
       Basic.ident * Basic.gtype
 	* (string*Basic.gtype) list * thm option
 *)
+and ctypedef =
+    {
+     type_name : Basic.ident;  (* name of new type *)
+     type_args : string list;  (* arguments of new type *)
+     type_base: Basic.gtype;   (* the base type *)
+     type_rep: cdefn;          (* representation function *)
+     type_abs: cdefn;          (* abstraction function *)
+     type_set: Formula.form;      (* defining set *)
+     rep_type: thm;
+     rep_type_inverse: thm;
+     abs_type_inverse: thm
+   }
+
+(*
 type ctypedef =
     {
      type_name : Basic.ident;  (* name of new type *)
@@ -183,7 +197,7 @@ type ctypedef =
      type_thm: thm;          (* subtype theorem *)
      type_set: Formula.form       (* defining set *)
    }
-      
+*)      
 type saved_cdefn =
     STypeAlias of Basic.ident * string list * Gtypes.stype option
   | STypeDef of saved_ctypedef
@@ -193,11 +207,24 @@ and saved_ctypedef =
     {
      stype_name : Basic.ident;  (* name of new type *)
      stype_args : string list;  (* arguments of new type *)
+     stype_base: Gtypes.stype; 
+     stype_rep: saved_cdefn;          (* representation function *)
+     stype_abs: saved_cdefn;          (* abstraction function *)
+     stype_set: Formula.saved_form;      (* defining set *)
+     srep_type: saved_thm;
+     srep_type_inverse: saved_thm;
+     sabs_type_inverse: saved_thm
+   }
+(*
+and saved_ctypedef =
+    {
+     stype_name : Basic.ident;  (* name of new type *)
+     stype_args : string list;  (* arguments of new type *)
      stype_rep: saved_cdefn;          (* representation function *)
      stype_thm: saved_thm;          (* subtype theorem *)
      stype_set: Formula.saved_form      (* defining set *)
    }
-
+*)
 	
 (** 
    Theorem destructors and constructors
@@ -785,7 +812,7 @@ module Defns :
       val dest_subtype: cdefn -> ctypedef
 
 (*
-   mk_subtype scp name args d setP rep:
+   mk_subtype scp name args d setP rep abs:
    - check name doesn't exist already
    - check all arguments in args are unique
    - check def is well defined 
@@ -808,12 +835,16 @@ module Defns :
 *)
       val prove_subtype_exists: 
 	  Gtypes.scope -> Basic.term -> thm -> thm
+(*
       val mk_subtype_thm: 
 	  Gtypes.scope -> Basic.term -> Basic.ident -> thm
+*)
+      val mk_subtype_thm: 
+	  Gtypes.scope -> Basic.term -> thm
 
       val mk_subtype: 
 	  Gtypes.scope -> string -> string list 
-	    -> Basic.gtype -> Basic.term -> string
+	    -> Basic.gtype -> Basic.term -> string -> string
 	      -> thm  (* existance *)
 		-> cdefn
 

@@ -5,18 +5,10 @@
    ----*)
 
 open Basic
-
   
 (*
    Term definitions
  *)
-(*
-type decln = (Basic.ident* Basic.gtype)
-type defn = Defn of (Basic.ident* Basic.gtype * Logic.thm)
-
-let dest_decln (id, ty) = id, ty
-let dest_defn (Defn x) = x
-*)
 
 let rec mk_all_from_list scp b qnts =
   match qnts with 
@@ -54,33 +46,25 @@ let get_lhs t =
 
 let mk_decln scp name ty =
   let check_exists () = 
-      try 
-	ignore(scp.Gtypes.typeof_fn name);
-	raise (Term.term_error "Name exists in scope" 
-		 [Term.mk_typed_var name ty])
-      with Not_found -> ()
+    try 
+      ignore(scp.Gtypes.typeof_fn name);
+      raise (Term.term_error "Name exists in scope" 
+	       [Term.mk_typed_var name ty])
+    with Not_found -> ()
   in
   let new_ty () = Gtypes.set_name scp ty
   in 
   let check_type typ = Gtypes.check_decl_type scp typ; typ
   in 
   let ret_ty = 
-  try
-    (check_exists();
-     check_type (new_ty()))
-  with err -> 
-    raise (Term.add_term_error 
-	     "Invalid declaration " [(Term.mk_typed_var name ty)] err)
+    try
+      (check_exists();
+       check_type (new_ty()))
+    with err -> 
+      raise (Term.add_term_error 
+	       "Invalid declaration " [(Term.mk_typed_var name ty)] err)
   in 
   (name, ret_ty)
-
-(*
-
-  with Not_found -> 
-    Gtypes.check_decl_type scp ty; (name, ty)
-    let vars = Gtypes.get_var_names ty
-    in Gtypes.well_defined scp vars ty; (name, ty)
-*)
 
 let mk_defn_type env atys rty rfrs = 
   match atys with
@@ -129,165 +113,36 @@ let mk_defn scp name args rhs =
   let tenv1=Typing.typecheck_env nscp tenv ndn Gtypes.mk_bool
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
-       (Formula.make nscp (Term.retype tenv ndn)))
-
-(*
-  Defn(name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
-       Logic.mk_axiom (Formula.make nscp (Term.retype tenv ndn)))
-*)
+   (Formula.make nscp (Term.retype tenv ndn)))
 
 (* Types *)
 
 (* Type definition: aliasing *)
 
-    let check_args_unique ags=
-      let rec check_aux ys=
-	match ys with
-	  [] -> ()
-	| (x::xs) -> 
-	    if (List.exists (fun a -> a=x) xs) 
-	    then raise 
-		(Result.error 
-		   ("Identifier "^x^" appears twice in argument list"))
-	    else check_aux xs 
-      in 
-      check_aux ags
+let check_args_unique ags=
+  let rec check_aux ys=
+    match ys with
+      [] -> ()
+    | (x::xs) -> 
+	if (List.exists (fun a -> a=x) xs) 
+	then raise 
+	    (Result.error 
+	       ("Identifier "^x^" appears twice in argument list"))
+	else check_aux xs 
+  in 
+  check_aux ags
 
 
 (* Type definition: subtypes *)
 
 
-(*
-   [mk_subtype_property setp rep]:
-   make the term 
-   << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-   and 
-   (!x: (P x) = (?x1: x=(rep x1)))>>
-   to be used as the subtype theorem.
+(** 
+   [extend_scope_typedef scp id args]: extend scope [scp] with type 
+   named [id] with arguments [args].
+
+   [extend_scope_identifier scp id typ]: extend scope [scp] with term
+   named [id] of type [typ].
  *)
-(*
-let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
-  let typedef_term = 
-    Term.mk_var (Basic.mk_long "base" "Type_Def") 
-  and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
-  in 
-  Term.mk_app (Term.mk_app typedef_term setP) rep_term
-*)
-
-let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
-  let mk_subtype_1 (rep: Basic.ident)=
-    let x1_b=Basic.mk_binding Basic.All "x1" (Gtypes.mk_var "x1_ty")
-    and x2_b=Basic.mk_binding Basic.All "x2" (Gtypes.mk_var "x2_ty")
-    in 
-    let x1= Term.mk_bound x1_b
-    and x2= Term.mk_bound x2_b
-    and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
-    in 
-    let lhs =
-      Logicterm.mk_equality (Term.mk_app rep_term x1) 
-	(Term.mk_app rep_term x2)
-    and rhs = Logicterm.mk_equality x1 x2
-    in 
-    let body = Logicterm.mk_implies lhs rhs
-    in 
-    Basic.Qnt(Basic.All, x1_b, Basic.Qnt(Basic.All, x2_b, body))
-  and 
-      mk_subtype_2 (setP:Basic.term) (rep: Basic.ident)=
-    let y_b=(Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty"))
-    and y1_b=(Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty"))
-    in 
-    let y= Term.mk_bound y_b
-    and y1= Term.mk_bound y1_b
-    and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty2")
-    in 
-    let lhs = Term.mk_app setP y
-    and rhs =
-      Basic.Qnt(Basic.Ex, y1_b, 
-		(Logicterm.mk_equality y (Term.mk_app rep_term y1)))
-    in 
-    Basic.Qnt(Basic.All, y_b, 
-	      Logicterm.mk_equality lhs rhs)
-  in 
-  Logicterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)
-
-(*
-   [mk_subtype_exists setp]
-   make the term << ?x. setp x >> to be used to show that a subtype exists.
- *)
-let mk_subtype_exists setp=
-  let x_b=(Basic.mk_binding Basic.Ex "x" (Gtypes.mk_var "x_ty"))
-  in 
-  let x= Term.mk_bound x_b
-  in 
-  Basic.Qnt(Basic.Ex, x_b, Term.mk_app setp x)
-
-
-(*
-   mk_subtype scp name args d setP rep:
-   - check name doesn't exist already
-   - check all arguments in args are unique
-   - check def is well defined 
-   (all constructors exist and variables are in the list of arguments)
-   - ensure setP has type (d -> bool)
-   - declare rep as a function of type (d -> n)
-   - make subtype property from setp and rep.
-*)
-let check_type_name scp n = 
-  try
-    (ignore(scp.Gtypes.typ_defn n);
-     raise (Gtypes.type_error "Type already exists" 
-	      [Gtypes.mk_constr (Basic.Defined n) []]))
-  with Not_found -> ()
-       
-
-
-(*
-let rec well_defined scp args t =
-  let lookup x= List.find (fun y -> x=y) args
-  in 
-  let rec well_def t = 
-    match t with 
-      Constr(Defined n, nargs) ->
-	(try 
-          (let recrd=scp.Gtypes.typ_defn n
-          in 
-	  List.iter well_def nargs)
-	with Not_found -> 
-	  raise (Gtypes.type_error "well_defined: " [t]))
-    | Var(v) -> ignore(lookup (!v))
-    | WeakVar(v) -> raise (Gtypes.type_error "well_defined " [t])
-    | _ -> ()
-  in 
-  well_def t
-*)
-
-let check_well_defined scp args ty= 
-    (try 
-      Gtypes.well_defined scp args ty;()
-    with err ->
-      raise (Gtypes.add_type_error "Badly formed type" [ty] err))
-
-let make_witness_type scp dtype setP =
-  let fty = Typing.typeof scp setP
-  in 
-  if not (Logicterm.is_fun_ty fty)
-  then 
-    raise 
-      (Term.add_term_error "Expected a function" [setP]
-	 (Gtypes.type_error "Not a function type" [fty]))
-  else 
-    let tty = 
-      Logicterm.mk_fun_ty dtype (Gtypes.mk_base (Basic.Bool))
-    in 
-    try 
-      let sbs=Gtypes.unify scp fty tty
-      in 
-      Term.retype sbs setP
-    with err -> 
-      raise
-      (Term.add_term_error "Badly typed term" [setP]
-	(Gtypes.add_type_error "Invalid type" [tty] err))
-
 let extend_scope_typedef scp id args=
   let record = 
     {Gtypes.name = Basic.name id; Gtypes.args = args; 
@@ -328,11 +183,157 @@ let extend_scope_identifier scp id typ =
    Gtypes.thy_of = thy_of;
    Gtypes.prec_of = prec_of}
 
-    
-let mk_subtype scp name args dtype setP rep=
+
+
+let check_well_defined scp args ty= 
+  (try 
+    Gtypes.well_defined scp args ty;()
+  with err ->
+    raise (Gtypes.add_type_error "Badly formed type" [ty] err))
+
+(*
+   [mk_subtype_exists setp]
+   make the term << ?x. setp x >> to be used to show that a subtype exists.
+ *)
+let mk_subtype_exists setp=
+  let x_b=(Basic.mk_binding Basic.Ex "x" (Gtypes.mk_var "x_ty"))
+  in 
+  let x= Term.mk_bound x_b
+  in 
+  Basic.Qnt(Basic.Ex, x_b, Term.mk_app setp x)
+
+(**
+   [check_type_name scp n]: make sure that there is no type named [n]
+   in scope [scp].
+ *)
+let check_type_name scp n = 
+  try
+    (ignore(scp.Gtypes.typ_defn n);
+     raise (Gtypes.type_error "Type already exists" 
+	      [Gtypes.mk_constr (Basic.Defined n) []]))
+  with Not_found -> ()
+
+
+(**
+   [make_witness_type scp dtype setP]: 
+   Construct the actual type of the defining set.
+ *)
+let make_witness_type scp dtype setP =
+  let fty = Typing.typeof scp setP
+  in 
+  if not (Logicterm.is_fun_ty fty)
+  then 
+    raise 
+      (Term.add_term_error "Expected a function" [setP]
+	 (Gtypes.type_error "Not a function type" [fty]))
+  else 
+    let tty = 
+      Logicterm.mk_fun_ty dtype (Gtypes.mk_base (Basic.Bool))
+    in 
+    try 
+      let sbs=Gtypes.unify scp fty tty
+      in 
+      Term.retype sbs setP
+    with err -> 
+      raise
+	(Term.add_term_error "Badly typed term" [setP]
+	   (Gtypes.add_type_error "Invalid type" [tty] err))
+
+(*
+ *  Type definition. 
+ *  A, args, T, set:(args)T->bool, rep_name, abs_name
+ * 
+ *  make 
+ *  Declarations:
+ *   representation function rep = rep_name:(args)T -> A
+ *   abstraction function rep = abs_name:A-> (args)T 
+ *
+ *  Axioms:
+ *   Rep_T: |- !x: set (rep_name x)
+ *   Rep_T_inverse: |- !x: abs_name (rep_name x) = x
+ *   Abs_T_inverse: |- !x: (set x) => rep_name (abs_name x) = x
+ *   
+ *)
+
+(**
+   [mk_rep_T set rep]: 
+   build 
+   |- !x: set (rep x) 
+*)
+let mk_rep_T set rep =
+  let x_b=Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty")
+  in 
+  let x = Term.mk_bound x_b
+  in 
+  let body = Term.mk_app set (Term.mk_app rep x)
+  in 
+  Basic.Qnt(Basic.All, x_b, body)
+
+(**
+   [mk_rep_T_inv rep abs]: 
+   build 
+   |- !x: (abs (rep x)) = x
+*)
+let mk_rep_T_inv rep abs=
+  let x_b=Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty")
+  in 
+  let x = Term.mk_bound x_b
+  in 
+  let body = 
+    Logicterm.mk_equality 
+      (Term.mk_app abs (Term.mk_app rep x)) x
+  in 
+  Basic.Qnt(Basic.All, x_b, body)
+
+(**
+   [mk_abs_T_inv set rep abs]:
+   build 
+   |- !x: (set x)=> (rep (abs x)) = x
+*)
+let mk_abs_T_inv set rep abs=
+  let x_b=Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty")
+  in 
+  let x = Term.mk_bound x_b
+  in 
+  let lhs = Term.mk_app set x
+  and rhs = 
+    Logicterm.mk_equality 
+      (Term.mk_app rep (Term.mk_app abs x)) x
+  in 
+  let body = Logicterm.mk_implies lhs rhs
+  in 
+  Basic.Qnt(Basic.All, x_b, body)
+      
+
+(*
+   mk_subtype scp name args d setP rep:
+   - check name doesn't exist already
+   - check all arguments in args are unique
+   - check def is well defined 
+   (all constructors exist and variables are in the list of arguments)
+   - ensure setP has type (d -> bool)
+   - declare rep as a function of type (d -> n)
+   - make subtype property from setp and rep.
+ *)
+
+type subtype_defn = 
+    {
+     id: Basic.ident;
+     args : string list;
+     rep : (Basic.ident* Basic.gtype);
+     abs: (Basic.ident* Basic.gtype);
+     set: Basic.term;
+     rep_T: Basic.term;
+     rep_T_inverse: Basic.term;
+     abs_T_inverse: Basic.term
+   }
+
+let mk_subtype scp name args dtype setP rep_name abs_name=
   let th = scp.Gtypes.curr_thy
   in 
   let id = Basic.mk_long th name
+  and rep_id = Basic.mk_long th rep_name
+  and abs_id = Basic.mk_long th abs_name
   in 
   let ntype = 
     Gtypes.mk_constr 
@@ -344,9 +345,129 @@ let mk_subtype scp name args dtype setP rep=
   let new_setp = make_witness_type scp dtype setP
   in 
   let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
+  and abs_ty = 
+    Gtypes.copy_type
+      (Gtypes.normalize_vars (Logicterm.mk_fun_ty dtype ntype))
   in 
-  let nscp = extend_scope_typedef scp id args
+  let abs_term = Term.mk_typed_var abs_id (Gtypes.mk_var "abs_ty2")
+  and rep_term = Term.mk_typed_var rep_id (Gtypes.mk_var "rep_ty2")
   in 
-  let subtype_prop = mk_subtype_prop setP rep
+  let rep_T_thm = mk_rep_T setP rep_term
+  and rep_T_inv_thm = mk_rep_T_inv rep_term abs_term
+  and abs_T_inv_thm = mk_abs_T_inv setP rep_term abs_term
   in 
-  (rep_ty, new_setp, subtype_prop)
+  { 
+    id=id;
+    args = args;
+    rep = (rep_id, rep_ty); abs=(abs_id, abs_ty);
+    set = new_setp;
+    rep_T=rep_T_thm;
+    rep_T_inverse= rep_T_inv_thm; abs_T_inverse=abs_T_inv_thm
+  }
+
+module HolLike =
+  struct
+
+(*
+ * HOL-like type definition. 
+ *  A, args, T, set:(args)T->bool
+ * 
+ *  make declaration
+ *   representation function rep = name:(args)T -> A
+ *   and theorem
+ *   |- ((!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
+ *       and (!x: (P x) = (?x1: x=(rep x1))))
+ *
+ * Everything needed to use subtyping is derived making this approach
+ * the more intellectually rigorous. But this takes a lot of work,
+ * so use the easy way out.
+ * 
+ *)
+
+(*
+   [mk_subtype_property setp rep]:
+   make the term 
+   << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
+   and 
+   (!x: (P x) = (?x1: x=(rep x1)))>>
+   to be used as the subtype theorem.
+ *)
+(*
+   let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
+   let typedef_term = 
+   Term.mk_var (Basic.mk_long "base" "Type_Def") 
+   and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
+   in 
+   Term.mk_app (Term.mk_app typedef_term setP) rep_term
+ *)
+
+    let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
+      let mk_subtype_1 (rep: Basic.ident)=
+	let x1_b=Basic.mk_binding Basic.All "x1" (Gtypes.mk_var "x1_ty")
+	and x2_b=Basic.mk_binding Basic.All "x2" (Gtypes.mk_var "x2_ty")
+	in 
+	let x1= Term.mk_bound x1_b
+	and x2= Term.mk_bound x2_b
+	and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
+	in 
+	let lhs =
+	  Logicterm.mk_equality (Term.mk_app rep_term x1) 
+	    (Term.mk_app rep_term x2)
+	and rhs = Logicterm.mk_equality x1 x2
+	in 
+	let body = Logicterm.mk_implies lhs rhs
+	in 
+	Basic.Qnt(Basic.All, x1_b, Basic.Qnt(Basic.All, x2_b, body))
+      and 
+	  mk_subtype_2 (setP:Basic.term) (rep: Basic.ident)=
+	let y_b=(Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty"))
+	and y1_b=(Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty"))
+	in 
+	let y= Term.mk_bound y_b
+	and y1= Term.mk_bound y1_b
+	and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty2")
+	in 
+	let lhs = Term.mk_app setP y
+	and rhs =
+	  Basic.Qnt(Basic.Ex, y1_b, 
+		    (Logicterm.mk_equality y (Term.mk_app rep_term y1)))
+	in 
+	Basic.Qnt(Basic.All, y_b, 
+		  Logicterm.mk_equality lhs rhs)
+      in 
+      Logicterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)
+
+
+(*
+   mk_subtype scp name args d setP rep:
+   - check name doesn't exist already
+   - check all arguments in args are unique
+   - check def is well defined 
+   (all constructors exist and variables are in the list of arguments)
+   - ensure setP has type (d -> bool)
+   - declare rep as a function of type (d -> n)
+   - make subtype property from setp and rep.
+ *)
+    let mk_subtype scp name args dtype setP rep=
+      let th = scp.Gtypes.curr_thy
+      in 
+      let id = Basic.mk_long th name
+      in 
+      let ntype = 
+	Gtypes.mk_constr 
+	  (Basic.Defined id) (List.map Gtypes.mk_var args)
+      in
+      check_type_name scp id;
+      check_args_unique args;
+      check_well_defined scp args dtype;
+      let new_setp = make_witness_type scp dtype setP
+      in 
+      let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
+      in 
+      let nscp = extend_scope_typedef scp id args
+      in 
+      let subtype_prop = mk_subtype_prop setP rep
+      in 
+      (rep_ty, new_setp, subtype_prop)
+
+  end

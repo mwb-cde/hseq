@@ -1884,9 +1884,13 @@ and ctypedef =
     {
      type_name : Basic.ident;  (* name of new type *)
      type_args : string list;  (* arguments of new type *)
+     type_base: Basic.gtype;   (* the base type *)
      type_rep: cdefn;          (* representation function *)
-     type_thm: thm;          (* subtype theorem *)
-     type_set: Formula.form      (* defining set *)
+     type_abs: cdefn;          (* abstraction function *)
+     type_set: Formula.form;      (* defining set *)
+     rep_type: thm;
+     rep_type_inverse: thm;
+     abs_type_inverse: thm
    }
 
 type saved_cdefn =
@@ -1898,9 +1902,13 @@ and saved_ctypedef =
     {
      stype_name : Basic.ident;  (* name of new type *)
      stype_args : string list;  (* arguments of new type *)
+     stype_base: Gtypes.stype; 
      stype_rep: saved_cdefn;          (* representation function *)
-     stype_thm: saved_thm;          (* subtype theorem *)
-     stype_set: Formula.saved_form      (* defining set *)
+     stype_abs: saved_cdefn;          (* abstraction function *)
+     stype_set: Formula.saved_form;      (* defining set *)
+     srep_type: saved_thm;
+     srep_type_inverse: saved_thm;
+     sabs_type_inverse: saved_thm
    }
 
 
@@ -1930,9 +1938,13 @@ and
       {
        stype_name = x.type_name;
        stype_args = x.type_args;
+       stype_base = Gtypes.to_save x.type_base;
        stype_rep = to_saved_cdefn x.type_rep;
-       stype_thm = to_save x.type_thm;
-       stype_set = Formula.to_save x.type_set
+       stype_abs = to_saved_cdefn x.type_abs;
+       stype_set = Formula.to_save x.type_set;
+       srep_type = to_save x.rep_type;
+       srep_type_inverse = to_save x.rep_type_inverse;
+       sabs_type_inverse = to_save x.abs_type_inverse
      }
 
 let rec from_saved_cdefn td = 
@@ -1952,10 +1964,14 @@ and
       {
        type_name = x.stype_name;
        type_args = x.stype_args;
+       type_base = Gtypes.from_save x.stype_base;
        type_rep = from_saved_cdefn x.stype_rep;
-       type_thm = from_save x.stype_thm;
-       type_set = Formula.from_save x.stype_set
-     }
+       type_abs = from_saved_cdefn x.stype_abs;
+       type_set = Formula.from_save x.stype_set;
+       rep_type = from_save x.srep_type;
+       rep_type_inverse = from_save x.srep_type_inverse;
+       abs_type_inverse = from_save x.sabs_type_inverse
+      }
 
 
 
@@ -2054,6 +2070,7 @@ and
 
 (* Type definition: subtype *)
 
+
 (*
    mk_subtype scp name args d setP rep:
    - check name doesn't exist already
@@ -2075,8 +2092,8 @@ and
 	TypeDef ctd -> ctd
       | _ -> raise (defn_error "Not a term definition" [])
 
-    let mk_subtype_thm scp setp rep =
-      mk_axiom (Formula.make scp (Defn.mk_subtype_prop setp rep))
+    let mk_subtype_thm scp prop =
+      mk_axiom (Formula.make scp prop)
 
 (*
    [prove_subtype_exists scp setp thm]
@@ -2108,17 +2125,17 @@ and
       in 
       mk_thm gl2
 
-    let mk_subtype scp name args dtype setp rep_name exist_thm =
-      let th = scp.Gtypes.curr_thy
-      in 
-      let rep_id = Basic.mk_long th rep_name
-      and type_id = Basic.mk_long th name
-      in 
+    let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
       (* run checks and get the subtype property *)
       let dtype1 = Gtypes.set_name scp dtype
       in
-      let (rep_ty, new_setp, subtype_prop) =
-	Defn.mk_subtype scp name args dtype1 setp rep_id
+      let subtype_def =
+	Defn.mk_subtype scp name args dtype1 setp rep_name abs_name
+      in 
+      let new_setp = subtype_def.Defn.set
+      and type_id = subtype_def.Defn.id
+      and (rep_id, rep_ty) = subtype_def.Defn.rep
+      and (abs_id, abs_ty) = subtype_def.Defn.abs
       in 
       (* try to prove the subtype exists *)
       let does_exist_thm = prove_subtype_exists scp new_setp exist_thm
@@ -2129,24 +2146,31 @@ and
       in 
       (* declare the the rep function *)
       let rep_decln = mk_termdecln nscp0 rep_name rep_ty
+      and abs_decln = mk_termdecln nscp0 abs_name abs_ty
       in 
       (* nscp1: scope with new type and rep identifier *)
       let nscp1 = 
-	let (nid, nty) = dest_termdecln rep_decln
+	let (rid, rty) = dest_termdecln rep_decln
+	and (aid, aty) = dest_termdecln abs_decln
 	in
-	Defn.extend_scope_identifier nscp0 nid nty
-      in 
-      (* make the subtype representation theorem *)
-      let subtype_thm = 
-	mk_subtype_thm nscp1 new_setp rep_id
+
+	let nscp2= Defn.extend_scope_identifier nscp0 rid rty
+	in 
+	Defn.extend_scope_identifier nscp2 aid aty
       in 
       TypeDef
       {
-       type_name = type_id;
-       type_args = args; 
+       type_name = subtype_def.Defn.id;
+       type_args = subtype_def.Defn.args; 
+       type_base = dtype1;
        type_rep = rep_decln;
-       type_thm = subtype_thm;
-       type_set = Formula.make scp new_setp
+       type_abs = abs_decln;
+       type_set = Formula.make scp new_setp;
+       rep_type = mk_subtype_thm nscp1 subtype_def.Defn.rep_T;
+       rep_type_inverse = 
+       mk_subtype_thm nscp1 subtype_def.Defn.rep_T_inverse;
+       abs_type_inverse = 
+       mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
      }
 
   end
@@ -2263,19 +2287,29 @@ let rec print_subtype ppinfo x =
   Format.printf "@[<v>";
   Format.printf "@[";
   Gtypes.print ppinfo named_ty;
-  Format.printf "@ <=@ ";
+  Format.printf "@ =@ ";
+  Gtypes.print ppinfo x.type_base;
+  Format.printf "@,:@ ";
   Formula.print ppinfo x.type_set;
   Format.printf "@]@,";
-  Format.printf "@[";
   print_cdefn ppinfo x.type_rep;
-  Format.printf "@]@,";
-  print_thm ppinfo x.type_thm;
+  Format.printf "@,";
+  print_cdefn ppinfo x.type_abs;
+  Format.printf "@,";
+  print_thm ppinfo x.rep_type;
+  Format.printf "@,";
+  print_thm ppinfo x.rep_type_inverse;
+  Format.printf "@,";
+  print_thm ppinfo x.abs_type_inverse;
   Format.printf "@]"
 and
   print_cdefn ppinfo x = 
-  match x with
+  Format.printf "@[";
+  (match x with
     TypeAlias (n, args, ty) -> 
       print_typealias ppinfo (n, args, ty)
   | TypeDef y -> print_subtype ppinfo y
   | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
-  | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th)
+  | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th));
+  Format.printf "@]"
+
