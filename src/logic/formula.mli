@@ -148,19 +148,20 @@ val eta_conv: Gtypes.scope -> form -> Basic.gtype -> form -> form
 
 (* rewriting *)
 val rewrite : Gtypes.scope -> ?dir:bool -> form list-> form -> form
+(*
 val rewrite_simple : Gtypes.scope -> ?dir:bool -> form list-> form -> form
-
+*)
 (* rewriting with a given type environment *)
 val rewrite_env : 
     Gtypes.scope -> ?dir:bool 
       -> Gtypes.substitution 
 	-> form list-> form -> (form * Gtypes.substitution)
-
+(*
 val rewrite_simple_env : 
     Gtypes.scope -> ?dir:bool 
       -> Gtypes.substitution 
 	-> form list-> form -> (form*Gtypes.substitution)
-
+*)
 (*
    type rulesDB 
 

@@ -247,62 +247,6 @@ let is_lambda = Logicterm.is_lambda
 let mk_lambda = Logicterm.mklam
 let mk_typed_lambda = Logicterm.mklam_ty
 
-(*
-   let is_neg t = is_fun_name "not" t
-   let mk_neg t = mk_fun "not" [t]
-   let dest_neg f = 
-   if is_neg f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_neg")
-   
-   let is_conj t = is_fun_name "and" t
-   let mk_conj a b = mk_fun "and" [a; b]
-   let dest_conj f = 
-   if is_conj f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_conj")
-
-   let is_disj t = is_fun_name "or" t
-   let mk_disj a b = mk_fun "or" [a; b]
-   let dest_disj f = 
-   if is_disj f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_disj")
-
-   let is_implies t = is_fun_name "implies" t
-   let mk_implies a b = mk_fun "implies" [a; b]
-   let dest_implies f = 
-   if is_implies f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_implies")
-
-   let is_equals t = is_fun_name "equals" t
-   let mk_equals a b = mk_fun "equals" [a; b]
-   let dest_equals f = 
-   if is_equals f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_equals")
-
-   let get_binder_name = Term.get_binder_name
-   let get_binder_type = Term.get_binder_type
-
-
-   let is_all = Term.is_all
-   let mk_all = Term.mkall
-   let mk_typed_all = Term.mkall_ty 
-
-   let is_exists = Term.is_exists
-   let mk_exists = Term.mkex
-   let mk_typed_exists = Term.mkex_ty 
-
-   let is_qnt t = (is_all t) or (is_exists t)
-
-
-   let is_lambda = Term.is_lambda
-   let mk_lambda = Term.mklam
-   let mk_typed_lambda = Term.mklam_ty
-
- *)
 (* Typecheck and reset types of formula *)
 
 let typecheck_env scp tenv f expty = 
@@ -381,26 +325,6 @@ let inst scp vs t r =
   let f, _ = inst_env scp vs (Gtypes.empty_subst()) t r
   in f
 
-(*
-let inst scp vs t r =
-  if (Term.is_qnt t) 
-  then 
-    if (is_closed vs r)
-    then 
-      (let (q, qnt, n, ty, b) = Term.dest_qnt t
-      in 
-      let nr0 = Typing.assign_types scp r
-      in let nr = 
-	Typing.retype 
-	  (Typing.simple_typecheck_env scp (Gtypes.empty_subst()) nr0 ty) nr0
-      in 
-      let f= (Term.subst_quick (Term.Bound(q)) nr b)
-      in 
-      f)
-    else raise (Term.termError "inst: replacement not closed " [r])
-  else raise (Term.termError "inst: not a quantified formula" [t])
-*)
-
 
 let equals = Term.equals
 
@@ -432,11 +356,13 @@ let rewrite_env scp ?(dir=true) tyenv rrs t =
   in 
   (form_of_term scp nt, ntyenv)
 
+(*
 let rewrite_simple_env scp ?(dir=true) tyenv rrs t = 
   let nt, ntyenv = 
     Rewrite.rewrite_univs_env ~dir:dir ~simple:true scp tyenv rrs t
   in 
   (form_of_term scp nt, ntyenv)
+*)
 
 (* Rewriting with nets *)
 

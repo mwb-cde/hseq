@@ -9,17 +9,17 @@ let dest_defn (Defn x) = x
 
 let rec mk_all_from_list scp b qnts =
   match qnts with 
-    (Basic.Id(n, ty)::qs) ->
+    [] -> b
+  | (Basic.Id(n, ty)::qs) ->
       mk_all_from_list scp (Logicterm.mkall_ty scp (name n) ty b) qs
-  |	[] -> b
-  |	_ -> raise (Term.termError "Invalid argument, mk_all_from_list" qnts)
+  | _ -> raise (Term.termError "Invalid argument, mk_all_from_list" qnts)
 
 
 let rec mk_var_ty_list ls =
   match ls with
     [] -> []
-  |	(Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
-  |	_ -> raise (Term.termError "Non-variables not allowed" ls)
+  | (Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
+  | _ -> raise (Term.termError "Non-variables not allowed" ls)
 
 
 let get_lhs t = 
@@ -64,8 +64,9 @@ let mk_defn_type env atys rty rfrs =
 let rec check_free_vars tyenv name ls = 
   match ls with
     [] -> []
-  |	(n, ty) :: fvs -> 
-      if n = name then check_free_vars tyenv name fvs
+  | (n, ty) :: fvs -> 
+      if n = name 
+      then check_free_vars tyenv name fvs
       else (ignore(tyenv.Gtypes.typeof_fn n); 
 	    check_free_vars tyenv name fvs)
 	  
@@ -86,7 +87,7 @@ let mkdefn scp name args rhs =
       raise (Term.termError 
 	       "Free variables not allowed in definition" [ndn])
   in 
-  let nscp =  (Gtypes.add_to_scope scp [name, nty])
+  let nscp = (Gtypes.add_to_scope scp [name, nty])
   in 
   let tenv=Typing.settype nscp ndn
   in 

@@ -1563,10 +1563,11 @@ module Rules=
       in 
       try
 	(let nt, ntyenv = 
-	  if simple 
+(*	  if simple 
 	  then 
 	    Formula.rewrite_simple_env scp ~dir:dir tyenv r t
 	  else 
+*)
 	    Formula.rewrite_env scp ~dir:dir tyenv r t
 	in 
 	let gtyenv = Gtypes.extract_bindings (sqnt_tyvars sq) ntyenv tyenv
@@ -1768,10 +1769,11 @@ module ThmRules=
 	  and rs=List.map (fun x -> Formula.rename (dest_thm x)) rrl
 	  in 
 	  let nt = 
-	    if simple
+(*	    if simple
 	    then
 	      (Formula.rewrite_simple ~dir:dir scp rs f)
 	    else 
+*)
 	      (Formula.rewrite ~dir:dir scp rs f)
 	  in mk_same_thm t nt
 	with x -> raise 
