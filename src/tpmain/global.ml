@@ -307,11 +307,17 @@ let read_defn x =
     catch_parse_error (Parser.read defn_parser) x
   in (l, r)
 
+(*
 let read_type_defn x =
   let (l, args, r)= 
     catch_parse_error 
       (Parser.read Parser.typedef_parser) x
   in (match args with None -> (l, [], r) | Some(a) -> (l, a, r))
+*)
+let read_type_defn x =
+    catch_parse_error 
+      (Parser.read Parser.typedef_parser) x
+
 
 let read_type x = 
   catch_parse_error

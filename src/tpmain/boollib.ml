@@ -16,7 +16,7 @@ module BaseTheory=
 
     let builder() =
       begin_theory "base" [];
-      ignore(new_type <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
+      ignore(typedef <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
 
       ignore
 	(declare

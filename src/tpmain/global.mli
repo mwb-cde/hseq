@@ -121,7 +121,11 @@ val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
 val read_defn :
     string -> (string * (string * Basic.gtype) list) * Basic.term
+(*
 val read_type_defn : string -> string * string list * Basic.gtype option
+*)
+val read_type_defn : string -> Parser.typedef_data
+
 val read_type : string -> Basic.gtype
 val read_fulltype : string -> Basic.gtype
 val read_identifier: string -> Basic.ident

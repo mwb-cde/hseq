@@ -78,9 +78,19 @@ val get_type_pp : Basic.ident -> (int * fixity * string option)
    [new_type <<:! t>>] declares type t, 
    [new_type <<:! ty1=ty2 >>] declares type ty1 as a synonym for ty2 
 *)
+(*
 val new_type :
     ?pp:(int*fixity*string option) 
     -> (string * string list * Basic.gtype option) -> unit
+*)
+val typedef:
+    ?pp:(int*fixity*string option) 
+    -> ?simp:bool
+      -> ?thm:Logic.thm
+	-> ?rep:string -> ?abs:string
+	-> Parser.typedef_data
+	-> Logic.cdefn
+
 
 (* new_defn/define define an identifier *)
 
@@ -168,3 +178,14 @@ val scope: unit -> Gtypes.scope
 val read : string -> Basic.term
 val read_defn : string -> ((string * (string * Basic.gtype) list) * Basic.term)
 val read_unchecked : string -> Basic.term
+
+(* The following is exposed for debugging *)
+
+val simple_typedef: 
+    (string * string list * Basic.gtype option) 
+  -> Logic.cdefn
+val subtypedef: 
+    (string * string list * Basic.gtype * Basic.term) 
+  -> (string option * string option)
+    -> ?simp:bool -> Logic.thm 
+      -> Logic.cdefn

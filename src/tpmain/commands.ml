@@ -161,6 +161,26 @@ let get_pp_rec selector id=
 let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
 
+
+let save_thm ?(simp=false) n th =
+  let props = if simp then [Theory.simp_property] else []
+  in 
+  catch_errors 
+    (fun x -> Thydb.add_thm n th props x; th) (theories())
+
+let prove_thm ?(simp=false) n t tacs =
+  catch_errors
+    (fun x -> 
+      let th = Goals.by_list t tacs
+      in 
+      ignore(save_thm ~simp:simp n th); th)
+    ()
+
+let by x = 
+  (catch_errors Goals.by_com) x
+
+
+(*
 let new_type ?pp (n, args, def) = 
   let trec = Logic.Defns.mk_typealias (Global.scope()) n args def 
   in 
@@ -171,6 +191,73 @@ let new_type ?pp (n, args, def) =
       let lname = Basic.mk_long (Global.get_cur_name()) n
       in 
       add_type_pp lname prec fx repr)
+*)
+
+let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
+  let rep_str = Lib.get_option rep "REP"
+  and abs_str = Lib.get_option abs "ABS"
+  in 
+  let rep_name = rep_str^"_"^name
+  and abs_name = abs_str^"_"^name
+  in 
+  let tydef = 
+    Logic.Defns.mk_subtype (Global.scope()) 
+      name args dtype set rep_name abs_name thm
+  in 
+  (* add the type definition *)
+  Thydb.add_type_rec tydef (theories());
+  (* add the other parts to the theory *)
+  let tyrec = Logic.Defns.dest_subtype tydef
+  in 
+  let rep_decln = tyrec.Logic.type_rep
+  and abs_decln = tyrec.Logic.type_abs
+  in 
+  (* add the declarations of rep and abs *)
+  Thydb.add_decln rep_decln [] (theories());
+  Thydb.add_decln abs_decln [] (theories());
+  (* Add the theorems *)
+  let rep_type = tyrec.Logic.rep_type
+  and rt_name = rep_name^"_mem"
+  and rep_type_inverse = tyrec.Logic.rep_type_inverse
+  and rti_name = rep_name^"_inverse"
+  and abs_type_inverse = tyrec.Logic.abs_type_inverse
+  and ati_name = abs_name^"_inverse"
+  in 
+  ignore(save_thm ~simp:simp rt_name rep_type);
+  ignore(save_thm ~simp:simp rti_name rep_type_inverse);
+  ignore(save_thm ~simp:simp ati_name abs_type_inverse);
+  tydef
+  
+let simple_typedef (n, args, def) =
+  let tydef = Logic.Defns.mk_typealias (Global.scope()) n args def 
+  in 
+  Thydb.add_type_rec tydef (theories()); tydef
+
+let typedef ?pp ?simp ?thm ?rep ?abs tydef = 
+  let (name, td) =
+    match tydef with
+      Parser.NewType (n, args) -> 
+	(n, simple_typedef (n, args, None))
+    | Parser.TypeAlias(n, args, d) -> 
+	(n, simple_typedef(n, args, Some(d)))
+    | Parser.Subtype(n, args, dtyp, set) -> 
+	let thm1=
+	  Lib.dest_option 
+	    ~err:(Result.error 
+		    ("Subtype definition must have an existance theorem"))
+	    thm
+	in 
+	(n, subtypedef (n, args, dtyp, set) (rep, abs) ?simp:simp thm1)
+  in 
+  (match pp with 
+    None -> ()
+  | Some(prec, fx, repr) -> 
+      let lname = Basic.mk_long (Global.get_cur_name()) name
+      in 
+      add_type_pp lname prec fx repr);
+  td
+
+
 
 (*
    [dest_defn_term trm]
@@ -333,22 +420,6 @@ let qed n =
   in 
   Thydb.add_thm n (Goals.result()) [] (theories()); t
 
-let save_thm ?(simp=false) n th =
-  let props = if simp then [Theory.simp_property] else []
-  in 
-  catch_errors 
-    (fun x -> Thydb.add_thm n th props x; th) (theories())
-
-let prove_thm ?(simp=false) n t tacs =
-  catch_errors
-    (fun x -> 
-      let th = Goals.by_list t tacs
-      in 
-      ignore(save_thm ~simp:simp n th); th)
-    ()
-
-let by x = 
-  (catch_errors Goals.by_com) x
 
 let scope () = Global.scope();;
 
