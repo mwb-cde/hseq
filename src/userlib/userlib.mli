@@ -76,6 +76,50 @@ val new_type :
     -> (string * string list * Basic.gtype option) -> unit
 *)
 
+(*
+   [typedef <:def<: t>>]: declare a new type [t], which may take arguments.
+
+   [typedef <:def<: ty1=ty2 >>]: define type [ty1] as a synonym for
+   type [ty2]. Both [ty1] and [ty2] may take arguments, but all
+   variables in [ty2] occur in the argument list of [ty1].
+
+   [typedef <:def<: ty1=ty2: trm >> ~thm ?rep ?abs ?simp]:
+   define type [ty1] as a subtype of type [ty2] containing those
+   elements [x:ty2] for which [trm x] is [true]. 
+
+   Both [ty1] and [ty2] may take arguments. All variables in [ty2]
+   must occur in [ty1].
+
+   [thm]: the existance theorem for [ty1], must be in the form
+   [|- ?x: trm x ]. The expression [Defn.mk_subtype_exists trm] returns the
+   form that the theorem must be in for term [trm].
+
+   [?rep], [?abs]: (optional) the names for the representation and
+   abstraction functions. Default: [rep= REP_T] and [abs = ABS_T]
+   where [T] is the name of the type being defined.
+
+   [?simp]: (optional) whether the theorems constructed by the subtype package
+   should be added to the standard simpset. Default [simp=true].
+
+   Subtype construction:
+
+   Assume [ty1 = (args) T], [ty2], [trm=set] and 
+   [?rep=REP], [?abs=ABS].
+
+   The subtype package declares two functions, [REP] and [ABS] and
+   three axioms [REP_T_mem], [REP_T_inverse] and [ABS_T_inverse] and
+   adds them to the current theory. If [?simp=true], the axioms are
+   also added to the standard simpset.
+
+   Declarations:
+    REP:(args)T -> A
+    ABS:A-> (args)T 
+ 
+   Axioms:
+    REP_T_mem: |- !x: set (REP x)
+    REP_T_inverse: |- !x: ABS (REP x) = x
+    ABS_T_inverse: |- !x: (set x) => (REP (ABS x) = x)
+*)
 val typedef:
     ?pp:(int*fixity*string option) 
     -> ?simp:bool
