@@ -94,7 +94,7 @@ let is_weak t  =
 let rec equals x y = 
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
-  |	(Constr(f1, args1), Constr(f2, args2))
+  | (Constr(f1, args1), Constr(f2, args2))
     -> (f1=f2) &
       (try
 	((List.iter2 

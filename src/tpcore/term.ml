@@ -3,6 +3,7 @@ open Basic
 open Gtypes
 open Result
 
+(*
 let rec equals x y = 
   (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
@@ -13,6 +14,19 @@ let rec equals x y =
   | (Typed(t1, ty1), Typed(t2, ty2)) ->
       ty1=ty2  & (equals t1 t2)
   | (_, _) -> x=y)
+*)
+
+let rec equals x y = 
+  (match (x, y) with
+    (App(f1, arg1), App(f2, arg2))->
+      (equals f1 f2) & (equals arg1 arg2)
+  | (Bound(q1), Bound(q2)) -> q1==q2
+  | (Qnt(k1, qn1, b1), Qnt(k2, qn2, b2)) -> 
+      k1=k2 & qn1==qn2 & (equals b1 b2)
+  | (Typed(t1, ty1), Typed(t2, ty2)) ->
+     (Gtypes.equals ty1 ty2)  & (equals t1 t2)
+  | (_, _) -> x=y)
+
 
 (* simple pretty printing  and error handling *)
 
