@@ -237,18 +237,27 @@ val gen_rewrite_tac:
    If [f] is not given, rewrite all formulas in sequent.
 *)
 val rewrite_tac: 
-    ?ctrl:Rewrite.control
+    ?dir:Rewrite.direction
   -> Logic.thm list -> ?f:Logic.label -> Logic.rule
 
+(*
+val rewrite_tac: 
+    ?ctrl:Rewrite.control
+  -> Logic.thm list -> ?f:Logic.label -> Logic.rule
+*)
 
 (** [once_rewrite_tac info dir thms f]
 
    Rewrite formula [f] once.
    If [f] is not given, rewrite all formulas in sequent.
 *)
-val once_rewrite_tac: 
+val once_rewrite_tac: ?dir:Rewrite.direction -> 
     Logic.thm list -> ?f:Logic.label -> Logic.rule
 
+(*
+val once_rewrite_tac: 
+    Logic.thm list -> ?f:Logic.label -> Logic.rule
+*)
 
 (** [replace_tac info dir asms f]
 
@@ -262,6 +271,22 @@ val once_rewrite_tac:
 
    replace exactly once.
 *)
+val gen_replace_tac: 
+    ?ctrl:Rewrite.control
+  -> ?asms:Logic.label list 
+    -> ?f:Logic.label -> Logic.rule
+
+val replace_tac: 
+    ?dir:Rewrite.direction
+  -> ?asms:Logic.label list 
+    -> ?f:Logic.label -> Logic.rule
+
+val once_replace_tac: 
+    ?dir:Rewrite.direction
+  -> ?asms:Logic.label list 
+    -> ?f:Logic.label -> Logic.rule
+
+(*
 val replace_tac: 
     ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
@@ -270,6 +295,7 @@ val replace_tac:
 val once_replace_tac: 
     ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.rule
+*)
 
 (** [is_rewrite_formula f] 
    test whether [f] is an equality or a universally quantified 
@@ -313,11 +339,12 @@ val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
 (** [itactic]
    Information passing tactics.
  *)
+(*
 type itactic = 
     Logic.info 
   -> (Tag.t list * Tag.t list * Basic.term list)
     -> tactic
-
+*)
 (**
    [itac tac (gs, fs, vs) g]
 
@@ -335,12 +362,13 @@ type itactic =
    Example:
    [itac (fun _ -> allE) ([], [], [])]
  *)
+(*
 val itac: 
     itactic 
   -> (Tag.t list * Tag.t list * Basic.term list)
     -> Logic.branch
       -> ((Tag.t list * Tag.t list * Basic.term list) * Logic.branch)
-
+*)
 (** [iseq initial itacs g]
    Make a tactic from a list of itactics.
    Apply itactics in the list [itac] to goal [g] in order.
@@ -349,10 +377,11 @@ val itac:
    The remaning itactics get their information from the prevoius 
    itactic.
  *)
+(*
 val iseq: 
     ?initial:(Tag.t list * Tag.t list * Basic.term list) 
   -> itactic list -> tactic
-
+*)
 (** [ialt initial itacs g]
    Make a tactic from a list of itactics.
    Apply itactics in the list [itac] to goal [g] until one succeeds.
@@ -361,6 +390,8 @@ val iseq:
    The remaning itactics get their information from the prevoius 
    itactic.
  *)
+(*
 val ialt: 
     ?initial:(Tag.t list * Tag.t list * Basic.term list) 
   -> itactic list -> tactic
+*)

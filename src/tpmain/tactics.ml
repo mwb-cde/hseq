@@ -320,28 +320,6 @@ let (++) tac1 tac2 g =
 let rec repeat tac g =
   (tac ++ ((repeat tac) || skip)) g
 
-(* apply_list rules sq:
-   applies rules, in order, to each subgoal resulting from
-   application of first rule to sq 
-   fails if no rule succeeds 
- *)
-(*
-let apply_list fs g =
-  let chng = ref false
-  in 
-  let rec appl_aux fs gs =
-    match fs with 
-      [] -> gs 
-    | r::rs-> 
-        (try 
-          (let ng=foreach r gs
-          in chng:=true; appl_aux rs ng)
-        with _ -> appl_aux rs gs)
-  in 
-  let ngs = appl_aux fs (skip g)
-  in if !chng then ngs else (fail g)
-*)
-
 (** 
    [apply_if pred tac]
    Apply tactic [tac] if predicate [pred] is true for node.
@@ -373,44 +351,40 @@ let rec each l tac goal =
 
 
 let rewrite_control 
-    ?(max=None) ?(strat=Rewrite.topdown) dir=
+    ?max ?(strat=Rewrite.topdown) dir=
   Rewrite.control ~max:max ~dir:dir ~strat:strat 
 
 let gen_rewrite_tac ?info ctrl rules ?f goal=
   match f with
     None -> 
       Drule.foreach_once 
-	(fun x -> 
-	  Logic.Rules.rewrite 
-	    info ~ctrl:ctrl rules x) goal
+	(fun x -> Logic.Rules.rewrite info ~ctrl:ctrl rules x) goal
   | Some (x) ->
-      Logic.Rules.rewrite
-	info ~ctrl:ctrl rules x goal
+      Logic.Rules.rewrite info ~ctrl:ctrl rules x goal
 	
-
-let rewrite_tac ?(ctrl=Formula.default_rr_control) ths ?f goal=
+let rewrite_tac ?(dir=leftright) ths ?f goal=
+  let ctrl = rewrite_control dir
+  in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
-  match f with
-    None -> 
-      Drule.foreach_once
-	(fun l -> Logic.Rules.rewrite None ~ctrl:ctrl rules l)
-	goal
-  | Some (x) ->
-      Logic.Rules.rewrite None ~ctrl:ctrl rules x goal
+  gen_rewrite_tac ?info:None ctrl rules ?f:f goal 
 
-let once_rewrite_tac ths ?f goal=
-  let ctrl=
-    {Formula.default_rr_control with Rewrite.depth=Some 1}
+
+let once_rewrite_tac ?(dir=leftright) ths ?f goal=
+  let ctrl=rewrite_control ~max:1 dir
   in 
-  rewrite_tac ~ctrl ths ?f:f goal
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:None ctrl rules ?f:f goal
+
 
 let is_rewrite_formula t=
   let (_, t1) = Term.strip_qnt Basic.All t
   in 
   (Logicterm.is_equality t1)
     
-let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
+
+let gen_replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = Drule.sequent goal
   in 
   let rec find_equality_asms sqasms rst=
@@ -443,12 +417,16 @@ let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   | Some (x) ->
       Logic.Rules.rewrite None ~ctrl:ctrl rules x goal
 
-
-let once_replace_tac ?asms ?f goal=
-  let ctrl=
-    {Formula.default_rr_control with Rewrite.depth=Some 1}
+let replace_tac ?(dir=leftright) ?asms ?f goal=
+  let ctrl=rewrite_control dir
   in 
-  replace_tac ~ctrl ?asms:asms ?f:f goal
+  gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f goal
+
+let once_replace_tac ?(dir=leftright) ?asms ?f goal=
+  let ctrl=rewrite_control ~max:1 dir
+  in 
+  gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f goal
+
 
 (* pattern matching tacticals *)
 
@@ -479,6 +457,7 @@ let match_formula trm tac g=
 (** [itactic]
    Information passing tactics.
  *)
+(*
 type itactic = 
     Logic.info
       -> (Tag.t list * Tag.t list * Basic.term list)
@@ -522,3 +501,4 @@ let ialt ?(initial=([], [], [])) (tacs: itactic list) goal=
 	else g
   in 
   alt_aux tacs ([], [], []) (skip goal)
+*)

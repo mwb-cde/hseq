@@ -194,11 +194,8 @@ let new_type ?pp (n, args, def) =
 *)
 
 let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
-  let rep_str = Lib.get_option rep "REP"
-  and abs_str = Lib.get_option abs "ABS"
-  in 
-  let rep_name = rep_str^"_"^name
-  and abs_name = abs_str^"_"^name
+  let rep_name = Lib.get_option rep ("REP_"^name)
+  and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
   let tydef = 
     Logic.Defns.mk_subtype (Global.scope()) 

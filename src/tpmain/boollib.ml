@@ -144,15 +144,24 @@ module BoolPP =
  *
  ***)
 
-let eq_tac g = 
-  let a = first_concl Formula.is_equality (Drule.sequent g)
+let eq_tac ?c g = 
+  let cf = 
+    match c with
+      None -> first_concl Formula.is_equality (Drule.sequent g)
+    | Some(x) -> x
   in 
   let th = 
     try lemma "base.eq_refl"
     with Not_found -> 
       (raise (Result.error "eq_tac: Can't find required lemma base.eq_refl"))
   in 
-  seq [cut th; unify_tac ~a:(fnum (-1)) ~c:a] g
+  let info = Drule.mk_info()
+  in 
+  seq [Logic.Rules.cut (Some info) th; 
+       (fun g1 -> 
+	 let af = Lib.get_one (Drule.formulas info) (Failure "eq_tac")
+	 in 
+	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
 let cut_thm str = (cut (lemma str))
 
@@ -177,6 +186,30 @@ let is_iff f =
     (fst (Term.dest_fun (Formula.term_of f)) = Logicterm.iffid)
   with _ -> false
 
+let iffA_rule i goal = 
+  let sqnt=Drule.sequent goal
+  in 
+  let t, f = Logic.Sequent.get_tagged_asm (Logic.label_to_tag i sqnt) sqnt
+  in
+  let iff_def_id = Basic.string_fnid Logicterm.iffid
+  in 
+  if not (is_iff f) 
+  then (raise (Result.error "iffC_rule"))
+  else 
+    (seq 
+       [Tactics.rewrite_tac [defn iff_def_id] ~f:(ftag t);
+	Logic.Rules.conjA None (ftag t);
+	Logic.Rules.implA None (ftag t)]) goal
+
+let iffA ?a g = 
+  let af = 
+    match a with
+      Some x -> x
+    | _ -> (first_asm is_iff (Drule.sequent g))
+  in 
+  iffA_rule af g
+
+
 let iffC_rule i goal = 
   let sqnt=Drule.sequent goal
   in 
@@ -185,12 +218,13 @@ let iffC_rule i goal =
   let iff_def_id = Basic.string_fnid Logicterm.iffid
   in 
   if not (is_iff f) 
-  then (raise (Result.error "iffI_rule"))
+  then (raise (Result.error "iffC_rule"))
   else 
     (seq 
        [Tactics.rewrite_tac [defn iff_def_id] ~f:(ftag t);
 	Logic.Rules.conjC None (ftag t);
 	Logic.Rules.implC None (ftag t)]) goal
+
 
 let iffC ?c g = 
   let cf = 
@@ -447,7 +481,6 @@ let match_mp_rule0 thm i sq=
 	 [inst_tac ~f:af ncnsts; 
 	  Tactics.cut thm; 
 	  Logic.Rules.implA None af;
-(*	  Logic.Rules.postpone;  *)
 	  Tactics.unify_tac ~a:af ~c:i] g)) sq
 
 let match_mp_tac thm ?c g = 

@@ -51,7 +51,7 @@ end
 *)
 
 (* prove goals of the form A|- x=x, C *)
-    val eq_tac :  Tactics.tactic
+    val eq_tac : ?c:Logic.label -> Tactics.tactic
 
 (* unfold a definition *)
     val unfold : ?f:Logic.label -> string -> Tactics.tactic
@@ -64,6 +64,7 @@ val is_iff: Formula.form -> bool
 
 (* val iffC_rule: Logic.label -> Logic.rule *)
 val iffC: ?c:Logic.label -> Tactics.tactic
+val iffA: ?a:Logic.label -> Tactics.tactic
 
 val asm_elims : 
     unit -> ((Formula.form->bool) * (Logic.label -> Logic.rule)) list
@@ -142,22 +143,15 @@ val false_tac: Tactics.tactic
 *)
 val bool_tac:  Tactics.tactic
 
-(* match_mp_tac *)
-(*
-val match_mp_tac: Logic.thm -> ?c:Logic.label -> Tactics.tactic
-
-val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
-*)
-
 (**
-   [mp_tac ~a ~f]
+   [mp_tac ~a ~a1]
 
    Modus ponens.
-   if [a] is [l=>r] and [f] is [l],
-   then apply reduce [a] to [r].
+   if [a] is [l=>r] and [a1] is [l],
+   then reduce [a] to [r].
 
-   if [a] is [! x1 .. xn: l = r] and [f] is [l],
-   instantiate all of the [x1 .. xn] from [f] before 
+   if [a] is [! x1 .. xn: l = r] and [a1] is [l],
+   instantiate all of the [x1 .. xn] from [a1] before 
    reducing.
 
    [cut_mp_tac ?info thm ?a]
