@@ -674,10 +674,18 @@ module Rules:
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> rule
 
+(*
+   [rewrite_conv scp ctrl rrl thm]
+   rewrite theorem [thm] with rules [rrl] in scope [scp].
+*)
+      val rewrite_conv: 
+	  Gtypes.scope -> ?ctrl:Rewrite.control
+	    -> thm list -> thm -> thm
     end
 
 open Rules
 
+(*
 module ThmRules:
     sig
 
@@ -686,18 +694,17 @@ module ThmRules:
 (* conversions which apply to only one theorem 
    (e.g. conjE_conv |- a and b  --> [|- a; |- b])
  *)
+(*
       val conjE_conv: thm-> thm list
+*)
+(*
       val allI_conv: Gtypes.scope -> Basic.term -> conv
       val eta_conv: Gtypes.scope -> Formula.form -> conv
       val beta_conv: Gtypes.scope -> conv
-
+*)
 (* conversions which apply to all theorems in the list *)
-
-(* rewrite_conv: apply rewrite, fail if any rewrite fails *)
-      val rewrite_conv: 
-	  Gtypes.scope -> ?ctrl:Rewrite.control
-	    -> thm list -> thm -> thm
     end
+*)
 
 module Defns :
     sig

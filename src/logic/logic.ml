@@ -2470,6 +2470,28 @@ module Rules=
 	sqnt_apply (rewriteC0 inf rrc rls j) g
       with Not_found -> sqnt_apply (rewriteA0 inf rrc rls j) g
 
+(*
+   [rewrite_conv scp ctrl rrl thm]
+   rewrite theorem [thm] with rules [rrl] in scope [scp].
+*)
+    let rewrite_conv scp ?(ctrl=Formula.default_rr_control) rrl thm =
+      let mk_same_thm t f = 
+      if (is_axiom t) then mk_axiom f else mk_theorem f
+      in 
+      let conv_aux t = 
+	try 
+	  let f= dest_thm t
+	  in 
+	  let nt = Formula.rewrite ~ctrl:ctrl scp 
+	      (List.map 
+		 (fun x -> 
+		   Rewrite.rule 
+		     (Formula.dest_form (dest_thm x))) rrl) f
+	  in mk_same_thm t nt
+	with x -> raise 
+	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
+      in 
+      conv_aux thm
 
 (*
     let rewrite0 inf ctrl rls j tyenv sq=
@@ -2515,6 +2537,8 @@ module Rules=
   end
 
 open Rules
+
+(*
 module ThmRules=
   struct
 
@@ -2583,24 +2607,9 @@ module ThmRules=
       with e -> 
 	raise (Result.add_error (logicError "eta_conv" []) e)
 
-    let rewrite_conv scp ?(ctrl=Formula.default_rr_control) rrl thm =
-      let conv_aux t = 
-	try 
-	  let f= dest_thm t
-	  in 
-	  let nt = Formula.rewrite ~ctrl:ctrl scp 
-	      (List.map 
-		 (fun x -> 
-		   Rewrite.rule 
-		     (Formula.dest_form (dest_thm x))) rrl) f
-	  in mk_same_thm t nt
-	with x -> raise 
-	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)
-      in 
-      conv_aux thm
 
   end
-
+*)
 (* 
    cdefn:
    Checked Definitions: 
