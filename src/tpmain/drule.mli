@@ -9,11 +9,12 @@ val fnum : int -> Logic.label
 val asm_forms : Logic.Sequent.t -> Formula.form list
 val concl_forms : Logic.Sequent.t -> Formula.form list
 
+(* tagged formulas of a sequent *)
+val asms_of : Logic.Sequent.t -> Logic.tagged_form list
+val concls_of : Logic.Sequent.t -> Logic.tagged_form list
+
 (** [sequent g]
    get first subgoal of of goal [g].
- *)
-(*
-   val sequent : Logic.goal -> Logic.Sequent.t
  *)
 val sequent : Logic.node -> Logic.Sequent.t
 
@@ -46,8 +47,7 @@ val get_cncl: Logic.label -> Logic.node -> Formula.form
 val has_subgoals : Logic.branch -> bool
 
 (** 
-   [node_tag n]
-   get tag of the sequent of node n.
+   [node_tag n]: Get tag of the sequent of node n.
  *)
 val node_tag : Logic.node -> Tag.t
 
@@ -172,6 +172,46 @@ val foreach_asm_once :
 val foreach_once :
     (Logic.label -> Logic.rule) -> Logic.rule
 
+(* 
+   [find_qnt_opt ?exclude qnt ?f pred forms] 
+
+   Find the first formula in [forms] to satisfy [pred].
+   The formula may by quantified by [qnt].
+   Return the binders, the tag and the formula.
+
+   if [f] is given, the formula must be tagged with [f].
+   if [exclude] is given, ignore the formulas for which it is true.
+
+   raise [Not_found] if no formula can be found which satisfies all the
+   conditions.
+*)
+val find_qnt_opt:
+    ?exclude:(Logic.tagged_form -> bool)
+    -> Basic.quant_ty
+      -> ?f:Tag.t
+	-> (Basic.term -> bool)
+	  -> Logic.tagged_form list
+	    -> (Tag.t * Basic.binders list * Basic.term)
+
+(*
+   [unify_sqnt_form varp trm ?f forms]
+   Unify [trm] with formula [ft] in forms, return substitution and tag 
+   of formula which matches ([ft] if given).
+
+   [varp] determines what is a bindable variable.
+   raise Not_found if no unifiable formula is found.
+ *)
+val unify_sqnt_form:
+    Gtypes.substitution 
+    -> Gtypes.scope
+	-> (Basic.term -> bool)
+	    -> Basic.term
+		-> ?exclude:(Logic.tagged_form -> bool)
+		  -> ?f:Tag.t
+		    -> Logic.tagged_form list 
+			-> (Tag.t * Term.substitution)
+
+
 (**
    [match_formulas scp varp t fs]
 
@@ -234,3 +274,77 @@ val qnt_opt_of:
 val dest_qnt_opt: 
     Basic.quant_ty 
   -> (Basic.term -> 'a) -> Basic.term -> (Basic.binders list * 'a) 
+
+(** [rebuild_qnt k qs b]
+   rebuild quantified term of kind k from quantifiers [qs] and body [b]
+
+   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
+   ->
+   [ << !x y z : b >> ]
+ *)
+val rebuild_qnt: 
+    Basic.quant_ty -> Basic.binders list -> Basic.term -> Basic.term
+
+(** 
+   [find_formula p fs]: Return the first formula in [fs] to satisfy [p].
+
+   raise Not_found if no such formula.
+*)
+val find_formula : ('a -> bool) -> 'a list -> 'a
+(*
+   [find_asm p n]: 
+   Return the first assumption of [n] to satisfy [p].
+
+   [find_concl p n]: 
+   Return the first conclusion of [n] to satisfy [p].
+
+   raise Not_found if no such formula.
+*)
+val find_asm:
+    ((Logic.tagged_form) -> bool) -> Logic.node -> Logic.tagged_form
+
+val find_concl:
+    ((Logic.tagged_form) -> bool) -> Logic.node -> Logic.tagged_form
+
+(**
+   [unify_formula_for_consts scp trm f]
+
+   Unify [trm] with formula [f] returning the list of terms needed to
+   make [trm] alpha-equal to [f] by instantiating the topmost
+   quantifiers of [trm].
+
+   raise Not_found, if no unifiable formula found.
+*)
+val unify_formula_for_consts:
+    Gtypes.substitution
+    -> Gtypes.scope
+      -> (Basic.binders list * Basic.term) 
+	-> Basic.term -> Basic.term list
+
+(**
+   [unify_concl_for_consts ?c trm g]
+
+   if [c] is given, unify [trm] with the conclusion labelled [c],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be universally quantified.
+*)
+val unify_concl_for_consts:
+    Basic.quant_ty
+    -> ?c:Logic.label
+	-> Basic.term -> Logic.node -> Basic.term list
+
+(**
+   [unify_asm_for_consts ?a qnt trm g]
+
+   if [a] is given, unify [trm] with the assumption labelled [a],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be quantified by [qnt].
+*)
+val unify_asm_for_consts:
+    Basic.quant_ty
+    -> ?a:Logic.label
+	-> Basic.term -> Logic.node -> Basic.term list

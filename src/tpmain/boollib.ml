@@ -135,7 +135,7 @@ let iffC_rule i goal =
   else 
     (seq 
        [Tactics.rewrite_tac [lemma "boolean.iff_def"]
-	  ~dir:leftright ~f:(ftag t);
+	  ~f:(ftag t);
 	Logic.Rules.conjC None (ftag t);
 	Logic.Rules.implC None (ftag t)]) goal
 
@@ -252,16 +252,61 @@ let inst_tac ?f l g=
       with Not_found -> inst_concl ~c:x l g)
 
 
-let cases_tac0 (x:Basic.term) g= 
-  let thm = 
-    try
-      lemma "boolean.cases_thm"
-    with Not_found -> 
-      (raise (Result.error "Can't find required lemma boolean.cases_thm"))
-  in 
-  Tactics.seq [cut thm; allA x; disjA; negA; (* postpone *)] g
+(**
+   [cases_tac x sq]
 
-let cases_tac x = cases_tac0 x
+   Adds formula x to assumptions of sq, 
+   creates new subgoal in which to prove x.
+
+   g|asm |- cncl      
+   --> 
+   g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
+
+   info: [g, g'] [t]
+*)
+    let cases_tac_thm = ref None;;
+
+    let get_cases_thm ()=
+      match !cases_tac_thm with
+	None ->
+	  let nthm =
+	    try 
+	      Commands.lemma "boolean.cases_thm"
+	    with Not_found -> 
+	       (Goals.prove <<!P: (not P) or P>>
+		(allC ++ disjC ++ negC ++ basic))
+	  in 
+	  cases_tac_thm := Some(nthm);
+	  nthm
+      | Some(t) -> t
+
+    let cases_full_tac inf (t:Basic.term) g= 
+      let thm = 
+	try get_cases_thm()
+	with e -> 
+	  raise 
+	    (Result.add_error 
+	       (Result.error "cases_full_tac: can't build cases theorem") e)
+      and tinf=Drule.mk_info()
+      in 
+      let g1=Logic.Rules.cut (Some tinf) thm g
+      in 
+      let ttag=Lib.get_one ((!tinf).Logic.forms) (Failure "case_info")
+      in 
+      let g2=
+	foreach
+	(seq
+	  [Logic.Rules.allA None t (ftag ttag);
+	   Logic.Rules.disjA (Some tinf) (ftag ttag)
+	     -- [Logic.Rules.negA None (ftag ttag); skip]]) g1
+      in 
+      let ng1, ng2=Lib.get_two (!tinf).Logic.goals (Failure "case_info")
+      in 
+      Logic.add_info inf [ng1;ng2] [ttag] [];
+      g2
+
+    let cases_tac ?info (x:Basic.term) g = cases_full_tac info x g
+
 
 let equals_tac ?f g =
   let ff =
@@ -376,85 +421,196 @@ let match_mp_sqnt_rule0 j i sq=
 
 let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
 
-(**
-   [mp_tac ~a ~f]
-   Modus ponens.
-   if [a] is [l=>r] and [f] is [l],
-   then apply reduce [a] to [r].
+
+
+(* 
+   Modus ponens
 *)
-let mp_tac ?a ?f g=
+let asm_mp_tac ?a ?a1 g=
   let typenv = Drule.typenv_of g
   and sqnt = Drule.sequent g
   in 
   let scp = Logic.Sequent.scope_of sqnt
+  and a_tag = 
+    Lib.apply_option (fun x -> Some(Logic.label_to_tag x sqnt)) a None
+  and a1_tag = 
+    Lib.apply_option (fun x -> Some(Logic.label_to_tag x sqnt)) a1 None
   in 
-  let mpform_tag =  (* find the implication in the assumptions *)
-    match a with
-      None -> 
-	(try
-	  Drule.first_asm
-	    (fun x -> 
-	      (Logicterm.is_implies) (Formula.dest_form x)) sqnt
-	with Not_found ->
-	  raise 
-	    (Logic.logicError ("mp_tac: no implications in assumptions") []))
-    | Some x -> x
+  let (a_label, mp_vars, mp_form) =
+    try
+      find_qnt_opt Basic.All ?f:a_tag 
+	Logicterm.is_implies (Drule.asms_of sqnt)
+    with Not_found -> 
+      raise (Logic.logicError ("asm_mp_tac: no implications in assumptions") 
+	       [])
+  in
+  let (_, mp_lhs, mp_rhs) = Term.dest_binop mp_form
   in 
-  let mpform = Formula.dest_form (Drule.get_asm mpform_tag g)
+  let varp = Rewrite.is_free_binder mp_vars
   in 
-  let (l, r) = 
-    match Term.dest_fun mpform with
-      (_, (x::y::_)) ->  (x, y)
-    | _ -> raise (Invalid_argument "mp_tac")
+  let (a1_label, a1_env)= 
+    let exclude (t, _) = (Tag.equal t a_label)
+    in
+    try 
+      unify_sqnt_form typenv scp varp mp_lhs 
+	~exclude:exclude
+	?f:a1_tag (Drule.asms_of sqnt)
+    with 
+      Not_found -> 
+	raise 
+	  (Term.termError ("asm_mp_tac: no matching formula in assumptions") 
+	   [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
   in 
-  let varp x = false
+  let info= Drule.mk_info()
   in 
-  let mpasm_tag = (* find the lhs in the assumptions *)
-    match f with
-      None -> 
-	(try
-	  (Drule.match_formulas typenv scp varp l (Logic.Sequent.asms sqnt))
-	with Not_found -> 
-	  raise (Term.termError ("mp_tac: no match") [mpform]))
-    | Some x -> x
+  let tac1=
+    match mp_vars with
+      [] -> (* No quantifier *)
+	skip
+    | _ -> (* Implication has quantifier *)
+	inst_asm ~a:(ftag a_label)
+	  (Drule.make_consts mp_vars a1_env)
+  and tac2 g2= Logic.Rules.implA (Some info) (ftag a_label) g2
+  and tac3 g3 =
+    ((fun n -> 
+      (Lib.apply_nth 0 (Tag.equal (Drule.node_tag n)) 
+	 (Drule.subgoals info) false))
+       --> 
+	 Logic.Rules.basic (Some info) (ftag a1_label)
+	   (ftag (Lib.get_one (Drule.formulas info) 
+		    (Failure "asm_mp_tac2.2")))) g3
   in 
-  let info=Drule.mk_info()
-  in let g1= (Logic.Rules.implA (Some info) mpform_tag) g
-  in let lgtag = 
-    match Drule.subgoals info with
-      [] -> raise (Result.error "mp_tac: error when applying implA")
-    | (x::_) -> x
-  in 
-  (Logic.foreach 
-     ((fun n -> Tag.equal (Drule.node_tag n) lgtag)
-	--> 
-	  (Logic.Rules.basic (Some info) mpasm_tag 
-	     (ftag (Lib.get_one (formulas info) 
-		      (Failure "mp_tac: basic"))))) g1)
+   (tac1++ (tac2 ++ tac3)) g 
 
 
 (*
-  let g1= 
-    iseq 
-      ~initial:([], [], [])
-      [(fun info (_, fs, _) ->
-	Logic.Rules.implA (Some info) mpform_tag);
-       (fun info (_, fs, _) ->
-	 thenl skip
-	   [Logic.Rules.basic (Some info) mpasm_tag 
-	      (ftag (Lib.get_one fs (Failure "mp_tac: basic")));
-	    skip])]
-      g
+   [mp_tac ?info thm ?a]
+
+   Apply modus ponens to theorem [thm] and assumption [a].
+   [thm] must be a (possibly quantified) implication [!x1 .. xn: l=>r]
+   and [a] must be [l].
+
+   If [a] is not given, finds a suitable assumption to unify with [l].
+
+   info [] [thm_tag] []
+   where tag [thm_tag] identifies the theorem in the sequent.
+*)
+let mp_tac ?info thm ?a g=
+  let info1 = Drule.mk_info()
+  and f_label = 
+    Lib.apply_option 
+      (fun x -> Some (ftag (Logic.label_to_tag x (Drule.sequent g))))
+      a None
   in 
-  g1
+  let tac1 = Logic.Rules.cut (Some info1) thm
+  in 
+  let tac2 g2 = 
+    (let a_tag = 
+      Lib.get_one (Drule.formulas info1) 
+	(Logic.logicError "mp_tac: Failed to cut theorem" 
+	   [Logic.dest_thm thm])
+    in 
+    asm_mp_tac ~a:(ftag a_tag) ?a1:f_label g2)
+  in 
+  let g3= (tac1++tac2) g
+  in 
+  (Logic.add_info info [] (Drule.formulas info1) [];
+  g3)
+    
+
+(* 
+   Backward match tactic.
+
+   info [g_tag] [c_tag] []
+   where 
+   [g_tag] is the new goal
+   [c_tag] identifies the new conclusion.
 *)
+let asm_back_tac ?info ?a ?c g=
+  let typenv = Drule.typenv_of g
+  and sqnt = Drule.sequent g
+  in 
+  let scp = Logic.Sequent.scope_of sqnt
+  and a_tag =  (* assumption having implication *)
+    Lib.apply_option (fun x -> Some(Logic.label_to_tag x sqnt)) a None
+  and c_tag =  (* conclusion to match with rhs of assumption *)
+    Lib.apply_option (fun x -> Some(Logic.label_to_tag x sqnt)) c None
+  in 
+  (* find, get the assumption *)
+  let (a_label, back_vars, back_form) =
+    try 
+      Drule.find_qnt_opt Basic.All ?f:a_tag 
+	Logicterm.is_implies (Drule.asms_of sqnt)
+    with Not_found -> 
+      raise (Logic.logicError ("asm_back_tac: no implications in assumptions") 
+	       [])
+  in
+  let (_, back_lhs, back_rhs) = Term.dest_binop back_form
+  in 
+  let varp = Rewrite.is_free_binder back_vars
+  in 
+  (* find, get the conclusion and substitution *)
+  let (c_label, c_env)= 
+    let exclude (t, _) = (Tag.equal t a_label)
+    in
+    try 
+      Drule.unify_sqnt_form typenv scp varp back_rhs 
+	~exclude:exclude
+	?f:c_tag (Drule.concls_of sqnt)
+    with 
+      Not_found -> 
+	raise (Term.termError 
+		 ("asm_back_tac: no matching formula in conclusion") 
+	   [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
+  in 
+  let info1= Drule.mk_info()
+  in 
+  let tac1=
+    match back_vars with
+      [] -> (* No quantifier *)
+	skip
+    | _ -> (* Implication has quantifier *)
+	inst_asm ~a:(ftag a_label)
+	  (Drule.make_consts back_vars c_env)
+  and tac2 g2= Logic.Rules.implA (Some info1) (ftag a_label) g2
+  and tac3 g3 =
+    ((fun n -> 
+      (Lib.apply_nth 1 (Tag.equal (Drule.node_tag n)) 
+	 (Drule.subgoals info1) false))
+       --> 
+	 Logic.Rules.basic (Some info1) 
+	   (ftag (Lib.get_nth (Drule.formulas info1) 1))
+	   (ftag c_label)) g3
+  in 
+  let g4= (tac1++ (tac2 ++ tac3)) g 
+  in 
+  (Logic.add_info info 
+     [Lib.get_nth (Drule.subgoals info1) 0]
+     [Lib.get_nth (Drule.formulas info1) 0]
+     [];
+  g4)
+
 (*
-  if(Tag.equal 
-       (Logic.Sequent.sqnt_tag (sequent g1)) 
-       (Logic.Sequent.sqnt_tag sqnt))
-  then g1
-  else raise (Logic.logicError "mp_tac: failed" [])
+   [back_tac ?info thm ?a]
 *)
+let back_tac ?info thm ?c g=
+  let info1 = Drule.mk_info()
+  and c_label = 
+    Lib.apply_option 
+      (fun x -> Some (ftag (Logic.label_to_tag x (Drule.sequent g))))
+      c None
+  in 
+  let tac1 = Logic.Rules.cut (Some info1) thm
+  in 
+  let tac2 g2 = 
+    (let a_tag = 
+      Lib.get_one (Drule.formulas info1) 
+	(Logic.logicError "back_tac: Failed to cut theorem" 
+	   [Logic.dest_thm thm])
+    in 
+    asm_back_tac ?info:info ~a:(ftag a_tag) ?c:c_label) g2
+  in 
+  (tac1++tac2) g
 
 
 (***

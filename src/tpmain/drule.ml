@@ -4,9 +4,12 @@ let fnum n = (Logic.FNum n)
 
 let asm_forms sq = 
   List.map Logic.drop_tag (Logic.Sequent.asms sq)
-
 let concl_forms sq = 
   List.map Logic.drop_tag (Logic.Sequent.concls sq)
+
+let asms_of sq = Logic.Sequent.asms sq
+let concls_of sq = Logic.Sequent.concls sq
+
 
 let sequent g = Logic.Subgoals.node_sqnt g
 let scope_of g = Logic.Sequent.scope_of (sequent g)
@@ -306,6 +309,94 @@ let foreach_once r sq =
       if !chng then sq1 else (raise (Result.Error x)))
 
 
+let qnt_opt_of qnt p t=
+  let (_, b) = Term.strip_qnt qnt t
+  in 
+  p b
+
+let dest_qnt_opt qnt d t=
+  let (vs, b) = Term.strip_qnt qnt t
+  in 
+  (vs, d b)
+
+let rec rebuild_qnt k qs b=
+  match qs with
+    [] -> b
+  | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
+
+(* 
+   [find_qnt_opt ?exclude qnt ?f pred forms]
+*)
+let find_qnt_opt ?exclude qnt ?f pred forms = 
+  let not_this = Lib.get_option exclude (fun _ -> false)
+  in 
+  let rec find_aux lst=
+    match lst with 
+      [] -> raise Not_found
+    | (t, sf)::rst ->
+	if(not_this (t, sf))
+	then find_aux rst
+	else 
+	  (match f with
+	    (Some x) -> 
+	      if Tag.equal t x
+	      then 
+		(if (qnt_opt_of qnt pred
+		       (Formula.dest_form sf))
+		then (t, (Formula.dest_form sf))
+		else raise Not_found)
+	      else find_aux rst
+	  | None -> 
+	      if (qnt_opt_of qnt pred
+		    (Formula.dest_form sf))
+	      then (t, (Formula.dest_form sf))
+	      else find_aux rst)
+  in 
+  let (tag, trm) = find_aux forms
+  in 
+  let (vs, trm1) = Term.strip_qnt Basic.All trm
+  in 
+  (tag, vs, trm1)
+
+(*
+   [unify_sqnt_form varp trm ?f forms]
+   Unify [trm] with formula [ft] in forms, return substitution and tag 
+   of formula which matches ([ft] if given).
+
+   [varp] determines what is a bindable variable.
+   raise Not_found if no unifiable formula is found.
+ *)
+let unify_sqnt_form typenv scp varp trm ?exclude ?f forms = 
+  let not_this = Lib.get_option exclude (fun _ -> false)
+  in 
+  let rec find_aux lst=
+    match lst with 
+      [] -> raise Not_found
+    | (t, sf)::rst ->
+	if(not_this (t, sf))
+	then find_aux rst
+	else 
+	  (match f with
+	    (Some x) -> 
+	      if Tag.equal t x
+	      then 
+		(try 
+		  (t, Unify.unify ~typenv:typenv scp varp trm
+		     (Formula.dest_form sf))
+		with _ -> raise Not_found)
+	      else find_aux rst
+	  | None -> 
+	      (try 
+		(t, Unify.unify ~typenv:typenv scp varp trm
+		   (Formula.dest_form sf))
+	      with _ -> find_aux rst))
+  in 
+  let (tag, subst) = find_aux forms
+  in 
+  (tag, subst)
+
+
+
 (*
    Matching assumptions/conclusions against a given term.
    (Similar to HOL's PAT_ASSUM).
@@ -387,12 +478,108 @@ let match_concl typenv t sq=
   in 
   match_formulas typenv scp varp t1 concls
 
-let qnt_opt_of qnt p t=
-  let (_, b) = Term.strip_qnt qnt t
-  in 
-  p b
+(** 
+   [find_formula p fs]: Return the first formula in [fs] to satisfy [p].
+*)
+let find_formula p fs = List.find p fs
 
-let dest_qnt_opt qnt d t=
-  let (vs, b) = Term.strip_qnt qnt t
+(*
+   [find_asm p n]: 
+   Return the first assumption of [n] to satisfy [p].
+
+   [find_concl p n]: 
+   Return the first conclusion of [n] to satisfy [p].
+*)
+let find_asm p n=
+  find_formula p (Logic.Sequent.asms (sequent n))
+
+let find_concl p n=
+  find_formula p (Logic.Sequent.concls (sequent n))
+
+
+(**
+   [unify_formula_for_consts scp trm f]
+
+   Unify [trm] with formula [f] returning the list of terms needed to
+   make [trm] alpha-equal to [f] by instantiating the topmost
+   quantifiers of [trm].
+
+   raise Not_found, if no unifiable formula found.
+*)
+let unify_formula_for_consts tyenv scp (vars, trm) f=
+  let varp=Rewrite.is_free_binder vars
   in 
-  (vs, d b)
+  let env=Unify.unify ~typenv:tyenv scp varp trm f
+  in 
+  make_consts vars env
+
+(**
+   [unify_concl_for_consts ?c trm g]
+
+   if [c] is given, unify [trm] with the conclusion labelled [c],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be universally quantified.
+*)
+let unify_concl_for_consts qnt ?c trm n=
+  let tyenv = typenv_of n
+  and scp = scope_of n
+  and (vars, body) = Term.strip_qnt qnt trm
+  in 
+  let (t, f)=
+    match c with 
+      None ->
+	let sqnt = sequent n
+	in 
+	let unifies x = 
+	  (try
+	    ignore
+	      (Unify.unify ~typenv:tyenv scp 
+		 (Rewrite.is_free_binder vars) body x);true
+	  with _ -> false)
+	in 
+	find_concl (fun (_, f) -> unifies (Formula.dest_form f)) n
+    | Some(x) -> 
+	let sqnt = sequent n
+	in 
+	Logic.Sequent.get_tagged_cncl 
+	  (Logic.label_to_tag x sqnt) sqnt
+  in 
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.dest_form f)
+
+
+(**
+   [unify_asm_for_consts ?a qnt trm g]
+
+   if [a] is given, unify [trm] with the assumption labelled [a],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be quantified by [qnt].
+*)
+let unify_asm_for_consts qnt ?a trm n=
+  let tyenv = typenv_of n
+  and scp = scope_of n
+  and (vars, body) = Term.strip_qnt qnt trm
+  in 
+  let (t, f)=
+    match a with 
+      None ->
+	  let sqnt = sequent n
+	  in 
+	  let unifies x = 
+	   (try
+	     ignore
+	       (Unify.unify ~typenv:tyenv scp 
+		  (Rewrite.is_free_binder vars) body x);true
+	   with _ -> false)
+	  in 
+	  find_asm (fun (_, f) -> unifies (Formula.dest_form f)) n
+    | Some(x) ->
+	let sqnt = sequent n
+	in 
+	Logic.Sequent.get_tagged_asm
+	  (Logic.label_to_tag x sqnt) sqnt
+  in 
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.dest_form f)

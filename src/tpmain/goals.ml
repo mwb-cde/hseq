@@ -51,12 +51,14 @@ let goal trm =
   prflist:= [mk_goal  (Tpenv.scope()) f];
   (!save_hook()); top()
 
-let prove_goal trm tac =
+let apply ?report tac goal=
+  Logic.Subgoals.apply_to_goal ?report tac goal
+
+let prove_goal scp trm tac =
   mk_thm 
-    (Logic.Subgoals.apply_to_goal tac 
-       (mk_goal 
-	  (Tpenv.scope()) 
-	  (Formula.mk_form (Tpenv.scope()) trm)))
+    (apply tac (mk_goal scp (Formula.mk_form (Tpenv.scope()) trm)))
+
+let prove trm tac = prove_goal (Tpenv.scope()) trm tac
 
 let by_list trm tacl =
   let fg=mk_goal (Tpenv.scope()) 
@@ -67,7 +69,7 @@ let by_list trm tacl =
 	[] -> g
       | (x::xs) -> 
 	  if Logic.has_subgoals g
-	  then by_aux xs (Logic.Subgoals.apply_to_goal x g)
+	  then by_aux xs (apply x g)
 	  else g
   in 
    mk_thm (by_aux tacl fg)
@@ -90,12 +92,6 @@ let report node branch =
   in 
   let sqnts = Logic.Subgoals.branch_sqnts branch
   in 
-  let nsqnts = 
-    List.filter 
-      (fun sq -> 
-	not (Tag.equal (Drule.node_tag node) (Logic.Sequent.sqnt_tag sq))) 
-      sqnts
-  in 
   match sqnts with
     [] -> 
       Format.open_box 0;
@@ -103,12 +99,12 @@ let report node branch =
       Format.close_box(); 
       Format.print_newline()
   | _ -> 
-      let len=(List.length nsqnts)
+      let len=(List.length sqnts)
       in 
-      if(len>0)
+      if(len>1)
       then 
 	(Format.open_box 0;
-	 Format.print_int (List.length sqnts);
+	 Format.print_int len;
 	 Format.print_string " subgoals";
 	 Format.close_box(); 
 	 Format.print_newline();

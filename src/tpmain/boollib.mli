@@ -73,9 +73,27 @@ val inst_tac: ?f:Logic.label -> Basic.term list -> Tactics.tactic
 val inst_asm : ?a:Logic.label -> Basic.term list -> Tactics.tactic
 val inst_concl : ?c:Logic.label -> Basic.term list -> Tactics.tactic
 
-(* cases tactics *)
+val inst_asm_rule : Logic.label -> Basic.term list -> Tactics.tactic
 
-val cases_tac: Basic.term -> Tactics.tactic
+(**
+   [cases_full_tac info x g]
+   [cases_tac ?info x g]
+
+   Adds formula [x] to assumptions of [g],
+   creates new subgoal in which to prove [x].
+
+   [cases_full_tac] does the work.
+   [cases_tac] is a wrapper for [cases_full_tac], making [info] an
+   optional argument.
+
+   g|asm |- cncl      
+   --> 
+   g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
+
+   info: [g, g'] [t]
+*)
+val cases_full_tac : Logic.info option -> Basic.term -> Tactics.tactic
+val cases_tac: ?info:Logic.info -> Basic.term -> Tactics.tactic
 
 (* convert boolean equality to iff *)
 val equals_tac: ?f:Logic.label -> Tactics.tactic
@@ -92,10 +110,71 @@ val false_tac: Tactics.tactic
 val bool_tac:  Tactics.tactic
 
 (* match_mp_tac *)
-
+(*
 val match_mp_tac: Logic.thm -> ?c:Logic.label -> Tactics.tactic
 
 val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
+*)
 
-(* mp_tac *)
-val mp_tac: ?a:Logic.label -> ?f:Logic.label -> Tactics.tactic
+(**
+   [asm_mp_tac ~a ~f]
+
+   Modus ponens.
+   if [a] is [l=>r] and [f] is [l],
+   then apply reduce [a] to [r].
+
+   if [a] is [! x1 .. xn: l = r] and [f] is [l],
+   instantiate all of the [x1 .. xn] from [f] before 
+   reducing.
+
+   [mp_tac ?info thm ?a]
+
+   Apply modus ponens to theorem [thm] and assumption [a].
+   [thm] must be a (possibly quantified) implication [!x1 .. xn: l=>r]
+   and [a] must be [l].
+
+   If [a] is not given, finds a suitable assumption to unify with [l].
+
+   info [] [thm_tag] []
+   where tag [thm_tag] identifies the theorem in the sequent.
+*)
+val asm_mp_tac: ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
+val mp_tac:?info:Logic.info -> Logic.thm 
+    -> ?a:Logic.label -> Tactics.tactic
+
+(**
+   [asm_back_tac ~a ~c]
+   
+   Match, backward tactic.
+
+   If [a] is [l=>r] and [c] is [r],
+   then reduce [c] to [l].
+
+   thm= |- l => r
+   asms |- l, concls
+   -->
+   asms |- r, concls
+
+   if [a] is [! x1 .. xn: l = r] instantiate all of the [x1 .. xn]
+   from [c] before reducing.
+
+   info: [g_tag] [c_tag] []
+   where 
+   [g_tag] is the new goal
+   [c_tag] identifies the new conclusion.
+
+   [back_tac ?info thm ?c]
+   Cut theorem [thm] into the sequent and apply [asm_back_tac] 
+   to the theorem and conclusion [c].
+
+   [thm] must be a (possibly quantified) implication [!x1 .. xn: l=>r]
+   and [c] must be [r].
+
+   info: as for [asm_back_tac].
+*)
+val asm_back_tac: 
+    ?info:Logic.info ->  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
+
+val back_tac:
+    ?info:Logic.info -> Logic.thm 
+      -> ?c:Logic.label -> Tactics.tactic

@@ -216,8 +216,17 @@ val gen_rewrite_tac:
    If [f] is not given, rewrite all formulas in sequent.
 *)
 val rewrite_tac: 
-    ?dir:Rewrite.direction
+    ?ctrl:Rewrite.control
   -> Logic.thm list -> ?f:Logic.label -> Logic.rule
+
+
+(** [once_rewrite_tac info dir thms f]
+
+   Rewrite formula [f] once.
+   If [f] is not given, rewrite all formulas in sequent.
+*)
+val once_rewrite_tac: 
+    Logic.thm list -> ?f:Logic.label -> Logic.rule
 
 
 (** [replace_tac info dir asms f]
@@ -229,7 +238,7 @@ val rewrite_tac:
    Doesn't rewrite the used assumptions.
 *)
 val replace_tac: 
-    ?dir:Rewrite.direction
+    ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.rule
 

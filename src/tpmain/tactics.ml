@@ -242,6 +242,8 @@ let fail ?err sq =
     None -> raise (Result.error "failed")
   | Some e -> raise e
 
+
+(*
 let rec repeat tac g =
   let rec app_aux ng=
     if(Drule.has_subgoals ng)
@@ -251,7 +253,7 @@ let rec repeat tac g =
     else ng
   in 
   app_aux (tac g)
-
+*)
 (*
    [orl tacl g]
    apply first tactic of [tacl] which succeeds.
@@ -289,11 +291,9 @@ let seq rls sq =
     match fs with 
       [] -> sqs 
     | r::rs ->
-        let nsq=foreach r sqs
-	in 
-	if Drule.has_subgoals nsq
-	then (seq_aux rs nsq)
-	else nsq
+	if Drule.has_subgoals sqs
+	then (seq_aux rs (foreach r sqs))
+	else sqs
   in 
   match rls with
     [] -> raise (Result.error "seq: empty tactic list")
@@ -301,6 +301,9 @@ let seq rls sq =
 
 let (++) tac1 tac2 g =
   seq [tac1; tac2] g
+
+let rec repeat tac g =
+  (tac ++ ((repeat tac) || skip)) g
 
 (* apply_list rules sq:
    applies rules, in order, to each subgoal resulting from
@@ -330,8 +333,7 @@ let apply_list fs g =
    Do nothing if [pred] is false (using [skip]).
  *)
 let apply_if pred tac n =
-  if(pred n)
-  then tac n
+  if (pred n) then tac n
   else skip n
 
 (** 
@@ -353,29 +355,35 @@ let gen_rewrite_tac ?info ctrl rules ?f goal=
       Drule.foreach_once 
 	(fun x -> 
 	  Logic.Rules.rewrite 
-	    info ~dir:(ctrl.Rewrite.rr_dir) rules x) goal
+	    info ~ctrl:ctrl rules x) goal
   | Some (x) ->
       Logic.Rules.rewrite
-	info ~dir:(ctrl.Rewrite.rr_dir) rules x goal
+	info ~ctrl:ctrl rules x goal
 	
 
-let rewrite_tac ?(dir=leftright) ths ?f goal=
+let rewrite_tac ?(ctrl=Formula.default_rr_control) ths ?f goal=
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
   match f with
     None -> 
       Drule.foreach_once
-	(fun l -> Logic.Rules.rewrite None ~dir:dir rules l)
+	(fun l -> Logic.Rules.rewrite None ~ctrl:ctrl rules l)
 	goal
   | Some (x) ->
-      Logic.Rules.rewrite None ~dir:dir rules x goal
+      Logic.Rules.rewrite None ~ctrl:ctrl rules x goal
+
+let once_rewrite_tac ths ?f goal=
+  let ctrl=
+    {Formula.default_rr_control with Rewrite.depth=Some 1}
+  in 
+  rewrite_tac ~ctrl ths ?f:f goal
 
 let is_rewrite_formula t=
   let (_, t1) = Term.strip_qnt Basic.All t
   in 
   (Logicterm.is_equality t1)
     
-let replace_tac ?(dir=leftright) ?asms ?f goal =
+let replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = Drule.sequent goal
   in 
   let rec find_equality_asms sqasms rst=
@@ -403,10 +411,10 @@ let replace_tac ?(dir=leftright) ?asms ?f goal =
 		asm_tags)
 	  then fun g -> (skip g)
 	  else 
-	    orl [Logic.Rules.rewrite None ~dir:dir rules x; skip])
+	    orl [Logic.Rules.rewrite None ~ctrl:ctrl rules x; skip])
 	goal
   | Some (x) ->
-      Logic.Rules.rewrite None ~dir:dir rules x goal
+      Logic.Rules.rewrite None ~ctrl:ctrl rules x goal
 
 
 (* pattern matching tacticals *)

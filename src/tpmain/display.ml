@@ -31,9 +31,7 @@ let rec print_type x =
   close_box()
 
 let print_sqnt x = 
-  open_box 0;
-  Logic.print_sqnt (Tpenv.pp_info()) x;
-  close_box()
+  Logic.print_sqnt (Tpenv.pp_info()) x
     
 
 let print_thm t = 
