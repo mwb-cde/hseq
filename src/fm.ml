@@ -13,6 +13,7 @@
 #install_printer Printer.print_thm;;
 #install_printer Printer.print_prf;;
 #install_printer Printer.print_fnident;;
+#install_printer Printer.print_error;;
 
 let _ =
   print_string "fm.ml: initialising\n";
