@@ -36,6 +36,17 @@ let replace_nth i x y=
   in 
   (take (j, x)@ (y::(drop(j+1, x))))
 
+let replace a b l=
+  let rec rep ys=
+    match ys with
+      [] -> [(a, b)]
+    | (x, y)::xs -> 
+	if x=a
+	then (a, b)::xs
+	else (x, y)::(rep xs)
+  in 
+  rep l
+
 let splice_nth i x y=
   let j=if i-1<0 then 0 else (i-1)
   in 

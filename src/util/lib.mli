@@ -7,6 +7,7 @@ val take : int * 'a list -> 'a list
 val drop : int * 'a list -> 'a list 
 val delete_nth : int -> 'a list -> 'a list
 val replace_nth : int -> 'a list -> 'a -> 'a list
+val replace : 'a -> 'b -> ('a*'b) list -> ('a*'b) list
 val wrap_around: 'a list -> int -> int
 val get_nth: 'a list -> int -> 'a
 val splice_nth : int -> 'a list -> 'a list -> 'a list
