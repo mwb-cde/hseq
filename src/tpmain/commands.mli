@@ -57,7 +57,7 @@ val new_full_defn : string -> bool -> int -> string
 
 (* full declaration of an identifier *)
 val new_full_decln :
-  string -> string -> bool -> int -> string -> Basic.fnident * Gtypes.gtype
+  string -> string -> bool -> int -> string -> Basic.ident * Gtypes.gtype
 
 (* [new_axiom id thm]
    declare thm a new axiom with name id. *)

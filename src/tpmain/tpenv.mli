@@ -41,8 +41,10 @@ val find_thy_file: string -> string
 val build_type_info : unit -> unit
 val build_id_info : unit -> unit
 
-val prec_of:  Basic.id_selector -> Basic.fnident ->  int
-val is_infix: Basic.id_selector -> Basic.fnident ->  bool
+(*
+val prec_of:  Basic.id_selector -> Basic.ident ->  int
+val is_infix: Basic.id_selector -> Basic.ident ->  bool
+*)
 
 (* function to invoke when loading theories from disk *)
 
@@ -61,25 +63,128 @@ val on_load_thy: Theory.thy -> unit
     val read_type_defn : string -> string * string list * Gtypes.gtype option
     val read_type : string -> Gtypes.gtype
     val read_fulltype : string -> Gtypes.gtype
-val read_identifier: string -> Basic.fnident
+val read_identifier: string -> Basic.ident
 
 (* PP information *)
+
+(* 
+   [tp_pp_info]
+   The system PP information store (of size Basic.PP.default_info_size).
+*)
+val tp_pp_info: Basic.PP.info ref
+
+(**
+   [pp_info()]
+   Get the system PP information store
+*)
+val pp_info : unit -> Basic.PP.info
+
+(**
+   [pp_reset()]
+   Reset the system PP information store
+*)
+val pp_reset: unit -> unit
+
+(** 
+   [pp_set info]
+   Set the system PP information store to [info]
+*)
+val pp_set : Basic.PP.info -> unit
+
+(** get/set/remove PP information for identifiers*)
+
+(** PP information for terms *)
+
+(*
+   [get_term_ppid]
+   get pretty printing information for identifer occuring in a term.
+   @param id identifier to look up.
+
+   @return [(prec, fixity, repr)]
+   where 
+   [prec] is precedence
+   [fixity] is fixity
+   [repr] is representation to use (if any)
+
+   @return [(default_term_prec, default_term_fixity, None)] if id is not found.
+*)
+val get_term_pp : Basic.ident -> (int * Basic.PP.fixity * string option)   
+
+(**
+   [add_term_pp id prec fixity repr]
+   add pretty printing information for identifer occuring in a term.
+   @param id identifier to add.
+   @param prec precedence.
+   @param fixity fixity.
+   @param repr representation (if any).
+*)
+      val add_term_pp : 
+	  Basic.ident -> int -> Basic.PP.fixity 
+	    -> string option -> unit
+
+(**
+   [remove_term_pp id]
+   remove pretty printing information for identifer occuring in a term.
+   @param id identifier to remove.
+   @param prec precedence.
+   @param fixity fixity.
+   @param repr representation (if any).
+*)
+val remove_term_pp : Basic.ident -> unit
+
+(**
+   [get_type_pp id]
+   get pretty printing information for identifer occuring in a type.
+   @param id identifier to look up.
+
+   @return [(prec, fixity, repr)]
+   where 
+   [prec] is precedence
+   [fixity] is fixity
+   [repr] is representation to use (if any)
+*)
+val get_type_pp : Basic.ident -> (int * Basic.PP.fixity * string option)
+
+(**
+   [add_type_pp id prec fixity repr]
+   add pretty printing information for identifer occuring in a type.
+   @param id identifier to add.
+   @param prec precedence.
+   @param fixity fixity.
+   @param repr representation (if any).
+*)
+
+val add_type_pp : 
+    Basic.ident -> int -> Basic.PP.fixity -> string option -> unit
+
+(**
+   [remove_type_pp id]
+   remove pretty printing information for identifer occuring in a type.
+   @param id identifier to remove.
+   @param prec precedence.
+   @param fixity fixity.
+   @param repr representation (if any).
+*)
+val remove_type_pp : Basic.ident -> unit
+
+(*
 type pp_info 
 val empty_pp_info : unit -> pp_info
 val base_pp_state : unit -> Corepp.pp_state
-val get_pp : Basic.fnident -> pp_info ->  Corepp.pp_rec 
-val add_pp :  Basic.fnident -> Corepp.pp_rec -> pp_info -> unit
-val remove_pp : Basic.fnident -> pp_info -> unit
+val get_pp : Basic.ident -> pp_info ->  Corepp.pp_rec 
+val add_pp :  Basic.ident -> Corepp.pp_rec -> pp_info -> unit
+val remove_pp : Basic.ident -> pp_info -> unit
 
 val type_pp_info : pp_info
 val id_pp_info : pp_info
 
-val get_id_info : Basic.fnident ->  Corepp.pp_rec
-val add_id_info : Basic.fnident -> Corepp.pp_rec -> unit
-val remove_id_info : Basic.fnident  ->  unit
-val get_type_info : Basic.fnident ->  Corepp.pp_rec
-val add_type_info : Basic.fnident -> Corepp.pp_rec -> unit
-val remove_type_info : Basic.fnident  -> unit
+val get_id_info : Basic.ident ->  Corepp.pp_rec
+val add_id_info : Basic.ident -> Corepp.pp_rec -> unit
+val remove_id_info : Basic.ident  ->  unit
+val get_type_info : Basic.ident ->  Corepp.pp_rec
+val add_type_info : Basic.ident -> Corepp.pp_rec -> unit
+val remove_type_info : Basic.ident  -> unit
+*)
 
 val build_type_info : unit -> unit
 val build_id_info : unit -> unit

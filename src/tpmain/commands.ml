@@ -4,7 +4,7 @@ let catch_errors f a =
   (try f a 
   with 
     Result.Error e -> 
-      Result.print_error (Tpenv.base_pp_state()) (-1) (Result.Error e); 
+      Result.print_error (Tpenv.pp_info()) (-1) (Result.Error e); 
       raise(Result.Error e)
   | x -> raise x)
 
@@ -116,10 +116,8 @@ let new_infix_defn str priority=
   in 
   Thydb.add_defn_rec n ty (Some d) true priority 
     (theories());
-
-  Tpenv.add_id_info 
-    (Basic.mklong (Tpenv.get_cur_name()) n)
-    (Corepp.mk_pp_rec priority true None);
+  Tpenv.add_term_pp
+    (Basic.mklong (Tpenv.get_cur_name()) n) priority Basic.PP.infix None;
   (n, ty, d)
 
 let new_decl sl sty =
@@ -145,15 +143,13 @@ let new_full_defn str infx prec trans =
   in 
   let (n, ty, d) = Defn.mkdefn (Tpenv.typenv()) name args r
   in 
-  Thydb.add_defn_rec n ty (Some d)
-    infx prec (theories());
-
+  Thydb.add_defn_rec n ty (Some d) infx prec (theories());
   if infx then
-    let pprc = (Corepp.mk_pp_rec prec infx (Some trans))
+    let pprc = (Basic.PP.mk_record prec Basic.PP.infix (Some trans))
     in 
     Thydb.add_pp_rec (Basic.fn_id) n pprc (theories());
-    Tpenv.add_id_info 
-      (Basic.mklong (Tpenv.get_cur_name()) n) pprc
+    Tpenv.add_term_pp (Basic.mklong (Tpenv.get_cur_name()) n) 
+      prec Basic.PP.infix (Some trans)
   else ();
   (n, ty, d)
 
@@ -165,7 +161,7 @@ let new_full_decln sl sty inf prec trans=
   in Thydb.add_defn_rec 
     (Basic.name l) ty None inf prec (theories());
   if inf then
-    let pprc = (Corepp.mk_pp_rec prec inf (Some trans))
+    let pprc = (Basic.PP.mk_record prec Basic.PP.infix (Some trans))
     and longname = 
       if (Basic.thy_of_id n) = Basic.null_thy 
       then 
@@ -173,7 +169,7 @@ let new_full_decln sl sty inf prec trans=
       else n
     in 
     Thydb.add_pp_rec (Basic.fn_id) (Basic.name n) pprc (theories());
-    Tpenv.add_id_info longname  pprc
+    Tpenv.add_term_pp longname prec Basic.PP.infix (Some trans)
   else ();
   (n, ty)
 
