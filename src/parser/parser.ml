@@ -3,6 +3,7 @@ module Pkit=Parserkit.Grammars
     (struct 
       type tokens=Lexer.tok 
       let matches = Lexer.match_tokens
+      let string_of_token = Lexer.message_of_token
     end)
 
 (* default precedence, fixity and associativity  *)
@@ -67,7 +68,7 @@ let token_table_add tbl s tok=
    try 
     ignore(Hashtbl.find tbl.table s);
     Result.raiseError 
-      ("Parsing information for "^(string_of_token s)^" already exists")
+      ("Parsing information for "^(message_of_token s)^" already exists")
   with 
     Not_found -> Hashtbl.add (tbl.table) s tok
 *)
@@ -134,7 +135,7 @@ let token_info tbl t=
 
 (* utility functions *)
 
-  let string_of_tok tok = Lexer.string_of_token tok
+  let string_of_tok tok = Lexer.message_of_token tok
 
   let string_tokens toks =
     Lib.list_string string_of_tok " " toks
@@ -221,12 +222,18 @@ let token_info tbl t=
 	with 
 	  ParsingError _ -> (alternates phs inf toks))
 
-  let error inp =  
+  let error ?msg inp =  
+    let str=
+      match msg with None -> ""
+      | Some(m) -> (": "^m)
+    in 
     try 
       let tok, _ = next_token inp
       in 
-      raise (ParsingError ("Error at token "^(string_of_token tok)))
-    with _ -> raise (ParsingError "Error")
+      raise 
+	(ParsingError
+	   ("error at "^(string_of_token tok)^str))
+    with _ -> raise (ParsingError str)
 
   let mk_type_binary_constr inf t=
     let lookup x =
@@ -480,7 +487,7 @@ let token_info tbl t=
 	       None -> Gtypes.mk_def i []
 	     | Some(ts) -> Gtypes.mk_def i ts))
      || (other_type_parsers inf) 
-     || error)
+     || error ~msg:"unknown construct in type.")
 	 toks)
 
   let rec types inf toks = 
@@ -498,7 +505,7 @@ let token_info tbl t=
 	     >> (fun (_, (x, _)) -> x)))
        -- 
        (optional 
-	  (((!$(mk_ident Logicterm.equalsid))
+	  (((!$(mk_symbol Logicterm.equalssym))
 	      -- (types inf)) >> (fun (_, x) -> x)))))
       >> (fun (x, (y, z)) -> (x, y, z))) toks
 
@@ -579,6 +586,25 @@ let token_info tbl t=
    else 
    mk_typed_var nid t)) toks
 
+       
+(* 
+   Support for Ocaml anti-quotation.
+   An anti-quotation expression must evaluate to a term 
+   ANTI-QUOTATION NOT SUPPORTED
+*)
+(*
+  let antiquote_parser inp = 
+    let comp x= match x with ANTIQUOTE _ -> true | _ -> false
+    and mk x =
+      match x with 
+	ANTIQUOTE s -> s
+      | _ -> raise (ParsingError "parser: Not an antiquote")
+    in 
+    try
+      get comp mk inp
+    with No_match -> raise (ParsingError "parser: Not an antiquote")
+*)    
+
 (* term parsers *)
 (* primary term parsers by named list *)
   let core_term_parser_list = 
@@ -588,7 +614,7 @@ let token_info tbl t=
 (*   | number *)
       "number", (fun _ -> (number >> (fun x -> mknum x)));
 (*   | boolean *)
-    "boolean", (fun _ -> (boolean >> (fun x -> mkbool x)))
+    "boolean", (fun _ -> (boolean >> (fun x -> mkbool x)));
      ]
 
   let other_parsers_list  = ref core_term_parser_list
@@ -686,7 +712,7 @@ let token_info tbl t=
    | error 
 *)
    || (other_parsers inf)
-   || (error)
+   || (error ~msg:"unknown construct in term.")
     ) toks
 
   let message m _ =  raise (ParsingError m)
@@ -695,20 +721,19 @@ let token_info tbl t=
     ((((id_type_op (mk_short_id id) inf) 
 	 -- (args_opt inf))
 	>> (fun ((n, t) , args) -> (n, args))) 
-    || error )
+    || error ~msg:"badly formed identifier for definition.")
        toks
   and args_opt inf toks= 
    ( repeat_term
       (id_type_op (short_id id) inf) 
-(*      (!$(mk_ident Logicterm.equalsid)) *)
       (!$(mk_symbol Logicterm.equalssym))
-    || error)
+    || error ~msg:"badly formed argument list for definition.")
       toks
   and defn inf toks =
      (
       (((lhs inf) -- (form inf))
 	   >> (fun (l, r) -> (l, r)))
-    || (message "Badly formed defintion"))
+    || (error ~msg:"Badly formed defintion"))
       toks
 
 
@@ -916,5 +941,7 @@ let read_type str =
   read type_parser str
 
 let test_lex str = scan (symtable()) (Stream.of_string str);;
+
 let test str =  
   reader (scan (symtable())) term_parser str
+

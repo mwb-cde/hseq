@@ -84,7 +84,7 @@ module Grammars :
       val mk_empty_inf :  token_table -> token_table -> infotyp
       val mk_inf : token_table -> token_table -> infotyp
 
-      val error : 'a phrase
+      val error : ?msg:string -> 'a phrase
 
       val alternates : (infotyp -> 'a phrase) list  -> infotyp -> 'a phrase
 

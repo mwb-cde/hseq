@@ -104,6 +104,7 @@ end
     | BOOL of bool 
     | EOF 
     | NULL
+(*    | ANTIQUOTE of string *)
 
   exception Error
   exception Lexer
@@ -130,6 +131,45 @@ end
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
     | NULL -> "null"
+(*    | ANTIQUOTE(s) -> ("ANTIQUOTE("^s^")")*)
+
+(* 
+   [message_of_token tok]
+   generate a string description of [tok] suitable for use
+   in an error message
+*)
+
+  let message_of_token tok = 
+    match tok with 
+    | Sym DOT -> "."
+    | Sym COMMA -> ","
+    | Sym ORB -> "("
+    | Sym CRB -> ")"
+    | Sym RIGHTARROW -> "->"
+    | Sym PRIME -> "'"
+    | Sym COLON -> ":"
+    | Sym (OTHER s) -> s
+    | Sym NULL_SYMBOL -> "(null_symbol)"
+    | Key ALL -> "ALL"
+    | Key EX -> "EXISTS"
+    | Key LAM -> "LAMBDA"
+    | ID(s) -> (Basic.string_fnid s)
+    | NUM(n) -> n
+    | BOOL(b) -> string_of_bool b
+    | EOF -> "eof"
+    | NULL -> "null"
+(*    | ANTIQUOTE(s) -> ("ANTIQUOTE("^s^")")*)
+
+
+(* 
+   Support for OCaml antiquotation 
+   Not supported
+*)
+(*
+let antiquote_char=ref '$'
+let get_antiquote ()= !antiquote_char
+let set_antiquote c = antiquote_char:=c
+*)
 
 (* function to match tokens *)
 
@@ -471,7 +511,6 @@ let match_identifier inp =
     | _ -> raise (Lexing(0, 0)) 
   else (false, null_tok)
 
-
 let rec skip_space str =
   if stream_empty str then ()
   else 
@@ -503,6 +542,40 @@ let match_keywords symtable strm =
 
 
 
+(* [match_antiquote tbl strm]
+   read characters from stream strm,
+   if first is the antiquote char 
+   then read up to the next antiquote character.
+
+   The anti-quotation char is Lexer.antiquote_char. This can be
+   set to a different value (with Parser.set_antiquote) than 
+   the default, at the expense of breaking all the code which 
+   relied on its original value.
+
+   ANTIQUOTES NOT CURRENTLY SUPPORTED
+*)
+
+(*
+let dest_ANTIQUOTE t=
+  match t with
+    ANTIQUOTE(s) -> s
+  | _ -> Result.raiseError("Error dealing with antiquotation.")
+
+let match_antiquote symtable strm =
+  if stream_empty strm 
+  then (true, eof_tok)
+  else 
+    let first_char = List.hd(Stream.npeek 1 strm)
+    in 
+    if (first_char = get_antiquote())
+    then 
+      (Stream.junk strm;
+      let strng=get_while (fun c-> c!=(get_antiquote())) strm
+      in 
+      Stream.junk strm;
+      (true, ANTIQUOTE(strng)))
+    else (false, null_tok)
+*)	
 
 (* toplevel lexing functions *)
 
@@ -516,12 +589,26 @@ let match_keywords symtable strm =
     then (true, eof_tok)
     else (false, null_tok)
   
-  let lex symtable str=
-    skip_space str;
-    let empty, empty_tk = is_empty str
+let rec lex symtable str=
+  skip_space str;
+  let empty, empty_tk = is_empty str
+  in 
+  if empty 
+  then empty_tk
+  else 
+(* try for an antiquote *)
+(* not currently supported *)
+(*
+    let antiquote, aqtok= match_antiquote symtable str 
     in 
-    if empty then empty_tk
+    if antiquote 
+    then
+      let evalstrng=dest_ANTIQUOTE aqtok
+      in let loc= (0, 0)
+      in let newstrm = Stream.of_string <:expr< $evalstrng$ >>
+      in lex symtable newstrm
     else 
+*)
 (* try for a symbol/keyword *)
       let key, tok= match_keywords symtable str 
       in 
@@ -533,16 +620,17 @@ let match_keywords symtable strm =
 	if is_alpha_tok then alpha_tok
 	else 
 (* not a symbol/keyword, so try other lexers (numbers, bools, etc) *)
-	  other str 
+	  other str
  
 
+(*
    let lexfn symtab strm = 
      let first=Stream.count strm
      in 
      try 
        lex symtab strm
      with _ -> raise (Lexing (first, Stream.count strm))
-
+*)
 (*
    scan symtab strm:
    make token input stream from a char stream
@@ -560,4 +648,3 @@ let match_keywords symtable strm =
 
   let reader lex ph str=
     ph (lex (Stream.of_string str))
-

@@ -58,12 +58,28 @@ type tok =
   | EOF
   | NULL
 
+(*
+  | ANTIQUOTE of string (* ANTIQUOTES NOT CURRENTLY SUPPORTED *)
+*)
+
 exception Error
 exception Lexer
 
 val eof_tok : tok
 val null_tok : tok
+
+(* 
+   [string_of_token tok]
+   generate a string representation of token [tok].
+*)
 val string_of_token : tok -> string
+
+(* 
+   [message_of_token tok]
+   generate a string description of token [tok] suitable for use
+   in an error message
+*)
+val message_of_token : tok -> string
 
 val match_tokens : tok -> tok -> bool
 
@@ -162,14 +178,21 @@ val match_identifier : char Stream.t -> bool * tok
 
 val match_keywords : symtable -> char Stream.t -> bool * tok
 
+(* ANTIQUOTATION NOT SUPPORTED
+val match_antiquote : symtable -> char Stream.t -> bool * tok
+*)
+
 val skip_space : char Stream.t -> unit
 
 val is_empty : 'a Stream.t -> bool * tok
 
 val lex : symtable -> char Stream.t -> tok
 
+(*
 val lexfn : symtable -> char Stream.t -> tok
+*)
 
 val scan : symtable ->char Stream.t -> tok Parserkit.Input.t
 
 val reader : (char Stream.t -> 'a) -> ('a -> 'b) -> string -> 'b
+
