@@ -8,12 +8,10 @@ let dest_rrthm t =
     Logic.RRThm (x) -> x
   | _ -> failwith("dest_rrth: failure")
 
-(*
-   let dest_option x=
-   match x with
-   None -> failwith "dest_option"
-   | Some c -> c
- *)
+let dest_option x=
+  match x with
+    None -> failwith "dest_option"
+  | Some c -> c
 
 let has_cond c =
   match c with
@@ -139,3 +137,57 @@ let allA_list l vs =
    test for variables (universal quantifiers) in an entry 
  *)
 let is_variable qnts x= Rewrite.is_free_binder qnts x
+
+
+
+type 'a link = ('a -> Logic.branch -> ('a * Logic.branch))
+
+(** [chain tac links x g]
+
+   Start by applyint [tac x] to [g] then recursively apply each [l] in
+   [links] to the branch and data returned by the preceding link.
+
+   Stop when an branch does not have exactly one goal.
+
+   Fail if [tac] or any link fails.
+*)
+let rec chain_aux links x branch=
+  match links with
+    [] -> (x, branch)
+  | (t::ts) ->
+      match (Drule.branch_subgoals branch) with
+	[g] ->
+	  let (d, b) = t x branch
+	  in 
+	  chain_aux ts d b
+      | _ -> (x, branch)
+
+let rec chain tac links x node= 
+  let (d, b) = tac x node
+  in 
+  chain_aux links d b
+
+
+(** [iter_chain tac link x g]
+
+   Start by applying [tac x] to [g] then repeatedly apply [link] until
+   it fails a branch does not have exactly one goal.
+
+   Fail if [tac] fails.
+*)
+let rec iter_aux link x branch=
+      match (Drule.branch_subgoals branch) with
+	[g] ->
+	    (try 
+	      let (d, b) = (link x branch)
+	      in 
+	      iter_aux link d b
+	    with _ -> (x, branch))
+      | _ -> (x, branch)
+
+let rec iter_chain tac link x node= 
+  let (d, b) = tac x node
+  in 
+  try 
+    iter_aux link d b
+  with _ -> (d, b)

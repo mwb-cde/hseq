@@ -103,7 +103,7 @@ let split s1=
       let (cnd, rl)=
 	if (Logicterm.is_implies t1)         
 	then (* is conditional *)
-	  (let (asm, cncl)=Simputils.dest_implies t1
+	  (let (_, asm, cncl)=Term.dest_binop t1
 	  in 
 	  (Some(asm), cncl))
 	else  (* is not conditional *)
@@ -123,6 +123,6 @@ let split s1=
    make rule from theorem or assumption [src] in scope [scp]
 *)
     let make_rule rl trm=
-      let qs, c, l, r= dest_rr_rule trm
+      let qs, c, l, r=dest_rr_rule trm
       in 
       (qs, c, l, r, rl)

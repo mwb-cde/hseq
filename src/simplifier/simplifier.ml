@@ -30,10 +30,12 @@ let add_error s t e =
 
 exception No_change
 
-module Control =
+type control = Rewrite.control
+
+module Data =
   struct
 
-(* [type Control.t]
+(* [type Data.t]
    Information used by and built up during simplification.
  *)
     type t =
@@ -46,6 +48,9 @@ module Control =
 
 (** [cond_tac]: the tactic used to prove conditions of rewrite rules *)
 	 cond_tac: t -> Tag.t -> Tactics.tactic;
+
+(** [control]: rewrite control ([direction] is ignored *)
+	   control: Rewrite.control;
 
 (** conds: max. no. of conditions to try and prove at once *)
 	   conds: int;  
@@ -62,11 +67,12 @@ module Control =
 	   rules: Logic.rr_type list
        }
 
-    let make sset tac cd rd a rs= 
+    let make sset tac cntrl cd rd a rs= 
       {
        simpset=sset;
        cond_tac=tac;
        conds=cd;
+       control=cntrl;
        rr_depth=rd;
        asms=a;
        rules=rs
@@ -81,6 +87,9 @@ module Control =
     let set_conds cntrl d=
       {cntrl with conds=d}
 
+    let set_control cntrl c=
+      {cntrl with control=c}
+
     let set_rr_depth cntrl d=
       {cntrl with rr_depth=d}
 
@@ -92,6 +101,7 @@ module Control =
 
     let get_simpset cntrl=cntrl.simpset
     let get_tactic cntrl=cntrl.cond_tac
+    let get_control cntrl=cntrl.control
 
     let add_asm cntrl a=
       set_asms cntrl (a::(cntrl.asms))
@@ -110,7 +120,8 @@ module Control =
 
 (** [default]: The default control information  *)
     let default = 
-      make (Simpset.empty_set()) (fun _ _ -> skip) 50 50 [] [] 
+      make (Simpset.empty_set()) (fun _ _ -> skip) 
+	Formula.default_rr_control 50 50 [] [] 
 
   end
 
@@ -163,7 +174,7 @@ let rec clean_aux_tac tags g=
       in clean_aux_tac xs ng
 
 let clean_up_tac ctrl g=
-  clean_aux_tac (Control.get_asms ctrl) g
+  clean_aux_tac (Data.get_asms ctrl) g
 
 (** [cut_rr_rule info t g]
    Put rule [t] into first subgoal of [g].
@@ -225,7 +236,7 @@ let prep_cond_tac cntrl values thm goal =
       in 
       (cgltg, rgltg, cftg, ng)
     in
-    let ncntrl= Control.add_asm cntrl rrftg
+    let ncntrl= Data.add_asm cntrl rrftg
     in 
     (ncntrl, (cgltg, rgltg), (cftg, rrftg), goal2)
   with _ -> raise No_change
@@ -261,7 +272,7 @@ let rec prove_cond cntrl values entry goal =
 	     (Tag.equal cgltg1 (Drule.node_tag n)))
 	      --> 
 		(fun g -> 
-		  let tac=Control.get_tactic ncntrl1
+		  let tac=Data.get_tactic ncntrl1
 		  in 
 		  (tac ncntrl1 cftg1) g)) ng)
       in 
@@ -278,7 +289,7 @@ let rec prove_cond cntrl values entry goal =
 	      (Logic.Asm (Drule.ftag rftg)) 
 	      (Formula.dest_form form)
 	  in 
-	  (Control.add_simp_rule ncntrl rule,
+	  (Data.add_simp_rule ncntrl rule,
 	   Logic.Asm(Drule.ftag rftg), ng1)
       | _ -> (* >1 subgoals = failure *)
 	  raise No_change
@@ -336,7 +347,7 @@ let find_basic cntrl tyenv rl trm g=
 
    raise No_change and set [ret:=None] if no matches.
  *)
-let find_match cntrl tyenv ret trm (goal: Logic.node)=
+let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
   let rec find_aux rls t g= 
     match rls with
       [] -> (ret:=None; raise No_change)
@@ -346,7 +357,7 @@ let find_match cntrl tyenv ret trm (goal: Logic.node)=
 	with _ -> find_aux nxt t g
   in 
   let (ncntrl, ntyenv, nt, rr, ng) = 
-    find_aux (lookup (Control.get_simpset cntrl) trm) trm goal
+    find_aux (lookup (Data.get_simpset cntrl) trm) trm goal
   in 
   ret:=(Some(ncntrl, ntyenv, nt, rr)); ng
 
@@ -360,7 +371,7 @@ let find_match cntrl tyenv ret trm (goal: Logic.node)=
 
    Messy implementation:
 
-   Apply find_match to a term, store result,
+   Apply find_match_tac to a term, store result,
    repeat until find_match fails. 
    Return result and last sucessfull goal.
  *)
@@ -371,13 +382,13 @@ let rec find_all_matches cntrl tyenv trm branch=
     (let ret1=ref None
     in 
     try
-      let ng=foreach (find_match c ty ret1 t) g
+      let ng=foreach (find_match_tac c ty ret1 t) g
       in 
       match (!ret1) with
 	None -> (c, ty, t, g)
       | Some (cntrl1, tyenv1, t1, r1) -> 
 	  (chng:=true;
-	   find_aux (Control.add_rule cntrl1 r1) tyenv1 t1 ng)
+	   find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 ng)
     with _ -> (c, ty, t, g))
   in 
   let (nc, ntyenv, nt, ng)=find_aux cntrl tyenv trm branch
@@ -441,10 +452,10 @@ let is_true t = Term.is_true t
 
    raise [Not_found] if not found.
  *)
-let get_form t n = 
+let get_form t sqnt = 
   try 
-    Drule.get_tagged_cncl t n
-  with Not_found -> Drule.get_tagged_asm t n
+    Logic.Sequent.get_tagged_cncl t sqnt
+  with Not_found -> Logic.Sequent.get_tagged_asm t sqnt
 
 
 (**
@@ -511,34 +522,55 @@ let rec find_rrs_top_down ctrl tyenv trm g=
   find_td_aux ntyenv nctrl ntrm ng
 
 
-let rec basic_simp_tac cntrl set ft goal=
+let rec basic_simp_link ft cntrl goal=
   let chng=ref false
   in 
-  let tyenv=Drule.typenv_of goal
+  let tyenv=Drule.branch_tyenv goal
+  in 
+  let sqnt = 
+    match (Drule.branch_subgoals goal) with
+      [x] -> x
+    | _ -> raise (Failure "basic_simp_link: too many subgoals")
   in 
   let trm=
-    Formula.dest_form (Logic.drop_tag (get_form (ftag ft) goal))
-  in 
-  let cntrl1=Control.set_simpset cntrl set
+    Formula.dest_form (Logic.drop_tag (get_form ft sqnt))
   in 
   let (ncntrl, ntyenv, ntrm, ngoal)= 
-    find_rrs_top_down
-      (Control.set_tactic cntrl1 prove_cond_tac)  (* TEMPORARY HACK *)
-      tyenv
-      trm (skip goal)
+    let rr_cntrl = Data.get_control cntrl
+    in 
+    if (rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
+    then 
+      find_rrs_bottom_up cntrl tyenv trm goal
+    else
+      find_rrs_top_down cntrl tyenv trm goal
   in 
-  let rrs=List.rev (ncntrl.Control.rules)
+  let rrs=List.rev (ncntrl.Data.rules)
   in 
   if rrs=[]
   then raise No_change
   else 
     let goal1=
+      let rr_cntrl0 = Data.get_control cntrl
+      in 
+      let rr_cntrl = 
+	Rewrite.control 
+	  ~dir:Rewrite.leftright
+	  ~max:None
+	  ~strat:rr_cntrl0.Rewrite.rr_strat
+      in 
       (try
-	Tactics.foreach (Logic.Rules.rewrite None rrs (ftag ft)) ngoal
+	Tactics.foreach 
+	  (Logic.Rules.rewrite None ~ctrl:rr_cntrl rrs (ftag ft)) ngoal
       with _ -> raise No_change)
     in 
+    (ncntrl, goal1)
+
     (* Clean up afterwards *)
-    clean_up_tac ncntrl goal1
+(*     clean_up_tac ncntrl goal1 *)
+
+let basic_simp_tac cntrl ft goal=
+  let (_, g) = basic_simp_link ft cntrl (skip goal)
+  in g
 
 (**
    [prove_cond_tac ctrl tg g]: The tactic used to prove the conditions of
@@ -547,9 +579,7 @@ let rec basic_simp_tac cntrl set ft goal=
    Apply [simp_prep_tac] then [basic_simp_tac].
    Then apply [Logic.Rules.trueR] to solve goal.
 *) 
-and prove_cond_tac ctrl tg goal=
-  let set = Control.get_simpset ctrl
-  in 
+let prove_cond_tac ctrl tg goal=
   Tactics.orl
     [
      Logic.Rules.trueR None (Logic.FTag tg);
@@ -557,7 +587,7 @@ and prove_cond_tac ctrl tg goal=
        let init_simp_tac ctrl0 tg0 g0=
 	 let (ctrl1, g1) = simp_prep_tac ctrl0 tg0 g0
 	 in 
-	 Tactics.foreach(basic_simp_tac ctrl1 set tg0) g1
+	 Tactics.foreach(basic_simp_tac ctrl1 tg0) g1
        in 
        Tactics.seq
 	 [
@@ -575,7 +605,7 @@ and prove_cond_tac ctrl tg goal=
  *)
 
 let simp_asm_elims = 
-  [(Formula.is_false, (fun x -> Boollib.false_rule ~a:x));
+  [(Formula.is_false, (fun x -> Boollib.falseR ~a:x));
    (Formula.is_conj, Logic.Rules.conjA None); 
    (Formula.is_neg, Logic.Rules.negA None); 
    (Formula.is_exists, Logic.Rules.existA None)]
@@ -593,7 +623,39 @@ let initial_flatten_tac fts goal=
 	  Drule.foreach_asm_except fts simp_asm_elims]) goal)
 
 
+
+
+(**
+   [once_simp_tac cntrl set l g]
+
+   Simplify formula [label] with [set], once.
+*)
+let once_simp_tac cntrl set l goal =
+  let tag=Logic.label_to_tag l (Drule.sequent goal)
+  in 
+  let data0 = Data.set_control Data.default cntrl
+  in 
+  let data1 = Data.set_tactic data0 prove_cond_tac 
+  in
+  let data2 = Data.set_simpset data1 set
+  in 
+  let (ncntrl, goal1) =
+    chain (fun cdata -> simp_prep_tac cdata tag)
+      [ basic_simp_link tag ] data2 goal
+  in 
+  let goal2 = goal1
+  in goal2
+
+
+ (* Clean up afterwards *)
+(* 
+   (foreach (clean_up_tac ncntrl) goal1)
+*)
+
+
 (* simp_tac i st:
+   not implemented 
+
    - flatten sequent
    - put conclusions into assumption by negation (** not done yet **)
    - make assumption entries
@@ -601,6 +663,28 @@ let initial_flatten_tac fts goal=
    - delete temporary assumptions
    - flatten sequent
  *)
+
+let simp_tac cntrl set l goal=
+  let tag = Logic.label_to_tag l (Drule.sequent goal)
+  in 
+  let data0 = Data.set_control Data.default cntrl
+  in 
+  let data1 = Data.set_tactic data0 prove_cond_tac 
+  in
+  let data2 = Data.set_simpset data1 set
+  in 
+  let (ncntrl, goal1) =
+    iter_chain (fun cdata -> simp_prep_tac cdata tag)
+      (basic_simp_link tag) data2 goal
+  in 
+  let goal2 = goal1
+  in goal2
+
+
+ (* Clean up afterwards *)
+(* 
+   (foreach (clean_up_tac ncntrl) goal1)
+*)
 
 
 (* 
@@ -624,13 +708,15 @@ let full_simp_tac cntrl simpset tg gl=
     try (Drule.sequent gl)
     with _ -> raise (Result.error "full_simp_tac: No such formula in goal")
   in 
+  let cntrl1=Data.set_simpset cntrl simpset
+  in 
   (* prepare the subgoal for simplification *)
   let (prepared_cntrl, prepared_goal) = 
     (try 
-      let tmp= simp_prep_tac cntrl tg gl
+      let tmp= simp_prep_tac cntrl1 tg gl
       in (chng:=true; tmp)
     with 
-      No_change -> (cntrl, (skip gl))
+      No_change -> (cntrl1, (skip gl))
     | err -> 
 	raise (Result.error "simp_tac: stage 1"))
   in 
@@ -638,7 +724,7 @@ let full_simp_tac cntrl simpset tg gl=
   let simped_goal = 
     (try 
       Tactics.foreach
-	(basic_simp_tac prepared_cntrl simpset tg) prepared_goal
+	(basic_simp_tac prepared_cntrl tg) prepared_goal
     with No_change -> (chng:=false; skip gl))
   in 
   (* clean up afterwards *)

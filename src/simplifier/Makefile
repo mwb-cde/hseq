@@ -1,8 +1,8 @@
 # Header, code and optimised code files
 
-HEADERS = simputils.cmi simpset.cmi simplifier.cmi
-CODE = simputils.cmo simpset.cmo simplifier.cmo
-OPTCODE = simputils.cmx simpset.cmx simplifier.cmx
+HEADERS = simputils.cmi simpconvs.cmi simpset.cmi simplifier.cmi
+CODE = simputils.cmo simpconvs.cmo simpset.cmo simplifier.cmo
+OPTCODE = simputils.cmx simpconvs.cmo simpset.cmx simplifier.cmx
 
 LIBFILE= simplifier.cma
 OPTLIB= simplifier.cmxa
@@ -15,9 +15,10 @@ LIBDIR=
 HEADERSDIR=../include
 INSTALLDIR=../libs
 
+SRCDIR=..
 OCLIBS=
 OPTLIBS=
-OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
+OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" -I +camlp4
 
 OCAMLC=ocamlc ${OPTIONS} 
 OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
