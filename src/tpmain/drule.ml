@@ -42,7 +42,7 @@ let basic sqnt =
   try
     let a,c = find_basic sq
     in Logic.Rules.unify a c sqnt
-  with Not_found -> Result.raiseError "Not basic"
+  with Not_found -> raise (Result.error "Not basic")
 
 let implI sq =
   let c=first_concl Formula.is_implies (Logic.get_sqnt sq)
@@ -173,7 +173,7 @@ let foreach_asm rs sq =
   (let rslt = (each_safe 1) sq
   in 
   if !chng then rslt 
-  else Result.raiseError "No change")
+  else raise (Result.error "No change"))
 
 let foreach_asm_except excpt rs sq = 
   let exclude t =
@@ -207,7 +207,7 @@ let foreach_asm_except excpt rs sq =
   (let rslt = (each_safe 1) sq
   in 
   if !chng then rslt 
-  else Result.raiseError "No change")
+  else raise (Result.error "No change"))
 
 
 let foreach_conc rs sq = 
@@ -231,7 +231,7 @@ let foreach_conc rs sq =
   in
   (let rslt = (each_safe 1) sq
   in 
-  if !chng then rslt else Result.raiseError "No change")
+  if !chng then rslt else raise (Result.error "No change"))
 
 
 let foreach_conc_except excpt rs sq = 
@@ -266,7 +266,7 @@ let foreach_conc_except excpt rs sq =
   in
   (let rslt = (each_safe 1) sq
   in 
-  if !chng then rslt else Result.raiseError "No change")
+  if !chng then rslt else raise (Result.error "No change"))
 
 
 (*
@@ -288,7 +288,7 @@ let foreach_conc_once r sq =
       with _ -> sq)
     else sq
   in let rslt = each_once 1 sq 
-  in if !chng then rslt else Result.raiseError "No change"
+  in if !chng then rslt else raise (Result.error "No change")
 
 
 let foreach_asm_once r sq =
@@ -303,7 +303,7 @@ let foreach_asm_once r sq =
       with _ -> sq)
     else sq
   in let rslt = each_once 1 sq 
-  in if !chng then rslt else Result.raiseError "No change"
+  in if !chng then rslt else raise (Result.error "No change")
 
 let foreach_once r sq = 
   let chng = ref true

@@ -33,7 +33,7 @@ let dest_equal t =
     (match snd(dest_fun t) with
       [l; r] -> (l, r)
     |	_ -> raise (termError "Badly formed equality" [t]))
-  else Result.raiseError "Not an equality"
+  else raise (Result.error "Not an equality")
 
 let mkall tyenv n b= mkqnt tyenv Basic.All n b
 let mkex tyenv n b= mkqnt tyenv Basic.Ex n b
@@ -133,7 +133,7 @@ let beta_reduce t =
     |	x -> x
   in let flag = ref false
   in let nt = beta_reduce_aux flag t
-  in if !flag then nt else raise (Result.raiseError "No change")
+  in if !flag then nt else raise (Result.error "No change")
 
 (* eta-abstraction *)
 (* abstract x, of type ty, from term t *)

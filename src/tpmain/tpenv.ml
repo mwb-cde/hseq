@@ -184,9 +184,8 @@ let catch_parse_error e a =
   (try (e a)
   with 
     Pkit.ParsingError x ->
-      Result.raiseError("Parsing error: "^x)
-  | Lexer.Error -> Result.raiseError("Lexing error: "^a)) 
-
+      raise (Result.error ("Parsing error: "^x))
+  | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
 let mkterm_unchecked tyenv pt = pt
 
 let read str= 

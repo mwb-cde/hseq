@@ -23,16 +23,25 @@ class errormsg :
     method msg : unit -> string 
     method print : Printer.ppinfo -> unit 
   end
-exception Error of error list
+
+exception Error of error
+exception Errors of exn list
 
 (* construct, add and raise errors *)
-val mkError : error -> exn
-val addError : error -> exn -> exn
+val mk_error : error -> exn
+val add_error : error -> exn -> exn
+
+val catch_error : Printer.ppinfo -> int -> ('a -> unit )  -> 'a -> unit
+
+val error : string -> exn
+
+(*
 val catchError : error -> exn -> exn
 val raiseError : string -> 'a
+*)
 
 (* basic printer *)
-val print_error : Printer.ppinfo -> int -> exn -> unit
+val print_error :  Printer.ppinfo -> int -> exn -> unit
 
 
 (* warnings *)

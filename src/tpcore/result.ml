@@ -29,9 +29,11 @@ class errormsg =
     inherit error "Error"
   end
 
+(*
 exception Error of error list
 
 let mkError e = Error[(e:>error)]
+
 let addError e x = 
   match x with 
     (Error es) ->  (Error ((e:>error)::es))
@@ -61,25 +63,27 @@ let print_error st dpth e =
     (Error(ers)) -> (print_aux ers dpth; ()) 
   | _ -> ()
 
-let warning s =
-  (Format.open_box 0;
-   Format.print_string s;
-   Format.print_string "\n";
-   Format.close_box())
+*)
 
 
 (* Alternative error messages *)
 
+exception Error of error
 exception Errors of exn list
 
+let mk_error e = Error e
+let error s = Error (new error s)
 
-let alt_addError e x=
+let add_error e x=
   match x with
-    Errors es -> Errors(e::es)
-  | _ -> Errors[e; x]
+    Errors es -> Errors((Error e)::es)
+  | _ -> Errors[(Error e); x]
 
 (*
-let alt_printErrors depth info errs=
+let catchError e x =  raise (addError e x)
+*)
+
+let print_error info depth errs=
   let ctr=ref (depth+1)
   in 
   let rec print_aux x=
@@ -87,9 +91,9 @@ let alt_printErrors depth info errs=
     else 
       (ctr:=(!ctr)-1;
        match x with
-      (Alt_Error e) -> 
+      (Error e) -> 
 	Format.open_box 0;
-	e.print info;
+	e#print info;
 	Format.close_box ()
     | (Errors l) -> 
 	List.iter print_aux l;
@@ -99,9 +103,14 @@ let alt_printErrors depth info errs=
 	Format.close_box())
   in 
   List.iter print_aux [errs]
-*)
-(*
-let alt_catchError info depth f a = 
+
+
+let catch_error info depth f a = 
   try (f a)
-  with x -> alt_printErrors info depth x
-*)
+  with x -> print_error info depth x
+
+let warning s =
+  (Format.open_box 0;
+   Format.print_string s;
+   Format.print_string "\n";
+   Format.close_box())

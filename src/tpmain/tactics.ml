@@ -43,7 +43,7 @@ let basic0 sqnt =
   try
     let a,c = find_basic sq
     in Logic.Rules.unify a c sqnt
-  with Not_found -> Result.raiseError "Not basic"
+  with Not_found -> raise (Result.error "Not basic")
 
 let basic sqnt = rule_tac basic0 sqnt
 

@@ -35,7 +35,7 @@ let save_theory thy prot=
     in 
     Theory.export_theory oc thy prot;
     close_out oc)
-  else raiseError ("Theory "^(Theory.get_name thy)^" is protected")
+  else raise (Result.error ("Theory "^(Theory.get_name thy)^" is protected"))
 
 let load_theory n = 
   let rec chop n = 
@@ -67,7 +67,7 @@ let load_theory_as_cur n =
 
 let begin_theory n = 
   if n = "" 
-  then (raiseError "No theory name")
+  then (raise (Result.error "No theory name"))
   else 
     let thy = (Theory.mk_thy n)
     in 
@@ -80,17 +80,17 @@ let new_theory n = begin_theory n
 
 let open_theory n =
   if n = "" 
-  then (raiseError "No theory name")
+  then (raise (Result.error "No theory name"))
   else (load_theory_as_cur n)
 
 let close_theory() = 
   if get_theory_name() = "" 
-  then (raiseError "At base theory")
+  then (raise (Result.error "At base theory"))
   else save_theory (curr_theory()) false
 
 let end_theory() = 
   if get_theory_name() = "" 
-  then (raiseError "At base theory")
+  then (raise (Result.error "At base theory"))
   else save_theory (curr_theory()) true
 
 
@@ -231,7 +231,7 @@ let declare trm =
     in 
     Thydb.add_decln dcl (theories());
     (n, ty))
-  with _ -> raiseError ("Badly formed declaration")
+  with _ -> raise (Result.error ("Badly formed declaration"))
 
 let declare_full trm pp =
   let n, ty=declare trm
@@ -259,7 +259,7 @@ let declare_string str =
     in 
     Thydb.add_decln dcl (theories());
     (n, ty))
-  with _ -> raiseError ("Badly formed declaration: "^str)
+  with _ -> raise (Result.error ("Badly formed declaration: "^str))
 
 let declare_full_string str pp =
   let n, ty=declare_string str 

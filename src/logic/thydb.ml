@@ -20,12 +20,12 @@ let addthy thdb thy =
   let name = Theory.get_name thy
   in 
   if is_loaded name thdb
-  then raiseError ("Theory "^name^" exists")
+  then raise (Result.error ("Theory "^name^" exists"))
   else (Lib.add name thy thdb.db)
 
 let remove_thy thdb n= 
   if n=Theory.get_name thdb.curr 
-  then raiseError ("Theory "^n^" is current theory")
+  then raise (Result.error ("Theory "^n^" is current theory"))
   else Hashtbl.remove thdb.db n
 
 let getthy thdb name = Lib.find name thdb.db
@@ -46,7 +46,7 @@ let setcur thdb name =
     thdb.curr<- (getthy thdb name); 
     thdb.importing<-[name];
     thdb
-  with Not_found -> raiseError ("Can' find theory "^name)
+  with Not_found -> raise (Result.error ("Can' find theory "^name))
 
 let setcur_thy thdb thy = 
   thdb.curr<- thy;
@@ -58,15 +58,15 @@ let setcur_thy thdb thy =
 let load_theory thdb name prot thfn filefn =
   let test_date tim thy = 
     if (Theory.get_date thy)<tim then () 
-    else raiseError 
+    else raise (Result.error 
       	("Imported theory "^(Theory.get_name thy)^" is more recent than "
-	 ^" its importing theory")
+	 ^" its importing theory"))
   and test_protection thy =
     if prot 
     then 
       if (Theory.get_protection thy) then ()
-      else raiseError 
-	  ("Imported theory "^(Theory.get_name thy)^" is not complete")
+      else raise (Result.error 
+	  ("Imported theory "^(Theory.get_name thy)^" is not complete"))
     else ()
   in 
   let rec load_aux tim ls imps=
@@ -74,7 +74,7 @@ let load_theory thdb name prot thfn filefn =
       [] -> imps
     | (x::xs) ->
 	(if (x=name) 
-	then raiseError ("Circular importing in Theory "^x)
+	then raise (Result.error ("Circular importing in Theory "^x))
 	else 
 	  (if is_loaded x thdb
 	  then 
@@ -128,7 +128,7 @@ let mk_importing thdb=
 	    let nls = get_parents thdb x
 	    in let nrs= mk_aux thdb nls (x::rs)
 	    in mk_aux thdb xs (rs@(filter (fun x->List.mem x rs) nrs ))
-	  with _ -> raiseError("mk_importing: theory "^x))
+	  with _ -> raise (Result.error("mk_importing: theory "^x)))
   in 
   (mk_aux thdb (Theory.get_parents thdb.curr) [])
 
@@ -281,7 +281,7 @@ let get_lemma th n tdb =
 let get_defn th n tdb = 
   (let r = get_defn_rec th n tdb
   in match r.Theory.def with
-    None -> raiseError ("No definition for "^n)
+    None -> raise (Result.error ("No definition for "^n))
   | Some(d) -> d)
 
 let get_id_type th n tdb = 

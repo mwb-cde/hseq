@@ -55,7 +55,7 @@ let get_parents thy = thy.parents
 let add_parent n thy =
   if (not thy.protection) & (n<>"") & (not (List.mem n (thy.parents)))
   then thy.parents<-(n::(thy.parents))
-  else (Result.raiseError ("add_parent: "^n))
+  else raise (Result.error ("add_parent: "^n))
 
 let add_parents ns thy =
   match ns with
@@ -79,14 +79,14 @@ let add_pp_rec idsel n ppr thy=
     then 
       (if Lib.member n thy.defns
       then thy.id_pps <- ((n, ppr)::thy.id_pps)
-      else (Result.raiseError 
+      else raise (Result.error 
 	      ("No name "^n^" defined in theory "^(get_name thy))))
     else 
       (if Lib.member n thy.typs
       then thy.type_pps <- ((n, ppr)::thy.type_pps)
-      else (Result.raiseError 
+      else raise (Result.error
 	      ("No type "^n^" defined in theory "^(get_name thy))))
-  else (Result.raiseError ("Theory "^(get_name thy)^" is protected"))
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 let get_pp_rec idsel n thy =
   if idsel = Basic.fn_id 
@@ -110,16 +110,16 @@ let add_axiom n ax thy =
   then 
     if not (Lib.member n thy.axioms)
     then Hashtbl.add (thy.axioms) n ax
-    else Result.raiseError ("Axiom "^n^" exists")
-  else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+    else raise (Result.error ("Axiom "^n^" exists"))
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_thm n t thy =
   if not (get_protection thy)
   then 
     if not (Lib.member n thy.theorems)
     then Hashtbl.add (thy.theorems) n t
-    else Result.raiseError ("Theorem "^n^" exists")
-  else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+    else raise (Result.error ("Theorem "^n^" exists"))
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 (*
    let add_type_rec n tr thy =
@@ -127,8 +127,8 @@ let add_thm n t thy =
    then 
    if not (Lib.member n thy.typs)
    then Hashtbl.add (thy.typs) n tr
-   else Result.raiseError ("Type "^n^" exists")
-   else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+   else raise (Result.error ("Type "^n^" exists"))
+   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
  *)
 
 let add_type_rec tr thy =
@@ -148,8 +148,8 @@ let add_type_rec tr thy =
     in 
     if not (Lib.member id thy.typs)
     then Hashtbl.add (thy.typs) id tr
-    else Result.raiseError ("Type "^id^" exists")
-  else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+    else raise (Result.error ("Type "^id^" exists"))
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 
 let get_type_rec n thy = Hashtbl.find (thy.typs) n
@@ -163,7 +163,7 @@ let get_defn_rec n thy =
 let get_defn n thy = 
   (let r = get_defn_rec n thy
   in match r.def with
-    None -> Result.raiseError ("No definition for "^n)
+    None -> raise (Result.error ("No definition for "^n))
   | Some(d) -> d)
 
 let get_id_type n thy = 
@@ -187,10 +187,10 @@ let add_defn_rec n ty d inf pr thy =
   if not (get_protection thy)
   then 
     (if id_exists n thy
-    then Result.raiseError ("Identifier "^n^" already exists in theory")
+    then raise (Result.error ("Identifier "^n^" already exists in theory"))
     else (Hashtbl.add (thy.defns) n 
 	    {typ=ty; def=d;  infix=inf; prec=pr}))
-  else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_defn n ty d thy =
   add_defn_rec n ty (Some d) false (-1) thy
@@ -201,14 +201,14 @@ let add_decln_rec n ty pr thy =
 let get_axiom n thy = 
   try Hashtbl.find thy.axioms n
   with Not_found -> 
-    Result.raiseError 
-      ("Axiom "^n^" not found in theory "^(get_name thy)^".")
+    raise (Result.error 
+      ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
 
 let get_theorem n thy = 
   try Hashtbl.find thy.theorems n
   with Not_found -> 
-    Result.raiseError 
-      ("Theorem "^n^" not found in theory "^(get_name thy)^".")
+    raise (Result.error 
+      ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
 
 let to_list tbl = 
   let tmp = ref []
@@ -280,7 +280,7 @@ let save_theory thy prot fname=
     in if prot then (set_protection thy) else ();
     output_theory oc thy; 
     close_out oc)
-  else Result.raiseError ("Theory "^(get_name thy)^" is protected")
+  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 
 let export_theory oc thy prot =

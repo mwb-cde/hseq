@@ -10,7 +10,7 @@ let eq_tac0 sqnt =
   let th = 
     try lemma "base.eq_sym"
     with Not_found -> 
-      (Result.raiseError "Can't find required lemma base.eq_sym")
+      (raise (Result.error "Can't find required lemma base.eq_sym"))
   in rule_tac (thenl [cut th; unify_tac (-1) a]) sqnt
 
 let eq_tac sqnt = rule_tac eq_tac0 sqnt
@@ -54,7 +54,7 @@ let is_iff f =
 let iffI_rule i sq = 
   let _, f = Logic.get_cncl i (Logic.get_sqnt sq)
   in
-  if not (is_iff f) then (Result.raiseError "iffI_rule")
+  if not (is_iff f) then (raise (Result.error "iffI_rule"))
   else 
     (thenl 
        [Drule.rewrite_thm [lemma "boolean.iff_def"] true i;
@@ -180,7 +180,7 @@ let cases_tac0 (x:Basic.term) g=
     try
       lemma "boolean.cases_thm"
     with Not_found -> 
-      (Result.raiseError "Can't find required lemma boolean.cases_thm")
+      (raise (Result.error "Can't find required lemma boolean.cases_thm"))
   in 
   rule_tac(thenl
 	     [cut thm; rule_tac (Drule.allE x); disjI; negA; postpone]) g
@@ -192,7 +192,7 @@ let equals_tac i g =
     try
       lemma "boolean.equals_bool"
     with Not_found -> 
-      (Result.raiseError "Can't find required lemma boolean.equals_bool")
+      (raise (Result.error "Can't find required lemma boolean.equals_bool"))
   in 
   (rewrite thm i g)
 
@@ -224,7 +224,7 @@ let hyp_conc_thm f =
   then
     match Term.dest_fun t with
       (_, (a::b::[])) -> (qnts, a, b)
-    | _ -> (Result.raiseError "hyp_conc_thm: unusually shaped implication")
+    | _ -> (raise (Result.error "hyp_conc_thm: unusually shaped implication"))
   else (qnts, Term.mkbool true, t)
 
 let match_mp_rule0 thm i sq=

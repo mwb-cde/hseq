@@ -111,7 +111,7 @@ let by_com tac =
 
 let postpone() =
   match (!prflist) with
-    [] -> Result.raiseError "No goal"
+    [] -> raise (Result.error "No goal")
   |	_ -> 
       (let ng = Logic.Rules.goal_postpone (pop_plist())
       in 
@@ -119,8 +119,8 @@ let postpone() =
 
 let undo() =
   match (!prflist) with
-    [] -> Result.raiseError "No goal"
-  |	[x] -> Result.raiseError "No previous goals"
+    [] -> raise (Result.error "No goal")
+  |	[x] -> raise (Result.error "No previous goals")
   |	_ -> (ignore(pop_plist()); top())
 	
 let result ()= mk_thm (curr_goal (top()))

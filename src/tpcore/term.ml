@@ -84,7 +84,7 @@ class basictermError s ts =
       Format.close_box();
       Format.close_box();
   end
-let basicError s t = mkError((new basictermError s t):>error)
+let basicError s t = mk_error((new basictermError s t):>error)
 
 let get_binder_name x =
   match x with
@@ -983,8 +983,8 @@ class termError s ts =
   end
 let mktermError s t = ((new termError s t):>error)
 
-let termError s t = mkError((new termError s t):>error)
-let addtermError s t es = raise (addError ((new termError s t):>error) es)
+let termError s t = mk_error((new termError s t):>error)
+let addtermError s t es = raise (add_error ((new termError s t):>error) es)
 
 (* [set_names_types scp thy trm]
    find and set long identifiers and types for variables in [trm]

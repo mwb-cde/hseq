@@ -33,9 +33,9 @@ class typingError s ts tys=
       Format.close_box()
   end
 let typingError s tr ty= 
-  Result.mkError((new typingError s tr ty):>Result.error)
+  Result.mk_error((new typingError s tr ty):>Result.error)
 let addtypingError s tr ty es =
-  raise (Result.addError ((new typingError s tr ty):>Result.error) es)
+  raise (Result.add_error ((new typingError s tr ty):>Result.error) es)
 
 
 let typeof_env scp typenv inf trm =

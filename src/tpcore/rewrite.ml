@@ -28,7 +28,7 @@ let find_match_aux scp tyenv varp term1 term2 env=
     Unify.unify_fullenv_rewrite scp tyenv env varp term1 term2 
   with x -> 
     raise 
-      (catchError (mktermError ("Can't match terms") [term1; term2]) x)
+      (add_error (mktermError ("Can't match terms") [term1; term2]) x)
 
 let find_match scp tyenv varp term1 term2 env=
   let tyenv1, env1= find_match_aux scp tyenv varp  term1 term2 env

@@ -249,13 +249,13 @@ let set_antiquote c = antiquote_char:=c
     then 
       (try 
 	 (Hashtbl.find tbl s; 
-	  Result.raiseError ("Symbol "^s^" exists"))
+	  raise (Result.error ("Symbol "^s^" exists")))
        with 
 	 Not_found ->
 	   (Hashtbl.add tbl s tk;
 	    add_char_info (String.get s 0) sz ls, tbl))
     else 
-      Result.raiseError "Invalid symbol"
+      raise (Result.error "Invalid symbol")
 	
 
   let find_sym (_, tbl) s=
@@ -572,7 +572,7 @@ let match_keywords symtable strm =
 let dest_ANTIQUOTE t=
   match t with
     ANTIQUOTE(s) -> s
-  | _ -> Result.raiseError("Error dealing with antiquotation.")
+  | _ -> raise (Result.error "Error dealing with antiquotation.")
 
 let match_antiquote symtable strm =
   if stream_empty strm 
