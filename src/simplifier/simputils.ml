@@ -138,3 +138,23 @@ let allA_list l vs =
  *)
 let is_variable qnts x= Rewrite.is_free_binder qnts x
 
+(**
+ [equal_upto_vars varp x y]: Terms [x] and [y] are equal upto the
+   position of the terms for which [varp] is true (which are
+   considered to be variables.)
+
+   This is used to determine whether a rewrite- or simp-rule could
+   lead to an infinite loop (e.g. |- (x and y) = (y and x) ).
+*)
+let rec equal_upto_vars varp x y =
+  if ((varp x) & (varp y))
+  then true
+  else 
+    match (x, y) with
+      (Basic.App(f1, arg1), Basic.App(f2, arg2))->
+	(equal_upto_vars varp f1 f2) & (equal_upto_vars varp arg1 arg2)
+    | (Basic.Qnt(k1, qn1, b1), Basic.Qnt(k2, qn2, b2)) -> 
+	k1=k2 & qn1==qn2 & (equal_upto_vars varp b1 b2)
+    | (Basic.Typed(t1, ty1), Basic.Typed(t2, ty2)) ->
+	(Gtypes.equals ty1 ty2)  & (equal_upto_vars varp t1 t2)
+    | (_, _) -> Term.equals x y

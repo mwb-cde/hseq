@@ -119,7 +119,7 @@ let split s1=
 		   ("Not an equality or a conditional equality\n"))
 
 
-(** [make_rule rl]:
+(** [make_rule rl src]:
    make rule from theorem or assumption [src] in scope [scp]
 *)
     let make_rule rl trm=

@@ -35,7 +35,8 @@ type control = Rewrite.control
 module Data =
   struct
 
-(* [type Data.t]
+(**
+   [type Data.t]
    Information used by and built up during simplification.
  *)
     type t =
@@ -61,13 +62,15 @@ module Data =
 (** asms: assumptions generated during the course of simplification *)
 	   asms: Tag.t list;
 
+(** visited: formulas visited during the course of simplification *)
+	   visited: Tag.t list;
 (** rules: 
    rewrite rules to pass to the rewriter (the result of the simplifier)
  *)
 	   rules: Logic.rr_type list
        }
 
-    let make sset tac cntrl cd rd a rs= 
+    let make sset tac cntrl cd rd a vs rs= 
       {
        simpset=sset;
        cond_tac=tac;
@@ -75,6 +78,7 @@ module Data =
        control=cntrl;
        rr_depth=rd;
        asms=a;
+       visited = vs;
        rules=rs
      }
 
@@ -96,6 +100,9 @@ module Data =
     let set_asms cntrl ds=
       {cntrl with asms=ds}
 
+    let set_visited cntrl ds=
+      {cntrl with visited=ds}
+
     let set_rules cntrl ds=
       {cntrl with rules=ds}
 
@@ -107,6 +114,8 @@ module Data =
       set_asms cntrl (a::(cntrl.asms))
 
     let get_asms cntrl =cntrl.asms
+
+    let get_visited cntrl =cntrl.visited
 
     let dec_cond_depth cntrl=
       set_conds cntrl ((cntrl.conds)-1)
@@ -121,7 +130,7 @@ module Data =
 (** [default]: The default control information  *)
     let default = 
       make (Simpset.empty_set()) (fun _ _ -> skip) 
-	Formula.default_rr_control 50 50 [] [] 
+	Formula.default_rr_control 50 50 [] [] [] 
 
   end
 
@@ -244,7 +253,7 @@ let prep_cond_tac cntrl ret values thm goal =
       in 
       seq[allA_list (ftag rrftg) values;
 	  Logic.Rules.implA (Some(info)) (ftag rrftg);
-	  add_info_tac (add_data rrftg) info
+	  data_tac (add_data rrftg) info
 	] g2
     in 
     (tac1 ++ tac2) goal
@@ -292,7 +301,7 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	       in 
 	       seq 
 		 [tac ncntrl1 cftg1;
-		  add_info_tac 
+		  data_tac 
 		    (fun x -> ret:=(Some x))
 		    (ncntrl1, Logic.Asm(Drule.ftag rftg1))]
 		 g3)) g2
@@ -318,7 +327,7 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	    (Logic.Asm (Drule.ftag rftg1)) 
 	    (Formula.dest_form form)
 	in 
-	add_info_tac (fun x -> ret := Some x)
+	data_tac (fun x -> ret := Some x)
 	  (Data.add_simp_rule ncntrl1 rule,
 	   Logic.Asm(Drule.ftag rftg1)) g4
       in
@@ -661,7 +670,7 @@ let rec basic_simp_tac cntrl ret ft goal=
    Then apply [Logic.Rules.trueR] to solve goal.
  *) 
 let prove_cond_tac ctrl tg goal=
-  Tactics.orl
+  Tactics.alt
     [
      Logic.Rules.trueR None (Logic.FTag tg);
      (fun g -> 
@@ -704,7 +713,7 @@ let simp_conc_elims =
 
 let initial_flatten_tac fts goal=
   (repeat
-     (Tactics.orl
+     (Tactics.alt
  	[ Drule.foreach_conc_except fts simp_conc_elims;
 	  Drule.foreach_asm_except fts simp_asm_elims]) goal)
 
@@ -740,17 +749,236 @@ let once_simp_tac cntrl set l goal =
      ] goal
 
 
-(* simp_tac i st:
-   not implemented 
+(*
+   [simp_engine_tac cntrl asms l goal]:
+   The engine for [simp_tac]
 
-   - flatten sequent
-   - put conclusions into assumption by negation (** not done yet **)
-   - make assumption entries
+   - eliminate toplevel universal quantifiers of [l]
+   - if (asms=true),
+     put conclusions other than [l] into assumptions and make simp rules
+   - if (asms=true), make simp rules from assumptions
    - simplify
    - delete temporary assumptions
-   - flatten sequent
+
+   [simp_tac cntrl asms except ?l goal]:
+   - eliminate toplevel universal quantifiers of [l]
+   - if (asms=true),
+     put conclusions other than [l] into assumptions and make simp rules
+   - if (asms=true), make simp rules from assumptions
+   - simplify
+   - delete temporary assumptions
+
+   If [l] is not given, repeat for each conclusion.
+   Ignore formulas for which [except] is true.
  *)
 
+(* [make_asm_entries_tac ret tags except goal]
+
+   Copy, prepare the assumptions in [tags], set ret to [(asm_tags,
+   forms)] where [asm_tags] is the list of pairs [(a, e)] where [a] is
+   the assumption used to make the rule tagged [e] and [forms] is the
+   list of tagged formulas to be used as the simp rules.
+*)
+
+let dfst (x, _) = x
+let dsnd (_, x) = x
+
+let asm_info_tags = ref []
+let concl_info_tags = ref []
+
+
+let make_asm_entries_tac ret tags except goal=
+  let data = ref []
+  in 
+  (* prepare assumptions *)
+  let tac1 g = Simpconvs.prepare_asms data tags except g
+  in 
+  (* make list of tagged formulas *)
+  let tac2 g =
+    let sqnt = Drule.sequent g
+    in 
+    let asm_forms = Drule.asms_of sqnt
+    and asm_tags = !data
+    in 
+    let forms = 
+      let use (t, f) = 
+	try 
+	  ignore(List.find (fun (_, x) -> Tag.equal t x) asm_tags); true
+	with Not_found -> false
+      in 
+      List.filter use asm_forms
+    in 
+    data_tac (fun x -> ret:=x) (asm_tags, forms) g
+  in 
+  seq [tac1; tac2] goal
+
+(* [make_concl_entries_tac ret tags except goal]
+
+   Copy, lift, prepare the conclusions in [tags], set ret to
+   [(asm_tags, rules)] where [asm_tags] is a list of pairs [(c, a)]
+   where [c] is the conclusion used to form assumption [a] (from which
+   a simp rule is formed) and [rules] is the list of tagged formulas
+   to be used as simp rules.
+*)
+let make_concl_entries_tac ret tags except goal=
+  let data = ref []
+  in 
+  (* copy, prepare conclusions *)
+  let tac1 g=
+    Simpconvs.prepare_concls data tags except g
+  in 
+  (* make list of tagged formulas *)
+  let tac2 g =
+    let sqnt = Drule.sequent g
+    in 
+    let asm_forms = Drule.asms_of sqnt
+    and asm_tags = !data
+    in 
+    let forms=
+      let use (t, f) = 
+	try 
+	  ignore(List.find (fun (_, x) -> Tag.equal t x) asm_tags); true
+	with Not_found -> false
+      in 
+      List.filter use asm_forms
+    in 
+    data_tac (fun x -> ret:=x) (asm_tags, forms) g
+  in 
+  seq [tac1; tac2] goal
+
+
+let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
+  let concl_rules = 
+    Simpconvs.make_simp_asm_rules 
+      (fun x -> not (Tag.equal tag (dfst x))) 
+      concl_forms
+  in 
+  let set=Simpconvs.add_simp_rule (Data.get_simpset cntrl) concl_rules
+  in 
+  let cntrl1=Data.set_simpset cntrl set
+  in 
+  let tac1 g = simp_prep_tac cntrl1 ret tag g
+  in 
+  let tac2 g =
+    let ncntrl = Lib.get_option (!ret) cntrl1
+    in 
+    ret:=None;
+    try 
+      basic_simp_tac ncntrl ret tag g
+    with e -> 
+      (Lib.set_option ret ncntrl; raise e)
+  in 
+  let trivial g = 
+    try Boollib.trivial ~f:(ftag tag) g
+    with _ -> skip g
+  in 
+  ret:=None; 
+  seq [tac1; repeat tac2; trivial] goal
+
+
+let simp_tac cntrl asms except l goal=
+  let sqnt = (Drule.sequent goal)
+  in 
+  let asm_forms = Drule.asms_of sqnt
+  and concl_forms = Drule.concls_of sqnt
+  in 
+  let asm_tags = List.map (fun (x, _) -> x) asm_forms
+  and concl_tags = List.map (fun (x, _) -> x) concl_forms
+  in 
+  let targets = 
+    match l with
+      None -> concl_tags
+    | Some x -> [Logic.label_to_tag x sqnt]
+  in
+  let data1 =
+    Data.set_tactic cntrl prove_cond_tac 
+  in
+  let set = Data.get_simpset data1
+  in 
+  let ret=ref (None: Data.t option)
+  in 
+  let asm_rules = ref ([], [])
+  and concl_rules = ref ([], [])
+  and asm_entry_tags = ref []
+  and concl_entry_tags = ref []
+  in 
+  let tac1 g= 
+   seq
+      [
+       (fun _ -> asms) 
+	 --> 
+       seq 
+	 [make_asm_entries_tac asm_rules asm_tags except;
+	  make_concl_entries_tac concl_rules concl_tags except];
+       data_tac 
+	 (fun () -> 
+       (* get the information, put it into a useful form *)
+	   asm_entry_tags := dfst (!asm_rules);
+	   asm_info_tags := dfst (!asm_rules);
+	   concl_entry_tags := dfst (!concl_rules);
+	   concl_info_tags := dfst (!concl_rules);
+       (*
+	  update the simp set with the rules for the assumptions,
+	  the tags of the visited formulas
+	  and the tags of the new formulas.
+	*)
+	   let rules = 
+	     Simpconvs.make_simp_asm_rules (fun _ -> false) (dsnd(!asm_rules))
+	   in 
+	   let set1 = Simpconvs.add_simp_rule set rules
+	   in 
+	   let data2=
+	     Data.set_asms data1
+	       (List.append 
+		  (List.map dsnd (!asm_entry_tags))
+		  (Data.get_asms data1))
+	   in 
+	   let data2a=
+	     Data.set_asms data1
+	       (List.append 
+		  (List.map dsnd (!concl_entry_tags))
+		  (Data.get_asms data2))
+	   in 
+	   let data3= 
+	     Data.set_visited data2a
+	       (List.append 
+		  (List.map dfst (!asm_entry_tags))
+		  (List.append  
+		     (List.map dfst (!concl_entry_tags))
+		     (Data.get_asms data2a)))
+	   in 
+	   let data4= 
+	     Data.set_simpset data3 set1
+	   in 
+	    Lib.set_option ret data4) ()] g
+  in 
+  let chng = ref false 
+  in 
+  let tac2 g = 
+    let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 1") (!ret) 
+    in 
+    Tactics.each targets 
+      (fun tg -> 
+	alt
+	  [seq
+	     [simp_engine_tac (ncntrl, ret, except, snd (!concl_rules)) tg;
+	      data_tac (fun _ -> chng:=true) ()];
+	   skip]) g
+  in 
+  let tac3 g =
+    let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 2") (!ret)
+    in 
+    clean_up_tac ncntrl g
+  in 
+  let tac4 g =
+    if(!chng) 
+    then skip g
+    else raise No_change
+  in 
+  seq [tac1; tac2; tac3; tac4] goal
+
+
+(*
 let simp_tac cntrl set l goal=
   let tag = Logic.label_to_tag l (Drule.sequent goal)
   in 
@@ -776,6 +1004,7 @@ let simp_tac cntrl set l goal=
 	 let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 2") (!ret)
 	 in 
 	 clean_up_tac ncntrl g)] goal
+*)
 
 
 (* 
