@@ -794,7 +794,7 @@ module Rules=
     let delete inf x g = 
       simple_sqnt_apply (delete0 inf (dest_label x (get_sqnt g))) g
 
-(* conjI i sq: 
+(* conjC i sq: 
    g| asm |- t:(a /\ b), concl   
    -->
    g| asm |- t:a  and g'| asm |- t:b 
@@ -803,7 +803,7 @@ module Rules=
    info: [g;g'] [t]
  *)
 
-    let conjI0 inf i sq=
+    let conjC0 inf i sq=
       let (ft1, t)=(Sequent.get_cncl i sq) 
       in 
       if (Formula.is_conj t) 
@@ -822,17 +822,17 @@ module Rules=
 	   (Sequent.sqnt_env sq) (Sequent.asms sq) cnl2])
       else raise (logicError "Not a conjunct" [t])
 
-    let conjI inf i g = 
-      simple_sqnt_apply (conjI0 inf (dest_label i (get_sqnt g))) g
+    let conjC inf i g = 
+      simple_sqnt_apply (conjC0 inf (dest_label i (get_sqnt g))) g
 
-(* conjE i sq: 
+(* conjA i sq: 
    t:a/\ b, asm |- concl   
    -->
    t:a, t':b, asm |- concl 
    info: [] [t; t']
  *)
 
-    let conjE0 inf i sq=
+    let conjA0 inf i sq=
       let (ft1, t)=(Sequent.get_asm i sq) 
       in 
       if (Formula.is_conj t) 
@@ -849,17 +849,17 @@ module Rules=
 		    Sequent.concls sq))
       else raise (logicError "Not a conjunction" [t])
 
-    let conjE inf i g = 
-      simple_sqnt_apply (conjE0 inf (dest_label i (get_sqnt g))) g
+    let conjA inf i g = 
+      simple_sqnt_apply (conjA0 inf (dest_label i (get_sqnt g))) g
 
-(* disjI i sq: 
+(* disjA i sq: 
    g| t:a\/b, asm |-  concl   
    -->
    g| t:a, asm |- concl  and g'| t:b, asm |- concl
    info: [g;g'] [t]
  *)
 
-    let disjI0 inf i sq=
+    let disjA0 inf i sq=
       let (ft, t)=(Sequent.get_asm i sq) 
       in 
       if (Formula.is_disj t) 
@@ -878,17 +878,17 @@ module Rules=
 	   (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)])
       else raise (logicError "Not a disjunction" [t])
 
-    let disjI inf i g = 
-      simple_sqnt_apply (disjI0 inf (dest_label i (get_sqnt g))) g
+    let disjA inf i g = 
+      simple_sqnt_apply (disjA0 inf (dest_label i (get_sqnt g))) g
 
-(* disjE i sq: 
+(* disjC i sq: 
    asm |- t:a\/b, concl   
    -->
    asm |- t:a, t':b, concl 
    info: [] [t;t']
  *)
 
-    let disjE0 inf i sq =
+    let disjC0 inf i sq =
       let (ft1, t)=(Sequent.get_cncl i sq) 
       in 
       if (Formula.is_disj t) 
@@ -907,8 +907,8 @@ module Rules=
 	   cncl1::cncl2::(Sequent.delete_cncl i (Sequent.concls sq))))
       else raise (logicError "Not a disjunction" [t])
 
-    let disjE inf i g = 
-      simple_sqnt_apply (disjE0 inf (dest_label i (get_sqnt g))) g
+    let disjC inf i g = 
+      simple_sqnt_apply (disjC0 inf (dest_label i (get_sqnt g))) g
 
 (* negA i sq:
    t:~a, asms |- concl
@@ -961,14 +961,14 @@ module Rules=
     let negC inf i g = 
       simple_sqnt_apply (negC0  inf (dest_label i (get_sqnt g))) g
 
-(* implI i sq
+(* implC i sq
    asms |- t:a-> b, cncl 
    -->
    t':a, asms |- t:b, cncl
    info: [] [t'; t]
  *)
 
-    let implI0 inf i sq=
+    let implC0 inf i sq=
       let (ft1, t)=(Sequent.get_cncl i sq) 
       in 
       if (Formula.is_implies t) 
@@ -986,10 +986,10 @@ module Rules=
 	   (Sequent.replace_cncl i (Sequent.concls sq) cncl)))
       else raise (logicError "Not an implication" [t])
 
-    let implI inf i g = 
-      simple_sqnt_apply (implI0  inf (dest_label i (get_sqnt g))) g
+    let implC inf i g = 
+      simple_sqnt_apply (implC0  inf (dest_label i (get_sqnt g))) g
 
-(* implE i sq
+(* implA i sq
    g| t:a-> b,asms |-cncl 
    -->
    g'| asms |- t:a, cncl  and  g| t:b, asms |- cncl
@@ -1000,7 +1000,7 @@ module Rules=
    means g is the tag for the sequent
  *)
 
-    let implE0 info i sq =
+    let implA0 info i sq =
       let (ft, t)=(Sequent.get_asm i sq) 
       in 
       if (Formula.is_implies t) 
@@ -1020,10 +1020,10 @@ module Rules=
 	   (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)])
       else raise (logicError "Not an implication" [t])
 
-    let implE info i g = 
-      simple_sqnt_apply (implE0 info (dest_label i (get_sqnt g))) g
+    let implA info i g = 
+      simple_sqnt_apply (implA0 info (dest_label i (get_sqnt g))) g
 
-(* allI i sq
+(* allC i sq
    asm |- t:!x. P(x), concl
    -->
    asm |- t:P(c), concl   where c is a new identifier
@@ -1031,7 +1031,7 @@ module Rules=
    info: [] [t] [c]
  *)
 
-    let allI0 inf i tyenv sq =
+    let allC0 inf i tyenv sq =
       (* get the conclusion and its tag *)
       let (ft, t)=(Sequent.get_cncl i sq)
       in 
@@ -1078,17 +1078,17 @@ module Rules=
 	 gtyenv))
       else raise (logicError "Not a universal quantifier" [t])
 
-    let allI inf i g = 
-      sqnt_apply (allI0 inf (dest_label i (get_sqnt g))) g
+    let allC inf i g = 
+      sqnt_apply (allC0 inf (dest_label i (get_sqnt g))) g
 
-(* existI i sq
+(* existA i sq
    t:?x. P(x), asm |- concl
    -->
    t:P(c), asm |- concl   where c is a new identifier
    info: [] [t] [c]
  *)
 
-    let existI0 inf i tyenv sq =
+    let existA0 inf i tyenv sq =
       (* get the assumption and its tag *)
       let (ft, t)=(Sequent.get_asm i sq)
       in 
@@ -1134,8 +1134,8 @@ module Rules=
 	gtyenv)
       else raise (logicError "Not an existential quantifier" [t])
 
-    let existI inf i g = 
-      sqnt_apply (existI0 inf (dest_label i (get_sqnt g))) g
+    let existA inf i g = 
+      sqnt_apply (existA0 inf (dest_label i (get_sqnt g))) g
 
 (* trueR i sq
    t:asm |- true, concl
@@ -1304,14 +1304,14 @@ module Rules=
       sqnt_apply (basic0 inf (dest_label i sq) (dest_label j sq)) g
 
 
-(* existE i sq
+(* existC i sq
    asm |- t:?x. P(c), concl
    -->
    asm |- t:P(c), concl where c is a given term
    info: [] [t] []
  *)
 
-    let existE0 inf trm i tyenv sq =
+    let existC0 inf trm i tyenv sq =
       let (ft, t)=(Sequent.get_cncl i sq)
       in 
       if (Formula.is_exists t) 
@@ -1335,21 +1335,21 @@ module Rules=
 	      (Sequent.replace_cncl i (Sequent.concls sq) (ft, trm2))),
 	   gtyenv))
 	with x -> raise (Result.add_error
-			   (logicError "existE:" [t]) x)
+			   (logicError "existC:" [t]) x)
       else 
 	raise (logicError "Not an existential quantifier" [t])
 
-    let existE inf trm i g = 
-      sqnt_apply (existE0 inf trm (dest_label i (get_sqnt g))) g
+    let existC inf trm i g = 
+      sqnt_apply (existC0 inf trm (dest_label i (get_sqnt g))) g
 
-(* allE i sq
+(* allA i sq
    t:!x. P(c), asm |-  concl
    -->
    t:P(c'), asm |- concl   where c' is a given term
    info: [] [t] []
  *)
 
-    let allE0 inf trm i tyenv sq =
+    let allA0 inf trm i tyenv sq =
       let (ft, t)=(Sequent.get_asm i sq)
       in 
       if (Formula.is_all t) 
@@ -1374,12 +1374,12 @@ module Rules=
 	  gtyenv)
 	with x -> 
 	  (raise (Result.add_error
-		    (logicError "allE: " [t]) x))
+		    (logicError "allA: " [t]) x))
       else 
 	raise (logicError "Not a universal quantifier" [t])
 
-    let allE inf trm i g = 
-      sqnt_apply (allE0 inf trm (dest_label i (get_sqnt g))) g
+    let allA inf trm i g = 
+      sqnt_apply (allA0 inf trm (dest_label i (get_sqnt g))) g
 
 
 (* rewrite dir simple thms j sq:

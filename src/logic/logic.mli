@@ -328,7 +328,7 @@ module Rules:
    asm |- a                tag(t1)
    and asm |- b            tag(t2)
  *)
-      val conjI: info option -> label -> rule
+      val conjC: info option -> label -> rule
 
 (* 
    conjE i sq: 
@@ -336,7 +336,7 @@ module Rules:
    -->
    a, b, asm |- concl 
  *)
-      val conjE: info option -> label -> rule
+      val conjA: info option -> label -> rule
 
 (*
    disjI i sq: 
@@ -345,14 +345,14 @@ module Rules:
    a, asm |- concl      tag(t1)
    and b, asm |- concl  tag(t2)
  *)
-      val disjI: info option -> label -> rule
+      val disjA: info option -> label -> rule
 
 (* disjE i sq: 
    asm |- a\/b, concl   
    -->
    asm |- a, b, concl 
  *)
-      val disjE: info option -> label -> rule
+      val disjC: info option -> label -> rule
 
 (* negA i sq:
    ~a, asms |- concl
@@ -373,7 +373,7 @@ module Rules:
    -->
    a, asms |- b, cncl
  *)
-      val implI: info option -> label -> rule
+      val implC: info option -> label -> rule
 
 (* implE i sq
    a-> b,asms |-cncl  tag(t)
@@ -381,35 +381,36 @@ module Rules:
    asms |- a, cncl    tag(t1)
    b, asms |- cncl    tag(t2)
  *)
-      val implE: info option -> label -> rule
+      val implA: info option -> label -> rule
 
 (* allI i sq
    asm |- !x. P(c), concl
    -->
    asm |- P(c'), concl   where c' is a new identifier
  *)
-      val allI : info option -> label -> rule
+      val allC : info option -> label -> rule
 
 (* allE i sq
    !x. P(c), asm |-  concl
    -->
    P(c'), asm |- concl   where c' is a given term
  *)
-      val allE : info option -> Basic.term -> label -> rule
+      val allA : info option -> Basic.term -> label -> rule
+
 
 (* existI i sq
    ?x. P(c), asm |- concl
    -->
    P(c'), asm |- concl   where c' is a new identifier
  *)
-      val existI : info option -> label -> rule
+      val existA : info option -> label -> rule
 
 (* existE i sq
    asm |- ?x. P(c), concl
    -->
    asm |- P(c'), concl   where c' is a given term
  *)
-      val existE : info option  -> Basic.term -> label -> rule
+      val existC : info option  -> Basic.term -> label -> rule
 
 
 (* beta i sq:  (beta reduction of asm (i<0) or concl (i>0) in sq) *)
