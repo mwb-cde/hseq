@@ -9,6 +9,7 @@ val thy_of_id : fnident -> thy_id
 val name: fnident -> string
 val mklong: string -> string -> fnident
 val mkname: string -> fnident
+val is_short_id: fnident -> bool
 val string_fnid: fnident -> string
 val dest_fnid: fnident -> (string * string)
 

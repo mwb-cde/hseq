@@ -6,6 +6,7 @@ let thy_of_id (t, _) = t
 let name (_, n) = n
 let mklong t n = (t, n)
 let mkname n = (null_thy, n)
+let is_short_id (t, _) = t=null_thy
 
 type id_selector = bool
 let fn_id = true
