@@ -13,6 +13,7 @@
 (*#install_printer Term.simple_term_printer;;*)
 
 #install_printer Display.print_term;;
+#install_printer Display.print_formula;;
 #install_printer Display.print_type;;
 #install_printer Display.print_sqnt;;
 #install_printer Display.print_thm;;
