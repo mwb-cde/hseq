@@ -186,6 +186,10 @@ let table_add t r env = Termhash.add env t r
 let table_rebind t r env 
     = (Termhash.remove env t; Termhash.add env t r)
 
+let table_member x env = 
+  try ignore(table_find x env); true
+  with Not_found -> false
+
 (* USING HASHTABLES *)
 
 (*
@@ -440,6 +444,15 @@ let dest_bound t =
     Bound(n) -> n
   | _ -> raise (Failure "Not a binder")
 
+let mkmeta n ty = Bound (mk_binding Meta n ty)
+let is_meta trm = 
+  match trm with
+    Bound (q) ->
+      (match (dest_binding q) with
+	Meta, _, _ -> true
+      | _ -> false)
+  | _ -> false
+  
 let get_binder t = !(dest_bound t)
 (*
    let get_binder_name x =
@@ -819,13 +832,27 @@ let print_identifier pprec x=
     None -> Basic.name x
   | Some(s) -> s)
 
+let print_meta qnt =
+  let _, qv, qty = dest_binding qnt 
+  in 
+  Format.open_box 0;
+  Format.print_string "(";
+  Format.print_string ("( _"^qv^": ");
+  Format.print_string (Gtypes.string_gtype qty);
+  Format.print_string ")";
+  Format.close_box()
+
+
 let rec print_term_aux ppstate i x =
   match x with
     Var(n, ty) -> 
       (let pprec = ppstate.Corepp.id_info n
       in 
       print_identifier pprec n)
-  | Bound(n) -> Format.print_string ((get_binder_name x))
+  | Bound(n) -> 
+      if(is_meta x) 
+      then print_meta n
+      else (Format.print_string ((get_binder_name x)))
   | Const(c) -> Format.print_string (Basic.string_const c)
   | Typed (trm, ty) ->
       Format.print_string "(";

@@ -20,7 +20,7 @@ type term =
   | Bound of binders
   | Const of Basic.const_ty
   | Typed of term * Gtypes.gtype
-  |	App of term * term
+  | App of term * term
 
 (* construct/destruct/compare bindings *)
 val mk_binding : Basic.quant_ty -> string -> Gtypes.gtype
@@ -50,6 +50,7 @@ module Termhash: TERMHASH
 type ('a)table (* = ('a) Termhash.t *)
 val empty_table: unit -> ('a) table
 val table_find: term -> 'a table -> 'a
+val table_member: term -> 'a table -> bool
 val table_remove: term -> 'a table -> unit
 val table_add : term -> 'a -> 'a table -> unit
 val table_rebind : term -> 'a -> 'a table -> unit
@@ -139,6 +140,9 @@ val get_var_type : term-> Gtypes.gtype
 val is_bound : term-> bool
 val mkbound : binders -> term
 val dest_bound : term-> binders
+
+val mkmeta : string -> Gtypes.gtype -> term
+val is_meta : term -> bool
 
 val is_qnt : term-> bool
 

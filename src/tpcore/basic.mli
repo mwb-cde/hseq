@@ -21,7 +21,9 @@ val type_id: id_selector
 
 (* primitive logical constructs *)
     type conns_ty = | Not | And | Or | Implies | Iff | Equal
-    type quant_ty = | All | Ex | Lambda
+    type quant_ty =  
+	All | Ex | Lambda 
+      | Meta  (* Meta: used for skolem constants *)
     type const_ty =  
 	Null_const of int (* needed to satisfy conditions in Dequals *)
 (*       | Cnum of int  *)

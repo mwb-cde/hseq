@@ -2,11 +2,14 @@
 
 HEADERS = settings.cmi basic.cmi corepp.cmi result.cmi \
 	gtypes.cmi term.cmi logicterm.cmi dbterm.cmi \
+	termnet.cmi \
 	typing.cmi unify.cmi net.cmi rewrite.cmi 
 
 CODE =  settings.cmo basic.cmo corepp.cmo result.cmo \
 	gtypes.cmo term.cmo logicterm.cmo dbterm.cmo \
+	termnet.cmo \
 	typing.cmo unify.cmo net.cmo rewrite.cmo 
+
 
 OPTCODE = settings.cmx basic.cmx corepp.cmx result.cmx \
 	gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \

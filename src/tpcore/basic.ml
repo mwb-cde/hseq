@@ -33,6 +33,7 @@ type quant_ty =
     All
   | Ex
   | Lambda
+  | Meta (* used for skolem constants *)
 
 type const_ty =
     Null_const of int
@@ -119,6 +120,7 @@ let quant_string x =
     All -> "!"
   | Ex -> "?" 
   | Lambda -> "%"
+  | Meta -> "*??*"
 
 let fns_string x = 
   match x with
