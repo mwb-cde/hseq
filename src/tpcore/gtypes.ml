@@ -180,10 +180,12 @@ let is_constr t =
     Constr _ -> true
   | _ -> false
 
+(*
 let is_func t = 
   match t with
     Constr (Func, _) -> true
   | _ -> false
+*)
 
 let is_defined t = 
   match t with
@@ -229,12 +231,44 @@ let destconstr t =
     Constr(f, l) -> (f, l)
   | _ -> raise (Failure "Not a constructor type")
 
-let mk_fun l r = mk_constr Func [l; r]
+(*
+let fun_id = Basic.mk_long "base" "FUN"
+
+let mk_fun l r = mk_constr (Defined fun_id) [l; r]
+let is_fun t = 
+  match t with
+    Constr (Defined x, _) -> x=fun_id
+  | _ -> false
+
+let dest_fun t = 
+  if(is_fun t)
+  then 
+    match t with
+      Constr(Defined _, [a1; a2]) -> (a1, a2)
+    | _ -> raise (Failure "Not function type")
+  else raise (Failure "Not function type")
+      
+
 let rec mk_fun_from_list l r = 
   match l with
     [] -> raise (Failure "No argument types")
   | [t] -> mk_fun t r
   | t::ts -> mk_fun t (mk_fun_from_list ts r)
+
+let arg_type t = 
+  let (l, _) =  dest_fun t
+  in l
+
+let ret_type t = 
+  let (_, r) =  dest_fun t
+  in r
+
+let rec chase_ret_type t=
+  if(is_fun t)
+  then 
+    chase_ret_type (ret_type t)
+  else t
+*)
 
 let rec dest_constr ty = 
   match ty with 
@@ -265,21 +299,6 @@ let eqconstr c1 c2 =
   | _ -> raise (Failure "Not a constructor type")
 
 
-let arg_type t = 
-  match t with
-    (Constr(Func, (l::_))) -> l
-  | (Constr(Func, [])) -> raise (Failure "No argument type")
-  | _ -> raise (Failure "Not a function type")
-
-let ret_type t = 
-  match t with
-    (Constr(Func, (l::r::[]))) -> r
-  | _ -> raise (Failure "Not a function type")
-
-let rec chase_ret_type t=
-  match t with 
-    Constr(Func, l::r::[]) -> chase_ret_type r
-  | x -> x
 
 
 (* pretty printing *)
@@ -302,19 +321,25 @@ let mk_typevar n =
 let print_constr ppstate id=
   match id with
     Basic.Defined n -> Printer.print_identifier ppstate n
+(*
   | Basic.Func ->
       Printer.print_string "->"
+*)
 
 let lookup_constr ppstate id = 
   match id with
     Basic.Defined n -> Printer.get_record ppstate n
+(*
   | Basic.Func -> 
       Printer.mk_record 6 Printer.infix None
+*)
 
 let find_printer ppstate id = 
   match id with 
     Basic.Defined n -> raise Not_found
+(*
   | Basic.Func -> raise Not_found
+*)
 
 let pplookup ppstate id =
   try
@@ -340,9 +365,11 @@ let rec print_type ppstate pr t =
     | Constr(Defined op, args) -> 
 	print_defined ppstate pr (op, args);
 	Format.print_cut()
+(*
     | Constr(Func, args) -> 
 	print_func ppstate pr args;
 	Format.print_cut()
+*)
   in 
   Format.open_box 2;
   print_aux ppstate pr t;
@@ -395,6 +422,7 @@ and print_defined ppstate prec (f, args) =
 	      Printer.print_string ")"));
 	 Printer.print_identifier (pplookup ppstate) f;
 	 Format.print_cut())
+(*
 and print_func ppstate prec args =
   Printer.print_infix
     ((fun _ _ -> Printer.print_string "->"),
@@ -404,7 +432,7 @@ and print_func ppstate prec args =
 	 (print_type ppstate pr, Printer.print_space) l;
        Printer.print_bracket pr prec ")"))
     prec (Func, args)
-
+*)
 let print ppinfo x =
   print_type ppinfo 0 x
 
@@ -1010,8 +1038,10 @@ let rec check_term scp n vs t =
    else 
  *)
 	List.iter (check_term scp n vs) args
+(*
   | Constr(_, args) -> 
       List.iter (check_term scp n vs) args
+*)
   | WeakVar _ -> raise Not_found
   | x -> ()
 
@@ -1083,8 +1113,10 @@ let rec well_defined scp ?args t =
           else raise (Invalid_argument ("well_defined:"^(string_gtype t))))
 	with Not_found -> 
 	  raise (Invalid_argument ("well_defined: "^(string_gtype t))))
+(*
     | Constr(f, args) ->
 	List.iter well_def args
+*)
     | Var(v) -> lookup (!v)
     | WeakVar(v) -> 
 	raise (Invalid_argument ("well_defined:"^(string_gtype t)))
@@ -1121,8 +1153,10 @@ let rec quick_well_defined scp cache t =
 	with Not_found -> 
 	  raise (Invalid_argument 
 		   ("quick_well_defined:"^(string_gtype t)))))
+(*
   |	Constr(f, args) ->
       List.iter (quick_well_defined scp cache) args
+*)
   |	x -> ()
 
 
@@ -1142,6 +1176,7 @@ let print_subst tenv =
 
 (* from typing.ml *)
 
+(*
 let typeof_cnst c =
   match c with
     Null_const _-> 
@@ -1156,6 +1191,7 @@ let typeof_conn c =
     Not -> mk_fun_from_list [mk_bool] mk_bool
   | x -> mk_fun_from_list 
 	[mk_bool; mk_bool] mk_bool
+*)
 
 (* set names in a type to their long form *)
 
@@ -1180,8 +1216,10 @@ let set_name scp trm =
 	in 
 	let nid=Basic.mk_long nth n
 	in Constr(Defined nid, List.map set_aux args)
+(*
     | Constr(f, args) ->
 	Constr(f, List.map set_aux args)
+*)
     | _ -> t
   in set_aux trm
 
@@ -1206,8 +1244,10 @@ let in_thy_scope memo scp th ty =
     match t with
       Var(_) -> ()
     | Base(_) -> ()
+(*
     | Constr(Func, args) ->
 	List.iter in_scp_aux args
+*)
     | Constr(Defined(id), args) ->
 	ignore(lookup_id (thy_of_id id));
 	List.iter in_scp_aux args

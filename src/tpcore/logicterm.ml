@@ -4,6 +4,76 @@ open Term
 
 let base_thy = "base"
 
+
+(* from typing.ml *)
+
+(* Types *)
+
+(* Type ind *)
+let mk_ind_ty() = Gtypes.mk_base Ind
+let is_ind_ty t = 
+  match t with 
+    Base Ind -> true
+  | _ -> false
+
+(* Type of functions *)
+
+let fun_ty_id = Basic.mk_long base_thy "FUN"
+
+let mk_fun_ty l r = Gtypes.mk_constr (Defined fun_ty_id) [l; r]
+let is_fun_ty t = 
+  match t with
+    Constr (Defined x, _) -> x=fun_ty_id
+  | _ -> false
+
+let dest_fun_ty t = 
+  if(is_fun_ty t)
+  then 
+    match t with
+      Constr(Defined _, [a1; a2]) -> (a1, a2)
+    | _ -> raise (Failure "Not function type")
+  else raise (Failure "Not function type")
+      
+
+let rec mk_fun_ty_from_list l r = 
+  match l with
+    [] -> raise (Failure "No argument types")
+  | [t] -> mk_fun_ty t r
+  | t::ts -> mk_fun_ty t (mk_fun_ty_from_list ts r)
+
+let arg_type t = 
+  let (l, _) =  dest_fun_ty t
+  in l
+
+let ret_type t = 
+  let (_, r) =  dest_fun_ty t
+  in r
+
+let rec chase_ret_type t=
+  if(is_fun_ty t)
+  then 
+    chase_ret_type (ret_type t)
+  else t
+
+
+let typeof_cnst c =
+  match c with
+    Null_const _-> 
+      raise (typeError "Null constant has no type" [])
+  |	Cnum _ -> Gtypes.mk_num
+  | Cbool _ -> Gtypes.mk_bool
+
+let bin_ty a1 a2 r = (mk_fun_ty_from_list [a1; a2] r)
+
+let typeof_conn c =
+  match c with
+    Not -> mk_fun_ty_from_list [Gtypes.mk_bool] Gtypes.mk_bool
+  | x -> mk_fun_ty_from_list 
+	[Gtypes.mk_bool; Gtypes.mk_bool] Gtypes.mk_bool
+
+
+(* Terms *)
+
 let notid = Basic.mk_long base_thy "not"
 let andid = Basic.mk_long base_thy "and"
 let orid = Basic.mk_long base_thy "or"

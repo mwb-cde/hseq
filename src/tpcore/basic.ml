@@ -131,7 +131,7 @@ let fns_string x =
 (* Types *)
 
 type base_typ = Bool | Num | Ind
-type typ_const = Func | Defined of ident
+type typ_const = (* Func |*) Defined of ident
 
 type ('idtyp, 'tfun, 'tcons) pre_typ =
     Var of 'idtyp
@@ -178,7 +178,7 @@ let string_btype x =
 
 let string_tconst x l =
   match x with 
-    Func -> "("^(List.nth l 0)^"->"^(List.nth l 1)^")"
+(*    Func -> "("^(List.nth l 0)^"->"^(List.nth l 1)^")" *)
   | Defined n -> ((string_fnid n)^"("^
 		  (Lib.list_string (fun x-> x) ", " l)^")")
 

@@ -5,6 +5,33 @@ open Basic
 open Gtypes
 open Term
 
+(** 
+{c6 Types}
+*)
+
+(**
+   Function types 
+
+   [fun_id]: The identifier for function types.
+
+   [is_fun x]: Test whether [x] is a function.
+
+   [mk_fun x y]: Make type "x -> y".
+
+   [mk_fun_from_list xs]: Make type "a1->(a2->.. (an-1 -> an))" 
+
+   [dest_fun x]: Destructor for function.
+*)
+val fun_ty_id: Basic.ident
+val mk_fun_ty : gtype -> gtype -> gtype
+val mk_fun_ty_from_list: gtype list -> gtype -> gtype
+
+(** type of primitive constructs *)
+val typeof_cnst  : Basic.const_ty -> gtype
+val typeof_conn  : Basic.conns_ty -> gtype
+
+(** {c6} Terms *)
+
 (* identifiers/recognisers/constructors for basic logic functions *)
 val notid : Basic.ident
 val andid : Basic.ident

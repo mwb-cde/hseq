@@ -90,6 +90,7 @@ val safe_equal: gtype -> gtype -> bool
 val mk_null : unit -> gtype 
 val is_null: gtype -> bool
 
+val mk_base: base_typ -> gtype
 val mk_bool : gtype
 val mk_num : gtype
 
@@ -104,9 +105,35 @@ val mk_weak : string -> gtype
 val dest_weak : gtype -> string  ref
 val get_weak : gtype -> string
 
-(* function types *)
+(* Constructed types *)
+val mk_constr: Basic.typ_const -> gtype list -> gtype
+val dest_constr:  gtype -> (Basic.typ_const * gtype list)
+
+(**
+   Function types 
+
+   [fun_id]: The identifier for function types.
+
+   [is_fun x]: Test whether [x] is a function.
+
+   [mk_fun x y]: Make type "x -> y".
+
+   [mk_fun_from_list xs]: Make type "a1->(a2->.. (an-1 -> an))" 
+
+   [dest_fun x]: Destructor for function.
+*)
+(*
+val fun_id: Basic.ident
 val mk_fun : gtype -> gtype -> gtype
 val mk_fun_from_list: gtype list -> gtype -> gtype
+(* destruct function type *)
+val arg_type : gtype -> gtype
+val ret_type : gtype -> gtype
+val chase_ret_type : gtype -> gtype
+
+*)
+
+
 val dest_constr : gtype -> (Basic.typ_const * gtype list)
 
 (* recognisers *)
@@ -132,10 +159,6 @@ val is_weak : gtype -> bool
    val eqconstr : gtype -> gtype -> bool
  *)
 
-(* destruct function type *)
-val arg_type : gtype -> gtype
-val ret_type : gtype -> gtype
-val chase_ret_type : gtype -> gtype
 
 (* Defined types *)
 
@@ -174,9 +197,10 @@ val empty_subst : unit -> substitution
 val subst_sz: int -> substitution
 
 (* type of primitive constructs *)
+(*
 val typeof_cnst  : Basic.const_ty -> gtype
 val typeof_conn  : Basic.conns_ty -> gtype
-
+*)
 (* occurs check  
    occurs is a shallow check.
    occurs_env takes context into account 

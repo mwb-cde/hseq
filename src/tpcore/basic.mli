@@ -28,11 +28,9 @@ val type_id: id_selector
       | Meta  (* Meta: used for skolem constants *)
     type const_ty =  
 	Null_const of int (* needed to satisfy conditions in Dequals *)
-(*       | Cnum of int  *)
       |	Cnum of Num.num    (* big numbers *)
       | Cbool of bool
     type fns = | Name of ident
-
 
 (* ordering on constants *)
 val const_lt: const_ty -> const_ty -> bool
@@ -50,7 +48,7 @@ val const_leq: const_ty -> const_ty -> bool
 (* primitive types *)
 
     type base_typ = | Bool | Num | Ind
-    type typ_const = | Func | Defined of ident
+    type typ_const = (* Func | *)  Defined of ident
     val string_btype : base_typ -> string
     val string_tconst : typ_const -> string list -> string
     val string_const: const_ty -> string
