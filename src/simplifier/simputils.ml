@@ -25,7 +25,7 @@ module Simputils=
 (** [dest_implies trm]
    Destruct implication.
    fails if trm is not an implication.
- *)
+*)
     let dest_implies trm =
       let (f, args)=Term.dest_fun trm
       in
@@ -103,6 +103,7 @@ module Simputils=
       match qs with
 	[] -> b
       | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
+
 
 (** [allA_list i vs g]
    apply [allA] to formula [i] using terms [vs]
