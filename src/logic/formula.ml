@@ -349,11 +349,7 @@ let eta_conv scp f ty x =
 
 (* Rewriting: normal rewrite followed by check for close_term *)
 
-let default_rr_control= 
-  Rewrite.control 
-    ~strat:(Rewrite.TopDown)
-    ~dir:(Rewrite.leftright)
-    ~max:None
+let default_rr_control= Rewrite.default_control
 
 let rewrite scp ?ctrl rrs t = 
   let c = Lib.get_option ctrl default_rr_control

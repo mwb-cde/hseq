@@ -60,9 +60,7 @@ val add_parents: string list -> thy -> unit
 val get_protection : thy -> bool
 val get_date : thy -> float
 
-(*
-   val set_protection : thy -> unit
- *)
+val set_protection : thy -> unit
 
 (* add/remove PP record *)
 
@@ -123,11 +121,17 @@ val input_theory : in_channel -> thy
 val load_theory : string -> thy
 val save_theory: thy -> bool -> string -> unit
 
-(* save theory to disc setting protection to prot *)
-(* once protected, the protection can't be changed *)
+(**
+   [end_theory thy prot]: Mark end of session with theory [thy].
+   Update date of theory, set protection to [prot].
+   Note that once set, theory protection can't be removed.
+   Does nothing if theory [thy] is protected.
 
-val export_theory: out_channel -> thy-> bool -> unit
-
+   [export_thy thy prot]: Mark end of theory [thy], (with [end_theory
+   thy prot]), and save theory to disk.
+*)
+val end_theory: thy -> bool -> unit
+val export_theory: out_channel -> thy -> bool -> unit
 
 (* [contents thy]
    Get contents of theory [thy]

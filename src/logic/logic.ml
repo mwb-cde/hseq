@@ -216,13 +216,16 @@ type label =
 
 (*
    rr_type: where to get rewrite rule from
-   Asm : numbered assumption
-   Tagged: tagged assumption
+   Asm : labelled assumption
    RRThm: given theorem
+   OAsm : labelled assumption, with ordering
+   ORRThm: given theorem, with ordering
  *)
 type rr_type = 
     Asm of label
   | RRThm of thm
+  | OAsm of label * Rewrite.order
+  | ORRThm of thm * Rewrite.order
 
 module Sequent=
   struct
@@ -2162,21 +2165,39 @@ module Rules=
 	match srcs with 
 	  [] -> List.rev rslt
 	|  (Asm(x)::xs) ->
-	    let tgdasm=
+	    let asm=
 	      (try 
-		Sequent.get_tagged_asm (label_to_tag x sq) sq
+		 drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
 	      with 
 		Not_found -> 
 		  raise 
 		    (logicError "Rewrite: can't find tagged assumption" []))
 	    in 
-	    ft xs ((drop_tag tgdasm)::rslt)
+	    ft xs ((Rewrite.rule (Formula.dest_form asm))::rslt)
+	|  (OAsm(x, order)::xs) ->
+	    let asm=
+	      (try 
+		 drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+	      with 
+		Not_found -> 
+		  raise 
+		    (logicError "Rewrite: can't find tagged assumption" []))
+	    in 
+	    ft xs ((Rewrite.orule (Formula.dest_form asm) order)::rslt)
 	| ((RRThm(x))::xs) -> 
-	    try 
+	    (try 
 	      (check_term_memo memo scp (Formula.dest_form (dest_thm x)));
-	      ft xs ((dest_thm x)::rslt)
+	      ft xs ((Rewrite.rule (Formula.dest_form (dest_thm x)))::rslt)
 	    with 
-	      _ -> ft xs rslt
+	      _ -> ft xs rslt)
+	| ((ORRThm(x, order))::xs) -> 
+	    (try 
+	      (check_term_memo memo scp (Formula.dest_form (dest_thm x)));
+	      ft xs 
+		((Rewrite.orule (Formula.dest_form (dest_thm x)) order)
+		 ::rslt)
+	    with 
+	      _ -> ft xs rslt)
       in ft rls []
 
     let rewriteA0 inf ctrl rls j tyenv sq=
@@ -2201,7 +2222,7 @@ module Rules=
 	      Sequent.concls sq), 
 	   gtyenv))
       with x -> raise 
-	  (Result.add_error (logicError "rewriting" (t::r)) x)
+	  (Result.add_error (logicError "rewriting" [t]) x)
 
     let rewriteA inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
@@ -2230,7 +2251,7 @@ module Rules=
 	    join_up lconcls ((ft, nt)::rconcls)),
 	 gtyenv))
       with x -> raise 
-	  (Result.add_error (logicError"rewriting" (t::r)) x)
+	  (Result.add_error (logicError"rewriting" [t]) x)
 
     let rewriteC inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
@@ -2238,18 +2259,12 @@ module Rules=
       sqnt_apply (rewriteC0 inf rrc rls j) g
 
     let rewrite inf ?ctrl rls j g=
-      try 
-	rewriteC inf ?ctrl rls j g
-      with Not_found -> rewriteA inf ?ctrl rls j g
-
-(*
-    let rewrite inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
       in 
       try 
 	sqnt_apply (rewriteC0 inf rrc rls j) g
       with Not_found -> sqnt_apply (rewriteA0 inf rrc rls j) g
-*)
+
 
 (*
     let rewrite0 inf ctrl rls j tyenv sq=
@@ -2367,9 +2382,12 @@ module ThmRules=
       let conv_aux t = 
 	try 
 	  let f= dest_thm t
-	  and rs=List.map (fun x -> Formula.rename (dest_thm x)) rrl
 	  in 
-	  let nt =  (Formula.rewrite ~ctrl:ctrl scp rs f)
+	  let nt = Formula.rewrite ~ctrl:ctrl scp 
+	      (List.map 
+		 (fun x -> 
+		   Rewrite.rule 
+		     (Formula.dest_form (dest_thm x))) rrl) f
 	  in mk_same_thm t nt
 	with x -> raise 
 	    (Result.add_error(logicError "rewrite_conv" [dest_thm t]) x)

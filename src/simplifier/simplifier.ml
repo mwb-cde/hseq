@@ -204,7 +204,11 @@ let cut_rr_rule info t g =
   match t with
     Logic.RRThm(th) ->
       Logic.Rules.cut info th g
+  | Logic.ORRThm(th, _) ->
+      Logic.Rules.cut info th g
   | Logic.Asm(x) ->
+      Logic.Rules.copy_asm info x g
+  | Logic.OAsm(x, _) ->
       Logic.Rules.copy_asm info x g
 
 (** [prep_cond_tac cntrl values thm g]

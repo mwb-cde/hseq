@@ -2,8 +2,6 @@ SHELL=/bin/sh
 export INCLUDE= -I ../include -I ./include
 export LIB= -I ./libs -I ../libs -I +camlp4
 
-#LIBS= #-cclib -lnums -cclib -lunix
-
 export SRCDIR=$(shell pwd)
 
 export OCLIBS=nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
@@ -18,7 +16,7 @@ BAREMAKE=make
 MAKE=make INCLUDE='${INCLUDE}' LIB='${LIB}' OPTIONS='${OPTIONS}'
 
 
-OCAMLlink=${OCANMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
+OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCLIBS} 
 
 BINFILE=fmcaml
@@ -63,14 +61,17 @@ PARSEROPT = parser.cmxa
 TPMAINCODE=tpmain.cma
 TPMAINOPT=tpmain.cmxa
 
+SIMPLIFIERCODE=simplifier.cma
+SIMPLIFIEROPT=simplifier.cmxa
+
 NUMBERSCODE=numbers.cma
 NUMBERSOPT=numbers.cmxa
 
 CODE= ${QUOTECODE} ${UTILCODE} ${TPCORECODE} ${LOGICCODE} \
-	${PARSERCODE}  ${TPMAINCODE} ${NUMBERSCODE}
+	${PARSERCODE}  ${TPMAINCODE} ${SIMPLIFIERCODE} ${NUMBERSCODE}
 
 CODEOPT= ${QUOTECODE} ${UTILOPT} ${TPCOREOPT} ${LOGICOPT} \
-	${PARSEROPT} ${TPMAINOPT} ${NUMBERSOPT}
+	${PARSEROPT} ${TPMAINOPT} ${SIMPLIFIEROPT} ${NUMBERSOPT}
 
 OTHER=
 
@@ -100,6 +101,9 @@ ${LOGICCODE}: ${TPCORECODE}
 ${TPMAINCODE}: ${TPCORECODE} ${PARSERCODE}
 	cd tpmain; $(MAKE) install
 
+${SIMPLIFIERCODE}: ${TPMAINCODE}
+	cd simplifier; $(MAKE) install
+
 ${NUMBERSCODE}: ${TPMAINCODE}
 	cd numbers; $(MAKE) install
 
@@ -119,6 +123,9 @@ ${PARSEROPT}: ${TPCOREOPT} ${TPCOREOPT}
 
 ${TPMAINOPT}: ${TPCOREOPT} ${PARSEROPT} 
 	cd tpmain; $(MAKE) opt
+
+${SIMPLIFIEROPT}: ${TPMAINOPT}
+	cd simplifier; $(MAKE) opt
 
 ${NUMBERSOPT}: ${TPMAINOPT}
 	cd main; $(MAKE) opt
@@ -155,6 +162,7 @@ clean:
 	cd parser; $(BAREMAKE) clean
 	cd logic; $(BAREMAKE) clean
 	cd tpmain; $(BAREMAKE) clean
+	cd simplifier; $(BAREMAKE) clean
 	cd numbers; $(BAREMAKE) clean
 
 .PHONY: libclean
@@ -175,6 +183,7 @@ reallyclean: clean libclean
 	cd logic; $(BAREMAKE) reallyclean
 	cd tpmain; $(BAREMAKE) reallyclean
 	cd numbers; $(BAREMAKE) reallyclean
+	cd simplifier; $(BAREMAKE) reallyclean
 	cd include; $(BAREMAKE) reallyclean
 	cd libs; $(BAREMAKE) reallyclean
 

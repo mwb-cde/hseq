@@ -15,7 +15,11 @@ type rule =
        * Logic.rr_type)
 
 let dest_rule (vs, cnd, lhs, rhs, rr)=(vs, cnd, lhs, rhs, rr)
-
+let rule_binders (vs, cnd, lhs, rhs, rr)=vs
+let rule_cond (vs, cnd, lhs, rhs, rr)=cnd
+let rule_lhs (vs, cnd, lhs, rhs, rr)=lhs
+let rule_rhs (vs, cnd, lhs, rhs, rr)=rhs
+let rule_src (vs, cnd, lhs, rhs, rr)=rr
 
 (** 
    [simpset]:
@@ -23,12 +27,12 @@ let dest_rule (vs, cnd, lhs, rhs, rr)=(vs, cnd, lhs, rhs, rr)
  *)
 type simpset = 
     { 
-      basic: rule Termnet.net;          (* global rules *)
+      basic: rule Net.net;          (* global rules *)
       next: simpset option             (* next simpset *)
     } 
 
 let empty_set() = 
-  { basic=Termnet.empty(); 
+  { basic=Net.empty(); 
     next=None
   }
 
@@ -36,7 +40,7 @@ let empty_set() =
 (** [lt x y]:
    less than ordering of term
  *)
-let lt (_, _, _, x, _) (_, _, _, y, _)=term_gt y x
+let lt x y =term_gt (rule_rhs y) (rule_rhs x)
 
 (** [add_rule rl s]:
 
@@ -58,24 +62,46 @@ let print_rule (vars, cond, lhs, rhs, src)=
   Format.open_box 0;
   (match src with
     Logic.Asm _ -> Format.print_string "(assumption) "
-  | Logic.RRThm _ -> Format.print_string "(theorem) ");
+  | Logic.OAsm _ -> Format.print_string "(ordered assumption) "
+  | Logic.RRThm _ -> Format.print_string "(theorem) ";
+  | Logic.ORRThm _ -> Format.print_string "(ordered theorem) ");
   Display.print_term trm;
   Format.close_box();
   Format.print_newline()
 
+
+let get_rr_order rr=
+  match rr with
+    Logic.OAsm(_, p) -> p
+  | Logic.ORRThm(_, p) -> p
+  | _ -> raise (Invalid_argument "get_rr_order")
+
+let set_rr_order rr order=
+  match rr with
+    Logic.OAsm(t, p) -> Logic.OAsm(t, order)
+  | Logic.ORRThm(t, p) -> Logic.ORRThm(t, order)
+  | Logic.Asm(t) -> Logic.OAsm(t, order)
+  | Logic.RRThm(t) -> Logic.ORRThm(t, order)
+
 let add_rule rl s=
-  let (vs, _, l, r, _)=rl
+  let (vs, cond, l, r, src)=rl
   in 
   if(Simputils.equal_upto_vars (Rewrite.is_free_binder vs) l r)
   then 
-    (Format.open_box 0;
-     Format.print_string "Ignoring looping rule: ";
-     Format.close_box();
-     print_rule rl;
-     s)
+    let order =
+      try 
+	get_rr_order src
+      with _ -> term_lt
+    in 
+    let rl1=(vs, cond, l, r, set_rr_order src order)
+    in 
+    { 
+      basic=Net.insert lt (is_variable vs) (s.basic) l rl1;
+      next=s.next
+    }
   else 
     { 
-      basic=Termnet.insert lt (is_variable vs) (s.basic) l rl;
+      basic=Net.insert lt (is_variable vs) (s.basic) l rl;
       next=s.next
     }
 
@@ -85,7 +111,7 @@ let add_rule rl s=
  *)
 let rec lookup set trm =
   try
-    Termnet.lookup set.basic trm 
+    Net.lookup set.basic trm 
   with Not_found ->
     (match set.next with 
       None -> raise Not_found

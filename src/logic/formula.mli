@@ -151,13 +151,13 @@ val default_rr_control : Rewrite.control
 
 val rewrite : 
 Gtypes.scope -> ?ctrl:Rewrite.control
-  -> form list-> form -> form
+  -> Rewrite.rule list-> form -> form
 
 (* rewriting with a given type environment *)
 val rewrite_env : 
     Gtypes.scope -> ?ctrl:Rewrite.control
       -> Gtypes.substitution 
-	-> form list-> form -> (form * Gtypes.substitution)
+	-> Rewrite.rule list-> form -> (form * Gtypes.substitution)
 (*
    type rulesDB 
 

@@ -54,9 +54,19 @@ type label =
     FNum of int
   | FTag of Tag.t
 
+
+(*
+   rr_type: where to get rewrite rule from
+   Asm : labelled assumption
+   RRThm: given theorem
+   OAsm : labelled assumption, with ordering
+   ORRThm: given theorem, with ordering
+ *)
 type rr_type = 
     Asm of label
   | RRThm of thm
+  | OAsm of label * Rewrite.order
+  | ORRThm of thm * Rewrite.order
 
 module Sequent:
     sig

@@ -1090,6 +1090,9 @@ let simpset_add_thm scp sset thm=
   in 
   add_simp_rule sset entries
 
+let simpset_add_thms scp set thms =
+  List.fold_left (simpset_add_thm scp) set thms
+
 (** [add_simp_rule scp set rls]
    add (properly formed rules) [rls] to set [set]
    in scope [scp]
@@ -1550,7 +1553,7 @@ let term_cond_rewrite scp rl fm =
 	  (Rewrite.control 
 	     ~dir:Rewrite.rightleft
 	     ~strat:Rewrite.BottomUp
-	     ~max:None) [rrtrm] qb))
+	     ~max:None) [Rewrite.rule rrtrm] qb))
     
 (** [form_cond_rewrite scp rl fm]:
    for rewrite rule [rl]=|-l=r,

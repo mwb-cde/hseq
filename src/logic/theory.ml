@@ -283,8 +283,15 @@ let save_theory thy prot fname=
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 
+let end_theory thy prot = 
+  if not (get_protection thy)
+  then 
+    (set_date thy;
+     if prot then set_protection thy else ())
+  else ()
+
 let export_theory oc thy prot =
-  if prot then set_protection thy else set_date thy;
+  end_theory thy prot;
   output_theory oc thy
 
 
