@@ -104,7 +104,7 @@ let resolve_closed_term scp trm=
     Gtypes.set_name ~strict:true ~memo:memo s t
   in 
   let true_term = Term.mk_short_var "true"
-  and curr_thy = scp.Gtypes.curr_thy
+  and curr_thy = Scope.thy_of scp
   in 
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env()
@@ -115,14 +115,14 @@ let resolve_closed_term scp trm=
     try 
       Lib.find n id_memo
     with Not_found -> 
-      let nth = (scp.Gtypes.thy_of Basic.fn_id n) 
+      let nth = Scope.thy_of_term scp n
       in (ignore(Lib.add n nth id_memo); nth)
   in 
   let lookup_type id = 
     try 
       Gtypes.copy_type (Lib.find id type_memo)
     with Not_found -> 
-      let ty = (scp.Gtypes.typeof_fn id) 
+      let ty = Scope.type_of scp id
       in (ignore(Lib.add id ty type_memo); ty)
   in 
   let rec set_aux qnts t=

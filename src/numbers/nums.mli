@@ -21,7 +21,7 @@ val leqid : Basic.ident
 
 val numterm_to_expr :
     int * (int * Basic.term) list 
-  -> Gtypes.scope -> Basic.term 
+  -> Scope.t -> Basic.term 
     -> (Supinf.expr * (int * (int * Basic.term) list) )
 
 val bool_type : Basic.gtype
@@ -29,13 +29,13 @@ val bool_type : Basic.gtype
 val bterm_to_boolexpr :
   int * (int * Basic.term) list ->
   int * (int * Basic.term) list ->
-  Gtypes.scope ->
+  Scope.t ->
   Basic.term ->
   (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr *
   (int * (int * Basic.term) list) * (int * (int * Basic.term) list)
 
 val term_to_boolexpr :
-  Gtypes.scope ->
+  Scope.t ->
   Basic.term ->
   (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr *
   (int * (int * Basic.term) list) * (int * (int * Basic.term) list) *
@@ -55,13 +55,13 @@ val boolexpr_to_term :
   'd * ('e * Basic.term) list -> Basic.binders list -> Basic.term
 
 
-val simp_term_basic : Gtypes.scope -> Basic.term -> Basic.term
-val simp_term_rewrite : Gtypes.scope -> Basic.term -> Basic.term
-val simp_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
+val simp_term_basic : Scope.t -> Basic.term -> Basic.term
+val simp_term_rewrite : Scope.t -> Basic.term -> Basic.term
+val simp_rewrite : Scope.t -> Formula.form -> Logic.thm
 
-val decide_term_basic : Gtypes.scope -> Basic.term -> bool
-val decide_term : Gtypes.scope -> Basic.term -> Basic.term
-val decide_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
+val decide_term_basic : Scope.t -> Basic.term -> bool
+val decide_term : Scope.t -> Basic.term -> Basic.term
+val decide_rewrite : Scope.t -> Formula.form -> Logic.thm
 
 (**
    [simp_conv scp t]: Conversion to simplify term [t].
@@ -75,5 +75,5 @@ val decide_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
    Returns a theorem of the form [ |- t=t' ] where [t'] is 
    either true or false.
 *)
-val simp_conv: Gtypes.scope -> Basic.term -> Logic.thm
-val decide_conv: Gtypes.scope -> Basic.term -> Logic.thm
+val simp_conv: Scope.t -> Basic.term -> Logic.thm
+val decide_conv: Scope.t -> Basic.term -> Logic.thm

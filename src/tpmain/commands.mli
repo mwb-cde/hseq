@@ -217,7 +217,7 @@ val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 val by : Tactics.tactic -> Goals.prf
 
 (* user-level function to get the current scope *)
-val scope: unit -> Gtypes.scope
+val scope: unit -> Scope.t
 
 (* user level parsing of string *)
 val read : string -> Basic.term

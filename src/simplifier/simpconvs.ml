@@ -492,7 +492,7 @@ and do_neg_all_rule (scp, thm, (qs, c, a)) =
       then 
 	let thm1= once_rewrite_rule scp [neg_all_conv scp a] thm
 	in 
-	single_thm_to_rules (scp: Gtypes.scope) (thm1: Logic.thm)
+	single_thm_to_rules (scp: Scope.t) (thm1: Logic.thm)
       else failwith "do_neg_all_rule: Not a negated universal quantifier"
   | Some _ ->  
       failwith 

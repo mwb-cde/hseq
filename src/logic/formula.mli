@@ -29,7 +29,7 @@ val is_closed: Basic.term list -> Basic.term -> bool
 
    2. Fail if any bound variable in [trm] occurs outside its binding term.
 *)
-val resolve_closed_term: Gtypes.scope -> Basic.term -> Basic.term
+val resolve_closed_term: Scope.t -> Basic.term -> Basic.term
 
 (*
    [make ?env scp trm]: make a formula from term [trm] in scope [scp].
@@ -45,7 +45,7 @@ val resolve_closed_term: Gtypes.scope -> Basic.term -> Basic.term
 
    [dest frm]: Formula destructor.
 *)
-val make: ?env:Gtypes.substitution ref -> Gtypes.scope -> Basic.term -> form
+val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
 (* val dest: form -> Basic.term*)
 val term_of: form -> Basic.term
 
@@ -54,8 +54,8 @@ val string_form : form -> string
 (* check that a given formula is in the scope of an identified theory *)
 val in_scope_memo: 
     (string, bool) Lib.substype ->
-      Gtypes.scope -> Basic.thy_id -> form -> bool
-val in_scope:  Gtypes.scope -> Basic.thy_id -> form -> bool
+      Scope.t -> Basic.thy_id -> form -> bool
+val in_scope:  Scope.t -> Basic.thy_id -> form -> bool
 
 (* apply a predicate to a term *)
 val check_term: (Basic.term -> bool) -> Basic.term -> unit
@@ -67,19 +67,19 @@ val check_term: (Basic.term -> bool) -> Basic.term -> unit
    [inst_env]: instantiate a quantified formula with a given term 
    succeeds only if the result is a formula.
 *)
-val inst : Gtypes.scope -> Basic.term list -> form -> Basic.term -> form
-val inst_env : Gtypes.scope -> Basic.term list -> Gtypes.substitution
+val inst : Scope.t -> Basic.term list -> form -> Basic.term -> form
+val inst_env : Scope.t -> Basic.term list -> Gtypes.substitution
   -> form -> Basic.term -> (form* Gtypes.substitution)
 
 (**
    Unification 
 *)
-val unify: Gtypes.scope 
+val unify: Scope.t 
   -> form        (* assumption *)
     -> form       (* conclusion *)
       -> Term.substitution
 
-val unify_env: Gtypes.scope 
+val unify_env: Scope.t 
   -> Gtypes.substitution (* type environment *)
     -> form        (* assumption *)
       -> form       (* conclusion *)
@@ -87,7 +87,7 @@ val unify_env: Gtypes.scope
 
 (** Substitution *)
 val empty_subst: unit -> substitution
-val subst : Gtypes.scope -> substitution -> form -> form
+val subst : Scope.t -> substitution -> form -> form
 
 (** [rename]: rename bound variables *)
 val rename: form -> form
@@ -130,15 +130,15 @@ val get_binder_type: form -> Basic.gtype
 val dest_qnt : form -> Basic.binders * Basic.term
 
 val is_all: form -> bool
-val mk_all: Gtypes.scope -> string->form -> form
-val mk_typed_all: Gtypes.scope -> string -> Basic.gtype -> form -> form
+val mk_all: Scope.t -> string->form -> form
+val mk_typed_all: Scope.t -> string -> Basic.gtype -> form -> form
 
 val is_exists: form -> bool
 val is_lambda:  form -> bool
 
 (** Typechecking *)
-val typecheck: Gtypes.scope -> form  -> Basic.gtype ->form
-val typecheck_env : Gtypes.scope -> Gtypes.substitution 
+val typecheck: Scope.t -> form  -> Basic.gtype ->form
+val typecheck_env : Scope.t -> Gtypes.substitution 
   -> form -> Basic.gtype -> Gtypes.substitution
 val retype: Gtypes.substitution
   -> form -> form
@@ -152,25 +152,25 @@ val equals : form -> form -> bool
    (renaming of alpha_convp)
 *)
 val alpha_equals_match : 
-    Gtypes.scope -> Gtypes.substitution 
+    Scope.t -> Gtypes.substitution 
       -> form -> form -> Gtypes.substitution
-val alpha_equals : Gtypes.scope -> form -> form -> bool 
+val alpha_equals : Scope.t -> form -> form -> bool 
 
 (** Beta reduction *)
 val beta_convp:  form -> bool
-val beta_conv: Gtypes.scope -> form -> form
-val beta_reduce : Gtypes.scope -> form -> form
+val beta_conv: Scope.t -> form -> form
+val beta_reduce : Scope.t -> form -> form
 
 (** Eta abstraction *)
-val eta_conv: Gtypes.scope -> form -> Basic.gtype -> form -> form
+val eta_conv: Scope.t -> form -> Basic.gtype -> form -> form
 
 (* Rewriting *)
 val default_rr_control : Rewrite.control
 val rewrite : 
-Gtypes.scope -> ?ctrl:Rewrite.control
+Scope.t -> ?ctrl:Rewrite.control
   -> Rewrite.rule list-> form -> form
 val rewrite_env : 
-    Gtypes.scope -> ?ctrl:Rewrite.control
+    Scope.t -> ?ctrl:Rewrite.control
       -> Gtypes.substitution 
 	-> Rewrite.rule list-> form -> (form * Gtypes.substitution)
 

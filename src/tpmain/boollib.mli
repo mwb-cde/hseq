@@ -264,8 +264,8 @@ end
  *)
 
 val conv_rule :
-    Gtypes.scope ->
-      (Gtypes.scope -> Basic.term -> Logic.thm) -> Logic.thm -> Logic.thm
+    Scope.t ->
+      (Scope.t -> Basic.term -> Logic.thm) -> Logic.thm -> Logic.thm
 
 module Rules:
 sig
@@ -278,7 +278,7 @@ sig
    rewrite [thm] with [rules] once.
 *)
 val once_rewrite_rule :
-    Gtypes.scope -> Logic.thm list -> Logic.thm -> Logic.thm
+    Scope.t -> Logic.thm list -> Logic.thm -> Logic.thm
 
 
 (*
@@ -294,9 +294,9 @@ val once_rewrite_rule :
    break theorem [thm] into the list of conjuncts.
    [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
  *)
-  val conjunctL : Gtypes.scope -> Logic.thm -> Logic.thm 
-  val conjunctR : Gtypes.scope -> Logic.thm -> Logic.thm 
-  val conjuncts : Gtypes.scope -> Logic.thm -> Logic.thm list 
+  val conjunctL : Scope.t -> Logic.thm -> Logic.thm 
+  val conjunctR : Scope.t -> Logic.thm -> Logic.thm 
+  val conjuncts : Scope.t -> Logic.thm -> Logic.thm list 
 
 end
 
@@ -308,10 +308,10 @@ sig
 *)
 
 (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-val neg_all_conv: Gtypes.scope -> Basic.term -> Logic.thm
+val neg_all_conv: Scope.t -> Basic.term -> Logic.thm
 
 (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-val neg_exists_conv: Gtypes.scope -> Basic.term -> Logic.thm
+val neg_exists_conv: Scope.t -> Basic.term -> Logic.thm
 
 
 end

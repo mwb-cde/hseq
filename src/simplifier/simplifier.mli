@@ -112,7 +112,7 @@ val prove_cond_tac:
       -> Tactics.tactic
 
 val match_rewrite :
-    Gtypes.scope 
+    Scope.t 
   -> Gtypes.substitution 
     -> Term.substitution 
       -> (Basic.term -> bool) 

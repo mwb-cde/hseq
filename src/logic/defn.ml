@@ -47,7 +47,7 @@ let get_lhs t =
 let mk_decln scp name ty =
   let check_exists () = 
     try 
-      ignore(scp.Gtypes.typeof_fn name);
+      ignore(Scope.type_of scp name);
       raise (Term.term_error "Name exists in scope" 
 	       [Term.mk_typed_var name ty])
     with Not_found -> ()
@@ -85,7 +85,7 @@ let rec check_free_vars tyenv name ls =
   | (n, ty) :: fvs -> 
       if n = name 
       then check_free_vars tyenv name fvs
-      else (ignore(tyenv.Gtypes.typeof_fn n); 
+      else (ignore(Scope.type_of tyenv n); 
 	    check_free_vars tyenv name fvs)
 	  
 let mk_defn scp name args rhs = 
@@ -106,7 +106,8 @@ let mk_defn scp name args rhs =
 	raise (Term.term_error 
 		 "Free variables not allowed in definition" [ndn])
   in 
-  let nscp = (Gtypes.add_to_scope scp [name, nty])
+  let nscp = Scope.extend_with_terms scp [(name, nty)]
+(* (Gtypes.add_to_scope scp [name, nty]) *)
   in 
   let tenv=Typing.settype nscp ndn
   in 
@@ -146,10 +147,11 @@ let check_args_unique ags=
    [extend_scope_terms scp declns]: extend scope [scp] with terms 
    declared in declns.
  *)
+(*
 let extend_scope_typedef scp id args=
   let record = 
-    {Gtypes.name = Basic.name id; Gtypes.args = args; 
-     Gtypes.alias = None; Gtypes.characteristics = []}
+    {Scope.name = Basic.name id; Scope.args = args; 
+     Scope.alias = None; Scope.characteristics = []}
   in 
   {scp with 
    Gtypes.typ_defn = 
@@ -213,7 +215,7 @@ let extend_scope_terms scp declns =
    Gtypes.typeof_fn = typeof_fn;
    Gtypes.thy_of = thy_of;
    Gtypes.prec_of = prec_of}
-
+*)
 
 
 let check_well_defined scp args ty= 
@@ -239,7 +241,7 @@ let mk_subtype_exists setp=
  *)
 let check_type_name scp n = 
   try
-    (ignore(scp.Gtypes.typ_defn n);
+    (ignore(Scope.defn_of scp n);
      raise (Gtypes.type_error "Type already exists" 
 	      [Gtypes.mk_constr (Basic.Defined n) []]))
   with Not_found -> ()
@@ -360,7 +362,7 @@ type subtype_defn =
    }
 
 let mk_subtype scp name args dtype setP rep_name abs_name=
-  let th = scp.Gtypes.curr_thy
+  let th = Scope.thy_of scp
   in 
   let id = Basic.mk_long th name
   and rep_id = Basic.mk_long th rep_name
@@ -482,7 +484,7 @@ module HolLike =
    - make subtype property from setp and rep.
  *)
     let mk_subtype scp name args dtype setP rep=
-      let th = scp.Gtypes.curr_thy
+      let th = Scope.thy_of scp
       in 
       let id = Basic.mk_long th name
       in 
@@ -497,7 +499,7 @@ module HolLike =
       in 
       let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
       in 
-      let nscp = extend_scope_typedef scp id args
+      let nscp = Scope.extend_with_typedeclns scp [(id, args)]
       in 
       let subtype_prop = mk_subtype_prop setP rep
       in 

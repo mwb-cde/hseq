@@ -71,7 +71,7 @@ val result: unit-> Logic.thm
    tactic [tac] in the standard scope.
    (equivalent to [prove_goal (Tpenv.scope()) trm tac]).
 *)
-val prove_goal: Gtypes.scope -> Basic.term -> Tactics.tactic -> Logic.thm 
+val prove_goal: Scope.t -> Basic.term -> Tactics.tactic -> Logic.thm 
 val prove: Basic.term -> Tactics.tactic -> Logic.thm
 
 (**

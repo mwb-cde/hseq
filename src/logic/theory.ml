@@ -168,10 +168,10 @@ let add_thm n t ps thy =
 
 let add_type_rec tr thy =
   let mk_typedef_rec n ags d cs =
-    {Gtypes.name = n;
-     Gtypes.args = ags;
-     Gtypes.alias = d;
-     Gtypes.characteristics = cs}
+    {Scope.name = n;
+     Scope.args = ags;
+     Scope.alias = d;
+     Scope.characteristics = cs}
   in 
   let dest_tydef tydef= 
     if(Logic.Defns.is_typealias tydef)
@@ -486,17 +486,17 @@ and print_tydefs pp n tys =
   Printer.print_list
     ((fun (n, tyd) ->
       Format.printf "@[<2>";
-      (match tyd.Gtypes.args with
+      (match tyd.Scope.args with
 	[] -> ()
       | _ -> 
 	  (Format.printf "(";
 	   Printer.print_list
 	     ((fun s -> Format.printf "'%s" s),
 	      (fun _ -> Format.printf ",@ "))
-	     tyd.Gtypes.args;
+	     tyd.Scope.args;
 	   Format.printf ")"));
       Format.printf "%s@," n;
-      (match tyd.Gtypes.alias with
+      (match tyd.Scope.alias with
 	None -> ()
       | Some(gty) -> 
      	  (Format.printf "=@,";

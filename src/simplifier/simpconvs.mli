@@ -33,14 +33,14 @@ val get_cond_rule_false_ax : unit -> Logic.thm
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
 val simple_rewrite_conv :
-    Gtypes.scope -> Logic.thm -> Basic.term -> Logic.thm
+    Scope.t -> Logic.thm -> Basic.term -> Logic.thm
 
 (**
    [simple_rewrite_rule scp rule thm]: 
    Apply [simple_rewrite_conv] to theorem [thm].
  *)
 val simple_rewrite_rule :
-    Gtypes.scope -> Logic.thm -> Logic.thm -> Logic.thm
+    Scope.t -> Logic.thm -> Logic.thm -> Logic.thm
 
 (**
    [simple_asm_rewrite_tac rule asm]
@@ -229,36 +229,36 @@ val is_rr_equality: Basic.binders list * Basic.term option * Basic.term -> bool
    Convert theorem [thm] to a list of rules
  *)
 val accept_all_thms :
-    (Gtypes.scope 
+    (Scope.t 
        * Logic.thm 
        * (Basic.binders list * Basic.term option * Basic.term))
      -> Logic.thm
 val do_rr_equality :
-    (Gtypes.scope 
+    (Scope.t 
        * Logic.thm 
        * (Basic.binders list * Basic.term option * Basic.term))
      -> Logic.thm
 val do_fact_rule :
-    Gtypes.scope * Logic.thm *
+    Scope.t * Logic.thm *
     (Basic.binders list * Basic.term option * Basic.term) -> Logic.thm
 val do_neg_rule :
-    Gtypes.scope * Logic.thm *
+    Scope.t * Logic.thm *
     (Basic.binders list * Basic.term option * Basic.term) -> Logic.thm
 
 val do_neg_all_rule :
-    Gtypes.scope * Logic.thm *
+    Scope.t * Logic.thm *
     (Basic.binders list * Basic.term option * Basic.term) -> Logic.thm
 
 val do_neg_exists_rule :
-    Gtypes.scope * Logic.thm *
+    Scope.t * Logic.thm *
     (Basic.binders list * Basic.term option * Basic.term) -> Logic.thm
 
-val single_thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm
-val do_conj_rule : Gtypes.scope -> Logic.thm -> Logic.thm list
+val single_thm_to_rules : Scope.t -> Logic.thm -> Logic.thm
+val do_conj_rule : Scope.t -> Logic.thm -> Logic.thm list
 val apply_get_list : ('a -> 'a list) -> 'a list -> 'a list -> 'a list
 val app_first : ('a -> 'b) list -> 'a -> 'b
-val multi_thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm list
-val thm_to_rules : Gtypes.scope -> Logic.thm -> Logic.thm list
+val multi_thm_to_rules : Scope.t -> Logic.thm -> Logic.thm list
+val thm_to_rules : Scope.t -> Logic.thm -> Logic.thm list
 
 
 (** {6c Converting assumptions to rewrite rules} *)

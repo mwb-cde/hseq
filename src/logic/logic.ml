@@ -99,7 +99,7 @@ module Skolem =
     let add_skolems_to_scope sklms scp =
       let declns = List.map decln_of_sklm sklms
       in 
-      Defn.extend_scope_terms scp declns
+      Scope.extend_with_terms scp declns
 
 (*
     let add_skolems_to_scope sklms scp =
@@ -125,6 +125,9 @@ module Skolem =
       }
 *)	
     let add_skolem_to_scope sv sty scp =
+      Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
+(*
+    let add_skolem_to_scope sv sty scp =
       let svname=Basic.name (Term.get_var_id sv)
       in 
       { scp with
@@ -144,6 +147,7 @@ module Skolem =
 	  then scp.Gtypes.curr_thy
 	  else scp.Gtypes.thy_of sel x)
       }
+*)
 
 (** [mk_new_skolem scp n ty]
 
@@ -157,7 +161,7 @@ module Skolem =
 	 name: Basic.ident;
 	 ty: Basic.gtype;
 	 tyenv: Gtypes.substitution;
-	 scope: Gtypes.scope;
+	 scope: Scope.t;
 	 skolems: skolem_type;
 	 tylist: (string*int) list
        }
@@ -280,7 +284,7 @@ module Sequent=
     type sqnt_env = 
 	{
 	 sklms: Skolem.skolem_type; 
-	 sqscp : Gtypes.scope;
+	 sqscp : Scope.t;
 	 tyvars: Basic.gtype list;
 	 tynames: (string * int) list;
        }
@@ -310,7 +314,7 @@ module Sequent=
       mk_sqnt (Tag.create()) env [] [mk_sqnt_form x]
 
     let sqnt_scope sq = scope_of sq
-    let thy_of_sqnt sq = (scope_of sq).Gtypes.curr_thy
+    let thy_of_sqnt sq = Scope.thy_of (scope_of sq)
 
 
 (* Accessing and manipulating formulas in a sequent *)
@@ -1097,7 +1101,7 @@ module Rules=
    Check that term [trm] is in the scope [scope].
  *)
     let check_term_memo memo scp frm=
-      (if (Formula.in_scope_memo memo scp (scp.Gtypes.curr_thy) frm)
+      (if (Formula.in_scope_memo memo scp (Scope.thy_of scp) frm)
       then ()
       else (raise (logic_error "Badly formed formula" [frm])))
 
@@ -1756,7 +1760,7 @@ module Rules=
  *)
     let filter_rules scp rls j sq= 
       let memo = Lib.empty_env() 
-      and thyname= scp.Gtypes.curr_thy
+      and thyname= Scope.thy_of scp
       in 
       let rec ft srcs rslt =
 	match srcs with 
@@ -2030,7 +2034,7 @@ and
       | _ -> raise (defn_error "Not a term declaration" [])
 
     let mk_termdecln scp n ty =
-      let name = Basic.mk_long (scp.Gtypes.curr_thy) n
+      let name = Basic.mk_long (Scope.thy_of scp) n
       in 
       let (id, typ) = Defn.mk_decln scp name ty
       in 
@@ -2069,7 +2073,7 @@ and
    (all constructors exist and variables are in the list of arguments)
  *)
     let mk_typealias scp n ags d =
-      let th = scp.Gtypes.curr_thy
+      let th = Scope.thy_of scp
       in 
       let args = Defn.check_args_unique ags
       in 
@@ -2159,7 +2163,7 @@ and
       in 
       (* temporarily extend the scope with the new type and rep identifier *)
       (* nscp0: scope with new type *)
-      let nscp0 = Defn.extend_scope_typedef scp type_id args 
+      let nscp0 = Scope.extend_with_typedeclns scp [(type_id, args)]
       in 
       (* declare the the rep function *)
       let rep_decln = mk_termdecln nscp0 rep_name rep_ty
@@ -2170,9 +2174,7 @@ and
 	let (rid, rty) = dest_termdecln rep_decln
 	and (aid, aty) = dest_termdecln abs_decln
 	in
-	let nscp2= Defn.extend_scope_identifier nscp0 rid rty
-	in 
-	Defn.extend_scope_identifier nscp2 aid aty
+	Scope.extend_with_terms nscp0 [(rid, rty); (aid, aty)]
       in 
       TypeDef
       {

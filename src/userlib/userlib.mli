@@ -203,7 +203,7 @@ val prove_thm :
 val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 
 (** Get the current scope *)
-val scope: unit -> Gtypes.scope
+val scope: unit -> Scope.t
 
 (* apply a tactic to the current sub-goal in a proof attempt *)
 val by : Tactics.tactic -> Goals.prf

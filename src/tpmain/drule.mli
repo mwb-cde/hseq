@@ -27,7 +27,7 @@ val sequent : Logic.node -> Logic.Sequent.t
 (** [scope_of g]
    get scope of first subgoal of of goal [g].
  *)
-val scope_of : Logic.node -> Gtypes.scope
+val scope_of : Logic.node -> Scope.t
 
 (** [typenv_of n]
    get type environment of node [n].
@@ -232,7 +232,7 @@ val find_qnt_opt:
  *)
 val unify_sqnt_form:
     Gtypes.substitution 
-  -> Gtypes.scope
+  -> Scope.t
     -> (Basic.term -> bool)
       -> Basic.term
 	-> ?exclude:(Logic.tagged_form -> bool)
@@ -252,7 +252,7 @@ val unify_sqnt_form:
  *)
 val match_formulas: 
     Gtypes.substitution
-  -> Gtypes.scope -> (Basic.term -> bool) 
+  -> Scope.t -> (Basic.term -> bool) 
     -> Basic.term -> Logic.tagged_form list -> Logic.label
 
 (** [match_asm t sq]
@@ -346,7 +346,7 @@ val find_concl:
  *)
 val unify_formula_for_consts:
     Gtypes.substitution
-  -> Gtypes.scope
+  -> Scope.t
     -> (Basic.binders list * Basic.term) 
       -> Basic.term -> Basic.term list
 

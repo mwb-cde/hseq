@@ -38,7 +38,7 @@ val get_lhs : Basic.term ->
 
 (* function declarations of the type (f: ty) *)
 val mk_decln :
-    Gtypes.scope ->
+    Scope.t ->
       Basic.ident -> Basic.gtype -> (Basic.ident * Basic.gtype)
 
 (* make the type of a defined term *)
@@ -55,13 +55,13 @@ val mk_defn_type :
    t is the body of the definition 
  *)
 val mk_defn :
-    Gtypes.scope ->
+    Scope.t ->
       Basic.ident->
 	(string * Basic.gtype) list -> Basic.term 
 	  -> (Basic.ident * Basic.gtype * Formula.form)
 
 
-val mk_all_from_list: Gtypes.scope -> Basic.term 
+val mk_all_from_list: Scope.t -> Basic.term 
   -> Basic.term list ->  Basic.term
 
 
@@ -79,19 +79,21 @@ val check_args_unique : string list -> unit
 *)
 val mk_subtype_exists: Basic.term -> Basic.term
 
-val check_type_name: Gtypes.scope -> Basic.ident -> unit
-val check_well_defined : Gtypes.scope -> string list -> Basic.gtype -> unit
+val check_type_name: Scope.t -> Basic.ident -> unit
+val check_well_defined : Scope.t -> string list -> Basic.gtype -> unit
 val make_witness_type: 
-    Gtypes.scope -> Basic.gtype -> Basic.term -> Basic.term
+    Scope.t -> Basic.gtype -> Basic.term -> Basic.term
 
+(*
 val extend_scope_typedef:
-    Gtypes.scope -> Basic.ident -> string list -> Gtypes.scope
+    Scope.t -> Basic.ident -> string list -> Scope.t
 
 val extend_scope_identifier:
-    Gtypes.scope -> Basic.ident -> Basic.gtype -> Gtypes.scope
+    Scope.t -> Basic.ident -> Basic.gtype -> Scope.t
 
 val extend_scope_terms:
-    Gtypes.scope -> (Basic.ident * Basic.gtype) list -> Gtypes.scope
+    Scope.t -> (Basic.ident * Basic.gtype) list -> Scope.t
+*)
 
 
 (*
@@ -123,7 +125,7 @@ type subtype_defn =
    }
 
 val mk_subtype:
-    Gtypes.scope -> string -> string list 
+    Scope.t -> string -> string list 
       -> Basic.gtype -> Basic.term -> string -> string
 	-> subtype_defn
 
@@ -167,7 +169,7 @@ sig
 *)
 val mk_subtype_prop: Basic.term -> Basic.ident -> Basic.term
 val mk_subtype:
-    Gtypes.scope -> string -> string list 
+    Scope.t -> string -> string list 
       -> Basic.gtype -> Basic.term -> Basic.ident
 	-> (Basic.gtype * Basic.term * Basic.term)
 

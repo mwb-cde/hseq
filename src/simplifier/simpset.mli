@@ -97,7 +97,7 @@ val make_thm_rule :
     Logic.thm ->
       rule
 val thm_to_entries :
-    Gtypes.scope ->
+    Scope.t ->
       Logic.thm ->
 	rule list
 
@@ -110,9 +110,9 @@ val thm_to_entries :
 val add_simp_rule :
     simpset -> rule list -> simpset
 val simpset_add_thm :
-    Gtypes.scope -> simpset -> Logic.thm -> simpset
+    Scope.t -> simpset -> Logic.thm -> simpset
 val simpset_add_thms :
-    Gtypes.scope -> simpset -> Logic.thm list -> simpset
+    Scope.t -> simpset -> Logic.thm list -> simpset
 
 
 val simpset_add_asm: 

@@ -46,6 +46,30 @@ let set_cur_thy thy =
 let scope() =
   let thy_name = (get_cur_name())
   in 
+  {Scope.curr_thy = thy_name;
+   Scope.term_type = 
+   (fun f -> 
+     let thstr, idstr = Basic.dest_fnid f
+     in 
+     Thydb.get_id_type thstr idstr (get_theories()));
+   Scope.term_thy = 
+   (fun x -> Thydb.thy_of x (thy_name) (get_theories()));
+
+   Scope.type_defn = 
+   (fun f -> 
+     let thstr, idstr = Basic.dest_fnid f
+     in 
+     Thydb.get_type_rec thstr idstr (get_theories()));
+   Scope.type_thy = 
+   (fun x -> Thydb.thy_of x (thy_name) (get_theories()));
+   Scope.thy_in_scope  = 
+   (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
+ } 
+
+(*
+let scope() =
+  let thy_name = (get_cur_name())
+  in 
   {Gtypes.curr_thy = thy_name;
    Gtypes.typeof_fn = 
    (fun f -> 
@@ -71,7 +95,7 @@ let scope() =
    Gtypes.thy_in_scope  = 
    (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
  } 
-
+*)
 (* file handling *)
 
 let thy_suffix = "."^Settings.thy_suffix

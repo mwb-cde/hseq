@@ -32,7 +32,7 @@ module Skolem:
 	   name: Basic.ident;
 	   ty: Basic.gtype;
 	   tyenv: Gtypes.substitution;
-	   scope: Gtypes.scope;
+	   scope: Scope.t;
 	   skolems: skolem_type;
 	   tylist: (string*int) list
 	 } 
@@ -56,10 +56,10 @@ module Skolem:
 
       val add_skolem_to_scope: 
 	  Basic.term -> Basic.gtype 
-	    -> Gtypes.scope -> Gtypes.scope
+	    -> Scope.t -> Scope.t
 
       val add_skolems_to_scope: 
-	  skolem_cnst list -> Gtypes.scope -> Gtypes.scope
+	  skolem_cnst list -> Scope.t -> Scope.t
 
     end
 
@@ -87,7 +87,7 @@ module Sequent:
 (** Information from a sequent *)
       val asms : t -> tagged_form list
       val concls : t -> tagged_form list
-      val scope_of: t -> Gtypes.scope
+      val scope_of: t -> Scope.t
       val sklm_cnsts: t -> Skolem.skolem_cnst list
       val sqnt_tyvars: t -> Basic.gtype list
       val sqnt_tag: t->Tag.t
@@ -289,7 +289,7 @@ val rotate_subgoals_right : int -> goal -> goal
    [mk_goal scp f]
    Make formula [f] a goal to be proved in scope [scp] 
  *)
-val mk_goal : Gtypes.scope -> Formula.form -> goal
+val mk_goal : Scope.t -> Formula.form -> goal
 
 (** make a theorem from an established goal *)
 (** only suceeds if the goal has no sub-goals *)
@@ -513,14 +513,14 @@ module Rules:
    in a theory. 
    Free variables are not permitted.
  *)
-      val check_term: Gtypes.scope -> Formula.form -> unit
+      val check_term: Scope.t -> Formula.form -> unit
 
 (**
    [check_term_memo]
    Memoised version of [check_term].
  *)
       val check_term_memo: 
-	  (string, bool) Lib.substype -> Gtypes.scope -> Formula.form -> unit
+	  (string, bool) Lib.substype -> Scope.t -> Formula.form -> unit
 
 
 (** apply a rule to a goal *)
@@ -771,7 +771,7 @@ module Rules:
    rewrite theorem [thm] with rules [rrl] in scope [scp].
 *)
       val rewrite_rule: 
-	  Gtypes.scope -> ?ctrl:Rewrite.control
+	  Scope.t -> ?ctrl:Rewrite.control
 	    -> thm list -> thm -> thm
     end
 
@@ -789,7 +789,7 @@ module Defns :
       val dest_termdef: cdefn -> 
 	Basic.ident * Basic.gtype * thm
       val mk_termdef: 
-	  Gtypes.scope 
+	  Scope.t 
 	-> Basic.ident
 	  -> (string * Basic.gtype) list -> Basic.term -> cdefn
 
@@ -803,13 +803,13 @@ module Defns :
       val dest_termdecln: cdefn 
 	-> Basic.ident * Basic.gtype 
       val mk_termdecln:
-	  Gtypes.scope -> string -> Basic.gtype -> cdefn
+	  Scope.t -> string -> Basic.gtype -> cdefn
 
 (*Type definition: alias *)
       val is_typealias: cdefn -> bool
       val dest_typealias: cdefn ->
 	Basic.ident * string list * Basic.gtype option
-      val mk_typealias: Gtypes.scope 
+      val mk_typealias: Scope.t 
 	-> string -> string list -> Basic.gtype option -> cdefn
 
 (*Type definition: subtype *)
@@ -839,16 +839,16 @@ module Defns :
       (!x: (setp x) = (?x1: x=(rep x1)))>>
 *)
       val prove_subtype_exists: 
-	  Gtypes.scope -> Basic.term -> thm -> thm
+	  Scope.t -> Basic.term -> thm -> thm
 (*
       val mk_subtype_thm: 
-	  Gtypes.scope -> Basic.term -> Basic.ident -> thm
+	  Scope.t -> Basic.term -> Basic.ident -> thm
 *)
       val mk_subtype_thm: 
-	  Gtypes.scope -> Basic.term -> thm
+	  Scope.t -> Basic.term -> thm
 
       val mk_subtype: 
-	  Gtypes.scope -> string -> string list 
+	  Scope.t -> string -> string list 
 	    -> Basic.gtype -> Basic.term -> string -> string
 	      -> thm  (* existance *)
 		-> cdefn

@@ -67,7 +67,7 @@ val find_thy_file: string -> string
 val get_cdir : unit -> string
 
 (* current scope  *)
-val scope : unit -> Gtypes.scope
+val scope : unit -> Scope.t
 
 
 (*
@@ -114,9 +114,9 @@ val on_load_thy: Theory.contents -> unit
    [mk_term scp trm]
    typecheck term [trm] in scope [scp]
 *)
-val mk_term : Gtypes.scope -> Basic.term -> Basic.term
-val mk_term_raw : Gtypes.scope -> Basic.term -> Basic.term
-val mk_term_unchecked : Gtypes.scope -> Basic.term -> Basic.term
+val mk_term : Scope.t -> Basic.term -> Basic.term
+val mk_term_raw : Scope.t -> Basic.term -> Basic.term
+val mk_term_unchecked : Scope.t -> Basic.term -> Basic.term
 val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
 val read_defn :
