@@ -3,13 +3,12 @@
 
 (*
 #load "cli.cmo";;
-
 #load "bool_tacs.cmo";;
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
 #install_printer Printer.print_term;;
-#install_printer Printer.print_typ;;
+#install_printer Printer.print_type;;
 #install_printer Printer.print_sqnt;;
 #install_printer Printer.print_thm;;
 #install_printer Printer.print_prf;;
