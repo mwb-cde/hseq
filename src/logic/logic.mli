@@ -14,7 +14,6 @@ type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 
 type skolem_type
 type sqnt
-type subgoal
 
 type goal
 type rule= goal -> goal 
@@ -130,11 +129,7 @@ val get_goal_tag: goal -> Tag.t
 (* val num_of_subsqnts: goal -> int *)
 val num_of_subgoals: goal -> int
 
-val subgoal_nth_sqnt : int -> subgoal -> sqnt
-
-val get_subgoals: goal -> subgoal list
-val get_nth_subgoal: int -> goal -> subgoal
-
+val get_subgoals: goal -> sqnt list
 val get_nth_subgoal_sqnt: int -> goal-> sqnt
 val goal_has_subgoals: goal -> bool
 
@@ -400,7 +395,7 @@ module ThmRules:
 
 (* conversions which apply to only one theorem 
    (e.g. conjE_conv |- a and b  --> [|- a; |- b])
- *)
+*)
       val conjE_conv: thm-> thm list
       val allI_conv: Gtypes.scope -> Basic.term -> conv
       val eta_conv: Gtypes.scope -> Formula.form -> conv
@@ -409,20 +404,9 @@ module ThmRules:
 (* conversions which apply to all theorems in the list *)
 
 (* rewrite_conv: apply rewrite, fail if any rewrite fails *)
-      val rewrite_conv: Gtypes.scope -> ?dir:Rewrite.direction -> ?simple:bool
-	-> thm list -> thm -> thm
-
-(* rewriting with nets in subgoals in theorems *)
-(*
-   type rulesDB 
-
-   val empty_db: Gtypes.scope -> rulesDB
-   val add: Gtypes.scope -> bool -> thm list -> rulesDB -> rulesDB
-   val rescope_db: Gtypes.scope -> Basic.thy_id -> rulesDB -> rulesDB
-
-   val rewrite_net_conv: Gtypes.scope -> rulesDB -> thm -> thm
-   val rewrite_net : rulesDB -> int -> rule
- *)
+      val rewrite_conv: 
+	  Gtypes.scope -> ?dir:Rewrite.direction
+	    -> thm list -> thm -> thm
     end
 
 module Defns :
