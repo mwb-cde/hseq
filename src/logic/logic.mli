@@ -616,5 +616,13 @@ val print_thm: Printer.ppinfo -> thm -> unit
 (**
    [print_sqnt ppinfo sq]
    Print sequent [sq] using PP info [ppinfo].
+
+   [print_node ppinfo n]
+   Print node [n] using PP info [ppinfo].
+
+   [print_branch ppinfo branch]
+   Print branch [branch] using PP info [ppinfo].
 *)
 val print_sqnt : Printer.ppinfo -> Sequent.t -> unit
+val print_node : Printer.ppinfo -> node -> unit
+val print_branch : Printer.ppinfo -> branch -> unit

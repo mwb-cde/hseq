@@ -1906,3 +1906,41 @@ let print_sqnt ppinfo sq =
   Format.close_box();
   Format.print_newline();
   print_cncl 1 sq_concls
+
+
+let print_node ppstate n = print_sqnt ppstate (Subgoals.node_sqnt n)
+
+let print_branch ppstate branch=
+  let rec print_subgoals i gs = 
+    match gs with 
+      [] -> ()
+    | (y::ys) -> 
+	Format.open_box 0;
+	Format.print_string "(Subgoal ";
+	Format.print_int i;
+	Format.print_string ")";
+	Format.close_box();
+	Format.print_newline();
+	print_sqnt ppstate y;
+	Format.print_newline();
+	print_subgoals (i+1) ys
+  in 
+  let sqnts = Subgoals.branch_sqnts branch
+  in 
+  match sqnts with
+    [] -> 
+      Format.open_box 0;
+      Format.print_string "No subgoals";
+      Format.close_box(); 
+      Format.print_newline()
+  | _ -> 
+      let len=(List.length sqnts)
+      in 
+      (Format.open_box 0;
+       Format.print_int len;
+       (if(len>1)
+       then Format.print_string " subgoal"
+       else Format.print_string " subgoals");
+       Format.close_box(); 
+       Format.print_newline();
+       print_subgoals 1 sqnts)

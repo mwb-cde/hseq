@@ -35,15 +35,23 @@
     val setcur : thydb -> string -> thydb
     val setcur_thy : thydb -> Theory.thy -> thydb
 
-(* load a theory from disc into the database.
-   applies a given function the theory once it is loaded
-   applies a second function to construct the filename of the theory 
-   bool: true => theory and its parents should be protected
-         false => it doesn't matter
-*)
+(*
+   [load_theory db n prot f loadfn buildfn]
 
+ load a theory from disc into the database.
+   apply function [f] to the theory once it is loaded
+
+   apply function [loadfn] to construct the filename of the theory 
+
+   apply function [buildfn] to build a theory if it can't be loaded.
+
+   [prot]: true => theory and its parents should be protected
+         false => it doesn't matter
+
+   return the list of importings for the new theory.
+*)
 val load_theory : thydb -> string -> bool -> (Theory.thy -> unit) 
-      -> (string -> string) -> string list
+      -> (string -> string) -> (string -> unit) -> string list
 
 (* build the importing list of the current theory *)
     val mk_importing : thydb -> string list

@@ -55,7 +55,7 @@ let setcur_thy thdb thy =
   then thdb 
   else (ignore(add_thy thdb thy); thdb)
 
-let load_theory thdb name prot thfn filefn =
+let load_theory thdb name prot thfn filefn buildfn =
   let test_date tim thy = 
     if (Theory.get_date thy)<tim then () 
     else raise (Result.error 
@@ -69,6 +69,27 @@ let load_theory thdb name prot thfn filefn =
       else raise (Result.error 
 	  ("Imported theory "^(Theory.get_name thy)^" is not complete"))
     else ()
+  in 
+  let load_thy tim x =
+    let fname = filefn x
+    in 
+    let thy = 
+      Theory.load_theory fname
+    in 
+    test_protection thy;
+    test_date tim thy; 
+    if(not (is_loaded x thdb))
+    then (ignore(add_thy thdb thy); thfn thy)
+    else ();
+    thy
+  in 
+  let build_thy tim x=
+    buildfn x;
+    let thy = get_thy thdb x
+    in 
+    test_protection thy;
+    test_date tim thy;
+    thy
   in 
   let rec load_aux tim ls imps=
     match ls with 
@@ -86,17 +107,14 @@ let load_theory thdb name prot thfn filefn =
 	    load_aux tim xs 
 	      (if List.mem x imps then imps else (x::imps)))
 	  else 
-	    (let fname = filefn x
-	    in let thy = Theory.load_theory fname
+	    let thy = 
+	      (try 
+		load_thy tim x
+	      with _ -> build_thy tim x);
 	    in 
-	    test_protection thy;
-	    test_date tim thy; 
-	    (if(not (is_loaded x thdb))
-	    then (ignore(add_thy thdb thy); thfn thy)
-	    else ());
 	    load_aux tim xs 
 	      (load_aux (Theory.get_date thy)
-		 (Theory.get_parents thy) (x::imps)))))
+		 (Theory.get_parents thy) (x::imps))))
   in 
   (if is_loaded name thdb
   then 
