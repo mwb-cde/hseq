@@ -240,7 +240,7 @@ let mk_new_skolem info=
      weak variable otherwise use the empty string
    *)
   let tyname x=
-    if Gtypes.varp info.ty 
+    if Gtypes.is_var info.ty 
     then new_weak_type (Gtypes.get_var info.ty) info.tylist
     else new_weak_type (x^"_ty") info.tylist
   in
@@ -1146,7 +1146,7 @@ module Rules=
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
-	  if (Gtypes.weakp sty)
+	  if (Gtypes.is_weak sty)
 	  then sty::(sqnt_tyvars sq)
 	  else (sqnt_tyvars sq)
 	in 
@@ -1201,7 +1201,7 @@ module Rules=
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
-	  if (Gtypes.weakp sty)
+	  if (Gtypes.is_weak sty)
 	  then sty::(sqnt_tyvars sq)
 	  else (sqnt_tyvars sq)
 	in 

@@ -393,7 +393,8 @@ let inst scp vs t r =
   else raise (Term.termError "inst: not a quantified formula" [t])
 *)
 
-let equality = Term.equality 
+
+let equals = Term.equals
 
 let alpha_convp = Logicterm.alpha_convp 
 let alpha_equals = Logicterm.alpha_convp 

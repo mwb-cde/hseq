@@ -127,8 +127,10 @@ val dest_qnt : form -> Term.binders * Term.term
 
 
 (* equality with pointers *)
+    val equals : form -> form -> bool
+(* renamed to equals
     val equality : form -> form -> bool
-
+*)
 (* equality under alpha conversion *)
     val alpha_convp : Gtypes.scope -> form -> form -> bool 
 

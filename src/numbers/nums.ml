@@ -15,7 +15,7 @@ let new_env () = (0, [])
 let var_ctr (n, _) = n
 let var_env (_, e) = e
 let get_var (n, e) t =
-  fst(List.find (fun (_, x) -> Term.equality t x) e)
+  fst(List.find (fun (_, x) -> Term.equals t x) e)
 let get_index (n, e) i =
     try snd(List.nth e (i-1))
     with _ -> raise Not_found
@@ -70,7 +70,7 @@ let numterm_to_expr var_env scp t =
   let rec conv_aux x =
     match x with
       Term.Var(f, ty) -> 
-	if (Gtypes.varp ty)
+	if (Gtypes.is_var ty)
 	then raiseError "Variable type in term" [x]
 	else 
 	  (Typing.typecheck scp x (num_type);
@@ -163,7 +163,7 @@ let strip_univs scp bvar_env var_env t =
   let add_qntvar x =
     let nx=Term.Bound(x)
     in 
-    (if (Gtypes.varp (Term.get_binder_type nx))
+    (if (Gtypes.is_var (Term.get_binder_type nx))
     then ()
     else 
       (try 
@@ -245,7 +245,7 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
   let rec conv_aux x =
     match x with
       Term.Var(f, ty) -> 
-	if (Gtypes.varp ty)
+	if (Gtypes.is_var ty)
 	then raiseError "Variable type in term" [x]
 	else 
 	  (Typing.typecheck scp x (bool_type);
@@ -275,7 +275,7 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
     | Term.Bound(b) ->
 	let (q, _, qty) = Term.dest_binding b
 	in 
-	if (Gtypes.varp qty)
+	if (Gtypes.is_var qty)
 	then raiseError "Variable type in bound term" [x]
 	else 
 	  match q with
