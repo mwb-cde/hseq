@@ -15,15 +15,110 @@ struct
   type input = Pkit.input
   type 'a phrase = 'a Pkit.phrase
 
+(* 
+   token tables
+   information about symbols
+*)
+
+type token_info =
+    (Basic.fnident
+      * Parserkit.Info.fixity 
+      * int) option
+
+(* token table 
+   stores the identifier associated with a symbol
+   the fixity and precedence of the symbol
+   the table is memoised
+*)
+let default_table_size=253;
+
+type token_table = 
+    { 
+      mutable memo: (token * token_info) option;
+      table: (token, token_info) Hashtbl.t
+    }
+
+let token_table_new()=
+  {memo = None; table=Hashtbl.create default_table_size}
+
+let token_table_reset tbl=
+  tbl.memo<-None;
+  Hashtbl.clear tbl.table
+
+(* token_table_add: 
+   should fail if token already exists
+   (but doesn't *fixme* )
+*)
+let token_table_add tbl s tok=
+  Hashtbl.add (tbl.table) s tok
+(*
+   let token_table_add tbl s tok=
+   try 
+    ignore(Hashtbl.find tbl.table s);
+    Result.raiseError 
+      ("Parsing information for "^(string_of_token s)^" already exists")
+  with 
+    Not_found -> Hashtbl.add (tbl.table) s tok
+*)
+
+let token_table_find tbl s=
+  let mfind =
+    match tbl.memo with
+      Some(x, y) -> 
+	if Lexer.match_tokens s x
+	then Some(y) 
+	else None
+    | _ -> None
+  in 
+  match mfind with
+    Some(r) -> r
+  | _ -> 
+      let ret=Hashtbl.find (tbl.table) s
+      in 
+      tbl.memo<-Some(s, ret); ret
+
+let token_table_remove tbl s=
+  Hashtbl.remove tbl.table s;
+  match tbl.memo with
+    Some(x, y) ->
+      if Lexer.match_tokens s x 
+      then tbl.memo<-None 
+      else ()
+  | _ -> ()
+
+
+(* token information *)
+
+type fixity=Parserkit.Info.fixity
+let nonfix=Parserkit.Info.nonfix
+let infix=Parserkit.Info.infix
+let prefix=Parserkit.Info.prefix
+let suffix=Parserkit.Info.suffix
+    
+type associativity=Parserkit.Info.associativity
+let non_assoc=Parserkit.Info.non_assoc
+let left_assoc=Parserkit.Info.left_assoc
+let right_assoc=Parserkit.Info.right_assoc
+
+let token_info tbl t= 
+  match t with
+   Sym s ->  
+     (try
+       token_table_find tbl t
+     with Not_found -> None)
+  | _ -> None
+
   type infotyp = 
       { 
 	(* term information *)
 	bound_names: (string* Term.term) list ref;
-	token_info: token -> Pkit.token_info;
+	token_info: token -> token_info;
+	  
         (* type information *)
-      	typ_indx : int ref;
-	typ_names: (string* Gtypes.gtype) list ref;
-        type_token_info: token -> Pkit.token_info
+        typ_indx : int ref;
+        typ_names: (string* Gtypes.gtype) list ref;
+	  
+        type_token_info: token ->token_info;
       }
 
 (* utility functions *)
@@ -74,34 +169,35 @@ struct
   let clear_type_names inf = 
     inf.typ_names:=[]
 
+  let mk_token_info x =
+    match x with
+      Some(_, f, p) ->  {fixity=f; prec=p}
+    | _ -> {fixity = nonfix; prec=0}
 
-  let mk_token_info t=
-    let f, p= Lexer.token_info t
-    in 
-    {fixity=f; prec=p}
+  let mk_type_token_info tbl t=
+    match (token_info tbl t) with
+      Some(_, f, p)-> 
+	{fixity=f; prec=p}
+    | _ -> {fixity=nonfix; prec=0}
 
-  let mk_type_token_info t=
-    let f, p= Lexer.type_token_info t
-    in 
-    {fixity=f; prec=p}
-
-  let mk_empty_inf scp = 
+  let mk_empty_inf tbl type_tbl= 
     { 
       bound_names = ref [];
-      token_info = mk_token_info;
+      token_info = token_info tbl;
 
       typ_indx = ref 0;
       typ_names = ref [];
-      type_token_info = mk_type_token_info
+      type_token_info = token_info type_tbl
     }
 
-  let mk_inf () = 
+  let mk_inf tbl type_tbl = 
     { 
       bound_names = ref [];
-      token_info = mk_token_info;
+      token_info = token_info tbl;
+
       typ_indx = ref 0;
       typ_names = ref [];
-      type_token_info = mk_type_token_info
+      type_token_info = token_info type_tbl
     }
 
   let rec alternates phl inf toks= 
@@ -129,42 +225,147 @@ struct
   let other_parsers inf toks = 
     alternates (!other_parsers_list) inf toks
 
-
-  let mk_type_binary_constr t=
+  let mk_type_binary_constr inf t=
+    let lookup x =
+      try inf.token_info x
+      with Not_found -> None
+    in 
     match t with
       Sym RIGHTARROW -> Gtypes.mk_fun
-    | ID(s, _) -> (fun x y -> Gtypes.mk_def s [x;y])
-    | _ -> raise (ParsingError 
+    | ID(s) -> (fun x y -> Gtypes.mk_def s [x;y])
+    | _ ->
+	match (lookup t) with
+	  Some(name, _, _) -> 
+	    (fun x y-> Gtypes.mk_def name [x; y])
+	| _ -> 
+	  raise (ParsingError 
 		    ((string_of_tok t)^" is not a type constructor"))
 
-  let mk_type_unary_constr t=
+
+  let mk_type_unary_constr inf t=
+    let lookup x =
+      try inf.token_info x
+      with Not_found -> None
+    in 
     match t with
-      ID(s, _) -> (fun x -> Gtypes.mk_def s [x])
-    | _ -> raise (ParsingError 
-		    ((string_of_tok t)^" is not a unary type constructor"))
+      ID(s) -> (fun x -> Gtypes.mk_def s [x])
+    | _ ->
+	match (lookup t) with
+	  Some(name, _, _)->
+	    (fun x -> Gtypes.mk_def name [x])
+	| _ -> 
+	    raise (ParsingError 
+		     ((string_of_tok t)^" is not a unary type constructor"))
 
   let mk_conn idsel inf t= 
+    let lookup x =
+      try inf.token_info x
+      with Not_found -> None
+    in 
     match t with 
-     ID(i, _) -> 
-       (if (Lexer.is_infix t)
-       then (fun x y -> Term.mkfun i [x; y])
-       else raise (ParsingError ((string_of_tok t)^" is not a connective")))
-    | _ -> raise (ParsingError ((string_of_tok t)^" is not a connective"))
+     ID(i) -> 
+       (fun x y -> Term.mkfun i [x; y])       
+    | _ -> 
+	match (lookup t) with
+	  Some (name, _, _) ->
+	    (fun x y -> Term.mkfun name [x; y])
+	| _ ->
+	  raise (ParsingError ((string_of_tok t)^" is not a connective"))
+
 
   let mk_prefix idsel inf t= 
-    match t with 
-     ID(i, _) -> 
-       (if (Lexer.is_prefix t)
-       then (fun x -> Term.mkfun i [x])
-       else raise (ParsingError ((string_of_tok t)^" is not a prefix")))
-    | _ -> raise (ParsingError ((string_of_tok t)^" is not a prefix"))
-
-  let id inp = 
-    let comp x = match x with ID _ -> true | _ -> false 
-    and mk x = match x with ID (s, _) -> s | _ -> failwith "parser: id"
+    let lookup x =
+      try inf.token_info x
+      with Not_found -> None
     in 
-    try get comp mk inp
-    with No_match -> raise (ParsingError "Not an identifier")
+    match t with 
+     ID(i) -> 
+       (fun x -> Term.mkfun i [x])
+    | _ -> 
+	match (lookup t) with
+	  Some(name, _, _) -> 
+	    (fun x -> Term.mkfun name [x])
+	| _ -> 
+	  raise (ParsingError ((string_of_tok t)^" is not a prefix"))
+
+(* id/named_id/type_id
+   parsers to read an identifier.
+   compilicated by the need to look up symbols
+   to test if the symbol maps to an identifier
+   id: read an identifier
+   type_id: read an identifier for the type parser
+
+   named_id: read a specific (given) identifier
+*)
+
+  let id_parser info inp =
+    let get_info x = info x
+    in 
+    let comp x= 
+      match x with 
+	ID _ -> true 
+      | _ -> 
+	  match (get_info x) with
+	    Some (name, _, _) -> true
+	  | _ -> false
+    and mk x = 
+      match x with 
+	ID(s) -> s
+      | _ -> 
+	  (match (get_info x) with
+	    Some(name, _, _) -> name
+	  | _ ->  failwith "parser: id.")
+    in 
+    try Pkit.get comp mk inp
+    with No_match -> raise (ParsingError "(id) Not an identifier")
+
+
+  let id info inp = 
+    let lookup x =
+      info.token_info x
+    in 
+    (id_parser lookup inp)
+
+
+(* 
+   type_id: take into account that symbol -> should be 
+   treated as an identifer 
+*)
+  let type_id info inp =
+    let get_info x = 
+      try info.type_token_info x
+      with Not_found -> None
+    in 
+    let comp x= 
+      match x with 
+	ID _ -> true
+      | Sym(RIGHTARROW) -> true
+      | _ -> 
+	  match (get_info x) with
+	    Some (name, _, _) -> true
+	  | _ -> false
+    and mk x = 
+      match x with 
+	ID(s) -> s
+      | Sym(RIGHTARROW) -> Basic.mkname "->"
+      | _ -> 
+	  (match (get_info x) with
+	    Some(name, _, _) -> name
+	  | _ ->  failwith "parser: id.")
+    in 
+    try Pkit.get comp mk inp
+    with No_match -> raise (ParsingError "(id) Not an identifier")
+
+  let named_id info idparser name inp =
+    ((id info) >> 
+     (fun x -> 
+       if(x=name) 
+       then x 
+       else 
+	 raise (ParsingError ("Expected identifier "
+			      ^(Basic.string_fnid name)^" but got "
+			      ^(Basic.string_fnid x)))))
+      inp
 
   let number inp = 
     let comp x = match x with NUM _ -> true | _ -> false 
@@ -188,24 +389,15 @@ struct
 
   let none inp = empty inp
 
-  let named_id fnid inp =
-    let comp x = 
-      match x with 
-	ID(id, _) ->  id=fnid
-      | _ -> false 
-    and mk x =  x
-    in 
-    get comp mk inp
-
-  let bool_type toks =
+  let bool_type info toks =
     try 
-      ((named_id (Basic.mkname "bool"))
+      ((named_id info type_id (Basic.mkname "bool"))
 	 >> (fun _ -> Gtypes.mk_bool)) toks
     with No_match -> raise (ParsingError "Not a boolean type")
 
-  let num_type toks =
+  let num_type info toks =
     try 
-      ((named_id (Basic.mkname "num"))
+      ((named_id info type_id (Basic.mkname "num"))
 	 >> (fun _ -> Gtypes.mk_num)) toks
     with No_match -> raise (ParsingError "Not a number type")
 
@@ -225,58 +417,61 @@ struct
 	 >> (fun (x, y) -> (x::y)))
     || (tm >> (fun x -> []))) toks
 
-  let short_id inf toks =
-    ((id >> 
+  let short_id id inf toks =
+    ((id inf >> 
       (fun x -> 
 	match (Basic.dest_fnid x) with 
 	  ("", s) -> s | _ -> raise (ParsingError "Not a short identifier"))) 
        toks)
 
-  let long_id inf toks = 
-    (id >> 
+  let long_id id inf toks = 
+    (id inf >> 
      (fun x -> 
        match (Basic.dest_fnid x) with 
 	 (_, "") -> raise (ParsingError "Badly formed identifier")
        | _ -> x))
       toks
       
-  let mk_short_id inf toks =
-    (long_id inf >> (fun x -> Basic.name x)) toks
+  let mk_short_id id inf toks =
+    (long_id id inf >> (fun x -> Basic.name x)) toks
 
-  let rec types inf toks = 
-    (clear_type_names inf; inner_types inf toks)
-  and inner_types inf toks =
-    (operators (atomic inf, inf.type_token_info , 
-	      mk_type_binary_constr, mk_type_unary_constr) toks) 
-  and atomic inf toks =
-    ((
-      ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
-	>> (fun x -> fst (snd x)))
-    || ((num_type) >> (fun x -> x))
-    || ((bool_type >> (fun x -> x)))
-    || ((!$(Sym PRIME) -- short_id inf )
-	      >> (fun (_, x) -> get_type x inf))
-    || (((long_id inf) -- 
-	(optional 
-	   ((!$(Sym ORB) -- ((comma_list (inner_types inf))
-			       -- (!$(Sym CRB))))
-	      >> (fun (_, (args, _)) -> args))))
-	>> (fun (i, a) -> 
+  let rec inner_types inf toks =
+    (operators (atomic_types inf, 
+		(fun x -> mk_token_info (inf.type_token_info x)), 
+		mk_type_binary_constr inf, mk_type_unary_constr inf) toks) 
+  and atomic_types inf toks =
+      ((
+       ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
+	  >> (fun x -> fst (snd x)))
+     || ((num_type inf) >> (fun x -> x))
+     || ((bool_type inf >> (fun x -> x)))
+     || ((!$(Sym PRIME) -- short_id id inf )
+	   >> (fun (_, x) -> get_type x inf))
+     || (((long_id id inf) -- 
+	    (optional 
+	       ((!$(Sym ORB) -- ((comma_list (inner_types inf))
+				   -- (!$(Sym CRB))))
+		  >> (fun (_, (args, _)) -> args))))
+	   >> (fun (i, a) -> 
 	     match a with
 	       None -> Gtypes.mk_def i []
 	     | Some(ts) -> Gtypes.mk_def i ts))
 (*    || (other_type_parsers inf) *)
-    || error)
-      toks)
+     || error)
+	 toks)
+
+  let rec types inf toks = 
+    (clear_type_names inf; inner_types inf toks)
+      
 
   let typedef inf toks = 
-    let type_id inf toks =
-      ((!$(Sym PRIME) -- (short_id inf))>> (fun (_, x) -> x)) toks
+    let type_name inf toks =
+      ((!$(Sym PRIME) -- (short_id type_id inf))>> (fun (_, x) -> x)) toks
     in 
-    (((short_id inf) 
+    (((short_id type_id inf) 
        -- 
        ((optional 
-	  ((!$(Sym ORB)-- ((comma_list (type_id inf)) -- (!$(Sym CRB))))
+	  ((!$(Sym ORB)-- ((comma_list (type_name inf)) -- (!$(Sym CRB))))
 	     >> (fun (_, (x, _)) -> x)))
        -- 
        (optional 
@@ -349,7 +544,7 @@ struct
 *)
 
    let term_identifier inf toks =
-   ((id_type_op long_id inf) 
+   ((id_type_op (long_id id) inf) 
    >>
    (fun ((n, i), t) -> 
    let nid=Basic.mklong n i
@@ -369,7 +564,8 @@ struct
     ) toks
   and formula inf toks= 
     (
-     operators(typed_primary inf, inf.token_info, 
+     operators(typed_primary inf, 
+	       (fun x-> mk_token_info (inf.token_info x)), 
 	     mk_conn Basic.fn_id inf, mk_prefix Basic.fn_id inf)
     ) toks
   and typed_primary inf toks =
@@ -388,8 +584,8 @@ struct
 
 (* "ALL" { id_type_op }+ ":" form *)
    || (((( !$ (Key ALL) 
-           -- ((id_type_op short_id inf)
-		 -- ((listof (id_type_op short_id inf))
+           -- ((id_type_op (short_id id) inf)
+		 -- ((listof (id_type_op (short_id id) inf))
 		       -- (!$(Sym COLON)))))
 	 >> 
 	(fun (_, (v, (vs, _)))
@@ -403,8 +599,8 @@ struct
 
 (* "EX" { id_type_op }+ ":" form *)
    || (((( !$ (Key EX) 
-           -- ((id_type_op short_id inf)
-		 -- ((listof (id_type_op short_id inf))
+           -- ((id_type_op (short_id id) inf)
+		 -- ((listof (id_type_op (short_id id) inf))
 		       -- (!$(Sym COLON)))))
 	 >> 
 	(fun (_, (v, (vs, _)))
@@ -417,8 +613,8 @@ struct
 	   qnt_term_remove_names inf xs body))
 (* "LAM" { id_type_op }+ ":" form *)
    || (((( !$ (Key LAM) 
-           -- ((id_type_op short_id inf)
-		 -- ((listof (id_type_op short_id inf))
+           -- ((id_type_op (short_id id) inf)
+		 -- ((listof (id_type_op (short_id id) inf))
 		       -- (!$(Sym COLON)))))
 	 >> 
 	(fun (_, (v, (vs, _)))
@@ -445,10 +641,11 @@ struct
 
       
   let rec lhs inf toks=
-    ((( (id_type_op mk_short_id inf) -- (args_opt inf))
+    ((( (id_type_op (mk_short_id id) inf) -- (args_opt inf))
 	>> (fun ((n, t) , args) -> (n, args))) toks)
   and args_opt inf toks= 
-    (tlistof (id_type_op short_id inf) (!$(mk_ident Logicterm.equalsid))) toks
+    (tlistof (id_type_op (short_id id) inf) 
+       (!$(mk_ident Logicterm.equalsid))) toks
   and defn inf toks =
     ( (( ((lhs inf) -- (form inf))
 	   >> (fun (l,  r) -> (l, r)))
@@ -482,16 +679,23 @@ let right_assoc=Parserkit.Info.right_assoc
 
 (* reserved words *)
 
-  let all_qnts = [("!", Key ALL); 
-		  ("all", Key ALL); 
-		  ("forall", Key ALL)]
-  let ex_qnts = [("?", Key EX); 
-		 ("exists", Key EX)]
-  let lam_qnts = [("%", Key LAM); 
-		  "lambda", Key LAM]
-
 
 (* reserved words *)
+
+
+let syms_list = 
+  [(".", Sym DOT); 
+   ("(", Sym ORB);
+   (")", Sym CRB); 
+   (",", Sym COMMA);
+   ("->", Sym RIGHTARROW); 
+   ("'", Sym PRIME);
+   (":", Sym COLON);
+   ("true", BOOL true); ("false", BOOL false);
+   ("!", Key ALL); ("all", Key ALL); 
+   ("forall", Key ALL);
+   ("?", Key EX); ("exists", Key EX);
+   ("%", Key LAM); "lambda", Key LAM]
 
 let reserved_words = 
   [ ("not", notid, prefix, 10);
@@ -501,73 +705,120 @@ let reserved_words =
     ("iff", iffid, infix left_assoc, 4); 
     ("=", equalsid, infix left_assoc, 3)]
 
-  let syms_list = 
-    [(".", Sym DOT); ("(", Sym ORB);
-     (")", Sym CRB); (",", Sym COMMA);
-     ("->", Sym RIGHTARROW); ("'", Sym PRIME);
-     (":", Sym COLON)]
+let type_reserved_words =  []
 
-  let keywords_list = 
-    let rwords=
-       List.map
-	(fun (sym, id, fx, pr) ->
-	  (sym, mk_full_ident id fx pr))
-	reserved_words
-    in 
-    List.concat 
-      [[("true", BOOL true)]; [("false", BOOL false)];
-       all_qnts; ex_qnts; lam_qnts; 
-       rwords
-     ]
 
-(* Symbol table *)
+(*
+   token_info_list/type_token_info_list:
+   information about symbols which do not map to identifiers 
+*)
+let token_info_list = [ ]
+
+let type_token_info_list =
+  [ (Sym RIGHTARROW, Some(Basic.null_id, infix left_assoc, 6)) ]
+
+(* Symbol tables *)
 
 let symtable_size=51
-  let symbols= ref (mk_symtable symtable_size)
-  let symtable()= !symbols
 
-let find_symbol sym=
-  Lexer.find_sym (!symbols) sym
+let symbols= ref (mk_symtable symtable_size)
+let symtable()= !symbols
+
+let token_table=Grammars.token_table_new()
+let type_token_table=Grammars.token_table_new()
+
+
+let find_symbol sym= Lexer.find_sym (!symbols) sym
 
 let remove_symbol sym =
   symbols:=Lexer.remove_sym (!symbols) sym
 
-let add_symbol id sym fx pr=
-  List.iter
-    (fun (s, _) -> 
-      if s=sym 
-      then failwith ("Symbol "^sym^" is a reserved keyword")
-      else ())
-    syms_list;
-  symbols:=Lexer.add_sym (!symbols) 
-      sym
-      (Lexer.mk_full_ident id fx pr)
+(* add_symbol sym tok:
+   add sym as symbol representing token tok.
+   fail silently if sym already exists
+*)
+let add_symbol sym tok=
+  try
+    symbols:=Lexer.add_sym (!symbols) sym tok
+  with _ -> ()
 
-let add_token sym tok=
-  symbols:=Lexer.add_sym (!symbols) sym tok
+(* add_token_info tok info:
+   add parsing information for the term token tok
+   fail if token information exists
+*)
+let add_token_info tok tok_info=
+  Grammars.token_table_add token_table tok tok_info
+
+let remove_token_info tok =
+  Grammars.token_table_remove token_table tok 
+
+(* add_type_token_info tok info:
+   add parsing information for type token tok, 
+   fail if token information exists
+*)
+let add_type_token_info tok tok_info=
+  Grammars.token_table_add type_token_table tok tok_info
+
+let remove_type_token_info tok =
+  Grammars.token_table_remove type_token_table tok
+
+(* toplevel functions to add/remove tokens *)
+
+let add_token id sym fx pr=
+  add_symbol sym (Sym (OTHER sym));
+  add_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
+
+let add_type_token id sym fx pr=
+  add_symbol sym (Sym (OTHER sym));
+  remove_type_token_info (Sym(OTHER sym))
+
+let remove_token sym=
+  remove_symbol sym;
+  remove_token_info (Sym(OTHER sym))
 
 (* set up a symbol table with the built in tokens *)
 
-let init_symtab () = 
+let init_symbols()=
+  List.iter (fun (s, t) ->  add_symbol s t) syms_list
+     
+let init_token_table()=
+  List.iter (fun (sym, id, fx, pr) -> add_token id sym fx pr) reserved_words;
+  List.iter (fun (tok, inf) -> add_token_info tok inf) token_info_list
+
+let init_type_token_table()=
   List.iter 
-    (fun (s, tk) -> add_token s tk) keywords_list;
-  List.iter 
-    (fun (s, tk) -> add_token s tk) syms_list
-    
-let init ()=
-  init_symtab ()
+    (fun (sym, id, fx, pr) -> add_type_token id sym fx pr) 
+    type_reserved_words;
+  List.iter (fun (tok, inf) -> add_type_token_info tok inf) 
+    type_token_info_list
+   
+let init_symtab ()=
+  init_symbols();
+  init_token_table();
+  init_type_token_table()
+
+let init ()= init_symtab ()
+
+let reset_symbols() = symbols:=(mk_symtable symtable_size)
+let reset_token_table() = Grammars.token_table_reset token_table
+let reset_type_token_table() = Grammars.token_table_reset type_token_table
+
+let reset()=
+  reset_symbols();
+  reset_token_table();
+  reset_type_token_table()
 
 (* 
    Parsers
    read a given phrase followed by an end of file/string
 *)
 
-  let mk_info = Grammars.mk_inf
+  let mk_info ()= Grammars.mk_inf token_table type_token_table
 
   let parse ph inp = Pkit.parse ph EOF inp
 
   let identifier_parser inp =
-    parse (Grammars.long_id (mk_info ())) inp
+    parse (Grammars.long_id Grammars.id (mk_info ())) inp
 
   let typedef_parser inp =
     parse (Grammars.typedef (mk_info ())) inp
@@ -593,6 +844,4 @@ let read_type str =
 
 let test_lex str = scan (symtable()) (Stream.of_string str);;
 let test str =  
-  reader (scan (symtable()))
-    term_parser 
-    str
+  reader (scan (symtable())) term_parser str

@@ -31,15 +31,27 @@ module Grammars :
     type input = Pkit.input
     type 'a phrase = 'a Pkit.phrase
 
+type token_info =
+    (Basic.fnident
+      * Parserkit.Info.fixity 
+      * int) option
+
+    type token_table
+    val token_table_new: unit -> token_table
+    val token_table_reset: token_table -> unit
+    val token_table_add: token_table -> Lexer.tok -> token_info -> unit
+    val token_table_find: token_table -> Lexer.tok-> token_info
+    val token_table_remove: token_table -> Lexer.tok -> unit
+
   type infotyp = 
       { 
 	(* term information *)
 	bound_names: (string* Term.term) list ref;
-	token_info: Pkit.token -> Pkit.token_info;
+	token_info: Pkit.token -> token_info;
         (* type information *)
       	typ_indx : int ref;
 	typ_names: (string* Gtypes.gtype)list ref;
-        type_token_info: Pkit.token -> Pkit.token_info
+        type_token_info: Pkit.token -> token_info
       }
 
     val string_of_tok : Lexer.tok -> string
@@ -58,10 +70,10 @@ module Grammars :
     val get_type : string -> infotyp -> Gtypes.gtype
     val clear_type_names : infotyp -> unit
 
-    val mk_token_info : Lexer.tok -> Pkit.token_info
-    val mk_type_token_info : Lexer.tok -> Pkit.token_info
-    val mk_empty_inf : Gtypes.scope -> infotyp
-    val mk_inf : unit -> infotyp
+    val mk_token_info : token_info-> Pkit.token_info
+    val mk_type_token_info : token_table -> Lexer.tok -> Pkit.token_info
+    val mk_empty_inf :  token_table -> token_table -> infotyp
+    val mk_inf : token_table -> token_table -> infotyp
 
     val error : 'a phrase
 
@@ -78,31 +90,53 @@ module Grammars :
       (infotyp -> Term.term phrase) -> unit
     val other_parsers : infotyp ->Term.term phrase
     val mk_type_binary_constr :
-      Lexer.tok -> Gtypes.gtype -> Gtypes.gtype -> Gtypes.gtype
-    val mk_type_unary_constr : Lexer.tok -> Gtypes.gtype -> Gtypes.gtype
+	infotyp -> 
+	  Lexer.tok -> Gtypes.gtype -> Gtypes.gtype -> Gtypes.gtype
+    val mk_type_unary_constr : 	
+	infotyp -> 
+	  Lexer.tok -> Gtypes.gtype -> Gtypes.gtype
     val mk_conn :
-      'a -> 'b -> Lexer.tok -> Term.term -> Term.term -> Term.term
-    val mk_prefix : 'a -> 'b -> Lexer.tok -> Term.term -> Term.term
+      'a -> infotyp -> Lexer.tok -> Term.term -> Term.term -> Term.term
+    val mk_prefix : 'a -> infotyp -> Lexer.tok -> Term.term -> Term.term
 
 (* basic parsers *)
-    val id : Basic.fnident phrase
+(*
+   id: identifiers which occur in terms
+*)
+    val id : infotyp -> Basic.fnident phrase
+
+(*
+   type_id: identifiers which occur in types
+*)
+    val type_id : infotyp -> Basic.fnident phrase
+
+(*
+   named_id: get a specific identifer
+*)
+    val named_id : 
+	infotyp 
+	-> (infotyp -> Basic.fnident phrase)
+	  -> Basic.fnident -> Basic.fnident phrase
+
     val number : Num.num phrase
     val boolean : bool phrase
     val none : 'a list phrase
-    val named_id : Basic.fnident -> Pkit.token phrase
-    val bool_type : Gtypes.gtype phrase
-    val num_type : Gtypes.gtype phrase
+    val bool_type : infotyp -> Gtypes.gtype phrase
+    val num_type : infotyp -> Gtypes.gtype phrase
     val comma_list : 'a phrase -> 'a list phrase
     val listof : 'a phrase -> 'a list phrase
     val repeat_term : 'a phrase -> 'b phrase -> 'a list phrase
     val tlistof :
       'a phrase -> 'b phrase -> 'a list phrase
-    val short_id : 'a -> string phrase
-    val long_id : 'a -> Basic.fnident phrase
-    val mk_short_id : 'a -> string phrase
+    val short_id : (infotyp -> Basic.fnident phrase) 
+      -> infotyp -> string phrase
+    val long_id : (infotyp -> Basic.fnident phrase)
+      -> infotyp -> Basic.fnident phrase
+    val mk_short_id : (infotyp -> Basic.fnident phrase)
+      -> infotyp -> string phrase
     val types : infotyp -> Gtypes.gtype phrase
     val inner_types : infotyp -> Gtypes.gtype Pkit.phrase
-    val atomic : infotyp -> Gtypes.gtype phrase
+    val atomic_types : infotyp -> Gtypes.gtype phrase
     val typedef :
       infotyp ->
 	(string * string list option * Gtypes.gtype option)  phrase
@@ -151,32 +185,43 @@ val non_assoc : Parserkit.Info.associativity
 val syms_list : (string * Lexer.tok) list
 
 (* reserved_words: 
-   list of reserved words, their symbols and properties *)
+   list of reserved words, their symbols and properties 
+*)
 val reserved_words: 
     (string * Basic.fnident
     * Parserkit.Info.fixity 
        * int) list
     
 
-(* keywords_list: symbols which are needed  but could be reused *)
-val keywords_list : (string * Lexer.tok) list
-
+(* tables of symbols and token (parsing) information *)
 val symtable_size : int
 val symtable : unit -> Lexer.symtable
 
+val token_table: Grammars.token_table
+val type_token_table: Grammars.token_table
+
 (* changing and querying the symbol table *)
+
+(* add_symbol sym tok:
+   add sym as symbol representing token tok.
+   fail silently if sym already exists
+*)
 val add_symbol :
-  Basic.fnident ->
-  string ->
-  Parserkit.Info.fixity 
-    -> int -> unit
+    string -> Lexer.tok -> unit
 
 val find_symbol : string -> Lexer.tok
 val remove_symbol : string -> unit
 
+val add_token_info : Lexer.tok -> Grammars.token_info -> unit
+val add_type_token_info : Lexer.tok -> Grammars.token_info -> unit
+
+val add_token: Basic.fnident -> string -> fixity -> int -> unit
+val add_type_token: Basic.fnident -> string -> fixity -> int -> unit
+
 (* init: call init() before using lexer, to install reserved words *)
 
 val init : unit -> unit
+val reset : unit -> unit
 
 (* 
    Parsers

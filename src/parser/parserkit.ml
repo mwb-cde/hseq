@@ -125,7 +125,8 @@ module type GRAMMARS =
 	  
 
       type token_info = 
-	  { fixity: Info.fixity;
+	  { 
+	    fixity: Info.fixity;
 	    prec: int
 	  }
 
@@ -213,7 +214,6 @@ module Grammars:GRAMMARS=
 	((ph >> (fun x->(Some x))) toks)
       with 
 	(ParsingError _)  -> (None, toks)
-
 
 
 (* operators (ph, info, binop, unaryop) inp: 

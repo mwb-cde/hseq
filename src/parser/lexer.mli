@@ -41,17 +41,18 @@ type symbols =
   | PRIME
   | COLON
   | OTHER of string
+  | NULL_SYMBOL
 type keys = ALL | EX | LAM
 
-
 type token_info = 
-    Parserkit.Info.fixity 
+    Basic.fnident
+      * Parserkit.Info.fixity 
       * int
 
 type tok =
     Key of keys
   | Sym of symbols
-  | ID of Basic.fnident * token_info option
+  | ID of Basic.fnident (* * token_info option*)
   | NUM of string
   | BOOL of bool
   | EOF
@@ -66,51 +67,10 @@ val string_of_token : tok -> string
 
 val match_tokens : tok -> tok -> bool
 
-(*
-type fixity = Parserkit.Info.fixity
-val nonfix : Parserkit.Info.fixity
-val infix : Parserkit.Info.associativity -> Parserkit.Info.fixity
-val prefix : Parserkit.Info.fixity
-val suffix : Parserkit.Info.fixity
-
-type associativity = Parserkit.Info.associativity
-val left_assoc : Parserkit.Info.associativity
-val right_assoc : Parserkit.Info.associativity
-val non_assoc : Parserkit.Info.associativity
-*)
-
-val is_infix : tok -> bool
-val is_prefix : tok -> bool
-val is_suffix : tok -> bool
-val is_left_assoc : tok -> bool
-val is_right_assoc : tok -> bool
-
-val prec_of : tok -> int
-val prec_of_type : tok -> int
-
-
-val token_info : tok -> 
-  Parserkit.Info.fixity 
-    * int
-
-val type_token_info : tok -> 
-  Parserkit.Info.fixity 
-    * int
-
 val mk_ident : Basic.fnident -> tok
-val mk_full_ident : 
-    Basic.fnident 
-  -> Parserkit.Info.fixity 
-      -> int -> tok
-val mk_ident_left : Basic.fnident 
-  -> int -> tok
-val mk_ident_right : Basic.fnident 
-  -> int -> tok
-val mk_ident_none : Basic.fnident 
-  -> Parserkit.Info.fixity -> int -> tok
 
-type token_table = (string, tok) Hashtbl.t
-type symtable = (char * int Counter.t) list * token_table
+type symbol_table=(string, tok)Hashtbl.t
+type symtable = (char * int Counter.t) list * symbol_table
 
 val add_sym_size : 'a -> ('a * int) list -> ('a * int) list
 val add_char_info :
@@ -120,8 +80,17 @@ val remove_sym_size : 'a -> ('a * int) list -> ('a * int) list
 val remove_char_info :
   'a -> 'b -> ('a * ('b * int) list) list -> ('a * ('b * int) list) list
 
+(* add_sym tbl s t: 
+   add s to symtable tbl as the representation of token t
+   fails if s is already in the table
+*)
+
 val add_sym :
     symtable -> string -> tok -> symtable
+
+(* remove_sym tbl s: 
+   remove s from symtable tbl
+*)
 val remove_sym :
     symtable -> string -> symtable
 
@@ -140,7 +109,7 @@ val find_sym :
 (*
    lookup_sym symtable strn: 
    try to match a symbol at the beginning of string str
-   return token and size of matched string
+   return symbol and size of matched string
    raise Not_found if no matching symbol
 
    Uses longest substring matching:

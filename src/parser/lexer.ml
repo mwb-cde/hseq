@@ -80,7 +80,6 @@ struct
 
 end
 
-
   open Logicterm
 
   exception Lexing of (int * int)
@@ -88,18 +87,19 @@ end
   type symbols =
       DOT | COMMA | ORB | CRB | RIGHTARROW | PRIME | COLON 
     | OTHER of string
+    | NULL_SYMBOL
 
   type keys = ALL | EX | LAM 
 	
-
   type token_info = 
-      (Parserkit.Info.fixity      
+      (Basic.fnident   (* identifiers represented by symbols *)
+	 * Parserkit.Info.fixity      
 	 * int)     (* precedence *)
 
   type tok = 
       Key of keys 
     | Sym of symbols 
-    | ID of Basic.fnident * (token_info)option
+    | ID of Basic.fnident (* * (token_info)option *)
     | NUM of string 
     | BOOL of bool 
     | EOF 
@@ -120,11 +120,12 @@ end
     | Sym RIGHTARROW -> "->"
     | Sym PRIME -> "'"
     | Sym COLON -> ":"
-    | Sym (OTHER s) -> s
+    | Sym (OTHER s) -> ("Sym("^s^")")
+    | Sym NULL_SYMBOL -> "(null_symbol)"
     | Key ALL -> "ALL"
     | Key EX -> "EXISTS"
     | Key LAM -> "LAMBDA"
-    | ID(s, _) -> (Basic.string_fnid s)
+    | ID(s) -> (Basic.string_fnid s)
     | NUM(n) -> n
     | BOOL(b) -> string_of_bool b
     | EOF -> "eof"
@@ -134,78 +135,12 @@ end
 
   let match_tokens x y=
     match (x, y) with
-      (ID(sx, _), ID(sy, _)) -> sx=sy
+      (ID(sx), ID(sy)) -> sx=sy
     | _ -> x=y
 
 (* token information *)
 
-type fixity=Parserkit.Info.fixity
-let nonfix=Parserkit.Info.nonfix
-let infix=Parserkit.Info.infix
-let prefix=Parserkit.Info.prefix
-let suffix=Parserkit.Info.suffix
-    
-type associativity=Parserkit.Info.associativity
-let non_assoc=Parserkit.Info.non_assoc
-let left_assoc=Parserkit.Info.left_assoc
-let right_assoc=Parserkit.Info.right_assoc
-
-let prec_of t = 
-  match t with
-    ID(_, Some(_, p)) -> p
-  | Key _ -> 0
-  | _ -> (-1)
-
-let prec_of_type t = 
-  match t with
-    ID(_, Some(_, p)) -> p
-  | Sym RIGHTARROW -> 6
-  | _ -> (-1)
-
-let token_info t= 
-  match t with
-    ID(_, Some(f, p)) -> f, (prec_of t)
-  | _ -> (nonfix,  -1)
-
-let type_token_info t= 
-  match t with
-    ID(_, Some(f, p)) -> f, (prec_of t)
-  | Sym RIGHTARROW -> infix left_assoc, 6
-  | _ -> (nonfix, -1)
-
-
-let is_infix t =
-  let f, p = token_info t 
-  in 
-  Parserkit.Info.is_infix f
-
-let is_prefix t =
-  let f, _ = token_info t 
-  in 
-  Parserkit.Info.is_prefix f
-
-let is_suffix t =
-  let f, _ = token_info t 
-  in 
-  Parserkit.Info.is_suffix f
-
-let is_left_assoc t =
-  let f, _ = token_info t 
-  in 
-  Parserkit.Info.is_left_assoc f
-
-let is_right_assoc t =
-  let f, _ = token_info t 
-  in 
-  Parserkit.Info.is_right_assoc f
-    
-
-
-  let mk_ident s = ID(s, None)
-  let mk_full_ident s i p = ID(s, Some(i, p))
-  let mk_ident_left s p = ID(s, Some(infix left_assoc, p))
-  let mk_ident_right s p = ID(s, Some(infix right_assoc,p))
-  let mk_ident_none s i p = ID(s, Some(i, p))
+  let mk_ident s = ID(s)
 
 (* 
    symtable:  
@@ -213,11 +148,11 @@ let is_right_assoc t =
    and (symbol, token) table 
 *)
 
-  type token_table=(string, tok)Hashtbl.t
+  type symbol_table=(string, tok)Hashtbl.t
 
   type symtable=
       ((char * (int)Counter.t) list  (* (this could be made a tree *)
-	 * token_table)
+	 * symbol_table)
 
   let add_sym_size sz lst=Counter.add sz lst
 
@@ -266,8 +201,16 @@ let is_right_assoc t =
     in 
     if(sz>0)
     then 
-      Hashtbl.add tbl s tk;
-      (add_char_info (String.get s 0) sz ls, tbl)
+      (try 
+	 (Hashtbl.find tbl s; 
+	  Result.raiseError ("Symbol "^s^" exists"))
+       with 
+	 Not_found ->
+	   (Hashtbl.add tbl s tk;
+	    add_char_info (String.get s 0) sz ls, tbl))
+    else 
+      Result.raiseError "Invalid symbol"
+	
 
   let find_sym (_, tbl) s=
     Hashtbl.find tbl s
