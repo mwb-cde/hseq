@@ -29,7 +29,7 @@ exception Errors of exn list
 
 (* construct, add and raise errors *)
 val mk_error : error -> exn
-val add_error : error -> exn -> exn
+val add_error : exn -> exn -> exn
 
 val catch_error : Printer.ppinfo -> int -> ('a -> unit )  -> 'a -> unit
 

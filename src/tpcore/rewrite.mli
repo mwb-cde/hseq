@@ -2,15 +2,28 @@
 (* two versions with a single core. 
    The first uses lists of rewrite rules, the second term nets *)
 
-(*
-    exception Error of string
-*)
 
-(* rewrite rules and databases *)
+(* rewrite control, rules and databases *)
 type rewrite_rules = (Basic.binders list * Basic.term * Basic.term)
 type rewriteDB = 
     Net_rr of rewrite_rules Net.net 
   | List_rr of rewrite_rules list
+
+type direction  (* = LeftRight | RightLeft *)
+type control =
+    { 
+      depth: int option; (** (Some i): maximum number of times to rewrite is i,
+			   None : unlimited rewriting (default) *)
+      dir: direction
+    }
+
+val mk_control : int option -> direction -> control
+
+(**
+   [limit_reached d]
+   [true] iff d=Some 0
+*)
+val limit_reached: int option -> bool
 
 (* try to match a term with the LHS of a rewrite rule *)
 (* because lists of rewrites are used, the type contexts is important *)

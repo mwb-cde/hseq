@@ -67,7 +67,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	      in 
 	      unify_aux tyenv1 env tt1 tt2
 	    with x -> 
-	      raise (add_error (mktermError "unify_aux: typed" [t1; t2]) x))
+	      raise (add_error (termError "unify_aux: typed" [t1; t2]) x))
 	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
 	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
@@ -290,7 +290,7 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	      in 
 	      unify_aux tyenv1 env tt1 tt2
 	    with x -> 
-	      raise (add_error (mktermError "unify_full: typed" [t1;t2]) x))
+	      raise (add_error (termError "unify_full: typed" [t1;t2]) x))
 	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
 	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->

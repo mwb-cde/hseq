@@ -257,8 +257,12 @@ val mktermError: string -> term list -> Result.error
 val termError : string -> term list -> exn
 val addtermError : string -> term list -> exn -> 'a
 
-(* get and set full names and types in a term *)
+(*
+   get and set full names and types in a term 
 
+   if a term is free (not defined in any theory),
+   its theory is set to Basic.null_thy.
+*)
 val set_names: Gtypes.scope  -> term -> term
 
 (* check that term is in scope:

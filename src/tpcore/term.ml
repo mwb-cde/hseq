@@ -984,7 +984,7 @@ class termError s ts =
 let mktermError s t = ((new termError s t):>error)
 
 let termError s t = mk_error((new termError s t):>error)
-let addtermError s t es = raise (add_error ((new termError s t):>error) es)
+let addtermError s t es = raise (add_error (termError s t) es)
 
 (* [set_names_types scp thy trm]
    find and set long identifiers and types for variables in [trm]
@@ -1000,7 +1000,7 @@ let set_names scp trm=
       let nth = 
 	try 
 	  (scp.thy_of Basic.fn_id n) 
-	with _ -> scp.curr_thy
+	with _ -> Basic.null_thy      (* scp.curr_thy *)
       in ignore(Lib.add n nth term_memo); nth)
   in 
   let rec set_aux t=
@@ -1008,15 +1008,17 @@ let set_names scp trm=
       Id(id, ty) -> 
 	let th, n = Basic.dest_fnid id
 	in 
-	let nth = (if th=Basic.null_thy
-	then lookup_id n else th)
+	let nth = 
+	  (if th=Basic.null_thy
+	  then lookup_id n 
+	  else th)
 	in 
 	let nid = Basic.mklong nth n
 	in Id(nid, ty)
     | Qnt(qnt, q, b) -> Qnt(qnt, q, set_aux b)
     | Typed(tt, tty) -> Typed(set_aux tt, tty)
     | App(f, a) -> App(set_aux f, set_aux a)
-    | _ ->t
+    | _ -> t
   in set_aux trm
 
 let in_thy_scope memo scp th trm =

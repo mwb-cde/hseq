@@ -2,6 +2,19 @@ open Basic
 open Term
 open Result
 
+type direction = LeftRight | RightLeft 
+type control =
+    { 
+      depth: int option; (** (Some i): maximum number of times to rewrite is i,
+			   None : unlimited rewriting (default) *)
+      dir: direction
+    }
+
+let mk_control i d=
+  { depth=i; dir=d }
+
+let limit_reached d = 
+  match d with Some 0 -> true | _ -> false
 
 let varp, funp, constp, is_app, is_typed=
   Term.is_bound, Term.is_fun, Term.is_const, Term.is_app, Term.is_typed
@@ -28,7 +41,7 @@ let find_match_aux scp tyenv varp term1 term2 env=
     Unify.unify_fullenv_rewrite scp tyenv env varp term1 term2 
   with x -> 
     raise 
-      (add_error (mktermError ("Can't match terms") [term1; term2]) x)
+      (add_error (termError ("Can't match terms") [term1; term2]) x)
 
 let find_match scp tyenv varp term1 term2 env=
   let tyenv1, env1= find_match_aux scp tyenv varp  term1 term2 env

@@ -35,7 +35,7 @@ class typingError s ts tys=
 let typingError s tr ty= 
   Result.mk_error((new typingError s tr ty):>Result.error)
 let addtypingError s tr ty es =
-  raise (Result.add_error ((new typingError s tr ty):>Result.error) es)
+  raise (Result.add_error (typingError s tr ty) es)
 
 
 let typeof_env scp typenv inf trm =

@@ -432,7 +432,8 @@ class typeError s ts=
       Format.close_box()
   end
 let typeError s t = (mk_error((new typeError s t):>error))
-let addtypeError s t es= raise (add_error ((new typeError s t):>error) es)
+let addtypeError s t es= 
+  raise (add_error (typeError s t) es)
 
 
 (* save types *)

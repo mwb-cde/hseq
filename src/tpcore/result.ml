@@ -76,8 +76,8 @@ let error s = Error (new error s)
 
 let add_error e x=
   match x with
-    Errors es -> Errors((Error e)::es)
-  | _ -> Errors[(Error e); x]
+    Errors es -> Errors(e::es)
+  | _ -> Errors[e; x]
 
 (*
 let catchError e x =  raise (addError e x)
