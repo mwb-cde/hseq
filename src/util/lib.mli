@@ -72,11 +72,19 @@ val named_add:
 
 
 (* 
-   [get_option x default] 
-   if [x] is [Some(y)] then return [y]
-   if [x] is [None] then return [default]
+   [get_option x default]:
+   If [x] is [Some(y)] then return [y], otherwise return [default].
+
+   [set_option x d]:
+   If [x] is [Some(y)] then [y:=d].
+
+   [dest_option ?err x]
+   If [x] is [Some(y)] then [y], otherwise raise [err] or [Failure]
 *)
 val get_option : 'a option -> 'a -> 'a
+val set_option:  'a option ref -> 'a -> unit
+val dest_option: ?err:exn -> 'a option -> 'a
+
 
 val set_int_option : int -> int option
 val get_int_option : int option -> int

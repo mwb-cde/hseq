@@ -225,6 +225,15 @@ let get_option x d=
     None -> d
   | Some(y) -> y
 
+let set_option x data= x:=Some(data)
+let dest_option ?err x = 
+  match x with
+    (Some x) -> x
+  | _ -> 
+      (match err with
+	None -> failwith "dest_option"
+      | (Some e) -> raise e)
+
 
 let set_int_option i = Some(i)
 let get_int_option x =
