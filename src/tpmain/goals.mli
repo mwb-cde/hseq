@@ -33,7 +33,6 @@
 (* apply a tactic *)
     val by_com : Tactics.tactic -> prf
 
-
 (* go back *)
     val undo : unit -> prf
 (* try on a different subgoal *)

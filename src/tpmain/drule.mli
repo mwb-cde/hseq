@@ -5,7 +5,7 @@
 val ftag : Tag.t -> Logic.label
 val fnum : int -> Logic.label
 
-(* formulas of a sequent *)
+(* untagged formulas of a sequent *)
 val asm_forms : Logic.sqnt -> Formula.form list
 val concl_forms : Logic.sqnt -> Formula.form list
 
@@ -141,3 +141,64 @@ val foreach_once :
 val foreach_subgoal: 
     Tag.t list -> Logic.rule -> Logic.rule
 
+(** [match_formulas scp varp t fs]
+   Match a list of tagged formulas 
+   Return the tag of the first formula in [fs] to unify 
+   with term [t] in scope [scp].
+   [varp] determines which terms can be bound by unification.
+
+   raise Not_found if no match.
+*)
+
+val match_formulas: 
+    Gtypes.substitution
+  -> Gtypes.scope -> (Basic.term -> bool) 
+      -> Basic.term -> Logic.tagged_form list -> Logic.label
+
+(** [match_asm t sq]
+   Find a match for [t] in the assumptions of [sq].
+   Return the tag of the first formula in the assumptions to unify 
+   with term [t] in the scope of sequent [sq].
+
+   raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+val match_asm : 
+    Gtypes.substitution
+  -> Basic.term -> Logic.sqnt -> Logic.label
+
+(** [match_concl t sq]
+   Find a match for [t] in the assumptions of [sq].
+   Return the tag of the first formula in the assumptions to unify 
+   with term [t] in the scope of sequent [sq].
+
+   raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+val match_concl :     
+    Gtypes.substitution
+  -> Basic.term -> Logic.sqnt -> Logic.label
+
+
+
+(* Predicates on terms *)
+(**
+   [qnt_opt_of qnt p t]
+   apply predicate [p] to [b] where [(_, b)=strip_qnt qnt t].
+*)
+val qnt_opt_of: 
+    Basic.quant_ty -> (Basic.term -> bool) -> Basic.term -> bool
+(**
+   [dest_qnt_opt qnt d t]
+   return [(vs, (d b))] 
+   where [(vs, b)=strip_qnt qnt t].
+*)
+val dest_qnt_opt: 
+    Basic.quant_ty 
+  -> (Basic.term -> 'a) -> Basic.term -> (Basic.binders list * 'a) 

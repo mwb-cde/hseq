@@ -5,6 +5,9 @@ type tactic = Logic.rule
 
 let fnum = Drule.fnum
 let ftag = Drule.ftag
+
+let (!~) x= fnum (-x)
+let (!+) = fnum
 let (!!) = fnum
 
 let leftright=Rewrite.leftright
@@ -12,15 +15,15 @@ let rightleft = Rewrite.rightleft
 
 let rule_tac r g =  r g
 
-let rotateA ?info g = Logic.Rules.rotate_asms info g
-let rotateC ?info g = Logic.Rules.rotate_cncls info g
+let rotateA g = Logic.Rules.rotate_asms None g
+let rotateC g = Logic.Rules.rotate_cncls None g
 
-let copy_asm ?info i g 
-    = Logic.Rules.copy_asm info i g
-let copy_concl ?info i g 
-    = Logic.Rules.copy_cncl info i g
+let copy_asm i g 
+    = Logic.Rules.copy_asm None i g
+let copy_concl i g 
+    = Logic.Rules.copy_cncl None i g
 
-let lift ?info id g = Logic.Rules.lift info id g
+let lift id g = Logic.Rules.lift None id g
 
 let skip g= g
 
@@ -34,133 +37,133 @@ let find_basic sq =
     | (t, c)::cs -> 
 	try 
 	  ((Drule.first 
-	     (fun x-> Formula.alpha_convp 
+	     (fun x-> Formula.alpha_equals
 		 (Logic.scope_of sq) x c) ams), 
 	   ftag t)
 	with Not_found -> find_basic_aux cs 
   in 
   find_basic_aux cncs
 
-let basic ?info sqnt = 
+let basic sqnt = 
   let sq=Logic.get_sqnt sqnt
   in 
   try
     let a,c = find_basic sq
-    in Logic.Rules.assume info a c sqnt
+    in Logic.Rules.basic None a c sqnt
   with Not_found -> raise (Result.error "Not basic")
 
 let postpone = Logic.Rules.postpone
 
-let cut ?info th = Logic.Rules.cut info th
+let cut th = Logic.Rules.cut None th
 
-let implI ?info ?c sq =
+let implI ?c sq =
   let cf=
     match c with
       Some x -> x
     | _ -> (Drule.first_concl Formula.is_implies (Logic.get_sqnt sq))
   in 
-  Logic.Rules.implI info cf sq
+  Logic.Rules.implI None cf sq
 
-let implE ?info ?a sq =
+let implE ?a sq =
   let af=
     match a with 
       (Some x) -> x
     | _ -> (Drule.first_asm Formula.is_implies (Logic.get_sqnt sq))
   in 
-  Logic.Rules.implE info af sq
+  Logic.Rules.implE None af sq
 
-let conjI ?info ?c sq =
+let conjI ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_conj (Logic.get_sqnt sq))
-  in Logic.Rules.conjI info cf sq
+  in Logic.Rules.conjI None cf sq
 
-let conjE ?info ?a sq =
+let conjE ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_conj (Logic.get_sqnt sq))
-  in Logic.Rules.conjE info af sq
+  in Logic.Rules.conjE None af sq
 
-let disjI ?info ?a sq =
+let disjI ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_disj (Logic.get_sqnt sq))
-  in Logic.Rules.disjI info af sq
+  in Logic.Rules.disjI None af sq
 
-let disjE ?info ?c sq =
+let disjE ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_disj (Logic.get_sqnt sq))
-  in Logic.Rules.disjE info cf sq
+  in Logic.Rules.disjE None cf sq
 
-let negC ?info ?c sq =
+let negC ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_neg (Logic.get_sqnt sq))
-  in Logic.Rules.negC info cf sq
+  in Logic.Rules.negC None cf sq
 
-let negA ?info ?a sq =
+let negA ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_neg (Logic.get_sqnt sq))
-  in Logic.Rules.negA info af sq
+  in Logic.Rules.negA None af sq
 
-let allI ?info ?c sq =
+let allI ?c sq =
   let cf=
     match c with 
       Some(x) -> x
     | _ -> (Drule.first_concl Formula.is_all (Logic.get_sqnt sq))
-  in Logic.Rules.allI info cf sq
+  in Logic.Rules.allI None cf sq
 
-let existI ?info ?a sq =
+let existI ?a sq =
   let af=
     match a with 
       Some(x) -> x
     | _ -> (Drule.first_asm Formula.is_exists (Logic.get_sqnt sq))
-  in Logic.Rules.existI info af sq
+  in Logic.Rules.existI None af sq
 
-let trueR ?info ?c sq =
+let trueR ?c sq =
   let cf=
     match c with 
       Some x -> x
     | _ -> (Drule.first_concl Formula.is_true (Logic.get_sqnt sq))
-  in Logic.Rules.trueR info cf sq
+  in Logic.Rules.trueR None cf sq
 
 let trivial = trueR
 
-let allE ?info ?a trm sq =
+let allE ?a trm sq =
   let af=
     match a with
       Some x -> x
     | _ ->  (Drule.first_asm Formula.is_all (Logic.get_sqnt sq))
-  in Logic.Rules.allE info trm af sq
+  in Logic.Rules.allE None trm af sq
 
-let existE ?info ?c trm sq =
+let existE ?c trm sq =
   let cf=
     match c with
       (Some x) -> x
     | _ -> (Drule.first_concl Formula.is_exists (Logic.get_sqnt sq))
-  in Logic.Rules.existE info trm cf sq
+  in Logic.Rules.existE None trm cf sq
 
-let deleten ?info ns sq = 
+let deleten ns sq = 
   let rec del_aux l s=
     match l with
       [] -> s
-    | (x::xs) -> del_aux xs (Logic.Rules.delete info x s)
+    | (x::xs) -> del_aux xs (Logic.Rules.delete None x s)
   in del_aux ns sq
 
-let delete ?info i =  (Logic.Rules.delete info i)
+let delete i =  (Logic.Rules.delete None i)
 
-let beta_tac ?info ?f= 
+let beta_tac ?f= 
     match f with
-    (Some x) -> Logic.Rules.beta info x
-    | _ -> (Drule.foreach_once (fun x -> Logic.Rules.beta info x))
+    (Some x) -> Logic.Rules.beta None x
+    | _ -> (Drule.foreach_once (fun x -> Logic.Rules.beta None x))
 
 
 
@@ -213,12 +216,18 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   let asm_consts = Drule.make_consts asm_vars env1
   and concl_consts = Drule.make_consts concl_vars env1
   in 
-  let g1 = Drule.inst_list (Logic.Rules.allE info) asm_consts a g
+  let g1 = 
+    match asm_vars with
+      [] -> g
+    | _ -> Drule.inst_list (Logic.Rules.allE info) asm_consts a g
   in 
-  let g2 = Drule.inst_list (Logic.Rules.existE info) concl_consts c g
+  let g2 = 
+    match concl_vars with
+      [] -> g1
+    | _ -> Drule.inst_list (Logic.Rules.existE info) concl_consts c g1
   in 
   try 
-    Logic.Rules.assume info a c g2
+    Logic.Rules.basic info a c g2
   with _ -> g2
 
 
@@ -285,12 +294,7 @@ let firstF ts g =
    application of first rule to sq 
    fails if any rule fails ( sequential composition )
  *)
-
 (*
-   let thenl ts g = 
-   Logic.Rules.thenl ts g
-*)
-
 let thenl rls sq =
   let rec thenl_aux fs sqs =
     match fs with 
@@ -303,10 +307,29 @@ let thenl rls sq =
 	else nsq
   in 
   thenl_aux rls sq 
+*)
+
+(* seq rules sq:
+   applies rules, in order, to each subgoal resulting from
+   application of first rule to sq 
+   fails if any rule fails ( sequential composition )
+ *)
+let seq rls sq =
+  let rec seq_aux fs sqs =
+    match fs with 
+      [] -> sqs 
+    |	r::rs ->
+        let nsq=(r sqs)
+	in 
+	if Logic.has_subgoals nsq
+	then (seq_aux rs nsq)
+	else nsq
+  in 
+  seq_aux rls sq 
 
 
 let (++) tac1 tac2 g =
-  thenl [tac1; tac2] g
+  seq [tac1; tac2] g
 
 
 (* apply_list rules sq:
@@ -341,46 +364,135 @@ let gen_rewrite_tac ?info ctrl rules ?f goal=
     None -> 
       Drule.foreach_once 
 	(fun x -> 
-	  Logic.Rules.rewrite_any 
+	  Logic.Rules.rewrite 
 	    info ~dir:(ctrl.Rewrite.rr_dir) rules x) goal
   | Some (x) ->
-      Logic.Rules.rewrite_any 
+      Logic.Rules.rewrite
 	info ~dir:(ctrl.Rewrite.rr_dir) rules x goal
       
 
-let rewrite_tac ?info ?(dir=leftright) ths ?f goal=
+let rewrite_tac ?(dir=leftright) ths ?f goal=
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
   match f with
     None -> 
-      Drule.foreach_formula
-	[(fun x -> true),
-	 (fun x -> 
-	   orl[Logic.Rules.rewrite_any info ~dir:dir rules x;
-	       skip]) 
-       ]
+      Drule.foreach_once
+	(fun l -> Logic.Rules.rewrite None ~dir:dir rules l)
 	goal
   | Some (x) ->
-      Logic.Rules.rewrite_any info ~dir:dir rules x goal
+      Logic.Rules.rewrite None ~dir:dir rules x goal
 
-let replace_tac ?info ?(dir=leftright) asms ?f goal =
-  let rules = (List.map (fun x -> Logic.Asm x) asms) 
+
+let is_rewrite_formula t=
+  let (_, t1) = Term.strip_qnt Basic.All t
+  in 
+  (Logicterm.is_equality t1)
+  
+
+let replace_tac ?(dir=leftright) ?asms ?f goal =
+  let sqnt = Drule.sequent goal
+  in 
+  let rec find_equality_asms sqasms rst=
+    match sqasms with 
+      [] -> List.rev rst
+    | (l, af)::xs -> 
+	(if (Drule.qnt_opt_of Basic.All 
+	       (Logicterm.is_equality) (Formula.dest_form af))
+	then find_equality_asms xs (l::rst)
+	else find_equality_asms xs rst)
+  in 
+  let asm_tags=
+    match asms with
+      None -> find_equality_asms (Logic.asms sqnt) []
+    | Some xs -> (List.map (fun i -> Logic.label_to_tag i sqnt) xs)
+  in 
+  let rules = (List.map (fun x -> Logic.Asm (ftag x)) asm_tags) 
   in 
   match f with
     None -> 
-      let sqnt = Drule.sequent goal
-      in 
-      let tags = 
-	(List.map (fun i -> Logic.label_to_tag i sqnt) asms)
-      in 
       Drule.foreach_once
 	(fun x -> 
 	   if (List.exists 
 		 (fun y -> Tag.equal (Logic.label_to_tag x sqnt) y)
-		 tags)
+		 asm_tags)
 	   then fun g -> g
 	   else 
-	     orl [Logic.Rules.rewrite_any info ~dir:dir rules x; skip])
+	     orl [Logic.Rules.rewrite None ~dir:dir rules x; skip])
 	goal
   | Some (x) ->
-      Logic.Rules.rewrite_any info ~dir:dir rules x goal
+      Logic.Rules.rewrite None ~dir:dir rules x goal
+
+
+
+(* pattern matching tacticals *)
+
+let match_asm trm tac g =
+  try 
+    tac (Drule.match_asm (Logic.goal_tyenv g) trm (Drule.sequent g)) g
+  with Not_found -> raise (Term.termError "No matching assumption" [trm])
+
+let match_concl trm tac g =
+  try 
+    tac (Drule.match_concl (Logic.goal_tyenv g) trm (Drule.sequent g)) g
+  with Not_found -> raise (Term.termError "No matching conclusion" [trm])
+
+let match_formula trm tac g=
+  let sqnt=Drule.sequent g
+  and tyenv=Logic.goal_tyenv g
+  in 
+  try
+    tac (Drule.match_asm tyenv trm sqnt) g
+  with Not_found -> 
+    try 
+      tac (Drule.match_concl tyenv trm sqnt) g
+    with Not_found ->
+      raise (Term.termError "No matching formula in sequent" [trm])
+
+(* Tacticals for dealing with information returned by tactics *)
+
+(** [itactic]
+   Information passing tactics.
+*)
+type itactic = 
+    Logic.info
+      -> (Tag.t list * Tag.t list * Basic.term list)
+	-> tactic
+
+let itac (tac:itactic) (goals, forms, vars) g= 
+  let info=Drule.mk_info()
+  in 
+  let g1=tac info (goals, forms, vars) g
+  in 
+  let ngs, nfs, nvars = 
+    ((!info).Logic.goals, (!info).Logic.forms, (!info).Logic.terms)
+  in 
+  ((ngs, nfs, nvars), g1)
+
+let iseq ?(initial=([], [], [])) (tacs: itactic list) goal=
+  let rec seq_aux rls (gs, fs, vs) g = 
+    match rls with 
+      [] -> g
+    | (t::ts) ->
+	if(Logic.has_subgoals g)
+	then 
+	  let (nr, g1) = itac t (gs, fs, vs) g
+	  in 
+	  seq_aux ts nr g1
+	else g
+  in 
+  seq_aux tacs ([], [], []) goal
+
+let ialt ?(initial=([], [], [])) (tacs: itactic list) goal=
+  let rec alt_aux rls (gs, fs, vs) g = 
+    match rls with 
+      [] -> fail g
+    | (t::ts) ->
+	if (Logic.has_subgoals g)
+	then 
+	  try 
+	    (let (nr, g1) = itac t (gs, fs, vs) g
+	    in g1)
+	  with _ -> alt_aux ts (gs, fs, vs) g
+	else g
+  in 
+  alt_aux tacs ([], [], []) goal

@@ -4,22 +4,36 @@ open Parser
 
 let dest_name f = Lib.chop_at '.' f
 
-let empty_thy_name = ""
-let base_thy_name = "base"
+let empty_thy_name = "(empty)"
+(* An anonymous theory *)
+let anon_thy ()= Theory.mk_thy empty_thy_name
 
-let base_thy ()= Theory.mk_thy empty_thy_name
+(* base_thy:
+   The theory on which all user theories are based
+*)
+let base_name = ref (Some("Main"))
+let get_base_name()= 
+  match !base_name with
+    None -> raise Not_found
+  | Some x -> x
+let set_base_name x = base_name:=(Some(x))
+let clear_base_name () = base_name:=None
 
-let thdb() = Thydb.emptydb (base_thy ())
+
+(* theories: the theory database *)
+let thdb() = Thydb.emptydb (anon_thy ())
+
 let theories = ref (thdb())
-
 let get_theories () = !theories
 let set_theories thdb = theories:=thdb
-
 let reset_thydb () = set_theories (thdb())
 
 let get_cur_thy () = Thydb.getcur (!theories)
 let get_cur_name () = Theory.get_name (get_cur_thy ())
+let set_cur_thy thy = 
+  theories:=Thydb.setcur_thy (!theories) thy
 
+(* [scope] the standard scope *)
 let scope() =
   let thy_name = (get_cur_name())
   in 
@@ -49,11 +63,11 @@ let scope() =
    (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
  } 
 
-let set_cur_thy thy = 
-  theories:=Thydb.setcur_thy (!theories) thy
-
 (* file handling *)
 
+let thy_suffix = "."^Settings.thy_suffix
+
+(* search directories *)
 let thy_path = ref ["."]
 let get_thy_path ()= !thy_path
 let add_thy_path x = thy_path:=(x::!thy_path)
@@ -66,13 +80,10 @@ let set_thy_dir n = thy_dir := !n
 let get_thy_dir () = !thy_dir
 let get_cdir () = Sys.getcwd ()
 
-let thy_suffix = "."^Settings.thy_suffix
-
 (*
    [build_thy_file f]: 
-   build a theory by useing file f.
+   build a theory by using file f.
 *)
-
 let build_thy_file f=  
   let tf = f^Settings.script_suffix
   in 
@@ -211,7 +222,7 @@ let on_load_thy th =
   List.iter (fun (id, rcrd) -> add_type_record id rcrd) 
     (Theory.get_pplist Basic.type_id th); ()
 
-let mkterm scp pt = 
+let mk_term scp pt = 
   let tenv = 
     Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
   in 
@@ -228,16 +239,16 @@ let catch_parse_error e a =
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
 
-let mkterm_raw tyenv pt = Term.set_names (scope()) pt
-let mkterm_unchecked tyenv pt =  pt
+let mk_term_raw tyenv pt = Term.set_names (scope()) pt
+let mk_term_unchecked tyenv pt =  pt
 
 
 let read str= 
-  mkterm (scope()) 
+  mk_term (scope()) 
     (catch_parse_error Parser.read_term str)
 
 let read_unchecked  x=
-  mkterm_raw (scope()) 
+  mk_term_raw (scope()) 
     (catch_parse_error Parser.read_term x)
 
 let read_defn x =
@@ -263,9 +274,34 @@ let read_identifier x =
 
 (* initialising functions *)
 
-(* try to load the base theory *)
-(* use an empty theory if unsuccessful *)
+(*
+   [load_base_thy()]
+   try to load the base theory 
+   if successful:
+   make it the current theory.
+   set the base theory name ([set_base_name(...)])
 
+   if unsuccessful:
+   use an empty theory as the current theory.
+   clear the base theory name ([clear_base_name()])
+*)
+
+let load_base_thy ()=
+  try
+    let thy_name = get_base_name()
+    in 
+    let imprts=
+      Thydb.load_theory(get_theories()) 
+	thy_name false on_load_thy find_thy_file
+    in 
+    set_cur_thy(Thydb.get_thy (get_theories()) thy_name);
+    Thydb.add_importing imprts (get_theories())
+  with _ ->
+    (* Can't find the base theory or no base theory set *)
+    (clear_base_name();
+     theories:=(thdb()))
+
+(*
 let load_base_thy ()=
   try 
     let imprts=
@@ -275,6 +311,7 @@ let load_base_thy ()=
     set_cur_thy(Thydb.get_thy (get_theories()) base_thy_name);
     Thydb.add_importing imprts (get_theories())
   with _ -> theories:=(thdb())
+*)
 
 let init_theoryDB () = load_base_thy()
 let reset_theoryDB () = reset_thydb()

@@ -31,13 +31,15 @@ val load_theory_as_cur : string -> unit
    end_theory saves the theory to disk and protects it 
 *)
 
-val begin_theory : string -> unit
+val begin_theory : string -> string list -> unit
 val open_theory : string -> unit
 val close_theory : unit -> unit
 val end_theory : unit -> unit
 
 (* new_theory renamed to begin_theory *)
+(*
 val new_theory : string->unit 
+*)
 
 (* Parsing/Printing manipulation *)
 

@@ -12,6 +12,8 @@ module BoolPP =
     open Parser.Utility
     open Lexer
 
+    let ifthenelse_id= Basic.mk_long "base" "IF"
+
     let ifthenelse_parser inf=
       ((seq
       [?$(Lexer.Sym (Lexer.OTHER "IF"));
@@ -24,7 +26,7 @@ module BoolPP =
        (fun l -> 
 	 match l with 
 	   [_; test; _; tbr; _; fbr] ->
-	       Term.mkfun (Basic.mklong "base" "if") [test; tbr; fbr]
+	       Term.mk_fun ifthenelse_id [test; tbr; fbr]
 	 | _ -> raise (ParsingError "Error parsing if-then-else")))
 	
 
@@ -73,21 +75,9 @@ module BoolPP =
 	      Format.close_box())	    
       | _ -> 
 	  Term.simple_print_fn_app ppstate cprec (f, args)
-(*
-	  Format.open_box 0;
-	  Printer.print_bracket prec cprec "(";
-	  Format.print_space();
-	  Printer.print_list 
-	    ((Term.print_term ppstate cprec),
-	     Printer.print_space)
-	    args;
-	  Printer.print_bracket prec cprec ")";
-	  Format.close_box()
-*)
-
 
     let init_ifthenelse_printer()=
-      Tpenv.add_term_printer (Basic.mklong "base" "if")
+      Tpenv.add_term_printer ifthenelse_id
       ifthenelse_printer
 
     let init_ifthenelse()=
@@ -102,24 +92,27 @@ module BoolPP =
  *
  ***)
 
-let eq_tac0 sqnt = 
-  let a = first_concl Formula.is_equals (Logic.get_sqnt sqnt)
+let eq_tac g = 
+  let a = first_concl Formula.is_equality (Logic.get_sqnt g)
   in 
   let th = 
     try lemma "base.eq_sym"
     with Not_found -> 
-      (raise (Result.error "Can't find required lemma base.eq_sym"))
-  in thenl [cut th; unify_tac ~a:(fnum (-1)) ~c:a] sqnt
-
-let eq_tac sqnt =  eq_tac0 sqnt
+      (raise (Result.error "eq_tac: Can't find required lemma base.eq_sym"))
+  in 
+  seq [cut th; unify_tac ~a:(fnum (-1)) ~c:a] g
 
 let cut_thm str = (cut (lemma str))
 
-let unfold str i sqnt= 
-  let j= if i<0 then i-1 else i
-  in
-  (thenl[cut (defn str); replace_tac [(fnum(-1))] ~f:(fnum j); 
-	 delete (fnum (-1))]) sqnt
+let unfold ?f str g= 
+  let th = 
+    try defn str
+    with Not_found -> 
+      raise (Result.error ("unfold: Can't find definition of "^str))
+  in 
+  match f with
+    None -> rewrite_tac [th] g
+  | Some (x) -> rewrite_tac ~f:x [th] g
 
 (* iffI_rule i sq:
    asm |- a iff b, cncl 
@@ -130,7 +123,7 @@ let unfold str i sqnt=
 let is_iff f = 
   try 
     (fst (Term.dest_fun (Formula.term_of_form f)) 
-       = (Basic.mklong "base" "iff"))
+       = (Basic.mk_long "base" "iff"))
   with _ -> false
 
 let iffI_rule i goal = 
@@ -140,7 +133,7 @@ let iffI_rule i goal =
   in
   if not (is_iff f) then (raise (Result.error "iffI_rule"))
   else 
-    (thenl 
+    (seq 
        [Tactics.rewrite_tac [lemma "boolean.iff_def"]
 	  ~dir:leftright ~f:(ftag t);
 	Logic.Rules.conjI None (ftag t);
@@ -157,7 +150,7 @@ let iffI ?c g =
 let false_rule0 a sq =
   let  thm = lemma "base.false_def"
   in 
-  thenl [(Tactics.rewrite_tac [thm] ~f:a); 
+  seq [(Tactics.rewrite_tac [thm] ~f:a); 
 	 Logic.Rules.negA None a; 
 	 trivial] sq
 
@@ -236,17 +229,28 @@ let inst_concl ?c l g=
   let cf = 
     match c with 
       Some x -> x
-    | _ -> (Drule.first_concl (Formula.is_all) (Logic.get_sqnt g))
+    | _ -> (Drule.first_concl (Formula.is_exists) (Logic.get_sqnt g))
   in 
   inst_concl_rule cf l g
 
-let inst_tac f l g= 
+let inst_tac ?f l g= 
   let sqnt = Logic.get_sqnt g
   in 
-  try 
-    ignore(Logic.get_label_asm f sqnt);
-    inst_asm ~a:f l g
-  with Not_found -> inst_concl ~c:f l g
+  match f with 
+    None -> 
+      (try 
+	let ft = (Drule.first_asm (Formula.is_all) sqnt)
+	in inst_asm ~a:ft l g
+	with Not_found -> 
+	  (try 
+	    let ft= Drule.first_concl (Formula.is_exists) sqnt
+	    in inst_concl ~c:ft l g
+	  with _ -> 
+	    raise (Logic.logicError "inst_tac: No instansiatable formula" [])))
+  | Some x -> 
+      (try inst_asm ~a:x l g
+      with Not_found -> inst_concl ~c:x l g)
+
 
 let cases_tac0 (x:Basic.term) g= 
   let thm = 
@@ -255,7 +259,7 @@ let cases_tac0 (x:Basic.term) g=
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.cases_thm"))
   in 
-  thenl [cut thm; allE x; disjI; negA; postpone] g
+  seq [cut thm; allE x; disjI; negA; postpone] g
 
 let cases_tac x = cases_tac0 x
 
@@ -265,11 +269,11 @@ let equals_tac ?f g =
       Some x -> x
     | _ -> 
 	try
-	  (Drule.first_asm Formula.is_equals (Logic.get_sqnt g))
+	  (Drule.first_asm Formula.is_equality (Logic.get_sqnt g))
 	with 
 	  Not_found ->
 	    try
-	      (Drule.first_concl Formula.is_equals (Logic.get_sqnt g))
+	      (Drule.first_concl Formula.is_equality (Logic.get_sqnt g))
 	    with Not_found ->
 	      raise 
 		(Result.error "equals_tac: No equality term")
@@ -280,7 +284,7 @@ let equals_tac ?f g =
     with Not_found -> 
       (raise (Result.error "Can't find required lemma boolean.equals_bool"))
   in 
-  (Logic.Rules.rewrite_any None [Logic.RRThm thm] ff g)
+  (Logic.Rules.rewrite None [Logic.RRThm thm] ff g)
 
 let false_tac g = false_rule g
 
@@ -311,27 +315,28 @@ let hyp_conc_thm f =
     match Term.dest_fun t with
       (_, (a::b::[])) -> (qnts, a, b)
     | _ -> (raise (Result.error "hyp_conc_thm: unusually shaped implication"))
-  else (qnts, Term.mkbool true, t)
+  else (qnts, Term.mk_bool true, t)
 
 let match_mp_rule0 thm i sq=
   let (qnts, a, b) = hyp_conc_thm (Logic.dest_thm thm)
   and c = 
     Formula.dest_form (Drule.get_cncl i sq)
   and scp = Drule.scope_of sq
+  and tyenv = Logic.goal_tyenv sq
   in 
-  let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
+  let qenv = Unify.unify ~typenv:tyenv scp (Rewrite.is_free_binder qnts) b c
   in 
   let ncnsts = Drule.make_consts qnts qenv
   and info = Drule.mk_info()
   in 
-  ((Tactics.cut ~info:info thm)
+  ((Logic.Rules.cut (Some(info)) thm)
      ++
      (fun g -> 
        let af = ftag(Lib.get_one (Drule.subgoals info) 
 		       (Failure "match_mp_rule"))
        in
-       thenl
-	 [inst_tac af ncnsts; 
+       seq
+	 [inst_tac ~f:af ncnsts; 
 	  Tactics.cut thm; 
 	  Logic.Rules.implE None af;
 	  Logic.Rules.postpone; 
@@ -357,19 +362,167 @@ let match_mp_sqnt_rule0 j i sq=
   let ncnsts = make_consts qnts qenv
   and info =Drule.mk_info()
   in 
-  (((inst_tac j ncnsts) ++ Logic.Rules.implE (Some info) j)
+  (((inst_tac ~f:j ncnsts) ++ Logic.Rules.implE (Some info) j)
      ++
      (fun g->
        let gtl, gtr=
 	 Lib.get_two (Drule.subgoals info) 
 	   (Failure "match_mp_sqnt_rule")
        in 
-       thenl
+       seq
 	 [Logic.goal_focus gtr;
 	  Tactics.unify_tac ~a:j ~c:i;
 	  Logic.goal_focus gtl] g)) sq
 
 let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
+
+(*
+(**
+   [mp_tac ~info ~a ~f]
+   Modus ponens.
+   if [a] is [l=>r] or [!x: l=>r], and [f] is [l],
+   then apply reduce [a] to [r].
+
+   info: [] [a] []
+*)
+
+let mp_tac ?a ?f g=
+  let typenv = Logic.goal_tyenv g
+  and sqnt = Drule.sequent g
+  in 
+  let scp = Logic.scope_of sqnt
+  in 
+  let mpform_tag =  (* find the implication in the assumptions *)
+    match a with
+      None -> 
+	(try
+	  Drule.first_asm
+	    (fun x -> 
+	      Drule.qnt_opt_of Basic.All (Logicterm.is_implies)
+		(Formula.dest_form x)) sqnt
+	with Not_found ->
+	  raise 
+	    (Logic.logicError ("mp_tac: no implications in assumptions") []))
+    | Some x -> x
+  in 
+  let mpform = Formula.dest_form (Drule.get_asm mpform_tag g)
+  in 
+  let (vs, (l, r)) = 
+    match Drule.dest_qnt_opt Basic.All Term.dest_fun mpform with
+      (zs, (_, (x::y::_))) -> (zs, (x, y))
+    | _ -> raise (Invalid_argument "mp_tac")
+  in 
+  let bvars= (List.map (fun x-> Basic.Bound(x)) vs)
+  in 
+  let varp x=
+    try ignore(List.find (Term.equals x) bvars); true
+    with Not_found -> false
+  in 
+  let mpasm_tag = (* find the lhs in the assumptions *)
+    match f with
+      None -> 
+	(try
+	  (Drule.match_formulas typenv scp varp l (Logic.asms sqnt))
+	with Not_found -> 
+	  raise (Term.termError ("mp_tac: no match") [mpform]))
+    | Some x -> x
+  in 
+  let lhs = Formula.dest_form(Drule.get_asm mpasm_tag g)
+  in 
+  (* if implication is quantified, unify it with the lhs *)
+  let g1=
+    match vs with 
+      [] -> g
+    | _ ->
+	let (_, subst) = 
+	  Unify.unify ~typenv:typenv scp varp lhs l
+	in 
+	let tmp_g=
+	  Drule.inst_list (Logic.Rules.allE None) 
+	    (Drule.make_consts vs subst) mpform_tag g
+	in 
+	if (Logicterm.is_implies 
+	      (Formula.dest_form (Drule.get_asm mpform_tag tmp_g)))
+	then tmp_g
+	else 
+	  raise (Term.termError "mp_tac: Can't form an implication" [mpform])
+  in 
+  let info=Drule.mk_info
+  in 
+  let g2= 
+    iseq 
+      ~initial:([], [], [])
+      [(fun info (_, fs, _) ->
+	Logic.Rules.implE (Some info) mpform_tag);
+       (fun info (_, fs, _) ->
+	 Logic.Rules.basic (Some info) mpasm_tag 
+	   (ftag (Lib.get_one fs (Failure "mp_tac: basic"))))]
+      g1
+  in 
+  if(Tag.equal (Logic.sqnt_tag (sequent g2)) (Logic.sqnt_tag sqnt))
+  then g2
+  else raise (Logic.logicError "mp_tac: failed" [])
+*)     
+
+
+(**
+   [mp_tac ~a ~f]
+   Modus ponens.
+   if [a] is [l=>r] and [f] is [l],
+   then apply reduce [a] to [r].
+*)
+let mp_tac ?a ?f g=
+  let typenv = Logic.goal_tyenv g
+  and sqnt = Drule.sequent g
+  in 
+  let scp = Logic.scope_of sqnt
+  in 
+  let mpform_tag =  (* find the implication in the assumptions *)
+    match a with
+      None -> 
+	(try
+	  Drule.first_asm
+	    (fun x -> 
+	      (Logicterm.is_implies) (Formula.dest_form x)) sqnt
+	with Not_found ->
+	  raise 
+	    (Logic.logicError ("mp_tac: no implications in assumptions") []))
+    | Some x -> x
+  in 
+  let mpform = Formula.dest_form (Drule.get_asm mpform_tag g)
+  in 
+  let (l, r) = 
+    match Term.dest_fun mpform with
+      (_, (x::y::_)) ->  (x, y)
+    | _ -> raise (Invalid_argument "mp_tac")
+  in 
+  let varp x = false
+  in 
+  let mpasm_tag = (* find the lhs in the assumptions *)
+    match f with
+      None -> 
+	(try
+	  (Drule.match_formulas typenv scp varp l (Logic.asms sqnt))
+	with Not_found -> 
+	  raise (Term.termError ("mp_tac: no match") [mpform]))
+    | Some x -> x
+  in 
+  let info=Drule.mk_info
+  in 
+  let g1= 
+    iseq 
+      ~initial:([], [], [])
+      [(fun info (_, fs, _) ->
+	Logic.Rules.implE (Some info) mpform_tag);
+       (fun info (_, fs, _) ->
+	 Logic.Rules.basic (Some info) mpasm_tag 
+	   (ftag (Lib.get_one fs (Failure "mp_tac: basic"))))]
+      g
+  in 
+  if(Tag.equal (Logic.sqnt_tag (sequent g1)) (Logic.sqnt_tag sqnt))
+  then g1
+  else raise (Logic.logicError "mp_tac: failed" [])
+
 
 
 (***
@@ -378,7 +531,7 @@ let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
  *
  ***)
 
-let init_boollib()=
+let init_boollib()= 
   BoolPP.init_ifthenelse()
 
 

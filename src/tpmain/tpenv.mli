@@ -1,14 +1,33 @@
 (* Global environment and utility functions *)
 
 (* destruct a long identifier *)
+(*
 val dest_name : string -> string * string
+*)
 
 (* default theory and theoryDB*)
 
+(** [empty_thy_name] the name of the anonymous theory *)
 val empty_thy_name : string
-val base_thy_name : string
+val base_name : ref (string option)
 
-val base_thy : unit -> Theory.thy
+(** [get_base_name ()]
+   get the name of the base theory.
+   raise Not Found if no base theory loaded or set.
+
+   [set_base_name s]
+   set the name of the base theory to [s]
+
+   [clear_base_name()]
+   clear the base name.
+*)
+val get_base_name: unit -> string
+val set_base_name: string -> unit
+val clear_base_name: unit -> unit
+
+
+(* anon_thy: the anonymous theory *)
+val anon_thy : unit -> Theory.thy
 val thdb : unit -> Thydb.thydb
 
 (* current theoryDB *)
@@ -48,12 +67,12 @@ val on_load_thy: Theory.thy -> unit
    so all calls to the parser should go through here *)
 
 (* 
-   [mkterm scp trm]
+   [mk_term scp trm]
    typecheck term [trm] in scope [scp]
 *)
-val mkterm : Gtypes.scope -> Basic.term -> Basic.term
-val mkterm_raw : Gtypes.scope -> Basic.term -> Basic.term
-val mkterm_unchecked : Gtypes.scope -> Basic.term -> Basic.term
+val mk_term : Gtypes.scope -> Basic.term -> Basic.term
+val mk_term_raw : Gtypes.scope -> Basic.term -> Basic.term
+val mk_term_unchecked : Gtypes.scope -> Basic.term -> Basic.term
 val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
 val read_defn :

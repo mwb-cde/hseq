@@ -64,17 +64,26 @@ let load_theory_as_cur n =
   (Tpenv.set_cur_thy (Thydb.get_thy (theories()) n);
    Thydb.add_importing imprts (theories()))
 
+let parents ns = 
+  List.iter load_parent_theory ns;
+  Theory.add_parents ns (curr_theory());
+  Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
 
-let begin_theory n = 
+let begin_theory n parents= 
   if n = "" 
   then (raise (Result.error "No theory name"))
   else 
     let thy = (Theory.mk_thy n)
     in 
-    (if(n!=Tpenv.base_thy_name)
-    then Theory.add_parents [Tpenv.base_thy_name] (thy)
-    else ());
-    Tpenv.set_cur_thy thy
+    let importing=
+      try
+	((Tpenv.get_base_name())::parents)
+      with Not_found -> parents
+    in 
+    Tpenv.set_cur_thy thy;
+    List.iter load_parent_theory importing;
+    Theory.add_parents importing thy;
+    Thydb.add_importing importing (theories())
 
 let new_theory n = begin_theory n
 
@@ -94,10 +103,6 @@ let end_theory() =
   else save_theory (curr_theory()) true
 
 
-let parents ns = 
-  List.iter load_parent_theory ns;
-  Theory.add_parents ns (curr_theory());
-  Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
 
 
 let add_pp_rec selector id rcrd=
@@ -159,9 +164,9 @@ let new_type st =
 let dest_defn_term trm=
   let err()= failwith "Badly formed definition"
   in 
-  if Logicterm.is_equal trm 
+  if Logicterm.is_equality trm 
   then
-    let (lhs, rhs)=Logicterm.dest_equal trm
+    let (lhs, rhs)=Logicterm.dest_equality trm
     in 
     let (f, args) =
       if(Term.is_fun lhs)
@@ -176,15 +181,10 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
     
-(*
-let define trm=
-  let (name, args, r) = dest_defn_term trm
-  in 
-*)
 let define ((name, args), r)=
   let ndef=
-    Defn.mkdefn (Tpenv.scope()) 
-      (Basic.mklong (Tpenv.get_cur_name()) name) args r
+    Defn.mk_defn (Tpenv.scope()) 
+      (Basic.mk_long (Tpenv.get_cur_name()) name) args r
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
@@ -200,37 +200,21 @@ let define_full trm pp=
   add_term_pp n prec fx repr); 
   ndef
 
-(*
-let define_string str= 
-  let ((name, args), r)=Tpenv.read_defn str
-  in 
-  let ndef=
-    Defn.mkdefn (Tpenv.scope()) 
-      (Basic.mklong (Tpenv.get_cur_name()) name) args r
-  in 
-  let (n, ty, d)= Defn.dest_defn ndef
-  in 
-  Thydb.add_defn (Basic.name n) ty d (theories()); ndef
-
-let define_full_string str pp=
-  let ndef=define_string str
-  in 
-  let (n, ty, d)= Defn.dest_defn ndef
-  in 
-  (let (prec, fx, repr) = pp
-  in 
-  add_term_pp n prec fx repr); 
-  ndef
-*)
 let declare trm = 
   try 
     (let (v, ty)=Term.dest_typed trm
-    in let (n, _)=Term.dest_var v
     in 
-    let dcl=Defn.mkdecln (Tpenv.scope()) n ty
+    let id =
+      if(Term.is_free v)
+      then (Basic.mk_long 
+	      (Tpenv.get_cur_name()) 
+	      (Term.get_free_name v))
+      else Term.get_var_id v
+    in 
+    let dcl=Defn.mk_decln (Tpenv.scope()) id ty
     in 
     Thydb.add_decln dcl (theories());
-    (n, ty))
+    (id, ty))
   with _ -> raise (Result.error ("Badly formed declaration"))
 
 let declare_full trm pp =
@@ -241,7 +225,7 @@ let declare_full trm pp =
   let longname = 
     if (Basic.thy_of_id n) = Basic.null_thy 
     then 
-      (Basic.mklong (Tpenv.get_cur_name()) (Basic.name n))
+      (Basic.mk_long (Tpenv.get_cur_name()) (Basic.name n))
     else n
   in 
   add_term_pp longname prec fx repr;
@@ -255,7 +239,7 @@ let declare_string str =
     (let (v, ty)=Term.dest_typed t
     in let (n, _)=Term.dest_var v
     in 
-    let dcl=Defn.mkdecln (Tpenv.scope()) n ty
+    let dcl=Defn.mk_decln (Tpenv.scope()) n ty
     in 
     Thydb.add_decln dcl (theories());
     (n, ty))
@@ -269,7 +253,7 @@ let declare_full_string str pp =
   let longname = 
     if (Basic.thy_of_id n) = Basic.null_thy 
     then 
-      (Basic.mklong (Tpenv.get_cur_name()) (Basic.name n))
+      (Basic.mk_long (Tpenv.get_cur_name()) (Basic.name n))
     else n
   in 
   add_term_pp longname prec fx repr;

@@ -9,9 +9,13 @@ module BoolPP :
     val init_ifthenelse_parser: unit -> unit
 
 (**
+   [ifthenelse_id]
+   Identifier of the conditional function.
+
    [ifthenelse_prec]
    precedence/fixity/associativity
 *)
+    val ifthenelse_id: Basic.ident
     val ifthenelse_pprec : Printer.record
 
     val ifthenelse_printer: 
@@ -26,7 +30,10 @@ end
     val eq_tac :  Tactics.tactic
 
 (* unfold a definition *)
-    val unfold : string -> int -> Tactics.tactic
+    val unfold : ?f:Logic.label -> string -> Tactics.tactic
+
+(* cut a named theorem *)
+val cut_thm: string -> Tactics.tactic
 
 (* test and rules for Iff *)
 val is_iff: Formula.form -> bool
@@ -62,7 +69,7 @@ val false_rule:  ?a:Logic.label -> Logic.rule
 (* [inst_tac f consts] 
    instantiate formula [f] with terms [consts]
 *)
-val inst_tac: Logic.label -> Basic.term list -> Tactics.tactic 
+val inst_tac: ?f:Logic.label -> Basic.term list -> Tactics.tactic 
 val inst_asm : ?a:Logic.label -> Basic.term list -> Tactics.tactic
 val inst_concl : ?c:Logic.label -> Basic.term list -> Tactics.tactic
 
@@ -89,3 +96,6 @@ val bool_tac:  Tactics.tactic
 val match_mp_tac: Logic.thm -> ?c:Logic.label -> Tactics.tactic
 
 val back_mp_tac: a:Logic.label -> c:Logic.label -> Tactics.tactic
+
+(* mp_tac *)
+val mp_tac: ?a:Logic.label -> ?f:Logic.label -> Tactics.tactic

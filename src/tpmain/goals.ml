@@ -34,17 +34,17 @@ let get_concl i =
   (ft, Formula.term_of_form nt)
 
 let mk_dummy_fntype n=
-  let rec mkdum m j=
+  let rec mk_dum m j=
     if m = 0 
     then []
     else 
-      (Gtypes.mk_typevar j)::mkdum (m-1) j
+      (Gtypes.mk_typevar j)::mk_dum (m-1) j
   in let i = ref 0
-  in Gtypes.mkfun_from_list (mkdum n i)
+  in Gtypes.mk_fun_from_list (mk_dum n i)
     (Gtypes.mk_typevar i)
 
 let goal trm = 
-  let f = Formula.mk_form (Tpenv.scope()) (Tpenv.mkterm (Tpenv.scope()) trm)
+  let f = Formula.mk_form (Tpenv.scope()) (Tpenv.mk_term (Tpenv.scope()) trm)
   in 
   prflist:= [mk_goal  (Tpenv.scope()) f];
   (!save_hook()); top()

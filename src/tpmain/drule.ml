@@ -33,7 +33,7 @@ let make_consts qs env =
     try 
       Term.find (Basic.Bound q) env
     with 
-      Not_found -> Logicterm.mksome
+      Not_found -> Logicterm.mk_some
   in 
   List.map make_aux qs
 
@@ -63,11 +63,9 @@ let inst_list rule cs id goal =
   let rec inst_aux cnsts g=
     match cnsts with 
       []  -> g
-    | (x::xs) -> 
-	inst_aux xs (rule x id g)
+    | (x::xs) -> inst_aux xs (rule x id g)
   in 
   inst_aux cs goal
-
 
 (* utility functions for tactics *)
 
@@ -247,7 +245,7 @@ let foreach_conc_once r sq =
 	(let rsl = r (fnum i) sq
 	in 
 	chng:=true; each_once (i+1) rsl)
-      with _ -> sq)
+      with _ -> each_once (i+1) sq)
     else sq
   in let rslt = each_once 1 sq 
   in if !chng then rslt else raise (Result.error "No change")
@@ -262,7 +260,7 @@ let foreach_asm_once r sq =
 	(let rsl = r (fnum (-i)) sq
 	in 
 	chng:=true; each_once (i+1) rsl)
-      with _ -> sq)
+      with _ -> each_once (i+1) sq)
     else sq
   in let rslt = each_once 1 sq 
   in if !chng then rslt else raise (Result.error "No change")
@@ -290,3 +288,93 @@ let foreach_subgoal lst tac goal=
 	  None -> for_aux xs g
 	| Some ng -> for_aux xs (tac ng)
   in for_aux lst goal
+
+
+(*
+ Matching assumptions/conclusions against a given term.
+ (Similar to HOL's PAT_ASSUM).
+*)
+
+(* [match_formulas typenv scp varp t fs]
+   Match a list of tagged formulas 
+   Return the tag of the first formula in [fs] to unify 
+   with term [t] in scope [scp].
+   [varp] determines which terms can be bound by unification.
+   [typenv] is the goals type environment.
+
+   raise Not_found if no match.
+*)
+let match_formulas typenv scp varp t fs=
+  let rec match_aux l = 
+    match l with 
+      [] -> raise Not_found
+    | (tf::tfs) ->
+	try 
+	  let tg, f = tf
+	  in
+	  ignore(Unify.unify ~typenv:typenv scp 
+		   varp t (Formula.dest_form f));
+	  tg
+	with _ -> match_aux tfs
+  in
+  Logic.FTag (match_aux fs)
+
+
+(* [match_asm typenv t sq]
+   Find a match for [t] in the assumptions of [sq].
+   Return the tag of the first formula in the assumptions to unify 
+   with term [t] in the scope of sequent [sq].
+   [typenv] is the type environment of the goal (from [Logic.goal_tyenv])
+
+   raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+let match_asm typenv t sq=
+  let scp = Logic.scope_of sq
+  and asms = Logic.asms sq
+  in 
+  let t1 = Term.set_names scp t
+  in let vars = Term.get_free_vars t1
+  in let varp x = 
+    try (ignore(List.find (Term.equals x) vars); true)
+    with Not_found -> false
+  in 
+  match_formulas typenv scp varp t1 asms
+
+
+(* [match_concl typenv t sq]
+   Find a match for [t] in the assumptions of [sq].
+   Return the tag of the first formula in the assumptions to unify 
+   with term [t] in the scope of sequent [sq].
+   [typenv] is the type environment of the goal (from [Logic.goal_tyenv])
+
+   raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+let match_concl typenv t sq=
+  let scp = Logic.scope_of sq
+  and concls = Logic.concls sq
+  in let t1=Term.set_names scp t
+  in let vars = Term.get_free_vars t1
+  in let varp x = 
+    try (ignore(List.find (Term.equals x) vars); true)
+    with Not_found -> false
+  in 
+  match_formulas typenv scp varp t1 concls
+
+
+let qnt_opt_of qnt p t=
+  let (_, b) = Term.strip_qnt qnt t
+  in 
+  p b
+
+let dest_qnt_opt qnt d t=
+  let (vs, b) = Term.strip_qnt qnt t
+  in 
+  (vs, d b)
