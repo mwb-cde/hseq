@@ -50,8 +50,16 @@ let rec is_closed_scope env t =
 	raise (Term.termError  "Not closed"  [t]))
   | _ -> ()
 
-let is_closed t = 
-  try is_closed_scope (Term.empty_table()) t; true
+let is_closed vs t = 
+  let tbl=Term.empty_table()
+  in 
+  (* add bound terms of [vs] to tbl *)
+  List.iter 
+    (fun x -> 
+      if(Term.is_bound x) 
+      then ignore(Term.table_add x (Term.mkbool true) tbl)
+      else ()) vs;
+  try is_closed_scope tbl t; true
   with _ -> false
 
 (* is_form scp t: check that [t] is a closed formula in scope [scp] *)
@@ -104,7 +112,7 @@ let in_thy_scope scp th f =
 let retype tenv x = Typing.retype tenv x
 
 let mk_form scp t= 
-  if is_closed t 
+  if is_closed [] t 
   then 
     let nt=Term.set_names scp t
     in 
@@ -324,6 +332,19 @@ let unify scp asmf conclf =
     | _ -> false)
   in (Unify.unify scp varp abody cbody)
 
+let unify_env scp tyenv asmf conclf =
+  let asm = term_of_form asmf
+  and concl = term_of_form conclf
+  in 
+  let (avars, abody)=Term.strip_qnt Basic.All asm
+  and (cvars, cbody)= Term.strip_qnt Basic.Ex concl
+  in let varp x = 
+    (match x with 
+      (Term.Bound q) -> (List.memq q avars) or (List.memq q cvars)
+    | _ -> false)
+  in 
+  Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody
+
 
 (* manipulation *)
 
@@ -336,10 +357,35 @@ let subst scp env t =
 
 let rename t = Term.rename t
 
-let inst scp t r =
+
+let inst_env scp vs env t r =
   if (Term.is_qnt t) 
   then 
-    if (is_closed r)
+    if (is_closed vs r)
+    then 
+      (let (q, qnt, n, ty, b) = Term.dest_qnt (term_of_form t)
+      in 
+      let nr0 = Typing.assign_types scp r
+      in 
+      let nenv = Typing.simple_typecheck_env scp env nr0 ty
+      in 
+      let nr =Typing.retype nenv nr0
+      in 
+      let f= Term.subst_quick (Term.Bound(q)) nr b
+      in 
+      (f, nenv))
+    else raise (Term.termError "inst: replacement not closed " [r])
+  else raise (Term.termError "inst: not a quantified formula" [t])
+
+let inst scp vs t r =
+  let f, _ = inst_env scp vs (Gtypes.empty_subst()) t r
+  in f
+
+(*
+let inst scp vs t r =
+  if (Term.is_qnt t) 
+  then 
+    if (is_closed vs r)
     then 
       (let (q, qnt, n, ty, b) = Term.dest_qnt t
       in 
@@ -353,10 +399,12 @@ let inst scp t r =
       f)
     else raise (Term.termError "inst: replacement not closed " [r])
   else raise (Term.termError "inst: not a quantified formula" [t])
+*)
 
 let equality = Term.equality 
 
 let alpha_convp = Logicterm.alpha_convp 
+let alpha_equals = Logicterm.alpha_convp 
 
 let beta_convp = Logicterm.beta_convp
 let beta_conv scp x =  form_of_term scp (Logicterm.beta_conv x)

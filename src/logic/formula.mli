@@ -9,7 +9,11 @@
     type substitution = Term.substitution
 
 (* conversion between terms and formulas *)
-    val is_closed: Term.term -> bool
+(* is_closed ts f:
+   true iff all bound variables in [f] are in the body 
+   of a quantifier or occur in ts
+*)
+    val is_closed: Term.term list -> Term.term -> bool
     val term_of_form : form -> Term.term
 
 (* form_of_term: make a formula from a closed term
@@ -40,13 +44,21 @@ val dest_form: form -> Term.term
 
 (* instantiate a quantified formula with a given term *)
 (* succeeds only if the result is a formula *)
-    val inst : Gtypes.scope -> form -> Term.term -> form
+    val inst : Gtypes.scope -> Term.term list -> form -> Term.term -> form
+    val inst_env : Gtypes.scope -> Term.term list -> Gtypes.substitution
+	-> form -> Term.term -> (form* Gtypes.substitution)
 
 (* Unification *)
     val unify: Gtypes.scope 
       -> form        (* assumption *)
       -> form       (* conclusion *)
 	-> Term.substitution
+
+    val unify_env: Gtypes.scope 
+      -> Gtypes.substitution (* type environment *)
+	-> form        (* assumption *)
+	  -> form       (* conclusion *)
+	   -> (Gtypes.substitution * Term.substitution)
 
 (* (basiclly term) substitution *)
     val empty_subst: unit -> substitution
@@ -119,6 +131,12 @@ val dest_qnt : form -> Term.binders * Term.term
 
 (* equality under alpha conversion *)
     val alpha_convp : Gtypes.scope -> form -> form -> bool 
+
+(* alpha_equals: equality under alpha conversion
+   (renaming of alpha_convp)
+*)
+    val alpha_equals : Gtypes.scope -> form -> form -> bool 
+
 (* beta reduction *)
     val beta_convp:  form -> bool
     val beta_conv: Gtypes.scope -> form -> form
