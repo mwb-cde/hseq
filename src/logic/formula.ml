@@ -109,7 +109,7 @@ let in_thy_scope_memo memo scp th f =
 let in_thy_scope scp th f =
   Term.in_thy_scope (Lib.empty_env()) scp th (term_of_form f)
 
-let retype tenv x = Typing.retype tenv x
+let retype tenv x = Term.retype tenv x
 
 let mk_form scp t= 
   if is_closed [] t 
@@ -118,7 +118,7 @@ let mk_form scp t=
     in 
     (try
       let env = Typing.settype scp nt
-      in Typing.retype_pretty env nt
+      in Term.retype_pretty env nt
     with x -> Term.addtermError "mk_form: incorrect types" [nt] x)
   else raise (Term.termError "mk_form: Not a closed term" [t])
 
@@ -129,7 +129,7 @@ let form_of_term scp t0 =
   let tenv = 
     Typing.typecheck_env scp (Gtypes.empty_subst()) t (Gtypes.mk_null())
   in 
-  Typing.retype_pretty tenv t
+  Term.retype_pretty tenv t
 
 (* Formula recognisers, constructors and destructors *)
 
@@ -305,7 +305,7 @@ let typecheck_env scp tenv f expty =
 let typecheck scp f expty= 
   let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
   in 
-  Typing.retype_pretty tyenv f 
+  Term.retype_pretty tyenv f 
 
 let simple_typecheck scp f expty= 
   ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
@@ -363,7 +363,7 @@ let inst_env scp vs env t r =
       in 
       let nr= Term.subst_quick (Term.Bound(q)) nr0 b
       in 
-      let f =Typing.retype nenv nr
+      let f =Term.retype nenv nr
       in 
       (f, nenv))
     else raise (Term.termError "inst: replacement not closed " [r])

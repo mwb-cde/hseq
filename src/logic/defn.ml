@@ -93,5 +93,5 @@ let mkdefn scp name args rhs =
   let tenv1=Typing.typecheck_env nscp tenv ndn Gtypes.mk_bool
   in 
   Defn(name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
-       Logic.mk_axiom (Formula.mk_form nscp (Typing.retype tenv ndn)))
+       Logic.mk_axiom (Formula.mk_form nscp (Term.retype tenv ndn)))
 

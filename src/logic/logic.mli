@@ -165,7 +165,7 @@ val logicError : string -> Formula.form list -> exn
 val addlogicError : string -> Formula.form list -> exn -> 'a
 
 (* Printing *)
-val print_thm: Printer.info -> thm -> unit
+val print_thm: Printer.ppinfo -> thm -> unit
 
 module Rules:
     sig

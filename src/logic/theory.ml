@@ -341,28 +341,28 @@ and print_parents ps =
 	   Format.print_newline())
   | _ -> 
       Format.open_box 2;
-      Printer.list_print 
-	Format.print_string 
-	(fun _ -> Format.print_space()) ps;
+      Printer.print_list 
+	(Format.print_string,
+	 (fun _ -> Format.print_space())) ps;
       Format.close_box());
 and print_thms pp n ths = 
   print_section n;
-  Printer.list_print
-    (fun (tn, t) ->
+  Printer.print_list
+    ((fun (tn, t) ->
       Format.open_box 4;
       Format.print_string tn;
       Format.print_string ": ";
       Format.print_newline();
       Logic.print_thm pp t;
       Format.print_newline();
-      Format.close_box()) 
-    (fun _ -> Format.print_newline()) ths
+      Format.close_box()),
+     (fun _ -> Format.print_newline())) ths
 
 and print_tydefs pp n tys = 
   print_section n;
   Format.open_box 0;
-  Printer.list_print
-    (fun (n, tyd) ->
+  Printer.print_list
+    ((fun (n, tyd) ->
       Format.open_box 4;
       Format.print_string n;
       (match tyd.Gtypes.args with
@@ -370,9 +370,9 @@ and print_tydefs pp n tys =
       | _ -> 
 	  Format.open_box 1;
 	  Format.print_string "(";
-	  Printer.list_print 
-	    (fun s -> Format.print_string s)
-	    (fun _ -> Format.print_string ","; Format.print_space())
+	  Printer.print_list
+	    ((fun s -> Format.print_string s),
+	    (fun _ -> Format.print_string ","; Format.print_space()))
 	    tyd.Gtypes.args;
 	  Format.close_box());
       (match tyd.Gtypes.alias with
@@ -384,15 +384,15 @@ and print_tydefs pp n tys =
 	  Gtypes.print pp gty;
 	  Format.print_newline();
 	  Format.close_box());
-      Format.close_box())
-    (fun _ -> Format.print_newline())
+      Format.close_box()),
+    (fun _ -> Format.print_newline()))
     tys;
   Format.close_box()
 
 and print_defs pp n defs = 
   print_section n;
-  Printer.list_print
-    (fun (n, d) ->
+  Printer.print_list
+    ((fun (n, d) ->
       Format.print_string n;
       Format.print_string ": ";
       Format.open_box 4;
@@ -403,15 +403,15 @@ and print_defs pp n defs =
       | Some(df) -> 
 	  Logic.print_thm pp df;
 	  Format.print_newline ());
-      Format.close_box())
-    (fun _ -> Format.print_newline())
+      Format.close_box()),
+    (fun _ -> Format.print_newline()))
     defs
 
 let print_pps n pps = 
   print_section n;
   Format.open_box 4;
-  Printer.list_print 
-    (fun (n, r) ->
+  Printer.print_list
+    ((fun (n, r) ->
       Format.open_box 2;
       Format.print_string n;
       Format.print_space();
@@ -425,8 +425,8 @@ let print_pps n pps =
       Format.print_space();
       Format.print_string "fixity=";
       Format.print_string (Printer.fixity_to_string r.Printer.fixity);
-      Format.close_box())
-    (fun _ -> Format.print_newline())
+      Format.close_box()),
+    (fun _ -> Format.print_newline()))
     pps;
   Format.close_box()
 

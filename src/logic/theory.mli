@@ -134,4 +134,4 @@ val export_theory: out_channel -> thy-> bool -> unit
 *)
 val contents : thy -> contents
 
-val print: Printer.info -> thy -> unit
+val print: Printer.ppinfo -> thy -> unit
