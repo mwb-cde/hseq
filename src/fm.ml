@@ -22,7 +22,9 @@
 #install_printer Display.print_theory;;
 
 let _ =
-  Format.print_string "fm.ml: initialising\n";
+  Format.open_box 0;
+  Format.print_string "Initialising\n";
+  Format.close_box();
   Tpenv.add_thy_path "./thys";
   Tpenv.add_thy_path "../thys";
   Tpenv.init()
