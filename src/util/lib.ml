@@ -91,8 +91,6 @@ let index p xs =
   in index_aux xs 0
 
 
-
-
 (* substitution types *)
 
 type ('a,'b)substype = ('a, 'b)Hashtbl.t
@@ -134,7 +132,7 @@ let remove_dups ls =
 	else ((Hashtbl.add cache y None); remove_aux ys (y::rs))
   in remove_aux ls []
 
-
+(* string functions *)
 
 let find_char c max x=
   let rec find_aux i =
@@ -169,4 +167,43 @@ let int_to_name i =
     ld
   else 
     ld^(string_of_int rm)
+
+(* Named Lists *)
+
+type ('a)named_list = (string * 'a) list
+
+type position = 
+    First | Last | Before of string | After of string
+
+(* 
+   split_at s nl: split named list nl at s name s
+   returning the list upto s and the list beginning with s
+*)
+
+let split_at s nl=
+  let rec split_aux l r=
+    match l with 
+      [] -> (r, [])
+    | (x, y)::ls -> 
+	if(x=s) then (List.rev r, l)
+	else split_aux ls ((x, y)::r)
+  in split_aux nl []
+
+let named_add l p n x =
+  match p with 
+    First -> (n, x)::l
+  | Last -> List.rev ((n, x)::(List.rev l))
+  | Before s -> 
+      let (lt, rt)=split_at s l
+      in 
+      List.rev_append (List.rev lt) ((n, x)::rt)
+  | After s -> 
+      let (lt, rt)=split_at s l
+      in 
+      let nrt=
+	(match rt with
+	  [] ->  [(n, x)]
+	| d::rst -> d::(n, x)::rst)
+      in 
+      List.rev_append (List.rev lt) rt
 

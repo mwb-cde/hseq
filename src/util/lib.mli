@@ -47,3 +47,24 @@ val chop_at : char -> string -> string * string
    26 -> a1
 *)
 val int_to_name: int -> string
+
+(* 
+   Named Lists 
+   lists in which elements are named and data can be
+   added by relative position
+
+   Use association list functions for operations other than add.
+*)
+
+type ('a)named_list = (string * 'a) list
+
+type position = 
+    First | Last | Before of string | After of string
+
+(* named_add l p n x: 
+   add (n, x) to named list l at position p 
+*)
+
+val named_add: 
+    ('a)named_list->position 
+      -> string -> 'a -> ('a) named_list
