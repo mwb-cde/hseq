@@ -77,3 +77,18 @@ val named_add:
 *)
 val get_option : 'a option -> 'a -> 'a
 
+
+(*
+(* tags *)
+module Tag:
+    sig
+      type t
+
+      val named: string->t
+      val name: t->string
+      val null:t
+      val create: unit->t
+
+      val equal: t->t->bool
+    end
+*)

@@ -1,8 +1,8 @@
 # Header, code and optimised code files
 
-HEADERS = lib.cmi unsafe.cmi treekit.cmi parserkit.cmi
-CODE = lib.cmo unsafe.cmo treekit.cmo parserkit.cmo
-OPTCODE = lib.cmx unsafe.cmx treekit.cmx parserkit.cmx
+HEADERS = lib.cmi tag.cmi unsafe.cmi treekit.cmi parserkit.cmi
+CODE = lib.cmo tag.cmo unsafe.cmo treekit.cmo parserkit.cmo
+OPTCODE = lib.cmx tag.cmx unsafe.cmx treekit.cmx parserkit.cmx
 
 LIBFILE=util.cma
 OPTLIB=util.cmxa
