@@ -18,7 +18,7 @@ type label =
   | Bound of Basic.quant_ty
   | Quant of Basic.quant_ty
   | Const of Basic.const_ty 
-  | Cname of Basic.fnident
+  | Cname of Basic.ident
 
 (* 'a net : Node data, rest of net, Var tagged net (if any) *)
 

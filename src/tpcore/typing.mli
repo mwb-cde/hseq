@@ -76,7 +76,7 @@ val settype: Gtypes.scope -> Term.term  -> Gtypes.substitution
 (* infer_types is an alternative to settype but not actually used *)
 
 val infer_aux : 
-    int ref * (Basic.fnident * int, bool) Hashtbl.t 
+    int ref * (Basic.ident * int, bool) Hashtbl.t 
   -> Gtypes.scope -> Gtypes.substitution -> Term.term 
     -> (Gtypes.gtype * Gtypes.substitution )
 val infer_types_env: Gtypes.scope -> Gtypes.substitution 
@@ -103,5 +103,5 @@ val assign_types: Gtypes.scope -> Term.term -> Term.term
     
 val typecheck_aux:
     Gtypes.scope ->
-      int ref * (Basic.fnident * int, bool) Hashtbl.t ->
+      int ref * (Basic.ident * int, bool) Hashtbl.t ->
 	Gtypes.substitution -> Gtypes.gtype -> Term.term -> Gtypes.substitution

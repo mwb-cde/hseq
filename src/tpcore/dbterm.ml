@@ -5,7 +5,7 @@
   type binder = {quant: quant_ty; qvar: string; qtyp: stype}
 
   type dbterm =
-      Var of Basic.fnident * stype
+      Var of Basic.ident * stype
     | Qnt of binder * dbterm
     | Bound of int
     | App of dbterm * dbterm

@@ -5,14 +5,14 @@ open Gtypes
 open Term
 
 (* identifiers/recognisers/constructors for basic logic functions *)
-  val notid : Basic.fnident
-  val andid : Basic.fnident
-  val orid : Basic.fnident
-  val iffid : Basic.fnident
-  val impliesid : Basic.fnident
-  val equalsid : Basic.fnident
+  val notid : Basic.ident
+  val andid : Basic.ident
+  val orid : Basic.ident
+  val iffid : Basic.ident
+  val impliesid : Basic.ident
+  val equalsid : Basic.ident
 
-val someid: Basic.fnident  (* base.some=base.epsilon(%x: x) *)
+val someid: Basic.ident  (* base.some=base.epsilon(%x: x) *)
 
 val is_neg: term -> bool
 val is_conj: term -> bool

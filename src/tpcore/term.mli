@@ -15,7 +15,7 @@ type binders
 
 (* the representation of a term *)
 type term =
-    Var of Basic.fnident * gtype
+    Var of Basic.ident * gtype
   | Qnt of binders * term
   | Bound of binders
   | Const of Basic.const_ty
@@ -118,7 +118,7 @@ val subst : substitution -> term -> term
 val subst_quick : term -> term -> term -> term
 
 (* get free variables in a term (constructed with Var) *)
-val get_free_vars : term -> (Basic.fnident *gtype) list
+val get_free_vars : term -> (Basic.ident *gtype) list
 
 (* get bound vars with no matching binders *)
 val get_free_binders : term -> binders list
@@ -142,7 +142,7 @@ val mktyped_qnt : scope ->
 (* conversion to a string *)
 val string_typed_name : string -> Gtypes.gtype -> string
 val string_term : term -> string
-val string_inf_term : ((Basic.fnident -> int) * (Basic.fnident -> bool))
+val string_inf_term : ((Basic.ident -> int) * (Basic.ident -> bool))
   -> term -> string
 val string_term_basic: term -> string
 
@@ -152,11 +152,11 @@ val inst : term -> term -> term
 (* constructors/destructors/reconisers for terms *)
 
 val is_var : term-> bool
-val mkvar : Basic.fnident -> term
+val mkvar : Basic.ident -> term
 val mkshort_var :string -> term
-val mk_typed_var : Basic.fnident -> Gtypes.gtype -> term
-val dest_var : term-> Basic.fnident * Gtypes.gtype
-val get_var_id : term-> Basic.fnident
+val mk_typed_var : Basic.ident -> Gtypes.gtype -> term
+val dest_var : term-> Basic.ident * Gtypes.gtype
+val get_var_id : term-> Basic.ident
 val get_var_type : term-> Gtypes.gtype
 
 val is_bound : term-> bool
@@ -169,8 +169,8 @@ val is_meta : term -> bool
 val is_qnt : term-> bool
 
 val is_fun : term-> bool
-val mkfun : Basic.fnident -> term list -> term
-val dest_fun : term-> Basic.fnident * term list
+val mkfun : Basic.ident -> term list -> term
+val dest_fun : term-> Basic.ident * term list
 
 val is_app : term-> bool
 val mkapp : term -> term  -> term
@@ -204,10 +204,18 @@ val get_fun_args: term -> (term* term list)
 
 (* pretty printer *)
 
-val print_term_aux : Corepp.pp_state -> int -> term -> unit
-val print_term : Corepp.pp_state -> term -> unit
+val print_term_aux : Basic.PP.info -> int -> term -> unit
+(*
+val print_term : Basic.PP.info -> term -> unit
 val simple_term_printer: term -> unit
-
+*)
+(* 
+   print_term renamed to print,
+   simple_term_printer renamed to print_simple
+*)
+val print : Basic.PP.info -> term -> unit
+val print_simple: term -> unit
+   
 (* Error handling *)
 
 class termError : string -> term list ->

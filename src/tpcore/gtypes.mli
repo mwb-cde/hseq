@@ -45,19 +45,19 @@ type stypedef_record =
 
 type scope =  (* was typ_env *)
     { curr_thy : thy_id;
-      typeof_fn : fnident -> gtype; 
-	typ_defn: fnident -> typedef_record;
+      typeof_fn : ident -> gtype; 
+	typ_defn: ident -> typedef_record;
 	  thy_of : id_selector -> string -> thy_id;
-    	    prec_of: id_selector -> fnident -> int;
+    	    prec_of: id_selector -> ident -> int;
 	      thy_in_scope : thy_id -> thy_id -> bool}
 
 val empty_scope : unit -> scope
-val add_to_scope: scope -> (fnident * gtype) list -> scope
-val extend_scope: scope -> (fnident -> gtype) -> scope
+val add_to_scope: scope -> (ident * gtype) list -> scope
+val extend_scope: scope -> (ident -> gtype) -> scope
 
 
 (* get definition of a type *)
-val get_typdef: scope -> fnident -> typedef_record
+val get_typdef: scope -> ident -> typedef_record
 
 val string_gtype :  gtype -> string
 
@@ -138,8 +138,8 @@ val chase_ret_type : gtype -> gtype
 
 (* Defined types *)
 
-val mk_def: Basic.fnident -> gtype list -> gtype
-val dest_def: gtype -> (Basic.fnident* gtype list)
+val mk_def: Basic.ident -> gtype list -> gtype
+val dest_def: gtype -> (Basic.ident* gtype list)
 
 (* unification and subsitution *)
 
@@ -286,7 +286,7 @@ val well_defined : scope -> ?args: (string)list -> gtype -> unit
    parameters
 *)
 val quick_well_defined : scope -> 
-  (fnident *int, bool) Hashtbl.t -> gtype -> unit
+  (ident *int, bool) Hashtbl.t -> gtype -> unit
 
 (* Error reporting *)
 
@@ -301,8 +301,14 @@ val addtypeError : string ->gtype list -> exn -> 'a
 
 (* pretty printer *)
 
-val print_type_info : Corepp.pp_state -> int -> gtype -> unit
-val print_type : Corepp.pp_state -> gtype -> unit
+(*
+val print_type_info : Basic.PP.info -> int -> gtype -> unit
+val print_type : Basic.PP.info -> gtype -> unit
+*)
+
+val print_type_info : Basic.PP.info -> int -> gtype -> unit
+(* print_type renamed to print *)
+val print : Basic.PP.info -> gtype -> unit
 
 (* set names in a type to their long form *)
 

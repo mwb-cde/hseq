@@ -9,10 +9,10 @@ type pp_rec =
   } 
 
 type pp_state = 
-    { id_info: Basic.fnident -> pp_rec;
-      type_info: Basic.fnident -> pp_rec}
+    { id_info: Basic.ident -> pp_rec;
+      type_info: Basic.ident -> pp_rec}
 
-type pp_info = (Basic.fnident * pp_rec) list
+type pp_info = (Basic.ident * pp_rec) list
 
 let mk_pp_rec pr inf rep =
   {prec=pr; infix = inf; repr= rep }

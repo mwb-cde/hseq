@@ -17,7 +17,7 @@ class typingError s ts tys=
       print_string "Terms: ";
       Format.print_break 1 2;
       Format.open_box 0; 
-      Corepp.list_print (Term.print_term st) 
+      Basic.PP.list_print (Term.print st) 
 	(fun _ -> Format.print_string ","; 
 	  Format.print_break 1 2; 
 	  Format.close_box(); Format.open_box 0)
@@ -27,7 +27,7 @@ class typingError s ts tys=
       Format.print_break 1 2;
       print_string "Gtypes: ";
       Format.open_box 0; 
-      Corepp.list_print (Gtypes.print_type st) 
+      Basic.PP.list_print (Gtypes.print st) 
 	(fun _ -> Format.print_string ","; 
 	  Format.print_break 1 2; 
 	  Format.close_box(); Format.open_box 0)

@@ -6,18 +6,18 @@
       string ->
       object 
       method msg : unit -> string 
-      method print : Corepp.pp_state -> unit 
+      method print : Basic.PP.info -> unit 
     end
     class error :
       string ->
       object 
       method msg : unit -> string 
-      method print : Corepp.pp_state -> unit 
+      method print : Basic.PP.info -> unit 
     end
     class errormsg :
       object 
       method msg : unit -> string 
-      method print : Corepp.pp_state -> unit 
+      method print : Basic.PP.info -> unit 
     end
     exception Error of error list
 
@@ -28,7 +28,7 @@
     val raiseError : string -> 'a
 
 (* basic printer *)
-val print_error : Corepp.pp_state -> int -> exn -> unit
+val print_error : Basic.PP.info -> int -> exn -> unit
 
 
 (* warnings *)
