@@ -84,7 +84,9 @@ module Sequent:
     end
 
 type goal
-type rule= goal -> goal 
+(*
+   type rule= goal -> goal 
+ *)
 
 (* conversion: a function from a theorem to one or more theorems *)
 type conv= thm list -> thm list
@@ -162,7 +164,7 @@ val get_subgoal_tags : goal -> Tag.t list
 val get_goal : goal -> Formula.form
 
 (* put the tagged sqnt at the front, raise Not_found if not found *)
-val goal_focus: Tag.t->rule
+val goal_focus: Tag.t-> goal -> goal
 
 (* rotate subgoals left and right
    raise No_subgoals if no subgoals
@@ -186,8 +188,6 @@ val mk_logicError: string ->Formula.form list -> Result.error
 val logicError : string -> Formula.form list -> exn
 val addlogicError : string -> Formula.form list -> exn -> 'a
 
-(* Printing *)
-val print_thm: Printer.ppinfo -> thm -> unit
 
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
@@ -215,6 +215,130 @@ val add_info:
     info option ->
       Tag.t list-> Tag.t list -> Basic.term list -> unit
 
+module Subgoals:
+    sig
+      
+      (* 
+	 [node]
+	 A node is a sequent and a type environment.
+       *)
+      type node
+      val node_tyenv: node -> Gtypes.substitution
+      val node_sqnt: node -> Sequent.t
+
+	  (* 
+	     [branch]
+	     A branch is a list of sequents, a type environment
+	     and the tag of the sequent from which the list of sequents 
+	     is derived.
+	   *)
+      type branch
+      val branch_tag: branch -> Tag.t
+      val branch_tyenv: branch -> Gtypes.substitution
+      val branch_sqnts: branch -> Sequent.t list
+
+(* 
+   [branch_node node]
+   Make a branch from [node] without doing anything.
+*)
+      val branch_node : node -> branch
+(*
+   Functions to apply a tactic to subgoals.
+   (A tactic has type node -> branch)
+ *)
+(*
+   [apply_to_node ?report tac (Node(tyenv, sqnt))]
+
+   Apply tactic [tac] to node, getting [result].  If tag of result is
+   the same as the tag of sqnt, then return result.  Otherwise raise
+   logicError.
+
+   If [report] is given, apply to first subgoal and the branch
+   resulting from application of [tac]. (This is to allow interactive
+   proof support to print result of the tactic).
+ *)
+      val apply_to_node: 
+	  ?report:(node->branch->unit) -> (node->branch) -> node -> branch
+
+(*
+   [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]
+
+   Apply tactic [tac] to firsg sequent of [sqnts] using
+   [apply_to_node].  replace original sequent with resulting branches.
+   return branch with tag [tg].
+
+   If [report] is given, apply to first subgoal and the branch
+   resulting from application of [tac]. (This is to allow interactive
+   proof support to print result of the tactic).
+
+   raise No_subgoals if [sqnts] is empty.
+*)
+      val apply_to_first: 
+	  ?report:(node->branch->unit) ->
+	    (node->branch) -> branch -> branch
+(*
+   [apply_to_each tac (Branch(tg, tyenv, sqnts))]
+   Apply tactic [tac] to each sequent in [sqnts] 
+   using [apply_to_node].
+   replace original sequents with resulting branches.
+   return branch with tag [tg].
+
+   raise No_subgoals if [sqnts] is empty.
+ *)
+      val apply_to_each: (node->branch) -> branch -> branch
+
+(*
+   [apply_to_goal ?report tac goal] 
+
+   Apply tactic [tac] to first subgoal of in [goal] using
+   [apply_to_first].  Replace original list of subgoals with resulting
+   subgoals.  
+
+   If [report] is given, apply to first subgoal and the branch
+   resulting from application of [tac]. (This is to allow interactive
+   proof support to print result of the tactic).
+
+   raise logicError "Invalid Tactic" 
+   if tag of result doesn't match tag originaly assigned to it.
+ *)
+      val apply_to_goal: 
+	  ?report:(node->branch->unit) ->  (node->branch) -> goal -> goal
+
+(* 
+   [zip tacl branch]
+   apply each of the tactics in [tacl] to the corresponding 
+   subgoal in branch.
+   e.g. [zip [t1;t2;..;tn] (Branch [g1;g2; ..; gm])
+   is Branch([t1 g1; t2 g2; .. ;tn gn]) 
+   (with [t1 g1] first and [tn gn] last)
+   if n<m then untreated subgoals are attached to the end of the new
+   branch.
+   if m<n then unused tactic are silently discarded.
+   typenv of new branch is that produced by the last tactic 
+   ([tn gn] in the example).
+   tag of the branch is the tag of the original branch.
+ *)
+      val zip: (node -> branch) list -> branch -> branch
+
+
+(* simple tactical (really only an example) *)
+(*
+   [seq tac1 tac2 node]
+   apply tactic [tac1] to [node] then [tac2] 
+   to each of the resulting subgoals.
+ *)
+(*
+      val seq: (node -> branch) -> (node -> branch) -> node -> branch
+*)
+    end
+
+type node = Subgoals.node
+type branch = Subgoals.branch
+type rule = Subgoals.node -> Subgoals.branch
+
+val postpone :  goal -> goal
+val foreach: rule -> Subgoals.branch -> Subgoals.branch
+val first_only: rule -> Subgoals.branch -> Subgoals.branch
 
 module Rules:
     sig
@@ -237,7 +361,6 @@ module Rules:
 
 (* apply a rule to a goal *)
 (*      val goal_apply : rule -> goal -> goal *)
-      val postpone :  rule
 
 
 (*
@@ -292,6 +415,13 @@ module Rules:
 
 (* delete x sq: delete assumption (x<0) or conclusion (x>0) from sq*)
       val delete : info option -> label -> rule
+
+(*
+   [skip]
+   The do nothing tactic
+*)
+      val skip : info option -> rule
+
 
 (* cut x sq: adds theorem x to assumptions of sq 
 
@@ -475,3 +605,15 @@ module Defns :
 	  -> string list -> thm option -> cdefn
 
     end
+
+(* Printer for sequents *)
+
+(* Printing *)
+
+val print_thm: Printer.ppinfo -> thm -> unit
+
+(**
+   [print_sqnt ppinfo sq]
+   Print sequent [sq] using PP info [ppinfo].
+*)
+val print_sqnt : Printer.ppinfo -> Sequent.t -> unit
