@@ -124,7 +124,7 @@ let find_match scope ctrl tyenv varp term1 term2 env=
     Unify.unify_fullenv_rewrite scope tyenv env varp term1 term2 
   with x -> 
     raise 
-      (add_error (termError ("Can't match terms") [term1; term2]) x)
+      (add_error (term_error ("Can't match terms") [term1; term2]) x)
 
 let match_rewrite scope ctrl tyenv varp lhs rhs order trm = 
   let env = Term.empty_subst ()
@@ -141,7 +141,7 @@ let match_rewrite scope ctrl tyenv varp lhs rhs order trm =
 	then (nt, tyenv1) (* accept nt *) 
 	else raise (Failure "No match")) (* reject nt *)
   with x -> 
-    (Term.addtermError "match_rewrite: failed" [lhs; trm] x)
+    (Term.add_term_error "match_rewrite: failed" [lhs; trm] x)
 
 (* 
    rewriting with a choice of rewrites 
@@ -266,7 +266,7 @@ let rewrite_eqs scope ctrl tyenv rrl trm =
   in 
   if !chng 
   then r
-  else raise (termError "Matching" [trm])
+  else raise (term_error "Matching" [trm])
 
 (*
 let rewrite_eqs scope ctrl tyenv rrl trm =
@@ -286,7 +286,7 @@ let rewrite_eqs scope ctrl tyenv rrl trm =
   in 
   if !chng 
   then r
-  else raise (termError "Matching" [trm])
+  else raise (term_error "Matching" [trm])
 *)      
 
 (*
@@ -360,7 +360,7 @@ let rewrite_net_env scope ctrl tyenv rn trm =
     else rewrite_list_bottomup scope ctrl tyenv chng rn trm
   in 
   if !chng then (nt, nenv)
-  else raise (termError "rewrite_net: no change" [trm])
+  else raise (term_error "rewrite_net: no change" [trm])
 
 let rewrite_net scope ctrl rn trm = 
   let ret, _= rewrite_net_env scope ctrl (Gtypes.empty_subst()) rn trm

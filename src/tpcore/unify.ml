@@ -25,7 +25,7 @@ let rec occurs s t =
 
 let bind_occs s t env =
   try occurs t s; Term.bind s t env
-  with Occurs -> raise (termError "occurs:" [t; s])
+  with Occurs -> raise (term_error "occurs:" [t; s])
 
 
 let unify_fullenv scp typenv trmenv varp trm1 trm2 =
@@ -65,38 +65,38 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	      in 
 	      if qtst 
 	      then unify_aux qtyenv env b1 b2
-	      else raise (termError "unify_aux: qnt" [t1;t2])
-	    else raise (termError "unify_aux: qnt" [t1;t2])
+	      else raise (term_error "unify_aux: qnt" [t1;t2])
+	    else raise (term_error "unify_aux: qnt" [t1;t2])
 	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
 	    (try
 	      let tyenv1=Gtypes.unify_env scp ty1 ty2 tyenv
 	      in 
 	      unify_aux tyenv1 env tt1 tt2
 	    with x -> 
-	      raise (add_error (termError "unify_aux: typed" [t1; t2]) x))
+	      raise (add_error (term_error "unify_aux: typed" [t1; t2]) x))
 	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
 	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
-	    else raise (termError "unify_aux: var" [t1;t2])
+	    else raise (term_error "unify_aux: var" [t1;t2])
 	| (Free(n1, ty1), Free(n2, ty2)) ->
 	    if n1=n2 
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
-	    else raise (termError "unify_aux: var" [t1;t2])
+	    else raise (term_error "unify_aux: var" [t1;t2])
 	| (Bound(q1), Bound(q2)) ->
 	    let qtst, qtyenv=eq_binder tyenv q1 q2
 	    in 
 	    if qtst
 	    then (qtyenv, env)
-	    else raise (termError "unify_aux: bound" [t1;t2])
+	    else raise (term_error "unify_aux: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tyenv, env)
-	    else raise (termError "unify_aux: const" [t1;t2])
+	    else raise (term_error "unify_aux: const" [t1;t2])
 	| (_, _) -> 
 	    if Term.equals s t 
 	    then (tyenv, env)
-	    else raise (termError "unify_aux: default" [t1;t2]))
+	    else raise (term_error "unify_aux: default" [t1;t2]))
   in 
   unify_aux typenv trmenv trm1 trm2
 
@@ -239,30 +239,30 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
    |	(Qnt(q1, b1), Qnt(q2, b2)) ->
    if (eqqnt_env scp s t)
    then (unify_aux b1 b2;())
-   else raise (termError "unify_full: qnts" [t1;t2])
+   else raise (term_error "unify_full: qnts" [t1;t2])
    |	(Typed(tt1, ty1), Typed(tt2, ty2)) ->
    (try
    (Gtypes.unify_for_rewrite scp ty1 ty2 tyenv type_bindings;
    unify_aux tt1 tt2; ())
    with x -> 
-   raise (catchError (mk_termError "unify_full: typed" [t1;t2]) x))
+   raise (catchError (mk_term_error "unify_full: typed" [t1;t2]) x))
    |	(Typed(tt1, _), x) -> unify_aux tt1 x; ()
    |	(x, Typed(tt2, _)) -> unify_aux x tt2; ()
    | (Var(n1, ty1), Var(n2, ty2)) ->
    if n1=n2 
    then 
    Gtypes.unify_for_rewrite scp ty1 ty2 tyenv type_bindings
-   else raise (termError "unify_full: var"[t1;t2])
+   else raise (term_error "unify_full: var"[t1;t2])
    |	(Bound(q1), Bound(q2)) ->
    if eq_binder q1 q2
    then ()
-   else raise (termError"unify_full: bound" [t1;t2])
+   else raise (term_error"unify_full: bound" [t1;t2])
    |	(Const(c1), Const(c2)) ->
    if c1=c2 then ()
-   else raise (termError "unify_full: const" [t1;t2])
+   else raise (term_error "unify_full: const" [t1;t2])
    | (_, _) -> 
    if Term.equals s t 
-   then () else raise (termError "unify_full: default" [t1;t2]))
+   then () else raise (term_error "unify_full: default" [t1;t2]))
    in 
    try 
    (unify_aux trm1 trm2; env)
@@ -309,15 +309,15 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	      in 
 	      if qtst
 	      then unify_aux qtyenv env b1 b2
-	      else raise (termError "unify_full: qnts" [t1;t2])
-	    else raise (termError "unify_full: qnts" [t1;t2])
+	      else raise (term_error "unify_full: qnts" [t1;t2])
+	    else raise (term_error "unify_full: qnts" [t1;t2])
 	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
 	    (try
 	      let tyenv1=Gtypes.unify_for_rewrite scp ty1 ty2 tyenv
 	      in 
 	      unify_aux tyenv1 env tt1 tt2
 	    with x -> 
-	      raise (add_error (termError "unify_full: typed" [t1;t2]) x))
+	      raise (add_error (term_error "unify_full: typed" [t1;t2]) x))
 	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
 	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
@@ -326,27 +326,27 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	      let tyenv1=Gtypes.unify_for_rewrite scp ty1 ty2 tyenv
 	      in 
 	      (tyenv1, env)
-	    else raise (termError "unify_full: var"[t1;t2])
+	    else raise (term_error "unify_full: var"[t1;t2])
 	| (Free(n1, ty1), Free(n2, ty2)) ->
 	    if n1=n2 
 	    then 
 	      let tyenv1=Gtypes.unify_for_rewrite scp ty1 ty2 tyenv
 	      in 
 	      (tyenv1, env)
-	    else raise (termError "unify_full: var"[t1;t2])
+	    else raise (term_error "unify_full: var"[t1;t2])
 	| (Bound(q1), Bound(q2)) ->
 	    let qtst, qtyenv=eq_binder tyenv q1 q2
 	    in 
 	    if qtst
 	    then (qtyenv, env)
-	    else raise (termError"unify_full: bound" [t1;t2])
+	    else raise (term_error"unify_full: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tyenv, env)
-	    else raise (termError "unify_full: const" [t1;t2])
+	    else raise (term_error "unify_full: const" [t1;t2])
 	| (_, _) -> 
 	    if Term.equals s t 
 	    then (tyenv, env) 
-	    else raise (termError "unify_full: default" [t1;t2]))
+	    else raise (term_error "unify_full: default" [t1;t2]))
   in 
   unify_aux typenv trmenv trm1 trm2
 

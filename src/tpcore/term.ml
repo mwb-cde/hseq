@@ -66,13 +66,13 @@ class basictermError s ts =
 	(self#get());
       Format.printf "@]"
   end
-let basicError s t = mk_error((new basictermError s t):>error)
+let basic_error s t = mk_error((new basictermError s t):>error)
 
 let get_binder_name x =
   match x with
     Bound(n) -> binder_name n
   | Qnt(_, n, _) -> binder_name n
-  | _ -> raise (basicError "Not a binder" [x])
+  | _ -> raise (basic_error "Not a binder" [x])
 
 let dest_qnt t=
   match t with 
@@ -996,10 +996,11 @@ class termError s ts =
 	(print st, ",") (self#get());
       Format.printf "@]@]"
   end
+(*
 let mk_termError s t = ((new termError s t):>error)
-
-let termError s t = mk_error((new termError s t):>error)
-let addtermError s t es = raise (add_error (termError s t) es)
+*)
+let term_error s t = mk_error((new termError s t):>error)
+let add_term_error s t es = raise (add_error (term_error s t) es)
 
 (**
    [set_names_types scp thy trm]
@@ -1085,7 +1086,7 @@ let least ts =
 	else less_aux l ys
   in 
   match ts with
-    [] -> raise (termError "least: No arguments" [])
+    [] -> raise (term_error "least: No arguments" [])
   | (x::xs) -> less_aux x xs
 
 (* 

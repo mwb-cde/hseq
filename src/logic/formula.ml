@@ -25,7 +25,7 @@ let rec check_term p t =
     | Basic.App(f, a) -> check_term p f; check_term p a
     | Basic.Typed(trm, ty) -> check_term p trm
     | _ -> ())
-  else raise (Term.termError "Term check failed" [t])
+  else raise (Term.term_error "Term check failed" [t])
 
 (*
 let dest_form  x =  x
@@ -50,7 +50,7 @@ let rec is_closed_scope env t =
   | Basic.Typed(a, _) -> is_closed_scope env a
   | Basic.Qnt(k, q, b) -> 
       if not((Basic.binder_kind q)=k)
-      then raise (Term.termError "Not closed" [t])
+      then raise (Term.term_error "Not closed" [t])
       else 
 	(Term.table_add (Basic.Bound(q)) (Term.mk_bool true) env;
 	 is_closed_scope env b;
@@ -58,11 +58,11 @@ let rec is_closed_scope env t =
   | Basic.Bound(_) -> 
       (try ignore(Term.table_find t env)
       with Not_found -> 
-	raise (Term.termError  "Not closed"  [t]))
+	raise (Term.term_error  "Not closed"  [t]))
   | Basic.Free(_) -> 
       (try ignore(Term.table_find t env)
       with Not_found -> 
-	raise (Term.termError  "Not closed"  [t]))
+	raise (Term.term_error  "Not closed"  [t]))
   | _ -> ()
 
 let is_closed vs t = 
@@ -80,12 +80,12 @@ let is_closed vs t =
 let in_scope_memo memo scp th f =
   if (Term.in_scope memo scp th (term_of f))
   then true
-  else raise (Term.termError "Badly formed formula" [term_of f])
+  else raise (Term.term_error "Badly formed formula" [term_of f])
 
 let in_scope scp th f =
   if (Term.in_scope (Lib.empty_env()) scp th (term_of f))
   then true
-  else raise (Term.termError "Badly formed formula" [term_of f])
+  else raise (Term.term_error "Badly formed formula" [term_of f])
 
 let retype tenv x = Term.retype tenv x
 
@@ -118,14 +118,14 @@ let close_term scp trm=
 	      in Id((Basic.mk_long nth n), ty))
 	    with Not_found -> 
 	      raise 
-		(Term.termError 
+		(Term.term_error 
 		   "Formula.make: term not in scope" [t])
 	  else 
 	    (if (Term.in_scope scope_memo scp curr_thy t)
 	    then t
 	    else 
 	      raise 
-		(Term.termError 
+		(Term.term_error 
 		   "Formula.make: term not in scope" [t]))
     | Free(n, ty) -> 
 	(try 
@@ -145,7 +145,7 @@ let close_term scp trm=
 	if Term.member t qnts
 	then t
 	else 
-	  raise (Term.termError 
+	  raise (Term.term_error 
 		   "Bound variable occurs outside binding" [t])
     | _ -> t
   in set_aux (Term.empty_subst()) trm
@@ -155,7 +155,7 @@ let make ?env scp t=
     try close_term scp t
     with x -> raise
 	(Result.add_error x
-	   (Term.termError 
+	   (Term.term_error 
 	      "Formula.make: Can't make formula, not a closed term" [t]))
   in 
   try
@@ -168,7 +168,7 @@ let make ?env scp t=
     Term.retype_pretty tyenv1 t1)
   with x -> 
     raise (Result.add_error x 
-	     (Term.termError "Formula.make: incorrect types" [t1]))
+	     (Term.term_error "Formula.make: incorrect types" [t1]))
 
 let dest f = f
 
@@ -190,7 +190,7 @@ let mk_app f a= (Basic.App(f, a))
 let dest_app t = 
   match t with 
     (Basic.App(f, a)) -> (f, a)
-  | _ -> raise (Term.termError "Not an application" [t])
+  | _ -> raise (Term.term_error "Not an application" [t])
 
 let rec mk_comb x y = 
   match y with 
@@ -220,28 +220,28 @@ let mk_neg  = Logicterm.mk_not
 let dest_neg f = 
   if is_neg f
   then match dest_fun f with (_, x) -> x
-  else raise (Term.termError "dest_neg" [f])
+  else raise (Term.term_error "dest_neg" [f])
       
 let is_conj = Logicterm.is_conj 
 let mk_conj = Logicterm.mk_and
 let dest_conj f = 
   if is_conj f
   then match dest_fun f with (_, x) -> x
-  else raise (Term.termError "dest_conj" [f])
+  else raise (Term.term_error "dest_conj" [f])
 
 let is_disj = Logicterm.is_disj 
 let mk_disj = Logicterm.mk_or
 let dest_disj f = 
   if is_disj f
   then match dest_fun f with (_, x) -> x
-  else raise (Term.termError "dest_disj" [f])
+  else raise (Term.term_error "dest_disj" [f])
 
 let mk_implies = Logicterm.mk_implies
 let is_implies = Logicterm.is_implies 
 let dest_implies f = 
   if is_implies f
   then match dest_fun f with (_, x) -> x
-  else raise (Term.termError "dest_implies" [f])
+  else raise (Term.term_error "dest_implies" [f])
 
 let mk_equality  = Logicterm.mk_equality
 let is_equality = Logicterm.is_equality
@@ -249,8 +249,8 @@ let dest_equality f =
   if is_equality f
   then match dest_fun f with 
     (_, [a; b]) -> (a, b)
-  |	_ -> raise (Term.termError "dest_equality" [f])
-  else raise (Term.termError "dest_equality" [f])
+  |	_ -> raise (Term.term_error "dest_equality" [f])
+  else raise (Term.term_error "dest_equality" [f])
 
 (*
    if is_equals f
@@ -351,8 +351,8 @@ let inst_env scp vs env t r =
       let f =Term.retype nenv nr
       in 
       (f, nenv))
-    else raise (Term.termError "inst: replacement not closed " [r])
-  else raise (Term.termError "inst: not a quantified formula" [t])
+    else raise (Term.term_error "inst: replacement not closed " [r])
+  else raise (Term.term_error "inst: not a quantified formula" [t])
 *)
 
 let inst_env scp vs env t r =
@@ -375,9 +375,8 @@ let inst_env scp vs env t r =
       (f, nenv))
     with err -> 
       raise
-	(Result.add_error err 
-	(Term.termError "inst: replacement not closed " [r]))
-  else raise (Term.termError "inst: not a quantified formula" [t])
+	(Term.add_term_error "inst: replacement not closed " [r] err)
+  else raise (Term.term_error "inst: not a quantified formula" [t])
 
 let inst scp vs t r =
   let f, _ = inst_env scp vs (Gtypes.empty_subst()) t r

@@ -234,9 +234,11 @@ val mk_thm : goal -> thm
 
 (** errors *)
 
+(*
 val mk_logicError: string ->Formula.form list -> Result.error
-val logicError : string -> Formula.form list -> exn
-val addlogicError : string -> Formula.form list -> exn -> 'a
+*)
+val logic_error : string -> Formula.form list -> exn
+val add_logic_error : string -> Formula.form list -> exn -> 'a
 
 
 (**

@@ -65,7 +65,7 @@ let rec chase_ret_type t=
 let typeof_cnst c =
   match c with
     Null_const _-> 
-      raise (typeError "Null constant has no type" [])
+      raise (type_error "Null constant has no type" [])
   |	Cnum _ -> Gtypes.mk_num
   | Cbool _ -> Gtypes.mk_bool
 
@@ -111,7 +111,7 @@ let dest_equality t =
   then 
     (match snd(dest_fun t) with
       [l; r] -> (l, r)
-    |	_ -> raise (termError "Badly formed equality" [t]))
+    |	_ -> raise (term_error "Badly formed equality" [t]))
   else raise (Result.error "Not an equality")
 
 let mk_all tyenv n b= mk_qnt tyenv Basic.All n b
@@ -142,14 +142,14 @@ let alpha_convp_full scp tenv t1 t2 =
       (Id(n1, ty1), Id(n2, ty2)) -> 
 	if (n1=n2) 
 	then (trmenv, Gtypes.matches_env scp tyenv ty1 ty2)
-	else raise (termError "alpha_convp_aux" [t1;t2])
+	else raise (term_error "alpha_convp_aux" [t1;t2])
     | (Bound(q1), Bound(q2)) ->
 	let q1trm= (chase (fun x->true) t1 trmenv) 
 	and q2trm = (chase (fun x->true) t2 trmenv) 
 	in 
 	if equals q1trm q2trm
 	then (trmenv, tyenv)
-	else raise (termError "alpha_convp_aux" [t1;t2])
+	else raise (term_error "alpha_convp_aux" [t1;t2])
     | (App(f1, a1), App(f2, a2)) ->
 	let (trmenv1, tyenv1)=alpha_aux f1 f2 tyenv trmenv
 	in 
@@ -163,19 +163,19 @@ let alpha_convp_full scp tenv t1 t2 =
 	  let tyenv1=Gtypes.matches_env scp tyenv qty1 qty2
 	  in 
 	  alpha_aux b1 b2 tyenv1 (bind (Bound(q1)) (Bound(q2)) trmenv)
-	else raise (termError "alpha_convp_aux" [t1;t2]))
+	else raise (term_error "alpha_convp_aux" [t1;t2]))
     | (Typed(trm, _), _) -> alpha_aux trm t2 tyenv trmenv
     | (_, Typed(trm, _)) -> alpha_aux t1 trm tyenv trmenv
     | _ -> 
 	(if equals t1 t2 then (trmenv, tyenv)
-	else raise (termError "alpha_convp_aux" [t1;t2]))
+	else raise (term_error "alpha_convp_aux" [t1;t2]))
   in 
   let env = Term.empty_subst() 
   in 
   try 
     let _, ret = alpha_aux t1 t2 tenv env
     in ret
-  with _ -> raise (termError "alpha_convp" [t1; t2])
+  with _ -> raise (term_error "alpha_convp" [t1; t2])
 
 let alpha_convp scp t1 t2=
   let tyenv=Gtypes.empty_subst()
@@ -210,8 +210,8 @@ let beta_conv t =
 	(let (q, _, _, _, b)=dest_qnt f
 	in 
 	subst_quick (Bound(q)) a  b)
-      else raise (termError "Can't apply beta-reduction" [t])
-  | _ -> raise (termError "Can't apply beta-reduction" [t])
+      else raise (term_error "Can't apply beta-reduction" [t])
+  | _ -> raise (term_error "Can't apply beta-reduction" [t])
 
 let beta_reduce t = 
   let rec beta_reduce_aux chng t =

@@ -361,9 +361,15 @@ class typeError s ts=
 	(print st, ",") (self#get());
       Format.printf "@]"
   end
+let type_error s t = (mk_error((new typeError s t):>error))
+let add_type_error s t es= 
+  raise (add_error (type_error s t) es)
+
+(*
 let typeError s t = (mk_error((new typeError s t):>error))
 let addtypeError s t es= 
   raise (add_error (typeError s t) es)
+*)
 
 
 (* save types *)
@@ -383,7 +389,7 @@ let rec to_save_aux inf env ty =
       Constr(f, List.map (to_save_aux inf env) ats)
   | Base(b) -> Base(b)
   | WeakVar _ -> 
-      raise (typeError "Can't save a weak variable" [ty])
+      raise (type_error "Can't save a weak variable" [ty])
 
 let to_save ty = to_save_aux (ref 0) (ref []) ty
 let to_save_env env ty = to_save_aux (ref 0) env ty
@@ -410,7 +416,7 @@ let rec from_save_aux env ty =
   | Constr(f, ats) ->
       Constr(f, List.map(from_save_aux env) ats)
   | Base(b) -> Base(b)
-  | WeakVar _ -> raise (typeError "Can't load a weak variable" [])
+  | WeakVar _ -> raise (type_error "Can't load a weak variable" [])
 
 let from_save ty = from_save_aux (ref[]) ty
 let from_save_env env ty = from_save_aux env ty
@@ -492,7 +498,7 @@ let rec occurs ty1 ty2 =
   | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
   | (_, _) ->
       if (equals ty1 ty2)
-      then raise (typeError ("occurs: ") [ty1;ty2])
+      then raise (type_error ("occurs: ") [ty1;ty2])
       else ()
 
 let rec occurs_env tenv ty1 ty2 =
@@ -503,18 +509,18 @@ let rec occurs_env tenv ty1 ty2 =
     (Var(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
   | (Var(_), _)->
       if (equals nty1 nty2)
-      then raise (typeError ("occurs: ") [nty1;nty2])
+      then raise (type_error ("occurs: ") [nty1;nty2])
       else ()
   | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
   | (WeakVar(_), _)->
       if (equals nty1 nty2)
-      then raise (typeError ("occurs: ") [nty1;nty2])
+      then raise (type_error ("occurs: ") [nty1;nty2])
       else ()
   | (Constr(_, l), _) -> 
       List.iter (fun x-> occurs_env tenv x nty2) l
   | _ -> 
       if (equals nty1 nty2)
-      then raise (typeError ("occurs: ") [nty1;nty2])
+      then raise (type_error ("occurs: ") [nty1;nty2])
       else ()
 
 (* copy_type t: make a copy of type t, which differs from t in the vars *)
@@ -552,7 +558,7 @@ let copy_type t =
 let bind_var t r env = 
   if is_any_var t then bind t r env 
   else 
-    raise (typeError "bind_var: Can't bind a non variable" [t; r])
+    raise (type_error "bind_var: Can't bind a non variable" [t; r])
 
 let bind_occs t1 t2 env =
   if is_any_var t1
@@ -562,7 +568,7 @@ let bind_occs t1 t2 env =
     in 
     (occurs_env env r1 r2; bind_var r1 r2 env))
   else 
-    raise (typeError "bind_occs: Can't bind a non variable" [t1; t2])
+    raise (type_error "bind_occs: Can't bind a non variable" [t1; t2])
 
 let rec subst t env =
   match t with 
@@ -586,7 +592,7 @@ let rec rewrite_subst t env =
     Var(a) -> 
       (try Lib.find (!a) env 
       with Not_found -> raise
-	  (typeError "rewrite_subst: Can't find parameter" [t])) 
+	  (type_error "rewrite_subst: Can't find parameter" [t])) 
   | Constr(f, l)
     -> Constr(f, List.map (fun x-> rewrite_subst x env) l) 
   | x -> x
@@ -601,7 +607,7 @@ let rewrite_defn given_args rcrd_args t=
 	  (fun x y -> 
 	    (Lib.bind_env x y tenv)) rcrd_args given_args))
     in (env_of_args(); rewrite_subst t tenv))
-  else raise (typeError "rewrite_defn: Wrong number of arguments" [t])
+  else raise (type_error "rewrite_defn: Wrong number of arguments" [t])
 
 let has_record tyenv t = 
   match t with
@@ -657,7 +663,7 @@ let unify_env scp t1 t2 nenv =
 	       (fun ev x y -> unify_aux x y ev)
 	       env args1 args2)
 	  with 
-	    x -> addtypeError "Can't unify types" [s; t] x)
+	    x -> add_type_error "Can't unify types" [s; t] x)
 	else 
 	  (try (* different constructors, try for type aliasing *)
 	    (try   (* try rewriting left constructor *)
@@ -668,7 +674,7 @@ let unify_env scp t1 t2 nenv =
 		let t1= get_defn scp t
 		in unify_aux s t1 env)
 	  with
-            x ->(addtypeError "x: Can't unify types" [s; t] x)))
+            x ->(add_type_error "x: Can't unify types" [s; t] x)))
 	  (* Variables, bind if not equal, but test for occurence *)
     | (Var(_), Var(_)) -> 
 	if equals s t 
@@ -686,14 +692,14 @@ let unify_env scp t1 t2 nenv =
 (* All other types, try for equals *)
     | _ -> 
 	if equals s t then env
-	else (raise (typeError "Can't unify types" [s; t]))
+	else (raise (type_error "Can't unify types" [s; t]))
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
 
 (* unify scp t1 t2:
 
    Unify types t1 and t2, returning the substitution needed.
-   Raise typeError unification fails
+   Raise type_error unification fails
  *)
     
 let unify scp t1 t2 =
@@ -882,12 +888,12 @@ let matching_env scp t1 t2 nenv =
 	    (List.fold_left2
 	       (fun ev x y -> match_aux x y ev) env args1 args2)
 	  with 
-	    x -> addtypeError "Can't match types" [s; t] x)
+	    x -> add_type_error "Can't match types" [s; t] x)
 	else 
 	  (try match_aux (get_defn scp s) t env
 	  with 
             Not_found -> (match_aux s (get_defn scp t) env)
-          | x -> (addtypeError "Can't match types" [s; t] x)))
+          | x -> (add_type_error "Can't match types" [s; t] x)))
     | (Var(_), Var(_)) ->
 	if equals s t 
 	then env
@@ -902,7 +908,7 @@ let matching_env scp t1 t2 nenv =
     | (_, WeakVar(_)) -> env
     | _ -> 
 	if equals s t then env
-	else (raise (typeError "Can't match types" [s; t]))
+	else (raise (type_error "Can't match types" [s; t]))
   in
   match_aux t1 t2 nenv (* try to match t1 and t2 *)
 

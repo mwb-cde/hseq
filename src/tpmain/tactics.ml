@@ -455,12 +455,12 @@ let once_replace_tac ?asms ?f goal=
 let match_asm trm tac g =
   try 
     tac (Drule.match_asm (Drule.typenv_of g) trm (Drule.sequent g)) g
-  with Not_found -> raise (Term.termError "No matching assumption" [trm])
+  with Not_found -> raise (Term.term_error "No matching assumption" [trm])
 
 let match_concl trm tac g =
   try 
     tac (Drule.match_concl (Drule.typenv_of g) trm (Drule.sequent g)) g
-  with Not_found -> raise (Term.termError "No matching conclusion" [trm])
+  with Not_found -> raise (Term.term_error "No matching conclusion" [trm])
 
 let match_formula trm tac g=
   let sqnt=Drule.sequent g
@@ -472,7 +472,7 @@ let match_formula trm tac g=
     try 
       tac (Drule.match_concl tyenv trm sqnt) g
     with Not_found ->
-      raise (Term.termError "No matching formula in sequent" [trm])
+      raise (Term.term_error "No matching formula in sequent" [trm])
 
 (* Tacticals for dealing with information returned by tactics *)
 

@@ -47,14 +47,13 @@ let string_thm x = string_form (formula_of x)
 
 (* Error handling *)
 
-let mk_logicError s t = 
-  ((new Term.termError s 
-      (List.map Formula.term_of t)):>Result.error)
-let logicError s t = 
-  Result.mk_error((new Term.termError s 
-		     (List.map Formula.term_of t)):>Result.error)
-let addlogicError s t es = 
-  raise (Result.add_error (logicError s t) es)
+(*
+let mk_logic_error s t = 
+  (Term.term_error s (List.map Formula.term_of t))
+*)
+let logic_error s t = Term.term_error s (List.map Formula.term_of t)
+let add_logic_error s t es = 
+  raise (Result.add_error (logic_error s t) es)
 
 (* Skolem constants *)
 module Skolem = 
@@ -580,7 +579,7 @@ let apply_nth r i g =
 let mk_thm g = 
   match g with 
     Goal([], _, f) -> Theorem f
-  | _ -> raise (logicError "Not a theorem" [])
+  | _ -> raise (logic_error "Not a theorem" [])
 
 let print_thm pp t = 
   Format.printf "@[<3>|- ";
@@ -680,7 +679,7 @@ module Subgoals=
       let nbtyenv = 
 	try merge_tyenvs btyenv ntyenv
 	with _ -> 
-	    raise (logicError "Subgoal.apply: Invalid result from tactic" [])
+	    raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
       in 
       mk_branch btag nbtyenv bsqnts
 
@@ -702,7 +701,7 @@ module Subgoals=
 
    6. Return the branch formed from [b'] with the tag of [node].
 
-   raise logicError on failure.
+   raise logic_error on failure.
 *)
     let apply tac node = 
       let ticket = Tag.create()
@@ -712,7 +711,7 @@ module Subgoals=
       let b1 = tac n1
       in 
       if not (Tag.equal ticket (branch_tag b1))
-      then raise (logicError "Subgoal.apply: Invalid result from tactic" [])
+      then raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
       else 
 	replace_branch_tag b1 (node_tag n1)
 (*
@@ -727,7 +726,7 @@ module Subgoals=
    Apply tactic [tac] to node, getting [result].
    If tag of result is the same as the tag of sqnt,
    then return result.
-   Otherwise raise logicError.
+   Otherwise raise logic_error.
  *)
     let apply_report report node branch=
       match report with
@@ -791,7 +790,7 @@ module Subgoals=
    Apply tactic [tac] to firat subgoal of [goal] using [apply_to_first].
    Replace original list of subgoals with resulting subgoals.
 
-   raise logicError "Invalid Tactic" 
+   raise logic_error "Invalid Tactic" 
    if tag of result doesn't match tag originaly assigned to it.
 
    raises [No_subgoals] if goal is solved.
@@ -809,7 +808,7 @@ module Subgoals=
 	in 
 	Goal(branch_sqnts result, ntyenv, f)
       else raise 
-	  (logicError "Subgoal.apply_to_goal: Invalid tactic" [])
+	  (logic_error "Subgoal.apply_to_goal: Invalid tactic" [])
 
 (* 
    [zip tacl branch]
@@ -1060,12 +1059,12 @@ module Rules=
     let get_pair x = 
       match x with
 	[t1; t2] -> (t1, t2)
-      | _ -> raise (logicError "get_pair" x)
+      | _ -> raise (logic_error "get_pair" x)
 
     let get_one x = 
       match x with
 	[t1] -> t1
-      | _ -> raise (logicError "get_one" x)
+      | _ -> raise (logic_error "get_one" x)
 
 (* [set_names scp trm]
    Try to match free variables in term [trm] with identifiers 
@@ -1083,7 +1082,7 @@ module Rules=
     let check_term_memo memo scp frm=
       (if (Formula.in_scope_memo memo scp (scp.Gtypes.curr_thy) frm)
       then ()
-      else (raise (Term.termError "Badly formed formula" [Formula.term_of frm])))
+      else (raise (logic_error "Badly formed formula" [frm])))
 
     let check_term scp frm=
       check_term_memo (Lib.empty_env()) scp frm
@@ -1118,7 +1117,7 @@ module Rules=
 		   nasm::(Sequent.asms sq), 
 		   Sequent.concls sq)
       with 
-	x -> (addlogicError "Not in scope of sequent" [nf] x)
+	x -> (add_logic_error "Not in scope of sequent" [nf] x)
 
     let cut info x sqnt = simple_sqnt_apply (cut0 info x) sqnt
 
@@ -1181,7 +1180,7 @@ module Rules=
 	   (Sequent.sqnt_env sq) asms concll;
 	 Sequent.mk_sqnt tagr 
 	   (Sequent.sqnt_env sq) asms conclr])
-      else raise (logicError "Not a conjunct" [t])
+      else raise (logic_error "Not a conjunct" [t])
 
     let conjC inf i g = 
       simple_sqnt_apply (conjC0 inf i) g
@@ -1209,7 +1208,7 @@ module Rules=
 	mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
 		    asm1::asm2::(join_up lasms rasms),
 		    Sequent.concls sq))
-      else raise (logicError "Not a conjunction" [t])
+      else raise (logic_error "Not a conjunction" [t])
 
     let conjA inf i g = 
       simple_sqnt_apply (conjA0 inf i) g
@@ -1239,7 +1238,7 @@ module Rules=
 	   (Sequent.sqnt_env sq) asmsl (Sequent.concls sq);
 	 Sequent.mk_sqnt tagr 
 	   (Sequent.sqnt_env sq) asmsr (Sequent.concls sq)])
-      else raise (logicError "Not a disjunction" [t])
+      else raise (logic_error "Not a disjunction" [t])
 
     let disjA inf i g = 
       simple_sqnt_apply (disjA0 inf i) g
@@ -1270,7 +1269,7 @@ module Rules=
 	   Sequent.sqnt_env sq, 
 	   Sequent.asms sq, 
 	   cncl1::cncl2::(join_up lconcls rconcls)))
-      else raise (logicError "Not a disjunction" [t])
+      else raise (logic_error "Not a disjunction" [t])
 
     let disjC inf i g = 
       simple_sqnt_apply (disjC0 inf i) g
@@ -1297,7 +1296,7 @@ module Rules=
 		    Sequent.sqnt_env sq, 
 		    join_up lasms rasms,
 		    cncl1::(Sequent.concls sq)))
-      else raise (logicError "Not a negation"[t])
+      else raise (logic_error "Not a negation"[t])
 
     let negA inf i g = 
       simple_sqnt_apply (negA0 inf i) g
@@ -1324,7 +1323,7 @@ module Rules=
 		    Sequent.sqnt_env sq,
 		    asm1::(Sequent.asms sq), 
 		    join_up lconcls rconcls))
-      else raise (logicError "Not a negation"[t])
+      else raise (logic_error "Not a negation"[t])
 
     let negC inf i g = 
       simple_sqnt_apply (negC0 inf i) g
@@ -1354,7 +1353,7 @@ module Rules=
 	   Sequent.sqnt_env sq, 
 	   asm::(Sequent.asms sq), 
 	   join_up lconcls (cncl::rconcls)))
-      else raise (logicError "Not an implication" [t])
+      else raise (logic_error "Not an implication" [t])
 
     let implC inf i g = 
       simple_sqnt_apply (implC0 inf i) g
@@ -1391,7 +1390,7 @@ module Rules=
 	   (Sequent.sqnt_env sq) asm1 cncl1;
 	 Sequent.mk_sqnt tagr 
 	   (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)])
-      else raise (logicError "Not an implication" [t])
+      else raise (logic_error "Not an implication" [t])
 
     let implA info i g = 
       simple_sqnt_apply (implA0 info i) g
@@ -1450,7 +1449,7 @@ module Rules=
 		    Sequent.asms sq, 
 		    join_up lconcls ((ft, ncncl)::rconcls)),
 	 gtyenv))
-      else raise (logicError "Not a universal quantifier" [t])
+      else raise (logic_error "Not a universal quantifier" [t])
 
     let allC inf i g = 
       sqnt_apply (allC0 inf i) g
@@ -1507,7 +1506,7 @@ module Rules=
 	    join_up lasms ((ft, nasm)::rasms),
 	    Sequent.concls sq)), 
 	gtyenv)
-      else raise (logicError "Not an existential quantifier" [t])
+      else raise (logic_error "Not an existential quantifier" [t])
 
     let existA inf i g = 
       sqnt_apply (existA0 inf i) g
@@ -1527,7 +1526,7 @@ module Rules=
 	(add_info inf [] [] [];
 	 raise No_subgoals)
       else 
-	raise (logicError "Not trivial" [t])
+	raise (logic_error "Not trivial" [t])
 
     let trueR inf i g = 
       simple_sqnt_apply (trueR0 inf i) g
@@ -1565,7 +1564,7 @@ module Rules=
 	 try 
 	   Formula.beta_reduce (Sequent.scope_of sq) t
 	 with x -> raise 
-	     (Result.add_error(logicError "Beta reduction" [t]) x))
+	     (Result.add_error(logic_error "Beta reduction" [t]) x))
       in 
       add_info inf [] [ft] [];
       mk_subgoal
@@ -1587,7 +1586,7 @@ module Rules=
 	 try 
 	   Formula.beta_reduce (Sequent.scope_of sq) t
 	 with x -> raise 
-	     (Result.add_error(logicError "Beta reduction" [t]) x))
+	     (Result.add_error(logic_error "Beta reduction" [t]) x))
       in 
       add_info inf [] [ft] [];
       mk_subgoal
@@ -1637,14 +1636,14 @@ module Rules=
 	    Formula.alpha_equals_match 
 	      scp tyenv (drop_tag asm) (drop_tag concl)
 	  with _ -> 
-	    (raise (logicError "Assumption not equal to conclusion"
+	    (raise (logic_error "Assumption not equal to conclusion"
 		      [drop_tag asm; drop_tag concl]))
 	in 
 	let tyenv2=
 	  try 
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
 	  with _ -> 
-	    (raise (logicError "basic: Inconsistent types"
+	    (raise (logic_error "basic: Inconsistent types"
 		      [drop_tag asm; drop_tag concl]))
 	in 
 	(add_info inf [] [] []; raise (Solved_subgoal tyenv2))
@@ -1681,9 +1680,9 @@ module Rules=
 	      join_up lconcls ((ft, trm2)::rconcls)),
 	   gtyenv)
 	with x -> raise (Result.add_error
-			   (logicError "existC:" [t]) x)
+			   (logic_error "existC:" [t]) x)
       else 
-	raise (logicError "Not an existential quantifier" [t])
+	raise (logic_error "Not an existential quantifier" [t])
 
     let existC inf trm i g = 
       sqnt_apply (existC0 inf trm i) g
@@ -1716,9 +1715,9 @@ module Rules=
 	  gtyenv)
 	with x -> 
 	  (raise (Result.add_error
-		    (logicError "allA: " [t]) x))
+		    (logic_error "allA: " [t]) x))
       else 
-	raise (logicError "Not a universal quantifier" [t])
+	raise (logic_error "Not a universal quantifier" [t])
 
 
     let allA inf trm i g = 
@@ -1752,7 +1751,7 @@ module Rules=
 	      with 
 		Not_found -> 
 		  raise 
-		    (logicError "Rewrite: can't find tagged assumption" []))
+		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
 	    ft xs ((Rewrite.rule (Formula.term_of asm))::rslt)
 	|  (OAsm(x, order)::xs) ->
@@ -1762,7 +1761,7 @@ module Rules=
 	      with 
 		Not_found -> 
 		  raise 
-		    (logicError "Rewrite: can't find tagged assumption" []))
+		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
 	    ft xs ((Rewrite.orule (Formula.term_of asm) order)::rslt)
 	| ((RRThm(x))::xs) -> 
@@ -1803,7 +1802,7 @@ module Rules=
 	      Sequent.concls sq), 
 	   gtyenv))
       with x -> raise 
-	  (Result.add_error (logicError "rewriting" [t]) x)
+	  (Result.add_error (logic_error "rewriting" [t]) x)
 
     let rewriteA inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
@@ -1832,7 +1831,7 @@ module Rules=
 	    join_up lconcls ((ft, nt)::rconcls)),
 	 gtyenv))
       with x -> raise 
-	  (Result.add_error (logicError"rewriting" [t]) x)
+	  (Result.add_error (logic_error"rewriting" [t]) x)
 
     let rewriteC inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
@@ -1861,7 +1860,7 @@ module Rules=
 		   Rewrite.rule (term_of x)) rrl) f
 	  in mk_theorem nt
 	with x -> raise 
-	    (Result.add_error(logicError "rewrite_conv" [formula_of t]) x)
+	    (Result.add_error(logic_error "rewrite_conv" [formula_of t]) x)
       in 
       conv_aux thm
 
@@ -1930,8 +1929,7 @@ module Defns =
       try 
 	Gtypes.well_defined scp ~args:arguments ty
       with
-	_ ->
-	  raise (Gtypes.typeError "Badly formed type" [ty])
+	x -> raise (Gtypes.add_type_error "Badly formed type" [ty] x)
 
     let mk_typedef scp n ags d =
       let th = scp.Gtypes.curr_thy
@@ -1943,8 +1941,8 @@ module Defns =
 	  None -> None
 	| Some(a) -> 
 	    (try check_type_defn scp ags a; Some(a)
-	    with 
-	      _ -> raise (Gtypes.typeError "Badly formed definition" [a]))
+	    with err -> 
+	      raise (Gtypes.add_type_error "Badly formed definition" [a] err))
       in 
       (TypeDef((Basic.mk_long th n), ags, dfn))
 

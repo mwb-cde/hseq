@@ -333,8 +333,8 @@ class typeError : string -> gtype list ->
     val trms : gtype list
     method get : unit -> gtype list
   end
-val typeError : string -> gtype list -> exn
-val addtypeError : string ->gtype list -> exn -> 'a
+val type_error : string -> gtype list -> exn
+val add_type_error : string ->gtype list -> exn -> 'a
 
 (* pretty printer *)
 

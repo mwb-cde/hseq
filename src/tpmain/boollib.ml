@@ -330,7 +330,7 @@ let inst_tac ?f l g=
 	  let ft= Drule.first_concl (Formula.is_exists) sqnt
 	  in inst_concl ~c:ft l g
 	with _ -> 
-	  raise (Logic.logicError "inst_tac: No instansiatable formula" [])))
+	  raise (Logic.logic_error "inst_tac: No instansiatable formula" [])))
   | Some x -> 
       (try inst_asm ~a:x l g
       with Not_found -> inst_concl ~c:x l g)
@@ -503,7 +503,7 @@ let mp_tac ?a ?a1 g=
       find_qnt_opt Basic.All ?f:a_tag 
 	Logicterm.is_implies (Drule.asms_of sqnt)
     with Not_found -> 
-      raise (Logic.logicError ("mp_tac: no implications in assumptions") 
+      raise (Logic.logic_error ("mp_tac: no implications in assumptions") 
 	       [])
   in
   let (_, mp_lhs, mp_rhs) = Term.dest_binop mp_form
@@ -520,7 +520,7 @@ let mp_tac ?a ?a1 g=
     with 
       Not_found -> 
 	raise 
-	  (Term.termError ("mp_tac: no matching formula in assumptions") 
+	  (Term.term_error ("mp_tac: no matching formula in assumptions") 
 	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
   in 
   let info= Drule.mk_info()
@@ -569,7 +569,7 @@ let cut_mp_tac ?info thm ?a g=
   let tac2 g2 = 
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
-	(Logic.logicError "cut_mp_tac: Failed to cut theorem" 
+	(Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
     mp_tac ~a:(ftag a_tag) ?a1:f_label g2)
@@ -604,7 +604,7 @@ let back_tac ?info ?a ?c g=
       Drule.find_qnt_opt Basic.All ?f:a_tag 
 	Logicterm.is_implies (Drule.asms_of sqnt)
     with Not_found -> 
-      raise (Logic.logicError ("back_tac: no implications in assumptions") 
+      raise (Logic.logic_error ("back_tac: no implications in assumptions") 
 	       [])
   in
   let (_, back_lhs, back_rhs) = Term.dest_binop back_form
@@ -621,7 +621,7 @@ let back_tac ?info ?a ?c g=
 	?f:c_tag (Drule.concls_of sqnt)
     with 
       Not_found -> 
-	raise (Term.termError 
+	raise (Term.term_error 
 		 ("back_tac: no matching formula in conclusion") 
 		 [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
   in 
@@ -667,7 +667,7 @@ let cut_back_tac ?info thm ?c g=
   let tac2 g2 = 
     (let a_tag = 
       Lib.get_one (Drule.formulas info1) 
-	(Logic.logicError "cut_back_tac: Failed to cut theorem" 
+	(Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
     back_tac ?info:info ~a:(ftag a_tag) ?c:c_label) g2

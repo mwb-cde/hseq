@@ -285,9 +285,11 @@ class termError : string -> term list ->
     val trms : term list
     method get : unit -> term list
   end
+(*
 val mk_termError: string -> term list -> Result.error
-val termError : string -> term list -> exn
-val addtermError : string -> term list -> exn -> 'a
+*)
+val term_error : string -> term list -> exn
+val add_term_error : string -> term list -> exn -> 'a
 
 (*
    get and set full names and types in a term 
