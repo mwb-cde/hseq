@@ -40,8 +40,12 @@ module Input:
 
 module Info :
   sig
-    type fixity 
-    type associativity
+    type associativity = 
+	Nonassoc | Leftassoc | Rightassoc
+
+    type fixity =
+	Nonfix | Prefix | Suffix | Infix of associativity
+	  
 
     val nonfix : fixity
     val infix : associativity -> fixity
@@ -78,6 +82,7 @@ module type GRAMMARS =
       and input = token Input.t
       and 'a phrase = input -> 'a * input
       val empty : 'a list phrase
+      val next_token : token phrase
       val get : (token -> bool) -> (token -> 'a) -> 'a phrase
       val ( !$ ) : token -> token phrase
       val ( || ) : 'a phrase -> 'a phrase -> 'a phrase

@@ -218,3 +218,8 @@ let named_add l p n x =
       in 
       List.rev_append (List.rev lt) rt
 
+let get_option x d=
+  match x with
+    None -> d
+  | Some(y) -> y
+

@@ -69,3 +69,11 @@ type position =
 val named_add: 
     ('a)named_list->position 
       -> string -> 'a -> ('a) named_list
+
+(* 
+   [get_option x default] 
+   if [x] is [Some(y)] then return [y]
+   if [x] is [None] then return [default]
+*)
+val get_option : 'a option -> 'a -> 'a
+

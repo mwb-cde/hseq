@@ -110,6 +110,7 @@ module type GRAMMARS =
 	  (* parser constructors *)
 
       val empty : ('a list)phrase
+      val next_token : token phrase 
 
       val get: (token -> bool) -> (token -> 'a) -> 'a phrase
       val (!$) : token -> token phrase
@@ -162,6 +163,7 @@ module Grammars:GRAMMARS=
 
     let empty inp = ([], inp)
 
+
     let get test fn inp =
       let t = 
 	try
@@ -175,6 +177,8 @@ module Grammars:GRAMMARS=
 
     let (!$) tok inp = get (fun t -> matches tok t) (fun t -> t) inp
 
+    let next_token inp  =
+      get (fun t -> true) (fun t -> t) inp
 
     let (||) ph1 ph2 = 
       (fun toks -> 
