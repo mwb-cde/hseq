@@ -1,18 +1,22 @@
 SHELL=/bin/sh
-export INCLUDE= -I +camlp4  -I ./include
-export LIB= -I ./libs
+export INCLUDE= -I ../include -I ./include
+export LIB= -I ./libs -I ../libs -I +camlp4
 
 #LIBS= #-cclib -lnums -cclib -lunix
 
-export OCLIBS=nums.cma unix.cma camlp4o.cma pa_extend.cmo
+export SRCDIR=$(shell pwd)
+
+export OCLIBS=nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 export OPTLIBS=nums.cmxa unix.cmxa
-export OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4
+export OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" -I +camlp4
 
 INSTALLDIR=${HOME}/bin
 
 OCAMLC=ocamlc ${OPTIONS} 
 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
+MAKE=make INCLUDE='${INCLUDE}' LIB='${LIB}' OPTIONS='${OPTIONS}'
+
+OCAMLlink=${OCANMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCLIBS} 
 
 BINFILE=fmcaml
@@ -39,6 +43,9 @@ OPTFILE=fmcaml.opt
 .cmx.cmxa:
 	ocamlopt -a ${INCLUDE} $<
 
+QUOTEHD=tpquote.cmi
+QUOTECODE=${SRCDIR}/libs/tpquote.cmo
+
 UTILCODE=util.cma
 UTILOPT=util.cmxa
 
@@ -57,18 +64,22 @@ TPMAINOPT=tpmain.cmxa
 NUMBERSCODE=numbers.cma
 NUMBERSOPT=numbers.cmxa
 
-CODE= ${UTILCODE} ${TPCORECODE} ${LOGICCODE} ${PARSERCODE} \
-      ${TPMAINCODE} ${NUMBERSCODE}
+CODE= ${QUOTECODE} ${UTILCODE} ${TPCORECODE} ${LOGICCODE} \
+	${PARSERCODE}  ${TPMAINCODE} ${NUMBERSCODE}
 
-CODEOPT= ${UTILOPT} ${TPCOREOPT} ${LOGICOPT} ${PARSEROPT} \
-	${TPMAINOPT} ${NUMBERSOPT}
+CODEOPT= ${QUOTECODE} ${UTILOPT} ${TPCOREOPT} ${LOGICOPT} \
+	${PARSEROPT} ${TPMAINOPT} ${NUMBERSOPT}
 
 OTHER=
 
-#all: ${HEADERS} ${CODE}
 
 all: ${CODE} ${OTHER}
 
+
+# the quotation system
+
+${QUOTECODE}:
+	cd quote; make install
 
 # headers and libraries
 
@@ -136,6 +147,7 @@ clean:
 	rm -f *.cmx  *.o
 	rm -f *~
 	cd include; $(MAKE) clean
+	cd quote; $(MAKE) clean
 	cd util; $(MAKE) clean
 	cd tpcore; $(MAKE) clean
 	cd parser; $(MAKE) clean
@@ -154,6 +166,7 @@ libclean: clean
 reallyclean: clean libclean
 	rm -f fmcaml
 	rm -f depend
+	cd quote; $(MAKE) reallyclean
 	cd util; $(MAKE) reallyclean
 	cd tpcore; $(MAKE) reallyclean
 	cd parser; $(MAKE) reallyclean

@@ -18,14 +18,14 @@
 #install_printer Printer.print_prf;;
 #install_printer Printer.print_fnident;;
 #install_printer Printer.print_error;;
+#install_printer Printer.print_defn;;
 
 
 let _ =
   print_string "fm.ml: initialising\n";
-  Tpenv.init();
-  Tpenv.add_thy_path "thys";
-  Tpenv.add_thy_path "../thys"
-
+  Tpenv.add_thy_path "./thys";
+  Tpenv.add_thy_path "../thys";
+  Tpenv.init()
 
 open Goals;;
 open Commands;;
