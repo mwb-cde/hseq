@@ -297,26 +297,18 @@ let mk_typed_lambda = Logicterm.mklam_ty
  *)
 (* Typecheck and reset types of formula *)
 
-
 let typecheck_env scp tenv f expty = 
   let t = term_of_form f
   in 
-  let typ_subst = 
-    Typing.typecheck_env scp tenv t expty
-  in typ_subst
-
-
-(*
-   Typing.typecheck_env scp tenv (term_of_form f) expty
- *)
+  Typing.typecheck_env scp (Gtypes.empty_subst()) t expty
 
 let typecheck scp f expty= 
-  Typing.retype (typecheck_env scp (Gtypes.empty_subst()) f expty) f
+  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
+  in 
+  Typing.retype_pretty tyenv f 
 
 let simple_typecheck scp f expty= 
   ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
-
-
 
 let mkiff = Logicterm.mkiff
 
@@ -369,9 +361,9 @@ let inst_env scp vs env t r =
       in 
       let nenv = Typing.simple_typecheck_env scp env nr0 ty
       in 
-      let nr =Typing.retype nenv nr0
+      let nr= Term.subst_quick (Term.Bound(q)) nr0 b
       in 
-      let f= Term.subst_quick (Term.Bound(q)) nr b
+      let f =Typing.retype nenv nr
       in 
       (f, nenv))
     else raise (Term.termError "inst: replacement not closed " [r])

@@ -122,6 +122,8 @@ val index_to_tag : int -> sqnt -> Tag.t
 val has_subgoals: goal -> bool
 val get_sqnt:goal -> sqnt
 
+val goal_tyenv: goal -> Gtypes.substitution
+
 (* get tags of all subgoals *)
 val get_all_goal_tags: goal -> Tag.t list
 (* get tag of first subgoals *)
@@ -157,12 +159,6 @@ val logicError : string -> Formula.form list -> exn
 val addlogicError : string -> Formula.form list -> exn -> 'a
 
 
-
-(* 
-   Goal_proved: raised when a tactic is applied to 
-   a goal with no subgoals
-*)
-exception Goal_proved
 
 module Rules:
     sig
@@ -531,3 +527,21 @@ module Defns :
 
     end
 
+type skolem_info=
+    {
+     name: Basic.fnident;
+     ty: Gtypes.gtype;
+     tyenv: Gtypes.substitution;
+     scope: Gtypes.scope;
+     skolems: skolem_type;
+     tylist: (string*int) list
+   } 
+val mk_new_skolem: 
+    skolem_info
+  -> Term.term * Gtypes.gtype 
+      * (Basic.fnident * (int * Gtypes.gtype)) list 
+      * Gtypes.substitution * (string * int) list
+
+val add_sklms_to_scope: 
+    (Basic.fnident * ('a * Gtypes.gtype)) list ->
+    Gtypes.scope -> Gtypes.scope

@@ -42,6 +42,7 @@ type skolem_type = skolem_cnst list
 (* 
    A sqnt_env is made up of
    the shared type variables (Gtypes.WeakVar) that may be used in the sequent
+   information for constructing names of weak types
    the skolem constants (Term.Meta) that may be used in the sequent
    the scope of the sequent
 *)
@@ -50,7 +51,7 @@ type sqnt_env =
      sklms: skolem_type; 
      sqscp : Gtypes.scope;
      tyvars: Gtypes.gtype list;
-     consts: Term.term list;
+     tynames: (string * int) list;
    }
 type sqnt = (Tag.t* sqnt_env * tagged_form list * tagged_form list)
 
@@ -184,7 +185,10 @@ let mk_skolem scp n ty =
    (* tyname: if ty is a variable then use its name for the
       weak variable otherwise use the empty string
     *)
-   let tyname=if Gtypes.varp ty then !(Gtypes.dest_var ty) else ""
+   let tyname=
+   if Gtypes.varp ty 
+   then !(Gtypes.dest_var ty) 
+   else ""
    in
    (* make the weak type *)
    let nty=Gtypes.mk_weak tyname
@@ -195,48 +199,88 @@ let mk_skolem scp n ty =
    (Term.mkmeta n rty, rty)
 *)
 
-(* mk_new_skolem scp n ty:
-   make a new skolem constant with name n and type ty
-   scope scp is needed for unification
+(* 
+   [new_weak_type n names]
+
+   Make a new weak type with a name derived from [n] and [names].
+   Return this type and the updated names.
+*)
+
+let new_weak_type n names=
+  (* get the index of the name (if any) *)
+  let nm_int=
+    try List.assoc n names
+    with Not_found -> 0
+  in 
+  let nnames = Lib.replace n (nm_int+1) names
+  in 
+  let nm_s = (n^(Lib.int_to_name nm_int))
+  in (nm_s, nnames)
+
+(* [mk_new_skolem scp n ty]
+
+   make a new skolem constant with name [n] and type [ty]
+   scope [scp] is needed for unification
    return the new identifier, its type and the updated 
    information for skolem building
 *)
 
-let mk_new_skolem scp n ty sklms = 
-   (* tyname: if ty is a variable then use its name for the
-      weak variable otherwise use the empty string
-    *)
-   let tyname=
-     if Gtypes.varp ty 
-     then !(Gtypes.dest_var ty) 
-     else ((name n)^"type")
-   in
-   (* make the weak type *)
-   let nty=
-     let tty=Gtypes.mk_weak tyname
-     in 
-   (* unify the weak type with the given type *)
-     Gtypes.mgu tty (Gtypes.unify scp tty ty)
-   in 
-   let nid, nsklms =
-    try 
-      (* see if name is already associated with a skolem *)
-      let oldsk = get_old_sklm n sklms
-      in 
-      (* get new index for skolem named n *)
-      let nindx = (get_sklm_indx oldsk)+1
-      in 
-      (* make the new identifier *)
-      let nnam = 
-	mklong (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
-      in 
-      (Term.mk_typed_var nnam nty, (nnam, (nindx, nty))::sklms)
-    with Not_found -> 
-      let nn=mklong (thy_of_id n) ((name n)^"_"^(string_of_int 1))
-      in 
-      (Term.mk_typed_var nn nty, (nn, (1, nty))::sklms)
+type skolem_info=
+    {
+     name: Basic.fnident;
+     ty: Gtypes.gtype;
+     tyenv: Gtypes.substitution;
+     scope: Gtypes.scope;
+     skolems: skolem_type;
+     tylist: (string*int) list
+   }
+
+let mk_new_skolem info=
+  (* tyname: if ty is a variable then use its name for the
+     weak variable otherwise use the empty string
+   *)
+  let tyname x=
+    if Gtypes.varp info.ty 
+    then new_weak_type (Gtypes.get_var info.ty) info.tylist
+    else new_weak_type (x^"_ty") info.tylist
+  in
+  (* make the weak type *)
+  let mk_nty x=
+    let ty_name, nnames=tyname x
+    in 
+    let tty=Gtypes.mk_weak ty_name
+    in 
+    (* unify the weak type with the given type *)
+    let ntyenv=Gtypes.unify_env info.scope tty info.ty info.tyenv
+    in 
+    (Gtypes.mgu tty ntyenv, ntyenv, nnames)
   in 
-   (nid, nty, nsklms)
+  try 
+    (* see if name is already associated with a skolem *)
+    let oldsk = get_old_sklm info.name info.skolems
+    in 
+    (* get new index for skolem named n *)
+    let nindx = (get_sklm_indx oldsk)+1
+    in 
+    (* make the new identifier *)
+    let nnam = 
+      mklong 
+	(thy_of_id info.name) 
+	((name info.name)^"_"^(string_of_int nindx))
+    in 
+    let nty, ntyenv, new_names=mk_nty (name nnam)
+    in 
+    (Term.mk_typed_var nnam nty, nty, (nnam, (nindx, nty))::info.skolems, 
+     ntyenv, new_names)
+  with Not_found -> 
+    let nnam=
+      mklong 
+	(thy_of_id info.name) ((name info.name)^"_"^(string_of_int 1))
+    in 
+    let nty, ntyenv, new_names=mk_nty (name nnam)
+    in 
+    (Term.mk_typed_var nnam nty, nty, (nnam, (1, nty))::info.skolems, 
+     ntyenv, new_names)
 
 
 (* Sequent manipulation *)
@@ -247,6 +291,7 @@ let sqnt_env (_, e, _, _) = e
 let sklm_cnsts (_, e, _, _) = e.sklms
 let scope_of (_, e, _, _) = e.sqscp
 let sqnt_tyvars (_, e, _, _)=e.tyvars
+let sqnt_tynames (_, e, _, _)=e.tynames
 (*let sqnt_consts (_, e, _, _)=e.consts*)
 let sqnt_tag(t, _, _, _) = t
 
@@ -257,8 +302,8 @@ let sqnt_form (_, f) = f
 
 let mk_sqnt_form f = (Tag.create(), f)
 
-let mk_sqnt_env sks scp tyvs cnsts=
-  {sklms=sks; sqscp=scp; tyvars=tyvs; consts=cnsts}
+let mk_sqnt_env sks scp tyvs names=
+  {sklms=sks; sqscp=scp; tyvars=tyvs; tynames=names}
 
 let mk_sqnt tg env ps cs= (tg, env, ps, cs)
   
@@ -350,7 +395,6 @@ let thy_of_sq sq = (scope_of sq).Gtypes.curr_thy
 
 (* Subgoals *)
 exception No_subgoals
-exception Goal_proved
 
 (* 
    Solved_subgoal tyenv:
@@ -369,6 +413,8 @@ let get_sqnt g=
   match g with
     Goal(s::_, _, f) -> s
   | _ -> Result.raiseError ("get_sqnt: No subgoals")
+
+let goal_tyenv (Goal(_, e, _)) = e
 
 let combine_subgoals a b = a@b
 
@@ -418,9 +464,10 @@ let get_goal_tag g =
     (Goal(x::_, _, _))-> sqnt_tag x
   | _ -> raise Not_found
 
-let mk_goal tenv f = 
-  let nf= Formula.typecheck tenv f (Gtypes.mk_bool)
-  in Goal([new_sqnt tenv nf], Gtypes.empty_subst(), nf)
+let mk_goal scp f = 
+  let nf= Formula.typecheck scp f (Gtypes.mk_bool)
+  in 
+  Goal([new_sqnt scp nf], Gtypes.empty_subst(), nf)
 
 let mk_thm g = 
   match g with 
@@ -462,7 +509,7 @@ module Rules=
 *)
     let sqnt_apply r g =
       match g with 
-	Goal([], _, f) -> raise Goal_proved
+	Goal([], _, f) -> raise No_subgoals
       | Goal(x::xs, tyenv, f) -> 
 	  (try 
 	    let ng, ntyenv=r tyenv x
@@ -491,7 +538,7 @@ module Rules=
 *)
     let simple_sqnt_apply r g =
       match g with 
-	Goal([], _, f) -> raise Goal_proved
+	Goal([], _, f) -> raise No_subgoals
       | Goal(x::xs, tyenv, f) -> 
 	  try 
 	    let ng=r x
@@ -1073,35 +1120,6 @@ module Rules=
    info: [] [t]
  *)
 
-(*
-    let allI0 inf i sq =
-      let (ft, t)=(get_cncl i sq)
-      in 
-      if (Formula.is_all t)
-      then 
-	(let (nv, nty)=(Formula.get_binder_name t, Formula.get_binder_type t)
-	in 
-	let (sv, nsklms) = 
-	  get_new_sklm (mklong (thy_of_sq sq) nv) nty (sklm_cnsts sq)
-	in 
-	let nscp = add_sklms_to_scope nsklms (scope_of sq)
-	in 
-	let ncncl = (ft, Formula.inst nscp t sv)
-	in 
-	do_tag_info inf [] [ft] [];
-	mk_subgoal(sqnt_tag sq, 
-		   mk_sqnt_sqnt_env nsklms nscp 
-                     (sqnt_tyvars sq) (sqnt_consts sq),
-		   asms sq, 
-		   replace_cncl i (concls sq) ncncl))
-      else raise (logicError "Not a universal quantifier" [t])
-*)
-(*
-	let (sv, sty)=mk_skolem (scope_of sq) nv nty
-	in 
-	and nsqcnsts=sv::(sqnt_consts sq)
-	in 
-*)
 
     let allI0 inf i tyenv sq =
       (* get the conclusion and its tag *)
@@ -1113,9 +1131,16 @@ module Rules=
 	(* make the skolem constant from the binder name and type *)
 	(let (nv, nty)=(Formula.get_binder_name t, Formula.get_binder_type t)
 	in 
-	let sv, sty, nsklms=
-	  mk_new_skolem (scope_of sq) 
-	    (mklong (thy_of_sq sq) nv) nty (sklm_cnsts sq)
+	let sv, sty, nsklms, styenv, ntynms=
+	  mk_new_skolem 
+	    {
+	     name=(mklong (thy_of_sq sq) nv);
+	     ty=nty;
+	     tyenv=tyenv;
+	     scope=scope_of sq;
+	     skolems=sklm_cnsts sq;
+	     tylist=sqnt_tynames sq
+	   }
 	in 
 	let nscp = add_sklms_to_scope nsklms (scope_of sq)
 	in 
@@ -1126,7 +1151,7 @@ module Rules=
 	  else (sqnt_tyvars sq)
 	in 
 	let ncncl, ntyenv = 
-	  Formula.inst_env nscp [] tyenv t sv
+	  Formula.inst_env nscp [] styenv t sv
 	in 
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
@@ -1134,7 +1159,7 @@ module Rules=
 	(* build the subgoal and return information *)
 	do_tag_info inf [] [ft] [];
 	(mk_subgoal(sqnt_tag sq, 
-		   mk_sqnt_env nsklms nscp nsqtys [],
+		   mk_sqnt_env nsklms nscp nsqtys ntynms,
 		   asms sq, 
 		   replace_cncl i (concls sq) (ft, ncncl)), gtyenv))
       else raise (logicError "Not a universal quantifier" [t])
@@ -1151,31 +1176,6 @@ module Rules=
    info: [] [t]
  *)
 
-(*
-    let existI0 inf i sq =
-      let (ft, t)=(get_asm i sq)
-      in 
-      if (Formula.is_exists t)
-      then 
-	(let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
-	in 
-	let (sv, nsklms) = 
-	  get_new_sklm (mklong (thy_of_sq sq) nv) nty (sklm_cnsts sq)
-	in 
-	let nscp = add_sklms_to_scope nsklms (scope_of sq)
-	in 
-	let nasm=(ft, Formula.inst nscp t sv)
-	in 
-	do_tag_info inf [] [ft] [];
-	mk_subgoal
-	  (sqnt_tag sq, {sklms=nsklms; sqscp = nscp},
-           replace_asm i (asms sq) nasm, 
-	   concls sq))
-      else raise (logicError "Not an existential quantifier" [t])
-
-	and nsqcnsts=sv::(sqnt_consts sq)
-	in 
-*)
     let existI0 inf i tyenv sq =
       (* get the assumption and its tag *)
       let (ft, t)=(get_asm i sq)
@@ -1186,9 +1186,18 @@ module Rules=
 	(* make the skolem constant from the binder name and type *)
 	(let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
 	in 
-	let (sv, sty, nsklms)=
-	  mk_new_skolem (scope_of sq) (mklong (thy_of_sq sq) nv) nty 
-	    (sklm_cnsts sq)
+	let sv, sty, nsklms, styenv, ntynms=
+	  mk_new_skolem
+	    {
+	     name=(mklong (thy_of_sq sq) nv);
+	     ty=nty;
+	     tyenv=tyenv;
+	     scope=scope_of sq;
+	     skolems=sklm_cnsts sq;
+	     tylist=sqnt_tynames sq
+	   }
+	in 
+	let nscp = add_sklms_to_scope nsklms (scope_of sq)
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
@@ -1197,7 +1206,7 @@ module Rules=
 	  else (sqnt_tyvars sq)
 	in 
 	let nasm, ntyenv= 
-	  Formula.inst_env (scope_of sq) [] tyenv t sv
+	  Formula.inst_env nscp [] styenv t sv
 	in 
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
@@ -1205,7 +1214,7 @@ module Rules=
 	do_tag_info inf [] [ft] [];
 	(mk_subgoal
 	  (sqnt_tag sq, 
-	   mk_sqnt_env nsklms (scope_of sq) nsqtys [],
+	   mk_sqnt_env nsklms nscp nsqtys ntynms,
            replace_asm i (asms sq) (ft, nasm), 
 	   concls sq)), gtyenv)
       else raise (logicError "Not an existential quantifier" [t])
