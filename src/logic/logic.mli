@@ -117,6 +117,7 @@ val get_tagged_form: Tag.t -> sqnt -> tagged_form
 val tag_to_index : Tag.t -> sqnt -> int
 val index_to_tag : int -> sqnt -> Tag.t 
 
+
 (* manipulation of subgoals *)
 
 val has_subgoals: goal -> bool
@@ -145,6 +146,11 @@ val get_goal : goal -> Formula.form
 
 (* put the tagged sqnt at the front, raise Not_found if not found *)
 val goal_focus: Tag.t->rule
+
+(* 
+   [mk_goal scp f]
+   Make formula [f] a goal to be proved in scope [scp] 
+ *)
 
 val mk_goal : Gtypes.scope -> Formula.form -> goal
 
@@ -191,17 +197,24 @@ module Rules:
 	  tag_info option ->
 	    Tag.t list-> Tag.t list -> Term.term list -> unit
 
-(* functions for combining rules *)
 
-(*  val foreach: rule -> rule *)
 (*
-      val thenl: rule list -> rule
-      val apply_list: rule list -> rule
-      val repeat: rule -> rule
-      val skip: rule
-      val fail: rule
-      val orl : rule list -> rule
-*)
+   [lift_asm id sqnt] 
+   [lift_concl id sqnt]
+   [lift id sqnt]
+   Move assumption/conclusion with identifier [id] to 
+   to top of the assumptions/conclusions of sequent sqnt.
+
+   Raise Not_found if identified formula is not in 
+   assumptions/conclusions.
+
+   [lift] tries lift_asm then tries lift_concl.
+ *)
+      val lift_asm : fident -> rule
+      val lift_concl : fident -> rule
+      val lift : fident -> rule
+
+
 (* copy_asm i: 
    .., Ai, ..|- C
    ->
@@ -533,4 +546,4 @@ val mk_new_skolem:
 
 val add_sklms_to_scope: 
     (Basic.ident * ('a * Gtypes.gtype)) list ->
-    Gtypes.scope -> Gtypes.scope
+      Gtypes.scope -> Gtypes.scope

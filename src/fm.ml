@@ -11,16 +11,15 @@
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
-#install_printer Printer.print_term;;
-#install_printer Printer.print_type;;
-#install_printer Printer.print_sqnt;;
-#install_printer Printer.print_thm;;
-#install_printer Printer.print_prf;;
-#install_printer Printer.print_fnident;;
-#install_printer Printer.print_error;;
-#install_printer Printer.print_defn;;
-#install_printer Printer.print_theory;;
-
+#install_printer Display.print_term;;
+#install_printer Display.print_type;;
+#install_printer Display.print_sqnt;;
+#install_printer Display.print_thm;;
+#install_printer Display.print_prf;;
+#install_printer Display.print_fnident;;
+#install_printer Display.print_error;;
+#install_printer Display.print_defn;;
+#install_printer Display.print_theory;;
 
 let _ =
   Format.print_string "fm.ml: initialising\n";

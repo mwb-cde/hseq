@@ -26,7 +26,10 @@
     val curr_sqnt : prf -> Logic.sqnt
 
 (* start a proof attempt *)
-    val goal : string -> prf
+    val goal : Term.term -> prf
+(*
+    val goal_string : string -> prf
+*)
 (* apply a tactic *)
     val by_com : Tactics.tactic -> prf
 
@@ -39,10 +42,16 @@
     val result: unit-> Logic.thm
 
 (* prove a goal with a list of tactics *)
-    val prove_goal: string -> Tactics.tactic -> Logic.thm
 
-    val by_list : string -> Tactics.tactic list -> Logic.thm
+    val prove_goal: Term.term -> Tactics.tactic -> Logic.thm
 
+    val by_list : Term.term -> Tactics.tactic list -> Logic.thm
+
+(*
+    val prove_goal_string: string -> Tactics.tactic -> Logic.thm
+
+    val by_list_string : string -> Tactics.tactic list -> Logic.thm
+*)
 
 (* user level parsing of string *)
     val read : string -> Term.term

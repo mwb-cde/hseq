@@ -59,6 +59,10 @@ val on_load_thy: Theory.thy -> unit
 (* does error handling (from exception to Result.Error)
    so all calls to the parser should go through here *)
 
+(* 
+   [mkterm scp trm]
+   typecheck term [trm] in scope [scp]
+*)
 val mkterm : Gtypes.scope -> Term.term -> Term.term
 val mkterm_unchecked : Gtypes.scope -> Term.term -> Term.term
 val read : string -> Term.term

@@ -18,9 +18,10 @@ LIBDIR=
 HEADERSDIR=../include
 INSTALLDIR=../libs
 
+SRCDIR=..
 OCLIBS=
 OPTLIBS=
-OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
+OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" -I +camlp4
 
 OCAMLC=ocamlc ${OPTIONS} 
 OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 

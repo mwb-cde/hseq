@@ -83,15 +83,18 @@ val new_type_term : (string * string list * Gtypes.gtype option) -> unit
 
    [*_term] versions take a term rather than a string and
    will eventually become the default.
+   [*_string] versions take a string rather than a term and
+   will eventually be removed.
 *)
-
-val define_full : string -> (int*fixity*string option) 
+(*
+val define_full_string : 
+    string -> (int*fixity*string option) 
+      -> Defn.defn
+val define_string : string -> Defn.defn
+*)
+val define_full : Term.term -> (int*fixity*string option) 
   -> Defn.defn
-val define : string -> Defn.defn
-
-val define_term_full : Term.term -> (int*fixity*string option) 
-  -> Defn.defn
-val define_term : Term.term -> Defn.defn
+val define : Term.term -> Defn.defn
 
 (* 
    [declare_full str pp]
@@ -102,11 +105,14 @@ val define_term : Term.term -> Defn.defn
 
    [*_term] versions take a term rather than a string and
    will eventually become the default.
+   [*_string] versions take a string rather than a term and
+   will eventually be removed.
  *)
-val declare_full : string -> (int* fixity* string option) 
+(*
+val declare_full_string : string -> (int* fixity* string option) 
   -> (Basic.ident * Gtypes.gtype)
-
-val declare_term_full : Term.term -> (int* fixity* string option) 
+*)
+val declare_full : Term.term -> (int* fixity* string option) 
   -> (Basic.ident * Gtypes.gtype)
 
 (* 
@@ -114,17 +120,20 @@ val declare_term_full : Term.term -> (int* fixity* string option)
    declare an identifier 
    return name and type.
 *)
-val declare : string -> (Basic.ident * Gtypes.gtype)
-
-val declare_term : Term.term -> (Basic.ident * Gtypes.gtype)
+(*
+val declare_string : string -> (Basic.ident * Gtypes.gtype)
+*)
+val declare : Term.term -> (Basic.ident * Gtypes.gtype)
 
 (*
    [new_axiom id thm]
    declare thm a new axiom with name id.
 *)
 
-val new_axiom : string -> string -> Logic.thm
-val new_axiom_term : string -> Term.term -> Logic.thm
+(*
+val new_axiom_string : string -> string -> Logic.thm
+*)
+val new_axiom : string -> Term.term -> Logic.thm
 (* [axiom/theorem/defn id] 
    get the axiom/theorem/definition named id
    id can be a long identifier (of the form th.name) *)
@@ -149,8 +158,12 @@ val qed : string -> Logic.thm
 
 (* prove a theorem name using the list of tactics and 
    store it under the given name *)
-val prove_theorem : string -> string -> Tactics.tactic list -> Logic.thm
 
+val prove_theorem : string -> Term.term -> Tactics.tactic list -> Logic.thm
+
+(*
+val prove_theorem_string : string -> string -> Tactics.tactic list -> Logic.thm
+*)
 (* store a given theorem under the given name *)
 val save_theorem : string ->  Logic.thm ->  Logic.thm
 

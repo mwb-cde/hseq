@@ -61,22 +61,27 @@ let read_unchecked  x= Tpenv.read_unchecked x
 
 (*(Tpenv.mk_thyinfo()) *)
 
-let goal st = 
-  let f = Formula.mk_form (Tpenv.scope()) (read st)
+let goal trm = 
+  let f = Formula.mk_form (Tpenv.scope()) (Tpenv.mkterm (Tpenv.scope()) trm)
   in 
   prflist:= [mk_goal  (Tpenv.scope()) f];
   (!save_hook()); top()
 
+(*
+let goal_string st = goal (read st)
+*)
 (*(Tpenv.mk_thyinfo())*)
 
-let prove_goal st tac =
+let prove_goal trm tac =
   mk_thm (Logic.Rules.goal_apply tac 
 	    (mk_goal  (Tpenv.scope()) 
-	       (Formula.mk_form (Tpenv.scope()) (read st))))
-
-let by_list st tacs =
+	       (Formula.mk_form (Tpenv.scope()) trm)))
+(*
+let prove_goal_string st tac= prove_goal (read st) tac
+*)
+let by_list trm tacs =
   let fg=mk_goal (Tpenv.scope()) 
-      (Formula.mk_form (Tpenv.scope()) (read st))
+      (Formula.mk_form (Tpenv.scope()) trm)
   in 
   let rec by_aux tcs g= 
     match tcs with
@@ -89,6 +94,9 @@ let by_list st tacs =
   in 
   mk_thm (by_aux tacs fg)
 
+(*
+let by_list_string st tacs =by_list (read st) tacs
+*)
 
 let by_com tac =
   let p = top()

@@ -176,7 +176,7 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
     
-let define_term trm=
+let define trm=
   let (name, args, r) = dest_defn_term trm
   in 
   let ndef=
@@ -187,8 +187,8 @@ let define_term trm=
   in 
   Thydb.add_defn (Basic.name n) ty d (theories()); ndef
 
-let define_term_full trm pp=
-  let ndef=define_term trm 
+let define_full trm pp=
+  let ndef=define trm 
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
@@ -197,7 +197,8 @@ let define_term_full trm pp=
   add_term_pp n prec fx repr); 
   ndef
 
-let define str= 
+(*
+let define_string str= 
   let ((name, args), r)=Tpenv.read_defn str
   in 
   let ndef=
@@ -208,8 +209,8 @@ let define str=
   in 
   Thydb.add_defn (Basic.name n) ty d (theories()); ndef
 
-let define_full str pp=
-  let ndef=define str
+let define_full_string str pp=
+  let ndef=define_string str
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
@@ -217,8 +218,8 @@ let define_full str pp=
   in 
   add_term_pp n prec fx repr); 
   ndef
-
-let declare_term trm = 
+*)
+let declare trm = 
   try 
     (let (v, ty)=Term.dest_typed trm
     in let (n, _)=Term.dest_var v
@@ -229,8 +230,8 @@ let declare_term trm =
     (n, ty))
   with _ -> raiseError ("Badly formed declaration")
 
-let declare_term_full trm pp =
-  let n, ty=declare_term trm
+let declare_full trm pp =
+  let n, ty=declare trm
   in 
   let (prec, fx, repr) = pp
   in 
@@ -243,7 +244,8 @@ let declare_term_full trm pp =
   add_term_pp longname prec fx repr;
   (n, ty)
 
-let declare str = 
+(*
+let declare_string str = 
   let t=Tpenv.read_unchecked str
   in 
   try 
@@ -256,8 +258,8 @@ let declare str =
     (n, ty))
   with _ -> raiseError ("Badly formed declaration: "^str)
 
-let declare_full str pp =
-  let n, ty=declare str 
+let declare_full_string str pp =
+  let n, ty=declare_string str 
   in 
   let (prec, fx, repr) = pp
   in 
@@ -269,16 +271,21 @@ let declare_full str pp =
   in 
   add_term_pp longname prec fx repr;
   (n, ty)
-
-let new_axiom_term n trm =
+*)
+let new_axiom n trm =
   let t = Logic.mk_axiom 
       (Formula.form_of_term (Tpenv.scope()) trm)
   in Thydb.add_axiom n t (theories()); t
 
-let new_axiom n str =
+(*
+let new_axiom_string n str =
+  new_axiom n (Tpenv.read str)
+*)
+(*
   let t = Logic.mk_axiom 
       (Formula.form_of_term (Tpenv.scope()) (Tpenv.read str))
   in Thydb.add_axiom n t (theories()); t
+*)
 
 let axiom id =
   let t, n = Tpenv.read_identifier id
@@ -318,6 +325,11 @@ let prove_theorem n t tacs =
       (Thydb.add_thm n nt x); nt)
     (theories())
 
+(*
+let prove_theorem_string n st tacs =
+  prove_theorem n (Tpenv.read st) tacs
+*)
+
 let save_theorem n th =
   catch_errors 
     (fun x -> Thydb.add_thm n th x; th) (theories())
@@ -326,3 +338,4 @@ let by x =
   (catch_errors Goals.by_com) x
 
 let scope () = Tpenv.scope();;
+

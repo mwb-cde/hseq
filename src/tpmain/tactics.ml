@@ -15,6 +15,10 @@ let copy_asm i g
 let copy_concl i g 
     = rule_tac (Logic.Rules.copy_cncl i) g
 
+let lift id g = 
+  if (id<0) then Logic.Rules.lift_asm (Logic.FNum id) g
+  else Logic.Rules.lift_concl (Logic.FNum id) g
+
 let skip g= g
 
 let trivial = rule_tac Drule.trueR

@@ -22,6 +22,17 @@ val postpone: tactic
 val cut : Logic.thm -> tactic
 val unify_tac : int -> int -> tactic
 
+
+(*
+   [lift id sqnt]
+   Move assumption/conclusion with identifier [id] to 
+   to top of the assumptions/conclusions of sequent sqnt.
+
+   Raise Not_found if identified formula is not in 
+   assumptions/conclusions.
+*)
+val lift : int -> tactic
+
 (* 
    the following apply the basic rules to the first assumption/conclusion
    which will succeed 
