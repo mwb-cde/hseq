@@ -275,8 +275,9 @@ val mgu : gtype  -> substitution -> gtype
 
 (* matching *)
 val matching :scope -> gtype -> gtype -> gtype
-val matches_env : scope -> substitution 
-  -> gtype -> gtype -> (bool * substitution)
+val matches_env : 
+    scope -> substitution 
+      -> gtype -> gtype -> substitution
 val matches : scope -> gtype -> gtype -> bool
 
 (* look up types in a subsitution *)

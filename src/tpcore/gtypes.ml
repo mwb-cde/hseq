@@ -919,8 +919,8 @@ let matching scp t1 t2 =
 let matches_env scp tyenv t1 t2 = 
   try 
     let nenv=matching_env scp t1 t2 tyenv
-    in true, nenv
-  with _ -> (false, tyenv)
+    in nenv
+  with _ -> tyenv
 
 let matches scp t1 t2=
   try ignore(matching_env scp t1 t2 (empty_subst())) ; true

@@ -84,6 +84,11 @@ val mk_any: term
 (* alpha_equals: equality under alpha conversion 
    (renaming of alpha_convp)
  *)
+val alpha_convp_full : 
+    scope 
+  -> Gtypes.substitution -> term -> term 
+    -> Gtypes.substitution
+val alpha_convp : scope -> term -> term -> Gtypes.substitution
 val alpha_equals : scope -> term -> term -> bool 
 (* beta reduction *)
 val beta_convp:  term -> bool

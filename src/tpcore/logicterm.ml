@@ -136,47 +136,62 @@ let is_lambda t =
   ((is_qnt t) &
    (match (dest_qnt t) with (_, Basic.Lambda, _, _, _) -> true | _ -> false))
 
-
-let alpha_convp_aux scp trmenv s t =
-  let rec alpha_aux t1 t2 env =
+let alpha_convp_full scp tenv t1 t2 =
+  let rec alpha_aux t1 t2 tyenv trmenv =
     match (t1, t2) with
       (Id(n1, ty1), Id(n2, ty2)) -> 
-	if (n1=n2) & (Gtypes.matches scp ty1 ty2)
-	then env
+	if (n1=n2) 
+	then (trmenv, Gtypes.matches_env scp tyenv ty1 ty2)
 	else raise (termError "alpha_convp_aux" [t1;t2])
     | (Bound(q1), Bound(q2)) ->
-	if equals (chase (fun x->true) t1 env) 
-	    (chase (fun x->true) t2 env) 
-	then env
+	let q1trm= (chase (fun x->true) t1 trmenv) 
+	and q2trm = (chase (fun x->true) t2 trmenv) 
+	in 
+	if equals q1trm q2trm
+	then (trmenv, tyenv)
 	else raise (termError "alpha_convp_aux" [t1;t2])
     | (App(f1, a1), App(f2, a2)) ->
-	let env1=alpha_aux f1 f2  env
-	in alpha_aux a1 a2 env1
+	let (trmenv1, tyenv1)=alpha_aux f1 f2 tyenv trmenv
+	in 
+	alpha_aux a1 a2 tyenv1 trmenv1
     | (Qnt(qn1, q1, b1), Qnt(qn2, q2, b2)) ->
 	(let qty1=Basic.binder_type q1
 	and qty2=Basic.binder_type q2
 	in 
-	if (qn1=qn2) & (Gtypes.matches scp qty1 qty2)
+	if (qn1=qn2) 
 	then 
-	  alpha_aux b1 b2 (bind (Bound(q1)) (Bound(q2)) env)
+	  let tyenv1=Gtypes.matches_env scp tyenv qty1 qty2
+	  in 
+	  alpha_aux b1 b2 tyenv1 (bind (Bound(q1)) (Bound(q2)) trmenv)
 	else raise (termError "alpha_convp_aux" [t1;t2]))
-    | (Typed(trm, _), _) -> alpha_aux trm t2 env
-    | (_, Typed(trm, _)) -> alpha_aux t1 trm env
+    | (Typed(trm, _), _) -> alpha_aux trm t2 tyenv trmenv
+    | (_, Typed(trm, _)) -> alpha_aux t1 trm tyenv trmenv
     | _ -> 
-	(if equals t1 t2 then env
+	(if equals t1 t2 then (trmenv, tyenv)
 	else raise (termError "alpha_convp_aux" [t1;t2]))
-  in alpha_aux s t trmenv
-    
+  in 
+  let env = Term.empty_subst() 
+  in 
+  try 
+    let _, ret = alpha_aux t1 t2 tenv env
+    in ret
+  with _ -> raise (termError "alpha_convp" [t1; t2])
+
+let alpha_convp scp t1 t2=
+  let tyenv=Gtypes.empty_subst()
+  in 
+  alpha_convp_full scp tyenv t1 t2
+
+(*
 let alpha_convp scp t1 t2 =
   let env=empty_subst()
   in 
   try ignore(alpha_convp_aux scp env t1 t2); true
   with _ -> false
+*)
 
-let alpha_equals tyenv t1 t2 =
-  let env=empty_subst()
-  in 
-  try ignore(alpha_convp_aux tyenv env t1 t2); true
+let alpha_equals scp t1 t2 =
+  try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
 (* beta reduction *)
