@@ -226,32 +226,32 @@ let catch_parse_error e a =
 
   let read str= 
     mkterm (typenv()) 
-      (catch_parse_error (Parser.read_term (typenv())) str)
+      (catch_parse_error Parser.read_term  str)
 
   let read_unchecked  x=
     mkterm_unchecked (typenv()) 
-      (catch_parse_error (Parser.read_term (typenv())) x)
+      (catch_parse_error Parser.read_term x)
 
   let read_defn x =
     let (l, r)= 
-      catch_parse_error (Parser.read defn_parser (typenv())) x
+      catch_parse_error (Parser.read defn_parser) x
     in (l, mkterm_unchecked (typenv()) r)
 
 let read_type_defn x =
   let (l, args, r)= 
     catch_parse_error 
-      (Parser.read Parser.typedef_parser (typenv())) x
+      (Parser.read Parser.typedef_parser) x
     in (match args with None -> (l, [], r) | Some(a) -> (l, a, r))
 
 let read_type x = 
   catch_parse_error
-    (Parser.read_type (typenv())) x
+    Parser.read_type x
 
   let read_fulltype x = 
-    catch_parse_error (Parser.read_type (typenv())) x
+    catch_parse_error Parser.read_type x
 
 let read_identifier x = 
-  catch_parse_error (Parser.read Parser.identifier_parser (typenv())) x
+  catch_parse_error (Parser.read Parser.identifier_parser) x
 
 (*
 let printer_info = 
