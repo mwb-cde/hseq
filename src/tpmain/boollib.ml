@@ -1,3 +1,9 @@
+(*-----
+ Name: boollib.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 open Drule
 open Commands
@@ -40,13 +46,13 @@ module BaseTheory=
 		    ^" x y = (x => y) and (y => x)"))
 	~pp:(104, infixl, Some "iff"));
       ignore(new_axiom "false_def" << false = (not true)>>);
-      ignore(new_axiom "eq_sym" <<!x: x=x>>);
+      ignore(new_axiom "eq_refl" <<!x: x=x>>);
       ignore(new_axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
       ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
       ignore(new_axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
       ignore(define
 	  <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))>>);
-      ignore(define <:def< some = epsilon (%a: true)>>);
+      ignore(define <:def< any = epsilon (%a: true)>>);
       ignore(end_theory ~save:false ())
 	
 
@@ -97,34 +103,27 @@ module BoolPP =
       in 
       match args with 
 	(b::tbr::fbr::rest) -> 
-	  Format.open_box 2;
+	  Format.printf "@[<2>";
 	  Printer.print_bracket prec cprec "(";
-	  Format.print_string "if";
-	  Format.print_space();
+	  Format.printf "if@ ";
 	  Term.print_term ppstate cprec b;
-	  Format.print_space();
-	  Format.print_string "then";
-	  Format.print_space();
+	  Format.printf "@ then@ ";
 	  Term.print_term ppstate cprec tbr;
-	  Format.print_space();
-	  Format.print_string "else";
-	  Format.print_space();
+	  Format.printf "@ else @ ";
 	  Term.print_term ppstate cprec fbr;
 	  Printer.print_bracket prec cprec  ")";
-	  if(prec<cprec) then Format.print_space() else ();
-	  Format.close_box();
+	  if(prec<cprec) then Format.printf "@ " else ();
+	  Format.printf "@]";
 	  (match rest with
 	    [] -> ()
 	  | _ -> 
-	      Format.open_box 0;
+	      Format.printf "@[";
 	      Printer.print_list
 		((fun x ->
-		  Format.open_box 0;
-		  Term.print_term ppstate prec x;
-		  Format.close_box ()),
-		 (fun () -> Format.print_space()))
+		  Term.print_term ppstate prec x),
+		 (fun () -> Format.printf "@ "))
 		rest;
-	      Format.close_box())	    
+	      Format.printf "@]")
       | _ -> 
 	  Term.simple_print_fn_app ppstate cprec (f, args)
 
@@ -148,9 +147,9 @@ let eq_tac g =
   let a = first_concl Formula.is_equality (Drule.sequent g)
   in 
   let th = 
-    try lemma "base.eq_sym"
+    try lemma "base.eq_refl"
     with Not_found -> 
-      (raise (Result.error "eq_tac: Can't find required lemma base.eq_sym"))
+      (raise (Result.error "eq_tac: Can't find required lemma base.eq_refl"))
   in 
   seq [cut th; unify_tac ~a:(fnum (-1)) ~c:a] g
 

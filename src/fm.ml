@@ -1,7 +1,12 @@
+(*----
+ Name: fm.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* 
    Start up file loaded when the TP system starts.
 *)
-
 
 (*#install_printer Term.simple_term_printer;;*)
 
@@ -17,13 +22,13 @@
 #install_printer Display.print_error;;
 #install_printer Display.print_defn;;
 #install_printer Display.print_theory;;
+#install_printer Simplib.print_set;;
 
 open Goals;;
-(* open Commands;; *)
-open Userlib;;
 open Tactics;;
 open Boollib;;
 open Simplib;;
+open Userlib;;
 
 let _ =
   Format.open_box 0;

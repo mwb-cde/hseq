@@ -1,3 +1,8 @@
+(*-----
+ Name: unsafe.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 (*
    Utility functions which depend on unsafe/undocumented features.

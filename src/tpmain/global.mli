@@ -1,3 +1,9 @@
+(*-----
+ Name: global.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Global environment and utility functions *)
 
 (* destruct a long identifier *)

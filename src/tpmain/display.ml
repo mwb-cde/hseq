@@ -1,3 +1,9 @@
+(*-----
+ Name: display.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 open Term
 open Format
@@ -5,13 +11,13 @@ open Result
 
 let cfun_string c =
   match c with 
-    "not" -> Format.print_string "not"
-  | "and" -> Format.print_string "and"
-  | "or" -> Format.print_string "or"
-  | "implies" -> Format.print_string " => "
-  | "iff" -> Format.print_string "<=>"
-  | "equals" -> Format.print_string "="
-  | x -> Format.print_string x
+    "not" -> Format.printf "@[not@ @]"
+  | "and" -> Format.printf "@[and@ @]"
+  | "or" -> Format.printf "@[or@ @]"
+  | "implies" -> Format.printf "@[=>@ @]"
+  | "iff" -> Format.printf "@[<=>@ @]"
+  | "equals" -> Format.printf "@[=@ @]"
+  | x -> Format.printf "@[%s@ @]" x
 
 let print_fnident x = Printer.print_ident x
 
@@ -26,9 +32,9 @@ let print_formula x =
   close_box()
 
 let rec print_type x = 
-  open_box 0; 
+  Format.printf "@[";
   Gtypes.print (Global.pp_info())  x; 
-  close_box()
+  Format.printf "@]"
 
 let print_sqnt x = 
   Logic.print_sqnt (Global.pp_info()) x
@@ -37,67 +43,46 @@ let print_node x =
 let print_branch x = 
   Logic.print_branch (Global.pp_info()) x
     
-
-let print_thm t = 
-  open_box 3; Format.print_string "|- ";
-  print_term (Formula.term_of_form (Logic.dest_thm t));
-  close_box()
-
+let print_thm t = Logic.print_thm (Global.pp_info()) t
 
 let print_prf p = 
-  let print_subgoals i = 
-    Format.print_int i; 
-    if i>1 
-    then Format.print_string " subgoals"
-    else Format.print_string " subgoal"
-  in 
   let g = Goals.curr_goal p
   in 
   let subgls = Logic.num_of_subgoals g
   in 
-  open_box 3; 
-  Format.print_string "Goal: "; 
+  Format.printf "@[<v>Goal ";
+  Format.printf "@[";
   print_term 
     (Formula.term_of_form (Logic.get_goal g));
-  close_box();
-  Format.print_newline();
+  Format.printf "@]@,";
   (match subgls with
-    0 -> (open_box 0; 
-	  Format.print_string "No subgoals"; 
-	  close_box();
-	  print_newline())
+    0 -> Format.printf "@[No subgoals@]@,"
   | _ -> 
-      (open_box 0;
-       print_subgoals subgls;
-       close_box ();
-       print_newline();
-       print_sqnt (Goals.curr_sqnt p)))
+      (Format.printf "@[%i %s@]@," subgls
+	 (if subgls>1 
+	 then "subgoals" else "subgoal");
+       print_sqnt (Goals.curr_sqnt p)));
+  Format.printf "@]"
 
 let print_defn def =
   let n, ty, th = Defn.dest_defn def
   in 
-  Format.open_box 3;
-  Format.open_box 3;
+  Format.printf "@[";
+  Format.printf "@[";
   print_fnident (Basic.mk_long Basic.null_thy (Basic.name n));
-  Format.print_string ":";
-  Format.print_space();
+  Format.printf ":@ ";
   print_type ty;
-  Format.close_box();
-  Format.print_cut();
+  Format.printf "@],@ ";
   print_thm th;
-  Format.close_box()
+  Format.printf "@]"
   
 let print_subst tenv f= 
-  open_box 3;
+  Format.printf "@[<2>";
   (Hashtbl.iter 
-     (fun x y -> 
-       Format.print_string ("("^(f x)^" = "^(f y)^"):");
-       Format.print_space())
+     (fun x y -> Format.printf "@[(%s =@ %s):@]@ " (f x) (f y))
      tenv);
-  close_box();
-  Format.print_newline()
+  Format.printf "@]"
     
-
 let print_error r = (r#print) (Global.pp_info())
 
 let print_theory x = 

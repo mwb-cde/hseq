@@ -1,3 +1,9 @@
+(*-----
+ Name: formula.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* representation and manipulation of well formed formulas *)
 (* a term is a formula in a given scope scp if it is correctly typed
    in scp and it is closed (all bound variables occur only in their binding

@@ -1,3 +1,9 @@
+(*-----
+ Name: nums.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 val raiseError : string -> Basic.term list -> 'a
 
 val num_thy : string

@@ -1,3 +1,8 @@
+(*-----
+ Name: simplib.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 (**
    [std_ss()]: The standard simpset
@@ -72,6 +77,18 @@ val once_simp_tac :
 	      ?rules:Logic.thm list ->
 		?ignore:Logic.label list -> Tactics.tactic
 
+(* Printer *)
+
+val print_set : Simpset.simpset -> unit
+
 (** Initialising functions *)
 
 (** [on_load thy] function to call when a theory is loaded *)
+
+val init: unit -> unit
+
+(* Debugging *)
+
+val has_property: 'a -> 'a list -> bool
+val thm_is_simp : ('a * Theory.thm_record) -> unit
+val def_is_simp : ('a * Theory.id_record) -> unit

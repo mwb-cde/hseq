@@ -1,3 +1,9 @@
+(*-----
+ Name: dbterm.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Representation of terms suitable for saving on disk *)
 
     open Gtypes

@@ -1,8 +1,17 @@
+(*-----
+ Name: theory.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
+
+(*
 type property = exn
-
 exception SimpProperty
 let simp_property = SimpProperty
+*)
+type property = string
+let simp_property = "simp"
 
 type id_record= 
     {
@@ -16,7 +25,8 @@ type id_save_record=
     {
      sty: Basic.gtype; 
      sdef: Logic.saved_thm option; 
-     sinfix: bool; sprec: int;
+     sinfix: bool; 
+     sprec: int;
      sdprops : property list
    }
 
@@ -94,8 +104,7 @@ let add_parents ns thy =
 
 let get_protection thy = thy.protection
 let set_protection thy = 
-  thy.protection<-true;
-  set_date thy
+  thy.protection<-true; set_date thy
 
 let get_files thy = thy.lfiles
 let set_files fs thy = thy.lfiles <- fs
@@ -156,16 +165,6 @@ let add_thm n t ps thy =
       in Hashtbl.add (thy.theorems) n rcrd
     else raise (Result.error ("Theorem "^n^" exists"))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
-
-(*
-   let add_type_rec n tr thy =
-   if not (get_protection thy)
-   then 
-   if not (Lib.member n thy.typs)
-   then Hashtbl.add (thy.typs) n tr
-   else raise (Result.error ("Type "^n^" exists"))
-   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
- *)
 
 let add_type_rec tr thy =
   let mk_typedef_rec n ags d cs =
@@ -362,7 +361,7 @@ let load_theory fname =
   let ic = open_in fname
   in let thy = input_theory ic; 
   in close_in ic; 
-  print_string ("Loading theory "^(get_name thy)^"\n");
+  Format.printf "@[Loading theory %s@]@." (get_name thy);
   thy
 
 let save_theory thy prot fname= 
@@ -378,14 +377,14 @@ let save_theory thy prot fname=
 let end_theory thy prot = 
   if not (get_protection thy)
   then 
-    (set_date thy;
-     if prot then set_protection thy else ())
+    (if prot 
+    then (set_date thy; set_protection thy)
+    else ())
   else ()
 
 let export_theory oc thy prot =
   end_theory thy prot;
   output_theory oc thy
-
 
 let contents thy = 
   let to_list tbl =
@@ -407,183 +406,130 @@ let contents thy =
    cid_pps = thy.id_pps
  }
 
-let print_section title = 
-  Format.open_box 0;
-  Format.print_string "-----\n";
-  Format.print_string title;
-  Format.print_string "\n-----";    
-  Format.close_box();
-  Format.print_newline()
 
-let print_property pp p =
+(*
+let print_property pp p = 
   match p with
-    SimpProperty -> 
-      Format.open_box 0; print_string "(simp)"; Format.close_box()
-  | _ -> 
-      Format.open_box 0; 
-      print_string (Printexc.to_string p); 
-      Format.close_box()
+    SimpProperty -> (Format.printf "@[simp@]")
+  | _ -> (Format.printf "@[%s@]" (Printexc.to_string p))
+*)
+let print_property pp p = 
+  Format.printf "@[%s@]" p
 
+let print_properties pp ps =
+  match ps with
+    [] -> ()
+  | _ -> 
+      (Format.printf "@[(";
+       Printer.print_list
+	 ((fun p -> print_property pp p),
+	  (fun _ -> Format.printf ",@ ")) ps;
+       Format.printf ")@]@,")
+
+let print_section title = 
+  Format.printf "@[-----\n%s\n-----@]@," title
 
 let print_protection p = 
   if(p) then ()
-  else 
-    (Format.open_box 0;
-     Format.print_string "read-write";
-     Format.close_box();
-     Format.print_newline())
+  else Format.printf "@[read-write@]@,"
 and print_date d =
   let (y, mo, day, h, mi) = Lib.nice_date d
   in 
-  Format.open_box 0;
-  Format.print_string "Date: ";
-  Format.print_int day;
-  Format.print_string "/";
-  Format.print_int (mo+1);
-  Format.print_string "/";
-  Format.print_int y;
-  Format.print_string " ";
-  Format.print_int h;
-  Format.print_string ":";
-  Format.print_int mi;
-  Format.close_box();
-  Format.print_newline()
+  Format.printf "@[Date: %i/%i/%i %i:%i@]@," day (mo+1) y h mi
 and print_parents ps = 
-  Format.open_box 2;
-  Format.print_string "Parents: ";
+  Format.printf "@[<2>Parents: ";
   (match ps with
-    [] -> (Format.print_string "None")
+    [] -> (Format.printf "%s" "None")
   | _ -> 
-      Format.open_box 2;
       Printer.print_list 
-	(Format.print_string,
-	 (fun _ -> Format.print_space())) ps;
-      Format.close_box());
-  Format.close_box();
-  Format.print_newline();
+	((fun s -> Format.printf "%s" s),
+	 (fun _ -> Format.printf "@ ")) ps);
+  Format.printf "@]@,"
 and print_files ps = 
-  Format.open_box 2;
-  Format.print_string "Load Files: ";
+  Format.printf "@[<2>Load Files: ";
   (match ps with
-    [] -> (Format.print_string "None")
+    [] -> (Format.printf "None")
   | _ -> 
-      Format.open_box 2;
       Printer.print_list 
-	(Format.print_string,
-	 (fun _ -> Format.print_space())) ps;
-      Format.close_box());
-  Format.close_box();
-  Format.print_newline();
+	((fun s -> Format.printf "%s" s),
+	 (fun _ -> Format.printf "@ ")) ps);
+  Format.printf "@]@,"
 and print_thms pp n ths = 
   print_section n;
-  Format.open_box 0;
+  Format.printf "@[<v>";
   Printer.print_list
     ((fun (tn, t) ->
-      Format.open_box 2;
-      Format.print_string tn;
-      Format.print_string ": ";
-      Format.close_box();
-      Printer.print_list
-	((fun p -> print_property pp p),
-	 (fun _ -> Format.print_string " ")) 
-	t.props;
-      Format.print_newline();
-      Logic.print_thm pp t.thm),
-     (fun _ -> Format.print_newline())) ths;
-  Format.close_box();
-  Format.print_newline()
-
+      Format.printf "@[<2>%s:@ " tn;
+      print_properties pp t.props;
+      Format.printf "@ ";
+      Logic.print_thm pp t.thm;
+      Format.printf "@]"),
+     (fun _ -> ())) ths;
+  Format.printf "@]@,"
 and print_tydefs pp n tys = 
   print_section n;
-  Format.open_box 0;
+  Format.printf "@[<v>";
   Printer.print_list
     ((fun (n, tyd) ->
-      Format.open_box 4;
-      Format.print_string n;
+      Format.printf "@[<2>";
       (match tyd.Gtypes.args with
 	[] -> ()
       | _ -> 
-	  (Format.print_string "(";
-	   Format.open_box 1;
+	  (Format.printf "(";
 	   Printer.print_list
-	     ((fun s -> Format.print_string s),
-	      (fun _ -> Format.print_string ","; Format.print_space()))
+	     ((fun s -> Format.printf "'%s" s),
+	      (fun _ -> Format.printf ",@ "))
 	     tyd.Gtypes.args;
-	   Format.close_box();
-	   Format.print_string ")"));
+	   Format.printf ")"));
+      Format.printf "%s@," n;
       (match tyd.Gtypes.alias with
 	None -> ()
       | Some(gty) -> 
-	  Format.print_string "=";
-	  Format.print_space ();
-	  Format.open_box 1;
-	  Gtypes.print pp gty;
-	  Format.close_box());
-      Format.close_box()),
-     (fun _ -> Format.print_newline()))
-    tys;
-  Format.close_box();
-  Format.print_newline()
-
+     	  (Format.printf "=@,";
+	  Gtypes.print pp gty));
+      Format.printf "@]"),
+     (fun _ -> ())) tys;
+  Format.printf "@]@,"
 and print_defs pp n defs = 
   print_section n;
+  Format.printf "@[<v>";
   Printer.print_list
     ((fun (n, d) ->
-      Format.open_box 2;
-      Format.print_string n;
-      Format.print_string ":";
-      Format.print_cut();
+      Format.printf "@[<2>%s:@ " n;
+      print_properties pp d.dprops;
+      Format.printf "@ ";
       Gtypes.print pp d.typ;
-      Format.close_box();
+      Format.printf "@ ";
       (match d.def with
 	None -> ()
-      | Some(df) -> 
-	  (Format.print_newline();
-	   Format.open_box 0;
-	   Logic.print_thm pp df; 
-	   Format.close_box())
-      );
-      Format.print_newline()),		     
-     (fun _ -> Format.print_flush()))
-    defs;
-  Format.print_newline()
+      | Some(df) ->
+	  Logic.print_thm pp df);
+      Format.printf "@]"),
+     (fun _ -> ())) defs;
+  Format.printf "@]@,"
 
 let print_pps n pps = 
   print_section n;
-  Format.open_box 0;
+  Format.printf "@[<v>";
   Printer.print_list
     ((fun (n, r) ->
-      Format.open_box 2;
-      Format.print_string n;
-      Format.print_space();
+      Format.printf "@[<2>%s@ " n;
       (match (r.Printer.repr) with
 	None -> ()
-      | Some(s) -> 
-	  Format.print_string ("\""^s^"\"");
-	  Format.print_space());
-      Format.print_string "precedence=";
-      Format.print_int r.Printer.prec;
-      Format.print_space();
-      Format.print_string "fixity=";
-      Format.print_string (Printer.fixity_to_string r.Printer.fixity);
-      Format.close_box()),
-     (fun _ -> Format.print_newline()))
-    pps;
-  Format.close_box();
-  Format.print_newline()
+      | Some(s) -> Format.printf "\"%s\"@ " s);
+      Format.printf "precedence= %i@ " r.Printer.prec;
+      Format.printf "fixity= %s@ "
+	(Printer.fixity_to_string r.Printer.fixity);
+      Format.printf "@]"),
+     (fun _ -> ())) pps;
+  Format.printf "@]@,"
 
 let print ppstate thy = 
   let content = contents thy 
   in 
-  Format.print_newline();
-  Format.open_box 0;
-  Format.print_string "-------------";
-  Format.close_box();
-  Format.print_newline();
-  Format.open_box 0;
-  Format.print_string content.cname;
-  Format.close_box();
-  Format.print_newline();  
+  Format.printf "@[<v>";
+  Format.printf "@[-------------@]@,";
+  Format.printf "@[%s@]@," content.cname;
   print_parents content.cparents;
   print_files content.cfiles;
   print_date content.cdate;
@@ -600,7 +546,6 @@ let print ppstate thy =
     [] -> ()
   | _ -> 
       print_pps "Term printer/parser information" content.cid_pps);
-  Format.open_box 0;
-  Format.print_string "-------------";
-  Format.close_box();
-  Format.print_newline()
+  Format.printf "@[-------------@]@,";
+  Format.printf "@]"
+    

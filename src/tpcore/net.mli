@@ -1,8 +1,8 @@
-(*
-   Author: Matthew Wahab
-   Date: March 4, 2004
-*)
-
+(*-----
+ Name: net.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 (**
    Term Nets
@@ -134,3 +134,14 @@ val insert:
 val delete: (Basic.term -> bool) -> 'a net
    -> Basic.term -> ('a -> bool) -> 'a net
 
+(**
+   [iter f net]
+   Apply [f] to each data item stored in a net.
+*)
+val iter: ('a -> unit) -> 'a net -> unit
+
+(*
+   [print p net]
+   Print the contents of [net] using printer [p].
+*)
+val print : ('a -> unit) -> 'a net -> unit

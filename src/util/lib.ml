@@ -1,3 +1,9 @@
+(*----
+ Name: lib.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* library functions *)
 
 (* Array iteration *)

@@ -1,3 +1,9 @@
+(*-----
+ Name: tactics.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Tactics and Tacticals *)
 
 type tactic = Logic.rule

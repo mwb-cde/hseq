@@ -1,3 +1,9 @@
+(*-----
+ Name: settings.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Directory and files  *)
 
 let base_dir = ref "/home/mw/src/tp/src"

@@ -1,3 +1,9 @@
+(*----
+ Name: tag.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* 
    Tags: 
    unique identifiers with which to identify

@@ -1,3 +1,9 @@
+(*-----
+ Name: counter.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* 
    counter: keep track of how many instances of an item there are 
    Order is largest item first.

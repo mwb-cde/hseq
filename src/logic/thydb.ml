@@ -1,3 +1,9 @@
+(*-----
+ Name: thydb.ml
+ Author: M Wahab <Mwahab@Users.Sourceforge.Net>
+ Copyright M Wahab 2005
+----*)
+
 open Result
 
 exception Importing
@@ -56,44 +62,53 @@ let setcur_thy thdb thy =
   else (ignore(add_thy thdb thy); thdb)
 
 
-let load_theory thdb name prot thfn filefn buildfn =
-  let test_date tim thy = 
-    if (Theory.get_date thy) <= tim then () 
+let print_date d =
+  let (y, mo, day, h, mi) = Lib.nice_date d
+  in 
+  Format.printf "@[Date: %i/%i/%i %i:%i@]" day (mo+1) y h mi
+
+let test_date tim thy = 
+  if (Theory.get_date thy) <= tim 
+  then () 
+  else 
+    (warning ("Imported theory "^(Theory.get_name thy)
+	      ^" is more recent than"
+	      ^" its importing theory");
+     raise (Result.error 
+      	      ("Imported theory "^(Theory.get_name thy)
+	       ^" is more recent than"
+	       ^" its importing theory")))
+and test_protection prot thy =
+  if prot 
+  then 
+    (if (Theory.get_protection thy) 
+    then ()
     else 
-      raise (Result.error 
-      	       ("Imported theory "^(Theory.get_name thy)
-		^" is more recent than"
-		^" its importing theory"))
-  and test_protection thy =
-    if prot 
-    then 
-      if (Theory.get_protection thy) 
-      then ()
-      else 
-	raise 
-	  (Result.error 
-	     ("Imported theory "^(Theory.get_name thy)
-	      ^" is not complete"))
-    else ()
+      (warning 
+	 ("Imported theory "^(Theory.get_name thy)
+	  ^" is not complete");
+       raise 
+	 (Result.error 
+	    ("Imported theory "^(Theory.get_name thy)
+	     ^" is not complete"))))
+  else ()
+
+let load_thy p tim (filefn, thfn) x thdb=
+  let fname = filefn x
   in 
-  let load_thy tim x =
-    let fname = filefn x
-    in 
-    let thy = Theory.load_theory fname
-    in 
-    test_protection thy;
-    test_date tim thy;
-    if(not (is_loaded x thdb))
-    then (ignore(add_thy thdb thy); thfn (Theory.contents thy))
-    else ();
-    thy
+  let thy = Theory.load_theory fname
   in 
-  let build_thy tim x=
-    buildfn x;
-    let thy = get_thy thdb x
-    in 
-    thy
-  in 
+  test_protection p thy;
+  test_date tim thy;
+  ignore(add_thy thdb thy);
+  (try (thfn (Theory.contents thy)) with _ -> ());
+  thy
+
+let build_thy tim buildfn x thdb= 
+  buildfn x; 
+  get_thy thdb x
+
+let load_theory thdb name prot thfn filefn buildfn =
   let rec load_aux tim ls imps=
     match ls with 
       [] -> imps
@@ -105,44 +120,43 @@ let load_theory thdb name prot thfn filefn buildfn =
 	  then 
 	    (let thy = get_thy thdb x 
 	    in 
-	    test_protection thy;
+	    test_protection true thy;
 	    test_date tim thy;
 	    load_aux tim xs 
 	      (if List.mem x imps then imps else (x::imps)))
 	  else 
 	    let thy = 
-	      (try load_thy tim x
-	      with _ -> build_thy tim x);
+	      (try load_thy true tim (filefn, thfn) x thdb
+	      with _ -> 
+		 build_thy tim buildfn x thdb);
 	    in 
 	    load_aux tim xs 
 	      (load_aux (Theory.get_date thy)
 		 (Theory.get_parents thy) (x::imps))))
   in 
-  (if is_loaded name thdb
+  if is_loaded name thdb
   then 
-    (let thy=get_thy thdb name
+    let thy=get_thy thdb name
     in 
-    test_protection thy;
+    test_protection prot thy;
     let imprts = 
-      load_aux (Theory.get_date thy)
-	(Theory.get_parents thy) [Theory.get_name thy]
-    in List.rev imprts)
+      load_aux (Theory.get_date thy) (Theory.get_parents thy) [name]
+    in List.rev imprts
   else 
     (let thy = 
       let current_time = Lib.date()
       in 
-      (try load_thy current_time name
-      with _ -> build_thy current_time name)
+      (try load_thy prot current_time (filefn, thfn) name thdb
+      with x -> 
+	 build_thy current_time buildfn name thdb)
     in 
-    (test_protection thy; 
-     (if(not (is_loaded name thdb))
-     then (ignore(add_thy thdb thy); thfn (Theory.contents thy))
-     else ());
-     (let imprts = 
-       (load_aux (Theory.get_date thy)
-	  (Theory.get_parents thy) [Theory.get_name thy])
-     in (List.rev imprts)))))
-    
+    test_protection prot thy; 
+    let imprts = 
+      load_aux (Theory.get_date thy)
+	(Theory.get_parents thy) [name]
+    in 
+    List.rev imprts)
+      
 let mk_importing thdb=
   let rec mk_aux thdb ls rs =
     match ls with 
@@ -349,5 +363,4 @@ let expunge thdb th=
   thdb.importing<-[];
   thdb.curr<-th
       
-
       

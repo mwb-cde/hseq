@@ -1,3 +1,9 @@
+(*-----
+ Name: counter.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* counter: keep track of how many instances of a thing there are *)
     type 'a t = ('a * int) list
 

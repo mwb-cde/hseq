@@ -1,4 +1,8 @@
-
+(*-----
+ Name: simplib.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 let std_simpset = ref(Simpset.empty_set())
 
@@ -52,7 +56,7 @@ let simp_tac
     ?(asms=true) ?set ?use ?(rules=[]) ?(ignore = []) gl=
   let uset0 = 
     match set with
-      None -> (std_ss())
+      None -> std_ss()
     | Some s -> s
   in 
   let uset1 = 
@@ -123,26 +127,29 @@ let once_simp_tac
   Simplifier.once_simp_tac sctrl asms except f gl
 
 
+(* Printer *)
+
+let print_set set = 
+  Simpset.print (Global.pp_info()) set
 
 (* Initialising functions *)
 
 (* function to call when a theory is loaded *)
 
-let has_property p ps =
-  List.mem p ps
+let has_property p ps = List.mem p ps
 
 let thm_is_simp (_, tr)=
   if(has_property Theory.simp_property tr.Theory.props)
-  then add_simp tr.Theory.thm
+  then try (add_simp tr.Theory.thm) with _ -> ()
   else ()
 
 let def_is_simp (_, dr)=
-  if(has_property Theory.simp_property dr.Theory.dprops)
-  then 
-    match dr.Theory.def with
-      None -> ()
-    | Some(thm) -> add_simp thm
-  else ()
+  match dr.Theory.def with
+    None -> ()
+  | Some(thm) -> 
+      if(has_property Theory.simp_property dr.Theory.dprops)
+      then try add_simp thm with _ -> ()
+      else ()
   
 let on_load thy=
   List.iter thm_is_simp thy.Theory.caxioms;

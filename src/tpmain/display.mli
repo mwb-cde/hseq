@@ -1,3 +1,9 @@
+(*-----
+ Name: display.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* functions for printing types/terms/errors etc *)
 open Basic
 

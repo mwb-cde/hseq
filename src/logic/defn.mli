@@ -1,3 +1,9 @@
+(*-----
+ Name: defn.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Type and term definition and declaration *)
 
 (* 

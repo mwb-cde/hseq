@@ -1,3 +1,9 @@
+(*-----
+ Name: result.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Error and message construction and reporting *)
 (* errors and messages are objects, allowing new errors to be derived *)
 (* an error raised as an exception with  a list of one or more objects *)

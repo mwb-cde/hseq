@@ -1,3 +1,9 @@
+(*-----
+ Name: commands.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Result
 
 (* Infixes *)
@@ -93,7 +99,7 @@ let begin_theory n parents=
     in 
     Global.set_cur_thy thy;
     Theory.add_parents importing thy;
-    Thydb.add_importing importing (theories())
+    Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
 
 let new_theory n = begin_theory n
 
@@ -102,7 +108,7 @@ let open_theory n =
   then (raise (Result.error "No theory name"))
   else (load_theory_as_cur n)
 
-let close_theory() = 
+let close_theory () = 
   if get_theory_name() = "" 
   then (raise (Result.error "At base theory"))
   else 
@@ -118,7 +124,7 @@ let end_theory ?(save=true) () =
     (let thy = curr_theory()
     in 
     Theory.end_theory thy true;
-    save_theory thy true)
+    if(save) then save_theory thy true else ())
 
 
 let add_pp_rec selector id rcrd=
@@ -199,7 +205,10 @@ let define ?pp ?(simp=false) ((name, args), r)=
     Defn.mk_defn (Global.scope()) 
       (Basic.mk_long (Global.get_cur_name()) name) args r
   in 
-  let props = if simp then [] else [Theory.simp_property]
+  let props = 
+    if simp
+    then [Theory.simp_property]
+    else []
   in 
   let (n, ty, d)= Defn.dest_defn ndef
   in 
@@ -275,7 +284,8 @@ let new_axiom ?(simp=false) n trm =
   let t = Logic.mk_axiom 
       (Formula.form_of_term (Global.scope()) trm)
   and props = if simp then [Theory.simp_property] else []
-  in Thydb.add_axiom n t props (theories()); t
+  in 
+  Thydb.add_axiom n t props (theories()); t
 
 let axiom id =
   let t, n = Global.read_identifier id

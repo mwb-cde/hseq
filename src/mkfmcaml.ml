@@ -1,3 +1,9 @@
+(*-----
+ Name: mkfmcaml.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* link libraries into a runtime *)
 
 (* fmhome: where fmcaml lives *)

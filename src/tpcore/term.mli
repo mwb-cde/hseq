@@ -1,3 +1,9 @@
+(*-----
+ Name: term.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Term representation and their basic manipulation *)
 
 open Basic

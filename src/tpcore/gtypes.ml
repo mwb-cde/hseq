@@ -1,17 +1,13 @@
+(*-----
+ Name: gtypes.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 open Basic
 open Lib
 open Result
 
-(*
-type ('idtyp, 'tfun, 'tcons) pre_typ =
-    Var of 'idtyp
-  | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
-  | Base of 'tcons
-  | WeakVar of 'idtyp
-
-type gtype = (string ref, typ_const, base_typ)pre_typ
-*)
 type stype = ((string * int), typ_const, base_typ) pre_typ
 
 type typedef_record =
@@ -86,11 +82,10 @@ let is_weak t  =
   | _ -> false
 
 
-(* substitution *)
-(* substitution types *)
-(* Using balanced trees *)
-(* The right way to do it *)
-
+(*
+   Substitution 
+   substitution using balanced trees 
+*)
 let rec equals x y = 
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
@@ -106,7 +101,6 @@ let rec equals x y =
       with _ -> false)
   | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
   | (_, _) -> x=y)
-
 
 let rec safe_equal x y = 
   (match (x, y) with
@@ -161,8 +155,6 @@ let get_weak t =
   | _ -> raise (Failure "Not a weak variable")
 
 
-
-
 let rec string_gtype x =
   match x with
     Var(a) -> "'"^(!a)
@@ -180,13 +172,6 @@ let is_constr t =
     Constr _ -> true
   | _ -> false
 
-(*
-let is_func t = 
-  match t with
-    Constr (Func, _) -> true
-  | _ -> false
-*)
-
 let is_defined t = 
   match t with
     Constr (Defined _ , _) -> true
@@ -197,8 +182,7 @@ let is_base t  =
     Base _ -> true
   | _ -> false
 
-
-(* constructurs *)
+(* constructors *)
 
 let mk_base x = (Base x)
 
@@ -231,45 +215,6 @@ let destconstr t =
     Constr(f, l) -> (f, l)
   | _ -> raise (Failure "Not a constructor type")
 
-(*
-let fun_id = Basic.mk_long "base" "FUN"
-
-let mk_fun l r = mk_constr (Defined fun_id) [l; r]
-let is_fun t = 
-  match t with
-    Constr (Defined x, _) -> x=fun_id
-  | _ -> false
-
-let dest_fun t = 
-  if(is_fun t)
-  then 
-    match t with
-      Constr(Defined _, [a1; a2]) -> (a1, a2)
-    | _ -> raise (Failure "Not function type")
-  else raise (Failure "Not function type")
-      
-
-let rec mk_fun_from_list l r = 
-  match l with
-    [] -> raise (Failure "No argument types")
-  | [t] -> mk_fun t r
-  | t::ts -> mk_fun t (mk_fun_from_list ts r)
-
-let arg_type t = 
-  let (l, _) =  dest_fun t
-  in l
-
-let ret_type t = 
-  let (_, r) =  dest_fun t
-  in r
-
-let rec chase_ret_type t=
-  if(is_fun t)
-  then 
-    chase_ret_type (ret_type t)
-  else t
-*)
-
 let rec dest_constr ty = 
   match ty with 
     Constr(f, args) -> (f, args)
@@ -280,7 +225,6 @@ let dest_def t =
   match t with
     Constr(Defined n, args) -> (n, args)
   | _ -> raise (Failure "Not a defined type")
-
 
 let eqbase b1 b2 = 
   match b1 with
@@ -299,16 +243,14 @@ let eqconstr c1 c2 =
   | _ -> raise (Failure "Not a constructor type")
 
 
-
-
-(* pretty printing *)
-
+(* Pretty printing *)
 
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)
       ctr: int ref; (* used to generate variable names *)
     }
+
 let empty_printer_info()=
   {tbl=empty_subst(); ctr=ref 0}
 
@@ -321,25 +263,14 @@ let mk_typevar n =
 let print_constr ppstate id=
   match id with
     Basic.Defined n -> Printer.print_identifier ppstate n
-(*
-  | Basic.Func ->
-      Printer.print_string "->"
-*)
 
 let lookup_constr ppstate id = 
   match id with
     Basic.Defined n -> Printer.get_record ppstate n
-(*
-  | Basic.Func -> 
-      Printer.mk_record 6 Printer.infix None
-*)
 
 let find_printer ppstate id = 
   match id with 
     Basic.Defined n -> raise Not_found
-(*
-  | Basic.Func -> raise Not_found
-*)
 
 let pplookup ppstate id =
   try
@@ -354,26 +285,15 @@ let rec print_type ppstate pr t =
   let print_aux ppstate pr x=
     match x with
       Var(_) -> 
-	Format.print_string ("'"^(get_var x));
-	Format.print_cut()
+	Format.printf "@[<hov 2>'%s@]" (get_var x)
     | WeakVar(_) -> 
-	Format.print_string ("'_"^(get_weak x));
-	Format.print_cut()
+	Format.printf "@[<hov 2>_%s@]" (get_weak x)
     | Base(b) -> 
-	Format.print_string (Basic.string_btype b);
-	Format.print_cut()
+	Format.printf "@[<hov 2>%s@]" (Basic.string_btype b)
     | Constr(Defined op, args) -> 
-	print_defined ppstate pr (op, args);
-	Format.print_cut()
-(*
-    | Constr(Func, args) -> 
-	print_func ppstate pr args;
-	Format.print_cut()
-*)
+	print_defined ppstate pr (op, args)
   in 
-  Format.open_box 2;
   print_aux ppstate pr t;
-  Format.close_box ()
 and print_defined ppstate prec (f, args) =
   let pprec = pplookup ppstate f
   in 
@@ -387,6 +307,7 @@ and print_defined ppstate prec (f, args) =
       (match args with
 	[] -> ()
       | (lf::rs) -> 
+	  Format.printf "@[<hov 2>";
 	  Printer.print_bracket prec (pprec.Printer.prec) "(";
 	  print_type ppstate (pprec.Printer.prec) lf;
 	  Printer.print_space();
@@ -395,12 +316,12 @@ and print_defined ppstate prec (f, args) =
 	  Printer.print_list 
 	    (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
 	    rs; 
-	  Format.print_cut();
-	  Printer.print_bracket prec (pprec.Printer.prec) ")")
+	  Printer.print_bracket prec (pprec.Printer.prec) ")";
+	  Format.printf "@]")
     else 
       if(Printer.is_suffix pprec.Printer.fixity)
       then 
-	(Format.print_cut();
+	(Format.printf "@[<hov 2>";
 	 Printer.print_bracket prec (pprec.Printer.prec) "(";
 	 Printer.print_suffix 
 	   ((fun pr -> Printer.print_identifier (pplookup ppstate)), 
@@ -411,28 +332,19 @@ and print_defined ppstate prec (f, args) =
 		    (print_type ppstate pr, ",") l))
 	   (pprec.Printer.prec) (f, args);
 	 Printer.print_bracket prec (pprec.Printer.prec) ")";
-	 Format.print_cut())
+	 Format.printf "@]")
       else 
-	(Format.print_cut();
+	(Format.printf "@[<hov 2>";
 	 (match args with 
 	   [] -> ()
 	 | _ -> 
 	     (Printer.print_string "(";
-	      Printer.print_sep_list (print_type ppstate prec, ",") args;
-	      Printer.print_string ")"));
+	      Printer.print_sep_list 
+		(print_type ppstate prec, ",") args;
+	      Format.printf ")@,"));
 	 Printer.print_identifier (pplookup ppstate) f;
-	 Format.print_cut())
-(*
-and print_func ppstate prec args =
-  Printer.print_infix
-    ((fun _ _ -> Printer.print_string "->"),
-     (fun pr l -> 
-       Printer.print_bracket pr prec "(";
-       Printer.print_list 
-	 (print_type ppstate pr, Printer.print_space) l;
-       Printer.print_bracket pr prec ")"))
-    prec (Func, args)
-*)
+	 Format.printf "@]")
+
 let print ppinfo x =
   print_type ppinfo 0 x
 
@@ -451,8 +363,8 @@ class typeError s ts=
       Printer.print_sep_list 
 	(print st, ",") (self#get());
       Format.close_box();
-      Format.print_newline();
-      Format.close_box()
+      Format.close_box();
+      Format.print_newline()
   end
 let typeError s t = (mk_error((new typeError s t):>error))
 let addtypeError s t es= 
@@ -1165,33 +1077,14 @@ let rec quick_well_defined scp cache t =
 (* Debugging *)
 
 let print_subst tenv = 
-  Format.open_box 0;
-  (subst_iter 
-     (fun x y -> print_string 
-	 ("("^(string_gtype x)^" = "
-	  ^(string_gtype  y)^"):"))
-     tenv);
-  Format.close_box()
+  Format.printf "@[";
+  subst_iter 
+    (fun x y -> 
+      Format.printf "@[(%s =@ %s):@]"
+	(string_gtype x) (string_gtype  y))
+    tenv;
+  Format.printf "@]"
 
-
-(* from typing.ml *)
-
-(*
-let typeof_cnst c =
-  match c with
-    Null_const _-> 
-      raise (typeError "Null constant has no type" [mk_ind])
-  |	Cnum _ -> mk_num
-  | Cbool _ -> mk_bool
-
-let bin_ty a1 a2 r = (mk_fun_from_list [a1; a2] r)
-
-let typeof_conn c =
-  match c with
-    Not -> mk_fun_from_list [mk_bool] mk_bool
-  | x -> mk_fun_from_list 
-	[mk_bool; mk_bool] mk_bool
-*)
 
 (* set names in a type to their long form *)
 
@@ -1216,10 +1109,6 @@ let set_name scp trm =
 	in 
 	let nid=Basic.mk_long nth n
 	in Constr(Defined nid, List.map set_aux args)
-(*
-    | Constr(f, args) ->
-	Constr(f, List.map set_aux args)
-*)
     | _ -> t
   in set_aux trm
 
@@ -1244,10 +1133,6 @@ let in_thy_scope memo scp th ty =
     match t with
       Var(_) -> ()
     | Base(_) -> ()
-(*
-    | Constr(Func, args) ->
-	List.iter in_scp_aux args
-*)
     | Constr(Defined(id), args) ->
 	ignore(lookup_id (thy_of_id id));
 	List.iter in_scp_aux args

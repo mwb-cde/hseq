@@ -1,3 +1,9 @@
+(*-----
+ Name: typing.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Basic
 open Term
 
@@ -9,28 +15,23 @@ class typingError s ts tys=
     method get_terms() = trms
     method get_types () = typs
     method print st = 
-      Format.open_box 0; 
-      print_string (self#msg());
+      Format.printf "@[<v>";
+      Format.printf "@[%s@]@," (self#msg());
       (match (self#get_terms()) with 
 	[] -> ()
       | ts -> 
-	  (Format.print_newline();
-	   print_string "Terms: ";
-	   Format.open_box 0; 
-	   Printer.print_sep_list 
-	     (Term.print_term st 0, ",") ts;
-	   Format.close_box()));
+	  ( Format.printf "@[%s" "Terms: ";
+	    Printer.print_sep_list 
+	      (Term.print_term st 0, ",") ts;
+	    Format.printf "@]@,"));
       (match (self#get_types()) with 
 	[] -> ()
       | ts -> 
-	  (Format.print_newline();
-	   print_string "Gtypes: ";
-	   Format.open_box 0; 
+	  (Format.printf "@[%s" "Gtypes: ";
 	   Printer.print_sep_list
 	     (Gtypes.print_type st 0, ",") ts;
-	   Format.close_box()));
-      Format.print_newline();
-      Format.close_box()
+	   Format.printf "@]@,"));
+      Format.printf "@]"
   end
 let typingError s tr ty= 
   Result.mk_error((new typingError s tr ty):>Result.error)

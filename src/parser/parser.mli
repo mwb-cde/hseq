@@ -1,3 +1,9 @@
+(*-----
+ Name: parser.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 module Pkit :
     sig
       exception ParsingError of string

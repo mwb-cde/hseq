@@ -1,3 +1,9 @@
+(*-----
+ Name: supinf.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (*
    SupInf decision procedure for Presburger Formulas.
    Based on Shostaks method.

@@ -1,23 +1,17 @@
+(*-----
+ Name: term.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Lib
 open Basic
 open Gtypes
 open Result
 
-(*
-let rec equals x y = 
-  (match (x, y) with
-    (App(f1, arg1), App(f2, arg2))->
-      (equals f1 f2) & (equals arg1 arg2)
-  | (Bound(q1), Bound(q2)) -> q1==q2
-  | (Qnt(k1, qn1, b1), Qnt(k2, qn2, b2)) -> 
-      k1=k2 & qn1==qn2 & (equals b1 b2)
-  | (Typed(t1, ty1), Typed(t2, ty2)) ->
-      ty1=ty2  & (equals t1 t2)
-  | (_, _) -> x=y)
-*)
 
 let rec equals x y = 
-  (match (x, y) with
+ (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
       (equals f1 f2) & (equals arg1 arg2)
   | (Bound(q1), Bound(q2)) -> q1==q2
@@ -27,7 +21,6 @@ let rec equals x y =
      (Gtypes.equals ty1 ty2)  & (equals t1 t2)
   | (_, _) -> x=y)
 
-
 (* simple pretty printing  and error handling *)
 
 let print_simple trm=
@@ -35,35 +28,31 @@ let print_simple trm=
     match t with
       Id(n, ty) -> 
 	let (th, x) = Basic.dest_fnid n
-	in Format.print_string (th^"."^x)
-    | Bound(n) -> Format.print_string (".."^(binder_name n))
-    | Free(n, ty) -> Format.print_string n
-    | Const(c) -> Format.print_string (Basic.string_const c)
+	in 
+	Format.printf "@[%s@]" (th^"."^x)
+    | Bound(n) -> 
+	Format.printf "@[%s@]" (".."^(binder_name n))
+    | Free(n, ty) -> Format.printf "@[%s@]"  n
+    | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
     | Typed (trm, ty) ->
-	Format.print_string "(";
-	Format.open_box 0;
-	print_aux  trm;
-	Format.close_box();
-	Format.print_string ": ";
-	Format.print_string (Gtypes.string_gtype ty);
-	Format.print_string ")"
+	Format.printf "@[%s" "(";
+	print_aux trm;
+	Format.printf "@ %s %s)@]" ":" (Gtypes.string_gtype ty)
     | App(t1, t2) ->
-	Format.open_box 0;
-	Format.print_string "(";
+	Format.printf "@[(";
 	print_aux t1;
-	Format.print_string " ";
+	Format.printf "@ ";
 	print_aux t2;
-	Format.print_string ")";
-	Format.close_box ()
+	Format.printf ")@]"
     | Qnt(k, q, body) ->
-	Format.print_string (Basic.quant_string k);
-	Format.print_string 
-	  ("("^(binder_name q)
-	   ^": "^(Gtypes.string_gtype (binder_type q))^")"^": ");
-	Format.open_box 0;
+	Format.printf "@[%s"  (Basic.quant_string k);
+	Format.printf "(%s:@ %s) :@ "  
+	  (binder_name q)
+	  (Gtypes.string_gtype (binder_type q));
 	print_aux body;
-	Format.close_box ();
-  in print_aux trm
+	Format.printf "@]"
+  in 
+  print_aux trm
 
 class basictermError s ts =
   object (self)
@@ -71,13 +60,11 @@ class basictermError s ts =
     val trms = (ts :term list)
     method get() = trms
     method print st = 
-      Format.open_box 0; print_string ((self#msg())^" "); 
-      Format.open_box 0; 
+      Format.printf "@[%s@ " (self#msg()); 
       Printer.print_sep_list 
 	(print_simple, ",")
 	(self#get());
-      Format.close_box();
-      Format.close_box();
+      Format.printf "@]"
   end
 let basicError s t = mk_error((new basictermError s t):>error)
 
@@ -86,7 +73,6 @@ let get_binder_name x =
     Bound(n) -> binder_name n
   | Qnt(_, n, _) -> binder_name n
   | _ -> raise (basicError "Not a binder" [x])
-
 
 let dest_qnt t=
   match t with 
@@ -859,19 +845,16 @@ let retype_pretty typenv trm =
   let nt, _ = retype_pretty_env typenv trm
   in nt
 
-(*
-let print prenv x = 
-  Format.open_box 2;
-  print_string 
-    (string_inf_term  prenv x);
-  Format.close_box()
-*)
-
 let rec print_termlist prenv x =
   match x with 
-    [] -> print_string ""
-  | [p] -> print prenv p
-  | (p::ps) -> (print prenv p; print_string ", "; print_termlist prenv ps)
+    [] -> ()
+  | [p] -> Format.printf "@[";print prenv p; Format.printf "@]"
+  | (p::ps) -> 
+      (Format.printf "@[";
+       print prenv p; 
+       Format.printf ",@ ";
+       print_termlist prenv ps;
+       Format.printf "@]")
 
 (* pretty printing *)
 
@@ -888,22 +871,12 @@ let pplookup ppstate id =
 let print_meta qnt =
   let _, qv, qty = dest_binding qnt 
   in 
-  Format.open_box 0;
-  Format.print_string "(";
-  Format.print_string ("( _"^qv^": ");
-  Format.print_string (Gtypes.string_gtype qty);
-  Format.print_string ")";
-  Format.close_box()
+  Format.printf "@[(_%s:@ %s)@]" qv (Gtypes.string_gtype qty)
 
 let print_typed_name ppstate (n, ty)=
-  Format.open_box 2;
-  Printer.print_string "(";
-  Printer.print_string n;
-  Format.print_cut();
-  Printer.print_string ": ";
+  Format.printf "@[<hov 2>(%s@,: " n;
   Gtypes.print (ppstate) ty;
-  Printer.print_string ")";
-  Format.close_box()
+  Format.printf ")@]"
 
 let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
   let printer =
@@ -920,14 +893,11 @@ let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
   printer prec (f, args)
 
 let print_typed_term tpr ppstate prec (trm, ty)=
-  Format.open_box 2;
-  Printer.print_string "(";
+  Format.printf "@[<hov 2>(";
   tpr ppstate prec trm;
-  Printer.print_string ")";
-  Format.print_cut();
-  Printer.print_string ": ";
+  Format.printf ")@,: ";
   Gtypes.print_type ppstate 0 ty;
-  Format.close_box()
+  Format.printf "@]"
 
 let print_qnt ppstate q =
   let _, qvar, qtyp = dest_binding q 
@@ -935,63 +905,54 @@ let print_qnt ppstate q =
   print_typed_name ppstate (qvar, qtyp)
 
 let print_qnts ppstate prec (qnt, qs) =
-  Printer.print_string (Basic.quant_string qnt);
+  Format.printf "@[%s" (Basic.quant_string qnt);
   Printer.print_list
     (print_qnt ppstate, 
      Printer.print_space) 
     qs;
-  Printer.print_string ":";
-  Format.print_cut()
+  Format.printf":@]"
 
 let rec print_term ppstate prec x =
   match x with
     Id(n, ty) -> 
+      Format.printf "@[";
       Printer.print_identifier 
 	(pplookup ppstate) n;
-      Format.print_cut()
+      Format.printf "@]"
   | Free(n, ty) -> 
-      Format.print_string n; 
-      Format.print_cut()
+      Format.printf "@[%s@]" n 
   | Bound(n) -> 
-      Format.print_string ((get_binder_name x));
-      Format.print_cut()
+      Format.printf "@[%s@]" ((get_binder_name x))
   | Const(c) -> 
-      Format.print_string (Basic.string_const c);
-      Format.print_cut()
+      Format.printf "@[%s@]"  (Basic.string_const c);
   | Typed (trm, ty) -> 
+      Format.printf "@[";
       print_typed_term print_term ppstate prec (trm, ty);
-      Format.print_cut()
+      Format.printf "@]"
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
       (match args with 
-	[] -> 
-	  (Format.open_box 0;
-	   print_term ppstate prec f;
-	   Format.close_box())
+	[] -> print_term ppstate prec f
       | _ -> 
-	  (if is_var f 
+	  if is_var f 
 	  then 
-	    (let n, ty=dest_var f
+	    let n, ty=dest_var f
 	    in 
+	    Format.printf "@[";
 	    print_fn_app 
 	      ((fun _ -> 
 		Printer.print_identifier 
 		  (pplookup ppstate)),
-	      (fun p t-> 
-		Format.open_box 0; 
-		print_term ppstate p t; 
-		Format.close_box()))
-	      ppstate prec (n, args))
+	      (fun p t-> print_term ppstate p t))
+	      ppstate prec (n, args);
+	    Format.printf "@]"
 	  else 
-	    (Printer.print_string "(";
-	     Format.open_box 2;
+	    (Format.printf "@[<hov 2>(";
 	     Printer.print_list
 	       (print_term ppstate prec, Printer.print_space)
 	       (f::args);
-	     Format.close_box();
-	     Printer.print_string ")")));
-      Format.print_cut()
+	     Format.printf ")@]"))
   | Qnt(qnt, q, body) -> 
       let (_, _, qvar, qtyp, _) = dest_qnt x
       in 
@@ -999,14 +960,15 @@ let rec print_term ppstate prec x =
       in 
       let ti = (Basic.prec_qnt (qnt))
       in 
+      Format.printf "@[";
       Printer.print_bracket prec ti "(";
-      Format.open_box 3;
+      Format.printf "@[<hov 3>";
       print_qnts ppstate prec (qnt, qnts); 
       Printer.print_space ();
       print_term ppstate ti b;
-      Format.close_box();
+      Format.printf "@]";
       Printer.print_bracket prec ti ")";
-      Format.print_cut()
+      Format.printf "@]"
 
 let print ppstate x = 
   Format.open_box 0;
@@ -1029,15 +991,10 @@ class termError s ts =
     val trms = (ts :term list)
     method get() = trms
     method print st = 
-      Format.open_box 0; 
-      print_string ((self#msg())^" "); 
-      Format.print_space();
-      Format.open_box 0; 
+      Format.printf "@[%s@ @[" (self#msg()); 
       Printer.print_sep_list 
 	(print st, ",") (self#get());
-      Format.close_box();
-      Format.print_newline();
-      Format.close_box();
+      Format.printf "@]@]@."
   end
 let mk_termError s t = ((new termError s t):>error)
 

@@ -1,3 +1,9 @@
+(*-----
+ Name: logicterm.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Representation and manipulation of terms of the Logic *)
 (* builds on term.ml *)
 
@@ -30,9 +36,9 @@ val mk_fun_ty_from_list: gtype list -> gtype -> gtype
 val typeof_cnst  : Basic.const_ty -> gtype
 val typeof_conn  : Basic.conns_ty -> gtype
 
-(** {c6} Terms *)
+(** {c6 Terms} *)
 
-(* identifiers/recognisers/constructors for basic logic functions *)
+(** identifiers/recognisers/constructors for basic logic functions *)
 val notid : Basic.ident
 val andid : Basic.ident
 val orid : Basic.ident
@@ -41,7 +47,7 @@ val impliesid : Basic.ident
 val equalsid : Basic.ident
 val equalssym : string (* PP symbol for equals ("=") *)
 
-val someid: Basic.ident  (* base.some=base.epsilon(%x: x) *)
+val anyid: Basic.ident  (* base.any=base.epsilon(%x: true) *)
 
 val is_neg: term -> bool
 val is_conj: term -> bool
@@ -71,7 +77,7 @@ val is_lambda: term-> bool
 
 val dest_equality : term -> (term * term)
 
-val mk_some: term
+val mk_any: term
 
 (* equality under alpha conversion *)
 (* val alpha_convp : scope -> term -> term -> bool  *)

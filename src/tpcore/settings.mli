@@ -1,3 +1,9 @@
+(*-----
+ Name: settings.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* 
    Settings:
    Put installation dependent settings in here 

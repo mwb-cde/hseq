@@ -1,3 +1,9 @@
+(*-----
+ Name: userlib.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 (* Infixes *)
 
@@ -25,20 +31,19 @@ let end_theory = Commands.end_theory
 let new_type=Commands.new_type
 
 let define ?pp ?(simp=false) df =
-  let ret = Commands.define ?pp ~simp df
+  let ret = Commands.define ?pp ~simp:simp df
   in 
   if simp
   then 
-    let (_, _, thm) = Defn.dest_defn ret
+    (let (_, _, thm) = Defn.dest_defn ret
     in 
-    Simplib.add_simp thm;
-    ret
+    Simplib.add_simp thm; ret)
   else ret
 
 let declare = Commands.declare
 
 let new_axiom ?(simp=false) n t =
-  let thm = Commands.new_axiom ~simp n t
+  let thm = Commands.new_axiom ~simp:simp n t
   in 
   if(simp)
   then (Simplib.add_simp thm; thm)
@@ -54,16 +59,16 @@ let remove_file = Commands.remove_file
 let qed = Commands.qed
 
 let prove_thm ?(simp=false) n t tac =
-  let thm = Commands.prove_thm ~simp n t tac
+  let thm = Commands.prove_thm ~simp:simp n t tac
   in 
-  if(simp) 
+  if simp 
   then (Simplib.add_simp thm; thm)
   else thm
 
 let save_thm ?(simp=false) n thm =
-  let ret = Commands.save_thm ~simp n thm
+  let ret = Commands.save_thm ~simp:simp n thm
   in 
-  if(simp) 
+  if simp 
   then (Simplib.add_simp ret; ret)
   else ret
 

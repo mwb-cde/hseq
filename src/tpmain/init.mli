@@ -1,3 +1,9 @@
+(*-----
+ Name: init.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 (*
    Code to initialise TP

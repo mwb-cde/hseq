@@ -1,3 +1,9 @@
+(*-----
+ Name: goals.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Logic
 open Tactics
 

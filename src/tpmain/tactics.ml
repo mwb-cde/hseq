@@ -1,3 +1,9 @@
+(*-----
+ Name: tactics.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Logic
 
 type tactic = Logic.rule

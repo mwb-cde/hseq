@@ -1,3 +1,8 @@
+(*-----
+ Name: simpset.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
 
 open Basic
 open Term
@@ -42,24 +47,21 @@ let empty_set() =
    Less than ordering of terms for use with Net.insert. Makes
    variables (for which [varp] is true) larger than any other term.
  *)
-(*
-let lt var x y =term_gt (rule_rhs y) (rule_rhs x)
-*)
 
-let rec lt_var varp x y=
-  let (x_is_var, y_is_var) = (varp x, varp y)
+let rec lt_var lvarp rvarp x y=
+  let (x_is_var, y_is_var) = (lvarp x, rvarp y)
   in 
   match x_is_var, y_is_var with
     (false, true) -> true
-  | (true, false) -> false
-  | _ -> term_lt varp x y
-and term_lt varp t1 t2 = 
+  | (true, _) -> false
+  | _ -> term_lt lvarp rvarp x y
+and term_lt lvarp rvarp t1 t2 = 
   let atom_lt (a1, ty1) (a2, ty2) =  a1<a2
   and bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
   in 
   match (t1, t2) with
-    Typed (trm, _), _ -> lt_var varp trm t2
-  | _, Typed (trm, _) -> lt_var varp t1 trm
+    Typed (trm, _), _ -> lt_var lvarp rvarp trm t2
+  | _, Typed (trm, _) -> lt_var lvarp rvarp t1 trm
   | (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
@@ -79,9 +81,9 @@ and term_lt varp t1 t2 =
   | (App _, Bound _) -> false
   | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
-      if lt_var varp f1 f2 then true
-      else if lt_var varp f2 f1 then false
-      else lt_var varp a1 a2
+      if lt_var lvarp rvarp f1 f2 then true
+      else if lt_var lvarp rvarp f2 f1 then false
+      else lt_var lvarp rvarp a1 a2
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
   | (Qnt _, Id _) -> false
@@ -89,11 +91,15 @@ and term_lt varp t1 t2 =
   | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
   | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
-      if (lt_var varp b1 b2) 
+      if (lt_var lvarp rvarp b1 b2) 
       then (bound_lt (dest_binding q1) (dest_binding q2))
       else false
 and 
- termnet_lt varp x y = lt_var varp (rule_rhs y) (rule_rhs x)
+ termnet_lt x y = 
+  let lvarp = is_variable (rule_binders x)
+  and rvarp = is_variable (rule_binders y)
+  in 
+  lt_var lvarp rvarp (rule_lhs y) (rule_lhs x)
 
 
 (** [add_rule rl s]:
@@ -105,23 +111,6 @@ and
    (not implemented, currently [add_rule] just prints a warning and 
    returns the set [s]).
  *)
-
-let print_rule (vars, cond, lhs, rhs, src)=
-  let trm = 
-    Drule.rebuild_qnt Basic.All vars
-      (match cond with
-	None -> (Logicterm.mk_equality lhs rhs)
-      | Some c -> (Logicterm.mk_implies c (Logicterm.mk_equality lhs rhs)))
-  in 
-  Format.open_box 0;
-  (match src with
-    Logic.Asm _ -> Format.print_string "(assumption) "
-  | Logic.OAsm _ -> Format.print_string "(ordered assumption) "
-  | Logic.RRThm _ -> Format.print_string "(theorem) ";
-  | Logic.ORRThm _ -> Format.print_string "(ordered theorem) ");
-  Display.print_term trm;
-  Format.close_box();
-  Format.print_newline()
 
 
 let get_rr_order rr=
@@ -152,12 +141,12 @@ let add_rule rl s=
     let rl1=(vs, cond, l, r, set_rr_order src order)
     in 
     { 
-      basic=Net.insert (termnet_lt varp) varp (s.basic) l rl1;
+      basic=Net.insert termnet_lt varp (s.basic) l rl1;
       next=s.next
     }
   else 
     { 
-      basic=Net.insert (termnet_lt varp) varp (s.basic) l rl;
+      basic=Net.insert termnet_lt varp (s.basic) l rl;
       next=s.next
     }
 
@@ -237,3 +226,50 @@ let split s1=
       let qs, c, l, r=dest_rr_rule trm
       in 
       (qs, c, l, r, rl)
+
+
+(* Printer for simpsets *)
+
+(* Printer for nets in a simpset *)
+let print_rule ppinfo (vars, cond, lhs, rhs, src)=
+  let trm = 
+    Drule.rebuild_qnt Basic.All vars
+      (match cond with
+	None -> (Logicterm.mk_equality lhs rhs)
+      | Some c -> (Logicterm.mk_implies c (Logicterm.mk_equality lhs rhs)))
+  in 
+  Format.printf "@[";
+  (match src with
+    Logic.Asm _ -> 
+      Format.printf "Assumption: ";
+      Term.print ppinfo trm;
+  | Logic.OAsm _ -> 
+      Format.printf "Ordered assumption: ";
+      Term.print ppinfo trm;
+  | Logic.RRThm thm -> 
+      Format.printf "Theorem: ";
+      Logic.print_thm ppinfo thm
+  | Logic.ORRThm (othm, _) -> 
+      Format.printf "Orderd theorem: ";
+      Logic.print_thm ppinfo othm);
+  Format.printf "@]"
+
+let print_rule_net ppinfo net=
+  let rule_printer r = print_rule ppinfo r; Format.printf "@,"
+  in 
+  Format.printf "@[<v>";
+  Net.iter rule_printer net;
+  Format.printf "@]"
+  
+let rec print_aux ppinfo set = 
+  print_rule_net ppinfo set.basic;
+  match set.next with
+    None -> ()
+  | Some set1 -> 
+      Format.printf "@,";
+      print_aux ppinfo set1
+
+let print ppinfo set = 
+  Format.printf "@[<v>[{";
+  print_aux ppinfo set;
+  Format.printf "}]@]"

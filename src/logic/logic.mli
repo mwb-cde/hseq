@@ -1,3 +1,9 @@
+(*-----
+ Name: logic.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* theorems and rules of the logic *)
 (* rules are based on a sequent calculus *)
 
@@ -295,6 +301,49 @@ module Subgoals:
    Functions to apply a tactic to subgoals.
    (A tactic has type node -> branch)
  *)
+
+(*
+   [merge env1 env2]: merge type environments.
+
+   Create a [env3] which has the binding of each weak variable in
+   [env1 + env2].
+
+   raise [Failure] if a variable ends up bound to itself.
+*)
+    val merge_tyenvs:
+	Gtypes.substitution 
+      -> Gtypes.substitution	
+	-> Gtypes.substitution
+
+
+(* [merge_tac_tyenvs n b]:
+   Merge the type environment of [b], resulting from applying a tactic
+   to [n], with the type environment of [n].  Make a new branch with
+   the components of [b] but with the new type environment.
+*)
+    val merge_tac_tyenvs : node -> branch -> branch
+
+(*
+   [apply tac node]: Apply tactic [tac] to [node].
+
+   This is the work-horse for applying tactics. All other functions
+   should call this to apply a tactic.
+
+   Approach:
+   1. Create a new tag [ticket].
+   3. Apply tac to [node] getting branch [b'].
+   4. If the tag of [b'] is not [ticket] then fail.
+[
+   5. Merge the type environment of [b'] with [n']. 
+      (This may be unnecessary.)
+Almost certainly unnecessary so not done.
+]
+   6. Return the branch formed from [b'] with the tag of [node].
+
+   raise logicError on failure.
+*)
+    val apply: (node -> branch) -> node -> branch
+
 (*
    [apply_to_node ?report tac (Node(tyenv, sqnt))]
 

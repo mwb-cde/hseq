@@ -1,3 +1,9 @@
+(*-----
+ Name: result.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Format
 
 type kind = int
@@ -15,7 +21,7 @@ class message s=
   object (self)
     method msg () = s
     method print (x: Printer.ppinfo) = 
-      open_box 0; print_string (self#msg()); close_box ()
+      Format.printf "@[%s@]" (self#msg())
   end
 
 class error s =
@@ -79,10 +85,6 @@ let add_error e x=
     Errors es -> Errors(e::es)
   | _ -> Errors[e; x]
 
-(*
-let catchError e x =  raise (addError e x)
-*)
-
 let print_error info depth errs=
   let ctr=ref (depth+1)
   in 
@@ -92,30 +94,21 @@ let print_error info depth errs=
       (ctr:=(!ctr)-1;
        match x with
       (Error e) -> 
-	Format.open_box 0;
+	Format.printf "@[";
 	e#print info;
-	Format.print_newline();
-	Format.close_box ()
+	Format.printf "@]@,"
     | (Errors l) -> 
-	List.iter print_aux l;
+	List.iter print_aux l
     | _ -> 
-	Format.open_box 0;
-	Format.print_string (Printexc.to_string x);
-	Format.print_newline();
-	Format.close_box())
+	Format.printf "@[%s@]@," (Printexc.to_string x))
   in 
-  Format.open_box 0;
+  Format.printf "@[<v>";
   List.iter print_aux [errs];
-  Format.close_box()
-
-
+  Format.printf "@]"
 
 let catch_error info depth f a = 
   try (f a)
   with x -> print_error info depth x
 
 let warning s =
-  (Format.open_box 0;
-   Format.print_string s;
-   Format.print_string "\n";
-   Format.close_box())
+  Format.printf "@[%s@]@." s

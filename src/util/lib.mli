@@ -1,3 +1,9 @@
+(*----
+ Name: lib.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Simple utility functions *)
 
 val iteri : (int -> 'a array -> 'b) -> 'a array -> unit 

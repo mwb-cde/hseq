@@ -1,3 +1,9 @@
+(*-----
+ Name: simpconvs.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (**
    [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
 *)

@@ -1,3 +1,9 @@
+(*-----
+ Name: cli.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Lib
 
 let use_string st =  
@@ -21,15 +27,10 @@ let read_input () = input_line stdin
 let catch_errors f arg =
   try Commands.catch_errors f arg
   with x -> 
-    (Format.open_box 0;
-     Format.print_string (Printexc.to_string x);
-     Format.print_flush ())
-
+    (Format.printf "@[%s@]@." (Printexc.to_string x))
 
   let get_input () = 
-    Format.open_box 0;
-    Format.print_string "> ";
-    Format.print_flush ();
+    Format.printf "@[> @]@?";
     Commands.catch_errors read_input ()
 
   let repl () =
@@ -54,12 +55,16 @@ let catch_errors f arg =
     repl_flag:=true; Goals.set_hook signal; repl()
 
 
-  let rec print_aux hs = 
-    match hs with
-      [] -> print_newline()
-    | (h::hhs) -> print_string h; print_newline(); print_aux hhs
-
-  let print () = print_aux (List.rev (!history))
+  let print () = 
+    let rec print_aux hs = 
+      match hs with
+	[] -> ()
+      | (h::hhs) -> 
+	  Format.printf "@[%s@]@," h; print_aux hhs
+    in 
+    Format.printf "@[<v>";
+    print_aux (List.rev (!history));
+    Format.printf "@]"
     
   let save fn = ()
 

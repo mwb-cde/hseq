@@ -1,3 +1,9 @@
+(*-----
+ Name: simpconvs.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 let log_message = ref None
 let log x = log_message:=Some x
 
@@ -577,7 +583,6 @@ and do_neg_exists_rule (scp, thm, (qs, c, a)) =
   | Some _ ->  
       failwith 
 	"do_neg_exists_rule: Not an unconditional negated existential quantifier"
-
 
 and single_thm_to_rules scp thm = 
   let (qs, c, a) = strip_qnt_cond (Formula.dest_form (Logic.dest_thm thm))

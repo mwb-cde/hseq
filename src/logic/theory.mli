@@ -1,3 +1,10 @@
+(*-----
+ Name: theory.mli
+ Author: M Wahab <Mwahab@Users.Sourceforge.Net>
+ Copyright M Wahab 2005
+----*)
+
+
 (* theories: a record of identifier and type definitions and declarations,
    their theorems and the parent theories *)
 
@@ -8,7 +15,11 @@
    [simp: property]: Mark as of interest to the simplifier.
 *)
 
+(*
 type property = exn
+val simp_property: property
+*)
+type property = string
 val simp_property: property
 
 (* identifier records *)
@@ -172,5 +183,8 @@ val export_theory: out_channel -> thy -> bool -> unit
    Get contents of theory [thy]
 *)
 val contents : thy -> contents
+
+val print_property: Printer.ppinfo -> property -> unit
+val print_properties: Printer.ppinfo -> property list -> unit
 
 val print: Printer.ppinfo -> thy -> unit

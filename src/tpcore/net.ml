@@ -1,3 +1,9 @@
+(*-----
+ Name: net.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* 
    Term Nets
 
@@ -40,8 +46,6 @@ let is_empty n =
 
    Return the label for term t. Not used, term_to_label is better.
  *)
-
-
 let rec label varp trm = 
   if(varp trm) then Var
   else
@@ -307,3 +311,21 @@ let delete varp net trm test =
 	Node(delete_from_list trm test ds, ls, vn)
   in 
   update delete_aux varp net trm
+
+(* 
+   [iter f net]
+   apply [f] to each data item stored in a net.
+*)
+let rec iter f (Node(ds, lnets, vnet)) =
+  List.iter f ds;
+  List.iter (fun (_, ln) -> iter f ln) lnets;
+  match vnet with 
+    None -> ()
+  | Some vn -> iter f vn
+   
+
+(*
+   [print p net]
+   Print the contents of [net] using printer [p].
+*)
+let print p net = iter p net

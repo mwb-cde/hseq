@@ -1,3 +1,9 @@
+(*-----
+ Name: dbterm.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
   open Gtypes
 
   type binder = {quant: Basic.quant_ty; qvar: string; qtyp: stype}

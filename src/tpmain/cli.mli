@@ -1,3 +1,9 @@
+(*-----
+ Name: cli.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* simple user interface *)
 
 (* saves list of input strings which make a change to the sequent *)

@@ -1,3 +1,9 @@
+(*-----
+ Name: thydb.mli
+ Author: M Wahab <Mwahab@Users.Sourceforge.Net>
+ Copyright M Wahab 2005
+----*)
+
 (* database of theories *)
 (* has a hashtable of theories indexed by name,
    a current theory and that theories dependency list *)
@@ -120,3 +126,13 @@ val thy_of: string -> string -> thydb -> string
 
 (* empty a database *)
 val expunge: thydb -> Theory.thy-> unit
+
+(* debugging info *)
+
+val load_thy: 
+    bool -> float -> (('a -> string) * (Theory.contents -> unit))
+	-> 'a -> thydb -> Theory.thy
+
+val build_thy: 
+    float -> ( string -> unit)
+	-> string -> thydb -> Theory.thy

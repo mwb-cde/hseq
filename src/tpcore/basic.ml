@@ -1,3 +1,9 @@
+(*-----
+ Name: basic.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 type thy_id = string
 type ident = (thy_id* string)
 
@@ -333,24 +339,13 @@ module PP =
       | Some(x) -> x
 
 
-(*
-   let cfun_string c =
-   match c with 
-   "not" -> print_string "not"
-   | "and" -> print_string "and"
-   | "or" -> print_string "or"
-   | "implies" -> print_string " => "
-   | "iff" -> print_string "<=>"
-   | "equals" -> print_string "="
-   | x -> print_string x
- *)
-
-    let print_ident x = Format.print_string (string_fnid x)
+    let print_ident x = 
+   Format.printf "@[%s@]" (string_fnid x)
 
 (* print_bracket: print a bracket depending on relative priority *)
 
     let print_bracket pr i br =
-      if pr < i then Format.print_string br else ()
+      if pr < i then Format.printf "@[%s@]" br else ()
 
 (* Identifier Printer *)
     let print_identifier x pprec=
@@ -359,7 +354,7 @@ module PP =
 	  None -> name x
 	| Some(s) -> s)
       in 
-      Format.print_string str
+      Format.printf "@[%s@]" str
 
   end
 

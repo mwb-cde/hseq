@@ -1,3 +1,9 @@
+(*-----
+ Name: logic.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Basic
 open Formula
 
@@ -285,6 +291,22 @@ module Sequent=
 
 (* Accessing and manipulating formulas in a sequent *)
 
+(*
+let extract_bindings tyvars src dst=
+  let rec extract_aux vs r=
+    match vs with
+      [] -> r
+    | (x::xs) -> 
+	let y= 
+	  try Gtypes.lookup_var x src
+	  with Not_found -> x
+	in 
+	if Gtypes.is_any_var y
+	then extract_aux xs r
+	else extract_aux xs (bind x y r)
+  in extract_aux tyvars dst
+*)
+
 (* 
    New method: 
    split a list x into (l, c, r) so that x = (rev_append l (c::r)).
@@ -440,16 +462,59 @@ module Sequent=
       else index_aux (concls sq) i
 
 
+(* Merge type environments:
+   
+   [merge (tyvar1, env1) (tyvar2, env2)]
+
+   Create a [(tyvar3, env3)]
+   such that [tyvar3 = tyvar1+tyvar2] 
+   and [env3] has the binding of each variable in [tyvar3] in [env1 + env2].
+
+   raise [Failure] if a variable ends up bound to itself.
+*)
+let rec merge_aux memo bc cs =
+  match bc with 
+    [] -> cs
+  | (x::xs) -> 
+      if(Gtypes.member x memo)
+      then merge_aux memo xs cs
+      else merge_aux memo xs (x::cs)
+
+let merge_lists xs ys =
+  let memo = 
+    List.fold_left (fun e x -> Gtypes.bind x x e) (Gtypes.empty_subst()) xs
+  in 
+  merge_aux memo ys xs
+
+let merge_envs vs env1 env2 =
+  let assign e x = 
+    let y = Gtypes.lookup_var x env2
+    in 
+    if (Gtypes.equals x y)
+    then raise (Failure "Can't merge type environments")
+    else Gtypes.bind x y e
+  in 
+  List.fold_left assign env1 vs
+
+let merge_tyenvs (tyvars1, env1) (tyvars2, env2) =
+  let tyvars3= merge_lists tyvars1 tyvars2
+  in 
+  let env3= merge_envs tyvars3 env1 env2
+  in 
+  (tyvars3, env3)
+
   end
 
 
 
 (* 
-   A goal is made up of
-   a list of sequents: the sub-goals still to be proved
-   a type environment: the bindings of the shared type variables 
-   which occur in the goals sequents.
-   a formula: the theorem which is to be proved
+   A goal is made up of a list of sequents: 
+
+   - The sub-goals still to be proved 
+   - A type environment: the bindings of the shared type
+   variables which occur in the goals sequents (all of these are weak
+   type variables). 
+   - A formula: the theorem which is to be proved
  *)
 type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
 (* type rule = goal -> goal *)
@@ -569,10 +634,9 @@ let mk_thm g =
   | _ -> raise (logicError "Not a theorem" [])
 
 let print_thm pp t = 
-  Format.open_box 3; 
-  Format.print_string "|- ";
+  Format.printf "@[<3>|- ";
   Term.print pp (Formula.term_of_form (dest_thm t));
-  Format.close_box()
+  Format.printf "@]"
 
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
@@ -607,10 +671,11 @@ module Subgoals=
    Subgoals:
    managing sequents used as subgoals
  *)
-    type node = Node of (Gtypes.substitution * Sequent.t)
-    let node_tyenv (Node(ty, _)) = ty
-    let node_sqnt (Node(_, s)) = s
-    let mk_node ty s = Node(ty, s)
+    type node = Node of (Tag.t * Gtypes.substitution * Sequent.t)
+    let node_tag (Node(tg, _, _)) = tg
+    let node_tyenv (Node(_, ty, _)) = ty
+    let node_sqnt (Node(_, _, s)) = s
+    let mk_node tg ty s = Node(tg, ty, s)
 
     type branch= Branch of (Tag.t * Gtypes.substitution * Sequent.t list)
     let branch_tag (Branch(tg, _, _)) = tg
@@ -618,13 +683,95 @@ module Subgoals=
     let branch_sqnts (Branch(_, _, s)) = s
     let mk_branch tg ty gs = Branch(tg, ty, gs)
 
+    let replace_branch_tag b tg =
+      mk_branch tg (branch_tyenv b) (branch_sqnts b) 
+
 (* 
    [branch_node node]
    make a branch from [node]
  *)
-    let branch_node (Node(tyenv, sqnt))=
-      Branch(Sequent.sqnt_tag sqnt, tyenv, [sqnt])
+    let branch_node (Node(tg, tyenv, sqnt))=
+      Branch(tg, tyenv, [sqnt])
 
+(*
+   [merge env1 env2]: merge type environments.
+
+   Create a [env3] which has the binding of each weak variable in
+   [env1 + env2].
+
+   raise [Failure] if a variable ends up bound to itself.
+*)
+    let merge_tyenvs env1 env2 = 
+      let env3 = ref env1
+      in 
+      let assign x z =
+	try
+	  (let y = Gtypes.lookup_var x env2
+	  in 
+	  if (Gtypes.equals x y)
+	  then raise (Failure "Can't merge type environments")
+	  else env3:=Gtypes.bind x y (!env3))
+	with Not_found -> ()
+      in 
+      Gtypes.subst_iter assign env1; !env3
+
+
+(* [merge_tac_tyenvs n b]:
+   Merge the type environment of [b], resulting from applying a tactic
+   to [n], with the type environment of [n].  Make a new branch with
+   the components of [b] but with the new type environment.
+*)
+    let merge_tac_tyenvs n b =
+      let ntyenv = node_tyenv n
+      in 
+      let btag = branch_tag b
+      and btyenv = branch_tyenv b
+      and bsqnts = branch_sqnts b
+      in 
+      let nbtyenv = 
+	try merge_tyenvs btyenv ntyenv
+	with _ -> 
+	    raise (logicError "Subgoal.apply: Invalid result from tactic" [])
+      in 
+      mk_branch btag nbtyenv bsqnts
+
+
+(*
+   [apply tac node]: Apply tactic [tac] to [node].
+
+   This is the work-horse for applying tactics. All other functions
+   should call this to apply a tactic.
+
+   Approach:
+   1. Create a new tag [ticket].
+   3. Apply tac to [node] getting branch [b'].
+   4. If the tag of [b'] is not [ticket] then fail.
+[
+   5. Merge the type environment of [b'] with [n']. 
+      (This may be unnecessary.)
+Almost certainly unnecessary so not done.
+]
+   6. Return the branch formed from [b'] with the tag of [node].
+
+   raise logicError on failure.
+*)
+    let apply tac node = 
+      let ticket = Tag.create()
+      in 
+      let n1 = mk_node ticket (node_tyenv node) (node_sqnt node)
+      in 
+      let b1 = tac n1
+      in 
+      if not (Tag.equal ticket (branch_tag b1))
+      then raise (logicError "Subgoal.apply: Invalid result from tactic" [])
+      else 
+	replace_branch_tag b1 (node_tag n1)
+(*
+	let b2 = merge_tac_tyenvs n1 b1
+	in 
+	replace_branch_tag b2 (node_tag n1)
+*)
+      
 (*
    [apply_to_node tac (Node(tyenv, sqnt))]
 
@@ -639,18 +786,28 @@ module Subgoals=
       | (Some f) -> f node branch
 
     let apply_to_node ?report tac node = 
+      let result = apply tac node
+      in 
+      apply_report report node result;
+      result
+
+(*
+    let apply_to_node ?report tac node = 
       let sq_tag = Sequent.sqnt_tag (node_sqnt node)
       and tyenv=node_tyenv node
       in 
       let result = tac node
       in 
-      if (Tag.equal (branch_tag result) sq_tag)
+      let btag = (branch_tag result)
+      and nbranch = merge_tac_tyenvs node result
+      in 
+      if (Tag.equal btag sq_tag)
       then 
-	(apply_report report node result;
-	 result)
+	(apply_report report node nbranch;
+	 nbranch)
       else raise 
 	  (logicError "Subgoal.apply: Invalid result from tactic" [])
-	  
+*)	  
 
 (*
    [apply_to_first tac (Branch(tg, tyenv, sqnts))]
@@ -665,11 +822,27 @@ module Subgoals=
       match sqnts with 
 	[] -> raise No_subgoals
       | (x::xs) ->
-	  let branch1=apply_to_node ?report:report tac (mk_node tyenv x) 
+	  let branch1=
+	    apply_to_node ?report:report tac 
+	      (mk_node (Sequent.sqnt_tag x) tyenv x) 
 	  in 
 	  mk_branch tg 
 	    (branch_tyenv branch1)
 	    ((branch_sqnts branch1)@xs)
+
+(*
+    let apply_to_first ?report tac (Branch(tg, tyenv, sqnts))=
+      match sqnts with 
+	[] -> raise No_subgoals
+      | (x::xs) ->
+	  let branch1=
+	    apply_to_node ?report:report tac 
+	      (mk_node (Sequent.sqnt_tag x) tyenv x) 
+	  in 
+	  mk_branch tg 
+	    (merge_tyenvs (branch_tyenv branch1) tyenv)
+	    ((branch_sqnts branch1)@xs)
+*)
 (*
    [apply_to_each tac (Branch(tg, tyenv, sqnts))]
    Apply tactic [tac] to each sequent in [sqnts] 
@@ -684,17 +857,34 @@ module Subgoals=
 	match gs with
 	  [] -> mk_branch tg ty (List.rev lst)
 	| (x::xs) ->
-	    let branch1=apply_to_node tac (mk_node ty x)
+	    let branch1=apply_to_node tac 
+		(mk_node (Sequent.sqnt_tag x) ty x)
 	    in
-	    app_aux 
-	      (branch_tyenv branch1)
-	      xs 
+	    app_aux (branch_tyenv branch1) xs 
 	      (List.rev_append (branch_sqnts branch1) lst)
       in 
       match sqnts with
 	[] -> raise No_subgoals
       | _ -> app_aux tyenv sqnts []
 
+(*
+    let apply_to_each tac (Branch(tg, tyenv, sqnts))=
+      let rec app_aux ty gs lst=
+	match gs with
+	  [] -> mk_branch tg ty (List.rev lst)
+	| (x::xs) ->
+	    let branch1=apply_to_node tac 
+		(mk_node (Sequent.sqnt_tag x) ty x)
+	    in
+	    app_aux 
+	      (merge_tyenvs (branch_tyenv branch1) ty)
+	      xs 
+	      (List.rev_append (branch_sqnts branch1) lst)
+      in 
+      match sqnts with
+	[] -> raise No_subgoals
+      | _ -> app_aux tyenv sqnts []
+*)
 (*
    [apply_to_goal tac goal]
    Apply tactic [tac] to firat subgoal of [goal] using [apply_to_first].
@@ -714,10 +904,28 @@ module Subgoals=
       in 
       if Tag.equal g_tag (branch_tag result)
       then 
-	Goal(branch_sqnts result, branch_tyenv result, f)
+	let ntyenv = (branch_tyenv result)
+	in 
+	Goal(branch_sqnts result, ntyenv, f)
       else raise 
 	  (logicError "Subgoal.apply_to_goal: Invalid tactic" [])
 
+(*
+    let apply_to_goal ?report tac (Goal(sqnts, tyenv, f))=
+      let g_tag = Tag.create()
+      in
+      let branch=mk_branch g_tag tyenv sqnts
+      in 
+      let result=apply_to_first ?report:report tac branch 
+      in 
+      if Tag.equal g_tag (branch_tag result)
+      then 
+	let ntyenv = merge_tyenvs (branch_tyenv result) tyenv
+	in 
+	Goal(branch_sqnts result, ntyenv, f)
+      else raise 
+	  (logicError "Subgoal.apply_to_goal: Invalid tactic" [])
+*)
 (* 
    [zip tacl branch]
    apply each of the tactics in [tacl] to the corresponding 
@@ -738,11 +946,10 @@ module Subgoals=
 	  (_, []) -> mk_branch tg ty (List.rev lst)
 	| ([], gs) -> mk_branch tg ty (List.rev_append lst gs)
 	| ((tac::ts), (g::gs)) ->
-	    let branch1=apply_to_node tac (mk_node ty g)
+	    let branch1=apply_to_node tac 
+		(mk_node (Sequent.sqnt_tag g) ty g)
 	    in
-	    zip_aux 
-	      (branch_tyenv branch1)
-	      ts gs 
+	    zip_aux (branch_tyenv branch1) ts gs 
 	      (List.rev_append (branch_sqnts branch1) lst)
       in 
       match sqnts with
@@ -778,16 +985,14 @@ module Subgoals=
 
    THIS FUNCTION MUST REMAIN PRIVATE TO MODULE LOGIC
  *)
-    let rule_apply r (Node(tyenv, sqnt)) =
-      let sq_tag = Sequent.sqnt_tag sqnt
-      in 
+    let rule_apply r (Node(ntag, tyenv, sqnt)) =
       try
 	(let rg, rtyenv = r tyenv sqnt
 	in 
-	Branch(sq_tag, rtyenv, rg))
+	Branch(ntag, rtyenv, rg))
       with 
-	No_subgoals -> Branch(sq_tag, tyenv, [])
-      | Solved_subgoal ntyenv -> Branch(sq_tag, ntyenv, [])
+	No_subgoals -> Branch(ntag, tyenv, [])
+      | Solved_subgoal ntyenv -> Branch(ntag, ntyenv, [])
 
 
 (* simple_rule_apply f g:
@@ -2485,7 +2690,6 @@ module Defns =
 
   end
 
-
 let print_sqnt ppinfo sq = 
   let nice = Settings.get_nice_sequent()
   in let nice_prefix = 
@@ -2497,38 +2701,36 @@ let print_sqnt ppinfo sq =
   let string_of_concl_index i = string_of_int i
   in 
   let rec print_asm i afl= 
-    match afl with 
+    Format.printf "@[<v>";
+    (match afl with 
       [] -> ()
     | (s::als) -> 
-	(Format.open_box 0;
-	 Format.print_string ("["^(string_of_asm_index i)^"] ");
+	(Format.printf "@[[%s] " (string_of_asm_index i);
 	 Term.print ppinfo (Formula.term_of_form s);
-	 Format.close_box(); 
-	 Format.print_newline(); 
-	 print_asm (i-1) als)
+	 Format.printf "@]@,";
+	 print_asm (i-1) als));
+    Format.printf "@]"
   and print_cncl i cfl =
-    match cfl with
+    Format.printf "@[<v>";
+    (match cfl with
       [] -> ()
     | (s::cls) -> 
-	(Format.open_box 0;
-	 Format.print_string ("["^(string_of_concl_index i)^"] ");
+	(Format.printf "@[[%s] " (string_of_concl_index i);
 	 Term.print ppinfo (Formula.term_of_form s);
-	 Format.close_box(); 
-	 Format.print_newline(); 
-	 (print_cncl (i+1) cls))
+	 Format.printf "@]@,";
+	 (print_cncl (i+1) cls)));
+    Format.printf "@]"
   in 
   let sq_asms = List.map drop_tag (Sequent.asms sq)
   and sq_concls = List.map drop_tag (Sequent.concls sq)
   in 
+  Format.printf "@[<v>";
   (match sq_asms with
     [] -> ()
   | _ -> print_asm (-1) sq_asms);
-  Format.open_box 0;
-  Format.print_string ("----------------------"); 
-  Format.close_box();
-  Format.print_newline();
-  print_cncl 1 sq_concls
-
+  Format.printf ("@[----------------------@]@,"); 
+  print_cncl 1 sq_concls;
+  Format.printf "@]"
 
 let print_node ppstate n = print_sqnt ppstate (Subgoals.node_sqnt n)
 
@@ -2537,32 +2739,23 @@ let print_branch ppstate branch=
     match gs with 
       [] -> ()
     | (y::ys) -> 
-	Format.open_box 0;
-	Format.print_string "(Subgoal ";
-	Format.print_int i;
-	Format.print_string ")";
-	Format.close_box();
-	Format.print_newline();
+	Format.printf "@[<v>";
+	Format.printf "@[(Subgoal %i)@]@," i;
 	print_sqnt ppstate y;
-	Format.print_newline();
+	Format.printf "@]@,";
 	print_subgoals (i+1) ys
   in 
   let sqnts = Subgoals.branch_sqnts branch
   in 
-  match sqnts with
+  Format.printf "@[<v>";
+  (match sqnts with
     [] -> 
-      Format.open_box 0;
-      Format.print_string "No subgoals";
-      Format.close_box(); 
-      Format.print_newline()
+      Format.printf "@[No subgoals@]@,"
   | _ -> 
       let len=(List.length sqnts)
       in 
-      (Format.open_box 0;
-       Format.print_int len;
-       (if(len>1)
-       then Format.print_string " subgoal"
-       else Format.print_string " subgoals");
-       Format.close_box(); 
-       Format.print_newline();
-       print_subgoals 1 sqnts)
+      Format.printf "@[%i %s@]@," 
+	len
+	(if(len>1) then "subgoal" else "subgoals");
+      print_subgoals 1 sqnts);
+  Format.printf "@]"

@@ -1,3 +1,9 @@
+(*-----
+ Name: simpset.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Simplification sets *)
 
 
@@ -33,7 +39,7 @@ val empty_set : unit -> simpset
    Less-than ordering of terms for use with Net.insert. Makes
    variables (for which [varp] is true) larger than any other term.
  *)
-val termnet_lt : (Basic.term -> bool) -> rule -> rule -> bool
+val termnet_lt : rule -> rule -> bool
 
 (** [add_rule rl s]: Add rule [rl] to set [s].
 
@@ -71,4 +77,10 @@ val dest_rr_rule :
 val make_rule: Logic.rr_type -> Basic.term -> rule
 
 
-val print_rule: rule -> unit
+(* Printers *)
+
+val print_rule: Printer.ppinfo -> rule -> unit
+val print_rule_net: Printer.ppinfo -> rule Net.net -> unit
+
+val print_aux: Printer.ppinfo -> simpset -> unit
+val print: Printer.ppinfo -> simpset -> unit

@@ -1,3 +1,9 @@
+(*-----
+ Name: drule.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Useful functions for writing tactics *)
 
 (* Utility functions *)

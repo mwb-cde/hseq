@@ -1,3 +1,9 @@
+(*-----
+ Name: prop.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 type ('a,'b)boolexpr =
     Bool of bool

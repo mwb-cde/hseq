@@ -1,3 +1,9 @@
+(*-----
+ Name: drule.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 
 let ftag t = (Logic.FTag t)
 let fnum n = (Logic.FNum n)

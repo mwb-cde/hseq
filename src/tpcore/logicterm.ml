@@ -1,3 +1,9 @@
+(*-----
+ Name: logicterm.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Basic
 open Gtypes
 open Term
@@ -82,7 +88,10 @@ let iffid = Basic.mk_long base_thy "iff"
 let equalsid = Basic.mk_long base_thy "equals"
 let equalssym = "="
 
-let someid = Basic.mk_long base_thy "some"
+(*
+let someid = Basic.mk_long base_thy "any"
+*)
+let anyid = Basic.mk_long base_thy "any"
 
 let mk_not t = mk_fun notid [t]
 let mk_and l r = mk_fun andid [l; r]
@@ -113,7 +122,7 @@ let mk_all_ty tyenv n ty b= mk_typed_qnt tyenv Basic.All ty n b
 let mk_ex_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Ex ty n b
 let mk_lam_ty tyenv n ty b= mk_typed_qnt tyenv Basic.Lambda ty n b
 
-let mk_some=Term.mk_var someid
+let mk_any=Term.mk_var anyid
 
 let is_all t = 
   ((is_qnt t) &

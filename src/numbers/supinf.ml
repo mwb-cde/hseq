@@ -1,3 +1,9 @@
+(*-----
+ Name: supinf.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 open Num
 
 let zero_num = num_of_int 0

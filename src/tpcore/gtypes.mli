@@ -1,3 +1,9 @@
+(*-----
+ Name: gtypes.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
 (* Types and their manipulation *)
 
 open Basic
@@ -195,6 +201,11 @@ type substitution
 (* make a substitution with arbitrary or given size *)
 val empty_subst : unit -> substitution
 val subst_sz: int -> substitution
+val bind : gtype -> gtype -> substitution -> substitution
+val delete : gtype -> substitution -> substitution
+val lookup: gtype -> substitution -> gtype
+val member: gtype -> substitution -> bool
+val subst_iter: (gtype -> gtype -> unit) -> substitution -> unit
 
 (* type of primitive constructs *)
 (*
