@@ -16,10 +16,14 @@ struct
   type 'a phrase = 'a Pkit.phrase
 
   type infotyp = 
-      { scope: Gtypes.scope;
+      { 
+	scope: Gtypes.scope;
+	(* term information *)
+	bound_names: (string* Term.term) list ref;
+	token_info: token -> Pkit.token_info;
+        (* type information *)
       	typ_indx : int ref;
 	typ_names: (string, Gtypes.gtype)Lib.substype;
- 	token_info: token -> Pkit.token_info;
         type_token_info: token -> Pkit.token_info
       }
 
@@ -37,14 +41,34 @@ struct
     Gtypes.mk_var
       ("_typ"^(string_of_int (get_type_indx inf)))
 
-  let lookup n inf = Lib.find n inf.typ_names
-  let add_name n ty inf = Lib.add n ty inf.typ_names
-  let get_type n inf = 
-    (try lookup n inf 
-    with Not_found -> 
-      add_name n (Gtypes.mk_var n) inf)
+  let lookup_name n inf = 
+   List.assoc n !(inf.bound_names)
+  let add_name n trm inf = 
+   inf.bound_names:=(n, trm)::!(inf.bound_names)
+  let drop_name n inf = 
+    let rec d_aux ls =
+      match ls with
+	[] -> []
+      | ((x, t)::xs) -> 
+	  if(x=n) 
+	  then xs
+	  else (x, t)::(d_aux xs)
+    in 
+    inf.bound_names:=d_aux !(inf.bound_names)
 
-  let clear_names inf = Hashtbl.clear inf.typ_names
+  let get_term n inf = 
+    (try lookup_name n inf 
+    with Not_found -> Term.mkshort_var n)
+  let clear_names inf = inf.bound_names:=[]
+
+(*   let lookup n inf = Lib.find n inf.typ_names *)
+  let lookup_type_name n inf = Lib.find n inf.typ_names 
+  let add_type_name n ty inf = Lib.add n ty inf.typ_names
+  let get_type n inf = 
+    (try lookup_type_name n inf 
+    with Not_found -> 
+      add_type_name n (Gtypes.mk_var n) inf)
+  let clear_type_names inf = Hashtbl.clear inf.typ_names
 
   let mk_token_info t=
     let f, p= Lexer.token_info t
@@ -59,20 +83,25 @@ struct
   let mk_empty_inf scp = 
     { 
       scope=scp;
+
+      bound_names = ref [];
+      token_info = mk_token_info;
+
       typ_indx = ref 0;
       typ_names = Lib.empty_env ();
-      token_info = mk_token_info;
       type_token_info = mk_type_token_info
     }
 
   let mk_inf scp = 
     { 
       scope=scp;
+      bound_names = ref [];
+      token_info = mk_token_info;
       typ_indx = ref 0;
       typ_names = Lib.empty_env ();
-      token_info = mk_token_info;
       type_token_info = mk_type_token_info
     }
+
 
   let scope_of_inf inf = inf.scope
 
@@ -216,7 +245,7 @@ struct
     (long_id inf >> (fun x -> Basic.name x)) toks
 
   let rec types inf toks = 
-    (clear_names inf; inner_types inf toks)
+    (clear_type_names inf; inner_types inf toks)
   and inner_types inf toks =
     (operators (atomic inf, inf.type_token_info , 
 	      mk_type_binary_constr, mk_type_unary_constr) toks) 
@@ -272,6 +301,8 @@ struct
     ( (( !$(Sym COLON) -- (types inf)) >> (fun (_, ty) -> Some(ty)))
     || (empty >> (fun x -> None))) 
 
+(*
+(* term parser, using substitution to deal with bound variables *)
   let rec form inf toks =
     (
      ((formula inf)-- (listof (formula inf)))
@@ -327,6 +358,139 @@ struct
    || (other_parsers inf)
    || (error)
     ) toks
+*)
+
+(* 
+   Term parser, 
+   keeps a record of bound records 
+*)
+
+(* 
+   utility functions to create bound variable and quantified terms 
+   (for use in the term parser)
+*)
+(*
+   qnt_setup_bound_names inf qnt xs
+   make bound variables from the name-type pairs in xs,
+   add them to inf.bound_names
+   qnt is the quantifier type (All, Ex or Lambda)
+*)
+
+  let qnt_setup_bound_names inf 
+      (qnt: Basic.quant_ty) (xs : (string* Gtypes.gtype) list) =
+    List.map 
+      (fun (n, ty) -> 
+	let b_id=Term.mkbound(Term.mk_binding qnt n ty)
+	in 
+	add_name n b_id inf;
+	(n, b_id)) xs
+
+(*
+   qnt_term_remove inf xs body
+   use bound names in xs to form a quantified term, with body
+   as the initial term.
+   simplified example:  [!x, ?y, !z] t -> (!x: (?y: (!z: t)))
+
+   remove each name in xs from inf.bound_names as it is used.
+*)
+
+  let qnt_term_remove_names inf (xs : (string* Term.term) list) body=
+    List.fold_right
+      (fun (x, y) b ->
+	let nt=Term.Qnt(dest_bound y, b)
+	in 
+	drop_name x inf; nt) xs body
+
+  let rec form inf toks =
+    (
+     ((formula inf)-- (listof (formula inf)))
+       >> (fun (x, y) -> mkcomb x y)
+    ) toks
+  and formula inf toks= 
+    (
+     operators(typed_primary inf, inf.token_info, 
+	     mk_conn Basic.fn_id inf, mk_prefix Basic.fn_id inf)
+    ) toks
+  and typed_primary inf toks =
+      (
+       ((primary inf) --  (optional_type inf))
+	 >> 
+       (fun (t, pty) -> 
+	 match pty with None -> t | Some(ty) -> mktyped t ty)
+      ) toks
+  and
+      primary inf toks = 
+    (
+(* "(" form ")" *)
+     ( (( !$ (Sym ORB) -- ((form inf) -- !$(Sym CRB))))
+	 >> (fun (_, (x, _)) ->  x))
+
+(* "ALL" { id_type_op }+ ":" form *)
+   || (((( !$ (Key ALL) 
+           -- ((id_type_op short_id inf)
+		 -- ((listof (id_type_op short_id inf))
+		       -- (!$(Sym COLON)))))
+	 >> 
+	(fun (_, (v, (vs, _)))
+	   ->
+	     qnt_setup_bound_names inf Basic.All (v::vs)))
+	 -- (form inf))
+	 >> 
+       (fun ((xs:(string*Term.term)list), body)
+	 ->
+	   qnt_term_remove_names inf xs body))
+
+(* "EX" { id_type_op }+ ":" form *)
+   || (((( !$ (Key EX) 
+           -- ((id_type_op short_id inf)
+		 -- ((listof (id_type_op short_id inf))
+		       -- (!$(Sym COLON)))))
+	 >> 
+	(fun (_, (v, (vs, _)))
+	   ->
+	     qnt_setup_bound_names inf Basic.Ex (v::vs)))
+	 -- (form inf))
+	 >> 
+       (fun ((xs:(string*Term.term)list), body)
+	 ->
+	   qnt_term_remove_names inf xs body))
+(* "LAM" { id_type_op }+ ":" form *)
+   || (((( !$ (Key LAM) 
+           -- ((id_type_op short_id inf)
+		 -- ((listof (id_type_op short_id inf))
+		       -- (!$(Sym COLON)))))
+	 >> 
+	(fun (_, (v, (vs, _)))
+	   ->
+	     qnt_setup_bound_names inf Basic.Lambda (v::vs)))
+	 -- (form inf))
+	 >> 
+       (fun ((xs:(string*Term.term)list), body)
+	 ->
+	   qnt_term_remove_names inf xs body))
+(* id | "(" id ":" type ")" *)
+   || ((id_type_op long_id inf)  >> 
+       (fun ((n, i), t) -> 
+	 let nid=Basic.mklong n i
+	 in 
+	 if(Basic.is_short_id nid)
+	 then 
+	   try lookup_name i inf
+	   with Not_found -> mk_typed_var nid t
+	 else 
+	   mk_typed_var nid t))
+(*
+     number
+   | boolean
+   | alternative_parsers
+   | error 
+*)
+   || (number >> (fun x -> mknum x))
+   || (boolean >> (fun x -> mkbool x))
+   || (other_parsers inf)
+   || (error)
+    ) toks
+
       
   let rec lhs inf toks=
     ((( (id_type_op mk_short_id inf) -- (args_opt inf))

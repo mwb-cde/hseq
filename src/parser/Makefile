@@ -6,7 +6,8 @@ INSTALLDIR=../libs
 
 OCLIBS=
 OPTLIBS=
-OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
+#OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
+OPTIONS=
 
 OCAMLC=ocamlc ${OPTIONS} 
 OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 

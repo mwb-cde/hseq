@@ -30,6 +30,20 @@ module Grammars :
   sig
     type input = Pkit.input
     type 'a phrase = 'a Pkit.phrase
+
+  type infotyp = 
+      { 
+	scope: Gtypes.scope;
+	(* term information *)
+	bound_names: (string* Term.term) list ref;
+	token_info: Pkit.token -> Pkit.token_info;
+        (* type information *)
+      	typ_indx : int ref;
+	typ_names: (string, Gtypes.gtype)Lib.substype;
+        type_token_info: Pkit.token -> Pkit.token_info
+      }
+
+(* preivous infotyp
     type infotyp = {
       scope : Gtypes.scope;
       typ_indx : int ref;
@@ -37,14 +51,23 @@ module Grammars :
       token_info : Pkit.token -> Pkit.token_info;
       type_token_info : Pkit.token -> Pkit.token_info;
     } 
+*)
     val string_of_tok : Lexer.tok -> string
     val string_tokens : Lexer.tok list -> string
     val get_type_indx : infotyp -> int
     val mk_vartyp : infotyp -> Gtypes.gtype
-    val lookup : string -> infotyp -> Gtypes.gtype
-    val add_name : string -> Gtypes.gtype -> infotyp -> Gtypes.gtype
-    val get_type : string -> infotyp -> Gtypes.gtype
+
+    val lookup_name : string -> infotyp -> Term.term
+    val add_name : string -> Term.term -> infotyp -> unit
+    val drop_name : string -> infotyp -> unit
+    val get_term : string -> infotyp -> Term.term
     val clear_names : infotyp -> unit
+
+    val lookup_type_name : string -> infotyp -> Gtypes.gtype
+    val add_type_name : string -> Gtypes.gtype -> infotyp -> Gtypes.gtype
+    val get_type : string -> infotyp -> Gtypes.gtype
+    val clear_type_names : infotyp -> unit
+
     val mk_token_info : Lexer.tok -> Pkit.token_info
     val mk_type_token_info : Lexer.tok -> Pkit.token_info
     val mk_empty_inf : Gtypes.scope -> infotyp
