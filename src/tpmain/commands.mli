@@ -67,7 +67,7 @@ val get_type_pp : Basic.ident -> (int * fixity * string option)
 *)
 val new_type : string -> unit
 
-val new_type_term : (string * string list * Gtypes.gtype option) -> unit
+val new_type_term : (string * string list * Basic.gtype option) -> unit
 
 (* new_defn/define define an identifier *)
 
@@ -87,14 +87,15 @@ val new_type_term : (string * string list * Gtypes.gtype option) -> unit
    will eventually be removed.
 *)
 (*
-val define_full_string : 
-    string -> (int*fixity*string option) 
-      -> Defn.defn
-val define_string : string -> Defn.defn
-*)
-val define_full : Term.term -> (int*fixity*string option) 
+val define_full : Basic.term -> (int*fixity*string option) 
   -> Defn.defn
-val define : Term.term -> Defn.defn
+val define : Basic.term -> Defn.defn
+*)
+val define_full : ((string * (string * Basic.gtype) list) * Basic.term)
+  -> (int*fixity*string option) 
+    -> Defn.defn
+val define : 
+    ((string * (string * Basic.gtype) list) * Basic.term) -> Defn.defn
 
 (* 
    [declare_full str pp]
@@ -110,10 +111,10 @@ val define : Term.term -> Defn.defn
  *)
 (*
 val declare_full_string : string -> (int* fixity* string option) 
-  -> (Basic.ident * Gtypes.gtype)
+  -> (Basic.ident * Basic.gtype)
 *)
-val declare_full : Term.term -> (int* fixity* string option) 
-  -> (Basic.ident * Gtypes.gtype)
+val declare_full : Basic.term -> (int* fixity* string option) 
+  -> (Basic.ident * Basic.gtype)
 
 (* 
    [declare str]
@@ -121,9 +122,9 @@ val declare_full : Term.term -> (int* fixity* string option)
    return name and type.
 *)
 (*
-val declare_string : string -> (Basic.ident * Gtypes.gtype)
+val declare_string : string -> (Basic.ident * Basic.gtype)
 *)
-val declare : Term.term -> (Basic.ident * Gtypes.gtype)
+val declare : Basic.term -> (Basic.ident * Basic.gtype)
 
 (*
    [new_axiom id thm]
@@ -133,7 +134,7 @@ val declare : Term.term -> (Basic.ident * Gtypes.gtype)
 (*
 val new_axiom_string : string -> string -> Logic.thm
 *)
-val new_axiom : string -> Term.term -> Logic.thm
+val new_axiom : string -> Basic.term -> Logic.thm
 (* [axiom/theorem/defn id] 
    get the axiom/theorem/definition named id
    id can be a long identifier (of the form th.name) *)
@@ -159,7 +160,7 @@ val qed : string -> Logic.thm
 (* prove a theorem name using the list of tactics and 
    store it under the given name *)
 
-val prove_theorem : string -> Term.term -> Tactics.tactic list -> Logic.thm
+val prove_theorem : string -> Basic.term -> Tactics.tactic list -> Logic.thm
 
 (*
 val prove_theorem_string : string -> string -> Tactics.tactic list -> Logic.thm
@@ -172,3 +173,8 @@ val by : Tactics.tactic -> Goals.prf
 
 (* user-level function to get the current scope *)
 val scope: unit -> Gtypes.scope
+
+(* user level parsing of string *)
+val read : string -> Basic.term
+val read_defn : string -> ((string * (string * Basic.gtype) list) * Basic.term)
+val read_unchecked : string -> Basic.term

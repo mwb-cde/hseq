@@ -46,7 +46,7 @@ val is_empty: 'a net -> bool
    [label varp t]:
    Return the label for term t. Not used, [term_to_label] is better.
 *)
-val label: (Term.term -> bool) -> Term.term -> label
+val label: (Basic.term -> bool) -> Basic.term -> label
 
 (**
    [term_to_label varp t]:
@@ -70,8 +70,8 @@ val label: (Term.term -> bool) -> Term.term -> label
    [Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]
  *)
 val term_to_label : 
-    (Term.term -> bool) -> Term.term -> Term.term list 
-      -> (label * Term.term list)
+    (Basic.term -> bool) -> Basic.term -> Basic.term list 
+      -> (label * Basic.term list)
 
 
 (** [update f net trm]:
@@ -82,8 +82,8 @@ val term_to_label :
    these subnets.
  *)
 val update: 
-    ('a net -> 'a net) -> (Term.term -> bool) 
-      -> 'a net -> Term.term -> 'a net
+    ('a net -> 'a net) -> (Basic.term -> bool) 
+      -> 'a net -> Basic.term -> 'a net
 
 (** Functions to use Nets *)
 
@@ -98,7 +98,7 @@ val update:
    because x occurs deeper in t1 than in t2. (t1 is likely to be
    rejected by exact matching more quickly than t2 would be.)
  *)
-val lookup: 'a net -> Term.term -> 'a list
+val lookup: 'a net -> Basic.term -> 'a list
 
 (** [add varp net t r]:
 
@@ -107,8 +107,8 @@ val lookup: 'a net -> Term.term -> 'a list
    Replaces but doesn't remove previous bindings of [t].
 *)
 val add: 
-    (Term.term -> bool) -> 'a net 
-      -> Term.term -> 'a
+    (Basic.term -> bool) -> 'a net 
+      -> Basic.term -> 'a
 	-> 'a net
 
 (** [insert order varp net t r]:
@@ -119,8 +119,8 @@ val add:
 *)
 val insert: 
     ('a -> 'a -> bool) ->
-      (Term.term -> bool) -> 'a net 
-	-> Term.term -> 'a
+      (Basic.term -> bool) -> 'a net 
+	-> Basic.term -> 'a
 	  -> 'a net
 
 (** [delete varp net t test]:
@@ -129,6 +129,6 @@ val insert:
    silently if [t] is not found.  Needs the same [varp] as used to add
    the term to the net.  
 *) 
-val delete: (Term.term -> bool) -> 'a net
-   -> Term.term -> ('a -> bool) -> 'a net
+val delete: (Basic.term -> bool) -> 'a net
+   -> Basic.term -> ('a -> bool) -> 'a net
 

@@ -55,8 +55,6 @@ let mk_dummy_fntype n=
 (*
    (i:=(!i)+1;(Gtypes.mk_var ("ty"^(string_of_int !i))))
  *)
-let read x= Tpenv.read x
-let read_unchecked  x= Tpenv.read_unchecked x
 
 
 (*(Tpenv.mk_thyinfo()) *)

@@ -1,3 +1,4 @@
+open Basic
 open Gtypes
 open Term
 
@@ -60,7 +61,7 @@ let is_lambda t =
 let alpha_convp_aux scp trmenv s t =
   let rec alpha_aux t1 t2 env =
     match (t1, t2) with
-      (Var(n1, ty1), Var(n2, ty2)) -> 
+      (Id(n1, ty1), Id(n2, ty2)) -> 
 	if (n1=n2) & (Gtypes.matches scp ty1 ty2)
 	then env
 	else raise (termError "alpha_convp_aux" [t1;t2])
@@ -72,9 +73,9 @@ let alpha_convp_aux scp trmenv s t =
     | (App(f1, a1), App(f2, a2)) ->
 	let env1=alpha_aux f1 f2  env
 	in alpha_aux a1 a2 env1
-    | (Qnt(q1, b1), Qnt(q2, b2)) ->
-	(let (_, qn1, _, qty1, _)=dest_qnt t1
-	and (_, qn2, _, qty2, _)=dest_qnt t2
+    | (Qnt(qn1, q1, b1), Qnt(qn2, q2, b2)) ->
+	(let qty1=Basic.binder_type q1
+	and qty2=Basic.binder_type q2
 	in 
 	if (qn1=qn2) & (Gtypes.matches scp qty1 qty2)
 	then 
@@ -127,7 +128,7 @@ let beta_reduce t =
 	in 
 	(try (let nt=beta_conv (App(nf, na)) in chng:=true; nt)
 	with _ -> (App(nf, na))))
-    |	Qnt(q, b) -> Qnt(q, beta_reduce_aux chng b)
+    |	Qnt(k, q, b) -> Qnt(k, q, beta_reduce_aux chng b)
     |	Typed(tr, ty) -> Typed(beta_reduce_aux chng tr, ty)
     |	x -> x
   in let flag = ref false
@@ -139,7 +140,7 @@ let beta_reduce t =
 let eta_conv x ty t=
   let name="a" 
   in let q= mk_binding Basic.Lambda name ty 
-  in App((Qnt(q, subst_quick x (Bound(q)) t)), x)
+  in App((Qnt(Basic.Lambda, q, subst_quick x (Bound(q)) t)), x)
     
 
 
@@ -154,7 +155,7 @@ let rec is_closed_aux env t =
       is_closed_aux env r
   | Typed(a, _) -> 
       is_closed_aux env a
-  | Qnt(q, b) -> 
+  | Qnt(_, q, b) -> 
       let nenv=bind (Bound(q)) (mkbool true) env
       in 
       is_closed_aux nenv b
@@ -182,12 +183,12 @@ let close_term t =
   let memo = empty_table()
   and qnts = ref []
   and mk_univ q = 
-    let (_, n, ty) = Term.dest_binding q
-    in Term.mk_binding Basic.All n ty
+    let (_, n, ty) = Basic.dest_binding q
+    in Basic.mk_binding Basic.All n ty
   in 
   let rec close_aux x =
     match x with
-      Qnt(q, b) ->
+      Qnt(_, q, b) ->
 	ignore(table_add (Bound q) (Bound q) memo);
 	close_aux b
     | Bound(q) ->
@@ -203,36 +204,5 @@ let close_term t =
   in 
   close_aux t; 
   List.fold_left 
-    (fun b q-> Term.Qnt(q, b)) t !qnts
+    (fun b q-> Qnt(binder_kind q, q, b)) t !qnts
 
-
-
-(* get and set full names and their types in a term *)
-(*
-   let set_types scp trm =
-   let memo = Gtypes.empty_subst()
-   and qnt_env = Term.empty_subst()
-   in 
-   let lookup_ty t = 
-   (try (Gtypes.lookup t memo)
-   with Not_found -> 
-   let nth = try (scp.thy_of Basic.fn_id n) with _ -> scp.curr_thy
-   in Lib.add n nth term_memo; nth)
-   in 
-   let rec set_aux t=
-   match t with
-   Var(id, ty) -> 
-   let th, n = Basic.dest_fnid id
-   in 
-   let nth = (if th=Basic.null_thy
-   then lookup_id n
-   else th)
-   in 
-   let nid = Basic.mklong nth n
-   in Var(nid, ty)
-   | Qnt(q, b) -> Qnt(q, set_aux b)
-   | Typed(tt, tty) -> Typed(set_aux tt, tty)
-   | App(f, a) -> App(set_aux f, set_aux a)
-   | _ ->t
-   in set_aux trm
- *)

@@ -45,18 +45,16 @@ let rec label varp trm =
   if(varp trm) then Var
   else
     match trm with
-      Term.Var(id, _) -> Cname(id)
-    | Term.Qnt(q, b) ->  
-	let qnt, _, _ =Term.dest_binding q
-	in 
+      Basic.Id(id, _) -> Cname(id)
+    | Basic.Qnt(qnt, q, b) ->  
 	Quant(qnt)
-    | Term.Bound(q) -> 
-	let qnt, _, _ =Term.dest_binding q
+    | Basic.Bound(q) -> 
+	let qnt, _, _ =Basic.dest_binding q
 	in 
 	Bound(qnt)
-    | Term.Const(c) ->Const(c)
-    | Term.Typed(t, _) -> label varp t
-    | Term.App(l, r) -> App
+    | Basic.Const(c) ->Const(c)
+    | Basic.Typed(t, _) -> label varp t
+    | Basic.App(l, r) -> App
 
 
 (*
@@ -87,20 +85,18 @@ let rec term_to_label varp trm rst=
   then (Var, rst)
   else 
     match trm with
-      Term.Var(id, _) -> (Cname(id), rst)
-    | Term.Qnt(q, b) -> 
-	let qnt, _, _ =Term.dest_binding q
-	in 
+      Basic.Id(id, _) -> (Cname(id), rst)
+    | Basic.Qnt(qnt, q, b) -> 
 	(Quant(qnt), b::rst)
-    | Term.Bound(q) -> 
-	let qnt, _, _ =Term.dest_binding q
+    | Basic.Bound(q) -> 
+	let qnt, _, _ =Basic.dest_binding q
 	in 
 	(Bound(qnt), rst)
-    | Term.Const(c) -> 
+    | Basic.Const(c) -> 
 	(Const(c), rst)
-    | Term.Typed(t, _) ->
+    | Basic.Typed(t, _) ->
 	term_to_label varp t rst
-    | Term.App(l, r) ->
+    | Basic.App(l, r) ->
 	(App, l::r::rst)
 
 

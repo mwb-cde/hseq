@@ -56,10 +56,10 @@ val load_theory : thydb -> string -> bool -> (Theory.thy -> unit)
 *)
     val add_type_rec: Logic.cdefn -> thydb->unit
 
-    val add_defn : string -> Gtypes.gtype -> Logic.thm -> thydb -> unit
+    val add_defn : string -> Basic.gtype -> Logic.thm -> thydb -> unit
     val add_decln_rec :Defn.decln -> int -> thydb -> unit
     val add_decln :Defn.decln -> thydb -> unit
-    val add_defn_rec : string-> Gtypes.gtype -> Logic.thm option 
+    val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
        -> bool -> int -> thydb -> unit
 
 (* get the type record of a type in a named theory *)
@@ -91,7 +91,7 @@ val get_pplist: Basic.id_selector -> string -> thydb
     val get_defn_rec : string -> string -> thydb -> Theory.id_record
     val get_lemma : string -> string -> thydb -> Logic.thm
     val get_defn : string -> string -> thydb -> Logic.thm
-    val get_id_type : string -> string -> thydb -> Gtypes.gtype
+    val get_id_type : string -> string -> thydb -> Basic.gtype
 
     val id_is_infix : string -> string -> thydb -> bool
     val get_id_prec : string -> string -> thydb -> int

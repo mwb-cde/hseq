@@ -4,10 +4,10 @@
  *)
 
 
-type id_record= {typ: Gtypes.gtype; def: Logic.thm option; 
+type id_record= {typ: Basic.gtype; def: Logic.thm option; 
 		 infix: bool; prec: int}
 
-type save_record= {sty: Gtypes.gtype; sdef: Logic.saved_thm option; 
+type save_record= {sty: Basic.gtype; sdef: Logic.saved_thm option; 
 		   sinfix: bool; sprec: int}
 
 type thy = 
@@ -64,7 +64,7 @@ let add_parents ns thy =
 
 
 let get_date thy = thy.date
-let set_date thy = thy.date<-Basic.date()
+let set_date thy = thy.date<-Lib.date()
 
 let get_protection thy = thy.protection
 let set_protection thy = 
@@ -320,7 +320,7 @@ let print_protection p =
   then ()
   else print_string "read-write"
 and print_date d =
-  let (y, mo, day, h, mi) = Basic.nice_date d
+  let (y, mo, day, h, mi) = Lib.nice_date d
   in 
   Format.open_box 0;
   Format.print_string "Date: ";

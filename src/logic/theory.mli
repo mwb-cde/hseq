@@ -9,14 +9,14 @@
 
 type id_record =
     {
-     typ: Gtypes.gtype;
+     typ: Basic.gtype;
      def: Logic.thm option;
      infix: bool;
      prec: int 
    }
 type save_record =
     {
-     sty: Gtypes.gtype;
+     sty: Basic.gtype;
      sdef: Logic.saved_thm option;
      sinfix: bool;
      sprec: int 
@@ -96,17 +96,17 @@ val add_type_rec : Logic.cdefn -> thy -> unit
 val get_type_rec : string -> thy -> Gtypes.typedef_record 
 val get_defn_rec : string -> thy -> id_record
 val get_defn : string -> thy -> Logic.thm
-val get_id_type : string -> thy -> Gtypes.gtype
+val get_id_type : string -> thy -> Basic.gtype
 val id_is_infix : string -> thy -> bool
 val get_id_prec : string -> thy -> int
 val id_exists : string -> thy -> bool
 
 
 val add_defn_rec :
-    string -> Gtypes.gtype 
+    string -> Basic.gtype 
       -> Logic.thm option -> bool -> int -> thy -> unit
-val add_defn : string -> Gtypes.gtype -> Logic.thm -> thy -> unit
-val add_decln_rec : string  -> Gtypes.gtype -> int -> thy -> unit
+val add_defn : string -> Basic.gtype -> Logic.thm -> thy -> unit
+val add_decln_rec : string  -> Basic.gtype -> int -> thy -> unit
 val get_axiom : string -> thy -> Logic.thm
 val get_theorem : string -> thy -> Logic.thm
 

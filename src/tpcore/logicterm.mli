@@ -1,6 +1,7 @@
 (* Representation and manipulation of terms of the Logic *)
 (* builds on term.ml *)
 
+open Basic
 open Gtypes
 open Term
 
@@ -33,9 +34,9 @@ val mkex : scope -> string -> term -> term
 val mklam : scope -> string -> term -> term
     
 (* make typed quantifiers *)
-val mkall_ty : scope -> string -> Gtypes.gtype -> term -> term
-val mkex_ty : scope -> string -> Gtypes.gtype -> term -> term
-val mklam_ty : scope -> string -> Gtypes.gtype -> term -> term
+val mkall_ty : scope -> string -> Basic.gtype -> term -> term
+val mkex_ty : scope -> string -> Basic.gtype -> term -> term
+val mklam_ty : scope -> string -> Basic.gtype -> term -> term
 
 val is_all: term-> bool
 val is_exists : term -> bool
@@ -56,7 +57,7 @@ val beta_convp:  term -> bool
 val beta_conv:  term -> term
 val beta_reduce :  term -> term
 (* eta abstraction *)
-val eta_conv: term -> Gtypes.gtype -> term -> term
+val eta_conv: term -> Basic.gtype -> term -> term
 
 (* closed terms (every bound variable occurs within its binding term *)
 val is_closed : term -> bool

@@ -48,10 +48,10 @@ val implE : tactic
 val mp_tac : tactic
 val existI : tactic
 (* val existE : string -> tactic *)
-val existE : Term.term -> tactic 
+val existE : Basic.term -> tactic 
 val allI : tactic
 (* val allE : string -> tactic *)
-val allE : Term.term -> tactic
+val allE : Basic.term -> tactic
 
 (* beta conversion 
    to given asumption/conclusion
@@ -98,9 +98,9 @@ val get_two : 'a list -> exn -> ('a * 'a)
    info: [g', g] [t] []
  *)
     val cases_info_tac :
-      Logic.Rules.tag_info option -> Term.term -> Logic.goal -> Logic.goal
+      Logic.Rules.tag_info option -> Basic.term -> Logic.goal -> Logic.goal
     val cases_tac: 
-      Term.term -> Logic.goal -> Logic.goal
+      Basic.term -> Logic.goal -> Logic.goal
 
 *)
 (* tacticals *)

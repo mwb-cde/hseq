@@ -1,4 +1,4 @@
-(* pre-logical constants *)
+(* Basic constants and data structures*)
 
 (* function and type identifiers *)
 type thy_id = string
@@ -33,6 +33,7 @@ val type_id: id_selector
       | Cbool of bool
     type fns = | Name of ident
 
+
 (* ordering on constants *)
 val const_lt: const_ty -> const_ty -> bool
 val const_leq: const_ty -> const_ty -> bool
@@ -56,6 +57,57 @@ val const_leq: const_ty -> const_ty -> bool
 
 (*     val std_prec : string -> int *)
 
+
+type ('idtyp, 'tfun, 'tcons) pre_typ =
+    Var of 'idtyp
+  | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
+  | Base of 'tcons
+  | WeakVar of 'idtyp
+(** 
+   WeekVar x: binds to anything except a variable.
+
+   Isn't (usually) renamed.
+
+   Is used in a sequent calculus when a variable type x can occur
+   in more than one sequent. If x is bound in one sequent, it must
+   be have that binding in every sequent in which it occurs. (Like 
+   week types in ML)
+ *)
+(* representation of types *)
+type gtype = 
+    ((string ref, typ_const, base_typ)pre_typ)
+
+
+(* Records for quantifiers *)
+type q_type =
+    { quant: quant_ty;
+      qvar: string;
+      qtyp: gtype}
+
+(* the type of binding quantifers *)
+(* primitive quanitifiers are All, Exists and Lambda *)
+
+type binders
+
+(* the representation of a term *)
+type term =
+    Id of ident* gtype   (* was   Var of ident* gtype *)
+  | Qnt of quant_ty * binders * term
+  | Bound of binders
+  | Const of const_ty
+  | Typed of term * gtype
+  | App of term * term
+
+val mk_binding : quant_ty -> string -> gtype
+  -> binders
+val dest_binding : binders -> 
+  (quant_ty * string * gtype)
+val binder_kind: binders -> quant_ty
+val binder_name: binders -> string
+val binder_type: binders -> gtype
+val binder_equality: binders -> binders -> bool
+
+(*
 (* date: used to ensure dependencies among theory files *)
 
 val date: unit -> float
@@ -65,6 +117,7 @@ val date: unit -> float
    return date [f] in form [(year, month, day, hour, min)]
 *)
 val nice_date: float -> (int * int * int * int * int)
+*)
 
 
 (* Pretty printer *)

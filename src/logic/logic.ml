@@ -12,7 +12,7 @@ type saved_thm =
 
 type tagged_form = (Tag.t* form)
 
-type skolem_cnst = (Basic.ident * (int * Gtypes.gtype))
+type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 type skolem_type = skolem_cnst list
 
 (* 
@@ -33,7 +33,7 @@ type sqnt_env =
     {
      sklms: skolem_type; 
      sqscp : Gtypes.scope;
-     tyvars: Gtypes.gtype list;
+     tyvars: Basic.gtype list;
      tynames: (string * int) list;
    }
 type sqnt = (Tag.t* sqnt_env * tagged_form list * tagged_form list)
@@ -57,10 +57,10 @@ type conv = thm list -> thm list
  *)
 
 type cdefn =
-    TypeDef of Basic.ident * string list * Gtypes.gtype option
+    TypeDef of Basic.ident * string list * Basic.gtype option
   | TermDef of 
-      Basic.ident * Gtypes.gtype
-	* (string*Gtypes.gtype) list * thm option
+      Basic.ident * Basic.gtype
+	* (string*Basic.gtype) list * thm option
 
 let mk_axiom t = Axiom t
 let mk_theorem t = Theorem t
@@ -211,7 +211,7 @@ let new_weak_type n names=
 type skolem_info=
     {
      name: Basic.ident;
-     ty: Gtypes.gtype;
+     ty: Basic.gtype;
      tyenv: Gtypes.substitution;
      scope: Gtypes.scope;
      skolems: skolem_type;
@@ -571,7 +571,7 @@ module Rules=
 	{ 
 	  goals:Tag.t list; 
 	  forms : Tag.t list;
-	  terms: Term.term list
+	  terms: Basic.term list
 	}
     type tag_info = tag_record ref
 

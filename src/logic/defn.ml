@@ -1,15 +1,15 @@
 
 open Basic
   
-type decln = (Basic.ident* Gtypes.gtype)
-type defn = Defn of (Basic.ident* Gtypes.gtype * Logic.thm)
+type decln = (Basic.ident* Basic.gtype)
+type defn = Defn of (Basic.ident* Basic.gtype * Logic.thm)
 
 let dest_decln (id, ty) = id, ty
 let dest_defn (Defn x) = x
 
 let rec mk_all_from_list scp b qnts =
   match qnts with 
-    (Term.Var(n, ty)::qs) ->
+    (Basic.Id(n, ty)::qs) ->
       mk_all_from_list scp (Logicterm.mkall_ty scp (name n) ty b) qs
   |	[] -> b
   |	_ -> raise (Term.termError "Invalid argument, mk_all_from_list" qnts)
@@ -18,14 +18,14 @@ let rec mk_all_from_list scp b qnts =
 let rec mk_var_ty_list ls =
   match ls with
     [] -> []
-  |	(Term.Var(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
+  |	(Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
   |	_ -> raise (Term.termError "Non-variables not allowed" ls)
 
 
 let get_lhs t = 
   match t with 
-    Term.Var(n, _) -> (n, [])
-  |	Term.App(_, _) -> 
+    Basic.Id(n, _) -> (n, [])
+  | Basic.App(_, _) -> 
       let f=Term.get_fun t
       in 
       let n=

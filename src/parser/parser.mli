@@ -55,28 +55,28 @@ module Grammars :
       type infotyp = 
 	  { 
 	    (* term information *)
-	    bound_names: (string* Term.term) list ref;
+	    bound_names: (string* Basic.term) list ref;
 	    token_info: Pkit.token -> token_info;
               (* type information *)
       	      typ_indx : int ref;
-	      typ_names: (string* Gtypes.gtype)list ref;
+	      typ_names: (string* Basic.gtype)list ref;
               type_token_info: Pkit.token -> token_info
 	  }
 
       val string_of_tok : Lexer.tok -> string
       val string_tokens : Lexer.tok list -> string
       val get_type_indx : infotyp -> int
-      val mk_vartyp : infotyp -> Gtypes.gtype
+      val mk_vartyp : infotyp -> Basic.gtype
 
-      val lookup_name : string -> infotyp -> Term.term
-      val add_name : string -> Term.term -> infotyp -> unit
+      val lookup_name : string -> infotyp -> Basic.term
+      val add_name : string -> Basic.term -> infotyp -> unit
       val drop_name : string -> infotyp -> unit
-      val get_term : string -> infotyp -> Term.term
+      val get_term : string -> infotyp -> Basic.term
       val clear_names : infotyp -> unit
 
-      val lookup_type_name : string -> infotyp -> Gtypes.gtype
-      val add_type_name : string -> Gtypes.gtype -> infotyp -> Gtypes.gtype
-      val get_type : string -> infotyp -> Gtypes.gtype
+      val lookup_type_name : string -> infotyp -> Basic.gtype
+      val add_type_name : string -> Basic.gtype -> infotyp -> Basic.gtype
+      val get_type : string -> infotyp -> Basic.gtype
       val clear_type_names : infotyp -> unit
 
       val mk_token_info : token_info-> Pkit.token_info
@@ -89,22 +89,22 @@ module Grammars :
       val alternates : (infotyp -> 'a phrase) list  -> infotyp -> 'a phrase
 
       val other_type_parsers_list : 
-	  (infotyp -> (Gtypes.gtype phrase)) Lib.named_list ref
-      val other_type_parsers : infotyp -> (Gtypes.gtype phrase)
+	  (infotyp -> (Basic.gtype phrase)) Lib.named_list ref
+      val other_type_parsers : infotyp -> (Basic.gtype phrase)
 
       val other_parsers_list :
-	  (infotyp -> Term.term phrase) Lib.named_list ref
-      val other_parsers : infotyp ->Term.term phrase
+	  (infotyp -> Basic.term phrase) Lib.named_list ref
+      val other_parsers : infotyp ->Basic.term phrase
 
       val mk_type_binary_constr :
 	  infotyp -> 
-	    Lexer.tok -> Gtypes.gtype -> Gtypes.gtype -> Gtypes.gtype
+	    Lexer.tok -> Basic.gtype -> Basic.gtype -> Basic.gtype
       val mk_type_unary_constr : 	
 	  infotyp -> 
-	    Lexer.tok -> Gtypes.gtype -> Gtypes.gtype
+	    Lexer.tok -> Basic.gtype -> Basic.gtype
       val mk_conn :
-	  'a -> infotyp -> Lexer.tok -> Term.term -> Term.term -> Term.term
-      val mk_prefix : 'a -> infotyp -> Lexer.tok -> Term.term -> Term.term
+	  'a -> infotyp -> Lexer.tok -> Basic.term -> Basic.term -> Basic.term
+      val mk_prefix : 'a -> infotyp -> Lexer.tok -> Basic.term -> Basic.term
 
 (* basic parsers *)
 (*
@@ -128,8 +128,8 @@ module Grammars :
       val number : Num.num phrase
       val boolean : bool phrase
       val none : 'a list phrase
-      val bool_type : infotyp -> Gtypes.gtype phrase
-      val num_type : infotyp -> Gtypes.gtype phrase
+      val bool_type : infotyp -> Basic.gtype phrase
+      val num_type : infotyp -> Basic.gtype phrase
       val comma_list : 'a phrase -> 'a list phrase
       val listof : 'a phrase -> 'a list phrase
       val repeat_term : 'a phrase -> 'b phrase -> 'a list phrase
@@ -141,35 +141,35 @@ module Grammars :
 	-> infotyp -> Basic.ident phrase
       val mk_short_id : (infotyp -> Basic.ident phrase)
 	-> infotyp -> string phrase
-      val types : infotyp -> Gtypes.gtype phrase
-      val inner_types : infotyp -> Gtypes.gtype Pkit.phrase
-      val atomic_types : infotyp -> Gtypes.gtype phrase
+      val types : infotyp -> Basic.gtype phrase
+      val inner_types : infotyp -> Basic.gtype Pkit.phrase
+      val atomic_types : infotyp -> Basic.gtype phrase
       val typedef :
 	  infotyp ->
-	    (string * string list option * Gtypes.gtype option)  phrase
-      val mkcomb : Term.term -> Term.term list -> Term.term
+	    (string * string list option * Basic.gtype option)  phrase
+      val mkcomb : Basic.term -> Basic.term list -> Basic.term
       val id_type_op :
 	  (infotyp -> 'a Pkit.phrase) ->
-	    infotyp -> ('a * Gtypes.gtype) phrase
-      val optional_type : infotyp -> Gtypes.gtype option phrase
+	    infotyp -> ('a * Basic.gtype) phrase
+      val optional_type : infotyp -> Basic.gtype option phrase
 
 (*
    term_identifier: 
    parse an identifier that might appear in a quantified term
  *)
-      val term_identifier: infotyp -> Term.term phrase
+      val term_identifier: infotyp -> Basic.term phrase
 (* form:
    toplevel of term phrase
  *)
-      val form : infotyp -> Term.term phrase
-      val formula : infotyp -> Term.term phrase
-      val typed_primary : infotyp -> Term.term phrase
-      val primary : infotyp -> Term.term phrase
-      val lhs : infotyp -> (string * (string * Gtypes.gtype) list) phrase
-      val args_opt : infotyp -> (string * Gtypes.gtype) list phrase
+      val form : infotyp -> Basic.term phrase
+      val formula : infotyp -> Basic.term phrase
+      val typed_primary : infotyp -> Basic.term phrase
+      val primary : infotyp -> Basic.term phrase
+      val lhs : infotyp -> (string * (string * Basic.gtype) list) phrase
+      val args_opt : infotyp -> (string * Basic.gtype) list phrase
       val defn :
 	  infotyp ->
-	    ((string * (string * Gtypes.gtype) list) * Term.term) phrase
+	    ((string * (string * Basic.gtype) list) * Basic.term) phrase
     end
 
 (*
@@ -249,26 +249,26 @@ val parse : 'a Pkit.phrase -> Pkit.input -> 'a
 val identifier_parser : Pkit.input -> Basic.ident
 
 val typedef_parser :
-    Pkit.input -> string * string list option * Gtypes.gtype option
-val type_parser : Pkit.input -> Gtypes.gtype
+    Pkit.input -> string * string list option * Basic.gtype option
+val type_parser : Pkit.input -> Basic.gtype
 
 val defn_parser :
-    Pkit.input -> (string * (string * Gtypes.gtype) list) * Term.term
-val term_parser : Pkit.input -> Term.term
+    Pkit.input -> (string * (string * Basic.gtype) list) * Basic.term
+val term_parser : Pkit.input -> Basic.term
 
 (* User defined parsers *)
 
 (* term_parser_list: list of added term parsers *)
 
 val term_parser_list : 
-    unit -> (Grammars.infotyp -> Term.term phrase) Lib.named_list
+    unit -> (Grammars.infotyp -> Basic.term phrase) Lib.named_list
 
 (* add_term_parser pos n ph:
    add term parser ph named n, in relative position pos 
  *)
 
 val add_term_parser :  Lib.position -> string
-  -> (Grammars.infotyp -> Term.term phrase)
+  -> (Grammars.infotyp -> Basic.term phrase)
     -> unit
 
 (* [remove_term_parser s]
@@ -279,14 +279,14 @@ val remove_term_parser :  string -> unit
 (* type_parser_list: list of added type parsers *)
 
 val type_parser_list : 
-    unit -> (Grammars.infotyp -> Gtypes.gtype phrase) Lib.named_list
+    unit -> (Grammars.infotyp -> Basic.gtype phrase) Lib.named_list
 
 (* add_term_parser pos n ph:
    add term parser ph named n, in relative position pos 
  *)
 
 val add_type_parser :  Lib.position -> string
-  -> (Grammars.infotyp -> Gtypes.gtype phrase)
+  -> (Grammars.infotyp -> Basic.gtype phrase)
     -> unit
 
 	(* remove_type_parser s: 
@@ -296,8 +296,8 @@ val remove_type_parser :  string -> unit
 
 (* readers: read and parse a string *)
 val read:  'a parse -> string -> 'a
-val read_term : string -> Term.term
-val read_type : string -> Gtypes.gtype
+val read_term : string -> Basic.term
+val read_type : string -> Basic.gtype
 
 val test_lex : string -> Lexer.tok Parserkit.Input.t
-val test : string -> Term.term
+val test : string -> Basic.term

@@ -1,10 +1,10 @@
 open Basic
 exception Error
 
-type form =  Term.term
+type form =  Basic.term
 type saved_form =  Dbterm.dbterm
 
-exception TermCheck of Term.term
+exception TermCheck of Basic.term
 
 let term_of_form x = x
 let string_form = Term.string_term
@@ -15,9 +15,9 @@ let from_save x = Dbterm.to_term x
 let rec check_term p t =
   if (p t) then 
     (match t with
-      Term.Qnt(q, b) -> check_term p b
-    | Term.App(f, a) -> check_term p f; check_term p a
-    | Term.Typed(trm, ty) -> check_term p trm
+      Basic.Qnt(_, q, b) -> check_term p b
+    | Basic.App(f, a) -> check_term p f; check_term p a
+    | Basic.Typed(trm, ty) -> check_term p trm
     | _ -> ())
   else raise (Term.termError "Term check failed" [t])
 
@@ -38,13 +38,16 @@ let replace x subst = Term.replace x subst
 
 let rec is_closed_scope env t =
   match t with
-    Term.App(l, r) -> is_closed_scope env l; is_closed_scope env r
-  | Term.Typed(a, _) -> is_closed_scope env a
-  | Term.Qnt(q, b) -> 
-      Term.table_add (Term.Bound(q)) (Term.mkbool true) env;
-      is_closed_scope env b;
-      Term.table_remove (Term.Bound(q)) env
-  | Term.Bound(q) -> 
+    Basic.App(l, r) -> is_closed_scope env l; is_closed_scope env r
+  | Basic.Typed(a, _) -> is_closed_scope env a
+  | Basic.Qnt(k, q, b) -> 
+      if not((Basic.binder_kind q)=k)
+      then raise (Term.termError "Not closed" [t])
+      else 
+	(Term.table_add (Basic.Bound(q)) (Term.mkbool true) env;
+	 is_closed_scope env b;
+	 Term.table_remove (Basic.Bound(q)) env)
+  | Basic.Bound(q) -> 
       (try ignore(Term.table_find t env)
       with Not_found -> 
 	raise (Term.termError  "Not closed"  [t]))
@@ -82,19 +85,22 @@ let is_form scp t =
   in 
   let rec in_scope x=
     match x with
-      Term.Var(id, ty) -> 
+      Basic.Id(id, ty) -> 
 	let th, n = Basic.dest_fnid id
 	in 
 	ignore(lookup_id id); ignore(lookup_ty ty)
-    | Term.Qnt(q, b) -> 
-	lookup_ty (Term.get_binder_type x);
-	ignore(Term.table_add (Term.Bound(q)) (Term.mkbool true) qnt_env);
-	in_scope b;
-	Term.table_remove (Term.Bound(q)) qnt_env
-    | Term.Bound(q) -> 
+    | Basic.Qnt(qnt, q, b) -> 
+	if(qnt=Basic.binder_kind q)
+	then 
+	  (lookup_ty (Term.get_binder_type x);
+	   ignore(Term.table_add (Basic.Bound(q)) (Term.mkbool true) qnt_env);
+	   in_scope b;
+	   Term.table_remove (Basic.Bound(q)) qnt_env)
+	else raise Not_found
+    | Basic.Bound(q) -> 
 	ignore(Term.table_find t qnt_env)
-    | Term.App(l, r) -> in_scope l; in_scope r
-    | Term.Typed(tt, ty) ->
+    | Basic.App(l, r) -> in_scope l; in_scope r
+    | Basic.Typed(tt, ty) ->
 	lookup_ty ty; in_scope tt
     | _ -> ()
   in 
@@ -145,10 +151,10 @@ let get_var_id vt= fst (dest_var vt)
 let get_var_type vt= snd (dest_var vt)
 
 let is_app = Term.is_app 
-let mk_app f a= (Term.App(f, a))
+let mk_app f a= (Basic.App(f, a))
 let dest_app t = 
   match t with 
-    (Term.App(f, a)) -> (f, a)
+    (Basic.App(f, a)) -> (f, a)
   | _ -> raise (Term.termError "Not an application" [t])
 
 let rec mk_comb x y = 
@@ -320,7 +326,7 @@ let unify scp asmf conclf =
   and (cvars, cbody)= Term.strip_qnt Basic.Ex concl
   in let varp x = 
     (match x with 
-      (Term.Bound q) -> (List.memq q avars) or (List.memq q cvars)
+      (Basic.Bound q) -> (List.memq q avars) or (List.memq q cvars)
     | _ -> false)
   in (Unify.unify scp varp abody cbody)
 
@@ -332,7 +338,7 @@ let unify_env scp tyenv asmf conclf =
   and (cvars, cbody)= Term.strip_qnt Basic.Ex concl
   in let varp x = 
     (match x with 
-      (Term.Bound q) -> (List.memq q avars) or (List.memq q cvars)
+      (Basic.Bound q) -> (List.memq q avars) or (List.memq q cvars)
     | _ -> false)
   in 
   Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody
@@ -361,7 +367,7 @@ let inst_env scp vs env t r =
       in 
       let nenv = Typing.simple_typecheck_env scp env nr0 ty
       in 
-      let nr= Term.subst_quick (Term.Bound(q)) nr0 b
+      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
       in 
       let f =Term.retype nenv nr
       in 
@@ -447,7 +453,7 @@ let dest_rr dir f =
 
 let is_free_binder qs t= 
   (match t with
-    Term.Bound(q) -> List.exists (fun x ->  Term.binder_equality x q) qs
+    Basic.Bound(q) -> List.exists (fun x -> Basic.binder_equality x q) qs
   |_ -> false)
 
 let add scp dir fs (t, net) =

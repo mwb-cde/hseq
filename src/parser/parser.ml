@@ -123,12 +123,12 @@ let token_info tbl t=
   type infotyp = 
       { 
 	(* term information *)
-	bound_names: (string* Term.term) list ref;
+	bound_names: (string* Basic.term) list ref;
 	token_info: token -> token_info;
 	  
         (* type information *)
         typ_indx : int ref;
-        typ_names: (string* Gtypes.gtype) list ref;
+        typ_names: (string* Basic.gtype) list ref;
 	  
         type_token_info: token ->token_info;
       }
@@ -542,10 +542,10 @@ let token_info tbl t=
 *)
 
   let qnt_setup_bound_names inf 
-      (qnt: Basic.quant_ty) (xs : (string* Gtypes.gtype) list) =
+      (qnt: Basic.quant_ty) (xs : (string* Basic.gtype) list) =
     List.map 
       (fun (n, ty) -> 
-	let b_id=Term.mkbound(Term.mk_binding qnt n ty)
+	let b_id=Term.mkbound(Basic.mk_binding qnt n ty)
 	in 
 	add_name n b_id inf;
 	(n, b_id)) xs
@@ -559,10 +559,12 @@ let token_info tbl t=
    remove each name in xs from inf.bound_names as it is used.
 *)
 
-  let qnt_term_remove_names inf (xs : (string* Term.term) list) body=
+  let qnt_term_remove_names inf (xs : (string* Basic.term) list) body=
     List.fold_right
       (fun (x, y) b ->
-	let nt=Term.Qnt(dest_bound y, b)
+	let binder=dest_bound y
+	in 
+	let nt=Basic.Qnt(Basic.binder_kind binder, binder, b)
 	in 
 	drop_name x inf; nt) xs body
 
@@ -672,7 +674,7 @@ let token_info tbl t=
 	     qnt_setup_bound_names inf Basic.All (v::vs)))
 	 -- (form inf))
 	 >> 
-       (fun ((xs:(string*Term.term)list), body)
+       (fun ((xs:(string*Basic.term)list), body)
 	 ->
 	   qnt_term_remove_names inf xs body))
 
@@ -687,7 +689,7 @@ let token_info tbl t=
 	     qnt_setup_bound_names inf Basic.Ex (v::vs)))
 	 -- (form inf))
 	 >> 
-       (fun ((xs:(string*Term.term)list), body)
+       (fun ((xs:(string*Basic.term)list), body)
 	 ->
 	   qnt_term_remove_names inf xs body))
 (* "LAM" { id_type_op }+ ":" form *)
@@ -701,7 +703,7 @@ let token_info tbl t=
 	     qnt_setup_bound_names inf Basic.Lambda (v::vs)))
 	 -- (form inf))
 	 >> 
-       (fun ((xs:(string*Term.term)list), body)
+       (fun ((xs:(string*Basic.term)list), body)
 	 ->
 	   qnt_term_remove_names inf xs body))
 (* | id 

@@ -1,8 +1,8 @@
 (* functions for printing types/terms/errors etc *)
 open Basic
 
-val print_term : Term.term -> unit
-val print_type : Gtypes.gtype -> unit
+val print_term : Basic.term -> unit
+val print_type : Basic.gtype -> unit
 val print_theory: Theory.thy -> unit
 
 val print_sqnt: Logic.sqnt -> unit

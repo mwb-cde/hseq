@@ -1,4 +1,4 @@
-val raiseError : string -> Term.term list -> 'a
+val raiseError : string -> Basic.term list -> 'a
 
 val num_thy : string
 val plusid : Basic.ident
@@ -14,43 +14,43 @@ val ltid : Basic.ident
 val leqid : Basic.ident
 
 val numterm_to_expr :
-    int * (int * Term.term) list ->
-  Gtypes.scope -> Term.term -> (Supinf.expr * (int * (int * Term.term) list) )
+    int * (int * Basic.term) list ->
+  Gtypes.scope -> Basic.term -> (Supinf.expr * (int * (int * Basic.term) list) )
 
-val bool_type : Gtypes.gtype
+val bool_type : Basic.gtype
 
 val bterm_to_boolexpr :
-  int * (int * Term.term) list ->
-  int * (int * Term.term) list ->
+  int * (int * Basic.term) list ->
+  int * (int * Basic.term) list ->
   Gtypes.scope ->
-  Term.term ->
+  Basic.term ->
   (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr *
-  (int * (int * Term.term) list) * (int * (int * Term.term) list)
+  (int * (int * Basic.term) list) * (int * (int * Basic.term) list)
 
 val term_to_boolexpr :
   Gtypes.scope ->
-  Term.term ->
+  Basic.term ->
   (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr *
-  (int * (int * Term.term) list) * (int * (int * Term.term) list) *
-  Term.binders list
-val expr_to_numterm : 'a * ('b * Term.term) list -> Supinf.expr -> Term.term
+  (int * (int * Basic.term) list) * (int * (int * Basic.term) list) *
+  Basic.binders list
+val expr_to_numterm : 'a * ('b * Basic.term) list -> Supinf.expr -> Basic.term
 val compexpr_to_term :
-  'a * ('b * Term.term) list ->
-  Supinf.compfn -> Supinf.expr -> Supinf.expr -> Term.term
+  'a * ('b * Basic.term) list ->
+  Supinf.compfn -> Supinf.expr -> Supinf.expr -> Basic.term
 val boolexpr_to_bterm :
-  'a * ('b * Term.term) list ->
-  'c * ('d * Term.term) list ->
-  (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr -> Term.term
+  'a * ('b * Basic.term) list ->
+  'c * ('d * Basic.term) list ->
+  (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr -> Basic.term
 val boolexpr_to_term :
   'a ->
   (Supinf.compfn * Supinf.expr * Supinf.expr, int) Prop.boolexpr ->
-  'b * ('c * Term.term) list ->
-  'd * ('e * Term.term) list -> Term.binders list -> Term.term
+  'b * ('c * Basic.term) list ->
+  'd * ('e * Basic.term) list -> Basic.binders list -> Basic.term
 
 
-val simp_term_basic : Gtypes.scope -> Term.term -> Term.term
-val simp_term_rewrite : Gtypes.scope -> Term.term -> Term.term
+val simp_term_basic : Gtypes.scope -> Basic.term -> Basic.term
+val simp_term_rewrite : Gtypes.scope -> Basic.term -> Basic.term
 val simp_rewrite : Gtypes.scope -> Formula.form -> Logic.thm
-val decide_term_basic : Gtypes.scope -> Term.term -> bool
-val decide_term : Gtypes.scope -> Term.term -> Term.term
+val decide_term_basic : Gtypes.scope -> Basic.term -> bool
+val decide_term : Gtypes.scope -> Basic.term -> Basic.term
 val decide_rewrite : Gtypes.scope -> Formula.form -> Logic.thm

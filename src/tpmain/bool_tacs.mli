@@ -46,14 +46,14 @@ val false_rule:  Logic.rule
    with list of constants *)
 
 val inst_rule : string list -> int -> Logic.rule
-val inst_term_rule : Term.term list -> int -> Logic.rule
+val inst_term_rule : Basic.term list -> int -> Logic.rule
 val inst_tac: string list -> int -> Tactics.tactic 
 val inst_asm : string list -> Tactics.tactic
 val inst_concl : string list -> Tactics.tactic
 
 (* cases tactics *)
 
-val cases_tac0: Term.term -> Tactics.tactic
+val cases_tac0: Basic.term -> Tactics.tactic
 val cases_tac: string -> Tactics.tactic
 
 (* convert boolean equality to iff *)

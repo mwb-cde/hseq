@@ -1,3 +1,4 @@
+open Basic
 open Term
 open Result
 
@@ -100,7 +101,7 @@ let make_rewrites xs = make_rewrites_aux (List.rev xs) (Net.empty())
  *)	
 
 
-type rewrite_rules = (Term.binders list * Term.term * Term.term)
+type rewrite_rules = (Basic.binders list * Basic.term * Basic.term)
 type rewriteDB = 
     Net_rr of rewrite_rules Net.net 
   | List_rr of rewrite_rules list
@@ -140,20 +141,20 @@ let rec match_rewrite_list scp tyenv chng net trm =
 let rewrite_list_aux scp tyenv chng net trm = 
   let rec rewrite_aux env t=
     match t with
-      Term.Qnt(q, b) -> 
+      Basic.Qnt(qnt, q, b) -> 
 	(let nb, benv = rewrite_aux env b
 	in 
-	match_rewrite_list scp benv chng net (Qnt(q, nb)))
-    | Term.Typed(tt, ty) -> 
+	match_rewrite_list scp benv chng net (Qnt(qnt, q, nb)))
+    | Basic.Typed(tt, ty) -> 
 	rewrite_aux env tt
-    |	Term.App(f, a)->
+    |	Basic.App(f, a)->
 	(let nf, fenv = 
 	  (rewrite_aux env f)
 	in
 	let na, aenv = 
 	  (rewrite_aux fenv a)
 	in 
-	match_rewrite_list scp aenv chng net (Term.App(nf, na)))
+	match_rewrite_list scp aenv chng net (Basic.App(nf, na)))
     | _ -> 
 	match_rewrite_list scp env chng net t
   in 
@@ -175,19 +176,19 @@ let rewrite_list scp chng tyenv rs trm =
    let rec rewrite_list_aux  scp tyenv chng net trm = 
    try
    match trm with
-   Term.Qnt(q, b) -> 
+   Basic.Qnt(q, b) -> 
    (let nb = rewrite_list_aux scp tyenv chng net b
    in 
    match_rewrite_list scp tyenv chng net (Qnt(q, nb)))
-   | Term.Typed(tt, ty) -> 
+   | Basic.Typed(tt, ty) -> 
    rewrite_list_aux scp tyenv chng net tt
-   |	Term.App(f, a)->
+   |	Basic.App(f, a)->
    let nf = 
    (rewrite_list_aux scp tyenv chng net f)
    and na = 
    (rewrite_list_aux scp tyenv chng net a)
    in 
-   (match_rewrite_list scp tyenv chng net (Term.App(nf, na)))
+   (match_rewrite_list scp tyenv chng net (Basic.App(nf, na)))
    | _ -> (match_rewrite_list scp tyenv chng net trm)
    with x -> 
    (Term.addtermError "rewrite failed for term" [trm] x)
@@ -253,9 +254,9 @@ let simple_rewrite_list scp chng rs trm =
   in 
   let rec rewrite_aux tr = 
     match tr with
-      Term.Typed(tt, ty) -> 
+      Basic.Typed(tt, ty) -> 
 	rewrite_aux tt
-    | Term.Qnt(q, b) ->
+    | Basic.Qnt(q, b) ->
 	let ntrm = match_rr_list scp tyenv chng rs tr
 	in 
 	if (!chng) 
@@ -265,7 +266,7 @@ let simple_rewrite_list scp chng rs trm =
 	  (let nb= rewrite_aux b
 	  in 
 	  if(!chng)
-	  then Term.Qnt(q, nb)
+	  then Basic.Qnt(q, nb)
 	  else 
 	    raise (Term.termError "No match for rewrite" [tr]))
     | _ -> match_rr_list scp tyenv chng rs tr
@@ -278,19 +279,18 @@ let simple_rewrite_list scp chng rs trm =
 let simple_rewrite_list scp chng tyenv rs trm = 
   let rec rewrite_aux env tr = 
     match tr with
-      Term.Typed(tt, ty) -> 
+      Basic.Typed(tt, ty) -> 
 	rewrite_aux env tt
-    | Term.Qnt(q, b) ->
+    | Basic.Qnt(qnt, q, b) ->
 	let ntrm, nenv = match_rr_list scp env chng rs tr
 	in 
 	if (!chng) 
-	then 
-	  (ntrm, nenv)
+	then (ntrm, nenv)
 	else 
 	  (let nb, benv= rewrite_aux nenv b
 	  in 
 	  if(!chng)
-	  then (Term.Qnt(q, nb), benv)
+	  then (Basic.Qnt(qnt, q, nb), benv)
 	  else 
 	    raise (Term.termError "No match for rewrite" [tr]))
     | _ -> match_rr_list scp env chng rs tr 

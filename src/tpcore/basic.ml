@@ -42,6 +42,8 @@ type const_ty =
   | Cnum of Num.num    (* big numbers *)
   | Cbool of bool
 
+
+
 let const_lt x y=
   match (x, y) with
     Cbool(true), _ -> true
@@ -126,16 +128,46 @@ let fns_string x =
   match x with
     Name n -> string_fnid n
 
-(* types *)
+(* Types *)
 
-type base_typ =
-    Bool
-  | Num
-  | Ind
+type base_typ = Bool | Num | Ind
+type typ_const = Func | Defined of ident
 
-type typ_const =
-    Func
-  | Defined of ident
+type ('idtyp, 'tfun, 'tcons) pre_typ =
+    Var of 'idtyp
+  | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
+  | Base of 'tcons
+  | WeakVar of 'idtyp
+
+type gtype = (string ref, typ_const, base_typ)pre_typ
+
+(* Terms *)
+
+type q_type = {quant: quant_ty; qvar: string; qtyp: gtype}
+type binders = q_type ref
+type term =
+    Id of ident* gtype   (* was   Var of ident* gtype *)
+  | Qnt of quant_ty * binders * term (* was  Qnt of q_type ref * term *)
+  | Bound of q_type ref
+  | Const of const_ty
+  | Typed of term * gtype
+  | App of term * term
+
+(* Binder operations *)
+let binder_equality x y = x==y
+let mk_binding qn qv qt 
+    = ref{quant=qn; qvar=qv; qtyp=qt}
+let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
+let binder_kind b = 
+  let (x, _, _) = dest_binding b
+  in x
+let binder_name b = 
+  let (_, x, _) = dest_binding b
+  in x
+let binder_type b = 
+  let (_, _, x) = dest_binding b
+  in x
+
 
 let string_btype x =
   match x with 
@@ -150,18 +182,19 @@ let string_tconst x l =
 		  (Lib.list_string (fun x-> x) ", " l)^")")
 
 
+(*
 let date ()= Unix.time()
 let nice_date f= 
   let tm = Unix.localtime f
   in 
   (tm.Unix.tm_year + 1900, tm.Unix.tm_mon, tm.Unix.tm_yday, 
    tm.Unix.tm_hour, tm.Unix.tm_min)
+*)
 
-
-(* Pretty Printer *)
-
+(*
 module PP =
   struct
+(* Pretty Printer *)
 
     open Format
     exception Error of string
@@ -331,3 +364,4 @@ module PP =
 
 
 
+*)

@@ -5,14 +5,14 @@
    unify terms l and r in scope scp
    use predicate p to determine what counts as a variable for unification *)
 
-val unify: Gtypes.scope -> (Term.term -> bool) 
-  -> Term.term -> Term.term -> Term.substitution
+val unify: Gtypes.scope -> (Basic.term -> bool) 
+  -> Basic.term -> Basic.term -> Term.substitution
 
 (* unify_env: unify terms in a given context 
    if unification fails, any bindings made are removed *)
 
 val unify_env: Gtypes.scope  -> Term.substitution
-  -> (Term.term -> bool) -> Term.term -> Term.term 
+  -> (Basic.term -> bool) -> Basic.term -> Basic.term 
     -> Term.substitution 
 
 (* unify_fullenv:  unify terms in a given type and term context.
@@ -22,7 +22,7 @@ val unify_fullenv:
     Gtypes.scope 
   -> Gtypes.substitution
     -> Term.substitution 
-      -> (Term.term -> bool) -> Term.term -> Term.term 
+      -> (Basic.term -> bool) -> Basic.term -> Basic.term 
 	-> (Gtypes.substitution * Term.substitution)
 
 (*
@@ -40,13 +40,13 @@ val unify_fullenv:
 
 val unify_fullenv_rewrite: 
     Gtypes.scope -> Gtypes.substitution  -> Term.substitution 
-    -> (Term.term -> bool) 
-      -> Term.term -> Term.term 
+    -> (Basic.term -> bool) 
+      -> Basic.term -> Basic.term 
 	-> (Gtypes.substitution * Term.substitution)
 
 (* simple wrapper for unify_fullenv_rewrite which constructs 
    and empty type substitution *)
 
 val unify_env_rewrite: Gtypes.scope 
-  -> Term.substitution -> (Term.term -> bool) 
-    -> Term.term -> Term.term -> Term.substitution
+  -> Term.substitution -> (Basic.term -> bool) 
+    -> Basic.term -> Basic.term -> Term.substitution

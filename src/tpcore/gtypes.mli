@@ -2,7 +2,7 @@
 
 open Basic
 open Lib
-
+(*
 type ('idtyp, 'tfun, 'tcons) pre_typ =
     Var of 'idtyp
   | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
@@ -18,10 +18,10 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
    be have that binding in every sequent in which it occurs. (Like 
    week types in ML)
  *)
-
 (* representation of types *)
 type gtype = 
     ((string ref, Basic.typ_const, Basic.base_typ)pre_typ)
+*)
 
 (* representation of types for storage on disk *)
 type stype = 

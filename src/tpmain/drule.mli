@@ -39,8 +39,8 @@ val mp_basic_rule : int -> Logic.rule
 (*    val mp_rule : Logic.rule *)
 
 val trueR : Logic.rule
-val existE : Term.term -> Logic.rule
-val allE : Term.term -> Logic.rule
+val existE : Basic.term -> Logic.rule
+val allE : Basic.term -> Logic.rule
 
 (* delete a list of assumptions/conclusions *)
 val deleten: int list -> Logic.rule

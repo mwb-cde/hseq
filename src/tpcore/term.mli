@@ -1,7 +1,9 @@
 (* Term representation and their basic manipulation *)
 
+open Basic
 open Gtypes
 
+(*
 (* Records for quantifiers *)
 type q_type =
     { quant: Basic.quant_ty;
@@ -21,13 +23,15 @@ type term =
   | Const of Basic.const_ty
   | Typed of term * Gtypes.gtype
   | App of term * term
-
+*)
+(*
 (* construct/destruct/compare bindings *)
 val mk_binding : Basic.quant_ty -> string -> Gtypes.gtype
   -> binders
 val dest_binding : binders -> 
   (Basic.quant_ty * string * Gtypes.gtype)
 val binder_equality: binders -> binders -> bool
+*)
 val binder_equiv : scope -> term -> term -> bool
 
 (* equality of terms *)
@@ -124,23 +128,24 @@ val get_free_vars : term -> (Basic.ident *gtype) list
 val get_free_binders : term -> binders list
 
 (* destructors for bindings *)
-val get_binder : term -> q_type
+(* val get_binder : term -> q_type *)
+val get_binder : term -> binders
 val get_binder_name : term -> string
-val get_binder_type : term -> Gtypes.gtype
+val get_binder_type : term -> gtype
 
 val dest_qnt :
-    term -> binders * Basic.quant_ty * string * Gtypes.gtype * term
+    term -> binders * Basic.quant_ty * string * Basic.gtype * term
 
 (* constructors/destructors for quanitifed terms *)
-val get_qnt_type : term -> Gtypes.gtype
+val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
 val mkqnt : scope -> 
   Basic.quant_ty -> string -> term -> term
 val mktyped_qnt : scope -> 
-  Basic.quant_ty -> Gtypes.gtype -> string -> term -> term
+  Basic.quant_ty -> Basic.gtype -> string -> term -> term
 
 (* conversion to a string *)
-val string_typed_name : string -> Gtypes.gtype -> string
+val string_typed_name : string -> Basic.gtype -> string
 val string_term : term -> string
 val string_inf_term : ((Basic.ident -> int) * (Basic.ident -> bool))
   -> term -> string
@@ -154,16 +159,16 @@ val inst : term -> term -> term
 val is_var : term-> bool
 val mkvar : Basic.ident -> term
 val mkshort_var :string -> term
-val mk_typed_var : Basic.ident -> Gtypes.gtype -> term
-val dest_var : term-> Basic.ident * Gtypes.gtype
+val mk_typed_var : Basic.ident -> Basic.gtype -> term
+val dest_var : term-> Basic.ident * Basic.gtype
 val get_var_id : term-> Basic.ident
-val get_var_type : term-> Gtypes.gtype
+val get_var_type : term-> Basic.gtype
 
 val is_bound : term-> bool
 val mkbound : binders -> term
 val dest_bound : term-> binders
 
-val mkmeta : string -> Gtypes.gtype -> term
+val mkmeta : string -> Basic.gtype -> term
 val is_meta : term -> bool
 
 val is_qnt : term-> bool
@@ -178,8 +183,8 @@ val dest_app : term-> term * term
 val mkcomb: term -> term list -> term
 
 val is_typed : term-> bool
-val mktyped : term -> Gtypes.gtype -> term
-val dest_typed : term-> term* Gtypes.gtype
+val mktyped : term -> Basic.gtype -> term
+val dest_typed : term-> term* Basic.gtype
 
 val is_const : term-> bool
 val mkconst : Basic.const_ty -> term

@@ -176,9 +176,12 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
     
+(*
 let define trm=
   let (name, args, r) = dest_defn_term trm
   in 
+*)
+let define ((name, args), r)=
   let ndef=
     Defn.mkdefn (Tpenv.scope()) 
       (Basic.mklong (Tpenv.get_cur_name()) name) args r
@@ -339,3 +342,6 @@ let by x =
 
 let scope () = Tpenv.scope();;
 
+let read x= Tpenv.read x
+let read_unchecked  x= Tpenv.read_unchecked x
+let read_defn  x= Tpenv.read_defn x

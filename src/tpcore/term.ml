@@ -3,6 +3,7 @@ open Basic
 open Gtypes
 open Result
 
+(*
 type q_type = {quant: quant_ty; qvar: string; qtyp: gtype}
 
 type binders = q_type ref
@@ -19,14 +20,15 @@ let binder_equality x y = x==y
 let mk_binding qn qv qt 
     = ref{quant=qn; qvar=qv; qtyp=qt}
 let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
-
+*)
 
 let rec equals x y = 
   (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
       (equals f1 f2) & (equals arg1 arg2)
   | (Bound(q1), Bound(q2)) -> q1==q2
-  | (Qnt(qn1, b1), Qnt(qn2, b2)) -> qn1==qn2 & (equals b1 b2)
+  | (Qnt(k1, qn1, b1), Qnt(k2, qn2, b2)) -> 
+      k1=k2 & qn1==qn2 & (equals b1 b2)
   | (Typed(t1, ty1), Typed(t2, ty2)) ->
       ty1=ty2  & (equals t1 t2)
   | (_, _) -> x=y)
@@ -39,8 +41,8 @@ let simple_term_printer trm=
 let print_simple trm=
   let rec print_aux t =
     match t with
-      Var(n, ty) -> Format.print_string(Basic.string_fnid n)
-    | Bound(n) -> Format.print_string (".."^(!n.qvar))
+      Id(n, ty) -> Format.print_string(Basic.string_fnid n)
+    | Bound(n) -> Format.print_string (".."^(binder_name n))
     | Const(c) -> Format.print_string (Basic.string_const c)
     | Typed (trm, ty) ->
 	Format.print_string "(";
@@ -58,11 +60,11 @@ let print_simple trm=
 	print_aux t2;
 	Format.print_string ")";
 	Format.close_box ()
-    | Qnt(q, body) ->
-	Format.print_string (Basic.quant_string (!q.quant));
+    | Qnt(k, q, body) ->
+	Format.print_string (Basic.quant_string k);
 	Format.print_string 
-	  ("("^(!q.qvar)
-	   ^": "^(Gtypes.string_gtype (!q.qtyp))^")"^": ");
+	  ("("^(binder_name q)
+	   ^": "^(Gtypes.string_gtype (binder_type q))^")"^": ");
 	Format.open_box 0;
 	print_aux body;
 	Format.close_box ();
@@ -86,14 +88,16 @@ let basicError s t = mkError((new basictermError s t):>error)
 
 let get_binder_name x =
   match x with
-    Bound(n) -> (!n).qvar
-  | Qnt(n, b) -> (!n).qvar
+    Bound(n) -> binder_name n
+  | Qnt(_, n, _) -> binder_name n
   | _ -> raise (basicError "Not a binder" [x])
 
 
 let dest_qnt t=
   match t with 
-    (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
+    (Qnt(qnt, q,b)) -> 
+      let (_, qv, qt) = Basic.dest_binding q
+      in (q, qnt, qv, t, b)
   | _  -> raise (Failure "Not a quantifier")
 
 let is_qnt x = 
@@ -247,9 +251,11 @@ exception No_quantifier
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv= 
-    let nt, nev=copy_type_env tyenv (!q.qtyp)
+    let qnt, qv, qty = Basic.dest_binding q
     in 
-    (mk_binding (!q.quant) (!q.qvar) nt, nev)
+    let nt, nev=copy_type_env tyenv qty
+    in 
+    (mk_binding qnt qv nt, nev)
   and has_quantifier = ref false
   in 
   let rec rename_aux t tyenv env=
@@ -257,7 +263,7 @@ let rename_env typenv trmenv trm =
       Bound(_) -> 
 	(try (find t env, tyenv, env)
 	with Not_found -> (t, tyenv, env))
-    | Qnt(q, b) -> 
+    | Qnt(k, q, b) -> 
       	let nq, tyenv1 = copy_binder q tyenv
       	in 
 	let env1=bind (Bound(q)) (Bound(nq)) env
@@ -265,7 +271,7 @@ let rename_env typenv trmenv trm =
 	let nb, tyenv2, env2=rename_aux b tyenv1 env1
 	in 
 	has_quantifier:=true;
-      	(Qnt(nq, nb), tyenv2, env2)
+      	(Qnt(k, nq, nb), tyenv2, env2)
     | Typed(b, ty) -> 
 	let nb, tyenv1, env1 = rename_aux b tyenv env
 	in 
@@ -328,7 +334,7 @@ let rec subst env trm =
     subst env nt
   with Not_found ->
     (match trm with
-      Qnt(q, b) ->  Qnt(q, subst env b)
+      Qnt(k, q, b) ->  Qnt(k, q, subst env b)
     | App(f, a) -> App(subst env f, subst env a)
     | Typed(t, ty) -> Typed(subst env t, ty)
     | _ -> trm)
@@ -359,7 +365,7 @@ let subst_mgu varp env trm =
       in mgu_aux nt
     with Not_found ->
       (match trm with
-	Qnt(q, b) ->  Qnt(q, mgu_aux b)
+	Qnt(k, q, b) ->  Qnt(k, q, mgu_aux b)
       | App(f, a) -> App(mgu_aux f, mgu_aux a)
       | Typed(t, ty) -> Typed(mgu_aux t, ty)
       | _ -> trm)
@@ -368,8 +374,8 @@ let subst_mgu varp env trm =
 let get_free_vars trm = 
   let rec get_free_vars_aux t ts =
     match t with 
-      Var(x, ty) -> (x, ty)::ts
-    | Qnt(q, b) -> get_free_vars_aux b ts
+      Id(x, ty) -> (x, ty)::ts
+    | Qnt(k, q, b) -> get_free_vars_aux b ts
     | App(f, a) -> get_free_vars_aux a (get_free_vars_aux f ts)
     | Typed(tr, ty) ->get_free_vars_aux tr ts
     | _ -> ts
@@ -396,24 +402,24 @@ let is_meta trm =
       | _ -> false)
   | _ -> false
   
-let get_binder t = !(dest_bound t)
+let get_binder t = (dest_bound t)
 
 let get_binder_type x =
   match x with
-    Bound(n) -> (!n).qtyp
-  | Qnt(n, b) -> (!n).qtyp
+    Bound(n) -> Basic.binder_type n
+  | Qnt(_, n, _) -> Basic.binder_type n
   | _ -> raise (Failure "Not a binder")
 
 let is_var x = 
   match x with 
-    Var _ -> true
+    Id _ -> true
   | _ -> false
-let mk_typed_var n t= (Var(n, t))
+let mk_typed_var n t= (Id(n, t))
 let mkvar n = mk_typed_var n (Gtypes.mk_null ())
 let mkshort_var n = mkvar (mkname n)
 let dest_var vt =
   match vt with
-    (Var (n, t)) -> (n, t)
+    (Id (n, t)) -> (n, t)
   | _ -> raise (Failure "Not a variable")
 
 let get_var_id vt= fst (dest_var vt)
@@ -454,7 +460,7 @@ let get_args x =
   in get_args_aux x []
 
 let mkfun f args = 
-  mkcomb (Var(f, Gtypes.mk_var 
+  mkcomb (Id(f, Gtypes.mk_var 
 		("_"^(Basic.string_fnid f)^"_ty"))) args
 let is_fun t =
   (is_app t) & is_var (get_fun t)
@@ -507,18 +513,20 @@ let is_true t =
 
 let dest_qnt t=
   match t with 
-    (Qnt(q,b)) -> (q, (!q).quant, (!q).qvar, (!q).qtyp, b)
+    (Qnt(qnt, q,b)) -> 
+      let _, qv, qty = Basic.dest_binding q
+      in (q, qnt, qv, qty, b)
   | _  -> raise (Failure "Not a quantifier")
 
 let get_qnt_type t =
   match t with 
-    Qnt(qb, b) -> (!qb).qtyp
-  | Bound(qb) -> (!qb).qtyp
+    Qnt(qnt, qb, b) -> Basic.binder_type qb
+  | Bound(qb) -> Basic.binder_type qb
   | _ -> raise (Failure "not a quantifier")
 
 let get_qnt_body t = 
   match t with 
-    Qnt(qb, b) -> b
+    Qnt(_, _, b) -> b
   | _ -> raise (Failure "Not a quantified formula")
 
 
@@ -529,7 +537,7 @@ let get_free_binders t =
   in 
   let rec free_aux x =
     match x with
-      Qnt(q, b) ->
+      Qnt(_, q, b) ->
 	table_add (Bound q) (trtrm) memo;
 	free_aux b
     | Bound(q) ->
@@ -565,14 +573,14 @@ let inst t r =
 let subst_qnt_var scp env trm =
   let rec subst_aux t=
     match t with
-      Var(n, ty) -> 
+      Id(n, ty) -> 
 	(try 
 	  (let r = Lib.find n env
 	  in ignore(Gtypes.unify scp ty (get_binder_type r)); r)
 	with _ -> t)
     | (Typed(tt, ty)) -> Typed(subst_aux tt, ty)
     | (App(f, a)) -> App(subst_aux f, subst_aux a)
-    | Qnt(q, b) -> Qnt(q, subst_aux b)
+    | Qnt(k, q, b) -> Qnt(k, q, subst_aux b)
     | _ -> t
   in subst_aux trm
 
@@ -581,7 +589,7 @@ let mktyped_qnt scp q ty n b =
   in 
   let nb=subst_qnt_var scp
       (Lib.bind (mkname n) (Bound t) (Lib.empty_env())) b
-  in Qnt(t, nb)
+  in Qnt(q, t, nb)
 
 let mkqnt tyenv q n b =
   mktyped_qnt tyenv q (Gtypes.mk_null()) n b
@@ -595,9 +603,9 @@ let binder_equiv tyenv s t =
       if (qnt1 = qnt2) 
       then (ignore(Gtypes.unify tyenv ty1 ty2); true)
       else false
-  | (Qnt(b1, _), Qnt(b2, _)) ->
-      let (qnt1, _, ty1) =dest_binding b1
-      and (qnt2, _, ty2) =dest_binding b2
+  | (Qnt(qnt1, b1, _), Qnt(qnt2, b2, _)) ->
+      let (_, _, ty1) =dest_binding b1
+      and (_, _, ty2) =dest_binding b2
       in 
       if (qnt1 = qnt2) 
       then (ignore(Gtypes.unify tyenv ty1 ty2); true)
@@ -612,7 +620,7 @@ let string_typed_name n t =
 
 let rec string_term_basic t =
   match t with
-    Var(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
+    Id(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
   | Bound(_) -> "?"^(get_binder_name t)
   | Const(c) -> string_const c
   | App(t1, t2) ->
@@ -622,9 +630,10 @@ let rec string_term_basic t =
       ("("^(string_term_basic f)^" ("
        ^(Lib.list_string (string_term_basic ) ", " args)^"))")
 
-  | Qnt(q, body) -> 
-      (quant_string (!q).quant)
-      ^" ("^(string_typed_name (!q).qvar (!q).qtyp)^"): "
+  | Qnt(k, q, body) -> 
+      (quant_string k)
+      ^" ("^(string_typed_name (Basic.binder_name q) 
+	       (Basic.binder_type q))^"): "
       ^(string_term_basic body)
   | Typed (trm, ty) -> 
       ("("^(string_term_basic trm)^": "
@@ -632,19 +641,21 @@ let rec string_term_basic t =
 
 let rec string_term_prec i x =
   match x with
-    Var(n, ty) -> (Basic.string_fnid n)
+    Id(n, ty) -> (Basic.string_fnid n)
   | Bound(_) -> "?"^(get_binder_name x)
   | Const(c) -> Basic.string_const c
-  | Qnt(q, body) -> 
-      let ti = (Basic.prec_qnt (!q.quant))
+  | Qnt(k, q, body) -> 
+      let ti = (Basic.prec_qnt k)
       in 
       if ti <= i 
-      then ("("^(quant_string (!q.quant))
-	    ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
+      then ("("^(quant_string (Basic.binder_kind q))
+	    ^" "^(string_typed_name (Basic.binder_name q) 
+		    (Basic.binder_type q))^". "
 	    ^(string_term_prec ti (body))^")")
       else 
-	((quant_string (!q.quant))
-	 ^" "^(string_typed_name (!q.qvar) (!q.qtyp))^". "
+	((quant_string (Basic.binder_kind q))
+	 ^" "^(string_typed_name (Basic.binder_name q) 
+		 (Basic.binder_type q))^". "
 	 ^(string_term_prec ti (body)))
   | App(t1, t2) ->
       let f=get_fun x 
@@ -676,7 +687,7 @@ let cfun_string c =
 
 let rec string_term_inf inf i x =
   match x with
-    Var(n, ty) -> (cfun_string (string_fnid n))
+    Id(n, ty) -> (cfun_string (string_fnid n))
   | Bound(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Typed (trm, ty) ->
@@ -702,16 +713,16 @@ let rec string_term_inf inf i x =
       else 
 	("("^(string_term_inf inf i f)^" "
 	 ^(list_string (string_term_inf inf i) " " args)^")")
-  | Qnt(q, body) -> 
-      let qnt = !q.quant
-      in let (qnts, b) = (strip_qnt qnt x)
+  | Qnt(qnt, q, body) -> 
+      let (qnts, b) = (strip_qnt qnt x)
       in let qnts_str = 
 	(quant_string qnt)
 	^(list_string 
-	    (fun x -> (string_typed_name (!x.qvar) (!x.qtyp)))
+	    (fun x -> (string_typed_name (Basic.binder_name x) 
+			 (Basic.binder_type x)))
 	    " " qnts)^": "
       in 
-      let ti = (Basic.prec_qnt (!q.quant))
+      let ti = (Basic.prec_qnt (Basic.binder_kind q))
       in 
       if ti < i 
       then ("("^qnts_str^(string_term_inf inf ti (b))^")")
@@ -726,7 +737,7 @@ let retype tyenv t=
   in 
   let rec retype_aux t =
     match t with
-      Var(n, ty) -> Var(n, Gtypes.mgu ty tyenv)
+      Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
     | Bound(q) -> 
 	(try table_find t qenv
 	with Not_found -> t)
@@ -734,7 +745,7 @@ let retype tyenv t=
     | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
 	App(retype_aux f, retype_aux a)
-    | Qnt(q, b) ->
+    | Qnt(qnt, q, b) ->
 	(let (_, oqnt, oqnm, oqty, _) = dest_qnt t
 	in 
 	let nty = Gtypes.mgu oqty tyenv
@@ -742,7 +753,7 @@ let retype tyenv t=
 	let nq = mk_binding oqnt oqnm nty
 	in 
 	table_add (Bound(q)) (Bound(nq)) qenv;
-	let rt= Qnt(nq, retype_aux b)
+	let rt= Qnt(qnt, nq, retype_aux b)
 	in 
 	table_remove (Bound(q)) qenv; rt)
   in 
@@ -760,10 +771,10 @@ let retype_pretty_env typenv trm=
   in 
   let rec retype_aux t name_env =
     match t with
-      Var(n, ty) -> 
+      Id(n, ty) -> 
 	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
 	in 
-	(Var(n, nt), nenv1)
+	(Id(n, nt), nenv1)
     | Bound(q) -> (table_find t qenv, name_env)
     | Const(c) -> (t, name_env)
     | Typed(trm, ty) -> retype_aux trm name_env
@@ -772,16 +783,16 @@ let retype_pretty_env typenv trm=
 	in let na, nenv2=retype_aux a nenv1
 	in 
 	(App(nf, na), nenv2)
-    | Qnt(q, b) ->
+    | Qnt(qnt, q, b) ->
 	(let (_, oqnt, oqnm, oqty, _) = dest_qnt t
 	in 
 	let nty, nenv1 =Gtypes.mgu_rename_env inf typenv name_env oqty
 	in 
-	let nq = mk_binding oqnt oqnm nty
+	let nq = mk_binding qnt oqnm nty
 	in 
 	table_add (Bound(q)) (Bound(nq)) qenv;
 	let nb, nenv2=retype_aux b nenv1
-	in let rt= Qnt(nq, nb)
+	in let rt= Qnt(qnt, nq, nb)
 	in 
 	table_remove (Bound(q)) qenv; (rt, nenv2))
   in 
@@ -879,7 +890,7 @@ let print_qnts ppstate prec (qnt, qs) =
 
 let rec print_term ppstate prec x =
   match x with
-    Var(n, ty) -> 
+    Id(n, ty) -> 
       Printer.print_identifier 
 	(pplookup ppstate) n;
       Format.print_cut()
@@ -917,8 +928,8 @@ let rec print_term ppstate prec x =
 	     Printer.print_string ")";
 	     Format.close_box())));
       Format.print_cut()
-  | Qnt(q, body) -> 
-      let (_, qnt, qvar, qtyp, _) = dest_qnt x
+  | Qnt(qnt, q, body) -> 
+      let (_, _, qvar, qtyp, _) = dest_qnt x
       in 
       let (qnts, b) = (strip_qnt qnt x)
       in 
@@ -978,15 +989,15 @@ let set_names scp trm=
   in 
   let rec set_aux t=
     match t with
-      Var(id, ty) -> 
+      Id(id, ty) -> 
 	let th, n = Basic.dest_fnid id
 	in 
 	let nth = (if th=Basic.null_thy
 	then lookup_id n else th)
 	in 
 	let nid = Basic.mklong nth n
-	in Var(nid, ty)
-    | Qnt(q, b) -> Qnt(q, set_aux b)
+	in Id(nid, ty)
+    | Qnt(qnt, q, b) -> Qnt(qnt, q, set_aux b)
     | Typed(tt, tty) -> Typed(set_aux tt, tty)
     | App(f, a) -> App(set_aux f, set_aux a)
     | _ ->t
@@ -1001,10 +1012,10 @@ let in_thy_scope memo scp th trm =
   in
   let rec in_scp_aux t =
     match t with
-      Var(id, ty) -> 
+      Id(id, ty) -> 
 	ignore(lookup_id (thy_of_id id));
 	Gtypes.in_thy_scope memo scp th ty
-    | Qnt(_, b) ->
+    | Qnt(_, _, b) ->
 	ignore(Gtypes.in_thy_scope memo scp th (get_qnt_type t));
 	in_scp_aux b
     | Bound(_) ->
@@ -1038,7 +1049,7 @@ let least ts =
 
 (* 
    more complex ordering on terms:
-   Const < Var <  Bound < App < Qnt
+   Const < Id <  Bound < App < Qnt
    (Typed t1) < t2 iff t1<t2
  *)
 
@@ -1052,16 +1063,16 @@ let rec term_lt t1 t2 =
   | _, Typed (trm, _) -> term_lt t1 trm
   | (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
-  | (Var _, Const _) -> false
-  | (Var _, Var _) -> atom_lt (dest_var t1) (dest_var t2)
-  | (Var _, _) -> true
+  | (Id _, Const _) -> false
+  | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Id _, _) -> true
   | (Bound _, Const _) -> false
-  | (Bound _, Var _) -> false
+  | (Bound _, Id _) -> false
   | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
   | (App _, Const _) -> false
   | (App _, Bound _) -> false
-  | (App _, Var _) -> false
+  | (App _, Id _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
       if term_lt f1 f2 then true
       else if term_lt f2 f1 then false
@@ -1069,12 +1080,11 @@ let rec term_lt t1 t2 =
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
   | (Qnt _, Bound _) -> false
-  | (Qnt _, Var _) -> false
+  | (Qnt _, Id _) -> false
   | (Qnt _, App _) -> false
-  | (Qnt(q1, b1), Qnt(q2, b2)) ->
+  | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
       if(term_lt b1 b2) then true
       else bound_lt (dest_binding q1) (dest_binding q2)
-
 
 
 let rec term_leq t1 t2 = 
@@ -1087,15 +1097,15 @@ let rec term_leq t1 t2 =
   | _, Typed (trm, _) -> term_leq t1 trm
   | (Const c1, Const c2) -> Basic.const_leq c1 c2
   | (Const _ , _ ) -> true
-  | (Var _, Const _) -> false
-  | (Var _, Var _) -> atom_leq (dest_var t1) (dest_var t2)
-  | (Var _, _) -> true
+  | (Id _, Const _) -> false
+  | (Id _, Id _) -> atom_leq (dest_var t1) (dest_var t2)
+  | (Id _, _) -> true
   | (Bound _, Const _) -> false
-  | (Bound _, Var _) -> false
+  | (Bound _, Id _) -> false
   | (Bound b1, Bound b2) -> bound_leq (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
   | (App _, Const _) -> false
-  | (App _, Var _) -> false
+  | (App _, Id _) -> false
   | (App _, Bound _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
       if term_leq f1 f2 then term_leq a1 a2
@@ -1103,9 +1113,9 @@ let rec term_leq t1 t2 =
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
   | (Qnt _, Bound _) -> false
-  | (Qnt _, Var _) -> false
+  | (Qnt _, Id _) -> false
   | (Qnt _, App _) -> false
-  | (Qnt(q1, b1), Qnt(q2, b2)) ->
+  | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
       if(term_leq b1 b2) then true
       else bound_leq (dest_binding q1) (dest_binding q2)
 

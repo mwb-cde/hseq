@@ -12,26 +12,26 @@ type decln
    This is used only for prettyprinting and can be.
    (The Logic.thm describing the definition is an abstracted type)
 *)
-type defn = Defn of (Basic.ident * Gtypes.gtype * Logic.thm)
+type defn = Defn of (Basic.ident * Basic.gtype * Logic.thm)
 
 (* destructors *)
-val dest_decln : decln -> Basic.ident * Gtypes.gtype
-val dest_defn : defn -> (Basic.ident * Gtypes.gtype * Logic.thm)
+val dest_decln : decln -> Basic.ident * Basic.gtype
+val dest_defn : defn -> (Basic.ident * Basic.gtype * Logic.thm)
 
 (* destruct a term of the form (f a1 a2 ..)=G to (f, [a1; a2; ..]) *)
-val get_lhs : Term.term -> 
-  Basic.ident * (Basic.ident * Gtypes.gtype) list   
+val get_lhs : Basic.term -> 
+  Basic.ident * (Basic.ident * Basic.gtype) list   
 
 (* function declarations of the type (f: ty) *)
 val mkdecln :
     Gtypes.scope ->
-      Basic.ident -> Gtypes.gtype -> decln
+      Basic.ident -> Basic.gtype -> decln
 
 (* make the type of a defined term *)
 val mk_defn_type :
     Gtypes.substitution ->
-      ('a * Gtypes.gtype) list ->
-	Gtypes.gtype -> ('a * Gtypes.gtype) list -> Gtypes.gtype
+      ('a * Basic.gtype) list ->
+	Basic.gtype -> ('a * Basic.gtype) list -> Basic.gtype
 
 (* make a definition *)
 (* [mkdefn scp id args t]
@@ -44,6 +44,6 @@ val mk_defn_type :
 val mkdefn :
     Gtypes.scope ->
       Basic.ident->
-	(string * Gtypes.gtype) list -> Term.term 
+	(string * Basic.gtype) list -> Basic.term 
 	  -> defn
 

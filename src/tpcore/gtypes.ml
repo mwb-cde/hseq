@@ -3,6 +3,7 @@ open Basic
 open Lib
 open Result
 
+(*
 type ('idtyp, 'tfun, 'tcons) pre_typ =
     Var of 'idtyp
   | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
@@ -10,6 +11,7 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
   | WeakVar of 'idtyp
 
 type gtype = (string ref, typ_const, base_typ)pre_typ
+*)
 type stype = ((string * int), typ_const, base_typ) pre_typ
 
 type typedef_record =

@@ -12,7 +12,7 @@ type saved_thm
 type tagged_form = (Tag.t* Formula.form)
 
 (*  type skolem_cnst*)
-type skolem_cnst = (Basic.ident * (int * Gtypes.gtype))
+type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 
 type skolem_type
 type sqnt
@@ -47,9 +47,9 @@ type fident =
  *)
 
 type cdefn =
-    TypeDef of Basic.ident * string list * Gtypes.gtype option
-  | TermDef of Basic.ident * Gtypes.gtype
-	* (string*Gtypes.gtype) list * thm option
+    TypeDef of Basic.ident * string list * Basic.gtype option
+  | TermDef of Basic.ident * Basic.gtype
+	* (string*Basic.gtype) list * thm option
 	
 (* theorem destructors  and constructors *)
 (* (axioms do not need to be proved) *)
@@ -68,9 +68,9 @@ val from_save: saved_thm -> thm
 
 val get_sklm_name: skolem_cnst -> Basic.ident
 val get_sklm_indx: skolem_cnst -> int
-val get_sklm_type: skolem_cnst -> Gtypes.gtype
-val get_new_sklm: Basic.ident -> Gtypes.gtype -> skolem_type 
-  -> (Term.term * skolem_type)
+val get_sklm_type: skolem_cnst -> Basic.gtype
+val get_new_sklm: Basic.ident -> Basic.gtype -> skolem_type 
+  -> (Basic.term * skolem_type)
 
 val sqntError : string ->  exn
 val addsqntError : string -> exn -> 'a
@@ -81,7 +81,7 @@ val asms : sqnt -> tagged_form list
 val concls : sqnt -> tagged_form list
 val scope_of: sqnt -> Gtypes.scope
 val sklm_cnsts: sqnt -> skolem_cnst list
-val sqnt_tyvars: sqnt -> Gtypes.gtype list
+val sqnt_tyvars: sqnt -> Basic.gtype list
 val sqnt_tag: sqnt->Tag.t
 
 (* get/delete/copy particular assumptions/conclusions *)
@@ -171,19 +171,19 @@ module Rules:
 	  { 
 	    goals:Tag.t list; 
 	    forms : Tag.t list;
-	    terms: Term.term list
+	    terms: Basic.term list
 	  }
       type tag_info = tag_record ref
 
       val make_tag_record: 
 	  Tag.t list 
 	-> Tag.t list 
-	  -> Term.term list 
+	  -> Basic.term list 
 	    -> tag_record
 
       val do_tag_info: 
 	  tag_info option ->
-	    Tag.t list-> Tag.t list -> Term.term list -> unit
+	    Tag.t list-> Tag.t list -> Basic.term list -> unit
 
 
 (*
@@ -372,9 +372,9 @@ module Rules:
    P(c'), asm |- concl   where c' is a given term
  *)
 
-      val allE : Term.term -> int -> rule
-      val allE_info : tag_info -> Term.term -> int -> rule
-      val allE_full : tag_info option -> Term.term -> fident -> rule
+      val allE : Basic.term -> int -> rule
+      val allE_info : tag_info -> Basic.term -> int -> rule
+      val allE_full : tag_info option -> Basic.term -> fident -> rule
 
 (* existI i sq
    ?x. P(c), asm |- concl
@@ -391,9 +391,9 @@ module Rules:
    asm |- P(c'), concl   where c' is a given term
  *)
 
-      val existE : Term.term -> int -> rule
-      val existE_info : tag_info -> Term.term -> int -> rule
-      val existE_full : tag_info option  -> Term.term -> fident -> rule
+      val existE : Basic.term -> int -> rule
+      val existE_info : tag_info -> Basic.term -> int -> rule
+      val existE_full : tag_info option  -> Basic.term -> fident -> rule
 
 
 (* beta i sq:  (beta reduction of asm (i<0) or concl (i>0) in sq) *)
@@ -417,9 +417,9 @@ module Rules:
 
  *)
 
-      val name_rule: string -> Term.term -> rule
-      val name_rule_info : tag_info -> string -> Term.term -> rule
-      val name_rule_full : tag_info option -> string -> Term.term -> rule
+      val name_rule: string -> Basic.term -> rule
+      val name_rule_info : tag_info -> string -> Basic.term -> rule
+      val name_rule_full : tag_info option -> string -> Basic.term -> rule
 
 
 (* rewrite_any dir thms j sq:
@@ -474,7 +474,7 @@ module ThmRules:
    (e.g. conjE_conv |- a and b  --> [|- a; |- b])
  *)
       val conjE_conv: thm-> thm list
-      val allI_conv: Gtypes.scope -> Term.term -> conv
+      val allI_conv: Gtypes.scope -> Basic.term -> conv
       val eta_conv: Gtypes.scope -> Formula.form -> conv
       val beta_conv: Gtypes.scope -> conv
 
@@ -504,15 +504,15 @@ module Defns :
       val is_termdef: cdefn -> bool
 
       val dest_typedef: cdefn ->
-	Basic.ident * string list * Gtypes.gtype option
+	Basic.ident * string list * Basic.gtype option
       val dest_termdef: cdefn -> 
-	Basic.ident * Gtypes.gtype * (string* Gtypes.gtype) list * thm option
+	Basic.ident * Basic.gtype * (string* Basic.gtype) list * thm option
 
       val mk_typedef: Gtypes.scope 
-	-> string -> string list -> Gtypes.gtype option -> cdefn
+	-> string -> string list -> Basic.gtype option -> cdefn
 
       val mk_termdef: Gtypes.scope 
-	-> string -> Gtypes.gtype 
+	-> string -> Basic.gtype 
 	  -> string list -> thm option -> cdefn
 
     end
@@ -520,7 +520,7 @@ module Defns :
 type skolem_info=
     {
      name: Basic.ident;
-     ty: Gtypes.gtype;
+     ty: Basic.gtype;
      tyenv: Gtypes.substitution;
      scope: Gtypes.scope;
      skolems: skolem_type;
@@ -528,10 +528,10 @@ type skolem_info=
    } 
 val mk_new_skolem: 
     skolem_info
-  -> Term.term * Gtypes.gtype 
-      * (Basic.ident * (int * Gtypes.gtype)) list 
+  -> Basic.term * Basic.gtype 
+      * (Basic.ident * (int * Basic.gtype)) list 
       * Gtypes.substitution * (string * int) list
 
 val add_sklms_to_scope: 
-    (Basic.ident * ('a * Gtypes.gtype)) list ->
+    (Basic.ident * ('a * Basic.gtype)) list ->
       Gtypes.scope -> Gtypes.scope

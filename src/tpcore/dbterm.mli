@@ -8,12 +8,12 @@
         qtyp: Gtypes.stype}
 
     type dbterm =
-      	Var of Basic.ident * stype
-      | Qnt of binder * dbterm
+      	Id of Basic.ident * stype
+      | Qnt of Basic.quant_ty* binder * dbterm
       | Bound of int
       | App of dbterm * dbterm
       | Const of Basic.const_ty
 
 (* conversion to and from terms *)
-    val of_term : Term.term -> dbterm
-    val to_term : dbterm -> Term.term
+    val of_term : Basic.term -> dbterm
+    val to_term : dbterm -> Basic.term
