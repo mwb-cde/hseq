@@ -8,6 +8,7 @@
 
 (* error messages *)
 
+(*
 class typingError: string -> Basic.term list -> Basic.gtype list ->
   object
     inherit Result.error 
@@ -16,6 +17,17 @@ class typingError: string -> Basic.term list -> Basic.gtype list ->
   end
 val typingError: string -> Basic.term list -> Basic.gtype list -> exn
 val addtypingError: string -> Basic.term list -> Basic.gtype list -> exn -> 'a
+*)
+class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
+  object
+    inherit Result.error 
+    method get_term: unit -> Basic.term 
+    method get_types: unit -> Basic.gtype * Basic.gtype
+  end
+val typing_error: string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn
+val add_typing_error: 
+    string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn -> exn
+
 
 (* construct type of a term *)
 val typeof : Gtypes.scope -> Basic.term -> Basic.gtype

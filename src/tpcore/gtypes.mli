@@ -15,15 +15,16 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
   | Base of 'tcons
   | WeakVar of 'idtyp
 (** 
-   WeekVar x: binds to anything except a variable.
+   WeakVar x: binds to anything except a variable.
 
    Isn't (usually) renamed.
 
-   Is used in a sequent calculus when a variable type x can occur
-   in more than one sequent. If x is bound in one sequent, it must
-   be have that binding in every sequent in which it occurs. (Like 
-   week types in ML)
+   Is used for the sequent calculus when a variable type x can occur
+   in more than one sequent. If x is bound in one sequent, it must be
+   have that binding in every sequent in which it occurs. (Just like
+   weak types in ML)
  *)
+
 (* representation of types *)
 type gtype = 
     ((string ref, Basic.typ_const, Basic.base_typ)pre_typ)
@@ -136,9 +137,7 @@ val mk_fun_from_list: gtype list -> gtype -> gtype
 val arg_type : gtype -> gtype
 val ret_type : gtype -> gtype
 val chase_ret_type : gtype -> gtype
-
 *)
-
 
 val dest_constr : gtype -> (Basic.typ_const * gtype list)
 
@@ -155,7 +154,7 @@ val is_weak : gtype -> bool
    val constrp : gtype  -> bool to is_constr 
    val basep : gtype  -> bool to is_base
    val weakp : gtype -> bool to is_weak
- *)
+*)
 
 (* compare types *)
 
@@ -307,12 +306,36 @@ val print_subst : substitution -> unit
 val get_defn : scope -> gtype -> gtype
 
 (* 
+   [get_var_names ty]: 
+   get names of variables occuring in type.
+*)
+val get_var_names: gtype -> string list
+
+(**
+   [normalize_vars ty]:
+   Make all type variables with the same string name
+   be the same variable.
+
+   Useful when constructing types by combining existing types.
+*)
+val normalize_vars : gtype -> gtype   
+
+(*
+   [check_decl_type scp ty]: Ensure type [ty] is suitable for
+   a declaration.
+
+   Fails if [ty] contains a weak variable.
+*)
+val check_decl_type: scope -> Basic.gtype -> unit
+
+(* 
    [well_defined scp args ty]
    test [ty] for well-definednes.
    every constructor occuring in [ty] must be defined.
    weak variables are not permitted in [ty]
+   args: (optional) check variables are in the list of args 
  *)
-val well_defined : scope -> ?args: (string)list -> gtype -> unit
+val well_defined : scope -> (string)list -> gtype -> unit
 
 (* 
    [quick_well_defined scp tbl ty]:
@@ -373,8 +396,9 @@ val print_type : Printer.ppinfo -> int -> gtype Printer.printer
 val print : Printer.ppinfo -> gtype Printer.printer
 
 (* set names in a type to their long form *)
-
-val set_name : scope -> gtype -> gtype
+val set_name : 
+    ?memo:(string, Basic.thy_id)Hashtbl.t
+  -> scope -> gtype -> gtype
 
 (* in_thy_scope: check that all types are in scope of given theory *)
 (* first argument is for memoised *)

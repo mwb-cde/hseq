@@ -69,3 +69,8 @@ val script_suffix: string
 val nice_sequent_prefix : string ref
 val set_nice_sequent: bool -> unit
 val get_nice_sequent: unit -> bool
+
+(**
+   [long_identifier]: whether to print a long or short identifier
+*)
+val long_identifier: bool ref

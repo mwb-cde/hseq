@@ -20,17 +20,19 @@ open Term
 
    [fun_id]: The identifier for function types.
 
-   [is_fun x]: Test whether [x] is a function.
+   [is_fun_ty x]: Test whether [x] is a function.
 
-   [mk_fun x y]: Make type "x -> y".
+   [mk_fun_ty x y]: Make type "x -> y".
 
    [mk_fun_from_list xs]: Make type "a1->(a2->.. (an-1 -> an))" 
 
-   [dest_fun x]: Destructor for function.
+   [dest_fun_ty x]: Destructor for function.
 *)
 val fun_ty_id: Basic.ident
+val is_fun_ty: gtype -> bool
 val mk_fun_ty : gtype -> gtype -> gtype
 val mk_fun_ty_from_list: gtype list -> gtype -> gtype
+val dest_fun_ty : gtype -> (gtype * gtype)
 
 (** type of primitive constructs *)
 val typeof_cnst  : Basic.const_ty -> gtype

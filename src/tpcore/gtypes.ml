@@ -1006,10 +1006,102 @@ let check_decln l =
     with Not_found -> false
   else false
 
+let get_var_names ty = 
+  let lookup x vs= List.find (fun y -> x=y) vs
+  in 
+  let rec get_aux names typ=
+    match typ with
+      Var n -> 
+	(try ignore(lookup (!n) names); names
+	with Not_found -> (!n)::names)
+    | Constr(_, args) ->
+	List.fold_left get_aux names args
+    | _ -> names
+  in 
+  get_aux [] ty 
 
-(* well_defined t: ensure that all constructors in t are declared *)
-(* args: (optional) check variables are in the list of args *)
 
+let normalize_vars typ=
+  let lookup tbl str =
+    try
+      (tbl, Lib.find str tbl)
+    with 
+      Not_found -> 
+	let nvar = mk_var str
+	in 
+	(Lib.bind str nvar tbl, nvar)
+  in 
+  let rec norm_aux tbl ty =
+    match ty with
+      Var(n) -> 
+	let (tbl1, n1) = lookup tbl (get_var ty)
+	in (tbl1, n1)
+    | Constr(Defined n, args) ->
+	let (tbl1, args1)=norm_list tbl args []
+	in 
+	(tbl1, Constr(Defined n, args1))
+    | _ -> (tbl, ty)
+  and norm_list tbl tys result = 
+    match tys with 
+      [] -> (tbl, List.rev result)
+    | (ty::xs) -> 
+	let (tbl1, ty1) = norm_aux tbl ty
+	in 
+	norm_list tbl1 xs (ty1::result)
+  in 
+  let (_, typ1) = norm_aux (Lib.empty_env()) typ
+  in typ1
+
+(* 
+   [well_defined scp args t]: ensure that all constructors in [t] are declared.
+
+    args: check variables are in the list of args 
+*)
+let rec well_defined scp args t =
+  let lookup_var x= List.find (fun y -> x=y) args
+  in 
+  let rec well_def t = 
+    match t with 
+      Constr(Defined n, nargs) ->
+	(try 
+          (let recrd=scp.typ_defn n
+          in 
+	  List.iter well_def nargs)
+	with Not_found -> 
+	  raise (type_error "well_defined: " [t]))
+    | Var(v) -> 
+	(try ignore(lookup_var (!v))
+	with Not_found -> 
+	  raise (type_error "well_defined, unexpected variable." [t]))
+    | WeakVar(v) -> 
+	raise (type_error "well_defined, unexpected weak variable." [t])
+    | _ -> ()
+  in 
+  well_def t
+
+(*
+   [check_decl_type scp ty]: Ensure type [ty] is suitable for
+   a declaration.
+
+   Fails if [ty] contains a weak variable.
+*)
+let check_decl_type scp ty=
+  let rec check_aux t = 
+    match t with 
+      Constr(Defined n, nargs) ->
+	(try 
+          (let recrd=scp.typ_defn n
+          in 
+	  List.iter check_aux nargs)
+	with Not_found -> 
+	  raise (type_error "Invalid type" [t]))
+    | WeakVar(v) -> 
+	raise (type_error "Invalid type, unexpected weak variable." [t])
+    | _ -> ()
+  in 
+  check_aux ty
+
+(*
 let rec well_defined scp ?args t =
   let lookup_fn = ref (fun x -> ())
   in 
@@ -1026,10 +1118,6 @@ let rec well_defined scp ?args t =
           else raise (Invalid_argument ("well_defined:"^(string_gtype t))))
 	with Not_found -> 
 	  raise (Invalid_argument ("well_defined: "^(string_gtype t))))
-(*
-    | Constr(f, args) ->
-	List.iter well_def args
-*)
     | Var(v) -> lookup (!v)
     | WeakVar(v) -> 
 	raise (Invalid_argument ("well_defined:"^(string_gtype t)))
@@ -1040,11 +1128,12 @@ let rec well_defined scp ?args t =
   | Some(xs) -> 
       lookup_fn:=(fun x -> ignore(List.find (fun y -> x=y) xs));
       well_def t
+*)
 
-(* quick_well_defined: memoised, simpler version of well_defined
+(*
+   quick_well_defined: memoised, simpler version of well_defined
    no argument testing
- *)
-
+*)
 let rec quick_well_defined scp cache t =
   match t with 
     Constr(Defined n, args) ->
@@ -1065,12 +1154,14 @@ let rec quick_well_defined scp cache t =
 	      (Invalid_argument ("quick_well_defined: "^(string_gtype t))))
 	with Not_found -> 
 	  raise (Invalid_argument 
-		   ("quick_well_defined:"^(string_gtype t)))))
+		   ("quick_well_defined, not found: "
+		      ^(Basic.string_fnid n)^" in "^(string_gtype t)))))
+  |	x -> ()
+
 (*
   |	Constr(f, args) ->
       List.iter (quick_well_defined scp cache) args
 *)
-  |	x -> ()
 
 
 
@@ -1089,9 +1180,7 @@ let print_subst tenv =
 
 (* set names in a type to their long form *)
 
-let set_name scp trm = 
-  let memo = Lib.empty_env()
-  in 
+let set_name ?(memo=Lib.empty_env()) scp trm = 
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
@@ -1122,7 +1211,6 @@ let set_name scp trm =
    The function is memoised: if a constructor name is found to be 
    in scope, it is added to memo.
  *)
-
 let in_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
