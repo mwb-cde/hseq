@@ -47,7 +47,11 @@ let rec is_closed_scope env t =
 	(Term.table_add (Basic.Bound(q)) (Term.mkbool true) env;
 	 is_closed_scope env b;
 	 Term.table_remove (Basic.Bound(q)) env)
-  | Basic.Bound(q) -> 
+  | Basic.Bound(_) -> 
+      (try ignore(Term.table_find t env)
+      with Not_found -> 
+	raise (Term.termError  "Not closed"  [t]))
+  | Basic.Free(_) -> 
       (try ignore(Term.table_find t env)
       with Not_found -> 
 	raise (Term.termError  "Not closed"  [t]))
@@ -59,7 +63,7 @@ let is_closed vs t =
   (* add bound terms of [vs] to tbl *)
   List.iter 
     (fun x -> 
-      if(Term.is_bound x) 
+      if ((Term.is_bound x) or (Term.is_free x))
       then ignore(Term.table_add x (Term.mkbool true) tbl)
       else ()) vs;
   try is_closed_scope tbl t; true

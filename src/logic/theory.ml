@@ -308,17 +308,26 @@ let contents thy =
  }
 
 let print_section title = 
+  Format.open_box 0;
   Format.print_string "-----";
+  Format.close_box();
   Format.print_newline();
+  Format.open_box 0;
   Format.print_string title;
+  Format.close_box();
   Format.print_newline();
+  Format.open_box 0;
   Format.print_string "-----";    
+  Format.close_box();
   Format.print_newline()
 
 let print_protection p = 
-  if(p)
-  then ()
-  else print_string "read-write"
+  if(p) then ()
+  else 
+    (Format.open_box 0;
+     Format.print_string "read-write";
+     Format.close_box();
+     Format.print_newline())
 and print_date d =
   let (y, mo, day, h, mi) = Lib.nice_date d
   in 
@@ -333,30 +342,35 @@ and print_date d =
   Format.print_int h;
   Format.print_string ":";
   Format.print_int mi;
-  Format.close_box()
+  Format.close_box();
+  Format.print_newline()
 and print_parents ps = 
+  Format.open_box 2;
   Format.print_string "Parents: ";
   (match ps with
-    [] -> (Format.print_string "None"; 
-	   Format.print_newline())
+    [] -> (Format.print_string "None")
   | _ -> 
       Format.open_box 2;
       Printer.print_list 
 	(Format.print_string,
 	 (fun _ -> Format.print_space())) ps;
       Format.close_box());
+  Format.close_box();
+  Format.print_newline();
 and print_thms pp n ths = 
   print_section n;
+  Format.open_box 0;
   Printer.print_list
     ((fun (tn, t) ->
-      Format.open_box 4;
+      Format.open_box 2;
       Format.print_string tn;
-      Format.print_string ": ";
+      Format.print_string ":";
+      Format.close_box();
       Format.print_newline();
-      Logic.print_thm pp t;
-      Format.print_newline();
-      Format.close_box()),
-     (fun _ -> Format.print_newline())) ths
+      Logic.print_thm pp t),
+     (fun _ -> Format.print_newline())) ths;
+  Format.close_box();
+  Format.print_newline()
 
 and print_tydefs pp n tys = 
   print_section n;
@@ -368,48 +382,54 @@ and print_tydefs pp n tys =
       (match tyd.Gtypes.args with
 	[] -> ()
       | _ -> 
-	  Format.open_box 1;
-	  Format.print_string "(";
-	  Printer.print_list
-	    ((fun s -> Format.print_string s),
-	    (fun _ -> Format.print_string ","; Format.print_space()))
-	    tyd.Gtypes.args;
-	  Format.close_box());
+	  (Format.print_string "(";
+	   Format.open_box 1;
+	   Printer.print_list
+	     ((fun s -> Format.print_string s),
+	      (fun _ -> Format.print_string ","; Format.print_space()))
+	     tyd.Gtypes.args;
+	   Format.close_box();
+	   Format.print_string ")"));
       (match tyd.Gtypes.alias with
 	None -> ()
       | Some(gty) -> 
-	  Format.open_box 1;
 	  Format.print_string "=";
 	  Format.print_space ();
+	  Format.open_box 1;
 	  Gtypes.print pp gty;
-	  Format.print_newline();
 	  Format.close_box());
       Format.close_box()),
     (fun _ -> Format.print_newline()))
     tys;
-  Format.close_box()
+  Format.close_box();
+  Format.print_newline()
 
 and print_defs pp n defs = 
   print_section n;
   Printer.print_list
     ((fun (n, d) ->
+      Format.open_box 2;
       Format.print_string n;
-      Format.print_string ": ";
-      Format.open_box 4;
+      Format.print_string ":";
+      Format.print_cut();
       Gtypes.print pp d.typ;
-      Format.print_newline();
+      Format.close_box();
       (match d.def with
 	None -> ()
       | Some(df) -> 
-	  Logic.print_thm pp df;
-	  Format.print_newline ());
-      Format.close_box()),
-    (fun _ -> Format.print_newline()))
-    defs
+	  (Format.print_newline();
+	   Format.open_box 0;
+	   Logic.print_thm pp df; 
+	   Format.close_box())
+	    );
+      Format.print_newline()),		     
+    (fun _ -> Format.print_flush()))
+    defs;
+  Format.print_newline()
 
 let print_pps n pps = 
   print_section n;
-  Format.open_box 4;
+  Format.open_box 0;
   Printer.print_list
     ((fun (n, r) ->
       Format.open_box 2;
@@ -428,40 +448,37 @@ let print_pps n pps =
       Format.close_box()),
     (fun _ -> Format.print_newline()))
     pps;
-  Format.close_box()
+  Format.close_box();
+  Format.print_newline()
 
 let print ppstate thy = 
   let content = contents thy 
   in 
+  Format.print_newline();
   Format.open_box 0;
-  Format.print_newline();
   Format.print_string "-------------";
+  Format.close_box();
   Format.print_newline();
+  Format.open_box 0;
   Format.print_string content.cname;
+  Format.close_box();
   Format.print_newline();  
-  print_date content.cdate;
-  Format.print_newline();  
-  print_protection content.cprotection;
-  Format.print_newline();
   print_parents content.cparents;
-  Format.print_newline();
+  print_date content.cdate;
+  print_protection content.cprotection;
   print_tydefs ppstate "Types" content.ctyps;
-  Format.print_newline();
   print_thms ppstate "Axioms" content.caxioms;
-  Format.print_newline();
   print_defs ppstate "Definitions" content.cdefns;
-  Format.print_newline();
   print_thms ppstate "Theorems" content.ctheorems;
-  Format.print_newline();
   (match content.ctype_pps with 
     [] -> () 
   | _ -> 
-      print_pps "Type printer/parser information" content.ctype_pps;
-      Format.print_newline());
+      print_pps "Type printer/parser information" content.ctype_pps);
   (match content.cid_pps with 
     [] -> ()
   | _ -> 
       print_pps "Term printer/parser information" content.cid_pps);
-  Format.print_newline();
+  Format.open_box 0;
   Format.print_string "-------------";
-  Format.close_box()
+  Format.close_box();
+  Format.print_newline()

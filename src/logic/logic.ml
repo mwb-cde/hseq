@@ -467,10 +467,11 @@ let mk_thm g =
 
 
 let print_thm pp t = 
-  Format.open_box 3; 
-  print_string "|- ";
+  Format.open_box 2; 
+  Format.print_string "|-";
+  Format.print_space();
   Term.print pp (Formula.term_of_form (dest_thm t));
-  Format.close_box();
+  Format.close_box()
 
 (* tag information for rules *)
 (* goals: new goals produced by rule *)

@@ -77,6 +77,14 @@ let numterm_to_expr var_env scp t =
 	   let c, e=add_var (!env) x
 	   in env:=e;
 	   Supinf.Var(c))
+    | Basic.Free(n, ty) -> 
+	if (Gtypes.is_var ty)
+	then raiseError "Variable type in term" [x]
+	else 
+	  (Typing.typecheck scp x (num_type);
+	   let c, e=add_var (!env) x
+	   in env:=e;
+	   Supinf.Var(c))
     | Basic.Typed(y, ty) -> conv_aux y
     | Basic.Qnt(_) -> raiseError "Badly formed integer expression" [x]
     | Basic.Const(Basic.Cnum(i)) -> Supinf.Val(i)
@@ -91,8 +99,8 @@ let numterm_to_expr var_env scp t =
 	in 
 	cnstr (List.map conv_aux args)
     | Basic.Bound(_) ->
-	try Supinf.Var(get_var !env x)
-	with Not_found -> raiseError "Badly formed integer expression" [x]
+	(try Supinf.Var(get_var !env x)
+	with Not_found -> raiseError "Badly formed integer expression" [x])
   in 
   let nume = conv_aux t
   in 
@@ -245,6 +253,14 @@ let bterm_to_boolexpr bvar_env nvar_env scp t =
   let rec conv_aux x =
     match x with
       Basic.Id(f, ty) -> 
+	if (Gtypes.is_var ty)
+	then raiseError "Variable type in term" [x]
+	else 
+	  (Typing.typecheck scp x (bool_type);
+	   let c, e=add_var (!benv) x
+	   in benv:=e;
+	   Prop.Var(c))
+    | Basic.Free(n, ty) -> 
 	if (Gtypes.is_var ty)
 	then raiseError "Variable type in term" [x]
 	else 
