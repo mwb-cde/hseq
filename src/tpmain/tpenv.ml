@@ -161,23 +161,42 @@ let remove_term_pp id =
   Printer.remove_term_info (pp_info()) id;
   Parser.remove_token (Lib.get_option sym (name id))
 
+
 let get_type_pp id=
   Printer.get_type_info (pp_info()) id
-let add_type_pp id prec fixity repr=
-  Printer.add_type_info (pp_info()) id prec fixity repr
-let add_type_pp_record id rcrd=
-  Printer.add_type_record (pp_info()) id rcrd
 
-(*
-let remove_type_pp id=
-  Printer.remove_type_info (pp_info()) id
-*)
+let add_type_pp id prec fixity repr=
+  Printer.add_type_info (pp_info()) id prec fixity repr;
+  Parser.add_type_token id (Lib.get_option repr (name id)) fixity prec
+
+let add_type_pp_record id rcrd=
+  Printer.add_type_record (pp_info()) id rcrd;
+  Parser.add_type_token 
+    id 
+    (Lib.get_option rcrd.Printer.repr (name id)) 
+    (rcrd.Printer.fixity)
+    (rcrd.Printer.prec)
 
 let remove_type_pp id =
   let (_, _, sym) = get_type_pp id
   in 
   Printer.remove_type_info (pp_info()) id;
   Parser.remove_type_token (Lib.get_option sym (name id))
+
+(*
+let get_type_pp id=
+  Printer.get_type_info (pp_info()) id
+let add_type_pp id prec fixity repr=
+  Printer.add_type_info (pp_info()) id prec fixity repr
+let add_type_pp_record id rcrd=
+  Printer.add_type_record (pp_info()) id rcrd
+*)
+
+(*
+let remove_type_pp id=
+  Printer.remove_type_info (pp_info()) id
+*)
+
 
 let get_term_printer id=
   Printer.get_term_printer (pp_info()) id

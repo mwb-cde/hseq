@@ -10,6 +10,9 @@ module BaseTheory=
 
     let builder() =
       begin_theory "base" [];
+      ignore(
+      new_type <:def<: ('a, 'b)FUN >> ~pp:(1000, infixl, Some("->")));
+
       ignore
 	(declare
 	(read_unchecked ((Basic.name Logicterm.equalsid)^": 'a -> 'a -> bool"))

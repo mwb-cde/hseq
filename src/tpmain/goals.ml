@@ -42,7 +42,7 @@ let mk_dummy_fntype n=
     else 
       (Gtypes.mk_typevar j)::mk_dum (m-1) j
   in let i = ref 0
-  in Gtypes.mk_fun_from_list (mk_dum n i)
+  in Logicterm.mk_fun_ty_from_list (mk_dum n i)
     (Gtypes.mk_typevar i)
 
 let goal trm = 

@@ -67,9 +67,15 @@ val get_type_pp : Basic.ident -> (int * fixity * string option)
    N.B. when dealing with a string [str] use
    [new_type_term (Tpenv.read_type_defn str)]
 *)
-val new_type : string -> unit
+(*
+val new_type :
+    ?pp:(int*fixity*string option) 
+  ->  string -> unit
+*)
 
-val new_type_term : (string * string list * Basic.gtype option) -> unit
+val new_type :
+    ?pp:(int*fixity*string option) 
+    -> (string * string list * Basic.gtype option) -> unit
 
 (* new_defn/define define an identifier *)
 

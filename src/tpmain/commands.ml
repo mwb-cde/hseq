@@ -105,8 +105,6 @@ let end_theory() =
   else save_theory (curr_theory()) true
 
 
-
-
 let add_pp_rec selector id rcrd=
   Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
@@ -141,15 +139,24 @@ let get_pp_rec selector id=
 let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
 
-let new_type_term (n, args, def) = 
+let new_type ?pp (n, args, def) = 
   let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
   in 
-  Thydb.add_type_rec trec (theories())
+  Thydb.add_type_rec trec (theories());
+  (match pp with 
+    None -> ()
+  | Some(prec, fx, repr) -> 
+      let lname = Basic.mk_long (Tpenv.get_cur_name()) n
+      in 
+      add_type_pp lname prec fx repr)
 
-let new_type st = 
+(*
+let new_type ?pp st = 
   let (n, args, def)= Tpenv.read_type_defn st
   in 
-  new_type_term (n, args, def)
+  new_type_term ?pp:pp(n, args, def)
+*)
+
 (*
   let trec = Logic.Defns.mk_typedef (Tpenv.scope()) n args def 
   in 
