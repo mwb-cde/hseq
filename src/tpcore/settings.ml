@@ -9,7 +9,7 @@ let init_file = "fm.ml"
 (* suffixes *)
 
 let thy_suffix="tho"
-
+let script_suffix="Script.ml"
 
 
 

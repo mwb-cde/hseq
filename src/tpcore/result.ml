@@ -94,15 +94,20 @@ let print_error info depth errs=
       (Error e) -> 
 	Format.open_box 0;
 	e#print info;
+	Format.print_newline();
 	Format.close_box ()
     | (Errors l) -> 
 	List.iter print_aux l;
     | _ -> 
 	Format.open_box 0;
 	Format.print_string (Printexc.to_string x);
+	Format.print_newline();
 	Format.close_box())
   in 
-  List.iter print_aux [errs]
+  Format.open_box 0;
+  List.iter print_aux [errs];
+  Format.close_box()
+
 
 
 let catch_error info depth f a = 

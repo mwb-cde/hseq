@@ -32,3 +32,10 @@ val init_file: string
 
 (* thy_suffix: suffix of stored theories *)
 val thy_suffix: string
+
+(* 
+   script_suffix = "Script.ml": 
+   string to append to theory name to get 
+   theory building script.
+*)
+val script_suffix: string

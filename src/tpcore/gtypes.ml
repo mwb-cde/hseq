@@ -374,8 +374,8 @@ and print_defined ppstate prec (f, args) =
     else 
       if(Printer.is_suffix pprec.Printer.fixity)
       then 
-	(Printer.print_bracket prec (pprec.Printer.prec) "(";
-	 Format.print_cut();
+	(Format.print_cut();
+	 Printer.print_bracket prec (pprec.Printer.prec) "(";
 	 Printer.print_suffix 
 	   ((fun pr -> Printer.print_identifier (pplookup ppstate)), 
 	    (fun pr l-> 
@@ -384,22 +384,18 @@ and print_defined ppstate prec (f, args) =
 	      |_ -> Printer.print_sep_list
 		    (print_type ppstate pr, ",") l))
 	   (pprec.Printer.prec) (f, args);
-	 Format.print_cut();
-	 Printer.print_bracket prec (pprec.Printer.prec) ")")
+	 Printer.print_bracket prec (pprec.Printer.prec) ")";
+	 Format.print_cut())
       else 
-	Format.print_cut();
-    Printer.print_prefix
-      ((fun pr -> Printer.print_identifier (pplookup ppstate)),
-       (fun pr l -> 
-	 match l with 
+	(Format.print_cut();
+	 (match args with 
 	   [] -> ()
 	 | _ -> 
-	     Printer.print_string "(";
-	     Printer.print_sep_list
-	       (print_type ppstate pr, ",") l;
-	     Printer.print_string ")"))
-      (pprec.Printer.prec) (f, args);
-    Format.print_cut();
+	     (Printer.print_string "(";
+	      Printer.print_sep_list (print_type ppstate prec, ",") args;
+	      Printer.print_string ")"));
+	 Printer.print_identifier (pplookup ppstate) f;
+	 Format.print_cut())
 and print_func ppstate prec args =
   Printer.print_infix
     ((fun _ _ -> Printer.print_string "->"),
