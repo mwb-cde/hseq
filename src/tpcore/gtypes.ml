@@ -506,6 +506,7 @@ let lookup_var ty env =
 let rec occurs ty1 ty2 =
   match (ty1, ty2) with
     (Var(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
+  | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs ty1) l
   | (_, _) ->
       if (equality ty1 ty2)
       then raise (typeError ("occurs: ") [ty1;ty2])
@@ -518,6 +519,11 @@ let rec occurs_env tenv ty1 ty2 =
   match (nty1, nty2) with
     (Var(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
   | (Var(_), _)->
+      if (equality nty1 nty2)
+      then raise (typeError ("occurs: ") [nty1;nty2])
+      else ()
+  | (WeakVar(_), (Constr(f, l))) ->  List.iter (occurs_env tenv nty1) l
+  | (WeakVar(_), _)->
       if (equality nty1 nty2)
       then raise (typeError ("occurs: ") [nty1;nty2])
       else ()
@@ -551,6 +557,10 @@ let rec copy_type_env env trm=
 	    args
 	in 
 	(Constr(f, nargs), !renv)
+    | WeakVar(x) -> 
+	(try (lookup trm env, env)
+	with 
+	  Not_found -> (trm, env))
     | _ -> (trm, env)
 
 let copy_type t =
@@ -558,7 +568,7 @@ let copy_type t =
   in nty
 
 let bind_var t r env = 
-  if varp t then bind t r env 
+  if any_varp t then bind t r env 
   else 
     raise (typeError "bind_var: Can't bind a non variable" [t; r])
 
@@ -576,6 +586,7 @@ let bind_occs t1 t2 env =
 let rec subst t env =
   match t with 
     Var(a) -> (lookup_var t env)
+  | WeakVar(a) -> (lookup_var t env)
   | Constr(f, l) -> 
       Constr(f, List.map (fun x-> subst x env) l)
   | x -> x
@@ -738,6 +749,13 @@ let unify_env scp t1 t2 nenv =
 	else bind_occs s t env
     | (Var(_), _) -> bind_occs s t env
     | (_, Var(_)) -> bind_occs t s env
+(* Weak variables, don't bind to variables *)
+    | (WeakVar(_), WeakVar(_)) -> 
+	if equality s t 
+	then env
+	else bind_occs s t env
+    | (WeakVar(_), _) -> bind_occs s t env
+    | (_, WeakVar(_)) -> bind_occs t s env
 (* All other types, try for equality *)
     | _ -> 
 	if equality s t then env
@@ -820,6 +838,9 @@ let unify_env_unique_left scp t1 t2 nenv =
 	with Not_found -> 
 	  (let nt=mk_var (!x)
 	  in (nt, bind ty1 nt env)))
+    | WeakVar(x) -> 
+	(try  (lookup_var ty1 env, env)
+	with Not_found -> (ty1, env))
     | _ -> (ty1, env)
   in 
   let rec unify_aux ty1 ty2 env =
@@ -856,6 +877,13 @@ let unify_env_unique_left scp t1 t2 nenv =
 	else bind_occs s t senv
     | (Var(v1), x) -> bind_occs s x senv
     | (x, Var(v2)) -> bind_occs t x senv
+    | (WeakVar(_), WeakVar(_)) ->
+	if equality s t 
+	then senv
+	else bind_occs s t senv
+    | (WeakVar(v1), x) -> bind_occs s x senv
+    | (x, WeakVar(v2)) -> bind_occs t x senv
+
     | _ -> 
 	if equality s t then senv
 	else raise (Failure ("Can't unify " ^(string_gtype s)
@@ -935,6 +963,9 @@ let unify_for_rewrite scp t1 t2 env =
 	with Not_found -> 
 	  let nt=mk_var (!x)
 	  in (nt, bind ty1 nt env))
+    | (WeakVar(x)) -> 
+	(try (lookup_var ty1 env, env)
+	with Not_found -> (ty1, env))
     | _ -> (ty1, env)
   in 
   let rec unify_aux ty1 ty2 env =
