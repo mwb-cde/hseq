@@ -3,6 +3,105 @@ open Drule
 open Commands
 open Tactics
 
+(* Support for if-then-else *)
+
+(** Parser-Printer for If-Then-else *)
+module BoolPP = 
+  struct
+    open Parser.Pkit
+    open Parser.Utility
+    open Lexer
+
+    let ifthenelse_parser inf=
+      ((seq
+      [?$(Lexer.Sym (Lexer.OTHER "IF"));
+	 Parser.Grammars.form inf;
+       ?$(Lexer.Sym(Lexer.OTHER "THEN"));
+       Parser.Grammars.form inf;
+       ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
+       Parser.Grammars.form inf])
+	 >>
+       (fun l -> 
+	 match l with 
+	   [_; test; _; tbr; _; fbr] ->
+	       Term.mkfun (Basic.mklong "base" "if") [test; tbr; fbr]
+	 | _ -> raise (ParsingError "Error parsing if-then-else")))
+	
+
+    let ifthenelse_pprec = Printer.mk_record 10 Printer.nonfix None
+
+    let init_ifthenelse_parser() = 
+      Parser.add_symbol "if" (Sym(OTHER "IF"));
+      Parser.add_symbol "then" (Sym(OTHER "THEN"));
+      Parser.add_symbol "else" (Sym(OTHER "ELSE"));
+      Parser.add_term_parser Lib.First "IfThenElse" ifthenelse_parser
+
+(* Printer for If-Then-Else *)
+
+    let ifthenelse_printer ppstate prec (f, args)=
+      let cprec=(ifthenelse_pprec.Printer.prec)
+      in 
+      match args with 
+	(b::tbr::fbr::rest) -> 
+	  Format.open_box 2;
+	  Printer.print_bracket prec cprec "(";
+	  Format.print_string "if";
+	  Format.print_space();
+	  Term.print_term ppstate cprec b;
+	  Format.print_space();
+	  Format.print_string "then";
+	  Format.print_space();
+	  Term.print_term ppstate cprec tbr;
+	  Format.print_space();
+	  Format.print_string "else";
+	  Format.print_space();
+	  Term.print_term ppstate cprec fbr;
+	  Printer.print_bracket prec cprec  ")";
+	  if(prec<cprec) then Format.print_space() else ();
+	  Format.close_box();
+	  (match rest with
+	    [] -> ()
+	  | _ -> 
+	      Format.open_box 0;
+	      Printer.print_list
+		((fun x ->
+		  Format.open_box 0;
+		  Term.print_term ppstate prec x;
+		  Format.close_box ()),
+		 (fun () -> Format.print_space()))
+		rest;
+	      Format.close_box())	    
+      | _ -> 
+	  Term.simple_print_fn_app ppstate cprec (f, args)
+(*
+	  Format.open_box 0;
+	  Printer.print_bracket prec cprec "(";
+	  Format.print_space();
+	  Printer.print_list 
+	    ((Term.print_term ppstate cprec),
+	     Printer.print_space)
+	    args;
+	  Printer.print_bracket prec cprec ")";
+	  Format.close_box()
+*)
+
+
+    let init_ifthenelse_printer()=
+      Tpenv.add_term_printer (Basic.mklong "base" "if")
+      ifthenelse_printer
+
+    let init_ifthenelse()=
+      init_ifthenelse_parser();
+      init_ifthenelse_printer()
+  end    
+
+
+(***
+ *
+ *  Tactics
+ *
+ ***)
+
 let eq_tac0 sqnt = 
   let a = first_concl Formula.is_equals (Logic.get_sqnt sqnt)
   in 
@@ -67,8 +166,8 @@ let false_rule ?a goal =
     match a with
       Some x -> x
     | _ -> Drule.first_asm Formula.is_false (Logic.get_sqnt goal)
-    in 
-    false_rule0 af goal 
+  in 
+  false_rule0 af goal 
 
 let asm_elims () = 
   [ (Formula.is_false, (fun x -> false_rule ~a:x));
@@ -111,7 +210,7 @@ let inst_asm_rule i l sqnt=
       [] -> sqs
     | (x::xs) -> 
 	let nsqnt=
-	    (Logic.Rules.allE None x i) sqs
+	  (Logic.Rules.allE None x i) sqs
 	in rule xs nsqnt
   in rule l sqnt
 
@@ -129,7 +228,7 @@ let inst_concl_rule i l sqnt=
       [] -> sqs
     | (x::xs) -> 
 	let nsqnt=
-	    (Logic.Rules.existE None x i) sqs
+	  (Logic.Rules.existE None x i) sqs
 	in rule xs nsqnt
   in rule l sqnt
 
@@ -226,23 +325,23 @@ let match_mp_rule0 thm i sq=
   and info = Drule.mk_info()
   in 
   ((Tactics.cut ~info:info thm)
-    ++
-    (fun g -> 
-      let af = ftag(Lib.get_one (Drule.subgoals info) 
-		      (Failure "match_mp_rule"))
-      in
-      thenl
-	[inst_tac af ncnsts; 
-	 Tactics.cut thm; 
-	 Logic.Rules.implE None af;
-	 Logic.Rules.postpone; 
-	 Tactics.unify_tac ~a:af ~c:i] g)) sq
+     ++
+     (fun g -> 
+       let af = ftag(Lib.get_one (Drule.subgoals info) 
+		       (Failure "match_mp_rule"))
+       in
+       thenl
+	 [inst_tac af ncnsts; 
+	  Tactics.cut thm; 
+	  Logic.Rules.implE None af;
+	  Logic.Rules.postpone; 
+	  Tactics.unify_tac ~a:af ~c:i] g)) sq
 
 let match_mp_tac thm ?c g = 
   let cf=
-  match c with
-    None ->  (fnum 1)
-  | Some x -> x 
+    match c with
+      None ->  (fnum 1)
+    | Some x -> x 
   in 
   match_mp_rule0 thm cf g
 
@@ -271,3 +370,19 @@ let match_mp_sqnt_rule0 j i sq=
 	  Logic.goal_focus gtl] g)) sq
 
 let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
+
+
+(***
+ *
+ * Initialisation
+ *
+ ***)
+
+let init_boollib()=
+  BoolPP.init_ifthenelse()
+
+
+let _ = Tpenv.add_init init_boollib
+
+
+

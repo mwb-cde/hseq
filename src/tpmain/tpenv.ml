@@ -132,8 +132,11 @@ let pp_init() = pp_reset()
 (* tp_sym_info: Parser symbol table *)
 let sym_init() = Parser.init()
 let sym_info() = Parser.symtable()
-let sym_reset () = Parser.reset()
+let sym_reset () = Parser.init()
 
+(*
+let sym_reset () = Parser.reset()
+*)
 let get_term_pp id=
   Printer.get_term_info (pp_info()) id
 

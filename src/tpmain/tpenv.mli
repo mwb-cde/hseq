@@ -11,26 +11,21 @@ val base_thy_name : string
 val base_thy : unit -> Theory.thy
 val thdb : unit -> Thydb.thydb
 
-
 (* current theoryDB *)
 val theories : Thydb.thydb ref
+
 (* get/set theoryDB and current theory *)
 val get_theories : unit -> Thydb.thydb
 val set_theories : Thydb.thydb -> unit
+
 val get_cur_thy : unit -> Theory.thy
 val get_cur_name : unit -> string
-
-(* get current scope *)
-
-(*
-val stdtypenv : unit -> Gtypes.scope
-*)
-
 val set_cur_thy : Theory.thy -> unit
 
 (* filenames and paths for theory files *)
 
 val thy_suffix: string
+
 val get_thy_path : unit -> string list
 val add_thy_path : string -> unit
 val set_thy_path: string list -> unit
@@ -39,17 +34,10 @@ val find_thy_file: string -> string
 
 val get_cdir : unit -> string
 
-(* current scope (synonym for stdtypenv()) *)
-(*
-val typenv : unit -> Gtypes.scope
-*)
+(* current scope  *)
 val scope : unit -> Gtypes.scope
 
 (* build PP record *)
-(*
-val build_type_info : unit -> unit
-val build_id_info : unit -> unit
-*)
 
 (* function to invoke when loading theories from disk *)
 
@@ -151,7 +139,7 @@ val add_term_pp_record :
    @param prec precedence.
    @param fixity fixity.
    @param repr representation (if any).
- *)
+*)
 val remove_term_pp : Basic.ident -> unit
 
 (**
@@ -229,13 +217,11 @@ val add_type_printer :
 	int -> (Basic.ident * (Basic.gtype list)) Printer.printer) -> unit
 val remove_type_printer : Basic.ident -> unit
 
-
 (* initialising functions *)
 
 val init_theoryDB : unit -> unit
 
 (* list of initialising functions *)
-
 val init_list: (unit -> unit) list ref
 val add_init: (unit-> unit) -> unit
 

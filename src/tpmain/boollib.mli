@@ -1,3 +1,24 @@
+(** Parser-Printer for If-Then-else *)
+module BoolPP :
+  sig
+    open Parser.Pkit
+    open Parser.Grammars
+    open Lexer
+
+    val ifthenelse_parser: infotyp -> Basic.term phrase
+    val init_ifthenelse_parser: unit -> unit
+
+(**
+   [ifthenelse_prec]
+   precedence/fixity/associativity
+*)
+    val ifthenelse_pprec : Printer.record
+
+    val ifthenelse_printer: 
+	Printer.ppinfo-> int -> Basic.ident * Basic.term list -> unit
+end
+
+
 (* derived tactics, some of which depend on theorems already having been
    proved *)
 
