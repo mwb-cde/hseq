@@ -9,7 +9,7 @@ open Basic
 
   val print_prf: Goals.prf -> unit
 
-val print_fnident: Basic.fnident -> unit
+  val print_fnident: Basic.fnident -> unit
 
   val print_subst : ('a, 'a) Hashtbl.t -> ('a -> string) -> unit
   val print_error: Result.error -> unit

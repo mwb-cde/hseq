@@ -5,7 +5,6 @@ module Pkit=Parserkit.Grammars
       let matches = Lexer.match_tokens
     end)
 
-
 module Grammars  =
 struct
 
@@ -48,14 +47,14 @@ struct
   let clear_names inf = Hashtbl.clear inf.typ_names
 
   let mk_token_info t=
-    let f, a, p= Lexer.token_info t
+    let f, p= Lexer.token_info t
     in 
-    {fixity=f; assoc=a; prec=p}
+    {fixity=f; prec=p}
 
   let mk_type_token_info t=
-    let f, a, p= Lexer.type_token_info t
+    let f, p= Lexer.type_token_info t
     in 
-    {fixity=f; assoc=a; prec=p}
+    {fixity=f; prec=p}
 
   let mk_empty_inf scp = 
     { 
@@ -342,18 +341,25 @@ struct
 
 end
 
-
-
-
-
-
-
 (*
    Tpparser: toplevel for parsing functions
 *)
 
 open Lexer
 open Logicterm
+
+(* token fixity and associativity (exactly the same as in Lexer) *)
+
+type fixity=Parserkit.Info.fixity
+let nonfix=Parserkit.Info.nonfix
+let infix=Parserkit.Info.infix
+let prefix=Parserkit.Info.prefix
+let suffix=Parserkit.Info.suffix
+    
+type associativity=Parserkit.Info.associativity
+let non_assoc=Parserkit.Info.non_assoc
+let left_assoc=Parserkit.Info.left_assoc
+let right_assoc=Parserkit.Info.right_assoc
 
 (* reserved words *)
 
@@ -387,12 +393,12 @@ open Logicterm
 (* reserved words *)
 
 let reserved_words = 
-  [ ("not", notid, prefix, non_assoc, 10);
-    ("and", andid, infix, left_assoc, 9);
-    ("or", orid, infix, left_assoc, 9);
-    ("=>", impliesid, infix, left_assoc, 5); 
-    ("iff", iffid, infix, left_assoc, 4); 
-    ("=", equalsid, infix, left_assoc, 3)]
+  [ ("not", notid, prefix, 10);
+    ("and", andid, infix left_assoc, 9);
+    ("or", orid, infix left_assoc, 9);
+    ("=>", impliesid, infix left_assoc, 5); 
+    ("iff", iffid, infix left_assoc, 4); 
+    ("=", equalsid, infix left_assoc, 3)]
 
   let syms_list = 
     [(".", Sym DOT); ("(", Sym ORB);
@@ -403,8 +409,8 @@ let reserved_words =
   let keywords_list = 
     let rwords=
        List.map
-	(fun (sym, id, fx, assoc, pr) ->
-	  (sym, mk_full_ident id fx assoc pr))
+	(fun (sym, id, fx, pr) ->
+	  (sym, mk_full_ident id fx pr))
 	reserved_words
     in 
     List.concat 
@@ -425,7 +431,7 @@ let find_symbol sym=
 let remove_symbol sym =
   symbols:=Lexer.remove_sym (!symbols) sym
 
-let add_symbol id sym fx assc pr=
+let add_symbol id sym fx pr=
   List.iter
     (fun (s, _) -> 
       if s=sym 
@@ -434,7 +440,7 @@ let add_symbol id sym fx assc pr=
     syms_list;
   symbols:=Lexer.add_sym (!symbols) 
       sym
-      (Lexer.mk_full_ident id fx assc pr)
+      (Lexer.mk_full_ident id fx pr)
 
 let add_token sym tok=
   symbols:=Lexer.add_sym (!symbols) sym tok

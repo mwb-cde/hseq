@@ -18,7 +18,6 @@ module Pkit :
     val repeat : 'a phrase -> 'a list phrase
     type token_info = {
       fixity : Parserkit.Info.fixity;
-      assoc : Parserkit.Info.associativity;
       prec : int;
     } 
     val operators :
@@ -111,6 +110,22 @@ module Grammars :
 	((string * (string * Gtypes.gtype) list) * Term.term) phrase
   end
 
+(*
+   token fixity and associativity 
+   (exactly the same as used by the lexer
+*)
+
+type fixity = Parserkit.Info.fixity
+val nonfix : Parserkit.Info.fixity
+val infix : Parserkit.Info.associativity -> Parserkit.Info.fixity
+val prefix : Parserkit.Info.fixity
+val suffix : Parserkit.Info.fixity
+
+type associativity = Parserkit.Info.associativity
+val left_assoc : Parserkit.Info.associativity
+val right_assoc : Parserkit.Info.associativity
+val non_assoc : Parserkit.Info.associativity
+
 (* symbols_list: symbols which can't be redefined *)
 val syms_list : (string * Lexer.tok) list
 
@@ -118,7 +133,8 @@ val syms_list : (string * Lexer.tok) list
    list of reserved words, their symbols and properties *)
 val reserved_words: 
     (string * Basic.fnident
-    * Parserkit.Info.fixity * Parserkit.Info.associativity * int) list
+    * Parserkit.Info.fixity 
+       * int) list
     
 
 (* keywords_list: symbols which are needed  but could be reused *)
@@ -131,7 +147,8 @@ val symtable : unit -> Lexer.symtable
 val add_symbol :
   Basic.fnident ->
   string ->
-  Parserkit.Info.fixity -> Parserkit.Info.associativity -> int -> unit
+  Parserkit.Info.fixity 
+    -> int -> unit
 
 val find_symbol : string -> Lexer.tok
 val remove_symbol : string -> unit

@@ -43,8 +43,9 @@ module Info :
     type associativity
 
     val nonfix : fixity
-    val infix : fixity
+    val infix : associativity -> fixity
     val prefix : fixity
+    val suffix : fixity
 
     val left_assoc : associativity
     val right_assoc : associativity
@@ -53,11 +54,11 @@ module Info :
     val is_nonfix: fixity -> bool
     val is_infix: fixity -> bool
     val is_prefix: fixity -> bool
+    val is_suffix: fixity -> bool
 
-    val is_left_assoc: associativity -> bool
-    val is_right_assoc: associativity -> bool
-    val is_non_assoc: associativity -> bool
-
+    val is_left_assoc: fixity -> bool
+    val is_right_assoc: fixity -> bool
+    val is_non_assoc: fixity -> bool
   end
 
 
@@ -89,7 +90,6 @@ module type GRAMMARS =
 
       type token_info = 
 	  { fixity: Info.fixity;
-	    assoc: Info.associativity;
 	    prec: int
 	  }
 

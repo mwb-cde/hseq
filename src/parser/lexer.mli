@@ -46,7 +46,6 @@ type keys = ALL | EX | LAM
 
 type token_info = 
     Parserkit.Info.fixity 
-      * Parserkit.Info.associativity 
       * int
 
 type tok =
@@ -67,22 +66,24 @@ val string_of_token : tok -> string
 
 val match_tokens : tok -> tok -> bool
 
+(*
 type fixity = Parserkit.Info.fixity
 val nonfix : Parserkit.Info.fixity
-val infix : Parserkit.Info.fixity
+val infix : Parserkit.Info.associativity -> Parserkit.Info.fixity
 val prefix : Parserkit.Info.fixity
+val suffix : Parserkit.Info.fixity
 
 type associativity = Parserkit.Info.associativity
 val left_assoc : Parserkit.Info.associativity
 val right_assoc : Parserkit.Info.associativity
 val non_assoc : Parserkit.Info.associativity
+*)
 
 val is_infix : tok -> bool
 val is_prefix : tok -> bool
-(*
+val is_suffix : tok -> bool
 val is_left_assoc : tok -> bool
 val is_right_assoc : tok -> bool
-*)
 
 val prec_of : tok -> int
 val prec_of_type : tok -> int
@@ -90,22 +91,21 @@ val prec_of_type : tok -> int
 
 val token_info : tok -> 
   Parserkit.Info.fixity 
-    * Parserkit.Info.associativity
     * int
 
 val type_token_info : tok -> 
   Parserkit.Info.fixity 
-    * Parserkit.Info.associativity
     * int
 
 val mk_ident : Basic.fnident -> tok
 val mk_full_ident : 
     Basic.fnident 
-  -> Parserkit.Info.fixity -> Parserkit.Info.associativity-> int -> tok
+  -> Parserkit.Info.fixity 
+      -> int -> tok
 val mk_ident_left : Basic.fnident 
-  -> Parserkit.Info.fixity -> int -> tok
+  -> int -> tok
 val mk_ident_right : Basic.fnident 
-  -> Parserkit.Info.fixity -> int -> tok
+  -> int -> tok
 val mk_ident_none : Basic.fnident 
   -> Parserkit.Info.fixity -> int -> tok
 

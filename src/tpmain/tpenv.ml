@@ -138,7 +138,7 @@ let type_pp_info = empty_pp_info()
 let build_id_info () =
   Hashtbl.clear id_pp_info;
   List.iter 
-    (fun (sym, id, fx, assoc, pr) -> 
+    (fun (sym, id, fx, pr) -> 
       add_pp id 
 	(Corepp.mk_pp_rec pr 
 	   (Parserkit.Info.is_infix fx)

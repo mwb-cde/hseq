@@ -94,7 +94,6 @@ end
 
   type token_info = 
       (Parserkit.Info.fixity      
-	 * Parserkit.Info.associativity  
 	 * int)     (* precedence *)
 
   type tok = 
@@ -144,6 +143,7 @@ type fixity=Parserkit.Info.fixity
 let nonfix=Parserkit.Info.nonfix
 let infix=Parserkit.Info.infix
 let prefix=Parserkit.Info.prefix
+let suffix=Parserkit.Info.suffix
     
 type associativity=Parserkit.Info.associativity
 let non_assoc=Parserkit.Info.non_assoc
@@ -152,45 +152,60 @@ let right_assoc=Parserkit.Info.right_assoc
 
 let prec_of t = 
   match t with
-    ID(_, Some(_, _, p)) -> p
+    ID(_, Some(_, p)) -> p
   | Key _ -> 0
   | _ -> (-1)
 
 let prec_of_type t = 
   match t with
-    ID(_, Some(_, _, p)) -> p
+    ID(_, Some(_, p)) -> p
   | Sym RIGHTARROW -> 6
   | _ -> (-1)
 
 let token_info t= 
   match t with
-    ID(_, Some(f, a, p)) -> f, a, (prec_of t)
-  | _ -> (nonfix, non_assoc, -1)
+    ID(_, Some(f, p)) -> f, (prec_of t)
+  | _ -> (nonfix,  -1)
 
 let type_token_info t= 
   match t with
-    ID(_, Some(f, a, p)) -> f, a, (prec_of t)
-  | Sym RIGHTARROW -> infix, left_assoc, 6
-  | _ -> (nonfix, non_assoc, -1)
+    ID(_, Some(f, p)) -> f, (prec_of t)
+  | Sym RIGHTARROW -> infix left_assoc, 6
+  | _ -> (nonfix, -1)
 
 
 let is_infix t =
-  let f, _, p = token_info t 
+  let f, p = token_info t 
   in 
   Parserkit.Info.is_infix f
 
 let is_prefix t =
-  let f, _, _ = token_info t 
+  let f, _ = token_info t 
   in 
   Parserkit.Info.is_prefix f
+
+let is_suffix t =
+  let f, _ = token_info t 
+  in 
+  Parserkit.Info.is_suffix f
+
+let is_left_assoc t =
+  let f, _ = token_info t 
+  in 
+  Parserkit.Info.is_left_assoc f
+
+let is_right_assoc t =
+  let f, _ = token_info t 
+  in 
+  Parserkit.Info.is_right_assoc f
     
 
 
   let mk_ident s = ID(s, None)
-  let mk_full_ident s i a p = ID(s, Some(i, a, p))
-  let mk_ident_left s i p = ID(s, Some(i, left_assoc, p))
-  let mk_ident_right s i p = ID(s, Some(i, right_assoc,p))
-  let mk_ident_none s i p = ID(s, Some(i, non_assoc, p))
+  let mk_full_ident s i p = ID(s, Some(i, p))
+  let mk_ident_left s p = ID(s, Some(infix left_assoc, p))
+  let mk_ident_right s p = ID(s, Some(infix right_assoc,p))
+  let mk_ident_none s i p = ID(s, Some(i, p))
 
 (* 
    symtable:  

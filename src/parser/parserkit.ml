@@ -62,24 +62,29 @@ end
 
 module Info =
   struct
-    type fixity = Nonfix | Infix | Prefix
-    let nonfix=Nonfix
-    let infix=Infix
-    let prefix=Prefix
-	
     type associativity = Nonassoc | Leftassoc | Rightassoc
       
     let non_assoc=Nonassoc
     let left_assoc=Leftassoc
     let right_assoc=Rightassoc
 
-    let is_nonfix f = match f with Nonfix -> true | _ -> false 
-    let is_infix f = match f with Infix -> true | _ -> false 
-    let is_prefix f = match f with Prefix -> true | _ -> false 
+    type fixity = Nonfix | Prefix | Suffix | Infix of associativity
+    let nonfix=Nonfix
+    let infix a=Infix a
+    let prefix=Prefix
+    let suffix=Suffix
 
-    let is_left_assoc a = match a with Leftassoc -> true | _ -> false
-    let is_right_assoc a = match a with Rightassoc -> true | _ -> false
-    let is_non_assoc a = match a with Nonassoc -> true | _ -> false
+    let is_nonfix f = match f with Nonfix -> true | _ -> false 
+    let is_prefix f = match f with Prefix -> true | _ -> false 
+    let is_suffix f = match f with Suffix -> true | _ -> false 
+    let is_infix f = match f with Infix _ -> true | _ -> false 
+
+    let is_left_assoc a = 
+      match a with Infix Leftassoc -> true | _ -> false
+    let is_right_assoc a = 
+      match a with Infix Rightassoc -> true | _ -> false
+    let is_non_assoc a = 
+      match a with Infix Nonassoc -> true | _ -> false
 
   end
     
@@ -121,7 +126,7 @@ module type GRAMMARS =
 
       type token_info = 
 	  { fixity: Info.fixity;
-	    assoc: Info.associativity;
+(*	    assoc: Info.associativity; *)
 	    prec: int
 	  }
 
@@ -143,12 +148,12 @@ module Grammars:GRAMMARS=
     exception No_match
 
     type token = ParseTokens.tokens
-    type input=token Input.t    (* type input=token list *)
+    type input=token Input.t  
     type ('a)phrase= input -> ('a* input)
 
     type token_info = 
 	  { fixity: Info.fixity;
-	    assoc: Info.associativity;
+(*	    assoc: Info.associativity; *)
 	    prec: int
 	  }
 
@@ -234,7 +239,7 @@ module Grammars:GRAMMARS=
 	in 
 	if Info.is_prefix inf.fixity
         then 
-          list_unary inf.prec tok (Input.accept inp)
+          list_prefix inf.prec tok (Input.accept inp)
 	else 
 	  ph inp
       and list_binary prec (x, inp) =
@@ -249,15 +254,16 @@ module Grammars:GRAMMARS=
 	  then 
 	    (x, inp)
 	  else 
-	    if not (Info.is_infix inf.fixity)
+	    if (Info.is_suffix inf.fixity)
 	    then 
-	      (x, inp)
+	      list_binary prec
+		(list_suffix inf.prec tok (x, Input.accept inp))
 	    else
-	      if Info.is_right_assoc inf.assoc
+	      if Info.is_right_assoc inf.fixity 
 	      then list_binary prec 
 		  (list_right inf.prec tok (x, Input.accept inp))
 	      else 
-		if Info.is_left_assoc inf.assoc
+		if Info.is_infix inf.fixity
 		then list_binary prec 
 		    (list_left inf.prec tok (x, Input.accept inp))
 		else (x, inp)
@@ -271,10 +277,12 @@ module Grammars:GRAMMARS=
 	  list_binary prec (chunk inp)
 	in
         (binop tok x nx, ninp)
-      and list_unary prec tok inp =
+      and list_prefix prec tok inp =
 	let nx, ninp = (list_binary prec (chunk inp))
 	in
 	unaryop tok nx, ninp
+      and list_suffix prec tok (x, inp) =
+	unaryop tok x, inp
       in 
       list_binary 0 (chunk inp)
 
