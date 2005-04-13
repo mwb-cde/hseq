@@ -45,15 +45,15 @@ val rightleft : Rewrite.direction
 
    Rotate the assumptions/conclusions
 *)
-val rotateA : tactic
-val rotateC : tactic
+val rotateA : ?info:Logic.info -> tactic
+val rotateC : ?info:Logic.info -> tactic
 
 (** [copy_asm l]/[copy_concl l]
 
    Make a copy of assumption/conclusion labelled [l].
 *)
-val copy_asm : Logic.label -> tactic
-val copy_concl : Logic.label -> tactic
+val copy_asm : ?info:Logic.info -> Logic.label -> tactic
+val copy_concl : ?info:Logic.info -> Logic.label -> tactic
 
 (**
    [delete l]/[deleten ls]
@@ -61,7 +61,7 @@ val copy_concl : Logic.label -> tactic
    Delete assumption/conclusion labelled by [l] ([delete])
    or by a label in [ls] ([deleten]).
 *)
-val delete: Logic.label -> tactic 
+val delete: ?info:Logic.info -> Logic.label -> tactic 
 val deleten: Logic.label list -> Logic.rule
 
 val postpone: Logic.goal -> Logic.goal
@@ -97,14 +97,14 @@ val data_tac:
    [basic]: Prove the sequent [  A_{1}, x, A_{m}  |-C_{1}, y, C_{n} ],
    where [x] and [y] are alpha-equal.
 *)
-val trueR : ?c:Logic.label -> tactic
+val trueR : ?info:Logic.info -> ?c:Logic.label -> tactic
 
-val basic : tactic
+val basic : ?info:Logic.info -> tactic
 
 (** 
    [cut th]: Cut [th] into the sequent.
 *)
-val cut : Logic.thm -> tactic
+val cut : ?info:Logic.info -> Logic.thm -> tactic
 
 (*
    [unify_tac a c g]
@@ -135,7 +135,7 @@ val unify_tac : ?info: Logic.info ->
    Raise Not_found if identified formula is not in 
    assumptions/conclusions.
  *)
-val lift : Logic.label -> tactic
+val lift : ?info:Logic.info -> Logic.label -> tactic
 
 (**
    User level tactics
@@ -148,23 +148,23 @@ val lift : Logic.label -> tactic
    (Parameter [f] is used for formulas which can be either 
    in the assumptions or the conclusions).
 *)
-val conjC : ?c: Logic.label -> tactic
-val conjA : ?a: Logic.label -> tactic
-val disjC : ?c: Logic.label -> tactic
-val disjA : ?a: Logic.label -> tactic
-val negC : ?c: Logic.label -> tactic
-val negA : ?a: Logic.label -> tactic
-val implC : ?c: Logic.label -> tactic
-val implA : ?a: Logic.label -> tactic
-val existA : ?a: Logic.label -> tactic
-val existC : ?c: Logic.label -> Basic.term -> tactic 
-val allC : ?c: Logic.label -> tactic
-val allA : ?a: Logic.label -> Basic.term -> tactic
+val conjC : ?info:Logic.info -> ?c: Logic.label -> tactic
+val conjA : ?info:Logic.info -> ?a: Logic.label -> tactic
+val disjC : ?info:Logic.info -> ?c: Logic.label -> tactic
+val disjA : ?info:Logic.info -> ?a: Logic.label -> tactic
+val negC : ?info:Logic.info -> ?c: Logic.label -> tactic
+val negA : ?info:Logic.info -> ?a: Logic.label -> tactic
+val implC : ?info:Logic.info -> ?c: Logic.label -> tactic
+val implA : ?info:Logic.info -> ?a: Logic.label -> tactic
+val existA : ?info:Logic.info -> ?a: Logic.label -> tactic
+val existC : ?info:Logic.info -> ?c: Logic.label -> Basic.term -> tactic 
+val allC : ?info:Logic.info -> ?c: Logic.label -> tactic
+val allA : ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
 
 (**
    [beta_tac]: Apply beta conversion.
  *)
-val beta_tac : ?f:Logic.label -> tactic
+val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
 
 
 (* tacticals *)
@@ -237,8 +237,8 @@ val gen_rewrite_tac:
    If [f] is not given, rewrite all formulas in sequent.
 *)
 val rewrite_tac: 
-    ?dir:Rewrite.direction
-  -> Logic.thm list -> ?f:Logic.label -> Logic.rule
+    ?info:Logic.info -> ?dir:Rewrite.direction
+    -> Logic.thm list -> ?f:Logic.label -> Logic.rule
 
 (*
 val rewrite_tac: 
@@ -251,7 +251,8 @@ val rewrite_tac:
    Rewrite formula [f] once.
    If [f] is not given, rewrite all formulas in sequent.
 *)
-val once_rewrite_tac: ?dir:Rewrite.direction -> 
+val once_rewrite_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
     Logic.thm list -> ?f:Logic.label -> Logic.rule
 
 (*
@@ -272,17 +273,17 @@ val once_rewrite_tac:
    replace exactly once.
 *)
 val gen_replace_tac: 
-    ?ctrl:Rewrite.control
+    ?info:Logic.info -> ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.rule
 
 val replace_tac: 
-    ?dir:Rewrite.direction
+    ?info:Logic.info -> ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.rule
 
 val once_replace_tac: 
-    ?dir:Rewrite.direction
+    ?info:Logic.info -> ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.rule
 

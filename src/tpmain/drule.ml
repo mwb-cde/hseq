@@ -50,7 +50,7 @@ let subgoals inf= (!inf).Logic.goals
 let formulas inf = (!inf).Logic.forms
 let constants inf = (!inf).Logic.terms
     
-let skip = Logic.Rules.skip None
+let skip = Logic.Tactics.skip None
 let foreach = Logic.Subgoals.apply_to_each 
 
 (*
