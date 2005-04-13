@@ -503,7 +503,7 @@ val postpone :  goal -> goal
 val foreach: rule -> Subgoals.branch -> Subgoals.branch
 val first_only: rule -> Subgoals.branch -> Subgoals.branch
 
-module Rules:
+module Tactics :
     sig
 
 (** 
@@ -774,8 +774,6 @@ module Rules:
 	  Scope.t -> ?ctrl:Rewrite.control
 	    -> thm list -> thm -> thm
     end
-
-open Rules
 
 
 module Defns :

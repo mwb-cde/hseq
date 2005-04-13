@@ -926,7 +926,7 @@ let foreach rule branch=
 let first_only rule branch=
   Subgoals.apply_to_first rule branch
 
-module Rules=
+module Tactics = 
   struct
 
 (* 
@@ -1887,7 +1887,6 @@ module Rules=
 
   end
 
-open Rules
 
 (* 
    cdefn:  Checked Definitions: 
@@ -2131,14 +2130,14 @@ and
       let info = ref (make_tag_record [] [] [])
       in 
       let tac1 =
-	(fun g -> Rules.cut (Some info) thm g)
+	(fun g -> Tactics.cut (Some info) thm g)
       in 
       let tac2 =
 	(fun g ->
 	  let a = FTag (List.hd ((!info).forms))
 	  and c = FNum 1
 	  in 
-	  Rules.basic None a c g)
+	  Tactics.basic None a c g)
       in 
       let gl1=Subgoals.apply_to_goal tac1 gl
       in 
