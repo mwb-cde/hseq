@@ -182,7 +182,7 @@ let cleanup = ref true
 
 
 let clean_aux_tac tags g =
-  each tags (fun x -> Logic.Rules.delete None (Logic.FTag x)) g
+  each tags (fun x -> Logic.Tactics.delete None (Logic.FTag x)) g
 
 let clean_up_tac ctrl g=
   if (!cleanup) 
@@ -209,13 +209,13 @@ let clean_up_tac ctrl g=
 let cut_rr_rule info t g =
   match t with
     Logic.RRThm(th) ->
-      Logic.Rules.cut info th g
+      Logic.Tactics.cut info th g
   | Logic.ORRThm(th, _) ->
-      Logic.Rules.cut info th g
+      Logic.Tactics.cut info th g
   | Logic.Asm(x) ->
-      Logic.Rules.copy_asm info x g
+      Logic.Tactics.copy_asm info x g
   | Logic.OAsm(x, _) ->
-      Logic.Rules.copy_asm info x g
+      Logic.Tactics.copy_asm info x g
 
 (** [prep_cond_tac cntrl values thm g]
 
@@ -250,7 +250,7 @@ let prep_cond_tac cntrl ret values thm goal =
       let rrftg=Lib.get_one (Drule.formulas info) No_change
       in 
       seq[allA_list (ftag rrftg) values;
-	  Logic.Rules.implA (Some(info)) (ftag rrftg);
+	  Logic.Tactics.implA (Some(info)) (ftag rrftg);
 	  data_tac (add_data rrftg) info
 	] g2
     in 
@@ -478,11 +478,11 @@ let simp_prep_tac control ret tag g=
     then 
       try 
 	(control, 
-	 Tactics.repeat (Logic.Rules.existA None fid) g)
+	 Tactics.repeat (Logic.Tactics.existA None fid) g)
       with _ -> (control, skip g)
     else 
       try 
-	(control, Tactics.repeat (Logic.Rules.allC None fid) g)
+	(control, Tactics.repeat (Logic.Tactics.allC None fid) g)
       with _ -> (control, skip g)
   in 
   Lib.set_option ret newcontrol;
@@ -652,7 +652,7 @@ let rec basic_simp_tac cntrl ret ft goal=
       in 
       Lib.set_option ret ncntrl;
       (try
-	Logic.Rules.rewrite None ~ctrl:rr_cntrl rrs (ftag ft) g2
+	Logic.Tactics.rewrite None ~ctrl:rr_cntrl rrs (ftag ft) g2
       with _ -> raise No_change)
   in 
   seq[tac1 ; tac2] goal
@@ -662,12 +662,12 @@ let rec basic_simp_tac cntrl ret ft goal=
    rewrite rules.
 
    Apply [simp_prep_tac] then [basic_simp_tac].
-   Then apply [Logic.Rules.trueR] to solve goal.
+   Then apply [Logic.Tactics.trueR] to solve goal.
  *) 
 let prove_cond_tac ctrl tg goal=
   Tactics.alt
     [
-     Logic.Rules.trueR None (Logic.FTag tg);
+     Logic.Tactics.trueR None (Logic.FTag tg);
      (fun g -> 
        let init_simp_tac ctrl0 tg0 g0=
 	 let ret=ref None
@@ -682,7 +682,7 @@ let prove_cond_tac ctrl tg goal=
        Tactics.seq
 	 [
 	  init_simp_tac ctrl tg;
-	  Logic.Rules.trueR None (Logic.FTag tg)
+	  Logic.Tactics.trueR None (Logic.FTag tg)
 	] g)
    ] goal
 
@@ -696,15 +696,15 @@ let prove_cond_tac ctrl tg goal=
 
 let simp_asm_elims = 
   [(Formula.is_false, (fun x -> Boollib.falseR ~a:x));
-   (Formula.is_conj, Logic.Rules.conjA None); 
-   (Formula.is_neg, Logic.Rules.negA None); 
-   (Formula.is_exists, Logic.Rules.existA None)]
+   (Formula.is_conj, Logic.Tactics.conjA None); 
+   (Formula.is_neg, Logic.Tactics.negA None); 
+   (Formula.is_exists, Logic.Tactics.existA None)]
 
 let simp_conc_elims =
   [
-   (Formula.is_true, Logic.Rules.trueR None);
-   (Formula.is_disj, Logic.Rules.disjC None);
-   (Formula.is_all, Logic.Rules.allC None)]
+   (Formula.is_true, Logic.Tactics.trueR None);
+   (Formula.is_disj, Logic.Tactics.disjC None);
+   (Formula.is_all, Logic.Tactics.allC None)]
 
 let initial_flatten_tac fts goal=
   (repeat

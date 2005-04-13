@@ -121,7 +121,7 @@ let apply_get_single_formula_tag tac g =
  *)
 let allA_list l vs =
   Drule.inst_list 
-    (fun t -> Logic.Rules.allA None t)
+    (fun t -> Logic.Tactics.allA None t)
     vs l
 
 (* [make_consts qs env]: 

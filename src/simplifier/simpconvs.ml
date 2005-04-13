@@ -102,18 +102,18 @@ let simple_rewrite_conv scp rule trm=
     seq
       [
        once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
-       Logic.Rules.conjC None (fnum 1)
+       Logic.Tactics.conjC None (fnum 1)
 	 --
 	 [
 	  seq
-	    [Logic.Rules.implC (Some info) (fnum 1);
+	    [Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1-> 
 	       let atag, ctag = 
 		 Lib.get_two (Drule.formulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
-		 [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
 		    let trms = List.rev (Drule.constants info)
 		    in 
@@ -123,14 +123,14 @@ let simple_rewrite_conv scp rule trm=
 		       basic] g2)] g1)];
 	  seq 
 	    [(data_tac (fun () -> ignore(Drule.empty_info info)) ());
-	     Logic.Rules.implC (Some info) (fnum 1);
+	     Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1 -> 
 	       let atag, ctag = Lib.get_two (Drule.formulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 
 	       in 
 	       seq 
-		 [repeat (Logic.Rules.allC (Some info) (ftag ctag));
+		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
 		    let trms = List.rev (Drule.constants info)
 		    in 
@@ -194,7 +194,7 @@ let negate_concl info c goal=
     Logic.add_info info [] (Drule.formulas x) []
   in 
   seq [ once_rewrite_tac [get_double_not_ax()] ~f:c;
-	Logic.Rules.negC (Some inf) c;
+	Logic.Tactics.negC (Some inf) c;
 	data_tac add_fn inf] goal
 
 
@@ -698,7 +698,7 @@ let prepare_concl data except c goal =
       new_asm_tags:=[];
       data:=List.append l (!data)
     in 
-    seq [Logic.Rules.copy_cncl (Some info) (Drule.ftag c); 
+    seq [Logic.Tactics.copy_cncl (Some info) (Drule.ftag c); 
 	 (fun g -> 
 	   let c1 = 
 	     Lib.get_one (Drule.formulas info) 
@@ -748,7 +748,7 @@ let prepare_asm data except a goal =
       new_asm_tags:=[];
       data:=List.append l (!data)
     in 
-    seq [Logic.Rules.copy_asm (Some info) (Drule.ftag a); 
+    seq [Logic.Tactics.copy_asm (Some info) (Drule.ftag a); 
 	 (fun g ->
 	   let a1=
 	     Lib.get_one (Drule.formulas info) 
