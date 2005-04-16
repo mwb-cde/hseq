@@ -56,6 +56,11 @@
 
    return the list of importings for the new theory.
 *)
+val load_parents : 
+    (thydb * (Theory.contents -> unit) * (string -> string) 
+       * (string -> unit) * string) 
+    -> float  -> (string list) -> string list -> string list
+
 val load_theory : thydb -> string -> bool -> (Theory.contents -> unit) 
       -> (string -> string) -> (string -> unit) -> string list
 

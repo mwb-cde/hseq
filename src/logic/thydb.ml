@@ -100,39 +100,56 @@ let load_thy p tim (filefn, thfn) x thdb=
   in 
   test_protection p thy;
   test_date tim thy;
-  ignore(add_thy thdb thy);
-  (try (thfn (Theory.contents thy)) with _ -> ());
-  thy
+  ignore(add_thy thdb thy); thy
 
 let build_thy tim buildfn x thdb= 
   buildfn x; 
   get_thy thdb x
 
-let load_theory thdb name prot thfn filefn buildfn =
-  let rec load_aux tim ls imps=
-    match ls with 
-      [] -> imps
+let apply_fn db thyfn thy =
+  (try (thyfn (Theory.contents thy)) with _ -> ())
+
+let rec load_parents bundle tyme ps imports = 
+  let (db, thyfn, filefn, buildfn, name) = bundle
+  in 
+    match ps with 
+      [] -> imports
     | (x::xs) ->
 	(if (x=name) 
-	then raise (Result.error ("Circular importing in Theory "^x))
+	then 
+	  raise (Result.error ("Circular importing in Theory "^x))
 	else 
-	  (if is_loaded x thdb
+	  (if is_loaded x db
 	  then 
-	    (let thy = get_thy thdb x 
+	    (let thy = get_thy db x 
 	    in 
 	    test_protection true thy;
-	    test_date tim thy;
-	    load_aux tim xs 
-	      (if List.mem x imps then imps else (x::imps)))
+	    test_date tyme thy;
+	    let imports0 = load_parents bundle tyme xs 
+	      (if List.mem x imports then imports else (x::imports))
+	    in 
+	    add_importing [Theory.get_name thy] db;
+	    imports0)
 	  else 
 	    let thy = 
-	      (try load_thy true tim (filefn, thfn) x thdb
+	      (try 
+		load_thy true tyme (filefn, thyfn) x db
 	      with _ -> 
-		 build_thy tim buildfn x thdb);
+		 build_thy tyme buildfn x db);
 	    in 
-	    load_aux tim xs 
-	      (load_aux (Theory.get_date thy)
-		 (Theory.get_parents thy) (x::imps))))
+	    add_importing [Theory.get_name thy] db;
+	    let imports0=
+	      load_parents bundle (Theory.get_date thy)
+		(Theory.get_parents thy) (x::imports)
+	    in 
+	    let imports1 = 
+	      load_parents bundle tyme xs imports0
+	    in 
+	    apply_fn db thyfn thy;
+	    imports1))
+
+let load_theory thdb name prot thfn filefn buildfn =
+  let current_time = Lib.date()
   in 
   if is_loaded name thdb
   then 
@@ -140,22 +157,35 @@ let load_theory thdb name prot thfn filefn buildfn =
     in 
     test_protection prot thy;
     let imprts = 
-      load_aux (Theory.get_date thy) (Theory.get_parents thy) [name]
-    in List.rev imprts
+      load_parents 
+	(thdb, thfn, filefn, buildfn, name)
+	(Theory.get_date thy) (Theory.get_parents thy) [name]
+    in 
+    List.rev imprts
   else 
-    (let thy = 
-      let current_time = Lib.date()
+    try 
+      (let thy = load_thy prot current_time (filefn, thfn) name thdb
       in 
-      (try load_thy prot current_time (filefn, thfn) name thdb
-      with x -> 
-	 build_thy current_time buildfn name thdb)
-    in 
-    test_protection prot thy; 
-    let imprts = 
-      load_aux (Theory.get_date thy)
-	(Theory.get_parents thy) [name]
-    in 
-    List.rev imprts)
+      test_protection prot thy; 
+      let imprts = 
+	load_parents 
+	  (thdb, thfn, filefn, buildfn, name)
+	  (Theory.get_date thy) (Theory.get_parents thy) [name]
+      in 
+      add_importing [Theory.get_name thy] thdb;
+      apply_fn thdb thfn thy;
+      List.rev imprts)
+    with 
+      _ -> 
+	(let thy = build_thy current_time buildfn name thdb
+	in 
+	test_protection prot thy; 
+	let imprts = 
+	  load_parents 
+	    (thdb, thfn, filefn, buildfn, name)
+	    (Theory.get_date thy) (Theory.get_parents thy) [name]
+	in 
+	List.rev imprts)
       
 let mk_importing thdb=
   let rec mk_aux thdb ls rs =
