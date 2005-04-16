@@ -10,7 +10,9 @@ open Parser
 
 let dest_name f = Lib.chop_at '.' f
 
-let empty_thy_name = "(empty)"
+(* let empty_thy_name = "(empty)" *)
+let empty_thy_name = Basic.null_thy
+
 (* An anonymous theory *)
 let anon_thy ()= Theory.mk_thy empty_thy_name
 
@@ -43,27 +45,41 @@ let set_cur_thy thy =
   theories:=Thydb.setcur_thy (!theories) thy
 
 (* [scope] the standard scope *)
+
+let scope_term_type f= 
+  let thstr, idstr = Basic.dest_fnid f
+  in 
+  Thydb.get_id_type thstr idstr (get_theories())
+
+let scope_term_thy x = 
+  let thy_name = (get_cur_name())
+  in 
+  Thydb.thy_of x (thy_name) (get_theories())
+
+let scope_type_defn f = 
+  let thstr, idstr = Basic.dest_fnid f
+  in 
+  Thydb.get_type_rec thstr idstr (get_theories())
+
+let scope_type_thy x = 
+  let thy_name = (get_cur_name())
+  in 
+  Thydb.thy_of x (thy_name) (get_theories())
+
+let scope_thy_in_scope th1 th2 = 
+  if(th1=Basic.null_thy)  (* ignore the empty scope *)
+  then true
+  else Thydb.thy_in_scope th1 th2 (get_theories())
+
 let scope() =
   let thy_name = (get_cur_name())
   in 
   {Scope.curr_thy = thy_name;
-   Scope.term_type = 
-   (fun f -> 
-     let thstr, idstr = Basic.dest_fnid f
-     in 
-     Thydb.get_id_type thstr idstr (get_theories()));
-   Scope.term_thy = 
-   (fun x -> Thydb.thy_of x (thy_name) (get_theories()));
-
-   Scope.type_defn = 
-   (fun f -> 
-     let thstr, idstr = Basic.dest_fnid f
-     in 
-     Thydb.get_type_rec thstr idstr (get_theories()));
-   Scope.type_thy = 
-   (fun x -> Thydb.thy_of x (thy_name) (get_theories()));
-   Scope.thy_in_scope  = 
-   (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
+   Scope.term_type = scope_term_type; 
+   Scope.term_thy = scope_term_thy;
+   Scope.type_defn = scope_type_defn;
+   Scope.type_thy = scope_type_thy;
+   Scope.thy_in_scope  = scope_thy_in_scope
  } 
 
 (*
@@ -172,9 +188,6 @@ let sym_init() = Parser.init()
 let sym_info() = Parser.symtable()
 let sym_reset () = Parser.init()
 
-(*
-let sym_reset () = Parser.reset()
-*)
 let get_term_pp id=
   Printer.get_term_info (pp_info()) id
 
@@ -217,20 +230,6 @@ let remove_type_pp id =
   in 
   Printer.remove_type_info (pp_info()) id;
   Parser.remove_type_token (Lib.get_option sym (name id))
-
-(*
-let get_type_pp id=
-  Printer.get_type_info (pp_info()) id
-let add_type_pp id prec fixity repr=
-  Printer.add_type_info (pp_info()) id prec fixity repr
-let add_type_pp_record id rcrd=
-  Printer.add_type_record (pp_info()) id rcrd
-*)
-
-(*
-let remove_type_pp id=
-  Printer.remove_type_info (pp_info()) id
-*)
 
 
 let get_term_printer id=
@@ -289,7 +288,10 @@ let add_load_fn f = load_functions:=(f::!load_functions)
 
 (* on_load_thy: run load_functions, in reverse order *)
 let on_load_thy th =
-  List.iter (fun f -> f th) (List.rev !load_functions)
+(*   Format.printf "@[Processing theory@ %s@]@." (th.Theory.cname); *)
+  List.iter 
+    (fun f -> f th) 
+    (List.rev !load_functions)
 
 let mk_term scp pt = 
   let tenv = 

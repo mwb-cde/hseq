@@ -60,7 +60,9 @@ let load_parent_theory n =
     in if t=n then n else chop t
   in 
   ignore(Thydb.load_theory (theories()) n true 
-	   Global.on_load_thy Global.find_thy_file Global.build_thy_file)
+	   Global.on_load_thy 
+	   Global.find_thy_file 
+	   Global.build_thy_file)
 
 let load_theory_as_cur n = 
   let rec chop n = 

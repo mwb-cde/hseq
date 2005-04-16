@@ -739,11 +739,8 @@ module Props =
    [iff_equals_ax]:  |- !x y: (x iff y) = (x = y)
  *)
     let make_iff_equals_ax ()=
-      let iff_l1= 
-	Goals.prove << !x y: (x = y ) => (x => y) >>
-	(flatten_tac ++ replace_tac ++ basic)
-      in 
-      let iff_l2 = Goals.prove
+      let iff_l2 = 
+	Goals.prove
 	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
 	(flatten_tac
 	   ++ (cut_thm "bool_cases" ++ allA <<x_1>>)
@@ -754,15 +751,6 @@ module Props =
 	   [(replace_tac ++ (basic || trivial));
             (basic || trivial);
 	    (replace_tac ++ eq_tac)])
-      in 
-      let iff_l3 = 
-	Goals.prove << !x y: (x iff y) iff (x = y) >>
-	  ((flatten_tac ++ unfold "iff" ~f:(!!1) 
-	      ++ conjC ++ flatten_tac)
-	     --
-	     [cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-		 ++ split_tac ++ alt [ basic; flatten_tac ++ basic ];
-	      split_tac ++ flatten_tac ++ replace_tac ++ basic])
       in 
       Goals.prove <<!x y: (x iff y) = (x = y)>>
       ((flatten_tac ++ cut iff_l2
