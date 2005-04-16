@@ -85,6 +85,8 @@ val print_set : Simpset.simpset -> unit
 
 (** [on_load thy] function to call when a theory is loaded *)
 
+val on_load: Theory.contents -> unit
+
 val init: unit -> unit
 
 (* Debugging *)
