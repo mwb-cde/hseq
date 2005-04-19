@@ -9,7 +9,7 @@ exception Lexing of (int * int)
 
 type symbols =
     DOT
-  | COMMA
+(*  | COMMA *)
   | ORB
   | CRB
 (*  | RIGHTARROW *)
@@ -43,6 +43,7 @@ exception Lexer
 
 val eof_tok : tok
 val null_tok : tok
+val comma_sym: symbols
 
 (* 
    [string_of_token tok]

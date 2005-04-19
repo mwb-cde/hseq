@@ -10,8 +10,9 @@
   exception Lexing of (int * int)
 
   type symbols =
-      DOT | COMMA | ORB | CRB 
+      DOT | ORB | CRB 
 (*    |  RIGHTARROW *)
+(* | COMMA *)
     | PRIME | COLON 
     | OTHER of string
     | NULL_SYMBOL
@@ -38,11 +39,13 @@
 
   let eof_tok = EOF
   let null_tok = NULL
+let comma_sym = OTHER ","
+
 
   let string_of_token tok = 
     match tok with 
     | Sym DOT -> "."
-    | Sym COMMA -> ","
+(*   | Sym COMMA -> "," *)
     | Sym ORB -> "("
     | Sym CRB -> ")"
 (*    | Sym RIGHTARROW -> "->" *)
@@ -69,7 +72,7 @@
   let message_of_token tok = 
     match tok with 
     | Sym DOT -> "."
-    | Sym COMMA -> ","
+(*    | Sym COMMA -> "," *)
     | Sym ORB -> "("
     | Sym CRB -> ")"
 (*    | Sym RIGHTARROW -> "->" *)

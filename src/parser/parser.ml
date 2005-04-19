@@ -33,7 +33,6 @@ struct
       ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
 end
 
-
 (**
    [typdef_data]:
    Information returned by the typedef parsers 
@@ -382,8 +381,12 @@ module Grammars  =
       with _ -> raise (ParsingError str)
 
 
+(*
     let comma_list ph toks=
       list0 ph (!$(Sym COMMA)) toks
+*)
+    let comma_list ph toks=
+      list0 ph (!$(Sym comma_sym)) toks
 
     let listof ph toks=  repeat ph toks
 	
@@ -912,6 +915,7 @@ module Grammars  =
       ((term_parsers inf)
      || (error ~msg:"unknown construct in term")) toks
 
+
 (** [term_parsers_list] 
    list of term parsers.
 *)
@@ -1116,7 +1120,7 @@ let syms_list =
   [(".", Sym DOT); 
    ("(", Sym ORB);
    (")", Sym CRB); 
-   (",", Sym COMMA);
+   (",", Sym comma_sym); 
 (*    ("->", Sym RIGHTARROW);  *)
    ("'", Sym PRIME);
    (":", Sym COLON);
