@@ -57,7 +57,7 @@ module Grammars  =
 (* 
    token tables
    information about symbols
- *)
+*)
 
     type token_info =
 	(Basic.ident
@@ -68,7 +68,7 @@ module Grammars  =
    stores the identifier associated with a symbol
    the fixity and precedence of the symbol
    the table is memoised
- *)
+*)
     let default_table_size=253;
 
     type token_table = 
@@ -91,15 +91,6 @@ module Grammars  =
 
     let token_table_add tbl s tok=
       Hashtbl.add (tbl.table) s tok
-(*
-   let token_table_add tbl s tok=
-   try 
-   ignore(Hashtbl.find tbl.table s);
-   Result.raiseError 
-   ("Parsing information for "^(message_of_token s)^" already exists")
-   with 
-   Not_found -> Hashtbl.add (tbl.table) s tok
-*)
 
     let token_table_find tbl s=
       let mfind =
@@ -241,11 +232,6 @@ module Grammars  =
    if there is no term associated with [n] 
    then return an unqualified identifier.
  *)
-(*
-    let get_term n inf = 
-      (try lookup_name n inf 
-      with Not_found -> Term.mk_short_var n)
-*)
     let get_term n inf = 
       (try lookup_name n inf 
       with Not_found -> Term.mk_free n (Gtypes.mk_null()))
@@ -352,21 +338,6 @@ module Grammars  =
 *)
     let message m _ =  raise (ParsingError m)
 
-(**
-   [alternates phs inf]
-   Version of Parserkit.orl specialised to parsers 
-   of type [('a -> 'b phrase)], where [inf:'a].
- *)
-(*
-    let rec alternates phl inf toks= 
-      match phl with
-	[] -> raise (ParsingError "No alternative parsers")
-      | (ph::phs) -> 
-	  (try (ph inf) toks 
-	  with 
-	    ParsingError _ -> (alternates phs inf toks))
-*)
-
     let error ?msg inp =  
       let str=
 	match msg with None -> ""
@@ -380,11 +351,6 @@ module Grammars  =
 	     ("error at "^(string_of_token tok)^str))
       with _ -> raise (ParsingError str)
 
-
-(*
-    let comma_list ph toks=
-      list0 ph (!$(Sym COMMA)) toks
-*)
     let comma_list ph toks=
       list0 ph (!$(Sym comma_sym)) toks
 
@@ -505,7 +471,6 @@ module Grammars  =
 	with Not_found -> None
       in 
       match t with
-(*	Sym RIGHTARROW -> Gtypes.mk_fun *)
       | ID(s) -> (fun x y -> Gtypes.mk_def s [x;y])
       | _ ->
 	  match (lookup t) with
@@ -549,7 +514,6 @@ module Grammars  =
       let comp x= 
 	match x with 
 	  ID _ -> true
-(*	| Sym(RIGHTARROW) -> true *)
 	| _ -> 
 	    match (get_info x) with
 	      Some (name, _, _) -> true
@@ -557,7 +521,6 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
-(*	| Sym(RIGHTARROW) -> Basic.mk_name "->" *)
 	| _ -> 
 	    (match (get_info x) with
 	      Some(name, _, _) -> name
@@ -701,10 +664,6 @@ module Grammars  =
       type_parsers_list:=List.remove_assoc n (!type_parsers_list)
 
 
-
-(*
-*)
-
 (**********
 *
 *  Term parsers 
@@ -718,7 +677,7 @@ module Grammars  =
    [mk_conn idsel inf t]
    Construct a function application term from a binary operator.
 *)
-   
+  
     let mk_conn idsel inf t= 
       let lookup x =
 	try inf.token_info x
@@ -785,7 +744,6 @@ module Grammars  =
 	  let nt=Basic.Qnt(Basic.binder_kind binder, binder, b)
 	  in 
 	  drop_name x inf; nt) xs body
-
 
 (**
    [mkcomb f args]
@@ -872,7 +830,6 @@ module Grammars  =
 	   with Not_found -> mk_free i t)
 	 else 
 	   mk_typed_var nid t)) toks
-
 
 (**
    [form]/[formula]/[type_primary]/[primary]
@@ -1091,9 +1048,9 @@ module Grammars  =
 
   end
 
-(*
-   Tpparser: toplevel for parsing functions
- *)
+(**
+   Toplevel for parsing functions
+*)
 
 open Lexer
 open Logicterm
@@ -1121,7 +1078,6 @@ let syms_list =
    ("(", Sym ORB);
    (")", Sym CRB); 
    (",", Sym comma_sym); 
-(*    ("->", Sym RIGHTARROW);  *)
    ("'", Sym PRIME);
    (":", Sym COLON);
    ("true", BOOL true); ("false", BOOL false);
@@ -1143,13 +1099,10 @@ let type_reserved_words =  []
 (*
    token_info_list/type_token_info_list:
    information about symbols which do not map to identifiers 
- *)
-let token_info_list = [ ]
+*)
+let token_info_list = []
 
-let type_token_info_list =
-  [
-(* (Sym RIGHTARROW, Some(Basic.null_id, infix right_assoc, 6)) *)
- ]
+let type_token_info_list = []
 
 (* Symbol tables *)
 
@@ -1161,8 +1114,8 @@ let symtable()= !symbols
 let token_table=Grammars.token_table_new()
 let type_token_table=Grammars.token_table_new()
 
-
-(* add_symbol sym tok:
+(*
+   add_symbol sym tok:
    add sym as symbol representing token tok.
    fail silently if sym already exists
 *)
@@ -1177,10 +1130,11 @@ let remove_symbol sym =
   symbols:=Lexer.remove_sym (!symbols) sym
 
 
-(* add_token_info tok info:
-   add parsing information for the term token tok
+(*
+   [add_token_info tok info]:
+   add parsing information for the term token [tok]
    fail if token information exists
- *)
+*)
 let add_token_info tok tok_info=
   Grammars.token_table_add token_table tok tok_info
 
@@ -1190,8 +1144,9 @@ let remove_token_info tok =
 let get_token_info tok=
   Grammars.token_table_find token_table tok
 
-(* add_type_token_info tok info:
-   add parsing information for type token tok, 
+(**
+   [add_type_token_info tok info]:
+   add parsing information for type token [tok], 
    fail if token information exists
  *)
 let add_type_token_info tok tok_info=
@@ -1246,18 +1201,8 @@ let init_symtab ()=
 
 let init ()= init_symtab ()
 
-(*
-let reset_symbols() = symbols:=(mk_symtable symtable_size)
-let reset_token_table() = Grammars.token_table_reset token_table
-let reset_type_token_table() = Grammars.token_table_reset type_token_table
 
-let reset()=
-  reset_symbols();
-  reset_token_table();
-  reset_type_token_table()
-*)
-
-(* 
+(**
    Parsers
    read a given phrase followed by an end of file/string
 *)

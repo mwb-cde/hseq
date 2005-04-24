@@ -369,16 +369,6 @@ let get_id_prec th n tdb =
   in 
   r.Printer.prec
 
-(*
-let id_is_infix th n tdb = 
-  let r =  get_defn_rec th n tdb
-  in r.Theory.infix
-
-let get_id_prec th n tdb = 
-  let r =  get_defn_rec th n tdb
-  in r.Theory.prec
-*)
-
 let id_exists th n tdb = 
   (try 
     (ignore(get_defn_rec th n tdb); true)

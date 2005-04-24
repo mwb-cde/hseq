@@ -81,36 +81,6 @@ let scope() =
    Scope.thy_in_scope  = scope_thy_in_scope
  } 
 
-(*
-   let scope() =
-   let thy_name = (get_cur_name())
-   in 
-   {Gtypes.curr_thy = thy_name;
-   Gtypes.typeof_fn = 
-   (fun f -> 
-   let thstr, idstr = Basic.dest_fnid f
-   in 
-   Thydb.get_id_type thstr idstr (get_theories()));
-   Gtypes.typ_defn = 
-   (fun f -> 
-   let thstr, idstr = Basic.dest_fnid f
-   in 
-   Thydb.get_type_rec thstr idstr (get_theories()));
-
-   Gtypes.prec_of = (fun idsel s -> 
-   (try 
-   let thstr, idstr = Basic.dest_fnid s
-   in 
-   if idsel = Basic.fn_id
-   then (Thydb.get_id_prec thstr idstr (get_theories())) 
-   else (-1)
-   with _ -> (-1)));
-   Gtypes.thy_of = 
-   (fun idsel x -> Thydb.thy_of x (thy_name) (get_theories()));
-   Gtypes.thy_in_scope  = 
-   (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
-   } 
- *)
 (* file handling *)
 
 let thy_suffix = "."^Settings.thy_suffix
@@ -181,7 +151,6 @@ module PP=
 (* tp_pp_info: Printer Table *)
     let tp_pp_info=ref (Printer.empty_ppinfo())
     let info() = !tp_pp_info 
-(*    let pp_info() = !tp_pp_info  *)
     let pp_set info = tp_pp_info:=info
     let pp_reset () = pp_set (Printer.empty_ppinfo())
     let pp_init() = pp_reset()
@@ -212,7 +181,6 @@ module PP=
       Printer.remove_term_info (info()) id;
       Parser.remove_token (Lib.get_option sym (name id))
 
-
     let get_type_pp id=
       Printer.get_type_info (info()) id
 
@@ -234,7 +202,6 @@ module PP=
       Printer.remove_type_info (info()) id;
       Parser.remove_type_token (Lib.get_option sym (name id))
 
-
     let get_term_printer id=
       Printer.get_term_printer (info()) id
     let add_term_printer id printer=
@@ -248,7 +215,6 @@ module PP=
       Printer.add_type_printer (info()) id (printer (info()))
     let remove_type_printer id=
       Printer.remove_type_printer (info()) id
-
 
 (* Functions to add PP information when a theory is loaded *)
 
@@ -293,24 +259,8 @@ let default_load_functions =
    load_use_theory_files; 
 (* add type PP information *)
    add_loaded_type_pp;
-(*
-   (fun th -> 
-     List.iter 
-       (fun (id, rcrd) -> 
-	 PP.add_type_record (Basic.mk_long th.Theory.cname id) rcrd)
-       (List.rev th.Theory.ctype_pps)) ;
-*)
 (* add term PP information *)
    add_loaded_term_pp;
-
-(*
-   add_loaded_term_pp;
-   (fun th -> 
-     List.iter 
-       (fun (id, rcrd) -> 
-	 PP.add_id_record (Basic.mk_long th.Theory.cname id) rcrd) 
-       (List.rev th.Theory.cid_pps)
-*)
  ]
 
 let load_functions = ref default_load_functions

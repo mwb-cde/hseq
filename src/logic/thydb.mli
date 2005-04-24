@@ -11,13 +11,6 @@
     exception Importing
 
     type thydb 
-(*
-   thydb=
-      { db: (string, Theory.thy) Hashtbl.t;
-        mutable curr: Theory.thy;
-        mutable importing: string list 
-      }
-*)
     val emptydb : Theory.thy -> thydb
 
 (* get current theory/database of theories *)
@@ -119,10 +112,6 @@ val get_pplist: Basic.id_selector -> string -> thydb
 
 val get_term_pp_rec : string -> string -> thydb -> Printer.record
 val get_type_pp_rec : string -> string -> thydb -> Printer.record
-(*
-    val id_is_infix : string -> string -> thydb -> bool
-    val get_id_prec : string -> string -> thydb -> int
-*)
     val id_exists : string -> string -> thydb -> bool
 
 type memos
@@ -130,6 +119,7 @@ val empty_memo : unit -> memos
 
 (* test that second theory is in scope of first *)
 val thy_in_scope: string -> string -> thydb -> bool
+
 (* find the theory of a given identifier *)
 val thy_of: string -> string -> thydb -> string 
 

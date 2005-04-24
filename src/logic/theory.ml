@@ -17,9 +17,6 @@ type id_record=
     {
      typ: Basic.gtype; 
      def: Logic.thm option; 
-(*
-     infix: bool; prec: int;
-*)
      dprops: property list
    }
 
@@ -27,10 +24,6 @@ type id_save_record=
     {
      sty: Basic.gtype; 
      sdef: Logic.saved_thm option; 
-(*
-     sinfix: bool; 
-     sprec: int;
-*)
      sdprops : property list
    }
 
@@ -227,27 +220,6 @@ let get_defn n thy =
 let get_id_type n thy = 
   (let r = (get_defn_rec n thy)
   in r.typ)
-
-(*
-let id_is_infix n thy = 
-  let r =  get_defn_rec n thy
-  in r.infix
-*)
-
-let id_is_infix n thy = 
-  let recd = get_pp_rec Basic.fn_id n thy
-  in 
-  Printer.is_infix recd.Printer.fixity
-
-(*
-let get_id_prec n thy = 
-  let r =  get_defn_rec n thy
-  in r.prec
-*)
-let get_id_prec n thy = 
-  let recd = get_pp_rec Basic.fn_id n thy
-  in 
-  recd.Printer.prec
 
 let id_exists n thy =
   try 

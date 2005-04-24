@@ -131,10 +131,7 @@ val get_type_rec : string -> thy -> Gtypes.typedef_record
 val get_defn_rec : string -> thy -> id_record
 val get_defn : string -> thy -> Logic.thm
 val get_id_type : string -> thy -> Basic.gtype
-val id_is_infix : string -> thy -> bool
-val get_id_prec : string -> thy -> int
 val id_exists : string -> thy -> bool
-
 
 val add_defn_rec :
     string -> Basic.gtype 
@@ -156,7 +153,6 @@ val get_theorem : string -> thy -> Logic.thm
 val set_defn_props: string -> property list -> thy -> unit
 val set_theorem_props: string -> property list -> thy -> unit
 val set_axiom_props: string -> property list -> thy -> unit
-
 
 val to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 val from_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
