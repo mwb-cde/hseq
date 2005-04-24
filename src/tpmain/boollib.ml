@@ -64,6 +64,39 @@ module BaseTheory=
 module BoolPP = 
   struct
 
+(*
+   Printer for negation. Prints [ << base.not x >> ] 
+   as [~x] rather than [~ x].
+*)
+    let negation_pprec = Printer.mk_record 110 Printer.prefix None
+
+    let negation_printer ppstate prec (f, args)=
+      let cprec= negation_pprec.Printer.prec
+      in 
+      match args with 
+      (t::rest) -> 
+	Format.printf "@[<2>";
+	Printer.print_bracket prec cprec "(";
+	Format.printf "~";
+	Term.print_term ppstate cprec t;
+	Printer.print_bracket prec cprec ")";
+	Format.printf "@]";
+	(match rest with
+	  [] -> ()
+	| _ -> 
+	    Format.printf "@[";
+	    Printer.print_list
+	      ((fun x ->
+		Term.print_term ppstate prec x),
+	       (fun () -> Format.printf "@ "))
+	      rest;
+	    Format.printf "@]")
+      | _ -> 
+	  Term.simple_print_fn_app ppstate cprec (f, args)
+
+    let init_negation_printer()=
+      Global.PP.add_term_printer Logicterm.notid negation_printer
+
 (* Support for if-then-else *)
 (** Parser-Printer for If-Then-else *)
 
@@ -129,12 +162,24 @@ module BoolPP =
 	  Term.simple_print_fn_app ppstate cprec (f, args)
 
     let init_ifthenelse_printer()=
-      Global.add_term_printer ifthenelse_id
+      Global.PP.add_term_printer ifthenelse_id
 	ifthenelse_printer
 
     let init_ifthenelse()=
       init_ifthenelse_parser();
       init_ifthenelse_printer()
+
+    let init_parsers () = 
+      init_ifthenelse_parser()
+      
+    let init_printers ()=
+      init_negation_printer();
+      init_ifthenelse_printer()
+
+    let init() =
+      init_printers();
+      init_parsers();
+
   end    
 
 
@@ -1308,8 +1353,7 @@ let equals_tac ?f g =
  ***)
 
 let init_boollib()= 
-  BoolPP.init_ifthenelse()
-
+  BoolPP.init()
 
 let _ = Global.add_init init_boollib
 

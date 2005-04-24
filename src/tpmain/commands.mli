@@ -193,8 +193,17 @@ val lemma : string -> Logic.thm
 (* declare parents of the current theory *)
 val parents : string list -> unit
 
-(* add/remove load files *)
-val add_file: string -> unit
+(**
+   Add/remove load files.
+
+   [add_file ?(use=false) f] Add file [f] to the list to be
+   loaded/used when the theory is loaded.  if [use=true] then also
+   load/use [f] immediately.
+
+   [remove_file f] Remove file [f] from the list to be loaded/used
+   when the theory is loaded.
+*)
+val add_file: ?use:bool -> string -> unit
 val remove_file: string -> unit
 
 (* declare a proof results in a theorem and store this theorem

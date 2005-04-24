@@ -1,15 +1,10 @@
 (*-----
- Name: global.mli
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: global.mli
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 (* Global environment and utility functions *)
-
-(* destruct a long identifier *)
-(*
-val dest_name : string -> string * string
-*)
 
 (* default theory and theoryDB*)
 
@@ -26,11 +21,10 @@ val base_name : ref (string option)
 
    [clear_base_name()]
    clear the base name.
-*)
+ *)
 val get_base_name: unit -> string
 val set_base_name: string -> unit
 val clear_base_name: unit -> unit
-
 
 (* anon_thy: the anonymous theory *)
 val anon_thy : unit -> Theory.thy
@@ -57,10 +51,9 @@ val set_thy_path: string list -> unit
 val remove_from_path: string -> unit
 
 (** [find_file x]: Find file [x] in the theory path. 
-   
    raise [Not_found] if not found
-*)
-
+ *)
+val find_file : string -> string
 val build_thy_file: string -> unit
 val find_thy_file: string -> string
 
@@ -74,7 +67,6 @@ val scope_type_thy: string -> string
 val scope_thy_in_scope: string -> string -> bool
 
 val scope : unit -> Scope.t
-
 
 (*
    [load_base_thy()]
@@ -93,15 +85,11 @@ val scope : unit -> Scope.t
    [set_base_thy_builder f]
 
    Set/get value of base_thy_builder.
-*)
-
+ *)
 val set_base_thy_builder : (unit -> unit) -> unit
 val get_base_thy_builder : unit -> (unit -> unit) option
-
 val load_base_thy: unit -> unit
 
-
-(* build PP record *)
 
 (* function to invoke when loading theories from disk *)
 
@@ -119,7 +107,7 @@ val on_load_thy: Theory.contents -> unit
 (* 
    [mk_term scp trm]
    typecheck term [trm] in scope [scp]
-*)
+ *)
 val mk_term : Scope.t -> Basic.term -> Basic.term
 val mk_term_raw : Scope.t -> Basic.term -> Basic.term
 val mk_term_unchecked : Scope.t -> Basic.term -> Basic.term
@@ -127,14 +115,15 @@ val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
 val read_defn :
     string -> (string * (string * Basic.gtype) list) * Basic.term
-(*
-val read_type_defn : string -> string * string list * Basic.gtype option
-*)
 val read_type_defn : string -> Parser.typedef_data
 
 val read_type : string -> Basic.gtype
 val read_fulltype : string -> Basic.gtype
 val read_identifier: string -> Basic.ident
+
+module PP:
+    sig
+(* Global printer/parser functions *)
 
 (* PP information *)
 
@@ -142,25 +131,29 @@ val read_identifier: string -> Basic.ident
    [tp_pp_info]
    The system PP information store (of size Printer.default_info_size).
  *)
-val tp_pp_info: Printer.ppinfo ref
+      val tp_pp_info: Printer.ppinfo ref
 
 (**
    [pp_info()]
    Get the system PP information store
  *)
-val pp_info : unit -> Printer.ppinfo
+      val info : unit -> Printer.ppinfo
+
+(*
+      val pp_info : unit -> Printer.ppinfo
+*)
 
 (**
    [pp_reset()]
    Reset the system PP information store
  *)
-val pp_reset: unit -> unit
+      val pp_reset: unit -> unit
 
 (** 
    [pp_set info]
    Set the system PP information store to [info]
  *)
-val pp_set : Printer.ppinfo -> unit
+      val pp_set : Printer.ppinfo -> unit
 
 (** get/set/remove PP information for identifiers*)
 
@@ -180,7 +173,7 @@ val pp_set : Printer.ppinfo -> unit
 
    @return [(default_term_prec, default_term_fixity, None)] if id is not found.
  *)
-val get_term_pp : Basic.ident -> (int * Printer.fixity * string option)   
+      val get_term_pp : Basic.ident -> (int * Printer.fixity * string option)   
 
 (**
    [add_term_pp id prec fixity repr]
@@ -191,9 +184,9 @@ val get_term_pp : Basic.ident -> (int * Printer.fixity * string option)
    @param fixity fixity.
    @param repr representation (if any).
  *)
-val add_term_pp : 
-    Basic.ident -> int -> Printer.fixity 
-      -> string option -> unit
+      val add_term_pp : 
+	  Basic.ident -> int -> Printer.fixity 
+	    -> string option -> unit
 
 (**
    [add_term_pp_record id rcrd]
@@ -201,8 +194,8 @@ val add_term_pp :
    @param id identifier to add.
    @param rcrd PP record
  *)
-val add_term_pp_record : 
-    Basic.ident -> Printer.record -> unit
+      val add_term_pp_record : 
+	  Basic.ident -> Printer.record -> unit
 
 (**
    [remove_term_pp id]
@@ -212,8 +205,8 @@ val add_term_pp_record :
    @param prec precedence.
    @param fixity fixity.
    @param repr representation (if any).
-*)
-val remove_term_pp : Basic.ident -> unit
+ *)
+      val remove_term_pp : Basic.ident -> unit
 
 (**
    [get_type_pp id]
@@ -227,7 +220,7 @@ val remove_term_pp : Basic.ident -> unit
    [fixity] is fixity
    [repr] is representation to use (if any)
  *)
-val get_type_pp : Basic.ident -> (int * Printer.fixity * string option)
+      val get_type_pp : Basic.ident -> (int * Printer.fixity * string option)
 
 (**
    [add_type_pp id prec fixity repr]
@@ -239,8 +232,8 @@ val get_type_pp : Basic.ident -> (int * Printer.fixity * string option)
    @param repr representation (if any).
  *)
 
-val add_type_pp : 
-    Basic.ident -> int -> Printer.fixity -> string option -> unit
+      val add_type_pp : 
+	  Basic.ident -> int -> Printer.fixity -> string option -> unit
 
 (**
    [add_type_pp_record id rcrd]
@@ -248,8 +241,8 @@ val add_type_pp :
    @param id identifier to add.
    @param rcrd PP record
  *)
-val add_type_pp_record : 
-    Basic.ident -> Printer.record -> unit
+      val add_type_pp_record : 
+	  Basic.ident -> Printer.record -> unit
 
 (**
    [remove_type_pp id]
@@ -260,35 +253,37 @@ val add_type_pp_record :
    @param fixity fixity.
    @param repr representation (if any).
  *)
-val remove_type_pp : Basic.ident -> unit
+      val remove_type_pp : Basic.ident -> unit
 
 (**
    [get/add/remove_term_printer]
 
    get/add/remove a term printer
-*)
-val get_term_printer:
-    Basic.ident -> 
-      (int -> (Basic.ident * (Basic.term list)) Printer.printer)
-val add_term_printer : 
-    Basic.ident -> 
-      (Printer.ppinfo -> 
-	int -> (Basic.ident * (Basic.term list)) Printer.printer) -> unit
-val remove_term_printer : Basic.ident -> unit
+ *)
+      val get_term_printer:
+	  Basic.ident -> 
+	    (int -> (Basic.ident * (Basic.term list)) Printer.printer)
+      val add_term_printer : 
+	  Basic.ident -> 
+	    (Printer.ppinfo -> 
+	      int -> (Basic.ident * (Basic.term list)) Printer.printer) -> unit
+      val remove_term_printer : Basic.ident -> unit
 
 (**
    [get/add/remove_type_printer]
 
    get/add/remove a type printer
-*)
-val get_type_printer:
-    Basic.ident -> 
-      (int -> (Basic.ident * (Basic.gtype list)) Printer.printer)
-val add_type_printer : 
-    Basic.ident -> 
-      (Printer.ppinfo -> 
-	int -> (Basic.ident * (Basic.gtype list)) Printer.printer) -> unit
-val remove_type_printer : Basic.ident -> unit
+ *)
+      val get_type_printer:
+	  Basic.ident -> 
+	    (int -> (Basic.ident * (Basic.gtype list)) Printer.printer)
+      val add_type_printer : 
+	  Basic.ident -> 
+	    (Printer.ppinfo -> 
+	      int -> (Basic.ident * (Basic.gtype list)) Printer.printer) -> unit
+      val remove_type_printer : Basic.ident -> unit
+
+    end
 
 (* initialising functions *)
 
@@ -308,9 +303,9 @@ val add_reset: (unit-> unit) -> unit
 
 (* reset(): function to call to reset system 
 
-   calls al functions in reset_list then
+   call all functions in reset_list then
    call init()
-*)
+ *)
 val reset : unit -> unit
 
 

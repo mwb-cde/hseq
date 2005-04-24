@@ -130,7 +130,7 @@ let once_simp_tac
 (* Printer *)
 
 let print_set set = 
-  Simpset.print (Global.pp_info()) set
+  Simpset.print (Global.PP.info()) set
 
 (* Initialising functions *)
 

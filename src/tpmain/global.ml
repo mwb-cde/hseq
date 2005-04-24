@@ -1,8 +1,8 @@
 (*-----
- Name: global.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: global.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 open Basic
 
@@ -13,13 +13,13 @@ let dest_name f = Lib.chop_at '.' f
 (* let empty_thy_name = "(empty)" *)
 let empty_thy_name = Basic.null_thy
 
-(* An anonymous theory *)
+(** [anont_thy()]: An anonymous theory *)
 let anon_thy ()= Theory.mk_thy empty_thy_name
 
 (**
-   base_thy:
+   [base_thy]:
    The theory on which all user theories are based
-*)
+ *)
 let base_name = ref (Some("Main"))
 let get_base_name()= 
   match !base_name with
@@ -27,7 +27,6 @@ let get_base_name()=
   | Some x -> x
 let set_base_name x = base_name:=(Some(x))
 let clear_base_name () = base_name:=None
-
 
 (* theories: the theory database *)
 let thdb() = Thydb.emptydb (anon_thy ())
@@ -83,35 +82,35 @@ let scope() =
  } 
 
 (*
-let scope() =
-  let thy_name = (get_cur_name())
-  in 
-  {Gtypes.curr_thy = thy_name;
+   let scope() =
+   let thy_name = (get_cur_name())
+   in 
+   {Gtypes.curr_thy = thy_name;
    Gtypes.typeof_fn = 
    (fun f -> 
-     let thstr, idstr = Basic.dest_fnid f
-     in 
-     Thydb.get_id_type thstr idstr (get_theories()));
+   let thstr, idstr = Basic.dest_fnid f
+   in 
+   Thydb.get_id_type thstr idstr (get_theories()));
    Gtypes.typ_defn = 
    (fun f -> 
-     let thstr, idstr = Basic.dest_fnid f
-     in 
-     Thydb.get_type_rec thstr idstr (get_theories()));
+   let thstr, idstr = Basic.dest_fnid f
+   in 
+   Thydb.get_type_rec thstr idstr (get_theories()));
 
    Gtypes.prec_of = (fun idsel s -> 
-     (try 
-       let thstr, idstr = Basic.dest_fnid s
-       in 
-       if idsel = Basic.fn_id
-       then (Thydb.get_id_prec thstr idstr (get_theories())) 
-       else (-1)
-     with _ -> (-1)));
+   (try 
+   let thstr, idstr = Basic.dest_fnid s
+   in 
+   if idsel = Basic.fn_id
+   then (Thydb.get_id_prec thstr idstr (get_theories())) 
+   else (-1)
+   with _ -> (-1)));
    Gtypes.thy_of = 
    (fun idsel x -> Thydb.thy_of x (thy_name) (get_theories()));
    Gtypes.thy_in_scope  = 
    (fun th1 th2 -> Thydb.thy_in_scope th1 th2 (get_theories()))
- } 
-*)
+   } 
+ *)
 (* file handling *)
 
 let thy_suffix = "."^Settings.thy_suffix
@@ -136,7 +135,7 @@ let init_paths() = init_thy_path()
 (** [find_file x]: Find file [x] in the theory path. 
    
    raise [Not_found] if not found
-*)
+ *)
 let find_file f =
   let rec find_aux ths =
     match ths with
@@ -154,7 +153,7 @@ let find_file f =
 (*
    [build_thy_file f]: 
    build a theory by using file f.
-*)
+ *)
 let build_thy_file f=  
   let tf = f^Settings.script_suffix
   in 
@@ -176,93 +175,99 @@ let find_thy_file f =
 
 (* Pretty printing and Parsing*)
 
+module PP=
+  struct
+
 (* tp_pp_info: Printer Table *)
-let tp_pp_info=ref (Printer.empty_ppinfo())
-let pp_info() = !tp_pp_info 
-let pp_set info = tp_pp_info:=info
-let pp_reset () = pp_set (Printer.empty_ppinfo())
-let pp_init() = pp_reset()
+    let tp_pp_info=ref (Printer.empty_ppinfo())
+    let info() = !tp_pp_info 
+(*    let pp_info() = !tp_pp_info  *)
+    let pp_set info = tp_pp_info:=info
+    let pp_reset () = pp_set (Printer.empty_ppinfo())
+    let pp_init() = pp_reset()
 
 (* tp_sym_info: Parser symbol table *)
-let sym_init() = Parser.init()
-let sym_info() = Parser.symtable()
-let sym_reset () = Parser.init()
+    let sym_init() = Parser.init()
+    let sym_info() = Parser.symtable()
+    let sym_reset () = Parser.init()
 
-let get_term_pp id=
-  Printer.get_term_info (pp_info()) id
+    let get_term_pp id=
+      Printer.get_term_info (info()) id
 
-let add_term_pp id prec fixity repr=
-  Printer.add_term_info (pp_info()) id prec fixity repr;
-  Parser.add_token id (Lib.get_option repr (name id)) fixity prec
+    let add_term_pp id prec fixity repr=
+      Printer.add_term_info (info()) id prec fixity repr;
+      Parser.add_token id (Lib.get_option repr (name id)) fixity prec
 
-let add_term_pp_record id rcrd=
-  Printer.add_term_record (pp_info()) id rcrd;
-  Parser.add_token 
-    id 
-    (Lib.get_option rcrd.Printer.repr (name id)) 
-    (rcrd.Printer.fixity)
-    (rcrd.Printer.prec)
+    let add_term_pp_record id rcrd=
+      Printer.add_term_record (info()) id rcrd;
+      Parser.add_token 
+	id 
+	(Lib.get_option rcrd.Printer.repr (name id)) 
+	(rcrd.Printer.fixity)
+	(rcrd.Printer.prec)
 
-let remove_term_pp id =
-  let (_, _, sym) = get_term_pp id
-  in 
-  Printer.remove_term_info (pp_info()) id;
-  Parser.remove_token (Lib.get_option sym (name id))
-
-
-let get_type_pp id=
-  Printer.get_type_info (pp_info()) id
-
-let add_type_pp id prec fixity repr=
-  Printer.add_type_info (pp_info()) id prec fixity repr;
-  Parser.add_type_token id (Lib.get_option repr (name id)) fixity prec
-
-let add_type_pp_record id rcrd=
-  Printer.add_type_record (pp_info()) id rcrd;
-  Parser.add_type_token 
-    id 
-    (Lib.get_option rcrd.Printer.repr (name id)) 
-    (rcrd.Printer.fixity)
-    (rcrd.Printer.prec)
-
-let remove_type_pp id =
-  let (_, _, sym) = get_type_pp id
-  in 
-  Printer.remove_type_info (pp_info()) id;
-  Parser.remove_type_token (Lib.get_option sym (name id))
+    let remove_term_pp id =
+      let (_, _, sym) = get_term_pp id
+      in 
+      Printer.remove_term_info (info()) id;
+      Parser.remove_token (Lib.get_option sym (name id))
 
 
-let get_term_printer id=
-  Printer.get_term_printer (pp_info()) id
-let add_term_printer id printer=
-  Printer.add_term_printer (pp_info()) id (printer (pp_info()))
-let remove_term_printer id=
-  Printer.remove_term_printer (pp_info()) id
+    let get_type_pp id=
+      Printer.get_type_info (info()) id
 
-let get_type_printer id=
-  Printer.get_type_printer (pp_info()) id
-let add_type_printer id printer=
-  Printer.add_type_printer (pp_info()) id (printer (pp_info()))
-let remove_type_printer id=
-  Printer.remove_type_printer (pp_info()) id
+    let add_type_pp id prec fixity repr=
+      Printer.add_type_info (info()) id prec fixity repr;
+      Parser.add_type_token id (Lib.get_option repr (name id)) fixity prec
+
+    let add_type_pp_record id rcrd=
+      Printer.add_type_record (info()) id rcrd;
+      Parser.add_type_token 
+	id 
+	(Lib.get_option rcrd.Printer.repr (name id)) 
+	(rcrd.Printer.fixity)
+	(rcrd.Printer.prec)
+
+    let remove_type_pp id =
+      let (_, _, sym) = get_type_pp id
+      in 
+      Printer.remove_type_info (info()) id;
+      Parser.remove_type_token (Lib.get_option sym (name id))
+
+
+    let get_term_printer id=
+      Printer.get_term_printer (info()) id
+    let add_term_printer id printer=
+      Printer.add_term_printer (info()) id (printer (info()))
+    let remove_term_printer id=
+      Printer.remove_term_printer (info()) id
+
+    let get_type_printer id=
+      Printer.get_type_printer (info()) id
+    let add_type_printer id printer=
+      Printer.add_type_printer (info()) id (printer (info()))
+    let remove_type_printer id=
+      Printer.remove_type_printer (info()) id
 
 
 (* Functions to add PP information when a theory is loaded *)
 
-let add_id_record id rcrd =
-  let pr, fx, repr = 
-    rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
-  in 
-  add_term_pp id pr fx repr
+    let add_id_record id rcrd =
+      let pr, fx, repr = 
+	rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
+      in 
+      add_term_pp id pr fx repr
 
-let add_type_record id rcrd =
-  let pr, fx, repr = 
-    rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
-  in 
-  add_type_pp id pr fx repr
+    let add_type_record id rcrd =
+      let pr, fx, repr = 
+	rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr
+      in 
+      add_type_pp id pr fx repr
+
+  end
 
 let load_use_theory_files th = 
-     List.iter (Unsafe.load_use_file) th.Theory.cfiles
+  List.iter (Unsafe.load_use_file) th.Theory.cfiles
 
 let default_load_functions = 
   [
@@ -272,13 +277,13 @@ let default_load_functions =
    (fun th -> 
      List.iter 
        (fun (id, rcrd) -> 
-	 add_type_record (Basic.mk_long th.Theory.cname id) rcrd)
+	 PP.add_type_record (Basic.mk_long th.Theory.cname id) rcrd)
        th.Theory.ctype_pps) ;
 (* add term PP information *)
    (fun th -> 
      List.iter 
        (fun (id, rcrd) -> 
-	 add_id_record (Basic.mk_long th.Theory.cname id) rcrd) 
+	 PP.add_id_record (Basic.mk_long th.Theory.cname id) rcrd) 
        th.Theory.cid_pps)
  ]
 
@@ -334,15 +339,15 @@ let read_defn x =
   in (l, r)
 
 (*
+   let read_type_defn x =
+   let (l, args, r)= 
+   catch_parse_error 
+   (Parser.read Parser.typedef_parser) x
+   in (match args with None -> (l, [], r) | Some(a) -> (l, a, r))
+ *)
 let read_type_defn x =
-  let (l, args, r)= 
-    catch_parse_error 
-      (Parser.read Parser.typedef_parser) x
-  in (match args with None -> (l, [], r) | Some(a) -> (l, a, r))
-*)
-let read_type_defn x =
-    catch_parse_error 
-      (Parser.read Parser.typedef_parser) x
+  catch_parse_error 
+    (Parser.read Parser.typedef_parser) x
 
 
 let read_type x = 
@@ -369,7 +374,7 @@ let read_identifier x =
    if [!base_thy_builder=Some(f)] 
    then call [f]
    otherwise clear the base theory name ([clear_base_name()])
-*)
+ *)
 
 let base_thy_builder = ref None
 let set_base_thy_builder f = base_thy_builder:=Some(f)
@@ -395,16 +400,16 @@ let load_base_thy ()=
 	 f())
 
 (*
-let load_base_thy ()=
-  try 
-    let imprts=
-      Thydb.load_theory(get_theories()) 
-	base_thy_name false on_load_thy find_thy_file
-    in 
-    set_cur_thy(Thydb.get_thy (get_theories()) base_thy_name);
-    Thydb.add_importing imprts (get_theories())
-  with _ -> theories:=(thdb())
-*)
+   let load_base_thy ()=
+   try 
+   let imprts=
+   Thydb.load_theory(get_theories()) 
+   base_thy_name false on_load_thy find_thy_file
+   in 
+   set_cur_thy(Thydb.get_thy (get_theories()) base_thy_name);
+   Thydb.add_importing imprts (get_theories())
+   with _ -> theories:=(thdb())
+ *)
 
 let reset_theoryDB () = reset_thydb()
 let init_theoryDB () = reset_theoryDB(); load_base_thy()
@@ -415,8 +420,8 @@ let init_list =
   ref 
     [
      init_theoryDB;
-     sym_init;
-     pp_init;
+     PP.sym_init;
+     PP.pp_init;
      init_load_functions;
      init_paths
    ]

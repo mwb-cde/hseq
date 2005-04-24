@@ -71,12 +71,6 @@ val end_theory : ?save:bool -> unit -> unit
    [new_type <<:! ty1=ty2 >>] declares type ty1 as a synonym for ty2 
 *)
 (*
-val new_type :
-    ?pp:(int*fixity*string option) 
-    -> (string * string list * Basic.gtype option) -> unit
-*)
-
-(*
    [typedef <:def<: t>>]: declare a new type [t], which may take arguments.
 
    [typedef <:def<: ty1=ty2 >>]: define type [ty1] as a synonym for
@@ -159,6 +153,45 @@ val declare :
   -> Basic.term -> (Basic.ident * Basic.gtype)
 
 (*
+   [add_term_pp id prec fixity sym]: add printer-parser information
+   for term identifier [id]. Parser/print term identifier [id] as [sym] with
+   precedent [prec] and fixity [fixity].
+
+   [get_term_pp id: get printer-parser information for term identifier
+   [id].
+
+   [remove_term_pp id]: remove last-added printer-parser information
+   for term identifier [id].
+
+   [add_type_pp id prec fixity sym]: add printer-parser information
+   for term identifier [id]. Parser/print term identifier [id] as [sym] with
+   precedent [prec] and fixity [fixity].
+
+   [get_type_pp id: get printer-parser information for term identifier
+   [id].
+
+   [remove_type_pp id]: remove last-added printer-parser information
+   for term identifier [id].
+
+*)
+val add_term_pp : 
+    string -> int -> Printer.fixity 
+      -> string option -> unit
+val get_term_pp : 
+    string -> (int * Printer.fixity * string option)
+val remove_term_pp : 
+    string -> unit
+
+val add_type_pp : 
+    string -> int -> Printer.fixity 
+      -> string option -> unit
+val get_type_pp : 
+    string -> (int * Printer.fixity * string option)
+val remove_type_pp : 
+    string -> unit
+
+
+(*
    [new_axiom ?simp id thm]
    declare thm a new axiom with name id.
 *)
@@ -183,8 +216,17 @@ val lemma : string -> Logic.thm
 (* declare parents of the current theory *)
 val parents : string list -> unit
 
-(* add/remove load files *)
-val add_file: string -> unit
+(**
+   Add/remove load files.
+
+   [add_file ?(use=false) f] Add file [f] to the list to be
+   loaded/used when the theory is loaded.  if [use=true] then also
+   load/use [f] immediately.
+
+   [remove_file f] Remove file [f] from the list to be loaded/used
+   when the theory is loaded.
+*)
+val add_file: ?use:bool -> string -> unit
 val remove_file: string -> unit
 
 (* declare a proof results in a theorem and store this theorem

@@ -27,8 +27,8 @@ module BoolPP :
     open Parser.Grammars
     open Lexer
 
-    val ifthenelse_parser: infotyp -> Basic.term phrase
-    val init_ifthenelse_parser: unit -> unit
+(* Printer for negation (base.not). *)
+    val negation_pprec : Printer.record
 
 (**
    [ifthenelse_id]
@@ -40,8 +40,21 @@ module BoolPP :
     val ifthenelse_id: Basic.ident
     val ifthenelse_pprec : Printer.record
 
+    val ifthenelse_parser: infotyp -> Basic.term phrase
     val ifthenelse_printer: 
 	Printer.ppinfo-> int -> Basic.ident * Basic.term list -> unit
+
+(**
+   [init_printers()] initialise boolean printers.
+   
+   [init_parsers()] initialise parsers.
+
+   [init()]: Initialise printers and parsers.
+*)
+    val init_printers : unit -> unit
+    val init_parsers : unit -> unit
+
+    val init: unit -> unit
 end
 
 

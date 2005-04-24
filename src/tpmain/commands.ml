@@ -17,13 +17,23 @@ let infixr=Parserkit.Info.infix Parserkit.Info.right_assoc
 let infixn=Parserkit.Info.infix Parserkit.Info.non_assoc
 
 
+(*
 let catch_errors f a =
   (try f a 
   with 
     Result.Error e -> 
-      Result.print_error (Global.pp_info()) (-1) (Result.Error e); 
+      Result.print_error (Global.PP.info()) (-1) (Result.Error e); 
       raise(Result.Error e)
   | x -> raise x)
+*)
+let catch_errors f a =
+  (try f a 
+  with 
+    Result.Error e -> 
+      Result.print_error (Global.PP.info()) (-1) (Result.Error e); 
+      raise (Failure "failed")
+  | x -> raise x)
+
 
 let theories () = Global.get_theories()
 
@@ -81,8 +91,13 @@ let parents ns =
   Theory.add_parents ns (curr_theory());
   Thydb.add_importing (Thydb.mk_importing (theories())) (theories())
 
-let add_file f =
-  Theory.add_file f (curr_theory())
+let add_file ?(use=false) f =
+  Theory.add_file f (curr_theory());
+  if use
+  then 
+    Unsafe.load_use_file f
+  else ()
+      
 
 let remove_file f =
   Theory.remove_file f (curr_theory())
@@ -132,8 +147,8 @@ let end_theory ?(save=true) () =
 let add_pp_rec selector id rcrd=
   Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
-  then Global.add_term_pp_record id rcrd
-  else Global.add_type_pp_record id rcrd
+  then Global.PP.add_term_pp_record id rcrd
+  else Global.PP.add_type_pp_record id rcrd
       
 let add_term_pp id prec fx repr=
   let rcrd=Printer.mk_record prec fx repr
@@ -149,16 +164,16 @@ let remove_pp_rec selector id =
   Thydb.remove_pp_rec selector 
     (Basic.thy_of_id id) (Basic.name id) (theories());
   if(selector=Basic.fn_id)
-  then Global.remove_term_pp id
-  else Global.remove_type_pp id 
+  then Global.PP.remove_term_pp id
+  else Global.PP.remove_type_pp id 
 
 let remove_term_pp id = remove_pp_rec Basic.type_id id
 let remove_type_pp id = remove_pp_rec Basic.type_id id
 
 let get_pp_rec selector id=
   if(selector=Basic.fn_id)
-  then Global.get_term_pp id
-  else Global.get_type_pp id 
+  then Global.PP.get_term_pp id
+  else Global.PP.get_type_pp id 
 
 let get_term_pp id=get_pp_rec Basic.fn_id id
 let get_type_pp id=get_pp_rec Basic.type_id id
@@ -290,20 +305,12 @@ let define ?pp ?(simp=false) ((name, args), r)=
   let ndef=
     Logic.Defns.mk_termdef (Global.scope()) 
       (Basic.mk_long (Global.get_cur_name()) name) args r
-
-(*
-    Defn.mk_defn (Global.scope()) 
-      (Basic.mk_long (Global.get_cur_name()) name) args r
-*)
   in 
   let props = 
     if simp
     then [Theory.simp_property]
     else []
   in 
-(*
-  let (n, ty, d)= Defn.dest_defn ndef
-*)
   let (n, ty, d)= Logic.Defns.dest_termdef ndef
   in 
   Thydb.add_defn (Basic.name n) ty d props (theories()); 

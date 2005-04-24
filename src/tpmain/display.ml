@@ -23,27 +23,27 @@ let print_fnident x = Printer.print_ident x
 
 let print_term x = 
   open_box 0;
-  Term.print (Global.pp_info()) x;
+  Term.print (Global.PP.info()) x;
   close_box()
 
 let print_formula x = 
   open_box 0;
-  Term.print (Global.pp_info()) (Formula.term_of x);
+  Term.print (Global.PP.info()) (Formula.term_of x);
   close_box()
 
 let rec print_type x = 
   Format.printf "@[";
-  Gtypes.print (Global.pp_info())  x; 
+  Gtypes.print (Global.PP.info())  x; 
   Format.printf "@]"
 
 let print_sqnt x = 
-  Logic.print_sqnt (Global.pp_info()) x
+  Logic.print_sqnt (Global.PP.info()) x
 let print_node x = 
-  Logic.print_node (Global.pp_info()) x
+  Logic.print_node (Global.PP.info()) x
 let print_branch x = 
-  Logic.print_branch (Global.pp_info()) x
+  Logic.print_branch (Global.PP.info()) x
     
-let print_thm t = Logic.print_thm (Global.pp_info()) t
+let print_thm t = Logic.print_thm (Global.PP.info()) t
 
 let print_prf p = 
   let g = Goals.curr_goal p
@@ -87,7 +87,7 @@ let print_termdecln def =
 
 
 let print_defn def =
-  Logic.print_cdefn (Global.pp_info()) def
+  Logic.print_cdefn (Global.PP.info()) def
 (*
   if(Logic.Defns.is_termdef def)
   then print_termdefn def
@@ -104,7 +104,7 @@ let print_subst tenv f=
      tenv);
   Format.printf "@]"
     
-let print_error r = (r#print) (Global.pp_info())
+let print_error r = (r#print) (Global.PP.info())
 
 let print_theory x = 
-  Theory.print (Global.pp_info()) x
+  Theory.print (Global.PP.info()) x

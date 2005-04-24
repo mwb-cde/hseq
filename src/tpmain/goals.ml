@@ -92,7 +92,7 @@ let report node branch =
 	Format.print_string ")";
 	Format.close_box();
 	Format.print_newline();
-	Logic.print_sqnt (Global.pp_info()) y;
+	Logic.print_sqnt (Global.PP.info()) y;
 	Format.print_newline();
 	print_subgoals (i+1) ys
   in 
