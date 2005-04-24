@@ -49,7 +49,7 @@ let insert k v l =
     | (a, b)::xs -> 
 	if(a<k)
 	then add xs ((a, b)::rest)
-	else List.rev_append rest ((k, v)::(a, b)::rest)
+	else List.rev_append rest ((k, v)::(a, b)::xs)
   in 
   add l []
 
