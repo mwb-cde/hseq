@@ -269,22 +269,48 @@ module PP=
 let load_use_theory_files th = 
   List.iter (Unsafe.load_use_file) th.Theory.cfiles
 
+let add_loaded_term_pp th =
+  let thy_name = th.Theory.cname
+  and pp_list = List.rev th.Theory.cid_pps
+  in 
+  let add_pp (id, rcrd) = 
+      PP.add_id_record (Basic.mk_long thy_name id) rcrd
+  in 
+  List.iter add_pp pp_list
+
+let add_loaded_type_pp th =
+  let thy_name = th.Theory.cname
+  and pp_list = List.rev th.Theory.ctype_pps
+  in 
+  let add_pp (id, rcrd) = 
+      PP.add_type_record (Basic.mk_long thy_name id) rcrd
+  in 
+  List.iter add_pp pp_list
+
 let default_load_functions = 
   [
 (* load files *)
    load_use_theory_files; 
 (* add type PP information *)
+   add_loaded_type_pp;
+(*
    (fun th -> 
      List.iter 
        (fun (id, rcrd) -> 
 	 PP.add_type_record (Basic.mk_long th.Theory.cname id) rcrd)
-       th.Theory.ctype_pps) ;
+       (List.rev th.Theory.ctype_pps)) ;
+*)
 (* add term PP information *)
+   add_loaded_term_pp;
+
+(*
+   add_loaded_term_pp;
    (fun th -> 
      List.iter 
        (fun (id, rcrd) -> 
 	 PP.add_id_record (Basic.mk_long th.Theory.cname id) rcrd) 
-       th.Theory.cid_pps)
+       (List.rev th.Theory.cid_pps)
+*)
  ]
 
 let load_functions = ref default_load_functions

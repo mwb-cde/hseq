@@ -17,7 +17,9 @@ type id_record=
     {
      typ: Basic.gtype; 
      def: Logic.thm option; 
+(*
      infix: bool; prec: int;
+*)
      dprops: property list
    }
 
@@ -25,8 +27,10 @@ type id_save_record=
     {
      sty: Basic.gtype; 
      sdef: Logic.saved_thm option; 
+(*
      sinfix: bool; 
      sprec: int;
+*)
      sdprops : property list
    }
 
@@ -119,12 +123,12 @@ let add_pp_rec idsel n ppr thy=
     if idsel = Basic.fn_id 
     then 
       (if Lib.member n thy.defns
-      then thy.id_pps <- ((n, ppr)::thy.id_pps)
+      then thy.id_pps <- (Lib.insert n ppr thy.id_pps)
       else raise (Result.error 
 		    ("No name "^n^" defined in theory "^(get_name thy))))
     else 
       (if Lib.member n thy.typs
-      then thy.type_pps <- ((n, ppr)::thy.type_pps)
+      then thy.type_pps <- (Lib.insert n ppr thy.type_pps)
       else raise (Result.error
 		    ("No type "^n^" defined in theory "^(get_name thy))))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
@@ -208,7 +212,8 @@ let get_defn_rec n thy =
   in 
   {
    typ=Gtypes.copy_type (rcrd.typ); 
-   def=rcrd.def; infix = rcrd.infix; prec=rcrd.prec;
+   def=rcrd.def; 
+   (* infix = rcrd.infix; prec=rcrd.prec; *)
    dprops = rcrd.dprops
  }
     
@@ -223,13 +228,26 @@ let get_id_type n thy =
   (let r = (get_defn_rec n thy)
   in r.typ)
 
+(*
 let id_is_infix n thy = 
-  (let r =  get_defn_rec n thy
-  in r.infix)
+  let r =  get_defn_rec n thy
+  in r.infix
+*)
 
+let id_is_infix n thy = 
+  let recd = get_pp_rec Basic.fn_id n thy
+  in 
+  Printer.is_infix recd.Printer.fixity
+
+(*
 let get_id_prec n thy = 
-  (let r =  get_defn_rec n thy
-  in r.prec)
+  let r =  get_defn_rec n thy
+  in r.prec
+*)
+let get_id_prec n thy = 
+  let recd = get_pp_rec Basic.fn_id n thy
+  in 
+  recd.Printer.prec
 
 let id_exists n thy =
   try 
@@ -242,7 +260,9 @@ let add_defn_rec n ty d inf pr prop thy =
     (if id_exists n thy
     then raise (Result.error ("Identifier "^n^" already exists in theory"))
     else (Hashtbl.add (thy.defns) n 
-	    {typ=ty; def=d;  infix=inf; prec=pr; dprops=prop}))
+	    {typ=ty; def=d;  
+	     (* infix=inf; prec=pr;*)
+	     dprops=prop}))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_defn n ty d prop thy =
@@ -324,16 +344,14 @@ let to_save ir =
   {sty=ir.typ; 
    sdef = (match ir.def with 
      None -> None | Some(d) -> Some (Logic.to_save d));
-   sinfix=ir.infix;
-   sprec=ir.prec;
+(*   sinfix=ir.infix;  sprec=ir.prec; *)
    sdprops = ir.dprops}
 
 let from_save sr =
   {typ=sr.sty; 
    def = (match sr.sdef with 
      None -> None | Some(d) -> Some(Logic.from_save d));
-   infix=sr.sinfix;
-   prec=sr.sprec;
+(*   infix=sr.sinfix;  prec=sr.sprec; *)
    dprops = sr.sdprops}
 
 let thm_to_save tr=

@@ -117,8 +117,12 @@ val get_pplist: Basic.id_selector -> string -> thydb
     val get_defn : string -> string -> thydb -> Logic.thm
     val get_id_type : string -> string -> thydb -> Basic.gtype
 
+val get_term_pp_rec : string -> string -> thydb -> Printer.record
+val get_type_pp_rec : string -> string -> thydb -> Printer.record
+(*
     val id_is_infix : string -> string -> thydb -> bool
     val get_id_prec : string -> string -> thydb -> int
+*)
     val id_exists : string -> string -> thydb -> bool
 
 type memos

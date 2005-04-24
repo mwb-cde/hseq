@@ -28,16 +28,20 @@ type id_record =
     {
      typ: Basic.gtype;
      def: Logic.thm option;
+(*
      infix: bool;
      prec: int ;
+*)
      dprops : property list
    }
 type id_save_record =
     {
      sty: Basic.gtype;
      sdef: Logic.saved_thm option;
+(*
      sinfix: bool;
      sprec: int ;
+*)
      sdprops: property list
    }
 

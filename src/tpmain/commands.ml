@@ -349,52 +349,11 @@ let declare ?pp trm =
       add_term_pp longname prec fx repr;
       (n, ty)
 
-(*
-let declare ?pp trm = 
-  let n, ty=
-    try 
-   (let (v, ty)=Term.dest_typed trm 
-      in 
-      let id =
-	if(Term.is_free v)
-	then (Basic.mk_long 
-		(Global.get_cur_name()) 
-		(Term.get_free_name v))
-	else Term.get_var_id v
-      in 
-      let dcl=Defn.mk_decln (Global.scope()) id ty
-      in 
-      Thydb.add_decln dcl (theories());
-      (id, ty))
-    with _ -> raise (Result.error ("Badly formed declaration"))
-  in 
-  match pp with 
-    None -> (n, ty)
-  | Some(prec, fx, repr) ->
-      let longname = 
-	if (Basic.thy_of_id n) = Basic.null_thy 
-	then 
-	  (Basic.mk_long (Global.get_cur_name()) (Basic.name n))
-	else n
-      in 
-      add_term_pp longname prec fx repr;
-      (n, ty)
-*)
-
 let new_axiom ?(simp=false) n trm =
   let t = Logic.mk_axiom (Formula.make (Global.scope()) trm)
   and props = if simp then [Theory.simp_property] else []
   in 
   Thydb.add_axiom n t props (theories()); t
-
-(*
-let new_axiom ?(simp=false) n trm =
-  let t = Logic.mk_axiom 
-      (Formula.form_of_term (Global.scope()) trm)
-  and props = if simp then [Theory.simp_property] else []
-  in 
-  Thydb.add_axiom n t props (theories()); t
-*)
 
 let axiom id =
   let t, n = Global.read_identifier id

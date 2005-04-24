@@ -316,6 +316,24 @@ let get_type_rec th n tdb=
   then (find_apply get_aux tdb)
   else quick_find get_aux th tdb
 
+let get_term_pp_rec th n tdb =
+  let get_aux cur= 
+    try Theory.get_pp_rec Basic.fn_id n cur
+    with _ -> raise Not_found 
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+
+let get_type_pp_rec th n tdb =
+  let get_aux cur= 
+    try Theory.get_pp_rec Basic.type_id n cur
+    with _ -> raise Not_found 
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+
 
 let get_lemma th n tdb =
   let get_aux cur =
@@ -338,16 +356,28 @@ let get_defn th n tdb =
   | Some(d) -> d)
 
 let get_id_type th n tdb = 
-  (let r = (get_defn_rec th n tdb)
-  in r.Theory.typ)
+  let r = (get_defn_rec th n tdb)
+  in r.Theory.typ
 
 let id_is_infix th n tdb = 
-  (let r =  get_defn_rec th n tdb
-  in r.Theory.infix)
+  let r = get_term_pp_rec th n tdb
+  in 
+  Printer.is_infix r.Printer.fixity
 
 let get_id_prec th n tdb = 
-  (let r =  get_defn_rec th n tdb
-  in r.Theory.prec)
+  let r =  get_term_pp_rec th n tdb
+  in 
+  r.Printer.prec
+
+(*
+let id_is_infix th n tdb = 
+  let r =  get_defn_rec th n tdb
+  in r.Theory.infix
+
+let get_id_prec th n tdb = 
+  let r =  get_defn_rec th n tdb
+  in r.Theory.prec
+*)
 
 let id_exists th n tdb = 
   (try 
