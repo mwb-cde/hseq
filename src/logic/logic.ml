@@ -944,7 +944,6 @@ module Tactics =
 
     let get_sqnt = Subgoals.node_sqnt
 
-
 (*
    [sqnt_apply f g]:
    apply function f to the first subgoal of g
