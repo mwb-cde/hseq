@@ -31,8 +31,9 @@ open Simplib;;
 open Userlib;;
 
 let _ =
-  Format.printf "@[Initialising@]@.";
+  Format.printf "@[<v>Initialising@,";
   Init.init();
   Global.add_thy_path "./thys";
-  Global.add_thy_path "../thys"
+  Global.add_thy_path "../thys";
+  Format.printf "@]"
 

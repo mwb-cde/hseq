@@ -1,6 +1,7 @@
 SHELL=/bin/sh
-export INCLUDE= -I ../include -I ./include
-export LIB= -I ./libs -I ../libs -I +camlp4
+export INCLUDE= -I ../include -I ./include -I ./libs
+#export LIB= -I ./libs -I ../libs -I +camlp4
+export LIB= -I +camlp4
 
 export SRCDIR=$(shell pwd)
 
