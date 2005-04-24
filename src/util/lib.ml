@@ -42,6 +42,17 @@ let replace_nth i x y=
   in 
   (take (j, x)@ (y::(drop(j+1, x))))
 
+let insert k v l =
+  let rec add l rest=
+    match l with
+      [] -> List.rev_append rest [(k, v)]
+    | (a, b)::xs -> 
+	if(a<k)
+	then add xs ((a, b)::rest)
+	else List.rev_append rest ((k, v)::(a, b)::rest)
+  in 
+  add l []
+
 let replace a b l=
   let rec rep ys=
     match ys with
