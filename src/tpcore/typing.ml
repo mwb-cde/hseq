@@ -7,39 +7,6 @@
 open Basic
 open Term
 
-(*
-   class typingError s ts tys=
-   object (self)
-   inherit Result.error s
-   val trms = (ts :term list)
-   val typs = (tys: Basic.gtype list)
-   method get_terms() = trms
-   method get_types () = typs
-   method print st = 
-   Format.printf "@[<v>";
-   Format.printf "@[%s@]@," (self#msg());
-   (match (self#get_terms()) with 
-   [] -> ()
-   | ts -> 
-   ( Format.printf "@[%s" "Terms: ";
-   Printer.print_sep_list 
-   (Term.print_term st 0, ",") ts;
-   Format.printf "@]@,"));
-   (match (self#get_types()) with 
-   [] -> ()
-   | ts -> 
-   (Format.printf "@[%s" "Gtypes: ";
-   Printer.print_sep_list
-   (Gtypes.print_type st 0, ",") ts;
-   Format.printf "@]@,"));
-   Format.printf "@]"
-   end
-   let typingError s tr ty= 
-   Result.mk_error((new typingError s tr ty):>Result.error)
-   let addtypingError s tr ty es =
-   raise (Result.add_error (typingError s tr ty) es)
- *)
-
 class typingError s t ty expty=
   object (self)
     inherit Result.error s
@@ -340,18 +307,6 @@ let typecheck_env scp env t expty =
 let typecheck scp t expty =
   ignore(typecheck_env scp (Gtypes.empty_subst()) t expty)
 
-(*
-   let rec check_types scp t =
-   match t with
-   Id(_, ty) -> Gtypes.check_decl_type scp ty
-   | App(f, a) -> check_types scp f; check_types scp a
-   | Qnt(_, q, b) ->
-   Gtypes.check_decl_type scp (Term.get_qnt_type t);
-   check_types scp b
-   | Typed(t, ty) -> Gtypes.check_decl_type scp ty; check_types scp t
-   | x -> ()
- *)
-
 let rec check_types scp t =
   match t with
     Id(_, ty) -> Gtypes.well_defined scp [] ty
@@ -363,7 +318,6 @@ let rec check_types scp t =
   | x -> ()
 
 (* infers type of terms, returns infered type *)
-
 
 let rec infer_aux (inf, cache) scp env t =
   match t with
@@ -462,49 +416,4 @@ let assign_types scp trm =
     | _ -> t
   in set_aux trm
 
-
-(*
-   let typecheck_env scp env t expty =
-   let inf = ref 0
-   in 
-   let rec typchck_aux expty t =
-   match t with
-   Var(n, ty) ->    (* unify with expected type *)
-   Gtypes.unify_env scp ty expty env  
-   | Bound(q) -> 
-   (let ty = get_binder_type t
-   in
-   Gtypes.unify_env scp ty expty env)
-   | Const(c) -> 
-   (let ty = Logicterm.typeof_cnst c
-   in
-   Gtypes.unify_env scp ty expty env)
-   | Typed(trm, ty) -> 
-   Gtypes.unify_env scp ty expty env;
-   typchck_aux ty trm
-   | App(lf, a) -> 
-   let aty = Gtypes.mk_typevar inf       (* make an argument type *)
-   in
-   let fty = Logicterm.mk_fun_ty aty expty  (* expect a function type *)
-   in 
-   typchck_aux fty lf;            (* check function type *)
-   typchck_aux aty a              (* check argument type *)
-   | Qnt(q, b) ->
-   if Logicterm.is_lambda t
-   then 
-   (let rty = Gtypes.mk_typevar inf     (* range type *)
-   and fty = Term.get_qnt_type t  (* domain *)
-   in
-   let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
-   in 
-   Gtypes.unify_env scp bty expty env;
-   typchck_aux rty b)
-   else 
-   (typchck_aux Gtypes.mk_bool b;
-   Gtypes.unify_env scp expty Gtypes.mk_bool env)
-   in typchck_aux expty t
-
-   let typecheck scp t expty =
-   typecheck_env scp (Gtypes.empty_subst()) t expty; ()
- *)
 

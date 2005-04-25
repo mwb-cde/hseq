@@ -29,10 +29,11 @@ module Pkit :
       val optional : 'a phrase -> 'a option phrase
       val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
       val repeat : 'a phrase -> 'a list phrase
-      type token_info = {
-	  fixity : Parserkit.Info.fixity;
-	  prec : int;
-	} 
+      type token_info = 
+	  {
+	   fixity : Parserkit.Info.fixity;
+	   prec : int;
+	 } 
       val operators :
 	  'a phrase * (token -> token_info) * (token -> 'a -> 'a -> 'a) *
 	  (token -> 'a -> 'a) -> 'a phrase
@@ -162,7 +163,7 @@ val antiquote_parser : string phrase
 
 (*
    id: identifiers which occur in terms
- *)
+*)
       val id : infotyp -> Basic.ident phrase
 
 (*
@@ -280,13 +281,12 @@ val type_token_table: Grammars.token_table
 
 (* changing and querying the symbol table *)
 
-(* add_symbol sym tok:
+(**
+   [add_symbol sym tok]:
    add sym as symbol representing token tok.
    fail silently if sym already exists
  *)
-val add_symbol :
-    string -> Lexer.tok -> unit
-
+val add_symbol : string -> Lexer.tok -> unit
 val find_symbol : string -> Lexer.tok
 val remove_symbol : string -> unit
 
@@ -345,35 +345,33 @@ val term_parser : Pkit.input -> Basic.term
 val term_parser_list : 
     unit -> (Grammars.infotyp -> Basic.term phrase) Lib.named_list
 
-(* add_term_parser pos n ph:
+(**
+   [add_term_parser pos n ph]:
    add term parser ph named n, at position pos 
- *)
 
+   [remove_term_parser s]
+   remove term parser named [s], raise [Not_found] if not present 
+ *)
 val add_term_parser :  Lib.position -> string
   -> (Grammars.infotyp -> Basic.term phrase)
     -> unit
-
-(* [remove_term_parser s]
-   remove term parser named [s], raise [Not_found] if not present 
- *)
 val remove_term_parser :  string -> unit
 
 (* type_parser_list: list of added type parsers *)
-
 val type_parser_list : 
     unit -> (Grammars.infotyp -> Basic.gtype phrase) Lib.named_list
 
-(* add_term_parser pos n ph:
+(**
+   [add_term_parser pos n ph]:
    add term parser ph named n, in relative position pos 
+
+   [remove_type_parser s]: 
+   remove type parser named s, raise Not_found if not present 
  *)
-
-val add_type_parser :  Lib.position -> string
-  -> (Grammars.infotyp -> Basic.gtype phrase)
-    -> unit
-
-	(* remove_type_parser s: 
-	   remove type parser named s, raise Not_found if not present 
-	 *)
+val add_type_parser :  
+    Lib.position -> string
+      -> (Grammars.infotyp -> Basic.gtype phrase)
+	-> unit
 val remove_type_parser :  string -> unit
 
 (* readers: read and parse a string *)
@@ -383,3 +381,87 @@ val read_type : string -> Basic.gtype
 
 val test_lex : string -> Lexer.tok Parserkit.Input.t
 val test : string -> Basic.term
+
+(** 
+   [resolve_term scp env t]: Resolve the symbols in term [t].
+   For each free variable [Free(s, ty)] in [t], 
+   Lookup [s] in [env] to get long identifier [id]. 
+   If not found, use [Free(s, ty)].
+   If found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
+
+   [env] should return an identifier-type pair where type matches (in
+   some sense) [ty].
+
+   [env] must raise Not_found if [s] is not found.
+*)
+val resolve_term:
+    Scope.t
+  -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+    -> Basic.term
+      -> Basic.term
+
+(**
+   [make_lookup scp db]:
+   make an environment suitable for resolve term from db]
+
+   [db] must raise Not_found when items are not found.
+
+   [make_lookup db s ty]: returns the identifier-type pair associated
+   by [db] with [s] for which [ty] is unifies with type in scope [scp].
+
+   [make_lookup db s ty] raise Not_found if [s] is not found in [db].
+*)
+val make_lookup: 
+    Scope.t
+  -> (string -> (Basic.ident * Basic.gtype) list) 
+    -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype)) 
+      
+(* functions exposed for debugging *)
+type resolve_memo =
+    { 
+      types : (Basic.ident, Basic.gtype)Hashtbl.t;
+      idents: (string, Basic.ident)Hashtbl.t;
+      symbols : (string, Basic.ident)Hashtbl.t
+    }
+
+type resolve_arg =
+    {
+     scp: Scope.t;
+     inf : int ref;
+     memo: resolve_memo;
+     lookup: (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+   }
+
+val resolve_aux:
+    resolve_arg
+  -> Gtypes.substitution
+    -> Basic.gtype
+      -> Basic.term
+      -> (Basic.term * Basic.gtype * Gtypes.substitution)
+
+val memo_find:
+    ('a, 'b)Hashtbl.t
+      -> ('a -> 'c -> 'b) 
+	-> 'c 
+	  -> 'a -> 'b
+
+val find_type : 
+    Scope.t 
+  -> Basic.gtype -> (Basic.ident * Basic.gtype) list 
+    -> (Basic.ident * Basic.gtype)
+
+(* preliminary support for overloading *)
+val overload_table: 
+    (string,  (Basic.ident * Basic.gtype) list) Hashtbl.t
+val get_overload_list: 
+    string -> (Basic.ident * Basic.gtype) list
+val add_overload:
+    string -> (Basic.ident * Basic.gtype) -> unit
+val remove_overload:
+    string -> Basic.ident -> unit
+val print_overloads:
+    Printer.ppinfo -> unit
+
+val ovl : 
+    Scope.t
+    -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))

@@ -1,9 +1,8 @@
 (*-----
- Name: parser.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
-
+Name: parser.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 module Pkit=Parserkit.Grammars
     (struct 
@@ -23,7 +22,7 @@ let default_type_fixity= Parserkit.Info.nonfix
 
 
 module Utility=
-struct 
+  struct 
     open Lexer
     open Pkit
 
@@ -31,17 +30,17 @@ struct
       ((!$ tok) >> (fun _ -> Term.mk_short_var (Lexer.string_of_token tok)))
     let (?%) tok =
       ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
-end
+  end
 
 (**
    [typdef_data]:
    Information returned by the typedef parsers 
-*)
-    type typedef_data =
-	NewType of (string * (string list))
-      | TypeAlias of (string * (string list) * Basic.gtype)
-      | Subtype of (string * (string list) 
-		      * Basic.gtype * Basic.term)
+ *)
+type typedef_data =
+    NewType of (string * (string list))
+  | TypeAlias of (string * (string list) * Basic.gtype)
+  | Subtype of (string * (string list) 
+		  * Basic.gtype * Basic.term)
 
 
 module Grammars  =
@@ -57,7 +56,7 @@ module Grammars  =
 (* 
    token tables
    information about symbols
-*)
+ *)
 
     type token_info =
 	(Basic.ident
@@ -68,7 +67,7 @@ module Grammars  =
    stores the identifier associated with a symbol
    the fixity and precedence of the symbol
    the table is memoised
-*)
+ *)
     let default_table_size=253;
 
     type token_table = 
@@ -159,13 +158,12 @@ module Grammars  =
 	{ 
 	  (* term information *)
 	  bound_names: (string* Basic.term) list ref;
-	  token_info: token -> token_info;
-	    
-            (* type information *)
-            typ_indx : int ref;
-            typ_names: (string* Basic.gtype) list ref;
-	    
-            type_token_info: token ->token_info;
+	  token_info: (token -> token_info);
+
+          (* type information *)
+          typ_indx : int ref;
+          typ_names: (string* Basic.gtype) list ref;
+          type_token_info: (token ->token_info);
 	}
 
 (* utility functions *)
@@ -335,7 +333,7 @@ module Grammars  =
 
 (** [message m _]
    Fail, raising [ParsingError m]
-*)
+ *)
     let message m _ =  raise (ParsingError m)
 
     let error ?msg inp =  
@@ -456,10 +454,10 @@ module Grammars  =
 
 
 (**********
-*
-* Gtype parsers
-*
-**********)
+ *
+ * Gtype parsers
+ *
+ **********)
 
 (** 
    [mk_type_binary_constr inf t]
@@ -529,11 +527,10 @@ module Grammars  =
       try Pkit.get comp mk inp
       with No_match -> raise (ParsingError "(id) Not an identifier")
 
-
 (** 
    [primed_id inf]
    Read a type variable name.
-*)
+ *)
     let primed_id inf toks =
       let comp x =
 	match x with 
@@ -550,7 +547,7 @@ module Grammars  =
 (**
    [bool_type info]
    Parse type "bool"
-*)
+ *)
     let bool_type info toks =
       try 
 	((named_id info type_id (Basic.mk_name "bool"))
@@ -560,7 +557,7 @@ module Grammars  =
 (**
    [num_type info]
    Parse type "num"
-*)
+ *)
     let num_type info toks =
       try 
 	((named_id info type_id (Basic.mk_name "num"))
@@ -571,7 +568,7 @@ module Grammars  =
 (** [mk_short_id id inf]
    Parse a possibly qualified identifer with [id inf], 
    make it a short identifier.
-*)	  
+ *)	  
     let mk_short_id id inf toks =
       (long_id id inf >> (fun x -> Basic.name x)) toks
 
@@ -582,14 +579,14 @@ module Grammars  =
    [inner_types]: parse types built with infix/prefix/suffix operators.
    [atomic_types]: 
    Parse types satisfying the grammar
-     primed_id
+   primed_id
    | num_type
    | bool_type
    | '(' list0_sep inner_type ',' ')' long_id
    | '(' inner_type ')'
    | type_parsers
    | error
-*)
+ *)
     let rec inner_types inf toks =
       (operators (atomic_types inf, 
 		  (fun x -> mk_token_info (inf.type_token_info x)), 
@@ -600,7 +597,7 @@ module Grammars  =
 	 toks)
 (*
    Core Type Parsers:
-*)
+ *)
     and core_type_parsers = 
       [
        "primed_id", primed_id;
@@ -625,14 +622,14 @@ module Grammars  =
      ]
 (**
    Support for adding type parsers.
-*)
+ *)
     and 
 	type_parsers_list  =  ref core_type_parsers
 (**
    [type_parsers inf]
    Try each of the parsers in the list 
    [type_parsers_list].
-*)
+ *)
     and 
 	type_parsers inf toks = 
       named_alt (!type_parsers_list) inf toks
@@ -640,18 +637,18 @@ module Grammars  =
 (**
    [types inf]
    Toplevel for the type parser.
-*)
+ *)
     let rec types inf toks = 
       (clear_type_names inf; inner_types inf toks)
 	
 (**
    Support for adding type parsers.
-*)
+ *)
 
 (** 
    [add_type_parser pos n ph]
    Add type parser [ph] at position [pos] with name [n].
-*)
+ *)
     let add_type_parser pos n ph = 
       type_parsers_list:=
 	Lib.named_add (!type_parsers_list) pos n ph
@@ -659,16 +656,16 @@ module Grammars  =
 (** 
    [remove_type_parser n]
    Remove the type parser named [n].
-*)
+ *)
     let remove_type_parser n =
       type_parsers_list:=List.remove_assoc n (!type_parsers_list)
 
 
 (**********
-*
-*  Term parsers 
-*
-**********)
+ *
+ *  Term parsers 
+ *
+ **********)
 
 
 (* Utility functions for use with the term parser. *)
@@ -676,8 +673,8 @@ module Grammars  =
 (** 
    [mk_conn idsel inf t]
    Construct a function application term from a binary operator.
-*)
-  
+ *)
+	  
     let mk_conn idsel inf t= 
       let lookup x =
 	try inf.token_info x
@@ -696,8 +693,8 @@ module Grammars  =
 (**
    [mk_prefix idsel inf t]
    Construct a function application term from a unary operator.
-  
-*)
+   
+ *)
     let mk_prefix idsel inf t= 
       let lookup x =
 	try inf.token_info x
@@ -718,7 +715,7 @@ module Grammars  =
    Make bound variables from the name-type pairs in [xs],
    add them to [inf.bound_names]
    [qnt] is the quantifier type (All, Ex or Lambda)
-*)
+ *)
     let qnt_setup_bound_names inf 
 	(qnt: Basic.quant_ty) (xs : (string* Basic.gtype) list) =
       List.map 
@@ -749,7 +746,7 @@ module Grammars  =
    [mkcomb f args]
    Make the term ((((f a1) a2) .. ) an)
    (where args = [a1; a2; ..; an])
-*)
+ *)
     let rec mk_comb x y = 
       match y with 
 	[] -> x
@@ -757,7 +754,7 @@ module Grammars  =
 
 (** [number]
    Read a number.
-*)
+ *)
     let number inp = 
       let comp x = match x with NUM _ -> true | _ -> false 
       and mk x = 
@@ -770,7 +767,7 @@ module Grammars  =
 
 (** [boolean]
    Read a boolean.
-*)
+ *)
     let boolean inp = 
       let comp x = match x with BOOL _ -> true | _ -> false 
       and mk x = 
@@ -786,7 +783,7 @@ module Grammars  =
    [optional_type inf]
    parse optional type.
    { ':' types }?
-*)
+ *)
     let optional_type inf =     
       ( (( !$(Sym COLON) -- (types inf)) >> (fun (_, ty) -> Some(ty)))
       || (empty >> (fun x -> None))) 
@@ -803,7 +800,7 @@ module Grammars  =
 (** 
    [id_type_opt idnt inf]
    parse identifier [idnt inf] with optional type.
-*)
+ *)
     let id_type_opt idnt inf toks=
       (( (((!$(Sym ORB)) -- (idnt inf) 
 	     -- (!$(Sym COLON))-- (types inf) -- (!$(Sym CRB)))
@@ -839,7 +836,7 @@ module Grammars  =
    formula: prefix/infix/suffix operators built around typed_primary.
    typed_primary: primary optional_type
    primary:
-     '(' form ')'
+   '(' form ')'
    | 'ALL' { id_type_opt }+ ':' form
    | 'EX' { id_type_opt }+ ':' form
    | 'LAM' { id_type_opt }+ ':' form
@@ -848,7 +845,7 @@ module Grammars  =
    | boolean
    | alternative_parsers
    | error 
-*)
+ *)
     let rec form inf toks =
       (
        ((formula inf)-- (listof (formula inf)))
@@ -875,14 +872,14 @@ module Grammars  =
 
 (** [term_parsers_list] 
    list of term parsers.
-*)
+ *)
     and 
 	term_parsers_list  = ref core_term_parser_list
 (**
    [core_term_parser_list]
 
    The primary term parsers are stored in a named list.
-*)
+ *)
     and core_term_parser_list = 
       [ 
 (* id '(' id ':' type ')' *)
@@ -906,7 +903,7 @@ module Grammars  =
 			     -- (!$(Sym COLON)))))
 	       >> 
 	     (fun (_, (v, (vs, _))) ->
-		 qnt_setup_bound_names inf Basic.All (v::vs)))
+	       qnt_setup_bound_names inf Basic.All (v::vs)))
 	      -- (form inf))
 	     >> 
 	   (fun ((xs:(string*Basic.term)list), body) -> 
@@ -935,35 +932,35 @@ module Grammars  =
 			     -- (!$(Sym COLON)))))
 	       >> 
 	     (fun (_, (v, (vs, _))) ->
-		 qnt_setup_bound_names inf Basic.Lambda (v::vs)))
+	       qnt_setup_bound_names inf Basic.Lambda (v::vs)))
 	      -- (form inf))
 	     >> 
 	   (fun ((xs:(string*Basic.term)list), body) ->
-	       qnt_term_remove_names inf xs body)))
+	     qnt_term_remove_names inf xs body)))
       ]
 
 (**
    [term_parsers inf tok]
    parse using parsers in [term_parsers_list].
-*)
+ *)
     and term_parsers inf toks = 
       named_alt (!term_parsers_list) inf toks
 
 (**
    Support addition of parsers.
-*)
+ *)
 
 (**
    [add_parser pos n ph]
    Add term parser [ph] with name [n] in position [pos].
-*)
+ *)
     let add_parser pos n ph = 
       term_parsers_list:=Lib.named_add (!term_parsers_list) pos n ph
 
 (**
    [remove_parser n]
    Remove term parser named [n].
-*)
+ *)
     let remove_parser n = 
       term_parsers_list:=List.remove_assoc n (!term_parsers_list)
 
@@ -972,7 +969,7 @@ module Grammars  =
    Parse a definition.
    Grammar:
    (id_type_opt short_id) (id_type_opt short_id)* '=' form
-*)
+ *)
     let rec lhs inf toks=
       ((((id_type_opt (short_id id) inf) 
 	   -- (args_opt inf))
@@ -983,7 +980,7 @@ module Grammars  =
       (((optional (repeat (id_type_opt (short_id id) inf)))
 	  -- (!$(mk_symbol Logicterm.equalssym)))
 	 >> (fun (x, _) -> match x with None -> [] | Some l -> l))
-      || error ~msg:"badly formed argument list for definition"
+    || error ~msg:"badly formed argument list for definition"
     and defn inf toks =
       (
        (((lhs inf) -- (form inf))
@@ -997,22 +994,22 @@ module Grammars  =
    Parse a type definition.
    Grammar:
    typedef ::= simple_typedef
-            | subtypedef
+   | subtypedef
 
    simple_typedef::= ('(' {primed_id}* ')')? short_id ( '=' type )?
    subtypedef ::= type ':' term
-*)
+ *)
 
     let simple_typedef inf toks = 
       (((optional 
-	  ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-	     >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
-	 -- 
-	 ((short_id type_id inf)
-	    -- 
-	    (optional 
-	       (((!$(mk_symbol Logicterm.equalssym))
-		   -- (types inf)) >> (fun (_, x) -> x)))))
+	   ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
+	      >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
+	  -- 
+	  ((short_id type_id inf)
+	     -- 
+	     (optional 
+		(((!$(mk_symbol Logicterm.equalssym))
+		    -- (types inf)) >> (fun (_, x) -> x)))))
 	 >> (fun (args, (name, defn)) 
 	   -> (name, args, defn))) toks
 
@@ -1031,8 +1028,8 @@ module Grammars  =
 	   >> (fun ((ty, _), f) -> (ty, f))) inp
       in 
       ((lhs -- (!$(mk_symbol Logicterm.equalssym)) -- rhs) 
-	>> (fun (((args, name), _), (ty, trm)) 
-	    -> (name, args, ty, trm))) toks
+	 >> (fun (((args, name), _), (ty, trm)) 
+	   -> (name, args, ty, trm))) toks
 
 
     let typedef inf toks = 
@@ -1050,7 +1047,7 @@ module Grammars  =
 
 (**
    Toplevel for parsing functions
-*)
+ *)
 
 open Lexer
 open Logicterm
@@ -1099,12 +1096,12 @@ let type_reserved_words =  []
 (*
    token_info_list/type_token_info_list:
    information about symbols which do not map to identifiers 
-*)
+ *)
 let token_info_list = []
 
 let type_token_info_list = []
 
-(* Symbol tables *)
+(* Symbol and token tables *)
 
 let symtable_size=51
 
@@ -1118,7 +1115,7 @@ let type_token_table=Grammars.token_table_new()
    add_symbol sym tok:
    add sym as symbol representing token tok.
    fail silently if sym already exists
-*)
+ *)
 let add_symbol sym tok=
   try
     symbols:=Lexer.add_sym (!symbols) sym tok
@@ -1129,12 +1126,59 @@ let find_symbol sym= Lexer.find_sym (!symbols) sym
 let remove_symbol sym =
   symbols:=Lexer.remove_sym (!symbols) sym
 
+(*
+   Overloading 
+
+   Overload table 
+*)
+let overload_table = Hashtbl.create 127
+
+let init_overload () = Hashtbl.clear overload_table
+
+let get_overload_list sym =
+    Hashtbl.find overload_table sym
+
+let add_overload sym (id, ty) =
+  let list0 = 
+    try 
+      get_overload_list sym
+    with Not_found -> []
+  in 
+  let list1=(id, ty)::list0
+  in 
+  Hashtbl.replace overload_table sym list1
+  
+let remove_overload sym id =
+  let list0 = get_overload_list sym
+  in 
+  let list1 = 
+    List.remove_assoc id list0
+  in 
+  match list1 with
+    [] -> Hashtbl.remove overload_table sym
+  | _ -> Hashtbl.replace overload_table sym list1
+
+let print_overloads info = 
+  let print_fn sym list= 
+    Format.printf "@[<2>%s@ " sym;
+    List.iter
+      (fun (id, ty) -> 
+	Printer.print_ident id;
+	Format.printf ":@ ";
+	Gtypes.print info ty;
+	Format.printf ";@ ")
+      list;
+    Format.printf "@]@,"
+  in 
+  Format.printf "@[<v>";
+  Hashtbl.iter print_fn overload_table;
+  Format.printf "@]"
 
 (*
    [add_token_info tok info]:
    add parsing information for the term token [tok]
    fail if token information exists
-*)
+ *)
 let add_token_info tok tok_info=
   Grammars.token_table_add token_table tok tok_info
 
@@ -1162,11 +1206,15 @@ let get_type_token_info tok =
 (* toplevel functions to add/remove tokens *)
 
 let add_token id sym fx pr=
-  add_symbol sym (Sym (OTHER sym));
+(* lexer information *)
+  add_symbol sym (Sym (OTHER sym)); 
+(* parser information *)
   add_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
 
 let add_type_token id sym fx pr=
+(* lexer information *)
   add_symbol sym (Sym (OTHER sym));
+(* parser information *)
   add_type_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
 
 let remove_token sym=
@@ -1197,10 +1245,10 @@ let init_type_token_table()=
 let init_symtab ()=
   init_symbols();
   init_type_token_table();
-  init_token_table()
+  init_token_table();
+  init_overload()
 
 let init ()= init_symtab ()
-
 
 (**
    Parsers
@@ -1251,3 +1299,239 @@ let test str =
   reader (scan (symtable())) term_parser str
 
 
+(**
+   [resolve_term env t]: Resolve the symbols in term [t].
+   For each free variable [Free(s, ty)] in [t], 
+   Lookup [s] in [env] to get long identifier [id]. 
+   If not found, use [Free(s, ty)].
+   If found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
+ *)
+(*
+let rec resolve_aux scp env term =
+  let lookup s ty = env s ty
+  in 
+  match term with 
+    Basic.Id _ -> term
+  | Basic.Bound _ -> term
+  | Basic.App (l, r) -> 
+      let nl = resolve_aux scp env l
+      in 
+      let nr = resolve_aux scp env r
+      in 
+      Basic.App(nl, nr)
+  | Basic.Qnt(q, b, body) ->
+      let nbody = resolve_aux scp env body
+      in 
+      Basic.Qnt(q, b, nbody)
+  | Basic.Const _ -> term
+  | Basic.Typed(tt, ty) -> 
+      let ntt = resolve_aux scp env tt
+      in 
+      Basic.Typed(ntt, ty)
+  | Basic.Free (s, ty) -> 
+      let found = 
+	try Some(lookup s ty)
+	with Not_found -> None
+      in 
+      match found with
+	None -> term
+      | Some(id, id_type) -> Basic.Id(id, ty)
+*)
+open Basic
+  
+let memo_find cache find table n =
+  try
+    Lib.find n cache
+  with Not_found -> 
+    let ret = find n table 
+    in 
+    (ignore(Lib.bind n ret cache); ret)
+
+type resolve_memo =
+    { 
+      types : (Basic.ident, Basic.gtype)Hashtbl.t;
+      idents: (string, Basic.ident)Hashtbl.t;
+      symbols : (string, Basic.ident)Hashtbl.t
+    }
+
+type resolve_arg =
+    {
+     scp: Scope.t;
+     inf : int ref;
+     memo: resolve_memo;
+     lookup: (string -> gtype -> (ident * gtype))
+   }
+     
+let rec resolve_aux data env expty term =
+  let ident_find n s = 
+    let thy = Scope.thy_of_term s n
+    in 
+    Basic.mk_long thy n
+  in 
+  let find_ident n = 
+    (try 
+      Some (memo_find data.memo.idents ident_find data.scp n)
+    with Not_found -> None)
+  in 
+  let type_find n s = Scope.type_of s n
+  in 
+  let find_type n = 
+    (try 
+      Some (memo_find data.memo.types type_find data.scp n)
+    with Not_found -> None)
+  in 
+  let find_sym n ty= 
+    try Some(data.lookup n ty)
+    with Not_found -> None
+  in 
+  match term with
+    Id(n, ty) -> 
+      let (ty0, env0)=
+	try (expty, Gtypes.unify_env data.scp expty ty env)
+	with _ -> (ty, env)
+      in 
+      (Id(n, ty0), ty0, env0)
+  | Free(n, ty) -> 
+      let (ty0, env0)=
+	try (expty, Gtypes.unify_env data.scp expty ty env)
+	with _ -> (ty, env)
+      in 
+      let ty1=
+	try Gtypes.mgu ty0 env0
+	with _ -> ty0
+      in 
+      (match (find_sym n ty1) with
+	None -> 
+	  (Free(n, ty1), ty1, env0)
+      | Some(id2, ty2) -> 
+	  resolve_aux data env0 ty1 (Id(id2, ty2)))
+  | Bound(q) -> 
+      let ty = Term.get_binder_type term
+      in
+      let (ty0, env0)=
+	try (expty, Gtypes.unify_env data.scp expty ty env)
+	with _ -> (ty, env)
+      in 
+      (term, ty0, env0)
+  | Const(c) ->
+      let ty = Logicterm.typeof_cnst c
+      in
+      let (ty0, env0)=
+	try (ty, Gtypes.unify_env data.scp expty ty env)
+	with _ -> (ty, env)
+      in 
+      (term, ty0, env0)
+  | Typed(trm, ty) -> 
+      let (ty0, env0)=
+	try (expty, Gtypes.unify_env data.scp expty ty env)
+	with _ -> (ty, env)
+      in 
+      let trm1, nty1, env1 = 
+	resolve_aux data env0 ty trm
+      in 
+      let (nty2, env2)=
+	try (nty1, Gtypes.unify_env data.scp ty nty1 env1)
+	with _ -> (nty1, env1)
+      in 
+      (Typed(trm1, nty2), nty2, env2)
+  | App(lf, a) -> 
+      let argty = Gtypes.mk_typevar data.inf
+      in 
+      let rty0 = Gtypes.mk_typevar data.inf
+      in 
+      let (rty1, env1)=
+	try (expty, Gtypes.unify_env data.scp rty0 expty env)
+	with _ -> (rty0, env)
+      in 
+      let fty0 = Logicterm.mk_fun_ty argty rty1
+      in 
+      let (atrm, aty, aenv) = 
+	resolve_aux data env1 (Gtypes.mgu argty env1) a
+      in  
+      let (ftrm, fty, fenv) = 
+	resolve_aux data aenv (Gtypes.mgu fty0 aenv) lf
+      in 
+      (App(ftrm, atrm), (Gtypes.mgu rty1 fenv), fenv)
+  | Qnt(Lambda, qnt, body) ->
+      let aty = Term.get_qnt_type term 
+      and rty = Gtypes.mk_typevar data.inf
+      in 
+      let nty0 = Logicterm.mk_fun_ty aty rty
+      in 
+      let (nty1, env1)=
+	try (expty, Gtypes.unify_env data.scp nty0 expty env)
+	with _ -> (nty0, env)
+      in 
+      let (body1, bty, benv) = 
+	resolve_aux data env1 rty body
+      in
+      (Qnt(Lambda, qnt, body1), nty1, benv)
+  | Qnt(qty, qnt, body) -> 
+      let (nty1, env1)=
+	try (expty, Gtypes.unify_env data.scp Gtypes.mk_bool expty env)
+	with _ -> (expty, env)
+      in 
+      let (body1, bty, benv)=
+	resolve_aux data env1 nty1 body
+      in 
+      (Qnt(qty, qnt, body1), nty1, benv)
+
+let resolve_term scp lookup term=
+  let rmemo=
+    { 
+      types = Lib.empty_env(); idents=Lib.empty_env();
+      symbols=Lib.empty_env()
+    }
+  in 
+  let data = 
+    { 
+      scp = scp;
+      inf= ref 0;
+      memo = rmemo;
+      lookup = lookup
+    }
+  in 
+  let expty = Gtypes.mk_null()
+  in 
+  let (term1, ty1, subst) = 
+    resolve_aux data (Gtypes.empty_subst()) expty term
+  in 
+  term1
+
+(* 
+   find_type ty list: 
+   return first identifier-type pair in list 
+   where ty matches the type.
+   
+   Matching is by equality.
+ *)
+let rec find_type scp ty list =
+  let matching_types t1 t2 = 
+    try
+      ignore(Gtypes.unify scp t1 t2); true
+    with _ -> false
+  in 
+  let default = 
+    match list with 
+      [] -> None
+    | (x::_) -> Some x
+  in 
+  match list with
+    [] -> 
+      raise Not_found
+(* Lib.dest_option ~err:Not_found default *)
+  | ((id, id_type)::xs) -> 
+      if matching_types ty id_type
+      then (id, id_type)
+      else find_type scp ty xs
+
+let make_lookup scp db s ty= 
+  let type_list = db s
+  in 
+  let (id, id_type) = find_type scp ty type_list
+  in 
+  (id, id_type)
+
+
+let ovl scp= 
+  make_lookup scp get_overload_list 
