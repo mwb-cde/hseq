@@ -21,7 +21,7 @@ module BaseTheory:
     end
 
 (** Parser-Printer for If-Then-else *)
-module BoolPP :
+module PP :
   sig
     open Parser.Pkit
     open Parser.Grammars

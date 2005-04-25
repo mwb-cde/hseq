@@ -147,13 +147,26 @@ let end_theory ?(save=true) () =
 let add_pp_rec selector id rcrd=
   Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
-  then Global.PP.add_term_pp_record id rcrd
-  else Global.PP.add_type_pp_record id rcrd
+  then 
+    Global.PP.add_term_pp_record id rcrd
+  else 
+    Global.PP.add_type_pp_record id rcrd
       
+let add_overload sym id = 
+  let ty = 
+    Thydb.get_id_type (Basic.thy_of_id id) (Basic.name id) (theories())
+  in 
+  Parser.add_overload sym (id, ty)
+let remove_overload sym id =
+  Parser.remove_overload sym id
+
 let add_term_pp id prec fx repr=
   let rcrd=Printer.mk_record prec fx repr
   in 
-  add_pp_rec Basic.fn_id id rcrd
+  add_pp_rec Basic.fn_id id rcrd;
+  match repr with
+    None -> ()
+  | Some(sym) -> add_overload sym id
 
 let add_type_pp id prec fx repr=
   let rcrd=Printer.mk_record prec fx repr

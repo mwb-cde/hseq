@@ -132,7 +132,8 @@ let build_thy_file f=
     Unsafe.use_file ~silent:false  (find_file tf);
     Result.warning ("Built theory "^f)
   with Not_found ->
-    raise (Result.error ("Can't find script to build theory "^f))
+    (Result.warning ("Failed to build theory "^f);
+     raise (Result.error ("Can't find script to build theory "^f)))
 
 let find_thy_file f =
   let tf = f^thy_suffix
@@ -240,7 +241,19 @@ let add_loaded_term_pp th =
   and pp_list = List.rev th.Theory.cid_pps
   in 
   let add_pp (id, rcrd) = 
-      PP.add_id_record (Basic.mk_long thy_name id) rcrd
+    PP.add_id_record (Basic.mk_long thy_name id) rcrd;
+    let repr = rcrd.Printer.repr
+    in 
+    match repr with
+      None -> ()
+    | Some(sym) -> 
+	(try
+	  let id_record = List.assoc id th.Theory.cdefns
+	  in 
+	  let id_type = id_record.Theory.typ
+	  in 
+	  Parser.add_overload sym (Basic.mk_long thy_name id, id_type)
+	with _ -> ())
   in 
   List.iter add_pp pp_list
 
@@ -249,7 +262,7 @@ let add_loaded_type_pp th =
   and pp_list = List.rev th.Theory.ctype_pps
   in 
   let add_pp (id, rcrd) = 
-      PP.add_type_record (Basic.mk_long thy_name id) rcrd
+    PP.add_type_record (Basic.mk_long thy_name id) rcrd
   in 
   List.iter add_pp pp_list
 
@@ -314,17 +327,9 @@ let read_defn x =
     catch_parse_error (Parser.read defn_parser) x
   in (l, r)
 
-(*
-   let read_type_defn x =
-   let (l, args, r)= 
-   catch_parse_error 
-   (Parser.read Parser.typedef_parser) x
-   in (match args with None -> (l, [], r) | Some(a) -> (l, a, r))
- *)
 let read_type_defn x =
   catch_parse_error 
     (Parser.read Parser.typedef_parser) x
-
 
 let read_type x = 
   catch_parse_error

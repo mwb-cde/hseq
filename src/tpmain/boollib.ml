@@ -61,7 +61,7 @@ module BaseTheory=
 
   end
 
-module BoolPP = 
+module PP = 
   struct
 
 (*
@@ -1353,7 +1353,7 @@ let equals_tac ?f g =
  ***)
 
 let init_boollib()= 
-  BoolPP.init()
+  PP.init()
 
 let _ = Global.add_init init_boollib
 

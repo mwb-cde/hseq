@@ -43,9 +43,7 @@ let set_directorys ()=
    [starting_mesg()]: Print a Start Up message.
 *)
 let starting_mesg()=
-  Format.open_box 0;
-  Format.print_string "Starting up...";
-  Format.close_box()
+  Format.printf "@[<v>Starting up...@,@]"
 
 let load_init () = 
   let initfile=Settings.make_filename Settings.init_file

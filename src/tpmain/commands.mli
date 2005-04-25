@@ -61,8 +61,9 @@ val end_theory : ?save:bool -> unit -> unit
 (* Parsing/Printing manipulation *)
 
 val add_pp_rec: Basic.id_selector -> Basic.ident -> Printer.record -> unit
-val add_term_pp: Basic.ident -> int -> fixity -> string option -> unit
 val add_type_pp: Basic.ident -> int -> fixity -> string option -> unit
+val add_term_pp: Basic.ident -> int -> fixity -> string option -> unit
+val add_overload: string -> Basic.ident -> unit
 
 val remove_pp_rec : Basic.id_selector -> Basic.ident -> unit
 val remove_term_pp : Basic.ident -> unit
