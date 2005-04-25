@@ -14,11 +14,6 @@
 
    [simp: property]: Mark as of interest to the simplifier.
 *)
-
-(*
-type property = exn
-val simp_property: property
-*)
 type property = string
 val simp_property: property
 
@@ -28,20 +23,12 @@ type id_record =
     {
      typ: Basic.gtype;
      def: Logic.thm option;
-(*
-     infix: bool;
-     prec: int ;
-*)
      dprops : property list
    }
 type id_save_record =
     {
      sty: Basic.gtype;
      sdef: Logic.saved_thm option;
-(*
-     sinfix: bool;
-     sprec: int ;
-*)
      sdprops: property list
    }
 
@@ -56,7 +43,7 @@ type thm_save_record =
      sprops: property list
    }
 
-(*
+(**
    [thy] The type of theories 
    a theory has a name and zero or more parent theories 
    if a theory is protected then it cannot be extended 
