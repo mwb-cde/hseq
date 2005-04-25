@@ -223,18 +223,19 @@ module type GRAMMARS =
    Used by operators parser.
 *)
       type token_info = 
-	  { fixity: Info.fixity;
+	  { 
+	    fixity: Info.fixity;
 	    prec: int
 	  }
 
-  (* 
-      operators(ph, info, binop, unaryopy):
-      ph: parser for basic (atomic) terms, such as numbers, bools etc
-      info: return fixity information about a token
-      binop: function to combine two arguments and a token
-      unaryop: function to combine one argument and a token
-  *)
+  (**
+      [operators(ph, info, binop, unaryopy):]
 
+      [ph]: parser for basic (atomic) terms, such as numbers, bools etc
+      [info]: return fixity information about a token
+      [binop]: function to combine two arguments and a token
+      [unaryop]: function to combine one argument and a token
+   *)
       val operators :
         'a phrase * (token -> token_info) * (token -> 'a -> 'a -> 'a) *
         (token -> 'a -> 'a) -> 'a phrase
