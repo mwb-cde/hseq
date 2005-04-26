@@ -230,6 +230,7 @@ let pplookup ppstate id =
       Printer.default_type_fixity
       None
 
+(*
 let rec print_type ppstate pr t = 
   let print_aux ppstate pr x=
     match x with
@@ -296,6 +297,102 @@ and print_defined ppstate prec (f, args) =
 
 let print ppinfo x =
   print_type ppinfo 0 x
+*)
+
+let print_bracket = Printer.print_assoc_bracket
+
+let rec print_type ppstate pr t = 
+  let print_aux ppstate pr x=
+    match x with
+      Var(_) -> 
+	Format.printf "@[<hov 2>'%s@]" (get_var x)
+    | WeakVar(_) -> 
+	Format.printf "@[<hov 2>_%s@]" (get_weak x)
+    | Base(b) -> 
+	Format.printf "@[<hov 2>%s@]" (Basic.string_btype b)
+    | Constr(Defined op, args) -> 
+	print_defined ppstate pr (op, args)
+  in 
+  print_aux ppstate pr t;
+and print_defined ppstate (assoc, prec) (f, args) =
+  let pprec = pplookup ppstate f
+  in 
+  let nfixity = pprec.Printer.fixity
+  in 
+  let (nassoc, nprec) = 
+    (Printer.assoc_of nfixity, pprec.Printer.prec)
+  in 
+  try 
+    let printer = Printer.get_printer (ppstate.Printer.types) f
+    in 
+    printer prec (f, args)
+  with Not_found -> 
+    if(Printer.is_infix nfixity)
+    then 
+      (match args with
+	[] -> ()
+      | (lf::lr::rs) -> 
+	  Format.printf "@[<hov 2>";
+	  print_bracket (assoc, prec) (nassoc, nprec)
+	     "(";
+	  print_type ppstate (Printer.left_assoc, nprec) lf;
+	  Printer.print_space();
+	  Printer.print_identifier (pplookup ppstate) f;
+	  Printer.print_space();
+	  print_type ppstate (Printer.right_assoc, nprec) lr;
+	  Printer.print_list 
+	    (print_type ppstate (nassoc, nprec), 
+	     Printer.print_space) 
+	    rs; 
+	  print_bracket (assoc, prec) (nassoc, nprec) ")";
+	  Format.printf "@]"
+      | (lf::rs) -> 
+	  Format.printf "@[<hov 2>";
+	  print_bracket (assoc, prec) (nassoc, nprec)
+	     "(";
+	  print_type ppstate (Printer.left_assoc, nprec) lf;
+	  Printer.print_space();
+	  Printer.print_identifier (pplookup ppstate) f;
+	  Printer.print_space();
+	  Printer.print_list 
+	    (print_type ppstate (nassoc, nprec), 
+	     Printer.print_space) 
+	    rs; 
+	  print_bracket (assoc, prec) (nassoc, nprec) ")";
+	  Format.printf "@]")
+    else 
+      if(Printer.is_suffix nfixity)
+      then 
+	(Format.printf "@[<hov 2>";
+	 print_bracket 
+	   (assoc, prec) (nassoc, nprec) "(";
+	 Printer.print_suffix 
+	   ((fun pr -> Printer.print_identifier (pplookup ppstate)), 
+	    (fun pr l-> 
+	      match l with 
+		[] -> ()
+	      |_ -> Printer.print_sep_list
+		    (print_type ppstate (assoc, pr), ",") l))
+	   nprec (f, args);
+	 print_bracket (assoc, prec) 
+	   (nassoc, nprec) ")";
+	 Format.printf "@]")
+      else 
+	(Format.printf "@[<hov 2>";
+	 (match args with 
+	   [] -> ()
+	 | _ -> 
+	     (Printer.print_string "(";
+	      Printer.print_sep_list 
+		(print_type ppstate (assoc, prec), ",") args;
+	      Format.printf ")@,"));
+	 Printer.print_identifier (pplookup ppstate) f;
+	 Format.printf "@]")
+
+
+let print ppinfo x =
+  print_type ppinfo 
+    (Printer.default_type_assoc, Printer.default_type_prec) x
 
 (* Error handling *)
 
@@ -527,8 +624,6 @@ let rec subst t env =
    Only used to rewrite the rhs of a definition,
    instantiating its variables with the values of the given arguments.
 *)
-
-
 let rec rewrite_subst t env =
   match t with 
     Var(a) -> 

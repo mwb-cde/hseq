@@ -249,8 +249,36 @@ val retype_pretty: Gtypes.substitution -> term
 
 (* Pretty printing *)
 
+val print_bracket:
+    (Printer.assoc * int) -> (Printer.assoc * int)
+      -> string Printer.printer
+
+val print_infix: 
+    (((Printer.assoc * int) -> Basic.ident Printer.printer)
+       * ((Printer.assoc * int) -> term Printer.printer))
+    -> (Printer.assoc * int) 
+      -> (Basic.ident * (term)list) Printer.printer
+val print_prefix: 
+    (((Printer.assoc * int) -> Basic.ident Printer.printer)
+       * ((Printer.assoc * int) -> term Printer.printer))
+    -> (Printer.assoc * int) 
+      -> (Basic.ident * (term)list) Printer.printer
+val print_suffix: 
+    (((Printer.assoc * int) -> Basic.ident Printer.printer)
+       * ((Printer.assoc * int) -> term Printer.printer))
+    -> (Printer.assoc * int) 
+      -> (Basic.ident * (term)list) Printer.printer
+
+val print_fn_app :
+    Printer.ppinfo 
+  -> (((Printer.assoc * int) -> Basic.ident Printer.printer)
+	* ((Printer.assoc * int) -> term Printer.printer))
+    -> (Printer.assoc * int)
+      -> (Basic.ident * (term)list) Printer.printer
+
 val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
-val print_term : Printer.ppinfo -> int -> term Printer.printer
+val print_term : 
+    Printer.ppinfo -> (Printer.assoc * int) -> term Printer.printer
 
 (**
    [simple_print_fn_app]
@@ -258,7 +286,8 @@ val print_term : Printer.ppinfo -> int -> term Printer.printer
    print an application as 'f a1 a2 .. an'
 *)
 val simple_print_fn_app: 
-    Printer.ppinfo -> int -> (Basic.ident * term list) Printer.printer
+    Printer.ppinfo -> (Printer.assoc * int) 
+      -> (Basic.ident * term list) Printer.printer
 
 val print : Printer.ppinfo -> term -> unit
 val print_simple: term -> unit

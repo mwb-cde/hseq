@@ -311,7 +311,8 @@ val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
    generating consistent pretty variable names.  Update [tbl] with the
    new substitution of new names for old 
 *)
-val print_type : Printer.ppinfo -> int -> gtype Printer.printer
+val print_type : 
+    Printer.ppinfo -> (Printer.assoc * int) -> gtype Printer.printer
 
 val print : Printer.ppinfo -> gtype Printer.printer
 
