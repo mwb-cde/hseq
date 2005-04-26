@@ -52,7 +52,6 @@ module Info :
     type fixity =
 	Nonfix | Prefix | Suffix | Infix of associativity
 	  
-
     val nonfix : fixity
     val infix : associativity -> fixity
     val prefix : fixity
@@ -70,6 +69,7 @@ module Info :
     val is_left_assoc: fixity -> bool
     val is_right_assoc: fixity -> bool
     val is_non_assoc: fixity -> bool
+    val assoc_of : fixity -> associativity
   end
 
 

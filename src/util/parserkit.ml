@@ -92,6 +92,10 @@ module Info =
     let is_non_assoc a = 
       match a with Infix Nonassoc -> true | _ -> false
 
+    let assoc_of a = 
+      match a with 
+	Infix x -> x
+      | _ -> Nonassoc
   end
     
 module type TOKENS =
