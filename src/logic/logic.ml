@@ -180,8 +180,12 @@ module Skolem =
       in 
       let nnames = Lib.replace n (nm_int+1) names
       in 
+(*
       let nm_s = (n^(Lib.int_to_name nm_int))
-      in (nm_s, nnames)
+*)
+      let nm_s = (Lib.int_to_name nm_int)
+      in 
+      (nm_s, nnames)
 
     let mk_new_skolem info=
       (* tyname: if ty is a variable then use its name for the
