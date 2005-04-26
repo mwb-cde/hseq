@@ -72,13 +72,14 @@ module PP =
 
     let negation_printer ppstate prec (f, args)=
       let cprec= negation_pprec.Printer.prec
+      and assoc = Printer.default_term_assoc
       in 
       match args with 
       (t::rest) -> 
 	Format.printf "@[<2>";
 	Printer.print_bracket prec cprec "(";
 	Format.printf "~";
-	Term.print_term ppstate cprec t;
+	Term.print_term ppstate (assoc, cprec) t;
 	Printer.print_bracket prec cprec ")";
 	Format.printf "@]";
 	(match rest with
@@ -87,12 +88,12 @@ module PP =
 	    Format.printf "@[";
 	    Printer.print_list
 	      ((fun x ->
-		Term.print_term ppstate prec x),
+		Term.print_term ppstate (assoc, prec) x),
 	       (fun () -> Format.printf "@ "))
 	      rest;
 	    Format.printf "@]")
       | _ -> 
-	  Term.simple_print_fn_app ppstate cprec (f, args)
+	  Term.simple_print_fn_app ppstate (assoc, cprec) (f, args)
 
     let init_negation_printer()=
       Global.PP.add_term_printer Logicterm.notid negation_printer
@@ -133,6 +134,8 @@ module PP =
 (* Printer for If-Then-Else *)
 
     let ifthenelse_printer ppstate prec (f, args)=
+      let cassoc = Printer.default_term_assoc
+      in 
       let cprec=(ifthenelse_pprec.Printer.prec)
       in 
       match args with 
@@ -140,11 +143,11 @@ module PP =
 	  Format.printf "@[<2>";
 	  Printer.print_bracket prec cprec "(";
 	  Format.printf "if@ ";
-	  Term.print_term ppstate cprec b;
+	  Term.print_term ppstate (cassoc, cprec) b;
 	  Format.printf "@ then@ ";
-	  Term.print_term ppstate cprec tbr;
+	  Term.print_term ppstate (cassoc, cprec) tbr;
 	  Format.printf "@ else @ ";
-	  Term.print_term ppstate cprec fbr;
+	  Term.print_term ppstate (cassoc, cprec) fbr;
 	  Printer.print_bracket prec cprec  ")";
 	  if(prec<cprec) then Format.printf "@ " else ();
 	  Format.printf "@]";
@@ -154,12 +157,12 @@ module PP =
 	      Format.printf "@[";
 	      Printer.print_list
 		((fun x ->
-		  Term.print_term ppstate prec x),
+		  Term.print_term ppstate (cassoc, prec) x),
 		 (fun () -> Format.printf "@ "))
 		rest;
 	      Format.printf "@]")
       | _ -> 
-	  Term.simple_print_fn_app ppstate cprec (f, args)
+	  Term.simple_print_fn_app ppstate (cassoc, cprec) (f, args)
 
     let init_ifthenelse_printer()=
       Global.PP.add_term_printer ifthenelse_id
