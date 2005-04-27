@@ -35,17 +35,17 @@ let print_simple trm=
     | Free(n, ty) -> Format.printf "@[%s@]"  n
     | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
     | Typed (trm, ty) ->
-	Format.printf "@[%s" "(";
+	Format.printf "@[<2>%s" "(";
 	print_aux trm;
 	Format.printf "@ %s %s)@]" ":" (Gtypes.string_gtype ty)
     | App(t1, t2) ->
-	Format.printf "@[(";
+	Format.printf "@[<2>(";
 	print_aux t1;
 	Format.printf "@ ";
 	print_aux t2;
 	Format.printf ")@]"
     | Qnt(k, q, body) ->
-	Format.printf "@[%s"  (Basic.quant_string k);
+	Format.printf "@[<2>%s"  (Basic.quant_string k);
 	Format.printf "(%s:@ %s) :@ "  
 	  (binder_name q)
 	  (Gtypes.string_gtype (binder_type q));
@@ -951,7 +951,6 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
       tpr (Printer.left_assoc, prec) l;
       Format.printf "@ ";
       opr (assoc, prec) f;
-      Format.printf "@ ";
       Printer.print_list (tpr (assoc, prec), Printer.print_space) rest;
       Format.printf "@]"
   | [] -> 
@@ -976,7 +975,7 @@ let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f,args)=
       if(Printer.is_suffix pprec.Printer.fixity)
       then print_suffix (fnpr, argpr)
       else 
-	print_infix (fnpr, argpr)
+	print_prefix (fnpr, argpr)
   in 
   Format.printf "@[<2>";
   print_bracket (assoc, prec) (nassoc, nprec) "(";
@@ -1000,8 +999,17 @@ let print_qnt ppstate q =
   in 
   print_typed_name ppstate (qvar, qtyp)
 
+(*
 let print_qnts ppstate prec (qnt, qs) =
   Format.printf "@[%s" (Basic.quant_string qnt);
+  Printer.print_list
+    (print_qnt ppstate, 
+     Printer.print_space) 
+    qs;
+  Format.printf":@]"
+*)
+let print_qnts ppstate prec (qnt, qs) =
+  Format.printf "@[%s" qnt;
   Printer.print_list
     (print_qnt ppstate, 
      Printer.print_space) 
@@ -1060,7 +1068,7 @@ let rec print_term ppstate (assoc, prec) x =
       Format.printf "@[";
       print_bracket (assoc, prec) (tassoc, tprec) "(";
       Format.printf "@[<hov 3>";
-      print_qnts ppstate tprec (qnt, qnts); 
+      print_qnts ppstate tprec (Basic.quant_string qnt, qnts); 
       Printer.print_space ();
       print_term ppstate (assoc, tprec) b;
       Format.printf "@]";
@@ -1075,10 +1083,30 @@ let print ppstate x =
   Format.close_box()
 
 let simple_print_fn_app ppstate (assoc, prec) (f, args)=
+  let pprec = pplookup ppstate f
+  in 
+  let fixity = pprec.Printer.fixity
+  in 
+  let (nassoc, nprec) = (Printer.assoc_of fixity, pprec.Printer.prec)
+  in 
   let iprint (a, pr) = Printer.print_identifier (pplookup ppstate) 
   and tprint (a, pr) = print_term ppstate (a, pr)
   in 
+  Format.printf "@[<2>";
+  print_bracket (assoc, prec) (nassoc, nprec) "(";
+  (if(Printer.is_infix pprec.Printer.fixity)
+  then print_infix (iprint, tprint) (assoc, prec) (f, args)
+  else 
+    if(Printer.is_suffix pprec.Printer.fixity)
+    then print_suffix (iprint, tprint) (assoc, prec) (f, args)
+    else 
+      print_prefix (iprint, tprint) (assoc, prec) (f, args));
+  print_bracket (assoc, prec) (nassoc, nprec) ")"; 
+  Format.printf "@]"
+
+(*
   print_fn_app ppstate (iprint, tprint) (assoc, prec) (f, args)
+*)
 
 (*
   Printer.print_operator
@@ -1434,3 +1462,79 @@ let close_term qnt free trm=
     List.fold_left (make_qnts qnt) (empty_subst(), 0, []) vars
   in 
   rebuild_qnt qnt (List.rev binders) (subst sb trm)
+
+
+
+(**
+   [print_as_binder (sym_assoc, sym_prec) f sym]
+   Construct a printer to print function applications
+   of the form [f (%x: P)] as [sym x: P].
+*)
+
+(* 
+   [strip_typed], [strip_fun_qnt]: support functions for [print_as_binder]. 
+*)
+
+ let rec strip_typed term =
+  match term with 
+    Basic.Typed(tt, _) -> strip_typed tt
+  | _ -> term
+
+let rec strip_fun_qnt f term qs = 
+  let is_ident t = 
+    if(is_var t)
+    then 
+      let n, _ = dest_var t
+      in f = n
+    else false
+  in 
+  let is_lambda b = 
+    (let (q, _, _) = Basic.dest_binding b
+    in 
+    (q=Basic.Lambda))
+  in 
+  match term with 
+    Basic.App(l, Basic.Qnt(qnts, q, body)) -> 
+      let l0=strip_typed l
+      in 
+      if not((is_ident l0) && (is_lambda q))
+      then (qs, term)
+      else 
+	strip_fun_qnt f body (q::qs)
+  | Basic.Typed(t, _) -> strip_fun_qnt f t qs
+  | _ -> (List.rev qs, term)
+
+let print_as_binder (sym_assoc, sym_prec) ident sym = 
+  let print_qnt ppstate (assoc, prec) arg =
+    let (qnts, body) = 
+      strip_fun_qnt ident (mk_app (mk_var ident) arg) []
+    in 
+    Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) "(";
+    Format.printf "@[<hov 3>";
+    print_qnts ppstate (sym_assoc, sym_prec) (sym, qnts); 
+    Printer.print_space ();
+    print_term ppstate (assoc, sym_prec) body;
+    Format.printf "@]";
+    Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) ")"
+  in 
+  let lambda_arg x = 
+    match x with
+      Basic.Qnt(qnt, q, body) -> qnt=Basic.Lambda
+    | _ -> false
+  in 
+  let printer ppstate prec (f, args) =
+    (match args with 
+      (a::rest) -> 
+	Format.printf "@[<2>";
+	(if(lambda_arg a)
+	then 
+	   print_qnt ppstate prec a
+	else 
+	  simple_print_fn_app ppstate prec (f, args));
+	Format.printf "@]"
+    | _ ->
+	Format.printf "@[";
+	Printer.print_identifier (pplookup ppstate) f;
+	Format.printf "@]")
+  in 
+  printer

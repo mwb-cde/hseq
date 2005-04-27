@@ -249,6 +249,10 @@ val retype_pretty: Gtypes.substitution -> term
 
 (* Pretty printing *)
 
+val print_qnts: 
+    Printer.ppinfo -> (Printer.assoc * int)
+      -> (string * (Basic.binders list)) Printer.printer 
+
 val print_bracket:
     (Printer.assoc * int) -> (Printer.assoc * int)
       -> string Printer.printer
@@ -292,6 +296,17 @@ val simple_print_fn_app:
 val print : Printer.ppinfo -> term -> unit
 val print_simple: term -> unit
    
+(**
+   [print_as_binder (sym_assoc, sym_prec) f sym]
+   Construct a printer to print function applications
+   of the form [f (%x: P)] as [sym x: P].
+*)
+val print_as_binder:
+    (Printer.assoc * int) -> Basic.ident -> string
+      -> Printer.ppinfo 
+	-> (Printer.assoc * int)
+	  -> (Basic.ident * Basic.term list) Printer.printer
+
 (* Error handling *)
 
 class termError : string -> term list ->
