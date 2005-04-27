@@ -172,12 +172,45 @@ module PP =
       init_ifthenelse_parser();
       init_ifthenelse_printer()
 
+
+(* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
+
+    let choice_ident = Basic.mk_long "base" "epsilon"
+    let choice_sym = "@"
+    let choice_pp = 
+      (Printer.default_term_assoc, Printer.default_term_prec) 
+
+    let epsilon_parser ()=
+      Parser.Grammars.parse_as_binder choice_ident choice_sym
+
+    let init_epsilon_parser ()=
+      Parser.add_symbol choice_sym (Lexer.Sym(Lexer.OTHER choice_sym));
+      Parser.add_term_parser 
+	(Lib.After "lambda") "epsilon" (epsilon_parser())
+	
+    let epsilon_printer ()= 
+      Term.print_as_binder choice_pp choice_ident choice_sym
+
+    let init_epsilon_printer () =
+      let printer = epsilon_printer()
+      in 
+      Global.PP.add_term_printer choice_ident 
+	(fun ppstate i -> printer ppstate (Printer.non_assoc, i))
+
+    let init_epsilon() = 
+      init_epsilon_parser();
+      init_epsilon_printer()
+
+(* PP Initialising functions *)
+
     let init_parsers () = 
-      init_ifthenelse_parser()
+      init_ifthenelse_parser();
+      init_epsilon_parser()
       
     let init_printers ()=
       init_negation_printer();
-      init_ifthenelse_printer()
+      init_ifthenelse_printer();
+      init_epsilon_printer() 
 
     let init() =
       init_printers();
