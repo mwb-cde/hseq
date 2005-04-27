@@ -202,7 +202,7 @@ module type GRAMMARS =
    Apply each of the parsers of [phs] in sequence, 
    starting with the first,
    fail if any fails.
-   return the result of as a list.
+   return the result as a list.
 *)
       val seq : ('a phrase) list -> ('a list)phrase
 
