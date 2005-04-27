@@ -1,8 +1,8 @@
 (*-----
- Name: parser.mli
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+Name: parser.mli
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 module Pkit :
     sig
@@ -24,7 +24,7 @@ module Pkit :
       val seq : ('a phrase) list -> ('a list)phrase
       val named_seq : 
 	  ('a -> ('b)phrase) Lib.named_list 
-	   -> 'a -> ('b list)phrase
+	-> 'a -> ('b list)phrase
 
       val optional : 'a phrase -> 'a option phrase
       val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
@@ -54,7 +54,7 @@ module Utility:
     sig
 (**
    Some useful parsers which can't really go into Parserkit.
-*)
+ *)
       open Pkit
 
 (**
@@ -74,12 +74,12 @@ module Utility:
 (**
    [typdef_data]:
    Information returned by the typedef parsers 
-*)
-    type typedef_data =
-	NewType of (string * (string list))
-      | TypeAlias of (string * (string list) * Basic.gtype)
-      | Subtype of (string * (string list) 
-		      * Basic.gtype * Basic.term)
+ *)
+type typedef_data =
+    NewType of (string * (string list))
+  | TypeAlias of (string * (string list) * Basic.gtype)
+  | Subtype of (string * (string list) 
+		  * Basic.gtype * Basic.term)
 
 module Grammars :
     sig
@@ -121,6 +121,13 @@ module Grammars :
       val get_term : string -> infotyp -> Basic.term
       val clear_names : infotyp -> unit
 
+      val qnt_setup_bound_names: 
+	  infotyp -> Basic.quant_ty -> (string * Basic.gtype) list 
+	    -> (string * Basic.term) list
+      val qnt_term_remove_names:
+	  infotyp -> (string * Basic.term) list 
+	    -> Basic.term -> Basic.term
+
       val lookup_type_name : string -> infotyp -> Basic.gtype
       val add_type_name : string -> Basic.gtype -> infotyp -> Basic.gtype
       val get_type : string -> infotyp -> Basic.gtype
@@ -152,9 +159,9 @@ module Grammars :
       val mk_prefix : 'a -> infotyp -> Lexer.tok -> Basic.term -> Basic.term
 
 (*
-ANTIQUOTATION NOT SUPPORTED
-val antiquote_parser : string phrase
-*)
+   ANTIQUOTATION NOT SUPPORTED
+   val antiquote_parser : string phrase
+ *)
 
 (* basic parsers *)
 
@@ -163,7 +170,7 @@ val antiquote_parser : string phrase
 
 (*
    id: identifiers which occur in terms
-*)
+ *)
       val id : infotyp -> Basic.ident phrase
 
 (*
@@ -197,10 +204,10 @@ val antiquote_parser : string phrase
       val inner_types : infotyp -> Basic.gtype Pkit.phrase
       val atomic_types : infotyp -> Basic.gtype phrase
 (*
-      val typedef :
-	  infotyp ->
-	    (string * string list option * Basic.gtype option)  phrase
-*)
+   val typedef :
+   infotyp ->
+   (string * string list option * Basic.gtype option)  phrase
+ *)
 
       val mk_comb : Basic.term -> Basic.term list -> Basic.term
       val id_type_opt :
@@ -241,6 +248,19 @@ val antiquote_parser : string phrase
       val defn :
 	  infotyp ->
 	    ((string * (string * Basic.gtype) list) * Basic.term) phrase
+
+
+(** 
+   [parse_as_binder f sym]:
+   Construct a grammar to parse function applications
+   of the form [f (%x: P)] as [sym x: P].
+
+   Symbol [sym] should be added to the lexer seperately.
+   (e.g. using [Parser.add_symbol sym (Lexer.Sym(Lexer.OTHER sym))]).
+ *)   
+      val parse_as_binder:
+	  Basic.ident -> string 
+	    -> infotyp -> Basic.term phrase
 
     end
 
@@ -307,13 +327,13 @@ val remove_type_token : string -> unit
 
 val init : unit -> unit
 (*
-val reset : unit -> unit
-*)
+   val reset : unit -> unit
+ *)
 
 (* 
    Parsers
    read a given phrase followed by an end of file/string
-*)
+ *)
 
 (* mk_info: utility function *)
 val mk_info : unit -> Grammars.infotyp
@@ -326,9 +346,9 @@ val parse : 'a Pkit.phrase -> Pkit.input -> 'a
 val identifier_parser : Pkit.input -> Basic.ident
 
 (*
-val typedef_parser :
-    Pkit.input -> string * string list option * Basic.gtype option
-*)
+   val typedef_parser :
+   Pkit.input -> string * string list option * Basic.gtype option
+ *)
 val typedef_parser :
     Pkit.input -> typedef_data
 
@@ -393,7 +413,7 @@ val test : string -> Basic.term
    some sense) [ty].
 
    [env] must raise Not_found if [s] is not found.
-*)
+ *)
 val resolve_term:
     Scope.t
   -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
@@ -410,12 +430,12 @@ val resolve_term:
    by [db] with [s] for which [ty] is unifies with type in scope [scp].
 
    [make_lookup db s ty] raise Not_found if [s] is not found in [db].
-*)
+ *)
 val make_lookup: 
     Scope.t
   -> (string -> (Basic.ident * Basic.gtype) list) 
     -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype)) 
-      
+	
 (* functions exposed for debugging *)
 type resolve_memo =
     { 
@@ -437,13 +457,13 @@ val resolve_aux:
   -> Gtypes.substitution
     -> Basic.gtype
       -> Basic.term
-      -> (Basic.term * Basic.gtype * Gtypes.substitution)
+	-> (Basic.term * Basic.gtype * Gtypes.substitution)
 
 val memo_find:
     ('a, 'b)Hashtbl.t
-      -> ('a -> 'c -> 'b) 
-	-> 'c 
-	  -> 'a -> 'b
+  -> ('a -> 'c -> 'b) 
+    -> 'c 
+      -> 'a -> 'b
 
 val find_type : 
     Scope.t 
@@ -464,4 +484,4 @@ val print_overloads:
 
 val ovl : 
     Scope.t
-    -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+  -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))

@@ -1,5 +1,5 @@
 (*-----
-Name: parser.ml
+   Name: parser.ml
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
@@ -1043,6 +1043,49 @@ module Grammars  =
 	    None -> NewType (n, Lib.get_option args [])
 	  | (Some dt) -> TypeAlias(n, Lib.get_option args [], dt)))) toks
 
+
+(** 
+   [parse_as_binder f sym]:
+   Construct a grammar to parse function applications
+   of the form [f (%x: P)] as [sym x: P].
+
+   Symbol [sym] should be added to the lexer seperately.
+   (e.g. using [Parser.add_symbol sym (Lexer.Sym(Lexer.OTHER sym))]).
+ *)   
+    let parse_as_binder ident sym= 
+      let sym_tok = Sym(OTHER sym)
+      and colon = Sym(COLON)
+      in 
+      let make_term_remove_names inf xs  body=
+	let wrapper = Term.mk_var ident
+	in 
+	let wrap b = Term.mk_app wrapper b
+	in 
+	List.fold_right
+	  (fun (x, y) b ->
+	    let binder=Term.dest_bound y
+	    in 
+	    let nt=wrap (Basic.Qnt(Basic.binder_kind binder, binder, b))
+	    in 
+	    drop_name x inf; nt) xs body
+      in 
+      let grammar inf inp = 
+	(((((!$ sym_tok)
+	      -- (id_type_opt (short_id id) inf)
+	      -- (listof (id_type_opt (short_id id) inf))
+	      -- (!$ colon))
+	     >> 
+	   (fun (((_, v), vs), _) -> 
+	     qnt_setup_bound_names inf Basic.Lambda (v::vs)))
+	    --
+	    (form inf))
+	   >>
+	 (fun ((xs:(string*Basic.term)list), body) ->
+	   make_term_remove_names inf xs body)) inp
+      in 
+      grammar 
+
+
   end
 
 (**
@@ -1130,13 +1173,13 @@ let remove_symbol sym =
    Overloading 
 
    Overload table 
-*)
+ *)
 let overload_table = Hashtbl.create 127
 
 let init_overload () = Hashtbl.clear overload_table
 
 let get_overload_list sym =
-    Hashtbl.find overload_table sym
+  Hashtbl.find overload_table sym
 
 let add_overload sym (id, ty) =
   let list0 = 
@@ -1147,7 +1190,7 @@ let add_overload sym (id, ty) =
   let list1=(id, ty)::list0
   in 
   Hashtbl.replace overload_table sym list1
-  
+    
 let remove_overload sym id =
   let list0 = get_overload_list sym
   in 
@@ -1253,7 +1296,7 @@ let init ()= init_symtab ()
 (**
    Parsers
    read a given phrase followed by an end of file/string
-*)
+ *)
 
 let mk_info ()= Grammars.mk_inf token_table type_token_table
 
@@ -1307,36 +1350,36 @@ let test str =
    If found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
  *)
 (*
-let rec resolve_aux scp env term =
-  let lookup s ty = env s ty
-  in 
-  match term with 
-    Basic.Id _ -> term
-  | Basic.Bound _ -> term
-  | Basic.App (l, r) -> 
-      let nl = resolve_aux scp env l
-      in 
-      let nr = resolve_aux scp env r
-      in 
-      Basic.App(nl, nr)
-  | Basic.Qnt(q, b, body) ->
-      let nbody = resolve_aux scp env body
-      in 
-      Basic.Qnt(q, b, nbody)
-  | Basic.Const _ -> term
-  | Basic.Typed(tt, ty) -> 
-      let ntt = resolve_aux scp env tt
-      in 
-      Basic.Typed(ntt, ty)
-  | Basic.Free (s, ty) -> 
-      let found = 
-	try Some(lookup s ty)
-	with Not_found -> None
-      in 
-      match found with
-	None -> term
-      | Some(id, id_type) -> Basic.Id(id, ty)
-*)
+   let rec resolve_aux scp env term =
+   let lookup s ty = env s ty
+   in 
+   match term with 
+   Basic.Id _ -> term
+   | Basic.Bound _ -> term
+   | Basic.App (l, r) -> 
+   let nl = resolve_aux scp env l
+   in 
+   let nr = resolve_aux scp env r
+   in 
+   Basic.App(nl, nr)
+   | Basic.Qnt(q, b, body) ->
+   let nbody = resolve_aux scp env body
+   in 
+   Basic.Qnt(q, b, nbody)
+   | Basic.Const _ -> term
+   | Basic.Typed(tt, ty) -> 
+   let ntt = resolve_aux scp env tt
+   in 
+   Basic.Typed(ntt, ty)
+   | Basic.Free (s, ty) -> 
+   let found = 
+   try Some(lookup s ty)
+   with Not_found -> None
+   in 
+   match found with
+   None -> term
+   | Some(id, id_type) -> Basic.Id(id, ty)
+ *)
 open Basic
   
 let memo_find cache find table n =
@@ -1361,7 +1404,7 @@ type resolve_arg =
      memo: resolve_memo;
      lookup: (string -> gtype -> (ident * gtype))
    }
-     
+      
 let rec resolve_aux data env expty term =
   let ident_find n s = 
     let thy = Scope.thy_of_term s n
