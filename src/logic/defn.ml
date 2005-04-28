@@ -16,7 +16,7 @@ let rec mk_all_from_list scp b qnts =
   | (Basic.Free(n, ty)::qs) ->
       mk_all_from_list scp (Logicterm.mk_all_ty scp n ty b) qs
   | (Basic.Id(n, ty)::qs) ->
-      raise (Term.term_error "mk_all_from_list, got a Basic.id" qnts)
+      raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
   | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
 let rec mk_var_ty_list ls =
@@ -89,15 +89,24 @@ let rec check_free_vars tyenv name ls =
 	    check_free_vars tyenv name fvs)
 	  
 let mk_defn scp name args rhs = 
+  let args1=
+    let memo = Lib.empty_env()
+    in 
+    List.map
+      (fun (n, ty) -> 
+	(n, Gtypes.set_name ~memo:memo scp ty)) args
+  in 
   let ps = 
     List.map 
-      (fun (x, y) -> Term.mk_free x y) args 
+      (fun (x, y) -> Term.mk_free x y) args1
   in let rhs1=Term.set_names scp rhs
   in let rty = Typing.typeof scp rhs1
   in let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
   in let lhs = Term.mk_comb (Term.mk_typed_var name nty) ps
   in let ndn = 
-    mk_all_from_list scp (Logicterm.mk_equality lhs rhs1) (List.rev ps) 
+    mk_all_from_list scp 
+      (Logicterm.mk_equality lhs rhs1) 
+      (List.rev ps) 
   in
   let rfrees = 
     match Term.get_free_vars ndn with
@@ -107,7 +116,6 @@ let mk_defn scp name args rhs =
 		 "Free variables not allowed in definition" [ndn])
   in 
   let nscp = Scope.extend_with_terms scp [(name, nty)]
-(* (Gtypes.add_to_scope scp [name, nty]) *)
   in 
   let tenv=Typing.settype nscp ndn
   in 
