@@ -179,8 +179,6 @@ let cleanup = ref true
    Clean up after simplification.
    Delete all assumptions listed in [ctrl.asms].
  *)
-
-
 let clean_aux_tac tags g =
   each tags (fun x -> Logic.Tactics.delete None (Logic.FTag x)) g
 
@@ -626,6 +624,8 @@ let rec basic_simp_tac cntrl ret ft goal=
   in 
   let ret1=ref None
   in
+  let trivial f g = Boollib.trivial ~f:f g
+  in 
   let tac1 = 
     let rr_cntrl = Data.get_control cntrl
     in 
@@ -638,9 +638,14 @@ let rec basic_simp_tac cntrl ret ft goal=
   let tac2 g2 = 
     let (ncntrl, ntyenv, ntrm) =  
       Lib.dest_option ~err:(Failure "basic_simp_tac: 1") (!ret1)
-    in let rrs=List.rev (ncntrl.Data.rules)
     in 
-    if rrs=[] then raise No_change
+    let rrs=List.rev (ncntrl.Data.rules)
+    in 
+    if rrs=[] 
+    then 
+      try 
+	trivial (ftag ft) g2
+      with _ -> raise No_change
     else 
       let rr_cntrl0 = Data.get_control cntrl
       in 
@@ -833,7 +838,7 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
     with _ -> skip g
   in 
   ret:=None; 
-  seq [tac1; repeat tac2; trivial] goal
+  seq [tac1; (repeat tac2) ; trivial] goal
 
 (**
    [simp_tac cntrl asms except ?l goal]:
@@ -879,8 +884,18 @@ let simp_tac cntrl asms except l goal=
        (fun _ -> asms) 
 	 --> 
        seq 
+(*
 	 [make_asm_entries_tac asm_rules asm_tags except;
 	  make_concl_entries_tac concl_rules concl_tags except];
+*)
+	 [make_asm_entries_tac asm_rules asm_tags except;
+	  make_concl_entries_tac concl_rules concl_tags 
+	    (fun t -> 
+	      Pervasives.(||)
+		(List.exists (fun x -> Tag.equal x t) targets)
+		(except t))
+		 ];
+
        data_tac 
 	 (fun () -> 
        (* get the information, put it into a useful form *)
