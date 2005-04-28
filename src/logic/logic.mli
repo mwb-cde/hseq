@@ -1,13 +1,13 @@
 (*-----
- Name: logic.mli
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+Name: logic.mli
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 (**
    Theorems and rules of the logic.
    Rules are based on a sequent calculus.
-*)
+ *)
 
 (** Theorems of the logic *)
 type thm
@@ -23,8 +23,8 @@ module Skolem:
 
       type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 (*
-      type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
-*)
+   type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
+ *)
       type skolem_type
 
       type skolem_info=
@@ -46,7 +46,7 @@ module Skolem:
 
       val get_new_sklm: 
 	  Basic.ident -> Basic.gtype -> skolem_type
-	-> (Basic.term * skolem_type)
+	    -> (Basic.term * skolem_type)
 
       val mk_new_skolem: 
 	  skolem_info
@@ -110,15 +110,15 @@ module Sequent:
 
    [split_at_label t x]:
    [c] is the formula in [x] labelled [l].
-*)
-val split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
-val split_at: ('a -> bool) -> 'a list -> ('a list * 'a * 'a list)
-val split_at_tag: 
-    Tag.t -> (Tag.t * 'a) list 
-      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
-val split_at_label: 
-    label -> (Tag.t * 'a) list 
-      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+ *)
+      val split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
+      val split_at: ('a -> bool) -> 'a list -> ('a list * 'a * 'a list)
+      val split_at_tag: 
+	  Tag.t -> (Tag.t * 'a) list 
+	    -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+      val split_at_label: 
+	  label -> (Tag.t * 'a) list 
+	    -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 
 (**
    [split_at_asm lbl x]:
@@ -132,12 +132,12 @@ val split_at_label:
 
    [split_at_concl lbl x]:
    raise Not_found if [lbl=FNum i] and i<0
-*)
+ *)
 
 
 (**
    Get/Delete/Copy particular assumptions/conclusions.
-*)
+ *)
       val get_asm : int -> t -> tagged_form
       val get_cncl : int -> t -> tagged_form
 
@@ -147,14 +147,14 @@ val split_at_label:
 
 (** 
    Get tagged assumptions/conclusions. 
-*)
+ *)
       val get_tagged_asm : Tag.t -> t -> tagged_form
       val get_tagged_cncl : Tag.t -> t -> tagged_form
       val get_tagged_form: Tag.t -> t -> tagged_form
 
 (**
    Assumption/conclusion tag <-> index 
-*)
+ *)
       val tag_to_index : Tag.t -> t -> int
       val index_to_tag : int -> t -> Tag.t 
 
@@ -172,14 +172,14 @@ val label_to_index: label -> Sequent.t -> int
  *)
 type cdefn
 (*
-    TypeAlias of 
-      Basic.ident * string list * Basic.gtype option
-  | TypeDef of ctypedef
-  | TermDecln of Basic.ident * Basic.gtype
-  | TermDef of 
-      Basic.ident * Basic.gtype
-	* (string*Basic.gtype) list * thm option
-*)
+   TypeAlias of 
+   Basic.ident * string list * Basic.gtype option
+   | TypeDef of ctypedef
+   | TermDecln of Basic.ident * Basic.gtype
+   | TermDef of 
+   Basic.ident * Basic.gtype
+ * (string*Basic.gtype) list * thm option
+ *)
 and ctypedef =
     {
      type_name : Basic.ident;  (* name of new type *)
@@ -194,15 +194,15 @@ and ctypedef =
    }
 
 (*
-type ctypedef =
-    {
-     type_name : Basic.ident;  (* name of new type *)
-     type_args : string list;  (* arguments of new type *)
-     type_rep: cdefn;          (* representation function *)
-     type_thm: thm;          (* subtype theorem *)
-     type_set: Formula.form       (* defining set *)
+   type ctypedef =
+   {
+   type_name : Basic.ident;  (* name of new type *)
+   type_args : string list;  (* arguments of new type *)
+   type_rep: cdefn;          (* representation function *)
+   type_thm: thm;          (* subtype theorem *)
+   type_set: Formula.form       (* defining set *)
    }
-*)      
+ *)      
 type saved_cdefn =
     STypeAlias of Basic.ident * string list * Gtypes.stype option
   | STypeDef of saved_ctypedef
@@ -221,20 +221,20 @@ and saved_ctypedef =
      sabs_type_inverse: saved_thm
    }
 (*
-and saved_ctypedef =
-    {
-     stype_name : Basic.ident;  (* name of new type *)
-     stype_args : string list;  (* arguments of new type *)
-     stype_rep: saved_cdefn;          (* representation function *)
-     stype_thm: saved_thm;          (* subtype theorem *)
-     stype_set: Formula.saved_form      (* defining set *)
+   and saved_ctypedef =
+   {
+   stype_name : Basic.ident;  (* name of new type *)
+   stype_args : string list;  (* arguments of new type *)
+   stype_rep: saved_cdefn;          (* representation function *)
+   stype_thm: saved_thm;          (* subtype theorem *)
+   stype_set: Formula.saved_form      (* defining set *)
    }
-*)
-	
+ *)
+      
 (** 
    Theorem destructors and constructors
    (axioms do not need to be proved).
-*)
+ *)
 val mk_axiom : Formula.form -> thm
 (*val dest_thm : thm -> Formula.form *)
 val formula_of : thm -> Formula.form 
@@ -298,8 +298,8 @@ val mk_thm : goal -> thm
 (** errors *)
 
 (*
-val mk_logicError: string ->Formula.form list -> Result.error
-*)
+   val mk_logicError: string ->Formula.form list -> Result.error
+ *)
 val logic_error : string -> Formula.form list -> exn
 val add_logic_error : string -> Formula.form list -> exn -> 'a
 
@@ -309,7 +309,7 @@ val add_logic_error : string -> Formula.form list -> exn -> 'a
    [goals]: new goals produced by rule 
    [forms]: new forms produced by rule 
    [terms]: new constants produced by rule
-*)
+ *)
 type tag_record = 
     { 
       goals:Tag.t list; 
@@ -357,13 +357,13 @@ module Subgoals:
 (** 
    [branch_node node]
    Make a branch from [node] without doing anything.
-*)
+ *)
       val branch_node : node -> branch
 
 (**
    Functions to apply a tactic to subgoals.
    (A tactic has type node -> branch)
-*)
+ *)
 
 (**
    [merge env1 env2]: merge type environments.
@@ -372,11 +372,11 @@ module Subgoals:
    [env1 + env2].
 
    raise [Failure] if a variable ends up bound to itself.
-*)
-    val merge_tyenvs:
-	Gtypes.substitution 
-      -> Gtypes.substitution	
-	-> Gtypes.substitution
+ *)
+      val merge_tyenvs:
+	  Gtypes.substitution 
+	-> Gtypes.substitution	
+	  -> Gtypes.substitution
 
 
 (**
@@ -384,8 +384,8 @@ module Subgoals:
    Merge the type environment of [b], resulting from applying a tactic
    to [n], with the type environment of [n].  Make a new branch with
    the components of [b] but with the new type environment.
-*)
-    val merge_tac_tyenvs : node -> branch -> branch
+ *)
+      val merge_tac_tyenvs : node -> branch -> branch
 
 (**
    [apply tac node]: Apply tactic [tac] to [node].
@@ -399,14 +399,14 @@ module Subgoals:
    4. If the tag of [b'] is not [ticket] then fail.
 
    5. Merge the type environment of [b'] with [n']. 
-      (This may be unnecessary.)
+   (This may be unnecessary.)
    Almost certainly unnecessary so not done.
 
    6. Return the branch formed from [b'] with the tag of [node].
 
    raise logicError on failure.
-*)
-    val apply: (node -> branch) -> node -> branch
+ *)
+      val apply: (node -> branch) -> node -> branch
 
 (**
    [apply_to_node ?report tac (Node(tyenv, sqnt))]
@@ -434,7 +434,7 @@ module Subgoals:
    proof support to print result of the tactic).
 
    raise No_subgoals if [sqnts] is empty.
-*)
+ *)
       val apply_to_first: 
 	  ?report:(node->branch->unit) ->
 	    (node->branch) -> branch -> branch
@@ -491,13 +491,14 @@ module Subgoals:
    to each of the resulting subgoals.
  *)
 (*
-      val seq: (node -> branch) -> (node -> branch) -> node -> branch
-*)
+   val seq: (node -> branch) -> (node -> branch) -> node -> branch
+ *)
     end
 
 type node = Subgoals.node
 type branch = Subgoals.branch
 type rule = Subgoals.node -> Subgoals.branch
+type conv = Scope.t -> Basic.term -> thm
 
 val postpone :  goal -> goal
 val foreach: rule -> Subgoals.branch -> Subgoals.branch
@@ -539,7 +540,7 @@ module Tactics :
 
    [lift] tries lift_asm then tries lift_concl.
    Doesn't change the formula tag.
-*)
+ *)
       val lift_asm : info option -> label -> rule
       val lift_concl : info option -> label -> rule
       val lift : info option -> label -> rule
@@ -591,7 +592,7 @@ module Tactics :
 (*
    [skip]
    The do nothing tactic
-*)
+ *)
       val skip : info option -> rule
 
 
@@ -622,7 +623,7 @@ module Tactics :
 
 (** 
    [conjE i sq]
- 
+   
    a/\ b, asm |- concl   
    -->
    a, b, asm |- concl 
@@ -725,7 +726,7 @@ module Tactics :
 
 (** 
    [beta i sq]:  (beta reduction of asm (i<0) or concl (i>0) in sq) 
-*)
+ *)
       val beta : info option -> label -> rule
 
 (** 
@@ -769,11 +770,24 @@ module Tactics :
    [rewrite_rule scp ctrl rrl thm]
 
    rewrite theorem [thm] with rules [rrl] in scope [scp].
-*)
+ *)
       val rewrite_rule: 
 	  Scope.t -> ?ctrl:Rewrite.control
 	    -> thm list -> thm -> thm
     end
+
+module Conv:
+    sig
+
+      (** 
+	 [beta_conv scp term]: Apply a single beta conversion to [term].
+
+	 Fails if [term] is not of the form [(%x: F)y]
+	 or the resulting formula is not in scope.
+       *)
+
+      val beta_conv : conv
+    end 
 
 
 module Defns :
@@ -796,7 +810,7 @@ module Defns :
    scope [scp].
    Fails if identifier [name] is already defined in [scp]
    or if [ty] is not well defined.
-*)
+ *)
       val is_termdecln: cdefn -> bool
       val dest_termdecln: cdefn 
 	-> Basic.ident * Basic.gtype 
@@ -833,15 +847,15 @@ module Defns :
    [mk_subtype_thm scp setp rep]:
    make the subtype theorem
    << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-      and 
-      (!x: (setp x) = (?x1: x=(rep x1)))>>
-*)
+   and 
+   (!x: (setp x) = (?x1: x=(rep x1)))>>
+ *)
       val prove_subtype_exists: 
 	  Scope.t -> Basic.term -> thm -> thm
 (*
-      val mk_subtype_thm: 
-	  Scope.t -> Basic.term -> Basic.ident -> thm
-*)
+   val mk_subtype_thm: 
+   Scope.t -> Basic.term -> Basic.ident -> thm
+ *)
       val mk_subtype_thm: 
 	  Scope.t -> Basic.term -> thm
 
@@ -872,7 +886,7 @@ val print_cdefn: Printer.ppinfo -> cdefn -> unit
 
    [print_branch ppinfo branch]
    Print branch [branch] using PP info [ppinfo].
-*)
+ *)
 val print_sqnt : Printer.ppinfo -> Sequent.t -> unit
 val print_node : Printer.ppinfo -> node -> unit
 val print_branch : Printer.ppinfo -> branch -> unit

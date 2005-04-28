@@ -1,5 +1,5 @@
 (*-----
-   Name: logic.ml
+Name: logic.ml
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
@@ -62,7 +62,7 @@ module Skolem =
     type skolem_cnst = (Basic.ident * (int * Basic.gtype))
 (*
    type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
-*)
+ *)
     type skolem_type = skolem_cnst list
 
     let make_sklm x ty i = (x, (i, ty))
@@ -73,10 +73,10 @@ module Skolem =
 
     let decln_of_sklm x= (get_sklm_name x, get_sklm_type x)
 (*
-    let get_sklm_name ((x, _), _) = x
-    let get_sklm_indx ((_, _),i) = i
-    let get_sklm_type ((_, t), _) = t
-*)
+   let get_sklm_name ((x, _), _) = x
+   let get_sklm_indx ((_, _),i) = i
+   let get_sklm_type ((_, t), _) = t
+ *)
 
     let get_old_sklm n sklms =  (n, List.assoc n sklms)
 
@@ -102,52 +102,52 @@ module Skolem =
       Scope.extend_with_terms scp declns
 
 (*
-    let add_skolems_to_scope sklms scp =
-      { scp with
-	Gtypes.typeof_fn = 
-	(fun x ->
-	  (let y =
-	    (if (thy_of_id x)=null_thy
-	    then mk_long scp.Gtypes.curr_thy (name x)
-	    else x)
-	  in 
-	  try get_sklm_type (get_old_sklm y sklms)
-	  with Not_found -> scp.Gtypes.typeof_fn x));
-	Gtypes.thy_of=
-	(fun sel x-> 
-	  if(sel = Basic.fn_id)
-	  then 
-	    try 
-	      ignore(List.assoc (Basic.mk_long scp.Gtypes.curr_thy x) sklms);
-	      scp.Gtypes.curr_thy
-	    with Not_found -> scp.Gtypes.thy_of sel x
-	  else scp.Gtypes.thy_of sel x)
-      }
-*)	
+   let add_skolems_to_scope sklms scp =
+   { scp with
+   Gtypes.typeof_fn = 
+   (fun x ->
+   (let y =
+   (if (thy_of_id x)=null_thy
+   then mk_long scp.Gtypes.curr_thy (name x)
+   else x)
+   in 
+   try get_sklm_type (get_old_sklm y sklms)
+   with Not_found -> scp.Gtypes.typeof_fn x));
+   Gtypes.thy_of=
+   (fun sel x-> 
+   if(sel = Basic.fn_id)
+   then 
+   try 
+   ignore(List.assoc (Basic.mk_long scp.Gtypes.curr_thy x) sklms);
+   scp.Gtypes.curr_thy
+   with Not_found -> scp.Gtypes.thy_of sel x
+   else scp.Gtypes.thy_of sel x)
+   }
+ *)	
     let add_skolem_to_scope sv sty scp =
       Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
 (*
-    let add_skolem_to_scope sv sty scp =
-      let svname=Basic.name (Term.get_var_id sv)
-      in 
-      { scp with
-	Gtypes.typeof_fn = 
-	(fun x ->
-	  let id_thy = thy_of_id x
-	  in 
-	  if (id_thy=null_thy) or (id_thy=scp.Gtypes.curr_thy)
-	  then 
-	    (if (name x) = svname
-	    then sty
-	    else scp.Gtypes.typeof_fn x)
-	  else scp.Gtypes.typeof_fn x);
-	Gtypes.thy_of=
-	(fun sel x-> 
-	  if(sel = Basic.fn_id) & x = svname
-	  then scp.Gtypes.curr_thy
-	  else scp.Gtypes.thy_of sel x)
-      }
-*)
+   let add_skolem_to_scope sv sty scp =
+   let svname=Basic.name (Term.get_var_id sv)
+   in 
+   { scp with
+   Gtypes.typeof_fn = 
+   (fun x ->
+   let id_thy = thy_of_id x
+   in 
+   if (id_thy=null_thy) or (id_thy=scp.Gtypes.curr_thy)
+   then 
+   (if (name x) = svname
+   then sty
+   else scp.Gtypes.typeof_fn x)
+   else scp.Gtypes.typeof_fn x);
+   Gtypes.thy_of=
+   (fun sel x-> 
+   if(sel = Basic.fn_id) & x = svname
+   then scp.Gtypes.curr_thy
+   else scp.Gtypes.thy_of sel x)
+   }
+ *)
 
 (** [mk_new_skolem scp n ty]
 
@@ -181,8 +181,8 @@ module Skolem =
       let nnames = Lib.replace n (nm_int+1) names
       in 
 (*
-      let nm_s = (n^(Lib.int_to_name nm_int))
-*)
+   let nm_s = (n^(Lib.int_to_name nm_int))
+ *)
       let nm_s = (Lib.int_to_name nm_int)
       in 
       (nm_s, nnames)
@@ -916,6 +916,7 @@ module Subgoals=
 type node = Subgoals.node
 type branch = Subgoals.branch
 type rule = Subgoals.node -> Subgoals.branch
+type conv = Scope.t -> Basic.term -> thm
 
 let postpone g = 
   match g with
@@ -1896,7 +1897,7 @@ module Tactics =
    checking of type and term definitions and declarations
 
    scdefn: version of cdefn suitable for disk storage.
-*)
+ *)
 type cdefn =
     TypeAlias of Basic.ident * string list * Basic.gtype option
   | TypeDef of ctypedef
@@ -1935,6 +1936,32 @@ and saved_ctypedef =
    }
 
 
+module Conv=
+  struct
+    
+    (** 
+       [beta_conv scp term]: Apply a single beta conversion to [term].
+
+       Fails if [term] is not of the form [(%x: F)y]
+       or the resulting formula is not in scope.
+     *)
+
+    let beta_conv scp term =
+      let rhs ()= Logicterm.beta_conv term
+      in 
+      let eq_term t = 
+	Formula.make scp (Logicterm.mk_equality term t)
+      in 
+      try
+	mk_theorem (eq_term (rhs()))
+      with err -> 
+	raise(Result.add_error
+		(logic_error "beta_conv" [])
+		(Result.add_error 
+		   (Term.term_error "beta_conv term: " [term]) err))
+
+  end 
+
 (* Defns: functions for checking definitions and declarations *)
 module Defns =
   struct
@@ -1944,20 +1971,20 @@ module Defns =
       raise (Result.add_error (defn_error s t) es)
 
 
-let rec to_saved_cdefn td = 
-  match td with
-    TypeAlias (id, sl, ty) ->
-      (match ty with 
-	None -> STypeAlias (id, sl, None)
-      | Some t -> STypeAlias (id, sl, Some(Gtypes.to_save t)))
-  | TermDecln (id, ty) -> 
-      STermDecln (id, Gtypes.to_save ty)
-  | TermDef (id, ty, thm) ->
-      STermDef (id, Gtypes.to_save ty, to_save thm)
-  | TypeDef ctdef ->
-      STypeDef (to_saved_ctypedef ctdef)
-and
-    to_saved_ctypedef x = 
+    let rec to_saved_cdefn td = 
+      match td with
+	TypeAlias (id, sl, ty) ->
+	  (match ty with 
+	    None -> STypeAlias (id, sl, None)
+	  | Some t -> STypeAlias (id, sl, Some(Gtypes.to_save t)))
+      | TermDecln (id, ty) -> 
+	  STermDecln (id, Gtypes.to_save ty)
+      | TermDef (id, ty, thm) ->
+	  STermDef (id, Gtypes.to_save ty, to_save thm)
+      | TypeDef ctdef ->
+	  STypeDef (to_saved_ctypedef ctdef)
+    and
+	to_saved_ctypedef x = 
       {
        stype_name = x.type_name;
        stype_args = x.type_args;
@@ -1970,20 +1997,20 @@ and
        sabs_type_inverse = to_save x.abs_type_inverse
      }
 
-let rec from_saved_cdefn td = 
-  match td with
-    STypeAlias (id, sl, ty) ->
-      (match ty with 
-	None -> TypeAlias (id, sl, None)
-      | Some t -> TypeAlias (id, sl, Some(Gtypes.from_save t)))
-  | STermDecln (id, ty) -> 
-      TermDecln (id, Gtypes.from_save ty)
-  | STermDef (id, ty, thm) ->
-      TermDef (id, Gtypes.from_save ty, from_save thm)
-  | STypeDef ctdef ->
-      TypeDef (from_saved_ctypedef ctdef)
-and
-    from_saved_ctypedef x = 
+    let rec from_saved_cdefn td = 
+      match td with
+	STypeAlias (id, sl, ty) ->
+	  (match ty with 
+	    None -> TypeAlias (id, sl, None)
+	  | Some t -> TypeAlias (id, sl, Some(Gtypes.from_save t)))
+      | STermDecln (id, ty) -> 
+	  TermDecln (id, Gtypes.from_save ty)
+      | STermDef (id, ty, thm) ->
+	  TermDef (id, Gtypes.from_save ty, from_save thm)
+      | STypeDef ctdef ->
+	  TypeDef (from_saved_ctypedef ctdef)
+    and
+	from_saved_ctypedef x = 
       {
        type_name = x.stype_name;
        type_args = x.stype_args;
@@ -1994,7 +2021,7 @@ and
        rep_type = from_save x.srep_type;
        rep_type_inverse = from_save x.srep_type_inverse;
        abs_type_inverse = from_save x.sabs_type_inverse
-      }
+     }
 
 
 
@@ -2024,7 +2051,7 @@ and
    scope [scp].
    Fails if identifier [name] is already defined in [scp]
    or if [ty] is not well defined.
-*)
+ *)
     let is_termdecln x = 
       match x with 
 	TermDecln _ -> true
@@ -2179,19 +2206,19 @@ and
 	Scope.extend_with_terms nscp0 [(rid, rty); (aid, aty)]
       in 
       TypeDef
-      {
-       type_name = subtype_def.Defn.id;
-       type_args = subtype_def.Defn.args; 
-       type_base = dtype1;
-       type_rep = rep_decln;
-       type_abs = abs_decln;
-       type_set = Formula.make scp new_setp;
-       rep_type = mk_subtype_thm nscp1 subtype_def.Defn.rep_T;
-       rep_type_inverse = 
-       mk_subtype_thm nscp1 subtype_def.Defn.rep_T_inverse;
-       abs_type_inverse = 
-       mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
-     }
+	{
+	 type_name = subtype_def.Defn.id;
+	 type_args = subtype_def.Defn.args; 
+	 type_base = dtype1;
+	 type_rep = rep_decln;
+	 type_abs = abs_decln;
+	 type_set = Formula.make scp new_setp;
+	 rep_type = mk_subtype_thm nscp1 subtype_def.Defn.rep_T;
+	 rep_type_inverse = 
+	 mk_subtype_thm nscp1 subtype_def.Defn.rep_T_inverse;
+	 abs_type_inverse = 
+	 mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
+       }
 
   end
 
@@ -2267,21 +2294,21 @@ let print_branch ppstate branch=
 
 
 let print_termdefn ppinfo (n, ty, th) = 
-    Format.printf "@[";
-    Format.printf "@[";
-    Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
-    Format.printf ":@ ";
-    Gtypes.print ppinfo ty;
-    Format.printf "@],@ ";
-    print_thm ppinfo th;
-    Format.printf "@]"
+  Format.printf "@[";
+  Format.printf "@[";
+  Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+  Format.printf ":@ ";
+  Gtypes.print ppinfo ty;
+  Format.printf "@],@ ";
+  print_thm ppinfo th;
+  Format.printf "@]"
 
 let print_termdecln ppinfo (n, ty) = 
-    Format.printf "@[";
-    Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
-    Format.printf ":@ ";
-    Gtypes.print ppinfo ty;
-    Format.printf "@]"
+  Format.printf "@[";
+  Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+  Format.printf ":@ ";
+  Gtypes.print ppinfo ty;
+  Format.printf "@]"
 
 let print_typealias ppinfo (n, args, ty) = 
   let named_ty = 
@@ -2323,7 +2350,7 @@ let rec print_subtype ppinfo x =
   print_thm ppinfo x.abs_type_inverse;
   Format.printf "@]"
 and
-  print_cdefn ppinfo x = 
+    print_cdefn ppinfo x = 
   Format.printf "@[";
   (match x with
     TypeAlias (n, args, ty) -> 
