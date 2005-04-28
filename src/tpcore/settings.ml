@@ -43,4 +43,5 @@ let get_nice_sequent () = !nice_sequent
 (* Gtypes display *)
 
 let long_identifier=ref false
+let print_type_level=ref 1
 

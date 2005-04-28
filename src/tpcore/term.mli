@@ -307,6 +307,27 @@ val print_as_binder:
 	-> (Printer.assoc * int)
 	  -> (Basic.ident * Basic.term list) Printer.printer
 
+(**
+   [print_qnt_body (assoc, prec) qs body]
+   Print term [body] quantified by variables [qs=[x1; x2; ...; xn]]
+   as [x1 x2 ... xn : body]
+*)
+val print_qnt_body: 
+    Printer.ppinfo -> (Printer.assoc * int)
+      -> ((Basic.binders)list * Basic.term) Printer.printer
+
+(** 
+   [strip_fun_qnt f term qs]:
+   strip applications of the form [f (% x: P)] returning 
+   the bound variables and P.
+
+   (qs should be [] initially)
+*)
+val strip_fun_qnt: 
+    Basic.ident -> Basic.term -> Basic.binders list 
+      -> (Basic.binders list * Basic.term)
+
+
 (* Error handling *)
 
 class termError : string -> term list ->

@@ -1024,7 +1024,11 @@ let rec print_term ppstate (assoc, prec) x =
 	(pplookup ppstate) n;
       Format.printf "@]"
   | Free(n, ty) -> 
-      Format.printf "@[%s@]" n 
+      if(!Settings.print_type_level > 3)
+      then 
+	print_typed_name ppstate (n, ty)
+      else 
+	Format.printf "@[%s@]" n 
   | Bound(n) -> 
       Format.printf "@[%s@]" ((get_binder_name x))
   | Const(c) -> 
@@ -1036,6 +1040,26 @@ let rec print_term ppstate (assoc, prec) x =
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
+      if is_var f 
+      then 
+	let n, ty=dest_var f
+	in 
+	Format.printf "@[";
+	print_fn_app ppstate
+	  ((fun _ -> 
+	    Printer.print_identifier 
+	      (pplookup ppstate)),
+	   (fun (a, p) t-> print_term ppstate (a, p) t))
+	  (assoc, prec) (n, args);
+	Format.printf "@]"
+      else 
+	(Format.printf "@[<hov 2>(";
+	 Printer.print_list
+	   (print_term ppstate (assoc, prec), Printer.print_space)
+	   (f::args);
+	 Format.printf ")@]")
+
+(*
       (match args with 
 	[] -> print_term ppstate (assoc, prec) f
       | _ -> 
@@ -1057,6 +1081,7 @@ let rec print_term ppstate (assoc, prec) x =
 	       (print_term ppstate (assoc, prec), Printer.print_space)
 	       (f::args);
 	     Format.printf ")@]"))
+*)
   | Qnt(qnt, q, body) -> 
       let (_, _, qvar, qtyp, _) = dest_qnt x
       in 
@@ -1260,7 +1285,10 @@ let set_names scp trm=
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
 	in 
 	Qnt(qnt, nq, set_aux qnts1 b)
-    | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
+    | Typed(tt, tty) -> 
+	let tty1 = set_type_name type_thy_memo scp tty
+	in 
+	Typed(set_aux qnts tt, tty1)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
 	(try
@@ -1504,6 +1532,16 @@ let rec strip_fun_qnt f term qs =
   | Basic.Typed(t, _) -> strip_fun_qnt f t qs
   | _ -> (List.rev qs, term)
 
+let print_qnt_body ppstate (assoc, prec) (qs, body) =
+  Format.printf "@[";
+  Printer.print_list
+    (print_qnt ppstate, 
+     Printer.print_space) 
+    qs;
+  Format.printf ":@ ";
+  print_term ppstate (assoc, prec) body;
+  Format.printf"@]"
+
 let print_as_binder (sym_assoc, sym_prec) ident sym = 
   let print_qnt ppstate (assoc, prec) arg =
     let (qnts, body) = 
@@ -1531,6 +1569,8 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
 	   print_qnt ppstate prec a
 	else 
 	  simple_print_fn_app ppstate prec (f, args));
+	Printer.print_list 
+	  (print_term ppstate prec, Printer.print_space) rest;
 	Format.printf "@]"
     | _ ->
 	Format.printf "@[";

@@ -74,3 +74,4 @@ val get_nice_sequent: unit -> bool
    [long_identifier]: whether to print a long or short identifier
 *)
 val long_identifier: bool ref
+val print_type_level: int ref
