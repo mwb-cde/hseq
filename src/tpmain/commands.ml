@@ -315,8 +315,10 @@ let dest_defn_term trm=
   else err()
       
 let define ?pp ?(simp=false) ((name, args), r)=
+  let scp = Global.scope()
+  in 
   let ndef=
-    Logic.Defns.mk_termdef (Global.scope()) 
+    Logic.Defns.mk_termdef scp
       (Basic.mk_long (Global.get_cur_name()) name) args r
   in 
   let props = 

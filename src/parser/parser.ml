@@ -743,6 +743,24 @@ module Grammars  =
 	  drop_name x inf; nt) xs body
 
 (**
+   [make_term_remove_names info wrapper vs body]:
+
+   Remove the variables in [vs] from [info]. 
+   Return the term constructed by quantifying 
+   [body] with the variables [vs], applying [wrapper] to 
+   each constructed term.
+*)
+    let make_term_remove_names inf wrapper xs body=
+      List.fold_right
+	(fun (x, y) b ->
+	  let binder=Term.dest_bound y
+	  in 
+	  let nt=wrapper (Basic.Qnt(Basic.binder_kind binder, binder, b))
+	  in 
+	  drop_name x inf; nt) xs body
+
+
+(**
    [mkcomb f args]
    Make the term ((((f a1) a2) .. ) an)
    (where args = [a1; a2; ..; an])
@@ -1044,6 +1062,7 @@ module Grammars  =
 	  | (Some dt) -> TypeAlias(n, Lib.get_option args [], dt)))) toks
 
 
+
 (** 
    [parse_as_binder f sym]:
    Construct a grammar to parse function applications
@@ -1056,18 +1075,9 @@ module Grammars  =
       let sym_tok = Sym(OTHER sym)
       and colon = Sym(COLON)
       in 
-      let make_term_remove_names inf xs  body=
-	let wrapper = Term.mk_var ident
-	in 
-	let wrap b = Term.mk_app wrapper b
-	in 
-	List.fold_right
-	  (fun (x, y) b ->
-	    let binder=Term.dest_bound y
-	    in 
-	    let nt=wrap (Basic.Qnt(Basic.binder_kind binder, binder, b))
-	    in 
-	    drop_name x inf; nt) xs body
+      let id_term = Term.mk_var ident
+      in 
+      let wrapper b = Term.mk_app id_term b
       in 
       let grammar inf inp = 
 	(((((!$ sym_tok)
@@ -1081,7 +1091,7 @@ module Grammars  =
 	    (form inf))
 	   >>
 	 (fun ((xs:(string*Basic.term)list), body) ->
-	   make_term_remove_names inf xs body)) inp
+	   make_term_remove_names inf wrapper xs body)) inp
       in 
       grammar 
 

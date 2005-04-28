@@ -121,12 +121,41 @@ module Grammars :
       val get_term : string -> infotyp -> Basic.term
       val clear_names : infotyp -> unit
 
+(**
+   [qnt_setup_bound_names inf qnt xs]
+   Make bound variables from the name-type pairs in [xs],
+   add them to [inf.bound_names]
+   [qnt] is the quantifier type (All, Ex or Lambda)
+ *)
       val qnt_setup_bound_names: 
 	  infotyp -> Basic.quant_ty -> (string * Basic.gtype) list 
 	    -> (string * Basic.term) list
+(**
+   [qnt_term_remove_names inf xs body]
+   use bound names in [xs] to form a quantified term, with body
+   as the initial term.
+   simplified example:  [!x, ?y, !z] t -> (!x: (?y: (!z: t)))
+
+   remove each name in [xs] from [inf.bound_names] as it is used.
+ *)
       val qnt_term_remove_names:
 	  infotyp -> (string * Basic.term) list 
 	    -> Basic.term -> Basic.term
+
+(**
+   [make_term_remove_names info wrapper vs body]:
+
+   Remove the variables in [vs] from [info]. 
+   Return the term constructed by quantifying 
+   [body] with the variables [vs], applying [wrapper] to 
+   each constructed term.
+*)
+      val make_term_remove_names:
+	  infotyp 
+	-> (Basic.term -> Basic.term)
+	  -> (string * Basic.term) list
+	      -> Basic.term -> Basic.term
+
 
       val lookup_type_name : string -> infotyp -> Basic.gtype
       val add_type_name : string -> Basic.gtype -> infotyp -> Basic.gtype
