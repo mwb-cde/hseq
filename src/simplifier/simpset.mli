@@ -30,7 +30,12 @@ val dest_rule :
 
    [empty_set()]: Make a new, empty simpset.
 *)
-type simpset = { basic : rule Net.net; next : simpset option; }
+type simpset = 
+    { 
+      convs: Logic.conv Net.net;
+      basic : rule Net.net; 
+      next : simpset option; 
+    }
 val empty_set : unit -> simpset
 
 
@@ -41,7 +46,13 @@ val empty_set : unit -> simpset
  *)
 val termnet_lt : rule -> rule -> bool
 
-(** [add_rule rl s]: Add rule [rl] to set [s].
+(** 
+   [add_rule rl s]: Add rule [rl] to set [s].
+
+   [add_conv (vars, key) conv s]: 
+
+   Add conversion [conv] to set [s], indexed by terms of [key] in
+   which [vars] are the list of unifiable variables.
 
    [lookup trm s]: Find list of possible matches for term [trm] in set [s].
 
@@ -52,7 +63,13 @@ val termnet_lt : rule -> rule -> bool
    fails if [s] is not joined to another set.
  *)
 val add_rule : rule -> simpset -> simpset
-val lookup : simpset -> Basic.term -> rule list
+
+val add_conv: 
+    (Basic.binders list * Basic.term) -> Logic.conv -> simpset -> simpset
+
+val lookup_conv : Scope.t -> simpset -> Basic.term -> rule list
+
+val lookup : Scope.t -> simpset -> Basic.term -> rule list
 val join : simpset -> simpset -> simpset
 val split : simpset -> simpset * simpset
 

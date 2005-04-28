@@ -32,13 +32,16 @@ let rule_src (vs, cnd, lhs, rhs, rr)=rr
  *)
 type simpset = 
     { 
+      convs: Logic.conv Net.net;
       basic: rule Net.net;          (* global rules *)
       next: simpset option             (* next simpset *)
     } 
 
 let empty_set() = 
-  { basic=Net.empty(); 
-    next=None
+  {
+   convs = Net.empty();
+   basic=Net.empty(); 
+   next=None
   }
 
 
@@ -140,54 +143,14 @@ let add_rule rl s=
     in 
     let rl1=(vs, cond, l, r, set_rr_order src order)
     in 
-    { 
-      basic=Net.insert termnet_lt varp (s.basic) l rl1;
-      next=s.next
-    }
+    { s with basic=Net.insert termnet_lt varp (s.basic) l rl1 }
   else 
-    { 
-      basic=Net.insert termnet_lt varp (s.basic) l rl;
-      next=s.next
-    }
+    { s with basic=Net.insert termnet_lt varp (s.basic) l rl }
 
-(** [lookup trm s]:
-
-   find list of possible matches for term [trm] in set [s].
- *)
-let rec lookup set trm =
-  try
-    Net.lookup set.basic trm 
-  with Not_found ->
-    (match set.next with 
-      None -> raise Not_found
-    | Some(s) -> lookup s trm)
-
-
-(** [join s t]
-   Join sets s and t together.
-   In the set [join s t], the set [s] will be searched before set [t]
- *)
-let rec join s1 s2 = 
-  match s1.next with 
-    None ->
-      { basic=s1.basic;
-	next=Some(s2)}
-  | Some x -> 
-      {basic=s1.basic;
-       next=Some(join x s2)}
-
-(** [split s]
-   Split simpset [s] into two parts.
-   fails if [s] is not joined to another set.
- *)
-let split s1=
-  match s1.next with 
-    None ->
-      raise (Failure "split")
-  | Some x -> 
-      ({basic=s1.basic;
-	next=None}, x)
-	
+let add_conv (vars, key) conv s =
+  let varp = is_variable vars 
+  in 
+  { s with convs=Net.add varp (s.convs) key conv }
 
 
 (* [dest_rr_rule trm]: 
@@ -226,6 +189,63 @@ let split s1=
       let qs, c, l, r=dest_rr_rule trm
       in 
       (qs, c, l, r, rl)
+
+(** [lookup trm s]:
+
+   find list of possible matches for term [trm] in set [s].
+ *)
+let rec find_first f l =
+  match l with
+    [] -> failwith "find_first"
+  | (x::xs) -> try (f x) with _ -> find_first f xs
+
+let lookup_conv scp set trm =
+  let conv_list = Net.lookup set.convs trm
+  in 
+  try 
+    let thm = find_first (fun conv -> conv scp trm) conv_list
+    in 
+    let (qs, conc, lhs, rhs, src) = 
+      make_rule thm (Logic.term_of thm)
+    in 
+    [(qs, conc, lhs, rhs, Logic.RRThm(src))]
+  with _ -> raise Not_found
+
+let rec lookup scp set trm =
+  try 
+    lookup_conv scp set trm
+  with Not_found -> 
+    (try
+      Net.lookup set.basic trm 
+    with Not_found ->
+      (match set.next with 
+	None -> raise Not_found
+      | Some(s) -> lookup scp s trm))
+
+
+(** [join s t]
+   Join sets s and t together.
+   In the set [join s t], the set [s] will be searched before set [t]
+ *)
+let rec join s1 s2 = 
+  match s1.next with 
+    None ->
+      {s1 with next=Some(s2)}
+  | Some x -> 
+      {s1 with next=Some(join x s2)}
+
+(** [split s]
+   Split simpset [s] into two parts.
+   fails if [s] is not joined to another set.
+ *)
+let split s1=
+  match s1.next with 
+    None ->
+      raise (Failure "split")
+  | Some x -> 
+      ({ s1 with next=None}, x)
+	
+
 
 
 (* Printer for simpsets *)

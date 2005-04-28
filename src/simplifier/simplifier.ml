@@ -388,6 +388,8 @@ let find_basic cntrl ret tyenv rl trm g=
    raise No_change and set [ret:=None] if no matches.
  *)
 let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
+  let scp = Drule.scope_of goal
+  in 
   let rec find_aux rls t g= 
     match rls with
       [] -> (ret:=None; raise No_change)
@@ -396,7 +398,7 @@ let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
 	  find_basic cntrl ret tyenv rl t g
 	with _ -> find_aux nxt t g
   in 
-  find_aux (lookup (Data.get_simpset cntrl) trm) trm goal
+  find_aux (lookup scp (Data.get_simpset cntrl) trm) trm goal
 
 
 (** [find_all_matches scp tyenv rslt set tac trm g]

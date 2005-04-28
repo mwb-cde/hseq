@@ -16,7 +16,7 @@ val set_std_ss: Simpset.simpset -> unit
 val empty_simp : unit -> unit
 val add_simps : Logic.thm list -> unit
 val add_simp : Logic.thm -> unit
-
+val add_conv : Basic.term -> Logic.conv -> unit
 
 (** [simp_tac ?f ?cntrl ?asms ?set ?with ?rules ?ignore goal]
    

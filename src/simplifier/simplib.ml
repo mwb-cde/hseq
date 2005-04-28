@@ -13,6 +13,14 @@ let add_simps thms =
   set_std_ss (Simpset.simpset_add_thms (Global.scope()) (std_ss()) thms)
 let add_simp thm = add_simps [thm]
 
+let add_conv term conv =
+  let (vs, body) = Term.strip_qnt Basic.All term
+  in 
+  set_std_ss (Simpset.add_conv (vs, body) conv (std_ss()))
+
+let init_std_ss() =
+  empty_simp();
+  add_conv << !x A: (%y: A) x >> Logic.Conv.beta_conv
 
 (** [simp_tac ?f ?cntrl ?asms ?set ?with ?rules ?ignore goal]
    
@@ -158,7 +166,7 @@ let on_load thy=
 
 
 let init () =
-  empty_simp();
+  init_std_ss();
   Global.add_load_fn on_load
 
 let _ = 
