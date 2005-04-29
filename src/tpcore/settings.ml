@@ -6,7 +6,9 @@
 
 (* Directory and files  *)
 
-let base_dir = ref "/home/mw/src/tp/src"
+let base_dir_var = "HSEQ"
+
+let base_dir = ref Defaults.basedir
 let get_base_dir () = !base_dir
 let set_base_dir d = base_dir := d
 
@@ -15,10 +17,10 @@ let make_directory f = (get_base_dir())^"/"^f
 
 let init_file = "fm.ml"
 
-let base_dir_var = "HSEQ"
 let include_dir () = make_directory "include"
 let libs_dir () = make_directory "libs"
 let thys_dir () = make_directory "thys"
+
 
 
 (* suffixes *)
@@ -44,4 +46,5 @@ let get_nice_sequent () = !nice_sequent
 
 let long_identifier=ref false
 let print_type_level=ref 1
+
 

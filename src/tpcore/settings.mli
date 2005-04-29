@@ -9,6 +9,14 @@
    Put installation dependent settings in here 
 
 *)
+
+(**
+   [base_dir_var]: the environment variable to test for the
+   systems base_dir. 
+   Initially "HSEQ"
+*)
+val base_dir_var: string
+
 (* File and directory settings *)
 (* 
    base_dir:
@@ -19,8 +27,6 @@
 val get_base_dir: unit -> string
 val set_base_dir: string -> unit
 
-(* [base_dir_var]: Environment variable to query for base directory *)
-val base_dir_var: string
 
 (* 
    [make_filename f]: make file name f relative to the base directory
@@ -75,3 +81,4 @@ val get_nice_sequent: unit -> bool
 *)
 val long_identifier: bool ref
 val print_type_level: int ref
+

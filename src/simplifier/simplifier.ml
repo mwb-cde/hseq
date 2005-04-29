@@ -886,10 +886,9 @@ let simp_tac cntrl asms except l goal=
        (fun _ -> asms) 
 	 --> 
        seq 
-(*
 	 [make_asm_entries_tac asm_rules asm_tags except;
 	  make_concl_entries_tac concl_rules concl_tags except];
-*)
+(*
 	 [make_asm_entries_tac asm_rules asm_tags except;
 	  make_concl_entries_tac concl_rules concl_tags 
 	    (fun t -> 
@@ -897,6 +896,7 @@ let simp_tac cntrl asms except l goal=
 		(List.exists (fun x -> Tag.equal x t) targets)
 		(except t))
 		 ];
+*)
 
        data_tac 
 	 (fun () -> 
