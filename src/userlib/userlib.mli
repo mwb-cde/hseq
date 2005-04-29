@@ -17,7 +17,17 @@
    different module.
 *)
 
+(* 
+   [compiler dirs name]: 
+   Compile file [name] with include directories [dirs].
 
+   [compile ["../include"] "test.ml"] 
+   is equivalent to
+   [Sys.system "ocamlc -c -I base_include -I ../include test.ml"]
+   where [base_include = Settings.include_dir()
+*)
+val compile: string list -> string -> int
+   
 (* from Commands *)
 
 (* Infixes *)

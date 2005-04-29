@@ -108,3 +108,15 @@ let scope = Commands.scope
 
 let by x = 
   (catch_errors Goals.by_com) x
+
+
+let compile dirs name = 
+  let inc_dirs = 
+    Lib.list_string (fun x -> "-I "^x) " " dirs
+  in 
+  let inc_string = ("-I "^(Settings.include_dir())^inc_dirs)
+  in 
+  let com_string = "ocamlc -c"
+  in 
+  Sys.command (com_string ^" "^ inc_string ^" "^name)
+					      
