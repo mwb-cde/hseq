@@ -385,7 +385,13 @@ let make_simp_asm_rules except forms =
     | (t, f)::fs -> 
 	if(except (t, f)) 
 	then make_aux fs rslt
-	else make_aux fs ((make_simp_asm_rule t f)::rslt)
+	else 
+	  let nrslt = 
+	    try
+	      ((make_simp_asm_rule t f)::rslt)
+	    with _ -> rslt
+	  in 
+	  make_aux fs nrslt
   in 
   make_aux forms []
 

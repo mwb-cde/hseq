@@ -854,7 +854,7 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
    If [l] is not given, repeat for each conclusion.
    Ignore formulas for which [except] is true.
  *)
-let simp_tac cntrl asms except l goal=
+let rec simp_tac cntrl asms except l goal=
   let sqnt = (Drule.sequent goal)
   in 
   let asm_forms = Drule.asms_of sqnt
@@ -868,8 +868,16 @@ let simp_tac cntrl asms except l goal=
       None -> concl_tags
     | Some x -> [Logic.label_to_tag x sqnt]
   in
+(*
   let data1 =
     Data.set_tactic cntrl prove_cond_tac 
+  in
+*)
+  let data1 =
+    let prover_tac pd pt g= 
+      simp_tac pd asms except (Some (ftag pt)) g
+    in 
+    Data.set_tactic cntrl prover_tac 
   in
   let set = Data.get_simpset data1
   in 
