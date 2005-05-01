@@ -63,10 +63,27 @@ module Data:
 (** visited: formulas visited during the course of simplification *)
 	   visited: Tag.t list;
 
+(** asm_pairs: 
+   tags of original formulas and the new modified formula
+   (in (a, b) a is the tag of the original assumption,
+   b is the tag of the formula used as a rewrite rule
+*)
+	   asm_pairs: (Tag.t*Tag.t) list;
+(** concl_pairs: 
+   tags of original formulas and the new modified formula
+   (in (a, b) a is the tag of the original conclusion
+   b is the tag of the formula used as a rewrite rule
+*)
+	   concl_pairs: (Tag.t*Tag.t) list;
+
+(** exclude: formulas not to use as a rewrite rule *)
+	   exclude: Tag.t list;
+
 (** rules: 
    rewrite rules to pass to the rewriter (the result of the simplifier)
  *)
 	    rules : Logic.rr_type list
+
 	}
 
       val make: 
@@ -76,8 +93,12 @@ module Data:
 	    -> int -> int 
 	      -> Tag.t list 
 		-> Tag.t list 
-		  -> Logic.rr_type list 
-		    -> t
+		  -> Tag.t list 
+		    -> (Tag.t*Tag.t) list 
+		      -> (Tag.t*Tag.t) list 
+			-> Logic.rr_type list 
+			  -> t
+
       val set_simpset : t -> Simpset.simpset -> t
       val set_tactic : t -> (t -> Tag.t -> Tactics.tactic) -> t
       val set_conds : t -> int -> t
@@ -85,12 +106,18 @@ module Data:
       val set_control: t -> control -> t
       val set_asms : t -> Tag.t list -> t
       val set_visited : t -> Tag.t list -> t
+      val set_asm_pairs : t -> (Tag.t*Tag.t) list -> t
+      val set_concl_pairs : t -> (Tag.t*Tag.t) list -> t
+      val set_exclude : t -> Tag.t list -> t
       val set_rules : t -> Logic.rr_type list -> t
       val get_simpset : t -> Simpset.simpset
       val get_tactic : t -> (t -> Tag.t -> Tactics.tactic)
       val get_control: t -> control
       val get_asms : t -> Tag.t list 
       val get_visited : t -> Tag.t list 
+      val get_asm_pairs : t -> (Tag.t*Tag.t) list 
+      val get_concl_pairs : t -> (Tag.t*Tag.t) list 
+      val get_exclude : t -> Tag.t list 
       val add_asm : t -> Tag.t -> t
       val dec_cond_depth : t -> t
       val add_rule : t -> Logic.rr_type -> t
@@ -108,8 +135,12 @@ val prep_cond_tac :
       -> Tactics.tactic
 
 val prove_cond_tac:
-    Data.t -> Tag.t 
-      -> Tactics.tactic
+    Data.t 
+  -> (Data.t * Logic.rr_type) option ref 
+    -> Basic.term list 
+      -> Simpset.rule
+	-> Tactics.tactic
+
 
 val match_rewrite :
     Scope.t 
@@ -189,11 +220,9 @@ val basic_simp_tac :
     Data.t ->
     Data.t option ref -> Tag.t -> Tactics.tactic
 
-
 (**
    {6C User-level functions }
- *)
-
+*)
 
 val make_asm_entries_tac : 
     ((Tag.t * Tag.t) list * (Tag.t * Formula.form) list) ref 
@@ -204,6 +233,10 @@ val make_concl_entries_tac :
     ((Tag.t * Tag.t) list * (Tag.t * Formula.form) list) ref 
   -> Tag.t list -> (Tag.t -> bool)
     -> Tactics.tactic
+
+val cond_prover_tac:
+    Data.t -> Tag.t 
+      -> Tactics.tactic
 
 (**
    [once_simp_tac cntrl set l g]
@@ -251,7 +284,10 @@ val dsnd: ('a * 'b) -> 'b
 
 (* Debugging information *)
 
-val prove_cond_trueR: 
+val cond_prover_trueR: 
     Logic.info option -> Logic.label -> Tactics.tactic
-val prove_cond_prover_tac: 
+val cond_prover_worker_tac: 
     Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
+
+val is_excluded: 
+    Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool

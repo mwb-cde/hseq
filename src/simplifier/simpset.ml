@@ -199,8 +199,19 @@ let rec find_first f l =
     [] -> failwith "find_first"
   | (x::xs) -> try (f x) with _ -> find_first f xs
 
-let lookup_conv scp set trm =
-  let conv_list = Net.lookup set.convs trm
+
+(*
+let net_lookup net trm=
+  match Net.lookup net trm with
+    [] -> raise Not_found
+  | xs -> xs
+*)
+let net_lookup net trm=
+  Net.lookup net trm
+
+let rec lookup_conv scp set trm list =
+  let conv_list = 
+      Net.lookup set.convs trm
   in 
   try 
     let thm = find_first (fun conv -> conv scp trm) conv_list
@@ -208,19 +219,41 @@ let lookup_conv scp set trm =
     let (qs, conc, lhs, rhs, src) = 
       make_rule thm (Logic.term_of thm)
     in 
-    [(qs, conc, lhs, rhs, Logic.RRThm(src))]
+    (qs, conc, lhs, rhs, Logic.RRThm(src))::list
   with _ -> raise Not_found
 
+      
+let rec lookup_all scp set term list = 
+  let list1 = 
+    try
+      lookup_conv scp set term list
+    with Not_found -> list
+  in 
+  let list2 = 
+    try
+      List.rev_append (net_lookup set.basic term) list1
+    with Not_found -> list1
+  in 
+  match set.next with
+    None -> List.rev list2
+  | Some(s) -> lookup_all scp s term list2
+
+
+let rec lookup scp set trm =
+  lookup_all scp set trm []
+
+(*
 let rec lookup scp set trm =
   try 
-    lookup_conv scp set trm
+    lookup_conv_once scp set trm
   with Not_found -> 
     (try
-      Net.lookup set.basic trm 
+      net_lookup set.basic trm 
     with Not_found ->
       (match set.next with 
-	None -> raise Not_found
+	None -> []
       | Some(s) -> lookup scp s trm))
+*)
 
 
 (** [join s t]

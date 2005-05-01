@@ -67,7 +67,12 @@ val add_rule : rule -> simpset -> simpset
 val add_conv: 
     (Basic.binders list * Basic.term) -> Logic.conv -> simpset -> simpset
 
-val lookup_conv : Scope.t -> simpset -> Basic.term -> rule list
+val net_lookup: (rule) Net.net -> Basic.term -> rule list
+
+val lookup_conv : 
+    Scope.t -> simpset -> Basic.term -> rule list -> rule list
+val lookup_all : 
+    Scope.t -> simpset -> Basic.term -> rule list -> rule list
 
 val lookup : Scope.t -> simpset -> Basic.term -> rule list
 val join : simpset -> simpset -> simpset
