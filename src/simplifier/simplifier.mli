@@ -248,3 +248,10 @@ val full_simp_tac :
 val dfst: ('a * 'b) -> 'a
 val dsnd: ('a * 'b) -> 'b
 
+
+(* Debugging information *)
+
+val prove_cond_trueR: 
+    Logic.info option -> Logic.label -> Tactics.tactic
+val prove_cond_prover_tac: 
+    Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic

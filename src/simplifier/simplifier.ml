@@ -4,6 +4,12 @@
  Copyright M Wahab 2005
 ----*)
 
+(*
+   Bugs: 
+
+   Puts the formula being simplified into the simpset which can
+   interfere with usable rules.
+*)
 
 open Basic
 open Term
@@ -671,6 +677,20 @@ let rec basic_simp_tac cntrl ret ft goal=
    Apply [simp_prep_tac] then [basic_simp_tac].
    Then apply [Logic.Tactics.trueR] to solve goal.
  *) 
+(* 
+   prove_cond_trueR, prove_cond_prover_tac
+   seperated out from prove_cond_tac to help with debugging.
+*)
+   
+let prove_cond_trueR = Logic.Tactics.trueR
+
+let prove_cond_prover_tac ctrl1 ret tg0 g2= 
+    let ctrl1 = 
+      Lib.dest_option ~err:(Failure "prove_cond_prover_tac: 1") (!ret)
+    in 
+    repeat (basic_simp_tac ctrl1 ret tg0) g2
+
+
 let prove_cond_tac ctrl tg goal=
   Tactics.alt
     [
@@ -680,16 +700,16 @@ let prove_cond_tac ctrl tg goal=
 	 let ret=ref None
 	 in 
 	 seq [simp_prep_tac ctrl0 ret tg0;
-	      fun g2 -> 
-		let ctrl1 = 
-		  Lib.dest_option ~err:(Failure "prove_cond_tac: 1") (!ret)
-		in 
-		basic_simp_tac ctrl1 ret tg0 g2] g0
+	      prove_cond_prover_tac ctrl0 ret tg0
+	    ] g0
        in 
        Tactics.seq
 	 [
 	  init_simp_tac ctrl tg;
+	  prove_cond_trueR None (Logic.FTag tg)
+(*
 	  Logic.Tactics.trueR None (Logic.FTag tg)
+*)
 	] g)
    ] goal
 
@@ -835,12 +855,12 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
     with e -> 
       (Lib.set_option ret ncntrl; raise e)
   in 
-  let trivial g = 
+  let trivia_tac g = 
     try Boollib.trivial ~f:(ftag tag) g
     with _ -> skip g
   in 
   ret:=None; 
-  seq [tac1; (repeat tac2) ; trivial] goal
+  seq [tac1; (repeat tac2) ; trivia_tac] goal
 
 (**
    [simp_tac cntrl asms except ?l goal]:
@@ -854,6 +874,7 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
    If [l] is not given, repeat for each conclusion.
    Ignore formulas for which [except] is true.
  *)
+
 let rec simp_tac cntrl asms except l goal=
   let sqnt = (Drule.sequent goal)
   in 
@@ -868,21 +889,16 @@ let rec simp_tac cntrl asms except l goal=
       None -> concl_tags
     | Some x -> [Logic.label_to_tag x sqnt]
   in
-(*
-  let data1 =
-    Data.set_tactic cntrl prove_cond_tac 
-  in
-*)
-  let data1 =
-    let prover_tac pd pt g= 
-      simp_tac pd asms except (Some (ftag pt)) g
-    in 
-    Data.set_tactic cntrl prover_tac 
-  in
-  let set = Data.get_simpset data1
-  in 
   let ret=ref (None: Data.t option)
   in 
+  let set = Data.get_simpset cntrl
+  in 
+  let data1 =
+    let prover_tac pd pt g= 
+      prove_cond_tac pd pt g
+    in 
+    Data.set_tactic cntrl prover_tac  
+  in
   let asm_rules = ref ([], [])
   and concl_rules = ref ([], [])
   and asm_entry_tags = ref []
@@ -896,16 +912,6 @@ let rec simp_tac cntrl asms except l goal=
        seq 
 	 [make_asm_entries_tac asm_rules asm_tags except;
 	  make_concl_entries_tac concl_rules concl_tags except];
-(*
-	 [make_asm_entries_tac asm_rules asm_tags except;
-	  make_concl_entries_tac concl_rules concl_tags 
-	    (fun t -> 
-	      Pervasives.(||)
-		(List.exists (fun x -> Tag.equal x t) targets)
-		(except t))
-		 ];
-*)
-
        data_tac 
 	 (fun () -> 
        (* get the information, put it into a useful form *)
