@@ -883,6 +883,21 @@ let print_typed_name ppstate (n, ty)=
   Gtypes.print (ppstate) ty;
   Format.printf ")@]"
 
+let print_typed_identifier ppstate (id, ty)=
+  if(!Settings.print_type_level > 3)
+  then 
+    (Format.printf "@[<2>(";
+     Printer.print_identifier 
+       (pplookup ppstate) id;
+     Format.printf ":@ ";
+     Gtypes.print (ppstate) ty;
+     Format.printf ")@]")
+  else 
+    (Format.printf "@[";
+     Printer.print_identifier 
+       (pplookup ppstate) id;
+     Format.printf "@]")
+
 (*
 let rec print_infix ppstate (assoc, prec) opr (f, args) = 
   match args with
@@ -1019,10 +1034,13 @@ let print_qnts ppstate prec (qnt, qs) =
 let rec print_term ppstate (assoc, prec) x =
   match x with
     Id(n, ty) -> 
+      print_typed_identifier ppstate (n, ty)
+(*
       Format.printf "@[";
       Printer.print_identifier 
 	(pplookup ppstate) n;
       Format.printf "@]"
+*)
   | Free(n, ty) -> 
       if(!Settings.print_type_level > 3)
       then 
