@@ -86,11 +86,18 @@ module Info =
     let is_infix f = match f with Infix _ -> true | _ -> false 
 
     let is_left_assoc a = 
-      match a with Infix Leftassoc -> true | _ -> false
+      match a with 
+	Infix Leftassoc -> true 
+      | _ -> false
     let is_right_assoc a = 
-      match a with Infix Rightassoc -> true | _ -> false
+      match a with 
+	Infix Rightassoc -> true 
+      | _ -> false
     let is_non_assoc a = 
-      match a with Infix Nonassoc -> true | _ -> false
+      match a with 
+	Infix Leftassoc -> false
+      | Infix Rightassoc -> false
+      | _ -> true
 
     let assoc_of a = 
       match a with 
@@ -146,11 +153,11 @@ module type GRAMMARS =
       val (||) : 'a phrase -> 'a phrase -> 'a phrase
       val alt : ('b) phrase list -> ('b) phrase 
       val named_alt : 
-	  ('a -> ('b)phrase) Lib.named_list 
+	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
       val seq : ('b phrase) list -> ('b list)phrase
       val named_seq : 
-	  ('a -> ('b)phrase) Lib.named_list 
+	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b list)phrase)
 
       type token_info = 

@@ -194,7 +194,7 @@ module type GRAMMARS =
    return the result of the first to suceed.
 *)
       val named_alt : 
-	  ('a -> ('b)phrase) Lib.named_list 
+	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
 
 (*
@@ -214,7 +214,7 @@ module type GRAMMARS =
    return the result of as a list.
 *)
       val named_seq : 
-	  ('a -> ('b)phrase) Lib.named_list 
+	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b list)phrase)
 
 (*

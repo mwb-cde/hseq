@@ -198,12 +198,31 @@ let int_to_name i =
   else 
     ld^(string_of_int rm)
 
+
+let num_to_name (i:Num.num) =
+  let numchars=Num.num_of_int 26
+  and codea=Num.num_of_int (int_of_char 'a')
+  and zero = Num.num_of_int 0
+  in 
+  let ch=Num.mod_num i numchars
+  and rm=Num.div_num i numchars
+  in 
+  let ld= 
+    String.make 1 
+      (char_of_int (Num.int_of_num (Num.add_num codea ch)))
+  in
+  if (Num.eq_num rm zero)
+  then
+    ld
+  else 
+    ld^(Num.string_of_num rm)
+
 (* Named Lists *)
 
-type ('a)named_list = (string * 'a) list
+type ('a, 'b)named_list = ('a * 'b) list
 
-type position = 
-    First | Last | Before of string | After of string
+type ('a)position = 
+    First | Last | Before of 'a | After of 'a | Level of 'a
 
 (* 
    split_at s nl: split named list nl at s name s
@@ -215,8 +234,11 @@ let split_at s nl=
     match l with 
       [] -> (r, [])
     | (x, y)::ls -> 
-	if(x=s) then (List.rev r, l)
-	else split_aux ls ((x, y)::r)
+	if(x=s) 
+	then 
+	  (List.rev r, l)
+	else 
+	  split_aux ls ((x, y)::r)
   in split_aux nl []
 
 let named_add l p n x =
@@ -236,6 +258,11 @@ let named_add l p n x =
 	| d::rst -> d::(n, x)::rst)
       in 
       List.rev_append (List.rev lt) rt
+  | Level s -> 
+      let (lt, rt)=split_at s l
+      in 
+      List.rev_append (List.rev lt) ((n, x)::rt)
+
 
 let get_option x d=
   match x with
@@ -331,4 +358,5 @@ let apply_nth n f l d =
   match l with 
     [] -> d
   | _ -> f (List.nth l n)
+
 

@@ -48,12 +48,19 @@ val find_char : char -> int -> string -> int
 
 val chop_at : char -> string -> string * string
 
-(* int_to_name i: convert i to type name
+(* [int_to_name i]: convert i to a string
    0 -> a
    25-> z
    26 -> a1
 *)
 val int_to_name: int -> string
+
+(* [num_to_name i]: convert [i] to string
+   0 -> a
+   25-> z
+   26 -> a1
+*)
+val num_to_name: Num.num -> string
 
 (**
    Named Lists 
@@ -63,19 +70,18 @@ val int_to_name: int -> string
 
    Use association list functions for operations other than add.
 *)
-type ('a)named_list = (string * 'a) list
+type ('a, 'b)named_list = ('a * 'b) list
 
-type position = 
-    First | Last | Before of string | After of string
+type ('a)position = 
+    First | Last | Before of 'a | After of 'a | Level of 'a
 
 
 (** [named_add l p n x]: 
    add (n, x) to named list l at position p 
 *)
 val named_add: 
-    ('a)named_list->position 
-      -> string -> 'a -> ('a) named_list
-
+    ('a, 'b)named_list->('a)position 
+      -> 'a -> 'b -> ('a, 'b) named_list
 
 (* 
    [get_option x default]:
@@ -139,3 +145,4 @@ val rotate_right : int -> 'a list -> 'a list
    If list [l] is empty, return [d].
 *)
 val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
+
