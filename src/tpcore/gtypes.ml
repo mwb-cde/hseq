@@ -319,8 +319,7 @@ and print_defined ppstate (assoc, prec) (f, args) =
   in 
   let nfixity = pprec.Printer.fixity
   in 
-  let (nassoc, nprec) = 
-    (Printer.assoc_of nfixity, pprec.Printer.prec)
+  let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
   in 
   try 
     let printer = Printer.get_printer (ppstate.Printer.types) f
@@ -335,11 +334,11 @@ and print_defined ppstate (assoc, prec) (f, args) =
 	  Format.printf "@[<hov 2>";
 	  print_bracket (assoc, prec) (nassoc, nprec)
 	     "(";
-	  print_type ppstate (Printer.left_assoc, nprec) lf;
+	  print_type ppstate (Printer.infixl, nprec) lf;
 	  Printer.print_space();
 	  Printer.print_identifier (pplookup ppstate) f;
 	  Printer.print_space();
-	  print_type ppstate (Printer.right_assoc, nprec) lr;
+	  print_type ppstate (Printer.infixr, nprec) lr;
 	  Printer.print_list 
 	    (print_type ppstate (nassoc, nprec), 
 	     Printer.print_space) 
@@ -350,7 +349,7 @@ and print_defined ppstate (assoc, prec) (f, args) =
 	  Format.printf "@[<hov 2>";
 	  print_bracket (assoc, prec) (nassoc, nprec)
 	     "(";
-	  print_type ppstate (Printer.left_assoc, nprec) lf;
+	  print_type ppstate (Printer.infixl, nprec) lf;
 	  Printer.print_space();
 	  Printer.print_identifier (pplookup ppstate) f;
 	  Printer.print_space();
@@ -392,7 +391,7 @@ and print_defined ppstate (assoc, prec) (f, args) =
 
 let print ppinfo x =
   print_type ppinfo 
-    (Printer.default_type_assoc, Printer.default_type_prec) x
+    (Printer.default_type_fixity, Printer.default_type_prec) x
 
 (* Error handling *)
 

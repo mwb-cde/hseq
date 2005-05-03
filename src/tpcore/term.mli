@@ -250,39 +250,54 @@ val retype_pretty: Gtypes.substitution -> term
 (* Pretty printing *)
 
 val print_qnts: 
-    Printer.ppinfo -> (Printer.assoc * int)
+    Printer.ppinfo -> (Printer.fixity * int)
       -> (string * (Basic.binders list)) Printer.printer 
 
+(* 
+   [print_typed_obj level printer ppstate prec (obj, ty)]: 
+
+   If [Setting.print_type_level > level] print [obj] with [ty] as its type
+   in the form [(obj: ty)] otherwise print [obj] only.
+
+   Use [printer] to print [obj].
+*)
+val print_typed_obj:
+    int 
+  -> (Printer.ppinfo -> (Printer.fixity * int) -> ('a) Printer.printer)
+    -> Printer.ppinfo
+    -> (Printer.fixity * int)
+      -> ('a * Basic.gtype) Printer.printer 
+
 val print_bracket:
-    (Printer.assoc * int) -> (Printer.assoc * int)
+    (Printer.fixity * int) -> (Printer.fixity * int)
       -> string Printer.printer
 
 val print_infix: 
-    (((Printer.assoc * int) -> Basic.ident Printer.printer)
-       * ((Printer.assoc * int) -> term Printer.printer))
-    -> (Printer.assoc * int) 
+    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+       * ((Printer.fixity * int) -> term Printer.printer))
+    -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
 val print_prefix: 
-    (((Printer.assoc * int) -> Basic.ident Printer.printer)
-       * ((Printer.assoc * int) -> term Printer.printer))
-    -> (Printer.assoc * int) 
+    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+       * ((Printer.fixity * int) -> term Printer.printer))
+    -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
 val print_suffix: 
-    (((Printer.assoc * int) -> Basic.ident Printer.printer)
-       * ((Printer.assoc * int) -> term Printer.printer))
-    -> (Printer.assoc * int) 
+    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+       * ((Printer.fixity * int) -> term Printer.printer))
+    -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
 
 val print_fn_app :
     Printer.ppinfo 
-  -> (((Printer.assoc * int) -> Basic.ident Printer.printer)
-	* ((Printer.assoc * int) -> term Printer.printer))
-    -> (Printer.assoc * int)
+  -> (((Printer.fixity * int) -> Basic.ident Printer.printer)
+	* ((Printer.fixity * int) -> term Printer.printer))
+    -> (Printer.fixity * int)
       -> (Basic.ident * (term)list) Printer.printer
 
 val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
 val print_term : 
-    Printer.ppinfo -> (Printer.assoc * int) -> term Printer.printer
+    Printer.ppinfo -> (Printer.fixity * int) -> term Printer.printer
 
 (**
    [simple_print_fn_app]
@@ -290,7 +305,7 @@ val print_term :
    print an application as 'f a1 a2 .. an'
 *)
 val simple_print_fn_app: 
-    Printer.ppinfo -> (Printer.assoc * int) 
+    Printer.ppinfo -> (Printer.fixity * int) 
       -> (Basic.ident * term list) Printer.printer
 
 val print : Printer.ppinfo -> term -> unit
@@ -302,9 +317,9 @@ val print_simple: term -> unit
    of the form [f (%x: P)] as [sym x: P].
 *)
 val print_as_binder:
-    (Printer.assoc * int) -> Basic.ident -> string
+    (Printer.fixity * int) -> Basic.ident -> string
       -> Printer.ppinfo 
-	-> (Printer.assoc * int)
+	-> (Printer.fixity * int)
 	  -> (Basic.ident * Basic.term list) Printer.printer
 
 (**
@@ -313,7 +328,7 @@ val print_as_binder:
    as [x1 x2 ... xn : body]
 *)
 val print_qnt_body: 
-    Printer.ppinfo -> (Printer.assoc * int)
+    Printer.ppinfo -> (Printer.fixity * int)
       -> ((Basic.binders)list * Basic.term) Printer.printer
 
 (** 

@@ -84,12 +84,17 @@ module Skolem =
       try ignore(get_old_sklm n sklms); true
       with Not_found -> false
 
+    let make_skolem_name id indx = 
+      mk_long (thy_of_id id) ((name id)^"_"^(string_of_int indx))
+
     let get_new_sklm n t sklms = 
       try 
 	(let oldsk = get_old_sklm n sklms
 	in let nindx = ((get_sklm_indx oldsk)+1)
-	in let nnam = 
+	in let nnam = make_skolem_name n nindx
+(*
 	  mk_long (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
+*)
 	in (Term.mk_typed_var nnam t, (make_sklm nnam t nindx)::sklms))
       with Not_found -> 
 	let nn =  (mk_long (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
@@ -102,6 +107,7 @@ module Skolem =
       Scope.extend_with_terms scp declns
 
 (*
+
    let add_skolems_to_scope sklms scp =
    { scp with
    Gtypes.typeof_fn = 
@@ -216,9 +222,12 @@ module Skolem =
 	in 
 	(* make the new identifier *)
 	let nnam = 
+	  make_skolem_name info.name nindx
+(*
 	  mk_long 
 	    (thy_of_id info.name) 
 	    ((name info.name)^"_"^(string_of_int nindx))
+*)
 	in 
 	let nty, ntyenv, new_names=mk_nty (name nnam)
 	in 
@@ -226,8 +235,11 @@ module Skolem =
 	 ntyenv, new_names)
       with Not_found -> 
 	let nnam=
+	  make_skolem_name info.name 1
+(*
 	  mk_long 
 	    (thy_of_id info.name) ((name info.name)^"_"^(string_of_int 1))
+*)
 	in 
 	let nty, ntyenv, new_names=mk_nty (name nnam)
 	in 

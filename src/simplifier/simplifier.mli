@@ -62,7 +62,7 @@ module Data:
 
 (** visited: formulas visited during the course of simplification *)
 	   visited: Tag.t list;
-
+(*
 (** asm_pairs: 
    tags of original formulas and the new modified formula
    (in (a, b) a is the tag of the original assumption,
@@ -75,7 +75,7 @@ module Data:
    b is the tag of the formula used as a rewrite rule
 *)
 	   concl_pairs: (Tag.t*Tag.t) list;
-
+*)
 (** exclude: formulas not to use as a rewrite rule *)
 	   exclude: Tag.t list;
 
@@ -94,8 +94,10 @@ module Data:
 	      -> Tag.t list 
 		-> Tag.t list 
 		  -> Tag.t list 
+(*
 		    -> (Tag.t*Tag.t) list 
 		      -> (Tag.t*Tag.t) list 
+*)
 			-> Logic.rr_type list 
 			  -> t
 
@@ -106,8 +108,10 @@ module Data:
       val set_control: t -> control -> t
       val set_asms : t -> Tag.t list -> t
       val set_visited : t -> Tag.t list -> t
+(*
       val set_asm_pairs : t -> (Tag.t*Tag.t) list -> t
       val set_concl_pairs : t -> (Tag.t*Tag.t) list -> t
+*)
       val set_exclude : t -> Tag.t list -> t
       val set_rules : t -> Logic.rr_type list -> t
       val get_simpset : t -> Simpset.simpset
@@ -115,8 +119,10 @@ module Data:
       val get_control: t -> control
       val get_asms : t -> Tag.t list 
       val get_visited : t -> Tag.t list 
+(*
       val get_asm_pairs : t -> (Tag.t*Tag.t) list 
       val get_concl_pairs : t -> (Tag.t*Tag.t) list 
+*)
       val get_exclude : t -> Tag.t list 
       val add_asm : t -> Tag.t -> t
       val dec_cond_depth : t -> t

@@ -24,6 +24,11 @@
 #install_printer Display.print_theory;;
 #install_printer Simplib.print_set;;
 
+(*
+let no_print_simpset (s:Simpset.simpset) = ();;
+#install_printer no_print_simpset;;
+*)
+
 open Goals;;
 open Tactics;;
 open Boollib;;
@@ -37,4 +42,5 @@ let _ =
   Global.add_thy_path "../thys";
   Format.printf "@]" ;
   ()
+
 

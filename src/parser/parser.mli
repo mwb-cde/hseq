@@ -19,11 +19,11 @@ module Pkit :
       val ( -- ) : 'a phrase -> 'b phrase -> ('a * 'b) phrase
       val ( >> ) : 'a phrase -> ('a -> 'b) -> 'b phrase
       val alt : 'a phrase list -> 'a phrase
-      val named_alt: ('a -> ('b)phrase) Lib.named_list 
+      val named_alt: (string, 'a -> ('b)phrase) Lib.named_list 
 	-> 'a -> ('b)phrase
       val seq : ('a phrase) list -> ('a list)phrase
       val named_seq : 
-	  ('a -> ('b)phrase) Lib.named_list 
+	  (string, 'a -> ('b)phrase) Lib.named_list 
 	-> 'a -> ('b list)phrase
 
       val optional : 'a phrase -> 'a option phrase
@@ -170,11 +170,11 @@ module Grammars :
       val error : ?msg:string -> 'a phrase
 
       val type_parsers_list : 
-	  (infotyp -> (Basic.gtype phrase)) Lib.named_list ref
+	  (string, infotyp -> (Basic.gtype phrase)) Lib.named_list ref
       val type_parsers : infotyp -> (Basic.gtype phrase)
 
       val term_parsers_list :
-	  (infotyp -> Basic.term phrase) Lib.named_list ref
+	  (string, infotyp -> Basic.term phrase) Lib.named_list ref
       val term_parsers : infotyp ->Basic.term phrase
 
       val mk_type_binary_constr :
@@ -392,7 +392,7 @@ val term_parser : Pkit.input -> Basic.term
 (* term_parser_list: list of added term parsers *)
 
 val term_parser_list : 
-    unit -> (Grammars.infotyp -> Basic.term phrase) Lib.named_list
+    unit -> (string, Grammars.infotyp -> Basic.term phrase) Lib.named_list
 
 (**
    [add_term_parser pos n ph]:
@@ -401,14 +401,14 @@ val term_parser_list :
    [remove_term_parser s]
    remove term parser named [s], raise [Not_found] if not present 
  *)
-val add_term_parser :  Lib.position -> string
+val add_term_parser :  (string) Lib.position -> string
   -> (Grammars.infotyp -> Basic.term phrase)
     -> unit
 val remove_term_parser :  string -> unit
 
 (* type_parser_list: list of added type parsers *)
 val type_parser_list : 
-    unit -> (Grammars.infotyp -> Basic.gtype phrase) Lib.named_list
+    unit -> (string, Grammars.infotyp -> Basic.gtype phrase) Lib.named_list
 
 (**
    [add_term_parser pos n ph]:
@@ -418,7 +418,7 @@ val type_parser_list :
    remove type parser named s, raise Not_found if not present 
  *)
 val add_type_parser :  
-    Lib.position -> string
+    (string)Lib.position -> string
       -> (Grammars.infotyp -> Basic.gtype phrase)
 	-> unit
 val remove_type_parser :  string -> unit

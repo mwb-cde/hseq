@@ -68,18 +68,18 @@ module PP =
    Printer for negation. Prints [ << base.not x >> ] 
    as [~x] rather than [~ x].
 *)
-    let negation_pprec = Printer.mk_record 110 Printer.prefix None
+    let negation_pprec = Printer.mk_record 200 Printer.prefix None
 
     let negation_printer ppstate prec (f, args)=
       let cprec= negation_pprec.Printer.prec
-      and assoc = Printer.default_term_assoc
+      and fixity = negation_pprec.Printer.fixity
       in 
       match args with 
       (t::rest) -> 
 	Format.printf "@[<2>";
 	Printer.print_bracket prec cprec "(";
 	Format.printf "~";
-	Term.print_term ppstate (assoc, cprec) t;
+	Term.print_term ppstate (fixity, cprec) t;
 	Printer.print_bracket prec cprec ")";
 	Format.printf "@]";
 	(match rest with
@@ -88,12 +88,12 @@ module PP =
 	    Format.printf "@[";
 	    Printer.print_list
 	      ((fun x ->
-		Term.print_term ppstate (assoc, prec) x),
+		Term.print_term ppstate (fixity, prec) x),
 	       (fun () -> Format.printf "@ "))
 	      rest;
 	    Format.printf "@]")
       | _ -> 
-	  Term.simple_print_fn_app ppstate (assoc, cprec) (f, args)
+	  Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
     let init_negation_printer()=
       Global.PP.add_term_printer Logicterm.notid negation_printer
@@ -123,7 +123,7 @@ module PP =
 	 | _ -> raise (ParsingError "Error parsing if-then-else")))
 	
 
-    let ifthenelse_pprec = Printer.mk_record 10 Printer.nonfix None
+    let ifthenelse_pprec = Printer.mk_record 50 Printer.nonfix None
 
     let init_ifthenelse_parser() = 
       Parser.add_symbol "if" (Sym(OTHER "IF"));
@@ -134,7 +134,7 @@ module PP =
 (* Printer for If-Then-Else *)
 
     let ifthenelse_printer ppstate prec (f, args)=
-      let cassoc = Printer.default_term_assoc
+      let cfixity = Printer.default_term_fixity
       in 
       let cprec=(ifthenelse_pprec.Printer.prec)
       in 
@@ -143,11 +143,11 @@ module PP =
 	  Format.printf "@[<2>";
 	  Printer.print_bracket prec cprec "(";
 	  Format.printf "if@ ";
-	  Term.print_term ppstate (cassoc, cprec) b;
+	  Term.print_term ppstate (cfixity, cprec) b;
 	  Format.printf "@ then@ ";
-	  Term.print_term ppstate (cassoc, cprec) tbr;
-	  Format.printf "@ else @ ";
-	  Term.print_term ppstate (cassoc, cprec) fbr;
+	  Term.print_term ppstate (cfixity, cprec) tbr;
+	  Format.printf "@ else@ ";
+	  Term.print_term ppstate (cfixity, cprec) fbr;
 	  Printer.print_bracket prec cprec  ")";
 	  if(prec<cprec) then Format.printf "@ " else ();
 	  Format.printf "@]";
@@ -157,12 +157,12 @@ module PP =
 	      Format.printf "@[";
 	      Printer.print_list
 		((fun x ->
-		  Term.print_term ppstate (cassoc, prec) x),
+		  Term.print_term ppstate (cfixity, prec) x),
 		 (fun () -> Format.printf "@ "))
 		rest;
 	      Format.printf "@]")
       | _ -> 
-	  Term.simple_print_fn_app ppstate (cassoc, cprec) (f, args)
+	  Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
 
     let init_ifthenelse_printer()=
       Global.PP.add_term_printer ifthenelse_id
@@ -178,7 +178,7 @@ module PP =
     let choice_ident = Basic.mk_long "base" "epsilon"
     let choice_sym = "@"
     let choice_pp = 
-      (Printer.default_term_assoc, Printer.default_term_prec) 
+      (Printer.default_term_fixity, Printer.default_term_prec) 
 
     let epsilon_parser ()=
       Parser.Grammars.parse_as_binder choice_ident choice_sym
@@ -195,7 +195,7 @@ module PP =
       let printer = epsilon_printer()
       in 
       Global.PP.add_term_printer choice_ident 
-	(fun ppstate i -> printer ppstate (Printer.non_assoc, i))
+	(fun ppstate i -> printer ppstate (Printer.nonfix, i))
 
     let init_epsilon() = 
       init_epsilon_parser();

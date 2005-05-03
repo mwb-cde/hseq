@@ -70,6 +70,7 @@ module Data =
 (** visited: formulas visited during the course of simplification *)
 	   visited: Tag.t list;
 
+(*
 (** asm_pairs: 
    tags of original formulas and the new modified formula
    (in (a, b) a is the tag of the original assumption,
@@ -82,6 +83,7 @@ module Data =
    b is the tag of the formula used as a rewrite rule
 *)
 	   concl_pairs: (Tag.t*Tag.t) list;
+*)
 
 (** exclude: formulas not to use as a rewrite rule *)
 	   exclude: Tag.t list;
@@ -92,7 +94,7 @@ module Data =
 	   rules: Logic.rr_type list;
        }
 
-    let make sset tac cntrl cd rd a vs ex aps cps rs = 
+    let make sset tac cntrl cd rd a vs ex rs = 
       {
        simpset=sset;
        cond_tac=tac;
@@ -102,7 +104,9 @@ module Data =
        asms=a;
        visited = vs;
        exclude=ex;
+(*
        asm_pairs = aps; concl_pairs = cps;
+*)
        rules=rs
      }
 
@@ -127,11 +131,12 @@ module Data =
     let set_visited cntrl ds=
       {cntrl with visited=ds}
 
+(*
     let set_asm_pairs cntrl ds=
       {cntrl with asm_pairs=ds}
-
     let set_concl_pairs cntrl ds=
       {cntrl with concl_pairs=ds}
+*)
 
     let set_exclude cntrl ds=
       {cntrl with exclude=ds}
@@ -150,8 +155,10 @@ module Data =
 
     let get_visited cntrl =cntrl.visited
 
+(*
     let get_asm_pairs cntrl =cntrl.asm_pairs
     let get_concl_pairs cntrl =cntrl.concl_pairs
+*)
 
     let get_exclude cntrl =cntrl.exclude
 
@@ -168,7 +175,7 @@ module Data =
 (** [default]: The default control information  *)
     let default = 
       make (Simpset.empty_set()) (fun _ _ -> skip) 
-	Formula.default_rr_control 50 50 [] [] [] [] [] []
+	Formula.default_rr_control 50 50 [] [] [] []
 
   end
 
@@ -998,14 +1005,16 @@ let rec simp_tac cntrl asms except l goal=
 	       in 
 	       let set1 = Simpset.add_simp_rule set rules
 	       in 
+(*
 	       let data1a = 
 		 Data.set_asm_pairs data1 (!asm_entry_tags)
 	       in 
 	       let data1b = 
 		 Data.set_concl_pairs data1a (!concl_entry_tags)
 	       in 
+*)
 	       let data2=
-		 Data.set_asms data1b
+		 Data.set_asms data1
 		   (List.append 
 		      (List.map dsnd (!asm_entry_tags))
 		      (Data.get_asms data1))
