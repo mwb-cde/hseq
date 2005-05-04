@@ -694,6 +694,9 @@ let asm_to_rules tg ret goal =
 (* 
    [prepare_concls data cs except g]
 
+   If conclusion is [true] then solve goal with [trueR].
+
+   Otherwise
    Copy and lift the conclusions labelled with a tag in [cs] into the
    assumptions (by negation) then prepare the assumption for use as a
    simp rule.  Ignore conclusions for which [except] is true. Set
@@ -714,7 +717,14 @@ let prepare_concl data except c goal =
       new_asm_tags:=[];
       data:=List.append l (!data)
     in 
-    seq [Logic.Tactics.copy_cncl (Some info) (Drule.ftag c); 
+    let true_test g = 
+      let (_, concl) = Logic.Sequent.get_tagged_cncl c (Drule.sequent g)
+      in 
+      Term.is_true (Formula.term_of concl)
+    in 
+    seq [
+    (true_test --> Logic.Tactics.trueR None (Drule.ftag c));
+    Logic.Tactics.copy_cncl (Some info) (Drule.ftag c); 
 	 (fun g -> 
 	   let c1 = 
 	     Lib.get_one (Drule.formulas info) 
@@ -744,6 +754,9 @@ let prepare_concls data cs except goal=
 (* 
    [prepare_asms data cs except g]
 
+   If assumption is [false] then solve subgoal with [Boollib.trivial].
+
+   Otherwise
    Copy the assumptions labelled with a tag in [cs] then prepare the
    copy for use as a rewrite rule.  Ignore assumptions for which
    [except] is true. Set [!data] to the list of pairs [(a, na)] where
@@ -764,16 +777,23 @@ let prepare_asm data except a goal =
       new_asm_tags:=[];
       data:=List.append l (!data)
     in 
-    seq [Logic.Tactics.copy_asm (Some info) (Drule.ftag a); 
-	 (fun g ->
-	   let a1=
-	     Lib.get_one (Drule.formulas info) 
-	       (Failure "Simplib.prepare_asm")
-	   in 
-	   seq 
-	     [asm_to_rules a1 new_asm_tags;
-	      data_tac data_fn ()] g)
-       ] goal
+    let false_test g = 
+      let (_, asm) = Logic.Sequent.get_tagged_asm a (Drule.sequent g)
+      in 
+      Logicterm.is_false (Formula.term_of asm)
+    in 
+    seq [
+    (false_test --> Boollib.falseR ~a:(Drule.ftag a));
+    Logic.Tactics.copy_asm (Some info) (Drule.ftag a); 
+    (fun g ->
+      let a1=
+	Lib.get_one (Drule.formulas info) 
+	  (Failure "Simplib.prepare_asm")
+      in 
+      seq 
+	[asm_to_rules a1 new_asm_tags;
+	 data_tac data_fn ()] g)
+  ] goal
 
 let prepare_asms data ams except goal=
   let d=ref []
