@@ -84,8 +84,12 @@ module Skolem =
       try ignore(get_old_sklm n sklms); true
       with Not_found -> false
 
+(*
     let make_skolem_name id indx = 
       mk_long (thy_of_id id) ((name id)^"_"^(string_of_int indx))
+*)
+    let make_skolem_name id indx = 
+      mk_long (thy_of_id id) ("_"^(name id)^(string_of_int indx))
 
     let get_new_sklm n t sklms = 
       try 
