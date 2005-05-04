@@ -393,7 +393,7 @@ let match_primed_identifier symtable inp=
 
 (* match_identifier:
    match a string 
-   beginning with an alphabetic character
+   beginning with an alphabetic character or '_'
    and continuing with alpha-numeric or special character.
    string may have more than one identifier, seperated 
    by character satisfying is_dot
@@ -450,10 +450,15 @@ let get_sep_list init_test body_test sep_test strm=
 
 let is_identifier_char c = (is_alpha c) or (is_special_alpha c) or (is_digit c)
 
+let is_identifier_start c = (is_alpha c) or (c='_')
 let match_identifier symtable inp =
-  if (stream_test is_alpha inp)
+  if (stream_test is_identifier_start inp)
   then 
+(*
     match (get_sep_list is_alpha is_identifier_char is_dot inp) with
+*)
+    match (get_sep_list is_identifier_start is_identifier_char is_dot inp) with
+
       [] -> (false, null_tok)
     | [n] -> 
 	(* unqualified identifier may be a symbol/keyword *)
