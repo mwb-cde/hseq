@@ -81,6 +81,7 @@ let typeof_conn c =
 
 (* Terms *)
 
+let falseid = Basic.mk_long base_thy "false"
 let notid = Basic.mk_long base_thy "not"
 let andid = Basic.mk_long base_thy "and"
 let orid = Basic.mk_long base_thy "or"
@@ -106,6 +107,16 @@ let is_conj t = try(fst(dest_fun t) = andid) with _ -> false
 let is_disj t = try( fst(dest_fun t) = orid) with _ -> false
 let is_implies t = try (fst(dest_fun t) = impliesid) with _ -> false
 let is_equality t = try (fst(dest_fun t) = equalsid) with _ -> false
+
+(*
+   let is_false t = 
+   try(fst(dest_fun t) = falseid) with _ -> false
+*)
+let is_false t = 
+  match t with 
+    (Const (Cbool false)) -> true 
+  | _ -> false
+
 
 let dest_equality t = 
   if is_equality t 

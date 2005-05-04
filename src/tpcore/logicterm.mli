@@ -43,6 +43,7 @@ val typeof_conn  : Basic.conns_ty -> gtype
 (** {c6 Terms} *)
 
 (** identifiers/recognisers/constructors for basic logic functions *)
+val falseid : Basic.ident
 val notid : Basic.ident
 val andid : Basic.ident
 val orid : Basic.ident
@@ -53,6 +54,7 @@ val equalssym : string (* PP symbol for equals ("=") *)
 
 val anyid: Basic.ident  (* base.any=base.epsilon(%x: true) *)
 
+val is_false : term -> bool
 val is_neg: term -> bool
 val is_conj: term -> bool
 val is_disj: term -> bool
