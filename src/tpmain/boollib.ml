@@ -821,33 +821,54 @@ module Props =
  *)
     let make_iff_equals_ax ()=
       let iff_l2 = 
+	let info = Drule.mk_info()
+	in 
 	Goals.prove
 	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
-	(flatten_tac
-	   ++ (cut_thm "bool_cases" ++ allA <<x_1>>)
-	   ++ (cut_thm "bool_cases" ++ allA <<y_1>>)
-	   ++ split_tac 
+	(allC ~info:info 
+	   ++ allC ~info:info 
 	   ++ 
-	   alt 
-	   [(replace_tac ++ (basic || trivial));
-            (basic || trivial);
-	    (replace_tac ++ eq_tac)])
+	   (fun g -> 
+	     let y_term, x_term = 
+	       Lib.get_two (Drule.constants info) 
+		 (Failure "make_iff_equals_ax")
+	     in 
+	     (flatten_tac
+	       ++ (cut_thm "bool_cases" ++ allA x_term)
+	       ++ (cut_thm "bool_cases" ++ allA y_term)
+	       ++ split_tac 
+	       ++ 
+	       alt 
+	       [(replace_tac ++ (basic || trivial));
+		(basic || trivial);
+		(replace_tac ++ eq_tac)]) g))
+      in 
+      let info = Drule.mk_info()
       in 
       Goals.prove <<!x y: (x iff y) = (x = y)>>
-      ((flatten_tac ++ cut iff_l2
-	  ++ inst_tac [<<x_1 iff y_1>>; <<x_1 = y_1>>]
-	  ++ split_tac)
-	 --
-	 [flatten_tac
-	    ++ cut iff_l2 ++ inst_tac [<<x_1>>; <<y_1>>]
-		++ unfold "iff" ~f:(!~2)
-		++ (implA --  [basic; basic]);
-	  flatten_tac
-	    ++ replace_tac
-	    ++ unfold "iff" ~f:(!! 1)
-	    ++ split_tac ++ flatten_tac ++ basic;
-	  replace_tac
-	    ++ eq_tac])
+      (allC ~info ++ allC ~info
+	 ++ 
+	 (fun g -> 
+	   let y_term, x_term = 
+	     Lib.get_two (Drule.constants info) 
+	       (Failure "make_iff_equals_ax")
+	   in 
+	   (
+(* flatten_tac ++ *)
+	      (cut iff_l2)
+	     ++ inst_tac [Logicterm.mk_iff x_term y_term;
+			  Logicterm.mk_equality x_term y_term]
+	     ++ split_tac
+	     --
+	     [flatten_tac
+		++ cut iff_l2 ++ inst_tac [x_term; y_term]
+		    ++ unfold "iff" ~f:(!~2)
+		    ++ (implA --  [basic; basic]);
+	      flatten_tac
+		++ replace_tac
+		++ unfold "iff" ~f:(!! 1)
+		++ split_tac ++ flatten_tac ++ basic;
+	      replace_tac ++ eq_tac]) g))
 
     let iff_equals_ax = ref None
     let get_iff_equals_ax ()=
@@ -927,12 +948,24 @@ module Props =
 	(flatten_tac ++ replace_tac ++ trivial)
       in
       let rule_true_l2 = 
+	let info = Drule.mk_info()
+	in 
 	Goals.prove <<!x: x => (x=true)>>
-	((flatten_tac ++ (cut_thm "bool_cases") ++ (allA << x_1 >>) ++ disjA)
-	   -- 
-	   [basic;
-	    rewrite_tac [Commands.lemma "false_def"]
-	      ++ replace_tac ++ flatten_tac])
+	(allC ~info:info
+	   ++ 
+	   (fun g -> 
+	     let x_term = 
+	       Lib.get_one (Drule.constants info) 
+		 (Failure "rule_true_l2")
+	     in 
+	     (flatten_tac 
+	       ++ (cut_thm "bool_cases") 
+	       ++ (allA x_term) 
+	       ++ disjA
+	       -- 
+	       [basic;
+		rewrite_tac [Commands.lemma "false_def"]
+		  ++ replace_tac ++ flatten_tac]) g))
       in
       let rule_true_l3 = 
 	Goals.prove <<! x: x iff (x=true)>>
@@ -959,19 +992,29 @@ module Props =
    rule_false_ax: !x: (not x) = (x=false)
  *)
     let make_rule_false_ax ()= 
+      let info = Drule.mk_info()
+      in 
       Goals.prove <<! x : (not x)=(x=false)>>
-      ((flatten_tac 
-	  ++ once_rewrite_tac [get_equals_iff_ax()]
-	  ++ unfold "iff"
-	  ++ split_tac ++ flatten_tac)
-	 -- 
-	 [
-	  cut_thm "bool_cases" ++ inst_tac [<<x_1>>]
-	    ++
-	    (split_tac 
-	       ++ replace_tac 
-	       ++ (trivial || eq_tac));
-	  replace_tac ++ trivial])
+      (allC ~info:info
+	 ++
+	 (fun g -> 
+	   let x_term = 
+	     Lib.get_one (Drule.constants info)
+	       (Failure "make_rule_false_ax")
+	   in 
+	   ((
+(* flatten_tac ++  *)
+	       once_rewrite_tac [get_equals_iff_ax()]
+	      ++ unfold "iff"
+	      ++ split_tac ++ flatten_tac)
+	     -- 
+	     [
+	      cut_thm "bool_cases" ++ inst_tac [x_term]
+		++
+		(split_tac 
+		   ++ replace_tac 
+		   ++ (trivial || eq_tac));
+	      replace_tac ++ trivial]) g))
 
     let rule_false_ax = ref None
     let get_rule_false_ax ()= 
