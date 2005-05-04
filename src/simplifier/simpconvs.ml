@@ -26,11 +26,19 @@ open Tactics
    [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
 *)
 let make_cond_rule_true_ax()=
+  let info = Drule.mk_info () 
+  in 
   Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
-  (flatten_tac
-     ++ cut (get_rule_true_ax()) ++ inst_tac [<< y_1 >>]
-     ++ once_replace_tac
-     ++ eq_tac)
+  (allC ~info:info ++ allC ~info:info
+     ++
+     (fun g-> 
+       let y_term, x_term = 
+	 Lib.get_two (Drule.constants info) 
+	   (Failure "make_cond_rule_true_ax")
+       in 
+       (cut (get_rule_true_ax()) ++ inst_tac [ y_term ]
+	  ++ once_replace_tac
+	  ++ eq_tac) g))
 
 let cond_rule_true_ax = ref None
 let get_cond_rule_true_ax ()= 
@@ -47,11 +55,19 @@ let get_cond_rule_true_ax ()=
    [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
  *)
 let make_cond_rule_false_ax()=
+  let info = Drule.mk_info()
+  in 
   Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
-  (flatten_tac
-     ++ cut (get_rule_false_ax()) ++ inst_tac [<< y_1 >>]
-     ++ once_replace_tac
-     ++ eq_tac)
+  (allC ~info:info ++ allC ~info:info
+     ++ 
+     (fun g -> 
+       let y_term, x_term = 
+	 Lib.get_two (Drule.constants info) 
+	   (Failure "make_cond_rule_false_ax")
+       in 
+       (cut (get_rule_false_ax()) ++ inst_tac [y_term]
+	  ++ once_replace_tac
+	  ++ eq_tac) g))
 
 let cond_rule_false_ax = ref None
 let get_cond_rule_false_ax ()= 
