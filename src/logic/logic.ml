@@ -47,10 +47,6 @@ let string_thm x = string_form (formula_of x)
 
 (* Error handling *)
 
-(*
-   let mk_logic_error s t = 
-   (Term.term_error s (List.map Formula.term_of t))
- *)
 let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es = 
   raise (Result.add_error (logic_error s t) es)
@@ -60,9 +56,6 @@ module Skolem =
   struct
 
     type skolem_cnst = (Basic.ident * (int * Basic.gtype))
-(*
-   type skolem_cnst = ((Basic.ident * Basic.gtype) * int)
- *)
     type skolem_type = skolem_cnst list
 
     let make_sklm x ty i = (x, (i, ty))
@@ -71,93 +64,50 @@ module Skolem =
     let get_sklm_indx (_, (i, _)) = i
     let get_sklm_type (_, (_, t)) = t
 
-    let decln_of_sklm x= (get_sklm_name x, get_sklm_type x)
-(*
-   let get_sklm_name ((x, _), _) = x
-   let get_sklm_indx ((_, _),i) = i
-   let get_sklm_type ((_, t), _) = t
- *)
+    let make_skolem_name id indx = 
+      let suffix = 
+	if(indx=0) 
+	then ""
+	else (string_of_int indx)
+      in 
+      mk_long (thy_of_id id) ("_"^(name id)^suffix)
 
-    let get_old_sklm n sklms =  (n, List.assoc n sklms)
+    let decln_of_sklm x= 
+      let n = get_sklm_name x
+      and indx = get_sklm_indx x
+      and ty = get_sklm_type x
+      in 
+      let id = make_skolem_name n indx
+      in 
+      (id, ty)
+
+    let get_old_sklm n sklms =
+      (n, List.assoc n sklms)
 
     let is_sklm n sklms = 
       try ignore(get_old_sklm n sklms); true
       with Not_found -> false
 
 (*
-    let make_skolem_name id indx = 
-      mk_long (thy_of_id id) ((name id)^"_"^(string_of_int indx))
-*)
-    let make_skolem_name id indx = 
-      mk_long (thy_of_id id) ("_"^(name id)^(string_of_int indx))
-
     let get_new_sklm n t sklms = 
       try 
 	(let oldsk = get_old_sklm n sklms
 	in let nindx = ((get_sklm_indx oldsk)+1)
 	in let nnam = make_skolem_name n nindx
-(*
-	  mk_long (thy_of_id n) ((name n)^"_"^(string_of_int nindx))
-*)
 	in (Term.mk_typed_var nnam t, (make_sklm nnam t nindx)::sklms))
       with Not_found -> 
 	let nn =  (mk_long (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
 	in 
 	((Term.mk_typed_var nn t), (nn, (1, t))::sklms)
+*)
 
     let add_skolems_to_scope sklms scp =
       let declns = List.map decln_of_sklm sklms
       in 
       Scope.extend_with_terms scp declns
 
-(*
-
-   let add_skolems_to_scope sklms scp =
-   { scp with
-   Gtypes.typeof_fn = 
-   (fun x ->
-   (let y =
-   (if (thy_of_id x)=null_thy
-   then mk_long scp.Gtypes.curr_thy (name x)
-   else x)
-   in 
-   try get_sklm_type (get_old_sklm y sklms)
-   with Not_found -> scp.Gtypes.typeof_fn x));
-   Gtypes.thy_of=
-   (fun sel x-> 
-   if(sel = Basic.fn_id)
-   then 
-   try 
-   ignore(List.assoc (Basic.mk_long scp.Gtypes.curr_thy x) sklms);
-   scp.Gtypes.curr_thy
-   with Not_found -> scp.Gtypes.thy_of sel x
-   else scp.Gtypes.thy_of sel x)
-   }
- *)	
     let add_skolem_to_scope sv sty scp =
       Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
-(*
-   let add_skolem_to_scope sv sty scp =
-   let svname=Basic.name (Term.get_var_id sv)
-   in 
-   { scp with
-   Gtypes.typeof_fn = 
-   (fun x ->
-   let id_thy = thy_of_id x
-   in 
-   if (id_thy=null_thy) or (id_thy=scp.Gtypes.curr_thy)
-   then 
-   (if (name x) = svname
-   then sty
-   else scp.Gtypes.typeof_fn x)
-   else scp.Gtypes.typeof_fn x);
-   Gtypes.thy_of=
-   (fun sel x-> 
-   if(sel = Basic.fn_id) & x = svname
-   then scp.Gtypes.curr_thy
-   else scp.Gtypes.thy_of sel x)
-   }
- *)
 
 (** [mk_new_skolem scp n ty]
 
@@ -190,15 +140,13 @@ module Skolem =
       in 
       let nnames = Lib.replace n (nm_int+1) names
       in 
-(*
-   let nm_s = (n^(Lib.int_to_name nm_int))
- *)
       let nm_s = (Lib.int_to_name nm_int)
       in 
       (nm_s, nnames)
 
     let mk_new_skolem info=
-      (* tyname: if ty is a variable then use its name for the
+      (*
+	 tyname: if ty is a variable then use its name for the
 	 weak variable otherwise use the empty string
        *)
       let tyname x=
@@ -225,29 +173,26 @@ module Skolem =
 	let nindx = (get_sklm_indx oldsk)+1
 	in 
 	(* make the new identifier *)
-	let nnam = 
-	  make_skolem_name info.name nindx
-(*
-	  mk_long 
-	    (thy_of_id info.name) 
-	    ((name info.name)^"_"^(string_of_int nindx))
-*)
+	let oname = info.name
+	in 
+	let nnam = make_skolem_name oname nindx
 	in 
 	let nty, ntyenv, new_names=mk_nty (name nnam)
 	in 
-	(Term.mk_typed_var nnam nty, nty, (nnam, (nindx, nty))::info.skolems, 
+	(Term.mk_typed_var nnam nty, nty, 
+	 (oname, (nindx, nty))::info.skolems, 
 	 ntyenv, new_names)
       with Not_found -> 
-	let nnam=
-	  make_skolem_name info.name 1
-(*
-	  mk_long 
-	    (thy_of_id info.name) ((name info.name)^"_"^(string_of_int 1))
-*)
+	let nindx = 0
+	in 
+	let oname = info.name
+	in 
+	let nnam = make_skolem_name oname nindx
 	in 
 	let nty, ntyenv, new_names=mk_nty (name nnam)
 	in 
-	(Term.mk_typed_var nnam nty, nty, (nnam, (1, nty))::info.skolems, 
+	(Term.mk_typed_var nnam nty, nty, 
+	 (oname, (nindx, nty))::info.skolems, 
 	 ntyenv, new_names)
   end
 

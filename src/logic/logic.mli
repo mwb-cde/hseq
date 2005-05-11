@@ -44,9 +44,15 @@ module Skolem:
       val get_sklm_type: skolem_cnst -> Basic.gtype
       val decln_of_sklm: skolem_cnst -> (Basic.ident * Basic.gtype)
 
+(*
       val get_new_sklm: 
 	  Basic.ident -> Basic.gtype -> skolem_type
 	    -> (Basic.term * skolem_type)
+*)
+
+val get_old_sklm: Basic.ident -> skolem_type -> skolem_cnst
+
+val make_skolem_name : Basic.ident -> int -> Basic.ident
 
       val mk_new_skolem: 
 	  skolem_info
