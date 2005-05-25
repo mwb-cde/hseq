@@ -24,8 +24,8 @@
 #install_printer Display.print_theory;;
 #install_printer Simplib.print_set;;
 
-(*
 let no_print_simpset (s:Simpset.simpset) = ();;
+(*
 #install_printer no_print_simpset;;
 *)
 
