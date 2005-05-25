@@ -434,7 +434,7 @@ let is_constant (qs, c, t)=
       let (_, _, x) = Term.dest_binop t in x
     else t
   in 
-  (List.exists (Term.equals r) [Term.mk_bool true; Term.mk_bool false])
+  (List.exists (Term.equals r) [Logicterm.mk_true; Logicterm.mk_false])
 
 let is_neg_all (qs, c, t) = 
   if (Logicterm.is_neg t)
@@ -720,7 +720,7 @@ let prepare_concl data except c goal =
     let true_test g = 
       let (_, concl) = Logic.Sequent.get_tagged_cncl c (Drule.sequent g)
       in 
-      Term.is_true (Formula.term_of concl)
+      Logicterm.is_true (Formula.term_of concl)
     in 
     seq [
     (true_test --> Logic.Tactics.trueR None (Drule.ftag c));

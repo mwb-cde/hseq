@@ -52,7 +52,7 @@ let rec is_closed_scope env t =
       if not((Basic.binder_kind q)=k)
       then raise (Term.term_error "Not closed" [t])
       else 
-	(Term.table_add (Basic.Bound(q)) (Term.mk_bool true) env;
+	(Term.table_add (Basic.Bound(q)) (Logicterm.mk_true) env;
 	 is_closed_scope env b;
 	 Term.table_remove (Basic.Bound(q)) env)
   | Basic.Bound(_) -> 
@@ -72,7 +72,7 @@ let is_closed vs t =
   List.iter 
     (fun x -> 
       if ((Term.is_bound x) or (Term.is_free x))
-      then ignore(Term.table_add x (Term.mk_bool true) tbl)
+      then ignore(Term.table_add x (Logicterm.mk_true) tbl)
       else ()) vs;
   try is_closed_scope tbl t; true
   with _ -> false
@@ -262,12 +262,17 @@ let dest_const =  Term.dest_const
 let mk_num = Term.mk_num
 let dest_num = Term.destnum 
 
+(*
 let mk_bool = Term.mk_bool
 let dest_bool = Term.destbool 
-
 let is_true x= try dest_bool x with _ -> false
-
 let is_false x = try not (dest_bool x) with _ -> false
+*)
+let mk_true = Logicterm.mk_true
+let mk_false = Logicterm.mk_false
+
+let is_true = Logicterm.is_true
+let is_false = Logicterm.is_false
 
 let is_fun_name s t =
   try (Term.is_fun t) & (fst(Term.dest_fun t) = s)

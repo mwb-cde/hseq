@@ -559,7 +559,7 @@ let simp_prep_tac control ret tag g=
    where ft is tag of formula to work on
    and st is tag of sequent to work on
  *)
-let is_true t = Term.is_true t
+let is_true t = Logicterm.is_true t
 
 (**
    [get_form t n]:

@@ -197,9 +197,11 @@ val mk_num : Num.num -> term
 val destnum : term -> Num.num
 val mk_int : int -> term
 
+(*
 val mk_bool : bool -> term
 val destbool : term-> bool
 val is_true :term-> bool
+*)
 
 (* remove outermost quantifiers from a term *)
 val strip_qnt : Basic.quant_ty -> term -> binders list * term

@@ -62,12 +62,17 @@ let rec chase_ret_type t=
   else t
 
 
+let bool_ty_id = Basic.mk_long base_thy "bool"
+let mk_bool_ty = Gtypes.mk_base (Basic.Bool)
+let is_bool_ty t = (t = mk_bool_ty)
+
+
 let typeof_cnst c =
   match c with
     Null_const _-> 
       raise (type_error "Null constant has no type" [])
   |	Cnum _ -> Gtypes.mk_num
-  | Cbool _ -> Gtypes.mk_bool
+  | Cbool _ -> mk_bool_ty
 
 let bin_ty a1 a2 r = (mk_fun_ty_from_list [a1; a2] r)
 
@@ -81,6 +86,7 @@ let typeof_conn c =
 
 (* Terms *)
 
+let trueid = Basic.mk_long base_thy "true"
 let falseid = Basic.mk_long base_thy "false"
 let notid = Basic.mk_long base_thy "not"
 let andid = Basic.mk_long base_thy "and"
@@ -112,11 +118,29 @@ let is_equality t = try (fst(dest_fun t) = equalsid) with _ -> false
    let is_false t = 
    try(fst(dest_fun t) = falseid) with _ -> false
 *)
+
+
+let is_true t = 
+  match t with 
+    (Const (Cbool true)) -> true 
+  | _ -> false
+
 let is_false t = 
   match t with 
     (Const (Cbool false)) -> true 
   | _ -> false
 
+let mk_true = mk_const(Cbool true)
+let mk_false = mk_const(Cbool false)
+
+let mk_bool b = 
+  if b then mk_true else mk_false
+
+let dest_bool b = 
+  if (b = mk_true) then true
+  else 
+    (if b = mk_false then false
+    else raise (Failure "Not a boolean"))
 
 let dest_equality t = 
   if is_equality t 

@@ -1353,7 +1353,8 @@ let in_scope memo scp th trm =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-      if (Scope.in_scope_of scp th n)
+(*      if (Scope.in_scope_of scp th n) *)
+      if (Scope.in_scope scp n) 
       then Lib.add n true memo else raise Not_found)
   in
   let rec in_scp_aux t =

@@ -530,7 +530,7 @@ let get_goal_tag g =
   | _ -> raise Not_found
 
 let mk_goal scp f = 
-  let nf= Formula.typecheck scp f (Gtypes.mk_bool)
+  let nf= Formula.typecheck scp f (Logicterm.mk_bool_ty)
   in 
   Goal([Sequent.new_sqnt scp nf], Gtypes.empty_subst(), nf)
 
@@ -2138,10 +2138,11 @@ module Defns =
 
     let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
       (* run checks and get the subtype property *)
-      let dtype1 = Gtypes.set_name scp dtype
+      let dtype1 = Gtypes.set_name ~strict:true scp dtype
+      and setp1 = Term.set_names scp setp
       in
       let subtype_def =
-	Defn.mk_subtype scp name args dtype1 setp rep_name abs_name
+	Defn.mk_subtype scp name args dtype1 setp1 rep_name abs_name
       in 
       let new_setp = subtype_def.Defn.set
       and type_id = subtype_def.Defn.id

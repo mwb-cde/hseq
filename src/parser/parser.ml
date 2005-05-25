@@ -551,7 +551,7 @@ module Grammars  =
     let bool_type info toks =
       try 
 	((named_id info type_id (Basic.mk_name "bool"))
-	   >> (fun _ -> Gtypes.mk_bool)) toks
+	   >> (fun _ -> Logicterm.mk_bool_ty)) toks
       with No_match -> raise (ParsingError "Not a boolean type")
 
 (**
@@ -796,7 +796,6 @@ module Grammars  =
       try get comp mk inp
       with No_match -> raise (ParsingError "Not a boolean")
 
-
 (** 
    [optional_type inf]
    parse optional type.
@@ -905,9 +904,11 @@ module Grammars  =
 (*   | number *)
 	"number", (fun _ -> (number >> (fun x -> mk_num x)));
 (*   | boolean *)
-	"boolean", (fun _ -> (boolean >> (fun x -> mk_bool x)));
-	"bracketed_term",
+	"boolean", 
+	(fun _ -> 
+ 	  (boolean >> (fun x -> Logicterm.mk_bool x))); 
 (* '(' form ')' *)
+	"bracketed_term",
 	(fun inf -> 
 	  ( (( !$ (Sym ORB) -- ((form inf) -- !$(Sym CRB))))
 	      >> (fun (_, (x, _)) ->  x)));
@@ -1352,6 +1353,9 @@ let test str =
   reader (scan (symtable())) term_parser str
 
 
+module Resolver =
+struct
+
 (**
    [resolve_term env t]: Resolve the symbols in term [t].
    For each free variable [Free(s, ty)] in [t], 
@@ -1404,7 +1408,8 @@ type resolve_memo =
     { 
       types : (Basic.ident, Basic.gtype)Hashtbl.t;
       idents: (string, Basic.ident)Hashtbl.t;
-      symbols : (string, Basic.ident)Hashtbl.t
+      symbols : (string, Basic.ident)Hashtbl.t;
+      type_names: (string, Basic.thy_id) Hashtbl.t
     }
 
 type resolve_arg =
@@ -1412,10 +1417,40 @@ type resolve_arg =
      scp: Scope.t;
      inf : int ref;
      memo: resolve_memo;
+     qnts: Term.substitution;
      lookup: (string -> gtype -> (ident * gtype))
    }
       
+(* 
+   [resolve_aux data env expty term]: Resolve names in [term].
+
+   Each type name is expanded to a long name. 
+
+   Each free variable [n] (which may be an overloaded symbol or name)
+   is resolved to an exact identifier.
+
+   [expty] is the type the term is expected to have (can be a variable
+   type).
+
+   returns the renamed term, the actual type and a type substitution
+   from which the exact type can be obtained (using Gtypes.mgu).
+
+   Never fails.
+*)
+
 let rec resolve_aux data env expty term =
+  let bind_qnt t1 t2 =
+    { data with qnts=(Term.bind t1 t2 data.qnts) }
+  in 
+  let binding_set_names binding =
+    let (qnt, qname, qtype) = Basic.dest_binding binding
+    in 
+    Basic.mk_binding qnt qname 
+      (Gtypes.set_name ~memo:(data.memo.type_names) (data.scp) qtype)
+  in 
+  let set_type_name t =
+    Gtypes.set_name ~memo:(data.memo.type_names) (data.scp) t
+  in 
   let ident_find n s = 
     let thy = Scope.thy_of_term s n
     in 
@@ -1423,7 +1458,7 @@ let rec resolve_aux data env expty term =
   in 
   let find_ident n = 
     (try 
-      Some (memo_find data.memo.idents ident_find data.scp n)
+      Some(memo_find data.memo.idents ident_find data.scp n)
     with Not_found -> None)
   in 
   let type_find n s = Scope.type_of s n
@@ -1439,15 +1474,34 @@ let rec resolve_aux data env expty term =
   in 
   match term with
     Id(n, ty) -> 
-      let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty ty env)
-	with _ -> (ty, env)
+      let id_ty = find_type n
       in 
-      (Id(n, ty0), ty0, env0)
-  | Free(n, ty) -> 
+      let nty = set_type_name ty
+      in 
       let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty ty env)
-	with _ -> (ty, env)
+	try
+	  let n_env = Gtypes.unify_env data.scp expty nty env
+	  in 
+	  (Gtypes.mgu nty n_env, n_env)
+	with _ -> (nty, env)
+      in 
+      let (ty1, env1)=
+	(match id_ty with
+	  None -> (ty0, env0)
+	| Some(d_ty) -> 
+	    (try 
+	      let id_env = Gtypes.unify_env data.scp ty0 d_ty env0
+	      in 
+	      (Gtypes.mgu d_ty id_env, id_env)
+	    with _ -> (d_ty, env0)))
+      in 
+      (Id(n, ty1), ty1, env1)
+  | Free(n, ty) -> 
+      let nty = set_type_name ty
+      in 
+      let (ty0, env0)=
+	try (expty, Gtypes.unify_env data.scp expty nty env)
+	with _ -> (nty, env)
       in 
       let ty1=
 	try Gtypes.mgu ty0 env0
@@ -1455,17 +1509,24 @@ let rec resolve_aux data env expty term =
       in 
       (match (find_sym n ty1) with
 	None -> 
-	  (Free(n, ty1), ty1, env0)
+	  (match (find_ident n) with
+	    None -> (Free(n, ty1), ty1, env0) 
+	  | Some(id3) -> (resolve_aux data env0 ty1 (Id(id3, ty1))))
       | Some(id2, ty2) -> 
 	  resolve_aux data env0 ty1 (Id(id2, ty2)))
   | Bound(q) -> 
-      let ty = Term.get_binder_type term
+      let term1=
+	try
+	  Term.find term data.qnts
+	with Not_found -> term
+      in 
+      let ty = Term.get_binder_type term1
       in
       let (ty0, env0)=
 	try (expty, Gtypes.unify_env data.scp expty ty env)
 	with _ -> (ty, env)
       in 
-      (term, ty0, env0)
+      (term1, ty0, env0)
   | Const(c) ->
       let ty = Logicterm.typeof_cnst c
       in
@@ -1475,15 +1536,17 @@ let rec resolve_aux data env expty term =
       in 
       (term, ty0, env0)
   | Typed(trm, ty) -> 
+      let nty = set_type_name ty
+      in 
       let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty ty env)
-	with _ -> (ty, env)
+	try (expty, Gtypes.unify_env data.scp expty nty env)
+	with _ -> (nty, env)
       in 
       let trm1, nty1, env1 = 
-	resolve_aux data env0 ty trm
+	resolve_aux data env0 nty trm
       in 
       let (nty2, env2)=
-	try (nty1, Gtypes.unify_env data.scp ty nty1 env1)
+	try (nty1, Gtypes.unify_env data.scp nty nty1 env1)
 	with _ -> (nty1, env1)
       in 
       (Typed(trm1, nty2), nty2, env2)
@@ -1506,34 +1569,42 @@ let rec resolve_aux data env expty term =
       in 
       (App(ftrm, atrm), (Gtypes.mgu rty1 fenv), fenv)
   | Qnt(Lambda, qnt, body) ->
+      let qnt1=binding_set_names qnt
+      in 
+      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
+      in 
       let aty = Term.get_qnt_type term 
-      and rty = Gtypes.mk_typevar data.inf
+      and rty = Gtypes.mk_typevar data1.inf
       in 
       let nty0 = Logicterm.mk_fun_ty aty rty
       in 
       let (nty1, env1)=
-	try (expty, Gtypes.unify_env data.scp nty0 expty env)
+	try (expty, Gtypes.unify_env data1.scp nty0 expty env)
 	with _ -> (nty0, env)
       in 
       let (body1, bty, benv) = 
-	resolve_aux data env1 rty body
+	resolve_aux data1 env1 rty body
       in
-      (Qnt(Lambda, qnt, body1), nty1, benv)
+      (Qnt(Lambda, qnt1, body1), nty1, benv)
   | Qnt(qty, qnt, body) -> 
+      let qnt1=binding_set_names qnt
+      in 
+      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
+      in 
       let (nty1, env1)=
-	try (expty, Gtypes.unify_env data.scp Gtypes.mk_bool expty env)
+	try (expty, Gtypes.unify_env data1.scp Logicterm.mk_bool_ty expty env)
 	with _ -> (expty, env)
       in 
       let (body1, bty, benv)=
-	resolve_aux data env1 nty1 body
+	resolve_aux data1 env1 nty1 body
       in 
-      (Qnt(qty, qnt, body1), nty1, benv)
+      (Qnt(qty, qnt1, body1), nty1, benv)
 
 let resolve_term scp lookup term=
   let rmemo=
     { 
       types = Lib.empty_env(); idents=Lib.empty_env();
-      symbols=Lib.empty_env()
+      symbols=Lib.empty_env(); type_names = Lib.empty_env()
     }
   in 
   let data = 
@@ -1541,6 +1612,7 @@ let resolve_term scp lookup term=
       scp = scp;
       inf= ref 0;
       memo = rmemo;
+      qnts = Term.empty_subst();
       lookup = lookup
     }
   in 
@@ -1549,7 +1621,7 @@ let resolve_term scp lookup term=
   let (term1, ty1, subst) = 
     resolve_aux data (Gtypes.empty_subst()) expty term
   in 
-  term1
+  (term1, subst)
 
 (* 
    find_type ty list: 
@@ -1572,7 +1644,6 @@ let rec find_type scp ty list =
   match list with
     [] -> 
       raise Not_found
-(* Lib.dest_option ~err:Not_found default *)
   | ((id, id_type)::xs) -> 
       if matching_types ty id_type
       then (id, id_type)
@@ -1588,3 +1659,5 @@ let make_lookup scp db s ty=
 
 let ovl scp= 
   make_lookup scp get_overload_list 
+
+end

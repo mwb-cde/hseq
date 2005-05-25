@@ -119,6 +119,7 @@ val get_defn_rec : string -> thy -> id_record
 val get_defn : string -> thy -> Logic.thm
 val get_id_type : string -> thy -> Basic.gtype
 val id_exists : string -> thy -> bool
+val type_exists : string -> thy -> bool
 
 val add_defn_rec :
     string -> Basic.gtype 

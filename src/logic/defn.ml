@@ -119,7 +119,7 @@ let mk_defn scp name args rhs =
   in 
   let tenv=Typing.settype nscp ndn
   in 
-  let tenv1=Typing.typecheck_env nscp tenv ndn Gtypes.mk_bool
+  let tenv1=Typing.typecheck_env nscp tenv ndn Logicterm.mk_bool_ty
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))

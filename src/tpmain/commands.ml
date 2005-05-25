@@ -17,15 +17,6 @@ let infixr=Parserkit.Info.infix Parserkit.Info.right_assoc
 let infixn=Parserkit.Info.infix Parserkit.Info.non_assoc
 
 
-(*
-let catch_errors f a =
-  (try f a 
-  with 
-    Result.Error e -> 
-      Result.print_error (Global.PP.info()) (-1) (Result.Error e); 
-      raise(Result.Error e)
-  | x -> raise x)
-*)
 let catch_errors f a =
   (try f a 
   with 
@@ -33,7 +24,6 @@ let catch_errors f a =
       Result.print_error (Global.PP.info()) (-1) (Result.Error e); 
       raise (Failure "failed")
   | x -> raise x)
-
 
 let theories () = Global.get_theories()
 
@@ -98,7 +88,6 @@ let add_file ?(use=false) f =
     Unsafe.load_use_file f
   else ()
       
-
 let remove_file f =
   Theory.remove_file f (curr_theory())
 
@@ -227,6 +216,11 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
+(*
+  let set0 = 
+    Term.set_names (Global.scope()) set
+  in
+*)
   let tydef = 
     Logic.Defns.mk_subtype (Global.scope()) 
       name args dtype set rep_name abs_name thm
@@ -256,7 +250,12 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   tydef
   
 let simple_typedef (n, args, def) =
-  let tydef = Logic.Defns.mk_typealias (Global.scope()) n args def 
+  let def1 = 
+    match def with 
+      None -> None
+    | Some(x) -> Some(Gtypes.set_name (Global.scope()) x)
+  in 
+  let tydef = Logic.Defns.mk_typealias (Global.scope()) n args def1
   in 
   Thydb.add_type_rec tydef (theories()); tydef
 

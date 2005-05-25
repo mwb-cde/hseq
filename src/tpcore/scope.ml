@@ -24,7 +24,11 @@ type t=
 	term_thy : string -> thy_id;
 	  type_defn: ident -> type_record;
 	    type_thy : string -> thy_id;
+(*
 		thy_in_scope : thy_id -> thy_id -> bool
+*)
+		thy_in_scope : thy_id -> bool
+
     }
 
 let empty_scope () = 
@@ -36,7 +40,10 @@ let empty_scope () =
    term_thy = dummy;
    type_defn = dummy;
    type_thy = dummy;
+(*
    thy_in_scope = (fun x y -> false)
+*)
+   thy_in_scope = (fun x -> false)
  }
 
 let thy_of scp = scp.curr_thy
@@ -44,7 +51,10 @@ let type_of scp id = scp.term_type id
 let thy_of_term scp id = scp.term_thy id
 let defn_of scp id = scp.type_defn id
 let thy_of_type scp id = scp.type_thy id
+(*
 let in_scope_of scp th1 th2 = scp.thy_in_scope th1 th2
+*)
+let in_scope scp  th1 = scp.thy_in_scope th1 
 
 let extend_with_terms scp declns =
   let ext_type x = 

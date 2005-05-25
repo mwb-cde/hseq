@@ -56,7 +56,7 @@ val mk_null : unit -> gtype
 val is_null: gtype -> bool
 
 val mk_base: base_typ -> gtype
-val mk_bool : gtype
+(* val mk_bool : gtype *)
 val mk_num : gtype
 
 (* variable types *)

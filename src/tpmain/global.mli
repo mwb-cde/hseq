@@ -64,7 +64,10 @@ val scope_term_type: Basic.ident -> Basic.gtype
 val scope_term_thy: string -> string
 val scope_type_defn: Basic.ident -> Gtypes.typedef_record
 val scope_type_thy: string -> string
+(*
 val scope_thy_in_scope: string -> string -> bool
+*)
+val scope_thy_in_scope: string -> bool
 
 val scope : unit -> Scope.t
 
@@ -108,6 +111,10 @@ val on_load_thy: Theory.contents -> unit
    [mk_term scp trm]
    typecheck term [trm] in scope [scp]
  *)
+val expand_type_names: Basic.gtype -> Basic.gtype
+val expand_typedef_names: Parser.typedef_data -> Parser.typedef_data
+val expand_term : Basic.term -> (Basic.term * Gtypes.substitution)
+
 val mk_term : Scope.t -> Basic.term -> Basic.term
 val mk_term_raw : Scope.t -> Basic.term -> Basic.term
 val mk_term_unchecked : Scope.t -> Basic.term -> Basic.term

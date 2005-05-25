@@ -135,7 +135,9 @@ let is_base t  =
 
 let mk_base x = (Base x)
 
+(*
 let mk_bool = (mk_base Bool)
+*)
 let mk_num = (mk_base Num)
 let mk_ind = (mk_base Ind)
 
@@ -1180,7 +1182,7 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
     (try (Lib.find n memo)
     with Not_found -> 
       let nth =
-	try (Scope.thy_of_term scp n) 
+	try (Scope.thy_of_type scp n) 
 	with Not_found -> 
 	  if(strict)
 	  then raise 
@@ -1217,7 +1219,8 @@ let in_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-      if (Scope.in_scope_of scp th n)
+(*      if (Scope.in_scope_of scp th n) *)
+      if (Scope.in_scope scp n) 
       then Lib.add n true memo else raise Not_found)
   in
   let rec in_scp_aux t =

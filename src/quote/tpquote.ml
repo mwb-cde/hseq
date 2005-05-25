@@ -103,7 +103,7 @@ let std_astexpander str =
   match std_check_string str with 
     (Type, nstr) -> 
       <:expr<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:expr<(Global.read_unchecked $str:nstr$)>>
+  | (Term, nstr) -> <:expr<(Global.read $str:nstr$)>>
   | _ -> <:expr< $str:str$ >>
 
 let def_astexpander str =

@@ -216,7 +216,7 @@ module Grammars :
 	  -> Basic.ident -> Basic.ident phrase
 
       val number : Num.num phrase
-      val boolean : bool phrase
+      val boolean : bool phrase 
       val bool_type : infotyp -> Basic.gtype phrase
       val num_type : infotyp -> Basic.gtype phrase
       val comma_list : 'a phrase -> 'a list phrase
@@ -431,6 +431,23 @@ val read_type : string -> Basic.gtype
 val test_lex : string -> Lexer.tok Parserkit.Input.t
 val test : string -> Basic.term
 
+
+(* preliminary support for overloading *)
+val overload_table: 
+    (string,  (Basic.ident * Basic.gtype) list) Hashtbl.t
+val get_overload_list: 
+    string -> (Basic.ident * Basic.gtype) list
+val add_overload:
+    string -> (Basic.ident * Basic.gtype) -> unit
+val remove_overload:
+    string -> Basic.ident -> unit
+val print_overloads:
+    Printer.ppinfo -> unit
+
+
+module Resolver :
+sig
+
 (** 
    [resolve_term scp env t]: Resolve the symbols in term [t].
    For each free variable [Free(s, ty)] in [t], 
@@ -447,7 +464,7 @@ val resolve_term:
     Scope.t
   -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
     -> Basic.term
-      -> Basic.term
+      -> (Basic.term * Gtypes.substitution)
 
 (**
    [make_lookup scp db]:
@@ -470,7 +487,8 @@ type resolve_memo =
     { 
       types : (Basic.ident, Basic.gtype)Hashtbl.t;
       idents: (string, Basic.ident)Hashtbl.t;
-      symbols : (string, Basic.ident)Hashtbl.t
+      symbols : (string, Basic.ident)Hashtbl.t;
+      type_names: (string, Basic.thy_id)Hashtbl.t
     }
 
 type resolve_arg =
@@ -478,6 +496,7 @@ type resolve_arg =
      scp: Scope.t;
      inf : int ref;
      memo: resolve_memo;
+     qnts: Term.substitution;
      lookup: (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
    }
 
@@ -499,18 +518,8 @@ val find_type :
   -> Basic.gtype -> (Basic.ident * Basic.gtype) list 
     -> (Basic.ident * Basic.gtype)
 
-(* preliminary support for overloading *)
-val overload_table: 
-    (string,  (Basic.ident * Basic.gtype) list) Hashtbl.t
-val get_overload_list: 
-    string -> (Basic.ident * Basic.gtype) list
-val add_overload:
-    string -> (Basic.ident * Basic.gtype) -> unit
-val remove_overload:
-    string -> Basic.ident -> unit
-val print_overloads:
-    Printer.ppinfo -> unit
 
 val ovl : 
     Scope.t
   -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+end

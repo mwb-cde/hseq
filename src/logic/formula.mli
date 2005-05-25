@@ -105,7 +105,9 @@ val get_var_type : form-> Basic.gtype
 val is_app : form -> bool
 val is_const : form -> bool
 val dest_num : form -> Num.num
+(*
 val dest_bool : form -> bool
+*)
 
 val is_true :form -> bool
 val is_false :form -> bool

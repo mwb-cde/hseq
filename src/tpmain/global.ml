@@ -63,12 +63,22 @@ let scope_type_defn f =
 let scope_type_thy x = 
   let thy_name = (get_cur_name())
   in 
-  Thydb.thy_of x (thy_name) (get_theories())
+  Thydb.thy_of_type x (thy_name) (get_theories())
 
+(*
 let scope_thy_in_scope th1 th2 = 
   if(th1=Basic.null_thy)  (* ignore the empty scope *)
   then true
   else Thydb.thy_in_scope th1 th2 (get_theories())
+*)
+let scope_thy_in_scope th1 = 
+  if(th1=Basic.null_thy)  (* ignore the empty scope *)
+  then true
+  else Thydb.thy_in_scope th1 (get_theories())
+(*
+  Thydb.thy_in_scope th1 (get_theories())
+*)
+
 
 let scope() =
   let thy_name = (get_cur_name())
@@ -78,7 +88,7 @@ let scope() =
    Scope.term_thy = scope_term_thy;
    Scope.type_defn = scope_type_defn;
    Scope.type_thy = scope_type_thy;
-   Scope.thy_in_scope  = scope_thy_in_scope
+   Scope.thy_in_scope  = scope_thy_in_scope 
  } 
 
 (* file handling *)
@@ -287,14 +297,6 @@ let on_load_thy th =
     (fun f -> f th) 
     (List.rev !load_functions)
 
-let mk_term scp pt = 
-  let tenv = 
-    Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
-  in 
-  let nt = Term.retype_pretty tenv pt
-  in 
-(*  Typing.check_types scp nt;   *)
-  nt
 
 (* parser functions and error handling *)
 
@@ -304,6 +306,37 @@ let catch_parse_error e a =
     Pkit.ParsingError x ->
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
+
+let expand_term t = 
+  let scp = scope()
+  and db s = Thydb.get_id_options s (get_theories())
+  in 
+  let lookup = 
+    Parser.Resolver.make_lookup scp db
+  in 
+  Parser.Resolver.resolve_term scp lookup t
+
+
+let expand_type_names t=
+  Gtypes.set_name ~strict:false (scope()) t
+
+let expand_typedef_names t=
+  match t with
+    Parser.NewType (n, args) -> t
+  | Parser.TypeAlias (n, args, def) ->
+      Parser.TypeAlias(n, args, expand_type_names def)
+  | Parser.Subtype (n, args, def, set) ->
+      Parser.Subtype(n, args, expand_type_names def,  set)
+
+
+let mk_term scp pt = 
+  let tenv = 
+    Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
+  in 
+  let nt = Term.retype_pretty tenv pt
+  in 
+(*  Typing.check_types scp nt;   *)
+  nt
 
 let mk_term_raw tyenv trm = 
   let trm1=Term.set_names (scope()) trm
@@ -315,11 +348,11 @@ let mk_term_raw tyenv trm =
 let mk_term_unchecked tyenv pt =  pt
 
 let read str= 
-  mk_term (scope()) 
+  mk_term_raw (scope()) 
     (catch_parse_error Parser.read_term str)
 
 let read_unchecked  x=
-  mk_term_raw (scope()) 
+  mk_term_unchecked (scope()) 
     (catch_parse_error Parser.read_term x)
 
 let read_defn x =
@@ -327,16 +360,16 @@ let read_defn x =
     catch_parse_error (Parser.read defn_parser) x
   in (l, r)
 
+
 let read_type_defn x =
-  catch_parse_error 
-    (Parser.read Parser.typedef_parser) x
+  expand_typedef_names 
+    (catch_parse_error (Parser.read Parser.typedef_parser) x)
 
 let read_type x = 
-  catch_parse_error
-    Parser.read_type x
+  expand_type_names(catch_parse_error Parser.read_type x)
 
 let read_fulltype x = 
-  catch_parse_error Parser.read_type x
+  expand_type_names(catch_parse_error Parser.read_type x)
 
 let read_identifier x = 
   catch_parse_error (Parser.read Parser.identifier_parser) x

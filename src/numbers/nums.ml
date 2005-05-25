@@ -166,7 +166,7 @@ let compterm_to_compexpr env scp fnid args=
       raise (error "Badly formed expression" [Term.mk_fun fnid args])
 
 
-let bool_type = Gtypes.mk_bool
+let bool_type = Logicterm.mk_bool_ty
 
 let strip_univs scp bvar_env var_env t =
   let (rqnts, b) = Term.strip_qnt Basic.All t
@@ -363,7 +363,9 @@ let compexpr_to_term env cfn a b =
 let boolexpr_to_bterm benv nenv e =
   let rec conv_aux t =
     match t with
-      Prop.Bool(b) -> Term.mk_bool b
+      Prop.Bool(b) -> 
+	if b then Logicterm.mk_true else Logicterm.mk_false
+(*Term.mk_bool b*)
     | Prop.Not(a) -> Logicterm.mk_not (conv_aux a)
     | Prop.And(a, b) -> 
 	Logicterm.mk_and (conv_aux a) (conv_aux b)
@@ -443,7 +445,7 @@ let decide_term_basic scp t =
 
 let decide_term scp t =
   Logicterm.close_term 
-    (Logicterm.mk_equality t (Term.mk_bool (decide_term_basic scp t)))
+    (Logicterm.mk_equality t (Logicterm.mk_bool (decide_term_basic scp t)))
 
 
 (* decide_rewrite scp f: 
@@ -470,6 +472,6 @@ let simp_conv scp trm =
 
 let decide_conv scp trm = 
   let nt = 
-    Logicterm.mk_equality trm (Term.mk_bool (decide_term_basic scp trm))
+    Logicterm.mk_equality trm (Logicterm.mk_bool (decide_term_basic scp trm))
   in 
   Logic.mk_axiom (Formula.make scp nt)

@@ -34,6 +34,10 @@ val mk_fun_ty : gtype -> gtype -> gtype
 val mk_fun_ty_from_list: gtype list -> gtype -> gtype
 val dest_fun_ty : gtype -> (gtype * gtype)
 
+val bool_ty_id : Basic.ident
+val mk_bool_ty: gtype
+val is_bool_ty: gtype -> bool
+
 (** type of primitive constructs *)
 val typeof_cnst  : Basic.const_ty -> gtype
 (*
@@ -43,6 +47,7 @@ val typeof_conn  : Basic.conns_ty -> gtype
 (** {c6 Terms} *)
 
 (** identifiers/recognisers/constructors for basic logic functions *)
+val trueid : Basic.ident
 val falseid : Basic.ident
 val notid : Basic.ident
 val andid : Basic.ident
@@ -54,6 +59,7 @@ val equalssym : string (* PP symbol for equals ("=") *)
 
 val anyid: Basic.ident  (* base.any=base.epsilon(%x: true) *)
 
+val is_true :term-> bool
 val is_false : term -> bool
 val is_neg: term -> bool
 val is_conj: term -> bool
@@ -61,6 +67,10 @@ val is_disj: term -> bool
 val is_implies: term -> bool
 val is_equality: term -> bool
 
+
+val mk_bool : bool -> term
+val mk_true: term
+val mk_false : term
 val mk_not: term -> term
 val mk_and: term -> term -> term
 val mk_or: term -> term -> term
@@ -82,6 +92,7 @@ val is_exists : term -> bool
 val is_lambda: term-> bool
 
 val dest_equality : term -> (term * term)
+val dest_bool : term-> bool
 
 val mk_any: term
 

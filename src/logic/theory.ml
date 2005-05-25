@@ -226,6 +226,11 @@ let id_exists n thy =
     (ignore(get_defn_rec n thy); true)
   with Not_found -> false
 
+let type_exists n thy =
+  try 
+    (ignore(get_type_rec n thy); true)
+  with Not_found -> false
+
 let add_defn_rec n ty d inf pr prop thy =
   if not (get_protection thy)
   then 

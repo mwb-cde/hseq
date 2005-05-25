@@ -210,6 +210,8 @@ let set_importing thdb  =
     (name :: (mk_importing thdb));
   thdb
 
+let get_importing thydb = thydb.importing
+
 let add_axiom s th ps thdb= Theory.add_axiom s th ps thdb.curr
 let add_thm s th ps thdb = Theory.add_thm s th ps thdb.curr
 
@@ -393,6 +395,7 @@ let find_to_apply memo f thy_name thdb =
 	   with _ -> find_aux (get_parents thdb n)))
   in find_aux [thy_name]
 
+(*
 let thy_in_scope th1 th2 thdb =   (* true if th2 is in scope of th1 *)
   let memo = empty_memo()
   in 
@@ -401,6 +404,21 @@ let thy_in_scope th1 th2 thdb =   (* true if th2 is in scope of th1 *)
     else raise Not_found
   in try (find_to_apply memo is_in_scope th1 thdb; true)
   with Not_found -> false
+*)
+(*
+let thy_in_scope th1 thdb =   (* true if th1 is in scope *)
+  let curr_thy_name = Theory.get_name (getcur thdb)
+  in 
+  let memo = empty_memo()
+  in 
+  let is_in_scope thy =
+    if (Theory.get_name thy)=th1 then ()
+    else raise Not_found
+  in try (find_to_apply memo is_in_scope curr_thy_name thdb; true)
+  with Not_found -> false
+*)
+let thy_in_scope th thydb =
+  imported th thydb
 
 let thy_of name th thdb =
   let is_thy_of thy =
@@ -408,9 +426,30 @@ let thy_of name th thdb =
     else raise Not_found
   in find_to_apply (empty_memo()) is_thy_of th thdb 
 
+let thy_of_type name th thdb =
+  let is_thy_of thy =
+    if (Theory.type_exists name thy) then (Theory.get_name thy)
+    else raise Not_found
+  in 
+  find_to_apply (empty_memo()) is_thy_of th thdb 
+
 let expunge thdb th= 
   Hashtbl.clear thdb.db;
   thdb.importing<-[];
   thdb.curr<-th
       
       
+let get_id_options n db = 
+  let get_id x =
+    try Some(get_defn_rec x n db) with Not_found -> None
+  in 
+  let rec get_aux ls r= 
+    match ls with
+      [] -> List.rev r
+    | (x::xs) -> 
+	(match(get_id x) with
+	  None -> get_aux xs r
+	| (Some defn) ->
+	    get_aux xs (((Basic.mk_long x n), (defn.Theory.typ))::r))
+  in 
+  get_aux db.importing []

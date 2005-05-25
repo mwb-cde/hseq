@@ -537,7 +537,7 @@ let hyp_conc_thm f =
     match Term.dest_fun t with
       (_, (a::b::[])) -> (qnts, a, b)
     | _ -> (raise (Result.error "hyp_conc_thm: unusually shaped implication"))
-  else (qnts, Term.mk_bool true, t)
+  else (qnts, Logicterm.mk_true, t)
 
 let match_mp_rule0 thm i sq=
   let (qnts, a, b) = hyp_conc_thm (Logic.formula_of thm)
