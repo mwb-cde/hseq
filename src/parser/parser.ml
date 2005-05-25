@@ -1363,37 +1363,6 @@ struct
    If not found, use [Free(s, ty)].
    If found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
  *)
-(*
-   let rec resolve_aux scp env term =
-   let lookup s ty = env s ty
-   in 
-   match term with 
-   Basic.Id _ -> term
-   | Basic.Bound _ -> term
-   | Basic.App (l, r) -> 
-   let nl = resolve_aux scp env l
-   in 
-   let nr = resolve_aux scp env r
-   in 
-   Basic.App(nl, nr)
-   | Basic.Qnt(q, b, body) ->
-   let nbody = resolve_aux scp env body
-   in 
-   Basic.Qnt(q, b, nbody)
-   | Basic.Const _ -> term
-   | Basic.Typed(tt, ty) -> 
-   let ntt = resolve_aux scp env tt
-   in 
-   Basic.Typed(ntt, ty)
-   | Basic.Free (s, ty) -> 
-   let found = 
-   try Some(lookup s ty)
-   with Not_found -> None
-   in 
-   match found with
-   None -> term
-   | Some(id, id_type) -> Basic.Id(id, ty)
- *)
 open Basic
   
 let memo_find cache find table n =
@@ -1465,7 +1434,9 @@ let rec resolve_aux data env expty term =
   in 
   let find_type n = 
     (try 
-      Some (memo_find data.memo.types type_find data.scp n)
+      Some 
+	(Gtypes.copy_type 
+	   (memo_find data.memo.types type_find data.scp n))
     with Not_found -> None)
   in 
   let find_sym n ty= 
@@ -1480,9 +1451,7 @@ let rec resolve_aux data env expty term =
       in 
       let (ty0, env0)=
 	try
-	  let n_env = Gtypes.unify_env data.scp expty nty env
-	  in 
-	  (Gtypes.mgu nty n_env, n_env)
+	  (nty, Gtypes.unify_env data.scp expty nty env)
 	with _ -> (nty, env)
       in 
       let (ty1, env1)=
@@ -1490,17 +1459,15 @@ let rec resolve_aux data env expty term =
 	  None -> (ty0, env0)
 	| Some(d_ty) -> 
 	    (try 
-	      let id_env = Gtypes.unify_env data.scp ty0 d_ty env0
-	      in 
-	      (Gtypes.mgu d_ty id_env, id_env)
+	      (d_ty, Gtypes.unify_env data.scp ty0 d_ty env0)
 	    with _ -> (d_ty, env0)))
       in 
-      (Id(n, ty1), ty1, env1)
+      (Id(n, (Gtypes.mgu ty1 env1)), ty1, env1)
   | Free(n, ty) -> 
       let nty = set_type_name ty
       in 
       let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty nty env)
+	try (nty, Gtypes.unify_env data.scp expty nty env)
 	with _ -> (nty, env)
       in 
       let ty1=
@@ -1511,7 +1478,8 @@ let rec resolve_aux data env expty term =
 	None -> 
 	  (match (find_ident n) with
 	    None -> (Free(n, ty1), ty1, env0) 
-	  | Some(id3) -> (resolve_aux data env0 ty1 (Id(id3, ty1))))
+	  | Some(id3) -> 
+	      (resolve_aux data env0 ty1 (Id(id3, ty1))))
       | Some(id2, ty2) -> 
 	  resolve_aux data env0 ty1 (Id(id2, ty2)))
   | Bound(q) -> 
@@ -1523,7 +1491,7 @@ let rec resolve_aux data env expty term =
       let ty = Term.get_binder_type term1
       in
       let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty ty env)
+	try (ty, Gtypes.unify_env data.scp expty ty env)
 	with _ -> (ty, env)
       in 
       (term1, ty0, env0)
@@ -1539,7 +1507,7 @@ let rec resolve_aux data env expty term =
       let nty = set_type_name ty
       in 
       let (ty0, env0)=
-	try (expty, Gtypes.unify_env data.scp expty nty env)
+	try (nty, Gtypes.unify_env data.scp expty nty env)
 	with _ -> (nty, env)
       in 
       let trm1, nty1, env1 = 
@@ -1556,7 +1524,7 @@ let rec resolve_aux data env expty term =
       let rty0 = Gtypes.mk_typevar data.inf
       in 
       let (rty1, env1)=
-	try (expty, Gtypes.unify_env data.scp rty0 expty env)
+	try (rty0, Gtypes.unify_env data.scp expty rty0 env)
 	with _ -> (rty0, env)
       in 
       let fty0 = Logicterm.mk_fun_ty argty rty1
@@ -1573,13 +1541,13 @@ let rec resolve_aux data env expty term =
       in 
       let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
       in 
-      let aty = Term.get_qnt_type term 
+      let aty = Term.get_qnt_type (Bound qnt1)
       and rty = Gtypes.mk_typevar data1.inf
       in 
       let nty0 = Logicterm.mk_fun_ty aty rty
       in 
       let (nty1, env1)=
-	try (expty, Gtypes.unify_env data1.scp nty0 expty env)
+	try (nty0, Gtypes.unify_env data1.scp expty nty0 env)
 	with _ -> (nty0, env)
       in 
       let (body1, bty, benv) = 
@@ -1592,8 +1560,9 @@ let rec resolve_aux data env expty term =
       let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
       in 
       let (nty1, env1)=
-	try (expty, Gtypes.unify_env data1.scp Logicterm.mk_bool_ty expty env)
-	with _ -> (expty, env)
+	try (Logicterm.mk_bool_ty, 
+	     Gtypes.unify_env data1.scp expty Logicterm.mk_bool_ty env)
+	with _ -> (Logicterm.mk_bool_ty, env)
       in 
       let (body1, bty, benv)=
 	resolve_aux data1 env1 nty1 body

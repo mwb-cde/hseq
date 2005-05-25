@@ -307,28 +307,22 @@ let catch_parse_error e a =
       raise (Result.error ("Parsing error: "^x))
   | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
 
-let expand_term t = 
-  let scp = scope()
-  and db s = Thydb.get_id_options s (get_theories())
+let expand_term scp t = 
+  let db s = Thydb.get_id_options s (get_theories())
   in 
   let lookup = 
     Parser.Resolver.make_lookup scp db
   in 
-  Parser.Resolver.resolve_term scp lookup t
+  let (t1, env) = Parser.Resolver.resolve_term scp lookup t
+  in 
+  let t2 = Term.retype_pretty env t1
+  in t2
+
+let expand_type_names scp t=
+  Gtypes.set_name ~strict:false scp t
 
 
-let expand_type_names t=
-  Gtypes.set_name ~strict:false (scope()) t
-
-let expand_typedef_names t=
-  match t with
-    Parser.NewType (n, args) -> t
-  | Parser.TypeAlias (n, args, def) ->
-      Parser.TypeAlias(n, args, expand_type_names def)
-  | Parser.Subtype (n, args, def, set) ->
-      Parser.Subtype(n, args, expand_type_names def,  set)
-
-
+(*
 let mk_term scp pt = 
   let tenv = 
     Typing.typecheck_env scp (Gtypes.empty_subst()) pt (Gtypes.mk_null ())
@@ -337,15 +331,33 @@ let mk_term scp pt =
   in 
 (*  Typing.check_types scp nt;   *)
   nt
+*)
 
+let mk_term scp pt = 
+  expand_term scp pt
+
+let mk_term_raw tyenv trm = mk_term (scope()) trm
+(*
 let mk_term_raw tyenv trm = 
   let trm1=Term.set_names (scope()) trm
   in 
   let tyenv = Typing.settype (scope()) trm1
   in 
   Term.retype tyenv trm1
+*)
 
 let mk_term_unchecked tyenv pt =  pt
+
+let expand_typedef_names scp t=
+  match t with
+    Parser.NewType (n, args) -> t
+  | Parser.TypeAlias (n, args, def) ->
+      Parser.TypeAlias(n, args, expand_type_names scp def)
+  | Parser.Subtype (n, args, def, set) ->
+      Parser.Subtype(n, args, 
+		     expand_type_names scp def, 
+		     expand_term scp set)
+
 
 let read str= 
   mk_term_raw (scope()) 
@@ -356,20 +368,22 @@ let read_unchecked  x=
     (catch_parse_error Parser.read_term x)
 
 let read_defn x =
-  let (l, r)= 
+  let (lhs, rhs)= 
     catch_parse_error (Parser.read defn_parser) x
-  in (l, r)
-
+  in 
+  let rhs1=expand_term (scope()) rhs
+  in 
+  (lhs, rhs1)
 
 let read_type_defn x =
-  expand_typedef_names 
+  expand_typedef_names (scope())
     (catch_parse_error (Parser.read Parser.typedef_parser) x)
 
 let read_type x = 
-  expand_type_names(catch_parse_error Parser.read_type x)
+  expand_type_names (scope()) (catch_parse_error Parser.read_type x)
 
 let read_fulltype x = 
-  expand_type_names(catch_parse_error Parser.read_type x)
+  expand_type_names (scope()) (catch_parse_error Parser.read_type x)
 
 let read_identifier x = 
   catch_parse_error (Parser.read Parser.identifier_parser) x
