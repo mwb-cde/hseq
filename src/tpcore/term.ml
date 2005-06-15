@@ -533,6 +533,15 @@ let get_qnt_body t =
     Qnt(_, _, b) -> b
   | _ -> raise (Failure "Not a quantified formula")
 
+let get_quant t =
+  match t with
+    Qnt(_, b, _) -> 
+      let (qnt, _, _) = Basic.dest_binding b
+      in qnt
+  | Bound(b) -> 
+      let (qnt, _, _) = Basic.dest_binding b
+      in qnt
+  | _ -> raise (Failure "Not a quantifier or bound term")
 
 let get_free_binders t =
   let memo = empty_table()

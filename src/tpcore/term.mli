@@ -121,6 +121,7 @@ val dest_qnt :
 val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
 
+val get_quant : term -> Basic.quant_ty
 
 (**
    [mk_qnt_name scp qnt name t]: make a quantified term, with
