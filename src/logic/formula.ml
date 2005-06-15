@@ -21,7 +21,7 @@ let from_save x = Dbterm.to_term x
 let rec check_term p t =
   if (p t) then 
     (match t with
-      Basic.Qnt(_, q, b) -> check_term p b
+      Basic.Qnt(q, b) -> check_term p b
     | Basic.App(f, a) -> check_term p f; check_term p a
     | Basic.Typed(trm, ty) -> check_term p trm
     | _ -> ())
@@ -48,13 +48,10 @@ let rec is_closed_scope env t =
   match t with
     Basic.App(l, r) -> is_closed_scope env l; is_closed_scope env r
   | Basic.Typed(a, _) -> is_closed_scope env a
-  | Basic.Qnt(k, q, b) -> 
-      if not((Basic.binder_kind q)=k)
-      then raise (Term.term_error "Not closed" [t])
-      else 
-	(Term.table_add (Basic.Bound(q)) (Logicterm.mk_true) env;
-	 is_closed_scope env b;
-	 Term.table_remove (Basic.Bound(q)) env)
+  | Basic.Qnt(q, b) -> 
+      (Term.table_add (Basic.Bound(q)) (Logicterm.mk_true) env;
+       is_closed_scope env b;
+       Term.table_remove (Basic.Bound(q)) env)
   | Basic.Bound(_) -> 
       (try ignore(Term.table_find t env)
       with Not_found -> 
@@ -188,12 +185,12 @@ let resolve_closed_term scp trm=
 	  raise 
 	    (Term.term_error 
 	       "Formula.make: can't resolve free variable" [t]))
-    | Qnt(qnt, q, b) -> 
+    | Qnt(q, b) -> 
 	let nq = binding_set_names type_thy_memo scp q
 	in 
 	let qnts1 = Term.bind (Bound(q)) (Bound(nq)) qnts
 	in 
-	Qnt(qnt, nq, set_aux qnts1 b)
+	Qnt(nq, set_aux qnts1 b)
     | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 

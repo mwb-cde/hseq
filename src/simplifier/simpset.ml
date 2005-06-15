@@ -93,7 +93,7 @@ and term_lt lvarp rvarp t1 t2 =
   | (Qnt _, Bound _) -> false
   | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
-  | (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
+  | (Qnt(q1, b1), Qnt(q2, b2)) ->
       if (lt_var lvarp rvarp b1 b2) 
       then (bound_lt (dest_binding q1) (dest_binding q2))
       else false
@@ -286,7 +286,7 @@ let split s1=
 (* Printer for nets in a simpset *)
 let print_rule ppinfo (vars, cond, lhs, rhs, src)=
   let trm = 
-    Drule.rebuild_qnt Basic.All vars
+    Term.rebuild_qnt vars
       (match cond with
 	None -> (Logicterm.mk_equality lhs rhs)
       | Some c -> (Logicterm.mk_implies c (Logicterm.mk_equality lhs rhs)))

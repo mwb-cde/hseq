@@ -121,7 +121,7 @@ type term =
   | Bound of q_type ref
   | Free of string * gtype
   | App of term * term
-  | Qnt of quant_ty * binders * term 
+  | Qnt of binders * term 
   | Const of const_ty
   | Typed of term * gtype
 

@@ -391,15 +391,15 @@ val term_leq: term -> term -> bool
 val term_gt: term -> term -> bool
 
 
-(** [rebuild_qnt k qs b]
-   rebuild quantified term of kind k from quantifiers [qs] and body [b]
+(** [rebuild_qnt qs b]
+   rebuild quantified term from quantifiers [qs] and body [b]
 
-   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
+   e.g. [rebuild_qnt ["! x", "! y", "! z"] << b >>]
    ->
    [ << !x y z : b >> ]
  *)
 val rebuild_qnt: 
-    quant_ty -> binders list -> term -> term
+    binders list -> term -> term
 
 (**
    [close_term qnt free trm]: Close term [trm]. Make variables bound

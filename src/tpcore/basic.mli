@@ -88,7 +88,7 @@ type term =
   | Bound of binders     (* Bound variables *)
   | Free of string * gtype      (* Free variables *)
   | App of term * term    (* Function application *)
-  | Qnt of quant_ty * binders * term (* Binding terms *)
+  | Qnt of binders * term (* Binding terms *)
   | Const of const_ty     (* Constants *)
   | Typed of term * gtype  (* Typed terms *)
 

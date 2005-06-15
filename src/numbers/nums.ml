@@ -478,14 +478,17 @@ let term_to_prop scp t =
    term using environements [benv] and [nenv] to substitute terms for
    variables.
 *)
+(*
 let prop_to_term scp benv nenv rqnts e =
   let rec rebuild x ls=
     match ls with
       [] -> x
-    | q::qs -> rebuild (Basic.Qnt(Basic.binder_kind q, q, x)) qs
+    | q::qs -> rebuild (Basic.Qnt(q, x)) qs
   in 
   rebuild (prop_to_bterm benv nenv e) rqnts
-  
+*)
+let prop_to_term scp benv nenv rqnts e =
+  Term.rebuild_qnt rqnts (prop_to_bterm benv nenv e)
 
 (* simp_term_basic: simplify a term involving only integer functions *)
 
@@ -755,7 +758,7 @@ let simp_decide_conv scp asms trm=
 	  in 
 	  let asm = List.fold_left Logicterm.mk_and x xs
 	  in 
-	  Term.rebuild_qnt Basic.All qnts
+	  Term.rebuild_qnt qnts
 	    (Logicterm.mk_implies asm body)
   in 
   if(is_presburger scp trm)

@@ -52,8 +52,8 @@ let rec label varp trm =
     match trm with
       Basic.Id(id, _) -> Cname(id)
     | Basic.Free(id, _) -> Cfree(id)
-    | Basic.Qnt(qnt, q, b) ->  
-	Quant(qnt)
+    | Basic.Qnt(q, b) ->  
+	Quant(Basic.binder_kind q)
     | Basic.Bound(q) -> 
 	let qnt, _, _ =Basic.dest_binding q
 	in 
@@ -93,8 +93,8 @@ let rec term_to_label varp trm rst=
     match trm with
       Basic.Id(id, _) -> (Cname(id), rst)
     | Basic.Free(n, _) -> (Cfree(n), rst)
-    | Basic.Qnt(qnt, q, b) -> 
-	(Quant(qnt), b::rst)
+    | Basic.Qnt(q, b) -> 
+	(Quant(Basic.binder_kind q), b::rst)
     | Basic.Bound(q) -> 
 	let qnt, _, _ =Basic.dest_binding q
 	in 

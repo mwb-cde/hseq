@@ -738,7 +738,7 @@ module Grammars  =
 	(fun (x, y) b ->
 	  let binder=dest_bound y
 	  in 
-	  let nt=Basic.Qnt(Basic.binder_kind binder, binder, b)
+	  let nt=Basic.Qnt(binder, b)
 	  in 
 	  drop_name x inf; nt) xs body
 
@@ -755,7 +755,7 @@ module Grammars  =
 	(fun (x, y) b ->
 	  let binder=Term.dest_bound y
 	  in 
-	  let nt=wrapper (Basic.Qnt(Basic.binder_kind binder, binder, b))
+	  let nt=wrapper (Basic.Qnt(binder, b))
 	  in 
 	  drop_name x inf; nt) xs body
 
@@ -1536,38 +1536,40 @@ let rec resolve_aux data env expty term =
 	resolve_aux data aenv (Gtypes.mgu fty0 aenv) lf
       in 
       (App(ftrm, atrm), (Gtypes.mgu rty1 fenv), fenv)
-  | Qnt(Lambda, qnt, body) ->
-      let qnt1=binding_set_names qnt
-      in 
-      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
-      in 
-      let aty = Term.get_qnt_type (Bound qnt1)
-      and rty = Gtypes.mk_typevar data1.inf
-      in 
-      let nty0 = Logicterm.mk_fun_ty aty rty
-      in 
-      let (nty1, env1)=
-	try (nty0, Gtypes.unify_env data1.scp expty nty0 env)
-	with _ -> (nty0, env)
-      in 
-      let (body1, bty, benv) = 
-	resolve_aux data1 env1 rty body
-      in
-      (Qnt(Lambda, qnt1, body1), nty1, benv)
-  | Qnt(qty, qnt, body) -> 
-      let qnt1=binding_set_names qnt
-      in 
-      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
-      in 
-      let (nty1, env1)=
-	try (Logicterm.mk_bool_ty, 
-	     Gtypes.unify_env data1.scp expty Logicterm.mk_bool_ty env)
-	with _ -> (Logicterm.mk_bool_ty, env)
-      in 
-      let (body1, bty, benv)=
-	resolve_aux data1 env1 nty1 body
-      in 
-      (Qnt(qty, qnt1, body1), nty1, benv)
+  | Qnt(qnt, body) ->
+      (match Basic.binder_kind qnt with
+	Lambda -> 
+	  let qnt1=binding_set_names qnt
+	  in 
+	  let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
+	  in 
+	  let aty = Term.get_qnt_type (Bound qnt1)
+	  and rty = Gtypes.mk_typevar data1.inf
+	  in 
+	  let nty0 = Logicterm.mk_fun_ty aty rty
+	  in 
+	  let (nty1, env1)=
+	    try (nty0, Gtypes.unify_env data1.scp expty nty0 env)
+	    with _ -> (nty0, env)
+	  in 
+	  let (body1, bty, benv) = 
+	    resolve_aux data1 env1 rty body
+	  in
+	  (Qnt(qnt1, body1), nty1, benv)
+      | _ -> 
+	  let qnt1=binding_set_names qnt
+	  in 
+	  let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
+	  in 
+	  let (nty1, env1)=
+	    try (Logicterm.mk_bool_ty, 
+		 Gtypes.unify_env data1.scp expty Logicterm.mk_bool_ty env)
+	    with _ -> (Logicterm.mk_bool_ty, env)
+	  in 
+	  let (body1, bty, benv)=
+	    resolve_aux data1 env1 nty1 body
+	  in 
+	  (Qnt(qnt1, body1), nty1, benv))
 
 let resolve_term scp lookup term=
   let rmemo=

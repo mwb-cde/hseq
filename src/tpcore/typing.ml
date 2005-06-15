@@ -39,11 +39,13 @@ let typeof_env scp typenv inf trm =
     | Free(n, ty) -> (Gtypes.mgu ty env, env)
     | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Const(c) -> (Logicterm.typeof_cnst c, env)
-    | Qnt(Basic.Lambda, q, b) -> 
-	let btyp, benv=typeof_aux b env
-	in 
-	(Logicterm.mk_fun_ty (Term.get_qnt_type t) btyp, benv)
-    | Qnt(_, q, b) -> Logicterm.mk_bool_ty, env
+    | Qnt(q, b) -> 
+	(match Basic.binder_kind q with
+	  Basic.Lambda -> 
+	    (let btyp, benv=typeof_aux b env
+	    in 
+	    (Logicterm.mk_fun_ty (Term.get_qnt_type t) btyp, benv))
+	| _ -> Logicterm.mk_bool_ty, env)
     | App(f, a) -> 
 	let fty, fenv= typeof_aux f env
 	in let aty, aenv= typeof_aux a fenv
@@ -142,37 +144,38 @@ let settype_top scp (inf, cache) f typenv exty et =
 	  settype_aux aty a fenv  (* check argument type *)
 	with err -> 
 	  raise (Term.add_term_error "Typechecking: " [t] err))
-    | Qnt(Basic.Lambda, q, b) ->
-	let rty = Gtypes.mk_typevar inf     (* range type *)
-	and fty = Term.get_qnt_type t  (* domain *)
-	in
-	let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
-	in 
-        Gtypes.quick_well_defined scp cache fty; (* check domain *)
-	let env1= 
-	  (try
-	    Gtypes.unify_env scp bty expty env
-	  with err -> 
-	    raise (add_typing_error "Typechecking: " t
-		     (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
-	in 
-	(try
-	  settype_aux rty b env1
-	with err -> 
-	  raise (Term.add_term_error "Typechecking: " [t] err))
-    | Qnt(_, q, b) ->
-	let env1=
-	  (try 
-	    settype_aux Logicterm.mk_bool_ty b env
-	  with err -> 
-	    raise (Term.add_term_error "Typechecking: " [t] err))
-	in 
-	(try
-	  Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
-	with err -> 
-	  raise (add_typing_error "Typechecking: " t
-		   (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err))
-
+    | Qnt(q, b) ->
+	(match Basic.binder_kind q with
+	  Basic.Lambda -> 
+	    (let rty = Gtypes.mk_typevar inf     (* range type *)
+	    and fty = Term.get_qnt_type t  (* domain *)
+	    in
+	    let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
+	    in 
+            Gtypes.quick_well_defined scp cache fty; (* check domain *)
+	    let env1= 
+	      (try
+		Gtypes.unify_env scp bty expty env
+	      with err -> 
+		raise (add_typing_error "Typechecking: " t
+			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
+	    in 
+	    (try
+	      settype_aux rty b env1
+	    with err -> 
+	      raise (Term.add_term_error "Typechecking: " [t] err)))
+	| _ -> 
+	    let env1=
+	      (try 
+		settype_aux Logicterm.mk_bool_ty b env
+	      with err -> 
+		raise (Term.add_term_error "Typechecking: " [t] err))
+	    in 
+	    (try
+	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
+	    with err -> 
+	      raise (add_typing_error "Typechecking: " t
+		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err)))
   in settype_aux exty et typenv
 
 
@@ -249,33 +252,35 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	(try
 	  type_aux aty a fenv            (* check argument type *)
 	with err -> Term.add_term_error "Typechecking: " [t] err)
-    | Qnt(Lambda, q, b) ->
-	let rty = Gtypes.mk_typevar inf     (* range type *)
-	and fty = Term.get_qnt_type t  (* domain *)
-	in
-	let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
-	in 
-	Gtypes.quick_well_defined scp cache fty; (* check domain *)
-	let env1= 
-	  (try
-	    Gtypes.unify_env scp bty expty env
-	  with err -> 
-	    raise (add_typing_error "Typechecking: " t 
-		     (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
-	in 
-	(try
-	  type_aux rty b env1
-	with err ->
-	  Term.add_term_error "Typecheck: " [t] err)
-    | Qnt(_, q, b) ->
-	let env1=type_aux Logicterm.mk_bool_ty b env
-	in 
-	(try
-	  Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
-	with err -> 
-	  raise (add_typing_error "Typechecking: " t 
-		   (Gtypes.mgu expty env) 
-		   (Gtypes.mgu Logicterm.mk_bool_ty env) err))
+    | Qnt(q, b) ->
+	(match Basic.binder_kind q with
+	  Basic.Lambda -> 
+	    let rty = Gtypes.mk_typevar inf     (* range type *)
+	    and fty = Term.get_qnt_type t  (* domain *)
+	    in
+	    let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
+	    in 
+	    Gtypes.quick_well_defined scp cache fty; (* check domain *)
+	    let env1= 
+	      (try
+		Gtypes.unify_env scp bty expty env
+	      with err -> 
+		raise (add_typing_error "Typechecking: " t 
+			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
+	    in 
+	    (try
+	      type_aux rty b env1
+	    with err ->
+	      Term.add_term_error "Typecheck: " [t] err)
+	| _ -> 
+	    let env1=type_aux Logicterm.mk_bool_ty b env
+	    in 
+	    (try
+	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
+	    with err -> 
+	      raise (add_typing_error "Typechecking: " t 
+		       (Gtypes.mgu expty env) 
+		       (Gtypes.mgu Logicterm.mk_bool_ty env) err)))
   in 
   try 
     type_aux exty et typenv
@@ -311,7 +316,7 @@ let rec check_types scp t =
   match t with
     Id(_, ty) -> Gtypes.well_defined scp [] ty
   | App(f, a) -> check_types scp f; check_types scp a
-  | Qnt(_, q, b) ->
+  | Qnt(q, b) ->
       Gtypes.well_defined scp [] (Term.get_qnt_type t);
       check_types scp b
   | Typed(t, ty) -> Gtypes.well_defined scp [] ty; check_types scp t
@@ -361,19 +366,21 @@ let rec infer_aux (inf, cache) scp env t =
       in                               (* unify with actual f-type *)
       let env1=Gtypes.unify_env scp nty fty fenv
       in (rty, env1)
-  | Qnt(Lambda, q, b) ->
-      let rty, renv = infer_aux (inf, cache) scp env b
-      and aty = Term.get_qnt_type t  (* domain *)
-      in
-      let nty = Logicterm.mk_fun_ty aty rty (* type of term *)
-      in 
-      Gtypes.quick_well_defined scp cache nty; (* check domain *)
-      (nty, renv)
-  | Qnt(_, q, b) -> 
-      let nty, nenv=infer_aux (inf, cache) scp env b
-      in 
-      let env1=Gtypes.unify_env scp nty Logicterm.mk_bool_ty nenv
-      in (nty, env1)
+  | Qnt(q, b) ->
+      (match Basic.binder_kind q with
+	Lambda -> 
+	  let rty, renv = infer_aux (inf, cache) scp env b
+	  and aty = Term.get_qnt_type t  (* domain *)
+	  in
+	  let nty = Logicterm.mk_fun_ty aty rty (* type of term *)
+	  in 
+	  Gtypes.quick_well_defined scp cache nty; (* check domain *)
+	  (nty, renv)
+      | _ -> 
+	  let nty, nenv=infer_aux (inf, cache) scp env b
+	  in 
+	  let env1=Gtypes.unify_env scp nty Logicterm.mk_bool_ty nenv
+	  in (nty, env1))
 
 let infer_types_env scp env trm =
   let inf = (ref 0, Lib.empty_env())
@@ -394,7 +401,7 @@ let set_exact_types scp trm =
 	  (let ty = Scope.type_of scp id
 	  in (Id(id, ty)))
 	with Not_found -> t)
-    | Qnt(k, q, b) -> Qnt(k, q, set_aux b)
+    | Qnt(q, b) -> Qnt(q, set_aux b)
     | Typed(tt, tty) -> Typed(set_aux tt, tty)
     | App(f, a) -> App(set_aux f, set_aux a)
     | _ -> t
@@ -410,7 +417,7 @@ let assign_types scp trm =
 	  in (Id(id, ty)))
 	with Not_found -> 
 	  raise (Term.term_error "assign_types: Unknown identifier" [t]))
-    | Qnt(k, q, b) -> Qnt(k, q, set_aux b)
+    | Qnt(q, b) -> Qnt(q, set_aux b)
     | Typed(tt, tty) -> Typed(set_aux tt, tty)
     | App(f, a) -> App(set_aux f, set_aux a)
     | _ -> t

@@ -190,9 +190,11 @@ let alpha_convp_full scp tenv t1 t2 =
 	let (trmenv1, tyenv1)=alpha_aux f1 f2 tyenv trmenv
 	in 
 	alpha_aux a1 a2 tyenv1 trmenv1
-    | (Qnt(qn1, q1, b1), Qnt(qn2, q2, b2)) ->
+    | (Qnt(q1, b1), Qnt(q2, b2)) ->
 	(let qty1=Basic.binder_type q1
 	and qty2=Basic.binder_type q2
+	and qn1=Basic.binder_kind q1
+	and qn2=Basic.binder_kind q2
 	in 
 	if (qn1=qn2) 
 	then 
@@ -258,7 +260,7 @@ let beta_reduce t =
 	in 
 	(try (let nt=beta_conv (App(nf, na)) in chng:=true; nt)
 	with _ -> (App(nf, na))))
-    |	Qnt(k, q, b) -> Qnt(k, q, beta_reduce_aux chng b)
+    |	Qnt(q, b) -> Qnt(q, beta_reduce_aux chng b)
     |	Typed(tr, ty) -> Typed(beta_reduce_aux chng tr, ty)
     |	x -> x
   in let flag = ref false
@@ -270,7 +272,7 @@ let beta_reduce t =
 let eta_conv x ty t=
   let name="a" 
   in let q= mk_binding Basic.Lambda name ty 
-  in App((Qnt(Basic.Lambda, q, subst_quick x (Bound(q)) t)), x)
+  in App((Qnt(q, subst_quick x (Bound(q)) t)), x)
     
 
 
@@ -285,7 +287,7 @@ let rec is_closed_aux env t =
       is_closed_aux env r
   | Typed(a, _) -> 
       is_closed_aux env a
-  | Qnt(_, q, b) -> 
+  | Qnt(q, b) -> 
       let nenv=bind (Bound(q)) (mk_bool true) env
       in 
       is_closed_aux nenv b
@@ -318,7 +320,7 @@ let close_term t =
   in 
   let rec close_aux x =
     match x with
-      Qnt(_, q, b) ->
+      Qnt(q, b) ->
 	ignore(table_add (Bound q) (Bound q) memo);
 	close_aux b
     | Bound(q) ->
@@ -334,7 +336,7 @@ let close_term t =
   in 
   close_aux t; 
   List.fold_left 
-    (fun b q-> Qnt(binder_kind q, q, b)) t !qnts
+    (fun b q-> Qnt(q, b)) t !qnts
 
 
 (**
@@ -378,7 +380,7 @@ let gen_term bs trm =
     match t with 
       Basic.Bound _ -> get_bound t
     | Basic.Free _ -> get_free t
-    | Basic.Qnt(x, q, body) -> 
+    | Basic.Qnt(q, body) -> 
 	let qnts1 = qnts
 	and known1 = Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known
 	and vars1 = vars
@@ -387,7 +389,7 @@ let gen_term bs trm =
 	  gen_aux qnts (Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known)
 	    vars body
 	in 
-	(Basic.Qnt(x, q, body1), qnts1, known, vars1)
+	(Basic.Qnt(q, body1), qnts1, known, vars1)
     | Basic.App(f, a) ->
 	let (f1, qnts1, known1, vars1) = 
 	  gen_aux qnts known vars f
@@ -410,4 +412,4 @@ let gen_term bs trm =
 	 (Term.empty_subst()) bs)
       trm
   in 
-  Term.rebuild_qnt Basic.All qnts trm1
+  Term.rebuild_qnt qnts trm1

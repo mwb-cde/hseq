@@ -158,9 +158,9 @@ let rec equal_upto_vars varp x y =
   else 
     match (x, y) with
       (Basic.App(f1, arg1), Basic.App(f2, arg2))->
-	(equal_upto_vars varp f1 f2) & (equal_upto_vars varp arg1 arg2)
-    | (Basic.Qnt(k1, qn1, b1), Basic.Qnt(k2, qn2, b2)) -> 
-	k1=k2 & qn1==qn2 & (equal_upto_vars varp b1 b2)
+	(equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
+    | (Basic.Qnt(qn1, b1), Basic.Qnt(qn2, b2)) -> 
+	(qn1==qn2) && (equal_upto_vars varp b1 b2)
     | (Basic.Typed(t1, ty1), Basic.Typed(t2, ty2)) ->
-	(Gtypes.equals ty1 ty2)  & (equal_upto_vars varp t1 t2)
+	(Gtypes.equals ty1 ty2) && (equal_upto_vars varp t1 t2)
     | (_, _) -> Term.equals x y

@@ -241,7 +241,7 @@ let mk_subtype_exists setp=
   in 
   let x= Term.mk_bound x_b
   in 
-  Basic.Qnt(Basic.Ex, x_b, Term.mk_app setp x)
+  Basic.Qnt(x_b, Term.mk_app setp x)
 
 (**
    [check_type_name scp n]: make sure that there is no type named [n]
@@ -308,7 +308,7 @@ let mk_rep_T set rep =
   in 
   let body = Term.mk_app set (Term.mk_app rep x)
   in 
-  Basic.Qnt(Basic.All, x_b, body)
+  Basic.Qnt(x_b, body)
 
 (**
    [mk_rep_T_inv rep abs]: 
@@ -324,7 +324,7 @@ let mk_rep_T_inv rep abs=
     Logicterm.mk_equality 
       (Term.mk_app abs (Term.mk_app rep x)) x
   in 
-  Basic.Qnt(Basic.All, x_b, body)
+  Basic.Qnt(x_b, body)
 
 (**
    [mk_abs_T_inv set rep abs]:
@@ -343,7 +343,7 @@ let mk_abs_T_inv set rep abs=
   in 
   let body = Logicterm.mk_implies lhs rhs
   in 
-  Basic.Qnt(Basic.All, x_b, body)
+  Basic.Qnt(x_b, body)
       
 
 (*
@@ -460,7 +460,7 @@ module HolLike =
 	in 
 	let body = Logicterm.mk_implies lhs rhs
 	in 
-	Basic.Qnt(Basic.All, x1_b, Basic.Qnt(Basic.All, x2_b, body))
+	Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
       and 
 	  mk_subtype_2 (setP:Basic.term) (rep: Basic.ident)=
 	let y_b=(Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty"))
@@ -472,10 +472,10 @@ module HolLike =
 	in 
 	let lhs = Term.mk_app setP y
 	and rhs =
-	  Basic.Qnt(Basic.Ex, y1_b, 
+	  Basic.Qnt(y1_b, 
 		    (Logicterm.mk_equality y (Term.mk_app rep_term y1)))
 	in 
-	Basic.Qnt(Basic.All, y_b, 
+	Basic.Qnt(y_b, 
 		  Logicterm.mk_equality lhs rhs)
       in 
       Logicterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)

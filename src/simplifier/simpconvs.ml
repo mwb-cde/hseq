@@ -111,8 +111,8 @@ let simple_rewrite_conv scp rule trm=
   let new_goal =
     Term.rename
       (Logicterm.mk_equality 
-	 (Drule.rebuild_qnt Basic.All trmvars trmbody)
-	 (Drule.rebuild_qnt Basic.All trmvars (Term.subst env rrhs)))
+	 (Term.rebuild_qnt trmvars trmbody)
+	 (Term.rebuild_qnt trmvars (Term.subst env rrhs)))
   in 
   let proof g= 
     seq
@@ -278,7 +278,7 @@ let is_equality (vars, cnd, main)=
 let find_variables is_var vars trm=
   let rec find_aux env t=
     match t with
-      Basic.Qnt(_, _, b) ->
+      Basic.Qnt(_, b) ->
 	find_aux env b
     | Basic.Bound(q) ->
 	if(is_var q)
@@ -302,7 +302,7 @@ let find_variables is_var vars trm=
 let check_variables is_var vars trm=
   let rec check_aux t=
     match t with
-      Basic.Qnt(_, _, b) ->
+      Basic.Qnt(_, b) ->
 	check_aux b
     | Basic.Bound(q) ->
 	if(is_var q)

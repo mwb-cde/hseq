@@ -16,10 +16,15 @@
     type dbterm =
       	Id of Basic.ident * Gtypes.stype
       | Free of string * Gtypes.stype
-      | Qnt of Basic.quant_ty* binder * dbterm
+      | Qnt of binder * dbterm
       | Bound of int
       | App of dbterm * dbterm
       | Const of Basic.const_ty
+
+val binder_kind: binder -> Basic.quant_ty
+val binder_name: binder -> string
+val binder_type: binder -> Gtypes.stype
+
 
 (* conversion to and from terms *)
     val of_term : Basic.term -> dbterm

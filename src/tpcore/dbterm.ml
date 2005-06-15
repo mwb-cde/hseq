@@ -11,12 +11,17 @@
   type dbterm =
       Id of Basic.ident * Gtypes.stype
     | Free of string * Gtypes.stype
-    | Qnt of Basic.quant_ty * binder * dbterm
+    | Qnt of binder * dbterm
     | Bound of int
     | App of dbterm * dbterm
     | Const of Basic.const_ty
 
   let mk_binder q v t = {quant=q; qvar=v; qtyp=t}
+
+let binder_kind q = q.quant
+let binder_name q = q.qvar
+let binder_type q = q.qtyp
+
 
   let rec of_term_aux env qnts t= 
     match t with
@@ -27,11 +32,11 @@
     | Basic.Typed (trm, ty) -> of_term_aux env qnts trm
     | Basic.Bound(q) ->
 	Bound(Lib.index (fun x -> (x==q)) qnts)
-    | Basic.Qnt(tqnt, q, b) -> 
-	let (_, tqvar, tqtyp) = Basic.dest_binding q
+    | Basic.Qnt(q, b) -> 
+	let (tqnt, tqvar, tqtyp) = Basic.dest_binding q
 	and nb = of_term_aux env (q::qnts) b
 	in 
-	Qnt(tqnt, mk_binder tqnt tqvar (Gtypes.to_save_env env tqtyp), nb)
+	Qnt(mk_binder tqnt tqvar (Gtypes.to_save_env env tqtyp), nb)
 	  
   let of_term t = of_term_aux (ref []) [] t
 
@@ -42,12 +47,14 @@
     | Const(c) -> Basic.Const(c)
     | App(f, a) -> Basic.App(to_term_aux env qnts f, to_term_aux env qnts a)
     | Bound(q) -> Basic.Bound(List.nth qnts q)
-    | Qnt(qnt, q, b) ->
+    | Qnt(q, b) ->
 	let nq = 
-	  Basic.mk_binding qnt 
-	    (q.qvar) (Gtypes.from_save_env env q.qtyp)
+	  Basic.mk_binding 
+	    (binder_kind q)
+	    (binder_name q)
+	    (Gtypes.from_save_env env q.qtyp)
 	in 
-	Basic.Qnt(qnt, nq, to_term_aux env (nq::qnts) b)
+	Basic.Qnt(nq, to_term_aux env (nq::qnts) b)
 
   let to_term t = to_term_aux (ref[]) [] t
 

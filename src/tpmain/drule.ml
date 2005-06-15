@@ -337,7 +337,7 @@ let dest_qnt_opt qnt d t=
   in 
   (vs, d b)
 
-let rec rebuild_qnt k qs b= Term.rebuild_qnt k qs b
+let rec rebuild_qnt qs b= Term.rebuild_qnt qs b
 
 (* 
    [find_qnt_opt ?exclude qnt ?f pred forms]

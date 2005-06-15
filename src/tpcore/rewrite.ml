@@ -194,10 +194,10 @@ let rewrite_list_topdown scope ctrl tyenv chng net trm =
     then (t, env, ctrl)
     else 
       (match t with
-	Basic.Qnt(qnt, q, b) -> 
+	Basic.Qnt(q, b) -> 
 	  let nb, benv, bctrl = rewrite_aux ctrl env b
 	  in 
-	  (Basic.Qnt(qnt, q, nb), benv, bctrl)
+	  (Basic.Qnt(q, nb), benv, bctrl)
       |	Basic.App(f, a)->
 	  let nf, fenv, fctrl = (rewrite_aux ctrl env f)
 	  in
@@ -222,10 +222,10 @@ let rewrite_list_bottomup scope ctrl tyenv chng net trm =
     then (t, env, ctrl)
     else 
       (match t with
-	Basic.Qnt(qnt, q, b) -> 
+	Basic.Qnt(q, b) -> 
 	  (let nb, benv, nctrl = rewrite_aux ctrl env b
 	  in 
-	  match_rewrite_list scope nctrl benv chng net (Qnt(qnt, q, nb)))
+	  match_rewrite_list scope nctrl benv chng net (Qnt(q, nb)))
       |	Basic.App(f, a)->
 	  (let nf, fenv, fctrl = 
 	    (rewrite_aux ctrl env f)

@@ -304,15 +304,17 @@ val dest_qnt_opt:
     Basic.quant_ty 
   -> (Basic.term -> 'a) -> Basic.term -> (Basic.binders list * 'a) 
 
-(** [rebuild_qnt k qs b]
-   rebuild quantified term of kind k from quantifiers [qs] and body [b]
+(** [rebuild_qnt qs b]
+   rebuild quantified term from quantifiers [qs] and body [b]
 
-   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
+   e.g. [rebuild_qnt ["! x", "! y", "! z"] << b >>]
    ->
    [ << !x y z : b >> ]
  *)
+(*
 val rebuild_qnt: 
     Basic.quant_ty -> Basic.binders list -> Basic.term -> Basic.term
+*)
 
 (** 
    [find_formula p fs]: Return the first formula in [fs] to satisfy [p].

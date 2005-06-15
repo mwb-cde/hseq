@@ -583,7 +583,7 @@ let get_form t sqnt =
  *)
 let rec find_rrs_bottom_up_tac ctrl ret tyenv t g=
   match t with
-    Basic.Qnt(k, q, b) -> 
+    Basic.Qnt(q, b) -> 
       (let ret1 = ref None
       in 
       seq[(find_rrs_bottom_up_tac ctrl ret1 tyenv b);
@@ -593,11 +593,11 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv t g=
 	    in 
 	    ret1:=None;
 	    let g2= 
-	      (find_all_matches_tac bcntrl ret1 btyenv (Qnt(k, q, nb)) 
+	      (find_all_matches_tac bcntrl ret1 btyenv (Qnt(q, nb)) 
 	     || skip) g1
 	    in 
 	    Lib.set_option ret 
-	      (Lib.get_option (!ret1) (bcntrl, btyenv, Qnt(k, q, nb)));
+	      (Lib.get_option (!ret1) (bcntrl, btyenv, Qnt(q, nb)));
 	    g2)] g)
   | Basic.Typed(tt, ty) -> find_rrs_bottom_up_tac ctrl ret tyenv tt g
   | Basic.App(f, a)->
@@ -636,7 +636,7 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv t g=
 let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
   let find_td_aux ret1 tyenv1 cntrl1 trm1 g=
     match trm1 with
-      Basic.Qnt(k, q, b) -> 
+      Basic.Qnt(q, b) -> 
 	(let ret2=ref None 
 	in 
 	let bg=find_rrs_top_down_tac cntrl1 ret2 tyenv1 b g
@@ -644,7 +644,7 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
 	let (bcntrl, btyenv, nb) = 
 	  Lib.get_option (!ret2) (cntrl1, tyenv1, b)
 	in 
-	Lib.set_option ret1 (bcntrl, btyenv, Basic.Qnt(k, q, nb)); bg)
+	Lib.set_option ret1 (bcntrl, btyenv, Basic.Qnt(q, nb)); bg)
     | Basic.Typed(tt, ty) -> 
 	find_rrs_top_down_tac cntrl1 ret1 tyenv1 tt g
     | Basic.App(f, a)->

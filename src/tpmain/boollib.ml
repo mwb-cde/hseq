@@ -1186,7 +1186,7 @@ module Convs=
 	in 
 	let newterm= 
 	  Term.rename 
-	    (Drule.rebuild_qnt Basic.Ex eqvars (Logicterm.mk_not eqbody))
+	    (Term.rebuild_qnt eqvars (Logicterm.mk_not eqbody))
 	in 
 	let goal_term = 
 	  Logicterm.mk_equality trm newterm
@@ -1305,7 +1305,7 @@ module Convs=
 	in 
 	let newterm= 
 	  Term.rename 
-	    (Drule.rebuild_qnt Basic.All aqvars (Logicterm.mk_not aqbody))
+	    (Term.rebuild_qnt aqvars (Logicterm.mk_not aqbody))
 	in 
 	let goal_term = 
 	  Logicterm.mk_equality trm newterm

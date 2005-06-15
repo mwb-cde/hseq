@@ -19,7 +19,7 @@ let rec occurs s t =
     match t with
       App(f, a) -> occurs s f; occurs s a
     | Typed(tt, _) -> occurs s t
-    | Qnt(_, _, b) -> occurs s b
+    | Qnt(_, b) -> occurs s b
     | _ -> ()
 
 
@@ -58,8 +58,8 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	    let tyenv2, env2= unify_aux tyenv1 env1 a1 a2
 	    in 
 	    (tyenv2, env2)
-	| (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
-	    if(qnt1=qnt2)
+	| (Qnt(q1, b1), Qnt(q2, b2)) ->
+	    if(Basic.binder_kind q1=Basic.binder_kind q2)
 	    then 
 	      let qtst, qtyenv = eq_binder tyenv q1 q2
 	      in 
@@ -302,8 +302,8 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	    let tyenv1, env1=unify_aux tyenv env f1 f2
 	    in let tyenv2, env2= unify_aux tyenv1 env1 a1 a2
 	    in (tyenv2, env2)
-	| (Qnt(qnt1, q1, b1), Qnt(qnt2, q2, b2)) ->
-	    if(qnt1=qnt2)
+	| (Qnt(q1, b1), Qnt(q2, b2)) ->
+	    if(Basic.binder_kind q1=Basic.binder_kind q2)
 	    then 
 	      let qtst, qtyenv=eq_binder tyenv q1 q2
 	      in 
