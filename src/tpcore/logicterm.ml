@@ -336,3 +336,78 @@ let close_term t =
   List.fold_left 
     (fun b q-> Qnt(binder_kind q, q, b)) t !qnts
 
+
+(**
+   [gen_term qnts trm]: generalise term [trm]. Replace bound variables
+   occuring outside their binder and free variables with universally
+   quantified variables. Binders in [qnts] are ignored.
+
+   belongs in Logicterm
+*)
+let gen_term bs trm =
+  let rec gen_aux qnts known vars t=
+  let get_bound t = 
+    try 
+      (Term.find t known, qnts, known, vars)
+    with Not_found -> 
+      try 
+	(Term.find t vars, qnts, known, vars)
+      with _ -> 
+	let q = Term.dest_bound t
+	in 
+	let (_, name, ty) = Basic.dest_binding q
+	in 
+	let q1 = Basic.mk_binding Basic.All name ty
+	in 
+	(Basic.Bound(q1), q1::qnts, known,
+	 Term.bind t (Basic.Bound(q1)) vars)
+  and get_free t = 
+    try 
+      (Term.find t known, qnts, known, vars)
+    with Not_found -> 
+      try 
+	(Term.find t vars, qnts, known, vars)
+      with _ -> 
+	let (name, ty) = Term.dest_free t
+	in 
+	let q = Basic.mk_binding Basic.All name ty
+	in 
+	(Basic.Bound(q), q::qnts, known, 
+	 Term.bind t (Basic.Bound(q)) vars)
+  in 
+    match t with 
+      Basic.Bound _ -> get_bound t
+    | Basic.Free _ -> get_free t
+    | Basic.Qnt(x, q, body) -> 
+	let qnts1 = qnts
+	and known1 = Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known
+	and vars1 = vars
+	in 
+	let (body1, qnts1, known1, vars1) = 
+	  gen_aux qnts (Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known)
+	    vars body
+	in 
+	(Basic.Qnt(x, q, body1), qnts1, known, vars1)
+    | Basic.App(f, a) ->
+	let (f1, qnts1, known1, vars1) = 
+	  gen_aux qnts known vars f
+	in 
+	let (a1, qnts2, known2, vars2) = 
+	  gen_aux qnts1 known1 vars1 a
+	in 
+	(Basic.App(f1, a1), qnts2, known2, vars2)
+    | Basic.Typed(t1, ty) -> 
+	let (t2, qnts1, known1, vars1) = 
+	  gen_aux qnts known vars t
+	in 
+	(Basic.Typed(t2, ty), qnts1, known1, vars1)
+    | _ -> (t, qnts, known, vars)
+  in 
+  let (trm1, qnts, _, vars) = 
+    gen_aux [] (Term.empty_subst()) 
+      (List.fold_left 
+	 (fun s q -> Term.bind (Basic.Bound(q)) (Basic.Bound(q)) s)
+	 (Term.empty_subst()) bs)
+      trm
+  in 
+  Term.rebuild_qnt Basic.All qnts trm1

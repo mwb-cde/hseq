@@ -146,3 +146,28 @@ val rotate_right : int -> 'a list -> 'a list
 *)
 val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
 
+(**
+   [fold_map f a l]: 
+   [fold_map f a [b1; ... ; bn]] is
+   [ (fst(f (std f a bn-1) bn),
+   [snd(f a b1); snd(f (fst f a b1) b2) ; ... ; snd(f (fstf a bn-1) bn)])]
+*)
+val fold_map : 
+    ('a -> 'b -> ('a * 'c )) -> 'a -> 'b list -> ('a * 'c list)
+
+(** [swap p]: [swap (a, b)] is [b, a] *)
+val swap: ('a * 'b) -> ('b * 'a)
+
+
+(**
+   [extract p ls]: Extract the first element [x] of [ls] satisfying [p].
+   return [(x, ls')], where [ls'] is [ls] with [x] removed.
+   Raise [Not_found] if no element of [ls] satisfies [p].
+*)
+val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
+
+(**
+   [least ord ls]: return least [x] in [ls]. Raise [Invalid_argument]
+   if [ls] is empty
+*)
+val least: ('a -> 'a -> bool) -> 'a list -> 'a

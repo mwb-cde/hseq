@@ -360,3 +360,42 @@ let apply_nth n f l d =
   | _ -> f (List.nth l n)
 
 
+let fold_map f a bs = 
+  let rec fold_aux e ls rst = 
+    match ls with 
+      [] -> (e, List.rev rst)
+    | (x::xs) -> 
+	let (e1, c) = f e x
+	in 
+	fold_aux e1 xs (c::rst)
+  in 
+  fold_aux a bs []
+
+
+let swap (a, b) = (b, a)
+
+let extract p ls =
+  let rec extract_aux ys rs =
+    match ys with 
+      [] -> raise Not_found
+    | (x::xs) -> 
+	if (p x)
+	then (x, List.rev_append xs rs)
+	else extract_aux xs (x::rs)
+  in 
+  let (x, bs) = extract_aux ls []
+  in 
+  (x, List.rev bs)
+
+let least lt ls = 
+  let rec ord_aux curr ys =
+    match ys with
+      [] -> curr
+    | (x::xs) -> 
+	if (lt x curr) 
+	then ord_aux x xs
+	else ord_aux curr xs
+  in 
+  match ls with 
+    [] -> raise (Invalid_argument "least")
+  | (f::fs) -> ord_aux f fs

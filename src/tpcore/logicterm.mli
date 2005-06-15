@@ -121,6 +121,18 @@ val is_closed_aux: substitution -> term -> unit
 
 (* close a term:
    constructs outermost universal quantifier for every
-   bound variable without an enclosing binder *)
+   bound variable without an enclosing binder 
+*)
 
 val close_term: term -> term
+
+(**
+   [gen_term qnts trm]: generalise term [trm]. Replace bound variables
+   occuring outside their binder and free variables with universally
+   quantified variables. 
+
+   Variables bound with a binder in [qnts] are ignored.
+
+   (More thorough than [close_term]).
+*)
+val gen_term : Basic.binders list -> Basic.term -> Basic.term
