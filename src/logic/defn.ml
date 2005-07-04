@@ -389,7 +389,7 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
   in 
   let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
   and abs_ty = 
-    Gtypes.copy_type
+    Gtypes.rename_type_vars
       (Gtypes.normalize_vars (Logicterm.mk_fun_ty dtype ntype))
   in 
   let abs_term = Term.mk_typed_var abs_id (Gtypes.mk_var "abs_ty2")

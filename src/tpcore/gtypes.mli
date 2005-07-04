@@ -9,21 +9,9 @@
 open Basic
 open Lib
 
-(* representation of types for storage on disk *)
-type stype = 
-    ((string * int), Basic.typ_const, Basic.base_typ) pre_typ
-
 (* records for type definitions *)
-
 type typedef_record = Scope.type_record
 
-type stypedef_record =
-    {sname: string; 
-     sargs : string list; 
-     salias: stype option;
-     scharacteristics: string list}
-
-(* record scopes and type definitions (e.g. for typechecking) *)
 
 (* get definition of a type *)
 val get_typdef: Scope.t -> ident -> typedef_record
@@ -31,6 +19,16 @@ val get_typdef: Scope.t -> ident -> typedef_record
 val string_gtype :  gtype -> string
 
 (* conversion to and from disk representation *)
+(* representation of types for storage on disk *)
+type stype = 
+    ((string * int), Basic.typ_const, Basic.base_typ) pre_typ
+
+type stypedef_record =
+    {sname: string; 
+     sargs : string list; 
+     salias: stype option;
+     scharacteristics: string list}
+
 val from_save: stype -> gtype
 val from_save_env : 
     ((string * int)* (string ref)) list ref
@@ -43,14 +41,12 @@ val to_save_env: (string ref* (string *int)) list ref
 val to_save_rec: typedef_record -> stypedef_record
 val from_save_rec: stypedef_record -> typedef_record
 
-(* equality between types (uses Dequals test) *)
+(* [equals]: Equality between types  *)
 val equals: gtype -> gtype -> bool
-
-val safe_equal: gtype -> gtype -> bool
 
 (* constructors/destructors/recognisers for types *)
 
-(* basic types *)
+(* Basic types *)
 
 val mk_null : unit -> gtype 
 val is_null: gtype -> bool
@@ -59,7 +55,7 @@ val mk_base: base_typ -> gtype
 (* val mk_bool : gtype *)
 val mk_num : gtype
 
-(* variable types *)
+(* Variable types *)
 
 val mk_var : string -> gtype
 val dest_var : gtype -> string  ref
@@ -141,11 +137,11 @@ val occurs_env :  substitution-> gtype -> gtype -> unit
 val bind_occs : gtype -> gtype -> substitution -> substitution
 
 (**
-   [copy_type_env]: copy a type, making new variables in the type.    
-   [(copy_type t)] is equivalent but not equal to [t]
+   [rename_type_vars_env]: copy a type, making new variables in the type.    
+   [(rename_type_vars t)] is equivalent but not equal to [t]
 *)
-val copy_type_env: substitution -> gtype -> (gtype * substitution)
-val copy_type: gtype -> gtype
+val rename_type_vars_env: substitution -> gtype -> (gtype * substitution)
+val rename_type_vars: gtype -> gtype
 
 (* Unification 
    
@@ -162,31 +158,35 @@ val unify_env : Scope.t -> gtype -> gtype
 
 (**
    [unify_env_unique_left scp tyl tyr env]: Unify types [tyl'] and
-   [tyr] in given context [env], where [tyl' = copy_type tyl]. If [sb]
+   [tyr] in given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
    is the returned substitution, then the type formed by [mgu tyr sb]
    will not have any type variable in common with [tyl].
    
    [unify_env_unique_left sc l r s] is equivalent, but faster than, to
-   [unify_env sc (copy_type l) r s].
+   [unify_env sc (rename_type_vars l) r s].
    
    This function is used for rewriting with multiple terms.
 
    Defunct: use [unify_for_rewrite]
  *)
+(*
 val unify_env_unique_left:  Scope.t -> gtype -> gtype 
   -> substitution -> substitution 
+*)
 
 (* remove bindings from a failed attempt at unification *)
+(*
 val remove_bindings: gtype list -> substitution -> substitution
+*)
 
 (**
    [unify_for_rewrite scp tyl tyr env]: Unify types [tyl'] and
-   [tyr] in given context [env], where [tyl' = copy_type tyl]. If [sb]
+   [tyr] in given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
    is the returned substitution, then the type formed by [mgu tyr sb]
    will not have any type variable in common with [tyl].
    
    [unify_for_rewrite sc l r s] is equivalent, but faster than, to
-   [unify_env sc (copy_type l) r s].
+   [unify_env sc (rename_type_vars l) r s].
    
    This function is used for term-rewriting, where there is a danger
    that the same type may occur in different contexts (e.g. as the type

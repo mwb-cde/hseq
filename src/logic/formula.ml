@@ -117,7 +117,7 @@ let resolve_closed_term scp trm=
   in 
   let lookup_type id = 
     try 
-      Gtypes.copy_type (Lib.find id type_memo)
+      Gtypes.rename_type_vars (Lib.find id type_memo)
     with Not_found -> 
       let ty = Scope.type_of scp id
       in (ignore(Lib.add id ty type_memo); ty)

@@ -1435,7 +1435,7 @@ let rec resolve_aux data env expty term =
   let find_type n = 
     (try 
       Some 
-	(Gtypes.copy_type 
+	(Gtypes.rename_type_vars 
 	   (memo_find data.memo.types type_find data.scp n))
     with Not_found -> None)
   in 

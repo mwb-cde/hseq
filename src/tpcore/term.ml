@@ -1,24 +1,25 @@
 (*-----
- Name: term.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: term.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 open Lib
 open Basic
 open Gtypes
 open Result
 
-
+(* Equality *)
 let rec equals x y = 
- (match (x, y) with
+  (x == y) || 
+  (match (x, y) with
     (App(f1, arg1), App(f2, arg2))->
       (equals f1 f2) & (equals arg1 arg2)
   | (Bound(q1), Bound(q2)) -> q1==q2
   | (Qnt(qn1, b1), Qnt(qn2, b2)) -> 
-       (qn1==qn2) && (equals b1 b2)
+      (qn1==qn2) && (equals b1 b2)
   | (Typed(t1, ty1), Typed(t2, ty2)) ->
-     (Gtypes.equals ty1 ty2)  & (equals t1 t2)
+      (Gtypes.equals ty1 ty2)  & (equals t1 t2)
   | (_, _) -> x=y)
 
 
@@ -87,9 +88,10 @@ let get_binder_name x =
 
 let dest_qnt t=
   match t with 
-    (Qnt(q,b)) -> 
-      let (qnt, qv, qt) = Basic.dest_binding q
-      in (q, qnt, qv, t, b)
+    (Qnt(q, b)) -> 
+      let qnt, qv, qty = Basic.dest_binding q
+      in 
+      (q, qnt, qv, qty, b)
   | _  -> raise (Failure "Not a quantifier")
 
 let is_qnt x = 
@@ -101,7 +103,7 @@ let strip_qnt q trm =
   let rec strip_aux t qs=
     if is_qnt t 
     then
-      (let (bind, qnt, _, _, b) = dest_qnt t
+      (let (bind, qnt, qv, qty, b) = dest_qnt t
       in 
       (if qnt=q 
       then (strip_aux b (bind::qs))
@@ -113,11 +115,10 @@ let strip_qnt q trm =
 
 
 (* 
-   flatten_app: flatten an application to a list
-   that is: (((f a1) a2) a3) -> [f; a1; a2; a3]
-   and (((f a1) (g a2)) a3) -> [f; a1; (g a2); a3]
+   [flatten_app trm]: flatten an application in [trm] to a list of
+   terms.  [flatten_app (((f a1) a2) a3)] is [[f; a1; a2; a3]] and
+   [flatten_app (((f a1) (g a2)) a3)] is [[f; a1; (g a2); a3]]
  *)
-
 let rec flatten_app trm =
   let rec flat_aux t rslt =
     match t with
@@ -140,22 +141,24 @@ let get_args t =
   in args
     
 
-(* Substitutions for terms *)
+(* Substitution in terms *)
 
+(**
+   [type subst_terms]: Terms stored in a substitution.
+ *)
 type subst_alt= Rename | No_rename | Unknown
-
 type subst_terms = ST of term * (subst_alt ref)
 
 let set_subst_alt (ST(_, x)) a = x:=a
 let deST (ST(t, a)) = (t, a)
 let st_term (ST(t, _)) = t
-let st_choice (ST(_, a)) =  !a
+let st_choice (ST(_, a)) = !a
 let sterm t a= ST(t, ref a)
+let term_of_sterm x = st_term x
 
 (* 
-   Hashtables with a term as the key
-*)
-
+   [('a)table]: Hashtables with a term as the key
+ *)
 module type TERMHASHKEYS=
   sig 
     type t = term
@@ -184,35 +187,32 @@ let table_member x env =
   try ignore(table_find x env); true
   with Not_found -> false
 
-
-(* Substitution *)
-(* Using balanced trees *)
-
+(* 
+   Term Substitution 
+   (Using balanced trees)
+ *)
 module TermTreeData=
   struct
     type key=term
     let equals=equals
   end
-
 module TermTree=Treekit.BTree(TermTreeData)
 
-(* USING TREES *)
-
+(*
+   [type substitution]: the data structure holding the substitution to
+   be made in a term.
+ *)
 type substitution = (subst_terms)TermTree.t
 
 let empty_subst() = TermTree.nil
-(*
-let subst_size i = TermTree.nil
-*)
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
+
 
 let find x env =
   let st=basic_find x env 
   in 
   st_term st 
-
-let term_of_substterm x = st_term x
 
 let bind t r env = TermTree.replace env t (sterm r Unknown)
 let add t r env = bind t r env
@@ -222,12 +222,11 @@ let member t env =
   try ignore(find t env); true
   with Not_found -> false
       
-      
 
 (* [chase varp x env]
    Find the end of the chain of bindings for [x] in [env]
    where [varp] determines what is a variable.
-*)
+ *)
 
 let rec chase varp x env =
   try 
@@ -243,7 +242,7 @@ let fullchase varp x env =
    renames the variables in a term t which are bound by  
    a binder in t 
    needs substitutions 
-*)
+ *)
 
 exception No_quantifier
 
@@ -251,7 +250,7 @@ let rename_env typenv trmenv trm =
   let copy_binder q tyenv= 
     let qnt, qv, qty = Basic.dest_binding q
     in 
-    let nt, nev=copy_type_env tyenv qty
+    let nt, nev=rename_type_vars_env tyenv qty
     in 
     (mk_binding qnt qv nt, nev)
   and has_quantifier = ref false
@@ -297,7 +296,7 @@ let rename_silent env t =
    [rename t]
    rename term [t], raise [No_quantifier] if no change 
    (carry out alpha conversion on [t])
-*)
+ *)
 
 let rename t = 
   try
@@ -324,7 +323,7 @@ let replace env x =  do_rename env x (basic_find x env)
 
 (* [subst env trm]
    carry out substitutions of [env] in [trm]
-*)
+ *)
 let rec subst env trm =
   try 
     let nt= replace env trm 
@@ -341,7 +340,7 @@ let rec subst env trm =
 
 let chase_var varp x env =
   let rec chase_var_aux r =
-    (let y = term_of_substterm r
+    (let y = term_of_sterm r
     in 
     if varp y
     then 
@@ -352,7 +351,7 @@ let chase_var varp x env =
   in 
   let nb = chase_var_aux (sterm x Unknown)
   in 
-  if not (equals x (term_of_substterm nb))
+  if not (equals x (term_of_sterm nb))
   then do_rename env x nb
   else x
 
@@ -416,7 +415,7 @@ let is_meta trm =
 	Meta, _, _ -> true
       | _ -> false)
   | _ -> false
-  
+	
 let get_binder t = (dest_bound t)
 
 let get_binder_type x =
@@ -526,12 +525,6 @@ let is_true t =
     (Const (Cbool true)) -> true 
   | _ -> false
 
-let dest_qnt t=
-  match t with 
-    (Qnt(q, b)) -> 
-      let qnt, qv, qty = Basic.dest_binding q
-      in (q, qnt, qv, qty, b)
-  | _  -> raise (Failure "Not a quantifier")
 
 let get_qnt_type t =
   match t with 
@@ -596,7 +589,7 @@ let inst t r =
    specialised form of substitution for constructing quantified terms. 
    replaces only free variables and only if name and type match the
    quantifying term.
-*)
+ *)
 let subst_qnt_var scp env trm =
   let rec subst_aux t=
     match t with
@@ -906,7 +899,7 @@ let print_typed_obj level printer ppstate prec (obj, ty)=
 
 let print_typed_identifier ppstate (id, ty)=
   let printer ppstate _ i= 
-     Printer.print_identifier (pplookup ppstate) i
+    Printer.print_identifier (pplookup ppstate) i
   in 
   print_typed_obj 3 printer ppstate (Printer.nonfix, 0) (id, ty)
 
@@ -917,58 +910,58 @@ let print_typed_name ppstate (id, ty)=
   print_typed_obj 2 printer ppstate (Printer.nonfix, 0) (id, ty)
     
 (*
-  if(!Settings.print_type_level > 3)
-  then 
-    (Format.printf "@[<2>(";
-     Printer.print_identifier 
-       (pplookup ppstate) id;
-     Format.printf ":@ ";
-     Gtypes.print (ppstate) ty;
-     Format.printf ")@]")
-  else 
-    (Format.printf "@[";
-     Printer.print_identifier 
-       (pplookup ppstate) id;
-     Format.printf "@]")
-*)
+   if(!Settings.print_type_level > 3)
+   then 
+   (Format.printf "@[<2>(";
+   Printer.print_identifier 
+   (pplookup ppstate) id;
+   Format.printf ":@ ";
+   Gtypes.print (ppstate) ty;
+   Format.printf ")@]")
+   else 
+   (Format.printf "@[";
+   Printer.print_identifier 
+   (pplookup ppstate) id;
+   Format.printf "@]")
+ *)
 
 
 
 (*
-let rec print_infix ppstate (assoc, prec) opr (f, args) = 
-  match args with
-    (l::r::rest) -> 
-      Format.printf "@[<2>";
-      print_term (Printer.infixl, prec) l;
-      Format.printf "@ ";
-      opr prec op;
-      Format.printf "@ ";
-      print_term (Printer.infixl, prec) l;
-      print_term (assoc, prec) rargs;
-      Format.printf "@]"
-  | [] -> 
-      Format.printf "@[<2>";
-      opr prec op;
-      Format.printf "@]"
-*)
+   let rec print_infix ppstate (assoc, prec) opr (f, args) = 
+   match args with
+   (l::r::rest) -> 
+   Format.printf "@[<2>";
+   print_term (Printer.infixl, prec) l;
+   Format.printf "@ ";
+   opr prec op;
+   Format.printf "@ ";
+   print_term (Printer.infixl, prec) l;
+   print_term (assoc, prec) rargs;
+   Format.printf "@]"
+   | [] -> 
+   Format.printf "@[<2>";
+   opr prec op;
+   Format.printf "@]"
+ *)
 
 (*
-let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
-  let user_printer=
-    try Some (Printer.get_printer (ppstate.Printer.terms) f)
-    with Not_found -> None
-  and std_printer = 
-      Printer.print_operator
-	(fnpr, 
-	 (fun pr l -> 
-	   Printer.print_list
-	     (argpr Printer.fun_app_prec, Printer.print_space) l), 
-	 (pplookup ppstate))
-  in 
-  match user_printer with 
-    None -> std_printer prec (f, args)
-  | Some p -> p prec (f, args)
-*)
+   let print_fn_app (fnpr, argpr) ppstate prec (f,args)=
+   let user_printer=
+   try Some (Printer.get_printer (ppstate.Printer.terms) f)
+   with Not_found -> None
+   and std_printer = 
+   Printer.print_operator
+   (fnpr, 
+   (fun pr l -> 
+   Printer.print_list
+   (argpr Printer.fun_app_prec, Printer.print_space) l), 
+   (pplookup ppstate))
+   in 
+   match user_printer with 
+   None -> std_printer prec (f, args)
+   | Some p -> p prec (f, args)
+ *)
 
 let print_prefix (opr, tpr) (assoc, prec) (f, args)=
   Format.printf "@[<2>";
@@ -1053,14 +1046,14 @@ let print_qnt ppstate q =
   print_typed_name ppstate (qvar, qtyp)
 
 (*
-let print_qnts ppstate prec (qnt, qs) =
-  Format.printf "@[%s" (Basic.quant_string qnt);
-  Printer.print_list
-    (print_qnt ppstate, 
-     Printer.print_space) 
-    qs;
-  Format.printf":@]"
-*)
+   let print_qnts ppstate prec (qnt, qs) =
+   Format.printf "@[%s" (Basic.quant_string qnt);
+   Printer.print_list
+   (print_qnt ppstate, 
+   Printer.print_space) 
+   qs;
+   Format.printf":@]"
+ *)
 let print_qnts ppstate prec (qnt, qs) =
   Format.printf "@[%s" qnt;
   Printer.print_list
@@ -1080,18 +1073,18 @@ let rec print_term ppstate (assoc, prec) x =
 	None -> print_typed_identifier ppstate (n, ty)
       | Some(p) -> p prec (n, []))
 (*
-      Printer.print_identifier 
-	(pplookup ppstate) n;
-*)
+   Printer.print_identifier 
+   (pplookup ppstate) n;
+ *)
   | Free(n, ty) -> 
       print_typed_name ppstate (n, ty)
 (*
-      if(!Settings.print_type_level > 3)
-      then 
-	print_typed_name ppstate (n, ty)
-      else 
-	Format.printf "@[%s@]" n 
-*)
+   if(!Settings.print_type_level > 3)
+   then 
+   print_typed_name ppstate (n, ty)
+   else 
+   Format.printf "@[%s@]" n 
+ *)
   | Bound(n) -> 
       Format.printf "@[%s@]" ((get_binder_name x))
   | Const(c) -> 
@@ -1123,28 +1116,28 @@ let rec print_term ppstate (assoc, prec) x =
 	 Format.printf ")@]")
 
 (*
-      (match args with 
-	[] -> print_term ppstate (assoc, prec) f
-      | _ -> 
-	  if is_var f 
-	  then 
-	    let n, ty=dest_var f
-	    in 
-	    Format.printf "@[";
-	    print_fn_app ppstate
-	      ((fun _ -> 
-		Printer.print_identifier 
-		  (pplookup ppstate)),
-	      (fun (a, p) t-> print_term ppstate (a, p) t))
-	      (assoc, prec) (n, args);
-	    Format.printf "@]"
-	  else 
-	    (Format.printf "@[<hov 2>(";
-	     Printer.print_list
-	       (print_term ppstate (assoc, prec), Printer.print_space)
-	       (f::args);
-	     Format.printf ")@]"))
-*)
+   (match args with 
+   [] -> print_term ppstate (assoc, prec) f
+   | _ -> 
+   if is_var f 
+   then 
+   let n, ty=dest_var f
+   in 
+   Format.printf "@[";
+   print_fn_app ppstate
+   ((fun _ -> 
+   Printer.print_identifier 
+   (pplookup ppstate)),
+   (fun (a, p) t-> print_term ppstate (a, p) t))
+   (assoc, prec) (n, args);
+   Format.printf "@]"
+   else 
+   (Format.printf "@[<hov 2>(";
+   Printer.print_list
+   (print_term ppstate (assoc, prec), Printer.print_space)
+   (f::args);
+   Format.printf ")@]"))
+ *)
   | Qnt(q, body) -> 
       let (_, qnt, qvar, qtyp, _) = dest_qnt x
       in 
@@ -1191,18 +1184,18 @@ let simple_print_fn_app ppstate (assoc, prec) (f, args)=
   Format.printf "@]"
 
 (*
-  print_fn_app ppstate (iprint, tprint) (assoc, prec) (f, args)
-*)
+   print_fn_app ppstate (iprint, tprint) (assoc, prec) (f, args)
+ *)
 
 (*
-  Printer.print_operator
-    ((fun _ -> Printer.print_identifier (pplookup ppstate)),
-     (fun pr l -> 
-       Printer.print_list
-	 (print_term ppstate (Printer.default_term_assoc, pr), 
-	  Printer.print_space) l),
-     (pplookup ppstate)) prec (f, args)
-*)
+   Printer.print_operator
+   ((fun _ -> Printer.print_identifier (pplookup ppstate)),
+   (fun pr l -> 
+   Printer.print_list
+   (print_term ppstate (Printer.default_term_assoc, pr), 
+   Printer.print_space) l),
+   (pplookup ppstate)) prec (f, args)
+ *)
 
 (* Error handling *)
 
@@ -1218,8 +1211,8 @@ class termError s ts =
       Format.printf "@]@]"
   end
 (*
-let mk_termError s t = ((new termError s t):>error)
-*)
+   let mk_termError s t = ((new termError s t):>error)
+ *)
 let term_error s t = mk_error((new termError s t):>error)
 let add_term_error s t es = raise (add_error (term_error s t) es)
 
@@ -1230,41 +1223,41 @@ let add_term_error s t es = raise (add_error (term_error s t) es)
  *)
 
 (*
-let set_names scp trm=
-  let term_memo = Lib.empty_env()
-  in 
-  let lookup_id n = 
-    try 
-      Lib.find n term_memo
-    with Not_found -> 
-      let nth = (scp.thy_of Basic.fn_id n) 
-      in (ignore(Lib.add n nth term_memo); nth)
-  in 
-  let rec set_aux t=
-    match t with
-      Id(id, ty) -> 
-	let th, n = Basic.dest_fnid id
-	in 
-	if(th = Basic.null_thy)
-	then 
-	  try 
-	    (let nth = lookup_id n
-	    in Id((Basic.mk_long nth n), ty))
-	  with Not_found -> Free(n, ty)
-	else t
-    | Free(n, ty) -> 
-	(try 
-	  (let nth = lookup_id n
-	  in 
-	  let nid = Basic.mk_long nth n
-	  in Id(nid, ty))
-	with Not_found -> t)
-    | Qnt(q, b) -> Qnt(q, set_aux b)
-    | Typed(tt, tty) -> Typed(set_aux tt, tty)
-    | App(f, a) -> App(set_aux f, set_aux a)
-    | _ -> t
-  in set_aux trm
-*)
+   let set_names scp trm=
+   let term_memo = Lib.empty_env()
+   in 
+   let lookup_id n = 
+   try 
+   Lib.find n term_memo
+   with Not_found -> 
+   let nth = (scp.thy_of Basic.fn_id n) 
+   in (ignore(Lib.add n nth term_memo); nth)
+   in 
+   let rec set_aux t=
+   match t with
+   Id(id, ty) -> 
+   let th, n = Basic.dest_fnid id
+   in 
+   if(th = Basic.null_thy)
+   then 
+   try 
+   (let nth = lookup_id n
+   in Id((Basic.mk_long nth n), ty))
+   with Not_found -> Free(n, ty)
+   else t
+   | Free(n, ty) -> 
+   (try 
+   (let nth = lookup_id n
+   in 
+   let nid = Basic.mk_long nth n
+   in Id(nid, ty))
+   with Not_found -> t)
+   | Qnt(q, b) -> Qnt(q, set_aux b)
+   | Typed(tt, tty) -> Typed(set_aux tt, tty)
+   | App(f, a) -> App(set_aux f, set_aux a)
+   | _ -> t
+   in set_aux trm
+ *)
 
 let binding_set_names memo scp binding =
   let (qnt, qname, qtype) = Basic.dest_binding binding
@@ -1292,7 +1285,7 @@ let set_names scp trm=
   in 
   let lookup_type id = 
     try 
-      Gtypes.copy_type (Lib.find id type_memo)
+      Gtypes.rename_type_vars (Lib.find id type_memo)
     with Not_found -> 
       let nty = Scope.type_of scp id 
       in 
@@ -1306,9 +1299,9 @@ let set_names scp trm=
 	let nid = 
 	  if(th = Basic.null_thy)
 	  then 
-	      let nth = lookup_id n
-	      in 
-	      Basic.mk_long nth n
+	    let nth = lookup_id n
+	    in 
+	    Basic.mk_long nth n
 	  else id
 	in 
 	let ty1= set_type_name type_thy_memo scp ty
@@ -1373,7 +1366,7 @@ let in_scope memo scp th trm =
   let rec in_scp_aux t =
     match t with
       Id(id, ty) -> 
-	  ignore(lookup_id (thy_of_id id));
+	ignore(lookup_id (thy_of_id id));
 	Gtypes.in_scope memo scp th ty
     | Qnt(_, b) ->
 	ignore(Gtypes.in_scope memo scp th (get_qnt_type t));
@@ -1502,11 +1495,11 @@ let rec rebuild_qnt qs b=
   | (x::xs) -> Basic.Qnt(x, rebuild_qnt xs b)
 
 (*
-let rec rebuild_qnt k qs b=
-  match qs with
-    [] -> b
-  | (x::xs) -> Basic.Qnt(x, rebuild_qnt k xs b)
-*)
+   let rec rebuild_qnt k qs b=
+   match qs with
+   [] -> b
+   | (x::xs) -> Basic.Qnt(x, rebuild_qnt k xs b)
+ *)
 
 (**
    [close_term qnt free trm]: Close term [trm]. Make variables bound
@@ -1565,13 +1558,13 @@ let close_term qnt free trm=
    [print_as_binder (sym_assoc, sym_prec) f sym]
    Construct a printer to print function applications
    of the form [f (%x: P)] as [sym x: P].
-*)
+ *)
 
 (* 
    [strip_typed], [strip_fun_qnt]: support functions for [print_as_binder]. 
-*)
+ *)
 
- let rec strip_typed term =
+let rec strip_typed term =
   match term with 
     Basic.Typed(tt, _) -> strip_typed tt
   | _ -> term
@@ -1634,7 +1627,7 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
 	Format.printf "@[<2>";
 	(if(lambda_arg a)
 	then 
-	   print_qnt ppstate prec a
+	  print_qnt ppstate prec a
 	else 
 	  simple_print_fn_app ppstate prec (f, args));
 	Printer.print_list 

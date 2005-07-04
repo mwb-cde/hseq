@@ -204,7 +204,7 @@ let get_defn_rec n thy =
   let rcrd = (Hashtbl.find (thy.defns) n)
   in 
   {
-   typ=Gtypes.copy_type (rcrd.typ); 
+   typ=Gtypes.rename_type_vars (rcrd.typ); 
    def=rcrd.def; 
    (* infix = rcrd.infix; prec=rcrd.prec; *)
    dprops = rcrd.dprops

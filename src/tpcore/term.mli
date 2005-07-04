@@ -9,8 +9,6 @@
 open Basic
 open Gtypes
 
-val binder_equiv : Scope.t -> term -> term -> bool
-
 (* equality of terms *)
 val equals : term -> term -> bool
 
@@ -122,6 +120,13 @@ val get_qnt_type : term -> Basic.gtype
 val get_qnt_body : term -> term
 
 val get_quant : term -> Basic.quant_ty
+
+(**
+   [binder_equiv scp a b]: if [a] and [b] are both [Bound] or both
+   [Qnt] terms then [true] if the binders of [a] and [b] are for the
+   same quanitifier kind and have the same type.
+*)
+val binder_equiv : Scope.t -> term -> term -> bool
 
 (**
    [mk_qnt_name scp qnt name t]: make a quantified term, with

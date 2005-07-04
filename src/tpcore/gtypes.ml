@@ -8,15 +8,9 @@ open Basic
 open Lib
 open Result
 
-type stype = ((string * int), typ_const, base_typ) pre_typ
-
+(* Records for type definitions/declarations *)
 type typedef_record = Scope.type_record
 
-type stypedef_record =
-    {sname: string; 
-     sargs : string list; 
-     salias: stype option;
-     scharacteristics: string list}
 
 let get_typdef scp r =  
   Scope.defn_of scp r
@@ -32,11 +26,9 @@ let is_weak t  =
   | _ -> false
 
 
-(*
-   Substitution 
-   substitution using balanced trees 
-*)
+(* Equality *)
 let rec equals x y = 
+  (x == y) ||
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
   | (Constr(f1, args1), Constr(f2, args2))
@@ -52,6 +44,7 @@ let rec equals x y =
   | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
   | (_, _) -> x=y)
 
+(*
 let rec safe_equal x y = 
   (match (x, y) with
     (Var(v1), Var(v2)) -> (v1==v2)
@@ -67,11 +60,12 @@ let rec safe_equal x y =
       with _ -> false)
   | (WeakVar(v1), WeakVar(v2)) -> (v1==v2)
   | (_, _) -> x=y)
+*)
 
-let eqvar v1 v2 = 
-  if (is_var v1) & (is_var v2) 
-  then equals v1 v2
-  else raise (Failure "Not a variable")
+(*
+   Substitution 
+   substitution using balanced trees 
+*)
 
 module TypeTreeData=
   struct 
@@ -114,7 +108,7 @@ let rec string_gtype x =
 
 
 (*renamed any_varp to is_any_var *)
-let is_any_var t= (is_var t) or (is_weak t)
+let is_any_var t= (is_var t) || (is_weak t)
 
 let is_constr t = 
   match t with
@@ -154,18 +148,12 @@ let dest_weak t =
     WeakVar(n) -> n
   | _ -> raise (Failure "Not a weak variable")
 
-
 let mk_null () = (mk_var "")
 let is_null = 
   function (Var(x)) -> (!x)=""
     | _ -> false
 
 let mk_constr f l = Constr(f, l)
-let destconstr t = 
-  match t with
-    Constr(f, l) -> (f, l)
-  | _ -> raise (Failure "Not a constructor type")
-
 let rec dest_constr ty = 
   match ty with 
     Constr(f, args) -> (f, args)
@@ -177,6 +165,7 @@ let dest_def t =
     Constr(Defined n, args) -> (n, args)
   | _ -> raise (Failure "Not a defined type")
 
+(*
 let eqbase b1 b2 = 
   match b1 with
     Base(n1) -> 
@@ -184,7 +173,16 @@ let eqbase b1 b2 =
 	Base(n2) -> n1=n2 
       | _ -> raise (Failure "Not a basic type"))
   | _ -> raise (Failure "Not a basic type")
+*)
 
+(*
+let eqvar v1 v2 = 
+  if (is_var v1) & (is_var v2) 
+  then equals v1 v2
+  else raise (Failure "Not a variable")
+*)
+
+(*
 let eqconstr c1 c2 =
   match c1 with
     Constr(n1, _) -> 
@@ -192,7 +190,7 @@ let eqconstr c1 c2 =
 	Constr(n2, _) -> n1=n2 
       | _ -> raise (Failure "Not a constructor type"))
   | _ -> raise (Failure "Not a constructor type")
-
+*)
 
 (* Pretty printing *)
 
@@ -231,75 +229,6 @@ let pplookup ppstate id =
       Printer.default_type_prec
       Printer.default_type_fixity
       None
-
-(*
-let rec print_type ppstate pr t = 
-  let print_aux ppstate pr x=
-    match x with
-      Var(_) -> 
-	Format.printf "@[<hov 2>'%s@]" (get_var x)
-    | WeakVar(_) -> 
-	Format.printf "@[<hov 2>_%s@]" (get_weak x)
-    | Base(b) -> 
-	Format.printf "@[<hov 2>%s@]" (Basic.string_btype b)
-    | Constr(Defined op, args) -> 
-	print_defined ppstate pr (op, args)
-  in 
-  print_aux ppstate pr t;
-and print_defined ppstate prec (f, args) =
-  let pprec = pplookup ppstate f
-  in 
-  try 
-    let printer = Printer.get_printer (ppstate.Printer.types) f
-    in 
-    printer prec (f, args)
-  with Not_found -> 
-    if(Printer.is_infix pprec.Printer.fixity)
-    then 
-      (match args with
-	[] -> ()
-      | (lf::rs) -> 
-	  Format.printf "@[<hov 2>";
-	  Printer.print_bracket prec (pprec.Printer.prec) "(";
-	  print_type ppstate (pprec.Printer.prec) lf;
-	  Printer.print_space();
-	  Printer.print_identifier (pplookup ppstate) f;
-	  Printer.print_space();
-	  Printer.print_list 
-	    (print_type ppstate (pprec.Printer.prec), Printer.print_space) 
-	    rs; 
-	  Printer.print_bracket prec (pprec.Printer.prec) ")";
-	  Format.printf "@]")
-    else 
-      if(Printer.is_suffix pprec.Printer.fixity)
-      then 
-	(Format.printf "@[<hov 2>";
-	 Printer.print_bracket prec (pprec.Printer.prec) "(";
-	 Printer.print_suffix 
-	   ((fun pr -> Printer.print_identifier (pplookup ppstate)), 
-	    (fun pr l-> 
-	      match l with 
-		[] -> ()
-	      |_ -> Printer.print_sep_list
-		    (print_type ppstate pr, ",") l))
-	   (pprec.Printer.prec) (f, args);
-	 Printer.print_bracket prec (pprec.Printer.prec) ")";
-	 Format.printf "@]")
-      else 
-	(Format.printf "@[<hov 2>";
-	 (match args with 
-	   [] -> ()
-	 | _ -> 
-	     (Printer.print_string "(";
-	      Printer.print_sep_list 
-		(print_type ppstate prec, ",") args;
-	      Format.printf ")@,"));
-	 Printer.print_identifier (pplookup ppstate) f;
-	 Format.printf "@]")
-
-let print ppinfo x =
-  print_type ppinfo 0 x
-*)
 
 let print_bracket = Printer.print_assoc_bracket
 
@@ -390,7 +319,6 @@ and print_defined ppstate (assoc, prec) (f, args) =
 	 Printer.print_identifier (pplookup ppstate) f;
 	 Format.printf "@]")
 
-
 let print ppinfo x =
   print_type ppinfo 
     (Printer.default_type_fixity, Printer.default_type_prec) x
@@ -412,7 +340,17 @@ let type_error s t = (mk_error((new typeError s t):>error))
 let add_type_error s t es= 
   raise (add_error (type_error s t) es)
 
-(* save types *)
+(* Save types: for saving types to disk storage *)
+
+(* representation of types for storage on disk *)
+type stype = ((string * int), typ_const, base_typ) pre_typ
+
+(* Type definition/declaration records for disk storage *)
+type stypedef_record =
+    {sname: string; 
+     sargs : string list; 
+     salias: stype option;
+     scharacteristics: string list}
 
 let rec to_save_aux inf env ty =
   match ty with
@@ -473,10 +411,8 @@ let from_save_rec record =
  }
 
 (* 
-   USING HASHTABLES FOR SUBSTITUTION
-   IS WRONG AND SHOULD BE STOPPED.
+   DON'T USE HASHTABLES FOR SUBSTITUTION
 *)
-
 module type RHASHKEYS=
   sig 
     type t = gtype
@@ -563,9 +499,11 @@ let rec occurs_env tenv ty1 ty2 =
       then raise (type_error ("occurs: ") [nty1;nty2])
       else ()
 
-(* copy_type t: make a copy of type t, which differs from t in the vars *)
-
-let rec copy_type_env env trm=
+(*
+   [rename_type_vars t]: make a copy of type t, which differs from [t] only
+   in the variables 
+*)
+let rec rename_type_vars_env env trm=
   match trm with
     Var(x) -> 
       (try (lookup trm env, env)
@@ -580,7 +518,7 @@ let rec copy_type_env env trm=
       let nargs = 
 	List.map
 	  (fun t ->
-	    let nt, ne= copy_type_env (!renv) t
+	    let nt, ne= rename_type_vars_env (!renv) t
 	    in renv:=ne; nt) 
 	  args
       in 
@@ -591,8 +529,8 @@ let rec copy_type_env env trm=
 	Not_found -> (trm, env))
   | _ -> (trm, env)
 
-let copy_type t =
-  let nty, _ = copy_type_env (empty_subst()) t
+let rename_type_vars t =
+  let nty, _ = rename_type_vars_env (empty_subst()) t
   in nty
 
 let bind_var t r env = 
@@ -618,12 +556,11 @@ let rec subst t env =
       Constr(f, List.map (fun x-> subst x env) l)
   | x -> x
 
-(* rewrite_subst t env: 
+(**
+   [rewrite_subst t env]: Rewrite t, using substitution env.  
 
-   Rewrite t, using substitution env.  
-
-   Only used to rewrite the rhs of a definition,
-   instantiating its variables with the values of the given arguments.
+   Only used to rewrite the rhs of a definition, instantiating its
+   variables with the values of the given arguments.
 *)
 let rec rewrite_subst t env =
   match t with 
@@ -671,18 +608,19 @@ let get_defn tyenv t =
   | _ -> raise Not_found
 
 
+(*
 let rec remove_bindings ls env =
   match ls with
     [] -> env
   | (s::bs) -> 
       remove_bindings bs (delete s env)
+*)
 
-
-(* unify_env scp t1 t2 nenv:
-
-   Unify types t1 and t2, adding new bindings to substitution nenv.
+(**
+   [unify_env scp t1 t2 nenv]: Unify types t1 and t2, adding new
+   bindings to substitution nenv.
    
-   Scope scp is used lookup definitions of constructors occuring 
+   Scope scp is used to look up definitions of constructors occuring
    in t1 or t2 (if necessary).
  *)
 
@@ -734,25 +672,24 @@ let unify_env scp t1 t2 nenv =
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
 
-(* unify scp t1 t2:
+(**
+   [unify scp t1 t2]: Unify types t1 and t2, returning the
+   substitution needed.
 
-   Unify types t1 and t2, returning the substitution needed.
-   Raise type_error unification fails
+   Raise [type_error] if unification fails
  *)
-    
 let unify scp t1 t2 =
   unify_env scp t1 t2 (empty_subst())
 
-(* unify_env_unique_left:  type unification  
-   for term rewriting in which each of a series of unificiations
-   involving a term (and therefore its types) must be treated as
-   unique. 
+(**
+   [unify_env_unique_left]: type unification for term rewriting in
+   which each of a series of unificiations involving a term (and
+   therefore its types) must be treated as unique.
 
-   [unify_env_unique_left scope t1 t2 env]
-   is equivalent to
-   [unify_env scope (copy_type t1) t2 env]
+   [unify_env_unique_left scope t1 t2 env] is equivalent to
+   [unify_env scope (rename_type_vars t1) t2 env]
  *)
-
+(*
 let unify_env_unique_left scp t1 t2 nenv =  
   let varenv= empty_subst()
   in 
@@ -815,13 +752,13 @@ let unify_env_unique_left scp t1 t2 nenv =
 			     ^" with " ^(string_gtype t)))
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
+*)
 
-(*
-   unify_for_rewrite: same as unify_env_unique_left
+(**
+   [unify_for_rewrite]: same as unify_env_unique_left
    except it returns a list of the bindings made
    if any error, removes bindings and raises exception 
  *)
-
 let unify_for_rewrite scp t1 t2 env = 
   let varenv= empty_subst()
   in 
@@ -884,12 +821,10 @@ let unify_for_rewrite scp t1 t2 env =
   in
   unify_aux t1 t2 env (* try to unify t1 and t2 *)
 
-(* mgu t env:
-
-   Get most general unifier for type t and substitution env.
-   Replaces variables in t with their bindings in env.
+(* 
+   [mgu t env]: Get most general unifier for type [t] and substitution
+   [env]. Replaces variables in [t] with their bindings in [env].
  *)
-
 let rec mgu t env =
   match t with 
     Var(a) -> 
@@ -908,11 +843,10 @@ let rec mgu t env =
       Constr(f, List.map (fun x-> mgu x env) l)
   | x -> x
 
-(* matching_env scp t1 t2 nenv:
-
-   Like unify_env but only variables in type t1 can be bound.
+(**
+   [matching_env scp t1 t2 nenv]: Like unify_env but only variables in
+   type [t1] can be bound.
  *)
-
 let matching_env scp t1 t2 nenv =  
   let rec match_aux ty1 ty2 env=
     let s = lookup_var ty1 env
@@ -966,19 +900,19 @@ let matches scp t1 t2=
   with _ -> false
 
 
-(* Consistency tests for type definitions 
+(*
+   Consistency tests for type definitions 
 
    Weak variables are not permitted in any definition (type or term)
- *)
+*)
 
-(* check_term n vs t: 
-   for definition (n vs = t)
-   test name n and arguments vs for definition t 
-   fails 
-   if a variable occurs in t which is not in the list vs
-   or name n occurs in t (a recursive definition)
- *)
+(**
+   [check_term n vs t]: for definition [(n vs) = t], test name [n] and
+   arguments [vs] for definition [t].
 
+   Fails if a variable occurs in [t] which is not in the list [vs] or name
+   [n] occurs in [t] (a recursive definition)
+*)
 let rec check_term scp n vs t = 
   match t with
     Var(x) -> if List.mem (Var x) vs then () else raise Not_found
@@ -989,10 +923,10 @@ let rec check_term scp n vs t =
   | WeakVar _ -> raise Not_found
   | x -> ()
 
-(* check_args args: 
-   test each a in args is a variable and occurs only once 
+(**
+   [check_args args]: 
+   test that each [a] in [args] is a variable and occurs only once.
  *)
-
 let check_args args =
   let tenv = empty_subst()
   in 
@@ -1006,14 +940,14 @@ let check_args args =
 	 tenv args); true
   with Not_found -> false
 
-(* check_defn l r: test definition of l as alias for r
+(**
+   [check_defn l r]: test definition of [l] as alias for [r]
 
    fails if the type is already defined,
    or if the definition is recursive
    or if the arguments occur on the lhs more than once
    or if there are variables in the rhs which are not in the arguments
  *)
-
 let check_defn  scp l r =
   if (is_defined l) then 
     let n, largs = dest_def l 
@@ -1027,8 +961,9 @@ let check_defn  scp l r =
       else false
   else false
 
-(* check_decln l: consistency check on declaration of type l *)
-
+(**
+   [check_decln l]: consistency check on declaration of type [l]
+*)
 let check_decln l =
   if (is_defined l) then 
     let n, largs = dest_def l 
@@ -1051,6 +986,13 @@ let get_var_names ty =
   get_aux [] ty 
 
 
+(**
+   [normalize_vars ty]:
+   Make all type variables in [ty] with the same string name
+   be the same variable.
+
+   Useful when constructing types from existing types.
+*)
 let normalize_vars typ=
   let lookup tbl str =
     try
@@ -1082,7 +1024,7 @@ let normalize_vars typ=
   let (_, typ1) = norm_aux (Lib.empty_env()) typ
   in typ1
 
-(* 
+(**
    [well_defined scp args t]: ensure that all constructors in [t] are
    declared.
    args: check variables are in the list of args
@@ -1109,7 +1051,7 @@ let rec well_defined scp args t =
   in 
   well_def t
 
-(*
+(**
    [check_decl_type scp ty]: Ensure type [ty] is suitable for
    a declaration.
 
@@ -1131,9 +1073,9 @@ let check_decl_type scp ty=
   in 
   check_aux ty
 
-(*
-   quick_well_defined: memoised, simpler version of well_defined
-   no argument testing
+(**
+   [quick_well_defined]: memoised, simpler version of well_defined without
+   argument testing
 *)
 let rec quick_well_defined scp cache t =
   match t with 
@@ -1171,12 +1113,12 @@ let print_subst tenv =
   Format.printf "@]"
 
 
-(* [set_name ?strict ?memo scp typ]:
+(**
+   [set_name ?strict ?memo scp typ]:
    Set names in type [typ] to their long form.
 
    if [strict=true], fail if any type name doesn't occur in scope [scp].
  *)
-
 let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm = 
   let lookup_id n = 
     (try (Lib.find n memo)
@@ -1207,19 +1149,17 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
   in set_aux trm
 
 
-(* in_scope memo scp th ty:
-
-   Check that ty is in valid for theory th.
-   Every type constructor must be in scope of th.
+(**
+   [in_scope memo scp th ty]: Check that [ty] is in scope by checking
+   that every type constructor is decared or defined in scope [scp].
 
    The function is memoised: if a constructor name is found to be 
-   in scope, it is added to memo.
- *)
+   in scope, it is added to [memo].
+*)
 let in_scope memo scp th ty =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 
-(*      if (Scope.in_scope_of scp th n) *)
       if (Scope.in_scope scp n) 
       then Lib.add n true memo else raise Not_found)
   in
@@ -1235,11 +1175,11 @@ let in_scope memo scp th ty =
   try in_scp_aux ty ; true
   with Not_found -> false
 
-(* mgu_rename_env inf env env nenv typ:
-
-   Replace variables in typ with their bindings in substitution env.
-   If a variable isn't bound in env, then it is renamed and bound
-   to that name in nenv (which is checked before a new name is created).
+(**
+   [mgu_rename_env inf env env nenv typ]: Replace variables in [typ]
+   with their bindings in substitution [env].  If a variable isn't bound
+   in [env], then it is renamed and bound to that name in [nenv] (which is
+   checked before a new name is created).
  *)
 let mgu_rename_env inf tyenv name_env typ =
   let new_name_env nenv x =
