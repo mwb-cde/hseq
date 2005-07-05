@@ -320,9 +320,7 @@ let dest_equality f =
 let get_binder_name = Term.get_binder_name 
 let get_binder_type = Term.get_binder_type 
 
-let dest_qnt f = 
-  let (q, _, _, _, b) = Term.dest_qnt f
-  in (q, b)
+let dest_qnt f = Term.dest_qnt f
 
 let is_all = Logicterm.is_all 
 let mk_all scp x f = 
@@ -419,7 +417,8 @@ let inst_env scp vs env t r =
   if (Term.is_qnt t) 
   then 
     try
-      (let (q, qnt, n, ty, b) = Term.dest_qnt (term_of t)
+      (let (* (q, qnt, n, ty, b) = Term.dest_qnt (term_of t) *)
+	   (q, b) = Term.dest_qnt (term_of t)
       in 
       let nr0, nenv=
 	let penv = ref env

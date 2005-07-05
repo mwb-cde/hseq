@@ -9,13 +9,20 @@
 open Basic
 open Gtypes
 
-(* equality of terms *)
+(* Very basic operations *)
+
+(** [equals]: equality of terms *)
 val equals : term -> term -> bool
 
+(** [rename t]: Rename bound variables in term [t] (alpha-conversion) *)
+val rename: term -> term
+
 (**
-   [Termhash]:
-   Hashtables with a term as the key
+   [Termhash]: Hashtables with a term as the key
+
+   Useful for memoising functions
 *)
+(*
 module type TERMHASHKEYS=
   sig 
     type t = term
@@ -24,9 +31,8 @@ module type TERMHASHKEYS=
   end
 module type TERMHASH = (Hashtbl.S with type key = term)
 module Termhash: TERMHASH
-
-(* tables, usefull for memoising functions *)
-type ('a)table (* = ('a) Termhash.t *)
+*)
+type ('a)table 
 val empty_table: unit -> ('a) table
 val table_find: term -> 'a table -> 'a
 val table_member: term -> 'a table -> bool
@@ -34,14 +40,9 @@ val table_remove: term -> 'a table -> unit
 val table_add : term -> 'a -> 'a table -> unit
 val table_rebind : term -> 'a -> 'a table -> unit
 
-(* rename bound variables in term (alpha-conversion) *)
-val rename: term -> term
-
-(** Substitution in terms *)
 
 (**
-   [TermTree]
-   Trees indexed by terms
+   [TermTree]: Trees indexed by terms
 *)
 module TermTreeData: Treekit.TreeData
 module TermTree: 
@@ -69,6 +70,9 @@ module TermTree:
       val iter : (TermTreeData.key -> 'a -> 'b) -> 'a t -> unit
       val to_list : 'a t -> (TermTreeData.key * 'a) list list
     end
+type ('a)tree=('a)TermTree.t
+
+(** Substitution in terms *)
 
 (**
    [substitution]: the type of term substitutions.
@@ -77,22 +81,15 @@ type substitution
 
 (** subsitution construction *)
 val empty_subst: unit -> substitution
-(*
-val subst_size: int -> substitution
-*)
 
 (* lookup/add/remove term from a substitution *)
 val find: term -> substitution -> term
 val bind: term -> term -> substitution -> substitution
 val member: term -> substitution -> bool
 val remove: term -> substitution -> substitution
-(*
-val quiet_remove: term -> substitution -> substitution
-*)
-
 val chase: (term -> bool) -> term -> substitution -> term
 val fullchase: 
-    (Termhash.key -> bool) -> term -> substitution -> term
+    (term -> bool) -> term -> substitution -> term
 val chase_var: (term -> bool) -> term -> substitution -> term
 val replace: substitution -> term -> term
 
@@ -107,13 +104,17 @@ val get_free_vars : term -> term list
 val get_free_binders : term -> binders list
 
 (* destructors for bindings *)
-(* val get_binder : term -> q_type *)
 val get_binder : term -> binders
 val get_binder_name : term -> string
 val get_binder_type : term -> gtype
 
 val dest_qnt :
+    term -> binders * term
+
+(*
+val dest_qnt :
     term -> binders * Basic.quant_ty * string * Basic.gtype * term
+*)
 
 (* constructors/destructors for quantified terms *)
 val get_qnt_type : term -> Basic.gtype
@@ -209,14 +210,17 @@ val destbool : term-> bool
 val is_true :term-> bool
 *)
 
-(* remove outermost quantifiers from a term *)
+(**
+   [strip_qnt k t]: remove outermost quantifiers of kind [k] from term
+   [t]
+*)
 val strip_qnt : Basic.quant_ty -> term -> binders list * term
 
-(* get function identifier and arguments of an application *)
-val get_args: term -> term list
-val get_fun: term -> term
+(** get function identifier and arguments of an application *)
 val flatten_app : term -> term list
 val get_fun_args: term -> (term* term list)
+val get_args: term -> term list
+val get_fun: term -> term
 
 
 (**

@@ -162,15 +162,15 @@ let mk_any=Term.mk_var anyid
 
 let is_all t = 
   ((is_qnt t) &
-   (match (dest_qnt t) with (_, Basic.All, _, _, _) -> true | _ -> false))
+   (match (get_quant t) with Basic.All -> true | _ -> false))
 
 let is_exists t = 
   (is_qnt t) &
-  (match (dest_qnt t) with (_, Basic.Ex, _, _, _) -> true | _ -> false)
+  (match (get_quant t) with Basic.Ex -> true | _ -> false)
 
 let is_lambda t = 
   ((is_qnt t) &
-   (match (dest_qnt t) with (_, Basic.Lambda, _, _, _) -> true | _ -> false))
+   (match (get_quant t) with Basic.Lambda -> true | _ -> false))
 
 let alpha_convp_full scp tenv t1 t2 =
   let rec alpha_aux t1 t2 tyenv trmenv =
@@ -245,7 +245,7 @@ let beta_conv t =
     App(f, a) -> 
       if is_lambda f
       then 
-	(let (q, _, _, _, b)=dest_qnt f
+	(let (q, b)=dest_qnt f
 	in 
 	subst_quick (Bound(q)) a  b)
       else raise (term_error "Can't apply beta-reduction" [t])

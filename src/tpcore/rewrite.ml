@@ -78,14 +78,20 @@ let varp, funp, constp, is_app, is_typed, qntp=
   Term.is_app, Term.is_typed, Term.is_qnt 
 
 let eqqnt tyenv s t = 
-  let _, qnt1, _, qty1, _=dest_qnt s
-  and _, qnt2, _, qty2, _=dest_qnt t
+  let q1, _ = dest_qnt s
+  and q2, _ = dest_qnt t
+  in
+  let qnt1, _, qty1=Basic.dest_binding q1
+  and qnt2, _, qty2=Basic.dest_binding q2
   in 
   (Gtypes.matches tyenv qty1 qty2) & (qnt1=qnt2)
 
 let eqqnt_env scp s t tyenv = 
-  let _, qnt1, _, qty1, _=dest_qnt s
-  and _, qnt2, _, qty2, _=dest_qnt t
+  let q1, _ = dest_qnt s
+  and q2, _ = dest_qnt t
+  in
+  let qnt1, _, qty1=Basic.dest_binding q1
+  and qnt2, _, qty2=Basic.dest_binding q2
   in 
   if qnt1=qnt2 then 
     (try 
