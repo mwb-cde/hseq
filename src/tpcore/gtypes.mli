@@ -317,6 +317,10 @@ val bind_occs : gtype -> gtype -> substitution -> substitution
    [unify]: unify two types, returning the substitution
 
    Raise [type_error] if unification fails
+
+   The result of unifying [x] and [y] is a substitution [env]
+   s.t. that [subst x env] is the same as [subst y env]. (Substitution
+   constructs the most general unifier).
 *)
 val unify_env : 
    Scope.t -> gtype -> gtype 
@@ -346,10 +350,12 @@ val unify_for_rewrite:
    [mgu ty env]: Construct the most general unifier for type [ty] from
    substitution [env].
 *)
+(*
 val mgu : gtype  -> substitution -> gtype
+*)
 
 (**
-   [mgu_rename inf env nenv ty] 
+   [subst_rename inf env nenv ty] 
 
    Replace variables in [ty] with their bindings in substitution [env].
    If a variable isn't bound in [env], then it is renamed and bound
@@ -360,10 +366,17 @@ val mgu : gtype  -> substitution -> gtype
 
    returns the new type and updated nenv
  *)
+val subst_rename_env: int ref -> substitution -> substitution 
+  -> gtype -> (gtype * substitution)
+val subst_rename: int ref -> substitution -> substitution 
+  -> gtype -> gtype 
+
+(*
 val mgu_rename_env: int ref -> substitution -> substitution 
   -> gtype -> (gtype * substitution)
 val mgu_rename: int ref -> substitution -> substitution 
   -> gtype -> gtype 
+*)
 
 (** {6 Matching functions} *)
 

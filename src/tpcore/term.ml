@@ -824,8 +824,10 @@ let retype tyenv t=
   in 
   let rec retype_aux t =
     match t with
-      Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
-    | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv)
+(*       Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv) *)
+       Id(n, ty) -> Id(n, Gtypes.subst ty tyenv)
+(*    | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv) *)
+    | Free(n, ty) -> Free(n, Gtypes.subst ty tyenv)
     | Bound(q) -> 
 	(try table_find t qenv
 	with Not_found -> t)
@@ -836,7 +838,8 @@ let retype tyenv t=
     | Qnt(q, b) ->
 	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
 	in 
-	let nty = Gtypes.mgu oqty tyenv
+(* 	let nty = Gtypes.mgu oqty tyenv *)
+ 	let nty = Gtypes.subst oqty tyenv 
 	in 
 	let nq = mk_binding oqnt oqnm nty
 	in 
@@ -860,11 +863,11 @@ let retype_pretty_env typenv trm=
   let rec retype_aux t name_env =
     match t with
       Id(n, ty) -> 
-	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
+	let nt, nenv1=Gtypes.subst_rename_env inf typenv name_env ty
 	in 
 	(Id(n, nt), nenv1)
     | Free(n, ty) -> 
-	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
+	let nt, nenv1=Gtypes.subst_rename_env inf typenv name_env ty
 	in 
 	(Free(n, nt), nenv1)
     | Bound(q) -> 
@@ -874,7 +877,7 @@ let retype_pretty_env typenv trm=
 	    let qnt, qnm, qty = Basic.dest_binding q
 	    in 
 	    let nty, nenv1=
-	      Gtypes.mgu_rename_env inf typenv name_env qty
+	      Gtypes.subst_rename_env inf typenv name_env qty
 	    in 
 	    let nq=mk_binding qnt qnm nty
 	    in 
@@ -892,7 +895,7 @@ let retype_pretty_env typenv trm=
     | Qnt(q, b) ->
 	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
 	in 
-	let nty, nenv1 =Gtypes.mgu_rename_env inf typenv name_env oqty
+	let nty, nenv1 =Gtypes.subst_rename_env inf typenv name_env oqty
 	in 
 	let nq = mk_binding oqnt oqnm nty
 	in 

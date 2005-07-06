@@ -163,7 +163,8 @@ module Skolem =
 	(* unify the weak type with the given type *)
 	let ntyenv=Gtypes.unify_env info.scope tty info.ty info.tyenv
 	in 
-	(Gtypes.mgu tty ntyenv, ntyenv, nnames)
+(* 	(Gtypes.mgu tty ntyenv, ntyenv, nnames) *)
+ 	(Gtypes.subst tty ntyenv, ntyenv, nnames)
       in 
       try 
 	(* see if name is already associated with a skolem *)

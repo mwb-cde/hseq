@@ -242,13 +242,25 @@ let bind_var t r env =
     raise (Failure "bind_var: Can't bind a non variable")
 
 let rec subst t env =
-  match t with 
-    Var(a) -> (lookup t env)
-  | WeakVar(a) -> (lookup t env)
-  | Constr(f, l) -> 
+  try lookup t env
+  with 
+    Not_found -> 
+      (match t with 
+	Constr(f, l) -> 
+	  Constr(f, List.map (fun x-> subst x env) l)
+      | Var _ -> t
+      | WeakVar _ -> t
+      | Base _ -> t)
+	    
+(*
+let rec subst t env =
+   match t with 
+      Var(a) -> (lookup t env)
+   | WeakVar(a) -> (lookup t env)
+   | Constr(f, l) -> 
       Constr(f, List.map (fun x-> subst x env) l)
   | x -> x
-
+*)
 
 (***
 * Operations which need substitution.
@@ -877,7 +889,7 @@ let rec mgu t env =
    in [env], then it is renamed and bound to that name in [nenv] (which is
    checked before a new name is created).
  *)
-let mgu_rename_env inf tyenv name_env typ =
+let subst_rename_env inf tyenv name_env typ =
   let new_name_env nenv x =
     try (lookup x nenv, nenv)
     with 
@@ -914,8 +926,8 @@ let mgu_rename_env inf tyenv name_env typ =
   in 
   rename_aux name_env typ
 
-let mgu_rename inf env nenv typ =
-  let nty, _ = mgu_rename_env inf env nenv typ
+let subst_rename inf env nenv typ =
+  let nty, _ = subst_rename_env inf env nenv typ
   in nty
 
 (***
