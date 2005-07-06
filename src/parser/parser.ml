@@ -1022,7 +1022,7 @@ module Grammars  =
     let simple_typedef inf toks = 
       (((optional 
 	   ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-	      >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
+	      >> (fun (_, (x, _)) -> (List.map Gtypes.get_var_name x))))
 	  -- 
 	  ((short_id type_id inf)
 	     -- 
@@ -1037,7 +1037,7 @@ module Grammars  =
       let lhs inp= 
 	((optional 
 	    ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-	       >> (fun (_, (x, _)) -> (List.map Gtypes.get_var x))))
+	       >> (fun (_, (x, _)) -> (List.map Gtypes.get_var_name x))))
 	   -- 
 	   (short_id type_id inf)) inp
       and rhs inp = 

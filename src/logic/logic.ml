@@ -151,7 +151,7 @@ module Skolem =
        *)
       let tyname x=
 	if Gtypes.is_var info.ty 
-	then new_weak_type (Gtypes.get_var info.ty) info.tylist
+	then new_weak_type (Gtypes.get_var_name info.ty) info.tylist
 	else new_weak_type (x^"_ty") info.tylist
       in
       (* make the weak type *)

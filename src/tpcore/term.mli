@@ -95,7 +95,6 @@ val mk_typed_var : ident -> gtype -> term
 val mk_var: ident -> term
 val mk_short_var: string -> term
 
-
 (* Destructors *)
 
 val dest_qnt: term -> (binders * term) 
