@@ -1543,7 +1543,7 @@ let rec resolve_aux data env expty term =
 	  in 
 	  let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
 	  in 
-	  let aty = Term.get_qnt_type (Bound qnt1)
+	  let aty = Term.get_binder_type (Bound qnt1)
 	  and rty = Gtypes.mk_typevar data1.inf
 	  in 
 	  let nty0 = Logicterm.mk_fun_ty aty rty

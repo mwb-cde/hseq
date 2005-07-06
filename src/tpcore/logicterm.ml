@@ -162,15 +162,15 @@ let mk_any=Term.mk_var anyid
 
 let is_all t = 
   ((is_qnt t) &
-   (match (get_quant t) with Basic.All -> true | _ -> false))
+   (match (get_binder_kind t) with Basic.All -> true | _ -> false))
 
 let is_exists t = 
   (is_qnt t) &
-  (match (get_quant t) with Basic.Ex -> true | _ -> false)
+  (match (get_binder_kind t) with Basic.Ex -> true | _ -> false)
 
 let is_lambda t = 
   ((is_qnt t) &
-   (match (get_quant t) with Basic.Lambda -> true | _ -> false))
+   (match (get_binder_kind t) with Basic.Lambda -> true | _ -> false))
 
 let alpha_convp_full scp tenv t1 t2 =
   let rec alpha_aux t1 t2 tyenv trmenv =

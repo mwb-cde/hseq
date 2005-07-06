@@ -44,7 +44,7 @@ let typeof_env scp typenv inf trm =
 	  Basic.Lambda -> 
 	    (let btyp, benv=typeof_aux b env
 	    in 
-	    (Logicterm.mk_fun_ty (Term.get_qnt_type t) btyp, benv))
+	    (Logicterm.mk_fun_ty (Term.get_binder_type t) btyp, benv))
 	| _ -> Logicterm.mk_bool_ty, env)
     | App(f, a) -> 
 	let fty, fenv= typeof_aux f env
@@ -148,7 +148,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	(match Basic.binder_kind q with
 	  Basic.Lambda -> 
 	    (let rty = Gtypes.mk_typevar inf     (* range type *)
-	    and fty = Term.get_qnt_type t  (* domain *)
+	    and fty = Term.get_binder_type t  (* domain *)
 	    in
 	    let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
 	    in 
@@ -256,7 +256,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	(match Basic.binder_kind q with
 	  Basic.Lambda -> 
 	    let rty = Gtypes.mk_typevar inf     (* range type *)
-	    and fty = Term.get_qnt_type t  (* domain *)
+	    and fty = Term.get_binder_type t  (* domain *)
 	    in
 	    let bty = Logicterm.mk_fun_ty fty rty (* type of term *)
 	    in 
@@ -317,7 +317,7 @@ let rec check_types scp t =
     Id(_, ty) -> Gtypes.well_defined scp [] ty
   | App(f, a) -> check_types scp f; check_types scp a
   | Qnt(q, b) ->
-      Gtypes.well_defined scp [] (Term.get_qnt_type t);
+      Gtypes.well_defined scp [] (Term.get_binder_type t);
       check_types scp b
   | Typed(t, ty) -> Gtypes.well_defined scp [] ty; check_types scp t
   | x -> ()
@@ -370,7 +370,7 @@ let rec infer_aux (inf, cache) scp env t =
       (match Basic.binder_kind q with
 	Lambda -> 
 	  let rty, renv = infer_aux (inf, cache) scp env b
-	  and aty = Term.get_qnt_type t  (* domain *)
+	  and aty = Term.get_binder_type t  (* domain *)
 	  in
 	  let nty = Logicterm.mk_fun_ty aty rty (* type of term *)
 	  in 

@@ -4,14 +4,13 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Types and their manipulation *)
+(** {4 Types and their manipulation} *)
 
 open Basic
 open Lib
 
 (* records for type definitions *)
 type typedef_record = Scope.type_record
-
 
 (* get definition of a type *)
 val get_typdef: Scope.t -> ident -> typedef_record
@@ -52,7 +51,6 @@ val mk_null : unit -> gtype
 val is_null: gtype -> bool
 
 val mk_base: base_typ -> gtype
-(* val mk_bool : gtype *)
 val mk_num : gtype
 
 (* Variable types *)
