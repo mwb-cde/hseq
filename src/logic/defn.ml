@@ -73,8 +73,7 @@ let mk_defn_type env atys rty rfrs =
       (Logicterm.mk_fun_ty_from_list
 	 (List.map
 	    (fun (x, ty) -> 
-(* 	      Gtypes.mgu  *)
- 	      Gtypes.subst
+ 	      Gtypes.mgu  
 		(try 
 		  (List.assoc x rfrs)
 		with Not_found -> ty) env)
@@ -122,11 +121,7 @@ let mk_defn scp name args rhs =
   in 
   let tenv1=Typing.typecheck_env nscp tenv ndn Logicterm.mk_bool_ty
   in 
-(*
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
-   (Formula.make nscp (Term.retype tenv ndn)))
-*)
-  (name, Gtypes.subst_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))
 
 (* Types *)

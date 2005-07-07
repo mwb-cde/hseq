@@ -1462,8 +1462,7 @@ let rec resolve_aux data env expty term =
 	      (d_ty, Gtypes.unify_env data.scp ty0 d_ty env0)
 	    with _ -> (d_ty, env0)))
       in 
-(*       (Id(n, (Gtypes.mgu ty1 env1)), ty1, env1) *)
-       (Id(n, (Gtypes.subst ty1 env1)), ty1, env1)
+       (Id(n, (Gtypes.mgu ty1 env1)), ty1, env1)
   | Free(n, ty) -> 
       let nty = set_type_name ty
       in 
@@ -1472,11 +1471,7 @@ let rec resolve_aux data env expty term =
 	with _ -> (nty, env)
       in 
       let ty1=
-(*
 	try Gtypes.mgu ty0 env0 
-	with _ -> ty0
-*)
-	try Gtypes.subst ty0 env0 
 	with _ -> ty0
       in 
       (match (find_sym n ty1) with
@@ -1535,15 +1530,12 @@ let rec resolve_aux data env expty term =
       let fty0 = Logicterm.mk_fun_ty argty rty1
       in 
       let (atrm, aty, aenv) = 
-(*	resolve_aux data env1 (Gtypes.mgu argty env1) a *)
-	resolve_aux data env1 (Gtypes.subst argty env1) a 
+	resolve_aux data env1 (Gtypes.mgu argty env1) a
       in  
       let (ftrm, fty, fenv) = 
-(* 	resolve_aux data aenv (Gtypes.mgu fty0 aenv) lf *)
- 	resolve_aux data aenv (Gtypes.subst fty0 aenv) lf 
+ 	resolve_aux data aenv (Gtypes.mgu fty0 aenv) lf
       in 
-(*      (App(ftrm, atrm), (Gtypes.mgu rty1 fenv), fenv) *)
-      (App(ftrm, atrm), (Gtypes.subst rty1 fenv), fenv) 
+      (App(ftrm, atrm), (Gtypes.mgu rty1 fenv), fenv)
   | Qnt(qnt, body) ->
       (match Basic.binder_kind qnt with
 	Lambda -> 

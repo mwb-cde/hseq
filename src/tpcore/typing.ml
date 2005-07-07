@@ -35,12 +35,9 @@ let add_typing_error s tr expty ty es =
 let typeof_env scp typenv inf trm =
   let rec typeof_aux t env =
     match t with
-(*       Id(n, ty) -> (Gtypes.mgu ty env, env) *)
-       Id(n, ty) -> (Gtypes.subst ty env, env) 
-(*    | Free(n, ty) -> (Gtypes.mgu ty env, env) *)
-    | Free(n, ty) -> (Gtypes.subst ty env, env)
-(*     | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env) *)
-    | Bound(q) -> (Gtypes.subst (get_binder_type t) env, env)
+       Id(n, ty) -> (Gtypes.mgu ty env, env)
+    | Free(n, ty) -> (Gtypes.mgu ty env, env)
+    | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Const(c) -> (Logicterm.typeof_cnst c, env)
     | Qnt(q, b) -> 
 	(match Basic.binder_kind q with
@@ -58,15 +55,13 @@ let typeof_env scp typenv inf trm =
 	in 
 	let renv = Gtypes.unify_env scp fty nty aenv
 	in 
-(*	(Gtypes.mgu retty renv, renv) *)
-	(Gtypes.subst retty renv, renv) 
+	(Gtypes.mgu retty renv, renv) 
     | Typed(trm, expty) ->
 	let tty, tenv= typeof_aux trm env
 	in 
 	let renv = Gtypes.unify_env scp tty expty tenv
 	in 
-(*	(Gtypes.mgu expty renv, renv) *)
-	(Gtypes.subst expty renv, renv) 
+	(Gtypes.mgu expty renv, renv)
   in typeof_aux trm typenv
 
 
@@ -90,10 +85,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	      Gtypes.unify_env scp ty nt env
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t 
-(*
 		       (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
-*)
-		       (Gtypes.subst expty env) (Gtypes.subst ty env) err))
 	  in 
           (* unify with expected type *)
 	  Gtypes.unify_env scp nt expty env1
@@ -104,8 +96,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	   Gtypes.unify_env scp ty expty env
 	 with err -> 
 	   raise (add_typing_error "Typechecking: " t 
-(*		    (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))) *)
-		    (Gtypes.subst expty env) (Gtypes.subst ty env) err))) 
+		    (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Bound(q) -> 
 	(let ty = get_binder_type t
 	in
@@ -114,8 +105,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	  Gtypes.unify_env scp ty expty env
 	with err -> 
 	  raise (add_typing_error "Typechecking: "t
-(*	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))) *)
-	   (Gtypes.subst expty env) (Gtypes.subst ty env) err))) 
+		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Const(c) -> 
 	(let ty = Logicterm.typeof_cnst c
 	in
@@ -124,8 +114,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	  Gtypes.unify_env scp ty expty env
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t
-(*		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))) *)
-		   (Gtypes.subst expty env) (Gtypes.subst ty env) err)))
+		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Typed(trm, ty) -> 
 	(Gtypes.quick_well_defined scp cache ty;
 	 let env1=
@@ -133,8 +122,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	     Gtypes.unify_env scp ty expty env
 	   with err -> 
 	     raise (add_typing_error "Typechecking: " t
-(*		      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)) *)
-		      (Gtypes.subst expty env) (Gtypes.subst ty env) err))
+	      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
 	 in 
 	 (try
 	   settype_aux ty trm env1
@@ -169,8 +157,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 		Gtypes.unify_env scp bty expty env
 	      with err -> 
 		raise (add_typing_error "Typechecking: " t
-(*			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)) *)
-			 (Gtypes.subst expty env) (Gtypes.subst bty env) err)) 
+			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
 	    in 
 	    (try
 	      settype_aux rty b env1
@@ -187,8 +174,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t
-(*		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err))) *)
-		       (Gtypes.subst expty env) (Logicterm.mk_bool_ty) err)))
+		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err)))
   in settype_aux exty et typenv
 
 
@@ -216,16 +202,14 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	  Gtypes.unify_env scp ty expty env     (* unify with expected type *)
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
-(*		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)) *)
-		   (Gtypes.subst expty env) (Gtypes.subst ty env) err))
+	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
     | Free(n, ty) -> 
 	Gtypes.quick_well_defined scp cache ty; (* check given type *) 
 	(try 
 	  Gtypes.unify_env scp ty expty env     (* unify with expected type *)
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
-(*		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)) *)
-		   (Gtypes.subst expty env) (Gtypes.subst ty env) err)) 
+	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
     | Bound(q) -> 
 	(let ty = get_binder_type t
 	in
@@ -234,8 +218,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	  Gtypes.unify_env scp ty expty env
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
-(*		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))) *)
-		   (Gtypes.subst expty env) (Gtypes.subst ty env) err)))
+	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Const(c) -> 
 	(let ty = Logicterm.typeof_cnst c
 	in
@@ -244,8 +227,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	  Gtypes.unify_env scp ty expty env
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
-(*		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))) *)
-		   (Gtypes.subst expty env) (Gtypes.subst ty env) err)))
+	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Typed(trm, ty) -> 
 	(Gtypes.quick_well_defined scp cache ty;
 	 let env1=
@@ -253,8 +235,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	     Gtypes.unify_env scp ty expty env
 	   with err -> 
 	     raise (add_typing_error "Typechecking: " t 
-(*		      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)) *)
-		      (Gtypes.subst expty env) (Gtypes.subst ty env) err))
+	      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
 	 in 
 	 type_aux ty trm env1)
     | App(f, a) -> 
@@ -284,8 +265,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 		Gtypes.unify_env scp bty expty env
 	      with err -> 
 		raise (add_typing_error "Typechecking: " t 
-(*			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)) *)
-			 (Gtypes.subst expty env) (Gtypes.subst bty env) err))
+		 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err))
 	    in 
 	    (try
 	      type_aux rty b env1
@@ -298,12 +278,8 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t 
-(*
 		       (Gtypes.mgu expty env) 
 		       (Gtypes.mgu Logicterm.mk_bool_ty env) err)))
-*)
-		       (Gtypes.subst expty env) 
-		       (Gtypes.subst Logicterm.mk_bool_ty env) err)))
   in 
   try 
     type_aux exty et typenv

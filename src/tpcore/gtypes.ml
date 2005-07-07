@@ -889,7 +889,7 @@ let rec mgu t env =
    in [env], then it is renamed and bound to that name in [nenv] (which is
    checked before a new name is created).
  *)
-let subst_rename_env inf tyenv name_env typ =
+let mgu_rename_env inf tyenv name_env typ =
   let new_name_env nenv x =
     try (lookup x nenv, nenv)
     with 
@@ -926,8 +926,8 @@ let subst_rename_env inf tyenv name_env typ =
   in 
   rename_aux name_env typ
 
-let subst_rename inf env nenv typ =
-  let nty, _ = subst_rename_env inf env nenv typ
+let mgu_rename inf env nenv typ =
+  let nty, _ = mgu_rename_env inf env nenv typ
   in nty
 
 (***

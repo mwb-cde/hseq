@@ -162,7 +162,11 @@ type substitution
 
    [subst_iter f env]: Apply function [f] to each binding in [env].
 
-   [subst env t]: Apply substitution [env] to gtype [t].
+   [subst env t]: Apply substitution [env] to gtype [t].  This is
+   simultaneous substitution: the substitution is not pushed into the
+   replacement terms. This is therefore unsuitable for forming the
+   most general unifier since unification can bind variables in both
+   the replaced and the replacement term. 
 *)
 val empty_subst : unit -> substitution
 val bind : gtype -> gtype -> substitution -> substitution
@@ -319,8 +323,7 @@ val bind_occs : gtype -> gtype -> substitution -> substitution
    Raise [type_error] if unification fails
 
    The result of unifying [x] and [y] is a substitution [env]
-   s.t. that [subst x env] is the same as [subst y env]. (Substitution
-   constructs the most general unifier).
+   s.t. that [mgu x env] is the same as [mgu y env]. 
 *)
 val unify_env : 
    Scope.t -> gtype -> gtype 
@@ -348,14 +351,13 @@ val unify_for_rewrite:
 
 (** 
    [mgu ty env]: Construct the most general unifier for type [ty] from
-   substitution [env].
+   substitution [env]. This is a version of substitution which pushes
+   the substitution into the replacement terms.
 *)
-(*
 val mgu : gtype  -> substitution -> gtype
-*)
 
 (**
-   [subst_rename inf env nenv ty] 
+   [mgu_rename inf env nenv ty] 
 
    Replace variables in [ty] with their bindings in substitution [env].
    If a variable isn't bound in [env], then it is renamed and bound
@@ -366,17 +368,10 @@ val mgu : gtype  -> substitution -> gtype
 
    returns the new type and updated nenv
  *)
-val subst_rename_env: int ref -> substitution -> substitution 
-  -> gtype -> (gtype * substitution)
-val subst_rename: int ref -> substitution -> substitution 
-  -> gtype -> gtype 
-
-(*
 val mgu_rename_env: int ref -> substitution -> substitution 
   -> gtype -> (gtype * substitution)
 val mgu_rename: int ref -> substitution -> substitution 
   -> gtype -> gtype 
-*)
 
 (** {6 Matching functions} *)
 
