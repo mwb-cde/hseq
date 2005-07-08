@@ -10,8 +10,19 @@ module type TreeData =
   sig
     (* type of keys *)
     type key
-	  (* comparisons functions between keys *)
+
+  (** 
+     Comparisons between keys 
+     
+     [equals x y]: True if [x] is the same as [y]. Must be accurate
+     since this is used to find the data associated with a key.
+
+     [lessthan x y]: True if [x] is considered less-than [y]. Does not
+     need to be accurate since it is only used to narrow the list of
+     possible matches for a key.
+   *)
     val equals : key -> key -> bool
+    val lessthan : key -> key -> bool
   end
 
 
@@ -19,8 +30,8 @@ module type TreeType=
 functor (A : TreeData) ->
   sig
 
-    val eql : 'a -> 'a -> bool
-    val lessthan : 'a -> 'a -> bool
+    val eql : A.key -> A.key -> bool
+    val lessthan : A.key -> A.key -> bool
 
     type ('a)t= 
 	Nil 
@@ -120,8 +131,12 @@ module Tree=
   functor (A: TreeData)->
   struct
 
+(*
     let eql x y =  (Pervasives.compare x y) = 0
     let lessthan x y= (Pervasives.compare x y) < 0
+*)
+    let eql = A.equals
+    let lessthan = A.lessthan
 
     type ('a)t= 
 	Nil 
@@ -449,8 +464,8 @@ module Tree=
 module type BTreeType=
 functor (A : TreeData) ->
   sig
-    val eql : 'a -> 'a -> bool
-    val lessthan : 'a -> 'a -> bool
+    val eql : A.key -> A.key -> bool
+    val lessthan : A.key -> A.key -> bool
 
     type depth_t = int
     type ('a)t= 
@@ -563,8 +578,12 @@ module BTree=
   functor (A: TreeData)->
   struct
 
+(*
     let eql x y =  (Pervasives.compare x y) = 0
     let lessthan x y= (Pervasives.compare x y) < 0
+*)
+    let eql =  A.equals
+    let lessthan = A.lessthan
 
     type depth_t = int
 

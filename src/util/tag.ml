@@ -21,15 +21,30 @@ let create() = ref ""
 
 let equal x y = x==y
 
-
-(** 
-   [compare x y]: Compare references [x] and [y].
+(**
+   [fuzzy_compare x y]: Compare references [x] and [y].
    (ported from HOL pointer_compare).
+
+   Not guarenteed (or expected) to be accurate.
 *)
-   let compare x y=
+   let fuzzy_compare x y=
    let cast x = ((Obj.magic x):int)
    in 
    compare (cast x) (cast y)
+
+(***
+   Trees
+*)
+
+module TagTreeData=
+  struct
+    type key = tag_type
+    let equals = equal
+    let lessthan x y= (fuzzy_compare x y)<0
+  end
+
+module TagTree = Treekit.BTree(TagTreeData)
+type ('a)tree = ('a)TagTree.t
 
 (* Sets *)
 
