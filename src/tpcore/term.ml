@@ -52,6 +52,7 @@ module TermTreeData=
   struct
     type key=term
     let equals=equals
+    let lessthan x y= (Pervasives.compare x y) < 0
   end
 module TermTree=Treekit.BTree(TermTreeData)
 type ('a)tree = ('a) TermTree.t

@@ -113,15 +113,18 @@ module Rhash: RHASH
 type ('a)table = ('a)Rhash.t
 
 (** [('a)tree]: Balanced trees indexed by gtypes *)
-module TypeTreeData:
+module TypeTreeData: Treekit.TreeData
+(*
     sig
       type key=gtype
       val equals : key -> key -> bool
+      val lessthan : key -> key -> bool
     end
+*)
 module TypeTree:
     sig
-      val eql : 'a -> 'a -> bool
-      val lessthan : 'a -> 'a -> bool
+      val eql : gtype -> gtype -> bool
+      val lessthan : gtype -> gtype -> bool
       type 'a t 
       val nil : 'a t
       val create : (gtype * 'a) list -> 'a t -> 'a t -> 'a t

@@ -35,8 +35,8 @@ val binder_equiv : Scope.t -> term -> term -> bool
 module TermTreeData: Treekit.TreeData
 module TermTree: 
     sig
-      val eql : 'a -> 'a -> bool
-      val lessthan : 'a -> 'a -> bool
+      val eql : term -> term -> bool
+      val lessthan : term -> term -> bool
       type 'a t 
       val nil : 'a t
       val create : (term * 'a) list -> 'a t -> 'a t -> 'a t

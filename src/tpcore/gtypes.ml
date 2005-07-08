@@ -199,6 +199,7 @@ module TypeTreeData=
   struct 
     type key=gtype
     let equals = equals
+    let lessthan x y= (Pervasives.compare x y) < 0
   end
 module TypeTree=Treekit.BTree(TypeTreeData)      
 type ('a)tree = ('a)TypeTree.t
