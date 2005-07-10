@@ -69,9 +69,7 @@ let is_bool_ty t = (t = mk_bool_ty)
 
 let typeof_cnst c =
   match c with
-    Null_const _-> 
-      raise (type_error "Null constant has no type" [])
-  |	Cnum _ -> Gtypes.mk_num
+    Cnum _ -> Gtypes.mk_num
   | Cbool _ -> mk_bool_ty
 
 let bin_ty a1 a2 r = (mk_fun_ty_from_list [a1; a2] r)

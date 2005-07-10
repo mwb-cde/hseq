@@ -4,11 +4,22 @@
    Copyright M Wahab 2005
    ----*)
 
-(* Scope of terms and types *)
+(** 
+   Scope of terms and types. 
+
+   A scope stores information about the term and type identifiers
+   which are available for use, the type of each declared identifier,
+   the definition of type aliases and whether a theory is in scope.
+
+   Each scope is associated with a theory [th] and a theory [x] is in
+   scope if it is [th] or is a parent of [th].
+*)
 
 open Basic
 
-(* records for type definitions *)
+(** {5 Data structures} *)
+
+(** Records for type definitions *)
 type type_record =
     {
      name: string; 
@@ -17,31 +28,66 @@ type type_record =
      characteristics: string list
    }
 
+(** Scope records. *)
 type t=
     { 
-      curr_thy : thy_id;
+      curr_thy : thy_id; 
+(** The name of the current theory *)
       term_type : ident -> gtype; 
+	(** The type of a term identifier. *)
 	term_thy : string -> thy_id;
+	  (** The theory in which a term is declared. *)
 	  type_defn: ident -> type_record;
+	    (** The definition (if any) of a type *)
 	    type_thy : string -> thy_id;
-(*	      thy_in_scope : thy_id -> thy_id -> bool *)
+	      (** The theory in which a type is declared *)
 	      thy_in_scope : thy_id -> bool 
+		  (** Whether a theory is in scope *)
     }
+(** All lookup functions raise [Not_found] on failure. *)
+
+(** {6 Operations on scopes} *)
 
 val empty_scope : unit -> t
+(** Construct an empty scope *)
 
 val thy_of : t -> thy_id
-val type_of : t -> ident -> gtype
-val thy_of_term: t -> string -> thy_id
-val defn_of: t -> ident -> type_record
-val thy_of_type: t -> string -> thy_id
-(*
-val in_scope_of : t-> thy_id -> thy_id -> bool
-*)
-val in_scope : t -> thy_id -> bool
+(** [thy_of scp]: Get the theory of scope [scp] *)
 
-val extend_with_terms: t -> (ident * gtype) list -> t
+val type_of : t -> ident -> gtype
+(** Lookup the type of an identifier *)
+
+val thy_of_term: t -> string -> thy_id
+(** Lookup the theory of an identifier *)
+
+val defn_of: t -> ident -> type_record
+(** Get the definition of a type. *)
+
+val thy_of_type: t -> string -> thy_id
+(** Lookup the theory of a type. *)
+
+val in_scope : t -> thy_id -> bool
+(** Test whether a theory is in scope *)
+
+(** {5 Extending scopes} *)
+
+val extend_with_terms: t -> (ident * gtype) list -> t 
+(** 
+   Extend a scope with a list of identifiers [[(I1, T1); ...; (In,
+   Tn)]]. Each identifier [Ii] is given type [Ti].
+*)
+
 val extend_with_typedefs: t -> (ident * type_record) list -> t
+(** 
+   Extend a scope with a list of type definitions [[(I1, D1); ...;
+   (In, Dn)]]. Each identifier [Ii] has definition [Di].
+*)
+
 val extend_with_typedeclns: t -> (ident * (string) list) list -> t
+(** 
+   Extend a scope with a list of type declarations [[(I1, A1); ...;
+   (In, An)]]. Each identifier [Ii] has arguments [Ai], but
+   no definition.
+*)
 
 

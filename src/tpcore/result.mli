@@ -4,51 +4,58 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Error and message construction and reporting *)
-(* errors and messages are objects, allowing new errors to be derived *)
-(* an error raised as an exception with  a list of one or more objects *)
+(**
+   {5 Error and message construction and reporting} 
 
-type kind (* kind=int *)
-val mk_new_kind : unit -> kind
-val errorkind: kind
+   Errors and messages are objects, allowing new errors to be derived.
+   An error is raised as an exception with  a list of one or more objects.
+*)
 
+(** {6 Objects for reporting information} *)
+
+(** Message objects, for reporting non-fatal information *)
 class message :
     string ->
       object 
 	method msg : unit -> string 
 	method print : Printer.ppinfo -> unit 
       end
+
+(** Error objects, for reporting fatal information *)
 class error :
     string ->
       object 
 	method msg : unit -> string 
 	method print : Printer.ppinfo -> unit 
       end
-class errormsg :
-  object 
-    method msg : unit -> string 
-    method print : Printer.ppinfo -> unit 
-  end
+
+(** {6 Exceptions for reporting errors} *)
 
 exception Error of error
+(** A single error. *)
+
 exception Errors of exn list
+(** A list of errors *)
 
-(* construct, add and raise errors *)
 val mk_error : error -> exn
+(** Construct an error. *)
 val add_error : exn -> exn -> exn
+(** Add an error to a list of errors. *)
 
-val catch_error : Printer.ppinfo -> int -> ('a -> unit )  -> 'a -> unit
-
-val error : string -> exn
-
-(*
-val catchError : error -> exn -> exn
-val raiseError : string -> 'a
+val print_error: Printer.ppinfo -> int -> exn -> unit 
+(** 
+   [print_error info n err]: Print the first [n] errors
+   from exception [err].
 *)
 
-(* basic printer *)
-val print_error :  Printer.ppinfo -> int -> exn -> unit
+val catch_error : Printer.ppinfo -> int -> ('a -> unit ) -> 'a -> unit
+(** 
+   [catch_error info depth f a]: Apply [f a], catching any error and
+   printing it with [print_error].
+*)
 
+val error : string -> exn
+(** [error msg]: Raise exception [Error] with message [msg] *)
 
-(* warnings *)
 val warning: string -> unit
+(** [warning msg]: Print warning message [msg] *)

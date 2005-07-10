@@ -16,13 +16,16 @@ OPTCODE = settings.cmx basic.cmx printer.cmx result.cmx \
 	scope.cmx gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
 	typing.cmx unify.cmx net.cmx rewrite.cmx 
 
-DOCFILES = gtypes.mli term.mli net.mli
+DOCFILES = defaults.mli settings.mli basic.mli \
+	printer.mli result.mli scope.mli \
+	gtypes.mli term.mli logicterm.mli dbterm.mli \
+	net.mli typing.mli unify.mli rewrite.mli 
 
 
 LIBFILE=tpcore.cma
 OPTLIB=tpcore.cmxa
 
-# Compiler setings
+# Compiler settings
 
 INCLUDE= -I .. -I ../include
 LIBDIR= 
@@ -30,6 +33,7 @@ CONFIGDIR ?= ../config
 
 HEADERSDIR=../include
 INSTALLDIR=../libs
+DOCDIR ?= ../doc
 
 OCLIBS=
 OPTLIBS=
@@ -81,7 +85,7 @@ installopt: opt
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
 doc: ${DOCFILES}
-	ocamldoc ${INCLUDE} -html -d ../doc ${DOCFILES}
+	ocamldoc ${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

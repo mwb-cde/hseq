@@ -12,7 +12,7 @@ open Gtypes
 open Term
 
 (** 
-{c6 Types}
+{6 Types}
 *)
 
 (**
@@ -44,7 +44,7 @@ val typeof_cnst  : Basic.const_ty -> gtype
 val typeof_conn  : Basic.conns_ty -> gtype
 *)
 
-(** {c6 Terms} *)
+(** {6 Terms} *)
 
 (** identifiers/recognisers/constructors for basic logic functions *)
 val trueid : Basic.ident

@@ -4,31 +4,31 @@
  Copyright M Wahab 2005
 ----*)
 
-(** {4 Types and their manipulation} *)
+(** Types and their manipulation *)
 
 open Basic
 open Lib
 
 (** {5 Basic Operations} *)
 
-(** [equals]: Syntactic equality between types *)
 val equals: gtype -> gtype -> bool
+(** Syntactic equality between types *)
 
-(* Recognisers *)
+(** {7 Recognisers} *)
 
 val is_var : gtype -> bool
 val is_constr : gtype  -> bool
 val is_base : gtype  -> bool
 val is_weak : gtype -> bool
 
-(* Constructors *)
+(** {7 Constructors} *)
 
 val mk_var : string -> gtype
 val mk_weak : string -> gtype
 val mk_constr: Basic.typ_const -> gtype list -> gtype
 val mk_base: Basic.base_typ -> gtype
 
-(* Destructors *)
+(** {7 Destructors} *)
 
 val dest_var : gtype -> string  ref
 val get_var_name : gtype -> string
@@ -39,68 +39,64 @@ val get_weak_name : gtype -> string
 val dest_constr:  gtype -> (Basic.typ_const * gtype list)
 val dest_base:  gtype -> Basic.base_typ
 
-(** {5 Specialised Manipulators} *)
+(** {6 Specialised Manipulators} *)
 
-(* Base types *)
+(** {7 Base types} *)
+
 val mk_num: gtype
 val mk_ind: gtype
 
-(* Variable types *)
+(** {7 Variable types} *)
 
-(** [is_any_var t]: true if [t] is a variable or a weak variable *)
 val is_any_var: gtype -> bool
+(** [is_any_var t]: true if [t] is a variable or a weak variable *)
 
-(** 
-   [get_var_names ty]: get names of variables occuring in type.
-*)
 val get_var_names: gtype -> string list
+(** Get names of variables occuring in type. *)
 
-(**
-   [normalize_vars ty]:
-   Make all type variables with the same string name
-   be the same variable.
-
-   Useful when constructing types from existing types.
-*)
 val normalize_vars : gtype -> gtype   
-
 (**
-   [mk_new_type n]: make a new type variable with a name derived from
+   Make all type variables with the same string name be the same
+   variable.  Useful when constructing types from existing types.
+*)
+
+val mk_typevar: int ref -> gtype
+(**
+   [mk_typevar n]: Make a new type variable with a name derived from
    [!n]; increment [n] and return the new type. Different values of
    [!n] make different names.
 *)
-val mk_typevar: int ref -> gtype
 
+val get_var_names: gtype -> string list
 (** 
    [get_var_names ty]: Get the names of variables in [ty]. Ignores
    weak variables. 
 *)
-val get_var_names: gtype -> string list
 
-(* Unnamed type variables *)
+(** {7 Unnamed type variables} *)
 
-(** [mk_null()]: Make an unnamed type variable *)
 val mk_null: unit -> gtype
+(** Make an unnamed type variable. *)
 val is_null: gtype -> bool
+(** Test for an unnamed type variable. *)
 
-(* Named typed constructors *)
+(** {7 Named typed constructors} *)
+
 val is_def : gtype -> bool
 val mk_def: ident -> gtype list -> gtype
 val dest_def: gtype -> (ident * gtype list)
 
 (** {5 Type Definitions} *)
 
-(** [typedef_record]: Records for type definitions *)
 type typedef_record = Scope.type_record
+(** Records for type definitions *)
 
-(**
-   [get_typdef scp n]: get definition of type named [n] from scope [scp]
-*)
 val get_typdef: Scope.t -> ident -> typedef_record
+(** Get definition of type named [n] from scope [scp] *)
 
 (** {5 Data storage indexed by gtypes} *)
 
-(** [('a)table]: hashtables with gtype as the key *)
+(** {7 Hash tables} *)
 module type RHASHKEYS=
   sig 
     type t = gtype
@@ -111,8 +107,10 @@ module type RHASH = (Hashtbl.S with type key = (gtype))
 module Rhash: RHASH
 
 type ('a)table = ('a)Rhash.t
+(** Hashtables with gtype as the key *)
 
-(** [('a)tree]: Balanced trees indexed by gtypes *)
+
+(** {7 Balanced Trees} *)
 module TypeTreeData: Treekit.TreeData
 (*
     sig
@@ -143,86 +141,69 @@ module TypeTree:
     end 
 
 type ('a)tree = ('a)TypeTree.t
+(** Balanced trees indexed by gtypes *)
+
 
 (** {5 Substitution} *)
 
-(** [substitution]: The type of substitutions *)
 type substitution
+(** The type of substitutions *)
 
+val empty_subst : unit -> substitution
+(** Make an empty substitution. *)
+val bind : gtype -> gtype -> substitution -> substitution
+(** [bind t r env]: Bind [r] to [t] in substitution [env]. *)
+val delete : gtype -> substitution -> substitution
+(** [delete t env]: Delete the binding of [t] in [env]. *)
+val lookup: gtype -> substitution -> gtype
+(** [lookup t env]: Get the binding of [t] in [env]. *)
+val member: gtype -> substitution -> bool
+(** [member t env]: True if [t] has a binding in [env]. *)
+val subst_iter: (gtype -> gtype -> unit) -> substitution -> unit
+(** [subst_iter f env]: Apply function [f] to each binding in [env]. *)
+val subst: gtype -> substitution -> gtype
 (**
-   [empty_subst()]: Make an empty substitution.
-
-   [bind t r env]: Bind [r] to [t] in substitution [env].
-
-   [bind_var t r env]: Bind [r] to [t] in substitution [env] but only
-   if [t] is a variable.
-
-   [delete t env]: Delete the binding of [t] in [env].
-
-   [lookup t env]: Get the binding of [t] in [env].
-
-   [member t env]: True if [t] has a binding in [env].
-
-   [subst_iter f env]: Apply function [f] to each binding in [env].
-
-   [subst env t]: Apply substitution [env] to gtype [t].  This is
+[subst env t]: Apply substitution [env] to gtype [t].  This is
    simultaneous substitution: the substitution is not pushed into the
    replacement terms. This is therefore unsuitable for forming the
    most general unifier since unification can bind variables in both
    the replaced and the replacement term. 
 *)
-val empty_subst : unit -> substitution
-val bind : gtype -> gtype -> substitution -> substitution
-val delete : gtype -> substitution -> substitution
-val lookup: gtype -> substitution -> gtype
-val member: gtype -> substitution -> bool
-val subst_iter: (gtype -> gtype -> unit) -> substitution -> unit
-val subst: gtype -> substitution -> gtype
 
-(** {5 Operations which depend on substitution} *)
+(** {6 Operations which depend on substitution} *)
 
-(**
-   Type renaming.
-
-   [rename_type_vars_env]: copy a type, making new variables in the type.    
-
-   [rename_type_vars t]: Make a type equivalent but not equal to
-   [t], differing from [t] in the variable names.
-*)
 val rename_type_vars_env: substitution -> gtype -> (gtype * substitution)
+(** copy a type, making new variables in the type. *)
 val rename_type_vars: gtype -> gtype
+(** 
+   [rename_type_vars t]: Make a type equivalent but not equal to
+   [t], differing from [t] in the variable names. 
+*)
 
 (** {5 Pretty Printing} *)
 
-(** 
-   [printer_info]: Pretty printing information for types.
-
-   User defined printers have type [(Basic.type_const * Gtypes list)
-   printer].
-
-   [empty_printer_info()]: Make an empty printer information.
-
-   [pplookup ppstate id]: Find the printer record for [id] in [ppstate].
-*)
 type printer_info=
     { 
       tbl: substitution; (* used to store pretty replacement variable names *)
       ctr: int ref; (* used to generate variable names *)
     }
+(** Pretty printing information for types. *)
 val empty_printer_info: unit -> printer_info
+(** Make an empty printer information. *)
 val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
+(** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
 
+val print_type : 
+    Printer.ppinfo -> (Printer.fixity * int) -> gtype Printer.printer
 (** 
    [print_type_inf ppstate tbl prec ty] Print type [ty] beginning with
    precedence [prec].  Rename type variables, using table [tbl],
    generating consistent pretty variable names.  Update [tbl] with the
    new substitution of new names for old 
-
-   [print]: Toplevel for [print_type_inf].
 *)
-val print_type : 
-    Printer.ppinfo -> (Printer.fixity * int) -> gtype Printer.printer
 val print : Printer.ppinfo -> gtype Printer.printer
+(**  Toplevel for [print_type_inf]. *)
+
 
 (* {5 Error reporting} *)
 
@@ -235,41 +216,39 @@ class typeError : string -> gtype list ->
 val type_error : string -> gtype list -> exn
 val add_type_error : string ->gtype list -> exn -> 'a
 
-(**  [string_gtype ty]: Make a string representation of type [ty] *)
 val string_gtype :  gtype -> string
+(** Make a string representation of a type *)
 
 
-(** {5 Type definitions}
+(** {5 Type definitions} *)
 
-*)
-
-(** {6 Consistency tests for type definitions}
+(** {7 Consistency tests for type definitions}
 
    Weak variables are not permitted in any definition (type or term).
 *)
 
-(**
-   [check_defn l r]: test definition of [l] as alias for [r].
-
-   [check_decln l]: consistency check on declaration of type [l].
-*) 
 val check_defn : Scope.t -> gtype -> gtype -> bool
-val check_decln : gtype  -> bool
+(** [check_defn l r]: test definition of [l] as alias for [r]. *)
 
+val check_decln : gtype  -> bool
+(**   [check_decln l]: consistency check on declaration of type [l]. *) 
+
+val get_defn : Scope.t -> gtype -> gtype
 (**
    [get_defn scp ty]: get the definition of type [ty] from the scope
    [scp]. Raise Not_found if no definition.
 *)
-val get_defn : Scope.t -> gtype -> gtype
 
+val well_defined : Scope.t -> (string)list -> gtype -> unit
 (**
-   [well_defined scp args ty] Test [ty] for well-definednes.  every
+   [well_defined scp args ty]: Test [ty] for well-definednes.  every
    constructor occuring in [ty] must be defined.  Variables in [ty]
    must have a name in [args] and weak variables are not permitted in
    [ty]
  *)
-val well_defined : Scope.t -> (string)list -> gtype -> unit
 
+val quick_well_defined : Scope.t -> 
+  (ident *int, bool) Hashtbl.t -> gtype -> unit
 (**
    [quick_well_defined scp tbl ty]:
    Test [ty] to make sure it is well-defined.
@@ -278,16 +257,12 @@ val well_defined : Scope.t -> (string)list -> gtype -> unit
    [tbl] is memo of found constructors (and the number of their
    parameters
 *)
-val quick_well_defined : Scope.t -> 
-  (ident *int, bool) Hashtbl.t -> gtype -> unit
 
-(**
-   [check_decl_type scp ty]: Ensure type [ty] is suitable for
-   the declaration of a term.
-
-   Fails if [ty] contains a weak variable.
-*)
 val check_decl_type: Scope.t -> Basic.gtype -> unit
+(**
+   [check_decl_type scp ty]: Ensure type [ty] is suitable for the
+   declaration of a term.  Fails if [ty] contains a weak variable.
+*)
 
 (** {5 Unification} *)
 
@@ -295,44 +270,61 @@ exception Occurs
 exception Unify
 exception Match
 
-(**
-   Occurs check.
-
-   [lookup_var ty env]: Look-up and chase var [ty] in env [environment].
-   
-   [occurs t r]: check whether [t] occurs in [r].
-
-   [occurs_env env t r]: Occurs check w.r.t [env].  Chase [t] in [env]
-   to get [t'], chase [r] in [env] to get [r']. Check whether [t']
-   occurs in [r'].
-
-   Both raise typeError on failure, and are silent on  success.
-
-   [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs in [r].
- *)
 val lookup_var : gtype -> substitution -> gtype
+(** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
 val occurs :  gtype -> gtype -> unit
+(** [occurs t r]: Occurs check.
+   Raises [typeError] if [t] occurs in [r], succeed silently otherwise.
+*)
 val occurs_env :  substitution-> gtype -> gtype -> unit
+(**
+   [occurs_env env t r]: Occurs check w.r.t [env].  Chase [t] in [env]
+   to get [t'], chase [r] in [env] to get [r']. Raises [typeError] if
+   [t'] occurs in [r'], succeed silently otherwise.
+*)
 val bind_occs : gtype -> gtype -> substitution -> substitution
+(** 
+   [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs in [r].
+*)
+
 
 (** {6 Unification functions} *)
 
 (**
-   [unify_env scp ty1 ty2 env]: unify two types in context [env],
-   return a new subsitution 
-
-   [unify]: unify two types, returning the substitution
-
-   Raise [type_error] if unification fails
+   Unification of gtypes [x] and [y] tries to create a substitution
+   with bindings for variables of [x] and [y] which make [x] and
+   [y] equal.
 
    The result of unifying [x] and [y] is a substitution [env]
    s.t. that [mgu x env] is the same as [mgu y env]. 
+
+   The substitution is formed by assigning types to type
+   variables. Weak type variables (constructed by [Weak]) can be
+   assigned weak variables and non-variables only. Weak type variables
+   cannot be assigned type variables formed by [Var]. Type variables
+   formed by [Var] can be assigned any type. 
+
+   The substitution resulting from the unification functions cannot be
+   used with [subst]. Function [mgu] and its derivatives must be used.
+
+   Unification functions raise [type_error] on failure.
 *)
+
 val unify_env : 
    Scope.t -> gtype -> gtype 
    -> substitution -> substitution 
+(** 
+   [unify_env scp ty1 ty2 env]: unify two types in context [env],
+   return a new subsitution.
+*)
 val unify : Scope.t -> gtype -> gtype  -> substitution 
+(**
+   [unify]: unify two types, returning the substitution
+*)
 
+val unify_for_rewrite:  
+    Scope.t -> gtype -> gtype 
+      -> substitution -> substitution
 (**
    [unify_for_rewrite scp tyl tyr env]: Unify types [tyl'] and
    [tyr] in given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
@@ -346,21 +338,20 @@ val unify : Scope.t -> gtype -> gtype  -> substitution
    that the same type may occur in different contexts (e.g. as the type
    of an identifier which occurs in different parts of the term).
 *)
-val unify_for_rewrite:  
-    Scope.t -> gtype -> gtype 
-      -> substitution -> substitution
 
-(** {6 Most General Unifiers} *)
+(** {7 Most General Unifiers} *)
 
+val mgu : gtype  -> substitution -> gtype
 (** 
    [mgu ty env]: Construct the most general unifier for type [ty] from
    substitution [env]. This is a version of substitution which pushes
    the substitution into the replacement terms.
 *)
-val mgu : gtype  -> substitution -> gtype
 
+val mgu_rename_env: int ref -> substitution -> substitution 
+  -> gtype -> (gtype * substitution)
 (**
-   [mgu_rename inf env nenv ty] 
+   [mgu_rename_env inf env nenv ty] 
 
    Replace variables in [ty] with their bindings in substitution [env].
    If a variable isn't bound in [env], then it is renamed and bound
@@ -371,26 +362,35 @@ val mgu : gtype  -> substitution -> gtype
 
    returns the new type and updated nenv
  *)
-val mgu_rename_env: int ref -> substitution -> substitution 
-  -> gtype -> (gtype * substitution)
 val mgu_rename: int ref -> substitution -> substitution 
   -> gtype -> gtype 
+(** Toplevel for [mgu_rename_env] *)
 
-(** {6 Matching functions} *)
+(** {6 Matching functions} 
 
+   Matching of types [x] and [y] is the unification of [x] and [y] in
+   which only the variables of [x] can be bound.
+*)
+
+val matches_env : 
+    Scope.t -> substitution 
+      -> gtype -> gtype -> substitution
 (**
    [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
    type [t1] can be bound.
 *)
-val matches_env : 
-    Scope.t -> substitution 
-      -> gtype -> gtype -> substitution
+
 val matches : Scope.t -> gtype -> gtype -> bool
+(** Toplevel for [matches_env] *)
 
 
 (** {5 More functions} *)
 
+val set_name : 
+    ?strict:bool
+  -> ?memo:(string, Basic.thy_id)Hashtbl.t
+    -> Scope.t -> gtype -> gtype
 (** 
    [set_name ?strict ?memo scp ty]: set names in type [ty] to their
    long form.
@@ -399,11 +399,9 @@ val matches : Scope.t -> gtype -> gtype -> bool
 
    [memo] is the optional memoisation table.
 *)
-val set_name : 
-    ?strict:bool
-  -> ?memo:(string, Basic.thy_id)Hashtbl.t
-    -> Scope.t -> gtype -> gtype
 
+val in_scope: 
+    (string, bool)Lib.substype -> Scope.t ->thy_id -> gtype -> bool
 (**
    [in_scope memo scp th ty]: Check that [ty] is in scope by checking
    that every type constructor is decared or defined in scope [scp].
@@ -411,10 +409,10 @@ val set_name :
    The function is memoised: if a constructor name is found to be 
    in scope, it is added to [memo].
 *)
-val in_scope: 
-    (string, bool)Lib.substype -> Scope.t ->thy_id -> gtype -> bool
 
 
+val extract_bindings: gtype list -> substitution -> substitution 
+  -> substitution
 (**
    [extract_bindings vars src dst]: extract bindings variables in
    [var] from [src] substitution, store them in [dst] substitution
@@ -422,50 +420,49 @@ val in_scope:
    Needed by the sequent calculus to determine the bindings made by
    operations.
 *)
-val extract_bindings: gtype list -> substitution -> substitution 
-  -> substitution
 
 (** {5 Saving gtypes to disk storage} *)
 
-(** [stype]: representation of types for storage on disk *)
 type stype = ((string * int), Basic.typ_const, Basic.base_typ) pre_typ
+(** Representation of types for storage on disk *)
 
-(** [stypedef]: representation of typedef_records for disk storage *)
 type stypedef_record =
     {sname: string; 
      sargs : string list; 
      salias: stype option;
      scharacteristics: string list}
+(** Representation of typedef_records for disk storage *)
 
+val to_save_env: (string ref* (string *int)) list ref 
+  -> gtype -> stype
 (** 
-   [to_save ty]: Convert [ty] to [stype] storage representation.
-
    [to_save_env ty env]: Convert [ty] to [stype] storage representation.
    [env] store the names of type variables already encountered.
 *)
 val to_save: gtype -> stype
-val to_save_env: (string ref* (string *int)) list ref 
-  -> gtype -> stype
+(**  Toplevel for [to_save_env]. *)
 
-(** 
-   [from_save ty]: Convert storage type [ty] to [gtype] representation.
-
-   [from_save_env ty env]: Convert storage [ty] to [gtype] representation.
-   [env] store the names of type variables already encountered.
-*)
-val from_save: stype -> gtype
 val from_save_env : 
     ((string * int)* (string ref)) list ref
   -> stype -> gtype
 
 (** 
-   [to_save_rec r]: Convert [r] to [stypedef_record] storage representation.
+   [from_save_env ty env]: Convert storage [ty] to [gtype] representation.
+   [env] store the names of type variables already encountered.
+*)
+val from_save: stype -> gtype
+(** Toplevel for [from_save_env]. *)
 
+val to_save_rec: typedef_record -> stypedef_record
+(** 
+   [to_save_rec r]: Convert [r] to [stypedef_record] storage representation.
+*)
+
+val from_save_rec: stypedef_record -> typedef_record
+(**
    [from_save_rec r]: Convert storage record [r] to [typedef_record]
    representation.
 *)
-val to_save_rec: typedef_record -> stypedef_record
-val from_save_rec: stypedef_record -> typedef_record
 
 (*
 * Debugging support

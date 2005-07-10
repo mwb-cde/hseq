@@ -6,17 +6,11 @@
 
 open Format
 
-type kind = int
-let kind_ctr = ref 0
+(***
+* Objects for reporting information
+***)
 
-let mk_new_kind () = 
-  let tmp = !kind_ctr
-  in 
-  kind_ctr:=(!kind_ctr)+1;
-  tmp
-
-let errorkind = mk_new_kind()
-
+(** Message objects, for reporting non-fatal information *)
 class message s=
   object (self)
     method msg () = s
@@ -24,28 +18,35 @@ class message s=
       Format.printf "@[%s@]" (self#msg())
   end
 
+(** Error objects, for reporting fatal information *)
 class error s =
   object 
     inherit message s
-    val kind = errorkind
   end
 
-class errormsg =
-  object
-    inherit error "Error"
-  end
+(***
+* Exceptions for reporting errors
+***)
 
+(** A single error. *)
 exception Error of error
+(** A list of errors *)
 exception Errors of exn list
 
+(** Construct an error. *)
 let mk_error e = Error e
-let error s = Error (new error s)
 
+(** Add an error to a list of errors. *)
 let add_error e x=
   match x with
     Errors es -> Errors(e::es)
   | _ -> Errors[e; x]
 
+
+(** 
+   [print_error info depth err]: Print the first [depth] errors
+   from the exception.
+*)
 let print_error info depth errs=
   let ctr=ref (depth+1)
   in 
@@ -67,9 +68,15 @@ let print_error info depth errs=
   List.iter print_aux [errs];
   Format.printf "@]"
 
+(** 
+   [catch_error info depth f a]: Apply [f a], catching any error and
+   printing it with [print_error].
+*)
 let catch_error info depth f a = 
   try (f a)
   with x -> print_error info depth x
+
+let error s = Error (new error s)
 
 let warning s =
   Format.printf "@[<v>%s@,@]" s
