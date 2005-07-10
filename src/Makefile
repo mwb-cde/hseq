@@ -161,6 +161,54 @@ install: hseq
 
 THYFILE=base_thy.ml bool_thy.ml bool_prop.ml
 
+###
+# Documentation
+###
+
+DOCDIR ?= ../doc
+DOCOPTIONS ?= -html
+MAKEDOC = make DOCOPTIONS='${DOCOPTIONS}' DOCDIRS='${DOCDIR}'
+
+#DOC= ${QUOTEDOC} ${UTILDOC} ${TPCOREDOC} ${LOGICDOC} \
+#	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
+#	${USERLIBDOC}
+
+DOC= tpcoredoc
+
+doc: ${DOC}
+
+# the quotation system
+
+quotedoc:
+	cd quote; $(MAKEDOC) doc
+
+# headers and libraries
+
+utildoc: 
+	cd util; $(MAKEDOC) doc
+
+tpcoredoc: utildoc
+	cd tpcore; $(MAKEDOC) doc
+
+parserdoc: tpcoredoc
+	cd parser; $(MAKEDOC) doc
+
+logicdoc: tpcoredoc
+	cd logic; $(MAKEDOC) doc
+
+tpmaindoc: parserdoc logicdoc
+	cd tpmain; $(MAKEDOC) doc
+
+simplifierdoc: tpmaindoc
+	cd simplifier; $(MAKEDOC) doc
+
+numbersdoc: tpmaindoc
+	cd numbers; $(MAKEDOC) doc
+
+userlibdoc: tpmaindoc
+	cd userlib; $(MAKEDOC) doc
+
+
 depend: 
 	ocamldep  *.ml* > depend
 
@@ -185,6 +233,7 @@ libclean: clean
 	rm -f *.cma *.cmxa
 	cd include; $(BAREMAKE) libclean
 	cd libs; $(BAREMAKE) libclean
+	cd doc; $(BAREMAKE) libclean
 
 .PHONY: reallyclean
 reallyclean: clean libclean
@@ -201,7 +250,7 @@ reallyclean: clean libclean
 	cd userlib; $(BAREMAKE) reallyclean
 	cd include; $(BAREMAKE) reallyclean
 	cd libs; $(BAREMAKE) reallyclean
-
+	cd doc; $(BAREMAKE) reallyclean
 
 .PHONY: commit
 commit:
