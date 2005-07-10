@@ -385,45 +385,58 @@ val print_bracket:
    [print_bracket ppstate prec str]: Print bracket [str].
 *)
 
-(**
-   [print_infix], [print_prefix], [print_suffix]:
-   print [(f, args)] as an infix, prefix or suffix operator.
-*)   
+val print_var_as_identifier:
+  Printer.ppinfo ->  (Printer.fixity * int) 
+      -> term Printer.printer
+(** 
+   [print_var_as_identifier ppstate]: 
+   Print a [Var(id, _)] term as an identifier using 
+   [Printer.print_identifier ppstate].
+*)
 
 val print_infix: 
     (((Printer.fixity * int) -> Basic.ident Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
+(**
+   [print_infix]: print [(f, args)] as an infixoperator.
+*)   
 val print_prefix: 
     (((Printer.fixity * int) -> Basic.ident Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
+(**
+   [print_suffix]: Print [(f, args)] as a suffix operator.
+*)   
 val print_suffix: 
     (((Printer.fixity * int) -> Basic.ident Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
       -> (Basic.ident * (term)list) Printer.printer
+(**
+   [print_prefix]: Print [(f, args)] as a prefix operator.
+*)   
 
 val print_fn_app :
     Printer.ppinfo 
-  -> (((Printer.fixity * int) -> Basic.ident Printer.printer)
+  -> (((Printer.fixity * int) -> term Printer.printer)
 	* ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int)
-      -> (Basic.ident * (term)list) Printer.printer
+      -> (term * (term)list) Printer.printer
 (**
    [print_fn_app ppstate id_printer term_printer (f, args)]: Print
    [(f, args)] as a function application. 
 
    If there is a printer in [ppstate] for [f] then that is used
-   otherwise uses [id_printer] to print [f] and [term_printer] to
-   print each of the [args].
+   otherwise [f] as an identifier and [term_printer] to print each of
+   the [args].
 *)
 
 val simple_print_fn_app: 
     Printer.ppinfo -> (Printer.fixity * int) 
-      -> (Basic.ident * term list) Printer.printer
+      -> (term * term list) Printer.printer
 (**
    [simple_print_fn_app]: Print an application as 'f a1 a2
    .. an'.
@@ -454,7 +467,7 @@ val print_as_binder:
     (Printer.fixity * int) -> Basic.ident -> string
       -> Printer.ppinfo 
 	-> (Printer.fixity * int)
-	  -> (Basic.ident * Basic.term list) Printer.printer
+	  -> (term * term list) Printer.printer
 (**
    [print_as_binder (sym_assoc, sym_prec) f sym]: Construct a printer
    to print function applications of the form [f (%x: P)] as [sym x:

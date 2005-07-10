@@ -274,12 +274,12 @@ module PP:
       val get_term_printer:
 	  Basic.ident -> 
 	    (Printer.fixity * int 
-	     -> (Basic.ident * (Basic.term list)) Printer.printer)
+	     -> (Basic.term * (Basic.term list)) Printer.printer)
       val add_term_printer : 
 	  Basic.ident -> 
 	    (Printer.ppinfo 
 	     -> (Printer.fixity * int) 
-	      -> (Basic.ident * (Basic.term list)) Printer.printer) -> unit
+	      -> (Basic.term * (Basic.term list)) Printer.printer) -> unit
       val remove_term_printer : Basic.ident -> unit
 
 (**

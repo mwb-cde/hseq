@@ -965,6 +965,11 @@ let print_typed_name ppstate (id, ty)=
   in 
   print_typed_obj 2 printer ppstate (Printer.nonfix, 0) (id, ty)
 
+let print_var_as_identifier ppstate (f, p) v =
+  let (id, ty) = dest_var v 
+  in 
+  Printer.print_identifier (pplookup ppstate) id
+
 let print_prefix (opr, tpr) (assoc, prec) (f, args)=
   Format.printf "@[<2>";
   opr (assoc, prec) f;
@@ -1006,13 +1011,15 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
       Format.printf "@]");
   Format.printf "@]"
 
-let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f,args)=
-  let pprec = pplookup ppstate f
+let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args)=
+  let (id, ty) = dest_var f
+  in 
+  let pprec = pplookup ppstate id
   in 
   let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
   in 
   let user_printer=
-    try Some (Printer.get_printer (ppstate.Printer.terms) f)
+    try Some (Printer.get_printer (ppstate.Printer.terms) id)
     with Not_found -> None
   and std_printer = 
     if(Printer.is_infix nfixity)
@@ -1062,7 +1069,7 @@ let rec print_term ppstate (assoc, prec) x =
       in 
       (match user_printer with
 	None -> print_typed_identifier ppstate (n, ty)
-      | Some(p) -> p (assoc, prec) (n, []))
+      | Some(p) -> p (assoc, prec) (x, []))
   | Free(n, ty) -> 
       print_typed_name ppstate (n, ty)
   | Bound(n) -> 
@@ -1078,16 +1085,12 @@ let rec print_term ppstate (assoc, prec) x =
       in 
       if is_var f 
       then 
-	let n, ty=dest_var f
-	in 
-	Format.printf "@[";
-	print_fn_app ppstate
-	  ((fun _ -> 
-	    Printer.print_identifier 
-	      (pplookup ppstate)),
-	   (fun (a, p) t-> print_term ppstate (a, p) t))
-	  (assoc, prec) (n, args);
-	Format.printf "@]"
+	(Format.printf "@[";
+	 print_fn_app ppstate
+	   (print_var_as_identifier ppstate,
+	    (fun (a, p) t-> print_term ppstate (a, p) t))
+	   (assoc, prec) (f, args);
+	 Format.printf "@]")
       else 
 	(Format.printf "@[<hov 2>(";
 	 Printer.print_list
@@ -1120,11 +1123,13 @@ let print ppstate x =
   Format.close_box()
 
 let simple_print_fn_app ppstate (assoc, prec) (f, args)=
-  let pprec = pplookup ppstate f
+  let (id, _) = dest_var f
+  in 
+  let pprec = pplookup ppstate id
   in 
   let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
   in 
-  let iprint (a, pr) = Printer.print_identifier (pplookup ppstate) 
+  let iprint (a, pr) = print_var_as_identifier ppstate (a, pr)
   and tprint (a, pr) = print_term ppstate (a, pr)
   in 
   Format.printf "@[<2>";
@@ -1186,7 +1191,7 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
 	Format.printf "@]"
     | _ ->
 	Format.printf "@[";
-	Printer.print_identifier (pplookup ppstate) f;
+	print_var_as_identifier ppstate prec f;
 	Format.printf "@]")
   in 
   printer

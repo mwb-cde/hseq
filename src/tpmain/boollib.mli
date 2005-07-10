@@ -44,7 +44,7 @@ module PP :
     val ifthenelse_printer: 
 	Printer.ppinfo
       -> (Printer.fixity * int) 
-	-> (Basic.ident * Basic.term list) Printer.printer
+	-> (Basic.term * Basic.term list) Printer.printer
 
 (**
    [init_printers()] initialise boolean printers.
