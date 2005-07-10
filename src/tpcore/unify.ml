@@ -9,10 +9,12 @@ open Basic
 open Term
 open Result
 
-exception Occurs
+(** Unification of terms. *)
 
+exception Occurs
 exception Unify of string
 
+(** Occurs check *)
 let rec occurs s t =
   if Term.equals s t then raise Occurs
   else 
@@ -22,11 +24,15 @@ let rec occurs s t =
     | Qnt(_, b) -> occurs s b
     | _ -> ()
 
-
 let bind_occs s t env =
   try occurs t s; Term.bind s t env
   with Occurs -> raise (term_error "occurs:" [t; s])
 
+(***
+* General Unification 
+***)
+
+(** Unify terms w.r.t given type and term contexts *)
 
 let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   let eq_binder tyenv b1 b2 = 
@@ -100,6 +106,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   in 
   unify_aux typenv trmenv trm1 trm2
 
+(**  Unify terms in a given term context. *)
 let unify_env ?typenv scp env varp trm1 trm2 =
   let tye = 
     match typenv with 
@@ -109,6 +116,8 @@ let unify_env ?typenv scp env varp trm1 trm2 =
   let rettypenv, retenv= 
     unify_fullenv scp tye env varp trm1 trm2
   in retenv
+
+(** Unify terms and in scope. *)
 
 let unify ?typenv ?initial scp varp trm1 trm2 = 
   let tye = 
@@ -125,57 +134,10 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
   in 
   retenv
 
-(*   
-   let matches_full scp varp tyenv env term1 term2 =
-   let eqqnt_env scp s t tenv = 
-   let _, qnt1, _, qty1, _=dest_qnt s
-   and _, qnt2, _, qty2, _=dest_qnt t
-   in 
-   if qnt1=qnt2 then 
-   (try 
-   (Gtypes.unify_env scp qty1 qty2 tenv; true)
-   with _ -> false)
-   else false
-   in 
-   let rec find_match trm1 trm2=
-   let s= Term.chase varp trm1 env
-   and t=term2
-   in 
-   if (varp s) 
-   then (bind_occs s t env; ())
-   else 
-   (match (s, t) with
-   (Bound(q1), Bound(q2)) ->
-   (if  (Term.equals s t)                     (* q1==q2  *)
-   then ()
-   else 
-   if Term.binder_equiv scp s t then ()
-   else 
-   raiseError ("Can't match bound variable "^(string_term s)
-   ^" with bound variable "^(string_term t)))
-   | (App(f1, a1), App(f2, a2)) ->
-   find_match f1 f2;
-   find_match a1 a2
-   | (Qnt(q1, b1), Qnt(q2, b2)) ->
-   if (eqqnt_env scp s t tyenv)
-   then find_match b1 b2
-   else 
-   raiseError ("Can't match quantifier "^(string_term s)
-   ^" with quantifier "^(string_term t))
-   | (Typed(trm1, ty1), Typed(trm2, ty2)) ->
-   find_match trm1 trm2
-   | (Var(n1, ty1), Var(n2, ty2)) ->
-   if n1=n2 
-   then (Gtypes.unify scp ty1 ty2; ())
-   else 
-   raiseError ("Can't match name "^(string_term s)
-   ^" with name "^(string_term t))
-   | (_, _) -> 
-   if Term.equals s t then  ()
-   else raiseError ("Can't match term "^(string_term s)
-   ^" with term "^(string_term t)))
-   in find_match term1 term2
- *)
+
+(***
+* Unification for rewriting
+***)
 
 (*
    unify_fullenv_rewrite:
@@ -188,90 +150,6 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
    usage: trm1 is normally the lhs of a rewrite rule which is to be
    applied to trm2. 
  *)
-
-(*
-   let unify_fullenv_rewrite scp tyenv env varp trm1 trm2 =
-   let bindings = ref([])
-   and type_bindings = ref []
-   in 
-   let add_binding a = bindings:=(a::!bindings)
-   in 
-   let eqqnt_env scp s t= 
-   let _, qnt1, _, qty1, _=dest_qnt s
-   and _, qnt2, _, qty2, _=dest_qnt t
-   in 
-   if qnt1=qnt2 then 
-   (try 
-   (Gtypes.unify_for_rewrite scp qty1 qty2 tyenv type_bindings;
-   true) 
-   with _ -> false)
-   else false
-   in 
-   let eq_binder b1 b2 = 
-   let qnt1, _, qty1=dest_binding b1
-   and qnt2, _, qty2=dest_binding b2
-   in 
-   if (qnt1=qnt2)
-   then 
-   (try 
-   (Gtypes.unify_for_rewrite scp qty1 qty2 tyenv type_bindings;
-   true)
-   with _ -> false)
-   else false
-   in 
-   let rec unify_aux t1 t2 = 
-   let s= Term.chase_var varp t1 env
-   and t= Term.chase_var varp t2 env
-   in 
-   if (varp s) 
-   then 
-   (if (equals s t) then () 
-   else (bind_occs s t env; add_binding s; ()))
-   else 
-   if (varp t) 
-   then if(equals s t) then () 
-   else (bind_occs t s env; add_binding t; ())
-   else
-   (match (s, t) with
-   (App(f1, a1), App(f2, a2)) ->
-   unify_aux f1 f2;
-   unify_aux a1 a2;()
-   |	(Qnt(q1, b1), Qnt(q2, b2)) ->
-   if (eqqnt_env scp s t)
-   then (unify_aux b1 b2;())
-   else raise (term_error "unify_full: qnts" [t1;t2])
-   |	(Typed(tt1, ty1), Typed(tt2, ty2)) ->
-   (try
-   (Gtypes.unify_for_rewrite scp ty1 ty2 tyenv type_bindings;
-   unify_aux tt1 tt2; ())
-   with x -> 
-   raise (catchError (mk_term_error "unify_full: typed" [t1;t2]) x))
-   |	(Typed(tt1, _), x) -> unify_aux tt1 x; ()
-   |	(x, Typed(tt2, _)) -> unify_aux x tt2; ()
-   | (Var(n1, ty1), Var(n2, ty2)) ->
-   if n1=n2 
-   then 
-   Gtypes.unify_for_rewrite scp ty1 ty2 tyenv type_bindings
-   else raise (term_error "unify_full: var"[t1;t2])
-   |	(Bound(q1), Bound(q2)) ->
-   if eq_binder q1 q2
-   then ()
-   else raise (term_error"unify_full: bound" [t1;t2])
-   |	(Const(c1), Const(c2)) ->
-   if c1=c2 then ()
-   else raise (term_error "unify_full: const" [t1;t2])
-   | (_, _) -> 
-   if Term.equals s t 
-   then () else raise (term_error "unify_full: default" [t1;t2]))
-   in 
-   try 
-   (unify_aux trm1 trm2; env)
-   with x -> 
-   ignore(remove_bindings (!bindings) env); 
-   ignore(Gtypes.remove_bindings (!type_bindings) tyenv);
-   raise x
- *)
-
 let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
   let eq_binder tyenv b1 b2 = 
     let qnt1, _, qty1=dest_binding b1
@@ -350,6 +228,7 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
   in 
   unify_aux typenv trmenv trm1 trm2
 
+(** Top-level unification for rewriting. *)
 let unify_env_rewrite scp env varp trm1 trm2 =
   let _, nenv= 
     unify_fullenv_rewrite scp (Gtypes.empty_subst()) env varp trm1 trm2
