@@ -273,11 +273,13 @@ module PP:
  *)
       val get_term_printer:
 	  Basic.ident -> 
-	    (int -> (Basic.ident * (Basic.term list)) Printer.printer)
+	    (Printer.fixity * int 
+	     -> (Basic.ident * (Basic.term list)) Printer.printer)
       val add_term_printer : 
 	  Basic.ident -> 
-	    (Printer.ppinfo -> 
-	      int -> (Basic.ident * (Basic.term list)) Printer.printer) -> unit
+	    (Printer.ppinfo 
+	     -> (Printer.fixity * int) 
+	      -> (Basic.ident * (Basic.term list)) Printer.printer) -> unit
       val remove_term_printer : Basic.ident -> unit
 
 (**
@@ -286,12 +288,14 @@ module PP:
    get/add/remove a type printer
  *)
       val get_type_printer:
-	  Basic.ident -> 
-	    (int -> (Basic.ident * (Basic.gtype list)) Printer.printer)
+	  Basic.ident 
+	-> (Printer.fixity * int 
+	    -> (Basic.ident * (Basic.gtype list)) Printer.printer)
       val add_type_printer : 
 	  Basic.ident -> 
-	    (Printer.ppinfo -> 
-	      int -> (Basic.ident * (Basic.gtype list)) Printer.printer) -> unit
+	    (Printer.ppinfo 
+	     -> (Printer.fixity * int) 
+	       -> (Basic.ident * (Basic.gtype list)) Printer.printer) -> unit
       val remove_type_printer : Basic.ident -> unit
 
     end

@@ -355,7 +355,7 @@ and print_defined ppstate (assoc, prec) (f, args) =
   try 
     let printer = Printer.get_printer (ppstate.Printer.types) f
     in 
-    printer prec (f, args)
+    printer (assoc, prec) (f, args)
   with Not_found -> 
     if(Printer.is_infix nfixity)
     then 

@@ -46,26 +46,3 @@ module TagTreeData=
 module TagTree = Treekit.BTree(TagTreeData)
 type ('a)tree = ('a)TagTree.t
 
-(* Sets *)
-
-let tag_compare = compare
-
-module OrdTag =
-struct
-  type t = tag_type
-
-  let compare x y = tag_compare x y
-end
-
-module Set = Set.Make(OrdTag)
-
-(* Tables *)
-
-module HashedTag= 
-struct
-  type t = tag_type
-  let equal x y = (x == y)
-  let hash = Hashtbl.hash
-end
-
-module Table = Hashtbl.Make(HashedTag)

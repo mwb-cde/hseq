@@ -42,7 +42,9 @@ module PP :
 
     val ifthenelse_parser: infotyp -> Basic.term phrase
     val ifthenelse_printer: 
-	Printer.ppinfo-> int -> Basic.ident * Basic.term list -> unit
+	Printer.ppinfo
+      -> (Printer.fixity * int) 
+	-> (Basic.ident * Basic.term list) Printer.printer
 
 (**
    [init_printers()] initialise boolean printers.

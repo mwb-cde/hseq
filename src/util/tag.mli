@@ -4,26 +4,38 @@
  Copyright M Wahab 2005
 ----*)
 
-(* 
-   Tags: 
-   unique identifiers with which to identify
-   sequents in a goal and formulas in a sequent
- *)
-type tag_type
+(**
+   {5 Tags}
 
+   Unique identifiers with which to identify sequents in a goal and
+   formulas in a sequent.
+*)
+
+type tag_type
 type t=tag_type
 
+(**
+   [named s]: Make a tag with name [s].
+  
+   [name x]: Get the name of tag [x].
+
+   [null]: A constant, unnamed tag.
+
+   [create]: Make an unnamed tag.
+
+   [equal]: Equality of tags.
+*)
 val named: string->t
 val name: t->string
 val null:t
 val create: unit->t
-
 val equal: t->t->bool
 
 (**
    Trees 
 
-   (Depends on [Obj.magic]).
+   (Depend on being able to use [Obj.magic] to cast a reference to an
+   integer.)
 *)
 
 module TagTreeData: Treekit.TreeData
@@ -50,25 +62,3 @@ module TagTree:
 
 type ('a)tree = ('a)TagTree.t
 
-
-(* sets *)
-
-(*
-module OrdTag: 
-  sig
-    type t=tag_type
-    val compare : t -> t -> int
-  end 
-module Set : Set.S with type elt = t
-*)
-
-(* Tables *)
-(*
-module HashedTag: 
-  sig
-    type t=tag_type
-    val equal : t -> t -> bool
-    val hash: t -> int
-  end 
-module Table : Hashtbl.S with type key = t
-*)

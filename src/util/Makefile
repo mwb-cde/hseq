@@ -1,8 +1,10 @@
 # Header, code and optimised code files
 
-HEADERS = lib.cmi tag.cmi unsafe.cmi treekit.cmi parserkit.cmi
-CODE = lib.cmo tag.cmo unsafe.cmo treekit.cmo parserkit.cmo
-OPTCODE = lib.cmx tag.cmx unsafe.cmx treekit.cmx parserkit.cmx
+HEADERS = lib.cmi unsafe.cmi treekit.cmi tag.cmi parserkit.cmi
+CODE = lib.cmo unsafe.cmo treekit.cmo tag.cmo parserkit.cmo
+OPTCODE = lib.cmx unsafe.cmx treekit.cmx tag.cmx parserkit.cmx
+
+DOCFILES = lib.mli unsafe.mli treekit.mli tag.mli parserkit.mli
 
 LIBFILE=util.cma
 OPTLIB=util.cmxa
@@ -14,6 +16,7 @@ LIBDIR=
 
 HEADERSDIR=../include
 INSTALLDIR=../libs
+DOCDIR ?= ../doc
 
 OCLIBS=
 OPTLIBS=
@@ -57,6 +60,8 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

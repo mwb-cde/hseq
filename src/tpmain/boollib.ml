@@ -70,7 +70,7 @@ module PP =
 *)
     let negation_pprec = Printer.mk_record 200 Printer.prefix None
 
-    let negation_printer ppstate prec (f, args)=
+    let negation_printer ppstate (fixity, prec) (f, args)=
       let cprec= negation_pprec.Printer.prec
       and fixity = negation_pprec.Printer.fixity
       in 
@@ -133,7 +133,7 @@ module PP =
 
 (* Printer for If-Then-Else *)
 
-    let ifthenelse_printer ppstate prec (f, args)=
+    let ifthenelse_printer ppstate (fixity, prec) (f, args)=
       let cfixity = Printer.default_term_fixity
       in 
       let cprec=(ifthenelse_pprec.Printer.prec)
@@ -195,7 +195,7 @@ module PP =
       let printer = epsilon_printer()
       in 
       Global.PP.add_term_printer choice_ident 
-	(fun ppstate i -> printer ppstate (Printer.nonfix, i))
+	(fun ppstate ppenv -> printer ppstate ppenv)
 
     let init_epsilon() = 
       init_epsilon_parser();

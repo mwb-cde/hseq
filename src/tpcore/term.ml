@@ -1006,7 +1006,6 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
       Format.printf "@]");
   Format.printf "@]"
 
-
 let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f,args)=
   let pprec = pplookup ppstate f
   in 
@@ -1030,7 +1029,7 @@ let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f,args)=
       print_bracket (assoc, prec) (nfixity, nprec) "(";
       std_printer (nfixity, nprec) (f, args);
       print_bracket (assoc, prec) (nfixity, nprec) ")"
-  | Some p -> p prec (f, args));
+  | Some p -> p (assoc, prec) (f, args));
   Format.printf "@]"
 
 let print_typed_term tpr ppstate (assoc, prec) (trm, ty)=
@@ -1063,7 +1062,7 @@ let rec print_term ppstate (assoc, prec) x =
       in 
       (match user_printer with
 	None -> print_typed_identifier ppstate (n, ty)
-      | Some(p) -> p prec (n, []))
+      | Some(p) -> p (assoc, prec) (n, []))
   | Free(n, ty) -> 
       print_typed_name ppstate (n, ty)
   | Bound(n) -> 
