@@ -8,29 +8,48 @@ open Basic
 open Gtypes
 open Term
 
+(*** 
+* Theories
+***)
+
 let base_thy = "base"
 
+(***
+* Types
+***)
 
-(* from typing.ml *)
+(*** Identifiers for base types ***)
 
-(* Types *)
+let bool_ty_id = Basic.mk_long base_thy "bool"
+let fun_ty_id = Basic.mk_long base_thy "FUN"
 
-(* Type ind *)
+(** The type ind *)
+
 let mk_ind_ty() = Gtypes.mk_base Ind
 let is_ind_ty t = 
   match t with 
     Base Ind -> true
   | _ -> false
 
-(* Type of functions *)
+(*** Type bool ***)
 
-let fun_ty_id = Basic.mk_long base_thy "FUN"
+let mk_bool_ty = Gtypes.mk_base (Basic.Bool)
+let is_bool_ty t = (t = mk_bool_ty)
+
+(*** Type of functions ***)
 
 let mk_fun_ty l r = Gtypes.mk_constr (Defined fun_ty_id) [l; r]
+
 let is_fun_ty t = 
   match t with
     Constr (Defined x, _) -> x=fun_ty_id
   | _ -> false
+
+let rec mk_fun_ty_from_list l r = 
+  match l with
+    [] -> raise (Failure "No argument types")
+  | [t] -> mk_fun_ty t r
+  | t::ts -> mk_fun_ty t (mk_fun_ty_from_list ts r)
 
 let dest_fun_ty t = 
   if(is_fun_ty t)
@@ -40,49 +59,11 @@ let dest_fun_ty t =
     | _ -> raise (Failure "Not function type")
   else raise (Failure "Not function type")
       
+(***
+* Terms 
+***)
 
-let rec mk_fun_ty_from_list l r = 
-  match l with
-    [] -> raise (Failure "No argument types")
-  | [t] -> mk_fun_ty t r
-  | t::ts -> mk_fun_ty t (mk_fun_ty_from_list ts r)
-
-let arg_type t = 
-  let (l, _) =  dest_fun_ty t
-  in l
-
-let ret_type t = 
-  let (_, r) =  dest_fun_ty t
-  in r
-
-let rec chase_ret_type t=
-  if(is_fun_ty t)
-  then 
-    chase_ret_type (ret_type t)
-  else t
-
-
-let bool_ty_id = Basic.mk_long base_thy "bool"
-let mk_bool_ty = Gtypes.mk_base (Basic.Bool)
-let is_bool_ty t = (t = mk_bool_ty)
-
-
-let typeof_cnst c =
-  match c with
-    Cnum _ -> Gtypes.mk_num
-  | Cbool _ -> mk_bool_ty
-
-let bin_ty a1 a2 r = (mk_fun_ty_from_list [a1; a2] r)
-
-(*
-let typeof_conn c =
-  match c with
-    Not -> mk_fun_ty_from_list [Gtypes.mk_bool] Gtypes.mk_bool
-  | x -> mk_fun_ty_from_list 
-	[Gtypes.mk_bool; Gtypes.mk_bool] Gtypes.mk_bool
-*)
-
-(* Terms *)
+(*** Identifiers for logic functions and constants *)
 
 let trueid = Basic.mk_long base_thy "true"
 let falseid = Basic.mk_long base_thy "false"
@@ -93,30 +74,9 @@ let impliesid = Basic.mk_long base_thy "implies"
 let iffid = Basic.mk_long base_thy "iff"
 let equalsid = Basic.mk_long base_thy "equals"
 let equalssym = "="
-
-(*
-let someid = Basic.mk_long base_thy "any"
-*)
 let anyid = Basic.mk_long base_thy "any"
 
-let mk_not t = mk_fun notid [t]
-let mk_and l r = mk_fun andid [l; r]
-let mk_or l r = mk_fun orid [l; r]
-let mk_implies l r = mk_fun impliesid [l; r]
-let mk_iff l r = mk_fun iffid [l; r]
-let mk_equality l r = mk_fun equalsid [l; r]
-
-let is_neg t = try(fst(dest_fun t) = notid) with _ -> false
-let is_conj t = try(fst(dest_fun t) = andid) with _ -> false
-let is_disj t = try( fst(dest_fun t) = orid) with _ -> false
-let is_implies t = try (fst(dest_fun t) = impliesid) with _ -> false
-let is_equality t = try (fst(dest_fun t) = equalsid) with _ -> false
-
-(*
-   let is_false t = 
-   try(fst(dest_fun t) = falseid) with _ -> false
-*)
-
+(*** Recognisers ***)
 
 let is_true t = 
   match t with 
@@ -128,11 +88,28 @@ let is_false t =
     (Const (Cbool false)) -> true 
   | _ -> false
 
+let is_neg t = try(fst(dest_fun t) = notid) with _ -> false
+let is_conj t = try(fst(dest_fun t) = andid) with _ -> false
+let is_disj t = try( fst(dest_fun t) = orid) with _ -> false
+let is_implies t = try (fst(dest_fun t) = impliesid) with _ -> false
+let is_equality t = try (fst(dest_fun t) = equalsid) with _ -> false
+
+(*** Constructors ***)
+
 let mk_true = mk_const(Cbool true)
 let mk_false = mk_const(Cbool false)
-
 let mk_bool b = 
   if b then mk_true else mk_false
+
+let mk_not t = mk_fun notid [t]
+let mk_and l r = mk_fun andid [l; r]
+let mk_or l r = mk_fun orid [l; r]
+let mk_implies l r = mk_fun impliesid [l; r]
+let mk_iff l r = mk_fun iffid [l; r]
+let mk_equality l r = mk_fun equalsid [l; r]
+let mk_any=Term.mk_var anyid
+
+(*** Destructors ***)
 
 let dest_bool b = 
   if (b = mk_true) then true
@@ -148,15 +125,7 @@ let dest_equality t =
     |	_ -> raise (term_error "Badly formed equality" [t]))
   else raise (Result.error "Not an equality")
 
-let mk_all tyenv n b= mk_qnt_name tyenv Basic.All n b
-let mk_ex tyenv n b= mk_qnt_name tyenv Basic.Ex n b
-let mk_lam tyenv n b= mk_qnt_name tyenv Basic.Lambda n b
-
-let mk_all_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.All ty n b
-let mk_ex_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Ex ty n b
-let mk_lam_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Lambda ty n b
-
-let mk_any=Term.mk_var anyid
+(*** Quantified terms *)
 
 let is_all t = 
   ((is_qnt t) &
@@ -169,6 +138,21 @@ let is_exists t =
 let is_lambda t = 
   ((is_qnt t) &
    (match (get_binder_kind t) with Basic.Lambda -> true | _ -> false))
+
+let mk_all tyenv n b= mk_qnt_name tyenv Basic.All n b
+let mk_all_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.All ty n b
+
+let mk_ex tyenv n b= mk_qnt_name tyenv Basic.Ex n b
+let mk_ex_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Ex ty n b
+
+let mk_lam tyenv n b= mk_qnt_name tyenv Basic.Lambda n b
+let mk_lam_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Lambda ty n b
+
+(***
+* Lambda Conversions
+***)
+
+(*** Alpha conversion ***)
 
 let alpha_convp_full scp tenv t1 t2 =
   let rec alpha_aux t1 t2 tyenv trmenv =
@@ -218,26 +202,17 @@ let alpha_convp scp t1 t2=
   in 
   alpha_convp_full scp tyenv t1 t2
 
-(*
-let alpha_convp scp t1 t2 =
-  let env=empty_subst()
-  in 
-  try ignore(alpha_convp_aux scp env t1 t2); true
-  with _ -> false
-*)
-
 let alpha_equals scp t1 t2 =
   try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
-(* beta reduction *)
+(*** Beta conversion ***)
 
 let beta_convp  =
   function
       App(f, a) -> is_lambda f
     | _ -> false
 
-(* beta reduction: assuming well-typed expression *)
 let beta_conv t =
   match t with
     App(f, a) -> 
@@ -265,16 +240,23 @@ let beta_reduce t =
   in let nt = beta_reduce_aux flag t
   in if !flag then nt else raise (Result.error "No change")
 
-(* eta-abstraction *)
-(* abstract x, of type ty, from term t *)
+(*** Eta-abstraction ***)
+
 let eta_conv x ty t=
   let name="a" 
   in let q= mk_binding Basic.Lambda name ty 
   in App((Qnt(q, subst_quick x (Bound(q)) t)), x)
     
+(***
+* Utility functions
+***)
 
+let typeof_cnst c =
+  match c with
+    Cnum _ -> Gtypes.mk_num
+  | Cbool _ -> mk_bool_ty
 
-(* closed terms *)
+(*** closed terms ***)
 
 exception TermCheck of term
 
@@ -301,14 +283,7 @@ let is_closed_scope env t =
 let is_closed t = 
   try is_closed_aux (empty_subst()) t; true
   with TermCheck _ -> false
-
       
-(*
-   let close_term t = 
-   let qnts = Term.get_free_binders t
-   in 
- *)
-
 let close_term t = 
   let memo = empty_table()
   and qnts = ref []
@@ -336,6 +311,7 @@ let close_term t =
   List.fold_left 
     (fun b q-> Qnt(q, b)) t !qnts
 
+(*** Generalising terms ***)
 
 (**
    [gen_term qnts trm]: generalise term [trm]. Replace bound variables
