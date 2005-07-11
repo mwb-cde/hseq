@@ -85,7 +85,7 @@ installopt: opt
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
 doc: ${DOCFILES}
-	ocamldoc ${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
+	ocamldoc ${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

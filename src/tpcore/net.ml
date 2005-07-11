@@ -18,6 +18,10 @@
    considered by (more expensive) exact matching.
  *) 
 
+(***
+* Labels
+***)
+
 type label = 
     Var 
   | App
@@ -27,25 +31,12 @@ type label =
   | Cname of Basic.ident
   | Cfree of string
 
-(* 'a net : Node data, rest of net, Var tagged net (if any) *)
-
-type 'a net =  
-    Node of ('a list                  (* data held at this node *)
-	       * (label * 'a net) list  (* nets tagged by labels *)
-	       * ('a net) option )           (* net tagged by Var *)
-
-let empty() = Node([], [], None)
-
-let is_empty n = 
-  match n with
-    Node ([], [], None) -> true
-  | _ -> false
+(*** Operations ***)
 
 (* 
    label varp t:
-
    Return the label for term t. Not used, term_to_label is better.
- *)
+*)
 let rec label varp trm = 
   if(varp trm) then Var
   else
@@ -85,7 +76,6 @@ let rec label varp trm =
    -->
    [Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]
  *)
-
 let rec term_to_label varp trm rst=
   if (varp trm)
   then (Var, rst)
@@ -107,10 +97,32 @@ let rec term_to_label varp trm rst=
 	(App, l::r::rst)
 
 
-(* lookup varp n t: 
-   lookup term t in net n,
+(***
+* Nets
+***)
+
+(* 'a net : Node data, rest of net, Var tagged net (if any) *)
+type 'a net =  
+    Node of ('a list                  (* data held at this node *)
+	       * (label * 'a net) list  
+	       * ('a net) option )           (* net tagged by Var *)
+
+
+(*** Operations ***)
+
+let empty() = Node([], [], None)
+
+let is_empty n = 
+  match n with
+    Node ([], [], None) -> true
+  | _ -> false
+
+(*** Look-up ***)
+
+(**
+   [lookup varp n t]: lookup term [t] in net [n],
    returning list of possible replacements
- *)
+*)
 
 let rec get_from_list lbl netl=
   match netl with
@@ -179,6 +191,8 @@ let rec lookup_list varp net trms=
  *)
 let lookup net trm = lookup_list (fun x -> false) net [trm]
 
+(*** Updating a net ***)
+
 (* update f net trm:
 
    Apply function f to the subnet of net identified by trm to update
@@ -244,14 +258,12 @@ let update f varp net trm =
   in 
   update_aux [trm] net
 
-(* add varp net t r:
 
-   Add term r, indexed by term t with variables identified by varp
-   to net.
-
-   Replaces but doesn't remove previous bindings of t
- *)
-
+(* 
+   add varp net t r: Add term r, indexed by term t with variables
+   identified by varp to net.  Replaces but doesn't remove previous
+   bindings of t
+*)
 let add_to_list t r ls = r::ls
 let add varp net t r=
   let add_aux net = 
@@ -261,14 +273,11 @@ let add varp net t r=
   in 
   update add_aux varp net t 
 
-(* insert order varp net t r:
-
-   Add data r, indexed by term t with variables identified by varp
-   to net. Store in order given by predicate order.
-
-   Replaces but doesn't remove previous bindings of t
- *)
-
+(*
+   insert order varp net t r: Add data r, indexed b term t with
+   variables identified by varp to net. Store in order given by
+   predicate order. Replaces but doesn't remove previous bindings of t
+*)
 let insert_in_list order r ls = 
   let rec insert_aux ts =
     match ts with
@@ -287,15 +296,11 @@ let insert order varp net t r=
   in 
   update order_aux varp net t 
 
-(* delete varp net t test:
-
-   Remove data indexed by t in net and satisfying test. 
-   Fails silently if t is not found.
-
-   Needs the same varp as used to add the term to the net.
-
- *)
-
+(*
+   delete varp net t test: Remove data indexed by t in net and
+   satisfying test. Fails silently if t is not found. Needs the same
+   varp as used to add the term to the net.
+*)
 let rec delete_from_list trm test ls =
   match ls with
     [] -> []
@@ -312,10 +317,7 @@ let delete varp net trm test =
   in 
   update delete_aux varp net trm
 
-(* 
-   [iter f net]
-   apply [f] to each data item stored in a net.
-*)
+(* [iter f net]: apply [f] to each data item stored in a net. *)
 let rec iter f (Node(ds, lnets, vnet)) =
   List.iter f ds;
   List.iter (fun (_, ln) -> iter f ln) lnets;
@@ -324,8 +326,5 @@ let rec iter f (Node(ds, lnets, vnet)) =
   | Some vn -> iter f vn
    
 
-(*
-   [print p net]
-   Print the contents of [net] using printer [p].
-*)
+(* [print p net] Print the contents of [net] using printer [p]. *)
 let print p net = iter p net
