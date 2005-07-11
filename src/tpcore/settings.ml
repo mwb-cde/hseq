@@ -4,7 +4,9 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Directory and files  *)
+(***
+* File and directory settings
+***)
 
 let base_dir_var = "HSEQ"
 
@@ -21,15 +23,14 @@ let include_dir () = make_directory "include"
 let libs_dir () = make_directory "libs"
 let thys_dir () = make_directory "thys"
 
-
-
-(* suffixes *)
+(*** File suffixes ***)
 
 let thy_suffix="tho"
 let script_suffix="Script.ml"
 
-
-(* Sequent display *)
+(***
+* Sequent display 
+***)
 
 (** 
    [set_nice_sequent x]

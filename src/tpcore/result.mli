@@ -5,7 +5,7 @@
 ----*)
 
 (**
-   {5 Error and message construction and reporting} 
+   {5 Error and message reporting} 
 
    Errors and messages are objects, allowing new errors to be derived.
    An error is raised as an exception with  a list of one or more objects.

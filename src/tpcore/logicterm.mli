@@ -4,7 +4,8 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Representation and manipulation of terms of the Logic *)
+(** Constructing and manipulating logic terms. *)
+
 (* builds on term.ml *)
 
 open Basic

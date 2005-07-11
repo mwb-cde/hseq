@@ -5,7 +5,7 @@
 ----*)
 
 (**
-   Term Nets: structures to store data indexed by a term.  
+   Term Nets, structures to store data indexed by a term.  
 
    Look-up is by inexact matching of a term against the keys to get a
    list of possible matches. More exact mactching (such as
@@ -54,11 +54,11 @@ type label =
 
    Examples:
    
-   [?y: ! x: (x or z) and y]  (with variable z)
+   [?y: ! x: (x | z) & y]  (with variable z)
    -->
    [[Qnt(?); Qnt(!); App; App; Bound(!); Var; Bound(?)]]
 
-   [?y: ! x: (x or z) and y]  (with no variables,  z is free)
+   [?y: ! x: (x | z) & y]  (with no variables,  z is free)
    -->
    [[Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]]
  *)

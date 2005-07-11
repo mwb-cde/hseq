@@ -4,81 +4,90 @@
  Copyright M Wahab 2005
 ----*)
 
-(* 
-   Settings:
-   Put installation dependent settings in here 
+(** Installation specific and modifiable settings. *)
 
-*)
+
+(** {5 File and directory settings} *)
 
 (**
-   [base_dir_var]: the environment variable to test for the
-   systems base_dir. 
-   Initially "HSEQ"
+ Directories are set relative to the base directory.
 *)
-val base_dir_var: string
 
-(* File and directory settings *)
-(* 
-   base_dir:
-   base directory of installation.
-   all other directories are set relative to this
+val base_dir_var: string
+(**
+   The environment variable to test at start-up for the systems base
+   directory. Initially "HSEQ".
 *)
 
 val get_base_dir: unit -> string
+(** Get the base directory. *)
+
 val set_base_dir: string -> unit
+(** Set the base directory. *)
 
-
-(* 
-   [make_filename f]: make file name f relative to the base directory
-   [make_directory f]: make directory path f relative to the base
-   directory
-*)
 val make_filename: string -> string
+(** [make_filename f]: make file name f relative to the base directory. *)
+
 val make_directory: string -> string
+(** [make_directory f]: make directory path f relative to the base directory.*)
 
-(* 
-   [init_file]: name of file to execute to initialise the system
-   the file name used will be contructed as base_dir^init_file
-*)
+
 val init_file: string
-
-(* 
-   [include_dir ()]: Directory to search for headers.
-   [lib_dir ()]: Directory to search for library files.
+(**
+   Name of the file to execute to initialise the system
+   the file name used will be contructed as [base_dir^init_file].
 *)
+
 val include_dir : unit -> string
+(** Directory to search for headers. *)
+
 val libs_dir : unit -> string
+(**  Directory to search for library files. *)
+
 val thys_dir : unit -> string
-
-(* 
-   File suffixes:
-   suffixes to add to a name to form a file name
-*)
-
-(* thy_suffix: suffix of stored theories *)
-val thy_suffix: string
-
-(* 
-   script_suffix = "Script.ml": 
-   string to append to theory name to get 
-   theory building script.
-*)
-val script_suffix: string
-
+(**  Directory to search for theory files. *)
 
 (** 
-   [set_nice_sequent x]
-   if [x] is [true], print sequents with assumption indices prefixed by 
-   [!nice_sequent_prefix].
+   {7 File suffixes} 
+
+   Suffixes to add to a name to form a file name
+*)
+
+val thy_suffix: string
+(** [thy_suffix="tho"]: Suffix of stored theories. *)
+
+val script_suffix: string
+(**
+   [script_suffix = "Script.ml"]: 
+   String to append to theory name to get 
+   theory building script.
+*)
+
+(** {5 Settings} *)
+
+val nice_sequent_prefix : string ref
+(** 
+   If [get_nice_sequent()] is [true], print sequents with the
+   assumption indices prefixed by [nice_sequent_prefix].
+*)
+
+val set_nice_sequent: bool -> unit
+(** 
+   [set_nice_sequent x]: if [x] is [true], print sequents with
+   assumption indices prefixed by [!nice_sequent_prefix].  
    if [x] is false, print sequent assumption indices as negative numbers.
 *)
-val nice_sequent_prefix : string ref
-val set_nice_sequent: bool -> unit
-val get_nice_sequent: unit -> bool
 
+val get_nice_sequent: unit -> bool
+(** Test for whether or not to print a nice sequent. *)
+
+val long_identifier: bool ref
 (**
    [long_identifier]: whether to print a long or short identifier
 *)
-val long_identifier: bool ref
-val print_type_level: int ref
 
+val print_type_level: int ref
+(**
+   How many types to print when printing terms. Higher values of
+   [print_type_level] correspond to more types. Initially [1].
+*)

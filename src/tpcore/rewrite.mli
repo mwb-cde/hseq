@@ -4,7 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
-(* term rewriting *)
+(** Term rewriting *)
 
 (** [type rule] 
 
