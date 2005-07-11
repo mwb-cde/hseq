@@ -40,8 +40,6 @@ let script_suffix="Script.ml"
 *)
 let nice_sequent_prefix=ref "~"
 let nice_sequent = ref true
-let set_nice_sequent x = nice_sequent:=x
-let get_nice_sequent () = !nice_sequent
 
 (* Gtypes display *)
 
