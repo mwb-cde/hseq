@@ -166,8 +166,9 @@ THYFILE=base_thy.ml bool_thy.ml bool_prop.ml
 ###
 
 DOCDIR ?= ../doc
-DOCOPTIONS ?= -html
-MAKEDOC = make DOCOPTIONS='${DOCOPTIONS}' DOCDIRS='${DOCDIR}'
+DOCTYPE ?= -html
+DOCOPTIONS ?= 
+MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}' DOCDIRS='${DOCDIR}'
 
 #DOC= ${QUOTEDOC} ${UTILDOC} ${TPCOREDOC} ${LOGICDOC} \
 #	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
@@ -233,7 +234,6 @@ libclean: clean
 	rm -f *.cma *.cmxa
 	cd include; $(BAREMAKE) libclean
 	cd libs; $(BAREMAKE) libclean
-	cd doc; $(BAREMAKE) libclean
 
 .PHONY: reallyclean
 reallyclean: clean libclean
@@ -250,6 +250,9 @@ reallyclean: clean libclean
 	cd userlib; $(BAREMAKE) reallyclean
 	cd include; $(BAREMAKE) reallyclean
 	cd libs; $(BAREMAKE) reallyclean
+
+.PHONY: docclean
+docclean: 
 	cd doc; $(BAREMAKE) reallyclean
 
 .PHONY: commit
