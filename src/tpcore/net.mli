@@ -44,11 +44,6 @@ type label =
 (** {7 Label operations} *)
 
 (**
-   Return the label for a term. Not used, [term_to_label] is better.
-*)
-val label: (Basic.term -> bool) -> Basic.term -> label
-
-(**
    [term_to_label varp t]: Return the label for term [t] together with
    the remainder of the the term as a list of terms.
 

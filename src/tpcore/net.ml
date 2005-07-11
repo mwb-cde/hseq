@@ -33,26 +33,6 @@ type label =
 
 (*** Operations ***)
 
-(* 
-   label varp t:
-   Return the label for term t. Not used, term_to_label is better.
-*)
-let rec label varp trm = 
-  if(varp trm) then Var
-  else
-    match trm with
-      Basic.Id(id, _) -> Cname(id)
-    | Basic.Free(id, _) -> Cfree(id)
-    | Basic.Qnt(q, b) ->  
-	Quant(Basic.binder_kind q)
-    | Basic.Bound(q) -> 
-	let qnt, _, _ =Basic.dest_binding q
-	in 
-	Bound(qnt)
-    | Basic.Const(c) ->Const(c)
-    | Basic.Typed(t, _) -> label varp t
-    | Basic.App(l, r) -> App
-
 
 (*
    term_to_label varp t rst:
