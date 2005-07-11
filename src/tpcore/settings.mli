@@ -67,19 +67,16 @@ val script_suffix: string
 
 val nice_sequent_prefix : string ref
 (** 
-   If [get_nice_sequent()] is [true], print sequents with the
+   If [!nice_sequent] is [true], print sequents with the
    assumption indices prefixed by [nice_sequent_prefix].
 *)
 
-val set_nice_sequent: bool -> unit
-(** 
-   [set_nice_sequent x]: if [x] is [true], print sequents with
-   assumption indices prefixed by [!nice_sequent_prefix].  
-   if [x] is false, print sequent assumption indices as negative numbers.
+val nice_sequent: bool ref
+(**
+   if [true], print sequents with assumption indices prefixed by
+   [!nice_sequent_prefix] otherwise print assumption indices
+   as negative numbers.
 *)
-
-val get_nice_sequent: unit -> bool
-(** Test for whether or not to print a nice sequent. *)
 
 val long_identifier: bool ref
 (**

@@ -2185,7 +2185,7 @@ module Defns =
   end
 
 let print_sqnt ppinfo sq = 
-  let nice = Settings.get_nice_sequent()
+  let nice = !Settings.nice_sequent
   in let nice_prefix = 
     if nice then (!Settings.nice_sequent_prefix)
     else "-"
