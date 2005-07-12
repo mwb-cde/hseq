@@ -6,7 +6,24 @@
 
 (** Typing and type-checking of terms *)
 
-(** {7 Type Errors} *)
+(**
+   Type-checking a term [t] means infering the type of [t] and
+   checking it against a given type [ty]. The result of type-checking
+   is a type substitution in which type variables in [t] are assigned
+   the types needed to make [t] well-typed.
+
+   Type-checking tests all types for well-definedness (every
+   identifier is in scope) type inference is carried out. 
+
+   There are currently two flavours of typechecking function based on
+   [settype] and [typecheck_top]. Eventually this will be reduced to
+   one.  Using the [typecheck] and [typecheck_env] is safe provided
+   that the types of identifiers ([Id]) in terms are always assigned
+   the type given to them by the scope before typechecking is carried
+   out.
+*)
+
+(** {7 Typing Errors} *)
 
 class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
   object
@@ -27,23 +44,7 @@ val add_typing_error:
 val typeof : Scope.t -> Basic.term -> Basic.gtype
 (** Get the type of a term *)
 
-(** {5 Type-checking} 
-
-   Type-checking a term [t] means infering the type of [t] and
-   checking it against a given type [ty]. The result of type-checking
-   is a type substitution in which type variables in [t] are assigned
-   the types needed to make [t] well-typed.
-
-   Type-checking tests all types for well-definedness (every
-   identifier is in scope) type inference is carried out. 
-
-   There are currently two flavours of typechecking function based on
-   [settype] and [typecheck_aux]. Eventually this will be reduced to
-   one.  Using the [typecheck] and [typecheck_env] is safe provided
-   that the types of identifiers ([Id]) in terms are always assigned
-   the type given to them by the scope before typechecking is carried
-   out.
-*)
+(** {5 Type-checking functions} *)
 
 val typecheck: Scope.t -> Basic.term 
   -> Basic.gtype -> unit

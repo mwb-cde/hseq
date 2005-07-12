@@ -206,9 +206,6 @@ let settype scp t=
   settype_top scp (inf, cache) f 
     (Gtypes.empty_subst()) (Gtypes.mk_typevar inf) t
 
-
-
-
 let typecheck_env scp env t expty =
   let inf = (ref 0, Lib.empty_env())
   and f = (fun _ _ _ t -> 
