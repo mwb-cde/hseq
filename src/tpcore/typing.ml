@@ -7,6 +7,8 @@
 open Basic
 open Term
 
+(*** Type Errors ***)
+
 class typingError s t ty expty=
   object (self)
     inherit Result.error s
@@ -31,11 +33,14 @@ let typing_error s tr expty ty=
 let add_typing_error s tr expty ty es =
   Result.add_error (typing_error s tr expty ty) es
 
+(***
+* Typing a term
+***)
 
 let typeof_env scp typenv inf trm =
   let rec typeof_aux t env =
     match t with
-       Id(n, ty) -> (Gtypes.mgu ty env, env)
+      Id(n, ty) -> (Gtypes.mgu ty env, env)
     | Free(n, ty) -> (Gtypes.mgu ty env, env)
     | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Const(c) -> (Logicterm.typeof_cnst c, env)
@@ -64,12 +69,25 @@ let typeof_env scp typenv inf trm =
 	(Gtypes.mgu expty renv, renv)
   in typeof_aux trm typenv
 
-
 let typeof scp t = 
   let ty, _ = typeof_env scp (Gtypes.empty_subst()) (ref 0) t
   in ty
     
+(***
+* Type-checking 
+***)
     
+(** Two flavours: 
+
+   [settype] looks up the type of each identifier in the scope before
+   type checking.
+
+   [typecheck] assumes that identifiers have already been assigned
+   their correct types.
+*)
+
+(*** Settype based type checking ****)
+
 let settype_top scp (inf, cache) f typenv exty et =
   let rec settype_aux expty t env =
     match t with
@@ -177,7 +195,6 @@ let settype_top scp (inf, cache) f typenv exty et =
 		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err)))
   in settype_aux exty et typenv
 
-
 let settype scp t=
   let inf = (ref 0)
   and cache =  Lib.empty_env()
@@ -190,8 +207,27 @@ let settype scp t=
     (Gtypes.empty_subst()) (Gtypes.mk_typevar inf) t
 
 
-(* typecheck: assumes identifiers are assigned their types *)
 
+
+let typecheck_env scp env t expty =
+  let inf = (ref 0, Lib.empty_env())
+  and f = (fun _ _ _ t -> 
+    match t with 
+      (Basic.Id (n, ty)) ->
+	raise 
+	  (Term.term_error
+	     ("Typecheck: unknown identifier ")
+	     [t])
+    | _ -> 
+	raise
+	  (Term.term_error "Typecheck: unknown error" [t] ))
+  in 
+  settype_top scp inf f env expty t
+
+let typecheck scp t expty =
+  ignore(typecheck_env scp (Gtypes.empty_subst()) t expty)
+
+(*** typecheck based type checking ****)
 
 let typecheck_aux scp (inf, cache) typenv exty et =
   let rec type_aux expty t env=
@@ -288,28 +324,14 @@ let typecheck_aux scp (inf, cache) typenv exty et =
       (Term.add_term_error "Typecheck: badly typed" [et] err)
 
 
-let simple_typecheck_env scp env t expty = 
+let typecheck_top scp env t expty = 
   let inf = (ref 0, Lib.empty_env())
   in 
   typecheck_aux scp inf env expty t
 
-let typecheck_env scp env t expty =
-  let inf = (ref 0, Lib.empty_env())
-  and f = (fun _ _ _ t -> 
-    match t with 
-      (Basic.Id (n, ty)) ->
-	raise 
-	  (Term.term_error
-	     ("Typecheck: unknown identifier ")
-	     [t])
-    | _ -> 
-	raise
-	  (Term.term_error "Typecheck: unknown error" [t] ))
-  in 
-  settype_top scp inf f env expty t
-
-let typecheck scp t expty =
-  ignore(typecheck_env scp (Gtypes.empty_subst()) t expty)
+(*** 
+* Well-definedness of types.
+***)
 
 let rec check_types scp t =
   match t with
@@ -320,6 +342,10 @@ let rec check_types scp t =
       check_types scp b
   | Typed(t, ty) -> Gtypes.well_defined scp [] ty; check_types scp t
   | x -> ()
+
+(*** 
+* Type inference
+***)
 
 (* infers type of terms, returns infered type *)
 

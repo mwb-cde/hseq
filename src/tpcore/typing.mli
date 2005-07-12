@@ -4,9 +4,9 @@
    Copyright M Wahab 2005
    ----*)
 
-(* typing and typechecking of terms *)
+(** Typing and type-checking of terms *)
 
-(* error messages *)
+(** {7 Type Errors} *)
 
 class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
   object
@@ -14,64 +14,70 @@ class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
     method get_term: unit -> Basic.term 
     method get_types: unit -> Basic.gtype * Basic.gtype
   end
+
 val typing_error: string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn
+(** Construct a type error *)
+
 val add_typing_error: 
     string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn -> exn
+(** Add a type error to existing errors. *)
 
+(** {5 Typing a term} *)
 
-(* construct type of a term *)
 val typeof : Scope.t -> Basic.term -> Basic.gtype
+(** Get the type of a term *)
 
-(*
-   typechecking functions:
-   the typecheck is deep:  type are tested for well-definedness
-   and type inference is carried out.
-   This is used e.g. to check that a term (and all its subterms)
-   is type-correct in a given scope.
- *)
+(** {5 Type-checking} 
 
-(* check a given term has the expected type *)
+   Type-checking a term [t] means infering the type of [t] and
+   checking it against a given type [ty]. The result of type-checking
+   is a type substitution in which type variables in [t] are assigned
+   the types needed to make [t] well-typed.
+
+   Type-checking tests all types for well-definedness (every
+   identifier is in scope) type inference is carried out. 
+
+   There are currently two flavours of typechecking function based on
+   [settype] and [typecheck_aux]. Eventually this will be reduced to
+   one.  Using the [typecheck] and [typecheck_env] is safe provided
+   that the types of identifiers ([Id]) in terms are always assigned
+   the type given to them by the scope before typechecking is carried
+   out.
+*)
+
 val typecheck: Scope.t -> Basic.term 
   -> Basic.gtype -> unit
-
-(* check a given term has the expected type 
-   in a given context/substitution  *) 
+(** 
+   [typecheck scp t ty]: Check that term [t] has type [ty] in scope [scp]. 
+*)
 
 val typecheck_env: Scope.t  
   -> Gtypes.substitution
-    -> Basic.term   -> Basic.gtype 
+    -> Basic.term -> Basic.gtype 
       -> Gtypes.substitution
-	  
-val simple_typecheck_env: Scope.t  
+(** 
+   [typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],
+   that term [t] has type [ty] in scope [scp]. Type variables in [t]
+   take their assigned value from [tyenv], if they have one.
+*) 
+
+val typecheck_top: Scope.t  
   -> Gtypes.substitution
-    -> Basic.term   -> Basic.gtype 
+    -> Basic.term -> Basic.gtype 
       -> Gtypes.substitution
 (*
-   Assign the variable types in a term their required type
-   to ensure well typed term, returning the required subsititution 
-   Also checks that defined types are valid and well defined in the given 
-   scope.
- *)
+   [simple_typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],
+   that term [t] has type [ty] in scope [scp]. Type variables in [t]
+   take their assigned value from [tyenv], if they have one.
+
+   This is typechecking based on [typecheck_aux]. 
+*)
+
 val settype: Scope.t -> Basic.term  -> Gtypes.substitution
+(**
+   Type-check a term. The types of identifier terms (built from [Id(n, ty)])
+   are taken from the scope ([ty] is discarded).
 
-(* Assign the variable types in a term their required type
-   to ensure well typed term, returning the required subsititution 
-   Also checks that defined types are valid and well defined in the given 
-   scope.
- *)
-
-(* infer_types is an alternative to settype but not actually used *)
-
-val infer_aux : 
-    int ref * (Basic.ident * int, bool) Hashtbl.t 
-  -> Scope.t -> Gtypes.substitution -> Basic.term 
-    -> (Basic.gtype * Gtypes.substitution )
-val infer_types_env: Scope.t -> Gtypes.substitution 
-  -> Basic.term -> (Basic.gtype* Gtypes.substitution)
-
-val infer_types: Scope.t -> Basic.term -> Basic.gtype
-
-(* check that types in the term are well defined *)
-val check_types: Scope.t -> Basic.term -> unit
-
-
+   This is a primitive type-checking function. Use one of [typecheck]
+   or [typecheck_env] instead.
+*)
