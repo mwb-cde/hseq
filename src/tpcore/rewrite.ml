@@ -90,36 +90,6 @@ let decr_depth ctrl =
   | Some x -> 
       {ctrl with depth=Lib.set_int_option(x-1)}
 
-(*
-let varp, funp, constp, is_app, is_typed, qntp=
-  Term.is_bound, Term.is_fun, Term.is_const, 
-  Term.is_app, Term.is_typed, Term.is_qnt 
-*)
-
-(*
-let eqqnt tyenv s t = 
-  let q1, _ = dest_qnt s
-  and q2, _ = dest_qnt t
-  in
-  let qnt1, _, qty1=Basic.dest_binding q1
-  and qnt2, _, qty2=Basic.dest_binding q2
-  in 
-  (Gtypes.matches tyenv qty1 qty2) & (qnt1=qnt2)
-
-let eqqnt_env scp s t tyenv = 
-  let q1, _ = dest_qnt s
-  and q2, _ = dest_qnt t
-  in
-  let qnt1, _, qty1=Basic.dest_binding q1
-  and qnt2, _, qty2=Basic.dest_binding q2
-  in 
-  if qnt1=qnt2 then 
-    (try 
-      (true, Gtypes.unify_env scp qty1 qty2 tyenv)
-    with _ -> (false, tyenv))
-  else (false, tyenv)
-*)
-
 let is_free_binder qs t= 
   (match t with
     Bound(q) -> List.exists (fun x ->  x == q) qs
@@ -129,6 +99,46 @@ let is_free_binder qs t=
 
 type rewrite_rules = 
     (Basic.binders list * Basic.term * Basic.term * order option)
+
+(**
+   [dest_lr_rule r]: Destruct for left to right rewriting.
+
+   Break rule [t= !x1..xn: lhs = rhs] 
+   into quantifiers [x1..xn], [lhs] and [rhs].
+
+   return ([x1..xn], [lhs], [rhs], [p]).
+   where [p] is [None] if [r=Rule t] and [Some x if r= Order(t, x)]
+*)
+let dest_lr_rule  r= 
+  let dest_term x p=
+    let qs, b = strip_qnt Basic.All x
+    in 
+    let lhs, rhs= Logicterm.dest_equality b
+    in 
+    (qs, lhs, rhs, p)
+  in
+  match r with
+    Rule(t) -> dest_term t None
+  | Ordered(t, x) -> dest_term t (Some x)
+
+(**
+   [dest_rl_term t]: Destruct for right to left rewriting.
+   Break term [t= !x1..xn: lhs = rhs] 
+   into quantifiers [x1..xn], [lhs] and [rhs].
+   return ([x1..xn], [rhs], [lhs]).
+*)
+let dest_rl_rule r = 
+  let dest_term x p=
+    let qs, b = strip_qnt Basic.All x
+    in 
+    let lhs, rhs= Logicterm.dest_equality b
+    in 
+    (qs, rhs, lhs, p)
+  in 
+  match r with
+    Rule(t) -> dest_term t None
+  | Ordered(t, x) -> dest_term t (Some x)
+
 
 (** make_rewrites: convert list of equalities to db of rewrites *)
 
@@ -341,78 +351,10 @@ let rewrite_list scope ctrl chng tyenv rs trm =
       rewrite_list_bottomup scope ctrl tyenv chng nt trm
   in (nt, ntyenv)
 
-(*
-   rewrite with equality eqtrm: "l=r" -> (l, r) 
-   left-right if dir=true, right-left otherwise
- *)
-(*
-let rewrite_eqs scope ctrl tyenv rrl trm =
-  let chng = ref false
-  in 
-  let r = rewrite_list scope ctrl chng tyenv rrl trm;
-  in 
-  if !chng 
-  then r
-  else raise (term_error "Matching" [trm])
-*)
-
-(*** Rule destructors *)
-
-(**
-   [dest_lr_rule r]: Destruct for left to right rewriting.
-
-   Break rule [t= !x1..xn: lhs = rhs] 
-   into quantifiers [x1..xn], [lhs] and [rhs].
-
-   return ([x1..xn], [lhs], [rhs], [p]).
-   where [p] is [None] if [r=Rule t] and [Some x if r= Order(t, x)]
-*)
-let dest_lr_rule  r= 
-  let dest_term x p=
-    let qs, b = strip_qnt Basic.All x
-    in 
-    let lhs, rhs= Logicterm.dest_equality b
-    in 
-    (qs, lhs, rhs, p)
-  in
-  match r with
-    Rule(t) -> dest_term t None
-  | Ordered(t, x) -> dest_term t (Some x)
-
-(**
-   [dest_rl_term t]: Destruct for right to left rewriting.
-   Break term [t= !x1..xn: lhs = rhs] 
-   into quantifiers [x1..xn], [lhs] and [rhs].
-   return ([x1..xn], [rhs], [lhs]).
-*)
-let dest_rl_rule r = 
-  let dest_term x p=
-    let qs, b = strip_qnt Basic.All x
-    in 
-    let lhs, rhs= Logicterm.dest_equality b
-    in 
-    (qs, rhs, lhs, p)
-  in 
-  match r with
-    Rule(t) -> dest_term t None
-  | Ordered(t, x) -> dest_term t (Some x)
-
 
 (***
 * Toplevel rewriting functions
 ***)
-
-(*
-let rewrite_env scope ctrl tyenv rrl trm=
-  let rs = 
-    if ctrl.rr_dir=LeftRight
-    then 
-      List.map dest_lr_rule rrl
-    else 
-      List.map dest_rl_rule rrl
-  in 
-  rewrite_eqs scope ctrl tyenv rs trm
-*)
 
 let rewrite_env scope ctrl tyenv rrl trm=
   let chng = ref false

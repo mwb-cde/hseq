@@ -172,16 +172,16 @@ type rewrite_rules =
    [opt_order] is [Some p]. For right-left rewriting, the rule is
    broken to [([v1; ..; vn], rhs, lhs, opt_order)].
 *)
+
 val dest_lr_rule: 
     rule 
   -> (Basic.binders list * Basic.term * Basic.term * order option)
-(*
+(**
    Rule destructor for left to right rewriting.
-
    Break rule [t= !x1..xn: lhs = rhs] 
    into quantifiers [x1..xn], [lhs] and [rhs].
 
-   return ([x1..xn], [lhs], [rhs], [p]).
+   Return ([x1..xn], [lhs], [rhs], [p])
    where [p] is [None] if [r=Rule t] and [Some x if r= Order(t, x)]
 
    Raises [term_error] if the rule is not an equality.
@@ -192,9 +192,11 @@ val dest_rl_rule:
   -> (Basic.binders list * Basic.term * Basic.term * order option)
 (**
    Rule destructor for right to left rewriting.
-   Break term [t= !x1..xn: lhs = rhs] 
-   into quantifiers [x1..xn], [lhs] and [rhs].
-   return ([x1..xn], [rhs], [lhs]).
+   Break rule [t= !x1..xn: lhs = rhs] 
+   into quantifiers [x1..xn], [rhs] and [lhs].
+
+   Return ([x1..xn], [lhs], [rhs], [p])
+   where [p] is [None] if [r=Rule t] and [Some x if r= Order(t, x)]
 
    Raises [term_error] if the rule is not an equality.
 *)
@@ -212,12 +214,6 @@ type rewriteDB =
   | List_rr of rewrite_rules list
 
 
-
-(** [match_rewrite]
-
-   Try to rewrite a term using a given rewrite rule
-   Returns new term and updated type environment (substitution)
- *)
 val match_rewrite : 
     Scope.t -> 
       control -> Gtypes.substitution ->
@@ -226,10 +222,6 @@ val match_rewrite :
 	    (Basic.term* Gtypes.substitution)
 
 
-(** [rewrite_list]
-   rewrite using a list of deconstructed rewrite rules 
-   return type environment built up during rewriting 
- *)
 val rewrite_list : 
     Scope.t -> 
       control -> bool ref 
@@ -237,20 +229,6 @@ val rewrite_list :
 	  -> (Basic.binders list 
 		* Basic.term * Basic.term * order option) list 
 	    ->  Basic.term -> (Basic.term * Gtypes.substitution)
-
-(* [rewrite_eqs]
-   rewrite using a list of partialy deconstructed rewrite rules 
-   return type environment built up during rewriting 
- *)
-(*
-val rewrite_eqs : 
-    Scope.t -> 
-      control
-      -> Gtypes.substitution
-	-> (Basic.binders list * Basic.term * Basic.term * order option)list 
-	  -> Basic.term -> (Basic.term * Gtypes.substitution )
-*)
-
 
 
 val match_rr_list: 
