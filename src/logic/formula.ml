@@ -27,10 +27,6 @@ let rec check_term p t =
     | _ -> ())
   else raise (Term.term_error "Term check failed" [t])
 
-(*
-let dest_form  x =  x
-*)
-
 (* Substitution primitives *)
 
 type substitution = Term.substitution
@@ -42,7 +38,9 @@ let chase = Term.chase
 let fullchase = Term.fullchase
 let replace x subst = Term.replace x subst
 
-(* closed terms and conversion to formula *)
+(***
+* Closed terms and conversion to formula 
+***)
 
 let rec is_closed_scope env t =
   match t with
@@ -86,7 +84,7 @@ let in_scope scp th f =
 
 let retype tenv x = Term.retype tenv x
 
-(*
+(**
    [resolve_closed_term scp trm]: 
    resolve names and types in closed term [trm] in scope [scp].
 *)
@@ -215,7 +213,10 @@ let make ?env scp t=
     let tyenv = Lib.apply_option (fun x -> !x) env (Gtypes.empty_subst())
     in 
     let tyenv1 = 
+      Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
+(*
       Typing.typecheck_env scp tyenv t1 (Gtypes.mk_null())
+*)
     in 
     Term.retype tyenv1 t1
 
@@ -340,10 +341,25 @@ let mk_typed_lambda = Logicterm.mk_lam_ty
 
 (* Typecheck and reset types of formula *)
 
+(*
 let typecheck_env scp tenv f expty = 
   let t = term_of f
   in 
   Typing.typecheck_env scp (Gtypes.empty_subst()) t expty
+
+let typecheck scp f expty= 
+  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
+  in 
+  Term.retype_pretty tyenv f 
+
+let simple_typecheck scp f expty= 
+  ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
+*)
+
+let typecheck_env scp tenv f expty = 
+  let t = term_of f
+  in 
+  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
 
 let typecheck scp f expty= 
   let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
@@ -391,27 +407,6 @@ let subst scp env t =
   make scp nt
 
 let rename t = Term.rename t
-
-(*
-let inst_env scp vs env t r =
-  if (Term.is_qnt t) 
-  then 
-    if (is_closed vs r)
-    then 
-      (let (q, qnt, n, ty, b) = Term.dest_qnt (term_of t)
-      in 
-      let nr0 = Typing.assign_types scp r
-      in 
-      let nenv = Typing.simple_typecheck_env scp env nr0 ty
-      in 
-      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
-      in 
-      let f =Term.retype nenv nr
-      in 
-      (f, nenv))
-    else raise (Term.term_error "inst: replacement not closed " [r])
-  else raise (Term.term_error "inst: not a quantified formula" [t])
-*)
 
 let inst_env scp vs env t r =
   if (Term.is_qnt t) 

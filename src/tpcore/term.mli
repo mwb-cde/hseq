@@ -333,6 +333,8 @@ val retype: Gtypes.substitution -> term -> term
    [retype tyenv t]:
    Reset the types in term [t] using type substitution [tyenv].
    Substitutes variables with their concrete type in [tyenv].
+
+   Retyping collapses terms of the form [Typed(trm, ty)] to [trm].
 *)
 val retype_pretty_env: 
     Gtypes.substitution -> term 

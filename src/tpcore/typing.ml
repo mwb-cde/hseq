@@ -221,8 +221,10 @@ let typecheck_env scp env t expty =
   in 
   settype_top scp inf f env expty t
 
+(*
 let typecheck scp t expty =
   ignore(typecheck_env scp (Gtypes.empty_subst()) t expty)
+*)
 
 (*** typecheck based type checking ****)
 
@@ -325,6 +327,10 @@ let typecheck_top scp env t expty =
   let inf = (ref 0, Lib.empty_env())
   in 
   typecheck_aux scp inf env expty t
+
+let typecheck scp t expty =
+  ignore(typecheck_top scp (Gtypes.empty_subst()) t expty)
+
 
 (*** 
 * Well-definedness of types.

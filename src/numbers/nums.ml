@@ -57,12 +57,15 @@ let add_var (n, e) t =
    [is_equals scp ty f a b]: test whether [f] is the equality function
    for arguments [a] and [b] of type [ty].
 *)
+let typing_typecheck scp x ty =
+    ignore (Typing.typecheck_top scp (Gtypes.empty_subst()) x ty)
+
 let is_equals scp ty f a b = 
   if f=Logicterm.equalsid
   then 
     try 
-      (Typing.typecheck scp a ty;
-       Typing.typecheck scp b ty; 
+      (typing_typecheck scp a ty;
+       typing_typecheck scp b ty; 
        true)
     with _ -> false
   else false
@@ -79,11 +82,11 @@ let is_bool_equals scp f a b =
    [has_bool_type scp trm]: term [trm] has type [bool_type].
 *)
 let has_num_type scp trm = 
-  try (Typing.typecheck scp trm num_type; true)
+  try (typing_typecheck scp trm num_type; true)
   with _ -> false
 
 let has_bool_type scp trm = 
-  try (Typing.typecheck scp trm bool_type; true)
+  try (typing_typecheck scp trm bool_type; true)
   with _ -> false
 
 (**
@@ -103,11 +106,11 @@ let strip_univs scp benv nenv t =
     let nx=Basic.Bound(x)
     in 
     (try 
-      (Typing.typecheck scp nx (num_type);
+      (typing_typecheck scp nx (num_type);
        (benv1, snd(add_var nenv1 nx)))
     with _ ->
       (try
-	(Typing.typecheck scp nx (bool_type);
+	(typing_typecheck scp nx (bool_type);
 	 (snd(add_var benv1 nx), nenv1))
       with _ -> 
 	raise (error "Badly formed expression" [t])))
@@ -158,12 +161,12 @@ let numterm_to_expr var_env scp t =
   let rec conv_aux env x =
     match x with
       Basic.Id(f, ty) -> 
-	  (Typing.typecheck scp x (num_type);
+	  (typing_typecheck scp x (num_type);
 	   let c, env1=add_var env x
 	   in 
 	   (Exprs.Var(c), env1))
     | Basic.Free(n, ty) -> 
-	  (Typing.typecheck scp x (num_type);
+	  (typing_typecheck scp x (num_type);
 	   let c, env1=add_var env x
 	   in 
 	   (Exprs.Var(c), env1))
@@ -173,7 +176,7 @@ let numterm_to_expr var_env scp t =
 	raise (error "Badly formed expression: not a number" [x])
     | Basic.Qnt(_) -> raise (error "Badly formed expression: quantifier" [x])
     | Basic.Bound(_) ->
-	  (Typing.typecheck scp x (num_type);
+	  (typing_typecheck scp x (num_type);
 	   let c, env1=add_var env x
 	   in 
 	   (Exprs.Var(c), env1))
@@ -365,12 +368,12 @@ let bterm_to_prop scp bvar_env nvar_env t =
   let rec conv_aux x benv nenv=
     match x with
       Basic.Id(f, ty) -> 
-	(Typing.typecheck scp x (bool_type);
+	(typing_typecheck scp x (bool_type);
 	 let c, benv1=add_var benv x
 	 in 
 	 (Prop.Var(c), benv1, nenv))
     | Basic.Free(n, ty) -> 
-	(Typing.typecheck scp x (bool_type);
+	(typing_typecheck scp x (bool_type);
 	 let c, benv1=add_var benv x
 	 in 
 	 (Prop.Var(c), benv1, nenv))
@@ -409,7 +412,7 @@ let bterm_to_prop scp bvar_env nvar_env t =
 	    | None -> 
 		raise (error "Badly formed expression:" [x])))
     | Basic.Bound(b) ->
-	(Typing.typecheck scp x (bool_type);
+	(typing_typecheck scp x (bool_type);
 	 let c, benv1=add_var benv x
 	 in 
 	 (Prop.Var(c), benv1, nenv))
@@ -419,7 +422,7 @@ let bterm_to_prop scp bvar_env nvar_env t =
 	in 
 	(match q with
 	    Basic.All -> 
-		(Typing.typecheck scp x (bool_type);
+		(typing_typecheck scp x (bool_type);
 		 let c, benv1=add_var benv x
 		 in 
 		 (Prop.Var(c), benv1, nenv))
