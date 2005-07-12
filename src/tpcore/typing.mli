@@ -15,12 +15,9 @@
    Type-checking tests all types for well-definedness (every
    identifier is in scope) type inference is carried out. 
 
-   There are currently two flavours of typechecking function based on
-   [settype] and [typecheck_top]. Eventually this will be reduced to
-   one.  Using the [typecheck] and [typecheck_env] is safe provided
-   that the types of identifiers ([Id]) in terms are always assigned
-   the type given to them by the scope before typechecking is carried
-   out.
+   Using the [typecheck] and [typecheck_top] is safe provided that the
+   types of identifiers ([Id]) in terms are always assigned the type
+   given to them by the scope before typechecking is carried out.
 *)
 
 (** {7 Typing Errors} *)
@@ -54,7 +51,6 @@ val typecheck: Scope.t -> Basic.term -> Basic.gtype -> unit
    their types. The type used is [ty], whatever type [n] has in [scp].
 *)
 
-
 val typecheck_top: Scope.t  
   -> Gtypes.substitution
     -> Basic.term -> Basic.gtype 
@@ -68,26 +64,9 @@ val typecheck_top: Scope.t
    their types. The type used is [ty], whatever type [n] has in [scp].
 *)
 
-(*
-val typecheck_env: Scope.t  
-  -> Gtypes.substitution
-    -> Basic.term -> Basic.gtype 
-      -> Gtypes.substitution
-*)
-(** 
-   [typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],
-   that term [t] has type [ty] in scope [scp]. Type variables in [t]
-   take their assigned value from [tyenv], if they have one.
-
-   The type of an identifier [Id(n, ty)] is looked for in scope [scp].
-   The given type [ty] is discarded.
-*) 
-
-
 val settype: Scope.t -> Basic.term  -> Gtypes.substitution
 (**
-   Type-check a term. The types of identifier terms (built from [Id(n, ty)])
-   are taken from the scope ([ty] is discarded).
-
-   This is a primitive type-checking function. 
+   Type-check a term. The types of identifier terms (built from [Id(n,
+   ty)]) are taken from the scope ([ty] is discarded). (This is a
+   primitive type-checking function.)
 *)
