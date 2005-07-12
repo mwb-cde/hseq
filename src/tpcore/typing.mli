@@ -49,6 +49,9 @@ val typecheck: Scope.t -> Basic.term
   -> Basic.gtype -> unit
 (** 
    [typecheck scp t ty]: Check that term [t] has type [ty] in scope [scp]. 
+
+   The type of an identifier [Id(n, ty)] is looked for in scope [scp].
+   The given type [ty] is discarded.
 *)
 
 val typecheck_env: Scope.t  
@@ -59,18 +62,22 @@ val typecheck_env: Scope.t
    [typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],
    that term [t] has type [ty] in scope [scp]. Type variables in [t]
    take their assigned value from [tyenv], if they have one.
+
+   The type of an identifier [Id(n, ty)] is looked for in scope [scp].
+   The given type [ty] is discarded.
 *) 
 
 val typecheck_top: Scope.t  
   -> Gtypes.substitution
     -> Basic.term -> Basic.gtype 
       -> Gtypes.substitution
-(*
-   [simple_typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],
+(**
+   [typecheck_top tyenv scp t ty]: Check, w.r.t type context [tyenv],
    that term [t] has type [ty] in scope [scp]. Type variables in [t]
    take their assigned value from [tyenv], if they have one.
 
-   This is typechecking based on [typecheck_aux]. 
+   Identifiers ([Id(n, ty)]) are assumed to have already been assigned
+   their types. The type used is [ty], whatever type [n] has in [scp].
 *)
 
 val settype: Scope.t -> Basic.term  -> Gtypes.substitution
