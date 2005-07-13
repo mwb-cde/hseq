@@ -91,7 +91,7 @@ let make_consts vars env=
 	try 
 	  let nv = Term.find (Basic.Bound x) env
 	  in 
-	  if(Formula.is_closed [] nv)
+	  if(Term.is_closed [] nv)
 	  then make_aux xs (nv::cnsts)
 	  else cnsts
 	with 
