@@ -5,7 +5,7 @@
 ----*)
 
 (**
-   {5 Tags}
+   Unique identifiers. 
 
    Unique identifiers with which to identify sequents in a goal and
    formulas in a sequent.
@@ -14,28 +14,36 @@
 type tag_type
 type t=tag_type
 
+val create: unit->t
+(**
+   [create]: Make an unnamed tag.
+*)
+
+val named: string->t
 (**
    [named s]: Make a tag with name [s].
+*)
   
+val name: t->string
+(**
    [name x]: Get the name of tag [x].
+*)
 
+val null:t
+(**
    [null]: A constant, unnamed tag.
+*)
 
-   [create]: Make an unnamed tag.
-
+val equal: t->t->bool
+(**
    [equal]: Equality of tags.
 *)
-val named: string->t
-val name: t->string
-val null:t
-val create: unit->t
-val equal: t->t->bool
 
 (**
-   Trees 
+   {5 Trees}
 
-   (Depend on being able to use [Obj.magic] to cast a reference to an
-   integer.)
+   Trees indexed by tags depend on being able to use [Obj.magic] to
+   cast a reference to an integer.
 *)
 
 module TagTreeData: Treekit.TreeData
@@ -61,4 +69,4 @@ module TagTree:
     end 
 
 type ('a)tree = ('a)TagTree.t
-
+(** The type of tree indexed by tags *)

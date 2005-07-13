@@ -4,13 +4,16 @@
  Copyright M Wahab 2005
 ----*)
 
-(* toolkit for top-down parsers *)
+(** 
+   Toolkit for top-down parsers 
 
-
-(* Parser Input: 
-   a type of stream which are suitable for backtracking 
+   Based on the parser combinators described by Paulson ("ML for the
+   working programmer", 1991, Cambridge University Press.)
 *)
 
+(**
+   Parser Input: streams which can deal with backtracking 
+*)
 module Input:
   sig
 

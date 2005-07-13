@@ -5,6 +5,9 @@ CODE = lib.cmo unsafe.cmo treekit.cmo tag.cmo parserkit.cmo
 OPTCODE = lib.cmx unsafe.cmx treekit.cmx tag.cmx parserkit.cmx
 
 DOCFILES = lib.mli unsafe.mli treekit.mli tag.mli parserkit.mli
+DOCLOAD = 
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
 
 LIBFILE=util.cma
 OPTLIB=util.cmxa
@@ -61,7 +64,8 @@ installopt: opt
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
 doc: ${DOCFILES}
-	ocamldoc ${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/util.data" \
+	${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

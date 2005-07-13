@@ -4,6 +4,10 @@
  Copyright M Wahab 2005
 ----*)
 
+(**
+   General purpose functions.
+*)
+
 (* Simple utility functions *)
 
 val iteri : (int -> 'a array -> 'b) -> 'a array -> unit 

@@ -4,7 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
-(* lookup trees *)
+(** Balanced and unbalanced Trees *)
 
 module type TreeData =
   sig
