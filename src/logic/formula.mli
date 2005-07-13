@@ -4,177 +4,226 @@
  Copyright M Wahab 2005
 ----*)
 
-(* representation and manipulation of well formed formulas *)
-(* a term is a formula in a given scope scp if it is correctly typed
-   in scp and it is closed (all bound variables occur only in their binding
-   terms *)
+(**
+   Well formed formulas.
+
+   A term is a well-formed formula if
+   - it is type-correct 
+   - it is closed: all bound variables occur within their binders
+   and there are no free variables.
+*)
 
 type form 
-type saved_form 
+(** The type of formulas *)
 
-type substitution = Term.substitution
-
-(* conversion between terms and formulas *)
-(*
-   is_closed ts f:
-   true iff all bound variables in [f] are in the body 
-   of a quantifier or occur in ts
- *)
-val is_closed: Basic.term list -> Basic.term -> bool
-(*
-   [resolve_closed_term scp trm]:
-   
-   1. Replace each free variable [Var(x, _)] in [trm] with the term
-   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
-
-   2. Fail if any bound variable in [trm] occurs outside its binding term.
-*)
-val resolve_closed_term: Scope.t -> Basic.term -> Basic.term
-
-(*
-   [make ?env scp trm]: make a formula from term [trm] in scope [scp].
-   
-   1. Replace each free variable [Var(x, _)] in [trm] with the term
-   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].
-   2. Fail if any bound variable in [trm] occurs outside its binding term.
-   4. Fail if any identifier is not in scope.
-   4. Typecheck resulting term, to set correct types. If [?env] is
-      given, pass it to the typechecker.
-   5. return resulting formula built from resulting term.  If [?env]
-      is given, set it to the type substitution obtained from typechecking.
-
-   [dest frm]: Formula destructor.
-*)
 val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
-(* val dest: form -> Basic.term*)
+(**
+   [make ?env scp trm]: Make a formula from term [trm] in scope [scp].
+   
+   {ol 
+   {- Replace each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].}
+   {- Fail if any bound variable in [trm] occurs outside its binding term.}
+   {- Fail if any identifier is not in scope.}
+   {- Typecheck resulting term, to set correct types. If [?env] is
+      given, pass it to the typechecker.}
+   {- return resulting formula built from resulting term.  If [?env]
+      is given, set it to the type substitution obtained from typechecking.}}
+*)
+
 val term_of: form -> Basic.term
+(** Reduce a formula to a term. *)
 
-val string_form : form -> string
+(** {5 Representation for permanent storage} *)
 
-(* check that a given formula is in the scope of an identified theory *)
+type saved_form 
+(** The representation of formulas for permanent storage. *)
+
+val to_save: form -> saved_form
+(** Convert to the saveable representation. *)
+val from_save : saved_form -> form
+(** Convert from the saveable representation. *)
+
+(** {5 Operations on formulas} *)
+
+val equals : form -> form -> bool
+(** Equality *)
+
+(** {7 General operations} *)
+
+val in_scope:  Scope.t -> form -> bool
+(** Check that a formula is in scope. *)
+
 val in_scope_memo: 
     (string, bool) Lib.substype ->
-      Scope.t -> Basic.thy_id -> form -> bool
-val in_scope:  Scope.t -> Basic.thy_id -> form -> bool
+      Scope.t ->  form -> bool
+(** Memoised version of [in_scope]. *)
 
-(* apply a predicate to a term *)
-val check_term: (Basic.term -> bool) -> Basic.term -> unit
-
-(* 
-   [inst]: instantiate a quantified formula with a given term 
-   succeeds only if the result is a formula.
-
-   [inst_env]: instantiate a quantified formula with a given term 
-   succeeds only if the result is a formula.
-*)
-val inst : Scope.t -> Basic.term list -> form -> Basic.term -> form
-val inst_env : Scope.t -> Basic.term list -> Gtypes.substitution
+val inst_env : Scope.t -> Gtypes.substitution
   -> form -> Basic.term -> (form* Gtypes.substitution)
-
 (**
-   Unification 
+   Instantiation w.r.t a type substitution.
+   Instantiate a quantified formula with a given term 
+   succeeds only if the result is a formula.
 *)
-val unify: Scope.t 
-  -> form        (* assumption *)
-    -> form       (* conclusion *)
-      -> Term.substitution
 
-val unify_env: Scope.t 
-  -> Gtypes.substitution (* type environment *)
-    -> form        (* assumption *)
-      -> form       (* conclusion *)
-	-> (Gtypes.substitution * Term.substitution)
+val inst : Scope.t -> form -> Basic.term -> form
+(**
+   Instantiate a quantified formula with a given term
+   succeeds only if the result is a formula.
+*)
 
+
+val subst : Scope.t -> Term.substitution -> form -> form
 (** Substitution *)
-val empty_subst: unit -> substitution
-val subst : Scope.t -> substitution -> form -> form
 
-(** [rename]: rename bound variables *)
 val rename: form -> form
+(** Rename bound variables *)
 
-(** Conversions for disk storage *)
-val to_save: form -> saved_form
-val from_save : saved_form -> form
+(** {7 Recognisers} *)
 
-(** recognisers/destructors and some constructors *)
-val is_fun: form -> bool
-val is_var : form-> bool
-val get_var_id : form-> Basic.ident
-val get_var_type : form-> Basic.gtype
-
+val is_qnt : form -> bool 
 val is_app : form -> bool
+val is_bound: form -> bool
+val is_free : form -> bool
+val is_var : form -> bool
+val is_typed : form -> bool
 val is_const : form -> bool
+val is_fun: form -> bool
+
+val is_true :form-> bool
+val is_false : form -> bool
+val is_neg: form -> bool
+val is_conj: form -> bool
+val is_disj: form -> bool
+val is_implies: form -> bool
+val is_equality: form -> bool
+
+val is_all: form-> bool
+val is_exists : form -> bool
+val is_lambda: form-> bool
+
+(** {7 Destructors} *)
+
 val dest_num : form -> Num.num
-(*
-val dest_bool : form -> bool
-*)
-
-val is_true :form -> bool
-val is_false :form -> bool
-val is_neg : form -> bool
-val dest_neg: form -> form list
-
-val is_conj : form -> bool
-val dest_conj: form -> form list
-
-val is_disj : form -> bool
-val dest_disj: form -> form list
-
-val is_implies : form -> bool
-val dest_implies: form -> form list
-
-val is_equality : form -> bool
+val dest_neg: form -> form
+val dest_conj: form -> (form * form)
+val dest_disj: form -> (form * form)
+val dest_implies: form -> (form * form)
 val dest_equality: form -> (form * form)
 
 val get_binder_name : form -> string
 val get_binder_type: form -> Basic.gtype
 
-val dest_qnt : form -> Basic.binders * Basic.term
+(** {7 Constructors} *)
 
-val is_all: form -> bool
-val mk_all: Scope.t -> string->form -> form
-val mk_typed_all: Scope.t -> string -> Basic.gtype -> form -> form
+val mk_true: Scope.t -> form
+val mk_false : Scope.t -> form
+val mk_bool : Scope.t -> bool -> form
+val mk_not: Scope.t -> form -> form
+val mk_and: Scope.t -> form -> form -> form
+val mk_or: Scope.t -> form -> form -> form
+val mk_implies: Scope.t -> form -> form -> form
+val mk_iff: Scope.t -> form -> form -> form
+val mk_equality: Scope.t -> form -> form -> form
 
-val is_exists: form -> bool
-val is_lambda:  form -> bool
+(** {5 Unification functions} *)
 
-(** Typechecking *)
+val unify: Scope.t 
+  -> form 
+    -> form 
+      -> Term.substitution
+(**
+   [unify scp asm concl]: Unify [asm] with [concl] in scope
+   [scp]. Formula [asm] is normally the assumption of some sub-goal and
+   [concl] is the conclusion.
+*)
+
+val unify_env: Scope.t 
+  -> Gtypes.substitution
+    -> form 
+      -> form 
+	-> (Gtypes.substitution * Term.substitution)
+(**
+   [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
+   [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
+   assumption of some sub-goal and [concl] is the conclusion. Returns
+   the type context updated with binding made during unification.
+*)
+
+(** {5 Typechecking} *)
+
 val typecheck: Scope.t -> form  -> Basic.gtype ->form
+(** [typecheck scp f ty]: Check that [f] has type [ty] in scope [scp]. *)
+
 val typecheck_env : Scope.t -> Gtypes.substitution 
   -> form -> Basic.gtype -> Gtypes.substitution
-val retype: Gtypes.substitution
-  -> form -> form
-
-(** equality with pointers *)
-val equals : form -> form -> bool
-
-(* equality under alpha conversion *)
-
-(* alpha_equals: equality under alpha conversion
-   (renaming of alpha_convp)
+(** 
+   [typecheck_env scp tyenv f ty]: Check that [f] has type [ty] in
+   scope [scp] w.r.t type context [tyenv]. Returns [tyenv] updated
+   with binding made during the typechecking.
 *)
+
+val retype: Scope.t -> Gtypes.substitution -> form -> form
+(** [retype tyenv f]: Retype [f] with using type context [tyenv]. *)
+
+
+(** {5 Logic operations} *)
+
+(** {7 Alpha conversion} *)
+
+val alpha_equals : Scope.t -> form -> form -> bool 
+(** Equality under alpha conversion *)
+
 val alpha_equals_match : 
     Scope.t -> Gtypes.substitution 
       -> form -> form -> Gtypes.substitution
-val alpha_equals : Scope.t -> form -> form -> bool 
+(** Equality under alpha-conversion w.r.t a type environment *)
 
-(** Beta reduction *)
+(** {7 Beta conversion} *)
+
 val beta_convp:  form -> bool
+(** A formula has the form [((%x. F) a)]. *)
+
 val beta_conv: Scope.t -> form -> form
+(** Reduce a formula of the form [((%x. F) a)] to [F[a/x]]. *)
+
 val beta_reduce : Scope.t -> form -> form
+(** Reduce all sub-terms of the form [((%x. F) a)] to [F[a/x]]. *)
 
-(** Eta abstraction *)
+(** {7 Eta conversion} *)
+
 val eta_conv: Scope.t -> form -> Basic.gtype -> form -> form
+(** Eta abstract a formula. *)
 
-(* Rewriting *)
+(** {5 Rewriting} *)
+
+type rule = 
+    Rule of form
+  | Ordered of (form * Rewrite.order)
+
+val rule : form -> rule
+(** Make an unordered rewrite rule. *)
+val orule : form -> Rewrite.order -> rule
+(** Make a unordered rewrite rule. *)
+
 val default_rr_control : Rewrite.control
+(** The default rewrite control. *)
+
 val rewrite : 
-Scope.t -> ?ctrl:Rewrite.control
-  -> Rewrite.rule list-> form -> form
+    Scope.t -> ?ctrl:Rewrite.control
+      -> rule list-> form -> form
+(** Rewrite a formula *)
+
 val rewrite_env : 
     Scope.t -> ?ctrl:Rewrite.control
       -> Gtypes.substitution 
-	-> Rewrite.rule list-> form -> (form * Gtypes.substitution)
+	-> rule list-> form -> (form * Gtypes.substitution)
+(** Rewrite a formula w.r.t a type context. *)
 
-(** Print a formula in a given PP state *)
+(** {5 Pretty printing} *)
+
 val print : Printer.ppinfo -> form -> unit 
+(** Print a formula in a given PP state *)
+
+val string_form : form -> string

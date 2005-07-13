@@ -7,203 +7,24 @@
 open Basic
 exception Error
 
+
+(** The type for formulas *)
 type form =  Basic.term
-type saved_form =  Dbterm.dbterm
-
-exception TermCheck of Basic.term
-
-let term_of x = x
-let string_form = Term.string_term
-
-let to_save x =  Dbterm.of_term x
-let from_save x = Dbterm.to_term x
-
-let rec check_term p t =
-  if (p t) then 
-    (match t with
-      Basic.Qnt(q, b) -> check_term p b
-    | Basic.App(f, a) -> check_term p f; check_term p a
-    | Basic.Typed(trm, ty) -> check_term p trm
-    | _ -> ())
-  else raise (Term.term_error "Term check failed" [t])
-
-(* Substitution primitives *)
-
-type substitution = Term.substitution
-let empty_subst () = Term.empty_subst()
-
-let find x subst = Term.find x subst
-let remove x subst = Term.remove x subst
-let chase = Term.chase
-let fullchase = Term.fullchase
-let replace x subst = Term.replace x subst
 
 (***
-* Closed terms and conversion to formula 
+* Conversion to and from a term
 ***)
 
-let rec is_closed_scope env t =
-  match t with
-    Basic.App(l, r) -> is_closed_scope env l; is_closed_scope env r
-  | Basic.Typed(a, _) -> is_closed_scope env a
-  | Basic.Qnt(q, b) -> 
-      (Term.table_add (Basic.Bound(q)) (Logicterm.mk_true) env;
-       is_closed_scope env b;
-       Term.table_remove (Basic.Bound(q)) env)
-  | Basic.Bound(_) -> 
-      (try ignore(Term.table_find t env)
-      with Not_found -> 
-	raise (Term.term_error  "Not closed"  [t]))
-  | Basic.Free(_) -> 
-      (try ignore(Term.table_find t env)
-      with Not_found -> 
-	raise (Term.term_error  "Not closed"  [t]))
-  | _ -> ()
-
-let is_closed vs t = 
-  let tbl=Term.empty_table()
-  in 
-  (* add bound terms of [vs] to tbl *)
-  List.iter 
-    (fun x -> 
-      if ((Term.is_bound x) or (Term.is_free x))
-      then ignore(Term.table_add x (Logicterm.mk_true) tbl)
-      else ()) vs;
-  try is_closed_scope tbl t; true
-  with _ -> false
-
-let in_scope_memo memo scp th f =
-  if (Term.in_scope memo scp th (term_of f))
-  then true
-  else raise (Term.term_error "Badly formed formula" [term_of f])
-
-let in_scope scp th f =
-  if (Term.in_scope (Lib.empty_env()) scp th (term_of f))
-  then true
-  else raise (Term.term_error "Badly formed formula" [term_of f])
-
-let retype tenv x = Term.retype tenv x
-
-(**
-   [resolve_closed_term scp trm]: 
-   resolve names and types in closed term [trm] in scope [scp].
+(** 
+   [mk_scoped_formula scp f]: make [f] a formula of [scp]. 
+   Currently does nothing. Must not be exposed for general use.
 *)
-let binding_set_names memo scp binding =
-  let (qnt, qname, qtype) = Basic.dest_binding binding
-  in 
-  Basic.mk_binding qnt qname 
-    (Gtypes.set_name ~strict:true ~memo:memo scp qtype)
+let mk_scoped_formula scp f = f
 
-let resolve_closed_term scp trm=
-  let set_type_name memo s t =
-    Gtypes.set_name ~strict:true ~memo:memo s t
-  in 
-  let true_term = Term.mk_short_var "true"
-  and curr_thy = Scope.thy_of scp
-  in 
-  let id_memo = Lib.empty_env()
-  and scope_memo = Lib.empty_env()
-  and type_memo = Lib.empty_env()
-  and type_thy_memo = Lib.empty_env()
-  in 
-  let lookup_id n = 
-    try 
-      Lib.find n id_memo
-    with Not_found -> 
-      let nth = Scope.thy_of_term scp n
-      in (ignore(Lib.add n nth id_memo); nth)
-  in 
-  let lookup_type id = 
-    try 
-      Gtypes.rename_type_vars (Lib.find id type_memo)
-    with Not_found -> 
-      let ty = Scope.type_of scp id
-      in (ignore(Lib.add id ty type_memo); ty)
-  in 
-  let rec set_aux qnts t=
-    match t with
-      Id(id, ty) -> 
-	let th, n = Basic.dest_fnid id
-	in 
-	let nid = 
-	  if(th = Basic.null_thy)
-	  then 
-	    try 
-	      let nth = lookup_id n
-	      in 
-	      Basic.mk_long nth n
-	    with Not_found -> 
-	      raise 
-		(Term.term_error "Formula.make: term not in scope" [t])
-	  else id
-	in 
-	let nty =  
-	  try 
-	    lookup_type id
-	  with Not_found -> 
-	    raise 
-	      (Term.term_error 
-		 "Formula.make: Can't find type for term" [t])
-	in 	
-	let ty1=
-	  try
-	    set_type_name type_thy_memo scp ty
-	  with err ->
-	    raise (Term.add_term_error "Invalid type" [t] err)
-	in 
-	let ret_id = Typed(Id(nid, nty), ty1)
-	in 
-	(if (Term.in_scope scope_memo scp curr_thy ret_id)
-	then ret_id
-	else 
-	  raise 
-	    (Term.term_error 
-	       "Formula.make: term not in scope" [t]))
-    | Free(n, ty) -> 
-	(try 
-	  let nth = lookup_id n
-	  in 
-	  let nid = Basic.mk_long nth n
-	  in 
-	  let nty = 
-	    try lookup_type nid
-	    with Not_found -> 
-	      raise 
-		(Term.term_error 
-		   "Formula.make: Can't find type for term" [t])
-	  in 
-	  let ty1=
-	    try
-	      set_type_name type_thy_memo scp ty
-	    with err ->
-	      raise (Term.add_term_error "Invalid type" [t] err)
-	  in 
-	  set_aux qnts (Typed(Id(nid, nty), ty1))
-	with Not_found -> 
-	  raise 
-	    (Term.term_error 
-	       "Formula.make: can't resolve free variable" [t]))
-    | Qnt(q, b) -> 
-	let nq = binding_set_names type_thy_memo scp q
-	in 
-	let qnts1 = Term.bind (Bound(q)) (Bound(nq)) qnts
-	in 
-	Qnt(nq, set_aux qnts1 b)
-    | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
-    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
-    | Bound(q) -> 
-	(try
-	  (Term.find (Bound(q)) qnts)
-	with Not_found -> 
-	  raise (Term.term_error 
-		   "Bound variable occurs outside binding" [t]))
-
-    | _ -> t
-  in set_aux (Term.empty_subst()) trm
-
+(** Convert a term to a formula *)
 let make ?env scp t= 
   let t1=
-    try resolve_closed_term scp t
+    try Term.resolve_closed_term scp t
     with x -> raise
 	(Result.add_error x
 	   (Term.term_error 
@@ -214,162 +35,184 @@ let make ?env scp t=
     in 
     let tyenv1 = 
       Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
-(*
-      Typing.typecheck_env scp tyenv t1 (Gtypes.mk_null())
-*)
     in 
-    Term.retype tyenv1 t1
-
-(*    (Lib.apply_option (fun x -> x:=tyenv1) env ();
-    Term.retype_pretty tyenv1 t1) *)
+    mk_scoped_formula scp (Term.retype tyenv1 t1)
   with x -> 
     raise (Result.add_error x 
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
 
-let dest f = f
+(** Convert a formula to a term *)
+let term_of x = x
 
-(* Formula recognisers, constructors and destructors *)
+(***
+* Representation for permanent storage
+***)
 
-let is_fun= Term.is_fun
-let mk_fun = Term.mk_fun
-let dest_fun = Term.dest_fun
+type saved_form =  Dbterm.dbterm
+let to_save x =  Dbterm.of_term (term_of x)
+let from_save x = Dbterm.to_term (term_of x)
 
-let is_var  = Term.is_var
-let mk_typed_var = Term.mk_typed_var
-let mk_var n = mk_typed_var n (Gtypes.mk_null())
-let dest_var  =  Term.dest_var 
-let get_var_id vt= fst (dest_var vt)
-let get_var_type vt= snd (dest_var vt)
+(***
+* Operations on formulas 
+***)
 
-let is_app = Term.is_app 
-let mk_app f a= (Basic.App(f, a))
-let dest_app t = 
-  match t with 
-    (Basic.App(f, a)) -> (f, a)
-  | _ -> raise (Term.term_error "Not an application" [t])
+let equals x y = Term.equals (term_of x) (term_of y)
 
-let rec mk_comb x y = 
-  match y with 
-    [] -> x
-  | t::ts -> mk_comb (mk_app x t) ts
+let in_scope_memo memo scp f =
+  if (Term.in_scope memo scp (term_of f))
+  then true
+  else raise (Term.term_error "Badly formed formula" [term_of f])
 
-let is_const = Term.is_const 
-let mk_const = Term.mk_const
-let dest_const =  Term.dest_const
+let in_scope scp f =
+  if (Term.in_scope (Lib.empty_env()) scp (term_of f))
+  then true
+  else raise (Term.term_error "Badly formed formula" [term_of f])
 
-let mk_num = Term.mk_num
-let dest_num = Term.destnum 
 
-(*
-let mk_bool = Term.mk_bool
-let dest_bool = Term.destbool 
-let is_true x= try dest_bool x with _ -> false
-let is_false x = try not (dest_bool x) with _ -> false
-*)
-let mk_true = Logicterm.mk_true
-let mk_false = Logicterm.mk_false
+let inst_env scp env t r =
+  if (Term.is_qnt t) 
+  then 
+    try
+      (let (q, b) = Term.dest_qnt (term_of t)
+      in 
+      let nr0, nenv=
+	let penv = ref env
+	in 
+	let r1=make ~env:penv scp r
+	in 
+	(r1, !penv)
+      in 
+      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
+      in 
+      let f =Term.retype nenv nr
+      in 
+      (f, nenv))
+    with err -> 
+      raise
+	(Term.add_term_error "inst: replacement not closed " [r] err)
+  else raise (Term.term_error "inst: not a quantified formula" [t])
 
-let is_true = Logicterm.is_true
-let is_false = Logicterm.is_false
+let inst scp t r =
+  let f, _ = inst_env scp (Gtypes.empty_subst()) t r
+  in f
 
-let is_fun_name s t =
-  try (Term.is_fun t) & (fst(Term.dest_fun t) = s)
-  with _ -> false
+let subst scp env t = 
+  let nt = Term.subst env (term_of t)
+  in 
+  make scp nt
 
-let is_neg = Logicterm.is_neg 
-let mk_neg  = Logicterm.mk_not
+let rename t = Term.rename (term_of t)
+
+
+(*** Recognisers ***)
+
+let is_qnt x = Term.is_qnt (term_of x)
+let is_app x= Term.is_app (term_of x)
+let is_bound x= Term.is_bound (term_of x)
+let is_free x = Term.is_free (term_of x)
+let is_var x = Term.is_var (term_of x)
+let is_typed x = Term.is_typed (term_of x)
+let is_const x = Term.is_const (term_of x)
+let is_fun x= Term.is_fun (term_of x)
+
+let is_true x = Logicterm.is_true (term_of x)
+let is_false x = Logicterm.is_false (term_of x)
+let is_neg x = Logicterm.is_neg (term_of x)
+let is_conj x = Logicterm.is_conj (term_of x)
+let is_disj x = Logicterm.is_disj (term_of x)
+let is_implies x = Logicterm.is_implies (term_of x)
+let is_equality x = Logicterm.is_equality (term_of x)
+
+let is_all x = Logicterm.is_all (term_of x)
+let is_exists x = Logicterm.is_exists (term_of x)
+let is_lambda x = Logicterm.is_lambda (term_of x)
+
+(*** Destructors ***)
+
+let dest_num x = Term.destnum (term_of x)
 let dest_neg f = 
   if is_neg f
-  then match dest_fun f with (_, x) -> x
+  then match Term.dest_unop f with (_, x) -> x
   else raise (Term.term_error "dest_neg" [f])
-      
-let is_conj = Logicterm.is_conj 
-let mk_conj = Logicterm.mk_and
+
 let dest_conj f = 
   if is_conj f
-  then match dest_fun f with (_, x) -> x
+  then match Term.dest_binop f with (_, a, b) -> (a, b)
   else raise (Term.term_error "dest_conj" [f])
 
-let is_disj = Logicterm.is_disj 
-let mk_disj = Logicterm.mk_or
 let dest_disj f = 
   if is_disj f
-  then match dest_fun f with (_, x) -> x
+  then match Term.dest_binop f with (_, a, b) -> (a, b)
   else raise (Term.term_error "dest_disj" [f])
 
-let mk_implies = Logicterm.mk_implies
-let is_implies = Logicterm.is_implies 
 let dest_implies f = 
   if is_implies f
-  then match dest_fun f with (_, x) -> x
+  then match Term.dest_binop f with (_, a, b) -> (a, b)
   else raise (Term.term_error "dest_implies" [f])
 
-let mk_equality  = Logicterm.mk_equality
-let is_equality = Logicterm.is_equality
 let dest_equality f =  
   if is_equality f
-  then match dest_fun f with 
-    (_, [a; b]) -> (a, b)
-  |	_ -> raise (Term.term_error "dest_equality" [f])
+  then match Term.dest_binop f with (_, a, b) -> (a, b)
   else raise (Term.term_error "dest_equality" [f])
 
-(*
-   if is_equals f
-   then match dest_fun f with (_, x) -> x
-   else raise (Failure "dest_equals")
- *)
-let get_binder_name = Term.get_binder_name 
-let get_binder_type = Term.get_binder_type 
+let get_binder_name x = Term.get_binder_name (term_of x)
+let get_binder_type x = Term.get_binder_type (term_of x)
 
-let dest_qnt f = Term.dest_qnt f
+(*** Constructors ***)
 
-let is_all = Logicterm.is_all 
-let mk_all scp x f = 
-  make scp (Logicterm.mk_all scp x f)
-let mk_typed_all scp x ty f= 
-  make scp (Logicterm.mk_all_ty scp x ty f)
+(**
+   [formula_in_scope scp f]: true if formula [f] is in scope [scp].
 
-let is_exists = Logicterm.is_exists 
-let mk_exists = Logicterm.mk_ex
-let mk_typed_exists = Logicterm.mk_ex_ty 
+   In the current implementation, this always returns [false], forcing
+   Future implementations will hopefully do something useful here.
+*)   
+let formula_in_scope scp f = false
 
-let is_qnt t = (is_all t) or (is_exists t)
+(**
+   [valid_forms scp fs]: Return true if all formulas in [fs] are in
+   scope [scp]. Return false otherwise. Used to test whether the
+   formulas can be used e.g. with conjunction to make a new formula
+   without the expense of going through [make].
 
-let is_lambda = Logicterm.is_lambda
-let mk_lambda = Logicterm.mk_lam
-let mk_typed_lambda = Logicterm.mk_lam_ty
-
-(* Typecheck and reset types of formula *)
-
-(*
-let typecheck_env scp tenv f expty = 
-  let t = term_of f
-  in 
-  Typing.typecheck_env scp (Gtypes.empty_subst()) t expty
-
-let typecheck scp f expty= 
-  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
-  in 
-  Term.retype_pretty tyenv f 
-
-let simple_typecheck scp f expty= 
-  ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
+let valid_forms scp fs =
+  List.fold_left (fun b f -> b && formula_in_scope scp f) true fs
 *)
+let valid_forms scp fs = false 
 
-let typecheck_env scp tenv f expty = 
-  let t = term_of f
-  in 
-  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
+(** 
+   [fast_make scp fs t]: make a formula without any checks, if
+   possible. This function must not be exposed for general use. It is
+   only for use by the constructors.
 
-let typecheck scp f expty= 
-  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
-  in 
-  Term.retype_pretty tyenv f 
+   If [fs] are valid formulas then make [t] a formula of [scp] without
+   doing any checks. Otherwise make [t] a formula using [make].
+*)
+let fast_make scp fs t = 
+  if (valid_forms scp fs) 
+  then mk_scoped_formula scp t 
+  else make scp t
 
-let simple_typecheck scp f expty= 
-  ignore(typecheck_env scp (Gtypes.empty_subst()) f expty)
+let mk_true scp = make scp Logicterm.mk_true
+let mk_false scp = make scp Logicterm.mk_false
+let mk_bool scp b = if b then mk_true scp else mk_false scp
 
-let mk_iff = Logicterm.mk_iff
+let mk_not scp f = 
+  fast_make scp [f] (Logicterm.mk_not (term_of f))
+let mk_and scp a b = 
+  fast_make scp [a; b] (Logicterm.mk_and (term_of a) (term_of b))
+let mk_or scp a b = 
+  fast_make scp [a; b] (Logicterm.mk_or (term_of a) (term_of b))
+let mk_implies scp a b = 
+  fast_make scp [a; b] (Logicterm.mk_implies (term_of a) (term_of b))
+let mk_iff scp a b = 
+  fast_make scp [a; b] (Logicterm.mk_iff (term_of a) (term_of b))
+let mk_equality scp a b = 
+  fast_make scp [a; b] (Logicterm.mk_equality (term_of a) (term_of b))
+
+
+(***
+* Unification functions
+***)
 
 let unify scp asmf conclf =
   let asm = term_of asmf
@@ -397,49 +240,32 @@ let unify_env scp tyenv asmf conclf =
   Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody
 
 
-(* manipulation *)
+(***
+* Typechecking
+***)
 
-(* substitution: term substitution followed by check for closed term *)
-
-let subst scp env t = 
-  let nt = Term.subst env (term_of t)
+let typecheck_env scp tenv f expty = 
+  let t = term_of f
   in 
-  make scp nt
+  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
 
-let rename t = Term.rename t
+let typecheck scp f expty= 
+  let t = term_of f
+  in 
+  let tyenv = typecheck_env scp (Gtypes.empty_subst()) t expty
+  in 
+  make scp (Term.retype_pretty tyenv t)
 
-let inst_env scp vs env t r =
-  if (Term.is_qnt t) 
-  then 
-    try
-      (let (* (q, qnt, n, ty, b) = Term.dest_qnt (term_of t) *)
-	   (q, b) = Term.dest_qnt (term_of t)
-      in 
-      let nr0, nenv=
-	let penv = ref env
-	in 
-	let r1=make ~env:penv scp r
-	in 
-	(r1, !penv)
-      in 
-      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
-      in 
-      let f =Term.retype nenv nr
-      in 
-      (f, nenv))
-    with err -> 
-      raise
-	(Term.add_term_error "inst: replacement not closed " [r] err)
-  else raise (Term.term_error "inst: not a quantified formula" [t])
+let retype scp tenv x = make scp (Term.retype tenv (term_of x))
 
-let inst scp vs t r =
-  let f, _ = inst_env scp vs (Gtypes.empty_subst()) t r
-  in f
+(***
+* Logic operations
+***)
 
+(*** Alpha conversion ***)
 
-let equals = Term.equals
+let alpha_equals x = Logicterm.alpha_equals (term_of x)
 
-(* let alpha_equals_match = Logicterm.alpha_convp_full*)
 let alpha_equals_match scp tyenv asmf conclf= 
   let asm = term_of asmf
   and concl = term_of conclf
@@ -449,35 +275,92 @@ let alpha_equals_match scp tyenv asmf conclf=
     Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp asm concl
   in ret
 
-let alpha_equals = Logicterm.alpha_equals
+(*** Beta conversion ***)
 
 let beta_convp = Logicterm.beta_convp
 let beta_conv scp x =  make scp (Logicterm.beta_conv x)
 let beta_reduce scp x = make scp (Logicterm.beta_reduce x)
 
+(*** Eta conversion ***)
+
 let eta_conv scp f ty x = 
   make scp (Logicterm.eta_conv f ty x)
 
-(* Rewriting: normal rewrite followed by check for close_term *)
+
+(***
+* Rewriting
+***)
+
+type rule = 
+    Rule of form
+  | Ordered of (form * Rewrite.order)
+
+
+(* Rule constructors *)
+let rule t = Rule t
+let orule t r = Ordered(t, r)
 
 let default_rr_control= Rewrite.default_control
 
-let rewrite scp ?ctrl rrs t = 
-  let c = Lib.get_option ctrl default_rr_control
-  in 
-  let nt = Rewrite.rewrite scp c rrs t
-  in 
-  make scp nt
+(*** Rewriting functions ***)
 
-let rewrite_env scp ?ctrl tyenv rrs t = 
+let rule_to_form r = 
+  match r with
+    Rule f -> f
+  | Ordered (f, p) -> f
+
+let to_rewrite_rule r = 
+  match r with
+    Rule f -> Rewrite.rule (term_of f)
+  | Ordered (f, p) -> Rewrite.orule (term_of f) p
+
+(** 
+   Split a list [rs] of rules into a list [fs] of formulas and a list
+   [rrs] of Rewrite.rule. The list [rrs] is in the same order as
+   [rrs]. The list [fs] is in arbitrary order.
+   In particular [rrs= List.map to_rewrite_rules rs].
+*)
+let rec split_rules rs (fs, rrs) = 
+  match rs with
+    [] -> (fs, List.rev rrs)
+  | x::xs -> split_rules xs ((rule_to_form x)::fs, (to_rewrite_rule x)::rrs)
+
+let rewrite scp ?ctrl rules t = 
   let c = Lib.get_option ctrl default_rr_control
+  in 
+  let (fs, rrs) = split_rules rules ([], [])
+  in 
+  let nt = Rewrite.rewrite scp c rrs (term_of t)
+  in 
+  fast_make scp fs nt
+
+let rewrite_env scp ?ctrl tyenv rules t = 
+  let c = Lib.get_option ctrl default_rr_control
+  in 
+  let (fs, rrs) = split_rules rules ([], [])
   in 
   let nt, ntyenv = 
-    Rewrite.rewrite_env scp c tyenv rrs t
+    Rewrite.rewrite_env scp c tyenv rrs (term_of t)
   in 
-  (make scp nt, ntyenv)
+  (fast_make scp fs nt, ntyenv)
 
+
+(***
+* Pretty printing
+***)
 
 let print inf x = Term.print inf (term_of x)
 
+let string_form = Term.string_term
 
+(***
+* Miscelaneous
+***)
+let rec check_term p t =
+  if (p t) then 
+    (match t with
+      Basic.Qnt(q, b) -> check_term p b
+    | Basic.App(f, a) -> check_term p f; check_term p a
+    | Basic.Typed(trm, ty) -> check_term p trm
+    | _ -> ())
+  else raise (Term.term_error "Term check failed" [t])

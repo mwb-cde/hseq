@@ -1066,7 +1066,7 @@ module Tactics =
    Check that term [trm] is in the scope [scope].
  *)
     let check_term_memo memo scp frm=
-      (if (Formula.in_scope_memo memo scp (Scope.thy_of scp) frm)
+      (if (Formula.in_scope_memo memo scp frm)
       then ()
       else (raise (logic_error "Badly formed formula" [frm])))
 
@@ -1153,7 +1153,7 @@ module Tactics =
       in 
       if (Formula.is_conj t) 
       then 
-	(let (t1, t2) = get_pair (Formula.dest_conj t)
+	(let (t1, t2) = (Formula.dest_conj t)
 	in 
 	let concll = join_up lcncls ((ft1, t1)::rcncls)
 	and conclr = join_up lcncls ((ft1, t2)::rcncls)
@@ -1184,7 +1184,7 @@ module Tactics =
       in 
       if (Formula.is_conj t) 
       then 
-	(let (t1, t2) = get_pair(Formula.dest_conj t)
+	(let (t1, t2) = (Formula.dest_conj t)
 	and ft2=Tag.create()
 	in 
 	let asm1=(ft1, t1)
@@ -1212,7 +1212,7 @@ module Tactics =
       in 
       if (Formula.is_disj t) 
       then 
-	(let (t1, t2) = get_pair (Formula.dest_disj t)
+	(let (t1, t2) = (Formula.dest_disj t)
 	in 
 	let asmsl= join_up lasms ((ft, t1)::rasms)
 	and asmsr = join_up lasms ((ft, t2)::rasms)
@@ -1243,7 +1243,7 @@ module Tactics =
       in 
       if (Formula.is_disj t) 
       then 
-	(let (t1, t2) = get_pair (Formula.dest_disj t)
+	(let (t1, t2) = (Formula.dest_disj t)
 	and ft2=Tag.create()
 	in 
 	let cncl1=(ft1, t1)
@@ -1273,7 +1273,7 @@ module Tactics =
       in 
       if (Formula.is_neg t) 
       then 
-	(let t1 = get_one(Formula.dest_neg t)
+	(let t1 = (Formula.dest_neg t)
 	in 
 	let cncl1=(ft, t1)
 	in 
@@ -1300,7 +1300,7 @@ module Tactics =
       in 
       if (Formula.is_neg t) 
       then 
-	(let t1 = get_one (Formula.dest_neg t)
+	(let t1 = (Formula.dest_neg t)
 	in 
 	let asm1=(ft, t1)
 	in 
@@ -1327,7 +1327,7 @@ module Tactics =
       in 
       if (Formula.is_implies t) 
       then 
-	(let  (t1, t2) = get_pair (Formula.dest_implies t)
+	(let  (t1, t2) = (Formula.dest_implies t)
 	and ft2=Tag.create()
 	in 
 	let asm =(ft2, t1)
@@ -1363,7 +1363,7 @@ module Tactics =
       in 
       if (Formula.is_implies t) 
       then 
-	(let (t1, t2) = get_pair (Formula.dest_implies t)
+	(let (t1, t2) = (Formula.dest_implies t)
 	in 
 	let asm2=join_up lasms ((ft, t2)::rasms)
 	and asm1 = join_up lasms rasms
@@ -1411,9 +1411,6 @@ module Tactics =
 	     Skolem.tylist=Sequent.sqnt_tynames sq
 	   }
 	in 
-(*
-   let nscp = add_sklms_to_scope nsklms (scope_of sq)
- *)
 	let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
 	in 
 	(* add skolem constant and type variable to sequent list *)
@@ -1423,7 +1420,7 @@ module Tactics =
 	  else (Sequent.sqnt_tyvars sq)
 	in 
 	let ncncl, ntyenv = 
-	  Formula.inst_env nscp [] styenv t sv
+	  Formula.inst_env nscp styenv t sv
 	in 
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
@@ -1480,7 +1477,7 @@ module Tactics =
 	  else (Sequent.sqnt_tyvars sq)
 	in 
 	let nasm, ntyenv= 
-	  Formula.inst_env nscp [] styenv t sv
+	  Formula.inst_env nscp styenv t sv
 	in 
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
@@ -1599,7 +1596,7 @@ module Tactics =
       in 
       let ntrm1= Formula.term_of fm1
       in 
-      let ntrm2, ntyenv2=Formula.inst_env scp [] tyenv t ntrm1
+      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t ntrm1
       in 
       let ntyenv3=Formula.typecheck_env scp ntyenv2 ntrm2 
 	  (Gtypes.mk_var "inst_ty")
@@ -1739,7 +1736,8 @@ module Tactics =
 		  raise 
 		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
-	    ft xs ((Rewrite.rule (Formula.term_of asm))::rslt)
+(* 	    ft xs ((Rewrite.rule (Formula.term_of asm))::rslt) *)
+ 	    ft xs ((Formula.rule asm)::rslt) 
 	|  (OAsm(x, order)::xs) ->
 	    let asm=
 	      (try 
@@ -1749,18 +1747,21 @@ module Tactics =
 		  raise 
 		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
-	    ft xs ((Rewrite.orule (Formula.term_of asm) order)::rslt)
+(*	    ft xs ((Rewrite.orule (Formula.term_of asm) order)::rslt) *)
+	    ft xs ((Formula.orule asm order)::rslt) 
 	| ((RRThm(x))::xs) -> 
 	    (try 
 	      check_term_memo memo scp (formula_of x);
-	      ft xs ((Rewrite.rule (term_of x))::rslt)
+(* 	      ft xs ((Rewrite.rule (term_of x))::rslt) *)
+ 	      ft xs ((Formula.rule (formula_of x))::rslt) 
 	    with 
 	      _ -> ft xs rslt)
 	| ((ORRThm(x, order))::xs) -> 
 	    (try 
 	      (check_term_memo memo scp (formula_of x));
 	      ft xs 
-		((Rewrite.orule (term_of x) order)
+(*		((Rewrite.orule (term_of x) order) *)
+		((Formula.orule (formula_of x) order) 
 		 ::rslt)
 	    with 
 	      _ -> ft xs rslt)
@@ -1843,7 +1844,8 @@ module Tactics =
 	  let nt = Formula.rewrite ~ctrl:ctrl scp 
 	      (List.map 
 		 (fun x -> 
-		   Rewrite.rule (term_of x)) rrl) f
+(* 		   Rewrite.rule (term_of x)) rrl) f *)
+ 		   Formula.rule (formula_of x)) rrl) f 
 	  in mk_theorem nt
 	with x -> raise 
 	    (Result.add_error(logic_error "rewrite_conv" [formula_of t]) x)

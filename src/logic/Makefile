@@ -6,6 +6,11 @@ CODE = formula.cmo defn.cmo logic.cmo theory.cmo thydb.cmo
 
 OPTCODE = formula.cmx defn.cmx logic.cmx theory.cmx thydb.cmx
 
+DOCFILES = formula.mli defn.mli 
+DOCLOAD = -load "${DOCDIR}/tpcore.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
+
 LIBFILE=logic.cma
 OPTLIB=logic.cmxa
 
@@ -14,8 +19,9 @@ OPTLIB=logic.cmxa
 INCLUDE= -I .. -I ../include
 LIBDIR= 
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
+HEADERSDIR ?=../include
+INSTALLDIR ?=../libs
+DOCDIR ?= ../doc
 
 OCLIBS=
 OPTLIBS=
@@ -59,6 +65,9 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${DOCLOAD} ${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} \
+	-d ${DOCDIR} ${DOCFILES}
 
 # libraries
 
