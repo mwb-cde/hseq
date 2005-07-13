@@ -16,7 +16,6 @@ OCAMLC=ocamlc ${OPTIONS}
 BAREMAKE=make
 MAKE=make INCLUDE='${INCLUDE}' LIB='${LIB}' OPTIONS='${OPTIONS}'
 
-
 #OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLlink=${OCAMLC} -c ${INCLUDE} ${LIB} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCLIBS} 
@@ -168,13 +167,14 @@ THYFILE=base_thy.ml bool_thy.ml bool_prop.ml
 DOCDIR ?= ../doc
 DOCTYPE ?= -html
 DOCOPTIONS ?= 
-MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}' DOCDIRS='${DOCDIR}'
+MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}'\
+	 DOCDIRS='${DOCDIR}'
 
 #DOC= ${QUOTEDOC} ${UTILDOC} ${TPCOREDOC} ${LOGICDOC} \
 #	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
 #	${USERLIBDOC}
 
-DOC= tpcoredoc
+DOC= logicdoc
 
 doc: ${DOC}
 
