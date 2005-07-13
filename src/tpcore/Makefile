@@ -20,28 +20,30 @@ DOCFILES = defaults.mli settings.mli basic.mli \
 	printer.mli result.mli scope.mli \
 	gtypes.mli term.mli logicterm.mli dbterm.mli \
 	net.mli typing.mli unify.mli rewrite.mli 
-
+DOCLOAD = -load "${DOCDIR}/util.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
 
 LIBFILE=tpcore.cma
 OPTLIB=tpcore.cmxa
 
 # Compiler settings
 
-INCLUDE= -I .. -I ../include
-LIBDIR= 
+INCLUDE ?= -I .. -I ../include
+LIBDIR ?= 
 CONFIGDIR ?= ../config
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
+HEADERSDIR ?=../include
+INSTALLDIR ?=../libs
 DOCDIR ?= ../doc
 
-OCLIBS=
-OPTLIBS=
-OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
+OCLIBS ?=
+OPTLIBS ?=
+OPTIONS ?=-pp "camlp4o pa_extend.cmo" -I +camlp4 
 
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
+OCAMLC ?= ocamlc ${OPTIONS} 
+OCAMLlink ?= ${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
+OCAMLoptlink ?= ocamlopt -c ${INCLUDE} ${OCLIBS} 
 
 # OCAMLCPP : the preprocesor
 OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -- -I ${CONFIGDIR} 
@@ -85,7 +87,8 @@ installopt: opt
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
 doc: ${DOCFILES}
-	ocamldoc ${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/tpcore.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

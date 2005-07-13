@@ -1027,13 +1027,13 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
 
 
 (**
-   [in_scope memo scp th ty]: Check that [ty] is in scope by checking
+   [in_scope memo scp ty]: Check that [ty] is in scope by checking
    that every type constructor is decared or defined in scope [scp].
 
    The function is memoised: if a constructor name is found to be 
    in scope, it is added to [memo].
 *)
-let in_scope memo scp th ty =
+let in_scope memo scp ty =
   let lookup_id n = 
     (try (Lib.find n memo)
     with Not_found -> 

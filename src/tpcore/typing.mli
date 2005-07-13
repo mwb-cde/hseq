@@ -15,7 +15,7 @@
    Type-checking tests all types for well-definedness (every
    identifier is in scope) type inference is carried out. 
 
-   Using the [typecheck] and [typecheck_top] is safe provided that the
+   Using [typecheck] and [typecheck_top] is safe provided that the
    types of identifiers ([Id]) in terms are always assigned the type
    given to them by the scope before typechecking is carried out.
 *)

@@ -511,7 +511,7 @@ val set_names: Scope.t  -> term -> term
 *)
 
 val in_scope: (string, bool)Lib.substype 
-  -> Scope.t -> Basic.thy_id -> term -> bool
+  -> Scope.t -> term -> bool
 (**
    [in_scope memo spc thy t]: Check that term is in scope.
    All identifiers and types must be declared in the given scope.
@@ -524,6 +524,33 @@ val close_term: quant_ty -> (term -> bool) -> term -> term
    to quantifiers of kind [qnt] to replace free variables and bound
    variables with no binding quantifier and for which [free] is true.
  *)
+
+val is_closed: Basic.term list -> Basic.term -> bool
+(**
+   [is_closed ts f] is true iff all bound variables in [f] are in the
+   body of a quantifier or occur in [ts].
+*)
+
+val resolve_closed_term: Scope.t -> Basic.term -> Basic.term
+(**
+   [resolve_closed_term scp trm]: Resolve names and variables in term [trm]. 
+   - Replaces each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp]. Fail if [x] is not in scope
+   [scp].
+   - Expands all type names to their long form (theory+name).
+   - Expands all identifier terms ([Id]) to their long form (theory+name).
+   - Looks up the type [ty'] of each identifier term ([Id(n,
+     ty)]). Replaces the term with [Typed(Id(n, ty), ty')], setting
+     the type [ty'] of the identifier while retaining any information
+     in the given type [ty].
+
+   Fails if
+   - Any type name is not declared in scope [scp].
+   - Any identifier is not declared in [scp].
+   - Any free variable can't be replaced with an identifier in scope [scp].
+   - Any bound variable occurs outside its binding term.
+*)
+
 
 (** {5 Comparisons} *)
 

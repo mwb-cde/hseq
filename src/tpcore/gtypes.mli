@@ -401,7 +401,7 @@ val set_name :
 *)
 
 val in_scope: 
-    (string, bool)Lib.substype -> Scope.t ->thy_id -> gtype -> bool
+    (string, bool)Lib.substype -> Scope.t -> gtype -> bool
 (**
    [in_scope memo scp th ty]: Check that [ty] is in scope by checking
    that every type constructor is decared or defined in scope [scp].
