@@ -6,43 +6,13 @@
 
 open Basic
   
-(*
-   Term definitions
- *)
+(** Term and subtype definition *)
 
-let rec mk_all_from_list scp b qnts =
-  match qnts with 
-    [] -> b
-  | (Basic.Free(n, ty)::qs) ->
-      mk_all_from_list scp (Logicterm.mk_all_ty scp n ty b) qs
-  | (Basic.Id(n, ty)::qs) ->
-      raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
-  | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
+(***
+* Term definition and declaration
+***)
 
-let rec mk_var_ty_list ls =
-  match ls with
-    [] -> []
-  | (Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
-  | _ -> raise (Term.term_error "Non-variables not allowed" ls)
-
-let get_lhs t = 
-  match t with 
-    Basic.Id(n, _) -> (n, [])
-  | Basic.App(_, _) -> 
-      let f=Term.get_fun t
-      in 
-      let n=
-	(if (Term.is_fun f) 
-	then fst(Term.dest_fun f)
-	else 
-	  (if (Term.is_var f) 
-	  then fst(Term.dest_var f)
-	  else raise (Term.term_error "Defn: name must be a name" [t])))
-      in 
-      (n, mk_var_ty_list (Term.get_args t))
-  | _ -> 
-      raise (Term.term_error "Defn: parameters must be free variables" [])
-
+(*** Term declaration ***)
 
 let mk_decln scp name ty =
   let check_exists () = 
@@ -66,28 +36,25 @@ let mk_decln scp name ty =
   in 
   (name, ret_ty)
 
-let mk_defn_type env atys rty rfrs = 
-  match atys with
-    [] -> rty
-  |	ts -> 
-      (Logicterm.mk_fun_ty_from_list
-	 (List.map
-	    (fun (x, ty) -> 
- 	      Gtypes.mgu  
-		(try 
-		  (List.assoc x rfrs)
-		with Not_found -> ty) env)
-	    ts) rty)
 
-let rec check_free_vars tyenv name ls = 
+(*** Term definition ***)
+
+let rec mk_var_ty_list ls =
   match ls with
     [] -> []
-  | (n, ty) :: fvs -> 
-      if n = name 
-      then check_free_vars tyenv name fvs
-      else (ignore(Scope.type_of tyenv n); 
-	    check_free_vars tyenv name fvs)
-	  
+  | (Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
+  | _ -> raise (Term.term_error "Non-variables not allowed" ls)
+
+let rec mk_all_from_list scp b qnts =
+  match qnts with 
+    [] -> b
+  | (Basic.Free(n, ty)::qs) ->
+      mk_all_from_list scp (Logicterm.mk_all_ty scp n ty b) qs
+  | (Basic.Id(n, ty)::qs) ->
+      raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
+  | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
+
+
 let mk_defn scp name args rhs = 
   let args1=
     let memo = Lib.empty_env()
@@ -119,17 +86,16 @@ let mk_defn scp name args rhs =
   in 
   let tenv=Typing.settype nscp ndn
   in 
-(*
-  let tenv1=Typing.typecheck_env nscp tenv ndn Logicterm.mk_bool_ty
-*)
   let tenv1=Typing.typecheck_top nscp tenv ndn Logicterm.mk_bool_ty
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))
 
-(* Types *)
+(***
+* Type definition
+***)
 
-(* Type definition: aliasing *)
+(*** Support functions ***)
 
 let check_args_unique ags=
   let rec check_aux ys=
@@ -144,90 +110,16 @@ let check_args_unique ags=
   in 
   check_aux ags
 
-
-(* Type definition: subtypes *)
-
-
-(** 
-   [extend_scope_typedef scp id args]: extend scope [scp] with type 
-   named [id] with arguments [args].
-
-   [extend_scope_identifier scp id typ]: extend scope [scp] with term
-   named [id] of type [typ].
-
-   [extend_scope_terms scp declns]: extend scope [scp] with terms 
-   declared in declns.
- *)
-(*
-let extend_scope_typedef scp id args=
-  let record = 
-    {Scope.name = Basic.name id; Scope.args = args; 
-     Scope.alias = None; Scope.characteristics = []}
-  in 
-  {scp with 
-   Gtypes.typ_defn = 
-   (fun x -> if(x=id) then record else scp.Gtypes.typ_defn x);
-   Gtypes.thy_of =
-   (fun sel n ->
-     if ((sel = Basic.type_id) & (n=Basic.name id ))
-     then thy_of_id id
-     else scp.Gtypes.thy_of sel n)     
- }
-
-let extend_scope_identifier scp id typ =
-  let thy_of sel n =
-    if (sel = fn_id) then 
-      if n = (Basic.name id) 
-      then Basic.thy_of_id id
-      else scp.Gtypes.thy_of sel n
-    else scp.Gtypes.thy_of sel n
-  and 
-      typeof_fn n = 
-    if n=id 
-    then (Gtypes.copy_type typ)
-    else scp.Gtypes.typeof_fn n
-  and 
-      prec_of sel n = 
-    if (sel = fn_id) 
-    then 
-      if(n = id) then raise Not_found
-      else scp.Gtypes.prec_of sel n
-    else scp.Gtypes.prec_of sel n
-  in 
-  {scp with 
-   Gtypes.typeof_fn = typeof_fn;
-   Gtypes.thy_of = thy_of;
-   Gtypes.prec_of = prec_of}
-
-
-let extend_scope_terms scp declns =
-  let thy_of sel n =
-    if (sel = fn_id) then 
-      try 
-	let (id, _) = List.find (fun (y, _) -> n = (name y)) declns
-	in 
-	Basic.thy_of_id id
-      with Not_found ->  scp.Gtypes.thy_of sel n
-    else scp.Gtypes.thy_of sel n
-  and 
-      typeof_fn n = 
-	  try Gtypes.copy_type (List.assoc n declns)
-	  with Not_found -> scp.Gtypes.typeof_fn n
-  and 
-      prec_of sel n = 
-    if (sel = fn_id) 
-    then 
-      if (List.mem_assoc n declns)
-      then raise Not_found 
-      else scp.Gtypes.prec_of sel n
-    else scp.Gtypes.prec_of sel n
-  in 
-  {scp with 
-   Gtypes.typeof_fn = typeof_fn;
-   Gtypes.thy_of = thy_of;
-   Gtypes.prec_of = prec_of}
+(**
+   [check_type_name scp n]: make sure that there is no type named [n]
+   in scope [scp].
 *)
-
+let check_type_name scp n = 
+  try
+    (ignore(Scope.defn_of scp n);
+     raise (Gtypes.type_error "Type already exists" 
+	      [Gtypes.mk_constr (Basic.Defined n) []]))
+  with Not_found -> ()
 
 let check_well_defined scp args ty= 
   (try 
@@ -235,27 +127,73 @@ let check_well_defined scp args ty=
   with err ->
     raise (Gtypes.add_type_error "Badly formed type" [ty] err))
 
+
+(*** Type definition: aliasing ***)
+
+
+(** Subtype definition 
+
+   Define the subtype of a type constructing
+   [A, args, T, set:(args)T->bool, rep, abs]
+   where 
+   {- [A] is the name of the subtype.}
+   {- [args] are the names of the types' parameters.}
+   {- [T] is the representation type.}
+   {- [rep] is the name of the representation function
+   destructing type [A]}
+   {- [abs] is the name of the abstraction function constructing
+   type [A].}
+
+   The types of the constructed functions are
+   {- representation function:  [rep:(args)T -> A]}
+   {- abstraction function: [abs:A-> (args)T]}
+ 
+   The axioms specifying the abstraction and representation functions are:
+   {- rep_T: |- !x: set (rep x)}
+   {- rep_T_inverse: |- !x: abs (rep x) = x}
+   {- abs_T_inverse: |- !x: (set x) => rep (abs x) = x}
+
+   The names of the type, abstraction and representation functions are
+   all parameters to the subtype definition.
+*)
+
 (*
+   [subtype_defn]: The result of constructing a subtype. 
+
+   The result of constructing a subtype:
+   {- [id]: The name of the new type.}
+   {- [args]: The names of the parameters to the type.}
+   {- [rep]: The declaration of the representation function.}
+   {- [abs]: The declaration of the abstraction function.}
+   {- [set]: The term providing the defining predicate of the subtype.}
+   {- [rep_T]: A term of the form |- !x: set (rep x)}
+   {- [rep_T_inverse]: A term of the form |- !x: abs (rep x) = x}
+   {- [abs_T_inverse]: A term of the form |- !x: (set x) => rep
+   (abs x) = x}
+*)
+type subtype_defn = 
+    {
+     id: Basic.ident;
+     args : string list;
+     rep : (Basic.ident* Basic.gtype);
+     abs: (Basic.ident* Basic.gtype);
+     set: Basic.term;
+     rep_T: Basic.term;
+     rep_T_inverse: Basic.term;
+     abs_T_inverse: Basic.term
+   }
+
+
+(**
    [mk_subtype_exists setp]
    make the term << ?x. setp x >> to be used to show that a subtype exists.
- *)
+*)
 let mk_subtype_exists setp=
   let x_b=(Basic.mk_binding Basic.Ex "x" (Gtypes.mk_var "x_ty"))
   in 
   let x= Term.mk_bound x_b
   in 
   Basic.Qnt(x_b, Term.mk_app setp x)
-
-(**
-   [check_type_name scp n]: make sure that there is no type named [n]
-   in scope [scp].
- *)
-let check_type_name scp n = 
-  try
-    (ignore(Scope.defn_of scp n);
-     raise (Gtypes.type_error "Type already exists" 
-	      [Gtypes.mk_constr (Basic.Defined n) []]))
-  with Not_found -> ()
 
 
 (**
@@ -283,21 +221,6 @@ let make_witness_type scp dtype setP =
 	(Term.add_term_error "Badly typed term" [setP]
 	   (Gtypes.add_type_error "Invalid type" [tty] err))
 
-(*
- *  Type definition. 
- *  A, args, T, set:(args)T->bool, rep_name, abs_name
- * 
- *  make 
- *  Declarations:
- *   representation function rep = rep_name:(args)T -> A
- *   abstraction function rep = abs_name:A-> (args)T 
- *
- *  Axioms:
- *   Rep_T: |- !x: set (rep_name x)
- *   Rep_T_inverse: |- !x: abs_name (rep_name x) = x
- *   Abs_T_inverse: |- !x: (set x) => rep_name (abs_name x) = x
- *   
- *)
 
 (**
    [mk_rep_T set rep]: 
@@ -349,8 +272,9 @@ let mk_abs_T_inv set rep abs=
   Basic.Qnt(x_b, body)
       
 
-(*
-   mk_subtype scp name args d setP rep:
+(**
+   [mk_subtype scp name args d setP rep]: Make a subtype.
+
    - check name doesn't exist already
    - check all arguments in args are unique
    - check def is well defined 
@@ -359,19 +283,6 @@ let mk_abs_T_inv set rep abs=
    - declare rep as a function of type (d -> n)
    - make subtype property from setp and rep.
  *)
-
-type subtype_defn = 
-    {
-     id: Basic.ident;
-     args : string list;
-     rep : (Basic.ident* Basic.gtype);
-     abs: (Basic.ident* Basic.gtype);
-     set: Basic.term;
-     rep_T: Basic.term;
-     rep_T_inverse: Basic.term;
-     abs_T_inverse: Basic.term
-   }
-
 let mk_subtype scp name args dtype setP rep_name abs_name=
   let th = Scope.thy_of scp
   in 
@@ -410,6 +321,7 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
     rep_T=rep_T_thm;
     rep_T_inverse= rep_T_inv_thm; abs_T_inverse=abs_T_inv_thm
   }
+
 
 module HolLike =
   struct
@@ -517,3 +429,78 @@ module HolLike =
       (rep_ty, new_setp, subtype_prop)
 
   end
+
+
+(***
+* Retired code
+***)
+
+(* decln: type of declarations. *)
+(* type decln *)
+(*
+ defn: the ocaml type of a definition 
+   This is used only for prettyprinting.
+   (The Logic.thm describing the definition is an abstracted type)
+*)
+(*
+type defn = Defn of (Basic.ident * Basic.gtype * Logic.thm)
+*)
+
+(* destructors *)
+(*
+val dest_decln : decln -> Basic.ident * Basic.gtype
+val dest_defn : defn -> (Basic.ident * Basic.gtype * Logic.thm)
+*)
+
+(*
+let get_lhs t = 
+  match t with 
+    Basic.Id(n, _) -> (n, [])
+  | Basic.App(_, _) -> 
+      let f=Term.get_fun t
+      in 
+      let n=
+	(if (Term.is_fun f) 
+	then fst(Term.dest_fun f)
+	else 
+	  (if (Term.is_var f) 
+	  then fst(Term.dest_var f)
+	  else raise (Term.term_error "Defn: name must be a name" [t])))
+      in 
+      (n, mk_var_ty_list (Term.get_args t))
+  | _ -> 
+      raise (Term.term_error "Defn: parameters must be free variables" [])
+*)
+
+(*
+let mk_defn_type env atys rty rfrs = 
+  match atys with
+    [] -> rty
+  | ts -> 
+      (Logicterm.mk_fun_ty_from_list
+	 (List.map
+	    (fun (x, ty) -> 
+ 	      Gtypes.mgu  
+		(try 
+		  (List.assoc x rfrs)
+		with Not_found -> ty) env)
+	    ts) rty)
+(** [mk_defn_type tyenv arg_tys rty frees]
+   Construct the type of a defined term.  Forms the type [a1 -> a2 ->
+   .. -> rty] where [arg_tys = [a1; a2; ..]].  
+
+   [frees] is an association list of names and types, making type
+   variables with the same name be the same type.
+ *)
+*)
+
+(*
+let rec check_free_vars tyenv name ls = 
+  match ls with
+    [] -> []
+  | (n, ty) :: fvs -> 
+      if n = name 
+      then check_free_vars tyenv name fvs
+      else (ignore(Scope.type_of tyenv n); 
+	    check_free_vars tyenv name fvs)
+*)	  
