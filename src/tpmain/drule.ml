@@ -31,7 +31,7 @@ let get_tagged_cncl i g= Logic.get_label_cncl i (sequent g)
 let sqnt_tag  = Logic.Sequent.sqnt_tag
 let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
 
-let branch_tag b = Logic.Subgoals.branch_tag b
+(* let branch_tag b = Logic.Subgoals.branch_tag b*)
 let branch_tyenv b = Logic.Subgoals.branch_tyenv b
 let branch_subgoals b = Logic.Subgoals.branch_sqnts b
 

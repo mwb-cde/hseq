@@ -74,7 +74,7 @@ val node_tag : Logic.node -> Tag.t
 
    [num_subgoals b]: number of subgoals in branch [b]
  *)
-val branch_tag: Logic.branch -> Tag.t
+(* val branch_tag: Logic.branch -> Tag.t *)
 val branch_tyenv: Logic.branch -> Gtypes.substitution
 val branch_subgoals: Logic.branch -> Logic.Sequent.t list
 val has_subgoals : Logic.branch -> bool
