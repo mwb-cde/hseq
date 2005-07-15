@@ -1,5 +1,5 @@
 (*-----
-Name: logic.ml
+   Name: logic.ml
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
@@ -8,8 +8,8 @@ open Basic
 open Formula
 
 (**********
-* Theorems
-**********)
+ * Theorems
+ **********)
 
 type thm = 
     Axiom of form
@@ -31,7 +31,9 @@ let formula_of x =
 
 let term_of x = Formula.term_of (formula_of x)
 
-(** Representation for storage *)
+(***
+ * Representation for storage 
+ ***)
 
 type saved_thm = 
     Saxiom of saved_form
@@ -47,7 +49,9 @@ let from_save t =
     Saxiom f -> Axiom (Formula.from_save f)
   | Stheorem f -> Theorem (Formula.from_save f)
 
-(** Pretty printing *)
+(***
+ * Pretty printing
+ ***)
 
 let print_thm pp t = 
   Format.printf "@[<3>|- ";
@@ -56,21 +60,39 @@ let print_thm pp t =
 
 let string_thm x = string_form (formula_of x)
 
-(***
-* Error handling 
-***)
+(**********
+ * Error handling 
+ **********)
 
 let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es = 
   raise (Result.add_error (logic_error s t) es)
 
+let sqntError s = 
+  Result.mk_error(new Result.error s)
+let addsqntError s es = 
+  raise (Result.add_error (sqntError s) es)
+
 (**********
-* Subgoals 
-**********)
+ * Subgoals 
+ **********)
 
 (***
-* Skolem constants 
-***)
+ * Types used in subgoals
+ ***)
+
+type label = 
+    FNum of int
+  | FTag of Tag.t
+
+type tagged_form = (Tag.t* form)
+
+let form_tag (t, _) = t
+let drop_tag (_, f) = f
+
+(***
+ * Skolem constants 
+ ***)
 module Skolem = 
   struct
 
@@ -104,8 +126,8 @@ module Skolem =
       (id, ty)
 
 (***
-* Constructing skolem constants
-***)
+ * Constructing skolem constants
+ ***)
 
 (** Data needed to generate a skolem constant *)
     type new_skolem_data=
@@ -142,7 +164,7 @@ module Skolem =
    scope [scp] is needed for unification
    return the new identifier, its type and the updated 
    information for skolem building
-*)
+ *)
     let mk_new_skolem info=
       (*
 	 tyname: if ty is a variable then use its name for the
@@ -164,103 +186,138 @@ module Skolem =
 	in 
  	(Gtypes.mgu tty ntyenv, ntyenv, nnames)
       in 
-	(* see if name is already associated with a skolem *)
-	match (Lib.find_opt (get_old_sklm info.name) info.skolems) with 
-	  None -> 
-	    let nindx = 0
-	    in 
-	    let oname = info.name
-	    in 
-	    let nnam = make_skolem_name oname nindx
-	    in 
-	    let nty, ntyenv, new_names=mk_nty (name nnam)
-	    in 
-	    (Term.mk_typed_var nnam nty, nty, 
-	     (oname, (nindx, nty))::info.skolems, 
-	     ntyenv, new_names)
-	| Some(oldsk) -> 
-	    (* get new index for skolem named n *)
-	    let nindx = (get_sklm_indx oldsk)+1
-	    in 
-	    (* make the new identifier *)
-	    let oname = info.name
-	    in 
-	    let nnam = make_skolem_name oname nindx
-	    in 
-	    let nty, ntyenv, new_names=mk_nty (name nnam)
-	    in 
-	    (Term.mk_typed_var nnam nty, nty, 
-	     (oname, (nindx, nty))::info.skolems, 
-	     ntyenv, new_names)
+      (* see if name is already associated with a skolem *)
+      match (Lib.find_opt (get_old_sklm info.name) info.skolems) with 
+	None -> 
+	  let nindx = 0
+	  in 
+	  let oname = info.name
+	  in 
+	  let nnam = make_skolem_name oname nindx
+	  in 
+	  let nty, ntyenv, new_names=mk_nty (name nnam)
+	  in 
+	  (Term.mk_typed_var nnam nty, nty, 
+	   (oname, (nindx, nty))::info.skolems, 
+	   ntyenv, new_names)
+      | Some(oldsk) -> 
+	  (* get new index for skolem named n *)
+	  let nindx = (get_sklm_indx oldsk)+1
+	  in 
+	  (* make the new identifier *)
+	  let oname = info.name
+	  in 
+	  let nnam = make_skolem_name oname nindx
+	  in 
+	  let nty, ntyenv, new_names=mk_nty (name nnam)
+	  in 
+	  (Term.mk_typed_var nnam nty, nty, 
+	   (oname, (nindx, nty))::info.skolems, 
+	   ntyenv, new_names)
 
 
 (***
-* Retired code
+ * Retired code
 
-***)
+ ***)
 (*
-    let is_sklm n sklms = 
-      try ignore(get_old_sklm n sklms); true
-      with Not_found -> false
+   let is_sklm n sklms = 
+   try ignore(get_old_sklm n sklms); true
+   with Not_found -> false
 
-	  (** Add skolem constants to the scope *)
-    let add_skolems_to_scope sklms scp =
-      let declns = List.map decln_of_sklm sklms
-      in 
-      Scope.extend_with_terms scp declns
+   (** Add skolem constants to the scope *)
+   let add_skolems_to_scope sklms scp =
+   let declns = List.map decln_of_sklm sklms
+   in 
+   Scope.extend_with_terms scp declns
 
-	(** Add an identifier to the scope *)
-    let add_skolem_to_scope sv sty scp =
-      Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
-*)
-
+   (** Add an identifier to the scope *)
+   let add_skolem_to_scope sv sty scp =
+   Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
+ *)
 
   end
 
 
-type tagged_form = (Tag.t* form)
+(***
+ * Sequents
+ ***)
 
-let form_tag (t, _) = t
-let drop_tag (_, f) = f
+(*** 
+ * Utility funcitons
+ ***)
 
-let sqntError s = 
-  Result.mk_error(new Result.error s)
-let addsqntError s es = 
-  raise (Result.add_error (sqntError s) es)
+let join_up l r = List.rev_append l r
 
-(* label: sequent formula identifiers *)
-
-type label = 
-    FNum of int
-  | FTag of Tag.t
-
-(*
-   rr_type: where to get rewrite rule from
-   Asm : labelled assumption
-   RRThm: given theorem
-   OAsm : labelled assumption, with ordering
-   ORRThm: given theorem, with ordering
+let split_at_tag t x= 
+  let test (l, _) = Tag.equal t l
+  in Lib.full_split_at test x
+(**
+   [split_at_tag t x]:
+   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
+   and [c] is the formula in [x] identified by tag [t].
  *)
-type rr_type = 
-    Asm of label
-  | RRThm of thm
-  | OAsm of label * Rewrite.order
-  | ORRThm of thm * Rewrite.order
 
+(**
+   [split_at_label lbl x]:
+   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
+   and [c] is the formula in [x] identified by label [lbl].
+
+   if [lbl=FNum i], then split at index [(abs i)-1].
+   (to deal with assumptions and the index offset).
+ *)
+let split_at_label lbl x= 
+  match lbl with
+    FNum i -> Lib.full_split_at_index ((abs i)-1) x
+  | FTag tg -> split_at_tag tg x
+
+(**
+   [split_at_asm lbl x]:
+   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
+   and [c] is the formula in [x] identified by label [lbl].
+
+   raise Not_found if [lbl=FNum i] and i>=0
+ *)
+let split_at_asm l fs = 
+  match l with
+    FNum i -> 
+      if i>=0 then raise Not_found 
+      else split_at_label l fs
+  | _ -> split_at_label l fs
+
+(**
+   [split_at_concl lbl x]:
+   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
+   and [c] is the formula in [x] identified by label [lbl].
+
+   raise Not_found if [lbl=FNum i] and i<0
+ *)
+let split_at_concl l fs = 
+  match l with
+    FNum i -> 
+      if i<0 then raise Not_found 
+      else split_at_label l fs
+  | _ -> split_at_label l fs
+
+
+(** Sequents and their components *)
 module Sequent=
   struct
-(* 
+(**
+   Sequents
+
    A sequent is made up of
    a unique tag
+   a scope
    information about skolem constants (the sqnt_env)
    a list of tagged formulas: the assumptions
    a list of tagged formulas: the conclusions
  *)
 
-(* mk_sqnt x: |- x  (with x to be proved)*) 
+(** [mk_sqnt_form x]: make the subgoal |- x  (with x to be proved) *) 
     let mk_sqnt_form f = (Tag.create(), f)
 
-(* 
+(**
    A sqnt_env is made up of
    the shared type variables (Gtypes.WeakVar) that may be used in the sequent
    information for constructing names of weak types
@@ -275,21 +332,24 @@ module Sequent=
 	 tynames: (string * int) list;
        }
 
+(** The type of sequents *)
     type t = (Tag.t * sqnt_env * tagged_form list * tagged_form list)
 
-(* Sequent manipulation *)
+    let make tg env ps cs= (tg, env, ps, cs)
+    let dest (tg, env, ps, cs) = (tg, env, ps, cs)
 
+(** Components of a sequent *)
     let asms (_, _, asl, _) = asl
     let concls (_, _, _, cnl) = cnl
     let sqnt_env (_, e, _, _) = e
+    let sqnt_tag(t, _, _, _) = t
+
     let sklm_cnsts (_, e, _, _) = e.sklms
     let scope_of (_, e, _, _) = e.sqscp
     let sqnt_tyvars (_, e, _, _)=e.tyvars
     let sqnt_tynames (_, e, _, _)=e.tynames
-    let sqnt_tag(t, _, _, _) = t
 
-    let mk_sqnt tg env ps cs= (tg, env, ps, cs)
-    let dest_sqnt (tg, env, ps, cs) = (tg, env, ps, cs)
+    let thy_of_sqnt sq = Scope.thy_of (scope_of sq)
 
     let mk_sqnt_env sks scp tyvs names=
       {sklms=sks; sqscp=scp; tyvars=tyvs; tynames=names}
@@ -297,115 +357,22 @@ module Sequent=
     let new_sqnt scp x = 
       let env=mk_sqnt_env [] scp [] []
       in 
-      mk_sqnt (Tag.create()) env [] [mk_sqnt_form x]
-
-    let sqnt_scope sq = scope_of sq
-    let thy_of_sqnt sq = Scope.thy_of (scope_of sq)
+      make (Tag.create()) env [] [mk_sqnt_form x]
 
 
 (* Accessing and manipulating formulas in a sequent *)
 
-(* 
-   New method: 
-   split a list x into (l, c, r) so that x = (rev_append l (c::r)).
-   element c is identified by either an integer or a predicate (for tags).
- *)
-
-(**
-   [split_at_index i x]: Split [x] into [(l, c, r)] so that
-   [x=List.revappend x (c::r)] and [c] is the [i]th element of [x]
-   (counting from [0]).
-
-   @raise Not_found if [i] >= [length x].
- *)
-    let split_at_index i x=
-      let rec split_aux ctr l rst =
-	match l with 
-	  [] -> raise Not_found
-	| (y::ys) -> 
-	    if (ctr=0) then (rst, y, ys)
-	    else split_aux (ctr-1) ys (y::rst)
-      in 
-      split_aux (abs i) x []
-
-(**
-   [split_at p x]:
-   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
-   and [c] is the first element of [x] such that [p x] is true.
-
-   @raise Not_found if [p] is false for all elements of x.
- *)
-    let split_at p x=
-      let rec split_aux l rst =
-	match l with 
-	  [] -> raise Not_found
-	| (y::ys) -> 
-	    if (p y) then (rst, y, ys)
-	    else split_aux ys (y::rst)
-      in split_aux  x []
-	
-(**
-   [split_at_tag t x]:
-   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
-   and [c] is the formula in [x] identified by tag [t].
- *)
-    let split_at_tag t x= 
-      let test (l, _) = Tag.equal t l
-      in split_at test x
-
-(**
-   [split_at_label lbl x]:
-   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
-   and [c] is the formula in [x] identified by label [lbl].
-
-   if [lbl=FNum i], then split at index [(abs i)-1].
-   (to deal with assumptions and the index offset).
- *)
-    let split_at_label lbl x= 
-      match lbl with
-	FNum i -> split_at_index ((abs i)-1) x
-      | FTag tg -> split_at_tag tg x
-
-(*
-   [split_at_asm lbl x]:
-   [split_at_concl lbl x]:
-
-   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
-   and [c] is the formula in [x] identified by label [lbl].
-
-   [split_at_asm lbl x]:
-   raise Not_found if [lbl=FNum i] and i>=0
-
-   [split_at_concl lbl x]:
-   raise Not_found if [lbl=FNum i] and i<0
- *)
-    let split_at_asm l fs = 
-      match l with
-	FNum i -> 
-	  if i>=0 then raise Not_found 
-	  else split_at_label l fs
-      | _ -> split_at_label l fs
-
-    let split_at_concl l fs = 
-      match l with
-	FNum i -> 
-	  if i<0 then raise Not_found 
-	  else split_at_label l fs
-      | _ -> split_at_label l fs
-
-(* Old method (still in use): search through lists of formulas *)
     let get_asm i sq = 
-      let (t, f) = try (List.nth (asms sq) ((-i)-1)) with _ -> raise Not_found
+      let (t, f) = 
+	try (List.nth (asms sq) ((-i)-1)) 
+	with _ -> raise Not_found
       in (t, rename f)
-
-    let delete_asm i asms = (Lib.delete_nth (-i) asms)
-    let replace_asm i asms a = (Lib.replace_nth (-i) asms a)
 
     let get_cncl i sq = 
-      let (t, f) = try (List.nth (concls sq) (i-1)) with _ -> raise Not_found
+      let (t, f) = 
+	try (List.nth (concls sq) (i-1)) 
+	with _ -> raise Not_found
       in (t, rename f)
-    let delete_cncl i cncls = Lib.delete_nth i cncls
-    let replace_cncl i cncls c= Lib.replace_nth i cncls c
 
     let get_tagged_asm t sq = 
       let rec get_aux ams = 
@@ -431,6 +398,22 @@ module Sequent=
       try 
 	get_tagged_asm t sq
       with Not_found -> get_tagged_cncl t sq
+
+	  (** Delete an assumption by label*)
+    let delete_asm l sq =
+      let tg, env, ams, cls = dest sq
+      in 
+      let (lasms, _, rasms) = split_at_asm l ams
+      in 
+      make tg env (List.rev_append lasms rasms) cls
+	
+	(** Delete a conclusion by label*)
+    let delete_cncl l sq =
+      let tg, env, ams, cls = dest sq
+      in 
+      let (lcncls, _, rcncls) = split_at_concl l cls
+      in 
+      make tg env ams  (List.rev_append lcncls rcncls)
 
     let tag_to_index t sq =
       let rec index_aux fs i = 
@@ -460,20 +443,20 @@ module Sequent=
 
   end
 
+(***
+* Operations on sequent formulas
+***)
 
-(* 
-   A goal is made up of a list of sequents: 
+let label_to_tag f sq=
+  match f with
+    FNum(x) -> Sequent.index_to_tag x sq
+  | FTag(x) -> x
 
-   - The sub-goals still to be proved 
-   - A type environment: the bindings of the shared type
-   variables which occur in the goals sequents (all of these are weak
-   type variables). 
-   - A formula: the theorem which is to be proved
- *)
-type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
-(*
-   type conv = thm list -> thm list 
- *)
+let label_to_index f sq=
+  match f with
+    FNum(x) -> x
+  | FTag(x) -> Sequent.tag_to_index x sq
+
 
 let get_label_asm t sq = 
   match t with
@@ -490,20 +473,25 @@ let get_label_form t sq=
     get_label_asm t sq
   with Not_found -> get_label_cncl t sq
 
-let dest_label f sq=
-  match f with
-    FNum(x) -> x
-  | FTag(x) -> Sequent.tag_to_index x sq
+(**********
+ * Goals and subgoals
+ **********)
 
-let label_to_tag f sq=
-  match f with
-    FNum(x) -> Sequent.index_to_tag x sq
-  | FTag(x) -> x
+(***
+ * Goals
+ ***)
 
-let label_to_index f sq=
-  match f with
-    FNum(x) -> x
-  | FTag(x) -> Sequent.tag_to_index x sq
+(* 
+   A goal is made up of a list of sequents: 
+
+   - The sub-goals still to be proved 
+   - A type environment: the bindings of the shared type
+   variables which occur in the goals sequents (all of these are weak
+   type variables). 
+   - A formula: the theorem which is to be proved
+ *)
+type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
+
 
 
 (* Subgoals *)
@@ -589,38 +577,19 @@ let mk_thm g =
   | _ -> raise (logic_error "Not a theorem" [])
 
 
-(* tag information for rules *)
-(* goals: new goals produced by rule *)
-(* forms: new forms produced by rule *)
-(* terms: new constants produced by rule *)
-type tag_record = 
-    { 
-      goals:Tag.t list; 
-      forms : Tag.t list;
-      terms: Basic.term list
-    }
-type info = tag_record ref
+(***
+ * Applying Rules to Subgoals
+ ****)
 
-let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
-let add_to_record r gs fs ts =
-  make_tag_record (gs@r.goals) (fs@r.forms) (ts@r.terms)
-
-let do_info info gs fs ts=
-  match info with
-    None -> ()
-  | Some(v) -> v:=make_tag_record gs fs ts
-
-let add_info info gs fs ts=
-  match info with
-    None -> ()
-  | Some(v) -> v:=add_to_record (!v) gs fs ts
-
-
+(** 
+   The subgoal package.
+   Manages the application of rules to the subgoals of a goal.
+ *)
 module Subgoals=
   struct
+
 (*
    Subgoals:
-   managing sequents used as subgoals
  *)
     type node = Node of (Tag.t * Gtypes.substitution * Sequent.t)
     let node_tag (Node(tg, _, _)) = tg
@@ -909,6 +878,55 @@ let foreach rule branch=
 let first_only rule branch=
   Subgoals.apply_to_first rule branch
 
+(**********
+ * Tactics
+ **********)
+
+
+(**
+   Information generated by tactics.
+   [goals]: new goals produced by rule 
+   [forms]: new forms produced by rule 
+   [terms]: new constants produced by rule 
+ *)
+type tag_record = 
+    { 
+      goals:Tag.t list; 
+      forms : Tag.t list;
+      terms: Basic.term list
+    }
+type info = tag_record ref
+
+let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
+let add_to_record r gs fs ts =
+  make_tag_record (gs@r.goals) (fs@r.forms) (ts@r.terms)
+
+let do_info info gs fs ts=
+  match info with
+    None -> ()
+  | Some(v) -> v:=make_tag_record gs fs ts
+
+let add_info info gs fs ts=
+  match info with
+    None -> ()
+  | Some(v) -> v:=add_to_record (!v) gs fs ts
+
+
+(** 
+   Rules for rewrite tactics.
+
+   rr_type: where to get rewrite rule from
+   Asm : labelled assumption
+   RRThm: given theorem
+   OAsm : labelled assumption, with ordering
+   ORRThm: given theorem, with ordering
+ *)
+type rr_type = 
+    Asm of label
+  | RRThm of thm
+  | OAsm of label * Rewrite.order
+  | ORRThm of thm * Rewrite.order
+
 module Tactics = 
   struct
 
@@ -943,10 +961,9 @@ module Tactics =
 
 (* Lifting assumption/conclusion formulas *)
 
-    let split_at_label l fs = Sequent.split_at_label l fs
-    let split_at_asm l fs = Sequent.split_at_asm l fs
-    let split_at_concl l fs = Sequent.split_at_concl l fs
-    let join_up l r = List.rev_append l r
+    let split_at_label l fs = split_at_label l fs
+    let split_at_asm l fs = split_at_asm l fs
+    let split_at_concl l fs = split_at_concl l fs
 
     let lift_tagged id fs =
       let (lhs, c, rhs) = split_at_label id fs
@@ -959,7 +976,7 @@ module Tactics =
       let (t, nasms) = lift_tagged l (Sequent.asms sq)
       in 
       add_info info [] [t] [];
-      [Sequent.mk_sqnt 
+      [Sequent.make
 	 (Sequent.sqnt_tag sq) (Sequent.sqnt_env sq) 
 	 nasms (Sequent.concls sq)]
 	
@@ -971,7 +988,7 @@ module Tactics =
       let (t, nconcls) = lift_tagged f (Sequent.concls sq)
       in 
       add_info info [] [t] [];
-      [Sequent.mk_sqnt (Sequent.sqnt_tag sq) 
+      [Sequent.make (Sequent.sqnt_tag sq) 
 	 (Sequent.sqnt_env sq) (Sequent.asms sq)  
 	 nconcls]
 
@@ -1129,24 +1146,26 @@ module Tactics =
    info: [] []
  *)
     let delete0 inf x sq=
-      let delete_asm () =
-	let (lasms, _, rasms) = split_at_asm x (Sequent.asms sq)
-	in 
-	mk_subgoal (Sequent.sqnt_tag sq, 
-		    Sequent.sqnt_env sq, 
-		    join_up lasms rasms,
-		    Sequent.concls sq)
-      and delete_concl () =
-	let (lcncls, _, rcncls) = split_at_concl x (Sequent.concls sq)
-	in 
-	mk_subgoal (Sequent.sqnt_tag sq, 
-		    Sequent.sqnt_env sq, 
-		    Sequent.asms sq, 
-		    join_up lcncls rcncls)
-      in 
+(*
+   let delete_asm () =
+   let (lasms, _, rasms) = split_at_asm x (Sequent.asms sq)
+   in 
+   mk_subgoal (Sequent.sqnt_tag sq, 
+   Sequent.sqnt_env sq, 
+   join_up lasms rasms,
+   Sequent.concls sq)
+   and delete_concl () =
+   let (lcncls, _, rcncls) = split_at_concl x (Sequent.concls sq)
+   in 
+   mk_subgoal (Sequent.sqnt_tag sq, 
+   Sequent.sqnt_env sq, 
+   Sequent.asms sq, 
+   join_up lcncls rcncls)
+   in 
+ *)
       let ng = 
-	try (delete_asm())
-	with Not_found -> delete_concl()
+	try [Sequent.delete_asm x sq]
+	with Not_found -> [Sequent.delete_cncl x sq]
       in 
       add_info inf [] [] [];
       ng
@@ -1179,9 +1198,9 @@ module Tactics =
 	and asms = Sequent.asms sq
 	in 
 	add_info inf [tagl; tagr] [ft1] [];
-	[Sequent.mk_sqnt tagl 
+	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asms concll;
-	 Sequent.mk_sqnt tagr 
+	 Sequent.make tagr 
 	   (Sequent.sqnt_env sq) asms conclr])
       else raise (logic_error "Not a conjunct" [t])
 
@@ -1237,9 +1256,9 @@ module Tactics =
 	and tagr=Tag.create()
 	in 
 	add_info inf [tagl; tagr] [ft] [];
-	[Sequent.mk_sqnt tagl 
+	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asmsl (Sequent.concls sq);
-	 Sequent.mk_sqnt tagr 
+	 Sequent.make tagr 
 	   (Sequent.sqnt_env sq) asmsr (Sequent.concls sq)])
       else raise (logic_error "Not a disjunction" [t])
 
@@ -1389,9 +1408,9 @@ module Tactics =
 	and tagr=Sequent.sqnt_tag sq
 	in 
 	add_info info [tagl; tagr] [ft] [];
-	[Sequent.mk_sqnt tagl 
+	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asm1 cncl1;
-	 Sequent.mk_sqnt tagr 
+	 Sequent.make tagr 
 	   (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)])
       else raise (logic_error "Not an implication" [t])
 
@@ -1429,8 +1448,8 @@ module Tactics =
 	   }
 	in 
 (*
-	let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
-*)
+   let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
+ *)
 	let nscp = 
 	  Scope.extend_with_terms (Sequent.scope_of sq)
 	    [(Term.get_var_id sv, sty)]
@@ -1883,6 +1902,38 @@ module Tactics =
   end
 
 
+
+module Conv=
+  struct
+    
+    (** 
+       [beta_conv scp term]: Apply a single beta conversion to [term].
+
+       Fails if [term] is not of the form [(%x: F)y]
+       or the resulting formula is not in scope.
+     *)
+
+    let beta_conv scp term =
+      let rhs ()= Logicterm.beta_conv term
+      in 
+      let eq_term t = 
+	Formula.make scp (Logicterm.mk_equality term t)
+      in 
+      try
+	mk_theorem (eq_term (rhs()))
+      with err -> 
+	raise(Result.add_error
+		(logic_error "beta_conv" [])
+		(Result.add_error 
+		   (Term.term_error "beta_conv term: " [term]) err))
+
+  end 
+
+
+(**********
+ * Definitions and declarations
+ **********)
+
 (* 
    cdefn:  Checked Definitions: 
    checking of type and term definitions and declarations
@@ -1910,9 +1961,8 @@ and ctypedef =
 
 
 (***
-* Representations for permanent storage
-***)
-
+ * Representations for permanent storage
+ ***)
 
 type saved_cdefn =
     STypeAlias of Basic.ident * string list * Gtypes.stype option
@@ -1932,32 +1982,6 @@ and saved_ctypedef =
      sabs_type_inverse: saved_thm
    }
 
-
-module Conv=
-  struct
-    
-    (** 
-       [beta_conv scp term]: Apply a single beta conversion to [term].
-
-       Fails if [term] is not of the form [(%x: F)y]
-       or the resulting formula is not in scope.
-     *)
-
-    let beta_conv scp term =
-      let rhs ()= Logicterm.beta_conv term
-      in 
-      let eq_term t = 
-	Formula.make scp (Logicterm.mk_equality term t)
-      in 
-      try
-	mk_theorem (eq_term (rhs()))
-      with err -> 
-	raise(Result.add_error
-		(logic_error "beta_conv" [])
-		(Result.add_error 
-		   (Term.term_error "beta_conv term: " [term]) err))
-
-  end 
 
 (* Defns: functions for checking definitions and declarations *)
 module Defns =

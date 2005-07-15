@@ -1,5 +1,5 @@
 (*-----
-   Name: logic.mli
+Name: logic.mli
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
@@ -126,7 +126,7 @@
    {- [form_tags] is a list of tags which identify subgoal formulas.}
    {- [term_list] is a list of terms which have been introduced by 
    the tactic.}}
-*)
+ *)
 
 (** {5 Theorems} *)
 
@@ -158,20 +158,48 @@ val print_thm: Printer.ppinfo -> thm -> unit
 val string_thm: thm -> string
 (** String representation of a theorem (using [print_thm] instead) *)
 
+
 (** {5 Error reporting} *)
 
 val logic_error : string -> Formula.form list -> exn
 (** Make a logic error *)
-
 val add_logic_error : string -> Formula.form list -> exn -> 'a
 (** Add a logic error to an existing list of errors *)
 
+val sqntError : string ->  exn
+(** Make a sequent error *)
+val addsqntError : string -> exn -> 'a
+(** Add a sequent error to an existing list of errors *)
+
+
 (** {5 Subgoals} *)
 
+(** {7 Types used in subgoals} *)
+
+(** 
+   Labels for identifying sequent formulas.
+
+   [FNum i]: The formula at position [i]. If [i] is negative, [i=-j],
+   the formula is the assumption at position [j]. If [i] is positive,
+   the formula is the conclusion at position [i].
+
+   [FTag t]: The formula with tag [t].
+ *)
+type label = 
+    FNum of int
+  | FTag of Tag.t
+
+type tagged_form = (Tag.t* Formula.form)
+(** Tagged formulas. Each formula in a subgoal has a tag. *)
+
+val form_tag: tagged_form -> Tag.t 
+(** The tag of a formula *)
+val drop_tag: tagged_form -> Formula.form
+(** Drop the tag of a formula *)
 
 (** 
    Skolem constants 
-*)
+ *)
 module Skolem:
     sig
 (** 
@@ -204,7 +232,7 @@ module Skolem:
       val decln_of_sklm: skolem_cnst -> (Basic.ident * Basic.gtype)
 	  (** Make a declaration from a skolem record *)
 
-      (** The record of generated skolem constants *)
+	  (** The record of generated skolem constants *)
       type skolem_type
 
       val get_old_sklm: Basic.ident -> skolem_type -> skolem_cnst
@@ -213,7 +241,7 @@ module Skolem:
 	     generated from an identifier. 
 	   *)
 
-      (** Information needed to generate a new skolem constant *)
+	  (** Information needed to generate a new skolem constant *)
       type new_skolem_data=
 	  {
 	   name: Basic.ident;
@@ -241,170 +269,148 @@ module Skolem:
 
       val mk_new_skolem: 
 	  new_skolem_data
-	-> Basic.term * Basic.gtype 
-	    * skolem_type
-	    * Gtypes.substitution * (string * int) list
+	-> (Basic.term 
+	      * Basic.gtype 
+	      * skolem_type
+	      * Gtypes.substitution 
+	      * (string * int) list)
+(** 
+   [mk_new_skolem data] constructs a new skolem. Returns [(sv, sty,
+   skolems, tyenv, tylist]) where [sv] is the new skolem constant,
+   [sty] is the type of the skolem constant, [skolems] is the updated
+   skolems record, [tyenv] is the type environment updated when making
+   the skolems' type and [tylist] is the updated list of type variable
+   names.
+ *)
 
     end
 
-type label = 
-    FNum of int
-  | FTag of Tag.t
 
-(**
-   [rr_type]: where to get rewrite rule from
-   [Asm] : labelled assumption
-   [RRThm]: given theorem
-   [OAsm] : labelled assumption, with ordering
-   [ORRThm]: given theorem, with ordering
+(** {6 Sequents} *)
+
+(** {7 Utility functions} 
+
+   Utility functions for use with sequents
  *)
-type rr_type = 
-    Asm of label
-  | RRThm of thm
-  | OAsm of label * Rewrite.order
-  | ORRThm of thm * Rewrite.order
 
-type tagged_form = (Tag.t* Formula.form)
+val join_up : 'a list -> 'a list -> 'a list
+(** 
+   [join_up l r] is [List.rev_append l r]. Reverses [l] and appends it to [r].
+*)
 
-module Sequent:
-    sig
-      type t
-
-(** Information from a sequent *)
-      val asms : t -> tagged_form list
-      val concls : t -> tagged_form list
-      val scope_of: t -> Scope.t
-      val sklm_cnsts: t -> Skolem.skolem_cnst list
-      val sqnt_tyvars: t -> Basic.gtype list
-      val sqnt_tag: t->Tag.t
-
+val split_at_tag: 
+    Tag.t -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (**
-   [split_at_cond x]
-   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
-   and [c] is element satisfying [?cond?].
-
-   @raise Not_found if no element of [x] satisifies the condition.
-
-   [split_at_index i x]:
-   [c] is the [i]th element of [x] (counting from 0).
-
-   [split_at p x]:
-   [c] is the first element of [x] such that [p x] is true.
-
-   [split_at_tag t x]:
-   [c] is the formula in [x] tagged with [t].
-
-   [split_at_label t x]:
-   [c] is the formula in [x] labelled [l].
+   [split_at_tag t x]: Split [x] into [(l, c, r)] so that
+   [x=join_up l (c::r)] and [c] is the first element of [x]
+   tagged with [t].
  *)
-      val split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
-      val split_at: ('a -> bool) -> 'a list -> ('a list * 'a * 'a list)
-      val split_at_tag: 
-	  Tag.t -> (Tag.t * 'a) list 
-	    -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
-      val split_at_label: 
-	  label -> (Tag.t * 'a) list 
-	    -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 
+val split_at_label: 
+    label -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (**
-   [split_at_asm lbl x]:
-   [split_at_concl lbl x]:
+   [split_at_label t x]: Split [x] into [(l, c, r)] so that
+   [x=join_up l (c::r)] and [c] is the formula in [x] labelled
+   [l].
+ *)
 
-   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
-   and [c] is the formula in [x] identified by label [lbl].
+val split_at_asm: 
+    label -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+(**
+   [split_at_asm lbl x]: Split [x] into [(l, c, r)] so that
+   [x=join_up l (c::r)] and [c] is the assumption in [x] labelled
+   [l].
 
-   [split_at_asm lbl x]:
    raise Not_found if [lbl=FNum i] and i>=0
+ *)
 
-   [split_at_concl lbl x]:
+val split_at_concl: 
+    label -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+(**
+   [split_at_concl lbl x]: Split [x] into [(l, c, r)] so that
+   [x=join_up l (c::r)] and [c] is the conclusion in [x] labelled
+   [l].
    raise Not_found if [lbl=FNum i] and i<0
  *)
 
 
+(** Sequents and their components *)
+module Sequent:
+    sig
 (**
-   Get/Delete/Copy particular assumptions/conclusions.
+   A sequent is made up of a unique tag, a scope, a list of
+   assumptions, a list of conclusions and information about skolem
+   constants and weak types,
  *)
+
+      type t
+(** The type of sequents *)
+
+(** {7 Components of a sequent} *)
+
+      val asms : t -> tagged_form list
+	  (** The assumptions *)
+      val concls : t -> tagged_form list
+	  (** The conclusions *)
+      val scope_of: t -> Scope.t
+	  (** The scope of a sequent *)
+      val sklm_cnsts: t -> Skolem.skolem_cnst list
+	  (** The skolem constants of the sequent *)
+      val sqnt_tyvars: t -> Basic.gtype list
+	  (** All weak type variables that were generated in the sequent *)
+      val sqnt_tag: t->Tag.t
+	  (** The tag of the sequent. (This is the tag of the subgoal.) *)
+
+
+(** {7 Operations on formulas} *)
+
       val get_asm : int -> t -> tagged_form
+	  (** Get an assumption by position *)
       val get_cncl : int -> t -> tagged_form
+	  (** Get a conclusion by position *)
 
-      val delete_asm : int -> tagged_form list  -> tagged_form list
-      val delete_cncl : int -> tagged_form list  -> tagged_form list
-
-
-(** 
-   Get tagged assumptions/conclusions. 
- *)
       val get_tagged_asm : Tag.t -> t -> tagged_form
+	  (** Get an assumption by tag *)
       val get_tagged_cncl : Tag.t -> t -> tagged_form
+	  (** Get a conclusion by tag *)
       val get_tagged_form: Tag.t -> t -> tagged_form
+	  (** Get a formula by tag *)
 
-(**
-   Assumption/conclusion tag <-> index 
- *)
+      val delete_asm : label -> t -> t
+	  (** Delete an assumption by label *)
+      val delete_cncl : label -> t -> t
+	  (** Delete a conclusion by label *)
+
       val tag_to_index : Tag.t -> t -> int
+	  (** Get the position of a formula from its tag *)
       val index_to_tag : int -> t -> Tag.t 
+	  (** Get the tag of a formula from its position *)
 
     end
 
+(** {7 Operations on sequent formulas} *)
+
 val label_to_tag: label -> Sequent.t -> Tag.t
+(** Convert a label to the tag of the formula it identifies. *)
 val label_to_index: label -> Sequent.t -> int
+(** 
+   Convert a label to the position of the formula it identifies. If the label
+   identifies an assumption, the position will be a negative integer.
+*)
 
-(**
-   [cdecln]: Checked term declarations.
-   Checking of type and term definitions and declarations
-
-   [cdefn]: Checked Definitions.  
-   Checking of type and term definitions and declarations
- *)
-type cdefn
-and ctypedef =
-    {
-     type_name : Basic.ident;  (* name of new type *)
-     type_args : string list;  (* arguments of new type *)
-     type_base: Basic.gtype;   (* the base type *)
-     type_rep: cdefn;          (* representation function *)
-     type_abs: cdefn;          (* abstraction function *)
-     type_set: Formula.form;      (* defining set *)
-     rep_type: thm;
-     rep_type_inverse: thm;
-     abs_type_inverse: thm
-   }
-
-type saved_cdefn =
-    STypeAlias of Basic.ident * string list * Gtypes.stype option
-  | STypeDef of saved_ctypedef
-  | STermDecln of Basic.ident * Gtypes.stype
-  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
-and saved_ctypedef =
-    {
-     stype_name : Basic.ident;  (* name of new type *)
-     stype_args : string list;  (* arguments of new type *)
-     stype_base: Gtypes.stype; 
-     stype_rep: saved_cdefn;          (* representation function *)
-     stype_abs: saved_cdefn;          (* abstraction function *)
-     stype_set: Formula.saved_form;      (* defining set *)
-     srep_type: saved_thm;
-     srep_type_inverse: saved_thm;
-     sabs_type_inverse: saved_thm
-   }
-
-
-(** Sequents *)
-
-val sqntError : string ->  exn
-val addsqntError : string -> exn -> 'a
-
-(** tag of formula *)
-val form_tag: tagged_form -> Tag.t 
-val drop_tag: tagged_form -> Formula.form
-
-(** get tagged assumptions/conclusions *)
 val get_label_asm : label -> Sequent.t -> tagged_form
+(** Get the assumption identified by a label *)
 val get_label_cncl : label -> Sequent.t -> tagged_form
+(** Get the conclusion identified by a label *)
 val get_label_form: label -> Sequent.t -> tagged_form
+(** Get the formula identified by a label *)
 
+(** {5 Goals} *)
 
-(** Goals *)
 type goal
 
 val has_subgoals: goal -> bool
@@ -443,34 +449,12 @@ val mk_goal : Scope.t -> Formula.form -> goal
 val mk_thm : goal -> thm
 
 
-(**
-   [tag_record]: tag information for rules.
-   [goals]: new goals produced by rule 
-   [forms]: new forms produced by rule 
-   [terms]: new constants produced by rule
+(** {7 Applying Rules to Subgoals} *)
+
+(** 
+   The subgoal package.
+   Manages the application of rules to the subgoals of a goal.
  *)
-type tag_record = 
-    { 
-      goals:Tag.t list; 
-      forms : Tag.t list;
-      terms: Basic.term list
-    }
-type info = tag_record ref
-
-val make_tag_record: 
-    Tag.t list 
-  -> Tag.t list 
-    -> Basic.term list 
-      -> tag_record
-
-val do_info: 
-    info option ->
-      Tag.t list-> Tag.t list -> Basic.term list -> unit
-
-val add_info: 
-    info option ->
-      Tag.t list-> Tag.t list -> Basic.term list -> unit
-
 module Subgoals:
     sig
       
@@ -643,12 +627,80 @@ val postpone :  goal -> goal
 val foreach: rule -> Subgoals.branch -> Subgoals.branch
 val first_only: rule -> Subgoals.branch -> Subgoals.branch
 
+
+(** {5 Tactics} *)
+
+(** 
+   {7 Tactic Information} 
+
+   Tactics pass information by assigning values to elements of type
+   {!Logic.info}, which are references to elements of type
+   {!Logic.tag_record}. The standard tactics take parameters of type
+   [Logic.info option], and provide the information only if it is
+   requested (by an argument [(Some r)]).
+ *)
+
+(**
+   The record holding information generated by tactics.
+   [goals]: new goals produced by rule 
+   [forms]: new forms produced by rule 
+   [terms]: new constants produced by rule 
+ *)
+type tag_record = 
+    { 
+      goals:Tag.t list; 
+      forms : Tag.t list;
+      terms: Basic.term list
+    }
+
+(** Type used to pass information from a tactic  *)
+type info = tag_record ref
+
+val make_tag_record: 
+    Tag.t list -> Tag.t list -> Basic.term list -> tag_record
+(** Construct a [tag_record] *)
+
+val do_info: info option ->
+  Tag.t list-> Tag.t list -> Basic.term list -> unit
+(** 
+   [do_info info gs fs ts]: 
+   If [info] is [Some r] then [r:=mk_tag_record gs fs ts]
+   otherwise do nothing.
+ *)
+
+val add_info: 
+    info option ->
+      Tag.t list-> Tag.t list -> Basic.term list -> unit
+(** 
+   [do_info info gs fs ts]: 
+   If [info] is [Some r] then add [gs], [fs] and [ts] to 
+   [!r.goals], [!r.forms] and [!r.terms] respectively.
+   otherwise do nothing.
+ *)
+
+
+(**
+   [rr_type]: where to get rewrite rule from
+   [Asm] : labelled assumption
+   [RRThm]: given theorem
+   [OAsm] : labelled assumption, with ordering
+   [ORRThm]: given theorem, with ordering
+ *)
+type rr_type = 
+    Asm of label
+  | RRThm of thm
+  | OAsm of label * Rewrite.order
+  | ORRThm of thm * Rewrite.order
+
+
+
+
 module Tactics :
     sig
 
 (** 
    Tactics for proving goals.
-*)
+ *)
 
 (* 
    [check_term scp trm]
@@ -656,18 +708,18 @@ module Tactics :
    All identifiers must be bound to a quantifier or defined/declared 
    in a theory. 
    Free variables are not permitted.
-*)
+ *)
 (*
-      val check_term: Scope.t -> Formula.form -> unit
-*)
+   val check_term: Scope.t -> Formula.form -> unit
+ *)
 (*
    [check_term_memo]
    Memoised version of [check_term].
  *)
 (*
-      val check_term_memo: 
-	  (string, bool) Lib.substype -> Scope.t -> Formula.form -> unit
-*)
+   val check_term_memo: 
+   (string, bool) Lib.substype -> Scope.t -> Formula.form -> unit
+ *)
 
 (* apply a rule to a goal *)
 (*      val goal_apply : rule -> goal -> goal *)
@@ -679,13 +731,13 @@ module Tactics :
    [lift_asm id sqnt]: Move assumption with identifier [id] to to top
    of the assumptions of subgoal [sqnt]. Raise [Not_found] if identified
    formula is not in assumptions.
-*)
+ *)
       val lift_concl : info option -> label -> rule
 (**
    [lift_concl id sqnt]: Move conclusion with identifier [id] to to
    top of the conclusions of subgoal [sqnt]. Raise [Not_found] if
    identified formula is not in assumptions.
-*)
+ *)
       val lift : info option -> label -> rule
 (**
    [lift id sqnt]: Lift formula with label [id] to the top of
@@ -736,7 +788,7 @@ module Tactics :
 (** 
    [delete x sq]: Delete assumption [x] or conclusion [x] from
    subgoal [sq].
-*)
+ *)
 
 
 (** {5 Logic rules}  *)
@@ -941,6 +993,47 @@ module Conv:
     end 
 
 
+(** {5 Declarations and Definitions} *)
+
+(**
+   [cdecln]: Checked term declarations.
+   Checking of type and term definitions and declarations
+
+   [cdefn]: Checked Definitions.  
+   Checking of type and term definitions and declarations
+ *)
+type cdefn
+and ctypedef =
+    {
+     type_name : Basic.ident;  (* name of new type *)
+     type_args : string list;  (* arguments of new type *)
+     type_base: Basic.gtype;   (* the base type *)
+     type_rep: cdefn;          (* representation function *)
+     type_abs: cdefn;          (* abstraction function *)
+     type_set: Formula.form;      (* defining set *)
+     rep_type: thm;
+     rep_type_inverse: thm;
+     abs_type_inverse: thm
+   }
+
+type saved_cdefn =
+    STypeAlias of Basic.ident * string list * Gtypes.stype option
+  | STypeDef of saved_ctypedef
+  | STermDecln of Basic.ident * Gtypes.stype
+  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+and saved_ctypedef =
+    {
+     stype_name : Basic.ident;  (* name of new type *)
+     stype_args : string list;  (* arguments of new type *)
+     stype_base: Gtypes.stype; 
+     stype_rep: saved_cdefn;          (* representation function *)
+     stype_abs: saved_cdefn;          (* abstraction function *)
+     stype_set: Formula.saved_form;      (* defining set *)
+     srep_type: saved_thm;
+     srep_type_inverse: saved_thm;
+     sabs_type_inverse: saved_thm
+   }
+
 module Defns :
     sig
 
@@ -1069,14 +1162,14 @@ val print_branch : Printer.ppinfo -> branch -> unit
    stype_set: Formula.saved_form      (* defining set *)
    }
  *)
-      
+    
 
 
 (*
-      val add_skolem_to_scope: 
-	  Basic.term -> Basic.gtype 
-	    -> Scope.t -> Scope.t
+   val add_skolem_to_scope: 
+   Basic.term -> Basic.gtype 
+   -> Scope.t -> Scope.t
 
-      val add_skolems_to_scope: 
-	  skolem_cnst list -> Scope.t -> Scope.t
-*)
+   val add_skolems_to_scope: 
+   skolem_cnst list -> Scope.t -> Scope.t
+ *)
