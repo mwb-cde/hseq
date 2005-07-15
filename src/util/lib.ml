@@ -1,8 +1,8 @@
 (*----
- Name: lib.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: lib.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 (* library functions *)
 
@@ -110,8 +110,8 @@ let rec move_left al =
 
 
 (*
-let ($) x y = fun a -> x (y a)
-*)
+   let ($) x y = fun a -> x (y a)
+ *)
 
 let index p xs =
   let rec index_aux xs i =
@@ -173,7 +173,7 @@ let find_char c max x=
       then i
       else find_aux (i+1))
   in find_aux 0
-      
+    
 
 let chop_at c x =
   let max = String.length x
@@ -227,9 +227,9 @@ type ('a)position =
 (* 
    split_at s nl: split named list nl at s name s
    returning the list upto s and the list beginning with s
-*)
+ *)
 
-let split_at s nl=
+let split_at_name s nl=
   let rec split_aux l r=
     match l with 
       [] -> (r, [])
@@ -246,11 +246,11 @@ let named_add l p n x =
     First -> (n, x)::l
   | Last -> List.rev ((n, x)::(List.rev l))
   | Before s -> 
-      let (lt, rt)=split_at s l
+      let (lt, rt)=split_at_name s l
       in 
       List.rev_append (List.rev lt) ((n, x)::rt)
   | After s -> 
-      let (lt, rt)=split_at s l
+      let (lt, rt)=split_at_name s l
       in 
       let nrt=
 	(match rt with
@@ -259,7 +259,7 @@ let named_add l p n x =
       in 
       List.rev_append (List.rev lt) rt
   | Level s -> 
-      let (lt, rt)=split_at s l
+      let (lt, rt)=split_at_name s l
       in 
       List.rev_append (List.rev lt) ((n, x)::rt)
 
@@ -311,7 +311,42 @@ let get_two ls err=
     x::y::_ -> (x, y)
   | _ -> raise err
 
-let split_at num lst=
+
+
+(**
+   [full_split_at_index i x]: Split [x] into [(l, c, r)] so that
+   [x=List.revappend x (c::r)] and [c] is the [i]th element of [x]
+   (counting from [0]).
+
+   @raise Not_found if [i] >= [length x].
+ *)
+let full_split_at_index i x=
+  let rec split_aux ctr l rst =
+    match l with 
+      [] -> raise Not_found
+    | (y::ys) -> 
+	if (ctr=0) then (rst, y, ys)
+	else split_aux (ctr-1) ys (y::rst)
+  in 
+  split_aux (abs i) x []
+
+(**
+   [full_split_at p x]:
+   Split [x] into [(l, c, r)] so that [x=List.revappend x (c::r)]
+   and [c] is the first element of [x] such that [p x] is true.
+
+   @raise Not_found if [p] is false for all elements of x.
+ *)
+let full_split_at p x=
+  let rec split_aux l rst =
+    match l with 
+      [] -> raise Not_found
+    | (y::ys) -> 
+	if (p y) then (rst, y, ys)
+	else split_aux ys (y::rst)
+  in split_aux  x []
+    
+let split_at_index num lst=
   let rec split_aux ctr rs ls =
     match rs with
       [] -> 
@@ -335,7 +370,7 @@ let rotate_left num lst=
       then (num mod size)
       else num
     in 
-    let ls, rs = split_at n lst
+    let ls, rs = split_at_index n lst
     in 
     List.append rs ls
 
@@ -350,7 +385,7 @@ let rotate_right num lst=
       then size - (num mod size)
       else size - num
     in 
-    let ls, rs = split_at n lst
+    let ls, rs = split_at_index n lst
     in 
     List.append rs ls
       

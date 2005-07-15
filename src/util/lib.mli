@@ -133,7 +133,37 @@ val get_one : 'a list -> exn -> 'a
 val get_two : 'a list -> exn -> ('a * 'a)
 
 
-val split_at : int -> 'a list -> ('a list * 'a list)
+val split_at_index : int -> 'a list -> ('a list * 'a list)
+(**
+   [split_at_index i x]: Split [x] into [(l, r)] so that
+   [x=List.append l r] and [List.hd r] is the [i]th element of [x]
+   (counting from [0]).
+
+   @raise Not_found if [i] >= [length x].
+*)
+
+val full_split_at: ('a -> bool) -> 'a list -> ('a list * 'a * 'a list)
+(**
+   [split_at p x]: Split [x] into [(l, c, r)] so that
+   [x=List.rev_append l (c::r)] and [c] is element satisfying [p].
+
+   @raise Not_found if no element of [x] satisifies the condition.
+*)
+
+val full_split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
+(**
+   [split_at_index i x]: Split [x] into [(l, c, r)] so that
+   [x=List.rev_append l (c::r)] and [c] is the [i]th element of [x]
+   (counting from [0]).
+
+   @raise Not_found if [i] >= [length x].
+ *)
+
+(*
+val full_split_at_tag: 
+    Tag.t -> (Tag.t * 'a) list 
+      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+*)
 
 (**
    [rotate_left n l]: Rotate list [l] [n] places left 
