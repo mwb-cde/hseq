@@ -399,3 +399,8 @@ let least lt ls =
   match ls with 
     [] -> raise (Invalid_argument "least")
   | (f::fs) -> ord_aux f fs
+
+
+let find_opt f p =
+  try (Some (f p))
+  with Not_found -> None

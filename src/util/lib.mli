@@ -175,3 +175,10 @@ val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
    if [ls] is empty
 *)
 val least: ('a -> 'a -> bool) -> 'a list -> 'a
+
+
+val find_opt: ('a -> 'b) -> 'a -> 'b option
+(**
+   [find_opt f p]: Return [Some (f p)]. If [(f p)] raise [Not_found],
+   return [None].
+*)
