@@ -7,31 +7,35 @@ Name: logic.ml
 open Basic
 open Formula
 
+(**********
+* Theorems
+**********)
+
 type thm = 
     Axiom of form
   | Theorem of form
 
-type saved_thm = 
-    Saxiom of saved_form
-  | Stheorem of saved_form
-
-let mk_axiom t = Axiom t
+(** Recogniseres *)
 let is_axiom t = match t with (Axiom _) -> true | _ -> false
-
-let mk_theorem t = Theorem t
 let is_thm t = match t with (Theorem _) -> true | _ -> false
-let dest_thm x = 
+
+(** Constructors *)
+let mk_axiom t = Axiom t
+let mk_theorem t = Theorem t
+
+(** Destructors *)
+let formula_of x = 
   match x with 
     Axiom f -> f
   | Theorem f -> f
 
-let formula_of = dest_thm
+let term_of x = Formula.term_of (formula_of x)
 
-let term_of x = 
-  match x with 
-    Axiom f -> Formula.term_of f
-  | Theorem f -> Formula.term_of f
+(** Representation for storage *)
 
+type saved_thm = 
+    Saxiom of saved_form
+  | Stheorem of saved_form
 
 let to_save t = 
   match t with 
@@ -43,26 +47,44 @@ let from_save t =
     Saxiom f -> Axiom (Formula.from_save f)
   | Stheorem f -> Theorem (Formula.from_save f)
 
+(** Pretty printing *)
+
+let print_thm pp t = 
+  Format.printf "@[<3>|- ";
+  Term.print pp (term_of t);
+  Format.printf "@]"
+
 let string_thm x = string_form (formula_of x)
 
-(* Error handling *)
+(***
+* Error handling 
+***)
 
 let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es = 
   raise (Result.add_error (logic_error s t) es)
 
-(* Skolem constants *)
+(**********
+* Subgoals 
+**********)
+
+(***
+* Skolem constants 
+***)
 module Skolem = 
   struct
 
     type skolem_cnst = (Basic.ident * (int * Basic.gtype))
-    type skolem_type = skolem_cnst list
 
     let make_sklm x ty i = (x, (i, ty))
-
     let get_sklm_name (x, (_, _)) = x
     let get_sklm_indx (_, (i, _)) = i
     let get_sklm_type (_, (_, t)) = t
+
+    type skolem_type = skolem_cnst list
+
+    let get_old_sklm n sklms =
+      (n, List.assoc n sklms)
 
     let make_skolem_name id indx = 
       let suffix = 
@@ -81,42 +103,12 @@ module Skolem =
       in 
       (id, ty)
 
-    let get_old_sklm n sklms =
-      (n, List.assoc n sklms)
+(***
+* Constructing skolem constants
+***)
 
-    let is_sklm n sklms = 
-      try ignore(get_old_sklm n sklms); true
-      with Not_found -> false
-
-(*
-    let get_new_sklm n t sklms = 
-      try 
-	(let oldsk = get_old_sklm n sklms
-	in let nindx = ((get_sklm_indx oldsk)+1)
-	in let nnam = make_skolem_name n nindx
-	in (Term.mk_typed_var nnam t, (make_sklm nnam t nindx)::sklms))
-      with Not_found -> 
-	let nn =  (mk_long (thy_of_id n) ((name n)^"_"^(string_of_int 1)))
-	in 
-	((Term.mk_typed_var nn t), (nn, (1, t))::sklms)
-*)
-
-    let add_skolems_to_scope sklms scp =
-      let declns = List.map decln_of_sklm sklms
-      in 
-      Scope.extend_with_terms scp declns
-
-    let add_skolem_to_scope sv sty scp =
-      Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
-
-(** [mk_new_skolem scp n ty]
-
-   make a new skolem constant with name [n] and type [ty]
-   scope [scp] is needed for unification
-   return the new identifier, its type and the updated 
-   information for skolem building
- *)
-    type skolem_info=
+(** Data needed to generate a skolem constant *)
+    type new_skolem_data=
 	{
 	 name: Basic.ident;
 	 ty: Basic.gtype;
@@ -144,6 +136,13 @@ module Skolem =
       in 
       (nm_s, nnames)
 
+(** [mk_new_skolem scp n ty]
+
+   make a new skolem constant with name [n] and type [ty]
+   scope [scp] is needed for unification
+   return the new identifier, its type and the updated 
+   information for skolem building
+*)
     let mk_new_skolem info=
       (*
 	 tyname: if ty is a variable then use its name for the
@@ -165,35 +164,57 @@ module Skolem =
 	in 
  	(Gtypes.mgu tty ntyenv, ntyenv, nnames)
       in 
-      try 
 	(* see if name is already associated with a skolem *)
-	let oldsk = get_old_sklm info.name info.skolems
-	in 
-	(* get new index for skolem named n *)
-	let nindx = (get_sklm_indx oldsk)+1
-	in 
-	(* make the new identifier *)
-	let oname = info.name
-	in 
-	let nnam = make_skolem_name oname nindx
-	in 
-	let nty, ntyenv, new_names=mk_nty (name nnam)
-	in 
-	(Term.mk_typed_var nnam nty, nty, 
-	 (oname, (nindx, nty))::info.skolems, 
-	 ntyenv, new_names)
-      with Not_found -> 
-	let nindx = 0
-	in 
-	let oname = info.name
-	in 
-	let nnam = make_skolem_name oname nindx
-	in 
-	let nty, ntyenv, new_names=mk_nty (name nnam)
-	in 
-	(Term.mk_typed_var nnam nty, nty, 
-	 (oname, (nindx, nty))::info.skolems, 
-	 ntyenv, new_names)
+	match (Lib.find_opt (get_old_sklm info.name) info.skolems) with 
+	  None -> 
+	    let nindx = 0
+	    in 
+	    let oname = info.name
+	    in 
+	    let nnam = make_skolem_name oname nindx
+	    in 
+	    let nty, ntyenv, new_names=mk_nty (name nnam)
+	    in 
+	    (Term.mk_typed_var nnam nty, nty, 
+	     (oname, (nindx, nty))::info.skolems, 
+	     ntyenv, new_names)
+	| Some(oldsk) -> 
+	    (* get new index for skolem named n *)
+	    let nindx = (get_sklm_indx oldsk)+1
+	    in 
+	    (* make the new identifier *)
+	    let oname = info.name
+	    in 
+	    let nnam = make_skolem_name oname nindx
+	    in 
+	    let nty, ntyenv, new_names=mk_nty (name nnam)
+	    in 
+	    (Term.mk_typed_var nnam nty, nty, 
+	     (oname, (nindx, nty))::info.skolems, 
+	     ntyenv, new_names)
+
+
+(***
+* Retired code
+
+***)
+(*
+    let is_sklm n sklms = 
+      try ignore(get_old_sklm n sklms); true
+      with Not_found -> false
+
+	  (** Add skolem constants to the scope *)
+    let add_skolems_to_scope sklms scp =
+      let declns = List.map decln_of_sklm sklms
+      in 
+      Scope.extend_with_terms scp declns
+
+	(** Add an identifier to the scope *)
+    let add_skolem_to_scope sv sty scp =
+      Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
+*)
+
+
   end
 
 
@@ -567,10 +588,6 @@ let mk_thm g =
     Goal([], _, f) -> Theorem f
   | _ -> raise (logic_error "Not a theorem" [])
 
-let print_thm pp t = 
-  Format.printf "@[<3>|- ";
-  Term.print pp (term_of t);
-  Format.printf "@]"
 
 (* tag information for rules *)
 (* goals: new goals produced by rule *)
@@ -1411,7 +1428,12 @@ module Tactics =
 	     Skolem.tylist=Sequent.sqnt_tynames sq
 	   }
 	in 
+(*
 	let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
+*)
+	let nscp = 
+	  Scope.extend_with_terms (Sequent.scope_of sq)
+	    [(Term.get_var_id sv, sty)]
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
@@ -1466,10 +1488,16 @@ module Tactics =
 	     Skolem.tylist=Sequent.sqnt_tynames sq
 	   }
 	in 
-	let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
 (*
+   let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
+
    let nscp = add_sklms_to_scope nsklms (scope_of sq)
- *)	in 
+ *)
+	let nscp = 
+	  Scope.extend_with_terms (Sequent.scope_of sq)
+	    [(Term.get_var_id sv, sty)]
+
+	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)
@@ -1879,6 +1907,12 @@ and ctypedef =
      rep_type_inverse: thm;
      abs_type_inverse: thm
    }
+
+
+(***
+* Representations for permanent storage
+***)
+
 
 type saved_cdefn =
     STypeAlias of Basic.ident * string list * Gtypes.stype option
@@ -2323,4 +2357,6 @@ and
   | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
   | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th));
   Format.printf "@]"
+
+
 
