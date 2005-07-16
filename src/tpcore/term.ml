@@ -848,6 +848,53 @@ let retype tyenv t=
   in 
   retype_aux t
 
+(**
+   [retype_with_check tyenv t]: Reset the types in term [t] using type
+   substitution [tyenv].  Substitutes variables with their concrete
+   type in [tyenv]. Check that the new types are in scope.
+
+   Retyping collapses terms of the form [Typed(trm, ty)] to [trm].
+*)
+let retype_with_check scp tyenv t=
+  let qenv=empty_table()
+  in 
+  let memo = Lib.empty_env ()
+  in 
+  let mk_new_type ty = 
+    let nty = Gtypes.mgu ty tyenv
+    in 
+    if(Gtypes.in_scope memo scp nty)
+    then nty
+    else 
+      raise 
+	(Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
+  in
+  let rec retype_aux t =
+    match t with
+      Id(n, ty) -> 
+	Id(n, mk_new_type ty)
+    | Free(n, ty) -> Free(n, mk_new_type ty) 
+    | Bound(q) -> 
+	(try table_find t qenv
+	with Not_found -> t)
+    | Const(c) -> t
+    | Typed(trm, ty) -> retype_aux trm
+    | App(f, a) -> 
+	App(retype_aux f, retype_aux a)
+    | Qnt(q, b) ->
+	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
+	in 
+ 	let nty = mk_new_type oqty
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	table_add (Bound(q)) (Bound(nq)) qenv;
+	let rt= Qnt(nq, retype_aux b)
+	in 
+	table_remove (Bound(q)) qenv; rt)
+  in 
+  retype_aux t
+
 (*
    retype_pretty: 
    as for retype, make substitution for type variables
