@@ -409,6 +409,19 @@ let fold_map f a bs =
 
 let swap (a, b) = (b, a)
 
+    let map_find f lst = 
+      let rec map_aux l rslt = 
+	match l with
+	  [] -> List.rev rslt
+	| (x::xs) -> 
+	    let rslt1=
+	      try ((f x)::rslt)
+	      with Not_found -> rslt
+	    in map_aux xs rslt1
+      in 
+      map_aux lst []
+
+
 let extract p ls =
   let rec extract_aux ys rs =
     match ys with 

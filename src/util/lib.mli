@@ -173,7 +173,6 @@ val full_split_at_tag:
 val rotate_left : int -> 'a list -> 'a list
 val rotate_right : int -> 'a list -> 'a list
 
-
 (** 
    [apply_nth n f l d]: Apply [f] to [n]th element of list.
    If list [l] is empty, return [d].
@@ -192,6 +191,11 @@ val fold_map :
 (** [swap p]: [swap (a, b)] is [b, a] *)
 val swap: ('a * 'b) -> ('b * 'a)
 
+val map_find: ('a -> 'b) -> 'a list -> 'b list
+(**
+   [map_find f l]: map function [f] to list [l]. Silently discard
+   elements for which [f] raises [Not_found].
+*)
 
 (**
    [extract p ls]: Extract the first element [x] of [ls] satisfying [p].
@@ -212,3 +216,5 @@ val find_opt: ('a -> 'b) -> 'a -> 'b option
    [find_opt f p]: Return [Some (f p)]. If [(f p)] raise [Not_found],
    return [None].
 *)
+
+
