@@ -1299,7 +1299,6 @@ type cdefn
    correctly defined.
 *)
 
-
 (**
    Checked subtype definitions. Elements of [ctypedef] can be assumed to be
    correctly defined. 
@@ -1316,6 +1315,8 @@ type ctypedef =
      rep_type_inverse: thm;
      abs_type_inverse: thm
    }
+
+(** {7 Representation for permanent storage} *)
 
 (** 
    The representation of a checked definition for permanent storage.
@@ -1344,76 +1345,107 @@ and
    }
 
       val to_saved_cdefn: cdefn -> saved_cdefn
+(** Convert a definition to the representation for permanent storage. *)
       val from_saved_cdefn: saved_cdefn -> cdefn 
+(** Convert a definition from the representation for permanent storage. *)
 
-(* Term definition *)
-      val is_termdef: cdefn -> bool
+(** {7 Term definition and declaration} *)
+
+      val is_termdef: cdefn -> bool 
+(** Recogniser for term definitions. *)
+
       val dest_termdef: cdefn -> 
 	Basic.ident * Basic.gtype * thm
+(** Get the components of a certified definition. *)
+
       val mk_termdef: 
 	  Scope.t 
 	-> Basic.ident
 	  -> (string * Basic.gtype) list -> Basic.term -> cdefn
+(** 
+   [mk_termdef scp i args trm]: Make a certified definition.
 
-(* 
+   Constructs the definition [! args. (i args) = trm]. 
+*)
+
+      val is_termdecln: cdefn -> bool 
+(** Recogniser for term declarations. *)
+
+      val dest_termdecln: cdefn 
+	-> Basic.ident * Basic.gtype 
+(**
+   Get the components of a term declaration.
+*)
+
+      val mk_termdecln:
+	  Scope.t -> string -> Basic.gtype -> cdefn
+(** 
    [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
    scope [scp].
    Fails if identifier [name] is already defined in [scp]
    or if [ty] is not well defined.
  *)
-      val is_termdecln: cdefn -> bool
-      val dest_termdecln: cdefn 
-	-> Basic.ident * Basic.gtype 
-      val mk_termdecln:
-	  Scope.t -> string -> Basic.gtype -> cdefn
 
-(*Type definition: alias *)
-      val is_typealias: cdefn -> bool
+(** 
+   {7 Type definition: Declarations and Aliases} 
+
+   Type declarations and aliases are handled together since both just
+   introduce names of types. The only difference between an
+   declaration and alias is that an alias has a definition (the type
+   being aliased) while a declaration does not.
+*)
+
+      val is_typealias: cdefn -> bool 
+(** Recogniser for definition of a type declaration or alias. *)
       val dest_typealias: cdefn ->
 	Basic.ident * string list * Basic.gtype option
+(** 
+   Get the components of a type declaration or alias. 
+*)
       val mk_typealias: Scope.t 
 	-> string -> string list -> Basic.gtype option -> cdefn
+(**
+   [mk_typealias scp n args d]: Make a type declaration or alias.
 
-(*Type definition: subtype *)
-      val is_subtype: cdefn -> bool
+   {ul 
+   {- Check n doesn't exist already.}
+   {- check all arguments in args are unique.}
+   {- if [d = Some x] then [n] is being defined as an alias for [x].
+   so check x is well defined (all constructors exist and variables
+   are in the list of arguments)}}
+*)
+
+(** {7 Type definition: Subtypes} *)
+
+      val is_subtype: cdefn -> bool 
+(** Recognisers for subtype definition. *)
       val dest_subtype: cdefn -> ctypedef
+(** Get the components of a subtype definition. *)
 
-(*
-   mk_subtype scp name args d setP rep abs:
-   - check name doesn't exist already
-   - check all arguments in args are unique
-   - check def is well defined 
-   (all constructors exist and variables are in the list of arguments)
-   - ensure setP has type (d -> bool)
-   - declare rep as a function of type (d -> n)
-   - make subtype property from setp and rep.
- *)
-
-
-(*
-   [prove_subtype_exists scp setp thm]
-   Use [thm] to prove the goal << ?x. setp x >> (built by mk_subtype_exists).
-
-   [mk_subtype_thm scp setp rep]:
-   make the subtype theorem
-   << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-   and 
-   (!x: (setp x) = (?x1: x=(rep x1)))>>
- *)
       val prove_subtype_exists: 
 	  Scope.t -> Basic.term -> thm -> thm
-(*
-   val mk_subtype_thm: 
-   Scope.t -> Basic.term -> Basic.ident -> thm
- *)
-      val mk_subtype_thm: 
-	  Scope.t -> Basic.term -> thm
-
+(**
+   [prove_subtype_exists scp setp thm]: Prove the existence theorem of
+   a subtype.  Use [thm] to prove the goal << ?x. setp x >> (built by
+   {!Defn.mk_subtype_exists}.
+*)
       val mk_subtype: 
 	  Scope.t -> string -> string list 
 	    -> Basic.gtype -> Basic.term -> string -> string
 	      -> thm  (* existance *)
 		-> cdefn
+(**
+   [mk_subtype scp name args d setP rep abs]: Define a subtype.
+
+   {ul
+   {- Check name doesn't exist already.}
+   {- Check all arguments in args are unique.}
+   {- Check def is well defined (all constructors exist and variables
+   are in the list of arguments).}
+   {- Ensure setP has type (d -> bool).}
+   {- Declare rep as a function of type (d -> n).}
+   {- make subtype property from setp and rep.}}
+*)
 
 
 (** {7 Pretty Printing} *)

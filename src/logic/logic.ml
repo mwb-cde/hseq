@@ -2144,7 +2144,6 @@ module Conv=
 module Defns =
   struct
 
-
 (*** Error reporting ***)
 
     let defn_error s t = Term.term_error s (List.map Formula.term_of t)
@@ -2196,9 +2195,7 @@ module Defns =
 	 sabs_type_inverse: saved_thm
        }
 
-
 (*** Conversions to and from the permanent storage representation ***)
-
 
     let rec to_saved_cdefn td = 
       match td with
@@ -2225,7 +2222,6 @@ module Defns =
        srep_type_inverse = to_save x.rep_type_inverse;
        sabs_type_inverse = to_save x.abs_type_inverse
      }
-
 
     let rec from_saved_cdefn td = 
       match td with
@@ -2258,12 +2254,8 @@ module Defns =
  * Term definition and declaration
  ***)
 
-(**
-   [mk_termdef scp n ty args d]:
+(**** Term definition ****)
 
-   - check n doesn't exist already
-   - check all arguments in args are unique
- *)
     let is_termdef x = 
       match x with 
 	TermDef _ -> true
@@ -2274,6 +2266,12 @@ module Defns =
 	TermDef (id, ty, thm) -> (id, ty, thm)
       | _ -> raise (defn_error "Not a term definition" [])
 
+(**
+   [mk_termdef scp n ty args d]:
+
+   - check n doesn't exist already
+   - check all arguments in args are unique
+ *)
     let mk_termdef scp n args d = 
       let (id, ty, frm) = Defn.mk_defn scp n args d
       in 
@@ -2281,12 +2279,8 @@ module Defns =
       in 
       TermDef(id, ty, thm)
 
-(** 
-   [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
-   scope [scp].
-   Fails if identifier [name] is already defined in [scp]
-   or if [ty] is not well defined.
- *)
+(**** Term declarations ****)
+
     let is_termdecln x = 
       match x with 
 	TermDecln _ -> true
@@ -2297,6 +2291,12 @@ module Defns =
 	TermDecln (id, ty) -> (id, ty)
       | _ -> raise (defn_error "Not a term declaration" [])
 
+(** 
+   [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
+   scope [scp].
+   Fails if identifier [name] is already defined in [scp]
+   or if [ty] is not well defined.
+ *)
     let mk_termdecln scp n ty =
       let name = Basic.mk_long (Scope.thy_of scp) n
       in 
@@ -2308,16 +2308,8 @@ module Defns =
  * Type definitions
  ****)
 
-(**** Type aliasing ***)
+(**** Type declaration and aliasing ***)
 
-(**
-   [mk_typealias scp n args d]:
-   - check n doesn't exist already
-   - check all arguments in args are unique
-   if defining n as d
-   - check d is well defined 
-   (all constructors exist and variables are in the list of arguments)
- *)
     let is_typealias x = 
       match x with 
 	TypeAlias _ -> true
@@ -2328,6 +2320,14 @@ module Defns =
 	TypeAlias (id, args, def) -> (id, args, def)
       | _ -> raise (defn_error "Not a term definition" [])
 
+(**
+   [mk_typealias scp n args d]:
+   - check n doesn't exist already
+   - check all arguments in args are unique
+   if defining n as d
+   - check d is well defined 
+   (all constructors exist and variables are in the list of arguments)
+ *)
     let mk_typealias scp n ags d =
       let th = Scope.thy_of scp
       in 
@@ -2345,20 +2345,7 @@ module Defns =
       in 
       TypeAlias((Basic.mk_long th n), ags, dfn)
 
-(***
- * Subtype definition
- ***)
-
-(*
-   [mk_subtype scp name args d setP rep]:
-   - check name doesn't exist already
-   - check all arguments in args are unique
-   - check def is well defined 
-   (all constructors exist and variables are in the list of arguments)
-   - ensure setP has type (d -> bool)
-   - declare rep as a function of type (d -> n)
-   - make subtype property from setp and rep.
- *)
+(**** Type definition: Subtypes ****)
 
     let is_subtype x = 
       match x with 
@@ -2403,6 +2390,16 @@ module Defns =
       in 
       mk_thm gl2
 
+(*
+   [mk_subtype scp name args d setP rep]:
+   - check name doesn't exist already
+   - check all arguments in args are unique
+   - check def is well defined 
+   (all constructors exist and variables are in the list of arguments)
+   - ensure setP has type (d -> bool)
+   - declare rep as a function of type (d -> n)
+   - make subtype property from setp and rep.
+ *)
     let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
       (* run checks and get the subtype property *)
       let dtype1 = Gtypes.set_name ~strict:true scp dtype
@@ -2520,7 +2517,6 @@ module Defns =
       | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
       | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th));
       Format.printf "@]"
-
 
   end
 
