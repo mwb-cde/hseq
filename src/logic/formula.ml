@@ -44,6 +44,40 @@ let make ?env scp t=
 (** Convert a formula to a term *)
 let term_of x = x
 
+(*** Fast conversion to formulas for internal use ***)
+
+(**
+   [formula_in_scope scp f]: true if formula [f] is in scope [scp].
+
+   In the current implementation, this always returns [false], forcing
+   Future implementations will hopefully do something useful here.
+*)   
+let formula_in_scope scp f = false
+
+(**
+   [valid_forms scp fs]: Return true if all formulas in [fs] are in
+   scope [scp]. Return false otherwise. Used to test whether the
+   formulas can be used e.g. with conjunction to make a new formula
+   without the expense of going through [make].
+
+let valid_forms scp fs =
+  List.fold_left (fun b f -> b && formula_in_scope scp f) true fs
+*)
+let valid_forms scp fs = false 
+
+(** 
+   [fast_make scp fs t]: make a formula without any checks, if
+   possible. This function must not be exposed for general use. It is
+   only for use by the constructors.
+
+   If [fs] are valid formulas then make [t] a formula of [scp] without
+   doing any checks. Otherwise make [t] a formula using [make].
+*)
+let fast_make ?env scp fs t = 
+  if (valid_forms scp fs) 
+  then mk_scoped_formula scp t 
+  else make scp t
+
 (***
 * Representation for permanent storage
 ***)
@@ -58,6 +92,8 @@ let from_save x = Dbterm.to_term (term_of x)
 
 let equals x y = Term.equals (term_of x) (term_of y)
 
+(*** General tests ***)
+
 let in_scope_memo memo scp f =
   if (Term.in_scope memo scp (term_of f))
   then true
@@ -67,42 +103,6 @@ let in_scope scp f =
   if (Term.in_scope (Lib.empty_env()) scp (term_of f))
   then true
   else raise (Term.term_error "Badly formed formula" [term_of f])
-
-
-let inst_env scp env t r =
-  if (Term.is_qnt t) 
-  then 
-    try
-      (let (q, b) = Term.dest_qnt (term_of t)
-      in 
-      let nr0, nenv=
-	let penv = ref env
-	in 
-	let r1=make ~env:penv scp r
-	in 
-	(r1, !penv)
-      in 
-      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
-      in 
-      let f =Term.retype nenv nr
-      in 
-      (f, nenv))
-    with err -> 
-      raise
-	(Term.add_term_error "inst: replacement not closed " [r] err)
-  else raise (Term.term_error "inst: not a quantified formula" [t])
-
-let inst scp t r =
-  let f, _ = inst_env scp (Gtypes.empty_subst()) t r
-  in f
-
-let subst scp env t = 
-  let nt = Term.subst env (term_of t)
-  in 
-  make scp nt
-
-let rename t = Term.rename (term_of t)
-
 
 (*** Recognisers ***)
 
@@ -160,37 +160,6 @@ let get_binder_type x = Term.get_binder_type (term_of x)
 
 (*** Constructors ***)
 
-(**
-   [formula_in_scope scp f]: true if formula [f] is in scope [scp].
-
-   In the current implementation, this always returns [false], forcing
-   Future implementations will hopefully do something useful here.
-*)   
-let formula_in_scope scp f = false
-
-(**
-   [valid_forms scp fs]: Return true if all formulas in [fs] are in
-   scope [scp]. Return false otherwise. Used to test whether the
-   formulas can be used e.g. with conjunction to make a new formula
-   without the expense of going through [make].
-
-let valid_forms scp fs =
-  List.fold_left (fun b f -> b && formula_in_scope scp f) true fs
-*)
-let valid_forms scp fs = false 
-
-(** 
-   [fast_make scp fs t]: make a formula without any checks, if
-   possible. This function must not be exposed for general use. It is
-   only for use by the constructors.
-
-   If [fs] are valid formulas then make [t] a formula of [scp] without
-   doing any checks. Otherwise make [t] a formula using [make].
-*)
-let fast_make scp fs t = 
-  if (valid_forms scp fs) 
-  then mk_scoped_formula scp t 
-  else make scp t
 
 let mk_true scp = make scp Logicterm.mk_true
 let mk_false scp = make scp Logicterm.mk_false
@@ -208,6 +177,48 @@ let mk_iff scp a b =
   fast_make scp [a; b] (Logicterm.mk_iff (term_of a) (term_of b))
 let mk_equality scp a b = 
   fast_make scp [a; b] (Logicterm.mk_equality (term_of a) (term_of b))
+
+
+(*** General Operations ***)
+
+let inst_env scp env t r =
+  if (Term.is_qnt t) 
+  then 
+    try
+      (let (q, b) = Term.dest_qnt (term_of t)
+      in 
+      let nr0, nenv=
+	let penv = ref env
+	in 
+	let r1=make ~env:penv scp r
+	in 
+	(r1, !penv)
+      in 
+      let nr= Term.subst_quick (Basic.Bound(q)) nr0 b
+      in 
+      let f =Term.retype nenv nr
+      in 
+      (f, nenv))
+    with err -> 
+      raise
+	(Term.add_term_error "inst: replacement not closed " [r] err)
+  else raise (Term.term_error "inst: not a quantified formula" [t])
+
+let inst scp t r =
+  let f, _ = inst_env scp (Gtypes.empty_subst()) t r
+  in f
+
+let subst scp lst form = 
+  let env = 
+    List.fold_left 
+      (fun e (t, r) -> Term.bind (term_of t) (term_of r) e) 
+      (Term.empty_subst()) lst
+  in 
+  let nt = Term.subst env (term_of form)
+  in 
+  fast_make scp (List.map snd lst) nt
+
+let rename t = Term.rename (term_of t)
 
 
 (***
@@ -258,6 +269,23 @@ let typecheck scp f expty=
 
 let retype scp tenv x = make scp (Term.retype tenv (term_of x))
 
+let retype_with_check scp tenv f = 
+  let nf = 
+    try
+      Term.retype_with_check scp tenv (term_of f)
+    with err -> 
+      raise (Term.add_term_error "Formula.retype_with_check" [term_of f] err)
+  in 
+  fast_make scp [f] nf
+
+let typecheck_retype scp tyenv f expty=
+  let tyenv1 = typecheck_env scp tyenv f expty
+  in 
+  try
+    (retype_with_check scp tyenv1 f, tyenv1)
+  with 
+    err -> (Term.add_term_error "Formula.typecheck_retype" [term_of f] err)
+
 (***
 * Logic operations
 ***)
@@ -300,10 +328,7 @@ type rule =
 let rule t = Rule t
 let orule t r = Ordered(t, r)
 
-let default_rr_control= Rewrite.default_control
-
-(*** Rewriting functions ***)
-
+(* Conversions *)
 let rule_to_form r = 
   match r with
     Rule f -> f
@@ -313,6 +338,10 @@ let to_rewrite_rule r =
   match r with
     Rule f -> Rewrite.rule (term_of f)
   | Ordered (f, p) -> Rewrite.orule (term_of f) p
+
+let default_rr_control= Rewrite.default_control
+
+(*** Rewriting functions ***)
 
 (** 
    Split a list [rs] of rules into a list [fs] of formulas and a list

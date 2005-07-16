@@ -1,6 +1,6 @@
 (*-----
 Name: logic.mli
-   Author: M Wahab <mwahab@users.sourceforge.net>
+Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
 
@@ -119,14 +119,17 @@ Name: logic.mli
    A list of subgoals is written as a semi-colon seperated list:
    [sg1; sg2; ...; sg3].
 
-   The information provided by tactics is written 
-   {L [info: goals = goal_tags, forms=form_tags, terms = term_list]}
-   where
-   {ul {- [goal_tags] is a list of tags which identify subgoals.}
-   {- [form_tags] is a list of tags which identify subgoal formulas.}
-   {- [term_list] is a list of terms which have been introduced by 
-   the tactic.}}
- *)
+   Where there is no ambiguity, labels and tags will be treated as
+   the same.
+   
+  The information provided by tactics is written 
+  {L [info: goals = goal_tags, forms=form_tags, terms = term_list]}
+  where
+  {ul {- [goal_tags] is a list of tags which identify subgoals.}
+     {- [form_tags] is a list of tags which identify subgoal formulas.}
+     {- [term_list] is a list of terms which have been introduced by 
+	 the tactic.}}
+  *)
 
 (** {5 Theorems} *)
 
@@ -296,7 +299,7 @@ module Skolem:
 val join_up : 'a list -> 'a list -> 'a list
 (** 
    [join_up l r] is [List.rev_append l r]. Reverses [l] and appends it to [r].
-*)
+ *)
 
 val split_at_tag: 
     Tag.t -> (Tag.t * 'a) list 
@@ -336,6 +339,7 @@ val split_at_concl:
    [l].
    raise Not_found if [lbl=FNum i] and i<0
  *)
+
 
 
 (** Sequents and their components *)
@@ -400,7 +404,7 @@ val label_to_index: label -> Sequent.t -> int
 (** 
    Convert a label to the position of the formula it identifies. If the label
    identifies an assumption, the position will be a negative integer.
-*)
+ *)
 
 val get_label_asm : label -> Sequent.t -> tagged_form
 (** Get the assumption identified by a label *)
@@ -411,105 +415,156 @@ val get_label_form: label -> Sequent.t -> tagged_form
 
 (** {5 Goals} *)
 
+(**
+   A goal is made up of:
+   {ul
+   {- The sub-goals still to be proved.}
+   {- A type environment: the bindings of the shared type
+   variables which occur in the goals sequents (all of these are weak
+   type variables).} 
+   {- A formula: the theorem which is to be proved.}}
+ *)
 type goal
 
-val has_subgoals: goal -> bool
-val get_sqnt:goal -> Sequent.t
-
-val goal_tyenv: goal -> Gtypes.substitution
-
-(** get tag of first subgoal *)
-val get_goal_tag: goal -> Tag.t
-val num_of_subgoals: goal -> int
-val get_subgoals: goal -> Sequent.t list
-val get_nth_subgoal_sqnt: int -> goal-> Sequent.t
-val goal_has_subgoals: goal -> bool
-val get_subgoal_tags : goal -> Tag.t list
-
-(** manipulating goals *)
 val get_goal : goal -> Formula.form
+(** The formula to be proved. *)
+val get_subgoals: goal -> Sequent.t list
+(** The subgoals of the goal. *)
+val goal_tyenv: goal -> Gtypes.substitution
+(** The type environment of the goal. *)
 
-(** put the tagged sqnt at the front, raise Not_found if not found *)
-val goal_focus: Tag.t-> goal -> goal
+val has_subgoals: goal -> bool
+(** Whether a goal has subgoals. *)
+val num_of_subgoals: goal -> int
+(** The number of subgoals in a goal. *)
 
-(** rotate subgoals left and right
-   raise No_subgoals if no subgoals
- *)
-val rotate_subgoals_left : int -> goal -> goal 
-val rotate_subgoals_right : int -> goal -> goal
-
+val mk_goal : Scope.t -> Formula.form -> goal
 (**
    [mk_goal scp f]
    Make formula [f] a goal to be proved in scope [scp] 
- *)
-val mk_goal : Scope.t -> Formula.form -> goal
+*)
 
-(** make a theorem from an established goal *)
-(** only suceeds if the goal has no sub-goals *)
 val mk_thm : goal -> thm
+(**
+   Make a theorem from a goal with no subgoals.
+   Fails if the goal has subgoals.
+*)
 
+(** {7 Manipulating goals} *)
+
+val goal_focus: Tag.t-> goal -> goal
+(** Put the tagged sqnt at the front, raise [Not_found] if not found *)
+
+val rotate_subgoals_left : int -> goal -> goal 
+(** 
+   [rotate_subgoals_left n]: Rotate subgoals left. Raise [Failure] if
+   no subgoals.
+ *)
+val rotate_subgoals_right : int -> goal -> goal
+(** 
+   [rotate_subgoals_right n]:
+   Rotate subgoals right [n] places. Raise [Failure] if no subgoals.
+*)
 
 (** {7 Applying Rules to Subgoals} *)
 
 (** 
-   The subgoal package.
-   Manages the application of rules to the subgoals of a goal.
+   The subgoal package. Manages the application of rules to the
+   subgoals of a goal. Ensures that the result of applying a tactics
+   to a subgoal is the result of the functions, defined in module
+   {!Logic}, which implement the rules of the logic.
+
+   The approach is to provide a type {!Logic.Subgoals.node} of nodes
+   and a type {!Logic.Subgoals.branch} of branches, representing nodes
+   and branches of the proof tree. A tactic has type [node -> branch],
+   a node contains the subgoal which is the argument to the tactic and
+   a branch has the list of subgoals resulting from the tactic. Each
+   node and branch has a unique tag. When applying a tactic [tac] to a
+   node [n], a unique tag (the ticket) is generated and set as the tag
+   of [n]. If branch [b=tac n], the tag of [b] must be the same as the
+   ticket otherwise the result is invalid and will be discarded. If
+   the result is valid, the tag of [b] is set to the original tag of
+   [n] and [b] is the result of the tactic. Since only functions in
+   module {!Logic} can change the tag of a node or branch, tactics
+   external to {!Logic} must use the tactics defined in {!Logic} to
+   construct branches from nodes. This system also provides for
+   tacticals by allowing tactics to be chained together, the branch
+   resulting from the last tactic having the same tag as the node
+   applied to the first tactic.
+
+   The functions in this module deal with the application of tactics
+   to nodes and goals. The main function is {!Logic.Subgoals.apply}
+   which implements the ticket holding mechanism. Other functions
+   allow the result of applying tactics to be reported (e.g. by
+   printing) and also provide different ways of applying tactics to
+   lists of subgoals (all of which are based around
+   {!Logic.Subgoals.apply}).
  *)
 module Subgoals:
     sig
       
+      (** {7 Nodes and branches} *)
+
       (** 
-	 [node]
-	 A node is a sequent and a type environment.
+	 [node]: A node holds the subgoal to be solved and the type
+	 environment of the goal. A node also holds a tag, which is
+	 not visible.
        *)
       type node
+
       val node_tyenv: node -> Gtypes.substitution
+	  (** The type environment of the goal. *)
       val node_sqnt: node -> Sequent.t
+	  (** The subgoal to br proved. *)
 
 	  (** 
-	     [branch]
-	     A branch is a list of sequents, a type environment
-	     and the tag of the sequent from which the list of sequents 
-	     is derived.
+	     [branch]: A branch is a list of subgoals and the type
+	     environment of the goal. A branch also holds the tag of
+	     the node from which it was produced.
 	   *)
       type branch
-(*      val branch_tag: branch -> Tag.t *)
+
       val branch_tyenv: branch -> Gtypes.substitution
+	  (** The type environment of the branch *)
       val branch_sqnts: branch -> Sequent.t list
+	  (** The subgoals of the branch *)
 
-(** 
-   [branch_node node]
-   Make a branch from [node] without doing anything.
- *)
       val branch_node : node -> branch
-
-(**
-   Functions to apply a tactic to subgoals.
-   (A tactic has type node -> branch)
+(** 
+   [branch_node node]: Make a branch from [node] without doing
+   anything. The subgoal of the node is the only subgoal of the
+   branch. This is safe since no subgoal is removed.
  *)
 
-(**
-   [merge env1 env2]: merge type environments.
+(** {7 Utility functions} *)
 
-   Create a [env3] which has the binding of each weak variable in
-   [env1 + env2].
-
-   raise [Failure] if a variable ends up bound to itself.
- *)
       val merge_tyenvs:
 	  Gtypes.substitution 
 	-> Gtypes.substitution	
 	  -> Gtypes.substitution
-
-
 (**
-   [merge_tac_tyenvs n b]:
-   Merge the type environment of [b], resulting from applying a tactic
-   to [n], with the type environment of [n].  Make a new branch with
-   the components of [b] but with the new type environment.
- *)
-      val merge_tac_tyenvs : node -> branch -> branch
+   [merge tyenv1 tyenv2]: Merge type environments. 
 
+   Create a type environment [env3] which has the binding of each weak
+   variable in [env1 + env2]. 
+
+   Used to combine the type environment resulting from the application
+   of a tactic with the original type environment of a goal.
+
+   raise [Failure] if a variable ends up bound to itself.
+ *)
+
+      val merge_tac_tyenvs : node -> branch -> branch
+(**
+   [merge_tac_tyenvs n b]: Merge the type environment of branch [b],
+   resulting from applying a tactic to node [n], with the type
+   environment of [n].  Make a new branch with the subgoals of [b]
+   but with the new type environment.
+ *)
+
+(** {7 Applying tactics} *)
+
+      val apply: (node -> branch) -> node -> branch
 (**
    [apply tac node]: Apply tactic [tac] to [node].
 
@@ -517,134 +572,139 @@ module Subgoals:
    should call this to apply a tactic.
 
    Approach:
-   1. Create a new tag [ticket].
-   3. Apply tac to [node] getting branch [b'].
-   4. If the tag of [b'] is not [ticket] then fail.
+   {ol
+   {- Create a new tag [ticket] and make it the tag of [node].}
+   {- Apply tac to [node] getting branch [b].}
+   {- If the tag of [b] is not [ticket] then fail.}
+   {- Merge the type environment of [b] with [n']. (This may be
+   unnecessary.) (Almost certainly unnecessary so not done.)}
+   {- Make the original tag of [node] the tag of [b].}
+   {- Return the branch [b].}}
 
-   5. Merge the type environment of [b'] with [n']. 
-   (This may be unnecessary.)
-   Almost certainly unnecessary so not done.
+   raise [logicError] on failure.
 
-   6. Return the branch formed from [b'] with the tag of [node].
-
-   raise logicError on failure.
+   The ticket passing method should ensure that it is not possible to
+   return an arbitrary branch as the result of a tactic. A tactic can
+   only succeed if it returns a branch produced from the original node
+   by passing through [apply]. Since the tags of nodes and branches
+   can only be set from functions in module {!Logic}, this should
+   ensure that a tactic cannot fake a result.
  *)
-      val apply: (node -> branch) -> node -> branch
 
-(**
-   [apply_to_node ?report tac (Node(tyenv, sqnt))]
-
-   Apply tactic [tac] to node, getting [result].  If tag of result is
-   the same as the tag of sqnt, then return result.  Otherwise raise
-   logicError.
-
-   If [report] is given, apply to first subgoal and the branch
-   resulting from application of [tac]. (This is to allow interactive
-   proof support to print result of the tactic).
- *)
       val apply_to_node: 
 	  ?report:(node->branch->unit) -> (node->branch) -> node -> branch
-
 (**
-   [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]
+   [apply_to_node ?report tac n]: A wrapper around [apply] to allow
+   reporting of the argument and result of a tactic.
 
-   Apply tactic [tac] to firsg sequent of [sqnts] using
-   [apply_to_node].  replace original sequent with resulting branches.
-   return branch with tag [tg].
+   Evaluate [apply tac n] to get a branch [b] then, 
+   if [report] is given, evaluate [report n b]. Return [b].
+ *)
+
+      val apply_to_first: 
+	  ?report:(node->branch->unit) 
+	-> (node -> branch) -> branch -> branch
+(**
+   [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]: Apply a
+   tactic to the first subgoal in a branch.
+
+   Apply tactic [tac] to [List.hd sqnts] using [apply_to_node].
+   Replace original sequent with resulting branch to form the result.
 
    If [report] is given, apply to first subgoal and the branch
    resulting from application of [tac]. (This is to allow interactive
    proof support to print result of the tactic).
 
-   raise No_subgoals if [sqnts] is empty.
+   raise [No_subgoals] if [sqnts] is empty.
  *)
-      val apply_to_first: 
-	  ?report:(node->branch->unit) ->
-	    (node->branch) -> branch -> branch
 
+      val apply_to_each: (node->branch) -> branch -> branch
 (**
    [apply_to_each tac (Branch(tg, tyenv, sqnts))]
-   Apply tactic [tac] to each sequent in [sqnts] 
-   using [apply_to_node].
-   replace original sequents with resulting branches.
-   return branch with tag [tg].
+   Apply tactic [tac] to each subgoal in a branch.
 
-   raise No_subgoals if [sqnts] is empty.
+   Apply tactic [tac] to each subgoal in [sqnts] using
+   [apply_to_node].  Collapse the resulting branches, merging the type
+   environments, to form the branch which is returned.
+
+   raise [No_subgoals] if [sqnts] is empty.
  *)
-      val apply_to_each: (node->branch) -> branch -> branch
 
+      val apply_to_goal: 
+	  ?report:(node->branch->unit) ->  (node->branch) -> goal -> goal
 (**
-   [apply_to_goal ?report tac goal] 
+   [apply_to_goal ?report tac goal]: Apply a tactic to a goal.
 
-   Apply tactic [tac] to first subgoal of in [goal] using
+   Apply tactic [tac] to first subgoal of [goal] using
    [apply_to_first].  Replace original list of subgoals with resulting
-   subgoals.  
+   subgoals and merge the type environments.
 
    If [report] is given, apply to first subgoal and the branch
    resulting from application of [tac]. (This is to allow interactive
    proof support to print result of the tactic).
 
-   raise logicError "Invalid Tactic" 
-   if tag of result doesn't match tag originaly assigned to it.
+   raise [logicError "Invalid Tactic"] if tactic is invalid.
  *)
-      val apply_to_goal: 
-	  ?report:(node->branch->unit) ->  (node->branch) -> goal -> goal
 
+      val zip: (node -> branch) list -> branch -> branch
 (** 
    [zip tacl branch]: Apply each of the tactics in [tacl] to the
    corresponding subgoal in branch.
 
    [zip [t1;t2;..;tn] (Branch [g1;g2; ..; gm])] is [Branch([t1 g1; t2
-   g2; .. ;tn gn])] (with [t1 g1] first and [tn gn] last) if [n<m]
-   then untreated subgoals are attached to the end of the new branch.
-   if m<n then unused tactic are silently discarded.  typenv of new
-   branch is that produced by the last tactic ([tn gn] in the
-   example).  tag of the branch is the tag of the original branch.
- *)
-      val zip: (node -> branch) list -> branch -> branch
+   g2; .. ;tn gn])] (with [t1 g1] first and [tn gn] last). The type
+   environment from (t{_ i} g{_ i}) is used when evaluating (t{_ i+1}
+   g{_ i+1}). The type environment of the returned branch is the type
+   environment of (tn gn). 
 
-
-(** simple tactical (really only an example) *)
-
-(**
-   [seq tac1 tac2 node]
-   apply tactic [tac1] to [node] then [tac2] 
-   to each of the resulting subgoals.
+   If there are more subgoals than tactics (n<m) then untreated
+   subgoals are attached to the end of the new branch. If there are
+   more tactics then subgoals (m<n) then the unused tactics are silently
+   discarded. 
  *)
-(*
-   val seq: (node -> branch) -> (node -> branch) -> node -> branch
- *)
+
     end
-
-(** Sequents and goals of the sequent calculus *)
 
 type node = Subgoals.node
 type branch = Subgoals.branch
-type rule = Subgoals.node -> Subgoals.branch
-type conv = Scope.t -> Basic.term -> thm
-
-val postpone :  goal -> goal
-val foreach: rule -> Subgoals.branch -> Subgoals.branch
-val first_only: rule -> Subgoals.branch -> Subgoals.branch
-
 
 (** {5 Tactics} *)
 
+type tactic = node -> branch
+
+val foreach: tactic -> branch -> branch
 (** 
-   {7 Tactic Information} 
+   A synonym for {!Logic.Subgoals.apply_to_each}. [foreach tac b]
+   applies [tac] to each subgoal in [b], returning all subgoals.
+*)
+
+val first_only: tactic -> branch -> branch
+(** 
+   A synonym for {!Logic.Subgoals.apply_to_first}.  [first_only tac b]
+   applies [tac] to the first subgoal of [b], merging the resulting
+   subgoals with the other subgoals of [b].
+*)
+
+(** 
+   {7 Data for tactics} 
 
    Tactics pass information by assigning values to elements of type
    {!Logic.info}, which are references to elements of type
    {!Logic.tag_record}. The standard tactics take parameters of type
    [Logic.info option], and provide the information only if it is
    requested (by an argument [(Some r)]).
+
+   Rewriting tactics can use both theorems and assumptions as rewrite
+   rules. Type {!Logic.rr_type} is the type of rules to use for
+   rewriting and allows assumptions and theorems to be ordered or
+   unordered.
  *)
 
 (**
    The record holding information generated by tactics.
-   [goals]: new goals produced by rule 
-   [forms]: new forms produced by rule 
-   [terms]: new constants produced by rule 
+   [goals]: new goals produced by tactic 
+   [forms]: new forms produced by tactic 
+   [terms]: new constants produced by tactic 
  *)
 type tag_record = 
     { 
@@ -678,332 +738,573 @@ val add_info:
    otherwise do nothing.
  *)
 
-
 (**
-   [rr_type]: where to get rewrite rule from
-   [Asm] : labelled assumption
-   [RRThm]: given theorem
-   [OAsm] : labelled assumption, with ordering
-   [ORRThm]: given theorem, with ordering
- *)
+   The type of rules to use with rewriting in the logic.
+*)
 type rr_type = 
-    Asm of label
-  | RRThm of thm
-  | OAsm of label * Rewrite.order
-  | ORRThm of thm * Rewrite.order
+  | RRThm of thm   (** A theorem *)
+  | ORRThm of thm * Rewrite.order (** An ordered theorem *)
+  | Asm of label  (** The label of an assumption *)
+  | OAsm 
+    of label * Rewrite.order 
+(** The label of an ordered assumption *)
 
 
+(** {7 Tactics and Conversions} *)
 
-
+(** 
+   Tactics implement the rules of the logic.
+*)
 module Tactics :
     sig
 
-(** 
-   Tactics for proving goals.
- *)
+(** {5 Manipulating Assumptions and Conclusions} *)
 
-(* 
-   [check_term scp trm]
-   Ensure that term [trm] is in the scope [scp].
-   All identifiers must be bound to a quantifier or defined/declared 
-   in a theory. 
-   Free variables are not permitted.
- *)
-(*
-   val check_term: Scope.t -> Formula.form -> unit
- *)
-(*
-   [check_term_memo]
-   Memoised version of [check_term].
- *)
-(*
-   val check_term_memo: 
-   (string, bool) Lib.substype -> Scope.t -> Formula.form -> unit
- *)
-
-(* apply a rule to a goal *)
-(*      val goal_apply : rule -> goal -> goal *)
-
-(** {5 Manipulating subgoal formulas} *)
-
-      val lift_asm : info option -> label -> rule
+      val lift_asm : info option -> label -> tactic
 (**
-   [lift_asm id sqnt]: Move assumption with identifier [id] to to top
-   of the assumptions of subgoal [sqnt]. Raise [Not_found] if identified
-   formula is not in assumptions.
+   [lift_asm l sqnt]: Move assumption with label [l] to top
+   of the assumptions of subgoal [sqnt]. Raise [Not_found] if no
+   assumption has label [l]. 
+
+   {L
+   asms1, A{_ l}, asms2 |- c
+   ---->
+   A{_ l}, asms1, asms2 |- c
+   }
+
+   info: [goals = [], forms=[l], terms = []]
  *)
-      val lift_concl : info option -> label -> rule
+
+      val lift_concl : info option -> label -> tactic
 (**
-   [lift_concl id sqnt]: Move conclusion with identifier [id] to to
+   [lift_concl l sqnt]: Move conclusion with label [l] to 
    top of the conclusions of subgoal [sqnt]. Raise [Not_found] if
-   identified formula is not in assumptions.
+   no conclusion has label [l].
+
+   {L
+   a |- concls1, C{_ l}, concls2
+   ---->
+   a |- C{_ l}, concls1, concls2
+   }
+
+   info: [goals = [], forms=[l], terms = []]
  *)
-      val lift : info option -> label -> rule
+
+      val lift : info option -> label -> tactic
 (**
-   [lift id sqnt]: Lift formula with label [id] to the top of
+   [lift l sqnt]: Lift formula with label [l] to the top of
    assumption/conclusions. [lift] tries [lift_asm] then tries
-   [lift_concl].  Doesn't change the formula tag.
+   [lift_concl]. Doesn't change the formula tag.
  *)
 
-      val copy_asm : info option -> label -> rule
+      val copy_asm : info option -> label -> tactic
 (** 
-   [copy_asm i] 
+   [copy_asm l]: Copy assumption [l].
 
-   Ai, asms|- C 
-   -> 
-   Ai, Ai, asms |- C
+   {L
+   A{_ l}, asms|- C 
+   ----> 
+   A{_ l'}, A{_ l}, asms |- C
+   }
+
+   info: [goals = [], forms=[l'], terms = []]
  *)
 
-      val copy_cncl : info option -> label -> rule
+      val copy_cncl : info option -> label -> tactic
 (** 
-   [copy_cncl i]
+   [copy_cncl l]: Copy conclusion [l]
 
-   A|- Ci, concls
-   ->
-   A|- Ci, Ci, concls
+   {L
+   A |- C{_ l}, concls
+   ---->
+   A |- C{_ l'}, C{_ l}, concls
+   }
+
+   info: [goals = [], forms=[l'], terms = []]
  *)
 
+(*** rotate assumptions conclusions ***)
 
-(** rotate assumptions conclusions *)
-
-      val rotate_asms: info option -> rule
+      val rotate_asms: info option -> tactic
 (** 
-   [rotate_asm]
+   [rotate_asm]: Rotate assumptions.
 
-   A1, asms |- C
-   ->
-   asms, A1 |- C
+   {L
+   A1, asms |- C   ---->  asms, A1 |- C
+   }
+
+   info: [goals = [], forms=[], terms = []]
  *)
 
-      val rotate_cncls : info option -> rule
+      val rotate_cncls : info option -> tactic
 (** 
-   [rotate_cncls]
+   [rotate_cncls]: Rotate conclusions
 
+   {L
    A|- C1, concls
-   ->
+   ---->
    A|-  concls, C1
+   }
+
+   info: [goals = [], forms=[], terms = []]
  *)
 
-      val delete : info option -> label -> rule
+      val delete : info option -> label -> tactic
 (** 
-   [delete x sq]: Delete assumption [x] or conclusion [x] from
+   [delete l sq]: Delete assumption [l] or conclusion [l] from
    subgoal [sq].
+
+   If [l] is an assumption:
+   {L
+   A{_ l}, asms |- concls ----> asms |- concls
+   }
+
+   If [l] is a conclusion
+   {L
+   asms |- C{_ l}, concls ----> asms |- concls
+   }
+
+   info: [goals = [], forms=[], terms = []]
  *)
 
 
-(** {5 Logic rules}  *)
+(** {5 Logic Rules}  *)
 
-      val skip : info option -> rule
-(*
-   [skip]: The do nothing tactic
- *)
+      val skip : info option -> tactic
+(**
+   [skip]: The do nothing tactic.
 
-
-(** [cut x sq]: add theorem [x] to assumptions of [sq].
-
-   asm |- cncl      --> x, asm |- cncl
- *)
-      val cut : info option -> thm -> rule
-
-(** 
-   [basic i j sq]: if asm [i] is alpha-equal to cncl [j] of [sq].
-
-   asm, a{_ i}, asm' |- concl, c{_ j}, concl'
-   -->
-   true if a{_ i}=c{_ j}
- *)
-      val basic : info option -> label -> label -> rule
-
-(** 
-   [conjI i sq] 
-
-   asm |- a /\ b, concl    tag(t)
-   -->
-   asm |- a                tag(t1)
-   and asm |- b            tag(t2)
- *)
-      val conjC: info option -> label -> rule
-
-(** 
-   [conjE i sq]
+   {L
+   asms |- concls ----> asms |- concls
+   }
    
-   a/\ b, asm |- concl   
-   -->
-   a, b, asm |- concl 
- *)
-      val conjA: info option -> label -> rule
+   info: [goals = [], forms=[], terms = []]
 
-(*
-   [disjI i sq]
+   Useful for turning a node into a branch (e.g. for recursive
+   functions using {!Logic.foreach})
+*)
 
-   a\/b, asm |-  concl   tag(t)
-   -->
-   a, asm |- concl      tag(t1)
-   and b, asm |- concl  tag(t2)
- *)
-      val disjA: info option -> label -> rule
-
+      val cut : info option -> thm -> tactic
 (** 
-   [disjE i sq]
+   [cut th sq]: add theorem [th] to assumptions of [sq].
 
-   asm |- a\/b, concl   
-   -->
-   asm |- a, b, concl 
+   {L
+   asms |- concls ----> th{_ l}, asms |- concls
+   }
+   
+   info: [goals = [], forms=[l], terms = []]
  *)
-      val disjC: info option -> label -> rule
 
+      val basic : info option -> label -> label -> tactic
 (** 
-   [negA i sq]
+   [basic i j sq]: solve the subgoal
+   if assumption [i] is alpha-equal to conclusion [j].
 
-   ~a, asms |- concl
-   -->
-   asms |- a, concl
+   {L
+   A{_ i}, asms |- C{_ j}, concls 
+
+   ----> (if A{_ i} =alpha= C{_ j}) 
+
+   |- true
+   }
+
+   info: [goals = [], forms=[], terms = []]
  *)
-      val negA: info option-> label -> rule
 
+      val conjA: info option -> label -> tactic
 (** 
-   [negC i sq]
+   [conjA l sq]: Eliminate the conjunction at assumption [l]
+   
+   {L
+   (A/\B){_ l1}, asm |- concl   
+   ---->
+   A{_ l1}, B{_ l2}, asm |- concl 
+   }
 
-   asms |- ~c, concl
-   -->
-   c, asms |- concl
+   info: [goals = [], forms=[l1, l2], terms = []]
  *)
-      val negC: info option -> label -> rule
 
+      val conjC: info option -> label -> tactic
 (** 
-   [implI i sq]
+   [conjC l sq]: Eliminate the conjunction at conclusion [l]
 
-   asms |- a-> b, cncl 
-   -->
-   a, asms |- b, cncl
+
+   {L
+   g1:\[asms |- (A/\B){_ l}, concls\]
+
+   ----> 
+
+   g1:\[asms |- A{_ l}, concls\]; g2:\[asms |- B{_ l}, concls\]
+   }
+
+   info: [goals = [g1; g2], forms=[l], terms = []]
  *)
-      val implC: info option -> label -> rule
 
+      val disjA: info option -> label -> tactic
 (** 
-   [implE i sq]
+   [disjA l sq]: Eliminate the disjunction at assumption [l]
 
-   a-> b,asms |-cncl  tag(t)
-   -->
-   asms |- a, cncl    tag(t1)
-   b, asms |- cncl    tag(t2)
+
+   {L
+   g1:\[(A\/B){_ l}, asms |- concls\]
+
+   ----> 
+
+   g1:\[A{_ l}, asms |- concls\]; g2:\[asms |- B{_ l}, concls\]
+   }
+
+   info: [goals = [g1; g2], forms=[l], terms = []]
  *)
-      val implA: info option -> label -> rule
 
+      val disjC: info option -> label -> tactic
 (** 
-   [allI i sq]
+   [disjC l sq]: Eliminate the disjunction at conclusion [l]
+   
+   {L
+   (asm |- A\/B){_ l1}, concl   
+   ---->
+   asm |- A{_ l1}, B{_ l2}, concl 
+   }
 
-   asm |- !x. P(c), concl
-   -->
-   asm |- P(c'), concl   where c' is a new identifier
+   info: [goals = [], forms=[l1, l2], terms = []]
  *)
-      val allC : info option -> label -> rule
 
+      val negA: info option-> label -> tactic
 (** 
-   [allE i sq]
+   [negA l sq]: Elminate the negation at assumption [l]
 
-   !x. P(c), asm |-  concl
-   -->
-   P(c'), asm |- concl   where c' is a given term
+   {L
+   (~A){_ l}, asms |- concl
+   ---->
+   asms |- A{_ l}, concl
+   }
+
+   info: [goals = [], forms=[l], terms = []]
  *)
-      val allA : info option -> Basic.term -> label -> rule
 
-
+      val negC: info option -> label -> tactic
 (** 
-   [existI i sq]
+   [negA l sq]: Elminate the negation at conclusion [l]
 
-   ?x. P(c), asm |- concl
-   -->
-   P(c'), asm |- concl   where c' is a new identifier
+   {L
+   asms |- (~A){_ l}, concl
+   ---->
+   A{_ l}, asms |- concl
+   }
+
+   info: [goals = [], forms=[l], terms = []]
  *)
-      val existA : info option -> label -> rule
 
+
+      val implA: info option -> label -> tactic
 (** 
-   [existE i sq]
+   [implA l sq]: Eliminate the implication at assumption [l]
 
-   asm |- ?x. P(c), concl
-   -->
-   asm |- P(c'), concl   where c' is a given term
+   {L
+   g1:\[(A => B){_ l}, asms |- concls\]
+
+   ----> 
+
+   g1:\[asms |- A{_ l}, concls\]; g2:\[asms |- B{_ l}, concls\]
+   }
+
+   info: [goals = [g1; g2], forms=[l], terms = []]
  *)
-      val existC : info option  -> Basic.term -> label -> rule
 
-
+      val implC: info option -> label -> tactic
 (** 
-   [beta i sq]:  (beta reduction of asm (i<0) or concl (i>0) in sq) 
- *)
-      val beta : info option -> label -> rule
+   [implC l sq]: Elminate the implication at conclusion [l]
 
+   {L
+   asms |- (A => B){_ l}, concl
+   ---->
+   A{_ l1}, asms |- B{_ l}, concl
+   }
+
+   info: [goals = [], forms=[l1; l], terms = []]
+ *)
+
+      val allA : info option -> Basic.term -> label -> tactic
 (** 
-   [trueR i sq]
+   [allA t l sq]: Elminate the universal quantifier at assumption [l],
+   instantiating it with [t].
 
-   asm |- true, concl
-   --> true
- *)
-      val trueR: info option -> label -> rule
 
+   {L
+   (! x. A){_ l}, asms |- concls
+
+   ----> 
+
+   (A\[t/x\]){_ l}, asms |- concls
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+*)
+      val allC : info option -> label -> tactic
 (** 
-   [rewrite ctrl thms j sq]
+   [allC l sq]: Elminate the universal quantifier at conclusion [l].
 
-   (list of theorems or assumptions containing [x=y])
-   asm |- P(x), concl
-   -->
-   asm |- P(y), concl
 
-   where [ctrl] is the rewriting control.
+   {L
+   asms |- (! x. A){_ l}, concls
 
-   Theorems [thms] must be in scope of sequent.
+   ----> (create a skolem constant c)
 
-   Theorems not in scope and assumptions which don't exist are
-   silently discarded.
+   asms |- (A\[c/x\]){_ l}, concls
+   }
 
-   [rewriteA ctrl simple thms j sq]: rewrite assumption j
-   [rewriteC ctrl simple thms j sq]: rewrite conclusion j
+   info: [goals = [], forms=[l], terms = [c]]
+*)
+
+      val existA : info option -> label -> tactic
+(** 
+   [existA l sq]: Elminate the existential quantifier at assumption [l].
+
+
+   {L
+   (? x. A){_ l}, asms |- concls
+
+   ----> (create a skolem constant c)
+
+   (A\[c/x\]){_ l}, asms |- concls
+   }
+
+   info: [goals = [], forms=[l], terms = [c]]
  *)
+
+      val existC : info option  -> Basic.term -> label -> tactic
+(** 
+   [existC t l sq]: Elminate the existential quantifier at conclusion
+   [l], instantiating it with [t].
+
+
+   {L
+   asms |- (? x. A){_ l}, concls
+
+   ---->
+
+   asms |- (A\[t/x\]){_ l}, concls
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+ *)
+
+      val trueR: info option -> label -> tactic
+(** 
+   [trueR i sq]: Truth solves the goal.
+
+
+   {L
+   asms |- true, concls
+   ---->
+   |- true
+   }
+
+   info: [goals = [], forms=[], terms = []]
+ *)
+
+      val beta : info option -> label -> tactic
+(** 
+   [beta l sq]: Beta-reduce the assumption or conclusion at label [l].
+
+   info: [goals = [], forms=[l], terms = []]
+ *)
+
+(** {7 Rewriting} 
+
+   The rewrite tactics take a list of rules which are made up of
+   theorems or the labels of the assumptions to rewrite with. The
+   rules can be ordered or unordered. The tactics fail if any of the
+   rules are out of scope, a label to a non-exixtant assumption or not
+   an equality.
+*)
+
       val rewriteA : info option 
 	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> rule
+	  -> rr_type list -> label -> tactic
+(** 
+   [rewriteA ctrl rules l]: Rewrite the assumption at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   A{_ l}, asms |- concls
+
+   ----> (B is the rewritten assumption)
+
+   B{_ l}, asms |- concls
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+ *)
+
       val rewriteC : info option 
 	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> rule
+	  -> rr_type list -> label -> tactic
+(** 
+   [rewriteC ctrl rules l]: Rewrite the conclusion at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   asms |- A{_ l}, concls
+
+   ----> (B is the rewritten conclusion)
+
+   asms |- B{_ l}, concls
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+ *)
 
       val rewrite : info option 
 	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> rule
-
-(*
-   [rewrite_rule scp ctrl rrl thm]
-
-   rewrite theorem [thm] with rules [rrl] in scope [scp].
+	  -> rr_type list -> label -> tactic
+(** 
+   [rewrite ctrl rules l]: Combination of [rewriteC] and
+   [rewriteA]. First tries [rewriteC] then tries [rewriteA].
  *)
-      val rewrite_rule: 
+
+      val rewrite_rule:
 	  Scope.t -> ?ctrl:Rewrite.control
 	    -> thm list -> thm -> thm
+(**
+   [rewrite_rule scp ctrl rrl thm]: Rewrite theorem [thm] with rules
+   [rrl] in scope [scp].
+
+   {e This is likely to be removed or moved out of module Logic.}
+ *)
+
+(** {7 Experimental} *)
+
+      val rewrite_intro :
+	  info option
+	-> ?ctrl:Rewrite.control
+	  -> rr_type list -> Basic.term -> tactic
+(**
+   [rewrite_intro ?info ctrl rules trm sq]: 
+   Introduce an equality established by rewriting term [trm] with [rules].
+   
+   {L
+   asms |- concl
+   ---->
+   (trm = T){_ l}, asms|- concl
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+ *)
+
+      val substA: info option -> label list -> label -> tactic
+(**
+   [substA ?info eqs l sq]: Substitute, using the assumptions in [eq],
+   into the assumption [l].  The assumptions in [eq] must all be
+   equalities of the form [L=R]. The substitution is A{_ l}\[R1, R2,
+   ..., Rn/L1, L2, ..., Rn\].
+   
+   {L
+   A{_ l}, asms |- concl
+
+   ---->
+
+   (A\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, asms|- concl
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+
+   Silently discards the labels of non-existant assumptions in [eqs].
+ *)
+
+      val substC: info option -> label list -> label -> tactic
+(**
+   [substC ?info eqs l sq]: Substitute, using the assumptions in [eq],
+   into the conclusion [l].  The assumptions in [eq] must all be
+   equalities of the form [L=R]. The substitution is C{_ l}\[R1, R2,
+   ..., Rn/L1, L2, ..., Rn\].
+   
+   {L
+   asms |- C{_ l}, concl
+
+   ---->
+
+   asms|- (C\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, concl
+   }
+
+   info: [goals = [], forms=[l], terms = []]
+
+   Silently discards the labels of non-existant assumptions in [eqs].
+ *)
+
     end
+
+(** 
+   Conversions are functions constructing theorems which express an
+   equality.
+
+   Although the logic is based on tactics, some rules are better
+   described as equalities (which can be used for rewriting). 
+
+   Module {!Logic.Conv} also provides a very small number of basic
+   conversions which are generally useful and which would be too
+   inefficient if written in terms of tactics.
+*)
+type conv = Scope.t -> Basic.term -> thm
 
 module Conv:
     sig
 
-      (** 
-	 [beta_conv scp term]: Apply a single beta conversion to [term].
-
-	 Fails if [term] is not of the form [(%x: F)y]
-	 or the resulting formula is not in scope.
-       *)
-
       val beta_conv : conv
+(** 
+   [beta_conv scp term]: Apply a single beta conversion to [term].
+
+   Returns |- ((%x: F) y) = F' 
+   where F' = F\[y/x\]
+
+   Fails if [term] is not of the form [(%x: F)y]
+   or the resulting formula is not in scope.
+
+   {e Note: The beta-reduce tactics may be removed in favour of this
+   function.}
+*)
+
+      val rewrite_conv: 
+	  ?ctrl:Rewrite.control -> rr_type list -> conv
+(**
+   [rewrite_conv scp ctrl rules trm]:
+   rewrite term [trm] with rules [rrl] in scope [scp].
+
+   Returns |- trm = X 
+   where [X] is the result of rewriting [trm]
+
+   Discards any rule which is not a theorem or an ordered theorem.
+
+   This conversion could be written using the rewriting tactics but
+   this would require two sets of rewriting. The first to construct
+   the term [X] on the rhs of the equality and the second when the
+   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
+   one set of rewriting.
+ *)
     end 
 
 
 (** {5 Declarations and Definitions} *)
 
-(**
-   [cdecln]: Checked term declarations.
-   Checking of type and term definitions and declarations
 
-   [cdefn]: Checked Definitions.  
-   Checking of type and term definitions and declarations
- *)
+(** Support for defining terms and subtypes. *)
+module Defns :
+    sig
+
+(** {7 Representation of Declarations and definitions} *)
+
 type cdefn
-and ctypedef =
+(**
+   Checked term definitions. Elements of [cdefn] can be assumed to be
+   correctly defined.
+*)
+
+
+(**
+   Checked subtype definitions. Elements of [ctypedef] can be assumed to be
+   correctly defined. 
+*)
+type ctypedef =
     {
      type_name : Basic.ident;  (* name of new type *)
      type_args : string list;  (* arguments of new type *)
@@ -1016,12 +1317,20 @@ and ctypedef =
      abs_type_inverse: thm
    }
 
+(** 
+   The representation of a checked definition for permanent storage.
+*)
 type saved_cdefn =
     STypeAlias of Basic.ident * string list * Gtypes.stype option
   | STypeDef of saved_ctypedef
   | STermDecln of Basic.ident * Gtypes.stype
   | STermDef of Basic.ident * Gtypes.stype * saved_thm 
-and saved_ctypedef =
+and
+(** 
+   The representation of a checked subtype definition for permanent
+   storage.
+ *)
+ saved_ctypedef =
     {
      stype_name : Basic.ident;  (* name of new type *)
      stype_args : string list;  (* arguments of new type *)
@@ -1033,9 +1342,6 @@ and saved_ctypedef =
      srep_type_inverse: saved_thm;
      sabs_type_inverse: saved_thm
    }
-
-module Defns :
-    sig
 
       val to_saved_cdefn: cdefn -> saved_cdefn
       val from_saved_cdefn: saved_cdefn -> cdefn 
@@ -1110,29 +1416,32 @@ module Defns :
 		-> cdefn
 
 
+(** {7 Pretty Printing} *)
+
+val print_cdefn: Printer.ppinfo -> cdefn -> unit
+(** Print a definition *)
 
     end
 
-(** Printer for sequents *)
+(** {5 Pretty Printing} *)
 
-(** Printing *)
-
-
-val print_cdefn: Printer.ppinfo -> cdefn -> unit
-
-(**
-   [print_sqnt ppinfo sq]
-   Print sequent [sq] using PP info [ppinfo].
-
-   [print_node ppinfo n]
-   Print node [n] using PP info [ppinfo].
-
-   [print_branch ppinfo branch]
-   Print branch [branch] using PP info [ppinfo].
- *)
 val print_sqnt : Printer.ppinfo -> Sequent.t -> unit
+(**
+   [print_sqnt ppinfo sq]:
+   Print sequent [sq] using PP info [ppinfo].
+*)
+
 val print_node : Printer.ppinfo -> node -> unit
+(**
+   [print_node ppinfo n]:
+   Print node [n] using PP info [ppinfo].
+*)
+
 val print_branch : Printer.ppinfo -> branch -> unit
+(**
+   [print_branch ppinfo branch]:
+   Print branch [branch] using PP info [ppinfo].
+*)
 
 
 (*** Miscelaneous ***)

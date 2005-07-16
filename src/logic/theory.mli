@@ -112,7 +112,7 @@ val get_pplist:
 val add_axiom : string -> Logic.thm -> property list -> thy -> unit
 val add_thm : string -> Logic.thm -> property list -> thy -> unit
 
-val add_type_rec : Logic.cdefn -> thy -> unit
+val add_type_rec : Logic.Defns.cdefn -> thy -> unit
 
 val get_type_rec : string -> thy -> Gtypes.typedef_record 
 val get_defn_rec : string -> thy -> id_record

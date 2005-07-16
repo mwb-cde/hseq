@@ -49,7 +49,7 @@ val from_save : saved_form -> form
 val equals : form -> form -> bool
 (** Equality *)
 
-(** {7 General operations} *)
+(** {7 General tests} *)
 
 val in_scope:  Scope.t -> form -> bool
 (** Check that a formula is in scope. *)
@@ -58,27 +58,6 @@ val in_scope_memo:
     (string, bool) Lib.substype ->
       Scope.t ->  form -> bool
 (** Memoised version of [in_scope]. *)
-
-val inst_env : Scope.t -> Gtypes.substitution
-  -> form -> Basic.term -> (form* Gtypes.substitution)
-(**
-   Instantiation w.r.t a type substitution.
-   Instantiate a quantified formula with a given term 
-   succeeds only if the result is a formula.
-*)
-
-val inst : Scope.t -> form -> Basic.term -> form
-(**
-   Instantiate a quantified formula with a given term
-   succeeds only if the result is a formula.
-*)
-
-
-val subst : Scope.t -> Term.substitution -> form -> form
-(** Substitution *)
-
-val rename: form -> form
-(** Rename bound variables *)
 
 (** {7 Recognisers} *)
 
@@ -127,6 +106,32 @@ val mk_implies: Scope.t -> form -> form -> form
 val mk_iff: Scope.t -> form -> form -> form
 val mk_equality: Scope.t -> form -> form -> form
 
+
+(** {7 General operations} *)
+
+val inst_env : Scope.t -> Gtypes.substitution
+  -> form -> Basic.term -> (form* Gtypes.substitution)
+(**
+   Instantiation w.r.t a type substitution.
+   Instantiate a quantified formula with a given term 
+   succeeds only if the result is a formula.
+*)
+
+val inst : Scope.t -> form -> Basic.term -> form
+(**
+   Instantiate a quantified formula with a given term
+   succeeds only if the result is a formula.
+*)
+
+val subst : Scope.t -> (form*form) list ->  form -> form
+(** 
+   [subst scp [(t1, r1); ...; (tn, rn)] f]: Simultaneous substitution.
+   Substitutes the [ri] for the [ti] in formula [f].
+*)
+
+val rename: form -> form
+(** Rename bound variables *)
+
 (** {5 Unification functions} *)
 
 val unify: Scope.t 
@@ -153,7 +158,7 @@ val unify_env: Scope.t
 
 (** {5 Typechecking} *)
 
-val typecheck: Scope.t -> form  -> Basic.gtype ->form
+val typecheck: Scope.t -> form -> Basic.gtype ->form
 (** [typecheck scp f ty]: Check that [f] has type [ty] in scope [scp]. *)
 
 val typecheck_env : Scope.t -> Gtypes.substitution 
@@ -167,6 +172,16 @@ val typecheck_env : Scope.t -> Gtypes.substitution
 val retype: Scope.t -> Gtypes.substitution -> form -> form
 (** [retype tyenv f]: Retype [f] with using type context [tyenv]. *)
 
+val typecheck_retype: 
+    Scope.t -> Gtypes.substitution 
+      -> form -> Basic.gtype
+	-> (form * Gtypes.substitution)
+(** 
+   [typecheck_retype scp tyenv f ty]: Check that [f] is correctly
+   typed and has type [ty] w.r.t type context [tyenv].  Retype [f]
+   with the updated type context. Return the retyped formula and the
+   updated type context.
+*)
 
 (** {5 Logic operations} *)
 
@@ -206,6 +221,12 @@ val rule : form -> rule
 (** Make an unordered rewrite rule. *)
 val orule : form -> Rewrite.order -> rule
 (** Make a unordered rewrite rule. *)
+
+val rule_to_form : rule -> form
+(** Get the formula of a rule. *)
+
+val to_rewrite_rule: rule -> Rewrite.rule
+(** Convert to a Rewrite.rule. *)
 
 val default_rr_control : Rewrite.control
 (** The default rewrite control. *)

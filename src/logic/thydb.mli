@@ -68,14 +68,14 @@ val add_axiom :
 val add_thm : 
     string -> Logic.thm -> Theory.property list -> thydb -> unit
 
-val add_type_rec: Logic.cdefn -> thydb->unit
+val add_type_rec: Logic.Defns.cdefn -> thydb->unit
 
 val add_defn : 
     string -> Basic.gtype -> Logic.thm -> Theory.property list 
       -> thydb -> unit
-val add_decln_rec :Logic.cdefn -> int -> Theory.property list
+val add_decln_rec :Logic.Defns.cdefn -> int -> Theory.property list
   -> thydb -> unit
-val add_decln :Logic.cdefn
+val add_decln :Logic.Defns.cdefn
   -> Theory.property list -> thydb -> unit
 val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
   -> bool -> int -> Theory.property list -> thydb -> unit

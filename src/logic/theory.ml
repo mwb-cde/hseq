@@ -179,7 +179,7 @@ let add_type_rec tr thy =
       then 
 	let ctyrec=Logic.Defns.dest_subtype tydef
 	in 
-	(ctyrec.Logic.type_name, ctyrec.Logic.type_args, None)
+	(ctyrec.Logic.Defns.type_name, ctyrec.Logic.Defns.type_args, None)
       else
 	raise 
 	  (Result.error "Theory.add_type_rec: Expected a type definition")

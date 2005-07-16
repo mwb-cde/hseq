@@ -1,5 +1,5 @@
 (*-----
-   Name: logic.ml
+Name: logic.ml
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
@@ -299,6 +299,18 @@ let split_at_concl l fs =
       else split_at_label l fs
   | _ -> split_at_label l fs
 
+(* get_pair: auxiliary function *)
+
+let get_pair x = 
+  match x with
+    [t1; t2] -> (t1, t2)
+  | _ -> raise (logic_error "get_pair" x)
+
+let get_one x = 
+  match x with
+    [t1] -> t1
+  | _ -> raise (logic_error "get_one" x)
+
 
 (** Sequents and their components *)
 module Sequent=
@@ -444,8 +456,8 @@ module Sequent=
   end
 
 (***
-* Operations on sequent formulas
-***)
+ * Operations on sequent formulas
+ ***)
 
 let label_to_tag f sq=
   match f with
@@ -481,67 +493,40 @@ let get_label_form t sq=
  * Goals
  ***)
 
-(* 
-   A goal is made up of a list of sequents: 
-
-   - The sub-goals still to be proved 
-   - A type environment: the bindings of the shared type
+(**
+   A goal is made up of:
+   {ul
+   {- The sub-goals still to be proved.}
+   {- A type environment: the bindings of the shared type
    variables which occur in the goals sequents (all of these are weak
-   type variables). 
-   - A formula: the theorem which is to be proved
+   type variables).} 
+   {- A formula: the theorem which is to be proved.}}
  *)
 type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
 
-
-
-(* Subgoals *)
-exception No_subgoals
-
-(* 
-   Solved_subgoal tyenv:
-   solved a subgoal, creating new goal type environment tyenv
- *)
-exception Solved_subgoal of Gtypes.substitution
-
-let has_subgoals g = 
-  match g with
-    Goal([], _, _) -> false
-  | _ -> true
-
-(* get_sqnt: take first subgoal of goal *)
-let get_sqnt g=
-  match g with
-    Goal(s::_, _, f) -> s
-  | _ -> raise (Result.error "get_sqnt: No subgoals")
-
-let goal_tyenv (Goal(_, e, _)) = e
 let get_goal (Goal(_, _, f)) = f
 let get_subgoals (Goal(sq, tyenv, _)) = sq
-let get_subgoal_tags (Goal(sqs, _, _)) = List.map Sequent.sqnt_tag sqs
+let goal_tyenv (Goal(_, e, _)) = e
 
-let goal_has_subgoals g =
-  match g with 
-    (Goal([], _, _)) -> false
-  | (Goal(_, _, _)) -> true
+let has_subgoals g = 
+  match (get_subgoals g) with
+    [] -> false
+  | _ -> true
 
-let num_of_subgoals x = 
-  match x with
-    (Goal(sqs, _, _)) -> List.length sqs
-
-let get_nth_subgoal_sqnt i (Goal(sq, _, _)) =
-  try (List.nth sq i)
-  with _ -> 
-    raise Not_found (*(sqntError "get_nth_subgoal: invalid argument")*)
-
-let get_goal_tag g =
-  match g with
-    (Goal(x::_, _, _))-> Sequent.sqnt_tag x
-  | _ -> raise Not_found
+let num_of_subgoals g = 
+  List.length (get_subgoals g)
 
 let mk_goal scp f = 
   let nf= Formula.typecheck scp f (Logicterm.mk_bool_ty)
   in 
   Goal([Sequent.new_sqnt scp nf], Gtypes.empty_subst(), nf)
+
+let mk_thm g = 
+  match g with 
+    Goal([], _, f) -> Theorem f
+  | _ -> raise (logic_error "Not a theorem" [])
+
+(*** Manipulating goals ****)
 
 let goal_focus t (Goal(sqnts, tyenv, f)) =
   let rec focus sqs rslt=
@@ -554,32 +539,40 @@ let goal_focus t (Goal(sqnts, tyenv, f)) =
   in Goal(focus sqnts [], tyenv, f)
 
 let rotate_subgoals_left n (Goal(sqnts, tyenv, f)) =
-  if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
+  if has_subgoals (Goal(sqnts, tyenv, f)) 
   then 
     Goal(Lib.rotate_left n sqnts, tyenv, f)
-  else raise No_subgoals
+  else raise (Failure "rotate_subgoals_left")
 
 let rotate_subgoals_right n (Goal(sqnts, tyenv, f)) =
-  if goal_has_subgoals (Goal(sqnts, tyenv, f)) 
+  if has_subgoals (Goal(sqnts, tyenv, f)) 
   then 
     Goal(Lib.rotate_right n sqnts, tyenv, f)
-  else raise No_subgoals
+  else raise (Failure "rotate_subgoals_right")
 
-let apply_nth r i g = 
-  match g with 
-    Goal(sgs, tyenv, f) ->
-      let nsgs = r (try (List.nth sgs i) with _ -> raise Not_found)
-      in Goal(Lib.splice_nth i sgs [nsgs], tyenv, f)
-
-let mk_thm g = 
-  match g with 
-    Goal([], _, f) -> Theorem f
-  | _ -> raise (logic_error "Not a theorem" [])
+let postpone g = 
+  match g with
+    Goal (sq::[], _, _) -> raise (sqntError "postpone: No other subgoals")
+  | Goal (sg::sgs, tyenv, f) -> 
+      Goal (List.concat [sgs;[sg]], tyenv, f)
+  | _ -> raise (sqntError "postpone: No subgoals")
 
 
 (***
  * Applying Rules to Subgoals
  ****)
+
+exception No_subgoals
+(**
+   No subgoals. Either a tactic solved all subgoals or a function
+   expected subgoals.
+*)
+
+exception Solved_subgoal of Gtypes.substitution
+(**
+   [Solved_subgoal tyenv]: solved a subgoal, creating new goal type
+   environment tyenv
+*)
 
 (** 
    The subgoal package.
@@ -588,32 +581,37 @@ let mk_thm g =
 module Subgoals=
   struct
 
-(*
+(**
    Subgoals:
  *)
     type node = Node of (Tag.t * Gtypes.substitution * Sequent.t)
+    let mk_node tg ty s = Node(tg, ty, s)
     let node_tag (Node(tg, _, _)) = tg
     let node_tyenv (Node(_, ty, _)) = ty
     let node_sqnt (Node(_, _, s)) = s
-    let mk_node tg ty s = Node(tg, ty, s)
 
     type branch= Branch of (Tag.t * Gtypes.substitution * Sequent.t list)
+    let mk_branch tg ty gs = Branch(tg, ty, gs)
+
     let branch_tag (Branch(tg, _, _)) = tg
     let branch_tyenv (Branch(_, ty, _)) = ty
     let branch_sqnts (Branch(_, _, s)) = s
-    let mk_branch tg ty gs = Branch(tg, ty, gs)
 
+(** 
+   [replace_branch_tag b tg]: Replace the tag of branch [b]
+   with [tg]. 
+ *)
     let replace_branch_tag b tg =
       mk_branch tg (branch_tyenv b) (branch_sqnts b) 
 
-(* 
-   [branch_node node]
+(**
+   [branch_node node]:
    make a branch from [node]
  *)
     let branch_node (Node(tg, tyenv, sqnt))=
       Branch(tg, tyenv, [sqnt])
 
-(*
+(**
    [merge env1 env2]: merge type environments.
 
    Create a [env3] which has the binding of each weak variable in
@@ -636,7 +634,8 @@ module Subgoals=
       Gtypes.subst_iter assign env1; !env3
 
 
-(* [merge_tac_tyenvs n b]:
+(**
+   [merge_tac_tyenvs n b]:
    Merge the type environment of [b], resulting from applying a tactic
    to [n], with the type environment of [n].  Make a new branch with
    the components of [b] but with the new type environment.
@@ -656,24 +655,22 @@ module Subgoals=
       mk_branch btag nbtyenv bsqnts
 
 
-(*
+(**
    [apply tac node]: Apply tactic [tac] to [node].
 
    This is the work-horse for applying tactics. All other functions
    should call this to apply a tactic.
 
    Approach:
-   1. Create a new tag [ticket].
-   3. Apply tac to [node] getting branch [b'].
-   4. If the tag of [b'] is not [ticket] then fail.
+   {ol
+   {- Create a new tag [ticket].}
+   {- Apply tac to [node] getting branch [b'].}
+   {- If the tag of [b'] is not [ticket] then fail.}
+   {- Merge the type environment of [b'] with [n']. (This may be
+   unnecessary.) (Almost certainly unnecessary so not done.)}
+   {- Return the branch formed from [b'] with the tag of [node].}}
 
-   5. Merge the type environment of [b'] with [n']. (This may be
-   unnecessary.)
-   (Almost certainly unnecessary so not done.)
-
-   6. Return the branch formed from [b'] with the tag of [node].
-
-   raise logic_error on failure.
+   raise [logic_error] on failure.
  *)
     let apply tac node = 
       let ticket = Tag.create()
@@ -690,15 +687,12 @@ module Subgoals=
    let b2 = merge_tac_tyenvs n1 b1
    in 
    replace_branch_tag b2 (node_tag n1)
- *)
+*)
 	  
-(*
-   [apply_to_node tac (Node(tyenv, sqnt))]
-
-   Apply tactic [tac] to node, getting [result].
-   If tag of result is the same as the tag of sqnt,
-   then return result.
-   Otherwise raise logic_error.
+(**
+   [apply_to_node tac (Node(tyenv, sqnt))]: Apply tactic [tac] to
+   node, getting [result].  If tag of result is the same as the tag of
+   sqnt, then return result.  Otherwise raise logic_error.
  *)
     let apply_report report node branch=
       match report with
@@ -711,13 +705,11 @@ module Subgoals=
       apply_report report node result;
       result
 
-
-(*
-   [apply_to_first tac (Branch(tg, tyenv, sqnts))]
-   Apply tactic [tac] to firsg sequent of [sqnts] 
-   using [apply_to_node].
-   replace original sequent with resulting branches.
-   return branch with tag [tg].
+(**
+   [apply_to_first tac (Branch(tg, tyenv, sqnts))]: Apply tactic [tac]
+   to firsg sequent of [sqnts] using [apply_to_node].  replace
+   original sequent with resulting branches.  return branch with tag
+   [tg].
 
    raise No_subgoals if [sqnts] is empty.
  *)
@@ -733,14 +725,12 @@ module Subgoals=
 	    (branch_tyenv branch1)
 	    ((branch_sqnts branch1)@xs)
 
-(*
-   [apply_to_each tac (Branch(tg, tyenv, sqnts))]
-   Apply tactic [tac] to each sequent in [sqnts] 
-   using [apply_to_node].
-   replace original sequents with resulting branches.
-   return branch with tag [tg].
+(**
+   [apply_to_each tac (Branch(tg, tyenv, sqnts))]: Apply tactic [tac]
+   to each sequent in [sqnts] using [apply_to_node].  replace original
+   sequents with resulting branches.  return branch with tag [tg].
 
-   raise No_subgoals if [sqnts] is empty.
+   raise [No_subgoals] if [sqnts] is empty.
  *)
     let apply_to_each tac (Branch(tg, tyenv, sqnts))=
       let rec app_aux ty gs lst=
@@ -757,12 +747,12 @@ module Subgoals=
 	[] -> raise No_subgoals
       | _ -> app_aux tyenv sqnts []
 
-(*
-   [apply_to_goal tac goal]
-   Apply tactic [tac] to firat subgoal of [goal] using [apply_to_first].
-   Replace original list of subgoals with resulting subgoals.
+(**
+   [apply_to_goal tac goal]: Apply tactic [tac] to firat subgoal of
+   [goal] using [apply_to_first].  Replace original list of subgoals
+   with resulting subgoals.
 
-   raise logic_error "Invalid Tactic" 
+   raise [logic_error "Invalid Tactic"]
    if tag of result doesn't match tag originaly assigned to it.
 
    raises [No_subgoals] if goal is solved.
@@ -782,19 +772,15 @@ module Subgoals=
       else raise 
 	  (logic_error "Subgoal.apply_to_goal: Invalid tactic" [])
 
-(* 
-   [zip tacl branch]
-   apply each of the tactics in [tacl] to the corresponding 
-   subgoal in branch.
-   e.g. [zip [t1;t2;..;tn] (Branch [g1;g2; ..; gm])
-   is Branch([t1 g1; t2 g2; .. ;tn gn]) 
-   (with [t1 g1] first and [tn gn] last)
-   if n<m then untreated subgoals are attached to the end of the new
-   branch.
-   if m<n then unused tactic are silently discarded.
-   typenv of new branch is that produced by the last tactic 
-   ([tn gn] in the example).
-   tag of the branch is the tag of the original branch.
+(**
+   [zip tacl branch]: Apply each of the tactics in [tacl] to the
+   corresponding subgoal in branch.  e.g. [zip [t1;t2;..;tn] (Branch
+   [g1;g2; ..; gm]) is Branch([t1 g1; t2 g2; .. ;tn gn]) (with [t1 g1]
+   first and [tn gn] last) if n<m then untreated subgoals are attached
+   to the end of the new branch.  if m<n then unused tactic are
+   silently discarded.  typenv of new branch is that produced by the
+   last tactic ([tn gn] in the example).  tag of the branch is the tag
+   of the original branch.
  *)
     let zip tacl (Branch(tg, tyenv, sqnts))=
       let rec zip_aux ty tacs subgs lst=
@@ -813,25 +799,25 @@ module Subgoals=
       | _ -> zip_aux tyenv tacl sqnts []
 
 (*
-   [seq tac1 tac2 node]
-   apply tactic [tac1] to [node] then [tac2] 
-   to each of the resulting subgoals.
+(**
+   [seq tac1 tac2 node]: Apply tactic [tac1] to [node] then [tac2] to
+   each of the resulting subgoals.
 
    if [tac1] solves the goal (no subgoals), then [tac2] is not used.
  *)
-    let seq tac1 tac2 node=
-      let branch = apply_to_node tac1 node
-      in 
-      match (branch_sqnts branch) with
-	[] -> branch
-      | _ -> apply_to_each tac2 branch
+   let seq tac1 tac2 node=
+   let branch = apply_to_node tac1 node
+   in 
+   match (branch_sqnts branch) with
+   [] -> branch
+   | _ -> apply_to_each tac2 branch
+ *)
 
-(*
-   [rule_apply f g]
-   Apply function [f] to sequent [sg] and type environment of node [g]
-   to get [(ng, tyenv)]. 
-   [ng] is the list of sequents produced by [f] from [sg].
-   [tyenv] is the new type environment for the goal.   
+(**
+   [rule_apply f g]: Apply function [f] to sequent [sg] and type
+   environment of node [g] to get [(ng, tyenv)]. [ng] is the list of
+   sequents produced by [f] from [sg].  [tyenv] is the new type
+   environment for the goal.
 
    [f] must have type 
    [Gtypes.substitution -> Sequent.t 
@@ -851,10 +837,10 @@ module Subgoals=
       | Solved_subgoal ntyenv -> Branch(ntag, ntyenv, [])
 
 
-(* [simple_rule_apply f g]:
-   apply function (f: sqnt -> sqnt list) to the first subgoal of g
-   Like sqnt_apply but does not change [tyenv] of [g].
-   Used for rules which do not alter the type environment.
+(**
+   [simple_rule_apply f g]: Apply function [f: sqnt -> sqnt list] to
+   the first subgoal of g Like sqnt_apply but does not change [tyenv]
+   of [g].  Used for rules which do not alter the type environment.
  *)
     let simple_rule_apply r node =
       rule_apply (fun tyenv sq -> (r sq, tyenv)) node
@@ -862,26 +848,18 @@ module Subgoals=
 
 type node = Subgoals.node
 type branch = Subgoals.branch
-type rule = Subgoals.node -> Subgoals.branch
-type conv = Scope.t -> Basic.term -> thm
 
-let postpone g = 
-  match g with
-    Goal (sq::[], _, _) -> raise (sqntError "postpone: No other subgoals")
-  | Goal (sg::sgs, tyenv, f) -> 
-      Goal (List.concat [sgs;[sg]], tyenv, f)
-  | _ -> raise (sqntError "postpone: No subgoals")
+(**********
+ * Tactics
+ **********)
+
+type tactic = node -> branch
 
 let foreach rule branch=
   Subgoals.apply_to_each rule branch
 
 let first_only rule branch=
   Subgoals.apply_to_first rule branch
-
-(**********
- * Tactics
- **********)
-
 
 (**
    Information generated by tactics.
@@ -911,7 +889,6 @@ let add_info info gs fs ts=
     None -> ()
   | Some(v) -> v:=add_to_record (!v) gs fs ts
 
-
 (** 
    Rules for rewrite tactics.
 
@@ -921,16 +898,19 @@ let add_info info gs fs ts=
    OAsm : labelled assumption, with ordering
    ORRThm: given theorem, with ordering
  *)
+
 type rr_type = 
-    Asm of label
-  | RRThm of thm
-  | OAsm of label * Rewrite.order
-  | ORRThm of thm * Rewrite.order
+    RRThm of thm   (** A theorem *)
+  | ORRThm of thm * Rewrite.order (** An ordered theorem *)
+  | Asm of label  (** The label of an assumption *)
+  | OAsm 
+    of label * Rewrite.order 
+(** The label of an ordered assumption *)
 
 module Tactics = 
   struct
 
-(* 
+(**
    Rules:
    The implementation of the rules of the sequent calculus
 
@@ -941,25 +921,64 @@ module Tactics =
    the tags for the two new formulas [a] and [b]
  *)
 
-(* Utility functions *)
+(*** Utility functions ***)
 
     let get_sqnt = Subgoals.node_sqnt
 
-(*
-   [sqnt_apply f g]:
-   apply function f to the first subgoal of g
+(**
+   [sqnt_apply f g]: apply function f to the first subgoal of g
+*)
+    let sqnt_apply r g = Subgoals.rule_apply r g
 
+(**
    [simple_sqnt_apply f g]:
    apply function (f: sqnt -> sqnt list) to the first subgoal of g
    Like sqnt_apply but does not change [tyenv] of [g].
    Used for rules which do not alter the type environment.
  *)
-    let sqnt_apply r g = Subgoals.rule_apply r g
     let simple_sqnt_apply r g = Subgoals.simple_rule_apply r g
 
     let mk_subgoal sq = [sq]
+(** A simple wrapper to make a list of sequents *)
 
-(* Lifting assumption/conclusion formulas *)
+(**
+   [check_term_memo memo scp], [check_term scp trm]: Check that term
+   [trm] is in the scope [scp].
+ *)
+    let check_term_memo memo scp frm=
+      (if (Formula.in_scope_memo memo scp frm)
+      then ()
+      else (raise (logic_error "Badly formed formula" [frm])))
+
+    let check_term scp frm=
+      check_term_memo (Lib.empty_env()) scp frm
+
+
+(*** instantiation terms ***)  
+    let inst_term sq tyenv t trm =
+      let scp = Sequent.scope_of sq
+      in 
+      let mtyenv = ref tyenv
+      in 
+      let fm1 = Formula.make ~env:mtyenv scp trm
+      in 
+      let ntrm1= Formula.term_of fm1
+      in 
+      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t ntrm1
+      in 
+      let (ntrm3, ntyenv3)=
+	Formula.typecheck_retype scp ntyenv2 ntrm2 
+	  (Gtypes.mk_var "inst_ty")
+      in 
+      (ntrm3, ntyenv3)
+
+
+
+(***
+ * Manipulating Assumptions and Conclusions
+ ***)
+
+(***  Lifting assumptions/conclusions ***)
 
     let split_at_label l fs = split_at_label l fs
     let split_at_asm l fs = split_at_asm l fs
@@ -980,7 +999,6 @@ module Tactics =
 	 (Sequent.sqnt_tag sq) (Sequent.sqnt_env sq) 
 	 nasms (Sequent.concls sq)]
 	
-
     let lift_asm info f g =
       simple_sqnt_apply (lift_asm_sq info f) g
 
@@ -1000,7 +1018,10 @@ module Tactics =
 	lift_asm info f g
       with Not_found -> lift_concl info f g
 
-(* copy_asm i: 
+(*** Copying assumptions and conclusions ***)
+
+(*
+   copy_asm i: 
    .., t:Ai, ..|- C
    ->
    .., t':Ai, t:Ai, .. |- C
@@ -1022,7 +1043,8 @@ module Tactics =
       in 
       simple_sqnt_apply (copy_asm0 info i) g
 
-(* copy_cncl i: 
+(* 
+   copy_cncl i: 
    A|- .., t:Ci, ..
    ->
    A|- .., t':Ci, t:Ci, ..
@@ -1045,9 +1067,8 @@ module Tactics =
       simple_sqnt_apply (copy_cncl0 inf i) g
 
 
-(* rotate asms/cncls:
-   info: [] []
- *)
+(*** Rotating assumptions and conclusions ***)
+
     let rotate_asms0 info sq = 
       let hs = Sequent.asms sq 
       in
@@ -1074,51 +1095,39 @@ module Tactics =
     let rotate_cncls inf sqnt = 
       simple_sqnt_apply (rotate_cncls0 inf) sqnt
 
-(* get_pair: auxiliary function *)
 
-    let get_pair x = 
-      match x with
-	[t1; t2] -> (t1, t2)
-      | _ -> raise (logic_error "get_pair" x)
-
-    let get_one x = 
-      match x with
-	[t1] -> t1
-      | _ -> raise (logic_error "get_one" x)
-
-(* [set_names scp trm]
-   Try to match free variables in term [trm] with identifiers 
-   defined in the scope of sequent [sq]
-   Return the term with the resolved names.
+(**
+   [delete l sq]: delete assumption [l] or conclusion [l].
  *)
-(*
-   let set_names scp trm = Term.set_names scp trm
- *)
+    let delete0 inf x sq=
+      let ng = 
+	try [Sequent.delete_asm x sq]
+	with Not_found -> [Sequent.delete_cncl x sq]
+      in 
+      add_info inf [] [] [];
+      ng
 
-(*
-   [check_term sq trm]
-   Check that term [trm] is in the scope [scope].
- *)
-    let check_term_memo memo scp frm=
-      (if (Formula.in_scope_memo memo scp frm)
-      then ()
-      else (raise (logic_error "Badly formed formula" [frm])))
+    let delete inf x g = 
+      simple_sqnt_apply (delete0 inf x) g
 
-    let check_term scp frm=
-      check_term_memo (Lib.empty_env()) scp frm
+(***
+ * Logic Rules
+ ***)
 
-(*
-   [skip]
-   The do nothing tactic
+
+(**
+   [skip]: The do nothing tactic.
+
    Useful for turning a node into a branch (e.g. for recursive
    functions)
  *)
     let skip info node = Subgoals.branch_node node
 
-(* cut x sq: adds theorem x to assumptions of sq 
+(**
+   cut x sq: adds theorem x to assumptions of sq 
 
    asm |- cncl      --> t:x, asm |- cncl
-   info: [] [t]
+   info: [] [t] []
  *)
     let cut0 info x sq=
       let scp = Sequent.scope_of sq
@@ -1141,47 +1150,78 @@ module Tactics =
 
     let cut info x sqnt = simple_sqnt_apply (cut0 info x) sqnt
 
-(* 
-   delete x sq: delete assumption (x<0) or conclusion (x>0) from sq
-   info: [] []
+(**
+   basic i j sq: asm i is alpha-equal to cncl j of sq, 
+
+   asm, a_{i}, asm' |- concl, c_{j}, concl' 
+   -->
+   true if a_{i}=c_{j}
+
+   info: [] [] []
  *)
-    let delete0 inf x sq=
-(*
-   let delete_asm () =
-   let (lasms, _, rasms) = split_at_asm x (Sequent.asms sq)
-   in 
-   mk_subgoal (Sequent.sqnt_tag sq, 
-   Sequent.sqnt_env sq, 
-   join_up lasms rasms,
-   Sequent.concls sq)
-   and delete_concl () =
-   let (lcncls, _, rcncls) = split_at_concl x (Sequent.concls sq)
-   in 
-   mk_subgoal (Sequent.sqnt_tag sq, 
-   Sequent.sqnt_env sq, 
-   Sequent.asms sq, 
-   join_up lcncls rcncls)
-   in 
- *)
-      let ng = 
-	try [Sequent.delete_asm x sq]
-	with Not_found -> [Sequent.delete_cncl x sq]
+    let basic0 inf i j tyenv sq = 
+      let scp = Sequent.scope_of sq
+      and (lasms, asm, rasms) = split_at_asm i (Sequent.asms sq)
+      and (lconcls, concl, rconcls) = split_at_concl j (Sequent.concls sq)
       in 
-      add_info inf [] [] [];
-      ng
+      let tyenv1 = 
+	try
+	  Formula.alpha_equals_match 
+	    scp tyenv (drop_tag asm) (drop_tag concl)
+	with _ -> 
+	  (raise (logic_error "Assumption not equal to conclusion"
+		    [drop_tag asm; drop_tag concl]))
+      in 
+      let tyenv2=
+	try 
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
+	with _ -> 
+	  (raise (logic_error "basic: Inconsistent types"
+		    [drop_tag asm; drop_tag concl]))
+      in 
+      (add_info inf [] [] []; raise (Solved_subgoal tyenv2))
 
-    let delete inf x g = 
-      simple_sqnt_apply (delete0 inf x) g
+    let basic inf i j g = 
+      sqnt_apply (basic0 inf i j) g
 
-(* conjC i sq: 
+(**
+   conjA i sq: 
+   t:a/\ b, asm |- concl   
+   -->
+   t:a, t':b, asm |- concl 
+   info: [] [t; t'] []
+*)
+    let conjA0 inf i sq=
+      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
+      in 
+      let (ft1, t) = asm
+      in 
+      if (Formula.is_conj t) 
+      then 
+	(let (t1, t2) = (Formula.dest_conj t)
+	and ft2=Tag.create()
+	in 
+	let asm1=(ft1, t1)
+	and asm2=(ft2, t2)
+	in 
+	add_info inf [] [ft1; ft2] [];
+	mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
+		    asm1::asm2::(join_up lasms rasms),
+		    Sequent.concls sq))
+      else raise (logic_error "Not a conjunction" [t])
+
+    let conjA inf i g = 
+      simple_sqnt_apply (conjA0 inf i) g
+
+(**
+   conjC i sq: 
    g| asm |- t:(a /\ b), concl   
    -->
    g| asm |- t:a  and g'| asm |- t:b 
 
    (where t:a means formula has tag t)
-   info: [g;g'] [t]
+   info: [g;g'] [t] []
  *)
-
     let conjC0 inf i sq=
       let (lcncls, cncl, rcncls) = split_at_concl i (Sequent.concls sq)
       in 
@@ -1207,39 +1247,12 @@ module Tactics =
     let conjC inf i g = 
       simple_sqnt_apply (conjC0 inf i) g
 
-(* conjA i sq: 
-   t:a/\ b, asm |- concl   
-   -->
-   t:a, t':b, asm |- concl 
-   info: [] [t; t']
- *)
-    let conjA0 inf i sq=
-      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
-      in 
-      let (ft1, t) = asm
-      in 
-      if (Formula.is_conj t) 
-      then 
-	(let (t1, t2) = (Formula.dest_conj t)
-	and ft2=Tag.create()
-	in 
-	let asm1=(ft1, t1)
-	and asm2=(ft2, t2)
-	in 
-	add_info inf [] [ft1; ft2] [];
-	mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
-		    asm1::asm2::(join_up lasms rasms),
-		    Sequent.concls sq))
-      else raise (logic_error "Not a conjunction" [t])
-
-    let conjA inf i g = 
-      simple_sqnt_apply (conjA0 inf i) g
-
-(* disjA i sq: 
+(**
+   disjA i sq: 
    g| t:a\/b, asm |-  concl   
    -->
    g| t:a, asm |- concl  and g'| t:b, asm |- concl
-   info: [g;g'] [t]
+   info: [g;g'] [t] []
  *)
     let disjA0 inf i sq=
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1265,13 +1278,13 @@ module Tactics =
     let disjA inf i g = 
       simple_sqnt_apply (disjA0 inf i) g
 
-(* disjC i sq: 
+(**
+   disjC i sq: 
    asm |- t:a\/b, concl   
    -->
    asm |- t:a, t':b, concl 
-   info: [] [t;t']
+   info: [] [t;t'] []
  *)
-
     let disjC0 inf i sq =
       let (lconcls, concl, rconcls) = split_at_concl i (Sequent.concls sq)
       in 
@@ -1296,11 +1309,12 @@ module Tactics =
     let disjC inf i g = 
       simple_sqnt_apply (disjC0 inf i) g
 
-(* negA i sq:
+(**
+   negA i sq:
    t:~a, asms |- concl
    -->
    asms |- t:a, concl
-   info: [] [t]
+   info: [] [t] []
  *)
     let negA0 inf i sq =
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1323,11 +1337,12 @@ module Tactics =
     let negA inf i g = 
       simple_sqnt_apply (negA0 inf i) g
 
-(* negC i sq:
+(**
+   negC i sq:
    asms |- t:~c, concl
    -->
    t:c, asms |- concl
-   info: [] [t]
+   info: [] [t] []
  *)
     let negC0 inf i sq =
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
@@ -1350,44 +1365,15 @@ module Tactics =
     let negC inf i g = 
       simple_sqnt_apply (negC0 inf i) g
 
-(* implC i sq
-   asms |- t:a-> b, cncl 
-   -->
-   t':a, asms |- t:b, cncl
-   info: [] [t'; t]
- *)
-    let implC0 inf i sq=
-      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
-      in 
-      let (ft1, t)=concl
-      in 
-      if (Formula.is_implies t) 
-      then 
-	(let  (t1, t2) = (Formula.dest_implies t)
-	and ft2=Tag.create()
-	in 
-	let asm =(ft2, t1)
-	and cncl = (ft1, t2)
-	in 
-	add_info inf [] [ft2; ft1] [];
-	mk_subgoal
-	  (Sequent.sqnt_tag sq, 
-	   Sequent.sqnt_env sq, 
-	   asm::(Sequent.asms sq), 
-	   join_up lconcls (cncl::rconcls)))
-      else raise (logic_error "Not an implication" [t])
-
-    let implC inf i g = 
-      simple_sqnt_apply (implC0 inf i) g
-
-(* implA i sq
+(**
+   implA i sq
    g| t:a => b,asms |-cncl 
    -->
    g'| asms |- t:a, cncl  
    and  
    g| t:b, asms |- cncl
 
-   info: [g'; g]  [t]
+   info: [g'; g]  [t] []
 
    where g| asms |- concl 
    means g is the tag for the sequent
@@ -1417,310 +1403,43 @@ module Tactics =
     let implA info i g = 
       simple_sqnt_apply (implA0 info i) g
 
-(* allC i sq
-   asm |- t:!x. P(x), concl
+(**
+   implC i sq
+   asms |- t:a-> b, cncl 
    -->
-   asm |- t:P(c), concl   where c is a new identifier
-
-   info: [] [t] [c]
+   t':a, asms |- t:b, cncl
+   info: [] [t'; t] []
  *)
-    let allC0 inf i tyenv sq =
-      (* get the conclusion and its tag *)
+    let implC0 inf i sq=
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
       in 
-      let (ft, t)=concl
+      let (ft1, t)=concl
       in 
-      (* check that it is a universal quantification *)
-      if (Formula.is_all t)
+      if (Formula.is_implies t) 
       then 
-	(* make the skolem constant from the binder name and type *)
-	(let (nv, nty)=(Formula.get_binder_name t, Formula.get_binder_type t)
+	(let  (t1, t2) = (Formula.dest_implies t)
+	and ft2=Tag.create()
 	in 
-	let sv, sty, nsklms, styenv, ntynms=
-	  Skolem.mk_new_skolem 
-	    {
-	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
-	     Skolem.ty=nty;
-	     Skolem.tyenv=tyenv;
-	     Skolem.scope=Sequent.scope_of sq;
-	     Skolem.skolems=Sequent.sklm_cnsts sq;
-	     Skolem.tylist=Sequent.sqnt_tynames sq
-	   }
+	let asm =(ft2, t1)
+	and cncl = (ft1, t2)
 	in 
-(*
-   let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
- *)
-	let nscp = 
-	  Scope.extend_with_terms (Sequent.scope_of sq)
-	    [(Term.get_var_id sv, sty)]
-	in 
-	(* add skolem constant and type variable to sequent list *)
-	let nsqtys=
-	  if (Gtypes.is_weak sty)
-	  then sty::(Sequent.sqnt_tyvars sq)
-	  else (Sequent.sqnt_tyvars sq)
-	in 
-	let ncncl, ntyenv = 
-	  Formula.inst_env nscp styenv t sv
-	in 
-	(* update the goals' type environment *)
-	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
-	in 
-	(* build the subgoal and return information *)
-	add_info inf [] [ft] [sv];
-	(mk_subgoal(Sequent.sqnt_tag sq, 
-		    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
-		    Sequent.asms sq, 
-		    join_up lconcls ((ft, ncncl)::rconcls)),
-	 gtyenv))
-      else raise (logic_error "Not a universal quantifier" [t])
+	add_info inf [] [ft2; ft1] [];
+	mk_subgoal
+	  (Sequent.sqnt_tag sq, 
+	   Sequent.sqnt_env sq, 
+	   asm::(Sequent.asms sq), 
+	   join_up lconcls (cncl::rconcls)))
+      else raise (logic_error "Not an implication" [t])
 
-    let allC inf i g = 
-      sqnt_apply (allC0 inf i) g
+    let implC inf i g = 
+      simple_sqnt_apply (implC0 inf i) g
 
-(* existA i sq
-   t:?x. P(x), asm |- concl
-   -->
-   t:P(c), asm |- concl   where c is a new identifier
-   info: [] [t] [c]
- *)
-    let existA0 inf i tyenv sq =
-      (* get the assumption and its tag *)
-      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
-      in 
-      let (ft, t)=asm
-      in 
-      (* check that it is existential quantification *)
-      if (Formula.is_exists t)
-      then 
-	(* make the skolem constant from the binder name and type *)
-	(let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
-	in 
-	let sv, sty, nsklms, styenv, ntynms=
-	  Skolem.mk_new_skolem
-	    {
-	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
-	     Skolem.ty=nty;
-	     Skolem.tyenv=tyenv;
-	     Skolem.scope=Sequent.scope_of sq;
-	     Skolem.skolems=Sequent.sklm_cnsts sq;
-	     Skolem.tylist=Sequent.sqnt_tynames sq
-	   }
-	in 
-(*
-   let nscp = Skolem.add_skolem_to_scope sv sty (Sequent.scope_of sq)
-
-   let nscp = add_sklms_to_scope nsklms (scope_of sq)
- *)
-	let nscp = 
-	  Scope.extend_with_terms (Sequent.scope_of sq)
-	    [(Term.get_var_id sv, sty)]
-
-	in 
-	(* add skolem constant and type variable to sequent list *)
-	let nsqtys=
-	  if (Gtypes.is_weak sty)
-	  then sty::(Sequent.sqnt_tyvars sq)
-	  else (Sequent.sqnt_tyvars sq)
-	in 
-	let nasm, ntyenv= 
-	  Formula.inst_env nscp styenv t sv
-	in 
-	(* update the goals' type environment *)
-	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
-	in 
-	add_info inf [] [ft] [sv];
-	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
-	    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
-	    join_up lasms ((ft, nasm)::rasms),
-	    Sequent.concls sq)), 
-	gtyenv)
-      else raise (logic_error "Not an existential quantifier" [t])
-
-    let existA inf i g = 
-      sqnt_apply (existA0 inf i) g
-
-(* trueR i sq
-   t:asm |- true, concl
-   --> true
-   info : [] []
- *)
-    let trueR0 inf i sq=
-      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
-      in 
-      let (_, t)=concl
-      in 
-      if (Formula.is_true t)
-      then 
-	(add_info inf [] [] [];
-	 raise No_subgoals)
-      else 
-	raise (logic_error "Not trivial" [t])
-
-    let trueR inf i g = 
-      simple_sqnt_apply (trueR0 inf i) g
-
-(*
-   betaA i sq: beta reduction of assumption i
-   t:(%x.P(x))(c), asm |- concl
-   -->
-   t:P(c), asm |- concl
-   info: [] [t] 
-
-   betaC i sq: beta reduction of conclusion i
-   asm |- t:(%x.P(x))(c), concl
-   -->
-   asm |- t:P(c), concl
-   info: [] [t] 
-
-   raise Not_found if assumption/conclusion not found.
-
-   beta i sq:  beta reduction of concl or asm i in sq
-   (conclusions searched first)
-
-   t:(%x.P(x))(c), asm |- concl
-   -->
-   t:P(c), asm |- concl
-   info: [] [t] 
- *)
-    let betaA0 inf i sq = 
-      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
-      in 
-      let (ft, t) = asm
-      in
-      let nt = 
-	(ft,
-	 try 
-	   Formula.beta_reduce (Sequent.scope_of sq) t
-	 with x -> raise 
-	     (Result.add_error(logic_error "Beta reduction" [t]) x))
-      in 
-      add_info inf [] [ft] [];
-      mk_subgoal
-	(Sequent.sqnt_tag sq, 
-	 Sequent.sqnt_env sq, 
-	 join_up lasms (nt::rasms),
-	 Sequent.concls sq)
-
-    let betaA info i g = 
-      simple_sqnt_apply (betaA0 info i) g
-
-    let betaC0 inf i sq = 
-      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
-      in 
-      let (ft, t) = concl
-      in 
-      let nt = 
-	(ft,
-	 try 
-	   Formula.beta_reduce (Sequent.scope_of sq) t
-	 with x -> raise 
-	     (Result.add_error(logic_error "Beta reduction" [t]) x))
-      in 
-      add_info inf [] [ft] [];
-      mk_subgoal
-	(Sequent.sqnt_tag sq, 
-	 Sequent.sqnt_env sq, 
-	 Sequent.asms sq, 
-	 join_up lconcls (nt::rconcls))
-
-    let betaC info i g = 
-      simple_sqnt_apply (betaC0 info i) g
-
-    let beta info i g=
-      try betaC info i g
-      with Not_found -> betaA info i g
-
-(* instantiation terms *)  
-
-    let inst_term sq tyenv t trm =
-      let scp = Sequent.scope_of sq
-      in 
-      let mtyenv = ref tyenv
-      in 
-      let fm1 = Formula.make ~env:mtyenv scp trm
-      in 
-      let ntrm1= Formula.term_of fm1
-      in 
-      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t ntrm1
-      in 
-      let ntyenv3=Formula.typecheck_env scp ntyenv2 ntrm2 
-	  (Gtypes.mk_var "inst_ty")
-      in ntrm2, ntyenv3
-
-(* basic i j sq: asm i is alpha-equal to cncl j of sq, 
-
-   asm, a_{i}, asm' |- concl, c_{j}, concl' 
-   -->
-   true if a_{i}=c_{j}
-   info: [] []
- *)
-    let basic0 inf i j tyenv sq = 
-      let scp = Sequent.scope_of sq
-      and (lasms, asm, rasms) = split_at_asm i (Sequent.asms sq)
-      and (lconcls, concl, rconcls) = split_at_concl j (Sequent.concls sq)
-      in 
-      let tyenv1 = 
-	try
-	  Formula.alpha_equals_match 
-	    scp tyenv (drop_tag asm) (drop_tag concl)
-	with _ -> 
-	  (raise (logic_error "Assumption not equal to conclusion"
-		    [drop_tag asm; drop_tag concl]))
-      in 
-      let tyenv2=
-	try 
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
-	with _ -> 
-	  (raise (logic_error "basic: Inconsistent types"
-		    [drop_tag asm; drop_tag concl]))
-      in 
-      (add_info inf [] [] []; raise (Solved_subgoal tyenv2))
-
-    let basic inf i j g = 
-      sqnt_apply (basic0 inf i j) g
-
-
-(* existC i sq
-   asm |- t:?x. P(c), concl
-   -->
-   asm |- t:P(c), concl where c is a given term
-   info: [] [t] []
- *)
-
-    let existC0 inf trm i tyenv sq =
-      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
-      in
-      let (ft, t)=concl
-      in 
-      if (Formula.is_exists t) 
-      then 
-	try 
-	  let trm2, tyenv2 = inst_term sq tyenv t trm
-	  in 
-	  let gtyenv=
-	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
-	  in 
-	  add_info inf [] [ft] [];
-      	  (mk_subgoal
-	     (Sequent.sqnt_tag sq, 
-	      Sequent.sqnt_env sq, 
-	      Sequent.asms sq, 
-	      join_up lconcls ((ft, trm2)::rconcls)),
-	   gtyenv)
-	with x -> raise (Result.add_error
-			   (logic_error "existC:" [t]) x)
-      else 
-	raise (logic_error "Not an existential quantifier" [t])
-
-    let existC inf trm i g = 
-      sqnt_apply (existC0 inf trm i) g
-
-(* allA i sq
+(**
+   allA i sq
    t:!x. P(c), asm |-  concl
    -->
    t:P(c'), asm |- concl   where c' is a given term
+
    info: [] [t] []
  *)
     let allA0 inf trm i tyenv sq =
@@ -1753,21 +1472,282 @@ module Tactics =
     let allA inf trm i g = 
       sqnt_apply (allA0 inf trm i) g
 
-(*
-   rewrite ctrl simple thms j sq:
-   list of theorems or assumptions containing x=y
-   asm |- t:P(x), concl
+(**
+   allC i sq
+   asm |- t:!x. P(x), concl
    -->
-   asm |- t:P(y), concl
-   where ctrl is the rewrite control
-   theorems must be in scope.
-   silently discards theorems not in scope and assumptions which don't exist
-   info: [] [t] []
+   asm |- t:P(c), concl   where c is a new identifier
 
-   rewriteA ctrl simple thms j sq: rewrite assumption j
-   rewriteC ctrl simple thms j sq: rewrite conclusion j
+   info: [] [t] [c]
  *)
-    let filter_rules scp rls j sq= 
+    let allC0 inf i tyenv sq =
+      (* get the conclusion and its tag *)
+      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
+      in 
+      let (ft, t)=concl
+      in 
+      (* check that it is a universal quantification *)
+      if (Formula.is_all t)
+      then 
+	(* make the skolem constant from the binder name and type *)
+	(let (nv, nty)=(Formula.get_binder_name t, Formula.get_binder_type t)
+	in 
+	let sv, sty, nsklms, styenv, ntynms=
+	  Skolem.mk_new_skolem 
+	    {
+	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
+	     Skolem.ty=nty;
+	     Skolem.tyenv=tyenv;
+	     Skolem.scope=Sequent.scope_of sq;
+	     Skolem.skolems=Sequent.sklm_cnsts sq;
+	     Skolem.tylist=Sequent.sqnt_tynames sq
+	   }
+	in 
+	let nscp = 
+	  Scope.extend_with_terms (Sequent.scope_of sq)
+	    [(Term.get_var_id sv, sty)]
+	in 
+	(* add skolem constant and type variable to sequent list *)
+	let nsqtys=
+	  if (Gtypes.is_weak sty)
+	  then sty::(Sequent.sqnt_tyvars sq)
+	  else (Sequent.sqnt_tyvars sq)
+	in 
+	let ncncl, ntyenv = 
+	  Formula.inst_env nscp styenv t sv
+	in 
+	(* update the goals' type environment *)
+	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
+	in 
+	(* build the subgoal and return information *)
+	add_info inf [] [ft] [sv];
+	(mk_subgoal(Sequent.sqnt_tag sq, 
+		    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
+		    Sequent.asms sq, 
+		    join_up lconcls ((ft, ncncl)::rconcls)),
+	 gtyenv))
+      else raise (logic_error "Not a universal quantifier" [t])
+
+    let allC inf i g = 
+      sqnt_apply (allC0 inf i) g
+
+(**
+   existA i sq
+   t:?x. P(x), asm |- concl
+   -->
+   t:P(c), asm |- concl   where c is a new identifier
+
+   info: [] [t] [c]
+ *)
+    let existA0 inf i tyenv sq =
+      (* get the assumption and its tag *)
+      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
+      in 
+      let (ft, t)=asm
+      in 
+      (* check that it is existential quantification *)
+      if (Formula.is_exists t)
+      then 
+	(* make the skolem constant from the binder name and type *)
+	(let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
+	in 
+	let sv, sty, nsklms, styenv, ntynms=
+	  Skolem.mk_new_skolem
+	    {
+	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
+	     Skolem.ty=nty;
+	     Skolem.tyenv=tyenv;
+	     Skolem.scope=Sequent.scope_of sq;
+	     Skolem.skolems=Sequent.sklm_cnsts sq;
+	     Skolem.tylist=Sequent.sqnt_tynames sq
+	   }
+	in 
+	let nscp = 
+	  Scope.extend_with_terms (Sequent.scope_of sq)
+	    [(Term.get_var_id sv, sty)]
+
+	in 
+	(* add skolem constant and type variable to sequent list *)
+	let nsqtys=
+	  if (Gtypes.is_weak sty)
+	  then sty::(Sequent.sqnt_tyvars sq)
+	  else (Sequent.sqnt_tyvars sq)
+	in 
+	let nasm, ntyenv= 
+	  Formula.inst_env nscp styenv t sv
+	in 
+	(* update the goals' type environment *)
+	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
+	in 
+	add_info inf [] [ft] [sv];
+	(mk_subgoal
+	   (Sequent.sqnt_tag sq, 
+	    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
+	    join_up lasms ((ft, nasm)::rasms),
+	    Sequent.concls sq)), 
+	gtyenv)
+      else raise (logic_error "Not an existential quantifier" [t])
+
+    let existA inf i g = 
+      sqnt_apply (existA0 inf i) g
+
+(**
+   existC i sq
+   asm |- t:?x. P(c), concl
+   -->
+   asm |- t:P(c), concl where c is a given term
+
+   info: [] [t] []
+ *)
+    let existC0 inf trm i tyenv sq =
+      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
+      in
+      let (ft, t)=concl
+      in 
+      if (Formula.is_exists t) 
+      then 
+	try 
+	  let trm2, tyenv2 = inst_term sq tyenv t trm
+	  in 
+	  let gtyenv=
+	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+	  in 
+	  add_info inf [] [ft] [];
+      	  (mk_subgoal
+	     (Sequent.sqnt_tag sq, 
+	      Sequent.sqnt_env sq, 
+	      Sequent.asms sq, 
+	      join_up lconcls ((ft, trm2)::rconcls)),
+	   gtyenv)
+	with x -> raise (Result.add_error
+			   (logic_error "existC:" [t]) x)
+      else 
+	raise (logic_error "Not an existential quantifier" [t])
+
+    let existC inf trm i g = 
+      sqnt_apply (existC0 inf trm i) g
+
+(**
+   trueR i sq
+   t:asm |- true, concl
+   --> true
+   info : [] []
+ *)
+    let trueR0 inf i sq=
+      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
+      in 
+      let (_, t)=concl
+      in 
+      if (Formula.is_true t)
+      then 
+	(add_info inf [] [] [];
+	 raise No_subgoals)
+      else 
+	raise (logic_error "Not trivial" [t])
+
+    let trueR inf i g = 
+      simple_sqnt_apply (trueR0 inf i) g
+
+
+(**
+   betaA i sq: beta reduction of assumption i
+   t:(%x.P(x))(c), asm |- concl
+   -->
+   t:P(c), asm |- concl
+
+   raise Not_found if assumption not found.
+
+   info: [] [t] []
+ *)
+    let betaA0 inf i sq = 
+      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
+      in 
+      let (ft, t) = asm
+      in
+      let nt = 
+	(ft,
+	 try 
+	   Formula.beta_reduce (Sequent.scope_of sq) t
+	 with x -> raise 
+	     (Result.add_error(logic_error "Beta reduction" [t]) x))
+      in 
+      add_info inf [] [ft] [];
+      mk_subgoal
+	(Sequent.sqnt_tag sq, 
+	 Sequent.sqnt_env sq, 
+	 join_up lasms (nt::rasms),
+	 Sequent.concls sq)
+
+    let betaA info i g = 
+      simple_sqnt_apply (betaA0 info i) g
+
+(**
+   betaC i sq: beta reduction of conclusion i
+   asm |- t:(%x.P(x))(c), concl
+   -->
+   asm |- t:P(c), concl
+
+   raise Not_found if conclusion not found.
+
+   info: [] [t] []
+ *)
+    let betaC0 inf i sq = 
+      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
+      in 
+      let (ft, t) = concl
+      in 
+      let nt = 
+	(ft,
+	 try 
+	   Formula.beta_reduce (Sequent.scope_of sq) t
+	 with x -> raise 
+	     (Result.add_error(logic_error "Beta reduction" [t]) x))
+      in 
+      add_info inf [] [ft] [];
+      mk_subgoal
+	(Sequent.sqnt_tag sq, 
+	 Sequent.sqnt_env sq, 
+	 Sequent.asms sq, 
+	 join_up lconcls (nt::rconcls))
+
+    let betaC info i g = 
+      simple_sqnt_apply (betaC0 info i) g
+
+
+(**
+   beta i sq:  beta reduction of concl or asm i in sq
+   (conclusions searched first)
+
+   t:(%x.P(x))(c), asm |- concl
+   -->
+   t:P(c), asm |- concl
+
+   raise Not_found if formula not found.
+
+   info: [] [t] []
+ *)
+    let beta info i g=
+      try betaC info i g
+      with Not_found -> betaA info i g
+
+
+(*** 
+ * Rewriting 
+ ***)
+
+(**
+   [filter_rules scp rls l sg]: Filter the rewrite rules [rls].
+   
+   Extracts the assumptions to use as a rule from subgoal [sg]. Checks
+   that other rules are in the scope of [sg]. Creates unordered or
+   ordered rewrite rules as appropriate.
+
+   Fails if any rule in [rls] is the label of an assumption 
+   which does not exist in [sg].
+
+   Fails if any rule in [rls] is not in scope.
+ *)
+    let filter_rules scp rls sq= 
       let memo = Lib.empty_env() 
       and thyname= Scope.thy_of scp
       in 
@@ -1783,7 +1763,6 @@ module Tactics =
 		  raise 
 		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
-(* 	    ft xs ((Rewrite.rule (Formula.term_of asm))::rslt) *)
  	    ft xs ((Formula.rule asm)::rslt) 
 	|  (OAsm(x, order)::xs) ->
 	    let asm=
@@ -1794,12 +1773,10 @@ module Tactics =
 		  raise 
 		    (logic_error "Rewrite: can't find tagged assumption" []))
 	    in 
-(*	    ft xs ((Rewrite.orule (Formula.term_of asm) order)::rslt) *)
 	    ft xs ((Formula.orule asm order)::rslt) 
 	| ((RRThm(x))::xs) -> 
 	    (try 
 	      check_term_memo memo scp (formula_of x);
-(* 	      ft xs ((Rewrite.rule (term_of x))::rslt) *)
  	      ft xs ((Formula.rule (formula_of x))::rslt) 
 	    with 
 	      _ -> ft xs rslt)
@@ -1807,18 +1784,28 @@ module Tactics =
 	    (try 
 	      (check_term_memo memo scp (formula_of x));
 	      ft xs 
-(*		((Rewrite.orule (term_of x) order) *)
 		((Formula.orule (formula_of x) order) 
 		 ::rslt)
 	    with 
 	      _ -> ft xs rslt)
       in ft rls []
 
+(**
+   rewriteA ?info ctrl rules l sq: Rewrite assumption [l] with [rules].
+   
+   {L
+   A{_ l}, asms |- concl
+   ---->>
+   B{_ l}, asms|- concl
+   }
+
+   info: [] [l] []
+ *)
     let rewriteA0 inf ctrl rls j tyenv sq=
       let scp = Sequent.scope_of sq
       and lasms, asm, rasms = split_at_asm j (Sequent.asms sq)
       in 
-      let r=filter_rules scp rls j sq
+      let r=filter_rules scp rls sq
       and (ft, t)= asm
       in 
       try
@@ -1843,11 +1830,22 @@ module Tactics =
       in 
       sqnt_apply (rewriteA0 inf rrc rls j) g
 
+(**
+   rewriteC ?info ctrl rules l sq: Rewrite conclusion [l] with [rules].
+   
+   {L
+   asms |- A{_ l}, concl
+   ---->>
+   asms|- B{_ l}, concl
+   }
+
+   info: [] [l] []
+ *)
     let rewriteC0 inf ctrl rls j tyenv sq=
       let scp = Sequent.scope_of sq
       and lconcls, concl, rconcls = split_at_concl j (Sequent.concls sq)
       in 
-      let r=filter_rules scp rls j sq
+      let r=filter_rules scp rls  sq
       and (ft, t)= concl
       in 
       try
@@ -1872,6 +1870,12 @@ module Tactics =
       in 
       sqnt_apply (rewriteC0 inf rrc rls j) g
 
+(**
+   rewrite ?info ctrl rules l sq: Rewrite formula [l] with [rules].
+   
+   If [l] is in the conclusions then call [rewrite_concl]
+   otherwise call [rewrite_asm].
+ *)
     let rewrite inf ?ctrl rls j g=
       let rrc = Lib.get_option ctrl Formula.default_rr_control
       in 
@@ -1891,7 +1895,6 @@ module Tactics =
 	  let nt = Formula.rewrite ~ctrl:ctrl scp 
 	      (List.map 
 		 (fun x -> 
-(* 		   Rewrite.rule (term_of x)) rrl) f *)
  		   Formula.rule (formula_of x)) rrl) f 
 	  in mk_theorem nt
 	with x -> raise 
@@ -1899,9 +1902,176 @@ module Tactics =
       in 
       conv_aux thm
 
+(***
+ * Experimental
+ ***)
+
+(**
+   [rewrite_intro ?info ctrl rules trm sq]: 
+   Introduce an equality established by rewriting term [trm] with [rules].
+   
+   {L
+   asms |- concl
+   ---->>
+   (trm = T){_ l}, asms|- concl
+   }
+
+   info: [] [l] []
+
+   Fails if [trm] cannot be made into a formula.
+ *)
+    let rewrite_intro0 inf ctrl rules trm tyenv sq=
+      let scp = Sequent.scope_of sq
+      and rtyenv = ref tyenv
+      in 
+      let rls=filter_rules scp rules sq
+      and form = Formula.make ~env:rtyenv scp trm
+      in 
+      let tyenv1 = !rtyenv
+      in 
+      try
+	(let nt, ntyenv = 
+	  Formula.rewrite_env scp ~ctrl:ctrl tyenv1 rls form
+	in 
+	let nasm0 = Formula.mk_equality scp form nt
+	and asm_tag= Tag.create()
+	in 
+	let (nasm1, tyenv2) = 
+	  Formula.typecheck_retype scp tyenv1 nasm0 (Gtypes.mk_null())
+	in 
+	let gtyenv = 
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv2
+	in 
+	add_info inf [] [asm_tag] [];
+	(mk_subgoal
+	   (Sequent.sqnt_tag sq, 
+	    Sequent.sqnt_env sq, 
+	    ((asm_tag, nasm1)::(Sequent.asms sq)),
+	    Sequent.concls sq), 
+	 gtyenv))
+      with x -> raise 
+	  (Result.add_error (logic_error "rewrite_intro" [form]) x)
+
+    let rewrite_intro inf ?ctrl rls trm g=
+      let rrc = Lib.get_option ctrl Formula.default_rr_control
+      in 
+      sqnt_apply (rewrite_intro0 inf rrc rls trm) g
+
+
+(**** Subsitution tactics ****)
+
+(** 
+   [get_eqs_list lbls sq]: Get the equalities in [lbls], break them
+   into lhs and rhs.
+*)
+    let get_eq_list lbls sq = 
+      let get_eq_list = 
+	Lib.map_find (fun t -> drop_tag(get_label_asm t sq)) lbls
+      in 
+      let ret_list = 
+	Lib.map_find 
+	  (fun f -> try Formula.dest_equality f with _ -> raise Not_found)
+	  get_eq_list
+      in
+      ret_list
+
+(**
+   [substA ?info eqs l sq]: Substitute, using the assumptions in [eq],
+   into the assumption [l].  The assumptions in [eq] must all be
+   equalities of the form [L=R]. The substitution is A{_ l}\[R1, R2,
+   ..., Rn/L1, L2, ..., Rn\].
+   
+   {L
+   A{_ l}, asms |- concl
+
+   ---->
+
+   (A\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, asms|- concl
+   }
+
+   info: [] [l] []
+ *)
+    let substA0 inf eqs l tyenv sq=
+      let scp = Sequent.scope_of sq
+      and (lasms, asm, rasms) = split_at_asm l (Sequent.asms sq)
+      in 
+      let (form_tag, form) = asm
+      and eqs_list= get_eq_list eqs sq
+      in 
+      try
+	let form1= Formula.subst scp eqs_list form
+	in 
+	let (form2, tyenv2) = 
+	  Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+	in 
+	let gtyenv=
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+	in 
+	let new_asms = join_up lasms ((form_tag, form2)::rasms)
+	in 
+	add_info inf [] [form_tag] [];
+	(mk_subgoal
+	   (Sequent.sqnt_tag sq, 
+	    Sequent.sqnt_env sq, 
+	    new_asms,
+	    Sequent.concls sq), 
+	 gtyenv)
+      with x -> raise 
+	  (Result.add_error (logic_error "substA" [form]) x)
+
+    let substA inf eqs l g=
+      sqnt_apply (substA0 inf eqs l) g
+
+(**
+   [substC ?info eqs l sq]: Substitute, using the assumptions in [eq],
+   into the conclusion [l].  The assumptions in [eq] must all be
+   equalities of the form [L=R]. The substitution is C{_ l}\[R1, R2,
+   ..., Rn/L1, L2, ..., Rn\].
+   
+   {L
+   asms |- C{_ l}, concl
+
+   ---->
+
+   asms|- (C\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, concl
+   }
+
+   info: [] [l] []
+ *)
+    let substC0 inf eqs l tyenv sq=
+      let scp = Sequent.scope_of sq
+      and (lconcls, concl, rconcls) = split_at_concl l (Sequent.concls sq)
+      in 
+      let (form_tag, form) = concl
+      and eqs_list= get_eq_list eqs sq
+      in 
+      try
+	let form1= Formula.subst scp eqs_list form
+	in 
+	let (form2, tyenv2) = 
+	  Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+	in 
+	let gtyenv=
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+	in 
+	let new_concls = join_up lconcls ((form_tag, form2)::rconcls)
+	in 
+	add_info inf [] [form_tag] [];
+	(mk_subgoal
+	   (Sequent.sqnt_tag sq, 
+	    Sequent.sqnt_env sq, 
+	    Sequent.concls sq, 
+	    new_concls), 
+	 gtyenv)
+      with x -> raise 
+	  (Result.add_error (logic_error "substC" [form]) x)
+
+    let substC inf eqs l g=
+      sqnt_apply (substC0 inf eqs l) g
+
   end
 
-
+type conv = Scope.t -> Basic.term -> thm
 
 module Conv=
   struct
@@ -1909,10 +2079,12 @@ module Conv=
     (** 
        [beta_conv scp term]: Apply a single beta conversion to [term].
 
+       Returns |- ((%x: F) y) = F' 
+       where F' = F\[y/x\]
+
        Fails if [term] is not of the form [(%x: F)y]
        or the resulting formula is not in scope.
      *)
-
     let beta_conv scp term =
       let rhs ()= Logicterm.beta_conv term
       in 
@@ -1927,6 +2099,40 @@ module Conv=
 		(Result.add_error 
 		   (Term.term_error "beta_conv term: " [term]) err))
 
+(*
+   [rewrite_conv scp ctrl rrl trm]:
+   rewrite term [trm] with rules [rrl] in scope [scp].
+
+   Returns |- trm = X 
+   where [X] is the result of rewriting [trm]
+ *)
+    let rr_thm_to_rule rule = 
+      match rule with 
+	RRThm(thm) -> Formula.rule (formula_of thm)
+      | ORRThm (thm, order) -> Formula.orule (formula_of thm) order
+      | _ -> raise (Failure "thm_to_rule: Invalid rule")
+
+    let rewrite_conv ?(ctrl=Formula.default_rr_control) rules scp trm =
+      let thm_list = 
+	Lib.map_find 
+	  (fun x -> try rr_thm_to_rule x with _ -> raise Not_found)
+	  rules
+      in 
+      let conv_aux t = 
+	let form = Formula.make scp trm
+	in 
+	let nform = 
+	  Formula.rewrite ~ctrl:ctrl scp thm_list form
+	in 
+	let tform = Formula.mk_equality scp form nform
+	in 
+	mk_theorem tform
+      in 
+      try conv_aux trm
+      with x -> raise 
+	  (Result.add_error 
+	     (Term.term_error "rewrite_conv" [trm]) x)
+
   end 
 
 
@@ -1934,62 +2140,64 @@ module Conv=
  * Definitions and declarations
  **********)
 
-(* 
-   cdefn:  Checked Definitions: 
-   checking of type and term definitions and declarations
-
-   scdefn: version of cdefn suitable for disk storage.
- *)
-type cdefn =
-    TypeAlias of Basic.ident * string list * Basic.gtype option
-  | TypeDef of ctypedef
-  | TermDecln of Basic.ident * Basic.gtype
-  | TermDef of 
-      Basic.ident * Basic.gtype	* thm 
-and ctypedef =
-    {
-     type_name : Basic.ident;  (* name of new type *)
-     type_args : string list;  (* arguments of new type *)
-     type_base: Basic.gtype;   (* the base type *)
-     type_rep: cdefn;          (* representation function *)
-     type_abs: cdefn;          (* abstraction function *)
-     type_set: Formula.form;      (* defining set *)
-     rep_type: thm;
-     rep_type_inverse: thm;
-     abs_type_inverse: thm
-   }
-
-
-(***
- * Representations for permanent storage
- ***)
-
-type saved_cdefn =
-    STypeAlias of Basic.ident * string list * Gtypes.stype option
-  | STypeDef of saved_ctypedef
-  | STermDecln of Basic.ident * Gtypes.stype
-  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
-and saved_ctypedef =
-    {
-     stype_name : Basic.ident;  (* name of new type *)
-     stype_args : string list;  (* arguments of new type *)
-     stype_base: Gtypes.stype; 
-     stype_rep: saved_cdefn;          (* representation function *)
-     stype_abs: saved_cdefn;          (* abstraction function *)
-     stype_set: Formula.saved_form;      (* defining set *)
-     srep_type: saved_thm;
-     srep_type_inverse: saved_thm;
-     sabs_type_inverse: saved_thm
-   }
-
-
-(* Defns: functions for checking definitions and declarations *)
+(** Defns: Support for defining terms and subtypes. *)
 module Defns =
   struct
+
+
+(*** Error reporting ***)
 
     let defn_error s t = Term.term_error s (List.map Formula.term_of t)
     let add_defn_error s t es = 
       raise (Result.add_error (defn_error s t) es)
+
+(*** Data Representation ***)
+
+(**
+   Checked and subtype definitions. Elements of [cdefn] and [ctypedef]
+   have been correctly defined.
+ *)
+    type cdefn =
+	TypeAlias of Basic.ident * string list * Basic.gtype option
+      | TypeDef of ctypedef
+      | TermDecln of Basic.ident * Basic.gtype
+      | TermDef of 
+	  Basic.ident * Basic.gtype	* thm 
+    and ctypedef =
+	{
+	 type_name : Basic.ident;  (* name of new type *)
+	 type_args : string list;  (* arguments of new type *)
+	 type_base: Basic.gtype;   (* the base type *)
+	 type_rep: cdefn;          (* representation function *)
+	 type_abs: cdefn;          (* abstraction function *)
+	 type_set: Formula.form;      (* defining set *)
+	 rep_type: thm;
+	 rep_type_inverse: thm;
+	 abs_type_inverse: thm
+       }
+
+(*** Representations for permanent storage ***)
+
+    type saved_cdefn =
+	STypeAlias of Basic.ident * string list * Gtypes.stype option
+      | STypeDef of saved_ctypedef
+      | STermDecln of Basic.ident * Gtypes.stype
+      | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+    and saved_ctypedef =
+	{
+	 stype_name : Basic.ident;  (* name of new type *)
+	 stype_args : string list;  (* arguments of new type *)
+	 stype_base: Gtypes.stype; 
+	 stype_rep: saved_cdefn;          (* representation function *)
+	 stype_abs: saved_cdefn;          (* abstraction function *)
+	 stype_set: Formula.saved_form;      (* defining set *)
+	 srep_type: saved_thm;
+	 srep_type_inverse: saved_thm;
+	 sabs_type_inverse: saved_thm
+       }
+
+
+(*** Conversions to and from the permanent storage representation ***)
 
 
     let rec to_saved_cdefn td = 
@@ -2018,6 +2226,7 @@ module Defns =
        sabs_type_inverse = to_save x.abs_type_inverse
      }
 
+
     let rec from_saved_cdefn td = 
       match td with
 	STypeAlias (id, sl, ty) ->
@@ -2045,8 +2254,13 @@ module Defns =
      }
 
 
+(***
+ * Term definition and declaration
+ ***)
 
-(* mk_termdef scp n ty args d:
+(**
+   [mk_termdef scp n ty args d]:
+
    - check n doesn't exist already
    - check all arguments in args are unique
  *)
@@ -2067,7 +2281,7 @@ module Defns =
       in 
       TermDef(id, ty, thm)
 
-(* 
+(** 
    [mk_termdecln scp name ty]: Declare identifier [name] of type [ty] in
    scope [scp].
    Fails if identifier [name] is already defined in [scp]
@@ -2090,13 +2304,14 @@ module Defns =
       in 
       TermDecln(id, typ)
 
-(*
-   Type definitions
- *)
+(***
+ * Type definitions
+ ****)
 
-(* Type aliasing *)
+(**** Type aliasing ***)
 
-(* mk_typealias scp n args d:
+(**
+   [mk_typealias scp n args d]:
    - check n doesn't exist already
    - check all arguments in args are unique
    if defining n as d
@@ -2113,15 +2328,6 @@ module Defns =
 	TypeAlias (id, args, def) -> (id, args, def)
       | _ -> raise (defn_error "Not a term definition" [])
 
-
-(*
-   mk_typealias scp n args d:
-   - check n doesn't exist already
-   - check all arguments in args are unique
-   if defining n as d
-   - check d is well defined 
-   (all constructors exist and variables are in the list of arguments)
- *)
     let mk_typealias scp n ags d =
       let th = Scope.thy_of scp
       in 
@@ -2139,11 +2345,12 @@ module Defns =
       in 
       TypeAlias((Basic.mk_long th n), ags, dfn)
 
-(* Type definition: subtype *)
-
+(***
+ * Subtype definition
+ ***)
 
 (*
-   mk_subtype scp name args d setP rep:
+   [mk_subtype scp name args d setP rep]:
    - check name doesn't exist already
    - check all arguments in args are unique
    - check def is well defined 
@@ -2166,7 +2373,7 @@ module Defns =
     let mk_subtype_thm scp prop =
       mk_axiom (Formula.make scp prop)
 
-(*
+(**
    [prove_subtype_exists scp setp thm]
    Use [thm] to prove the goal << ?x. setp x >> (built by mk_subtype_exists).
 
@@ -2242,6 +2449,79 @@ module Defns =
 	 mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
        }
 
+(***
+ * Pretty printing 
+ ***)
+
+    let print_termdefn ppinfo (n, ty, th) = 
+      Format.printf "@[";
+      Format.printf "@[";
+      Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+      Format.printf ":@ ";
+      Gtypes.print ppinfo ty;
+      Format.printf "@],@ ";
+      print_thm ppinfo th;
+      Format.printf "@]"
+
+    let print_termdecln ppinfo (n, ty) = 
+      Format.printf "@[";
+      Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+      Format.printf ":@ ";
+      Gtypes.print ppinfo ty;
+      Format.printf "@]"
+
+    let print_typealias ppinfo (n, args, ty) = 
+      let named_ty = 
+	Gtypes.mk_constr 
+	  (Basic.Defined n)
+	  (List.map (fun x -> Gtypes.mk_var x) args)
+      in 
+      Format.printf "@[";
+      Gtypes.print ppinfo named_ty;
+      (match ty with
+	None -> ()
+      | (Some t) -> 
+	  Format.printf "=@,";
+	  Gtypes.print ppinfo t);
+      Format.printf "@]"
+
+
+    let rec print_subtype ppinfo x =  
+      let named_ty = 
+	Gtypes.mk_constr 
+	  (Basic.Defined x.type_name)
+	  (List.map (fun x -> Gtypes.mk_var x) x.type_args)
+      in 
+      Format.printf "@[<v>";
+      Format.printf "@[";
+      Gtypes.print ppinfo named_ty;
+      Format.printf "@ =@ ";
+      Gtypes.print ppinfo x.type_base;
+      Format.printf "@,:@ ";
+      Formula.print ppinfo x.type_set;
+      Format.printf "@]@,";
+      print_cdefn ppinfo x.type_rep;
+      Format.printf "@,";
+      print_cdefn ppinfo x.type_abs;
+      Format.printf "@,";
+      print_thm ppinfo x.rep_type;
+      Format.printf "@,";
+      print_thm ppinfo x.rep_type_inverse;
+      Format.printf "@,";
+      print_thm ppinfo x.abs_type_inverse;
+      Format.printf "@]"
+    and
+	print_cdefn ppinfo x = 
+      Format.printf "@[";
+      (match x with
+	TypeAlias (n, args, ty) -> 
+	  print_typealias ppinfo (n, args, ty)
+      | TypeDef y -> print_subtype ppinfo y
+      | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
+      | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th));
+      Format.printf "@]"
+
+
   end
 
 let print_sqnt ppinfo sq = 
@@ -2313,74 +2593,5 @@ let print_branch ppstate branch=
 	(if(len>1) then "subgoal" else "subgoals");
       print_subgoals 1 sqnts);
   Format.printf "@]"
-
-
-let print_termdefn ppinfo (n, ty, th) = 
-  Format.printf "@[";
-  Format.printf "@[";
-  Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
-  Format.printf ":@ ";
-  Gtypes.print ppinfo ty;
-  Format.printf "@],@ ";
-  print_thm ppinfo th;
-  Format.printf "@]"
-
-let print_termdecln ppinfo (n, ty) = 
-  Format.printf "@[";
-  Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
-  Format.printf ":@ ";
-  Gtypes.print ppinfo ty;
-  Format.printf "@]"
-
-let print_typealias ppinfo (n, args, ty) = 
-  let named_ty = 
-    Gtypes.mk_constr 
-      (Basic.Defined n)
-      (List.map (fun x -> Gtypes.mk_var x) args)
-  in 
-  Format.printf "@[";
-  Gtypes.print ppinfo named_ty;
-  (match ty with
-    None -> ()
-  | (Some t) -> 
-      Format.printf "=@,";
-      Gtypes.print ppinfo t);
-  Format.printf "@]"
-
-let rec print_subtype ppinfo x =  
-  let named_ty = 
-    Gtypes.mk_constr 
-      (Basic.Defined x.type_name)
-      (List.map (fun x -> Gtypes.mk_var x) x.type_args)
-  in 
-  Format.printf "@[<v>";
-  Format.printf "@[";
-  Gtypes.print ppinfo named_ty;
-  Format.printf "@ =@ ";
-  Gtypes.print ppinfo x.type_base;
-  Format.printf "@,:@ ";
-  Formula.print ppinfo x.type_set;
-  Format.printf "@]@,";
-  print_cdefn ppinfo x.type_rep;
-  Format.printf "@,";
-  print_cdefn ppinfo x.type_abs;
-  Format.printf "@,";
-  print_thm ppinfo x.rep_type;
-  Format.printf "@,";
-  print_thm ppinfo x.rep_type_inverse;
-  Format.printf "@,";
-  print_thm ppinfo x.abs_type_inverse;
-  Format.printf "@]"
-and
-    print_cdefn ppinfo x = 
-  Format.printf "@[";
-  (match x with
-    TypeAlias (n, args, ty) -> 
-      print_typealias ppinfo (n, args, ty)
-  | TypeDef y -> print_subtype ppinfo y
-  | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
-  | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th));
-  Format.printf "@]"
-
 
 
