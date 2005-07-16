@@ -126,9 +126,9 @@ val make_consts:
    each of the resulting subgoals.  If [tac1] solves the goal (no
    subgoals), then [tac2] is not used.
  *)
-val skip : Logic.rule
-val foreach : Logic.rule -> Logic.branch -> Logic.branch
-val seq : Logic.rule -> Logic.rule -> Logic.rule
+val skip : Logic.tactic
+val foreach : Logic.tactic -> Logic.branch -> Logic.branch
+val seq : Logic.tactic -> Logic.tactic -> Logic.tactic
 
 (* 
    Utility tactics
@@ -140,8 +140,8 @@ val seq : Logic.rule -> Logic.rule -> Logic.rule
    do nothing if [cs] is empty.
  *)
 val inst_list : 
-    (Basic.term -> Logic.label -> Logic.rule)
-  -> Basic.term list -> Logic.label -> Logic.rule
+    (Basic.term -> Logic.label -> Logic.tactic)
+  -> Basic.term list -> Logic.label -> Logic.tactic
 
 (* Search functions *)
 
@@ -162,44 +162,44 @@ val find_rule : 'a -> (('a -> bool) * 'b) list -> 'b
 (* Apply functions *)
 (* apply test and rules to each/all assumption/conclusion *)
 val foreach_asm :
-    ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-      Logic.rule
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
 
 val foreach_asm_except : Tag.t list->
-  ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-    Logic.rule
+  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+    Logic.tactic
 
 val foreach_conc :
-    ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-      Logic.rule
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
 
 val foreach_formula :
-    ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-      Logic.rule
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
 
 val foreach_conc_except : Tag.t list -> 
-  ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-    Logic.rule
+  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+    Logic.tactic
 
 val foreach_except:
     Tag.t list -> 
-      ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list ->
-	Logic.rule
+      ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+	Logic.tactic
 
 (*
    val foreach_in_sq :
-   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
-   ((Formula.form -> bool) * (int -> Logic.rule)) list ->
-   Logic.rule
+   ((Formula.form -> bool) * (int -> Logic.tactic)) list ->
+   ((Formula.form -> bool) * (int -> Logic.tactic)) list ->
+   Logic.tactic
  *)
 
 (* apply rules once *)
 val foreach_conc_once :
-    (Logic.label -> Logic.rule) -> Logic.rule
+    (Logic.label -> Logic.tactic) -> Logic.tactic
 val foreach_asm_once :
-    (Logic.label -> Logic.rule) -> Logic.rule
+    (Logic.label -> Logic.tactic) -> Logic.tactic
 val foreach_once :
-    (Logic.label -> Logic.rule) -> Logic.rule
+    (Logic.label -> Logic.tactic) -> Logic.tactic
 
 (* 
    [find_qnt_opt ?exclude qnt ?f pred forms] 

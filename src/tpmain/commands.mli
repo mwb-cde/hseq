@@ -135,7 +135,7 @@ val typedef:
       -> ?thm:Logic.thm
 	-> ?rep:string -> ?abs:string
 	-> Parser.typedef_data
-	-> Logic.cdefn
+	-> Logic.Defns.cdefn
 
 
 (* new_defn/define define an identifier *)
@@ -153,7 +153,7 @@ val define :
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ((string * (string * Basic.gtype) list) * Basic.term) 
-  -> Logic.cdefn
+  -> Logic.Defns.cdefn
 
 (* 
    [declare trm pp]
@@ -238,9 +238,9 @@ val read_unchecked : string -> Basic.term
 
 val simple_typedef: 
     (string * string list * Basic.gtype option) 
-  -> Logic.cdefn
+  -> Logic.Defns.cdefn
 val subtypedef: 
     (string * string list * Basic.gtype * Basic.term) 
   -> (string option * string option)
     -> ?simp:bool -> Logic.thm 
-      -> Logic.cdefn
+      -> Logic.Defns.cdefn

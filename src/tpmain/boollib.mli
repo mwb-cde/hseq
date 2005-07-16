@@ -89,12 +89,12 @@ val iffC: ?c:Logic.label -> Tactics.tactic
 val iffA: ?a:Logic.label -> Tactics.tactic
 
 val asm_elims : 
-    unit -> ((Formula.form->bool) * (Logic.label -> Logic.rule)) list
+    unit -> ((Formula.form->bool) * (Logic.label -> Logic.tactic)) list
 val conc_elims : 
-    unit -> ((Formula.form->bool) * (Logic.label -> Logic.rule)) list
+    unit -> ((Formula.form->bool) * (Logic.label -> Logic.tactic)) list
 
 (*
-val false_rule:  ?a:Logic.label -> Logic.rule
+val false_rule:  ?a:Logic.label -> Logic.tactic
 *)
 val falseR:  ?a:Logic.label -> Tactics.tactic
 

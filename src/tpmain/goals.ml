@@ -29,7 +29,10 @@ let push_plist p =
 
 let curr_sqnt p = 
   match p with 
-    g -> (Logic.get_nth_subgoal_sqnt 0 g)
+    g -> 
+      (match (Logic.get_subgoals g) with
+	[] -> raise (Result.error "No subgoals")
+      | x::xs -> x)
 
 let get_asm i = 
   let (ft, nt)= Logic.Sequent.get_asm i (curr_sqnt (top()))
@@ -130,6 +133,7 @@ let by_com tac =
    (!save_hook()));
   top())
 
+(*
 let postpone() =
   match (!prflist) with
     [] -> raise (Result.error "No goal")
@@ -137,6 +141,7 @@ let postpone() =
       (let ng = Logic.postpone (pop_plist())
       in 
       push_plist ng)
+*)
 
 let undo() =
   match (!prflist) with

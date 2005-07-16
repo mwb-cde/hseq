@@ -6,7 +6,7 @@
 
 (* Tactics and Tacticals *)
 
-type tactic = Logic.rule
+type tactic = Logic.tactic
 
 (* label functions *)
 
@@ -62,9 +62,11 @@ val copy_concl : ?info:Logic.info -> Logic.label -> tactic
    or by a label in [ls] ([deleten]).
 *)
 val delete: ?info:Logic.info -> Logic.label -> tactic 
-val deleten: Logic.label list -> Logic.rule
+val deleten: Logic.label list -> Logic.tactic
 
+(*
 val postpone: Logic.goal -> Logic.goal
+*)
 
 (**
    [skip]: Do nothing. Useful for converting a node to a branch.
@@ -124,7 +126,7 @@ val cut : ?info:Logic.info -> Logic.thm -> tactic
    Defaults: [a=(fnum -1)], [c=(fnum 1)].
 *)
 val unify_tac : ?info: Logic.info ->  
-  ?a:Logic.label -> ?c:Logic.label -> Logic.rule
+  ?a:Logic.label -> ?c:Logic.label -> Logic.tactic
 
 (**
    [lift id sqnt]
@@ -229,7 +231,7 @@ val gen_rewrite_tac:
     ?info: Logic.info 
   -> Rewrite.control
     -> Logic.rr_type list 
-      -> ?f:Logic.label -> Logic.rule
+      -> ?f:Logic.label -> Logic.tactic
 
 (** [rewrite_tac info dir thms f]
 
@@ -238,12 +240,12 @@ val gen_rewrite_tac:
 *)
 val rewrite_tac: 
     ?info:Logic.info -> ?dir:Rewrite.direction
-    -> Logic.thm list -> ?f:Logic.label -> Logic.rule
+    -> Logic.thm list -> ?f:Logic.label -> Logic.tactic
 
 (*
 val rewrite_tac: 
     ?ctrl:Rewrite.control
-  -> Logic.thm list -> ?f:Logic.label -> Logic.rule
+  -> Logic.thm list -> ?f:Logic.label -> Logic.tactic
 *)
 
 (** [once_rewrite_tac info dir thms f]
@@ -253,11 +255,11 @@ val rewrite_tac:
 *)
 val once_rewrite_tac: 
     ?info:Logic.info -> ?dir:Rewrite.direction -> 
-    Logic.thm list -> ?f:Logic.label -> Logic.rule
+    Logic.thm list -> ?f:Logic.label -> Logic.tactic
 
 (*
 val once_rewrite_tac: 
-    Logic.thm list -> ?f:Logic.label -> Logic.rule
+    Logic.thm list -> ?f:Logic.label -> Logic.tactic
 *)
 
 (** [replace_tac info dir asms f]
@@ -275,27 +277,27 @@ val once_rewrite_tac:
 val gen_replace_tac: 
     ?info:Logic.info -> ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
-    -> ?f:Logic.label -> Logic.rule
+    -> ?f:Logic.label -> Logic.tactic
 
 val replace_tac: 
     ?info:Logic.info -> ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
-    -> ?f:Logic.label -> Logic.rule
+    -> ?f:Logic.label -> Logic.tactic
 
 val once_replace_tac: 
     ?info:Logic.info -> ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
-    -> ?f:Logic.label -> Logic.rule
+    -> ?f:Logic.label -> Logic.tactic
 
 (*
 val replace_tac: 
     ?ctrl:Rewrite.control
   -> ?asms:Logic.label list 
-    -> ?f:Logic.label -> Logic.rule
+    -> ?f:Logic.label -> Logic.tactic
 
 val once_replace_tac: 
     ?asms:Logic.label list 
-  -> ?f:Logic.label -> Logic.rule
+  -> ?f:Logic.label -> Logic.tactic
 *)
 
 (** [is_rewrite_formula f] 

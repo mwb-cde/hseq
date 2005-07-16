@@ -230,18 +230,18 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   (* add the other parts to the theory *)
   let tyrec = Logic.Defns.dest_subtype tydef
   in 
-  let rep_decln = tyrec.Logic.type_rep
-  and abs_decln = tyrec.Logic.type_abs
+  let rep_decln = tyrec.Logic.Defns.type_rep
+  and abs_decln = tyrec.Logic.Defns.type_abs
   in 
   (* add the declarations of rep and abs *)
   Thydb.add_decln rep_decln [] (theories());
   Thydb.add_decln abs_decln [] (theories());
   (* Add the theorems *)
-  let rep_type = tyrec.Logic.rep_type
+  let rep_type = tyrec.Logic.Defns.rep_type
   and rt_name = rep_name^"_mem"
-  and rep_type_inverse = tyrec.Logic.rep_type_inverse
+  and rep_type_inverse = tyrec.Logic.Defns.rep_type_inverse
   and rti_name = rep_name^"_inverse"
-  and abs_type_inverse = tyrec.Logic.abs_type_inverse
+  and abs_type_inverse = tyrec.Logic.Defns.abs_type_inverse
   and ati_name = abs_name^"_inverse"
   in 
   ignore(save_thm ~simp:simp rt_name rep_type);

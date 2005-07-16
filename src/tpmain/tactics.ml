@@ -6,7 +6,7 @@
 
 open Logic
 
-type tactic = Logic.rule
+type tactic = Logic.tactic
 
 let fnum = Drule.fnum
 let ftag = Drule.ftag
@@ -68,7 +68,9 @@ let basic ?info sqnt =
     in Logic.Tactics.basic info a c sqnt
   with Not_found -> raise (Result.error "Not basic")
 
+(*
 let postpone = Logic.postpone
+*)
 
 let cut ?info th = Logic.Tactics.cut info th
 

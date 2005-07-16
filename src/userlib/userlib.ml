@@ -96,9 +96,9 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
   then 
     let tyrec = Logic.Defns.dest_subtype defn
     in 
-    let rt_thm= tyrec.Logic.rep_type
-    and rti_thm= tyrec.Logic.rep_type_inverse
-    and ati_thm= tyrec.Logic.abs_type_inverse
+    let rt_thm= tyrec.Logic.Defns.rep_type
+    and rti_thm= tyrec.Logic.Defns.rep_type_inverse
+    and ati_thm= tyrec.Logic.Defns.abs_type_inverse
     in 
     List.iter Simplib.add_simp [rt_thm; rti_thm; ati_thm]
   else ());

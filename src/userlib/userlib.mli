@@ -130,7 +130,7 @@ val typedef:
       -> ?thm:Logic.thm
 	-> ?rep:string -> ?abs:string
 	-> Parser.typedef_data
-	-> Logic.cdefn
+	-> Logic.Defns.cdefn
 
 
 (* [define ?simp term pp]
@@ -146,7 +146,7 @@ val define :
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ((string * (string * Basic.gtype) list) * Basic.term) 
-  -> Logic.cdefn
+  -> Logic.Defns.cdefn
 
 (* 
    [declare trm pp]

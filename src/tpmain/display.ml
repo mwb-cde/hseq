@@ -87,7 +87,7 @@ let print_termdecln def =
 
 
 let print_defn def =
-  Logic.print_cdefn (Global.PP.info()) def
+  Logic.Defns.print_cdefn (Global.PP.info()) def
 (*
   if(Logic.Defns.is_termdef def)
   then print_termdefn def
