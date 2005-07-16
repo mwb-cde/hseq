@@ -59,7 +59,7 @@ val apply_get_single_formula_tag :
   -> Logic.node -> (Tag.t * Logic.branch)
 
 
-val allA_list : Logic.label -> Basic.term list -> Logic.rule
+val allA_list : Logic.label -> Basic.term list -> Logic.tactic
 
 (** [is_variable qnts x]:
    test for variables (universal quantifiers) in an entry 

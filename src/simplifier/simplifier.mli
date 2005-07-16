@@ -201,9 +201,9 @@ val simp_prep_tac :
 
 val is_true : Basic.term -> bool
 val simp_asm_elims :
-    ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list
+    ((Formula.form -> bool) * (Logic.label -> Tactics.tactic)) list
 val simp_conc_elims :
-    ((Formula.form -> bool) * (Logic.label -> Logic.rule)) list
+    ((Formula.form -> bool) * (Logic.label -> Tactics.tactic)) list
 val initial_flatten_tac :
     Tag.t list -> tactic
 
