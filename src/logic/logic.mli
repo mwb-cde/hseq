@@ -503,6 +503,20 @@ val rotate_subgoals_right : int -> goal -> goal
 module Subgoals:
     sig
       
+      (** {7 Notification of Result} *)
+
+      val notify_hook : (bool -> unit) ref
+	  (** 
+	     Support for user interfaces.
+
+	     [!notify_hook] is called with [true] when a succeeds and
+	     [false] when a tactic fails.  A tactic fails if and only
+	     if it raises an exception. Note that if the tactic is
+	     made up of several tactics, [notify_hook] will be called
+	     for each individual tactic in the order they are applied
+	     to a subgoal.
+	   *)
+
       (** {7 Nodes and branches} *)
 
       (** 
@@ -528,13 +542,6 @@ module Subgoals:
 	  (** The type environment of the branch *)
       val branch_sqnts: branch -> Sequent.t list
 	  (** The subgoals of the branch *)
-
-      val branch_node : node -> branch
-(** 
-   [branch_node node]: Make a branch from [node] without doing
-   anything. The subgoal of the node is the only subgoal of the
-   branch. This is safe since no subgoal is removed.
- *)
 
 (** {7 Utility functions} *)
 
