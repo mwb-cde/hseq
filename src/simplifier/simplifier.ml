@@ -305,7 +305,7 @@ let prep_cond_tac cntrl ret values thm goal =
    condition; apply tactic [tac] to prove the condition; fail
    if [tac] fails to solve the condition.
 
-   Return RRInfo of the theorem/assumption to use as i rewriting
+   Return RRInfo of the theorem/assumption to use as rewriting rule
    and new goal.
  *)
 

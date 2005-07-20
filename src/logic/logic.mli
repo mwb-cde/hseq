@@ -40,9 +40,9 @@ Author: M Wahab <mwahab@users.sourceforge.net>
    terms (by the quantifier rules). Subgoals are implemented in module
    {!Logic.Sequent}.
 
-   The tag of a subgoal is unique within a goal and can be used to
-   identify the subgoal. This can be used to determine whether a
-   subgoal is present in a goal or whether it has been solved).
+   The tag of a subgoal is unique and can be used to identify the
+   subgoal. This can be used to determine whether a subgoal is present
+   in a goal or whether it has been solved).
 
    The assumptions and conclusions of a subgoal are collectively
    refered as the {e formulas} of the subgoal and each subgoal has at
@@ -479,18 +479,19 @@ val rotate_subgoals_right : int -> goal -> goal
    and branches of the proof tree. A tactic has type [node -> branch],
    a node contains the subgoal which is the argument to the tactic and
    a branch has the list of subgoals resulting from the tactic. Each
-   node and branch has a unique tag. When applying a tactic [tac] to a
-   node [n], a unique tag (the ticket) is generated and set as the tag
-   of [n]. If branch [b=tac n], the tag of [b] must be the same as the
-   ticket otherwise the result is invalid and will be discarded. If
-   the result is valid, the tag of [b] is set to the original tag of
-   [n] and [b] is the result of the tactic. Since only functions in
-   module {!Logic} can change the tag of a node or branch, tactics
-   external to {!Logic} must use the tactics defined in {!Logic} to
-   construct branches from nodes. This system also provides for
-   tacticals by allowing tactics to be chained together, the branch
-   resulting from the last tactic having the same tag as the node
-   applied to the first tactic.
+   node and branch has a unique tag. Initially, the tag of a node [n]
+   is the tag of the subgoal to be solved. When applying a tactic
+   [tac] to node [n], a unique tag (the ticket) is generated and set
+   as the tag of [n]. If branch [b=tac n], the tag of [b] must be the
+   same as the ticket otherwise the result is invalid and will be
+   discarded. If the result is valid, the tag of [b] is set to the
+   original tag of [n] and [b] is the result of the tactic. Since only
+   functions in module {!Logic} can change the tag of a node or
+   branch, tactics external to {!Logic} must use the tactics defined
+   in {!Logic} to construct branches from nodes. This system also
+   provides for tacticals by allowing tactics to be chained together,
+   the branch resulting from the last tactic having the same tag as
+   the node applied to the first tactic.
 
    The functions in this module deal with the application of tactics
    to nodes and goals. The main function is {!Logic.Subgoals.apply}
@@ -937,7 +938,7 @@ module Tactics :
 
 
    {L
-   g1:\[asms |- (A/\B){_ l}, concls\]
+   g:\[asms |- (A/\B){_ l}, concls\]
 
    ----> 
 
@@ -953,7 +954,7 @@ module Tactics :
 
 
    {L
-   g1:\[(A\/B){_ l}, asms |- concls\]
+   g:\[(A\/B){_ l}, asms |- concls\]
 
    ----> 
 
@@ -1008,7 +1009,7 @@ module Tactics :
    [implA l sq]: Eliminate the implication at assumption [l]
 
    {L
-   g1:\[(A => B){_ l}, asms |- concls\]
+   g:\[(A => B){_ l}, asms |- concls\]
 
    ----> 
 
