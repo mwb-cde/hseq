@@ -34,7 +34,7 @@ Author: M Wahab <mwahab@users.sourceforge.net>
    propagated to all the other subgoals. This is necessary for the
    soundness of the logic.
 
-   A subgoal (also called {e sequents}) has type {!Logic.Sequent.t}
+   A subgoal (also called a {e sequent}) has type {!Logic.Sequent.t}
    and consists of a tag, a scope, possibly empty lists of {e
    assumptions} and {e conclusions} and information used to generate
    terms (by the quantifier rules). Subgoals are implemented in module
@@ -102,10 +102,10 @@ Author: M Wahab <mwahab@users.sourceforge.net>
    A theorem is written |- t
 
    A subgoal is written 
-   {L t:\[A{_ ta{_ 1}}, ... , A{_ ta{_ n}} |- 
+   {L g:\[A{_ ta{_ 1}}, ... , A{_ ta{_ n}} |- 
    C{_ tc{_ 1}}, ..., C{_ tc{_ n}}\]}
    where 
-   {ul {- t is the tag of the subgoal}
+   {ul {- g is the tag of the subgoal}
    {- ta{_ i} is the tag of assumption A{_ ta{_ i}}}
    {- tc{_ i} is the tag of conclusion C{_ tc{_ i}}}
    {- A{_ i} are the assumptions} 
@@ -479,16 +479,20 @@ val rotate_subgoals_right : int -> goal -> goal
    and branches of the proof tree. A tactic has type [node -> branch],
    a node contains the subgoal which is the argument to the tactic and
    a branch has the list of subgoals resulting from the tactic. Each
-   node and branch has a unique tag. Initially, the tag of a node [n]
-   is the tag of the subgoal to be solved. When applying a tactic
-   [tac] to node [n], a unique tag (the ticket) is generated and set
-   as the tag of [n]. If branch [b=tac n], the tag of [b] must be the
-   same as the ticket otherwise the result is invalid and will be
+   node and branch has a unique tag. When a tactic [tac] is applied to
+   a node [n], a unique tag (the ticket) is generated and set as the
+   tag of [n]. If branch [b=tac n], the tag of [b] must be the same as
+   the ticket otherwise the result is invalid and will be
    discarded. If the result is valid, the tag of [b] is set to the
-   original tag of [n] and [b] is the result of the tactic. Since only
-   functions in module {!Logic} can change the tag of a node or
-   branch, tactics external to {!Logic} must use the tactics defined
-   in {!Logic} to construct branches from nodes. This system also
+   original tag of [n] and [b] is the result of the tactic.
+   Initially, the tag of node [n] is the tag of the subgoal to be
+   solved. Because each subgoal is uniquely tagged, the branch
+   resulting from applying a tactic to the node is unique to that
+   subgoal.
+
+   Since only functions in module {!Logic} can change the tag of a
+   node or branch, tactics external to {!Logic} must use the tactics
+   defined in {!Logic} to construct branches from nodes. The system
    provides for tacticals by allowing tactics to be chained together,
    the branch resulting from the last tactic having the same tag as
    the node applied to the first tactic.
@@ -510,12 +514,12 @@ module Subgoals:
 	  (** 
 	     Support for user interfaces.
 
-	     [!notify_hook] is called with [true] when a succeeds and
-	     [false] when a tactic fails.  A tactic fails if and only
-	     if it raises an exception. Note that if the tactic is
-	     made up of several tactics, [notify_hook] will be called
-	     for each individual tactic in the order they are applied
-	     to a subgoal.
+	     [!notify_hook] is called with [true] when a tactic
+	     succeeds and [false] when a tactic fails. A tactic fails
+	     if and only if it raises an exception. Note that if the
+	     tactic is made up of several tactics, [notify_hook] will
+	     be called for each individual tactic in the order they
+	     are applied to a subgoal.
 	   *)
 
       (** {7 Nodes and branches} *)

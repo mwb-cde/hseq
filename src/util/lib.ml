@@ -148,6 +148,21 @@ let fullchase varp x env =
   in if varp t1 then x else t1
 
 
+let table_to_list tbl = 
+  let tmp = ref []
+  in 
+  (Hashtbl.iter (fun x y -> tmp:=((x, y)::!tmp)) tbl); !tmp
+
+let table_from_list xs = 
+  let tenv = Hashtbl.create 1 
+  in
+  let rec from_list_aux ys=
+    match ys with
+      [] -> tenv
+    | (x, y)::xss -> Hashtbl.add tenv x y; from_list_aux xss
+  in ignore(from_list_aux xs); tenv
+
+
 (* remove duplicates from a list *)
 
 let remove_dups ls =

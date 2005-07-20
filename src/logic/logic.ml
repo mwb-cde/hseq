@@ -1243,7 +1243,6 @@ module Tactics =
 	in 
 	let concll = join_up lcncls ((ft1, t1)::rcncls)
 	and conclr = join_up lcncls ((ft1, t2)::rcncls)
-(*	and tagl=Sequent.sqnt_tag sq *)
 	and tagl=Tag.create()
 	and tagr=Tag.create()
 	and asms = Sequent.asms sq
@@ -1276,7 +1275,6 @@ module Tactics =
 	in 
 	let asmsl= join_up lasms ((ft, t1)::rasms)
 	and asmsr = join_up lasms ((ft, t2)::rasms)
-(*	and tagl=Sequent.sqnt_tag sq *)
 	and tagl=Tag.create()
 	and tagr=Tag.create()
 	in 
@@ -1404,7 +1402,6 @@ module Tactics =
 	and cncl1=(ft, t1)::(Sequent.concls sq)
 	and tagl=Tag.create()
 	and tagr=Tag.create()
-(*	and tagr=Sequent.sqnt_tag sq *)
 	in 
 	add_info info [tagl; tagr] [ft] [];
 	[Sequent.make tagl 

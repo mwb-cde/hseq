@@ -73,18 +73,23 @@ val add_type_rec: Logic.Defns.cdefn -> thydb->unit
 val add_defn : 
     string -> Basic.gtype -> Logic.thm -> Theory.property list 
       -> thydb -> unit
-val add_decln_rec :Logic.Defns.cdefn -> int -> Theory.property list
+val add_decln_rec :Logic.Defns.cdefn -> Theory.property list
   -> thydb -> unit
 val add_decln :Logic.Defns.cdefn
   -> Theory.property list -> thydb -> unit
+(*
 val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
   -> bool -> int -> Theory.property list -> thydb -> unit
+*)
+val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
+   -> Theory.property list -> thydb -> unit
 
 (* get the type record of a type in a named theory *)
 val get_type_rec: string -> string -> thydb -> Gtypes.typedef_record
 
 (* add/extract PP records *)
 
+(*
 val add_pp_rec: 
     Basic.id_selector  -> string -> Printer.record
       -> thydb  -> unit
@@ -97,6 +102,36 @@ val remove_pp_rec :
 
 val get_pplist: Basic.id_selector -> string -> thydb 
   -> (Basic.ident * Printer.record) list
+*)
+
+val add_term_pp_rec: 
+    string -> Printer.record
+      -> thydb  -> unit
+val get_term_pp_rec: 
+    string  -> string  -> thydb
+      -> Printer.record
+val remove_term_pp_rec : 
+    string -> string 
+      -> thydb -> unit
+
+val get_term_pplist: 
+    string -> thydb 
+  -> (Basic.ident * Printer.record) list
+
+val add_type_pp_rec: 
+    string -> Printer.record
+      -> thydb  -> unit
+val get_type_pp_rec: 
+    string  -> string  -> thydb
+      -> Printer.record
+val remove_type_pp_rec : 
+    string -> string 
+      -> thydb -> unit
+
+val get_type_pplist: 
+    string -> thydb 
+      -> (Basic.ident * Printer.record) list
+
       
 (* find a theory and apply a function *)
 val find : (Theory.thy -> 'a) -> thydb -> 'a
@@ -118,8 +153,6 @@ val get_id_type : string -> string -> thydb -> Basic.gtype
 *)
 val get_id_options : string -> thydb -> (Basic.ident * Basic.gtype) list
 
-val get_term_pp_rec : string -> string -> thydb -> Printer.record
-val get_type_pp_rec : string -> string -> thydb -> Printer.record
 val id_exists : string -> string -> thydb -> bool
 
 type memos

@@ -42,6 +42,11 @@ val member : 'a -> ('a, 'b)Hashtbl.t -> bool
 val remove: 'a -> ('a, 'b)Hashtbl.t -> unit
 val remove_dups: 'a list -> 'a list
 
+val table_to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
+(** Convert from a table to a list. *)
+val table_from_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
+(** Convert from a list to a table. *)
+
 val find_char : char -> int -> string -> int 
 
 (* chop_at c str:

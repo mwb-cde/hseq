@@ -6,7 +6,7 @@ CODE = formula.cmo defn.cmo logic.cmo theory.cmo thydb.cmo
 
 OPTCODE = formula.cmx defn.cmx logic.cmx theory.cmx thydb.cmx
 
-DOCFILES = formula.mli defn.mli logic.mli
+DOCFILES = formula.mli defn.mli logic.mli theory.mli
 DOCLOAD = -load "${DOCDIR}/tpcore.data"
 DOCTYPE ?= -html
 DOCDIR ?= "../doc"

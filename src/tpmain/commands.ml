@@ -1,8 +1,8 @@
 (*-----
- Name: commands.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: commands.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 open Result
 
@@ -33,9 +33,9 @@ let curr_theory () = Global.get_cur_thy()
 let get_theory_name thy = Theory.get_name (curr_theory())
 
 let theory name = 
-   if name = "" 
-   then curr_theory()
-   else Thydb.get_thy (theories()) name
+  if name = "" 
+  then curr_theory()
+  else Thydb.get_thy (theories()) name
 
 let save_theory thy prot= 
   let fname = Filename.concat
@@ -134,12 +134,13 @@ let end_theory ?(save=true) () =
 
 
 let add_pp_rec selector id rcrd=
-  Thydb.add_pp_rec selector (Basic.name id) rcrd (theories());
   if(selector=Basic.fn_id)
   then 
-    Global.PP.add_term_pp_record id rcrd
+    (Thydb.add_term_pp_rec (Basic.name id) rcrd (theories());
+     Global.PP.add_term_pp_record id rcrd)
   else 
-    Global.PP.add_type_pp_record id rcrd
+    (Thydb.add_type_pp_rec (Basic.name id) rcrd (theories());
+     Global.PP.add_type_pp_record id rcrd)
       
 let add_overload sym id = 
   let ty = 
@@ -163,11 +164,15 @@ let add_type_pp id prec fx repr=
   add_pp_rec Basic.type_id id rcrd
 
 let remove_pp_rec selector id =
-  Thydb.remove_pp_rec selector 
-    (Basic.thy_of_id id) (Basic.name id) (theories());
   if(selector=Basic.fn_id)
-  then Global.PP.remove_term_pp id
-  else Global.PP.remove_type_pp id 
+  then 
+    (Thydb.remove_term_pp_rec
+       (Basic.thy_of_id id) (Basic.name id) (theories());
+     Global.PP.remove_term_pp id)
+  else 
+    (Thydb.remove_type_pp_rec
+       (Basic.thy_of_id id) (Basic.name id) (theories());
+     Global.PP.remove_type_pp id)
 
 let remove_term_pp id = remove_pp_rec Basic.type_id id
 let remove_type_pp id = remove_pp_rec Basic.type_id id
@@ -200,27 +205,27 @@ let by x =
 
 
 (*
-let new_type ?pp (n, args, def) = 
-  let trec = Logic.Defns.mk_typealias (Global.scope()) n args def 
-  in 
-  Thydb.add_type_rec trec (theories());
-  (match pp with 
-    None -> ()
-  | Some(prec, fx, repr) -> 
-      let lname = Basic.mk_long (Global.get_cur_name()) n
-      in 
-      add_type_pp lname prec fx repr)
-*)
+   let new_type ?pp (n, args, def) = 
+   let trec = Logic.Defns.mk_typealias (Global.scope()) n args def 
+   in 
+   Thydb.add_type_rec trec (theories());
+   (match pp with 
+   None -> ()
+   | Some(prec, fx, repr) -> 
+   let lname = Basic.mk_long (Global.get_cur_name()) n
+   in 
+   add_type_pp lname prec fx repr)
+ *)
 
 let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
 (*
-  let set0 = 
-    Term.set_names (Global.scope()) set
-  in
-*)
+   let set0 = 
+   Term.set_names (Global.scope()) set
+   in
+ *)
   let tydef = 
     Logic.Defns.mk_subtype (Global.scope()) 
       name args dtype set rep_name abs_name thm
@@ -248,7 +253,7 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   ignore(save_thm ~simp:simp rti_name rep_type_inverse);
   ignore(save_thm ~simp:simp ati_name abs_type_inverse);
   tydef
-  
+    
 let simple_typedef (n, args, def) =
   let def1 = 
     match def with 

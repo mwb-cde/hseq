@@ -215,26 +215,38 @@ let get_importing thydb = thydb.importing
 let add_axiom s th ps thdb= Theory.add_axiom s th ps thdb.curr
 let add_thm s th ps thdb = Theory.add_thm s th ps thdb.curr
 
-let add_pp_rec idsel n ppr thdb = 
-  Theory.add_pp_rec idsel n ppr thdb.curr
 
 let add_type_rec tr thdb = Theory.add_type_rec tr thdb.curr
 
+(*
 let add_defn_rec s ty def inf pr ps thdb =
   Theory.add_defn_rec s ty def inf pr ps thdb.curr
+*)
+let add_defn_rec s ty def ps thdb =
+  Theory.add_defn_rec s ty def ps thdb.curr
 
+(*
 let add_defn s ty def ps thdb =
   Theory.add_defn s ty def ps thdb.curr
+*)
+let add_defn s ty def ps thdb =
+  Theory.add_defn_rec s ty (Some def) ps thdb.curr
 
+(*
 let add_decln_rec dcl pr ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
   Theory.add_decln_rec (Basic.name s) ty pr ps thdb.curr
+*)
+let add_decln_rec dcl ps thdb =
+  let s, ty = Logic.Defns.dest_termdecln dcl
+  in 
+  Theory.add_decln_rec (Basic.name s) ty ps thdb.curr
 
 let add_decln dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty 0 ps thdb.curr
+  Theory.add_decln_rec (Basic.name s) ty ps thdb.curr
 
 let find f tdb =
   let rec find_aux ls =
@@ -255,10 +267,9 @@ let find_apply f tdb=
     find f tdb
   with Importing -> raise Not_found
 
-let get_pplist idsel th tdb =
-  let get_aux cur =
-    Theory.get_pplist idsel cur
-  in quick_find get_aux th tdb
+(*
+let add_pp_rec idsel n ppr thdb = 
+  Theory.add_pp_rec idsel n ppr thdb.curr
 
 let get_pp_rec idsel th n tdb =
   let get_aux cur= 
@@ -279,6 +290,71 @@ let remove_pp_rec idsel th n tdb =
   if th="" 
   then (find_apply get_aux tdb)
   else quick_find get_aux th tdb
+
+let get_pplist idsel th tdb =
+  let get_aux cur =
+    Theory.get_pplist idsel cur
+  in quick_find get_aux th tdb
+*)
+
+let add_term_pp_rec n ppr thdb = 
+  Theory.add_term_pp_rec n ppr thdb.curr
+
+let get_term_pp_rec th n tdb =
+  let get_aux cur= 
+    try 
+      Theory.get_term_pp_rec n cur
+    with _ -> raise Not_found
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+      
+let remove_term_pp_rec th n tdb = 
+  let get_aux cur= 
+    try 
+      Theory.remove_term_pp_rec n cur
+    with _ -> raise Not_found
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+
+let get_term_pplist th tdb =
+  let get_aux cur =
+    Theory.get_term_pplist cur
+  in quick_find get_aux th tdb
+
+
+
+let add_type_pp_rec n ppr thdb = 
+  Theory.add_type_pp_rec n ppr thdb.curr
+
+let get_type_pp_rec th n tdb =
+  let get_aux cur= 
+    try 
+      Theory.get_type_pp_rec n cur
+    with _ -> raise Not_found
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+      
+let remove_type_pp_rec th n tdb = 
+  let get_aux cur= 
+    try 
+      Theory.remove_type_pp_rec n cur
+    with _ -> raise Not_found
+  in 
+  if th="" 
+  then (find_apply get_aux tdb)
+  else quick_find get_aux th tdb
+
+let get_type_pplist th tdb =
+  let get_aux cur =
+    Theory.get_type_pplist cur
+  in quick_find get_aux th tdb
+
 
 
 let get_axiom th n tdb =
@@ -312,24 +388,6 @@ let get_defn_rec th n tdb =
 let get_type_rec th n tdb=
   let get_aux cur= 
     try Theory.get_type_rec n cur
-    with _ -> raise Not_found 
-  in 
-  if th="" 
-  then (find_apply get_aux tdb)
-  else quick_find get_aux th tdb
-
-let get_term_pp_rec th n tdb =
-  let get_aux cur= 
-    try Theory.get_pp_rec Basic.fn_id n cur
-    with _ -> raise Not_found 
-  in 
-  if th="" 
-  then (find_apply get_aux tdb)
-  else quick_find get_aux th tdb
-
-let get_type_pp_rec th n tdb =
-  let get_aux cur= 
-    try Theory.get_pp_rec Basic.type_id n cur
     with _ -> raise Not_found 
   in 
   if th="" 
