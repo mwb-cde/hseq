@@ -39,6 +39,7 @@ val equal: t->t->bool
    [equal]: Equality of tags.
 *)
 
+(*
 (**
    {5 Trees}
 
@@ -70,3 +71,4 @@ module TagTree:
 
 type ('a)tree = ('a)TagTree.t
 (** The type of tree indexed by tags *)
+*)

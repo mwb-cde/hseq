@@ -1178,3 +1178,23 @@ module BTree=
    let t3=delete (delete t1 "e") "a";;
    let t4=right t3;;
  *)
+
+(***
+* Simple trees, indexed by Pervasives.compare.
+***)
+
+module type Data =
+sig
+  type key 
+end
+
+module SimpleTree = 
+functor (A:Data) ->
+  BTree
+    (struct 
+      type key = A.key
+      let equals x y = 
+	((x==y) || (Pervasives.compare x y) = 0)
+      let lessthan x y = 
+	(not(x==y) && ((Pervasives.compare x y) < 0))
+    end)
