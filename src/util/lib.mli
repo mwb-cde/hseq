@@ -216,10 +216,16 @@ val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
 val least: ('a -> 'a -> bool) -> 'a list -> 'a
 
 
-val find_opt: ('a -> 'b) -> 'a -> 'b option
+val try_find: ('a -> 'b) -> 'a -> 'b option
 (**
-   [find_opt f p]: Return [Some (f p)]. If [(f p)] raise [Not_found],
+   [try_find f p]: Return [Some (f p)]. If [(f p)] raises [Not_found],
    return [None].
+*)
+
+val try_app: ('a -> 'b) -> 'a -> 'b option
+(**
+   [try_app f p]: Return [Some (f p)]. If [(f p)] raises an exception,
+   return [None]. This is a generalisation of [try_find].
 *)
 
 

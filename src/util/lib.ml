@@ -464,6 +464,11 @@ let least lt ls =
   | (f::fs) -> ord_aux f fs
 
 
-let find_opt f p =
+let try_find f p =
   try (Some (f p))
   with Not_found -> None
+
+let try_app f p =
+  try (Some (f p))
+  with _ -> None
+
