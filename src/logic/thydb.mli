@@ -27,12 +27,9 @@ type thydb
 
 val empty : Theory.thy -> thydb 
 (** 
-   Make a database with an initial theory. The given theory is made
-   the current theory.
+   [empty thy]: Make a database with initial theory [thy], which is
+   made the current theory. Fails if [thy] has parents.
  *)
-
-val table: thydb -> (string, Theory.thy) Hashtbl.t
-(** Get the theory table. *)
 
 val current : thydb -> Theory.thy
 (** Get the current theory. *)
@@ -40,7 +37,10 @@ val current : thydb -> Theory.thy
 val imported : thydb -> string list
 (** Get the names of the imported theories. *)
 
-val add_importing : string list -> thydb -> unit
+val thys : thydb -> Lib.StringSet.t
+(** The names of the theories which are in scope. *)
+
+val add_importing : thydb -> string list -> thydb
 (** 
    Add a list of names to front of the importing list. Duplicates are
    removed.
@@ -65,13 +65,13 @@ val is_loaded : string -> thydb -> bool
    in scope). 
 *)
 
-val add_thy : thydb -> Theory.thy -> Theory.thy
+val add_thy : thydb -> Theory.thy -> thydb
 (** 
    Add a theory to the table of theories. Fails if the theory is
    already present. Doesn't change the current theory.
- *)
+*)
 
-val remove_thy : thydb -> string -> unit
+val remove_thy : thydb -> string -> thydb
 (** 
    Remove a theory from the table of theories. Fails if the theory is
    the current theory.
@@ -99,7 +99,7 @@ val set_importing : thydb -> thydb
 
 (** {7 Types} *)
 
-val add_type_rec: Logic.Defns.cdefn -> thydb ->unit
+val add_type_rec: Logic.Defns.cdefn -> thydb -> thydb
 (** 
    [add_type_rec r db]: Store type record [r] in the current theory.
  *)
@@ -120,21 +120,21 @@ val thy_of_type: string -> string -> thydb -> string
 
 val add_decln_rec: 
     Logic.Defns.cdefn -> Theory.property list
-      -> thydb -> unit
+      -> thydb -> thydb
 (** 
    [add_decln_rec d ps db]: Store declaration [d] with properties [ps] in
    the current theory.
  *)
 val add_decln: 
     Logic.Defns.cdefn
-  -> Theory.property list -> thydb -> unit
+  -> Theory.property list -> thydb -> thydb
 (** 
    [add_decln d ps db]: Store declaration [d] with properties [ps] in
    the current theory.
  *)
 
 val add_defn_rec : string-> Basic.gtype -> Logic.thm option 
-  -> Theory.property list -> thydb -> unit
+  -> Theory.property list -> thydb -> thydb
 (** 
    [add_defn_rec n ty th ps db]: Store definition [th] of name [n], typed
    [ty] with properties [ps] in the current theory.
@@ -142,7 +142,7 @@ val add_defn_rec : string-> Basic.gtype -> Logic.thm option
 
 val add_defn : 
     string -> Basic.gtype -> Logic.thm -> Theory.property list 
-      -> thydb -> unit
+      -> thydb -> thydb
 (** 
    [add_defn n ty th ps db]: Store definition [th] of name [n], typed
    [ty] with properties [ps] in the current theory.
@@ -188,13 +188,13 @@ val thy_of: string -> string -> thydb -> string
 (** {7 Theorems} *)
 
 val add_axiom : 
-    string -> Logic.thm -> Theory.property list -> thydb -> unit
+    string -> Logic.thm -> Theory.property list -> thydb -> thydb
 (** 
    [add_axiom n th ps db]: Store axiom [th] under name [n] with
    properties [ps] in the current theory.
  *)
 val add_thm : 
-    string -> Logic.thm -> Theory.property list -> thydb -> unit
+    string -> Logic.thm -> Theory.property list -> thydb -> thydb
 (** 
    [add_thm n th ps db]: Store theorem [th] under name [n] with
    properties [ps] in the current theory.
@@ -223,7 +223,7 @@ val get_lemma : string -> string -> thydb -> Logic.thm
 (** {7 Type Printer-Parser records} *)
 
 val add_type_pp_rec: 
-    string -> Printer.record -> thydb  -> unit
+    string -> Printer.record -> thydb  -> thydb
 (** 
    [add_type_pp_rec n r db]: Add PP record [r] for type identifier [n]
    in the current theory. 
@@ -254,7 +254,7 @@ val get_type_pplist:
 (** {7 Term Printer-Parser records} *)
 
 val add_term_pp_rec: 
-    string -> Printer.record -> thydb  -> unit
+    string -> Printer.record -> thydb  -> thydb
 (** 
    [add_term_pp_rec n r db]: Add PP record [r] for term identifier [n]
    in the current theory. 
@@ -290,8 +290,23 @@ val mk_scope: thydb -> Scope.t
 
 (** {5 Theory loader} *)
 
+(** The theory loader.
+
+   Loads theories from permanent storage, rebuilding them if necessary.
+ *)
 module Loader :
     sig
+
+    (** Information about a theory passed to file-handling functions. *)
+    type info =
+	{ 
+	  name: string; (** The name of the theory *)
+	  date : float; 
+(** The maximum date of the theory (ignored if [=0.0]) *)
+	  protected : bool   (** Whether the theory is protected *)
+	}
+
+      val mk_info : string -> float -> bool -> info
 
       (** 
 	 Data needed for loading a theory. [file_fn] constructs the
@@ -307,17 +322,26 @@ module Loader :
 	   (** 
 	      Function to apply to a successfully loaded theory.
 	    *)
+	 load_fn : (info -> Theory.thy);
+	 (** Function to find and load a theory file. *)
+(*
 	   file_fn : (string -> string);
 	   (** Function to construct the filename of theory file to load. *)
-	   build_fn: string -> unit;
-	     (** Function to build the theory if it can't be loaded. *)
+*)
+	   build_fn: thydb -> string -> thydb;
+	     (** 
+		Function to build the theory if it can't be
+		loaded. The function should take the database in which
+		the theory is to be built and return the database with
+		the new theory as the current theory.
+	      *)
 	     prot: bool
 	 }
 
       val mk_data : 
 	  (Theory.contents -> unit)
-	  -> (string -> string)
-	    -> (string -> unit)
+	  -> (info -> Theory.thy)
+	    -> (thydb -> string -> thydb)
 		-> bool -> data
 
 
@@ -328,28 +352,7 @@ module Loader :
    Load a theory from disc into the database.
    Return the list of importings for the new theory.
  *)
-
-(*
-
-      val load_parents : 
-	  thydb -> data -> string -> float 
-	    -> string list -> string list -> string list
-*)
     end
 
 
-(** {7 Debugging information} *)
 
-(*
-   val find : (Theory.thy -> 'a) -> thydb -> 'a
-   val quick_find : (Theory.thy -> 'a) -> string -> thydb -> 'a
-   val find_apply : (Theory.thy -> 'a) -> thydb -> 'a
-
-   val load_thy: 
-   bool -> float -> (('a -> string) * (Theory.contents -> unit))
-   -> 'a -> thydb -> Theory.thy
-
-   val build_thy: 
-   float -> ( string -> unit)
-   -> string -> thydb -> Theory.thy
- *)
