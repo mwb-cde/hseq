@@ -187,7 +187,7 @@ module Skolem =
  	(Gtypes.mgu tty ntyenv, ntyenv, nnames)
       in 
       (* see if name is already associated with a skolem *)
-      match (Lib.find_opt (get_old_sklm info.name) info.skolems) with 
+      match (Lib.try_find (get_old_sklm info.name) info.skolems) with 
 	None -> 
 	  let nindx = 0
 	  in 

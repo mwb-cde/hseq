@@ -443,11 +443,6 @@ module Loader =
     let apply_fn db thyfn thy =
       (try (thyfn (Theory.contents thy)) with _ -> ())
 
-(*
-    let rec load_parents bundle tyme ps imports = 
-      let (db, thyfn, filefn, buildfn, name) = bundle
-      in 
-*)
     let rec load_parents db bundle name tyme ps imports = 
       match ps with 
 	[] -> imports
@@ -485,9 +480,46 @@ module Loader =
 	      apply_fn db bundle.thy_fn thy;
 	      imports1))
 
+    let load_theory thdb name data =
+      let current_time = Lib.date()
+      in 
+      if is_loaded name thdb
+      then 
+	let thy=get_thy thdb name
+	in 
+	test_protection data.prot thy;
+	let imprts = 
+	  load_parents 
+	    thdb data name
+	    (Theory.get_date thy) (Theory.get_parents thy) [name]
+	in 
+	List.rev imprts
+      else 
+	match 
+	  (Lib.try_app
+	    (load_thy data.prot current_time 
+	      (data.file_fn, data.thy_fn) name) thdb)
+	with 
+	  Some(thy) -> 
+	    (let imprts = 
+	      load_parents 
+		thdb data name
+		(Theory.get_date thy) (Theory.get_parents thy) [name]
+	    in 
+	    add_importing [Theory.get_name thy] thdb;
+	    apply_fn thdb data.thy_fn thy;
+	    List.rev imprts)
+	| None -> 
+	    (let thy = build_thy current_time data.build_fn name thdb
+	    in 
+	    let imprts = 
+	      load_parents 
+		thdb data name
+		(Theory.get_date thy) (Theory.get_parents thy) [name]
+	    in 
+	    List.rev imprts)
+
 (*
-    let load_theory thdb name prot thfn filefn buildfn =
-*)
     let load_theory thdb name data =
       let current_time = Lib.date()
       in 
@@ -528,28 +560,6 @@ module Loader =
 		(Theory.get_date thy) (Theory.get_parents thy) [name]
 	    in 
 	    List.rev imprts)
+*)
   end      
 
-
-
-(*
-let print_date d =
-  let (y, mo, day, h, mi) = Lib.nice_date d
-  in 
-  Format.printf "@[Date: %i/%i/%i %i:%i@]" day (mo+1) y h mi
-
-
-
-
-let id_is_infix th n tdb = 
-  let r = get_term_pp_rec th n tdb
-  in 
-  Printer.is_infix r.Printer.fixity
-
-let get_id_prec th n tdb = 
-  let r =  get_term_pp_rec th n tdb
-  in 
-  r.Printer.prec
-
-    
-*)
