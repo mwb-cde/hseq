@@ -229,3 +229,6 @@ val try_app: ('a -> 'b) -> 'a -> 'b option
 *)
 
 
+(** {5 Sets of strings} *)
+
+module StringSet : Set.S with type elt=string

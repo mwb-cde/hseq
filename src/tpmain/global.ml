@@ -126,13 +126,20 @@ let find_file f =
    [build_thy_file f]: 
    build a theory by using file f.
  *)
-let build_thy_file f=  
+let build_thy_file thydb f=  
+  let db0 = get_theories()
+  in 
   let tf = f^Settings.script_suffix
   in 
   try 
+    set_theories(thydb);
     Result.warning ("Trying to build theory "^f);
     Unsafe.use_file ~silent:false  (find_file tf);
-    Result.warning ("Built theory "^f)
+    Result.warning ("Built theory "^f);
+    let db1 = get_theories()
+    in 
+    set_theories (db0);
+    db1
   with Not_found ->
     (Result.warning ("Failed to build theory "^f);
      raise (Result.error ("Can't find script to build theory "^f)))
@@ -140,10 +147,46 @@ let build_thy_file f=
 let find_thy_file f =
   let tf = f^thy_suffix
   in 
-  try 
-    find_file tf
+  try find_file tf
   with Not_found -> 
     raise (Result.error ("Can't find theory "^f))
+
+(**
+   [load_thy_file info]: Load the file storing the theory
+   named [info.name] with protection [info.prot] and date no later
+   than [info.date]. Finds the file from the path [get_thy_path()].
+*)
+let load_thy_file info = 
+  let test_protection prot thy =
+    if prot
+    then (Theory.get_protection thy)
+    else not (Theory.get_protection thy)
+  in 
+  let test_date tym thy = 
+    (tym > (0.0: float)) && ((Theory.get_date thy) <= tym)
+  in 
+  let name = info.Thydb.Loader.name
+  and date = info.Thydb.Loader.date
+  and prot = info.Thydb.Loader.protected
+  in 
+  let thyfile = name^thy_suffix
+  in 
+  let rec load_aux ths =
+    match ths with
+      [] -> raise Not_found
+    | (t::ts) ->
+	let filename = Filename.concat t thyfile
+	in 
+	if Sys.file_exists filename
+	then 
+	  let thy = Theory.load_theory filename
+	  in 
+	  if (test_protection prot thy) && (test_date date thy)
+	  then thy
+	  else load_aux ts
+	else load_aux ts
+  in 
+  load_aux (get_thy_path())
 
 
 (* Pretty printing and Parsing*)
@@ -404,19 +447,19 @@ let load_base_thy ()=
   try
     let thy_name = get_base_name()
     in 
+(*
     let data = 
       Thydb.Loader.mk_data on_load_thy find_thy_file build_thy_file false
     in 
+*)
+    let data = 
+      Thydb.Loader.mk_data on_load_thy load_thy_file build_thy_file false
+    in 
     let imprts=
       Thydb.Loader.load_theory (get_theories()) thy_name data 
-(*
-    let imprts=
-      Thydb.Loader.load_theory (get_theories()) 
-	thy_name false on_load_thy find_thy_file build_thy_file
-*)
     in 
     set_cur_thy(Thydb.get_thy (get_theories()) thy_name);
-    Thydb.add_importing imprts (get_theories())
+    set_theories(Thydb.add_importing (get_theories()) imprts)
   with _ ->
     (* Can't find the base theory or no base theory set *)
     (clear_base_name();

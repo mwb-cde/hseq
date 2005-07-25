@@ -472,3 +472,17 @@ let try_app f p =
   try (Some (f p))
   with _ -> None
 
+(***
+* Sets of strings 
+***)
+
+let string_compare x y = 
+  if x==y then 0 
+  else Pervasives.compare x y
+
+module StringSet = 
+  Set.Make 
+    (struct 
+      type t = string
+      let compare = string_compare
+    end)

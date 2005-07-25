@@ -54,7 +54,8 @@ val remove_from_path: string -> unit
    raise [Not_found] if not found
  *)
 val find_file : string -> string
-val build_thy_file: string -> unit
+val build_thy_file: Thydb.thydb -> string -> Thydb.thydb
+val load_thy_file: Thydb.Loader.info -> Theory.thy
 val find_thy_file: string -> string
 
 val get_cdir : unit -> string
