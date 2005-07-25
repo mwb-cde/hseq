@@ -94,11 +94,13 @@ let def_check_string str =
 
 
 (* OCaml-3.07 version *)
-let std_astexpander str =
+let std_astexpander instr =
   let pos=  { Lexing.pos_fname="Input"; Lexing.pos_lnum=0;
 	      Lexing.pos_bol = 0;  Lexing.pos_cnum = 0 }
   in
   let loc= (pos, pos)
+  in 
+  let str = String.escaped instr
   in 
   match std_check_string str with 
     (Type, nstr) -> 
