@@ -369,21 +369,42 @@ let output_theory oc thy =
   and stypes = mk_save Gtypes.to_save_rec (Lib.table_to_list thy.typs)
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
-  in output_value oc 
+  in 
+  output_value oc 
     (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
      saxs, sthms, sdefs, stypes, styp_pps, sid_pps)
 
 let input_theory ic = 
+(*** Scoping information not needed yet 
+let input_theory scp ic = 
+***)
   let unsave f xs = Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
   and n, prot, tim, prnts, lfls, saxs, sthms, 
     sdefs, stypes, ntype_pps, nid_pps = input_value ic 
   in 
+(*** Make an empty theory and unsave the type definitions ***)
+  let thy = mk_thy n 
+  in 
+(*** Scoping information not needed yet 
+  let thy_scp = 
+    let scp = Scope.empty_scope()
+    in
+    let scp1= Scope.extend_with_typedeclns scp 
+	(List.map 
+	   (fun (id, srd) -> 
+	     ((Basic.mk_long n id), srd.Gtypes.sargs)) stypes)
+    in 
+    Scope.extend_with_terms scp1 
+      (List.map (fun (id, srd) -> (id, srd.sty)) sdefs)
+  in 
+***)
   let axs = unsave thm_from_save saxs
   and thms = unsave thm_from_save sthms
   and defs = unsave from_save sdefs
   and tydefs = unsave Gtypes.from_save_rec stypes
   in 
-  {name=n; protection=prot; date=tim; parents=prnts; lfiles = lfls;
+  {thy with
+   protection=prot; date=tim; parents=prnts; lfiles = lfls;
    axioms = axs; theorems = thms; defns= defs; typs=tydefs;
    type_pps = ntype_pps; id_pps = nid_pps}
 
