@@ -51,27 +51,33 @@ let load_theory n =
     in if t=n then n else chop t
   in let filefn fname = Global.find_thy_file fname
   in 
-  ignore(Thydb.load_theory (theories()) n false 
-	   Global.on_load_thy Global.find_thy_file Global.build_thy_file)
+  let data = Thydb.Loader.mk_data 
+      Global.on_load_thy Global.find_thy_file Global.build_thy_file false
+  in 
+  ignore(Thydb.Loader.load_theory (theories()) n data)
 
 let load_parent_theory n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
   in 
-  ignore(Thydb.load_theory (theories()) n true 
-	   Global.on_load_thy 
-	   Global.find_thy_file 
-	   Global.build_thy_file)
+  let data = 
+    Thydb.Loader.mk_data 
+      Global.on_load_thy Global.find_thy_file 
+      Global.build_thy_file true
+  in 
+  ignore(Thydb.Loader.load_theory (theories()) n data)
 
 let load_theory_as_cur n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
   in let filefn fname = Global.find_thy_file fname
-  in let imprts=
-    (Thydb.load_theory (theories()) n false Global.on_load_thy 
-       Global.find_thy_file Global.build_thy_file)
+  in let data = Thydb.Loader.mk_data Global.on_load_thy 
+       Global.find_thy_file Global.build_thy_file false
+  in 
+  let imprts=
+    (Thydb.Loader.load_theory (theories()) n data)
   in 
   (Global.set_cur_thy (Thydb.get_thy (theories()) n);
    Thydb.add_importing imprts (theories()))

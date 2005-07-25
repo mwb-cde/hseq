@@ -29,19 +29,20 @@ let set_base_name x = base_name:=(Some(x))
 let clear_base_name () = base_name:=None
 
 (* theories: the theory database *)
-let thdb() = Thydb.emptydb (anon_thy ())
+let thdb() = Thydb.empty (anon_thy ())
 
 let theories = ref (thdb())
 let get_theories () = !theories
 let set_theories thdb = theories:=thdb
 let reset_thydb () = 
-  Thydb.expunge (thdb()) (anon_thy()); 
-  set_theories (thdb())
+  let db = Thydb.empty (anon_thy()) 
+  in 
+  set_theories db
 
-let get_cur_thy () = Thydb.getcur (!theories)
+let get_cur_thy () = Thydb.current (get_theories())
 let get_cur_name () = Theory.get_name (get_cur_thy ())
 let set_cur_thy thy = 
-  theories:=Thydb.setcur_thy (!theories) thy
+  theories:=Thydb.set_current (get_theories()) thy
 
 (* [scope] the standard scope *)
 
@@ -65,19 +66,10 @@ let scope_type_thy x =
   in 
   Thydb.thy_of_type x (thy_name) (get_theories())
 
-(*
-let scope_thy_in_scope th1 th2 = 
-  if(th1=Basic.null_thy)  (* ignore the empty scope *)
-  then true
-  else Thydb.thy_in_scope th1 th2 (get_theories())
-*)
 let scope_thy_in_scope th1 = 
   if(th1=Basic.null_thy)  (* ignore the empty scope *)
   then true
   else Thydb.thy_in_scope th1 (get_theories())
-(*
-  Thydb.thy_in_scope th1 (get_theories())
-*)
 
 
 let scope() =
@@ -412,9 +404,16 @@ let load_base_thy ()=
   try
     let thy_name = get_base_name()
     in 
+    let data = 
+      Thydb.Loader.mk_data on_load_thy find_thy_file build_thy_file false
+    in 
     let imprts=
-      Thydb.load_theory(get_theories()) 
+      Thydb.Loader.load_theory (get_theories()) thy_name data 
+(*
+    let imprts=
+      Thydb.Loader.load_theory (get_theories()) 
 	thy_name false on_load_thy find_thy_file build_thy_file
+*)
     in 
     set_cur_thy(Thydb.get_thy (get_theories()) thy_name);
     Thydb.add_importing imprts (get_theories())
@@ -431,7 +430,7 @@ let load_base_thy ()=
    let load_base_thy ()=
    try 
    let imprts=
-   Thydb.load_theory(get_theories()) 
+   Thydb.Loader.load_theory(get_theories()) 
    base_thy_name false on_load_thy find_thy_file
    in 
    set_cur_thy(Thydb.get_thy (get_theories()) base_thy_name);
