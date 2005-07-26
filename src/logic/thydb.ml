@@ -12,12 +12,41 @@ exception Importing
 * Databases
 ***)
 
+(**
+   NameSet: A data structure for storing the names of theories 
+   in the order they are added. 
+
+   This behaves like a list of strings but also supports fast lookup.
+*)
+module NameSet = 
+struct
+  type t = { list : string list ; set : Lib.StringSet.t }
+
+  let empty = { list = []; set = Lib.StringSet.empty }
+  let add s x = { list = x::s.list; set = Lib.StringSet.add x s.set}
+
+  let filter p s  = 
+    { list = List.filter p s.list; set = Lib.StringSet.filter p s.set }
+
+  let to_list s = s.list
+  let to_set s = s.set
+  let from_list ls = 
+    List.fold_left add empty ls
+
+  let mem s x = Lib.StringSet.mem x s.set
+
+end
+
+
 type thydb = 
     {
      db: (string, Theory.thy)Hashtbl.t;
      mutable curr: Theory.thy;
+     mutable importing : NameSet.t
+(*
      mutable importing : string list;
      thys : Lib.StringSet.t (** The names of theories which are in scope. *)
+*)
    }
 
 let empty thy = 
@@ -26,23 +55,39 @@ let empty thy =
     {
      db= Hashtbl.create 253; 
      curr=thy;
+     importing = NameSet.empty
+(*
      importing=[];
      thys = Lib.StringSet.empty
+*)
    }
   else 
     raise (Result.error ("Initial theory can't have parents."))
 
 let table thdb = thdb.db
 let current thdb = thdb.curr
+let imported thdb = NameSet.to_list thdb.importing
+let thys thdb = NameSet.to_set thdb.importing
+(*
 let imported thdb = thdb.importing
 let thys thdb = thdb.thys
+*)
 
+let add_importing thdb ls = 
+  let ls1 = Lib.remove_dups ((imported thdb)@ ls)
+  in 
+  let thys1 = List.fold_left NameSet.add thdb.importing ls1
+  in 
+  {thdb with importing = thys1}
+
+(*
 let add_importing thdb ls = 
   let ls1 = Lib.remove_dups ((imported thdb)@ ls)
   in 
   let thys1 = List.fold_left (fun a b -> Lib.StringSet.add b a) thdb.thys ls1
   in 
   {thdb with importing = ls1; thys = thys1}
+*)
 
 (***
 * Operations on Theories
@@ -53,8 +98,11 @@ let current_name db =
   in 
   Theory.get_name thy
 
+(*
 let is_imported th thdb = List.mem th thdb.importing
-
+let thy_in_scope th thydb = is_imported th thydb
+*)
+let is_imported th thdb = NameSet.mem thdb.importing th
 let thy_in_scope th thydb = is_imported th thydb
 
 let is_loaded name thdb = Lib.member name thdb.db
@@ -78,9 +126,13 @@ let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
 let set_current thdb thy = 
   let db = 
-    {thdb with
+    {
+     thdb with
      curr = thy;
+     importing = NameSet.add NameSet.empty (Theory.get_name thy)
+(*
      importing = [Theory.get_name thy]
+*)
    }
   in 
   if is_loaded (Theory.get_name thy)  db
@@ -116,7 +168,13 @@ let mk_importing thdb=
 let set_importing thdb = 
   let name = current_name thdb
   in 
+  {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
+(*
+let set_importing thdb = 
+  let name = current_name thdb
+  in 
   {thdb with importing = (name :: (mk_importing thdb))}
+*)
 
 (*** Find functions ***)
 
@@ -131,7 +189,7 @@ let find f tdb =
     | x::xs ->
 	try f (get_thy tdb x)
 	with Not_found -> find_aux xs
-  in find_aux tdb.importing
+  in find_aux (imported tdb)
 
 (*
 let find_apply f tdb=
@@ -249,7 +307,7 @@ let get_id_options n db =
 	| (Some defn) ->
 	    get_aux xs (((Basic.mk_long x n), (defn.Theory.typ))::r))
   in 
-  get_aux db.importing []
+  get_aux (imported db) []
 
 let id_exists th n tdb = 
   (try 
