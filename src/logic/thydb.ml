@@ -9,8 +9,8 @@ open Result
 exception Importing
 
 (***
-* Error handling 
-***)
+ * Error handling 
+ ***)
 
 class dbError s ns =
   object (self)
@@ -28,41 +28,41 @@ let error s t = mk_error((new dbError s t):>Result.error)
 let add_error s t es = raise (Result.add_error (error s t) es)
 
 (***
-* Databases
-***)
+ * Databases
+ ***)
 
 (**
    NameSet: A data structure for storing the names of theories 
    in the order they are added. 
 
    This behaves like a list of strings but also supports fast lookup.
-*)
+ *)
 module NameSet = 
-struct
-  type t = { list : string list ; set : Lib.StringSet.t }
+  struct
+    type t = { list : string list ; set : Lib.StringSet.t }
 
-  let empty = { list = []; set = Lib.StringSet.empty }
-  let add s x = { list = x::s.list; set = Lib.StringSet.add x s.set}
-  let mem s x = Lib.StringSet.mem x s.set
-  let rev s  = { s with list = List.rev s.list }
+    let empty = { list = []; set = Lib.StringSet.empty }
+    let add s x = { list = x::s.list; set = Lib.StringSet.add x s.set}
+    let mem s x = Lib.StringSet.mem x s.set
+    let rev s  = { s with list = List.rev s.list }
 
-  let filter p s  = 
-    { list = List.filter p s.list; set = Lib.StringSet.filter p s.set }
+    let filter p s  = 
+      { list = List.filter p s.list; set = Lib.StringSet.filter p s.set }
 
-  let to_list s = s.list
-  let to_set s = s.set
-  let from_list ls = 
-    List.fold_left add empty ls
-end
+    let to_list s = s.list
+    let to_set s = s.set
+    let from_list ls = 
+      List.fold_left add empty ls
+  end
 
 (*
-type thydb = 
-    {
-     db: (string, Theory.thy)Hashtbl.t;
-     mutable curr: Theory.thy option;
-     mutable importing : NameSet.t
+   type thydb = 
+   {
+   db: (string, Theory.thy)Hashtbl.t;
+   mutable curr: Theory.thy option;
+   mutable importing : NameSet.t
    }
-*)
+ *)
 module Tree = Treekit.StringTree
 
 type table_t = (Theory.thy)Tree.t
@@ -75,20 +75,20 @@ type thydb =
    }
 
 let empty ()= 
-    {
-     db= Tree.nil; 
-     curr=None;
-     importing = NameSet.empty
-   }
+  {
+   db= Tree.nil; 
+   curr=None;
+   importing = NameSet.empty
+ }
 
 (*
-let empty ()= 
-    {
-     db= Hashtbl.create 253; 
-     curr=None;
-     importing = NameSet.empty
+   let empty ()= 
+   {
+   db= Hashtbl.create 253; 
+   curr=None;
+   importing = NameSet.empty
    }
-*)
+ *)
 
 let table thdb = thdb.db
 let current thdb = 
@@ -97,8 +97,8 @@ let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
 
 (***
-* Operations on Theories
-***)
+ * Operations on Theories
+ ***)
 
 let current_name db = 
   let thy = current db
@@ -117,8 +117,8 @@ let add_thy thdb thy =
   else 
     {thdb with db =Tree.add thdb.db name thy}
 (*
-    {thdb with db =(Hashtbl.add thdb.db name thy; thdb.db)}
-*)
+   {thdb with db =(Hashtbl.add thdb.db name thy; thdb.db)}
+ *)
 
 let remove_thy thdb n= 
   if (n=current_name thdb) || (thy_in_scope n thdb)
@@ -126,16 +126,16 @@ let remove_thy thdb n=
   else 
     {thdb with db = Tree.delete thdb.db n}
 (*
-    {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
-*)
+   {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
+ *)
 
 let get_thy thdb name = Tree.find thdb.db name
 
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
 (***
-* Operations on the current theory 
-***)
+ * Operations on the current theory 
+ ***)
 
 (*** House keeping functions ***)
 
@@ -144,14 +144,14 @@ let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 (**
    [not_loaded db ns]: Get the list of names in [ns] which are not
    loaded in the database of [db].
-*)
+ *)
 let not_loaded db ns = 
   List.filter (fun x -> not (is_loaded x db)) ns
 
 (**
    [all_loaded db ns]: Test that each theory named in [ns] is loaded
    in [db]. Raise error if any is not loaded.
-*)
+ *)
 let all_loaded db ns = 
   match not_loaded db ns with
     [] -> true
@@ -170,7 +170,7 @@ let add_importing thdb ls =
 (** 
    [mk_importing db]: Build the importing list of the current theory 
    Fail if any theory in not loaded.
-*)
+ *)
 let mk_importing thdb=
   let rec mk_aux thdb ls rs =
     match ls with 
@@ -183,10 +183,10 @@ let mk_importing thdb=
 	    try (get_parents thdb x)
 	    with err -> 
 	      raise (add_error "mk_importing, theory" [x] err)
-	    in 
-	    let rs1 = mk_aux thdb nls (NameSet.add rs x)
-	    in 
-	    mk_aux thdb xs rs1)
+	  in 
+	  let rs1 = mk_aux thdb nls (NameSet.add rs x)
+	  in 
+	  mk_aux thdb xs rs1)
   in 
   let parents = try Theory.get_parents (current thdb) with _ -> []
   in 
@@ -196,37 +196,37 @@ let mk_importing thdb=
   NameSet.rev (mk_aux thdb thy_list NameSet.empty)
 
 (*
-  NameSet.to_list (mk_aux thdb parents NameSet.empty)
-*)
+   NameSet.to_list (mk_aux thdb parents NameSet.empty)
+ *)
 
 (*
-let mk_importing thdb=
-  let rec mk_aux thdb ls rs =
-    match ls with 
-      [] -> rs
-    | (x::xs) -> 
-	if List.mem x rs 
-	then mk_aux thdb xs rs
-	else 
-	  (try
-	    let nls = get_parents thdb x
-	    in let nrs= mk_aux thdb nls (x::rs)
-	    in 
-	    mk_aux thdb xs 
-	      (rs@(List.filter (fun x->not(List.mem x rs)) nrs ))
-	  with _ -> raise (Result.error("mk_importing: theory "^x)))
-  in 
-  let parents = try Theory.get_parents (current thdb) with _ -> []
-  in 
-  (mk_aux thdb parents [])
-*)
+   let mk_importing thdb=
+   let rec mk_aux thdb ls rs =
+   match ls with 
+   [] -> rs
+   | (x::xs) -> 
+   if List.mem x rs 
+   then mk_aux thdb xs rs
+   else 
+   (try
+   let nls = get_parents thdb x
+   in let nrs= mk_aux thdb nls (x::rs)
+   in 
+   mk_aux thdb xs 
+   (rs@(List.filter (fun x->not(List.mem x rs)) nrs ))
+   with _ -> raise (Result.error("mk_importing: theory "^x)))
+   in 
+   let parents = try Theory.get_parents (current thdb) with _ -> []
+   in 
+   (mk_aux thdb parents [])
+ *)
 
 (*
-let set_importing thdb = 
-  let name = current_name thdb
-  in 
-  {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
-*)
+   let set_importing thdb = 
+   let name = current_name thdb
+   in 
+   {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
+ *)
 
 let set_current thdb thy = 
   let name = Theory.get_name thy 
@@ -256,7 +256,7 @@ let set_current thdb thy =
 (** 
    [find f tdb]: apply [f] to each theory in the importing list,
    returning the first that succeeds. Raise [Not_found] if none succeed.
-*)
+ *)
 let find f tdb =
   let rec find_aux ls =
     match ls with 
@@ -269,7 +269,7 @@ let find f tdb =
 (** 
    [quick_find f th tdb]: apply [f] to theory [th] if it is in the
    importing list. Raise [Not_found] if not found.
-*)
+ *)
 let quick_find f th tdb =
   if is_imported th tdb
   then f (get_thy tdb th)
@@ -279,7 +279,7 @@ let quick_find f th tdb =
    [find_to_apply mem f thy_name thdb]: Starting with the theory named
    [thy_name], apply [f] to each theory in the imported by [thy_name]
    returning the first to succeed. Return [Not_found] if none succeed.
-*)
+ *)
 type memos=(string, bool) Lib.substype
 let empty_memo()=Lib.empty_env()
 
@@ -529,8 +529,8 @@ let mk_scope db =
  } 
 
 (***
-* Theory loader 
-***)
+ * Theory loader 
+ ***)
 
 module Loader = 
   struct
@@ -545,7 +545,7 @@ module Loader =
 
     let mk_info n d p = { name = n; date = d; prot = p }
 
-    (*** Data needed for loading a theory. ***)
+	(*** Data needed for loading a theory. ***)
     type data = 
 	{
 	 thy_fn : (Theory.contents -> unit);
@@ -555,7 +555,7 @@ module Loader =
 	 load_fn : (info -> Theory.thy);
 	 (** Function to find and load a theory file. *)
 	 build_fn: thydb -> string -> thydb
-	   (** Function to build the theory if it can't be loaded. *)
+	     (** Function to build the theory if it can't be loaded. *)
        }
 
     let mk_data tfn lfn bfn = 
@@ -569,7 +569,7 @@ module Loader =
 
    Doesn't re-calculate the importing list. 
    Doesn't test whether any of the theories are loaded.
-*)
+ *)
     let set_curr db thy = 
       let name = Theory.get_name thy
       and imps = db.importing
@@ -588,7 +588,7 @@ module Loader =
 (** 
    [test_data tim thy]: Ensure that the date of theory [thy] is not
    greater then [tim].
-*)
+ *)
     let test_date tym thy = 
       match tym with
 	None -> ()
@@ -607,7 +607,7 @@ module Loader =
 (** 
    [test_protection prot thy]: Ensure that the protection of theory
    [thy] is [prot].
-*)
+ *)
     let test_protection prot thy =
       match prot with 
 	None -> ()
@@ -634,7 +634,7 @@ module Loader =
 
    Adds the theory to [thdb]. Returns the updated database.
    Doesn't change the current theory. Doesn't change the importing data.
-*)
+ *)
     let load_thy info data thdb=
       try
 	let thy = data.load_fn info
@@ -653,7 +653,7 @@ module Loader =
    specified in [info].
 
    Returns the database with the newly built theory as the current theory.
-*)
+ *)
 
 (** 
    [check_build db thy]: verify that [thy] is in database [db], that
@@ -661,7 +661,7 @@ module Loader =
    [thy] is the first in the importing list.
 
    raise Failure if checks fail.
-*)
+ *)
     let check_build db thy =
       let thy_list = imported db 
       and name = Theory.get_name thy
@@ -684,36 +684,36 @@ module Loader =
 	raise (add_error "Failed to build theory" [name] err)
 
     let build_thy info data thdb= 
-	let db = 
-	  try data.build_fn thdb info.name
-	  with err -> add_error "Failed to rebuild theory" [info.name] err
-	in 
-	let thy = 
-	  try get_thy db info.name 
-	  with err -> 
-	    add_error 
-	      "Failed to rebuild theory. Theory not in database." 
-	      [info.name] err
-	in 
-	(try test_protection info.prot thy
+      let db = 
+	try data.build_fn thdb info.name
+	with err -> add_error "Failed to rebuild theory" [info.name] err
+      in 
+      let thy = 
+	try get_thy db info.name 
 	with err -> 
 	  add_error 
-	    "Failed to rebuild theory. Theory not protected." 
-	    [info.name] err);
-	(try check_build db thy
-	with err -> 
-	  add_error "Failed to rebuild theory" [info.name] err);
-	(try set_curr db thy
-	with err -> 
-	  add_error 
-	    "Failed to rebuild theory. Can't make theory current." 
-	    [info.name] err)
+	    "Failed to rebuild theory. Theory not in database." 
+	    [info.name] err
+      in 
+      (try test_protection info.prot thy
+      with err -> 
+	add_error 
+	  "Failed to rebuild theory. Theory not protected." 
+	  [info.name] err);
+      (try check_build db thy
+      with err -> 
+	add_error "Failed to rebuild theory" [info.name] err);
+      (try set_curr db thy
+      with err -> 
+	add_error 
+	  "Failed to rebuild theory. Can't make theory current." 
+	  [info.name] err)
 
 
 (**
    [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of theory
    [thy]. Ignores all errors.
-*)
+ *)
     let apply_fn db thy_fn thy =
       (try (thy_fn (Theory.contents thy)) with _ -> ())
 
@@ -724,7 +724,7 @@ module Loader =
    the functions [data.thy_fn] to each loaded theory.
 
    Makes the newly loaded theory the current theory.
-*)
+ *)
     let rec load_theory thdb data info =
       let name = info.name
       and tyme = info.date
@@ -765,13 +765,13 @@ module Loader =
 	    apply_fn db3 data.thy_fn thy;
 	    db3
 	| None -> (** Loading from file failed, try to rebuild. **)
-	      build_thy info data thdb
+	    build_thy info data thdb
 
 (**
    [load_parents db data name tyme ps imports]: Load the theories with
    names in [ps] as parents of theory named [name] into database
    [db]. Each parent must be no younger then the date given by [tyme].
-*)
+ *)
     and load_parents db bundle info ps =
       let name = info.name
       and tyme = info.date
@@ -787,23 +787,32 @@ module Loader =
 	      if(is_imported x db)
 	      then db
 	      else 
-	      load_theory db bundle (mk_info x tyme info.prot)
+		load_theory db bundle (mk_info x tyme info.prot)
 	    in 
 	    load_parents db1 bundle info xs)
 
 
-let make_current db data thy = 
-  let ps = Theory.get_parents thy
-  and name = Theory.get_name thy
-  and tyme = Theory.get_date thy
-  and prot = true
-  in 
-  let info = mk_info name (Some tyme) (Some prot)
-  in 
-  let db1 = load_parents db data info ps
-  in 
+    let make_current db data thy = 
+      let ps = Theory.get_parents thy
+      and name = Theory.get_name thy
+      and tyme = Theory.get_date thy
+      and prot = true
+      in 
+      let info = mk_info name (Some tyme) (Some prot)
+      in 
+      let db1 = load_parents db data info ps
+      in 
 (*  set_curr db1 thy  *)
-  set_current db1 thy  
+      set_current db1 thy  
+
+    let load db data info =
+      let name = info.name
+      in 
+      let db1 = load_theory db data info
+      in 
+      let thy = get_thy db1 name
+      in 
+      set_current db1 thy
 
   end      
 
@@ -813,7 +822,7 @@ let table_as_list db =
 let print db = 
   let print_tbl ths = 
     Printer.print_sep_list 
-    ((fun (n, _) -> Format.print_string n), ",") ths
+      ((fun (n, _) -> Format.print_string n), ",") ths
   in 
   let name = try current_name db with _ -> "(none)"
   in 

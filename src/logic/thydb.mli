@@ -378,6 +378,14 @@ module Loader :
    making sure that all the parents of [thy] are loaded.
 *)
 
+      val load: thydb -> data -> info -> thydb
+(**
+   [load db info data]
+
+   Load a theory from disc into the database. Make it the current theory.
+ *)
+
+
 (** {7 Debugging information} *)
 
       val load_parents : thydb -> data -> info -> string list -> thydb
