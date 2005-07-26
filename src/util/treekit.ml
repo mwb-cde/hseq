@@ -30,15 +30,17 @@ module type TreeType=
 functor (A : TreeData) ->
   sig
 
-    val eql : A.key -> A.key -> bool
-    val lessthan : A.key -> A.key -> bool
+    type key = A.key
+
+    val eql : key -> key -> bool
+    val lessthan : key -> key -> bool
 
     type ('a)t= 
 	Nil 
-      | Branch of ( (A.key * 'a) list * ('a)t * ('a)t)
+      | Branch of ( (key * 'a) list * ('a)t * ('a)t)
 
 (* data tr: get the data at the current branch *)
-    val data : 'a t -> (A.key * 'a) list
+    val data : 'a t -> (key * 'a) list
 
 (* left tr: get left branch of tree *)
     val left : 'a t -> 'a t
@@ -50,7 +52,7 @@ functor (A : TreeData) ->
     val nil : 'a t
 
 (* create: make a branch with data *)
-    val create : (A.key * 'a) list -> 'a t -> 'a t -> 'a t
+    val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
 
 (*
    add tr k d:
@@ -58,7 +60,7 @@ functor (A : TreeData) ->
    previous bindings to k are hidden 
    but not removed
  *)
-    val add : 'a t -> A.key -> 'a -> 'a t
+    val add : 'a t -> key -> 'a -> 'a t
 
 (*
    replace tr k d:
@@ -67,14 +69,14 @@ functor (A : TreeData) ->
    but not removed
    add binding if necessary
  *)
-    val replace : 'a t -> A.key -> 'a -> 'a t
+    val replace : 'a t -> key -> 'a -> 'a t
 
 (* 
    find tree key
    finds the current binding of key in tree
  *)
 
-    val find : 'a t -> A.key -> 'a
+    val find : 'a t -> key -> 'a
 
 (* 
    find_all tree key
@@ -82,14 +84,14 @@ functor (A : TreeData) ->
    with last binding first in list
    raise Not_found if no bindings in tree
  *)
-    val find_all : 'a t -> A.key -> 'a list
+    val find_all : 'a t -> key -> 'a list
 
 (* mem tree key:
    return true if key is bound in tree
    false otherwise
  *)
 
-    val mem : 'a t -> A.key -> bool
+    val mem : 'a t -> key -> bool
 
 (*
    remove tree key
@@ -97,7 +99,7 @@ functor (A : TreeData) ->
    removes the data currently bound to key in tree
    does nothing if key is not in tree
  *)
-(*      val remove : 'a t -> A.key -> 'a t *)
+(*      val remove : 'a t -> key -> 'a t *)
 
 (*
    delete tree key
@@ -105,7 +107,7 @@ functor (A : TreeData) ->
    removes the data currently bound to key in tree
    does nothing if key is not in tree
  *)
-    val delete : 'a t -> A.key -> 'a t
+    val delete : 'a t -> key -> 'a t
 
 (* 
    iter tree fn:
@@ -114,14 +116,14 @@ functor (A : TreeData) ->
    only the current key bindings are used.
  *)
 
-    val iter : (A.key -> 'a -> 'b) -> 'a t -> unit
+    val iter : (key -> 'a -> 'b) -> 'a t -> unit
 
 
 (* to_list tree:
    return a list of the (lists of) elements in the
    tree in descending order
  *)
-    val to_list: 'a t -> (A.key * 'a) list list
+    val to_list: 'a t -> (key * 'a) list list
 
   end
 
@@ -131,6 +133,7 @@ module Tree=
   functor (A: TreeData)->
   struct
 
+    type key = A.key
 (*
     let eql x y =  (Pervasives.compare x y) = 0
     let lessthan x y= (Pervasives.compare x y) < 0
@@ -140,7 +143,7 @@ module Tree=
 
     type ('a)t= 
 	Nil 
-      | Branch of ( (A.key * 'a) list * ('a)t * ('a)t)
+      | Branch of ( (key * 'a) list * ('a)t * ('a)t)
 
 
     let nil = Nil
@@ -464,20 +467,21 @@ module Tree=
 module type BTreeType=
 functor (A : TreeData) ->
   sig
-    val eql : A.key -> A.key -> bool
-    val lessthan : A.key -> A.key -> bool
+    type key = A.key
+    val eql : key -> key -> bool
+    val lessthan : key -> key -> bool
 
     type depth_t = int
     type ('a)t= 
 	Nil 
-      | Branch of ((A.key * 'a) list * ('a)t * ('a)t * depth_t)
+      | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
 
 
 (* nil: make an empty tree *)
     val nil : 'a t
 
 (* create: make a branch with data *)
-    val create : (A.key * 'a) list -> 'a t -> 'a t -> 'a t
+    val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
 
 (*
    tree information/manipulation
@@ -485,7 +489,7 @@ functor (A : TreeData) ->
 
 (* data tr: get the data at the current branch *)
 
-    val data : 'a t -> (A.key * 'a) list
+    val data : 'a t -> (key * 'a) list
 
 (* left tr: get left branch of tree *)
     val left : 'a t -> 'a t
@@ -505,7 +509,7 @@ functor (A : TreeData) ->
    previous bindings to k are hidden 
    but not removed
  *)
-    val add : 'a t -> A.key -> 'a -> 'a t
+    val add : 'a t -> key -> 'a -> 'a t
 
 
 (*
@@ -515,7 +519,7 @@ functor (A : TreeData) ->
    but not removed
    add binding if necessary
  *)
-    val replace : 'a t -> A.key -> 'a -> 'a t
+    val replace : 'a t -> key -> 'a -> 'a t
 
 (*
    remove tree key
@@ -526,7 +530,7 @@ functor (A : TreeData) ->
    is by putting subtree r at the rightmost point of subtree l,
    then rebalancing at every level
  *)
-(*       val remove : 'a t -> A.key -> 'a t*)
+(*       val remove : 'a t -> key -> 'a t*)
 
 (*
    delete tree key
@@ -535,13 +539,13 @@ functor (A : TreeData) ->
    does nothing if key is not in tree.
  *)
 
-    val delete : 'a t -> A.key -> 'a t
+    val delete : 'a t -> key -> 'a t
 
 (* 
    find tree key
    finds the current binding of key in tree
  *)
-    val find : 'a t -> A.key -> 'a
+    val find : 'a t -> key -> 'a
 
 (* 
    find_all tree key
@@ -549,13 +553,13 @@ functor (A : TreeData) ->
    with last binding first in list
    raise Not_found if no bindings in tree
  *)
-    val find_all : 'a t -> A.key -> 'a list
+    val find_all : 'a t -> key -> 'a list
 
 (* mem tree key:
    return true if key is bound in tree
    false otherwise
  *)
-    val mem : 'a t -> A.key -> bool
+    val mem : 'a t -> key -> bool
 
 (* 
    iter tree fn:
@@ -564,13 +568,13 @@ functor (A : TreeData) ->
    only the current key bindings are used.
  *)
 
-    val iter : (A.key -> 'a -> 'b) -> 'a t -> unit
+    val iter : (key -> 'a -> 'b) -> 'a t -> unit
 
 (* to_list tree:
    return a list of the (lists of) elements in the
    tree in descending order
  *)
-    val to_list: 'a t -> (A.key * 'a) list list
+    val to_list: 'a t -> (key * 'a) list list
   end
 
 
@@ -578,6 +582,7 @@ module BTree=
   functor (A: TreeData)->
   struct
 
+    type key = A.key
 (*
     let eql x y =  (Pervasives.compare x y) = 0
     let lessthan x y= (Pervasives.compare x y) < 0
@@ -589,7 +594,7 @@ module BTree=
 
     type ('a)t= 
 	Nil 
-      | Branch of ((A.key * 'a) list * ('a)t * ('a)t
+      | Branch of ((key * 'a) list * ('a)t * ('a)t
 		     * depth_t)
 
     let nil = Nil
@@ -1188,6 +1193,103 @@ sig
   type key 
 end
 
+module type SimpleTreeType =
+  sig
+
+    type key 
+
+    val eql : key -> key -> bool
+    val lessthan : key -> key -> bool
+
+    type depth_t = int
+    type ('a)t= 
+	Nil 
+      | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
+
+
+    val nil : 'a t
+(** Make an empty tree *)
+
+    val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
+(** Make a branch with data *)
+
+    val data : 'a t -> (key * 'a) list
+(** Get the data at the current branch *)
+
+    val left : 'a t -> 'a t
+(** Get the left branch of tree *)
+
+    val right : 'a t -> 'a t
+(** Get the right branch of tree *)
+
+    val depth : 'a t -> depth_t
+(** Get the depth (number of levels) of the tree *)
+
+    val balance : 'a t -> 'a t
+(** Balance the tree. *)
+
+    val add : 'a t -> key -> 'a -> 'a t
+(**
+   [add tr k d]: Add binding of [d] to [k] in tree [tr].  Previous
+   bindings to [k] are hidden but not removed.
+*)
+
+    val replace : 'a t -> key -> 'a -> 'a t
+(**
+   [replace tr k d]: Replace binding of [k] with [d] in tree [tr].
+   Adds the binding even if [k] is not already bound in [tr].
+*)
+
+(*       val remove : 'a t -> key -> 'a t*)
+(*
+   remove tree key
+
+   removes the data currently bound to key in tree
+   does nothing if key is not in tree
+   removal of Branch(x, l, r, d) 
+   is by putting subtree r at the rightmost point of subtree l,
+   then rebalancing at every level
+ *)
+
+    val delete : 'a t -> key -> 'a t
+(**
+   [delete tree key]: Remove the data currently bound to [key] in
+   [tree].  Does nothing if key is not in tree
+*)
+
+    val find : 'a t -> key -> 'a
+(**
+   [find_all tree key]: Finds all bindings of [key] in [tree]
+   with last binding first in list.
+   Raise [Not_found] if no bindings in tree.
+ *)
+
+    val find_all : 'a t -> key -> 'a list
+(**
+   [find_all tree key]: Finds all bindings of [key] in [tree]
+   with last binding first in list.
+   Raise [Not_found] if no bindings in tree.
+ *)
+
+    val mem : 'a t -> key -> bool
+(**
+   [mem tree key]: test whether [key] is bound in [tree].
+*)
+
+    val iter : (key -> 'a -> 'b) -> 'a t -> unit
+(**
+   [iter tree fn]: Apply [fn] to the data bound to each key.
+   Only the current key bindings are used.
+*)
+
+    val to_list: 'a t -> (key * 'a) list list
+(** 
+   [to_list tree]: Return a list of the (lists of) elements in the
+   tree, in descending order.
+*)
+
+  end
+
 module SimpleTree = 
 functor (A:Data) ->
   BTree
@@ -1198,3 +1300,6 @@ functor (A:Data) ->
       let lessthan x y = 
 	(not(x==y) && ((Pervasives.compare x y) < 0))
     end)
+
+
+module StringTree = SimpleTree(struct type key = string end)

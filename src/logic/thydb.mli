@@ -6,13 +6,13 @@ Name: thydb.mli
 
 (** Theory databases 
 
-   A theory database is a mutable table of theories, indexed by theory
-   names, the current theory and a list of theory names (the {e
-   importing list}). The list of names is the scope of the current
-   theory: each name is the name of an ancestor theory and occurs in
-   the order it was imported. When the database is searched, the
-   theories are searched in the order they appear in the importing
-   list (unless the theory name is explicitly given).
+   A theory database is a table of theories, indexed by theory names,
+   the current theory and a list of theory names (the {e importing
+   list}). The list of names is the scope of the current theory: each
+   name is the name of an ancestor theory and occurs in the order it
+   was imported. When the database is searched, the theories are
+   searched in the order they appear in the importing list (unless the
+   theory name is explicitly given).
  *)
 
 (** {5 Error Reporting} *)
@@ -28,6 +28,8 @@ val add_error : string -> string list -> exn -> 'a
 
 (** {5 Databases} *)
 
+type table_t = (Theory.thy)Treekit.StringTree.t
+
 type thydb 
 (** 
    The type of theory databases. 
@@ -41,6 +43,9 @@ val empty : unit ->  thydb
    [empty thy]: Make a database with initial theory [thy], which is
    made the current theory. Fails if [thy] has parents.
  *)
+
+val table: thydb -> table_t
+(** Get the table of theories. *)
 
 val current : thydb -> Theory.thy
 (** Get the current theory. Raises [Failure] if no current theory. *)
@@ -376,9 +381,39 @@ module Loader :
 (** {7 Debugging information} *)
 
       val load_parents : thydb -> data -> info -> string list -> thydb
+      val load_thy: info -> data -> thydb -> thydb
+      val build_thy: info -> data -> thydb -> thydb
+
+      val set_curr : thydb -> Theory.thy -> thydb
+
+      val test_protection : bool option -> Theory.thy -> unit
+      val test_date : float option -> Theory.thy -> unit
+	  
 	  
     end
 
 
 
 (** {5 Debugging information} *)
+
+module NameSet :
+sig
+  type t = { list : string list ; 
+	     set : Lib.StringSet.t}
+
+  val empty: t
+  val add : t -> string -> t 
+  val mem : t -> string -> bool
+  val filter: (string -> bool) -> t -> t
+  val to_list: t -> string list
+  val to_set : t -> Lib.StringSet.t
+  val from_list : string list -> t
+
+end
+
+
+val mk_importing : thydb -> NameSet.t
+
+val table_as_list : thydb -> (string * Theory.thy) list list
+val print : thydb -> unit
+

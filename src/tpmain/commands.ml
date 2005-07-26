@@ -115,16 +115,6 @@ let begin_theory n parents=
     in 
     Global.set_theories(db1)
 
-(*
-    List.iter load_parent_theory importing;
-    let thy = (Theory.mk_thy n)
-    in 
-    Theory.add_parents parents thy;
-    Global.set_cur_thy thy;
-    Global.set_theories
-      (Thydb.add_importing (theories()) (Thydb.mk_importing (theories())))
-*)
-
 let new_theory n = begin_theory n
 
 let open_theory n =

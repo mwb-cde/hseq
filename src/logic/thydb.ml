@@ -43,6 +43,7 @@ struct
 
   let empty = { list = []; set = Lib.StringSet.empty }
   let add s x = { list = x::s.list; set = Lib.StringSet.add x s.set}
+  let mem s x = Lib.StringSet.mem x s.set
 
   let filter p s  = 
     { list = List.filter p s.list; set = Lib.StringSet.filter p s.set }
@@ -51,35 +52,41 @@ struct
   let to_set s = s.set
   let from_list ls = 
     List.fold_left add empty ls
-
-  let mem s x = Lib.StringSet.mem x s.set
-
 end
 
+(*
 type thydb = 
     {
      db: (string, Theory.thy)Hashtbl.t;
      mutable curr: Theory.thy option;
      mutable importing : NameSet.t
    }
+*)
+module Tree = Treekit.StringTree
 
+type table_t = (Theory.thy)Tree.t
+
+type thydb = 
+    {
+     db: table_t;
+     curr: Theory.thy option;
+     importing : NameSet.t
+   }
+
+let empty ()= 
+    {
+     db= Tree.nil; 
+     curr=None;
+     importing = NameSet.empty
+   }
+
+(*
 let empty ()= 
     {
      db= Hashtbl.create 253; 
      curr=None;
      importing = NameSet.empty
    }
-(*
-let empty thy= 
-  if Theory.get_parents thy = [] 
-  then 
-    {
-     db= Hashtbl.create 253; 
-     curr=None
-     importing = NameSet.empty
-   }
-  else 
-    raise (Result.error ("Initial theory can't have parents."))
 *)
 
 let table thdb = thdb.db
@@ -99,7 +106,7 @@ let current_name db =
 
 let is_imported th thdb = NameSet.mem thdb.importing th
 let thy_in_scope th thydb = is_imported th thydb
-let is_loaded name thdb = Lib.member name thdb.db
+let is_loaded name thdb = Tree.mem thdb.db name
 
 let add_thy thdb thy = 
   let name = Theory.get_name thy
@@ -107,14 +114,21 @@ let add_thy thdb thy =
   if is_loaded name thdb
   then raise (error ("Theory "^name^" already present in database.") [])
   else 
+    {thdb with db =Tree.add thdb.db name thy}
+(*
     {thdb with db =(Hashtbl.add thdb.db name thy; thdb.db)}
+*)
 
 let remove_thy thdb n= 
   if (n=current_name thdb) || (thy_in_scope n thdb)
   then raise (error ("Theory "^n^" is being used in the database.") [])
-  else {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
+  else 
+    {thdb with db = Tree.delete thdb.db n}
+(*
+    {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
+*)
 
-let get_thy thdb name = Lib.find name thdb.db
+let get_thy thdb name = Tree.find thdb.db name
 
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
@@ -164,13 +178,14 @@ let mk_importing thdb=
 	if NameSet.mem rs x
 	then mk_aux thdb xs rs
 	else 
-	  (try
-	    let nls = get_parents thdb x
+	  (let nls = 
+	    try (get_parents thdb x)
+	    with err -> 
+	      raise (add_error "mk_importing, theory" [x] err)
 	    in 
 	    let rs1 = mk_aux thdb nls (NameSet.add rs x)
 	    in 
-	    mk_aux thdb xs rs1
-	  with _ -> raise (Result.error("mk_importing: theory "^x)))
+	    mk_aux thdb xs rs1)
   in 
   let parents = try Theory.get_parents (current thdb) with _ -> []
   in 
@@ -617,7 +632,7 @@ module Loader =
 	in 
 	test_protection info.prot thy;
 	test_date info.date thy;
-	ignore(add_thy thdb thy); thy
+	add_thy thdb thy
       with err -> add_error "Failed to load theory" [info.name] err
 	  
 (**
@@ -631,14 +646,28 @@ module Loader =
    Returns the database with the newly built theory as the current theory.
 *)
     let build_thy info data  thdb= 
-      try
-	let db = data.build_fn thdb info.name
+	let db = 
+	  try data.build_fn thdb info.name
+	  with err -> add_error "Failed to rebuild theory" [info.name] err
 	in 
-	let thy= get_thy thdb info.name
+	let thy = 
+	  try get_thy db info.name 
+	  with err -> 
+	    add_error 
+	      "Failed to rebuild theory. Theory not in database." 
+	      [info.name] err
 	in 
-	test_protection info.prot thy;
-	set_current db thy
-      with err -> add_error "Failed to rebuild theory" [info.name] err
+	(try test_protection info.prot thy
+	with err -> 
+	  add_error 
+	    "Failed to rebuild theory. Theory not protected." 
+	    [info.name] err);
+	(try set_current db thy
+	with err -> 
+	  add_error 
+	    "Failed to rebuild theory. Can't make theory current." 
+	    [info.name] err)
+
 
 (**
    [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of theory
@@ -673,21 +702,27 @@ module Loader =
 	set_curr db1 thy
       else 
 	let load_attempt = 
-	  Lib.try_app
-	    (load_thy info data) 
-	    thdb
+	  Lib.try_app (load_thy info data) thdb
 	in 
 	match load_attempt with 
-	  Some(thy) ->  (** Loading from file succeeded. **)
-	    let db1 = 
-	      load_parents thdb data
+	  Some(db1) ->  (** Loading from file succeeded. **)
+	    let thy = 
+	      try get_thy db1 name
+	      with err -> 
+		raise 
+		  (add_error 
+		     "Load theory: something went wrong with theory " 
+		     [name] err)
+	    in 
+	    let db2 = 
+	      load_parents db1 data
 		(mk_info name (Some (Theory.get_date thy)) (Some true))
 		(Theory.get_parents thy) 
 	    in 
-	    let db2 = set_curr db1 thy
+	    let db3 = set_curr db2 thy
 	    in 
-	    apply_fn db2 data.thy_fn thy;
-	    db2
+	    apply_fn db3 data.thy_fn thy;
+	    db3
 	| None -> (** Loading from file failed, try to rebuild. **)
 	      build_thy info data thdb
 
@@ -823,3 +858,22 @@ let make_current db data thy =
 *)
   end      
 
+let table_as_list db = 
+  Treekit.StringTree.to_list (table db)
+
+let print db = 
+  let print_tbl ths = 
+    Printer.print_sep_list 
+    ((fun (n, _) -> Format.print_string n), ",") ths
+  in 
+  let name = try current_name db with _ -> "(none)"
+  in 
+  Format.printf "@[<v 2> {@,Current theory: %s@," name;
+  Format.printf "Importing: @[<2>";
+  Printer.print_sep_list (Format.print_string, ",") (imported db);
+  Format.printf "@]@,";
+  Format.printf "Table: @[<2>";
+  Printer.print_sep_list 
+    (print_tbl, ",") (table_as_list db);
+  Format.printf "@]@,}@]"
+    
