@@ -104,6 +104,8 @@ val add_load_fn : (Theory.contents -> unit) -> unit
 
 val on_load_thy: Theory.contents -> unit
 
+val loader_data : Thydb.Loader.data
+
 (* parsing functions *)
 (* does error handling (from exception to Result.Error)
    so all calls to the parser should go through here *)

@@ -51,42 +51,42 @@ let load_theory n =
     in if t=n then n else chop t
   in let filefn fname = Global.find_thy_file fname
   in 
-  let data = Thydb.Loader.mk_data 
-      Global.on_load_thy Global.load_thy_file Global.build_thy_file false
+  let db = 
+    Thydb.Loader.load_theory (theories()) Global.loader_data 
+      (Thydb.Loader.mk_info n None None)
   in 
-  ignore(Thydb.Loader.load_theory (theories()) n data)
+  Global.set_theories(db)
 
 let load_parent_theory n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
   in 
-  let data = 
-    Thydb.Loader.mk_data 
-      Global.on_load_thy Global.load_thy_file 
-      Global.build_thy_file true
+  let db = 
+    Thydb.Loader.load_theory (theories()) Global.loader_data 
+      (Thydb.Loader.mk_info n None (Some true))
   in 
-  ignore(Thydb.Loader.load_theory (theories()) n data)
+  Global.set_theories(db)
 
 let load_theory_as_cur n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
-  in let filefn fname = Global.find_thy_file fname
-  in let data = Thydb.Loader.mk_data Global.on_load_thy 
-       Global.load_thy_file Global.build_thy_file false
   in 
-  let imprts=
-    (Thydb.Loader.load_theory (theories()) n data)
+  let filefn fname = Global.find_thy_file fname
   in 
-  (Global.set_cur_thy (Thydb.get_thy (theories()) n);
-   Global.set_theories(Thydb.add_importing (theories()) imprts))
+  let db = Thydb.Loader.load_theory (theories()) Global.loader_data
+      (Thydb.Loader.mk_info n None None)
+  in 
+  Global.set_theories(db)
+
 
 let parents ns = 
   List.iter load_parent_theory ns;
   Theory.add_parents ns (curr_theory());
-  Global.set_theories
-    (Thydb.add_importing (theories()) (Thydb.mk_importing (theories())))
+  let db1 = Thydb.set_current (theories()) (curr_theory())
+  in 
+  Global.set_theories db1
 
 let add_file ?(use=false) f =
   Theory.add_file f (curr_theory());
@@ -107,13 +107,23 @@ let begin_theory n parents=
 	((Global.get_base_name())::parents)
       with Not_found -> parents
     in 
+    let db = theories()
+    and thy = Theory.mk_thy n
+    in
+    Theory.add_parents parents thy;
+    let db1 = Thydb.Loader.make_current db Global.loader_data thy
+    in 
+    Global.set_theories(db1)
+
+(*
     List.iter load_parent_theory importing;
     let thy = (Theory.mk_thy n)
     in 
+    Theory.add_parents parents thy;
     Global.set_cur_thy thy;
-    Theory.add_parents importing thy;
     Global.set_theories
       (Thydb.add_importing (theories()) (Thydb.mk_importing (theories())))
+*)
 
 let new_theory n = begin_theory n
 

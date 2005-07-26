@@ -32,6 +32,7 @@ let clear_base_name () = base_name:=None
 (*
 let thdb() = Thydb.empty (anon_thy ())
 *)
+
 let thdb() = Thydb.empty ()
 
 let theories = ref (thdb())
@@ -76,7 +77,9 @@ let scope_thy_in_scope th1 =
 
 
 let scope() = Thydb.mk_scope (get_theories())
+
 (*
+let scope() = Thydb.mk_scope (get_theories())
   let thy_name = (get_cur_name())
   in 
   {Scope.curr_thy = thy_name;
@@ -163,16 +166,18 @@ let find_thy_file f =
 *)
 let load_thy_file info = 
   let test_protection prot thy =
-    if prot
-    then (Theory.get_protection thy)
-    else not (Theory.get_protection thy)
+    match prot with 
+      None -> true
+    | (Some p) -> p && (Theory.get_protection thy)
   in 
   let test_date tym thy = 
-    (tym > (0.0: float)) && ((Theory.get_date thy) <= tym)
+    match tym with 
+      None -> true
+    | (Some tim) -> (Theory.get_date thy) <= tim
   in 
   let name = info.Thydb.Loader.name
   and date = info.Thydb.Loader.date
-  and prot = info.Thydb.Loader.protected
+  and prot = info.Thydb.Loader.prot
   in 
   let thyfile = name^thy_suffix
   in 
@@ -337,6 +342,8 @@ let on_load_thy th =
     (fun f -> f th) 
     (List.rev !load_functions)
 
+let loader_data = 
+  Thydb.Loader.mk_data on_load_thy load_thy_file build_thy_file
 
 (* parser functions and error handling *)
 
@@ -452,19 +459,13 @@ let load_base_thy ()=
   try
     let thy_name = get_base_name()
     in 
-(*
-    let data = 
-      Thydb.Loader.mk_data on_load_thy find_thy_file build_thy_file false
+    let db1 = get_theories()
     in 
-*)
-    let data = 
-      Thydb.Loader.mk_data on_load_thy load_thy_file build_thy_file false
+    let db2=
+      Thydb.Loader.load_theory db1 loader_data 
+	(Thydb.Loader.mk_info thy_name None None)
     in 
-    let imprts=
-      Thydb.Loader.load_theory (get_theories()) thy_name data 
-    in 
-    set_cur_thy(Thydb.get_thy (get_theories()) thy_name);
-    set_theories(Thydb.add_importing (get_theories()) imprts)
+    set_theories(db2)
   with _ ->
     (* Can't find the base theory or no base theory set *)
     (clear_base_name();
