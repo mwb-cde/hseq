@@ -19,9 +19,10 @@ let infixn = Commands.infixn
 let catch_errors = Commands.catch_errors
 
 let theory = Commands.theory
+let theories = Commands.theories
 
 let save_theory = Commands.save_theory
-let load_theory = Commands.load_theory
+let load_theory = Commands.load_theory_as_cur
 
 let begin_theory = Commands.begin_theory
 let open_theory = Commands.open_theory

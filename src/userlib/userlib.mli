@@ -47,6 +47,11 @@ val catch_errors : ('a -> 'b) -> 'a -> 'b
 *)
 val theory : string -> Theory.thy
 
+val theories : unit -> Thydb.thydb
+(**
+   Get the theory database.
+*)
+
 (* save/load theories *)
 val save_theory : Theory.thy -> bool -> unit
 val load_theory : string -> unit
