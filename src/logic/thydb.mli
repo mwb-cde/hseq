@@ -25,14 +25,14 @@ type thydb
    {e importing list}.
  *)
 
-val empty : Theory.thy -> thydb 
+val empty : unit ->  thydb 
 (** 
    [empty thy]: Make a database with initial theory [thy], which is
    made the current theory. Fails if [thy] has parents.
  *)
 
 val current : thydb -> Theory.thy
-(** Get the current theory. *)
+(** Get the current theory. Raises [Failure] if no current theory. *)
 
 val imported : thydb -> string list
 (** Get the names of the imported theories. *)

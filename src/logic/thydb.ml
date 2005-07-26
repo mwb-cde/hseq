@@ -9,6 +9,25 @@ open Result
 exception Importing
 
 (***
+* Error handling 
+***)
+
+class dbError s ns =
+  object (self)
+    inherit Result.error s
+    val names = (ns :string list)
+    method get() = names
+    method print st = 
+      Format.printf "@[%s@ @[" (self#msg()); 
+      Printer.print_sep_list 
+	(Format.print_string , ",") (self#get());
+      Format.printf "@]@]"
+  end
+
+let error s t = mk_error((new dbError s t):>Result.error)
+let add_error s t es = raise (Result.add_error (error s t) es)
+
+(***
 * Databases
 ***)
 
@@ -37,41 +56,37 @@ struct
 
 end
 
-
 type thydb = 
     {
      db: (string, Theory.thy)Hashtbl.t;
-     mutable curr: Theory.thy;
+     mutable curr: Theory.thy option;
      mutable importing : NameSet.t
-(*
-     mutable importing : string list;
-     thys : Lib.StringSet.t (** The names of theories which are in scope. *)
-*)
    }
 
-let empty thy = 
+let empty ()= 
+    {
+     db= Hashtbl.create 253; 
+     curr=None;
+     importing = NameSet.empty
+   }
+(*
+let empty thy= 
   if Theory.get_parents thy = [] 
   then 
     {
      db= Hashtbl.create 253; 
-     curr=thy;
+     curr=None
      importing = NameSet.empty
-(*
-     importing=[];
-     thys = Lib.StringSet.empty
-*)
    }
   else 
     raise (Result.error ("Initial theory can't have parents."))
+*)
 
 let table thdb = thdb.db
-let current thdb = thdb.curr
+let current thdb = 
+  Lib.dest_option ~err:(Failure "No current theory") thdb.curr
 let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
-(*
-let imported thdb = thdb.importing
-let thys thdb = thdb.thys
-*)
 
 let add_importing thdb ls = 
   let ls1 = Lib.remove_dups ((imported thdb)@ ls)
@@ -79,15 +94,6 @@ let add_importing thdb ls =
   let thys1 = List.fold_left NameSet.add thdb.importing ls1
   in 
   {thdb with importing = thys1}
-
-(*
-let add_importing thdb ls = 
-  let ls1 = Lib.remove_dups ((imported thdb)@ ls)
-  in 
-  let thys1 = List.fold_left (fun a b -> Lib.StringSet.add b a) thdb.thys ls1
-  in 
-  {thdb with importing = ls1; thys = thys1}
-*)
 
 (***
 * Operations on Theories
@@ -98,13 +104,8 @@ let current_name db =
   in 
   Theory.get_name thy
 
-(*
-let is_imported th thdb = List.mem th thdb.importing
-let thy_in_scope th thydb = is_imported th thydb
-*)
 let is_imported th thdb = NameSet.mem thdb.importing th
 let thy_in_scope th thydb = is_imported th thydb
-
 let is_loaded name thdb = Lib.member name thdb.db
 
 let add_thy thdb thy = 
@@ -128,11 +129,8 @@ let set_current thdb thy =
   let db = 
     {
      thdb with
-     curr = thy;
+     curr = Some(thy);
      importing = NameSet.add NameSet.empty (Theory.get_name thy)
-(*
-     importing = [Theory.get_name thy]
-*)
    }
   in 
   if is_loaded (Theory.get_name thy)  db
@@ -163,7 +161,9 @@ let mk_importing thdb=
 	      (rs@(List.filter (fun x->not(List.mem x rs)) nrs ))
 	  with _ -> raise (Result.error("mk_importing: theory "^x)))
   in 
-  (mk_aux thdb (Theory.get_parents thdb.curr) [])
+  let parents = try Theory.get_parents (current thdb) with _ -> []
+  in 
+  (mk_aux thdb parents [])
 
 let set_importing thdb = 
   let name = current_name thdb
@@ -232,7 +232,7 @@ let find_to_apply memo f thy_name thdb =
 (*** Types ***)
 
 let add_type_rec tr thdb = 
-  Theory.add_type_rec tr thdb.curr; thdb
+  Theory.add_type_rec tr (current thdb); thdb
 
 let get_type_rec th n tdb=
   let get_aux cur= 
@@ -256,21 +256,21 @@ let thy_of_type th name thdb =
 let add_decln_rec dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty ps thdb.curr;
+  Theory.add_decln_rec (Basic.name s) ty ps (current thdb);
   thdb
 
 let add_decln dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty ps thdb.curr;
+  Theory.add_decln_rec (Basic.name s) ty ps (current thdb);
   thdb
 
 let add_defn_rec s ty def ps thdb =
-  Theory.add_defn_rec s ty def ps thdb.curr;
+  Theory.add_defn_rec s ty def ps (current thdb);
   thdb
 
 let add_defn s ty def ps thdb =
-  Theory.add_defn_rec s ty (Some def) ps thdb.curr;
+  Theory.add_defn_rec s ty (Some def) ps (current thdb);
   thdb
 
 let get_defn_rec th n tdb =
@@ -323,9 +323,9 @@ let thy_of th name thdb =
 
 (*** Theorems ***)
 
-let add_axiom s th ps thdb= Theory.add_axiom s th ps thdb.curr; thdb
+let add_axiom s th ps thdb= Theory.add_axiom s th ps (current thdb); thdb
 
-let add_thm s th ps thdb = Theory.add_thm s th ps thdb.curr; thdb
+let add_thm s th ps thdb = Theory.add_thm s th ps (current thdb); thdb
 
 let get_axiom th n tdb =
   let get_aux cur= 
@@ -364,7 +364,7 @@ let get_lemma th n tdb =
 
 
 let add_type_pp_rec n ppr thdb = 
-  Theory.add_type_pp_rec n ppr thdb.curr; thdb
+  Theory.add_type_pp_rec n ppr (current thdb); thdb
 
 let get_type_pp_rec th n tdb =
   let get_aux cur= 
@@ -394,7 +394,7 @@ let get_type_pplist th tdb =
 (*** Term Printer-Parser records ***)
 
 let add_term_pp_rec n ppr thdb = 
-  Theory.add_term_pp_rec n ppr thdb.curr; thdb
+  Theory.add_term_pp_rec n ppr (current thdb); thdb
 
 let get_term_pp_rec th n tdb =
   let get_aux cur= 
@@ -447,7 +447,8 @@ let scope_thy_in_scope db th1 =
   else thy_in_scope th1 db
 
 let mk_scope db =
-  let thy_name = (current_name db)
+  let thy_name = 
+    try (current_name db) with _ -> Basic.null_thy
   in 
   {
    Scope.curr_thy = thy_name;
@@ -548,26 +549,17 @@ module Loader =
       test_date tim thy;
       ignore(add_thy thdb thy); thy
 	  
-(*
-    let load_thy n prot tim data thdb=
-      let fname = data.file_fn n
-      in 
-      let thy = Theory.load_theory fname
-      in 
-      test_protection prot thy;
-      test_date tim thy;
-      ignore(add_thy thdb thy); thy
-*)
-
 (**
    [build_thy buildfn n thdb]: Build theory named [n] using
    function [buildfn]. Function [buildfn] is assumed to add the theory
    to [thdb]. Returns the build theory.
 *)
     let build_thy buildfn x thdb= 
-      let db = buildfn thdb x
-      in 
-      get_thy thdb x
+      try
+	let db = buildfn thdb x
+	in 
+	get_thy thdb x
+      with err -> add_error "Failed to rebuild theory" [x] err
 
 (**
    [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of theory
