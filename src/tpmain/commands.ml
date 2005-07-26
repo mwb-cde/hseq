@@ -45,6 +45,7 @@ let save_theory thy prot=
   Theory.export_theory oc thy prot;
   close_out oc
 
+(*
 let load_theory n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
@@ -56,7 +57,9 @@ let load_theory n =
       (Thydb.Loader.mk_info n None None)
   in 
   Global.set_theories(db)
+*)
 
+(*
 let load_parent_theory n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
@@ -67,6 +70,7 @@ let load_parent_theory n =
       (Thydb.Loader.mk_info n None (Some true))
   in 
   Global.set_theories(db)
+*)
 
 let load_theory_as_cur n = 
   let rec chop n = 
@@ -75,18 +79,36 @@ let load_theory_as_cur n =
   in 
   let filefn fname = Global.find_thy_file fname
   in 
-  let db = Thydb.Loader.load_theory (theories()) Global.loader_data
+  let db = Thydb.Loader.load (theories()) Global.loader_data
       (Thydb.Loader.mk_info n None None)
   in 
   Global.set_theories(db)
 
+(*
+  let db = Thydb.Loader.load_theory (theories()) Global.loader_data
+      (Thydb.Loader.mk_info n None None)
+*)
+
+
 
 let parents ns = 
-  List.iter load_parent_theory ns;
+  let thy = curr_theory()
+  and db = theories()
+  in 
+  Theory.add_parents ns thy;
+  let db1 = 
+    Thydb.Loader.make_current db Global.loader_data thy
+  in 
+  Global.set_theories db1
+
+(*
+let parents ns = 
   Theory.add_parents ns (curr_theory());
+  List.iter load_parent_theory ns;
   let db1 = Thydb.set_current (theories()) (curr_theory())
   in 
   Global.set_theories db1
+*)
 
 let add_file ?(use=false) f =
   Theory.add_file f (curr_theory());

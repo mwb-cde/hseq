@@ -30,7 +30,9 @@ val theory : string -> Theory.thy
 
 (* save/load theories *)
 val save_theory : Theory.thy -> bool -> unit
+(*
 val load_theory : string -> unit
+*)
 val load_theory_as_cur : string -> unit
 
 (* begin/restart/suspend/finish a theory *)
