@@ -23,6 +23,7 @@
 #install_printer Display.print_defn;;
 #install_printer Display.print_theory;;
 #install_printer Simplib.print_set;;
+#install_printer Thydb.print;;
 
 let no_print_simpset (s:Simpset.simpset) = ();;
 
@@ -33,7 +34,6 @@ let simple_theory_print (thy:Theory.thy) =
   Format.printf ".@]@]";;
 
 #install_printer simple_theory_print;;
-#install_printer Thydb.print;;
 (*
 #trace Thydb.mk_importing;;
 #trace Thydb.add_type_rec;;
