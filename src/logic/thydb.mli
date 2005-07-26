@@ -15,6 +15,17 @@ Name: thydb.mli
    list (unless the theory name is explicitly given).
  *)
 
+(** {5 Error Reporting} *)
+
+class dbError : string -> string list ->
+  object
+    inherit Result.error 
+    val names : string list
+    method get : unit -> string list
+  end
+val error : string -> string list -> exn
+val add_error : string -> string list -> exn -> 'a
+
 (** {5 Databases} *)
 
 type thydb 
@@ -39,12 +50,6 @@ val imported : thydb -> string list
 
 val thys : thydb -> Lib.StringSet.t
 (** The names of the theories which are in scope. *)
-
-val add_importing : thydb -> string list -> thydb
-(** 
-   Add a list of names to front of the importing list. Duplicates are
-   removed.
- *)
 
 (** {5 Operations on Theories} *)
 
@@ -74,7 +79,7 @@ val add_thy : thydb -> Theory.thy -> thydb
 val remove_thy : thydb -> string -> thydb
 (** 
    Remove a theory from the table of theories. Fails if the theory is
-   the current theory.
+   the current theory or in scope.
  *)
 
 val get_thy : thydb -> string -> Theory.thy
@@ -83,19 +88,31 @@ val get_thy : thydb -> string -> Theory.thy
 val get_parents : thydb -> string -> string list
 (** Get the parents of a theory. *)
 
-val set_current : thydb -> Theory.thy -> thydb
-(** 
-   Set the current theory to the given theory. The theory is added
-   to the table of theories.
- *)
-
 (** {5 Operations on the current theory} *)
 
+val add_importing : thydb -> string list -> thydb
+(** 
+   Add a list of names to the front of the importing list. Duplicates are
+   removed. Fails if any theory is not loaded into the database.
+*)
+
+(*
 val mk_importing : thydb -> string list
 (** Build the importing list of the current theory *)
+*)
 
+(*
 val set_importing : thydb -> thydb
 (** Build the importing list of the current theory. *)
+*)
+
+val set_current : thydb -> Theory.thy -> thydb
+(** 
+   Set the current theory to the given theory. The theory is added to
+   the table of theories if it not already present. The importing list
+   is rebuilt from the theorys' parents. Fails if any of the theorys'
+   parents are not loaded.
+*)
 
 (** {7 Types} *)
 
@@ -300,13 +317,15 @@ module Loader :
     (** Information about a theory passed to file-handling functions. *)
     type info =
 	{ 
-	  name: string; (** The name of the theory *)
-	  date : float; 
+	  name: string; 
+(** The name of the theory *)
+	  date : float option; 
 (** The maximum date of the theory (ignored if [=0.0]) *)
-	  protected : bool   (** Whether the theory is protected *)
+	  prot : bool option  
+(** Whether the theory is protected *)
 	}
 
-      val mk_info : string -> float -> bool -> info
+      val mk_info : string -> float option -> bool option -> info
 
       (** 
 	 Data needed for loading a theory. [file_fn] constructs the
@@ -324,35 +343,42 @@ module Loader :
 	    *)
 	 load_fn : (info -> Theory.thy);
 	 (** Function to find and load a theory file. *)
-(*
-	   file_fn : (string -> string);
-	   (** Function to construct the filename of theory file to load. *)
-*)
-	   build_fn: thydb -> string -> thydb;
-	     (** 
-		Function to build the theory if it can't be
-		loaded. The function should take the database in which
-		the theory is to be built and return the database with
-		the new theory as the current theory.
-	      *)
-	     prot: bool
+	   build_fn: thydb -> string -> thydb
+	       (** 
+		  Function to build the theory if it can't be
+		  loaded. The function should take the database in which
+		  the theory is to be built and return the database with
+		  the new theory as the current theory.
+		*)
 	 }
 
       val mk_data : 
 	  (Theory.contents -> unit)
 	  -> (info -> Theory.thy)
 	    -> (thydb -> string -> thydb)
-		-> bool -> data
+		-> data
 
 
-      val load_theory : thydb -> string -> data -> string list
+      val load_theory : thydb -> data -> info -> thydb
 (**
    [load_theory db n data]
 
    Load a theory from disc into the database.
    Return the list of importings for the new theory.
  *)
+
+      val make_current :  thydb -> data -> Theory.thy -> thydb
+(** 
+   [make_current db thy]: Make theory [thy] the current theory, 
+   making sure that all the parents of [thy] are loaded.
+*)
+
+(** {7 Debugging information} *)
+
+      val load_parents : thydb -> data -> info -> string list -> thydb
+	  
     end
 
 
 
+(** {5 Debugging information} *)

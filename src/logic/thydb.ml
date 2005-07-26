@@ -88,13 +88,6 @@ let current thdb =
 let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
 
-let add_importing thdb ls = 
-  let ls1 = Lib.remove_dups ((imported thdb)@ ls)
-  in 
-  let thys1 = List.fold_left NameSet.add thdb.importing ls1
-  in 
-  {thdb with importing = thys1}
-
 (***
 * Operations on Theories
 ***)
@@ -112,30 +105,18 @@ let add_thy thdb thy =
   let name = Theory.get_name thy
   in 
   if is_loaded name thdb
-  then raise (Result.error ("Theory "^name^" exists"))
+  then raise (error ("Theory "^name^" already present in database.") [])
   else 
     {thdb with db =(Hashtbl.add thdb.db name thy; thdb.db)}
 
 let remove_thy thdb n= 
-  if n=current_name thdb
-  then raise (Result.error ("Theory "^n^" is current theory"))
+  if (n=current_name thdb) || (thy_in_scope n thdb)
+  then raise (error ("Theory "^n^" is being used in the database.") [])
   else {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
 
 let get_thy thdb name = Lib.find name thdb.db
 
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
-
-let set_current thdb thy = 
-  let db = 
-    {
-     thdb with
-     curr = Some(thy);
-     importing = NameSet.add NameSet.empty (Theory.get_name thy)
-   }
-  in 
-  if is_loaded (Theory.get_name thy)  db
-  then db 
-  else (ignore(add_thy db thy); db)
 
 (***
 * Operations on the current theory 
@@ -145,6 +126,64 @@ let set_current thdb thy =
 
 (*** Constructing an importing list from the current theory. ***)
 
+(**
+   [not_loaded db ns]: Get the list of names in [ns] which are not
+   loaded in the database of [db].
+*)
+let not_loaded db ns = 
+  List.filter (fun x -> not (is_loaded x db)) ns
+
+(**
+   [all_loaded db ns]: Test that each theory named in [ns] is loaded
+   in [db]. Raise error if any is not loaded.
+*)
+let all_loaded db ns = 
+  match not_loaded db ns with
+    [] -> true
+  | (x::_) -> raise (error "Theory not in database" [x])
+
+let add_importing thdb ls = 
+  let ls1 = Lib.remove_dups ((imported thdb)@ ls)
+  in 
+  if all_loaded thdb ls1
+  then 
+    let thys1 = List.fold_left NameSet.add thdb.importing ls1
+    in 
+    {thdb with importing = thys1}
+  else thdb
+
+(** 
+   [mk_importing db]: Build the importing list of the current theory 
+   Fail if any theory in not loaded.
+*)
+let mk_importing thdb=
+  let rec mk_aux thdb ls rs =
+    match ls with 
+      [] -> rs
+    | (x::xs) -> 
+	if NameSet.mem rs x
+	then mk_aux thdb xs rs
+	else 
+	  (try
+	    let nls = get_parents thdb x
+	    in 
+	    let rs1 = mk_aux thdb nls (NameSet.add rs x)
+	    in 
+	    mk_aux thdb xs rs1
+	  with _ -> raise (Result.error("mk_importing: theory "^x)))
+  in 
+  let parents = try Theory.get_parents (current thdb) with _ -> []
+  in 
+  let thy_list = 
+    try (current_name thdb)::parents with _ -> parents
+  in 
+  mk_aux thdb thy_list NameSet.empty
+
+(*
+  NameSet.to_list (mk_aux thdb parents NameSet.empty)
+*)
+
+(*
 let mk_importing thdb=
   let rec mk_aux thdb ls rs =
     match ls with 
@@ -164,17 +203,37 @@ let mk_importing thdb=
   let parents = try Theory.get_parents (current thdb) with _ -> []
   in 
   (mk_aux thdb parents [])
+*)
 
-let set_importing thdb = 
-  let name = current_name thdb
-  in 
-  {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
 (*
 let set_importing thdb = 
   let name = current_name thdb
   in 
-  {thdb with importing = (name :: (mk_importing thdb))}
+  {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
 *)
+
+let set_current thdb thy = 
+  let name = Theory.get_name thy 
+  in
+  let err = 
+    try (ignore(all_loaded thdb (imported thdb)); None)
+    with e -> Some(e)
+  in
+  match err with
+  | Some(e) -> 
+      raise (add_error 
+	       ("Can't set theory "^name^" as the current theory.") [] e)
+  | None ->
+      let db1 = 
+	try (add_thy thdb thy) with _ -> thdb
+      in 
+      let db2 = 
+	{db1 with curr = Some(thy)}
+      in 
+      {
+       db2 with
+       importing = mk_importing db2
+     }
 
 (*** Find functions ***)
 
@@ -190,12 +249,6 @@ let find f tdb =
 	try f (get_thy tdb x)
 	with Not_found -> find_aux xs
   in find_aux (imported tdb)
-
-(*
-let find_apply f tdb=
-  try find f tdb
-  with Importing -> raise Not_found
-*)
 
 (** 
    [quick_find f th tdb]: apply [f] to theory [th] if it is in the
@@ -228,6 +281,7 @@ let find_to_apply memo f thy_name thdb =
 	   try f th
 	   with _ -> find_aux (get_parents thdb n)))
   in find_aux [thy_name]
+
 
 (*** Types ***)
 
@@ -281,7 +335,6 @@ let get_defn_rec th n tdb =
   if th="" 
   then (find get_aux tdb)
   else quick_find get_aux th tdb
-
 
 let get_defn th n tdb = 
   let r = get_defn_rec th n tdb
@@ -470,11 +523,11 @@ module Loader =
     type info =
 	{ 
 	  name: string;
-	  date : float;
-	  protected : bool
+	  date : float option;
+	  prot : bool option
 	}
 
-    let mk_info n d p = { name = n; date = d; protected = p }
+    let mk_info n d p = { name = n; date = d; prot = p }
 
     (*** Data needed for loading a theory. ***)
     type data = 
@@ -485,54 +538,69 @@ module Loader =
 	  *)
 	 load_fn : (info -> Theory.thy);
 	 (** Function to find and load a theory file. *)
-(*
-	 file_fn : (string -> string);
-	 (** Function to construct the filename of theory file to load. *)
-*)
-	 build_fn: thydb -> string -> thydb;
+	 build_fn: thydb -> string -> thydb
 	   (** Function to build the theory if it can't be loaded. *)
-	   prot: bool
        }
 
-    let mk_data tfn lfn bfn p = 
-      { thy_fn = tfn; load_fn = lfn; build_fn = bfn; prot = p }
+    let mk_data tfn lfn bfn = 
+      { thy_fn = tfn; load_fn = lfn; build_fn = bfn }
 
 (*** Support functions for loading a theory ***)
+
+(**
+   A version of [set_current] for internal use. Sets the current
+   theory and adds the name to the importing list. 
+
+   Doesn't re-calculate the importing list. 
+   Doesn't test whether any of the theories are loaded.
+*)
+    let set_curr db thy = 
+      {
+       db with
+       curr = Some(thy);
+       importing = NameSet.add db.importing (Theory.get_name thy)
+     }
 
 (** 
    [test_data tim thy]: Ensure that the date of theory [thy] is not
    greater then [tim].
 *)
-    let test_date tim thy = 
-      if (Theory.get_date thy) <= tim 
-      then () 
-      else 
-	(warning ("Imported theory "^(Theory.get_name thy)
-		  ^" is more recent than"
-		  ^" its importing theory");
-	 raise (Result.error 
-      		  ("Imported theory "^(Theory.get_name thy)
-		   ^" is more recent than"
-		   ^" its importing theory")))
+    let test_date tym thy = 
+      match tym with
+	None -> ()
+      | (Some tim) ->
+	  if (Theory.get_date thy) <= tim 
+	  then () 
+	  else 
+	    (warning ("Imported theory "^(Theory.get_name thy)
+		      ^" is more recent than"
+		      ^" its importing theory");
+	     raise (Result.error 
+      		      ("Imported theory "^(Theory.get_name thy)
+		       ^" is more recent than"
+		       ^" its importing theory")))
 
 (** 
    [test_protection prot thy]: Ensure that the protection of theory
    [thy] is [prot].
 *)
     let test_protection prot thy =
-      if prot 
-      then 
-	(if (Theory.get_protection thy) 
-	then ()
-	else 
-	  (warning 
-	     ("Imported theory "^(Theory.get_name thy)
-	      ^" is not complete");
-	   raise 
-	     (Result.error 
-		("Imported theory "^(Theory.get_name thy)
-		 ^" is not complete"))))
-      else ()
+      match prot with 
+	None -> ()
+      | (Some pval) ->
+	  if pval
+	  then 
+	    (if (Theory.get_protection thy) 
+	    then ()
+	    else 
+	      (warning 
+		 ("Imported theory "^(Theory.get_name thy)
+		  ^" is not complete");
+	       raise 
+		 (Result.error 
+		    ("Imported theory "^(Theory.get_name thy)
+		     ^" is not complete"))))
+	  else ()
 
 (**
    [load_thy prot tim (filefn, thfn) n thdb]: Load theory named [n]
@@ -540,26 +608,37 @@ module Loader =
    as specified by [prot] and [tim]. [filefn] and [thfn] are [file_fn]
    and [app_fn] from type [data].
 
-   Adds the theory to [thdb]. Returns the theory.
+   Adds the theory to [thdb]. Returns the updated database.
+   Doesn't change the current theory. Doesn't change the importing data.
 *)
-    let load_thy n tim prot data thdb=
-      let thy = data.load_fn (mk_info n tim prot)
-      in 
-      test_protection prot thy;
-      test_date tim thy;
-      ignore(add_thy thdb thy); thy
+    let load_thy info data thdb=
+      try
+	let thy = data.load_fn info
+	in 
+	test_protection info.prot thy;
+	test_date info.date thy;
+	ignore(add_thy thdb thy); thy
+      with err -> add_error "Failed to load theory" [info.name] err
 	  
 (**
-   [build_thy buildfn n thdb]: Build theory named [n] using
+   [build_thy info buildfn thdb]: Build theory named [info.name] using
    function [buildfn]. Function [buildfn] is assumed to add the theory
-   to [thdb]. Returns the build theory.
+   to [thdb]. 
+
+   Fails if the newly built theory does not have the attributes
+   specified in [info].
+
+   Returns the database with the newly built theory as the current theory.
 *)
-    let build_thy buildfn x thdb= 
+    let build_thy info data  thdb= 
       try
-	let db = buildfn thdb x
+	let db = data.build_fn thdb info.name
 	in 
-	get_thy thdb x
-      with err -> add_error "Failed to rebuild theory" [x] err
+	let thy= get_thy thdb info.name
+	in 
+	test_protection info.prot thy;
+	set_current db thy
+      with err -> add_error "Failed to rebuild theory" [info.name] err
 
 (**
    [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of theory
@@ -567,6 +646,91 @@ module Loader =
 *)
     let apply_fn db thy_fn thy =
       (try (thy_fn (Theory.contents thy)) with _ -> ())
+
+
+(**
+   [load_theory thdb name data]: Load the theory named [name] into
+   database [thdb]. Also load the parents of the theory and applies
+   the functions [data.thy_fn] to each loaded theory.
+
+   Makes the newly loaded theory the current theory.
+*)
+    let rec load_theory thdb data info =
+      let name = info.name
+      and tyme = info.date
+      in 
+      if is_loaded name thdb
+      then 
+	let thy=get_thy thdb name
+	in 
+	test_date tyme thy;
+	test_protection info.prot thy;
+	let db1 =
+	  load_parents thdb data 
+	    (mk_info name (Some (Theory.get_date thy)) (Some true))
+	    (Theory.get_parents thy)
+	in 
+	set_curr db1 thy
+      else 
+	let load_attempt = 
+	  Lib.try_app
+	    (load_thy info data) 
+	    thdb
+	in 
+	match load_attempt with 
+	  Some(thy) ->  (** Loading from file succeeded. **)
+	    let db1 = 
+	      load_parents thdb data
+		(mk_info name (Some (Theory.get_date thy)) (Some true))
+		(Theory.get_parents thy) 
+	    in 
+	    let db2 = set_curr db1 thy
+	    in 
+	    apply_fn db2 data.thy_fn thy;
+	    db2
+	| None -> (** Loading from file failed, try to rebuild. **)
+	      build_thy info data thdb
+
+(**
+   [load_parents db data name tyme ps imports]: Load the theories with
+   names in [ps] as parents of theory named [name] into database
+   [db]. Each parent must be no younger then the date given by [tyme].
+*)
+    and load_parents db bundle info ps =
+      let name = info.name
+      and tyme = info.date
+      in 
+      match ps with 
+	[] -> db
+      | (x::xs) ->
+	  (if (x = name)
+	  then 
+	    raise (Result.error ("Circular importing in Theory "^x))
+	  else 
+	    let db1 = 
+	      if(is_imported x db)
+	      then db
+	      else 
+	      load_theory db bundle (mk_info x tyme info.prot)
+	    in 
+	    load_parents db1 bundle info xs)
+
+
+let make_current db data thy = 
+  let ps = Theory.get_parents thy
+  and name = Theory.get_name thy
+  and tyme = Theory.get_date thy
+  and prot = true
+  in 
+  let info = mk_info name (Some tyme) (Some prot)
+  in 
+  let db1 = load_parents db data info ps
+  in 
+  set_current db1 thy
+
+(* ****** ****** *)
+
+(*
 
 (**
    [load_parents db data name tyme ps imports]: Load the theories with
@@ -596,9 +760,9 @@ module Loader =
 	    else 
 	      let thy = 
 		(try 
-		  load_thy x tyme true bundle db
+		  load_thy (mk_info x tyme true) bundle db
 		with _ -> 
-		  build_thy bundle.build_fn x db);
+		  build_thy (mk_info x tyme true) bundle db);
 	      in 
 	      let db1= add_importing db [Theory.get_name thy]
 	      in 
@@ -634,7 +798,7 @@ module Loader =
       else 
 	match 
 	  (Lib.try_app
-	    (load_thy name current_time data.prot data) thdb)
+	    (load_thy (mk_info name current_time data.prot) data) thdb)
 	with 
 	  Some(thy) -> 
 	    (let imprts = 
@@ -647,7 +811,8 @@ module Loader =
 	    apply_fn thdb1 data.thy_fn thy;
 	    List.rev imprts)
 	| None -> 
-	    (let thy = build_thy data.build_fn name thdb
+	    (let thy = 
+	      build_thy (mk_info name current_time data.prot) data thdb
 	    in 
 	    let imprts = 
 	      load_parents 
@@ -655,6 +820,6 @@ module Loader =
 		(Theory.get_date thy) (Theory.get_parents thy) [name]
 	    in 
 	    List.rev imprts)
-
+*)
   end      
 
