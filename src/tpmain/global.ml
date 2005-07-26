@@ -29,13 +29,16 @@ let set_base_name x = base_name:=(Some(x))
 let clear_base_name () = base_name:=None
 
 (* theories: the theory database *)
+(*
 let thdb() = Thydb.empty (anon_thy ())
+*)
+let thdb() = Thydb.empty ()
 
 let theories = ref (thdb())
 let get_theories () = !theories
 let set_theories thdb = theories:=thdb
 let reset_thydb () = 
-  let db = Thydb.empty (anon_thy()) 
+  let db = Thydb.empty ()
   in 
   set_theories db
 
@@ -72,7 +75,8 @@ let scope_thy_in_scope th1 =
   else Thydb.thy_in_scope th1 (get_theories())
 
 
-let scope() =
+let scope() = Thydb.mk_scope (get_theories())
+(*
   let thy_name = (get_cur_name())
   in 
   {Scope.curr_thy = thy_name;
@@ -82,6 +86,7 @@ let scope() =
    Scope.type_thy = scope_type_thy;
    Scope.thy_in_scope  = scope_thy_in_scope 
  } 
+*)
 
 (* file handling *)
 
