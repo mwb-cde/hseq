@@ -27,6 +27,10 @@
 let no_print_simpset (s:Simpset.simpset) = ();;
 (*
 #install_printer no_print_simpset;;
+#trace Global.read;;
+#trace Global.scope;;
+#trace Simpset.add_conv;;
+#trace Thydb.current;;
 *)
 
 open Goals;;
