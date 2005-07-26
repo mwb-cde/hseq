@@ -104,7 +104,7 @@ let begin_theory n parents=
   else 
     let importing=
       try
-	((Global.get_base_name())::parents)
+	List.append parents [(Global.get_base_name())]
       with Not_found -> parents
     in 
     let db = theories()

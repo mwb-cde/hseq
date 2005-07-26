@@ -44,6 +44,7 @@ struct
   let empty = { list = []; set = Lib.StringSet.empty }
   let add s x = { list = x::s.list; set = Lib.StringSet.add x s.set}
   let mem s x = Lib.StringSet.mem x s.set
+  let rev s  = { s with list = List.rev s.list }
 
   let filter p s  = 
     { list = List.filter p s.list; set = Lib.StringSet.filter p s.set }
@@ -192,7 +193,7 @@ let mk_importing thdb=
   let thy_list = 
     try (current_name thdb)::parents with _ -> parents
   in 
-  mk_aux thdb thy_list NameSet.empty
+  NameSet.rev (mk_aux thdb thy_list NameSet.empty)
 
 (*
   NameSet.to_list (mk_aux thdb parents NameSet.empty)
@@ -570,10 +571,18 @@ module Loader =
    Doesn't test whether any of the theories are loaded.
 *)
     let set_curr db thy = 
+      let name = Theory.get_name thy
+      and imps = db.importing
+      in 
+      let thy_list = 
+	if NameSet.mem imps name 
+	then imps 
+	else NameSet.add db.importing name
+      in 
       {
        db with
        curr = Some(thy);
-       importing = NameSet.add db.importing (Theory.get_name thy)
+       importing = thy_list
      }
 
 (** 
@@ -645,7 +654,36 @@ module Loader =
 
    Returns the database with the newly built theory as the current theory.
 *)
-    let build_thy info data  thdb= 
+
+(** 
+   [check_build db thy]: verify that [thy] is in database [db], that
+   the parents of [thy] are in the importing list of [db] and that
+   [thy] is the first in the importing list.
+
+   raise Failure if checks fail.
+*)
+    let check_build db thy =
+      let thy_list = imported db 
+      and name = Theory.get_name thy
+      in 
+      try 
+	((match thy_list with 
+	  (x::_) -> 
+	    if ((x == name) || (x = name)) 
+	    then ()
+	    else 
+	      raise 
+		(error "Built theory not first in importing list." [name; x])
+	| [] -> 
+	    raise 
+	      (error "Empty importing list, trying to build " [name]));
+	 ignore(all_loaded db thy_list);
+	 try ignore (get_thy db name)
+	 with _ -> raise (error "Built theory not in database." [name]))
+      with err -> 
+	raise (add_error "Failed to build theory" [name] err)
+
+    let build_thy info data thdb= 
 	let db = 
 	  try data.build_fn thdb info.name
 	  with err -> add_error "Failed to rebuild theory" [info.name] err
@@ -662,7 +700,10 @@ module Loader =
 	  add_error 
 	    "Failed to rebuild theory. Theory not protected." 
 	    [info.name] err);
-	(try set_current db thy
+	(try check_build db thy
+	with err -> 
+	  add_error "Failed to rebuild theory" [info.name] err);
+	(try set_curr db thy
 	with err -> 
 	  add_error 
 	    "Failed to rebuild theory. Can't make theory current." 
@@ -761,101 +802,9 @@ let make_current db data thy =
   in 
   let db1 = load_parents db data info ps
   in 
-  set_current db1 thy
+(*  set_curr db1 thy  *)
+  set_current db1 thy  
 
-(* ****** ****** *)
-
-(*
-
-(**
-   [load_parents db data name tyme ps imports]: Load the theories with
-   names in [ps] as parents of theory named [name] into database
-   [db]. Each parent must be no younger then the date given by [tyme].
-*)
-    let rec load_parents db bundle name tyme ps imports = 
-      match ps with 
-	[] -> imports
-      | (x::xs) ->
-	  (if (x=name) 
-	  then 
-	    raise (Result.error ("Circular importing in Theory "^x))
-	  else 
-	    (if is_loaded x db
-	    then 
-	      (let thy = get_thy db x 
-	      in 
-	      test_protection true thy;
-	      test_date tyme thy;
-	      let db1 = add_importing db [Theory.get_name thy]
-	      in 
-	      let imports0 = load_parents db1 bundle name tyme xs 
-		  (if List.mem x imports then imports else (x::imports))
-	      in 
-	      imports0)
-	    else 
-	      let thy = 
-		(try 
-		  load_thy (mk_info x tyme true) bundle db
-		with _ -> 
-		  build_thy (mk_info x tyme true) bundle db);
-	      in 
-	      let db1= add_importing db [Theory.get_name thy]
-	      in 
-	      let imports0=
-		load_parents db1 bundle name (Theory.get_date thy)
-		  (Theory.get_parents thy) (x::imports)
-	      in 
-	      let imports1 = 
-		load_parents db bundle name tyme xs imports0
-	      in 
-	      apply_fn db bundle.thy_fn thy;
-	      imports1))
-
-(**
-   [load_theory thdb name data]: Load the theory named [name] into
-   database [thdb]. Also load the parents of the theory and applies
-   the functions [data.thy_fn] to each loaded theory.
-*)
-    let load_theory thdb name data =
-      let current_time = Lib.date()
-      in 
-      if is_loaded name thdb
-      then 
-	let thy=get_thy thdb name
-	in 
-	test_protection data.prot thy;
-	let imprts = 
-	  load_parents 
-	    thdb data name
-	    (Theory.get_date thy) (Theory.get_parents thy) [name]
-	in 
-	List.rev imprts
-      else 
-	match 
-	  (Lib.try_app
-	    (load_thy (mk_info name current_time data.prot) data) thdb)
-	with 
-	  Some(thy) -> 
-	    (let imprts = 
-	      load_parents 
-		thdb data name
-		(Theory.get_date thy) (Theory.get_parents thy) [name]
-	    in 
-	    let thdb1 = add_importing thdb [Theory.get_name thy]
-	    in 
-	    apply_fn thdb1 data.thy_fn thy;
-	    List.rev imprts)
-	| None -> 
-	    (let thy = 
-	      build_thy (mk_info name current_time data.prot) data thdb
-	    in 
-	    let imprts = 
-	      load_parents 
-		thdb data name
-		(Theory.get_date thy) (Theory.get_parents thy) [name]
-	    in 
-	    List.rev imprts)
-*)
   end      
 
 let table_as_list db = 

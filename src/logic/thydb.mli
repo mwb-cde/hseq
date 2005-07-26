@@ -383,6 +383,7 @@ module Loader :
       val load_parents : thydb -> data -> info -> string list -> thydb
       val load_thy: info -> data -> thydb -> thydb
       val build_thy: info -> data -> thydb -> thydb
+      val check_build : thydb -> Theory.thy -> unit
 
       val set_curr : thydb -> Theory.thy -> thydb
 
