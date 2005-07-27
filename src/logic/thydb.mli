@@ -380,14 +380,14 @@ module Loader :
 *)
 
 
+(*
 (** {7 Debugging information} *)
 
-(*
       val load_theory : thydb -> data -> info -> thydb
       val load_parents : thydb -> data -> info -> string list -> thydb
       val load_thy: info -> data -> thydb -> thydb
       val build_thy: info -> data -> thydb -> thydb
-      val check_build : thydb -> thydb -> Theory.thy -> unit
+      val check_build : thydb -> Theory.thy -> unit
       val set_curr : thydb -> Theory.thy -> thydb
       val test_protection : bool option -> Theory.thy -> unit
       val test_date : float option -> Theory.thy -> unit
@@ -412,9 +412,11 @@ sig
   val to_list: t -> string list
   val to_set : t -> Lib.StringSet.t
   val from_list : string list -> t
+
+  val print: t -> unit
 end
 
 val add_importing : thydb -> string list -> thydb
 val mk_importing : thydb -> NameSet.t
-*)
 
+*)

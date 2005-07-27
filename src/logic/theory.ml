@@ -99,10 +99,13 @@ let add_parent n thy =
   then thy.parents<-(n::(thy.parents))
   else raise (Result.error ("add_parent: "^n))
 
-let add_parents ns thy =
+let rec add_parents ns thy =
+  List.iter (fun n -> add_parent n thy) (List.rev ns)
+(*
   match ns with
     [] -> ()
-  | (x::xs) -> add_parent x thy
+  | (x::xs) -> add_parent x thy; add_parents xs thy
+*)
 
 let set_protection thy = 
   thy.protection<-true; set_date thy
