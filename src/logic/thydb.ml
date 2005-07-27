@@ -620,14 +620,15 @@ module Loader =
 (*** Building theories ***)
 
 (** 
-   [check_build db thy]: Check the result of a theory build. Verify
-   that [thy] is in database [db], that the parents of [thy] are in
-   the importing list of [db] and that [thy] is the first in the
-   importing list.
+   [check_build db0 db thy]: Check the result of a theory
+   build. Verify that [thy] is in database [db], that the parents of
+   [thy] are in the importing list of [db], that [thy] is the first in
+   the importing list and that every theory in the importing list of
+   [db0] is in the table of [db].
 
    raise Failure if checks fail.
 *)
-    let check_build db thy =
+    let check_build db0 db thy =
       let check_first n l = 
 	match Lib.try_app List.hd l with
 	  None -> ()
@@ -643,6 +644,7 @@ module Loader =
       try 
 	(check_first name thy_list;
 	 ignore(all_loaded db thy_list);
+	 ignore(all_loaded db (imported db0));
 	 try ignore (get_thy db name)
 	 with _ -> raise (error "Built theory not in database." [name]))
       with err -> 
@@ -675,7 +677,7 @@ module Loader =
 	add_error 
 	  "Failed to rebuild theory. Theory not protected." 
 	  [info.name] err);
-      (try check_build db thy
+      (try check_build thdb db thy
       with err -> 
 	add_error "Failed to rebuild theory" [info.name] err);
       (try set_curr db thy
@@ -749,19 +751,28 @@ module Loader =
     and load_parents db bundle info ps =
       let name = info.name
       and tyme = info.date
+      and prot = info.prot
       in 
       match ps with 
 	[] -> db
       | (x::xs) ->
 	  (if (x = name)
 	  then 
-	    raise (Result.error ("Circular importing in Theory "^x))
+	    raise (error "Circular importing in theory" [x])
 	  else 
 	    let db1 = 
 	      if(is_imported x db)
-	      then db
+	      then 
+		let thy = 
+		  try get_thy db x
+		  with _ -> 
+		    raise (error "Theory in scope but not in database:" [x])
+		in 
+		test_date tyme thy;
+		test_protection prot thy;
+		db
 	      else 
-		load_theory db bundle (mk_info x tyme info.prot)
+		load_theory db bundle (mk_info x tyme prot)
 	    in 
 	    load_parents db1 bundle info xs)
 

@@ -341,7 +341,7 @@ module Loader :
 	 database, if any of the parents of [thy] are not in the
 	 importing list of [db'], if [thy] is not the first theory in
 	 the importing list or if any theory in the importing list of
-	 [db] is not in the importing list and table of [db'].
+	 [db] is not in the table of [db'].
        *)
       type data = 
 	  {
