@@ -61,14 +61,13 @@ val find_thy_file: string -> string
 val get_cdir : unit -> string
 
 (* current scope  *)
+(*
 val scope_term_type: Basic.ident -> Basic.gtype
 val scope_term_thy: string -> string
 val scope_type_defn: Basic.ident -> Gtypes.typedef_record
 val scope_type_thy: string -> string
-(*
-val scope_thy_in_scope: string -> string -> bool
-*)
 val scope_thy_in_scope: string -> bool
+*)
 
 val scope : unit -> Scope.t
 

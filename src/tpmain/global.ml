@@ -50,6 +50,7 @@ let set_cur_thy thy =
 
 (* [scope] the standard scope *)
 
+(*
 let scope_term_type f= 
   let thstr, idstr = Basic.dest_fnid f
   in 
@@ -75,10 +76,6 @@ let scope_thy_in_scope th1 =
   then true
   else Thydb.thy_in_scope th1 (get_theories())
 
-
-let scope() = Thydb.mk_scope (get_theories())
-
-(*
 let scope() = Thydb.mk_scope (get_theories())
   let thy_name = (get_cur_name())
   in 
@@ -90,6 +87,7 @@ let scope() = Thydb.mk_scope (get_theories())
    Scope.thy_in_scope  = scope_thy_in_scope 
  } 
 *)
+let scope() = Thydb.mk_scope (get_theories())
 
 (* file handling *)
 
@@ -462,8 +460,13 @@ let load_base_thy ()=
     let db1 = get_theories()
     in 
     let db2=
+      Thydb.Loader.load db1 loader_data
+	(Thydb.Loader.mk_info thy_name None None)
+
+(*
       Thydb.Loader.load_theory db1 loader_data 
 	(Thydb.Loader.mk_info thy_name None None)
+*)
     in 
     set_theories(db2)
   with _ ->
