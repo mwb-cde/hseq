@@ -34,8 +34,8 @@ let simple_theory_print (thy:Theory.thy) =
   Printer.print_sep_list (Format.print_string, ",") (Theory.get_parents thy);
   Format.printf ".@]@]";;
 
-#install_printer Thydb.NameSet.print;;
-#install_printer simple_theory_print;;
+(* #install_printer Thydb.NameSet.print;; *)
+(* #install_printer simple_theory_print;; *)
 
 (*
 #trace Thydb.mk_importing;;
