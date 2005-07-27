@@ -15,6 +15,9 @@
    possibly empty, list of files to be loaded when the theory is first
    used.
 
+   A theory is identified by its name. A theory is also uniquely
+   identified by a marker, constructed from the theory name. 
+
    A theorem (or definition) stored in a theory can have {e
    properties}, to indicate that it should be used by some proof
    tool. Each proof tool should have its own unique property. The
@@ -73,6 +76,7 @@ type thy
 type contents=
     {
      cname: string;     (** The theory name *)
+     cmarker: Scope.marker; (** The theory marker *)
      cprotection: bool;  (** Whether it is protected *)
      cdate: float;       (** The date of the theory *)
      cparents: string list;   (** The parents *)
@@ -93,14 +97,16 @@ type contents=
 
 (** {7 Basic Theory Operations} *)
 
-val mk_thy : string -> thy
-(** Make a named theory. *)
+val mk_thy : string -> string list -> thy
+(** [mk_thy n ps]: Make a theory named [n] with parents [ps]. *)
 
 val contents : thy -> contents
 (** Get the contents of a theory. *)
 
 val get_name : thy -> string
 (** Get the name of a theory. *)
+val get_marker : thy -> Scope.marker
+(** Get the marker of a theory. *)
 val get_date : thy -> float
 (** Get the date of a theory. *)
 val get_parents: thy -> string list

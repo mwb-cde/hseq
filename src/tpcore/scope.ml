@@ -12,6 +12,12 @@ open Basic
 * Data structures
 ***)
 
+(** Theory markers. *)
+type marker = Tag.t
+
+let mk_marker = Tag.named
+let marker_name  = Tag.name 
+
 (* Records for type definitions *)
 type type_record =
     {
@@ -24,14 +30,15 @@ type type_record =
 (** Scope records. *)
 type t=
     { 
-      curr_thy : thy_id;
+      curr_thy : marker;
       term_type : ident -> gtype; 
 	term_thy : string -> thy_id;
 	  type_defn: ident -> type_record;
 	    type_thy : string -> thy_id;
-		thy_in_scope : thy_id -> bool
-
+		thy_in_scope : thy_id -> bool;
+		    marker_in_scope : marker -> bool
     }
+
 
 (***
 * Operations on scopes
@@ -42,16 +49,20 @@ let empty_scope () =
   let dummy x = raise Not_found
   in 
   {
-   curr_thy = null_thy;
+   curr_thy = mk_marker null_thy;
    term_type = dummy;
    term_thy = dummy;
    type_defn = dummy;
    type_thy = dummy;
-   thy_in_scope = (fun x -> false)
+   thy_in_scope = (fun x -> false);
+   marker_in_scope = (fun x -> false)
  }
 
+(** [marker_of scp]: Get the theory marker of scope [scp] *)
+let marker_of scp = scp.curr_thy
+
 (** [thy_of scp]: Get the theory of scope [scp] *)
-let thy_of scp = scp.curr_thy
+let thy_of scp = marker_name (scp.curr_thy)
 
 (** Lookup the type of an identifier *)
 let type_of scp id = scp.term_type id
@@ -67,6 +78,9 @@ let thy_of_type scp id = scp.type_thy id
 
 (** Test whether a theory is in scope *)
 let in_scope scp  th1 = scp.thy_in_scope th1 
+
+(** Test whether a theory marker is in scope *)
+let in_scope_marker scp th1 = scp.marker_in_scope th1 
 
 (***
 * Extending scopes

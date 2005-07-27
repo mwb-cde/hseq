@@ -14,7 +14,7 @@ let dest_name f = Lib.chop_at '.' f
 let empty_thy_name = Basic.null_thy
 
 (** [anont_thy()]: An anonymous theory *)
-let anon_thy ()= Theory.mk_thy empty_thy_name
+let anon_thy ()= Theory.mk_thy empty_thy_name []
 
 (**
    [base_thy]:

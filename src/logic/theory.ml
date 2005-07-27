@@ -27,6 +27,7 @@ type thm_record =
 type thy = 
     {
      name: string;
+     marker: Scope.marker;
      mutable protection: bool;
      mutable date: float;
      mutable parents:  string list;
@@ -42,6 +43,7 @@ type thy =
 type contents=
     {
      cname: string;
+     cmarker: Scope.marker;
      cprotection: bool;
      cdate: float;
      cparents: string list;
@@ -56,11 +58,12 @@ type contents=
 
 let set_date thy = thy.date<-Lib.date()
 
-let mk_thy n = 
+let mk_thy n ps = 
   let thy = {name=n; 
+	     marker = Scope.mk_marker n;
 	     protection=false;
 	     date=0.0;
-	     parents=[];
+	     parents=ps;
 	     lfiles = [];
 	     axioms=Hashtbl.create 1;
 	     theorems=Hashtbl.create 1;
@@ -74,6 +77,7 @@ let mk_thy n =
 let contents thy = 
   {
    cname = thy.name;
+   cmarker = thy.marker;
    cprotection = thy.protection;
    cdate = thy.date;
    cparents = thy.parents;
@@ -89,6 +93,7 @@ let contents thy =
 (*** Basic Theory Operations ***)
 
 let get_name thy = thy.name
+let get_marker thy = thy.marker
 let get_date thy = thy.date
 let get_parents thy = thy.parents
 let get_protection thy = thy.protection
@@ -386,7 +391,7 @@ let input_theory scp ic =
     sdefs, stypes, ntype_pps, nid_pps = input_value ic 
   in 
 (*** Make an empty theory and unsave the type definitions ***)
-  let thy = mk_thy n 
+  let thy = mk_thy n []
   in 
 (*** Scoping information not needed yet 
   let thy_scp = 

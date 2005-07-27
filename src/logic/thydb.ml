@@ -466,16 +466,26 @@ let scope_thy_in_scope db th1 =
   else is_imported th1 db
 
 let mk_scope db =
-  let thy_name = 
-    try (current_name db) with _ -> Basic.null_thy
+  let thy_marker = 
+    try 
+      let thy = get_thy db (current_name db)
+      in 
+      Theory.get_marker thy
+    with _ -> Scope.mk_marker Basic.null_thy
+  in 
+  let thy_name = Scope.marker_name thy_marker
   in 
   {
-   Scope.curr_thy = thy_name;
+   Scope.curr_thy = thy_marker;
    Scope.term_type = scope_term_type db; 
    Scope.term_thy = scope_term_thy thy_name db;
    Scope.type_defn = scope_type_defn db;
    Scope.type_thy = scope_type_thy thy_name db;
-   Scope.thy_in_scope  = scope_thy_in_scope db
+   Scope.thy_in_scope  = scope_thy_in_scope db;
+   Scope.marker_in_scope = 
+   (fun x -> 
+   (Result.warning "Thydb.mk_scope: marker_in_scope is not implemented";
+    raise Not_found))
  } 
 
 (*** 

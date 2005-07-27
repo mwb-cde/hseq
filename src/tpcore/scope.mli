@@ -19,6 +19,14 @@ open Basic
 
 (** {5 Data structures} *)
 
+(** Theory markers. *)
+type marker = Tag.t      (** The unique tag of the theory. *)
+
+val mk_marker: string -> marker
+(** Marker constructor *)
+val marker_name : marker -> string
+(** Marker destructor *)
+
 (** Records for type definitions *)
 type type_record =
     {
@@ -31,7 +39,7 @@ type type_record =
 (** Scope records. *)
 type t=
     { 
-      curr_thy : thy_id; 
+      curr_thy : marker;
 (** The name of the current theory *)
       term_type : ident -> gtype; 
 	(** The type of a term identifier. *)
@@ -41,8 +49,10 @@ type t=
 	    (** The definition (if any) of a type *)
 	    type_thy : string -> thy_id;
 	      (** The theory in which a type is declared *)
-	      thy_in_scope : thy_id -> bool 
-		  (** Whether a theory is in scope *)
+	      thy_in_scope : thy_id -> bool ;
+		  (** Whether a theory is in scope (identified by name). *)
+		marker_in_scope : marker -> bool 
+		  (** Whether a theory is in scope (identified by marker). *)
     }
 (** All lookup functions raise [Not_found] on failure. *)
 
@@ -51,8 +61,11 @@ type t=
 val empty_scope : unit -> t
 (** Construct an empty scope *)
 
+val marker_of : t -> marker
+(** [thy_of scp]: Get the theory marker of scope [scp] *)
+
 val thy_of : t -> thy_id
-(** [thy_of scp]: Get the theory of scope [scp] *)
+(** [thy_of scp]: Get the theory name of scope [scp] *)
 
 val type_of : t -> ident -> gtype
 (** Lookup the type of an identifier *)
@@ -67,7 +80,10 @@ val thy_of_type: t -> string -> thy_id
 (** Lookup the theory of a type. *)
 
 val in_scope : t -> thy_id -> bool
-(** Test whether a theory is in scope *)
+(** Test whether a theory is in scope (by name) *)
+
+val in_scope_marker : t -> marker -> bool
+(** Test whether a theory is in scope (by marker) *)
 
 (** {5 Extending scopes} *)
 

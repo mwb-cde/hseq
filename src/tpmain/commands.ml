@@ -130,9 +130,8 @@ let begin_theory n parents=
       with Not_found -> parents
     in 
     let db = theories()
-    and thy = Theory.mk_thy n
+    and thy = Theory.mk_thy n parents
     in
-    Theory.add_parents importing thy;
     let db1 = Thydb.Loader.make_current db Global.loader_data thy
     in 
     Global.set_theories(db1)
