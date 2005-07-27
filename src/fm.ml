@@ -27,13 +27,16 @@
 
 let no_print_simpset (s:Simpset.simpset) = ();;
 
+
 let simple_theory_print (thy:Theory.thy) =
   Format.printf "@[<hov 2>Theory: %s,@ " (Theory.get_name thy);
   Format.printf "@[Parents: @[<hov 2>";
   Printer.print_sep_list (Format.print_string, ",") (Theory.get_parents thy);
   Format.printf ".@]@]";;
 
+#install_printer Thydb.NameSet.print;;
 #install_printer simple_theory_print;;
+
 (*
 #trace Thydb.mk_importing;;
 #trace Thydb.add_type_rec;;

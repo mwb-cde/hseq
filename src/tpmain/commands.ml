@@ -132,7 +132,7 @@ let begin_theory n parents=
     let db = theories()
     and thy = Theory.mk_thy n
     in
-    Theory.add_parents parents thy;
+    Theory.add_parents importing thy;
     let db1 = Thydb.Loader.make_current db Global.loader_data thy
     in 
     Global.set_theories(db1)
