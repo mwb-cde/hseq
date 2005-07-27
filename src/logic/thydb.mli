@@ -62,12 +62,9 @@ val current_name: thydb -> string
 (** Get the name of the current theory. *)
 
 val is_imported : string -> thydb -> bool
-(** Test whether a theory is in the importing list. *)
-
-val thy_in_scope: string -> thydb -> bool
-(**
-   [thy_in_scope thy db]: test whether theory [thy] is in the importing list.
- *)
+(** 
+   Test whether a theory is in the importing list (and therefore in scope). 
+*)
 
 val is_loaded : string -> thydb -> bool 
 (** 
@@ -95,28 +92,14 @@ val get_parents : thydb -> string -> string list
 
 (** {5 Operations on the current theory} *)
 
-val add_importing : thydb -> string list -> thydb
-(** 
-   Add a list of names to the front of the importing list. Duplicates are
-   removed. Fails if any theory is not loaded into the database.
-*)
-
-(*
-val mk_importing : thydb -> string list
-(** Build the importing list of the current theory *)
-*)
-
-(*
-val set_importing : thydb -> thydb
-(** Build the importing list of the current theory. *)
-*)
-
 val set_current : thydb -> Theory.thy -> thydb
 (** 
    Set the current theory to the given theory. The theory is added to
-   the table of theories if it not already present. The importing list
-   is rebuilt from the theorys' parents. Fails if any of the theorys'
+   the table of theories if not already present. The importing list is
+   rebuilt from the theory parents. Fails if any of the theorys'
    parents are not loaded.
+
+   Use {!Thydb.Loader.make_current} instead.
 *)
 
 (** {7 Types} *)
@@ -124,7 +107,7 @@ val set_current : thydb -> Theory.thy -> thydb
 val add_type_rec: Logic.Defns.cdefn -> thydb -> thydb
 (** 
    [add_type_rec r db]: Store type record [r] in the current theory.
- *)
+*)
 
 val get_type_rec: string -> string -> thydb -> Gtypes.typedef_record
 (** 
@@ -136,7 +119,7 @@ val thy_of_type: string -> string -> thydb -> string
 (** 
    [thy_of_type th n db]: Beginning with theory [th], try to find the
    theory containing a type declaration for name [n].
- *)
+*)
 
 (** {7 Definitions and Declarations} *)
 
@@ -147,6 +130,7 @@ val add_decln_rec:
    [add_decln_rec d ps db]: Store declaration [d] with properties [ps] in
    the current theory.
  *)
+
 val add_decln: 
     Logic.Defns.cdefn
   -> Theory.property list -> thydb -> thydb
@@ -215,6 +199,7 @@ val add_axiom :
    [add_axiom n th ps db]: Store axiom [th] under name [n] with
    properties [ps] in the current theory.
  *)
+
 val add_thm : 
     string -> Logic.thm -> Theory.property list -> thydb -> thydb
 (** 
@@ -228,12 +213,14 @@ val get_axiom : string -> string -> thydb -> Logic.thm
    [th] is "", the theory used is the first in [db.importing] with an
    axiom named [n].
 *)
+
 val get_theorem : string -> string -> thydb -> Logic.thm
 (** 
    [get_theorem th n db]: Get the theorem named [n] from theory [th].
    If [th] is "", the theory used is the first in [db.importing] with
    a theorem named [n].
 *)
+
 val get_lemma : string -> string -> thydb -> Logic.thm
 (** 
    [get_lemma th n db]: Get the axiom, theorem or definition named [n]
@@ -271,7 +258,6 @@ val get_type_pplist:
    [get_type_pplist n db]: Get the list of PP records for identifiers
    with name [n].
  *)
-
 	
 (** {7 Term Printer-Parser records} *)
 
@@ -305,17 +291,20 @@ val get_term_pplist:
 
 (** {5 Scopes from databases} *)
 
-
 val mk_scope: thydb -> Scope.t
 (** Make a scope from a theory database. *)
 
+(** {5 Pretty Printer} *)
+
+val print : thydb -> unit
+(** Printer for databases. *)
 
 (** {5 Theory loader} *)
 
 (** The theory loader.
 
    Loads theories from permanent storage, rebuilding them if necessary.
- *)
+*)
 module Loader :
     sig
 
@@ -325,20 +314,34 @@ module Loader :
 	  name: string; 
 (** The name of the theory *)
 	  date : float option; 
-(** The maximum date of the theory (ignored if [=0.0]) *)
+(** The maximum date of the theory (optional) *)
 	  prot : bool option  
-(** Whether the theory is protected *)
+(** Whether the theory is protected (optional) *)
 	}
 
       val mk_info : string -> float option -> bool option -> info
+	  (** Constructor for [info]. *)
 
       (** 
-	 Data needed for loading a theory. [file_fn] constructs the
-	 filename of the file to be loaded from the name of a
-	 theory. [build_fn] constructs the theory (e.g. by loading a
-	 script), if the theory file can't be found. [thy_fn] is
-	 applied to a successfully loaded theory and can be used to
-	 access data from theories as they are used.
+	 Data needed for loading a theory. [load_fn] loads a theory
+	 from a file. [build_fn] constructs the theory (e.g. by
+	 running a script), if the theory file can't be
+	 found. [thy_fn] is applied to a successfully loaded theory
+	 and can be used to access data from theories as they are
+	 used.
+
+	 [load_fn info]: Load the theory named [info.name]. The theory
+	 should satisfy the contraints in [info] (e.g. of date and
+	 whether it is protected.)
+
+	 [build_fn db name]: Build the theory named [name], return the
+	 database with the newly built theory as the current
+	 theory. The result ({e db'}) of [build_fn db name] will be
+	 rejected if the theory ({e thy}) named [name] is not in the
+	 database, if any of the parents of [thy] are not in the
+	 importing list of [db'], if [thy] is not the first theory in
+	 the importing list or if any theory in the importing list of
+	 [db] is not in the importing list and table of [db'].
        *)
       type data = 
 	  {
@@ -362,42 +365,33 @@ module Loader :
 	  -> (info -> Theory.thy)
 	    -> (thydb -> string -> thydb)
 		-> data
-
-
-      val load_theory : thydb -> data -> info -> thydb
-(**
-   [load_theory db n data]
-
-   Load a theory from disc into the database.
-   Return the list of importings for the new theory.
- *)
+(** Constructor for [data]. *)
 
       val make_current :  thydb -> data -> Theory.thy -> thydb
 (** 
-   [make_current db thy]: Make theory [thy] the current theory, 
-   making sure that all the parents of [thy] are loaded.
+   [make_current db thy]: Load the parents of [thy] into [db] and make
+   theory [thy] the current theory.
 *)
 
       val load: thydb -> data -> info -> thydb
 (**
-   [load db info data]
-
-   Load a theory from disc into the database. Make it the current theory.
- *)
+   [load db info data]: Load a theory and, if neccessary, it parents
+   from disc into the database. Make it the current theory.
+*)
 
 
 (** {7 Debugging information} *)
 
+(*
+      val load_theory : thydb -> data -> info -> thydb
       val load_parents : thydb -> data -> info -> string list -> thydb
       val load_thy: info -> data -> thydb -> thydb
       val build_thy: info -> data -> thydb -> thydb
-      val check_build : thydb -> Theory.thy -> unit
-
+      val check_build : thydb -> thydb -> Theory.thy -> unit
       val set_curr : thydb -> Theory.thy -> thydb
-
       val test_protection : bool option -> Theory.thy -> unit
       val test_date : float option -> Theory.thy -> unit
-	  
+*)
 	  
     end
 
@@ -405,6 +399,7 @@ module Loader :
 
 (** {5 Debugging information} *)
 
+(*
 module NameSet :
 sig
   type t = { list : string list ; 
@@ -417,12 +412,9 @@ sig
   val to_list: t -> string list
   val to_set : t -> Lib.StringSet.t
   val from_list : string list -> t
-
 end
 
-
+val add_importing : thydb -> string list -> thydb
 val mk_importing : thydb -> NameSet.t
-
-val table_as_list : thydb -> (string * Theory.thy) list list
-val print : thydb -> unit
+*)
 

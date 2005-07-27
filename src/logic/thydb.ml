@@ -55,14 +55,6 @@ module NameSet =
       List.fold_left add empty ls
   end
 
-(*
-   type thydb = 
-   {
-   db: (string, Theory.thy)Hashtbl.t;
-   mutable curr: Theory.thy option;
-   mutable importing : NameSet.t
-   }
- *)
 module Tree = Treekit.StringTree
 
 type table_t = (Theory.thy)Tree.t
@@ -81,20 +73,12 @@ let empty ()=
    importing = NameSet.empty
  }
 
-(*
-   let empty ()= 
-   {
-   db= Hashtbl.create 253; 
-   curr=None;
-   importing = NameSet.empty
-   }
- *)
-
 let table thdb = thdb.db
 let current thdb = 
   Lib.dest_option ~err:(Failure "No current theory") thdb.curr
 let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
+
 
 (***
  * Operations on Theories
@@ -106,7 +90,6 @@ let current_name db =
   Theory.get_name thy
 
 let is_imported th thdb = NameSet.mem thdb.importing th
-let thy_in_scope th thydb = is_imported th thydb
 let is_loaded name thdb = Tree.mem thdb.db name
 
 let add_thy thdb thy = 
@@ -116,18 +99,12 @@ let add_thy thdb thy =
   then raise (error ("Theory "^name^" already present in database.") [])
   else 
     {thdb with db =Tree.add thdb.db name thy}
-(*
-   {thdb with db =(Hashtbl.add thdb.db name thy; thdb.db)}
- *)
 
 let remove_thy thdb n= 
-  if (n=current_name thdb) || (thy_in_scope n thdb)
+  if (n=current_name thdb) || (is_imported n thdb)
   then raise (error ("Theory "^n^" is being used in the database.") [])
   else 
     {thdb with db = Tree.delete thdb.db n}
-(*
-   {thdb with db = (Hashtbl.remove thdb.db n; thdb.db)}
- *)
 
 let get_thy thdb name = Tree.find thdb.db name
 
@@ -157,6 +134,9 @@ let all_loaded db ns =
     [] -> true
   | (x::_) -> raise (error "Theory not in database" [x])
 
+(** 
+   [add_importing db ns]: Add names [ns] to the importing list.
+*)
 let add_importing thdb ls = 
   let ls1 = Lib.remove_dups ((imported thdb)@ ls)
   in 
@@ -195,39 +175,6 @@ let mk_importing thdb=
   in 
   NameSet.rev (mk_aux thdb thy_list NameSet.empty)
 
-(*
-   NameSet.to_list (mk_aux thdb parents NameSet.empty)
- *)
-
-(*
-   let mk_importing thdb=
-   let rec mk_aux thdb ls rs =
-   match ls with 
-   [] -> rs
-   | (x::xs) -> 
-   if List.mem x rs 
-   then mk_aux thdb xs rs
-   else 
-   (try
-   let nls = get_parents thdb x
-   in let nrs= mk_aux thdb nls (x::rs)
-   in 
-   mk_aux thdb xs 
-   (rs@(List.filter (fun x->not(List.mem x rs)) nrs ))
-   with _ -> raise (Result.error("mk_importing: theory "^x)))
-   in 
-   let parents = try Theory.get_parents (current thdb) with _ -> []
-   in 
-   (mk_aux thdb parents [])
- *)
-
-(*
-   let set_importing thdb = 
-   let name = current_name thdb
-   in 
-   {thdb with importing = NameSet.from_list (name :: (mk_importing thdb))}
- *)
-
 let set_current thdb thy = 
   let name = Theory.get_name thy 
   in
@@ -254,7 +201,7 @@ let set_current thdb thy =
 (*** Find functions ***)
 
 (** 
-   [find f tdb]: apply [f] to each theory in the importing list,
+   [find f tdb]: Apply [f] to each theory in the importing list,
    returning the first that succeeds. Raise [Not_found] if none succeed.
  *)
 let find f tdb =
@@ -269,35 +216,11 @@ let find f tdb =
 (** 
    [quick_find f th tdb]: apply [f] to theory [th] if it is in the
    importing list. Raise [Not_found] if not found.
- *)
+*)
 let quick_find f th tdb =
   if is_imported th tdb
   then f (get_thy tdb th)
   else raise Not_found
-
-(**
-   [find_to_apply mem f thy_name thdb]: Starting with the theory named
-   [thy_name], apply [f] to each theory in the imported by [thy_name]
-   returning the first to succeed. Return [Not_found] if none succeed.
- *)
-type memos=(string, bool) Lib.substype
-let empty_memo()=Lib.empty_env()
-
-let find_to_apply memo f thy_name thdb =
-  let rec find_aux names =
-    match names with
-      [] -> raise Not_found
-    | (n::ns) -> 
-	if Lib.member n memo 
-	then find_aux ns
-	else 
-	  (let th = get_thy thdb n
-	  in 
-	  (ignore(Lib.add n true memo);
-	   try f th
-	   with _ -> find_aux (get_parents thdb n)))
-  in find_aux [thy_name]
-
 
 (*** Types ***)
 
@@ -318,8 +241,7 @@ let thy_of_type th name thdb =
     if (Theory.type_exists name thy) then (Theory.get_name thy)
     else raise Not_found
   in 
-  find_to_apply (empty_memo()) is_thy_of th thdb 
-
+  find is_thy_of thdb 
 
 (*** Definitions and Declarations ***)
 
@@ -388,7 +310,7 @@ let thy_of th name thdb =
     if (Theory.id_exists name thy) then (Theory.get_name thy)
     else raise Not_found
   in 
-  find_to_apply (empty_memo()) is_thy_of th thdb 
+  find is_thy_of thdb 
 
 (*** Theorems ***)
 
@@ -430,7 +352,6 @@ let get_lemma th n tdb =
   else quick_find get_aux th tdb
 
 (*** Type Printer-Parser records ***)
-
 
 let add_type_pp_rec n ppr thdb = 
   Theory.add_type_pp_rec n ppr (current thdb); thdb
@@ -513,7 +434,7 @@ let scope_type_thy thy_name db x =
 let scope_thy_in_scope db th1 = 
   if(th1=Basic.null_thy)  (* ignore the empty scope *)
   then true
-  else thy_in_scope th1 db
+  else is_imported th1 db
 
 let mk_scope db =
   let thy_name = 
@@ -528,6 +449,29 @@ let mk_scope db =
    Scope.thy_in_scope  = scope_thy_in_scope db
  } 
 
+(*** 
+* Printer 
+***)
+
+let print db = 
+  let table_as_list db0 = 
+    Treekit.StringTree.to_list (table db0)
+  in 
+  let print_tbl ths = 
+    Printer.print_sep_list 
+      ((fun (n, _) -> Format.print_string n), ",") ths
+  in 
+  let name = try current_name db with _ -> "(none)"
+  in 
+  Format.printf "@[<v 2> {@,Current theory: %s@," name;
+  Format.printf "Importing: @[<2>";
+  Printer.print_sep_list (Format.print_string, ",") (imported db);
+  Format.printf "@]@,";
+  Format.printf "Table: @[<2>";
+  Printer.print_sep_list 
+    (print_tbl, ",") (table_as_list db);
+  Format.printf "@]@,}@]"
+    
 (***
  * Theory loader 
  ***)
@@ -644,6 +588,47 @@ module Loader =
 	add_thy thdb thy
       with err -> add_error "Failed to load theory" [info.name] err
 	  
+(*** Building theories ***)
+
+(** 
+   [check_build db thy]: Check the result of a theory build. Verify
+   that [thy] is in database [db], that the parents of [thy] are in
+   the importing list of [db] and that [thy] is the first in the
+   importing list.
+
+   raise Failure if checks fail.
+*)
+    let check_build db0 db thy =
+      let check_first n l = 
+	match l with 
+	  (x::_) -> 
+	    if ((x == n) || (x = n)) then ()
+	    else 
+	      raise 
+		(error "Built theory not first in importing list." [n; x])
+	| [] -> 
+	    raise (error "Empty importing list, trying to build " [n])
+      in 
+      let rec check_all l = 
+	match l with 
+	  [] -> ()
+	| (x::xs) -> 
+	    if (is_imported x db) && (is_loaded x db) then check_all xs 
+	    else raise (error "Failed database check at theory" [x])
+      in 
+      let thy_list = imported db 
+      and name = Theory.get_name thy
+      and thy_list0 = imported db0
+      in 
+      try 
+	(check_first name thy_list;
+	 ignore(all_loaded db thy_list);
+	 check_all thy_list0;
+	 try ignore (get_thy db name)
+	 with _ -> raise (error "Built theory not in database." [name]))
+      with err -> 
+	raise (add_error "Failed to build theory" [name] err)
+
 (**
    [build_thy info buildfn thdb]: Build theory named [info.name] using
    function [buildfn]. Function [buildfn] is assumed to add the theory
@@ -654,35 +639,6 @@ module Loader =
 
    Returns the database with the newly built theory as the current theory.
  *)
-
-(** 
-   [check_build db thy]: verify that [thy] is in database [db], that
-   the parents of [thy] are in the importing list of [db] and that
-   [thy] is the first in the importing list.
-
-   raise Failure if checks fail.
- *)
-    let check_build db thy =
-      let thy_list = imported db 
-      and name = Theory.get_name thy
-      in 
-      try 
-	((match thy_list with 
-	  (x::_) -> 
-	    if ((x == name) || (x = name)) 
-	    then ()
-	    else 
-	      raise 
-		(error "Built theory not first in importing list." [name; x])
-	| [] -> 
-	    raise 
-	      (error "Empty importing list, trying to build " [name]));
-	 ignore(all_loaded db thy_list);
-	 try ignore (get_thy db name)
-	 with _ -> raise (error "Built theory not in database." [name]))
-      with err -> 
-	raise (add_error "Failed to build theory" [name] err)
-
     let build_thy info data thdb= 
       let db = 
 	try data.build_fn thdb info.name
@@ -700,7 +656,7 @@ module Loader =
 	add_error 
 	  "Failed to rebuild theory. Theory not protected." 
 	  [info.name] err);
-      (try check_build db thy
+      (try check_build thdb db thy
       with err -> 
 	add_error "Failed to rebuild theory" [info.name] err);
       (try set_curr db thy
@@ -716,7 +672,6 @@ module Loader =
  *)
     let apply_fn db thy_fn thy =
       (try (thy_fn (Theory.contents thy)) with _ -> ())
-
 
 (**
    [load_theory thdb name data]: Load the theory named [name] into
@@ -792,6 +747,10 @@ module Loader =
 	    load_parents db1 bundle info xs)
 
 
+(***
+* Toplevel functions 
+***)
+
     let make_current db data thy = 
       let ps = Theory.get_parents thy
       and name = Theory.get_name thy
@@ -802,7 +761,6 @@ module Loader =
       in 
       let db1 = load_parents db data info ps
       in 
-(*  set_curr db1 thy  *)
       set_current db1 thy  
 
     let load db data info =
@@ -816,22 +774,3 @@ module Loader =
 
   end      
 
-let table_as_list db = 
-  Treekit.StringTree.to_list (table db)
-
-let print db = 
-  let print_tbl ths = 
-    Printer.print_sep_list 
-      ((fun (n, _) -> Format.print_string n), ",") ths
-  in 
-  let name = try current_name db with _ -> "(none)"
-  in 
-  Format.printf "@[<v 2> {@,Current theory: %s@," name;
-  Format.printf "Importing: @[<2>";
-  Printer.print_sep_list (Format.print_string, ",") (imported db);
-  Format.printf "@]@,";
-  Format.printf "Table: @[<2>";
-  Printer.print_sep_list 
-    (print_tbl, ",") (table_as_list db);
-  Format.printf "@]@,}@]"
-    
