@@ -73,10 +73,23 @@ let make ?env scp t=
 
 
 (** 
-   [mk_subterm f t]: Make [t] a formula with the same theory marker as [f].
-   This is only safe if [t] is a subterm of [f] and [f] is not a quantifier.
+   [mk_subterm_unsafe f t]: Make [t] a formula with the same theory
+   marker as [f].  This is only safe if [t] is a subterm of [f] and
+   [f] is not a quantifier.
 *)
-let mk_subterm f t = {thy = thy_of f; term = t}
+let mk_subterm_unsafe f t = {thy = thy_of f; term = t}
+
+(**
+   [mk_subterm f t]: Make [t] a formula with the same theory marker as
+   [f]. Checks that [t] is a closed subterm of [f], fails otherwise. 
+*)
+let mk_subterm f t = 
+  if (Term.is_subterm t (term_of f)) && (Term.is_closed [] t)
+  then 
+    {thy = thy_of f; term = t}
+  else 
+    raise (add_error "Can't make a formula as a subterm of formula" [f]
+	     (Term.term_error "term isn't a subterm" [t]))
 
 (**
    [formula_in_scope scp f]: true if formula [f] is in scope [scp].
@@ -175,34 +188,34 @@ let dest_neg f =
   if is_neg f
   then 
     match Term.dest_unop (term_of f) with 
-    (_, x) -> mk_subterm f x
+    (_, x) -> mk_subterm_unsafe f x
   else raise (error "dest_neg" [f])
 
 let dest_conj f = 
   if is_conj f
   then 
     match Term.dest_binop (term_of f) with 
-    (_, a, b) -> (mk_subterm f a, mk_subterm f b)
+    (_, a, b) -> (mk_subterm_unsafe f a, mk_subterm_unsafe f b)
   else raise (error "dest_conj" [f])
 
 let dest_disj f = 
   if is_disj f
   then 
     match Term.dest_binop (term_of f) with 
-      (_, a, b) -> (mk_subterm f a, mk_subterm f b)
+      (_, a, b) -> (mk_subterm_unsafe f a, mk_subterm_unsafe f b)
   else raise (error "dest_disj" [f])
 
 let dest_implies f = 
   if is_implies f
   then 
     match Term.dest_binop (term_of f)
-    with (_, a, b) -> (mk_subterm f a, mk_subterm f b)
+    with (_, a, b) -> (mk_subterm_unsafe f a, mk_subterm_unsafe f b)
   else raise (error "dest_implies" [f])
 
 let dest_equality f =  
   if is_equality f
   then match Term.dest_binop (term_of f) with 
-    (_, a, b) -> (mk_subterm f a, mk_subterm f b)
+    (_, a, b) -> (mk_subterm_unsafe f a, mk_subterm_unsafe f b)
   else raise (error "dest_equality" [f])
 
 let get_binder_name x = Term.get_binder_name (term_of x)
@@ -291,7 +304,7 @@ let subst scp lst form =
   in 
   fast_make scp (List.map snd lst) nt
 
-let rename t = mk_subterm t (Term.rename (term_of t))
+let rename t = mk_subterm_unsafe t (Term.rename (term_of t))
 
 
 (***
