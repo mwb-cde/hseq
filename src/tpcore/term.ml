@@ -1707,3 +1707,13 @@ let rec term_leq t1 t2 =
 let term_gt t1 t2 = not (term_leq t2 t1)
 
 
+let rec is_subterm x y = 
+  if(Term.equals x y) then true
+  else 
+    match y with 
+      App (f, a) -> (is_subterm x f) || (is_subterm x a)
+    | Qnt (_, b) -> (is_subterm x b)
+    | Typed (t, _) -> is_subterm x t
+    | _ -> false
+
+      

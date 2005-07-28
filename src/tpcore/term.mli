@@ -595,3 +595,7 @@ val term_gt: term -> term -> bool
    [term_gt]: Greater-Than, defined in terms of [term_leq].
 *)
 
+val is_subterm : term -> term -> bool
+(**
+   [is_subterm x y]: Test whether [x] is a subterm of [y]. 
+*)
