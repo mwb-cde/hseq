@@ -226,7 +226,7 @@ type id_save_record =
 
 val to_save : id_record -> id_save_record
 (** Convert identifier record to permanent storage record. *)
-val from_save : id_save_record -> id_record
+val from_save : Scope.t -> id_save_record -> id_record
 (** Convert identifier record from permanent storage record. *)
 
 (** The representation of a theorem record for disk storage. *)
@@ -238,7 +238,7 @@ type thm_save_record =
 
 val thm_to_save : thm_record -> thm_save_record
 (** Convert theorem record to permanent storage record. *)
-val thm_from_save : thm_save_record -> thm_record
+val thm_from_save : Scope.t -> thm_save_record -> thm_record
 (** Convert theorem record from permanent storage record. *)
 
 val output_theory : out_channel -> thy -> unit
@@ -246,7 +246,7 @@ val output_theory : out_channel -> thy -> unit
    Convert a theory to permanent storage representation and emit to an
    output channel.
 *)
-val input_theory : in_channel -> thy
+val input_theory : Scope.t -> in_channel -> thy
 (** 
    Convert a theory from the permanent storage representation read from 
    an channel.
@@ -254,7 +254,7 @@ val input_theory : in_channel -> thy
 
 (** {7 Toplevel input/output of theories} *)
 
-val load_theory : string -> thy
+val load_theory : Scope.t -> string -> thy
 (** Load a theory from disc *)
 val save_theory: thy -> bool -> string -> unit
 (** Save a theory to disc *)

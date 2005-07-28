@@ -348,10 +348,10 @@ let to_save ir =
      None -> None | Some(d) -> Some (Logic.to_save d));
    sdprops = ir.dprops}
 
-let from_save sr =
+let from_save scp sr =
   {typ=sr.sty; 
    def = (match sr.sdef with 
-     None -> None | Some(d) -> Some(Logic.from_save d));
+     None -> None | Some(d) -> Some(Logic.from_save scp d));
    dprops = sr.sdprops}
 
 type thm_save_record =
@@ -364,9 +364,18 @@ let thm_to_save tr=
   { sthm = Logic.to_save tr.thm; 
     sprops = tr.props }
 
-let thm_from_save sr=
-  { thm = Logic.from_save sr.sthm; 
+let thm_from_save scp sr=
+  { thm = Logic.from_save scp sr.sthm; 
     props = sr.sprops }
+
+(** 
+   [new_thy_scope thy scp]: Extend [scp] with the name and marker of [thy].
+   Does not add other contents of [thy] to the scope.
+*)
+let thy_scope thy scp=
+  let mark = get_marker thy
+  in 
+  { scp with Scope.curr_thy = mark }
 
 let output_theory oc thy = 
   let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
@@ -382,10 +391,10 @@ let output_theory oc thy =
     (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
      saxs, sthms, sdefs, stypes, styp_pps, sid_pps)
 
-let input_theory ic = 
 (*** Scoping information not needed yet 
-let input_theory scp ic = 
+let input_theory ic = 
 ***)
+let input_theory scp ic = 
   let unsave f xs = Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
   and n, prot, tim, prnts, lfls, saxs, sthms, 
     sdefs, stypes, ntype_pps, nid_pps = input_value ic 
@@ -395,7 +404,7 @@ let input_theory scp ic =
   in 
 (*** Scoping information not needed yet 
   let thy_scp = 
-    let scp = Scope.empty_scope()
+    let scp = new_thy_scope thy scp
     in
     let scp1= Scope.extend_with_typedeclns scp 
 	(List.map 
@@ -406,9 +415,9 @@ let input_theory scp ic =
       (List.map (fun (id, srd) -> (id, srd.sty)) sdefs)
   in 
 ***)
-  let axs = unsave thm_from_save saxs
-  and thms = unsave thm_from_save sthms
-  and defs = unsave from_save sdefs
+  let axs = unsave (thm_from_save scp) saxs
+  and thms = unsave (thm_from_save scp) sthms
+  and defs = unsave (from_save scp) sdefs
   and tydefs = unsave Gtypes.from_save_rec stypes
   in 
   {thy with
@@ -418,9 +427,9 @@ let input_theory scp ic =
 
 (*** Toplevel input/output of theories ***)
 
-let load_theory fname = 
+let load_theory scp fname = 
   let ic = open_in fname
-  in let thy = input_theory ic; 
+  in let thy = input_theory scp ic; 
   in close_in ic; 
   Format.printf "@[Loading theory %s@]@." (get_name thy);
   thy

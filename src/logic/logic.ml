@@ -44,10 +44,10 @@ let to_save t =
     Axiom f -> Saxiom (Formula.to_save f)
   | Theorem f -> Stheorem (Formula.to_save f)
 
-let from_save t = 
+let from_save scp t = 
   match t with 
-    Saxiom f -> Axiom (Formula.from_save f)
-  | Stheorem f -> Theorem (Formula.from_save f)
+    Saxiom f -> Axiom (Formula.from_save scp f)
+  | Stheorem f -> Theorem (Formula.from_save scp f)
 
 (***
  * Pretty printing
@@ -965,16 +965,12 @@ module Tactics =
 
 
 (*** instantiation terms ***)  
-    let inst_term sq tyenv t trm =
-      let scp = Sequent.scope_of sq
-      in 
+    let inst_term scp tyenv t trm =
       let mtyenv = ref tyenv
       in 
       let fm1 = Formula.make ~env:mtyenv scp trm
       in 
-      let ntrm1= Formula.term_of fm1
-      in 
-      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t ntrm1
+      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t fm1
       in 
       let (ntrm3, ntyenv3)=
 	Formula.typecheck_retype scp ntyenv2 ntrm2 
@@ -1460,7 +1456,7 @@ module Tactics =
       if (Formula.is_all t) 
       then 
 	try 
-	  (let ntrm, tyenv2 = inst_term sq tyenv t trm
+	  (let ntrm, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm
 	  in 
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
@@ -1523,9 +1519,13 @@ module Tactics =
 	  then sty::(Sequent.sqnt_tyvars sq)
 	  else (Sequent.sqnt_tyvars sq)
 	in 
-	let ncncl, ntyenv = 
-	  Formula.inst_env nscp styenv t sv
+	let ncncl, ntyenv = inst_term nscp tyenv t sv
 	in 
+(*
+   let ncncl, ntyenv = 
+   Formula.inst_env nscp styenv t sv
+   in 
+*)
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
@@ -1584,8 +1584,13 @@ module Tactics =
 	  else (Sequent.sqnt_tyvars sq)
 	in 
 	let nasm, ntyenv= 
+	  inst_term nscp styenv t sv
+	in 
+(*
+	let nasm, ntyenv= 
 	  Formula.inst_env nscp styenv t sv
 	in 
+*)
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
@@ -1617,7 +1622,7 @@ module Tactics =
       if (Formula.is_exists t) 
       then 
 	try 
-	  let trm2, tyenv2 = inst_term sq tyenv t trm
+	  let trm2, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm
 	  in 
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
@@ -2233,7 +2238,7 @@ module Defns =
        sabs_type_inverse = to_save x.abs_type_inverse
      }
 
-    let rec from_saved_cdefn td = 
+    let rec from_saved_cdefn scp td = 
       match td with
 	STypeAlias (id, sl, ty) ->
 	  (match ty with 
@@ -2242,21 +2247,21 @@ module Defns =
       | STermDecln (id, ty) -> 
 	  TermDecln (id, Gtypes.from_save ty)
       | STermDef (id, ty, thm) ->
-	  TermDef (id, Gtypes.from_save ty, from_save thm)
+	  TermDef (id, Gtypes.from_save ty, from_save scp thm)
       | STypeDef ctdef ->
-	  TypeDef (from_saved_ctypedef ctdef)
+	  TypeDef (from_saved_ctypedef scp ctdef)
     and
-	from_saved_ctypedef x = 
+	from_saved_ctypedef scp x = 
       {
        type_name = x.stype_name;
        type_args = x.stype_args;
        type_base = Gtypes.from_save x.stype_base;
-       type_rep = from_saved_cdefn x.stype_rep;
-       type_abs = from_saved_cdefn x.stype_abs;
-       type_set = Formula.from_save x.stype_set;
-       rep_type = from_save x.srep_type;
-       rep_type_inverse = from_save x.srep_type_inverse;
-       abs_type_inverse = from_save x.sabs_type_inverse
+       type_rep = from_saved_cdefn scp x.stype_rep;
+       type_abs = from_saved_cdefn scp x.stype_abs;
+       type_set = Formula.from_save scp x.stype_set;
+       rep_type = from_save scp x.srep_type;
+       rep_type_inverse = from_save scp x.srep_type_inverse;
+       abs_type_inverse = from_save scp x.sabs_type_inverse
      }
 
 

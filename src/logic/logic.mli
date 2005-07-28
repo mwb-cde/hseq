@@ -150,7 +150,7 @@ type saved_thm
 (** The representation for saving on permanent storage *)
 val to_save: thm -> saved_thm
 (** Convert to the representation for saving on permanent storage *)
-val from_save: saved_thm -> thm
+val from_save: Scope.t -> saved_thm -> thm
 (** Convert from the representation for saving on permanent storage *)
 
 (** {7 Pretty printing} *)
@@ -1358,7 +1358,7 @@ and
 
       val to_saved_cdefn: cdefn -> saved_cdefn
 (** Convert a definition to the representation for permanent storage. *)
-      val from_saved_cdefn: saved_cdefn -> cdefn 
+      val from_saved_cdefn: Scope.t -> saved_cdefn -> cdefn 
 (** Convert a definition from the representation for permanent storage. *)
 
 (** {7 Term definition and declaration} *)

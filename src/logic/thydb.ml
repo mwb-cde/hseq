@@ -444,6 +444,20 @@ let get_term_pplist th tdb =
  * Scopes from database 
  ***)
 
+let marker_in_scope m db =
+  let get_mark n tbl = 
+    Theory.get_marker (get_thy tbl n)
+  in 
+  let name = Scope.marker_name m
+  in 
+  if (is_imported name db)
+  then 
+    try 
+      let thy_mark = get_mark name db
+      in Tag.equal thy_mark m
+    with Not_found -> false
+  else false
+	
 let scope_term_type db f= 
   let thstr, idstr = Basic.dest_fnid f
   in 
@@ -465,6 +479,9 @@ let scope_thy_in_scope db th1 =
   then true
   else is_imported th1 db
 
+let scope_marker_in_scope db m = 
+  marker_in_scope m db
+
 let mk_scope db =
   let thy_marker = 
     try 
@@ -482,10 +499,7 @@ let mk_scope db =
    Scope.type_defn = scope_type_defn db;
    Scope.type_thy = scope_type_thy thy_name db;
    Scope.thy_in_scope  = scope_thy_in_scope db;
-   Scope.marker_in_scope = 
-   (fun x -> 
-   (Result.warning "Thydb.mk_scope: marker_in_scope is not implemented";
-    raise Not_found))
+   Scope.marker_in_scope = scope_marker_in_scope db
  } 
 
 (*** 

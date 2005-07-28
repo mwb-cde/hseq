@@ -288,8 +288,13 @@ val get_term_pplist:
    with name [n].
  *)
 
-
 (** {5 Scopes from databases} *)
+
+val marker_in_scope : Scope.marker -> thydb -> bool
+(** 
+   Test whether the theory identified by a marker is in the importing
+   list (and therefore in scope).
+*)
 
 val mk_scope: thydb -> Scope.t
 (** Make a scope from a theory database. *)

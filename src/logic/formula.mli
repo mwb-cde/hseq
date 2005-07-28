@@ -11,10 +11,34 @@
    - it is type-correct 
    - it is closed: all bound variables occur within their binders
    and there are no free variables.
+
+   Each formula is associated with a theory, identified by a theory
+   marker. The formula is type-correct in the scope of its theory.
+
 *)
 
 type form 
 (** The type of formulas *)
+
+val term_of: form -> Basic.term
+(** The term of a formula *)
+
+val thy_of : form -> Scope.marker
+(** The theory  of a formula *)
+
+
+(** {5 Error Reporting} *)
+
+class formError : string -> form list ->
+  object
+    inherit Result.error 
+    val forms: form list
+    method get : unit -> form list
+  end
+val error : string -> form list -> exn
+val add_error : string -> form list -> exn -> 'a
+
+(** {5 Conversion from a term} *)
 
 val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
 (**
@@ -31,9 +55,6 @@ val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
       is given, set it to the type substitution obtained from typechecking.}}
 *)
 
-val term_of: form -> Basic.term
-(** Reduce a formula to a term. *)
-
 (** {5 Representation for permanent storage} *)
 
 type saved_form 
@@ -41,7 +62,7 @@ type saved_form
 
 val to_save: form -> saved_form
 (** Convert to the saveable representation. *)
-val from_save : saved_form -> form
+val from_save : Scope.t -> saved_form -> form
 (** Convert from the saveable representation. *)
 
 (** {5 Operations on formulas} *)
@@ -110,14 +131,14 @@ val mk_equality: Scope.t -> form -> form -> form
 (** {7 General operations} *)
 
 val inst_env : Scope.t -> Gtypes.substitution
-  -> form -> Basic.term -> (form* Gtypes.substitution)
+  -> form -> form -> (form* Gtypes.substitution)
 (**
    Instantiation w.r.t a type substitution.
    Instantiate a quantified formula with a given term 
    succeeds only if the result is a formula.
 *)
 
-val inst : Scope.t -> form -> Basic.term -> form
+val inst : Scope.t -> form -> form -> form
 (**
    Instantiate a quantified formula with a given term
    succeeds only if the result is a formula.
