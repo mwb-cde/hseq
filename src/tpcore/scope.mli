@@ -40,7 +40,7 @@ type type_record =
 type t=
     { 
       curr_thy : marker;
-(** The name of the current theory *)
+(** The marker of the current theory *)
       term_type : ident -> gtype; 
 	(** The type of a term identifier. *)
 	term_thy : string -> thy_id;
