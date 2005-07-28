@@ -187,7 +187,7 @@ let load_thy_file info =
 	in 
 	if Sys.file_exists filename
 	then 
-	  let thy = Theory.load_theory filename
+	  let thy = Theory.load_theory (scope()) filename
 	  in 
 	  if (test_protection prot thy) && (test_date date thy)
 	  then thy
