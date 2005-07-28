@@ -43,6 +43,7 @@ val add_error : string -> form list -> exn -> 'a
 val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
 (**
    [make ?env scp trm]: Make a formula from term [trm] in scope [scp].
+   The theory of the formula is the theory currently in scope.
    
    {ol 
    {- Replace each free variable [Var(x, _)] in [trm] with the term
@@ -103,7 +104,14 @@ val is_all: form-> bool
 val is_exists : form -> bool
 val is_lambda: form-> bool
 
-(** {7 Destructors} *)
+(** 
+   {7 Destructors} 
+
+   The theory of a subterm of a formula [f] is the theory of
+   [f]. There are no destructors for binding terms since these would
+   not result in closed terms. Use {!Term.dest_qnt} to destruct
+   binding terms or {!Formula.inst} to form a formula from a binding term.
+*)
 
 val dest_num : form -> Num.num
 val dest_neg: form -> form

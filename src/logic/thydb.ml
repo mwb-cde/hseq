@@ -102,6 +102,27 @@ let current thdb =
 let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
 
+let expunge db = 
+  let used_list = db.importing
+  and tbl = table db
+  in 
+  let not_used = 
+    let rec flatten_list ls rs =
+      match ls with 
+      [] -> rs
+      | ((n, _)::_)::xs -> 
+	  if not (NameSet.mem used_list n)
+	  then flatten_list xs (n::rs)
+	  else flatten_list xs rs
+      | [] :: xs -> flatten_list xs rs
+    in 
+    flatten_list (Treekit.StringTree.to_list tbl) []
+  in 
+  let tbl1 =
+    List.fold_left 
+     Treekit.StringTree.delete tbl not_used
+  in 
+  { db with db=tbl1 }
 
 (***
  * Operations on Theories

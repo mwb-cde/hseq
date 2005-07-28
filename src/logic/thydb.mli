@@ -56,6 +56,12 @@ val imported : thydb -> string list
 val thys : thydb -> Lib.StringSet.t
 (** The names of the theories which are in scope. *)
 
+val expunge: thydb -> thydb
+(** 
+   Delete unused theories from the theory database. A theory is unused
+   iff it is not in the importing list of the database.
+*)
+
 (** {5 Operations on Theories} *)
 
 val current_name: thydb -> string

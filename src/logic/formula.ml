@@ -96,8 +96,6 @@ let mk_subterm f t =
 
    In the current implementation, this always returns [false].
    Future implementations will hopefully do something useful here.
-
-let formula_in_scope scp f = false
 *)   
 let formula_in_scope scp f = Scope.in_scope_marker scp (thy_of f)
 
@@ -106,8 +104,6 @@ let formula_in_scope scp f = Scope.in_scope_marker scp (thy_of f)
    scope [scp]. Return false otherwise. Used to test whether the
    formulas can be used e.g. with conjunction to make a new formula
    without the expense of going through [make].
-
-let valid_forms scp fs = false 
 *)
 let valid_forms scp fs =
   let test() =
@@ -223,7 +219,6 @@ let get_binder_type x = Term.get_binder_type (term_of x)
 
 (*** Constructors ***)
 
-
 let mk_true scp = make scp Logicterm.mk_true
 let mk_false scp = make scp Logicterm.mk_false
 let mk_bool scp b = if b then mk_true scp else mk_false scp
@@ -243,33 +238,6 @@ let mk_equality scp a b =
 
 
 (*** General Operations ***)
-
-(*
-let inst_env scp env f r =
-  let t = term_of f
-  in 
-  if (Term.is_qnt t) 
-  then 
-    try
-      (let (q, b) = Term.dest_qnt (term_of t)
-      in 
-      let r1, nenv=
-	let penv = ref env
-	in 
-	let r1=make ~env:penv scp r
-	in 
-	(r1, !penv)
-      in 
-      let t1= Term.subst_quick (Basic.Bound(q)) (term_of r1) b
-      in 
-      let t2 = Term.retype nenv t1
-      in 
-      (fast_make scp [f] t2, nenv))
-    with err -> 
-      raise
-	(add_error "inst: replacement not closed " [r] err)
-  else raise (error "inst: not a quantified formula" [t])
-*)
 
 let inst_env scp env f r =
   let t = term_of f
@@ -469,7 +437,7 @@ let print inf x = Term.print inf (term_of x)
 let string_form x = Term.string_term (term_of x)
 
 (***
-* Miscelaneous
+* Miscellaneous
 ***)
 let rec check_term p t =
   if (p t) then 
