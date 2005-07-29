@@ -1085,7 +1085,7 @@ let rec to_save_aux inf env ty =
     Var(id) -> 
       let nty=
 	(try 
-	  Lib.assocp (==) id (!env)
+	  Lib.assocp (fun x -> id == x) (!env)
 	with Not_found -> 
 	  let nid= inf:=!inf+1; (!id, !inf)
 	  in 
@@ -1113,7 +1113,7 @@ let rec from_save_aux env ty =
   match ty with
     Var(id) -> 
       let nty = (
-	try Lib.assocp (=) id (!env)
+	try Lib.assocp (fun x -> id = x) (!env)
 	with Not_found ->
 	  let nid = ref(fst id)
 	  in 

@@ -177,6 +177,13 @@ val alpha_equals : Scope.t -> term -> term -> bool
    for [alpha_convp]. 
 *)
 
+val subst_equiv: Scope.t -> term -> (term * term) list -> term
+(**
+   Substition of equivalents under alpha-conversion. [subst scp f
+   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
+   to [ti] in [f]. Slower than {!Term.subst}.
+*)
+
 (** {7 Beta conversion} *)
 
 val beta_convp:  term -> bool
@@ -203,7 +210,7 @@ val eta_conv: term -> Basic.gtype -> term -> term
    (v:ty). t[v/x]) x)].
 *)
 
-(*** {5 Utility functions} *)
+(** {5 Utility functions} *)
 
 val typeof_cnst  : Basic.const_ty -> gtype
 (** Get the type of a primitive construct *)

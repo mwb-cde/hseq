@@ -206,6 +206,22 @@ let alpha_equals scp t1 t2 =
   try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
+let subst_equiv scp term lst = 
+  let repl t ls = 
+    Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
+  in 
+  let rec subst_aux trm = 
+    match (repl trm lst) with
+      Some(x) -> x 
+    | None -> 
+	(match trm with
+	  Qnt(q, b) ->  Qnt(q, subst_aux b)
+	| App(f, a) -> App(subst_aux f, subst_aux a)
+	| Typed(t, ty) -> Typed(subst_aux t, ty)
+	| _ -> trm)
+  in 
+  subst_aux term
+
 (*** Beta conversion ***)
 
 let beta_convp  =
