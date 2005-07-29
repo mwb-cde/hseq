@@ -26,8 +26,7 @@ val move_right : 'a list * 'a list -> 'a list * 'a list
 val move_left : 'a list * 'a list -> 'a list * 'a list 
 val index: ('a -> bool) -> 'a list -> int
 val filter: ('a -> bool) -> 'a list -> 'a list
-val assocp: ('a -> 'a -> bool) -> 'a -> ('a* 'b) list -> 'b
-val assoc: ('a -> bool ) -> 'a list -> 'a
+val assocp: ('a -> bool) -> ('a* 'b) list -> 'b
 
 type ('a, 'b) substype = ('a, 'b)Hashtbl.t
 val empty_env : unit -> ('a, 'b) Hashtbl.t 

@@ -69,15 +69,10 @@ let splice_nth i x y=
   in 
   (take (j, x)@ y@ (drop(j+1, x)))
 
-let rec assoc p ls =
+let rec assocp p ls = 
   match ls with
     [] -> raise Not_found
-  | (y::ys)  -> if p y then y else assoc p ls
-
-let rec assocp p x ls = 
-  match ls with
-    [] -> raise Not_found
-  | (y::ys) -> if (p x (fst y)) then (snd y) else assocp p x ys
+  | (a, b)::ys -> if (p a) then b else assocp p ys
 
 let rec filter p ls =
   match ls with
