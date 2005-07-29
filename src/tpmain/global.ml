@@ -162,7 +162,7 @@ let find_thy_file f =
    named [info.name] with protection [info.prot] and date no later
    than [info.date]. Finds the file from the path [get_thy_path()].
 *)
-let load_thy_file thydb info = 
+let load_thy_file info = 
   let test_protection prot b =
     match prot with 
       None -> true
@@ -178,8 +178,6 @@ let load_thy_file thydb info =
   and prot = info.Thydb.Loader.prot
   in 
   let thyfile = name^thy_suffix
-  in 
-  let scp = Thydb.mk_scope thydb
   in 
   let rec load_aux ths =
     match ths with

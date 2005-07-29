@@ -192,7 +192,34 @@ let name_tac ?info n lbl goal =
   match Lib.try_app (Logic.get_label_asm lbl) sqnt with
     Some _ -> Logic.Tactics.nameA info n lbl goal
   | None -> Logic.Tactics.nameC info n lbl goal
-  
+
+(** 
+   [named_tac tac names]: apply [tac ~info:inf goal], rename each of
+   [Drule.formula inf] with a name from [names], in order. Set
+   [info=inf'] where [inf'] is [inf], with the formula tag produced by
+   renaming.
+*) 
+let named_tac ?info tac names (goal: Logic.node) =
+    let inf1 = Drule.mk_info()
+    and inf2 = Drule.mk_info()
+    in 
+    let rec name_list ns ls g = 
+      match (ns, ls) with 
+	([], _) -> g
+      | (_, []) -> g
+      | (x::xs, y::ys) -> 
+	 (name_list xs ys) (foreach (name_tac ~info:inf2 x y) g)
+    in 
+    let g1 = tac ?info:(Some inf1) goal
+    in 
+    let lbls = List.map ftag (Drule.formulas inf1)
+    in 
+    let g2 = name_list names lbls g1
+    in 
+    add_info info 
+      (Drule.subgoals inf1) 
+      (List.rev (Drule.formulas inf2)) (Drule.constants inf1);
+    g2
 
 (*
    [unify_tac a c g]

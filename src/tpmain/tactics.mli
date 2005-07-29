@@ -176,10 +176,20 @@ val allA : ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
  *)
 val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
 
+val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
 (** 
    [name_tac ?info n lbl]: Name formula [lbl] with [n].
 *)
-val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
+
+val named_tac : 
+    ?info: Logic.info
+    -> (?info: Logic.info -> tactic) -> string list -> tactic
+(** 
+   [named_tac tac names]: apply [tac ~info:inf goal], rename each of
+   [Drule.formula inf] with a name from [names], in order. Set
+   [info=inf'] where [inf'] is [inf], with the formula tag produced by
+   renaming.
+*) 
 
 (* tacticals *)
 
