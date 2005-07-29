@@ -34,8 +34,8 @@ let simple_theory_print (thy:Theory.thy) =
   Format.printf ".@]@]";;
 
 (*
-#install_printer Thydb.NameSet.print;; 
 #install_printer simple_theory_print;; 
+#install_printer Thydb.NameSet.print;; 
 #install_printer Term.print_simple;;
 *)
 
