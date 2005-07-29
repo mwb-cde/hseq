@@ -2014,7 +2014,7 @@ module Tactics =
       and eqs_list= get_eq_list eqs sq
       in 
       try
-	let form1= Formula.subst scp eqs_list form
+	let form1= Formula.subst_equiv scp form eqs_list
 	in 
 	let (form2, tyenv2) = 
 	  Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
@@ -2061,7 +2061,7 @@ module Tactics =
       and eqs_list= get_eq_list eqs sq
       in 
       try
-	let form1= Formula.subst scp eqs_list form
+	let form1= Formula.subst_equiv scp form eqs_list
 	in 
 	let (form2, tyenv2) = 
 	  Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())

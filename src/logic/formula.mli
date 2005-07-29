@@ -152,10 +152,18 @@ val inst : Scope.t -> form -> form -> form
    succeeds only if the result is a formula.
 *)
 
-val subst : Scope.t -> (form*form) list ->  form -> form
+val subst : Scope.t -> form -> (form*form) list -> form 
 (** 
    [subst scp [(t1, r1); ...; (tn, rn)] f]: Simultaneous substitution.
    Substitutes the [ri] for the [ti] in formula [f].
+*)
+
+val subst_equiv : Scope.t -> form -> (form*form) list -> form 
+(**
+   Substition of equivalents under alpha-conversion. [subst scp f
+   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
+   to [ti] in [f]. Slower than {!Formula.subst} but less sensitive to
+   binder renaming. Note that this is not syntactic substitution.
 *)
 
 val rename: form -> form

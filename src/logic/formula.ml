@@ -262,13 +262,21 @@ let inst scp t r =
   let f, _ = inst_env scp (Gtypes.empty_subst()) t r
   in f
 
-let subst scp lst form = 
+let subst scp form lst=
   let env = 
     List.fold_left 
       (fun e (t, r) -> Term.bind (term_of t) (term_of r) e) 
       (Term.empty_subst()) lst
   in 
   let nt = Term.subst env (term_of form)
+  in 
+  fast_make scp (List.map snd lst) nt
+
+let subst_equiv scp form lst =
+  let repl_list = 
+    List.map (fun (t, r) -> ((term_of t), (term_of r))) lst
+  in 
+  let nt = Logicterm.subst_equiv scp (term_of form) repl_list
   in 
   fast_make scp (List.map snd lst) nt
 
