@@ -419,39 +419,6 @@ let new_thy_scope thy scp=
     (fun m -> (Tag.equal mark m) || Scope.in_scope_marker scp m)
   }
 
-(*
-let input_theory scp ic = 
-  let unsave f xs = Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
-  and n, prot, tim, prnts, lfls, saxs, sthms, 
-    sdefs, stypes, ntype_pps, nid_pps = input_value ic 
-  in 
-(*** Make an empty theory and unsave the type definitions ***)
-  let thy = mk_thy n []
-  in 
-  let thy_scp = 
-    let scp = new_thy_scope thy scp
-    in
-    let scp1= Scope.extend_with_typedeclns scp 
-	(List.map 
-	   (fun (id, rd) -> 
-	     ((Basic.mk_long n id), rd.Gtypes.sargs)) stypes)
-    in 
-    Scope.extend_with_terms scp1 
-      (List.map 
-	 (fun (id, rd) -> 
-	   (Basic.mk_long n id, Gtypes.from_save rd.sty)) sdefs)
-  in 
-  let axs = unsave (thm_from_save thy_scp) saxs
-  and thms = unsave (thm_from_save thy_scp) sthms
-  and defs = unsave (from_save thy_scp) sdefs
-  and tydefs = unsave Gtypes.from_save_rec stypes
-  in 
-  {thy with
-   protection=prot; date=tim; parents=prnts; lfiles = lfls;
-   axioms = axs; theorems = thms; defns= defs; typs=tydefs;
-   type_pps = ntype_pps; id_pps = nid_pps}
-*)
-
 let input_theory ic = 
   let n, prot, tim, prnts, lfls, saxs, sthms, 
     sdefs, stys, ntype_pps, nid_pps = input_value ic 

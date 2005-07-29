@@ -360,7 +360,7 @@ module Loader :
 	   (** 
 	      Function to apply to a successfully loaded theory.
 	    *)
-	 load_fn : thydb -> info -> Theory.saved_thy;
+	 load_fn : info -> Theory.saved_thy;
 	 (** Function to find and load a theory file. *)
 	   build_fn: thydb -> string -> thydb
 	       (** 
@@ -373,7 +373,7 @@ module Loader :
 
       val mk_data : 
 	  (Theory.contents -> unit)
-	  -> (thydb -> info -> Theory.saved_thy)
+	  -> (info -> Theory.saved_thy)
 	    -> (thydb -> string -> thydb)
 		-> data
 (** Constructor for [data]. *)
@@ -392,7 +392,6 @@ module Loader :
 
 
 (*
-*)
 
 (** {7 Debugging information} *)
 
@@ -404,6 +403,7 @@ module Loader :
       val set_curr : thydb -> Theory.thy -> thydb
       val test_protection : string -> bool option -> bool -> unit
       val test_date : string -> float option -> float -> unit
+*)
 	  
     end
 
@@ -412,7 +412,6 @@ module Loader :
 (** {5 Debugging information} *)
 
 (*
-*)
 
 module NameSet :
 sig
@@ -433,3 +432,4 @@ end
 val add_importing : thydb -> string list -> thydb
 val mk_importing : thydb -> NameSet.t
 
+*)

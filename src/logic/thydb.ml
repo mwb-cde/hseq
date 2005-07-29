@@ -224,7 +224,6 @@ let add_importing thdb ls =
    [mk_importing db]: Build the importing list of the current theory 
    Fail if any theory in not loaded.
  *)
-
 let mk_importing thdb=
   let rec mk_aux name rs = 
     if (NameSet.mem rs name) then rs
@@ -248,6 +247,12 @@ let mk_importing thdb=
   NameSet.insert (mk_aux name NameSet.empty) name
 
 
+(** 
+   Set the current theory to the given theory. The theory is added to
+   the table of theories if not already present. The importing list is
+   rebuilt from the theory parents. Fails if any of the theorys'
+   parents are not loaded.
+*)
 let set_current thdb thy = 
   let check_first n l =
     match Lib.try_app List.hd l with
@@ -577,7 +582,7 @@ module Loader =
 	 (** 
 	    Function to apply to a successfully loaded theory.
 	  *)
-	 load_fn : thydb -> info -> Theory.saved_thy;
+	 load_fn : info -> Theory.saved_thy;
 	 (** Function to find and load a theory file. *)
 	 build_fn: thydb -> string -> thydb
 	     (** Function to build the theory if it can't be loaded. *)
@@ -656,14 +661,13 @@ module Loader =
  *)
     let load_thy info data thdb=
       try
-	let saved_thy = data.load_fn thdb info
+	let saved_thy = data.load_fn info
 	in 
 	test_protection info.name info.prot (Theory.saved_prot saved_thy);
 	test_date info.name info.date (Theory.saved_date saved_thy);
 	saved_thy
       with err -> add_error "Failed to load theory" [info.name] err
 
-	  
 (*** Building theories ***)
 
 (** 

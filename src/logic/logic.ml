@@ -1578,11 +1578,6 @@ module Tactics =
 	in 
 	let ncncl, ntyenv = inst_term nscp tyenv t sv
 	in 
-(*
-   let ncncl, ntyenv = 
-   Formula.inst_env nscp styenv t sv
-   in 
-*)
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
@@ -1643,11 +1638,6 @@ module Tactics =
 	let nasm, ntyenv= 
 	  inst_term nscp styenv t sv
 	in 
-(*
-	let nasm, ntyenv= 
-	  Formula.inst_env nscp styenv t sv
-	in 
-*)
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
