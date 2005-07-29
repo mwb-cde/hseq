@@ -333,7 +333,7 @@ let get_type_pplist thy =
 * Theory Storage 
 ***)
 
-(*** Primitive input/output of theories ***)
+(** Representation for saving to disk. *)
 
 type id_save_record= 
     {
@@ -389,20 +389,6 @@ let saved_parents sthy = sthy.sparents
 let saved_prot sthy = sthy.sprot
 let saved_date sthy = sthy.sdate
 
-let output_theory oc thy = 
-  let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
-  in 
-  let saxs = mk_save thm_to_save (Lib.table_to_list thy.axioms)
-  and sthms = mk_save thm_to_save (Lib.table_to_list thy.theorems)
-  and sdefs = mk_save to_save (Lib.table_to_list thy.defns)
-  and stypes = mk_save Gtypes.to_save_rec (Lib.table_to_list thy.typs)
-  and styp_pps = thy.type_pps
-  and sid_pps = thy.id_pps
-  in 
-  output_value oc 
-    (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
-     saxs, sthms, sdefs, stypes, styp_pps, sid_pps)
-
 (** 
    [new_thy_scope thy scp]: Extend [scp] with the name and marker of [thy].
    Does not add other contents of [thy] to the scope.
@@ -419,25 +405,7 @@ let new_thy_scope thy scp=
     (fun m -> (Tag.equal mark m) || Scope.in_scope_marker scp m)
   }
 
-let input_theory ic = 
-  let n, prot, tim, prnts, lfls, saxs, sthms, 
-    sdefs, stys, ntype_pps, nid_pps = input_value ic 
-  in 
-  { 
-    sname=n;
-    sprot = prot; 
-    sdate = tim;
-    sparents = prnts;
-    sfiles = lfls;
-    saxioms = saxs;
-    stheorems = sthms;
-    sdefns = sdefs;
-    stypes = stys;
-    stype_pps = ntype_pps;
-    sid_pps = nid_pps
-  }
-
-(*** Make a theory from a saved theory. *)
+(** Make a theory from a saved theory. *)
 let from_saved scp sthy = 
   let unsave f xs = Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
   in 
@@ -474,6 +442,41 @@ let from_saved scp sthy =
    axioms = axs; theorems = thms; defns= defs; typs=tydefs;
    type_pps = ntype_pps; id_pps = nid_pps}
 
+
+(*** Primitive input/output of theories ***)
+
+let output_theory oc thy = 
+  let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
+  in 
+  let saxs = mk_save thm_to_save (Lib.table_to_list thy.axioms)
+  and sthms = mk_save thm_to_save (Lib.table_to_list thy.theorems)
+  and sdefs = mk_save to_save (Lib.table_to_list thy.defns)
+  and stypes = mk_save Gtypes.to_save_rec (Lib.table_to_list thy.typs)
+  and styp_pps = thy.type_pps
+  and sid_pps = thy.id_pps
+  in 
+  output_value oc 
+    (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
+     saxs, sthms, sdefs, stypes, styp_pps, sid_pps)
+
+let input_theory ic = 
+  let n, prot, tim, prnts, lfls, saxs, sthms, 
+    sdefs, stys, ntype_pps, nid_pps = input_value ic 
+  in 
+  { 
+    sname=n;
+    sprot = prot; 
+    sdate = tim;
+    sparents = prnts;
+    sfiles = lfls;
+    saxioms = saxs;
+    stheorems = sthms;
+    sdefns = sdefs;
+    stypes = stys;
+    stype_pps = ntype_pps;
+    sid_pps = nid_pps
+  }
+
 (*** Toplevel input/output of theories ***)
 
 let load_theory fname = 
@@ -483,15 +486,11 @@ let load_theory fname =
   Format.printf "@[Loading theory %s@]@." sthy.sname;
   sthy
 
-let save_theory thy prot fname= 
-  if not (get_protection thy)
-  then 
-    (let oc = open_out fname
-    in if prot then (set_protection thy) else ();
-    output_theory oc thy; 
-    close_out oc)
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
-
+let save_theory thy fname= 
+  let oc = open_out fname
+  in 
+  output_theory oc thy; 
+  close_out oc
 
 let end_theory thy prot = 
   if not (get_protection thy)
@@ -500,10 +499,6 @@ let end_theory thy prot =
     then (set_date thy; set_protection thy)
     else ())
   else ()
-
-let export_theory oc thy prot =
-  end_theory thy prot;
-  output_theory oc thy
 
 (***
 * Pretty-Printer 

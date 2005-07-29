@@ -212,9 +212,25 @@ val get_type_pplist:
     thy -> (Basic.ident * Printer.record) list
 (** Get all type Printer-Parser records of a theory. *)
 
-(** {5 Theory Storage} *)
+(** {5 Theory Storage} 
 
-(** {7 Primitive input/output of theories} *)
+   Although saving theories is straightforward, loading theories must
+   be done in two stages. This is because formulas stored in a theory
+   must be rebuilt in the scope of the theory but to construct the
+   theory scope, the parents of the theory must be in scope. The first
+   stage of loading a theory is to use function {!Theory.load_theory}
+   to load the theory as a [saved_thy]. This can be interogated to get
+   the information needed to load the theory parents and then to form
+   a scope [scp] for the theory. In the second stage, function
+   {!Theory.from_saved} is used to convert the theory to the [thy]
+   representation, using [scp] to make a scope in which to rebuild the
+   theory formulas. 
+
+   It is almost always best to let the functions in {!Thydb.Loader}
+   handle loading a theory.
+*)
+
+(** {7 Representation of theories for permanent storage} *)
 
 (** The representation of an identifier record for disk storage. *)
 type id_save_record =
@@ -242,20 +258,7 @@ val thm_from_save : Scope.t -> thm_save_record -> thm_record
 (** Convert theorem record from permanent storage record. *)
 
 (** Representation of a theory stored on disk. *)
-type saved_thy =
-    {
-     sname : string;
-     sprot : bool;
-     sdate : float;
-     sparents: string list;
-     sfiles : string list;
-     saxioms : (string * thm_save_record) list;
-     stheorems : (string * thm_save_record) list;
-     sdefns : (string * id_save_record) list;
-     stypes: (string * Gtypes.stypedef_record) list;
-     stype_pps: (string * Printer.record) list;
-     sid_pps: (string * Printer.record) list
-   }
+type saved_thy 
 
 val saved_name: saved_thy -> string
 (** Get the name of a theory in saved representation. *)
@@ -266,6 +269,14 @@ val saved_prot: saved_thy -> bool
 val saved_date: saved_thy -> float
 (** Get the date of a theory in saved representation. *)
 
+val from_saved: Scope.t -> saved_thy -> thy
+(** 
+   Convert a theory from the permanent storage representation read from 
+   an channel.
+*)
+
+(** {7 Primitive input/output of theories} *)
+
 val output_theory : out_channel -> thy -> unit
 (** 
    Convert a theory to permanent storage representation and emit to an
@@ -274,21 +285,17 @@ val output_theory : out_channel -> thy -> unit
 val input_theory : in_channel -> saved_thy
 (** 
    Read a saved theory from an input channel
- *)
-
-val from_saved: Scope.t -> saved_thy -> thy
-(** 
-   Convert a theory from the permanent storage representation read from 
-   an channel.
 *)
 
 (** {7 Toplevel input/output of theories} *)
 
 val load_theory : string -> saved_thy
-(** Load a saved theory from disc *)
+(** [load_theory n]: Load a saved theory from file named [n]. *)
 
-val save_theory: thy -> bool -> string -> unit
-(** Save a theory to disc *)
+val save_theory: thy -> string -> unit
+(** 
+   [save_theory thy n]: Save theory [thy] to file [n]. 
+*)
 
 val end_theory: thy -> bool -> unit
 (**
@@ -297,12 +304,6 @@ val end_theory: thy -> bool -> unit
    Update date of theory, set protection to [prot].
    Note that once set, theory protection can't be removed.
    Does nothing if theory [thy] is protected.
-*)
-
-val export_theory: out_channel -> thy -> bool -> unit
-(**
-   [export_thy thy prot]: Mark end of theory [thy], (with [end_theory
-   thy prot]), and save theory to disk.
 *)
 
 (** {5 Pretty-Printer} *)
