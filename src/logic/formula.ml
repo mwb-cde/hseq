@@ -124,8 +124,8 @@ let valid_forms scp fs =
 *)
 let fast_make ?env scp fs t = 
   if (valid_forms scp fs) 
-  then mk_scoped_formula scp t 
-  else make scp t
+  then (mk_scoped_formula scp  t)
+  else (make scp t)
 
 (***
 * Representation for permanent storage
