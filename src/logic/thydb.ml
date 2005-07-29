@@ -154,6 +154,35 @@ let get_thy thdb name = Tree.find thdb.db name
 
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
+
+(*** 
+* Printer 
+***)
+
+let print db = 
+  let table_as_list db0 = 
+    Treekit.StringTree.to_list (table db0)
+  in 
+  let print_tbl ths = 
+    Printer.print_sep_list 
+      ((fun (n, _) -> Format.print_string n), ",") ths
+  in 
+  let name = try current_name db with _ -> "(none)"
+  in 
+  Format.printf "@[{@,Current theory: %s;@ " name;
+  Format.printf "Importing: @[<2>";
+  Printer.print_sep_list (Format.print_string, ",") (imported db);
+  Format.printf ";@]@ ";
+  Format.printf "Table: @[<2>";
+  Printer.print_sep_list 
+    (print_tbl, ",") (table_as_list db);
+  Format.printf ";@]@,}@]"
+
+let message s db = 
+  Format.printf "@[<v>%s" s;
+  print db;
+  Format.printf "@,@]"
+
 (***
  * Operations on the current theory 
  ***)
@@ -523,29 +552,7 @@ let mk_scope db =
    Scope.marker_in_scope = scope_marker_in_scope db
  } 
 
-(*** 
-* Printer 
-***)
-
-let print db = 
-  let table_as_list db0 = 
-    Treekit.StringTree.to_list (table db0)
-  in 
-  let print_tbl ths = 
-    Printer.print_sep_list 
-      ((fun (n, _) -> Format.print_string n), ",") ths
-  in 
-  let name = try current_name db with _ -> "(none)"
-  in 
-  Format.printf "@[<v 2> {@,Current theory: %s;@," name;
-  Format.printf "Importing: @[<2>";
-  Printer.print_sep_list (Format.print_string, ",") (imported db);
-  Format.printf ";@]@,";
-  Format.printf "Table: @[<2>";
-  Printer.print_sep_list 
-    (print_tbl, ",") (table_as_list db);
-  Format.printf ";@]@,}@]"
-    
+   
 (***
  * Theory loader 
  ***)
@@ -570,7 +577,7 @@ module Loader =
 	 (** 
 	    Function to apply to a successfully loaded theory.
 	  *)
-	 load_fn : (info -> Theory.thy);
+	 load_fn : thydb -> info -> Theory.saved_thy;
 	 (** Function to find and load a theory file. *)
 	 build_fn: thydb -> string -> thydb
 	     (** Function to build the theory if it can't be loaded. *)
@@ -583,7 +590,8 @@ module Loader =
 
 (**
    A version of [set_current] for internal use. Sets the current
-   theory and adds the name to the importing list. 
+   theory and adds the name to the importing list, if the theory isn't
+   already in the importing list otherwise it does nothing.
 
    Doesn't re-calculate the importing list. 
    Doesn't test whether any of the theories are loaded.
@@ -592,33 +600,29 @@ module Loader =
       let name = Theory.get_name thy
       and imps = db.importing
       in 
-      let thy_list = 
-	if NameSet.mem imps name 
-	then imps 
-	else NameSet.add db.importing name
-      in 
-      {
-       db with
-       curr = Some(thy);
-       importing = thy_list
-     }
+      if NameSet.mem imps name 
+      then db
+      else { db with
+	     curr = Some(thy);
+	     importing = NameSet.add imps name
+	   }
 
 (** 
    [test_data tim thy]: Ensure that the date of theory [thy] is not
    greater then [tim].
  *)
-    let test_date tym thy = 
+    let test_date name tym thy_date = 
       match tym with
 	None -> ()
       | (Some tim) ->
-	  if (Theory.get_date thy) <= tim 
+	  if (thy_date <= tim)
 	  then () 
 	  else 
-	    (warning ("Imported theory "^(Theory.get_name thy)
+	    (warning ("Imported theory "^name
 		      ^" is more recent than"
 		      ^" its importing theory");
 	     raise (Result.error 
-      		      ("Imported theory "^(Theory.get_name thy)
+      		      ("Imported theory "^name
 		       ^" is more recent than"
 		       ^" its importing theory")))
 
@@ -626,41 +630,39 @@ module Loader =
    [test_protection prot thy]: Ensure that the protection of theory
    [thy] is [prot].
  *)
-    let test_protection prot thy =
+    let test_protection name prot thy_prot =
       match prot with 
 	None -> ()
       | (Some pval) ->
 	  if pval
 	  then 
-	    (if (Theory.get_protection thy) 
+	    (if thy_prot
 	    then ()
 	    else 
 	      (warning 
-		 ("Imported theory "^(Theory.get_name thy)
+		 ("Imported theory "^name
 		  ^" is not complete");
 	       raise 
 		 (Result.error 
-		    ("Imported theory "^(Theory.get_name thy)
+		    ("Imported theory "^name
 		     ^" is not complete"))))
 	  else ()
 
 (**
-   [load_thy prot tim (filefn, thfn) n thdb]: Load theory named [n]
-   into database [thdb]. The protection and date of the theory must be
-   as specified by [prot] and [tim]. [filefn] and [thfn] are [file_fn]
-   and [app_fn] from type [data].
-
-   Adds the theory to [thdb]. Returns the updated database.
-   Doesn't change the current theory. Doesn't change the importing data.
+   [load_thy info ]: Load theory specified by [info], using
+   [data.load_fn]. The protection and date of the theory must be as
+   specified by [prot] and [tim]. Returns the loaded theory as the
+   saved representation of a theory.
  *)
     let load_thy info data thdb=
       try
-	let thy = data.load_fn info
+	let saved_thy = data.load_fn thdb info
 	in 
-	test_protection info.prot thy;
-	test_date info.date thy;
-	add_thy thdb thy
+	test_protection info.name info.prot (Theory.saved_prot saved_thy);
+	test_date info.name info.date (Theory.saved_date saved_thy);
+	saved_thy
       with err -> add_error "Failed to load theory" [info.name] err
+
 	  
 (*** Building theories ***)
 
@@ -717,7 +719,9 @@ module Loader =
 	    "Failed to rebuild theory. Theory not in database." 
 	    [info.name] err
       in 
-      (try test_protection info.prot thy
+      (try test_protection 
+	  (Theory.get_name thy) 
+	  info.prot (Theory.get_protection thy)
       with err -> 
 	add_error 
 	  "Failed to rebuild theory. Theory not protected." 
@@ -754,8 +758,8 @@ module Loader =
       then 
 	let thy=get_thy thdb name
 	in 
-	test_date tyme thy;
-	test_protection info.prot thy;
+	test_date name tyme (Theory.get_date thy);
+	test_protection name info.prot (Theory.get_protection thy);
 	let db1 =
 	  load_parents thdb data 
 	    (mk_info name (Some (Theory.get_date thy)) (Some true))
@@ -767,26 +771,24 @@ module Loader =
 	  Lib.try_app (load_thy info data) thdb
 	in 
 	match load_attempt with 
-	  Some(db1) ->  (** Loading from file succeeded. **)
-	    let thy = 
-	      try get_thy db1 name
-	      with err -> 
-		raise 
-		  (add_error 
-		     "Load theory: something went wrong with theory " 
-		     [name] err)
+	  None -> (** Loading from file failed, try to rebuild. **)
+	    build_thy info data thdb
+	| Some(saved_thy) -> 
+	    let sparents = Theory.saved_parents saved_thy
+	    and sdate = Theory.saved_date saved_thy
 	    in 
-	    let db2 = 
-	      load_parents db1 data
-		(mk_info name (Some (Theory.get_date thy)) (Some true))
-		(Theory.get_parents thy) 
+	    let db1 = 
+	      load_parents thdb data
+		(mk_info name (Some sdate) (Some true)) sparents
+	    in 
+	    let thy = Theory.from_saved (mk_scope db1) saved_thy
+	    in 
+	    let db2 = add_thy db1 thy
 	    in 
 	    let db3 = set_curr db2 thy
 	    in 
 	    apply_fn db3 data.thy_fn thy;
 	    db3
-	| None -> (** Loading from file failed, try to rebuild. **)
-	    build_thy info data thdb
 
 (**
    [load_parents db data name tyme ps imports]: Load the theories with
@@ -813,14 +815,15 @@ module Loader =
 		  with _ -> 
 		    raise (error "Theory in scope but not in database:" [x])
 		in 
-		test_date tyme thy;
-		test_protection prot thy;
-		db
+		test_date 
+		  (Theory.get_name thy) tyme (Theory.get_date thy);
+		test_protection 
+		  (Theory.get_name thy) prot (Theory.get_protection thy);
+		set_curr db thy
 	      else 
 		load_theory db bundle (mk_info x tyme prot)
 	    in 
 	    load_parents db1 bundle info xs)
-
 
 (***
 * Toplevel functions 

@@ -96,6 +96,11 @@ val get_thy : thydb -> string -> Theory.thy
 val get_parents : thydb -> string -> string list
 (** Get the parents of a theory. *)
 
+(** {5 Pretty Printer} *)
+
+val print : thydb -> unit
+(** Printer for databases. *)
+
 (** {5 Operations on the current theory} *)
 
 val set_current : thydb -> Theory.thy -> thydb
@@ -305,11 +310,6 @@ val marker_in_scope : Scope.marker -> thydb -> bool
 val mk_scope: thydb -> Scope.t
 (** Make a scope from a theory database. *)
 
-(** {5 Pretty Printer} *)
-
-val print : thydb -> unit
-(** Printer for databases. *)
-
 (** {5 Theory loader} *)
 
 (** The theory loader.
@@ -360,7 +360,7 @@ module Loader :
 	   (** 
 	      Function to apply to a successfully loaded theory.
 	    *)
-	 load_fn : (info -> Theory.thy);
+	 load_fn : thydb -> info -> Theory.saved_thy;
 	 (** Function to find and load a theory file. *)
 	   build_fn: thydb -> string -> thydb
 	       (** 
@@ -373,7 +373,7 @@ module Loader :
 
       val mk_data : 
 	  (Theory.contents -> unit)
-	  -> (info -> Theory.thy)
+	  -> (thydb -> info -> Theory.saved_thy)
 	    -> (thydb -> string -> thydb)
 		-> data
 (** Constructor for [data]. *)
@@ -392,17 +392,18 @@ module Loader :
 
 
 (*
+*)
+
 (** {7 Debugging information} *)
 
       val load_theory : thydb -> data -> info -> thydb
       val load_parents : thydb -> data -> info -> string list -> thydb
-      val load_thy: info -> data -> thydb -> thydb
+      val load_thy: info -> data -> thydb -> Theory.saved_thy
       val build_thy: info -> data -> thydb -> thydb
-      val check_build : thydb -> Theory.thy -> unit
+      val check_build : thydb -> thydb -> Theory.thy -> unit
       val set_curr : thydb -> Theory.thy -> thydb
-      val test_protection : bool option -> Theory.thy -> unit
-      val test_date : float option -> Theory.thy -> unit
-*)
+      val test_protection : string -> bool option -> bool -> unit
+      val test_date : string -> float option -> float -> unit
 	  
     end
 
@@ -411,6 +412,8 @@ module Loader :
 (** {5 Debugging information} *)
 
 (*
+*)
+
 module NameSet :
 sig
   type t = { list : string list ; 
@@ -430,4 +433,3 @@ end
 val add_importing : thydb -> string list -> thydb
 val mk_importing : thydb -> NameSet.t
 
-*)

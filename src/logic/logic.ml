@@ -84,6 +84,7 @@ let addsqntError s es =
 type label = 
     FNum of int
   | FTag of Tag.t
+  | FName of string
 
 type tagged_form = (Tag.t* form)
 
@@ -258,6 +259,16 @@ let split_at_tag t x=
    and [c] is the formula in [x] identified by tag [t].
  *)
 
+let split_at_name n x= 
+  let test (l, _) = (String.compare n (Tag.name l)) = 0
+  in 
+  Lib.full_split_at test x
+(**
+   [split_at_name n x]:
+   Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
+   and [c] is the formula in [x] identified by a tag with name [n].
+ *)
+
 (**
    [split_at_label lbl x]:
    Split [x] into [(l, c, r)] so that [x=List.rev_append x (c::r)]
@@ -270,6 +281,7 @@ let split_at_label lbl x=
   match lbl with
     FNum i -> Lib.full_split_at_index ((abs i)-1) x
   | FTag tg -> split_at_tag tg x
+  | FName n -> split_at_name n x
 
 (**
    [split_at_asm lbl x]:
@@ -411,6 +423,36 @@ module Sequent=
 	get_tagged_asm t sq
       with Not_found -> get_tagged_cncl t sq
 
+    let get_named_asm t sq = 
+      let rec get_aux ams = 
+	match ams with
+	  [] -> raise Not_found
+	| (xt, xf)::xs -> 
+	    if (Tag.name xt)=t then (xt, rename xf)
+	    else get_aux xs
+      in 
+      if t="" then raise Not_found 
+      else get_aux (asms sq)
+
+    let get_named_cncl t sq = 
+      let rec get_aux ccs = 
+	match ccs with
+	  [] -> raise Not_found
+	| (xt, xf)::xs -> 
+	    if (Tag.name xt)=t then (xt, rename xf)
+	    else get_aux xs
+      in 
+      if t="" then raise Not_found 
+      else get_aux (concls sq)
+
+    let get_named_form t sq =
+      if t="" then raise Not_found 
+      else 
+	try 
+	  get_named_asm t sq
+	with Not_found -> get_named_cncl t sq
+
+
 	  (** Delete an assumption by label*)
     let delete_asm l sq =
       let tg, env, ams, cls = dest sq
@@ -452,6 +494,18 @@ module Sequent=
       then index_aux (asms sq)  (-i)
       else index_aux (concls sq) i
 
+    let name_to_tag n sq = 
+      let test x = (String.compare n (Tag.name (fst x)) = 0)
+      in
+      let first ls =
+	let (_, f, _) = 
+	  Lib.full_split_at test ls
+	in (fst f)
+      in 
+      if n = "" then raise Not_found
+      else 
+	try first (asms sq) 
+	with Not_found -> first (concls sq)
 
   end
 
@@ -463,22 +517,25 @@ let label_to_tag f sq=
   match f with
     FNum(x) -> Sequent.index_to_tag x sq
   | FTag(x) -> x
+  | FName(x) -> Sequent.name_to_tag x sq
 
 let label_to_index f sq=
   match f with
     FNum(x) -> x
   | FTag(x) -> Sequent.tag_to_index x sq
-
+  | FName(x) -> Sequent.tag_to_index (Sequent.name_to_tag x sq) sq
 
 let get_label_asm t sq = 
   match t with
     FTag x -> Sequent.get_tagged_asm x sq
   | FNum x -> Sequent.get_asm x sq
+  | FName x -> Sequent.get_named_asm x sq
 
 let get_label_cncl t sq = 
   match t with
     FTag x -> Sequent.get_tagged_cncl x sq
   | FNum x -> Sequent.get_cncl x sq
+  | FName x -> Sequent.get_named_cncl x sq
 
 let get_label_form t sq=
   try 
@@ -2084,6 +2141,88 @@ module Tactics =
     let substC inf eqs l g=
       sqnt_apply (substC0 inf eqs l) g
 
+(**
+   [nameA ?info name l sq]: Rename the assumption labelled [l] as [name].
+   The previous name and tag of [l] are both discarded.
+   
+   {L
+   A{_ l1}, asms |- concl
+
+   ----> l2 a tag created from name
+
+   A{_ l2}, asms|- concl
+   }
+
+   info: [goals = [], forms=[l2], terms = []]
+ *)
+
+(** [check_name n sq]: test whether [n] is the name of a formula in [sq]. *) 
+    let check_name n sq = 
+      if n = "" then raise (Result.error "Invalid formula name.")
+      else 
+	match Lib.try_app (Sequent.get_named_form n) sq with
+	  None -> ()
+	| _ -> raise (Result.error ("Name "^n^" is used in sequent"))
+
+    let nameA0 inf name lbl sqnt = 
+      try 
+	(check_name name sqnt;
+	 let (lasms, asm, rasms) = split_at_asm lbl (Sequent.asms sqnt)
+	 in
+	 let form_tag, form = asm
+	 in 
+	 let new_tag = Tag.named name
+	 in 
+	 let new_asms = join_up lasms ((new_tag, form)::rasms)
+	 in 
+	 add_info inf [] [new_tag] [];
+	 mk_subgoal 
+	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
+	    new_asms, Sequent.concls sqnt))
+      with err -> 
+	raise (add_logic_error "nameA: failed." [] err) 
+	  
+    let nameA inf name l g=
+      simple_sqnt_apply (nameA0 inf name l) g
+
+
+(**
+   [nameC ?info name l sq]: Rename the conclusion labelled [l] as [name].
+   The previous name and tag of [l] are both discarded.
+   
+   {L
+   asms |- C{_ l1}, concl
+
+   ----> l2 a tag created from name
+
+   asms|- C{_ l2}, concl
+   }
+
+   info: [goals = [], forms=[l2], terms = []]
+ *)
+    let nameC0 inf name lbl sqnt = 
+      try 
+	(check_name name sqnt;
+	 let (lconcls, concl, rconcls) = 
+	   split_at_concl lbl (Sequent.concls sqnt)
+	 in
+	 let form_tag, form = concl
+	 in 
+	 let new_tag = Tag.named name
+	 in 
+	 let new_concls = join_up lconcls ((new_tag, form)::rconcls)
+	 in 
+	 add_info inf [] [new_tag] [];
+	 mk_subgoal 
+	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
+	    Sequent.asms sqnt, new_concls))
+      with err -> 
+	raise (add_logic_error "nameC: failed." [] err) 
+	  
+    let nameC inf name l g=
+      simple_sqnt_apply (nameC0 inf name l) g
+
+
   end
 
 type conv = Scope.t -> Basic.term -> thm
@@ -2541,17 +2680,20 @@ let print_sqnt ppinfo sq =
     if nice then (!Settings.nice_sequent_prefix)
     else "-"
   in 
-  let string_of_asm_index i =  (nice_prefix^(string_of_int (-i)))
-  in 
-  let string_of_concl_index i = string_of_int i
+  let name_of_asm i tg = 
+    if (Tag.name tg) = "" then (nice_prefix^(string_of_int (-i)))
+    else (Tag.name tg)
+  and name_of_concl i tg = 
+    if (Tag.name tg) = "" then (string_of_int i)
+    else (Tag.name tg)
   in 
   let rec print_asm i afl= 
     Format.printf "@[<v>";
     (match afl with 
       [] -> ()
     | (s::als) -> 
-	(Format.printf "@[[%s] " (string_of_asm_index i);
-	 Term.print ppinfo (Formula.term_of s);
+	(Format.printf "@[[%s] " (name_of_asm i (form_tag s));
+	 Term.print ppinfo (Formula.term_of (drop_tag s));
 	 Format.printf "@]@,";
 	 print_asm (i-1) als));
     Format.printf "@]"
@@ -2560,14 +2702,14 @@ let print_sqnt ppinfo sq =
     (match cfl with
       [] -> ()
     | (s::cls) -> 
-	(Format.printf "@[[%s] " (string_of_concl_index i);
-	 Term.print ppinfo (Formula.term_of s);
+	(Format.printf "@[[%s] " (name_of_concl i (form_tag s));
+	 Term.print ppinfo (Formula.term_of (drop_tag s));
 	 Format.printf "@]@,";
 	 (print_cncl (i+1) cls)));
     Format.printf "@]"
   in 
-  let sq_asms = List.map drop_tag (Sequent.asms sq)
-  and sq_concls = List.map drop_tag (Sequent.concls sq)
+  let sq_asms = (Sequent.asms sq)
+  and sq_concls = (Sequent.concls sq)
   in 
   Format.printf "@[<v>";
   (match sq_asms with

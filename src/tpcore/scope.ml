@@ -100,7 +100,8 @@ let extend_with_terms scp declns =
       in thy_of_id id
     with Not_found -> thy_of_term scp x
   in 
-  {scp with term_type = ext_type; term_thy = ext_thy }
+  {scp with 
+   term_type = ext_type; term_thy = ext_thy}
 
 (** 
    Extend a scope with a list of type definitions [[(I1, D1); ...;
@@ -115,6 +116,9 @@ let extend_with_typedefs scp declns =
       let (id, _) = List.find (fun (y, _) -> x = (name y)) declns
       in thy_of_id id
     with Not_found -> thy_of_type scp x
+  and ext_scope n = 
+    List.exists 
+      (fun (id, _) -> (String.compare n (Basic.name id)) = 0) declns
   in 
   {scp with type_defn = ext_defn; type_thy = ext_thy }
 

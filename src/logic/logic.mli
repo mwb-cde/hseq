@@ -187,10 +187,13 @@ val addsqntError : string -> exn -> 'a
    the formula is the conclusion at position [i].
 
    [FTag t]: The formula with tag [t].
+
+   [FName n]: The formula with named [n] (Experimental).
  *)
 type label = 
     FNum of int
   | FTag of Tag.t
+  | FName of string
 
 type tagged_form = (Tag.t* Formula.form)
 (** Tagged formulas. Each formula in a subgoal has a tag. *)
@@ -384,6 +387,13 @@ module Sequent:
       val get_tagged_form: Tag.t -> t -> tagged_form
 	  (** Get a formula by tag *)
 
+      val get_named_asm : string -> t -> tagged_form
+	  (** Get an assumption by name *)
+      val get_named_cncl : string -> t -> tagged_form
+	  (** Get a conclusion by name *)
+      val get_named_form: string -> t -> tagged_form
+	  (** Get a formula by name *)
+
       val delete_asm : label -> t -> t
 	  (** Delete an assumption by label *)
       val delete_cncl : label -> t -> t
@@ -393,6 +403,8 @@ module Sequent:
 	  (** Get the position of a formula from its tag *)
       val index_to_tag : int -> t -> Tag.t 
 	  (** Get the tag of a formula from its position *)
+      val name_to_tag : string -> t -> Tag.t 
+	  (** Get the tag of a formula from its name *)
 
     end
 
@@ -1209,7 +1221,8 @@ module Tactics :
    [substA ?info eqs l sq]: Substitute, using the assumptions in [eq],
    into the assumption [l].  The assumptions in [eq] must all be
    equalities of the form [L=R]. The substitution is A{_ l}\[R1, R2,
-   ..., Rn/L1, L2, ..., Rn\].
+   ..., Rn/L1, L2, ..., Rn\]. The substitution is based on
+   alpha-equality rather than syntactic equality.
    
    {L
    A{_ l}, asms |- concl
@@ -1229,7 +1242,8 @@ module Tactics :
    [substC ?info eqs l sq]: Substitute, using the assumptions in [eq],
    into the conclusion [l].  The assumptions in [eq] must all be
    equalities of the form [L=R]. The substitution is C{_ l}\[R1, R2,
-   ..., Rn/L1, L2, ..., Rn\].
+   ..., Rn/L1, L2, ..., Rn\]. The substitution is based on
+   alpha-equality rather than syntactic equality.
    
    {L
    asms |- C{_ l}, concl
@@ -1244,6 +1258,41 @@ module Tactics :
    Silently discards the labels of non-existant assumptions in [eqs].
  *)
 
+      val nameA: info option -> string -> label -> tactic
+(**
+   [nameA ?info l name sq]: Rename the assumption labelled [l] as [name].
+   The previous name and tag of [l] are both discarded.
+   
+   {L
+   A{_ l1}, asms |- concl
+
+   ----> l2 a tag created from name
+
+   A{_ l2}, asms|- concl
+   }
+
+   info: [goals = [], forms=[l2], terms = []]
+
+   Fails if an assumption or conclusion is already named [name].
+ *)
+
+      val nameC: info option -> string -> label -> tactic
+(**
+   [nameC ?info name l sq]: Rename the conclusion labelled [l] as [name].
+   The previous name and tag of [l] are both discarded.
+   
+   {L
+   asms |- C{_ l1}, concl
+
+   ----> l2 a tag created from name
+
+   asms|- C{_ l2}, concl
+   }
+
+   info: [goals = [], forms=[l2], terms = []]
+
+   Fails if an assumption or conclusion is already named [name].
+ *)
     end
 
 (** 

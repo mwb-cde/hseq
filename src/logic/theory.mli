@@ -219,7 +219,7 @@ val get_type_pplist:
 (** The representation of an identifier record for disk storage. *)
 type id_save_record =
     {
-     sty: Basic.gtype;
+     sty: Gtypes.stype;
      sdef: Logic.saved_thm option;
      sdprops: property list
    }
@@ -241,12 +241,42 @@ val thm_to_save : thm_record -> thm_save_record
 val thm_from_save : Scope.t -> thm_save_record -> thm_record
 (** Convert theorem record from permanent storage record. *)
 
+(** Representation of a theory stored on disk. *)
+type saved_thy =
+    {
+     sname : string;
+     sprot : bool;
+     sdate : float;
+     sparents: string list;
+     sfiles : string list;
+     saxioms : (string * thm_save_record) list;
+     stheorems : (string * thm_save_record) list;
+     sdefns : (string * id_save_record) list;
+     stypes: (string * Gtypes.stypedef_record) list;
+     stype_pps: (string * Printer.record) list;
+     sid_pps: (string * Printer.record) list
+   }
+
+val saved_name: saved_thy -> string
+(** Get the name of a theory in saved representation. *)
+val saved_parents: saved_thy -> string list
+(** Get the parents of a theory in saved representation. *)
+val saved_prot: saved_thy -> bool
+(** Get the protection of a theory in saved representation. *)
+val saved_date: saved_thy -> float
+(** Get the date of a theory in saved representation. *)
+
 val output_theory : out_channel -> thy -> unit
 (** 
    Convert a theory to permanent storage representation and emit to an
    output channel.
 *)
-val input_theory : Scope.t -> in_channel -> thy
+val input_theory : in_channel -> saved_thy
+(** 
+   Read a saved theory from an input channel
+ *)
+
+val from_saved: Scope.t -> saved_thy -> thy
 (** 
    Convert a theory from the permanent storage representation read from 
    an channel.
@@ -254,8 +284,9 @@ val input_theory : Scope.t -> in_channel -> thy
 
 (** {7 Toplevel input/output of theories} *)
 
-val load_theory : Scope.t -> string -> thy
-(** Load a theory from disc *)
+val load_theory : string -> saved_thy
+(** Load a saved theory from disc *)
+
 val save_theory: thy -> bool -> string -> unit
 (** Save a theory to disc *)
 
