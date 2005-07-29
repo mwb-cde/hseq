@@ -183,7 +183,7 @@ val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
 
 val named_tac : 
     ?info: Logic.info
-    -> (?info: Logic.info -> tactic) -> string list -> tactic
+    -> (info:Logic.info -> tactic) -> string list -> tactic
 (** 
    [named_tac tac names]: apply [tac ~info:inf goal], rename each of
    [Drule.formula inf] with a name from [names], in order. Set

@@ -210,7 +210,7 @@ let named_tac ?info tac names (goal: Logic.node) =
       | (x::xs, y::ys) -> 
 	 (name_list xs ys) (foreach (name_tac ~info:inf2 x y) g)
     in 
-    let g1 = tac ?info:(Some inf1) goal
+    let g1 = tac ~info:inf1 goal
     in 
     let lbls = List.map ftag (Drule.formulas inf1)
     in 
