@@ -10,10 +10,12 @@ type tactic = Logic.tactic
 
 let fnum = Drule.fnum
 let ftag = Drule.ftag
+let fname = Drule.fname
 
 let (!~) x= fnum (-x)
 let (!+) = fnum
 let (!!) = fnum
+let (!$) = fname
 
 let leftright=Rewrite.leftright
 let rightleft = Rewrite.rightleft
@@ -184,6 +186,13 @@ let beta_tac ?info ?f=
     (Some x) -> Logic.Tactics.beta info x
   | _ -> (Drule.foreach_once (fun x -> Logic.Tactics.beta info x))
 
+let name_tac ?info n lbl goal = 
+  let sqnt = Drule.sequent goal
+  in 
+  match Lib.try_app (Logic.get_label_asm lbl) sqnt with
+    Some _ -> Logic.Tactics.nameA info n lbl goal
+  | None -> Logic.Tactics.nameC info n lbl goal
+  
 
 (*
    [unify_tac a c g]

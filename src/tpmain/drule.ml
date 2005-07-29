@@ -7,6 +7,7 @@
 
 let ftag t = (Logic.FTag t)
 let fnum n = (Logic.FNum n)
+let fname n = (Logic.FName n)
 
 let asm_forms sq = 
   List.map Logic.drop_tag (Logic.Sequent.asms sq)

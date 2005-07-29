@@ -162,22 +162,24 @@ let find_thy_file f =
    named [info.name] with protection [info.prot] and date no later
    than [info.date]. Finds the file from the path [get_thy_path()].
 *)
-let load_thy_file info = 
-  let test_protection prot thy =
+let load_thy_file thydb info = 
+  let test_protection prot b =
     match prot with 
       None -> true
-    | (Some p) -> p && (Theory.get_protection thy)
+    | (Some p) -> p && b
   in 
-  let test_date tym thy = 
+  let test_date tym d = 
     match tym with 
       None -> true
-    | (Some tim) -> (Theory.get_date thy) <= tim
+    | (Some tim) -> d <= tim
   in 
   let name = info.Thydb.Loader.name
   and date = info.Thydb.Loader.date
   and prot = info.Thydb.Loader.prot
   in 
   let thyfile = name^thy_suffix
+  in 
+  let scp = Thydb.mk_scope thydb
   in 
   let rec load_aux ths =
     match ths with
@@ -187,10 +189,11 @@ let load_thy_file info =
 	in 
 	if Sys.file_exists filename
 	then 
-	  let thy = Theory.load_theory (scope()) filename
+	  let sthy = Theory.load_theory filename
 	  in 
-	  if (test_protection prot thy) && (test_date date thy)
-	  then thy
+	  if (test_protection prot (Theory.saved_prot sthy))
+	      && (test_date date (Theory.saved_date sthy))
+	  then sthy
 	  else load_aux ts
 	else load_aux ts
   in 

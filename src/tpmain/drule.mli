@@ -10,6 +10,7 @@
 
 val ftag : Tag.t -> Logic.label
 val fnum : int -> Logic.label
+val fname : string -> Logic.label
 
 (* untagged formulas of a sequent *)
 val asm_forms : Logic.Sequent.t -> Formula.form list

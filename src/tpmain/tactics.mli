@@ -12,6 +12,7 @@ type tactic = Logic.tactic
 
 val fnum: int -> Logic.label
 val ftag: Tag.t -> Logic.label
+val fname: string -> Logic.label
 
 (* [!~]: 
 
@@ -36,6 +37,13 @@ val (!~): int -> Logic.label
    Used for assumptions and conclusions of a sequent.
  *)
 val (!!): int -> Logic.label
+
+(* [!$]: String to label.
+   [!$ x] is the label of the conclusion named [x].
+   Used for assumptions and conclusions of a sequent.
+ *)
+val (!$): string -> Logic.label
+
 
 (* rewriting direction *)
 val leftright : Rewrite.direction
@@ -168,6 +176,10 @@ val allA : ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
  *)
 val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
 
+(** 
+   [name_tac ?info n lbl]: Name formula [lbl] with [n].
+*)
+val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
 
 (* tacticals *)
 
