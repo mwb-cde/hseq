@@ -40,10 +40,19 @@ let theory name =
 let save_theory thy prot= 
   let fname = Filename.concat
       (Global.get_cdir()) ((get_theory_name thy)^(Global.thy_suffix))
-  in let oc = open_out fname
+  in 
+  Theory.save_theory thy fname
+
+(*
+let save_theory thy prot= 
+  let fname = Filename.concat
+      (Global.get_cdir()) ((get_theory_name thy)^(Global.thy_suffix))
+  in 
+  let oc = open_out fname
   in 
   Theory.export_theory oc thy prot;
   close_out oc
+*)
 
 (*
 let load_theory n = 
