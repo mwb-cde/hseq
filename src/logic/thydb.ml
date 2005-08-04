@@ -747,6 +747,39 @@ module Loader =
     let apply_fn db thy_fn thy =
       (try (thy_fn (Theory.contents thy)) with _ -> ())
 
+
+(**
+   [check_theory info thy]: Run tests on theory.
+   For each theory [thy] named in [parents]: 
+   - Ensure that the date of [thy] is no more than [info.date]
+   - Ensure that the protection of [thy] is set to [info.prot].
+*)
+    let check_theory info thy=
+      let name = info.name 
+      and tyme = info.date
+      in 
+      test_date name tyme (Theory.get_date thy);
+      test_protection name info.prot (Theory.get_protection thy)
+
+(**
+   [check_parents db info parents]: Check parents loaded by a theory.
+   For each theory [thy] named in [parents]: 
+   - Ensure that the date of [thy] is no more than [info.date]
+   - Ensure that the protection of [thy] is set to [info.prot].
+*)
+    let check_parents db info parents =
+      let rec check_aux ps =
+	match ps with
+	  [] -> ()
+	| (x::xs) -> 
+	    let thy = get_thy db x
+	    in 
+	    check_theory info thy;
+	    check_aux xs
+      in 
+      check_aux parents
+
+
 (**
    [load_theory thdb name data]: Load the theory named [name] into
    database [thdb]. Also load the parents of the theory and applies
@@ -762,8 +795,6 @@ module Loader =
       then 
 	let thy=get_thy thdb name
 	in 
-	test_date name tyme (Theory.get_date thy);
-	test_protection name info.prot (Theory.get_protection thy);
 	let db1 =
 	  load_parents thdb data 
 	    (mk_info name (Some (Theory.get_date thy)) (Some true))
@@ -781,25 +812,33 @@ module Loader =
 	    let sparents = Theory.saved_parents saved_thy
 	    and sdate = Theory.saved_date saved_thy
 	    in 
-	    let db1 = 
-	      load_parents thdb data
-		(mk_info name (Some sdate) (Some true)) sparents
+	    let sinfo = mk_info name (Some sdate) (Some true)
 	    in 
-	    let thy = Theory.from_saved (mk_scope db1) saved_thy
+	    let db1 = load_parents thdb data sinfo sparents
 	    in 
-	    let db2 = add_thy db1 thy
-	    in 
-	    let db3 = set_curr db2 thy
-	    in 
-	    apply_fn db3 data.thy_fn thy;
-	    db3
+	    let parents_ok = Lib.try_app (check_parents db1 sinfo) sparents
+	    in
+	    match parents_ok with
+	      None -> (** Parents failed to load, try to rebuild **)
+		build_thy info data thdb
+	    | Some _ ->  (** Parents loaded succesfully **)
+		let thy = Theory.from_saved (mk_scope db1) saved_thy
+		in 
+		let db2 = add_thy db1 thy
+		in 
+		let db3 = set_curr db2 thy
+		in 
+		apply_fn db3 data.thy_fn thy;
+		db3
+	    
 
 (**
    [load_parents db data name tyme ps imports]: Load the theories with
    names in [ps] as parents of theory named [name] into database
    [db]. Each parent must be no younger then the date given by [tyme].
  *)
-    and load_parents db bundle info ps =
+    and 
+	load_parents db bundle info ps =
       let name = info.name
       and tyme = info.date
       and prot = info.prot
@@ -812,19 +851,6 @@ module Loader =
 	    raise (error "Circular importing in theory" [x])
 	  else 
 	    let db1 = 
-	      if(is_imported x db)
-	      then 
-		let thy = 
-		  try get_thy db x
-		  with _ -> 
-		    raise (error "Theory in scope but not in database:" [x])
-		in 
-		test_date 
-		  (Theory.get_name thy) tyme (Theory.get_date thy);
-		test_protection 
-		  (Theory.get_name thy) prot (Theory.get_protection thy);
-		set_curr db thy
-	      else 
 		load_theory db bundle (mk_info x tyme prot)
 	    in 
 	    load_parents db1 bundle info xs)

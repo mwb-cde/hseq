@@ -391,7 +391,6 @@ module Loader :
 *)
 
 
-(*
 
 (** {7 Debugging information} *)
 
@@ -403,7 +402,7 @@ module Loader :
       val set_curr : thydb -> Theory.thy -> thydb
       val test_protection : string -> bool option -> bool -> unit
       val test_date : string -> float option -> float -> unit
-*)
+      val check_parents: thydb -> info -> string list -> unit
 	  
     end
 
@@ -411,7 +410,6 @@ module Loader :
 
 (** {5 Debugging information} *)
 
-(*
 
 module NameSet :
 sig
@@ -432,4 +430,3 @@ end
 val add_importing : thydb -> string list -> thydb
 val mk_importing : thydb -> NameSet.t
 
-*)

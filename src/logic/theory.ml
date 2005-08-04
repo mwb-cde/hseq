@@ -412,14 +412,21 @@ let from_saved scp sthy =
   let name = sthy.sname
   in 
   let thy = mk_thy name (sthy.sparents)
+  and tydefs_list = 
+    List.map (fun (x, y) -> (x, Gtypes.from_save_rec y)) sthy.stypes
   in 
   let thy_scp = 
     let scp = new_thy_scope thy scp
     in
-    let scp1= Scope.extend_with_typedeclns scp 
+    let scp1=
+      (*
+      Scope.extend_with_typedeclns scp 
 	(List.map 
 	   (fun (id, rd) -> 
-	     ((Basic.mk_long name id), rd.Gtypes.sargs)) sthy.stypes)
+	     ((Basic.mk_long name id), rd)) sthy.stypes)
+       *)
+      Scope.extend_with_typedefs scp 
+	(List.map (fun (id, rd) -> ((Basic.mk_long name id), rd)) tydefs_list)
     in 
     Scope.extend_with_terms scp1 
       (List.map 
@@ -433,13 +440,13 @@ let from_saved scp sthy =
   and axs = unsave (thm_from_save thy_scp) sthy.saxioms
   and thms = unsave (thm_from_save thy_scp) sthy.stheorems
   and defs = unsave (from_save thy_scp) sthy.sdefns
-  and tydefs = unsave Gtypes.from_save_rec sthy.stypes
+  and tydefs_table = Lib.table_from_list tydefs_list
   and ntype_pps = sthy.stype_pps
   and nid_pps = sthy.sid_pps
   in 
   {thy with
    protection=prot; date=tim; parents=prnts; lfiles = lfls;
-   axioms = axs; theorems = thms; defns= defs; typs=tydefs;
+   axioms = axs; theorems = thms; defns= defs; typs=tydefs_table;
    type_pps = ntype_pps; id_pps = nid_pps}
 
 
