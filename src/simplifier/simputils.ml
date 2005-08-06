@@ -73,6 +73,7 @@ let apply_tag tac n =
    return tags of formulas
    fail if more than [n] new formulas (tags) are generated
  *)
+(*
 let apply_get_formula_tag n tac g =
   let inf= Drule.mk_info()
   in 
@@ -84,16 +85,31 @@ let apply_get_formula_tag n tac g =
   then
     raise (Failure "too many tags")
   else (ntg, ng)
+*)
+let apply_get_formula_tag n tac g =
+  let inf= Drule.mk_info()
+  in 
+  let ng = tac inf g
+  in 
+  let atgs = Drule.aformulas inf
+  and ctgs = Drule.cformulas inf
+  in 
+  if((List.length atgs) + (List.length ctgs)) >n 
+  then
+    raise (Failure "too many tags")
+  else (atgs, ctgs, ng)
 
 (** [apply_get_single_formula_tag tac g]
    apply tactic [tac] to goal [g]
    return tag of single formula.
    fail if more than 1 new formula is reported by [tac]
  *)
+(*
 let apply_get_single_formula_tag tac g =
   let ts, ng=apply_get_formula_tag 1 tac g
   in 
   (Lib.get_one ts (Failure "too many tags"), ng)
+*)
 
 (** [rebuild_qnt k qs b]
    rebuild quantified term of kind k from quantifiers [qs] and body [b]

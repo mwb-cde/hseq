@@ -45,19 +45,21 @@ val apply_tag :
    return tags of formulas
    fail if more than [g] new formulas (tags) are generated
 *)
+(*
 val apply_get_formula_tag :
     int -> (Logic.info -> Tactics.tactic) 
       -> Logic.node -> (Tag.t list * Logic.branch)
-
+*)
 (** [apply_get_single_formula_tag tac g]
    apply tactic [tac] to goal [g]
    return tag of single formula.
    fail if more than [1] new formula is reported by [tac]
  *)
+(*
 val apply_get_single_formula_tag :
     (Logic.info -> Tactics.tactic) 
   -> Logic.node -> (Tag.t * Logic.branch)
-
+*)
 
 val allA_list : Logic.label -> Basic.term list -> Logic.tactic
 

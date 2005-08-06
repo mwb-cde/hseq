@@ -124,8 +124,11 @@ let simple_rewrite_conv scp rule trm=
 	  seq
 	    [Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1-> 
-	       let atag, ctag = 
-		 Lib.get_two (Drule.formulas info) 
+	       let atag = 
+		 Lib.get_one (Drule.aformulas info) 
+		   (Failure "simple_rewrite_conv: 1")
+	       and ctag = 
+		 Lib.get_one (Drule.cformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
@@ -141,9 +144,12 @@ let simple_rewrite_conv scp rule trm=
 	    [(data_tac (fun () -> ignore(Drule.empty_info info)) ());
 	     Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1 -> 
-	       let atag, ctag = Lib.get_two (Drule.formulas info) 
+	       let atag = 
+		 Lib.get_one (Drule.aformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
-
+	       and ctag = 
+		 Lib.get_one (Drule.cformulas info) 
+		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
 		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
@@ -201,13 +207,13 @@ let simple_asm_rewrite_tac rule asm node=
    asms|- t:c, cncl
    -->
    t':~c, asms |- cncl
-   info [] [t'] []
+   info [] [t'][]  []
  *)
 let negate_concl info c goal=
   let inf= Drule.mk_info()
   in 
   let add_fn x = 
-    Logic.add_info info [] (Drule.formulas x) []
+    Logic.add_info info [] (Drule.aformulas x) [] []
   in 
   seq [ once_rewrite_tac [get_double_not_ax()] ~f:c;
 	Logic.Tactics.negC (Some inf) c;
@@ -727,14 +733,14 @@ let prepare_concl data except c goal =
     Logic.Tactics.copy_cncl (Some info) (Drule.ftag c); 
 	 (fun g -> 
 	   let c1 = 
-	     Lib.get_one (Drule.formulas info) 
+	     Lib.get_one (Drule.cformulas info) 
 	       (Failure "Simplib.prepare_concl")
 	   in 
 	   ignore(Drule.empty_info info);
 	   negate_concl (Some info) (Drule.ftag c1) g); 
 	 (fun g ->
 	   let a=
-	     Lib.get_one (Drule.formulas info) 
+	     Lib.get_one (Drule.aformulas info) 
 	       (Failure "Simplib.prepare_concl")
 	   in 
 	   seq 
@@ -787,7 +793,7 @@ let prepare_asm data except a goal =
     Logic.Tactics.copy_asm (Some info) (Drule.ftag a); 
     (fun g ->
       let a1=
-	Lib.get_one (Drule.formulas info) 
+	Lib.get_one (Drule.aformulas info) 
 	  (Failure "Simplib.prepare_asm")
       in 
       seq 

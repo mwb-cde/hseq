@@ -276,7 +276,7 @@ let prep_cond_tac cntrl ret values thm goal =
 	  (Failure "prep_cond_tac: goals")
       in 
       let cftg=
-	Lib.get_one (Drule.formulas info)
+	Lib.get_one (Drule.cformulas info)
 	  (Failure "prep_cond_tac: forms")
       in 
       let ncntrl= Data.add_asm cntrl rrftg
@@ -284,7 +284,7 @@ let prep_cond_tac cntrl ret values thm goal =
       Lib.set_option ret  (ncntrl, (cgltg, rgltg), (cftg, rrftg))
     in 
     let tac2 g2 =
-      let rrftg=Lib.get_one (Drule.formulas info) No_change
+      let rrftg=Lib.get_one (Drule.aformulas info) No_change
       in 
       seq[allA_list (ftag rrftg) values;
 	  Logic.Tactics.implA (Some(info)) (ftag rrftg);
