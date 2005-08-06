@@ -937,24 +937,27 @@ let first_only rule branch=
 type tag_record = 
     { 
       goals:Tag.t list; 
-      forms : Tag.t list;
+      aforms : Tag.t list;
+      cforms : Tag.t list;
       terms: Basic.term list
     }
 type info = tag_record ref
 
-let make_tag_record gs fs ts = {goals=gs; forms=fs; terms=ts}
-let add_to_record r gs fs ts =
-  make_tag_record (gs@r.goals) (fs@r.forms) (ts@r.terms)
+let make_tag_record gs hs cs ts = {goals=gs; aforms=hs; cforms=cs; terms=ts}
+let add_to_record r gs hs cs ts =
+  make_tag_record (gs@r.goals) (hs@r.aforms) (cs@r.cforms) (ts@r.terms)
 
-let do_info info gs fs ts=
+let empty_tag_record = make_tag_record [] [] [] []
+
+let do_info info gs hs cs ts=
   match info with
     None -> ()
-  | Some(v) -> v:=make_tag_record gs fs ts
+  | Some(v) -> v:=make_tag_record gs hs cs ts
 
-let add_info info gs fs ts=
+let add_info info gs hs cs ts=
   match info with
     None -> ()
-  | Some(v) -> v:=add_to_record (!v) gs fs ts
+  | Some(v) -> v:=add_to_record (!v) gs hs cs ts
 
 (** 
    Rules for rewrite tactics.
@@ -1057,7 +1060,7 @@ module Tactics =
     let lift_asm_sq info l sq = 
       let (t, nasms) = lift_tagged l (Sequent.asms sq)
       in 
-      add_info info [] [t] [];
+      add_info info [] [t] [] [];
       [Sequent.make
 	 (Sequent.sqnt_tag sq) (Sequent.sqnt_env sq) 
 	 nasms (Sequent.concls sq)]
@@ -1068,7 +1071,7 @@ module Tactics =
     let lift_concl_sq info f sq = 
       let (t, nconcls) = lift_tagged f (Sequent.concls sq)
       in 
-      add_info info [] [t] [];
+      add_info info [] [] [t] [];
       [Sequent.make (Sequent.sqnt_tag sq) 
 	 (Sequent.sqnt_env sq) (Sequent.asms sq)  
 	 nconcls]
@@ -1088,7 +1091,7 @@ module Tactics =
    .., t:Ai, ..|- C
    ->
    .., t':Ai, t:Ai, .. |- C
-   info: [] [t']
+   info: [] [t'] [] []
  *)
     let copy_asm0 info l sq = 
       let (lasms, na, rasms) = split_at_asm l (Sequent.asms sq)
@@ -1096,7 +1099,7 @@ module Tactics =
       in
       let nb = (nt, drop_tag na)
       in 
-      add_info info [] [nt] [];
+      add_info info [] [nt] [] [];
       mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq,
 		  join_up lasms (nb::na::rasms),
 		  Sequent.concls sq)
@@ -1111,7 +1114,7 @@ module Tactics =
    A|- .., t:Ci, ..
    ->
    A|- .., t':Ci, t:Ci, ..
-   info: [] [t']
+   info: [] [] [] [t']
  *)
     let copy_cncl0 info l sq=
       let (lcncls, nc, rcncls) = split_at_concl l (Sequent.concls sq)
@@ -1119,7 +1122,7 @@ module Tactics =
       in 
       let nb = (nt, drop_tag nc)
       in 
-      add_info info [] [nt] [];
+      add_info info [] [] [nt] [];
       mk_subgoal(Sequent.sqnt_tag sq, Sequent.sqnt_env sq,
 		 Sequent.asms sq,
 		 join_up lcncls (nb::nc::rcncls))
@@ -1135,7 +1138,7 @@ module Tactics =
     let rotate_asms0 info sq = 
       let hs = Sequent.asms sq 
       in
-      add_info info [] [] [];
+      add_info info [] [] [] [];
       match hs with 
 	[] -> mk_subgoal(Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
 			 hs, Sequent.concls sq)
@@ -1148,7 +1151,7 @@ module Tactics =
 
     let rotate_cncls0 inf sq =
       let cs = Sequent.concls sq in
-      add_info inf [] [] [];
+      add_info inf [] [] [] [];
       match cs with 
 	[] -> mk_subgoal(Sequent.sqnt_tag sq, 
 			 Sequent.sqnt_env sq, Sequent.asms sq, cs)
@@ -1167,7 +1170,7 @@ module Tactics =
 	try [Sequent.delete_asm x sq]
 	with Not_found -> [Sequent.delete_cncl x sq]
       in 
-      add_info inf [] [] [];
+      add_info inf [] [] [] [];
       ng
 
     let delete inf x g = 
@@ -1190,7 +1193,7 @@ module Tactics =
    cut x sq: adds theorem x to assumptions of sq 
 
    asm |- cncl      --> t:x, asm |- cncl
-   info: [] [t] []
+   info: [] [t] [] []
  *)
     let cut0 info x sq=
       let scp = Sequent.scope_of sq
@@ -1203,7 +1206,7 @@ module Tactics =
       let nasm = (ftag, (Formula.make scp nt))
       in 
       try 
-	add_info info [] [ftag] [];
+	add_info info [] [ftag] [] [];
 	mk_subgoal(Sequent.sqnt_tag sq, 
 		   Sequent.sqnt_env sq, 
 		   nasm::(Sequent.asms sq), 
@@ -1242,7 +1245,7 @@ module Tactics =
 	  (raise (logic_error "basic: Inconsistent types"
 		    [drop_tag asm; drop_tag concl]))
       in 
-      (add_info inf [] [] []; raise (Solved_subgoal tyenv2))
+      (add_info inf [] [] [] []; raise (Solved_subgoal tyenv2))
 
     let basic inf i j g = 
       sqnt_apply (basic0 inf i j) g
@@ -1252,7 +1255,7 @@ module Tactics =
    t:a/\ b, asm |- concl   
    -->
    t:a, t':b, asm |- concl 
-   info: [] [t; t'] []
+   info: [] [t; t'] [] []
 *)
     let conjA0 inf i sq=
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1267,7 +1270,7 @@ module Tactics =
 	let asm1=(ft1, t1)
 	and asm2=(ft2, t2)
 	in 
-	add_info inf [] [ft1; ft2] [];
+	add_info inf [] [ft1; ft2] [] [];
 	mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
 		    asm1::asm2::(join_up lasms rasms),
 		    Sequent.concls sq))
@@ -1300,7 +1303,7 @@ module Tactics =
 	and tagr=Tag.create()
 	and asms = Sequent.asms sq
 	in 
-	add_info inf [tagl; tagr] [ft1] [];
+	add_info inf [tagl; tagr] [] [ft1] [];
 	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asms concll;
 	 Sequent.make tagr 
@@ -1331,7 +1334,7 @@ module Tactics =
 	and tagl=Tag.create()
 	and tagr=Tag.create()
 	in 
-	add_info inf [tagl; tagr] [ft] [];
+	add_info inf [tagl; tagr] [ft] [] [];
 	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asmsl (Sequent.concls sq);
 	 Sequent.make tagr 
@@ -1346,7 +1349,7 @@ module Tactics =
    asm |- t:a\/b, concl   
    -->
    asm |- t:a, t':b, concl 
-   info: [] [t;t'] []
+   info: [] [] [t;t'] []
  *)
     let disjC0 inf i sq =
       let (lconcls, concl, rconcls) = split_at_concl i (Sequent.concls sq)
@@ -1361,7 +1364,7 @@ module Tactics =
 	let cncl1=(ft1, t1)
 	and cncl2=(ft2, t2)
 	in 
-	add_info inf [] [ft1; ft2] [];
+	add_info inf [] [] [ft1; ft2] [];
 	mk_subgoal 
 	  (Sequent.sqnt_tag sq, 
 	   Sequent.sqnt_env sq, 
@@ -1377,7 +1380,7 @@ module Tactics =
    t:~a, asms |- concl
    -->
    asms |- t:a, concl
-   info: [] [t] []
+   info: [] [] [t] []
  *)
     let negA0 inf i sq =
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1390,7 +1393,7 @@ module Tactics =
 	in 
 	let cncl1=(ft, t1)
 	in 
-	add_info inf [] [ft] [];
+	add_info inf [] [] [ft] [];
 	mk_subgoal (Sequent.sqnt_tag sq, 
 		    Sequent.sqnt_env sq, 
 		    join_up lasms rasms,
@@ -1405,7 +1408,7 @@ module Tactics =
    asms |- t:~c, concl
    -->
    t:c, asms |- concl
-   info: [] [t] []
+   info: [] [t] [] []
  *)
     let negC0 inf i sq =
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
@@ -1418,7 +1421,7 @@ module Tactics =
 	in 
 	let asm1=(ft, t1)
 	in 
-	add_info inf [] [ft] [];
+	add_info inf [] [ft] [] [];
 	mk_subgoal (Sequent.sqnt_tag sq, 
 		    Sequent.sqnt_env sq,
 		    asm1::(Sequent.asms sq), 
@@ -1436,7 +1439,7 @@ module Tactics =
    and  
    g| t:b, asms |- cncl
 
-   info: [g'; g]  [t] []
+   info: [g'; g]  [t] [t] []
 
    where g| asms |- concl 
    means g is the tag for the sequent
@@ -1456,7 +1459,7 @@ module Tactics =
 	and tagl=Tag.create()
 	and tagr=Tag.create()
 	in 
-	add_info info [tagl; tagr] [ft] [];
+	add_info info [tagl; tagr] [ft] [ft] [];
 	[Sequent.make tagl 
 	   (Sequent.sqnt_env sq) asm1 cncl1;
 	 Sequent.make tagr 
@@ -1471,7 +1474,7 @@ module Tactics =
    asms |- t:a-> b, cncl 
    -->
    t':a, asms |- t:b, cncl
-   info: [] [t'; t] []
+   info: [] [t'] [t] []
  *)
     let implC0 inf i sq=
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
@@ -1486,7 +1489,7 @@ module Tactics =
 	let asm =(ft2, t1)
 	and cncl = (ft1, t2)
 	in 
-	add_info inf [] [ft2; ft1] [];
+	add_info inf [] [ft2] [ft1] [];
 	mk_subgoal
 	  (Sequent.sqnt_tag sq, 
 	   Sequent.sqnt_env sq, 
@@ -1503,7 +1506,7 @@ module Tactics =
    -->
    t:P(c'), asm |- concl   where c' is a given term
 
-   info: [] [t] []
+   info: [] [t] [] []
  *)
     let allA0 inf trm i tyenv sq =
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1518,7 +1521,7 @@ module Tactics =
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
 	  in 
-	  add_info inf [] [ft] [];
+	  add_info inf [] [ft] [] [];
 	  (mk_subgoal
 	     (Sequent.sqnt_tag sq, 
 	      Sequent.sqnt_env sq, 
@@ -1541,7 +1544,7 @@ module Tactics =
    -->
    asm |- t:P(c), concl   where c is a new identifier
 
-   info: [] [t] [c]
+   info: [] [] [t] [c]
  *)
     let allC0 inf i tyenv sq =
       (* get the conclusion and its tag *)
@@ -1582,7 +1585,7 @@ module Tactics =
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
 	(* build the subgoal and return information *)
-	add_info inf [] [ft] [sv];
+	add_info inf [] [] [ft] [sv];
 	(mk_subgoal(Sequent.sqnt_tag sq, 
 		    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
 		    Sequent.asms sq, 
@@ -1599,7 +1602,7 @@ module Tactics =
    -->
    t:P(c), asm |- concl   where c is a new identifier
 
-   info: [] [t] [c]
+   info: [] [t] [] [c]
  *)
     let existA0 inf i tyenv sq =
       (* get the assumption and its tag *)
@@ -1641,7 +1644,7 @@ module Tactics =
 	(* update the goals' type environment *)
 	let gtyenv=Gtypes.extract_bindings nsqtys ntyenv tyenv
 	in 
-	add_info inf [] [ft] [sv];
+	add_info inf [] [ft] [] [sv];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
@@ -1659,7 +1662,7 @@ module Tactics =
    -->
    asm |- t:P(c), concl where c is a given term
 
-   info: [] [t] []
+   info: [] [] [t] []
  *)
     let existC0 inf trm i tyenv sq =
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
@@ -1674,7 +1677,7 @@ module Tactics =
 	  let gtyenv=
 	    Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
 	  in 
-	  add_info inf [] [ft] [];
+	  add_info inf [] [] [ft] [];
       	  (mk_subgoal
 	     (Sequent.sqnt_tag sq, 
 	      Sequent.sqnt_env sq, 
@@ -1702,7 +1705,7 @@ module Tactics =
       in 
       if (Formula.is_true t)
       then 
-	(add_info inf [] [] [];
+	(add_info inf [] [] [] [];
 	 raise No_subgoals)
       else 
 	raise (logic_error "Not trivial" [t])
@@ -1719,7 +1722,7 @@ module Tactics =
 
    raise Not_found if assumption not found.
 
-   info: [] [t] []
+   info: [] [t] [] []
  *)
     let betaA0 inf i sq = 
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1733,7 +1736,7 @@ module Tactics =
 	 with x -> raise 
 	     (Result.add_error(logic_error "Beta reduction" [t]) x))
       in 
-      add_info inf [] [ft] [];
+      add_info inf [] [ft] [] [];
       mk_subgoal
 	(Sequent.sqnt_tag sq, 
 	 Sequent.sqnt_env sq, 
@@ -1751,7 +1754,7 @@ module Tactics =
 
    raise Not_found if conclusion not found.
 
-   info: [] [t] []
+   info: [] [] [t] []
  *)
     let betaC0 inf i sq = 
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
@@ -1765,7 +1768,7 @@ module Tactics =
 	 with x -> raise 
 	     (Result.add_error(logic_error "Beta reduction" [t]) x))
       in 
-      add_info inf [] [ft] [];
+      add_info inf [] [] [ft] [];
       mk_subgoal
 	(Sequent.sqnt_tag sq, 
 	 Sequent.sqnt_env sq, 
@@ -1861,7 +1864,7 @@ module Tactics =
    B{_ l}, asms|- concl
    }
 
-   info: [] [l] []
+   info: [] [l] [] []
  *)
     let rewriteA0 inf ctrl rls j tyenv sq=
       let scp = Sequent.scope_of sq
@@ -1877,7 +1880,7 @@ module Tactics =
 	let gtyenv = 
 	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
 	in 
-	add_info inf [] [ft] [];
+	add_info inf [] [ft] [] [];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.sqnt_env sq, 
@@ -1917,7 +1920,7 @@ module Tactics =
 	let gtyenv = 
 	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
 	in 
-	add_info inf [] [ft] [];
+	add_info inf [] [] [ft] [];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.sqnt_env sq, 
@@ -1978,7 +1981,7 @@ module Tactics =
    (trm = T){_ l}, asms|- concl
    }
 
-   info: [] [l] []
+   info: [] [l] [] []
 
    Fails if [trm] cannot be made into a formula.
  *)
@@ -2004,7 +2007,7 @@ module Tactics =
 	let gtyenv = 
 	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv2
 	in 
-	add_info inf [] [asm_tag] [];
+	add_info inf [] [asm_tag] [] [];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.sqnt_env sq, 
@@ -2051,7 +2054,7 @@ module Tactics =
    (A\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, asms|- concl
    }
 
-   info: [] [l] []
+   info: [] [l] [] []
  *)
     let substA0 inf eqs l tyenv sq=
       let scp = Sequent.scope_of sq
@@ -2071,7 +2074,7 @@ module Tactics =
 	in 
 	let new_asms = join_up lasms ((form_tag, form2)::rasms)
 	in 
-	add_info inf [] [form_tag] [];
+	add_info inf [] [form_tag] [] [];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.sqnt_env sq, 
@@ -2098,7 +2101,7 @@ module Tactics =
    asms|- (C\[R1, R2, ..., Rn/L1, L2, ..., Rn\]){_ l}, concl
    }
 
-   info: [] [l] []
+   info: [] [] [l] []
  *)
     let substC0 inf eqs l tyenv sq=
       let scp = Sequent.scope_of sq
@@ -2118,7 +2121,7 @@ module Tactics =
 	in 
 	let new_concls = join_up lconcls ((form_tag, form2)::rconcls)
 	in 
-	add_info inf [] [form_tag] [];
+	add_info inf [] [] [form_tag] [];
 	(mk_subgoal
 	   (Sequent.sqnt_tag sq, 
 	    Sequent.sqnt_env sq, 
@@ -2143,7 +2146,7 @@ module Tactics =
    A{_ l2}, asms|- concl
    }
 
-   info: [goals = [], forms=[l2], terms = []]
+   info: [goals = [], aforms=[l2], cforms = [], terms = []]
  *)
 
 (** [check_name n sq]: test whether [n] is the name of a formula in [sq]. *) 
@@ -2165,7 +2168,7 @@ module Tactics =
 	 in 
 	 let new_asms = join_up lasms ((new_tag, form)::rasms)
 	 in 
-	 add_info inf [] [new_tag] [];
+	 add_info inf [] [new_tag] [] [];
 	 mk_subgoal 
 	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
 	    new_asms, Sequent.concls sqnt))
@@ -2188,7 +2191,7 @@ module Tactics =
    asms|- C{_ l2}, concl
    }
 
-   info: [goals = [], forms=[l2], terms = []]
+   info: [goals = [], aforms=[], cforms = [l2], terms = []]
  *)
     let nameC0 inf name lbl sqnt = 
       try 
@@ -2202,7 +2205,7 @@ module Tactics =
 	 in 
 	 let new_concls = join_up lconcls ((new_tag, form)::rconcls)
 	 in 
-	 add_info inf [] [new_tag] [];
+	 add_info inf [] [] [new_tag] [];
 	 mk_subgoal 
 	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
 	    Sequent.asms sqnt, new_concls))
@@ -2516,14 +2519,13 @@ module Defns =
       in 
       let gl = mk_goal scp goal_form
       in 
-      let info = ref (make_tag_record [] [] [])
+      let info = ref empty_tag_record
       in 
-      let tac1 =
-	(fun g -> Tactics.cut (Some info) thm g)
+      let tac1 = (fun g -> Tactics.cut (Some info) thm g)
       in 
       let tac2 =
 	(fun g ->
-	  let a = FTag (List.hd ((!info).forms))
+	  let a = FTag (List.hd ((!info).aforms))
 	  and c = FNum 1
 	  in 
 	  Tactics.basic None a c g)

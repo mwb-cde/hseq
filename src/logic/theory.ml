@@ -419,12 +419,6 @@ let from_saved scp sthy =
     let scp = new_thy_scope thy scp
     in
     let scp1=
-      (*
-      Scope.extend_with_typedeclns scp 
-	(List.map 
-	   (fun (id, rd) -> 
-	     ((Basic.mk_long name id), rd)) sthy.stypes)
-       *)
       Scope.extend_with_typedefs scp 
 	(List.map (fun (id, rd) -> ((Basic.mk_long name id), rd)) tydefs_list)
     in 
