@@ -17,9 +17,10 @@ Author: M Wahab <mwahab@users.sourceforge.net>
    The logic includes a number of features which are experimental or
    are intended to improve efficiency. These include some functions
    which construct theorems without passing through the rules of the
-   logic. In particular, beta reduction is available as a conversion
-   (a function constructing a theorem [|- t=x] from term [t]).  Term
-   and type definitions are currently handled in this module.
+   logic. In particular, beta reduction is available as a {e
+   conversion} (a function constructing a theorem to state an equality
+   [|- t=x] from term [t]). In addition, term and type definitions are
+   currently handled as part of the logic.
 
    The implementation of the logic is experimental and is likely to be
    faulty. The logic should not be considered sound.
@@ -28,41 +29,46 @@ Author: M Wahab <mwahab@users.sourceforge.net>
 
    A goal has type {!Logic.goal} and consists of the formula to be
    proved, a list of subgoals and a type environment. The type
-   environment holds bindings for weak variables occuring in any of
-   the subgoals. This means that when a weak variable is assigned a
-   constant (e.g. by unification) in one subgoal, the binding is
-   propagated to all the other subgoals. This is necessary for the
-   soundness of the logic.
+   environment holds bindings for weak type variables occurring in any
+   of the subgoals. This means that when a weak type variable is bound
+   to a type constant (e.g. by unification) in one subgoal, the
+   binding is propagated to all the other subgoals. This is necessary
+   for the soundness of the logic.
 
    A subgoal (also called a {e sequent}) has type {!Logic.Sequent.t}
    and consists of a tag, a scope, possibly empty lists of {e
-   assumptions} and {e conclusions} and information used to generate
-   terms (by the quantifier rules). Subgoals are implemented in module
-   {!Logic.Sequent}.
-
-   The tag of a subgoal is unique and can be used to identify the
-   subgoal. This can be used to determine whether a subgoal is present
-   in a goal or whether it has been solved).
+   assumptions} and {e conclusions} and information used (by the
+   quantifier rules) to generate terms. The tag of a subgoal is unique
+   and can be used to identify the subgoal.  Subgoals are implemented
+   in module {!Logic.Sequent}.
 
    The assumptions and conclusions of a subgoal are collectively
-   refered as the {e formulas} of the subgoal and each subgoal has at
+   referred to as the {e formulas} of the subgoal. Each subgoal has at
    least one formula. Each formula of a subgoal has a {e tag} which is
-   unique to in the subgoal. Tags are intended for use in tactics, to
-   keep track of a formula which may be moved around by tactics. For
-   interactive proof, it is more convenient to use integers indicating
-   the position of the formula in the list of assumptions or
-   conclusions. A {e label} is either the tag of the formula in the
-   subgoal or an integer giving the formulas' position. A negative
-   integer {i -i} identifies the {i i}th assumption with the first
-   assumption at position -1.  A positive integer {i i} identifies
-   the {i i}th conclusion with the first conclusion at position 1.
+   unique in the subgoal. A {e label} identifies a formula either by
+   the formulas' tag or by an integer giving the formulas' position in
+   the list of assumptions or conclusions. A negative integer {i -i}
+   identifies the {i i}th assumption with the first assumption at
+   position -1. A positive integer {i i} identifies the {i i}th
+   conclusion with the first conclusion at position 1. Tags are
+   intended for use in tactics, to identify a formula regardless of
+   its position (which can change). Integer labels are intended for
+   interactive proof, where it is more convenient to use the position
+   of a formula as the identifier.
 
-   Note that integer labels are only intended to be used during
-   interactive proofs. A tactic should convert an integer label to a
-   tag as its first action. Tactics written using tags to identify
-   formulas will be more robust and efficient than those using
-   positional identifiers since the tag of a formula in a subgoal
-   always stays the same while the position of the formula can change.
+   Note that integer labels are only intended for use in interactive
+   proofs. A tactic should convert an integer label to a tag as its
+   first action. Tactics written using tags to identify formulas will
+   be more robust and efficient than those using positional
+   identifiers since the tag of a formula in a subgoal always stays
+   the same while the position of the formula can change.
+
+   An experimental implementation of string labels is provided. A
+   formula can be assigned a string (its {e name}) which can then be
+   used in interactive proof in the same way as any other label. The
+   name is independent of the position of the formula and is therefore
+   more robust than positional labels. The assignment of a name is
+   handled by tactics {!Logic.Tactics.nameA} or {!Logic.Tactics.nameC}.
 
    The application of tactics to subgoals and the integration of the
    result into the goal is handled by a subgoal package (module
@@ -72,27 +78,31 @@ Author: M Wahab <mwahab@users.sourceforge.net>
    previous tactic.
 
    A tactic is a function from a {e node} to a {e branch} of the proof
-   tree. A node has type {!Logic.Subgoals.node} consists of a single
-   subgoal and the type environment of the goal. A branch has type
-   {!Logic.Subgoals.branch} and consists of a list of subgoals and the
-   new type environment of the goal. The subgoals and type environment
-   of a node or a branch can be examined, e.g. to determine what
-   action to take. Nodes and branches can only by constructed by
-   functions in module {!Logic}. A new tactic must use the logic rules
-   implemented by module {!Logic.Tactics} to construct a branch from a
-   node. The subgoal package tags nodes and constructed branches to
-   ensure that the branch {e b} returned by a tactic applied to node
-   {e n} was constructed from {e n}. This is intended to make it
-   impossible to return an arbitrary branch for a given node. The
-   correct working of this mechanism is required to ensure the
-   soundness of the logic.
+   tree. A node has type {!Logic.Subgoals.node} and consists of a
+   single subgoal and the type environment of the goal. A branch has
+   type {!Logic.Subgoals.branch} and consists of a list of subgoals
+   and the new type environment of the goal. The subgoals and type
+   environment of a node or a branch can be examined, e.g. to
+   determine what action to take. Nodes and branches can only by
+   constructed by functions in module {!Logic}. A new tactic must use
+   the logic rules implemented by module {!Logic.Tactics} to construct
+   a branch from a node. The subgoal package tags nodes and
+   constructed branches to ensure that the branch {e b} returned by a
+   tactic applied to node {e n} was constructed from {e n}. This is
+   intended to make it impossible to return an arbitrary branch for a
+   given node. The correct working of this mechanism is required to
+   ensure the soundness of the logic.
 
-   To assist the development of new tactics, each of the standard
-   tactics provides information about subgoals and formulas created or
-   affected and contants introduced by the tactic. This information
-   consists of the tags of subgoals, formulas and terms generated by a
-   tactic. Terms are generated by quantifier rules , which instantiate
-   quantifiers with arbitrary {e Skolem} contants. These are
+   To assist the development of tactics, each of the standard tactics
+   provides information about subgoals and formulas created or
+   affected and constants introduced by the tactic. This information
+   is packaged using type {!Logic.info} and contains the tags of
+   subgoals, formulas and terms generated by a tactic. Generally only
+   the tags of subgoals or formula affected or generated by a tactic
+   will be recorded but the documentation for each tactic should be
+   consulted for specific details. The terms recorded are typically
+   generated by quantifier rules, which instantiate quantifiers with
+   arbitrary {e Skolem} constants. These are automatically generated
    identifiers which are unique to the scope of a subgoal. The
    generation of Skolem constants is handled by module
    {!Logic.Skolem}.
