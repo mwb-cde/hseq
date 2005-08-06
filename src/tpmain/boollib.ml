@@ -240,7 +240,7 @@ let eq_tac ?c g =
   in 
   seq [Logic.Tactics.cut (Some info) th; 
        (fun g1 -> 
-	 let af = Lib.get_one (Drule.formulas info) (Failure "eq_tac")
+	 let af = Lib.get_one (Drule.aformulas info) (Failure "eq_tac")
 	 in 
 	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
@@ -338,7 +338,7 @@ let falseR ?a goal =
        Logic.Tactics.negA (Some info) af g)
      ++
      (fun g -> 
-       let c=Lib.get_one (Drule.formulas info) (Failure "falseR")
+       let c=Lib.get_one (Drule.cformulas info) (Failure "falseR")
        in 
        Logic.Tactics.trueR None (ftag c) g)) goal
 
@@ -490,7 +490,7 @@ let cases_full_tac inf (t:Basic.term) g=
   in 
   let g1=Logic.Tactics.cut (Some tinf) thm g
   in 
-  let ttag=Lib.get_one ((!tinf).Logic.forms) (Failure "case_info")
+  let ttag=Lib.get_one (Drule.aformulas tinf) (Failure "case_info")
   in 
   let g2=
     foreach
@@ -501,7 +501,7 @@ let cases_full_tac inf (t:Basic.term) g=
   in 
   let ng1, ng2=Lib.get_two (!tinf).Logic.goals (Failure "case_info")
   in 
-  Logic.add_info inf [ng1;ng2] [ttag] [];
+  Logic.add_info inf [ng1;ng2] [ttag] [ttag] [];
   g2
 
 let cases_tac ?info (x:Basic.term) g = cases_full_tac info x g
@@ -653,7 +653,7 @@ let mp_tac ?a ?a1 g=
 	 (Drule.subgoals info) false))
        --> 
 	 Logic.Tactics.basic (Some info) (ftag a1_label)
-	   (ftag (Lib.get_one (Drule.formulas info) 
+	   (ftag (Lib.get_one (Drule.cformulas info) 
 		    (Failure "mp_tac2.2")))) g3
   in 
   (tac1++ (tac2 ++ tac3)) g 
@@ -668,7 +668,7 @@ let mp_tac ?a ?a1 g=
 
    If [a] is not given, finds a suitable assumption to unify with [l].
 
-   info [] [thm_tag] []
+   info [] [thm_tag] [] []
    where tag [thm_tag] identifies the theorem in the sequent.
  *)
 let cut_mp_tac ?info thm ?a g=
@@ -682,7 +682,7 @@ let cut_mp_tac ?info thm ?a g=
   in 
   let tac2 g2 = 
     (let a_tag = 
-      Lib.get_one (Drule.formulas info1) 
+      Lib.get_one (Drule.aformulas info1) 
 	(Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
@@ -690,14 +690,14 @@ let cut_mp_tac ?info thm ?a g=
   in 
   let g3= (tac1++tac2) g
   in 
-  (Logic.add_info info [] (Drule.formulas info1) [];
+  (Logic.add_info info [] (Drule.aformulas info1) [] [];
    g3)
     
 
 (* 
    Backward match tactic.
 
-   info [g_tag] [c_tag] []
+   info [g_tag] [] [c_tag] []
    where 
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
@@ -755,14 +755,15 @@ let back_tac ?info ?a ?c g=
 	 (Drule.subgoals info1) false))
        --> 
 	 Logic.Tactics.basic (Some info1) 
-	   (ftag (Lib.get_nth (Drule.formulas info1) 1))
+	   (ftag (Lib.get_nth (Drule.aformulas info1) 1))
 	   (ftag c_label)) g3
   in 
   let g4= (tac1++ (tac2 ++ tac3)) g 
   in 
   (Logic.add_info info 
      [Lib.get_nth (Drule.subgoals info1) 0]
-     [Lib.get_nth (Drule.formulas info1) 0]
+     []
+     [Lib.get_nth (Drule.cformulas info1) 0]
      [];
    g4)
 
@@ -780,7 +781,7 @@ let cut_back_tac ?info thm ?c g=
   in 
   let tac2 g2 = 
     (let a_tag = 
-      Lib.get_one (Drule.formulas info1) 
+      Lib.get_one (Drule.aformulas info1) 
 	(Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
@@ -795,9 +796,9 @@ let cut_inst_tac ?info thm vals goal =
   let tac1 = (fun g -> Logic.Tactics.cut (Some data) thm g)
   in 
   let tac2 g = 
-    let a=Lib.get_one (Drule.formulas data) (Failure "cut_inst_tac")
+    let a=Lib.get_one (Drule.aformulas data) (Failure "cut_inst_tac")
     in 
-    Logic.add_info info [] [a] [];
+    Logic.add_info info [] [a] [] [];
     inst_asm_rule (Drule.ftag a) vals g
   in 
   let goal1 = (tac1 ++ tac2) goal
@@ -1064,14 +1065,14 @@ module Rules=
 	  seq [Logic.Tactics.cut (Some info) thm;
 	       (fun g1 -> 
 		 let ttag = 
-		   Lib.get_one (Drule.formulas info) 
+		   Lib.get_one (Drule.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 ignore(Drule.empty_info info);
 		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
-		   Lib.get_two (Drule.formulas info) 
+		   Lib.get_two (Drule.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 Logic.Tactics.basic None (ftag ltag) l g1)] g
@@ -1098,14 +1099,14 @@ module Rules=
 	  seq [Logic.Tactics.cut (Some info) thm;
 	       (fun g1 -> 
 		 let ttag = 
-		   Lib.get_one (Drule.formulas info) 
+		   Lib.get_one (Drule.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 ignore(Drule.empty_info info);
 		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
-		   Lib.get_two (Drule.formulas info) 
+		   Lib.get_two (Drule.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 Logic.Tactics.basic None (ftag rtag) l g1)] g
@@ -1201,8 +1202,10 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag, ctag = 
-			 Lib.get_two (Drule.formulas info) 
+		       let atag = Lib.get_one (Drule.aformulas info)
+			   (Failure "neg_all_conv: 1")
+		       and ctag = 
+			 Lib.get_one (Drule.cformulas info) 
 			   (Failure "neg_all_conv: 1")
 		       in 
 		       ignore(Drule.empty_info info);
@@ -1211,7 +1214,7 @@ module Convs=
 			  Logic.Tactics.negA (Some(info)) (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Drule.formulas info)
+			      Lib.get_one (Drule.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    ignore(Drule.empty_info info);
@@ -1226,7 +1229,7 @@ module Convs=
 			       Logic.Tactics.negC (Some info) (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
-				   Lib.get_one (Drule.formulas info)
+				   Lib.get_one (Drule.aformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 ignore(Drule.empty_info info);
@@ -1237,8 +1240,10 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag, ctag = 
-			 Lib.get_two (Drule.formulas info) 
+		       let atag = Lib.get_one (Drule.aformulas info)
+			   (Failure "neg_all_conv: 4")
+		       and ctag = 
+			 Lib.get_one (Drule.cformulas info) 
 			   (Failure "neg_all_conv: 4")
 		       in 
 		       ignore(Drule.empty_info info);
@@ -1247,7 +1252,7 @@ module Convs=
 			  Logic.Tactics.negC (Some(info)) (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
-			      Lib.get_one (Drule.formulas info)
+			      Lib.get_one (Drule.aformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    ignore(Drule.empty_info info);
@@ -1261,12 +1266,12 @@ module Convs=
 				 (fun () -> ignore(Drule.empty_info info)) ();
 			       Logic.Tactics.negA (Some info) (ftag atag);
 			       (fun g3 ->
-				 let atag3 = 
-				   Lib.get_one (Drule.formulas info)
+				 let ctag3 = 
+				   Lib.get_one (Drule.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
-				   None (ftag atag2) (ftag atag3) g3)
+				   None (ftag atag2) (ftag ctag3) g3)
 			     ] g2)] g1)]]
 	     ] g
 	in 
@@ -1320,8 +1325,11 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag, ctag = 
-			 Lib.get_two (Drule.formulas info) 
+		       let atag =
+			 Lib.get_one (Drule.aformulas info)
+			   (Failure "neg_exists_conv: 1")
+		       and ctag = 
+			 Lib.get_one (Drule.cformulas info) 
 			   (Failure "neg_exists_conv: 1")
 		       in 
 		       ignore(Drule.empty_info info);
@@ -1330,7 +1338,7 @@ module Convs=
 			  Logic.Tactics.negA (Some(info)) (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Drule.formulas info)
+			      Lib.get_one (Drule.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    ignore(Drule.empty_info info);
@@ -1345,7 +1353,7 @@ module Convs=
 			       Logic.Tactics.negC (Some info) (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
-				   Lib.get_one (Drule.formulas info)
+				   Lib.get_one (Drule.aformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
 				 ignore(Drule.empty_info info);
@@ -1356,8 +1364,11 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag, ctag = 
-			 Lib.get_two (Drule.formulas info) 
+		       let atag = 
+			 Lib.get_one (Drule.aformulas info) 
+			   (Failure "neg_exists_conv: 4")
+		       and ctag = 
+			 Lib.get_one (Drule.cformulas info) 
 			   (Failure "neg_exists_conv: 4")
 		       in 
 		       ignore(Drule.empty_info info);
@@ -1366,7 +1377,7 @@ module Convs=
 			  Logic.Tactics.negC (Some(info)) (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
-			      Lib.get_one (Drule.formulas info)
+			      Lib.get_one (Drule.aformulas info)
 				(Failure "neg_exists_conv: 2")
 			    in 
 			    ignore(Drule.empty_info info);
@@ -1381,18 +1392,16 @@ module Convs=
 				 (fun () -> ignore(Drule.empty_info info)) ();
 			       Logic.Tactics.negA (Some info) (ftag atag);
 			       (fun g3 ->
-				 let atag3 = 
-				   Lib.get_one (Drule.formulas info)
+				 let ctag3 = 
+				   Lib.get_one (Drule.cformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
-				   None (ftag atag2) (ftag atag3) g3)
+				   None (ftag atag2) (ftag ctag3) g3)
 			     ] g2)] g1)]]
 	     ] g
 	in 
 	Goals.prove_goal scp goal_term proof
-
-
 
   end
 

@@ -194,12 +194,13 @@ let name_tac ?info n lbl goal =
   | None -> Logic.Tactics.nameC info n lbl goal
 
 (** 
-   [named_tac tac names]: apply [tac ~info:inf goal], rename each of
-   [Drule.formula inf] with a name from [names], in order. Set
-   [info=inf'] where [inf'] is [inf], with the formula tag produced by
-   renaming.
+   [named_tac tac anames cnames]: apply [tac ~info:inf goal], rename
+   each of [Drule.aformulas inf] with a name from [anames], rename
+   each of [Drule.cformulas inf] with a name from [cnames], in
+   order. Set [info=inf'] where [inf'] is [inf], with the formula tag
+   produced by renaming.
 *) 
-let named_tac ?info tac names (goal: Logic.node) =
+let named_tac ?info tac anames cnames (goal: Logic.node) =
     let inf1 = Drule.mk_info()
     and inf2 = Drule.mk_info()
     in 
@@ -212,14 +213,19 @@ let named_tac ?info tac names (goal: Logic.node) =
     in 
     let g1 = tac ~info:inf1 goal
     in 
-    let lbls = List.map ftag (Drule.formulas inf1)
+    let albls = List.map ftag (Drule.aformulas inf1)
+    and clbls = List.map ftag (Drule.cformulas inf1)
     in 
-    let g2 = name_list names lbls g1
+    let g2 = name_list anames albls g1
+    in 
+    let g3 = name_list cnames clbls g2
     in 
     add_info info 
       (Drule.subgoals inf1) 
-      (List.rev (Drule.formulas inf2)) (Drule.constants inf1);
-    g2
+      (List.rev (Drule.aformulas inf2)) 
+      (List.rev (Drule.cformulas inf2))
+      (Drule.constants inf1);
+    g3
 
 (*
    [unify_tac a c g]

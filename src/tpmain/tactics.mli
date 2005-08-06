@@ -183,10 +183,18 @@ val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
 
 val named_tac : 
     ?info: Logic.info
-    -> (info:Logic.info -> tactic) -> string list -> tactic
+    -> (info:Logic.info -> tactic) 
+      -> string list -> string list 
+	-> tactic
 (** 
-   [named_tac tac names]: apply [tac ~info:inf goal], rename each of
-   [Drule.formula inf] with a name from [names], in order. Set
+   [named_tac tac anames cnames]: Apply [tac], renaming the
+   assumptions and conclusions produced with the names in [anames] and
+   [cnames] respecatively. The number of names does not have to match
+   the number of assumptions/conclusions produced.
+
+   Actions: apply [tac ~info:inf goal], rename each of
+   [Drule.aformulas inf] with a name from [anames], rename each of
+   [Drule.cformulas inf] with a name from [cnames], in order. Set
    [info=inf'] where [inf'] is [inf], with the formula tag produced by
    renaming.
 *) 

@@ -44,11 +44,13 @@ let has_subgoals b=
 let num_subgoals b = List.length (branch_subgoals b) 
 
 
-let mk_info () = ref (Logic.make_tag_record[] [] [])
-let empty_info info = (info:=(Logic.make_tag_record[] [] []); info)
+let mk_info () = ref (Logic.make_tag_record [] [] [] [])
+let empty_info info = (info:=(Logic.make_tag_record[] [] [] []); info)
 
 let subgoals inf= (!inf).Logic.goals
-let formulas inf = (!inf).Logic.forms
+(* let formulas inf = (!inf).Logic.forms *)
+let aformulas inf = (!inf).Logic.aforms
+let cformulas inf = (!inf).Logic.cforms
 let constants inf = (!inf).Logic.terms
     
 let skip = Logic.Tactics.skip None

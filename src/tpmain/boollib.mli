@@ -143,7 +143,7 @@ val inst_asm_rule : Logic.label -> Basic.term list -> Tactics.tactic
    --> 
    g|asm |- t:x, cncl, g'| t:x, asm |- cncl 
 
-   info: [g, g'] [t]
+   info: [g, g'] [t] [t] []
 *)
 val cases_full_tac : Logic.info option -> Basic.term -> Tactics.tactic
 val cases_tac: ?info:Logic.info -> Basic.term -> Tactics.tactic

@@ -97,11 +97,25 @@ val empty_info: Logic.info -> Logic.info
  *)
 val subgoals: Logic.info -> Tag.t list
 
+val aformulas: Logic.info -> Tag.t list
+(** 
+   [aformulas info]: Get assumption tags from  [info].
+   Equivalent to [(!info).aforms]
+*)
+
+val cformulas: Logic.info -> Tag.t list
+(** 
+   [cformulas info]: Get conclusion tags from  [info].
+   Equivalent to [(!info).cforms]
+*)
+
+(*
 (** [formulas info]
    get formulas of [info].
    equivalent to [(!info).forms]
  *)
 val formulas: Logic.info -> Tag.t list
+*)
 
 (** [constants info]
    get constants of [info].
