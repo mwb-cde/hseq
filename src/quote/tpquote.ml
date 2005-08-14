@@ -104,8 +104,8 @@ let std_astexpander instr =
   in 
   match std_check_string str with 
     (Type, nstr) -> 
-      <:expr<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:expr<(Global.read $str:nstr$)>>
+      <:expr<Global.Parser.read_type $str:nstr$>>
+  | (Term, nstr) -> <:expr<(Global.Parser.read $str:nstr$)>>
   | _ -> <:expr< $str:str$ >>
 
 let def_astexpander str =
@@ -116,9 +116,9 @@ let def_astexpander str =
   in 
   match def_check_string str with 
     (Typedef, nstr) -> 
-      <:expr<Global.read_type_defn $str:nstr$>>
+      <:expr<Global.Parser.read_type_defn $str:nstr$>>
   | (Def, nstr) -> 
-      <:expr<Global.read_defn $str:nstr$>>
+      <:expr<Global.Parser.read_defn $str:nstr$>>
   | _ -> <:expr< $str:str$ >>
 
 (* OCaml-3.08 version *)
@@ -128,10 +128,10 @@ let astexpander str =
   in 
   match check_string str with 
     (Type, nstr) -> 
-      <:expr<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:expr<(Global.read_unchecked $str:nstr$)>>
+      <:expr<Global.Parser.read_type $str:nstr$>>
+  | (Term, nstr) -> <:expr<(Global.Parser.read_unchecked $str:nstr$)>>
   | (Typedef, nstr) -> 
-      <:expr<Global.read_type_defn $str:nstr$>>
+      <:expr<Global.Parser.read_type_defn $str:nstr$>>
   | _ -> <:expr< $str:str$ >>
 *)
 
@@ -141,8 +141,8 @@ let pattexpander str =
   in 
   match check_string str with 
     (Type, nstr) -> 
-      <:patt<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:patt<Global.read_unchecked $str:nstr$>>
+      <:patt<Global.Parser.read_type $str:nstr$>>
+  | (Term, nstr) -> <:patt<Global.Parser.read_unchecked $str:nstr$>>
   | (_, nstr) -> <:patt< $str:nstr$ >>
 *)
 

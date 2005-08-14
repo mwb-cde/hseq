@@ -46,18 +46,18 @@ let define ?pp ?(simp=false) df =
 let declare = Commands.declare
 
 let add_term_pp s = 
-  Commands.add_term_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.add_term_pp (Basic.mk_long (Global.current_name()) s)
 let get_term_pp s = 
-  Commands.get_term_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.get_term_pp (Basic.mk_long (Global.current_name()) s)
 let remove_term_pp s = 
-  Commands.remove_term_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.remove_term_pp (Basic.mk_long (Global.current_name()) s)
 
 let add_type_pp s = 
-  Commands.add_type_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.add_type_pp (Basic.mk_long (Global.current_name()) s)
 let get_type_pp s = 
-  Commands.get_type_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.get_type_pp (Basic.mk_long (Global.current_name()) s)
 let remove_type_pp s =
-  Commands.remove_type_pp (Basic.mk_long (Global.get_cur_name()) s)
+  Commands.remove_type_pp (Basic.mk_long (Global.current_name()) s)
 
 let new_axiom ?(simp=false) n t =
   let thm = Commands.new_axiom ~simp:simp n t

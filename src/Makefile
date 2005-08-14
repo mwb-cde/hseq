@@ -174,7 +174,7 @@ MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}'\
 #	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
 #	${USERLIBDOC}
 
-DOC= logicdoc
+DOC= tpmaindoc
 
 doc: ${DOC}
 
@@ -191,8 +191,9 @@ utildoc:
 tpcoredoc: utildoc
 	cd tpcore; $(MAKEDOC) doc
 
-parserdoc: tpcoredoc
-	cd parser; $(MAKEDOC) doc
+#parserdoc: tpcoredoc
+#	cd parser; $(MAKEDOC) doc
+parserdoc: 
 
 logicdoc: tpcoredoc
 	cd logic; $(MAKEDOC) doc

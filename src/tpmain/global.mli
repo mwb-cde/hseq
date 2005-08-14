@@ -4,171 +4,85 @@
    Copyright M Wahab 2005
    ----*)
 
-(* Global environment and utility functions *)
+(** The global environment *)
 
-(* default theory and theoryDB*)
 
-(** [empty_thy_name] the name of the anonymous theory *)
-val empty_thy_name : string
-val base_name : ref (string option)
+(** {5 Theories} *)
+module Thys:
+    sig
 
-(** [get_base_name ()]
-   get the name of the base theory.
-   raise Not Found if no base theory loaded or set.
+      val empty_thy_name : string
+(** The name of the anonymous theory *)
 
-   [set_base_name s]
-   set the name of the base theory to [s]
+      val anon_thy : unit -> Theory.thy
+(** Make an anonymous theory *)
 
-   [clear_base_name()]
-   clear the base name.
+      val base_name : (string)option ref
+(** The name of the base theory [[default: base]] *)
+
+      val get_base_name: unit -> string
+(** 
+   get the name of the base theory. Raise Not_Found if no base theory
+   loaded or set.
  *)
-val get_base_name: unit -> string
-val set_base_name: string -> unit
-val clear_base_name: unit -> unit
 
-(* anon_thy: the anonymous theory *)
-val anon_thy : unit -> Theory.thy
-val thdb : unit -> Thydb.thydb
-
-(* current theoryDB *)
-val theories : Thydb.thydb ref
-
-(* get/set theoryDB and current theory *)
-val get_theories : unit -> Thydb.thydb
-val set_theories : Thydb.thydb -> unit
-
-val get_cur_thy : unit -> Theory.thy
-val get_cur_name : unit -> string
-val set_cur_thy : Theory.thy -> unit
-
-(* filenames and paths for theory files *)
-
-val thy_suffix: string
-
-val get_thy_path : unit -> string list
-val add_thy_path : string -> unit
-val set_thy_path: string list -> unit
-val remove_from_path: string -> unit
-
-(** [find_file x]: Find file [x] in the theory path. 
-   raise [Not_found] if not found
+      val set_base_name: string -> unit
+(**
+   [set_base_name s]: set the name of the base theory to [s]
  *)
-val find_file : string -> string
-val build_thy_file: Thydb.thydb -> string -> Thydb.thydb
-val load_thy_file: Thydb.Loader.info -> Theory.saved_thy
-val find_thy_file: string -> string
 
-val get_cdir : unit -> string
+      val clear_base_name: unit -> unit
+(** clear the base name. *)
 
-(* current scope  *)
-(*
-val scope_term_type: Basic.ident -> Basic.gtype
-val scope_term_thy: string -> string
-val scope_type_defn: Basic.ident -> Gtypes.typedef_record
-val scope_type_thy: string -> string
-val scope_thy_in_scope: string -> bool
-*)
+(** {5 The theory database} *)
 
+      val theoryDB : Thydb.thydb ref
+(** The theory database *)
+
+(** get/set theoryDB and current theory *)
+      val get_theories : unit -> Thydb.thydb
+      val set_theories : Thydb.thydb -> unit
+
+      val current : unit -> Theory.thy
+      val current_name : unit -> string
+      val set_current : Theory.thy -> unit
+    end
+
+(** {7 Toplevel theory functions} *)
+
+val theories: unit -> Thydb.thydb
+(** The theory database *)
+val current: unit -> Theory.thy
+(** The current theory. Raises Not_found if no theory set as current. *)
+val current_name: unit -> string
+(** 
+   The name of the current theory. Raises Not_found if no theory set
+   as current. 
+ *)
 val scope : unit -> Scope.t
-
-(*
-   [load_base_thy()]
-   try to load the base theory 
-   if successful:
-   make it the current theory.
-   set the base theory name ([set_base_name(...)])
-
-   if unsuccessful:
-   use an empty theory as the current theory.
-   if [!base_thy_builder=Some(f)] 
-   then call [f]
-   otherwise clear the base theory name ([clear_base_name()])
-
-   [get_base_thy_builder()]
-   [set_base_thy_builder f]
-
-   Set/get value of base_thy_builder.
- *)
-val set_base_thy_builder : (unit -> unit) -> unit
-val get_base_thy_builder : unit -> (unit -> unit) option
-val load_base_thy: unit -> unit
+(** The global scope. *)
 
 
-(* function to invoke when loading theories from disk *)
-
-val load_use_theory_files: Theory.contents -> unit
-val load_functions : (Theory.contents -> unit) list ref
-val init_load_functions: unit -> unit
-val add_load_fn : (Theory.contents -> unit) -> unit
-
-val on_load_thy: Theory.contents -> unit
-
-val loader_data : Thydb.Loader.data
-
-(* parsing functions *)
-(* does error handling (from exception to Result.Error)
-   so all calls to the parser should go through here *)
-
-(* 
-   [mk_term scp trm]
-   typecheck term [trm] in scope [scp]
- *)
-val expand_type_names: 
-    Scope.t -> Basic.gtype -> Basic.gtype
-val expand_typedef_names: 
-    Scope.t -> Parser.typedef_data -> Parser.typedef_data
-val expand_term : 
-    Scope.t -> Basic.term -> Basic.term
-
-val mk_term : Scope.t -> Basic.term -> Basic.term
-val mk_term_raw : Scope.t -> Basic.term -> Basic.term
-val mk_term_unchecked : Scope.t -> Basic.term -> Basic.term
-
-val read : string -> Basic.term
-val read_unchecked : string -> Basic.term
-val read_defn :
-    string -> (string * (string * Basic.gtype) list) * Basic.term
-val read_type_defn : string -> Parser.typedef_data
-
-val read_type : string -> Basic.gtype
-val read_fulltype : string -> Basic.gtype
-val read_identifier: string -> Basic.ident
-
+(** {5 Pretty Printer} *)
 module PP:
     sig
-(* Global printer/parser functions *)
 
-(* PP information *)
-
-(* 
-   [tp_pp_info]
-   The system PP information store (of size Printer.default_info_size).
- *)
       val tp_pp_info: Printer.ppinfo ref
-
 (**
-   [pp_info()]
-   Get the system PP information store
+   [tp_pp_info]: The system PP information store (of size
+   Printer.default_info_size).
  *)
+
       val info : unit -> Printer.ppinfo
+(** [info()]: Get the system PP information store *)
 
-(*
-      val pp_info : unit -> Printer.ppinfo
-*)
 
-(**
-   [pp_reset()]
-   Reset the system PP information store
- *)
       val pp_reset: unit -> unit
+(** [pp_reset()]: Reset the system PP information store *)
 
-(** 
-   [pp_set info]
-   Set the system PP information store to [info]
- *)
       val pp_set : Printer.ppinfo -> unit
+(** [pp_set info]: Set the system PP information store to [info] *)
 
-(** get/set/remove PP information for identifiers*)
 
 (** PP information for terms *)
 
@@ -281,7 +195,7 @@ module PP:
 	  Basic.ident -> 
 	    (Printer.ppinfo 
 	     -> (Printer.fixity * int) 
-	      -> (Basic.term * (Basic.term list)) Printer.printer) -> unit
+	       -> (Basic.term * (Basic.term list)) Printer.printer) -> unit
       val remove_term_printer : Basic.ident -> unit
 
 (**
@@ -302,27 +216,154 @@ module PP:
 
     end
 
-(* initialising functions *)
 
-val init_theoryDB : unit -> unit
+(** {5 File-Handling} *)
+
+(** Filenames and paths for theory files *)
+module Files : 
+    sig
+
+      val thy_suffix: string
+	  (** 
+	     The suffix to add to the name of a theory to get the
+	     name of its data file. 
+	   *)
+
+(** {7 Paths} *)
+
+      val get_thy_path : unit -> string list
+(** The path for theory files. *)
+      val add_thy_path : string -> unit
+(** Add a directory to the theory path. *)
+      val set_thy_path: string list -> unit
+(** Set the theory path. *)
+      val remove_from_path: string -> unit
+(** Remove a directory from the theory path. *)
+
+      val get_cdir : unit -> string
+(** The current working directory. *)
+
+      val find_file : string -> string
+(** 
+   [find_file x]: Find file [x] in the theory path. 
+   raise [Not_found] if not found
+ *)
+
+      val find_thy_file: string -> string
+(** Find the a theory file. *)
+
+(** {7 Theory loading and building} *)
+
+      val build_thy_file: Thydb.thydb -> string -> Thydb.thydb
+(** Function to build a theory from a script. *)
+      val load_thy_file: Thydb.Loader.info -> Theory.saved_thy
+(** Function to load a theory from a file. *)
+
+(* Functions to invoke when loading theories from disk *)
+      val load_use_theory_files: Theory.contents -> unit
+      val load_functions : (Theory.contents -> unit) list ref
+      val init_load_functions: unit -> unit
+      val add_load_fn : (Theory.contents -> unit) -> unit
+      val on_load_thy: Theory.contents -> unit
+
+      val loader_data : Thydb.Loader.data
+(** Default information needed for the theory database loader. *)
+    end
+
+(** {7 Toplevel file functions} *)
+val get_thy_path: unit -> string list
+val add_thy_path: string -> unit
+
+
+(** Parsing 
+
+   Parsing with error handling.  All calls to the parser should go
+   through here.
+ *)
+module Parser:
+    sig
+
+      val expand_term : 
+	  Scope.t -> Basic.term -> Basic.term
+      val expand_type_names: 
+	  Scope.t -> Basic.gtype -> Basic.gtype
+      val expand_typedef_names: 
+	  Scope.t -> Parser.typedef_data -> Parser.typedef_data
+
+      val mk_term : Scope.t -> Basic.term -> Basic.term
+(** [mk_term scp trm]: typecheck term [trm] in scope [scp] *)
+      val mk_term_raw : Scope.t -> Basic.term -> Basic.term
+      val mk_term_unchecked : Scope.t -> Basic.term -> Basic.term
+
+      val read : string -> Basic.term
+      val read_unchecked : string -> Basic.term
+      val read_defn :
+	  string -> (string * (string * Basic.gtype) list) * Basic.term
+      val read_type_defn : string -> Parser.typedef_data
+
+      val read_type : string -> Basic.gtype
+      val read_fulltype : string -> Basic.gtype
+      val read_identifier: string -> Basic.ident
+
+    end
+
+
+(** {5 Initialising functions} *)
+
+module Init:
+    sig
+
+(*
+   [load_base_thy()]
+   try to load the base theory 
+   if successful:
+   make it the current theory.
+   set the base theory name ([set_base_name(...)])
+
+   if unsuccessful:
+   use an empty theory as the current theory.
+   if [!base_thy_builder=Some(f)] 
+   then call [f]
+   otherwise clear the base theory name ([clear_base_name()])
+
+   [get_base_thy_builder()]
+   [set_base_thy_builder f]
+
+   Set/get value of base_thy_builder.
+ *)
+      val load_base_thy: unit -> unit
+
+      val set_base_thy_builder : (unit -> unit) -> unit
+(** Set the function to use if the base theory must be rebuilt. *)
+      val get_base_thy_builder : unit -> (unit -> unit) option
+(** Get the function to use if the base theory must be rebuilt. *)
+
+      val init_theoryDB : unit -> unit
 
 (* list of initialising functions *)
-val init_list: (unit -> unit) list ref
-val add_init: (unit-> unit) -> unit
+      val init_list: (unit -> unit) list ref
+      val add_init: (unit-> unit) -> unit
 
 (* function to call to initialise system *)
-val init : unit -> unit
+      val init : unit -> unit
 
 (* list of reset functions *)
 
-val reset_list: (unit -> unit) list ref
-val add_reset: (unit-> unit) -> unit
+      val reset_list: (unit -> unit) list ref
+      val add_reset: (unit-> unit) -> unit
 
-(* reset(): function to call to reset system 
-
+(**
+   reset(): function to call to reset system 
    call all functions in reset_list then
    call init()
- *)
+*)
+      val reset : unit -> unit
+    end
+
+(** {7 Toplevel initialising functions} *)
+
+
+val init : unit -> unit
+(** Initialise the system *)
 val reset : unit -> unit
-
-
+(** Reset the system. (This is the same as init()). *)

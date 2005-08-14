@@ -10,6 +10,11 @@ OPTCODE = global.cmx drule.cmx tactics.cmx goals.cmx commands.cmx \
 LIBFILE=tpmain.cma
 OPTLIB=tpmain.cmxa
 
+DOCFILES = global.mli
+DOCLOAD = -load "${DOCDIR}/tpcore.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
+
 # Compiler setings
 
 INCLUDE= -I .. -I ../include
@@ -61,6 +66,9 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/tpmain.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

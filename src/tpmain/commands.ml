@@ -25,12 +25,12 @@ let catch_errors f a =
       raise (Failure "failed")
   | x -> raise x)
 
-let theories () = Global.get_theories()
+let theories () = Global.Thys.get_theories()
 
-let read x = catch_errors Global.read x
+let read x = catch_errors Global.Parser.read x
 
-let curr_theory () = Global.get_cur_thy()
-let get_theory_name thy = Theory.get_name (curr_theory())
+let curr_theory () = Global.current()
+let get_theory_name thy = Global.current_name()
 
 let theory name = 
   if name = "" 
@@ -39,7 +39,8 @@ let theory name =
 
 let save_theory thy prot= 
   let fname = Filename.concat
-      (Global.get_cdir()) ((get_theory_name thy)^(Global.thy_suffix))
+      (Global.Files.get_cdir()) 
+      ((get_theory_name thy)^(Global.Files.thy_suffix))
   in 
   Theory.save_theory thy fname
 
@@ -86,12 +87,12 @@ let load_theory_as_cur n =
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
   in 
-  let filefn fname = Global.find_thy_file fname
+  let filefn fname = Global.Files.find_thy_file fname
   in 
-  let db = Thydb.Loader.load (theories()) Global.loader_data
+  let db = Thydb.Loader.load (theories()) Global.Files.loader_data
       (Thydb.Loader.mk_info n None None)
   in 
-  Global.set_theories(db)
+  Global.Thys.set_theories(db)
 
 (*
   let db = Thydb.Loader.load_theory (theories()) Global.loader_data
@@ -106,9 +107,9 @@ let parents ns =
   in 
   Theory.add_parents ns thy;
   let db1 = 
-    Thydb.Loader.make_current db Global.loader_data thy
+    Thydb.Loader.make_current db Global.Files.loader_data thy
   in 
-  Global.set_theories db1
+  Global.Thys.set_theories db1
 
 (*
 let parents ns = 
@@ -135,15 +136,15 @@ let begin_theory n parents=
   else 
     let importing=
       try
-	List.append parents [(Global.get_base_name())]
+	List.append parents [(Global.Thys.get_base_name())]
       with Not_found -> parents
     in 
     let db = theories()
     and thy = Theory.mk_thy n parents
     in
-    let db1 = Thydb.Loader.make_current db Global.loader_data thy
+    let db1 = Thydb.Loader.make_current db Global.Files.loader_data thy
     in 
-    Global.set_theories(db1)
+    Global.Thys.set_theories(db1)
 
 let new_theory n = begin_theory n
 
@@ -174,11 +175,11 @@ let end_theory ?(save=true) () =
 let add_pp_rec selector id rcrd=
   if(selector=Basic.fn_id)
   then 
-    (Global.set_theories
+    (Global.Thys.set_theories
        (Thydb.add_term_pp_rec (Basic.name id) rcrd (theories()));
      Global.PP.add_term_pp_record id rcrd)
   else 
-    (Global.set_theories
+    (Global.Thys.set_theories
        (Thydb.add_type_pp_rec (Basic.name id) rcrd (theories()));
      Global.PP.add_type_pp_record id rcrd)
       
@@ -230,7 +231,7 @@ let save_thm ?(simp=false) n th =
   let props = if simp then [Theory.simp_property] else []
   in 
   catch_errors 
-    (fun x -> Global.set_theories(Thydb.add_thm n th props x); th) 
+    (fun x -> Global.Thys.set_theories(Thydb.add_thm n th props x); th) 
     (theories())
 
 let prove_thm ?(simp=false) n t tacs =
@@ -253,7 +254,7 @@ let by x =
    (match pp with 
    None -> ()
    | Some(prec, fx, repr) -> 
-   let lname = Basic.mk_long (Global.get_cur_name()) n
+   let lname = Basic.mk_long (Theory.name (Global.current())) n
    in 
    add_type_pp lname prec fx repr)
  *)
@@ -289,7 +290,7 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   in 
   let db3 = Thydb.add_decln abs_decln [] db2
   in 
-  Global.set_theories(db3);
+  Global.Thys.set_theories(db3);
   (* Add the theorems *)
   let rep_type = tyrec.Logic.Defns.rep_type
   and rt_name = rep_name^"_mem"
@@ -311,7 +312,7 @@ let simple_typedef (n, args, def) =
   in 
   let tydef = Logic.Defns.mk_typealias (Global.scope()) n args def1
   in 
-  Global.set_theories(Thydb.add_type_rec tydef (theories())); tydef
+  Global.Thys.set_theories(Thydb.add_type_rec tydef (theories())); tydef
 
 let typedef ?pp ?simp ?thm ?rep ?abs tydef = 
   let (name, td) =
@@ -332,7 +333,7 @@ let typedef ?pp ?simp ?thm ?rep ?abs tydef =
   (match pp with 
     None -> ()
   | Some(prec, fx, repr) -> 
-      let lname = Basic.mk_long (Global.get_cur_name()) name
+      let lname = Basic.mk_long (Theory.get_name (Global.current())) name
       in 
       add_type_pp lname prec fx repr);
   td
@@ -372,7 +373,7 @@ let define ?pp ?(simp=false) ((name, args), r)=
   in 
   let ndef=
     Logic.Defns.mk_termdef scp
-      (Basic.mk_long (Global.get_cur_name()) name) args r
+      (Basic.mk_long (Theory.get_name (Global.current())) name) args r
   in 
   let props = 
     if simp
@@ -381,7 +382,7 @@ let define ?pp ?(simp=false) ((name, args), r)=
   in 
   let (n, ty, d)= Logic.Defns.dest_termdef ndef
   in 
-  Global.set_theories(Thydb.add_defn (Basic.name n) ty d props (theories())); 
+  Global.Thys.set_theories(Thydb.add_defn (Basic.name n) ty d props (theories())); 
   (match pp with 
     None -> ()
   | Some(prec, fx, repr) -> add_term_pp n prec fx repr);
@@ -398,11 +399,11 @@ let declare ?pp trm =
 	| Basic.Typed(Basic.Id(i, _), t) -> (Basic.name i, t)
 	| _ -> raise (Failure "Badly formed declaration")
       in 
-      let id = Basic.mk_long (Global.get_cur_name()) v
+      let id = Basic.mk_long (Global.current_name()) v
       in 
       let dcl = Logic.Defns.mk_termdecln (Global.scope()) v ty
       in 
-      Global.set_theories(Thydb.add_decln dcl [] (theories())); 
+      Global.Thys.set_theories(Thydb.add_decln dcl [] (theories())); 
       (id, ty)
     with _ -> raise (Result.error ("Badly formed declaration"))
   in 
@@ -412,7 +413,7 @@ let declare ?pp trm =
       let longname = 
 	if (Basic.thy_of_id n) = Basic.null_thy 
 	then 
-	  (Basic.mk_long (Global.get_cur_name()) (Basic.name n))
+	  (Basic.mk_long (Global.current_name()) (Basic.name n))
 	else n
       in 
       add_term_pp longname prec fx repr;
@@ -422,28 +423,28 @@ let new_axiom ?(simp=false) n trm =
   let t = Logic.mk_axiom (Formula.make (Global.scope()) trm)
   and props = if simp then [Theory.simp_property] else []
   in 
-  Global.set_theories(Thydb.add_axiom n t props (theories())); t
+  Global.Thys.set_theories(Thydb.add_axiom n t props (theories())); t
 
 let axiom id =
-  let t, n = Global.read_identifier id
+  let t, n = Global.Parser.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_axiom t n thys
 
 let theorem id =
-  let t, n = Global.read_identifier id
+  let t, n = Global.Parser.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_theorem t n thys
 
 let defn id =
-  let t, n = Global.read_identifier id
+  let t, n = Global.Parser.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_defn t n thys
 
 let lemma id =
-  let t, n = Global.read_identifier id
+  let t, n = Global.Parser.read_identifier id
   in 
   let thys=theories()
   in 
@@ -452,11 +453,11 @@ let lemma id =
 let qed n = 
   let t = Goals.result() 
   in 
-  Global.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); t
+  Global.Thys.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); t
 
 
 let scope () = Global.scope();;
 
-let read x= Global.read x
-let read_unchecked  x= Global.read_unchecked x
-let read_defn  x= Global.read_defn x
+let read x= Global.Parser.read x
+let read_unchecked  x= Global.Parser.read_unchecked x
+let read_defn  x= Global.Parser.read_defn x

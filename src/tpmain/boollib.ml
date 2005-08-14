@@ -57,7 +57,7 @@ module BaseTheory=
       ignore(end_theory ~save:false ())
 	
 
-    let init() = Global.set_base_thy_builder builder
+    let init() = Global.Init.set_base_thy_builder builder
 
   end
 
@@ -445,7 +445,7 @@ let inst_tac ?f l g=
 	  let ft= Drule.first_concl (Formula.is_exists) sqnt
 	  in inst_concl ~c:ft l g
 	with _ -> 
-	  raise (Logic.logic_error "inst_tac: No instansiatable formula" [])))
+	  raise (Logic.logic_error "inst_tac: No suitable formula" [])))
   | Some x -> 
       (try inst_asm ~a:x l g
       with Not_found -> inst_concl ~c:x l g)
@@ -1443,7 +1443,7 @@ let equals_tac ?f g =
 let init_boollib()= 
   PP.init()
 
-let _ = Global.add_init init_boollib
+let _ = Global.Init.add_init init_boollib
 
 
 

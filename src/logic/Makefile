@@ -66,8 +66,8 @@ installopt: opt
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
 doc: ${DOCFILES}
-	ocamldoc ${DOCLOAD} ${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} \
-	-d ${DOCDIR} ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/logic.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

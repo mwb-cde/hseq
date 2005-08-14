@@ -167,8 +167,8 @@ let on_load thy=
 
 let init () =
   init_std_ss();
-  Global.add_load_fn on_load
+  Global.Files.add_load_fn on_load
 
 let _ = 
-  Global.add_init init
+  Global.Init.add_init init
   
