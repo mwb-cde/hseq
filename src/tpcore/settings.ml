@@ -25,7 +25,7 @@ let thys_dir () = make_directory "thys"
 
 (*** File suffixes ***)
 
-let thy_suffix="tho"
+let thy_suffix=".tho"
 let script_suffix="Script.ml"
 
 (***

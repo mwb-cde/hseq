@@ -15,7 +15,6 @@ module Thys =
  ***)
 
     let empty_thy_name = Basic.null_thy
-
     let anon_thy ()= Theory.mk_thy empty_thy_name []
 
 (** base_thy: The theory on which all user theories are based *)
@@ -28,7 +27,7 @@ module Thys =
     let theoryDB = ref (Thydb.empty())
     let get_theories () = !theoryDB
     let set_theories thdb = theoryDB:=thdb
-    let reset_theories () = set_theories (Thydb.empty ())
+    let init_theories () = set_theories (Thydb.empty ())
 
 (** The current theory *)
     let current () = Thydb.current (get_theories())
@@ -44,21 +43,26 @@ let current () = Thydb.current (theories())
 let current_name () = Theory.get_name (current())
 let scope() = Thydb.mk_scope (theories())
 
-(* Pretty printing and Parsing*)
+(***
+ * Pretty printing 
+ ***)
 module PP=
   struct
 
-(* tp_pp_info: Printer Table *)
+(*** Printer tables ***)
     let tp_pp_info=ref (Printer.empty_ppinfo())
     let info() = !tp_pp_info 
-    let pp_set info = tp_pp_info:=info
-    let pp_reset () = pp_set (Printer.empty_ppinfo())
-    let pp_init() = pp_reset()
+    let set info = tp_pp_info:=info
+    let pp_reset () = set (Printer.empty_ppinfo())
 
-(* tp_sym_info: Parser symbol table *)
+(*** Parser tables ***)
     let sym_init() = Parser.init()
     let sym_info() = Parser.symtable()
     let sym_reset () = Parser.init()
+
+    let init() = pp_reset(); sym_init()
+
+(*** Terms ***)
 
     let get_term_pp id=
       Printer.get_term_info (info()) id
@@ -81,6 +85,8 @@ module PP=
       Printer.remove_term_info (info()) id;
       Parser.remove_token (Lib.get_option sym (name id))
 
+(*** Types ***)
+
     let get_type_pp id=
       Printer.get_type_info (info()) id
 
@@ -102,21 +108,27 @@ module PP=
       Printer.remove_type_info (info()) id;
       Parser.remove_type_token (Lib.get_option sym (name id))
 
+(*** User-defined printers ***)
+
     let get_term_printer id=
       Printer.get_term_printer (info()) id
+
     let add_term_printer id printer=
       Printer.add_term_printer (info()) id (printer (info()))
+
     let remove_term_printer id=
       Printer.remove_term_printer (info()) id
 
     let get_type_printer id=
       Printer.get_type_printer (info()) id
+
     let add_type_printer id printer=
       Printer.add_type_printer (info()) id (printer (info()))
+
     let remove_type_printer id=
       Printer.remove_type_printer (info()) id
 
-(* Functions to add PP information when a theory is loaded *)
+(** Functions to add PP information when a theory is loaded *)
 
     let add_id_record id rcrd =
       let pr, fx, repr = 
@@ -130,201 +142,40 @@ module PP=
       in 
       add_type_pp id pr fx repr
 
-  end
+    let add_loaded_term_pp th =
+      let thy_name = th.Theory.cname
+      and pp_list = List.rev th.Theory.cid_pps
+      in 
+      let add_pp (id, rcrd) = 
+	add_id_record (Basic.mk_long thy_name id) rcrd;
+	let repr = rcrd.Printer.repr
+	in 
+	match repr with
+	  None -> ()
+	| Some(sym) -> 
+	    (try
+	      let id_record = List.assoc id th.Theory.cdefns
+	      in 
+	      let id_type = id_record.Theory.typ
+	      in 
+	      Parser.add_overload sym (Basic.mk_long thy_name id, id_type)
+	    with _ -> ())
+      in 
+      List.iter add_pp pp_list
 
-let add_loaded_term_pp th =
-  let thy_name = th.Theory.cname
-  and pp_list = List.rev th.Theory.cid_pps
-  in 
-  let add_pp (id, rcrd) = 
-    PP.add_id_record (Basic.mk_long thy_name id) rcrd;
-    let repr = rcrd.Printer.repr
-    in 
-    match repr with
-      None -> ()
-    | Some(sym) -> 
-	(try
-	  let id_record = List.assoc id th.Theory.cdefns
-	  in 
-	  let id_type = id_record.Theory.typ
-	  in 
-	  Parser.add_overload sym (Basic.mk_long thy_name id, id_type)
-	with _ -> ())
-  in 
-  List.iter add_pp pp_list
+    let add_loaded_type_pp th =
+      let thy_name = th.Theory.cname
+      and pp_list = List.rev th.Theory.ctype_pps
+      in 
+      let add_pp (id, rcrd) = 
+	add_type_record (Basic.mk_long thy_name id) rcrd
+      in 
+      List.iter add_pp pp_list
 
-let add_loaded_type_pp th =
-  let thy_name = th.Theory.cname
-  and pp_list = List.rev th.Theory.ctype_pps
-  in 
-  let add_pp (id, rcrd) = 
-    PP.add_type_record (Basic.mk_long thy_name id) rcrd
-  in 
-  List.iter add_pp pp_list
 
 (***
- * File-Handling
+ * Parsing
  ***)
-module Files =
-  struct
-
-(* File handling *)
-
-    let thy_suffix = "."^Settings.thy_suffix
-
-(* search directories *)
-    let thy_path = ref []
-
-    let init_thy_path() = thy_path := ["."; Settings.thys_dir()]
-    let get_thy_path ()= !thy_path
-    let add_thy_path x = thy_path:=(x::!thy_path)
-    let set_thy_path x = thy_path:=x
-    let remove_from_path x = 
-      thy_path:= (Lib.filter (fun y -> x=y) !thy_path)
-
-    let thy_dir = ref "."
-    let set_thy_dir n = thy_dir := !n
-    let get_thy_dir () = !thy_dir
-
-    let get_cdir () = Sys.getcwd ()
-
-    let init_paths() = init_thy_path()
-
-(** [find_file x]: Find file [x] in the theory path. 
-   
-   raise [Not_found] if not found
- *)
-    let find_file f =
-      let rec find_aux ths =
-	match ths with
-	  [] -> raise Not_found
-	| (t::ts) ->
-	    let nf = Filename.concat t f
-	    in 
-	    if Sys.file_exists nf 
-	    then nf 
-	    else find_aux ts
-      in 
-      find_aux (get_thy_path())
-
-
-    let find_thy_file f =
-      let tf = f^thy_suffix
-      in 
-      try find_file tf
-      with Not_found -> 
-	raise (Result.error ("Can't find theory "^f))
-
-
-(**
-   [build_thy_file f]: build a theory by running script file f.
- *)
-    let build_thy_file thydb f=  
-      let db0 = Thys.get_theories()
-      in 
-      let tf = f^Settings.script_suffix
-      in 
-      try 
-	Thys.set_theories(thydb);
-	Result.warning ("Trying to build theory "^f);
-	Unsafe.use_file ~silent:false  (find_file tf);
-	Result.warning ("Built theory "^f);
-	let db1 = Thys.get_theories()
-	in 
-	Thys.set_theories (db0);
-	db1
-      with Not_found ->
-	(Result.warning ("Failed to build theory "^f);
-	 raise (Result.error ("Can't find script to build theory "^f)))
-
-
-(**
-   [load_thy_file info]: Load the file storing the theory
-   named [info.name] with protection [info.prot] and date no later
-   than [info.date]. Finds the file from the path [get_thy_path()].
- *)
-    let load_thy_file info = 
-      let test_protection prot b =
-	match prot with 
-	  None -> true
-	| (Some p) -> p && b
-      in 
-      let test_date tym d = 
-	match tym with 
-	  None -> true
-	| (Some tim) -> d <= tim
-      in 
-      let name = info.Thydb.Loader.name
-      and date = info.Thydb.Loader.date
-      and prot = info.Thydb.Loader.prot
-      in 
-      let thyfile = name^thy_suffix
-      in 
-      let rec load_aux ths =
-	match ths with
-	  [] -> raise Not_found
-	| (t::ts) ->
-	    let filename = Filename.concat t thyfile
-	    in 
-	    if Sys.file_exists filename
-	    then 
-	      let sthy = Theory.load_theory filename
-	      in 
-	      if (test_protection prot (Theory.saved_prot sthy))
-		  && (test_date date (Theory.saved_date sthy))
-	      then sthy
-	      else load_aux ts
-	    else load_aux ts
-      in 
-      load_aux (get_thy_path())
-
-
-(** 
-   [load_use_theory thy]: Load or use each of the files named in
-   theory [thy].
- *)
-    let load_use_theory_files thy = 
-      List.iter (Unsafe.load_use_file) thy.Theory.cfiles
-
-(** 
-   [default_load_function]: The default list of functions to call on a
-   newly-loaded theory.
- *)
-    let default_load_functions = 
-      [
-       load_use_theory_files; (* load files *)
-       add_loaded_type_pp;    (* add type PP information *)
-       add_loaded_term_pp;    (* add term PP information *)
-     ]
-
-
-(** [load_functions]: Functions to call when a theory is loaded. *)
-    let load_functions = ref default_load_functions
-    let add_load_fn f = load_functions:=(f::!load_functions)
-    let init_load_functions () = load_functions:=default_load_functions
-
-(** 
-   [on_load_thy]: The toplevel function that is passed a newly loaded
-   theory. This just passes the theory to the functions in [load_functions].
- *)
-    let on_load_thy th =
-      List.iter (fun f -> f th) (List.rev !load_functions)
-
-
-(** [loader_data]: Data to use when loading into a theory database. *)
-    let loader_data = 
-      Thydb.Loader.mk_data on_load_thy load_thy_file build_thy_file
-
-  end
-
-(*** Toplevel file functions *)
-let get_thy_path = Files.get_thy_path
-let add_thy_path = Files.add_thy_path
-
-
-(** Parser functions with error handling *)
-module Parser = 
-  struct
 
     let catch_parse_error e a = 
       (try (e a)
@@ -358,16 +209,13 @@ module Parser =
 			 expand_term scp set)
 
     let mk_term scp pt = expand_term scp pt
-    let mk_term_raw tyenv trm = mk_term (scope()) trm
-    let mk_term_unchecked tyenv pt =  pt
 
     let read str= 
-      mk_term_raw (scope()) 
+      mk_term (scope()) 
 	(catch_parse_error Parser.read_term str)
 
     let read_unchecked  x=
-      mk_term_unchecked (scope()) 
-	(catch_parse_error Parser.read_term x)
+      (catch_parse_error Parser.read_term x)
 
     let read_defn x =
       let (lhs, rhs)= 
@@ -384,12 +232,176 @@ module Parser =
     let read_type x = 
       expand_type_names (scope()) (catch_parse_error Parser.read_type x)
 
-    let read_fulltype x = 
-      expand_type_names (scope()) (catch_parse_error Parser.read_type x)
-
     let read_identifier x = 
       catch_parse_error (Parser.read Parser.identifier_parser) x
   end
+
+let read = PP.read
+let read_type = PP.read_type
+let read_identifier = PP.read_identifier
+let read_defn = PP.read_defn
+let read_type_defn = PP.read_type_defn
+
+let mk_term = PP.mk_term (scope())
+
+(***
+ * File-Handling
+ ***)
+module Files =
+  struct
+
+    let get_cdir () = Sys.getcwd ()
+
+(*** Paths ***)
+
+(** Functions for dealing with paths. *)
+    let get_path pth = !pth
+    let set_path x pth = pth:=x
+    let add_path x pth = set_path (x::(get_path pth)) pth
+    let remove_path x pth = 
+      set_path (Lib.filter (fun y -> x = y) (get_path pth)) pth
+
+    let thy_path = ref []
+    let init_thy_path() = thy_path := ["."; Settings.thys_dir()]
+
+    let get_thy_path ()= get_path thy_path
+    let add_thy_path x = add_path x thy_path
+    let set_thy_path x = set_path x thy_path
+    let remove_from_path x = remove_path x thy_path
+
+    let init_paths() = init_thy_path()
+
+    let find_file f path =
+      let rec find_aux ths =
+	match ths with
+	  [] -> raise Not_found
+	| (t::ts) ->
+	    let nf = Filename.concat t f
+	    in 
+	    if Sys.file_exists nf 
+	    then nf 
+	    else find_aux ts
+      in 
+      find_aux path
+
+(*** Theory files ***)
+
+    let file_of_thy th = th^Settings.thy_suffix
+    let script_of_thy th = th^Settings.script_suffix
+
+    let find_thy_file f =
+      let tf = file_of_thy f
+      in 
+      try find_file tf (get_thy_path())
+      with Not_found -> 
+	raise (Result.error ("Can't find theory "^f))
+
+(**
+   [build_thy_file f]: build a theory by running script file f.
+*)
+    let build_thy_file thydb f=  
+      let db0 = Thys.get_theories()
+      in 
+      let script = find_file (script_of_thy f) (get_thy_path())
+      in 
+      try 
+	Thys.set_theories(thydb);
+	Result.warning ("Trying to build theory "^f);
+	Unsafe.use_file ~silent:false script;
+	Result.warning ("Built theory "^f);
+	let db1 = Thys.get_theories()
+	in 
+	Thys.set_theories (db0);
+	db1
+      with Not_found ->
+	(Result.warning ("Failed to build theory "^f);
+	 raise (Result.error ("Can't find script to build theory "^f)))
+
+
+(**
+   [load_thy_file info]: Load the file storing the theory
+   named [info.name] with protection [info.prot] and date no later
+   than [info.date]. Finds the file from the path [get_thy_path()].
+ *)
+    let load_thy_file info = 
+      let test_protection prot b =
+	match prot with 
+	  None -> true
+	| (Some p) -> p && b
+      in 
+      let test_date tym d = 
+	match tym with 
+	  None -> true
+	| (Some tim) -> d <= tim
+      in 
+      let name = info.Thydb.Loader.name
+      and date = info.Thydb.Loader.date
+      and prot = info.Thydb.Loader.prot
+      in 
+      let thyfile =file_of_thy name
+      in 
+      let rec load_aux ths =
+	match ths with
+	  [] -> raise Not_found
+	| (t::ts) ->
+	    let filename = Filename.concat t thyfile
+	    in 
+	    if Sys.file_exists filename
+	    then 
+	      let sthy = Theory.load_theory filename
+	      in 
+	      if (test_protection prot (Theory.saved_prot sthy))
+		  && (test_date date (Theory.saved_date sthy))
+	      then sthy
+	      else load_aux ts
+	    else load_aux ts
+      in 
+      load_aux (get_thy_path())
+
+(** 
+   [load_use_theory thy]: Load or use each of the files named in
+   theory [thy].
+ *)
+    let load_use_theory_files thy = 
+      List.iter (Unsafe.load_use_file) thy.Theory.cfiles
+
+(***
+* Theory inspection functions
+***)
+
+(** 
+   [default_load_function]: The default list of functions to call on a
+   newly-loaded theory.
+ *)
+    let default_load_functions = 
+      [
+       load_use_theory_files; (* load files *)
+       PP.add_loaded_type_pp;    (* add type PP information *)
+       PP.add_loaded_term_pp;    (* add term PP information *)
+     ]
+
+    let load_functions = ref default_load_functions
+    let add_load_fn f = load_functions:=(f::!load_functions)
+    let init_load_functions () = load_functions:=default_load_functions
+
+(** 
+   [on_load_thy]: The toplevel function that is passed a newly loaded
+   theory. This just passes the theory to the functions in [load_functions].
+ *)
+    let on_load_thy th =
+      List.iter (fun f -> f th) (List.rev !load_functions)
+
+(*** Miscellaneous ***)
+
+(** [loader_data]: Data to use when loading into a theory database. *)
+    let loader_data = 
+      Thydb.Loader.mk_data on_load_thy load_thy_file build_thy_file
+
+  end
+
+(*** Toplevel file functions *)
+let get_thy_path = Files.get_thy_path
+let add_thy_path = Files.add_thy_path
 
 (** Initialising functions *)
 module Init=
@@ -425,27 +437,25 @@ module Init=
 	(* Can't find the base theory or no base theory set *)
 	(Thys.clear_base_name();
 	 match get_base_thy_builder() with
-	   None -> Thys.reset_theories()
+	   None -> Thys.init_theories()
 	 | Some f -> 
 	     (Result.warning 
 		"Building minimal theory from internal data.");
 	     f())
 
-
 (***
-* Main initialising function 
-***)
+ * Main initialising function 
+ ***)
 
 (** [init_list]: The list of functions to call to set-up the system. *)
 
-    let init_theoryDB () = Thys.reset_theories(); load_base_thy()
+    let init_theoryDB () = Thys.init_theories(); load_base_thy()
 
     let init_list = 
       ref 
 	[
 	 init_theoryDB;
-	 PP.sym_init;
-	 PP.pp_init;
+	 PP.init;
 	 Files.init_load_functions;
 	 Files.init_paths
        ]
@@ -458,7 +468,7 @@ module Init=
 
 (*** Reset functions ***)
 (** [reset_list]: The functions to call when the system is to be reset. *)
-    let reset_list = ref [Thys.reset_theories]
+    let reset_list = ref [Thys.init_theories]
     let add_reset x= reset_list:= x::(!reset_list)
 
 (** The toplevel reset function *)

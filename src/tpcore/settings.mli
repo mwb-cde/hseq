@@ -39,13 +39,13 @@ val init_file: string
 *)
 
 val include_dir : unit -> string
-(** Directory to search for headers. *)
+(** Main include directory. *)
 
 val libs_dir : unit -> string
-(**  Directory to search for library files. *)
+(**  Main library directory. *)
 
 val thys_dir : unit -> string
-(**  Directory to search for theory files. *)
+(**  Main theory directory. *)
 
 (** 
    {7 File suffixes} 
@@ -54,7 +54,7 @@ val thys_dir : unit -> string
 *)
 
 val thy_suffix: string
-(** [thy_suffix="tho"]: Suffix of stored theories. *)
+(** [thy_suffix=".tho"]: Suffix of stored theories. *)
 
 val script_suffix: string
 (**

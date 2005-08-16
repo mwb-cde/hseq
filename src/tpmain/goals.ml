@@ -57,7 +57,7 @@ let mk_dummy_fntype n=
 let goal trm = 
   let f = 
     Formula.make 
-      (Global.scope()) (Global.Parser.mk_term (Global.scope()) trm)
+      (Global.scope()) (Global.mk_term trm)
   in 
   prflist:= [mk_goal  (Global.scope()) f];
   (!save_hook()); top()

@@ -27,7 +27,7 @@ let catch_errors f a =
 
 let theories () = Global.Thys.get_theories()
 
-let read x = catch_errors Global.Parser.read x
+let read x = catch_errors Global.read x
 
 let curr_theory () = Global.current()
 let get_theory_name thy = Global.current_name()
@@ -40,7 +40,7 @@ let theory name =
 let save_theory thy prot= 
   let fname = Filename.concat
       (Global.Files.get_cdir()) 
-      ((get_theory_name thy)^(Global.Files.thy_suffix))
+      (Global.Files.file_of_thy (get_theory_name thy))
   in 
   Theory.save_theory thy fname
 
@@ -426,25 +426,25 @@ let new_axiom ?(simp=false) n trm =
   Global.Thys.set_theories(Thydb.add_axiom n t props (theories())); t
 
 let axiom id =
-  let t, n = Global.Parser.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_axiom t n thys
 
 let theorem id =
-  let t, n = Global.Parser.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_theorem t n thys
 
 let defn id =
-  let t, n = Global.Parser.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in Thydb.get_defn t n thys
 
 let lemma id =
-  let t, n = Global.Parser.read_identifier id
+  let t, n = Global.read_identifier id
   in 
   let thys=theories()
   in 
@@ -458,6 +458,6 @@ let qed n =
 
 let scope () = Global.scope();;
 
-let read x= Global.Parser.read x
-let read_unchecked  x= Global.Parser.read_unchecked x
-let read_defn  x= Global.Parser.read_defn x
+let read x= Global.read x
+let read_unchecked  x= Global.PP.read_unchecked x
+let read_defn  x= Global.read_defn x
