@@ -22,9 +22,9 @@ val use_file : ?silent:bool -> string -> unit
 *)
 
 val object_suffix : string list
-(*
-   [object_suffixes]: the suffixes of file types which can be loaded
-   with load_file (=[".cmo"; ".cmi"]).
+(**
+   The suffixes of file types which can be loaded with load_file
+   (=[".cmo"; ".cmi"]).
 *)
 
 val load_file : string -> unit
