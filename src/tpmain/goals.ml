@@ -8,83 +8,122 @@ open Logic
 open Tactics
 
 let save_hook = ref (fun () -> ())
-
 let set_hook f = (save_hook := f)
 
-type prf = goal
+(***
+* Single interactive proofs
+***)
+module Proof = 
+struct
+  type t = Logic.goal list
 
-let prflist = ref([]: prf list)
+  let push x p = x::p
 
-let curr_goal p = p
-let top () = List.hd !prflist
+  let top p = 
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | (x::_) -> x
 
-let drop()=prflist:=[]
+  let pop p = 
+    match p with
+      [] -> raise (Result.error "No goals.")
+    | (_::xs) -> xs
 
-let pop_plist () = 
-  let p = List.hd !prflist
-  in (prflist:=List.tl !prflist); p
+end
 
-let push_plist p = 
-  (prflist:=p::!prflist); p
+(***
+* Multiple interactive proofs.
+****)
+module ProofStack = 
+struct 
+  type t = Proof.t list
 
-let curr_sqnt p = 
-  match p with 
-    g -> 
-      (match (Logic.get_subgoals g) with
-	[] -> raise (Result.error "No subgoals")
-      | x::xs -> x)
+  let push x p = x::p
 
-let get_asm i = 
-  let (ft, nt)= Logic.Sequent.get_asm i (curr_sqnt (top()))
-  in 
-  (ft, Formula.term_of nt)
+  let top p = 
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | (x::_) -> x
 
-let get_concl i = 
-  let (ft, nt)= Logic.Sequent.get_cncl i (curr_sqnt (top()))
-  in 
-  (ft, Formula.term_of nt)
+  let pop p = 
+    match p with
+      [] -> raise (Result.error "No goals.")
+    | (_::xs) -> xs
 
-let mk_dummy_fntype n=
-  let rec mk_dum m j=
-    if m = 0 
-    then []
-    else 
-      (Gtypes.mk_typevar j)::mk_dum (m-1) j
-  in let i = ref 0
-  in Logicterm.mk_fun_ty_from_list (mk_dum n i)
-    (Gtypes.mk_typevar i)
+  let rotate p = 
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | (x::xs) -> xs@[x]
+
+  let lift n p =
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | xs -> 
+	let (l, c, r) = Lib.full_split_at_index n xs
+	in 
+	c::(List.rev_append l r)
+
+  let push_goal g p = 
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | (x::xs) -> (Proof.push g x)::xs
+
+  let top_goal p = 
+    match p with 
+      [] -> raise (Result.error "No goals.")
+    | (x::_) -> Proof.top x
+
+  let pop_goal p = 
+    match p with
+      [] -> raise (Result.error "No goals.")
+    | (x::xs) -> (Proof.pop x)::xs
+
+end
+
+let prflist = ref ([]:ProofStack.t)
+
+let proofs() = !prflist
+
+let top () = ProofStack.top_goal (!prflist)
+
+let drop() = prflist:=ProofStack.pop (!prflist)
 
 let goal trm = 
-  let f = 
-    Formula.make 
-      (Global.scope()) (Global.mk_term trm)
+  let f = Formula.make (Global.scope()) (Global.mk_term trm)
   in 
-  prflist:= [mk_goal  (Global.scope()) f];
-  (!save_hook()); top()
+  prflist:= ProofStack.push_goal (mk_goal  (Global.scope()) f) (!prflist);
+  !save_hook(); top()
+
+let postpone () =
+  prflist := ProofStack.rotate (!prflist);
+  top()
+
+let lift n =
+  let nlist = 
+    try  ProofStack.lift n (!prflist)
+    with err -> 
+      raise 
+	(Result.add_error (Result.error "Failed to focus on proof.") err)
+  in 
+  prflist := nlist;
+  top()
+
+
+let undo() =
+  match (!prflist) with
+    [] -> raise (Result.error "No goals")
+  | [x] -> raise (Result.error "No previous goals")
+  | _ -> (prflist := ProofStack.pop_goal (!prflist); top())
+	
+let result () = mk_thm (top())
 
 let apply ?report tac goal=
   Logic.Subgoals.apply_to_goal ?report tac goal
 
 let prove_goal scp trm tac =
-  mk_thm 
-    (apply tac (mk_goal scp (Formula.make (Global.scope()) trm)))
+  mk_thm  (apply tac (mk_goal scp (Formula.make (Global.scope()) trm)))
 
 let prove trm tac = prove_goal (Global.scope()) trm tac
-
-let by_list trm tacl =
-  let fg=mk_goal (Global.scope()) 
-      (Formula.make (Global.scope()) trm)
-  in 
-  let rec by_aux ts g =
-      match ts with 
-	[] -> g
-      | (x::xs) -> 
-	  if Logic.has_subgoals g
-	  then by_aux xs (apply x g)
-	  else g
-  in 
-   mk_thm (by_aux tacl fg)
-
 
 let report node branch = 
   let rec print_subgoals i gs = 
@@ -123,34 +162,46 @@ let report node branch =
       else ()
 
 let by_com tac =
-  let p = top()
+  let p = (top():Logic.goal)
   in 
-  (let g = 
-    Logic.Subgoals.apply_to_goal ~report:report tac (curr_goal p)
+  let g = Logic.Subgoals.apply_to_goal ~report:report tac p
   in 
-  (if (num_of_subgoals g)=0 
-  then prflist:= g::(!prflist)
-  else 
-    (prflist:=g::(!prflist));
-   (!save_hook()));
-  top())
+  prflist:= (ProofStack.push_goal g) !prflist;
+  !save_hook();
+  top()
 
-(*
-let postpone() =
-  match (!prflist) with
-    [] -> raise (Result.error "No goal")
-  |	_ -> 
-      (let ng = Logic.postpone (pop_plist())
-      in 
-      push_plist ng)
-*)
+let by_list trm tacl =
+  let fg=mk_goal (Global.scope()) (Formula.make (Global.scope()) trm)
+  in 
+  let rec by_aux ts g =
+      match ts with 
+	[] -> g
+      | (x::xs) -> 
+	  if Logic.has_subgoals g
+	  then by_aux xs (apply x g)
+	  else g
+  in 
+  mk_thm (by_aux tacl fg)
 
-let undo() =
-  match (!prflist) with
-    [] -> raise (Result.error "No goal")
-  |	[x] -> raise (Result.error "No previous goals")
-  |	_ -> (ignore(pop_plist()); top())
-	
-let result ()= mk_thm (curr_goal (top()))
 
+(***
+* Miscellaneous
+***)
+
+let curr_goal () = top()
+
+let curr_sqnt () = 
+  (match (Logic.get_subgoals (top())) with
+    [] -> raise (Result.error "No subgoals")
+  | x::xs -> x)
+
+let get_asm i = 
+  let (ft, nt)= Logic.Sequent.get_asm i (curr_sqnt ())
+  in 
+  (ft, Formula.term_of nt)
+
+let get_concl i = 
+  let (ft, nt)= Logic.Sequent.get_cncl i (curr_sqnt ())
+  in 
+  (ft, Formula.term_of nt)
 

@@ -10,8 +10,9 @@ OPTCODE = global.cmx drule.cmx tactics.cmx goals.cmx commands.cmx \
 LIBFILE=tpmain.cma
 OPTLIB=tpmain.cmxa
 
-DOCFILES = global.mli
-DOCLOAD = -load "${DOCDIR}/tpcore.data"
+DOCFILES = global.mli drule.mli tactics.mli goals.mli commands.mli \
+	display.mli boollib.mli init.mli
+DOCLOAD = -load "${DOCDIR}/logic.data"
 DOCTYPE ?= -html
 DOCDIR ?= "../doc"
 

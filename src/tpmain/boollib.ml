@@ -46,11 +46,11 @@ module BaseTheory=
 	   (read_defn ((Basic.name Logicterm.iffid)
 		       ^" x y = (x => y) and (y => x)"))
 	   ~pp:(104, infixl, Some "iff"));
-      ignore(new_axiom "false_def" << false = (not true)>>);
-      ignore(new_axiom "eq_refl" <<!x: x=x>>);
-      ignore(new_axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
+      ignore(axiom "false_def" << false = (not true)>>);
+      ignore(axiom "eq_refl" <<!x: x=x>>);
+      ignore(axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
       ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
-      ignore(new_axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
+      ignore(axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
       ignore(define
 	       <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))>>);
       ignore(define <:def< any = epsilon (%a: true)>>);
@@ -472,7 +472,7 @@ let get_cases_thm ()=
 	try 
 	  Commands.lemma "boolean.cases_thm"
 	with Not_found -> 
-	  (Goals.prove <<!P: (not P) or P>>
+	  (Commands.prove <<!P: (not P) or P>>
 	   (allC ++ disjC ++ negC ++ basic))
       in 
       cases_tac_thm := Some(nthm);
@@ -824,7 +824,7 @@ module Props =
       let iff_l2 = 
 	let info = Drule.mk_info()
 	in 
-	Goals.prove
+	Commands.prove
 	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
 	(allC ~info:info 
 	   ++ allC ~info:info 
@@ -846,7 +846,7 @@ module Props =
       in 
       let info = Drule.mk_info()
       in 
-      Goals.prove <<!x y: (x iff y) = (x = y)>>
+      Commands.prove <<!x y: (x iff y) = (x = y)>>
       (allC ~info ++ allC ~info
 	 ++ 
 	 (fun g -> 
@@ -886,7 +886,7 @@ module Props =
    [equals_iff_ax]:  |- !x y: (x = y) = (x iff y)
  *)
     let make_equals_iff_ax ()=
-      Goals.prove << !x y: (x = y) = (x iff y) >>
+      Commands.prove << !x y: (x = y) = (x iff y) >>
       (flatten_tac 
 	 ++ (rewrite_tac [get_iff_equals_ax()])
 	 ++ eq_tac)
@@ -906,7 +906,7 @@ module Props =
    [bool_eq_ax]: |- !x y: x = y = ((x => y) and (y=>x))
  *)
     let make_bool_eq_ax () = 
-      Goals.prove << !x y: (x=y) = ((x => y) and (y => x)) >>
+      Commands.prove << !x y: (x=y) = ((x => y) and (y => x)) >>
       (flatten_tac 
 	 ++ rewrite_tac [get_equals_iff_ax()]
 	 ++ unfold "iff"
@@ -926,7 +926,7 @@ module Props =
    [double_not_ax]: |- ! x: x = (not (not x))
  *)
     let make_double_not_ax () = 
-      Goals.prove << !x: x=(not (not x)) >> 
+      Commands.prove << !x: x=(not (not x)) >> 
       (flatten_tac ++ rewrite_tac [get_bool_eq_ax()]
 	 ++ split_tac ++ flatten_tac ++ basic)
 
@@ -945,13 +945,13 @@ module Props =
  *)
     let make_rule_true_ax ()= 
       let rule_true_l1 =  
-	Goals.prove <<!x: (x=true) => x>> 
+	Commands.prove <<!x: (x=true) => x>> 
 	(flatten_tac ++ replace_tac ++ trivial)
       in
       let rule_true_l2 = 
 	let info = Drule.mk_info()
 	in 
-	Goals.prove <<!x: x => (x=true)>>
+	Commands.prove <<!x: x => (x=true)>>
 	(allC ~info:info
 	   ++ 
 	   (fun g -> 
@@ -969,7 +969,7 @@ module Props =
 		  ++ replace_tac ++ flatten_tac]) g))
       in
       let rule_true_l3 = 
-	Goals.prove <<! x: x iff (x=true)>>
+	Commands.prove <<! x: x iff (x=true)>>
 	  ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
 	     --
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
@@ -995,7 +995,7 @@ module Props =
     let make_rule_false_ax ()= 
       let info = Drule.mk_info()
       in 
-      Goals.prove <<! x : (not x)=(x=false)>>
+      Commands.prove <<! x : (not x)=(x=false)>>
       (allC ~info:info
 	 ++
 	 (fun g -> 
@@ -1077,7 +1077,7 @@ module Rules=
 		 in 
 		 Logic.Tactics.basic None (ftag ltag) l g1)] g
 	in 
-	Goals.prove_goal scp lhs (proof (fnum 1))
+	Commands.prove ~scp:scp lhs (proof (fnum 1))
 
 	  
 (*
@@ -1111,7 +1111,7 @@ module Rules=
 		 in 
 		 Logic.Tactics.basic None (ftag rtag) l g1)] g
 	in 
-	Goals.prove_goal scp rhs (proof (fnum 1))
+	Commands.prove ~scp:scp rhs (proof (fnum 1))
 
 (*
    [conjuncts scp thm]
@@ -1275,7 +1275,7 @@ module Convs=
 			     ] g2)] g1)]]
 	     ] g
 	in 
-	Goals.prove_goal scp goal_term proof
+	Commands.prove ~scp:scp goal_term proof
 
 (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
     let neg_exists_conv scp trm=
@@ -1401,7 +1401,7 @@ module Convs=
 			     ] g2)] g1)]]
 	     ] g
 	in 
-	Goals.prove_goal scp goal_term proof
+	Commands.prove ~scp:scp goal_term proof
 
   end
 

@@ -16,7 +16,6 @@ let infixl=Parserkit.Info.infix Parserkit.Info.left_assoc
 let infixr=Parserkit.Info.infix Parserkit.Info.right_assoc
 let infixn=Parserkit.Info.infix Parserkit.Info.non_assoc
 
-
 let catch_errors f a =
   (try f a 
   with 
@@ -25,62 +24,12 @@ let catch_errors f a =
       raise (Failure "failed")
   | x -> raise x)
 
-let theories () = Global.Thys.get_theories()
-
-let read x = catch_errors Global.read x
-
-let curr_theory () = Global.current()
-let get_theory_name thy = Global.current_name()
-
-let theory name = 
-  if name = "" 
-  then curr_theory()
-  else Thydb.get_thy (theories()) name
-
 let save_theory thy prot= 
   let fname = Filename.concat
       (Global.Files.get_cdir()) 
-      (Global.Files.file_of_thy (get_theory_name thy))
+      (Global.Files.file_of_thy (Theory.get_name thy))
   in 
   Theory.save_theory thy fname
-
-(*
-let save_theory thy prot= 
-  let fname = Filename.concat
-      (Global.get_cdir()) ((get_theory_name thy)^(Global.thy_suffix))
-  in 
-  let oc = open_out fname
-  in 
-  Theory.export_theory oc thy prot;
-  close_out oc
-*)
-
-(*
-let load_theory n = 
-  let rec chop n = 
-    let t = try (Filename.chop_extension n) with _ -> n
-    in if t=n then n else chop t
-  in let filefn fname = Global.find_thy_file fname
-  in 
-  let db = 
-    Thydb.Loader.load_theory (theories()) Global.loader_data 
-      (Thydb.Loader.mk_info n None None)
-  in 
-  Global.set_theories(db)
-*)
-
-(*
-let load_parent_theory n = 
-  let rec chop n = 
-    let t = try (Filename.chop_extension n) with _ -> n
-    in if t=n then n else chop t
-  in 
-  let db = 
-    Thydb.Loader.load_theory (theories()) Global.loader_data 
-      (Thydb.Loader.mk_info n None (Some true))
-  in 
-  Global.set_theories(db)
-*)
 
 let load_theory_as_cur n = 
   let rec chop n = 
@@ -89,47 +38,33 @@ let load_theory_as_cur n =
   in 
   let filefn fname = Global.Files.find_thy_file fname
   in 
-  let db = Thydb.Loader.load (theories()) Global.Files.loader_data
+  let db = 
+    Thydb.Loader.load (Global.theories()) Global.Files.loader_data
       (Thydb.Loader.mk_info n None None)
   in 
   Global.Thys.set_theories(db)
 
-(*
-  let db = Thydb.Loader.load_theory (theories()) Global.loader_data
-      (Thydb.Loader.mk_info n None None)
-*)
+let read x = catch_errors Global.read x
+let read_unchecked  x= catch_errors Global.PP.read_unchecked x
+let read_defn  x= catch_errors Global.read_defn x
 
+(*** 
+* Theories
+***)
 
+let scope () = Global.scope()
+let theories () = Global.theories()
 
-let parents ns = 
-  let thy = curr_theory()
-  and db = theories()
-  in 
-  Theory.add_parents ns thy;
-  let db1 = 
-    Thydb.Loader.make_current db Global.Files.loader_data thy
-  in 
-  Global.Thys.set_theories db1
+let curr_theory () = Global.current()
+let curr_theory_name () = Global.current_name()
 
-(*
-let parents ns = 
-  Theory.add_parents ns (curr_theory());
-  List.iter load_parent_theory ns;
-  let db1 = Thydb.set_current (theories()) (curr_theory())
-  in 
-  Global.set_theories db1
-*)
+let theory name = 
+  if name = "" 
+  then curr_theory()
+  else Thydb.get_thy (theories()) name
 
-let add_file ?(use=false) f =
-  Theory.add_file f (curr_theory());
-  if use
-  then 
-    Unsafe.load_use_file f
-  else ()
-      
-let remove_file f =
-  Theory.remove_file f (curr_theory())
-
+(*** Begining and Ending theories ***)
+ 
 let begin_theory n parents= 
   if n = "" 
   then (raise (Result.error "No theory name"))
@@ -146,24 +81,8 @@ let begin_theory n parents=
     in 
     Global.Thys.set_theories(db1)
 
-let new_theory n = begin_theory n
-
-let open_theory n =
-  if n = "" 
-  then (raise (Result.error "No theory name"))
-  else (load_theory_as_cur n)
-
-let close_theory () = 
-  if get_theory_name() = "" 
-  then (raise (Result.error "At base theory"))
-  else 
-    (let thy = curr_theory()
-    in 
-    Theory.end_theory thy false;
-    save_theory thy false)
-
 let end_theory ?(save=true) () = 
-  if get_theory_name() = "" 
+  if curr_theory_name() = "" 
   then (raise (Result.error "At base theory"))
   else 
     (let thy = curr_theory()
@@ -172,60 +91,149 @@ let end_theory ?(save=true) () =
     if(save) then save_theory thy true else ())
 
 
-let add_pp_rec selector id rcrd=
-  if(selector=Basic.fn_id)
-  then 
-    (Global.Thys.set_theories
-       (Thydb.add_term_pp_rec (Basic.name id) rcrd (theories()));
-     Global.PP.add_term_pp_record id rcrd)
+let open_theory n =
+  if n = "" 
+  then (raise (Result.error "No theory name"))
+  else (load_theory_as_cur n)
+
+let close_theory () = 
+  if curr_theory_name() = "" 
+  then (raise (Result.error "At base theory"))
   else 
-    (Global.Thys.set_theories
-       (Thydb.add_type_pp_rec (Basic.name id) rcrd (theories()));
-     Global.PP.add_type_pp_record id rcrd)
+    (let thy = curr_theory()
+    in 
+    Theory.end_theory thy false;
+    save_theory thy false)
+
+(*** Theory properties ***)
+
+let parents ns = 
+  let thy = curr_theory()
+  and db = theories()
+  in 
+  Theory.add_parents ns thy;
+  let db1 = 
+    Thydb.Loader.make_current db Global.Files.loader_data thy
+  in 
+  Global.Thys.set_theories db1
+
+let add_file ?(use=false) f =
+  Theory.add_file f (curr_theory());
+  if use
+  then 
+    Unsafe.load_use_file f
+  else ()
       
+let remove_file f =
+  Theory.remove_file f (curr_theory())
+
+(*** Printer and Parser information ***)
+
+(*** Basic PP functions ***)
+
+(*** Types ***)
+let add_type_pp_rec id rcrd=
+  Global.Thys.set_theories
+    (Thydb.add_type_pp_rec (Basic.name id) rcrd (theories()));
+  Global.PP.add_type_pp_record id rcrd
+      
+let remove_type_pp_rec id =
+  Thydb.remove_type_pp_rec
+    (Basic.thy_of_id id) (Basic.name id) (theories());
+  Global.PP.remove_type_pp id
+
+let get_type_pp_rec id= Global.PP.get_type_pp id 
+
+(*** Terms ***)
+
+let add_term_pp_rec id rcrd=
+  Global.Thys.set_theories
+    (Thydb.add_term_pp_rec (Basic.name id) rcrd (theories()));
+  Global.PP.add_term_pp_record id rcrd
+      
+let remove_term_pp_rec id =
+  Thydb.remove_term_pp_rec
+       (Basic.thy_of_id id) (Basic.name id) (theories());
+  Global.PP.remove_term_pp id
+
+let get_term_pp_rec id= Global.PP.get_type_pp id 
+
 let add_overload sym id = 
   let ty = 
     Thydb.get_id_type (Basic.thy_of_id id) (Basic.name id) (theories())
   in 
   Parser.add_overload sym (id, ty)
+
 let remove_overload sym id =
   Parser.remove_overload sym id
+
+(*** User-level PP Functions ***)
+
+(*** Types ***)
+let add_type_pp id prec fx repr=
+  let rcrd=Printer.mk_record prec fx repr
+  in 
+  add_type_pp_rec id rcrd
+let remove_type_pp id = remove_type_pp_rec id
+let get_type_pp id=get_type_pp_rec id
+
+(*** Terms ***)
 
 let add_term_pp id prec fx repr=
   let rcrd=Printer.mk_record prec fx repr
   in 
-  add_pp_rec Basic.fn_id id rcrd;
+  add_term_pp_rec id rcrd;
   match repr with
     None -> ()
   | Some(sym) -> add_overload sym id
 
-let add_type_pp id prec fx repr=
-  let rcrd=Printer.mk_record prec fx repr
+let remove_term_pp id = remove_term_pp_rec id
+let get_term_pp id=get_term_pp_rec id
+
+
+(** Axioms and Theorems ***)
+
+let theorem id =
+  let t, n = Global.read_identifier id
   in 
-  add_pp_rec Basic.type_id id rcrd
+  let thys=theories()
+  in 
+  try
+    Thydb.get_axiom t n thys
+  with Not_found -> Thydb.get_theorem t n thys
 
-let remove_pp_rec selector id =
-  if(selector=Basic.fn_id)
-  then 
-    (Thydb.remove_term_pp_rec
-       (Basic.thy_of_id id) (Basic.name id) (theories());
-     Global.PP.remove_term_pp id)
-  else 
-    (Thydb.remove_type_pp_rec
-       (Basic.thy_of_id id) (Basic.name id) (theories());
-     Global.PP.remove_type_pp id)
+let defn id =
+  let t, n = Global.read_identifier id
+  in 
+  let thys=theories()
+  in Thydb.get_defn t n thys
 
-let remove_term_pp id = remove_pp_rec Basic.type_id id
-let remove_type_pp id = remove_pp_rec Basic.type_id id
+let lemma id =
+  let t, n = Global.read_identifier id
+  in 
+  let thys=theories()
+  in 
+  Thydb.get_lemma t n thys
 
-let get_pp_rec selector id=
-  if(selector=Basic.fn_id)
-  then Global.PP.get_term_pp id
-  else Global.PP.get_type_pp id 
 
-let get_term_pp id=get_pp_rec Basic.fn_id id
-let get_type_pp id=get_pp_rec Basic.type_id id
+let axiom ?(simp=false) n trm =
+  let thm = Logic.mk_axiom (Formula.make (Global.scope()) trm)
+  and props = if simp then [Theory.simp_property] else []
+  in 
+  match Lib.try_find (Theory.get_theorem_rec n) (curr_theory()) with
+    None -> 
+      Global.Thys.set_theories(Thydb.add_axiom n thm props (theories())); 
+      thm
+  | _ -> 
+      raise (Result.error ("Theorem named "^n^" already exists in theory."))
 
+let prove ?scp trm tac = 
+  let uscp = 
+    match scp with
+      None -> scope()
+    | Some x -> x
+  in
+  Goals.prove_goal uscp trm tac
 
 let save_thm ?(simp=false) n th =
   let props = if simp then [Theory.simp_property] else []
@@ -242,32 +250,24 @@ let prove_thm ?(simp=false) n t tacs =
       ignore(save_thm ~simp:simp n th); th)
     ()
 
-let by x = 
-  (catch_errors Goals.by_com) x
+let qed n = 
+  let thm = Goals.result() 
+  in 
+  Global.Thys.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); 
+  thm
 
+(*** 
+* Definitions and Declarations 
+***)
 
-(*
-   let new_type ?pp (n, args, def) = 
-   let trec = Logic.Defns.mk_typealias (Global.scope()) n args def 
-   in 
-   Thydb.add_type_rec trec (theories());
-   (match pp with 
-   None -> ()
-   | Some(prec, fx, repr) -> 
-   let lname = Basic.mk_long (Theory.name (Global.current())) n
-   in 
-   add_type_pp lname prec fx repr)
- *)
+(*** Type declarations and definitions ***)
+
+(*** Subtype definitions ***)
 
 let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
-(*
-   let set0 = 
-   Term.set_names (Global.scope()) set
-   in
- *)
   let tydef = 
     Logic.Defns.mk_subtype (Global.scope()) 
       name args dtype set rep_name abs_name thm
@@ -304,6 +304,7 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm=
   ignore(save_thm ~simp:simp ati_name abs_type_inverse);
   tydef
     
+(*** Simple type definitions ***)
 let simple_typedef (n, args, def) =
   let def1 = 
     match def with 
@@ -314,6 +315,8 @@ let simple_typedef (n, args, def) =
   in 
   Global.Thys.set_theories(Thydb.add_type_rec tydef (theories())); tydef
 
+
+(*** Toplevel type definitions and declarations ***)
 let typedef ?pp ?simp ?thm ?rep ?abs tydef = 
   let (name, td) =
     match tydef with
@@ -339,8 +342,10 @@ let typedef ?pp ?simp ?thm ?rep ?abs tydef =
   td
 
 
+(*** Term declerations and definitions ***)
 
-(*
+
+(**
    [dest_defn_term trm]
 
    for a term [trm] of the form [f a1 a2 ... an = r] where [n>=0]
@@ -368,6 +373,8 @@ let dest_defn_term trm=
     (Basic.name f, (List.map (fun (x, y) -> (Basic.name x), y) rargs), rhs)
   else err()
       
+(*** Term definitions ***)
+
 let define ?pp ?(simp=false) ((name, args), r)=
   let scp = Global.scope()
   in 
@@ -382,11 +389,14 @@ let define ?pp ?(simp=false) ((name, args), r)=
   in 
   let (n, ty, d)= Logic.Defns.dest_termdef ndef
   in 
-  Global.Thys.set_theories(Thydb.add_defn (Basic.name n) ty d props (theories())); 
+  Global.Thys.set_theories
+    (Thydb.add_defn (Basic.name n) ty d props (theories())); 
   (match pp with 
     None -> ()
   | Some(prec, fx, repr) -> add_term_pp n prec fx repr);
   ndef
+
+(*** Term declarations ***)
 
 let declare ?pp trm = 
   let n, ty=
@@ -419,45 +429,3 @@ let declare ?pp trm =
       add_term_pp longname prec fx repr;
       (n, ty)
 
-let new_axiom ?(simp=false) n trm =
-  let t = Logic.mk_axiom (Formula.make (Global.scope()) trm)
-  and props = if simp then [Theory.simp_property] else []
-  in 
-  Global.Thys.set_theories(Thydb.add_axiom n t props (theories())); t
-
-let axiom id =
-  let t, n = Global.read_identifier id
-  in 
-  let thys=theories()
-  in Thydb.get_axiom t n thys
-
-let theorem id =
-  let t, n = Global.read_identifier id
-  in 
-  let thys=theories()
-  in Thydb.get_theorem t n thys
-
-let defn id =
-  let t, n = Global.read_identifier id
-  in 
-  let thys=theories()
-  in Thydb.get_defn t n thys
-
-let lemma id =
-  let t, n = Global.read_identifier id
-  in 
-  let thys=theories()
-  in 
-  Thydb.get_lemma t n thys
-
-let qed n = 
-  let t = Goals.result() 
-  in 
-  Global.Thys.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); t
-
-
-let scope () = Global.scope();;
-
-let read x= Global.read x
-let read_unchecked  x= Global.PP.read_unchecked x
-let read_defn  x= Global.read_defn x

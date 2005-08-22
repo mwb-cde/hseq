@@ -46,9 +46,9 @@ let print_branch x =
 let print_thm t = Logic.print_thm (Global.PP.info()) t
 
 let print_prf p = 
-  let g = Goals.curr_goal p
+  let g = Goals.Proof.top p
   in 
-  let subgls = Logic.num_of_subgoals g
+  let subgls = Logic.get_subgoals g
   in 
   Format.printf "@[<v>Goal ";
   Format.printf "@[";
@@ -56,14 +56,14 @@ let print_prf p =
     (Formula.term_of (Logic.get_goal g));
   Format.printf "@]@,";
   (match subgls with
-    0 -> Format.printf "@[No subgoals@]@,"
-  | _ -> 
-      (Format.printf "@[%i %s@]@," subgls
-	 (if subgls>1 
-	 then "subgoals" else "subgoal");
-       print_sqnt (Goals.curr_sqnt p)));
+    [] -> Format.printf "@[No subgoals@]@,"
+  | (x::_) -> 
+      let num_gls = (List.length subgls)
+      in 
+      Format.printf "@[%i %s@]@," 
+	num_gls (if num_gls>1 then "subgoals" else "subgoal");
+       print_sqnt x);
   Format.printf "@]"
-
 let print_termdefn def = 
     let n, ty, th = Logic.Defns.dest_termdef def
     in 

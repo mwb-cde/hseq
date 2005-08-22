@@ -19,7 +19,7 @@ val print_branch: Logic.branch -> unit
 val print_thm: Logic.thm -> unit
 val print_defn: Logic.Defns.cdefn -> unit
 
-val print_prf: Goals.prf -> unit
+val print_prf: Goals.Proof.t -> unit
 
 val print_fnident: Basic.ident -> unit
 

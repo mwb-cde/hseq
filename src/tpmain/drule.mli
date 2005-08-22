@@ -4,9 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
-(* Useful functions for writing tactics *)
-
-(* Utility functions *)
+(** Utility functions for writing tactics. *)
 
 val ftag : Tag.t -> Logic.label
 val fnum : int -> Logic.label
