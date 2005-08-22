@@ -160,13 +160,15 @@ let set_axiom_props n ps thy =
 
 
 let get_theorem_rec n thy = 
-  try Hashtbl.find thy.theorems n
-  with Not_found -> 
-    raise (Result.error 
-	     ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
+  Hashtbl.find thy.theorems n
 
 let get_theorem n thy = 
-  let tr = get_theorem_rec n thy
+  let tr = 
+      try get_theorem_rec n thy
+      with Not_found -> 
+	raise 
+	  (Result.error 
+	     ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   in
   tr.thm
 
@@ -183,11 +185,15 @@ let add_thm n t ps thy =
 let set_theorem_props n ps thy =
   if not (get_protection thy)
   then 
-    let tr = get_theorem_rec n thy
-    in 
-    let ntr= {tr with props=ps}
-    in 
-    Hashtbl.replace (thy.theorems) n ntr
+    match Lib.try_find (get_theorem_rec n) thy with
+      Some(tr) -> 
+	let ntr= {tr with props=ps}
+	in 
+	Hashtbl.replace (thy.theorems) n ntr
+    | _ -> 
+	raise 
+	  (Result.error 
+	     ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
 
 

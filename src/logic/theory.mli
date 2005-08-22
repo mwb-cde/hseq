@@ -146,7 +146,7 @@ val set_axiom_props: string -> property list -> thy -> unit
 val get_theorem_rec : string -> thy -> thm_record
 (** Get a theorems' record, raise [Not_found] on failure. *)
 val get_theorem : string -> thy -> Logic.thm
-(** Get a theorem, raise [Not_found] on failure. *)
+(** Get a theorem, raise Result.Error on failure. *)
 val add_thm : string -> Logic.thm -> property list -> thy -> unit
 (** Add a theorem to a theory, raise [Not_found] on failure. *)
 val set_theorem_props: string -> property list -> thy -> unit
