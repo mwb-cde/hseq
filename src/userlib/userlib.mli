@@ -207,17 +207,16 @@ val remove_type_pp :
 
 
 (*
-   [new_axiom ?simp id thm]
+   [axiom ?simp id thm]
    declare thm a new axiom with name id.
 *)
-val new_axiom : ?simp:bool -> string -> Basic.term -> Logic.thm
+val axiom : ?simp:bool -> string -> Basic.term -> Logic.thm
 
 (**
    [axiom/theorem/defn id] 
    get the axiom/theorem/definition named id
    id can be a long identifier (of the form th.name) 
 *)
-val axiom : string -> Logic.thm
 val theorem : string -> Logic.thm
 val defn : string -> Logic.thm
 
@@ -263,4 +262,4 @@ val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 val scope: unit -> Scope.t
 
 (* apply a tactic to the current sub-goal in a proof attempt *)
-val by : Tactics.tactic -> Goals.prf
+val by : Tactics.tactic -> Logic.goal

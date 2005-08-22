@@ -59,14 +59,14 @@ let get_type_pp s =
 let remove_type_pp s =
   Commands.remove_type_pp (Basic.mk_long (Global.current_name()) s)
 
-let new_axiom ?(simp=false) n t =
-  let thm = Commands.new_axiom ~simp:simp n t
+let axiom ?(simp=false) n t =
+  let thm = Commands.axiom ~simp:simp n t
   in 
   if(simp)
   then (Simplib.add_simp thm; thm)
   else thm
 
-let axiom = Commands.axiom
+(*let axiom = Commands.axiom*)
 let theorem = Commands.theorem
 let defn = Commands.defn
 let lemma = Commands.lemma
@@ -107,9 +107,7 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
 
 let scope = Commands.scope
 
-let by x = 
-  (catch_errors Goals.by_com) x
-
+let by x = (catch_errors Goals.by_com) x
 
 let compile dirs name = 
   let inc_dirs = 
