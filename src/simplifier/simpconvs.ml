@@ -28,7 +28,7 @@ open Tactics
 let make_cond_rule_true_ax()=
   let info = Drule.mk_info () 
   in 
-  Goals.prove << !x y: (x=>y) = (x => (y=true)) >>
+  Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
   (allC ~info:info ++ allC ~info:info
      ++
      (fun g-> 
@@ -57,7 +57,7 @@ let get_cond_rule_true_ax ()=
 let make_cond_rule_false_ax()=
   let info = Drule.mk_info()
   in 
-  Goals.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
+  Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
   (allC ~info:info ++ allC ~info:info
      ++ 
      (fun g -> 
@@ -161,7 +161,7 @@ let simple_rewrite_conv scp rule trm=
 		       once_rewrite_tac ~f:(ftag ctag) [rule];
 		       basic] g2)] g1)]]] g
   in 
-  Goals.prove_goal scp new_goal proof;;
+  Commands.prove ~scp:scp new_goal proof;;
 
 
 (**
