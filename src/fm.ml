@@ -5,7 +5,7 @@
 ----*)
 
 (* 
-   Start up file loaded when the system starts.
+   Initialisation file loaded when the system starts.
 *)
 
 (*#install_printer Term.simple_term_printer;;*)
