@@ -219,7 +219,7 @@ let cleanup = ref true
    Delete all assumptions listed in [ctrl.asms].
  *)
 let clean_aux_tac tags g =
-  each tags (fun x -> Logic.Tactics.delete None (Logic.FTag x)) g
+  map_every (fun x -> Logic.Tactics.delete None (Logic.FTag x)) tags g
 
 let clean_up_tac ctrl g=
   if (!cleanup) 
@@ -1043,13 +1043,13 @@ let rec simp_tac cntrl asms except l goal=
   let tac2 g = 
     let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 1") (!ret) 
     in 
-    Tactics.each targets 
+    Tactics.map_every 
       (fun tg -> 
 	alt
 	  [seq
 	     [simp_engine_tac (ncntrl, ret, except, snd (!concl_rules)) tg;
 	      data_tac (fun _ -> chng:=true) ()];
-	   skip]) g
+	   skip]) targets g
   in 
   let tac3 g =
     let ncntrl = Lib.dest_option ~err:(Failure "simp_tac: 2") (!ret)
@@ -1158,9 +1158,9 @@ let once_simp_tac cntrl asms except l goal=
       [
        (fun _ -> asms) 
 	 --> 
-       seq 
-	 [make_asm_entries_tac asm_rules asm_tags except;
-	  make_concl_entries_tac concl_rules concl_tags except];
+	   seq 
+	     [make_asm_entries_tac asm_rules asm_tags except;
+	      make_concl_entries_tac concl_rules concl_tags except];
        data_tac 
 	 (fun () -> 
        (* get the information, put it into a useful form *)
@@ -1206,14 +1206,14 @@ let once_simp_tac cntrl asms except l goal=
   let tac2 g = 
     let ncntrl = Lib.dest_option ~err:(Failure "once_simp_tac: 1") (!ret) 
     in 
-    Tactics.each targets 
+    Tactics.map_every
       (fun tg -> 
 	alt
 	  [seq
 	     [once_simp_engine_tac 
 		(ncntrl, ret, except, snd (!concl_rules)) tg;
 	      data_tac (fun _ -> chng:=true) ()];
-	   skip]) g
+	   skip]) targets g
   in 
   let tac3 g =
     let ncntrl = Lib.dest_option ~err:(Failure "once_simp_tac: 2") (!ret)

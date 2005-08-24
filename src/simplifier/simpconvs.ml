@@ -137,7 +137,7 @@ let simple_rewrite_conv scp rule trm=
 		    let trms = List.rev (Drule.constants info)
 		    in 
 		    seq
-		      [inst_asm ~a:(ftag atag) trms;
+		      [instA ~a:(ftag atag) trms;
 		       once_rewrite_tac ~f:(ftag atag) [rule];
 		       basic] g2)] g1)];
 	  seq 
@@ -157,7 +157,7 @@ let simple_rewrite_conv scp rule trm=
 		    let trms = List.rev (Drule.constants info)
 		    in 
 		    seq
-		      [inst_asm ~a:(ftag atag) trms;
+		      [instA ~a:(ftag atag) trms;
 		       once_rewrite_tac ~f:(ftag ctag) [rule];
 		       basic] g2)] g1)]]] g
   in 
@@ -753,7 +753,7 @@ let prepare_concls data cs except goal=
   let d=ref []
   in 
   seq
-    [Tactics.each cs (prepare_concl d except);
+    [Tactics.map_every (prepare_concl d except) cs;
      data_tac (fun () -> data:=(!d)) ()] goal
 
 
@@ -806,7 +806,7 @@ let prepare_asms data ams except goal=
   in 
   seq
     [
-     Tactics.each ams (prepare_asm d except);
+     Tactics.map_every (prepare_asm d except) ams;
      data_tac (fun () -> data:=!d) ()
    ] goal
 
