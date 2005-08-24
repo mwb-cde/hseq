@@ -534,6 +534,7 @@ module Subgoals:
       
       (** {7 Notification of Result} *)
 
+(*
       val notify_hook : (bool -> unit) ref
 	  (** 
 	     Support for user interfaces.
@@ -545,6 +546,7 @@ module Subgoals:
 	     be called for each individual tactic in the order they
 	     are applied to a subgoal.
 	   *)
+*)
 
       (** {7 Nodes and branches} *)
 

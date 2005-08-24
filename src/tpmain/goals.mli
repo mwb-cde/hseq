@@ -140,6 +140,20 @@ val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
    from the tactics used in an interactive proof.
 *)
 
+(** {7 Support for proof recording} *)
+
+val save_hook: (unit -> unit) ref 
+(**
+   User interface hook called when an application a proof command is
+   successful.
+
+   The proof commands which invoke [save_hook] are {!Goals.by_com} and
+   {!Goals.goal}.
+*)
+
+val set_hook : (unit -> unit) -> unit
+(** Set the user interface hook to a given function. *)
+
 (** {7 Miscellaneous} *)
 
 val curr_goal : unit -> Logic.goal
@@ -154,17 +168,5 @@ val get_asm: int -> (Tag.t * Basic.term)
 val get_concl: int -> (Tag.t * Basic.term)
 (** Get a conclusion from the current sequent. *)
 
-
-(** {7 Deprecated} *)
-
-val save_hook :(unit -> unit) ref 
-(**
-   User interface hook called when a proof command is successful.
-
-   Deprecated: Use {!Logic.Subgoals.notify_hook} instead.
-*)
-
-val set_hook : (unit -> unit) -> unit
-(** Set the user interface hook to a given function. *)
 
 (** {7 Debugging} *)

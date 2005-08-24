@@ -313,11 +313,11 @@ val typedef:
    take arguments. All variables in [A] must occur in [B].
 
    [thm]: the existance theorem for [A], must be in the form [|- ?x:
-   trm x ]. The expression [Defn.mk_subtype_exists trm] constructs the
-   form that the theorem must be in, for term [trm].
+   trm x]. The expression [Defn.mk_subtype_exists trm] constructs the
+   formula stating the existance property.
 
    [?rep], [?abs]: (optional) the names for the representation and
-   abstraction functions. Default: [rep= REP_T] and [abs = ABS_T]
+   abstraction functions. Default: [rep = REP_T] and [abs = ABS_T]
    where [T] is the name of the type being defined.
 
    [?simp]: (optional) whether the theorems constructed by the subtype
@@ -336,7 +336,7 @@ val typedef:
 
    Function declarations:
    {ul {- [REP: X -> Y]} 
-   {- ABS: Y -> X}}
+   {- [ABS: Y -> X]}}
  
    Axioms:
    {ul

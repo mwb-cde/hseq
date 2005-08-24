@@ -13,7 +13,7 @@ let repl_flag = ref false
 
 let clear ()= history := []
 
-let signal () = should_save:=true
+let signal x = should_save:=true
 
 let read_input () = input_line stdin
 
@@ -43,7 +43,7 @@ let stop ()=
   Goals.set_hook (fun () -> ()) 
 
 let start () = 
-  clear();repl_flag:=true; Goals.set_hook signal; repl()
+  clear(); repl_flag:=true; Goals.set_hook signal; repl()
 
 let restart () = 
   repl_flag:=true; Goals.set_hook signal; repl()
