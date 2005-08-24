@@ -43,7 +43,6 @@ let has_subgoals b=
 
 let num_subgoals b = List.length (branch_subgoals b) 
 
-
 let mk_info () = ref (Logic.make_tag_record [] [] [] [])
 let empty_info info = (info:=(Logic.make_tag_record[] [] [] []); info)
 

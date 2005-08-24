@@ -8,42 +8,301 @@ open Logic
 
 type tactic = Logic.tactic
 
+(*** 
+* Support functions
+***)
+
 let fnum = Drule.fnum
 let ftag = Drule.ftag
 let fname = Drule.fname
 
-let (!~) x= fnum (-x)
-let (!+) = fnum
 let (!!) = fnum
+let (!~) x= fnum (-x)
 let (!$) = fname
 
-let leftright=Rewrite.leftright
-let rightleft = Rewrite.rightleft
+(*** 
+* Basic tacticals and tactics
+***)
 
-let rule_tac r g =  r g
+let foreach = Logic.Subgoals.apply_to_each 
+
+let skip = Logic.Tactics.skip None
+
+let fail ?err sq = 
+  match err with 
+    None -> raise (Result.error "failed")
+  | Some e -> raise e
+
+let data_tac f info g= f info; skip g
+
+(***
+* Tacticals
+***)
+
+let seq rls sq =
+  let rec seq_aux fs sqs =
+    match fs with 
+      [] -> sqs 
+    | r::rs ->
+	if Drule.has_subgoals sqs
+	then (seq_aux rs (foreach r sqs))
+	else sqs
+  in 
+  match rls with
+    [] -> raise (Result.error "seq: empty tactic list")
+  | x::xs -> seq_aux xs (x sq)
+
+let (++) tac1 tac2 g = seq [tac1; tac2] g
+
+let alt tacl g = 
+  let rec alt_aux ts =
+    match ts with
+      [] -> raise (Result.error "alt: no successful tactic")
+    | (x::xs) ->
+	try x g
+	with _ -> alt_aux xs
+  in alt_aux tacl 
+
+let (||) tac1 tac2 g=
+  try tac1 g with  _ -> tac2 g
+
+let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
+
+let (--) = thenl
+
+let rec repeat tac g =
+  (tac ++ ((repeat tac) || skip)) g
+
+let cond pred ttac ftac g =
+  if (pred g) then (ttac g) else (ftac g)
+
+let (-->) pred tac = cond pred tac skip
+
+let rec map_every tac l goal = 
+  let rec every_aux ls g=
+    match ls with 
+      [] -> skip g
+    | (x::xs) -> (tac x ++ every_aux xs) g
+  in 
+  every_aux l goal
+
+let map_first tac l goal = 
+  let rec every_aux ls g=
+    match ls with 
+      [] -> skip g
+    | (x::xs) -> 
+	try (tac x) g
+	with _ -> every_aux xs g
+  in 
+  every_aux l goal
+  
+
+(***
+* Tactics
+***)
+
+(*** Formula manipulation ***)
 
 let rotateA ?info g = Logic.Tactics.rotate_asms info g
 let rotateC ?info g = Logic.Tactics.rotate_cncls info g
 
-let copy_asm ?info i g 
+let copyA ?info i g 
     = Logic.Tactics.copy_asm info i g
-let copy_concl ?info i g 
+let copyC ?info i g 
     = Logic.Tactics.copy_cncl info i g
 
 let lift ?info id g = Logic.Tactics.lift info id g
 
-let skip = Drule.skip
-let foreach = Drule.foreach
+let delete ?info i = (Logic.Tactics.delete info i)
+
+let deleten ns sq = 
+  let rec del_aux l b=
+    match l with
+      [] -> b
+    | (x::xs) -> 
+	del_aux xs (foreach (Logic.Tactics.delete None x) b)
+  in del_aux ns (skip sq)
+
+(*** Logic Rules **)
+
+let trueR ?info ?c sq =
+  let cf=
+    match c with 
+      Some x -> x
+    | _ -> (Drule.first_concl Formula.is_true (Drule.sequent sq))
+  in Logic.Tactics.trueR info cf sq
+
+let conjC ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_conj (Drule.sequent sq))
+  in Logic.Tactics.conjC info cf sq
+
+let conjA ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_conj (Drule.sequent sq))
+  in Logic.Tactics.conjA info af sq
+
+let disjC ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_disj (Drule.sequent sq))
+  in Logic.Tactics.disjC info cf sq
+
+let disjA ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_disj (Drule.sequent sq))
+  in Logic.Tactics.disjA info af sq
+
+let negC ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_neg (Drule.sequent sq))
+  in Logic.Tactics.negC info cf sq
+
+let negA ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_neg (Drule.sequent sq))
+  in Logic.Tactics.negA info af sq
+
+let implC ?info ?c sq =
+  let cf=
+    match c with
+      Some x -> x
+    | _ -> (Drule.first_concl Formula.is_implies (Drule.sequent sq))
+  in 
+  Logic.Tactics.implC info cf sq
+
+let implA ?info ?a sq =
+  let af=
+    match a with 
+      (Some x) -> x
+    | _ -> (Drule.first_asm Formula.is_implies (Drule.sequent sq))
+  in 
+  Logic.Tactics.implA info af sq
+
+let existC ?info ?c trm sq =
+  let cf=
+    match c with
+      (Some x) -> x
+    | _ -> (Drule.first_concl Formula.is_exists (Drule.sequent sq))
+  in Logic.Tactics.existC info trm cf sq
+
+let existA ?info ?a sq =
+  let af=
+    match a with 
+      Some(x) -> x
+    | _ -> (Drule.first_asm Formula.is_exists (Drule.sequent sq))
+  in Logic.Tactics.existA info af sq
+
+let allC ?info ?c sq =
+  let cf=
+    match c with 
+      Some(x) -> x
+    | _ -> (Drule.first_concl Formula.is_all (Drule.sequent sq))
+  in Logic.Tactics.allC info cf sq
+
+let allA ?info ?a trm sq =
+  let af=
+    match a with
+      Some x -> x
+    | _ ->  (Drule.first_asm Formula.is_all (Drule.sequent sq))
+  in Logic.Tactics.allA info trm af sq
+
+let instA0 ?info l trms goal =
+  let info1 = Drule.mk_info ()
+  and tag1 = Logic.label_to_tag l (Drule.sequent goal)
+  in 
+  let instf infof trm g = 
+    let alabel = Lib.get_one (Drule.aformulas infof) (Failure "instA")
+    in
+    ignore(Drule.empty_info infof);
+    allA ~info:infof ~a:(ftag alabel) trm g
+  in 
+  Logic.do_info (Some info1) [] [tag1]  [] [];
+  let g1 = map_every (instf info1) trms goal
+  in 
+  Logic.add_info info [] (Drule.aformulas info1) [] [];
+  g1
+
+let instA ?info ?a trms goal = 
+  let af =
+    match a with 
+      Some x -> x
+    | _ ->  (Drule.first_asm Formula.is_all (Drule.sequent goal))
+  in 
+  instA0 ?info af trms goal
+
+let instC0 ?info l trms goal =
+  let info1 = Drule.mk_info ()
+  and tag1 = Logic.label_to_tag l (Drule.sequent goal)
+  in 
+  let instf infof trm g = 
+    let clabel = Lib.get_one (Drule.cformulas infof) (Failure "instA")
+    in
+    ignore(Drule.empty_info infof);
+    existC ~info:infof ~c:(ftag clabel) trm g
+  in 
+  Logic.do_info (Some info1) [] [] [tag1] [];
+  let g1 = map_every (instf info1) trms goal
+  in 
+  Logic.add_info info [] [] (Drule.cformulas info1) [];
+  g1
+  
+let instC ?info ?c trms goal=
+  let cf=
+    match c with
+      (Some x) -> x
+    | _ -> (Drule.first_concl Formula.is_exists (Drule.sequent goal))
+  in 
+  instC0 ?info cf trms goal
+
+let inst_tac ?info ?f trms goal = 
+  try
+    instA ?info:info ?a:f trms goal
+  with _ -> instC ?info:info ?c:f trms goal
+
+let cut ?info ?inst th goal = 
+  let cut0 trms g = 
+      let info1 = Drule.mk_info()
+      in 
+      let g1 = Logic.Tactics.cut (Some info1) th g
+      in 
+      let atag = Lib.get_one (Drule.aformulas info1) (Failure "cut")
+      in 
+      ignore(Drule.empty_info info1);
+      foreach (instA ?info:info ~a:(ftag atag) trms) g1
+  in 
+  match inst with
+    None -> Logic.Tactics.cut info th goal
+  | Some(trms) -> 
+      try cut0 trms goal
+      with err -> 
+	raise (Result.add_error (Result.error "cut") err)
+
+let beta_tac ?info ?f= 
+  match f with
+    (Some x) -> Logic.Tactics.beta info x
+  | _ -> (Drule.foreach_once (fun x -> Logic.Tactics.beta info x))
+
+let name_tac ?info n lbl goal = 
+  let sqnt = Drule.sequent goal
+  in 
+  match Lib.try_app (Logic.get_label_asm lbl) sqnt with
+    Some _ -> Logic.Tactics.nameA info n lbl goal
+  | None -> Logic.Tactics.nameC info n lbl goal
 
 
-(** [data_tac f info g]
-
-   Tactic to add information to [info].
-
-   Apply [f info] then [skip].
-*)
-let data_tac f info g= f info; skip g
-
+(*** Unification tactics ***)
 
 let find_basic sq = 
   let ams = Logic.Sequent.asms sq
@@ -70,167 +329,6 @@ let basic ?info sqnt =
     in Logic.Tactics.basic info a c sqnt
   with Not_found -> raise (Result.error "Not basic")
 
-(*
-let postpone = Logic.postpone
-*)
-
-let cut ?info th = Logic.Tactics.cut info th
-
-let implC ?info ?c sq =
-  let cf=
-    match c with
-      Some x -> x
-    | _ -> (Drule.first_concl Formula.is_implies (Drule.sequent sq))
-  in 
-  Logic.Tactics.implC info cf sq
-
-let implA ?info ?a sq =
-  let af=
-    match a with 
-      (Some x) -> x
-    | _ -> (Drule.first_asm Formula.is_implies (Drule.sequent sq))
-  in 
-  Logic.Tactics.implA info af sq
-
-let conjC ?info ?c sq =
-  let cf=
-    match c with 
-      Some(x) -> x
-    | _ -> (Drule.first_concl Formula.is_conj (Drule.sequent sq))
-  in Logic.Tactics.conjC info cf sq
-
-let conjA ?info ?a sq =
-  let af=
-    match a with 
-      Some(x) -> x
-    | _ -> (Drule.first_asm Formula.is_conj (Drule.sequent sq))
-  in Logic.Tactics.conjA info af sq
-
-let disjA ?info ?a sq =
-  let af=
-    match a with 
-      Some(x) -> x
-    | _ -> (Drule.first_asm Formula.is_disj (Drule.sequent sq))
-  in Logic.Tactics.disjA info af sq
-
-let disjC ?info ?c sq =
-  let cf=
-    match c with 
-      Some(x) -> x
-    | _ -> (Drule.first_concl Formula.is_disj (Drule.sequent sq))
-  in Logic.Tactics.disjC info cf sq
-
-let negC ?info ?c sq =
-  let cf=
-    match c with 
-      Some(x) -> x
-    | _ -> (Drule.first_concl Formula.is_neg (Drule.sequent sq))
-  in Logic.Tactics.negC info cf sq
-
-let negA ?info ?a sq =
-  let af=
-    match a with 
-      Some(x) -> x
-    | _ -> (Drule.first_asm Formula.is_neg (Drule.sequent sq))
-  in Logic.Tactics.negA info af sq
-
-let allC ?info ?c sq =
-  let cf=
-    match c with 
-      Some(x) -> x
-    | _ -> (Drule.first_concl Formula.is_all (Drule.sequent sq))
-  in Logic.Tactics.allC info cf sq
-
-let existA ?info ?a sq =
-  let af=
-    match a with 
-      Some(x) -> x
-    | _ -> (Drule.first_asm Formula.is_exists (Drule.sequent sq))
-  in Logic.Tactics.existA info af sq
-
-let trueR ?info ?c sq =
-  let cf=
-    match c with 
-      Some x -> x
-    | _ -> (Drule.first_concl Formula.is_true (Drule.sequent sq))
-  in Logic.Tactics.trueR info cf sq
-
-let trivial = trueR
-
-let allA ?info ?a trm sq =
-  let af=
-    match a with
-      Some x -> x
-    | _ ->  (Drule.first_asm Formula.is_all (Drule.sequent sq))
-  in Logic.Tactics.allA info trm af sq
-
-let existC ?info ?c trm sq =
-  let cf=
-    match c with
-      (Some x) -> x
-    | _ -> (Drule.first_concl Formula.is_exists (Drule.sequent sq))
-  in Logic.Tactics.existC info trm cf sq
-
-let deleten ns sq = 
-  let rec del_aux l b=
-    match l with
-      [] -> b
-    | (x::xs) -> 
-	del_aux xs (foreach (Logic.Tactics.delete None x) b)
-  in del_aux ns (skip sq)
-
-let delete ?info i = (Logic.Tactics.delete info i)
-
-let beta_tac ?info ?f= 
-  match f with
-    (Some x) -> Logic.Tactics.beta info x
-  | _ -> (Drule.foreach_once (fun x -> Logic.Tactics.beta info x))
-
-let name_tac ?info n lbl goal = 
-  let sqnt = Drule.sequent goal
-  in 
-  match Lib.try_app (Logic.get_label_asm lbl) sqnt with
-    Some _ -> Logic.Tactics.nameA info n lbl goal
-  | None -> Logic.Tactics.nameC info n lbl goal
-
-(** 
-   [named_tac tac anames cnames]: apply [tac ~info:inf goal], rename
-   each of [Drule.aformulas inf] with a name from [anames], rename
-   each of [Drule.cformulas inf] with a name from [cnames], in
-   order. Set [info=inf'] where [inf'] is [inf], with the formula tag
-   produced by renaming.
-*) 
-let named_tac ?info tac anames cnames (goal: Logic.node) =
-    let inf1 = Drule.mk_info()
-    and inf2 = Drule.mk_info()
-    in 
-    let rec name_list ns ls g = 
-      match (ns, ls) with 
-	([], _) -> g
-      | (_, []) -> g
-      | (x::xs, y::ys) -> 
-	 (name_list xs ys) (foreach (name_tac ~info:inf2 x y) g)
-    in 
-    let g1 = tac ~info:inf1 goal
-    in 
-    let albls = List.map ftag (Drule.aformulas inf1)
-    and clbls = List.map ftag (Drule.cformulas inf1)
-    in 
-    let g2 = name_list anames albls g1
-    in 
-    let g3 = name_list cnames clbls g2
-    in 
-    add_info info 
-      (Drule.subgoals inf1) 
-      (List.rev (Drule.aformulas inf2)) 
-      (List.rev (Drule.cformulas inf2))
-      (Drule.constants inf1);
-    g3
-
-(*
-   [unify_tac a c g]
-   unify assumption [a] with conclusion [c]
- *)
 let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
   let sqnt=Drule.sequent g
   in 
@@ -288,115 +386,21 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) g=
     Logic.foreach (Logic.Tactics.basic info a c) g1
   with _ -> g1
 
+(***
+* Rewriting tactics
+***)
 
-(* tacticals *)
-
-type tactical =  tactic 
-
-(* fail sq:
-   do nothing and fail
-*)
-let fail ?err sq = 
-  match err with 
-    None -> raise (Result.error "failed")
-  | Some e -> raise e
-
-
-(*
-let rec repeat tac g =
-  let rec app_aux ng=
-    if(Drule.has_subgoals ng)
-    then 
-      try app_aux (Logic.foreach tac ng)
-      with _ -> ng
-    else ng
-  in 
-  app_aux (tac g)
-*)
-(*
-   [alt tacl g]
-   apply first tactic of [tacl] which succeeds.
-   raise error if none succeeds.
- *)
-let alt tacl g = 
-  let rec alt_aux ts =
-    match ts with
-      [] -> raise (Result.error "alt: no successful tactic")
-    | (x::xs) ->
-	try x g
-	with _ -> alt_aux xs
-  in alt_aux tacl 
-
-let (||) tac1 tac2 g=
-  (try tac1 g
-  with  _ -> tac2 g)
-
-
-(* thenl tac rules sq:
-   applies rules, in order, to each subgoal resulting from
-   application of tac to sq 
-   fails if any rule fails ( sequential composition )
- *)
-let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
-let (--) = thenl
-
-(* seq rules sq:
-   applies rules, in order, to each subgoal resulting from
-   application of first rule to sq 
-   fails if any rule fails ( sequential composition )
- *)
-let seq rls sq =
-  let rec seq_aux fs sqs =
-    match fs with 
-      [] -> sqs 
-    | r::rs ->
-	if Drule.has_subgoals sqs
-	then (seq_aux rs (foreach r sqs))
-	else sqs
-  in 
-  match rls with
-    [] -> raise (Result.error "seq: empty tactic list")
-  | x::xs -> seq_aux xs (x sq)
-
-let (++) tac1 tac2 g =
-  seq [tac1; tac2] g
-
-let rec repeat tac g =
-  (tac ++ ((repeat tac) || skip)) g
-
-(** 
-   [apply_if pred tac]
-   Apply tactic [tac] if predicate [pred] is true for node.
-   Do nothing if [pred] is false (using [skip]).
- *)
-let apply_if pred tac n =
-  if (pred n) then tac n
-  else skip n
-
-(** 
-   [pred --> tac]
-   Apply tactic [tac] if predicate [pred] is true for node.
-   Do nothing if [pred] is false (using [skip]).
-   (synonym for apply_if)
- *)
-let (-->) = apply_if
-
-
-(**
-   [each xs tac] apply [tac] to each [x] in [xs]
-*)
-let rec each l tac goal = 
-  let rec each_aux ls g=
-    match ls with 
-      [] -> skip g
-    | (x::xs) -> (tac x ++ each_aux xs) g
-  in 
-  each_aux l goal
-
+let leftright=Rewrite.leftright
+let rightleft = Rewrite.rightleft
 
 let rewrite_control 
     ?max ?(strat=Rewrite.topdown) dir=
   Rewrite.control ~max:max ~dir:dir ~strat:strat 
+
+let is_rewrite_formula t=
+  let (_, t1) = Term.strip_qnt Basic.All t
+  in 
+  Logicterm.is_equality t1
 
 let gen_rewrite_tac ?info ctrl rules ?f goal=
   match f with
@@ -413,20 +417,12 @@ let rewrite_tac ?info ?(dir=leftright) ths ?f goal=
   in 
   gen_rewrite_tac ?info:info ctrl rules ?f:f goal 
 
-
 let once_rewrite_tac ?info ?(dir=leftright) ths ?f goal=
   let ctrl=rewrite_control ~max:1 dir
   in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
   gen_rewrite_tac ?info:info ctrl rules ?f:f goal
-
-
-let is_rewrite_formula t=
-  let (_, t1) = Term.strip_qnt Basic.All t
-  in 
-  (Logicterm.is_equality t1)
-    
 
 let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = Drule.sequent goal
@@ -472,7 +468,46 @@ let once_replace_tac ?info ?(dir=leftright) ?asms ?f goal=
   gen_replace_tac ?info:info ~ctrl:ctrl ?asms:asms ?f:f goal
 
 
-(* pattern matching tacticals *)
+(***
+* Derived tactics and tacticals
+***)
+
+(** 
+   [named_tac tac anames cnames]: apply [tac ~info:inf goal], rename
+   each of [Drule.aformulas inf] with a name from [anames], rename
+   each of [Drule.cformulas inf] with a name from [cnames], in
+   order. Set [info=inf'] where [inf'] is [inf], with the formula tag
+   produced by renaming.
+*) 
+let named_tac ?info tac anames cnames (goal: Logic.node) =
+    let inf1 = Drule.mk_info()
+    and inf2 = Drule.mk_info()
+    in 
+    let rec name_list ns ls g = 
+      match (ns, ls) with 
+	([], _) -> g
+      | (_, []) -> g
+      | (x::xs, y::ys) -> 
+	 (name_list xs ys) (foreach (name_tac ~info:inf2 x y) g)
+    in 
+    let g1 = tac ~info:inf1 goal
+    in 
+    let albls = List.map ftag (Drule.aformulas inf1)
+    and clbls = List.map ftag (Drule.cformulas inf1)
+    in 
+    let g2 = name_list anames albls g1
+    in 
+    let g3 = name_list cnames clbls g2
+    in 
+    add_info info 
+      (Drule.subgoals inf1) 
+      (List.rev (Drule.aformulas inf2)) 
+      (List.rev (Drule.cformulas inf2))
+      (Drule.constants inf1);
+    g3
+
+
+(*** Pattern matching tacticals ***)
 
 let match_asm trm tac g =
   try 

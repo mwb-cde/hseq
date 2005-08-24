@@ -4,6 +4,10 @@
  Copyright M Wahab 2005
 ----*)
 
+(**
+   Boolean proofs.
+*)
+
 module BaseTheory:
     sig
       (*
@@ -93,9 +97,6 @@ val asm_elims :
 val conc_elims : 
     unit -> ((Formula.form->bool) * (Logic.label -> Logic.tactic)) list
 
-(*
-val false_rule:  ?a:Logic.label -> Logic.tactic
-*)
 val falseR:  ?a:Logic.label -> Tactics.tactic
 
 val trivial : ?f:Logic.label -> Tactics.tactic
@@ -122,9 +123,11 @@ val trivial : ?f:Logic.label -> Tactics.tactic
 (* [inst_tac f consts] 
    instantiate formula [f] with terms [consts]
 *)
+(*
 val inst_tac: ?f:Logic.label -> Basic.term list -> Tactics.tactic 
 val inst_asm : ?a:Logic.label -> Basic.term list -> Tactics.tactic
 val inst_concl : ?c:Logic.label -> Basic.term list -> Tactics.tactic
+*)
 
 val inst_asm_rule : Logic.label -> Basic.term list -> Tactics.tactic
 
