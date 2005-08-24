@@ -534,20 +534,6 @@ module Subgoals:
       
       (** {7 Notification of Result} *)
 
-(*
-      val notify_hook : (bool -> unit) ref
-	  (** 
-	     Support for user interfaces.
-
-	     [!notify_hook] is called with [true] when a tactic
-	     succeeds and [false] when a tactic fails. A tactic fails
-	     if and only if it raises an exception. Note that if the
-	     tactic is made up of several tactics, [notify_hook] will
-	     be called for each individual tactic in the order they
-	     are applied to a subgoal.
-	   *)
-*)
-
       (** {7 Nodes and branches} *)
 
       (** 
@@ -1134,7 +1120,6 @@ module Tactics :
       val trueR: info option -> label -> tactic
 (** 
    [trueR i sq]: Truth solves the goal.
-
 
    {L
    asms |- true, concls

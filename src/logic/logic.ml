@@ -638,12 +638,6 @@ exception Solved_subgoal of Gtypes.substitution
 module Subgoals=
   struct
 
-(*
-(** Notification of Result ***)
-
-    let notify_hook = ref (fun _ -> ())
-*)
-
 (**
    Subgoals:
  *)
@@ -740,16 +734,7 @@ module Subgoals=
       in 
       let n1 = mk_node ticket (node_tyenv node) (node_sqnt node)
       in 
-      let b1 = 
-	try 
-	  let b2=tac n1
-	  in 
-	  (
-	   (* (!notify_hook true); *)
-	   b2)
-	with err -> 
-(*	  (!notify_hook false);  *)
-	  raise err
+      let b1 = tac n1
       in 
       if not (Tag.equal ticket (branch_tag b1))
       then raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
