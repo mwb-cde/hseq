@@ -128,7 +128,7 @@ val nice_date: float -> (int * int * int * int * int)
 
 (**
    [get_one l e]: Get first element of list [l].
-   raise exception [e] if length of [l] is empty.
+   raise exception [e] if [l] is empty.
 
    [get_two l e]: Get first two elements of list [l].
    raise exception [e] if length of [l] < 2.
