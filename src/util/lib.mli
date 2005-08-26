@@ -177,11 +177,11 @@ val full_split_at_tag:
 val rotate_left : int -> 'a list -> 'a list
 val rotate_right : int -> 'a list -> 'a list
 
+val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
 (** 
    [apply_nth n f l d]: Apply [f] to [n]th element of list.
    If list [l] is empty, return [d].
 *)
-val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
 
 (**
    [fold_map f a l]: 
@@ -227,6 +227,24 @@ val try_app: ('a -> 'b) -> 'a -> 'b option
    return [None]. This is a generalisation of [try_find].
 *)
 
+val test_app: ('a -> 'b) -> 'a -> bool
+(**
+   [test_app f p]: Apply (f p), returning [true] if it succeeds and
+   [false] if it raises an exception.
+*)
+
+val find_first: ('a -> 'b) -> 'a list -> 'b
+(**
+   [find_first f lst]: Apply f to each element in the list, returning
+   the result of the first application to succeed. An application (f
+   x) fails if it raises an exception.
+*)
+
+val first: ('a -> bool) -> 'a list -> 'a
+(**
+   [first p lst]: Return the first element of [lst] for which [p] is true.
+   Raise [Not_found] if no such element.
+*)
 
 (** {5 Sets of strings} *)
 

@@ -467,6 +467,25 @@ let try_app f p =
   try (Some (f p))
   with _ -> None
 
+let test_app f p = 
+  try ignore (f p); true with _ -> false
+
+let find_first f lst = 
+  let rec find_aux ls =
+    match ls with
+      [] -> raise Not_found
+    | x::xs -> try f x with _ -> find_aux xs
+  in 
+  find_aux lst
+
+let first p lst = 
+  let rec find_aux ls = 
+    match ls with
+      [] -> raise Not_found
+    | x::xs -> if p x then x else find_aux xs
+  in 
+  find_aux lst 
+
 (***
 * Sets of strings 
 ***)
