@@ -262,4 +262,4 @@ val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 val scope: unit -> Scope.t
 
 (* apply a tactic to the current sub-goal in a proof attempt *)
-val by : Tactics.tactic -> Logic.goal
+val by : Tactics.tactic -> Goals.Proof.t
