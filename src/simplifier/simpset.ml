@@ -367,9 +367,9 @@ let simpset_add_asm sset tg g=
     Formula.term_of
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
-	    (Drule.sequent g)))
+	    (Tactics.sequent g)))
   in 
-  let rule = make_rule (Logic.Asm (Drule.ftag tg)) trm
+  let rule = make_rule (Logic.Asm (Tactics.ftag tg)) trm
   in 
   add_simp_rule sset [rule]
 
@@ -384,9 +384,9 @@ let make_simp_asm tg goal=
     Formula.term_of
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
-	    (Drule.sequent goal)))
+	    (Tactics.sequent goal)))
   in 
-  let rule = make_rule (Logic.Asm (Drule.ftag tg)) trm
+  let rule = make_rule (Logic.Asm (Tactics.ftag tg)) trm
   in 
   (tg, rule)
 
@@ -409,7 +409,7 @@ let make_simp_asms tags except goal =
 let make_simp_asm_rule tg form=
   let trm =  Formula.term_of form
   in 
-  make_rule (Logic.Asm (Drule.ftag tg)) trm
+  make_rule (Logic.Asm (Tactics.ftag tg)) trm
 
 let make_simp_asm_rules except forms = 
   let rec make_aux xs rslt=

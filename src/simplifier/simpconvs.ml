@@ -26,14 +26,14 @@ open Tactics
    [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
 *)
 let make_cond_rule_true_ax()=
-  let info = Drule.mk_info () 
+  let info = Tactics.mk_info () 
   in 
   Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
   (allC ~info:info ++ allC ~info:info
      ++
      (fun g-> 
        let y_term, x_term = 
-	 Lib.get_two (Drule.constants info) 
+	 Lib.get_two (Tactics.constants info) 
 	   (Failure "make_cond_rule_true_ax")
        in 
        (cut (get_rule_true_ax()) ++ inst_tac [ y_term ]
@@ -55,14 +55,14 @@ let get_cond_rule_true_ax ()=
    [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
  *)
 let make_cond_rule_false_ax()=
-  let info = Drule.mk_info()
+  let info = Tactics.mk_info()
   in 
   Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
   (allC ~info:info ++ allC ~info:info
      ++ 
      (fun g -> 
        let y_term, x_term = 
-	 Lib.get_two (Drule.constants info) 
+	 Lib.get_two (Tactics.constants info) 
 	   (Failure "make_cond_rule_false_ax")
        in 
        (cut (get_rule_false_ax()) ++ inst_tac [y_term]
@@ -104,7 +104,7 @@ let simple_rewrite_conv scp rule trm=
   in 
   let trmvars, trmbody = Term.strip_qnt Basic.All trm
   in 
-  let info = Drule.mk_info()
+  let info = Tactics.mk_info()
   in 
   let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
   in 
@@ -125,36 +125,36 @@ let simple_rewrite_conv scp rule trm=
 	    [Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1-> 
 	       let atag = 
-		 Lib.get_one (Drule.aformulas info) 
+		 Lib.get_one (Tactics.aformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       and ctag = 
-		 Lib.get_one (Drule.cformulas info) 
+		 Lib.get_one (Tactics.cformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
 		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
-		    let trms = List.rev (Drule.constants info)
+		    let trms = List.rev (Tactics.constants info)
 		    in 
 		    seq
 		      [instA ~a:(ftag atag) trms;
 		       once_rewrite_tac ~f:(ftag atag) [rule];
 		       basic] g2)] g1)];
 	  seq 
-	    [(data_tac (fun () -> ignore(Drule.empty_info info)) ());
+	    [(data_tac (fun () -> Tactics.empty_info info) ());
 	     Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1 -> 
 	       let atag = 
-		 Lib.get_one (Drule.aformulas info) 
+		 Lib.get_one (Tactics.aformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       and ctag = 
-		 Lib.get_one (Drule.cformulas info) 
+		 Lib.get_one (Tactics.cformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
 		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
-		    let trms = List.rev (Drule.constants info)
+		    let trms = List.rev (Tactics.constants info)
 		    in 
 		    seq
 		      [instA ~a:(ftag atag) trms;
@@ -185,10 +185,10 @@ let simple_rewrite_rule scp rule thm=
    asm:rhs, A |- C
  *)
 let simple_asm_rewrite_tac rule asm node=
-  let sqnt=Drule.sequent node
+  let sqnt=Tactics.sequent node
   in 
   let (_, f)=Logic.get_label_asm asm sqnt
-  and scp = Drule.scope_of node
+  and scp = Tactics.scope_of node
   in 
   let thm=simple_rewrite_conv scp rule (Formula.term_of f)
   in 
@@ -210,10 +210,10 @@ let simple_asm_rewrite_tac rule asm node=
    info [] [t'][]  []
  *)
 let negate_concl info c goal=
-  let inf= Drule.mk_info()
+  let inf= Tactics.mk_info()
   in 
   let add_fn x = 
-    Logic.add_info info [] (Drule.aformulas x) [] []
+    Logic.add_info info [] (Tactics.aformulas x) [] []
   in 
   seq [ once_rewrite_tac [get_double_not_ax()] ~f:c;
 	Logic.Tactics.negC (Some inf) c;
@@ -576,7 +576,7 @@ let thm_to_rules scp thm =
    tg:b, asms |- concl
  *)
 let asm_rewrite thm tg g=
-  once_rewrite_tac [thm] ~f:(Drule.ftag tg) g
+  once_rewrite_tac [thm] ~f:(ftag tg) g
 
 
 (** 
@@ -647,7 +647,7 @@ and neg_rule_asm (tg, (qs, c, a)) g =
   else failwith "neg_rule_asm"
 
 and neg_all_rule_asm (tg, (qs, c, a)) g= 
-  let scp = Drule.scope_of g
+  let scp = Tactics.scope_of g
   in 
   match c with 
     None -> 
@@ -661,7 +661,7 @@ and neg_all_rule_asm (tg, (qs, c, a)) g=
 	"neg_all_rule_asm: Not an unconditional negated universal quantifier"
 
 and neg_exists_rule_asm (tg, (qs, c, a)) g= 
-  let scp = Drule.scope_of g
+  let scp = Tactics.scope_of g
   in 
   match c with 
     None -> 
@@ -679,7 +679,7 @@ and single_asm_to_rule tg goal =
     Formula.term_of
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
-	    (Drule.sequent goal)))
+	    (Tactics.sequent goal)))
   in 
   let (qs, c, a) = strip_qnt_cond trm
   in 
@@ -714,7 +714,7 @@ let prepare_concl data except c goal =
   if(except c)
   then skip goal
   else 
-    let info=Drule.mk_info()
+    let info=Tactics.mk_info()
     and new_asm_tags = ref []
     in 
     let data_fn () = 
@@ -724,23 +724,23 @@ let prepare_concl data except c goal =
       data:=List.append l (!data)
     in 
     let true_test g = 
-      let (_, concl) = Logic.Sequent.get_tagged_cncl c (Drule.sequent g)
+      let (_, concl) = Logic.Sequent.get_tagged_cncl c (Tactics.sequent g)
       in 
       Logicterm.is_true (Formula.term_of concl)
     in 
     seq [
-    (true_test --> Logic.Tactics.trueR None (Drule.ftag c));
-    Logic.Tactics.copy_cncl (Some info) (Drule.ftag c); 
+    (true_test --> Logic.Tactics.trueR None (ftag c));
+    Logic.Tactics.copy_cncl (Some info) (ftag c); 
 	 (fun g -> 
 	   let c1 = 
-	     Lib.get_one (Drule.cformulas info) 
+	     Lib.get_one (Tactics.cformulas info) 
 	       (Failure "Simplib.prepare_concl")
 	   in 
-	   ignore(Drule.empty_info info);
-	   negate_concl (Some info) (Drule.ftag c1) g); 
+	   Tactics.empty_info info;
+	   negate_concl (Some info) (ftag c1) g); 
 	 (fun g ->
 	   let a=
-	     Lib.get_one (Drule.aformulas info) 
+	     Lib.get_one (Tactics.aformulas info) 
 	       (Failure "Simplib.prepare_concl")
 	   in 
 	   seq 
@@ -774,7 +774,7 @@ let prepare_asm data except a goal =
   if(except a)
   then skip goal
   else 
-    let info=Drule.mk_info()
+    let info=Tactics.mk_info()
     and new_asm_tags = ref []
     in 
     let data_fn () = 
@@ -784,16 +784,16 @@ let prepare_asm data except a goal =
       data:=List.append l (!data)
     in 
     let false_test g = 
-      let (_, asm) = Logic.Sequent.get_tagged_asm a (Drule.sequent g)
+      let (_, asm) = Logic.Sequent.get_tagged_asm a (Tactics.sequent g)
       in 
       Logicterm.is_false (Formula.term_of asm)
     in 
     seq [
-    (false_test --> Boollib.falseR ~a:(Drule.ftag a));
-    Logic.Tactics.copy_asm (Some info) (Drule.ftag a); 
+    (false_test --> Boollib.falseR ~a:(ftag a));
+    Logic.Tactics.copy_asm (Some info) (ftag a); 
     (fun g ->
       let a1=
-	Lib.get_one (Drule.aformulas info) 
+	Lib.get_one (Tactics.aformulas info) 
 	  (Failure "Simplib.prepare_asm")
       in 
       seq 

@@ -265,18 +265,18 @@ let cut_rr_rule info t g =
    ret=(ncntrl, [cgltg; rgltg], [cftg; rrftg])
  *)
 let prep_cond_tac cntrl ret values thm goal =
-  let info =Drule.mk_info()
+  let info = Tactics.mk_info()
   in
   try 
     let tac1 g1 = cut_rr_rule (Some(info)) thm g1
     in 
     let add_data rrftg x=
       let (cgltg, rgltg)= 
-	Lib.get_two (Drule.subgoals info)
+	Lib.get_two (Tactics.subgoals info)
 	  (Failure "prep_cond_tac: goals")
       in 
       let cftg=
-	Lib.get_one (Drule.cformulas info)
+	Lib.get_one (Tactics.cformulas info)
 	  (Failure "prep_cond_tac: forms")
       in 
       let ncntrl= Data.add_asm cntrl rrftg
@@ -284,7 +284,7 @@ let prep_cond_tac cntrl ret values thm goal =
       Lib.set_option ret  (ncntrl, (cgltg, rgltg), (cftg, rrftg))
     in 
     let tac2 g2 =
-      let rrftg=Lib.get_one (Drule.aformulas info) No_change
+      let rrftg=Lib.get_one (Tactics.aformulas info) No_change
       in 
       seq[allA_list (ftag rrftg) values;
 	  Logic.Tactics.implA (Some(info)) (ftag rrftg);
@@ -309,11 +309,6 @@ let prep_cond_tac cntrl ret values thm goal =
    and new goal.
  *)
 
-let restrict_tac p tac g=
-  let ng = tac g
-  in 
-  if(p ng) then ng else raise (Failure "restrict_tac")
-
 let rec prove_cond_tac cntrl ret values entry goal = 
   let (qs, cnd, _, _, thm)=entry
   in 
@@ -329,7 +324,7 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	    = Lib.dest_option ~err:(Failure "prove_cond_tac: 1") (!ret1)
 	in 
 	((fun n -> 
-	  (Tag.equal cgltg1 (Drule.node_tag n)))
+	  (Tag.equal cgltg1 (Tactics.node_tag n)))
 	   --> 
 	     (fun g3 -> 
 	       let tac=Data.get_tactic ncntrl1
@@ -338,16 +333,16 @@ let rec prove_cond_tac cntrl ret values entry goal =
 		 [tac ncntrl1 cftg1;
 		  data_tac 
 		    (fun x -> ret:=(Some x))
-		    (ncntrl1, Logic.Asm(Drule.ftag rftg1))]
+		    (ncntrl1, Logic.Asm(ftag rftg1))]
 		 g3)) g2
       in 
       let tac2_pred br=
-	match (Drule.branch_subgoals br) with
+	match (Tactics.branch_subgoals br) with
 	  [] -> true
 	| [ _ ] -> true
 	| _ -> false
       in 
-      let tac3 g3 = restrict_tac tac2_pred tac2 g3
+      let tac3 g3 = restrict tac2_pred tac2 g3
       in 
       let tac4 g4=
 	let (ncntrl1, (cgltg1, rgltg1), (cftg1, rftg1))
@@ -355,16 +350,16 @@ let rec prove_cond_tac cntrl ret values entry goal =
 	in 
 	let form=
 	  Logic.drop_tag(Logic.Sequent.get_tagged_asm 
-			   rftg1 (Drule.sequent g4))
+			   rftg1 (Tactics.sequent g4))
 	in 
 	let rule = 
 	  Simpset.make_rule 
-	    (Logic.Asm (Drule.ftag rftg1)) 
+	    (Logic.Asm (ftag rftg1)) 
 	    (Formula.term_of form)
 	in 
 	data_tac (fun x -> ret := Some x)
 	  (Data.add_simp_rule ncntrl1 rule,
-	   Logic.Asm(Drule.ftag rftg1)) g4
+	   Logic.Asm(ftag rftg1)) g4
       in
       seq [tac1; (tac3++tac4)] goal
 
@@ -395,13 +390,13 @@ let find_basic cntrl ret tyenv rl trm g=
   in 
   let tenv=Term.empty_subst()
   in 
-  let scp=Drule.scope_of g
+  let scp=Tactics.scope_of g
   in 
   let (ntyenv, ntenv, nt)=
     match_rewrite scp tyenv tenv
       (Rewrite.is_free_binder qs) lhs rhs trm
   in 
-  let values=Drule.make_consts qs ntenv
+  let values=Tactics.extract_consts qs ntenv
   in 
   let ret1=ref None
   in 
@@ -439,9 +434,9 @@ let find_basic cntrl ret tyenv rl trm g=
     | _ -> false
 
 let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
-  let scp = Drule.scope_of goal
+  let scp = Tactics.scope_of goal
   in 
-  let sqnt = Drule.sequent goal 
+  let sqnt = Tactics.sequent goal 
   in 
   let excluded = Data.get_exclude cntrl
   in 
@@ -528,11 +523,11 @@ let rec find_all_matches_tac cntrl ret tyenv trm node =
    formula [i].
  *)
 let simp_prep_tac control ret tag g= 
-  let sqnt= Drule.sequent g
+  let sqnt= Tactics.sequent g
   in 
   let is_asm =
     try
-      (ignore(Drule.get_tagged_asm (ftag tag) g); true)
+      (ignore(Tactics.get_tagged_asm (ftag tag) g); true)
     with _ -> false
   in 
   let fid = Logic.FTag tag
@@ -681,9 +676,9 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
 let rec basic_simp_tac cntrl ret ft goal=
   let chng=ref false
   in 
-  let tyenv=Drule.typenv_of goal
+  let tyenv= Tactics.typenv_of goal
   in 
-  let sqnt = Drule.sequent goal
+  let sqnt = Tactics.sequent goal
   in 
   let trm=
     Formula.term_of (Logic.drop_tag (get_form ft sqnt))
@@ -835,9 +830,9 @@ let make_asm_entries_tac ret tags except goal=
   in 
   (* make list of tagged formulas *)
   let tac2 g =
-    let sqnt = Drule.sequent g
+    let sqnt = Tactics.sequent g
     in 
-    let asm_forms = Drule.asms_of sqnt
+    let asm_forms = Tactics.asms_of sqnt
     and asm_tags = !data
     in 
     let forms = 
@@ -867,9 +862,9 @@ let make_concl_entries_tac ret tags except goal=
   in 
   (* make list of tagged formulas *)
   let tac2 g =
-    let sqnt = Drule.sequent g
+    let sqnt = Tactics.sequent g
     in 
-    let asm_forms = Drule.asms_of sqnt
+    let asm_forms = Tactics.asms_of sqnt
     and asm_tags = !data
     in 
     let forms=
@@ -952,10 +947,10 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
  *)
 
 let rec simp_tac cntrl asms except l goal=
-  let sqnt = (Drule.sequent goal)
+  let sqnt = (Tactics.sequent goal)
   in 
-  let asm_forms = Drule.asms_of sqnt
-  and concl_forms = Drule.concls_of sqnt
+  let asm_forms = Tactics.asms_of sqnt
+  and concl_forms = Tactics.concls_of sqnt
   in 
   let asm_tags = List.map (fun (x, _) -> x) asm_forms
   and concl_tags = List.map (fun (x, _) -> x) concl_forms
@@ -1128,10 +1123,10 @@ let once_simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
    Ignore formulas for which [except] is true.
  *)
 let once_simp_tac cntrl asms except l goal=
-  let sqnt = (Drule.sequent goal)
+  let sqnt = (Tactics.sequent goal)
   in 
-  let asm_forms = Drule.asms_of sqnt
-  and concl_forms = Drule.concls_of sqnt
+  let asm_forms = Tactics.asms_of sqnt
+  and concl_forms = Tactics.concls_of sqnt
   in 
   let asm_tags = List.map (fun (x, _) -> x) asm_forms
   and concl_tags = List.map (fun (x, _) -> x) concl_forms
@@ -1249,7 +1244,7 @@ let once_simp_tac cntrl asms except l goal=
    in
    (* get the first sequent *)
    let sqnt = 
-   try (Drule.sequent gl)
+   try (Tactics.sequent gl)
    with _ -> raise (Result.error "full_simp_tac: No such formula in goal")
    in 
    let cntrl1=Data.set_simpset cntrl simpset

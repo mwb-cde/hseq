@@ -81,7 +81,7 @@ let simp_tac
 	in Simpset.join s uset1
   in 
   let ignore_tags = 
-    let sqnt = Drule.sequent gl 
+    let sqnt = Tactics.sequent gl 
     in 
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
   in 
@@ -121,7 +121,7 @@ let once_simp_tac
 	in Simpset.join s uset1
   in 
   let ignore_tags = 
-    let sqnt = Drule.sequent gl 
+    let sqnt = Tactics.sequent gl 
     in 
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
   in 

@@ -43,8 +43,8 @@ let dest_implies trm =
 let sqnt_solved st b =
   try
     ignore(List.find 
-	     (fun x->Tag.equal st (Drule.sqnt_tag x)) 
-	     (Drule.branch_subgoals b));
+	     (fun x->Tag.equal st (Tactics.sqnt_tag x)) 
+	     (Tactics.branch_subgoals b));
     false
   with Not_found ->true
 
@@ -61,7 +61,7 @@ let apply_on_cond c uncondf condf x =
    return new goal and tag record of tactic
  *)
 let apply_tag tac n =
-  let inf=Drule.mk_info()
+  let inf=Tactics.mk_info()
   in 
   let ng = tac inf n
   in 
@@ -75,7 +75,7 @@ let apply_tag tac n =
  *)
 (*
 let apply_get_formula_tag n tac g =
-  let inf= Drule.mk_info()
+  let inf= Tactics.mk_info()
   in 
   let ng = tac inf g
   in 
@@ -87,12 +87,12 @@ let apply_get_formula_tag n tac g =
   else (ntg, ng)
 *)
 let apply_get_formula_tag n tac g =
-  let inf= Drule.mk_info()
+  let inf= Tactics.mk_info()
   in 
   let ng = tac inf g
   in 
-  let atgs = Drule.aformulas inf
-  and ctgs = Drule.cformulas inf
+  let atgs = Tactics.aformulas inf
+  and ctgs = Tactics.cformulas inf
   in 
   if((List.length atgs) + (List.length ctgs)) >n 
   then
@@ -135,10 +135,12 @@ let apply_get_single_formula_tag tac g =
    use Boolib.inst_asm 
    or Drule.inst_list (fun x -> Logic.Rules.allA None i) vs
  *)
-let allA_list l vs =
+let allA_list l vs = Tactics.instA ~a:l vs
+(*
   Drule.inst_list 
     (fun t -> Logic.Tactics.allA None t)
     vs l
+*)
 
 (* [make_consts qs env]: 
    Get values for each binder in [qs] from [env].
