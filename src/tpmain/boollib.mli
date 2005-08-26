@@ -64,9 +64,21 @@ module PP :
 end
 
 
-(*
-   Tactics, some of which depend on theorems already having been
-   proved.
+(** {5 Support functions} *)
+
+val filter_by_tag: 
+    Tag.t option -> Logic.tagged_form list -> Logic.tagged_form list
+(**
+   [filter_by_tag tg l]: Filter list [l] by an optional tag [tg].  If
+   [tg=None], return [l].  If [tg=Some(x)], return the list containing
+   only the formula in [l] with tag [x], raising [Not_found] if no
+   such formula.
+*)
+
+
+(** {5 Tactics}
+
+   Some tactics depend on theorems already having been proved.
 *)
 
 (* prove goals of the form A|- x=x, C *)
@@ -167,6 +179,68 @@ val false_tac: Tactics.tactic
    in the conclusions.
 *)
 val bool_tac:  Tactics.tactic
+
+
+(** {7 Miscellaneous unification functions} *)
+
+val unify_formula_for_consts:
+    Gtypes.substitution
+  -> Scope.t
+    -> (Basic.binders list * Basic.term) 
+      -> Basic.term -> Basic.term list
+(**
+   [unify_formula_for_consts scp trm f]: Unify [trm] with formula [f]
+   returning the list of terms needed to make [trm] alpha-equal to [f]
+   by instantiating the topmost quantifiers of [trm].
+
+   raise Not_found, if no unifiable formula found.
+ *)
+
+val unify_concl_for_consts:
+    Basic.quant_ty
+  -> ?c:Logic.label
+    -> Basic.term -> Logic.node -> Basic.term list
+(**
+   [unify_concl_for_consts ?c trm g]: If [c] is given, unify [trm]
+   with the conclusion labelled [c], returning the list of terms
+   needed to make [trm] alpha-equals to the conclusion by
+   instantiating the topmost quantifiers of trm.
+
+   [trm] must be universally quantified.
+ *)
+
+val unify_asm_for_consts:
+    Basic.quant_ty
+  -> ?a:Logic.label
+    -> Basic.term -> Logic.node -> Basic.term list
+(**
+   [unify_asm_for_consts ?a qnt trm g]: If [a] is given, unify [trm]
+   with the assumption labelled [a], returning the list of terms
+   needed to make [trm] alpha-equals to the conclusion by
+   instantiating the topmost quantifiers of trm.
+
+   [trm] must be quantified by [qnt].
+ *)
+
+val find_unifier: 
+    Scope.t ->  Gtypes.substitution 
+      -> (Basic.term -> bool)
+	-> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
+	  -> Logic.tagged_form list 
+	    -> (Tag.t * Term.substitution)
+(**
+   [find_unifier scp typenv varp trm ?exclude forms]: Find the first
+   formula in [forms] which unifies with [trm]. Return the tag of the
+   formula and the substitution cosntructed by unification. Ignore
+   those formulas for which [?exclude] is true (if it is given).
+
+   [varp] determines what is a bindable variable for unification.
+   [typenv] is the type environment, to pass to the unifier.
+   [scp] is the scope, to pass to the unifier.
+   Raise Not_found if no unifiable formula is found.
+ *)
+
+(** {7 Modus Ponens} *)
 
 (**
    [mp_tac ~a ~a1]

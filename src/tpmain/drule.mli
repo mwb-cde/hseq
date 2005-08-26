@@ -6,205 +6,18 @@
 
 (** Utility functions for writing tactics. *)
 
-val ftag : Tag.t -> Logic.label
-val fnum : int -> Logic.label
-val fname : string -> Logic.label
-
-(* untagged formulas of a sequent *)
-val asm_forms : Logic.Sequent.t -> Formula.form list
-val concl_forms : Logic.Sequent.t -> Formula.form list
-
-(* tagged formulas of a sequent *)
-val asms_of : Logic.Sequent.t -> Logic.tagged_form list
-val concls_of : Logic.Sequent.t -> Logic.tagged_form list
-
-(** [sequent g]
-   get first subgoal of of goal [g].
- *)
-val sequent : Logic.node -> Logic.Sequent.t
-
-(** [scope_of g]
-   get scope of first subgoal of of goal [g].
- *)
-val scope_of : Logic.node -> Scope.t
-
-(** [typenv_of n]
-   get type environment of node [n].
- *)
-val typenv_of : Logic.node -> Gtypes.substitution
-
-
-(** [get_asm i g]:
-   Get assumption [i] of first sequent of goal [g].
-
-   [get_cncl i g]:
-   Get conclusion [i] of first sequent of goal [g].
- *)
-val get_asm: Logic.label -> Logic.node -> Formula.form
-val get_cncl: Logic.label -> Logic.node -> Formula.form
-
-(** [get_tagged_asm i g]:
-   Get assumption [i] of first sequent of goal [g].
-
-   [get_tagged_cncl i g]:
-   Get conclusion [i] of first sequent of goal [g].
- *)
-val get_tagged_asm: Logic.label -> Logic.node -> Logic.tagged_form
-val get_tagged_cncl: Logic.label -> Logic.node -> Logic.tagged_form
-
-
-(** 
-   [sqnt_tag n]: Get tag of the sequent of node n.
- *)
-val sqnt_tag : Logic.Sequent.t -> Tag.t
-
-(** 
-   [node_tag n]: Get tag of the sequent of node n.
- *)
-val node_tag : Logic.node -> Tag.t
-
-(** [branch_tag b]: Tag of branch [b].
-
-   [branch_typenv b]: type environment of branch [b].
-
-   [branch_subgoals b]: subgoals of branch [b].
-
-   [has_subgoals b]: [true] if [b] has subgoals, [false] otherwise
-
-   [num_subgoals b]: number of subgoals in branch [b]
- *)
-(* val branch_tag: Logic.branch -> Tag.t *)
-val branch_tyenv: Logic.branch -> Gtypes.substitution
-val branch_subgoals: Logic.branch -> Logic.Sequent.t list
-val has_subgoals : Logic.branch -> bool
-val num_subgoals : Logic.branch -> int
-
-(** [mk_info()]
-   make an empty information record.
- *)
-val mk_info: unit -> Logic.info
-
-(** [empty_info inf]
-   empty information record [inf]
- *)
-val empty_info: Logic.info -> Logic.info
-
-(** [subgoals info]
-   get subgoals of [info].
-   equivalent to [(!info).goals]
- *)
-val subgoals: Logic.info -> Tag.t list
-
-val aformulas: Logic.info -> Tag.t list
-(** 
-   [aformulas info]: Get assumption tags from  [info].
-   Equivalent to [(!info).aforms]
-*)
-
-val cformulas: Logic.info -> Tag.t list
-(** 
-   [cformulas info]: Get conclusion tags from  [info].
-   Equivalent to [(!info).cforms]
-*)
-
-(*
-(** [formulas info]
-   get formulas of [info].
-   equivalent to [(!info).forms]
- *)
-val formulas: Logic.info -> Tag.t list
-*)
-
-(** [constants info]
-   get constants of [info].
-   equivalent to [(!info).terms]
- *)
-val constants: Logic.info -> Basic.term list
-
-(** [make_consts l sb]
-   make a list of terms suitable for instantiating a quantifier.
-   [l] is the list of binders to be instantiated.
-   [sb] stores the terms to be used (typically found by substitution)
- *)
-val make_consts: 
-    Basic.binders list -> Term.substitution -> Basic.term list
-
-(**
-   Tactics needed for primitive tactic building.
-   [skip node]: Do nothing. Useful for converting a node to a branch.
-
-   [foreach tac branch]: Apply [tac] to each node of branch.
-
-   [seq tac1 tac2 node]: Apply tactic [tac1] to [node] then [tac2] to
-   each of the resulting subgoals.  If [tac1] solves the goal (no
-   subgoals), then [tac2] is not used.
- *)
-val skip : Logic.tactic
-val foreach : Logic.tactic -> Logic.branch -> Logic.branch
-val seq : Logic.tactic -> Logic.tactic -> Logic.tactic
-
-(* 
-   Utility tactics
- *)
-(**
-   [inst_list rule cs id goal]: 
-   instantiate formula [id] in [goal] with constants [cs]
-   using tactic [rule].
-   do nothing if [cs] is empty.
- *)
-val inst_list : 
-    (Basic.term -> Logic.label -> Logic.tactic)
-  -> Basic.term list -> Logic.label -> Logic.tactic
-
-(* Search functions *)
-
-(** [first p l]
-   first formula in assumption or conclusion list [l]
-   satisfying predicate [p] 
-
-   Search starts at (-1)/1 
- *)
-val first : ('a -> bool) -> (Tag.t * 'a) list -> Logic.label
-val first_asm : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
-val first_concl : (Formula.form -> bool) -> Logic.Sequent.t -> Logic.label
-
 (* first rule which can be applied to an assumption/conclusion *)
+(*
 
 val find_rule : 'a -> (('a -> bool) * 'b) list -> 'b
 
 (* Apply functions *)
 (* apply test and rules to each/all assumption/conclusion *)
-val foreach_asm :
-    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
-      Logic.tactic
-
-val foreach_asm_except : Tag.t list->
-  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
-    Logic.tactic
-
-val foreach_conc :
-    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
-      Logic.tactic
-
-val foreach_formula :
-    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
-      Logic.tactic
-
-val foreach_conc_except : Tag.t list -> 
-  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
-    Logic.tactic
 
 val foreach_except:
     Tag.t list -> 
       ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
 	Logic.tactic
-
-(*
-   val foreach_in_sq :
-   ((Formula.form -> bool) * (int -> Logic.tactic)) list ->
-   ((Formula.form -> bool) * (int -> Logic.tactic)) list ->
-   Logic.tactic
- *)
 
 (* apply rules once *)
 val foreach_conc_once :
@@ -214,19 +27,11 @@ val foreach_asm_once :
 val foreach_once :
     (Logic.label -> Logic.tactic) -> Logic.tactic
 
-(* 
-   [find_qnt_opt ?exclude qnt ?f pred forms] 
+val foreach_formula :
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
 
-   Find the first formula in [forms] to satisfy [pred].
-   The formula may by quantified by [qnt].
-   Return the binders, the tag and the formula.
-
-   if [f] is given, the formula must be tagged with [f].
-   if [exclude] is given, ignore the formulas for which it is true.
-
-   raise [Not_found] if no formula can be found which satisfies all the
-   conditions.
- *)
+(*
 val find_qnt_opt:
     ?exclude:(Logic.tagged_form -> bool)
   -> Basic.quant_ty
@@ -234,7 +39,7 @@ val find_qnt_opt:
       -> (Basic.term -> bool)
 	-> Logic.tagged_form list
 	  -> (Tag.t * Basic.binders list * Basic.term)
-
+*)
 (*
    [unify_sqnt_form varp trm ?f forms]
    Unify [trm] with formula [ft] in forms, return substitution and tag 
@@ -243,6 +48,7 @@ val find_qnt_opt:
    [varp] determines what is a bindable variable.
    raise Not_found if no unifiable formula is found.
  *)
+(*
 val unify_sqnt_form:
     Gtypes.substitution 
   -> Scope.t
@@ -252,8 +58,14 @@ val unify_sqnt_form:
 	  -> ?f:Tag.t
 	    -> Logic.tagged_form list 
 	      -> (Tag.t * Term.substitution)
+*)
 
 
+(*
+val match_formulas: 
+    Gtypes.substitution
+  -> Scope.t -> (Basic.term -> bool) 
+    -> Basic.term -> Logic.tagged_form list -> Logic.label
 (**
    [match_formulas scp varp t fs]
 
@@ -263,11 +75,10 @@ val unify_sqnt_form:
 
    raise Not_found if no match.
  *)
-val match_formulas: 
-    Gtypes.substitution
-  -> Scope.t -> (Basic.term -> bool) 
-    -> Basic.term -> Logic.tagged_form list -> Logic.label
 
+val match_asm : 
+    Gtypes.substitution
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
 (** [match_asm t sq]
 
    Find a match for [t] in the assumptions of [sq].
@@ -280,10 +91,10 @@ val match_formulas:
    e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
    for the match.
  *)
-val match_asm : 
+
+val match_concl :     
     Gtypes.substitution
   -> Basic.term -> Logic.Sequent.t -> Logic.label
-
 (** [match_concl t sq]
 
    Find a match for [t] in the assumptions of [sq].
@@ -296,27 +107,27 @@ val match_asm :
    e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
    for the match.
  *)
-val match_concl :     
-    Gtypes.substitution
-  -> Basic.term -> Logic.Sequent.t -> Logic.label
-
+*)
 
 (* Predicates on terms *)
 (**
    [qnt_opt_of qnt p t]
    apply predicate [p] to [b] where [(_, b)=strip_qnt qnt t].
  *)
+(*
 val qnt_opt_of: 
     Basic.quant_ty -> (Basic.term -> bool) -> Basic.term -> bool
+*)
 (**
    [dest_qnt_opt qnt d t]
    return [(vs, (d b))] 
    where [(vs, b)=strip_qnt qnt t].
  *)
+(*
 val dest_qnt_opt: 
     Basic.quant_ty 
   -> (Basic.term -> 'a) -> Basic.term -> (Basic.binders list * 'a) 
-
+*)
 (** [rebuild_qnt qs b]
    rebuild quantified term from quantifiers [qs] and body [b]
 
@@ -334,7 +145,9 @@ val rebuild_qnt:
 
    raise Not_found if no such formula.
  *)
+(*
 val find_formula : ('a -> bool) -> 'a list -> 'a
+*)
 (*
    [find_asm p n]: 
    Return the first assumption of [n] to satisfy [p].
@@ -344,11 +157,14 @@ val find_formula : ('a -> bool) -> 'a list -> 'a
 
    raise Not_found if no such formula.
  *)
+(*
 val find_asm:
     ((Logic.tagged_form) -> bool) -> Logic.node -> Logic.tagged_form
 
 val find_concl:
     ((Logic.tagged_form) -> bool) -> Logic.node -> Logic.tagged_form
+*)
+(*
 
 (**
    [unify_formula_for_consts scp trm f]
@@ -392,3 +208,24 @@ val unify_asm_for_consts:
     Basic.quant_ty
   -> ?a:Logic.label
     -> Basic.term -> Logic.node -> Basic.term list
+*)
+*)
+
+(*
+*)
+
+val foreach_asm :
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
+val foreach_conc :
+    ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+      Logic.tactic
+
+val foreach_asm_except : Tag.t list->
+  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+    Logic.tactic
+
+val foreach_conc_except : Tag.t list -> 
+  ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
+    Logic.tactic
+

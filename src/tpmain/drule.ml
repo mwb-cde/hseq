@@ -28,26 +28,22 @@ let get_cncl i g= Logic.drop_tag(Logic.get_label_cncl i (sequent g))
 let get_tagged_asm i g= Logic.get_label_asm i (sequent g)
 let get_tagged_cncl i g= Logic.get_label_cncl i (sequent g)
 
-
 let sqnt_tag  = Logic.Sequent.sqnt_tag
 let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
 
-(* let branch_tag b = Logic.Subgoals.branch_tag b*)
 let branch_tyenv b = Logic.Subgoals.branch_tyenv b
 let branch_subgoals b = Logic.Subgoals.branch_sqnts b
-
 let has_subgoals b=
   match (branch_subgoals b) with
     [] -> false
   | _ -> true
-
 let num_subgoals b = List.length (branch_subgoals b) 
+
 
 let mk_info () = ref (Logic.make_tag_record [] [] [] [])
 let empty_info info = (info:=(Logic.make_tag_record[] [] [] []); info)
 
 let subgoals inf= (!inf).Logic.goals
-(* let formulas inf = (!inf).Logic.forms *)
 let aformulas inf = (!inf).Logic.aforms
 let cformulas inf = (!inf).Logic.cforms
 let constants inf = (!inf).Logic.terms
@@ -62,12 +58,14 @@ let foreach = Logic.Subgoals.apply_to_each
 
    if [tac1] solves the goal (no subgoals), then [tac2] is not used.
  *)
+(*
 let seq tac1 tac2 node=
   let branch = tac1 node
   in 
   if (has_subgoals branch) 
   then foreach tac2 branch
   else branch
+*)
 
 (** [make_consts qs env]: 
    Get values for each binder in [qs] from [env].
@@ -329,10 +327,10 @@ let foreach_once r sq =
       if !chng then sq1 else (raise (Result.Error x)))
 
 
-let qnt_opt_of qnt p t=
-  let (_, b) = Term.strip_qnt qnt t
-  in 
-  p b
+let qnt_opt_of kind pred trm=
+  let (_, body) = Term.strip_qnt kind trm
+  in pred body
+
 
 let dest_qnt_opt qnt d t=
   let (vs, b) = Term.strip_qnt qnt t
@@ -341,9 +339,6 @@ let dest_qnt_opt qnt d t=
 
 let rec rebuild_qnt qs b= Term.rebuild_qnt qs b
 
-(* 
-   [find_qnt_opt ?exclude qnt ?f pred forms]
-*)
 let find_qnt_opt ?exclude qnt ?f pred forms = 
   let not_this = Lib.get_option exclude (fun _ -> false)
   in 
@@ -375,42 +370,6 @@ let find_qnt_opt ?exclude qnt ?f pred forms =
   in 
   (tag, vs, trm1)
 
-(*
-   [unify_sqnt_form varp trm ?f forms]
-   Unify [trm] with formula [ft] in forms, return substitution and tag 
-   of formula which matches ([ft] if given).
-
-   [varp] determines what is a bindable variable.
-   raise Not_found if no unifiable formula is found.
- *)
-let unify_sqnt_form typenv scp varp trm ?exclude ?f forms = 
-  let not_this = Lib.get_option exclude (fun _ -> false)
-  in 
-  let rec find_aux lst=
-    match lst with 
-      [] -> raise Not_found
-    | (t, sf)::rst ->
-	if(not_this (t, sf))
-	then find_aux rst
-	else 
-	  (match f with
-	    (Some x) -> 
-	      if Tag.equal t x
-	      then 
-		(try 
-		  (t, Unify.unify ~typenv:typenv scp varp trm
-		     (Formula.term_of sf))
-		with _ -> raise Not_found)
-	      else find_aux rst
-	  | None -> 
-	      (try 
-		(t, Unify.unify ~typenv:typenv scp varp trm
-		   (Formula.term_of sf))
-	      with _ -> find_aux rst))
-  in 
-  let (tag, subst) = find_aux forms
-  in 
-  (tag, subst)
 
 
 

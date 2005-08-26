@@ -226,21 +226,18 @@ module PP =
  ***)
 
 let eq_tac ?c g = 
-  let cf = 
-    match c with
-      None -> first_concl Formula.is_equality (Drule.sequent g)
-    | Some(x) -> x
+  let cf =  first_concl_label c Formula.is_equality g
   in 
   let th = 
     try lemma "base.eq_refl"
     with Not_found -> 
       (raise (Result.error "eq_tac: Can't find required lemma base.eq_refl"))
   in 
-  let info = Drule.mk_info()
+  let info = Tactics.mk_info()
   in 
   seq [Logic.Tactics.cut (Some info) th; 
        (fun g1 -> 
-	 let af = Lib.get_one (Drule.aformulas info) (Failure "eq_tac")
+	 let af = Lib.get_one (Tactics.aformulas info) (Failure "eq_tac")
 	 in 
 	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
@@ -267,7 +264,7 @@ let is_iff f =
   with _ -> false
 
 let iffA_rule i goal = 
-  let sqnt=Drule.sequent goal
+  let sqnt=Tactics.sequent goal
   in 
   let t, f = Logic.Sequent.get_tagged_asm (Logic.label_to_tag i sqnt) sqnt
   in
@@ -282,16 +279,13 @@ let iffA_rule i goal =
 	Logic.Tactics.implA None (ftag t)]) goal
 
 let iffA ?a g = 
-  let af = 
-    match a with
-      Some x -> x
-    | _ -> (first_asm is_iff (Drule.sequent g))
+  let af = first_asm_label a is_iff g
   in 
   iffA_rule af g
 
 
 let iffC_rule i goal = 
-  let sqnt=Drule.sequent goal
+  let sqnt=Tactics.sequent goal
   in 
   let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
   in
@@ -307,10 +301,7 @@ let iffC_rule i goal =
 
 
 let iffC ?c g = 
-  let cf = 
-    match c with
-      Some x -> x
-    | _ -> (first_concl is_iff (Drule.sequent g))
+  let cf = first_concl_label c is_iff g
   in 
   iffC_rule cf g
 
@@ -318,10 +309,7 @@ let iffC ?c g =
 let get_false_def() = Commands.lemma "false_def"
 
 let falseR ?a goal =
-  let af=
-    match a with 
-      Some x -> x
-    | _ -> (Drule.first_asm Formula.is_false (Drule.sequent goal))
+  let af= first_asm_label a Formula.is_false goal
   in 
   let th=
     try get_false_def()
@@ -330,7 +318,7 @@ let falseR ?a goal =
 	(Result.error 
 	   "falseR: Can't find needed theorem false_def: |- false = not true")
   in 
-  let info = Drule.mk_info()
+  let info = Tactics.mk_info()
   in 
   ((Tactics.rewrite_tac [th] ~f:af)
      ++
@@ -338,7 +326,7 @@ let falseR ?a goal =
        Logic.Tactics.negA (Some info) af g)
      ++
      (fun g -> 
-       let c=Lib.get_one (Drule.cformulas info) (Failure "falseR")
+       let c=Lib.get_one (Tactics.cformulas info) (Failure "falseR")
        in 
        Logic.Tactics.trueR None (ftag c) g)) goal
 
@@ -354,10 +342,7 @@ let false_rule0 a sq =
        trivial] sq
 
 let false_rule ?a goal =
-  let af =
-    match a with
-      Some x -> x
-    | _ -> Drule.first_asm Formula.is_false (Drule.sequent goal)
+  let af = first_asm_label a Formula.is_false goal
   in 
   false_rule0 af goal 
 
@@ -407,10 +392,7 @@ let inst_asm_rule i l sqnt=
   in rule l (skip sqnt)
 
 let inst_asm ?a l g=
-  let af = 
-    match a with 
-      Some x -> x
-    | _ -> (Drule.first_asm (Formula.is_all) (Drule.sequent g))
+  let af = first_asm_label a Formula.is_all g
   in 
   inst_asm_rule af l g
 
@@ -425,16 +407,16 @@ let inst_concl_rule i l sqnt=
   in rule l (skip sqnt)
 
 let inst_concl ?c l g=
-  let cf = 
-    match c with 
-      Some x -> x
-    | _ -> (Drule.first_concl (Formula.is_exists) (Drule.sequent g))
+  let cf = first_concl_label c Formula.is_exists g
   in 
   inst_concl_rule cf l g
 
 let inst_tac ?f l g= 
-  let sqnt = Drule.sequent g
+  let sqnt = Tactics.sequent g
   in 
+  try inst_asm ?a:f l g
+  with _ -> inst_concl ?c:f l g
+(*
   match f with 
     None -> 
       (try 
@@ -449,7 +431,7 @@ let inst_tac ?f l g=
   | Some x -> 
       (try inst_asm ~a:x l g
       with Not_found -> inst_concl ~c:x l g)
-
+*)
 
 (**
    [cases_tac x sq]
@@ -486,11 +468,11 @@ let cases_full_tac inf (t:Basic.term) g=
       raise 
 	(Result.add_error 
 	   (Result.error "cases_full_tac: can't build cases theorem") e)
-  and tinf=Drule.mk_info()
+  and tinf=Tactics.mk_info()
   in 
   let g1=Logic.Tactics.cut (Some tinf) thm g
   in 
-  let ttag=Lib.get_one (Drule.aformulas tinf) (Failure "case_info")
+  let ttag=Lib.get_one (Tactics.aformulas tinf) (Failure "case_info")
   in 
   let g2=
     foreach
@@ -512,6 +494,134 @@ let false_tac g = false_rule g
 
 let bool_tac g=
   (false_tac || trivial) g
+
+
+
+(***
+* Miscellaneous unification functions.
+***)
+
+(**
+   [unify_formula_for_consts scp trm f]
+
+   Unify [trm] with formula [f] returning the list of terms needed to
+   make [trm] alpha-equal to [f] by instantiating the topmost
+   quantifiers of [trm].
+
+   raise Not_found, if no unifiable formula found.
+*)
+let unify_formula_for_consts tyenv scp (vars, trm) f=
+  let varp=Rewrite.is_free_binder vars
+  in 
+  let env=Unify.unify ~typenv:tyenv scp varp trm f
+  in 
+  extract_consts vars env
+
+(**
+   [unify_concl_for_consts ?c trm g]
+
+   if [c] is given, unify [trm] with the conclusion labelled [c],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be universally quantified.
+*)
+let unify_concl_for_consts qnt ?c trm node=
+  let tyenv = typenv_of node
+  and scp = scope_of node
+  and (vars, body) = Term.strip_qnt qnt trm
+  in 
+  let (t, f)=
+    match c with 
+      None ->
+	let sqnt = sequent node
+	in 
+	let unifies x = 
+	  Lib.test_app 
+	      (Unify.unify ~typenv:tyenv scp 
+		 (Rewrite.is_free_binder vars) body) x
+	in 
+	first_concl 
+	  (fun (_, f) -> unifies (Formula.term_of f)) sqnt
+    | Some(x) -> 
+	get_tagged_concl x node
+  in 
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
+
+
+(**
+   [unify_asm_for_consts ?a qnt trm g]
+
+   if [a] is given, unify [trm] with the assumption labelled [a],
+   returning the list of terms needed to make [trm] alpha-equals
+   to the conclusion by instantiating the topmost quantifiers of trm.
+
+   [trm] must be quantified by [qnt].
+*)
+let unify_asm_for_consts qnt ?a trm n=
+  let tyenv = typenv_of n
+  and scp = scope_of n
+  and (vars, body) = Term.strip_qnt qnt trm
+  in 
+  let (t, f)=
+    match a with 
+      None ->
+	  let sqnt = sequent n
+	  in 
+	  let unifies x = 
+	   (try
+	     ignore
+	       (Unify.unify ~typenv:tyenv scp 
+		  (Rewrite.is_free_binder vars) body x);true
+	   with _ -> false)
+	  in 
+	  first_asm (fun (_, f) -> unifies (Formula.term_of f)) sqnt
+    | Some(x) ->
+	let sqnt = sequent n
+	in 
+	Logic.Sequent.get_tagged_asm
+	  (Logic.label_to_tag x sqnt) sqnt
+  in 
+  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
+
+
+(**
+   [filter_by_tag tg l]: Filter list [l] by an optional tag [tg].  If
+   [tg=None], return [l].  If [tg=Some(x)], return the list containing
+   only the formula in [l] with tag [x], raising [Not_found] if no
+   such formula.
+*)
+let filter_by_tag tg lst = 
+  match tg with 
+    None -> lst
+  | Some(x) -> 
+      let is_tg_form f = Tag.equal x (Tactics.drop_formula f)
+      in 
+      [Lib.first is_tg_form lst]
+
+
+(*
+   [find_unifier scp typenv varp trm ?exclude ?f forms]: Find the first
+   formula in forms which unifies with trm. Return the tag of the
+   formula and the substitution cosntructed by unification. Ignore
+   those formulas for which [?exclude] is true (if it is given).
+
+   [varp] determines what is a bindable variable for unification.
+   [typenv] is the type environment, to pass to the unifier.
+   [scp] is the scope, to pass to the unifier.
+   Raise Not_found if no unifiable formula is found.
+ *)
+let find_unifier scp typenv varp trm ?exclude forms = 
+  let not_this = Lib.get_option exclude (fun _ -> false)
+  in 
+  let find_fn form =
+    if (not_this form) then raise Not_found
+    else 
+      (Tactics.drop_formula form,
+       Unify.unify ~typenv:typenv scp varp trm 
+	 (Formula.term_of (Tactics.drop_tag form)))
+  in 
+  Lib.find_first find_fn forms
 
 (* match_mp_rule thm i sqnt: 
 
@@ -542,19 +652,19 @@ let hyp_conc_thm f =
 let match_mp_rule0 thm i sq=
   let (qnts, a, b) = hyp_conc_thm (Logic.formula_of thm)
   and c = 
-    Formula.term_of (Drule.get_cncl i sq)
-  and scp = Drule.scope_of sq
-  and tyenv = Drule.typenv_of sq
+    Formula.term_of (Tactics.get_concl i sq)
+  and scp = Tactics.scope_of sq
+  and tyenv = Tactics.typenv_of sq
   in 
   let qenv = Unify.unify ~typenv:tyenv scp (Rewrite.is_free_binder qnts) b c
   in 
-  let ncnsts = Drule.make_consts qnts qenv
-  and info = Drule.mk_info()
+  let ncnsts = Tactics.extract_consts qnts qenv
+  and info = Tactics.mk_info()
   in 
   ((Logic.Tactics.cut (Some(info)) thm)
      ++
      (fun g -> 
-       let af = ftag(Lib.get_one (Drule.subgoals info) 
+       let af = ftag(Lib.get_one (Tactics.subgoals info) 
 		       (Failure "match_mp_rule"))
        in
        seq
@@ -574,20 +684,20 @@ let match_mp_tac thm ?c g =
 
 let match_mp_sqnt_rule0 j i sq=
   let (qnts, a, b) = 
-    hyp_conc_thm (Drule.get_asm j sq)
-  and c = Formula.term_of (Drule.get_cncl i sq)
-  and scp = Drule.scope_of sq
+    hyp_conc_thm (Tactics.get_asm j sq)
+  and c = Formula.term_of (Tactics.get_concl i sq)
+  and scp = Tactics.scope_of sq
   in 
   let qenv = Unify.unify scp (Rewrite.is_free_binder qnts) b c
   in 
-  let ncnsts = make_consts qnts qenv
-  and info =Drule.mk_info()
+  let ncnsts = Tactics.extract_consts qnts qenv
+  and info =Tactics.mk_info()
   in 
   (((inst_tac ~f:j ncnsts) ++ Logic.Tactics.implA (Some info) j)
      ++
      (fun g->
        let gtl, gtr=
-	 Lib.get_two (Drule.subgoals info) 
+	 Lib.get_two (Tactics.subgoals info) 
 	   (Failure "match_mp_sqnt_rule")
        in 
        seq
@@ -598,13 +708,38 @@ let match_mp_sqnt_rule0 j i sq=
 let back_mp_tac ~a ~c g =match_mp_sqnt_rule0 a c g
 
 
+(**
+   [find_qnt_opt kind ?f pred forms] 
 
-(* 
-   Modus ponens
- *)
+   Find the first formula in [forms] to satisfy [pred].  The formula
+   may by quantified by binders of kind [kind].  Returns the binders,
+   the tag and the formula.
+
+   if [f] is given, the formula must be tagged with [f]. 
+
+   Raises [Not_found] if no formula can be found which satisfies all the
+   conditions.
+*)
+let find_qnt_opt kind pred forms = 
+  let find_fn tagged_form =
+    Tactics.qnt_opt_of kind pred 
+      (Formula.term_of (Tactics.drop_tag tagged_form))
+  in 
+  let tform = Lib.first find_fn forms
+  in 
+  let tag = Tactics.drop_formula tform
+  and form = Tactics.drop_tag tform
+  in
+  let (vs, term) = Term.strip_qnt kind (Formula.term_of form)
+  in 
+  (tag, vs, term)
+
+
+(***  Modus ponens ***)
+
 let mp_tac ?a ?a1 g=
-  let typenv = Drule.typenv_of g
-  and sqnt = Drule.sequent g
+  let typenv = Tactics.typenv_of g
+  and sqnt = Tactics.sequent g
   in 
   let scp = Logic.Sequent.scope_of sqnt
   and a_tag = 
@@ -614,8 +749,9 @@ let mp_tac ?a ?a1 g=
   in 
   let (a_label, mp_vars, mp_form) =
     try
-      find_qnt_opt Basic.All ?f:a_tag 
-	Logicterm.is_implies (Drule.asms_of sqnt)
+      find_qnt_opt Basic.All 
+	Logicterm.is_implies 
+	(filter_by_tag a_tag (Tactics.asms_of sqnt))
     with Not_found -> 
       raise (Logic.logic_error ("mp_tac: no implications in assumptions") 
 	       [])
@@ -627,17 +763,17 @@ let mp_tac ?a ?a1 g=
   let (a1_label, a1_env)= 
     let exclude (t, _) = (Tag.equal t a_label)
     in
-    try 
-      unify_sqnt_form typenv scp varp mp_lhs 
+    (try 
+      find_unifier scp typenv varp mp_lhs 
 	~exclude:exclude
-	?f:a1_tag (Drule.asms_of sqnt)
+	(filter_by_tag a1_tag (Tactics.asms_of sqnt))
     with 
       Not_found -> 
 	raise 
 	  (Term.term_error ("mp_tac: no matching formula in assumptions") 
-	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
+	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]]))
   in 
-  let info= Drule.mk_info()
+  let info= Tactics.mk_info()
   in 
   let tac1=
     match mp_vars with
@@ -645,15 +781,15 @@ let mp_tac ?a ?a1 g=
 	skip
     | _ -> (* Implication has quantifier *)
 	inst_asm ~a:(ftag a_label)
-	  (Drule.make_consts mp_vars a1_env)
+	  (Tactics.extract_consts mp_vars a1_env)
   and tac2 g2= Logic.Tactics.implA (Some info) (ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
-      (Lib.apply_nth 0 (Tag.equal (Drule.node_tag n)) 
-	 (Drule.subgoals info) false))
+      (Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n)) 
+	 (Tactics.subgoals info) false))
        --> 
 	 Logic.Tactics.basic (Some info) (ftag a1_label)
-	   (ftag (Lib.get_one (Drule.cformulas info) 
+	   (ftag (Lib.get_one (Tactics.cformulas info) 
 		    (Failure "mp_tac2.2")))) g3
   in 
   (tac1++ (tac2 ++ tac3)) g 
@@ -672,17 +808,17 @@ let mp_tac ?a ?a1 g=
    where tag [thm_tag] identifies the theorem in the sequent.
  *)
 let cut_mp_tac ?info thm ?a g=
-  let info1 = Drule.mk_info()
+  let info1 = Tactics.mk_info()
   and f_label = 
     Lib.apply_option 
-      (fun x -> Some (ftag (Logic.label_to_tag x (Drule.sequent g))))
+      (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
       a None
   in 
   let tac1 = Logic.Tactics.cut (Some info1) thm
   in 
   let tac2 g2 = 
     (let a_tag = 
-      Lib.get_one (Drule.aformulas info1) 
+      Lib.get_one (Tactics.aformulas info1) 
 	(Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
@@ -690,7 +826,7 @@ let cut_mp_tac ?info thm ?a g=
   in 
   let g3= (tac1++tac2) g
   in 
-  (Logic.add_info info [] (Drule.aformulas info1) [] [];
+  (Logic.add_info info [] (Tactics.aformulas info1) [] [];
    g3)
     
 
@@ -702,9 +838,9 @@ let cut_mp_tac ?info thm ?a g=
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
  *)
-let back_tac ?info ?a ?c g=
-  let typenv = Drule.typenv_of g
-  and sqnt = Drule.sequent g
+let back_tac ?info ?a ?c goal=
+  let typenv = Tactics.typenv_of goal
+  and sqnt = Tactics.sequent goal
   in 
   let scp = Logic.Sequent.scope_of sqnt
   and a_tag =  (* assumption having implication *)
@@ -715,8 +851,9 @@ let back_tac ?info ?a ?c g=
   (* find, get the assumption *)
   let (a_label, back_vars, back_form) =
     try 
-      Drule.find_qnt_opt Basic.All ?f:a_tag 
-	Logicterm.is_implies (Drule.asms_of sqnt)
+      find_qnt_opt Basic.All 
+	Logicterm.is_implies 
+	(filter_by_tag a_tag (Tactics.asms_of sqnt))
     with Not_found -> 
       raise (Logic.logic_error ("back_tac: no implications in assumptions") 
 	       [])
@@ -728,18 +865,18 @@ let back_tac ?info ?a ?c g=
   (* find, get the conclusion and substitution *)
   let (c_label, c_env)= 
     let exclude (t, _) = (Tag.equal t a_label)
-    in
+    in 
     try 
-      Drule.unify_sqnt_form typenv scp varp back_rhs 
+      find_unifier scp typenv varp back_rhs 
 	~exclude:exclude
-	?f:c_tag (Drule.concls_of sqnt)
+	(filter_by_tag c_tag  (Tactics.concls_of sqnt))
     with 
       Not_found -> 
 	raise (Term.term_error 
 		 ("back_tac: no matching formula in conclusion") 
 		 [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
   in 
-  let info1= Drule.mk_info()
+  let info1= Tactics.mk_info()
   in 
   let tac1=
     match back_vars with
@@ -747,23 +884,23 @@ let back_tac ?info ?a ?c g=
 	skip
     | _ -> (* Implication has quantifier *)
 	inst_asm ~a:(ftag a_label)
-	  (Drule.make_consts back_vars c_env)
+	  (Tactics.extract_consts back_vars c_env)
   and tac2 g2= Logic.Tactics.implA (Some info1) (ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
-      (Lib.apply_nth 1 (Tag.equal (Drule.node_tag n)) 
-	 (Drule.subgoals info1) false))
+      (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
+	 (Tactics.subgoals info1) false))
        --> 
 	 Logic.Tactics.basic (Some info1) 
-	   (ftag (Lib.get_nth (Drule.aformulas info1) 1))
+	   (ftag (Lib.get_nth (Tactics.aformulas info1) 1))
 	   (ftag c_label)) g3
   in 
-  let g4= (tac1++ (tac2 ++ tac3)) g 
+  let g4= (tac1++ (tac2 ++ tac3)) goal
   in 
   (Logic.add_info info 
-     [Lib.get_nth (Drule.subgoals info1) 0]
+     [Lib.get_nth (Tactics.subgoals info1) 0]
      []
-     [Lib.get_nth (Drule.cformulas info1) 0]
+     [Lib.get_nth (Tactics.cformulas info1) 0]
      [];
    g4)
 
@@ -771,17 +908,17 @@ let back_tac ?info ?a ?c g=
    [back_tac ?info thm ?a]
  *)
 let cut_back_tac ?info thm ?c g=
-  let info1 = Drule.mk_info()
+  let info1 = Tactics.mk_info()
   and c_label = 
     Lib.apply_option 
-      (fun x -> Some (ftag (Logic.label_to_tag x (Drule.sequent g))))
+      (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
       c None
   in 
   let tac1 = Logic.Tactics.cut (Some info1) thm
   in 
   let tac2 g2 = 
     (let a_tag = 
-      Lib.get_one (Drule.aformulas info1) 
+      Lib.get_one (Tactics.aformulas info1) 
 	(Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
@@ -791,15 +928,15 @@ let cut_back_tac ?info thm ?c g=
 
 
 let cut_inst_tac ?info thm vals goal = 
-  let data = Drule.mk_info()
+  let data = Tactics.mk_info()
   in 
   let tac1 = (fun g -> Logic.Tactics.cut (Some data) thm g)
   in 
   let tac2 g = 
-    let a=Lib.get_one (Drule.aformulas data) (Failure "cut_inst_tac")
+    let a=Lib.get_one (Tactics.aformulas data) (Failure "cut_inst_tac")
     in 
     Logic.add_info info [] [a] [] [];
-    inst_asm_rule (Drule.ftag a) vals g
+    inst_asm_rule (ftag a) vals g
   in 
   let goal1 = (tac1 ++ tac2) goal
   in 
@@ -822,7 +959,7 @@ module Props =
  *)
     let make_iff_equals_ax ()=
       let iff_l2 = 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in 
 	Commands.prove
 	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
@@ -831,7 +968,7 @@ module Props =
 	   ++ 
 	   (fun g -> 
 	     let y_term, x_term = 
-	       Lib.get_two (Drule.constants info) 
+	       Lib.get_two (Tactics.constants info) 
 		 (Failure "make_iff_equals_ax")
 	     in 
 	     (flatten_tac
@@ -844,14 +981,14 @@ module Props =
 		(basic || trivial);
 		(replace_tac ++ eq_tac)]) g))
       in 
-      let info = Drule.mk_info()
+      let info = Tactics.mk_info()
       in 
       Commands.prove <<!x y: (x iff y) = (x = y)>>
       (allC ~info ++ allC ~info
 	 ++ 
 	 (fun g -> 
 	   let y_term, x_term = 
-	     Lib.get_two (Drule.constants info) 
+	     Lib.get_two (Tactics.constants info) 
 	       (Failure "make_iff_equals_ax")
 	   in 
 	   (
@@ -949,14 +1086,14 @@ module Props =
 	(flatten_tac ++ replace_tac ++ trivial)
       in
       let rule_true_l2 = 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in 
 	Commands.prove <<!x: x => (x=true)>>
 	(allC ~info:info
 	   ++ 
 	   (fun g -> 
 	     let x_term = 
-	       Lib.get_one (Drule.constants info) 
+	       Lib.get_one (Tactics.constants info) 
 		 (Failure "rule_true_l2")
 	     in 
 	     (flatten_tac 
@@ -993,14 +1130,14 @@ module Props =
    rule_false_ax: !x: (not x) = (x=false)
  *)
     let make_rule_false_ax ()= 
-      let info = Drule.mk_info()
+      let info = Tactics.mk_info()
       in 
       Commands.prove <<! x : (not x)=(x=false)>>
       (allC ~info:info
 	 ++
 	 (fun g -> 
 	   let x_term = 
-	     Lib.get_one (Drule.constants info)
+	     Lib.get_one (Tactics.constants info)
 	       (Failure "make_rule_false_ax")
 	   in 
 	   ((
@@ -1059,20 +1196,20 @@ module Rules=
       else 
 	let (_, lhs, rhs) = Term.dest_binop trm
 	in 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in 
 	let proof l g =
 	  seq [Logic.Tactics.cut (Some info) thm;
 	       (fun g1 -> 
 		 let ttag = 
-		   Lib.get_one (Drule.aformulas info) 
+		   Lib.get_one (Tactics.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
-		 ignore(Drule.empty_info info);
+		 Tactics.empty_info info;
 		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
-		   Lib.get_two (Drule.aformulas info) 
+		   Lib.get_two (Tactics.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 Logic.Tactics.basic None (ftag ltag) l g1)] g
@@ -1093,20 +1230,20 @@ module Rules=
       else 
 	let (_, lhs, rhs) = Term.dest_binop trm
 	in 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in 
 	let proof l g =
 	  seq [Logic.Tactics.cut (Some info) thm;
 	       (fun g1 -> 
 		 let ttag = 
-		   Lib.get_one (Drule.aformulas info) 
+		   Lib.get_one (Tactics.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
-		 ignore(Drule.empty_info info);
+		 Tactics.empty_info info;
 		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
-		   Lib.get_two (Drule.aformulas info) 
+		   Lib.get_two (Tactics.aformulas info) 
 		     (Result.error "conjunctL")
 		 in 
 		 Logic.Tactics.basic None (ftag rtag) l g1)] g
@@ -1192,7 +1329,7 @@ module Convs=
 	let goal_term = 
 	  Logicterm.mk_equality trm newterm
 	in 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in
 	let proof g= 
 	  seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
@@ -1202,37 +1339,37 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag = Lib.get_one (Drule.aformulas info)
+		       let atag = Lib.get_one (Tactics.aformulas info)
 			   (Failure "neg_all_conv: 1")
 		       and ctag = 
-			 Lib.get_one (Drule.cformulas info) 
+			 Lib.get_one (Tactics.cformulas info) 
 			   (Failure "neg_all_conv: 1")
 		       in 
-		       ignore(Drule.empty_info info);
+		       Tactics.empty_info info;
 		       seq
 			 [
 			  Logic.Tactics.negA (Some(info)) (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Drule.cformulas info)
+			      Lib.get_one (Tactics.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    ignore(Drule.empty_info info);
+			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.allC 
 					 (Some info) (ftag ctag2));
 			       (fun g3 -> 
 				 inst_concl ~c:(ftag ctag)
-				   (List.rev (Drule.constants info)) g3);
+				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
-				 (fun () -> ignore(Drule.empty_info info)) ();
+				 (fun () -> Tactics.empty_info info) ();
 			       Logic.Tactics.negC (Some info) (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
-				   Lib.get_one (Drule.aformulas info)
+				   Lib.get_one (Tactics.aformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
-				 ignore(Drule.empty_info info);
+				 Tactics.empty_info info;
 				 Logic.Tactics.basic 
 				   None (ftag atag3) (ftag ctag2) g3)
 			     ] g2)] g1)];
@@ -1240,34 +1377,34 @@ module Convs=
 		  seq 
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
-		       let atag = Lib.get_one (Drule.aformulas info)
+		       let atag = Lib.get_one (Tactics.aformulas info)
 			   (Failure "neg_all_conv: 4")
 		       and ctag = 
-			 Lib.get_one (Drule.cformulas info) 
+			 Lib.get_one (Tactics.cformulas info) 
 			   (Failure "neg_all_conv: 4")
 		       in 
-		       ignore(Drule.empty_info info);
+		       Tactics.empty_info info;
 		       seq
 			 [
 			  Logic.Tactics.negC (Some(info)) (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
-			      Lib.get_one (Drule.aformulas info)
+			      Lib.get_one (Tactics.aformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    ignore(Drule.empty_info info);
+			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.existA 
 					 (Some info) (ftag atag));
 			       (fun g3 -> 
 				 inst_asm ~a:(ftag atag2)
-				   (List.rev (Drule.constants info)) g3);
+				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
-				 (fun () -> ignore(Drule.empty_info info)) ();
+				 (fun () -> Tactics.empty_info info) ();
 			       Logic.Tactics.negA (Some info) (ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
-				   Lib.get_one (Drule.cformulas info)
+				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
@@ -1315,7 +1452,7 @@ module Convs=
 	let goal_term = 
 	  Logicterm.mk_equality trm newterm
 	in 
-	let info = Drule.mk_info()
+	let info = Tactics.mk_info()
 	in
 	let proof g= 
 	  seq [once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
@@ -1326,37 +1463,37 @@ module Convs=
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
 		       let atag =
-			 Lib.get_one (Drule.aformulas info)
+			 Lib.get_one (Tactics.aformulas info)
 			   (Failure "neg_exists_conv: 1")
 		       and ctag = 
-			 Lib.get_one (Drule.cformulas info) 
+			 Lib.get_one (Tactics.cformulas info) 
 			   (Failure "neg_exists_conv: 1")
 		       in 
-		       ignore(Drule.empty_info info);
+		       Tactics.empty_info info;
 		       seq
 			 [
 			  Logic.Tactics.negA (Some(info)) (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Drule.cformulas info)
+			      Lib.get_one (Tactics.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    ignore(Drule.empty_info info);
+			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.allC 
 					 (Some info) (ftag ctag));
 			       (fun g3 -> 
 				 inst_concl ~c:(ftag ctag2)
-				   (List.rev (Drule.constants info)) g3);
+				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
-				 (fun () -> ignore(Drule.empty_info info)) ();
+				 (fun () -> Tactics.empty_info info) ();
 			       Logic.Tactics.negC (Some info) (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
-				   Lib.get_one (Drule.aformulas info)
+				   Lib.get_one (Tactics.aformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
-				 ignore(Drule.empty_info info);
+				 Tactics.empty_info info;
 				 Logic.Tactics.basic None 
 				   (ftag atag3) (ftag ctag2) g3)
 			     ] g2)] g1)];
@@ -1365,35 +1502,35 @@ module Convs=
 		    [Logic.Tactics.implC (Some info) (fnum 1);
 		     (fun g1 ->
 		       let atag = 
-			 Lib.get_one (Drule.aformulas info) 
+			 Lib.get_one (Tactics.aformulas info) 
 			   (Failure "neg_exists_conv: 4")
 		       and ctag = 
-			 Lib.get_one (Drule.cformulas info) 
+			 Lib.get_one (Tactics.cformulas info) 
 			   (Failure "neg_exists_conv: 4")
 		       in 
-		       ignore(Drule.empty_info info);
+		       Tactics.empty_info info;
 		       seq
 			 [
 			  Logic.Tactics.negC (Some(info)) (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
-			      Lib.get_one (Drule.aformulas info)
+			      Lib.get_one (Tactics.aformulas info)
 				(Failure "neg_exists_conv: 2")
 			    in 
-			    ignore(Drule.empty_info info);
+			    Tactics.empty_info info;
 			    seq
 			      [repeat 
 				 (Logic.Tactics.existA 
 				    (Some info) (ftag atag2));
 			       (fun g3 -> 
 				 inst_asm ~a:(ftag atag)
-				   (List.rev (Drule.constants info)) g3);
+				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
-				 (fun () -> ignore(Drule.empty_info info)) ();
+				 (fun () -> Tactics.empty_info info) ();
 			       Logic.Tactics.negA (Some info) (ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
-				   Lib.get_one (Drule.cformulas info)
+				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
@@ -1408,16 +1545,16 @@ module Convs=
 (* More tactics *)
 
 let equals_tac ?f g =
-  let ff =
+  let ff = 
     match f with
       Some x -> x
     | _ -> 
 	try
-	  (Drule.first_asm Formula.is_equality (Drule.sequent g))
+	  first_asm_label None Formula.is_equality g
 	with 
 	  Not_found ->
 	    try
-	      (Drule.first_concl Formula.is_equality (Drule.sequent g))
+	      first_concl_label None Formula.is_equality g
 	    with Not_found ->
 	      raise 
 		(Result.error "equals_tac: No equality term")

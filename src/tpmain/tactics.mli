@@ -7,8 +7,25 @@
 (** Tactics and Tacticals *)
 
 type tactic = Logic.tactic
+(** A tactic is a function of type [Logic.node -> Logic.branch] *)
 
 (** {5 Support functions} *)
+
+(** {7 Error reporting} *)
+
+val error: string -> exn
+(** [error s]: Make a Result.Error exception with message [s]. *)
+
+val add_error : string -> exn -> exn
+(** [add_error s err]: Add [error s] to exception [err]. *)
+
+(** {7 Formulas} *)
+
+val drop_tag : Logic.tagged_form -> Formula.form
+(** Get the formula of a tagged formula. *)
+
+val drop_formula: Logic.tagged_form -> Tag.t
+(** Get the tag of a tagged formula. *)
 
 (** {7 Formula labels} *)
 
@@ -29,6 +46,157 @@ val (!~): int -> Logic.label
 
 val (!$): string -> Logic.label
 (** Formula name to label. [!$ x] is [fname x]. *)
+
+(** {7 Sequents} *)
+
+val asms_of : Logic.Sequent.t -> Logic.tagged_form list
+(** Get the assumptions of a sequent. *)
+val concls_of : Logic.Sequent.t -> Logic.tagged_form list
+(** Get the conclusions of a sequent. *)
+val sqnt_tag : Logic.Sequent.t -> Tag.t
+(** Get the tag of a sequent. *)
+
+(** {7 Nodes} *)
+
+val sequent : Logic.node -> Logic.Sequent.t
+(** Get sequent of a node. *)
+val scope_of : Logic.node -> Scope.t
+(** Get the scope of a node. *)
+val typenv_of : Logic.node -> Gtypes.substitution
+(** Get the type environment of a node. *)
+val node_tag: Logic.node -> Tag.t
+(** Get the tag of a node. *)
+
+val get_tagged_asm: Logic.label -> Logic.node -> Logic.tagged_form
+(** Get an assumption and its tag by label.*)
+val get_tagged_concl: Logic.label -> Logic.node -> Logic.tagged_form
+(** Get a conclusion and its tag by label.*)
+
+val get_asm: Logic.label -> Logic.node -> Formula.form
+(** Get an assumption by label.*)
+val get_concl: Logic.label -> Logic.node -> Formula.form
+(** Get a conclusion by label.*)
+
+(** {7 Branches} *)
+
+val branch_tyenv: Logic.branch -> Gtypes.substitution
+(** Type environment of a branch. *)
+
+val branch_subgoals: Logic.branch -> Logic.Sequent.t list
+(** Subgoals of a branch. *)
+
+val has_subgoals : Logic.branch -> bool
+(** Test whether a branch has subgoals. *)
+
+val num_subgoals : Logic.branch -> int
+(** Get the number of subgoals in a branch. *)
+
+(** {7 Information records} *)
+
+val mk_info: unit -> Logic.info
+(** Make an empty information record. *)
+
+val empty_info: Logic.info -> unit
+(** 
+   [empty_info info]: Empty the information record [info].
+   Equivalent to [info:=mk_info()].
+ *)
+
+val subgoals: Logic.info -> Tag.t list
+(** 
+   [subgoals info]: Get subgoals of [info].
+   Equivalent to [(!info).goals]
+ *)
+
+val aformulas: Logic.info -> Tag.t list
+(** 
+   [aformulas info]: Get tags of assumption formulas from [info].
+   Equivalent to [(!info).aforms]
+*)
+
+val cformulas: Logic.info -> Tag.t list
+(** 
+   [cformulas info]: Get tags of conclusion formulas from [info].
+   Equivalent to [(!info).cforms]
+*)
+
+val constants: Logic.info -> Basic.term list
+(** 
+   [constants info]: Get constants from [info].  Equivalent to
+   [(!info).terms]
+ *)
+
+(** {7 Utility functions} *)
+
+val extract_consts: 
+    Basic.binders list -> Term.substitution -> Basic.term list
+(** 
+   [extract_consts qs sb]: [extract_consts qs sb] extracts the
+   bindings for each of the binders in [qs] from substitution [sb],
+   returning the terms in the same order as the binders. [qs] is
+   typically obtained by stripping the binders from a formula. [sb] is
+   typically constructed by unification.
+ *)
+
+val qnt_opt_of: 
+    Basic.quant_ty -> (Basic.term -> bool) -> Basic.term -> bool
+(**
+   [qnt_opt_of k pred t]: Apply predicate [pred] to the body of
+   possibly quantified term [t]. The outermost quantifiers of kind [k]
+   are stripped off before [pred] is applied.  Returns [pred body]
+   where [(_, body)=strip_qnt k t].
+*)
+
+val first_asm : 
+    (Logic.tagged_form -> bool) -> Logic.Sequent.t
+      -> Logic.tagged_form
+(** 
+   Get the first assumption in a sequent which satisfies a predicate. 
+   Raise Not_found if no such assumption.
+*)
+
+val first_concl : 
+    (Logic.tagged_form -> bool) -> Logic.Sequent.t
+      -> Logic.tagged_form
+(** 
+   Get the first conclusion in a sequent which satisfies a predicate. 
+   Raise Not_found if no such assumption.
+*)
+
+val first_form : 
+    (Logic.tagged_form -> bool) -> Logic.Sequent.t
+      -> Logic.tagged_form
+(** 
+   Get the first formula in a sequent which satisfies a
+   predicate. Raise [Not_found] if no such assumption. Searches the
+   assumptions then the conclusions of the sequent.
+*)
+
+val first_asm_label : 
+    Logic.label option -> (Formula.form -> bool) 
+      -> Logic.node -> Logic.label
+(** 
+   [first_asm_label ?c pred sq]: If a is [Some(x)] then return [x].
+   Otherwise, get the label of the first assumption whose formula
+   satisifies [pred]. Raise Not_found if no such assumption.
+
+   Mostly used to unpack the argument to a tactic, where [a] is the
+   optional label identifying a formula and [pred] is used if [a] is
+   not given.
+*)
+
+val first_concl_label : 
+    Logic.label option -> (Formula.form -> bool) 
+      -> Logic.node -> Logic.label
+(** 
+   [first_concl_label ?c pred sq]: If c is [Some(x)] then return [x].
+   Otherwise, get the label of the first conclusion whose formula
+   satisifies [pred]. Raise Not_found if no such conclusion.
+
+   Mostly used to unpack the argument to a tactic, where [c] is the
+   optional label identifying a formula and [pred] is used if [c] is
+   not given.
+*)
 
 (** 
    {5 Basic tacticals and tactics} 
@@ -105,8 +273,14 @@ val cond : (Logic.node -> bool) -> tactic -> tactic -> tactic
 
 val (-->) : (Logic.node -> bool) -> tactic -> tactic 
 (** 
-   One-armed conditional.
-   [pred --> tac] is [cond pred tac skip]. 
+   One-armed conditional.  [pred --> tac] is [cond pred tac skip],
+   applying [tac] if condition [pred] is met.
+*)
+
+val restrict : (Logic.branch -> bool) -> tactic -> tactic
+(**
+   [restrict pred tac g]:  Restrict the result of applying a tactic.
+   Fails if [pred (tac g)] is false otherwise behaves as [(tac g)].
 *)
 
 val map_every: ('a -> tactic) -> 'a list -> tactic
@@ -126,7 +300,40 @@ val map_first: ('a -> tactic) -> 'a list -> tactic
    [(tac y1) ++ (tac y2) ++ .. ++ (tac yn)].
 
    Fails if function [(tac x)] fails for any [x] in [xs] or if all of the
-   resulting tactics fail. Does nothing if [xs] is initially empty.
+   resulting tactics fail. Fails if [xs] is initially empty.
+*)
+
+val map_some: ('a -> tactic) -> 'a list -> tactic
+(**
+   [map_some tac xs]: Sequentially apply the tactics formed by [(tac
+   x)], for each [x] in [xs], allowing some tactics to fail.
+
+   Fails if function [(tac x)] fails for any [x] in [xs] or if all of
+   the tactics [(tac x)] fail. Fails if [xs] is initially empty.
+*)
+
+val foreach_asm: (Logic.label -> tactic) -> tactic
+(**
+   [foreach_asm tac goal]: Sequentially apply [tac l] to each
+   assumption in [goal], beginning with the first assmuption, where [l]
+   is the label of each assumption considered.
+
+   Fails if no instance of [tac l] succeeds.
+*)
+
+val foreach_concl: (Logic.label -> tactic) -> tactic
+(**
+   [foreach_concl tac goal]: Sequentially apply [tac l] to each
+   conclusion in [goal], beginning with the first assmuption, where [l]
+   is the label of each assumption considered.
+
+   Fails if no instance of [tac l] succeeds.
+*)
+
+val foreach_form: (Logic.label -> tactic) -> tactic
+(**
+   Apply {!Tactics.foreach_asm} then {!Tactics.foreach_concl}, failing
+   if both fail.
 *)
 
 (** 
@@ -176,18 +383,31 @@ val deleten: Logic.label list -> Logic.tactic
 *)
 
 val trueR : ?info:Logic.info -> ?c:Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.trueR}. *)
 val conjC : ?info:Logic.info -> ?c: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.conjC}. *)
 val conjA : ?info:Logic.info -> ?a: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.conjA}. *)
 val disjC : ?info:Logic.info -> ?c: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.disjC}. *)
 val disjA : ?info:Logic.info -> ?a: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.disjA}. *)
 val negC : ?info:Logic.info -> ?c: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.negC}. *)
 val negA : ?info:Logic.info -> ?a: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.negA}. *)
 val implC : ?info:Logic.info -> ?c: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.implC}. *)
 val implA : ?info:Logic.info -> ?a: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.implA}. *)
 val existC : ?info:Logic.info -> ?c: Logic.label -> Basic.term -> tactic 
+(** Entry point to {!Logic.Tactics.existC}. *)
 val existA : ?info:Logic.info -> ?a: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.existA}. *)
 val allC : ?info:Logic.info -> ?c: Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.allC}. *)
 val allA : ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
+(** Entry point to {!Logic.Tactics.allA}. *)
 
 val instA: ?info:Logic.info
     -> ?a:Logic.label -> Basic.term list -> tactic
@@ -218,19 +438,26 @@ val cut: ?info:Logic.info
 (** 
    [cut th]: Cut [th] into the sequent. If [~inst:trms] is given then the
    top-most variables of the theorem are instantiated with [trms]. 
+   Entry point to {!Logic.Tactics.cut}. 
 *)
 
 val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
-(** [beta_tac]: Apply beta conversion. *)
+(** 
+   [beta_tac]: Apply beta conversion. Entry point to
+   {!Logic.Tactics.beta}.
+*)
 
 val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
-(**  [name_tac ?info n lbl]: Name formula [lbl] with [n]. *)
-
-val basic : ?info:Logic.info -> tactic
 (** 
-   Prove the goal \[A, asms |- A, concls\].  Formula [A] can occur in
-   any position in the assumptions and conclusions, not just the
-   first.
+   [name_tac ?info n lbl]: Name formula [lbl] with [n]. 
+   Entry point to {!Logic.Tactics.nameA} and {!Logic.Tactics.nameC}. 
+*)
+
+val basic : 
+    ?info:Logic.info -> ?a:Logic.label -> ?c:Logic.label -> tactic
+(** 
+   Proves the goal \[A{_ a}, asms |- B{_ c}, concls\] if A is
+   alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.
 *)
 
 val unify_tac : ?info: Logic.info ->  
@@ -309,11 +536,11 @@ val gen_replace_tac:
   -> ?asms:Logic.label list 
     -> ?f:Logic.label -> Logic.tactic
 (**
-   [gen_replace_tac info ctrl asms f]: Rewrite formula [f] with
+   [gen_replace_tac info ctrl asms f]: Rewrite formula [f] with the
    assumptions in list [asms].  If [f] is not given, rewrite all
-   formulas in sequent.  If [asms] is not given, use all assumptions
-   of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
-   assumptions.
+   formulas in sequent. If [asms] is not given, use all assumptions of
+   the form [l=r] or [!x1 .. xn: l = r]. Doesn't rewrite the
+   assumptions used as rewrite rules.
 *)
 
 val replace_tac: 
@@ -358,13 +585,59 @@ val named_tac :
    renaming.
 *) 
 
+(** {7 Pattern matching tacticals} *)
+
+(** {8 Support functions} *)
+
+val find_match_formulas: 
+    Gtypes.substitution
+  -> Scope.t -> (Basic.term -> bool) 
+    -> Basic.term -> Logic.tagged_form list -> Logic.label
+(**
+   [find_match_formulas scp varp t fs]: Find a match for a term in list
+   of tagged formulas.  Return the tag of the first formula in [fs]
+   to unify with term [t] in scope [scp].  [varp] determines which
+   terms can be bound by unification.  raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+ *)
+
+val find_match_asm : 
+    Gtypes.substitution
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
+(** 
+   [find_match_asm tyenv t sq]: Find a match for [t] in the assumptions of
+   [sq].  Return the tag of the first formula in the assumptions to
+   unify with term [t] in the scope of sequent [sq].
+   raise Not_found if no match.
+ *)
+
+val find_match_concl :     
+    Gtypes.substitution
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
+(** 
+   [match_concl t sq]: Find a match for [t] in the assumptions of
+   [sq].  Return the tag of the first formula in the assumptions to
+   unify with term [t] in the scope of sequent [sq].  raise Not_found
+   if no match.
+*)
+
+(** {8 Tacticals} *)
+
 val match_asm: Basic.term -> (Logic.label -> tactic) -> tactic
 (** 
-   [match_asm trm tac g]: Apply a tactic to the assumption matching a term.
+   [match_asm trm tac g]: Apply a tactic to the assumption matching 
+   term.
 
    Find the label [l] of the first assumption, in the first subgoal of
    [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
    if [tac l] fails or if there is no matching assumption.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
 *)
 
 val match_concl: Basic.term -> (Logic.label -> tactic) -> tactic
@@ -375,6 +648,10 @@ val match_concl: Basic.term -> (Logic.label -> tactic) -> tactic
    Find the label [l] of the first conclusion, in the first subgoal of
    [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
    if [tac l] fails or if there is no matching conclusion.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
 *)
 
 val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
@@ -387,5 +664,12 @@ val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
    match is carried out first on the assumptions then on the
    conclusions. Fails if [tac l] fails or if there is no matching
    formula in the subgoal.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
 *)
+
+
+
 

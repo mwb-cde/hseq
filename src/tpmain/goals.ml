@@ -65,7 +65,7 @@ struct
 
   let push_goal g p = 
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> (Proof.push g [])::[]
     | (x::xs) -> (Proof.push g x)::xs
 
   let top_goal p = 
@@ -84,7 +84,8 @@ let prflist = ref ([]:ProofStack.t)
 
 let proofs() = !prflist
 
-let top () = ProofStack.top_goal (!prflist)
+let top () = ProofStack.top (!prflist)
+let top_goal () = ProofStack.top_goal (!prflist)
 
 let drop() = prflist:=ProofStack.pop (!prflist)
 
@@ -112,10 +113,9 @@ let lift n =
 let undo() =
   match (!prflist) with
     [] -> raise (Result.error "No goals")
-  | [x] -> raise (Result.error "No previous goals")
   | _ -> (prflist := ProofStack.pop_goal (!prflist); top())
 	
-let result () = mk_thm (top())
+let result () = mk_thm (top_goal())
 
 let apply ?report tac goal=
   Logic.Subgoals.apply_to_goal ?report tac goal
@@ -162,7 +162,7 @@ let report node branch =
       else ()
 
 let by_com tac =
-  let p = (top():Logic.goal)
+  let p = (top_goal():Logic.goal)
   in 
   let g = Logic.Subgoals.apply_to_goal ~report:report tac p
   in 
@@ -188,10 +188,10 @@ let by_list trm tacl =
 * Miscellaneous
 ***)
 
-let curr_goal () = top()
+let curr_goal () = top_goal()
 
 let curr_sqnt () = 
-  (match (Logic.get_subgoals (top())) with
+  (match (Logic.get_subgoals (top_goal())) with
     [] -> raise (Result.error "No subgoals")
   | x::xs -> x)
 

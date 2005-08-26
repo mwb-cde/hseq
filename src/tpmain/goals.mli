@@ -54,31 +54,34 @@ module ProofStack :
 val proofs : unit -> ProofStack.t
 (** Get the stack of proofs. *)
 
-val top : unit -> Logic.goal
+val top : unit -> Proof.t
 (** The current proof attempt *)
+
+val top_goal : unit -> Logic.goal
+(** The current goal. *)
 
 val drop : unit -> unit
 (** Drop the current proof.  *)
 
-val goal : Basic.term -> Logic.goal
+val goal : Basic.term -> Proof.t
 (** 
    Start a proof attempt. Creates a goal and pushes it on the top of
    the proof list.
 *)
 
-val postpone: unit -> Logic.goal
+val postpone: unit -> Proof.t
 (**
    Postpone the current proof, pushing it to the bottom of the list of
    attempts.
 *)
 
-val lift: int -> Logic.goal
+val lift: int -> Proof.t
 (**
    [lift n]: Focus on the nth proof, making it the current proof
    attempt. Fails if there is no nth proof.
 *)
 
-val undo : unit -> Logic.goal
+val undo : unit -> Proof.t
 (** 
    Go back. Pop the top goal off the proof. Fails if there is only one
    goal in the proof.
@@ -120,7 +123,7 @@ val prove: Basic.term -> Tactics.tactic -> Logic.thm
 
 (** {7 Interactive proofs} *)
 
-val by_com : Tactics.tactic -> Logic.goal
+val by_com : Tactics.tactic -> Proof.t
 (** 
    Apply a tactic to the current goal. If the tactic succeeds, call
    [!save_hook]. Used for interactive proofs.
