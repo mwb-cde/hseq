@@ -885,13 +885,13 @@ module Subgoals=
    THIS FUNCTION MUST REMAIN PRIVATE TO MODULE LOGIC
  *)
     let rule_apply r (Node(ntag, tyenv, sqnt)) =
-      try
+      (try
 	(let rg, rtyenv = r tyenv sqnt
 	in 
 	Branch(ntag, rtyenv, rg))
       with 
 	No_subgoals -> Branch(ntag, tyenv, [])
-      | Solved_subgoal ntyenv -> Branch(ntag, ntyenv, [])
+      | Solved_subgoal ntyenv -> Branch(ntag, ntyenv, []))
 
 
 (**
@@ -901,6 +901,7 @@ module Subgoals=
  *)
     let simple_rule_apply r node =
       rule_apply (fun tyenv sq -> (r sq, tyenv)) node
+
   end
 
 type node = Subgoals.node
@@ -1688,7 +1689,7 @@ module Tactics =
    --> true
    info : [] []
  *)
-    let trueR0 inf i sq=
+    let trueR0 inf i tyenv sq = 
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
       in 
       let (_, t)=concl
@@ -1696,13 +1697,12 @@ module Tactics =
       if (Formula.is_true t)
       then 
 	(add_info inf [] [] [] [];
-	 raise No_subgoals)
+	 raise (Solved_subgoal tyenv))
       else 
 	raise (logic_error "Not trivial" [t])
 
     let trueR inf i g = 
-      simple_sqnt_apply (trueR0 inf i) g
-
+      sqnt_apply (trueR0 inf i) g
 
 (**
    betaA i sq: beta reduction of assumption i
