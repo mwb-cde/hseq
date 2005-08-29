@@ -78,6 +78,13 @@ struct
       [] -> raise (Result.error "No goals.")
     | (x::xs) -> (Proof.pop x)::xs
 
+  let undo_goal p=
+    match p with
+      [] -> raise (Result.error "No goals.")
+    | (x::xs) ->
+	match (Proof.pop x) with
+	  [] -> raise (Result.error "Can't undo anymore")
+	| y -> y::xs
 end
 
 let prflist = ref ([]:ProofStack.t)
@@ -113,7 +120,8 @@ let lift n =
 let undo() =
   match (!prflist) with
     [] -> raise (Result.error "No goals")
-  | _ -> (prflist := ProofStack.pop_goal (!prflist); top())
+  | _ -> 
+      (prflist := ProofStack.undo_goal (!prflist); top())
 	
 let result () = mk_thm (top_goal())
 
@@ -188,8 +196,6 @@ let by_list trm tacl =
 * Miscellaneous
 ***)
 
-let curr_goal () = top_goal()
-
 let curr_sqnt () = 
   (match (Logic.get_subgoals (top_goal())) with
     [] -> raise (Result.error "No subgoals")
@@ -205,3 +211,7 @@ let get_concl i =
   in 
   (ft, Formula.term_of nt)
 
+let goal_scope () = 
+  let sq = curr_sqnt()
+  in 
+  Logic.Sequent.scope_of sq

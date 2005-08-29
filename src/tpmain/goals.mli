@@ -159,11 +159,11 @@ val set_hook : (unit -> unit) -> unit
 
 (** {7 Miscellaneous} *)
 
-val curr_goal : unit -> Logic.goal
-(** Get the current goal in a proof. *)
-
 val curr_sqnt : unit -> Logic.Sequent.t
 (** The current sequent *)
+
+val goal_scope: unit -> Scope.t
+(** The scope of the current subgoal. *)
 
 val get_asm: int -> (Tag.t * Basic.term)
 (** Get an assumption from the current sequent. *)

@@ -283,6 +283,13 @@ val restrict : (Logic.branch -> bool) -> tactic -> tactic
    Fails if [pred (tac g)] is false otherwise behaves as [(tac g)].
 *)
 
+val notify_tac : (unit -> unit) -> tactic -> tactic
+(**
+   [notify_tac f tac g]: Notify [tac g] succeeded.
+   Applies [tac g] then, if the tactic suceeded, apply [f ()].
+   Fails if [tac g] fails.
+*)
+
 val map_every: ('a -> tactic) -> 'a list -> tactic
 (**
    [map_every tac xs]: Sequentially apply the tactics formed by [(tac

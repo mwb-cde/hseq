@@ -101,8 +101,8 @@ val cut_thm: string -> Tactics.tactic
 val is_iff: Formula.form -> bool
 
 (* val iffC_rule: Logic.label -> Logic.rule *)
-val iffC: ?c:Logic.label -> Tactics.tactic
-val iffA: ?a:Logic.label -> Tactics.tactic
+val iffC: ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
+val iffA: ?info:Logic.info -> ?a:Logic.label -> Tactics.tactic
 
 val asm_elims : 
     unit -> ((Formula.form->bool) * (Logic.label -> Logic.tactic)) list
@@ -122,7 +122,8 @@ val trivial : ?f:Logic.label -> Tactics.tactic
    to conclusions then apply negA, conjE, existI 
    to assumptions.
 *)
-    val flatten_tac : Tactics.tactic
+    val flatten_tac : 
+	?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 
 (* [split_tac]
 
@@ -130,7 +131,52 @@ val trivial : ?f:Logic.label -> Tactics.tactic
    and disjunctions and implications in the assumptions
    creating new subgoals.
 *)
-    val split_tac : Tactics.tactic
+    val split_tac : 
+	?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
+
+(**
+   splitter_tac: reimplementation of split_tac
+*)
+
+val split_asm_rules:
+    Logic.info option -> Logic.label -> Tactics.tactic
+val split_concl_rules:
+    Logic.info option -> Logic.label -> Tactics.tactic
+
+val split_asms_tac: 
+    ?info:Logic.info -> Logic.label list -> Tactics.tactic
+val split_concls_tac: 
+    ?info:Logic.info -> Logic.label list -> Tactics.tactic
+
+val basic_splitter : 
+    ?info: Logic.info -> Tag.t list -> Tag.t list -> Tactics.tactic
+
+val splitter_tac : 
+    ?info: Logic.info -> ?f:Logic.label -> Tactics.tactic
+
+
+(**
+   flatter_tac: reimplementation of flatten_tac
+*)
+
+val flatter_asm_rules:
+   Logic.info option -> Logic.label -> Tactics.tactic
+val flatter_concl_rules:
+    Logic.info option -> Logic.label -> Tactics.tactic
+
+val flatter_asms_tac: 
+  ?info:Logic.info 
+    -> Logic.label list -> Tactics.tactic
+val flatter_concls_tac: 
+  ?info:Logic.info 
+    -> Logic.label list -> Tactics.tactic
+
+val basic_flatter : 
+  ?info:Logic.info 
+      -> Tag.t list -> Tag.t list -> Tactics.tactic
+
+val flatter_tac : 
+    ?info: Logic.info -> ?f:Logic.label -> Tactics.tactic
 
 (* [inst_tac f consts] 
    instantiate formula [f] with terms [consts]

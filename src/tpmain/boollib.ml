@@ -263,47 +263,106 @@ let is_iff f =
     (fst (Term.dest_fun (Formula.term_of f)) = Logicterm.iffid)
   with _ -> false
 
-let iffA_rule i goal = 
+(** 
+   [iffA l sq]: Elminate the implication at assumptin [l]
+
+   {L
+   g:\[(A iff B){_ l}, asms |- concl]
+   ---->
+   g1:[A{_ l1}, asms |- B{_ l2}, concl]; 
+   g2:[B{_ l3}, asms |- A{_ l4}, concl]; 
+   }
+
+   info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
+ *)
+let iffA_rule ?info i goal = 
   let sqnt=Tactics.sequent goal
+  and inf = Tactics.mk_info()
   in 
   let t, f = Logic.Sequent.get_tagged_asm (Logic.label_to_tag i sqnt) sqnt
   in
   let iff_def_id = Basic.string_fnid Logicterm.iffid
   in 
+  let set_info () = 
+    let subgoals = Tactics.subgoals inf
+    and aforms = Tactics.aformulas inf
+    and cforms = Tactics.cformulas inf
+    in 
+    Logic.add_info info (List.rev subgoals) 
+      (List.rev aforms) (List.rev cforms) []
+  in
+  let impl_tac g = 
+    let (a, b) = 
+      Lib.get_two (Tactics.aformulas inf) (Failure "iffA: impl_tac")
+    in 
+    Tactics.empty_info inf;
+    Tactics.map_every 
+      (Logic.Tactics.implA (Some inf)) [ftag a; ftag b]  goal
+  in 
   if not (is_iff f) 
   then (raise (Result.error "iffC_rule"))
   else 
-    (seq 
-       [Tactics.rewrite_tac [defn iff_def_id] ~f:(ftag t);
-	Logic.Tactics.conjA None (ftag t);
-	Logic.Tactics.implA None (ftag t)]) goal
+    seq 
+      [Tactics.rewrite_tac [defn iff_def_id] ~f:(ftag t);
+       Logic.Tactics.conjA (Some inf) (ftag t);
+       impl_tac;
+       Tactics.data_tac set_info ()] goal
+    
 
-let iffA ?a g = 
+let iffA ?info ?a g = 
   let af = first_asm_label a is_iff g
   in 
-  iffA_rule af g
+  iffA_rule ?info:info af g
 
 
-let iffC_rule i goal = 
+(** 
+   [iffC l sq]: Elminate the implication at conclusion [l]
+
+   {L
+   g:\[asms |- (A iff B){_ l}, concl]
+   ---->
+   g1:[A{_ l1}, asms |- B{_ l2}, concl]; 
+   g2:[B{_ l3}, asms |- A{_ l4}, concl]; 
+   }
+
+   info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
+ *)
+let iffC_rule ?info i goal = 
   let sqnt=Tactics.sequent goal
+  and inf = Tactics.mk_info()
   in 
   let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag i sqnt) sqnt
   in
   let iff_def_id = Basic.string_fnid Logicterm.iffid
   in 
+  let clear_cforms ()= 
+    let subgoals = Tactics.subgoals inf
+    in 
+    Logic.do_info (Some inf) subgoals [] [] []
+  in 
+  let set_info () = 
+    let subgoals = Tactics.subgoals inf
+    and aforms = Tactics.aformulas inf
+    and cforms = Tactics.cformulas inf
+    in 
+    Logic.add_info info subgoals 
+      (List.rev aforms) (List.rev cforms) []
+  in
   if not (is_iff f) 
   then (raise (Result.error "iffC_rule"))
   else 
     (seq 
        [Tactics.rewrite_tac [defn iff_def_id] ~f:(ftag t);
-	Logic.Tactics.conjC None (ftag t);
-	Logic.Tactics.implC None (ftag t)]) goal
+	Logic.Tactics.conjC (Some inf) (ftag t);
+	Tactics.data_tac clear_cforms ();
+	Logic.Tactics.implC (Some inf) (ftag t);
+	Tactics.data_tac set_info ()]) goal
 
 
-let iffC ?c g = 
+let iffC ?info ?c g = 
   let cf = first_concl_label c is_iff g
   in 
-  iffC_rule cf g
+  iffC_rule ?info cf g
 
 
 let get_false_def() = Commands.lemma "false_def"
@@ -360,12 +419,11 @@ let conc_elims () =
    (Formula.is_implies, Logic.Tactics.implC None);
    (Formula.is_all, Logic.Tactics.allC None)]
 
-let rec flatten_tac g =
+let flatten_tac0 g =
   repeat
     (Tactics.alt 
        [ Drule.foreach_conc (conc_elims()); 
 	 Drule.foreach_asm (asm_elims())]) g
-
 
 let split_asm () = 
   [(Formula.is_disj, Logic.Tactics.disjA None);  
@@ -373,13 +431,199 @@ let split_asm () =
 
 let split_conc () =
   [(Formula.is_conj, Logic.Tactics.conjC None); 
-   (is_iff, iffC_rule)]
+   (is_iff, iffC_rule ?info:None)]
 
-let rec split_tac g=
+let rec split0_tac ?info ?f g=
   ((alt [ Drule.foreach_conc (split_conc()); 
 	  Drule.foreach_asm (split_asm()) ])
      ++
-     (split_tac || skip)) g
+     (split0_tac || skip)) g
+
+let split_asm_rules info l = 
+  alt [Logic.Tactics.disjA info l; Logic.Tactics.implA info l]
+
+let split_concl_rules info l =
+   alt [Logic.Tactics.conjC info l; iffC_rule ?info:info l]
+
+let rec split_asms_tac ?info lst=
+  let inf = mk_info()
+  in 
+  seq
+    [
+     map_some (split_asm_rules (Some inf)) lst;
+     (fun g -> 
+       ((split_asms_tac ~info:inf (List.map ftag (aformulas inf)) 
+       || skip))
+	 g);
+     data_tac 
+       (fun _ -> 
+	 Logic.add_info info 
+	   (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)) ()
+   ]
+       
+let rec split_concls_tac ?info lst=
+  let inf = mk_info()
+  in 
+  seq
+    [
+     map_some (split_concl_rules (Some inf)) lst;
+     (fun g -> 
+       ((split_concls_tac ~info:inf (List.map ftag (cformulas inf)) 
+       || skip))
+	 g);
+     data_tac 
+       (fun _ -> 
+	 Logic.add_info info 
+	   (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)) ()
+   ]
+
+let rec basic_splitter ?info alst clst =
+  let chng = ref false
+  and inf = mk_info()
+  in
+  Logic.add_info (Some inf) [] [] clst [];
+  let set_info () = 
+    Logic.add_info info 
+      (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)
+  in 
+  let tac g= 
+    seq
+      [
+       notify_tac (fun _ -> chng:=true)
+       ((split_asms_tac ~info:inf (List.map ftag alst)) 
+      || split_concls_tac ~info:inf (List.map ftag clst));
+       (fun g1 -> 
+	 ((basic_splitter ~info:inf 
+	   (aformulas inf) (cformulas inf)
+	 || skip))
+	   g1)
+     ] g
+  in 
+  (restrict (fun _ -> !chng) tac
+     ++ data_tac set_info ())
+
+let splitter_tac ?info ?f goal =
+  let sqnt = sequent goal 
+  in 
+  let alst, clst = 
+    match f with 
+      None -> 
+	(List.map drop_formula (asms_of sqnt), 
+	 List.map drop_formula (concls_of sqnt))
+    | Some(x) ->
+	let tg = 
+	  try (Logic.label_to_tag x sqnt)
+	  with err -> 
+	    raise (add_error "splitter_tac: No such formula" err)
+	in 
+	match Lib.try_find (get_asm x) goal with
+	  None -> ([], [tg])
+	| _ -> ([tg], [])
+  in 
+  basic_splitter ?info alst clst goal
+
+let split_tac = splitter_tac 
+
+(** Alternative flattening **)
+let flatter_asm_rules info l =
+    alt [ false_rule ~a:l;
+	  Logic.Tactics.negA info l;
+	  Logic.Tactics.conjA info l;
+	  Logic.Tactics.existA info l]
+
+let flatter_concl_rules info l =
+  alt [Logic.Tactics.trueR None l;
+       Logic.Tactics.negC info l; 
+       Logic.Tactics.disjC info l;
+       Logic.Tactics.implC info l;
+       Logic.Tactics.allC info l]
+
+let rec flatter_asms_tac ?info lst =
+  let inf = mk_info()
+  in 
+  seq
+    [
+     map_some (flatter_asm_rules (Some inf)) lst;
+     (fun g -> 
+       ((flatter_asms_tac ~info:inf 
+	   (List.map ftag (aformulas inf)) 
+       || skip))
+	 g);
+     data_tac 
+       (fun _ -> 
+	 Logic.add_info info 
+	   (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)) ()
+   ] 
+    
+let rec flatter_concls_tac ?info lst =
+  let inf = mk_info()
+  in 
+  seq
+    [
+     map_some (flatter_concl_rules (Some inf)) lst;
+     (fun g -> 
+       ((flatter_concls_tac ~info:inf 
+	   (List.map ftag (cformulas inf)) 
+       || skip))
+	 g);
+     data_tac 
+       (fun _ -> 
+	 Logic.add_info info 
+	   (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)) ()
+   ]
+      
+
+let rec basic_flatter ?info alst clst =
+  let chng = ref false
+  and inf = mk_info()
+  in
+  Logic.add_info (Some inf) [] alst [] [];
+  let set_info () = 
+    Logic.add_info info 
+      (subgoals inf) (aformulas inf) (cformulas inf) (constants inf)
+  in 
+  let tac g= 
+    seq
+      [
+       notify_tac
+	 (fun _ -> chng:=true)
+	 (flatter_concls_tac ~info:inf (List.map ftag clst)
+	|| flatter_asms_tac ~info:inf (List.map ftag alst));
+       (fun g1 -> 
+	 ((basic_flatter ~info:inf 
+	   (aformulas inf) (cformulas inf)
+	 || skip))
+	   g1)
+     ] g
+  in 
+  (restrict (fun _ -> !chng) tac
+     ++ data_tac set_info ())
+
+
+let flatter_tac ?info ?f goal =
+  let sqnt = sequent goal 
+  in 
+  let alst, clst = 
+    match f with 
+      None -> 
+	(List.map drop_formula (asms_of sqnt), 
+	 List.map drop_formula (concls_of sqnt))
+    | Some(x) ->
+	let tg = 
+	  try (Logic.label_to_tag x sqnt)
+	  with err -> 
+	    raise (add_error "flatter_tac: No such formula" err)
+	in 
+	match Lib.try_find (get_asm x) goal with
+	  None -> ([], [tg])
+	| _ -> ([tg], [])
+  in 
+  basic_flatter ?info alst clst goal
+
+(*
+let flatten_tac ?info ?f g = flatten_tac0 g
+*)
+let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
 
 let inst_asm_rule i l sqnt=
   let rec rule ys sqs = 
