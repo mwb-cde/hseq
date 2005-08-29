@@ -4,11 +4,11 @@
  Copyright M Wahab 2005
 ----*)
 
-(*
-
+(**
    UserLib: User level commands.
 
-   Principally to define theories and to carry out interactive proofs.
+   Commands to define theories and to carry out interactive proofs as
+   well as user-level to useful functions.
 
    UserLib is needed to allow simplification rules to be added by commands
    such as prove_thm. 
@@ -17,6 +17,7 @@
    different module.
 *)
 
+val compile: string list -> string -> int
 (* 
    [compiler dirs name]: 
    Compile file [name] with include directories [dirs].
@@ -26,7 +27,6 @@
    [Sys.system "ocamlc -c -I base_include -I ../include test.ml"]
    where [base_include = Settings.include_dir()
 *)
-val compile: string list -> string -> int
    
 (* from Commands *)
 
@@ -258,8 +258,12 @@ val prove_thm :
 (* store a given theorem under the given name *)
 val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 
-(** Get the current scope *)
 val scope: unit -> Scope.t
+(** The current scope *)
+
+val goal_scope: unit -> Scope.t
+(** The scope of the current subgoal. *)
 
 (* apply a tactic to the current sub-goal in a proof attempt *)
 val by : Tactics.tactic -> Goals.Proof.t
+

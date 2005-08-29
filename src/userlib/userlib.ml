@@ -107,6 +107,8 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
 
 let scope = Commands.scope
 
+let goal_scope = Goals.goal_scope
+
 let by x = (catch_errors Goals.by_com) x
 
 let compile dirs name = 
