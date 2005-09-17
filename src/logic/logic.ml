@@ -1684,12 +1684,12 @@ module Tactics =
       sqnt_apply (existC0 inf trm i) g
 
 (**
-   trueR i sq
+   trueC i sq
    t:asm |- true, concl
    --> true
    info : [] []
  *)
-    let trueR0 inf i tyenv sq = 
+    let trueC0 inf i tyenv sq = 
       let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
       in 
       let (_, t)=concl
@@ -1701,8 +1701,8 @@ module Tactics =
       else 
 	raise (logic_error "Not trivial" [t])
 
-    let trueR inf i g = 
-      sqnt_apply (trueR0 inf i) g
+    let trueC inf i g = 
+      sqnt_apply (trueC0 inf i) g
 
 (**
    betaA i sq: beta reduction of assumption i

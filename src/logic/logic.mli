@@ -1117,9 +1117,9 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = []]
  *)
 
-      val trueR: info option -> label -> tactic
+      val trueC: info option -> label -> tactic
 (** 
-   [trueR i sq]: Truth solves the goal.
+   [trueC i sq]: Truth solves the goal.
 
    {L
    asms |- true, concls
