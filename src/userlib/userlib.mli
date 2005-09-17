@@ -212,20 +212,23 @@ val remove_type_pp :
 *)
 val axiom : ?simp:bool -> string -> Basic.term -> Logic.thm
 
+val get_theorem : string -> Logic.thm
 (**
-   [axiom/theorem/defn id] 
-   get the axiom/theorem/definition named id
-   id can be a long identifier (of the form th.name) 
+   [get_theorem id]: get the theorem or axion named [id].
+   [id] can be a long identifier (of the form th.name) 
 *)
-val theorem : string -> Logic.thm
-val defn : string -> Logic.thm
 
+val defn : string -> Logic.thm
 (**
-   [lemma id] 
-   get the axiom or theorem or definition named id
-   id can be a long identifier (of the form th.name) 
+   [defn id]: get the definition of [id].
+   [id] can be a long identifier (of the form th.name) 
 *)
-val lemma : string -> Logic.thm
+
+val thm : string -> Logic.thm
+(**
+   [thm id]: get the axiom or theorem or definition named [id].
+   [id] can be a long identifier (of the form th.name) 
+*)
 
 (* declare parents of the current theory *)
 val parents : string list -> unit
@@ -247,13 +250,36 @@ val remove_file: string -> unit
    under the given name *)
 val qed : string -> Logic.thm
 
+val prove_thm : 
+    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
 (* prove a theorem name using the list of tactics and 
    store it under the given name 
 
    [?simp]: whether to use the theorem as a simplifier rule.
 *)
-val prove_thm : 
+val theorem: 
     ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+(**
+   [theorem n trm tacs]: Prove theorem [trm] using the list of
+   tactics [tacs] and add it to the current theory under name [n].
+
+   The list of tactics is treated as an unstructured proof, using
+   {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to prove
+   a theorem using a structured proof.
+
+   [?simp]: whether to use the theorem as a simplifier rule (default: false).
+
+   Returns the new theorem.
+
+   A synonym for {!Commands.prove_thm}.
+*)
+
+val lemma:
+    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+(**
+   A synonym for {!Commands.theorem}.
+*)
+
 
 (* store a given theorem under the given name *)
 val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
@@ -267,3 +293,9 @@ val goal_scope: unit -> Scope.t
 (* apply a tactic to the current sub-goal in a proof attempt *)
 val by : Tactics.tactic -> Goals.Proof.t
 
+
+val init: unit -> unit
+(** initialise the system. *)
+
+val reset: unit -> unit
+(** reset, initialise the system. *)

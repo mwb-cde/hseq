@@ -67,13 +67,20 @@ let axiom ?(simp=false) n t =
   else thm
 
 (*let axiom = Commands.axiom*)
-let theorem = Commands.theorem
 let defn = Commands.defn
-let lemma = Commands.lemma
 let parents = Commands.parents
 let add_file = Commands.add_file
 let remove_file = Commands.remove_file
 let qed = Commands.qed
+let thm = Commands.thm
+let get_theorem = Commands.get_theorem
+
+let save_thm ?(simp=false) n thm =
+  let ret = Commands.save_thm ~simp:simp n thm
+  in 
+  if simp 
+  then (Simplib.add_simp ret; ret)
+  else ret
 
 let prove_thm ?(simp=false) n t tac =
   let thm = Commands.prove_thm ~simp:simp n t tac
@@ -82,12 +89,8 @@ let prove_thm ?(simp=false) n t tac =
   then (Simplib.add_simp thm; thm)
   else thm
 
-let save_thm ?(simp=false) n thm =
-  let ret = Commands.save_thm ~simp:simp n thm
-  in 
-  if simp 
-  then (Simplib.add_simp ret; ret)
-  else ret
+let theorem = prove_thm
+let lemma = theorem
 
 let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef = 
   let defn = 
@@ -121,3 +124,6 @@ let compile dirs name =
   in 
   Sys.command (com_string ^" "^ inc_string ^" "^name)
 					      
+
+let init = Global.init
+let reset = Global.reset 
