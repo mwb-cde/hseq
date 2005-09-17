@@ -500,3 +500,24 @@ module StringSet =
       type t = string
       let compare = string_compare
     end)
+
+
+(**
+   Lazy evaluation
+**)
+
+type ('a)deferred_t = 
+    Val of 'a | Fn of (unit -> 'a)
+
+type ('a)deferred = ('a)deferred_t ref
+
+let freeze fn = ref (Fn fn)
+
+let thaw var =
+  match !var with
+    Fn fn -> 
+      let x = fn ()
+      in 
+      var:= Val(x); x
+  | Val(x) -> x
+

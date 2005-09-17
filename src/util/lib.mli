@@ -249,3 +249,20 @@ val first: ('a -> bool) -> 'a list -> 'a
 (** {5 Sets of strings} *)
 
 module StringSet : Set.S with type elt=string
+
+(** {5 Lazy Evaluation} *)
+
+type ('a)deferred
+(** 
+   The type of lazy evaluation. A deferred function is evaluated once
+   and the result stored and used for subsequent evaluation.
+*)
+
+val freeze: (unit -> 'a) -> ('a)deferred
+(** [freeze fn]: Defer the evaluation of [fn]. *)
+
+val thaw: ('a) deferred -> 'a
+(** 
+   Get the value of the deferred function, evaluating the function if
+   necessary.
+*)
