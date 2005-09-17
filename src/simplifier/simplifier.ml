@@ -735,7 +735,7 @@ let rec basic_simp_tac cntrl ret ft goal=
    seperated out from cond_prover_tac to help with debugging.
 *)
    
-let cond_prover_trueR = Logic.Tactics.trueR
+let cond_prover_trueC = Logic.Tactics.trueC
 
 let cond_prover_worker_tac ctrl1 ret tg0 g2= 
     let ctrl1 = 
@@ -747,7 +747,7 @@ let cond_prover_worker_tac ctrl1 ret tg0 g2=
 let cond_prover_tac ctrl tg goal=
   Tactics.alt
     [
-     Logic.Tactics.trueR None (Logic.FTag tg);
+     Logic.Tactics.trueC None (Logic.FTag tg);
      (fun g -> 
        let init_simp_tac ctrl0 tg0 g0=
 	 let ret=ref None
@@ -761,9 +761,9 @@ let cond_prover_tac ctrl tg goal=
        Tactics.seq
 	 [
 	  init_simp_tac ctrl tg;
-	  cond_prover_trueR None (Logic.FTag tg)
+	  cond_prover_trueC None (Logic.FTag tg)
 (*
-	  Logic.Tactics.trueR None (Logic.FTag tg)
+	  Logic.Tactics.trueC None (Logic.FTag tg)
 *)
 	] g)
    ] goal
@@ -777,14 +777,14 @@ let cond_prover_tac ctrl tg goal=
  *)
 
 let simp_asm_elims = 
-  [(Formula.is_false, (fun x -> Boollib.falseR ~a:x));
+  [(Formula.is_false, (fun x -> Boollib.falseA ?info:None ~a:x));
    (Formula.is_conj, Logic.Tactics.conjA None); 
    (Formula.is_neg, Logic.Tactics.negA None); 
    (Formula.is_exists, Logic.Tactics.existA None)]
 
 let simp_conc_elims =
   [
-   (Formula.is_true, Logic.Tactics.trueR None);
+   (Formula.is_true, Logic.Tactics.trueC None);
    (Formula.is_disj, Logic.Tactics.disjC None);
    (Formula.is_all, Logic.Tactics.allC None)]
 

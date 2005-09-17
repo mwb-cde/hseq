@@ -16,16 +16,16 @@ let log_tac x g = log x; Tactics.skip g
 open Simputils
 
 open Boollib
-open Boollib.Props
+open Boollib.Thms
 open Boollib.Convs
 open Boollib.Rules
 
 open Tactics
 
 (**
-   [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
+   [cond_rule_true_thm] : |- !x y: (x=>y) = (x => (y=true))
 *)
-let make_cond_rule_true_ax()=
+let make_cond_rule_true_thm()=
   let info = Tactics.mk_info () 
   in 
   Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
@@ -34,27 +34,31 @@ let make_cond_rule_true_ax()=
      (fun g-> 
        let y_term, x_term = 
 	 Lib.get_two (Tactics.constants info) 
-	   (Failure "make_cond_rule_true_ax")
+	   (Failure "make_cond_rule_true_thm")
        in 
-       (cut (get_rule_true_ax()) ++ inst_tac [ y_term ]
+       (cut (rule_true_thm()) ++ inst_tac [ y_term ]
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-let cond_rule_true_ax = ref None
-let get_cond_rule_true_ax ()= 
-  match !cond_rule_true_ax with
+(*
+let cond_rule_true_thm = ref None
+let get_cond_rule_true_thm ()= 
+  match !cond_rule_true_thm with
     None -> 
-      let nthm =make_cond_rule_true_ax()
+      let nthm =make_cond_rule_true_thm()
       in 
-      cond_rule_true_ax:=Some(nthm);
+      cond_rule_true_thm:=Some(nthm);
       nthm
   | Some(t) -> t
+*)
+let cond_rule_true_thm () = 
+  Lazy.force (lazy (make_cond_rule_true_thm()))
 
 
 (**
-   [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
+   [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
  *)
-let make_cond_rule_false_ax()=
+let make_cond_rule_false_thm()=
   let info = Tactics.mk_info()
   in 
   Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
@@ -63,21 +67,25 @@ let make_cond_rule_false_ax()=
      (fun g -> 
        let y_term, x_term = 
 	 Lib.get_two (Tactics.constants info) 
-	   (Failure "make_cond_rule_false_ax")
+	   (Failure "make_cond_rule_false_thm")
        in 
-       (cut (get_rule_false_ax()) ++ inst_tac [y_term]
+       (cut (rule_false_thm()) ++ inst_tac [y_term]
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-let cond_rule_false_ax = ref None
-let get_cond_rule_false_ax ()= 
-  match !cond_rule_false_ax with
+(*
+let cond_rule_false_thm = ref None
+let get_cond_rule_false_thm ()= 
+  match !cond_rule_false_thm with
     None -> 
-      let nthm =make_cond_rule_false_ax()
+      let nthm =make_cond_rule_false_thm()
       in 
-      cond_rule_false_ax:=Some(nthm);
+      cond_rule_false_thm:=Some(nthm);
       nthm
   | Some(t) -> t
+*)
+let cond_rule_false_thm () =
+  Lazy.force (lazy (make_cond_rule_false_thm()))
 
 
 (** {c6} Rewriting applied inside topmost universal quantifiers *)
@@ -117,7 +125,7 @@ let simple_rewrite_conv scp rule trm=
   let proof g= 
     seq
       [
-       once_rewrite_tac [get_bool_eq_ax()] ~f:(fnum 1);
+       once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
        Logic.Tactics.conjC None (fnum 1)
 	 --
 	 [
@@ -215,7 +223,7 @@ let negate_concl info c goal=
   let add_fn x = 
     Logic.add_info info [] (Tactics.aformulas x) [] []
   in 
-  seq [ once_rewrite_tac [get_double_not_ax()] ~f:c;
+  seq [ once_rewrite_tac [double_not_thm()] ~f:c;
 	Logic.Tactics.negC (Some inf) c;
 	data_tac add_fn inf] goal
 
@@ -474,7 +482,7 @@ let is_rr_equality (qs, c, a)=
 let rec accept_all_thms (scp, thm, (qs, c, a))= 
   if(is_constant (qs, c, a))
   then thm
-  else once_rewrite_rule scp [get_rule_true_ax()] thm 
+  else once_rewrite_rule scp [rule_true_thm()] thm 
 
 and do_rr_equality (scp, thm, (qs, c, a)) =
   if(is_rr_equality (qs, c, a))
@@ -488,11 +496,11 @@ and do_fact_rule (scp, thm, (qs, c, a)) =
       (None, _) -> 
 	if(is_constant (qs, c, a))
 	then thm
-	else simple_rewrite_rule scp (get_rule_true_ax()) thm
+	else simple_rewrite_rule scp (rule_true_thm()) thm
     | (Some(true), _) -> 
 	if(is_constant (qs, c, a))
 	then thm
-	else simple_rewrite_rule scp (get_cond_rule_true_ax()) thm
+	else simple_rewrite_rule scp (cond_rule_true_thm()) thm
     | _ -> failwith "do_fact_rule"
   else failwith "do_fact_rule"
 
@@ -501,9 +509,9 @@ and do_neg_rule (scp, thm, (qs, c, a)) =
   then 
     match (is_rr_rule qs c a None) with
       (None, _) -> 
-	simple_rewrite_rule scp (get_rule_false_ax()) thm
+	simple_rewrite_rule scp (rule_false_thm()) thm
     | (Some(true), _) -> 
-	simple_rewrite_rule scp (get_cond_rule_false_ax()) thm
+	simple_rewrite_rule scp (cond_rule_false_thm()) thm
     | _ -> failwith "do_neg_rule"
   else failwith "do_neg_rule"
 
@@ -613,7 +621,7 @@ let asm_rewrite thm tg g=
 let rec accept_asm (tg, (qs, c, a)) g =
   if(is_constant (qs, c, a))
   then skip g
-  else asm_rewrite (get_rule_true_ax()) tg g
+  else asm_rewrite (rule_true_thm()) tg g
 
 and rr_equality_asm (tg, (qs, c, a)) g =
   if(is_rr_equality (qs, c, a))
@@ -627,11 +635,11 @@ and fact_rule_asm (tg, (qs, c, a)) g=
       (None, _) -> 
 	if(is_constant (qs, c, a))
 	then skip g
-	else asm_rewrite (get_rule_true_ax()) tg g
+	else asm_rewrite (rule_true_thm()) tg g
     | (Some(true), _) -> 
 	if(is_constant (qs, c, a))
 	then skip g
-	else asm_rewrite (get_cond_rule_true_ax()) tg g
+	else asm_rewrite (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
   else failwith "do_fact_asm"
 
@@ -640,9 +648,9 @@ and neg_rule_asm (tg, (qs, c, a)) g =
   then 
     match (is_rr_rule qs c a None) with
       (None, _) -> 
-	asm_rewrite (get_rule_false_ax()) tg g
+	asm_rewrite (rule_false_thm()) tg g
     | (Some(true), _) -> 
-	asm_rewrite (get_cond_rule_false_ax()) tg g
+	asm_rewrite (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
@@ -729,7 +737,7 @@ let prepare_concl data except c goal =
       Logicterm.is_true (Formula.term_of concl)
     in 
     seq [
-    (true_test --> Logic.Tactics.trueR None (ftag c));
+    (true_test --> Logic.Tactics.trueC None (ftag c));
     Logic.Tactics.copy_cncl (Some info) (ftag c); 
 	 (fun g -> 
 	   let c1 = 
@@ -789,7 +797,7 @@ let prepare_asm data except a goal =
       Logicterm.is_false (Formula.term_of asm)
     in 
     seq [
-    (false_test --> Boollib.falseR ~a:(ftag a));
+    (false_test --> Boollib.falseA ~a:(ftag a));
     Logic.Tactics.copy_asm (Some info) (ftag a); 
     (fun g ->
       let a1=

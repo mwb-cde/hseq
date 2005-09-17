@@ -290,7 +290,7 @@ val dsnd: ('a * 'b) -> 'b
 
 (* Debugging information *)
 
-val cond_prover_trueR: 
+val cond_prover_trueC: 
     Logic.info option -> Logic.label -> Tactics.tactic
 val cond_prover_worker_tac: 
     Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic

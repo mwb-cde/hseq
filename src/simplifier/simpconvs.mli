@@ -5,18 +5,16 @@
 ----*)
 
 (**
-   [cond_rule_true_ax] : |- !x y: (x=>y) = (x => (y=true))
+   [cond_rule_true_thm] : |- !x y: (x=>y) = (x => (y=true))
 *)
-val make_cond_rule_true_ax : unit -> Logic.thm
-val cond_rule_true_ax : Logic.thm option ref
-val get_cond_rule_true_ax : unit -> Logic.thm
+val make_cond_rule_true_thm : unit -> Logic.thm
+val cond_rule_true_thm : unit -> Logic.thm
 
 (**
-   [cond_rule_false_ax]: |- !x y: (x=>~y) = (x => (y=false))
+   [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
  *)
-val make_cond_rule_false_ax : unit -> Logic.thm
-val cond_rule_false_ax : Logic.thm option ref
-val get_cond_rule_false_ax : unit -> Logic.thm
+val make_cond_rule_false_thm : unit -> Logic.thm
+val cond_rule_false_thm : unit -> Logic.thm
 
 
 (**
