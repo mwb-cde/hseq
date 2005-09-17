@@ -17,6 +17,14 @@ type tactic = Logic.tactic
 let error s = Result.error s
 let add_error s err = Result.add_error (error s) err
 
+(*** Accessing elements of a list ***)
+
+let get_one ?(msg="Tactics.get_one failed") l =
+  Lib.get_one l (Failure msg)
+
+let get_two ?(msg="Tactics.get_two failed") l =
+  Lib.get_two l (Failure msg)
+
 (*** Formulas ***)
 
 let drop_tag = Logic.drop_tag
@@ -70,6 +78,8 @@ let subgoals inf= (!inf).Logic.goals
 let aformulas inf = (!inf).Logic.aforms
 let cformulas inf = (!inf).Logic.cforms
 let constants inf = (!inf).Logic.terms
+let set_info dst (sgs, afs, cfs, cnsts) = 
+  Logic.add_info dst sgs afs cfs cnsts
     
 (*** Utility functions ***)
 
@@ -280,9 +290,9 @@ let deleten ns sq =
 
 (*** Logic Rules **)
 
-let trueR ?info ?c sq =
+let trueC ?info ?c sq =
   let cf = first_concl_label c Formula.is_true sq
-  in Logic.Tactics.trueR info cf sq
+  in Logic.Tactics.trueC info cf sq
 
 let conjC ?info ?c sq =
   let cf = first_concl_label c Formula.is_conj sq
@@ -339,7 +349,7 @@ let instA0 ?info l trms goal =
   and tag1 = Logic.label_to_tag l (sequent goal)
   in 
   let instf infof trm g = 
-    let alabel = Lib.get_one (aformulas infof) (Failure "instA")
+    let alabel = get_one ~msg:"instA" (aformulas infof)
     in
     empty_info infof;
     allA ~info:infof ~a:(ftag alabel) trm g
@@ -360,7 +370,7 @@ let instC0 ?info l trms goal =
   and tag1 = Logic.label_to_tag l (sequent goal)
   in 
   let instf infof trm g = 
-    let clabel = Lib.get_one (cformulas infof) (Failure "instA")
+    let clabel = get_one ~msg:"instC" (cformulas infof)
     in
     empty_info infof;
     existC ~info:infof ~c:(ftag clabel) trm g
@@ -387,7 +397,7 @@ let cut ?info ?inst th goal =
       in 
       let g1 = Logic.Tactics.cut (Some info1) th g
       in 
-      let atag = Lib.get_one (aformulas info1) (Failure "cut")
+      let atag = get_one ~msg:"cut" (aformulas info1)
       in 
       empty_info info1;
       foreach (instA ?info:info ~a:(ftag atag) trms) g1

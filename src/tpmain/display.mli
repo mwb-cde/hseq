@@ -4,7 +4,8 @@
  Copyright M Wahab 2005
 ----*)
 
-(* functions for printing types/terms/errors etc *)
+(** Top-level pretty printers *)
+
 open Basic
 
 val print_term : Basic.term -> unit

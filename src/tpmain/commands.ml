@@ -193,7 +193,13 @@ let get_term_pp id=get_term_pp_rec id
 
 (** Axioms and Theorems ***)
 
-let theorem id =
+let defn id =
+  let t, n = Global.read_identifier id
+  in 
+  let thys=theories()
+  in Thydb.get_defn t n thys
+
+let get_theorem id =
   let t, n = Global.read_identifier id
   in 
   let thys=theories()
@@ -202,13 +208,7 @@ let theorem id =
     Thydb.get_axiom t n thys
   with Not_found -> Thydb.get_theorem t n thys
 
-let defn id =
-  let t, n = Global.read_identifier id
-  in 
-  let thys=theories()
-  in Thydb.get_defn t n thys
-
-let lemma id =
+let thm id =
   let t, n = Global.read_identifier id
   in 
   let thys=theories()
@@ -250,11 +250,29 @@ let prove_thm ?(simp=false) n t tacs =
       ignore(save_thm ~simp:simp n th); th)
     ()
 
+let theorem = prove_thm
+let lemma = theorem
+
 let qed n = 
   let thm = Goals.result() 
   in 
   Global.Thys.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); 
   thm
+
+let get_or_prove name trm tac = 
+  let act () =
+    match (Lib.try_find thm name) with
+      Some x -> x
+    | _ -> 
+	try (prove trm tac) 
+	with 
+	  err -> 
+	    raise 
+	      (Result.add_error 
+		 (Result.error 
+		    ("get_or_prove: Failed with theorem "^name)) err)
+  in 
+  catch_errors act ()
 
 (*** 
 * Definitions and Declarations 

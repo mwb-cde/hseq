@@ -222,15 +222,15 @@ val get_term_pp : Basic.ident -> (int * fixity * string option)
    theorem from a goal.
 *)
 
-val theorem : string -> Logic.thm
-(** Get a named axiom or theorem from the current theory. *)
-
 val defn : string -> Logic.thm
 (** Get a named definition from the current theory. *)
 
-val lemma : string -> Logic.thm
+val get_theorem : string -> Logic.thm
+(** Get a named axiom or theorem from the current theory. *)
+
+val thm : string -> Logic.thm
 (**
-   [lemma id]: Get the axiom or theorem or definition named [id],
+   [thm id]: Get the axiom or theorem or definition named [id],
    which be a long identifier (of the form th.name)
 *)
 
@@ -277,10 +277,42 @@ val prove_thm :
    Returns the new theorem.
 *)
 
+val theorem: 
+    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+(**
+   [theorem n trm tacs]: Prove theorem [trm] using the list of
+   tactics [tacs] and add it to the current theory under name [n].
+
+   The list of tactics is treated as an unstructured proof, using
+   {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to prove
+   a theorem using a structured proof.
+
+   [?simp]: whether to use the theorem as a simplifier rule (default: false).
+
+   Returns the new theorem.
+
+   A synonym for {!Commands.prove_thm}.
+*)
+
+val lemma:
+    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+(**
+   A synonym for {!Commands.theorem}.
+*)
+
 val qed : string -> Logic.thm
 (** 
    Declare a proof results in a theorem and store this theorem
    under the given name.
+*)
+
+val get_or_prove: 
+    string -> Basic.term -> Tactics.tactic -> Logic.thm
+(**
+   [get_or_prove n trm tacs ()]: Try to find the definition or theorem
+   named [n], using {!Commands.thm}. If not found, prove theorem [trm]
+   using tactic [tac]. This function allows tactic writers to ensure
+   that a necessary theorem is can be rebuilt if necessary.
 *)
 
 (** {5 Definitions and Declarations} *)

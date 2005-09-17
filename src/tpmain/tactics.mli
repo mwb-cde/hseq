@@ -19,6 +19,20 @@ val error: string -> exn
 val add_error : string -> exn -> exn
 (** [add_error s err]: Add [error s] to exception [err]. *)
 
+(** 
+   {7 Accessing elements of a list} 
+
+   Simpler versions of {!Lib.get_one} and {!Lib.get_two}. Both raise
+   exception [Failure msg] on failure, with [msg] an optional
+   argument.
+*)
+
+val get_one: ?msg:string -> 'a list -> 'a
+(** Get the first element of a list. *)
+
+val get_two: ?msg:string -> 'a list -> ('a * 'a)
+(** Get the first two elements of a list. *)
+
 (** {7 Formulas} *)
 
 val drop_tag : Logic.tagged_form -> Formula.form
@@ -125,6 +139,15 @@ val constants: Logic.info -> Basic.term list
    [constants info]: Get constants from [info].  Equivalent to
    [(!info).terms]
  *)
+
+val set_info : 
+    Logic.info option -> 
+      (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+      -> unit
+(** 
+   A version of {!Logic.add_info}, packaged for use, in tactics, with
+   {!Tactics.data_tac}.
+*)
 
 (** {7 Utility functions} *)
 
@@ -389,8 +412,8 @@ val deleten: Logic.label list -> Logic.tactic
    Tag information provided by the rules is as in {!Logic.Tactics}.
 *)
 
-val trueR : ?info:Logic.info -> ?c:Logic.label -> tactic
-(** Entry point to {!Logic.Tactics.trueR}. *)
+val trueC : ?info:Logic.info -> ?c:Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.trueC}. *)
 val conjC : ?info:Logic.info -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjC}. *)
 val conjA : ?info:Logic.info -> ?a: Logic.label -> tactic
