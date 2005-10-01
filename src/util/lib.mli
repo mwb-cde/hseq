@@ -246,6 +246,13 @@ val first: ('a -> bool) -> 'a list -> 'a
    Raise [Not_found] if no such element.
 *)
 
+val apply_first : ('a -> 'b) list -> 'a -> 'b
+(** 
+   [apply_first lst x]: Apply each function in [lst], return the
+   result of the first to succeed.  Fail if all functions in [lst]
+   fail.
+*)
+
 (** {5 Sets of strings} *)
 
 module StringSet : Set.S with type elt=string

@@ -41,7 +41,8 @@ type property = string
 
 val simp_property: property
 (**
-   Indicate that the theorem is of interest to the simplifier.
+   Indicate that the theorem should be added to the standard
+   simplification set.
 *)
 
 (** Records of identifier declarations and definitions. *)

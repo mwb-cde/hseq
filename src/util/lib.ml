@@ -486,6 +486,12 @@ let first p lst =
   in 
   find_aux lst 
 
+let rec apply_first lst x=
+  match lst with
+    [] -> raise (Failure "apply_first")
+  | f::ts -> 
+      try (f x) with _ -> apply_first ts x
+
 (***
 * Sets of strings 
 ***)
