@@ -5,6 +5,10 @@
 ----*)
 
 (**
+   User-level simplification tactics.
+*)
+
+(**
    [std_ss()]: The standard simpset
    [set_std_ss set]: Set the standard simpset to [set]
    [empty_simp()]: Clear the standard simpset.
@@ -44,9 +48,9 @@ val add_conv : Basic.term -> Logic.conv -> unit
    @param asms Whether to use the assumptions and conclusions as
    rewrite rules. Default: [true].
 
-   @params set The simpset to use. Default: [std_ss].
+   @param set The simpset to use. Default: [std_ss].
 
-   @params use Add this simpset to the set specified with [set]. This
+   @param use Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
    @param rules Additional rewrite rules to use. Default: [[]].

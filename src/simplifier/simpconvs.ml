@@ -9,11 +9,12 @@ let log x = log_message:=Some x
 
 let log_tac x g = log x; Tactics.skip g
 
-(* 
-   Function to prepare theorems and assumptions being added to a simpset.
+(**
+ Functions to prepare theorems and assumptions being added to a simpset.
 *)
 
 open Simputils
+
 
 open Boollib
 open Boollib.Thms
@@ -21,6 +22,14 @@ open Boollib.Convs
 open Boollib.Rules
 
 open Tactics
+
+(***
+* Theorems and conversions used by the simplifier.
+***)
+
+(***
+  Theorems
+***)
 
 (**
    [cond_rule_true_thm] : |- !x y: (x=>y) = (x => (y=true))
@@ -40,20 +49,8 @@ let make_cond_rule_true_thm()=
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-(*
-let cond_rule_true_thm = ref None
-let get_cond_rule_true_thm ()= 
-  match !cond_rule_true_thm with
-    None -> 
-      let nthm =make_cond_rule_true_thm()
-      in 
-      cond_rule_true_thm:=Some(nthm);
-      nthm
-  | Some(t) -> t
-*)
-let cond_rule_true_thm () = 
-  Lazy.force (lazy (make_cond_rule_true_thm()))
-
+let cond_rule_true_var = lazy (make_cond_rule_true_thm())
+let cond_rule_true_thm () = Lazy.force cond_rule_true_var
 
 (**
    [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
@@ -73,22 +70,12 @@ let make_cond_rule_false_thm()=
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-(*
-let cond_rule_false_thm = ref None
-let get_cond_rule_false_thm ()= 
-  match !cond_rule_false_thm with
-    None -> 
-      let nthm =make_cond_rule_false_thm()
-      in 
-      cond_rule_false_thm:=Some(nthm);
-      nthm
-  | Some(t) -> t
-*)
+let cond_rule_false_var = lazy (make_cond_rule_false_thm())
+
 let cond_rule_false_thm () =
-  Lazy.force (lazy (make_cond_rule_false_thm()))
+  Lazy.force cond_rule_false_var
 
-
-(** {c6} Rewriting applied inside topmost universal quantifiers *)
+(** Rewriting applied inside topmost universal quantifiers *)
 
 (**
    [simple_rewrite_conv scp rule trm]
@@ -133,41 +120,53 @@ let simple_rewrite_conv scp rule trm=
 	    [Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1-> 
 	       let atag = 
-		 Lib.get_one (Tactics.aformulas info) 
+		 Lib.get_one (aformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       and ctag = 
-		 Lib.get_one (Tactics.cformulas info) 
+		 Lib.get_one (cformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
-		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
+		 [
+		  repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
-		    let trms = List.rev (Tactics.constants info)
+		    let trms = List.rev (constants info)
 		    in 
 		    seq
-		      [instA ~a:(ftag atag) trms;
+		      [
+		       instA ~a:(ftag atag) trms;
 		       once_rewrite_tac ~f:(ftag atag) [rule];
-		       basic] g2)] g1)];
+		       basic] g2)
+		] g1)
+	   ];
 	  seq 
-	    [(data_tac (fun () -> Tactics.empty_info info) ());
+	    [
+	     data_tac (fun () -> empty_info info) ();
 	     Logic.Tactics.implC (Some info) (fnum 1);
 	     (fun g1 -> 
 	       let atag = 
-		 Lib.get_one (Tactics.aformulas info) 
+		 Lib.get_one (aformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       and ctag = 
-		 Lib.get_one (Tactics.cformulas info) 
+		 Lib.get_one (cformulas info) 
 		   (Failure "simple_rewrite_conv: 1")
 	       in 
 	       seq 
-		 [repeat (Logic.Tactics.allC (Some info) (ftag ctag));
+		 [
+		  repeat (Logic.Tactics.allC (Some info) (ftag ctag));
 		  (fun g2 -> 
-		    let trms = List.rev (Tactics.constants info)
+		    let trms = List.rev (constants info)
 		    in 
 		    seq
-		      [instA ~a:(ftag atag) trms;
+		      [
+		       instA ~a:(ftag atag) trms;
 		       once_rewrite_tac ~f:(ftag ctag) [rule];
-		       basic] g2)] g1)]]] g
+		       basic
+		     ] g2)
+		] g1)
+	   ]
+	]
+     ] g
   in 
   Commands.prove ~scp:scp new_goal proof;;
 
@@ -192,41 +191,52 @@ let simple_rewrite_rule scp rule thm=
    -->
    asm:rhs, A |- C
  *)
-let simple_asm_rewrite_tac rule asm node=
-  let sqnt=Tactics.sequent node
+let simple_asm_rewrite_tac ?info rule asm node=
+  let sqnt=sequent node
   in 
   let (_, f)=Logic.get_label_asm asm sqnt
-  and scp = Tactics.scope_of node
+  and scp = scope_of node
   in 
   let thm=simple_rewrite_conv scp rule (Formula.term_of f)
   in 
-  once_rewrite_tac [thm] ~f:asm node
-
+  once_rewrite_tac ?info:info [thm] ~f:asm node
 
 (** 
-   {c6} Functions manipulating theorems, needed to
+   [asm_rewrite_tac thm tg g]:
+
+   Rewrite assumption [tg] with rule [thm] = |- a=b
+
+   tg:a, asms |- concl
+   -->
+   tg:b, asms |- concl
+ *)
+let asm_rewrite_tac ?info thm tg g=
+  once_rewrite_tac ?info:info [thm] ~f:(ftag tg) g
+
+(** 
+   Functions manipulating theorems, needed to
    convert theorems to rewriting rules.
  *)
 
 
-(** [negate_concl info t g]:
-   Negate conclusion [t], making it assumption tagged [t'].
-
-   asms|- t:c, cncl
-   -->
-   t':~c, asms |- cncl
-   info [] [t'][]  []
+(** 
+   [negate_concl_tac info t g]: Negate conclusion [t], making it
+   assumption tagged [t'].
  *)
-let negate_concl info c goal=
-  let inf= Tactics.mk_info()
+let negate_concl_tac ?info c goal=
+  let inf= mk_info()
   in 
   let add_fn x = 
-    Logic.add_info info [] (Tactics.aformulas x) [] []
+    Logic.add_info info [] (aformulas x) [] []
   in 
   seq [ once_rewrite_tac [double_not_thm()] ~f:c;
 	Logic.Tactics.negC (Some inf) c;
 	data_tac add_fn inf] goal
 
+
+(***
+* Preparing simplifier rules.
+***)
 
 (** Tests on theorems *)
 
@@ -234,9 +244,7 @@ let negate_concl info c goal=
    test [thm] is of the form |- a and b and ... and z 
  *)
 let is_many_conj thm=
-  let thmtrm=Logic.term_of thm
-  in 
-  Logicterm.is_conj thmtrm
+  Logicterm.is_conj (Logic.term_of thm)
 
 (** [is_iffterm (vars, cnd, main)]: 
    true if [main] is of the for [a iff b] 
@@ -255,191 +263,6 @@ let is_negation (vars, cnd, main)=
  *)
 let is_equality (vars, cnd, main)=
   Logicterm.is_equality main
-
-(*
-   Two types of rule: theorems and assumptions 
-   for both: a formula f is transformed to T(f) as follows:
-
-   T(x and y) = T(x), T(y)
-   T(x iff y) = T(x=y), if this results in a rewrite rule
-   T(not x) = x=false
-   T(x) = x=true
-
-   conditional formulas: 
-   T(c=>x) transformed as above 
-   except 
-   T(c=>(x and y)) = c=>(x and y)
-
-   rewrite rules:
-   T(x=y) = x=y, if all variables in y also occur in x 
-   = (x=y)=true
-
-   T(c=>x=y) 
-   = c=>(x=y), if all variables in y and c occur in x
-   = c=>((x=y)=true), if variables in y don't occur in x 
-   and all variables in c occur in x
-   = (c=>x=y)=true, otherwise
- *)
-
-
-(** {6c Utility functions} *)
-
-(** [find_variables is_var vars trm]
-   find all subterms [t] of [trm] s.t. [(is_var t)] is true.
-   add [t] to [vars]
-   return [vars]
- *)
-let find_variables is_var vars trm=
-  let rec find_aux env t=
-    match t with
-      Basic.Qnt(_, b) ->
-	find_aux env b
-    | Basic.Bound(q) ->
-	if(is_var q)
-	then 
-	  (try ignore(Term.find t env); env
-	  with 
-	    Not_found ->
-	      (Term.bind t t env))
-	else env
-    | Basic.Typed(tr, _) -> find_aux env tr
-    | Basic.App(f, a) -> 
-	let nv=find_aux env f
-	in find_aux nv a
-    | _ -> env
-  in find_aux vars trm
-
-(** [check_variables is_var vars trm]
-   check that all subterms [t] of [trm] s.t. [is_var t] 
-   is in [vars]
- *)   
-let check_variables is_var vars trm=
-  let rec check_aux t=
-    match t with
-      Basic.Qnt(_, b) ->
-	check_aux b
-    | Basic.Bound(q) ->
-	if(is_var q)
-	then 
-	  ignore(Term.find t vars)
-	else ()
-    | Basic.Typed(tr, _) -> check_aux tr
-    | Basic.App(f, a) -> check_aux f; check_aux a
-    | _ -> ()
-  in check_aux trm
-
-(**  [is_rr_rule qs c l r]: 
-
-   Check that [c=>(l=r)] is a rewrite rule.
-
-   All variables (in [qs]) occuring in [c] or [r] must also occur in [l]
-   return: [(cnd, rhs)]
-   where 
-   [cnd]= [Some(true)] iff all variables in [c] occur in [l]
-   = [None] if no condition
-   [rhs]= [Some(true)] iff all variables in [r] occur in [l]
-   = [None] if no [rhs]
- *)
-let is_rr_rule qs c l r=
-  let is_var b=List.mem b qs
-  and rret=ref (Some true)
-  and cret=ref (Some true)
-  in
-  let vars=find_variables is_var (Term.empty_subst()) l
-  in 
-  (* check rhs *)
-  (try
-    match r with 
-      None -> rret:=None 
-    | Some (rhs) -> check_variables is_var vars rhs;
-  with Not_found -> rret:=(Some false));
-  (* check cond (if any) *)
-  (try
-    (match c with 
-      None -> cret:=None 
-    | Some(cnd) -> check_variables is_var vars cnd)
-  with Not_found -> cret:=(Some false));
-  (!cret, !rret)
-
-(* [dest_rr_rule trm]: 
-   Split rule [trm] into binders, condition, lhs, rhs 
-   rules are of the form:
-   [c=>(l=r)] or [l=r]
- *)
-
-
-(** [strip_qnt_cond trm]
-   split rule [trm] into variable binders, condition, equality
-   rules are of the form:
-   a=>c
-   c
- *)
-let strip_qnt_cond t =
-  let (qs, t1)=Term.strip_qnt (Basic.All) t  (* get leading quantifiers *)
-  in 
-  if (Logicterm.is_implies t1)  (* deal with conditional equalities *)
-  then 
-    (let (_, a, c)=Term.dest_binop t1
-    in 
-    (qs, Some a, c))
-  else
-    (qs, None, t1)
-
-
-(* conversions for manipulating rules *)
-
-(** {6c Functions to make simp rules from theorems} *)
-
-(**
-   [thm_to_rule scp thm]: convert theorem [thm] to a list of theorems suitable 
-   for rewriting.
-
-   Conversion:
-   |- l=r   ->  no change, if all variables in [r] also occur in [l])
-   -> |- (l=r)=true, otherwise
-
-   |- c => l = r -> no change, if all variables in [r] and [c] 
-   also occur in [l]
-   -> |- (c=> l = r)=true, otherwise
-
-   |- a -> |- a=true
-   |- c=> a -> |- c => a=true
-   |- not a ->  |- a=false
-   |- c=> not a -> |- c => a = false
-   |- a and b -> |- a; |- b
-   |- false -> not true
- *)
-
-
-(** 
-   [apply_first lst x]
-
-   Apply each function in [lst], return the result of the first to 
-   succeed.
-
-   Fail if all functions in [lst] fail.
- *)
-let rec apply_first lst x=
-  match lst with
-    [] -> raise (Failure "apply_first")
-  | f::ts -> 
-      try (f x) with _ -> apply_first ts x
-
-let rec apply_get_list f ls result = 
-  match ls with 
-    [] -> result
-  | (x::xs) -> 
-      try 
-	apply_get_list f xs (apply_get_list f (f x) result)
-      with _ -> apply_get_list f xs (x::result)
-
-let rec app_first fs x =
-  match fs with
-    [] -> failwith "app_first"
-  | f::ffs -> try f x with _ -> app_first ffs x
-
-
-(* The tests on terms *)
 
 let is_constant (qs, c, t)=
   let r = 
@@ -466,16 +289,99 @@ let is_neg_exists (qs, c, t) =
     Logicterm.is_exists not_body
   else false
 
+(**  
+   [is_rr_rule qs c l r]: Check that [c=>(l=r)] is a rewrite rule.
+
+   All variables (in [qs]) occuring in [c] or [r] must also occur in [l]
+
+   Returns [(cnd, rhs)]
+   where 
+   [cnd = Some(true)] iff all variables in [c] occur in [l].
+   [cnd = None] if no condition.
+   [rhs = Some(true)] iff all variables in [r] occur in [l].
+   [rhs = None] if no [rhs].
+ *)
+let is_rr_rule (qs, c, l, r) =
+  let is_var b=List.mem b qs
+  in 
+  let vars = Simputils.find_variables is_var (Term.empty_subst()) l
+  in 
+  let rret =
+    match r with 
+      None -> None 
+    | Some (rhs) -> 
+	try (check_variables is_var vars rhs; Some true)
+	with Not_found -> Some false
+  in 
+  let cret =
+    match c with 
+      None -> None 
+    | Some(cnd) -> 
+	try (check_variables is_var vars cnd; Some true)
+	with Not_found -> Some false
+  in 
+  (cret, rret)
+
+
 let is_rr_equality (qs, c, a)=
   if(Logicterm.is_equality a)
   then 
     let (_, lhs, rhs)= Term.dest_binop a
     in 
-    match (is_rr_rule qs c lhs (Some rhs)) with
+    match is_rr_rule (qs, c, lhs, (Some rhs)) with
       (Some(true), Some(true)) -> true
     | (None, Some(true)) -> true
     | _ -> false
   else false
+
+(**
+   Two types of rule: theorems and assumptions 
+   for both: a formula f is transformed to T(f) as follows:
+
+   T(x and y) = T(x), T(y)
+   T(x iff y) = T(x=y), if this results in a rewrite rule
+   T(not x) = x=false
+   T(x) = x=true
+
+   conditional formulas: 
+   T(c=>x) transformed as above 
+   except 
+   T(c=>(x and y)) = c=>(x and y)
+
+   rewrite rules:
+   T(x=y) = x=y, if all variables in y also occur in x 
+   = (x=y)=true
+
+   T(c=>x=y) 
+   = c=>(x=y), if all variables in y and c occur in x
+   = c=>((x=y)=true), if variables in y don't occur in x 
+   and all variables in c occur in x
+   = (c=>x=y)=true, otherwise
+ *)
+
+
+(*** Functions to make simp rules from theorems **)
+
+(**
+   [thm_to_rule scp thm]: convert theorem [thm] to a list of theorems suitable 
+   for rewriting.
+
+   Conversion:
+   |- l=r   ->  no change, if all variables in [r] also occur in [l])
+   -> |- (l=r)=true, otherwise
+
+   |- c => l = r -> no change, if all variables in [r] and [c] 
+   also occur in [l]
+   -> |- (c=> l = r)=true, otherwise
+
+   |- a -> |- a=true
+   |- c=> a -> |- c => a=true
+   |- not a ->  |- a=false
+   |- c=> not a -> |- c => a = false
+   |- a and b -> |- a; |- b
+   |- false -> not true
+ *)
+
 
 (* The conversion functions *)
 
@@ -492,7 +398,7 @@ and do_rr_equality (scp, thm, (qs, c, a)) =
 and do_fact_rule (scp, thm, (qs, c, a)) = 
   if(not (Logicterm.is_equality a))
   then 
-    match (is_rr_rule qs c a None) with
+    match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	if(is_constant (qs, c, a))
 	then thm
@@ -507,7 +413,7 @@ and do_fact_rule (scp, thm, (qs, c, a)) =
 and do_neg_rule (scp, thm, (qs, c, a)) = 
   if(not (Logicterm.is_equality a))
   then 
-    match (is_rr_rule qs c a None) with
+    match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	simple_rewrite_rule scp (rule_false_thm()) thm
     | (Some(true), _) -> 
@@ -545,7 +451,7 @@ and do_neg_exists_rule (scp, thm, (qs, c, a)) =
 and single_thm_to_rules scp thm = 
   let (qs, c, a) = strip_qnt_cond (Logic.term_of thm)
   in 
-  apply_first 
+  Lib.apply_first 
     [
      do_neg_all_rule;
      do_neg_exists_rule;
@@ -563,28 +469,16 @@ and do_conj_rule scp thm=
 
 
 and multi_thm_to_rules scp thm = 
-  let fs x= app_first [do_conj_rule scp] x
+  let fs x= Lib.apply_first [do_conj_rule scp] x
   in 
-  List.rev(apply_get_list fs [thm] [])
+  List.rev(apply_merge_list fs [thm])
 
 let thm_to_rules scp thm = 
   let thmlst=multi_thm_to_rules scp thm
   in 
   List.map (single_thm_to_rules scp) thmlst
 
-(** {6c Converting assumptions to rewrite rules} *)
-
-(** 
-   [asm_rewrite thm tg g]:
-
-   Rewrite assumption [tg] with rule [thm] = |- a=b
-
-   tg:a, asms |- concl
-   -->
-   tg:b, asms |- concl
- *)
-let asm_rewrite thm tg g=
-  once_rewrite_tac [thm] ~f:(ftag tg) g
+(*** Converting assumptions to rewrite rules **)
 
 
 (** 
@@ -621,7 +515,7 @@ let asm_rewrite thm tg g=
 let rec accept_asm (tg, (qs, c, a)) g =
   if(is_constant (qs, c, a))
   then skip g
-  else asm_rewrite (rule_true_thm()) tg g
+  else asm_rewrite_tac (rule_true_thm()) tg g
 
 and rr_equality_asm (tg, (qs, c, a)) g =
   if(is_rr_equality (qs, c, a))
@@ -631,37 +525,37 @@ and rr_equality_asm (tg, (qs, c, a)) g =
 and fact_rule_asm (tg, (qs, c, a)) g= 
   if(not (Logicterm.is_equality a))
   then 
-    match (is_rr_rule qs c a None) with
+    match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	if(is_constant (qs, c, a))
 	then skip g
-	else asm_rewrite (rule_true_thm()) tg g
+	else asm_rewrite_tac (rule_true_thm()) tg g
     | (Some(true), _) -> 
 	if(is_constant (qs, c, a))
 	then skip g
-	else asm_rewrite (cond_rule_true_thm()) tg g
+	else asm_rewrite_tac (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
   else failwith "do_fact_asm"
 
 and neg_rule_asm (tg, (qs, c, a)) g = 
   if(not (Logicterm.is_equality a))
   then 
-    match (is_rr_rule qs c a None) with
+    match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
-	asm_rewrite (rule_false_thm()) tg g
+	asm_rewrite_tac (rule_false_thm()) tg g
     | (Some(true), _) -> 
-	asm_rewrite (cond_rule_false_thm()) tg g
+	asm_rewrite_tac (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
 and neg_all_rule_asm (tg, (qs, c, a)) g= 
-  let scp = Tactics.scope_of g
+  let scp = scope_of g
   in 
   match c with 
     None -> 
       if (is_neg_all (qs, c, a))
       then 
-	(asm_rewrite (neg_all_conv scp a) tg 
+	(asm_rewrite_tac (neg_all_conv scp a) tg 
 	   ++ single_asm_to_rule tg) g
       else failwith "neg_all_rule_asm: Not a negated universal quantifier"
   | Some _ ->  
@@ -669,13 +563,13 @@ and neg_all_rule_asm (tg, (qs, c, a)) g=
 	"neg_all_rule_asm: Not an unconditional negated universal quantifier"
 
 and neg_exists_rule_asm (tg, (qs, c, a)) g= 
-  let scp = Tactics.scope_of g
+  let scp = scope_of g
   in 
   match c with 
     None -> 
       if (is_neg_exists (qs, c, a))
       then 
-	(asm_rewrite (neg_exists_conv scp a) tg 
+	(asm_rewrite_tac (neg_exists_conv scp a) tg 
 	   ++ single_asm_to_rule tg) g
       else failwith "neg_exists_rule_asm: Not a negated existential quantifier"
   | Some _ ->  
@@ -687,11 +581,11 @@ and single_asm_to_rule tg goal =
     Formula.term_of
       (Logic.drop_tag 
 	 (Logic.Sequent.get_tagged_asm tg 
-	    (Tactics.sequent goal)))
+	    (sequent goal)))
   in 
   let (qs, c, a) = strip_qnt_cond trm
   in 
-  apply_first 
+  Lib.apply_first 
     [
      neg_all_rule_asm (tg, (qs, c, a));
      neg_exists_rule_asm (tg, (qs, c, a));
@@ -705,84 +599,36 @@ let asm_to_rules tg ret goal =
   ret := [tg];
   single_asm_to_rule tg goal
 
-(* 
-   [prepare_concls data cs except g]
 
-   If conclusion is [true] then solve goal with [trueR].
+(***
+* Rules from assumptions and conclusions.
+***)
 
-   Otherwise
-   Copy and lift the conclusions labelled with a tag in [cs] into the
-   assumptions (by negation) then prepare the assumption for use as a
-   simp rule.  Ignore conclusions for which [except] is true. Set
-   [!data] to the list of pairs [(c, a)] where [c] is the tag of the
-   original conclusion and [a] is the tag of the new assumption (which
-   is to be used as a simp rule).
- *)
-let prepare_concl data except c goal =
-  if(except c)
-  then skip goal
-  else 
-    let info=Tactics.mk_info()
-    and new_asm_tags = ref []
-    in 
-    let data_fn () = 
-      let l = List.map (fun t -> (c, t)) (!new_asm_tags)
-      in 
-      new_asm_tags:=[];
-      data:=List.append l (!data)
-    in 
-    let true_test g = 
-      let (_, concl) = Logic.Sequent.get_tagged_cncl c (Tactics.sequent g)
-      in 
-      Logicterm.is_true (Formula.term_of concl)
-    in 
-    seq [
-    (true_test --> Logic.Tactics.trueC None (ftag c));
-    Logic.Tactics.copy_cncl (Some info) (ftag c); 
-	 (fun g -> 
-	   let c1 = 
-	     Lib.get_one (Tactics.cformulas info) 
-	       (Failure "Simplib.prepare_concl")
-	   in 
-	   Tactics.empty_info info;
-	   negate_concl (Some info) (ftag c1) g); 
-	 (fun g ->
-	   let a=
-	     Lib.get_one (Tactics.aformulas info) 
-	       (Failure "Simplib.prepare_concl")
-	   in 
-	   seq 
-	     [asm_to_rules a new_asm_tags;
-	      data_tac data_fn ()] g)
-       ] goal
+(**
+   [prepare_asm data except a goal]: Prepare assumption labelled [a]
+   for use as a simp rule. 
 
+   Does nothing if [except a] is true. Solves the goal if [a] is
+   [false]. Otherwise, returns the list of new assumptions formed from
+   [a] which are to be used as simp rules.
 
-let prepare_concls data cs except goal=
-  let d=ref []
-  in 
-  seq
-    [Tactics.map_every (prepare_concl d except) cs;
-     data_tac (fun () -> data:=(!d)) ()] goal
+   {ul
+   {- Copy the assumption to get new assumption [a1].}
 
+   {- Call [asm_to_rules] on [a1].}
 
-(* 
-   [prepare_asms data cs except g]
+   {- For each new assumption [r], store the result as the pair
+   [(a, r)].}
+   {- Return the list of pairs in [data]. }
+   }
 
-   If assumption is [false] then solve subgoal with [Boollib.trivial].
-
-   Otherwise
-   Copy the assumptions labelled with a tag in [cs] then prepare the
-   copy for use as a rewrite rule.  Ignore assumptions for which
-   [except] is true. Set [!data] to the list of pairs [(a, na)] where
-   [a] is the tag of the original assumption and [na] is the tag of the
-   new assumption generated from [a].
- *)
-
+   Note that [(a, a1)] is stored in [data].
+*)
 let prepare_asm data except a goal =
-  if(except a)
+  if (except a)
   then skip goal
   else 
-    let info=Tactics.mk_info()
+    let info=mk_info()
     and new_asm_tags = ref []
     in 
     let data_fn () = 
@@ -792,29 +638,109 @@ let prepare_asm data except a goal =
       data:=List.append l (!data)
     in 
     let false_test g = 
-      let (_, asm) = Logic.Sequent.get_tagged_asm a (Tactics.sequent g)
+      let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
       in 
       Logicterm.is_false (Formula.term_of asm)
     in 
-    seq [
-    (false_test --> Boollib.falseA ~a:(ftag a));
-    Logic.Tactics.copy_asm (Some info) (ftag a); 
-    (fun g ->
-      let a1=
-	Lib.get_one (Tactics.aformulas info) 
-	  (Failure "Simplib.prepare_asm")
-      in 
-      seq 
-	[asm_to_rules a1 new_asm_tags;
-	 data_tac data_fn ()] g)
-  ] goal
+    seq 
+      [
+       (false_test --> Boollib.falseA ~a:(ftag a));
+       copyA ~info:info (ftag a);
+       (fun g ->
+	 let a1=
+	   get_one ~msg:"Simplib.prepare_asm" (aformulas info)
+	 in 
+	 seq 
+	   [
+	    asm_to_rules a1 new_asm_tags;
+	    data_tac data_fn ()
+	  ] g)
+     ] goal
 
+(**
+   [prepare_asms data asm except g]: Apply [prepare_asm] to each
+   assumption in the list [asms]. Return the cumulative results.
+ *)
 let prepare_asms data ams except goal=
   let d=ref []
   in 
   seq
     [
-     Tactics.map_every (prepare_asm d except) ams;
+     map_every (prepare_asm d except) ams;
      data_tac (fun () -> data:=!d) ()
    ] goal
+
+
+(**
+   [prepare_concl data except c goal]: Prepare conclusion labelled [a]
+   for use as a simp rule. 
+
+   Does nothing if [except c] is true. Solves the goal if [c] is
+   [true]. Otherwise, returns the list of new assumptions formed from
+   [c] which are to be used as simp rules.
+
+   {ul 
+
+   {- Copy the conclusion and lift it into the assumptions (by
+   negation) to get new assumption [a].}
+
+   {- Call [asm_to_rules] on [a].}
+
+   {- For each new assumption [r], store the result as the pair
+   [(c, r)].}
+   {- Return the list of pairs in [data]. }
+   }
+
+   Note that [(c, a)] is stored in [data].
+*)
+let prepare_concl data except c goal =
+  if(except c)
+  then skip goal
+  else 
+    let info=mk_info()
+    and new_asm_tags = ref []
+    in 
+    let data_fn () = 
+      let l = List.map (fun t -> (c, t)) (!new_asm_tags)
+      in 
+      new_asm_tags:=[];
+      data:=List.append l (!data)
+    in 
+    let true_test g = 
+      let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
+      in 
+      Logicterm.is_true (Formula.term_of concl)
+    in 
+    seq 
+      [
+       (true_test --> Logic.Tactics.trueC None (ftag c));
+       copyC ~info:info (ftag c);
+       (fun g -> 
+	 let c1 = 
+	   get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
+	 in 
+	 empty_info info;
+	 negate_concl_tac ~info:info (ftag c1) g); 
+       (fun g ->
+	 let a=
+	   get_one ~msg:"Simplib.prepare_concl" (aformulas info) 
+	 in 
+	 seq 
+	   [
+	    asm_to_rules a new_asm_tags;
+	    data_tac data_fn ()
+	  ] g)
+     ] goal
+
+(**
+   [prepare_concls data concls except g]: Apply [prepare_concl] to each
+   assumption in the list [concls]. Return the cumulative results.
+ *)
+let prepare_concls data cs except goal=
+  let d=ref []
+  in 
+  seq
+    [map_every (prepare_concl d except) cs;
+     data_tac (fun () -> data:=(!d)) ()] goal
+
 

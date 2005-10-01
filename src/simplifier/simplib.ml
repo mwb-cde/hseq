@@ -92,7 +92,7 @@ let simp_tac
       (Simplifier.Data.set_control Simplifier.Data.default cntrl)
       uset
   in 
-  Simplifier.simp_tac sctrl asms except f gl
+  Simptacs.simp_tac sctrl asms except f gl
 
 
 (** 
@@ -132,7 +132,7 @@ let once_simp_tac
       (Simplifier.Data.set_control Simplifier.Data.default cntrl)
       uset
   in 
-  Simplifier.once_simp_tac sctrl asms except f gl
+  Simptacs.once_simp_tac sctrl asms except f gl
 
 
 (* Printer *)

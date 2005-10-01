@@ -4,158 +4,11 @@
  Copyright M Wahab 2005
 ----*)
 
-  (** Utility functions for simplifier *)
+(** Utility functions for the simplifier *)
 
 open Term
 open Logicterm
 
-let dest_rrthm t = 
-  match t with 
-    Logic.RRThm (x) -> x
-  | _ -> failwith("dest_rrth: failure")
-
-let dest_option x=
-  match x with
-    None -> failwith "dest_option"
-  | Some c -> c
-
-let has_cond c =
-  match c with
-    None -> false
-  | Some(_) -> true
-
-
-(** [dest_implies trm]
-   Destruct implication.
-   fails if trm is not an implication.
- *)
-let dest_implies trm =
-  let (f, args)=Term.dest_fun trm
-  in
-  if(f=Logicterm.impliesid)
-  then 
-    Lib.get_two args (Failure "dest_implies: too many arguments")
-  else raise (Failure "dest_implies: not an implication")
-
-(** [sqnt_solved st b]: 
-   true if sqnt st is no longer in branch b 
- *)
-let sqnt_solved st b =
-  try
-    ignore(List.find 
-	     (fun x->Tag.equal st (Tactics.sqnt_tag x)) 
-	     (Tactics.branch_subgoals b));
-    false
-  with Not_found ->true
-
-(** [apply_on_cond c t f x]
-   if c is None then return [(t x)] else return [(f x)]
- *)
-let apply_on_cond c uncondf condf x =
-  match c with
-    None -> uncondf x
-  | Some(_) -> condf x
-
-(** [apply_tag tac n]
-   apply tactic [tac] to node [n]
-   return new goal and tag record of tactic
- *)
-let apply_tag tac n =
-  let inf=Tactics.mk_info()
-  in 
-  let ng = tac inf n
-  in 
-  (!inf, ng)
-
-
-(** [apply_get_formula_tag n tac g]
-   apply tactic [tac] to goal [g]
-   return tags of formulas
-   fail if more than [n] new formulas (tags) are generated
- *)
-(*
-let apply_get_formula_tag n tac g =
-  let inf= Tactics.mk_info()
-  in 
-  let ng = tac inf g
-  in 
-  let ntg = (!inf).Logic.forms
-  in 
-  if(List.length ntg)>n 
-  then
-    raise (Failure "too many tags")
-  else (ntg, ng)
-*)
-let apply_get_formula_tag n tac g =
-  let inf= Tactics.mk_info()
-  in 
-  let ng = tac inf g
-  in 
-  let atgs = Tactics.aformulas inf
-  and ctgs = Tactics.cformulas inf
-  in 
-  if((List.length atgs) + (List.length ctgs)) >n 
-  then
-    raise (Failure "too many tags")
-  else (atgs, ctgs, ng)
-
-(** [apply_get_single_formula_tag tac g]
-   apply tactic [tac] to goal [g]
-   return tag of single formula.
-   fail if more than 1 new formula is reported by [tac]
- *)
-(*
-let apply_get_single_formula_tag tac g =
-  let ts, ng=apply_get_formula_tag 1 tac g
-  in 
-  (Lib.get_one ts (Failure "too many tags"), ng)
-*)
-
-(** [rebuild_qnt k qs b]
-   rebuild quantified term of kind k from quantifiers [qs] and body [b]
-
-   e.g. [rebuild_qnt All ["x", "y", "z"] << b >>]
-   ->
-   [ << !x y z : b >> ]
-
-   use Drule.rebuild_qnt
-
- *)
-(*
-   let rec rebuild_qnt k qs b=
-   match qs with
-   [] -> b
-   | (x::xs) -> Basic.Qnt(k, x, rebuild_qnt k xs b)
- *)
-
-
-(** [allA_list i vs g]
-   apply [allA] to formula [i] using terms [vs]
-
-   use Boolib.inst_asm 
-   or Drule.inst_list (fun x -> Logic.Rules.allA None i) vs
- *)
-let allA_list l vs = Tactics.instA ~a:l vs
-(*
-  Drule.inst_list 
-    (fun t -> Logic.Tactics.allA None t)
-    vs l
-*)
-
-(* [make_consts qs env]: 
-   Get values for each binder in [qs] from [env].
-   Use [base.some] if no value is found.
-   [base.some] constant is defined in theory [base].
- *)
-(* moved to drule.ml
-   let make_consts qs env = 
-   let make_aux q=
-   try Term.find (Basic.Bound q) env
-   with 
-   Not_found -> Logicterm.mk_some
-   in 
-   List.map make_aux qs
- *)
 
 (** [is_variable qnts x]:
    test for variables (universal quantifiers) in an entry 
@@ -182,3 +35,91 @@ let rec equal_upto_vars varp x y =
     | (Basic.Typed(t1, ty1), Basic.Typed(t2, ty2)) ->
 	(Gtypes.equals ty1 ty2) && (equal_upto_vars varp t1 t2)
     | (_, _) -> Term.equals x y
+
+
+
+(** 
+   [find_variables is_var vars trm]:
+   find all subterms [t] of [trm] s.t. [(is_var t)] is true, add [t]
+   to [vars] then return [vars]
+*)
+let find_variables is_var vars trm=
+  let rec find_aux env t=
+    match t with
+      Basic.Qnt(_, b) ->
+	find_aux env b
+    | Basic.Bound(q) ->
+	if(is_var q)
+	then 
+	  (try ignore(Term.find t env); env
+	  with 
+	    Not_found ->
+	      (Term.bind t t env))
+	else env
+    | Basic.Typed(tr, _) -> find_aux env tr
+    | Basic.App(f, a) -> 
+	let nv=find_aux env f
+	in find_aux nv a
+    | _ -> env
+  in find_aux vars trm
+
+(** 
+   [check_variables is_var vars trm]: Check that all subterms [t] of
+   [trm] s.t. [is_var t] are in [vars].
+*)   
+let check_variables is_var vars trm=
+  let rec check_aux t=
+    match t with
+      Basic.Qnt(_, b) ->
+	check_aux b
+    | Basic.Bound(q) ->
+	if(is_var q)
+	then 
+	  ignore(Term.find t vars)
+	else ()
+    | Basic.Typed(tr, _) -> check_aux tr
+    | Basic.App(f, a) -> check_aux f; check_aux a
+    | _ -> ()
+  in check_aux trm
+
+
+
+(** 
+   [strip_qnt_cond trm]:
+   split rule [trm] into variable binders, condition, equality
+   rules are of the form:
+   a=>c
+   c
+ *)
+let strip_qnt_cond t =
+  let (qs, t1)=Term.strip_qnt (Basic.All) t  (* get leading quantifiers *)
+  in 
+  if (Logicterm.is_implies t1)  (* deal with conditional equalities *)
+  then 
+    (let (_, a, c)=Term.dest_binop t1
+    in 
+    (qs, Some a, c))
+  else
+    (qs, None, t1)
+
+
+(**
+   [apply_merge_list f lst]: Apply [f] to each element [x] in [lst]
+   and repeat for the resulting list. Concatenate the list of lists
+   that result. If [f x] fails, keep [x] as the result.
+*)
+let apply_merge_list f ls = 
+  let rec app_aux ys result =
+    match ys with 
+      [] -> result
+    | (x::xs) -> 
+	try 
+	  let nlst = f x
+	  in 
+	  let nresult = app_aux nlst result
+	  in 
+	  app_aux xs nresult
+	with _ -> app_aux xs (x::result)
+  in
+  app_aux ls []
+

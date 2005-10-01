@@ -1,11 +1,20 @@
 # Header, code and optimised code files
 
-HEADERS = simputils.cmi simpconvs.cmi simpset.cmi simplifier.cmi simplib.cmi
-CODE = simputils.cmo simpconvs.cmo simpset.cmo simplifier.cmo simplib.cmo
-OPTCODE = simputils.cmx simpset.cmx simpconvs.cmo simplifier.cmx simplib.cmx
+HEADERS = simputils.cmi simpconvs.cmi simpset.cmi simplifier.cmi \
+	simptacs.cmi simplib.cmi
+CODE = simputils.cmo simpconvs.cmo simpset.cmo simplifier.cmo \
+	simptacs.cmo simplib.cmo
+OPTCODE = simputils.cmx simpset.cmx simpconvs.cmo simplifier.cmx \
+	simptacs.cmx simplib.cmx
 
 LIBFILE= simplifier.cma
 OPTLIB= simplifier.cmxa
+
+DOCFILES = simputils.mli simpconvs.mli simpset.mli simplifier.mli \
+	#simptacs.mli simplib.mli
+DOCLOAD = -load "${DOCDIR}/tpmain.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
 
 # Compiler setings
 
@@ -58,6 +67,9 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/simplifier.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 
