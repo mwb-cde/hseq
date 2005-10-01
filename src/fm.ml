@@ -25,6 +25,7 @@
 #install_printer Simplib.print_set;;
 #install_printer Thydb.print;;
 
+(*
 let no_print_simpset (s:Simpset.simpset) = ();;
 
 let simple_theory_print (thy:Theory.thy) =
@@ -33,7 +34,6 @@ let simple_theory_print (thy:Theory.thy) =
   Printer.print_sep_list (Format.print_string, ",") (Theory.get_parents thy);
   Format.printf ".@]@]";;
 
-(*
 #install_printer simple_theory_print;; 
 #install_printer Thydb.NameSet.print;; 
 #install_printer Term.print_simple;;

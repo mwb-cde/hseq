@@ -174,7 +174,7 @@ MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}'\
 #	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
 #	${USERLIBDOC}
 
-DOC= tpmaindoc
+DOC= simplifierdoc
 
 doc: ${DOC}
 
