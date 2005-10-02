@@ -57,6 +57,17 @@ val dest_rule :
 	 * Logic.rr_type)
 (** Destructor for rules. *)
 
+val rule_binders : rule -> Basic.binders list
+(** Get the rules variables. *)
+val rule_cond : rule -> Basic.term option
+(** Get the condition. *)
+val rule_lhs : rule -> Basic.term
+(** Get the left-hand-side. *)
+val rule_rhs : rule -> Basic.term
+(** Get the right-hand-side.*)
+val rule_src : rule -> Logic.rr_type
+(** Get the source of the rule. *)
+
 val termnet_lt : rule -> rule -> bool
 (**
    [termnet_lt x y]: Less-than ordering of terms for use with

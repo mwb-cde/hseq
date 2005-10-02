@@ -107,7 +107,7 @@ let simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
   in 
   let cntrl1=Data.set_simpset cntrl set
   in 
-  let tac1 g = simp_prep_tac cntrl1 ret tag g
+  let tac1 g = simp_prep_tac cntrl1 ret (ftag tag) g
   in 
   let tac2 g =
     let ncntrl = Lib.get_option (!ret) cntrl1
@@ -292,7 +292,7 @@ let once_simp_engine_tac (cntrl, ret, except, concl_forms) tag goal=
   in 
   let cntrl1=Data.set_simpset cntrl set
   in 
-  let tac1 g = simp_prep_tac cntrl1 ret tag g
+  let tac1 g = simp_prep_tac cntrl1 ret (ftag tag) g
   in 
   let tac2 g =
     let ncntrl = Lib.get_option (!ret) cntrl1
