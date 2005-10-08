@@ -68,6 +68,7 @@ val simp_tac :
 	      ?rules:Logic.thm list ->
 		?ignore:Logic.label list -> Tactics.tactic
 
+(*
 (** 
    [once_simp_tac]: like [simp_tac] but only apply simplification
    once to each formula. 
@@ -80,6 +81,7 @@ val once_simp_tac :
 	    ?use:Simpset.simpset ->
 	      ?rules:Logic.thm list ->
 		?ignore:Logic.label list -> Tactics.tactic
+*)
 
 (* Printer *)
 

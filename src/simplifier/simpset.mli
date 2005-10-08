@@ -103,7 +103,6 @@ val make_asm_rules :
    true. The list [forms] is assumed to be a list of assumptions.
 *)
 
-
 (** {5 Sets} *)
 
 (** Simpsets *)

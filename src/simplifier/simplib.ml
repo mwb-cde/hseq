@@ -95,6 +95,7 @@ let simp_tac
   Simptacs.simp_tac sctrl asms except f gl
 
 
+(*
 (** 
    [once_simp_tac]: like [simp_tac] but only apply simplification
    once to each formula. 
@@ -133,7 +134,7 @@ let once_simp_tac
       uset
   in 
   Simptacs.once_simp_tac sctrl asms except f gl
-
+*)
 
 (* Printer *)
 

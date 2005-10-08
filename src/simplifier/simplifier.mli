@@ -42,8 +42,8 @@ val is_none: 'a option -> bool
 
 val is_excluded: Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
 (**
-   [is_excluded excluded sqnt rl]: True if rewrite rule [rl] is an assumption
-   in the excluded list.
+   [is_excluded excluded sqnt rl]: True if rewrite rule [rl] is an
+   assumption in the excluded list.
 *)
 
 (** {5 Simplifier Data} *)
