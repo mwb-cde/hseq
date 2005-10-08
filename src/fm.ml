@@ -25,9 +25,10 @@
 #install_printer Simplib.print_set;;
 #install_printer Thydb.print;;
 
-(*
 let no_print_simpset (s:Simpset.simpset) = ();;
+#install_printer no_print_simpset;;
 
+(*
 let simple_theory_print (thy:Theory.thy) =
   Format.printf "@[<hov 2>Theory: %s,@ " (Theory.get_name thy);
   Format.printf "@[Parents: @[<hov 2>";
