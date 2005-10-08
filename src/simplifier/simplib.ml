@@ -61,89 +61,53 @@ let init_std_ss() =
  *)
 let simp_tac 
     ?f ?(cntrl=Formula.default_rr_control) 
-    ?(asms=true) ?set ?use ?(rules=[]) ?(ignore = []) gl=
-  let uset0 = 
-    match set with
-      None -> std_ss()
-    | Some s -> s
-  in 
-  let uset1 = 
-    match use with
-      None -> uset0
-    | Some s -> Simpset.join s uset0
-  in let uset = 
+    ?(asms=true) ?set ?add ?(rules=[]) ?(ignore = []) goal =
+(** uset: The simpset to use. **)
+  let uset = 
+    let uset0 = 
+      match set with
+	None -> std_ss()
+      | Some s -> s
+    in 
+    let uset1 = 
+      match add with
+	None -> uset0
+      | Some s -> Simpset.join s uset0
+    in 
+    (** If there are rules, make a simpset from them. **)
     match rules with 
       [] -> uset1
     | _ -> 
 	let s = 
 	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
-	in Simpset.join s uset1
+	in 
+	Simpset.join s uset1
   in 
+  (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
-    let sqnt = Tactics.sequent gl 
+    let sqnt = Tactics.sequent goal 
     in 
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
   in 
+  (** except: The test for an excluded formula. **)
   let except x = List.exists (Tag.equal x) ignore_tags
   in 
-  let sctrl = 
+  (** The simplifier arguments. **)
+  let args = Simptacs.mk_args asms except
+  in 
+  (** simp_data: The simpset data. *)
+  let simp_data = 
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control Simplifier.Data.default cntrl)
       uset
   in 
-  Simptacs.simp_tac sctrl asms except f gl
+  Simptacs.simp_tac simp_data args f goal
 
+(***
+* Initialising functions 
+***)
 
-(*
-(** 
-   [once_simp_tac]: like [simp_tac] but only apply simplification
-   once to each formula. 
- *)
-let once_simp_tac 
-    ?f ?(cntrl=Formula.default_rr_control) 
-    ?(asms=true) ?set ?use ?(rules=[]) ?(ignore = []) gl=
-  let uset0 = 
-    match set with
-      None -> (std_ss())
-    | Some s -> s
-  in 
-  let uset1 = 
-    match use with
-      None -> uset0
-    | Some s -> Simpset.join s uset0
-  in let uset = 
-    match rules with 
-      [] -> uset1
-    | _ -> 
-	let s = 
-	  Simpset.simpset_add_thms 
-	    (Global.scope()) (Simpset.empty_set()) rules
-	in Simpset.join s uset1
-  in 
-  let ignore_tags = 
-    let sqnt = Tactics.sequent gl 
-    in 
-    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
-  in 
-  let except x = List.exists (Tag.equal x) ignore_tags
-  in 
-  let sctrl = 
-    Simplifier.Data.set_simpset
-      (Simplifier.Data.set_control Simplifier.Data.default cntrl)
-      uset
-  in 
-  Simptacs.once_simp_tac sctrl asms except f gl
-*)
-
-(* Printer *)
-
-let print_set set = 
-  Simpset.print (Global.PP.info()) set
-
-(* Initialising functions *)
-
-(* function to call when a theory is loaded *)
 
 let has_property p ps = List.mem p ps
 
@@ -160,12 +124,15 @@ let def_is_simp (_, dr)=
       then try add_simp thm with _ -> ()
       else ()
   
+(** Function to call when a theory is loaded **)
+
 let on_load thy=
   List.iter thm_is_simp thy.Theory.caxioms;
   List.iter thm_is_simp thy.Theory.ctheorems;
   List.iter def_is_simp thy.Theory.cdefns
 
 
+(** Initialise the simp set. **)
 let init () =
   init_std_ss();
   Global.Files.add_load_fn on_load
@@ -173,3 +140,11 @@ let init () =
 let _ = 
   Global.Init.add_init init
   
+
+(***
+* Printer 
+***)
+
+let print_set set = 
+  Simpset.print (Global.PP.info()) set
+

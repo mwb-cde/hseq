@@ -5,40 +5,58 @@
 ----*)
 
 (**
-   User-level simplification tactics.
+   The simplifier libray.
 *)
 
+(** {5 The standard simplification set} *)
+
+val std_ss : unit -> Simpset.simpset 
 (**
    [std_ss()]: The standard simpset
+*)
+
+val set_std_ss: Simpset.simpset -> unit
+(**
    [set_std_ss set]: Set the standard simpset to [set]
+*)
+
+val empty_simp : unit -> unit
+(**
    [empty_simp()]: Clear the standard simpset.
+*)
+
+val add_simps : Logic.thm list -> unit
+(**
    [add_simps thms]: Add [thms] to the standard simpset.
+*)
+val add_simp : Logic.thm -> unit
+(**
    [add_simp thm]: Add [thm] to the standard simpset.
  *)
-val std_ss : unit -> Simpset.simpset 
-val set_std_ss: Simpset.simpset -> unit
-val empty_simp : unit -> unit
-val add_simps : Logic.thm list -> unit
-val add_simp : Logic.thm -> unit
-val add_conv : Basic.term -> Logic.conv -> unit
 
-(** [simp_tac ?f ?cntrl ?asms ?set ?with ?rules ?ignore goal]
+val add_conv : Basic.term -> Logic.conv -> unit
+(**
+   [add_conv trm conv]: Add conversion [conv] to the standard simpset,
+   with [trm] as the representative key.  Example: [add_conv << !x A:
+   (%y: A) x >> Logic.Conv.beta_conv] applies [beta_conv] on all terms
+   matching [(%y: A) x].
+ *)
+
+(** {5 User level simplification tactics} *)
+
+(** [simp_tac ?f ?cntrl ?asms ?set ?add ?rules ?ignore goal]
    
    Simplifier tactic.
 
    If [f] is not given, repeat for each conclusion:
-   - eliminate toplevel universal quantifiers of [f]
-   - if (asms=true), put conclusions other than [f] into assumptions
-   and make simp rules
-   - if (asms=true), make simp rules from assumptions, other than [f]
-   - simplify [f]: find (possibly conditional) rules for
-   rewriting [f], rewrite [f], repeat until no change.
-
-   When done, delete temporary assumptions
-
-   Don't use formulas in [ignore] or for which [except] is true.
-
-   Arguments:
+   {ul
+   {- Eliminate toplevel universal quantifiers of [f].}
+   {- If [asms=true], put conclusions other than [f] into assumptions
+   and make simp rules.}
+   {- if [asms=true], make simp rules from assumptions, other than [f].}
+   {- Simplify [f]: find (possibly conditional) rules for
+   rewriting [f], rewrite [f], repeat until no change.}}
+   Don't use formulas identified by a label in [ignore].
 
    @param f The formula to simplify. Default: all conclusions.
 
@@ -50,52 +68,44 @@ val add_conv : Basic.term -> Logic.conv -> unit
 
    @param set The simpset to use. Default: [std_ss].
 
-   @param use Add this simpset to the set specified with [set]. This
+   @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
    @param rules Additional rewrite rules to use. Default: [[]].
 
    @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
-   @raise Simplifier.No_change If no change is made.
+   @raise No_change If no change is made.
  *)
 val simp_tac :
     ?f:Logic.label ->
       ?cntrl:Simplifier.control ->
 	?asms:bool ->
 	  ?set:Simpset.simpset ->
-	    ?use:Simpset.simpset ->
+	    ?add:Simpset.simpset ->
 	      ?rules:Logic.thm list ->
 		?ignore:Logic.label list -> Tactics.tactic
 
-(*
-(** 
-   [once_simp_tac]: like [simp_tac] but only apply simplification
-   once to each formula. 
- *)
-val once_simp_tac :
-    ?f:Logic.label ->
-      ?cntrl:Simplifier.control ->
-	?asms:bool ->
-	  ?set:Simpset.simpset ->
-	    ?use:Simpset.simpset ->
-	      ?rules:Logic.thm list ->
-		?ignore:Logic.label list -> Tactics.tactic
-*)
 
-(* Printer *)
-
-val print_set : Simpset.simpset -> unit
-
-(** Initialising functions *)
-
-(** [on_load thy] function to call when a theory is loaded *)
+(** {5 Initialising functions} *)
 
 val on_load: Theory.contents -> unit
+(** Function to call when a theory is loaded *)
 
 val init: unit -> unit
+(** 
+   Initialise the simplification library. Reset the standard simp set
+   and add {!Simplib.on_load} to the functions called when a theory is
+   loaded.
+*)
 
-(* Debugging *)
+(** {5 Printer} *)
+
+val print_set : Simpset.simpset -> unit
+(** Print a simp set. **)
+
+
+(** {5 Debugging} *)
 
 val has_property: 'a -> 'a list -> bool
 val thm_is_simp : ('a * Theory.thm_record) -> unit

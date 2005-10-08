@@ -10,22 +10,21 @@
 
 open Simplifier
 
-(** 
-   Simplification tactics. 
-
-   [make_asm_entries_tac]/[make_concl_entries_tac]: Tactics to prepare
-   assumptions/conclusions for use as simp rules.
-
-   [simp_tac]: The standard simplification tactic. Repeatedly
-   simplifies formulas until nothing else can be done.
- *)
-
 (** {5 Rule-forming tactics} *)
 
+(** 
+   Data returned by the rule-forming tactics. Tags in [rule_asms] are
+   the assumptions formed from formulas, which should be deleted after
+   simplification by the clean-up tactic. Formulas in [rule_forms] are
+   use to construct simp rules to add to a simp set. Note that every
+   formula in [rule_forms] has its tag stored in [rule_asms].
+*)
 type rule_data = 
     { 
       rule_asms: (Tag.t * Tag.t) list ;
+      (** The tags of the assumption formed from formulas. *)
       rule_forms: (Logic.tagged_form) list
+      (** The formuls from which to form simp rules. *)
     }
 	
 
@@ -63,12 +62,26 @@ val make_concl_entries_tac :
 
 (** {5 Simplifier tactics} *)
 
+(** Arguments for the simplifier *)
+type simp_args=
+      {
+       use_asms: bool; 
+      (** Whether to use the assumptions (and conclusions) as simp rules. *)
+       exclude: (Tag.t -> bool)
+      (** Test on whether a formula is to be ignored (not simplified
+      or used as a simp rule. *)
+     }
+
+val mk_args : bool -> (Tag.t -> bool) -> simp_args
+(** Make arguments for the simplifier. *)
+
 val simp_engine_tac :
-    (Data.t * Data.t option ref * (Tag.t -> bool))
-  -> Tag.t -> Tactics.tactic
+    (Data.t) 
+  -> ((Data.t option) ref * (Tag.t -> bool))
+      -> Tag.t -> Tactics.tactic
 (** The engine for [simp_tac]. 
 
-   [simp_engine_tac cntrl asms l goal]:
+   [simp_engine_tac cntrl (ret, exclude) l goal]:
    {ul 
    {- Eliminate toplevel universal quantifiers of [l].}
    {- If [asms=true], put conclusions other than [l] into assumptions
@@ -76,11 +89,14 @@ val simp_engine_tac :
    {- If [asms=true], make simp rules from assumptions.}
    {- Simplify.}
    {- Delete temporary assumptions.}}
+
+   Ignores all formulas for which [exclude] is true. Returns the
+   updated simp data in [ret].
 *)
 
 val simp_tac: 
     Data.t
-  -> bool -> (Tag.t -> bool)
+  -> simp_args
     -> Logic.label option -> Tactics.tactic
 (**
    Simplify formulas.
@@ -109,32 +125,5 @@ val simp_tac:
  *)
 
 
-(* Debugging information *)
+(** Debugging information **)
 
-(*
-   val cond_prover_trueC: 
-   Logic.info option -> Logic.label -> Tactics.tactic
-   val cond_prover_worker_tac: 
-   Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
-
-   val is_excluded: 
-   Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
- *)
-
-(*** RETIRED
-(**
-   [once_simp_tac cntrl set l g]
-
-   Simplify formula [label] with [set], once.
- *)
-   val once_simp_engine_tac :
-   (Data.t  * Data.t option ref
- * (Tag.t -> bool)
- * (Logic.tagged_form list))
-   -> Tag.t -> Tactics.tactic
-
-   val once_simp_tac: 
-   Data.t
-   -> bool -> (Tag.t -> bool)
-   -> Logic.label option -> Tactics.tactic
- *)

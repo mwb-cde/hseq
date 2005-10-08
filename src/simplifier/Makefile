@@ -11,7 +11,7 @@ LIBFILE= simplifier.cma
 OPTLIB= simplifier.cmxa
 
 DOCFILES = simputils.mli simpconvs.mli simpset.mli simplifier.mli \
-	simptacs.mli # simplib.mli
+	simptacs.mli simplib.mli
 DOCLOAD = -load "${DOCDIR}/tpmain.data"
 DOCTYPE ?= -html
 DOCDIR ?= "../doc"
