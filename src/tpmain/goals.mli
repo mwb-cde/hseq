@@ -63,10 +63,12 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> unit
 (** Drop the current proof.  *)
 
-val goal : Basic.term -> Proof.t
+val goal : ?info:Logic.info -> Basic.term -> Proof.t
 (** 
    Start a proof attempt. Creates a goal and pushes it on the top of
-   the proof list.
+   the proof list.  If [?info] is given, the tag of the goal and
+   conclusion ([trm]) are stored in it. This allows the tag of the
+   conclusion formed from term [trm] to be determined.
 *)
 
 val postpone: unit -> Proof.t
@@ -106,10 +108,15 @@ val apply:
 
 (** {7 Batch proofs} *)
 
-val prove_goal: Scope.t -> Basic.term -> Tactics.tactic -> Logic.thm 
+val prove_goal: 
+    ?info:Logic.info -> 
+      Scope.t -> Basic.term -> Tactics.tactic 
+	-> Logic.thm
 (**
-   [prove_goal scp trm tac]: Prove the goal formed from [trm] using
-   tactic [tac] in scope [scp]. Used for batch proofs.
+   [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
+   using tactic [tac] in scope [scp]. Used for batch proofs. If
+   [?info] is given, the tag of the goal and conclusion ([trm]) are
+   stored in it before the tactic [tac] is applied.
 *)
 
 (*
@@ -129,10 +136,12 @@ val by_com : Tactics.tactic -> Proof.t
    [!save_hook]. Used for interactive proofs.
 *)
 
-val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
+val by_list : 
+    ?info:Logic.info 
+  -> Basic.term -> Tactics.tactic list -> Logic.thm
 (**
-   [by_list trm tacl]: Apply the list of tactics [tacl] to the goal formed 
-   from term [trm] in the standard scope.
+   [by_list ?info trm tacl]: Apply the list of tactics [tacl] to the
+   goal formed from term [trm] in the standard scope.
 
    [by_list] applies each tactic in the list to the first subgoal of
    the goal, in the same way as an interactive proof is built up by
@@ -141,6 +150,11 @@ val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
    proof. By contrast, {!Goals.prove_goal} requires a structured
    proof, a tactic which completely solves the goal, to be constructed
    from the tactics used in an interactive proof.
+
+   If [?info] is given, the tag of the goal and conclusion ([trm]) are
+   stored in it before the tactics are applied. This allows the
+   tactics to determine the tag of the conclusion formed from term
+   [trm].
 *)
 
 (** {7 Support for proof recording} *)

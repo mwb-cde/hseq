@@ -96,10 +96,10 @@ let top_goal () = ProofStack.top_goal (!prflist)
 
 let drop() = prflist:=ProofStack.pop (!prflist)
 
-let goal trm = 
+let goal ?info trm = 
   let f = Formula.make (Global.scope()) (Global.mk_term trm)
   in 
-  prflist:= ProofStack.push_goal (mk_goal  (Global.scope()) f) (!prflist);
+  prflist:= ProofStack.push_goal (mk_goal info (Global.scope()) f) (!prflist);
   !save_hook(); top()
 
 let postpone () =
@@ -128,8 +128,8 @@ let result () = mk_thm (top_goal())
 let apply ?report tac goal=
   Logic.Subgoals.apply_to_goal ?report tac goal
 
-let prove_goal scp trm tac =
-  mk_thm  (apply tac (mk_goal scp (Formula.make (Global.scope()) trm)))
+let prove_goal ?info scp trm tac =
+  mk_thm  (apply tac (mk_goal info scp (Formula.make (Global.scope()) trm)))
 
 let prove trm tac = prove_goal (Global.scope()) trm tac
 
@@ -178,8 +178,8 @@ let by_com tac =
   !save_hook();
   top()
 
-let by_list trm tacl =
-  let fg=mk_goal (Global.scope()) (Formula.make (Global.scope()) trm)
+let by_list ?info trm tacl =
+  let fg=mk_goal info (Global.scope()) (Formula.make (Global.scope()) trm)
   in 
   let rec by_aux ts g =
       match ts with 

@@ -195,10 +195,10 @@ let restrict p tac goal =
   in 
   if (p ng) then ng else raise (Failure "restrict_tac")
 
-let notify_tac f tac goal =
+let notify_tac f d tac goal =
   let ng = tac goal
   in 
-  f(); ng
+  f d; ng
 
 let rec map_every tac l goal = 
   let rec every_aux ls g=

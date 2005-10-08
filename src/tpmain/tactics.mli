@@ -306,10 +306,10 @@ val restrict : (Logic.branch -> bool) -> tactic -> tactic
    Fails if [pred (tac g)] is false otherwise behaves as [(tac g)].
 *)
 
-val notify_tac : (unit -> unit) -> tactic -> tactic
+val notify_tac : ('a -> unit) -> 'a -> tactic -> tactic
 (**
-   [notify_tac f tac g]: Notify [tac g] succeeded.
-   Applies [tac g] then, if the tactic suceeded, apply [f ()].
+   [notify_tac f x tac g]: Notify [tac g] succeeded.
+   Applies [tac g] then, if the tactic suceeded, apply [f x].
    Fails if [tac g] fails.
 *)
 

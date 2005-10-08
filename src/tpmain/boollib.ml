@@ -611,7 +611,7 @@ and
 (**
    [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
    elimination rules to all assumptions with a label in [albls] and
-   all conclusions with a label in [clbls] and with to all resulting
+   all conclusions with a label in [clbls] and to all resulting
    assumptions and conclusions. The tag of any new formula for which
    the elimination rules fails is stored in [?info] (in arbitrary
    order).
@@ -627,13 +627,13 @@ let elim_rules_tac ?info rules albls clbls =
 	  [
 	   alt 
 	     [
-	      notify_tac (fun _ -> chng:=true)
+	      notify_tac (fun _ -> chng:=true) ()
 		(map_some (asm_elim_rules_tac ?info rules) albls);
 	      skip
 	    ];
 	   alt 
 	     [ 
-	       notify_tac (fun _ -> chng:=true)
+	       notify_tac (fun _ -> chng:=true) ()
 		 (map_some (concl_elim_rules_tac ?info rules) clbls); 
 	       skip 
 	     ]
