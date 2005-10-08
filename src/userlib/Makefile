@@ -18,7 +18,16 @@ INSTALLDIR=../libs
 SRCDIR=..
 OCLIBS=
 OPTLIBS=
-OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" -I +camlp4
+
+
+DOCFILES = userlib.mli cli.mli
+DOCLOAD = -load "${DOCDIR}/simplifier.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
+
+
+OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" \
+	-I +camlp4
 
 OCAMLC=ocamlc ${OPTIONS} 
 OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
@@ -58,6 +67,9 @@ installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
 
+doc: ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/userlib.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 

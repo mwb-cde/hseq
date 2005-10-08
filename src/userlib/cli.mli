@@ -4,19 +4,44 @@
  Copyright M Wahab 2005
 ----*)
 
-(* simple user interface *)
+(** Simple command line interface.
 
-(* saves list of input strings which make a change to the sequent *)
+   Provides basic support for recording the commands used to prove a
+   goal.
 
-  val start: unit -> unit  (* start recording input strings *)
-  val stop : unit -> unit   (* stop recording *)
-  val restart: unit -> unit  (* continue recording input strings *)
+   Call {!Cli.clear} to start recording, {!Cli.stop} to stop
+   recording, {!Cli.restart} to restart recording. To print the list
+   of commands, call {!Cli.print} and to get the commands as a list of
+   strings, {!Cli.get}.
+*)
+
+val clear: unit -> unit   
+(** Clear recording, erasing any recorded input. *)
+
+val get: unit -> string list
+(** Get the list of recorded commands, in order of entry. *)
+
+val start: unit -> unit  
+(** Start recording, erasing any previously recorded input. *)
+
+val stop : unit -> unit   
+(** Stop recording. *)
+
+val restart: unit -> unit  
+(** Restart recording, preserving any previously recorded input. *)
+
+val print : unit -> unit  
+(** Print the list of recorded commands. *)
+
+(** {5 Debugging information} *)
+
+val repl : unit -> unit   (* read-eval-print loop *)
 
 
-  val repl : unit -> unit   (* read-eval-print loop *)
+(*
+val save : string -> unit 
+(** Append the list recorded commands to a named file. *)
+*)
 
-  val clear: unit -> unit   (* clear the list of strings *)
 
-  val print : unit -> unit  (* print list of string to the screen *)
-  val save : string -> unit (* append list to the named file *)
 
