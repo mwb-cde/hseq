@@ -4,7 +4,17 @@
    Copyright M Wahab 2005
    ----*)
 
-(* library functions *)
+(** Library functions *)
+
+
+(** Operators **)
+module Ops =
+struct
+
+  (** Function composition **)
+  let (<+) f g x = f (g x)
+
+end
 
 (* Array iteration *)
 
@@ -298,6 +308,11 @@ let compare_int_option x n =
   match x with
     None -> false
   | Some i -> i=n
+
+let dec_int_option x =
+  match x with 
+    None -> x
+  | Some i -> Some (i-1)
 
 let apply_option f x d=
   match x with

@@ -8,6 +8,15 @@
    General purpose functions.
 *)
 
+(** Operators **)
+module Ops : 
+sig
+
+  val (<+) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
+      (** Function composition **)
+
+end
+
 (* Simple utility functions *)
 
 val iteri : (int -> 'a array -> 'b) -> 'a array -> unit 
@@ -109,6 +118,7 @@ val dest_option: ?err:exn -> 'a option -> 'a
 val set_int_option : int -> int option
 val get_int_option : int option -> int
 val compare_int_option: int option -> int -> bool
+val dec_int_option: int option -> int option
 
 (** [apply_option f a d]
    
