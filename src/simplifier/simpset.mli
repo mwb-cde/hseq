@@ -180,10 +180,11 @@ val lookup : Scope.t -> simpset -> Basic.term -> rule list
    Use {!Simpset.simpset_add_thm} or {!Simpset.simpset_add_thms} to
    add a theorem to a simpset. 
 
-   Use {!Simpset.simpset_add_asm} to add an assumption to a simpset. 
+   Use {!Simpset.simpset_add_asm_rule} to add an assumption to a
+   simpset as a simplification rule.
 
    Uset {!Simpset.add_conv} to add a conversion to a simpset. 
-*)
+   *)
 
 val simpset_add_rules :
     simpset -> rule list -> simpset
@@ -203,12 +204,19 @@ val simpset_add_thms :
    [simpset_add_thms scp set thms]: Add theorems [thms] to simpset [set].
 *)
 
-val simpset_add_asm: 
+val simpset_add_asm_rule: 
     simpset -> Tag.t -> Logic.node -> simpset
 (**
-   [simpset_add_asm scp asm node thms]: Add assumption asm of [node]
-   to simpset [set].
+   [simpset_add_asm_rule scp asm node thms]: Add assumption [asm] of [node]
+   to simpset [set] as a simplification rule.
 *)
+
+val add_context: simpset -> Basic.term -> simpset
+(**
+   [add_context set trm]: Add [trm] as a new assumption in which
+   decision procedures operate. This currently does nothing, in the
+   future it will be used to notify conversions of new context.
+**)
 
 (** {5 Printers} *)
 

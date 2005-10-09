@@ -10,6 +10,7 @@
 
 open Tactics
 open Simplifier
+open Lib.Ops
 
 (*** Rules from assumptions and conclusions ***)
 
@@ -40,8 +41,7 @@ let make_asm_entries_tac ret tags except goal=
   let tac1 g = Simpconvs.prepare_asms data tags except g
   in 
   (*** Make the list of tagged assumptions to use as simp-rules ***)
-  let tac2 g =
-    data_tac (fun _ -> ret:= !data) () g
+  let tac2 g = data_tac (fun _ -> ret:= !data) () g
   in 
   seq [tac1; tac2] goal
 
@@ -213,9 +213,7 @@ let rec simp_tac cntrl args l goal=
       (** Add the tags of the new assumptions to the simp data **)
       let data2=
 	Data.set_asms data1
-	  (List.append 
-	     asm_entry_tags
-	     (Data.get_asms data1))
+	  (List.append asm_entry_tags  (Data.get_asms data1))
       in 
       (*** Get conclusion rules, put it into a useful form ***)
       let (concl_srcs, concl_new_asms, concl_new_rules) = 
@@ -235,13 +233,20 @@ let rec simp_tac cntrl args l goal=
       (** Add the tags of the new assumptions to the simp data **)
       let data3=
 	Data.set_asms data2
-	  (List.append 
-	     concl_entry_tags
-	     (Data.get_asms data2))
+	  (List.append concl_entry_tags (Data.get_asms data2))
       in 
       (** Add the new simp set to the simp data **)
       let data4 = 
-	Data.set_simpset data3 set2
+	(** Add the new assumptions as new context **)
+	let set3 =
+	  List.fold_left Simpset.add_context set2
+	    (List.map Formula.term_of asm_new_asms)
+	in 
+	let set4 =
+	  List.fold_left Simpset.add_context set3
+	    (List.map Formula.term_of concl_new_asms)
+	in 
+	Data.set_simpset data3 set4
       in 
       (** 
 	 Record the tags of the the assumptions and conclusions
@@ -256,7 +261,7 @@ let rec simp_tac cntrl args l goal=
 		(List.map drop_formula concl_srcs)
 		(Data.get_asms data4)))
       in 
-      Lib.set_option ret data5
+      Lib.set_option ret data4
     in 
     if not(use_asms) then skip g 
     else 

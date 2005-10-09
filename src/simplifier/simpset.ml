@@ -361,7 +361,7 @@ let simpset_add_thms scp set thms =
 
 (*** Assumptions ***)
 
-let simpset_add_asm sset tg g=
+let simpset_add_asm_rule sset tg g=
   let trm = 
     Formula.term_of
       (Logic.drop_tag 
@@ -372,6 +372,12 @@ let simpset_add_asm sset tg g=
   in 
   simpset_add_rules sset [rule]
 
+(**
+   [add_context set trm]: Add [trm] as a new assumption in which
+   decision procedures operate. This currently does nothing, in the
+   future it will be used to notify conversions of new context.
+**)
+let add_context set trm = set
 
 
 (***

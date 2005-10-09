@@ -341,15 +341,17 @@ val neg_exists_rule_asm :
 
 val single_asm_to_rule : Tag.t -> Tactics.tactic
  (**
-  [single_asm_to_rules l g]: Convert an assumption stating a single
-  fact to a rewrite-rule.
+  [single_asm_to_rules f g]: Convert the assumption [f] stating a single
+  fact to a rewrite-rule. Formula [f] must be an assumption of [g].
 *)
 
-val asm_to_rules : Tag.t -> Tag.t list ref -> Tactics.tactic
+val asm_to_rules : Tag.t -> Logic.tagged_form list ref -> Tactics.tactic
 (**
    [asm_to_rules tg ret g]: Toplevel conversion function.  Convert
-   assumption [tg] of goal [g] to one or more rules.  The tag of each
-   rule (including [tg]) generated from [tg] is stored in [ret].
+   assumption [tg] of goal [g] to one or more rules.  The (tagged)
+   formula of each rule generated from [tg] is stored in [ret]. Note
+   that the assumption identified by [tg] will be one of the rules in
+   [ret].
 *)
 
 
@@ -402,7 +404,7 @@ val prepare_asm :
    {- Copy the assumption to get new assumption [a1].}
    {- Call [asm_to_rules] on [a1] to get [rules].}
    {- For each new assumption [r], store the result as the pair
-   [{ src = a; new_asm = a1; new_rules = rules }].
+   [\{ src = a; new_asm = a1; new_rules = rules \}]}.
    {- Return the result in [data]. }
    }
 *)
@@ -432,14 +434,11 @@ val prepare_concl :
    [c] which are to be used as simp rules.
 
    {ul 
-
    {- Copy the conclusion and lift it into the assumptions (by
    negation) to get new assumption [a].}
-
    {- Call [asm_to_rules] on [a] to get [rules].}
-
    {- For each new assumption [r], store the result as the pair
-   [{ src = c; new_asm = a; new_rules = rules }].
+   [\{ src = c; new_asm = a; new_rules = rules \}]}.
    {- Return the result in [data]. }
    }
 *)

@@ -34,11 +34,11 @@ val add_simp : Logic.thm -> unit
    [add_simp thm]: Add [thm] to the standard simpset.
  *)
 
-val add_conv : Basic.term -> Logic.conv -> unit
+val add_conv : Basic.term list -> Logic.conv -> unit
 (**
-   [add_conv trm conv]: Add conversion [conv] to the standard simpset,
-   with [trm] as the representative key.  Example: [add_conv << !x A:
-   (%y: A) x >> Logic.Conv.beta_conv] applies [beta_conv] on all terms
+   [add_conv trms conv]: Add conversion [conv] to the standard simpset,
+   with [trms] as the representative keys.  Example: [add_conv [<< !x A:
+   (%y: A) x >>] Logic.Conv.beta_conv] applies [beta_conv] on all terms
    matching [(%y: A) x].
  *)
 

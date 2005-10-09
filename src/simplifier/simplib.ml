@@ -13,14 +13,20 @@ let add_simps thms =
   set_std_ss (Simpset.simpset_add_thms (Global.scope()) (std_ss()) thms)
 let add_simp thm = add_simps [thm]
 
-let add_conv term conv =
-  let (vs, body) = Term.strip_qnt Basic.All term
+let add_conv terms conv =
+  let add_aux set trm = 
+    let (vs, body) = Term.strip_qnt Basic.All trm
+    in 
+      Simpset.add_conv (vs, body) conv set
   in 
-  set_std_ss (Simpset.add_conv (vs, body) conv (std_ss()))
+  let set1 =
+    List.fold_left add_aux (std_ss()) terms
+  in 
+    set_std_ss set1
 
 let init_std_ss() =
   empty_simp();
-  add_conv << !x A: (%y: A) x >> Logic.Conv.beta_conv
+  add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv
 
 (** [simp_tac ?f ?cntrl ?asms ?set ?with ?rules ?ignore goal]
    
