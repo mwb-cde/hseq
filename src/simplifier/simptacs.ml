@@ -11,17 +11,17 @@
 open Tactics
 open Simplifier
 
+(*** Rules from assumptions and conclusions ***)
+
+(***
+* Rules from assumptions and conclusions.
+***)
+
+
 (***
 * Rule-forming tactics 
 ***)
 
-type rule_data = 
-    { 
-      rule_asms: (Tag.t * Tag.t) list ;
-      rule_forms: (Logic.tagged_form) list
-    }
-
-let empty_rule_data() = { rule_asms = []; rule_forms = [] }
 
 (**
    Make simp rules from identified assumptions.
@@ -30,9 +30,8 @@ let empty_rule_data() = { rule_asms = []; rule_forms = [] }
    assumptions in [tags] for use as simp rules. Ignore the assumptions
    in for which [except] is true.
 
-   Return [ret = (asm_tags, rules)] where [asm_tags] is a list of
-   pairs [(s, a)], with [a] a new assumption formed from [s] and
-   [rules] is the list of tagged formulas to be used as simp rules.
+   Return [ret = new_rules_data ] where [new_rules_data] is the list
+   of rules data formed from the assumptions.
 *)
 let make_asm_entries_tac ret tags except goal=
   let data = ref []
@@ -42,20 +41,7 @@ let make_asm_entries_tac ret tags except goal=
   in 
   (*** Make the list of tagged assumptions to use as simp-rules ***)
   let tac2 g =
-    let sqnt = Tactics.sequent g
-    in 
-    let asm_forms = Tactics.asms_of sqnt
-    and asm_tags = !data
-    in 
-    let forms = 
-      let use (t, f) = 
-	List.exists (fun (_, x) -> Tag.equal t x) asm_tags
-      in 
-      List.filter use asm_forms
-    in 
-    data_tac 
-      (fun (x, y) -> ret:= { rule_asms = x; rule_forms = y })
-      (asm_tags, forms) g
+    data_tac (fun _ -> ret:= !data) () g
   in 
   seq [tac1; tac2] goal
 
@@ -74,25 +60,11 @@ let make_concl_entries_tac ret tags except goal=
   let data = ref []
   in 
   (*** Prepare conclusions for use a simp-rules ***)
-  let tac1 g=
-    Simpconvs.prepare_concls data tags except g
+  let tac1 g= Simpconvs.prepare_concls data tags except g
   in 
   (*** Make the list of tagged assumptions to use as simp rules. *)
   let tac2 g =
-    let sqnt = Tactics.sequent g
-    in 
-    let asm_forms = Tactics.asms_of sqnt
-    and asm_tags = !data
-    in 
-    let forms=
-      let use (t, f) = 
-	List.exists (fun (_, x) -> Tag.equal t x) asm_tags
-      in 
-      List.filter use asm_forms
-    in 
-    data_tac 
-      (fun (x, y) -> ret:= { rule_asms = x; rule_forms = y })
-      (asm_tags, forms) g
+    data_tac (fun _ -> ret := !data) () g
   in 
   seq [tac1; tac2] goal
 
@@ -204,8 +176,8 @@ let rec simp_tac cntrl args l goal=
   (** Data variables **)
   let ret=ref (None: Data.t option)
   in 
-  let asm_rules = ref (empty_rule_data())
-  and concl_rules = ref (empty_rule_data())
+  let asm_rules = ref []
+  and concl_rules = ref []
   in 
   (** Set up the initial simp data **)
   let set = Data.get_simpset cntrl
@@ -224,8 +196,11 @@ let rec simp_tac cntrl args l goal=
   let tac1 g= 
     let set_data () =
       (*** Get assumption rules, put it into a useful form ***)
-      let asm_entry_tags = (!asm_rules).rule_asms
-      and asm_entry_forms = (!asm_rules).rule_forms
+      let (asm_srcs, asm_new_asms, asm_new_rules) = 
+	Simpconvs.unpack_rule_data (!asm_rules)
+      in 
+      let asm_entry_forms = asm_new_rules
+      and asm_entry_tags = List.map drop_formula asm_new_rules
       in 
       (** Make the simp rules from the assumption formulas **)
       let asm_rules = 
@@ -239,12 +214,15 @@ let rec simp_tac cntrl args l goal=
       let data2=
 	Data.set_asms data1
 	  (List.append 
-	     (List.map snd asm_entry_tags)
+	     asm_entry_tags
 	     (Data.get_asms data1))
       in 
       (*** Get conclusion rules, put it into a useful form ***)
-      let concl_entry_tags = (!concl_rules).rule_asms
-      and concl_entry_forms = (!concl_rules).rule_forms
+      let (concl_srcs, concl_new_asms, concl_new_rules) = 
+	Simpconvs.unpack_rule_data (!concl_rules)
+      in 
+      let concl_entry_forms = concl_new_rules
+      and concl_entry_tags = List.map drop_formula concl_new_rules
       in 
       (** Make the simp rules from the conclusions formulas **)
       let concl_rules = 
@@ -258,7 +236,7 @@ let rec simp_tac cntrl args l goal=
       let data3=
 	Data.set_asms data2
 	  (List.append 
-	     (List.map snd concl_entry_tags)
+	     concl_entry_tags
 	     (Data.get_asms data2))
       in 
       (** Add the new simp set to the simp data **)
@@ -273,9 +251,9 @@ let rec simp_tac cntrl args l goal=
       let data5= 
 	Data.set_visited data4
 	  (List.append 
-	     (List.map fst asm_entry_tags)
-	     (List.append  
-		(List.map fst concl_entry_tags)
+	     (List.map drop_formula asm_srcs)
+	     (List.append 
+		(List.map drop_formula concl_srcs)
 		(Data.get_asms data4)))
       in 
       Lib.set_option ret data5

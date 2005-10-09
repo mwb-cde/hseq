@@ -355,6 +355,115 @@ val asm_to_rules : Tag.t -> Tag.t list ref -> Tactics.tactic
 
 (** {7 Rules from assumptions and conclusions} *)
 
+(** Information about rules created from a sequent formula. **)
+type rule_data = 
+    { 
+      src: Logic.tagged_form; 
+      (** The source of the rules. **)
+      new_asm: Formula.form;
+            (**
+      	       The new assumption formed from the formula (e.g. when a
+      	       conclusion is lifted into the assumptions) to add to the
+      	       simp set (for information). 
+	    **)
+      new_rules: (Logic.tagged_form) list 
+      	(** The rules formed fro the source. *)
+    }
+
+val mk_rule_data:
+  Logic.tagged_form -> Formula.form
+  -> Logic.tagged_form list -> rule_data
+(** Constructor for rule data. *)
+
+val unpack_rule_data: 
+  rule_data list -> 
+  (Logic.tagged_form list * Formula.form list * Logic.tagged_form list)
+(**
+    [unpack_rule_data rd]: Unpack a list of rule data in a list of
+    sources, a list of new assumptions and a list of new rules.
+*)
+
+
+(** {7 Rules from assumptions and conclusions} *)
+
+val prepare_asm :
+  rule_data list ref 
+  -> (Tag.t -> bool) -> Tag.t 
+    -> Tactics.tactic
+(**
+   [prepare_asm data except a goal]: Prepare assumption labelled [a]
+   for use as a simp rule. 
+
+   Does nothing if [except a] is true. Solves the goal if [a] is
+   [false]. Otherwise, returns the list of new assumptions formed from
+   [a] which are to be used as simp rules.
+
+   {ul
+   {- Copy the assumption to get new assumption [a1].}
+   {- Call [asm_to_rules] on [a1] to get [rules].}
+   {- For each new assumption [r], store the result as the pair
+   [{ src = a; new_asm = a1; new_rules = rules }].
+   {- Return the result in [data]. }
+   }
+*)
+
+
+val prepare_asms :
+  rule_data list ref 
+  -> Tag.t list 
+    -> (Tag.t -> bool) 
+      -> Tactics.tactic
+(**
+   [prepare_asms data asm except g]: Apply [prepare_asm] to each
+   assumption in the list [asms]. Return the cumulative results.
+ *)
+
+
+val prepare_concl :
+  rule_data list ref 
+  -> (Tag.t -> bool) -> Tag.t 
+    -> Tactics.tactic
+(**
+   [prepare_concl data except c goal]: Prepare conclusion labelled [a]
+   for use as a simp rule. 
+
+   Does nothing if [except c] is true. Solves the goal if [c] is
+   [true]. Otherwise, returns the list of new assumptions formed from
+   [c] which are to be used as simp rules.
+
+   {ul 
+
+   {- Copy the conclusion and lift it into the assumptions (by
+   negation) to get new assumption [a].}
+
+   {- Call [asm_to_rules] on [a] to get [rules].}
+
+   {- For each new assumption [r], store the result as the pair
+   [{ src = c; new_asm = a; new_rules = rules }].
+   {- Return the result in [data]. }
+   }
+*)
+
+val prepare_concls :
+  rule_data list ref ->
+  Tag.t list ->
+  (Tag.t -> bool) -> Tactics.tactic
+(**
+   [prepare_concls data concls except g]: Apply [prepare_concl] to each
+   assumption in the list [concls]. Return the cumulative results.
+ *)
+
+      
+
+
+
+
+
+
+
+
+(**** RETIRED
+
 val prepare_asm :
   (Tag.t * Tag.t) list ref 
   -> (Tag.t -> bool) -> Tag.t 
@@ -422,5 +531,4 @@ val prepare_concls :
    assumption in the list [concls]. Return the cumulative results.
  *)
 
-
-
+****)

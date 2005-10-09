@@ -12,24 +12,8 @@ open Simplifier
 
 (** {5 Rule-forming tactics} *)
 
-(** 
-   Data returned by the rule-forming tactics. Tags in [rule_asms] are
-   the assumptions formed from formulas, which should be deleted after
-   simplification by the clean-up tactic. Formulas in [rule_forms] are
-   use to construct simp rules to add to a simp set. Note that every
-   formula in [rule_forms] has its tag stored in [rule_asms].
-*)
-type rule_data = 
-    { 
-      rule_asms: (Tag.t * Tag.t) list ;
-      (** The tags of the assumption formed from formulas. *)
-      rule_forms: (Logic.tagged_form) list
-      (** The formuls from which to form simp rules. *)
-    }
-	
-
 val make_asm_entries_tac : 
-    rule_data ref 
+    Simpconvs.rule_data list ref 
   -> Tag.t list -> (Tag.t -> bool)
     -> Tactics.tactic
 (**
@@ -45,7 +29,7 @@ val make_asm_entries_tac :
 *)
 
 val make_concl_entries_tac : 
-    rule_data ref 
+    Simpconvs.rule_data list ref 
   -> Tag.t list -> (Tag.t -> bool)
     -> Tactics.tactic
 (** 

@@ -13,6 +13,7 @@ let log_tac x g = log x; Tactics.skip g
  Functions to prepare theorems and assumptions being added to a simpset.
 *)
 
+open Lib.Ops
 open Simputils
 
 
@@ -604,6 +605,188 @@ let asm_to_rules tg ret goal =
 * Rules from assumptions and conclusions.
 ***)
 
+
+
+(** Information about rules created from sequent formulas. **)
+type rule_data = 
+    { 
+      src: Logic.tagged_form; (** The source of the rules. **)
+      new_asm: Formula.form;
+      (**
+	  The new assumption (e.g. when a conclusion is lifted into
+	  the assumptions) to add to the simp set.
+      **)
+      new_rules: (Logic.tagged_form) list 
+	(** The rules formed fro the source. *)
+    }
+
+let mk_rule_data s a rs = 
+  { src = s; new_asm = a; new_rules = rs }
+
+(**
+    [unpack_rule_data rd]: Unpack a list of rule data in a list of
+    sources, a list of new assumptions and a list of new rules.
+*)
+let unpack_rule_data rds = 
+  let srcs, asms = 
+    Lib.apply_split (fun rd -> (rd.src, rd.new_asm)) rds
+  in 
+  let rules = 
+    Lib.apply_flatten (fun rd -> rd.new_rules) rds
+  in 
+    (srcs, asms, rules)
+
+(**
+   [prepare_asm data except a goal]: Prepare assumption labelled [a]
+   for use as a simp rule. 
+
+   Does nothing if [except a] is true. Solves the goal if [a] is
+   [false]. Otherwise, returns the list of new assumptions formed from
+   [a] which are to be used as simp rules.
+
+   {ul
+   {- Copy the assumption to get new assumption [a1].}
+   {- Call [asm_to_rules] on [a1] to get [rules].}
+   {- For each new assumption [r], store the result as the pair
+   [{ src = a; new_asm = a1; new_rules = rules }].
+   {- Return the result in [data]. }
+   }
+*)
+let prepare_asm data except a goal =
+  if (except a)
+  then skip goal
+  else 
+    let info=mk_info()
+    and new_asm_tags = ref []
+    and asm_form = get_tagged_asm (ftag a) goal
+    in 
+    let data_fn (new_asm, rules) = 
+      new_asm_tags:=[];
+      data := 
+	(mk_rule_data asm_form new_asm rules)::(!data)
+    in 
+    let false_test g = 
+      let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
+      in 
+      Logicterm.is_false (Formula.term_of asm)
+    in 
+    seq 
+      [
+       (false_test --> Boollib.falseA ~a:(ftag a));
+       copyA ~info:info (ftag a);
+       (fun g ->
+	 let a1=
+	   get_one ~msg:"Simplib.prepare_asm" (aformulas info)
+	 in 
+	 let a1form = drop_tag (get_tagged_asm (ftag a1) g)
+	 in 
+	 seq 
+	   [
+	    asm_to_rules a1 new_asm_tags;
+	     (fun g1 -> 
+		let rules = 
+		  List.map 
+		    (fun t -> get_tagged_asm (ftag t) g1) 
+		    (!new_asm_tags)
+		in 
+		  data_tac data_fn (a1form, rules) g1)
+	   ] g)
+       ] goal
+
+(**
+   [prepare_asms data asm except g]: Apply [prepare_asm] to each
+   assumption in the list [asms]. Return the cumulative results.
+ *)
+let prepare_asms data ams except goal=
+  let d=ref []
+  in 
+  seq
+    [
+     map_every (prepare_asm d except) ams;
+     data_tac (fun () -> data:=!d) ()
+   ] goal
+
+(**
+   [prepare_concl data except c goal]: Prepare conclusion labelled [a]
+   for use as a simp rule. 
+
+   Does nothing if [except c] is true. Solves the goal if [c] is
+   [true]. Otherwise, returns the list of new assumptions formed from
+   [c] which are to be used as simp rules.
+
+   {ul 
+
+   {- Copy the conclusion and lift it into the assumptions (by
+   negation) to get new assumption [a].}
+
+   {- Call [asm_to_rules] on [a] to get [rules].}
+
+   {- For each new assumption [r], store the result as the pair
+   [{ src = c; new_asm = a; new_rules = rules }].
+   {- Return the result in [data]. }
+   }
+*)
+let prepare_concl data except c goal =
+  if(except c)
+  then skip goal
+  else 
+    let info=mk_info()
+    and new_asm_tags = ref []
+    and concl_form = get_tagged_concl (ftag c) goal
+    in 
+    let data_fn (new_asm, rules) = 
+      new_asm_tags:=[];
+      data:=
+	(mk_rule_data concl_form new_asm rules)::(!data)
+    in 
+    let true_test g = 
+      let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
+      in 
+      Logicterm.is_true (Formula.term_of concl)
+    in 
+    seq 
+      [
+       (true_test --> Logic.Tactics.trueC None (ftag c));
+       copyC ~info:info (ftag c);
+       (fun g -> 
+	 let c1 = 
+	   get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
+	 in 
+	 empty_info info;
+	 negate_concl_tac ~info:info (ftag c1) g); 
+       (fun g ->
+	 let a=
+	   get_one ~msg:"Simplib.prepare_concl" (aformulas info) 
+	 in 
+	 let aform = drop_tag (get_tagged_asm (ftag a) g)
+	 in 
+	 seq 
+	   [
+	    asm_to_rules a new_asm_tags;
+	     (fun g1 ->
+		let rules = 
+		  List.map 
+		    (fun t -> get_tagged_asm (ftag t) g1) 
+		    (!new_asm_tags)
+		in 
+		  data_tac data_fn (aform, rules) g1)
+	  ] g)
+     ] goal
+
+(**
+   [prepare_concls data concls except g]: Apply [prepare_concl] to each
+   assumption in the list [concls]. Return the cumulative results.
+ *)
+let prepare_concls data cs except goal=
+  let d=ref []
+  in 
+  seq
+    [map_every (prepare_concl d except) cs;
+     data_tac (fun () -> data:=(!d)) ()] goal
+
+
+(***** RETIRED
+
 (**
    [prepare_asm data except a goal]: Prepare assumption labelled [a]
    for use as a simp rule. 
@@ -744,3 +927,4 @@ let prepare_concls data cs except goal=
      data_tac (fun () -> data:=(!d)) ()] goal
 
 
+****)
