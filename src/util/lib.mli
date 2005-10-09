@@ -263,6 +263,18 @@ val apply_first : ('a -> 'b) list -> 'a -> 'b
    fail.
 *)
 
+val apply_flatten: ('a -> ('b list)) -> 'a list -> 'b list
+(**
+   [apply_flatten f lst]: Apply [f] to each element of [lst],
+   concatenating the resulting list of lists.
+*)
+
+val apply_split: ('a -> ('b * 'c)) -> 'a list -> (('b list) * ('c list))
+(**
+   [apply_split f lst]: Apply [f] to each element of [lst],
+   splitting the resulting list of pairs.
+*)
+
 (** {5 Sets of strings} *)
 
 module StringSet : Set.S with type elt=string
