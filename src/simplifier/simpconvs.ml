@@ -268,6 +268,9 @@ let is_constant clst (qs, c, t)=
 let is_constant_true (qs, c, t)=
   List.exists (Term.equals t) [Logicterm.mk_true]
 
+let is_constant_bool (qs, c, t)=
+  List.exists (Term.equals t) [Logicterm.mk_true; Logicterm.mk_false]
+
 
 let is_neg_all (qs, c, t) = 
   if (Logicterm.is_neg t)
@@ -586,9 +589,13 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
-	asm_rewrite_add_tac ret (rule_false_thm()) tg g
+	if(is_constant_bool (qs, c, a))
+	then add_asm_tac ret tg g 
+	else asm_rewrite_add_tac ret (rule_false_thm()) tg g
     | (Some(true), _) -> 
-	asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
+	if(is_constant_bool (qs, c, a))
+	then add_asm_tac ret tg g 
+	else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
