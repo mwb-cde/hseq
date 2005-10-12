@@ -71,19 +71,6 @@ val simple_asm_rewrite_tac :
 
  *)
 
-val asm_rewrite_tac : ?info:Logic.info -> 
-    Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
-(** 
-   [asm_rewrite thm tg g]:
-
-   Rewrite assumption [tg] with rule [thm] = |- a=b
-
-   tg:a, asms |- concl
-   -->
-   tg:b, asms |- concl
-
- *)
-
 
 val negate_concl_tac :
     ?info: Logic.info ->
@@ -157,11 +144,20 @@ val is_equality : 'a * 'b * Basic.term -> bool
    [is_equality (var, cnd, main)]: true if [main] is of the form [a=b]. 
 *)
 
-val is_constant : Basic.binders list * Basic.term option * Basic.term -> bool
+val is_constant : 
+  Basic.term list 
+  -> Basic.binders list * Basic.term option * Basic.term -> bool
 (** 
-   [is_constant t]: [t] is a boolean constant (true/false)
+   [is_constant lst t]: [t] is in the list (of constants) lst
    or in the form [l=r] where [r] is a boolean constant.
 *)
+
+val is_constant_true : 
+  Basic.binders list * Basic.term option * Basic.term -> bool
+(** 
+   [is_constant t]: [t] is a boolean true.
+*)
+
 
 val is_neg_all:  Basic.binders list * Basic.term option * Basic.term -> bool
 (**  [is_neg_all (var, cnd, trm)]: [trm] is in the form [not ! a: b] *)
@@ -287,25 +283,66 @@ val thm_to_rules : Scope.t -> Logic.thm -> Logic.thm list
 
 (** {7 Rules from assumptions} *)
 
+val asm_rewrite_tac : ?info:Logic.info -> 
+    Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
+(** 
+   [asm_rewrite thm tg g]:
+
+   Rewrite assumption [tg] with rule [thm] = |- a=b
+
+   tg:a, asms |- concl
+   -->
+   tg:b, asms |- concl
+
+ *)
+
+val add_asm_tac:
+  Logic.tagged_form list ref
+  -> Tag.t -> Tactics.tactic
+(**
+   [add_asm_tac ret tg g]: Add the assumption labelled [tg] to
+   [ret].
+   
+   If g = [ a{_ tg}, asms |- concl ]
+   then return [ret = [a]::!(reg)]
+*)
+
+val asm_rewrite_add_tac : 
+  ?info:Logic.info 
+  -> Logic.tagged_form list ref
+  -> Logic.thm -> Tag.t -> Tactics.tactic
+(** 
+   [asm_rewrite_add_tac ret thm tg g]:
+
+   Rewrite assumption [tg] with rule [thm] = |- a=b
+
+   a{_ tg}, asms |- concl
+   -->
+   b{_ tg}, asms |- concl
+
+   Return [ret = [b]::!(reg)]
+ *)
+
+
 val accept_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [accept_asm]: Convert [|- a] -> [|- a=true]
 *)
 
 val rr_equality_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [rr_equality_asm]: Accept [|- l=r] or [|= c=> l=r]
 *)
 
 val fact_rule_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [fact_rule_asm]: Convert [|- a] -> [|- a=true]
@@ -313,17 +350,25 @@ val fact_rule_asm :
 *)
 
 val neg_rule_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [neg_rule_asm]: Convert [|- not a] to [|- a=false]
    and [|- c => not a] to [|- c => a=false].
 *)
 
+val conj_rule_asm :
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Tactics.tactic
+(**
+   [conj_rule_asm]: convert |- (a & b)  to |- a and |- b
+*)
+
 val neg_all_rule_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [neg_all_rule_asm]: Convert [|- not (!a: b)] -> [|- ?a: not b]
@@ -331,21 +376,23 @@ val neg_all_rule_asm :
 *)
 
 val neg_exists_rule_asm :
-    Tag.t *
-    (Basic.binders list * Basic.term option * Basic.term) 
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
   -> Tactics.tactic
 (**
    [neg_exists_rule_asm]: Convert [|- not (?a: b)] -> [|- !a: not b]
    then convert the new theorem.
 *)
 
-val single_asm_to_rule : Tag.t -> Tactics.tactic
+val single_asm_to_rule : 
+  Logic.tagged_form list ref -> Tag.t -> Tactics.tactic
  (**
   [single_asm_to_rules f g]: Convert the assumption [f] stating a single
   fact to a rewrite-rule. Formula [f] must be an assumption of [g].
 *)
 
-val asm_to_rules : Tag.t -> Logic.tagged_form list ref -> Tactics.tactic
+val asm_to_rules : 
+  Logic.tagged_form list ref -> Tag.t -> Tactics.tactic
 (**
    [asm_to_rules tg ret g]: Toplevel conversion function.  Convert
    assumption [tg] of goal [g] to one or more rules.  The (tagged)
