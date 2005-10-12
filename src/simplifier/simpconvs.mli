@@ -158,6 +158,12 @@ val is_constant_true :
    [is_constant_true t]: [t] is boolean true.
 *)
 
+val is_constant_false : 
+  Basic.binders list * Basic.term option * Basic.term -> bool
+(** 
+   [is_constant_true t]: [t] is boolean false.
+*)
+
 val is_constant_bool : 
   Basic.binders list * Basic.term option * Basic.term -> bool
 (** 

@@ -268,6 +268,9 @@ let is_constant clst (qs, c, t)=
 let is_constant_true (qs, c, t)=
   List.exists (Term.equals t) [Logicterm.mk_true]
 
+let is_constant_false (qs, c, t)=
+  List.exists (Term.equals t) [Logicterm.mk_false]
+
 let is_constant_bool (qs, c, t)=
   List.exists (Term.equals t) [Logicterm.mk_true; Logicterm.mk_false]
 
@@ -410,7 +413,7 @@ and do_fact_rule (scp, thm, (qs, c, a)) =
   else failwith "do_fact_rule"
 
 and do_neg_rule (scp, thm, (qs, c, a)) = 
-  if(not (Logicterm.is_equality a))
+  if (Logicterm.is_neg a)
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
@@ -585,15 +588,17 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
   else failwith "do_fact_asm"
 
 and neg_rule_asm ret (tg, (qs, c, a)) g = 
-  if(not (Logicterm.is_equality a))
+  if Logicterm.is_neg a
   then 
+    let (_, b) = Term.dest_unop a
+    in 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
-	if(is_constant_bool (qs, c, a))
+	if(is_constant_false (qs, c, b))
 	then add_asm_tac ret tg g 
 	else asm_rewrite_add_tac ret (rule_false_thm()) tg g
     | (Some(true), _) -> 
-	if(is_constant_bool (qs, c, a))
+	if(is_constant_false (qs, c, b))
 	then add_asm_tac ret tg g 
 	else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
