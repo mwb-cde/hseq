@@ -266,13 +266,15 @@ let is_constant clst (qs, c, t)=
   List.exists (Term.equals t) clst
 
 let is_constant_true (qs, c, t)=
-  List.exists (Term.equals t) [Logicterm.mk_true]
+  Logicterm.is_true t
 
 let is_constant_false (qs, c, t)=
-  List.exists (Term.equals t) [Logicterm.mk_false]
+  Logicterm.is_false t
 
 let is_constant_bool (qs, c, t)=
-  List.exists (Term.equals t) [Logicterm.mk_true; Logicterm.mk_false]
+  Pervasives.(||)
+    (is_constant_true (qs, c, t))
+    (is_constant_true (qs, c, t))
 
 
 let is_neg_all (qs, c, t) = 
@@ -526,18 +528,36 @@ let asm_rewrite_add_tac ?info ret thm tg goal =
     ] goal
 
 (** 
+  [solve_not_true_tac]: Solve goals of the form [not true |- C].
+*)
+let solve_not_true_tac tg goal = 
+  let info = mk_info()
+  in 
+  seq
+    [
+      negA ~info:info ~a:(ftag tg);
+      (fun g ->
+	 let ctg = get_one ~msg:"solve_not_true_tac" (cformulas info)
+	 in 
+	   trueC ~c:(ftag ctg) g)
+    ] goal
+
+
+(** 
    Functions to convert an assumption
 
-   [accept_asm]: convert |- a to |- a=true 
+   [accept_asm]: convert |- a to |- a=true and delete |- true
 
    [rr_equality_asm]: accept |- l=r or |= c=> l=r 
 
    [fact_rule_asm]: 
    convert |- a to |- a=true 
    and  |- c=> a to |- c => a=true
+   and solve [false |- C]
 
    [neg_rule_asm]: convert |- not a to |- a=false 
    and |- c=> not a to |- c=> a=false
+   and solve  [not true |- C]
 
    [conj_rule_asm]: convert |- (a & b)  to |- a and |- b
 
@@ -559,9 +579,15 @@ let asm_rewrite_add_tac ?info ret thm tg goal =
 
 let rec accept_asm ret (tg, (qs, c, a)) g =
   if(is_constant_true (qs, c, a))
-  then add_asm_tac ret tg g
-    (* skip g *)
-  else asm_rewrite_add_tac ret (rule_true_thm()) tg g
+  then 
+    (** Delete assumption true *)
+    Logic.Tactics.delete None (ftag tg) g
+  else 
+    if (is_constant_false (qs, c, a))
+    then (** Solve assumption false *)
+      falseA ~a:(ftag tg) g
+    else 
+      asm_rewrite_add_tac ret (rule_true_thm()) tg g
 
 and rr_equality_asm ret (tg, (qs, c, a)) g =
   if(is_rr_equality (qs, c, a))
@@ -576,13 +602,20 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	if(is_constant_true (qs, c, a))
-	then add_asm_tac ret tg g 
-	  (* skip g *)
-	else asm_rewrite_add_tac ret (rule_true_thm()) tg g
+	then 
+	  (** Delete assumption true *)
+	  Logic.Tactics.delete None (ftag tg) g
+	else 
+	  if (is_constant_false (qs, c, a))
+	  then (** Solve assumption false *)
+	    falseA ~a:(ftag tg) g
+	else 
+	  asm_rewrite_add_tac ret (rule_true_thm()) tg g
     | (Some(true), _) -> 
 	if(is_constant_true (qs, c, a))
-	then add_asm_tac ret tg g 
-	  (* skip g *)
+	then 
+	  (** Delete assumption true *)
+	  Logic.Tactics.delete None (ftag tg) g
 	else asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
   else failwith "do_fact_asm"
@@ -595,11 +628,19 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	if(is_constant_false (qs, c, b))
-	then add_asm_tac ret tg g 
+	then 
+	  (** Delete assumption (not false) *)
+	  Logic.Tactics.delete None (ftag tg) g
+	else
+	  if (is_constant_true (qs, c, b))
+	  then 	  (** Solve assumption (not true) *)
+	    solve_not_true_tac tg g
 	else asm_rewrite_add_tac ret (rule_false_thm()) tg g
     | (Some(true), _) -> 
 	if(is_constant_false (qs, c, b))
-	then add_asm_tac ret tg g 
+	then 
+	  (* Delete assumption (not false) *)
+	  Logic.Tactics.delete None (ftag tg) g
 	else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"

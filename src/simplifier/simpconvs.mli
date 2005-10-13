@@ -335,6 +335,10 @@ val asm_rewrite_add_tac :
    Return [ret = [b]::!(reg)]
  *)
 
+val solve_not_true_tac: Tag.t -> Tactics.tactic
+(** 
+  [solve_not_true_tac]: Solve goals of the form [not true |- C].
+*)
 
 val accept_asm :
   Logic.tagged_form list ref 
