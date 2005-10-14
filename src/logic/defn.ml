@@ -353,7 +353,7 @@ module HolLike =
 (*
    let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
    let typedef_term = 
-   Term.mk_var (Basic.mk_long "base" "Type_Def") 
+   Term.mk_var (Basic.mk_long Logicterm.base_thy "Type_Def") 
    and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
    in 
    Term.mk_app (Term.mk_app typedef_term setP) rep_term
