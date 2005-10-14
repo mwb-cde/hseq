@@ -154,6 +154,17 @@ val get_fun: term -> term
 val dest_fun : term-> Basic.ident * term list
 (** Get the function identifier and arguments of a function application. *)
 
+val rator: term -> term
+(** 
+    Get the operator of a function application. 
+    [rator << f a >>] is [<< f >>].
+*)
+val rand: term -> term
+(** 
+    Get the operand of a function application. 
+    [rator << f a >>] is [<< a >>].
+*)
+
 val dest_unop : Basic.term -> (Basic.ident * Basic.term)
 (**
    [dest_unop t]: Destruct unary operator [t], return the identifier

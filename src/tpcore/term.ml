@@ -270,6 +270,16 @@ let get_args t =
 let is_fun t =
   (is_app t) & is_var (get_fun t)
 
+let rator t =
+  match t with
+      App(f, _) -> f
+    | _ -> raise (Failure "rator: Not an application")
+
+let rand t =
+  match t with
+      App(_, a) -> a
+    | _ -> raise (Failure "rand: Not an application")
+
 let dest_fun t = 
   try 
     let (f, args) = get_fun_args t
