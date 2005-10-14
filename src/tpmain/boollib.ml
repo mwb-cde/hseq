@@ -16,7 +16,7 @@ module BaseTheory=
   struct
 
     let builder() =
-      begin_theory "base" [];
+      begin_theory Logicterm.base_thy [];
       ignore(typedef 
 	       <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
 
@@ -113,7 +113,7 @@ module PP =
     open Parser.Utility
     open Lexer
 
-    let ifthenelse_id= Basic.mk_long "base" "IF"
+    let ifthenelse_id= Basic.mk_long Logicterm.base_thy "IF"
 
     let ifthenelse_parser inf=
       ((seq
@@ -182,7 +182,7 @@ module PP =
 
 (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
-    let choice_ident = Basic.mk_long "base" "epsilon"
+    let choice_ident = Basic.mk_long Logicterm.base_thy "epsilon"
     let choice_sym = "@"
     let choice_pp = 
       (Printer.default_term_fixity, Printer.default_term_prec) 
@@ -333,9 +333,10 @@ let eq_tac ?info ?c g =
   let cf = first_concl_label c Formula.is_equality g
   in 
   let th = 
-    try thm "base.eq_refl"
+    try thm (Logicterm.base_thy ^ ".eq_refl")
     with Not_found -> 
-      (raise (error "eq_tac: Can't find required lemma base.eq_refl"))
+      (raise (error ("eq_tac: Can't find required lemma "
+		     ^Logicterm.base_thy^".eq_refl")))
   in 
   let info = Tactics.mk_info()
   in 
