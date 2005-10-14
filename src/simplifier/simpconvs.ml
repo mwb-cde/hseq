@@ -74,6 +74,30 @@ let cond_rule_false_var = lazy (make_cond_rule_false_thm())
 let cond_rule_false_thm () =
   Lazy.force cond_rule_false_var
 
+(**
+   [cond_rule_imp_false_thm]: |- !x y: (x=>false) = (not x)
+ *)
+let make_cond_rule_imp_false_thm()=
+  Commands.prove << !x : (x=> false) = (not x) >>
+  (allC ++ equals_tac  ++ blast_tac)
+
+let cond_rule_imp_false_var = Lib.freeze (make_cond_rule_imp_false_thm)
+
+let cond_rule_imp_false_thm () =
+  Lib.thaw cond_rule_imp_false_var
+
+(**
+   [cond_rule_imp_not_true]: |- !x y: (x=> not true) => (not x)
+ *)
+let make_cond_rule_imp_not_true_thm()=
+  Commands.prove << !x: (x => (not true)) = (not x) >>
+  (allC  ++ equals_tac  ++ blast_tac)
+
+let cond_rule_imp_not_true_var = Lib.freeze (make_cond_rule_imp_not_true_thm)
+
+let cond_rule_imp_not_true_thm () =
+  Lib.thaw cond_rule_imp_not_true_var
+
 (** Rewriting applied inside topmost universal quantifiers *)
 
 (**
@@ -343,16 +367,18 @@ let is_rr_equality (qs, c, a)=
    for both: a formula f is transformed to T(f) as follows:
 
    T(x and y) = T(x), T(y)
-   T(x iff y) = T(x=y), if this results in a rewrite rule
+   T(x iff y) = T(x=y), if this results in a rewrite rule (not implemented)
    T(not x) = x=false
    T(x) = x=true
+   T(not (?x. y)) = T(!x. not y)
 
-   conditional formulas: 
-   T(c=>x) transformed as above 
-   except 
+   Conditional formulas: 
+   T(c=>false) = T(not c)
+   T(c=>not true) = T(not c)
    T(c=>(x and y)) = c=>(x and y)
+   T(c=>x) = (c => T(x))
 
-   rewrite rules:
+   Rewrite rules:
    T(x=y) = x=y, if all variables in y also occur in x 
    = (x=y)=true
 
@@ -386,59 +412,75 @@ let is_rr_equality (qs, c, a)=
    |- false -> not true
  *)
 
-
 (* The conversion functions *)
 
-let rec accept_all_thms (scp, thm, (qs, c, a))= 
+let rec accept_all_thms ret (scp, thm, (qs, c, a))= 
   if (is_constant_true (qs, c, a))
-  then thm
-  else once_rewrite_rule scp [rule_true_thm()] thm 
+  then ret
+  else (once_rewrite_rule scp [rule_true_thm()] thm)::ret
 
-and do_rr_equality (scp, thm, (qs, c, a)) =
+and do_rr_equality ret (scp, thm, (qs, c, a)) =
   if(is_rr_equality (qs, c, a))
-  then thm
+  then (thm::ret)
   else failwith "is_rr_equality: not a rewrite rule"
 
-and do_fact_rule (scp, thm, (qs, c, a)) = 
+and do_fact_rule ret (scp, thm, (qs, c, a)) = 
   if(not (Logicterm.is_equality a))
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
 	if(is_constant_true (qs, c, a))
-	then thm
-	else simple_rewrite_rule scp (rule_true_thm()) thm
+	then ret
+	else (simple_rewrite_rule scp (rule_true_thm()) thm)::ret
     | (Some(true), _) -> 
 	if(is_constant_true (qs, c, a))
-	then thm
-	else simple_rewrite_rule scp (cond_rule_true_thm()) thm
+	then ret
+	else 
+	  (** |- c => false -> |- not c*)
+	  if (is_constant_false (qs, c, a))
+	  then 
+	    let thm1 = simple_rewrite_rule scp (cond_rule_imp_false_thm()) thm
+	    in
+	      single_thm_to_rules ret scp thm1
+	  else 
+	    (simple_rewrite_rule scp (cond_rule_true_thm()) thm)::ret
     | _ -> failwith "do_fact_rule"
   else failwith "do_fact_rule"
 
-and do_neg_rule (scp, thm, (qs, c, a)) = 
+and do_neg_rule ret (scp, thm, (qs, c, a)) = 
   if (Logicterm.is_neg a)
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
-	simple_rewrite_rule scp (rule_false_thm()) thm
+	(simple_rewrite_rule scp (rule_false_thm()) thm)::ret
     | (Some(true), _) -> 
-	simple_rewrite_rule scp (cond_rule_false_thm()) thm
+	(** |- c => not true -> |- not c *)
+	if(is_constant_true (qs, c, Term.rand a))
+	then 
+	  let thm1 = 
+	    simple_rewrite_rule scp (cond_rule_imp_not_true_thm()) thm
+	  in
+	    (single_thm_to_rules ret scp thm1)
+	else 
+	  (** |- not c -> |- c=false *)
+	    (simple_rewrite_rule scp (cond_rule_false_thm()) thm)::ret
     | _ -> failwith "do_neg_rule"
   else failwith "do_neg_rule"
 
-and do_neg_all_rule (scp, thm, (qs, c, a)) = 
+and do_neg_all_rule ret (scp, thm, (qs, c, a)) = 
   match c with 
     None -> 
       if (is_neg_all (qs, c, a))
       then 
 	let thm1= once_rewrite_rule scp [neg_all_conv scp a] thm
 	in 
-	single_thm_to_rules (scp: Scope.t) (thm1: Logic.thm)
+	(single_thm_to_rules ret scp thm1)
       else failwith "do_neg_all_rule: Not a negated universal quantifier"
   | Some _ ->  
       failwith 
 	"do_neg_all_rule: Not an unconditional negated universal quantifier"
 
-and do_neg_exists_rule (scp, thm, (qs, c, a)) = 
+and do_neg_exists_rule ret (scp, thm, (qs, c, a)) = 
   match c with 
     None -> 
       if (is_neg_exists (qs, c, a))
@@ -446,41 +488,37 @@ and do_neg_exists_rule (scp, thm, (qs, c, a)) =
 	let thm1=
 	  once_rewrite_rule scp [neg_exists_conv scp a] thm
 	in 
-	single_thm_to_rules scp thm1
+	single_thm_to_rules ret scp thm1
       else failwith "do_neg_exists_rule: Not a negated existential quantifier"
   | Some _ ->  
       failwith 
 	"do_neg_exists_rule: Not an unconditional negated existential quantifier"
 
-and single_thm_to_rules scp thm = 
+and do_conj_rule ret (scp, thm, (qs, c, a)) =
+  if(is_many_conj thm)
+  then 
+    let lst = Boollib.Rules.conjuncts scp thm
+    in 
+      List.fold_left (fun r t -> single_thm_to_rules r scp t) ret lst
+  else failwith "do_conj_rule: not a conjunction"
+and single_thm_to_rules ret scp thm = 
   let (qs, c, a) = strip_qnt_cond (Logic.term_of thm)
   in 
   Lib.apply_first 
     [
-     do_neg_all_rule;
-     do_neg_exists_rule;
-     do_rr_equality;
-     do_neg_rule;
-     do_fact_rule;
-     accept_all_thms
+(*     do_neg_all_rule; *)
+      do_conj_rule ret;
+      do_neg_exists_rule ret;
+      do_rr_equality ret;
+      do_neg_rule ret;
+      do_fact_rule ret;
+      accept_all_thms ret
    ] (scp, thm, (qs, c, a))
 
-
-and do_conj_rule scp thm=
-  if(is_many_conj thm)
-  then Boollib.Rules.conjuncts scp thm
-  else failwith "do_conj_rule: not a conjunction"
-
-
-and multi_thm_to_rules scp thm = 
-  let fs x= Lib.apply_first [do_conj_rule scp] x
-  in 
-  List.rev(apply_merge_list fs [thm])
-
 let thm_to_rules scp thm = 
-  let thmlst=multi_thm_to_rules scp thm
+  let ret = single_thm_to_rules [] scp thm
   in 
-  List.map (single_thm_to_rules scp) thmlst
+    List.rev ret
 
 (*** Converting assumptions to rewrite rules **)
 
@@ -495,7 +533,6 @@ let thm_to_rules scp thm =
  *)
 let asm_rewrite_tac ?info thm tg g=
   once_rewrite_tac ?info:info [thm] ~f:(ftag tg) g
-
    	
 (**
    [add_asm_tac ret tg g]: Add the assumption labelled [tg] to
@@ -552,17 +589,21 @@ let solve_not_true_tac tg goal =
 
    [fact_rule_asm]: 
    convert |- a to |- a=true 
+   and |- c=> false to |- (not c)
    and  |- c=> a to |- c => a=true
    and solve [false |- C]
 
-   [neg_rule_asm]: convert |- not a to |- a=false 
+   [neg_rule_asm]: 
+   convert 
+   and |- c=> not true to |- (not c)
+   and |- not a to |- a=false 
    and |- c=> not a to |- c=> a=false
    and solve  [not true |- C]
 
    [conj_rule_asm]: convert |- (a & b)  to |- a and |- b
 
    [neg_all_rule_asm]: convert |- not (!a: b) to |- ?a: not b
-   then convert the new theorem.
+   then convert the new theorem. (Not used)
 
    [neg_exists_rule_asm]: convert |- not (?a: b) to |- !a: not b
    then convert the new theorem.
@@ -616,7 +657,16 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	then 
 	  (** Delete assumption true *)
 	  Logic.Tactics.delete None (ftag tg) g
-	else asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
+	else 
+	  (** |- c => false -> |- not c*)
+	  if (is_constant_false (qs, c, a))
+	  then 
+	    seq [
+	      asm_rewrite_tac (cond_rule_imp_false_thm()) tg;
+	      single_asm_to_rule ret tg
+	    ] g
+	  else 
+	    asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
   else failwith "do_fact_asm"
 
@@ -639,9 +689,16 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
     | (Some(true), _) -> 
 	if(is_constant_false (qs, c, b))
 	then 
-	  (* Delete assumption (not false) *)
 	  Logic.Tactics.delete None (ftag tg) g
-	else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
+	else
+	  (** |- c => not true -> |- not c*)
+	  if(is_constant_true (qs, c, b))
+	  then 
+	    seq [
+	      asm_rewrite_tac (cond_rule_imp_not_true_thm()) tg;
+	      single_asm_to_rule ret tg
+	    ] g
+	  else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
     | _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
@@ -703,7 +760,7 @@ and single_asm_to_rule ret tg goal =
   in 
   Lib.apply_first 
     [
-     neg_all_rule_asm ret (tg, (qs, c, a));
+(*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
      neg_exists_rule_asm ret (tg, (qs, c, a));
      rr_equality_asm ret (tg, (qs, c, a));
      neg_rule_asm ret (tg, (qs, c, a));
