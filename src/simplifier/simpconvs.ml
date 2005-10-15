@@ -575,29 +575,32 @@ and do_neg_eq_rule ret (scp, thm, (qs, c, a)) =
 	    ::ret
   else
     failwith "do_neg_eq_rule"    
-  
 
 and do_neg_rule ret (scp, thm, (qs, c, a)) = 
   if (Logicterm.is_neg a)
   then 
-    if (Logicterm.is_equality (Term.rand a))
-    then (* Convert |- not (a = b) and |- c=> not (a = b) *)
-      do_neg_eq_rule ret (scp, thm, (qs, c, a))
-    else 
-      match is_rr_rule (qs, c, a, None) with
-	  (None, _) -> 
+    match is_rr_rule (qs, c, a, None) with
+	(None, _) -> 
+	  if (Logicterm.is_equality (Term.rand a))
+	  then (* Convert |- not (a = b) and |- c=> not (a = b) *)
+	    do_neg_eq_rule ret (scp, thm, (qs, c, a))
+	  else 
 	    (simple_rewrite_rule scp (rule_false_thm()) thm)::ret
-	| (Some(true), _) -> 
-	    (** |- c => not true -> |- not c *)
-	    if(is_constant_true (qs, c, Term.rand a))
-	    then 
-	      let thm1 = 
-		simple_rewrite_rule scp (cond_rule_imp_not_true_thm()) thm
-	      in
-		(single_thm_to_rules ret scp thm1)
+      | (Some(true), _) -> 
+	  (** |- c => not true -> |- not c *)
+	  if(is_constant_true (qs, c, Term.rand a))
+	  then 
+	    let thm1 = 
+	      simple_rewrite_rule scp (cond_rule_imp_not_true_thm()) thm
+	    in
+	      (single_thm_to_rules ret scp thm1)
+	  else 
+	    if (Logicterm.is_equality (Term.rand a))
+	    then (* Convert |- not (a = b) and |- c=> not (a = b) *)
+	      do_neg_eq_rule ret (scp, thm, (qs, c, a))
 	    else 
-	      (simple_rewrite_rule scp (cond_rule_false_thm()) thm)::ret
-	| _ -> failwith "do_neg_rule"
+	    (simple_rewrite_rule scp (cond_rule_false_thm()) thm)::ret
+      | _ -> failwith "do_neg_rule"
   else failwith "do_neg_rule"
 
 and do_neg_all_rule ret (scp, thm, (qs, c, a)) = 
@@ -854,18 +857,19 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
   then 
     let (_, b) = Term.dest_unop a
     in 
-      if Logicterm.is_equality b then neg_eq_asm ret (tg, (qs, c, a)) g
-      else 
-	match is_rr_rule (qs, c, a, None) with
-	    (None, _) -> 
-	      if(is_constant_false (qs, c, b))
-	      then 
-		(** Delete assumption (not false) *)
-		Logic.Tactics.delete None (ftag tg) g
-	      else
-		if (is_constant_true (qs, c, b))
-		then 	  (** Solve assumption (not true) *)
-		  solve_not_true_tac tg g
+      match is_rr_rule (qs, c, a, None) with
+	  (None, _) -> 
+	    if(is_constant_false (qs, c, b))
+	    then 
+	      (** Delete assumption (not false) *)
+	      Logic.Tactics.delete None (ftag tg) g
+	    else
+	      if (is_constant_true (qs, c, b))
+	      then 	  (** Solve assumption (not true) *)
+		solve_not_true_tac tg g
+	      else 
+		if Logicterm.is_equality b 
+		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else 
 		  if (Logicterm.is_disj b)
 		  then 
@@ -880,20 +884,23 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 		      ] g
 		  else
 		    asm_rewrite_add_tac ret (rule_false_thm()) tg g
-	  | (Some(true), _) -> 
-	      if(is_constant_false (qs, c, b))
+	| (Some(true), _) -> 
+	    if(is_constant_false (qs, c, b))
+	    then 
+	      Logic.Tactics.delete None (ftag tg) g
+	    else
+	      (** |- c => not true -> |- not c*)
+	      if(is_constant_true (qs, c, b))
 	      then 
-		Logic.Tactics.delete None (ftag tg) g
-	      else
-		(** |- c => not true -> |- not c*)
-		if(is_constant_true (qs, c, b))
-		then 
-		  seq [
-		    asm_rewrite_tac (cond_rule_imp_not_true_thm()) tg;
-		    single_asm_to_rule ret tg
-		  ] g
+		(seq [
+		  asm_rewrite_tac (cond_rule_imp_not_true_thm()) tg;
+		  single_asm_to_rule ret tg
+		] g)
+	      else 
+		if Logicterm.is_equality b 
+		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
-	  | _ -> failwith "neg_rule_asm"
+	| _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
 and conj_rule_asm ret (tg, (qs, c, a)) g = 
