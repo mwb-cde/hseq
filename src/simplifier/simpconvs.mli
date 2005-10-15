@@ -26,15 +26,37 @@ val cond_rule_false_thm : unit -> Logic.thm
 (**
    [cond_rule_imp_false_thm]: |- !x: (x=>false) = (not x)
  *)
+
 val make_cond_rule_imp_false_thm : unit -> Logic.thm
 val cond_rule_imp_false_thm : unit -> Logic.thm
 
-val make_cond_rule_imp_not_true_thm : unit -> Logic.thm
-val cond_rule_imp_not_true_thm : unit -> Logic.thm
 (**
    [cond_rule_imp_not_true_thm]: |- !x: (x=>not true) = (not x)
  *)
 
+val make_cond_rule_imp_not_true_thm : unit -> Logic.thm
+val cond_rule_imp_not_true_thm : unit -> Logic.thm
+
+(**
+   [neg_disj]: |- not (a | b) = ((not a) & (not b))
+ *)
+
+val make_neg_disj_thm : unit -> Logic.thm
+val neg_disj_thm : unit -> Logic.thm
+
+(**
+   [neg_eq_sym]: |- not (a = b) = not (b = a)
+ *)
+
+val make_neg_eq_sym_thm : unit -> Logic.thm
+val neg_eq_sym_thm : unit -> Logic.thm
+
+(**
+   [cond_neg_eq_sym]: |- (c => not (a = b)) = (c => not (b = a))
+ *)
+
+val make_cond_neg_eq_sym_thm : unit -> Logic.thm
+val cond_neg_eq_sym_thm : unit -> Logic.thm
 
 (** {5 Rewriting conversions and tactics} *)
 
@@ -110,9 +132,15 @@ val negate_concl_tac :
    {L
    [T(x and y)] = [T(x), T(y)]
 
+   [T(not (x or y))] = [T((not x) and (not y))]
+
    [T(x iff y)] = [T(x=y)], if this results in a rewrite rule (not
    implemented).
 
+   [T(not(x=y))] = [T((x=y) = false), T((y=x)=false)]
+   
+   [T(c=>not(x=y))] = [T(c=> ((x=y) = false)), T(c=> ((y=x)=false))]
+   
    [T(not x)] = [x=false]
 
    [T(x)] = [x=true]
@@ -151,6 +179,12 @@ val is_many_conj : Logic.thm -> bool
 (**
    [is_many_conj thm]: true if [thm] is of the form
    [ |- a and b and ... and z ].
+*)
+
+val is_neg_disj : Logic.thm -> bool
+(**
+   [is_neg_disj thm]: true if [thm] is of the form
+   [ |- not (a or b) ].
 *)
 
 val is_iffterm : 'a * 'b * Basic.term -> bool
@@ -246,10 +280,14 @@ val is_rr_equality: Basic.binders list * Basic.term option * Basic.term -> bool
    
     [|- c=>a] is  [|- c => a=true]
     
+    [|- not (a = b)] is [|- (a=b)=false] and [|- (b=a) = false]
+   
     [|- not a] is  [|- a=false]
    
     [ |- c=> not a] is  [|- c => a = false]
    
+    [|- not (a or b)]  is  [|- (not a) and (not b)]
+
     [|- a and b]  is  [|- a] and [|- b]
    
     [|- true] is ignored
@@ -285,6 +323,17 @@ val do_fact_rule :
    Ignore [|- true] and [|- c=>true].
 *)
 
+val do_neg_eq_rule :
+  Logic.thm list -> 
+    Scope.t * Logic.thm 
+  * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Logic.thm list
+   (**
+   Convert [|- not (a = b)] to [|- (a = b) =false] and [|-
+   (b=a)=false].  Convert [|- c=>not (a = b)] to [|- c=>(a = b)
+   =false] and [|- c=> (b=a)=false]
+   *)
+   
 val do_neg_rule :
   Logic.thm list -> 
     Scope.t * Logic.thm 
@@ -292,7 +341,8 @@ val do_neg_rule :
   -> Logic.thm list
 (**
    Convert [|- not a] to [|- a=false] and [|- c=> not a] to [|- c=>
-   a=false] and [|- c=> not true ] to [|- not c].
+   a=false] and [|- c=> not true ] to [|- not c] and [not (a or b)] to
+   [(not a) and (not b)].
 *)
 
 val do_neg_all_rule :
@@ -312,6 +362,16 @@ val do_neg_exists_rule :
   -> Logic.thm list
 (**
    Convert [|- not (?a: b)] -> [|- !a: not b] then convert the new
+   theorem.
+*)
+
+val do_neg_disj_rule :
+  Logic.thm list -> 
+    Scope.t * Logic.thm 
+  * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Logic.thm list
+(**
+   Convert [|- not (a | b)] -> [|- (not a) & (not b)] then convert the new
    theorem.
 *)
 
@@ -395,12 +455,17 @@ val solve_not_true_tac: Tag.t -> Tactics.tactic
    and [c=> a] to [c => a=true]
    and solve [false |- C]
 
+   [neg_eq_asm]:
+    Convert [not (a=b)] to [(a=b) = false] and [(b=a)=false]
+    and [c=>not (a=b)] to [c=>((a=b) = false)] and [c=>((b=a)=false)]
+
    [neg_rule_asm]: 
-   Convert 
-   and [c=> not true] to [not c]
-   and [not a] to [a=false]
-   and [c=> not a] to [c=> a=false]
-   and solve  [not true |- C]
+    Convert [c=> not true] to [not c]
+    and [not (a or b)] to [(not a) & (not b)]
+    and [not a] to [a=false]
+    and [c=> not a] to [c=> a=false]
+    pass [not (a=b)] and [c=>not(a=b)] to [neg_eq_asm]
+    and solve  [not true |- C]
 
    [conj_rule_asm]: Convert [a & b] to [a] and [b]
 
