@@ -216,6 +216,22 @@ val iffC: ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
 
    ---->
 
+   g1:\[asms |- (A=>B){_ l}, concl\]; 
+   g2:\[asms |- (B=>A){_ l}, concl\]; 
+   }
+
+   info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
+ *)
+
+val iffE: ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
+(** 
+   [iffE l sq]: Fully elminate the equivalence at conclusion [l]
+
+   {L
+   g:\[asms |- (A iff B){_ l}, concl\]
+
+   ---->
+
    g1:\[A{_ l1}, asms |- B{_ l2}, concl\]; 
    g2:\[B{_ l3}, asms |- A{_ l4}, concl\]; 
    }
@@ -661,6 +677,14 @@ module Thms:
 
       val make_rule_false_thm : unit -> Logic.thm
       val rule_false_thm : unit -> Logic.thm
+
+(**
+   eq_sym_thm: !x y: (x = y) = (y = x)
+ *)
+
+      val make_eq_sym_thm : unit -> Logic.thm
+      val eq_sym_thm : unit -> Logic.thm
+
     end
 
 module Rules:

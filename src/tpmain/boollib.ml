@@ -365,9 +365,6 @@ let make_iff_def () = defn (Basic.string_fnid Logicterm.iffid)
 let iff_def_var = Lib.freeze make_iff_def
 let iff_def () = Lib.thaw iff_def_var
 
-(*
-let iff_def () = defn (Basic.string_fnid Logicterm.iffid)
-*)
 
 (** 
    [iffA l sq]: Elminate the equivalance at assumptin [l]
@@ -375,48 +372,63 @@ let iff_def () = defn (Basic.string_fnid Logicterm.iffid)
    {L
    g:\[(A iff B){_ l}, asms |- concl]
    ---->
-   g1:[A{_ l1}, asms |- B{_ l2}, concl]; 
-   g2:[B{_ l3}, asms |- A{_ l4}, concl]; 
+   g:[(A => B){_ l1}, (B => A){_ l2}, asms |- concl]; 
    }
 
-   info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
+   info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
  *)
 let iffA ?info ?a goal = 
   let af = first_asm_label a is_iff goal
   in 
   let sqnt=Tactics.sequent goal
-  and inf = Tactics.mk_info()
   in 
   let t, f = Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
-  in
-  let set_info () = 
-    let subgoals = Tactics.subgoals inf
-    and aforms = Tactics.aformulas inf
-    and cforms = Tactics.cformulas inf
-    in 
-    Logic.add_info info (List.rev subgoals) 
-      (List.rev aforms) (List.rev cforms) []
-  in
-  let impl_tac g = 
-    let (a, b) = 
-      Lib.get_two (Tactics.aformulas inf) (Failure "iffA: impl_tac")
-    in 
-    Tactics.empty_info inf;
-    Tactics.map_every 
-      (Logic.Tactics.implA (Some inf)) [ftag a; ftag b]  goal
   in 
+    if not (is_iff f) 
+    then (raise (error "iffA"))
+    else 
+      seq 
+	[
+	  Tactics.rewrite_tac [iff_def()] ~f:(ftag t);
+	  Logic.Tactics.conjA info (ftag t);
+	] goal
+    
+
+
+(** 
+   [iffC l sq]: Elminate the equivalence at conclusion [l]
+
+   {L
+   g:\[asms |- (A iff B){_ l}, concl]
+   ---->
+   g1:\[asms |- (A => B){_ l}, concl]
+   g2:\[asms |- (B => A){_ l}, concl]
+   }
+
+   info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
+**)
+
+let iffC ?info ?c goal = 
+  let cf = first_concl_label c is_iff goal
+  in 
+  let sqnt=sequent goal
+  in 
+  let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt
+  in
   if not (is_iff f) 
-  then (raise (error "iffA"))
+  then raise (error "iffC")
   else 
     seq 
       [
-       Tactics.rewrite_tac [iff_def()] ~f:(ftag t);
-       Logic.Tactics.conjA (Some inf) (ftag t);
-       impl_tac;
-       Tactics.data_tac set_info ()] goal
-    
+	rewrite_tac [iff_def()] ~f:(ftag t);
+	Logic.Tactics.conjC info (ftag t)
+      ] goal
+
+
+
+
 (** 
-   [iffC l sq]: Elminate the equivalence at conclusion [l]
+   [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
    {L
    g:\[asms |- (A iff B){_ l}, concl]
@@ -427,38 +439,42 @@ let iffA ?info ?a goal =
 
    info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 **)
-let iffC ?info ?c goal = 
+let iffE ?info ?c goal = 
   let cf = first_concl_label c is_iff goal
   in 
-  let sqnt=Tactics.sequent goal
-  and inf = Tactics.mk_info()
+  let sqnt=sequent goal
   in 
   let t, f = Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt
   in
-  let clear_cforms ()= 
-    let subgoals = Tactics.subgoals inf
+  let add_goals info inf =
+    let gls = subgoals inf
     in 
-    Logic.do_info (Some inf) subgoals [] [] []
+    Logic.add_info info gls [] [] [];
+    empty_info inf
   in 
-  let set_info () = 
-    let subgoals = Tactics.subgoals inf
-    and aforms = Tactics.aformulas inf
-    and cforms = Tactics.cformulas inf
+  let add_forms info inf=
+    let atgs = List.rev (aformulas inf)
+    and ctgs = List.rev (cformulas inf)
     in 
-    Logic.add_info info subgoals 
-      (List.rev aforms) (List.rev cforms) []
+      Logic.add_info info [] atgs ctgs [];
+      empty_info inf
   in
   if not (is_iff f) 
-  then (raise (error "iffC"))
+  then raise (error "iffE")
   else 
-    (seq 
-       [
-	Tactics.rewrite_tac [iff_def()] ~f:(ftag t);
-	Logic.Tactics.conjC (Some inf) (ftag t);
-	Tactics.data_tac clear_cforms ();
-	Logic.Tactics.implC (Some inf) (ftag t);
-	Tactics.data_tac set_info ()]) goal
-
+    let inf = mk_info()
+    in 
+    let tac g =
+      (seq 
+	 [
+	   rewrite_tac [iff_def()] ~f:(ftag t);
+	   notify_tac (add_goals info) inf
+	     (Logic.Tactics.conjC (Some inf) (ftag t));
+	   Logic.Tactics.implC (Some inf) (ftag t)
+	 ]) g
+    in 
+      alt [ notify_tac (add_forms info) inf tac; 
+	    fail ~err:(error "iffE") ] goal
 
 (*** 
 * Eliminating boolean operators 
@@ -680,7 +696,7 @@ let split_concl_rules =
   [
    (fun inf -> Logic.Tactics.trueC (Some inf)); 
    (fun inf -> Logic.Tactics.conjC (Some inf)); 
-(*   (fun inf c -> iffC ~info:inf ~c:c) *)
+(*   (fun inf c -> iffE ~info:inf ~c:c) *)
  ]
 
 
@@ -759,7 +775,7 @@ let scatter_concl_rules =
    (fun inf -> Logic.Tactics.allC (Some inf));
 
    (fun inf -> Logic.Tactics.conjC (Some inf)); 
-   (fun inf c -> iffC ~info:inf ~c:c)
+   (fun inf c -> iffE ~info:inf ~c:c)
  ]
 
 let scatter_tac ?info ?f goal =
@@ -797,7 +813,7 @@ let blast_concl_rules =
    (fun inf -> Logic.Tactics.allC (Some inf));
 
    (fun inf -> Logic.Tactics.conjC (Some inf)); 
-   (fun inf c -> iffC ~info:inf ~c:c);
+   (fun inf c -> iffE ~info:inf ~c:c);
 
    (fun inf l -> basic ~info:inf ?a:None ~c:l)
  ]
@@ -1321,6 +1337,20 @@ module Thms =
 
     let rule_false_thm_var = Lib.freeze make_rule_false_thm
     let rule_false_thm () = Lib.thaw rule_false_thm_var
+
+
+(**
+   eq_sym_thm: !x y: (x = y) = (y = x)
+ *)
+    let make_eq_sym_thm ()= 
+      Commands.prove << !x y: (x = y) = (y = x) >>
+      (allC ++ allC 
+       ++ (once_rewrite_tac [equals_iff_thm()])
+       ++ iffE
+       ++ replace_tac ++ eq_tac);;
+
+    let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
+    let eq_sym_thm () = Lib.thaw eq_sym_thm_var
 
   end
 

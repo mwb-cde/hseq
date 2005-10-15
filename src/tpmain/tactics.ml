@@ -613,7 +613,11 @@ let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
       None -> foreach_form filter_replace
     | Some(x) -> filter_replace (ftag x)
   in 
-  tac goal
+   alt 
+     [
+       tac;
+       fail ~err:(error "gen_replace")
+     ] goal
 
 
 let replace_tac ?info ?(dir=leftright) ?asms ?f goal=

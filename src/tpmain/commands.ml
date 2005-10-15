@@ -245,9 +245,16 @@ let save_thm ?(simp=false) n th =
 let prove_thm ?(simp=false) n t tacs =
   catch_errors
     (fun x -> 
-      let th = Goals.by_list t tacs
-      in 
-      ignore(save_thm ~simp:simp n th); th)
+       let th = 
+	 try 
+	   Goals.by_list t tacs
+	 with 
+	     err -> 
+	       raise 
+		 (Result.add_error
+		 (Result.error ("Failed to prove theorem "^n)) err)
+       in 
+	 ignore(save_thm ~simp:simp n th); th)
     ()
 
 let theorem = prove_thm
