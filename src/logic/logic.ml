@@ -419,7 +419,9 @@ module Sequent=
     let asms (_, _, asl, _) = asl
     let concls (_, _, _, cnl) = cnl
     let sqnt_env (_, e, _, _) = e
+
     let sqnt_tag(t, _, _, _) = t
+    let sqnt_retag _ = Tag.create()
 
     let sklm_cnsts (_, e, _, _) = e.sklms
     let scope_of (_, e, _, _) = e.sqscp
@@ -513,17 +515,21 @@ module Sequent=
     let delete_asm l sq =
       let tg, env, ams, cls = dest sq
       in 
+      let nsqnt_tag = sqnt_retag sq
+      in 
       let (lasms, _, rasms) = split_at_asm l ams
       in 
-      make tg env (List.rev_append lasms rasms) cls
+      make nsqnt_tag env (List.rev_append lasms rasms) cls
 	
 	(** Delete a conclusion by label*)
     let delete_cncl l sq =
       let tg, env, ams, cls = dest sq
       in 
+      let nsqnt_tag = sqnt_retag sq
+      in 
       let (lcncls, _, rcncls) = split_at_concl l cls
       in 
-      make tg env ams  (List.rev_append lcncls rcncls)
+      make nsqnt_tag env ams  (List.rev_append lcncls rcncls)
 
     let tag_to_index t sq =
       let rec index_aux fs i = 
@@ -1060,8 +1066,8 @@ module Tactics =
       let (t, nasms) = lift_tagged l (Sequent.asms sq)
       in 
       add_info info [] [t] [] [];
-      [Sequent.make
-	 (Sequent.sqnt_tag sq) (Sequent.sqnt_env sq) 
+      [Sequent.make (Sequent.sqnt_retag sq)
+	(Sequent.sqnt_env sq) 
 	 nasms (Sequent.concls sq)]
 	
     let lift_asm info f g =
@@ -1071,7 +1077,7 @@ module Tactics =
       let (t, nconcls) = lift_tagged f (Sequent.concls sq)
       in 
       add_info info [] [] [t] [];
-      [Sequent.make (Sequent.sqnt_tag sq) 
+      [Sequent.make (Sequent.sqnt_retag sq)
 	 (Sequent.sqnt_env sq) (Sequent.asms sq)  
 	 nconcls]
 
@@ -1089,8 +1095,8 @@ module Tactics =
    copy_asm i: 
    .., t:Ai, ..|- C
    ->
-   .., t':Ai, t:Ai, .. |- C
-   info: [] [t'] [] []
+   g:\[ .., t':Ai, t:Ai, .. |- C \]
+   info: [g] [t'] [] []
  *)
     let copy_asm0 info l sq = 
       let (lasms, na, rasms) = split_at_asm l (Sequent.asms sq)
@@ -1099,7 +1105,7 @@ module Tactics =
       let nb = (nt, drop_tag na)
       in 
       add_info info [] [nt] [] [];
-      mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq,
+      mk_subgoal (Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
 		  join_up lasms (nb::na::rasms),
 		  Sequent.concls sq)
 
@@ -1122,7 +1128,7 @@ module Tactics =
       let nb = (nt, drop_tag nc)
       in 
       add_info info [] [] [nt] [];
-      mk_subgoal(Sequent.sqnt_tag sq, Sequent.sqnt_env sq,
+      mk_subgoal(Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
 		 Sequent.asms sq,
 		 join_up lcncls (nb::nc::rcncls))
 
@@ -1139,9 +1145,9 @@ module Tactics =
       in
       add_info info [] [] [] [];
       match hs with 
-	[] -> mk_subgoal(Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
+	[] -> mk_subgoal(Sequent.sqnt_retag sq, Sequent.sqnt_env sq, 
 			 hs, Sequent.concls sq)
-      | h::hys -> mk_subgoal(Sequent.sqnt_tag sq, 
+      | h::hys -> mk_subgoal(Sequent.sqnt_retag sq,
 			     Sequent.sqnt_env sq, hys@[h], 
 			     Sequent.concls sq)
 
@@ -1149,17 +1155,17 @@ module Tactics =
       simple_sqnt_apply (rotate_asms0 info) sqnt
 
     let rotate_cncls0 inf sq =
-      let cs = Sequent.concls sq in
+      let cs = Sequent.concls sq 
+      in
       add_info inf [] [] [] [];
       match cs with 
-	[] -> mk_subgoal(Sequent.sqnt_tag sq, 
+	[] -> mk_subgoal(Sequent.sqnt_retag sq,
 			 Sequent.sqnt_env sq, Sequent.asms sq, cs)
-      | c::cns -> mk_subgoal(Sequent.sqnt_tag sq, 
+      | c::cns -> mk_subgoal(Sequent.sqnt_retag sq,
 			     Sequent.sqnt_env sq, Sequent.asms sq, cns@[c])
 
     let rotate_cncls inf sqnt = 
       simple_sqnt_apply (rotate_cncls0 inf) sqnt
-
 
 (**
    [delete l sq]: delete assumption [l] or conclusion [l].
@@ -1205,11 +1211,13 @@ module Tactics =
       let nasm = (ftag, (Formula.make scp nt))
       in 
       try 
-	add_info info [] [ftag] [] [];
-	mk_subgoal(Sequent.sqnt_tag sq, 
-		   Sequent.sqnt_env sq, 
-		   nasm::(Sequent.asms sq), 
-		   Sequent.concls sq)
+	let ng = 
+	  mk_subgoal(Sequent.sqnt_retag sq, 
+		     Sequent.sqnt_env sq, 
+		     nasm::(Sequent.asms sq), 
+		     Sequent.concls sq)
+	in 
+	add_info info [] [ftag] [] []; ng
       with 
 	x -> (add_logic_error "Not in scope of sequent" [nf] x)
 
@@ -1270,7 +1278,7 @@ module Tactics =
 	and asm2=(ft2, t2)
 	in 
 	add_info inf [] [ft1; ft2] [] [];
-	mk_subgoal (Sequent.sqnt_tag sq, Sequent.sqnt_env sq, 
+	mk_subgoal (Sequent.sqnt_retag sq, Sequent.sqnt_env sq, 
 		    asm1::asm2::(join_up lasms rasms),
 		    Sequent.concls sq))
       else raise (logic_error "Not a conjunction" [t])
@@ -1282,10 +1290,10 @@ module Tactics =
    conjC i sq: 
    g| asm |- t:(a /\ b), concl   
    -->
-   g| asm |- t:a  and g'| asm |- t:b 
+   g1| asm |- t:a  and g2| asm |- t:b 
 
    (where t:a means formula has tag t)
-   info: [g;g'] [t] []
+   info: [g1;g2] [t] []
  *)
     let conjC0 inf i sq=
       let (lcncls, cncl, rcncls) = split_at_concl i (Sequent.concls sq)
@@ -1316,8 +1324,8 @@ module Tactics =
    disjA i sq: 
    g| t:a\/b, asm |-  concl   
    -->
-   g| t:a, asm |- concl  and g'| t:b, asm |- concl
-   info: [g;g'] [t] []
+   g1| t:a, asm |- concl  and g2| t:b, asm |- concl
+   info: [g1; g2] [t] []
  *)
     let disjA0 inf i sq=
       let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
@@ -1365,7 +1373,7 @@ module Tactics =
 	in 
 	add_info inf [] [] [ft1; ft2] [];
 	mk_subgoal 
-	  (Sequent.sqnt_tag sq, 
+	  (Sequent.sqnt_retag sq, 
 	   Sequent.sqnt_env sq, 
 	   Sequent.asms sq, 
 	   cncl1::cncl2::(join_up lconcls rconcls)))
@@ -1393,7 +1401,7 @@ module Tactics =
 	let cncl1=(ft, t1)
 	in 
 	add_info inf [] [] [ft] [];
-	mk_subgoal (Sequent.sqnt_tag sq, 
+	mk_subgoal (Sequent.sqnt_retag sq, 
 		    Sequent.sqnt_env sq, 
 		    join_up lasms rasms,
 		    cncl1::(Sequent.concls sq)))
@@ -1421,7 +1429,7 @@ module Tactics =
 	let asm1=(ft, t1)
 	in 
 	add_info inf [] [ft] [] [];
-	mk_subgoal (Sequent.sqnt_tag sq, 
+	mk_subgoal (Sequent.sqnt_retag sq, 
 		    Sequent.sqnt_env sq,
 		    asm1::(Sequent.asms sq), 
 		    join_up lconcls rconcls))
@@ -1434,11 +1442,11 @@ module Tactics =
    implA i sq
    g| t:a => b,asms |-cncl 
    -->
-   g'| asms |- t:a, cncl  
+   g1| asms |- t:a, cncl  
    and  
-   g| t:b, asms |- cncl
+   g2| t:b, asms |- cncl
 
-   info: [g'; g]  [t] [t] []
+   info: [g1; g2]  [t] [t] []
 
    where g| asms |- concl 
    means g is the tag for the sequent
@@ -1490,7 +1498,7 @@ module Tactics =
 	in 
 	add_info inf [] [ft2] [ft1] [];
 	mk_subgoal
-	  (Sequent.sqnt_tag sq, 
+	  (Sequent.sqnt_retag sq, 
 	   Sequent.sqnt_env sq, 
 	   asm::(Sequent.asms sq), 
 	   join_up lconcls (cncl::rconcls)))
@@ -1522,7 +1530,7 @@ module Tactics =
 	  in 
 	  add_info inf [] [ft] [] [];
 	  (mk_subgoal
-	     (Sequent.sqnt_tag sq, 
+	     (Sequent.sqnt_retag sq, 
 	      Sequent.sqnt_env sq, 
 	      join_up lasms ((ft, ntrm)::rasms),
 	      Sequent.concls sq)),
@@ -1585,7 +1593,7 @@ module Tactics =
 	in 
 	(* build the subgoal and return information *)
 	add_info inf [] [] [ft] [sv];
-	(mk_subgoal(Sequent.sqnt_tag sq, 
+	(mk_subgoal(Sequent.sqnt_retag sq, 
 		    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
 		    Sequent.asms sq, 
 		    join_up lconcls ((ft, ncncl)::rconcls)),
@@ -1645,7 +1653,7 @@ module Tactics =
 	in 
 	add_info inf [] [ft] [] [sv];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
 	    join_up lasms ((ft, nasm)::rasms),
 	    Sequent.concls sq)), 
@@ -1678,7 +1686,7 @@ module Tactics =
 	  in 
 	  add_info inf [] [] [ft] [];
       	  (mk_subgoal
-	     (Sequent.sqnt_tag sq, 
+	     (Sequent.sqnt_retag sq, 
 	      Sequent.sqnt_env sq, 
 	      Sequent.asms sq, 
 	      join_up lconcls ((ft, trm2)::rconcls)),
@@ -1736,7 +1744,7 @@ module Tactics =
       in 
       add_info inf [] [ft] [] [];
       mk_subgoal
-	(Sequent.sqnt_tag sq, 
+	(Sequent.sqnt_retag sq, 
 	 Sequent.sqnt_env sq, 
 	 join_up lasms (nt::rasms),
 	 Sequent.concls sq)
@@ -1768,7 +1776,7 @@ module Tactics =
       in 
       add_info inf [] [] [ft] [];
       mk_subgoal
-	(Sequent.sqnt_tag sq, 
+	(Sequent.sqnt_retag sq, 
 	 Sequent.sqnt_env sq, 
 	 Sequent.asms sq, 
 	 join_up lconcls (nt::rconcls))
@@ -1880,7 +1888,7 @@ module Tactics =
 	in 
 	add_info inf [] [ft] [] [];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
 	    join_up lasms ((ft, nt)::rasms),
 	    Sequent.concls sq), 
@@ -1920,7 +1928,7 @@ module Tactics =
 	in 
 	add_info inf [] [] [ft] [];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
 	    Sequent.asms sq, 
 	    join_up lconcls ((ft, nt)::rconcls)),
@@ -2007,7 +2015,7 @@ module Tactics =
 	in 
 	add_info inf [] [asm_tag] [] [];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
 	    ((asm_tag, nasm1)::(Sequent.asms sq)),
 	    Sequent.concls sq), 
@@ -2074,7 +2082,7 @@ module Tactics =
 	in 
 	add_info inf [] [form_tag] [] [];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
 	    new_asms,
 	    Sequent.concls sq), 
@@ -2121,7 +2129,7 @@ module Tactics =
 	in 
 	add_info inf [] [] [form_tag] [];
 	(mk_subgoal
-	   (Sequent.sqnt_tag sq, 
+	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
 	    Sequent.concls sq, 
 	    new_concls), 
@@ -2168,7 +2176,7 @@ module Tactics =
 	 in 
 	 add_info inf [] [new_tag] [] [];
 	 mk_subgoal 
-	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
+	   (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
 	    new_asms, Sequent.concls sqnt))
       with err -> 
 	raise (add_logic_error "nameA: failed." [] err) 
@@ -2205,7 +2213,7 @@ module Tactics =
 	 in 
 	 add_info inf [] [] [new_tag] [];
 	 mk_subgoal 
-	   (Sequent.sqnt_tag sqnt, Sequent.sqnt_env sqnt,
+	   (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
 	    Sequent.asms sqnt, new_concls))
       with err -> 
 	raise (add_logic_error "nameC: failed." [] err) 
