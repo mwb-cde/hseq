@@ -512,6 +512,14 @@ val fact_rule_asm :
    and solve [false |- C].
 *)
 
+val neg_disj_asm :
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Tactics.tactic
+(**
+   Convert [not (a or b)] to [(not a) and (not b)]
+*)
+
 val neg_rule_asm :
   Logic.tagged_form list ref 
   -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 

@@ -28,7 +28,7 @@ let init_std_ss() =
   empty_simp();
   add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv
 
-(** [simp_tac ?f ?cntrl ?asms ?set ?with ?rules ?ignore goal]
+(** [simp_tac ?f ?cntrl ?ignore ?asms ?set ~rules goal]
    
    Simplifier tactic.
 
@@ -51,6 +51,8 @@ let init_std_ss() =
    @param cntrl The rewrite control to use (used to select top-down or
    bottom up simplifying). Default: top-down.  
 
+   @param ignore List of assumptions/conclusions to ignore. Default: [].
+
    @param asms Whether to use the assumptions and conclusions as
    rewrite rules. Default: true.
 
@@ -61,13 +63,11 @@ let init_std_ss() =
 
    @param rules Additional rewrite rules to use. Default: [].
 
-   @param ignore List of assumptions/conclusions to ignore. Default: [].
-
    @raise Simplifier.No_change If no change is made.
  *)
 let simp_tac 
-    ?f ?(cntrl=Formula.default_rr_control) 
-    ?(asms=true) ?set ?add ?(rules=[]) ?(ignore = []) goal =
+    ?f ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?(asms=true) ?set ?add ?(rules=[]) goal =
 (** uset: The simpset to use. **)
   let uset = 
     let uset0 = 

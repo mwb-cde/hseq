@@ -44,7 +44,7 @@ val add_conv : Basic.term list -> Logic.conv -> unit
 
 (** {5 User level simplification tactics} *)
 
-(** [simp_tac ?f ?cntrl ?asms ?set ?add ?rules ?ignore goal]
+(** [simp_tac ?f ?cntrl ?ignore ?asms ?set ?add ~rules goal]
    
    Simplifier tactic.
 
@@ -63,6 +63,8 @@ val add_conv : Basic.term list -> Logic.conv -> unit
    @param cntrl The rewrite control to use (used to select top-down or
    bottom up simplifying). Default: top-down.  
 
+   @param ignore List of assumptions/conclusions to ignore. Default: [[]].
+
    @param asms Whether to use the assumptions and conclusions as
    rewrite rules. Default: [true].
 
@@ -73,18 +75,17 @@ val add_conv : Basic.term list -> Logic.conv -> unit
 
    @param rules Additional rewrite rules to use. Default: [[]].
 
-   @param ignore List of assumptions/conclusions to ignore. Default: [[]].
-
    @raise No_change If no change is made.
  *)
 val simp_tac :
-    ?f:Logic.label ->
-      ?cntrl:Simplifier.control ->
-	?asms:bool ->
-	  ?set:Simpset.simpset ->
-	    ?add:Simpset.simpset ->
-	      ?rules:Logic.thm list ->
-		?ignore:Logic.label list -> Tactics.tactic
+  ?f:Logic.label ->
+  ?cntrl:Simplifier.control ->
+  ?ignore:Logic.label list -> 
+  ?asms:bool ->
+  ?set:Simpset.simpset ->
+  ?add:Simpset.simpset ->
+  ?rules:Logic.thm list ->
+  Tactics.tactic
 
 
 (** {5 Initialising functions} *)

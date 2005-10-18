@@ -852,10 +852,31 @@ and neg_eq_asm ret (tg, (qs, c, a)) g=
   else
     failwith "neg_eq_asm"
 
+and neg_disj_asm ret (tg, (qs, c, a)) g=
+  if ((Logicterm.is_neg a)
+	&& (Logicterm.is_disj (Term.rand a)))
+  then 
+    match c with
+	None -> 
+	  alt
+	    [
+	      seq
+		[
+		  asm_rewrite_tac (neg_disj_thm()) tg;
+		  single_asm_to_rule ret tg
+		];
+	      asm_rewrite_add_tac ret (rule_false_thm()) tg
+	    ] g
+      | Some _ ->  
+	  failwith 
+	    "neg_disj_asm: Not an unconditional negated disjunction"
+  else failwith "neg_disj_asm"
+
+
 and neg_rule_asm ret (tg, (qs, c, a)) g = 
   if Logicterm.is_neg a
   then 
-    let (_, b) = Term.dest_unop a
+    let b = Term.rand a
     in 
       match is_rr_rule (qs, c, a, None) with
 	  (None, _) -> 
@@ -872,16 +893,8 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else 
 		  if (Logicterm.is_disj b)
-		  then 
-		    alt
-		      [
-			seq
-			  [
-			    asm_rewrite_tac (neg_disj_thm()) tg;
-			    single_asm_to_rule ret tg
-			  ];
-			asm_rewrite_add_tac ret (rule_false_thm()) tg
-		      ] g
+		  then
+		    neg_disj_asm ret (tg, (qs, c, a)) g
 		  else
 		    asm_rewrite_add_tac ret (rule_false_thm()) tg g
 	| (Some(true), _) -> 
@@ -962,12 +975,13 @@ and single_asm_to_rule ret tg goal =
   Lib.apply_first 
     [
 (*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
-     neg_exists_rule_asm ret (tg, (qs, c, a));
-     rr_equality_asm ret (tg, (qs, c, a));
-     neg_rule_asm ret (tg, (qs, c, a));
-     conj_rule_asm ret (tg, (qs, c, a));
-     fact_rule_asm ret (tg, (qs, c, a));
-     accept_asm ret (tg, (qs, c, a))
+      neg_disj_asm ret (tg, (qs, c, a));
+      neg_exists_rule_asm ret (tg, (qs, c, a));
+      rr_equality_asm ret (tg, (qs, c, a));
+      neg_rule_asm ret (tg, (qs, c, a));
+      conj_rule_asm ret (tg, (qs, c, a));
+      fact_rule_asm ret (tg, (qs, c, a));
+      accept_asm ret (tg, (qs, c, a))
    ]  goal
 
 (*
