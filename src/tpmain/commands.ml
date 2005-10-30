@@ -36,8 +36,10 @@ let load_theory_as_cur n =
     let t = try (Filename.chop_extension n) with _ -> n
     in if t=n then n else chop t
   in 
+(*
   let filefn fname = Global.Files.find_thy_file fname
   in 
+*)
   let db = 
     Thydb.Loader.load (Global.theories()) Global.Files.loader_data
       (Thydb.Loader.mk_info n None None)
@@ -75,7 +77,7 @@ let begin_theory n parents=
       with Not_found -> parents
     in 
     let db = theories()
-    and thy = Theory.mk_thy n parents
+    and thy = Theory.mk_thy n importing
     in
     let db1 = Thydb.Loader.make_current db Global.Files.loader_data thy
     in 
@@ -146,9 +148,9 @@ let get_type_pp_rec id= Global.PP.get_type_pp id
 
 (*** Terms ***)
 
-let add_term_pp_rec id rcrd=
+let add_term_pp_rec id ?(pos=Lib.First) rcrd=
   Global.Thys.set_theories
-    (Thydb.add_term_pp_rec (Basic.name id) rcrd (theories()));
+    (Thydb.add_term_pp_rec (Basic.name id) (rcrd, pos) (theories()));
   Global.PP.add_term_pp_record id rcrd
       
 let remove_term_pp_rec id =
@@ -158,11 +160,11 @@ let remove_term_pp_rec id =
 
 let get_term_pp_rec id= Global.PP.get_type_pp id 
 
-let add_overload sym id = 
+let add_overload sym ?(pos=Lib.First) id = 
   let ty = 
     Thydb.get_id_type (Basic.thy_of_id id) (Basic.name id) (theories())
   in 
-  Parser.add_overload sym (id, ty)
+  Parser.add_overload sym pos (id, ty)
 
 let remove_overload sym id =
   Parser.remove_overload sym id
@@ -179,13 +181,13 @@ let get_type_pp id=get_type_pp_rec id
 
 (*** Terms ***)
 
-let add_term_pp id prec fx repr=
+let add_term_pp id ?(pos=Lib.First) prec fx repr=
   let rcrd=Printer.mk_record prec fx repr
   in 
-  add_term_pp_rec id rcrd;
+  add_term_pp_rec id ~pos:pos rcrd;
   match repr with
     None -> ()
-  | Some(sym) -> add_overload sym id
+  | Some(sym) -> add_overload sym ~pos:pos id
 
 let remove_term_pp id = remove_term_pp_rec id
 let get_term_pp id=get_term_pp_rec id

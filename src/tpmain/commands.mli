@@ -148,10 +148,12 @@ val get_type_pp_rec :
     Basic.ident -> (int * fixity * string option)
 (** Get the PP record for a type identifier. *)
 
-val add_term_pp_rec: Basic.ident -> Printer.record -> unit
-(** 
+val add_term_pp_rec: 
+  Basic.ident -> ?pos:Theory.sym_pos -> Printer.record -> unit
+(**
    Add a PP record for a term identifier. Updates Printer and Parser
-   tables. (Experimental) Add overloading information to the parser.
+   tables. (Experimental) Add overloading information to the parser
+   with relative position [pos] (Default is [First]).
 *)
 
 val remove_term_pp_rec : Basic.ident -> unit
@@ -163,10 +165,11 @@ val get_term_pp_rec :
     Basic.ident -> (int * fixity * string option)
 (** Get the PP record for a term identifier. *)
 
-val add_overload: string -> Basic.ident -> unit
-(** 
-   [add_overload sym id]: Overload [sym] with term identifier [id]. 
-   (Experimental.)
+val add_overload: string -> ?pos:Theory.sym_pos -> Basic.ident -> unit
+(**
+   [add_overload sym ?post id]: Overload [sym] with term identifier
+   [id]. Make identifier [id] have position [?pos] (default [First])
+   in the list of options for symbol [sym]. (Experimental.)
 *)
 val remove_overload: string -> Basic.ident -> unit
 (**
@@ -193,7 +196,10 @@ val get_type_pp : Basic.ident -> (int * fixity * string option)
    Get PP information for a type identifier.
 *)
 
-val add_term_pp: Basic.ident -> int -> fixity -> string option -> unit
+val add_term_pp: 
+  Basic.ident 
+  -> ?pos:Theory.sym_pos 
+  -> int -> fixity -> string option -> unit
 (** 
    Add a PP information for a term identifier. Updates Printer and
    Parser tables. (Experimental) Add overloading information to the

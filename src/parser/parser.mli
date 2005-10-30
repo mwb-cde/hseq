@@ -14,7 +14,7 @@ module Pkit :
       val empty : 'a list phrase
       val get : (token -> bool) -> (token -> 'a) -> 'a phrase
       val ( !$ ) : token -> token phrase
-      val ( || ) : 'a phrase -> 'a phrase -> 'a phrase
+      val ( // ) : 'a phrase -> 'a phrase -> 'a phrase
       val ( !! ) : 'a phrase -> 'a phrase
       val ( -- ) : 'a phrase -> 'b phrase -> ('a * 'b) phrase
       val ( >> ) : 'a phrase -> ('a -> 'b) -> 'b phrase
@@ -438,7 +438,7 @@ val overload_table:
 val get_overload_list: 
     string -> (Basic.ident * Basic.gtype) list
 val add_overload:
-    string -> (Basic.ident * Basic.gtype) -> unit
+    string -> Theory.sym_pos -> (Basic.ident * Basic.gtype) -> unit
 val remove_overload:
     string -> Basic.ident -> unit
 val print_overloads:

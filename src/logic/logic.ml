@@ -1110,8 +1110,6 @@ module Tactics =
 		  Sequent.concls sq)
 
     let copy_asm info i g = 
-      let sq=get_sqnt g
-      in 
       simple_sqnt_apply (copy_asm0 info i) g
 
 (* 
@@ -1133,8 +1131,6 @@ module Tactics =
 		 join_up lcncls (nb::nc::rcncls))
 
     let copy_cncl inf i g = 
-      let sq=get_sqnt g
-      in 
       simple_sqnt_apply (copy_cncl0 inf i) g
 
 
@@ -1820,7 +1816,6 @@ module Tactics =
  *)
     let filter_rules scp rls sq= 
       let memo = Lib.empty_env() 
-      and thyname= Scope.thy_of scp
       in 
       let rec ft srcs rslt =
 	match srcs with 
@@ -2484,7 +2479,7 @@ module Defns =
     let mk_typealias scp n ags d =
       let th = Scope.thy_of scp
       in 
-      let args = Defn.check_args_unique ags
+      let _ = Defn.check_args_unique ags
       in 
       let dfn = 
 	match d with
@@ -2567,7 +2562,7 @@ module Defns =
       and (abs_id, abs_ty) = subtype_def.Defn.abs
       in 
       (* try to prove the subtype exists *)
-      let does_exist_thm = prove_subtype_exists scp new_setp exist_thm
+      let _ = prove_subtype_exists scp new_setp exist_thm
       in 
       (* temporarily extend the scope with the new type and rep identifier *)
       (* nscp0: scope with new type *)

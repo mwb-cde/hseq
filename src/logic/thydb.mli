@@ -273,14 +273,14 @@ val get_type_pplist:
 (** {7 Term Printer-Parser records} *)
 
 val add_term_pp_rec: 
-    string -> Printer.record -> thydb  -> thydb
+    string -> (Printer.record * Theory.sym_pos) -> thydb  -> thydb
 (** 
    [add_term_pp_rec n r db]: Add PP record [r] for term identifier [n]
    in the current theory. 
  *)
 
 val get_term_pp_rec: 
-    string  -> string -> thydb -> Printer.record
+    string  -> string -> thydb -> (Printer.record * Theory.sym_pos)
 (** 
    [get_term_pp_rec th n db]: Get the PP record [r] for term identifier [n]
    in theory [th]. 
@@ -293,7 +293,8 @@ val remove_term_pp_rec : string -> string -> thydb -> unit
  *)
 
 val get_term_pplist: 
-    string -> thydb -> (Basic.ident * Printer.record) list
+    string -> thydb 
+  -> (Basic.ident * (Printer.record * Theory.sym_pos)) list
 (** 
    [get_term_pplist n db]: Get the list of PP records for identifiers
    with name [n].

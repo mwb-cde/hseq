@@ -271,7 +271,7 @@ let all_feasible s =
     let solve_for_var x s=
       let gL, gU, gO= IneqSolver.solve_for x s 
       in 
-      let gO1 = remove_trivial_ineqs gO
+      let _ = remove_trivial_ineqs gO
       in 
       (gL, gU, gO)
       

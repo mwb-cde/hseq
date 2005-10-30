@@ -175,7 +175,7 @@ let alt tacl g =
 	with _ -> alt_aux xs
   in alt_aux tacl 
 
-let (||) tac1 tac2 g=
+let (//) tac1 tac2 g=
   try tac1 g with  _ -> tac2 g
 
 let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
@@ -183,7 +183,7 @@ let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
 let (--) = thenl
 
 let rec repeat tac g =
-  (tac ++ ((repeat tac) || skip)) g
+  (tac ++ ((repeat tac) // skip)) g
 
 let cond pred ttac ftac g =
   if (pred g) then (ttac g) else (ftac g)
@@ -219,7 +219,7 @@ let map_first tac l goal =
   every_aux l goal
   
 let map_some tac l goal =
-  let nofail_tac l = (tac l || skip)
+  let nofail_tac l = (tac l // skip)
   in 
   let rec some_aux ls g =
     match ls with 
@@ -254,9 +254,9 @@ let foreach_form tac goal =
   let notify () = chng:=true
   in 
   let asms_tac g = 
-    (((foreach_asm tac) ++ data_tac notify ()) || skip) g 
+    (((foreach_asm tac) ++ data_tac notify ()) // skip) g 
   and concls_tac g = 
-    (((foreach_concl tac) ++ data_tac notify ()) || skip) g 
+    (((foreach_concl tac) ++ data_tac notify ()) // skip) g 
   in 
   restrict 
     (fun _ -> !chng)
@@ -490,7 +490,7 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) goal =
   let asm_varp x = Rewrite.is_free_binder asm_vars x
   and concl_varp x = Rewrite.is_free_binder concl_vars x
   in 
-  let varp x = Pervasives.(||) (asm_varp x) (concl_varp x)
+  let varp x = (asm_varp x) || (concl_varp x)
   and scope = Logic.Sequent.scope_of sqnt
   in 
   let env1 = 
@@ -515,7 +515,7 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) goal =
     [
      instA ?info:info ~a:a asm_consts;
      instC ?info:info ~c:c concl_consts;
-     (basic ?info:info ~a:a ~c:c || skip) 
+     (basic ?info:info ~a:a ~c:c // skip) 
    ] goal
 
 (***

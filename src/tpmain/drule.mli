@@ -6,6 +6,7 @@
 
 (** Utility functions for writing tactics. *)
 
+(*
 (* first rule which can be applied to an assumption/conclusion *)
 (*
 
@@ -229,3 +230,4 @@ val foreach_conc_except : Tag.t list ->
   ((Formula.form -> bool) * (Logic.label -> Logic.tactic)) list ->
     Logic.tactic
 
+*)

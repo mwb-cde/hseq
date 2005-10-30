@@ -598,7 +598,7 @@ let rec well_defined scp args t =
     match t with 
       Constr(Defined n, nargs) ->
 	(try 
-          (let recrd=Scope.defn_of scp n
+          (let _ =Scope.defn_of scp n
           in 
 	  List.iter well_def nargs)
 	with Not_found -> 
@@ -653,7 +653,7 @@ let check_decl_type scp ty=
     match t with 
       Constr(Defined n, nargs) ->
 	(try 
-          (let recrd=Scope.defn_of scp n
+          (let _ =Scope.defn_of scp n
           in 
 	  List.iter check_aux nargs)
 	with Not_found -> 
@@ -797,8 +797,10 @@ let unify scp t1 t2 = unify_env scp t1 t2 (empty_subst())
    if any error, removes bindings and raises exception 
  *)
 let unify_for_rewrite scp t1 t2 env = 
+(*
   let varenv= empty_subst()
   in 
+*)
   let copy_ty ty1 env =
     match ty1 with
       (Var(x)) -> 

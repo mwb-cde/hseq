@@ -262,10 +262,10 @@ val alt:  tactic list -> tactic
    Fails if no tactic succeeds. 
 *)
 
-val (||) : tactic -> tactic -> tactic
+val (//) : tactic -> tactic -> tactic
 (**
-   [tac1 || tac2]: Apply [tac1], if that fails, apply [tac2].
-   [tac1 || tac2] is [alt [tac1; tac2]].
+   [tac1 // tac2]: Apply [tac1], if that fails, apply [tac2].
+   [tac1 // tac2] is [alt [tac1; tac2]].
 *)
 
 val thenl : tactic ->  tactic list -> tactic 

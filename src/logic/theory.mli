@@ -45,6 +45,12 @@ val simp_property: property
    simplification set.
 *)
 
+(**
+   The precedence of a term identifier overloaded on a
+   symbol. (Default [First].)
+*)
+type sym_pos = Basic.ident Lib.position
+
 (** Records of identifier declarations and definitions. *)
 type id_record =
     {
@@ -92,7 +98,7 @@ type contents=
      (** Type definitions and declarations *)
      ctype_pps: (string * Printer.record) list;
      (** Type printer and parser information *)
-     cid_pps: (string * Printer.record) list 
+     cid_pps: (string * (Printer.record * sym_pos)) list 
      (** Term printer and parser information *)
    }
 
@@ -187,17 +193,19 @@ val add_decln_rec :
 
 (** {7 Printer-Parser records} *)
 
+
 val get_term_pp_rec: 
-    string  -> thy -> Printer.record
+    string  -> thy -> (Printer.record * sym_pos)
 (** Get a term Printer-Parser record to a theory. *)
 val add_term_pp_rec: 
-    string -> Printer.record
-      -> thy -> unit
+  string 
+  -> (Printer.record * sym_pos)
+  -> thy -> unit
 (** Add a term Printer-Parser record to a theory. *)
 val remove_term_pp_rec : string -> thy -> unit
 (** Remove term Printer-Parser record to a theory. *)
 val get_term_pplist: 
-    thy -> (Basic.ident * Printer.record) list
+    thy -> (Basic.ident * (Printer.record * sym_pos)) list
 (** Get all term Printer-Parser records of a theory. *)
 
 val get_type_pp_rec: 

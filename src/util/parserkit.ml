@@ -150,7 +150,7 @@ module type GRAMMARS =
       val list0 : ('a) phrase -> 'b phrase -> ('a list) phrase
       val list1 : ('a) phrase -> 'b phrase -> ('a list) phrase
 
-      val (||) : 'a phrase -> 'a phrase -> 'a phrase
+      val (//) : 'a phrase -> 'a phrase -> 'a phrase
       val alt : ('b) phrase list -> ('b) phrase 
       val named_alt : 
 	  (string, 'a -> ('b)phrase) Lib.named_list 
@@ -227,7 +227,7 @@ module Grammars:GRAMMARS=
 	     ("Error at "^(tok_to_str tok)^str))
       with _ -> raise (ParsingError str)
 
-    let (||) ph1 ph2 = 
+    let (//) ph1 ph2 = 
       (fun toks -> 
 	try (ph1 toks) 
 	with ParsingError _ -> (ph2 toks))
@@ -263,14 +263,14 @@ module Grammars:GRAMMARS=
 
     let rec repeat ph toks =
       (((ph -- (repeat ph)) >> (fun (x, y) -> x::y))
-     || empty) toks
+     // empty) toks
 
     let rec multiple ph toks=
       ((ph -- (repeat ph)) >> (fun (x, y) -> x::y)) toks
 
     let list0 ph sep = 
       (((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))
-     || empty) 
+     // empty) 
 
     let list1 ph sep =
       ((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))

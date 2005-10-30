@@ -67,7 +67,7 @@ let init_std_ss() =
  *)
 let simp_tac 
     ?f ?(cntrl=Formula.default_rr_control) ?(ignore = [])
-    ?(asms=true) ?set ?add ?(rules=[]) goal =
+    ?(asms=true) ?set ?add rules goal =
 (** uset: The simpset to use. **)
   let uset = 
     let uset0 = 
@@ -109,6 +109,8 @@ let simp_tac
       uset
   in 
   Simptacs.simp_tac simp_data args f goal
+
+let simp ?f goal = simp_tac ?f [] goal
 
 (***
 * Initialising functions 

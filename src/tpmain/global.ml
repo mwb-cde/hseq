@@ -146,7 +146,7 @@ module PP=
       let thy_name = th.Theory.cname
       and pp_list = List.rev th.Theory.cid_pps
       in 
-      let add_pp (id, rcrd) = 
+      let add_pp (id, (rcrd, pos)) = 
 	add_id_record (Basic.mk_long thy_name id) rcrd;
 	let repr = rcrd.Printer.repr
 	in 
@@ -158,7 +158,8 @@ module PP=
 	      in 
 	      let id_type = id_record.Theory.typ
 	      in 
-	      Parser.add_overload sym (Basic.mk_long thy_name id, id_type)
+	      Parser.add_overload sym pos
+		(Basic.mk_long thy_name id, id_type)
 	    with _ -> ())
       in 
       List.iter add_pp pp_list

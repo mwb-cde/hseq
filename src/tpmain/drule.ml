@@ -506,8 +506,6 @@ let unify_concl_for_consts qnt ?c trm n=
   let (t, f)=
     match c with 
       None ->
-	let sqnt = sequent n
-	in 
 	let unifies x = 
 	  (try
 	    ignore
@@ -542,8 +540,6 @@ let unify_asm_for_consts qnt ?a trm n=
   let (t, f)=
     match a with 
       None ->
-	  let sqnt = sequent n
-	  in 
 	  let unifies x = 
 	   (try
 	     ignore

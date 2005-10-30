@@ -53,10 +53,18 @@ val infixr: fixity
 val infixn: fixity  
 (** infix, non-associative *)
 
+val first_pos : Theory.sym_pos
+val last_pos : Theory.sym_pos
+val before_pos : string -> Theory.sym_pos
+val after_pos : string -> Theory.sym_pos
+val at_pos : string -> Theory.sym_pos
+
 val add_term_pp : 
-    string -> int -> Printer.fixity -> string option -> unit
+    string 
+    -> ?pos:Theory.sym_pos
+  -> int -> Printer.fixity -> string option -> unit
 (**
-   [add_term_pp id prec fixity sym]: Add printer-parser information
+   [add_term_pp id ?pos prec fixity sym]: Add printer-parser information
    for term identifier [id]. Parser/print term identifier [id] as [sym] with
    precedent [prec] and fixity [fixity].
 *)

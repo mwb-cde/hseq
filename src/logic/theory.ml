@@ -10,6 +10,7 @@
 
 type property = string
 let simp_property = "simp"
+type sym_pos = Basic.ident Lib.position
 
 type id_record= 
     {
@@ -37,7 +38,7 @@ type thy =
      defns: (string, id_record) Hashtbl.t;
      typs: (string, Gtypes.typedef_record) Hashtbl.t;
      mutable type_pps: (string * Printer.record) list;
-     mutable id_pps: (string * Printer.record) list
+     mutable id_pps: (string * (Printer.record * sym_pos)) list
    }
 
 type contents=
@@ -53,7 +54,7 @@ type contents=
      cdefns: (string * id_record) list;
      ctyps: (string * Gtypes.typedef_record) list;
      ctype_pps: (string * Printer.record) list;
-     cid_pps: (string * Printer.record) list 
+     cid_pps: (string * (Printer.record * sym_pos)) list 
    }
 
 let set_date thy = thy.date<-Lib.date()
@@ -387,7 +388,7 @@ type saved_thy =
      sdefns : (string * id_save_record) list;
      stypes: (string * Gtypes.stypedef_record) list;
      stype_pps: (string * Printer.record) list;
-     sid_pps: (string * Printer.record) list
+     sid_pps: (string * (Printer.record * sym_pos)) list
    }
 
 let saved_name sthy = sthy.sname
@@ -609,7 +610,42 @@ and print_defs pp n defs =
      (fun _ -> ())) defs;
   Format.printf "@]@,"
 
-let print_pps n pps = 
+let print_term_pps n pps = 
+  let print_pos pos = 
+    match pos with 
+	Lib.First -> ()
+      | Lib.Last -> 
+	  Format.printf "@[position=@ Last@]"
+      | Lib.Before id -> 
+	  Format.printf "@[position=@ Before@ @[";
+	  Printer.print_ident id;
+	  Format.printf "@]@]@ "
+      | Lib.After id -> 
+	  Format.printf "@[position=@ After@ @[";
+	  Printer.print_ident id;
+	  Format.printf "@]@]@ "
+      | Lib.Level id -> 
+	  Format.printf "@[position=@ Level@ @[";
+	  Printer.print_ident id;
+	  Format.printf "@]@]@ "
+  in 
+  print_section n;
+  Format.printf "@[<v>";
+  Printer.print_list
+    ((fun (n, (r, p)) ->
+      Format.printf "@[<2>%s@ " n;
+      (match (r.Printer.repr) with
+	None -> ()
+      | Some(s) -> Format.printf "\"%s\"@ " s);
+      Format.printf "precedence = %i@ " r.Printer.prec;
+      Format.printf "fixity = %s@ "
+	(Printer.fixity_to_string r.Printer.fixity);
+      print_pos p; 
+      Format.printf "@]"),
+     (fun _ -> ())) pps;
+  Format.printf "@]@,"
+
+let print_type_pps n pps = 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -618,8 +654,8 @@ let print_pps n pps =
       (match (r.Printer.repr) with
 	None -> ()
       | Some(s) -> Format.printf "\"%s\"@ " s);
-      Format.printf "precedence= %i@ " r.Printer.prec;
-      Format.printf "fixity= %s@ "
+      Format.printf "precedence = %i@ " r.Printer.prec;
+      Format.printf "fixity = %s@ "
 	(Printer.fixity_to_string r.Printer.fixity);
       Format.printf "@]"),
      (fun _ -> ())) pps;
@@ -642,11 +678,11 @@ let print ppstate thy =
   (match content.ctype_pps with 
     [] -> () 
   | _ -> 
-      print_pps "Type printer/parser information" content.ctype_pps);
+      print_type_pps "Type printer/parser information" content.ctype_pps);
   (match content.cid_pps with 
     [] -> ()
   | _ -> 
-      print_pps "Term printer/parser information" content.cid_pps);
+      print_term_pps "Term printer/parser information" content.cid_pps);
   Format.printf "@[-------------@]@,";
   Format.printf "@]"
     

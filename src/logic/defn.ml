@@ -67,7 +67,9 @@ let mk_defn scp name args rhs =
     List.map 
       (fun (x, y) -> Term.mk_free x y) args1
   in let rhs1=Term.set_names scp rhs
+(*
   in let rty = Typing.typeof scp rhs1
+*)
   in let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
   in let lhs = Term.mk_comb (Term.mk_typed_var name nty) ps
   in let ndn = 
@@ -75,6 +77,7 @@ let mk_defn scp name args rhs =
       (Logicterm.mk_equality lhs rhs1) 
       (List.rev ps) 
   in
+(*
   let rfrees = 
     match Term.get_free_vars ndn with
       [] -> ()
@@ -82,6 +85,7 @@ let mk_defn scp name args rhs =
 	raise (Term.term_error 
 		 "Free variables not allowed in definition" [ndn])
   in 
+*)
   let nscp = Scope.extend_with_terms scp [(name, nty)]
   in 
   let tenv=Typing.settype nscp ndn
@@ -422,8 +426,10 @@ module HolLike =
       in 
       let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
       in 
+(*
       let nscp = Scope.extend_with_typedeclns scp [(id, args)]
       in 
+*)
       let subtype_prop = mk_subtype_prop setP rep
       in 
       (rep_ty, new_setp, subtype_prop)

@@ -98,7 +98,7 @@ let std_astexpander instr =
   let pos=  { Lexing.pos_fname="Input"; Lexing.pos_lnum=0;
 	      Lexing.pos_bol = 0;  Lexing.pos_cnum = 0 }
   in
-  let loc= (pos, pos)
+  let _loc= (pos, pos)
   in 
   let str = String.escaped instr
   in 
@@ -112,7 +112,7 @@ let def_astexpander str =
   let pos=  { Lexing.pos_fname="Input"; Lexing.pos_lnum=0;
 	      Lexing.pos_bol = 0;  Lexing.pos_cnum = 0 }
   in
-  let loc= (pos, pos)
+  let _loc= (pos, pos)
   in 
   match def_check_string str with 
     (Typedef, nstr) -> 

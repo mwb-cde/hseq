@@ -5,7 +5,9 @@
    ----*)
 
 
+(*
 open Drule
+*)
 open Commands
 open Tactics
 
@@ -326,7 +328,7 @@ let falseA ?info ?a goal =
     goal
 
 let trivial ?info ?f g =  
-  try (Tactics.trueC ?c:f || falseA ?a:f) g
+  try (Tactics.trueC ?c:f // falseA ?a:f) g
   with _ -> raise (error "trivial")
 
 let eq_tac ?info ?c g = 
@@ -502,7 +504,7 @@ let direct_alt tacl info l g=
 let direct_map_some tac lst l goal =
   let add_lbl x = lst:=x::(!lst)
   in 
-  let nofail_tac lbl = (tac lbl || data_tac add_lbl lbl)
+  let nofail_tac lbl = (tac lbl // data_tac add_lbl lbl)
   in 
   let rec some_aux ls g =
     match ls with 
@@ -1197,8 +1199,8 @@ module Thms =
 	       ++ split_tac 
 	       ++ 
 	       alt 
-	       [(replace_tac ++ (basic || trivial));
-		(basic || trivial);
+	       [(replace_tac ++ (basic // trivial));
+		(basic // trivial);
 		(replace_tac ++ eq_tac)]) g))
       in 
       let info = Tactics.mk_info()
@@ -1331,7 +1333,7 @@ module Thms =
 		++
 		(split_tac 
 		   ++ replace_tac 
-		   ++ (trivial || eq_tac));
+		   ++ (trivial // eq_tac));
 	      replace_tac ++ trivial]) g))
 
 

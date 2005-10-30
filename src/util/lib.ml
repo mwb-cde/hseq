@@ -244,11 +244,11 @@ type ('a, 'b)named_list = ('a * 'b) list
 type ('a)position = 
     First | Last | Before of 'a | After of 'a | Level of 'a
 
-(* 
-   split_at s nl: split named list nl at s name s
+
+(** 
+   [split_at s nl]: split named list nl at s name s
    returning the list upto s and the list beginning with s
 *)
-
 let split_at_name s nl=
   let rec split_aux l r=
     match l with 
@@ -277,7 +277,7 @@ let named_add l p n x =
 	       [] ->  [(n, x)]
 	     | d::rst -> d::(n, x)::rst)
 	in 
-	  List.rev_append (List.rev lt) rt
+	  List.rev_append (List.rev lt) nrt
     | Level s -> 
 	let (lt, rt)=split_at_name s l
 	in 

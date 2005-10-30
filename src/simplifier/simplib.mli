@@ -44,7 +44,16 @@ val add_conv : Basic.term list -> Logic.conv -> unit
 
 (** {5 User level simplification tactics} *)
 
-(** [simp_tac ?f ?cntrl ?ignore ?asms ?set ?add ~rules goal]
+val simp_tac :
+  ?f:Logic.label ->
+  ?cntrl:Simplifier.control ->
+  ?ignore:Logic.label list -> 
+  ?asms:bool ->
+  ?set:Simpset.simpset ->
+  ?add:Simpset.simpset ->
+  Logic.thm list ->
+  Tactics.tactic
+(** [simp_tac ?f ?cntrl ?ignore ?asms ?set ?add rules goal]
    
    Simplifier tactic.
 
@@ -73,19 +82,19 @@ val add_conv : Basic.term list -> Logic.conv -> unit
    @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
-   @param rules Additional rewrite rules to use. Default: [[]].
+   [rules] are the additional rewrite rules to use. Rules given here
+   take precedence over those in the simp sets.
 
    @raise No_change If no change is made.
+    *)
+
+
+val simp : ?f:Logic.label ->  Tactics.tactic
+(** 
+    [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+   
+   @raise No_change If no change is made.
  *)
-val simp_tac :
-  ?f:Logic.label ->
-  ?cntrl:Simplifier.control ->
-  ?ignore:Logic.label list -> 
-  ?asms:bool ->
-  ?set:Simpset.simpset ->
-  ?add:Simpset.simpset ->
-  ?rules:Logic.thm list ->
-  Tactics.tactic
 
 
 (** {5 Initialising functions} *)

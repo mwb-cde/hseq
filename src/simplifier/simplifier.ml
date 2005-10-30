@@ -391,8 +391,8 @@ let prep_cond_tac cntrl ret values thm goal =
    [rl] the rewrite rule built from the new theorem/assumption.
  *)
 let prove_cond_tac cntrl ret values entry goal = 
-  let qs = Simpset.rule_binders entry
-  and thm = Simpset.rule_src entry
+  (* let qs = Simpset.rule_binders entry *)
+  let thm = Simpset.rule_src entry
   and ret1 = ref None
   in 
   let tac g =
@@ -590,7 +590,7 @@ let rec find_all_matches_tac cntrl ret tyenv trm goal =
 		 ((Data.add_rule cntrl1 r1), tyenv, t1);
 	       (** Go around again, ignoring failure. **)
 	       (find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 
-	      || skip)
+	      // skip)
 	     ] g1);
 	 ];
        (** Failed to find a match **)
@@ -641,7 +641,7 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
 		seq
 		  [
 		   (find_all_matches_tac bcntrl ret1 btyenv (Qnt(q, nb)) 
-	       || skip);
+		    // skip);
 		(fun g3 -> 
 		  data_tac
 		    (Lib.set_option ret)
@@ -673,7 +673,7 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
 		seq
 		  [
 		   (find_all_matches_tac acntrl ret1 atyenv (App(nf, na)) 
-		  || skip);
+		    // skip);
 		   (fun g3 -> 
 		     data_tac 
 		       (Lib.set_option ret)
@@ -699,12 +699,14 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
    type-environment and [ntrm] the term resulting from simplification.
  *)
 let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
+(*
   let set_replace dst (src, t) default=
     let (bcntrl, btyenv, nb) = 
       Lib.get_option (!src) default
     in 
     Lib.set_option dst (bcntrl, btyenv, t)
   in 
+*)
   let find_td_aux ret1 tyenv1 cntrl1 trm1 g=
     match trm1 with
       Basic.Qnt(q, b) -> 
@@ -760,7 +762,7 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
     seq
       [
        (** Rewrite the current term, ignoring errors **)
-       (find_all_matches_tac ctrl ret1 tyenv trm || skip);
+       (find_all_matches_tac ctrl ret1 tyenv trm // skip);
        (** Descend through the subterms **)
        (fun g1 -> 
 	 let (nctrl, ntyenv, ntrm)=
@@ -790,8 +792,6 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
    and st is tag of sequent to work on
 *)
 let rec basic_simp_tac cntrl ret ft goal=
-  let chng=ref false
-  in 
   let tyenv= typenv_of goal
   and sqnt = sequent goal
   in 
@@ -883,16 +883,16 @@ let simp_asm_tac ctrl ret lbl =
   seq
     [
      data_tac (fun _ -> Lib.set_option ret ctrl) ();
-     (repeat (Logic.Tactics.existA None lbl)
-    || skip)
+     ((repeat (Logic.Tactics.existA None lbl))
+    // skip)
    ]
 
 let simp_concl_tac ctrl ret lbl = 
   seq
     [
      data_tac (fun _ -> Lib.set_option ret ctrl) ();
-     (repeat (Logic.Tactics.allC None lbl)
-    || skip)
+     ((repeat (Logic.Tactics.allC None lbl))
+    // skip)
    ]
 
 let simp_prep_tac ctrl ret lbl goal = 

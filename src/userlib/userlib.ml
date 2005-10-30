@@ -32,8 +32,15 @@ let infixl = Commands.infixl
 let infixr = Commands.infixr
 let infixn = Commands.infixn
 
-let add_term_pp s = 
-  Commands.add_term_pp (Basic.mk_long (Global.current_name()) s)
+let first_pos = Lib.First
+let last_pos = Lib.Last
+let before_pos s = Lib.Before (Global.read_identifier s)
+let after_pos s = Lib.After (Global.read_identifier s)
+let at_pos s = Lib.Level (Global.read_identifier s)
+
+let add_term_pp s ?(pos=Lib.First) i f sym = 
+  Commands.add_term_pp 
+    (Basic.mk_long (Global.current_name()) s) ~pos:pos i f sym
 let get_term_pp s = 
   Commands.get_term_pp (Basic.mk_long (Global.current_name()) s)
 let remove_term_pp s = 

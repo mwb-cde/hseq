@@ -180,10 +180,10 @@ module type GRAMMARS =
 
 (* parsing alternatives *)
 (*
-   [ph1 || ph2]
+   [ph1 // ph2]
    [ph1] or [ph2]
 *)
-      val ( || ) : 'a phrase -> 'a phrase -> 'a phrase
+      val ( // ) : 'a phrase -> 'a phrase -> 'a phrase
 (*
    [alt phs]
    Try each of the parsers of [phs] in sequence, starting with the first,

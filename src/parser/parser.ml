@@ -356,7 +356,7 @@ module Grammars  =
 	
     let rec repeat_term ph term toks =
       (((ph -- (repeat_term ph term )) >> (fun (x, y) -> x ::y))
-     || (term >> (fun _ -> []))) toks
+     // (term >> (fun _ -> []))) toks
 
 (** 
    Identifier parsers.
@@ -593,7 +593,7 @@ module Grammars  =
 		  mk_type_binary_constr inf, mk_type_unary_constr inf) toks) 
     and atomic_types inf toks =
       (((type_parsers inf) 
-      || error ~msg:"unknown construct in type")
+      // error ~msg:"unknown construct in type")
 	 toks)
 (*
    Core Type Parsers:
@@ -803,7 +803,7 @@ module Grammars  =
  *)
     let optional_type inf =     
       ( (( !$(Sym COLON) -- (types inf)) >> (fun (_, ty) -> Some(ty)))
-      || (empty >> (fun x -> None))) 
+      // (empty >> (fun x -> None))) 
 
 
 (** [id]
@@ -822,7 +822,7 @@ module Grammars  =
       (( (((!$(Sym ORB)) -- (idnt inf) 
 	     -- (!$(Sym COLON))-- (types inf) -- (!$(Sym CRB)))
 	    >> (fun ((((_, i), _), t), _) -> (i, t)))
-       || ( (idnt inf) >> (fun x -> (x, mk_vartyp inf))))
+       // ( (idnt inf) >> (fun x -> (x, mk_vartyp inf))))
 	 toks)
 
 
@@ -884,7 +884,7 @@ module Grammars  =
     and
 	primary inf toks = 
       ((term_parsers inf)
-     || (error ~msg:"unknown construct in term")) toks
+     // (error ~msg:"unknown construct in term")) toks
 
 
 (** [term_parsers_list] 
@@ -993,18 +993,18 @@ module Grammars  =
       ((((id_type_opt (short_id id) inf) 
 	   -- (args_opt inf))
 	  >> (fun ((n, t), args) -> (n, args))) 
-     || error ~msg:"badly formed identifier for definition")
+     // error ~msg:"badly formed identifier for definition")
 	toks
     and args_opt inf= 
       (((optional (repeat (id_type_opt (short_id id) inf)))
 	  -- (!$(mk_symbol Logicterm.equalssym)))
 	 >> (fun (x, _) -> match x with None -> [] | Some l -> l))
-    || error ~msg:"badly formed argument list for definition"
+    // error ~msg:"badly formed argument list for definition"
     and defn inf toks =
       (
        (((lhs inf) -- (form inf))
 	  >> (fun (l, r) -> (l, r)))
-     || (error ~msg:"Badly formed definition"))
+     // (error ~msg:"Badly formed definition"))
 	toks
 
 
@@ -1055,7 +1055,7 @@ module Grammars  =
       (((subtypedef inf) >>
 	(fun (n, args, dtyp, set) -> 
 	  Subtype(n, Lib.get_option args [], dtyp, set)))
-     ||
+     //
        ((simple_typedef inf) >> 
 	(fun (n, args, dtyp) -> 
 	  match dtyp with
@@ -1192,13 +1192,46 @@ let init_overload () = Hashtbl.clear overload_table
 let get_overload_list sym =
   Hashtbl.find overload_table sym
 
-let add_overload sym (id, ty) =
+let insert_pos pos d lst = 
+  let rec split_at s l r =
+    match l with 
+	[] -> (r, [])
+      | (x, ty)::ls -> 
+	  if(x=s) 
+	  then 
+	    (List.rev r, l)
+	  else 
+	    split_at s ls ((x, ty)::r)
+  in 
+    match pos with
+	Lib.First -> d::lst
+      | Lib.Last -> List.rev (d::(List.rev lst))
+      | Lib.Before s -> 
+	  let (lt, rt) = split_at s lst []
+	  in 
+	    List.rev_append (List.rev lt) (d::rt)
+      | Lib.After s ->
+	  let (lt, rt)=split_at s lst []
+	in 
+	let nrt=
+	  (match rt with
+	       [] ->  [d]
+	     | x::rst -> x::d::rst)
+	in 
+	  List.rev_append (List.rev lt) nrt
+    | Lib.Level s -> 
+	let (lt, rt)=split_at s lst []
+	in 
+	  List.rev_append (List.rev lt) (d::rt)
+
+let add_overload sym pos (id, ty) =
   let list0 = 
     try 
       get_overload_list sym
     with Not_found -> []
   in 
-  let list1=(id, ty)::list0
+(*  let list1=(id, ty)::list0 *)
+  let list1 = insert_pos pos (id, ty) list0
   in 
   Hashtbl.replace overload_table sym list1
     
@@ -1600,21 +1633,23 @@ let resolve_term scp lookup term=
    where ty matches the type.
    
    Matching is by equality.
- *)
+*)
 let rec find_type scp ty list =
   let matching_types t1 t2 = 
     try
       ignore(Gtypes.unify scp t1 t2); true
     with _ -> false
   in 
+(*
   let default = 
     match list with 
       [] -> None
     | (x::_) -> Some x
   in 
+*)
   match list with
-    [] -> 
-      raise Not_found
+    [] ->  raise Not_found 
+(*    [] -> default  *)
   | ((id, id_type)::xs) -> 
       if matching_types ty id_type
       then (id, id_type)
