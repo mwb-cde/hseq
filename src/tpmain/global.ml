@@ -389,8 +389,13 @@ module Files =
    [on_load_thy]: The toplevel function that is passed a newly loaded
    theory. This just passes the theory to the functions in [load_functions].
  *)
-    let on_load_thy th =
-      List.iter (fun f -> f th) (List.rev !load_functions)
+    let on_load_thy db th =
+      let odb = Thys.get_theories()
+      in
+	Thys.set_theories db;
+	List.iter (fun f -> f th) (List.rev !load_functions);
+	Thys.set_theories odb
+	
 
 (*** Miscellaneous ***)
 

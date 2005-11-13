@@ -321,7 +321,7 @@ module Files :
       val init_load_functions: unit -> unit
 (** Initialise the inspection functions. *)
 
-      val on_load_thy: Theory.contents -> unit
+      val on_load_thy: Thydb.thydb -> Theory.contents -> unit
 (** 
    The top-level inspection functions, simply iterates through the
    list of functions !load_functions in the reverse order that they
