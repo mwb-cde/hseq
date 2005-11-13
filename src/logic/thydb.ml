@@ -578,7 +578,7 @@ module Loader =
 	(*** Data needed for loading a theory. ***)
     type data = 
 	{
-	 thy_fn : (Theory.contents -> unit);
+	 thy_fn : (thydb -> Theory.contents -> unit);
 	 (** 
 	    Function to apply to a successfully loaded theory.
 	  *)
@@ -742,10 +742,10 @@ module Loader =
 
 (**
    [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of theory
-   [thy]. Ignores all errors.
+   [thy] in scope [mk_scope db]. Ignores all errors.
  *)
     let apply_fn db thy_fn thy =
-      (try (thy_fn (Theory.contents thy)) with _ -> ())
+      (try (thy_fn db (Theory.contents thy)) with _ -> ())
 
 
 (**

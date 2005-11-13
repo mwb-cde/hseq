@@ -357,7 +357,7 @@ module Loader :
        *)
       type data = 
 	  {
-	   thy_fn : (Theory.contents -> unit);
+	   thy_fn : (thydb -> Theory.contents -> unit);
 	   (** 
 	      Function to apply to a successfully loaded theory.
 	    *)
@@ -373,7 +373,7 @@ module Loader :
 	 }
 
       val mk_data : 
-	  (Theory.contents -> unit)
+	  (thydb -> Theory.contents -> unit)
 	  -> (info -> Theory.saved_thy)
 	    -> (thydb -> string -> thydb)
 		-> data
