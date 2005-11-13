@@ -48,8 +48,8 @@ let make_cond_rule_true_thm()=
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-let cond_rule_true_var = lazy (make_cond_rule_true_thm())
-let cond_rule_true_thm () = Lazy.force cond_rule_true_var
+let cond_rule_true_var = Lib.freeze (make_cond_rule_true_thm)
+let cond_rule_true_thm () = Lib.thaw cond_rule_true_var
 
 (**
    [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
@@ -69,10 +69,10 @@ let make_cond_rule_false_thm()=
 	  ++ once_replace_tac
 	  ++ eq_tac) g))
 
-let cond_rule_false_var = lazy (make_cond_rule_false_thm())
+let cond_rule_false_var = Lib.freeze make_cond_rule_false_thm
 
 let cond_rule_false_thm () =
-  Lazy.force cond_rule_false_var
+  Lib.thaw cond_rule_false_var
 
 (**
    [cond_rule_imp_false_thm]: |- !x y: (x=>false) = (not x)
@@ -150,7 +150,7 @@ let neg_eq_sym_thm () =
   Lib.thaw neg_eq_sym_var
 
 (**
-   [cond_neq_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
+   [cond_neg_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
  *)
 let make_cond_neg_eq_sym_thm()=
   let info = mk_info()
@@ -194,6 +194,52 @@ let cond_neg_eq_sym_var = Lib.freeze (make_cond_neg_eq_sym_thm)
 
 let cond_neg_eq_sym_thm () =
   Lib.thaw cond_neg_eq_sym_var
+
+(**
+   [cond_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
+ *)
+let make_cond_eq_sym_thm()=
+  let info = mk_info()
+  and atgs = ref None
+  and thm = Boollib.Thms.eq_sym_thm()
+  in 
+    Commands.prove 
+    << !c x y: (c => (x = y)) = (c => (y = x)) >>
+      (seq
+      [ 
+	allC; allC; allC; equals_tac; 
+	((notify_tac 
+	  (fun inf ->
+	   let atg1, atg2 = 
+	     get_two ~msg:"make_eq_sym_thm" (aformulas info)
+	   in 
+	     Lib.set_option atgs (atg1, atg2)) info
+	  (iffE ~info:info)) ++ implC)
+	--
+	  [
+	    implA
+	      --
+	      [basic;
+	       (fun g -> 
+		  let (atg, _) = Lib.dest_option (!atgs)
+		  in 
+		    (once_rewrite_tac ~f:(ftag atg) [thm]
+		     ++ basic) g)];
+	    implA
+	      --
+	      [basic;
+	       (fun g -> 
+		  let (_, atg) = Lib.dest_option (!atgs)
+		  in 
+		    (once_rewrite_tac ~f:(ftag atg) [thm]
+		     ++ basic) g)]
+	  ]
+      ])
+
+let cond_eq_sym_var = Lib.freeze (make_cond_eq_sym_thm)
+
+let cond_eq_sym_thm () =
+  Lib.thaw cond_eq_sym_var
 
 (** Rewriting applied inside topmost universal quantifiers *)
 
@@ -486,12 +532,12 @@ let is_rr_equality (qs, c, a)=
 
    Rewrite rules:
    T(x=y) = x=y, if all variables in y also occur in x 
-   = (x=y)=true
+   = (x=y)=true and (y=x)=true, otherwise
 
    T(c=>x=y) 
    = c=>(x=y), if all variables in y and c occur in x
-   = c=>((x=y)=true), if variables in y don't occur in x 
-   and all variables in c occur in x
+   = c=>((x=y)=true) and c=>((y=x)=true), if variables in y don't
+   occur in x and all variables in c occur in x
    = (c=>x=y)=true, otherwise
  *)
 
@@ -504,11 +550,13 @@ let is_rr_equality (qs, c, a)=
 
    Conversion:
    |- l=r   ->  no change, if all variables in [r] also occur in [l])
-   -> |- (l=r)=true, otherwise
+   -> |- (l=r)=true; |- (r=l)=true , otherwise
 
    |- c => l = r -> no change, if all variables in [r] and [c] 
    also occur in [l]
-   -> |- (c=> l = r)=true, otherwise
+   |- c=> (l=r)=true ; |- c=> (r=l)=true, if all variables in [c]
+   occur in [l=r]
+  -> |- (c=> l = r)=true, otherwise
 
    |- a -> |- a=true
    |- c=> a -> |- c => a=true
@@ -527,33 +575,61 @@ let rec accept_all_thms ret (scp, thm, (qs, c, a))=
   else (once_rewrite_rule scp [rule_true_thm()] thm)::ret
 
 and do_rr_equality ret (scp, thm, (qs, c, a)) =
-  if(is_rr_equality (qs, c, a))
+  if (is_rr_equality (qs, c, a))
   then (thm::ret)
   else failwith "is_rr_equality: not a rewrite rule"
 
-and do_fact_rule ret (scp, thm, (qs, c, a)) = 
+and do_eq_rule ret (scp, thm, (qs, c, a)) =
+  if (Logicterm.is_equality a)
+  then 
+    match is_rr_rule (qs, c, a, None) with
+	(None, _) -> 
+	  let thm1 = 
+	    simple_rewrite_rule scp (eq_sym_thm()) thm
+	  in 
+	    (simple_rewrite_rule scp (rule_true_thm()) thm)
+	    ::(simple_rewrite_rule scp (rule_true_thm()) thm1)
+	    ::ret
+      | (Some(true), _) -> 
+	  let thm1 = 
+	    simple_rewrite_rule scp (cond_eq_sym_thm()) thm
+	  in 
+	    (simple_rewrite_rule scp (cond_rule_true_thm()) thm)
+	    ::(simple_rewrite_rule scp (cond_rule_true_thm()) thm1)
+	    ::ret
+      | _ -> 
+	  failwith "do_eq_rule"
+  else
+    failwith "do_eq_rule"    
+ 
+ and do_fact_rule ret (scp, thm, (qs, c, a)) = 
   if(not (Logicterm.is_equality a))
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
-	if(is_constant_true (qs, c, a))
-	then ret
-	else (simple_rewrite_rule scp (rule_true_thm()) thm)::ret
+ 	if(is_constant_true (qs, c, a))
+ 	then ret
+ 	else 
+ 	  (simple_rewrite_rule scp (rule_true_thm()) thm)::ret
     | (Some(true), _) -> 
-	if(is_constant_true (qs, c, a))
-	then ret
-	else 
-	  (** |- c => false -> |- not c*)
-	  if (is_constant_false (qs, c, a))
-	  then 
-	    let thm1 = simple_rewrite_rule scp (cond_rule_imp_false_thm()) thm
-	    in
-	      single_thm_to_rules ret scp thm1
-	  else 
-	    (simple_rewrite_rule scp (cond_rule_true_thm()) thm)::ret
+ 	if(is_constant_true (qs, c, a))
+ 	then ret
+ 	else 
+ 	  (** |- c => false -> |- not c*)
+ 	  if (is_constant_false (qs, c, a))
+ 	  then 
+ 	    let thm1 = simple_rewrite_rule scp (cond_rule_imp_false_thm()) thm
+ 	    in
+ 	      single_thm_to_rules ret scp thm1
+ 	  else 
+ 	    (simple_rewrite_rule scp (cond_rule_true_thm()) thm)::ret
     | _ -> failwith "do_fact_rule"
-  else failwith "do_fact_rule"
-
+  else 
+    do_eq_rule ret (scp, thm, (qs, c, a))
+ (*
+failwith "do_fact_rule"
+ *)
+ 
 and do_neg_eq_rule ret (scp, thm, (qs, c, a)) =
   if ((Logicterm.is_neg a)
 	&& (Logicterm.is_equality (Term.rand a)))
@@ -735,10 +811,15 @@ let solve_not_true_tac tg goal =
 
    [rr_equality_asm]: accept |- l=r or |= c=> l=r 
 
+   [eq_asm]:
+    Convert [a=b] to [(a=b) = true] and [(b=a)=true]
+    and [c=> (a=b)] to [c=>((a=b) = true)] and [c=>((b=a)=true)]
+
    [fact_rule_asm]: 
    convert |- a to |- a=true 
    and |- c=> false to |- (not c)
-   and  |- c=> a to |- c => a=true
+   and |- c=> a to |- c => a=true
+   pass [(a=b)] and [c=>(a=b)] to [eq_asm]
    and solve [false |- C]
 
    [neg_eq_asm]:
@@ -790,6 +871,34 @@ and rr_equality_asm ret (tg, (qs, c, a)) g =
     (* skip g *)
   else failwith "rr_equality_asm: not a rewrite rule"
 
+and eq_asm ret (tg, (qs, c, a)) g=
+  if (Logicterm.is_equality a)
+  then 
+    let rr_thm =
+      match is_rr_rule (qs, c, a, None) with
+ 	  (None, _) -> eq_sym_thm()
+ 	| (Some(true), _) -> cond_eq_sym_thm()
+ 	| _ -> failwith "eq_asm"
+    in 
+    let info = mk_info()
+    in 
+      seq
+ 	[
+ 	  copyA ~info:info (ftag tg);
+ 		(fun g ->
+ 		   let atg = get_one ~msg:"eq_asm" (aformulas info)
+ 		   in 
+ 		     seq 
+ 		       [
+ 			 asm_rewrite_tac rr_thm atg;
+ 			 asm_rewrite_tac (rule_true_thm()) atg;
+ 			 add_asm_tac ret atg;
+ 			 asm_rewrite_tac (rule_true_thm()) tg;
+ 			 add_asm_tac ret tg
+ 		       ] g)
+ 	] g
+  else failwith "eq_asm"
+
 and fact_rule_asm ret (tg, (qs, c, a)) g= 
   if(not (Logicterm.is_equality a))
   then 
@@ -821,7 +930,10 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	  else 
 	    asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
+  else eq_asm ret (tg, (qs, c, a)) g
+ (*
   else failwith "do_fact_asm"
+ *)
 
 and neg_eq_asm ret (tg, (qs, c, a)) g=
   if ((Logicterm.is_neg a)

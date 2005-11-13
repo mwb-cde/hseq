@@ -261,7 +261,7 @@ let rec simp_tac cntrl args l goal=
 		(List.map drop_formula concl_srcs)
 		(Data.get_asms data4)))
       in 
-      Lib.set_option ret data4
+      Lib.set_option ret data5
     in 
     if not(use_asms) then skip g 
     else 

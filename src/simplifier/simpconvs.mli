@@ -58,6 +58,13 @@ val neg_eq_sym_thm : unit -> Logic.thm
 val make_cond_neg_eq_sym_thm : unit -> Logic.thm
 val cond_neg_eq_sym_thm : unit -> Logic.thm
 
+(**
+   [cond_eq_sym]: |- (c => (a = b)) = (c => (b = a))
+ *)
+
+val make_cond_eq_sym_thm : unit -> Logic.thm
+val cond_eq_sym_thm : unit -> Logic.thm
+
 (** {5 Rewriting conversions and tactics} *)
 
 val simple_rewrite_conv :
@@ -137,7 +144,10 @@ val negate_concl_tac :
    [T(x iff y)] = [T(x=y)], if this results in a rewrite rule (not
    implemented).
 
-   [T(not(x=y))] = [T((x=y) = false), T((y=x)=false)]
+   [T(x = y)] = [((x=y) = true), ((y=x) = true)] if [x=y] is not a
+   rewrite rule.
+
+   [T(not(x=y))] = [((x=y) = false), ((y=x)=false)]
    
    [T(c=>not(x=y))] = [T(c=> ((x=y) = false)), T(c=> ((y=x)=false))]
    
@@ -158,20 +168,19 @@ val negate_concl_tac :
     [T(c=>x)] = [(c => T(x))]
     }
 
-   If [f] is a rewrite rule, of the form [x=y], its transformation is
-   [T(x=y)] = [x=y], if all variables in [y] also occur in [x].
-   [T(x=y)] = [(x=y)=true], otherwise.
-
-   A conditional rewrite rule is transformed:
+    If [f] is a rewrite rule, of the form [x=y], its transformation is
+    [T(x=y)] = [x=y], if all variables in [y] also occur in [x].
+    
+    A conditional rewrite rule is transformed:
     {L
     [T(c=>x=y)] = [c=>(x=y)], if all variables in [y] and [c] occur in [x].
-   
-    [T(c=>x=y)] = [c=>((x=y)=true)], if variables in [y] don't occur in [x].
-    and all variables in [c] occur in [x].
-   
+      
+    [T(c=>x=y)] = [c=>((x=y)=true), c=>((y=x)=true)], if variables in
+    [y] don't occur in [x].  and all variables in [c] occur in [x].
+       
     [T(c=>x=y)] = [(c=>x=y)=true] otherwise
     }
-   *)
+       *)
 
 (** {7 Tests on terms and theorems} *)
 
@@ -312,6 +321,17 @@ val do_rr_equality :
   -> Logic.thm list
 (** Accept [|- l=r] or [|= c=> l=r] *)
 
+val do_eq_rule :
+  Logic.thm list -> 
+    Scope.t * Logic.thm 
+  * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Logic.thm list
+   (**
+   Convert [|- (a = b)] to [|- (a = b) = true] and [|-
+   (b=a)=true].  Convert [|- c=>(a = b)] to [|- c=>(a = b)
+   =true] and [|- c=> (b=a)=true]
+   *)
+       
 val do_fact_rule :
   Logic.thm list -> 
     Scope.t * Logic.thm 
@@ -449,10 +469,15 @@ val solve_not_true_tac: Tag.t -> Tactics.tactic
 
    [rr_equality_asm]: Accept [l=r] or [c=> l=r].
 
+   [eq_asm]:
+    Convert [a=b] to [(a=b) = true] and [(b=a)=true]
+    and [c=> (a=b)] to [c=>((a=b) = true)] and [c=>((b=a)=true)]
+
    [fact_rule_asm]: 
    Convert [a] to [a=true]
    and [c=> false] to [(not c)]
    and [c=> a] to [c => a=true]
+   pass [(a=b)] and [c=>(a=b)] to [eq_asm]
    and solve [false |- C]
 
    [neg_eq_asm]:
@@ -501,6 +526,15 @@ val rr_equality_asm :
    Accept [l=r] or [c=> l=r].
 *)
 
+val eq_asm :
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Tactics.tactic
+(**
+    Convert [a=b] to [(a=b) = true] and [(b=a)=true]
+    and [c=> (a=b)] to [c=>((a=b) = true)] and [c=>((b=a)=true)]
+*)
+
 val fact_rule_asm :
   Logic.tagged_form list ref 
   -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
@@ -509,6 +543,7 @@ val fact_rule_asm :
    Convert [a] to [a=true]
    and [c=> false] to [(not c)]
    and [c=> a] to [c => a=true]
+   pass [(a=b)] and [c=>(a=b)] to [eq_asm]
    and solve [false |- C].
 *)
 
@@ -518,6 +553,15 @@ val neg_disj_asm :
   -> Tactics.tactic
 (**
    Convert [not (a or b)] to [(not a) and (not b)]
+*)
+       
+val neg_eq_asm :
+  Logic.tagged_form list ref 
+  -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
+  -> Tactics.tactic
+(**
+    Convert [not (a=b)] to [(a=b) = false] and [(b=a)=false]
+    and [c=>not (a=b)] to [c=>((a=b) = false)] and [c=>((b=a)=false)]
 *)
 
 val neg_rule_asm :
@@ -529,6 +573,7 @@ val neg_rule_asm :
    and [c=> not true] to [not c]
    and [not a] to [a=false]
    and [c=> not a] to [c=> a=false]
+   pass [not (a=b)] and [c=>not(a=b)] to [neg_eq_asm]
    and solve  [not true |- C]
 *)
 
