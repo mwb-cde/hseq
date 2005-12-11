@@ -183,7 +183,7 @@ module PP=
       with 
 	Pkit.ParsingError x ->
 	  raise (Result.error ("Parsing error: "^x))
-      | Lexer.Error -> raise (Result.error ("Lexing error: "^a)))
+      | Lexer.Lexing _ -> raise (Result.error ("Lexing error: "^a)))
 
     let expand_term scp t = 
       let db s = Thydb.get_id_options s (Thys.get_theories())

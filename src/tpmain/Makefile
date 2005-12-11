@@ -12,7 +12,7 @@ OPTLIB=tpmain.cmxa
 
 DOCFILES = global.mli drule.mli tactics.mli goals.mli commands.mli \
 	display.mli boollib.mli init.mli
-DOCLOAD = -load "${DOCDIR}/logic.data"
+DOCLOAD = -load "${DOCDIR}/parser.data"
 DOCTYPE ?= -html
 DOCDIR ?= "../doc"
 
