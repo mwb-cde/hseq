@@ -448,27 +448,31 @@ val print_overloads:
 module Resolver :
 sig
 
-(** 
-   [resolve_term scp env t]: Resolve the symbols in term [t].
-   For each free variable [Free(s, ty)] in [t], 
-   Lookup [s] in [env] to get long identifier [id]. 
-   If not found, use [Free(s, ty)].
-   If found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
-
-   [env] should return an identifier-type pair where type matches (in
-   some sense) [ty].
-
-   [env] must raise Not_found if [s] is not found.
- *)
 val resolve_term:
     Scope.t
   -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
     -> Basic.term
       -> (Basic.term * Gtypes.substitution)
+(** 
+   [resolve_term scp env t]: Resolve the symbols in term [t].
 
+   For each free variable [Free(s, ty)] in [t], lookup [s] in [env] to
+   get long identifier [id].  If not found, use [Free(s, ty)].  If
+   found, replace [Free(s, ty)] with the identifier [Id(id, ty)].
+
+   [env] should return an identifier-type pair where type matches (in
+   some sense) [ty].
+
+   [env] must raise Not_found if [s] is not found.
+*)
+
+val make_lookup: 
+    Scope.t
+  -> (string -> (Basic.ident * Basic.gtype) list) 
+    -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype)) 
 (**
    [make_lookup scp db]:
-   make an environment suitable for resolve term from db]
+   make an environment suitable for {!Parser.Resolver.resolve_term} from [db].
 
    [db] must raise Not_found when items are not found.
 
@@ -477,11 +481,8 @@ val resolve_term:
 
    [make_lookup db s ty] raise Not_found if [s] is not found in [db].
  *)
-val make_lookup: 
-    Scope.t
-  -> (string -> (Basic.ident * Basic.gtype) list) 
-    -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype)) 
 	
+   
 (* functions exposed for debugging *)
 type resolve_memo =
     { 

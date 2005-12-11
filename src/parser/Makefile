@@ -15,6 +15,11 @@ OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS}
 LIBFILE=parser.cma
 OPTLIB=parser.cmxa
 
+DOCFILES = lexer.mli parser.mli 
+DOCLOAD = -load "${DOCDIR}/logic.data"
+DOCTYPE ?= -html
+DOCDIR ?= "../doc"
+
 .SUFFIXES: .mli .cmi
 .SUFFIXES: .ml .cmo
 .SUFFIXES: .cma 
@@ -51,6 +56,10 @@ install: lib
 installopt: opt
 	cp -f ${OPTLIB} ${INSTALLDIR}
 	cp -f *.cmi *.mli ${HEADERSDIR}
+
+doc: ${DOCFILES}
+	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/parser.data" \
+	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
 
 # libraries
 
