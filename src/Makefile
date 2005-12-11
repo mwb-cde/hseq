@@ -174,9 +174,9 @@ MAKEDOC = make DOCTYPE='${DOCTYPE}' DOCOPTIONS='${DOCOPTIONS}'\
 #	${PARSERDOC}  ${TPMAINDOC} ${SIMPLIFIERDOC} ${NUMBERSDOC} \
 #	${USERLIBDOC}
 
-DOC= simplifierdoc
+#DOC= userlibdoc
 
-doc: ${DOC}
+doc: userlibdoc
 
 # the quotation system
 
@@ -191,23 +191,22 @@ utildoc:
 tpcoredoc: utildoc
 	cd tpcore; $(MAKEDOC) doc
 
-#parserdoc: tpcoredoc
-#	cd parser; $(MAKEDOC) doc
-parserdoc: 
-
 logicdoc: tpcoredoc
 	cd logic; $(MAKEDOC) doc
 
-tpmaindoc: parserdoc logicdoc
+parserdoc: logicdoc
+	cd parser; $(MAKEDOC) doc
+
+tpmaindoc: parserdoc 
 	cd tpmain; $(MAKEDOC) doc
 
 simplifierdoc: tpmaindoc
 	cd simplifier; $(MAKEDOC) doc
 
-numbersdoc: tpmaindoc
+numbersdoc: simplifierdoc
 	cd numbers; $(MAKEDOC) doc
 
-userlibdoc: tpmaindoc
+userlibdoc: simplifierdoc
 	cd userlib; $(MAKEDOC) doc
 
 
