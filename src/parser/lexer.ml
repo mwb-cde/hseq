@@ -378,27 +378,30 @@ let rec skip_space str =
 * Lexer functions
 ***)
 
-  type ('a) matcher = ('a Stream.t -> (bool * tok)) 
+  type ('a) matcher = symtable -> 'a Stream.t -> (bool * tok) 
 
-  let rec first_match l strm = 
-    match l with 
-	[] -> (false, null_tok)
-      | (f::fs) -> 
-	  let (r, tok) = 
-	    try (f strm) with _ -> (false, null_tok)
-	  in 
-	    if r then (r, tok) 
-	    else (first_match fs strm)
+  let first_match ll tbl strm = 
+    let rec first_aux l =
+      match l with 
+	  [] -> (false, null_tok)
+	| (f::fs) -> 
+	    let (r, tok) = 
+	      try (f tbl strm) with _ -> (false, null_tok)
+	    in 
+	      if r then (r, tok) 
+	      else (first_aux fs)
+    in 
+      first_aux ll
 
 (** Match numbers *)
-  let match_number strm = 
+  let match_number tbl strm = 
     if is_num strm 
     then 
       (true, get_num strm)
     else 
       (false, null_tok)
 
-  let match_other str = (false, null_tok)
+  let match_other tbl str = (false, null_tok)
 
 (** Primed identifiers *)
   let match_primed_identifier symtable inp=
@@ -465,19 +468,19 @@ let match_keywords symtable strm =
 
 
 (** Match the empty stream. *)
-let match_empty str =
+let match_empty tbl str =
   if(stream_empty str)
   then (true, eof_tok)
   else (false, null_tok)
   
 
 (** The standard lexers **)
-let std_lexers tbl = 
+let std_lexers = 
   [
     match_empty; 
-    match_primed_identifier tbl;
-    match_identifier tbl;
-    match_keywords tbl;
+    match_primed_identifier;
+    match_identifier;
+    match_keywords;
     match_number;
     match_other
   ]
@@ -491,7 +494,7 @@ let std_lexers tbl =
 **)
 let rec lex symtable str=
   skip_space str;
-  let rslt, tok = first_match (std_lexers symtable) str
+  let rslt, tok = first_match std_lexers symtable str
   in 
     if rslt then tok
     else raise (Lexing (0, 0))

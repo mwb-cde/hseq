@@ -233,43 +233,44 @@ val skip_space : char Stream.t -> unit
     returns [(false, tok)] where [tok] is an arbitrary token.
 *)
 
-type ('a) matcher = ('a Stream.t -> (bool * tok)) 
+type ('a) matcher = symtable -> 'a Stream.t -> (bool * tok)
     (** Functions which match from a stream. *)
 
-val first_match: ('a) matcher list -> 'a Stream.t -> (bool * tok)
+val first_match: 
+  ('a) matcher list -> symtable -> 'a Stream.t -> (bool * tok)
   (** 
       Apply each of the lexers in a list, in order, returning the result
       of the first to suceed. Returns [(false, null_tok)] on failure.
   *)
 
-val match_number : char Stream.t -> (bool * tok)
+val match_number : char matcher
 (**
    [match_number stm]: Match a number.
 *)
 
-val match_other : char Stream.t -> (bool * tok)
+val match_other : char matcher
 (**
    [match_other stm]: General matching function, tries standard
    lexers. Currently, only tries {!Lexer.match_number}.
 *)
 
-val match_primed_identifier : symtable -> char Stream.t -> bool * tok
+val match_primed_identifier : char matcher
 (**
    Match a primed identifier. An identifier begins with a prime ("'")
    and is made up of alpha-numeric characters.
 *)
 
-val match_identifier : symtable -> char Stream.t -> bool * tok
+val match_identifier : char matcher
     (**
     Match identifiers. An identifier begins with a alphabetic
     character or underscore ("_") and is made up of alpha-numeric
     characters possibly seperated by a single dot (".").
     *)
 
-val match_keywords : symtable -> char Stream.t -> bool * tok
+val match_keywords : char matcher
 (** [match_keywords tbl stm]: Match keywords in [stm]. *)
 
-val match_empty : 'a Stream.t -> bool * tok
+val match_empty : 'a matcher
     (** Match the empty stream. *)
 
 (* ANTIQUOTATION NOT SUPPORTED
