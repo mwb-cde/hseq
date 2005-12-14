@@ -451,20 +451,17 @@ let match_identifier symtable inp =
    try to match them with a keyword in symbol table tbl
 **)
 let match_keywords symtable strm =
-  if stream_empty strm 
-  then (true, eof_tok)
-  else 
-    try 
-      let first_char = List.hd(Stream.npeek 1 strm)
-      in 
-      let strng=
-	string_implode (Stream.npeek (largest_sym first_char symtable) strm)
-      in 
-      let (sz, tok)=lookup_sym symtable strng
-      in 
+  try 
+    let first_char = List.hd(Stream.npeek 1 strm)
+    in 
+    let strng=
+      string_implode (Stream.npeek (largest_sym first_char symtable) strm)
+    in 
+    let (sz, tok)=lookup_sym symtable strng
+    in 
       junkn sz strm;
       (true, tok)
-    with Not_found -> (false, null_tok)
+  with Not_found -> (false, null_tok)
 
 
 (** Match the empty stream. *)
