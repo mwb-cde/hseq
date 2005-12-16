@@ -823,14 +823,14 @@ module Grammars :
    The standard table for operator overloading is
    {!Parser.overload_table}, which maintains a list of identifiers and
    types for each overloaded symbols. Identifiers are normally added
-   to the front of the list but a position can be passed, to control
-   the default identifier of each symbol. (The default identifier is
-   the first identifier in the list for a symbol.)
+   to the front of the list but a position can be passed, to prefer
+   one identifier over others. (The search begins from the front of
+   the list.)
 
    The toplevel for operator overloading is
    {!Parser.Resolver.resolve_term} which takes a function which
    carries out the search for an identifier with a matching
-   type. Functin {!Parser.Resolver.make_lookup} constructs a suitable
+   type. Function {!Parser.Resolver.make_lookup} constructs a suitable
    search function, from a symbol look-up table.
 *)
 
@@ -1101,10 +1101,13 @@ val remove_overload:
 val print_overloads: Printer.ppinfo -> unit
 (** Print the overloads table. *)
 
-(** {7 Initialising functions} *)
+(** {5 Initialising functions} *)
 
 val init : unit -> unit
-(** Initialise the parser tables (symbols, tokens and overloading) *)
+(** 
+   Initialise the parser tables (symbols, tokens and overloading).
+   This must be called before any of the parsers are used.
+*)
 
 
 (** {5 Toplevel Parser functions} 
@@ -1192,6 +1195,7 @@ val read_type : string -> Basic.gtype
 (** [read_type str]: Parse string [str] using the standard term parser. *)
 
 (** {7 Debugging} *)
+
 val test_lex : string -> Lexer.tok Parserkit.Input.t
 val test : string -> Basic.term
 
