@@ -243,7 +243,7 @@ let read_identifier = PP.read_identifier
 let read_defn = PP.read_defn
 let read_type_defn = PP.read_type_defn
 
-let mk_term = PP.mk_term (scope())
+let mk_term t = PP.mk_term (scope()) t
 
 (***
  * File-Handling

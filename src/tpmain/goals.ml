@@ -97,7 +97,7 @@ let top_goal () = ProofStack.top_goal (!prflist)
 let drop() = prflist:=ProofStack.pop (!prflist)
 
 let goal ?info trm = 
-  let f = Formula.make (Global.scope()) (Global.mk_term trm)
+  let f = Formula.make (Global.scope()) trm
   in 
   prflist:= ProofStack.push_goal (mk_goal info (Global.scope()) f) (!prflist);
   !save_hook(); top()
