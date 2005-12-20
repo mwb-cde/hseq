@@ -1317,7 +1317,7 @@ module Resolver =
 
    Currently, this just raises Not_found
 *)
-    let default str ty list = raise Not_found
+    let default str ty list = None
 (*
     let default str ty list= 
       match list with 
