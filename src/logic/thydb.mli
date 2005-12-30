@@ -327,12 +327,19 @@ module Loader :
 (** The name of the theory *)
 	  date : float option; 
 (** The maximum date of the theory (optional) *)
-	  prot : bool option  
+	  prot : bool option ;
 (** Whether the theory is protected (optional) *)
+	  childn : Lib.StringSet.t 
+(** 
+   Names of the theories of which name is a parent. 
+   (If name is in childn then it is a circular importing.)
+*)
 	}
 
       val mk_info : string -> float option -> bool option -> info
 	  (** Constructor for [info]. *)
+      val info_add : info -> string -> info
+	  (** [info_add info n]: Add n to [info.childn]. *)
 
       (** 
 	 Data needed for loading a theory. [load_fn] loads a theory

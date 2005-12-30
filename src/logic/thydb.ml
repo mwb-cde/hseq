@@ -570,10 +570,24 @@ module Loader =
 	{ 
 	  name: string;
 	  date : float option;
-	  prot : bool option
+	  prot : bool option;
+	  childn : Lib.StringSet.t 
 	}
 
-    let mk_info n d p = { name = n; date = d; prot = p }
+    let mk_info n d p = 
+      { 
+	name = n; date = d; prot = p ; 
+	childn=Lib.StringSet.empty
+      }
+
+    let mk_full_info n d p c = 
+      { 
+	name = n; date = d; prot = p ; 
+	childn=c
+      }
+
+    let info_add inf n = 
+      { inf with childn = Lib.StringSet.add n (inf.childn) }
 
 	(*** Data needed for loading a theory. ***)
     type data = 
@@ -670,6 +684,18 @@ module Loader =
 
 (*** Building theories ***)
 
+(**
+   [check_importing info n]: Test for a circular importing. Fails iff
+   [n] is in [info.childn].
+*)
+    let check_importing info n =
+      let childn = info.childn
+      in 
+      if (Lib.StringSet.mem n childn)
+      then 
+	raise (error "Circular importing, theory" [n])
+      else ()
+
 (** 
    [check_build db0 db thy]: Check the result of a theory
    build. Verify that [thy] is in database [db], that the parents of
@@ -712,6 +738,8 @@ module Loader =
    Returns the database with the newly built theory as the current theory.
  *)
     let build_thy info data thdb= 
+      let name = info.name
+      in 
       let db = 
 	try data.build_fn thdb info.name
 	with err -> add_error "Failed to rebuild theory" [info.name] err
@@ -780,6 +808,7 @@ module Loader =
       check_aux parents
 
 
+
 (**
    [load_theory thdb name data]: Load the theory named [name] into
    database [thdb]. Also load the parents of the theory and applies
@@ -789,15 +818,23 @@ module Loader =
  *)
     let rec load_theory thdb data info =
       let name = info.name
-      and tyme = info.date
+(*      and tyme = info.date *)
+      and childn = info.childn
       in 
+      (try check_importing info name
+      with err -> 
+	add_error "Failed to load theory" [name] err);
       if is_loaded name thdb
       then 
 	let thy=get_thy thdb name
 	in 
 	let db1 =
 	  load_parents thdb data 
-	    (mk_info name (Some (Theory.get_date thy)) (Some true))
+	    (info_add
+	       (mk_full_info 
+		  name (Some (Theory.get_date thy)) 
+		  (Some true) childn)
+	       name)
 	    (Theory.get_parents thy)
 	in 
 	set_curr db1 thy
@@ -812,9 +849,10 @@ module Loader =
 	    let sparents = Theory.saved_parents saved_thy
 	    and sdate = Theory.saved_date saved_thy
 	    in 
-	    let sinfo = mk_info name (Some sdate) (Some true)
+	    let sinfo = 
+	      mk_full_info name (Some sdate) (Some true) childn
 	    in 
-	    let db1 = load_parents thdb data sinfo sparents
+	    let db1 = load_parents thdb data (info_add sinfo name) sparents
 	    in 
 	    let parents_ok = Lib.try_app (check_parents db1 sinfo) sparents
 	    in
@@ -842,18 +880,21 @@ module Loader =
       let name = info.name
       and tyme = info.date
       and prot = info.prot
+      and childn = info.childn
       in 
       match ps with 
 	[] -> db
       | (x::xs) ->
-	  (if (x = name)
-	  then 
-	    raise (error "Circular importing in theory" [x])
-	  else 
-	    let db1 = 
-		load_theory db bundle (mk_info x tyme prot)
-	    in 
-	    load_parents db1 bundle info xs)
+(*
+	  (try check_importing info x
+	  with err -> 
+	    add_error "Failed to load parents of theory" [x] err);
+*)
+	  let db1 = 
+	    load_theory db bundle 
+	      (mk_full_info x tyme prot childn)
+	  in 
+	  load_parents db1 bundle (info_add info x) xs
 
 (***
 * Toplevel functions 
@@ -865,7 +906,7 @@ module Loader =
       and tyme = Theory.get_date thy
       and prot = true
       in 
-      let info = mk_info name (Some tyme) (Some prot)
+      let info = info_add (mk_info name (Some tyme) (Some prot)) name
       in 
       let db1 = load_parents db data info ps
       in 
