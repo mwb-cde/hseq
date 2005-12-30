@@ -322,9 +322,11 @@ module Files =
 	in 
 	Thys.set_theories(thydb);
 	Result.warning ("Trying to build theory "^f);
-	add_forbidden f;
-	Unsafe.use_file ~silent:false script;
-	drop_forbidden f;
+	(try
+	  (add_forbidden f;
+	   Unsafe.use_file ~silent:false script;
+	   drop_forbidden f)
+	with err -> (drop_forbidden f; raise err));
 	Result.warning ("Built theory "^f);
 	let db1 = Thys.get_theories()
 	in 

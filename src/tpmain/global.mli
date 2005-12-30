@@ -332,6 +332,13 @@ module Files :
       val loader_data : Thydb.Loader.data
 (** Default information needed for the theory database loader. *)
 
+(** {7 Debugging} *)
+      val forbidden :  Lib.StringSet.t ref
+      val init_forbidden : unit -> unit 
+      val add_forbidden : string -> unit 
+      val drop_forbidden : string -> unit 
+      val is_forbidden : string -> bool
+	  
     end
 
 (** {7 Toplevel file functions} *)
