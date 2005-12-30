@@ -298,17 +298,33 @@ module Files =
 	raise (Result.error ("Can't find theory "^f))
 
 (**
+   [forbidden]: Theories that can't be used, otherwise a ciruclar
+   importing results.
+*)
+    let forbidden = ref Lib.StringSet.empty
+    let init_forbidden () = forbidden:=Lib.StringSet.empty
+
+    let is_forbidden s = Lib.StringSet.mem s (!forbidden)
+    let add_forbidden s = forbidden := Lib.StringSet.add s (!forbidden)
+    let drop_forbidden s = forbidden := Lib.StringSet.remove s (!forbidden)
+	
+(**
    [build_thy_file f]: build a theory by running script file f.
 *)
-    let build_thy_file thydb f=  
+    let build_thy_file thydb f=
       let db0 = Thys.get_theories()
       in 
-      let script = find_file (script_of_thy f) (get_thy_path())
-      in 
+      (if (is_forbidden f)
+      then raise (Result.error ("Circular importing, theory "^f))
+      else());
       try 
+	let script = find_file (script_of_thy f) (get_thy_path())
+	in 
 	Thys.set_theories(thydb);
 	Result.warning ("Trying to build theory "^f);
+	add_forbidden f;
 	Unsafe.use_file ~silent:false script;
+	drop_forbidden f;
 	Result.warning ("Built theory "^f);
 	let db1 = Thys.get_theories()
 	in 
@@ -383,7 +399,9 @@ module Files =
 
     let load_functions = ref default_load_functions
     let add_load_fn f = load_functions:=(f::!load_functions)
-    let init_load_functions () = load_functions:=default_load_functions
+    let init_load_functions () = 
+      init_forbidden();
+      load_functions:=default_load_functions
 
 (** 
    [on_load_thy]: The toplevel function that is passed a newly loaded
