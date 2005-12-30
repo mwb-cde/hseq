@@ -1177,9 +1177,10 @@ module Resolver =
       let find_type n = 
 	let type_find n s = Scope.type_of s n
 	in 
-	Lib.try_find 
-	    Gtypes.rename_type_vars 
-	       (memo_find data.memo.types type_find data.scp n)
+	Lib.apply_option
+	  (fun x -> Some (Gtypes.rename_type_vars x))
+	  (Lib.try_find (memo_find data.memo.types type_find data.scp) n)
+	  None
       in 
       let find_sym n ty= 
 	Lib.try_find (data.lookup n) ty
