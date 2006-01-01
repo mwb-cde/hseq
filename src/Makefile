@@ -235,8 +235,12 @@ libclean: clean
 	cd include; $(BAREMAKE) libclean
 	cd libs; $(BAREMAKE) libclean
 
+.PHONY: binclean
+binclean:
+	cd bin; rm -f *
+
 .PHONY: reallyclean
-reallyclean: clean libclean
+reallyclean: clean libclean binclean
 	rm -f hseq
 	rm -f depend
 	cd quote; $(BAREMAKE) reallyclean
