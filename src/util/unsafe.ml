@@ -63,23 +63,22 @@ let add_directory s = Topdirs.dir_directory s
    once init() has been called.
 *)
 let add_init_306 f = 
-  let tmp_parse_toplevel_phrase = !Toploop.parse_toplevel_phrase
+  let ocaml_init = !Toploop.parse_toplevel_phrase
   in 
    Toploop.parse_toplevel_phrase :=
-   (fun l ->
-   ignore(f());
-   Toploop.parse_toplevel_phrase:=tmp_parse_toplevel_phrase;
-   tmp_parse_toplevel_phrase l)
-
+     (fun l ->
+       ignore(f());
+       Toploop.parse_toplevel_phrase:=ocaml_init;
+       ocaml_init l)
 
 (* 
-   [add_init_306 f]:
+   [add_init_309 f]:
 
-   ocaml-3.07 specific code.
+   ocaml-3.09 specific code.
 
    Call init() after all other OCaml initialisation has been done.
 *)
-let add_init_307 f =  
+let add_init_309 f =  
   let ocaml_init = !Toploop.toplevel_startup_hook
   in 
   let startup () = (ocaml_init(); f())
@@ -92,3 +91,6 @@ let add_init_307 f =
    Setup function [f] to be called when OCaml starts.
 *)
 let add_init f = add_init_306 f
+(*
+let add_init f = add_init_309 f
+*)

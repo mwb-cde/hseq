@@ -153,12 +153,12 @@ let add_term_pp_rec id ?(pos=Lib.First) rcrd=
     (Thydb.add_term_pp_rec (Basic.name id) (rcrd, pos) (theories()));
   Global.PP.add_term_pp_record id rcrd
       
+let get_term_pp_rec id= Global.PP.get_type_pp id 
+
 let remove_term_pp_rec id =
   Thydb.remove_term_pp_rec
        (Basic.thy_of_id id) (Basic.name id) (theories());
   Global.PP.remove_term_pp id
-
-let get_term_pp_rec id= Global.PP.get_type_pp id 
 
 let add_overload sym ?(pos=Lib.First) id = 
   let ty = 
@@ -186,7 +186,7 @@ let add_term_pp id ?(pos=Lib.First) prec fx repr=
   in 
   add_term_pp_rec id ~pos:pos rcrd;
   match repr with
-    None -> ()
+    None -> add_overload (Basic.name id) ~pos:pos id
   | Some(sym) -> add_overload sym ~pos:pos id
 
 let remove_term_pp id = remove_term_pp_rec id

@@ -396,10 +396,12 @@ module Grammars  =
       let comp x= 
 	match x with 
 	  ID _ -> true 
-	| _ -> 
+	| _ -> false
+(*
 	    match (get_info x) with
 	      Some (name, _, _) -> true
 	    | _ -> false
+*)
       and mk x = 
 	match x with 
 	  ID(s) -> s
@@ -424,6 +426,27 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
+	| _ -> raise (ParsingError "Not an identifier")
+      in 
+      try Pkit.get comp mk inp
+      with No_match -> raise (ParsingError "Not an identifier")
+
+
+	  (**
+	     [id_relaxed info inp]
+	     String identifier parser.
+	     matches as much as possible.
+	   *)   
+    let id_relaxed info inp =
+      let comp x= 
+	match x with 
+	  ID _ -> true 
+	| Sym(OTHER _) -> true
+	| _ -> false
+      and mk x = 
+	match x with 
+	  ID(s) -> s
+	| Sym(OTHER x) -> (Basic.mk_name x)
 	| _ -> raise (ParsingError "Not an identifier")
       in 
       try Pkit.get comp mk inp
@@ -696,7 +719,17 @@ module Grammars  =
       | _ -> 
   	  match (lookup t) with
   	    Some (name, _, _) ->
+	      (fun x y ->
+		let fty = 
+		  Gtypes.mk_var ("_"^(Basic.string_fnid name)^"_ty")
+		in 
+		let f = 
+		  Term.mk_typed_var name fty
+		in 
+		Term.mk_comb f [x; y])
+(*
   	      (fun x y -> Term.mk_fun name [x; y])
+*)
   	  | _ ->
   	      raise (ParsingError ((string_of_tok t)
   				   ^" is not a connective"))
@@ -1099,8 +1132,8 @@ module Grammars  =
     and defn inf toks =
       (
        (((lhs inf) -- (form inf))
-	  >> (fun (l, r) -> (l, r)))
-	 // (error ~msg:"Badly formed definition"))
+	  >> (fun (l, r) -> (l, r))))
+(*	 // (error ~msg:"Badly formed definition")) *)
 	toks
   end
 
@@ -1164,7 +1197,7 @@ module Resolver =
 	  (Gtypes.set_name ~memo:(data.memo.type_names) (data.scp) qtype)
       in 
       let set_type_name t =
-	Gtypes.set_name ~memo:(data.memo.type_names) (data.scp) t
+	Gtypes.set_name ~memo:(data.memo.type_names) data.scp t
       in 
       let find_ident n = 
 	let ident_find n s = 
@@ -1183,26 +1216,33 @@ module Resolver =
 	  None
       in 
       let find_sym n ty= 
-	Lib.try_find (data.lookup n) ty
+	Lib.try_find 
+	  (fun atyp -> 
+	    let (x, xty) = data.lookup n atyp
+	    in 
+	    (x, Gtypes.rename_type_vars xty)) ty
       in 
       match term with
 	Id(n, ty) -> 
-	  let id_ty = find_type n
-	  in 
-	  let nty = set_type_name ty
-	  in 
-	  let (ty0, env0)=
-	    try (nty, Gtypes.unify_env data.scp expty nty env)
-	    with _ -> (nty, env)
-	  in 
-	  let (ty1, env1)=
-	    (match id_ty with
-	      None -> (ty0, env0)
-	    | Some(d_ty) -> 
-		(try (d_ty, Gtypes.unify_env data.scp ty0 d_ty env0)
-		with _ -> (d_ty, env0)))
-	  in 
-	  (Id(n, (Gtypes.mgu ty1 env1)), ty1, env1)
+	  if(Basic.is_short_id n)
+	  then resolve_aux data env expty (Free((Basic.name n), ty))
+	  else
+	    (let id_ty = find_type n
+	    in 
+	    let nty = set_type_name ty
+	    in 
+	    let (ty0, env0)=
+	      try (nty, Gtypes.unify_env data.scp expty nty env)
+	      with _ -> (nty, env)
+	    in 
+	    let (ty1, env1)=
+	      (match id_ty with
+		None -> (ty0, env0)
+	      | Some(d_ty) -> 
+		  (try (d_ty, Gtypes.unify_env data.scp ty0 d_ty env0)
+		  with _ -> (d_ty, env0)))
+	    in 
+	    (Id(n, (Gtypes.mgu ty1 env1)), ty1, env1))
       | Free(n, ty) -> 
 	  let nty = set_type_name ty
 	  in 
@@ -1464,7 +1504,10 @@ let add_token id sym fx pr=
   (* lexer information *)
   add_symbol sym (Sym (OTHER sym)); 
   (* parser information *)
+  add_token_info (Sym(OTHER sym)) (Some(Basic.mk_name sym, fx, pr))
+(*
   add_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
+*)
 
 let remove_token sym=
   remove_symbol sym;
@@ -1585,8 +1628,12 @@ let init ()= init_tables ()
 
 let parse ph inp = Pkit.parse ph EOF inp
 
+(*
 let identifier_parser inp =
   parse (Grammars.long_id Grammars.id (mk_info ())) inp
+*)
+let identifier_parser inp =
+  parse (Grammars.long_id Grammars.id_relaxed (mk_info ())) inp
 
 let type_parser inp =
   parse (Grammars.types (mk_info ())) inp
