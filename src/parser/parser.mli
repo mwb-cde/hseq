@@ -802,12 +802,26 @@ module Grammars :
 	     defined, the [a1 ... an] are the parameters and the form [rhs]
 	     is the definition of [f]. Occurences of the parameters [a1
 	     .. an] in [rhs] are treated as short identifiers.
+
+	     Each of the arguments [ai] is converted to a bound
+	     variable [bi] (of kind [Basic.All]) and replaced in
+	     [rhs] with [bi]. 
+
+	     The parser returns the name [f], [b1 .. bi] and the body
+	     [rhs].
 	   *)
-	  
+
+      val defn :
+	  infotyp ->
+	    ((string * Basic.term list) * Basic.term) phrase
+	      (** Parse a term definition. *)
+
+(*
       val defn :
 	  infotyp ->
 	    ((string * (string * Basic.gtype) list) * Basic.term) phrase
 	      (** Parse a term definition. *)
+*)
 
     end
 
@@ -1130,8 +1144,13 @@ val typedef_parser : input -> typedef_data
 val term_parser : input -> Basic.term
 (** Read a term *)
 
+(*
 val defn_parser :
     input -> (string * (string * Basic.gtype) list) * Basic.term
+*)
+val defn_parser :
+    input -> (string * Basic.term list) * Basic.term
+
 (** Read a term definition *)
 
 (** {7 User defined parsers} *)

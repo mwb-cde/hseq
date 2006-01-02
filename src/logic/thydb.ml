@@ -885,16 +885,11 @@ module Loader =
       match ps with 
 	[] -> db
       | (x::xs) ->
-(*
-	  (try check_importing info x
-	  with err -> 
-	    add_error "Failed to load parents of theory" [x] err);
-*)
 	  let db1 = 
 	    load_theory db bundle 
 	      (mk_full_info x tyme prot childn)
 	  in 
-	  load_parents db1 bundle (info_add info x) xs
+	  load_parents db1 bundle info xs
 
 (***
 * Toplevel functions 

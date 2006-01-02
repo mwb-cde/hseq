@@ -55,7 +55,8 @@ val read : string -> Basic.term
 val read_unchecked : string -> Basic.term
 (** User level parsing of a string as a raw term. *)
 
-val read_defn : string -> ((string * (string * Basic.gtype) list) * Basic.term)
+val read_defn : 
+    string -> ((string * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
 (** {5 Theories} *)
@@ -386,10 +387,17 @@ val typedef:
    {!Global.read_type_defn}.
 *)
 
+(*
 val define : 
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ((string * (string * Basic.gtype) list) * Basic.term) 
+  -> Logic.Defns.cdefn
+*)
+val define : 
+    ?pp:(int*fixity*string option) 
+  -> ?simp:bool
+  -> ((string * Basic.term list) * Basic.term)
   -> Logic.Defns.cdefn
 (**
    [define ?simp term pp]: Define a term. 

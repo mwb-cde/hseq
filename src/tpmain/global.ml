@@ -198,8 +198,11 @@ module PP=
       in 
       let (t1, env) = Parser.Resolver.resolve_term scp lookup t
       in 
+      t1
+(*
       let t2 = Term.retype_pretty env t1
       in t2
+*)
 
     let expand_type_names scp t=
       Gtypes.set_name ~strict:false scp t
@@ -480,7 +483,7 @@ module Init=
 
 (** [init_list]: The list of functions to call to set-up the system. *)
 
-    let init_theoryDB () = Thys.init_theories(); load_base_thy()
+    let init_theoryDB () = Thys.init_theories()
 
     let init_list = 
       ref 
@@ -495,7 +498,8 @@ module Init=
 
 (** The toplevel initialising function. *)
     let init ()=
-      List.iter (fun x -> x()) (List.rev (!init_list))
+      List.iter (fun x -> x()) (List.rev (!init_list));
+      load_base_thy()
 
 (*** Reset functions ***)
 (** [reset_list]: The functions to call when the system is to be reset. *)

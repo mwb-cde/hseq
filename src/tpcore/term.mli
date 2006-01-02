@@ -521,6 +521,18 @@ val add_term_error : string -> term list -> exn -> 'a
 
 (** {5 More operations} *)
 
+(**
+   [binding_set_names_types ?strict ?memo scp binding]
+   Find and set names for types in a binding.
+   If [strict=true], unknown types cause an error.
+*)
+val binding_set_names : 
+    ?strict:bool
+  -> ?memo:(string, Basic.thy_id)Hashtbl.t
+    -> Scope.t
+      -> Basic.binders
+	-> Basic.binders
+
 val set_names: Scope.t  -> term -> term
 (**
    [set_names scp t]: Get and set full identifiers in terms and and types of

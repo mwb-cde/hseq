@@ -228,7 +228,7 @@ val typedef:
 val define : 
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
-  -> ((string * (string * Basic.gtype) list) * Basic.term) 
+  -> ((string * Basic.term list) * Basic.term) 
   -> Logic.Defns.cdefn
 (**
    [define ?simp term pp]: Define a term. 

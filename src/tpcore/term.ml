@@ -1276,17 +1276,22 @@ let add_term_error s t es = raise (add_error (term_error s t) es)
 * More operations
 ***)
 
+
+(**
+   [binding_set_names_types ?memo scp binding]
+   Find and set names for types in a binding.
+*)
+let binding_set_names ?(strict=false) ?memo scp binding =
+  let (qnt, qname, qtype) = Basic.dest_binding binding
+  in 
+  Basic.mk_binding qnt qname 
+    (Gtypes.set_name ~strict:false ?memo:memo scp qtype)
+
 (**
    [set_names_types scp thy trm]
    find and set long identifiers and types for variables in [trm]
    theory is [thy] if no long identifier can be found in scope [scp]
 *)
-let binding_set_names memo scp binding =
-  let (qnt, qname, qtype) = Basic.dest_binding binding
-  in 
-  Basic.mk_binding qnt qname 
-    (Gtypes.set_name ~strict:false ~memo:memo scp qtype)
-
 let set_names scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:false ~memo:memo s t
@@ -1356,7 +1361,7 @@ let set_names scp trm=
 	      None -> Id(nid, ty1)
 	    | Some(xty) -> Typed(Id(nid, xty), ty1))
     | Qnt(q, b) -> 
-	let nq = binding_set_names type_thy_memo scp q
+	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
 	in 
@@ -1367,12 +1372,9 @@ let set_names scp trm=
 	Typed(set_aux qnts tt, tty1)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
-	(try
-	  (find (Bound(q)) qnts)
+	(try find (Bound(q)) qnts
 	with Not_found -> 
-	  raise (term_error 
-		   "Bound variable occurs outside binding" [t]))
-
+	    raise (term_error "Bound variable occurs outside binding" [t]))
     | _ -> t
   in set_aux (empty_subst()) trm
 
@@ -1495,11 +1497,13 @@ let is_closed vs t =
    [resolve_closed_term scp trm]: 
    resolve names and types in closed term [trm] in scope [scp].
 *)
+(*
 let binding_set_names memo scp binding =
   let (qnt, qname, qtype) = Basic.dest_binding binding
   in 
   Basic.mk_binding qnt qname 
     (Gtypes.set_name ~strict:true ~memo:memo scp qtype)
+*)
 
 let resolve_closed_term scp trm=
   let set_type_name memo s t =
@@ -1591,7 +1595,7 @@ let resolve_closed_term scp trm=
 	    (term_error 
 	       "Can't resolve free variable" [t]))
     | Qnt(q, b) -> 
-	let nq = binding_set_names type_thy_memo scp q
+	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
 	in 

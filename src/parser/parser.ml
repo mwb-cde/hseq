@@ -234,11 +234,11 @@ module Grammars  =
     let add_name n trm inf = 
       inf.bound_names:=(n, trm)::!(inf.bound_names)
 
-				   (**
-				      [drop_name n inf]
-				      Remove [n] from the list of bound names
-				      e.g. after parsing the body [t] of a binding term [! x. t]
-				    *)
+	   (**
+	      [drop_name n inf]
+	      Remove [n] from the list of bound names
+	      e.g. after parsing the body [t] of a binding term [! x. t]
+	    *)
     let drop_name n inf = 
       let rec d_aux ls =
 	match ls with
@@ -390,6 +390,7 @@ module Grammars  =
    General identifier parser.
    matches identifiers and symbols which translate to identifiers.
  *)   
+(*
     let id_parser info inp =
       let get_info x = info x
       in 
@@ -412,6 +413,26 @@ module Grammars  =
       in 
       try Pkit.get comp mk inp
       with No_match -> raise (ParsingError "(id) Not an identifier")
+*)
+    let id_parser info inp =
+      let get_info x = info x
+      in 
+      let comp x= 
+	match x with 
+	  ID _ -> true 
+	| Sym(OTHER _) -> true
+	| _ -> false
+      and mk x = 
+	match x with 
+	  ID(s) -> s
+	| _ -> 
+	    (match (get_info x) with
+	      Some(name, _, _) -> name
+	    | _ ->  raise (ParsingError "(id) Not an identifier"))
+      in 
+      try Pkit.get comp mk inp
+      with No_match -> raise (ParsingError "(id) Not an identifier")
+
 
 	  (**
 	     [id_strict info inp]
@@ -777,7 +798,6 @@ module Grammars  =
 	  in 
 	  add_name n b_id inf;
 	  (n, b_id)) xs
-
 (**
    [qnt_term_remove inf xs body]
    use bound names in [xs] to form a quantified term, with body
@@ -786,7 +806,7 @@ module Grammars  =
 
    remove each name in [xs] from [inf.bound_names] as it is used.
  *)
-    let qnt_term_remove_names inf (xs : (string* Basic.term) list) body=
+    let qnt_term_remove_names inf (xs : (string* Basic.term) list) body =
       List.fold_right
 	(fun (x, y) b ->
 	  let binder=dest_bound y
@@ -794,6 +814,14 @@ module Grammars  =
 	  let nt=Basic.Qnt(binder, b)
 	  in 
 	  drop_name x inf; nt) xs body
+
+(**
+   [qnt_remove_bound_names inf xs body]: Remove each name in [xs] from
+   [inf.bound_names] as it is used, replace it with the term it was
+   bound to.
+ *)
+    let qnt_remove_bound_names inf xs =
+      List.map (fun (x, nt) ->  drop_name x inf; nt) xs 
 
 (**
    [make_term_remove_names info wrapper vs body]:
@@ -951,8 +979,8 @@ module Grammars  =
 	"forall",
 	(fun inf -> 
 	  (((( !$ (Key ALL) 
-		 -- ((id_type_opt (short_id id) inf)
-		       -- ((repeat (id_type_opt (short_id id) inf))
+		 -- ((id_type_opt (short_id id_strict) inf)
+		       -- ((repeat (id_type_opt (short_id id_strict) inf))
 			     -- (!$(Sym COLON)))))
 	       >> 
 	     (fun (_, (v, (vs, _))) ->
@@ -966,8 +994,8 @@ module Grammars  =
 	"exists",
 	(fun inf -> 
 	  (((( !$ (Key EX) 
-		 -- ((id_type_opt (short_id id) inf)
-		       -- ((repeat (id_type_opt (short_id id) inf))
+		 -- ((id_type_opt (short_id id_strict) inf)
+		       -- ((repeat (id_type_opt (short_id id_strict) inf))
 			     -- (!$(Sym COLON)))))
 	       >> 
 	     (fun (_, (v, (vs, _))) ->
@@ -980,8 +1008,8 @@ module Grammars  =
 	"lambda", 
 	(fun inf -> 
 	  (((( !$ (Key LAM) 
-		 -- ((id_type_opt (short_id id) inf)
-		       -- ((repeat (id_type_opt (short_id id) inf))
+		 -- ((id_type_opt (short_id id_strict) inf)
+		       -- ((repeat (id_type_opt (short_id id_strict) inf))
 			     -- (!$(Sym COLON)))))
 	       >> 
 	     (fun (_, (v, (vs, _))) ->
@@ -1035,8 +1063,8 @@ module Grammars  =
       in 
       let grammar inf inp = 
 	(((((!$ sym_tok)
-	      -- (id_type_opt (short_id id) inf)
-	      -- (repeat (id_type_opt (short_id id) inf))
+	      -- (id_type_opt (short_id id_strict) inf)
+	      -- (repeat (id_type_opt (short_id id_strict) inf))
 	      -- (!$ colon))
 	     >> 
 	   (fun (((_, v), vs), _) -> 
@@ -1119,22 +1147,31 @@ module Grammars  =
    (id_type_opt short_id) (id_type_opt short_id)* '=' form
  *)
     let rec lhs inf toks=
-      ((((id_type_opt (short_id id) inf) 
+      ((((id_type_opt (short_id id_strict) inf) 
 	   -- (args_opt inf))
 	  >> (fun ((n, t), args) -> (n, args))) 
 	 // error ~msg:"badly formed identifier for definition")
 	toks
     and args_opt inf= 
-      (((optional (repeat (id_type_opt (short_id id) inf)))
+      (((optional (repeat (id_type_opt (short_id id_strict) inf)))
 	  -- (!$(mk_symbol Logicterm.equalssym)))
 	 >> (fun (x, _) -> match x with None -> [] | Some l -> l))
 	// error ~msg:"badly formed argument list for definition"
     and defn inf toks =
       (
-       (((lhs inf) -- (form inf))
-	  >> (fun (l, r) -> (l, r))))
+       ((((lhs inf) >> 
+	  (fun (n, arg_ns) ->
+	    (n, qnt_setup_bound_names inf Basic.All arg_ns)))
+	   -- 
+	   (form inf))
+	  >> 
+	(fun ((n, arg_ns), r) -> 
+	  let args = qnt_remove_bound_names inf arg_ns
+	  in 
+	  ((n, args), r))))
 (*	 // (error ~msg:"Badly formed definition")) *)
 	toks
+
   end
 
 module Resolver =

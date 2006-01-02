@@ -1429,10 +1429,16 @@ and
 	Basic.ident * Basic.gtype * thm
 (** Get the components of a certified definition. *)
 
+(*
       val mk_termdef: 
 	  Scope.t 
 	-> Basic.ident
 	  -> (string * Basic.gtype) list -> Basic.term -> cdefn
+*)
+      val mk_termdef: 
+	  Scope.t 
+	-> Basic.ident -> Basic.term list -> Basic.term 
+	  -> cdefn
 (** 
    [mk_termdef scp i args trm]: Make a certified definition.
 

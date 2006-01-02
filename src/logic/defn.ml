@@ -45,6 +45,7 @@ let rec mk_var_ty_list ls =
   | (Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
   | _ -> raise (Term.term_error "Non-variables not allowed" ls)
 
+(*
 let rec mk_all_from_list scp b qnts =
   match qnts with 
     [] -> b
@@ -53,8 +54,42 @@ let rec mk_all_from_list scp b qnts =
   | (Basic.Id(n, ty)::qs) ->
       raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
   | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
+*)
 
+let rec mk_all_from_list scp b qnts =
+  match qnts with 
+    [] -> b
+  | (Basic.Bound(q)::qs) ->
+      if (Basic.binder_kind q) = Basic.All
+      then mk_all_from_list scp (Term.mk_qnt q b) qs
+      else 
+	raise 
+	  (Term.term_error "Invalid argument: wrong quantifier in argument"
+	     qnts)
+  | (Basic.Id(n, ty)::qs) ->
+      raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
+  | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
+let mk_defn scp name args rhs = 
+  let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
+  in let lhs = Term.mk_comb (Term.mk_typed_var name nty) args
+  in let ndn0 = 
+    mk_all_from_list scp 
+      (Logicterm.mk_equality lhs rhs)  
+      (List.rev args) 
+  in
+  let ndn = Term.set_names scp ndn0
+  in 
+  let nscp = Scope.extend_with_terms scp [(name, nty)]
+  in 
+  let tenv= Typing.settype nscp ndn
+  in 
+  let tenv1=Typing.typecheck_top nscp tenv ndn Logicterm.mk_bool_ty
+  in 
+  (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
+   (Formula.make nscp (Term.retype tenv ndn)))
+
+(*
 let mk_defn scp name args rhs = 
   let args1=
     let memo = Lib.empty_env()
@@ -94,6 +129,7 @@ let mk_defn scp name args rhs =
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))
+*)
 
 (***
 * Type definition

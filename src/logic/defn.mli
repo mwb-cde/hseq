@@ -20,7 +20,7 @@ val mk_decln :
 val mk_defn :
     Scope.t ->
       Basic.ident->
-	(string * Basic.gtype) list -> Basic.term 
+	Basic.term list -> Basic.term 
 	  -> (Basic.ident * Basic.gtype * Formula.form)
 (**
    [mk_defn scp id args t]: Construct a definition.
