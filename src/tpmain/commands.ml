@@ -186,7 +186,7 @@ let add_term_pp id ?(pos=Lib.First) prec fx repr=
   in 
   add_term_pp_rec id ~pos:pos rcrd;
   match repr with
-    None -> add_overload (Basic.name id) ~pos:pos id
+    None -> () (* add_overload (Basic.name id) ~pos:pos id *)
   | Some(sym) -> add_overload sym ~pos:pos id
 
 let remove_term_pp id = remove_term_pp_rec id

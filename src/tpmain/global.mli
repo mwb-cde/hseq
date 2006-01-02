@@ -167,6 +167,13 @@ module PP:
 
 (** {6 Parsing} *)
 
+      val overload_lookup: string -> (Basic.ident * Basic.gtype) list
+(** 
+   [overload_lookup s]: Find the list of identifiers which may be
+   overloaded on [s]. String [s] may be a symbol or the short name of
+   a term.
+*)
+
       val expand_term : 
 	  Scope.t -> Basic.term -> Basic.term
 (** 

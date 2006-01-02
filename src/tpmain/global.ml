@@ -185,15 +185,16 @@ module PP=
 	  raise (Result.error ("Parsing error: "^x))
       | Lexer.Lexing _ -> raise (Result.error ("Lexing error: "^a)))
 
+    let overload_lookup s = 
+      let thydb s = Thydb.get_id_options s (Thys.get_theories())
+      and parserdb s = Parser.get_overload_list s
+      in 
+      try parserdb s
+      with Not_found -> thydb s
+
     let expand_term scp t = 
-(*
-      let db s = Thydb.get_id_options s (Thys.get_theories())
-      in 
-*)
-      let db s = Parser.get_overload_list s
-      in 
       let lookup = 
-	Parser.Resolver.make_lookup scp db
+	Parser.Resolver.make_lookup scp overload_lookup
       in 
       let (t1, env) = Parser.Resolver.resolve_term scp lookup t
       in 
