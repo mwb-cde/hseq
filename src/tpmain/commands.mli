@@ -56,7 +56,7 @@ val read_unchecked : string -> Basic.term
 (** User level parsing of a string as a raw term. *)
 
 val read_defn : 
-    string -> ((string * Basic.term list) * Basic.term)
+    string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
 (** {5 Theories} *)
@@ -397,15 +397,16 @@ val define :
 val define : 
     ?pp:(int*fixity*string option) 
   -> ?simp:bool
-  -> ((string * Basic.term list) * Basic.term)
+  -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
   -> Logic.Defns.cdefn
 (**
    [define ?simp term pp]: Define a term. 
 
    A term definition is of the from [define <:def< f a1 .. an = X>>].
    The term identifier is [f], the arguments (if any) are [a1 .. an]
-   and (f a1 .. an) is defined by axiom as [X]. Term [X] must be
-   closed, w.r.t. the arguments [a1 .. an]. 
+   where each [ai] is a unversally bound variable and (f a1 .. an) is
+   defined by axiom as [X]. Term [X] must be closed, w.r.t. the
+   arguments [a1 .. an].
 
    [?pp]: Printer-Parser information for the defined identifier.
 

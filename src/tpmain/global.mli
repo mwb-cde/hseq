@@ -218,7 +218,7 @@ module PP:
 	  string -> (string * (string * Basic.gtype) list) * Basic.term
 *)
       val read_defn :
-	  string -> (string * Basic.term list) * Basic.term
+	  string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
 (** Parse a string as a term definition. *)
 
       val read_type : string -> Basic.gtype
@@ -242,7 +242,7 @@ val read_identifier: string -> Basic.ident
 (** Read an identifier. *)
 
 val read_defn :
-    string -> (string * Basic.term list) * Basic.term
+    string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
 (** Read a term definition. *)
 val read_type_defn : string -> Parser.typedef_data
 (** Read a type definition. *)

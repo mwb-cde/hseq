@@ -70,9 +70,12 @@ let rec mk_all_from_list scp b qnts =
       raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
   | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
-let mk_defn scp name args rhs = 
+let mk_defn scp (name, nty) args rhs = 
+(*
   let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
-  in let lhs = Term.mk_comb (Term.mk_typed_var name nty) args
+  in 
+*)
+  let lhs = Term.mk_comb (Term.mk_typed_var name nty) args
   in let ndn0 = 
     mk_all_from_list scp 
       (Logicterm.mk_equality lhs rhs)  

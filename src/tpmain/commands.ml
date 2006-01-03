@@ -402,12 +402,14 @@ let dest_defn_term trm=
       
 (*** Term definitions ***)
 
-let define ?pp ?(simp=false) ((name, args), r)=
+let define ?pp ?(simp=false) (((name, nty), args), r)=
   let scp = Global.scope()
   in 
   let ndef=
     Logic.Defns.mk_termdef scp
-      (Basic.mk_long (Theory.get_name (Global.current())) name) args r
+      (Basic.mk_long (Theory.get_name (Global.current())) name, 
+       nty)
+      args r
   in 
   let props = 
     if simp

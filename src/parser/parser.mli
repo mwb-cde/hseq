@@ -813,7 +813,7 @@ module Grammars :
 
       val defn :
 	  infotyp ->
-	    ((string * Basic.term list) * Basic.term) phrase
+	    (((string * Basic.gtype) * Basic.term list) * Basic.term) phrase
 	      (** Parse a term definition. *)
 
 (*
@@ -1149,7 +1149,7 @@ val defn_parser :
     input -> (string * (string * Basic.gtype) list) * Basic.term
 *)
 val defn_parser :
-    input -> (string * Basic.term list) * Basic.term
+    input -> ((string * Basic.gtype) * Basic.term list) * Basic.term
 
 (** Read a term definition *)
 

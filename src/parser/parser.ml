@@ -1149,7 +1149,8 @@ module Grammars  =
     let rec lhs inf toks=
       ((((id_type_opt (short_id id_strict) inf) 
 	   -- (args_opt inf))
-	  >> (fun ((n, t), args) -> (n, args))) 
+	  >> 
+	(fun ((n, t), args) -> (n, t), args))
 	 // error ~msg:"badly formed identifier for definition")
 	toks
     and args_opt inf= 

@@ -18,17 +18,22 @@ val mk_decln :
 (** {7 Term definition} *)
 
 val mk_defn :
-    Scope.t ->
-      Basic.ident->
-	Basic.term list -> Basic.term 
-	  -> (Basic.ident * Basic.gtype * Formula.form)
+    Scope.t 
+  -> (Basic.ident * Basic.gtype)
+    -> Basic.term list 
+      -> Basic.term 
+	-> (Basic.ident * Basic.gtype * Formula.form)
 (**
    [mk_defn scp id args t]: Construct a definition.
 
    [scp] is the scope of the definition
    [id] is the identifier being defined.
-   [args] are the list of parameters identifiers and types 
+   [args] is the list of arguments, where each argument is a
+   (universally) bound variable.
    [t] is the body of the definition 
+
+   Returns a formula of the form [! id args : id args = t] together
+   with the long identifier and type of the defined term.
 *)
 
 (** {5 Type definition} *)

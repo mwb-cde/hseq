@@ -1437,8 +1437,9 @@ and
 *)
       val mk_termdef: 
 	  Scope.t 
-	-> Basic.ident -> Basic.term list -> Basic.term 
-	  -> cdefn
+	-> (Basic.ident * Basic.gtype) 
+	  -> Basic.term list -> Basic.term 
+	    -> cdefn
 (** 
    [mk_termdef scp i args trm]: Make a certified definition.
 
