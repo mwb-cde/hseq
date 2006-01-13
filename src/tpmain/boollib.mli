@@ -499,14 +499,18 @@ val cases_tac: ?info:Logic.info -> Basic.term -> Tactics.tactic
    info: [goals = [g1; g2], aforms=[t], cforms=[t], terms = []]
  *)
 
-val show_tac: Basic.term -> Tactics.tactic -> Tactics.tactic
+val show_tac: 
+    ?info:Logic.info
+  -> Basic.term -> Tactics.tactic -> Tactics.tactic
 (**
    [show_tac trm tac]: Use [tac] to show that [trm] is true,
    introducing [trm] as a new assumption. If [tac] fails to prove
    [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
-val show: Basic.term -> Tactics.tactic -> Tactics.tactic
+val show: 
+    ?info:Logic.info
+  -> Basic.term -> Tactics.tactic -> Tactics.tactic
 (**
    [show trm tac]: Use [tac] to show that [trm] is true,
    introducing [trm] as a new assumption. If [tac] fails to prove
@@ -514,6 +518,19 @@ val show: Basic.term -> Tactics.tactic -> Tactics.tactic
 
    {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
+
+
+val cases_of: 
+    ?info:Logic.info 
+  -> ?thm:Logic.thm -> Basic.term 
+    -> Tactics.tactic
+(**
+   [cases_of ?info ?thm trm]: Try to introduce a case split based on
+   the type of term [trm]. If [thm] is given, it is used as the cases
+   theorem. If [thm] is not given, the theorem named ["T_cases"] is
+   used, where [T] is the name of the type of [trm].
+*)
+
 
 (** {5 Modus Ponens} *)
 
@@ -792,6 +809,8 @@ val unify_asm_for_consts:
 ******)
 
 (** {5 Debugging} *)
+
+val get_type_name: Basic.gtype -> Basic.ident
 
 (*
 

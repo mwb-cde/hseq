@@ -210,20 +210,55 @@ module PP =
       init_choice_parser();
       init_choice_printer()
 
+
+(* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
+
+    let exists_unique_ident = 
+      Basic.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
+    let exists_unique_sym = "?!"
+    let exists_unique_pp = 
+      (Printer.default_term_fixity, Printer.default_term_prec) 
+
+    let exists_unique_parser =
+      Parser.Grammars.parse_as_binder exists_unique_ident exists_unique_sym
+
+    let init_exists_unique_parser ()=
+      Parser.add_symbol 
+	exists_unique_sym 
+	(Lexer.Sym(Lexer.OTHER exists_unique_sym));
+      Parser.add_term_parser 
+	(Lib.After "lambda") "exists_unique" exists_unique_parser
+	
+    let exists_unique_printer= 
+      Term.print_as_binder 
+	exists_unique_pp exists_unique_ident exists_unique_sym
+
+    let init_exists_unique_printer () =
+      let printer = exists_unique_printer
+      in 
+      Global.PP.add_term_printer exists_unique_ident 
+	(fun ppstate ppenv -> printer ppstate ppenv)
+
+    let init_exists_unique() = 
+      init_exists_unique_parser();
+      init_exists_unique_printer()
+
 (* PP Initialising functions *)
 
     let init_parsers () = 
       init_ifthenelse_parser();
-      init_choice_parser()
+      init_choice_parser();
+      init_exists_unique_parser()
       
     let init_printers ()=
       init_negation_printer();
       init_ifthenelse_printer();
-      init_choice_printer() 
+      init_choice_printer() ;
+      init_exists_unique_printer() 
 
     let init() =
       init_printers();
-      init_parsers();
+      init_parsers()
 
   end    
 
@@ -934,7 +969,7 @@ let cases_tac ?info (t:Basic.term)=
       ]
    ]
 
-let show_tac (trm:Basic.term) tac= 
+let show_tac ?info (trm:Basic.term) tac= 
   let thm = cases_thm()
   and inf1=Tactics.mk_info()
   in 
@@ -957,11 +992,78 @@ let show_tac (trm:Basic.term) tac=
 	  let asm_tag = get_one ~msg:"show_tac 3" (aformulas inf1)
 	  in 
 	  seq [ negA ~a:(ftag asm_tag); tac ] g);
-	skip
+	(fun g -> 
+	  let (_, gl_tag) = get_two (subgoals inf1)
+	  and asm_tag = get_one (aformulas inf1)
+	  in 
+	  data_tac (set_info info) ([gl_tag], [asm_tag], [], []) g)
       ]
    ]
 
 let show = show_tac
+
+
+(**
+   [cases_of ?info ?thm trm]: Try to introduce a case split based on
+   the type of term [trm]. If [thm] is given, it is used as the cases
+   theorem. If [thm] is not given, the theorem named ["T_cases"] is
+   used, where [T] is the name of the type of [trm].
+*)
+  let get_type_name ty =
+    match ty with
+      Basic.Constr ((Basic.Defined id), _) -> id
+    | Basic.Base Basic.Bool -> Logicterm.bool_ty_id
+    | Basic.Base Basic.Ind -> 
+	Basic.mk_long "base" "ind"
+    | _ -> failwith "get_type_name"
+
+let cases_of ?info ?thm t g =
+  let scp = Tactics.scope_of g
+  and tyenv = Tactics.typenv_of g
+  in 
+  let trm = Global.PP.expand_term scp t
+  in 
+  let case_thm = 
+    match thm with
+      Some x -> x
+    | _ -> 
+	let ty = 
+	  let sb = Typing.settype scp ~env:tyenv trm
+	  in Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
+	in
+	let (th, id) = Basic.dest_fnid (get_type_name ty)
+	in 
+	let thm_name = id^"_cases"
+	in 
+	try 
+	  Commands.thm (Basic.string_fnid (Basic.mk_long th thm_name))
+	with 
+	  _ ->
+	    try Commands.thm thm_name
+	    with _ -> 
+	      failwith ("Can't find cases theorem "^thm_name)
+  in 
+  let inf1 = 
+    match info with 
+      None -> None | _ -> Some(Tactics.mk_info())
+  in 
+  let tac1 g1 = 
+    seq 
+      [
+       cut ?info:info ~inst:[trm] case_thm;
+       repeat (disjA ?info:inf1)
+     ] g1
+  in 
+  let tac2 g2 = 
+    match inf1 with
+      None -> skip g2
+    | Some inf2 -> 
+	data_tac (set_info info) ([], [], (subgoals inf2), []) g2
+  in 
+  try
+    (tac1 ++ tac2) g
+  with err -> raise (add_error "cases_of" err)
+   
 
 (***
 * Modus Ponens
@@ -1132,14 +1234,17 @@ let back_tac ?info ?a ?c goal=
 	   (ftag (Lib.get_nth (Tactics.aformulas info1) 1))
 	   (ftag c_label)) g3
   in 
-  let tac4 g4 = 
+  let tac4 g4 =
+    delete (ftag c_label) g4
+  in 
+  let tac5 g5 = 
     data_tac (set_info info)
      ([Lib.get_nth (Tactics.subgoals info1) 0],
       [], 
       [Lib.get_nth (Tactics.cformulas info1) 0],
-      []) g4
+      []) g5
   in 
-  (tac1++ (tac2 ++ tac3 ++ tac4)) goal
+  (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
 
 
 let cut_back_tac ?info ?inst thm ?c g=
