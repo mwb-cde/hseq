@@ -179,13 +179,24 @@ let find_match scope ctrl tyenv varp term1 term2 env=
    unifying [lhs] and [trm] and contain the bindings for unification
    variables in [rhs].
 *)
-let match_rewrite scope ctrl tyenv varp lhs rhs order trm = 
+let match_rewrite scope ctrl qntenv tyenv varp lhs rhs order trm = 
   let env = Term.empty_subst ()
   in 
   try
     (let tyenv1, env1=find_match scope ctrl tyenv varp lhs trm env; 
     in 
-    let nt = Term.subst env1 rhs
+    let nt = Term.subst_closed qntenv env1 rhs
+(*
+      let tmp = Term.subst env1 rhs
+      in 
+      (* 
+	 Make sure the resulting term is closed wrt 
+	 the quantifiers of term trm
+       *)
+      if (is_closed_env qntenv tmp)
+      then tmp
+      else raise (Failure "No match")
+*)
     in 
     match order with
       None -> (nt, tyenv1)
@@ -204,7 +215,7 @@ let match_rewrite scope ctrl tyenv varp lhs rhs order trm =
 
    If any rule matches, [chng] is set to [true] otherwise it is unchanged.
 *)
-let rec match_rr_list scope ctrl tyenv chng rs trm = 
+let rec match_rr_list scope ctrl qntenv tyenv chng rs trm = 
   if (limit_reached (ctrl.depth))
   then (trm, tyenv, ctrl)
   else 
@@ -213,7 +224,7 @@ let rec match_rr_list scope ctrl tyenv chng rs trm =
     | (qs, lhs, rhs, order)::nxt ->
 	let (ntrm, ntyenv), fl = 
 	  (try 
-	    (match_rewrite scope ctrl tyenv 
+	    (match_rewrite scope ctrl qntenv tyenv 
 	       (is_free_binder qs) lhs rhs order trm, 
 	     true)
 	  with _ -> (trm, tyenv), false)
@@ -221,7 +232,7 @@ let rec match_rr_list scope ctrl tyenv chng rs trm =
 	if fl 
 	then (chng:=true; (ntrm, ntyenv, decr_depth ctrl))
 	else 
-	  match_rr_list scope ctrl ntyenv chng nxt trm)
+	  match_rr_list scope ctrl qntenv ntyenv chng nxt trm)
 
 (**
    [match_rewrite_list scp ctrl tyenv chng net trm]: Repeatedly
@@ -232,7 +243,7 @@ let rec match_rr_list scope ctrl tyenv chng rs trm =
    If [trm] rewritten then [chng] is set to [true] otherwise it is
    unchanged.
 *)
-let rec match_rewrite_list scope ctrl tyenv chng net trm =
+let rec match_rewrite_list scope ctrl qntenv tyenv chng net trm =
   if(limit_reached ctrl.depth)
   then (trm, tyenv, ctrl)
   else 
@@ -244,12 +255,12 @@ let rec match_rewrite_list scope ctrl tyenv chng net trm =
       | (List_rr r) -> r 
     in 
     let ntrm, ntyenv, nctrl =
-      match_rr_list scope ctrl tyenv cn rs trm
+      match_rr_list scope ctrl qntenv tyenv cn rs trm
     in 
     if (!cn) 
     then 
       (chng:=true; 
-       match_rewrite_list scope nctrl ntyenv chng net ntrm)
+       match_rewrite_list scope nctrl qntenv ntyenv chng net ntrm)
     else
       (ntrm, ntyenv, nctrl))
 
@@ -265,32 +276,40 @@ let rec match_rewrite_list scope ctrl tyenv chng net trm =
    [true] other wise it is unchanged.
 *)
 let rewrite_list_topdown scope ctrl tyenv chng net trm = 
-  let rec rewrite_subterm ctrl env t=
+  let rec rewrite_subterm ctrl qntenv env t=
     if(limit_reached ctrl.depth)
     then (t, env, ctrl)
     else 
       (match t with
 	Basic.Qnt(q, b) -> 
-	  let nb, benv, bctrl = rewrite_aux ctrl env b
+	  let qntenv1 = 
+	    Term.bind 
+	      (Basic.Bound q) (Term.mk_free "" (Gtypes.mk_null()))
+	      qntenv
+	  in 
+	  let nb, benv, bctrl = rewrite_aux ctrl qntenv1 env b
 	  in 
 	  (Basic.Qnt(q, nb), benv, bctrl)
       |	Basic.App(f, a)->
-	  let nf, fenv, fctrl = (rewrite_aux ctrl env f)
+	  let nf, fenv, fctrl = (rewrite_aux ctrl qntenv env f)
 	  in
-	  let na, aenv, actrl = (rewrite_aux fctrl fenv a)
+	  let na, aenv, actrl = (rewrite_aux fctrl qntenv fenv a)
 	  in 
 	  (Basic.App(nf, na), aenv, actrl)
-      | Basic.Typed(tt, ty) -> rewrite_aux ctrl env tt
+      | Basic.Typed(tt, ty) -> rewrite_aux ctrl qntenv env tt
       | _ -> (t, env, ctrl))
-  and rewrite_aux ctrl env t = 
-    if(limit_reached ctrl.depth)
+  and rewrite_aux ctrl qntenv env t = 
+    if (limit_reached ctrl.depth)
     then (t, env, ctrl)
     else 
-      (let nt, nenv, nctrl= match_rewrite_list scope ctrl env chng net t
+      (let nt, nenv, nctrl= 
+	match_rewrite_list scope ctrl qntenv env chng net t
       in 
-      rewrite_subterm nctrl nenv nt)
+      rewrite_subterm nctrl qntenv nenv nt)
   in 
-  rewrite_aux ctrl tyenv trm
+  let qntenv = Term.empty_subst()
+  in 
+  rewrite_aux ctrl qntenv tyenv trm
 
 (**
    [rewrite_list_bottomup scp ctrl tyenv chng net trm]: Rewrite [trm]
@@ -304,29 +323,37 @@ let rewrite_list_topdown scope ctrl tyenv chng net trm =
    [true] other wise it is unchanged.
 *)
 let rewrite_list_bottomup scope ctrl tyenv chng net trm = 
-  let rec rewrite_aux ctrl env t=
+  let rec rewrite_aux ctrl qntenv env t=
     if(limit_reached (ctrl.depth))
     then (t, env, ctrl)
     else 
       (match t with
 	Basic.Qnt(q, b) -> 
-	  (let nb, benv, nctrl = rewrite_aux ctrl env b
+	  let qntenv1 = 
+	    Term.bind 
+	      (Basic.Bound q) (Term.mk_free "" (Gtypes.mk_null()))
+	      qntenv
 	  in 
-	  match_rewrite_list scope nctrl benv chng net (Qnt(q, nb)))
+	  let nb, benv, nctrl = rewrite_aux ctrl qntenv1 env b
+	  in 
+	  match_rewrite_list scope nctrl qntenv benv chng net (Qnt(q, nb))
       |	Basic.App(f, a)->
 	  (let nf, fenv, fctrl = 
-	    (rewrite_aux ctrl env f)
+	    (rewrite_aux ctrl qntenv env f)
 	  in
 	  let na, aenv, actrl= 
-	    (rewrite_aux fctrl fenv a)
+	    (rewrite_aux fctrl qntenv fenv a)
 	  in 
-	  match_rewrite_list scope actrl aenv chng net (Basic.App(nf, na)))
+	  match_rewrite_list scope actrl qntenv aenv chng net 
+	    (Basic.App(nf, na)))
       | Basic.Typed(tt, ty) -> 
-	  rewrite_aux ctrl env tt
+	  rewrite_aux ctrl qntenv env tt
       | _ -> 
-	  match_rewrite_list scope ctrl env chng net t)
+	  match_rewrite_list scope ctrl qntenv env chng net t)
   in 
-  rewrite_aux ctrl tyenv trm
+  let qntenv= Term.empty_subst()
+  in 
+  rewrite_aux ctrl qntenv tyenv trm
 
 (** 
    [rewrite_list scp ctrl chng tyenv rs trm]: 

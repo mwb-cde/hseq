@@ -210,17 +210,23 @@ let subst_equiv scp term lst =
   let repl t ls = 
     Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
   in 
-  let rec subst_aux trm = 
+  let rec subst_aux qntenv trm = 
     match (repl trm lst) with
-      Some(x) -> x 
+      Some(x) -> 
+	if (Term.is_closed_env qntenv x)
+	then x
+	else raise (Failure "subst_equiv: Not closed")
     | None -> 
 	(match trm with
-	  Qnt(q, b) ->  Qnt(q, subst_aux b)
-	| App(f, a) -> App(subst_aux f, subst_aux a)
-	| Typed(t, ty) -> Typed(subst_aux t, ty)
+	  Qnt(q, b) ->  
+	    let qntenv1=Term.bind (Bound q) (Term.mk_short_var "") qntenv
+	    in 
+	    Qnt(q, subst_aux qntenv1 b)
+	| App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
+	| Typed(t, ty) -> Typed(subst_aux qntenv t, ty)
 	| _ -> trm)
   in 
-  subst_aux term
+  subst_aux (Term.empty_subst()) term
 
 (*** Beta conversion ***)
 

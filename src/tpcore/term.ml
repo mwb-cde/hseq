@@ -1296,10 +1296,12 @@ let set_names scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:false ~memo:memo s t
   in 
+(*
   let curr_thy = Scope.thy_of scp
   in 
+*)
   let id_memo = Lib.empty_env()
-  and scope_memo = Lib.empty_env()
+(*   and scope_memo = Lib.empty_env() *)
   and type_memo = Lib.empty_env()
   and type_thy_memo = Lib.empty_env()
   in 
@@ -1462,13 +1464,14 @@ let close_term qnt free trm=
   rebuild_qnt (List.rev binders) (subst sb trm)
 
 
-let rec is_closed_scope env t =
+(*
+let rec is_closed_env env t =
   match t with
-    Basic.App(l, r) -> is_closed_scope env l; is_closed_scope env r
-  | Basic.Typed(a, _) -> is_closed_scope env a
+    Basic.App(l, r) -> is_closed_env env l; is_closed_env env r
+  | Basic.Typed(a, _) -> is_closed_env env a
   | Basic.Qnt(q, b) -> 
       (table_add (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env;
-       is_closed_scope env b;
+       is_closed_env env b;
        table_remove (Basic.Bound(q)) env)
   | Basic.Bound(_) -> 
       (try ignore(table_find t env)
@@ -1489,9 +1492,54 @@ let is_closed vs t =
       if ((is_bound x) or (is_free x))
       then ignore(table_add x (mk_free "" (Gtypes.mk_null())) tbl)
       else ()) vs;
-  try is_closed_scope tbl t; true
+  try is_closed_env tbl t; true
+  with _ -> false
+*)
+
+let rec is_closed_env env t =
+  match t with
+    Basic.App(l, r) -> 
+      (is_closed_env env l && is_closed_env env r)
+  | Basic.Typed(a, _) -> 
+      is_closed_env env a
+  | Basic.Qnt(q, b) -> 
+      let env1 = bind (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env
+      in 
+      is_closed_env env1 b
+  | Basic.Bound(_) -> 
+      member t env
+  | Basic.Free(_) -> 
+      member t env
+  | _ -> true
+
+let is_closed vs t = 
+  (* add bound terms of [vs] to tbl *)
+  let env = 
+    List.fold_left 
+      (fun env x -> 
+	if ((is_bound x) or (is_free x))
+	then bind x (mk_free "" (Gtypes.mk_null())) env
+	else env) (empty_subst()) vs
+  in 
+  try is_closed_env env t
   with _ -> false
 
+let rec subst_closed qntenv sb trm =
+  try 
+    let nt = replace sb trm 
+    in 
+    if (is_closed_env qntenv nt)
+    then subst_closed qntenv sb nt
+    else raise (Failure "subst_closed: Not closed")
+  with Not_found ->
+    (match trm with
+      Qnt(q, b) -> 
+	let qntenv1 = bind (Bound q) (mk_free "" (Gtypes.mk_null())) qntenv
+	in 
+	Qnt(q, subst_closed qntenv1 sb b)
+    | App(f, a) -> App(subst_closed qntenv sb f, subst_closed qntenv sb a)
+    | Typed(t, ty) -> Typed(subst_closed qntenv sb t, ty)
+    | _ -> trm)
 
 (**
    [resolve_closed_term scp trm]: 
@@ -1509,11 +1557,13 @@ let resolve_closed_term scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:true ~memo:memo s t
   in 
-  let true_term = mk_short_var "true"
+(*
+  let true_term = mk_short_var "true" 
   and curr_thy = Scope.thy_of scp
   in 
+*)
   let id_memo = Lib.empty_env()
-  and scope_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env() 
   and type_memo = Lib.empty_env()
   and type_thy_memo = Lib.empty_env()
   in 

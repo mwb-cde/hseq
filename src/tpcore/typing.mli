@@ -38,8 +38,11 @@ val add_typing_error:
 
 (** {5 Typing a term} *)
 
-val typeof : Scope.t -> Basic.term -> Basic.gtype
-(** Get the type of a term *)
+val typeof : 
+   Scope.t 
+    -> ?env:Gtypes.substitution 
+      -> Basic.term -> Basic.gtype
+(** Get the type of a term wrt type environment [env] (if given). *)
 
 (** {5 Type-checking functions} *)
 
@@ -64,11 +67,18 @@ val typecheck_top: Scope.t
    their types. The type used is [ty], whatever type [n] has in [scp].
 *)
 
-val settype: Scope.t -> Basic.term  -> Gtypes.substitution
+val settype: 
+    Scope.t -> ?env:Gtypes.substitution
+      -> Basic.term  -> Gtypes.substitution
 (**
    Type-check a term. The types of identifier terms (built from [Id(n,
    ty)]) are taken from the scope ([ty] is discarded). (This is a
    primitive type-checking function.)
 *)
 
+
+(** {7 Debugging} *)
+val typeof_env:
+    Scope.t -> Gtypes.substitution -> 
+      int ref -> Basic.term -> (Basic.gtype * Gtypes.substitution)
 

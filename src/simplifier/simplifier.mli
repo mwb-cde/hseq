@@ -269,13 +269,14 @@ val match_rewrite :
     Scope.t 
   -> Gtypes.substitution 
     -> Term.substitution 
-      -> (Basic.term -> bool) 
+      -> Term.substitution 
+	-> (Basic.term -> bool) 
 	-> Basic.term 
 	  -> Basic.term 
 	    -> Basic.term 
 	      -> Gtypes.substitution * Term.substitution * Basic.term
 (**
-   [match_rewrite scp tyenv trmenv varp lhs rhs trm]: Try to match
+   [match_rewrite scp tyenv qntenv trmenv varp lhs rhs trm]: Try to match
    [lhs] with [trm] in type envivornment [tyenv] and term bindings
    [trmenv]. Return [rhs], instantiated with the binding from the
    match, and the type and term environments that made the match
@@ -286,6 +287,7 @@ val find_basic :
     Data.t 
   -> (Data.t * Gtypes.substitution * Basic.term * Logic.rr_type) option ref 
     -> Gtypes.substitution 
+    -> Term.substitution 
       -> Simpset.rule
 	-> Basic.term 
 	  -> Tactics.tactic
@@ -304,6 +306,7 @@ val find_basic :
 val find_match_tac :
     Data.t 
   -> Gtypes.substitution 
+    -> Term.substitution 
     -> (Data.t 
 	  * Gtypes.substitution 
 	  * Basic.term 
@@ -327,10 +330,11 @@ val find_all_matches_tac :
     Data.t 
   -> (Data.t * Gtypes.substitution * Basic.term) option ref
     -> Gtypes.substitution 
+    -> Term.substitution 
       -> Basic.term 
 	-> Tactics.tactic
 (** 
-   [find_all_matches cntrl ret tyenv trm g]: Find all rules in simpset
+   [find_all_matches cntrl ret tyenv qntenv trm g]: Find all rules in simpset
    [cntrl.set] which can be used to rewrite term [trm] in goal [g].
 
    Returns new simp data, the new type environment and the rewritten
@@ -344,10 +348,11 @@ val find_rrs_bottom_up_tac:
     Data.t
   -> (Data.t * Gtypes.substitution * Basic.term) option ref
     -> Gtypes.substitution
+    -> Term.substitution 
       -> Basic.term
 	-> Tactics.tactic
 (**
-   [find_rrs_bottom_up ctrl ret tyenv trm g]: Traverse term [trm],
+   [find_rrs_bottom_up ctrl ret tyenv qntenv trm g]: Traverse term [trm],
    bottom-up, finding rewrite rules to apply. 
 
    Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
@@ -359,10 +364,11 @@ val find_rrs_top_down_tac :
     Data.t
   -> (Data.t * Gtypes.substitution * Basic.term) option ref
     -> Gtypes.substitution
+    -> Term.substitution 
       -> Basic.term
 	-> Tactics.tactic
 (**
-   [find_rrs_top_down ctrl ret tyenv trm g]: Traverse term [trm],
+   [find_rrs_top_down ctrl ret tyenv qntenv trm g]: Traverse term [trm],
    top-down, finding rewrite rules to apply. This is the default.
 
    Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp

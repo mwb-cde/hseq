@@ -216,10 +216,12 @@ type rewriteDB =
 
 val match_rewrite : 
     Scope.t -> 
-      control -> Gtypes.substitution ->
-	(Basic.term -> bool) -> Basic.term -> 
-	  Basic.term -> order option -> Basic.term -> 
-	    (Basic.term* Gtypes.substitution)
+      control -> 
+	Term.substitution  -> 
+	  Gtypes.substitution ->
+	    (Basic.term -> bool) -> Basic.term -> 
+	      Basic.term -> order option -> Basic.term -> 
+		(Basic.term* Gtypes.substitution)
 
 
 val rewrite_list : 
@@ -232,7 +234,9 @@ val rewrite_list :
 
 
 val match_rr_list: 
-    Scope.t -> control -> Gtypes.substitution
+    Scope.t -> control 
+      -> Term.substitution  
+      -> Gtypes.substitution
       -> bool ref 
 	-> (Basic.binders list * Basic.term * Basic.term * order option) list 
 	  -> Basic.term
@@ -240,7 +244,9 @@ val match_rr_list:
 		
 
 val match_rewrite_list: 
-    Scope.t -> control -> Gtypes.substitution
+    Scope.t -> control 
+      -> Term.substitution  
+      -> Gtypes.substitution
       -> bool ref 
 	-> rewriteDB 
 	  -> Basic.term 
@@ -254,7 +260,8 @@ val rewrite_list_topdown:
 	    -> (Basic.term * Gtypes.substitution * control)
 
 val rewrite_list_bottomup:
-    Scope.t -> control -> Gtypes.substitution
+    Scope.t -> control 
+      -> Gtypes.substitution
       -> bool ref 
 	-> rewriteDB 
 	  -> Basic.term 

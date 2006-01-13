@@ -69,8 +69,13 @@ let typeof_env scp typenv inf trm =
 	(Gtypes.mgu expty renv, renv)
   in typeof_aux trm typenv
 
-let typeof scp t = 
-  let ty, _ = typeof_env scp (Gtypes.empty_subst()) (ref 0) t
+let typeof scp ?env t = 
+  let tenv = 
+    match env with
+      None -> Gtypes.empty_subst()
+    | Some x -> x
+  in 
+  let ty, _ = typeof_env scp tenv (ref 0) t
   in ty
     
 (***
@@ -301,7 +306,7 @@ let settype_top scp (inf, cache) f typenv exty et =
 		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err)))
   in settype_aux exty et typenv
 
-let settype scp t=
+let settype scp ?env t=
   let inf = (ref 0)
   and cache =  Lib.empty_env()
   and f inf env expty trm = 
@@ -309,8 +314,13 @@ let settype scp t=
       Id(n, ty) -> Gtypes.unify_env scp ty expty env
     | _ -> env)
   in 
+  let tyenv =
+    match env with 
+      None -> (Gtypes.empty_subst()) 
+    | Some(x) -> x
+  in 
   settype_top scp (inf, cache) f 
-    (Gtypes.empty_subst()) (Gtypes.mk_typevar inf) t
+    tyenv (Gtypes.mk_typevar inf) t
 
 (** 
    [typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],

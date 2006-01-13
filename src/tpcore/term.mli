@@ -559,11 +559,29 @@ val close_term: quant_ty -> (term -> bool) -> term -> term
    variables with no binding quantifier and for which [free] is true.
  *)
 
+val is_closed_env: substitution -> Basic.term -> bool
+(**
+   [is_closed ts f] is true iff all bound variables in [f] are in the
+   body of a quantifier or occur in [ts].
+*)
+
 val is_closed: Basic.term list -> Basic.term -> bool
 (**
    [is_closed ts f] is true iff all bound variables in [f] are in the
    body of a quantifier or occur in [ts].
 *)
+
+val subst_closed: 
+    substitution
+  -> substitution
+    -> Basic.term 
+      -> Basic.term 
+(**
+   [subst_closed qntenv sb t]: Substitute the bindings in [sb] in term
+   [t]. Fail, raising [Failure], if any of the substituted terms lead
+   to the term not being closed.
+*)
+
 
 val resolve_closed_term: Scope.t -> Basic.term -> Basic.term
 (**

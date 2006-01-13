@@ -443,33 +443,33 @@ let prove_cond_tac cntrl ret values entry goal =
    [lhs] with [trm]. If successful, return [rhs] instantiated with
    bindings from the match.
 *)
-let match_rewrite scp tyenv trmenv varp lhs rhs trm = 
+let match_rewrite scp tyenv trmenv qntenv varp lhs rhs trm = 
   try
     (let ntyenv, nenv=
       Unify.unify_fullenv_rewrite 
 	scp tyenv (Term.empty_subst()) varp lhs trm
     in 
-    (ntyenv, nenv, Term.subst nenv rhs))
+    (ntyenv, nenv, Term.subst_closed qntenv nenv rhs))
   with x -> (failwith "match_rewrite")
 
 (** 
-   [find_basic scp tyenv tac rl trm g]: Try to match simp rule [rl]
+   [find_basic scp tyenv qntenv tac rl trm g]: Try to match simp rule [rl]
    with term [trm] in node [g]. If [rl] matches but is conditional,
    try to prove the condition using tactic [tac], adding the rule to
    the goal assumptions.
 
    Returns rewritten term, matched rules and new goal.
  *)
-let find_basic cntrl ret tyenv rl trm goal=
+let find_basic cntrl ret tyenv qntenv rl trm goal=
   let (qs, c, lhs, rhs, thm)= rl
   and tenv=Term.empty_subst()
-  and  scp=scope_of goal
+  and scp=scope_of goal
   in 
 (** 
    Test whether the rule is a match, throws an exception on failure.
 **)
   let (ntyenv, ntenv, nt)=
-    match_rewrite scp tyenv tenv
+    match_rewrite scp tyenv tenv qntenv
       (Rewrite.is_free_binder qs) lhs rhs trm
   in 
   let ret1=ref None
@@ -509,7 +509,7 @@ let find_basic cntrl ret tyenv rl trm goal=
 *)
 
 (**
-   [find_match_tac ret c tyenv set tac trm g]: Find a rule in simpset
+   [find_match_tac ret c tyenv qntenv set tac trm g]: Find a rule in simpset
    [set] which matches term [trm] in goal [g]. If found, rewrite [trm]
    with the rule.
 
@@ -520,7 +520,7 @@ let find_basic cntrl ret tyenv rl trm goal=
 
    Raise [No_change] and set [ret:=None] if no matches.
  *)
-let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
+let find_match_tac cntrl tyenv qntenv ret trm (goal: Logic.node)=
   let scp = scope_of goal
   and sqnt = sequent goal 
   and excluded = Data.get_exclude cntrl
@@ -534,7 +534,7 @@ let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
 	if(is_excluded excluded sqnt src)
 	then find_aux nxt t g
 	else 
-	  (try find_basic cntrl ret tyenv rl t g
+	  (try find_basic cntrl ret tyenv qntenv rl t g
 	  with _ -> find_aux nxt t g)
   in 
   let lst = 
@@ -555,7 +555,7 @@ let find_match_tac cntrl tyenv ret trm (goal: Logic.node)=
    Repeat until find_match fails. 
    Return result and last sucessfull goal.
  *)
-let rec find_all_matches_tac cntrl ret tyenv trm goal =
+let rec find_all_matches_tac cntrl ret tyenv qntenv trm goal =
   let chng = ref false
   and ret1 = ref None
   in 
@@ -575,7 +575,7 @@ let rec find_all_matches_tac cntrl ret tyenv trm goal =
 	      (fun _ -> 
 		Lib.compare_int_option (Data.get_rr_depth ndata) 0)
 	      (fail ~err:No_change)
-	      (find_match_tac c ty ret1 t) g1);
+	      (find_match_tac c ty qntenv ret1 t) g1);
 	  (** Found a match **)
 	  (fun g1 -> 
 	    let (cntrl1, tyenv1, t1, r1) =
@@ -613,22 +613,25 @@ let rec find_all_matches_tac cntrl ret tyenv trm goal =
 ***)
 
 (**
-   [find_rrs_bottom_up ctrl ret tyenv trm g]: Traverse term [trm],
+   [find_rrs_bottom_up ctrl ret tyenv qntenv trm g]: Traverse term [trm],
    bottom-up, find rewrite rules to apply. 
 
    Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
    data (with the rewrite rules to apply), [ntyenv] the new
    type-environment and [ntrm] the term resulting from simplification.
  *)
-let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
+let rec find_rrs_bottom_up_tac ctrl ret tyenv qntenv trm g=
   match trm with
     Basic.Qnt(q, b) -> 
       (let ret1 = ref None
       in 
+      let qntenv1 = 
+	Term.bind (Bound q) (Term.mk_free "" (Gtypes.mk_null())) qntenv
+      in 
       seq
 	[
 	 (** Rewrite sub-terms **)
-	 find_rrs_bottom_up_tac ctrl ret1 tyenv b;
+	 find_rrs_bottom_up_tac ctrl ret1 tyenv qntenv1 b;
 	 (fun g1 -> 
 	   let (bcntrl, btyenv, nb) = 
 	     Lib.get_option (!ret1) (ctrl, tyenv, b)
@@ -640,7 +643,8 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
 	      (fun g2 -> 
 		seq
 		  [
-		   (find_all_matches_tac bcntrl ret1 btyenv (Qnt(q, nb)) 
+		   (find_all_matches_tac 
+		      bcntrl ret1 btyenv qntenv (Qnt(q, nb)) 
 		    // skip);
 		(fun g3 -> 
 		  data_tac
@@ -649,14 +653,15 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
 	      ] g2) 
 	    ] g1)
        ] g)
-  | Basic.Typed(tt, ty) -> find_rrs_bottom_up_tac ctrl ret tyenv tt g
+  | Basic.Typed(tt, ty) -> 
+      find_rrs_bottom_up_tac ctrl ret tyenv qntenv tt g
   | Basic.App(f, a)->
       (let ret1 = ref None
       in 
       seq 
 	[
 	 (** Rewrite subterms **)
-	 find_rrs_bottom_up_tac ctrl ret1 tyenv f;
+	 find_rrs_bottom_up_tac ctrl ret1 tyenv qntenv f;
 	 (fun g1 ->
 	   let (fcntrl, ftyenv, nf)=
 	     Lib.get_option (!ret1) (ctrl, tyenv, f)
@@ -665,14 +670,15 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
 	     [
 	      data_tac (fun _ -> ret1:=None) ();
 	      (** Rewrite this term **)
-	      find_rrs_bottom_up_tac fcntrl ret1 ftyenv a;
+	      find_rrs_bottom_up_tac fcntrl ret1 ftyenv qntenv a;
 	      (fun g2 -> 
 		let (acntrl, atyenv, na) = 
 		  Lib.get_option (!ret1)(fcntrl, ftyenv, a)
 		in 
 		seq
 		  [
-		   (find_all_matches_tac acntrl ret1 atyenv (App(nf, na)) 
+		   (find_all_matches_tac 
+		      acntrl ret1 atyenv qntenv (App(nf, na)) 
 		    // skip);
 		   (fun g3 -> 
 		     data_tac 
@@ -685,20 +691,20 @@ let rec find_rrs_bottom_up_tac ctrl ret tyenv trm g=
   | _ ->  
       alt
 	[
-	 find_all_matches_tac ctrl ret tyenv trm;
+	 find_all_matches_tac ctrl ret tyenv qntenv trm;
 	 data_tac 
 	   (Lib.set_option ret) (ctrl, tyenv, trm)
        ] g
 
 (**
-   [find_rrs_top_down ctrl ret tyenv trm g]: Traverse term [trm],
+   [find_rrs_top_down ctrl ret tyenv qntenv trm g]: Traverse term [trm],
    top-down, finding rewrite rules to apply. This is the default.
 
    Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
    data (with the rewrite rules to apply), [ntyenv] the new
    type-environment and [ntrm] the term resulting from simplification.
  *)
-let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
+let rec find_rrs_top_down_tac ctrl ret tyenv qntenv trm goal=
 (*
   let set_replace dst (src, t) default=
     let (bcntrl, btyenv, nb) = 
@@ -707,15 +713,20 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
     Lib.set_option dst (bcntrl, btyenv, t)
   in 
 *)
-  let find_td_aux ret1 tyenv1 cntrl1 trm1 g=
+  let find_td_aux ret1 tyenv1 qntenv1 cntrl1 trm1 g=
     match trm1 with
       Basic.Qnt(q, b) -> 
 	(let ret2=ref None 
 	in 
+	let qntenv2 = 
+	  Term.bind 
+	    (Basic.Bound q) (mk_free "" (Gtypes.mk_null()))
+	    qntenv1
+	in 
 	seq
 	  [
 	   (** Rewrite this term, top-down **)
-	   find_rrs_top_down_tac cntrl1 ret2 tyenv1 b;
+	   find_rrs_top_down_tac cntrl1 ret2 tyenv1 qntenv2 b;
 	   (** Add data to ret1 **)
 	   fun g1 ->
 	     let (bcntrl, btyenv, nb) = 
@@ -725,13 +736,13 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
 	       (Lib.set_option ret1) (bcntrl, btyenv, Basic.Qnt(q, nb)) g1
 	 ] g)
     | Basic.Typed(tt, ty) -> 
-	find_rrs_top_down_tac cntrl1 ret1 tyenv1 tt g
+	find_rrs_top_down_tac cntrl1 ret1 tyenv1 qntenv1 tt g
     | Basic.App(f, a)->
 	(let ret2=ref None
 	in 
 	seq
 	  [
-	   find_rrs_top_down_tac cntrl1 ret2 tyenv1 f;
+	   find_rrs_top_down_tac cntrl1 ret2 tyenv1 qntenv1 f;
 	   (fun g1->
 	     let (fcntrl, ftyenv, nf) = 
 	       Lib.get_option (!ret2) (cntrl1, tyenv1, f)
@@ -739,7 +750,7 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
 	     seq
 	       [
 		data_tac (fun _ -> ret2:=None) ();
-		find_rrs_top_down_tac fcntrl ret2 ftyenv a;
+		find_rrs_top_down_tac fcntrl ret2 ftyenv qntenv1 a;
 		(fun g2 ->
 		  let (acntrl, atyenv, na) = 
 		    Lib.get_option (!ret2) (fcntrl, ftyenv, a)
@@ -762,13 +773,13 @@ let rec find_rrs_top_down_tac ctrl ret tyenv trm goal=
     seq
       [
        (** Rewrite the current term, ignoring errors **)
-       (find_all_matches_tac ctrl ret1 tyenv trm // skip);
+       (find_all_matches_tac ctrl ret1 tyenv qntenv trm // skip);
        (** Descend through the subterms **)
        (fun g1 -> 
 	 let (nctrl, ntyenv, ntrm)=
 	   Lib.get_option (!ret1) (ctrl, tyenv, trm)
 	 in 
-	 find_td_aux ret1 ntyenv nctrl ntrm g1)
+	 find_td_aux ret1 ntyenv qntenv nctrl ntrm g1)
      ] g
   in 
   notify_tac
@@ -808,8 +819,8 @@ let rec basic_simp_tac cntrl ret ft goal=
   in 
   let tac1 g1 = (** Get the rewrites **)
     cond (fun _ -> rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
-      (find_rrs_bottom_up_tac cntrl ret1 tyenv trm)
-      (find_rrs_top_down_tac cntrl ret1 tyenv trm) g1
+      (find_rrs_bottom_up_tac cntrl ret1 tyenv (Term.empty_subst()) trm)
+      (find_rrs_top_down_tac cntrl ret1 tyenv (Term.empty_subst()) trm) g1
   in 
   let tac2 g2 = (** Apply the rewrites found by tac1 **)
     let (ncntrl0, ntyenv, ntrm) =  
