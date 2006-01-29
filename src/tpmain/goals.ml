@@ -129,7 +129,10 @@ let apply ?report tac goal=
   Logic.Subgoals.apply_to_goal ?report tac goal
 
 let prove_goal ?info scp trm tac =
+  mk_thm  (apply tac (mk_goal info scp (Formula.make scp trm)))
+(*
   mk_thm  (apply tac (mk_goal info scp (Formula.make (Global.scope()) trm)))
+*)
 
 let prove trm tac = prove_goal (Global.scope()) trm tac
 

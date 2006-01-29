@@ -532,21 +532,32 @@ val is_rewrite_formula: Basic.term -> bool
 
 val gen_rewrite_tac: 
     ?info: Logic.info 
-  -> Rewrite.control
-    -> Logic.rr_type list 
-      -> ?f:Logic.label -> Logic.tactic
+  -> ?asm:bool
+    -> Rewrite.control
+      -> ?f:Logic.label 
+	-> Logic.rr_type list 
+	  -> Logic.tactic
 (** 
    [gen_rewrite_tac info ctrl rules f]: General rewriting tactic.
 
    Rewrite formula [f] with list of theorems and assumptions given in
-   [rules]. If [f] is not given, rewrite all formulas in sequent.
+   [rules]. 
+
+   If [f] is not given, rewrite all assumptions and conclusions in in
+   sequent. If [f] is not given and [asm] is given then if [asm] is
+   true, rewrite only the assumptions, if [asm] is false then rewrite
+   only the conclusions. If neither [f] nor [asm] is given, the
+   rewrite both assumptions and conclusions in the sequent.
 
    This tactic is the entry-point for {!Logic.Tactics.rewrite}.
 *)
 
 val rewrite_tac: 
-    ?info:Logic.info -> ?dir:Rewrite.direction
-    -> Logic.thm list -> ?f:Logic.label -> Logic.tactic
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
 (** 
    [rewrite_tac info dir thms f]: Rewrite formula [f] with list of
    theorems [thms]. If [f] is not given, rewrite all formulas in
@@ -555,11 +566,52 @@ val rewrite_tac:
 
 val once_rewrite_tac: 
     ?info:Logic.info -> ?dir:Rewrite.direction -> 
-    Logic.thm list -> ?f:Logic.label -> Logic.tactic
+    ?f:Logic.label -> Logic.thm list -> Logic.tactic
 (** 
    [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
    If [f] is not given, rewrite all formulas in sequent.
 *)
+
+val rewriteC_tac: 
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
+(** 
+   [rewriteC_tac info dir thms f]: Rewrite formula [f] with list of
+   theorems [thms]. If [f] is not given, rewrite all conclusions in
+   sequent.
+*)
+
+val once_rewriteC_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
+    ?f:Logic.label -> Logic.thm list -> Logic.tactic
+(** 
+   [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
+   If [f] is not given, rewrite all conclusions in sequent.
+*)
+
+val rewriteA_tac: 
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
+(** 
+   [rewrite_tac info dir thms f]: Rewrite formula [f] with list of
+   theorems [thms]. If [f] is not given, rewrite all assumptions in
+   sequent.
+*)
+
+val once_rewriteA_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
+    ?f:Logic.label -> Logic.thm list -> Logic.tactic
+(** 
+   [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
+   If [f] is not given, rewrite all assumptions in sequent.
+*)
+
 
 val gen_replace_tac: 
     ?info:Logic.info -> ?ctrl:Rewrite.control

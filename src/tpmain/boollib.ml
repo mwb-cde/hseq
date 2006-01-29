@@ -1003,19 +1003,33 @@ let show_tac ?info (trm:Basic.term) tac=
 let show = show_tac
 
 
+
 (**
    [cases_of ?info ?thm trm]: Try to introduce a case split based on
    the type of term [trm]. If [thm] is given, it is used as the cases
    theorem. If [thm] is not given, the theorem named ["T_cases"] is
    used, where [T] is the name of the type of [trm].
 *)
-  let get_type_name ty =
-    match ty with
-      Basic.Constr ((Basic.Defined id), _) -> id
-    | Basic.Base Basic.Bool -> Logicterm.bool_ty_id
-    | Basic.Base Basic.Ind -> 
-	Basic.mk_long "base" "ind"
-    | _ -> failwith "get_type_name"
+
+(** 
+   [disj_splitter_tac ?info ?f]: 
+   Split an assumption using disjA
+*)
+
+let disj_splitter_tac ?info ?f goal = 
+  let tac ?info =
+    elim_rules_tac ?info
+      ([ (fun inf1 -> Logic.Tactics.disjA (Some inf1)) ], []) 
+  in 
+   apply_elim_tac tac ?info ?f goal
+    
+let get_type_name ty =
+  match ty with
+    Basic.Constr ((Basic.Defined id), _) -> id
+  | Basic.Base Basic.Bool -> Logicterm.bool_ty_id
+  | Basic.Base Basic.Ind -> 
+      Basic.mk_long "base" "ind"
+  | _ -> failwith "get_type_name"
 
 let cases_of ?info ?thm t g =
   let scp = Tactics.scope_of g
@@ -1043,6 +1057,8 @@ let cases_of ?info ?thm t g =
 	    with _ -> 
 	      failwith ("Can't find cases theorem "^thm_name)
   in 
+  let inf = Tactics.mk_info()
+  in 
   let inf1 = 
     match info with 
       None -> None | _ -> Some(Tactics.mk_info())
@@ -1050,8 +1066,12 @@ let cases_of ?info ?thm t g =
   let tac1 g1 = 
     seq 
       [
-       cut ?info:info ~inst:[trm] case_thm;
-       repeat (disjA ?info:inf1)
+       cut ~info:inf ~inst:[trm] case_thm;
+       (fun g -> 
+	 let a_tg = get_one (aformulas inf)
+	 in 
+	 (data_tac (set_info info) ([a_tg], [], [], [])
+	    ++ disj_splitter_tac ?info:info ~f:(ftag a_tg)) g)
      ] g1
   in 
   let tac2 g2 = 
