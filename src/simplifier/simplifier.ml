@@ -109,6 +109,11 @@ let get_form t sqnt =
   try Logic.Sequent.get_tagged_cncl t sqnt
   with Not_found -> Logic.Sequent.get_tagged_asm t sqnt
 
+(**
+   [simp_fail]: A hook to allow failures to be traced.
+*)
+let simp_fail ?err g = Tactics.fail ?err g
+
 (***
 * Simplifier data.
 ***)
@@ -556,8 +561,7 @@ let find_match_tac cntrl tyenv qntenv ret trm (goal: Logic.node)=
    Return result and last sucessfull goal.
  *)
 let rec find_all_matches_tac cntrl ret tyenv qntenv trm goal =
-  let chng = ref false
-  and ret1 = ref None
+  let ret1 = ref None
   in 
   let rec find_aux c ty t g= 
     alt
@@ -574,7 +578,7 @@ let rec find_all_matches_tac cntrl ret tyenv qntenv trm goal =
 	    cond 
 	      (fun _ -> 
 		Lib.compare_int_option (Data.get_rr_depth ndata) 0)
-	      (fail ~err:No_change)
+	      (simp_fail ~err:No_change)
 	      (find_match_tac c ty qntenv ret1 t) g1);
 	  (** Found a match **)
 	  (fun g1 -> 
@@ -586,12 +590,12 @@ let rec find_all_matches_tac cntrl ret tyenv qntenv trm goal =
 	      [
 	       (** Add the information to ret **)
 	       data_tac 
-		 (fun d -> chng:=true; Lib.set_option ret d)
+		 (Lib.set_option ret)
 		 ((Data.add_rule cntrl1 r1), tyenv, t1);
 	       (** Go around again, ignoring failure. **)
 	       (find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 
 	      // skip)
-	     ] g1);
+	     ] g1)
 	 ];
        (** Failed to find a match **)
        seq

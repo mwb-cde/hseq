@@ -431,3 +431,6 @@ val cond_prover_worker_tac:
     Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
 val is_excluded: 
     Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
+
+val simp_fail: ?err:exn -> Tactics.tactic
+

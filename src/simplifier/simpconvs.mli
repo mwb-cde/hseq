@@ -304,6 +304,8 @@ val is_rr_equality: Basic.binders list * Basic.term option * Basic.term -> bool
     [|- a] is [|- a = true], in all other cases
     }
 *)
+module Thms :
+sig
 
 val accept_all_thms :
   Logic.thm list -> 
@@ -410,6 +412,8 @@ val single_thm_to_rules :
    Convert a theorem to rewrite rules suitable for the simplifier.
 *)
 
+end
+
 val thm_to_rules : Scope.t -> Logic.thm -> Logic.thm list
 (**
    Toplevel conversion function.  Convert theorem [thm] to a list of
@@ -430,6 +434,22 @@ val asm_rewrite_tac : ?info:Logic.info ->
    b{_ tg}, asms |- concl
  *)
 
+
+val qnt_asm_rewrite_tac : ?info:Logic.info -> 
+    Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
+(** 
+   [qnt_asm_rewrite_tac thm tg g]: Rewrite a possibly quantified
+   assumption.
+
+   Descend through topmost quantifiers and 
+   rewrite assumption [tg] with rule [thm] 
+ 
+   tg:a, asms |- concl
+   -->
+   tg:b, asms |- concl
+ *)
+
+
 val add_asm_tac:
   Logic.tagged_form list ref
   -> Tag.t -> Tactics.tactic
@@ -441,21 +461,6 @@ val add_asm_tac:
    then return [ret = [a]::!(reg)]
 *)
 
-val asm_rewrite_add_tac : 
-  ?info:Logic.info 
-  -> Logic.tagged_form list ref
-  -> Logic.thm -> Tag.t -> Tactics.tactic
-(** 
-   [asm_rewrite_add_tac ret thm tg g]:
-
-   Rewrite assumption [tg] with rule [thm] = |- a=b
-
-   a{_ tg}, asms |- concl
-   -->
-   b{_ tg}, asms |- concl
-
-   Return [ret = [b]::!(reg)]
- *)
 
 val solve_not_true_tac: Tag.t -> Tactics.tactic
 (** 
@@ -509,6 +514,24 @@ val solve_not_true_tac: Tag.t -> Tactics.tactic
    Solves trivial goals involving [false] or [not true] in the
    assumptions.
 *)
+module Asms :
+sig
+
+val asm_rewrite_add_tac : 
+  ?info:Logic.info 
+  -> Logic.tagged_form list ref
+  -> Logic.thm -> Tag.t -> Tactics.tactic
+(** 
+   [asm_rewrite_add_tac ret thm tg g]:
+
+   Rewrite assumption [tg] with rule [thm] = |- a=b
+
+   a{_ tg}, asms |- concl
+   -->
+   b{_ tg}, asms |- concl
+
+   Return [ret = [b]::!(reg)]
+ *)
 
 val accept_asm :
   Logic.tagged_form list ref 
@@ -608,6 +631,7 @@ val single_asm_to_rule :
   [single_asm_to_rules f g]: Convert the assumption [f] stating a single
   fact to a rewrite-rule. Formula [f] must be an assumption of [g].
 *)
+end
 
 val asm_to_rules : 
   Logic.tagged_form list ref -> Tag.t -> Tactics.tactic
@@ -713,3 +737,13 @@ val prepare_concls :
    assumption in the list [concls]. Return the cumulative results.
  *)
 
+
+(** Debugging *)
+
+
+(*
+val asm_rewrite_add_truth_tac : 
+  ?info:Logic.info 
+  -> Logic.tagged_form list ref
+  -> Logic.thm -> Tag.t -> Tactics.tactic
+*)
