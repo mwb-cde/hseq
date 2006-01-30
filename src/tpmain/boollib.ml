@@ -1071,14 +1071,16 @@ let cases_of ?info ?thm t g =
 	 let a_tg = get_one (aformulas inf)
 	 in 
 	 (data_tac (set_info info) ([a_tg], [], [], [])
-	    ++ disj_splitter_tac ?info:info ~f:(ftag a_tg)) g)
+	    ++ (disj_splitter_tac ?info:info ~f:(ftag a_tg) // skip)
+	    ++ (specA ?info:info ~a:(ftag a_tg) // skip)) g)
      ] g1
   in 
   let tac2 g2 = 
     match inf1 with
       None -> skip g2
     | Some inf2 -> 
-	data_tac (set_info info) ([], [], (subgoals inf2), []) g2
+	data_tac 
+	  (set_info info) ([], [], (subgoals inf2), (constants inf2)) g2
   in 
   try
     (tac1 ++ tac2) g

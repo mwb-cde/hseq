@@ -798,3 +798,61 @@ let match_formula trm tac g=
       raise (Term.term_error "No matching formula in sequent" [trm])
 
 
+
+let specA ?info ?a g =
+  let inf1 = mk_info()
+  in 
+  let add_data (atgs, cs) =
+    add_info info [] [get_one atgs] [] (List.rev cs) 
+  in 
+  alt
+    [
+     seq 
+       [ 
+	 repeat (existA ~info:inf1 ?a);
+	 (fun g1 ->
+	   data_tac add_data ((aformulas inf1), (constants inf1)) g1)
+       ];
+     fail ~err:(error "specA")
+   ] g
+
+let specC ?info ?c g =
+  let inf1 = mk_info()
+  in 
+  let add_data (ctgs, cs) =
+    add_info info [] [] [get_one ctgs] (List.rev cs) 
+  in 
+  alt
+    [
+     seq 
+       [ 
+	 repeat (allC ~info:inf1 ?c);
+	 (fun g1 ->
+	   data_tac add_data ((cformulas inf1), (constants inf1)) g1)
+       ];
+     fail ~err:(error "specC")
+   ] g
+	
+let spec_tac ?info ?f g=
+  alt
+    [
+     specC ?info ?c:f;
+     specA ?info ?a:f;
+     fail ~err:(error "specA")
+   ] g
+
+
+
+let seq_some tacs goal =
+  let nofail_tac tac g = (tac // skip) g
+  in 
+  let rec some_aux ls g =
+    match ls with 
+      [] -> 
+	fail ~err:(Result.error "seq_some: no tactic succeeded.") g
+    | (x::xs) ->
+	try (x ++ map_every nofail_tac xs) g
+	with _ -> some_aux xs g
+  in 
+  some_aux tacs goal
+
