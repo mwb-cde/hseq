@@ -894,6 +894,7 @@ let simp_prep_tac control ret lbl g=
   Lib.set_option ret newcontrol;
   newgoal
 *)
+(*
 let simp_asm_tac ctrl ret lbl = 
   seq
     [
@@ -908,6 +909,21 @@ let simp_concl_tac ctrl ret lbl =
      data_tac (fun _ -> Lib.set_option ret ctrl) ();
      ((repeat (Logic.Tactics.allC None lbl))
     // skip)
+   ]
+*)
+
+let simp_asm_tac ctrl ret lbl = 
+  seq
+    [
+     data_tac (fun _ -> Lib.set_option ret ctrl) ();
+     specA // skip
+   ]
+
+let simp_concl_tac ctrl ret lbl = 
+  seq
+    [
+     data_tac (fun _ -> Lib.set_option ret ctrl) ();
+     specC // skip
    ]
 
 let simp_prep_tac ctrl ret lbl goal = 

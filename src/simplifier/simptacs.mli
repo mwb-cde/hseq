@@ -100,8 +100,6 @@ val simp_tac:
  *)
 
 
-
-
 (** [full_simp_tac]: not implemented *)
 (*
    val full_simp_tac :

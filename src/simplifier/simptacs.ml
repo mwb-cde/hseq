@@ -83,7 +83,21 @@ type simp_args=
      }
 
 let mk_args b f = 
-  { use_asms = b; exclude = f ; }
+  { use_asms = b; exclude = f }
+
+(**
+   [initial_prep_tac ctrl ret lbl goal]:
+   Prepare formula [lbl] for simplification. 
+   This just tries to apply [allC] or [existA].
+*)
+let initial_prep_tac ctrl ret lbl goal = 
+  let is_asm =
+    try (ignore(get_tagged_asm lbl goal); true)
+    with _ -> false
+  in 
+  if(is_asm)
+  then specA goal
+  else specC goal
 
 (**
    [simp_engine_tac cntrl asms l goal]:
@@ -96,30 +110,41 @@ let mk_args b f =
    - simplify
    - delete temporary assumptions
 *)
-let simp_engine_tac cntrl (ret, except) tag goal=
+let simp_engine_tac cntrl (ret, except) tag goal =
   (** Get the simp set. **)
   let set= Data.get_simpset cntrl
   in 
   (** Set the rewriting control. **)
   let cntrl1=Data.set_simpset cntrl set
   in 
-  (** tac1: Prepare the goal for simplification. **)
-  let tac1 g = simp_prep_tac cntrl1 ret (ftag tag) g
-  in 
   (** tac2: Simplify **)
   let tac2 g =
     let ncntrl = Lib.get_option (!ret) cntrl1
     in 
-    seq
+    alt
       [
-       (** Clear the return data. **)
-       data_tac (fun () -> ret:=None) ();
-       alt
+       seq_some
 	 [
-	  (** Try simplification. **)
-	  basic_simp_tac ncntrl ret tag;
-	  (** On fail, set the return value. **)
-	  seq [ data_tac (Lib.set_option ret) ncntrl; fail ~err:No_change ]
+	  (** Prepare the goal for simplification. **)
+	  initial_prep_tac cntrl1 ret (ftag tag);
+	  (** Clear the return data. **)
+	  seq
+	    [
+	     data_tac (fun () -> ret:=None) ();
+	     alt
+	       [
+		(** Try simplification. **)
+		basic_simp_tac ncntrl ret tag;
+		(** On fail, set the return value. **)
+		seq 
+		  [ 
+		    data_tac (Lib.set_option ret) ncntrl; 
+		    fail ~err:No_change 
+		  ]
+	      ]
+	   ];
+	  (** Fail if nothing worked *)
+	  fail ~err:No_change 
 	]
      ] g
   in 
@@ -129,7 +154,8 @@ let simp_engine_tac cntrl (ret, except) tag goal=
   in 
   ret:=None; 
   seq 
-    [repeat (tac1 ++ tac2) ; trivia_tac] goal
+    [repeat tac2 ; trivia_tac] goal
+
 
 (**
    [simp_tac cntrl asms except ?l goal]:
