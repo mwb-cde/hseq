@@ -437,6 +437,52 @@ let rewrite_env scp ?ctrl tyenv rules t =
   in 
   (fast_make scp fs nt, ntyenv)
 
+(***
+* Planned rewriting
+***)
+
+let rec extract_check_rules scp dir pl = 
+  let get_test x = 
+    if (formula_in_scope scp x)
+    then 
+      let t = term_of x
+      in 
+      let qs, b = Term.strip_qnt Basic.All t
+      in 
+      let lhs, rhs = Logicterm.dest_equality b
+      in 
+      if dir = Rewrite.leftright 
+      then (qs, lhs, rhs)
+      else (qs, rhs, lhs)
+    else
+      raise (error "Rewrite rule not in scope" [x])
+  in 
+  Rewrite.Planned.mapping get_test pl
+
+
+let plan_rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f = 
+  let plan1 = extract_check_rules scp dir plan
+  in 
+  let data = (scp, Term.empty_subst(), tyenv, Term.empty_subst())
+  in 
+  let (data1, nt) = 
+    try (Rewrite.Planned.rewrite data plan1 (term_of f))
+    with 
+      Rewritekit.Quit err -> raise err
+    | Rewritekit.Stop err -> raise err
+    | err -> raise err
+  in 
+  let (scp1, qntenv1, tyenv1, trmenv1) = data1
+  in 
+  (fast_make scp [f] nt, tyenv1)
+
+
+let plan_rewrite scp ?(dir=Rewrite.leftright) plan f = 
+  let (nt, ntyenv) = 
+    plan_rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
+  in 
+  nt
+
 
 (***
 * Pretty printing

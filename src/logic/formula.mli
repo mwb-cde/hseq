@@ -279,6 +279,19 @@ val rewrite_env :
 	-> rule list-> form -> (form * Gtypes.substitution)
 (** Rewrite a formula w.r.t a type context. *)
 
+val plan_rewrite : 
+    Scope.t -> ?dir:Rewrite.direction
+      -> form Rewrite.Planned.plan
+	-> form -> form
+(** Rewrite a formula *)
+
+val plan_rewrite_env : 
+    Scope.t -> ?dir:Rewrite.direction
+      -> Gtypes.substitution 
+	-> form Rewrite.Planned.plan
+	  -> form -> (form * Gtypes.substitution)
+(** Rewrite a formula w.r.t a type context. *)
+
 (** {5 Pretty printing} *)
 
 val print : Printer.ppinfo -> form -> unit 

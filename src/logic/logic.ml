@@ -2281,6 +2281,25 @@ module Conv=
 	  (Result.add_error 
 	     (Term.term_error "rewrite_conv" [trm]) x)
 
+
+    let plan_rewrite_conv ?(dir=Rewrite.leftright) plan scp trm =
+      let plan1 = Rewrite.Planned.mapping formula_of plan
+      in 
+      let conv_aux t = 
+	let form = Formula.make scp trm
+	in 
+	let nform = 
+	  Formula.plan_rewrite ~dir:dir scp plan1 form
+	in 
+	let tform = Formula.mk_equality scp form nform
+	in 
+	mk_theorem tform
+      in 
+      try conv_aux trm
+      with x -> raise 
+	  (Result.add_error 
+	     (Term.term_error "plan_rewrite_conv" [trm]) x)
+
   end 
 
 

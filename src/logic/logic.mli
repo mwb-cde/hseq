@@ -1352,6 +1352,26 @@ module Conv:
    rewrite tactic is invoked. By contrast, [rewrite_conv] only does
    one set of rewriting.
  *)
+
+      val plan_rewrite_conv: 
+	  ?dir:Rewrite.direction
+	-> (thm) Rewrite.Planned.plan 
+	  -> conv
+(**
+   [plan_rewrite_conv dir plan scp trm]:
+   rewrite term [trm] according to [plan] in scope [scp].
+
+   Returns |- trm = X 
+   where [X] is the result of rewriting [trm]
+
+   Discards any rule which is not a theorem or an ordered theorem.
+
+   This conversion could be written using the rewriting tactics but
+   this would require two sets of rewriting. The first to construct
+   the term [X] on the rhs of the equality and the second when the
+   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
+   one set of rewriting.
+ *)
     end 
 
 
