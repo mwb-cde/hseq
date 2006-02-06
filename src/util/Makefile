@@ -1,10 +1,10 @@
 # Header, code and optimised code files
 
-HEADERS = lib.cmi unsafe.cmi treekit.cmi tag.cmi parserkit.cmi
-CODE = lib.cmo unsafe.cmo treekit.cmo tag.cmo parserkit.cmo
-OPTCODE = lib.cmx unsafe.cmx treekit.cmx tag.cmx parserkit.cmx
+HEADERS = lib.cmi unsafe.cmi treekit.cmi tag.cmi parserkit.cmi rewritekit.cmi
+CODE = lib.cmo unsafe.cmo treekit.cmo tag.cmo parserkit.cmo rewritekit.cmo
+OPTCODE = lib.cmx unsafe.cmx treekit.cmx tag.cmx parserkit.cmx rewritekit.cmx
 
-DOCFILES = lib.mli unsafe.mli treekit.mli tag.mli parserkit.mli
+DOCFILES = lib.mli unsafe.mli treekit.mli tag.mli parserkit.mli rewritekit.mli
 DOCLOAD = 
 DOCTYPE ?= -html
 DOCDIR ?= "../doc"
