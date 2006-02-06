@@ -257,6 +257,21 @@ let cond_eq_sym_thm () =
    [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
  *)
 let simple_rewrite_conv scp rule trm=
+  let key = 
+    Rewrite.Planned.neg_key 
+      (Rewrite.Planned.alt_key 
+	 Rewrite.Planned.allq_key 
+	 Rewrite.Planned.tyterm_key)
+  in 
+  let plan = 
+    Rewrite.Planned.mk_node key [Rewrite.Planned.mk_rules [rule]]
+  in 
+  let conv = Logic.Conv.plan_rewrite_conv
+  in 
+  conv plan scp trm
+
+(*
+let simple_rewrite_conv scp rule trm=
   let rule_trm = Logic.term_of rule
   in 
   let rvars, rbody = Term.strip_qnt Basic.All rule_trm
@@ -344,7 +359,7 @@ let simple_rewrite_conv scp rule trm=
      ] g
   in 
   Commands.prove ~scp:scp new_goal proof;;
-
+*)
 
 (**
    [simple_rewrite_rule scp rule thm]
