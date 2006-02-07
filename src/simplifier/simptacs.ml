@@ -134,7 +134,11 @@ let simp_engine_tac cntrl (ret, except) tag goal =
 	     alt
 	       [
 		(** Try simplification. **)
+		Planner.basic_simp_tac ncntrl ret tag;
+
+(*
 		basic_simp_tac ncntrl ret tag;
+*)
 		(** On fail, set the return value. **)
 		seq 
 		  [ 

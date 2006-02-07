@@ -82,7 +82,6 @@ let get_rr_order rr=
     Logic.OAsm(_, p) -> p
   | Logic.ORRThm(_, p) -> p
   | _ -> raise (Invalid_argument "get_rr_order")
-
 (** 
    [set_rr_order rl order]: Set the ordering of rule [rl] to order.
 *)
@@ -104,14 +103,16 @@ let set_rr_order rr order=
 type rule = 
     (binders list 
        * term option * term * term 
+       * Rewrite.order option
        * Logic.rr_type)
 
-let dest_rule (vs, cnd, lhs, rhs, rr)=(vs, cnd, lhs, rhs, rr)
-let rule_binders (vs, cnd, lhs, rhs, rr)=vs
-let rule_cond (vs, cnd, lhs, rhs, rr)=cnd
-let rule_lhs (vs, cnd, lhs, rhs, rr)=lhs
-let rule_rhs (vs, cnd, lhs, rhs, rr)=rhs
-let rule_src (vs, cnd, lhs, rhs, rr)=rr
+let dest_rule (vs, cnd, lhs, rhs, order, rr)=(vs, cnd, lhs, rhs, order, rr)
+let rule_binders (vs, cnd, lhs, rhs, order, rr)=vs
+let rule_cond (vs, cnd, lhs, rhs, order, rr)=cnd
+let rule_lhs (vs, cnd, lhs, rhs, order, rr)=lhs
+let rule_rhs (vs, cnd, lhs, rhs, order, rr)=rhs
+let rule_order (vs, cnd, lhs, rhs, order, rr)=order
+let rule_src (vs, cnd, lhs, rhs, order, rr)=rr
 
 (**
    [termnet_lt]: Less-than ordering on simp rules.
@@ -144,7 +145,7 @@ let termnet_lt x y =
       if (Logicterm.is_equality rl)
       then 
 	let (lhs, rhs)=Logicterm.dest_equality rl
-	in (qs, cnd, lhs, rhs)
+	in (qs, cnd, lhs, rhs, None)
       else 
 	  raise (Failure 
 		   ("Not an equality or a conditional equality\n"))
@@ -155,9 +156,9 @@ let termnet_lt x y =
    scope [scp].
 *)
     let make_rule rl trm=
-      let qs, c, l, r=dest_rr_rule trm
+      let qs, c, l, r, o=dest_rr_rule trm
       in 
-      (qs, c, l, r, rl)
+      (qs, c, l, r, o, rl)
 
 
 (** [make_asm_rules ts except goal]
@@ -240,7 +241,7 @@ let split s1=
    make rule an ordered rewrite (using {!Term.term_lt}).
  *)
 let add_rule rl s=
-  let (vs, cond, l, r, src)=rl
+  let (vs, cond, l, r, order, src)=rl
   in 
   let varp = is_variable vs
   in 
@@ -250,7 +251,7 @@ let add_rule rl s=
       try get_rr_order src
       with _ -> Term.term_lt
     in 
-    let rl1=(vs, cond, l, r, set_rr_order src order)
+    let rl1=(vs, cond, l, r, Some(order), set_rr_order src order)
     in 
     { s with basic=Net.insert termnet_lt varp (s.basic) l rl1 }
   else 
@@ -279,10 +280,10 @@ let rec lookup_conv scp set trm list =
   try 
     let thm = Lib.find_first (fun conv -> conv scp trm) conv_list
     in 
-    let (qs, conc, lhs, rhs, src) = 
+    let (qs, conc, lhs, rhs, order, src) = 
       make_rule thm (Logic.term_of thm)
     in 
-    (qs, conc, lhs, rhs, Logic.RRThm(src))::list
+    (qs, conc, lhs, rhs, order, Logic.RRThm(src))::list
   with _ -> raise Not_found
 
 (**
@@ -293,13 +294,11 @@ let rec lookup_conv scp set trm list =
 *)
 let rec lookup_all scp set term list = 
   let list1 = 
-    try
-      lookup_conv scp set term list
+    try lookup_conv scp set term list
     with Not_found -> list
   in 
   let list2 = 
-    try
-      List.rev_append (Net.lookup set.basic term) list1
+    try List.rev_append (Net.lookup set.basic term) list1
     with Not_found -> list1
   in 
   match set.next with
@@ -385,7 +384,7 @@ let add_context set trm = set
 ***)
 
 (** [print_rule]: Printer for rules *)
-let print_rule ppinfo (vars, cond, lhs, rhs, src)=
+let print_rule ppinfo (vars, cond, lhs, rhs, order, src)=
   let trm = 
     Term.rebuild_qnt vars
       (match cond with

@@ -45,15 +45,15 @@ val set_rr_order: Logic.rr_type -> Rewrite.order -> Logic.rr_type
  *)
 type rule =
     Basic.binders list
-      * Basic.term option
-      * Basic.term    
-      * Basic.term    
+      * Basic.term option * Basic.term * Basic.term    
+      * Rewrite.order option
       * Logic.rr_type
 
 val dest_rule : 
     rule -> 
       (Basic.binders list 
 	 * Basic.term option * Basic.term * Basic.term 
+	 * Rewrite.order option
 	 * Logic.rr_type)
 (** Destructor for rules. *)
 
@@ -65,6 +65,8 @@ val rule_lhs : rule -> Basic.term
 (** Get the left-hand-side. *)
 val rule_rhs : rule -> Basic.term
 (** Get the right-hand-side.*)
+val rule_order : rule -> Rewrite.order option
+(** Get the ordering.*)
 val rule_src : rule -> Logic.rr_type
 (** Get the source of the rule. *)
 
@@ -79,9 +81,8 @@ val termnet_lt : rule -> rule -> bool
 val dest_rr_rule : 
     Basic.term -> 
       (Basic.binders list 
-	 * Basic.term option
-	 * Basic.term 
-	 * Basic.term)
+	 * Basic.term option * Basic.term * Basic.term
+	 * Rewrite.order option)
 (**
    [dest_rr_rule trm]: Split term [trm] into binders, condition, lhs,
    rhs. Rules must be of the form: [c=>(l=r)] or [l=r].
