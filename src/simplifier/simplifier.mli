@@ -534,8 +534,17 @@ module Planner :
    term. The new simp data is built by adding the rules used to
    rewrite the term, in the order they are applied.
  *)
+      val extract_rules: 
+	  Data.t -> (Logic.rr_type list * Data.t)
 
-      val find_rrs_bottom_up_tac:
+      val find_term_bu_tac:
+	  (Data.t * Gtypes.substitution 
+	     * Basic.term
+	     * Logic.rr_type Rewrite.Planned.plan) option ref
+	-> data
+	  -> Basic.term
+	    -> Tactics.tactic
+      val find_subterm_bu_tac:
 	  (Data.t * Gtypes.substitution 
 	     * Basic.term
 	     * Logic.rr_type Rewrite.Planned.plan) option ref
@@ -550,10 +559,8 @@ module Planner :
    data (with the rewrite rules to apply), [ntyenv] the new
    type-environment and [ntrm] the term resulting from simplification.
  *)
-      val extract_rules: 
-	  Data.t -> (Logic.rr_type list * Data.t)
 
-      val find_rrs_top_down_tac : 
+      val find_term_td_tac : 
 	  (Data.t * Gtypes.substitution 
 	     * Basic.term
 	     * Logic.rr_type Rewrite.Planned.plan) option ref
@@ -561,7 +568,7 @@ module Planner :
 	  -> Basic.term
 	    -> Tactics.tactic
 
-      val find_td_aux : 
+      val find_subterm_td_tac : 
 	  (Data.t * Gtypes.substitution 
 	     * Basic.term
 	     * Logic.rr_type Rewrite.Planned.plan) option ref

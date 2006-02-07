@@ -1289,21 +1289,23 @@ module Planner =
       with _ -> raise No_change
 
 (**
-   [find_rrs_bottom_up ctrl ret tyenv qntenv trm g]: Traverse term [trm],
+   [find_term_bu ret (ctrl, tyenv, qntenv) trm g]: Traverse term [trm],
    bottom-up, find rewrite rules to apply. 
 
-   Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
+   Return [ret=(ncntrl, ntyenv, ntrm, plan)], where [ncntrl] is the new simp
    data (with the rewrite rules to apply), [ntyenv] the new
-   type-environment and [ntrm] the term resulting from simplification.
+   type-environment, [ntrm] the term resulting from simplification
+   and [plan] the constructed rewriting plan.
  *)
-    let rec find_rrs_bottom_up_tac ret data trm g=
+    let extract_rules d = (Data.get_rules d, Data.set_rules d [])
+
+    let rec find_subterm_bu_tac ret data trm goal=
       let (ctrl, tyenv, qntenv) = data 
       in 
       let ret_list = ref None
       and ret_plan = ref None
       in 
       let clear_ret () = ret_list:=None; ret_plan:=None
-      and extract_rules d = (Data.get_rules d, Data.set_rules d [])
       in 
       match trm with
 	Basic.Qnt(q, b) -> 
@@ -1311,112 +1313,99 @@ module Planner =
 	  in 
 	  seq
 	    [
-	     (** Rewrite sub-terms **)
-	     (find_rrs_bottom_up_tac ret_plan (ctrl, tyenv, qntenv1) b
+	     (** Rewrite quantifier body **)
+	     (find_term_bu_tac ret_plan (ctrl, tyenv, qntenv1) b
 		// skip);
 	     (fun g1 -> 
 	       let (bcntrl, btyenv, btrm, bplan) = 
 		 Lib.get_option (!ret_plan) (ctrl, tyenv, b, mk_skip)
 	       in 
-	       (** Rewrite this term **)
-	       seq
-		 [
-		  data_tac clear_ret ();
-		  (find_all_matches_tac ret_list
-		     (bcntrl, btyenv, qntenv) (Qnt(q, btrm)) 
-		     // skip);
-		  (fun g3 -> 
-		    let (pcntrl0, ptyenv, ptrm) = 
-		      Lib.get_option (!ret_list)
-			(bcntrl, btyenv, Qnt(q, btrm))
-		    in 
-		    let (rules, pcntrl) = extract_rules pcntrl0
-		    in 
-		    let qplan = pack (mk_rules (List.rev rules))
-		    in 
-		    check_change2 qplan bplan;
-		    let subplan = pack(mk_branch 0 bplan)
-		    in 
-		    let tplan = 
-		      pack (mk_node (key_of trm) [subplan; qplan])
-		    in
-		    data_tac
-		      (Lib.set_option ret)
-		      (pcntrl, ptyenv, ptrm, tplan) g3)
-		] g1)
-	   ] g
+	       (** Add data *)
+	       clear_ret();
+	       check_change bplan;
+	       let subplan = pack(mk_branch 0 bplan)
+	       in 
+	       data_tac 
+		 (Lib.set_option ret)
+		 (bcntrl, btyenv, Qnt(q, btrm), subplan) g1)
+	   ] goal
       | Basic.App(f, a)->
 	  seq 
 	     [
-	      (** Rewrite subterms **)
-	      (find_rrs_bottom_up_tac ret_plan (ctrl, tyenv, qntenv) f
+	      (** Rewrite function term **)
+	      (find_term_bu_tac ret_plan (ctrl, tyenv, qntenv) f
 		 // skip);
 	      (fun g1 ->
 		let (fcntrl, ftyenv, nf, fplan)=
 		  Lib.get_option (!ret_plan) (ctrl, tyenv, f, mk_skip)
 		in 
+		clear_ret();
 		seq
 		  [
-		   data_tac clear_ret ();
-		   (** Rewrite this term **)
-		   (find_rrs_bottom_up_tac ret_plan (fcntrl, ftyenv, qntenv) a
+		   (** Rewrite argument term **)
+		   (find_term_bu_tac ret_plan (fcntrl, ftyenv, qntenv) a
 		      // skip);
 		   (fun g2 -> 
 		     let (acntrl, atyenv, na, aplan) = 
 		       Lib.get_option 
 			 (!ret_plan) (fcntrl, ftyenv, a, mk_skip)
 		     in 
-		     seq
-		       [
-			data_tac clear_ret ();
-			(find_all_matches_tac ret_list
-			   (acntrl, atyenv, qntenv) (App(nf, na)) 
-			   // skip);
-			(fun g3 -> 
-			  let (pcntrl0, ptyenv, ptrm) =
-			    Lib.get_option (!ret_list)
-			      (acntrl, atyenv, App(nf, na))
-			  in 
-			  let (rules, pcntrl) = extract_rules pcntrl0
-			  in 
-			  let qplan = pack (mk_rules (List.rev rules))
-			  in 
-			  let subplan = pack (mk_branches [fplan; aplan])
-			  in
-			  (if rules = [] 
-			  then check_change2 fplan aplan
-			  else ());
-			  let tplan =
-			    pack (mk_node (key_of trm) [subplan; qplan])
-			  in 
-			  data_tac 
-			    (Lib.set_option ret)
-			    (pcntrl, ptyenv, ptrm, tplan) g3)
-		      ] g2)
+		     clear_ret();
+		     (** Add data *)
+		     check_change2 fplan aplan;
+		     let subplan = pack(mk_branches [fplan; aplan])
+		     in 
+		     data_tac 
+		       (Lib.set_option ret)
+		       (acntrl, atyenv, App(nf, na), subplan) g2)
 		 ] g1)
-	    ] g
+	    ] goal
       | Basic.Typed(tt, ty) -> 
-	  find_rrs_bottom_up_tac ret (ctrl, tyenv, qntenv) tt g
-      | _ ->  
-	  seq
-	    [
-	     find_all_matches_tac ret_list data trm;
-	     (fun g1 ->
-	       let (pcntrl0, ptyenv, ptrm) =
-		 Lib.get_option (!ret_list) (ctrl, tyenv, trm)
-	       in 
-	       clear_ret();
-	       let (rules, pcntrl) = extract_rules pcntrl0
-	       in 
-	       let qplan = pack (mk_rules (List.rev rules))
-	       in 
-	       check_change qplan;
-	       let plan = pack (mk_node (key_of trm) [qplan])
-	       in 
-	       data_tac 
-		 (Lib.set_option ret)
-		 (pcntrl, ptyenv, trm, plan) g1)
-	   ] g
+	  find_term_bu_tac ret (ctrl, tyenv, qntenv) tt goal
+      | _ -> raise No_change
+    and 
+	find_term_bu_tac ret data trm goal =
+      let (cntrl, tyenv, qntenv) = data 
+      in 
+      let ret_list = ref None
+      and ret_plan = ref None
+      in 
+      let clear_ret () = ret_list:=None; ret_plan:=None
+      in 
+      seq
+	[
+	 (** Rewrite subterms *)
+	 ((find_subterm_bu_tac ret_plan data trm)
+	    // skip);
+	 (fun g1 ->
+	   let (scntrl, styenv, strm, splan) =
+	     Lib.get_option (!ret_plan)
+	       (cntrl, tyenv, trm, mk_skip)
+	   in 
+	   clear_ret();
+	   seq
+	     [
+	      (** Rewrite main term *)
+	      (find_all_matches_tac ret_list data strm // skip);
+	      (fun g2 ->
+		let (mcntrl0, mtyenv, mtrm) =
+		  Lib.get_option (!ret_list) (cntrl, tyenv, strm)
+		in 
+		clear_ret();
+		let (rules, mcntrl) = extract_rules mcntrl0
+		in 
+		let rplan = pack (mk_rules (List.rev rules))
+		in 
+		check_change2 rplan splan;
+		let plan = pack (mk_node (key_of trm) [splan; rplan])
+		in 
+		data_tac 
+		  (Lib.set_option ret)
+		  (mcntrl, mtyenv, mtrm, plan) g2)
+	    ] g1)
+       ] goal
+
+
 
 (**
    [find_rrs_top_down ctrl ret tyenv qntenv trm g]: Traverse term [trm],
@@ -1426,77 +1415,73 @@ module Planner =
    data (with the rewrite rules to apply), [ntyenv] the new
    type-environment and [ntrm] the term resulting from simplification.
  *)
-    let extract_rules d = (Data.get_rules d, Data.set_rules d [])
 
-    let rec find_td_aux ret1 data1 trm1 g=
-      let (ctrl1, tyenv1, qntenv1) = data1
+    let rec find_subterm_td_tac ret data trm g=
+      let (ctrl, tyenv, qntenv) = data
       in 
       let ret_list = ref None
       and ret_plan = ref None
       in 
       let clear_ret () = ret_list:=None; ret_plan:=None
       in 
-      match trm1 with
+      match trm with
 	Basic.Qnt(q, b) -> 
-	  let qntenv2 = Term.bind (Basic.Bound(q)) null_term qntenv1
+	  let qntenv2 = Term.bind (Basic.Bound(q)) null_term qntenv
 	  in 
 	  seq
 	    [
 	     (** Rewrite quantifier body, top-down **)
-	     (find_rrs_top_down_tac ret_plan (ctrl1, tyenv1, qntenv2) b 
+	     (find_term_td_tac ret_plan (ctrl, tyenv, qntenv2) b 
 		// skip);
-	     (** Add data to ret1 **)
+	     (** Add data to ret **)
 	     (fun g1 ->
 	       let (bcntrl, btyenv, btrm, bplan0) = 
-		 Lib.get_option (!ret_plan) (ctrl1, tyenv1, b, mk_skip)
+		 Lib.get_option (!ret_plan) (ctrl, tyenv, b, mk_skip)
 	       in 
 	       check_change bplan0;
 	       let bplan = pack (mk_branch 0 bplan0)
 	       in 
 	       data_tac
-		 (Lib.set_option ret1) 
+		 (Lib.set_option ret) 
 		 (bcntrl, btyenv, Basic.Qnt(q, btrm), bplan) g1)
 	   ] g
       | Basic.App(f, a)->
 	  seq
 	    [
 	     (** Rewrite function, top-down **)
-	     (find_rrs_top_down_tac ret_plan (ctrl1, tyenv1, qntenv1) f
+	     (find_term_td_tac ret_plan (ctrl, tyenv, qntenv) f
 		// skip);
 	     (** Extract function plan *)
 	     (fun g1->
 	       let (fcntrl, ftyenv, nf, fplan) = 
-		 Lib.get_option (!ret_plan) (ctrl1, tyenv1, f, mk_skip)
+		 Lib.get_option (!ret_plan) (ctrl, tyenv, f, mk_skip)
 	       in 
 	       clear_ret();
 	       seq
 		 [
 		  (** Rewrite argument, top-down **)
-		  (find_rrs_top_down_tac 
-		     ret_plan (fcntrl, ftyenv, qntenv1) a // skip);
+		  (find_term_td_tac 
+		     ret_plan (fcntrl, ftyenv, qntenv) a // skip);
 		  (** Extract argument plan *)
 		  (fun g2 ->
 		    let (acntrl, atyenv, na, aplan) = 
 		      Lib.get_option (!ret_plan) 
 			(fcntrl, ftyenv, a, mk_skip)
 		    in 
-		    (** Add data to ret1 *)
+		    (** Add data to ret *)
 		    check_change2 fplan aplan;
 		    let subplan = pack (mk_branches [fplan; aplan])
 		    in 
 		    data_tac 
-		      (Lib.set_option ret1)
+		      (Lib.set_option ret)
 		      (acntrl, atyenv, App(nf, na), subplan) g2)
 		] g1)
 	   ] g
       | Basic.Typed(tt, ty) -> 
-	  find_rrs_top_down_tac ret1 (ctrl1, tyenv1, qntenv1) tt g
-      | _ -> 
-	  data_tac 
-	    (Lib.set_option ret1) 
-	    (ctrl1, tyenv1, trm1, mk_skip)  g
+	  find_term_td_tac ret (ctrl, tyenv, qntenv) tt g
+      | _ -> raise No_change
     and 
-	find_rrs_top_down_tac ret data trm goal=
+	find_term_td_tac ret data trm goal=
       let (ctrl, tyenv, qntenv) = data 
       in 
       let ret_list = ref None
@@ -1521,7 +1506,8 @@ module Planner =
 	     clear_ret ();
 	     seq
 	       [
-		(find_td_aux ret_plan (nctrl, ntyenv, qntenv) ntrm // skip);
+		(find_subterm_td_tac ret_plan (nctrl, ntyenv, qntenv) ntrm 
+		   // skip);
 		(fun g2 ->
 		  let (sctrl0, styenv, strm, splan) = 
 		    Lib.get_option (!ret_plan) 
@@ -1568,8 +1554,8 @@ module Planner =
 	in 
 	cond 
 	  (fun _ -> rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
-	  (find_rrs_bottom_up_tac ret_plan data trm)
-	  (find_rrs_top_down_tac ret_plan data trm) g1
+	  (find_term_bu_tac ret_plan data trm)
+	  (find_term_td_tac ret_plan data trm) g1
       in 
       let tac2 g2 = (** Apply the rewrites found by tac1 **)
 	let (ncntrl0, ntyenv, ntrm, plan) =  
