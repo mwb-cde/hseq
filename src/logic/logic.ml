@@ -1972,6 +1972,8 @@ module Tactics =
  * Experimental
  ***)
 
+(*
+
 (**
    [rewrite_intro ?info ctrl rules trm sq]: 
    Introduce an equality established by rewriting term [trm] with [rules].
@@ -2022,7 +2024,100 @@ module Tactics =
       let rrc = Lib.get_option ctrl Formula.default_rr_control
       in 
       sqnt_apply (rewrite_intro0 inf rrc rls trm) g
+*)
 
+(**
+   [filter_rules scp rls l sg]: Filter the rewrite rules [rls].
+   
+   Extracts the assumptions to use as a rule from subgoal [sg]. Checks
+   that other rules are in the scope of [sg]. Creates unordered or
+   ordered rewrite rules as appropriate.
+
+   Fails if any rule in [rls] is the label of an assumption 
+   which does not exist in [sg].
+
+   Fails if any rule in [rls] is not in scope.
+ *)
+    let extract_rules scp plan sq= 
+      let memo = Lib.empty_env() 
+      in 
+      let extract src =
+	match src with
+	  Asm(x) ->
+	    let asm=
+	      (try drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
+	      with 
+		Not_found -> 
+		  raise 
+		    (logic_error "Rewrite: can't find tagged assumption" []))
+	    in 
+ 	    asm
+	| OAsm(x, order) ->
+	    let asm=
+	      (try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+	      with 
+		Not_found -> 
+		  raise 
+		    (logic_error "Rewrite: can't find tagged assumption" []))
+	    in 
+	    asm
+	| RRThm(x) -> 
+	    check_term_memo memo scp (formula_of x);
+ 	    (formula_of x)
+	| ORRThm(x, order) -> 
+	    check_term_memo memo scp (formula_of x);
+	    (formula_of x)
+      in 
+      Rewrite.Planned.mapping extract plan
+
+(**
+   [rewrite_intro ?info plan trm sq]: 
+   Introduce an equality established by rewriting term [trm] with [plan].
+   
+   {L
+   asms |- concl
+   ---->>
+   (trm = T){_ l}, asms|- concl
+   }
+
+   info: [] [l] [] []
+
+   Fails if [trm] cannot be made into a formula.
+ *)
+    let rewrite_intro0 inf plan trm tyenv sq=
+      let scp = Sequent.scope_of sq
+      and rtyenv = ref tyenv
+      in 
+      let fplan= extract_rules scp plan sq
+      and form = Formula.make ~env:rtyenv scp trm
+      in 
+      let tyenv1 = !rtyenv
+      in 
+      try
+	(let nt, ntyenv = 
+	  Formula.plan_rewrite_env scp tyenv1 fplan form
+	in 
+	let nasm0 = Formula.mk_equality scp form nt
+	and asm_tag= Tag.create()
+	in 
+	let (nasm1, tyenv2) = 
+	  Formula.typecheck_retype scp tyenv1 nasm0 (Gtypes.mk_null())
+	in 
+	let gtyenv = 
+	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv2
+	in 
+	add_info inf [] [asm_tag] [] [];
+	(mk_subgoal
+	   (Sequent.sqnt_retag sq, 
+	    Sequent.sqnt_env sq, 
+	    ((asm_tag, nasm1)::(Sequent.asms sq)),
+	    Sequent.concls sq), 
+	 gtyenv))
+      with x -> raise 
+	  (Result.add_error (logic_error "rewrite_intro" [form]) x)
+
+    let rewrite_intro inf plan trm g=
+      sqnt_apply (rewrite_intro0 inf plan trm) g
 
 (**** Subsitution tactics ****)
 
@@ -2126,7 +2221,7 @@ module Tactics =
 	(mk_subgoal
 	   (Sequent.sqnt_retag sq, 
 	    Sequent.sqnt_env sq, 
-	    Sequent.concls sq, 
+	    Sequent.asms sq, 
 	    new_concls), 
 	 gtyenv)
       with x -> raise 
@@ -2282,14 +2377,14 @@ module Conv=
 	     (Term.term_error "rewrite_conv" [trm]) x)
 
 
-    let plan_rewrite_conv ?(dir=Rewrite.leftright) plan scp trm =
+    let plan_rewrite_conv plan scp trm =
       let plan1 = Rewrite.Planned.mapping formula_of plan
       in 
       let conv_aux t = 
 	let form = Formula.make scp trm
 	in 
 	let nform = 
-	  Formula.plan_rewrite ~dir:dir scp plan1 form
+	  Formula.plan_rewrite scp plan1 form
 	in 
 	let tform = Formula.mk_equality scp form nform
 	in 

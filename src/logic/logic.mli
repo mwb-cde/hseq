@@ -281,8 +281,7 @@ type rr_type =
   | RRThm of thm   (** A theorem *)
   | ORRThm of thm * Rewrite.order (** An ordered theorem *)
   | Asm of label  (** The label of an assumption *)
-  | OAsm 
-    of label * Rewrite.order 
+  | OAsm of label * Rewrite.order 
 (** The label of an ordered assumption *)
 
 (** 
@@ -1209,10 +1208,15 @@ module Tactics :
 
 (** {7 Experimental} *)
 
+(*
       val rewrite_intro :
 	  info option
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> Basic.term -> tactic
+*)
+      val rewrite_intro :
+	  info option
+	  -> (rr_type)Rewrite.Planned.plan -> Basic.term -> tactic
 (**
    [rewrite_intro ?info ctrl rules trm sq]: 
    Introduce an equality established by rewriting term [trm] with [rules].
@@ -1354,9 +1358,7 @@ module Conv:
  *)
 
       val plan_rewrite_conv: 
-	  ?dir:Rewrite.direction
-	-> (thm) Rewrite.Planned.plan 
-	  -> conv
+	  (thm) Rewrite.Planned.plan -> conv
 (**
    [plan_rewrite_conv dir plan scp trm]:
    rewrite term [trm] according to [plan] in scope [scp].
