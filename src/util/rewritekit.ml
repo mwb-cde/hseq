@@ -295,7 +295,7 @@ module Make =
 	      (data3, set_subnodes node subnodes1)
 	| Branch(i, p) -> 
 	    let (data3, b) =
-	      rewrite_aux (data1, get_subnode node i) plan
+	      rewrite_aux (data1, get_subnode node i) p
 	    in 
 	    (data3, set_subnode node i b)
 	| Branches(ps) -> 
@@ -304,7 +304,7 @@ module Make =
 	    in 
 	    (data3, set_subnodes node subnodes1)
 	| Rules rls -> 
-	    rewrite_rules (data, node) rls
+	    rewrite_rules (data1, node) rls
 	| Skip -> (data1, node)
       in 
       let data3 = drop_data (data, node) (data2, node2)

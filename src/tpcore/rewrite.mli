@@ -455,9 +455,9 @@ module type PlannerType =
 (** {7 Exposed for debugging} *)
 
     type data = 
-	(Scope.t 
-	   * Term.substitution  
-	   * Gtypes.substitution)
+	(Scope.t  (** Scope *)
+	   * Term.substitution   (** Quantifier environment *)
+	   * Gtypes.substitution) (** Type environment *)
 
     type internal_rule = 
 	(Basic.binders list 

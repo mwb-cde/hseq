@@ -186,17 +186,6 @@ let match_rewrite scope ctrl qntenv tyenv varp lhs rhs order trm =
     (let tyenv1, env1=find_match scope ctrl tyenv varp lhs trm env; 
     in 
     let nt = Term.subst_closed qntenv env1 rhs
-(*
-   let tmp = Term.subst env1 rhs
-   in 
-   (* 
-      Make sure the resulting term is closed wrt 
-      the quantifiers of term trm
-    *)
-   if (is_closed_env qntenv tmp)
-   then tmp
-   else raise (Failure "No match")
- *)
     in 
     match order with
       None -> (nt, tyenv1)
@@ -576,7 +565,9 @@ module Planned =
 	  in 
 	  let (qs, lhs, rhs) = dest_rule rule 
 	  in
-	  (data, Term.subst_closed qntenv env rhs)
+	  let data1 = (scope, qntenv, tyenv, Term.empty_subst())
+	  in 
+	  (data1, Term.subst_closed qntenv env rhs)
 
 	let add_data data trm = 
 	  match trm with 
