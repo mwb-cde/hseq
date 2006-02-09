@@ -459,11 +459,10 @@ let rec extract_check_rules scp dir pl =
   in 
   Rewrite.Planned.mapping get_test pl
 
-
 let plan_rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f = 
   let plan1 = extract_check_rules scp dir plan
   in 
-  let data = (scp, Term.empty_subst(), tyenv, Term.empty_subst())
+  let data = (scp, Term.empty_subst(), tyenv)
   in 
   let (data1, nt) = 
     try (Rewrite.Planned.rewrite data plan1 (term_of f))
@@ -472,7 +471,7 @@ let plan_rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
     | Rewritekit.Stop err -> raise err
     | err -> raise err
   in 
-  let (scp1, qntenv1, tyenv1, trmenv1) = data1
+  let (scp1, qntenv1, tyenv1) = data1
   in 
   (fast_make scp [f] nt, tyenv1)
 
@@ -482,6 +481,31 @@ let plan_rewrite scp ?(dir=Rewrite.leftright) plan f =
     plan_rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
   in 
   nt
+
+let mk_rewrite_eq scp tyenv plan trm = 
+  let plan1 = extract_check_rules scp Rewrite.leftright plan
+  in 
+  let rtyenv = ref tyenv 
+  in 
+  let lhsf = make ~env:rtyenv scp trm
+  in 
+  let tyenv1 = !rtyenv
+  in 
+  let data = (scp, Term.empty_subst(), tyenv1)
+  in 
+  let (data1, nt) = 
+    try (Rewrite.Planned.rewrite data plan1 trm)
+    with 
+      Rewritekit.Quit err -> raise err
+    | Rewritekit.Stop err -> raise err
+    | err -> raise err
+  in 
+  let (scp1, _, tyenv2) = data1
+  in 
+  let rhsf = fast_make scp1 [lhsf] nt
+  in 
+  (mk_equality scp lhsf rhsf, tyenv2)
+
 
 
 (***

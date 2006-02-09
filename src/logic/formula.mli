@@ -292,6 +292,13 @@ val plan_rewrite_env :
 	  -> form -> (form * Gtypes.substitution)
 (** Rewrite a formula w.r.t a type context. *)
 
+val mk_rewrite_eq : 
+    Scope.t
+      -> Gtypes.substitution 
+	-> form Rewrite.Planned.plan
+	  -> Basic.term -> (form * Gtypes.substitution)
+(** Make an equality by rewriting a term w.r.t a type context. *)
+
 (** {5 Pretty printing} *)
 
 val print : Printer.ppinfo -> form -> unit 

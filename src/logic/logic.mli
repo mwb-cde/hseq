@@ -274,15 +274,6 @@ val add_info:
    otherwise do nothing.
  *)
 
-(**
-   The type of rules to use with rewriting in the logic.
-*)
-type rr_type = 
-  | RRThm of thm   (** A theorem *)
-  | ORRThm of thm * Rewrite.order (** An ordered theorem *)
-  | Asm of label  (** The label of an assumption *)
-  | OAsm of label * Rewrite.order 
-(** The label of an ordered assumption *)
 
 (** 
    Skolem constants 
@@ -779,8 +770,20 @@ val first_only: tactic -> branch -> branch
    subgoals with the other subgoals of [b].
 *)
 
+(** {7 Support for rewriting} *)
 
+(**
+   The type of rules to use with rewriting in the logic.
+*)
+type rr_type = 
+  | RRThm of thm   (** A theorem *)
+  | ORRThm of thm * Rewrite.order (** An ordered theorem *)
+  | Asm of label  (** The label of an assumption *)
+  | OAsm of label * Rewrite.order 
+(** The label of an ordered assumption *)
 
+type plan = rr_type Rewrite.Planned.plan
+(** The type of rewrite plans *)
 
 (** {7 Tactics and Conversions} *)
 
@@ -881,6 +884,34 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
+
+
+      val deleteA : info option -> label -> tactic
+(** 
+   [deleteA l sq]: Delete assumption [l] from subgoal [sq].
+
+   {L
+   A{_ l}, asms |- concls ----> asms |- concls
+   }
+
+   info: [goals = [], aforms=[], cforms=[], terms = []]
+ *)
+
+
+      val deleteC : info option -> label -> tactic
+(** 
+   [delete l sq]: Delete conclusion [l] from subgoal [sq].
+
+   If [l] is a conclusion
+   {L
+   asms |- C{_ l}, concls ----> asms |- concls
+   }
+
+   info: [goals = [], aforms=[], cforms=[], terms = []]
+ *)
+
+
+(*
       val delete : info option -> label -> tactic
 (** 
    [delete l sq]: Delete assumption [l] or conclusion [l] from
@@ -898,7 +929,7 @@ module Tactics :
 
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
-
+*)
 
 (** {5 Logic Rules}  *)
 
@@ -1360,7 +1391,7 @@ module Conv:
       val plan_rewrite_conv: 
 	  (thm) Rewrite.Planned.plan -> conv
 (**
-   [plan_rewrite_conv dir plan scp trm]:
+   [plan_rewrite_conv plan scp trm]:
    rewrite term [trm] according to [plan] in scope [scp].
 
    Returns |- trm = X 
