@@ -907,7 +907,7 @@ let rec accept_asm ret (tg, (qs, c, a)) g =
   if(is_constant_true (qs, c, a))
   then 
     (** Delete assumption true *)
-    Logic.Tactics.delete None (ftag tg) g
+    deleteA (ftag tg) g
   else 
     if (is_constant_false (qs, c, a))
     then (** Solve assumption false *)
@@ -958,7 +958,7 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	if(is_constant_true (qs, c, a))
 	then 
 	  (** Delete assumption true *)
-	  Logic.Tactics.delete None (ftag tg) g
+	  deleteA (ftag tg) g
 	else 
 	  if (is_constant_false (qs, c, a))
 	  then (** Solve assumption false *)
@@ -969,7 +969,7 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	if(is_constant_true (qs, c, a))
 	then 
 	  (** Delete assumption true *)
-	  Logic.Tactics.delete None (ftag tg) g
+	  deleteA (ftag tg) g
 	else 
 	  (** |- c => false -> |- not c*)
 	  if (is_constant_false (qs, c, a))
@@ -1046,7 +1046,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 	    if(is_constant_false (qs, c, b))
 	    then 
 	      (** Delete assumption (not false) *)
-	      Logic.Tactics.delete None (ftag tg) g
+	      deleteA (ftag tg) g
 	    else
 	      if (is_constant_true (qs, c, b))
 	      then 	  (** Solve assumption (not true) *)
@@ -1063,7 +1063,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 	| (Some(true), _) -> 
 	    if(is_constant_false (qs, c, b))
 	    then 
-	      Logic.Tactics.delete None (ftag tg) g
+	      deleteA (ftag tg) g
 	    else
 	      (** |- c => not true -> |- not c*)
 	      if(is_constant_true (qs, c, b))
@@ -1176,7 +1176,7 @@ let rec accept_asm ret (tg, (qs, c, a)) g =
   if(is_constant_true (qs, c, a))
   then 
     (** Delete assumption true *)
-    Logic.Tactics.delete None (ftag tg) g
+    deleteA (ftag tg) g
   else 
     if (is_constant_false (qs, c, a))
     then (** Solve assumption false *)
@@ -1228,7 +1228,7 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	if(is_constant_true (qs, c, a))
 	then 
 	  (** Delete assumption true *)
-	  Logic.Tactics.delete None (ftag tg) g
+	  deleteA (ftag tg) g
 	else 
 	  if (is_constant_false (qs, c, a))
 	  then (** Solve assumption false *)
@@ -1239,7 +1239,7 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	if(is_constant_true (qs, c, a))
 	then 
 	  (** Delete assumption true *)
-	  Logic.Tactics.delete None (ftag tg) g
+	  deleteA (ftag tg) g
 	else 
 	  (** |- c => false -> |- not c*)
 	  if (is_constant_false (qs, c, a))
@@ -1316,7 +1316,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 	    if(is_constant_false (qs, c, b))
 	    then 
 	      (** Delete assumption (not false) *)
-	      Logic.Tactics.delete None (ftag tg) g
+	      deleteA (ftag tg) g
 	    else
 	      if (is_constant_true (qs, c, b))
 	      then 	  (** Solve assumption (not true) *)
@@ -1333,7 +1333,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 	| (Some(true), _) -> 
 	    if(is_constant_false (qs, c, b))
 	    then 
-	      Logic.Tactics.delete None (ftag tg) g
+	      deleteA (ftag tg) g
 	    else
 	      (** |- c => not true -> |- not c*)
 	      if(is_constant_true (qs, c, b))

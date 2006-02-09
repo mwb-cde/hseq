@@ -471,7 +471,9 @@ module Planner :
 	    -> Simpset.rule
 	      -> Basic.term 
 		-> (Logic.rr_type 
-		      * Gtypes.substitution * Term.substitution * Basic.term)
+		      * Gtypes.substitution 
+		      * Term.substitution 
+		      * Basic.term)
 
 (**
    [match_rewrite scp tyenv qntenv trmenv varp lhs rhs trm]: Try to match
@@ -482,8 +484,10 @@ module Planner :
  *)
 
       val find_basic :
-	  (Data.t * Gtypes.substitution 
-	     * Basic.term * Logic.rr_type) option ref 
+	  (Data.t 
+	     * Gtypes.substitution 
+	     * Basic.term 
+	     * Logic.rr_type) option ref 
 	-> data
 	  -> Simpset.rule
 	    -> Basic.term 
@@ -522,7 +526,10 @@ module Planner :
  *)
 
       val find_all_matches_tac :
-	  (Data.t * Gtypes.substitution * Basic.term) option ref
+	  (Data.t 
+	     * Gtypes.substitution 
+	     * Basic.term
+	     * Logic.rr_type list) option ref
 	-> data
 	  -> Basic.term 
 	    -> Tactics.tactic

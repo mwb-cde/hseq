@@ -297,7 +297,7 @@ let cleanup = ref true
    Delete all assumptions listed in [ctrl.asms].
  *)
 let clean_aux_tac tags g =
-  map_every (fun x -> Logic.Tactics.delete None (Logic.FTag x)) tags g
+  map_every (fun x -> deleteA (Logic.FTag x)) tags g
 
 let clean_up_tac ctrl g=
   if (!cleanup) 
@@ -1106,7 +1106,7 @@ module Planner =
 	       Logic.Tactics.substC info [ftag (rule_tag)] lbl;
 	       Logic.Tactics.substA info [ftag (rule_tag)] lbl
 	     ];
-	   delete (ftag rule_tag)
+	   deleteA (ftag rule_tag)
 	 ] g
       in 
       try seq [ tac1; tac2 ] goal 
@@ -1238,9 +1238,11 @@ module Planner =
     let rec find_all_matches_tac ret data trm goal =
       let (cntrl, tyenv, qntenv) = data
       in 
-      let ret1 = ref None
+      let ret_list = ref None
       in 
-      let rec find_aux c ty t g= 
+      let ret_tmp = ref None
+      in 
+      let rec find_aux l c ty t g= 
 	alt
 	  [
 	   seq
@@ -1256,36 +1258,45 @@ module Planner =
 		  (fun _ -> 
 		    Lib.compare_int_option (Data.get_rr_depth ndata) 0)
 		  (simp_fail ~err:No_change)
-		  (find_match_tac ret1 (c, ty, qntenv) t) g1);
+		  (find_match_tac ret_list (c, ty, qntenv) t) g1);
 	      (** Found a match **)
 	      (fun g1 -> 
 		let (cntrl1, tyenv1, t1, r1) =
 		  Lib.dest_option 
-		    ~err:(Failure "find_all_matches: 1") (!ret1)
+		    ~err:(Failure "find_all_matches: 1") (!ret_list)
+		in 
+		let rslt = r1::l 
 		in 
 		seq
 		  [
-		   (** Add the information to ret **)
-		   data_tac 
-		     (Lib.set_option ret)
-		     ((Data.add_rule cntrl1 r1), tyenv, t1);
-		   (** Go around again, ignoring failure. **)
-		   (find_aux (Data.add_rule cntrl1 r1) tyenv1 t1 
-		      // skip)
+		   (** Add the result to ref_tmp **)
+		   data_tac (Lib.set_option ret_tmp)
+		     (cntrl1, tyenv, t1, rslt);
+		   (** Try to go round again **)
+		   (find_aux rslt cntrl1 tyenv1 t1 // skip)
 		 ] g1)
 	    ];
-	   (** Failed to find a match **)
+	   (** Failed to find any match **)
 	   seq
 	     [
-	      (** Add information to ret. **)
-	      data_tac (Lib.set_option ret) (c, ty, t);
+	      (** Add information to ret_tmp. **)
+	      data_tac (Lib.set_option ret_tmp) (c, ty, t, l);
 	      (** Raise failure **)
 	      fail ~err:(Failure "find_all_matches")
 	    ]
 	 ] g
       in 
       try 
-	find_aux cntrl tyenv trm goal
+	seq
+	  [
+	   find_aux [] cntrl tyenv trm;
+	   (fun g ->
+	     let (rcntrl, rtyenv, rtrm, rlist) =
+	       Lib.dest_option (!ret_tmp)
+	     in 
+	     data_tac (Lib.set_option ret)
+	       (rcntrl, rtyenv, rtrm, List.rev rlist) g)
+	 ] goal
       with _ -> raise No_change
 
 (**
@@ -1388,13 +1399,11 @@ module Planner =
 	      (** Rewrite main term *)
 	      (find_all_matches_tac ret_list data strm // skip);
 	      (fun g2 ->
-		let (mcntrl0, mtyenv, mtrm) =
-		  Lib.get_option (!ret_list) (cntrl, tyenv, strm)
+		let (mcntrl, mtyenv, mtrm, rules) =
+		  Lib.get_option (!ret_list) (cntrl, tyenv, strm, [])
 		in 
 		clear_ret();
-		let (rules, mcntrl) = extract_rules mcntrl0
-		in 
-		let rplan = pack (mk_rules (List.rev rules))
+		let rplan = pack (mk_rules rules)
 		in 
 		check_change2 rplan splan;
 		let plan = pack (mk_node (key_of trm) [splan; rplan])
@@ -1496,12 +1505,10 @@ module Planner =
 	   (find_all_matches_tac ret_list data trm // skip);
 	   (** Descend through the subterms **)
 	   (fun g1 -> 
-	     let (nctrl0, ntyenv, ntrm)=
-	       Lib.get_option (!ret_list) (ctrl, tyenv, trm)
+	     let (nctrl, ntyenv, ntrm, rules)=
+	       Lib.get_option (!ret_list) (ctrl, tyenv, trm, [])
 	     in 
-	     let (rules, nctrl) = extract_rules nctrl0
-	     in 
-	     let tplan = pack (mk_rules (List.rev rules))
+	     let tplan = pack (mk_rules rules)
 	     in 
 	     clear_ret ();
 	     seq
@@ -1509,14 +1516,12 @@ module Planner =
 		(find_subterm_td_tac ret_plan (nctrl, ntyenv, qntenv) ntrm 
 		   // skip);
 		(fun g2 ->
-		  let (sctrl0, styenv, strm, splan) = 
+		  let (sctrl, styenv, strm, splan) = 
 		    Lib.get_option (!ret_plan) 
 		      (nctrl, ntyenv, ntrm, mk_skip) 
 		  in 
 		  check_change2 tplan splan;
 		  let plan = pack (mk_node (key_of trm) [tplan; splan])
-		  in 
-		  let (_, sctrl) = extract_rules sctrl0
 		  in 
 		  data_tac (Lib.set_option ret)
 		    (sctrl, styenv, strm, plan) g2)
