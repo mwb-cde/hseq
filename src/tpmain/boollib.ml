@@ -922,7 +922,7 @@ let inst_tac ?f l g=
    info: [goals = [g1; g2], aforms=[l], cforms=[l], terms = []]
  *)
 let make_cases_tac_thm ()= 
-    (Commands.get_or_prove "boolean.cases_thm"
+    (Commands.get_or_prove "Bool.cases_thm"
        <<!P: (not P) or P>>
      (allC ++ disjC ++ negC ++ basic))
 
@@ -1362,7 +1362,7 @@ module Thms =
    [equals_iff_thm]:  |- !x y: (x = y) = (x iff y)
 *)
    let make_equals_iff_thm ()=
-     get_or_prove "boolean.equals_bool"
+     get_or_prove "Bool.equals_bool"
 	   << !x y: (x = y) = (x iff y) >>
 	 (flatten_tac 
 	    ++ (rewrite_tac [iff_equals_thm()])
@@ -1883,7 +1883,7 @@ let equals_tac ?info ?f g =
   let thm = 
     try Thms.equals_iff_thm()
     with Not_found -> 
-      (raise (error "Can't find required lemma boolean.equals_bool"))
+      (raise (error "Can't find required lemma Bool.equals_bool"))
   in 
   once_rewrite_tac ?info [thm] ~f:ff g
 

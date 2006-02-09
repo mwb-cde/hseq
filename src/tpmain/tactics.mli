@@ -90,6 +90,8 @@ val get_asm: Logic.label -> Logic.node -> Formula.form
 (** Get an assumption by label.*)
 val get_concl: Logic.label -> Logic.node -> Formula.form
 (** Get a conclusion by label.*)
+val get_form: Logic.label -> Logic.node -> Formula.form
+(** Get a formula by label. First tries [get_concl] then [get_asm]. *)
 
 (** {7 Branches} *)
 
@@ -393,6 +395,12 @@ val lift : ?info:Logic.info -> Logic.label -> tactic
    Move a formula to the top of the list of assumptions/conclusions.
 *)
 
+val deleteA: ?info:Logic.info -> Logic.label -> tactic 
+(** [deleteA l]: Delete the assumption labelled  [l]. *)
+
+val deleteC: ?info:Logic.info -> Logic.label -> tactic 
+(** [deleteC l]: Delete the conclusion labelled  [l]. *)
+
 val delete: ?info:Logic.info -> Logic.label -> tactic 
 (** [delete l]: Delete the formula labelled  [l]. *)
 
@@ -508,6 +516,164 @@ val unify_tac : ?info: Logic.info ->
    Defaults: [a=(fnum -1)], [c=(fnum 1)].
 *)
 
+val substA : 
+    ?info:Logic.info -> Logic.label list -> Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.substA}. *)
+
+val substC : 
+    ?info:Logic.info -> Logic.label list -> Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.substC}. *)
+
+(** {5 Derived tactics and tacticals} *)
+
+val named_tac : 
+    ?info: Logic.info -> (info:Logic.info -> tactic) 
+      -> string list -> string list 
+	-> tactic
+(** 
+   [named_tac tac anames cnames]: Apply [tac], renaming the
+   assumptions and conclusions produced with the names in [anames] and
+   [cnames] respecatively. The number of names does not have to match
+   the number of assumptions/conclusions produced.
+
+   Actions: apply [tac ~info:inf goal], rename each of
+   [Drule.aformulas inf] with a name from [anames], rename each of
+   [Drule.cformulas inf] with a name from [cnames], in order. Set
+   [info=inf'] where [inf'] is [inf], with the formula tag produced by
+   renaming.
+*) 
+
+(** {7 Pattern matching tacticals} *)
+
+(** {8 Support functions} *)
+
+val find_match_formulas: 
+    Gtypes.substitution
+  -> Scope.t -> (Basic.term -> bool) 
+    -> Basic.term -> Logic.tagged_form list -> Logic.label
+(**
+   [find_match_formulas scp varp t fs]: Find a match for a term in list
+   of tagged formulas.  Return the tag of the first formula in [fs]
+   to unify with term [t] in scope [scp].  [varp] determines which
+   terms can be bound by unification.  raise Not_found if no match.
+
+   Only free variables are bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+ *)
+
+val find_match_asm : 
+    Gtypes.substitution
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
+(** 
+   [find_match_asm tyenv t sq]: Find a match for [t] in the assumptions of
+   [sq].  Return the tag of the first formula in the assumptions to
+   unify with term [t] in the scope of sequent [sq].
+   raise Not_found if no match.
+ *)
+
+val find_match_concl :     
+    Gtypes.substitution
+  -> Basic.term -> Logic.Sequent.t -> Logic.label
+(** 
+   [match_concl t sq]: Find a match for [t] in the assumptions of
+   [sq].  Return the tag of the first formula in the assumptions to
+   unify with term [t] in the scope of sequent [sq].  raise Not_found
+   if no match.
+*)
+
+(** {8 Tacticals} *)
+
+val match_asm: Basic.term -> (Logic.label -> tactic) -> tactic
+(** 
+   [match_asm trm tac g]: Apply a tactic to the assumption matching 
+   term.
+
+   Find the label [l] of the first assumption, in the first subgoal of
+   [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
+   if [tac l] fails or if there is no matching assumption.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+
+val match_concl: Basic.term -> (Logic.label -> tactic) -> tactic
+(** 
+   [match_concl trm tac g]: Apply a tactic to the conclusion matching
+   a term.
+
+   Find the label [l] of the first conclusion, in the first subgoal of
+   [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
+   if [tac l] fails or if there is no matching conclusion.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+
+val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
+(** 
+   [match_formula trm tac g]: Apply a tactic the assumption or
+   conclusion matching a term.
+
+   Find the label [l] of the first formula, in the first subgoal of
+   [g], which matches [trm] then apply tactic [tac l] to [g].  The
+   match is carried out first on the assumptions then on the
+   conclusions. Fails if [tac l] fails or if there is no matching
+   formula in the subgoal.
+
+   Free variables in trm may be bound in the matching process.
+   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
+   for the match.
+*)
+
+val specA: ?info:Logic.info
+    -> ?a:Logic.label -> tactic
+(**
+   Specialize an existentially quantified assumption. [specA a trms]
+   repeatedly applies [existA], failing if [a] is not an
+   existentially quantified formula. 
+
+   info: [aforms=[tg], constants = cs] where [tg] is the tag of the
+   specialised assumption and [cs] are the constants generated by
+   [existA], in the order they were generated.
+*)
+
+val specC: ?info:Logic.info
+    -> ?c:Logic.label -> tactic
+(**
+   Specialize a universally quantified assumption. [specC a trms]
+   repeatedly applies [allC], failing if [c] is not universally
+   quantified.
+
+   info: [cforms=[tg], constants = cs] where [tg] is the tag of the
+   specialised conclusion and [cs] are the constants generated by
+   [allC], in the order they were generated.
+*)
+
+val spec_tac: ?info:Logic.info
+    -> ?f:Logic.label -> tactic
+(**
+   Specialize a formula. Tries {!Tactics.specC} then {!Tactics.specA}.
+
+   info: [cforms=[tg], constants = cs] or [aforms=[tg], constants =
+   cs] where [tg] is the tag of the specialised formula and [cs] are
+   the new constants in the order they were generated.
+*)
+
+val seq_some: tactic list -> tactic
+(**
+   [seq_some tacl xs]: Sequentially apply the tactics in [tacl],
+   allowing some tactics to fail.
+
+   Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
+
+   [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
+*)
+
+
+
 (** {7 Rewriting tactics} *)
 
 val leftright : Rewrite.direction
@@ -529,6 +695,252 @@ val is_rewrite_formula: Basic.term -> bool
    universally quantified equality (e.g. of the form [l=r] or [! x1
    .. x2 : l = r]).
 *)
+
+module Rewriter: 
+sig
+(** Generalising rewriting. 
+
+   General purpose rewriting functions including rewriting with lists
+   of theorems and assumptions (rather than rewrite plans).
+ *)
+
+  open Rewrite.Planned
+
+  type ('a)plan = ('a)Rewrite.Planned.plan
+  (** Rewrite plans *)
+
+  type rule = Logic.rr_type
+  (** Rewrite rules *)
+
+  val pure_rewriteA: 
+      ?info:Logic.info -> ?term:Basic.term
+      -> (rule)plan -> Logic.label
+	-> tactic
+    (** [pure_rewriteA info p l]: Rewrite assumption [l] with
+       plan [p]. This is a front end to [rewrite_intro]/[substA].  If
+       [term] is given, assumption [l] is replaced with the result of
+       rewriting [term] otherwise it is the assumption that is
+       rewritten.
+
+       {L
+       A{_ l}, asms |- concl
+       ---->
+       B{_ l}, asms|- concl
+       }
+
+       info: [goals = [], aforms=[l], cforms=[], terms = []]
+     *)
+
+  val pure_rewriteC: 
+      ?info:Logic.info -> ?term:Basic.term
+      -> (rule)plan -> Logic.label
+	-> tactic
+    (** [pure_rewriteC info p l]: Rewrite conclusion [l] with
+       plan [p]. This is a front end to [rewrite_intro]/[substC].  If
+       [term] is given, conclusion [l] is replaced with the result of
+       rewriting [term] otherwise it is the conclusion that is
+       rewritten.
+
+       {L
+       asms |- A{_ l}, concl
+       ---->
+       asms|- B{_ l}, concl
+       }
+
+       info: [goals = [], aforms=[], cforms=[l], terms = []]
+     *)
+
+  val pure_rewrite_tac: 
+      ?info:Logic.info -> ?term:Basic.term
+      -> (rule)plan -> Logic.label
+	-> tactic
+(** 
+   [pure_rewrite info p l]: Combination of [pure_rewriteC] and
+   [pure_rewriteA]. First tries [pure_rewriteC] then tries
+   [pure_rewriteA].
+ *)
+  
+  val pure_rewrite_conv: (Logic.thm) plan -> Logic.conv
+(** 
+   [plan_rewrite_conv plan scp trm]: rewrite term [trm] according to
+   [plan] in scope [scp]. This is an interface to
+   {!Logic.Conv.plan_rewrite_conv}.
+
+   Returns [|- trm = X] where [X] is the result of rewriting [trm]
+*)
+
+  val pure_rewrite_rule: 
+      (Logic.thm) plan -> Scope.t -> Logic.thm -> Logic.thm
+(** 
+   [plan_rewrite_rule plan scp thm]: rewrite theorem [thm] according to
+   [plan] in scope [scp]. 
+
+   Returns [|- X] where [X] is the result of rewriting [trm]
+*)
+
+(** {7 Rewrite planner} *)
+
+  val dest_term : 
+      Basic.term -> Rewrite.order option -> Rewrite.rewrite_rules
+
+  val extract_rule:
+      Logic.node option -> Logic.rr_type -> Rewrite.rewrite_rules
+
+  module PlannerData :
+      (Rewrite.PlannerData 
+       with type rule = Logic.rr_type
+       and type data = Logic.node option)
+
+  module Planner : 
+      (Rewrite.PlannerType with type a_rule = PlannerData.rule 
+      and type rule_data = PlannerData.data)
+
+
+val mk_plan : 
+    ?ctrl:Rewrite.control -> Logic.node
+      -> rule list -> Basic.term -> rule plan
+(** 
+   The rewrite planner, for use with tactics.
+
+   [mk_plan scp ?ctrl ?goal rules term]: Make a plan to rewrite [term]
+   using theorems and assumptions in [rules]. If [goal] is given, it
+   is the source of the assumptions in [rules].
+
+   N.B. The [rr_dir] field of [ctrl] is ignored.
+*)
+
+val mk_thm_plan : 
+    Scope.t -> ?ctrl:Rewrite.control 
+      -> rule list -> Basic.term -> Logic.thm plan
+(** 
+   The theorem rewrite planner, for use with conversions and rules. 
+
+   [mk_thm_plan scp ?ctrl ?goal rules term]: Make a plan to rewrite [term]
+   using theorems in [rules]. 
+
+   N.B. The [rr_dir] field of [ctrl] is ignored.
+*)
+
+(** {7 General rewriting} *)
+
+
+  val falseA : ?info:Logic.info -> ?a:Logic.label -> tactic
+  val trivial : ?info:Logic.info -> ?f:Logic.label -> tactic
+
+  val make_eq_refl_thm : unit -> Logic.thm
+  val eq_refl_thm_var : Logic.thm Lib.deferred
+  val eq_refl_thm : unit -> Logic.thm
+
+  val make_bool_cases_thm : unit -> Logic.thm
+  val bool_cases_thm_var : Logic.thm Lib.deferred
+  val bool_cases_thm : unit -> Logic.thm
+
+  val make_eq_sym_thm : unit -> Logic.thm
+  val eq_sym_thm_var : Logic.thm Lib.deferred
+  val eq_sym_thm : unit -> Logic.thm
+
+
+  val eq_sym_rule : Scope.t -> Logic.thm -> Logic.thm
+(** [eq_sym_rule scp thm]: If the body of [thm] is [ |- x = y], return 
+   [ |- y=x ].
+*)
+
+  val eq_symA: ?info:Logic.info -> Logic.label -> tactic
+(** 
+   [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
+*)
+
+  val eq_symC: ?info:Logic.info -> Logic.label -> tactic
+(**
+   [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
+*)
+
+  val eq_sym_tac: ?info:Logic.info -> Logic.label -> tactic
+(** 
+   [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try [eq_symC f].
+*)
+
+(** {7 Rewrite functions} *)
+
+      val rewrite_conv: 
+	  ?ctrl:Rewrite.control -> Logic.rr_type list -> Logic.conv
+(**
+   [rewrite_conv scp ctrl rules trm]:
+   rewrite term [trm] with rules [rrl] in scope [scp].
+
+   Returns |- trm = X 
+   where [X] is the result of rewriting [trm]
+
+   Discards any rule which is not a theorem or an ordered theorem.
+
+   This conversion could be written using the rewriting tactics but
+   this would require two sets of rewriting. The first to construct
+   the term [X] on the rhs of the equality and the second when the
+   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
+   one set of rewriting.
+ *)
+
+
+  val map_sym_tac:
+      (rule list) ref -> rule list -> tactic
+(**
+   [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
+   [rules], returning the resulting list in [ret]. The list in [ret]
+   will be in reverse order of [rules]. 
+*)
+
+
+val rewriteA_tac: 
+    ?info:Logic.info
+  -> ?ctrl:Rewrite.control
+    -> rule list -> Logic.label -> tactic
+(** 
+   [rewriteA ctrl rules l]: Rewrite the assumption at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   A{_ l}, asms |- concls
+
+   ----> (B is the rewritten assumption)
+
+   B{_ l}, asms |- concls
+   }
+
+   info: [goals = [], aforms=[l], cforms=[], terms = []]
+ *)
+
+      val rewriteC_tac : 
+	  ?info:Logic.info
+	-> ?ctrl:Rewrite.control
+	  -> rule list -> Logic.label -> tactic
+(** 
+   [rewriteC ctrl rules l]: Rewrite the conclusion at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   asms |- A{_ l}, concls
+
+   ----> (B is the rewritten conclusion)
+
+   asms |- B{_ l}, concls
+   }
+
+   info: [goals = [], aforms=[], cforms=[l], terms = []]
+ *)
+
+val rewrite_tac: 
+	  ?info:Logic.info
+	-> ?ctrl:Rewrite.control
+	  -> rule list -> Logic.label -> tactic
+(**
+   rewrite ?info ctrl rules l sq: Rewrite formula [l] with [rules].
+   
+   If [l] is in the conclusions then call [rewrite_concl]
+   otherwise call [rewrite_asm].
+ *)
+
+end
+
 
 val gen_rewrite_tac: 
     ?info: Logic.info 
@@ -646,156 +1058,5 @@ val once_replace_tac:
    formulas in sequent.  If [asms] is not given, use all assumptions
    of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
    assumptions.
-*)
-
-(** {5 Derived tactics and tacticals} *)
-
-val named_tac : 
-    ?info: Logic.info -> (info:Logic.info -> tactic) 
-      -> string list -> string list 
-	-> tactic
-(** 
-   [named_tac tac anames cnames]: Apply [tac], renaming the
-   assumptions and conclusions produced with the names in [anames] and
-   [cnames] respecatively. The number of names does not have to match
-   the number of assumptions/conclusions produced.
-
-   Actions: apply [tac ~info:inf goal], rename each of
-   [Drule.aformulas inf] with a name from [anames], rename each of
-   [Drule.cformulas inf] with a name from [cnames], in order. Set
-   [info=inf'] where [inf'] is [inf], with the formula tag produced by
-   renaming.
-*) 
-
-(** {7 Pattern matching tacticals} *)
-
-(** {8 Support functions} *)
-
-val find_match_formulas: 
-    Gtypes.substitution
-  -> Scope.t -> (Basic.term -> bool) 
-    -> Basic.term -> Logic.tagged_form list -> Logic.label
-(**
-   [find_match_formulas scp varp t fs]: Find a match for a term in list
-   of tagged formulas.  Return the tag of the first formula in [fs]
-   to unify with term [t] in scope [scp].  [varp] determines which
-   terms can be bound by unification.  raise Not_found if no match.
-
-   Only free variables are bound in the matching process.
-   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
-   for the match.
- *)
-
-val find_match_asm : 
-    Gtypes.substitution
-  -> Basic.term -> Logic.Sequent.t -> Logic.label
-(** 
-   [find_match_asm tyenv t sq]: Find a match for [t] in the assumptions of
-   [sq].  Return the tag of the first formula in the assumptions to
-   unify with term [t] in the scope of sequent [sq].
-   raise Not_found if no match.
- *)
-
-val find_match_concl :     
-    Gtypes.substitution
-  -> Basic.term -> Logic.Sequent.t -> Logic.label
-(** 
-   [match_concl t sq]: Find a match for [t] in the assumptions of
-   [sq].  Return the tag of the first formula in the assumptions to
-   unify with term [t] in the scope of sequent [sq].  raise Not_found
-   if no match.
-*)
-
-(** {8 Tacticals} *)
-
-val match_asm: Basic.term -> (Logic.label -> tactic) -> tactic
-(** 
-   [match_asm trm tac g]: Apply a tactic to the assumption matching 
-   term.
-
-   Find the label [l] of the first assumption, in the first subgoal of
-   [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
-   if [tac l] fails or if there is no matching assumption.
-
-   Free variables in trm may be bound in the matching process.
-   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
-   for the match.
-*)
-
-val match_concl: Basic.term -> (Logic.label -> tactic) -> tactic
-(** 
-   [match_concl trm tac g]: Apply a tactic to the conclusion matching
-   a term.
-
-   Find the label [l] of the first conclusion, in the first subgoal of
-   [g], which matches [trm] then apply tactic [tac l] to [g].  Fails
-   if [tac l] fails or if there is no matching conclusion.
-
-   Free variables in trm may be bound in the matching process.
-   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
-   for the match.
-*)
-
-val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
-(** 
-   [match_formula trm tac g]: Apply a tactic the assumption or
-   conclusion matching a term.
-
-   Find the label [l] of the first formula, in the first subgoal of
-   [g], which matches [trm] then apply tactic [tac l] to [g].  The
-   match is carried out first on the assumptions then on the
-   conclusions. Fails if [tac l] fails or if there is no matching
-   formula in the subgoal.
-
-   Free variables in trm may be bound in the matching process.
-   e.g. in [<< !x. y and x >>] only [y] is a bindable variable 
-   for the match.
-*)
-
-
-
-
-val specA: ?info:Logic.info
-    -> ?a:Logic.label -> tactic
-(**
-   Specialize an existentially quantified assumption. [specA a trms]
-   repeatedly applies [existA], failing if [a] is not an
-   existentially quantified formula. 
-
-   info: [aforms=[tg], constants = cs] where [tg] is the tag of the
-   specialised assumption and [cs] are the constants generated by
-   [existA], in the order they were generated.
-*)
-
-val specC: ?info:Logic.info
-    -> ?c:Logic.label -> tactic
-(**
-   Specialize a universally quantified assumption. [specC a trms]
-   repeatedly applies [allC], failing if [c] is not universally
-   quantified.
-
-   info: [cforms=[tg], constants = cs] where [tg] is the tag of the
-   specialised conclusion and [cs] are the constants generated by
-   [allC], in the order they were generated.
-*)
-
-val spec_tac: ?info:Logic.info
-    -> ?f:Logic.label -> tactic
-(**
-   Specialize a formula. Tries {!Tactics.specC} then {!Tactics.specA}.
-
-   info: [cforms=[tg], constants = cs] or [aforms=[tg], constants =
-   cs] where [tg] is the tag of the specialised formula and [cs] are
-   the new constants in the order they were generated.
-*)
-
-val seq_some: tactic list -> tactic
-(**
-   [seq_some tacl xs]: Sequentially apply the tactics in [tacl],
-   allowing some tactics to fail.
-
-   Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
-
-   [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
 *)
 

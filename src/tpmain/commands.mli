@@ -252,7 +252,7 @@ val axiom : ?simp:bool -> string -> Basic.term -> Logic.thm
 *)
 
 val prove: 
-    ?scp:Scope.t -> Basic.term -> Tactics.tactic -> Logic.thm
+    ?scp:Scope.t -> Basic.term -> Logic.tactic -> Logic.thm
 (** 
    [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
    in scope [scp]. This is a structured proof. If [scp] is not given,
@@ -270,7 +270,7 @@ val save_thm : ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 *)
 
 val prove_thm : 
-    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+    ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
 (**
    [prove_thm n trm tacs]: Prove theorem [trm] using the list of
    tactics [tacs] and add it to the current theory under name [n].
@@ -285,7 +285,7 @@ val prove_thm :
 *)
 
 val theorem: 
-    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+    ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
 (**
    [theorem n trm tacs]: Prove theorem [trm] using the list of
    tactics [tacs] and add it to the current theory under name [n].
@@ -302,7 +302,7 @@ val theorem:
 *)
 
 val lemma:
-    ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+    ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
 (**
    A synonym for {!Commands.theorem}.
 *)
@@ -314,7 +314,7 @@ val qed : string -> Logic.thm
 *)
 
 val get_or_prove: 
-    string -> Basic.term -> Tactics.tactic -> Logic.thm
+    string -> Basic.term -> Logic.tactic -> Logic.thm
 (**
    [get_or_prove n trm tacs ()]: Try to find the definition or theorem
    named [n], using {!Commands.thm}. If not found, prove theorem [trm]
