@@ -315,8 +315,10 @@ module Planned :
       type data = 
 	  (Scope.t (** Scope *)
 	     * Term.substitution    (** Quantifier environment *)
-	     * Gtypes.substitution  (** Type environment *)
+	     * Gtypes.substitution)  (** Type environment *)
+(*
 	     * Term.substitution    (** Substitution *) )
+*)
       and type rule = rewrite_rule
       and type node = Basic.term
       and type substn = Term.substitution
@@ -331,8 +333,10 @@ module Planned :
       with type data = 
 	  (Scope.t (** Scope *)
 	     * Term.substitution    (** Quantifier environment *)
-	     * Gtypes.substitution  (** Type environment *)
+	     * Gtypes.substitution)  (** Type environment *)
+(*
 	     * Term.substitution    (** Substitution *) )
+*)
       and type node = TermData.node
       and type substn = Term.substitution
       and type rule = rewrite_rule
@@ -374,6 +378,10 @@ module Planned :
       val noterm : key
       val alt_key : key -> key -> key
       val neg_key : key -> key
+      val ident_key : key
+      val fvar_key : key
+      val bvar_key : key
+      val appln_key : key
       val quant_key: key
       val allq_key : key
       val exq_key : key
@@ -400,8 +408,9 @@ val plan_rewrite_env :
 module type PlannerData =
   sig
     type rule
+    type data 
     val dest : 
-	rule 
+	data -> rule 
       -> (Basic.binders list * Basic.term * Basic.term * order option)
   end
 
@@ -431,18 +440,21 @@ module type PlannerType =
     exception No_change
 
     type a_rule 
+    type rule_data
 
     val make :
-	Scope.t -> control -> a_rule list 
-	  -> Basic.term -> (Basic.term * (a_rule)plan)
+	rule_data -> 
+	  Scope.t -> control -> a_rule list 
+	    -> Basic.term -> (Basic.term * (a_rule)plan)
 (** 
    Make a rewrite plan using a list of universally quantified rewrite
    rules.
  *)
 	      
     val make_env : 
-	Scope.t -> 
-	  control 
+       rule_data 
+	-> Scope.t 
+	  -> control 
 	  -> Gtypes.substitution
 	    -> a_rule list -> Basic.term 
 	      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
@@ -516,24 +528,28 @@ module type PlannerType =
 		  * control * (a_rule)plan)
 
     val make_rewrites: 
-	a_rule list -> rewrite_net
+	rule_data -> a_rule list -> rewrite_net
 
     val make_list : 
-	control 
-      -> Scope.t
-	-> Gtypes.substitution
-	  -> a_rule list
-	    -> Basic.term
-	      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
+	rule_data
+	-> control 
+	  -> Scope.t
+	    -> Gtypes.substitution
+	      -> a_rule list
+		-> Basic.term
+		  -> (Basic.term * Gtypes.substitution * (a_rule)plan)
 
   end
 
 module Planner : 
 functor (A: PlannerData) -> 
-  (PlannerType with type a_rule = A.rule)
+  (PlannerType with type a_rule = A.rule
+  and type rule_data = A.data)
 
 module TermPlannerData :  
-    (PlannerData with type rule = Basic.term)
+    (PlannerData with type rule = Basic.term 
+    and type data = unit)
 
 module TermPlanner : 
-    (PlannerType with type a_rule = TermPlannerData.rule)
+    (PlannerType with type a_rule = TermPlannerData.rule 
+    and type rule_data = unit)
