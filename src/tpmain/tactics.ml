@@ -1352,8 +1352,13 @@ let gen_rewrite_tac ?info ?asm ctrl ?f rules goal =
     None -> 
       (match asm with
 	None -> 
-	  foreach_form
-	    (Rewriter.rewrite_tac ?info ~ctrl:ctrl rules) goal
+	  seq_some
+	    [
+	     foreach_asm
+	       (Rewriter.rewriteA_tac ?info ~ctrl:ctrl rules);
+	     foreach_concl
+	       (Rewriter.rewriteC_tac ?info ~ctrl:ctrl rules);
+	   ] goal
       | Some(x) ->
 	  if x 
 	  then 
