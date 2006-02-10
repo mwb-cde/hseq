@@ -1184,6 +1184,7 @@ let rewrite_conv ?ctrl rls scp term =
    [rules], returning the resulting list in [ret]. The list in [ret]
    will be in reverse order of [rules]. 
  *)
+(*
 let map_sym_tac ret rules goal = 
   let scp = scope_of goal
   in 
@@ -1229,6 +1230,45 @@ let map_sym_tac ret rules goal =
      ] g
   in 
   map_every (mapping ret) rules goal
+*)
+let map_sym_tac ret rules goal = 
+  let scp = scope_of goal
+  in 
+  let asm_fn l g = 
+    let info = mk_info()
+    in 
+    try 
+      let g2 = eq_symA ~info:info l g
+      in 
+      let nl = 
+	Lib.get_one (aformulas info)
+	  (error "Rewriter.map_sym_tac: Invalid assumption")
+      in 
+      (ftag nl, g2)
+    with  err -> raise (add_error "Rewriter.map_sym_tac" err)
+  in 
+  let fn_tac r g =
+    match r with
+      RRThm(th) -> 
+	(RRThm(eq_sym_rule scp th), skip g)
+    | ORRThm(th, o) -> 
+	(ORRThm(eq_sym_rule scp th, o), skip g)
+    | Asm(l) -> 
+	let (nl, ng) = asm_fn l g
+	in 
+	(Asm(nl), ng)
+    | OAsm(l, o) -> 
+	let (nl, ng) = asm_fn l g
+	in 
+	(OAsm(nl, o), ng)
+  in 
+  let mapping lst rl g = 
+    let (nr, g2) = fn_tac rl g
+    in 
+    lst := nr:: (!lst); g2
+  in 
+  map_every (mapping ret) rules goal
+
 
 let rewriteA_tac 
     ?info ?(ctrl=Formula.default_rr_control) 
