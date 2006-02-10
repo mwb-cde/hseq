@@ -17,7 +17,7 @@ type ('k, 'a)plan =
 	(** The rewriting plan for a kind of node *)
   | Rules of 'a list
 	(** The rules to use to rewrite the current node *)
-  | Branch of (int * ('k, 'a)plan)
+  | Subnode of (int * ('k, 'a)plan)
 	(** The rewriting plan for the branch of a node *)
   | Branches of ('k, 'a)plan list
 	(** The rewriting plans for all branches of the node *)
@@ -57,7 +57,7 @@ type ('k, 'a)plan =
 	 raise [Quit e] then abandon the attempt and fail,
 	 raising [e].
 
-	 {b [p=Branch(i, p)]}: Replace the [i]'th subnode
+	 {b [p=Subnode(i, p)]}: Replace the [i]'th subnode
 	 of [n] with the result of rewriting the subnode
 	 using plan [p]. (The left-most subnode of [n] is
 	 the [0]'th.)

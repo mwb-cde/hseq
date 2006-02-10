@@ -356,7 +356,7 @@ module Planned :
 		(** {7 Plan constructors} *)
       val mk_node: key -> ('a)plan list -> ('a)plan
       val mk_rules : 'a list -> ('a)plan
-      val mk_branch: int -> ('a)plan -> ('a)plan
+      val mk_subnode: int -> ('a)plan -> ('a)plan
       val mk_branches: ('a)plan list -> ('a)plan
       val mk_skip: ('a)plan
 
@@ -370,7 +370,7 @@ module Planned :
       val pack_rules: ('a)list -> ('a)plan
       val pack_node: key -> ('a)plan list -> ('a)plan
       val pack_branches: ('a)plan list -> ('a)plan
-      val pack_branch : int -> 'a plan -> 'a plan
+      val pack_subnode : int -> 'a plan -> 'a plan
 
   	  (** {7 Keys} *)
       val key_of : Basic.term -> key

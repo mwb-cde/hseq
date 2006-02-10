@@ -15,7 +15,7 @@ type ('k, 'a)plan =
 	(** The rewriting plan for a kind of node *)
   | Rules of 'a list
 	(** The rules to use to rewrite the current node *)
-  | Branch of (int * ('k, 'a)plan)
+  | Subnode of (int * ('k, 'a)plan)
 	(** The rewriting plan for a branch of the node *)
   | Branches of (('k, 'a) plan) list
 	(** The rewriting plans for all branches of the node *)
@@ -50,7 +50,7 @@ type ('k, 'a)plan =
 	 [subst] raise [Quit e] then abandon the attempt and fail, raising
 	 [e].
 
-	 {b [p=Branch(i, p)]}: Rewrite the [i]'th subnode of [n] (starting
+	 {b [p=Subnode(i, p)]}: Rewrite the [i]'th subnode of [n] (starting
 	 with the left-most being [0]) using plan [p]. 
 
 	 {b [p=Branches(ps)]}: Rewrite each subnode of [n] with the
@@ -65,8 +65,8 @@ let rec mapping (f:('a -> 'b)) pl =
   match pl with
     Node (k, ps) -> 
       Node (k, List.map (mapping f) ps)
-  | Branch(i, p) -> 
-      Branch (i, mapping f p)
+  | Subnode(i, p) -> 
+      Subnode (i, mapping f p)
   | Branches(ps) -> 
       Branches(List.map (mapping f) ps)
   | Rules rs -> Rules (List.map f rs)
@@ -76,8 +76,8 @@ let rec map f plan =
   match plan with
     Node (k, ps) -> 
       f(Node (k, List.map (map f) ps))
-  | Branch(i, p) -> 
-      f(Branch (i, map f p))
+  | Subnode(i, p) -> 
+      f(Subnode (i, map f p))
   | Branches(ps) -> 
       f(Branches(List.map (map f) ps))
   | Rules rs -> f (Rules(rs))
@@ -87,7 +87,7 @@ let iter f plan =
   let rec iter_aux pl =
     match pl with
       Node (k, ps) -> (List.iter iter_aux ps; f pl)
-    | Branch(i, p) -> iter_aux p; f (Branch(i, p))
+    | Subnode(i, p) -> iter_aux p; f (Subnode(i, p))
     | Branches(ps) -> List.iter iter_aux ps; f (Branches ps)
     | _ -> f pl
   in 
@@ -293,7 +293,7 @@ module Make =
 		  (subnodes_of node)
 	      in 
 	      (data3, set_subnodes node subnodes1)
-	| Branch(i, p) -> 
+	| Subnode(i, p) -> 
 	    let (data3, b) =
 	      rewrite_aux (data1, get_subnode node i) p
 	    in 

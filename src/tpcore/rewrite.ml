@@ -613,7 +613,7 @@ module Planned =
 	(** Plan constructors *)
     let mk_node k ps = Rewritekit.Node(k, ps)
     let mk_rules rs = Rewritekit.Rules(rs)
-    let mk_branch i p = Rewritekit.Branch(i, p)
+    let mk_subnode i p = Rewritekit.Subnode(i, p)
     let mk_branches ps = Rewritekit.Branches(ps)
     let mk_skip = Rewritekit.Skip
 
@@ -623,7 +623,7 @@ module Planned =
       match pl with
 	Rewritekit.Rules rs -> pack_rules rs
       | Rewritekit.Node(k, ps) -> pack_node k ps
-      | Rewritekit.Branch(i, p) -> pack_branch i p
+      | Rewritekit.Subnode(i, p) -> pack_subnode i p
       | Rewritekit.Branches(ps) -> pack_branches ps
       | Rewritekit.Skip -> Rewritekit.Skip
     and 
@@ -645,15 +645,15 @@ module Planned =
       match ps with
 	[] -> Rewritekit.Skip
       | [Rewritekit.Skip] -> Rewritekit.Skip
-      | [Rewritekit.Skip; x] -> Rewritekit.Branch(1, x)
-      | [x; Rewritekit.Skip] -> Rewritekit.Branch(0, x)
-      | [x] -> Rewritekit.Branch(0, x)
+      | [Rewritekit.Skip; x] -> Rewritekit.Subnode(1, x)
+      | [x; Rewritekit.Skip] -> Rewritekit.Subnode(0, x)
+      | [x] -> Rewritekit.Subnode(0, x)
       | _ -> Rewritekit.Branches ps
     and 
-	pack_branch i p = 
+	pack_subnode i p = 
       match p with
 	Rewritekit.Skip -> Rewritekit.Skip
-      | _ -> Rewritekit.Branch(i, p)
+      | _ -> Rewritekit.Subnode(i, p)
 	    
 
 	    (** Keys *)
@@ -989,7 +989,7 @@ module Planner =
 	      rewrite_td_term ctrl (scope, qntenv1, tyenv) net b
 	    in 
 	    check_change brslt;
-	    let subplans = pack(mk_branch 0 brslt)
+	    let subplans = pack(mk_subnode 0 brslt)
 	    in 
 	    (Basic.Qnt(q, nb), benv, bctrl, subplans)
 	| Basic.App(f, a)->
@@ -1069,7 +1069,7 @@ module Planner =
 	    let subplans = 
 	      try 
 		check_change brslt; 
-		pack (mk_branch 0 brslt)
+		pack (mk_subnode 0 brslt)
 	      with _ -> mk_skip
 	    in 
 	    rewrite_bu_term ctrl 
