@@ -1281,7 +1281,8 @@ module Planner =
       (** Get the original loopdb *)
       let orig_loopdb = Data.get_loopdb cntrl0
       in 
-      let cntrl = Data.add_loopdb cntrl0 trm
+      let cntrl = 
+	Data.add_loopdb (Data.set_loopdb cntrl0 (Net.empty())) trm
       in 
       let ret_list = ref None
       and ret_tmp = ref None
@@ -1617,8 +1618,10 @@ module Planner =
       in
       let trivial f g = Boollib.trivial ~f:f g
       in 
+      let cntrl1 = Data.add_loopdb cntrl trm
+      in 
       let tac1 g1 = (** Get the rewrites **)
-	let data = (cntrl, tyenv, Term.empty_subst())
+	let data = (cntrl1, tyenv, Term.empty_subst())
 	in 
 	cond 
 	  (fun _ -> rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
@@ -1629,6 +1632,9 @@ module Planner =
 	let (ncntrl0, ntyenv, ntrm, plan) =  
 	  Lib.dest_option ~err:(Failure "basic_simp_tac: 1") (!ret_plan)
 	in 
+	(if (Data.mem_loopdb (scope_of g2) ncntrl0 ntrm)
+	then raise No_change
+	else ());
 	(** Check the rewrite plan **)
 	match Lib.try_app check_change plan with
 	  None -> trivial (ftag ft) g2
