@@ -1171,8 +1171,8 @@ module Planner =
 *)
     let check_add_loop scp cntrl t =
       if (Data.mem_loopdb scp cntrl t)
-      then (true, Data.add_loopdb cntrl t)
-      else (false, cntrl)
+      then raise (Failure "check_add_loop")
+      else Data.add_loopdb cntrl t
 
 (** 
    [find_basic scp tyenv qntenv tac rl trm g]: Try to match simp rule [rl]
@@ -1196,11 +1196,8 @@ module Planner =
       in 
 (** Test for a looping rewrite *)
       let cntrl1 = 
-	let (is_loop, loop_cntrl) = check_add_loop scp cntrl nt
-	in 
-	if (is_loop)
-	then raise No_change
-	else loop_cntrl
+	try check_add_loop scp cntrl nt
+	with _ -> raise No_change
       in 
       let ret1=ref None
       in 
@@ -1249,7 +1246,7 @@ module Planner =
       in 
       let rec find_aux rls t g= 
 	match rls with
-	  [] -> (ret:=None; raise No_change)
+	  [] -> ret:=None; raise No_change 
 	| (rl::nxt) ->
 	    let src = Simpset.rule_src rl
 	    in 
@@ -1279,10 +1276,12 @@ module Planner =
    Return result and last sucessfull goal.
  *)
     let rec find_all_matches_tac ret data trm goal =
-      let (cntrl, tyenv, qntenv) = data
+      let (cntrl0, tyenv, qntenv) = data
       in 
       (** Get the original loopdb *)
-      let orig_loopdb = Data.get_loopdb cntrl
+      let orig_loopdb = Data.get_loopdb cntrl0
+      in 
+      let cntrl = Data.add_loopdb cntrl0 trm
       in 
       let ret_list = ref None
       and ret_tmp = ref None

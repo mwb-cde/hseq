@@ -631,4 +631,8 @@ module Planner :
    raise [No_change] if no rules can be found.
  *)
 
+(** {7 Debugging information} *)
+      val check_add_loop: 
+	  Scope.t -> Data.t -> Basic.term
+	    ->  Data.t
     end
