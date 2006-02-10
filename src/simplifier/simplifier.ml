@@ -154,7 +154,7 @@ module Data =
 (** visited: formulas visited during the course of simplification *)
 	   visited: Tag.t list;
 
-(*
+(****
 (** asm_pairs: 
    tags of original formulas and the new modified formula
    (in (a, b) a is the tag of the original assumption,
@@ -167,7 +167,7 @@ module Data =
    b is the tag of the formula used as a rewrite rule
  *)
    concl_pairs: (Tag.t*Tag.t) list;
- *)
+****)
 
 (** exclude: formulas not to use as a rewrite rule *)
 	   exclude: Tag.t list;
@@ -1090,7 +1090,7 @@ module Planner =
 
     let null_term = Term.mk_free "" (Gtypes.mk_null())
 
-    let plan_rewrite ?info plan trm lbl goal =
+    let plan_rewrite ?info is_concl plan trm lbl goal =
       let inf = mk_info()
       in 
       let tac1 g = 
@@ -1101,11 +1101,10 @@ module Planner =
 	in 
 	seq
 	  [
-	   alt
-	     [ 
-	       Logic.Tactics.substC info [ftag (rule_tag)] lbl;
-	       Logic.Tactics.substA info [ftag (rule_tag)] lbl
-	     ];
+	   (fun g -> 
+	     if is_concl 
+	     then Logic.Tactics.substC info [ftag (rule_tag)] lbl g
+	     else Logic.Tactics.substA info [ftag (rule_tag)] lbl g);
 	   deleteA (ftag rule_tag)
 	 ] g
       in 
@@ -1334,7 +1333,7 @@ module Planner =
 	       (** Add data *)
 	       clear_ret();
 	       check_change bplan;
-	       let subplan = pack(mk_branch 0 bplan)
+	       let subplan = pack(mk_subnode 0 bplan)
 	       in 
 	       data_tac 
 		 (Lib.set_option ret)
@@ -1448,7 +1447,7 @@ module Planner =
 		 Lib.get_option (!ret_plan) (ctrl, tyenv, b, mk_skip)
 	       in 
 	       check_change bplan0;
-	       let bplan = pack (mk_branch 0 bplan0)
+	       let bplan = pack (mk_subnode 0 bplan0)
 	       in 
 	       data_tac
 		 (Lib.set_option ret) 
@@ -1539,6 +1538,20 @@ module Planner =
    where ft is tag of formula to work on
    and st is tag of sequent to work on
  *)
+(**
+   [get_form t n]: Get formula tagged [t] from node [n].  First try
+   conclusions, then try assumptions.  return the formula and a flag
+   which is [true] if the formula was in the conclusions and false if
+   the formula was in the assumptions.  raise [Not_found] if not
+   found.
+ *)
+    let get_form t sqnt = 
+      match Lib.try_find (Logic.Sequent.get_tagged_cncl t) sqnt
+      with
+	None -> 
+	  (Logic.Sequent.get_tagged_asm t sqnt, false)
+      | Some(x) -> (x, true)
+
     let rec basic_simp_tac cntrl ret ft goal=
       let tyenv= typenv_of goal
       and sqnt = sequent goal
@@ -1547,8 +1560,10 @@ module Planner =
       and rr_depth = Data.get_rr_depth cntrl
       and rr_conds = Data.get_cond_depth cntrl
       in 
-      let trm=
-	Formula.term_of (Logic.drop_tag (get_form ft sqnt))
+      let (trm, is_concl)=
+	let (ftrm, flag) = get_form ft sqnt
+	in
+	(Formula.term_of (Logic.drop_tag ftrm), flag)
       in 
       let ret_plan=ref None
       in
@@ -1579,7 +1594,7 @@ module Planner =
 	    in 
 	    Lib.set_option ret ncntrl;
 	    (try
-	      plan_rewrite ?info:None plan trm (ftag ft) g2
+	      plan_rewrite ?info:None is_concl plan trm (ftag ft) g2
 	    with _ -> raise No_change)
       in 
       try

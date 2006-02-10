@@ -104,9 +104,8 @@ module Data:
 	    exclude: Tag.t list;
 (** Formulas not to be used as a rewrite rule. *)
 
-	    rules : Logic.rr_type list
+	    rules : Logic.rr_type list;
 (**  Rewrite rules chosen by the simplifier. *)
-
 	}
 
       val make: 
@@ -454,10 +453,11 @@ module Planner :
 
       val plan_rewrite:
 	  ?info:Logic.info 
-	-> Logic.rr_type Rewrite.Planned.plan
-	  -> Basic.term 
-	    -> Logic.label
-	      -> tactic
+	-> bool
+	  -> Logic.rr_type Rewrite.Planned.plan
+	    -> Basic.term 
+	      -> Logic.label
+		-> tactic
 
       type data = 
 	  (Data.t  (** Scope *)
