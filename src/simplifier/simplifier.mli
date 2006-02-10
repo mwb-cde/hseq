@@ -58,6 +58,9 @@ type control = Rewrite.control
 module Data:
     sig
 
+      type loopDB = Basic.term Net.net
+    (** Structure used to store terms for looping rewriting detection *)
+
 (** Information needed during simplification. *)
       type t = {
 	  simpset: Simpset.simpset;
@@ -106,6 +109,9 @@ module Data:
 
 	    rules : Logic.rr_type list;
 (**  Rewrite rules chosen by the simplifier. *)
+
+	    loopdb: loopDB
+(** loopdb: Terms already rewritten. *)
 	}
 
       val make: 
@@ -157,6 +163,20 @@ module Data:
 
       val get_simpset : t -> Simpset.simpset
 (** Get the simpset to use. *)
+
+      val set_loopdb : t -> loopDB -> t
+(** Set the loopdb. *)
+
+      val get_loopdb : t -> loopDB
+(** Get the loopdb *)
+
+      val add_loopdb: t -> Basic.term -> t
+(** Add a term to the loopdb *)
+
+      val mem_loopdb: Scope.t -> t -> Basic.term -> bool
+(** 
+   Test whether a term is alpha-equal to a term in the loopdb
+*)
 
       val get_tactic : t -> (t -> Tag.t -> Tactics.tactic)
 (** Get the condition prover tactic. *)

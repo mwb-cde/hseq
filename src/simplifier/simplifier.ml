@@ -124,6 +124,9 @@ type control = Rewrite.control
 module Data =
   struct
 
+      type loopDB = Basic.term Net.net
+    (** Structure used to store terms for looping rewriting detection *)
+
 (**
    [type Data.t]
    Information used by and built up during simplification.
@@ -176,6 +179,9 @@ module Data =
    rewrite rules to pass to the rewriter (the result of the simplifier)
  *)
 	   rules: Logic.rr_type list;
+
+(** loopdb: Terms already rewritten. *)
+	    loopdb: loopDB
        }
 
     let make (sset, tac, cntrl, cd, rd, a, vs, ex, rs) = 
@@ -191,7 +197,9 @@ module Data =
 (*
    asm_pairs = aps; concl_pairs = cps;
  *)
-       rules=rs
+       rules=rs;
+
+       loopdb=Net.empty()
      }
 
     let set_simpset cntrl set=
@@ -235,6 +243,23 @@ module Data =
       {cntrl with rules=ds}
 
     let get_rules cntrl= cntrl.rules
+
+    let set_loopdb cntrl ds=
+      {cntrl with loopdb=ds}
+
+    let get_loopdb cntrl= cntrl.loopdb
+
+    let add_loopdb cntrl t =
+      let varp x = false
+      in 
+      set_loopdb cntrl (Net.add varp (get_loopdb cntrl) t t)
+
+    let mem_loopdb scp cntrl t = 
+      let opts = 
+	try (Net.lookup (get_loopdb cntrl) t)
+	with Not_found -> []
+      in
+      List.exists (Logicterm.alpha_equals scp t) opts
 
     let get_simpset cntrl=cntrl.simpset
     let get_tactic cntrl=cntrl.cond_tac
@@ -1140,6 +1165,15 @@ module Planner =
 	    else raise (Failure "match_rewrite"))
       with x -> (failwith "match_rewrite")
 
+(**
+   [check_add_loop scp cntrl t]: Test whether term [t] is in the
+   loopdb. If it isn't, add it to the loopdb.
+*)
+    let check_add_loop scp cntrl t =
+      if (Data.mem_loopdb scp cntrl t)
+      then (true, Data.add_loopdb cntrl t)
+      else (false, cntrl)
+
 (** 
    [find_basic scp tyenv qntenv tac rl trm g]: Try to match simp rule [rl]
    with term [trm] in node [g]. If [rl] matches but is conditional,
@@ -1160,6 +1194,14 @@ module Planner =
       let (src, ntyenv, ntenv, nt)=
 	match_rewrite scp tyenv qntenv rl trm
       in 
+(** Test for a looping rewrite *)
+      let cntrl1 = 
+	let (is_loop, loop_cntrl) = check_add_loop scp cntrl nt
+	in 
+	if (is_loop)
+	then raise No_change
+	else loop_cntrl
+      in 
       let ret1=ref None
       in 
       let tac g =
@@ -1170,7 +1212,7 @@ module Planner =
 	       (fun g1 ->
 		 let values=extract_consts qs ntenv
 		 in 
-		 prove_cond_tac cntrl ret1 values rl g1);
+		 prove_cond_tac cntrl1 ret1 values rl g1);
 	       (fun g1 -> 
 		 let (ncntrl, rr) = 
 		   Lib.dest_option 
@@ -1183,12 +1225,13 @@ module Planner =
 	    in 
 	    data_tac (Lib.set_option ret) (ncntrl, ntyenv, nt, rr) g1) g
       in 
-      try (tac goal) with _ -> raise No_change
+      try (tac goal) 
+      with _ -> raise No_change
 
 (**
-   [find_match_tac ret c tyenv qntenv set tac trm g]: Find a rule in simpset
-   [set] which matches term [trm] in goal [g]. If found, rewrite [trm]
-   with the rule.
+   [find_match_tac ret (ctrl, tyenv, qntenv) trm g]: Find a rule which
+   matches term [trm] in goal [g]. If found, rewrite [trm] with the
+   rule.
 
    Returns [ret=(ncntrl, ntyenv, ntrm, rr)] where [ncntrl] is the
    updated data, [nytenv] is the type environment made by the
@@ -1224,8 +1267,9 @@ module Planner =
 
 
 (** 
-   [find_all_matches cntrl ret tyenv trm g]: Find all rules in simpset
-   [cntrl.set] which can be used to rewrite term [trm] in goal [g].
+   [find_all_matches ret (cntrl, tyenv, qntenv) trm g]: Find all rules
+   in simpset [cntrl.set] which can be used to rewrite term [trm] in
+   goal [g].
 
    Puts matched rules into ret. Returns rewritten term, matched rules
    and new goal.
@@ -1237,9 +1281,11 @@ module Planner =
     let rec find_all_matches_tac ret data trm goal =
       let (cntrl, tyenv, qntenv) = data
       in 
-      let ret_list = ref None
+      (** Get the original loopdb *)
+      let orig_loopdb = Data.get_loopdb cntrl
       in 
-      let ret_tmp = ref None
+      let ret_list = ref None
+      and ret_tmp = ref None
       in 
       let rec find_aux l c ty t g= 
 	alt
@@ -1290,8 +1336,11 @@ module Planner =
 	  [
 	   find_aux [] cntrl tyenv trm;
 	   (fun g ->
-	     let (rcntrl, rtyenv, rtrm, rlist) =
+	     let (rcntrl0, rtyenv, rtrm, rlist) =
 	       Lib.dest_option (!ret_tmp)
+	     in 
+	     (** Restore original loopdb *)
+	     let rcntrl = Data.set_loopdb rcntrl0 orig_loopdb
 	     in 
 	     data_tac (Lib.set_option ret)
 	       (rcntrl, rtyenv, rtrm, List.rev rlist) g)
