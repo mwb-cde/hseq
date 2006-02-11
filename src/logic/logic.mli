@@ -522,7 +522,7 @@ val has_subgoals: goal -> bool
 val num_of_subgoals: goal -> int
 (** The number of subgoals in a goal. *)
 
-val mk_goal : info option -> Scope.t -> Formula.form -> goal
+val mk_goal : ?info:info -> Scope.t -> Formula.form -> goal
 (**
    [mk_goal info scp f]: Make formula [f] a goal to be proved in scope
    [scp]. If [info] is given, the tag of the new subgoal and
@@ -795,7 +795,7 @@ module Tactics :
 
 (** {5 Manipulating Assumptions and Conclusions} *)
 
-      val lift_asm : info option -> label -> tactic
+      val lift_asm : ?info:info -> label -> tactic
 (**
    [lift_asm l sqnt]: Move assumption with label [l] to top
    of the assumptions of subgoal [sqnt]. Raise [Not_found] if no
@@ -810,7 +810,7 @@ module Tactics :
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-      val lift_concl : info option -> label -> tactic
+      val lift_concl : ?info:info -> label -> tactic
 (**
    [lift_concl l sqnt]: Move conclusion with label [l] to 
    top of the conclusions of subgoal [sqnt]. Raise [Not_found] if
@@ -825,14 +825,14 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = []]
  *)
 
-      val lift : info option -> label -> tactic
+      val lift : ?info:info -> label -> tactic
 (**
    [lift l sqnt]: Lift formula with label [l] to the top of
    assumption/conclusions. [lift] tries [lift_asm] then tries
    [lift_concl]. Doesn't change the formula tag.
  *)
 
-      val copy_asm : info option -> label -> tactic
+      val copy_asm : ?info:info -> label -> tactic
 (** 
    [copy_asm l]: Copy assumption [l].
 
@@ -845,7 +845,7 @@ module Tactics :
    info: [goals = [], aforms=[l'], cforms=[], terms = []]
  *)
 
-      val copy_cncl : info option -> label -> tactic
+      val copy_cncl : ?info:info -> label -> tactic
 (** 
    [copy_cncl l]: Copy conclusion [l]
 
@@ -860,7 +860,7 @@ module Tactics :
 
 (*** rotate assumptions conclusions ***)
 
-      val rotate_asms: info option -> tactic
+      val rotate_asms: ?info:info -> tactic
 (** 
    [rotate_asm]: Rotate assumptions.
 
@@ -871,7 +871,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
-      val rotate_cncls : info option -> tactic
+      val rotate_cncls : ?info:info -> tactic
 (** 
    [rotate_cncls]: Rotate conclusions
 
@@ -886,7 +886,7 @@ module Tactics :
 
 
 
-      val deleteA : info option -> label -> tactic
+      val deleteA : ?info:info -> label -> tactic
 (** 
    [deleteA l sq]: Delete assumption [l] from subgoal [sq].
 
@@ -898,7 +898,7 @@ module Tactics :
  *)
 
 
-      val deleteC : info option -> label -> tactic
+      val deleteC : ?info:info -> label -> tactic
 (** 
    [delete l sq]: Delete conclusion [l] from subgoal [sq].
 
@@ -912,7 +912,7 @@ module Tactics :
 
 
 (*
-      val delete : info option -> label -> tactic
+      val delete : ?info:info -> label -> tactic
 (** 
    [delete l sq]: Delete assumption [l] or conclusion [l] from
    subgoal [sq].
@@ -933,7 +933,7 @@ module Tactics :
 
 (** {5 Logic Rules}  *)
 
-      val skip : info option -> tactic
+      val skip : ?info:info -> tactic
 (**
    [skip]: The do nothing tactic.
 
@@ -947,7 +947,7 @@ module Tactics :
    functions using {!Logic.foreach})
 *)
 
-      val cut : info option -> thm -> tactic
+      val cut : ?info:info -> thm -> tactic
 (** 
    [cut th sq]: add theorem [th] to assumptions of [sq].
 
@@ -958,7 +958,7 @@ module Tactics :
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-      val basic : info option -> label -> label -> tactic
+      val basic : ?info:info -> label -> label -> tactic
 (** 
    [basic i j sq]: solve the subgoal
    if assumption [i] is alpha-equal to conclusion [j].
@@ -974,7 +974,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
-      val conjA: info option -> label -> tactic
+      val conjA: ?info:info -> label -> tactic
 (** 
    [conjA l sq]: Eliminate the conjunction at assumption [l]
    
@@ -987,7 +987,7 @@ module Tactics :
    info: [goals = [], aforms=[l1, l2], cforms=[], terms = []]
  *)
 
-      val conjC: info option -> label -> tactic
+      val conjC: ?info:info -> label -> tactic
 (** 
    [conjC l sq]: Eliminate the conjunction at conclusion [l]
 
@@ -1003,7 +1003,7 @@ module Tactics :
    info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
  *)
 
-      val disjA: info option -> label -> tactic
+      val disjA: ?info:info -> label -> tactic
 (** 
    [disjA l sq]: Eliminate the disjunction at assumption [l]
 
@@ -1019,7 +1019,7 @@ module Tactics :
    info: [goals = [g1; g2], aforms=[l], cforms=[], terms = []]
  *)
 
-      val disjC: info option -> label -> tactic
+      val disjC: ?info:info -> label -> tactic
 (** 
    [disjC l sq]: Eliminate the disjunction at conclusion [l]
    
@@ -1032,7 +1032,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l1, l2], terms = []]
  *)
 
-      val negA: info option-> label -> tactic
+      val negA: ?info:info-> label -> tactic
 (** 
    [negA l sq]: Elminate the negation at assumption [l]
 
@@ -1045,7 +1045,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = []]
  *)
 
-      val negC: info option -> label -> tactic
+      val negC: ?info:info -> label -> tactic
 (** 
    [negC l sq]: Elminate the negation at conclusion [l]
 
@@ -1059,7 +1059,7 @@ module Tactics :
  *)
 
 
-      val implA: info option -> label -> tactic
+      val implA: ?info:info -> label -> tactic
 (** 
    [implA l sq]: Eliminate the implication at assumption [l]
 
@@ -1074,7 +1074,7 @@ module Tactics :
    info: [goals = [g1; g2], aforms=[l], cforms=[l], terms = []]
  *)
 
-      val implC: info option -> label -> tactic
+      val implC: ?info:info -> label -> tactic
 (** 
    [implC l sq]: Elminate the implication at conclusion [l]
 
@@ -1087,7 +1087,7 @@ module Tactics :
    info: [goals = [], aforms=[l1], cforms=[l], terms = []]
  *)
 
-      val allA : info option -> Basic.term -> label -> tactic
+      val allA : ?info:info -> Basic.term -> label -> tactic
 (** 
    [allA t l sq]: Elminate the universal quantifier at assumption [l],
    instantiating it with [t].
@@ -1103,7 +1103,7 @@ module Tactics :
 
    info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
-      val allC : info option -> label -> tactic
+      val allC : ?info:info -> label -> tactic
 (** 
    [allC l sq]: Elminate the universal quantifier at conclusion [l].
 
@@ -1119,7 +1119,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = [c]]
 *)
 
-      val existA : info option -> label -> tactic
+      val existA : ?info:info -> label -> tactic
 (** 
    [existA l sq]: Elminate the existential quantifier at assumption [l].
 
@@ -1135,7 +1135,7 @@ module Tactics :
    info: [goals = [], aforms=[l], cforms=[], terms = [c]]
  *)
 
-      val existC : info option  -> Basic.term -> label -> tactic
+      val existC : ?info:info  -> Basic.term -> label -> tactic
 (** 
    [existC t l sq]: Elminate the existential quantifier at conclusion
    [l], instantiating it with [t].
@@ -1152,7 +1152,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = []]
  *)
 
-      val trueC: info option -> label -> tactic
+      val trueC: ?info:info -> label -> tactic
 (** 
    [trueC i sq]: Truth solves the goal.
 
@@ -1165,7 +1165,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
-      val beta : info option -> label -> tactic
+      val beta : ?info:info -> label -> tactic
 (** 
    [beta l sq]: Beta-reduce the assumption or conclusion at label [l].
 
@@ -1183,7 +1183,7 @@ module Tactics :
    an equality.
 *)
 
-      val rewriteA : info option 
+      val rewriteA : ?info:info 
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> tactic
 (** 
@@ -1201,7 +1201,7 @@ module Tactics :
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-      val rewriteC : info option 
+      val rewriteC : ?info:info 
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> tactic
 (** 
@@ -1219,7 +1219,7 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[l], terms = []]
  *)
 
-      val rewrite : info option 
+      val rewrite : ?info:info 
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> label -> tactic
 (** 
@@ -1241,12 +1241,12 @@ module Tactics :
 
 (*
       val rewrite_intro :
-	  info option
+	  ?info:info
 	-> ?ctrl:Rewrite.control
 	  -> rr_type list -> Basic.term -> tactic
 *)
       val rewrite_intro :
-	  info option
+	  ?info:info
 	  -> (rr_type)Rewrite.Planned.plan -> Basic.term -> tactic
 (**
    [rewrite_intro ?info ctrl rules trm sq]: 
@@ -1261,7 +1261,7 @@ module Tactics :
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-      val substA: info option -> label list -> label -> tactic
+      val substA: ?info:info -> label list -> label -> tactic
 (**
    [substA ?info eqs l sq]: Substitute, using the assumptions in [eq],
    into the assumption [l].  The assumptions in [eq] must all be
@@ -1282,7 +1282,7 @@ module Tactics :
    Silently discards the labels of non-existant assumptions in [eqs].
  *)
 
-      val substC: info option -> label list -> label -> tactic
+      val substC: ?info:info -> label list -> label -> tactic
 (**
    [substC ?info eqs l sq]: Substitute, using the assumptions in [eq],
    into the conclusion [l].  The assumptions in [eq] must all be
@@ -1303,7 +1303,7 @@ module Tactics :
    Silently discards the labels of non-existant assumptions in [eqs].
  *)
 
-      val nameA: info option -> string -> label -> tactic
+      val nameA: ?info:info -> string -> label -> tactic
 (**
    [nameA ?info l name sq]: Rename the assumption labelled [l] as [name].
    The previous name and tag of [l] are both discarded.
@@ -1321,7 +1321,7 @@ module Tactics :
    Fails if an assumption or conclusion is already named [name].
  *)
 
-      val nameC: info option -> string -> label -> tactic
+      val nameC: ?info:info -> string -> label -> tactic
 (**
    [nameC ?info name l sq]: Rename the conclusion labelled [l] as [name].
    The previous name and tag of [l] are both discarded.

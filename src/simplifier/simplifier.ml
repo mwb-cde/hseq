@@ -402,7 +402,7 @@ let prep_cond_tac cntrl ret values thm goal =
 	 in 
 	 seq
 	   [
-	    Logic.Tactics.implA (Some(info)) (ftag rl_ftg);
+	    Logic.Tactics.implA ~info:info (ftag rl_ftg);
 	    data_tac (add_data rl_ftg) info
 	  ] g1)
      ] g
@@ -426,6 +426,8 @@ let prove_cond_tac cntrl ret values entry goal =
   (* let qs = Simpset.rule_binders entry *)
   let thm = Simpset.rule_src entry
   and ret1 = ref None
+  in 
+  let orig_loopdb = Data.get_loopdb cntrl
   in 
   let tac g =
     seq
@@ -452,12 +454,14 @@ let prove_cond_tac cntrl ret values entry goal =
 	    (fun g2 ->
 	      let form= drop_tag(get_tagged_asm (ftag rl_ftg) g2)
 	      in 
+	      let rcntrl = Data.set_loopdb ncntrl orig_loopdb
+	      in 
 	      let rule = 
 		Simpset.make_rule 
 		  (Logic.Asm (ftag rl_ftg)) (Formula.term_of form)
 	      in 
 	      data_tac (fun x -> ret := Some x)
-		(Data.add_simp_rule ncntrl rule, 
+		(Data.add_simp_rule rcntrl rule, 
 		 Logic.Asm(ftag rl_ftg)) g2)
 	  ] g1)
      ] g
@@ -913,7 +917,7 @@ let rec basic_simp_tac cntrl ret ft goal=
       in 
       Lib.set_option ret ncntrl;
       (try
-	Logic.Tactics.rewrite None ~ctrl:rr_cntrl rrs (ftag ft) g2
+	Logic.Tactics.rewrite ~ctrl:rr_cntrl rrs (ftag ft) g2
       with _ -> raise No_change)
   in 
   try
@@ -1031,12 +1035,12 @@ let cond_prover_tac ctrl tg goal=
     in 
     (alt
        [
-	Logic.Tactics.trueC None (ftag tg);
+	Logic.Tactics.trueC (ftag tg);
 	seq
 	  [
 	   simp_prep_tac data ret (ftag tg);
 	   cond_prover_worker_tac data ret tg;
-	   cond_prover_trueC None (ftag tg)
+	   cond_prover_trueC (ftag tg)
 	 ]
       ]) goal
   else
@@ -1053,16 +1057,16 @@ let cond_prover_tac ctrl tg goal=
 let simp_asm_elims =
   [
    (fun inf l -> Boollib.falseA ~info:inf ~a:l);
-   (fun inf -> Logic.Tactics.negA (Some inf));
-   (fun inf -> Logic.Tactics.conjA (Some inf));
-   (fun inf -> Logic.Tactics.existA (Some inf))
+   (fun inf -> Logic.Tactics.negA ~info:inf);
+   (fun inf -> Logic.Tactics.conjA ~info:inf);
+   (fun inf -> Logic.Tactics.existA ~info:inf)
  ]
 
 let simp_concl_elims =
   [
-   (fun inf -> Logic.Tactics.trueC (Some inf));
-   (fun inf -> Logic.Tactics.disjC (Some inf));
-   (fun inf -> Logic.Tactics.allC (Some inf))
+   (fun inf -> Logic.Tactics.trueC ~info:inf);
+   (fun inf -> Logic.Tactics.disjC ~info:inf);
+   (fun inf -> Logic.Tactics.allC ~info:inf)
  ]
 
 
@@ -1119,7 +1123,7 @@ module Planner =
       let inf = mk_info()
       in 
       let tac1 g = 
-	Logic.Tactics.rewrite_intro (Some inf) plan trm g
+	Logic.Tactics.rewrite_intro ~info:inf plan trm g
       in 
       let tac2 g =
 	let rule_tag = get_one (aformulas inf)
@@ -1128,8 +1132,8 @@ module Planner =
 	  [
 	   (fun g -> 
 	     if is_concl 
-	     then Logic.Tactics.substC info [ftag (rule_tag)] lbl g
-	     else Logic.Tactics.substA info [ftag (rule_tag)] lbl g);
+	     then Logic.Tactics.substC ?info [ftag (rule_tag)] lbl g
+	     else Logic.Tactics.substA ?info [ftag (rule_tag)] lbl g);
 	   deleteA (ftag rule_tag)
 	 ] g
       in 

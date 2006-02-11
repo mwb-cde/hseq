@@ -416,7 +416,7 @@ let negate_concl_tac ?info c goal=
     Logic.add_info info [] (aformulas x) [] []
   in 
   seq [ once_rewrite_tac [double_not_thm()] ~f:c;
-	Logic.Tactics.negC (Some inf) c;
+	Logic.Tactics.negC ~info:inf c;
 	data_tac add_fn inf] goal
 
 
@@ -1576,7 +1576,7 @@ let prepare_concl data except c goal =
     in 
     seq 
       [
-       (true_test --> Logic.Tactics.trueC None (ftag c));
+       (true_test --> Logic.Tactics.trueC (ftag c));
        copyC ~info:info (ftag c);
        (fun g -> 
 	 let c1 = 

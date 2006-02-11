@@ -48,7 +48,7 @@ let aformulas inf = (!inf).Logic.aforms
 let cformulas inf = (!inf).Logic.cforms
 let constants inf = (!inf).Logic.terms
     
-let skip = Logic.Tactics.skip None
+let skip = Logic.Tactics.skip 
 let foreach = Logic.Subgoals.apply_to_each 
 
 (*

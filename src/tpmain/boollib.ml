@@ -348,18 +348,18 @@ let falseA ?info ?a goal =
 	(Result.error 
 	   "falseA: Can't find needed theorem false_def: |- false = not true")
   in 
-  let info = Tactics.mk_info()
+  let info1 = Tactics.mk_info()
   in 
   seq 
-  [Tactics.rewrite_tac ~info:info [th] ~f:af;
+  [Tactics.rewrite_tac ~info:info1 [th] ~f:af;
    (fun g -> 
-     let a1=get_one ~msg:"falseA" (Tactics.aformulas info)
+     let a1=get_one ~msg:"falseA" (Tactics.aformulas info1)
      in 
-     Logic.Tactics.negA (Some info) (ftag a1) g);
+     Logic.Tactics.negA ~info:info1 (ftag a1) g);
    (fun g -> 
-     let c=get_one ~msg:"falseA" (Tactics.cformulas info)
+     let c=get_one ~msg:"falseA" (Tactics.cformulas info1)
      in 
-     Logic.Tactics.trueC None (ftag c) g)]
+     Logic.Tactics.trueC (ftag c) g)]
     goal
 
 let trivial ?info ?f g =  
@@ -375,11 +375,11 @@ let eq_tac ?info ?c g =
       (raise (error ("eq_tac: Can't find required lemma "
 		     ^Logicterm.base_thy^".eq_refl")))
   in 
-  let info = Tactics.mk_info()
+  let info1 = Tactics.mk_info()
   in 
-  seq [Logic.Tactics.cut (Some info) th; 
+  seq [Logic.Tactics.cut ~info:info1 th; 
        (fun g1 -> 
-	 let af = get_one ~msg:"eq_tac" (Tactics.aformulas info)
+	 let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
 	 in 
 	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
@@ -427,7 +427,7 @@ let iffA ?info ?a goal =
       seq 
 	[
 	  Tactics.rewrite_tac [iff_def()] ~f:(ftag t);
-	  Logic.Tactics.conjA info (ftag t);
+	  Logic.Tactics.conjA ?info (ftag t);
 	] goal
     
 
@@ -458,7 +458,7 @@ let iffC ?info ?c goal =
     seq 
       [
 	rewrite_tac [iff_def()] ~f:(ftag t);
-	Logic.Tactics.conjC info (ftag t)
+	Logic.Tactics.conjC ?info (ftag t)
       ] goal
 
 
@@ -506,8 +506,8 @@ let iffE ?info ?c goal =
 	 [
 	   rewrite_tac [iff_def()] ~f:(ftag t);
 	   notify_tac (add_goals info) inf
-	     (Logic.Tactics.conjC (Some inf) (ftag t));
-	   Logic.Tactics.implC (Some inf) (ftag t)
+	     (Logic.Tactics.conjC ~info:inf (ftag t));
+	   Logic.Tactics.implC ~info:inf (ftag t)
 	 ]) g
     in 
       alt [ notify_tac (add_forms info) inf tac; 
@@ -725,14 +725,14 @@ let apply_elim_tac tac ?info ?f goal =
 let split_asm_rules = 
   [
    (fun inf l -> falseA ~info:inf ~a:l); 
-   (fun inf -> Logic.Tactics.disjA (Some inf)); 
-   (fun inf -> Logic.Tactics.implA (Some inf))
+   (fun inf -> Logic.Tactics.disjA ~info:inf); 
+   (fun inf -> Logic.Tactics.implA ~info:inf)
  ]
 
 let split_concl_rules =
   [
-   (fun inf -> Logic.Tactics.trueC (Some inf)); 
-   (fun inf -> Logic.Tactics.conjC (Some inf)); 
+   (fun inf -> Logic.Tactics.trueC ~info:inf); 
+   (fun inf -> Logic.Tactics.conjC ~info:inf); 
 (*   (fun inf c -> iffE ~info:inf ~c:c) *)
  ]
 
@@ -758,18 +758,18 @@ let split_tac = splitter_tac
 let flatter_asm_rules =
   [
    (fun inf l -> falseA ~info:inf ~a:l);
-   (fun inf -> Logic.Tactics.negA (Some inf));
-   (fun inf -> Logic.Tactics.conjA (Some inf));
-   (fun inf -> Logic.Tactics.existA (Some inf))
+   (fun inf -> Logic.Tactics.negA ~info:inf);
+   (fun inf -> Logic.Tactics.conjA ~info:inf);
+   (fun inf -> Logic.Tactics.existA ~info:inf)
  ]
 
 let flatter_concl_rules =
   [
-   (fun inf -> Logic.Tactics.trueC (Some inf));
-   (fun inf -> Logic.Tactics.negC (Some inf));
-   (fun inf -> Logic.Tactics.disjC (Some inf));
-   (fun inf -> Logic.Tactics.implC (Some inf));
-   (fun inf -> Logic.Tactics.allC (Some inf))
+   (fun inf -> Logic.Tactics.trueC ~info:inf);
+   (fun inf -> Logic.Tactics.negC ~info:inf);
+   (fun inf -> Logic.Tactics.disjC ~info:inf);
+   (fun inf -> Logic.Tactics.implC ~info:inf);
+   (fun inf -> Logic.Tactics.allC ~info:inf)
  ]
 
 let flatter_asms_tac ?info lst = 
@@ -794,24 +794,24 @@ let scatter_asm_rules =
   [
    (fun inf l -> falseA ~info:inf ~a:l); 
 
-   (fun inf -> Logic.Tactics.negA (Some inf));
-   (fun inf -> Logic.Tactics.conjA (Some inf));
-   (fun inf -> Logic.Tactics.existA (Some inf));
+   (fun inf -> Logic.Tactics.negA ~info:inf);
+   (fun inf -> Logic.Tactics.conjA ~info:inf);
+   (fun inf -> Logic.Tactics.existA ~info:inf);
 
-   (fun inf -> Logic.Tactics.disjA (Some inf)); 
-   (fun inf -> Logic.Tactics.implA (Some inf))
+   (fun inf -> Logic.Tactics.disjA ~info:inf); 
+   (fun inf -> Logic.Tactics.implA ~info:inf)
  ]
 
 let scatter_concl_rules =
   [
-   (fun inf -> Logic.Tactics.trueC (Some inf));
+   (fun inf -> Logic.Tactics.trueC ~info:inf);
 
-   (fun inf -> Logic.Tactics.negC (Some inf));
-   (fun inf -> Logic.Tactics.disjC (Some inf));
-   (fun inf -> Logic.Tactics.implC (Some inf));
-   (fun inf -> Logic.Tactics.allC (Some inf));
+   (fun inf -> Logic.Tactics.negC ~info:inf);
+   (fun inf -> Logic.Tactics.disjC ~info:inf);
+   (fun inf -> Logic.Tactics.implC ~info:inf);
+   (fun inf -> Logic.Tactics.allC ~info:inf);
 
-   (fun inf -> Logic.Tactics.conjC (Some inf)); 
+   (fun inf -> Logic.Tactics.conjC ~info:inf); 
    (fun inf c -> iffE ~info:inf ~c:c)
  ]
 
@@ -830,26 +830,26 @@ let blast_asm_rules =
   [
    (fun inf l -> falseA ~info:inf ~a:l); 
 
-   (fun inf -> Logic.Tactics.negA (Some inf));
-   (fun inf -> Logic.Tactics.conjA (Some inf));
-   (fun inf -> Logic.Tactics.existA (Some inf));
+   (fun inf -> Logic.Tactics.negA ~info:inf);
+   (fun inf -> Logic.Tactics.conjA ~info:inf);
+   (fun inf -> Logic.Tactics.existA ~info:inf);
 
-   (fun inf -> Logic.Tactics.disjA (Some inf)); 
-   (fun inf -> Logic.Tactics.implA (Some inf));
+   (fun inf -> Logic.Tactics.disjA ~info:inf); 
+   (fun inf -> Logic.Tactics.implA ~info:inf);
 
    (fun inf l -> basic ~info:inf ~a:l ?c:None)
  ]
 
 let blast_concl_rules =
   [
-   (fun inf -> Logic.Tactics.trueC (Some inf));
+   (fun inf -> Logic.Tactics.trueC ~info:inf);
 
-   (fun inf -> Logic.Tactics.negC (Some inf));
-   (fun inf -> Logic.Tactics.disjC (Some inf));
-   (fun inf -> Logic.Tactics.implC (Some inf));
-   (fun inf -> Logic.Tactics.allC (Some inf));
+   (fun inf -> Logic.Tactics.negC ~info:inf);
+   (fun inf -> Logic.Tactics.disjC ~info:inf);
+   (fun inf -> Logic.Tactics.implC ~info:inf);
+   (fun inf -> Logic.Tactics.allC ~info:inf);
 
-   (fun inf -> Logic.Tactics.conjC (Some inf)); 
+   (fun inf -> Logic.Tactics.conjC ~info:inf); 
    (fun inf c -> iffE ~info:inf ~c:c);
 
    (fun inf l -> basic ~info:inf ?a:None ~c:l)
@@ -1019,7 +1019,7 @@ let show = show_tac
 let disj_splitter_tac ?info ?f goal = 
   let tac ?info =
     elim_rules_tac ?info
-      ([ (fun inf1 -> Logic.Tactics.disjA (Some inf1)) ], []) 
+      ([ (fun inf1 -> Logic.Tactics.disjA ~info:inf1) ], []) 
   in 
    apply_elim_tac tac ?info ?f goal
     
@@ -1140,13 +1140,13 @@ let mp_tac ?info ?a ?a1 g=
     | _ -> (* Implication has quantifier *)
 	instA ~a:(ftag a_label)
 	  (Tactics.extract_consts mp_vars a1_env)
-  and tac2 g2= Logic.Tactics.implA (Some inf1) (ftag a_label) g2
+  and tac2 g2= Logic.Tactics.implA ~info:inf1 (ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
       (Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n)) 
 	 (Tactics.subgoals inf1) false))
        --> 
-	 Logic.Tactics.basic (Some inf1) (ftag a1_label)
+	 Logic.Tactics.basic ~info:inf1 (ftag a1_label)
 	   (ftag (Lib.get_one (Tactics.cformulas inf1) 
 		    (Failure "mp_tac2.2")))) g3
   and tac4 g4 = 
@@ -1246,13 +1246,13 @@ let back_tac ?info ?a ?c goal=
     | _ -> (* Implication has quantifier *)
 	instA ~a:(ftag a_label)
 	  (Tactics.extract_consts back_vars c_env)
-  and tac2 g2= Logic.Tactics.implA (Some info1) (ftag a_label) g2
+  and tac2 g2= Logic.Tactics.implA ~info:info1 (ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
       (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
 	 (Tactics.subgoals info1) false))
        --> 
-	 Logic.Tactics.basic (Some info1) 
+	 Logic.Tactics.basic ~info:info1 
 	   (ftag (Lib.get_nth (Tactics.aformulas info1) 1))
 	   (ftag c_label)) g3
   in 
@@ -1516,20 +1516,20 @@ module Rules=
 	let info = Tactics.mk_info()
 	in 
 	let proof l g =
-	  seq [Logic.Tactics.cut (Some info) thm;
+	  seq [Logic.Tactics.cut ~info:info thm;
 	       (fun g1 -> 
 		 let ttag = 
 		   Lib.get_one (Tactics.aformulas info) 
 		     (error "conjunctL")
 		 in 
 		 Tactics.empty_info info;
-		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
+		 Logic.Tactics.conjA ~info:info (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
 		   Lib.get_two (Tactics.aformulas info) 
 		     (error "conjunctL")
 		 in 
-		 Logic.Tactics.basic None (ftag ltag) l g1)] g
+		 Logic.Tactics.basic (ftag ltag) l g1)] g
 	in 
 	Commands.prove ~scp:scp lhs (proof (fnum 1))
 
@@ -1550,20 +1550,20 @@ module Rules=
 	let info = Tactics.mk_info()
 	in 
 	let proof l g =
-	  seq [Logic.Tactics.cut (Some info) thm;
+	  seq [Logic.Tactics.cut ~info:info thm;
 	       (fun g1 -> 
 		 let ttag = 
 		   Lib.get_one (Tactics.aformulas info) 
 		     (error "conjunctL")
 		 in 
 		 Tactics.empty_info info;
-		 Logic.Tactics.conjA (Some info) (ftag ttag) g1);
+		 Logic.Tactics.conjA ~info:info (ftag ttag) g1);
 	       (fun g1 -> 
 		 let (ltag, rtag)=
 		   Lib.get_two (Tactics.aformulas info) 
 		     (error "conjunctL")
 		 in 
-		 Logic.Tactics.basic None (ftag rtag) l g1)] g
+		 Logic.Tactics.basic (ftag rtag) l g1)] g
 	in 
 	Commands.prove ~scp:scp rhs (proof (fnum 1))
 
@@ -1652,11 +1652,11 @@ module Convs=
 	in
 	let proof g= 
 	  seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
-	       Logic.Tactics.conjC None (fnum 1)
+	       Logic.Tactics.conjC (fnum 1)
 		 --
 		 [
 		  seq 
-		    [Logic.Tactics.implC (Some info) (fnum 1);
+		    [Logic.Tactics.implC ~info:info (fnum 1);
 		     (fun g1 ->
 		       let atag = Lib.get_one (Tactics.aformulas info)
 			   (Failure "neg_all_conv: 1")
@@ -1667,7 +1667,7 @@ module Convs=
 		       Tactics.empty_info info;
 		       seq
 			 [
-			  Logic.Tactics.negA (Some(info)) (ftag atag);
+			  Logic.Tactics.negA ~info:info (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
 			      Lib.get_one (Tactics.cformulas info)
@@ -1676,13 +1676,13 @@ module Convs=
 			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.allC 
-					 (Some info) (ftag ctag2));
+					 ~info:info (ftag ctag2));
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag)
 				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
 				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negC (Some info) (ftag ctag);
+			       Logic.Tactics.negC ~info:info (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
 				   Lib.get_one (Tactics.aformulas info)
@@ -1690,11 +1690,11 @@ module Convs=
 				 in 
 				 Tactics.empty_info info;
 				 Logic.Tactics.basic 
-				   None (ftag atag3) (ftag ctag2) g3)
+				   (ftag atag3) (ftag ctag2) g3)
 			     ] g2)] g1)];
 		  
 		  seq 
-		    [Logic.Tactics.implC (Some info) (fnum 1);
+		    [Logic.Tactics.implC ~info:info (fnum 1);
 		     (fun g1 ->
 		       let atag = Lib.get_one (Tactics.aformulas info)
 			   (Failure "neg_all_conv: 4")
@@ -1705,7 +1705,7 @@ module Convs=
 		       Tactics.empty_info info;
 		       seq
 			 [
-			  Logic.Tactics.negC (Some(info)) (ftag ctag);
+			  Logic.Tactics.negC ~info:info (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
 			      Lib.get_one (Tactics.aformulas info)
@@ -1714,20 +1714,20 @@ module Convs=
 			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.existA 
-					 (Some info) (ftag atag));
+					 ~info:info (ftag atag));
 			       (fun g3 -> 
 				 instA ~a:(ftag atag2)
 				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
 				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negA (Some info) (ftag atag);
+			       Logic.Tactics.negA ~info:info (ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
 				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
-				   None (ftag atag2) (ftag ctag3) g3)
+				   (ftag atag2) (ftag ctag3) g3)
 			     ] g2)] g1)]]
 	     ] g
 	in 
@@ -1777,11 +1777,11 @@ module Convs=
 	in
 	let proof g= 
 	  seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
-	       Logic.Tactics.conjC None (fnum 1)
+	       Logic.Tactics.conjC (fnum 1)
 		 --
 		 [
 		  seq 
-		    [Logic.Tactics.implC (Some info) (fnum 1);
+		    [Logic.Tactics.implC ~info:info (fnum 1);
 		     (fun g1 ->
 		       let atag =
 			 Lib.get_one (Tactics.aformulas info)
@@ -1793,7 +1793,7 @@ module Convs=
 		       Tactics.empty_info info;
 		       seq
 			 [
-			  Logic.Tactics.negA (Some(info)) (ftag atag);
+			  Logic.Tactics.negA ~info:info (ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
 			      Lib.get_one (Tactics.cformulas info)
@@ -1802,25 +1802,25 @@ module Convs=
 			    Tactics.empty_info info;
 			    seq
 			      [repeat (Logic.Tactics.allC 
-					 (Some info) (ftag ctag));
+					 ~info:info (ftag ctag));
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag2)
 				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
 				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negC (Some info) (ftag ctag);
+			       Logic.Tactics.negC ~info:info (ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
 				   Lib.get_one (Tactics.aformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
 				 Tactics.empty_info info;
-				 Logic.Tactics.basic None 
+				 Logic.Tactics.basic 
 				   (ftag atag3) (ftag ctag2) g3)
 			     ] g2)] g1)];
 		  
 		  seq 
-		    [Logic.Tactics.implC (Some info) (fnum 1);
+		    [Logic.Tactics.implC ~info:info (fnum 1);
 		     (fun g1 ->
 		       let atag = 
 			 Lib.get_one (Tactics.aformulas info) 
@@ -1832,7 +1832,7 @@ module Convs=
 		       Tactics.empty_info info;
 		       seq
 			 [
-			  Logic.Tactics.negC (Some(info)) (ftag ctag);
+			  Logic.Tactics.negC ~info:info (ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
 			      Lib.get_one (Tactics.aformulas info)
@@ -1842,20 +1842,20 @@ module Convs=
 			    seq
 			      [repeat 
 				 (Logic.Tactics.existA 
-				    (Some info) (ftag atag2));
+				    ~info:info (ftag atag2));
 			       (fun g3 -> 
 				 instA ~a:(ftag atag)
 				   (List.rev (Tactics.constants info)) g3);
 			       data_tac 
 				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negA (Some info) (ftag atag);
+			       Logic.Tactics.negA ~info:info (ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
 				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
 				 Logic.Tactics.basic 
-				   None (ftag atag2) (ftag ctag3) g3)
+				   (ftag atag2) (ftag ctag3) g3)
 			     ] g2)] g1)]]
 	     ] g
 	in 
