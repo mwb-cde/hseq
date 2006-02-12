@@ -2411,7 +2411,11 @@ module Conv=
        or the resulting formula is not in scope.
      *)
     let beta_conv scp term =
+(*
       let rhs ()= Logicterm.beta_conv term
+      in 
+*)
+      let rhs ()= Logicterm.beta_reduce term
       in 
       let eq_term t = 
 	Formula.make scp (Logicterm.mk_equality term t)

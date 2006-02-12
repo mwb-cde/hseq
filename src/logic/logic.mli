@@ -1165,7 +1165,9 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
+(*
       val beta : ?info:info -> label -> tactic
+*)
 (** 
    [beta l sq]: Beta-reduce the assumption or conclusion at label [l].
 
@@ -1358,6 +1360,18 @@ module Conv:
 
       val beta_conv : conv
 (** 
+   [beta_conv scp term]: Apply beta reduction to [term].
+
+   Returns |- ((%x: F) y) = F' 
+   where F' = F\[y/x\]
+
+   Note that this beta reduces throughout the term, not just the top
+   level.
+*)
+
+(****
+      val beta_conv : conv
+(** 
    [beta_conv scp term]: Apply a single beta conversion to [term].
 
    Returns |- ((%x: F) y) = F' 
@@ -1369,6 +1383,7 @@ module Conv:
    {e Note: The beta-reduce tactics may be removed in favour of this
    function.}
 *)
+*****)
 
       val rewrite_conv: 
 	  ?ctrl:Rewrite.control -> rr_type list -> conv
