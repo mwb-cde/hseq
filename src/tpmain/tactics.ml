@@ -237,6 +237,19 @@ let map_some tac l goal =
   in 
   some_aux l goal
 
+let seq_some tacs goal =
+  let nofail_tac tac g = (tac // skip) g
+  in 
+  let rec some_aux ls g =
+    match ls with 
+      [] -> 
+	fail ~err:(Result.error "seq_some: no tactic succeeded.") g
+    | (x::xs) ->
+	try (x ++ map_every nofail_tac xs) g
+	with _ -> some_aux xs g
+  in 
+  some_aux tacs goal
+
 let foreach_asm tac goal =
   let label_tac tf = tac (ftag (drop_formula tf))
   in 
@@ -423,6 +436,67 @@ let cut ?info ?inst th goal =
 	raise (add_error "cut" err)
 
 
+let betaA ?info lbl goal =
+  let scp = scope_of goal
+  and (ft, form) = get_tagged_asm lbl goal
+  in 
+  let thm = Logic.Conv.beta_conv scp (Formula.term_of form)
+  in 
+  let info1 = mk_info()
+  in 
+  seq 
+    [
+     Logic.Tactics.cut ~info:info1 thm;
+     (fun g1 ->
+       let atag = 
+	 Lib.get_one (aformulas info1) (error "Tactics.betaA")
+       in 
+       let albl = ftag atag
+       in
+       seq
+	 [
+	  Logic.Tactics.substA ?info:info [albl] lbl;
+	  Logic.Tactics.deleteA albl
+	] g1)
+   ] goal
+
+let betaA_tac ?info ?a goal =
+  match a with
+    Some(x) -> betaA ?info x goal
+  | None -> 
+      foreach_asm (betaA ?info) goal
+
+let betaC ?info lbl goal =
+  let scp = scope_of goal
+  and (ft, form) = get_tagged_concl lbl goal
+  in 
+  let thm = Logic.Conv.beta_conv scp (Formula.term_of form)
+  in 
+  let info1 = mk_info()
+  in 
+  seq 
+    [
+     Logic.Tactics.cut ~info:info1 thm;
+     (fun g1 ->
+       let atag = 
+	 Lib.get_one (aformulas info1) (error "Tactics.betaC")
+       in 
+       let albl = ftag atag
+       in
+       seq
+	 [
+	  Logic.Tactics.substC ?info:info [albl] lbl;
+	  Logic.Tactics.deleteA albl
+	] g1)
+   ] goal
+
+let betaC_tac ?info ?c goal =
+  match c with
+    Some(x) -> betaC ?info x goal
+  | None -> 
+      foreach_concl (betaC ?info) goal
+
+(*
 let beta_tac ?info ?f g= 
   match f with
     (Some x) -> Logic.Tactics.beta ?info x g
@@ -430,6 +504,15 @@ let beta_tac ?info ?f g=
       try foreach_form (Logic.Tactics.beta ?info) g
       with err -> 
 	raise (add_error "beta_tac: failed." err)
+*)
+let beta_tac ?info ?f goal = 
+  try 
+    seq_some
+      [ 
+	betaC_tac ?info ?c:f;
+	betaA_tac ?info ?a:f
+      ] goal
+  with err -> raise (add_error "beta_tac" err)
 
 let name_tac ?info n lbl goal = 
   let sqnt = sequent goal
@@ -692,19 +775,6 @@ let spec_tac ?info ?f g=
      fail ~err:(error "specA")
    ] g
 
-
-let seq_some tacs goal =
-  let nofail_tac tac g = (tac // skip) g
-  in 
-  let rec some_aux ls g =
-    match ls with 
-      [] -> 
-	fail ~err:(Result.error "seq_some: no tactic succeeded.") g
-    | (x::xs) ->
-	try (x ++ map_every nofail_tac xs) g
-	with _ -> some_aux xs g
-  in 
-  some_aux tacs goal
 
 
 

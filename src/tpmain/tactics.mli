@@ -344,6 +344,16 @@ val map_some: ('a -> tactic) -> 'a list -> tactic
    the tactics [(tac x)] fail. Fails if [xs] is initially empty.
 *)
 
+val seq_some: tactic list -> tactic
+(**
+   [seq_some tacl xs]: Sequentially apply the tactics in [tacl],
+   allowing some tactics to fail.
+
+   Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
+
+   [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
+*)
+
 val foreach_asm: (Logic.label -> tactic) -> tactic
 (**
    [foreach_asm tac goal]: Sequentially apply [tac l] to each
@@ -479,10 +489,56 @@ val cut: ?info:Logic.info
    Entry point to {!Logic.Tactics.cut}. 
 *)
 
+
+val betaA: ?info:Logic.info -> Logic.label -> tactic 
+(**
+   [betaA l sq]: beta conversion of assumption [l]
+
+   {L
+   F((%x.P x) c){_ l}, asm |- concl
+   ---->
+   F(P c){_ l}, asm |- concl
+   }
+
+   raise [Not_found] if assumption not found.
+
+   info: [goals = [], aforms=[l], cforms=[], terms = []]
+ *)
+
+val betaA_tac: ?info:Logic.info -> ?a:Logic.label -> tactic 
+(**
+   [betaA_tac ?info ?a]: Front-end to {!Tactics.betaA}. If [?a] is not
+   given, apply [betaA] to each assumption.
+*)
+
+
+val betaC: ?info:Logic.info -> Logic.label -> tactic 
+(**
+   [betaC l sq]: beta conversion of conclusion [l]
+
+   {L
+   asms |- F((%x.P x) c){_ l}, concls
+   ---->
+   asms |- F(P c){_ l}, concls
+   }
+
+   raise [Not_found] if conclusion not found.
+
+   info: [goals = [], aforms=[l], cforms=[], terms = []]
+ *)
+
+
+val betaC_tac: ?info:Logic.info -> ?c:Logic.label -> tactic 
+(**
+   [betaC_tac ?info ?a]: Front-end to {!Tactics.betaC}. If [?c] is not
+   given, apply [betaC] to each assumption.
+*)
+
 val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
 (** 
-   [beta_tac]: Apply beta conversion. Entry point to
-   {!Logic.Tactics.beta}.
+   [beta_tac]: Apply beta conversion to a formula in the goal.  If
+   [?f] is not given, beta convert conclusions and then the
+   assumptions. Fails if no change is made.
 *)
 
 val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
@@ -660,16 +716,6 @@ val spec_tac: ?info:Logic.info
    info: [cforms=[tg], constants = cs] or [aforms=[tg], constants =
    cs] where [tg] is the tag of the specialised formula and [cs] are
    the new constants in the order they were generated.
-*)
-
-val seq_some: tactic list -> tactic
-(**
-   [seq_some tacl xs]: Sequentially apply the tactics in [tacl],
-   allowing some tactics to fail.
-
-   Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
-
-   [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
 *)
 
 
