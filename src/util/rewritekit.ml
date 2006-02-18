@@ -4,10 +4,14 @@
    Copyright M Wahab 2006
    ----*)
 
-(** Directed Rewriting *)
+(** Planned Rewriting  *)
 
 exception Stop of exn
 exception Quit of exn
+
+(***
+* Rewriting plans
+***)
 
     (** The specification of a rewriting plan *)
 type ('k, 'a)plan =
@@ -61,6 +65,8 @@ type ('k, 'a)plan =
 	 {b [p=Skip]}: Do nothing, succeeding quietly.}
        *)
 
+(*** Functions on plans ***)
+
 let rec mapping (f:('a -> 'b)) pl =
   match pl with
     Node (k, ps) -> 
@@ -72,17 +78,6 @@ let rec mapping (f:('a -> 'b)) pl =
   | Rules rs -> Rules (List.map f rs)
   | Skip -> Skip
 	
-let rec map f plan =
-  match plan with
-    Node (k, ps) -> 
-      f(Node (k, List.map (map f) ps))
-  | Subnode(i, p) -> 
-      f(Subnode (i, map f p))
-  | Branches(ps) -> 
-      f(Branches(List.map (map f) ps))
-  | Rules rs -> f (Rules(rs))
-  | Skip -> f Skip
-
 let iter f plan =
   let rec iter_aux pl =
     match pl with
@@ -92,6 +87,10 @@ let iter f plan =
     | _ -> f pl
   in 
   iter_aux plan
+
+(***
+* Rewriter data 
+***)
 
 module type Data =
   sig
@@ -171,8 +170,17 @@ module type Data =
   end
 
 
-module type Kit =
+(***
+* The generic rewriter
+***) 
+
+module type T =
   sig
+(*** 
+ The type of a specific rewriter module. 
+***)
+
+(*** Term data ***)
 
     type data
     type rule
@@ -181,9 +189,9 @@ module type Kit =
     type key
 
     val is_key : key -> node -> bool
-    val node_matches : 
+    val matches : 
 	data -> rule -> node -> (data * substn) 
-    val node_subst :
+    val subst :
 	data -> rule -> substn -> (data * node)
     val subnodes_of : node -> node list
     val set_subnodes : node -> node list -> node
@@ -191,6 +199,8 @@ module type Kit =
     val set_subnode : node -> int -> node -> node
     val add_data : data -> node -> data
     val drop_data : (data * node) -> (data * node) -> data
+
+(*** Rewriting functions ***) 
 
     val rewrite_first :
 	data -> (key, rule)plan -> node list 
@@ -203,11 +213,14 @@ module type Kit =
     val rewrite_aux :
 	(data * node) -> (key, rule)plan
 	  -> (data * node)
+
+(*** Toplevel rewrite function ***)
+
     val rewrite :
 	data -> (key, rule)plan -> node -> (data * node)
   end
 
-
+(** Instantiate the generic rewriter with data **)
 module Make =
   functor (A : Data) ->
   struct
@@ -219,8 +232,8 @@ module Make =
     type key = A.key
 
     let is_key = A.is_key
-    let node_matches = A.matches
-    let node_subst = A.subst
+    let matches = A.matches
+    let subst = A.subst
     let subnodes_of = A.subnodes_of
     let set_subnodes = A.set_subnodes
     let get_subnode = A.get_subnode
@@ -251,9 +264,9 @@ module Make =
 	[] -> (data, node)
       | (r::rls) -> 
 	  (try
-	    (let (data1, sb) = node_matches data r node 
+	    (let (data1, sb) = matches data r node 
 	    in 
-	    let (data2, nt) = node_subst data1 r sb
+	    let (data2, nt) = subst data1 r sb
 	    in 
 	    rewrite_rules (data2, nt) rls)
 	  with 

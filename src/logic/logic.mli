@@ -782,7 +782,7 @@ type rr_type =
   | OAsm of label * Rewrite.order 
 (** The label of an ordered assumption *)
 
-type plan = rr_type Rewrite.Planned.plan
+type plan = rr_type Rewrite.plan
 (** The type of rewrite plans *)
 
 (** {7 Tactics and Conversions} *)
@@ -1165,94 +1165,20 @@ module Tactics :
    info: [goals = [], aforms=[], cforms=[], terms = []]
  *)
 
-(*
-      val beta : ?info:info -> label -> tactic
-*)
-(** 
-   [beta l sq]: Beta-reduce the assumption or conclusion at label [l].
 
-   info: [goals = [], aforms=[l], cforms=[], terms = []]
-   or 
-   info: [goals = [], aforms=[], cforms=[l], terms = []]
- *)
-
-(** {7 Rewriting} 
-
-   The rewrite tactics take a list of rules which are made up of
-   theorems or the labels of the assumptions to rewrite with. The
-   rules can be ordered or unordered. The tactics fail if any of the
-   rules are out of scope, a label to a non-exixtant assumption or not
-   an equality.
-*)
-
-      val rewriteA : ?info:info 
-	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> tactic
-(** 
-   [rewriteA ctrl rules l]: Rewrite the assumption at label [l] with
-   [rules], passing [ctrl] to the rewriter.
-
-   {L
-   A{_ l}, asms |- concls
-
-   ----> (B is the rewritten assumption)
-
-   B{_ l}, asms |- concls
-   }
-
-   info: [goals = [], aforms=[l], cforms=[], terms = []]
- *)
-
-      val rewriteC : ?info:info 
-	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> tactic
-(** 
-   [rewriteC ctrl rules l]: Rewrite the conclusion at label [l] with
-   [rules], passing [ctrl] to the rewriter.
-
-   {L
-   asms |- A{_ l}, concls
-
-   ----> (B is the rewritten conclusion)
-
-   asms |- B{_ l}, concls
-   }
-
-   info: [goals = [], aforms=[], cforms=[l], terms = []]
- *)
-
-      val rewrite : ?info:info 
-	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> label -> tactic
-(** 
-   [rewrite ctrl rules l]: Combination of [rewriteC] and
-   [rewriteA]. First tries [rewriteC] then tries [rewriteA].
- *)
-
-      val rewrite_rule:
-	  Scope.t -> ?ctrl:Rewrite.control
-	    -> thm list -> thm -> thm
-(**
-   [rewrite_rule scp ctrl rrl thm]: Rewrite theorem [thm] with rules
-   [rrl] in scope [scp].
-
-   {e This is likely to be removed or moved out of module Logic.}
- *)
-
-(** {7 Experimental} *)
-
-(*
       val rewrite_intro :
 	  ?info:info
-	-> ?ctrl:Rewrite.control
-	  -> rr_type list -> Basic.term -> tactic
-*)
-      val rewrite_intro :
-	  ?info:info
-	  -> (rr_type)Rewrite.Planned.plan -> Basic.term -> tactic
+	  -> (rr_type)Rewrite.plan -> Basic.term -> tactic
 (**
-   [rewrite_intro ?info ctrl rules trm sq]: 
-   Introduce an equality established by rewriting term [trm] with [rules].
+   [rewrite_intro ?info ctrl plan trm sq]: 
+
+   Introduce an equality established by rewriting term [trm] with [plan].
+
+   The rewriting plan is made up of theorems or the labels of the
+   assumptions to rewrite with. The tactic fails if any of the rules
+   are out of scope, a label to a non-existant assumption or not an
+   equality.
+
    
    {L
    asms |- concl
@@ -1369,44 +1295,9 @@ module Conv:
    level.
 *)
 
-(****
-      val beta_conv : conv
-(** 
-   [beta_conv scp term]: Apply a single beta conversion to [term].
-
-   Returns |- ((%x: F) y) = F' 
-   where F' = F\[y/x\]
-
-   Fails if [term] is not of the form [(%x: F)y]
-   or the resulting formula is not in scope.
-
-   {e Note: The beta-reduce tactics may be removed in favour of this
-   function.}
-*)
-*****)
-
-      val rewrite_conv: 
-	  ?ctrl:Rewrite.control -> rr_type list -> conv
+      val rewrite_conv: (thm) Rewrite.plan -> conv
 (**
-   [rewrite_conv scp ctrl rules trm]:
-   rewrite term [trm] with rules [rrl] in scope [scp].
-
-   Returns |- trm = X 
-   where [X] is the result of rewriting [trm]
-
-   Discards any rule which is not a theorem or an ordered theorem.
-
-   This conversion could be written using the rewriting tactics but
-   this would require two sets of rewriting. The first to construct
-   the term [X] on the rhs of the equality and the second when the
-   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
-   one set of rewriting.
- *)
-
-      val plan_rewrite_conv: 
-	  (thm) Rewrite.Planned.plan -> conv
-(**
-   [plan_rewrite_conv plan scp trm]:
+   [rewrite_conv plan scp trm]:
    rewrite term [trm] according to [plan] in scope [scp].
 
    Returns |- trm = X 

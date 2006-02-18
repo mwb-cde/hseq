@@ -738,8 +738,6 @@ module Loader =
    Returns the database with the newly built theory as the current theory.
  *)
     let build_thy info data thdb= 
-      let name = info.name
-      in 
       let db = 
 	try data.build_fn thdb info.name
 	with err -> add_error "Failed to rebuild theory" [info.name] err
@@ -877,8 +875,7 @@ module Loader =
  *)
     and 
 	load_parents db bundle info ps =
-      let name = info.name
-      and tyme = info.date
+      let tyme = info.date
       and prot = info.prot
       and childn = info.childn
       in 

@@ -383,63 +383,9 @@ let eta_conv scp f ty x =
 * Rewriting
 ***)
 
-type rule = 
-    Rule of form
-  | Ordered of (form * Rewrite.order)
-
-
-(* Rule constructors *)
-let rule t = Rule t
-let orule t r = Ordered(t, r)
-
-(* Conversions *)
-let rule_to_form r = 
-  match r with
-    Rule f -> f
-  | Ordered (f, p) -> f
-
-let to_rewrite_rule r = 
-  match r with
-    Rule f -> Rewrite.rule (term_of f)
-  | Ordered (f, p) -> Rewrite.orule (term_of f) p
-
 let default_rr_control= Rewrite.default_control
 
 (*** Rewriting functions ***)
-
-(** 
-   Split a list [rs] of rules into a list [fs] of formulas and a list
-   [rrs] of Rewrite.rule. The list [rrs] is in the same order as
-   [rrs]. The list [fs] is in arbitrary order.
-   In particular [rrs= List.map to_rewrite_rules rs].
-*)
-let rec split_rules rs (fs, rrs) = 
-  match rs with
-    [] -> (fs, List.rev rrs)
-  | x::xs -> split_rules xs ((rule_to_form x)::fs, (to_rewrite_rule x)::rrs)
-
-let rewrite scp ?ctrl rules t = 
-  let c = Lib.get_option ctrl default_rr_control
-  in 
-  let (fs, rrs) = split_rules rules ([], [])
-  in 
-  let nt = Rewrite.rewrite scp c rrs (term_of t)
-  in 
-  fast_make scp fs nt
-
-let rewrite_env scp ?ctrl tyenv rules t = 
-  let c = Lib.get_option ctrl default_rr_control
-  in 
-  let (fs, rrs) = split_rules rules ([], [])
-  in 
-  let nt, ntyenv = 
-    Rewrite.rewrite_env scp c tyenv rrs (term_of t)
-  in 
-  (fast_make scp fs nt, ntyenv)
-
-(***
-* Planned rewriting
-***)
 
 let rec extract_check_rules scp dir pl = 
   let get_test x = 
@@ -457,15 +403,15 @@ let rec extract_check_rules scp dir pl =
     else
       raise (error "Rewrite rule not in scope" [x])
   in 
-  Rewrite.Planned.mapping get_test pl
+  Rewrite.mapping get_test pl
 
-let plan_rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f = 
+let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f = 
   let plan1 = extract_check_rules scp dir plan
   in 
   let data = (scp, Term.empty_subst(), tyenv)
   in 
   let (data1, nt) = 
-    try (Rewrite.Planned.rewrite data plan1 (term_of f))
+    try (Rewrite.rewrite data plan1 (term_of f))
     with 
       Rewritekit.Quit err -> raise err
     | Rewritekit.Stop err -> raise err
@@ -476,12 +422,18 @@ let plan_rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
   (fast_make scp [f] nt, tyenv1)
 
 
-let plan_rewrite scp ?(dir=Rewrite.leftright) plan f = 
+let rewrite scp ?(dir=Rewrite.leftright) plan f = 
   let (nt, ntyenv) = 
-    plan_rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
+    rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
   in 
   nt
 
+(** 
+   [mk_rewrite_eq scp tyenv plan trm]: Make an equality by rewriting a
+   term w.r.t a type context.  Returns [(trm=t, ntyenv)] where [t] is
+   the result of rewriting [trm] with [plan] and [ntyenv] is the type
+   environment generated during rewriting.
+*)
 let mk_rewrite_eq scp tyenv plan trm = 
   let plan1 = extract_check_rules scp Rewrite.leftright plan
   in 
@@ -494,7 +446,7 @@ let mk_rewrite_eq scp tyenv plan trm =
   let data = (scp, Term.empty_subst(), tyenv1)
   in 
   let (data1, nt) = 
-    try (Rewrite.Planned.rewrite data plan1 trm)
+    try (Rewrite.rewrite data plan1 trm)
     with 
       Rewritekit.Quit err -> raise err
     | Rewritekit.Stop err -> raise err

@@ -1,19 +1,16 @@
 (*-----
-   Name: boollib.ml
+Name: boollib.ml
    Author: M Wahab <mwahab@users.sourceforge.net>
    Copyright M Wahab 2005
    ----*)
 
 
-(*
-open Drule
-*)
 open Commands
 open Tactics
 
 (**********
-* A minimal base theory 
-**********)
+ * A minimal base theory 
+ **********)
 module BaseTheory=
   struct
 
@@ -67,15 +64,15 @@ module BaseTheory=
   end
 
 (**********
-* Printer-Parser for Boolean functions. 
-**********)
+ * Printer-Parser for Boolean functions. 
+ **********)
 module PP = 
   struct
 
 (**
    Printer for negation. Prints [ << base.not x >> ] 
    as [~x] rather than [~ x].
-*)
+ *)
     let negation_pprec = Printer.mk_record 200 Printer.prefix None
 
     let negation_printer ppstate (fixity, prec) (f, args)=
@@ -83,23 +80,23 @@ module PP =
       and fixity = negation_pprec.Printer.fixity
       in 
       match args with 
-      (t::rest) -> 
-	Format.printf "@[<2>";
-	Printer.print_bracket prec cprec "(";
-	Format.printf "~";
-	Term.print_term ppstate (fixity, cprec) t;
-	Printer.print_bracket prec cprec ")";
-	Format.printf "@]";
-	(match rest with
-	  [] -> ()
-	| _ -> 
-	    Format.printf "@[";
-	    Printer.print_list
-	      ((fun x ->
-		Term.print_term ppstate (fixity, prec) x),
-	       (fun () -> Format.printf "@ "))
-	      rest;
-	    Format.printf "@]")
+	(t::rest) -> 
+	  Format.printf "@[<2>";
+	  Printer.print_bracket prec cprec "(";
+	  Format.printf "~";
+	  Term.print_term ppstate (fixity, cprec) t;
+	  Printer.print_bracket prec cprec ")";
+	  Format.printf "@]";
+	  (match rest with
+	    [] -> ()
+	  | _ -> 
+	      Format.printf "@[";
+	      Printer.print_list
+		((fun x ->
+		  Term.print_term ppstate (fixity, prec) x),
+		 (fun () -> Format.printf "@ "))
+		rest;
+	      Format.printf "@]")
       | _ -> 
 	  Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
@@ -107,8 +104,8 @@ module PP =
       Global.PP.add_term_printer Logicterm.notid negation_printer
 
 (***
- Support for if-then-else 
-***)
+   Support for if-then-else 
+ ***)
 
 (** Parser-Printer for If-Then-else *)
     open Parser.Pkit
@@ -249,7 +246,7 @@ module PP =
       init_ifthenelse_parser();
       init_choice_parser();
       init_exists_unique_parser()
-      
+	
     let init_printers ()=
       init_negation_printer();
       init_ifthenelse_printer();
@@ -264,8 +261,8 @@ module PP =
 
 
 (****
-* Support functions
-*****)
+ * Support functions
+ *****)
 
 (**
    [find_unifier scp typenv varp trm ?exclude ?f forms]: Find the first
@@ -302,7 +299,7 @@ let find_unifier scp typenv varp trm ?exclude forms =
 
    Raises [Not_found] if no formula can be found which satisfies all the
    conditions.
-*)
+ *)
 let find_qnt_opt kind pred forms = 
   let find_fn tagged_form =
     Tactics.qnt_opt_of kind pred 
@@ -319,24 +316,14 @@ let find_qnt_opt kind pred forms =
 
 
 (*****
-* Tactics
-*****)
+ * Basic Tactics
+ *****)
 
-(*
-let false_def = ref None
-
-let false_def() = 
-  match !false_def with 
-    Some(th) -> th
-  |  None -> 
-      let th = thm "false_def"
-      in 
-      false_def:=Some(th); th
-*)
-
-let make_false_def () = thm "false_def"
+let make_false_def () = 
+  thm (Logicterm.base_thy ^"."^"false_def")
 let false_def_var = Lib.freeze make_false_def
 let false_def () = Lib.thaw false_def_var
+    
 
 let falseA ?info ?a goal =
   let af= first_asm_label a Formula.is_false goal
@@ -346,25 +333,151 @@ let falseA ?info ?a goal =
     with Not_found -> 
       raise 
 	(Result.error 
-	   "falseA: Can't find needed theorem false_def: |- false = not true")
+	   ("Tactics.Rewriter.falseA: "
+	    ^"Can't find needed theorem false_def: |- false = not true"))
   in 
-  let info1 = Tactics.mk_info()
+  let plan = 
+    Rewrite.mk_node 
+      Rewrite.anyterm [Rewrite.mk_rules [Logic.RRThm(th)]]
   in 
-  seq 
-  [Tactics.rewrite_tac ~info:info1 [th] ~f:af;
-   (fun g -> 
-     let a1=get_one ~msg:"falseA" (Tactics.aformulas info1)
-     in 
-     Logic.Tactics.negA ~info:info1 (ftag a1) g);
-   (fun g -> 
-     let c=get_one ~msg:"falseA" (Tactics.cformulas info1)
-     in 
-     Logic.Tactics.trueC (ftag c) g)]
-    goal
-
+  let inf = mk_info()
+  in 
+  seq
+    [ 
+      pure_rewriteA ~info:inf plan af;
+      (fun g ->
+	let atag = Lib.get_one (aformulas inf) (Tactics.error "falseA")
+	in 
+	seq
+	  [ 
+	    negA ~info:inf ~a:(ftag atag);
+	    (fun g1  -> 
+	      let ctag = Lib.get_one (cformulas inf) (error "falseA")
+	      in 
+	      trueC ~c:(ftag ctag) g1)
+	  ] g)
+    ] goal
+	
 let trivial ?info ?f g =  
-  try (Tactics.trueC ?c:f // falseA ?a:f) g
+  try 
+    (trueC ?info ?c:f 
+       // falseA ?info ?a:f) g
   with _ -> raise (error "trivial")
+
+let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
+
+(*** Basic equality reasoning ***)
+
+
+let make_eq_refl_thm () = 
+  try 
+    thm 
+      (Basic.string_fnid (Basic.mk_long Logicterm.base_thy "eq_refl"))
+  with Not_found ->
+    raise (error 
+	     ("Tactics.Rewriter.make_eq_refl_thm:"
+	      ^"Can't find needed axiom eq_refl: |- !x: (x = x)"))
+      
+let eq_refl_thm_var = Lib.freeze make_eq_refl_thm
+let eq_refl_thm () =  Lib.thaw eq_refl_thm_var
+
+let make_bool_cases_thm () = 
+  try
+    thm 
+      (Basic.string_fnid (Basic.mk_long Logicterm.base_thy "bool_cases"))
+  with Not_found ->
+    raise (error 
+	     ("Tactics.Rewriter.make_bool_cases_thm:"
+	      ^"Can't find needed axiom bool_cases: "
+	      ^"|- !x: (x = true) | (x=false)"))
+
+let bool_cases_thm_var = Lib.freeze make_bool_cases_thm
+let bool_cases_thm () =  Lib.thaw bool_cases_thm_var
+
+let make_eq_sym_thm () = 
+  match Lib.try_app thm "Bool.eq_sym" with
+    Some(th) -> th
+  | None -> 
+      let eq_l1 =
+	prove << !x y : (x = y) => (y = x) >>
+	((repeat allC) ++ implC
+	   ++ substC [!~1] (!! 1) 
+	   ++ cut ~inst:[ << _y >> ] (eq_refl_thm ()) ++ basic)
+      in 
+      let eq_l2 =
+	prove << !x y : ((x => y) & (y => x)) => (x = y)>>
+	((repeat allC)
+	   ++ cut ~inst:[ << _x >>] (bool_cases_thm()) ++ disjA
+	   ++ cut ~inst:[ << _y >>] (bool_cases_thm()) ++ disjA
+	   ++ substC [ !~ 1; !~ 2] (!! 1) ++ implC
+	   --
+	   [
+	    cut ~inst:[ << true >> ] (eq_refl_thm()) ++ basic ;
+	    conjA ++ implA ++ trivial;
+	    conjA ++ implA ++ implA ++ trivial;
+	    cut ~inst:[ << false >> ] (eq_refl_thm()) ++ basic
+	  ])
+      in 
+      prove << !x y : (x = y) = (y = x)>>
+      ((repeat allC)
+	 ++ cut ~inst:[ << _x = _y >> ; << _y = _x >>] eq_l2
+	 ++ implA 
+	 --
+	 [ 
+	   conjC
+	     -- 
+	     [
+	      cut ~inst:[ << _x >> ; << _y >> ] eq_l1 ++ basic ;
+	      cut ~inst:[ << _y >> ; << _x >> ] eq_l1 ++ basic 
+	    ] ;
+	   basic
+	 ])
+
+let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
+let eq_sym_thm () =  Lib.thaw eq_sym_thm_var
+
+let eq_sym_rule scp thm= 
+  let ctrl = 
+    {Formula.default_rr_control with Rewrite.depth = Some 1}
+  in 
+  let term = Logic.term_of thm
+  in 
+  let plan = 
+    Tactics.mk_thm_plan scp ~ctrl:ctrl [ Logic.RRThm (eq_sym_thm()) ] term
+  in 
+  Tactics.pure_rewrite_rule plan scp thm
+
+let eq_symA ?info a goal =
+  let ctrl = 
+    {Formula.default_rr_control with Rewrite.depth = Some 1}
+  in 
+  let (atag, form) = get_tagged_asm a goal
+  in 
+  let term = Formula.term_of form
+  in 
+  let plan = 
+    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
+  in 
+  Tactics.pure_rewriteA ?info plan (ftag atag) goal
+
+let eq_symC ?info c goal =
+  let ctrl = 
+    {Formula.default_rr_control with Rewrite.depth = Some 1}
+  in 
+  let (ctag, form) = (get_tagged_concl c goal)
+  in 
+  let term = Formula.term_of form
+  in 
+  let plan = 
+    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
+  in 
+  Tactics.pure_rewriteC ?info plan (ftag ctag) goal
+    
+let eq_sym_tac ?info f goal = 
+  try 
+    eq_symA ?info f goal
+  with Not_found -> eq_symC ?info f goal
+
 
 let eq_tac ?info ?c g = 
   let cf = first_concl_label c Formula.is_equality g
@@ -383,13 +496,367 @@ let eq_tac ?info ?c g =
 	 in 
 	 unify_tac ~a:(ftag af) ~c:cf g1)] g
 
+(*** 
+ * Generalised Rewriting
+ ***)
+
+module Rewriter = 
+  struct
+
+(**
+   [rewrite_conv scp ctrl rules trm]:
+   rewrite term [trm] with rules [rrl] in scope [scp].
+
+   Returns |- trm = X where [X] is the result of rewriting [trm]
+ *)
+let rewrite_conv ?ctrl rls scp term = 
+  let c = Lib.get_option ctrl Rewrite.default_control
+  in 
+  let is_rl = c.Rewrite.rr_dir=rightleft
+  in 
+  let mapper f x = 
+    match x with
+      Logic.RRThm t -> Logic.RRThm(f t)
+    | Logic.ORRThm (t, o) -> Logic.ORRThm(f t, o)
+    | _ -> 
+	raise 
+	  (error "rewrite_conv: Invalid assumption rewrite rule")
+  in 
+  let rules = 
+    if is_rl 
+    then List.map (mapper (eq_sym_rule scp)) rls
+    else rls
+  in
+  let plan = Tactics.mk_thm_plan scp ~ctrl:c rules term
+  in 
+  Tactics.pure_rewrite_conv plan scp term
+
+(**
+   [rewrite_rule scp ctrl rules thm:
+   rewrite theorem [thm] with rules [rrl] in scope [scp].
+
+   Returns |- X where [X] is the result of rewriting [thm]
+ *)
+let rewrite_rule scp ?ctrl rls thm = 
+  let c = Lib.get_option ctrl Rewrite.default_control
+  in 
+  let is_rl = c.Rewrite.rr_dir=rightleft
+  in 
+  let mapper f x = 
+    match x with
+      Logic.RRThm t -> Logic.RRThm(f t)
+    | Logic.ORRThm (t, o) -> Logic.ORRThm(f t, o)
+    | _ -> 
+	raise 
+	  (error "rewrite_conv: Invalid assumption rewrite rule")
+  in 
+  let rules = 
+    if is_rl 
+    then List.map (mapper (eq_sym_rule scp)) rls
+    else rls
+  in
+  let plan = Tactics.mk_thm_plan scp ~ctrl:c rules (Logic.term_of thm)
+  in 
+  Tactics.pure_rewrite_rule plan scp thm
+
+(**
+   [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
+   [rules], returning the resulting list in [ret]. The list in [ret]
+   will be in reverse order of [rules]. 
+ *)
+    let map_sym_tac ret rules goal = 
+      let scp = scope_of goal
+      in 
+      let asm_fn l g = 
+	let info = mk_info()
+	in 
+	try 
+	  let g2 = eq_symA ~info:info l g
+	  in 
+	  let nl = 
+	    Lib.get_one (aformulas info)
+	      (error "Rewriter.map_sym_tac: Invalid assumption")
+	  in 
+	  (ftag nl, g2)
+	with  err -> raise (add_error "Rewriter.map_sym_tac" err)
+      in 
+      let fn_tac r g =
+	match r with
+	  Logic.RRThm(th) -> 
+	    (Logic.RRThm(eq_sym_rule scp th), skip g)
+	| Logic.ORRThm(th, o) -> 
+	    (Logic.ORRThm(eq_sym_rule scp th, o), skip g)
+	| Logic.Asm(l) -> 
+	    let (nl, ng) = asm_fn l g
+	    in 
+	    (Logic.Asm(nl), ng)
+	| Logic.OAsm(l, o) -> 
+	    let (nl, ng) = asm_fn l g
+	    in 
+	    (Logic.OAsm(nl, o), ng)
+      in 
+      let mapping lst rl g = 
+	let (nr, g2) = fn_tac rl g
+	in 
+	lst := nr:: (!lst); g2
+      in 
+      map_every (mapping ret) rules goal
+
+    let rewriteA_tac 
+	?info ?(ctrl=Formula.default_rr_control) 
+	rules albl goal =
+      let (atag, aform) = get_tagged_asm albl goal
+      in 
+      let aterm = Formula.term_of aform
+      in 
+      let is_lr = not (ctrl.Rewrite.rr_dir = rightleft)
+      in 
+      let urules = ref [] 
+      in 
+      let tac1 g = 
+	if is_lr 
+	then (data_tac (fun _ -> urules := rules) ()) g
+	else 
+	  (seq 
+	     [
+	      map_sym_tac urules rules;
+	      (fun g1 -> 
+		data_tac (fun x -> urules := List.rev !x) urules g1)
+	    ]) g
+      in 
+      let tac2 g = 
+	let rls = !urules 
+	in 
+	let plan = Tactics.mk_plan ~ctrl:ctrl g rls aterm
+	in 
+	Tactics.pure_rewriteA ?info plan (ftag atag) g
+      in 
+      let tac3 g = 
+	if is_lr
+	then skip g
+	else (map_sym_tac (ref []) rules) g
+      in 
+      try 
+	seq [tac1; tac2; tac3] goal
+      with 
+	err -> 
+	  raise (add_error "Rewriter.rewriteA_tac" err)
+	    
+
+    let rewriteC_tac ?info ?(ctrl=Formula.default_rr_control) 
+	rules clbl goal =
+      let (ctag, cform) = get_tagged_concl clbl goal
+      in 
+      let cterm = Formula.term_of cform
+      in 
+      let is_lr = (ctrl.Rewrite.rr_dir = leftright)
+      in 
+      let urules = ref [] 
+      in 
+      let tac1 g = 
+	if is_lr
+	then (data_tac (fun x -> urules := x) rules) g
+	else 
+	  seq 
+	    [
+	     map_sym_tac urules rules;
+	     (fun g1 -> 
+	       data_tac (fun x -> urules := List.rev !x) urules g1)
+	   ] g
+      in 
+      let tac2 g = 
+	let rls = !urules 
+	in 
+	let plan = Tactics.mk_plan ~ctrl:ctrl g rls cterm
+	in 
+	Tactics.pure_rewriteC ?info plan (ftag ctag) g
+      in 
+      let tac3 g = 
+	if is_lr
+	then skip g
+	else (map_sym_tac (ref []) rules) g
+      in 
+      try 
+	seq [tac1; tac2; tac3] goal
+      with 
+	err -> 
+	  raise (add_error "Rewriter.rewriteA_tac" err)
+	    
+
+(**
+   [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with [rules].
+   
+   If [l] is in the conclusions then call [rewriteC_tac]
+   otherwise call [rewriteA_tac].
+ *)
+    let rewrite_tac ?info ?(ctrl=Formula.default_rr_control) rls f g=
+      try
+	(try 
+	  rewriteA_tac ?info ~ctrl:ctrl rls f g
+	with Not_found -> 
+	  rewriteC_tac ?info ~ctrl:ctrl rls f g)
+      with err -> 
+	raise (add_error "Rewriter.rewrite_tac" err)
+
+  end
+
+let rewrite_conv ?ctrl rls scp trm = 
+  Rewriter.rewrite_conv ?ctrl 
+    (List.map (fun x -> Logic.RRThm(x)) rls) scp trm
+
+let rewrite_rule scp ?ctrl rls thm = 
+  Rewriter.rewrite_rule ?ctrl scp 
+    (List.map (fun x -> Logic.RRThm(x)) rls) thm
+
+let gen_rewrite_tac ?info ?asm ctrl ?f rules goal =
+  match f with
+    None -> 
+      (match asm with
+	None -> 
+	  seq_some
+	    [
+	     foreach_asm
+	       (Rewriter.rewriteA_tac ?info ~ctrl:ctrl rules);
+	     foreach_concl
+	       (Rewriter.rewriteC_tac ?info ~ctrl:ctrl rules);
+	   ] goal
+      | Some(x) ->
+	  if x 
+	  then 
+	    foreach_asm
+	      (Rewriter.rewriteA_tac ?info ~ctrl:ctrl rules) goal
+	  else 
+	    foreach_concl
+	      (Rewriter.rewriteC_tac ?info ~ctrl:ctrl rules) goal)
+  | Some (x) ->
+      Rewriter.rewrite_tac ?info ~ctrl:ctrl rules x goal
+	
+let rewrite_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl = rewrite_control dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ctrl ?f:f rules goal 
+
+let once_rewrite_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl=rewrite_control ~max:1 dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ctrl rules ?f:f goal
+
+let rewriteA_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl = rewrite_control dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ~asm:true ctrl ?f:f rules goal 
+
+let once_rewriteA_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl=rewrite_control ~max:1 dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ~asm:true ctrl rules ?f:f goal
+
+let rewriteC_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl = rewrite_control dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ~asm:false ctrl ?f:f rules goal 
+
+let once_rewriteC_tac ?info ?(dir=leftright) ?f ths goal=
+  let ctrl=rewrite_control ~max:1 dir
+  in 
+  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  in 
+  gen_rewrite_tac ?info:info ~asm:false ctrl rules ?f:f goal
+
+let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
+  let sqnt = sequent goal
+  in
+  (*** ttag: The tag of tag of the target (if given) ***)
+  let ttag = 
+    match f with 
+      None -> None 
+    | Some(x) -> Some(Logic.label_to_tag x sqnt)
+  in 
+  (*** exclude: a predicate to filter the rewriting target ***)
+  let exclude tg = 
+    match ttag with 
+      None -> false 
+    | Some(x) -> Tag.equal tg x
+  in 
+  (*** find_equality_asms: Find the assumptions which are equalities ***)
+  let rec find_equality_asms sqasms rst=
+    match sqasms with 
+      [] -> List.rev rst
+    | form::xs -> 
+	let tg = drop_formula form 
+	in 
+	(if not (exclude tg)
+	    && (qnt_opt_of Basic.All 
+		  (Logicterm.is_equality) (Formula.term_of (drop_tag form)))
+	then find_equality_asms xs (tg::rst)
+	else find_equality_asms xs rst)
+  in 
+  (*** asm_tags: The assumptions to use for rewriting. ***)
+  let asm_tags =
+    match asms with
+      None -> find_equality_asms (Logic.Sequent.asms sqnt) []
+    | Some xs -> List.map (fun x -> Logic.label_to_tag x sqnt) xs
+  in 
+  (*** rules: Assumption labels in rewriting form ***)
+  let rules = List.map (fun x -> Logic.Asm (ftag x)) asm_tags
+  in 
+  (*** 
+     filter_replace: The replacment tactics, filtering the target
+     to avoid trying to rewrite a formula with itself. 
+   ***)
+  let filter_replace x =
+    if (List.exists 
+	  (Tag.equal (Logic.label_to_tag x sqnt)) asm_tags)
+    then fail ~err:(error "gen_replace")
+    else 
+      gen_rewrite_tac ?info ?asm:None ctrl rules ~f:x
+  in 
+  (*** 
+     tac: apply filter_replace to an identified formula or to 
+     all formulas in the sequent.
+   ***)
+  let tac = 
+    match ttag with
+      None -> foreach_form filter_replace
+    | Some(x) -> filter_replace (ftag x)
+  in 
+  alt 
+    [
+     tac;
+     fail ~err:(error "gen_replace")
+   ] goal
+
+
+let replace_tac ?info ?(dir=leftright) ?asms ?f goal=
+  let ctrl=rewrite_control dir
+  in 
+  gen_replace_tac ?info:info ~ctrl:ctrl ?asms:asms ?f:f goal
+
+let once_replace_tac ?info ?(dir=leftright) ?asms ?f goal=
+  let ctrl=rewrite_control ~max:1 dir
+  in 
+  gen_replace_tac ?info:info ~ctrl:ctrl ?asms:asms ?f:f goal
+
 let unfold ?info ?f str g= 
   match Lib.try_find defn str with
     None -> 
       raise (error ("unfold: Can't find definition of "^str))
   | (Some th) -> rewrite_tac ?info ?f [th] g
 
-let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
+(***
+ * More boolean tactics
+ ***)
+
 
 (*** Boolean equivalence ***)
 
@@ -421,15 +888,15 @@ let iffA ?info ?a goal =
   in 
   let t, f = Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
   in 
-    if not (is_iff f) 
-    then (raise (error "iffA"))
-    else 
-      seq 
-	[
-	  Tactics.rewrite_tac [iff_def()] ~f:(ftag t);
-	  Logic.Tactics.conjA ?info (ftag t);
-	] goal
-    
+  if not (is_iff f) 
+  then (raise (error "iffA"))
+  else 
+    seq 
+      [
+       rewrite_tac [iff_def()] ~f:(ftag t);
+       Logic.Tactics.conjA ?info (ftag t);
+     ] goal
+      
 
 
 (** 
@@ -443,7 +910,7 @@ let iffA ?info ?a goal =
    }
 
    info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
-**)
+ **)
 
 let iffC ?info ?c goal = 
   let cf = first_concl_label c is_iff goal
@@ -457,9 +924,9 @@ let iffC ?info ?c goal =
   else 
     seq 
       [
-	rewrite_tac [iff_def()] ~f:(ftag t);
-	Logic.Tactics.conjC ?info (ftag t)
-      ] goal
+       rewrite_tac [iff_def()] ~f:(ftag t);
+       Logic.Tactics.conjC ?info (ftag t)
+     ] goal
 
 
 
@@ -475,7 +942,7 @@ let iffC ?info ?c goal =
    }
 
    info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
-**)
+ **)
 let iffE ?info ?c goal = 
   let cf = first_concl_label c is_iff goal
   in 
@@ -493,8 +960,8 @@ let iffE ?info ?c goal =
     let atgs = List.rev (aformulas inf)
     and ctgs = List.rev (cformulas inf)
     in 
-      Logic.add_info info [] atgs ctgs [];
-      empty_info inf
+    Logic.add_info info [] atgs ctgs [];
+    empty_info inf
   in
   if not (is_iff f) 
   then raise (error "iffE")
@@ -504,23 +971,23 @@ let iffE ?info ?c goal =
     let tac g =
       (seq 
 	 [
-	   rewrite_tac [iff_def()] ~f:(ftag t);
-	   notify_tac (add_goals info) inf
-	     (Logic.Tactics.conjC ~info:inf (ftag t));
-	   Logic.Tactics.implC ~info:inf (ftag t)
-	 ]) g
+	  rewrite_tac [iff_def()] ~f:(ftag t);
+	  notify_tac (add_goals info) inf
+	    (Logic.Tactics.conjC ~info:inf (ftag t));
+	  Logic.Tactics.implC ~info:inf (ftag t)
+	]) g
     in 
-      alt [ notify_tac (add_forms info) inf tac; 
-	    fail ~err:(error "iffE") ] goal
+    alt [ notify_tac (add_forms info) inf tac; 
+	  fail ~err:(error "iffE") ] goal
 
 (*** 
-* Eliminating boolean operators 
-***)
+ * Eliminating boolean operators 
+ ***)
 
 (**
    [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
    pass [info] and [l] to each tactic in [tacs].
-**)
+ **)
 let direct_alt tacl info l g=
   let rec alt_aux ts =
     match ts with
@@ -535,7 +1002,7 @@ let direct_alt tacl info l g=
    [direct_map_some tac lst l]: Directed map_some. Like
    {!Tactics.map_som} but pass [info] and [l] to [tac]. If [tac] fails
    for [l], then [lst:=l::!lst].
-**)
+ **)
 let direct_map_some tac lst l goal =
   let add_lbl x = lst:=x::(!lst)
   in 
@@ -556,7 +1023,7 @@ let direct_map_some tac lst l goal =
    conclusions. Assumptions are eliminated with [arules], conclusions
    with [crules]. Any new tag which can't be eliminated are stored in
    [?info] (in arbitrary order).
-*)
+ *)
 let rec asm_elim_rules_tac ?info rules lbl goal=
   let (arules, _) = rules
   and inf = mk_info()
@@ -612,7 +1079,7 @@ and
    conclusions. Assumptions are eliminated with [arules], conclusions
    with [crules]. The tag of any new formula for which the elimination
    rules fails is stored in [?info] (in arbitrary order).
-*)
+ *)
     concl_elim_rules_tac ?info rules lbl goal=
   let (_, crules) = rules
   and inf = mk_info()
@@ -669,7 +1136,7 @@ and
    assumptions and conclusions. The tag of any new formula for which
    the elimination rules fails is stored in [?info] (in arbitrary
    order).
-*)
+ *)
 let elim_rules_tac ?info rules albls clbls =
   match albls with 
     [] -> map_some (concl_elim_rules_tac ?info rules) clbls
@@ -702,7 +1169,7 @@ let elim_rules_tac ?info rules albls clbls =
    fails is stored in [?info] (in arbitrary order).
 
    [apply_elim_tac] is a wrapper for [elim_rules_tac].
-*)
+ *)
 let apply_elim_tac tac ?info ?f goal =
   let sqnt = sequent goal 
   in 
@@ -719,8 +1186,8 @@ let apply_elim_tac tac ?info ?f goal =
   tac ?info alst clst goal
 
 (***
-  Splitting formulas
-***)
+   Splitting formulas
+ ***)
 
 let split_asm_rules = 
   [
@@ -752,8 +1219,8 @@ let splitter_tac ?info ?f goal =
 let split_tac = splitter_tac 
 
 (***
-  Flattening formulas.
-***)
+   Flattening formulas.
+ ***)
 
 let flatter_asm_rules =
   [
@@ -787,8 +1254,8 @@ let flatter_tac ?info ?f goal =
 let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
 
 (***
- Scattering formulas
-***)
+   Scattering formulas
+ ***)
 
 let scatter_asm_rules =
   [
@@ -823,8 +1290,8 @@ let scatter_tac ?info ?f goal =
 
 
 (***
- Scattering, solving formulas
-***)
+   Scattering, solving formulas
+ ***)
 
 let blast_asm_rules =
   [
@@ -864,46 +1331,46 @@ let blast_tac ?info ?f goal =
 
 
 (*
-let inst_asm_rule i l sqnt=
-  let rec rule ys sqs = 
-    match ys with 
-      [] -> sqs
-    | (x::xs) -> 
-	let nsqnt=
-	  Tactics.foreach (Logic.Tactics.allA None x i) sqs
-	in rule xs nsqnt
-  in rule l (skip sqnt)
+   let inst_asm_rule i l sqnt=
+   let rec rule ys sqs = 
+   match ys with 
+   [] -> sqs
+   | (x::xs) -> 
+   let nsqnt=
+   Tactics.foreach (Logic.Tactics.allA None x i) sqs
+   in rule xs nsqnt
+   in rule l (skip sqnt)
 
-let inst_asm ?a l g=
-  let af = first_asm_label a Formula.is_all g
-  in 
-  inst_asm_rule af l g
+   let inst_asm ?a l g=
+   let af = first_asm_label a Formula.is_all g
+   in 
+   inst_asm_rule af l g
 
-let inst_concl_rule i l sqnt=
-  let rec rule ys sqs = 
-    match ys with 
-      [] -> sqs
-    | (x::xs) -> 
-	let nsqnt=
-	  Tactics.foreach (Logic.Tactics.existC None x i) sqs
-	in rule xs nsqnt
-  in rule l (skip sqnt)
+   let inst_concl_rule i l sqnt=
+   let rec rule ys sqs = 
+   match ys with 
+   [] -> sqs
+   | (x::xs) -> 
+   let nsqnt=
+   Tactics.foreach (Logic.Tactics.existC None x i) sqs
+   in rule xs nsqnt
+   in rule l (skip sqnt)
 
-let inst_concl ?c l g=
-  let cf = first_concl_label c Formula.is_exists g
-  in 
-  inst_concl_rule cf l g
+   let inst_concl ?c l g=
+   let cf = first_concl_label c Formula.is_exists g
+   in 
+   inst_concl_rule cf l g
 
-let inst_tac ?f l g= 
-  let sqnt = Tactics.sequent g
-  in 
-  try inst_asm ?a:f l g
-  with _ -> inst_concl ?c:f l g
-*)
+   let inst_tac ?f l g= 
+   let sqnt = Tactics.sequent g
+   in 
+   try inst_asm ?a:f l g
+   with _ -> inst_concl ?c:f l g
+ *)
 
 (***
-* Cases
-***)
+ * Cases
+ ***)
 
 (**
    [cases_tac x sq]
@@ -922,15 +1389,15 @@ let inst_tac ?f l g=
    info: [goals = [g1; g2], aforms=[l], cforms=[l], terms = []]
  *)
 let make_cases_tac_thm ()= 
-    (Commands.get_or_prove "Bool.cases_thm"
-       <<!P: (not P) or P>>
-     (allC ++ disjC ++ negC ++ basic))
+  (Commands.get_or_prove "Bool.cases_thm"
+     <<!P: (not P) or P>>
+   (allC ++ disjC ++ negC ++ basic))
 
 let cases_thm_var = Lib.freeze make_cases_tac_thm
 let cases_thm () =  Lib.thaw cases_thm_var
 
 let set_info dst (sgs, afs, cfs, cnsts) = 
-    Logic.add_info dst sgs afs cfs cnsts
+  Logic.add_info dst sgs afs cfs cnsts
 
 let cases_tac ?info (t:Basic.term)= 
   let thm = cases_thm()
@@ -963,7 +1430,7 @@ let cases_tac ?info (t:Basic.term)=
 	       let nasm_tag = get_one ~msg:"cases_tac 5" (cformulas inf1)
 	       in 
 	       data_tac (set_info info)
-	       ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) g1);
+		 ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) g1);
 	   ] g);
 	skip
       ]
@@ -1009,19 +1476,19 @@ let show = show_tac
    the type of term [trm]. If [thm] is given, it is used as the cases
    theorem. If [thm] is not given, the theorem named ["T_cases"] is
    used, where [T] is the name of the type of [trm].
-*)
+ *)
 
 (** 
    [disj_splitter_tac ?info ?f]: 
    Split an assumption using disjA
-*)
+ *)
 
 let disj_splitter_tac ?info ?f goal = 
   let tac ?info =
     elim_rules_tac ?info
       ([ (fun inf1 -> Logic.Tactics.disjA ~info:inf1) ], []) 
   in 
-   apply_elim_tac tac ?info ?f goal
+  apply_elim_tac tac ?info ?f goal
     
 let get_type_name ty =
   match ty with
@@ -1085,11 +1552,11 @@ let cases_of ?info ?thm t g =
   try
     (tac1 ++ tac2) g
   with err -> raise (add_error "cases_of" err)
-   
+      
 
 (***
-* Modus Ponens
-***)
+ * Modus Ponens
+ ***)
 
 let mp_tac ?info ?a ?a1 g=
   let typenv = Tactics.typenv_of g
@@ -1193,7 +1660,7 @@ let cut_mp_tac ?info ?inst thm ?a g=
    where 
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
-*)
+ *)
 
 let back_tac ?info ?a ?c goal=
   let typenv = Tactics.typenv_of goal
@@ -1261,10 +1728,10 @@ let back_tac ?info ?a ?c goal=
   in 
   let tac5 g5 = 
     data_tac (set_info info)
-     ([Lib.get_nth (Tactics.subgoals info1) 0],
-      [], 
-      [Lib.get_nth (Tactics.cformulas info1) 0],
-      []) g5
+      ([Lib.get_nth (Tactics.subgoals info1) 0],
+       [], 
+       [Lib.get_nth (Tactics.cformulas info1) 0],
+       []) g5
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
 
@@ -1295,17 +1762,17 @@ module Thms =
    {5 Theorems}
 
    Theorems about boolean operators which may be needed by tactics.
-*)
+ *)
 
 
 (**
    [make_n_thm()]: prove theorem n
    [n_thm()]: get theorem n, proving it if necessary
-*)
+ *)
 
 (**
    [iff_equals_thm]:  |- !x y: (x iff y) = (x = y)
-*)
+ *)
     let make_iff_equals_thm ()=
       let iff_l2 = 
 	let info = Tactics.mk_info()
@@ -1321,14 +1788,14 @@ module Thms =
 		 (Failure "make_iff_equals_thm")
 	     in 
 	     (flatten_tac
-	       ++ (cut_thm "bool_cases" ++ allA x_term)
-	       ++ (cut_thm "bool_cases" ++ allA y_term)
-	       ++ split_tac 
-	       ++ 
-	       alt 
-	       [(replace_tac ++ (basic // trivial));
-		(basic // trivial);
-		(replace_tac ++ eq_tac)]) g))
+		++ (cut_thm "bool_cases" ++ allA x_term)
+		++ (cut_thm "bool_cases" ++ allA y_term)
+		++ split_tac 
+		++ 
+		alt 
+		[(replace_tac ++ (basic // trivial));
+		 (basic // trivial);
+		 (replace_tac ++ eq_tac)]) g))
       in 
       let info = Tactics.mk_info()
       in 
@@ -1341,35 +1808,35 @@ module Thms =
 	       (Failure "make_iff_equals_thm")
 	   in 
 	   ((cut iff_l2)
-	     ++ inst_tac [Logicterm.mk_iff x_term y_term;
-			  Logicterm.mk_equality x_term y_term]
-	     ++ split_tac
-	     --
-	     [flatten_tac
-		++ cut iff_l2 ++ inst_tac [x_term; y_term]
-		    ++ unfold "iff" ~f:(!~2)
-		    ++ (implA --  [basic; basic]);
-	      flatten_tac
-		++ replace_tac
-		++ unfold "iff" ~f:(!! 1)
-		++ split_tac ++ flatten_tac ++ basic;
-	      replace_tac ++ eq_tac]) g))
+	      ++ inst_tac [Logicterm.mk_iff x_term y_term;
+			   Logicterm.mk_equality x_term y_term]
+	      ++ split_tac
+	      --
+	      [flatten_tac
+		 ++ cut iff_l2 ++ inst_tac [x_term; y_term]
+		     ++ unfold "iff" ~f:(!~2)
+		     ++ (implA --  [basic; basic]);
+	       flatten_tac
+		 ++ replace_tac
+		 ++ unfold "iff" ~f:(!! 1)
+		 ++ split_tac ++ flatten_tac ++ basic;
+	       replace_tac ++ eq_tac]) g))
 
     let iff_equals_thm_var = Lib.freeze make_iff_equals_thm
     let iff_equals_thm() = Lib.thaw iff_equals_thm_var
 
 (**
    [equals_iff_thm]:  |- !x y: (x = y) = (x iff y)
-*)
-   let make_equals_iff_thm ()=
-     get_or_prove "Bool.equals_bool"
-	   << !x y: (x = y) = (x iff y) >>
-	 (flatten_tac 
-	    ++ (rewrite_tac [iff_equals_thm()])
-	    ++ eq_tac)
+ *)
+    let make_equals_iff_thm ()=
+      get_or_prove "Bool.equals_bool"
+	<< !x y: (x = y) = (x iff y) >>
+      (flatten_tac 
+	 ++ (rewrite_tac [iff_equals_thm()])
+	 ++ eq_tac)
 
-   let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
-   let equals_iff_thm() = Lib.thaw equals_iff_thm_var
+    let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
+    let equals_iff_thm() = Lib.thaw equals_iff_thm_var
 
 (**
    [bool_eq_thm]: |- !x y: x = y = ((x => y) and (y=>x))
@@ -1416,13 +1883,13 @@ module Thms =
 		 (Failure "rule_true_l2")
 	     in 
 	     (flatten_tac 
-	       ++ (cut_thm "bool_cases") 
-	       ++ (allA x_term) 
-	       ++ disjA
-	       -- 
-	       [basic;
-		rewrite_tac [Commands.thm "false_def"]
-		  ++ replace_tac ++ flatten_tac]) g))
+		++ (cut_thm "bool_cases") 
+		++ (allA x_term) 
+		++ disjA
+		-- 
+		[basic;
+		 rewrite_tac [Commands.thm "false_def"]
+		   ++ replace_tac ++ flatten_tac]) g))
       in
       let rule_true_l3 = 
 	Commands.prove <<! x: x iff (x=true)>>
@@ -1431,8 +1898,7 @@ module Thms =
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	      cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
       in 
-      Logic.Tactics.rewrite_rule (Global.scope()) 
-	[iff_equals_thm()] rule_true_l3
+      rewrite_rule (Global.scope()) [iff_equals_thm()] rule_true_l3
 
     let rule_true_thm_var = Lib.freeze make_rule_true_thm
     let rule_true_thm () = Lib.thaw rule_true_thm_var
@@ -1452,16 +1918,16 @@ module Thms =
 	       (Failure "make_rule_false_thm")
 	   in 
 	   ((once_rewrite_tac [equals_iff_thm()]
-	      ++ unfold "iff"
-	      ++ split_tac ++ flatten_tac)
-	     -- 
-	     [
-	      cut_thm "bool_cases" ++ inst_tac [x_term]
-		++
-		(split_tac 
-		   ++ replace_tac 
-		   ++ (trivial // eq_tac));
-	      replace_tac ++ trivial]) g))
+	       ++ unfold "iff"
+	       ++ split_tac ++ flatten_tac)
+	      -- 
+	      [
+	       cut_thm "bool_cases" ++ inst_tac [x_term]
+		 ++
+		 (split_tac 
+		    ++ replace_tac 
+		    ++ (trivial // eq_tac));
+	       replace_tac ++ trivial]) g))
 
 
     let rule_false_thm_var = Lib.freeze make_rule_false_thm
@@ -1474,14 +1940,14 @@ module Thms =
     let make_eq_sym_thm ()= 
       Commands.prove << !x y: (x = y) = (y = x) >>
       (allC ++ allC 
-       ++ (once_rewrite_tac [equals_iff_thm()])
-       ++ iffE
-       ++ replace_tac ++ eq_tac);;
+	 ++ (once_rewrite_tac [equals_iff_thm()])
+	 ++ iffE
+	     ++ replace_tac ++ eq_tac);;
 
-    let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
-    let eq_sym_thm () = Lib.thaw eq_sym_thm_var
+let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
+let eq_sym_thm () = Lib.thaw eq_sym_thm_var
 
-  end
+end
 
 
 (** 
@@ -1497,14 +1963,13 @@ module Rules=
     let once_rewrite_rule scp rules thm =
       let ctrl = {Formula.default_rr_control with Rewrite.depth=Some(1)}
       in 
-      Logic.Tactics.rewrite_rule ~ctrl:ctrl scp rules thm
-
+      rewrite_rule scp ~ctrl:ctrl rules thm
 
 (**
    [conjunctL scp thm]
    Get the left hand side of conjunct [thm].
    [conjunctL scp << l and r >> = l]
-*)
+ *)
     let conjunctL scp thm = 
       let trm = Logic.term_of thm
       in 
@@ -1538,7 +2003,7 @@ module Rules=
    [conjunctR scp thm]
    Get the right hand side of conjunct [thm].
    [conjunctL scp << l and r >> = r]
-*)
+ *)
     let conjunctR scp thm = 
       let trm = Logic.term_of thm
       in 
@@ -1571,7 +2036,7 @@ module Rules=
    [conjuncts scp thm]
    break theorem [thm] into the list of conjuncts.
    [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
-*)
+ *)
     let conjuncts scp thm =
       let is_conj_thm thm = 
 	Logicterm.is_conj (Logic.term_of thm)
@@ -1589,20 +2054,11 @@ module Rules=
       in 
       conjuncts_aux scp thm []
 
-(** 
-   [conv_rule scp conv thm]
-   apply conversion [conv] to theorem [thm]
- *)
-    let conv_rule scp conv thm =
-      let rule = conv scp (Logic.term_of thm)
-      in 
-      once_rewrite_rule scp [rule] thm
-
   end
 
 (** 
    Conversions on boolean operators.
-*)
+ *)
 module Convs=
   struct
 
@@ -1610,7 +2066,7 @@ module Convs=
 
 (** 
    [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a 
-*)
+ *)
     let neg_all_conv scp trm=
       if(not (Logicterm.is_neg trm))
       then failwith "neg_all_conv: not a negation"
@@ -1735,7 +2191,7 @@ module Convs=
 
 (** 
    [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a 
-*)
+ *)
     let neg_exists_conv scp trm=
       if(not (Logicterm.is_neg trm))
       then failwith "neg_exists_conv: not a negation"
@@ -1864,8 +2320,8 @@ module Convs=
   end
 
 (***
-* More tactics 
-***)
+ * More tactics 
+ ***)
 
 let equals_tac ?info ?f g =
   let ff = 
@@ -1904,8 +2360,8 @@ let _ = Global.Init.add_init init_boollib
 (****** Retired 
 
 (***
-* Miscellaneous unification functions.
-***)
+ * Miscellaneous unification functions.
+ ***)
 
 (**
    [unify_formula_for_consts scp trm f]
@@ -1915,13 +2371,13 @@ let _ = Global.Init.add_init init_boollib
    quantifiers of [trm].
 
    raise Not_found, if no unifiable formula found.
-*)
-let unify_formula_for_consts tyenv scp (vars, trm) f=
-  let varp=Rewrite.is_free_binder vars
-  in 
-  let env=Unify.unify ~typenv:tyenv scp varp trm f
-  in 
-  extract_consts vars env
+ *)
+   let unify_formula_for_consts tyenv scp (vars, trm) f=
+   let varp=Rewrite.is_free_binder vars
+   in 
+   let env=Unify.unify ~typenv:tyenv scp varp trm f
+   in 
+   extract_consts vars env
 
 (**
    [unify_concl_for_consts ?c trm g]
@@ -1931,28 +2387,28 @@ let unify_formula_for_consts tyenv scp (vars, trm) f=
    to the conclusion by instantiating the topmost quantifiers of trm.
 
    [trm] must be universally quantified.
-*)
-let unify_concl_for_consts qnt ?c trm node=
-  let tyenv = typenv_of node
-  and scp = scope_of node
-  and (vars, body) = Term.strip_qnt qnt trm
-  in 
-  let (t, f)=
-    match c with 
-      None ->
-	let sqnt = sequent node
-	in 
-	let unifies x = 
-	  Lib.test_app 
-	      (Unify.unify ~typenv:tyenv scp 
-		 (Rewrite.is_free_binder vars) body) x
-	in 
-	first_concl 
-	  (fun (_, f) -> unifies (Formula.term_of f)) sqnt
-    | Some(x) -> 
-	get_tagged_concl x node
-  in 
-  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
+ *)
+   let unify_concl_for_consts qnt ?c trm node=
+   let tyenv = typenv_of node
+   and scp = scope_of node
+   and (vars, body) = Term.strip_qnt qnt trm
+   in 
+   let (t, f)=
+   match c with 
+   None ->
+   let sqnt = sequent node
+   in 
+   let unifies x = 
+   Lib.test_app 
+   (Unify.unify ~typenv:tyenv scp 
+   (Rewrite.is_free_binder vars) body) x
+   in 
+   first_concl 
+   (fun (_, f) -> unifies (Formula.term_of f)) sqnt
+   | Some(x) -> 
+   get_tagged_concl x node
+   in 
+   unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
 
 
 (**
@@ -1963,31 +2419,32 @@ let unify_concl_for_consts qnt ?c trm node=
    to the conclusion by instantiating the topmost quantifiers of trm.
 
    [trm] must be quantified by [qnt].
-*)
-let unify_asm_for_consts qnt ?a trm n=
-  let tyenv = typenv_of n
-  and scp = scope_of n
-  and (vars, body) = Term.strip_qnt qnt trm
-  in 
-  let (t, f)=
-    match a with 
-      None ->
-	  let sqnt = sequent n
-	  in 
-	  let unifies x = 
-	   (try
-	     ignore
-	       (Unify.unify ~typenv:tyenv scp 
-		  (Rewrite.is_free_binder vars) body x);true
-	   with _ -> false)
-	  in 
-	  first_asm (fun (_, f) -> unifies (Formula.term_of f)) sqnt
-    | Some(x) ->
-	let sqnt = sequent n
-	in 
-	Logic.Sequent.get_tagged_asm
-	  (Logic.label_to_tag x sqnt) sqnt
-  in 
-  unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
+ *)
+   let unify_asm_for_consts qnt ?a trm n=
+   let tyenv = typenv_of n
+   and scp = scope_of n
+   and (vars, body) = Term.strip_qnt qnt trm
+   in 
+   let (t, f)=
+   match a with 
+   None ->
+   let sqnt = sequent n
+   in 
+   let unifies x = 
+   (try
+   ignore
+   (Unify.unify ~typenv:tyenv scp 
+   (Rewrite.is_free_binder vars) body x);true
+   with _ -> false)
+   in 
+   first_asm (fun (_, f) -> unifies (Formula.term_of f)) sqnt
+   | Some(x) ->
+   let sqnt = sequent n
+   in 
+   Logic.Sequent.get_tagged_asm
+   (Logic.label_to_tag x sqnt) sqnt
+   in 
+   unify_formula_for_consts tyenv scp (vars, body) (Formula.term_of f)
 
-****)
+ ****)
+

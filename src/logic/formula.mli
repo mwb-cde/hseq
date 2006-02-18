@@ -250,54 +250,33 @@ val eta_conv: Scope.t -> form -> Basic.gtype -> form -> form
 
 (** {5 Rewriting} *)
 
-type rule = 
-    Rule of form
-  | Ordered of (form * Rewrite.order)
-
-val rule : form -> rule
-(** Make an unordered rewrite rule. *)
-val orule : form -> Rewrite.order -> rule
-(** Make a unordered rewrite rule. *)
-
-val rule_to_form : rule -> form
-(** Get the formula of a rule. *)
-
-val to_rewrite_rule: rule -> Rewrite.rule
-(** Convert to a Rewrite.rule. *)
-
 val default_rr_control : Rewrite.control
 (** The default rewrite control. *)
 
 val rewrite : 
-    Scope.t -> ?ctrl:Rewrite.control
-      -> rule list-> form -> form
-(** Rewrite a formula *)
-
-val rewrite_env : 
-    Scope.t -> ?ctrl:Rewrite.control
-      -> Gtypes.substitution 
-	-> rule list-> form -> (form * Gtypes.substitution)
-(** Rewrite a formula w.r.t a type context. *)
-
-val plan_rewrite : 
     Scope.t -> ?dir:Rewrite.direction
-      -> form Rewrite.Planned.plan
+      -> form Rewrite.plan
 	-> form -> form
 (** Rewrite a formula *)
 
-val plan_rewrite_env : 
+val rewrite_env : 
     Scope.t -> ?dir:Rewrite.direction
       -> Gtypes.substitution 
-	-> form Rewrite.Planned.plan
+	-> form Rewrite.plan
 	  -> form -> (form * Gtypes.substitution)
 (** Rewrite a formula w.r.t a type context. *)
 
 val mk_rewrite_eq : 
     Scope.t
       -> Gtypes.substitution 
-	-> form Rewrite.Planned.plan
+	-> form Rewrite.plan
 	  -> Basic.term -> (form * Gtypes.substitution)
-(** Make an equality by rewriting a term w.r.t a type context. *)
+(** 
+   [mk_rewrite_eq scp tyenv plan trm]: Make an equality by rewriting a
+   term w.r.t a type context.  Returns [(trm=t, ntyenv)] where [t] is
+   the result of rewriting [trm] with [plan] and [ntyenv] is the type
+   environment generated during rewriting.
+*)
 
 (** {5 Pretty printing} *)
 

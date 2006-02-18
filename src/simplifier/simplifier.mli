@@ -9,6 +9,8 @@
  *)
 
 open Tactics
+open Rewritekit
+open Rewrite
 
 (** {5 Errors} *)
 
@@ -24,32 +26,10 @@ class simpError :
 val error : string -> Basic.term list -> exn
 val add_error : string -> Basic.term list -> exn -> exn
 
-
-(** {5 Utility functions} *)
-
-(*
-   val strip_rrs : Logic.rr_type list -> Basic.term list
- *)
-(**
-   [strip_rrs]: Prepare for direct rewriting of term. (For tests only.)
- *)
-
-val is_conditional: Simpset.rule -> bool
-(** Test whether a rule is conditional. *)
-
-val is_none: 'a option -> bool
-(** [is_none x]: true if [x=None], false otherwise. *)
-
-val is_excluded: Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
-(**
-   [is_excluded excluded sqnt rl]: True if rewrite rule [rl] is an
-   assumption in the excluded list.
- *)
-
-(** {5 Simplifier Data} *)
-
 exception No_change
 (** Raised if the simplifier makes no changes. *)
+
+(** {5 Simplifier Data} *)
 
 type control = Rewrite.control
 (** Passed to the simplifier to control rewriting. *)
@@ -59,7 +39,9 @@ module Data:
     sig
 
       type loopDB = Basic.term Net.net
-    (** Structure used to store terms for looping rewriting detection *)
+	    (** 
+	       Structure used to store terms for looping rewriting detection 
+	     *)
 
 (** Information needed during simplification. *)
       type t = {
@@ -89,7 +71,8 @@ module Data:
 	    visited: Tag.t list;
 (** Formulas visited during the course of simplification *)
 
-(***
+(****
+
 (** asm_pairs: 
    tags of original formulas and the new modified formula
    (in (a, b) a is the tag of the original assumption,
@@ -102,13 +85,11 @@ module Data:
    b is the tag of the formula used as a rewrite rule
  *)
    concl_pairs: (Tag.t*Tag.t) list;
- ***)
+
+****)
 
 	    exclude: Tag.t list;
 (** Formulas not to be used as a rewrite rule. *)
-
-	    rules : Logic.rr_type list;
-(**  Rewrite rules chosen by the simplifier. *)
 
 	    loopdb: loopDB
 (** loopdb: Terms already rewritten. *)
@@ -155,12 +136,6 @@ module Data:
       val set_exclude : t -> Tag.t list -> t
 (** Set the excluded formulas list. *)
 
-      val set_rules : t -> Logic.rr_type list -> t
-(** Set the rewrite rules list. *)
-
-      val get_rules : t -> Logic.rr_type list 
-(** Get the rewrite rules list. *)
-
       val get_simpset : t -> Simpset.simpset
 (** Get the simpset to use. *)
 
@@ -176,7 +151,7 @@ module Data:
       val mem_loopdb: Scope.t -> t -> Basic.term -> bool
 (** 
    Test whether a term is alpha-equal to a term in the loopdb
-*)
+ *)
 
       val get_tactic : t -> (t -> Tag.t -> Tactics.tactic)
 (** Get the condition prover tactic. *)
@@ -199,9 +174,6 @@ module Data:
       val dec_cond_depth : t -> t
 (** Decrement the condition limit. *)
 
-      val add_rule : t -> Logic.rr_type -> t
-(** Add a rewrite rule. *)
-
       val add_simp_rule : t -> Simpset.rule -> t
 (** Add a simp rule as a rewrite rule. *)
 
@@ -214,6 +186,25 @@ module Data:
       val default : t
 (** Make the default simp data. *)
     end 
+
+(** {5 Utility functions} *)
+
+(* val strip_rrs : Logic.rr_type list -> Basic.term list *)
+(**
+   [strip_rrs]: Prepare for direct rewriting of term. (For tests only.)
+ *)
+
+val is_conditional: Simpset.rule -> bool
+(** Test whether a rule is conditional. *)
+
+val is_none: 'a option -> bool
+(** [is_none x]: true if [x=None], false otherwise. *)
+
+val is_excluded: Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
+(**
+   [is_excluded excluded sqnt rl]: True if rewrite rule [rl] is an
+   assumption in the excluded list.
+ *)
 
 (** {5 Utility Tactics} *)
 
@@ -248,7 +239,22 @@ val cut_rr_rule :
  *)
 
 
-(** {5 Conditional rewriting} *)
+val simp_rewrite_tac:
+    ?info:Logic.info 
+  -> bool
+    -> Logic.rr_type Rewrite.plan
+      -> Basic.term 
+	-> Logic.label
+	  -> tactic
+(** 
+   [simp_rewrite_tac ?info is_concl plan term lbl]: Local interface to
+   the main rewriting tactics. If [is_concl] is true, call
+   [Tactics.pure_rewriteC ?info plan ~term:trm lbl goal] otherwise
+   call [Tactics.pure_rewriteA ?info plan ~term:trm lbl goal].
+
+*)
+
+(** {5 Conditional rule tactics} *)
 
 val prep_cond_tac :
     Data.t 
@@ -267,7 +273,6 @@ val prep_cond_tac :
    Returns [ret=(ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg))]
  *)
 
-
 val prove_cond_tac:
     Data.t -> (Data.t * Logic.rr_type) option ref 
       -> Basic.term list -> Simpset.rule
@@ -284,127 +289,175 @@ val prove_cond_tac:
    [rl] the rewrite rule built from the new theorem/assumption.
  *)
 
+(** {5 Simplifier functions} *)
 
-(** {5 Rewriting terms} *)
+type data = 
+    (Data.t  (** Simplifier data *)
+       * Gtypes.substitution (** Type environment *)
+       * Term.substitution)   (** Quantifier environment *)
+(** Data passed between the simplifier functions *)
+
 
 val match_rewrite :
     Scope.t 
   -> Gtypes.substitution 
     -> Term.substitution 
-      -> Term.substitution 
-	-> Simpset.rule
-	  -> Basic.term 
-	    -> Gtypes.substitution * Term.substitution * Basic.term
+      -> Simpset.rule
+	-> Basic.term 
+	  -> (Logic.rr_type 
+		* Gtypes.substitution 
+		* Term.substitution 
+		* Basic.term)
 (**
-   [match_rewrite scp tyenv qntenv trmenv varp lhs rhs trm]: Try to match
-   [lhs] with [trm] in type envivornment [tyenv] and term bindings
-   [trmenv]. Return [rhs], instantiated with the binding from the
-   match, and the type and term environments that made the match
+   [match_rewrite scp tyenv qntenv trmenv rule trm]: Try to match lhs
+   of [rule] with [trm] in type envivornment [tyenv] and term bindings
+   [trmenv]. Return rhs of [rule], instantiated with the binding from
+   the match, and the type and term environments that made the match
    successful. Raise [Failure] on failure.
  *)
 
 val find_basic :
-    Data.t 
-  -> (Data.t * Gtypes.substitution * Basic.term * Logic.rr_type) option ref 
-    -> Gtypes.substitution 
-      -> Term.substitution 
-	-> Simpset.rule
-	  -> Basic.term 
-	    -> Tactics.tactic
+    (Data.t 
+       * Gtypes.substitution 
+       * Basic.term 
+       * Logic.rr_type) option ref 
+  -> data
+    -> Simpset.rule
+      -> Basic.term 
+	-> Tactics.tactic
 (** 
-   [find_basic cntrl ret tyenv tac rl trm g]: Try to match simp rule
-   [rl] with term [trm] in goal [g]. If [rl] matches but is
-   conditional, try to prove the condition using tactic [tac], adding
-   the rule to the goal assumptions.
+   [find_basic ret data rl trm g]: Try to match simp rule [rl] with
+   term [trm] in goal [g], with [data=(cntrl, tyenv, qntenv)]. If [rl]
+   matches but is conditional, try to prove the condition using tactic
+   [cntrl.cond_tac], adding the rule to the goal assumptions.
 
-   Returns [ret=(ncntrl, ntyenv, ntrm, rr)] where [ncntrl] is the
-   updated data, [nytenv] is the type environment made by the
-   matching, [ntrm] is the result of rewriting [trm] with [rl] and
-   [rl] the rewrite rule to add to the list being compiled.
+   Returns [ret=(ndata, ntrm, rr)] where [ndata=(ncntrl, ntyenv,
+   qntenv)], [ncntrl] is the updated simplifier data, [nytenv] is the
+   type environment made by the matching, [ntrm] is the result of
+   rewriting [trm] and [rl] the rewrite rule to add to the list being
+   compiled.
  *)
 
 val find_match_tac :
-    Data.t 
-  -> Gtypes.substitution 
-    -> Term.substitution 
-      -> (Data.t 
-	    * Gtypes.substitution 
-	    * Basic.term 
-	    * Logic.rr_type) option ref 
-	-> Basic.term 
-	  -> Tactics.tactic
+    (Data.t 
+       * Gtypes.substitution 
+       * Basic.term 
+       * Logic.rr_type) option ref 
+  -> data 
+    -> Basic.term 
+      -> Tactics.tactic
 (**
-   [find_match_tac cntrl tyenv ret trm g]: Find a rule in simpset
-   [set] which matches term [trm] in goal [g]. If found, rewrite [trm]
-   with the rule.
+   [find_match_tac ret data trm g]: Find a rule in simpset [set] which
+   matches term [trm] in goal [g], with [data=(cntrl, tyenv,
+   qntenv)]. If found, rewrite [trm] with the rule.
 
-   Returns [ret=(ncntrl, ntyenv, ntrm, rr)] where [ncntrl] is the
-   updated data, [nytenv] is the type environment made by the
-   matching, [ntrm] is the result of rewriting [trm] with [rl] and
-   [rl] the rewrite rule to add to the list being compiled.
+   Returns [ret=(ndata, ntrm, rr)] where [ndata=(ncntrl, ntyenv,
+   qntenv)], [ncntrl] is the updated data, [nytenv] is the type
+   environment made by the matching, [ntrm] is the result of rewriting
+   [trm] with [rl] and [rl] the rewrite rule to add to the list being
+   compiled.
 
    Raise [No_change] and set [ret:=None] if no matches.
  *)
 
 val find_all_matches_tac :
-    Data.t 
-  -> (Data.t * Gtypes.substitution * Basic.term) option ref
-    -> Gtypes.substitution 
-      -> Term.substitution 
-	-> Basic.term 
-	  -> Tactics.tactic
+    (Data.t 
+       * Gtypes.substitution 
+       * Basic.term
+       * Logic.rr_type list) option ref
+  -> data
+    -> Basic.term 
+      -> Tactics.tactic
 (** 
-   [find_all_matches cntrl ret tyenv qntenv trm g]: Find all rules in simpset
-   [cntrl.set] which can be used to rewrite term [trm] in goal [g].
+   [find_all_matches ret (cntrl, tyenv, qntenv) trm g]: Find all rules
+   in simpset [cntrl.set] which can be used to rewrite term [trm] in
+   goal [g].
 
    Returns new simp data, the new type environment and the rewritten
    term. The new simp data is built by adding the rules used to
    rewrite the term, in the order they are applied.
- *)
+*)
 
-(** {5 Term traversal} *)
-
-val find_rrs_bottom_up_tac:
-    Data.t
-  -> (Data.t * Gtypes.substitution 
-	* Basic.term) option ref
-    -> Gtypes.substitution
-      -> Term.substitution 
-	-> Basic.term
-	  -> Tactics.tactic
+val find_term_bu_tac:
+    (Data.t * Gtypes.substitution 
+       * Basic.term
+       * Logic.rr_type Rewrite.plan) option ref
+  -> data
+    -> Basic.term
+      -> Tactics.tactic
 (**
-   [find_rrs_bottom_up ctrl ret tyenv qntenv trm g]: Traverse term [trm],
-   bottom-up, finding rewrite rules to apply. 
+   [find_term_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term [trm],
+   bottom-up, constructing a rewrite plan.
 
-   Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
-   data (with the rewrite rules to apply), [ntyenv] the new
-   type-environment and [ntrm] the term resulting from simplification.
- *)
+   Return [ret=(ncntrl, ntyenv, ntrm, plan)], where [ncntrl] is the
+   new simp data, [ntyenv] the new type-environment, [ntrm] the term
+   resulting from simplification and [plan] the constructed rewriting
+   plan.
+*)
 
-val find_rrs_top_down_tac : 
-    Data.t
-  -> (Data.t * Gtypes.substitution 
-	* Basic.term) option ref
-    -> Gtypes.substitution
-      -> Term.substitution 
-	-> Basic.term
-	  -> Tactics.tactic
+val find_subterm_bu_tac:
+    (Data.t * Gtypes.substitution 
+       * Basic.term
+       * Logic.rr_type Rewrite.plan) option ref
+  -> data
+    -> Basic.term
+      -> Tactics.tactic
 (**
-   [find_rrs_top_down ctrl ret tyenv qntenv trm g]: Traverse term [trm],
-   top-down, finding rewrite rules to apply. This is the default.
+   [find_subterm_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
+   to rewrite, bottom-up, the subterms of [trm].
 
-   Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
-   data (with the rewrite rules to apply), [ntyenv] the new
-   type-environment and [ntrm] the term resulting from simplification.
- *)
+   Return [ret=(ncntrl, ntyenv, ntrm, plan)], where [ncntrl] is the
+   new simp data, [ntyenv] the new type-environment, [ntrm] the term
+   resulting from simplification and [plan] the constructed rewriting
+   plan.
+
+   This is a companion function to {!Simplifier.find_term_bu_tac}.
+*)
 
 
-(** {5 Simplifier tactics} *)
+val find_term_td_tac : 
+    (Data.t * Gtypes.substitution 
+       * Basic.term
+       * Logic.rr_type Rewrite.plan) option ref
+  -> data
+    -> Basic.term
+      -> Tactics.tactic
+(**
+   [find_term_td_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
+   [trm], top-down, constructing a rewrite plan.
+
+   Return [ret=(ncntrl, ntyenv, ntrm, plan)], where [ncntrl] is the
+   new simp data, [ntyenv] the new type-environment, [ntrm] the term
+   resulting from simplification and [plan] the constructed rewriting
+   plan.
+*)
+
+
+val find_subterm_td_tac : 
+    (Data.t * Gtypes.substitution 
+       * Basic.term
+       * Logic.rr_type Rewrite.plan) option ref
+  -> data
+    -> Basic.term
+      -> Tactics.tactic
+(**
+   [find_subterm_td_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
+   to rewrite, top-down, the subterms of [trm].
+
+   Return [ret=(ncntrl, ntyenv, ntrm, plan)], where [ncntrl] is the
+   new simp data, [ntyenv] the new type-environment, [ntrm] the term
+   resulting from simplification and [plan] the constructed rewriting
+   plan.
+
+   This is a companion function to {!Simplifier.find_term_bu_tac}.
+*)
+
 
 val basic_simp_tac :
     Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
 (**
-   [basic_simp_tac data ret tag goal]:
+   [basic_simp_tac data ret tag goal]: Main interface to the basic
+   simplifier functions.
 
    Simplify formula tagged [tag] in [goal]: 
    {ul
@@ -420,15 +473,7 @@ val basic_simp_tac :
    raise [No_change] if no rules can be found.
  *)
 
-val cond_prover_tac:
-    Data.t -> Tag.t -> Tactics.tactic
-(**
-   [cond_prover_tac ctrl tg g]: The tactic used to prove the conditions of
-   rewrite rules.
-
-   Apply [simp_prep_tac] then [basic_simp_tac].
-   Then apply [Logic.Tactics.trueR] to solve goal.
- *) 
+(** {5 Derived simplifier functions} *)
 
 val simp_prep_tac :
     'a -> 'a option ref -> Logic.label -> Tactics.tactic
@@ -445,7 +490,42 @@ val simp_prep_tac :
    Always succeeds.
  *)
 
+val cond_prover_tac:
+    Data.t -> Tag.t -> Tactics.tactic
+(**
+   [cond_prover_tac ctrl tg g]: The tactic used to prove the conditions of
+   rewrite rules.
+
+   Apply [simp_prep_tac] then [basic_simp_tac] then apply
+   [Logic.Tactics.trueR] to solve goal.
+ *) 
+
+
 (** {5 Debugging information} *)
+
+
+val check_add_loop: 
+    Scope.t -> Data.t -> Basic.term
+      ->  Data.t
+(** 
+   [check_add_loop scp cntrl trm]: Test whether term [trm] is in
+   [cntrl.loopDB]. If it is, raise [Failure] otherwise add it to
+   [cntrl.loopDB]. 
+
+   Used to test for loops during simplification.
+*)
+
+val check_change : ('a)plan -> unit
+(** 
+   [check_change p]: Test whether plan [p] does anything. Raise
+   [No_change] if it does not.
+*)
+
+val check_change2 : ('a)plan -> ('a)plan -> unit
+(** 
+   [check_change2 p1 p2]: Test either plan [p1] or plan [p2] does
+   anything. Raise [No_change] if both do nothing.
+*)
 
 val cond_prover_trueC: 
     ?info:Logic.info -> Logic.label -> Tactics.tactic
@@ -456,183 +536,3 @@ val is_excluded:
 
 val simp_fail: ?err:exn -> Tactics.tactic
 
-(** {5 Planned rewriting} *)
-
-module Planner :
-    sig
-
-      val log : string -> 'a -> unit
-
-      open Rewritekit
-      open Rewrite.Planned
-
-      val check_change : ('a)plan -> unit
-      val check_change2 : ('a)plan -> ('a)plan -> unit
-
-      val null_term : Basic.term
-
-      val plan_rewrite:
-	  ?info:Logic.info 
-	-> bool
-	  -> Logic.rr_type Rewrite.Planned.plan
-	    -> Basic.term 
-	      -> Logic.label
-		-> tactic
-
-      type data = 
-	  (Data.t  (** Scope *)
-	     * Gtypes.substitution (** Type environment *)
-	     * Term.substitution)   (** Quantifier environment *)
-
-      val match_rewrite :
-	  Scope.t 
-	-> Gtypes.substitution 
-	  -> Term.substitution 
-	    -> Simpset.rule
-	      -> Basic.term 
-		-> (Logic.rr_type 
-		      * Gtypes.substitution 
-		      * Term.substitution 
-		      * Basic.term)
-
-(**
-   [match_rewrite scp tyenv qntenv trmenv varp lhs rhs trm]: Try to match
-   [lhs] with [trm] in type envivornment [tyenv] and term bindings
-   [trmenv]. Return [rhs], instantiated with the binding from the
-   match, and the type and term environments that made the match
-   successful. Raise [Failure] on failure.
- *)
-
-      val find_basic :
-	  (Data.t 
-	     * Gtypes.substitution 
-	     * Basic.term 
-	     * Logic.rr_type) option ref 
-	-> data
-	  -> Simpset.rule
-	    -> Basic.term 
-	      -> Tactics.tactic
-(** 
-   [find_basic cntrl ret tyenv tac rl trm g]: Try to match simp rule
-   [rl] with term [trm] in goal [g]. If [rl] matches but is
-   conditional, try to prove the condition using tactic [tac], adding
-   the rule to the goal assumptions.
-
-   Returns [ret=(ncntrl, ntyenv, ntrm, rr)] where [ncntrl] is the
-   updated data, [nytenv] is the type environment made by the
-   matching, [ntrm] is the result of rewriting [trm] with [rl] and
-   [rl] the rewrite rule to add to the list being compiled.
- *)
-
-      val find_match_tac :
-	  (Data.t 
-	     * Gtypes.substitution 
-	     * Basic.term 
-	     * Logic.rr_type) option ref 
-	-> data 
-	  -> Basic.term 
-	    -> Tactics.tactic
-(**
-   [find_match_tac cntrl tyenv ret trm g]: Find a rule in simpset
-   [set] which matches term [trm] in goal [g]. If found, rewrite [trm]
-   with the rule.
-
-   Returns [ret=(ncntrl, ntyenv, ntrm, rr)] where [ncntrl] is the
-   updated data, [nytenv] is the type environment made by the
-   matching, [ntrm] is the result of rewriting [trm] with [rl] and
-   [rl] the rewrite rule to add to the list being compiled.
-
-   Raise [No_change] and set [ret:=None] if no matches.
- *)
-
-      val find_all_matches_tac :
-	  (Data.t 
-	     * Gtypes.substitution 
-	     * Basic.term
-	     * Logic.rr_type list) option ref
-	-> data
-	  -> Basic.term 
-	    -> Tactics.tactic
-(** 
-   [find_all_matches cntrl ret tyenv qntenv trm g]: Find all rules in simpset
-   [cntrl.set] which can be used to rewrite term [trm] in goal [g].
-
-   Returns new simp data, the new type environment and the rewritten
-   term. The new simp data is built by adding the rules used to
-   rewrite the term, in the order they are applied.
- *)
-      val extract_rules: 
-	  Data.t -> (Logic.rr_type list * Data.t)
-
-      val find_term_bu_tac:
-	  (Data.t * Gtypes.substitution 
-	     * Basic.term
-	     * Logic.rr_type Rewrite.Planned.plan) option ref
-	-> data
-	  -> Basic.term
-	    -> Tactics.tactic
-      val find_subterm_bu_tac:
-	  (Data.t * Gtypes.substitution 
-	     * Basic.term
-	     * Logic.rr_type Rewrite.Planned.plan) option ref
-	-> data
-	  -> Basic.term
-	    -> Tactics.tactic
-(**
-   [find_rrs_bottom_up ctrl ret tyenv qntenv trm g]: Traverse term [trm],
-   bottom-up, finding rewrite rules to apply. 
-
-   Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
-   data (with the rewrite rules to apply), [ntyenv] the new
-   type-environment and [ntrm] the term resulting from simplification.
- *)
-
-      val find_term_td_tac : 
-	  (Data.t * Gtypes.substitution 
-	     * Basic.term
-	     * Logic.rr_type Rewrite.Planned.plan) option ref
-	-> data
-	  -> Basic.term
-	    -> Tactics.tactic
-
-      val find_subterm_td_tac : 
-	  (Data.t * Gtypes.substitution 
-	     * Basic.term
-	     * Logic.rr_type Rewrite.Planned.plan) option ref
-	-> data
-	  -> Basic.term
-	    -> Tactics.tactic
-
-(**
-   [find_rrs_top_down ctrl ret tyenv qntenv trm g]: Traverse term [trm],
-   top-down, finding rewrite rules to apply. This is the default.
-
-   Return [ret=(ncntrl, ntyenv, ntrm)], where [ncntrl] is the new simp
-   data (with the rewrite rules to apply), [ntyenv] the new
-   type-environment and [ntrm] the term resulting from simplification.
- *)
-
-      val basic_simp_tac :
-	  Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
-(**
-   [basic_simp_tac data ret tag goal]:
-
-   Simplify formula tagged [tag] in [goal]: 
-   {ul
-   {- Descend top-down or bottom-up into formula, at each level collect
-   rewrite rules which can be used to rewrite the term.}
-   {- Use collected rules to rewrite the formula.}}
-
-   Doesn't clean up afterwards.
-
-   Returns [ret = ndata] where [ndata] is [data] updated with the
-   rules used to rewrite the formula.
-
-   raise [No_change] if no rules can be found.
- *)
-
-(** {7 Debugging information} *)
-      val check_add_loop: 
-	  Scope.t -> Data.t -> Basic.term
-	    ->  Data.t
-    end

@@ -4,6 +4,7 @@ Name: logic.ml
    Copyright M Wahab 2005
    ----*)
 
+open Lib.Ops
 open Basic
 open Formula
 
@@ -992,7 +993,7 @@ type rr_type =
 (** The label of an ordered assumption *)
 
 (** The type of rewrite plans *)
-type plan = rr_type Rewrite.Planned.plan
+type plan = rr_type Rewrite.plan
 
 (**
    [check_term_memo memo scp], [check_term scp trm]: Check that term
@@ -1050,7 +1051,7 @@ let check_term scp frm=
 	    check_term_memo memo scp (formula_of x);
 	    (formula_of x)
       in 
-      Rewrite.Planned.mapping extract plan
+      Rewrite.mapping extract plan
 
 module Tactics = 
   struct
@@ -1804,315 +1805,6 @@ module Tactics =
     let trueC ?info i g = 
       sqnt_apply (trueC0 ?info i) g
 
-(**
-   betaA i sq: beta reduction of assumption i
-   t:(%x.P(x))(c), asm |- concl
-   -->
-   t:P(c), asm |- concl
-
-   raise Not_found if assumption not found.
-
-   info: [] [t] [] []
- *)
-    let betaA0 ?info i sq = 
-      let lasms, asm, rasms = split_at_asm i (Sequent.asms sq)
-      in 
-      let (ft, t) = asm
-      in
-      let nt = 
-	(ft,
-	 try 
-	   Formula.beta_reduce (Sequent.scope_of sq) t
-	 with x -> raise 
-	     (Result.add_error(logic_error "Beta reduction" [t]) x))
-      in 
-      add_info info [] [ft] [] [];
-      mk_subgoal
-	(Sequent.sqnt_retag sq, 
-	 Sequent.sqnt_env sq, 
-	 join_up lasms (nt::rasms),
-	 Sequent.concls sq)
-
-    let betaA ?info i g = 
-      simple_sqnt_apply (betaA0 ?info i) g
-
-(**
-   betaC i sq: beta reduction of conclusion i
-   asm |- t:(%x.P(x))(c), concl
-   -->
-   asm |- t:P(c), concl
-
-   raise Not_found if conclusion not found.
-
-   info: [] [] [t] []
- *)
-    let betaC0 ?info i sq = 
-      let lconcls, concl, rconcls = split_at_concl i (Sequent.concls sq)
-      in 
-      let (ft, t) = concl
-      in 
-      let nt = 
-	(ft,
-	 try 
-	   Formula.beta_reduce (Sequent.scope_of sq) t
-	 with x -> raise 
-	     (Result.add_error(logic_error "Beta reduction" [t]) x))
-      in 
-      add_info info [] [] [ft] [];
-      mk_subgoal
-	(Sequent.sqnt_retag sq, 
-	 Sequent.sqnt_env sq, 
-	 Sequent.asms sq, 
-	 join_up lconcls (nt::rconcls))
-
-    let betaC ?info i g = 
-      simple_sqnt_apply (betaC0 ?info i) g
-
-
-(**
-   beta i sq:  beta reduction of concl or asm i in sq
-   (conclusions searched first)
-
-   t:(%x.P(x))(c), asm |- concl
-   -->
-   t:P(c), asm |- concl
-
-   raise Not_found if formula not found.
-
-   info: [] [t] []
- *)
-    let beta ?info i g=
-      try betaC ?info i g
-      with Not_found -> betaA ?info i g
-
-
-(*** 
- * Rewriting 
- ***)
-
-(**
-   [filter_rules scp rls l sg]: Filter the rewrite rules [rls].
-   
-   Extracts the assumptions to use as a rule from subgoal [sg]. Checks
-   that other rules are in the scope of [sg]. Creates unordered or
-   ordered rewrite rules as appropriate.
-
-   Fails if any rule in [rls] is the label of an assumption 
-   which does not exist in [sg].
-
-   Fails if any rule in [rls] is not in scope.
- *)
-    let filter_rules scp rls sq= 
-      let memo = Lib.empty_env() 
-      in 
-      let rec ft srcs rslt =
-	match srcs with 
-	  [] -> List.rev rslt
-	|  (Asm(x)::xs) ->
-	    let asm=
-	      (try 
-		drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	      with 
-		Not_found -> 
-		  raise 
-		    (logic_error "Rewrite: can't find tagged assumption" []))
-	    in 
- 	    ft xs ((Formula.rule asm)::rslt) 
-	|  (OAsm(x, order)::xs) ->
-	    let asm=
-	      (try 
-		drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	      with 
-		Not_found -> 
-		  raise 
-		    (logic_error "Rewrite: can't find tagged assumption" []))
-	    in 
-	    ft xs ((Formula.orule asm order)::rslt) 
-	| ((RRThm(x))::xs) -> 
-	    (try 
-	      check_term_memo memo scp (formula_of x);
- 	      ft xs ((Formula.rule (formula_of x))::rslt) 
-	    with 
-	      _ -> ft xs rslt)
-	| ((ORRThm(x, order))::xs) -> 
-	    (try 
-	      (check_term_memo memo scp (formula_of x));
-	      ft xs 
-		((Formula.orule (formula_of x) order) 
-		 ::rslt)
-	    with 
-	      _ -> ft xs rslt)
-      in ft rls []
-
-(**
-   rewriteA ?info ctrl rules l sq: Rewrite assumption [l] with [rules].
-   
-   {L
-   A{_ l}, asms |- concl
-   ---->>
-   B{_ l}, asms|- concl
-   }
-
-   info: [] [l] [] []
- *)
-    let rewriteA0 ?info ctrl rls j tyenv sq=
-      let scp = Sequent.scope_of sq
-      and lasms, asm, rasms = split_at_asm j (Sequent.asms sq)
-      in 
-      let r=filter_rules scp rls sq
-      and (ft, t)= asm
-      in 
-      try
-	(let nt, ntyenv = 
-	  Formula.rewrite_env scp ~ctrl:ctrl tyenv r t
-	in 
-	let gtyenv = 
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
-	in 
-	add_info info [] [ft] [] [];
-	(mk_subgoal
-	   (Sequent.sqnt_retag sq, 
-	    Sequent.sqnt_env sq, 
-	    join_up lasms ((ft, nt)::rasms),
-	    Sequent.concls sq), 
-	 gtyenv))
-      with x -> raise 
-	  (Result.add_error (logic_error "rewriting" [t]) x)
-
-    let rewriteA ?info ?ctrl rls j g=
-      let rrc = Lib.get_option ctrl Formula.default_rr_control
-      in 
-      sqnt_apply (rewriteA0 ?info rrc rls j) g
-
-(**
-   rewriteC ?info ctrl rules l sq: Rewrite conclusion [l] with [rules].
-   
-   {L
-   asms |- A{_ l}, concl
-   ---->>
-   asms|- B{_ l}, concl
-   }
-
-   info: [] [l] []
- *)
-    let rewriteC0 ?info ctrl rls j tyenv sq=
-      let scp = Sequent.scope_of sq
-      and lconcls, concl, rconcls = split_at_concl j (Sequent.concls sq)
-      in 
-      let r=filter_rules scp rls  sq
-      and (ft, t)= concl
-      in 
-      try
-	(let nt, ntyenv = 
-	  Formula.rewrite_env scp ~ctrl:ctrl tyenv r t
-	in 
-	let gtyenv = 
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
-	in 
-	add_info info [] [] [ft] [];
-	(mk_subgoal
-	   (Sequent.sqnt_retag sq, 
-	    Sequent.sqnt_env sq, 
-	    Sequent.asms sq, 
-	    join_up lconcls ((ft, nt)::rconcls)),
-	 gtyenv))
-      with x -> raise 
-	  (Result.add_error (logic_error"rewriting" [t]) x)
-
-    let rewriteC ?info ?ctrl rls j g=
-      let rrc = Lib.get_option ctrl Formula.default_rr_control
-      in 
-      sqnt_apply (rewriteC0 ?info rrc rls j) g
-
-(**
-   rewrite ?info ctrl rules l sq: Rewrite formula [l] with [rules].
-   
-   If [l] is in the conclusions then call [rewrite_concl]
-   otherwise call [rewrite_asm].
- *)
-    let rewrite ?info ?ctrl rls j g=
-      let rrc = Lib.get_option ctrl Formula.default_rr_control
-      in 
-      try 
-	sqnt_apply (rewriteC0 ?info rrc rls j) g
-      with Not_found -> sqnt_apply (rewriteA0 ?info rrc rls j) g
-
-(*
-   [rewrite_rule scp ctrl rrl thm]
-   rewrite theorem [thm] with rules [rrl] in scope [scp].
- *)
-    let rewrite_rule scp ?(ctrl=Formula.default_rr_control) rrl thm =
-      let conv_aux t = 
-	try 
-	  let f= formula_of t
-	  in 
-	  let nt = Formula.rewrite ~ctrl:ctrl scp 
-	      (List.map 
-		 (fun x -> 
- 		   Formula.rule (formula_of x)) rrl) f 
-	  in mk_theorem nt
-	with x -> raise 
-	    (Result.add_error(logic_error "rewrite_conv" [formula_of t]) x)
-      in 
-      conv_aux thm
-
-(***
- * Experimental
- ***)
-
-(*
-
-(**
-   [rewrite_intro ?info ctrl rules trm sq]: 
-   Introduce an equality established by rewriting term [trm] with [rules].
-   
-   {L
-   asms |- concl
-   ---->>
-   (trm = T){_ l}, asms|- concl
-   }
-
-   info: [] [l] [] []
-
-   Fails if [trm] cannot be made into a formula.
- *)
-    let rewrite_intro0 ?info ctrl rules trm tyenv sq=
-      let scp = Sequent.scope_of sq
-      and rtyenv = ref tyenv
-      in 
-      let rls=filter_rules scp rules sq
-      and form = Formula.make ~env:rtyenv scp trm
-      in 
-      let tyenv1 = !rtyenv
-      in 
-      try
-	(let nt, ntyenv = 
-	  Formula.rewrite_env scp ~ctrl:ctrl tyenv1 rls form
-	in 
-	let nasm0 = Formula.mk_equality scp form nt
-	and asm_tag= Tag.create()
-	in 
-	let (nasm1, tyenv2) = 
-	  Formula.typecheck_retype scp tyenv1 nasm0 (Gtypes.mk_null())
-	in 
-	let gtyenv = 
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv2
-	in 
-	add_info info [] [asm_tag] [] [];
-	(mk_subgoal
-	   (Sequent.sqnt_retag sq, 
-	    Sequent.sqnt_env sq, 
-	    ((asm_tag, nasm1)::(Sequent.asms sq)),
-	    Sequent.concls sq), 
-   gtyenv))
-      with x -> raise 
-	  (Result.add_error (logic_error "rewrite_intro" [form]) x)
-
-    let rewrite_intro ?info ?ctrl rls trm g=
-      let rrc = Lib.get_option ctrl Formula.default_rr_control
-      in 
-      sqnt_apply (rewrite_intro0 ?info rrc rls trm) g
-*)
 
 (**
    [extract_rules scp rls l sg]: Filter the rewrite rules [rls].
@@ -2126,8 +1818,6 @@ module Tactics =
 
    Fails if any rule in [rls] is not in scope.
  *)
-open Lib.Ops
-
     let extract_rules scp plan sq= 
       let memo = Lib.empty_env() 
       in 
@@ -2158,7 +1848,7 @@ open Lib.Ops
 	    check_term_memo memo scp (formula_of x);
 	    (formula_of x)
       in 
-      Rewrite.Planned.mapping extract plan
+      Rewrite.mapping extract plan
 
 (**
    [rewrite_intro ?info plan trm sq]: 
@@ -2411,10 +2101,7 @@ module Conv=
        or the resulting formula is not in scope.
      *)
     let beta_conv scp term =
-(*
-      let rhs ()= Logicterm.beta_conv term
-      in 
-*)
+(**    let rhs ()= Logicterm.beta_conv term     **)
       let rhs ()= Logicterm.beta_reduce term
       in 
       let eq_term t = 
@@ -2428,49 +2115,37 @@ module Conv=
 		(Result.add_error 
 		   (Term.term_error "beta_conv term: " [term]) err))
 
-(*
-   [rewrite_conv scp ctrl rrl trm]:
-   rewrite term [trm] with rules [rrl] in scope [scp].
+(**
+   [rewrite_conv scp pl trm]:
+   rewrite term [trm] with plan [pl] in scope [scp].
 
    Returns |- trm = X 
    where [X] is the result of rewriting [trm]
- *)
-    let rr_thm_to_rule rule = 
-      match rule with 
-	RRThm(thm) -> Formula.rule (formula_of thm)
-      | ORRThm (thm, order) -> Formula.orule (formula_of thm) order
-      | _ -> raise (Failure "thm_to_rule: Invalid rule")
-
-    let rewrite_conv ?(ctrl=Formula.default_rr_control) rules scp trm =
-      let thm_list = 
-	Lib.map_find 
-	  (fun x -> try rr_thm_to_rule x with _ -> raise Not_found)
-	  rules
+*)
+    let rewrite_conv plan scp trm =
+      let plan1 = Rewrite.mapping formula_of plan
       in 
       let conv_aux t = 
-	let form = Formula.make scp trm
-	in 
-	let nform = 
-	  Formula.rewrite ~ctrl:ctrl scp thm_list form
-	in 
-	let tform = Formula.mk_equality scp form nform
+	let (tform, _) = 
+	  Formula.mk_rewrite_eq scp (Gtypes.empty_subst()) 
+	    plan1 t
 	in 
 	mk_theorem tform
       in 
       try conv_aux trm
       with x -> raise 
 	  (Result.add_error 
-	     (Term.term_error "rewrite_conv" [trm]) x)
+	     (Term.term_error "plan_rewrite_conv" [trm]) x)
 
-
+(****
     let plan_rewrite_conv plan scp trm =
-      let plan1 = Rewrite.Planned.mapping formula_of plan
+      let plan1 = Rewrite.mapping formula_of plan
       in 
       let conv_aux t = 
 	let form = Formula.make scp trm
 	in 
 	let nform = 
-	  Formula.plan_rewrite scp plan1 form
+	  Formula.rewrite scp plan1 form
 	in 
 	let tform = Formula.mk_equality scp form nform
 	in 
@@ -2480,6 +2155,7 @@ module Conv=
       with x -> raise 
 	  (Result.add_error 
 	     (Term.term_error "plan_rewrite_conv" [trm]) x)
+****)
 
   end 
 

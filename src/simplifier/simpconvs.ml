@@ -241,6 +241,10 @@ let cond_eq_sym_var = Lib.freeze (make_cond_eq_sym_thm)
 let cond_eq_sym_thm () =
   Lib.thaw cond_eq_sym_var
 
+(***
+* Rewriting conversions and tactics 
+***)
+
 (** Rewriting applied inside topmost universal quantifiers *)
 
 (**
@@ -258,108 +262,17 @@ let cond_eq_sym_thm () =
  *)
 let simple_rewrite_conv scp rule trm=
   let key = 
-    Rewrite.Planned.neg_key 
-      (Rewrite.Planned.alt_key 
-	 Rewrite.Planned.allq_key 
-	 Rewrite.Planned.tyterm_key)
+    Rewrite.neg_key 
+      (Rewrite.alt_key 
+	 Rewrite.allq_key 
+	 Rewrite.tyterm_key)
   in 
   let plan = 
-    Rewrite.Planned.mk_node key [Rewrite.Planned.mk_rules [rule]]
+    Rewrite.mk_node key [Rewrite.mk_rules [rule]]
   in 
-  let conv = Logic.Conv.plan_rewrite_conv
+  let conv = Logic.Conv.rewrite_conv
   in 
   conv plan scp trm
-
-(*
-let simple_rewrite_conv scp rule trm=
-  let rule_trm = Logic.term_of rule
-  in 
-  let rvars, rbody = Term.strip_qnt Basic.All rule_trm
-  in 
-  let rlhs, rrhs = Logicterm.dest_equality rbody
-  in 
-  let trmvars, trmbody = Term.strip_qnt Basic.All trm
-  in 
-  let has_vars = not (trmvars = [])
-  in 
-  let info = Tactics.mk_info()
-  in 
-  let env=Unify.unify scp (Rewrite.is_free_binder rvars) rlhs trmbody
-  in 
-  let new_goal =
-    Term.rename
-      (Logicterm.mk_equality 
-	 (Term.rebuild_qnt trmvars trmbody)
-	 (Term.rebuild_qnt trmvars (Term.subst env rrhs)))
-  in 
-  let proof g= 
-    seq
-      [
-       once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
-       Logic.Tactics.conjC None (fnum 1)
-	 --
-	 [
-	  seq
-	    [Logic.Tactics.implC (Some info) (fnum 1);
-	     (fun g1-> 
-	       let atag = 
-		 Lib.get_one (aformulas info) 
-		   (Failure "simple_rewrite_conv: 1")
-	       and ctag = 
-		 Lib.get_one (cformulas info) 
-		   (Failure "simple_rewrite_conv: 1")
-	       in 
-	       seq 
-		 [
-		  ((fun _ -> has_vars)
-		     -->
-		     repeat (Logic.Tactics.allC (Some info) (ftag ctag)));
-		  (fun g2 -> 
-		    let trms = List.rev (constants info)
-		    in 
-		    seq
-		      [
-		       ((fun _ -> has_vars) 
-			  -->
-			    instA ~a:(ftag atag) trms);
-		       once_rewrite_tac ~f:(ftag atag) [rule];
-		       basic] g2)
-		] g1)
-	   ];
-	  seq 
-	    [
-	     data_tac (fun () -> empty_info info) ();
-	     Logic.Tactics.implC (Some info) (fnum 1);
-	     (fun g1 -> 
-	       let atag = 
-		 Lib.get_one (aformulas info) 
-		   (Failure "simple_rewrite_conv: 1")
-	       and ctag = 
-		 Lib.get_one (cformulas info) 
-		   (Failure "simple_rewrite_conv: 1")
-	       in 
-	       seq 
-		 [
-		  ((fun _ -> has_vars)
-		     --> 
-		       repeat (Logic.Tactics.allC (Some info) (ftag ctag)));
-		  (fun g2 -> 
-		    let trms = List.rev (constants info)
-		    in 
-		    seq
-		      [
-		       ((fun _ -> has_vars)
-			  --> instA ~a:(ftag atag) trms);
-		       once_rewrite_tac ~f:(ftag ctag) [rule];
-		       basic
-		     ] g2)
-		] g1)
-	   ]
-	]
-     ] g
-  in 
-  Commands.prove ~scp:scp new_goal proof;;
-*)
 
 (**
    [simple_rewrite_rule scp rule thm]
@@ -400,10 +313,9 @@ let simple_asm_rewrite_tac ?info rule asm node=
 
 
 (** 
-   Functions manipulating theorems, needed to
-   convert theorems to rewriting rules.
- *)
-
+*   Functions manipulating theorems, needed to
+*   convert theorems to rewriting rules.
+**)
 
 (** 
    [negate_concl_tac info t g]: Negate conclusion [t], making it
@@ -460,16 +372,6 @@ let is_negation (vars, cnd, main)=
 let is_equality (vars, cnd, main)=
   Logicterm.is_equality main
 
-(*
-let is_constant (qs, c, t)=
-  let r = 
-    if(Logicterm.is_equality t)
-    then 
-      let (_, _, x) = Term.dest_binop t in x
-    else t
-  in 
-  (List.exists (Term.equals r) [Logicterm.mk_true; Logicterm.mk_false])
-*)
 let is_constant clst (qs, c, t)=
   List.exists (Term.equals t) clst
 
@@ -532,7 +434,6 @@ let is_rr_rule (qs, c, l, r) =
 	with Not_found -> Some false
   in 
   (cret, rret)
-
 
 let is_rr_equality (qs, c, a)=
   if(Logicterm.is_equality a)
@@ -659,9 +560,6 @@ and do_eq_rule ret (scp, thm, (qs, c, a)) =
     | _ -> failwith "do_fact_rule"
   else 
     do_eq_rule ret (scp, thm, (qs, c, a))
- (*
-failwith "do_fact_rule"
- *)
  
 and do_neg_eq_rule ret (scp, thm, (qs, c, a)) =
   if ((Logicterm.is_neg a)
@@ -760,24 +658,29 @@ and do_neg_disj_rule ret (scp, thm, (qs, c ,a)) =
 and single_thm_to_rules ret scp thm = 
   let (qs, c, a) = strip_qnt_cond (Logic.term_of thm)
   in 
-  Lib.apply_first 
-    [
+  let make x = 
+    Lib.apply_first 
+      [
 (*     do_neg_all_rule; *)
-      do_neg_disj_rule ret;
-      do_conj_rule ret;
-      do_neg_exists_rule ret;
-      do_rr_equality ret;
-      do_neg_rule ret;
-      do_fact_rule ret;
-      accept_all_thms ret
-   ] (scp, thm, (qs, c, a))
+       do_neg_disj_rule ret;
+       do_conj_rule ret;
+       do_neg_exists_rule ret;
+       do_rr_equality ret;
+       do_neg_rule ret;
+       do_fact_rule ret;
+       accept_all_thms ret
+     ] x
+  in 
+  try (make (scp, thm, (qs, c, a)))
+  with err -> 
+    raise (add_error "Simpconvs.single_thm_to_rules" err)
 
 end
 
 let thm_to_rules scp thm = 
   let ret = Thms.single_thm_to_rules [] scp thm
   in 
-    List.rev ret
+  List.rev ret
 
 (*** Converting assumptions to rewrite rules **)
 
@@ -791,7 +694,7 @@ let thm_to_rules scp thm =
    tg:b, asms |- concl
  *)
 let asm_rewrite_tac ?info thm tg g=
-  once_rewrite_tac ?info:info [thm] ~f:(ftag tg) g
+  once_rewriteA_tac ?info:info [thm] ~f:(ftag tg) g
    	
 (** 
    [qnt_asm_rewrite_tac thm tg g]:
@@ -818,7 +721,6 @@ let add_asm_tac ret tg g =
   in 
     data_tac (fun _ -> ret:=aform::(!ret)) () g
 
-
 (** 
   [solve_not_true_tac]: Solve goals of the form [not true |- C].
 *)
@@ -833,7 +735,6 @@ let solve_not_true_tac tg goal =
 	 in 
 	   trueC ~c:(ftag ctg) g)
     ] goal
-
 
 (** 
    Functions to convert an assumption
@@ -882,275 +783,7 @@ let solve_not_true_tac tg goal =
    assumption [tg] of goal [g] to one or more rules.  The tag of each
    rule (including [tg]) generated from [tg] is stored in [ret].
  *)
-module OldAsms =
-struct
-
-(** 
-   [asm_rewrite_add_tac ret thm tg g]:
-
-   Rewrite assumption [tg] with rule [thm] = |- a=b
-
-   a{_ tg}, asms |- concl
-   -->
-   b{_ tg}, asms |- concl
-
-   Return [ret = [b]::!(reg)]
- *)
-let asm_rewrite_add_tac ?info ret thm tg goal =
-  seq
-    [
-      asm_rewrite_tac ?info thm tg;
-      add_asm_tac ret tg
-    ] goal
-
-let rec accept_asm ret (tg, (qs, c, a)) g =
-  if(is_constant_true (qs, c, a))
-  then 
-    (** Delete assumption true *)
-    deleteA (ftag tg) g
-  else 
-    if (is_constant_false (qs, c, a))
-    then (** Solve assumption false *)
-      falseA ~a:(ftag tg) g
-    else 
-      asm_rewrite_add_tac ret (rule_true_thm()) tg g
-
-and rr_equality_asm ret (tg, (qs, c, a)) g =
-  if(is_rr_equality (qs, c, a))
-  then 
-   add_asm_tac ret tg g
-    (* skip g *)
-  else failwith "rr_equality_asm: not a rewrite rule"
-
-and eq_asm ret (tg, (qs, c, a)) g=
-  if (Logicterm.is_equality a)
-  then 
-    let rr_thm =
-      match is_rr_rule (qs, c, a, None) with
- 	  (None, _) -> eq_sym_thm()
- 	| (Some(true), _) -> cond_eq_sym_thm()
- 	| _ -> failwith "eq_asm"
-    in 
-    let info = mk_info()
-    in 
-      seq
- 	[
- 	  copyA ~info:info (ftag tg);
- 		(fun g ->
- 		   let atg = get_one ~msg:"eq_asm" (aformulas info)
- 		   in 
- 		     seq 
- 		       [
- 			 asm_rewrite_tac rr_thm atg;
- 			 asm_rewrite_tac (rule_true_thm()) atg;
- 			 add_asm_tac ret atg;
- 			 asm_rewrite_tac (rule_true_thm()) tg;
- 			 add_asm_tac ret tg
- 		       ] g)
- 	] g
-  else failwith "eq_asm"
-
-and fact_rule_asm ret (tg, (qs, c, a)) g= 
-  if(not (Logicterm.is_equality a))
-  then 
-    match is_rr_rule (qs, c, a, None) with
-      (None, _) -> 
-	if(is_constant_true (qs, c, a))
-	then 
-	  (** Delete assumption true *)
-	  deleteA (ftag tg) g
-	else 
-	  if (is_constant_false (qs, c, a))
-	  then (** Solve assumption false *)
-	    falseA ~a:(ftag tg) g
-	else 
-	  asm_rewrite_add_tac ret (rule_true_thm()) tg g
-    | (Some(true), _) -> 
-	if(is_constant_true (qs, c, a))
-	then 
-	  (** Delete assumption true *)
-	  deleteA (ftag tg) g
-	else 
-	  (** |- c => false -> |- not c*)
-	  if (is_constant_false (qs, c, a))
-	  then 
-	    seq [
-	      asm_rewrite_tac (cond_rule_imp_false_thm()) tg;
-	      single_asm_to_rule ret tg
-	    ] g
-	  else 
-	    asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
-    | _ -> failwith "do_fact_asm"
-  else eq_asm ret (tg, (qs, c, a)) g
- (*
-  else failwith "do_fact_asm"
- *)
-
-and neg_eq_asm ret (tg, (qs, c, a)) g=
-  if ((Logicterm.is_neg a)
-	&& (Logicterm.is_equality (Term.rand a)))
-  then 
-    let rr_thm =
-      match c with
-	  None -> neg_eq_sym_thm()
-	| _ -> cond_neg_eq_sym_thm()
-    in 
-    let info = mk_info()
-    in 
-      seq
-	[
-	  copyA ~info:info (ftag tg);
-	  (fun g ->
-	     let atg = get_one ~msg:"neg_eq_asm" (aformulas info)
-	     in 
-	       seq 
-		 [
-		   asm_rewrite_tac rr_thm atg;
-		   asm_rewrite_tac (rule_false_thm()) atg;
-		   add_asm_tac ret atg;
-		   asm_rewrite_tac (rule_false_thm()) tg;
-		   add_asm_tac ret tg
-		 ] g)
-	] g
-  else
-    failwith "neg_eq_asm"
-
-and neg_disj_asm ret (tg, (qs, c, a)) g=
-  if ((Logicterm.is_neg a)
-	&& (Logicterm.is_disj (Term.rand a)))
-  then 
-    match c with
-	None -> 
-	  alt
-	    [
-	      seq
-		[
-		  asm_rewrite_tac (neg_disj_thm()) tg;
-		  single_asm_to_rule ret tg
-		];
-	      asm_rewrite_add_tac ret (rule_false_thm()) tg
-	    ] g
-      | Some _ ->  
-	  failwith 
-	    "neg_disj_asm: Not an unconditional negated disjunction"
-  else failwith "neg_disj_asm"
-
-
-and neg_rule_asm ret (tg, (qs, c, a)) g = 
-  if Logicterm.is_neg a
-  then 
-    let b = Term.rand a
-    in 
-      match is_rr_rule (qs, c, a, None) with
-	  (None, _) -> 
-	    if(is_constant_false (qs, c, b))
-	    then 
-	      (** Delete assumption (not false) *)
-	      deleteA (ftag tg) g
-	    else
-	      if (is_constant_true (qs, c, b))
-	      then 	  (** Solve assumption (not true) *)
-		solve_not_true_tac tg g
-	      else 
-		if Logicterm.is_equality b 
-		then neg_eq_asm ret (tg, (qs, c, a)) g
-		else 
-		  if (Logicterm.is_disj b)
-		  then
-		    neg_disj_asm ret (tg, (qs, c, a)) g
-		  else
-		    asm_rewrite_add_tac ret (rule_false_thm()) tg g
-	| (Some(true), _) -> 
-	    if(is_constant_false (qs, c, b))
-	    then 
-	      deleteA (ftag tg) g
-	    else
-	      (** |- c => not true -> |- not c*)
-	      if(is_constant_true (qs, c, b))
-	      then 
-		(seq [
-		  asm_rewrite_tac (cond_rule_imp_not_true_thm()) tg;
-		  single_asm_to_rule ret tg
-		] g)
-	      else 
-		if Logicterm.is_equality b 
-		then neg_eq_asm ret (tg, (qs, c, a)) g
-		else 
-		  asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
-	| _ -> failwith "neg_rule_asm"
-  else failwith "neg_rule_asm"
-
-and conj_rule_asm ret (tg, (qs, c, a)) g = 
-  if (Logicterm.is_conj a)
-  then 
-    let inf = mk_info ()
-    in 
-      seq
-	[
-	  conjA ~info:inf ~a:(ftag tg);
-	  (fun g1 -> 
-	     let ltg, rtg = 
-	       get_two ~msg:"Simpconvs.conj_rule_asm" (aformulas inf)
-	     in 
-	       seq
-		 [
-		   single_asm_to_rule ret ltg;
-		   single_asm_to_rule ret rtg
-		 ] g1)
-	] g
-  else failwith "conj_rule_asm"
-
-and neg_all_rule_asm ret (tg, (qs, c, a)) g= 
-  let scp = scope_of g
-  in 
-  match c with 
-    None -> 
-      if (is_neg_all (qs, c, a))
-      then 
-	(asm_rewrite_tac (neg_all_conv scp a) tg 
-	   ++ single_asm_to_rule ret tg) g
-      else failwith "neg_all_rule_asm: Not a negated universal quantifier"
-  | Some _ ->  
-      failwith 
-	"neg_all_rule_asm: Not an unconditional negated universal quantifier"
-
-and neg_exists_rule_asm ret (tg, (qs, c, a)) g= 
-  let scp = scope_of g
-  in 
-  match c with 
-    None -> 
-      if (is_neg_exists (qs, c, a))
-      then 
-	(asm_rewrite_tac (neg_exists_conv scp a) tg 
-	   ++ single_asm_to_rule ret tg) g
-      else failwith "neg_exists_rule_asm: Not a negated existential quantifier"
-  | Some _ ->  
-      failwith 
-	"neg_exists_rule_asm: Not an unconditional negated existential quantifier"
-
-and single_asm_to_rule ret tg goal = 
-  let tform = 
-    Logic.Sequent.get_tagged_asm tg (sequent goal)
-  in 
-  let trm = Formula.term_of (drop_tag tform)
-  in 
-  let (qs, c, a) = strip_qnt_cond trm
-  in 
-  Lib.apply_first 
-    [
-(*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
-      neg_disj_asm ret (tg, (qs, c, a));
-      neg_exists_rule_asm ret (tg, (qs, c, a));
-      rr_equality_asm ret (tg, (qs, c, a));
-      neg_rule_asm ret (tg, (qs, c, a));
-      conj_rule_asm ret (tg, (qs, c, a));
-      fact_rule_asm ret (tg, (qs, c, a));
-      accept_asm ret (tg, (qs, c, a))
-   ]  goal
-
-end
-
-module NewAsms =
+module Asms =
 struct
 
 (** 
@@ -1252,9 +885,6 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	    asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
     | _ -> failwith "do_fact_asm"
   else eq_asm ret (tg, (qs, c, a)) g
- (*
-  else failwith "do_fact_asm"
- *)
 
 and neg_eq_asm ret (tg, (qs, c, a)) g=
   if ((Logicterm.is_neg a)
@@ -1407,33 +1037,24 @@ and single_asm_to_rule ret tg goal =
   in 
   let (qs, c, a) = strip_qnt_cond trm
   in 
-  Lib.apply_first 
-    [
+  let make x = 
+    Lib.apply_first 
+      [
 (*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
-      neg_disj_asm ret (tg, (qs, c, a));
-      neg_exists_rule_asm ret (tg, (qs, c, a));
-      rr_equality_asm ret (tg, (qs, c, a));
-      neg_rule_asm ret (tg, (qs, c, a));
-      conj_rule_asm ret (tg, (qs, c, a));
-      fact_rule_asm ret (tg, (qs, c, a));
-      accept_asm ret (tg, (qs, c, a))
-   ]  goal
+       neg_disj_asm ret (tg, (qs, c, a));
+       neg_exists_rule_asm ret (tg, (qs, c, a));
+       rr_equality_asm ret (tg, (qs, c, a));
+       neg_rule_asm ret (tg, (qs, c, a));
+       conj_rule_asm ret (tg, (qs, c, a));
+       fact_rule_asm ret (tg, (qs, c, a));
+       accept_asm ret (tg, (qs, c, a))
+     ]  x 
+  in 
+  try make goal
+  with err ->  raise (add_error "single_asm_to_rule" err)
 
 end
 
-module Asms=NewAsms
-
-(*
-let asm_to_rules ret tg goal = 
-    seq
-      [
-	single_asm_to_rule ret tg;
-	(fun g ->
-	   let rule = get_tagged_asm (ftag tg) g
-	   in 
-	     data_tac (fun _ -> ret:=[rule]) () g)
-      ] goal
-*)
 let asm_to_rules ret tg goal = 
   Asms.single_asm_to_rule ret tg goal
 

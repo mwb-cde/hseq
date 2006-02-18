@@ -135,13 +135,12 @@ val find_unifier:
 
    Raises [Not_found] if no formula can be found which satisfies all the
    conditions.
-*)
+ *)
 val find_qnt_opt: 
     Basic.quant_ty 
   -> (Basic.term -> bool)
     -> Logic.tagged_form list 
       -> (Tag.t * Basic.binders list * Basic.term)
-
 
 
 (** {5 Basic Tactics} *)
@@ -153,20 +152,323 @@ val falseA: ?info:Logic.info -> ?a:Logic.label -> Tactics.tactic
 (** 
    Solve a goal of the form \[ false{_ a}, A |- C \].
    [info] is unchanged.
-*)
+ *)
 
 val trivial : ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 (** 
    Solve a goal of the form \[ false{_ f}, A |- C \] 
    or \[ A |- true{_ f}, C \].
    [info] is unchanged.
-*)
+ *)
+
+val cut_thm: 
+    ?info:Logic.info -> ?inst:Basic.term list 
+      -> string -> Tactics.tactic
+(** Cut a named theorem, with optional instantiation. *)
+
+(** {7 Basic equality reasoning} *)
+
+val make_bool_cases_thm : unit -> Logic.thm
+val bool_cases_thm_var : Logic.thm Lib.deferred
+val bool_cases_thm : unit -> Logic.thm
+(** [bool_cases_thm]: [! (x:bool): (x=true) | (x=false)] *)
+
+val make_eq_refl_thm : unit -> Logic.thm
+val eq_refl_thm_var : Logic.thm Lib.deferred
+val eq_refl_thm : unit -> Logic.thm
+(** [eql_refl]: [!x : (x = x)] *)
+
+val make_eq_sym_thm : unit -> Logic.thm
+val eq_sym_thm_var : Logic.thm Lib.deferred
+val eq_sym_thm : unit -> Logic.thm
+(** [eql_sym]: [!x y: (x = y) = (y = x) ] *)
+
+val eq_sym_rule : Scope.t -> Logic.thm -> Logic.thm
+(** 
+   [eq_sym_rule scp thm]: If the body of [thm] is [ |- x = y], return 
+   [ |- y=x ].
+ *)
+
+val eq_symA: ?info:Logic.info -> Logic.label -> Tactics.tactic
+(** 
+   [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
+ *)
+
+val eq_symC: ?info:Logic.info -> Logic.label -> Tactics.tactic
+(**
+   [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
+ *)
+
+val eq_sym_tac: ?info:Logic.info -> Logic.label -> Tactics.tactic
+(** 
+   [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try [eq_symC f].
+ *)
 
 val eq_tac :  ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
 (**
    Prove goals of the form \[A|- x=x{_ c}, C\].
    [info] is unchanged.
  *)
+
+(** 
+   {5 Generalised Rewriting} 
+
+   Tactics, conversions and rules for rewriting with a list of
+   theorems and assumptions. Combines rewrite planners and rewriting
+   and allows the direction of rewriting (left-right/right-left) to be
+   specified.
+*)
+
+module Rewriter :
+    sig
+(** 
+   This module implements a usable interface to rewriting, allowing
+   the direction of rewriting to be specified and using theorems and
+   assumptions as the rewrite rules. The conversions and tactics
+   provided here should not be used directly, instead the conversions
+   and the tactics of the main {!Boollib} module
+   (e.g. {!Boollib.rewrite_tac} and {!Boollib.rewrite_conv}) should be
+   used.
+*)
+
+      val rewrite_conv: 
+	  ?ctrl:Rewrite.control -> Logic.rr_type list -> Logic.conv
+(**
+   [rewrite_conv scp ctrl rules trm]:
+   rewrite term [trm] with rules [rrl] in scope [scp].
+
+   Returns |- trm = X 
+   where [X] is the result of rewriting [trm]
+
+   Discards any rule which is not a theorem or an ordered theorem.
+
+   This conversion could be written using the rewriting tactics but
+   this would require two sets of rewriting. The first to construct
+   the term [X] on the rhs of the equality and the second when the
+   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
+   one set of rewriting.
+ *)
+
+      val rewrite_rule:
+	  Scope.t 
+	  -> ?ctrl:Rewrite.control 
+	    -> Logic.rr_type list 
+	      -> Logic.thm -> Logic.thm
+(**
+   [rewrite_rule scp ctrl rules thm]:
+   rewrite theorem [thm] with rules [rrl] in scope [scp].
+
+   Returns |- X where [X] is the result of rewriting [thm]
+ *)
+
+(** {7 Tactics} *)
+
+      val map_sym_tac:
+	  (Tactics.rule list) ref -> Tactics.rule list -> Tactics.tactic
+(**
+   [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
+   [rules], returning the resulting list in [ret]. The list in [ret]
+   will be in reverse order of [rules]. 
+
+   Used to set assumptions and theorems in the right form for
+   right-left rewriting.
+ *)
+      val rewriteA_tac: 
+	  ?info:Logic.info
+	-> ?ctrl:Rewrite.control
+	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
+(** 
+   [rewriteA_tac ctrl rules l]: Rewrite the assumption at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   A{_ l}, asms |- concls
+
+   ----> (B is the rewritten assumption)
+
+   B{_ l}, asms |- concls
+   }
+
+   info: [goals = [], aforms=[l], cforms=[], terms = []]
+ *)
+
+      val rewriteC_tac : 
+	  ?info:Logic.info
+	-> ?ctrl:Rewrite.control
+	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
+(** 
+   [rewriteC_tac ctrl rules l]: Rewrite the conclusion at label [l] with
+   [rules], passing [ctrl] to the rewriter.
+
+   {L
+   asms |- A{_ l}, concls
+
+   ----> (B is the rewritten conclusion)
+
+   asms |- B{_ l}, concls
+   }
+
+   info: [goals = [], aforms=[], cforms=[l], terms = []]
+ *)
+	      
+      val rewrite_tac: 
+	  ?info:Logic.info
+	-> ?ctrl:Rewrite.control
+	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
+(**
+   [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
+   [rules].
+   
+   If [l] is in the conclusions then call [rewriteC_tac]
+   otherwise call [rewriteA_tac].
+ *)
+
+    end
+
+val rewrite_conv: 
+    ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
+(**
+   [rewrite_conv scp ctrl rules trm]:
+   Rewrite term [trm] with theorems [rules] in scope [scp].
+
+   Returns [ |- trm = X ]
+   where [X] is the result of rewriting [trm]
+ *)
+
+val rewrite_rule:
+    Scope.t 
+    -> ?ctrl:Rewrite.control -> Logic.thm list 
+      -> Logic.thm -> Logic.thm
+(**
+   [rewrite_rule scp ctrl rules thm]:
+   Rewrite theorem [thm] with theorems [rules] in scope [scp].
+
+   Returns [ |- X ] where [X] is the result of rewriting [thm]
+*)
+
+val gen_rewrite_tac: 
+    ?info: Logic.info 
+  -> ?asm:bool
+    -> Rewrite.control
+      -> ?f:Logic.label 
+	-> Logic.rr_type list 
+	  -> Logic.tactic
+(** 
+   [gen_rewrite_tac ?info ?asm ctrl rules f]: General rewriting
+   tactic.
+
+   Rewrite formula [f] with list of theorems and assumptions given in
+   [rules]. 
+
+   If [f] is not given, rewrite all assumptions and conclusions in in
+   sequent. If [f] is not given and [asm] is given then if [asm] is
+   true, rewrite only the assumptions, if [asm] is false then rewrite
+   only the conclusions. If neither [f] nor [asm] is given, the
+   rewrite both assumptions and conclusions in the sequent.
+ *)
+
+val rewrite_tac: 
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
+(** 
+   [rewrite_tac info dir thms f]: Rewrite formula [f] with list of
+   theorems [thms]. If [f] is not given, rewrite all formulas in
+   sequent. [dir=leftright] by default.
+ *)
+
+val once_rewrite_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
+      ?f:Logic.label -> Logic.thm list -> Logic.tactic
+(** 
+   [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
+   If [f] is not given, rewrite all formulas in sequent.
+   [dir=leftright] by default.
+ *)
+
+val rewriteC_tac: 
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
+(** 
+   [rewriteC_tac info dir thms f]: Rewrite formula [f] with list of
+   theorems [thms]. If [f] is not given, rewrite all conclusions in
+   sequent. [dir=leftright] by default.
+ *)
+
+val once_rewriteC_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
+      ?f:Logic.label -> Logic.thm list -> Logic.tactic
+(** 
+   [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
+   If [f] is not given, rewrite all conclusions in sequent.
+   [dir=leftright] by default.
+ *)
+
+val rewriteA_tac: 
+    ?info:Logic.info 
+  -> ?dir:Rewrite.direction
+    -> ?f:Logic.label
+      -> Logic.thm list 
+	-> Logic.tactic
+(** 
+   [rewrite_tac info dir thms f]: Rewrite formula [f] with list of
+   theorems [thms]. If [f] is not given, rewrite all assumptions in
+   sequent.
+   [dir=leftright] by default.
+ *)
+
+val once_rewriteA_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction -> 
+      ?f:Logic.label -> Logic.thm list -> Logic.tactic
+(** 
+   [once_rewrite_tac info dir thms f]: Rewrite formula [f] once.
+   If [f] is not given, rewrite all assumptions in sequent.
+   [dir=leftright] by default.
+ *)
+
+
+val gen_replace_tac: 
+    ?info:Logic.info -> ?ctrl:Rewrite.control
+      -> ?asms:Logic.label list 
+	-> ?f:Logic.label -> Logic.tactic
+(**
+   [gen_replace_tac info ctrl asms f]: Rewrite formula [f] with the
+   assumptions in list [asms].  If [f] is not given, rewrite all
+   formulas in sequent. If [asms] is not given, use all assumptions of
+   the form [l=r] or [!x1 .. xn: l = r]. Doesn't rewrite the
+   assumptions used as rewrite rules.
+ *)
+
+val replace_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction
+      -> ?asms:Logic.label list 
+	-> ?f:Logic.label -> Logic.tactic
+(** 
+   [replace_tac info dir asms f]: Rewrite formula [f] with assumptions
+   in list [asms].  If [f] is not given, rewrite all formulas in
+   sequent.  If [asms] is not given, use all assumptions of the form
+   [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used assumptions.
+   [dir=leftright] by default.
+ *)
+
+val once_replace_tac: 
+    ?info:Logic.info -> ?dir:Rewrite.direction
+      -> ?asms:Logic.label list 
+	-> ?f:Logic.label -> Logic.tactic
+(** 
+   [once_replace_tac info dir asms f]: Rewrite formula [f] with
+   assumptions in list [asms] once. If [f] is not given, rewrite all
+   formulas in sequent.  If [asms] is not given, use all assumptions
+   of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
+   assumptions.
+   [dir=leftright] by default.
+ *)
+
 
 val unfold : 
     ?info:Logic.info -> ?f:Logic.label -> string -> Tactics.tactic
@@ -176,12 +478,7 @@ val unfold :
    info: [aforms=[f'], cforms=[]] or [aforms=[], cforms=[f']]
    depending on whether [f] is in the assumptions or conclusions.
    [f'] is the tag of the formula resulting from rewriting.
-*)
-
-val cut_thm: 
-    ?info:Logic.info -> ?inst:Basic.term list 
-      -> string -> Tactics.tactic
-(** Cut a named theorem, with optional instantiation. *)
+ *)
 
 (** {7 Boolean equivalence} *)
 
@@ -241,24 +538,24 @@ val iffE: ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
 
 (** 
    {5 Eliminating boolean operators} 
-*)
+ *)
 
 val direct_alt: 
     (Logic.info -> Logic.label -> Tactics.tactic) list 
-    ->  Logic.info -> Logic.label -> Tactics.tactic
+  ->  Logic.info -> Logic.label -> Tactics.tactic
 (**
    [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
    pass [info] and [l] to each tactic in [tacs].
-**)
+ **)
 
 val direct_map_some: 
-  (Logic.label -> Tactics.tactic)
-    -> Logic.label list ref -> Logic.label list -> Tactics.tactic
+    (Logic.label -> Tactics.tactic)
+  -> Logic.label list ref -> Logic.label list -> Tactics.tactic
 (**
    [direct_map_some tac lst l]: Directed map_some. Like
    {!Tactics.map_some} but pass [info] and [l] to [tac]. If [tac]
    fails for [l], then [lst:=l::!lst].
-**)
+ **)
 
 val asm_elim_rules_tac :
     ?info:Logic.info 
@@ -272,7 +569,7 @@ val asm_elim_rules_tac :
    conclusions. Assumptions are eliminated with [arules], conclusions
    with [crules]. Any new tag which can't be eliminated are stored in
    [?info] (in arbitrary order and may contain duplicates).
-*)
+ *)
 
 
 val concl_elim_rules_tac :
@@ -288,15 +585,15 @@ val concl_elim_rules_tac :
    with [crules]. The tag of any new formula for which the elimination
    rules fails is stored in [?info] (in arbitrary order and may
    contain duplicates).
-*)
+ *)
 
 
 val elim_rules_tac :
     ?info:Logic.info 
   -> ((Logic.info -> Logic.label -> Tactics.tactic) list
-     * (Logic.info -> Logic.label -> Tactics.tactic) list)
-      -> Logic.label list -> Logic.label list
-	-> Tactics.tactic
+	* (Logic.info -> Logic.label -> Tactics.tactic) list)
+    -> Logic.label list -> Logic.label list
+      -> Tactics.tactic
 (**
    [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
    elimination rules to all assumptions with a label in [albls] and
@@ -304,15 +601,15 @@ val elim_rules_tac :
    assumptions and conclusions. The tag of any new formula for which
    the elimination rules fails is stored in [?info] (in arbitrary
    order and may contain duplicates).
-*)
+ *)
 
 val apply_elim_tac :
     (?info:Logic.info 
      -> Logic.label list -> Logic.label list
        -> Tactics.tactic)
-    -> ?info:Logic.info 
-      -> ?f:Logic.label
-	-> Tactics.tactic
+  -> ?info:Logic.info 
+    -> ?f:Logic.label
+      -> Tactics.tactic
 (**
    [apply_elim_tac tac ?info ?f]: Apply elimination tactic [tac] to
    formula [?f]. If [?f] is not given, use all formulas in the
@@ -322,7 +619,7 @@ val apply_elim_tac :
 
    [apply_elim_tac] is intended to be used to wrap
    {!Boollib.elim_rules_tac}.
-*)
+ *)
 
 (** 
    {7 Splitting subgoals}
@@ -331,7 +628,7 @@ val apply_elim_tac :
    split if eliminating the operator results in more than one subgoal
    (or proves the subgoal).  For example, {!Tactics.conjC} [~c:f] will
    split formula [f].
-*)
+ *)
 
 val split_asm_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
@@ -345,13 +642,13 @@ val split_asms_tac:
 (**
    Eliminate operators in the assumptions which introduce new
    subgoals. Uses the same rules as {!Boollib.split_tac}.
-*)
+ *)
 val split_concls_tac: 
     ?info:Logic.info -> Logic.label -> Tactics.tactic
 (**
    Eliminate operators in the conclusions which introduce new
    subgoals. Uses the same rules as {!Boollib.split_tac}.
-*)
+ *)
 
 val split_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
@@ -364,7 +661,7 @@ val split_tac :
    implication ([=>]).
 
    In the conclusions, eliminates [true], conjunction ([&]).
-*)
+ *)
 
 (** 
    {7 Flattening subgoals}
@@ -373,31 +670,31 @@ val split_tac :
    flattened} if eliminating the operator results in at most one
    subgoal (or proves the subgoal). For example, {!Tactics.conjA}
    [~a:f] flattens formal [f].
-*)
+ *)
 
 val flatter_asm_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    The rules used by {!Boollib.flatten_tac} to flatten assumptions. 
-*)
+ *)
 val flatter_concl_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    The rules used by {!Boollib.flatten_tac} to flatten conclusions.
-*)
+ *)
 
 val flatter_asms_tac: 
     ?info:Logic.info -> Logic.label -> Tactics.tactic
 (**
    Eliminate operators in the assumptions which don't introduce new
    subgoals. Uses the same rules as {!Boollib.flatten_tac}.
-*)
+ *)
 val flatter_concls_tac: 
     ?info:Logic.info -> Logic.label -> Tactics.tactic
 (**
    Eliminate operators in the conclusions which don't introduce new
    subgoals. Uses the same rules as {!Boollib.flatten_tac}.
-*)
+ *)
 
 val flatten_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
@@ -412,24 +709,24 @@ val flatten_tac :
    In the conclusions, eliminates [true], negation ([not]),
    disjunction ([|]), implication ([=>]), universal quantification
    ([!]).
-*)
+ *)
 
 (** 
    {7 Scatter subgoals}
 
    Split and flatten subgoals.
-*)
+ *)
 
 val scatter_asm_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    Rules used by {!Boollib.scatter_tac} to scatter assumptions.
-*)
+ *)
 val scatter_concl_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    Rules used by {!Boollib.scatter_tac} to scatter conclusions.
-*)
+ *)
 
 val scatter_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
@@ -445,18 +742,18 @@ val scatter_tac :
    ([!]), conjunction ([&]) and boolean equivalence ([iff]).
 
    Resulting tag information, in [?info], may contain duplicates.
-*)
+ *)
 
 val blast_asm_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    Rules used by {!Boollib.blast_tac}.
-*)
+ *)
 val blast_concl_rules:
     (Logic.info -> Logic.label -> Tactics.tactic) list
 (** 
    Rules used by {!Boollib.blast_tac}.
-*)
+ *)
 
 val blast_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
@@ -474,7 +771,7 @@ val blast_tac :
    {!Tactics.basic}.
 
    This is like {!Boollib.scatter_tac}, followed by {!Tactics.basic}.
-*)
+ *)
 
 (** {5 Cases} *)
 
@@ -506,7 +803,7 @@ val show_tac:
    [show_tac trm tac]: Use [tac] to show that [trm] is true,
    introducing [trm] as a new assumption. If [tac] fails to prove
    [trm], introduces [trm] as the conclusion of a new subgoal.
-*)
+ *)
 
 val show: 
     ?info:Logic.info
@@ -517,7 +814,7 @@ val show:
    [trm], introduces [trm] as the conclusion of a new subgoal.
 
    {!Boollib.show} is a synonym for {!Boollib.show_tac}.
-*)
+ *)
 
 
 val cases_of: 
@@ -529,14 +826,14 @@ val cases_of:
    the type of term [trm]. If [thm] is given, it is used as the cases
    theorem. If [thm] is not given, the theorem named ["T_cases"] is
    used, where [T] is the name of the type of [trm].
-*)
+ *)
 
 
 (** {5 Modus Ponens} *)
 
 val mp_tac: 
     ?info:Logic.info
-    -> ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
+  -> ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
 (**
    [mp_tac ?a ?a1]: Modus ponens.
 
@@ -557,7 +854,7 @@ val mp_tac:
    If [?a] is not given, the first (possibly quantified) implication
    in the assumptions is used. If [?a1] is not given, the assumptions
    are searched for a suitable formula.
-*)
+ *)
 
 val cut_mp_tac:
     ?info:Logic.info 
@@ -587,7 +884,7 @@ val cut_mp_tac:
    If [?a] is not given, the first (possibly quantified) implication
    in the assumptions is used. If [?a1] is not given, the assumptions
    are searched for a suitable formula.
-*)
+ *)
 
 val back_tac: 
     ?info:Logic.info 
@@ -612,7 +909,7 @@ val back_tac:
    If [a] is not given, the first (possibly quantified) implication
    in the assumptions is used. If [c] is not given, the assumptions
    are searched for a suitable formula.
-*)
+ *)
 
 val cut_back_tac:
     ?info:Logic.info -> ?inst:Basic.term list 
@@ -708,25 +1005,25 @@ module Rules:
     sig
 (** 
    Functions to construct theorems from other theorems. 
-*)
+ *)
 
       val once_rewrite_rule :
 	  Scope.t -> Logic.thm list -> Logic.thm -> Logic.thm
 (** 
    [once_rewrite_rule scp rules thm]: Rewrite [thm] with [rules] once.
-*)
+ *)
 
       val conjunctL : Scope.t -> Logic.thm -> Logic.thm 
 (**
    [conjunctL scp thm]: Get the left hand side of conjunct [thm].
    [conjunctL scp << l and r >> = l]
-*)
+ *)
 
       val conjunctR : Scope.t -> Logic.thm -> Logic.thm 
 (**
    [conjunctR scp thm]: Get the right hand side of conjunct [thm].
    [conjunctL scp << l and r >> = r]
-*)
+ *)
 
       val conjuncts : Scope.t -> Logic.thm -> Logic.thm list 
 (**
@@ -734,19 +1031,13 @@ module Rules:
    [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
  *)
 
-      val conv_rule :
-	  Scope.t ->
-	    (Scope.t -> Basic.term -> Logic.thm) -> Logic.thm -> Logic.thm
-(** 
-   [conv_rule scp conv thm]: Apply conversion [conv] to theorem [thm]
- *)
     end
 
 module Convs:
     sig
 (** 
    Conversions on boolean operators.
-*)
+ *)
 
 (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
       val neg_all_conv: Scope.t -> Basic.term -> Logic.thm
@@ -766,11 +1057,11 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 
 (** {7 Miscellaneous unification functions} *)
 
-val unify_formula_for_consts:
-    Gtypes.substitution
-  -> Scope.t
-    -> (Basic.binders list * Basic.term) 
-      -> Basic.term -> Basic.term list
+   val unify_formula_for_consts:
+   Gtypes.substitution
+   -> Scope.t
+   -> (Basic.binders list * Basic.term) 
+   -> Basic.term -> Basic.term list
 (**
    [unify_formula_for_consts scp trm f]: Unify [trm] with formula [f]
    returning the list of terms needed to make [trm] alpha-equal to [f]
@@ -779,10 +1070,10 @@ val unify_formula_for_consts:
    raise Not_found, if no unifiable formula found.
  *)
 
-val unify_concl_for_consts:
-    Basic.quant_ty
-  -> ?c:Logic.label
-    -> Basic.term -> Logic.node -> Basic.term list
+   val unify_concl_for_consts:
+   Basic.quant_ty
+   -> ?c:Logic.label
+   -> Basic.term -> Logic.node -> Basic.term list
 (**
    [unify_concl_for_consts ?c trm g]: If [c] is given, unify [trm]
    with the conclusion labelled [c], returning the list of terms
@@ -792,10 +1083,10 @@ val unify_concl_for_consts:
    [trm] must be universally quantified.
  *)
 
-val unify_asm_for_consts:
-    Basic.quant_ty
-  -> ?a:Logic.label
-    -> Basic.term -> Logic.node -> Basic.term list
+   val unify_asm_for_consts:
+   Basic.quant_ty
+   -> ?a:Logic.label
+   -> Basic.term -> Logic.node -> Basic.term list
 (**
    [unify_asm_for_consts ?a qnt trm g]: If [a] is given, unify [trm]
    with the assumption labelled [a], returning the list of terms
@@ -806,7 +1097,7 @@ val unify_asm_for_consts:
  *)
 
 
-******)
+ ******)
 
 (** {5 Debugging} *)
 
@@ -814,6 +1105,6 @@ val get_type_name: Basic.gtype -> Basic.ident
 
 (*
 
-val make_false_def: unit -> Logic.thm
-val make_iff_def: unit -> Logic.thm
-*)
+   val make_false_def: unit -> Logic.thm
+   val make_iff_def: unit -> Logic.thm
+ *)

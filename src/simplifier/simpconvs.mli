@@ -738,12 +738,3 @@ val prepare_concls :
  *)
 
 
-(** Debugging *)
-
-
-(*
-val asm_rewrite_add_truth_tac : 
-  ?info:Logic.info 
-  -> Logic.tagged_form list ref
-  -> Logic.thm -> Tag.t -> Tactics.tactic
-*)
