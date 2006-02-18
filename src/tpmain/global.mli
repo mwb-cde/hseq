@@ -287,8 +287,9 @@ module Files :
 
       val find_file : string -> string list -> string
 (** 
-   [find_file x p]: Find file [x] in the path [p].
+   [find_file f p]: Find file [f] in the path [p].
    Returns the full path to the file, raises [Not_found] if not found.
+   If [f] is an absolute file name, just returns [f].
  *)
 
 (** {7 Theory files} *)
@@ -314,6 +315,7 @@ module Files :
 (** 
    Load or use the files named by a theory. This is only called when
    a theory is loaded from a file, not went it is built from a script.
+   Files are searched for in the theory path [get_thy_path()].
 *)
 
 (** {7 Theory load functions}

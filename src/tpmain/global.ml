@@ -293,7 +293,9 @@ module Files =
 	    then nf 
 	    else find_aux ts
       in 
-      find_aux path
+      if Filename.is_relative f 
+      then find_aux path
+      else f
 
 (*** Theory files ***)
 
@@ -392,7 +394,17 @@ module Files =
    theory [thy].
  *)
     let load_use_theory_files thy = 
-      List.iter (Unsafe.load_use_file) thy.Theory.cfiles
+      let files = thy.Theory.cfiles
+      in
+      let path = get_thy_path()
+      in 
+      let find_load f = 
+	try 
+	  Unsafe.load_use_file (find_file f path)
+	with Not_found ->
+	  Result.warning ("Can't find file "^f)
+      in 
+      List.iter find_load files
 
 (***
 * Theory inspection functions
