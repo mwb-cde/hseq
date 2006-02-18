@@ -13,8 +13,8 @@ open Formula
  **********)
 
 type thm = 
-    Axiom of form
-  | Theorem of form
+    Axiom of Formula.t
+  | Theorem of Formula.t
 
 (** Recogniseres *)
 let is_axiom t = match t with (Axiom _) -> true | _ -> false
@@ -88,7 +88,7 @@ type label =
   | FTag of Tag.t
   | FName of string
 
-type tagged_form = (Tag.t* form)
+type tagged_form = (Tag.t * Formula.t)
 
 let form_tag (t, _) = t
 let drop_tag (_, f) = f
@@ -606,7 +606,7 @@ let get_label_form t sq=
    type variables).} 
    {- A formula: the theorem which is to be proved.}}
  *)
-type goal =  Goal of (Sequent.t list * Gtypes.substitution * form)
+type goal =  Goal of (Sequent.t list * Gtypes.substitution * Formula.t)
 
 let get_goal (Goal(_, _, f)) = f
 let get_subgoals (Goal(sq, tyenv, _)) = sq
@@ -2193,7 +2193,7 @@ module Defns =
 	 type_base: Basic.gtype;   (* the base type *)
 	 type_rep: cdefn;          (* representation function *)
 	 type_abs: cdefn;          (* abstraction function *)
-	 type_set: Formula.form;      (* defining set *)
+	 type_set: Formula.t;      (* defining set *)
 	 rep_type: thm;
 	 rep_type_inverse: thm;
 	 abs_type_inverse: thm

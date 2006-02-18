@@ -482,7 +482,7 @@ val unfold :
 
 (** {7 Boolean equivalence} *)
 
-val is_iff: Formula.form -> bool
+val is_iff: Formula.t -> bool
 (** Test whether a formula is a boolean equivalence. *)
 
 val iff_def: unit -> Logic.thm

@@ -14,33 +14,32 @@
 
    Each formula is associated with a theory, identified by a theory
    marker. The formula is type-correct in the scope of its theory.
-
 *)
 
-type form 
+type t
 (** The type of formulas *)
 
-val term_of: form -> Basic.term
+val term_of: t -> Basic.term
 (** The term of a formula *)
 
-val thy_of : form -> Scope.marker
+val thy_of : t -> Scope.marker
 (** The theory  of a formula *)
 
 
 (** {5 Error Reporting} *)
 
-class formError : string -> form list ->
+class formError : string -> t list ->
   object
     inherit Result.error 
-    val forms: form list
-    method get : unit -> form list
+    val forms: t list
+    method get : unit -> t list
   end
-val error : string -> form list -> exn
-val add_error : string -> form list -> exn -> 'a
+val error : string -> t list -> exn
+val add_error : string -> t list -> exn -> 'a
 
 (** {5 Conversion from a term} *)
 
-val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
+val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> t
 (**
    [make ?env scp trm]: Make a formula from term [trm] in scope [scp].
    The theory of the formula is the theory currently in scope.
@@ -61,48 +60,48 @@ val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> form
 type saved_form 
 (** The representation of formulas for permanent storage. *)
 
-val to_save: form -> saved_form
+val to_save: t -> saved_form
 (** Convert to the saveable representation. *)
-val from_save : Scope.t -> saved_form -> form
+val from_save : Scope.t -> saved_form -> t
 (** Convert from the saveable representation. *)
 
 (** {5 Operations on formulas} *)
 
-val equals : form -> form -> bool
+val equals : t -> t -> bool
 (** Equality *)
 
 (** {7 General tests} *)
 
-val in_scope:  Scope.t -> form -> bool
+val in_scope:  Scope.t -> t -> bool
 (** Check that a formula is in scope. *)
 
 val in_scope_memo: 
     (string, bool) Lib.substype ->
-      Scope.t ->  form -> bool
+      Scope.t ->  t -> bool
 (** Memoised version of [in_scope]. *)
 
 (** {7 Recognisers} *)
 
-val is_qnt : form -> bool 
-val is_app : form -> bool
-val is_bound: form -> bool
-val is_free : form -> bool
-val is_var : form -> bool
-val is_typed : form -> bool
-val is_const : form -> bool
-val is_fun: form -> bool
+val is_qnt : t -> bool 
+val is_app : t -> bool
+val is_bound: t -> bool
+val is_free : t -> bool
+val is_var : t -> bool
+val is_typed : t -> bool
+val is_const : t -> bool
+val is_fun: t -> bool
 
-val is_true :form-> bool
-val is_false : form -> bool
-val is_neg: form -> bool
-val is_conj: form -> bool
-val is_disj: form -> bool
-val is_implies: form -> bool
-val is_equality: form -> bool
+val is_true :t-> bool
+val is_false : t -> bool
+val is_neg: t -> bool
+val is_conj: t -> bool
+val is_disj: t -> bool
+val is_implies: t -> bool
+val is_equality: t -> bool
 
-val is_all: form-> bool
-val is_exists : form -> bool
-val is_lambda: form-> bool
+val is_all: t-> bool
+val is_exists : t -> bool
+val is_lambda: t-> bool
 
 (** 
    {7 Destructors} 
@@ -113,52 +112,52 @@ val is_lambda: form-> bool
    binding terms or {!Formula.inst} to form a formula from a binding term.
 *)
 
-val dest_num : form -> Num.num
-val dest_neg: form -> form
-val dest_conj: form -> (form * form)
-val dest_disj: form -> (form * form)
-val dest_implies: form -> (form * form)
-val dest_equality: form -> (form * form)
+val dest_num : t -> Num.num
+val dest_neg: t -> t
+val dest_conj: t -> (t * t)
+val dest_disj: t -> (t * t)
+val dest_implies: t -> (t * t)
+val dest_equality: t -> (t * t)
 
-val get_binder_name : form -> string
-val get_binder_type: form -> Basic.gtype
+val get_binder_name : t -> string
+val get_binder_type: t -> Basic.gtype
 
 (** {7 Constructors} *)
 
-val mk_true: Scope.t -> form
-val mk_false : Scope.t -> form
-val mk_bool : Scope.t -> bool -> form
-val mk_not: Scope.t -> form -> form
-val mk_and: Scope.t -> form -> form -> form
-val mk_or: Scope.t -> form -> form -> form
-val mk_implies: Scope.t -> form -> form -> form
-val mk_iff: Scope.t -> form -> form -> form
-val mk_equality: Scope.t -> form -> form -> form
+val mk_true: Scope.t -> t
+val mk_false : Scope.t -> t
+val mk_bool : Scope.t -> bool -> t
+val mk_not: Scope.t -> t -> t
+val mk_and: Scope.t -> t -> t -> t
+val mk_or: Scope.t -> t -> t -> t
+val mk_implies: Scope.t -> t -> t -> t
+val mk_iff: Scope.t -> t -> t -> t
+val mk_equality: Scope.t -> t -> t -> t
 
 
 (** {7 General operations} *)
 
 val inst_env : Scope.t -> Gtypes.substitution
-  -> form -> form -> (form* Gtypes.substitution)
+  -> t -> t -> (t* Gtypes.substitution)
 (**
    Instantiation w.r.t a type substitution.
    Instantiate a quantified formula with a given term 
    succeeds only if the result is a formula.
 *)
 
-val inst : Scope.t -> form -> form -> form
+val inst : Scope.t -> t -> t -> t
 (**
    Instantiate a quantified formula with a given term
    succeeds only if the result is a formula.
 *)
 
-val subst : Scope.t -> form -> (form*form) list -> form 
+val subst : Scope.t -> t -> (t*t) list -> t 
 (** 
    [subst scp [(t1, r1); ...; (tn, rn)] f]: Simultaneous substitution.
    Substitutes the [ri] for the [ti] in formula [f].
 *)
 
-val subst_equiv : Scope.t -> form -> (form*form) list -> form 
+val subst_equiv : Scope.t -> t -> (t*t) list -> t 
 (**
    Substition of equivalents under alpha-conversion. [subst scp f
    [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
@@ -166,26 +165,23 @@ val subst_equiv : Scope.t -> form -> (form*form) list -> form
    binder renaming. Note that this is not syntactic substitution.
 *)
 
-val rename: form -> form
+val rename: t -> t
 (** Rename bound variables *)
 
 (** {5 Unification functions} *)
 
-val unify: Scope.t 
-  -> form 
-    -> form 
-      -> Term.substitution
+val unify: 
+    Scope.t -> t -> t -> Term.substitution
 (**
    [unify scp asm concl]: Unify [asm] with [concl] in scope
    [scp]. Formula [asm] is normally the assumption of some sub-goal and
    [concl] is the conclusion.
 *)
 
-val unify_env: Scope.t 
+val unify_env: 
+    Scope.t 
   -> Gtypes.substitution
-    -> form 
-      -> form 
-	-> (Gtypes.substitution * Term.substitution)
+    -> t -> t -> (Gtypes.substitution * Term.substitution)
 (**
    [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
    [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
@@ -195,24 +191,24 @@ val unify_env: Scope.t
 
 (** {5 Typechecking} *)
 
-val typecheck: Scope.t -> form -> Basic.gtype ->form
+val typecheck: Scope.t -> t -> Basic.gtype ->t
 (** [typecheck scp f ty]: Check that [f] has type [ty] in scope [scp]. *)
 
 val typecheck_env : Scope.t -> Gtypes.substitution 
-  -> form -> Basic.gtype -> Gtypes.substitution
+  -> t -> Basic.gtype -> Gtypes.substitution
 (** 
    [typecheck_env scp tyenv f ty]: Check that [f] has type [ty] in
    scope [scp] w.r.t type context [tyenv]. Returns [tyenv] updated
    with binding made during the typechecking.
 *)
 
-val retype: Scope.t -> Gtypes.substitution -> form -> form
+val retype: Scope.t -> Gtypes.substitution -> t -> t
 (** [retype tyenv f]: Retype [f] with using type context [tyenv]. *)
 
 val typecheck_retype: 
     Scope.t -> Gtypes.substitution 
-      -> form -> Basic.gtype
-	-> (form * Gtypes.substitution)
+      -> t -> Basic.gtype
+	-> (t * Gtypes.substitution)
 (** 
    [typecheck_retype scp tyenv f ty]: Check that [f] is correctly
    typed and has type [ty] w.r.t type context [tyenv].  Retype [f]
@@ -224,28 +220,28 @@ val typecheck_retype:
 
 (** {7 Alpha conversion} *)
 
-val alpha_equals : Scope.t -> form -> form -> bool 
+val alpha_equals : Scope.t -> t -> t -> bool 
 (** Equality under alpha conversion *)
 
 val alpha_equals_match : 
     Scope.t -> Gtypes.substitution 
-      -> form -> form -> Gtypes.substitution
+      -> t -> t -> Gtypes.substitution
 (** Equality under alpha-conversion w.r.t a type environment *)
 
 (** {7 Beta conversion} *)
 
-val beta_convp:  form -> bool
+val beta_convp:  t -> bool
 (** A formula has the form [((%x. F) a)]. *)
 
-val beta_conv: Scope.t -> form -> form
+val beta_conv: Scope.t -> t -> t
 (** Reduce a formula of the form [((%x. F) a)] to [F[a/x]]. *)
 
-val beta_reduce : Scope.t -> form -> form
+val beta_reduce : Scope.t -> t -> t
 (** Reduce all sub-terms of the form [((%x. F) a)] to [F[a/x]]. *)
 
 (** {7 Eta conversion} *)
 
-val eta_conv: Scope.t -> form -> Basic.gtype -> form -> form
+val eta_conv: Scope.t -> t -> Basic.gtype -> t -> t
 (** Eta abstract a formula. *)
 
 (** {5 Rewriting} *)
@@ -255,22 +251,22 @@ val default_rr_control : Rewrite.control
 
 val rewrite : 
     Scope.t -> ?dir:Rewrite.direction
-      -> form Rewrite.plan
-	-> form -> form
+      -> t Rewrite.plan
+	-> t -> t
 (** Rewrite a formula *)
 
 val rewrite_env : 
     Scope.t -> ?dir:Rewrite.direction
       -> Gtypes.substitution 
-	-> form Rewrite.plan
-	  -> form -> (form * Gtypes.substitution)
+	-> t Rewrite.plan
+	  -> t -> (t * Gtypes.substitution)
 (** Rewrite a formula w.r.t a type context. *)
 
 val mk_rewrite_eq : 
     Scope.t
       -> Gtypes.substitution 
-	-> form Rewrite.plan
-	  -> Basic.term -> (form * Gtypes.substitution)
+	-> t Rewrite.plan
+	  -> Basic.term -> (t * Gtypes.substitution)
 (** 
    [mk_rewrite_eq scp tyenv plan trm]: Make an equality by rewriting a
    term w.r.t a type context.  Returns [(trm=t, ntyenv)] where [t] is
@@ -280,7 +276,7 @@ val mk_rewrite_eq :
 
 (** {5 Pretty printing} *)
 
-val print : Printer.ppinfo -> form -> unit 
+val print : Printer.ppinfo -> t -> unit 
 (** Print a formula in a given PP state *)
 
-val string_form : form -> string
+val string_form : t -> string

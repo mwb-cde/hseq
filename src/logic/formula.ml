@@ -9,7 +9,7 @@ exception Error
 
 
 (** The type for formulas *)
-type form =  { thy : Scope.marker; term : Basic.term }
+type t =  { thy : Scope.marker; term : Basic.term }
 
 let term_of x = x.term
 (** Convert a formula to a term *)
@@ -25,7 +25,7 @@ let thy_of x = x.thy
 class formError s ts =
   object (self)
     inherit Result.error s
-    val forms = (ts :form list)
+    val forms = (ts : t list)
     method get() = forms
     method print st = 
       Format.printf "@[%s@ @[" (self#msg()); 

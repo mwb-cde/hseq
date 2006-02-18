@@ -22,7 +22,7 @@ val mk_defn :
   -> (Basic.ident * Basic.gtype)
     -> Basic.term list 
       -> Basic.term 
-	-> (Basic.ident * Basic.gtype * Formula.form)
+	-> (Basic.ident * Basic.gtype * Formula.t)
 (**
    [mk_defn scp id args t]: Construct a definition.
 

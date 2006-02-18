@@ -651,7 +651,7 @@ type rule_data =
     { 
       src: Logic.tagged_form; 
       (** The source of the rules. *)
-      new_asm: Formula.form;
+      new_asm: Formula.t;
             (**
       	       The new assumption formed from the source (e.g. when a
       	       conclusion is lifted into the assumptions).
@@ -661,13 +661,13 @@ type rule_data =
     }
 
 val mk_rule_data:
-  Logic.tagged_form -> Formula.form
+  Logic.tagged_form -> Formula.t
   -> Logic.tagged_form list -> rule_data
 (** Constructor for rule data. *)
 
 val unpack_rule_data: 
   rule_data list -> 
-  (Logic.tagged_form list * Formula.form list * Logic.tagged_form list)
+  (Logic.tagged_form list * Formula.t list * Logic.tagged_form list)
 (**
     [unpack_rule_data rd]: Unpack a list of rule data in a list of
     sources, a list of new assumptions and a list of new rules.

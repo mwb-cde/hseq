@@ -37,7 +37,7 @@ val get_two: ?msg:string -> 'a list -> ('a * 'a)
 
 (** {7 Formulas} *)
 
-val drop_tag : Logic.tagged_form -> Formula.form
+val drop_tag : Logic.tagged_form -> Formula.t
 (** Get the formula of a tagged formula. *)
 
 val drop_formula: Logic.tagged_form -> Tag.t
@@ -88,11 +88,11 @@ val get_tagged_asm: Logic.label -> Logic.node -> Logic.tagged_form
 val get_tagged_concl: Logic.label -> Logic.node -> Logic.tagged_form
 (** Get a conclusion and its tag by label.*)
 
-val get_asm: Logic.label -> Logic.node -> Formula.form
+val get_asm: Logic.label -> Logic.node -> Formula.t
 (** Get an assumption by label.*)
-val get_concl: Logic.label -> Logic.node -> Formula.form
+val get_concl: Logic.label -> Logic.node -> Formula.t
 (** Get a conclusion by label.*)
-val get_form: Logic.label -> Logic.node -> Formula.form
+val get_form: Logic.label -> Logic.node -> Formula.t
 (** Get a formula by label. First tries [get_concl] then [get_asm]. *)
 
 (** {7 Branches} *)
@@ -200,7 +200,7 @@ val first_form :
  *)
 
 val first_asm_label : 
-    Logic.label option -> (Formula.form -> bool) 
+    Logic.label option -> (Formula.t -> bool) 
       -> Logic.node -> Logic.label
 (** 
    [first_asm_label ?c pred sq]: If a is [Some(x)] then return [x].
@@ -213,7 +213,7 @@ val first_asm_label :
  *)
 
 val first_concl_label : 
-    Logic.label option -> (Formula.form -> bool) 
+    Logic.label option -> (Formula.t -> bool) 
       -> Logic.node -> Logic.label
 (** 
    [first_concl_label ?c pred sq]: If c is [Some(x)] then return [x].

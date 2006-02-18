@@ -1068,7 +1068,7 @@ let asm_to_rules ret tg goal =
 type rule_data = 
     { 
       src: Logic.tagged_form; (** The source of the rules. **)
-      new_asm: Formula.form;
+      new_asm: Formula.t;
       (**
 	  The new assumption (e.g. when a conclusion is lifted into
 	  the assumptions) to add to the simp set.

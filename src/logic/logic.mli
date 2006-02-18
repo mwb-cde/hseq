@@ -150,10 +150,10 @@ Author: M Wahab <mwahab@users.sourceforge.net>
 type thm
 (** The type of theorems *)
 
-val mk_axiom : Formula.form -> thm
+val mk_axiom : Formula.t -> thm
 (** Make an axiom. (Axioms do not need to be proved true.) *)
 
-val formula_of : thm -> Formula.form 
+val formula_of : thm -> Formula.t 
 (** Convert a theorem to a formula *)
 val term_of : thm -> Basic.term
 (** Convert a theorem to a term *)
@@ -178,9 +178,9 @@ val string_thm: thm -> string
 
 (** {5 Error reporting} *)
 
-val logic_error : string -> Formula.form list -> exn
+val logic_error : string -> Formula.t list -> exn
 (** Make a logic error *)
-val add_logic_error : string -> Formula.form list -> exn -> 'a
+val add_logic_error : string -> Formula.t list -> exn -> 'a
 (** Add a logic error to an existing list of errors *)
 
 val sqntError : string ->  exn
@@ -209,12 +209,12 @@ type label =
   | FTag of Tag.t
   | FName of string
 
-type tagged_form = (Tag.t* Formula.form)
+type tagged_form = (Tag.t* Formula.t)
 (** Tagged formulas. Each formula in a subgoal has a tag. *)
 
 val form_tag: tagged_form -> Tag.t 
 (** The tag of a formula *)
-val drop_tag: tagged_form -> Formula.form
+val drop_tag: tagged_form -> Formula.t
 (** Drop the tag of a formula *)
 
 (** 
@@ -510,7 +510,7 @@ val get_label_form: label -> Sequent.t -> tagged_form
  *)
 type goal
 
-val get_goal : goal -> Formula.form
+val get_goal : goal -> Formula.t
 (** The formula to be proved. *)
 val get_subgoals: goal -> Sequent.t list
 (** The subgoals of the goal. *)
@@ -522,7 +522,7 @@ val has_subgoals: goal -> bool
 val num_of_subgoals: goal -> int
 (** The number of subgoals in a goal. *)
 
-val mk_goal : ?info:info -> Scope.t -> Formula.form -> goal
+val mk_goal : ?info:info -> Scope.t -> Formula.t -> goal
 (**
    [mk_goal info scp f]: Make formula [f] a goal to be proved in scope
    [scp]. If [info] is given, the tag of the new subgoal and
@@ -1340,7 +1340,7 @@ type ctypedef =
      type_base: Basic.gtype;   (* the base type *)
      type_rep: cdefn;          (* representation function *)
      type_abs: cdefn;          (* abstraction function *)
-     type_set: Formula.form;      (* defining set *)
+     type_set: Formula.t;      (* defining set *)
      rep_type: thm;
      rep_type_inverse: thm;
      abs_type_inverse: thm
@@ -1529,7 +1529,7 @@ val print_branch : Printer.ppinfo -> branch -> unit
    type_args : string list;  (* arguments of new type *)
    type_rep: cdefn;          (* representation function *)
    type_thm: thm;          (* subtype theorem *)
-   type_set: Formula.form       (* defining set *)
+   type_set: Formula.t       (* defining set *)
    }
    and saved_ctypedef =
    {
