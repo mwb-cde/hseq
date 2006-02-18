@@ -139,7 +139,7 @@ let mk_const c = (Const c)
 
 let mk_typed_var n t= (Id(n, t))
 let mk_var n = mk_typed_var n (Gtypes.mk_null ())
-let mk_short_var n = mk_var (mk_name n)
+let mk_short_var n = mk_var (Ident.mk_name n)
 
 
 (* Destructors *)
@@ -239,7 +239,7 @@ let rec mk_comb x y =
 
 let mk_fun f args = 
   mk_comb (Id(f, Gtypes.mk_var 
-		("_"^(Basic.string_fnid f)^"_ty"))) args
+		("_"^(Ident.string_of f)^"_ty"))) args
 
 (**
    [flatten_app trm]: flatten an application in [trm] to a list of
@@ -430,7 +430,7 @@ let print_simple trm=
   let rec print_aux t =
     match t with
       Id(n, ty) -> 
-	let (th, x) = Basic.dest_fnid n
+	let (th, x) = Ident.dest n
 	in 
 	Format.printf "@[%s@]" (th^"."^x)
     | Bound(n) -> 
@@ -676,7 +676,7 @@ let subst_qnt_var scp env trm =
 	with _ -> t)
     | Free(n, ty) -> 
 	(try 
-	  (let r = Lib.find (mk_name n) env
+	  (let r = Lib.find (Ident.mk_name n) env
 	  in ignore(Gtypes.unify scp ty (get_binder_type r)); r)
 	with _ -> t)
     | (Typed(tt, ty)) -> Typed(subst_aux tt, ty)
@@ -689,7 +689,7 @@ let mk_typed_qnt_name scp q ty n b =
   let t=mk_binding q n ty
   in 
   let nb=subst_qnt_var scp
-      (Lib.bind (mk_name n) (Bound t) (Lib.empty_env())) b
+      (Lib.bind (Ident.mk_name n) (Bound t) (Lib.empty_env())) b
   in Qnt(t, nb)
 
 let mk_qnt_name tyenv q n b =
@@ -704,7 +704,7 @@ let string_typed_name n t =
 
 let rec string_term_basic t =
   match t with
-    Id(n, ty) -> (Basic.string_fnid n) (*string_typed_name n ty*)
+    Id(n, ty) -> (Ident.string_of n) (*string_typed_name n ty*)
   | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name t)
   | Const(c) -> string_const c
@@ -726,7 +726,7 @@ let rec string_term_basic t =
 
 let rec string_term_prec i x =
   match x with
-    Id(n, ty) -> (Basic.string_fnid n)
+    Id(n, ty) -> (Ident.string_of n)
   | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name x)
   | Const(c) -> Basic.string_const c
@@ -776,7 +776,7 @@ let cfun_string c =
 
 let rec string_term_inf inf i x =
   match x with
-    Id(n, ty) -> (cfun_string (string_fnid n))
+    Id(n, ty) -> (cfun_string (Ident.string_of n))
   | Free(n, ty) -> n
   | Bound(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
@@ -795,7 +795,7 @@ let rec string_term_inf inf i x =
 	in let ti = if pr <=i then pr else i
 	in if (try (snd(inf)) name with _ -> false)
 	then 
-	  (string_infix (cfun_string (string_fnid name))
+	  (string_infix (cfun_string (Ident.string_of name))
 	     (List.map (string_term_inf inf ti) args))
 	else 
 	  ("("^(string_term_inf inf i f)^" "
@@ -1323,14 +1323,14 @@ let set_names scp trm=
   let rec set_aux qnts t=
     match t with
       Id(id, ty) -> 
-	let th, n = Basic.dest_fnid id
+	let th, n = Ident.dest id
 	in 
 	let nid = 
-	  if(th = Basic.null_thy)
+	  if(th = Ident.null_thy)
 	  then 
 	    let nth = lookup_id n
 	    in 
-	    Basic.mk_long nth n
+	    Ident.mk_long nth n
 	  else id
 	in 
 	let ty1= set_type_name type_thy_memo scp ty
@@ -1353,7 +1353,7 @@ let set_names scp trm=
 	match nth with
 	  None -> Free(n, ty1)
 	| Some(nth1) -> 
-	    let nid = Basic.mk_long nth1 n
+	    let nid = Ident.mk_long nth1 n
 	    in 
 	    let nty = 
 	      try Some(lookup_type nid)
@@ -1393,7 +1393,7 @@ let in_scope memo scp trm =
   let rec in_scp_aux t =
     match t with
       Id(id, ty) -> 
-	ignore(lookup_id (thy_of_id id));
+	ignore(lookup_id (Ident.thy_of id));
 	Gtypes.in_scope memo scp ty
     | Qnt(_, b) ->
 	ignore(Gtypes.in_scope memo scp (get_binder_type t));
@@ -1584,15 +1584,15 @@ let resolve_closed_term scp trm=
   let rec set_aux qnts t=
     match t with
       Id(id, ty) -> 
-	let th, n = Basic.dest_fnid id
+	let th, n = Ident.dest id
 	in 
 	let nid = 
-	  if(th = Basic.null_thy)
+	  if(th = Ident.null_thy)
 	  then 
 	    try 
 	      let nth = lookup_id n
 	      in 
-	      Basic.mk_long nth n
+	      Ident.mk_long nth n
 	    with Not_found -> 
 	      raise 
 		(term_error "Term not in scope" [t])
@@ -1624,7 +1624,7 @@ let resolve_closed_term scp trm=
 	(try 
 	  let nth = lookup_id n
 	  in 
-	  let nid = Basic.mk_long nth n
+	  let nid = Ident.mk_long nth n
 	  in 
 	  let nty = 
 	    try lookup_type nid

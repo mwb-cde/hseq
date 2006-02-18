@@ -6,6 +6,9 @@
 
 (** Basic constants and data structures. *)
 
+module Defunct : 
+sig
+
 (** {5 Identifiers for functions and types} *)
 
 type thy_id = string
@@ -48,13 +51,7 @@ val is_short_id: ident -> bool
 val string_fnid: ident -> string
 (** String representation of identifier [i]. *)
 
-(**
-   [id_selector]: Choose whether to interpret an identifier as a
-   function or type identifier. (Should be removed).
-*)
-type id_selector = bool
-val fn_id: id_selector
-val type_id: id_selector
+end
 
 (** {5 Base Representation of logic types} *)
 
@@ -63,7 +60,7 @@ type base_typ = Bool | Num | Ind
    The built-in types (should be removed) 
 *) 
 
-type typ_const = Defined of ident
+type typ_const = Defined of Ident.t
 (** 
    Representation of user-defined type constructors
    (could merged into [pre_typ] 
@@ -144,7 +141,7 @@ val binder_equality: binders -> binders -> bool
 
 (** The representation of a term *)
 type term =
-    Id of ident* gtype   (** Identifiers *)
+    Id of Ident.t* gtype   (** Identifiers *)
   | Bound of binders     (** Bound variables *)
   | Free of string * gtype  (** Free variables *)
   | App of term * term    (** Function application *)

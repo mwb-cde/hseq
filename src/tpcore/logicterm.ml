@@ -20,8 +20,8 @@ let base_thy = "base"
 
 (*** Identifiers for base types ***)
 
-let bool_ty_id = Basic.mk_long base_thy "bool"
-let fun_ty_id = Basic.mk_long base_thy "FUN"
+let bool_ty_id = Ident.mk_long base_thy "bool"
+let fun_ty_id = Ident.mk_long base_thy "FUN"
 
 (** The type ind *)
 
@@ -65,16 +65,16 @@ let dest_fun_ty t =
 
 (*** Identifiers for logic functions and constants *)
 
-let trueid = Basic.mk_long base_thy "true"
-let falseid = Basic.mk_long base_thy "false"
-let notid = Basic.mk_long base_thy "not"
-let andid = Basic.mk_long base_thy "and"
-let orid = Basic.mk_long base_thy "or"
-let impliesid = Basic.mk_long base_thy "implies"
-let iffid = Basic.mk_long base_thy "iff"
-let equalsid = Basic.mk_long base_thy "equals"
+let trueid = Ident.mk_long base_thy "true"
+let falseid = Ident.mk_long base_thy "false"
+let notid = Ident.mk_long base_thy "not"
+let andid = Ident.mk_long base_thy "and"
+let orid = Ident.mk_long base_thy "or"
+let impliesid = Ident.mk_long base_thy "implies"
+let iffid = Ident.mk_long base_thy "iff"
+let equalsid = Ident.mk_long base_thy "equals"
 let equalssym = "="
-let anyid = Basic.mk_long base_thy "any"
+let anyid = Ident.mk_long base_thy "any"
 
 (*** Recognisers ***)
 

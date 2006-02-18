@@ -8,6 +8,9 @@
 *   Basic constants and data structures
 ***)
 
+module Defunct =
+struct
+
 (***
 * Identifiers for functions and types
 ***)
@@ -29,13 +32,8 @@ let string_fnid n =
   if (thy_of_id n)=null_thy then name n
   else (thy_of_id n)^"."^(name n)
 
-(***
- *   id_selector: Choose whether to interpret an identifier as a
- *   function or type identifier. (Should be removed).
- ***)
-type id_selector = bool
-let fn_id = true
-let type_id = not fn_id
+end
+
 
 (***
 * Base Representation of logic types 
@@ -48,7 +46,7 @@ let type_id = not fn_id
    (could merged into [pre_typ] 
 *) 
 type base_typ = Bool | Num | Ind
-type typ_const = (* Func |*) Defined of ident
+type typ_const = (* Func |*) Defined of Ident.t
 
 (** [pre_typ]: The base representation of types *)
 type ('idtyp, 'tfun, 'tcons) pre_typ =
@@ -72,7 +70,7 @@ let string_btype x =
 let string_tconst x l =
   match x with 
     Defined n -> 
-      ((string_fnid n)^"("^
+      ((Ident.string_of n)^"("^
        (Lib.list_string (fun x-> x) ", " l)^")")
 
 (***
@@ -164,7 +162,7 @@ let binder_type b =
 
 (** [term]: The representation of a term *)
 type term =
-    Id of ident* gtype  
+    Id of Ident.t* gtype  
   | Bound of q_type ref
   | Free of string * gtype
   | App of term * term

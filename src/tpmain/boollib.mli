@@ -41,7 +41,7 @@ module PP :
    as [~x] rather than [~ x].
  *)
 
-      val ifthenelse_id: Basic.ident
+      val ifthenelse_id: Ident.t
 (**
    [ifthenelse_id]: Identifier for the conditional.
  *)
@@ -65,7 +65,7 @@ module PP :
    Printer for the conditional
  *)
 
-      val choice_ident: Basic.ident
+      val choice_ident: Ident.t
 (** Identifier for choice (the Hilbert epsilon) *)
 
       val choice_sym : string
@@ -1101,7 +1101,7 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 
 (** {5 Debugging} *)
 
-val get_type_name: Basic.gtype -> Basic.ident
+val get_type_name: Basic.gtype -> Ident.t
 
 (*
 

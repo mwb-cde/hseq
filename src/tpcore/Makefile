@@ -1,22 +1,20 @@
 # Header, code and optimised code files
 
-HEADERS = defaults.cmi settings.cmi basic.cmi printer.cmi result.cmi \
-	settings.cmi basic.cmi result.cmi scope.cmi \
+HEADERS = defaults.cmi settings.cmi ident.cmi basic.cmi printer.cmi \
+	result.cmi settings.cmi basic.cmi result.cmi scope.cmi \
 	gtypes.cmi term.cmi logicterm.cmi dbterm.cmi \
-	net.cmi \
-	typing.cmi unify.cmi net.cmi rewrite.cmi 
+	net.cmi typing.cmi unify.cmi net.cmi rewrite.cmi 
 
-CODE =  defaults.cmo settings.cmo basic.cmo printer.cmo result.cmo \
-	scope.cmo gtypes.cmo term.cmo logicterm.cmo dbterm.cmo \
-	net.cmo \
+CODE =  defaults.cmo settings.cmo ident.cmo basic.cmo printer.cmo \
+	result.cmo scope.cmo gtypes.cmo term.cmo logicterm.cmo \
+	dbterm.cmo net.cmo \
 	typing.cmo unify.cmo net.cmo rewrite.cmo 
 
-
-OPTCODE = settings.cmx basic.cmx printer.cmx result.cmx \
+OPTCODE = settings.cmx ident.cmx basic.cmx printer.cmx result.cmx \
 	scope.cmx gtypes.cmx term.cmx logicterm.cmx dbterm.cmx \
 	typing.cmx unify.cmx net.cmx rewrite.cmx 
 
-DOCFILES = defaults.mli settings.mli basic.mli \
+DOCFILES = defaults.mli settings.mli ident.mli basic.mli \
 	printer.mli result.mli scope.mli \
 	gtypes.mli term.mli logicterm.mli dbterm.mli \
 	net.mli typing.mli unify.mli rewrite.mli 

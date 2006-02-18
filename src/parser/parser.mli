@@ -131,7 +131,7 @@ module Grammars :
       (** {7 Utility types and functions} *)
       
       type token_info =
-	  (Basic.ident
+	  (Ident.t
 	     * Parserkit.Info.fixity 
 	     * int) option
 	    
@@ -299,13 +299,13 @@ module Grammars :
 	  
 	  (** {5 Identifier Parsers} *)
 
-      val id_parser: (Lexer.tok -> token_info) -> Basic.ident phrase
+      val id_parser: (Lexer.tok -> token_info) -> Ident.t phrase
 	  (** 
 	     [id_parser info inp]:  General identifier parser.
 	     Matches identifiers and symbols which translate to identifiers.
 	   *)
 	  
-      val id_strict: (Lexer.tok -> token_info) -> Basic.ident phrase
+      val id_strict: (Lexer.tok -> token_info) -> Ident.t phrase
 	  (**
 	     [id_strict info inp]: Strict identifier parser.
 	     Matches (possibly qualified) identifiers only, not symbols.
@@ -313,29 +313,29 @@ module Grammars :
 
       val named_id : 
 	  infotyp 
-	-> (infotyp -> Basic.ident phrase)
-	  -> Basic.ident -> Basic.ident phrase
+	-> (infotyp -> Ident.t phrase)
+	  -> Ident.t -> Ident.t phrase
 	      (**
 		 [named_id info ph name inp]: Parse an identifier [name].
 		 Fail if token doesn't match the given name. Uses parser
 		 [ph inf] to parse the identifier.
 	       *)
 
-      val short_id : (infotyp -> Basic.ident phrase) 
+      val short_id : (infotyp -> Ident.t phrase) 
 	-> infotyp -> string phrase
 	    (**
 	       [short_id ph inf toks]: Parse a short (unqualified)
 	       identifier. Uses parser [ph inf] to parse the identifier.
 	     *)
 
-      val long_id : (infotyp -> Basic.ident phrase)
-	-> infotyp -> Basic.ident phrase
+      val long_id : (infotyp -> Ident.t phrase)
+	-> infotyp -> Ident.t phrase
 	    (**
 	       [short_id ph inf toks]: Parse a long (possibly qualified)
 	       identifier. Uses parser [ph inf] to parse the identifier.
 	     *)
 
-      val mk_short_id : (infotyp -> Basic.ident phrase)
+      val mk_short_id : (infotyp -> Ident.t phrase)
 	-> infotyp -> string phrase
 	    (** 
 	       [mk_short_id ph inf]:
@@ -396,7 +396,7 @@ module Grammars :
 	      
 	      (** {7 The parsers} *)
 	      
-      val type_id : infotyp -> Basic.ident phrase
+      val type_id : infotyp -> Ident.t phrase
 	  (**  [type_id]: Parse a type identifier. *)
 
       val primed_id : infotyp -> Basic.gtype phrase
@@ -553,7 +553,7 @@ module Grammars :
 	     [ optional_type ::= [ ':' types ] ]
 	   *)
 
-      val id : infotyp -> Basic.ident phrase
+      val id : infotyp -> Ident.t phrase
 	  (** [id]: Parse identifiers which occur in terms *)
 
       val id_type_opt :
@@ -606,7 +606,7 @@ module Grammars :
 	   *)
 
       val parse_as_binder:
-	  Basic.ident -> string -> infotyp -> Basic.term phrase
+	  Ident.t -> string -> infotyp -> Basic.term phrase
 	      (** 
 		 [parse_as_binder f sym]:
 		 Construct a grammar to parse function applications
@@ -719,7 +719,7 @@ module Resolver :
 
       val resolve_term:
 	  Scope.t
-	-> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+	-> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
 	  -> Basic.term
 	    -> (Basic.term * Gtypes.substitution)
 		(** 
@@ -739,8 +739,8 @@ module Resolver :
 
       val make_lookup: 
 	  Scope.t
-	-> (string -> (Basic.ident * Basic.gtype) list) 
-	  -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype)) 
+	-> (string -> (Ident.t * Basic.gtype) list) 
+	  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
 	      (**
 		 [make_lookup scp db]: Make an environment suitable for
 		 {!Parser.Resolver.resolve_term} from table [db].
@@ -759,15 +759,15 @@ module Resolver :
 (** {7 Debugging} *)
 
       val default: 
-	  string -> Basic.gtype -> (Basic.ident * Basic.gtype) list
-	      -> (Basic.ident * Basic.gtype) option
+	  string -> Basic.gtype -> (Ident.t * Basic.gtype) list
+	      -> (Ident.t * Basic.gtype) option
 
       type resolve_memo =
 	  { 
-	    types : (Basic.ident, Basic.gtype)Hashtbl.t;
-	    idents: (string, Basic.ident)Hashtbl.t;
-	    symbols : (string, Basic.ident)Hashtbl.t;
-	    type_names: (string, Basic.thy_id)Hashtbl.t
+	    types : (Ident.t, Basic.gtype)Hashtbl.t;
+	    idents: (string, Ident.t)Hashtbl.t;
+	    symbols : (string, Ident.t)Hashtbl.t;
+	    type_names: (string, Ident.thy_id)Hashtbl.t
 	  }
 
       type resolve_arg =
@@ -776,7 +776,7 @@ module Resolver :
 	   inf : int ref;
 	   memo: resolve_memo;
 	   qnts: Term.substitution;
-	   lookup: (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+	   lookup: (string -> Basic.gtype -> (Ident.t * Basic.gtype))
 	 }
 
       val resolve_aux:
@@ -795,14 +795,14 @@ module Resolver :
       val find_type : 
 	  Scope.t 
 	-> string
-	  -> Basic.gtype -> (Basic.ident * Basic.gtype) list 
-	    -> (Basic.ident * Basic.gtype)
+	  -> Basic.gtype -> (Ident.t * Basic.gtype) list 
+	    -> (Ident.t * Basic.gtype)
 
 
 (*
    val ovl : 
    Scope.t
-   -> (string -> Basic.gtype -> (Basic.ident * Basic.gtype))
+   -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
  *)
     end
 
@@ -920,7 +920,7 @@ val mk_info : unit -> Grammars.infotyp
 
 (** {7 Toplevel symbol and token functions} *)
 
-val add_token: Basic.ident -> string -> fixity -> int -> unit
+val add_token: Ident.t -> string -> fixity -> int -> unit
 (** 
    [add_token id sym fix prec]: Add symbol [sym] as representation for
    term identifier [id], with fixity [fix] and precedence [prec]. 
@@ -933,7 +933,7 @@ val remove_token : string -> unit
    from the term symbol and token tables.
 *)
 
-val add_type_token: Basic.ident -> string -> fixity -> int -> unit
+val add_type_token: Ident.t -> string -> fixity -> int -> unit
 (** 
    [add_type_token id sym fix prec]: Add symbol [sym] as representation for
    type identifier [id], with fixity [fix] and precedence [prec]. 
@@ -952,26 +952,26 @@ val overload_table_size : int ref
 (** The initial size of the overloading table. *)
 
 val overload_table: 
-    (string,  (Basic.ident * Basic.gtype) list) Hashtbl.t ref
+    (string,  (Ident.t * Basic.gtype) list) Hashtbl.t ref
 (** The table of overloaded symbols and possible identifiers. *)
 
 val init_overload: unit -> unit
 (** Initialise the overloading table. *)
 
 val add_overload:
-    string -> Theory.sym_pos -> (Basic.ident * Basic.gtype) -> unit
+    string -> Theory.sym_pos -> (Ident.t * Basic.gtype) -> unit
 (** 
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
    type [ty] on symbol [sym]. Put [id] in position [pos]. 
 *)
 val get_overload_list: 
-    string -> (Basic.ident * Basic.gtype) list
+    string -> (Ident.t * Basic.gtype) list
 (** 
    [get_overload_list sym]: Get the list of identifiers overloaded on
    symbol [sym].
 *)
 val remove_overload:
-    string -> Basic.ident -> unit
+    string -> Ident.t -> unit
 (** 
    [remove_overload sym id]: Remove [id] from the list of identifiers
    overloading symbol [sym].
@@ -997,7 +997,7 @@ val init : unit -> unit
 val parse : 'a phrase -> 'a parse
 (** Make a parser from a phrase *)
 
-val identifier_parser : input -> Basic.ident
+val identifier_parser : input -> Ident.t
 (** Read a possibly long identifier *)
 
 val type_parser : input -> Basic.gtype

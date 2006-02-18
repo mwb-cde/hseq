@@ -22,7 +22,7 @@ val print_defn: Logic.Defns.cdefn -> unit
 
 val print_prf: Goals.Proof.t -> unit
 
-val print_fnident: Basic.ident -> unit
+val print_fnident: Ident.t -> unit
 
 val print_subst : ('a, 'a) Hashtbl.t -> ('a -> string) -> unit
 val print_error: Result.error -> unit

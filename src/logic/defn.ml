@@ -216,10 +216,10 @@ let check_well_defined scp args ty=
 *)
 type subtype_defn = 
     {
-     id: Basic.ident;
+     id: Ident.t;
      args : string list;
-     rep : (Basic.ident* Basic.gtype);
-     abs: (Basic.ident* Basic.gtype);
+     rep : (Ident.t* Basic.gtype);
+     abs: (Ident.t* Basic.gtype);
      set: Basic.term;
      rep_T: Basic.term;
      rep_T_inverse: Basic.term;
@@ -329,9 +329,9 @@ let mk_abs_T_inv set rep abs=
 let mk_subtype scp name args dtype setP rep_name abs_name=
   let th = Scope.thy_of scp
   in 
-  let id = Basic.mk_long th name
-  and rep_id = Basic.mk_long th rep_name
-  and abs_id = Basic.mk_long th abs_name
+  let id = Ident.mk_long th name
+  and rep_id = Ident.mk_long th rep_name
+  and abs_id = Ident.mk_long th abs_name
   in 
   let ntype = 
     Gtypes.mk_constr 
@@ -394,16 +394,16 @@ module HolLike =
    to be used as the subtype theorem.
  *)
 (*
-   let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
+   let mk_subtype_prop (setP: Basic.term) (rep: Ident.t)=
    let typedef_term = 
-   Term.mk_var (Basic.mk_long Logicterm.base_thy "Type_Def") 
+   Term.mk_var (Ident.mk_long Logicterm.base_thy "Type_Def") 
    and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
    in 
    Term.mk_app (Term.mk_app typedef_term setP) rep_term
  *)
 
-    let mk_subtype_prop (setP: Basic.term) (rep: Basic.ident)=
-      let mk_subtype_1 (rep: Basic.ident)=
+    let mk_subtype_prop (setP: Basic.term) (rep: Ident.t)=
+      let mk_subtype_1 (rep: Ident.t)=
 	let x1_b=Basic.mk_binding Basic.All "x1" (Gtypes.mk_var "x1_ty")
 	and x2_b=Basic.mk_binding Basic.All "x2" (Gtypes.mk_var "x2_ty")
 	in 
@@ -420,7 +420,7 @@ module HolLike =
 	in 
 	Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
       and 
-	  mk_subtype_2 (setP:Basic.term) (rep: Basic.ident)=
+	  mk_subtype_2 (setP:Basic.term) (rep: Ident.t)=
 	let y_b=(Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty"))
 	and y1_b=(Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty"))
 	in 
@@ -452,7 +452,7 @@ module HolLike =
     let mk_subtype scp name args dtype setP rep=
       let th = Scope.thy_of scp
       in 
-      let id = Basic.mk_long th name
+      let id = Ident.mk_long th name
       in 
       let ntype = 
 	Gtypes.mk_constr 
@@ -488,13 +488,13 @@ module HolLike =
    (The Logic.thm describing the definition is an abstracted type)
 *)
 (*
-type defn = Defn of (Basic.ident * Basic.gtype * Logic.thm)
+type defn = Defn of (Ident.t * Basic.gtype * Logic.thm)
 *)
 
 (* destructors *)
 (*
-val dest_decln : decln -> Basic.ident * Basic.gtype
-val dest_defn : defn -> (Basic.ident * Basic.gtype * Logic.thm)
+val dest_decln : decln -> Ident.t * Basic.gtype
+val dest_defn : defn -> (Ident.t * Basic.gtype * Logic.thm)
 *)
 
 (*

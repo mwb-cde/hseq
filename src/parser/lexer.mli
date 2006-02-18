@@ -47,7 +47,7 @@ type keys =
   | LAM  (** Lambda quantifier *)
 
 type token_info = 
-    Basic.ident
+    Ident.t
       * Parserkit.Info.fixity 
       * int
 (** Identifier fixity and precdence information. *)
@@ -56,7 +56,7 @@ type token_info =
 type tok =
     Key of keys  (** Keywords *)
   | Sym of symbols  (** Symbols *)
-  | ID of Basic.ident  (** Long identifiers *)
+  | ID of Ident.t  (** Long identifiers *)
   | PrimedID of string  (** Primed identifiers (for types) *)
   | NUM of string    (** Numbers *)
   | BOOL of bool     (** Booleans *)
@@ -69,7 +69,7 @@ val eof_tok : tok
 val null_tok : tok
 (** The null token. *)
 
-val mk_ident : Basic.ident -> tok
+val mk_ident : Ident.t -> tok
 (** Make an identifier token. *)
 val mk_symbol : string -> tok
 (** Make a symbol token. *)

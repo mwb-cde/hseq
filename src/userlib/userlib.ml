@@ -40,18 +40,18 @@ let at_pos s = Lib.Level (Global.read_identifier s)
 
 let add_term_pp s ?(pos=Lib.First) i f sym = 
   Commands.add_term_pp 
-    (Basic.mk_long (Global.current_name()) s) ~pos:pos i f sym
+    (Ident.mk_long (Global.current_name()) s) ~pos:pos i f sym
 let get_term_pp s = 
-  Commands.get_term_pp (Basic.mk_long (Global.current_name()) s)
+  Commands.get_term_pp (Ident.mk_long (Global.current_name()) s)
 let remove_term_pp s = 
-  Commands.remove_term_pp (Basic.mk_long (Global.current_name()) s)
+  Commands.remove_term_pp (Ident.mk_long (Global.current_name()) s)
 
 let add_type_pp s = 
-  Commands.add_type_pp (Basic.mk_long (Global.current_name()) s)
+  Commands.add_type_pp (Ident.mk_long (Global.current_name()) s)
 let get_type_pp s = 
-  Commands.get_type_pp (Basic.mk_long (Global.current_name()) s)
+  Commands.get_type_pp (Ident.mk_long (Global.current_name()) s)
 let remove_type_pp s =
-  Commands.remove_type_pp (Basic.mk_long (Global.current_name()) s)
+  Commands.remove_type_pp (Ident.mk_long (Global.current_name()) s)
 
 (***
 * Theories 

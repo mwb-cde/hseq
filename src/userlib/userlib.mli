@@ -251,7 +251,7 @@ val define :
 
 val declare : 
     ?pp:(int* fixity* string option) 
-  -> Basic.term -> (Basic.ident * Basic.gtype)
+  -> Basic.term -> (Ident.t * Basic.gtype)
 (**
    [declare trm pp]: Declare a term identifier. 
 

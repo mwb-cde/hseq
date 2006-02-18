@@ -72,9 +72,9 @@ val mk_free : string -> gtype -> term
 val mk_app : term -> term -> term
 val mk_typed: term -> gtype -> term
 val mk_const : Basic.const_ty -> term
-val mk_typed_var : ident -> gtype -> term
+val mk_typed_var : Ident.t -> gtype -> term
 
-val mk_var: ident -> term
+val mk_var: Ident.t -> term
 val mk_short_var: string -> term
 
 (** {7 Destructors} *)
@@ -85,7 +85,7 @@ val dest_free :term -> (string * gtype)
 val dest_app : term -> (term * term)
 val dest_typed: term -> (term * gtype)
 val dest_const : term -> Basic.const_ty 
-val dest_var : term -> (ident * gtype)
+val dest_var : term -> (Ident.t * gtype)
 
 (** {6 Specialised Manipulators} *)
 
@@ -117,7 +117,7 @@ val mk_comb: term -> term list -> term
    [mk_comb x y]: Make a function application from [x] and [y].
    [mk_comb f [a1;a2;...;an]] is [((((f a1) a2) ...) an)]
 *)
-val mk_fun : Basic.ident -> term list -> term
+val mk_fun : Ident.t -> term list -> term
 (** [mk_fun f args]: make function application [f args]. *)
 
 val flatten_app : term -> term list
@@ -134,7 +134,7 @@ val get_args: term -> term list
 (** Get the arguments of a function application. *) 
 val get_fun: term -> term
 (** Get the function of a function application .*)
-val dest_fun : term-> Basic.ident * term list
+val dest_fun : term-> Ident.t * term list
 (** Get the function identifier and arguments of a function application. *)
 
 val rator: term -> term
@@ -148,20 +148,20 @@ val rand: term -> term
     [rator << f a >>] is [<< a >>].
 *)
 
-val dest_unop : Basic.term -> (Basic.ident * Basic.term)
+val dest_unop : Basic.term -> (Ident.t * Basic.term)
 (**
    [dest_unop t]: Destruct unary operator [t], return the identifier
    and argument. Raise [Failure] if not enough arguments.
 *)
 
-val dest_binop : Basic.term -> (Basic.ident * Basic.term * Basic.term)
+val dest_binop : Basic.term -> (Ident.t * Basic.term * Basic.term)
 (**
    [dest_binop t]: Destruct binary operator [t], return the identifier
    and two arguments. Raise [Failure] if not enough arguments.
 *)
 
 val strip_fun_qnt: 
-    Basic.ident -> Basic.term -> Basic.binders list 
+    Ident.t -> Basic.term -> Basic.binders list 
       -> (Basic.binders list * Basic.term)
 (** 
    [strip_fun_qnt f term qs]: strip applications of the form [f (% x:
@@ -171,7 +171,7 @@ val strip_fun_qnt:
 
 (** {7 Identifier (Id) terms} *)
 
-val get_var_id : term-> Basic.ident
+val get_var_id : term-> Ident.t
 val get_var_type : term-> Basic.gtype
 
 (** {7 Free variables} *)
@@ -316,7 +316,7 @@ val mk_typed_qnt_name :
 val string_typed_name : string -> Basic.gtype -> string
 val string_term : term -> string
 val string_inf_term : 
-    ((Basic.ident -> int) * (Basic.ident -> bool)) -> term -> string
+    ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string
 val string_term_basic: term -> string
 
 
@@ -359,7 +359,7 @@ val retype_pretty:
 
 (** {5 Pretty printing} *)
 
-val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
+val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (**
    Get the printer record for a term identifier.
 *)
@@ -402,26 +402,26 @@ val print_var_as_identifier:
 *)
 
 val print_infix: 
-    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+    (((Printer.fixity * int) -> Ident.t Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
-      -> (Basic.ident * (term)list) Printer.printer
+      -> (Ident.t * (term)list) Printer.printer
 (**
    [print_infix]: print [(f, args)] as an infixoperator.
 *)   
 val print_prefix: 
-    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+    (((Printer.fixity * int) -> Ident.t Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
-      -> (Basic.ident * (term)list) Printer.printer
+      -> (Ident.t * (term)list) Printer.printer
 (**
    [print_suffix]: Print [(f, args)] as a suffix operator.
 *)   
 val print_suffix: 
-    (((Printer.fixity * int) -> Basic.ident Printer.printer)
+    (((Printer.fixity * int) -> Ident.t Printer.printer)
        * ((Printer.fixity * int) -> term Printer.printer))
     -> (Printer.fixity * int) 
-      -> (Basic.ident * (term)list) Printer.printer
+      -> (Ident.t * (term)list) Printer.printer
 (**
    [print_prefix]: Print [(f, args)] as a prefix operator.
 *)   
@@ -471,7 +471,7 @@ val print_simple: term -> unit
 (** {7 Helper functions for user defined printers} *)
 
 val print_as_binder:
-    (Printer.fixity * int) -> Basic.ident -> string
+    (Printer.fixity * int) -> Ident.t -> string
       -> Printer.ppinfo 
 	-> (Printer.fixity * int)
 	  -> (term * term list) Printer.printer
@@ -511,7 +511,7 @@ val add_term_error : string -> term list -> exn -> 'a
 *)
 val binding_set_names : 
     ?strict:bool
-  -> ?memo:(string, Basic.thy_id)Hashtbl.t
+  -> ?memo:(string, Ident.thy_id)Hashtbl.t
     -> Scope.t
       -> Basic.binders
 	-> Basic.binders

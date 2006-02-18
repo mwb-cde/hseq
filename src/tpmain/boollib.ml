@@ -21,30 +21,30 @@ module BaseTheory=
 
       ignore
 	(declare
-	   (read_unchecked ((Basic.name Logicterm.equalsid)
+	   (read_unchecked ((Ident.name_of Logicterm.equalsid)
 			    ^": 'a -> 'a -> bool"))
 	   ~pp:(1000, infixl, Some"="));
       ignore
 	(declare
-	   (read_unchecked ((Basic.name Logicterm.notid)^": bool -> bool"))
+	   (read_unchecked ((Ident.name_of Logicterm.notid)^": bool -> bool"))
 	   ~pp:(110, prefix, Some "not"));
       ignore
 	(declare
-	   (read_unchecked ((Basic.name Logicterm.andid)^":bool->bool->bool"))
+	   (read_unchecked ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
 	   ~pp:(105, infixl, Some "and")); 
       ignore
 	(define
-	   (read_defn ((Basic.name Logicterm.orid)
+	   (read_defn ((Ident.name_of Logicterm.orid)
 		       ^" x y = (not ((not x) and (not y)))"))
 	   ~pp:(105, infixl, Some "or"));
       ignore
 	(define
-	   (read_defn ((Basic.name Logicterm.impliesid)
+	   (read_defn ((Ident.name_of Logicterm.impliesid)
 		       ^" x y = (not x) or y"))
 	   ~pp:(104, infixl, Some "=>"));
       ignore
 	(define
-	   (read_defn ((Basic.name Logicterm.iffid)
+	   (read_defn ((Ident.name_of Logicterm.iffid)
 		       ^" x y = (x => y) and (y => x)"))
 	   ~pp:(104, infixl, Some "iff"));
       ignore(axiom "false_def" << false = (not true)>>);
@@ -112,7 +112,7 @@ module PP =
     open Parser.Utility
     open Lexer
 
-    let ifthenelse_id= Basic.mk_long Logicterm.base_thy "IF"
+    let ifthenelse_id= Ident.mk_long Logicterm.base_thy "IF"
 
     let ifthenelse_parser inf=
       ((seq
@@ -181,7 +181,7 @@ module PP =
 
 (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
-    let choice_ident = Basic.mk_long Logicterm.base_thy "epsilon"
+    let choice_ident = Ident.mk_long Logicterm.base_thy "epsilon"
     let choice_sym = "@"
     let choice_pp = 
       (Printer.default_term_fixity, Printer.default_term_prec) 
@@ -211,7 +211,7 @@ module PP =
 (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
     let exists_unique_ident = 
-      Basic.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
+      Ident.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
     let exists_unique_sym = "?!"
     let exists_unique_pp = 
       (Printer.default_term_fixity, Printer.default_term_prec) 
@@ -372,7 +372,7 @@ let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
 let make_eq_refl_thm () = 
   try 
     thm 
-      (Basic.string_fnid (Basic.mk_long Logicterm.base_thy "eq_refl"))
+      (Ident.string_of (Ident.mk_long Logicterm.base_thy "eq_refl"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_eq_refl_thm:"
@@ -384,7 +384,7 @@ let eq_refl_thm () =  Lib.thaw eq_refl_thm_var
 let make_bool_cases_thm () = 
   try
     thm 
-      (Basic.string_fnid (Basic.mk_long Logicterm.base_thy "bool_cases"))
+      (Ident.string_of (Ident.mk_long Logicterm.base_thy "bool_cases"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_bool_cases_thm:"
@@ -865,7 +865,7 @@ let is_iff f =
     (fst (Term.dest_fun (Formula.term_of f)) = Logicterm.iffid)
   with _ -> false
 
-let make_iff_def () = defn (Basic.string_fnid Logicterm.iffid)
+let make_iff_def () = defn (Ident.string_of Logicterm.iffid)
 let iff_def_var = Lib.freeze make_iff_def
 let iff_def () = Lib.thaw iff_def_var
 
@@ -1495,7 +1495,7 @@ let get_type_name ty =
     Basic.Constr ((Basic.Defined id), _) -> id
   | Basic.Base Basic.Bool -> Logicterm.bool_ty_id
   | Basic.Base Basic.Ind -> 
-      Basic.mk_long "base" "ind"
+      Ident.mk_long "base" "ind"
   | _ -> failwith "get_type_name"
 
 let cases_of ?info ?thm t g =
@@ -1512,12 +1512,12 @@ let cases_of ?info ?thm t g =
 	  let sb = Typing.settype scp ~env:tyenv trm
 	  in Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
 	in
-	let (th, id) = Basic.dest_fnid (get_type_name ty)
+	let (th, id) = Ident.dest (get_type_name ty)
 	in 
 	let thm_name = id^"_cases"
 	in 
 	try 
-	  Commands.thm (Basic.string_fnid (Basic.mk_long th thm_name))
+	  Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
 	with 
 	  _ ->
 	    try Commands.thm thm_name

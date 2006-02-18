@@ -13,7 +13,7 @@ open Term
 
 (** {5 Theories} *)
 
-val base_thy: thy_id 
+val base_thy: Ident.thy_id 
 (** 
    The name of the base theory. This is the theory at the root of the
    theory tree. The basic types and functions must be defined or
@@ -24,10 +24,10 @@ val base_thy: thy_id
 
 (** {7 Identifiers for base types} *)
 
-val bool_ty_id : ident
+val bool_ty_id : Ident.t
 (** The identifier for the boolean type. *)
 
-val fun_ty_id: Basic.ident
+val fun_ty_id: Ident.t
 (** The identifier for the function type. *)
 
 (** {7 The type of individuals} *)
@@ -67,20 +67,20 @@ val dest_fun_ty : gtype -> (gtype * gtype)
 
 (** {7 Identifiers for logic functions and constants} *)
 
-val trueid : Basic.ident
-val falseid : Basic.ident
-val notid : Basic.ident
-val andid : Basic.ident
-val orid : Basic.ident
-val iffid : Basic.ident
-val impliesid : Basic.ident
-val equalsid : Basic.ident
+val trueid : Ident.t
+val falseid : Ident.t
+val notid : Ident.t
+val andid : Ident.t
+val orid : Ident.t
+val iffid : Ident.t
+val impliesid : Ident.t
+val equalsid : Ident.t
 val equalssym : string
 (** 
    PP symbol for equals. (Should be in some other, more appropriate, module.)
 *)
 
-val anyid: Basic.ident 
+val anyid: Ident.t 
 (** An arbitrary choice operator, [base.any=base.epsilon(%x: true)] *)
 
 (** {7 Recognisers} *)

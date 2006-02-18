@@ -295,25 +295,25 @@ module Skolem:
  *)
 
       (** The record of an individual skolem constant *)
-      type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+      type skolem_cnst = (Ident.t * (int * Basic.gtype))
 
-      val get_sklm_name: skolem_cnst -> Basic.ident
+      val get_sklm_name: skolem_cnst -> Ident.t
       val get_sklm_indx: skolem_cnst -> int
       val get_sklm_type: skolem_cnst -> Basic.gtype
 
-      val make_skolem_name : Basic.ident -> int -> Basic.ident
+      val make_skolem_name : Ident.t -> int -> Ident.t
 	  (** 
 	     [make_skole_name i n]: Make the name of a skolem constant
 	     from [i] and [n]
 	   *)
 
-      val decln_of_sklm: skolem_cnst -> (Basic.ident * Basic.gtype)
+      val decln_of_sklm: skolem_cnst -> (Ident.t * Basic.gtype)
 	  (** Make a declaration from a skolem record *)
 
 	  (** The record of generated skolem constants *)
       type skolem_type
 
-      val get_old_sklm: Basic.ident -> skolem_type -> skolem_cnst
+      val get_old_sklm: Ident.t -> skolem_type -> skolem_cnst
 	  (** 
 	     Get the record of the skolem constant previously
 	     generated from an identifier. 
@@ -322,7 +322,7 @@ module Skolem:
 	  (** Information needed to generate a new skolem constant *)
       type new_skolem_data=
 	  {
-	   name: Basic.ident;
+	   name: Ident.t;
 	   ty: Basic.gtype;
 	   tyenv: Gtypes.substitution;
 	   scope: Scope.t;
@@ -1335,7 +1335,7 @@ type cdefn
 *)
 type ctypedef =
     {
-     type_name : Basic.ident;  (* name of new type *)
+     type_name : Ident.t;  (* name of new type *)
      type_args : string list;  (* arguments of new type *)
      type_base: Basic.gtype;   (* the base type *)
      type_rep: cdefn;          (* representation function *)
@@ -1352,10 +1352,10 @@ type ctypedef =
    The representation of a checked definition for permanent storage.
 *)
 type saved_cdefn =
-    STypeAlias of Basic.ident * string list * Gtypes.stype option
+    STypeAlias of Ident.t * string list * Gtypes.stype option
   | STypeDef of saved_ctypedef
-  | STermDecln of Basic.ident * Gtypes.stype
-  | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+  | STermDecln of Ident.t * Gtypes.stype
+  | STermDef of Ident.t * Gtypes.stype * saved_thm 
 and
 (** 
    The representation of a checked subtype definition for permanent
@@ -1363,7 +1363,7 @@ and
  *)
  saved_ctypedef =
     {
-     stype_name : Basic.ident;  (* name of new type *)
+     stype_name : Ident.t;  (* name of new type *)
      stype_args : string list;  (* arguments of new type *)
      stype_base: Gtypes.stype; 
      stype_rep: saved_cdefn;          (* representation function *)
@@ -1385,18 +1385,18 @@ and
 (** Recogniser for term definitions. *)
 
       val dest_termdef: cdefn -> 
-	Basic.ident * Basic.gtype * thm
+	Ident.t * Basic.gtype * thm
 (** Get the components of a certified definition. *)
 
 (*
       val mk_termdef: 
 	  Scope.t 
-	-> Basic.ident
+	-> Ident.t
 	  -> (string * Basic.gtype) list -> Basic.term -> cdefn
 *)
       val mk_termdef: 
 	  Scope.t 
-	-> (Basic.ident * Basic.gtype) 
+	-> (Ident.t * Basic.gtype) 
 	  -> Basic.term list -> Basic.term 
 	    -> cdefn
 (** 
@@ -1409,7 +1409,7 @@ and
 (** Recogniser for term declarations. *)
 
       val dest_termdecln: cdefn 
-	-> Basic.ident * Basic.gtype 
+	-> Ident.t * Basic.gtype 
 (**
    Get the components of a term declaration.
 *)
@@ -1435,7 +1435,7 @@ and
       val is_typealias: cdefn -> bool 
 (** Recogniser for definition of a type declaration or alias. *)
       val dest_typealias: cdefn ->
-	Basic.ident * string list * Basic.gtype option
+	Ident.t * string list * Basic.gtype option
 (** 
    Get the components of a type declaration or alias. 
 *)
@@ -1518,14 +1518,14 @@ val print_branch : Printer.ppinfo -> branch -> unit
 (*
    type cdefn=
    TypeAlias of 
-   Basic.ident * string list * Basic.gtype option
+   Ident.t * string list * Basic.gtype option
    | TypeDef of ctypedef
-   | TermDecln of Basic.ident * Basic.gtype
-   | TermDef of Basic.ident * Basic.gtype 
+   | TermDecln of Ident.t * Basic.gtype
+   | TermDef of Ident.t * Basic.gtype 
  * (string*Basic.gtype) list * thm option
    type ctypedef =
    {
-   type_name : Basic.ident;  (* name of new type *)
+   type_name : Ident.t;  (* name of new type *)
    type_args : string list;  (* arguments of new type *)
    type_rep: cdefn;          (* representation function *)
    type_thm: thm;          (* subtype theorem *)
@@ -1533,7 +1533,7 @@ val print_branch : Printer.ppinfo -> branch -> unit
    }
    and saved_ctypedef =
    {
-   stype_name : Basic.ident;  (* name of new type *)
+   stype_name : Ident.t;  (* name of new type *)
    stype_args : string list;  (* arguments of new type *)
    stype_rep: saved_cdefn;          (* representation function *)
    stype_thm: saved_thm;          (* subtype theorem *)

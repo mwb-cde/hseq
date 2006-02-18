@@ -17,17 +17,17 @@ let add_error s l err = Term.add_term_error s l err
 let num_thy = "nums"
 let bool_type = Logicterm.mk_bool_ty
 let num_type = Gtypes.mk_num
-let plusid = Basic.mk_long num_thy "plus"
-let minusid = Basic.mk_long num_thy "minus"
-let multid = Basic.mk_long num_thy "mult"
-let negid = Basic.mk_long num_thy "negate"
-let maxid = Basic.mk_long num_thy "max"
-let minid = Basic.mk_long num_thy "min"
+let plusid = Ident.mk_long num_thy "plus"
+let minusid = Ident.mk_long num_thy "minus"
+let multid = Ident.mk_long num_thy "mult"
+let negid = Ident.mk_long num_thy "negate"
+let maxid = Ident.mk_long num_thy "max"
+let minid = Ident.mk_long num_thy "min"
 
-let gtid = Basic.mk_long num_thy "greater"
-let geqid = Basic.mk_long num_thy "geq"
-let ltid = Basic.mk_long num_thy "less"
-let leqid = Basic.mk_long num_thy "leq"
+let gtid = Ident.mk_long num_thy "greater"
+let geqid = Ident.mk_long num_thy "geq"
+let ltid = Ident.mk_long num_thy "less"
+let leqid = Ident.mk_long num_thy "leq"
 
 let rec strip_typed trm = 
   match trm with 

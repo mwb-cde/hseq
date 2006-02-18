@@ -28,7 +28,7 @@ type label =
   | Bound of Basic.quant_ty
   | Quant of Basic.quant_ty
   | Const of Basic.const_ty 
-  | Cname of Basic.ident
+  | Cname of Ident.t
   | Cfree of string
 
 (*** Operations ***)

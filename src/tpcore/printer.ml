@@ -132,8 +132,8 @@ Printer information storage for identifiers
 (** The table of records and printers for a set of identifiers. *)
 type 'a info = 
     {
-     records : (ident, record) Hashtbl.t;
-     printers: (ident, (fixity * int) -> 'a printer) Hashtbl.t
+     records : (Ident.t, record) Hashtbl.t;
+     printers: (Ident.t, (fixity * int) -> 'a printer) Hashtbl.t
    }
 
 let mk_info sz = 
@@ -186,7 +186,7 @@ let remove_printer info id =
 type ppinfo=
     {
      terms:  (Basic.term * (Basic.term)list)info;
-     types:  (ident * (Basic.gtype)list)info
+     types:  (Ident.t * (Basic.gtype)list)info
    }
 
 let mk_ppinfo sz = 
@@ -235,7 +235,7 @@ let remove_type_printer info id=
 let string_identifier id pp_rec =
   match pp_rec.repr
   with 
-    None -> (string_fnid id) 
+    None -> (Ident.string_of id) 
   | Some(x) -> x
 
 (** Print a string *)
@@ -288,7 +288,7 @@ let print_sep_list (term_printer, sep) x =
 
 (** Printer a simple identifier *)
 let print_ident x = 
-  Format.printf "%s" (string_fnid x)
+  Format.printf "%s" (Ident.string_of x)
 
 (** Print an identifier, using stored representation if available *)
 let print_identifier info x=
@@ -298,8 +298,8 @@ let print_identifier info x=
     (match pprec.repr with
       None -> 
 	if(!Settings.long_identifier)
-	then Basic.string_fnid x
-	else name x
+	then Ident.string_of x
+	else Ident.name_of x
     | Some(s) -> s)
   in 
   Format.printf "%s" str

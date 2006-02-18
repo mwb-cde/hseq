@@ -332,13 +332,13 @@ let thy_of_type th name thdb =
 let add_decln_rec dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty ps (current thdb);
+  Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb);
   thdb
 
 let add_decln dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Basic.name s) ty ps (current thdb);
+  Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb);
   thdb
 
 let add_defn_rec s ty def ps thdb =
@@ -380,7 +380,7 @@ let get_id_options n db =
 	(match(get_id x) with
 	  None -> get_aux xs r
 	| (Some defn) ->
-	    get_aux xs (((Basic.mk_long x n), (defn.Theory.typ))::r))
+	    get_aux xs (((Ident.mk_long x n), (defn.Theory.typ))::r))
   in 
   get_aux (imported db) []
 
@@ -514,7 +514,7 @@ let marker_in_scope m db =
   else false
 	
 let scope_term_type db f= 
-  let thstr, idstr = Basic.dest_fnid f
+  let thstr, idstr = Ident.dest f
   in 
   get_id_type thstr idstr db
 
@@ -522,7 +522,7 @@ let scope_term_thy thy_name db x =
   thy_of thy_name x db
 
 let scope_type_defn db f = 
-  let thstr, idstr = Basic.dest_fnid f
+  let thstr, idstr = Ident.dest f
   in 
   get_type_rec thstr idstr db
 
@@ -530,7 +530,7 @@ let scope_type_thy thy_name db x =
   thy_of_type thy_name x db
 
 let scope_thy_in_scope db th1 = 
-  if(th1=Basic.null_thy)  (* ignore the empty scope *)
+  if(th1=Ident.null_thy)  (* ignore the empty scope *)
   then true
   else is_imported th1 db
 
@@ -543,7 +543,7 @@ let mk_scope db =
       let thy = get_thy db (current_name db)
       in 
       Theory.get_marker thy
-    with _ -> Scope.mk_marker Basic.null_thy
+    with _ -> Scope.mk_marker Ident.null_thy
   in 
   let thy_name = Scope.marker_name thy_marker
   in 

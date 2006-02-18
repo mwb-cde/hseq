@@ -88,7 +88,7 @@ module Grammars  =
 
 
     type token_info =
-	(Basic.ident
+	(Ident.t
 	   * fixity 
 	   * int) option
 
@@ -467,7 +467,7 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
-	| Sym(OTHER x) -> (Basic.mk_name x)
+	| Sym(OTHER x) -> (Ident.mk_name x)
 	| _ -> raise (ParsingError "Not an identifier")
       in 
       try Pkit.get comp mk inp
@@ -484,8 +484,8 @@ module Grammars  =
 	 if(x=name) then x 
 	 else 
 	   raise (ParsingError ("Expected identifier "
-				^(Basic.string_fnid name)^" but got "
-				^(Basic.string_fnid x)))))
+				^(Ident.string_of name)^" but got "
+				^(Ident.string_of x)))))
 	inp
 
 	(**
@@ -495,7 +495,7 @@ module Grammars  =
     let short_id idparser inf toks =
       ((idparser inf >> 
 	(fun x -> 
-	  match (Basic.dest_fnid x) with 
+	  match (Ident.dest x) with 
 	    ("", s) -> s 
 	  | _ -> raise (ParsingError "Not a short identifier"))) 
 	 toks)
@@ -507,7 +507,7 @@ module Grammars  =
     let long_id idparser inf toks = 
       (idparser inf >> 
        (fun x -> 
-	 match (Basic.dest_fnid x) with 
+	 match (Ident.dest x) with 
 	   (_, "") -> raise (ParsingError "Badly formed identifier")
 	 | _ -> x))
 	toks
@@ -517,7 +517,7 @@ module Grammars  =
 	   make it a short identifier.
 	 *)	  
     let mk_short_id id inf toks =
-      (long_id id inf >> (fun x -> Basic.name x)) toks
+      (long_id id inf >> (fun x -> Ident.name_of x)) toks
 
 
 (***
@@ -616,7 +616,7 @@ module Grammars  =
 	   *)
     let bool_type info toks =
       try 
-	((named_id info type_id (Basic.mk_name "bool"))
+	((named_id info type_id (Ident.mk_name "bool"))
 	   >> (fun _ -> Logicterm.mk_bool_ty)) toks
       with No_match -> raise (ParsingError "Not a boolean type")
 
@@ -626,7 +626,7 @@ module Grammars  =
 	   *)
     let num_type info toks =
       try 
-	((named_id info type_id (Basic.mk_name "num"))
+	((named_id info type_id (Ident.mk_name "num"))
 	   >> (fun _ -> Gtypes.mk_num)) toks
       with No_match -> raise (ParsingError "Not a number type")
 
@@ -742,7 +742,7 @@ module Grammars  =
   	    Some (name, _, _) ->
 	      (fun x y ->
 		let fty = 
-		  Gtypes.mk_var ("_"^(Basic.string_fnid name)^"_ty")
+		  Gtypes.mk_var ("_"^(Ident.string_of name)^"_ty")
 		in 
 		let f = 
 		  Term.mk_typed_var name fty
@@ -899,9 +899,9 @@ module Grammars  =
       ((id_type_opt (long_id id) inf) 
 	 >>
        (fun ((n, i), t) -> 
-  	 let nid=Basic.mk_long n i
+  	 let nid=Ident.mk_long n i
   	 in 
-  	 if(Basic.is_short_id nid)
+  	 if(Ident.is_short nid)
   	 then 
   	   (try (lookup_name i inf)
   	   with Not_found -> mk_free i t)
@@ -1191,10 +1191,10 @@ module Resolver =
 (** reolve_memo: Memoised tables *)
     type resolve_memo =
 	{ 
-	  types : (Basic.ident, Basic.gtype)Hashtbl.t;
-	  idents: (string, Basic.ident)Hashtbl.t;
-	  symbols : (string, Basic.ident)Hashtbl.t;
-	  type_names: (string, Basic.thy_id) Hashtbl.t
+	  types : (Ident.t, Basic.gtype)Hashtbl.t;
+	  idents: (string, Ident.t)Hashtbl.t;
+	  symbols : (string, Ident.t)Hashtbl.t;
+	  type_names: (string, Ident.thy_id) Hashtbl.t
 	}
 
 (** resolve_arg: The argument to the resolver *)
@@ -1204,7 +1204,7 @@ module Resolver =
 	 inf : int ref;
 	 memo: resolve_memo;
 	 qnts: Term.substitution;
-	 lookup: (string -> gtype -> (ident * gtype))
+	 lookup: (string -> gtype -> (Ident.t * gtype))
        }
 	  
 (** 
@@ -1241,7 +1241,7 @@ module Resolver =
 	let ident_find n s = 
 	  let thy = Scope.thy_of_term s n
 	  in 
-	  Basic.mk_long thy n
+	  Ident.mk_long thy n
 	in 
 	Lib.try_find (memo_find data.memo.idents ident_find data.scp) n
       in 
@@ -1262,8 +1262,8 @@ module Resolver =
       in 
       match term with
 	Id(n, ty) -> 
-	  if(Basic.is_short_id n)
-	  then resolve_aux data env expty (Free((Basic.name n), ty))
+	  if(Ident.is_short n)
+	  then resolve_aux data env expty (Free((Ident.name_of n), ty))
 	  else
 	    (let id_ty = find_type n
 	    in 
@@ -1542,7 +1542,7 @@ let add_token id sym fx pr=
   (* lexer information *)
   add_symbol sym (Sym (OTHER sym)); 
   (* parser information *)
-  add_token_info (Sym(OTHER sym)) (Some(Basic.mk_name sym, fx, pr))
+  add_token_info (Sym(OTHER sym)) (Some(Ident.mk_name sym, fx, pr))
 (*
   add_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
 *)

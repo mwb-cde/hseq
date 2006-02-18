@@ -12,17 +12,17 @@
 
 val mk_decln :
     Scope.t ->
-      Basic.ident -> Basic.gtype -> (Basic.ident * Basic.gtype)
+      Ident.t -> Basic.gtype -> (Ident.t * Basic.gtype)
 (* Declare a term identifier [(f:ty)] *)
 
 (** {7 Term definition} *)
 
 val mk_defn :
     Scope.t 
-  -> (Basic.ident * Basic.gtype)
+  -> (Ident.t * Basic.gtype)
     -> Basic.term list 
       -> Basic.term 
-	-> (Basic.ident * Basic.gtype * Formula.t)
+	-> (Ident.t * Basic.gtype * Formula.t)
 (**
    [mk_defn scp id args t]: Construct a definition.
 
@@ -46,7 +46,7 @@ val check_args_unique : string list -> unit
    are unique.
 *)
 
-val check_type_name: Scope.t -> Basic.ident -> unit
+val check_type_name: Scope.t -> Ident.t -> unit
 (**
    [check_type_name scp n]: Make sure that there is no type named [n]
    in scope [scp].
@@ -91,10 +91,10 @@ val check_well_defined : Scope.t -> string list -> Basic.gtype -> unit
 
 type subtype_defn = 
     {
-     id: Basic.ident;
+     id: Ident.t;
      args: string list;
-     rep : (Basic.ident* Basic.gtype);
-     abs: (Basic.ident* Basic.gtype);
+     rep : (Ident.t* Basic.gtype);
+     abs: (Ident.t* Basic.gtype);
      set: Basic.term;
      rep_T: Basic.term;
      rep_T_inverse: Basic.term;
@@ -179,10 +179,10 @@ sig
    - declare rep as a function of type (d -> n)
    - make subtype property from setp and rep.
 *)
-val mk_subtype_prop: Basic.term -> Basic.ident -> Basic.term
+val mk_subtype_prop: Basic.term -> Ident.t -> Basic.term
 val mk_subtype:
     Scope.t -> string -> string list 
-      -> Basic.gtype -> Basic.term -> Basic.ident
+      -> Basic.gtype -> Basic.term -> Ident.t
 	-> (Basic.gtype * Basic.term * Basic.term)
 
 end

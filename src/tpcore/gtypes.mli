@@ -83,15 +83,15 @@ val is_null: gtype -> bool
 (** {7 Named typed constructors} *)
 
 val is_def : gtype -> bool
-val mk_def: ident -> gtype list -> gtype
-val dest_def: gtype -> (ident * gtype list)
+val mk_def: Ident.t -> gtype list -> gtype
+val dest_def: gtype -> (Ident.t * gtype list)
 
 (** {5 Type Definitions} *)
 
 type typedef_record = Scope.type_record
 (** Records for type definitions *)
 
-val get_typdef: Scope.t -> ident -> typedef_record
+val get_typdef: Scope.t -> Ident.t -> typedef_record
 (** Get definition of type named [n] from scope [scp] *)
 
 (** {5 Data storage indexed by gtypes} *)
@@ -166,7 +166,7 @@ type printer_info=
 (** Pretty printing information for types. *)
 val empty_printer_info: unit -> printer_info
 (** Make an empty printer information. *)
-val pplookup: Printer.ppinfo -> Basic.ident -> Printer.record
+val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
 
 val print_type : 
@@ -224,7 +224,7 @@ val well_defined : Scope.t -> (string)list -> gtype -> unit
  *)
 
 val quick_well_defined : Scope.t -> 
-  (ident *int, bool) Hashtbl.t -> gtype -> unit
+  (Ident.t *int, bool) Hashtbl.t -> gtype -> unit
 (**
    [quick_well_defined scp tbl ty]:
    Test [ty] to make sure it is well-defined.
@@ -365,7 +365,7 @@ val matches : Scope.t -> gtype -> gtype -> bool
 
 val set_name : 
     ?strict:bool
-  -> ?memo:(string, Basic.thy_id)Hashtbl.t
+  -> ?memo:(string, Ident.thy_id)Hashtbl.t
     -> Scope.t -> gtype -> gtype
 (** 
    [set_name ?strict ?memo scp ty]: set names in type [ty] to their

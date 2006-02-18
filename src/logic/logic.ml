@@ -134,7 +134,7 @@ let add_info info gs hs cs ts=
 module Skolem = 
   struct
 
-    type skolem_cnst = (Basic.ident * (int * Basic.gtype))
+    type skolem_cnst = (Ident.t * (int * Basic.gtype))
 
     let make_sklm x ty i = (x, (i, ty))
     let get_sklm_name (x, (_, _)) = x
@@ -152,7 +152,7 @@ module Skolem =
 	then ""
 	else (string_of_int indx)
       in 
-      mk_long (thy_of_id id) ("_"^(name id)^suffix)
+      Ident.mk_long (Ident.thy_of id) ("_"^(Ident.name_of id)^suffix)
 
     let decln_of_sklm x= 
       let n = get_sklm_name x
@@ -170,7 +170,7 @@ module Skolem =
 (** Data needed to generate a skolem constant *)
     type new_skolem_data=
 	{
-	 name: Basic.ident;
+	 name: Ident.t;
 	 ty: Basic.gtype;
 	 tyenv: Gtypes.substitution;
 	 scope: Scope.t;
@@ -233,7 +233,7 @@ module Skolem =
 	  in 
 	  let nnam = make_skolem_name oname nindx
 	  in 
-	  let nty, ntyenv, new_names=mk_nty (name nnam)
+	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
 	  in 
 	  (Term.mk_typed_var nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
@@ -247,7 +247,7 @@ module Skolem =
 	  in 
 	  let nnam = make_skolem_name oname nindx
 	  in 
-	  let nty, ntyenv, new_names=mk_nty (name nnam)
+	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
 	  in 
 	  (Term.mk_typed_var nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
@@ -1653,7 +1653,7 @@ module Tactics =
 	let sv, sty, nsklms, styenv, ntynms=
 	  Skolem.mk_new_skolem 
 	    {
-	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
+	     Skolem.name=(Ident.mk_long (Sequent.thy_of_sqnt sq) nv);
 	     Skolem.ty=nty;
 	     Skolem.tyenv=tyenv;
 	     Skolem.scope=Sequent.scope_of sq;
@@ -1711,7 +1711,7 @@ module Tactics =
 	let sv, sty, nsklms, styenv, ntynms=
 	  Skolem.mk_new_skolem
 	    {
-	     Skolem.name=(mk_long (Sequent.thy_of_sqnt sq) nv);
+	     Skolem.name=(Ident.mk_long (Sequent.thy_of_sqnt sq) nv);
 	     Skolem.ty=nty;
 	     Skolem.tyenv=tyenv;
 	     Skolem.scope=Sequent.scope_of sq;
@@ -2181,14 +2181,14 @@ module Defns =
    have been correctly defined.
  *)
     type cdefn =
-	TypeAlias of Basic.ident * string list * Basic.gtype option
+	TypeAlias of Ident.t * string list * Basic.gtype option
       | TypeDef of ctypedef
-      | TermDecln of Basic.ident * Basic.gtype
+      | TermDecln of Ident.t * Basic.gtype
       | TermDef of 
-	  Basic.ident * Basic.gtype	* thm 
+	  Ident.t * Basic.gtype	* thm 
     and ctypedef =
 	{
-	 type_name : Basic.ident;  (* name of new type *)
+	 type_name : Ident.t;  (* name of new type *)
 	 type_args : string list;  (* arguments of new type *)
 	 type_base: Basic.gtype;   (* the base type *)
 	 type_rep: cdefn;          (* representation function *)
@@ -2202,13 +2202,13 @@ module Defns =
 (*** Representations for permanent storage ***)
 
     type saved_cdefn =
-	STypeAlias of Basic.ident * string list * Gtypes.stype option
+	STypeAlias of Ident.t * string list * Gtypes.stype option
       | STypeDef of saved_ctypedef
-      | STermDecln of Basic.ident * Gtypes.stype
-      | STermDef of Basic.ident * Gtypes.stype * saved_thm 
+      | STermDecln of Ident.t * Gtypes.stype
+      | STermDef of Ident.t * Gtypes.stype * saved_thm 
     and saved_ctypedef =
 	{
-	 stype_name : Basic.ident;  (* name of new type *)
+	 stype_name : Ident.t;  (* name of new type *)
 	 stype_args : string list;  (* arguments of new type *)
 	 stype_base: Gtypes.stype; 
 	 stype_rep: saved_cdefn;          (* representation function *)
@@ -2322,7 +2322,7 @@ module Defns =
    or if [ty] is not well defined.
  *)
     let mk_termdecln scp n ty =
-      let name = Basic.mk_long (Scope.thy_of scp) n
+      let name = Ident.mk_long (Scope.thy_of scp) n
       in 
       let (id, typ) = Defn.mk_decln scp name ty
       in 
@@ -2367,7 +2367,7 @@ module Defns =
 	    with err -> 
 	      raise (Gtypes.add_type_error "Badly formed definition" [a] err))
       in 
-      TypeAlias((Basic.mk_long th n), ags, dfn)
+      TypeAlias((Ident.mk_long th n), ags, dfn)
 
 (**** Type definition: Subtypes ****)
 
@@ -2477,7 +2477,7 @@ module Defns =
     let print_termdefn ppinfo (n, ty, th) = 
       Format.printf "@[";
       Format.printf "@[";
-      Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+      Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
       Format.printf ":@ ";
       Gtypes.print ppinfo ty;
       Format.printf "@],@ ";
@@ -2486,7 +2486,7 @@ module Defns =
 
     let print_termdecln ppinfo (n, ty) = 
       Format.printf "@[";
-      Printer.print_ident (Basic.mk_long Basic.null_thy (Basic.name n));
+      Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
       Format.printf ":@ ";
       Gtypes.print ppinfo ty;
       Format.printf "@]"

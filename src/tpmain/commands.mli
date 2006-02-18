@@ -138,41 +138,41 @@ val remove_file: string -> unit
 
 (** {7 Basic PP functions} *)
 
-val add_type_pp_rec: Basic.ident -> Printer.record -> unit
+val add_type_pp_rec: Ident.t -> Printer.record -> unit
 (** Add a PP record for a type identifier. Updates Printer and Parser. *)
-val remove_type_pp_rec : Basic.ident -> unit
+val remove_type_pp_rec : Ident.t -> unit
 (** 
    Remove the PP record for a type identifier. Updates Printer and
    Parser.
 *)
 val get_type_pp_rec : 
-    Basic.ident -> (int * fixity * string option)
+    Ident.t -> (int * fixity * string option)
 (** Get the PP record for a type identifier. *)
 
 val add_term_pp_rec: 
-  Basic.ident -> ?pos:Theory.sym_pos -> Printer.record -> unit
+  Ident.t -> ?pos:Theory.sym_pos -> Printer.record -> unit
 (**
    Add a PP record for a term identifier. Updates Printer and Parser
    tables. (Experimental) Add overloading information to the parser
    with relative position [pos] (Default is [First]).
 *)
 
-val remove_term_pp_rec : Basic.ident -> unit
+val remove_term_pp_rec : Ident.t -> unit
 (** 
    Remove the PP record for a term identifier. Updates Printer and
    Parser tables.
 *)
 val get_term_pp_rec : 
-    Basic.ident -> (int * fixity * string option)
+    Ident.t -> (int * fixity * string option)
 (** Get the PP record for a term identifier. *)
 
-val add_overload: string -> ?pos:Theory.sym_pos -> Basic.ident -> unit
+val add_overload: string -> ?pos:Theory.sym_pos -> Ident.t -> unit
 (**
    [add_overload sym ?post id]: Overload [sym] with term identifier
    [id]. Make identifier [id] have position [?pos] (default [First])
    in the list of options for symbol [sym]. (Experimental.)
 *)
-val remove_overload: string -> Basic.ident -> unit
+val remove_overload: string -> Ident.t -> unit
 (**
    [remove_overload sym id]: Remove overloading of term identifier [id]
    for [sym]. (Experimental.)
@@ -180,25 +180,25 @@ val remove_overload: string -> Basic.ident -> unit
 
 (** {7 Toplevel Printer and Parser information functions} *)
 
-val add_type_pp: Basic.ident -> int -> fixity -> string option -> unit
+val add_type_pp: Ident.t -> int -> fixity -> string option -> unit
 (** 
    Add a PP information for a type identifier. Updates Printer and
    Parser tables.
 *)
 
-val remove_type_pp : Basic.ident -> unit
+val remove_type_pp : Ident.t -> unit
 (** 
    Remove PP information for a type identifier. Updates Printer and
    Parser tables.
 *)
 
-val get_type_pp : Basic.ident -> (int * fixity * string option)
+val get_type_pp : Ident.t -> (int * fixity * string option)
 (** 
    Get PP information for a type identifier.
 *)
 
 val add_term_pp: 
-  Basic.ident 
+  Ident.t 
   -> ?pos:Theory.sym_pos 
   -> int -> fixity -> string option -> unit
 (** 
@@ -207,13 +207,13 @@ val add_term_pp:
    parser.
 *)
 
-val remove_term_pp : Basic.ident -> unit
+val remove_term_pp : Ident.t -> unit
 (** 
    Remove PP information for a term identifier. Updates Printer and
    Parser tables.
 *)
 
-val get_term_pp : Basic.ident -> (int * fixity * string option)
+val get_term_pp : Ident.t -> (int * fixity * string option)
 (** Get PP information for a term identifier. *)
 
 (** {5 Axioms and theorems} 
@@ -421,7 +421,7 @@ val define :
 
 val declare : 
     ?pp:(int* fixity* string option) 
-  -> Basic.term -> (Basic.ident * Basic.gtype)
+  -> Basic.term -> (Ident.t * Basic.gtype)
 (**
    [declare trm pp]: Declare a term identifier. 
 
