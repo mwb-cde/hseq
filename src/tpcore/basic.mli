@@ -1,57 +1,10 @@
 (*-----
    Name: basic.mli
    Author: M Wahab <mwahab@users.sourceforge.net>
-   Copyright M Wahab 2005
+   Copyright M Wahab 2005, 2006
    ----*)
 
 (** Basic constants and data structures. *)
-
-module Defunct : 
-sig
-
-(** {5 Identifiers for functions and types} *)
-
-type thy_id = string
-(** The name of a theory *)
-
-type ident = (thy_id * string)
-(** 
-   General, qualified identifiers.
-   Made up of a theory identifier and name.
-*)
-
-val null_thy: thy_id
-(** The empty theory identifier *)
-val null_id: ident
-(** The empty identifier *)
-val is_null_id: ident -> bool
-(** test for the empty identifier *)
-
-val thy_of_id : ident -> thy_id
-(** The theory identifier of long identifier [i]. *)
-val name: ident -> string
-(** The name portion of identifier [i]. *)
-val mk_long: string -> string -> ident
-(** 
-   [mk_long t n] makes a long identifier with theory part [t] and name
-   part [n].
-*)
-val mk_name: string -> ident
-(**
-   Make a long identifier with an empty theory part. These are called
-   short identifiers.
-*)
-val dest_fnid: ident -> (string * string)
-(** Destructor for [ident]. *)
-val is_short_id: ident -> bool
-(** 
-   [is_short_id i] is true if [i] is a short identifier (having an
-   empty theory part). 
-*)
-val string_fnid: ident -> string
-(** String representation of identifier [i]. *)
-
-end
 
 (** {5 Base Representation of logic types} *)
 

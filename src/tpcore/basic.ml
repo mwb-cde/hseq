@@ -1,39 +1,12 @@
 (*-----
  Name: basic.ml
  Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
+ Copyright M Wahab 2005, 2006
 ----*)
 
 (***
 *   Basic constants and data structures
 ***)
-
-module Defunct =
-struct
-
-(***
-* Identifiers for functions and types
-***)
-
-type thy_id = string
-type ident = (thy_id * string)
-
-let null_thy = ""
-let null_id = ("", "")
-let is_null_id x = x=null_id
-
-let thy_of_id (t, _) = t
-let name (_, n) = n
-let mk_long t n = (t, n)
-let mk_name n = (null_thy, n)
-let dest_fnid (t, n) = (t, n)
-let is_short_id (t, _) = t=null_thy
-let string_fnid n =
-  if (thy_of_id n)=null_thy then name n
-  else (thy_of_id n)^"."^(name n)
-
-end
-
 
 (***
 * Base Representation of logic types 
