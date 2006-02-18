@@ -27,10 +27,9 @@ module type TreeData =
 
 
 module type TreeType=
-functor (A : TreeData) ->
   sig
 
-    type key = A.key
+    type key 
 
     val eql : key -> key -> bool
     val lessthan : key -> key -> bool
@@ -465,9 +464,8 @@ module Tree=
 (* Balanced lookup trees *)
 
 module type BTreeType=
-functor (A : TreeData) ->
   sig
-    type key = A.key
+    type key 
     val eql : key -> key -> bool
     val lessthan : key -> key -> bool
 

@@ -33,25 +33,8 @@ val binder_equiv : Scope.t -> term -> term -> bool
 
 module TermTreeData: Treekit.TreeData
 module TermTree: 
-    sig
-      val eql : term -> term -> bool
-      val lessthan : term -> term -> bool
-      type 'a t 
-      val nil : 'a t
-      val create : (term * 'a) list -> 'a t -> 'a t -> 'a t
-      val data : 'a t -> (term * 'a) list
-      val left : 'a t -> 'a t
-      val right : 'a t -> 'a t
-      val balance : 'a t -> 'a t
-      val add : 'a t -> term -> 'a -> 'a t
-      val replace : 'a t -> term -> 'a -> 'a t
-      val delete : 'a t -> term -> 'a t
-      val find : 'a t -> term -> 'a
-      val find_all : 'a t -> term -> 'a list
-      val mem : 'a t -> term -> bool
-      val iter : (term -> 'a -> 'b) -> 'a t -> unit
-      val to_list : 'a t -> (term * 'a) list list
-    end
+    (Treekit.BTreeType with type key = term)
+
 type ('a)tree=('a)TermTree.t
 (** Trees indexed by terms *)
 

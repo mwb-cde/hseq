@@ -9,7 +9,7 @@ module Input=
 
     exception Empty
 
-(* 'a seq: Sequences of 'a, built up as function tail is called *)
+(** 'a seq: Sequences of 'a, built up as function tail is called *)
    
     type 'a seq = 
 	Nil | Cons of 'a * ('a seq ref)| Fun of (unit -> 'a)
@@ -49,18 +49,16 @@ module Input=
 	
     let is_empty inp=seq_is_empty inp
 	
-(* look inp:
-   get first token from stream
-   keep token in stream
+(**
+   [look inp]: get first token from stream keep token in stream
 *)
-
     let look inp = hd inp
 	
-(* accept inp:
+(**
+   [accept inp]:
    create a new stream which is exactly like inp
    except that first token is dropped
 *)
-
     let accept inp = tail inp
 
 end
@@ -110,29 +108,28 @@ module type TOKENS =
     type tokens
     val matches : tokens -> tokens -> bool
 
-(*
-   [string_of_token]
-   Used for error reporting only.
-   If necessary use [(fun x _ -> "")].
+(**
+   [string_of_token]: Used for error reporting only.  If necessary use
+   [(fun x _ -> "")].
 *)
     val string_of_token : tokens -> string
+
   end
 
-
-module type GRAMMARS =
-  functor (ParseTokens: TOKENS) ->
+module type T =
     sig
 
       exception ParsingError of string
       exception No_match
 
-      type token = ParseTokens.tokens
+      type token 
 
       type input=token Input.t
       type ('a)phrase= input -> ('a* input)
 
-	  (* parser constructors *)
-
+(***
+* Parser constructors 
+***)
       val empty : ('a list)phrase
       val next_token : token phrase 
       val error: ?msg:string -> (token -> string) -> 'a phrase
@@ -176,14 +173,14 @@ module type GRAMMARS =
       val parse : ('a)phrase -> token -> input ->  'a
     end
 
-module Grammars:GRAMMARS=
-  functor (ParseTokens: TOKENS)->
+module Make =
+  functor (A: TOKENS)->
   struct
 
     exception ParsingError of string
     exception No_match
 
-    type token = ParseTokens.tokens
+    type token = A.tokens
     type input=token Input.t  
     type ('a)phrase= input -> ('a* input)
 
@@ -192,7 +189,7 @@ module Grammars:GRAMMARS=
 	    prec: int
 	  }
 
-    let matches = ParseTokens.matches
+    let matches = A.matches
 
     let empty inp = ([], inp)
 
@@ -207,7 +204,7 @@ module Grammars:GRAMMARS=
 	(fn t, Input.accept inp)
       else 
 	raise (ParsingError 
-		 ("Unexpected symbol "^(ParseTokens.string_of_token t)))
+		 ("Unexpected symbol "^(A.string_of_token t)))
 
     let (!$) tok inp = get (fun t -> matches tok t) (fun t -> t) inp
 

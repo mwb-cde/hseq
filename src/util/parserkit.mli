@@ -7,46 +7,48 @@
 (** 
    Toolkit for top-down parsers 
 
-   Based on the parser combinators described by Paulson ("ML for the
-   working programmer", 1991, Cambridge University Press.)
+   Mostly based on the parser combinators described by Paulson ("ML
+   for the working programmer", 1991, Cambridge University Press.)
 *)
 
-(**
-   Parser Input: streams which can deal with backtracking 
-*)
+(** {7 Parser Input} *)
+
+(** [Input]: Input streams for parsers *)
 module Input:
   sig
+(** Streams which can deal with backtracking *)
 
     exception Empty
     type 'a t
 
-(*
-   make f: make an input from function f.
-   f must raise Empty when it is empty
-   If f is initially empty, then the constructed input
+    val make : (unit -> 'a) -> 'a t
+(**
+   [make f]: make an input from function [f].
+   [f] must raise [Empty] when it is empty
+   If [f] is initially empty, then the constructed input
    will always be empty.
 *)
-    val make : (unit -> 'a) -> 'a t
 
-(* 
-   is_empty inp: true iff inp is empty 
-*)
     val is_empty : 'a t -> bool
-
-(* look inp: 
-   get first element in input inp but don't remove it from input 
+(** 
+   [is_empty inp]: true iff [inp] is empty 
 *)
-    val look : 'a t -> 'a
 
-(* 
-   accept inp:
-   Get a new input, formed by dropping the first element of inp.
-   This is non-destructive, the first element will still be
+    val look : 'a t -> 'a
+(** 
+   [look inp]: get first element in input inp but don't remove it from
+   input
+*)
+
+    val accept : 'a t -> 'a t
+(**
+   [accept inp]: Get a new input, formed by dropping the first element
+   of inp.  This is non-destructive, the first element will still be
    available in inp
 *)
-    val accept : 'a t -> 'a t
   end
 
+(** [Info]: Precedence and associativity information for tokens. *)
 module Info :
   sig
     type associativity = 
@@ -76,154 +78,144 @@ module Info :
   end
 
 
+(** [Tokens]: Token values and matchings. *)
 module type TOKENS =
   sig 
-    type tokens 
-(*
-   [matches t1 t2]
-   [true] iff token [t1] should be considered a match for token [t2].
-*)
-    val matches : tokens -> tokens -> bool 
 
-(*
-   [string_of_token]
-   Used for error reporting only.
-   If necessary use [(fun x _ -> "")].
+    type tokens 
+
+    val matches : tokens -> tokens -> bool 
+(**
+   [matches t1 t2]: [true] iff token [t1] should be considered a match
+   for token [t2].
 *)
+
     val string_of_token : tokens -> string
+(**
+   [string_of_token]: Used for error reporting only. If necessary use
+   [(fun x _ -> "")].
+*)
 
   end
 
-module type GRAMMARS =
-  functor (ParseTokens : TOKENS) ->
+(** {5 Parsers} *)
+
+module type T =
     sig
+(** The available parser constructors. *)
+
       exception ParsingError of string
       exception No_match
-      type token = ParseTokens.tokens
+      type token 
       and input = token Input.t
       and 'a phrase = input -> 'a * input
       val empty : 'a list phrase
       val next_token : token phrase
 
-(* 
-   [error msg strtok]
-   Error reporting.
+(** {7 Parser Constructors} *)
+
+      val error: ?msg:string -> (token -> string) -> 'a phrase
+(** 
+   [error msg strtok]: Error reporting.
    Read a token, fail, raising ParsingError.
    Message for ParsingError.
 *)
-      val error: ?msg:string -> (token -> string) -> 'a phrase
 
-(* 
-   [get pred f]
-   match a token satisfying [pred] and apply [f]
-*)
       val get : (token -> bool) -> (token -> 'a) -> 'a phrase
+(**
+   [get pred f]: Match a token satisfying [pred] and apply [f]
+*)
 
-(*
-   [!$ tok]
-   Match token [tok].
- *)
       val ( !$ ) : token -> token phrase
-(*
-   !!ph
-   Apply [ph], fail if [ph] fails.
-*)
+(**
+   [!$ tok]: Match token [tok].
+ *)
+
       val ( !! ) : 'a phrase -> 'a phrase
-(*
-   [ph1 -- ph2]
-   Apply [ph1] followed by [ph2].
+(**
+   [!!ph]: Alternative.  Apply [ph], fail if [ph] fails.
 *)
+
       val ( -- ) : 'a phrase -> 'b phrase -> ('a * 'b) phrase
-
-(*
-   [ph1 $-- ph2 ]
-   Parse and discard [ph1] then [ph2].
+(**
+   [ph1 -- ph2]: Sequence. Apply [ph1] followed by [ph2].
 *)
+
       val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
-
-(*
-   [ph >> f]
-   Parse [ph], apply result to [f].
+(**
+   [ph1 $-- ph2 ]: Parse and discard [ph1] then parse [ph2].
 *)
+
       val ( >> ) : 'a phrase -> ('a -> 'b) -> 'b phrase
-
-
-(* 
-   [optional ph]
-   parse [ph], return [None] if no match.
+(**
+   [ph >> f]: Map. Parse [ph], apply result to [f].
 *)
+
+
       val optional : 'a phrase -> 'a option phrase
-
-(*
-   [repeat ph]
-   Apply [ph] until it fails.
+(**
+   [optional ph]: Parse [ph], return [None] on failure.
 *)
+
       val repeat : 'a phrase -> 'a list phrase
-
-(*
-   [multiple ph]
-   Apply [ph] at least one, then until it fails.
+(**
+   [repeat ph]: Apply [ph] until it fails.
 *)
+
       val multiple : 'a phrase -> 'a list phrase
-
-(*
-   [list0 ph sep]
-   List of zero or more [ph] seperated by [sep].
+(**
+   [multiple ph]: Apply [ph] at least one, then until it fails.
 *)
+
       val list0 : 'a phrase -> 'b phrase -> 'a list phrase
-
-(*
-   [list1 ph sep]
-   List of one or more [ph] seperated by [sep].
+(**
+   [list0 ph sep]: List of zero or more [ph] seperated by [sep].
 *)
+
       val list1 : 'a phrase -> 'b phrase -> 'a list phrase
+(**
+   [list1 ph sep]: List of one or more [ph] seperated by [sep].
+*)
 
-(* parsing alternatives *)
-(*
-   [ph1 // ph2]
-   [ph1] or [ph2]
-*)
+
       val ( // ) : 'a phrase -> 'a phrase -> 'a phrase
-(*
-   [alt phs]
-   Try each of the parsers of [phs] in sequence, starting with the first,
-   return the result of the first to suceed.   
+(**
+   [ph1 // ph2]: [ph1] or [ph2]
 *)
+
       val alt : 'a phrase list -> 'a phrase
 (*
-   [named_alt inf phs]
-   Try each of the named parsers of [phs] in sequence, 
-   starting with the first and applying each to [inf],
-   return the result of the first to suceed.
+   [alt phs]: Try each of the parsers of [phs] in sequence, starting
+   with the first, return the result of the first to suceed.
 *)
+
       val named_alt : 
 	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
-
-(*
-   [seq phs]
-   Apply each of the parsers of [phs] in sequence, 
-   starting with the first,
-   fail if any fails.
-   return the result as a list.
+(**
+   [named_alt inf phs]: Try each of the named parsers of [phs] in
+   sequence, starting with the first and applying each to [inf],
+   return the result of the first to suceed.
 *)
+
       val seq : ('a phrase) list -> ('a list)phrase
-
-(*
-   [named_seq phs]
-   Apply each of the named parsers of [phs] in sequence, 
-   starting with the first and applying each to [inf],
-   fail if any fails.
-   return the result of as a list.
+(**
+   [seq phs]: Apply each of the parsers of [phs] in sequence, starting
+   with the first, fail if any fails. Return the result as a list.
 *)
+
       val named_seq : 
 	  (string, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b list)phrase)
+(**
+   [named_seq phs]: Apply each of the named parsers of [phs] in
+   sequence, starting with the first and applying each to [inf], fail
+   if any fails. Return the result of as a list.
+*)
 
-(*
-   token_info
-   Precedence and fixity information about tokens.
-   Used by operators parser.
+(**
+   [token_info]: Precedence and fixity information about tokens.  Used
+   by operators parser.
 *)
       type token_info = 
 	  { 
@@ -231,17 +223,27 @@ module type GRAMMARS =
 	    prec: int
 	  }
 
+      val operators :
+        'a phrase * (token -> token_info) * (token -> 'a -> 'a -> 'a) *
+        (token -> 'a -> 'a) -> 'a phrase
   (**
-      [operators(ph, info, binop, unaryopy):]
+      [operators(ph, info, binop, unaryopy)]: Operator precedence parser.
 
       [ph]: parser for basic (atomic) terms, such as numbers, bools etc
       [info]: return fixity information about a token
       [binop]: function to combine two arguments and a token
       [unaryop]: function to combine one argument and a token
-   *)
-      val operators :
-        'a phrase * (token -> token_info) * (token -> 'a -> 'a -> 'a) *
-        (token -> 'a -> 'a) -> 'a phrase
+  *)
+
+
       val parse : 'a phrase -> token -> input -> 'a
+  (** 
+     [parse ph eof inp]: Parse input [inp] using [ph] until the end of
+     file token [eof].
+   *)
+
     end
-module Grammars : GRAMMARS
+
+module Make:
+    functor (A: TOKENS) -> (T with type token = A.tokens)
+(** Generic parser constructors *)

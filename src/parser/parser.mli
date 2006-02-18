@@ -12,7 +12,7 @@
    constructed by the functions in modules {!Lexer}.  A grammar is
    described as a {!Parser.phrase}, and a phrase can also be
    built up from one or more phrases. A parser is built from a phrase
-   using function {!Parser.Pkit.parse}.
+   using function {!Parserkit.T.parse}.
 
    The grammars are grouped around terms and types, with some
    miscellaneous utlity parsers. The term parsers include the
@@ -35,142 +35,7 @@
  *)
 
 (** Parser constructors specialised to tokens from {!Lexer}. *)
-module Pkit :
-    sig
-      
-      (** {7 Basic types} *)
-      exception ParsingError of string
-	  (**
-	     Raised on parsing errors. A parser which fails to match
-	     will raise [ParsingError].
-	   *)
-	  
-      type token = Lexer.tok
-	    (** The parser tokens *)
-      type input = token Parserkit.Input.t
-	    (** The parser input stream *)
-      type 'a phrase = input -> 'a * input
-	  (** A grammar rule *)
-
-
-	  (** Token information. *)
-      type token_info = 
-	  {
-	   fixity : Parserkit.Info.fixity; (** Fixity of a token *)
-	   prec : int;    (** Precedence of a token *)
-	 } 
-
-	    (** {5 Parser constructors} *)
-	    
-      val empty : 'a list phrase
-	  (** The empty phrase. Always produces the empty list. *)
-      val get : (token -> bool) -> (token -> 'a) -> 'a phrase
-	  (**
-	     [get pred fn]: Get and transform a token. If the next
-	     token satisfies [pred], return the result of applying [fn].
-	   *)
-
-      val ( !$ ) : token -> token phrase
-	  (** [ !$ tok ]: Match the token [tok]. *)
-
-      val ( // ) : 'a phrase -> 'a phrase -> 'a phrase
-	  (**
-	     [ph1 // ph2]: Alternation. Try to match [ph1], if it
-	     fails, try	to match [ph2].  
-	   *)
-
-      val ( !! ) : 'a phrase -> 'a phrase
-	  (**
-	     [!! ph]: Require a match for [ph]. Fail completely, raising
-	     [Failure], if no match. This will prevent any of the
-	     combinators from trying an alternative.
-	   *)
-	  
-      val ( -- ) : 'a phrase -> 'b phrase -> ('a * 'b) phrase
-	  (**
-	     [ph1 -- ph2]: Concatenation. Match [ph1] then [ph2].
-	   *)
-	  
-      val ( >> ) : 'a phrase -> ('a -> 'b) -> 'b phrase
-	  (**
-	     [ph >> fn]: Transformation. Match [ph], applying [fn] to
-	     the result.
-	   *)
-	  
-      val alt : 'a phrase list -> 'a phrase
-	  (**
-	     [alt phl]: Alternation on a list. Try each of the phrases
-	     in the list [phl], using the first to match.
-	   *)
-
-      val named_alt: 
-	  (string, 'a -> ('b)phrase) Lib.named_list -> 'a -> ('b)phrase
-	      (**
-		 [named_alt phl arg]: Alternation on a named list. Try each
-		 of the phrases in the list [phl], passing [arg] to each,
-		 using the first to match.
-	       *)
-
-      val seq : ('a phrase) list -> ('a list)phrase
-	  (**
-	     [seq phl]: Concatenation on a list. Match with each of the phrases
-	     in the list [phl], in order.
-	   *)
-
-
-      val named_seq : 
-	  (string, 'a -> ('b)phrase) Lib.named_list 
-	-> 'a -> ('b list)phrase
-	    (**
-	       [named_seq phl arg]: Concatenation on a named list. Match each
-	       of the phrases in the list [phl], in order, passing [arg] to each.
-	     *)
-
-      val optional : 'a phrase -> 'a option phrase
-	  (**
-	     [optional ph]: Optionally match [ph]. If the match
-	     succeeds, producing [x] then return [Some x] otherwise
-	     return [None].
-	   *)
-
-      val ( --% ) : 'a phrase -> 'b phrase -> 'b phrase
-	  (**
-	     [ph1 --% ph2]: Match [ph1] and [ph2], returning result of
-	     matching [ph2].
-	   *)
-
-      val repeat : 'a phrase -> 'a list phrase
-	  (**
-	     [repeat ph]: Match [ph] 0 or more times. Results returned
-	     in the order they matched.
-	   *)
-
-      val multiple : 'a phrase -> 'a list phrase
-	  (**
-	     [multiple ph]: Match [ph] 1 or more times. Results returned
-	     in the order they matched.
-	   *)
-
-      val operators :
-	  'a phrase * (token -> token_info) * (token -> 'a -> 'a -> 'a) *
-	  (token -> 'a -> 'a) -> 'a phrase
-	      (**
-		 [operators (ph, info, binop, unop)]: Bottom-up precedence
-		 parsing for infix, prefix and postfix operators.
-		 
-		 @param ph Parser for arguments to operators
-		 @param info Precedence and fixity information about tokens
-		 @param binop Constructors for binary operators.
-		 @param unop Constructors for unary operators.
-	       *)
-	      
-      val parse : 'a phrase -> token -> input -> 'a
-	  (** 
-	     [parse ph eof inp]: Parse input [inp], using phrase [ph], upto the 
-	     end of input, which is marked by token [eof].
-	   *)
-
-    end
+module Pkit : (Parserkit.T with type token =Lexer.tok) 
 
 (** Useful parser constructors  *)
 module Utility: 
@@ -180,14 +45,14 @@ module Utility:
       val (?$): Lexer.tok -> Basic.term phrase
 	  (**
 	     [?$ sym]: Utility function for building term parsers using
-	     {!Parser.Pkit.seq}.  Parse symbol [sym], return term
+	     {!Parserkit.T.seq}.  Parse symbol [sym], return term
 	     [Term.mk_short_var (Lexer.string_of_token)].
 	   *)
 	  
       val (?%): Lexer.tok -> Basic.gtype phrase
           (**
 	     [?% sym]: Utility function for building type parsers using
-	     {!Parser.Pkit.seq}. Parse symbol [sym], return term [Gtypes.mk_var
+	     {!Parserkit.T.seq}. Parse symbol [sym], return term [Gtypes.mk_var
 	     (Lexer.string_of_token)].
 	   *)
     end
@@ -403,7 +268,7 @@ module Grammars :
 	  (**
 	     [mk_token_info x]: Extract the precedence and fixity information
 	     from term token [x], if any. If not, return the default term fixity
-	     and precedence. For use with the {!Parser.Pkit.operators}
+	     and precedence. For use with the {!Parserkit.T.operators}
 	     constructor.
 	   *)
 

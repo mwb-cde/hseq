@@ -11,7 +11,7 @@
 (***
  * Parser constructors specialised to tokens from {!Lexer}.
  ***)
-module Pkit=Parserkit.Grammars
+module Pkit=Parserkit.Make
     (struct 
       type tokens=Lexer.tok 
       let matches = Lexer.match_tokens

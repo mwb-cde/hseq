@@ -112,33 +112,9 @@ type ('a)table = ('a)Rhash.t
 
 (** {7 Balanced Trees} *)
 module TypeTreeData: Treekit.TreeData
-(*
-    sig
-      type key=gtype
-      val equals : key -> key -> bool
-      val lessthan : key -> key -> bool
-    end
-*)
+
 module TypeTree:
-    sig
-      val eql : gtype -> gtype -> bool
-      val lessthan : gtype -> gtype -> bool
-      type 'a t 
-      val nil : 'a t
-      val create : (gtype * 'a) list -> 'a t -> 'a t -> 'a t
-      val data : 'a t -> (gtype * 'a) list
-      val left : 'a t -> 'a t
-      val right : 'a t -> 'a t
-      val balance : 'a t -> 'a t
-      val add : 'a t -> gtype -> 'a -> 'a t
-      val replace : 'a t -> gtype -> 'a -> 'a t
-      val delete : 'a t -> gtype -> 'a t
-      val find : 'a t -> gtype -> 'a
-      val find_all : 'a t -> gtype -> 'a list
-      val mem : 'a t -> gtype -> bool
-      val iter : (gtype -> 'a -> 'b) -> 'a t -> unit
-      val to_list : 'a t -> (gtype * 'a) list list
-    end 
+    (Treekit.BTreeType with type key = gtype)
 
 type ('a)tree = ('a)TypeTree.t
 (** Balanced trees indexed by gtypes *)
