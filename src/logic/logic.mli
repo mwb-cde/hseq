@@ -1356,17 +1356,13 @@ type ctypedef =
 (** 
    The representation of a checked definition for permanent storage.
 *)
-type saved_cdefn =
-    STypeAlias of Ident.t * string list * Gtypes.stype option
-  | STypeDef of saved_ctypedef
-  | STermDecln of Ident.t * Gtypes.stype
-  | STermDef of Ident.t * Gtypes.stype * saved_thm 
-and
+type saved_cdefn 
+
 (** 
    The representation of a checked subtype definition for permanent
    storage.
  *)
- saved_ctypedef =
+type saved_ctypedef =
     {
      stype_name : Ident.t;  (* name of new type *)
      stype_args : string list;  (* arguments of new type *)
