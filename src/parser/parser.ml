@@ -617,7 +617,7 @@ module Grammars  =
     let bool_type info toks =
       try 
 	((named_id info type_id (Ident.mk_name "bool"))
-	   >> (fun _ -> Logicterm.mk_bool_ty)) toks
+	   >> (fun _ -> Logicterm.mk_bool_ty())) toks
       with No_match -> raise (ParsingError "Not a boolean type")
 
 	  (**
@@ -627,7 +627,7 @@ module Grammars  =
     let num_type info toks =
       try 
 	((named_id info type_id (Ident.mk_name "num"))
-	   >> (fun _ -> Gtypes.mk_num)) toks
+	   >> (fun _ -> Logicterm.mk_num_ty())) toks
       with No_match -> raise (ParsingError "Not a number type")
 
 
@@ -1379,9 +1379,11 @@ module Resolver =
 	      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
 	      in 
 	      let (nty1, env1)=
-		try (Logicterm.mk_bool_ty, 
-		     Gtypes.unify_env data1.scp expty Logicterm.mk_bool_ty env)
-		with _ -> (Logicterm.mk_bool_ty, env)
+		try (Logicterm.mk_bool_ty(), 
+		     Gtypes.unify_env 
+		       data1.scp expty 
+		       (Logicterm.mk_bool_ty()) env)
+		with _ -> (Logicterm.mk_bool_ty(), env)
 	      in 
 	      let (body1, bty, benv)=
 		resolve_aux data1 env1 nty1 body

@@ -14,9 +14,11 @@ let add_error s l err = Term.add_term_error s l err
 
 
 (* Term identifiers *)
-let num_thy = "nums"
-let bool_type = Logicterm.mk_bool_ty
-let num_type = Gtypes.mk_num
+let num_thy = Logicterm.nums_thy
+
+let bool_type = Logicterm.mk_bool_ty()
+let num_type = Logicterm.mk_num_ty()
+
 let plusid = Ident.mk_long num_thy "plus"
 let minusid = Ident.mk_long num_thy "minus"
 let multid = Ident.mk_long num_thy "mult"

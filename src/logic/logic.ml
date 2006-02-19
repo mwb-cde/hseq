@@ -624,7 +624,7 @@ let num_of_subgoals g =
   List.length (get_subgoals g)
 
 let mk_goal ?info scp f = 
-  let nf= Formula.typecheck scp f (Logicterm.mk_bool_ty)
+  let nf= Formula.typecheck scp f (Logicterm.mk_bool_ty())
   in 
   Goal([Sequent.new_sqnt info scp nf], Gtypes.empty_subst(), nf)
 
@@ -2494,8 +2494,7 @@ module Defns =
 
     let print_typealias ppinfo (n, args, ty) = 
       let named_ty = 
-	Gtypes.mk_constr 
-	  (Basic.Defined n)
+	Gtypes.mk_constr n
 	  (List.map (fun x -> Gtypes.mk_var x) args)
       in 
       Format.printf "@[";
@@ -2510,8 +2509,7 @@ module Defns =
 
     let rec print_subtype ppinfo x =  
       let named_ty = 
-	Gtypes.mk_constr 
-	  (Basic.Defined x.type_name)
+	Gtypes.mk_constr x.type_name
 	  (List.map (fun x -> Gtypes.mk_var x) x.type_args)
       in 
       Format.printf "@[<v>";

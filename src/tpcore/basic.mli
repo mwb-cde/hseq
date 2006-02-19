@@ -8,25 +8,18 @@
 
 (** {5 Base Representation of logic types} *)
 
-type base_typ = Bool | Num | Ind 
-(** 
-   The built-in types (should be removed) 
-*) 
-
-type typ_const = Defined of Ident.t
+type typ_const = Ident.t
 (** 
    Representation of user-defined type constructors
    (could merged into [pre_typ] 
 *)
 
 (** The base representation of types *)
-type ('idtyp, 'tfun, 'tcons) pre_typ =
+type ('idtyp, 'tfun) pre_typ =
     Var of 'idtyp 
 (** Type variables. *)
-  | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
+  | Constr of 'tfun * ('idtyp, 'tfun) pre_typ list
 (** User defined type constructors. *)
-  | Base of 'tcons
-(** The built-in type constructors. *)
   | WeakVar of 'idtyp
 (**
  Weak type variables. These bind to anything except a
@@ -37,11 +30,10 @@ type ('idtyp, 'tfun, 'tcons) pre_typ =
    ML).
 *)
 
-type gtype = ((string ref, typ_const, base_typ)pre_typ)
+type gtype = ((string ref, typ_const)pre_typ)
 (** The actual representation of types *)
 
 (** String representation of types *)
-val string_btype : base_typ -> string
 val string_tconst : typ_const -> string list -> string
 
 

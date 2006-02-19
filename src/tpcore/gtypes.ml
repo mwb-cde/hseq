@@ -42,11 +42,6 @@ let is_constr t =
     Constr _ -> true
   | _ -> false
 
-let is_base t  = 
-  match t with
-    Base _ -> true
-  | _ -> false
-
 let is_weak t  = 
   match t with
     WeakVar _ -> true
@@ -57,7 +52,6 @@ let is_weak t  =
 let mk_var n = (Var (ref n))
 let mk_weak n = (WeakVar (ref n))
 let mk_constr f l = Constr(f, l)
-let mk_base b = Base b
 
 (* Destructors *)
 
@@ -86,18 +80,9 @@ let dest_constr ty =
     Constr(f, args) -> (f, args)
   | _ -> raise (Failure "Not a constructed type")
 
-let dest_base ty=
-  match ty with 
-    Base b -> b
-  | _ -> raise (Failure "Not a base type")
-
 (***
 * Specialised Manipulators 
 ***)
-
-(* Base types *)
-let mk_num = (mk_base Num)
-let mk_ind = (mk_base Ind)
 
 (* Variable types *)
 let is_any_var t= (is_var t) || (is_weak t)
@@ -143,10 +128,10 @@ let normalize_vars typ=
       Var(n) -> 
 	let (tbl1, n1) = lookup tbl (get_var_name ty)
 	in (tbl1, n1)
-    | Constr(Defined n, args) ->
+    | Constr(n, args) ->
 	let (tbl1, args1)=norm_list tbl args []
 	in 
-	(tbl1, Constr(Defined n, args1))
+	(tbl1, Constr(n, args1))
     | _ -> (tbl, ty)
   and norm_list tbl tys result = 
     match tys with 
@@ -169,14 +154,14 @@ let is_null t = (get_var_name t)=null_type_name
 
 let is_def t = 
   match t with
-    Constr (Defined _ , _) -> true
+    Constr (_ , _) -> true
   | _ -> false
 
-let mk_def n args = mk_constr (Defined n) args
+let mk_def n args = mk_constr n args
 
 let dest_def t = 
   match t with
-    Constr(Defined n, args) -> (n, args)
+    Constr(n, args) -> (n, args)
   | _ -> raise (Failure "Not a defined type")
 
 (***
@@ -250,8 +235,7 @@ let rec subst t env =
 	Constr(f, l) -> 
 	  Constr(f, List.map (fun x-> subst x env) l)
       | Var _ -> t
-      | WeakVar _ -> t
-      | Base _ -> t)
+      | WeakVar _ -> t)
 	    
 (*
 let rec subst t env =
@@ -301,7 +285,6 @@ let rec rename_type_vars_env env trm=
       (try (lookup trm env, env)
       with 
 	Not_found -> (trm, env))
-  | _ -> (trm, env)
 
 let rename_type_vars t =
   let nty, _ = rename_type_vars_env (empty_subst()) t
@@ -339,9 +322,7 @@ let rec print_type ppstate pr t =
 	Format.printf "@[<hov 2>'%s@]" (get_var_name x)
     | WeakVar(_) -> 
 	Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
-    | Base(b) -> 
-	Format.printf "@[<hov 2>%s@]" (Basic.string_btype b)
-    | Constr(Defined op, args) -> 
+    | Constr(op, args) -> 
 	print_defined ppstate pr (op, args)
   in 
   print_aux ppstate pr t;
@@ -449,10 +430,7 @@ let rec string_gtype x =
     Var(a) -> "'"^(!a)
   | Constr(f, args) ->  
       string_tconst f (List.map string_gtype args)
-  | Base(b) -> string_btype b
   | WeakVar(a) -> "_"^(!a)
-
-
 
 (***
 * Support functions to deal with type definitions.
@@ -503,7 +481,7 @@ let has_defn tyenv n =
 
 let get_defn tyenv t = 
   match t with
-    Constr(Defined n, args) ->
+    Constr(n, args) ->
       let recrd = get_typdef tyenv n 
       in 
       (match recrd.Scope.alias with
@@ -533,12 +511,11 @@ let get_defn tyenv t =
 let rec check_term scp n vs t = 
   match t with
     Var(x) -> if List.mem (Var x) vs then () else raise Not_found
-  | Constr(Defined m, args) -> 
+  | Constr(m, args) -> 
       if n=m then raise Not_found
       else 
 	List.iter (check_term scp n vs) args
   | WeakVar _ -> raise Not_found
-  | x -> ()
 
 let check_args args =
   let tenv = empty_subst()
@@ -596,7 +573,7 @@ let rec well_defined scp args t =
   in 
   let rec well_def t = 
     match t with 
-      Constr(Defined n, nargs) ->
+      Constr(n, nargs) ->
 	(try 
           (let _ =Scope.defn_of scp n
           in 
@@ -609,7 +586,6 @@ let rec well_defined scp args t =
 	  raise (type_error "well_defined, unexpected variable." [t]))
     | WeakVar(v) -> 
 	raise (type_error "well_defined, unexpected weak variable." [t])
-    | _ -> ()
   in 
   well_def t
 
@@ -619,7 +595,7 @@ let rec well_defined scp args t =
 *)
 let rec quick_well_defined scp cache t =
   match t with 
-    Constr(Defined n, args) ->
+    Constr(n, args) ->
       let nargs=List.length args
       in
       (try
@@ -651,7 +627,7 @@ let rec quick_well_defined scp cache t =
 let check_decl_type scp ty=
   let rec check_aux t = 
     match t with 
-      Constr(Defined n, nargs) ->
+      Constr(n, nargs) ->
 	(try 
           (let _ =Scope.defn_of scp n
           in 
@@ -708,10 +684,6 @@ let rec occurs_env tenv ty1 ty2 =
       else ()
   | (Constr(_, l), _) -> 
       List.iter (fun x-> occurs_env tenv x nty2) l
-  | _ -> 
-      if (equals nty1 nty2)
-      then raise (type_error ("occurs: ") [nty1;nty2])
-      else ()
 
 let bind_occs t1 t2 env =
   if is_any_var t1
@@ -776,10 +748,6 @@ let unify_env scp t1 t2 nenv =
 	else bind_occs s t env
     | (WeakVar(_), _) -> bind_occs s t env
     | (_, WeakVar(_)) -> bind_occs t s env
-(* All other types, try for equals *)
-    | _ -> 
-	if equals s t then env
-	else (raise (type_error "Can't unify types" [s; t]))
   in
   unify_aux t1 t2 nenv (* try to unify t1 and t2 *)
 
@@ -853,10 +821,6 @@ let unify_for_rewrite scp t1 t2 env =
     | (WeakVar(_), x) -> bind_occs s x senv
     | (x, WeakVar(_)) -> bind_occs t x senv
 	  (* unify constants *)
-    | _ -> 
-	if equals s t then senv
-	else raise (Failure ("Can't unify " ^(string_gtype s)
-			     ^" with " ^(string_gtype t)))
   in
   unify_aux t1 t2 env (* try to unify t1 and t2 *)
 
@@ -884,7 +848,6 @@ let rec mgu t env =
       else mgu nt env)
   | Constr(f, l) -> 
       Constr(f, List.map (fun x-> mgu x env) l)
-  | x -> x
 
 (**
    [mgu_rename_env inf env env nenv typ]: Replace variables in [typ]
@@ -925,7 +888,6 @@ let mgu_rename_env inf tyenv name_env typ =
 	      renv:=ne; nt) args
 	in 
 	(Constr(f, nargs), !renv)
-    | _ -> (ty, nenv)
   in 
   rename_aux name_env typ
 
@@ -972,9 +934,6 @@ let matching_env scp t1 t2 nenv =
 	else bind_occs s t env
     | (WeakVar(v1), x) -> bind_occs s x env
     | (_, WeakVar(_)) -> env
-    | _ -> 
-	if equals s t then env
-	else (raise (type_error "Can't match types" [s; t]))
   in
   match_aux t1 t2 nenv (* try to match t1 and t2 *)
 
@@ -1014,7 +973,7 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
   in 
   let rec set_aux t =
     match t with
-      Constr(Defined id, args) -> 
+      Constr(id, args) -> 
 	let th, n = Ident.dest id
 	in 
 	let nth = 
@@ -1023,7 +982,7 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
 	  else th)
 	in 
 	let nid=Ident.mk_long nth n
-	in Constr(Defined nid, List.map set_aux args)
+	in Constr(nid, List.map set_aux args)
     | _ -> t
   in set_aux trm
 
@@ -1045,8 +1004,7 @@ let in_scope memo scp ty =
   let rec in_scp_aux t =
     match t with
       Var(_) -> ()
-    | Base(_) -> ()
-    | Constr(Defined(id), args) ->
+    | Constr(id, args) ->
 	ignore(lookup_id (Ident.thy_of id));
 	List.iter in_scp_aux args
     | WeakVar _ -> ()
@@ -1073,7 +1031,7 @@ let extract_bindings tyvars src dst=
 ***)
 
 (* [stype]: Representation of types for storage on disk *)
-type stype = ((string * int), typ_const, base_typ) pre_typ
+type stype = ((string * int), typ_const) pre_typ
 
 (* [stypedef]: Type definition/declaration records for disk storage *)
 type stypedef_record =
@@ -1095,7 +1053,6 @@ let rec to_save_aux inf env ty =
       in Var(nty)
   | Constr(f, ats) ->
       Constr(f, List.map (to_save_aux inf env) ats)
-  | Base(b) -> Base(b)
   | WeakVar _ -> 
       raise (type_error "Can't save a weak variable" [ty])
 
@@ -1123,7 +1080,6 @@ let rec from_save_aux env ty =
       in Var(nty)
   | Constr(f, ats) ->
       Constr(f, List.map(from_save_aux env) ats)
-  | Base(b) -> Base(b)
   | WeakVar _ -> raise (type_error "Can't load a weak variable" [])
 
 let from_save ty = from_save_aux (ref[]) ty

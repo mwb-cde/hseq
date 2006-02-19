@@ -19,6 +19,9 @@ module BaseTheory=
       ignore(typedef 
 	       <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
 
+      ignore(typedef <:def<: bool >>);
+      ignore(typedef <:def<: ind >>);
+
       ignore
 	(declare
 	   (read_unchecked ((Ident.name_of Logicterm.equalsid)
@@ -30,7 +33,8 @@ module BaseTheory=
 	   ~pp:(110, prefix, Some "not"));
       ignore
 	(declare
-	   (read_unchecked ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
+	   (read_unchecked 
+	      ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
 	   ~pp:(105, infixl, Some "and")); 
       ignore
 	(define
@@ -1495,10 +1499,7 @@ let disj_splitter_tac ?info ?f goal =
     
 let get_type_name ty =
   match ty with
-    Basic.Constr ((Basic.Defined id), _) -> id
-  | Basic.Base Basic.Bool -> Logicterm.bool_ty_id
-  | Basic.Base Basic.Ind -> 
-      Ident.mk_long "base" "ind"
+    Basic.Constr (id, _) -> id
   | _ -> failwith "get_type_name"
 
 let cases_of ?info ?thm t g =

@@ -87,7 +87,7 @@ let mk_defn scp (name, nty) args rhs =
   in 
   let tenv= Typing.settype nscp ndn
   in 
-  let tenv1=Typing.typecheck_top nscp tenv ndn Logicterm.mk_bool_ty
+  let tenv1=Typing.typecheck_top nscp tenv ndn (Logicterm.mk_bool_ty())
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))
@@ -161,7 +161,7 @@ let check_type_name scp n =
   try
     (ignore(Scope.defn_of scp n);
      raise (Gtypes.type_error "Type already exists" 
-	      [Gtypes.mk_constr (Basic.Defined n) []]))
+	      [Gtypes.mk_constr n []]))
   with Not_found -> ()
 
 let check_well_defined scp args ty= 
@@ -253,7 +253,7 @@ let make_witness_type scp dtype setP =
 	 (Gtypes.type_error "Not a function type" [fty]))
   else 
     let tty = 
-      Logicterm.mk_fun_ty dtype (Gtypes.mk_base (Basic.Bool))
+      Logicterm.mk_fun_ty dtype (Logicterm.mk_bool_ty())
     in 
     try 
       let sbs=Gtypes.unify scp fty tty
@@ -334,8 +334,7 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
   and abs_id = Ident.mk_long th abs_name
   in 
   let ntype = 
-    Gtypes.mk_constr 
-      (Basic.Defined id) (List.map Gtypes.mk_var args)
+    Gtypes.mk_constr id (List.map Gtypes.mk_var args)
   in
   check_type_name scp id;
   check_args_unique args;
@@ -455,8 +454,7 @@ module HolLike =
       let id = Ident.mk_long th name
       in 
       let ntype = 
-	Gtypes.mk_constr 
-	  (Basic.Defined id) (List.map Gtypes.mk_var args)
+	Gtypes.mk_constr id (List.map Gtypes.mk_var args)
       in
       check_type_name scp id;
       check_args_unique args;

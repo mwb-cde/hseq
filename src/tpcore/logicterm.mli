@@ -20,6 +20,12 @@ val base_thy: Ident.thy_id
    declared in this theory. [base_thy="base"]
 *)
 
+val nums_thy: Ident.thy_id 
+(** 
+   The name of the nums theory. This is the theory in which numbers
+   and their operators are defined.
+*)
+
 (** {5 Types} *)
 
 (** {7 Identifiers for base types} *)
@@ -30,6 +36,12 @@ val bool_ty_id : Ident.t
 val fun_ty_id: Ident.t
 (** The identifier for the function type. *)
 
+val ind_ty_id: Ident.t
+(** The identifier for the ind type. *)
+
+val num_ty_id: Ident.t
+(** The identifier for the number type. *)
+
 (** {7 The type of individuals} *)
 
 val mk_ind_ty : unit -> gtype
@@ -38,9 +50,17 @@ val mk_ind_ty : unit -> gtype
 val is_ind_ty: gtype -> bool
 (** Test for an instance of the type of individuals. *)
 
+(** {7 The type of numbers} *)
+
+val mk_num_ty : unit -> gtype
+(** Make an instance of the type of num. *)
+
+val is_num_ty: gtype -> bool
+(** Test for an instance of the type of num. *)
+
 (** {7 The type of booleans} *)
 
-val mk_bool_ty : gtype
+val mk_bool_ty : unit -> gtype
 (** Make an instance of the type of individuals. *)
 
 val is_bool_ty: gtype -> bool

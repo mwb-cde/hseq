@@ -50,7 +50,7 @@ let typeof_env scp typenv inf trm =
 	    (let btyp, benv=typeof_aux b env
 	    in 
 	    (Logicterm.mk_fun_ty (Term.get_binder_type t) btyp, benv))
-	| _ -> Logicterm.mk_bool_ty, env)
+	| _ -> Logicterm.mk_bool_ty(), env)
     | App(f, a) -> 
 	let fty, fenv= typeof_aux f env
 	in let aty, aenv= typeof_aux a fenv
@@ -173,14 +173,14 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	    with err ->
 	      Term.add_term_error "Typecheck: " [t] err)
 	| _ -> 
-	    let env1=type_aux Logicterm.mk_bool_ty b env
+	    let env1=type_aux (Logicterm.mk_bool_ty()) b env
 	    in 
 	    (try
-	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
+	      Gtypes.unify_env scp expty (Logicterm.mk_bool_ty()) env1
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t 
 		       (Gtypes.mgu expty env) 
-		       (Gtypes.mgu Logicterm.mk_bool_ty env) err)))
+		       (Gtypes.mgu (Logicterm.mk_bool_ty()) env) err)))
   in 
   try 
     type_aux exty et typenv
@@ -295,15 +295,16 @@ let settype_top scp (inf, cache) f typenv exty et =
 	| _ -> 
 	    let env1=
 	      (try 
-		settype_aux Logicterm.mk_bool_ty b env
+		settype_aux (Logicterm.mk_bool_ty()) b env
 	      with err -> 
 		raise (Term.add_term_error "Typechecking: " [t] err))
 	    in 
 	    (try
-	      Gtypes.unify_env scp expty Logicterm.mk_bool_ty env1
+	      Gtypes.unify_env scp expty (Logicterm.mk_bool_ty()) env1
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t
-		       (Gtypes.mgu expty env) (Logicterm.mk_bool_ty) err)))
+		       (Gtypes.mgu expty env) 
+		       (Logicterm.mk_bool_ty()) err)))
   in settype_aux exty et typenv
 
 let settype scp ?env t=

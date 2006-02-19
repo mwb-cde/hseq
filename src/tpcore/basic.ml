@@ -18,33 +18,23 @@
    [typ_const]: Representation of user-defined type constructors
    (could merged into [pre_typ] 
 *) 
-type base_typ = Bool | Num | Ind
-type typ_const = (* Func |*) Defined of Ident.t
+type typ_const = Ident.t
 
 (** [pre_typ]: The base representation of types *)
-type ('idtyp, 'tfun, 'tcons) pre_typ =
+type ('idtyp, 'tfun) pre_typ =
     Var of 'idtyp
-  | Constr of 'tfun * ('idtyp, 'tfun, 'tcons) pre_typ list
-  | Base of 'tcons
+  | Constr of 'tfun * ('idtyp, 'tfun) pre_typ list
   | WeakVar of 'idtyp
 
 (** [gtype]: The actual representation of types *)
-type gtype = (string ref, typ_const, base_typ)pre_typ
+type gtype = (string ref, typ_const)pre_typ
 
 (** 
    String representation of types
 *)
-let string_btype x =
-  match x with 
-    Bool -> "bool"
-  | Num  -> "num"
-  | Ind -> "ind"
-
-let string_tconst x l =
-  match x with 
-    Defined n -> 
-      ((Ident.string_of n)^"("^
-       (Lib.list_string (fun x-> x) ", " l)^")")
+let string_tconst n l =
+  ((Ident.string_of n)^"("^
+   (Lib.list_string (fun x-> x) ", " l)^")")
 
 (***
 * Base Representation of logic terms

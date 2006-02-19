@@ -13,6 +13,7 @@ open Term
 ***)
 
 let base_thy = "base"
+let nums_thy = "nums"
 
 (***
 * Types
@@ -22,27 +23,43 @@ let base_thy = "base"
 
 let bool_ty_id = Ident.mk_long base_thy "bool"
 let fun_ty_id = Ident.mk_long base_thy "FUN"
+let ind_ty_id = Ident.mk_long base_thy "ind"
+let num_ty_id = Ident.mk_long nums_thy "num"
 
 (** The type ind *)
 
-let mk_ind_ty() = Gtypes.mk_base Ind
+let ind_ty = Gtypes.mk_constr ind_ty_id []
+let mk_ind_ty () = ind_ty
 let is_ind_ty t = 
-  match t with 
-    Base Ind -> true
+  match t with
+    Constr(x, []) -> (x = ind_ty_id)
+  | _ -> false
+
+(** The type nums.num *)
+
+let num_ty = Gtypes.mk_constr num_ty_id []
+let mk_num_ty () = num_ty
+let is_num_ty t = 
+  match t with
+    Constr(x, []) -> (x = num_ty_id)
   | _ -> false
 
 (*** Type bool ***)
 
-let mk_bool_ty = Gtypes.mk_base (Basic.Bool)
-let is_bool_ty t = (t = mk_bool_ty)
+let bool_ty = Gtypes.mk_constr bool_ty_id []
+let mk_bool_ty () = bool_ty
+let is_bool_ty t = 
+  match t with
+    Constr(x, []) -> (x = bool_ty_id)
+  | _ -> false
 
 (*** Type of functions ***)
 
-let mk_fun_ty l r = Gtypes.mk_constr (Defined fun_ty_id) [l; r]
+let mk_fun_ty l r = Gtypes.mk_constr fun_ty_id [l; r]
 
 let is_fun_ty t = 
   match t with
-    Constr (Defined x, _) -> x=fun_ty_id
+    Constr (x, _) -> x=fun_ty_id
   | _ -> false
 
 let rec mk_fun_ty_from_list l r = 
@@ -55,7 +72,7 @@ let dest_fun_ty t =
   if(is_fun_ty t)
   then 
     match t with
-      Constr(Defined _, [a1; a2]) -> (a1, a2)
+      Constr(_, [a1; a2]) -> (a1, a2)
     | _ -> raise (Failure "Not function type")
   else raise (Failure "Not function type")
       
@@ -275,8 +292,8 @@ let eta_conv x ty t=
 
 let typeof_cnst c =
   match c with
-    Cnum _ -> Gtypes.mk_num
-  | Cbool _ -> mk_bool_ty
+    Cnum _ -> mk_num_ty ()
+  | Cbool _ -> mk_bool_ty ()
 
 (*** closed terms ***)
 
