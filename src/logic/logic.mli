@@ -158,6 +158,11 @@ val formula_of : thm -> Formula.t
 val term_of : thm -> Basic.term
 (** Convert a theorem to a term *)
 
+val is_fresh: Scope.t -> thm -> bool
+(** 
+   [is_fresh scp t]: Check that the theory marker of [t] is still valid.
+*)
+
 (** {7 Permanent storage} *)
 
 type saved_thm

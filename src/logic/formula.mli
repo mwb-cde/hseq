@@ -39,20 +39,38 @@ val add_error : string -> t list -> exn -> 'a
 
 (** {5 Conversion from a term} *)
 
-val make: ?env:Gtypes.substitution ref -> Scope.t -> Basic.term -> t
+val make_full: 
+    Scope.t 
+      -> Gtypes.substitution 
+	-> Basic.term -> (t * Gtypes.substitution)
 (**
-   [make ?env scp trm]: Make a formula from term [trm] in scope [scp].
-   The theory of the formula is the theory currently in scope.
+   [make_full scp tyenv scp trm]: Make a formula from term [trm] in
+   scope [scp] w.r.t type environment [tyenv]. The theory of the formula
+   is the theory currently in scope. Return the new formula and the
+   updated type environment.
    
    {ol 
    {- Replace each free variable [Var(x, _)] in [trm] with the term
    associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].}
    {- Fail if any bound variable in [trm] occurs outside its binding term.}
    {- Fail if any identifier is not in scope.}
-   {- Typecheck resulting term, to set correct types. If [?env] is
-      given, pass it to the typechecker.}
-   {- return resulting formula built from resulting term.  If [?env]
-      is given, set it to the type substitution obtained from typechecking.}}
+   {- Typecheck resulting term, to set correct types. Passing [tyenv]
+   to the typechecker.}
+   {- Return resulting formula built from resulting term with the type
+   substitution obtained from typechecking.}}
+*)
+
+
+val make: 
+    Scope.t 
+    -> ?tyenv:Gtypes.substitution -> Basic.term -> t
+(**
+   [make scp ?tyenv trm]: Make a formula from term [trm] in scope
+   [scp] w.r.t type environment [tyenv] if given. If [tyenv] is not
+   given, an empty type environment is used. The theory of the formula
+   is the theory currently in scope.
+   
+   This is a front-end to {!Formula.make_full}.
 *)
 
 (** {5 Representation for permanent storage} *)
@@ -79,6 +97,12 @@ val in_scope_memo:
     (string, bool) Lib.substype ->
       Scope.t ->  t -> bool
 (** Memoised version of [in_scope]. *)
+
+val is_fresh:  Scope.t -> t -> bool
+(** 
+   [is_fresh scp t]: Check that the theory marker of [t] is still valid.
+   true iff [Scope.in_scope_marker scp (thy_of t)] is true.
+*)
 
 (** {7 Recognisers} *)
 

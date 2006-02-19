@@ -32,6 +32,9 @@ let formula_of x =
 
 let term_of x = Formula.term_of (formula_of x)
 
+(** Tests *)
+let is_fresh scp x = Formula.is_fresh scp (formula_of x)
+
 (***
  * Representation for storage 
  ***)
@@ -1091,11 +1094,9 @@ module Tactics =
 
 (*** instantiation terms ***)  
     let inst_term scp tyenv t trm =
-      let mtyenv = ref tyenv
+      let (fm1, tyenv1) = Formula.make_full scp tyenv trm
       in 
-      let fm1 = Formula.make ~env:mtyenv scp trm
-      in 
-      let ntrm2, ntyenv2=Formula.inst_env scp tyenv t fm1
+      let ntrm2, ntyenv2=Formula.inst_env scp tyenv1 t fm1
       in 
       let (ntrm3, ntyenv3)=
 	Formula.typecheck_retype scp ntyenv2 ntrm2 

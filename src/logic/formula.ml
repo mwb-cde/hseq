@@ -49,7 +49,7 @@ let add_error s t es = raise (Result.add_error (error s t) es)
 let mk_scoped_formula scp f = { thy = Scope.marker_of scp; term = f }
 
 (** Convert a term to a formula *)
-let make ?env scp t= 
+let make_full scp tyenv t= 
   let t1=
     try Term.resolve_closed_term scp t
     with x -> raise
@@ -58,16 +58,29 @@ let make ?env scp t=
 	      "Formula.make: Can't make formula, not a closed term" [t]))
   in 
   try
-    let tyenv = Lib.apply_option (fun x -> !x) env (Gtypes.empty_subst())
+(*
+    let tyenv = 
+      Lib.apply_option (fun x -> !x) env (Gtypes.empty_subst())
     in 
+*)
     let tyenv1 = 
       Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
     in 
-    mk_scoped_formula scp (Term.retype tyenv1 t1)
+    (mk_scoped_formula scp (Term.retype tyenv1 t1),
+     tyenv1)
   with x -> 
     raise (Result.add_error x 
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
 
+let make scp ?tyenv t= 
+  let env = 
+    match tyenv with
+      None -> Gtypes.empty_subst()
+    | Some(x) -> x
+  in 
+  let (form, _) = make_full scp env t
+  in 
+  form
 
 (*** Fast conversion to formulas for internal use ***)
 
@@ -93,9 +106,6 @@ let mk_subterm f t =
 
 (**
    [formula_in_scope scp f]: true if formula [f] is in scope [scp].
-
-   In the current implementation, this always returns [false].
-   Future implementations will hopefully do something useful here.
 *)   
 let formula_in_scope scp f = Scope.in_scope_marker scp (thy_of f)
 
@@ -153,6 +163,8 @@ let in_scope scp f =
     || (Term.in_scope (Lib.empty_env()) scp (term_of f)))
   then true
   else raise (Term.term_error "Badly formed formula" [term_of f])
+
+let is_fresh scp f = formula_in_scope scp f
 
 (*** Recognisers ***)
 
@@ -437,11 +449,7 @@ let rewrite scp ?(dir=Rewrite.leftright) plan f =
 let mk_rewrite_eq scp tyenv plan trm = 
   let plan1 = extract_check_rules scp Rewrite.leftright plan
   in 
-  let rtyenv = ref tyenv 
-  in 
-  let lhsf = make ~env:rtyenv scp trm
-  in 
-  let tyenv1 = !rtyenv
+  let (lhsf, tyenv1) = make_full scp tyenv trm
   in 
   let data = (scp, Term.empty_subst(), tyenv1)
   in 
