@@ -319,10 +319,13 @@ let find_qnt_opt kind pred forms =
  * Basic Tactics
  *****)
 
+let fresh_thm th = Logic.is_fresh (Global.scope()) th
+
 let make_false_def () = 
   thm (Logicterm.base_thy ^"."^"false_def")
 let false_def_var = Lib.freeze make_false_def
-let false_def () = Lib.thaw false_def_var
+let false_def () = 
+  Lib.thaw ~fresh:fresh_thm false_def_var
     
 
 let falseA ?info ?a goal =
@@ -379,7 +382,7 @@ let make_eq_refl_thm () =
 	      ^"Can't find needed axiom eq_refl: |- !x: (x = x)"))
       
 let eq_refl_thm_var = Lib.freeze make_eq_refl_thm
-let eq_refl_thm () =  Lib.thaw eq_refl_thm_var
+let eq_refl_thm () =  Lib.thaw ~fresh:fresh_thm eq_refl_thm_var
 
 let make_bool_cases_thm () = 
   try
@@ -392,7 +395,7 @@ let make_bool_cases_thm () =
 	      ^"|- !x: (x = true) | (x=false)"))
 
 let bool_cases_thm_var = Lib.freeze make_bool_cases_thm
-let bool_cases_thm () =  Lib.thaw bool_cases_thm_var
+let bool_cases_thm () =  Lib.thaw ~fresh:fresh_thm bool_cases_thm_var
 
 let make_eq_sym_thm () = 
   match Lib.try_app thm "Bool.eq_sym" with
@@ -434,7 +437,7 @@ let make_eq_sym_thm () =
 	 ])
 
 let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
-let eq_sym_thm () =  Lib.thaw eq_sym_thm_var
+let eq_sym_thm () =  Lib.thaw ~fresh:fresh_thm eq_sym_thm_var
 
 let eq_sym_rule scp thm= 
   let ctrl = 
@@ -867,7 +870,7 @@ let is_iff f =
 
 let make_iff_def () = defn (Ident.string_of Logicterm.iffid)
 let iff_def_var = Lib.freeze make_iff_def
-let iff_def () = Lib.thaw iff_def_var
+let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
 
 
 (** 
@@ -1394,7 +1397,7 @@ let make_cases_tac_thm ()=
    (allC ++ disjC ++ negC ++ basic))
 
 let cases_thm_var = Lib.freeze make_cases_tac_thm
-let cases_thm () =  Lib.thaw cases_thm_var
+let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
 
 let set_info dst (sgs, afs, cfs, cnsts) = 
   Logic.add_info dst sgs afs cfs cnsts
@@ -1823,7 +1826,7 @@ module Thms =
 	       replace_tac ++ eq_tac]) g))
 
     let iff_equals_thm_var = Lib.freeze make_iff_equals_thm
-    let iff_equals_thm() = Lib.thaw iff_equals_thm_var
+    let iff_equals_thm() = Lib.thaw ~fresh:fresh_thm iff_equals_thm_var
 
 (**
    [equals_iff_thm]:  |- !x y: (x = y) = (x iff y)
@@ -1836,7 +1839,7 @@ module Thms =
 	 ++ eq_tac)
 
     let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
-    let equals_iff_thm() = Lib.thaw equals_iff_thm_var
+    let equals_iff_thm() = Lib.thaw ~fresh:fresh_thm equals_iff_thm_var
 
 (**
    [bool_eq_thm]: |- !x y: x = y = ((x => y) and (y=>x))
@@ -1849,7 +1852,7 @@ module Thms =
 	 ++ (split_tac ++ flatten_tac ++ split_tac ++ flatten_tac ++ basic))
 
     let bool_eq_thm_var=  Lib.freeze make_bool_eq_thm
-    let bool_eq_thm ()=  Lib.thaw bool_eq_thm_var
+    let bool_eq_thm ()=  Lib.thaw ~fresh:fresh_thm bool_eq_thm_var
 
 (**
    [double_not_thm]: |- ! x: x = (not (not x))
@@ -1860,7 +1863,7 @@ module Thms =
 	 ++ split_tac ++ flatten_tac ++ basic)
 
     let double_not_thm_var = Lib.freeze make_double_not_thm
-    let double_not_thm () = Lib.thaw double_not_thm_var
+    let double_not_thm () = Lib.thaw ~fresh:fresh_thm double_not_thm_var
 
 (**
    [rule_true_thm]:  |- !x: x = (x=true) 
@@ -1901,7 +1904,7 @@ module Thms =
       rewrite_rule (Global.scope()) [iff_equals_thm()] rule_true_l3
 
     let rule_true_thm_var = Lib.freeze make_rule_true_thm
-    let rule_true_thm () = Lib.thaw rule_true_thm_var
+    let rule_true_thm () = Lib.thaw ~fresh:fresh_thm rule_true_thm_var
 
 (**
    rule_false_thm: !x: (not x) = (x=false)
@@ -1931,7 +1934,7 @@ module Thms =
 
 
     let rule_false_thm_var = Lib.freeze make_rule_false_thm
-    let rule_false_thm () = Lib.thaw rule_false_thm_var
+    let rule_false_thm () = Lib.thaw ~fresh:fresh_thm rule_false_thm_var
 
 
 (**
@@ -1945,7 +1948,7 @@ module Thms =
 	     ++ replace_tac ++ eq_tac);;
 
 let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
-let eq_sym_thm () = Lib.thaw eq_sym_thm_var
+let eq_sym_thm () = Lib.thaw ~fresh:fresh_thm eq_sym_thm_var
 
 end
 

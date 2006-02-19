@@ -54,3 +54,8 @@ val apply_merge_list : ('a -> 'a list) -> 'a list -> 'a list
    and repeat for the resulting list. Concatenate the list of lists
    that result. If [f x] fails, treat [[x]] as the result.
 *)
+
+val fresh_thm : Logic.thm -> bool
+(** 
+   [fresh_thm th]: Test whether theorem [th] is fresh in the global scope. 
+*)

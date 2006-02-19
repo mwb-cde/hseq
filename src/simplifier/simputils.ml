@@ -123,3 +123,9 @@ let apply_merge_list f ls =
   in
   app_aux ls []
 
+
+(** 
+   [fresh_thm th]: Test whether theorem [th] is fresh in the global scope. 
+*)
+let fresh_thm th = Logic.is_fresh (Global.scope()) th
+

@@ -290,8 +290,9 @@ type ('a)deferred
 val freeze: (unit -> 'a) -> ('a)deferred
 (** [freeze fn]: Defer the evaluation of [fn]. *)
 
-val thaw: ('a) deferred -> 'a
+val thaw: ?fresh:('a -> bool) 
+  -> ('a) deferred -> 'a
 (** 
-   Get the value of the deferred function, evaluating the function if
-   necessary.
+   Get the value [x] of the deferred function, evaluating the function
+   if necessary or if [fresh x] is false.
 *)

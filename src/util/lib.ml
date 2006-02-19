@@ -547,17 +547,29 @@ module StringSet =
 **)
 
 type ('a)deferred_t = 
-    Val of 'a | Fn of (unit -> 'a)
+    Val of ('a * (unit -> 'a)) 
+  | Fn of (unit -> 'a)
 
 type ('a)deferred = ('a)deferred_t ref
 
 let freeze fn = ref (Fn fn)
 
-let thaw var =
+let thaw ?fresh var =
+  let mk_val f = 
+	let x = f ()
+	in 
+	var:= Val(x, f); x
+  in
+  let pred x = 
+    match fresh with 
+      None -> true
+    | Some(p) -> p x
+  in 
   match !var with
       Fn fn -> 
-	let x = fn ()
-	in 
-	  var:= Val(x); x
-    | Val(x) -> x
-
+	mk_val fn
+    | Val(x, fn) -> 
+	if pred x 
+	then x
+	else mk_val fn
+	  

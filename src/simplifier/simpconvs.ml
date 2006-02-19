@@ -49,7 +49,7 @@ let make_cond_rule_true_thm()=
 	  ++ eq_tac) g))
 
 let cond_rule_true_var = Lib.freeze (make_cond_rule_true_thm)
-let cond_rule_true_thm () = Lib.thaw cond_rule_true_var
+let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
 
 (**
    [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
@@ -72,7 +72,7 @@ let make_cond_rule_false_thm()=
 let cond_rule_false_var = Lib.freeze make_cond_rule_false_thm
 
 let cond_rule_false_thm () =
-  Lib.thaw cond_rule_false_var
+  Lib.thaw ~fresh:fresh_thm cond_rule_false_var
 
 (**
    [cond_rule_imp_false_thm]: |- !x y: (x=>false) = (not x)
@@ -84,7 +84,7 @@ let make_cond_rule_imp_false_thm()=
 let cond_rule_imp_false_var = Lib.freeze (make_cond_rule_imp_false_thm)
 
 let cond_rule_imp_false_thm () =
-  Lib.thaw cond_rule_imp_false_var
+  Lib.thaw ~fresh:fresh_thm cond_rule_imp_false_var
 
 (**
    [cond_rule_imp_not_true]: |- !x y: (x=> not true) => (not x)
@@ -96,7 +96,7 @@ let make_cond_rule_imp_not_true_thm()=
 let cond_rule_imp_not_true_var = Lib.freeze (make_cond_rule_imp_not_true_thm)
 
 let cond_rule_imp_not_true_thm () =
-  Lib.thaw cond_rule_imp_not_true_var
+  Lib.thaw ~fresh:fresh_thm cond_rule_imp_not_true_var
 
 (**
    [neg_disj]: |- not (a | b) = ((not a) & (not b))
@@ -108,7 +108,7 @@ let make_neg_disj_thm()=
 let neg_disj_var = Lib.freeze (make_neg_disj_thm)
 
 let neg_disj_thm () =
-  Lib.thaw neg_disj_var
+  Lib.thaw ~fresh:fresh_thm neg_disj_var
 
 (**
    [neg_eq_sym]: |- not (a = b) = not (b = a)
@@ -147,7 +147,7 @@ let make_neg_eq_sym_thm()=
 let neg_eq_sym_var = Lib.freeze (make_neg_eq_sym_thm)
 
 let neg_eq_sym_thm () =
-  Lib.thaw neg_eq_sym_var
+  Lib.thaw ~fresh:fresh_thm neg_eq_sym_var
 
 (**
    [cond_neg_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
@@ -193,7 +193,7 @@ let make_cond_neg_eq_sym_thm()=
 let cond_neg_eq_sym_var = Lib.freeze (make_cond_neg_eq_sym_thm)
 
 let cond_neg_eq_sym_thm () =
-  Lib.thaw cond_neg_eq_sym_var
+  Lib.thaw ~fresh:fresh_thm cond_neg_eq_sym_var
 
 (**
    [cond_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
@@ -239,7 +239,7 @@ let make_cond_eq_sym_thm()=
 let cond_eq_sym_var = Lib.freeze (make_cond_eq_sym_thm)
 
 let cond_eq_sym_thm () =
-  Lib.thaw cond_eq_sym_var
+  Lib.thaw ~fresh:fresh_thm cond_eq_sym_var
 
 (***
 * Rewriting conversions and tactics 
