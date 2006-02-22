@@ -29,11 +29,16 @@ let tp_init() = Global.init()
    [init()]:  Start up function, called when system first begins.
    Initialise TP and load the startup file.
 *)
+
 let set_base_dir()=
     try 
       let d = Sys.getenv Settings.base_dir_var 
       in Settings.set_base_dir d
     with Not_found -> ()
+
+(***
+* Set OCaml toplevel search path
+***)
 
 let set_directorys ()=
   Unsafe.add_directory (Settings.include_dir());
@@ -54,7 +59,8 @@ let init() =
   starting_mesg(); 
   tp_init()
 
-(* The code to run when this module is loaded. *)  
+
+(*** The code to run when this module is loaded. **)  
 let _ = 
   set_base_dir();
   set_directorys();
