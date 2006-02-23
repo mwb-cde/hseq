@@ -60,28 +60,28 @@ val mk_args : bool -> (Tag.t -> bool) -> simp_args
 (** Make arguments for the simplifier. *)
 
 val simp_engine_tac :
-    (Data.t) 
-  -> ((Data.t option) ref * (Tag.t -> bool))
-      -> Tag.t -> Tactics.tactic
+    Data.t 
+  -> (Data.t option) ref
+    -> Tag.t 
+      -> Tactics.tactic
 (** The engine for [simp_tac]. 
 
-   [simp_engine_tac cntrl (ret, exclude) l goal]:
+   [simp_engine_tac ret cntrl l goal]:
+
    {ul 
    {- Eliminate toplevel universal quantifiers of [l].}
-   {- If [asms=true], put conclusions other than [l] into assumptions
-   and make simp rules.}
-   {- If [asms=true], make simp rules from assumptions.}
-   {- Simplify.}
-   {- Delete temporary assumptions.}}
+   {- Simplify [l], using {!Simplifier.basic_simp_tac}}
+   {- Solve trivial goals}
+   {- Repeat until nothing works}}
 
-   Ignores all formulas for which [exclude] is true. Returns the
-   updated simp data in [ret].
+   Returns the updated simp data in [ret].
 *)
 
 val simp_tac: 
     Data.t
   -> simp_args
-    -> Logic.label option -> Tactics.tactic
+    -> Logic.label option 
+      -> Tactics.tactic
 (**
    Simplify formulas.
 
@@ -106,6 +106,132 @@ val simp_tac:
    Data.t -> Simpset.simpset -> Tag.t -> tactic
  *)
 
+(** {5 Alternative approach} *)
+
+val add_rule_data:
+    Data.t -> Simpconvs.rule_data list -> Data.t
+(** 
+   [add_rule_data data rules]: Update [data] with assumption
+   [rules]. [rules] should be as provided by {!Simpconvs.prepare_asm}.
+*)
+
+val add_asms_tac:
+    Data.t option ref
+    -> Tag.t list
+      -> Tactics.tactic
+(**
+   [add_asms_tac data tags g]: Prepare the assumptions in [tags] for
+   use as simp-rules. Add them to [data].
+*)
+
+val add_concls_tac:
+    Data.t option ref
+    -> Tag.t list
+      -> Tactics.tactic
+(**
+   [add_concls_tac data tags g]: Prepare the conclusions in [tags] for
+   use as simp-rules. Add them to [data].
+*)
+
+val simpC0_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> Logic.label -> Tactics.tactic
+(**
+   [simpC0_tac cntrl ret l goal]: Simplify conclusion [l], returning
+   the updated data in [ret]. Doesn't clean-up.
+*) 
+
+val simpC1_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> Tactics.tactic
+(** 
+   [simpC1_tac cntrl ret goal]: Simplify conclusions.
+
+   Simplify each conclusion, starting with the last, adding it to the
+   assumptions after it is simplified.
+
+   Doesn't clean-up.
+*)
+
+val simpC_tac :
+    Data.t 
+      -> ?c:Logic.label -> Tactics.tactic
+(** 
+   [simpC1_tac cntrl goal]: Simplify conclusions.
+
+   Simplify each conclusion, starting with the last, adding it to the
+   assumptions after it is simplified.
+*)
+
+
+val simpA0_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> Logic.label -> Tactics.tactic
+(**
+   [simpA0_tac cntrl ret l goal]: Simplify assumption [l], returning
+   the updated data in [ret]. Doesn't clean-up.
+*) 
+
+val simpA1_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> Tactics.tactic
+(** 
+   [simpA1_tac cntrl ret goal]: Simplify assumptions
+
+   Simplify each assumptions, starting with the last, adding it to the
+   simpset rules after it is simplified.
+
+   Doesn't clean-up.
+*)
+
+val simpA_tac :
+    Data.t 
+  -> ?a:Logic.label -> Tactics.tactic
+(** 
+   [simpA_tac cntrl goal]: Simplify assumptions
+
+   Simplify each assumption, starting with the last, adding it to the
+   simpset rules after it is simplified.
+*)
+
+
+val full_simp0_tac:
+    Data.t 
+    -> Data.t option ref 
+      -> Tactics.tactic
+(** 
+   [full_simp0_tac cntrl ret goal]: Simplify subgoal
+
+   {ul
+   {- Simplify each assumption, starting with the last, adding it to the
+   simpset rules after it is simplified.}
+   {- Simplify each conclusion, starting with the last, adding it to the
+   simpset rules after it is simplified.}}
+
+   Doesn't clean-up.
+*)
+ 
+val full_simp_tac:
+    Data.t -> Tactics.tactic
+(** 
+   [full_simp_tac cntrl ret goal]: Simplify subgoal
+
+   {ul
+   {- Simplify each assumption, starting with the last, adding it to the
+   simpset rules after it is simplified.}
+   {- Simplify each conclusion, starting with the last, adding it to the
+   simpset rules after it is simplified.}}
+
+   Doesn't clean-up.
+*)
+ 
+
+
 
 (** Debugging information **)
 
+val log : string -> Data.t -> unit

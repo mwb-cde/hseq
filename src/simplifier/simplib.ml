@@ -66,8 +66,8 @@ let init_std_ss() =
    @raise Simplifier.No_change If no change is made.
  *)
 let simp_tac 
-    ?f ?(cntrl=Formula.default_rr_control) ?(ignore = [])
-    ?(asms=true) ?set ?add rules goal =
+    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?(asms=true) ?set ?add ?f rules goal =
 (** uset: The simpset to use. **)
   let uset = 
     let uset0 = 
@@ -111,6 +111,143 @@ let simp_tac
   Simptacs.simp_tac simp_data args f goal
 
 let simp ?f goal = simp_tac ?f [] goal
+
+
+(*** Alternatives ***)
+
+let simpC_tac 
+    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?set ?add ?c rules goal =
+(** uset: The simpset to use. **)
+  let uset = 
+    let uset0 = 
+      match set with
+	None -> std_ss()
+      | Some s -> s
+    in 
+    let uset1 = 
+      match add with
+	None -> uset0
+      | Some s -> Simpset.join s uset0
+    in 
+    (** If there are rules, make a simpset from them. **)
+    match rules with 
+      [] -> uset1
+    | _ -> 
+	let rset = 
+	  Simpset.simpset_add_thms 
+	    (Global.scope()) (Simpset.empty_set()) rules
+	in 
+	Simpset.join rset uset1
+  in 
+  (** ignore_tags: The tags of sequent formulas to be left alone. **)
+  let ignore_tags = 
+    let sqnt = Tactics.sequent goal 
+    in 
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+  in 
+  (** simp_data: The simpset data. *)
+  let simp_data = 
+    let data1 = 
+      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+    in 
+    Simplifier.Data.set_simpset
+      (Simplifier.Data.set_control data1 cntrl)
+      uset
+  in 
+  Simptacs.simpC_tac simp_data ?c goal
+
+let simpC ?c goal = simpC_tac ?c [] goal
+
+let simpA_tac 
+    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?set ?add ?a rules goal =
+(** uset: The simpset to use. **)
+  let uset = 
+    let uset0 = 
+      match set with
+	None -> std_ss()
+      | Some s -> s
+    in 
+    let uset1 = 
+      match add with
+	None -> uset0
+      | Some s -> Simpset.join s uset0
+    in 
+    (** If there are rules, make a simpset from them. **)
+    match rules with 
+      [] -> uset1
+    | _ -> 
+	let rset = 
+	  Simpset.simpset_add_thms 
+	    (Global.scope()) (Simpset.empty_set()) rules
+	in 
+	Simpset.join rset uset1
+  in 
+  (** ignore_tags: The tags of sequent formulas to be left alone. **)
+  let ignore_tags = 
+    let sqnt = Tactics.sequent goal 
+    in 
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+  in 
+  (** simp_data: The simpset data. *)
+  let simp_data = 
+    let data1 = 
+      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+    in 
+    Simplifier.Data.set_simpset
+      (Simplifier.Data.set_control data1 cntrl)
+      uset
+  in 
+  Simptacs.simpA_tac simp_data ?a goal
+
+let simpA ?a goal = simpA_tac ?a [] goal
+
+let simp_all_tac 
+    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?set ?add rules goal =
+(** uset: The simpset to use. **)
+  let uset = 
+    let uset0 = 
+      match set with
+	None -> std_ss()
+      | Some s -> s
+    in 
+    let uset1 = 
+      match add with
+	None -> uset0
+      | Some s -> Simpset.join s uset0
+    in 
+    (** If there are rules, make a simpset from them. **)
+    match rules with 
+      [] -> uset1
+    | _ -> 
+	let rset = 
+	  Simpset.simpset_add_thms 
+	    (Global.scope()) (Simpset.empty_set()) rules
+	in 
+	Simpset.join rset uset1
+  in 
+  (** ignore_tags: The tags of sequent formulas to be left alone. **)
+  let ignore_tags = 
+    let sqnt = Tactics.sequent goal 
+    in 
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+  in 
+  (** simp_data: The simpset data. *)
+  let simp_data = 
+    let data1 = 
+      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+    in 
+    Simplifier.Data.set_simpset
+      (Simplifier.Data.set_control data1 cntrl)
+      uset
+  in 
+  Simptacs.full_simp_tac simp_data goal
+
+let simp_all goal = simp_all_tac [] goal
+
+
 
 (***
 * Initialising functions 

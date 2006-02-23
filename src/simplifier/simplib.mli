@@ -45,12 +45,12 @@ val add_conv : Basic.term list -> Logic.conv -> unit
 (** {5 User level simplification tactics} *)
 
 val simp_tac :
-  ?f:Logic.label ->
   ?cntrl:Simplifier.control ->
   ?ignore:Logic.label list -> 
   ?asms:bool ->
   ?set:Simpset.simpset ->
   ?add:Simpset.simpset ->
+  ?f:Logic.label ->
   Logic.thm list ->
   Tactics.tactic
 (** [simp_tac ?f ?cntrl ?ignore ?asms ?set ?add rules goal]
@@ -95,6 +95,153 @@ val simp : ?f:Logic.label ->  Tactics.tactic
    
    @raise No_change If no change is made.
  *)
+
+
+(** {7 Alternatives} *)
+
+val simpC_tac :
+  ?cntrl:Simplifier.control ->
+  ?ignore:Logic.label list -> 
+  ?set:Simpset.simpset ->
+  ?add:Simpset.simpset ->
+  ?c:Logic.label ->
+  Logic.thm list ->
+  Tactics.tactic
+(** [simp_tac ?c ?cntrl ?ignore ?asms ?set ?add rules goal]
+   
+   Simplifier tactic.
+
+   If [f] is not given, repeat for each conclusion:
+   {ul
+   {- Eliminate toplevel universal quantifiers of [f].}
+   {- If [asms=true], put conclusions other than [f] into assumptions
+   and make simp rules.}
+   {- if [asms=true], make simp rules from assumptions, other than [f].}
+   {- Simplify [f]: find (possibly conditional) rules for
+   rewriting [f], rewrite [f], repeat until no change.}}
+   Don't use formulas identified by a label in [ignore].
+
+   @param f The formula to simplify. Default: all conclusions.
+
+   @param cntrl The rewrite control to use (used to select top-down or
+   bottom up simplifying). Default: top-down.  
+
+   @param ignore List of assumptions/conclusions to ignore. Default: [[]].
+
+   @param set The simpset to use. Default: [std_ss].
+
+   @param add Add this simpset to the set specified with [set]. This
+   allows extra simpsets to be used with the standard simpset.
+
+   [rules] are the additional rewrite rules to use. Rules given here
+   take precedence over those in the simp sets.
+
+   @raise No_change If no change is made.
+    *)
+
+
+val simpC : ?c:Logic.label ->  Tactics.tactic
+(** 
+    [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+   
+   @raise No_change If no change is made.
+ *)
+
+val simpA_tac :
+  ?cntrl:Simplifier.control ->
+  ?ignore:Logic.label list -> 
+  ?set:Simpset.simpset ->
+  ?add:Simpset.simpset ->
+  ?a:Logic.label ->
+  Logic.thm list ->
+  Tactics.tactic
+(** [simp_tac ?a ?cntrl ?ignore ?asms ?set ?add rules goal]
+   
+   Simplifier tactic.
+
+   If [f] is not given, repeat for each conclusion:
+   {ul
+   {- Eliminate toplevel universal quantifiers of [f].}
+   {- If [asms=true], put conclusions other than [f] into assumptions
+   and make simp rules.}
+   {- if [asms=true], make simp rules from assumptions, other than [f].}
+   {- Simplify [f]: find (possibly conditional) rules for
+   rewriting [f], rewrite [f], repeat until no change.}}
+   Don't use formulas identified by a label in [ignore].
+
+   @param f The formula to simplify. Default: all conclusions.
+
+   @param cntrl The rewrite control to use (used to select top-down or
+   bottom up simplifying). Default: top-down.  
+
+   @param ignore List of assumptions/conclusions to ignore. Default: [[]].
+
+   @param set The simpset to use. Default: [std_ss].
+
+   @param add Add this simpset to the set specified with [set]. This
+   allows extra simpsets to be used with the standard simpset.
+
+   [rules] are the additional rewrite rules to use. Rules given here
+   take precedence over those in the simp sets.
+
+   @raise No_change If no change is made.
+    *)
+
+
+val simpA : ?a:Logic.label ->  Tactics.tactic
+(** 
+    [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
+   
+   @raise No_change If no change is made.
+ *)
+
+
+val simpC : ?c:Logic.label ->  Tactics.tactic
+(** 
+    [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+   
+   @raise No_change If no change is made.
+ *)
+
+val simp_all_tac :
+  ?cntrl:Simplifier.control ->
+  ?ignore:Logic.label list -> 
+  ?set:Simpset.simpset ->
+  ?add:Simpset.simpset ->
+  Logic.thm list ->
+  Tactics.tactic
+(** 
+   [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+   
+   Simplify each assumption and conclusion:
+
+   Don't use formulas identified by a label in [ignore].
+
+   @param f The formula to simplify. Default: all conclusions.
+
+   @param cntrl The rewrite control to use (used to select top-down or
+   bottom up simplifying). Default: top-down.  
+
+   @param ignore List of assumptions/conclusions to ignore. Default: [[]].
+
+   @param set The simpset to use. Default: [std_ss].
+
+   @param add Add this simpset to the set specified with [set]. This
+   allows extra simpsets to be used with the standard simpset.
+
+   [rules] are the additional rewrite rules to use. Rules given here
+   take precedence over those in the simp sets.
+
+   @raise No_change If no change is made.
+    *)
+
+val simp_all : Tactics.tactic
+(** 
+    [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
+   
+   @raise No_change If no change is made.
+ *)
+
 
 
 (** {5 Initialising functions} *)

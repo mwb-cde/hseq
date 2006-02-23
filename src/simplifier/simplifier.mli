@@ -467,8 +467,9 @@ val basic_simp_tac :
 
    Doesn't clean up afterwards.
 
-   Returns [ret = ndata] where [ndata] is [data] updated with the
-   rules used to rewrite the formula.
+   Returns [ret = (ndata, ntag)] where [ndata] is [data] updated with
+   the rules used to rewrite the formula and [ntag] is the new tag of
+   the formula.
 
    raise [No_change] if no rules can be found.
  *)

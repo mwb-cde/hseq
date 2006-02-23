@@ -4,6 +4,8 @@
  Copyright M Wahab 2005
 ----*)
 
+let log str x = ()
+
 (**
    Tactical interface to the simplifier engine. 
 *)
@@ -37,7 +39,9 @@ let make_asm_entries_tac ret tags except goal=
   let data = ref []
   in 
   (*** Prepare assumptions for use as simp rules ***)
-  let tac1 g = Simpconvs.prepare_asms data tags except g
+  let utags = List.filter (not <+ except) tags
+  in
+  let tac1 g = Simpconvs.prepare_asms data utags g
   in 
   (*** Make the list of tagged assumptions to use as simp-rules ***)
   let tac2 g = data_tac (fun _ -> ret:= !data) () g
@@ -59,7 +63,9 @@ let make_concl_entries_tac ret tags except goal=
   let data = ref []
   in 
   (*** Prepare conclusions for use a simp-rules ***)
-  let tac1 g= Simpconvs.prepare_concls data tags except g
+  let utags = List.filter (not <+ except) tags
+  in 
+  let tac1 g= Simpconvs.prepare_concls data utags g
   in 
   (*** Make the list of tagged assumptions to use as simp rules. *)
   let tac2 g =
@@ -99,33 +105,25 @@ let initial_prep_tac ctrl ret lbl goal =
   else specC goal
 
 (**
-   [simp_engine_tac cntrl asms l goal]:
+   [simp_engine_tac cntrl ret l goal]:
    The engine for [simp_tac].
 
    - eliminate toplevel universal quantifiers of [l]
-   - if (asms=true),
-     put conclusions other than [l] into assumptions and make simp rules
-   - if (asms=true), make simp rules from assumptions
-   - simplify
-   - delete temporary assumptions
+   - simplify [l]
+   - solve trivial goals
+   - repeat until nothing works
 *)
-let simp_engine_tac cntrl (ret, except) tag goal =
-  (** Get the simp set. **)
-  let set= Data.get_simpset cntrl
-  in 
-  (** Set the rewriting control. **)
-  let cntrl1=Data.set_simpset cntrl set
-  in 
+let simp_engine_tac cntrl ret tag goal =
   (** tac2: Simplify **)
   let tac2 g =
-    let ncntrl = Lib.get_option (!ret) cntrl1
+    let ncntrl = Lib.get_option (!ret) cntrl 
     in 
     alt
       [
        seq_some
 	 [
 	  (** Prepare the goal for simplification. **)
-	  initial_prep_tac cntrl1 ret (ftag tag);
+	  initial_prep_tac cntrl ret (ftag tag);
 	  (** Clear the return data. **)
 	  seq
 	    [
@@ -152,8 +150,9 @@ let simp_engine_tac cntrl (ret, except) tag goal =
     alt [Boollib.trivial ~f:(ftag tag); skip] g
   in 
   ret:=None; 
-  seq 
-    [repeat tac2 ; trivia_tac] goal
+  try
+    seq [repeat tac2 ; trivia_tac] goal
+  with _ -> raise No_change
 
 
 (**
@@ -168,7 +167,6 @@ let simp_engine_tac cntrl (ret, except) tag goal =
    If [l] is not given, repeat for each conclusion.
    Ignore formulas for which [except] is true.
  *)
-
 let rec simp_tac cntrl args l goal=
   let use_asms = args.use_asms
   and except = args.exclude
@@ -311,7 +309,7 @@ let rec simp_tac cntrl args l goal=
       (fun tg -> 
 	alt
 	  [seq
-	     [simp_engine_tac ncntrl (ret, except) tg;
+	     [simp_engine_tac ncntrl ret tg;
 	      data_tac (fun _ -> chng:=true) ()];
 	   skip]) targets g
   in 
@@ -379,3 +377,405 @@ let rec simp_tac cntrl args l goal=
    else raise No_change
  *)
 
+
+(***
+* Alternative approach
+***)
+
+
+(** 
+   [add_rule_data data rules]: Update [data] with assumption
+   [rules]. [rules] should be as provided by {!Simpconvs.prepare_asm}.
+*)
+let add_rule_data data rules =
+  (*** Put rules into a useful form ***)
+  let asm_srcs, asm_new_asms, asm_new_rules = 
+    Simpconvs.unpack_rule_data rules
+  in 
+  (** Add the simp rules to the simpset *)
+  let data1 = 
+    let simp_rules = Simpset.make_asm_rules (fun _ -> false) asm_new_rules
+    in 
+    (** Add new simp rules to the simpset *)
+    let set1 = 
+      Simpset.simpset_add_rules (Data.get_simpset data) simp_rules
+    in 
+    (** Add the new context *)
+    let set2 = 
+      List.fold_left Simpset.add_context set1
+	(List.map Formula.term_of asm_new_asms)
+    in 
+    Data.set_simpset data set2   
+  in
+  (** Record the new assumptions *)
+  let data2 = 
+    let asm_entry_tags = List.map drop_formula asm_new_rules
+    in 
+    Data.set_asms data1 
+      (List.rev_append asm_entry_tags (Data.get_asms data1))
+  in 
+  data2
+  
+let add_asms_tac data atags goal =
+  let add_tac rdata rl g = 
+    let d = Lib.dest_option (!rdata)
+    in 
+    data_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+  in 
+  let tac tg g = 
+    let rl = ref [] 
+    in 
+    seq 
+      [ 
+	Simpconvs.prepare_asm rl tg;
+	(fun g1 -> add_tac data rl g1)
+      ] g
+  in
+  map_some tac atags goal
+
+let add_concls_tac data ctags goal =
+  let add_tac rdata rl g = 
+    let d = Lib.dest_option (!rdata)
+    in 
+    data_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+  in 
+  let tac tg g = 
+    let rl = ref [] 
+    in 
+    seq 
+      [ 
+	Simpconvs.prepare_concl rl tg;
+	(fun g1 -> add_tac data rl g1);
+	(fun g1 -> 
+	  data_tac (log "add_concls_tac 1") 
+	    (Lib.dest_option (!data)) g1)
+      ] g
+  in
+  map_some tac ctags goal
+
+(**
+   [simpC0_tac ret cntrl l goal]: Simplify conclusion [l], returning
+   the updated data in [ret].
+
+   Doesn't clean-up.
+*) 
+let simpC0_tac cntrl ret l goal = 
+  let (ctag, _) = 
+    try get_tagged_concl l goal
+    with Not_found -> raise No_change
+  in 
+  let loopdb = Data.get_loopdb cntrl
+  in 
+  let ngoal = 
+    simp_engine_tac cntrl ret ctag goal
+  in 
+  Lib.set_option ret 
+    (Data.set_loopdb (Lib.dest_option (!ret)) loopdb); 
+  ngoal
+
+(** 
+   [simpC1_tac ret cntrl goal]: Simplify conclusions.
+
+   Simplify each conclusion, starting with the last, adding it to the
+   assumptions after it is simplified.
+
+   Doesn't clean-up.
+*)
+let simpC1_tac cntrl ret goal = 
+  let excluded = Data.get_exclude cntrl
+  in 
+  let except x = List.exists (Tag.equal x) excluded
+  and sqnt = sequent goal
+  in 
+  let asms = 
+    List.filter (not <+ except) (List.map drop_formula (asms_of sqnt))
+  and concls = 
+    List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
+  in 
+  let asms_tac ret g = add_asms_tac ret asms g
+  in 
+  let concl_tac chng ret ct g = 
+    let cntrl = Lib.dest_option (!ret)
+    in 
+    seq
+      [
+       (** Simplify the conclusion *)
+       alt
+	 [
+	  simpC0_tac cntrl ret (ftag ct) 
+	    ++ data_tac (fun _ -> chng:=true) ();
+	  skip
+	];
+       (** Add it to the assumptions *)
+       (fun g1 -> add_concls_tac ret [ct] g1);
+     ] g
+  in 
+  let main_tac chng ret g = 
+    seq_some
+      [
+       (** Add assumptions to the simpset *)
+       asms_tac ret;
+       (** Simplify the conclusions (in reverse order) *)
+       (fun g1 -> map_some (concl_tac chng ret) (List.rev concls) g1);
+     ] g
+  in
+  let chng = ref false
+  in 
+  try 
+    let ngoal = main_tac chng ret goal
+    in
+    if (!chng) 
+    then ngoal
+    else raise No_change
+  with _ -> raise No_change
+
+(** 
+   [simpC_tac ret cntrl ?l goal]: Simplify conclusion.
+
+   If [l] is given, just simplify conclusion [l]. Otherwise, simplify
+   each conclusion, starting with the last, adding it to the
+   assumptions after it is simplified.
+*)
+let simpC_tac cntrl ?c goal =
+  let tac1 data g=
+    let ncntrl = Lib.dest_option (!data)
+    in 
+    log "simpC_tac, tac1: 1" ncntrl;
+    let ngoal =
+      match c with 
+(*	Some(x) -> simpC0_tac ncntrl data x g *)
+      | Some _ -> failwith "simpC_tac"
+      | None -> simpC1_tac ncntrl data g
+    in 
+    log "simpC_tac, tac1: 1" (Lib.dest_option (!data));
+    ngoal
+    
+  in 
+  let tac2 data g = 
+    clean_up_tac data g
+  in 
+  let main_tac g = 
+    let ret = ref (Some (cntrl))
+    in 
+    seq 
+      [
+       tac1 ret; 
+       (fun g1 -> data_tac (log "simpC_tac: 2") 
+	   (Lib.dest_option (!ret)) g1);
+       (fun g1 -> 
+	 let data = Lib.dest_option (!ret)
+	 in
+	 tac2 data g1)
+     ] g
+  in 
+  try (main_tac goal)
+  with _ -> raise No_change
+
+(**
+   [simpA0_tac ret cntrl l goal]: Simplify assumption [l], returning
+   the updated data in [ret].
+
+   Doesn't clean-up.
+*) 
+let simpA0_tac cntrl ret l goal = 
+  let (atag, _) = 
+    try get_tagged_asm l goal
+    with Not_found -> raise No_change
+  in 
+  let loopdb = Data.get_loopdb cntrl
+  in 
+  let ngoal = simp_engine_tac cntrl ret atag goal
+  in 
+  Lib.set_option ret 
+    (Data.set_loopdb (Lib.dest_option (!ret)) loopdb); 
+  ngoal
+
+(** 
+   [simpA1_tac ret cntrl goal]: Simplify assumptions
+
+   Simplify each assumptions, starting with the last, adding it to the
+   simpset rules after it is simplified.
+
+   Doesn't clean-up.
+*)
+let simpA1_tac cntrl ret goal = 
+  let excluded = Data.get_exclude cntrl
+  in 
+  let except x = List.exists (Tag.equal x) excluded
+  and sqnt = sequent goal
+  in 
+  let asms = 
+    List.filter (not <+ except) (List.map drop_formula (asms_of sqnt))
+  and concls = 
+    List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
+  in 
+  let asm_tac chng ret tg g =
+    let cntrl = Lib.dest_option (!ret)
+    in 
+    seq
+      [
+       (** Simplify the assumption **)
+       alt
+	 [
+	  simpA0_tac cntrl ret (ftag tg)
+	    ++ data_tac (fun _ -> chng:=true) ();
+	  skip
+	];
+       (** Add the assumption to the simpset *)
+       (fun g1 -> add_asms_tac ret [tg] g1)
+     ] g
+  in 
+  let concls_tac ret g = 
+    (** Add conclusions to the simpset *)
+       add_concls_tac ret concls g
+  in 
+  let main_tac chng ret g = 
+    seq_some
+      [
+       (** Add conclusions to the simpset *)
+       concls_tac ret;
+       (** Simplify the assumptions (in reverse order) *)
+       (fun g1 -> map_some (asm_tac chng ret) (List.rev asms) g1)
+     ] g
+  in
+  let chng = ref false
+  in 
+  try 
+    let ngoal = main_tac chng ret goal
+    in 
+    if (!chng) 
+    then ngoal
+    else raise No_change
+  with _ -> raise No_change
+
+(** 
+   [simpA_tac ret cntrl ?a goal]: Simplify conclusion.
+
+   If [l] is given, just simplify conclusion [l]. Otherwise, simplify
+   each conclusion, starting with the last, adding it to the
+   assumptions after it is simplified.
+
+   Doesn't clean-up.
+*)
+let simpA_tac cntrl ?a goal =
+  let tac1 ret g=
+    match a with 
+      Some(x) -> simpA0_tac cntrl ret x g
+    | None -> simpA1_tac cntrl ret g
+  in 
+  let tac2 data g = 
+    let ncntrl = Lib.dest_option ~err:(Failure "simpA_tac") (!data)
+    in 
+    clean_up_tac ncntrl g
+  in 
+  let main_tac ret g = 
+    seq
+      [
+       tac1 ret; 
+       (fun g1 -> tac2 ret g1)
+     ] g
+  in 
+  let ret = ref (Some (cntrl))
+  in 
+  try (main_tac ret goal)
+  with _ -> raise No_change
+
+
+(** 
+   [full_simp0_tac ret cntrl goal]: Simplify subgoal
+
+   {ul
+   {- Simplify each assumption, starting with the last, adding it to the
+   simpset rules after it is simplified.}
+   {- Simplify each conclusion, starting with the last, adding it to the
+   simpset rules after it is simplified.}}
+
+   Doesn't clean-up.
+*)
+let full_simp0_tac cntrl ret goal = 
+  let excluded = Data.get_exclude cntrl
+  in 
+  let except x = List.exists (Tag.equal x) excluded
+  and sqnt = sequent goal
+  in 
+  let asms = 
+    List.filter (not <+ except) (List.map drop_formula (asms_of sqnt))
+  and concls = 
+    List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
+  in 
+  let asm_tac chng ret tg g =
+    let cntrl = Lib.dest_option (!ret)
+    in 
+    seq
+      [
+       (** Simplify the assumption **)
+       alt
+	 [
+	  simpA0_tac cntrl ret (ftag tg)
+	    ++ data_tac (fun _ -> chng:=true) ();
+	  skip
+	];
+       (** Add the assumption to the simpset *)
+       (fun g1 -> add_asms_tac ret [tg] g1)
+     ] g
+  in 
+  let concl_tac chng ret tg g = 
+    let cntrl = Lib.dest_option (!ret)
+    in 
+    seq
+      [
+       (** Simplify the conclusion **)
+       alt
+	 [ 
+	   simpC0_tac cntrl ret (ftag tg)
+	     ++ data_tac (fun _ -> chng:=true) ();
+	   skip
+	 ];
+       (** Add the conclusion to the simpset *)
+       (fun g1 -> add_concls_tac ret [tg] g1)
+     ] g
+  in 
+  let main_tac chng ret g = 
+    seq_some
+      [
+       (** Simplify the assumptions (in reverse order) *)
+       map_some (asm_tac chng ret) (List.rev asms);
+       (** Simplify the conclusions (in reverse order) *)
+       (fun g1 -> 
+	 map_some (concl_tac chng ret) (List.rev concls) g1)
+     ] g
+  in
+  let chng = ref false
+  in 
+  try 
+    let ngoal = main_tac chng ret goal
+    in 
+    if (!chng)
+    then ngoal
+    else raise No_change
+  with _ -> raise No_change
+
+(** 
+   [full_simp0_tac ret cntrl goal]: Simplify subgoal
+
+   {ul
+   {- Simplify each assumption, starting with the last, adding it to the
+   simpset rules after it is simplified.}
+   {- Simplify each conclusion, starting with the last, adding it to the
+   simpset rules after it is simplified.}}
+*)
+let full_simp_tac cntrl goal =
+  let ret = ref (Some (cntrl))
+  in 
+  let tac1 g= full_simp0_tac cntrl ret g
+  in 
+  let tac2 g = 
+    let ncntrl = Lib.dest_option ~err:(Failure "full_simp_tac") (!ret)
+    in 
+    clean_up_tac ncntrl g
+  in 
+  let main_tac g = 
+    seq_some [tac1; tac2] g
+  in 
+  try (main_tac goal)
+  with _ -> raise No_change

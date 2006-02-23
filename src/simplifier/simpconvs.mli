@@ -677,15 +677,14 @@ val unpack_rule_data:
 
 val prepare_asm :
   rule_data list ref 
-  -> (Tag.t -> bool) -> Tag.t 
+  -> Tag.t 
     -> Tactics.tactic
 (**
-   [prepare_asm data except a goal]: Prepare assumption labelled [a]
+   [prepare_asm data a goal]: Prepare assumption labelled [a]
    for use as a simp rule. 
 
-   Does nothing if [except a] is true. Solves the goal if [a] is
-   [false]. Otherwise, returns the list of new assumptions formed from
-   [a] which are to be used as simp rules.
+   Solves the goal if [a] is [false]. Otherwise, returns the list of
+   new assumptions formed from [a] which are to be used as simp rules.
 
    {ul
    {- Copy the assumption to get new assumption [a1].}
@@ -699,24 +698,22 @@ val prepare_asm :
 val prepare_asms :
   rule_data list ref 
   -> Tag.t list 
-    -> (Tag.t -> bool) 
-      -> Tactics.tactic
+    -> Tactics.tactic
 (**
-   [prepare_asms data asm except g]: Apply [prepare_asm] to each
+   [prepare_asms data asm g]: Apply [prepare_asm] to each
    assumption in the list [asms]. Return the cumulative results.
  *)
 
 val prepare_concl :
   rule_data list ref 
-  -> (Tag.t -> bool) -> Tag.t 
+  -> Tag.t 
     -> Tactics.tactic
 (**
-   [prepare_concl data except c goal]: Prepare conclusion labelled [a]
+   [prepare_concl data c goal]: Prepare conclusion labelled [a]
    for use as a simp rule. 
 
-   Does nothing if [except c] is true. Solves the goal if [c] is
-   [true]. Otherwise, returns the list of new assumptions formed from
-   [c] which are to be used as simp rules.
+   Solves the goal if [c] is [true]. Otherwise, returns the list of
+   new assumptions formed from [c] which are to be used as simp rules.
 
    {ul 
    {- Copy the conclusion and lift it into the assumptions (by
@@ -729,11 +726,11 @@ val prepare_concl :
 *)
 
 val prepare_concls :
-  rule_data list ref ->
-  Tag.t list ->
-  (Tag.t -> bool) -> Tactics.tactic
+  rule_data list ref
+  -> Tag.t list 
+    -> Tactics.tactic
 (**
-   [prepare_concls data concls except g]: Apply [prepare_concl] to each
+   [prepare_concls data concls g]: Apply [prepare_concl] to each
    assumption in the list [concls]. Return the cumulative results.
  *)
 

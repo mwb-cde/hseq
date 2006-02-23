@@ -1052,9 +1052,15 @@ let rec basic_simp_tac cntrl ret ft goal=
 	  Data.set_rr_depth
 	    (Data.set_conds ncntrl0 rr_conds) rr_depth
 	in 
-	Lib.set_option ret ncntrl;
+	let info = mk_info()
+	in 
 	(try
-	  simp_rewrite_tac ?info:None is_concl plan trm (ftag ft) g2
+	  seq
+	    [
+	     simp_rewrite_tac ~info:info 
+	       is_concl plan trm (ftag ft);
+	     data_tac (Lib.set_option ret) ncntrl
+	   ] g2
 	with _ -> raise No_change)
   in 
   try

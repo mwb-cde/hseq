@@ -1094,12 +1094,11 @@ let unpack_rule_data rds =
     (srcs, asms, rules)
 
 (**
-   [prepare_asm data except a goal]: Prepare assumption labelled [a]
+   [prepare_asm data a goal]: Prepare assumption labelled [a]
    for use as a simp rule. 
 
-   Does nothing if [except a] is true. Solves the goal if [a] is
-   [false]. Otherwise, returns the list of new assumptions formed from
-   [a] which are to be used as simp rules.
+   Solves the goal if [a] is [false]. Otherwise, returns the list of
+   new assumptions formed from [a] which are to be used as simp rules.
 
    {ul
    {- Copy the assumption to get new assumption [a1].}
@@ -1109,63 +1108,59 @@ let unpack_rule_data rds =
    {- Return the result in [data]. }
    }
 *)
-let prepare_asm data except a goal =
-  if (except a)
-  then skip goal
-  else 
-    let info=mk_info()
-    and new_asm_tags = ref []
-    and asm_form = get_tagged_asm (ftag a) goal
+let prepare_asm data a goal =
+  let info=mk_info()
+  and new_asm_tags = ref []
+  and asm_form = get_tagged_asm (ftag a) goal
+  in 
+  let data_fn (new_asm, rules) = 
+    data := 
+      (mk_rule_data asm_form new_asm rules)::(!data)
+  in 
+  let false_test g = 
+    let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
     in 
-    let data_fn (new_asm, rules) = 
-      data := 
-	(mk_rule_data asm_form new_asm rules)::(!data)
-    in 
-    let false_test g = 
-      let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
-      in 
-      Logicterm.is_false (Formula.term_of asm)
-    in 
-    seq 
-      [
-       (false_test --> Boollib.falseA ~a:(ftag a));
-       copyA ~info:info (ftag a);
-       (fun g ->
-	 let a1=
-	   get_one ~msg:"Simplib.prepare_asm" (aformulas info)
-	 in 
-	 let a1form = drop_tag (get_tagged_asm (ftag a1) g)
-	 in 
-	 seq 
-	   [
-	    asm_to_rules new_asm_tags a1;
-	     (fun g1 -> 
-		let rules = (!new_asm_tags)
-		in 
-		  data_tac data_fn (a1form, rules) g1)
-	   ] g)
-       ] goal
+    Logicterm.is_false (Formula.term_of asm)
+  in 
+  seq 
+    [
+     (false_test --> Boollib.falseA ~a:(ftag a));
+     copyA ~info:info (ftag a);
+     (fun g ->
+       let a1=
+	 get_one ~msg:"Simplib.prepare_asm" (aformulas info)
+       in 
+       let a1form = drop_tag (get_tagged_asm (ftag a1) g)
+       in 
+       seq 
+	 [
+	  asm_to_rules new_asm_tags a1;
+	  (fun g1 -> 
+	    let rules = (!new_asm_tags)
+	    in 
+	    data_tac data_fn (a1form, rules) g1)
+	] g)
+   ] goal
 
 (**
-   [prepare_asms data asm except g]: Apply [prepare_asm] to each
+   [prepare_asms data asm g]: Apply [prepare_asm] to each
    assumption in the list [asms]. Return the cumulative results.
  *)
-let prepare_asms data ams except goal=
+let prepare_asms data ams goal=
   let d=ref []
   in 
   seq
     [
-     map_every (prepare_asm d except) ams;
+     map_every (prepare_asm d) ams;
      data_tac (fun () -> data:=!d) ()
    ] goal
 
 (**
-   [prepare_concl data except c goal]: Prepare conclusion labelled [a]
+   [prepare_concl data c goal]: Prepare conclusion labelled [a]
    for use as a simp rule. 
 
-   Does nothing if [except c] is true. Solves the goal if [c] is
-   [true]. Otherwise, returns the list of new assumptions formed from
-   [c] which are to be used as simp rules.
+   Solves the goal if [c] is [true]. Otherwise, returns the list of
+   new assumptions formed from [c] which are to be used as simp rules.
 
    {ul 
 
@@ -1179,56 +1174,53 @@ let prepare_asms data ams except goal=
    {- Return the result in [data]. }
    }
 *)
-let prepare_concl data except c goal =
-  if(except c)
-  then skip goal
-  else 
-    let info=mk_info()
-    and new_asm_tags = ref []
-    and concl_form = get_tagged_concl (ftag c) goal
+let prepare_concl data c goal =
+  let info=mk_info()
+  and new_asm_tags = ref []
+  and concl_form = get_tagged_concl (ftag c) goal
+  in 
+  let data_fn (new_asm, rules) = 
+    data:= (mk_rule_data concl_form new_asm rules)::(!data)
+  in 
+  let true_test g = 
+    let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
     in 
-    let data_fn (new_asm, rules) = 
-      data:= (mk_rule_data concl_form new_asm rules)::(!data)
-    in 
-    let true_test g = 
-      let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
-      in 
-      Logicterm.is_true (Formula.term_of concl)
-    in 
-    seq 
-      [
-       (true_test --> Logic.Tactics.trueC (ftag c));
-       copyC ~info:info (ftag c);
-       (fun g -> 
-	 let c1 = 
-	   get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
-	 in 
-	 empty_info info;
-	 negate_concl_tac ~info:info (ftag c1) g); 
-       (fun g ->
-	 let a=
-	   get_one ~msg:"Simplib.prepare_concl" (aformulas info) 
-	 in 
-	 let aform = drop_tag (get_tagged_asm (ftag a) g)
-	 in 
-	 seq 
-	   [
-	    asm_to_rules new_asm_tags a;
-	     (fun g1 ->
-		let rules = (!new_asm_tags)
-		in 
-		  data_tac data_fn (aform, rules) g1)
-	  ] g)
-     ] goal
+    Logicterm.is_true (Formula.term_of concl)
+  in 
+  seq 
+    [
+     (true_test --> Logic.Tactics.trueC (ftag c));
+     copyC ~info:info (ftag c);
+     (fun g -> 
+       let c1 = 
+	 get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
+       in 
+       empty_info info;
+       negate_concl_tac ~info:info (ftag c1) g); 
+     (fun g ->
+       let a=
+	 get_one ~msg:"Simplib.prepare_concl" (aformulas info) 
+       in 
+       let aform = drop_tag (get_tagged_asm (ftag a) g)
+       in 
+       seq 
+	 [
+	  asm_to_rules new_asm_tags a;
+	  (fun g1 ->
+	    let rules = (!new_asm_tags)
+	    in 
+	    data_tac data_fn (aform, rules) g1)
+	] g)
+   ] goal
 
 (**
-   [prepare_concls data concls except g]: Apply [prepare_concl] to each
+   [prepare_concls data concls g]: Apply [prepare_concl] to each
    assumption in the list [concls]. Return the cumulative results.
  *)
-let prepare_concls data cs except goal=
+let prepare_concls data cs goal=
   let d=ref []
   in 
   seq
-    [map_every (prepare_concl d except) cs;
+    [map_every (prepare_concl d) cs;
      data_tac (fun () -> data:=(!d)) ()] goal
 
