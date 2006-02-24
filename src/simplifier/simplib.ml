@@ -4,6 +4,8 @@
  Copyright M Wahab 2005
 ----*)
 
+open Tactics
+
 let std_simpset = ref(Simpset.empty_set())
 
 let std_ss() = !std_simpset
@@ -27,6 +29,8 @@ let add_conv terms conv =
 let init_std_ss() =
   empty_simp();
   add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv
+
+(***
 
 (** [simp_tac ?f ?cntrl ?ignore ?asms ?set ~rules goal]
    
@@ -112,6 +116,7 @@ let simp_tac
 
 let simp ?f goal = simp_tac ?f [] goal
 
+***)
 
 (*** Alternatives ***)
 
@@ -149,7 +154,7 @@ let simpC_tac
   (** simp_data: The simpset data. *)
   let simp_data = 
     let data1 = 
-      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+      Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
     in 
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
@@ -193,7 +198,7 @@ let simpA_tac
   (** simp_data: The simpset data. *)
   let simp_data = 
     let data1 = 
-      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+      Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
     in 
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
@@ -237,7 +242,7 @@ let simp_all_tac
   (** simp_data: The simpset data. *)
   let simp_data = 
     let data1 = 
-      Simplifier.Data.set_exclude Simplifier.Data.default ignore_tags
+      Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
     in 
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
@@ -247,7 +252,33 @@ let simp_all_tac
 
 let simp_all goal = simp_all_tac [] goal
 
-
+let simp_tac 
+    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
+    ?(asms=true) ?set ?add ?f rules goal =
+  let sqnt = Tactics.sequent goal 
+  in 
+  let tac = 
+    match f with 
+      None -> 
+	if (not asms)
+	then raise (error "simp_tac: Label must be given")
+	else (simpC_tac ~cntrl:cntrl ~ignore:ignore ?set ?add rules)
+    | Some(x) -> 
+	let tg = Logic.label_to_tag x sqnt
+	in 
+	(match 
+	  Lib.try_find (get_tagged_concl (ftag tg)) goal 
+	with
+	  None -> 
+	    simpA_tac 
+	      ~cntrl:cntrl ~ignore:ignore ?set ?add ~a:(ftag tg)rules
+	| _ -> 
+	    simpC_tac
+	      ~cntrl:cntrl ~ignore:ignore ?set ?add ~c:(ftag tg)rules)
+  in 
+  tac goal
+	
+let simp ?f goal = simp_tac ?f [] goal
 
 (***
 * Initialising functions 

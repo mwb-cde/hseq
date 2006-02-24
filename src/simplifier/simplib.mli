@@ -60,9 +60,8 @@ val simp_tac :
    If [f] is not given, repeat for each conclusion:
    {ul
    {- Eliminate toplevel universal quantifiers of [f].}
-   {- If [asms=true], put conclusions other than [f] into assumptions
-   and make simp rules.}
-   {- if [asms=true], make simp rules from assumptions, other than [f].}
+   {- If [asms=false], ignore all formulas other than [f] (which must
+   be given).}
    {- Simplify [f]: find (possibly conditional) rules for
    rewriting [f], rewrite [f], repeat until no change.}}
    Don't use formulas identified by a label in [ignore].
