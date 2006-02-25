@@ -1,95 +1,65 @@
-INCLUDE= -I .. -I ../include
-LIBDIR= 
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub
+# This is a template to be copied into each directory to be built.
+#####
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
+####
+# The variables to be set in Makefile.child
+###
 
-OCLIBS=-I +camlp4 camlp4o.cma q_MLast.cmo pa_extend.cmo 
-OPTLIBS=
-OPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4
+###
+# Header, code and optimised code files
+###
 
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
-
-LIBFILE=parser.cma
-OPTLIB=parser.cmxa
-
-DOCFILES = lexer.mli parser.mli 
-DOCLOAD = -load "${DOCDIR}/logic.data"
-DOCTYPE ?= -html
-DOCDIR ?= "../doc"
-
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
-
-.mli.cmi: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmo: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmx: 
-	ocamlopt -c ${INCLUDE} $<
-
-.cmo.cma:
-	${OCAMLC} -a ${INCLUDE} $<
-
-.cmx.cmxa:
-	ocamlopt -a ${INCLUDE} $<
-
+# HEADERS: the list of header (.cmi) files 
 HEADERS = counter.cmi lexer.cmi parser.cmi
+
+# CODE: the list of code (.cmo) files 
 CODE = counter.cmo lexer.cmo parser.cmo 
-OPTCODE = counter.cmx lexers.cmx termlex.cmx termlexer.cmx parsers.cmx tparser.cmx
 
-all: ${HEADERS} ${CODE}
+# OPTCODE: the list of optimised code (.cmx) files 
+OPTCODE = counter.cmx lexer.cmx parser.cmx 
 
-lib: ${LIBFILE}
+###
+# Generated libraries
+###
 
-install: lib
-	cp -f ${LIBFILE} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
+# LIBFILE: The list of library (.cma) files built
+LIBFILE = parser.cma
 
-installopt: opt
-	cp -f ${OPTLIB} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
+# OPTLIB: The list of optimised library (.cmxa) files built
+OPTLIB = parser.cmxa
 
-doc: ${DOCFILES}
-	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/parser.data" \
-	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
+###
+# Documentation
+###
 
-# libraries
+DOCTYPE = -html
 
-${LIBFILE}: ${HEADERS} ${CODE}
-		${OCAMLC} -o parser.cma -a ${INCLUDE} ${CODE}
+# DOCFILES: File from which documentation is to be built
+DOCFILES = lexer.mli parser.mli 
 
-# optimised libraries
+# DOCDATA: File to be emitted as a link
+DOCDATA = parser.data
 
-${OPTLIB}: ${HEADERS} ${OPTCODE}
-		ocamlopt -o parser.cmxa -a ${INCLUDE} ${OPTCODE}
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV = logic.data
 
-opt: ${OPTLIB}
 
-printer: printer.cmi printer.cmo
+###
+# End of Makefile.child variables
+###
 
-depend: 
-	ocamldep  *.ml* > depend
 
-clean:
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
 
-libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
 
-reallyclean: clean libclean
-	rm -f depend
-
-# dependencies
-
-include depend
+include ${CONFIGDIR}/Makefile.sub

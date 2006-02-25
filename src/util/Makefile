@@ -1,100 +1,69 @@
-# Header, code and optimised code files
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub
+# This is a template to be copied into each directory to be built.
+#####
 
+####
+# The variables to be set in Makefile.child
+###
+
+###
+# Header, code and optimised code files
+###
+
+# HEADERS: the list of header (.cmi) files 
 HEADERS = lib.cmi unsafe.cmi treekit.cmi tag.cmi parserkit.cmi rewritekit.cmi
+
+# CODE: the list of code (.cmo) files 
 CODE = lib.cmo unsafe.cmo treekit.cmo tag.cmo parserkit.cmo rewritekit.cmo
+
+# OPTCODE: the list of optimised code (.cmx) files 
 OPTCODE = lib.cmx unsafe.cmx treekit.cmx tag.cmx parserkit.cmx rewritekit.cmx
 
+###
+# Generated libraries
+###
+
+# LIBFILE: The list of library (.cma) files built
+LIBFILE = util.cma
+
+# OPTLIB: The list of optimised library (.cmxa) files built
+OPTLIB = util.cmxa
+
+###
+# Documentation
+###
+
+DOCTYPE = -html
+
+# DOCFILES: File from which documentation is to be built
 DOCFILES = lib.mli unsafe.mli treekit.mli tag.mli parserkit.mli rewritekit.mli
-DOCLOAD = 
-DOCTYPE ?= -html
-DOCDIR ?= "../doc"
 
-LIBFILE=util.cma
-OPTLIB=util.cmxa
+# DOCDATA: File to be emitted as a link
+DOCDATA = util.data
 
-# Compiler setings
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV = 
 
-INCLUDE= -I .. -I ../include
-LIBDIR= 
+##
+# Clear the PPOPTIONS
+##
+PPOPTIONS = 
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
-DOCDIR ?= ../doc
-
-OCLIBS=
-OPTLIBS=
-OPTIONS=-pp "camlp4o pa_extend.cmo" -I +camlp4 
-
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
-
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
-
-.mli.cmi: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmo: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmx: 
-	ocamlopt -c ${INCLUDE} $<
-
-.cmo.cma:
-	${OCAMLC} -a ${INCLUDE} $<
-
-.cmx.cmxa:
-	ocamlopt -a ${INCLUDE} $<
+###
+# End of Makefile.child variables
+###
 
 
-all: ${HEADERS} ${CODE}
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
 
-lib: ${LIBFILE}
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
 
-install: lib
-	cp -f ${LIBFILE} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
-
-installopt: opt
-	cp -f ${OPTLIB} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
-
-doc: ${DOCFILES}
-	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/util.data" \
-	${INCLUDE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
-
-# libraries
-
-${LIBFILE}: ${HEADERS} ${CODE}
-		${OCAMLC} -o ${LIBFILE} -a ${INCLUDE} ${CODE}
-
-# optimised libraries
-
-${OPTLIB}: ${HEADERS} ${OPTCODE}
-		ocamlopt -o ${OPTLIB} -a ${INCLUDE} ${OPTCODE}
-
-opt: ${OPTLIB}
-
-depend: 
-	ocamldep  *.ml* > depend
-
-.PHONY: clean
-clean:
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
-
-libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
-
-reallyclean: clean libclean
-	rm -f depend
-
-# dependencies
-
-include depend
+include ${CONFIGDIR}/Makefile.sub

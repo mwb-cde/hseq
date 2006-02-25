@@ -31,94 +31,8 @@ let init_std_ss() =
   add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv
 
 (***
-
-(** [simp_tac ?f ?cntrl ?ignore ?asms ?set ~rules goal]
-   
-   Simplifier tactic.
-
-   If [f] is not given, repeat for each conclusion:
-   - eliminate toplevel universal quantifiers of [f]
-   - if (asms=true), put conclusions other than [f] into assumptions
-   and make simp rules
-   - if (asms=true), make simp rules from assumptions, other than [f]
-   - simplify [f]: find (possibly conditional) rules for
-   rewriting [f], rewrite [f], repeat until no change.
-
-   When done, delete temporary assumptions
-
-   Don't use formulas in [ignore] or for which [except] is true.
-
-   Arguments:
-
-   @param f The formula to simplify. Default: all conclusions.
-
-   @param cntrl The rewrite control to use (used to select top-down or
-   bottom up simplifying). Default: top-down.  
-
-   @param ignore List of assumptions/conclusions to ignore. Default: [].
-
-   @param asms Whether to use the assumptions and conclusions as
-   rewrite rules. Default: true.
-
-   @params set The simpset to use. Default: [std_ss].
-
-   @params use Add this simpset to the set specified with [set]. This
-   allows extra simpsets to be used with the standard simpset.
-
-   @param rules Additional rewrite rules to use. Default: [].
-
-   @raise Simplifier.No_change If no change is made.
- *)
-let simp_tac 
-    ?(cntrl=Formula.default_rr_control) ?(ignore = [])
-    ?(asms=true) ?set ?add ?f rules goal =
-(** uset: The simpset to use. **)
-  let uset = 
-    let uset0 = 
-      match set with
-	None -> std_ss()
-      | Some s -> s
-    in 
-    let uset1 = 
-      match add with
-	None -> uset0
-      | Some s -> Simpset.join s uset0
-    in 
-    (** If there are rules, make a simpset from them. **)
-    match rules with 
-      [] -> uset1
-    | _ -> 
-	let s = 
-	  Simpset.simpset_add_thms 
-	    (Global.scope()) (Simpset.empty_set()) rules
-	in 
-	Simpset.join s uset1
-  in 
-  (** ignore_tags: The tags of sequent formulas to be left alone. **)
-  let ignore_tags = 
-    let sqnt = Tactics.sequent goal 
-    in 
-    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
-  in 
-  (** except: The test for an excluded formula. **)
-  let except x = List.exists (Tag.equal x) ignore_tags
-  in 
-  (** The simplifier arguments. **)
-  let args = Simptacs.mk_args asms except
-  in 
-  (** simp_data: The simpset data. *)
-  let simp_data = 
-    Simplifier.Data.set_simpset
-      (Simplifier.Data.set_control Simplifier.Data.default cntrl)
-      uset
-  in 
-  Simptacs.simp_tac simp_data args f goal
-
-let simp ?f goal = simp_tac ?f [] goal
-
+* Toplevel simplification tactics
 ***)
-
-(*** Alternatives ***)
 
 let simpC_tac 
     ?(cntrl=Formula.default_rr_control) ?(ignore = [])
@@ -254,15 +168,12 @@ let simp_all goal = simp_all_tac [] goal
 
 let simp_tac 
     ?(cntrl=Formula.default_rr_control) ?(ignore = [])
-    ?(asms=true) ?set ?add ?f rules goal =
+    ?set ?add ?f rules goal =
   let sqnt = Tactics.sequent goal 
   in 
   let tac = 
     match f with 
-      None -> 
-	if (not asms)
-	then raise (error "simp_tac: Label must be given")
-	else (simpC_tac ~cntrl:cntrl ~ignore:ignore ?set ?add rules)
+      None -> simpC_tac ~cntrl:cntrl ~ignore:ignore ?set ?add rules
     | Some(x) -> 
 	let tg = Logic.label_to_tag x sqnt
 	in 

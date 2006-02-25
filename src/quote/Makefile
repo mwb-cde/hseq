@@ -1,65 +1,74 @@
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub
+# This is a template to be copied into each directory to be built.
+#####
+
+####
+# The variables to be set in Makefile.child
+###
+
+###
 # Header, code and optimised code files
+###
 
+# HEADERS: the list of header (.cmi) files 
 HEADERS = tpquote.cmi
+
+# CODE: the list of code (.cmo) files 
 CODE = tpquote.cmo
-LIBFILE = ${CODE}
 
-# Compiler setings
+# OPTCODE: the list of optimised code (.cmx) files 
+OPTCODE = 
 
-INCLUDE= -I .. -I ../include
-LIBDIR= 
+###
+# Generated libraries
+###
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
+# LIBFILE: The list of library (.cma) files built
+LIBFILE = 
 
-OCLIBS=
-OPTLIBS=
-OPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+# OPTLIB: The list of optimised library (.cmxa) files built
+OPTLIB = 
 
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
+###
+# Documentation
+###
 
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
+DOCTYPE = -html
 
-.mli.cmi: 
-	${OCAMLC} -c ${INCLUDE} $<
+# DOCFILES: File from which documentation is to be built
+#DOCFILES =
 
-.ml.cmo: 
-	${OCAMLC} -c ${INCLUDE} $<
+# DOCDATA: File to be emitted as a link
+#DOCDATA = 
 
-#.ml.cmx: 
-#	ocamlopt -c ${INCLUDE} $<
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+#DOCPREV = 
 
-#.cmo.cma:
-#	${OCAMLC} -a ${INCLUDE} $<
+##
+# Preprocessor options
+## 
+PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
 
-#.cmx.cmxa:
-#	ocamlopt -a ${INCLUDE} $<
+###
+# End of Makefile.child variables
+###
 
+#
+# Custom build and install
+#
 
-all: ${HEADERS} ${CODE}
+CUSTOM_INSTALL = (cp -f tpquote.cmo ${LIBDIR}; cp -f ${HEADERS} *.mli ${HEADERSDIR})
 
-install: all
-	cp -f ${CODE} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
 
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
 
-clean:
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
-
-libclean: clean
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
-
-reallyclean: clean libclean
-
-# dependencies
-
-#include depend
+include ${CONFIGDIR}/Makefile.sub

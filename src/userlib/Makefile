@@ -1,103 +1,65 @@
-# Header, code and optimised code files
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub
+# This is a template to be copied into each directory to be built.
+#####
 
+####
+# The variables to be set in Makefile.child
+###
+
+###
+# Header, code and optimised code files
+###
+
+# HEADERS: the list of header (.cmi) files 
 HEADERS = userlib.cmi cli.cmi 
+
+# CODE: the list of code (.cmo) files 
 CODE = userlib.cmo cli.cmo
+
+# OPTCODE: the list of optimised code (.cmx) files 
 OPTCODE = userlib.cmx cli.cmx
 
-LIBFILE= userlib.cma
-OPTLIB= userlib.cmxa
+###
+# Generated libraries
+###
 
-# Compiler setings
+# LIBFILE: The list of library (.cma) files built
+LIBFILE = userlib.cma
 
-INCLUDE= -I .. -I ../include
-LIBDIR= 
+# OPTLIB: The list of optimised library (.cmxa) files built
+OPTLIB = userlib.cmxa
 
-HEADERSDIR=../include
-INSTALLDIR=../libs
+###
+# Documentation
+###
 
-SRCDIR=..
-OCLIBS=
-OPTLIBS=
+DOCTYPE = -html
 
-
+# DOCFILES: File from which documentation is to be built
 DOCFILES = userlib.mli cli.mli
-DOCLOAD = -load "${DOCDIR}/simplifier.data"
-DOCTYPE ?= -html
-DOCDIR ?= "../doc"
+
+# DOCDATA: File to be emitted as a link
+DOCDATA = userlib.data
+
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV = simplifier.data
 
 
-OPTIONS=-pp "camlp4o q_MLast.cmo ${SRCDIR}/libs/tpquote.cmo pa_extend.cmo" \
-	-I +camlp4
-
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
-
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
-
-.mli.cmi: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmo: 
-	${OCAMLC} -c ${INCLUDE} $<
-
-.ml.cmx: 
-	ocamlopt -c ${INCLUDE} $<
-
-.cmo.cma:
-	${OCAMLC} -a ${INCLUDE} $<
-
-.cmx.cmxa:
-	ocamlopt -a ${INCLUDE} $<
+###
+# End of Makefile.child variables
+###
 
 
-all: ${HEADERS} ${CODE}
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
 
-lib: ${LIBFILE}
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
 
-install: lib
-	cp -f ${LIBFILE} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
-
-installopt: opt
-	cp -f ${OPTLIB} ${INSTALLDIR}
-	cp -f *.cmi *.mli ${HEADERSDIR}
-
-doc: ${DOCFILES}
-	ocamldoc ${DOCLOAD} -dump "${DOCDIR}/userlib.data" \
-	${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} -d ${DOCDIR} ${DOCFILES}
-
-# libraries
-
-${LIBFILE}: ${HEADERS} ${CODE}
-	${OCAMLC} -o ${LIBFILE} -a ${INCLUDE} ${CODE}
-
-# optimised libraries
-
-${OPTLIB}: ${HEADERS} ${OPTCODE}
-	ocamlopt -o ${OPTLIB} -a ${INCLUDE} ${OPTCODE}
-
-opt: ${OPTLIB}
-
-depend: 
-	ocamldep  *.ml* > depend
-
-clean:
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
-
-libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
-
-reallyclean: clean libclean
-	rm -f depend
-
-# dependencies
-
-include depend
+include ${CONFIGDIR}/Makefile.sub

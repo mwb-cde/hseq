@@ -10,103 +10,7 @@
 
 open Simplifier
 
-(** {5 Rule-forming tactics} *)
-
-val make_asm_entries_tac : 
-    Simpconvs.rule_data list ref 
-  -> Tag.t list -> (Tag.t -> bool)
-    -> Tactics.tactic
-(**
-   Make simp rules from identified assumptions.
-
-   [make_asm_entries_tac ret tags except goal]: Copy, prepare the
-   assumptions in [tags] for use as simp rules. Ignore the assumptions
-   in for which [except] is true.
-
-   Return [ret = (asm_tags, rules)] where [asm_tags] is a list of
-   pairs [(s, a)], with [a] a new assumption formed from [s] and
-   [rules] is the list of tagged formulas to be used as simp rules.
-*)
-
-val make_concl_entries_tac : 
-    Simpconvs.rule_data list ref 
-  -> Tag.t list -> (Tag.t -> bool)
-    -> Tactics.tactic
-(** 
-   Make simp rules from identified conclusions.
-
-   [make_concl_entries_tac ret tags except goal]: Copy, lift, prepare
-   the conclusions in [tags] for use as simp rules.  Ignore the
-   conclusions for which [except] is true.
-
-   Return [ret = (asm_tags, rules)] where [asm_tags] is a list of
-   pairs [(c, a)], with [a] is a new assumption formed from [c] and
-   [rules] is the list of tagged formulas to be used as simp rules.
-*)
-
-(** {5 Simplifier tactics} *)
-
-(** Arguments for the simplifier *)
-type simp_args=
-      {
-       use_asms: bool; 
-      (** Whether to use the assumptions (and conclusions) as simp rules. *)
-       exclude: (Tag.t -> bool)
-      (** Test on whether a formula is to be ignored (not simplified
-      or used as a simp rule. *)
-     }
-
-val mk_args : bool -> (Tag.t -> bool) -> simp_args
-(** Make arguments for the simplifier. *)
-
-val simp_engine_tac :
-    Data.t 
-  -> (Data.t option) ref
-    -> Tag.t 
-      -> Tactics.tactic
-(** The engine for [simp_tac]. 
-
-   [simp_engine_tac ret cntrl l goal]:
-
-   {ul 
-   {- Eliminate toplevel universal quantifiers of [l].}
-   {- Simplify [l], using {!Simplifier.basic_simp_tac}}
-   {- Solve trivial goals}
-   {- Repeat until nothing works}}
-
-   Returns the updated simp data in [ret].
-*)
-
-val simp_tac: 
-    Data.t
-  -> simp_args
-    -> Logic.label option 
-      -> Tactics.tactic
-(**
-   Simplify formulas.
-
-   [simp_tac cntrl asms except ?l goal]: 
-   {ul
-   {- Eliminate toplevel universal quantifiers of [l].}
-   {- If [asms=true], put conclusions, other then those to be
-   simplified, into assumptions and make simp rules from them.}
-   {- If [asms=true], make simp rules from assumptions, other than
-   those to be simplified.} 
-   {- Simplify.}  
-   {- Delete temporary assumptions.}}
-
-   If [l] is not given, simplify each conclusion.
-   Ignore formulas for which [except] is true.
- *)
-
-
-(** [full_simp_tac]: not implemented *)
-(*
-   val full_simp_tac :
-   Data.t -> Simpset.simpset -> Tag.t -> tactic
- *)
-
-(** {5 Alternative approach} *)
+(** {5 Simplification Data} *)
 
 val default_data: Data.t
 (** The default data set. *)
@@ -117,6 +21,8 @@ val add_rule_data:
    [add_rule_data data rules]: Update [data] with assumption
    [rules]. [rules] should be as provided by {!Simpconvs.prepare_asm}.
 *)
+
+(** {7 Adding assumptions and conclusions} *)
 
 val add_asms_tac:
     Data.t option ref
@@ -136,6 +42,38 @@ val add_concls_tac:
    use as simp-rules. Add them to [data].
 *)
 
+
+(** {5 Simplification engines} *)
+
+val simp_engine_tac :
+    Data.t 
+  -> (Data.t option) ref
+    -> Tag.t 
+      -> Tactics.tactic
+(** The engine for [simp_tac]. 
+
+   [simp_engine_tac ret cntrl l goal]:
+
+   {ul 
+   {- Eliminate toplevel universal quantifiers of [l].}
+   {- Simplify [l], using {!Simplifier.basic_simp_tac}}
+   {- Solve trivial goals}
+   {- Repeat until nothing works}}
+
+   Returns the updated simp data in [ret].
+*)
+
+val simpA_engine_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> bool ref
+	-> Logic.label -> Tactics.tactic
+(**
+   [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
+   returning the updated data in [ret]. Sets [chng] to true on
+   success. Doesn't clean-up.
+*) 
+
 val simpC_engine_tac :
     Data.t 
     -> Data.t option ref 
@@ -147,7 +85,43 @@ val simpC_engine_tac :
    success. Doesn't clean-up.
 *) 
 
-val simpC1_tac :
+
+(** {5 Simplifying assumptions} *)
+
+val simpA0_tac :
+    Data.t 
+    -> Data.t option ref 
+      -> ?a:Logic.label
+      -> Tactics.tactic
+(** 
+   [simpA1_tac cntrl ret ?a goal]: Simplify assumptions
+
+   If [a] is given, add other assumptions to the simpset and then
+   simplify [a]. If [a] is not given, simplify each assumption,
+   starting with the last, adding it to the simpset rules it is
+   simplified. The conclusions are always added to the simpset.
+
+   Doesn't clean-up.
+*)
+
+val simpA_tac :
+    Data.t -> ?a:Logic.label -> Tactics.tactic
+(** 
+   [simpA_tac cntrl ?a goal]: Simplify assumptions
+
+   If [a] is given, add other assumptions to the simpset and then
+   simplify [a]. If [a] is not given, simplify each assumption,
+   starting with the last, adding it to the simpset rules it is
+   simplified. The conclusions are always added to the simpset.
+
+   This is the top-level tactic (for this module) for simplifying
+   assumptions.
+*)
+
+
+(** {5 Simplifying conclusions} *)
+
+val simpC0_tac :
     Data.t 
     -> Data.t option ref 
       -> ?c:Logic.label
@@ -173,47 +147,11 @@ val simpC_tac :
    adding it to the assumptions after it is simplified. The
    assumptions are always added to the simpset.
 
+   This is the top-level tactic (for this module) for simplifying
+   conclusions.
 *)
 
-
-val simpA_engine_tac :
-    Data.t 
-    -> Data.t option ref 
-      -> bool ref
-	-> Logic.label -> Tactics.tactic
-(**
-   [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
-   returning the updated data in [ret]. Sets [chng] to true on
-   success. Doesn't clean-up.
-*) 
-
-val simpA1_tac :
-    Data.t 
-    -> Data.t option ref 
-      -> ?a:Logic.label
-      -> Tactics.tactic
-(** 
-   [simpA1_tac cntrl ret ?a goal]: Simplify assumptions
-
-   If [a] is given, add other assumptions to the simpset and then
-   simplify [a]. If [a] is not given, simplify each assumption,
-   starting with the last, adding it to the simpset rules it is
-   simplified. The conclusions are always added to the simpset.
-
-   Doesn't clean-up.
-*)
-
-val simpA_tac :
-    Data.t -> ?a:Logic.label -> Tactics.tactic
-(** 
-   [simpA_tac cntrl ?a goal]: Simplify assumptions
-
-   If [a] is given, add other assumptions to the simpset and then
-   simplify [a]. If [a] is not given, simplify each assumption,
-   starting with the last, adding it to the simpset rules it is
-   simplified. The conclusions are always added to the simpset.
-*)
-
+(** {5 Simplifying subgoals} *)
 
 val full_simp0_tac:
     Data.t 
@@ -242,11 +180,10 @@ val full_simp_tac:
    {- Simplify each conclusion, starting with the last, adding it to the
    simpset rules after it is simplified.}}
 
-   Doesn't clean-up.
+   This is the top-level tactic (for this module) for simplifying
+   subgoals.
 *)
  
-
-
 
 (** Debugging information **)
 
