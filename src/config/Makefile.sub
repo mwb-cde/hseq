@@ -1,0 +1,246 @@
+#####
+# Makefile for building sub-directories
+#
+# Should be called from an instance of Makefile.child
+#####
+
+####
+# The variables to be set in Makefile.child
+###
+
+###
+# Header, code and optimised code files
+###
+
+# HEADERS: the list of header (.cmi) files 
+HEADERS ?= 
+
+# CODE: the list of code (.cmo) files 
+CODE ?= 
+
+# OPTCODE: the list of optimised code (.cmx) files 
+OPTCODE ?= 
+
+###
+# Generated libraries
+###
+
+# LIBFILE: The list of library (.cma) files built
+LIBFILE ?= 
+
+# OPTLIB: The list of optimised library (.cmxa) files built
+OPTLIB ?= 
+
+###
+# Documentation
+###
+
+DOCTYPE ?= -html
+
+# DOCFILES: File from which documentation is to be built
+DOCFILES ?= 
+
+# DOCDATA: File to be emitted as a link
+DOCDATA ?= 
+
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV ?= 
+
+
+###
+# End of Makefile.child variables
+###
+
+###
+# Useful definitions
+###
+
+# DIRSEP: The seperator for directories
+# On Unix DIRSEP=/, on windows DIRSEP=\
+DIRSEP ?= /
+
+##
+# Directories
+##
+
+# PGKDIR: The toplevel package directory
+PGKDIR ?= /home/mw/src/tp
+
+# SRCDIR: The source directory
+SRCDIR ?= ${PGKDIR}/src
+
+# CONFIGDIR: The configuration directory
+CONFIGDIR ?= ${SRCDIR}/config
+
+# HEADERSDIR: The location of the compiled header files
+HEADERSDIR ?= ${SRCDIR}/libs
+
+# LIBDIR: The location of the compiled files
+LIBDIR ?= ${SRCDIR}/libs
+
+# DOCDIR: Source code documentation directory
+DOCDIR ?= ${SRCDIR}/doc
+
+##
+# Compiler definitions
+##
+
+# PPCODE: The preprocessor code
+PPCODE ?= ${LIBDIR}/tpquote.cmo
+
+# PPOPTIONS: Preprocessor options 
+# To avoid using the preprocessor, 
+# set "PPOPTIONS =" (i.e. an empty value)
+ifneq (($strip ${PPOPTIONS}), "")
+PPOPTIONS ?= -pp "camlp4o q_MLast.cmo ${PPCODE} pa_extend.cmo" -I +camlp4
+endif
+
+# OPTIONS: The compiler options
+OPTIONS = ${PPOPTIONS}
+
+# INCLUDE: The include directives
+INCLUDE = -I ${HEADERSDIR}
+
+# DOCLOAD: The previous documentation link
+ifeq (${DOCPREV},) 
+DOCLOAD = 
+else
+DOCLOAD = -load "${DOCDIR}/${DOCPREV}"
+endif
+
+# DOCDUMP The documentation link
+ifeq (${DOCDATA},) 
+DOCDUMP = 
+else
+DOCDUMP = -dump "${DOCDIR}/${DOCDATA}"
+endif
+
+##
+# The compilers
+##
+
+# OCAMLC: The OCaml compiler
+OCAMLC=ocamlc ${OPTIONS} 
+
+# OCAMLlink: The OCaml linker
+OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
+
+# OCAMLOPT: The optimising OCaml compiler
+OCAMLC=ocamlc ${OPTIONS} 
+
+# OCAMLlink: The optimising OCaml linker
+OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP = ocamldep ${PPOPTIONS}
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC = ocamldoc 
+
+###
+# Suffixes and how to handle them
+###
+
+.SUFFIXES: .mli .cmi
+.SUFFIXES: .ml .cmo
+.SUFFIXES: .cma 
+.SUFFIXES: .cmx 
+.SUFFIXES: .cmxa 
+
+.mli.cmi: 
+	${OCAMLC} -c ${INCLUDE} $<
+
+.ml.cmo: 
+	${OCAMLC} -c ${INCLUDE} $<
+
+.ml.cmx: 
+	${OCAMLOPT} -c ${INCLUDE} $<
+
+.cmo.cma:
+	${OCAMLC} -a ${INCLUDE} $<
+
+.cmx.cmxa:
+	${OCAMLOPT} -a ${INCLUDE} $<
+
+
+###
+# Build targets
+###
+
+# all: Build everything
+all: ${HEADERS} ${CODE}
+
+# lib: Build the library file
+lib: all ${LIBFILE}
+
+# lib: Build the optimised library file
+opt: ${OPTLIB}
+
+# install: Install the library and header files.
+install: lib
+ifdef CUSTOM_INSTALL
+	${CUSTOM_INSTALL}
+else	
+	cp -f ${LIBFILE} ${LIBDIR}
+	cp -f ${HEADERS} *.mli ${HEADERSDIR}
+endif
+
+# installopt: Install the optimised library and header files.
+installopt: opt
+ifdef CUSTOM_OPTINSTALL
+	${CUSTOM_OPTINSTALL}
+else	
+	cp -f ${OPTLIB} ${LIBDIR}
+	cp -f ${HEADERS} ${HEADERSDIR}
+endif
+
+#doc: Generate the code documentation
+doc: ${DOCFILES}
+ifneq ($(strip ${DOCFILES}), "")
+	${OCAMLDOC} ${DOCLOAD} ${DOCDUMP} \
+		${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} \
+		-d ${DOCDIR} ${DOCFILES}
+endif
+
+##
+# Libraries
+##
+
+# The standard library
+${LIBFILE}: ${HEADERS} ${CODE}
+	$(foreach f,${LIBFILE},${OCAMLC} -o ${f} -a ${INCLUDE} ${CODE})
+
+# The optimised library
+${OPTLIB}: ${HEADERS} ${OPTCODE}
+	$(foreach f,${LIBFILE},${OCAMLOPT} -o ${f} -a ${INCLUDE} ${CODE})
+
+
+##
+# Cleaning files
+##
+
+clean:
+	rm -f *.cmo
+	rm -f *.cmx  *.o
+	rm -f *~
+
+libclean: 
+	rm -f *.cmi
+	rm -f *.cma *.cmxa
+
+reallyclean: clean libclean
+	rm -f depend
+
+##
+# Dependencies
+#
+# Define NODEPEND to prevent using depend
+##
+
+depend: 
+	${OCAMLDEP} *.ml* > depend
+
+ifndef NODEPEND
+include depend
+endif
