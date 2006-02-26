@@ -491,7 +491,7 @@ let load_theory fname =
   let ic = open_in fname
   in let sthy = input_theory ic; 
   in close_in ic; 
-  Format.printf "@[Loading theory %s@]@." sthy.sname;
+(*  Format.printf "@[Loading theory %s@]@." sthy.sname; *)
   sthy
 
 let save_theory thy fname= 

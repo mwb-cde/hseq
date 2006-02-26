@@ -77,7 +77,7 @@ module PP =
    Printer for negation. Prints [ << base.not x >> ] 
    as [~x] rather than [~ x].
  *)
-    let negation_pprec = Printer.mk_record 200 Printer.prefix None
+    let negation_pprec = Printer.mk_record 205 Printer.prefix None
 
     let negation_printer ppstate (fixity, prec) (f, args)=
       let cprec= negation_pprec.Printer.prec

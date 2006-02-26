@@ -19,8 +19,8 @@ let make_directory f = (get_base_dir())^"/"^f
 
 let init_file = "fm.ml"
 
-let include_dir () = make_directory "include"
-let libs_dir () = make_directory "libs"
+let libs_dir () = make_directory "lib"
+let include_dir = libs_dir
 let thys_dir () = make_directory "thys"
 
 (*** File suffixes ***)

@@ -64,20 +64,17 @@ DIRSEP ?= /
 # Directories
 ##
 
-# PGKDIR: The toplevel package directory
-PGKDIR ?= /home/mw/src/tp
-
-# SRCDIR: The source directory
-SRCDIR ?= ${PGKDIR}/src
+# SRCDIR: The source directory (relative to a sub-directory).
+SRCDIR ?= ..
 
 # CONFIGDIR: The configuration directory
 CONFIGDIR ?= ${SRCDIR}/config
 
 # HEADERSDIR: The location of the compiled header files
-HEADERSDIR ?= ${SRCDIR}/libs
+HEADERSDIR ?= ${SRCDIR}/lib
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= ${SRCDIR}/libs
+LIBDIR ?= ${SRCDIR}/lib
 
 # DOCDIR: Source code documentation directory
 DOCDIR ?= ${SRCDIR}/doc
@@ -239,7 +236,7 @@ reallyclean: clean libclean
 ##
 
 depend: 
-	${OCAMLDEP} *.ml* > depend
+	${OCAMLDEP} *.mli *.ml > depend
 
 ifndef NODEPEND
 include depend

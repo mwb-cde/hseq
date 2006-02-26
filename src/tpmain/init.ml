@@ -48,12 +48,15 @@ let set_directorys ()=
    [starting_mesg()]: Print a Start Up message.
 *)
 let starting_mesg()=
-  Format.printf "@[<v>Starting up...@,@]"
+  Format.printf "@[<v>HSeq starting up...@,@]@."
 
 let load_init () = 
   let initfile=Settings.make_filename Settings.init_file
   in
-  Unsafe.use_file initfile
+  if (Sys.file_exists initfile)
+  then Unsafe.use_file initfile
+  else
+    Result.warning ("Can't find initialising file "^initfile)
 
 let init() = 
   starting_mesg(); 
