@@ -1071,7 +1071,14 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
 let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args)=
   let (id, ty) = dest_var f
   in 
-  let pprec = pplookup ppstate id
+  (* let pprec = pplookup ppstate id *)
+  let pprec = 
+    try Printer.get_record ppstate.Printer.terms id
+    with Not_found ->
+      (Printer.mk_record 
+	Printer.fun_app_prec
+	Printer.default_term_fixity 
+	None)
   in 
   let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
   in 
@@ -1149,11 +1156,16 @@ let rec print_term ppstate (assoc, prec) x =
 	   (assoc, prec) (f, args);
 	 Format.printf "@]")
       else 
-	(Format.printf "@[<hov 2>(";
+	(let (tassoc, tprec) = 
+	   (Printer.default_term_fixity, Printer.fun_app_prec)
+	in 
+	Format.printf "@[<hov 2>";
+	print_bracket (assoc, prec) (tassoc, tprec) "(";
 	 Printer.print_list
 	   (print_term ppstate (assoc, prec), Printer.print_space)
 	   (f::args);
-	 Format.printf ")@]")
+	print_bracket (assoc, prec) (tassoc, tprec) ")";
+	Format.printf "@]")
   | Qnt(q, body) -> 
       let (qnt, qvar, qtyp) = Basic.dest_binding q
       in 

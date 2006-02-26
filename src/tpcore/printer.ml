@@ -78,20 +78,20 @@ let default_type_fixity= Parserkit.Info.nonfix
 let fun_app_prec = 90
 
 (** Precedence of Quantifiers *)
+(*
 let prec_qnt q = 
   match q with 
     Lambda -> 110
   | All -> 100
   | Ex -> 100
   | _ -> 100
-(*
+*)
 let prec_qnt q = 
   match q with 
     Lambda -> 60
   | All -> 55
   | Ex -> 55
   | _ -> 55
-*)
 
 (** Associativity of Quantifiers *)
 let assoc_qnt q = 
