@@ -371,6 +371,9 @@ let allA ?info ?a trm sq =
   let af= first_asm_label a Formula.is_all sq
   in Logic.Tactics.allA ?info trm af sq
 
+let nameC = Logic.Tactics.nameC 
+let nameA = Logic.Tactics.nameA
+
 let instA0 ?info l trms goal =
   let info1 = mk_info ()
   and tag1 = Logic.label_to_tag l (sequent goal)

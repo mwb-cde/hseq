@@ -458,6 +458,12 @@ val allC : ?info:Logic.info -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.allC}. *)
 val allA : ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
 (** Entry point to {!Logic.Tactics.allA}. *)
+val nameC : 
+    ?info:Logic.info -> string -> Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.nameC}. *)
+val nameA : 
+    ?info:Logic.info -> string -> Logic.label -> tactic
+(** Entry point to {!Logic.Tactics.nameA}. *)
 
 val instA: ?info:Logic.info
   -> ?a:Logic.label -> Basic.term list -> tactic
@@ -490,7 +496,6 @@ val cut: ?info:Logic.info
    top-most variables of the theorem are instantiated with [trms]. 
    Entry point to {!Logic.Tactics.cut}. 
  *)
-
 
 val betaA: ?info:Logic.info -> Logic.label -> tactic 
 (**
@@ -528,7 +533,6 @@ val betaC: ?info:Logic.info -> Logic.label -> tactic
 
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
-
 
 val betaC_tac: ?info:Logic.info -> ?c:Logic.label -> tactic 
 (**
