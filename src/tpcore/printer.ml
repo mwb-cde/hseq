@@ -66,11 +66,11 @@ let fixity_to_string fx=
 	
 (** Default precedence, fixity and assoc *)
 
-let default_term_prec = 50
+let default_term_prec = 10
 let default_term_assoc = Parserkit.Info.non_assoc
 let default_term_fixity= Parserkit.Info.nonfix
 
-let default_type_prec = 50
+let default_type_prec = 10
 let default_type_assoc = Parserkit.Info.non_assoc
 let default_type_fixity= Parserkit.Info.nonfix
 
@@ -78,20 +78,20 @@ let default_type_fixity= Parserkit.Info.nonfix
 let fun_app_prec = 90
 
 (** Precedence of Quantifiers *)
-(*
 let prec_qnt q = 
   match q with 
     Lambda -> 110
   | All -> 100
   | Ex -> 100
   | _ -> 100
-*)
+(*
 let prec_qnt q = 
   match q with 
     Lambda -> 60
   | All -> 55
   | Ex -> 55
   | _ -> 55
+*)
 
 (** Associativity of Quantifiers *)
 let assoc_qnt q = 

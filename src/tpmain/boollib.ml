@@ -134,7 +134,11 @@ module PP =
 	 | _ -> raise (ParsingError "Error parsing if-then-else")))
 	
 
-    let ifthenelse_pprec = Printer.mk_record 50 Printer.nonfix None
+    let ifthenelse_pprec = 
+      let prec=Printer.default_term_prec
+      and fixity = Printer.default_term_fixity
+      in 
+      Printer.mk_record prec fixity None
 
     let init_ifthenelse_parser() = 
       Parser.add_symbol "if" (Sym(OTHER "IF"));
