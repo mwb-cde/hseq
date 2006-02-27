@@ -4,6 +4,9 @@
 # Should be called from an instance of Makefile.child
 #####
 
+# Load the OS commands
+# include Makefile.os
+
 ####
 # The variables to be set in Makefile.child
 ###
@@ -194,7 +197,7 @@ endif
 
 #doc: Generate the code documentation
 doc: ${DOCFILES}
-ifneq ($(strip ${DOCFILES}), "")
+ifneq ($(strip $(DOCFILES)), "")
 	${OCAMLDOC} ${DOCLOAD} ${DOCDUMP} \
 		${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} \
 		-d ${DOCDIR} ${DOCFILES}
@@ -206,11 +209,11 @@ endif
 
 # The standard library
 ${LIBFILE}: ${HEADERS} ${CODE}
-	$(foreach f,${LIBFILE},${OCAMLC} -o ${f} -a ${INCLUDE} ${CODE})
+	$(foreach f,$(LIBFILE),$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE))
 
 # The optimised library
 ${OPTLIB}: ${HEADERS} ${OPTCODE}
-	$(foreach f,${LIBFILE},${OCAMLOPT} -o ${f} -a ${INCLUDE} ${CODE})
+	$(foreach f,$(LIBFILE),$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE))
 
 
 ##
@@ -241,3 +244,4 @@ depend:
 ifndef NODEPEND
 include depend
 endif
+

@@ -1,4 +1,3 @@
-
 ###
 # Variables
 ###
@@ -81,22 +80,22 @@ LibDir ?=
 ThyDir ?= 
 
 # IBINFILE: The installed binary
-IBINFILE = $(strip ${BINFILE})
+IBINFILE = $(BINFILE)
 
 # IPREFIX: The installation prefix
-IPREFIX = $(strip ${Prefix})
+IPREFIX = $(Prefix)
 
 # IBINDIR: Installation binary directory
-IBINDIR = $(strip ${BinDir})
+IBINDIR = $(BinDir)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(strip ${BaseDir})
+IBASEDIR = $(BaseDir)
 
 # ILIBDIR: Installation library directory
-ILIBDIR = $(strip ${LibDir})
+ILIBDIR = $(LibDir)
 
 # ITHYDIR: Installation theory directory
-ITHYDIR = $(strip ${ThyDir})
+ITHYDIR = $(ThyDir)
 
 ##
 # Build commands
@@ -153,11 +152,11 @@ all: code
 
 .PHONY: code
 code: 
-	$(foreach subdir, ${SUBDIRS}, $(DMAKE) -C ${subdir} install;)
+	$(foreach subdir, $(SUBDIRS), $(DMAKE) -C $(subdir) install;)
 
 .PHONY: doc
 doc:
-	$(foreach subdir, ${SUBDIRS}, $(DMAKE) -C ${subdir} doc;)
+	$(foreach subdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
 
 
 ##
@@ -185,20 +184,20 @@ clean:
 	rm -f *.cmo
 	rm -f *.cmx  *.o
 	rm -f *~
-	$(foreach subdir, ${SUBDIRS}, $(MAKECLEAN) -C ${subdir} clean; )
+	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
 
 .PHONY: libclean
 libclean: 
 	rm -f *.cmi
 	rm -f *.cma *.cmxa
-	$(foreach subdir, ${SUBDIRS}, $(MAKECLEAN) -C ${subdir} libclean; )
+	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; )
 	$(MAKECLEAN) -C ${LIBDIR} libclean
 
 .PHONY: reallyclean
 reallyclean: 
 	rm -f hseq
 	rm -f depend
-	$(foreach subdir, ${SUBDIRS}, $(MAKECLEAN) -C ${subdir} reallyclean; )
+	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
 	$(MAKECLEAN) -C ${LIBDIR} reallyclean
 
 

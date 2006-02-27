@@ -1,12 +1,12 @@
 (*----
- Name: fm.ml
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
-----*)
+   Name: fm.ml
+   Author: M Wahab <mwahab@users.sourceforge.net>
+   Copyright M Wahab 2005
+   ----*)
 
 (* 
    Initialisation file loaded when the system starts.
-*)
+ *)
 
 (*#install_printer Term.simple_term_printer;;*)
 
@@ -26,21 +26,21 @@
 #install_printer Thydb.print;;
 
 (*
-let no_print_simpset (s:Simpset.simpset) = ();;
-#install_printer no_print_simpset;;
-*)
+   let no_print_simpset (s:Simpset.simpset) = ();;
+   #install_printer no_print_simpset;;
+ *)
 
 (*
-let simple_theory_print (thy:Theory.thy) =
-  Format.printf "@[<hov 2>Theory: %s,@ " (Theory.get_name thy);
-  Format.printf "@[Parents: @[<hov 2>";
-  Printer.print_sep_list (Format.print_string, ",") (Theory.get_parents thy);
-  Format.printf ".@]@]";;
+   let simple_theory_print (thy:Theory.thy) =
+   Format.printf "@[<hov 2>Theory: %s,@ " (Theory.get_name thy);
+   Format.printf "@[Parents: @[<hov 2>";
+   Printer.print_sep_list (Format.print_string, ",") (Theory.get_parents thy);
+   Format.printf ".@]@]";;
 
-#install_printer simple_theory_print;; 
-#install_printer Thydb.NameSet.print;; 
-#install_printer Term.print_simple;;
-*)
+   #install_printer simple_theory_print;; 
+   #install_printer Thydb.NameSet.print;; 
+   #install_printer Term.print_simple;;
+ *)
 
 open Goals;;
 open Tactics;;
