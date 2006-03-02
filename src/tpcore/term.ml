@@ -1165,7 +1165,7 @@ let rec print_term ppstate (assoc, prec) x =
 	   (print_term ppstate (assoc, prec), Printer.print_space)
 	   (f::args);
 	print_bracket (assoc, prec) (tassoc, tprec) ")";
-	Format.printf "@]")
+	Format.printf "@,@]")
   | Qnt(q, body) -> 
       let (qnt, qvar, qtyp) = Basic.dest_binding q
       in 
