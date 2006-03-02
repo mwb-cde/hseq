@@ -1161,9 +1161,9 @@ let rec print_term ppstate (assoc, prec) x =
 	in 
 	Format.printf "@[<hov 2>";
 	print_bracket (assoc, prec) (tassoc, tprec) "(";
-	 Printer.print_list
-	   (print_term ppstate (assoc, prec), Printer.print_space)
-	   (f::args);
+	print_prefix 
+	  (print_term ppstate, print_term ppstate) 
+	  (tassoc, tprec) (f, args);
 	print_bracket (assoc, prec) (tassoc, tprec) ")";
 	Format.printf "@,@]")
   | Qnt(q, body) -> 
