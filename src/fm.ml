@@ -4,9 +4,9 @@
    Copyright M Wahab 2005
    ----*)
 
-(* 
+(**
    Initialisation file loaded when the system starts.
- *)
+*)
 
 (*#install_printer Term.simple_term_printer;;*)
 
@@ -38,7 +38,7 @@ let no_print_simpset (s:Simpset.simpset) = ();;
    #install_printer simple_theory_print;; 
    #install_printer Thydb.NameSet.print;; 
    #install_printer Term.print_simple;;
- *)
+*)
 
 open Goals;;
 open Tactics;;

@@ -150,12 +150,27 @@ module type T =
       val (//) : 'a phrase -> 'a phrase -> 'a phrase
       val alt : ('b) phrase list -> ('b) phrase 
       val named_alt : 
-	  (string, 'a -> ('b)phrase) Lib.named_list 
+	  ('x, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
       val seq : ('b phrase) list -> ('b list)phrase
       val named_seq : 
-	  (string, 'a -> ('b)phrase) Lib.named_list 
+	  ('x, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b list)phrase)
+
+      val unop_prefix : 
+	('a -> 'b) -> ('c) phrase -> ('a) phrase
+	-> ('b) phrase
+      val unop_suffix : 
+	('a -> 'b) -> ('c) phrase -> ('a) phrase
+	-> ('b) phrase
+      val binop_left : 
+	('a -> 'a -> 'a) 
+	-> ('b) phrase -> ('a) phrase
+	-> ('a) phrase
+      val binop_right : 
+	('a -> 'a -> 'a) 
+	-> ('b) phrase -> ('a) phrase
+	-> ('a) phrase
 
       type token_info = 
 	  { 
@@ -265,12 +280,12 @@ module Make =
     let rec multiple ph toks=
       ((ph -- (repeat ph)) >> (fun (x, y) -> x::y)) toks
 
-    let list0 ph sep = 
+    let list0 ph sep toks = 
       (((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))
-     // empty) 
+     // empty) toks
 
-    let list1 ph sep =
-      ((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y))
+    let list1 ph sep toks =
+      ((ph -- (repeat (sep --% ph))) >> (fun (x, y) -> x::y)) toks
 
     let optional ph toks =
       try 
@@ -311,6 +326,78 @@ module Make =
 	[] -> raise (ParsingError "No parsers in sequence")
       | _ -> seq_aux phl [] inp
       
+(***
+* Operators 
+***)
+
+(** 
+    [unop_prefix f op ph]: Prefix unary operator.
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the argument.
+
+    [f]: The constructor for the resulting term.
+*)
+    let unop_prefix f op ph toks =
+      ((op -- ph) >> (fun (_, a) -> f a)) toks
+
+
+(** 
+    [unop_suffix f op ph]: Suffix unary operator.
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the argument.
+
+    [f]: The constructor for the resulting term.
+*)
+    let unop_suffix f op ph toks =
+      ((ph -- op) >> (fun (a, _) -> f a)) toks
+
+(** 
+    [binop_left f op ph]: Left associative binary operator 
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the arguments.
+
+    [f]: The constructor for the resulting term.
+*)
+    let binop_left f op ph toks = 
+      let pa ts = 
+	((ph -- repeat (op --% ph))
+	 >> (fun (x, rest) -> x::rest)) ts
+      in 
+	(pa >> 
+	   (fun args -> 
+	      match args with 
+		  (x::y::xs) -> List.fold_left f x (y::xs)
+		| _ -> raise (ParsingError "binop_left"))) toks
+
+(** 
+    [binop_right]: right associative binary operator 
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the arguments.
+
+    [f]: The constructor for the resulting term.
+*)
+    let binop_right f op ph toks = 
+      let pa ts = 
+	((ph -- repeat (op --% ph))
+	 >> (fun (x, rest) -> x::rest)) ts
+      in 
+	(pa >>
+	 (fun args -> 
+	    match (List.rev args) with 
+		(x::y::xs) -> 
+		  let cf y x = f x y
+		  in 
+		  List.fold_left cf x (y::xs)
+	      | _ -> raise (ParsingError "binop_right"))) toks
+
 
 (* operators (ph, info, binop, unaryop) inp: 
    precedence parsing of binary and unary operators.

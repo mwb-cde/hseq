@@ -59,3 +59,11 @@ val fresh_thm : Logic.thm -> bool
 (** 
    [fresh_thm th]: Test whether theorem [th] is fresh in the global scope. 
 *)
+
+val simp_beta_conv: Logic.conv
+(**
+   [simp_beta_conv scp t]: Apply {!Logic.Conv.beta_conv} to [t] if
+   [t] is of the form << (% x: F) a >>.
+   Raise [Failure] if [t] is not an application.
+*)
+

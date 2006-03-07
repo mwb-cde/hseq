@@ -303,7 +303,7 @@ let add_term_pp_rec n ppr thy=
   if not (get_protection thy)
   then 
     (if Lib.member n thy.defns
-    then thy.id_pps <- (Lib.insert n ppr thy.id_pps)
+    then thy.id_pps <- (Lib.insert (<) n ppr thy.id_pps)
     else raise (Result.error 
 		  ("No name "^n^" defined in theory "^(get_name thy))))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
@@ -323,7 +323,7 @@ let add_type_pp_rec n ppr thy=
   if not (get_protection thy)
   then 
     (if Lib.member n thy.typs
-    then thy.type_pps <- (Lib.insert n ppr thy.type_pps)
+    then thy.type_pps <- (Lib.insert (<) n ppr thy.type_pps)
     else raise (Result.error
 		  ("No type "^n^" defined in theory "^(get_name thy))))
   else raise (Result.error ("Theory "^(get_name thy)^" is protected"))

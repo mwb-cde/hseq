@@ -129,3 +129,17 @@ let apply_merge_list f ls =
 *)
 let fresh_thm th = Logic.is_fresh (Global.scope()) th
 
+
+
+(**
+   [simp_beta_conv scp t]: Apply {!Logic.Conv.beta_conv} to [t] if
+   [t] is of the form << (% x: F) a >>.
+   Raise [Failure] if [t] is not an application.
+*)
+let simp_beta_conv scp t =
+  match t with
+      Basic.App(Basic.Qnt(q, _), a) ->
+	if (Basic.binder_kind q = Basic.Lambda)
+	then Logic.Conv.beta_conv scp t
+	else failwith "simp_beta_conv"
+    | _ -> failwith "simp_beta_conv"

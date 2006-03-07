@@ -190,7 +190,7 @@ module type T =
 *)
 
       val named_alt : 
-	  (string, 'a -> ('b)phrase) Lib.named_list 
+	  ('x, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b)phrase)
 (**
    [named_alt inf phs]: Try each of the named parsers of [phs] in
@@ -205,13 +205,71 @@ module type T =
 *)
 
       val named_seq : 
-	  (string, 'a -> ('b)phrase) Lib.named_list 
+	  ('x, 'a -> ('b)phrase) Lib.named_list 
 	   -> ('a -> ('b list)phrase)
 (**
    [named_seq phs]: Apply each of the named parsers of [phs] in
    sequence, starting with the first and applying each to [inf], fail
    if any fails. Return the result of as a list.
 *)
+
+(** {5 Operators} *)
+
+val unop_prefix:
+  ('a -> 'b) -> ('c) phrase -> ('a) phrase
+  -> ('b) phrase
+(** 
+    [unop_prefix f op ph]: Prefix unary operator.
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the argument.
+
+    [f]: The constructor for the resulting term.
+*)
+
+val unop_suffix:
+  ('a -> 'b) -> ('c) phrase -> ('a) phrase
+  -> ('b) phrase
+(** 
+    [unop_suffix f op ph]: Suffix unary operator.
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the argument.
+
+    [f]: The constructor for the resulting term.
+*)
+
+
+val binop_left:
+  ('a -> 'a -> 'a) 
+  -> ('b) phrase -> ('a) phrase
+  -> ('a) phrase
+(** 
+    [binop_left f op ph]: Left associative binary operator 
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the arguments.
+
+    [f]: The constructor for the resulting term.
+*)
+
+val binop_right:
+  ('a -> 'a -> 'a) 
+  -> ('b) phrase -> ('a) phrase
+  -> ('a) phrase
+(** 
+    [binop_right]: right associative binary operator 
+
+    [op]: The parser for the operator.
+
+    [ph]: The parser for the arguments.
+
+    [f]: The constructor for the resulting term.
+*)
+
 
 (**
    [token_info]: Precedence and fixity information about tokens.  Used

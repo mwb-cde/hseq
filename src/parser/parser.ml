@@ -30,6 +30,7 @@ module Utility=
       ((!$ tok) >> (fun _ -> Term.mk_short_var (Lexer.string_of_token tok)))
     let (?%) tok =
       ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
+	
   end
 
 
@@ -367,9 +368,6 @@ module Grammars  =
     let comma_list ph toks=
       list0 ph (!$(Sym comma_sym)) toks
 
-	(*
-	   let listof ph toks=  repeat ph toks
-	 *)
 	
     let rec repeat_term ph term toks =
       (((ph -- (repeat_term ph term )) >> (fun (x, y) -> x ::y))
@@ -1545,9 +1543,6 @@ let add_token id sym fx pr=
   add_symbol sym (Sym (OTHER sym)); 
   (* parser information *)
   add_token_info (Sym(OTHER sym)) (Some(Ident.mk_name sym, fx, pr))
-(*
-  add_token_info (Sym(OTHER sym)) (Some(id, fx, pr))
-*)
 
 let remove_token sym=
   remove_symbol sym;
@@ -1668,10 +1663,6 @@ let init ()= init_tables ()
 
 let parse ph inp = Pkit.parse ph EOF inp
 
-(*
-let identifier_parser inp =
-  parse (Grammars.long_id Grammars.id (mk_info ())) inp
-*)
 let identifier_parser inp =
   parse (Grammars.long_id Grammars.id_relaxed (mk_info ())) inp
 
