@@ -214,7 +214,7 @@ let simpC_engine_tac cntrl ret chng l goal =
 (** 
    [simpA0_tac ret cntrl goal]: Simplify assumptions
 
-   Simplify each assumptions, starting with the last, adding it to the
+   Simplify each assumptions, starting with the first, adding it to the
    simpset rules after it is simplified.
 
    Doesn't clean-up.
@@ -268,7 +268,8 @@ let simpA0_tac cntrl ret ?a goal =
        (** Add conclusions to the simpset *)
        concls_tac ret;
        (** Simplify the targets *)
-       (fun g1 -> map_some (target_tac chng ret) (List.rev targets) g1)
+(*    (fun g1 -> map_some (target_tac chng ret) (List.rev targets) g1) *)
+       (fun g1 -> map_some (target_tac chng ret) targets g1) 
      ] g
   in
   let chng = ref false
@@ -478,8 +479,12 @@ let full_simp0_tac cntrl ret goal =
   let main_tac chng ret g = 
     seq_some
       [
+(*
        (** Simplify the assumptions (in reverse order) *)
-       map_some (asm_tac chng ret) (List.rev asms);
+       map_some (asm_tac chng ret) (List.rev asms); 
+*)
+       (** Simplify the assumptions *)
+       map_some (asm_tac chng ret) asms;
        (** Simplify the conclusions (in reverse order) *)
        (fun g1 -> 
 	 map_some (concl_tac chng ret) (List.rev concls) g1)
@@ -499,7 +504,7 @@ let full_simp0_tac cntrl ret goal =
    [full_simp0_tac ret cntrl goal]: Simplify subgoal
 
    {ul
-   {- Simplify each assumption, starting with the last, adding it to the
+   {- Simplify each assumption, starting with the first, adding it to the
    simpset rules after it is simplified.}
    {- Simplify each conclusion, starting with the last, adding it to the
    simpset rules after it is simplified.}}
