@@ -288,6 +288,12 @@ module Grammars :
       val error : string -> 'a phrase
 	  (** [error msg]: Fail, using [msg] as the error message  *)
 
+      val term_error : string -> 'a phrase
+	  (** [term_error msg]: Fail, using [msg] as the error message  *)
+
+      val type_error : string -> 'a phrase
+	  (** [type_error msg]: Fail, using [msg] as the error message  *)
+
       val comma_list: 'a phrase -> 'a list phrase
 	  (** [comma_list ph]: Parse a comma seperated list of phrases [ph] *)
 	  
