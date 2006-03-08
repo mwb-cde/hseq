@@ -340,7 +340,8 @@ val do_fact_rule :
   * (Basic.binders list * Basic.term option * Basic.term) 
   -> Logic.thm list
 (**
-   Convert [|- a] -> [|- a=true] and [|- c=>a] -> [|- c => a=true]
+   Convert [|- a] -> [|- a=true] 
+   and [|- c=>a] -> [|- c => a=true]; [| (c => a) = true ]
    and [|- c => false] -> [|- not c].
    Ignore [|- true] and [|- c=>true].
 *)
@@ -362,9 +363,10 @@ val do_neg_rule :
   * (Basic.binders list * Basic.term option * Basic.term) 
   -> Logic.thm list
 (**
-   Convert [|- not a] to [|- a=false] and [|- c=> not a] to [|- c=>
-   a=false] and [|- c=> not true ] to [|- not c] and [not (a or b)] to
-   [(not a) and (not b)].
+   Convert [|- not a] to [|- a=false] 
+   and [|- c=> not a] to [|- c=> a=false]; [|- (c=> not a)=true]
+   and [|- c=> not true ] -> [|- not c]
+   and [not (a or b)] -> [(not a) and (not b)].
 *)
 
 val do_neg_all_rule :
@@ -493,7 +495,7 @@ val solve_not_true_tac: Tag.t -> Tactics.tactic
     Convert [c=> not true] to [not c]
     and [not (a or b)] to [(not a) & (not b)]
     and [not a] to [a=false]
-    and [c=> not a] to [c=> a=false]
+    and [c=> not a] to [c=> a=false]; [ (c => not a) = true]
     pass [not (a=b)] and [c=>not(a=b)] to [neg_eq_asm]
     and solve  [not true |- C]
 
@@ -565,7 +567,7 @@ val fact_rule_asm :
 (**
    Convert [a] to [a=true]
    and [c=> false] to [(not c)]
-   and [c=> a] to [c => a=true]
+   and [c=> a] to [c => a=true]; [ (c=>a) = true ]
    pass [(a=b)] and [c=>(a=b)] to [eq_asm]
    and solve [false |- C].
 *)
@@ -584,7 +586,7 @@ val neg_eq_asm :
   -> Tactics.tactic
 (**
     Convert [not (a=b)] to [(a=b) = false] and [(b=a)=false]
-    and [c=>not (a=b)] to [c=>((a=b) = false)] and [c=>((b=a)=false)]
+    and [c=>not (a=b)] to [c=>((a=b) = false)]; [c=>((b=a)=false)]
 *)
 
 val neg_rule_asm :
@@ -595,7 +597,7 @@ val neg_rule_asm :
    Convert 
    and [c=> not true] to [not c]
    and [not a] to [a=false]
-   and [c=> not a] to [c=> a=false]
+   and [c=> not a] to [c=> a=false]; [(c => not a) = true}
    pass [not (a=b)] and [c=>not(a=b)] to [neg_eq_asm]
    and solve  [not true |- C]
 *)

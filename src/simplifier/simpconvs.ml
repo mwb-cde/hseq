@@ -556,7 +556,12 @@ and do_eq_rule ret (scp, thm, (qs, c, a)) =
  	    in
  	      single_thm_to_rules ret scp thm1
  	  else 
- 	    (simple_rewrite_rule scp (cond_rule_true_thm()) thm)::ret
+	    let thm1=
+ 	      simple_rewrite_rule scp (cond_rule_true_thm()) thm
+	    and thm2 =
+	      simple_rewrite_rule scp (rule_true_thm()) thm
+	    in 
+	      thm1::thm2::ret
     | _ -> failwith "do_fact_rule"
   else 
     do_eq_rule ret (scp, thm, (qs, c, a))
@@ -603,10 +608,13 @@ and do_neg_rule ret (scp, thm, (qs, c, a)) =
 	      (single_thm_to_rules ret scp thm1)
 	  else 
 	    if (Logicterm.is_equality (Term.rand a))
-	    then (* Convert |- not (a = b) and |- c=> not (a = b) *)
+	    then 
+	      (* Convert |- not (a = b) and |- c=> not (a = b) *)
 	      do_neg_eq_rule ret (scp, thm, (qs, c, a))
 	    else 
-	    (simple_rewrite_rule scp (cond_rule_false_thm()) thm)::ret
+	      let thm1 = simple_rewrite_rule scp (cond_rule_false_thm()) thm
+	      and thm2 = simple_rewrite_rule scp (rule_true_thm()) thm
+	      in thm1::thm2::ret
       | _ -> failwith "do_neg_rule"
   else failwith "do_neg_rule"
 
@@ -750,7 +758,7 @@ let solve_not_true_tac tg goal =
    [fact_rule_asm]: 
    convert |- a to |- a=true 
    and |- c=> false to |- (not c)
-   and |- c=> a to |- c => a=true
+   and |- c=> a to |- c => a=true; |- (c=>a) = true 
    pass [(a=b)] and [c=>(a=b)] to [eq_asm]
    and solve [false |- C]
 
@@ -882,7 +890,21 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
 	      single_asm_to_rule ret tg
 	    ] g
 	  else 
-	    asm_rewrite_add_tac ret (cond_rule_true_thm()) tg g
+	    let info = mk_info()
+	    in 
+	    seq
+	      [
+		copyA ~info:info (ftag tg);
+		(fun g1 -> 
+		   let atg = get_one ~msg:"neg_eq_asm" (aformulas info)
+		   in 
+		     seq
+		       [
+			 asm_rewrite_add_tac ret (cond_rule_true_thm()) tg;
+			 asm_rewrite_add_tac ret (rule_true_thm()) atg
+		       ] g1
+		)
+	      ]g
     | _ -> failwith "do_fact_asm"
   else eq_asm ret (tg, (qs, c, a)) g
 
@@ -900,7 +922,7 @@ and neg_eq_asm ret (tg, (qs, c, a)) g=
       seq
 	[
 	  copyA ~info:info (ftag tg);
-	  (fun g ->
+	  (fun g1 ->
 	     let atg = get_one ~msg:"neg_eq_asm" (aformulas info)
 	     in 
 	       seq 
@@ -910,7 +932,7 @@ and neg_eq_asm ret (tg, (qs, c, a)) g=
 		   add_asm_tac ret atg;
 		   qnt_asm_rewrite_tac (rule_false_thm()) tg;
 		   add_asm_tac ret tg
-		 ] g)
+		 ] g1)
 	] g
   else
     failwith "neg_eq_asm"
@@ -976,7 +998,23 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 		if Logicterm.is_equality b 
 		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else 
-		  asm_rewrite_add_tac ret (cond_rule_false_thm()) tg g
+		  let info = mk_info()
+		  in 
+		    seq
+		      [
+			copyA ~info:info (ftag tg);
+			(fun g1 -> 
+			   let atg = 
+			     get_one ~msg:"neg_rule_asm" (aformulas info)
+			   in 
+			     seq
+			       [
+				 asm_rewrite_add_tac ret 
+				   (cond_rule_false_thm()) tg;
+				 asm_rewrite_add_tac ret
+				   (rule_true_thm()) atg
+			       ] g1)
+		      ] g
 	| _ -> failwith "neg_rule_asm"
   else failwith "neg_rule_asm"
 
