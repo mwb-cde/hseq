@@ -184,7 +184,7 @@ module PP=
       (try (e a)
       with 
 	Pkit.ParsingError x ->
-	  raise (Result.error ("Parsing error: "^x))
+	  raise (Result.error x)
       | Lexer.Lexing _ -> raise (Result.error ("Lexing error: "^a)))
 
     let overload_lookup s = 

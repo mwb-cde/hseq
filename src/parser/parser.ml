@@ -352,6 +352,39 @@ module Grammars  =
  *)
     let message m _ =  raise (ParsingError m)
 
+    let parse_error ?(msg="") f inp = 
+      let test x = true
+      in
+      let getn n inp = 
+	let rec get_aux n toks l = 
+	  if n = 0 then List.rev l
+	  else 
+	    try
+	      (let token, toks1 = get test (fun x -> x) toks
+	       in 
+		 if Lexer.match_tokens Lexer.eof_tok token
+		 then List.rev l
+		 else get_aux (n-1) toks1 (token::l))
+	    with _ -> List.rev l
+	in 
+	  get_aux n inp []
+      in 
+      let token_list = getn 5 inp
+      in 
+      let string = Lib.list_string f " " token_list
+      in 
+	raise (ParsingError (msg^"["^string^"]"))
+
+    let error msg inp = 
+      parse_error ~msg:msg string_of_token inp 
+
+    let type_error msg inp
+	= error ("Syntax error in type: "^msg) inp
+
+    let term_error msg inp
+	= error ("Syntax error in term: "^msg) inp
+
+(*
     let error ?msg inp =  
       let str=
 	match msg with None -> ""
@@ -364,6 +397,7 @@ module Grammars  =
 	  (ParsingError
 	     ("error at "^(string_of_token tok)^str))
       with _ -> raise (ParsingError str)
+*)
 
     let comma_list ph toks=
       list0 ph (!$(Sym comma_sym)) toks
@@ -426,17 +460,17 @@ module Grammars  =
 	| _ -> 
 	    (match (get_info x) with
 	      Some(name, _, _) -> name
-	    | _ ->  raise (ParsingError "(id) Not an identifier"))
+	    | _ -> error "Not an identifier" inp)
       in 
       try Pkit.get comp mk inp
-      with No_match -> raise (ParsingError "(id) Not an identifier")
+      with No_match -> error "Not an identifier" inp
 
 
-	  (**
-	     [id_strict info inp]
-	     String identifier parser.
-	     matches possibly qualified identifiers only
-	   *)   
+    (**
+       [id_strict info inp]
+       String identifier parser.
+       matches possibly qualified identifiers only
+    *)   
     let id_strict info inp =
       let comp x= 
 	match x with 
@@ -445,10 +479,10 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  ID(s) -> s
-	| _ -> raise (ParsingError "Not an identifier")
+	| _ -> error "Not an identifier" inp
       in 
       try Pkit.get comp mk inp
-      with No_match -> raise (ParsingError "Not an identifier")
+      with No_match -> error "Not an identifier" inp
 
 
 	  (**
@@ -466,10 +500,10 @@ module Grammars  =
 	match x with 
 	  ID(s) -> s
 	| Sym(OTHER x) -> (Ident.mk_name x)
-	| _ -> raise (ParsingError "Not an identifier")
+	| _ -> error "Not an identifier" inp
       in 
       try Pkit.get comp mk inp
-      with No_match -> raise (ParsingError "Not an identifier")
+      with No_match -> error "Not an identifier" inp
 
 
 	  (** [named_id info idparser name inp]
@@ -481,9 +515,10 @@ module Grammars  =
        (fun x -> 
 	 if(x=name) then x 
 	 else 
-	   raise (ParsingError ("Expected identifier "
+	   error 
+	     ("Expected identifier "
 				^(Ident.string_of name)^" but got "
-				^(Ident.string_of x)))))
+				^(Ident.string_of x)) inp))
 	inp
 
 	(**
@@ -491,12 +526,12 @@ module Grammars  =
 	   Parse a short (unqualified) identifier, using parser [idparser inf].
 	 *)
     let short_id idparser inf toks =
-      ((idparser inf >> 
+      (idparser inf >> 
 	(fun x -> 
 	  match (Ident.dest x) with 
 	    ("", s) -> s 
-	  | _ -> raise (ParsingError "Not a short identifier"))) 
-	 toks)
+	  | _ -> error "Not a short identifier" toks))
+	 toks
 
 	(**
 	   [long_id idparser inf toks]
@@ -506,7 +541,7 @@ module Grammars  =
       (idparser inf >> 
        (fun x -> 
 	 match (Ident.dest x) with 
-	   (_, "") -> raise (ParsingError "Badly formed identifier")
+	   (_, "") -> error "Badly formed identifier" toks
 	 | _ -> x))
 	toks
 
@@ -563,10 +598,10 @@ module Grammars  =
 			^" is not a unary type constructor"))
 
 
-		(** 
-		   [type_id info inp] 
-		   Read an identifier for the type parser.
-		   Take into account that symbol -> should be 
+    (** 
+	[type_id info inp] 
+	n	Read an identifier for the type parser.
+	Take into account that symbol -> should be 
 		   treated as an identifer 
 		 *)
     let type_id info inp =
@@ -590,7 +625,7 @@ module Grammars  =
 	    | _ ->  failwith "parser: id.")
       in 
       try Pkit.get comp mk inp
-      with No_match -> raise (ParsingError "(id) Not an identifier")
+      with No_match -> type_error "Not an identifier" inp
 
 	  (** 
 	     [primed_id inf]
@@ -604,10 +639,10 @@ module Grammars  =
       and mk x =
 	match x with 
 	  PrimedID s -> get_type s inf
-	| _ -> failwith "parser: expected type variable"
+	| _ -> type_error "Expected type variable" toks
       in 
       try Pkit.get comp mk toks
-      with No_match -> raise (ParsingError "expected type variable")
+      with No_match -> type_error "Expected type variable" toks
 
 	  (**
 	     [bool_type info]: Parse type "bool"
@@ -616,7 +651,7 @@ module Grammars  =
       try 
 	((named_id info type_id (Ident.mk_name "bool"))
 	   >> (fun _ -> Logicterm.mk_bool_ty())) toks
-      with No_match -> raise (ParsingError "Not a boolean type")
+      with No_match -> type_error "Not a boolean type" toks
 
 	  (**
 	     [num_type info]
@@ -626,7 +661,7 @@ module Grammars  =
       try 
 	((named_id info type_id (Ident.mk_name "num"))
 	   >> (fun _ -> Logicterm.mk_num_ty())) toks
-      with No_match -> raise (ParsingError "Not a number type")
+      with No_match -> type_error "Not a number type" toks
 
 
   (** 
@@ -649,7 +684,7 @@ module Grammars  =
 		  mk_type_binary_constr inf, mk_type_unary_constr inf) toks) 
     and atomic_types inf toks =
       (((type_parsers inf) 
-	  // error ~msg:"unknown construct in type")
+	  // type_error "")
 	 toks)
 	(*
 	   Core Type Parsers:
@@ -746,9 +781,6 @@ module Grammars  =
 		  Term.mk_typed_var name fty
 		in 
 		Term.mk_comb f [x; y])
-(*
-  	      (fun x y -> Term.mk_fun name [x; y])
-*)
   	  | _ ->
   	      raise (ParsingError ((string_of_tok t)
   				   ^" is not a connective"))
@@ -849,7 +881,7 @@ module Grammars  =
 	| _ -> failwith "parser: number"
       in 
       try get comp mk inp
-      with No_match -> raise (ParsingError "Not a number")
+      with No_match -> term_error "Not a number" inp
 
   (** [boolean]: Read a boolean constant. *)
     let boolean inp = 
@@ -857,10 +889,10 @@ module Grammars  =
       and mk x = 
 	match x with 
 	  BOOL b -> b
-	| _ -> failwith "parser: boolean"
+	| _ -> term_error "Not a boolean" inp
       in 
       try get comp mk inp
-      with No_match -> raise (ParsingError "Not a boolean")
+      with No_match -> term_error "Not a boolean" inp
 
 	  (** 
 	     [optional_type inf]: Parse an optional type.
@@ -945,7 +977,7 @@ module Grammars  =
     and
 	primary inf toks = 
       ((term_parsers inf)
-	 // (error ~msg:"unknown construct in term")) toks
+	 // (term_error "")) toks
 
 
 (** [term_parsers_list] 
@@ -1149,13 +1181,13 @@ module Grammars  =
 	   -- (args_opt inf))
 	  >> 
 	(fun ((n, t), args) -> (n, t), args))
-	 // error ~msg:"badly formed identifier for definition")
+	 // error "Badly formed identifier for definition")
 	toks
     and args_opt inf= 
       (((optional (repeat (id_type_opt (short_id id_strict) inf)))
 	  -- (!$(mk_symbol Logicterm.equalssym)))
 	 >> (fun (x, _) -> match x with None -> [] | Some l -> l))
-	// error ~msg:"badly formed argument list for definition"
+	// error "Badly formed argument list for definition"
     and defn inf toks =
       (
        ((((lhs inf) >> 
@@ -1168,7 +1200,6 @@ module Grammars  =
 	  let args = qnt_remove_bound_names inf arg_ns
 	  in 
 	  ((n, args), r))))
-(*	 // (error ~msg:"Badly formed definition")) *)
 	toks
 
   end

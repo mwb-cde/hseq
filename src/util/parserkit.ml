@@ -228,8 +228,9 @@ module Make =
 
     let error ?msg tok_to_str inp =  
       let str=
-	match msg with None -> ""
-	| Some(m) -> (": "^m)
+	match msg with 
+	    None -> ""
+	  | Some(m) -> (": "^m)
       in 
       try 
 	let tok, _ = next_token inp
