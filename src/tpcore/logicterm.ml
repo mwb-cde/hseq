@@ -263,6 +263,50 @@ let beta_conv t =
       else raise (term_error "Can't apply beta-reduction" [t])
   | _ -> raise (term_error "Can't apply beta-reduction" [t])
 
+
+let beta_reduce trm =
+  let rec beta_aux t env =
+    match t with
+	App(f, a) -> 
+	  let (na, achng) = beta_aux a env
+	  in 
+	    if is_lambda f 
+	    then
+	      let (q, b) = dest_qnt f
+	      in 
+	      let env1 = bind (Bound q) na env
+	      in 
+	      let (nb, _) = beta_aux b env1
+	      in 
+		(nb, true)
+	    else
+	      let (nf, fchng) = beta_aux f env
+	      in 
+		if fchng && (is_lambda nf)
+		then 
+		  beta_aux (App(nf, na)) env
+		else 
+		  (App(nf, na), achng || fchng)
+      | Qnt(q, b) -> 
+	  let nb, chng = beta_aux b env
+	  in 
+	    (Qnt(q, nb), chng)
+      | Typed(tr, ty) -> 
+	  let ntr, chng = beta_aux tr env
+	  in 
+	    (Typed(ntr, ty), chng)
+      | Bound(q) -> 
+	  (try (Term.find t env, true)
+	   with Not_found -> (t, false))
+      | x -> (x, false)
+  in
+  let (nt, chng) = beta_aux trm (Term.empty_subst())
+  in 
+    if chng then nt 
+    else
+      raise (Result.error "beta_reduce: No change")
+
+(*
 let beta_reduce t = 
   let rec beta_reduce_aux chng t =
     match t with
@@ -278,6 +322,7 @@ let beta_reduce t =
   in let flag = ref false
   in let nt = beta_reduce_aux flag t
   in if !flag then nt else raise (Result.error "No change")
+*)
 
 (*** Eta-abstraction ***)
 
@@ -394,10 +439,6 @@ let gen_term bs trm =
       Basic.Bound _ -> get_bound t
     | Basic.Free _ -> get_free t
     | Basic.Qnt(q, body) -> 
-	let qnts1 = qnts
-	and known1 = Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known
-	and vars1 = vars
-	in 
 	let (body1, qnts1, known1, vars1) = 
 	  gen_aux qnts (Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known)
 	    vars body
