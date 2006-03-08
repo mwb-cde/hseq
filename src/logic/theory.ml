@@ -557,6 +557,11 @@ and print_files ps =
 	 (fun _ -> Format.printf "@ ")) ps);
   Format.printf "@]@,"
 and print_thms pp n ths = 
+  let sorted_ths = 
+    let comp (x, _) (y, _) = compare x y
+    in 
+      List.sort comp ths
+  in 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -566,9 +571,14 @@ and print_thms pp n ths =
       Format.printf "@ ";
       Logic.print_thm pp t.thm;
       Format.printf "@]"),
-     (fun _ -> ())) ths;
+     (fun _ -> ())) sorted_ths;
   Format.printf "@]@,"
 and print_tydefs pp n tys = 
+  let sorted_tys = 
+    let comp (x, _) (y, _) = compare x y
+    in 
+      List.sort comp tys
+  in 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -590,9 +600,14 @@ and print_tydefs pp n tys =
      	  (Format.printf "=@,";
 	  Gtypes.print pp gty));
       Format.printf "@]"),
-     (fun _ -> ())) tys;
+     (fun _ -> ())) sorted_tys;
   Format.printf "@]@,"
 and print_defs pp n defs = 
+  let sorted_defs = 
+    let comp (x, _) (y, _) = compare x y
+    in 
+      List.sort comp defs
+  in 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -607,7 +622,7 @@ and print_defs pp n defs =
       | Some(df) ->
 	  Logic.print_thm pp df);
       Format.printf "@]"),
-     (fun _ -> ())) defs;
+     (fun _ -> ())) sorted_defs;
   Format.printf "@]@,"
 
 let print_term_pps n pps = 
@@ -629,6 +644,11 @@ let print_term_pps n pps =
 	  Printer.print_ident id;
 	  Format.printf "@]@]@ "
   in 
+  let sorted_pps = 
+    let comp (x, _) (y, _) = compare x y
+    in 
+      List.sort comp pps
+  in 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -642,10 +662,15 @@ let print_term_pps n pps =
 	(Printer.fixity_to_string r.Printer.fixity);
       print_pos p; 
       Format.printf "@]"),
-     (fun _ -> ())) pps;
+     (fun _ -> ())) sorted_pps;
   Format.printf "@]@,"
 
 let print_type_pps n pps = 
+  let sorted_pps = 
+    let comp (x, _) (y, _) = compare x y
+    in 
+      List.sort comp pps
+  in 
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -658,7 +683,7 @@ let print_type_pps n pps =
       Format.printf "fixity = %s@ "
 	(Printer.fixity_to_string r.Printer.fixity);
       Format.printf "@]"),
-     (fun _ -> ())) pps;
+     (fun _ -> ())) sorted_pps;
   Format.printf "@]@,"
 
 let print ppstate thy = 

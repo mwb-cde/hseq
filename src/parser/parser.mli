@@ -273,14 +273,14 @@ module Grammars :
 	   *)
 
       val mk_type_token_info : token_table -> Lexer.tok -> Pkit.token_info
-	  (**
+	(**
 	     [mk_type_token_info x] Extract the precedence and fixity
-	     information from type token [x], if any. If not, return the
-	     default type fixity and precedence.  Used with the Parserkit.operator
-	     parser.
+	     information from type token [x], if any. If not, return
+	     the default type fixity and precedence.  Used with the
+	     Parserkit.operator parser.
 	   *)
 
-	  (** {5 Utility parsers} *)
+	   	  (** {5 Utility parsers} *)
 
       val message : string -> 'a phrase
 	  (** [message m]: Fail, raising [ParsingError m]  *)
