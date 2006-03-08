@@ -421,17 +421,25 @@ module Grammars :
 
       val type_parsers_list : 
 	  (string, infotyp -> (Basic.gtype phrase)) Lib.named_list ref
-	  (** 
-	     A record of the type parsers used by {!Parser.Grammars.inner_types}.
-	     Can be extended with user-defined parsers.
+	  (**
+	     A record of the type parsers used by
+	     {!Parser.Grammars.inner_types}.  Can be extended with
+	     user-defined parsers.
 	   *)
 
       val type_parsers : infotyp -> Basic.gtype phrase
-	  (** The parser made from {!Parser.Grammars.inner_types}) *)
+	(** The parser made from {!Parser.Grammars.inner_types}) *)
 	  
       val types : infotyp -> Basic.gtype phrase
 	  (** The main type parser. *)
 
+      val core_type_parsers : 
+	   (string, infotyp -> (Basic.gtype phrase)) Lib.named_list
+	   (** The built-in type parsers *)
+	   
+      val init_type_parsers: unit -> unit
+	(** Initialise the type parsers *)
+	   
 (** {7 Support for adding parsers} 
 
    Functions to add to and remove from the list of type parsers
@@ -595,6 +603,14 @@ module Grammars :
       val primary : infotyp -> Basic.term phrase
 	  (** Parser for the atomic terms *)
 	  
+      val core_term_parser_list : 
+	(string, infotyp -> (Basic.term phrase)) Lib.named_list
+	(** The built-in term parsers *)
+	   
+      val init_term_parsers: unit -> unit
+	(** Initialise the term parsers *)
+
+	   
 	  (** {7 Support functions} *)
 	  
       val add_parser: 
@@ -987,6 +1003,9 @@ val print_overloads: Printer.ppinfo -> unit
 (** Print the overloads table. *)
 
 (** {5 Initialising functions} *)
+
+val init_parsers : unit -> unit
+(** Initialise the type and term parsers *)
 
 val init : unit -> unit
 (** 

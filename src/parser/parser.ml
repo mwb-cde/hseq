@@ -371,7 +371,10 @@ module Grammars  =
       in 
       let token_list = getn 5 inp
       in 
-      let string = Lib.list_string f " " token_list
+      let string = 
+	match token_list with
+	    [] -> "<end of input>"
+	  | _ -> Lib.list_string f " " token_list
       in 
 	raise (ParsingError (msg^"["^string^"]"))
 
@@ -463,7 +466,9 @@ module Grammars  =
 	    | _ -> error "Not an identifier" inp)
       in 
       try Pkit.get comp mk inp
-      with No_match -> error "Not an identifier" inp
+      with 
+	  No_match -> error "Not an identifier" inp
+	| _ -> error "Not an identifier" inp
 
 
     (**
@@ -483,6 +488,7 @@ module Grammars  =
       in 
       try Pkit.get comp mk inp
       with No_match -> error "Not an identifier" inp
+	| _ -> error "Not an identifier" inp
 
 
 	  (**
@@ -504,6 +510,7 @@ module Grammars  =
       in 
       try Pkit.get comp mk inp
       with No_match -> error "Not an identifier" inp
+	| _ -> error "Not an identifier" inp
 
 
 	  (** [named_id info idparser name inp]
@@ -626,6 +633,7 @@ module Grammars  =
       in 
       try Pkit.get comp mk inp
       with No_match -> type_error "Not an identifier" inp
+	| _ -> type_error "Not an identifier" inp
 
 	  (** 
 	     [primed_id inf]
@@ -643,6 +651,7 @@ module Grammars  =
       in 
       try Pkit.get comp mk toks
       with No_match -> type_error "Expected type variable" toks
+	| _ -> type_error "Expected type variable" toks
 
 	  (**
 	     [bool_type info]: Parse type "bool"
@@ -651,7 +660,7 @@ module Grammars  =
       try 
 	((named_id info type_id (Ident.mk_name "bool"))
 	   >> (fun _ -> Logicterm.mk_bool_ty())) toks
-      with No_match -> type_error "Not a boolean type" toks
+      with _ -> type_error "Not a boolean type" toks
 
 	  (**
 	     [num_type info]
@@ -661,7 +670,7 @@ module Grammars  =
       try 
 	((named_id info type_id (Ident.mk_name "num"))
 	   >> (fun _ -> Logicterm.mk_num_ty())) toks
-      with No_match -> type_error "Not a number type" toks
+      with _ -> type_error "Not a number type" toks
 
 
   (** 
@@ -689,7 +698,25 @@ module Grammars  =
 	(*
 	   Core Type Parsers:
 	 *)
-    and core_type_parsers = 
+    and 
+	type_parsers_list = ref []
+	(**
+	   [type_parsers inf]
+	   Try each of the parsers in the list 
+	   [type_parsers_list].
+	 *)
+    and 
+	type_parsers inf toks = 
+      named_alt (!type_parsers_list) inf toks
+
+	(**
+	   [types inf]
+	   Toplevel for the type parser.
+	 *)
+    let rec types inf toks = 
+      (clear_type_names inf; inner_types inf toks)
+	
+    let core_type_parsers = 
       [
        "primed_id", primed_id;
        "num_type", num_type;
@@ -711,27 +738,8 @@ module Grammars  =
 	 ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
 	    >> (fun x -> fst (snd x))))
      ]
-(**
-   Support for adding type parsers.
- *)
-    and 
-	type_parsers_list  =  ref core_type_parsers
-	(**
-	   [type_parsers inf]
-	   Try each of the parsers in the list 
-	   [type_parsers_list].
-	 *)
-    and 
-	type_parsers inf toks = 
-      named_alt (!type_parsers_list) inf toks
 
-	(**
-	   [types inf]
-	   Toplevel for the type parser.
-	 *)
-    let rec types inf toks = 
-      (clear_type_names inf; inner_types inf toks)
-	
+    let init_type_parsers () = type_parsers_list := core_type_parsers
 (**
    Support for adding type parsers.
  *)
@@ -882,6 +890,7 @@ module Grammars  =
       in 
       try get comp mk inp
       with No_match -> term_error "Not a number" inp
+	| _ -> term_error "Not a number" inp
 
   (** [boolean]: Read a boolean constant. *)
     let boolean inp = 
@@ -893,6 +902,7 @@ module Grammars  =
       in 
       try get comp mk inp
       with No_match -> term_error "Not a boolean" inp
+	| _ -> term_error "Not a boolean" inp
 
 	  (** 
 	     [optional_type inf]: Parse an optional type.
@@ -983,13 +993,20 @@ module Grammars  =
 (** [term_parsers_list] 
    list of term parsers.
  *)
-    and 
-	term_parsers_list  = ref core_term_parser_list
+    and term_parsers_list  = ref []
+(**
+   [term_parsers inf tok]
+   parse using parsers in [term_parsers_list].
+ *)
+    and term_parsers inf toks = 
+      named_alt (!term_parsers_list) inf toks
+
+
 (**
    [core_term_parser_list]
    The primary term parsers are stored in a named list.
  *)
-    and core_term_parser_list = 
+    let core_term_parser_list = 
       [ 
 	(* id '(' id ':' type ')' *)
 	"identifier", term_identifier;
@@ -1050,12 +1067,8 @@ module Grammars  =
 	     qnt_term_remove_names inf xs body)))
       ]
 
-(**
-   [term_parsers inf tok]
-   parse using parsers in [term_parsers_list].
- *)
-    and term_parsers inf toks = 
-      named_alt (!term_parsers_list) inf toks
+    (** [init_term_parsers]: Initilalise the term parsers *)
+    let init_term_parsers () = term_parsers_list := core_term_parser_list
 
 (***
    Support functions
@@ -1685,7 +1698,11 @@ let init_tables ()=
   init_token_table();
   init_overload()
 
-let init ()= init_tables ()
+let init_parsers () = 
+  Grammars.init_type_parsers();
+  Grammars.init_term_parsers()
+
+let init ()= init_tables (); init_parsers()
 
 (**
    Parsers
