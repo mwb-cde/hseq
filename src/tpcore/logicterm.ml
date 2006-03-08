@@ -264,7 +264,7 @@ let beta_conv t =
   | _ -> raise (term_error "Can't apply beta-reduction" [t])
 
 
-let beta_reduce trm =
+let safe_beta_reduce trm =
   let rec beta_aux t env =
     match t with
 	App(f, a) -> 
@@ -306,23 +306,64 @@ let beta_reduce trm =
     else
       raise (Result.error "beta_reduce: No change")
 
-(*
-let beta_reduce t = 
-  let rec beta_reduce_aux chng t =
+let beta_reduce trm =
+  let rebuild_app t l = mk_comb t l
+  in 
+  let rec beta_app t env args = 
     match t with
-      App(f, a) -> 
-	(let nf= beta_reduce_aux chng f
-	and na = beta_reduce_aux chng a
-	in 
-	(try (let nt=beta_conv (App(nf, na)) in chng:=true; nt)
-	with _ -> (App(nf, na))))
-    |	Qnt(q, b) -> Qnt(q, beta_reduce_aux chng b)
-    |	Typed(tr, ty) -> Typed(beta_reduce_aux chng tr, ty)
-    |	x -> x
-  in let flag = ref false
-  in let nt = beta_reduce_aux flag t
-  in if !flag then nt else raise (Result.error "No change")
-*)
+	App(f, a) ->
+	  let (na, achng) = beta_aux a env
+	  in 
+	  let nt, tchng = 
+	    beta_app f env (na::args)
+	  in
+	    (nt, achng || tchng)
+      | Qnt(q, b) -> 
+	  if (not (args = []) && (is_lambda t))
+	  then 
+	    let na, nargs = List.hd args, List.tl args
+	    in 
+	    let env1 = bind (Bound q) na env
+	    in 
+	    let (nb, _) = beta_app b env1 nargs
+	    in 
+	      (nb, true)
+	  else 
+	    let nt, tchng = beta_aux t env
+	    in 
+	      (rebuild_app nt args, tchng)
+      | _ -> 
+	  let nt, tchng = beta_aux t env
+	  in 
+	    (rebuild_app nt args, tchng)
+  and beta_aux t env =
+    match t with
+	App(f, a) -> 
+	  let (na, achng) = beta_aux a env
+	  in 
+	  let nt, tchng = 
+	    beta_app f env [na]
+	  in
+	    (nt, achng || tchng)
+      | Qnt(q, b) -> 
+	  let nb, chng = beta_aux b env 
+	  in 
+	    (Qnt(q, nb), chng)
+      | Typed(tr, ty) -> 
+	  let ntr, chng = beta_aux tr env 
+	  in 
+	    (Typed(ntr, ty), chng)
+      | Bound(q) -> 
+	  (try (Term.find t env, true)
+	   with Not_found -> (t, false))
+      | x -> (x, false)
+  in
+  let (nt, chng) = beta_aux trm (Term.empty_subst())
+  in 
+    if chng then nt 
+    else
+      raise (Result.error "beta_reduce: No change")
+
 
 (*** Eta-abstraction ***)
 
