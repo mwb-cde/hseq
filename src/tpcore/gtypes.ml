@@ -598,6 +598,31 @@ let rec quick_well_defined scp cache t =
     Constr(n, args) ->
       let nargs=List.length args
       in
+	(match Lib.try_find (Hashtbl.find cache) (n, nargs) with
+	    Some _ -> List.iter (quick_well_defined scp cache) args
+	  | None -> 
+	      (match Lib.try_find (get_typdef scp) n with
+		   Some(recrd) ->
+		     if nargs=(List.length recrd.Scope.args)
+		     then 
+		       (Hashtbl.add cache (n, nargs) true ; 
+			List.iter (quick_well_defined scp cache) args)
+		     else raise 
+		       (Invalid_argument 
+			  ("quick_well_defined: "^(string_gtype t)))
+		 | None -> 
+		     raise (Invalid_argument 
+			      ("quick_well_defined, not found: "
+			       ^(Ident.string_of n)
+			       ^" in "^(string_gtype t)))))
+    | x -> ()
+
+(*
+let rec quick_well_defined scp cache t =
+  match t with 
+    Constr(n, args) ->
+      let nargs=List.length args
+      in
       (try
 	(Hashtbl.find cache (n, nargs) ;
 	 List.iter (quick_well_defined scp cache) args)
@@ -615,7 +640,8 @@ let rec quick_well_defined scp cache t =
 	  raise (Invalid_argument 
 		   ("quick_well_defined, not found: "
 		      ^(Ident.string_of n)^" in "^(string_gtype t)))))
-  |	x -> ()
+  | x -> ()
+*)
 
 
 (**

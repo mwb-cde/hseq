@@ -414,7 +414,8 @@ let new_thy_scope thy scp=
 
 (** Make a theory from a saved theory. *)
 let from_saved scp sthy = 
-  let unsave f xs = Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
+  let unsave f xs = 
+    Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
   in 
   let name = sthy.sname
   in 

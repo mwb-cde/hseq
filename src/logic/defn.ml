@@ -70,13 +70,16 @@ let rec mk_all_from_list scp b qnts =
       raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
   | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
-let mk_defn scp (name, nty) args rhs = 
+let mk_defn scp (name, namety) args rhs = 
 (*
   let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
   in 
 *)
+  let nty = Gtypes.set_name scp namety
+  in 
   let lhs = Term.mk_comb (Term.mk_typed_var name nty) args
-  in let ndn0 = 
+  in 
+  let ndn0 = 
     mk_all_from_list scp 
       (Logicterm.mk_equality lhs rhs)  
       (List.rev args) 
@@ -89,8 +92,9 @@ let mk_defn scp (name, nty) args rhs =
   in 
   let tenv1=Typing.typecheck_top nscp tenv ndn (Logicterm.mk_bool_ty())
   in 
-  (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
-   (Formula.make nscp (Term.retype tenv ndn)))
+  let nty1 = Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty
+  in 
+  (name, nty1, (Formula.make nscp (Term.retype tenv ndn)))
 
 (*
 let mk_defn scp name args rhs = 
