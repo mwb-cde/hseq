@@ -580,6 +580,10 @@ let match_rewrite scp tyenv qntenv rl trm =
  *)
 let find_basic ret data rl trm goal=
   let (cntrl, tyenv, qntenv) = data
+(*
+  let (cntrl, _, qntenv) = data
+  and tyenv = typenv_of goal 
+*)
   in 
   let (qs, c, lhs, rhs, order, thm)= rl
   and scp=scope_of goal

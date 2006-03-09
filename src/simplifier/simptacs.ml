@@ -268,8 +268,8 @@ let simpA0_tac cntrl ret ?a goal =
        (** Add conclusions to the simpset *)
        concls_tac ret;
        (** Simplify the targets *)
-(*    (fun g1 -> map_some (target_tac chng ret) (List.rev targets) g1) *)
-       (fun g1 -> map_some (target_tac chng ret) targets g1) 
+(*       (fun g1 -> map_some (target_tac chng ret) (List.rev targets) g1) *)
+       (fun g1 -> map_some (target_tac chng ret) targets g1)  
      ] g
   in
   let chng = ref false

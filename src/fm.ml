@@ -28,6 +28,9 @@
 let no_print_simpset (s:Simpset.simpset) = ();;
 #install_printer no_print_simpset;;
 
+let no_print_termnet (_:('a)Net.net) = ();;
+#install_printer no_print_termnet;;
+
 (*
    let simple_theory_print (thy:Theory.thy) =
    Format.printf "@[<hov 2>Theory: %s,@ " (Theory.get_name thy);
