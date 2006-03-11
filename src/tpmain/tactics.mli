@@ -402,6 +402,15 @@ val copyA : ?info:Logic.info -> Logic.label -> tactic
 val copyC : ?info:Logic.info -> Logic.label -> tactic
 (** Copy a conclusion. *)
 
+val liftA : ?info:Logic.info -> Logic.label -> tactic
+(** 
+    [liftA a]: Lift assumption [a] to the top of the list.
+ *)
+val liftC : ?info:Logic.info -> Logic.label -> tactic
+(** 
+    [liftC a]: Lift conclusion [a] to the top of the list.
+ *)
+
 val lift : ?info:Logic.info -> Logic.label -> tactic
 (** 
    Move a formula to the top of the list of assumptions/conclusions.

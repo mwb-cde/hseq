@@ -124,6 +124,23 @@ val find_unifier:
    Raise Not_found if no unifiable formula is found.
  *)
 
+val is_qnt_opt:
+    Basic.quant_ty -> (Basic.term -> bool)
+  -> Logic.tagged_form -> bool
+(**
+   [is_qnt_opt kind pred form]: Test whether [form] satifies [pred].
+   The formula may by quantified by binders of kind [kind]. 
+*)
+
+val dest_qnt_opt:
+  Basic.quant_ty->
+    Logic.tagged_form -> (Tag.t * Basic.binders list * Basic.term)
+(**
+   [dest_qnt_opt forms]: Destruct a possibly quantified tagged formula.
+   Returns the binders, the tag and the 
+formula.
+*)
+
 (**
    [find_qnt_opt kind ?f pred forms] 
 
@@ -831,28 +848,32 @@ val cases_of:
 
 (** {5 Modus Ponens} *)
 
+val mp0_tac: 
+    ?info:Logic.info
+  -> Logic.label -> Logic.label list -> Tactics.tactic
+
 val mp_tac: 
     ?info:Logic.info
-  -> ?a:Logic.label -> ?a1:Logic.label -> Tactics.tactic
+  -> ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
 (**
-   [mp_tac ?a ?a1]: Modus ponens.
+   [mp_tac ?a ?h]: Modus ponens.
 
    {L
-   g:\[(A=>B){_ a}, A{_ a1}, asms |- concls\]
+   g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
 
    ---> 
 
-   g:\[B{_ t}, A{_ a1}, asms |- concls\]
+   g:\[B{_ t}, A{_ h}, asms |- concls\]
    }
 
    info: [goals = [], aforms=[t], cforms=[], terms = []]
 
-   If [a] is [! x1 .. xn: A => B] and [a1] is [l], try to instantiate
-   all of the [x1 .. xn] with values from [a1] (found by
+   If [a] is [! x1 .. xn: A => B] and [h] is [l], try to instantiate
+   all of the [x1 .. xn] with values from [h] (found by
    unification). 
 
    If [?a] is not given, the first (possibly quantified) implication
-   in the assumptions is used. If [?a1] is not given, the assumptions
+   in the assumptions is used. If [?h] is not given, the assumptions
    are searched for a suitable formula.
  *)
 
@@ -863,7 +884,7 @@ val cut_mp_tac:
       -> ?a:Logic.label -> Tactics.tactic
 
 (**
-   [cut_mp_tac ?info ?inst ?a ?a1]: Cut theorem for Modus ponens.
+   [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
 
    {L
    g:\[A{_ a}, asms |- concls\]; thm: |- A => B
@@ -885,6 +906,10 @@ val cut_mp_tac:
    in the assumptions is used. If [?a1] is not given, the assumptions
    are searched for a suitable formula.
  *)
+
+val back0_tac: 
+    ?info:Logic.info 
+  -> Logic.label -> Logic.label list -> Tactics.tactic
 
 val back_tac: 
     ?info:Logic.info 

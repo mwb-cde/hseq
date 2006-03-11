@@ -7,6 +7,7 @@ Name: boollib.ml
 
 open Commands
 open Tactics
+open Lib.Ops
 
 (**********
  * A minimal base theory 
@@ -296,6 +297,26 @@ let find_unifier scp typenv varp trm ?exclude forms =
   Lib.find_first find_fn forms
 
 
+(**
+   [is_qnt_opt kind pred form]: Test whether [form] satifies [pred].
+   The formula may by quantified by binders of kind [kind]. 
+*)
+let is_qnt_opt kind pred form = 
+  Tactics.qnt_opt_of kind pred 
+    (Formula.term_of (Tactics.drop_tag form))
+
+(**
+   [dest_qnt_opt forms]: Destruct a possibly quantified tagged formula.
+   Returns the binders, the tag and the formula.
+*)
+let dest_qnt_opt kind tform = 
+  let tag = Tactics.drop_formula tform
+  and form = Tactics.drop_tag tform
+  in
+  let (vs, term) = Term.strip_qnt kind (Formula.term_of form)
+  in 
+  (tag, vs, term)
+	
 (**
    [find_qnt_opt kind ?f pred forms] 
 
@@ -1566,6 +1587,81 @@ let cases_of ?info ?thm t g =
  * Modus Ponens
  ***)
 
+let mp0_tac ?info a a1lbls g=
+  let typenv = Tactics.typenv_of g
+  and sqnt = Tactics.sequent g
+  in 
+  let scp = Logic.Sequent.scope_of sqnt
+  in 
+  let (a_label, mp_vars, mp_form) = 
+    try
+      find_qnt_opt Basic.All Logicterm.is_implies [get_tagged_asm a g] 
+    with Not_found -> 
+      raise (error "mp_tac: No implications in assumptions")
+  and a1_forms = 
+    try Lib.map_find (fun x -> get_tagged_asm x g) a1lbls
+    with Not_found -> raise (error "mp_tac: No such assumption") 
+  in
+  let (_, mp_lhs, mp_rhs) = Term.dest_binop mp_form
+  in 
+  let varp = Rewrite.is_free_binder mp_vars
+  in 
+  let (a1_label, a1_env)= 
+    let exclude (t, _) = (Tag.equal t a_label)
+    in
+    try 
+      (find_unifier scp typenv varp mp_lhs 
+	 ~exclude:exclude a1_forms)
+    with 
+      Not_found -> 
+	raise 
+	  (Term.term_error ("mp_tac: no matching formula in assumptions") 
+	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
+  in 
+  let inf1= Tactics.mk_info()
+  in 
+  let tac1=
+    match mp_vars with
+      [] -> (* No quantifier *)
+	skip
+    | _ -> (* Implication has quantifier *)
+	instA ~a:(ftag a_label)
+	  (Tactics.extract_consts mp_vars a1_env)
+  and tac2 g2= Logic.Tactics.implA ~info:inf1 (ftag a_label) g2
+  and tac3 g3 =
+    ((fun n -> 
+      (Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n)) 
+	 (Tactics.subgoals inf1) false))
+       --> 
+	 Logic.Tactics.basic ~info:inf1 (ftag a1_label)
+	   (ftag (Lib.get_one (Tactics.cformulas inf1) 
+		    (Failure "mp_tac2.2")))) g3
+  and tac4 g4 = 
+    data_tac (set_info info) ([], aformulas inf1, [], []) g4
+  in 
+  (tac1++ (tac2 ++ tac3 ++ tac4)) g 
+   
+let mp_tac ?info ?a ?h goal =
+  let sqnt = sequent goal
+  in 
+  let albls = 
+    match a with
+	None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
+      | Some(x) -> [x]
+  and hlbls =
+    match h with
+	None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
+      | Some(x) -> [x]
+  in 
+  let tac g = 
+    map_first (fun x -> mp0_tac ?info x hlbls) albls g
+  in 
+    try tac goal
+    with err -> raise (error "mp_tac: Failed")
+   
+   
+   
+(*
 let mp_tac ?info ?a ?a1 g=
   let typenv = Tactics.typenv_of g
   and sqnt = Tactics.sequent g
@@ -1628,6 +1724,7 @@ let mp_tac ?info ?a ?a1 g=
     data_tac (set_info info) ([], aformulas inf1, [], []) g4
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4)) g 
+*)
 
 (**
    [cut_mp_tac ?info thm ?a]
@@ -1656,20 +1753,101 @@ let cut_mp_tac ?info ?inst thm ?a g=
 	(Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	   [Logic.formula_of thm])
     in 
-    mp_tac ?info:info ~a:(ftag a_tag) ?a1:f_label g2)
+    mp_tac ?info:info ~a:(ftag a_tag) ?h:f_label g2)
   in 
   (tac1++tac2) g
     
 
 (**
-   Backward match tactic.
+   [back_tac]: Backward match tactic. [back0_tac] is the main engine.
 
    info [g_tag] [] [c_tag] []
    where 
    [g_tag] is the new goal
    [c_tag] identifies the new conclusion.
  *)
+let back0_tac ?info a cs goal=
+  let typenv = Tactics.typenv_of goal
+  and sqnt = Tactics.sequent goal
+  in 
+  let scp = Logic.Sequent.scope_of sqnt
+  in 
+  let (a_label, back_vars, back_form) = 
+    try
+      find_qnt_opt Basic.All Logicterm.is_implies [get_tagged_asm a goal] 
+    with Not_found -> raise (error "back_tac: No assumption")
+  and c_forms = 
+    try Lib.map_find (fun x -> get_tagged_concl x goal) cs
+    with Not_found -> raise (error "back_tac: No such conclusion") 
+  in
+  let (_, back_lhs, back_rhs) = Term.dest_binop back_form
+  in 
+  let varp = Rewrite.is_free_binder back_vars
+  in 
+  (* find, get the conclusion and substitution *)
+  let (c_label, c_env)= 
+    let exclude (t, _) = (Tag.equal t a_label)
+    in 
+    try 
+      find_unifier scp typenv varp back_rhs 
+	~exclude:exclude c_forms
+    with 
+      Not_found -> 
+	raise (Term.term_error 
+		 ("back_tac: no matching formula in conclusion") 
+		 [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
+  in 
+  let info1= Tactics.mk_info()
+  in 
+  let tac1=
+    match back_vars with
+      [] -> (* No quantifier *)
+	skip
+    | _ -> (* Implication has quantifier *)
+	instA ~a:(ftag a_label)
+	  (Tactics.extract_consts back_vars c_env)
+  and tac2 g2= Logic.Tactics.implA ~info:info1 (ftag a_label) g2
+  and tac3 g3 =
+    ((fun n -> 
+      (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
+	 (Tactics.subgoals info1) false))
+       --> 
+	 Logic.Tactics.basic ~info:info1 
+	   (ftag (Lib.get_nth (Tactics.aformulas info1) 1))
+	   (ftag c_label)) g3
+  in 
+  let tac4 g4 =
+    delete (ftag c_label) g4
+  in 
+  let tac5 g5 = 
+    data_tac (set_info info)
+      ([Lib.get_nth (Tactics.subgoals info1) 0],
+       [], 
+       [Lib.get_nth (Tactics.cformulas info1) 0],
+       []) g5
+  in 
+  (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
 
+let back_tac ?info ?a ?c goal =
+  let sqnt = sequent goal
+  in 
+  let alabels = 
+    match a with
+      None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
+      | Some x -> [x]
+  and clabels = 
+    match c with
+      None -> List.map (ftag <+ drop_formula) (concls_of sqnt)
+    | Some(x) -> [x]
+  in
+  let tac g = 
+    map_first (fun x -> back0_tac ?info x clabels) alabels g
+  in 
+    try tac goal
+    with err -> raise (error "back_tac: Failed")
+
+
+(*
 let back_tac ?info ?a ?c goal=
   let typenv = Tactics.typenv_of goal
   and sqnt = Tactics.sequent goal
@@ -1742,6 +1920,7 @@ let back_tac ?info ?a ?c goal=
        []) g5
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
+*)
 
 
 let cut_back_tac ?info ?inst thm ?c g=
