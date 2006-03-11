@@ -848,10 +848,6 @@ val cases_of:
 
 (** {5 Modus Ponens} *)
 
-val mp0_tac: 
-    ?info:Logic.info
-  -> Logic.label -> Logic.label list -> Tactics.tactic
-
 val mp_tac: 
     ?info:Logic.info
   -> ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
@@ -872,18 +868,18 @@ val mp_tac:
    all of the [x1 .. xn] with values from [h] (found by
    unification). 
 
-   If [?a] is not given, the first (possibly quantified) implication
-   in the assumptions is used. If [?h] is not given, the assumptions
-   are searched for a suitable formula.
+   If [?a] is not given, each (possibly quantified) implication in the
+   assumptions is tried, starting with the first. If [?h] is not
+   given, the assumptions are searched for a suitable formula.
  *)
 
-val cut_mp_tac:
+ val cut_mp_tac:
     ?info:Logic.info 
   -> ?inst:Basic.term list
     -> Logic.thm 
       -> ?a:Logic.label -> Tactics.tactic
 
-(**
+ (**
    [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
 
    {L
@@ -907,10 +903,6 @@ val cut_mp_tac:
    are searched for a suitable formula.
  *)
 
-val back0_tac: 
-    ?info:Logic.info 
-  -> Logic.label -> Logic.label list -> Tactics.tactic
-
 val back_tac: 
     ?info:Logic.info 
   -> ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
@@ -931,15 +923,15 @@ val back_tac:
    all of the [x1 .. xn] with values from [c] (found by
    unification). 
 
-   If [a] is not given, the first (possibly quantified) implication
-   in the assumptions is used. If [c] is not given, the assumptions
-   are searched for a suitable formula.
+   If [a] is not given, each (possibly quantified) implication in the
+   assumptions is tried, starting with the first. If [c] is not given,
+   the assumptions are searched for a suitable formula.
  *)
 
-val cut_back_tac:
+ val cut_back_tac:
     ?info:Logic.info -> ?inst:Basic.term list 
       -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
-(**
+ (**
    [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 
    {L
