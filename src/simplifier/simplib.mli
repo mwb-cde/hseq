@@ -156,10 +156,10 @@ val simp_all_tac :
    Simplify each formula in the subgoal.
 
    {ul 
-   {- Simplify each assumption, starting with the last, adding it to
-   the simpset}
-   {- Simplify each conclusion, starting with the last, adding it to
-   the simpset.}}
+   {- Simplify each assumption, starting with the first (most recent),
+   adding it to the simpset}
+   {- Simplify each conclusion, starting with the last (least recent),
+   adding it to the simpset.}}
 
    Don't use formulas identified by a label in [ignore].
 
@@ -177,7 +177,7 @@ val simp_all_tac :
    take precedence over those in the simp sets.
 
    @raise No_change If no change is made.
-*)
+   *)
 
 val simp_all : Tactics.tactic
 (** 
