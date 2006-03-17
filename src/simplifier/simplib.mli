@@ -80,8 +80,7 @@ val simpA_tac :
    @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
-   @param rules Additional rewrite rules to use. Rules given here
-   take precedence over those in the simp sets.
+   @param rules Additional rewrite rules to use. 
 
    @raise No_change If no change is made.
 *)
@@ -129,8 +128,7 @@ val simpC_tac :
    @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
-   [rules] are the additional rewrite rules to use. Rules given here
-   take precedence over those in the simp sets.
+   [rules] are the additional rewrite rules to use. 
 
    @raise No_change If no change is made.
 *)
@@ -173,8 +171,7 @@ val simp_all_tac :
    @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
-   @param rules Additional rewrite rules to use. Rules given here
-   take precedence over those in the simp sets.
+   @param rules Additional rewrite rules to use.
 
    @raise No_change If no change is made.
    *)
@@ -222,8 +219,7 @@ val simp_tac :
    @param add Add this simpset to the set specified with [set]. This
    allows extra simpsets to be used with the standard simpset.
 
-   @param rules Additional rewrite rules to use. Rules given here
-   take precedence over those in the simp sets.
+   @param rules Additional rewrite rules to use. 
 
    @raise No_change If no change is made.
 *)

@@ -58,11 +58,6 @@ let make_full scp tyenv t=
 	      "Formula.make: Can't make formula, not a closed term" [t]))
   in 
   try
-(*
-    let tyenv = 
-      Lib.apply_option (fun x -> !x) env (Gtypes.empty_subst())
-    in 
-*)
     let tyenv1 = 
       Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
     in 
@@ -384,6 +379,18 @@ let alpha_equals_match scp tyenv asmf conclf=
 let beta_convp x = Logicterm.beta_convp (term_of x)
 let beta_conv scp x =  make scp (Logicterm.beta_conv (term_of x))
 let beta_reduce scp x = make scp (Logicterm.beta_reduce (term_of x))
+
+(** 
+   [mk_beta_reduce_eq scp tyenv trm]: 
+    Make an equality expressing the result of beta-reducing trm.
+*)
+let mk_beta_reduce_eq scp tyenv trm = 
+  let (lhsf, tyenv1) = make_full scp tyenv trm
+  in 
+  let rhsf = fast_make scp [lhsf] (Logicterm.beta_reduce trm)
+  in 
+    (mk_equality scp lhsf rhsf, tyenv)
+
 
 (*** Eta conversion ***)
 

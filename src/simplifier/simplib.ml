@@ -38,6 +38,8 @@ let simpC_tac
     ?(cntrl=Formula.default_rr_control) ?(ignore = [])
     ?set ?add ?c rules goal =
 (** uset: The simpset to use. **)
+  let scp = scope_of goal
+  in 
   let uset = 
     let uset0 = 
       match set with
@@ -53,11 +55,14 @@ let simpC_tac
     match rules with 
       [] -> uset1
     | _ -> 
+	Simpset.simpset_add_thms scp uset1 rules
+(*
 	let rset = 
 	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
 	in 
 	Simpset.join rset uset1
+*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -82,6 +87,8 @@ let simpA_tac
     ?(cntrl=Formula.default_rr_control) ?(ignore = [])
     ?set ?add ?a rules goal =
 (** uset: The simpset to use. **)
+  let scp = scope_of goal
+  in 
   let uset = 
     let uset0 = 
       match set with
@@ -97,11 +104,14 @@ let simpA_tac
     match rules with 
       [] -> uset1
     | _ -> 
+	Simpset.simpset_add_thms scp uset1 rules
+(*
 	let rset = 
 	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
 	in 
 	Simpset.join rset uset1
+*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -126,6 +136,8 @@ let simp_all_tac
     ?(cntrl=Formula.default_rr_control) ?(ignore = [])
     ?set ?add rules goal =
 (** uset: The simpset to use. **)
+  let scp = scope_of goal
+  in 
   let uset = 
     let uset0 = 
       match set with
@@ -141,11 +153,14 @@ let simp_all_tac
     match rules with 
       [] -> uset1
     | _ -> 
+	Simpset.simpset_add_thms scp uset1 rules
+(*
 	let rset = 
 	  Simpset.simpset_add_thms 
 	    (Global.scope()) (Simpset.empty_set()) rules
 	in 
 	Simpset.join rset uset1
+*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 

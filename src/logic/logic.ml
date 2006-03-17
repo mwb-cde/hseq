@@ -2102,6 +2102,21 @@ module Conv=
        or the resulting formula is not in scope.
      *)
     let beta_conv scp term =
+      let eq_term t = 
+	let (x, _) = 
+	  Formula.mk_beta_reduce_eq scp (Gtypes.empty_subst()) t
+	in x
+      in 
+      try
+	mk_theorem (eq_term term)
+      with err -> 
+	raise(Result.add_error
+		(logic_error "beta_conv" [])
+		(Result.add_error 
+		   (Term.term_error "beta_conv term: " [term]) err))
+
+(*
+    let beta_conv scp term =
 (**    let rhs ()= Logicterm.beta_conv term     **)
       let rhs ()= Logicterm.beta_reduce term
       in 
@@ -2115,6 +2130,7 @@ module Conv=
 		(logic_error "beta_conv" [])
 		(Result.add_error 
 		   (Term.term_error "beta_conv term: " [term]) err))
+*)
 
 (**
    [rewrite_conv scp pl trm]:

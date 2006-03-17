@@ -263,6 +263,14 @@ val beta_conv: Scope.t -> t -> t
 val beta_reduce : Scope.t -> t -> t
 (** Reduce all sub-terms of the form [((%x. F) a)] to [F[a/x]]. *)
 
+val mk_beta_reduce_eq : 
+  Scope.t -> Gtypes.substitution 
+  -> Basic.term -> (t* Gtypes.substitution)
+(**
+    [mk_beta_reduce_eq scp tyenv scp]: Make an equality expressing the
+    result of beta-reducing [trm].
+*)
+
 (** {7 Eta conversion} *)
 
 val eta_conv: Scope.t -> t -> Basic.gtype -> t -> t
