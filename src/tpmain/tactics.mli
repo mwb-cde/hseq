@@ -506,7 +506,7 @@ val cut: ?info:Logic.info
    Entry point to {!Logic.Tactics.cut}. 
  *)
 
-val betaA: ?info:Logic.info -> Logic.label -> tactic 
+val betaA: ?info:Logic.info -> ?a:Logic.label -> tactic 
 (**
    [betaA l sq]: beta conversion of assumption [l]
 
@@ -518,17 +518,12 @@ val betaA: ?info:Logic.info -> Logic.label -> tactic
 
    raise [Not_found] if assumption not found.
 
+   If [?a] is not given, apply to each assumption.
+
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-val betaA_tac: ?info:Logic.info -> ?a:Logic.label -> tactic 
-(**
-   [betaA_tac ?info ?a]: Front-end to {!Tactics.betaA}. If [?a] is not
-   given, apply [betaA] to each assumption.
- *)
-
-
-val betaC: ?info:Logic.info -> Logic.label -> tactic 
+val betaC: ?info:Logic.info -> ?c:Logic.label -> tactic 
 (**
    [betaC l sq]: beta conversion of conclusion [l]
 
@@ -540,14 +535,11 @@ val betaC: ?info:Logic.info -> Logic.label -> tactic
 
    raise [Not_found] if conclusion not found.
 
+   If [?c] is not given, apply to each conclusion
+
    info: [goals = [], aforms=[l], cforms=[], terms = []]
  *)
 
-val betaC_tac: ?info:Logic.info -> ?c:Logic.label -> tactic 
-(**
-   [betaC_tac ?info ?a]: Front-end to {!Tactics.betaC}. If [?c] is not
-   given, apply [betaC] to each assumption.
- *)
 
 val beta_tac : ?info:Logic.info -> ?f:Logic.label -> tactic
 (** 

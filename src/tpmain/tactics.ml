@@ -442,6 +442,38 @@ let cut ?info ?inst th goal =
 	raise (add_error "cut" err)
 
 
+let betaA ?info ?a goal =
+  let conv_tac (ft, form) g =
+    let scp = scope_of g
+    in 
+    let thm = 
+      try Logic.Conv.beta_conv scp (Formula.term_of form)
+      with err -> raise (add_error "betaA" err)
+    in 
+    let info1 = mk_info()
+    and albl = ftag ft
+    in 
+      seq 
+	[
+	  Logic.Tactics.cut ~info:info1 thm;
+	  (fun g1 ->
+	     let tlbl = 
+	       ftag
+		 (Lib.get_one (aformulas info1) (error "Tactics.betaA"))
+	     in
+	       seq
+		 [
+		   Logic.Tactics.substA ?info:info [tlbl] albl;
+		   Logic.Tactics.deleteA tlbl
+		 ] g1)
+	] g
+  in 
+    match a with
+	Some(x) -> conv_tac (get_tagged_asm x goal) goal
+      | None -> 
+	  map_some conv_tac (asms_of (sequent goal)) goal
+
+(*
 let betaA ?info lbl goal =
   let scp = scope_of goal
   and (ft, form) = get_tagged_asm lbl goal
@@ -471,7 +503,40 @@ let betaA_tac ?info ?a goal =
     Some(x) -> betaA ?info x goal
   | None -> 
       foreach_asm (betaA ?info) goal
+*)
 
+let betaC ?info ?c goal =
+  let conv_tac (ft, form) g =
+    let scp = scope_of g
+    in 
+    let thm = 
+      try Logic.Conv.beta_conv scp (Formula.term_of form)
+      with err -> raise (add_error "betaC" err)
+    in 
+    let info1 = mk_info()
+    and clbl = ftag ft
+    in 
+      seq 
+	[
+	  Logic.Tactics.cut ~info:info1 thm;
+	  (fun g1 ->
+	     let tlbl = 
+	       ftag
+		 (Lib.get_one (aformulas info1) (error "Tactics.betaC"))
+	     in
+	       seq
+		 [
+		   Logic.Tactics.substC ?info:info [tlbl] clbl;
+		   Logic.Tactics.deleteA tlbl
+		 ] g1)
+	] g
+  in 
+    match c with
+	Some(x) -> conv_tac (get_tagged_concl x goal) goal
+      | None -> 
+	  map_some conv_tac (concls_of (sequent goal)) goal
+
+(*
 let betaC ?info lbl goal =
   let scp = scope_of goal
   and (ft, form) = get_tagged_concl lbl goal
@@ -501,22 +566,14 @@ let betaC_tac ?info ?c goal =
     Some(x) -> betaC ?info x goal
   | None -> 
       foreach_concl (betaC ?info) goal
+*)
 
-(*
-   let beta_tac ?info ?f g= 
-   match f with
-   (Some x) -> Logic.Tactics.beta ?info x g
-   | _ -> 
-   try foreach_form (Logic.Tactics.beta ?info) g
-   with err -> 
-   raise (add_error "beta_tac: failed." err)
- *)
 let beta_tac ?info ?f goal = 
   try 
     seq_some
       [ 
-	betaC_tac ?info ?c:f;
-	betaA_tac ?info ?a:f
+	betaC ?info ?c:f;
+	betaA ?info ?a:f
       ] goal
   with err -> raise (add_error "beta_tac" err)
 
