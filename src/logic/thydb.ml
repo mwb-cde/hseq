@@ -547,15 +547,19 @@ let mk_scope db =
   in 
   let thy_name = Scope.marker_name thy_marker
   in 
-  {
-   Scope.curr_thy = thy_marker;
-   Scope.term_type = scope_term_type db; 
-   Scope.term_thy = scope_term_thy thy_name db;
-   Scope.type_defn = scope_type_defn db;
-   Scope.type_thy = scope_type_thy thy_name db;
-   Scope.thy_in_scope  = scope_thy_in_scope db;
-   Scope.marker_in_scope = scope_marker_in_scope db
- } 
+  let empty_scp = Scope.empty_scope()
+  in 
+    {
+      empty_scp
+    with 
+      Scope.curr_thy = thy_marker;
+      Scope.term_type = scope_term_type db; 
+      Scope.term_thy = scope_term_thy thy_name db;
+      Scope.type_defn = scope_type_defn db;
+      Scope.type_thy = scope_type_thy thy_name db;
+      Scope.thy_in_scope  = scope_thy_in_scope db;
+      Scope.marker_in_scope = scope_marker_in_scope db
+    } 
 
    
 (***

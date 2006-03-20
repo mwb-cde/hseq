@@ -147,3 +147,9 @@ val print : ('a -> unit) -> 'a net -> unit
 (**
    [print p net]: Print the contents of [net] using printer [p].
 *)
+
+(** {7 Debugging} *)
+
+val insert_in_list: 
+  ('a -> 'a -> bool)
+  -> 'a -> 'a list -> 'a list

@@ -1531,7 +1531,11 @@ let cases_of ?info ?thm t g =
   let scp = Tactics.scope_of g
   and tyenv = Tactics.typenv_of g
   in 
+(*
   let trm = Global.PP.expand_term scp t
+  in 
+*)
+  let trm = Term.set_names scp t
   in 
   let case_thm = 
     match thm with

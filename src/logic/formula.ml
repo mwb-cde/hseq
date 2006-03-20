@@ -246,6 +246,46 @@ let mk_equality scp a b =
 
 (*** General Operations ***)
 
+let rec is_closed scp env t =
+  match t with
+    Basic.App(l, r) -> 
+      (is_closed scp env l && is_closed scp env r)
+  | Basic.Typed(a, _) -> 
+      is_closed scp env a
+  | Basic.Qnt(q, b) -> 
+      let env1 = 
+	Term.bind 
+	  (Basic.Bound(q)) 
+	  (Term.mk_free "" (Gtypes.mk_null())) env
+      in 
+      is_closed scp env1 b
+  | Basic.Bound(q) -> 
+      if(Term.is_meta t)
+      then (Scope.is_meta scp q) 
+      else (Term.member t env)
+  | Basic.Free(_) -> 
+      Term.member t env
+  | _ -> true
+
+let rec subst_closed scp qntenv sb trm =
+  try 
+    let nt = Term.replace sb trm 
+    in 
+    if (is_closed scp qntenv nt)
+    then subst_closed scp qntenv sb nt
+    else raise (Failure "subst_closed: Not closed")
+  with Not_found ->
+    (match trm with
+      Basic.Qnt(q, b) -> 
+	let qntenv1 = 
+	  Term.bind (Bound q) (Term.mk_free "" (Gtypes.mk_null())) qntenv
+	in 
+	Basic.Qnt(q, subst_closed scp qntenv1 sb b)
+    | Basic.App(f, a) -> 
+	Basic.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
+    | Basic.Typed(t, ty) -> Typed(subst_closed scp qntenv sb t, ty)
+    | _ -> trm)
+
 let inst_env scp env f r =
   let t = term_of f
   and r1 = term_of r
@@ -256,8 +296,13 @@ let inst_env scp env f r =
       (let (q, b) = Term.dest_qnt t
       in 
       let t1= 
-	Term.subst_closed (Term.empty_subst()) 
-	  (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
+(*
+	let nulltrm = Term.mk_free "" (Gtypes.mk_null())
+	in 
+	Term.subst_closed  
+*)
+	  Term.subst
+	    (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
       in 
       let t2 = Term.retype env t1
       in 
@@ -277,7 +322,10 @@ let subst scp form lst=
       (fun e (t, r) -> Term.bind (term_of t) (term_of r) e) 
       (Term.empty_subst()) lst
   in 
-  let nt = Term.subst_closed (Term.empty_subst()) env (term_of form)
+(*
+  let nt = subst_closed scp (Term.empty_subst()) env (term_of form)
+*)
+  let nt = Term.subst env (term_of form)
   in 
   fast_make scp (List.map snd lst) nt
 
@@ -389,7 +437,7 @@ let mk_beta_reduce_eq scp tyenv trm =
   in 
   let rhsf = fast_make scp [lhsf] (Logicterm.beta_reduce trm)
   in 
-    (mk_equality scp lhsf rhsf, tyenv)
+    (mk_equality scp lhsf rhsf, tyenv1)
 
 
 (*** Eta conversion ***)

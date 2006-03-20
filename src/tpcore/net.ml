@@ -265,7 +265,7 @@ let insert_in_list order r ls =
     | x::tts -> 
 	if(order x r)  (* x<r *)
 	then x::(insert_aux tts)
-	else x::ts
+	else r::ts
   in insert_aux ls
 
 let insert order varp net t r=

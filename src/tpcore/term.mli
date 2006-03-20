@@ -555,7 +555,7 @@ val is_closed: Basic.term list -> Basic.term -> bool
 *)
 
 val subst_closed: 
-    substitution
+  substitution
   -> substitution
     -> Basic.term 
       -> Basic.term 

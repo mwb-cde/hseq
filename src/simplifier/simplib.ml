@@ -56,13 +56,6 @@ let simpC_tac
       [] -> uset1
     | _ -> 
 	Simpset.simpset_add_thms scp uset1 rules
-(*
-	let rset = 
-	  Simpset.simpset_add_thms 
-	    (Global.scope()) (Simpset.empty_set()) rules
-	in 
-	Simpset.join rset uset1
-*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -105,13 +98,6 @@ let simpA_tac
       [] -> uset1
     | _ -> 
 	Simpset.simpset_add_thms scp uset1 rules
-(*
-	let rset = 
-	  Simpset.simpset_add_thms 
-	    (Global.scope()) (Simpset.empty_set()) rules
-	in 
-	Simpset.join rset uset1
-*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -154,13 +140,6 @@ let simp_all_tac
       [] -> uset1
     | _ -> 
 	Simpset.simpset_add_thms scp uset1 rules
-(*
-	let rset = 
-	  Simpset.simpset_add_thms 
-	    (Global.scope()) (Simpset.empty_set()) rules
-	in 
-	Simpset.join rset uset1
-*)
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 

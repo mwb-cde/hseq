@@ -131,11 +131,14 @@ let apply ?report tac goal=
 
 let prove_goal ?info scp trm tac =
   mk_thm  (apply tac (mk_goal ?info scp (Formula.make scp trm)))
-(*
-  mk_thm  (apply tac (mk_goal info scp (Formula.make (Global.scope()) trm)))
-*)
 
-let prove trm tac = prove_goal (Global.scope()) trm tac
+let prove ?scp trm tac = 
+  let sp = 
+    match scp with 
+	None -> Global.scope()
+      | Some x -> x
+  in 
+    prove_goal sp trm tac
 
 let report node branch = 
   let rec print_subgoals i gs = 

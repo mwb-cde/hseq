@@ -238,9 +238,14 @@ module Skolem =
 	  in 
 	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
 	  in 
+	    (Term.mk_meta (Ident.name_of nnam) nty, nty, 
+	     (oname, (nindx, nty))::info.skolems, 
+	     ntyenv, new_names)
+(**
 	  (Term.mk_typed_var nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
 	   ntyenv, new_names)
+**)
       | Some(oldsk) -> 
 	  (* get new index for skolem named n *)
 	  let nindx = (get_sklm_indx oldsk)+1
@@ -252,9 +257,14 @@ module Skolem =
 	  in 
 	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
 	  in 
+	  (Term.mk_meta (Ident.name_of nnam) nty, nty, 
+	   (oname, (nindx, nty))::info.skolems, 
+	   ntyenv, new_names)
+(**
 	  (Term.mk_typed_var nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
 	   ntyenv, new_names)
+**)
 
 
 (***
@@ -1105,7 +1115,6 @@ module Tactics =
       (ntrm3, ntyenv3)
 
 
-
 (***
  * Manipulating Assumptions and Conclusions
  ***)
@@ -1654,7 +1663,7 @@ module Tactics =
 	let sv, sty, nsklms, styenv, ntynms=
 	  Skolem.mk_new_skolem 
 	    {
-	     Skolem.name=(Ident.mk_long (Sequent.thy_of_sqnt sq) nv);
+	     Skolem.name=Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
 	     Skolem.ty=nty;
 	     Skolem.tyenv=tyenv;
 	     Skolem.scope=Sequent.scope_of sq;
@@ -1663,9 +1672,17 @@ module Tactics =
 	   }
 	in 
 	let nscp = 
-	  Scope.extend_with_terms (Sequent.scope_of sq)
+	  Scope.add_meta 
+	    (Scope.new_local_scope (Sequent.scope_of sq)) 
+	    (Term.dest_bound sv)
+	in 
+(**
+	let nscp = 
+          Scope.extend_with_terms 
+	    (Scope.new_local_scope (Sequent.scope_of sq))
 	    [(Term.get_var_id sv, sty)]
 	in 
+**)
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)
@@ -1721,10 +1738,18 @@ module Tactics =
 	   }
 	in 
 	let nscp = 
-	  Scope.extend_with_terms (Sequent.scope_of sq)
+	  Scope.add_meta 
+	    (Scope.new_local_scope (Sequent.scope_of sq)) 
+	    (Term.dest_bound sv)
+	in 
+(**
+	let nscp = 
+	  Scope.extend_with_terms 
+	     (Scope.new_local_scope (Sequent.scope_of sq))
 	    [(Term.get_var_id sv, sty)]
 
 	in 
+**)
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)

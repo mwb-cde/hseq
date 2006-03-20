@@ -91,11 +91,17 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
 	    else raise (term_error "unify_aux: var" [t1;t2])
 	| (Bound(q1), Bound(q2)) ->
-	    let qtst, qtyenv=eq_binder tyenv q1 q2
-	    in 
-	    if qtst
-	    then (qtyenv, env)
-	    else raise (term_error "unify_aux: bound" [t1;t2])
+	    if ((Term.is_meta s) || (Term.is_meta t))
+	    then 
+	      (if (binder_equality q1 q2)
+	      then (tyenv, env)
+	      else raise (term_error"unify_aux: meta" [t1;t2]))
+	    else 
+	      let qtst, qtyenv=eq_binder tyenv q1 q2
+	      in 
+		if qtst
+		then (qtyenv, env)
+		else raise (term_error "unify_aux: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tyenv, env)
 	    else raise (term_error "unify_aux: const" [t1;t2])
@@ -213,11 +219,17 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 	      (tyenv1, env)
 	    else raise (term_error "unify_full: var"[t1;t2])
 	| (Bound(q1), Bound(q2)) ->
-	    let qtst, qtyenv=eq_binder tyenv q1 q2
-	    in 
-	    if qtst
-	    then (qtyenv, env)
-	    else raise (term_error"unify_full: bound" [t1;t2])
+	    if ((Term.is_meta s) || (Term.is_meta t))
+	    then 
+	      (if (binder_equality q1 q2)
+	      then (tyenv, env)
+	      else raise (term_error"unify_full: meta" [t1;t2]))
+	    else 
+	      let qtst, qtyenv=eq_binder tyenv q1 q2
+	      in 
+		if qtst
+		then (qtyenv, env)
+		else raise (term_error"unify_full: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tyenv, env)
 	    else raise (term_error "unify_full: const" [t1;t2])

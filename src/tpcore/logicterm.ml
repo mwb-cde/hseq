@@ -223,6 +223,16 @@ let alpha_equals scp t1 t2 =
   try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
+(***
+let qntenv_of scp =
+  let nulltrm = Term.mk_free "" (Gtypes.mk_null())
+  in 
+    List.fold_left 
+      (fun e x-> Term.bind (Basic.Bound(x)) nulltrm e)
+      (Term.empty_subst())
+      (Scope.get_meta_list scp)
+***)
+
 let subst_equiv scp term lst = 
   let repl t ls = 
     Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
@@ -397,8 +407,9 @@ let rec is_closed_aux env t =
       in 
       is_closed_aux nenv b
   | Bound(q) -> 
-    (try ignore(find t env)
-    with Not_found -> raise (TermCheck t))
+      if(is_meta t) then () 
+      else (try ignore(find t env)
+	    with Not_found -> raise (TermCheck t))
   | _ -> ()
 
 let is_closed_scope env t =
@@ -422,12 +433,14 @@ let close_term t =
 	ignore(table_add (Bound q) (Bound q) memo);
 	close_aux b
     | Bound(q) ->
-	(try ignore(table_find x memo)
-	with Not_found ->
-	  let nq = mk_univ q
-	  in 
-	  ignore(table_add x (Bound nq) memo);
-	  qnts:=nq::!qnts)
+	if is_meta x then () 
+	else 
+	  (try ignore(table_find x memo)
+	   with Not_found ->
+	     let nq = mk_univ q
+	     in 
+	       ignore(table_add x (Bound nq) memo);
+	       qnts:=nq::!qnts)
     | Typed(tr, _) -> close_aux tr
     | App(f, a) -> close_aux f; close_aux a
     | _ -> ()
@@ -477,7 +490,10 @@ let gen_term bs trm =
 	 Term.bind t (Basic.Bound(q)) vars)
   in 
     match t with 
-      Basic.Bound _ -> get_bound t
+      Basic.Bound _ -> 
+	if is_meta t 
+	then (t, qnts, known, vars)
+	else get_bound t
     | Basic.Free _ -> get_free t
     | Basic.Qnt(q, body) -> 
 	let (body1, qnts1, known1, vars1) = 

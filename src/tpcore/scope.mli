@@ -27,6 +27,60 @@ val mk_marker: string -> marker
 val marker_name : marker -> string
 (** Marker destructor *)
 
+type marker_db = ((marker*marker) list)Treekit.StringTree.t
+(** 
+    Local markers.
+    
+    A [marker_db] stores the list of markers associated with a name,
+    in the order they were added.  These are used to support local
+    scopes (such as for a goal) which are derived from a main scope
+    (such as for a theory). In each pair [(l, m)], marker [l] is the
+    new scope derived from marker [m].
+*)
+
+val empty_marker_db : marker_db
+(** The empty [marker_db] *)
+
+val marker_db_add: marker -> marker -> marker_db -> marker_db
+(**
+   [marker_db_add l m db]: Add marker [l] as derived from [m] to a
+   [marker_db]. The markers are added to the front of the list stored in
+   the [marker_db]
+*)
+
+val marker_db_get: string -> marker_db -> (marker * marker) list
+(**  Get the list of markers associated with a name. *)
+
+type meta_db  = ((Basic.binders)Treekit.StringTree.t 
+	      * Basic.binders list) 
+(** 
+    Meta variables 
+    
+    A record of the meta variables in a particular scope. These are
+    only needed by goal scopes.
+*)
+
+(****
+val empty_meta_db: meta_db
+(** The empty [meta_db]. *)
+
+val meta_list: meta_db -> Basic.binders list
+(** The record of meta variables as a list *)
+
+val meta_db_add: string -> Basic.binders -> meta_db -> meta_db
+(** 
+    Add a binder with the given name to a [meta_db]. 
+    Replaces any previous binder for the name.
+*)
+
+val meta_db_find: string -> meta_db -> Basic.binders
+(**
+    Find the binder for the given name. Raise [Not_found] if no such
+    binder.
+*)
+****)
+
+
 (** Records for type definitions *)
 type type_record =
     {
@@ -40,21 +94,25 @@ type type_record =
 type t=
     { 
       curr_thy : marker;
-(** The marker of the current theory *)
+      (** The marker of the current theory *)
       term_type : Ident.t -> gtype; 
-	(** The type of a term identifier. *)
-	term_thy : string -> Ident.thy_id;
-	  (** The theory in which a term is declared. *)
-	  type_defn: Ident.t -> type_record;
-	    (** The definition (if any) of a type *)
-	    type_thy : string -> Ident.thy_id;
-	      (** The theory in which a type is declared *)
-	      thy_in_scope : Ident.thy_id -> bool ;
-		  (** Whether a theory is in scope (identified by name). *)
-		marker_in_scope : marker -> bool 
-		  (** Whether a theory is in scope (identified by marker). *)
+      (** The type of a term identifier. *)
+      term_thy : string -> Ident.thy_id;
+      (** The theory in which a term is declared. *)
+      type_defn: Ident.t -> type_record;
+      (** The definition (if any) of a type *)
+      type_thy : string -> Ident.thy_id;
+      (** The theory in which a type is declared *)
+      thy_in_scope : Ident.thy_id -> bool ;
+      (** Whether a theory is in scope (identified by name). *)
+      marker_in_scope : marker -> bool ;
+      (** Whether a theory is in scope (identified by marker). *)
+      meta_vars: meta_db ;
+      (** A record of meta variables in this scope. *)
+      local_markers: marker_db
+	(** A record of markers of local scopes. *)
     }
-(** All lookup functions raise [Not_found] on failure. *)
+      (** All lookup functions raise [Not_found] on failure. *)
 
 (** {6 Operations on scopes} *)
 
@@ -106,4 +164,29 @@ val extend_with_typedeclns: t -> (Ident.t * (string) list) list -> t
    no definition.
 *)
 
+val new_local_scope: t -> t
+(** 
+    Introduce a new local scope, derived from the current theory marker.
+    The new marker is set as the curr_thy.
+*)
 
+val add_meta: t -> Basic.binders -> t
+(**
+   [add_meta scp v]: Add [v] as a new meta variable. Fails if there is
+   already a meta variable with the same name as [v].
+*)
+
+val find_meta: t -> string -> Basic.binders
+(**
+   [find_meta scp n]: Find the meta variable named [n]. 
+   Raise [Not_found] if no such variable.
+*)
+
+val is_meta: t -> Basic.binders -> bool
+(**
+   [is_meta scp v]: Test whether [v] is a meta variable in scope [scp].
+*)
+
+(***
+val get_meta_list: t -> Basic.binders list
+***)

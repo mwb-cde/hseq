@@ -1308,18 +1308,12 @@ let set_names scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:false ~memo:memo s t
   in 
-(*
-  let curr_thy = Scope.thy_of scp
-  in 
-*)
   let id_memo = Lib.empty_env()
-(*   and scope_memo = Lib.empty_env() *)
   and type_memo = Lib.empty_env()
   and type_thy_memo = Lib.empty_env()
   in 
   let lookup_id n = 
-    try 
-      Lib.find n id_memo
+    try Lib.find n id_memo
     with Not_found -> 
       let nth = Scope.thy_of_term scp n
       in (ignore(Lib.add n nth id_memo); nth)
@@ -1358,22 +1352,24 @@ let set_names scp trm=
 	in 
 	ret_id
     | Free(n, ty) -> 
-	(let nth = try Some(lookup_id n) with Not_found -> None
-	in 
-	let ty1= set_type_name type_thy_memo scp ty
-	in 
-	match nth with
-	  None -> Free(n, ty1)
-	| Some(nth1) -> 
-	    let nid = Ident.mk_long nth1 n
-	    in 
-	    let nty = 
-	      try Some(lookup_type nid)
-	      with Not_found -> None
-	    in 
-	    match nty with
-	      None -> Id(nid, ty1)
-	    | Some(xty) -> Typed(Id(nid, xty), ty1))
+	(let ty1= set_type_name type_thy_memo scp ty
+	 in 
+	   match try_find (Scope.find_meta scp) n with
+	       None -> 
+		 (try 
+		    let nth1 = lookup_id n 
+		    in 
+		    let nid = Ident.mk_long nth1 n
+		    in 
+		    let nty = 
+		      try Some(lookup_type nid)
+		      with Not_found -> None
+		    in 
+		      match nty with
+			  None -> Id(nid, ty1)
+			| Some(xty) -> Typed(Id(nid, xty), ty1)
+		  with Not_found -> Free(n, ty1))
+	     | Some(q) -> Bound(q))
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
@@ -1386,9 +1382,13 @@ let set_names scp trm=
 	Typed(set_aux qnts tt, tty1)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
-	(try find (Bound(q)) qnts
-	with Not_found -> 
-	    raise (term_error "Bound variable occurs outside binding" [t]))
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some(x) -> x
+	  | None -> 
+	      if(Scope.is_meta scp q) then t 
+	      else 
+		(raise 
+		   (term_error "Bound variable occurs outside binding" [t])))
     | _ -> t
   in set_aux (empty_subst()) trm
 
@@ -1519,7 +1519,8 @@ let rec is_closed_env env t =
       in 
       is_closed_env env1 b
   | Basic.Bound(_) -> 
-      member t env
+      if is_meta t then true
+      else member t env
   | Basic.Free(_) -> 
       member t env
   | _ -> true
@@ -1549,7 +1550,8 @@ let rec subst_closed qntenv sb trm =
 	let qntenv1 = bind (Bound q) (mk_free "" (Gtypes.mk_null())) qntenv
 	in 
 	Qnt(q, subst_closed qntenv1 sb b)
-    | App(f, a) -> App(subst_closed qntenv sb f, subst_closed qntenv sb a)
+    | App(f, a) -> 
+	App(subst_closed qntenv sb f, subst_closed qntenv sb a)
     | Typed(t, ty) -> Typed(subst_closed qntenv sb t, ty)
     | _ -> trm)
 
@@ -1569,11 +1571,6 @@ let resolve_closed_term scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:true ~memo:memo s t
   in 
-(*
-  let true_term = mk_short_var "true" 
-  and curr_thy = Scope.thy_of scp
-  in 
-*)
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env() 
   and type_memo = Lib.empty_env()
@@ -1633,29 +1630,30 @@ let resolve_closed_term scp trm=
 	    (term_error 
 	       "Term not in scope" [t]))
     | Free(n, ty) -> 
-	(try 
-	  let nth = lookup_id n
+	let ntrm = 
+	  match Lib.try_find (Scope.find_meta scp) n with
+	      Some(b) -> Bound(b)
+	    | None -> 
+		(try 
+		   let nth = lookup_id n 
+		   in 
+		   let nid = Ident.mk_long nth n
+		   in 
+		   let nty = 
+		     try lookup_type nid
+		     with Not_found -> 
+		       raise (term_error "Can't find type for term" [t])
+		   in 
+		     Id(nid, nty)
+		 with 
+		     Not_found -> 
+		       raise (term_error "Can't resolve free variable" [t]))
+	in 
+	let ty1=
+	  try set_type_name type_thy_memo scp ty
+	  with err -> raise (add_term_error "Invalid type" [t] err)
 	  in 
-	  let nid = Ident.mk_long nth n
-	  in 
-	  let nty = 
-	    try lookup_type nid
-	    with Not_found -> 
-	      raise 
-		(term_error 
-		   "Can't find type for term" [t])
-	  in 
-	  let ty1=
-	    try
-	      set_type_name type_thy_memo scp ty
-	    with err ->
-	      raise (add_term_error "Invalid type" [t] err)
-	  in 
-	  set_aux qnts (Typed(Id(nid, nty), ty1))
-	with Not_found -> 
-	  raise 
-	    (term_error 
-	       "Can't resolve free variable" [t]))
+	  set_aux qnts (Typed(ntrm, ty1))
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
@@ -1665,14 +1663,15 @@ let resolve_closed_term scp trm=
     | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Bound(q) -> 
-	(try
-	  (find (Bound(q)) qnts)
-	with Not_found -> 
-	  raise (term_error 
-		   "Bound variable occurs outside binding" [t]))
+	if (is_meta t) && (Scope.is_meta scp q) then t
+	else
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some x -> x
+	  | None ->
+	      raise 
+		(term_error "Bound variable occurs outside binding" [t]))
     | _ -> t
   in set_aux (empty_subst()) trm
-
 
 
 (***

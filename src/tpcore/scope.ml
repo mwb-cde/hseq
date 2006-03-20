@@ -18,6 +18,39 @@ type marker = Tag.t
 let mk_marker = Tag.named
 let marker_name  = Tag.name 
 
+(** Local markers *)
+type marker_db = 
+    ((marker*marker) list)Treekit.StringTree.t
+
+let empty_marker_db = Treekit.StringTree.nil
+
+let marker_db_add l m db =
+  let n = marker_name l
+  in 
+  let lst = Treekit.StringTree.find db n 
+  in 
+    Treekit.StringTree.add db n ((l,m)::lst)
+
+let marker_db_get n db =
+  Treekit.StringTree.find db n 
+
+(** Meta variables *)
+type meta_db = ((Basic.binders)Treekit.StringTree.t 
+		* Basic.binders list)
+
+let empty_meta_db = 
+  (Treekit.StringTree.nil, [])
+
+let meta_db (d, _) = d
+let meta_list (_, e) = e
+
+let meta_db_add n b db =
+  (Treekit.StringTree.add (meta_db db) n b,
+   b::(meta_list db))
+
+let meta_db_find n db =
+  Treekit.StringTree.find (meta_db db) n
+
 (* Records for type definitions *)
 type type_record =
     {
@@ -32,11 +65,13 @@ type t=
     { 
       curr_thy : marker;
       term_type : Ident.t -> gtype; 
-	term_thy : string -> Ident.thy_id;
-	  type_defn: Ident.t -> type_record;
-	    type_thy : string -> Ident.thy_id;
-		thy_in_scope : Ident.thy_id -> bool;
-		    marker_in_scope : marker -> bool
+      term_thy : string -> Ident.thy_id;
+      type_defn: Ident.t -> type_record;
+      type_thy : string -> Ident.thy_id;
+      thy_in_scope : Ident.thy_id -> bool;
+      marker_in_scope : marker -> bool;
+      meta_vars: meta_db ;
+      local_markers: marker_db
     }
 
 
@@ -55,7 +90,9 @@ let empty_scope () =
    type_defn = dummy;
    type_thy = dummy;
    thy_in_scope = (fun x -> false);
-   marker_in_scope = (fun x -> false)
+   marker_in_scope = (fun x -> false);
+   local_markers = empty_marker_db;
+   meta_vars = empty_meta_db
  }
 
 (** [marker_of scp]: Get the theory marker of scope [scp] *)
@@ -77,10 +114,26 @@ let defn_of scp id = scp.type_defn id
 let thy_of_type scp id = scp.type_thy id
 
 (** Test whether a theory is in scope *)
-let in_scope scp  th1 = scp.thy_in_scope th1 
+let in_scope scp th1 = scp.thy_in_scope th1 
 
 (** Test whether a theory marker is in scope *)
-let in_scope_marker scp th1 = scp.marker_in_scope th1 
+let rec in_scope_marker scp th1 = 
+  let rec test lst = 
+    match lst with 
+	[] -> false
+      | ((l, m)::xs) -> 
+	  if Tag.equal l th1
+	  then in_scope_marker scp m
+	  else test xs
+  in 
+  let is_alias m =
+    let n = marker_name m 
+    in 
+    match Lib.try_find (marker_db_get n) scp.local_markers with
+	None -> false
+      | Some(lst) -> test lst
+  in 
+  (scp.marker_in_scope th1 || is_alias th1)
 
 (***
 * Extending scopes
@@ -116,9 +169,6 @@ let extend_with_typedefs scp declns =
       let (id, _) = List.find (fun (y, _) -> x = (Ident.name_of y)) declns
       in Ident.thy_of id
     with Not_found -> thy_of_type scp x
-  and ext_scope n = 
-    List.exists 
-      (fun (id, _) -> (String.compare n (Ident.name_of id)) = 0) declns
   in 
   {scp with type_defn = ext_defn; type_thy = ext_thy }
 
@@ -135,3 +185,66 @@ let extend_with_typedeclns scp declns=
   in 
   extend_with_typedefs scp (List.map mk_def declns)
 
+
+(** 
+    Introduce a new local scope, derived from the current theory marker.
+*)
+let new_local_scope scp =
+  let n = marker_name scp.curr_thy
+  in 
+  let m = mk_marker n
+  in 
+  let mfn x = (Tag.equal m x) || (scp.marker_in_scope x)
+  in 
+    {
+      scp with 
+	curr_thy = m;
+	marker_in_scope=mfn
+    }
+
+(*
+let new_local_scope scp =
+  let n = marker_name scp.curr_thy
+  in 
+  let l = mk_marker n 
+  in 
+  let db = marker_db_add l scp.curr_thy scp.local_markers 
+  in 
+    {scp with 
+       curr_thy = l;
+       local_markers = db }
+*)
+
+(**
+   [add_meta scp b]: Add [b] as a new meta variable. Fails if there is
+   already a meta variable with the same name as [b].
+*)
+let add_meta scp v = 
+  let db = scp.meta_vars
+  in 
+  let n = Basic.binder_name v
+  in 
+  match Lib.try_find (meta_db_find n) db with
+      Some _ -> 
+	raise (Failure ("add_meta: "^n^" is already a meta variable"))
+    | _ -> 
+	{scp with meta_vars = meta_db_add n v db}
+  
+let find_meta scp n = 
+  let db = scp.meta_vars
+  in 
+    meta_db_find n db
+
+let is_meta scp v = 
+  let n = Basic.binder_name v
+  in 
+  let m = find_meta scp n
+  in 
+    (Basic.binder_equality v m)
+
+(**
+let get_meta_list scp = 
+  meta_list scp.meta_vars
+
+let get_meta_list scp = []
+**)
