@@ -18,6 +18,7 @@ type marker = Tag.t
 let mk_marker = Tag.named
 let marker_name  = Tag.name 
 
+(**
 (** Local markers *)
 type marker_db = 
     ((marker*marker) list)Treekit.StringTree.t
@@ -33,23 +34,18 @@ let marker_db_add l m db =
 
 let marker_db_get n db =
   Treekit.StringTree.find db n 
+**)
 
 (** Meta variables *)
-type meta_db = ((Basic.binders)Treekit.StringTree.t 
-		* Basic.binders list)
+type meta_db = (Basic.binders)Treekit.StringTree.t 
 
-let empty_meta_db = 
-  (Treekit.StringTree.nil, [])
-
-let meta_db (d, _) = d
-let meta_list (_, e) = e
+let empty_meta_db = Treekit.StringTree.nil
 
 let meta_db_add n b db =
-  (Treekit.StringTree.add (meta_db db) n b,
-   b::(meta_list db))
+  Treekit.StringTree.add db n b
 
 let meta_db_find n db =
-  Treekit.StringTree.find (meta_db db) n
+  Treekit.StringTree.find db n
 
 (* Records for type definitions *)
 type type_record =
@@ -70,8 +66,7 @@ type t=
       type_thy : string -> Ident.thy_id;
       thy_in_scope : Ident.thy_id -> bool;
       marker_in_scope : marker -> bool;
-      meta_vars: meta_db ;
-      local_markers: marker_db
+      meta_vars: meta_db 
     }
 
 
@@ -91,7 +86,6 @@ let empty_scope () =
    type_thy = dummy;
    thy_in_scope = (fun x -> false);
    marker_in_scope = (fun x -> false);
-   local_markers = empty_marker_db;
    meta_vars = empty_meta_db
  }
 
@@ -117,6 +111,9 @@ let thy_of_type scp id = scp.type_thy id
 let in_scope scp th1 = scp.thy_in_scope th1 
 
 (** Test whether a theory marker is in scope *)
+let in_scope_marker scp m =
+  scp.marker_in_scope m
+(***
 let rec in_scope_marker scp th1 = 
   let rec test lst = 
     match lst with 
@@ -134,6 +131,7 @@ let rec in_scope_marker scp th1 =
       | Some(lst) -> test lst
   in 
   (scp.marker_in_scope th1 || is_alias th1)
+**)
 
 (***
 * Extending scopes
@@ -242,9 +240,3 @@ let is_meta scp v =
   in 
     (Basic.binder_equality v m)
 
-(**
-let get_meta_list scp = 
-  meta_list scp.meta_vars
-
-let get_meta_list scp = []
-**)

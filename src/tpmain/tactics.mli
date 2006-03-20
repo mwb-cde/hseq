@@ -166,7 +166,7 @@ val extract_consts:
  *)
 
 val qnt_opt_of: 
-    Basic.quant_ty -> (Basic.term -> bool) -> Basic.term -> bool
+    Basic.quant -> (Basic.term -> bool) -> Basic.term -> bool
 (**
    [qnt_opt_of k pred t]: Apply predicate [pred] to the body of
    possibly quantified term [t]. The outermost quantifiers of kind [k]

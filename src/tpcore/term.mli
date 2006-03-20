@@ -89,7 +89,12 @@ val dest_var : term -> (Ident.t * gtype)
 
 (** {6 Specialised Manipulators} *)
 
-(** {7 Meta variables (not used)} *)
+(** 
+    {7 Meta variables} 
+
+    A meta variable is a bound term with quant {!Basic.Meta}. A meta
+    variable is treated like a term identifier, not a bound variable.
+*)
 
 val mk_meta : string -> gtype -> term
 val is_meta : term -> bool
@@ -193,7 +198,7 @@ val get_binder_name : term -> string
 (** [get_binder_name t]: The name of the variable bound in [t]. *)
 val get_binder_type : term -> gtype
 (** [get_binder_type t]: The type of the variable bound in [t]. *)
-val get_binder_kind : term -> quant_ty
+val get_binder_kind : term -> quant
 (** [get_binder_kind t]: The kind of binder in [t]. *)
 val get_qnt_body : term -> term
 (** [get_qnt_body t]: Get the body quantified by term [t]. *)
@@ -204,7 +209,7 @@ val get_free_binders : term -> binders list
    (those which occur outside their binding term).
 *)
 
-val strip_qnt : Basic.quant_ty -> term -> binders list * term
+val strip_qnt : Basic.quant -> term -> binders list * term
 (**
    [strip_qnt q t]: remove outermost quantifiers of kind [k] from term
    [t]
@@ -298,13 +303,13 @@ val inst : term -> term -> term
 (** [inst t r]: instantiate a quantified term [t] with term [r] *)
 
 val mk_qnt_name : 
-    Scope.t -> Basic.quant_ty -> string -> term -> term
+    Scope.t -> Basic.quant -> string -> term -> term
 (**
    [mk_qnt_name scp qnt n t]: make a quantified term, with quantifier
    [qnt], from term [t], binding free variables named [n].
 *)
 val mk_typed_qnt_name : 
-    Scope.t -> Basic.quant_ty -> Basic.gtype -> string -> term -> term
+    Scope.t -> Basic.quant -> Basic.gtype -> string -> term -> term
 (**
    [mk_typed_qnt_name scp qnt ty n t]: make a quantified term, of
    kind [qnt], from term [t], binding all free variables named
@@ -535,7 +540,7 @@ val in_scope: (string, bool)Lib.substype
    [memo] is used to memoise the lookup of names of free variables.
 *)
 
-val close_term: quant_ty -> (term -> bool) -> term -> term
+val close_term: quant -> (term -> bool) -> term -> term
 (**
    [close_term qnt free trm]: Close term [trm]. Make variables bound
    to quantifiers of kind [qnt] to replace free variables and bound

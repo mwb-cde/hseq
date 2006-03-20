@@ -6,7 +6,7 @@
 
 open Gtypes
 
-type binder = {quant: Basic.quant_ty; qvar: string; qtyp: Gtypes.stype}
+type binder = {quant: Basic.quant; qvar: string; qtyp: Gtypes.stype}
 
 let mk_binder q v t = {quant=q; qvar=v; qtyp=t}
 let binder_kind q = q.quant

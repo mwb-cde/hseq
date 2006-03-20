@@ -54,26 +54,26 @@ val string_const: const_ty -> string
 (** {7 Basis of quantified terms} *)
 
 (** Quantifiers for terms. *)
-type quant_ty =  
+type quant =  
     All | Ex | Lambda 
-  | Meta  (** Meta: not used *)
+  | Meta  
 
-val quant_string : quant_ty -> string
+val quant_string : quant -> string
 (** The string representation of quantifiers *)
 
 (** {7 Binders} *)
 
 type binders
 (** Associating bound variables with their binding term. *)
-val mk_binding : quant_ty -> string -> gtype -> binders
+val mk_binding : quant -> string -> gtype -> binders
 (** 
    [mk_binding k n ty] makes a binder of kind [k], with name [n] and
    type [ty]. This binder will be distinct from any other under
    [binder_equality].
 *)
-val dest_binding : binders -> (quant_ty * string * gtype)
+val dest_binding : binders -> (quant * string * gtype)
 (** Destructor for binders. *)
-val binder_kind: binders -> quant_ty
+val binder_kind: binders -> quant
 (** [binder_kind b]: The kind of binder binding variable [b]. *)
 val binder_name: binders -> string
 (** [binder_name b]: The name of bound variable [b]. *)

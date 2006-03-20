@@ -16,7 +16,7 @@ open Gtypes
 
 (** Binders for de Bruijn terms *)
 type binder =
-    { quant: Basic.quant_ty;
+    { quant: Basic.quant;
       qvar: string;
       qtyp: Gtypes.stype}
 

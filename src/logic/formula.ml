@@ -296,11 +296,6 @@ let inst_env scp env f r =
       (let (q, b) = Term.dest_qnt t
       in 
       let t1= 
-(*
-	let nulltrm = Term.mk_free "" (Gtypes.mk_null())
-	in 
-	Term.subst_closed  
-*)
 	  Term.subst
 	    (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
       in 
@@ -322,9 +317,6 @@ let subst scp form lst=
       (fun e (t, r) -> Term.bind (term_of t) (term_of r) e) 
       (Term.empty_subst()) lst
   in 
-(*
-  let nt = subst_closed scp (Term.empty_subst()) env (term_of form)
-*)
   let nt = Term.subst env (term_of form)
   in 
   fast_make scp (List.map snd lst) nt

@@ -125,7 +125,7 @@ val find_unifier:
  *)
 
 val is_qnt_opt:
-    Basic.quant_ty -> (Basic.term -> bool)
+    Basic.quant -> (Basic.term -> bool)
   -> Logic.tagged_form -> bool
 (**
    [is_qnt_opt kind pred form]: Test whether [form] satifies [pred].
@@ -133,7 +133,7 @@ val is_qnt_opt:
 *)
 
 val dest_qnt_opt:
-  Basic.quant_ty->
+  Basic.quant->
     Logic.tagged_form -> (Tag.t * Basic.binders list * Basic.term)
 (**
    [dest_qnt_opt forms]: Destruct a possibly quantified tagged formula.
@@ -154,7 +154,7 @@ formula.
    conditions.
  *)
 val find_qnt_opt: 
-    Basic.quant_ty 
+    Basic.quant 
   -> (Basic.term -> bool)
     -> Logic.tagged_form list 
       -> (Tag.t * Basic.binders list * Basic.term)
@@ -1088,7 +1088,7 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
  *)
 
    val unify_concl_for_consts:
-   Basic.quant_ty
+   Basic.quant
    -> ?c:Logic.label
    -> Basic.term -> Logic.node -> Basic.term list
 (**
@@ -1101,7 +1101,7 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
  *)
 
    val unify_asm_for_consts:
-   Basic.quant_ty
+   Basic.quant
    -> ?a:Logic.label
    -> Basic.term -> Logic.node -> Basic.term list
 (**

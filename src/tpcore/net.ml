@@ -25,8 +25,8 @@
 type label = 
     Var 
   | App
-  | Bound of Basic.quant_ty
-  | Quant of Basic.quant_ty
+  | Bound of Basic.quant
+  | Quant of Basic.quant
   | Const of Basic.const_ty 
   | Cname of Ident.t
   | Cfree of string

@@ -829,7 +829,7 @@ module Grammars  =
    [qnt] is the quantifier type (All, Ex or Lambda)
  *)
     let qnt_setup_bound_names inf 
-	(qnt: Basic.quant_ty) (xs : (string* Basic.gtype) list) =
+	(qnt: Basic.quant) (xs : (string* Basic.gtype) list) =
       List.map 
 	(fun (n, ty) -> 
 	  let b_id=Term.mk_bound(Basic.mk_binding qnt n ty)

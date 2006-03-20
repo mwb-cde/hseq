@@ -85,12 +85,11 @@ val default_type_fixity: fixity
 
 val fun_app_prec: int
 (** Precedence of function application *)
-
-val prec_qnt: Basic.quant_ty -> int
+val prec_qnt: Basic.quant -> int
 (** Precedence of Quantifiers *)
-val assoc_qnt: Basic.quant_ty -> assoc
+val assoc_qnt: Basic.quant -> assoc
 (** Associativity of Quantifiers *)
-val fixity_qnt: Basic.quant_ty -> fixity
+val fixity_qnt: Basic.quant -> fixity
 (** Fixity of Quantifiers *)
 
 (** {5 Pretty printer information for function and type identifiers} *)

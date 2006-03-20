@@ -27,6 +27,7 @@ val mk_marker: string -> marker
 val marker_name : marker -> string
 (** Marker destructor *)
 
+(**
 type marker_db = ((marker*marker) list)Treekit.StringTree.t
 (** 
     Local markers.
@@ -50,9 +51,9 @@ val marker_db_add: marker -> marker -> marker_db -> marker_db
 
 val marker_db_get: string -> marker_db -> (marker * marker) list
 (**  Get the list of markers associated with a name. *)
-
-type meta_db  = ((Basic.binders)Treekit.StringTree.t 
-	      * Basic.binders list) 
+  **)
+	      
+type meta_db  (* = (Basic.binders)Treekit.StringTree.t  *)
 (** 
     Meta variables 
     
@@ -60,12 +61,8 @@ type meta_db  = ((Basic.binders)Treekit.StringTree.t
     only needed by goal scopes.
 *)
 
-(****
 val empty_meta_db: meta_db
 (** The empty [meta_db]. *)
-
-val meta_list: meta_db -> Basic.binders list
-(** The record of meta variables as a list *)
 
 val meta_db_add: string -> Basic.binders -> meta_db -> meta_db
 (** 
@@ -78,8 +75,6 @@ val meta_db_find: string -> meta_db -> Basic.binders
     Find the binder for the given name. Raise [Not_found] if no such
     binder.
 *)
-****)
-
 
 (** Records for type definitions *)
 type type_record =
@@ -107,10 +102,8 @@ type t=
       (** Whether a theory is in scope (identified by name). *)
       marker_in_scope : marker -> bool ;
       (** Whether a theory is in scope (identified by marker). *)
-      meta_vars: meta_db ;
+      meta_vars: meta_db 
       (** A record of meta variables in this scope. *)
-      local_markers: marker_db
-	(** A record of markers of local scopes. *)
     }
       (** All lookup functions raise [Not_found] on failure. *)
 

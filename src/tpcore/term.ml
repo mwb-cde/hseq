@@ -187,7 +187,7 @@ let dest_const t =
 
 (* Specialised Manipulators *)
 
-(* Meta variables (not used) *)
+(* Meta variables *)
 
 let is_meta trm = 
   match trm with
@@ -1071,7 +1071,6 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
 let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args)=
   let (id, ty) = dest_var f
   in 
-  (* let pprec = pplookup ppstate id *)
   let pprec = 
     try Printer.get_record ppstate.Printer.terms id
     with Not_found ->
@@ -1475,39 +1474,6 @@ let close_term qnt free trm=
   in 
   rebuild_qnt (List.rev binders) (subst sb trm)
 
-
-(*
-let rec is_closed_env env t =
-  match t with
-    Basic.App(l, r) -> is_closed_env env l; is_closed_env env r
-  | Basic.Typed(a, _) -> is_closed_env env a
-  | Basic.Qnt(q, b) -> 
-      (table_add (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env;
-       is_closed_env env b;
-       table_remove (Basic.Bound(q)) env)
-  | Basic.Bound(_) -> 
-      (try ignore(table_find t env)
-      with Not_found -> 
-	raise (term_error  "Not closed"  [t]))
-  | Basic.Free(_) -> 
-      (try ignore(table_find t env)
-      with Not_found -> 
-	raise (term_error  "Not closed"  [t]))
-  | _ -> ()
-
-let is_closed vs t = 
-  let tbl=empty_table()
-  in 
-  (* add bound terms of [vs] to tbl *)
-  List.iter 
-    (fun x -> 
-      if ((is_bound x) or (is_free x))
-      then ignore(table_add x (mk_free "" (Gtypes.mk_null())) tbl)
-      else ()) vs;
-  try is_closed_env tbl t; true
-  with _ -> false
-*)
-
 let rec is_closed_env env t =
   match t with
     Basic.App(l, r) -> 
@@ -1559,14 +1525,6 @@ let rec subst_closed qntenv sb trm =
    [resolve_closed_term scp trm]: 
    resolve names and types in closed term [trm] in scope [scp].
 *)
-(*
-let binding_set_names memo scp binding =
-  let (qnt, qname, qtype) = Basic.dest_binding binding
-  in 
-  Basic.mk_binding qnt qname 
-    (Gtypes.set_name ~strict:true ~memo:memo scp qtype)
-*)
-
 let resolve_closed_term scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:true ~memo:memo s t
@@ -1702,7 +1660,7 @@ let least ts =
 let rec term_lt t1 t2 = 
   let atom_lt (a1, ty1) (a2, ty2) =  a1<a2
   and 
-      bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
+      bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 && q1<q1
   in 
   match (t1, t2) with
     Typed (trm, _), _ -> term_lt trm t2
@@ -1741,9 +1699,9 @@ let rec term_lt t1 t2 =
 
 
 let rec term_leq t1 t2 = 
-  let atom_leq (a1, ty1) (a2, ty2) =  a1<=a2 
+  let atom_leq (a1, ty1) (a2, ty2) = a1<=a2 
   and 
-      bound_leq (q1, n1, ty1) (q2, n2, ty2) =  n1<=n2 & q1<=q2
+      bound_leq (q1, n1, ty1) (q2, n2, ty2) =  n1<=n2 && q1<=q2
   in 
   match (t1, t2) with
     Typed (trm, _), _ -> term_leq trm t2
@@ -1780,7 +1738,6 @@ let rec term_leq t1 t2 =
       else bound_leq (dest_binding q1) (dest_binding q2)
 
 let term_gt t1 t2 = not (term_leq t2 t1)
-
 
 let rec is_subterm x y = 
   if(equals x y) then true

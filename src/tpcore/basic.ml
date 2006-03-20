@@ -71,11 +71,11 @@ let string_const c=
 ***)
 
 (** 
-   [quant_ty]: Quantifiers for terms 
+   [quant]: Quantifiers for terms 
 
    [quant_string q]: The string representation of [q].
 *)
-type quant_ty =
+type quant =
     All
   | Ex
   | Lambda
@@ -86,7 +86,7 @@ let quant_string x =
     All -> "!"
   | Ex -> "?" 
   | Lambda -> "%"
-  | Meta -> "*??*"
+  | Meta -> ""
 
 (**
    [q_type]: The data stored in a binder.
@@ -106,7 +106,7 @@ let quant_string x =
 
    [binder_equality]: Equality of binders.
 *)
-type q_type = {quant: quant_ty; qvar: string; qtyp: gtype}
+type q_type = {quant: quant; qvar: string; qtyp: gtype}
 type binders = q_type ref
 
 (* Binder operations *)

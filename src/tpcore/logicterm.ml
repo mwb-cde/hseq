@@ -223,16 +223,6 @@ let alpha_equals scp t1 t2 =
   try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
-(***
-let qntenv_of scp =
-  let nulltrm = Term.mk_free "" (Gtypes.mk_null())
-  in 
-    List.fold_left 
-      (fun e x-> Term.bind (Basic.Bound(x)) nulltrm e)
-      (Term.empty_subst())
-      (Scope.get_meta_list scp)
-***)
-
 let subst_equiv scp term lst = 
   let repl t ls = 
     Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
