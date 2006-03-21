@@ -549,7 +549,7 @@ let match_rewrite scp tyenv qntenv rl trm =
   let varp = Rewrite.is_free_binder qs
   in 
   let find_match term1 term2 = 
-    Unify.unify_fullenv_rewrite 
+    Unify.unify_rewrite 
       scp tyenv (Term.empty_subst()) varp term1 term2
   in 
   try

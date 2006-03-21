@@ -201,9 +201,9 @@ val check_defn : Scope.t -> gtype -> gtype -> bool
 val check_decln : gtype  -> bool
 (**   [check_decln l]: consistency check on declaration of type [l]. *) 
 
-val get_defn : Scope.t -> gtype -> gtype
+val unfold : Scope.t -> gtype -> gtype
 (**
-   [get_defn scp ty]: get the definition of type [ty] from the scope
+   [unfold scp ty]: Unfold the definition of type [ty] from the scope
    [scp]. Raise Not_found if no definition.
 *)
 

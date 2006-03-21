@@ -74,7 +74,7 @@ val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
 
 (** {5 Unification for rewriting} *)
 
-val unify_fullenv_rewrite: 
+val unify_rewrite: 
     Scope.t -> Gtypes.substitution  -> Term.substitution 
     -> (Basic.term -> bool) 
       -> Basic.term -> Basic.term 
@@ -82,7 +82,7 @@ val unify_fullenv_rewrite:
 (**
    A version of [unify_fullenv] which renames type variables.
 
-   [unify_fullenv_rewrite scp tyenv env varp trm1 trm2] is
+   [unify_rewrite scp tyenv env varp trm1 trm2] is
    [unify_fullenv scp tyenv env varp trm1' trm2] where [trm1'] is
    obtained from [trm1] by applying [Gtypes.copy_type] to each type in
    [trm1]. This ensures that the type variables in [trm1] are all
@@ -98,10 +98,12 @@ val unify_fullenv_rewrite:
    Returns both type and term substitutions
 *)
 
+(*
 val unify_env_rewrite: Scope.t 
   -> Term.substitution -> (Basic.term -> bool) 
     -> Basic.term -> Basic.term -> Term.substitution
+*)
 (**
    Top-level unification for rewriting.
-   Calls [unify_fullenv_rewrite] with an empty type substitution.
+   Calls [unify_rewrite] with an empty type substitution.
 *)

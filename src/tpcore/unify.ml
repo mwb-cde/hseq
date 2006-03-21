@@ -146,9 +146,9 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 ***)
 
 (*
-   unify_fullenv_rewrite:
+   unify_rewrite:
    A version of unify_fullenv for rewriting.
-   [unify_fullenv_rewrite scp tenv env varp trm1 trm2]
+   [unify_rewrite scp tenv env varp trm1 trm2]
    is equivalent to
    [unify_fullenv scp tenv env varp trm1' trm2]
    where [trm1'] is obtained from [trm1] by applying [Gtypes.copy_type]
@@ -156,7 +156,7 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
    usage: trm1 is normally the lhs of a rewrite rule which is to be
    applied to trm2. 
  *)
-let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
+let unify_rewrite scp typenv trmenv varp trm1 trm2 =
   let eq_binder tyenv b1 b2 = 
     let qnt1, _, qty1=dest_binding b1
     and qnt2, _, qty2=dest_binding b2
@@ -243,5 +243,5 @@ let unify_fullenv_rewrite scp typenv trmenv varp trm1 trm2 =
 (** Top-level unification for rewriting. *)
 let unify_env_rewrite scp env varp trm1 trm2 =
   let _, nenv= 
-    unify_fullenv_rewrite scp (Gtypes.empty_subst()) env varp trm1 trm2
+    unify_rewrite scp (Gtypes.empty_subst()) env varp trm1 trm2
   in nenv

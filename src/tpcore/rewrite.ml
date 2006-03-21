@@ -241,7 +241,7 @@ module TermData =
       in 
       try 
 	let tyenv1, env1 = 
-	  Unify.unify_fullenv_rewrite scope tyenv env varp lhs trm
+	  Unify.unify_rewrite scope tyenv env varp lhs trm
 	in 
 	((scope, qntenv, tyenv1), env1)
       with x ->
@@ -585,7 +585,7 @@ module Make =
       let varp x = is_free_binder qs x
       in
       let find_match term1 term2=
-	Unify.unify_fullenv_rewrite scope tyenv env varp term1 term2 
+	Unify.unify_rewrite scope tyenv env varp term1 term2 
       in 
       try
 	(let tyenv1, env1=find_match lhs trm

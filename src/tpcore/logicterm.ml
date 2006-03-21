@@ -172,15 +172,26 @@ let mk_lam_ty tyenv n ty b= mk_typed_qnt_name tyenv Basic.Lambda ty n b
 (*** Alpha conversion ***)
 
 let alpha_convp_full scp tenv t1 t2 =
+(*
+  let type_matches scp env x y = Gtypes.matches_env scp env x y
+  in 
+*)
+  let type_matches scp env x y = Gtypes.unify_env scp x y env
+  in 
   let rec alpha_aux t1 t2 tyenv trmenv =
     match (t1, t2) with
       (Id(n1, ty1), Id(n2, ty2)) -> 
 	if (n1=n2) 
-	then (trmenv, Gtypes.matches_env scp tyenv ty1 ty2)
+	then (trmenv, type_matches scp tyenv ty1 ty2)
 	else raise (term_error "alpha_convp_aux" [t1;t2])
     | (Bound(q1), Bound(q2)) ->
-	let q1trm= (chase (fun x->true) t1 trmenv) 
-	and q2trm = (chase (fun x->true) t2 trmenv) 
+(*
+	let q1trm= chase (fun x->true) t1 trmenv 
+	and q2trm = chase (fun x->true) t2 trmenv
+	in 
+*)
+	let q1trm= try Term.find t1 trmenv with Not_found -> t1
+	and q2trm = try Term.find t2 trmenv with Not_found -> t2
 	in 
 	if equals q1trm q2trm
 	then (trmenv, tyenv)
@@ -197,7 +208,7 @@ let alpha_convp_full scp tenv t1 t2 =
 	in 
 	if (qn1=qn2) 
 	then 
-	  let tyenv1=Gtypes.matches_env scp tyenv qty1 qty2
+	  let tyenv1=type_matches scp tyenv qty1 qty2
 	  in 
 	  alpha_aux b1 b2 tyenv1 (bind (Bound(q1)) (Bound(q2)) trmenv)
 	else raise (term_error "alpha_convp_aux" [t1;t2]))

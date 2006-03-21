@@ -449,10 +449,10 @@ let rec rewrite_subst t env =
   match t with 
     Var(a) -> 
       (try Lib.find (!a) env 
-      with Not_found -> raise
-	  (type_error "rewrite_subst: Can't find parameter" [t])) 
-  | Constr(f, l)
-    -> Constr(f, List.map (fun x-> rewrite_subst x env) l) 
+       with _ -> 
+	 raise (type_error "rewrite_subst: Can't find parameter" [t]))
+  | Constr(f, l) -> 
+      Constr(f, List.map (fun x-> rewrite_subst x env) l) 
   | x -> x
 
 let rewrite_defn given_args rcrd_args t=
@@ -461,11 +461,23 @@ let rewrite_defn given_args rcrd_args t=
     (let tenv = Lib.empty_env()
     in 
     let env_of_args ()= 
-      ((List.iter2 
-	  (fun x y -> 
-	    (Lib.bind_env x y tenv)) rcrd_args given_args))
-    in (env_of_args(); rewrite_subst t tenv))
+      List.iter2 
+	 (fun x y -> Lib.bind_env x y tenv) 
+	 rcrd_args given_args
+    in 
+      (env_of_args(); rewrite_subst t tenv))
   else raise (type_error "rewrite_defn: Wrong number of arguments" [t])
+
+let unfold scp t = 
+  match t with
+    Constr(n, args) ->
+      let recrd = get_typdef scp n 
+      in 
+      (match recrd.Scope.alias with
+	None -> raise Not_found
+      |	Some(gt) -> rewrite_defn args (recrd.Scope.args)  gt)
+  | _ -> raise Not_found
+
 
 (**
    [has_defn scp n]: true if [n] has a definition in scope [scp] (and
@@ -478,17 +490,6 @@ let has_defn tyenv n =
     (match (get_typdef tyenv n).Scope.alias with 
       None -> false | _ -> true)
   with Not_found -> false)
-
-let get_defn tyenv t = 
-  match t with
-    Constr(n, args) ->
-      let recrd = get_typdef tyenv n 
-      in 
-      (match recrd.Scope.alias with
-	None -> raise Not_found
-      |	Some(gt) -> rewrite_defn args (recrd.Scope.args)  gt)
-  | _ -> raise Not_found
-
 
 
 (***
@@ -752,11 +753,11 @@ let unify_env scp t1 t2 nenv =
 	else 
 	  (try (* different constructors, try for type aliasing *)
 	    (try   (* try rewriting left constructor *)
-	      let s1=get_defn scp s 
+	      let s1=unfold scp s 
 	      in unify_aux s1 t env
 	    with 
               Not_found ->  (* failed so try with right constructor *)
-		let t1= get_defn scp t
+		let t1= unfold scp t
 		in unify_aux s t1 env)
 	  with
             x ->(add_type_error "x: Can't unify types" [s; t] x)))
@@ -791,18 +792,14 @@ let unify scp t1 t2 = unify_env scp t1 t2 (empty_subst())
    if any error, removes bindings and raises exception 
  *)
 let unify_for_rewrite scp t1 t2 env = 
-(*
-  let varenv= empty_subst()
-  in 
-*)
   let copy_ty ty1 env =
     match ty1 with
-      (Var(x)) -> 
-	(try  (lookup_var ty1 env, env)
+      Var(x) -> 
+	(try (lookup_var ty1 env, env)
 	with Not_found -> 
 	  let nt=mk_var (!x)
 	  in (nt, bind ty1 nt env))
-    | (WeakVar(x)) -> 
+    | WeakVar(x) -> 
 	(try (lookup_var ty1 env, env)
 	with Not_found -> (ty1, env))
     | _ -> (ty1, env)
@@ -826,10 +823,10 @@ let unify_for_rewrite scp t1 t2 env =
 	    _ -> raise (Failure ("Can't unify " ^(string_gtype s)
 				 ^" with " ^(string_gtype t))))
 	else 
-	  (try (unify_aux (get_defn scp s) t senv)
+	  (try (unify_aux (unfold scp s) t senv)
 	  with _ ->
 	    (try
-	      (unify_aux s (get_defn scp t) senv)
+	      (unify_aux s (unfold scp t) senv)
 	    with _ ->
 	      raise (Failure ("Can't unify " ^(string_gtype s)
 			      ^" with " ^(string_gtype t))))))
@@ -926,42 +923,111 @@ let mgu_rename inf env nenv typ =
 ***)
 
 (**
-   [matching_env scp t1 t2 nenv]: Like unify_env but only variables in
+   [new_matching_env scp t1 t2 nenv]: Like unify_env but only variables in
    type [t1] can be bound.
 *)
-let matching_env scp t1 t2 nenv =  
-  let rec match_aux ty1 ty2 env=
+let new_matching_env scp t1 t2 (vars0, env0) =  
+  let null_ty = mk_null()
+  in
+  let rec match_aux ty1 ty2 (varl, env)=
+    let vars = 
+      if(is_any_var ty1) 
+      then (bind ty1 null_ty varl)
+      else varl
+    in
+    let vbind x y tb=
+      if member x vars
+      then bind_occs x y tb
+      else tb
+    in 
     let s = lookup_var ty1 env
     and t =  ty2 
     in 
     match (s, t) with
       (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
+	if f1=f2
 	then 
 	  (try 
 	    (List.fold_left2
-	       (fun ev x y -> match_aux x y ev) env args1 args2)
+	       (fun ev x y -> match_aux x y ev) 
+	       (vars, env) args1 args2)
 	  with 
 	    x -> add_type_error "Can't match types" [s; t] x)
 	else 
-	  (try match_aux (get_defn scp s) t env
+	  (try match_aux (unfold scp s) t (vars, env)
 	  with 
-            Not_found -> (match_aux s (get_defn scp t) env)
-          | x -> (add_type_error "Can't match types" [s; t] x)))
+            Not_found -> (match_aux s (unfold scp t) (vars, env))
+          | x -> (add_type_error "Can't match types" [s; t] x))
+    | (Var(_), Var(_)) ->
+	if equals s t 
+	then (vars, env)
+	else 
+	  (vars, vbind s t env)
+    | (Var(v1), x) -> 
+	(vars, vbind s x env)
+    | (_, Var(_)) -> (vars, env)
+    | (WeakVar(_), WeakVar(_)) ->
+	if equals s t 
+	then (vars, env)
+	else 
+	  (vars, vbind s t env)
+    | (WeakVar(v1), x) -> 
+	(vars, vbind s x env)
+    | (_, WeakVar(_)) -> (vars, env)
+  in
+  match_aux t1 t2 (vars0, env0) (* try to match t1 and t2 *)
+
+let new_matches_env scp env t1 t2 = 
+  try 
+    let nenv=new_matching_env scp t1 t2 env
+    in nenv
+  with _ -> env
+
+let new_matches scp t1 t2=
+  try 
+    ignore(new_matching_env scp t1 t2 (empty_subst(), empty_subst())) ; true
+  with _ -> false
+
+(**
+   [matching_env scp t1 t2 nenv]: Like unify_env but only variables in
+   type [t1] can be bound.
+*)
+let matching_env scp t1 t2 env =  
+  let rec match_aux ty1 ty2 env =
+    let s = lookup_var ty1 env
+    and t =  ty2 
+    in 
+    match (s, t) with
+      (Constr(f1, args1), Constr(f2, args2)) ->
+	if f1=f2
+	then 
+	  (try 
+	    (List.fold_left2
+	       (fun ev x y -> match_aux x y ev) 
+	       env args1 args2)
+	  with 
+	    x -> add_type_error "Can't match types" [s; t] x)
+	else 
+	  (try match_aux (unfold scp s) t env
+	  with 
+            Not_found -> (match_aux s (unfold scp t) env)
+          | x -> (add_type_error "Can't match types" [s; t] x))
     | (Var(_), Var(_)) ->
 	if equals s t 
 	then env
 	else bind_occs s t env
-    | (Var(v1), x) -> bind_occs s x env
+    | (Var(v1), x) -> 
+	bind_occs s x env
     | (_, Var(_)) -> env
     | (WeakVar(_), WeakVar(_)) ->
 	if equals s t 
 	then env
 	else bind_occs s t env
-    | (WeakVar(v1), x) -> bind_occs s x env
+    | (WeakVar(v1), x) -> 
+	bind_occs s x env
     | (_, WeakVar(_)) -> env
   in
-  match_aux t1 t2 nenv (* try to match t1 and t2 *)
+  match_aux t1 t2 env (* try to match t1 and t2 *)
 
 let matches_env scp tyenv t1 t2 = 
   try 
