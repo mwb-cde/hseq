@@ -185,11 +185,6 @@ let alpha_convp_full scp tenv t1 t2 =
 	then (trmenv, type_matches scp tyenv ty1 ty2)
 	else raise (term_error "alpha_convp_aux" [t1;t2])
     | (Bound(q1), Bound(q2)) ->
-(*
-	let q1trm= chase (fun x->true) t1 trmenv 
-	and q2trm = chase (fun x->true) t2 trmenv
-	in 
-*)
 	let q1trm= try Term.find t1 trmenv with Not_found -> t1
 	and q2trm = try Term.find t2 trmenv with Not_found -> t2
 	in 

@@ -1039,6 +1039,107 @@ let matches scp t1 t2=
   try ignore(matching_env scp t1 t2 (empty_subst())) ; true
   with _ -> false
 
+
+(**
+   [matches_rewrite scp tyl tyr env]: Match type [tyl'] with [tyr] in
+   given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
+   is the returned substitution, then the type formed by [mgu tyr sb]
+   will not have any type variable in common with [tyl]. Only
+   variables in [tyl'] can be bound.
+ *)
+
+type match_data =
+    {
+      vars: substitution; (** The unification variables *)
+      tyenv: substitution; (** The type environment being built-up *)
+    }
+
+let null_ty = mk_null()
+
+let vbind s t env =
+    if (member s env.vars)
+    then {env with tyenv=bind_occs s t env.tyenv}
+    else env
+
+let rec copy_set_ty ty data =
+  match ty with
+      Var(v) -> 
+	let vars1= bind ty null_ty data.vars
+	in 
+	let (nt, tyenv1)=
+	  match Lib.try_find (lookup_var ty) data.tyenv with
+	      Some(x) -> (x, data.tyenv)
+	    | None -> 
+		let nt=mk_var (!v)
+		in (nt, bind ty nt data.tyenv)
+	in 
+	  (nt, {vars=vars1;  tyenv=tyenv1})
+    | WeakVar(x) -> 
+	let vars1= bind ty null_ty data.vars
+	in 
+	let nt=
+	  (try lookup_var ty data.tyenv
+	   with Not_found -> ty)
+	in (nt, {data with vars = vars1})
+    | Constr(f, args) -> 
+	let args1, data1 = copy_args args data []
+	in 
+	  (Constr(f, args1), data1)
+and
+    copy_args args data l = 
+  match args with
+      [] -> (List.rev l, data)
+    | (x::xs) -> 
+	let t, data1 = copy_set_ty x data
+	in 
+	  copy_args xs data1 (t::l)
+
+let matches_rewrite scp t1 t2 data = 
+  let rec matches_aux ty1 ty2 env =
+    let s = lookup_var ty1 env.tyenv
+    in 
+    let t = lookup_var ty2 env.tyenv
+    in 
+    match (s, t) with
+      (Constr(f1, args1), Constr(f2, args2)) ->
+	(if f1=f2
+	then 
+	  (try 
+	    List.fold_left2 (fun ev x y -> matches_aux x y ev) 
+	      env args1 args2
+	  with _ -> 
+	    raise (type_error "(1)Can't match types: " [s; t]))
+	else 
+	  (try matches_aux (unfold scp s) t env
+	  with _ ->
+	    (try matches_aux s (unfold scp t) env
+	    with _ ->
+	      raise (type_error "(2)Can't match types: " [s; t]))))
+    | (Var(_), _) ->
+	if equals s t 
+	then env
+	else 
+	  (try vbind s t env
+	  with err -> 
+	    raise (add_type_error "(3)Can't match types: " [s; t] err))
+    | (WeakVar(_), _) -> 
+	if equals s t 
+	then env
+	else (try vbind s t env
+	      with err ->
+ 		raise (add_type_error "(4)Can't match types: " [s; t] err))
+  (* match constants *)
+    | (_, _) -> 
+	if equals s t 
+	then env
+	else  
+	  raise (type_error "(5)Can't match types: " [s; t])
+  in
+  let ty1, data1=copy_set_ty t1 data
+  in 
+  matches_aux ty1 t2 data1
+
+
 (***
 * More functions
 ***)
@@ -1204,4 +1305,6 @@ let print_subst tenv =
       Format.printf "):@]")
     tenv;
   Format.printf "@]"
+
+
 
