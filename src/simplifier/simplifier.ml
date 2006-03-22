@@ -229,8 +229,8 @@ module Data =
       set_simpset cntrl
 	(Simpset.add_rule rule (get_simpset cntrl))
 
-    let default_rr_depth = ref (Some 100)
-    let default_cond_depth = ref (Some 100)
+    let default_rr_depth = ref (Some 1000)
+    let default_cond_depth = ref (Some 1000)
 
 (** [default]: The default control information  *)
     let default = 
@@ -1135,11 +1135,24 @@ let simp_prep_tac ctrl ret lbl goal =
       
 let cond_prover_trueC = Logic.Tactics.trueC
 
-let rec cond_prover_worker_tac ctrl1 ret tg0 g2= 
+let rec cond_prover_worker_tac ctrl ret tg goal= 
   let ctrl1 = 
     Lib.dest_option ~err:(Failure "cond_prover_worker_tac: 1") (!ret)
   in 
-  repeat (basic_simp_tac ctrl1 ret tg0) g2
+  let orig_loopdb = Data.get_loopdb ctrl1
+  in 
+  let tac g = 
+    let ctrl2 = Data.set_loopdb ctrl1 (Net.empty())
+    in 
+      basic_simp_tac ctrl2 ret tg g
+  in 
+  let f () = 
+    let ret0 = Lib.dest_option (!ret)
+    in 
+      Lib.set_option ret (Data.set_loopdb (ret0) orig_loopdb)
+  in 
+  seq [ repeat tac; data_tac f () ] goal
+(* repeat (basic_simp_tac ctrl1 ret tg) *)
 
 let cond_prover_tac ctrl tg goal=
   let cond_depth = Data.get_cond_depth ctrl
@@ -1155,9 +1168,9 @@ let cond_prover_tac ctrl tg goal=
 	Logic.Tactics.trueC (ftag tg);
 	seq
 	  [
-	   simp_prep_tac data ret (ftag tg);
-	   cond_prover_worker_tac data ret tg;
-	   cond_prover_trueC (ftag tg)
+	    simp_prep_tac data ret (ftag tg);
+	    (fun g -> cond_prover_worker_tac data ret tg g);
+	    cond_prover_trueC (ftag tg)
 	 ]
       ]) goal
   else
