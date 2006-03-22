@@ -290,23 +290,6 @@ val unify : Scope.t -> gtype -> gtype  -> substitution
    [unify]: unify two types, returning the substitution
 *)
 
-val unify_for_rewrite:  
-    Scope.t -> gtype -> gtype 
-      -> substitution -> substitution
-(**
-   [unify_for_rewrite scp tyl tyr env]: Unify types [tyl'] and
-   [tyr] in given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
-   is the returned substitution, then the type formed by [mgu tyr sb]
-   will not have any type variable in common with [tyl].
-   
-   [unify_for_rewrite sc l r s] is equivalent, but faster than, to
-   [unify_env sc (rename_type_vars l) r s].
-   
-   This function is used for term-rewriting, where there is a danger
-   that the same type may occur in different contexts (e.g. as the type
-   of an identifier which occurs in different parts of the term).
-*)
-
 (** {7 Most General Unifiers} *)
 
 val mgu : gtype  -> substitution -> gtype
@@ -352,7 +335,6 @@ val matches_env :
 val matches : Scope.t -> gtype -> gtype -> bool
 (** Toplevel for [matches_env] *)
 
-   
 type match_data =
     {
       vars: substitution; (** Unification variables *)
@@ -375,7 +357,11 @@ val matches_rewrite:
    of an identifier which occurs in different parts of the term).
 *)
 
-   
+val copy_set_ty : gtype -> match_data -> (gtype * match_data)
+(**
+   [copy_set_ty t d]: Copy type [t], adding any variables in [t] to
+   [d.vars].
+*)
 
 (** {5 More functions} *)
 
@@ -463,3 +449,25 @@ val from_save_rec: stypedef_record -> typedef_record
 val print_subst : substitution -> unit
 
 
+module Retired: 
+sig
+
+val unify_for_rewrite:  
+    Scope.t -> gtype -> gtype 
+      -> substitution -> substitution
+(**
+   [unify_for_rewrite scp tyl tyr env]: Unify types [tyl'] and
+   [tyr] in given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
+   is the returned substitution, then the type formed by [mgu tyr sb]
+   will not have any type variable in common with [tyl].
+   
+   [unify_for_rewrite sc l r s] is equivalent, but faster than, to
+   [unify_env sc (rename_type_vars l) r s].
+   
+   This function is used for term-rewriting, where there is a danger
+   that the same type may occur in different contexts (e.g. as the type
+   of an identifier which occurs in different parts of the term).
+*)
+
+
+end

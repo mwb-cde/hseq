@@ -72,15 +72,47 @@ val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
    If [?initial] is not given, the empty term substitution is used.
 *)
 
+(** {5 Matching} *)
+
+val matches_rewrite: 
+    Scope.t -> Gtypes.substitution  -> Term.substitution 
+    -> (Basic.term -> bool) 
+      -> Basic.term -> Basic.term 
+	-> (Gtypes.substitution * Term.substitution)
+(**
+   [matches_rewrite scp tyenv env varp trm1 trm2]: Matches term
+   [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by
+   applying [Gtypes.copy_type] to each type in [trm1]. Matching is
+   unification where only variables in [trm1'] can be bound. In
+   particular, only the type variables in [trm1'] can be bound.
+
+   The variables for matching must be either {!Basic.Bound} or
+   {!Basic.Free} terms.
+
+   Because the type variables in [trm1] are all unique, it is safe to
+   repeatedly match [trm1] in a type context constructed from [tyenv]
+   since each instance of [trm1] will have its own set of unique type
+   variables.
+
+   Usage: [trm1] is normally the left hand side of a rewrite rule
+   which is to be applied to [trm2]. Only used because renaming types
+   in [trm1] before unification would take at least two traversals of
+   the term (once to rename and once to unify).
+
+   Returns both type and term substitutions
+*)
+
+module Retired :
+sig
+
+
 (** {5 Unification for rewriting} *)
 
-   (*
 val unify_rewrite: 
     Scope.t -> Gtypes.substitution  -> Term.substitution 
     -> (Basic.term -> bool) 
       -> Basic.term -> Basic.term 
 	-> (Gtypes.substitution * Term.substitution)
-   *)
 (**
    A version of [unify_fullenv] which renames type variables.
 
@@ -110,29 +142,4 @@ val unify_env_rewrite: Scope.t
    Calls [unify_rewrite] with an empty type substitution.
 *)
 
-(** {5 Matching} *)
-
-val matches_rewrite: 
-    Scope.t -> Gtypes.substitution  -> Term.substitution 
-    -> (Basic.term -> bool) 
-      -> Basic.term -> Basic.term 
-	-> (Gtypes.substitution * Term.substitution)
-         (**
-   [matches_rewrite scp tyenv env varp trm1 trm2]: Matches term
-   [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by
-   applying [Gtypes.copy_type] to each type in [trm1]. Matching is
-   unification where only variables in [trm1'] can be bound. In
-   particular, only the type variables in [trm1'] can be bound.
-
-   Because the type variables in [trm1] are all unique, it is safe to
-   repeatedly match [trm1] in a type context constructed from [tyenv]
-   since each instance of [trm1] will have its own set of unique type
-   variables.
-
-   Usage: [trm1] is normally the left hand side of a rewrite rule
-   which is to be applied to [trm2]. Only used because renaming types
-   in [trm1] before unification would take at least two traversals of
-   the term (once to rename and once to unify).
-
-   Returns both type and term substitutions
-   *)
+end

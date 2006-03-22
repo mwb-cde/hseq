@@ -786,66 +786,6 @@ let unify_env scp t1 t2 nenv =
  *)
 let unify scp t1 t2 = unify_env scp t1 t2 (empty_subst())
 
-(**
-   [unify_for_rewrite]: same as unify_env_unique_left
-   except it returns a list of the bindings made
-   if any error, removes bindings and raises exception 
- *)
-let unify_for_rewrite scp t1 t2 env = 
-  let copy_ty ty1 env =
-    match ty1 with
-      Var(x) -> 
-	(try (lookup_var ty1 env, env)
-	with Not_found -> 
-	  let nt=mk_var (!x)
-	  in (nt, bind ty1 nt env))
-    | WeakVar(x) -> 
-	(try (lookup_var ty1 env, env)
-	with Not_found -> (ty1, env))
-    | _ -> (ty1, env)
-  in 
-  let rec unify_aux ty1 ty2 env =
-    let s, senv = 
-      let s1, s1env=                (* make fresh variable if needed *)
-	copy_ty ty1 env
-      in (lookup_var s1 s1env, s1env)
-    in 
-    let t = lookup_var ty2 senv
-    in 
-    match (s, t) with
-      (Constr(f1, args1), Constr(f2, args2)) ->
-	(if f1=f2
-	then 
-	  (try 
-	    (List.fold_left2
-	       (fun ev x y -> unify_aux x y ev) senv args1 args2)
-	  with 
-	    _ -> raise (Failure ("Can't unify " ^(string_gtype s)
-				 ^" with " ^(string_gtype t))))
-	else 
-	  (try (unify_aux (unfold scp s) t senv)
-	  with _ ->
-	    (try
-	      (unify_aux s (unfold scp t) senv)
-	    with _ ->
-	      raise (Failure ("Can't unify " ^(string_gtype s)
-			      ^" with " ^(string_gtype t))))))
-    | (Var(_), Var(_)) ->
-	if equals s t 
-	then senv
-	else bind_occs s t senv
-    | (Var(v1), x) -> bind_occs s x senv
-    | (x, Var(v2)) -> bind_occs t x senv
-	  (* Weak variables are tried after the variables *)
-    | (WeakVar(_), WeakVar(_)) -> 
-	if equals s t 
-	then senv
-	else bind_occs s t senv
-    | (WeakVar(_), x) -> bind_occs s x senv
-    | (x, WeakVar(_)) -> bind_occs t x senv
-	  (* unify constants *)
-  in
-  unify_aux t1 t2 env (* try to unify t1 and t2 *)
 
 (***
 * Most general unifiers.
@@ -1098,6 +1038,54 @@ let matches_rewrite scp t1 t2 data =
   let rec matches_aux ty1 ty2 env =
     let s = lookup_var ty1 env.tyenv
     in 
+    let t = ty2
+    in 
+(*
+    let t = lookup_var ty2 env.tyenv
+    in 
+*)
+    match (s, t) with
+      (Constr(f1, args1), Constr(f2, args2)) ->
+	(if f1=f2
+	then 
+	  (try 
+	    List.fold_left2 (fun ev x y -> matches_aux x y ev) 
+	      env args1 args2
+	  with _ -> 
+	    raise (type_error "(1)Can't match types: " [s; t]))
+	else 
+	  (try matches_aux (unfold scp s) t env
+	  with _ ->
+	    (try matches_aux s (unfold scp t) env
+	    with _ ->
+	      raise (type_error "(2)Can't match types: " [s; t]))))
+    | (Var(_), _) ->
+	if equals s t 
+	then env
+	else 
+	  (try vbind s t env
+	  with err -> 
+	    raise (add_type_error "(3)Can't match types: " [s; t] err))
+    | (WeakVar(_), _) -> 
+	if equals s t 
+	then env
+	else (try vbind s t env
+	      with err ->
+ 		raise (add_type_error "(4)Can't match types: " [s; t] err))
+  (* match constants *)
+    | (_, _) -> 
+	if equals s t 
+	then env
+	else  
+	  raise (type_error "(5)Can't match types: " [s; t])
+  in
+  matches_aux t1 t2 data
+
+(*
+let matches_rewrite scp t1 t2 data = 
+  let rec matches_aux ty1 ty2 env =
+    let s = lookup_var ty1 env.tyenv
+    in 
     let t = lookup_var ty2 env.tyenv
     in 
     match (s, t) with
@@ -1138,6 +1126,7 @@ let matches_rewrite scp t1 t2 data =
   let ty1, data1=copy_set_ty t1 data
   in 
   matches_aux ty1 t2 data1
+*)
 
 
 (***
@@ -1308,3 +1297,68 @@ let print_subst tenv =
 
 
 
+module Retired =
+struct
+
+(**
+   [unify_for_rewrite]: same as unify_env_unique_left
+   except it returns a list of the bindings made
+   if any error, removes bindings and raises exception 
+ *)
+let unify_for_rewrite scp t1 t2 env = 
+  let copy_ty ty1 env =
+    match ty1 with
+      Var(x) -> 
+	(try (lookup_var ty1 env, env)
+	with Not_found -> 
+	  let nt=mk_var (!x)
+	  in (nt, bind ty1 nt env))
+    | WeakVar(x) -> 
+	(try (lookup_var ty1 env, env)
+	with Not_found -> (ty1, env))
+    | _ -> (ty1, env)
+  in 
+  let rec unify_aux ty1 ty2 env =
+    let s, senv = 
+      let s1, s1env=                (* make fresh variable if needed *)
+	copy_ty ty1 env
+      in (lookup_var s1 s1env, s1env)
+    in 
+    let t = lookup_var ty2 senv
+    in 
+    match (s, t) with
+      (Constr(f1, args1), Constr(f2, args2)) ->
+	(if f1=f2
+	then 
+	  (try 
+	    (List.fold_left2
+	       (fun ev x y -> unify_aux x y ev) senv args1 args2)
+	  with 
+	    _ -> raise (Failure ("Can't unify " ^(string_gtype s)
+				 ^" with " ^(string_gtype t))))
+	else 
+	  (try (unify_aux (unfold scp s) t senv)
+	  with _ ->
+	    (try
+	      (unify_aux s (unfold scp t) senv)
+	    with _ ->
+	      raise (Failure ("Can't unify " ^(string_gtype s)
+			      ^" with " ^(string_gtype t))))))
+    | (Var(_), Var(_)) ->
+	if equals s t 
+	then senv
+	else bind_occs s t senv
+    | (Var(v1), x) -> bind_occs s x senv
+    | (x, Var(v2)) -> bind_occs t x senv
+	  (* Weak variables are tried after the variables *)
+    | (WeakVar(_), WeakVar(_)) -> 
+	if equals s t 
+	then senv
+	else bind_occs s t senv
+    | (WeakVar(_), x) -> bind_occs s x senv
+    | (x, WeakVar(_)) -> bind_occs t x senv
+	  (* unify constants *)
+  in
+  unify_aux t1 t2 env (* try to unify t1 and t2 *)
+
+end
