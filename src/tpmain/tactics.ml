@@ -300,7 +300,7 @@ let copyC ?info i g
     = Logic.Tactics.copy_cncl ?info i g
 
 let liftA ?info l g = Logic.Tactics.lift_asm ?info l g
-let liftC ?info l g = Logic.Tactics.lift ?info l g
+let liftC ?info l g = Logic.Tactics.lift_concl ?info l g
 let lift ?info id g = Logic.Tactics.lift ?info id g
 
 let deleteA ?info i = Logic.Tactics.deleteA ?info i
