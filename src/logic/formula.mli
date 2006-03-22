@@ -159,60 +159,6 @@ val mk_iff: Scope.t -> t -> t -> t
 val mk_equality: Scope.t -> t -> t -> t
 
 
-(** {7 General operations} *)
-
-val inst_env : Scope.t -> Gtypes.substitution
-  -> t -> t -> (t* Gtypes.substitution)
-(**
-   Instantiation w.r.t a type substitution.
-   Instantiate a quantified formula with a given term 
-   succeeds only if the result is a formula.
-*)
-
-val inst : Scope.t -> t -> t -> t
-(**
-   Instantiate a quantified formula with a given term
-   succeeds only if the result is a formula.
-*)
-
-val subst : Scope.t -> t -> (t*t) list -> t 
-(** 
-   [subst scp [(t1, r1); ...; (tn, rn)] f]: Simultaneous substitution.
-   Substitutes the [ri] for the [ti] in formula [f].
-*)
-
-val subst_equiv : Scope.t -> t -> (t*t) list -> t 
-(**
-   Substition of equivalents under alpha-conversion. [subst scp f
-   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
-   to [ti] in [f]. Slower than {!Formula.subst} but less sensitive to
-   binder renaming. Note that this is not syntactic substitution.
-*)
-
-val rename: t -> t
-(** Rename bound variables *)
-
-(** {5 Unification functions} *)
-
-val unify: 
-    Scope.t -> t -> t -> Term.substitution
-(**
-   [unify scp asm concl]: Unify [asm] with [concl] in scope
-   [scp]. Formula [asm] is normally the assumption of some sub-goal and
-   [concl] is the conclusion.
-*)
-
-val unify_env: 
-    Scope.t 
-  -> Gtypes.substitution
-    -> t -> t -> (Gtypes.substitution * Term.substitution)
-(**
-   [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
-   [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
-   assumption of some sub-goal and [concl] is the conclusion. Returns
-   the type context updated with binding made during unification.
-*)
-
 (** {5 Typechecking} *)
 
 val typecheck: Scope.t -> t -> Basic.gtype ->t
@@ -240,6 +186,60 @@ val typecheck_retype:
    updated type context.
 *)
 
+(** {7 General operations} *)
+
+val subst : Scope.t -> t -> (t*t) list -> t 
+(** 
+   [subst scp [(t1, r1); ...; (tn, rn)] f]: Simultaneous substitution.
+   Substitutes the [ri] for the [ti] in formula [f].
+*)
+
+val subst_equiv : Scope.t -> t -> (t*t) list -> t 
+(**
+   Substition of equivalents under alpha-conversion. [subst scp f
+   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
+   to [ti] in [f]. Slower than {!Formula.subst} but less sensitive to
+   binder renaming. Note that this is not syntactic substitution.
+*)
+
+val rename: t -> t
+(** Rename bound variables *)
+
+val inst_env : Scope.t -> Gtypes.substitution
+  -> t -> t -> (t* Gtypes.substitution)
+(**
+   Instantiation w.r.t a type substitution.
+   Instantiate a quantified formula with a given term 
+   succeeds only if the result is a formula.
+*)
+
+val inst : Scope.t -> t -> t -> t
+(**
+   Instantiate a quantified formula with a given term
+   succeeds only if the result is a formula.
+*)
+
+(** {5 Unification functions} *)
+
+val unify: 
+    Scope.t -> t -> t -> Term.substitution
+(**
+   [unify scp asm concl]: Unify [asm] with [concl] in scope
+   [scp]. Formula [asm] is normally the assumption of some sub-goal and
+   [concl] is the conclusion.
+*)
+
+val unify_env: 
+    Scope.t 
+  -> Gtypes.substitution
+    -> t -> t -> (Gtypes.substitution * Term.substitution)
+(**
+   [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
+   [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
+   assumption of some sub-goal and [concl] is the conclusion. Returns
+   the type context updated with binding made during unification.
+*)
+
 (** {5 Logic operations} *)
 
 (** {7 Alpha conversion} *)
@@ -265,7 +265,7 @@ val beta_reduce : Scope.t -> t -> t
 
 val mk_beta_reduce_eq : 
   Scope.t -> Gtypes.substitution 
-  -> Basic.term -> (t* Gtypes.substitution)
+  -> Basic.term -> (t * Gtypes.substitution)
 (**
     [mk_beta_reduce_eq scp tyenv scp]: Make an equality expressing the
     result of beta-reducing [trm].

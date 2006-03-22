@@ -244,6 +244,42 @@ let mk_equality scp a b =
   fast_make scp [a; b] (Logicterm.mk_equality (term_of a) (term_of b))
 
 
+(***
+* Typechecking
+***)
+
+let typecheck_env scp tenv f expty = 
+  let t = term_of f
+  in 
+  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
+
+let typecheck scp f expty= 
+  let t = term_of f
+  in 
+  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
+  in 
+  make scp (Term.retype_pretty tyenv t)
+
+let retype scp tenv x = make scp (Term.retype tenv (term_of x))
+
+let retype_with_check scp tenv f = 
+  let nf = 
+    try
+      Term.retype_with_check scp tenv (term_of f)
+    with err -> 
+      raise (add_error "Formula.retype_with_check" [f] err)
+  in 
+  fast_make scp [f] nf
+
+let typecheck_retype scp tyenv f expty=
+  let tyenv1 = typecheck_env scp tyenv f expty
+  in 
+  try
+    (retype_with_check scp tyenv1 f, tyenv1)
+  with 
+    err -> (add_error "Formula.typecheck_retype" [f] err)
+
+
 (*** General Operations ***)
 
 let rec is_closed scp env t =
@@ -286,31 +322,6 @@ let rec subst_closed scp qntenv sb trm =
     | Basic.Typed(t, ty) -> Typed(subst_closed scp qntenv sb t, ty)
     | _ -> trm)
 
-let inst_env scp env f r =
-  let t = term_of f
-  and r1 = term_of r
-  in 
-  if (Term.is_qnt t) 
-  then 
-    try
-      (let (q, b) = Term.dest_qnt t
-      in 
-      let t1= 
-	  Term.subst
-	    (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
-      in 
-      let t2 = Term.retype env t1
-      in 
-      (fast_make scp [f; r] t2, env))
-    with err -> 
-      raise
-	(add_error "inst: replacement not closed " [r] err)
-  else raise (error "inst: not a quantified formula" [f])
-
-let inst scp t r =
-  let f, _ = inst_env scp (Gtypes.empty_subst()) t r
-  in f
-
 let subst scp form lst=
   let env = 
     List.fold_left 
@@ -330,6 +341,29 @@ let subst_equiv scp form lst =
   fast_make scp (List.map snd lst) nt
 
 let rename t = mk_subterm_unsafe t (Term.rename (term_of t))
+
+let inst_env scp env f r =
+  let t = term_of f
+  and r1 = term_of r
+  in 
+  if (Term.is_qnt t) 
+  then 
+    try
+      (let (q, b) = Term.dest_qnt t
+      in 
+      let t1= 
+	  Term.subst
+	    (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
+      in 
+      let t2 = fast_make scp [f; r] t1
+      in 
+	typecheck_retype scp env t2 (Gtypes.mk_var "inst_ty"))
+    with err -> raise (add_error "inst: " [r] err)
+  else raise (error "inst: not a quantified formula" [f])
+
+let inst scp t r =
+  let f, _ = inst_env scp (Gtypes.empty_subst()) t r
+  in f
 
 
 (***
@@ -361,41 +395,6 @@ let unify_env scp tyenv asmf conclf =
   in 
   Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody
 
-
-(***
-* Typechecking
-***)
-
-let typecheck_env scp tenv f expty = 
-  let t = term_of f
-  in 
-  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
-
-let typecheck scp f expty= 
-  let t = term_of f
-  in 
-  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
-  in 
-  make scp (Term.retype_pretty tyenv t)
-
-let retype scp tenv x = make scp (Term.retype tenv (term_of x))
-
-let retype_with_check scp tenv f = 
-  let nf = 
-    try
-      Term.retype_with_check scp tenv (term_of f)
-    with err -> 
-      raise (add_error "Formula.retype_with_check" [f] err)
-  in 
-  fast_make scp [f] nf
-
-let typecheck_retype scp tyenv f expty=
-  let tyenv1 = typecheck_env scp tyenv f expty
-  in 
-  try
-    (retype_with_check scp tyenv1 f, tyenv1)
-  with 
-    err -> (add_error "Formula.typecheck_retype" [f] err)
 
 (***
 * Logic operations

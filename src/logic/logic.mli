@@ -290,10 +290,10 @@ module Skolem:
    a quantified formula.
 
    The generation of skolem constants uses information stored in
-   subgoals. Each skolem constant is an identifier, built by
-   [Basic.Id], with a name which is unique in the subgoal. The
-   identifier is added to the scope of the subgoal and can be used to
-   instantiate a formula in the subgoal.
+   subgoals. Each skolem constant is a meta term, ({!Basic.Meta}),
+   with a name which is unique in the subgoal. The identifier is added
+   to the scope of the subgoal and can be used to instantiate a
+   formula in the subgoal.
 
    A skolem constant is initially assigned a weak type variable which is then
    unified with the type required of the constant.

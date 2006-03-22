@@ -241,11 +241,6 @@ module Skolem =
 	    (Term.mk_meta (Ident.name_of nnam) nty, nty, 
 	     (oname, (nindx, nty))::info.skolems, 
 	     ntyenv, new_names)
-(**
-	  (Term.mk_typed_var nnam nty, nty, 
-	   (oname, (nindx, nty))::info.skolems, 
-	   ntyenv, new_names)
-**)
       | Some(oldsk) -> 
 	  (* get new index for skolem named n *)
 	  let nindx = (get_sklm_indx oldsk)+1
@@ -260,35 +255,7 @@ module Skolem =
 	  (Term.mk_meta (Ident.name_of nnam) nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
 	   ntyenv, new_names)
-(**
-	  (Term.mk_typed_var nnam nty, nty, 
-	   (oname, (nindx, nty))::info.skolems, 
-	   ntyenv, new_names)
-**)
-
-
-(***
- * Retired code
-
- ***)
-(*
-   let is_sklm n sklms = 
-   try ignore(get_old_sklm n sklms); true
-   with Not_found -> false
-
-   (** Add skolem constants to the scope *)
-   let add_skolems_to_scope sklms scp =
-   let declns = List.map decln_of_sklm sklms
-   in 
-   Scope.extend_with_terms scp declns
-
-   (** Add an identifier to the scope *)
-   let add_skolem_to_scope sv sty scp =
-   Scope.extend_with_terms scp [(Term.get_var_id sv, sty)] 
- *)
-
   end
-
 
 (***
  * Sequents
@@ -1101,11 +1068,12 @@ module Tactics =
 (** A simple wrapper to make a list of sequents *)
 
 
-
 (*** instantiation terms ***)  
     let inst_term scp tyenv t trm =
       let (fm1, tyenv1) = Formula.make_full scp tyenv trm
       in 
+	Formula.inst_env scp tyenv1 t fm1
+(*
       let ntrm2, ntyenv2=Formula.inst_env scp tyenv1 t fm1
       in 
       let (ntrm3, ntyenv3)=
@@ -1113,6 +1081,7 @@ module Tactics =
 	  (Gtypes.mk_var "inst_ty")
       in 
       (ntrm3, ntyenv3)
+*)
 
 
 (***
@@ -1676,13 +1645,6 @@ module Tactics =
 	    (Scope.new_local_scope (Sequent.scope_of sq)) 
 	    (Term.dest_bound sv)
 	in 
-(**
-	let nscp = 
-          Scope.extend_with_terms 
-	    (Scope.new_local_scope (Sequent.scope_of sq))
-	    [(Term.get_var_id sv, sty)]
-	in 
-**)
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)
@@ -1742,14 +1704,6 @@ module Tactics =
 	    (Scope.new_local_scope (Sequent.scope_of sq)) 
 	    (Term.dest_bound sv)
 	in 
-(**
-	let nscp = 
-	  Scope.extend_with_terms 
-	     (Scope.new_local_scope (Sequent.scope_of sq))
-	    [(Term.get_var_id sv, sty)]
-
-	in 
-**)
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
 	  if (Gtypes.is_weak sty)
@@ -2109,7 +2063,6 @@ module Tactics =
     let nameC ?info name l g=
       simple_sqnt_apply (nameC0 ?info name l) g
 
-
   end
 
 type conv = Scope.t -> Basic.term -> thm
@@ -2128,34 +2081,14 @@ module Conv=
      *)
     let beta_conv scp term =
       let eq_term t = 
-	let (x, _) = 
-	  Formula.mk_beta_reduce_eq scp (Gtypes.empty_subst()) t
-	in x
+	fst(Formula.mk_beta_reduce_eq scp (Gtypes.empty_subst()) t)
       in 
-      try
-	mk_theorem (eq_term term)
+      try mk_theorem (eq_term term)
       with err -> 
 	raise(Result.add_error
 		(logic_error "beta_conv" [])
 		(Result.add_error 
 		   (Term.term_error "beta_conv term: " [term]) err))
-
-(*
-    let beta_conv scp term =
-(**    let rhs ()= Logicterm.beta_conv term     **)
-      let rhs ()= Logicterm.beta_reduce term
-      in 
-      let eq_term t = 
-	Formula.make scp (Logicterm.mk_equality term t)
-      in 
-      try
-	mk_theorem (eq_term (rhs()))
-      with err -> 
-	raise(Result.add_error
-		(logic_error "beta_conv" [])
-		(Result.add_error 
-		   (Term.term_error "beta_conv term: " [term]) err))
-*)
 
 (**
    [rewrite_conv scp pl trm]:
@@ -2178,26 +2111,6 @@ module Conv=
       with x -> raise 
 	  (Result.add_error 
 	     (Term.term_error "plan_rewrite_conv" [trm]) x)
-
-(****
-    let plan_rewrite_conv plan scp trm =
-      let plan1 = Rewrite.mapping formula_of plan
-      in 
-      let conv_aux t = 
-	let form = Formula.make scp trm
-	in 
-	let nform = 
-	  Formula.rewrite scp plan1 form
-	in 
-	let tform = Formula.mk_equality scp form nform
-	in 
-	mk_theorem tform
-      in 
-      try conv_aux trm
-      with x -> raise 
-	  (Result.add_error 
-	     (Term.term_error "plan_rewrite_conv" [trm]) x)
-****)
 
   end 
 
