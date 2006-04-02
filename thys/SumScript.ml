@@ -367,7 +367,6 @@ let sum_axiom =
   >> 
     [flatten_tac
      ++ (unfold "EXISTS_UNIQUE") ++ simp_all
-     ++ betaC
      ++ inst_tac 
      [ << (%x: 
 	     if (?v : (x = (inl v)))
@@ -396,7 +395,6 @@ let sum_axiom_alt =
      ++ simp_all
      ++ flatten_tac
      ++ instC [<< _x >>]
-     ++ simp
      ++ split_tac
      ++ once_rewriteC_tac [thm "function_eq"]
      ++ simp)

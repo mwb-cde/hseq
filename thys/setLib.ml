@@ -19,7 +19,7 @@ module SetPP =
   struct
 
     let ocb_sym, ccb_sym = ("{", "}")
-    let semicolon_sym = ";"
+    let semicolon_sym = ";" 
 
     (* Parser *)
     open Parser.Pkit
@@ -30,7 +30,7 @@ module SetPP =
     let set_parser () =
       let ocb_tok = Sym(OTHER ocb_sym)
       and ccb_tok = Sym(OTHER ccb_sym)
-      and semicolon = Sym(OTHER semicolon_sym)
+(*      and semicolon = Sym(OTHER semicolon_sym) *)
       in 
       let wrapper t = 
 	let id_term = Term.mk_var set_id

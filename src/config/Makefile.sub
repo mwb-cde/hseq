@@ -138,6 +138,9 @@ OCAMLDEP = ocamldep ${PPOPTIONS}
 # OCAMLDOC: The documentation generator
 OCAMLDOC = ocamldoc 
 
+# OCAMLCPP : the preprocesor
+OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I${CONFIGDIR} 
+
 ###
 # Suffixes and how to handle them
 ###
@@ -147,6 +150,10 @@ OCAMLDOC = ocamldoc
 .SUFFIXES: .cma 
 .SUFFIXES: .cmx 
 .SUFFIXES: .cmxa 
+.SUFFIXES: .mlp
+
+.mlp.ml:
+	${OCAMLCPP} -impl $< -o $@
 
 .mli.cmi: 
 	${OCAMLC} -c ${INCLUDE} $<
@@ -183,7 +190,9 @@ ifdef CUSTOM_INSTALL
 	${CUSTOM_INSTALL}
 else	
 	cp -f ${LIBFILE} ${LIBDIR}
-	cp -f ${HEADERS} *.mli ${HEADERSDIR}
+	cp -f ${HEADERS} ${HEADERSDIR}
+	cp -f $(HEADERS:.cmi=.mli) ${HEADERSDIR}
+#	cp -f *.mli ${HEADERSDIR}
 endif
 
 # installopt: Install the optimised library and header files.
@@ -239,7 +248,7 @@ reallyclean: clean libclean
 ##
 
 depend: 
-	${OCAMLDEP} *.mli *.ml > depend
+	-${OCAMLDEP} *.mli *.ml > depend
 
 ifndef NODEPEND
 include depend

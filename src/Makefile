@@ -5,6 +5,9 @@
 # BINFILE: The name of the executable
 BINFILE = hseq
 
+# INITFILE: The name of the initialising file
+INITFILE = hseqstart.ml
+
 # BINFILE: The name of the native-code executable
 OPTFILE =
 
@@ -57,9 +60,6 @@ LIBDIR ?= ${SRCDIR}/lib
 # DOCDIR: Source code documentation directory
 DOCDIR ?= ${SRCDIR}/doc
 
-# INSTALLDIR: The directory to install to
-INSTALLDIR ?= ./bin
-
 ###
 # Configuration variables
 # Set by data.make
@@ -89,13 +89,16 @@ IPREFIX = $(Prefix)
 IBINDIR = $(BinDir)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(BaseDir)
+IBASEDIR = $(strip $(BaseDir))
 
 # ILIBDIR: Installation library directory
 ILIBDIR = $(LibDir)
 
 # ITHYDIR: Installation theory directory
 ITHYDIR = $(ThyDir)
+
+# IDOCDIR: Installation documentation directory
+IDOCDIR = $(IBASEDIR)/doc/source
 
 ##
 # Build commands
@@ -148,7 +151,7 @@ OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCINCLUDE} ${OCLIBS}
 # The build targets
 ###
 
-all: code
+all: hseq
 
 .PHONY: code
 code: 
@@ -157,7 +160,6 @@ code:
 .PHONY: doc
 doc:
 	$(foreach subdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
-
 
 ##
 # Executables
@@ -171,9 +173,15 @@ hseq: code
 
 install: hseq
 	cp ${BINFILE} ${IBINDIR}/${IBINFILE}
-	mkdir ${IBASEDIR};
-	mkdir ${ILIBDIR}; cp -R ${LIBDIR} ${ILIBDIR}
-	mkdir ${ITHYDIR}; cp -R ${THYDIR} ${ITHYDIR}
+	-mkdir ${IBASEDIR}
+	-mkdir ${ILIBDIR}
+	-cp -R ${LIBDIR}/*.ml ${LIBDIR}/*.mli \
+		${LIBDIR}/*.cmi ${LIBDIR}/*.cmo ${ILIBDIR}
+	-cp ${INITFILE} ${ILIBDIR}
+
+install-doc: 
+	-mkdir $(IDOCDIR)
+	-cp -Rf $(DOCDIR)/* $(IDOCDIR)
 
 ###
 # Clean up
@@ -194,16 +202,12 @@ libclean:
 	$(MAKECLEAN) -C ${LIBDIR} libclean
 
 .PHONY: reallyclean
-reallyclean: 
+reallyclean: docclean
 	rm -f hseq
 	rm -f depend
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
 	$(MAKECLEAN) -C ${LIBDIR} reallyclean
 
-
-.PHONY: binclean
-binclean:
-	cd bin; rm -f *
 
 .PHONY: docclean
 docclean: 

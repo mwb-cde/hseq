@@ -12,7 +12,10 @@ let compile dirs name =
   let inc_dirs = 
     Lib.list_string (fun x -> "-I "^x) " " dirs
   in 
-  let inc_string = ("-I "^(Settings.include_dir())^inc_dirs)
+  let inc_std_dirs =
+    Lib.list_string (fun x -> "-I "^x) " " (!Settings.include_dirs)
+  in 
+  let inc_string = inc_std_dirs^" "^inc_dirs
   in 
   let com_string = "ocamlc -c"
   in 

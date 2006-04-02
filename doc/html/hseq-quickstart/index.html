@@ -1,0 +1,396 @@
+<html lang="en">
+<head>
+<title>HSeq Quick Start</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="HSeq Quick Start">
+<meta name="generator" content="makeinfo 4.7">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="../index.html#dir" title="(dir)">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 2005, M. Wahab-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc { font-variant:small-caps }
+  span.roman { font-family: serif; font-weight: normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">HSeq Quick Start</h1>
+<div class="node">
+<p>
+<a name="Top"></a>Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr><br>
+</div>
+
+<h2 class="unnumbered">HSeq Quick Start</h2>
+
+<p>Copyright &copy; 2005, M. Wahab
+
+   <p>HSeq is a tactical theorem prover for a typed, higher order logic
+based on the sequent calculus. A <em>term</em> is a <em>formula</em> of
+the logic if it is well-formed in a particular <em>scope</em>.  A scope
+is a record of term and type definitions and declarations. A
+<em>theorem</em> is a formula which has been proved to be a true
+statement. A proof is constructed by stating a <em>goal</em> and
+applying <em>tactics</em> to reduce the goal to <em>true</em>. A tactic
+reduces a goal to sub-goals; if there are no sub-goals, the tactic
+proves the goal. An <em>axiom</em> is a formula asserted to be true
+without proof. Theorems, definitions and declarations are stored in
+<em>theories</em> which provide the scope for other theories and for
+constructing formulas of the logic.
+
+<h3 class="heading">Interaction with OCaml</h3>
+
+<p>HSeq is built as an extension to the OCaml toplevel (<code>ocaml</code>). 
+From the command line, <code>hseq </code><var>options</var> <var>file</var> executes
+<var>file</var> as a script and <code>hseq </code><var>options</var> starts the
+interactive interpreter. In both cases, <var>options</var> are the options
+to pass to the OCaml system.
+
+   <p>The OCaml preprocessor is used to embed HSeq terms, types and
+definitions as quotations in OCaml expressions.  For string <var>str</var>,
+the quotation <code>&lt;&lt; str &gt;&gt;</code> parses <var>str</var> as a term and the
+quotation <code>&lt;&lt;: str &gt;&gt;</code> is parsed as a type.  The quotation
+<code>&lt;:def&lt; str &gt;&gt;</code> parses <var>str</var> as a term definition and the
+quotation <code>&lt;:def&lt;: str &gt;&gt;</code> parses <var>str</var> as a type definition
+or declaration.
+
+   <p><code>reset()</code> resets the HSeq system to its initial state.
+
+<h3 class="heading">Types</h3>
+
+<p>A type has OCaml type <code>Basic.gtype</code> and is a <em>type
+variable</em>, a <em>type constructor</em> or a <em>weak type variable</em>. 
+A type <code>'a</code> is a type variable of name <em>a</em>.  A type
+<code>'_a</code> is a weak type variable of name <em>a</em>.  A type
+<code>(t1, ..., t</code><var>n</var><code>)f</code> is a constructed type with constructor
+<em>f</em> and <var>n</var> arguments. If there are no arguments the type is
+in the form <code>f</code>. If identifier <em>f</em> is in the form
+<var>T</var><code>.</code><var>n</var> then it is constructor named <var>n</var> declared
+in the theory named <var>T</var>. If <em>f</em> is <var>n</var>, the scope
+of the type is searched for a theory <var>T</var> in which <var>n</var> is
+declared.
+
+   <p>A weak type variable is a type variable which cannot match a type
+variable, only other weak type variable or type constructors. Weak
+type variables occur only in sequents. If a weak type variable <var>v</var>
+is bound to a type <var>t</var> in a sequent, all instances of <var>v</var> are
+bound to <var>t</var>. Weak type variables are treated as ordinary type
+variables by the parser.
+
+   <p>The standard types are: <code>bool</code>, the booleans; <code>'a -&gt; 'b</code>,
+functions from <code>'a</code> to <code>'b</code>; <code>('a)set</code>, sets of
+<code>'a</code> and <code>'a * 'b</code>, the product of <code>'a</code> and <code>'b</code>.
+
+<h3 class="heading">Terms</h3>
+
+<p>A term has OCaml type <code>Basic.term</code> and is an identifier, a free
+variable, a bound variable, a binding term or a function application. 
+The boolean true and false are <code>true</code> and <code>false</code>; a
+function application is <code>f a</code> and has lower priority than other
+operators; negation is <code>~a</code> or <code>not a</code>; conjunction is
+<code>a &amp; b</code> or <code>a and b</code>; disjunction is <code>a | b</code> or <code>a
+or b</code>; implication is <code>a =&gt; b</code>; boolean equivalence is <code>a
+iff b</code>. Equality is <code>a = b</code> and has higher priority than the
+boolean operators. The type <var>ty</var> of a term <var>t</var> can be
+explicitly stated by enclosing the specification in brackets as the
+form <code>(</code><var>t</var><code>:</code><var>ty</var><code>)</code>.
+
+   <p>A term identifier <var>f</var> is either in the form <var>T</var><code>.</code><var>n</var>
+or <var>n</var>. For <var>T</var><code>.</code><var>n</var>, the identifier is the name
+<var>n</var> declared in the theory named <var>T</var>. If <var>f</var> is
+<var>n</var>, the scope of the term is searched for a list of
+theories in which <var>n</var> is defined or declared. The name <var>n</var> is
+resolved by choosing the first declaration or definition which matches
+the type of <var>f</var>.
+
+   <p>Standard binding terms are lambda-abstraction, universal and
+existential quantification. A binding term (with some symbol
+<var>SYM</var>) is written <var>SYM</var><code> x : F</code> and binds variable
+<code>x</code> in term <code>F</code>. The binding generalizes to a list of
+variables: <var>SYM</var><code> x1 x2 ... xn : F</code> binds variables
+<code>x1</code>, <code>x2</code>, <small class="dots">...</small>, <code>xn</code> in term <code>F</code>.  A lambda
+term is <code>% x: F</code>; universal quantification is <code>! x: F</code> and
+existential quantification is <code>? x: F</code>. The choice operator is
+<code>@ x: F</code> and the unique existential binding is <code>?! x: F</code>. 
+The variable <code>x</code> can be typed in which case it is written with
+brackets as <code>(x: ty)</code>.  For example, <code>! x (y: bool) z : ? 
+(A:('a)set): (y and z) | (x = A)</code>.
+
+<h3 class="heading">Interactive Proofs</h3>
+
+<p>In sequent <var>asm</var><code> |- </code><var>concl</var>, <var>asm</var> is the list of
+assumptions and <var>concl</var> is the list of conclusions. The
+assumptions and the conclusions are the <em>formulas</em> of the
+sequent. The terms sequent and sub-goal will be used interchangeably.
+
+   <p>When a sequent is displayed, the assumptions are printed before the
+conclusions, separated by a line.  Each assumption is printed with a
+negative integer, starting with <code>-1</code> and each assumption is
+printed with a positive integer, starting with <code>1</code>. The
+<em>first assumption</em> is numbered <code>-1</code>, the <em>first
+conclusion</em> is numbered <code>1</code>.
+
+   <p>Each sequent formula can be identified by a unique <em>label</em>. A
+string <var>str</var> can be set as the label for a formula, in which case
+the label is referred by the OCaml expression <code>!$
+</code><var>str</var>. When a string is set as the label of a sequent formula, it
+replaces the integer normally displayed with the formula.
+
+   <p>For interactive proofs, command <code>goal </code><var>t</var> sets term <var>t</var>
+as the goal to be proved. <code>by </code><var>tac</var> applies tactic <var>tac</var>
+to the current subgoal. <code>undo()</code> drops the result of the last
+<code>by</code> command. <code>top()</code> displays the current sub-goal.
+
+   <p>Function <code>prove </code><var>t</var> <var>tac</var> proves the theorem built from
+term <var>t</var> using tactic <var>tac</var>, failing if the tactic fails.
+
+<h3 class="heading">Tactics</h3>
+
+<p>Tactics are generally named with suffix '_tac'. Tactics ending with a
+'A' act on the assumptions of a sub-goal. Tactics ending with 'C' act
+on the conclusions. Optional arguments are generally named <var>a</var> for
+an assumption, <var>c</var> for a conclusion, <var>f</var> for an assumption or
+conclusion and <var>inst</var> for a list of terms.
+
+   <p>The basic tactics are <code>conjA</code>, <code>conjC</code>, <code>disjA</code>,
+<code>disjC</code>, <code>implA</code>, <code>implC</code>, <code>negA</code>, <code>negC</code>,
+<code>existA</code>, <code>existC</code>, <code>allA</code>, <code>allC</code> which eliminate
+conjunctions, disjunctions, implications, negation and existential and
+universal quantifiers. <code>betaA</code>, <code>betaC</code> and
+<code>beta_tac</code> beta reduce formulas.
+
+   <p><code>basic</code> solves sub-goals of the form <code>t, </code><var>asm</var><code>|- t,
+</code><var>concl</var> (a formula appearing in both assumptions and
+conclusions). <code>trivial</code> solves subgoals in which <code>true</code>
+appears in the conclusions or <code>false</code> appears in the
+assumptions. <code>eq_tac</code> solves subgoals in which term <code>x=x</code>
+appears in the conclusions.
+
+   <p><code>flatten_tac</code> eliminates basic boolean operators without
+splitting the sub-goal. <code>split_tac</code> eliminates the basic boolean
+operators, splitting the sub-goal. <code>scatter_tac</code> combines
+<code>flatten_tac</code> and <code>split_tac</code>. <code>blast_tac</code> is
+<code>scatter_tac</code> followed by <code>basic</code>.
+
+   <p><code>iffA</code> and <code>iffC</code> eliminate boolean equivalence and
+<code>equals_tac</code> replaces equality (=) between booleans with boolean
+equivalence (iff).
+
+   <p><code>instA</code>, <code>instC</code> instantiate assumptions and conclusions
+with a given list of terms. <code>inst_tac</code> first tries <code>instA</code>
+then <code>instC</code>. <code>specA</code>, <code>specC</code> and <code>spec_tac</code>
+specialize assumptions and conclusions.
+
+   <p>A theorem is introduced as an assumption using <code>cut</code>. The
+optional argument <code>inst</code> can be used to instantiate the
+assumption with values.
+
+   <p>The order of assumptions and conclusions can be significant for
+tactics which search for a formula.  <code>liftA </code><var>l</var> and
+<code>liftC </code><var>l</var> lift the assumption or conclusion labelled
+<var>l</var> to the front of the list of assumptions or conclusions. 
+<code>copyA </code><var>l</var> and <code>copyC </code><var>l</var> copy the assumption or
+conclusion with label <var>l</var>. <code>deleteA </code><var>l</var> and
+<code>deleteC </code><var>l</var> delete the assumption or conclusion labelled
+<var>l</var>.
+
+   <p><code>match_asm </code><var>t</var><code> tac</code> and <code>match_concl </code><var>t</var> <var>tac</var>
+search the sequent for an assumption or conclusion matching the term
+<var>t</var>, applying <var>tac</var> <var>l</var> where <var>l</var> is the label
+of the matched formula. Free variables in <var>t</var> match sub-terms in
+the assumptions/conclusions. Example: <span class="samp">match_asm &lt;&lt; !x y z: A =&gt;
+C &gt;&gt; liftA</span>.
+
+   <p><code>nameA </code><var>str</var> <var>l</var> and <code>nameC </code><var>str</var> <var>l</var> set
+string <var>str</var> as the label of the assumption or conclusion with
+label <var>l</var>. These should be used in conjunction with
+<code>match_asm</code> and <code>match_concl</code>.
+
+   <p><code>back_tac</code> matches a possibly quantified assumption of the from
+<code>a =&gt; c</code> with a conclusion of the form <code>c</code>, replacing the
+conclusion with <code>a</code>. <code>mp_tac</code> matches a possibly quantified
+assumption of the from <code>a =&gt; c</code> with an assumption of the form
+<code>a</code>, replacing it with assumption <code>c</code>.  <code>cut_back_tac</code>
+and <code>cut_mp_tac</code> operate with theorems of the form <code>a=&gt;c</code>
+(which may be universally quantified).
+
+   <p><code>show </code><var>t</var> <var>tac</var> introduces term <var>t</var> as an assumption,
+using tactic <var>tac</var> to prove the truth of <var>t</var>. <code>cases_tac
+</code><var>t</var> introduces a case split on the truth of term
+<var>t</var>. <code>case_of </code><var>t</var> introduces a case split on the
+possible values of term <var>t</var>.
+
+<h3 class="heading">Rewriting and Simplification</h3>
+
+<p>Tactics <code>rewriteA_tac</code>, <code>rewriteC_tac</code> and
+<code>rewrite_tac</code> rewrite assumptions, conclusions and sequent
+formulas with a list of rewrite rules, provided as theorems.  Tactics
+<code>once_rewriteA_tac</code>, <code>once_rewriteC_tac</code> and
+<code>once_rewrite_tac</code> apply a rewrite once. <code>replace_tac</code> and
+<code>once_replace_tac</code> rewrite formulas with rules from the
+assumptions. <code>unfold </code><var>n</var> unfolds the definition of the term
+named <var>n</var>. The rewrite tactics take an optional argument
+<code>dir</code> to specify the rewriting direction. Possible values are
+<code>rightleft</code> or <code>leftright</code>.
+
+   <p>The main simplification tactics are <code>simpA_tac</code>,
+<code>simpC_tac</code>, <code>simp_all_tac</code> and
+<code>simp_tac</code>. <code>simpA_tac</code> simplifies the assumptions, starting
+with the first, <code>simpC_tac</code> simplifies the conclusions, starting
+with the last. <code>simp_all_tac</code> simplifies the assumptions,
+starting with the first, and then the conclusions, starting with the
+last. In all cases both formulas which aren't simplified and formulas
+which have been simplified are used as simplification rules on other
+formulas. <code>simp_tac</code> takes an optional formula label. If the label
+is given, then <code>simp_tac</code> is either <code>simpC_tac</code> or
+<code>simpA_tac</code>, otherwise it is <code>simpC_tac</code>.
+
+   <p>The simplification tactics use the standard simplification rules,
+obtained by calling <code>std_ss()</code>. The simplification tactics ending
+with <code>_tac</code> take a list of theorems to use as additional
+simplification rules. Tactics <code>simpA</code>, <code>simpC</code>,
+<code>simp_all</code> and <code>simp</code> are short-hand for the simplification
+tactics with no additional rules (<code>simp = simp_tac []</code>).
+
+<h3 class="heading">Sequencing Tactics</h3>
+
+<p><code>skip</code> is the tactic that does nothing and always
+succeeds. <code>fail</code> is the tactic that does nothing and always
+fails.
+
+   <p>The sequential composition of tactics is <code>seq[</code><var>tac1</var><code>;
+</code><var>tac2</var><code>; ...; </code><var>tacn</var><code>]</code>. The tactics are applied in sequence
+starting with <var>tac1</var> and each tactic <var>tac(i+1)</var> is applied to
+all the sub-goals generated by <var>taci</var>. The sequence continues
+until all tactics have been applied, the goal is solved or a tactic
+fails.
+
+   <p>The alternation between tactics is <code>alt[</code><var>tac1</var><code>; </code><var>tac2</var><code>;
+...; </code><var>tacn</var><code>]</code>. Each tactic is tried in sequence, starting
+with <var>tac1</var>, until one of the tactics succeeds. The alternation
+fails if all the tactics fail.
+
+   <p><var>tac1</var><code>++</code><var>tac2</var> is shorthand for <code>seq[</code><var>tac1</var><code>;
+</code><var>tac2</var><code>]</code>. <var>tac1</var><code>//</code><var>tac2</var> is shorthand for
+<code>alt[</code><var>tac1</var><code>; </code><var>tac2</var><code>]</code>.
+
+   <p>Branching tactical <var>tac</var><code> -- [</code><var>tac1</var><code>; ...;
+</code><var>tacn</var><code>]</code> applies tactic <var>tac</var>. Each tactic <var>taci</var> is then
+applied to the <var>i</var>'th resulting sub-goal. All sub-goals are then
+combined (in the order they were generated) to form the final list of
+sub-goals. If there are more sub-goals than tactics, the extra
+sub-goals are added to the end of the final list (as if the list of
+tactics was padded with <code>skip</code>). If there are more tactics than
+sub-goals, the extra tactics are ignored.
+
+<h3 class="heading">Theories</h3>
+
+<p>A theory <var>T</var> is built from a <em>script file</em> named
+<var>T</var><code>Script.ml</code> and is saved to a <em>theory file</em> named
+<var>T</var><code>.tho</code>.  A theory may depend on other theories (its
+<em>parents</em>). When a theory is built or loaded from file, its
+parents are also loaded. If the parent of a theory does not have a
+theory file, it is rebuilt from its script file. All theories must be
+younger than the theories they depend on and theories are
+automatically rebuilt if necessary.
+
+   <p>A theory is either <em>closed</em> or <em>writable</em>. A closed theory
+can be the parent of other theories but cannot be modified. A writable
+theory can be modified but cannot be used as the parent of another
+theory.
+
+   <p>The main theory for HSeq is called <code>Main</code> and is automatically
+set as a parent for each new theory.
+
+   <p><code>begin_theory </code><var>n</var><code> [</code><var>p1</var><code>; ...; </code><var>pn</var><code>]</code> begins a
+theory named <var>n</var> with parents <var>p1</var>, <small class="dots">...</small>,
+<var>pn</var>. <code>end_theory()</code> ends the currently open theory, marking
+it as closed and saving it to a theory file.
+
+   <p><code>add_file </code><var>n</var> marks file <var>n</var> as a library to be loaded
+when the theory is loaded. If <var>n</var> ends with suffix <code>.ml</code>, it
+is loaded using <code>#use</code>. If <var>n</var> ends with suffix <code>.cmi</code>
+or <code>.cmo</code> it is loaded with <code>#load</code>.  <code>compile
+</code><var>path</var> <var>n</var> compiles file <var>n</var> with the standard HSeq
+libraries. <var>path</var> is the list of additional include directories to
+use.
+
+   <p><code>declare &lt;&lt; </code><var>D</var><code> &gt;&gt;</code> declares a term. <var>D</var> should be in the
+form <var>n</var><code>:</code><var>ty</var> where <var>n</var> is the identifier and
+<var>ty</var> the type. Note that <code>declare</code> uses the term quotation
+parser (<code>&lt;&lt; ... &gt;&gt;</code>) not the definition quotation parser. 
+Example: <code>declare &lt;:def&lt; and:(bool -&gt; bool -&gt; bool) &gt;&gt;</code>.
+
+   <p><code>define &lt;:def&lt; </code><var>D</var><code> &gt;&gt;</code> defines a term. <var>D</var> must
+be in the form <var>n</var> <var>a1</var><code> ... </code><var>an</var><code> = </code><var>T</var>
+where <var>n</var> is the identifier being defined, <var>a1</var> <small class="dots">...</small>
+<var>an</var> are the parameters and <var>T</var> the body of the definition. 
+Example: <code>define &lt;:def&lt; or x y = (not (not x) and (not y)) &gt;&gt;</code>.
+
+   <p><code>typedef &lt;:def&lt;: </code><var>D</var><code> &gt;&gt;</code> declares or defines a type
+constructor.  <code>typedef &lt;:def&lt;: </code><var>ty</var><code> &gt;&gt;</code> declares the new type
+<var>ty</var> constructor. <code>typedef &lt;:def&lt;: </code><var>ty1</var><code> = </code><var>ty2</var><code> &gt;&gt;</code>
+declares <var>ty1</var> to be an alias for type <var>ty2</var>.  Example:
+(declaration) <code>typedef &lt;:def&lt;: bool &gt;&gt;</code> and (aliasing)
+<code>typedef &lt;:def&lt;: ('a)set = ('a -&gt; bool)&gt;&gt;</code>.
+
+   <p><code>typedef ~thm:</code><var>T</var><code> &lt;:def&lt;: </code><var>ty1</var><code> = </code><var>ty2</var><code>:</code><var>pred</var><code>
+&gt;&gt;</code> defines <var>ty1</var> as the subtype of type <var>ty2</var> containing
+elements which satisfy term <var>pred</var> (which should have type
+<var>ty2</var><code> -&gt; bool</code>). Existence theorem <var>T</var> must be in the
+form <code>?x: </code><var>pred</var><code> x</code>. Example: <code>typedef &lt;:def&lt;: ('a,
+'b)PAIR = ('a -&gt; 'b -&gt; boo): is_pair&gt;&gt;</code>.
+
+   <p>The declaration and definition commands take an optional argument
+named <code>pp</code> to specify printer-parser information. This sets the
+precedence, fixity and the symbol to use for the identifier or
+constructor. Fixity values are <code>prefix</code>, <code>infixl</code> (infix,
+left associative), <code>infixr</code> (infix, right associative),
+<code>infixn</code> (infix, non-associative) and <code>suffix</code>.
+
+   <p><code>axiom </code><var>T</var> declares term <var>T</var> as an axiom.
+
+   <p><code>theorem </code><var>T</var><code> [</code><var>tac1</var><code>; ...; </code><var>tacn</var><code>]</code> adds term
+<var>T</var> as a theorem using list of tactics as a proof. A goal is
+constructed from term <var>T</var> and each tactic in the list is applied,
+in order, to the first subgoal.
+
+   <p>Note that the list of tactics used by <code>theorem</code> is an
+unstructured proof: the tactics are always applied to the first
+sub-goal, as they are in interactive proofs. This makes it easier to
+transfer interactive proofs to a batch proof.
+
+   <p><code>axiom</code> and <code>theorem</code> take the optional argument <code>simp</code>
+which marks the axiom/theorem for use as a simplification rule.
+
+<h3 class="heading">Information Access</h3>
+
+<p><code>theory </code><var>x</var> displays theory <var>n</var>. If <var>x</var> is
+the empty string (<code>""</code>), the current theory is displayed.
+
+   <p><code>defn </code><var>x</var> gets the defining theorem for term <var>x</var>. If
+<var>x</var> is in the form <var>T</var><code>.</code><var>n</var>, it identifies term
+<var>n</var> from theory <var>T</var>, otherwise the scope is searched for a
+definition of <var>x</var>.
+
+   <p><code>thm </code><var>x</var> get the theorem named <var>x</var>. Note that axioms are
+theorems. If <var>x</var> is in the form <var>T</var><code>.</code><var>n</var>, it
+identifies theorem <var>n</var> from theory <var>T</var>, otherwise the scope is
+searched for a theorem named <var>x</var>.
+
+   <p><code>scope()</code> get the current scope.
+
+   <p><code>goal_scope()</code> get the scope of the current goal (in an
+interactive proof).
+
+<!-- End of document -->
+</body></html>
+

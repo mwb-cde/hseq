@@ -1,0 +1,36 @@
+Installation
+============
+
+From the toplevel directory: 
+1) Run the configuration script:
+	ocaml configure.ml
+   By default, this set the installation directory to /usr/local/lib/hseq.
+
+   Options can be passed to the configure script. 
+	--help: See the list of options and their default values.
+	--basedir: Set the installation directory
+	--bindir: Set the directory in which to install the binary
+
+   Examples:
+	ocaml configure.ml --help,
+
+	ocaml configure.ml --bindir /usr/local/bin
+	(put the binary in /usr/local/bin)
+
+	ocaml configure.ml --basedir `pwd`
+	(make the installation directory the same as the build directory)
+
+
+2) Build the system:
+	make
+
+3) Install the system:
+	make install
+
+4) Build and install documentation (optional, recommended)
+	make install-doc
+
+5) Build and install source code documentation (optional, recommended)
+
+6) Clean up
+	make clean

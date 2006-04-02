@@ -966,6 +966,16 @@ module Grammars  =
    | alternative_parsers
    | error 
  *)
+    let mk_typed_opt (t, oty) = 
+      match oty with
+	  None -> t
+	| Some(ty) -> mk_typed t ty
+
+    let mk_app_opt (f, oa) = 
+      match oa with
+	  None -> f
+	| Some(a) -> mk_app f a
+
     let rec form inf toks =
       (
        ((formula inf)-- (repeat (formula inf)))
@@ -981,14 +991,12 @@ module Grammars  =
       (
        ((primary inf) --  (optional_type inf))
 	 >> 
-       (fun (t, pty) -> 
-	 match pty with None -> t | Some(ty) -> mk_typed t ty)
+	 mk_typed_opt
       ) toks
     and
 	primary inf toks = 
       ((term_parsers inf)
 	 // (term_error "")) toks
-
 
 (** [term_parsers_list] 
    list of term parsers.
@@ -1001,7 +1009,57 @@ module Grammars  =
     and term_parsers inf toks = 
       named_alt (!term_parsers_list) inf toks
 
+module Alt =
+struct
+  (**
+     [alt_form]/[alt_formula]/[alt_typed_primary]/[alt_primary]
+     Alternative term parser.
 
+     formula: operators optional_type | appl_term
+     appl_term: appl_term typed_primary | typed_primary
+     typed_primary: primary optional_type
+     primary:
+     '(' formula ')'
+     | 'ALL' { id_type_opt }+ ':' form
+     | 'EX' { id_type_opt }+ ':' form
+     | 'LAM' { id_type_opt }+ ':' form
+     | id_type_opt 
+     | number
+     | boolean
+     | alternative_parsers
+     | error 
+  *)
+
+  let rec form inf toks= 
+    alt 
+      [
+	((operators(formula inf, 
+		    (fun x-> mk_token_info (inf.token_info x)), 
+		    mk_conn inf, mk_prefix inf)
+	  -- (optional_type inf))
+	 >> mk_typed_opt)
+      ] toks
+  and formula inf toks = 
+    alt 
+      [
+	((((typed_primary inf) -- (optional (formula inf)))
+	  >> mk_app_opt)
+	 -- (optional_type inf))
+	>> mk_typed_opt;
+	typed_primary inf
+      ] toks
+  and typed_primary inf toks =
+    (((primary inf) --  (optional_type inf))
+     >> mk_typed_opt) toks
+  and
+      primary inf toks = 
+    ((term_parsers inf)
+     // (term_error "")) toks
+  and term_parsers_list =  ref []
+  and term_parsers inf toks = 
+    named_alt (!term_parsers_list) inf toks
+end
+    
 (**
    [core_term_parser_list]
    The primary term parsers are stored in a named list.
@@ -1373,7 +1431,8 @@ module Resolver =
 	    resolve_aux data env0 nty trm
 	  in 
 	  let (nty2, env2)=
-	    try (nty1, Gtypes.unify_env data.scp nty nty1 env1)
+	    try 
+	      (nty1, Gtypes.unify_env data.scp nty nty1 env1)
 	    with _ -> (nty1, env1)
 	  in 
 	  (Typed(trm1, nty2), nty2, env2)
@@ -1702,7 +1761,9 @@ let init_parsers () =
   Grammars.init_type_parsers();
   Grammars.init_term_parsers()
 
-let init ()= init_tables (); init_parsers()
+let init ()= 
+  init_tables (); 
+  init_parsers()
 
 (**
    Parsers
@@ -1721,12 +1782,15 @@ let typedef_parser inp =
 
 let term_parser inp=
   parse (Grammars.form (mk_info ())) inp
+
 let defn_parser inp = 
   parse (Grammars.defn (mk_info ())) inp
 
 (*** User defined parsers ***)
 
-let term_parser_list ()= !(Grammars.term_parsers_list)
+let term_parser_list ()= 
+  !(Grammars.term_parsers_list)
+
 let add_term_parser = Grammars.add_parser
 let remove_term_parser = Grammars.remove_parser
 

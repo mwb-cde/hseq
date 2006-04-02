@@ -23,7 +23,13 @@
 (**
    [tp_init()]: Theorem Prover specific initialisation.
 *)
-let tp_init() = Global.init()
+let tp_init() = 
+  let tmp = !Settings.load_thy_level
+  in 
+    Settings.load_thy_level:=0;
+    Global.init();
+    Settings.load_thy_level:=tmp
+
 
 (**
    [init()]:  Start up function, called when system first begins.
@@ -41,17 +47,18 @@ let set_base_dir()=
 ***)
 
 let set_directorys ()=
-  Unsafe.add_directory (Settings.include_dir());
+  List.iter Unsafe.add_directory (!Settings.include_dirs);
   Unsafe.add_directory (Settings.libs_dir())
   
 (**
    [starting_mesg()]: Print a Start Up message.
 *)
 let starting_mesg()=
-  Format.printf "@[<v>HSeq starting up...@,@]@."
+  Format.printf "@[\tHSeq (%s)\n@]@." Defaults.version
 
 let load_init () = 
-  let initfile=Settings.make_filename Settings.init_file
+  let initfile=
+    Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
   in
   if (Sys.file_exists initfile)
   then Unsafe.use_file initfile
@@ -59,12 +66,13 @@ let load_init () =
     Result.warning ("Can't find initialising file "^initfile)
 
 let init() = 
+  load_init();
   starting_mesg(); 
   tp_init()
-
 
 (*** The code to run when this module is loaded. **)  
 let _ = 
   set_base_dir();
   set_directorys();
-  Unsafe.add_init load_init
+  Unsafe.add_init init
+

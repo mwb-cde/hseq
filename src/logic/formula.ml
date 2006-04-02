@@ -49,7 +49,39 @@ let add_error s t es = raise (Result.add_error (error s t) es)
 let mk_scoped_formula scp f = { thy = Scope.marker_of scp; term = f }
 
 (** Convert a term to a formula *)
-let make_full scp tyenv t= 
+
+let resolve_term ?(strict=false) scp trm =
+  Term.resolve_closed_term scp trm
+
+let prepare ?(strict=false) scp tyenv trm =
+  let t1, lst = Term.resolve_closed_term scp trm
+  in 
+    if (strict && not (lst=[])) 
+    then
+      raise
+	(Term.term_error 
+	   "Formula.make: Can't make formula, not a closed term" [trm])
+    else 
+      let tyenv1 = 
+	try
+	 Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
+	with x -> 
+	  raise (Result.add_error x 
+		   (Term.term_error "Formula.make: incorrect types" [t1]))
+      in 
+	(lst, t1, tyenv1)
+
+let make_full ?(strict=false) scp tyenv t= 
+  let (lst, t1, tyenv1) = prepare ~strict:strict scp tyenv t
+  in
+  let t2 = 
+      List.fold_left 
+	(fun b (q, _) -> Term.mk_qnt (Term.dest_bound q) b)
+	t1 lst
+  in 
+    (mk_scoped_formula scp (Term.retype tyenv1 t2), tyenv1)
+
+(*
   let t1=
     try Term.resolve_closed_term scp t
     with x -> raise
@@ -66,6 +98,7 @@ let make_full scp tyenv t=
   with x -> 
     raise (Result.add_error x 
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
+*)
 
 let make scp ?tyenv t= 
   let env = 
@@ -424,11 +457,26 @@ let beta_reduce scp x = make scp (Logicterm.beta_reduce (term_of x))
     Make an equality expressing the result of beta-reducing trm.
 *)
 let mk_beta_reduce_eq scp tyenv trm = 
+  let (lhst, lst) = resolve_term scp trm
+  in 
+  let rhst = Logicterm.beta_reduce lhst
+  in 
+  let eqtrm = Logicterm.mk_equality lhst rhst
+  in 
+  let rtrm = 
+      List.fold_left 
+	(fun b (q, _) -> Term.mk_qnt (Term.dest_bound q) b)
+	eqtrm lst
+  in make_full scp tyenv rtrm
+
+(*
+let mk_beta_reduce_eq scp tyenv trm = 
   let (lhsf, tyenv1) = make_full scp tyenv trm
   in 
   let rhsf = fast_make scp [lhsf] (Logicterm.beta_reduce trm)
   in 
     (mk_equality scp lhsf rhsf, tyenv1)
+*)
 
 
 (*** Eta conversion ***)
@@ -495,6 +543,32 @@ let rewrite scp ?(dir=Rewrite.leftright) plan f =
 let mk_rewrite_eq scp tyenv plan trm = 
   let plan1 = extract_check_rules scp Rewrite.leftright plan
   in 
+  let (lhst, lst) = resolve_term scp trm
+  in 
+  let data = (scp, Term.empty_subst(), tyenv)
+  in 
+  let (data1, nt) = 
+    try (Rewrite.rewrite data plan1 trm)
+    with 
+      Rewritekit.Quit err -> raise err
+    | Rewritekit.Stop err -> raise err
+    | err -> raise err
+  in 
+  let (scp1, _, tyenv2) = data1
+  in 
+  let eqtrm =  Logicterm.mk_equality lhst nt
+  in 
+  let rtrm =
+    List.fold_left 
+      (fun b (q, _) -> Term.mk_qnt (Term.dest_bound q) b)
+      eqtrm lst
+  in 
+    make_full scp tyenv2 rtrm 
+
+(*
+let mk_rewrite_eq scp tyenv plan trm = 
+  let plan1 = extract_check_rules scp Rewrite.leftright plan
+  in 
   let (lhsf, tyenv1) = make_full scp tyenv trm
   in 
   let data = (scp, Term.empty_subst(), tyenv1)
@@ -511,7 +585,7 @@ let mk_rewrite_eq scp tyenv plan trm =
   let rhsf = fast_make scp1 [lhsf] nt
   in 
   (mk_equality scp lhsf rhsf, tyenv2)
-
+*)
 
 
 (***

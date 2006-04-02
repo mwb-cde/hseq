@@ -92,7 +92,7 @@ val dest_var : term -> (Ident.t * gtype)
 (** 
     {7 Meta variables} 
 
-    A meta variable is a bound term with quant {!Basic.Meta}. A meta
+    A meta variable is a bound term with quant [Basic.Meta]. A meta
     variable is treated like a term identifier, not a bound variable.
 *)
 
@@ -570,25 +570,34 @@ val subst_closed:
    to the term not being closed.
 *)
 
-
-val resolve_closed_term: Scope.t -> Basic.term -> Basic.term
+val resolve_closed_term: 
+  Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
 (**
-   [resolve_closed_term scp trm]: Resolve names and variables in term [trm]. 
-   - Replaces each free variable [Var(x, _)] in [trm] with the term
-   associated with [x] in scope [scp]. Fail if [x] is not in scope
-   [scp].
-   - Expands all type names to their long form (theory+name).
-   - Expands all identifier terms ([Id]) to their long form (theory+name).
-   - Looks up the type [ty'] of each identifier term ([Id(n,
-     ty)]). Replaces the term with [Typed(Id(n, ty), ty')], setting
-     the type [ty'] of the identifier while retaining any information
-     in the given type [ty].
+   [resolve_closed_term scp trm]: Resolve names and variables in
+   term [trm].
+     
+   {ul
+   {- Replace each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp].}
+   {- Expands all type names to their long form (theory+name).}
+   {- Expands all identifier terms ([Id]) to their long form
+   (theory+name).}
+   {- Looks up the type [ty'] of each identifier term ([Id(n,
+   ty)]). Replaces the term with [Typed(Id(n, ty), ty')], setting
+   the type [ty'] of the identifier while retaining any information
+   in the given type [ty].}}
+
+   Replaces each free or bound variable which can't be resolved with a
+   universally bound variable. Returns the resolved term, the list of
+   unknown variables and their replacments.
+     
 
    Fails if
-   - Any type name is not declared in scope [scp].
-   - Any identifier is not declared in [scp].
-   - Any free variable can't be replaced with an identifier in scope [scp].
-   - Any bound variable occurs outside its binding term.
+   {ul
+   {- Any type name is not declared in scope [scp].}
+   {- Any identifier is not declared in [scp].}
+   {- Any free variable can't be replaced with an identifier in scope [scp].}
+   {- Any bound variable occurs outside its binding term.}}
 *)
 
 

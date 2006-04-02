@@ -1,0 +1,42 @@
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub
+# This is a template to be copied into each directory to be built.
+#####
+
+####
+# The variables to be set in Makefile.child
+###
+
+###
+# texi documentation source files
+###
+
+# DOCSRC: the list of document source files 
+DOCSRC = 
+
+###
+# Generated files and directories
+###
+
+# OUTFILES: Generated files
+OUTFILES = 
+
+# OUTDIRS: Generated directories
+OUTDIRS = 
+
+###
+# End of Makefile.child variables
+###
+
+
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
+
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
+
+include ${CONFIGDIR}/Makefile.sub

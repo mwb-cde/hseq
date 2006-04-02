@@ -1,0 +1,340 @@
+This is hseq-quickstart.info, produced by makeinfo version 4.7 from
+hseq-quickstart.texi.
+
+   Copyright (C) 2005, M. Wahab
+
+
+File: hseq-quickstart.info,  Node: Top,  Up: (dir)
+
+HSeq Quick Start
+****************
+
+Copyright (C) 2005, M. Wahab
+
+   HSeq is a tactical theorem prover for a typed, higher order logic
+based on the sequent calculus. A _term_ is a _formula_ of the logic if
+it is well-formed in a particular _scope_.  A scope is a record of term
+and type definitions and declarations. A _theorem_ is a formula which
+has been proved to be a true statement. A proof is constructed by
+stating a _goal_ and applying _tactics_ to reduce the goal to _true_. A
+tactic reduces a goal to sub-goals; if there are no sub-goals, the
+tactic proves the goal. An _axiom_ is a formula asserted to be true
+without proof. Theorems, definitions and declarations are stored in
+_theories_ which provide the scope for other theories and for
+constructing formulas of the logic.
+
+Interaction with OCaml
+======================
+
+HSeq is built as an extension to the OCaml toplevel (`ocaml').  From
+the command line, `hseq OPTIONS FILE' executes FILE as a script and
+`hseq OPTIONS' starts the interactive interpreter. In both cases,
+OPTIONS are the options to pass to the OCaml system.
+
+   The OCaml preprocessor is used to embed HSeq terms, types and
+definitions as quotations in OCaml expressions.  For string STR, the
+quotation `<< str >>' parses STR as a term and the quotation `<<: str
+>>' is parsed as a type.  The quotation `<:def< str >>' parses STR as a
+term definition and the quotation `<:def<: str >>' parses STR as a type
+definition or declaration.
+
+   `reset()' resets the HSeq system to its initial state.
+
+Types
+=====
+
+A type has OCaml type `Basic.gtype' and is a _type variable_, a _type
+constructor_ or a _weak type variable_.  A type `'a' is a type variable
+of name _a_.  A type `'_a' is a weak type variable of name _a_.  A type
+`(t1, ..., tN)f' is a constructed type with constructor _f_ and N
+arguments. If there are no arguments the type is in the form `f'. If
+identifier _f_ is in the form `T.N' then it is constructor named N
+declared in the theory named T. If _f_ is `N', the scope of the type is
+searched for a theory T in which N is declared.
+
+   A weak type variable is a type variable which cannot match a type
+variable, only other weak type variable or type constructors. Weak type
+variables occur only in sequents. If a weak type variable V is bound to
+a type T in a sequent, all instances of V are bound to T. Weak type
+variables are treated as ordinary type variables by the parser.
+
+   The standard types are: `bool', the booleans; `'a -> 'b', functions
+from `'a' to `'b'; `('a)set', sets of `'a' and `'a * 'b', the product
+of `'a' and `'b'.
+
+Terms
+=====
+
+A term has OCaml type `Basic.term' and is an identifier, a free
+variable, a bound variable, a binding term or a function application.
+The boolean true and false are `true' and `false'; a function
+application is `f a' and has lower priority than other operators;
+negation is `~a' or `not a'; conjunction is `a & b' or `a and b';
+disjunction is `a | b' or `a or b'; implication is `a => b'; boolean
+equivalence is `a iff b'. Equality is `a = b' and has higher priority
+than the boolean operators. The type TY of a term T can be explicitly
+stated by enclosing the specification in brackets as the form `(T:TY)'.
+
+   A term identifier F is either in the form `T.N' or N. For `T.N', the
+identifier is the name N declared in the theory named T. If F is N, the
+scope of the term is searched for a list of theories in which N is
+defined or declared. The name N is resolved by choosing the first
+declaration or definition which matches the type of F.
+
+   Standard binding terms are lambda-abstraction, universal and
+existential quantification. A binding term (with some symbol SYM) is
+written `SYM x : F' and binds variable `x' in term `F'. The binding
+generalizes to a list of variables: `SYM x1 x2 ... xn : F' binds
+variables `x1', `x2', ..., `xn' in term `F'.  A lambda term is `% x:
+F'; universal quantification is `! x: F' and existential quantification
+is `? x: F'. The choice operator is `@ x: F' and the unique existential
+binding is `?! x: F'.  The variable `x' can be typed in which case it
+is written with brackets as `(x: ty)'.  For example, `! x (y: bool) z :
+?  (A:('a)set): (y and z) | (x = A)'.
+
+Interactive Proofs
+==================
+
+In sequent `ASM |- CONCL', ASM is the list of assumptions and CONCL is
+the list of conclusions. The assumptions and the conclusions are the
+_formulas_ of the sequent. The terms sequent and sub-goal will be used
+interchangeably.
+
+   When a sequent is displayed, the assumptions are printed before the
+conclusions, separated by a line.  Each assumption is printed with a
+negative integer, starting with `-1' and each assumption is printed
+with a positive integer, starting with `1'. The _first assumption_ is
+numbered `-1', the _first conclusion_ is numbered `1'.
+
+   Each sequent formula can be identified by a unique _label_. A string
+STR can be set as the label for a formula, in which case the label is
+referred by the OCaml expression `!$ STR'. When a string is set as the
+label of a sequent formula, it replaces the integer normally displayed
+with the formula.
+
+   For interactive proofs, command `goal T' sets term T as the goal to
+be proved. `by TAC' applies tactic TAC to the current subgoal. `undo()'
+drops the result of the last `by' command. `top()' displays the current
+sub-goal.
+
+   Function `prove T TAC' proves the theorem built from term T using
+tactic TAC, failing if the tactic fails.
+
+Tactics
+=======
+
+Tactics are generally named with suffix '_tac'. Tactics ending with a
+'A' act on the assumptions of a sub-goal. Tactics ending with 'C' act
+on the conclusions. Optional arguments are generally named A for an
+assumption, C for a conclusion, F for an assumption or conclusion and
+INST for a list of terms.
+
+   The basic tactics are `conjA', `conjC', `disjA', `disjC', `implA',
+`implC', `negA', `negC', `existA', `existC', `allA', `allC' which
+eliminate conjunctions, disjunctions, implications, negation and
+existential and universal quantifiers. `betaA', `betaC' and `beta_tac'
+beta reduce formulas.
+
+   `basic' solves sub-goals of the form `t, ASM|- t, CONCL' (a formula
+appearing in both assumptions and conclusions). `trivial' solves
+subgoals in which `true' appears in the conclusions or `false' appears
+in the assumptions. `eq_tac' solves subgoals in which term `x=x'
+appears in the conclusions.
+
+   `flatten_tac' eliminates basic boolean operators without splitting
+the sub-goal. `split_tac' eliminates the basic boolean operators,
+splitting the sub-goal. `scatter_tac' combines `flatten_tac' and
+`split_tac'. `blast_tac' is `scatter_tac' followed by `basic'.
+
+   `iffA' and `iffC' eliminate boolean equivalence and `equals_tac'
+replaces equality (=) between booleans with boolean equivalence (iff).
+
+   `instA', `instC' instantiate assumptions and conclusions with a
+given list of terms. `inst_tac' first tries `instA' then `instC'.
+`specA', `specC' and `spec_tac' specialize assumptions and conclusions.
+
+   A theorem is introduced as an assumption using `cut'. The optional
+argument `inst' can be used to instantiate the assumption with values.
+
+   The order of assumptions and conclusions can be significant for
+tactics which search for a formula.  `liftA L' and `liftC L' lift the
+assumption or conclusion labelled L to the front of the list of
+assumptions or conclusions.  `copyA L' and `copyC L' copy the
+assumption or conclusion with label L. `deleteA L' and `deleteC L'
+delete the assumption or conclusion labelled L.
+
+   `match_asm T tac' and `match_concl T TAC' search the sequent for an
+assumption or conclusion matching the term T, applying `TAC L' where L
+is the label of the matched formula. Free variables in T match
+sub-terms in the assumptions/conclusions. Example: `match_asm << !x y
+z: A => C >> liftA'.
+
+   `nameA STR L' and `nameC STR L' set string STR as the label of the
+assumption or conclusion with label L. These should be used in
+conjunction with `match_asm' and `match_concl'.
+
+   `back_tac' matches a possibly quantified assumption of the from `a
+=> c' with a conclusion of the form `c', replacing the conclusion with
+`a'. `mp_tac' matches a possibly quantified assumption of the from `a
+=> c' with an assumption of the form `a', replacing it with assumption
+`c'.  `cut_back_tac' and `cut_mp_tac' operate with theorems of the form
+`a=>c' (which may be universally quantified).
+
+   `show T TAC' introduces term T as an assumption, using tactic TAC to
+prove the truth of T. `cases_tac T' introduces a case split on the
+truth of term T. `case_of T' introduces a case split on the possible
+values of term T.
+
+Rewriting and Simplification
+============================
+
+Tactics `rewriteA_tac', `rewriteC_tac' and `rewrite_tac' rewrite
+assumptions, conclusions and sequent formulas with a list of rewrite
+rules, provided as theorems.  Tactics `once_rewriteA_tac',
+`once_rewriteC_tac' and `once_rewrite_tac' apply a rewrite once.
+`replace_tac' and `once_replace_tac' rewrite formulas with rules from
+the assumptions. `unfold N' unfolds the definition of the term named N.
+The rewrite tactics take an optional argument `dir' to specify the
+rewriting direction. Possible values are `rightleft' or `leftright'.
+
+   The main simplification tactics are `simpA_tac', `simpC_tac',
+`simp_all_tac' and `simp_tac'. `simpA_tac' simplifies the assumptions,
+starting with the first, `simpC_tac' simplifies the conclusions,
+starting with the last. `simp_all_tac' simplifies the assumptions,
+starting with the first, and then the conclusions, starting with the
+last. In all cases both formulas which aren't simplified and formulas
+which have been simplified are used as simplification rules on other
+formulas. `simp_tac' takes an optional formula label. If the label is
+given, then `simp_tac' is either `simpC_tac' or `simpA_tac', otherwise
+it is `simpC_tac'.
+
+   The simplification tactics use the standard simplification rules,
+obtained by calling `std_ss()'. The simplification tactics ending with
+`_tac' take a list of theorems to use as additional simplification
+rules. Tactics `simpA', `simpC', `simp_all' and `simp' are short-hand
+for the simplification tactics with no additional rules (`simp =
+simp_tac []').
+
+Sequencing Tactics
+==================
+
+`skip' is the tactic that does nothing and always succeeds. `fail' is
+the tactic that does nothing and always fails.
+
+   The sequential composition of tactics is `seq[TAC1; TAC2; ...;
+TACN]'. The tactics are applied in sequence starting with TAC1 and each
+tactic TAC(I+1) is applied to all the sub-goals generated by TACI. The
+sequence continues until all tactics have been applied, the goal is
+solved or a tactic fails.
+
+   The alternation between tactics is `alt[TAC1; TAC2; ...; TACN]'.
+Each tactic is tried in sequence, starting with TAC1, until one of the
+tactics succeeds. The alternation fails if all the tactics fail.
+
+   `TAC1++TAC2' is shorthand for `seq[TAC1; TAC2]'. `TAC1//TAC2' is
+shorthand for `alt[TAC1; TAC2]'.
+
+   Branching tactical `TAC -- [TAC1; ...; TACN]' applies tactic TAC.
+Each tactic TACI is then applied to the I'th resulting sub-goal. All
+sub-goals are then combined (in the order they were generated) to form
+the final list of sub-goals. If there are more sub-goals than tactics,
+the extra sub-goals are added to the end of the final list (as if the
+list of tactics was padded with `skip'). If there are more tactics than
+sub-goals, the extra tactics are ignored.
+
+Theories
+========
+
+A theory T is built from a _script file_ named `TScript.ml' and is
+saved to a _theory file_ named `T.tho'.  A theory may depend on other
+theories (its _parents_). When a theory is built or loaded from file,
+its parents are also loaded. If the parent of a theory does not have a
+theory file, it is rebuilt from its script file. All theories must be
+younger than the theories they depend on and theories are automatically
+rebuilt if necessary.
+
+   A theory is either _closed_ or _writable_. A closed theory can be
+the parent of other theories but cannot be modified. A writable theory
+can be modified but cannot be used as the parent of another theory.
+
+   The main theory for HSeq is called `Main' and is automatically set
+as a parent for each new theory.
+
+   `begin_theory N [P1; ...; PN]' begins a theory named N with parents
+P1, ..., PN. `end_theory()' ends the currently open theory, marking it
+as closed and saving it to a theory file.
+
+   `add_file N' marks file N as a library to be loaded when the theory
+is loaded. If N ends with suffix `.ml', it is loaded using `#use'. If N
+ends with suffix `.cmi' or `.cmo' it is loaded with `#load'.  `compile
+PATH N' compiles file N with the standard HSeq libraries. PATH is the
+list of additional include directories to use.
+
+   `declare << D >>' declares a term. D should be in the form `N:TY'
+where N is the identifier and TY the type. Note that `declare' uses the
+term quotation parser (`<< ... >>') not the definition quotation parser.
+Example: `declare <:def< and:(bool -> bool -> bool) >>'.
+
+   `define <:def< D >>' defines a term. D must be in the form `N A1 ...
+AN = T' where N is the identifier being defined, A1 ...  AN are the
+parameters and T the body of the definition.  Example: `define <:def<
+or x y = (not (not x) and (not y)) >>'.
+
+   `typedef <:def<: D >>' declares or defines a type constructor.
+`typedef <:def<: TY >>' declares the new type TY constructor. `typedef
+<:def<: TY1 = TY2 >>' declares TY1 to be an alias for type TY2.
+Example: (declaration) `typedef <:def<: bool >>' and (aliasing)
+`typedef <:def<: ('a)set = ('a -> bool)>>'.
+
+   `typedef ~thm:T <:def<: TY1 = TY2:PRED >>' defines TY1 as the
+subtype of type TY2 containing elements which satisfy term PRED (which
+should have type `TY2 -> bool'). Existence theorem T must be in the
+form `?x: PRED x'. Example: `typedef <:def<: ('a, 'b)PAIR = ('a -> 'b
+-> boo): is_pair>>'.
+
+   The declaration and definition commands take an optional argument
+named `pp' to specify printer-parser information. This sets the
+precedence, fixity and the symbol to use for the identifier or
+constructor. Fixity values are `prefix', `infixl' (infix, left
+associative), `infixr' (infix, right associative), `infixn' (infix,
+non-associative) and `suffix'.
+
+   `axiom T' declares term T as an axiom.
+
+   `theorem T [TAC1; ...; TACN]' adds term T as a theorem using list of
+tactics as a proof. A goal is constructed from term T and each tactic
+in the list is applied, in order, to the first subgoal.
+
+   Note that the list of tactics used by `theorem' is an unstructured
+proof: the tactics are always applied to the first sub-goal, as they
+are in interactive proofs. This makes it easier to transfer interactive
+proofs to a batch proof.
+
+   `axiom' and `theorem' take the optional argument `simp' which marks
+the axiom/theorem for use as a simplification rule.
+
+Information Access
+==================
+
+`theory X' displays theory N. If X is the empty string (`""'), the
+current theory is displayed.
+
+   `defn X' gets the defining theorem for term X. If X is in the form
+`T.N', it identifies term N from theory T, otherwise the scope is
+searched for a definition of X.
+
+   `thm X' get the theorem named X. Note that axioms are theorems. If X
+is in the form `T.N', it identifies theorem N from theory T, otherwise
+the scope is searched for a theorem named X.
+
+   `scope()' get the current scope.
+
+   `goal_scope()' get the scope of the current goal (in an interactive
+proof).
+
+
+
+Tag Table:
+Node: Top124
+
+End Tag Table

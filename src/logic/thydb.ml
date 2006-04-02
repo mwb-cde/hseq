@@ -683,7 +683,9 @@ module Loader =
 	in 
 	test_protection info.name info.prot (Theory.saved_prot saved_thy);
 	test_date info.name info.date (Theory.saved_date saved_thy);
-	Format.printf "@[Loading theory %s@]@." info.name;
+	(if !Settings.load_thy_level > 0
+	then Format.printf "@[Loading theory %s@]@." info.name
+	else ());
 	saved_thy
       with err -> add_error "Failed to load theory" [info.name] err
 

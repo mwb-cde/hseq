@@ -1,0 +1,13 @@
+@c @setfilename tactics.info
+
+@node Tactics and Tacticals
+@chapter Tactics and Tacticals
+
+@menu
+* Tactic Name:: Tactic Name.
+@end menu
+
+
+
+
+

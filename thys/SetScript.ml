@@ -140,6 +140,7 @@ let add_member =
     ++ (equals_tac ++ scatter_tac ++ simp)
   ];;
 
+(*
 let finite_def=
   define 
   <:def<
@@ -149,7 +150,53 @@ let finite_def=
      & (! x (A:('a)set): (~(x in A) & (P A)) => (P (add x A))))
   => (P X)
   >>;;
+*)
 
+(**
+   finite empty;
+   [ ~x in A; finite A ] --> finite (add x A);
+*)
+
+let finite_def=
+  define 
+  <:def<
+    finite X =
+  !P:
+    ((P empty)
+     & (! x A: (~(x in A) & (P A)) => (P (add x A))))
+  => (P X)
+  >>;;
+
+let finite_induct =
+  theorem "finite_induct"
+  <<
+  !P:
+    ((P empty)
+     & (! x A: (~(x in A) & (P A)) => (P (add x A))))
+  => 
+  !A : (finite A) => (P A)
+  >>
+  [flatten_tac 
+   ++ unfold "finite"
+   ++ back_tac
+   ++ blast_tac ++ back_tac ++ blast_tac];;  
+
+
+let finite_rules = 
+  theorem ~simp:true "finite_rules"
+  << 
+    (finite empty)
+  & (!x A: (~(x in A) & (finite A)) => (finite (add x A)))
+  >>
+    [rewrite_tac [defn "finite"]
+     ++ blast_tac
+     ++ (match_asm << !P: A => (P x) >>
+	 (fun l -> instA ~a:l [ << _P >> ]))
+     ++ (implA -- [split_tac ++ basic])
+     ++ back_tac 
+     ++ blast_tac];;
+
+(*
 let empty_finite = 
   prove_thm ~simp:true "empty_finite"
   << finite {} >>
@@ -172,7 +219,7 @@ let add_finite =
     ++ inst_tac [<< _x >> ; << _A >> ]
     ++ scatter_tac ++ simp_all
   ];;
-
+*)
 
 (** Properties of neg *)
 

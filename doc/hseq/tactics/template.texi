@@ -1,0 +1,29 @@
+@node Tactic Name
+@section Tactic Name
+
+@c Add to index
+@c Capitalize first word only. No trailing full stop.
+@tcindex Tactic name
+
+@c Full signature
+@Float{@TypedName{name, type}}
+
+@c Sections (follows the HOL reference format)
+
+@Synopsis{}
+
+@Description{}
+
+@GoalInfo{}
+
+@Failure{}
+
+@Example{}
+
+@Notes{}
+
+@Uses{}
+
+@SeeAlso{}
+
+

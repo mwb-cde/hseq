@@ -1,0 +1,127 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename hseq.info
+@settitle HSeq Description
+
+@ Indexes
+@c Modules
+@defindex md
+@c Functions index
+@c @defindex fn
+@c Variables index
+@c @defindex vr
+@c Tactics index
+@defindex tc
+@c Tacticals index
+@defindex tl
+@c Convs index
+@defindex cv
+@c Rules index
+@defindex rl
+
+@c %**end of header
+
+@c Local definitions
+@include localdefs.texi
+
+@copying
+This manual is for @HSeq{}.
+
+Copyright @copyright{} 2005, M. Wahab
+@end copying
+
+@titlepage
+@title @HSeq{} Description
+@author M. Wahab <mwahab@users.sourceforge.net>
+
+@page
+@vskip 0pt plus lfill
+@insertcopying
+@end titlepage
+
+@ifnottex
+@node Top
+@top HSeq Description
+@insertcopying
+@end ifnottex
+
+@c
+@c Front Matter
+@c
+
+A theorem prover for higher-logic based on the sequent calculus.
+
+@c @contents
+
+@menu
+* Introduction::
+@c * Quick Start::
+@c * Tactics and Tacticals:: Tactics and Tacticals.
+@end menu
+
+@c Indices
+@c @menu 
+@c * Tactics Index:: Tactics Index.
+@c * Tacticals Index:: Tacticals Index.  
+@c * Conversion Index:: Conversion Index.  
+@c * Rules Index:: Rules Index.  
+@c * Function Index:: Function Index.  
+@c * Variable Index:: Variable Index.  
+@c * Concept Index:: Concept Index.  
+@c @end menu
+
+@c
+@c Chapters
+@c 
+
+@include intro.texi
+@c @include qstart.texi
+@c @include tactics.texi
+
+@c
+@c Indices 
+@c
+
+@c
+@c Entries convention:
+@c Capitalize first word only. No trailing full stop.
+@c
+
+@c @node Module Index
+@c @unnumbered Module Index
+@c @printindex md
+
+@c @node Tactics Index
+@c @unnumbered Tactics Index
+@c @printindex tc
+
+@c @node Tacticals Index
+@c @unnumbered Tacticals Index
+@c @printindex tl
+
+@c @node Conversion Index
+@c @unnumbered Conversion Index
+@c @printindex cv
+
+@c @node Rules Index
+@c @unnumbered Rules Index
+@c @printindex rl
+
+@c @node Function Index
+@c @unnumbered Function Index
+@c @printindex fn
+
+@c @node Variable Index
+@c @unnumbered Variable Index
+@c @printindex vr
+
+@c @node Concept Index
+@c @unnumbered Concept Index
+
+@printindex cp
+
+@c
+@c End of document
+@c
+
+@bye

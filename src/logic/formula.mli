@@ -40,9 +40,10 @@ val add_error : string -> t list -> exn -> 'a
 (** {5 Conversion from a term} *)
 
 val make_full: 
-    Scope.t 
-      -> Gtypes.substitution 
-	-> Basic.term -> (t * Gtypes.substitution)
+  ?strict:bool
+  -> Scope.t 
+  -> Gtypes.substitution 
+  -> Basic.term -> (t * Gtypes.substitution)
 (**
    [make_full scp tyenv scp trm]: Make a formula from term [trm] in
    scope [scp] w.r.t type environment [tyenv]. The theory of the formula

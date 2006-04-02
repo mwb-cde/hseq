@@ -1,0 +1,21 @@
+(*-----
+ Name: defaults.mlp
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
+(*
+  Make defaults.ml with
+
+ camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -- -I CONFIGDIR
+ -impl defaults.mlp
+
+   where CONFIGDIR is the directory storing file configure.data
+*)
+
+INCLUDE "configure.data"
+
+let basedir = BaseDir
+
+let version = "March 2006"
+

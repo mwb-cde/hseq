@@ -25,27 +25,31 @@ val get_base_dir: unit -> string
 val set_base_dir: string -> unit
 (** Set the base directory. *)
 
-val make_filename: string -> string
-(** [make_filename f]: make file name f relative to the base directory. *)
-
-val make_directory: string -> string
-(** [make_directory f]: make directory path f relative to the base directory.*)
-
-
-val init_file: string
+val make_filename: ?dir:string -> string -> string
 (**
-   Name of the file to execute to initialise the system
-   the file name used will be contructed as [base_dir^init_file].
+    [make_filename ?dir f]: make file name [f] relative to the
+    directory [dir]. If [?dir] is not given, use the base directory.
 *)
 
-val include_dir : unit -> string
-(** Main include directory. *)
+val make_directory: string -> string
+(** 
+    [make_directory f]: make directory path f relative to the base directory.
+*)
+
+val include_dirs : string list ref
+(** Include directories. *)
 
 val libs_dir : unit -> string
 (**  Main library directory. *)
 
 val thys_dir : unit -> string
 (**  Main theory directory. *)
+
+val init_file: string
+(**
+   Name of the file to execute to initialise the system
+   the file name used will be contructed as [libs_dir^init_file].
+*)
 
 (** 
    {7 File suffixes} 
@@ -87,4 +91,9 @@ val print_type_level: int ref
 (**
    How many types to print when printing terms. Higher values of
    [print_type_level] correspond to more types. Initially [1].
+*)
+
+val load_thy_level: int ref
+(**
+   Amount of information to emit when loading a theory. Initially [1].
 *)

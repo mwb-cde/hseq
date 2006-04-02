@@ -1,13 +1,15 @@
 clean:
+	rm -f *.data
+	rm -f *.html *.css
+	rm -f *.info
 	rm -f *.cmi
 	rm -f *.mli
-	rm -f *.ml
 	rm -f *.cmo
 	rm -f *.cmx 
 	rm -f *.o
 	rm -f *~
 
-libclean: 
+libclean: clean
 	rm -f *.cmi
 	rm -f *.cma *.cmxa
 

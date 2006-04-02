@@ -597,7 +597,7 @@ val neg_rule_asm :
    Convert 
    and [c=> not true] to [not c]
    and [not a] to [a=false]
-   and [c=> not a] to [c=> a=false]; [(c => not a) = true}
+   and [c=> not a] to [c=> a=false]; [(c => not a) = true]
    pass [not (a=b)] and [c=>not(a=b)] to [neg_eq_asm]
    and solve  [not true |- C]
 *)

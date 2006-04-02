@@ -86,8 +86,8 @@ val matches_rewrite:
    unification where only variables in [trm1'] can be bound. In
    particular, only the type variables in [trm1'] can be bound.
 
-   The variables for matching must be either {!Basic.Bound} or
-   {!Basic.Free} terms.
+   The variables for matching must be either [Basic.Bound] or
+   [Basic.Free] terms.
 
    Because the type variables in [trm1] are all unique, it is safe to
    repeatedly match [trm1] in a type context constructed from [tyenv]

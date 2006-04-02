@@ -592,7 +592,7 @@ module Grammars :
 	  (** Parse infix/prefix/suffix operators *)
       val typed_primary : infotyp -> Basic.term phrase
 	  (** Parse a possibly typed atomic term *)
-	  
+
       val term_parsers_list :
 	  (string, infotyp -> Basic.term phrase) Lib.named_list ref
 	  (**

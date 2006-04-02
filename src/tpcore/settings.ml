@@ -14,14 +14,21 @@ let base_dir = ref Defaults.basedir
 let get_base_dir () = !base_dir
 let set_base_dir d = base_dir := d
 
-let make_filename f = (get_base_dir())^"/"^f
+let make_filename ?dir f = 
+  let d= 
+    match dir with
+      None -> (get_base_dir())
+    | Some x -> x
+  in 
+    d^"/"^f
+
 let make_directory f = (get_base_dir())^"/"^f
 
-let init_file = "fm.ml"
-
 let libs_dir () = make_directory "lib"
-let include_dir = libs_dir
+let include_dirs = ref [libs_dir()]
 let thys_dir () = make_directory "thys"
+
+let init_file = "hseqstart.ml"
 
 (*** File suffixes ***)
 
@@ -46,4 +53,6 @@ let nice_sequent = ref true
 let long_identifier=ref false
 let print_type_level=ref 1
 
+
+let load_thy_level=ref 1
 

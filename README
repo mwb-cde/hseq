@@ -1,0 +1,28 @@
+HSeq Theorem Prover
+March 2006
+M. Wahab 
+<mwahab@users.sourceforge.net>
+==============================
+
+HSeq is a tactical theorem prover for typed higher-order logic.  It
+should be considered experimental, alpha-quality code.
+
+HSeq is distributed under the terms of the BSD License, see file
+COPYRIGHT for details.
+
+For installation instructions, see file INSTALL.
+
+To start HSeq, run 'hseq'.
+
+Some documentation is provided in directories doc/html or doc/info
+(for html or texinfo format). It is recommended that the source code
+documentation is built and installed (see file INSTALL).
+
+Directories
+-----------
+
+src: The source code
+thys: Theory scripts, the generated files and their libraries.
+doc: Documentation
+lib: The libraries and files needed for HSeq
+config: Build configuration data
