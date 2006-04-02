@@ -1522,9 +1522,11 @@ let rec subst_closed qntenv sb trm =
     | _ -> trm)
 
 (**
-   [resolve_closed_term scp trm]: 
-   resolve names and types in closed term [trm] in scope [scp].
+   [resolve_closed_term scp trm]: resolve names and types in closed
+   term [trm] in scope [scp].
 *)
+
+(***
 let resolve_closed_term scp trm=
   let set_type_name memo s t =
     Gtypes.set_name ~strict:true ~memo:memo s t
@@ -1534,9 +1536,8 @@ let resolve_closed_term scp trm=
   and type_memo = Lib.empty_env()
   and type_thy_memo = Lib.empty_env()
   in 
-  let lookup_id n = 
-    try 
-      Lib.find n id_memo
+  let lookup_name n = 
+    try Lib.find n id_memo
     with Not_found -> 
       let nth = Scope.thy_of_term scp n
       in (ignore(Lib.add n nth id_memo); nth)
@@ -1548,7 +1549,21 @@ let resolve_closed_term scp trm=
       let ty = Scope.type_of scp id
       in (ignore(Lib.add id ty type_memo); ty)
   in 
-  let rec set_aux qnts t=
+  let lookup_var vars t =
+    match Lib.try_find (find t) vars with
+	Some(x) -> (x, vars)
+      | None -> 
+	  let nt = 
+	    (match t with
+		Free(n, ty) -> mk_bound (mk_binding All n ty)
+	      | Bound(q) -> 
+		  mk_bound (mk_binding All (binder_name q) (binder_type q))
+	      | _ -> 
+		  mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
+	  in 
+	    (nt, bind t nt vars)
+  in 
+  let rec set_aux (qnts, vars) t lst=
     match t with
       Id(id, ty) -> 
 	let th, n = Ident.dest id
@@ -1557,79 +1572,195 @@ let resolve_closed_term scp trm=
 	  if(th = Ident.null_thy)
 	  then 
 	    try 
-	      let nth = lookup_id n
+	      let nth = lookup_name n
 	      in 
 	      Ident.mk_long nth n
 	    with Not_found -> 
-	      raise 
-		(term_error "Term not in scope" [t])
+	      raise (term_error "Term not in scope" [t])
 	  else id
 	in 
 	let nty =  
-	  try 
-	    lookup_type id
+	  try lookup_type id
 	  with Not_found -> 
-	    raise 
-	      (term_error 
-		 "Can't find type for term" [t])
+	    raise (term_error "Can't find type for term" [t])
 	in 	
 	let ty1=
-	  try
-	    set_type_name type_thy_memo scp ty
+	  try set_type_name type_thy_memo scp ty
 	  with err ->
 	    raise (add_term_error "Invalid type" [t] err)
 	in 
 	let ret_id = Typed(Id(nid, nty), ty1)
 	in 
 	(if (in_scope scope_memo scp ret_id)
-	then ret_id
-	else 
-	  raise 
-	    (term_error 
-	       "Term not in scope" [t]))
+	then (ret_id, vars, lst)
+	else raise (term_error "Term not in scope" [t]))
     | Free(n, ty) -> 
-	let ntrm = 
-	  match Lib.try_find (Scope.find_meta scp) n with
-	      Some(b) -> Bound(b)
-	    | None -> 
-		(try 
-		   let nth = lookup_id n 
-		   in 
-		   let nid = Ident.mk_long nth n
-		   in 
-		   let nty = 
-		     try lookup_type nid
-		     with Not_found -> 
-		       raise (term_error "Can't find type for term" [t])
-		   in 
-		     Id(nid, nty)
-		 with 
-		     Not_found -> 
-		       raise (term_error "Can't resolve free variable" [t]))
-	in 
 	let ty1=
 	  try set_type_name type_thy_memo scp ty
 	  with err -> raise (add_term_error "Invalid type" [t] err)
-	  in 
-	  set_aux qnts (Typed(ntrm, ty1))
+	in 
+	let (ntrm, nvars, nlst) =
+	  (match Lib.try_find (Scope.find_meta scp) n with
+	       Some(b) -> (Bound(b), vars, lst)
+	     | None -> 
+		 (try 
+		    let nth = lookup_name n 
+		    in 
+		    let nid = Ident.mk_long nth n
+		    in 
+		    let nty = 
+		      try lookup_type nid
+		      with Not_found -> 
+			raise (term_error "Can't find type for term" [t])
+		    in 
+		      (Id(nid, nty), vars, lst)
+		  with 
+		      Not_found -> 
+			(let (nt, nvars) = lookup_var vars t
+			 in 
+			   (nt, nvars, ((nt, t)::lst)))))
+	in 
+	  set_aux (qnts, nvars) (Typed(ntrm, ty1)) nlst
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
 	in 
-	Qnt(nq, set_aux qnts1 b)
-    | Typed(tt, tty) -> Typed(set_aux qnts tt, tty)
-    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
+	in 
+	(Qnt(nq, nb), nvars, nlst)
+    | Typed(tt, tty) -> 
+	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
+	in 
+	  (Typed(nt, tty), nvars, nlst)
+    | App(f, a) -> 
+	let nf, fvars, flst = set_aux (qnts, vars) f lst
+	in 
+	let (na, avars, alst) = set_aux (qnts, fvars) a flst
+	in 
+	  (App(nf, na), avars, alst)
     | Bound(q) -> 
-	if (is_meta t) && (Scope.is_meta scp q) then t
+	if (is_meta t) && (Scope.is_meta scp q) 
+	then (t, vars, lst)
 	else
 	(match Lib.try_find (find (Bound(q))) qnts with
-	    Some x -> x
+	    Some x -> (x, vars, lst)
 	  | None ->
-	      raise 
-		(term_error "Bound variable occurs outside binding" [t]))
-    | _ -> t
-  in set_aux (empty_subst()) trm
+	      let nt, nvars = lookup_var vars t
+	      in 
+		(nt, nvars, ((nt, t)::lst)))
+    | _ -> (t, vars, lst)
+  in 
+  let (nt, nvars, nlst) =
+    set_aux (empty_subst(), empty_subst()) trm []
+  in 
+    (nt, nlst)
+***)
+
+
+let resolve_closed_term scp trm=
+  let id_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env() 
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
+  in 
+  let lookup_id scp ident ty =
+    let lookup_name n = 
+      try Lib.find n id_memo
+      with Not_found -> 
+	let nth = Scope.thy_of_term scp n
+	in 
+	  (ignore(Lib.add n nth id_memo); nth)
+    in 
+    let lookup_type id = 
+      try Gtypes.rename_type_vars (Lib.find id type_memo)
+      with Not_found -> 
+	let ty = Scope.type_of scp id
+	in (ignore(Lib.add id ty type_memo); ty)
+    in 
+    let th, name = Ident.dest ident
+    in 
+    let nid = 
+      if(th = Ident.null_thy)
+      then Ident.mk_long (lookup_name name) name
+      else ident
+    in 
+    let ty0 = lookup_type ident
+    in 	
+    let ntyenv = Gtypes.unify scp ty0 ty
+    in 
+    let nty = Gtypes.mgu ty0 ntyenv
+    in 
+      Id(nid, nty)
+  in 
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:true ~memo:memo s t
+  in 
+  let lookup_var vars t =
+    match Lib.try_find (find t) vars with
+	Some(x) -> (x, vars)
+      | None -> 
+	  let nt = 
+	    (match t with
+		Free(n, ty) -> mk_bound (mk_binding All n ty)
+	      | Bound(q) -> 
+		  mk_bound (mk_binding All (binder_name q) (binder_type q))
+	      | _ -> 
+		  mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
+	  in 
+	    (nt, bind t nt vars)
+  in 
+  let rec set_aux (qnts, vars) t lst=
+    match t with
+      Id(id, ty) -> 
+	let ty1=
+	  try set_type_name type_thy_memo scp ty
+	  with err -> raise (add_term_error "Invalid type" [t] err)
+	in 
+	let ret_id = lookup_id scp id ty1
+	in 
+	(if (in_scope scope_memo scp ret_id)
+	then (ret_id, vars, lst)
+	else raise (term_error "Term not in scope" [t]))
+    | Free(n, ty) -> 
+	(match Lib.try_find (Scope.find_meta scp) n with
+	     Some(b) -> (Bound(b), vars, lst)
+	   | None -> 
+	       set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
+    | Qnt(q, b) -> 
+	let nq = binding_set_names ~memo:type_thy_memo scp q
+	in 
+	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
+	in 
+	(Qnt(nq, nb), nvars, nlst)
+    | Typed(tt, tty) -> 
+	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
+	in 
+	  (Typed(nt, tty), nvars, nlst)
+    | App(f, a) -> 
+	let nf, fvars, flst = set_aux (qnts, vars) f lst
+	in 
+	let (na, avars, alst) = set_aux (qnts, fvars) a flst
+	in 
+	  (App(nf, na), avars, alst)
+    | Bound(q) -> 
+	if (is_meta t) && (Scope.is_meta scp q) 
+	then (t, vars, lst)
+	else
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some x -> (x, vars, lst)
+	  | None ->
+	      let nt, nvars = lookup_var vars t
+	      in 
+		(nt, nvars, ((nt, t)::lst)))
+    | _ -> (t, vars, lst)
+  in 
+  let (nt, nvars, nlst) =
+    set_aux (empty_subst(), empty_subst()) trm []
+  in 
+    (nt, nlst)
 
 
 (***
