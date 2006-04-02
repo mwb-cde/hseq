@@ -1,0 +1,28 @@
+(*-----
+ Name: hseqc.mlp
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2005
+----*)
+
+INCLUDE "configure.data"
+
+let bindir = BinDir
+let includedir = HeadersDir
+
+let bin = Filename.concat bindir "hseq"
+let bin_args = Array.of_list [""; "-I"; includedir]
+let args = 
+  Array.append bin_args 
+    (Array.sub Sys.argv 1 ((Array.length Sys.argv)-1))
+
+let _ =
+(*
+  Format.open_box 0;
+  List.iter (fun x -> Format.print_string (x^", ")) 
+    (bin::(Array.to_list args));
+  Format.close_box();
+  Format.print_newline();
+*)
+  Unix.execv bin args
+
+

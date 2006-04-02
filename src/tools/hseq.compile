@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# bindir = BinDir
+# includedir = HeadersDir
+
+bindir=/home/mw/src/tp/src
+includedir=/home/mw/src/tp/src/include
+
+bin=${bindir}/hseq
+bin_args='-I ${includedir}'
+
+args=$@
+echo "#use \"${args}\";;" | /home/mw/src/tp/src/hseq 
+
+
+
