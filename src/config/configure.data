@@ -1,0 +1,6 @@
+(**
+ Configuration dependent definitions 
+ (for a sub-directory of src).
+**)
+
+INCLUDE "../../config/configure.data"
