@@ -143,7 +143,7 @@ INCLUDE = -I ${HEADERSDIR}
 ##
 
 OCAMLC=ocamlc ${OPTIONS} 
-OCAMLMKTOP = ocamlmktop ${INCLUDE} ${OCINCLUDE} ${OCLIBS}
+OCAMLMKTOP = ocamlmktop -custom ${INCLUDE} ${OCINCLUDE} ${OCLIBS}
 OCAMLlink=${OCAMLC} -c ${INCLUDE} ${OCINCLUDE} ${OCLIBS} 
 OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCINCLUDE} ${OCLIBS} 
 
