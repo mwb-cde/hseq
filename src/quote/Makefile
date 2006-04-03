@@ -71,4 +71,11 @@ ifndef CONFIGDIR
 CONFIGDIR = ../config
 endif
 
+# Don't use the default dependency generator
+NODEPEND = "true"
+
 include ${CONFIGDIR}/Makefile.sub
+
+tpquote.cmi: tpquote.mli
+tpquote.cmo: tpquote.cmi tpquote.ml
+
