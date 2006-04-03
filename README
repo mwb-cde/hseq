@@ -10,9 +10,16 @@ should be considered experimental, alpha-quality code.
 HSeq is distributed under the terms of the BSD License, see file
 COPYRIGHT for details.
 
+Requirements: OCaml 3.09
+
 For installation instructions, see file INSTALL.
 
 To start HSeq, run 'hseq'.
+
+The system looks in the installation directory for the libraries and
+theories needed for execution. If the environment variable HSEQ is
+set, the value of HSEQ is used as the name of the installation
+directory.
 
 Some documentation is provided in directories doc/html or doc/info
 (for html or texinfo format). It is recommended that the source code

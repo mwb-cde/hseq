@@ -118,7 +118,7 @@ install-info: info
 	-mkdir $(INFODIR)
 	-cp -Rf info/* $(INFODIR)
 
-install: install-html
+install: install-html install-info
 
 ###
 # Clean up
