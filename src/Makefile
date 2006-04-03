@@ -172,8 +172,9 @@ hseq: code
 	${OCAMLMKTOP} -o ${BINFILE} ${CODE} 
 
 install: hseq
-	cp ${BINFILE} ${IBINDIR}/${IBINFILE}
 	-mkdir ${IBASEDIR}
+	-mkdir ${IBINDIR}
+	cp ${BINFILE} ${IBINDIR}/${IBINFILE}
 	-mkdir ${ILIBDIR}
 	-cp -R ${LIBDIR}/*.ml ${LIBDIR}/*.mli \
 		${LIBDIR}/*.cmi ${LIBDIR}/*.cmo ${ILIBDIR}

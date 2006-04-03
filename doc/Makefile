@@ -54,8 +54,7 @@ ThyDir ?=
 IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
-#IBASEDIR = $(BaseDir)
-IBASEDIR = ..
+IBASEDIR = $(BaseDir)
 
 # IDOCDIR: The documentation installation directory
 IDOCDIR ?= $(IBASEDIR)/doc
@@ -110,12 +109,14 @@ info: ${DOCSRC}
 	$(foreach subdir, ${SUBDIRS}, $(DMAKE) -C $(subdir) install-info;)
 
 install-html: html
-	-mkdir ${HTMLDIR}
-	-cp -Rf html/* ${HTMLDIR}
+	-mkdir $(IDOCDIR)
+	-mkdir $(HTMLDIR)
+	-cp -Rf html/* $(HTMLDIR)
 
 install-info: info
-	-mkdir ${INFODIR}
-	-cp -Rf info/* ${INFODIR}
+	-mkdir $(IDOCDIR)
+	-mkdir $(INFODIR)
+	-cp -Rf info/* $(INFODIR)
 
 install: install-html
 
