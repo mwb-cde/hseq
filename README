@@ -10,7 +10,8 @@ should be considered experimental, alpha-quality code.
 HSeq is distributed under the terms of the BSD License, see file
 COPYRIGHT for details.
 
-Requirements: OCaml 3.09
+Requirements: OCaml 3.09 
+Building HSeq also requires GNU Make in a Unix environment.
 
 For installation instructions, see file INSTALL.
 
