@@ -511,28 +511,6 @@ let eq_sym_tac ?info f goal =
   with Not_found -> eq_symC ?info f goal
 
 
-(***
-let eq_tac ?info ?c g = 
-  let cf = first_concl_label c Formula.is_equality g
-  in 
-  let th = 
-    try thm (Logicterm.base_thy ^ ".eq_refl")
-    with Not_found -> 
-      (raise (error ("eq_tac: Can't find required lemma "
-		     ^Logicterm.base_thy^".eq_refl")))
-  in 
-  let info1 = Tactics.mk_info()
-  in 
-  seq 
-    [
-      Logic.Tactics.cut ~info:info1 th; 
-      (fun g1 -> 
-	 let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
-	 in 
-	   unify_tac ~a:(ftag af) ~c:cf g1)
-    ] g
-***)
-
 let eq_tac ?info ?c goal = 
   let th = 
     try thm (Logicterm.base_thy ^ ".eq_refl")
