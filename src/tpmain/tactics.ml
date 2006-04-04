@@ -631,15 +631,19 @@ let basic ?info ?a ?c goal =
 	None -> raise (error "basic: failed")
       | Some(al, cl) -> Logic.Tactics.basic ?info al cl goal)
 
-let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) goal =
+(***
+let unify_tac ?info ?a ?c goal =
   let sqnt=sequent goal
   in 
+  let af = first_asm_label a (fun _ -> true) g
+  and cf = first_concl_label c (fun _ -> true) g
+  in 
   let asm = 
-    try Formula.term_of (get_asm a goal)
+    try Formula.term_of (get_asm af goal)
     with Not_found ->
       raise(error "unify_tac: assumption not found")
   and concl = 
-    try Formula.term_of (get_concl c goal)
+    try Formula.term_of (get_concl cf goal)
     with Not_found ->
       raise(error "unify_tac: conclusion not found")
   in 
@@ -676,6 +680,77 @@ let unify_tac ?info ?(a=(fnum (-1))) ?(c=(fnum 1)) goal =
      instC ?info:info ~c:c concl_consts;
      (basic ?info:info ~a:a ~c:c // skip) 
    ] goal
+***)
+
+let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
+  let sqnt = sequent goal
+  in 
+  let scope = Logic.Sequent.scope_of sqnt
+  in 
+  let albl = ftag atg
+  and clbl = ftag ctg
+  in 
+  let asm = Formula.term_of aform
+  and concl = Formula.term_of cform
+  in 
+  let asm_vars, asm_body =  Term.strip_qnt Basic.All asm
+  and concl_vars, concl_body = Term.strip_qnt Basic.Ex concl
+  in 
+  let asm_varp x = Rewrite.is_free_binder asm_vars x
+  and concl_varp x = Rewrite.is_free_binder concl_vars x
+  in 
+  let varp x = (asm_varp x) || (concl_varp x)
+  in 
+  let env1 = 
+    try  (* unify asm and concl *)
+      Unify.unify scope varp asm concl
+    with _ -> 
+      try (* unify asm and concl_body with concl_vars *)
+	Unify.unify scope concl_varp asm concl_body
+      with _ -> 
+	try (* unify asm_body and concl with asm_vars *)
+	  Unify.unify scope asm_varp asm_body concl
+	with _ -> 
+	  try (* unify asm_body and concl_body with all vars *)
+	    Unify.unify scope asm_varp asm_body concl_body
+	  with _ -> 
+	    raise (error "Can't unify formulas")
+  in 
+  let asm_consts = extract_consts asm_vars env1
+  and concl_consts = extract_consts concl_vars env1
+  in 
+  seq 
+    [
+     instA ?info:info ~a:albl asm_consts;
+     instC ?info:info ~c:clbl concl_consts;
+     (basic ?info:info ~a:albl ~c:clbl // skip) 
+   ] goal
+
+let unify_tac ?info ?a ?c goal =
+  let sqnt = sequent goal
+  in 
+  let asms = 
+    match a with
+	None -> asms_of sqnt
+      | Some(l) -> 
+	  (try [get_tagged_asm l goal]
+	  with Not_found -> 
+	    raise (error "unify_tac: No such assumption")
+	    | err -> raise (add_error "unify_tac" err))
+  and concls = 
+    match c with
+	None -> concls_of sqnt
+      | Some(l) -> 
+	  (try [get_tagged_concl l goal]
+	  with Not_found -> 
+	    raise (error "unify_tac: No such conclusion")
+	    | err -> raise (add_error "unify_tac" err))
+  in 
+  let tac c g = 
+    map_first (fun x -> unify_engine_tac x c) asms g
+  in 
+    try map_first tac concls goal
+    with err -> raise (add_error "unify_tac" err)
 
 let substA ?info rs l g = Logic.Tactics.substA ?info rs l g
 
