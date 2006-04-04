@@ -511,6 +511,7 @@ let eq_sym_tac ?info f goal =
   with Not_found -> eq_symC ?info f goal
 
 
+(***
 let eq_tac ?info ?c g = 
   let cf = first_concl_label c Formula.is_equality g
   in 
@@ -522,11 +523,43 @@ let eq_tac ?info ?c g =
   in 
   let info1 = Tactics.mk_info()
   in 
-  seq [Logic.Tactics.cut ~info:info1 th; 
-       (fun g1 -> 
+  seq 
+    [
+      Logic.Tactics.cut ~info:info1 th; 
+      (fun g1 -> 
 	 let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
 	 in 
-	 unify_tac ~a:(ftag af) ~c:cf g1)] g
+	   unify_tac ~a:(ftag af) ~c:cf g1)
+    ] g
+***)
+
+let eq_tac ?info ?c goal = 
+  let th = 
+    try thm (Logicterm.base_thy ^ ".eq_refl")
+    with Not_found -> 
+      (raise (error ("eq_tac: Can't find required lemma "
+		     ^Logicterm.base_thy^".eq_refl")))
+  in 
+  let info1 = Tactics.mk_info()
+  in 
+  let tac albl (t, f) g = 
+    if (Formula.is_equality f)
+    then 
+      unify_tac ~a:albl ~c:(ftag t) g
+    else 
+      fail g
+  in 
+  let cforms = concls_of (sequent goal)
+  in 
+  seq 
+    [
+      Logic.Tactics.cut ~info:info1 th; 
+      (fun g -> 
+	 let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
+	 in 
+	   map_first (tac (ftag af)) cforms g)
+    ] goal
+
 
 (*** 
  * Generalised Rewriting

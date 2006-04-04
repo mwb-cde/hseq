@@ -329,13 +329,13 @@ val map_every: ('a -> tactic) -> 'a list -> tactic
 
 val map_first: ('a -> tactic) -> 'a list -> tactic
 (**
-   [map_first tac xs]: Apply the first tactic formed by [(tac
-   x)], for each [x] in [xs].  [map_every tac [y1; y2; .. ; yn]] is
-   [(tac y1) ++ (tac y2) ++ .. ++ (tac yn)].
+   [map_first tac xs]: Apply the first tactic formed by [(tac x)], for
+   each [x] in [xs], to succeed.  [map_first tac [y1; y2; .. ; yn]] is
+   [(tac y1) // (tac y2) // .. // (tac yn)].
 
-   Fails if function [(tac x)] fails for any [x] in [xs] or if all of the
-   resulting tactics fail. Fails if [xs] is initially empty.
- *)
+   Fails if function [(tac x)] fails for every [x] in [xs]. Fails if
+   [xs] is initially empty.
+*)
 
 val map_some: ('a -> tactic) -> 'a list -> tactic
 (**
@@ -344,7 +344,7 @@ val map_some: ('a -> tactic) -> 'a list -> tactic
 
    Fails if function [(tac x)] fails for any [x] in [xs] or if all of
    the tactics [(tac x)] fail. Fails if [xs] is initially empty.
- *)
+*)
 
 val seq_some: tactic list -> tactic
 (**
