@@ -3,8 +3,8 @@ March 2006
 M. Wahab <mwahab@users.sourceforge.net>
 ==============
 
-HSeq is a tactical theorem prover for typed higher-order logic. It is
-experimental, alpha-quality code which may have soundness bugs.
+HSeq is a tactical theorem prover for typed higher-order logic.  HSeq
+is experimental, alpha-quality code which may have soundness bugs.
 
 HSeq is distributed under the terms of the BSD License, see file
 COPYRIGHT for details.
