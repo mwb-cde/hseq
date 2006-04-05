@@ -1,6 +1,11 @@
 Installation
 ============
 
+Requirements: 
+	OCaml version 3.09
+	GNU make
+	A Unix-like environment
+
 From the toplevel directory: 
 1) Run the configuration script:
 	ocaml configure.ml
@@ -31,6 +36,18 @@ From the toplevel directory:
 	make install-doc
 
 5) Build and install source code documentation (optional, recommended)
+	make install-srcdoc
 
 6) Clean up
 	make clean
+
+
+AFTER INSTALLATION
+==================
+
+The binary is named "hseq" and can be moved to a different location,
+such as a directory in the system path.
+
+The installation directory can be changed after the system is built
+provided the environment variable "HSEQ" is set to the new directory.
+

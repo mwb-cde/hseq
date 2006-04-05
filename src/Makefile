@@ -60,6 +60,12 @@ LIBDIR ?= ${SRCDIR}/lib
 # DOCDIR: Source code documentation directory
 DOCDIR ?= ${SRCDIR}/doc
 
+##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
+
 ###
 # Configuration variables
 # Set by data.make
@@ -172,17 +178,18 @@ hseq: code
 	${OCAMLMKTOP} -o ${BINFILE} ${CODE} 
 
 install: hseq
-	-mkdir ${IBASEDIR}
-	-mkdir ${IBINDIR}
-	cp ${BINFILE} ${IBINDIR}/${IBINFILE}
-	-mkdir ${ILIBDIR}
-	-cp -R ${LIBDIR}/*.ml ${LIBDIR}/*.mli \
-		${LIBDIR}/*.cmi ${LIBDIR}/*.cmo ${ILIBDIR}
-	-cp ${INITFILE} ${ILIBDIR}
+	-$(MKDIR) ${IBASEDIR}
+	-$(MKDIR) ${IBINDIR}
+	$(COPY) ${BINFILE} ${IBINDIR}/${IBINFILE}
+	-$(MKDIR) ${ILIBDIR}
+	-$(COPY) ${LIBDIR}/*.mli ${ILIBDIR}
+	-$(COPY) ${LIBDIR}/*.ml ${ILIBDIR}
+	-$(COPY) ${LIBDIR}/*.cmi ${LIBDIR}/*.cmo ${ILIBDIR}
+	-$(COPY) ${INITFILE} ${ILIBDIR}
 
 install-doc: 
-	-mkdir $(IDOCDIR)
-	-cp -Rf $(DOCDIR)/* $(IDOCDIR)
+	-$(MKDIR) $(IDOCDIR)
+	-$(COPY) $(DOCDIR)/* $(IDOCDIR)
 
 ###
 # Clean up
@@ -190,22 +197,24 @@ install-doc:
 
 .PHONY: clean
 clean: 
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
+	$(RM) *.cmo
+	$(RM) *.cmx  
+	$(RM) *.o
+	$(RM) *~
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
 
 .PHONY: libclean
 libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
+	$(RM) *.cmi
+	$(RM) *.cma 
+	$(RM) *.cmxa
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; )
 	$(MAKECLEAN) -C ${LIBDIR} libclean
 
 .PHONY: reallyclean
 reallyclean: docclean
-	rm -f hseq
-	rm -f depend
+	$(RM) hseq
+	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
 	$(MAKECLEAN) -C ${LIBDIR} reallyclean
 

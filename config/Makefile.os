@@ -22,7 +22,7 @@ MKDIR = mkdir
 RMDIR = rmdir
 
 # COPY: Copy one or more files
-COPY = cp
+COPY = cp -f
 
 # RM: Delete one or more files
 RM = rm -f
@@ -49,10 +49,10 @@ MKDIR = mkdir
 RMDIR = rmdir /Q
 
 # COPY: Copy one or more files
-COPY = xcopy /E /C /I /Y 
+COPY = xcopy /S /C /I /Y 
 
 # RM: Delete one or more files
-RM = del /Q /F 
+RM = del /Q 
 
 endif
 

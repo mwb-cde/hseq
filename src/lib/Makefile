@@ -1,17 +1,30 @@
+##
+## DO NOT MODIFY ANYTHING BELOW THIS POINT
+##
+
+ifndef CONFIGDIR
+CONFIGDIR = ../config
+endif
+
+# Don't use the default dependency generator
+NODEPEND = "true"
+
+include ${CONFIGDIR}/Makefile.os
+
 clean:
-	rm -f *.cmi
-	rm -f *.mli
-	rm -f *.ml
-	rm -f *.cmo
-	rm -f *.cmx 
-	rm -f *.o
-	rm -f *~
+	$(RM) *.cmi
+	$(RM) *.mli
+	$(RM) *.ml
+	$(RM) *.cmo
+	$(RM) *.cmx 
+	$(RM) *.o
+	$(RM) *~
 
 libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
+	$(RM) *.cmi
+	$(RM) *.cma *.cmxa
 
 reallyclean: clean libclean
-	rm -f depend
+	$(RM) depend
 
 

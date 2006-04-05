@@ -4,9 +4,6 @@
 # Should be called from an instance of Makefile.child
 #####
 
-# Load the OS commands
-# include Makefile.os
-
 ####
 # The variables to be set in Makefile.child
 ###
@@ -81,6 +78,11 @@ LIBDIR ?= ${SRCDIR}/lib
 
 # DOCDIR: Source code documentation directory
 DOCDIR ?= ${SRCDIR}/doc
+
+##
+# Load the OS commands
+##
+include ${CONFIGDIR}/Makefile.os
 
 ##
 # Compiler definitions
@@ -189,10 +191,10 @@ install: lib
 ifdef CUSTOM_INSTALL
 	${CUSTOM_INSTALL}
 else	
-	cp -f ${LIBFILE} ${LIBDIR}
-	cp -f ${HEADERS} ${HEADERSDIR}
-	cp -f $(HEADERS:.cmi=.mli) ${HEADERSDIR}
-#	cp -f *.mli ${HEADERSDIR}
+	$(COPY) ${LIBFILE} ${LIBDIR}
+	$(COPY) ${HEADERS} ${HEADERSDIR}
+	$(COPY) $(HEADERS:.cmi=.mli) ${HEADERSDIR}
+#	$(COPY) *.mli ${HEADERSDIR}
 endif
 
 # installopt: Install the optimised library and header files.
@@ -200,8 +202,8 @@ installopt: opt
 ifdef CUSTOM_OPTINSTALL
 	${CUSTOM_OPTINSTALL}
 else	
-	cp -f ${OPTLIB} ${LIBDIR}
-	cp -f ${HEADERS} ${HEADERSDIR}
+	$(COPY) ${OPTLIB} ${LIBDIR}
+	$(COPY) ${HEADERS} ${HEADERSDIR}
 endif
 
 #doc: Generate the code documentation
@@ -230,16 +232,18 @@ ${OPTLIB}: ${HEADERS} ${OPTCODE}
 ##
 
 clean:
-	rm -f *.cmo
-	rm -f *.cmx  *.o
-	rm -f *~
+	$(RM) *.cmo
+	$(RM) *.cmx  
+	$(RM) *.o
+	$(RM) *~
 
 libclean: 
-	rm -f *.cmi
-	rm -f *.cma *.cmxa
+	$(RM) *.cmi
+	$(RM) *.cma 
+	$(RM) *.cmxa
 
 reallyclean: clean libclean
-	rm -f depend
+	$(RM) depend
 
 ##
 # Dependencies
