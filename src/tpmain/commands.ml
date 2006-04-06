@@ -123,7 +123,7 @@ let add_file ?(use=false) f =
   Theory.add_file f (curr_theory());
   if use
   then 
-    Unsafe.load_use_file f
+    Global.Files.load_use_file f
   else ()
       
 let remove_file f =

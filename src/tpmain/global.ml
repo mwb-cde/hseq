@@ -263,6 +263,13 @@ module Files =
 
     let get_cdir () = Sys.getcwd ()
 
+    let object_suffix = [".cmo"; ".cmi"]
+
+    let load_use_file ?silent f=
+      if(List.exists (fun x -> Filename.check_suffix f x) object_suffix)
+      then Unsafe.load_file f
+      else Unsafe.use_file ?silent f
+
 (*** Paths ***)
 
 (** Functions for dealing with paths. *)
@@ -400,7 +407,7 @@ module Files =
       in 
       let find_load f = 
 	try 
-	  Unsafe.load_use_file (find_file f path)
+	  load_use_file (find_file f path)
 	with Not_found ->
 	  Result.warning ("Can't find file "^f)
       in 

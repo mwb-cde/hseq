@@ -262,7 +262,21 @@ module Files :
       val get_cdir : unit -> string
 (** The current working directory. *)
 
-(** {7 Paths} *)
+      val object_suffix : string list
+	(**
+	   The suffixes of file types which should be treated as
+	   byte-code files.  (=[".cmo"; ".cmi"]).
+	*)
+
+      val load_use_file : ?silent:bool -> string -> unit
+	(**
+	   [load_use_file ?silent name]: If name is an object file
+	   (with a suffix in [object_suffix]) then call
+	   {!Unsafe.load_file}[ name] otherwise call {!Unsafe.use_file}
+	   [?silent name].
+	*)
+
+	(** {7 Paths} *)
 
       val get_path : string list ref -> string list
 (** Get a list of directories from a path. *)
