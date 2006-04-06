@@ -21,23 +21,10 @@ val use_file : ?silent:bool -> string -> unit
    output like [#use].
 *)
 
-val object_suffix : string list
-(**
-   The suffixes of file types which can be loaded with load_file
-   (=[".cmo"; ".cmi"]).
-*)
-
 val load_file : string -> unit
 (**
    [load_file name]: Load file [name] as a script. Equivalent to
    [#load name].
-*)
-
-val load_use_file : ?silent:bool -> string -> unit
-(**
-   [load_use_file ?silent name]: If name is an object file (with a
-   suffix in [object_suffixes]) then call [load_file name] otherwise
-   call [use_file ?silent name].
 *)
 
 val add_directory : string -> unit

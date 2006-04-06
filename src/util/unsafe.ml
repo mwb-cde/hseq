@@ -28,14 +28,7 @@ let use_file ?(silent=false) f =
   then ignore(Toploop.use_silently Format.std_formatter f)
   else ignore(Toploop.use_file Format.std_formatter f)
 
-let object_suffix = [".cmo"; ".cmi"]
-
 let load_file f = Topdirs.dir_load Format.std_formatter f
-
-let load_use_file ?silent f=
-  if(List.exists (fun x -> Filename.check_suffix f x) object_suffix)
-  then load_file f
-  else use_file ?silent f
 
 
 let add_directory s = Topdirs.dir_directory s
