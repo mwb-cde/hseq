@@ -1,4 +1,8 @@
-
+(*-----
+Name: setLib.ml
+Author: M Wahab <mwahab@users.sourceforge.net>
+Copyright M Wahab 2006
+----*)
 
 let set_thy = "Set"
 let set_id = Ident.mk_long set_thy "SET"

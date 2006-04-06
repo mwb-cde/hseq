@@ -1,3 +1,9 @@
+(*-----
+Name: setLib.mli
+Author: M Wahab <mwahab@users.sourceforge.net>
+Copyright M Wahab 2006
+----*)
+
 (*
    setLib.mli:
 

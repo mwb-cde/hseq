@@ -1,8 +1,8 @@
 (*-----
 Name: SumScript.ml
 Author: M Wahab <mwahab@users.sourceforge.net>
-   Copyright M Wahab 2006
-   ----*)
+Copyright M Wahab 2006
+----*)
 
 (** 
    Sum of types.

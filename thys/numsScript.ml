@@ -1,4 +1,10 @@
-begin_theory "nums" ["bool"];; 
+(*-----
+ Name: numsScript.ml
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2006
+----*)
+
+begin_theory "nums" ["Bool"];; 
 
 declare (Commands.read_unchecked 
 	   ((Basic.name Nums.plusid)^": num -> num -> num"))
