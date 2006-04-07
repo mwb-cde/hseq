@@ -57,12 +57,6 @@ PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4
 # End of Makefile.child variables
 ###
 
-#
-# Custom build and install
-#
-
-CUSTOM_INSTALL = (cp -f tpquote.cmo ${LIBDIR}; cp -f ${HEADERS} *.mli ${HEADERSDIR})
-
 ##
 ## DO NOT MODIFY ANYTHING BELOW THIS POINT
 ##
@@ -74,8 +68,15 @@ endif
 # Don't use the default dependency generator
 NODEPEND = "true"
 
-include ${CONFIGDIR}/Makefile.sub
+# Custom build and install
+CUSTOM_INSTALL = "true"
+
+include $(CONFIGDIR)/Makefile.sub
 
 tpquote.cmi: tpquote.mli
 tpquote.cmo: tpquote.cmi tpquote.ml
 
+.PHONY: install
+install: $(HEADERS) $(CODE)
+	$(COPY) tpquote.cmo $(LIBDIR)
+	$(COPY) $(HEADERS) *.mli $(HEADERSDIR)

@@ -42,23 +42,23 @@ CODE= tpquote.cmo util.cma tpcore.cma logic.cma \
 SRCDIR ?= .
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${SRCDIR}/config
+CONFIGDIR ?= $(SRCDIR)/config
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = ${CONFIGDIR}/data.make
+CONFIGFILE = $(CONFIGDIR)/data.make
 
 # SUBCONFIGDIR: The configuration directory for sub-directories
 # (relative to a subdirectory)
 SUBCONFIGDIR ?= ../config
 
 # HEADERSDIR: The location of the compiled header files
-HEADERSDIR ?= ${SRCDIR}/lib
+HEADERSDIR ?= $(SRCDIR)/lib
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= ${SRCDIR}/lib
+LIBDIR ?= $(SRCDIR)/lib
 
 # DOCDIR: Source code documentation directory
-DOCDIR ?= ${SRCDIR}/doc
+DOCDIR ?= $(SRCDIR)/doc
 
 ##
 # Read command definitions
@@ -71,12 +71,12 @@ include $(CONFIGDIR)/Makefile.os
 # Set by data.make
 ###
 
-# Read from ${CONFIGFILE}
+# Read from $(CONFIGFILE)
 ifdef CONFIGFILE
 include $(CONFIGFILE)
 endif
 
-# Variables which are set in ${CONFIGFILE}
+# Variables which are set in $(CONFIGFILE)
 Bin ?= 
 Prefix ?= 
 BinDir ?= 
@@ -114,10 +114,10 @@ IDOCDIR = $(IBASEDIR)/doc/source
 BAREMAKE = make 
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = make SUBCONFIGDIR='${CONFIGDIR}'
+DMAKE = make SUBCONFIGDIR='$(CONFIGDIR)'
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = make NODEPEND=true SUBCONFIGDIR='${CONFIGDIR}'
+MAKECLEAN = make NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
 
 
 ###
@@ -129,29 +129,29 @@ MAKECLEAN = make NODEPEND=true SUBCONFIGDIR='${CONFIGDIR}'
 ##
 
 # PPCODE: The preprocessor code
-PPCODE ?= ${LIBDIR}/tpquote.cmo
+PPCODE ?= $(LIBDIR)/tpquote.cmo
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set "PPOPTIONS =" (i.e. an empty value)
-ifneq (($strip ${PPOPTIONS}), "")
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo ${PPCODE} pa_extend.cmo" -I +camlp4
+ifneq (($strip $(PPOPTIONS)), "")
+PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
 endif
 
 # OPTIONS: Compiler options
-OPTIONS = ${PPOPTIONS}
+OPTIONS = $(PPOPTIONS)
 
 # INCLUDE: The include directives
-INCLUDE = -I ${HEADERSDIR}
+INCLUDE = -I $(HEADERSDIR)
 
 ##
 # Compiler Commands
 ##
 
-OCAMLC=ocamlc ${OPTIONS} 
-OCAMLMKTOP = ocamlmktop -custom ${INCLUDE} ${OCINCLUDE} ${OCLIBS}
-OCAMLlink=${OCAMLC} -c ${INCLUDE} ${OCINCLUDE} ${OCLIBS} 
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${LIB} ${OCINCLUDE} ${OCLIBS} 
+OCAMLC=ocamlc $(OPTIONS) 
+OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
+OCAMLlink=$(OCAMLC) -c $(INCLUDE) $(OCINCLUDE) $(OCLIBS) 
+OCAMLoptlink=ocamlopt -c $(INCLUDE) $(LIB) $(OCINCLUDE) $(OCLIBS) 
 
 ###
 # The build targets
@@ -172,20 +172,20 @@ doc:
 ##
 
 mkhseq: mkhseq.ml
-	${OCAMLC} -o mkhseq mkhseq.ml
+	$(OCAMLC) -o mkhseq mkhseq.ml
 
 hseq: code
-	${OCAMLMKTOP} -o ${BINFILE} ${CODE} 
+	$(OCAMLMKTOP) -o $(BINFILE) $(CODE) 
 
 install: hseq
-	-$(MKDIR) ${IBASEDIR}
-	-$(MKDIR) ${IBINDIR}
-	$(COPY) ${BINFILE} ${IBINDIR}/${IBINFILE}
-	-$(MKDIR) ${ILIBDIR}
-	-$(COPY) ${LIBDIR}/*.mli ${ILIBDIR}
-	-$(COPY) ${LIBDIR}/*.ml ${ILIBDIR}
-	-$(COPY) ${LIBDIR}/*.cmi ${LIBDIR}/*.cmo ${ILIBDIR}
-	-$(COPY) ${INITFILE} ${ILIBDIR}
+	-$(MKDIR) $(IBASEDIR)
+	-$(MKDIR) $(IBINDIR)
+	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
+	-$(MKDIR) $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.cmi $(LIBDIR)/*.cmo $(ILIBDIR)
+	-$(COPY) $(INITFILE) $(ILIBDIR)
 
 install-doc: 
 	-$(MKDIR) $(IDOCDIR)
@@ -209,14 +209,14 @@ libclean:
 	$(RM) *.cma 
 	$(RM) *.cmxa
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; )
-	$(MAKECLEAN) -C ${LIBDIR} libclean
+	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
 reallyclean: docclean
 	$(RM) hseq
 	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
-	$(MAKECLEAN) -C ${LIBDIR} reallyclean
+	$(MAKECLEAN) -C $(LIBDIR) reallyclean
 
 
 .PHONY: docclean

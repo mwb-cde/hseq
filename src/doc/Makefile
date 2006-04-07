@@ -9,7 +9,7 @@ endif
 # Don't use the default dependency generator
 NODEPEND = "true"
 
-include ${CONFIGDIR}/Makefile.os
+include $(CONFIGDIR)/Makefile.os
 
 clean:
 	$(RM) *.data

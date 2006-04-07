@@ -68,54 +68,54 @@ DIRSEP ?= /
 SRCDIR ?= ..
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${SRCDIR}/config
+CONFIGDIR ?= $(SRCDIR)/config
 
 # HEADERSDIR: The location of the compiled header files
-HEADERSDIR ?= ${SRCDIR}/lib
+HEADERSDIR ?= $(SRCDIR)/lib
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= ${SRCDIR}/lib
+LIBDIR ?= $(SRCDIR)/lib
 
 # DOCDIR: Source code documentation directory
-DOCDIR ?= ${SRCDIR}/doc
+DOCDIR ?= $(SRCDIR)/doc
 
 ##
 # Load the OS commands
 ##
-include ${CONFIGDIR}/Makefile.os
+include $(CONFIGDIR)/Makefile.os
 
 ##
 # Compiler definitions
 ##
 
 # PPCODE: The preprocessor code
-PPCODE ?= ${LIBDIR}/tpquote.cmo
+PPCODE ?= $(LIBDIR)/tpquote.cmo
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set "PPOPTIONS =" (i.e. an empty value)
-ifneq (($strip ${PPOPTIONS}), "")
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo ${PPCODE} pa_extend.cmo" -I +camlp4
+ifneq (($strip $(PPOPTIONS)), "")
+PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
 endif
 
 # OPTIONS: The compiler options
-OPTIONS = ${PPOPTIONS}
+OPTIONS = $(PPOPTIONS)
 
 # INCLUDE: The include directives
-INCLUDE = -I ${HEADERSDIR}
+INCLUDE = -I $(HEADERSDIR)
 
 # DOCLOAD: The previous documentation link
-ifeq (${DOCPREV},) 
+ifeq ($(DOCPREV),) 
 DOCLOAD = 
 else
-DOCLOAD = -load "${DOCDIR}/${DOCPREV}"
+DOCLOAD = -load "$(DOCDIR)/$(DOCPREV)"
 endif
 
 # DOCDUMP The documentation link
-ifeq (${DOCDATA},) 
+ifeq ($(DOCDATA),) 
 DOCDUMP = 
 else
-DOCDUMP = -dump "${DOCDIR}/${DOCDATA}"
+DOCDUMP = -dump "$(DOCDIR)/$(DOCDATA)"
 endif
 
 ##
@@ -123,25 +123,25 @@ endif
 ##
 
 # OCAMLC: The OCaml compiler
-OCAMLC=ocamlc ${OPTIONS} 
+OCAMLC=ocamlc $(OPTIONS) 
 
 # OCAMLlink: The OCaml linker
-OCAMLlink=${OCAMLC} -custom -c ${INCLUDE} ${OCLIBS} 
+OCAMLlink=$(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLOPT: The optimising OCaml compiler
-OCAMLC=ocamlc ${OPTIONS} 
+OCAMLC=ocamlc $(OPTIONS) 
 
 # OCAMLlink: The optimising OCaml linker
-OCAMLoptlink=ocamlopt -c ${INCLUDE} ${OCLIBS} 
+OCAMLoptlink=ocamlopt -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLDEP: The OCaml dependency generator
-OCAMLDEP = ocamldep ${PPOPTIONS}
+OCAMLDEP = ocamldep $(PPOPTIONS)
 
 # OCAMLDOC: The documentation generator
 OCAMLDOC = ocamldoc 
 
 # OCAMLCPP : the preprocesor
-OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I${CONFIGDIR} 
+OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
 
 ###
 # Suffixes and how to handle them
@@ -155,22 +155,22 @@ OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I${CONFIGDIR}
 .SUFFIXES: .mlp
 
 .mlp.ml:
-	${OCAMLCPP} -impl $< -o $@
+	$(OCAMLCPP) -impl $< -o $@
 
 .mli.cmi: 
-	${OCAMLC} -c ${INCLUDE} $<
+	$(OCAMLC) -c $(INCLUDE) $<
 
 .ml.cmo: 
-	${OCAMLC} -c ${INCLUDE} $<
+	$(OCAMLC) -c $(INCLUDE) $<
 
 .ml.cmx: 
-	${OCAMLOPT} -c ${INCLUDE} $<
+	$(OCAMLOPT) -c $(INCLUDE) $<
 
 .cmo.cma:
-	${OCAMLC} -a ${INCLUDE} $<
+	$(OCAMLC) -a $(INCLUDE) $<
 
 .cmx.cmxa:
-	${OCAMLOPT} -a ${INCLUDE} $<
+	$(OCAMLOPT) -a $(INCLUDE) $<
 
 
 ###
@@ -178,40 +178,40 @@ OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I${CONFIGDIR}
 ###
 
 # all: Build everything
-all: ${HEADERS} ${CODE}
+all: $(HEADERS) $(CODE)
 
 # lib: Build the library file
-lib: all ${LIBFILE}
+lib: all $(LIBFILE)
 
 # lib: Build the optimised library file
-opt: ${OPTLIB}
+opt: $(OPTLIB)
 
 # install: Install the library and header files.
-install: lib
 ifdef CUSTOM_INSTALL
-	${CUSTOM_INSTALL}
+	$(CUSTOM_INSTALL)
 else	
-	$(COPY) ${LIBFILE} ${LIBDIR}
-	$(COPY) ${HEADERS} ${HEADERSDIR}
-	$(COPY) $(HEADERS:.cmi=.mli) ${HEADERSDIR}
-#	$(COPY) *.mli ${HEADERSDIR}
+install: lib
+	$(COPY) $(LIBFILE) $(LIBDIR)
+	$(COPY) $(HEADERS) $(HEADERSDIR)
+	$(COPY) $(HEADERS:.cmi=.mli) $(HEADERSDIR)
+#	$(COPY) *.mli $(HEADERSDIR)
 endif
 
 # installopt: Install the optimised library and header files.
 installopt: opt
 ifdef CUSTOM_OPTINSTALL
-	${CUSTOM_OPTINSTALL}
+	$(CUSTOM_OPTINSTALL)
 else	
-	$(COPY) ${OPTLIB} ${LIBDIR}
-	$(COPY) ${HEADERS} ${HEADERSDIR}
+	$(COPY) $(OPTLIB) $(LIBDIR)
+	$(COPY) $(HEADERS) $(HEADERSDIR)
 endif
 
 #doc: Generate the code documentation
-doc: ${DOCFILES}
+doc: $(DOCFILES)
 ifneq ($(strip $(DOCFILES)), "")
-	${OCAMLDOC} ${DOCLOAD} ${DOCDUMP} \
-		${INCLUDE} ${DOCTYPE} ${DOCOPTIONS} \
-		-d ${DOCDIR} ${DOCFILES}
+	$(OCAMLDOC) $(DOCLOAD) $(DOCDUMP) \
+		$(INCLUDE) $(DOCTYPE) $(DOCOPTIONS) \
+		-d $(DOCDIR) $(DOCFILES)
 endif
 
 ##
@@ -219,11 +219,11 @@ endif
 ##
 
 # The standard library
-${LIBFILE}: ${HEADERS} ${CODE}
+$(LIBFILE): $(HEADERS) $(CODE)
 	$(foreach f,$(LIBFILE),$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE))
 
 # The optimised library
-${OPTLIB}: ${HEADERS} ${OPTCODE}
+$(OPTLIB): $(HEADERS) $(OPTCODE)
 	$(foreach f,$(LIBFILE),$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE))
 
 
@@ -252,7 +252,7 @@ reallyclean: clean libclean
 ##
 
 depend: 
-	-${OCAMLDEP} *.mli *.ml > depend
+	-$(OCAMLDEP) *.mli *.ml > depend
 
 ifndef NODEPEND
 include depend
