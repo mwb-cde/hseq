@@ -57,14 +57,13 @@ NON-UNIX BUILD
 
 Building on non-Unix systems is not supported. 
 
-The build system requires the Unix file tools (cp, rm and mkdir) are
-required. For MS Windows systems, the file config/filetools.ml provide
-a front-end to the standard Windows tools. To use: set the environment
-TOOLBOX to the full path to filetools.ml (e.g. set
-TOOLBOX=\src\build\hseq\config\filetools.ml"). 
+The build system requires a Unix-like shell. HSeq won't build without
+it (and problably won't built with it). Try the GNU Make documentation
+for suggestions.
 
-The build system also requires a Unix-like shell (see the GNU make
-documentation). The OMake project includes a shell (osh) which may be
-suitable.
+The build system requires the Unix-like file tools (cp, rm and
+mkdir). For MS Windows systems, the file config/filetools.ml provides
+a usable front-end to the standard Windows tools. To use filetools.ml,
+pass the --toolbox option to the configure.ml script.
 
 Building the documentation also requires the GNU Texinfo system.

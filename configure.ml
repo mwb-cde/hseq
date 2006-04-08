@@ -109,13 +109,11 @@ let thys_d () =
   filename (get_opt !basedir (basedir_d())) "thys"
 end
 
-(*
 let toolbox_file = 
   Filename.concat cwd (Filename.concat "config" "filetools.ml")
 
 let set_toolbox () = 
   set toolbox toolbox_file
-*)
 
 let output_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
@@ -146,11 +144,9 @@ let arglist =
 ("--libdir", Arg.String (set libdir), 
  "The libraries directory ["^(libdir_d())^"]");
 ("--thydir", Arg.String (set thys), 
- "The theories directory ["^(thys_d())^"]")
-(*
+ "The theories directory ["^(thys_d())^"]");
 ("--toolbox", Arg.Unit set_toolbox, 
- "Use the os-neutral files (unreliable) [Don't use]")
-*)
+ "Use the os-neutral files (unreliable)")
 ]
 
 let usage_msg = ""
@@ -173,7 +169,7 @@ let varlist =
 
 let settinglist =
   [ 
-(*    ("TOOLBOX", toolbox) *)
+    ("TOOLBOX", toolbox) 
   ]
 
 let print_ml_var oc (v, d, _) =

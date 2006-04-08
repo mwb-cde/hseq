@@ -8,10 +8,6 @@
 # Unix settings (default)
 ##
 
-# file: Convert a Unix file-name to the OS file-name
-# use $(file f) to convert file-name f.
-file = $(1)
-
 # CHDIR: Change directory
 CHDIR = cd
 
@@ -36,6 +32,9 @@ SKIP =
 
 ifdef TOOLBOX
 ifneq ($(strip $(TOOLBOX)), "")
+
+# Set the shell
+#SHELL=
 
 # CHDIR: Change directory
 CHDIR = echo "CHDIR: not implemented"
