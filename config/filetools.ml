@@ -1,6 +1,6 @@
 #!/usr/local/bin/ocamlrun /usr/local/bin/ocaml
   (*-----
-    Name: filetools.ml
+    Name: toolbox.ml
     Author: M Wahab <mwahab@users.sourceforge.net>
     Copyright M Wahab 2006
     ----*)
@@ -14,9 +14,6 @@
    mkdir: Make one or more directories
 
 *)
-
-#load "unix.cma"
-#load "str.cma"
 
 let set x v = x:=v
 let get x = !x
@@ -34,122 +31,138 @@ let get_d x d =
 
 type cmd = Null | Pwd | Ls | Rm | Mkdir | Cp
 
-exception Error of string
-
-(* let error s = raise (Error s) *)
 let error s = Format.printf "@[%s@]@." s
 let fatal s = Format.printf "@[%s@]@." s; exit (-1)
 let report f a = Format.printf "@[%s: %s@]@." f a
 	
-module Util =
+
+(** [ostype]: The supported operating systems *)
+type os = Unix | Win32
+
+let ostype = ref Unix
+
+let _ = 
+  if Sys.os_type = "Win32" 
+  then ostype := Win32
+  else ()
+
+(** Utilities *)
+
+module UnixCmds =
 struct
 
-  open Unix
+  let pwd = "pwd"
+  let ls = "ls"
+  let rm = "rm"
+  let mkdir = "mkdir"
+  let copy = "cp"
 
-  let std_perm = 0o755
+  let file n = n
+end
 
-  let get_perm n =
-    try 
-      (let stf = Unix.stat n
-       in 
-	 stf.Unix.st_perm )
-    with _ -> std_perm
+module WinCmds =
+struct
 
-    let is_directory n = 
-      try
-	(let stf = Unix.stat n
-	in 
-	  match stf.Unix.st_kind with
-	      Unix.S_DIR -> true
-	    | _ -> false)
-      with _ -> false
-	    
-  (** 
-      [strexp_of f]: make a regexp from a file name f.
-  *)
-  let strexp_of f = 
-    let alpha_num = ""
-    in 
-    let rec make strm l =
-      match Stream.peek strm with
-	  None -> String.concat "" (List.rev ("$"::l))
-	| Some (chr) -> 
-	    Stream.next strm;
-	    let str =
-	      match chr with
-		  '*' -> ".*"
-		| '?' -> "."
-		| '.' -> "\\."
-		| _ -> Str.quote (String.make 1 chr)
-	    in 
-	      make strm (str::l)
-    in 
-      make (Stream.of_string f) [alpha_num]
+  let pwd = "pwd"
+  let ls = "dir"
+  let rm = "del /Q"
+  let mkdir = "mkdir"
+(*  let copy = "xcopy /C/R/Y" *)
+  let copy = "copy /B/Y" 
 
-  (**
-     [file_list regexp dir_name]: Get the list of file names in
-     directory [dir_name], matching [regexp].
-  *)
-  let file_list regexp dir_name = 
-    let dir_array = Sys.readdir dir_name
-    in 
-    let pred str = Str.string_match regexp str 0
-    in 
-    let file_names = List.filter pred (Array.to_list dir_array)
-    in 
-      if dir_name = Filename.current_dir_name 
-      then file_names
-      else
-	List.map (Filename.concat dir_name) file_names
+  let repl chr =
+    match chr with
+	'/' -> '\\'
+      | _ -> chr
 
-  (** [files str]: Get the list of filenames matching [str] *)
-  let files str = 
-    let dir_name = Filename.dirname str
-    and file_name = 
-      let tmp = Filename.basename str
-      in 
-  	if is_directory tmp
-	then "*"
-	else tmp
-    in 
-    let strexp = strexp_of file_name
-    in 
-    let regexp = Str.regexp strexp
+  let rec replace ctr str =
+    String.set str ctr (repl (String.get str ctr));
+    if ctr =0 then str
+    else replace (ctr -1) str
+
+  let file n = 
+    let sz = (String.length n)-1
     in
-    file_list regexp dir_name
-      
+      replace sz n
+
+end
+
+module Cmd =
+struct
+
+  let pwd () = 
+    match !ostype with
+	Win32 -> WinCmds.pwd
+      | _ -> UnixCmds.pwd
+
+  let ls ()= 
+    match !ostype with
+	Win32 -> WinCmds.ls
+      | _ -> UnixCmds.ls
+
+  let rm ()= 
+    match !ostype with
+	Win32 -> WinCmds.rm
+      | _ -> UnixCmds.rm
+
+  let mkdir ()= 
+    match !ostype with
+	Win32 -> WinCmds.mkdir
+      | _ -> UnixCmds.mkdir
+
+  let copy ()= 
+    match !ostype with
+	Win32 -> WinCmds.copy
+      | _ -> UnixCmds.copy
+
+end
+
+let file = 
+  match (!ostype) with
+      Win32 -> WinCmds.file
+    | _ -> UnixCmds.file
+
+let exec cmd args = 
+  let args1 = List.map file args
+  in 
+  let cl = String.concat " " (cmd::args1)
+  in 
+    Sys.command cl
+
+module Copy =
+struct
+
+  let copy_file src dst = 
+    exec (Cmd.copy()) [src; dst]
+
+  let rec copy_many src dst = 
+    match src with
+      [] -> 0
+     | (x::xs) -> ignore(copy_file x dst); copy_many xs dst
+
+  let run args = 
+    match List.rev args with 
+	[] -> fatal "cp: Not enough arguments"
+      | [x] -> fatal "cp: Not enough arguments"
+      | [dst; src] -> copy_file src dst
+      | dst::srcs -> copy_many (List.rev srcs) dst
+
 
 end
 
 module Pwd =
 struct
 
-  let run () = 
-    Format.printf "@[%s@]@." (Unix.getcwd())
+  let run args = 
+    (Format.printf "@[%s@]@." (Sys.getcwd())); 0
 
 end
 
 module Ls =
 struct
 
-  let print s =
-    Format.printf "%s@ " s
-
-  let print_list l = 
-    match l with 
-	[] -> ()
-      | _ -> 
-	  Format.printf "@[";
-	  List.iter print l;
-	  Format.printf "@]@."
-
-  let dir s = 
-    print_list (Util.files s)
-	
   let run args = 
-    match args with
-	[] -> dir "."
-      | _ -> List.iter dir args
+    exec (Cmd.ls()) args
 
 end
 
@@ -157,16 +170,12 @@ module Rm =
 struct
 
   let delete s =
-    let f x = 
-      try Unix.unlink x
-      with _ -> error ("rm: failed to delete "^x)
-    in 
-      List.iter f (Util.files s)
+    exec (Cmd.rm()) [s]
       
   let run args = 
     match args with 
 	[] -> fatal "rm: No arguments"
-      | _ -> List.iter delete args
+      | _ ->  List.iter (fun x -> ignore(delete x)) args; 0
 
 end
 
@@ -174,82 +183,15 @@ module Mkdir =
 struct
 
   let mkdir n = 
-    try Unix.mkdir n Util.std_perm 
-    with _ -> error ("mkdir: failed to make directory "^n)
+    exec (Cmd.mkdir()) [n]
 
   let run args = 
     match args with
 	[] -> fatal "mkdir: No arguments"
-      | _ -> List.iter mkdir args
+      | _ -> 
+	  List.iter (fun x -> ignore(mkdir x)) args; 0
 
 end
-
-module Copy =
-struct
-  open Unix
-
-  let out_flags = 
-    [O_WRONLY; O_CREAT; O_TRUNC]
-
-  let in_flags = 
-    [O_RDONLY]
-
-  let mk_srcfile src =
-    open_in_bin src 
-
-  let mk_dstfile dst = 
-    open_out_bin dst
-
-  let copy src dst = 
-    let src_file = mk_srcfile src
-    and dst_file = mk_dstfile dst
-    in 
-    let buff_len = 128
-    in 
-    let buff = String.make buff_len (char_of_int 0)
-    in 
-    let read_len = ref buff_len
-    in 
-      read_len := input src_file buff 0 buff_len;
-      while (!read_len)>0 do
-	output dst_file buff 0 (!read_len);
-	read_len := input src_file buff 0 buff_len
-      done;
-      flush dst_file; close_out dst_file;
-      close_in src_file
-
-  let copy_single src dst =
-    let dst_name = 
-      if Util.is_directory dst
-      then Filename.concat dst (Filename.basename src)
-      else dst
-    in 
-      if Util.is_directory src
-      then error ("cp: "^src^" is a directory")
-      else 
-	if (dst_name = src)
-	then error ("cp: Source and destination files are the same")
-	else
-	    try copy src dst_name
-	    with _ -> error ("cp: failed to copy "^src)
-
-  let copy_file src dst = 
-    let files = Util.files src
-    in 
-      List.iter (fun s -> copy_single s dst) files
-
-  let run args = 
-    match List.rev args with 
-	[] -> fatal "cp: Not enough arguments"
-      | [x] -> fatal "cp: Not enough arguments"
-      | [df; src] -> copy_file src df
-      | df::srcs -> 
-         if (Util.is_directory df)
-	 then 
-	    List.iter (fun s -> copy_file s df) (List.rev srcs)
-	 else fatal "cp: Destination of multiple files must be a directory"
-end
-
 
 module ArgParse =
 struct
@@ -276,10 +218,10 @@ struct
       "--cp", Unit (set_cmd Cp), "Copy file"
     ]
 
+
+  let usage() = Arg.usage arg_list usage_msg
   let alist = 
-    let f ()= Arg.usage arg_list usage_msg
-    in 
-      ("--usage", Unit f, "Usage")::arg_list
+      ("--usage", Unit usage, "Usage")::arg_list
 
   let run () = 
     Arg.parse alist anon_fun usage_msg;
@@ -297,12 +239,9 @@ let run_cmd (c, args) =
     | Rm -> Rm.run args
     | Mkdir -> Mkdir.run args
     | Cp -> Copy.run args
-    | Null -> ()
+    | Null -> (ArgParse.usage(); 0)
 
 let _ = 
-  try run_cmd (ArgParse.run ()); exit 0
-  with 
-      Error m -> fatal m
-    | err -> 
-	(Format.printf "@[%s@]@." (Printexc.to_string err); exit (-1))
+  try ignore(run_cmd (ArgParse.run ())); ()
+  with err -> fatal (Printexc.to_string err)
       

@@ -55,8 +55,15 @@ provided the environment variable "HSEQ" is set to the new directory.
 NON-UNIX BUILD
 ==============
 
-Building on non-Unix systems is not supported. However, only the Unix
-file tools (cp, rm and mkdir) are required. If these are present then
-the system should build. 
+Building on non-Unix systems is not supported. 
+
+The build system requires the Unix file tools (cp, rm and mkdir) are
+required. For MS Windows systems, the file config/filetools.ml provide
+a front-end to the standard Windows tools. To use: set the environment
+TOOLBOX to the full path to filetools.ml (e.g. set
+TOOLBOX=\src\build\hseq\config\filetools.ml"). 
+
+The build system also requires a Unix-like shell (see the GNU make
+documentation).
 
 Building the documentation also requires the GNU Texinfo system.
