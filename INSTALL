@@ -2,9 +2,9 @@ Installation
 ============
 
 Requirements: 
-	OCaml version 3.09
-	GNU make
-	A Unix-like environment (specifically: Unix file tools)
+  OCaml version 3.09
+  GNU make
+  A Unix-like environment (specifically: the file tools cp, mkdir and rm)
 
 From the toplevel directory: 
 1) Run the configuration script:
@@ -55,36 +55,8 @@ provided the environment variable "HSEQ" is set to the new directory.
 NON-UNIX BUILD
 ==============
 
-Building on non-Unix systems is not supported. However, os-neutral
-file tools, which rely only on OCaml, are provided and can be
-used. These are in file config/filetools.ml
+Building on non-Unix systems is not supported. However, only the Unix
+file tools (cp, rm and mkdir) are required. If these are present then
+the system should build. 
 
-THE FILE TOOLS IN filetools.ml MAY CAUSE SIGNIFCIANT DAMAGE TO YOUR
-FILES AND/OR FILESYSTEM.
-
-To build with the os-neutral file tools, follow the instructions above
-for the Unix but also pass the option --toolbox to the configuration
-script.
-
-   Examples:
-	ocaml configure.ml --bindir /usr/local/bin --toolbox
-	(put the binary in /usr/local/bin, 
-	use the os-neutral file tools)
-
-	ocaml configure.ml --basedir `pwd` --toolbox
-	(make the installation directory the same as the build directory,
-	use the os-neutral file tools))
-
-When building with filetools.ml, the installation directory must be
-different from the build directory.
-
-Building with the os-neutral file tools will fail to generate the
-html/info documentation. 
-
-It may also fail to build the theory files. In this case, go to the
-thys directory, run HSeq as:
-	../src/hseq -I ../src/lib -I ../src
-and build the theories manually,
-	#use "buildall.ml"
-then continue with the install
-	make install
+Building the documentation also requires the GNU Texinfo system.
