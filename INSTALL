@@ -4,7 +4,7 @@ Installation
 Requirements: 
 	OCaml version 3.09
 	GNU make
-	A Unix-like environment
+	A Unix-like environment (specifically: Unix file tools)
 
 From the toplevel directory: 
 1) Run the configuration script:
@@ -74,6 +74,9 @@ script.
 	ocaml configure.ml --basedir `pwd` --toolbox
 	(make the installation directory the same as the build directory,
 	use the os-neutral file tools))
+
+When building with filetools.ml, the installation directory must be
+different from the build directory.
 
 Building with the os-neutral file tools will fail to generate the
 html/info documentation. 
