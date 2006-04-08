@@ -51,3 +51,30 @@ such as a directory in the system path.
 The installation directory can be changed after the system is built
 provided the environment variable "HSEQ" is set to the new directory.
 
+
+NON-UNIX BUILD
+==============
+
+Building on non-Unix systems is not supported. However, os-neutral
+file tools, which rely only on OCaml, are provided and can be
+used. These are in file config/filetools.ml
+
+THE FILE TOOLS IN filetools.ml MAY CAUSE SIGNIFCIANT DAMAGE TO YOUR
+FILES AND/OR FILESYSTEM.
+
+To build with the os-neutral file tools, follow the instructions above
+for the Unix but also pass the option --toolbox to the configuration
+script.
+
+   Examples:
+	ocaml configure.ml --bindir /usr/local/bin --toolbox
+	(put the binary in /usr/local/bin, 
+	use the os-neutral file tools)
+
+	ocaml configure.ml --basedir `pwd` --toolbox
+	(make the installation directory the same as the build directory,
+	use the os-neutral file tools))
+
+Building with the os-neutral file tools will fail to generate the
+html/info documentation. In all other respects, it should be the same
+as for the Unix build.
