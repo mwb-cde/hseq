@@ -64,6 +64,7 @@ TOOLBOX to the full path to filetools.ml (e.g. set
 TOOLBOX=\src\build\hseq\config\filetools.ml"). 
 
 The build system also requires a Unix-like shell (see the GNU make
-documentation).
+documentation). The OMake project includes a shell (osh) which may be
+suitable.
 
 Building the documentation also requires the GNU Texinfo system.
