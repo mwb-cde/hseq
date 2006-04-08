@@ -110,14 +110,20 @@ include $(CONFIGDIR)/Makefile.os
 # Build commands
 ##
 
+MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
+
+#ifdef TOOLBOX
+MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+#endif
+
 # BAREMAKE: The make with not options
 BAREMAKE = make 
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = make SUBCONFIGDIR='$(CONFIGDIR)'
+DMAKE = make $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = make NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
+MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
 
 ###

@@ -79,6 +79,16 @@ LIBDIR ?= $(SRCDIR)/lib
 # DOCDIR: Source code documentation directory
 DOCDIR ?= $(SRCDIR)/doc
 
+###
+# Configuration variables
+# Set by data.make
+###
+
+# Read from $(CONFIGFILE)
+ifdef CONFIGFILE
+include $(CONFIGFILE)
+endif
+
 ##
 # Load the OS commands
 ##

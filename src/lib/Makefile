@@ -9,7 +9,8 @@ endif
 # Don't use the default dependency generator
 NODEPEND = "true"
 
-include ${CONFIGDIR}/Makefile.os
+-include $(CONFIGDIR)/data.make
+-include $(CONFIGDIR)/Makefile.os
 
 clean:
 	$(RM) *.cmi

@@ -64,20 +64,29 @@ ITHYDIR ?= $(IBASEDIR)/thys
 IBINDIR ?= $(BinDir)
 
 ##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
+
+##
 # Build commands
 ##
 
-# Get the OS commands
--include $(CONFIGDIR)/Makefile.os
+MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
+
+#ifdef TOOLBOX
+MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+#endif
 
 # BAREMAKE: The make with no options
 BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = $(MAKE) 
+DMAKE = make $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = $(MAKE) NODEPEND=true
+MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
 ###
 # Compiler definitions

@@ -31,6 +31,34 @@ RM = rm -f
 SKIP =
 
 ##
+# OS independent toolbox Settings
+##
+
+ifdef TOOLBOX
+ifneq ($(strip $(TOOLBOX)), "")
+
+# CHDIR: Change directory
+CHDIR = echo "CHDIR: not implemented"
+
+# MKDIR: Make a directory
+MKDIR = ocaml $(TOOLBOX) --mkdir
+
+# RMDIR: Remove a directory
+RMDIR = echo "RMDIR: not implemented"
+
+# COPY: Copy one or more files
+COPY = ocaml $(TOOLBOX) --cp
+
+# RM: Delete one or more files
+RM = ocaml $(TOOLBOX) --rm
+
+# SKIP: Do nothing
+SKIP = echo ""
+
+endif
+endif
+
+##
 # MS Windows Settings
 ##
 

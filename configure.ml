@@ -25,9 +25,9 @@
    --prefix: the prefix for directories.
    --basedir: the install directory
    --bindir: the executables directory
-   --includedir: the headers directory
    --libdir: the libraries directory.
    --thys: the theories directory.
+   --toolbox: use the os-neutral file tools
 *)
 
 (* File name utilities *)
@@ -58,10 +58,11 @@ let bin = ref None
 let prefix = ref None
 let basedir = ref None
 let bindir = ref None
-let includedir = ref None
+(*let includedir = ref None*)
 let libdir = ref None
 let thys = ref None
 let output = ref None
+let toolbox = ref None
 
 let set p x = p := Some x
 let get p =
@@ -79,8 +80,10 @@ let bin_d () = "hseq"
 
 let prefix_d () = "/usr/local"
 let basedir_d () = filename (filename (prefix_d()) "lib") (bin_d())
+(*
 let includedir_d () = 
   filename (get_opt !basedir  (basedir_d())) "include"
+*)
 let bindir_d () = get_opt !basedir (basedir_d())
 let libdir_d () = 
   filename (get_opt !basedir (basedir_d())) "lib"
@@ -94,8 +97,10 @@ let prefix_d () = "/usr/local"
 let basedir_d () = 
   filename (get_opt !prefix (prefix_d()))
     (filename "lib" (get_opt !bin (bin_d())))
+(*
 let includedir_d () = 
   filename (get_opt !basedir  (basedir_d())) "include"
+*)
 let bindir_d () = 
   filename (get_opt !prefix (prefix_d())) "bin"
 let libdir_d () = 
@@ -104,8 +109,15 @@ let thys_d () =
   filename (get_opt !basedir (basedir_d())) "thys"
 end
 
+let toolbox_file = 
+  Filename.concat cwd (Filename.concat "config" "filetools.ml")
+
+let set_toolbox () = 
+  set toolbox toolbox_file
+
 let output_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
+
 
 (* Command line arguments *)
 
@@ -132,7 +144,9 @@ let arglist =
 ("--libdir", Arg.String (set libdir), 
  "The libraries directory ["^(libdir_d())^"]");
 ("--thydir", Arg.String (set thys), 
- "The theories directory ["^(thys_d())^"]")
+ "The theories directory ["^(thys_d())^"]");
+("--toolbox", Arg.Unit set_toolbox, 
+ "Use the os-neutral files (unreliable) [Don't use]")
 ]
 
 let usage_msg = ""
@@ -148,17 +162,35 @@ let varlist =
    ("Prefix", prefix, prefix_d);
    ("BinDir", bindir, bindir_d);
    ("BaseDir", basedir, basedir_d);
-   ("IncludeDir", includedir, includedir_d);
+(*   ("IncludeDir", includedir, includedir_d); *)
    ("LibDir", libdir, libdir_d);
-   ("ThyDir", thys, thys_d)
+   ("ThyDir", thys, thys_d);
  ]
 
-let printer_ml oc (v, d, _) =
-  Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
+let settinglist =
+  [ 
+    ("TOOLBOX", toolbox)
+  ]
 
-let printer_make oc (v, d, _) =
-  Printf.fprintf oc "%s = %s\n" v (get !d)
+let print_ml_var oc (v, d, _) =
+  match (!d) with
+      None -> ()
+    | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
 
+let print_ml_setting oc (v, d) =
+  match (!d) with
+      None -> ()
+    | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
+
+let print_make_var oc (v, d, _) =
+  match (!d) with
+      None -> ()
+    | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
+
+let print_make_setting oc (v, d) =
+  match (!d) with
+      None -> ()
+    | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
 
 let make_outfile n = 
   if n = "" 
@@ -168,13 +200,15 @@ let make_outfile n =
 let emit_ml ()=
   let oc = make_outfile (output_d())
   in 
-  List.iter (printer_ml oc) varlist;
+  List.iter (print_ml_var oc) varlist;
+  List.iter (print_ml_setting oc) settinglist;
   close_out oc
 
 let emit_make() = 
   let oc = make_outfile (output_make_d())
   in 
-  List.iter (printer_make oc) varlist;
+  List.iter (print_make_var oc) varlist;
+  List.iter (print_make_setting oc) settinglist;
   close_out oc
 
 let emit () = 

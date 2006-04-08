@@ -78,20 +78,30 @@ HTMLDIR ?= $(IDOCDIR)/html
 INFODIR ?= $(IDOCDIR)/info
 
 ##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
+
+
+##
 # Build commands
 ##
 
-# Get the OS commands
--include $(CONFIGDIR)/Makefile.os
+MAKEOPTIONS += 
+
+#ifdef TOOLBOX
+MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+#endif
 
 # BAREMAKE: The make with not options
-BAREMAKE = $(MAKE)
+BAREMAKE = make 
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
+DMAKE = make $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
+MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
 ###
 # Compiler definitions

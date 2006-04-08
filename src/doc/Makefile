@@ -9,6 +9,7 @@ endif
 # Don't use the default dependency generator
 NODEPEND = "true"
 
+-include $(CONFIGDIR)/data.make
 include $(CONFIGDIR)/Makefile.os
 
 clean:
