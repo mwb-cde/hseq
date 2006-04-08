@@ -156,9 +156,16 @@ reallyclean: clean
 .PHONY: thys
 thys:
 #	$(HSEQC) $(BUILDSCRIPT) 
+ifndef TOOLBOX
 	echo "#use \"$(BUILDSCRIPT)\";;" | $(HSEQC)
+else	
+	$(HSEQC) $(BUILDSCRIPT)
+endif
 
 .PHONY: install-thys
 install-thys: thys
 	-$(MKDIR) $(ITHYDIR)
-	-$(COPY) *.tho *Script.ml *.cmi *.cmo $(ITHYDIR)
+	-$(COPY) *.tho $(ITHYDIR)
+	-$(COPY) *Script.ml $(ITHYDIR)
+	-$(COPY) *.cmi $(ITHYDIR)
+	-$(COPY) *.cmo $(ITHYDIR)

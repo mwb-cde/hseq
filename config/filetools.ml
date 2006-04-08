@@ -227,8 +227,11 @@ struct
       if Util.is_directory src
       then error ("cp: "^src^" is a directory")
       else 
-	try copy src dst_name
-	with _ -> error ("cp: failed to copy "^src)
+	if (dst_name = src)
+	then error ("cp: Source and destination files are the same")
+	else
+	    try copy src dst_name
+	    with _ -> error ("cp: failed to copy "^src)
 
   let copy_file src dst = 
     let files = Util.files src

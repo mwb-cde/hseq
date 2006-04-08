@@ -76,5 +76,11 @@ script.
 	use the os-neutral file tools))
 
 Building with the os-neutral file tools will fail to generate the
-html/info documentation. In all other respects, it should be the same
-as for the Unix build.
+html/info documentation. 
+
+It may also fail to build the theory files. In this case, go to the
+thys directory, run HSeq as:
+	hseq -I ../src/lib -I ../src
+and build the theories manually,
+	#use "buildall.ml"
+

@@ -193,6 +193,8 @@ install: hseq
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(LIBDIR)/*.cmo $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.cmo $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.cma $(ILIBDIR)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
 
 install-doc: 
