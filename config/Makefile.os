@@ -34,7 +34,7 @@ ifdef TOOLBOX
 ifneq ($(strip $(TOOLBOX)), "")
 
 # Set the shell
-#SHELL=cmd.exe
+SHELL=osh
 
 # CHDIR: Change directory
 CHDIR = echo "CHDIR: not implemented"
