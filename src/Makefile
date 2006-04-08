@@ -60,12 +60,6 @@ LIBDIR ?= $(SRCDIR)/lib
 # DOCDIR: Source code documentation directory
 DOCDIR ?= $(SRCDIR)/doc
 
-##
-# Read command definitions
-##
-
-include $(CONFIGDIR)/Makefile.os
-
 ###
 # Configuration variables
 # Set by data.make
@@ -105,6 +99,12 @@ ITHYDIR = $(ThyDir)
 
 # IDOCDIR: Installation documentation directory
 IDOCDIR = $(IBASEDIR)/doc/source
+
+##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
 
 ##
 # Build commands
@@ -161,11 +161,13 @@ all: hseq
 
 .PHONY: code
 code: 
-	$(foreach subdir, $(SUBDIRS), $(DMAKE) -C $(subdir) install;)
+	$(foreach subdir, $(SUBDIRS), \
+		$(DMAKE) -C $(subdir) install;) $(SKIP)
 
 .PHONY: doc
 doc:
-	$(foreach subdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
+	$(foreach subdir, $(SUBDIRS), \
+		$(DMAKE) -C $(subdir) doc;) $(SKIP)
 
 ##
 # Executables
@@ -201,21 +203,24 @@ clean:
 	$(RM) *.cmx  
 	$(RM) *.o
 	$(RM) *~
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) clean; ) $(SKIP)
 
 .PHONY: libclean
 libclean: 
 	$(RM) *.cmi
 	$(RM) *.cma 
 	$(RM) *.cmxa
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; )
+	$(foreach subdir, \
+		$(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; ) $(SKIP)
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
 reallyclean: docclean
 	$(RM) hseq
 	$(RM) depend
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 	$(MAKECLEAN) -C $(LIBDIR) reallyclean
 
 

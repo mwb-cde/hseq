@@ -48,16 +48,16 @@ DIRSEP ?= /
 SRCDIR ?= ..
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${SRCDIR}/config
+CONFIGDIR ?= $(SRCDIR)/config
 
 # DOCDIR: Documentation directory
-DOCDIR ?= ${SRCDIR}
+DOCDIR ?= $(SRCDIR)
 
 # HTMLDIR: HTML Documentation directory
-HTMLDIR ?= ${DOCDIR}/html
+HTMLDIR ?= $(DOCDIR)/html
 
 # INFODIR: Info Documentation directory
-INFODIR ?= ${DOCDIR}/info
+INFODIR ?= $(DOCDIR)/info
 
 ##
 # Compiler definitions
@@ -67,14 +67,14 @@ INFODIR ?= ${DOCDIR}/info
 INCLUDE = 
 
 # OPTIONS: The compiler options
-OPTIONS = ${INCLUDE}
+OPTIONS = $(INCLUDE)
 
 ##
 # The compilers
 ##
 
 # MAKEINFO: The makeinfo program
-MAKEINFO=makeinfo ${OPTIONS}
+MAKEINFO=makeinfo $(OPTIONS)
 
 ###
 # Suffixes and how to handle them
@@ -115,9 +115,11 @@ install-info: mkinfo
 ##
 
 clean:
-	$(foreach file, $(DOCSRC), rm -rf $(file);)
-	rm -f *.info
-	rm -f *~
+	$(foreach file, $(DOCSRC), rm -rf $(file);) $(SKIP)
+	$(RM) *.info
+	$(RM) *~
+#	rm -f *.info
+#	rm -f *~
 
 reallyclean: clean 
 	rm -f depend
@@ -129,7 +131,7 @@ reallyclean: clean
 ##
 
 #depend: 
-#	${OCAMLDEP} *.mli *.ml > depend
+#	$(OCAMLDEP) *.mli *.ml > depend
 
 #ifndef NODEPEND
 #include depend

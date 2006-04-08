@@ -19,29 +19,29 @@ SUBDIRS = quickstart
 SRCDIR ?= .
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${SRCDIR}/config
+CONFIGDIR ?= $(SRCDIR)/config
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = ${CONFIGDIR}/data.make
+CONFIGFILE = $(CONFIGDIR)/data.make
 
 # SUBCONFIGDIR: The configuration directory for sub-directories
 # (relative to a subdirectory)
 SUBCONFIGDIR ?= ../config
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= ${SRCDIR}/lib
+LIBDIR ?= $(SRCDIR)/lib
 
 ###
 # Configuration variables
 # Set by data.make
 ###
 
-# Read from ${CONFIGFILE}
+# Read from $(CONFIGFILE)
 ifdef CONFIGFILE
 include $(CONFIGFILE)
 endif
 
-# Variables which are set in ${CONFIGFILE}
+# Variables which are set in $(CONFIGFILE)
 Bin ?= 
 Prefix ?= 
 BinDir ?= 
@@ -66,17 +66,23 @@ HTMLDIR ?= $(IDOCDIR)/html
 INFODIR ?= $(IDOCDIR)/info
 
 ##
+# Read command definitions
+##
+
+include ../config/Makefile.os
+
+##
 # Build commands
 ##
 
-# BAREMAKE: The make with not options
+# BAREMAKE: The make with no options
 BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = $(MAKE) SUBCONFIGDIR='${CONFIGDIR}'
+DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='${CONFIGDIR}'
+MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
 
 ###
 # Compiler definitions
@@ -101,21 +107,23 @@ OPTIONS = $(INCLUDE)
 all: html
 
 .PHONY: html
-html: ${DOCSRC}
-	$(foreach subdir, ${SUBDIRS}, $(DMAKE) -C $(subdir) install-html;)
+html: $(DOCSRC)
+	$(foreach subdir, $(SUBDIRS), \
+		$(DMAKE) -C $(subdir) install-html;) $(SKIP)
 
 .PHONY: info
-info: ${DOCSRC}
-	$(foreach subdir, ${SUBDIRS}, $(DMAKE) -C $(subdir) install-info;)
+info: $(DOCSRC)
+	$(foreach subdir, $(SUBDIRS), \
+		$(DMAKE) -C $(subdir) install-info;) $(SKIP)
 
 install-html: html
-	-mkdir $(IDOCDIR)
-	-mkdir $(HTMLDIR)
+	-$(MKDIR) $(IDOCDIR)
+	-$(MKDIR) $(HTMLDIR)
 	-cp -Rf html/* $(HTMLDIR)
 
 install-info: info
-	-mkdir $(IDOCDIR)
-	-mkdir $(INFODIR)
+	-$(MKDIR) $(IDOCDIR)
+	-$(MKDIR) $(INFODIR)
 	-cp -Rf info/* $(INFODIR)
 
 install: install-html install-info
@@ -126,14 +134,15 @@ install: install-html install-info
 
 .PHONY: clean
 clean: 
-	rm -f *~
-	-rm -rf source
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
+	-$(RM) *~
+	-$(foreach subdir, \
+		$(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )$(SKIP)
 
 .PHONY: reallyclean
 reallyclean: clean
-	rm -rf source
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
+	-$(RM) source/*
+	-$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 
 
 

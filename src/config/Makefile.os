@@ -8,6 +8,10 @@
 # Unix settings (default)
 ##
 
+# file: Convert a Unix file-name to the OS file-name
+# use $(file f) to convert file-name f.
+file = $(1)
+
 # CHDIR: Change directory
 CHDIR = cd
 
@@ -23,11 +27,14 @@ COPY = cp -f
 # RM: Delete one or more files
 RM = rm -f
 
+# SKIP: Do nothing
+SKIP =
+
 ##
 # MS Windows Settings
 ##
 
-#ifeq ($(OS),"mswin")
+#ifeq (${OS},"mswin")
 
 # Set the shell
 #SHELL=cmd.exe
@@ -49,6 +56,9 @@ RM = rm -f
 
 # RM: Delete one or more files
 #RM = del /Q 
+
+# SKIP: Do nothing
+#SKIP = echo ""
 
 #endif
 

@@ -220,11 +220,13 @@ endif
 
 # The standard library
 $(LIBFILE): $(HEADERS) $(CODE)
-	$(foreach f,$(LIBFILE),$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE))
+	$(foreach f,$(LIBFILE),\
+		$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE); ) $(SKIP)
 
 # The optimised library
 $(OPTLIB): $(HEADERS) $(OPTCODE)
-	$(foreach f,$(LIBFILE),$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE))
+	$(foreach f,$(LIBFILE),\
+		$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE);) $(SKIP)
 
 
 ##

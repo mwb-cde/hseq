@@ -21,22 +21,22 @@ DOCSUBDIRS = doc
 CURRDIR ?= .
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${CURRDIR}/config
+CONFIGDIR ?= $(CURRDIR)/config
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = ${CONFIGDIR}/data.make
+CONFIGFILE = $(CONFIGDIR)/data.make
 
 ###
 # Configuration variables
 # Set by data.make
 ###
 
-# Read from ${CONFIGFILE}
+# Read from $(CONFIGFILE)
 ifdef CONFIGFILE
 include $(CONFIGFILE)
 endif
 
-# Variables which are set in ${CONFIGFILE}
+# Variables which are set in $(CONFIGFILE)
 Bin ?= 
 Prefix ?= 
 BinDir ?= 
@@ -46,7 +46,7 @@ LibDir ?=
 ThyDir ?= 
 
 # IPREFIX: The installation prefix
-IPREFIX = $(strip $(Prefix))
+IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
 IBASEDIR = $(BaseDir)
@@ -66,6 +66,9 @@ IBINDIR ?= $(BinDir)
 ##
 # Build commands
 ##
+
+# Get the OS commands
+-include $(CONFIGDIR)/Makefile.os
 
 # BAREMAKE: The make with no options
 BAREMAKE = $(MAKE)
@@ -104,7 +107,7 @@ thys:
 #doc: Buld documentation
 .PHONY: doc
 doc:
-	$(foreach docsubdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
+	$(foreach docsubdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;) $(SKIP)
 
 .PHONE: srcdoc
 srcdoc:
@@ -123,7 +126,8 @@ install-thys: thys
 
 # install-doc: Install the documentation
 install-doc: doc
-	$(foreach subdir, $(DOCSUBDIRS), $(DMAKE) -C $(subdir) install;)
+	$(foreach subdir, $(DOCSUBDIRS), \
+		$(DMAKE) -C $(subdir) install;) $(SKIP)
 
 # install-srcdoc: Install the documentation for the source code
 install-srcdoc: srcdoc
@@ -135,18 +139,20 @@ install-srcdoc: srcdoc
 
 .PHONY: clean
 clean: 
-	rm -f *~
+	$(RM) *~
 	$(MAKECLEAN) -C src reallyclean
 	$(MAKECLEAN) -C thys clean
-	$(foreach subdir, $(DOCSUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
+	$(foreach subdir, $(DOCSUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
 .PHONY: reallyclean
 reallyclean: clean
-	rm -f hseq
-	rm -rf lib/*
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
+	$(RM) hseq
+	$(RM) lib/*
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) reallyclean;) $(SKIP)
 	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) reallyclean; )
+		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 
 
 

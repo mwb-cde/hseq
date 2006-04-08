@@ -12,7 +12,7 @@ BUILDSCRIPT = buildall.ml
 # HSEQ: The name of the theorem prover executable
 HSEQ=hseq
 
-# HSEQLIB: The include directory for ${HSEQ} (before installation and 
+# HSEQLIB: The include directory for $(HSEQ) (before installation and 
 # relative to the src directory).
 HSEQLIB=lib
 
@@ -28,7 +28,7 @@ HSEQLIB=lib
 CONFIGDIR ?= ../config
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = ${CONFIGDIR}/data.make
+CONFIGFILE = $(CONFIGDIR)/data.make
 
 # SUBCONFIGDIR: The configuration directory for sub-directories
 # (relative to a subdirectory)
@@ -38,19 +38,19 @@ SUBCONFIGDIR ?= ../config
 SRCDIR ?= ../src
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= ${SRCDIR}/lib
+LIBDIR ?= $(SRCDIR)/lib
 
 ###
 # Configuration variables
 # Set by data.make
 ###
 
-# Read from ${CONFIGFILE}
+# Read from $(CONFIGFILE)
 ifdef CONFIGFILE
 include $(CONFIGFILE)
 endif
 
-# Variables which are set in ${CONFIGFILE}
+# Variables which are set in $(CONFIGFILE)
 Bin ?= 
 Prefix ?= 
 BinDir ?= 
@@ -60,7 +60,7 @@ LibDir ?=
 ThyDir ?= 
 
 # IPREFIX: The installation prefix
-IPREFIX = $(strip ${Prefix})
+IPREFIX = $(strip $(Prefix))
 
 # IBASEDIR: Installation directory
 IBASEDIR = $(BaseDir)
@@ -81,14 +81,17 @@ INFODIR ?= $(IDOCDIR)/info
 # Build commands
 ##
 
+# Get the OS commands
+-include $(CONFIGDIR)/Makefile.os
+
 # BAREMAKE: The make with not options
 BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = $(MAKE) SUBCONFIGDIR='${CONFIGDIR}'
+DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='${CONFIGDIR}'
+MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
 
 ###
 # Compiler definitions
@@ -126,13 +129,15 @@ install: install-thys
 
 .PHONY: clean
 clean: 
-	rm -f *~
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )
+	$(RM) *~
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
 .PHONY: reallyclean
 reallyclean: clean
-	rm -f *.tho *.cmo *.cmi
-	$(foreach subdir, $(SUBDIRS), $(MAKECLEAN) -C $(subdir) reallyclean; )
+	$(RM) *.tho *.cmo *.cmi
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 
 ###
 # Specialized targets
@@ -145,5 +150,5 @@ thys:
 
 .PHONY: install-thys
 install-thys: thys
-	-mkdir $(ITHYDIR)
-	-cp -Rf *.tho *Script.ml *.cmi *.cmo $(ITHYDIR)
+	-$(MKDIR) $(ITHYDIR)
+	-$(COPY) *.tho *Script.ml *.cmi *.cmo $(ITHYDIR)
