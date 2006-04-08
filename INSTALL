@@ -80,7 +80,8 @@ html/info documentation.
 
 It may also fail to build the theory files. In this case, go to the
 thys directory, run HSeq as:
-	hseq -I ../src/lib -I ../src
+	../src/hseq -I ../src/lib -I ../src
 and build the theories manually,
 	#use "buildall.ml"
-
+then continue with the install
+	make install
