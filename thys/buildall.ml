@@ -23,8 +23,6 @@ let _ =
 (** Initialise hseq *)
 #use "hseqstart.ml";;
 
-let _ = Init.init()
-
 (**
    This is part of the standard library so clear the theory base name.
 *)
