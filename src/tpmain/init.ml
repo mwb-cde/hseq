@@ -65,8 +65,8 @@ let load_init () =
   else
     Result.warning ("Can't find initialising file "^initfile)
 
+
 let init() = 
-  load_init();
   starting_mesg(); 
   tp_init()
 
@@ -74,5 +74,5 @@ let init() =
 let _ = 
   set_base_dir();
   set_directorys();
-  Unsafe.add_init init
+  Unsafe.add_init load_init
 
