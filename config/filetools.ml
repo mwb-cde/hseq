@@ -7,12 +7,12 @@
 
 (**
    File tools:
+   Unix-like front-end to OS file tools.
 
    pwd: Print the current directory
    ls: List the files
    rm: Delete one or more files
    mkdir: Make one or more directories
-
 *)
 
 let set x v = x:=v
