@@ -489,14 +489,14 @@ let input_theory ic =
 (*** Toplevel input/output of theories ***)
 
 let load_theory fname = 
-  let ic = open_in fname
+  let ic = open_in_bin fname
   in let sthy = input_theory ic; 
   in close_in ic; 
 (*  Format.printf "@[Loading theory %s@]@." sthy.sname; *)
   sthy
 
 let save_theory thy fname= 
-  let oc = open_out fname
+  let oc = open_out_bin fname
   in 
   output_theory oc thy; 
   close_out oc

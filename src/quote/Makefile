@@ -27,7 +27,7 @@ OPTCODE =
 ###
 
 # LIBFILE: The list of library (.cma) files built
-LIBFILE = 
+LIBFILE = tpquote.cma
 
 # OPTLIB: The list of optimised library (.cmxa) files built
 OPTLIB = 
@@ -69,14 +69,14 @@ endif
 NODEPEND = "true"
 
 # Custom build and install
-CUSTOM_INSTALL = "true"
+#CUSTOM_INSTALL = "true"
 
 include $(CONFIGDIR)/Makefile.sub
 
 tpquote.cmi: tpquote.mli
 tpquote.cmo: tpquote.cmi tpquote.ml
 
-.PHONY: install
-install: $(HEADERS) $(CODE)
-	$(COPY) tpquote.cmo $(LIBDIR)
-	$(COPY) $(HEADERS) *.mli $(HEADERSDIR)
+#.PHONY: install
+#install: $(HEADERS) $(CODE)
+#	$(COPY) tpquote.cmo $(LIBDIR)
+#	$(COPY) $(HEADERS) *.mli $(HEADERSDIR)

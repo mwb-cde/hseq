@@ -25,7 +25,7 @@ SUBDIRS = quote util util tpcore logic parser \
 	tpmain simplifier numbers userlib
 
 # CODE: The code to link in to build the executable (in order)
-CODE= tpquote.cmo util.cma tpcore.cma logic.cma \
+CODE= tpquote.cma util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma simplifier.cma numbers.cma \
 	userlib.cma
 
@@ -135,7 +135,7 @@ MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 ##
 
 # PPCODE: The preprocessor code
-PPCODE ?= $(LIBDIR)/tpquote.cmo
+PPCODE ?= $(LIBDIR)/tpquote.cma
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 

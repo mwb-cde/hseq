@@ -99,7 +99,7 @@ include $(CONFIGDIR)/Makefile.os
 ##
 
 # PPCODE: The preprocessor code
-PPCODE ?= $(LIBDIR)/tpquote.cmo
+PPCODE ?= $(LIBDIR)/tpquote.cma
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
