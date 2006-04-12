@@ -125,7 +125,7 @@ val add_file: ?use:bool -> string -> unit
    load/use [f] immediately.
 
    A file is loaded if it is a byte-code library (with suffix .cmo)
-   and used otherwise (see {!Unsafe.load_use_file}).
+   and used otherwise (see {!Global.Files.load_use_file}).
 *)
 
 val remove_file: string -> unit
