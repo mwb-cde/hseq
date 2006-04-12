@@ -21,14 +21,13 @@ OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 OCOPTLIBS =
 
 # SUBDIRS: The sub-directories to build (in order)
-SUBDIRS = quote util util tpcore logic parser \
+SUBDIRS = quote util tpcore logic parser \
 	tpmain simplifier numbers userlib
 
 # CODE: The code to link in to build the executable (in order)
 CODE= tpquote.cma util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma simplifier.cma numbers.cma \
 	userlib.cma
-
 
 ####
 # Don't modify anything below this line
@@ -210,12 +209,14 @@ all: hseq
 .PHONY: code
 code: 
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) install;) $(SKIP)
+		$(DMAKE) -C $(subdir) \
+			-f Makefile -f $(CONFIGDIR)/Makefile.sub install;)
 
 .PHONY: doc
 doc:
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) doc;) $(SKIP)
+		$(DMAKE) -C $(subdir) \
+			-f Makefile -f$(CONFIGDIR)/Makefile.sub doc;)
 
 ##
 # Executables
@@ -254,15 +255,17 @@ clean:
 	$(RM) *.o
 	$(RM) *~
 	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) clean; ) $(SKIP)
+		$(MAKECLEAN) -C $(subdir) \
+			-f Makefile -f $(CONFIGDIR)/Makefile.sub clean; )
 
 .PHONY: libclean
 libclean: 
 	$(RM) *.cmi
 	$(RM) *.cma 
 	$(RM) *.cmxa
-	$(foreach subdir, \
-		$(SUBDIRS), $(MAKECLEAN) -C $(subdir) libclean; ) $(SKIP)
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) \
+			-f Makefile -f $(CONFIGDIR)/Makefile.sub libclean; )
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
@@ -270,7 +273,8 @@ reallyclean: docclean
 	$(RM) hseq
 	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
+		$(MAKECLEAN) -C $(subdir) \
+			-f Makefile -f $(CONFIGDIR)/Makefile.sub reallyclean; )
 	$(MAKECLEAN) -C $(LIBDIR) reallyclean
 
 

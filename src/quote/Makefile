@@ -71,7 +71,7 @@ NODEPEND = "true"
 # Custom build and install
 #CUSTOM_INSTALL = "true"
 
-include $(CONFIGDIR)/Makefile.sub
+#include $(CONFIGDIR)/Makefile.sub
 
 tpquote.cmi: tpquote.mli
 tpquote.cmo: tpquote.cmi tpquote.ml

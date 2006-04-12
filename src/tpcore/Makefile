@@ -75,4 +75,4 @@ ifndef CONFIGDIR
 CONFIGDIR = ../config
 endif
 
-include $(CONFIGDIR)/Makefile.sub
+#include $(CONFIGDIR)/Makefile.sub

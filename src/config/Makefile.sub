@@ -52,14 +52,6 @@ DOCPREV ?=
 # End of Makefile.child variables
 ###
 
-###
-# Useful definitions
-###
-
-# DIRSEP: The seperator for directories
-# On Unix DIRSEP=/, on windows DIRSEP=\
-DIRSEP ?= /
-
 ##
 # Directories
 ##

@@ -58,8 +58,8 @@ DOCPREV =
 ## DO NOT MODIFY ANYTHING BELOW THIS POINT
 ##
 
-ifndef CONFIGDIR
-CONFIGDIR = ../config
-endif
+#ifndef CONFIGDIR
+#CONFIGDIR = ../config
+#endif
 
-include $(CONFIGDIR)/Makefile.sub
+#include $(CONFIGDIR)/Makefile.sub
