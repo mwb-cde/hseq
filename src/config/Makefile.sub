@@ -70,6 +70,9 @@ SRCDIR ?= ..
 # CONFIGDIR: The configuration directory
 CONFIGDIR ?= $(SRCDIR)/config
 
+# CONFIGFILE: The configuration file
+CONFIGFILE ?= $(CONFIGDIR)/data.make
+
 # HEADERSDIR: The location of the compiled header files
 HEADERSDIR ?= $(SRCDIR)/lib
 
@@ -86,7 +89,42 @@ DOCDIR ?= $(SRCDIR)/doc
 
 # Read from $(CONFIGFILE)
 ifdef CONFIGFILE
-include $(CONFIGFILE)
+-include $(CONFIGFILE)
+endif
+
+# Variables which are set in $(CONFIGFILE)
+Bin ?= 
+Prefix ?= 
+BinDir ?= 
+BaseDir ?= 
+IncludeDir ?= 
+LibDir ?= 
+ThyDir ?= 
+
+# IBINFILE: The installed binary
+IBINFILE ?= $(BINFILE)
+
+# IPREFIX: The installation prefix
+IPREFIX ?= $(Prefix)
+
+# IBINDIR: Installation binary directory
+IBINDIR ?= $(BinDir)
+
+# IBASEDIR: Installation directory
+IBASEDIR ?= $(strip $(BaseDir))
+
+# ILIBDIR: Installation library directory
+ILIBDIR ?= $(LibDir)
+
+# ITHYDIR: Installation theory directory
+ITHYDIR ?= $(ThyDir)
+
+# IDOCDIR: Installation documentation directory
+IDOCDIR ?= $(IBASEDIR)/doc/source
+
+# FASTCOMP: whether to use the fast compilers
+ifndef FASTCOMP
+export FASTCOMP = $(FastCompilers)
 endif
 
 ##
@@ -132,17 +170,14 @@ endif
 # The compilers
 ##
 
-# OCAMLC: The OCaml compiler
-OCAMLC=ocamlc $(OPTIONS) 
+# Flags:
+# FASTCOMP: Use the fast compilers
 
-# OCAMLlink: The OCaml linker
-OCAMLlink=$(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+# OCAMLC: The OCaml byte code compiler
+OCAMLC= ocamlc $(OPTIONS) 
 
-# OCAMLOPT: The optimising OCaml compiler
-OCAMLC=ocamlc $(OPTIONS) 
-
-# OCAMLlink: The optimising OCaml linker
-OCAMLoptlink=ocamlopt -c $(INCLUDE) $(OCLIBS) 
+# OCAMLNATC: The OCaml native code compiler
+OCAMLNATC= ocamlnat $(OPTIONS) 
 
 # OCAMLDEP: The OCaml dependency generator
 OCAMLDEP = ocamldep $(PPOPTIONS)
@@ -150,8 +185,33 @@ OCAMLDEP = ocamldep $(PPOPTIONS)
 # OCAMLDOC: The documentation generator
 OCAMLDOC = ocamldoc 
 
+ifeq ($(FASTCOMP), true)
+
+# OCAMLC: The OCaml bytecode compiler
+OCAMLC= ocamlc.opt $(OPTIONS) 
+
+# OCAMLCNAT: The OCaml native code compiler
+OCAMLCNAT= ocamlnat $(OPTIONS) 
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP = ocamldep.opt $(PPOPTIONS)
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC = ocamldoc.opt 
+
+endif
+
+# OCAMLlink: The OCaml byte-code linker
+OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+
+# OCAMLNATlink: The OCaml native-code linker
+OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
+
 # OCAMLCPP : the preprocesor
 OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
+
+# OCAMLMKTOP: Make a toplevel
+OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 ###
 # Suffixes and how to handle them

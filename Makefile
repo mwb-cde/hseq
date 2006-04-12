@@ -46,22 +46,25 @@ LibDir ?=
 ThyDir ?= 
 
 # IPREFIX: The installation prefix
-IPREFIX = $(Prefix)
+export IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(BaseDir)
+export IBASEDIR = $(BaseDir)
 
 # IDOCDIR: The documentation installation directory
-IDOCDIR ?= $(IBASEDIR)/doc
+export IDOCDIR ?= $(IBASEDIR)/doc
 
 # ILIBDIR: Library installation directory
-ILIBDIR ?= $(IBASEDIR)/lib
+export ILIBDIR ?= $(IBASEDIR)/lib
 
 # ITHYDIR: Theory installation directory
-ITHYDIR ?= $(IBASEDIR)/thys
+export ITHYDIR ?= $(IBASEDIR)/thys
 
 # IBINDIR: Binary installation directory
-IBINDIR ?= $(BinDir)
+export IBINDIR ?= $(BinDir)
+
+# FASTCOMP: whether to use the fast compilers
+export FASTCOMP = $(FastCompilers)
 
 ##
 # Read command definitions

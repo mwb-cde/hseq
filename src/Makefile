@@ -42,7 +42,8 @@ CODE= tpquote.cma util.cma tpcore.cma logic.cma \
 SRCDIR ?= .
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(SRCDIR)/config
+#CONFIGDIR ?= $(SRCDIR)/config
+CONFIGDIR ?= ../config
 
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(CONFIGDIR)/data.make
@@ -80,25 +81,28 @@ LibDir ?=
 ThyDir ?= 
 
 # IBINFILE: The installed binary
-IBINFILE = $(BINFILE)
+export IBINFILE = $(BINFILE)
 
 # IPREFIX: The installation prefix
-IPREFIX = $(Prefix)
+export IPREFIX = $(Prefix)
 
 # IBINDIR: Installation binary directory
-IBINDIR = $(BinDir)
+export IBINDIR = $(BinDir)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(strip $(BaseDir))
+export IBASEDIR = $(strip $(BaseDir))
 
 # ILIBDIR: Installation library directory
-ILIBDIR = $(LibDir)
+export ILIBDIR = $(LibDir)
 
 # ITHYDIR: Installation theory directory
-ITHYDIR = $(ThyDir)
+export ITHYDIR = $(ThyDir)
 
 # IDOCDIR: Installation documentation directory
-IDOCDIR = $(IBASEDIR)/doc/source
+export IDOCDIR = $(IBASEDIR)/doc/source
+
+# FASTCOMP: whether to use the fast compilers
+export FASTCOMP = $(FastCompilers)
 
 ##
 # Read command definitions
@@ -154,10 +158,48 @@ INCLUDE = -I $(HEADERSDIR)
 # Compiler Commands
 ##
 
-OCAMLC=ocamlc $(OPTIONS) 
+# Flags:
+# FASTCOMP: Use the fast compilers
+
+# OCAMLC: The OCaml byte code compiler
+OCAMLC= ocamlc $(OPTIONS) 
+
+# OCAMLNATC: The OCaml native code compiler
+OCAMLNATC= ocamlnat $(OPTIONS) 
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP = ocamldep $(PPOPTIONS)
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC = ocamldoc 
+
+ifeq ($(FASTCOMP), true)
+
+# OCAMLC: The OCaml bytecode compiler
+OCAMLC= ocamlc.opt $(OPTIONS) 
+
+# OCAMLCNAT: The OCaml native code compiler
+OCAMLCNAT= ocamlnat $(OPTIONS) 
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP = ocamldep.opt $(PPOPTIONS)
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC = ocamldoc.opt 
+
+endif
+
+# OCAMLlink: The OCaml byte-code linker
+OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+
+# OCAMLNATlink: The OCaml native-code linker
+OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
+
+# OCAMLCPP : the preprocesor
+OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
+
+# OCAMLMKTOP: Make a toplevel
 OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
-OCAMLlink=$(OCAMLC) -c $(INCLUDE) $(OCINCLUDE) $(OCLIBS) 
-OCAMLoptlink=ocamlopt -c $(INCLUDE) $(LIB) $(OCINCLUDE) $(OCLIBS) 
 
 ###
 # The build targets

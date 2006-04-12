@@ -63,6 +63,7 @@ let libdir = ref None
 let thys = ref None
 let output = ref None
 let toolbox = ref None
+let fast_compilers = ref None
 
 let set p x = p := Some x
 let get p =
@@ -115,9 +116,12 @@ let toolbox_file =
 let set_toolbox () = 
   set toolbox toolbox_file
 
+let fast_compilers_d ()= "false"
+let set_fast_compilers () = 
+  set fast_compilers "true"
+
 let output_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
-
 
 (* Command line arguments *)
 
@@ -145,6 +149,8 @@ let arglist =
  "The libraries directory ["^(libdir_d())^"]");
 ("--thydir", Arg.String (set thys), 
  "The theories directory ["^(thys_d())^"]");
+("--fastcompilers", Arg.Unit set_fast_compilers, 
+ "Use the fast compilers (ocamlc.opt) [Don't use]");
 ("--toolbox", Arg.Unit set_toolbox, 
  "Use the os-neutral files (unreliable)")
 ]
@@ -169,7 +175,8 @@ let varlist =
 
 let settinglist =
   [ 
-    ("TOOLBOX", toolbox) 
+    ("FastCompilers", fast_compilers);
+    ("TOOLBOX", toolbox)
   ]
 
 let print_ml_var oc (v, d, _) =
