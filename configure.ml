@@ -5,7 +5,7 @@
  Copyright M Wahab 2005
 ----*)
 
-(*
+(**
    Script to generate configuration data.
    Emits ML code (for configure.data)
    and definitions for use in a makefile.
@@ -16,21 +16,15 @@
    Usage:
    ocaml configure.ml [options] 
    where main options are:
-   --output: output file name (default data)
-   --ml: emit for ML (default)
-   --noml: don't emit for ML 
-   --makefile: emit for makefile (default)
-   --nomakefile: don't emit for makefile 
-   --output f: output to file name f. 
    --prefix: the prefix for directories.
    --basedir: the install directory
    --bindir: the executables directory
    --libdir: the libraries directory.
    --thys: the theories directory.
-   --toolbox: use the os-neutral file tools
+   --fastocaml: whether to use the optimised compiler (ocamlc.opt)
 *)
 
-(* File name utilities *)
+(** File name utilities **)
 
 let filename x y = 
   if x != ""
@@ -42,7 +36,15 @@ let filename_opt x y =
     None -> y
   | (Some d) -> Filename.concat d y
 
-(* Names of output files *)
+
+(** Test that a command exists *)
+
+let has_program s = 
+  Sys.command s = 0
+
+
+(** Names of output files **)
+
 let output_dir = "config"
 let ml_data=filename output_dir "configure.data"
 let make_data=filename output_dir "data.make"
@@ -50,7 +52,8 @@ let make_data=filename output_dir "data.make"
 (** The current directory *)
 let cwd = Sys.getcwd()
 
-(* The variables and default values *)
+
+(** Variables *)
 
 let ml_code= ref true
 let make_code= ref true
@@ -58,12 +61,11 @@ let bin = ref None
 let prefix = ref None
 let basedir = ref None
 let bindir = ref None
-(*let includedir = ref None*)
 let libdir = ref None
 let thys = ref None
 let output = ref None
-let toolbox = ref None
 let fast_compilers = ref None
+let native_compilers = ref None
 
 let set p x = p := Some x
 let get p =
@@ -76,15 +78,11 @@ let get_opt p d=
     None -> d
   | Some x -> x
 
-(** The default values *)
-let bin_d () = "hseq"
+(** Default values **)
 
+let bin_d () = "hseq"
 let prefix_d () = "/usr/local"
 let basedir_d () = filename (filename (prefix_d()) "lib") (bin_d())
-(*
-let includedir_d () = 
-  filename (get_opt !basedir  (basedir_d())) "include"
-*)
 let bindir_d () = get_opt !basedir (basedir_d())
 let libdir_d () = 
   filename (get_opt !basedir (basedir_d())) "lib"
@@ -98,10 +96,6 @@ let prefix_d () = "/usr/local"
 let basedir_d () = 
   filename (get_opt !prefix (prefix_d()))
     (filename "lib" (get_opt !bin (bin_d())))
-(*
-let includedir_d () = 
-  filename (get_opt !basedir  (basedir_d())) "include"
-*)
 let bindir_d () = 
   filename (get_opt !prefix (prefix_d())) "bin"
 let libdir_d () = 
@@ -110,57 +104,34 @@ let thys_d () =
   filename (get_opt !basedir (basedir_d())) "thys"
 end
 
-let toolbox_file = 
-  Filename.concat cwd (Filename.concat "config" "filetools.ml")
+let has_fast_compilers = has_program "ocamlc.opt"
 
-let set_toolbox () = 
-  set toolbox toolbox_file
+let fast_compilers_d ()= 
+  if has_fast_compilers 
+  then "true"
+  else "false"
 
-let fast_compilers_d ()= "false"
-let set_fast_compilers () = 
-  set fast_compilers "true"
+let set_fast_compilers flag = 
+  if flag 
+  then set fast_compilers "true"
+  else set fast_compilers "false"
 
-let output_d () = get_opt !output ml_data
+let has_native_compilers = has_program "ocamlopt"
+
+let native_compilers_d ()= 
+  if has_native_compilers 
+  then "true"
+  else "false"
+
+let set_native_compilers flag = 
+  if flag 
+  then set native_compilers "true"
+  else set native_compilers "false"
+
+let output_ml_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
 
-(* Command line arguments *)
-
-let arglist =
-[
-(*
-("--ml", Arg.Set ml_code, "Emit ML data [default]");
-("--noml", Arg.Clear ml_code, "Don't emit ML data");
-("--makefile", Arg.Set ml_code, "Emit makefile definitions [default]" );
-("--nomakefile", Arg.Set ml_code, "don't emit makefile definitions");
-("--output", Arg.String (set output), 
- "The output file ["^(output_d())^", "^(output_make_d())^"]");
-("-o", Arg.String (set output), 
- "The output file ["^(output_d())^", "^(output_make_d())^"]");
-("--bin", Arg.String (set bin),
- "The name of the binary ["^(bin_d())^"]");
-("--prefix", Arg.String (set prefix), 
- "The path to the top of the installation directory ["^(prefix_d())^"]");
-*)
-("--basedir", Arg.String (set basedir), 
- "The installation directory ["^(basedir_d())^"]");
-("--bindir", Arg.String (set bindir), 
- "The executables directory ["^(bindir_d())^"]");
-("--libdir", Arg.String (set libdir), 
- "The libraries directory ["^(libdir_d())^"]");
-("--thydir", Arg.String (set thys), 
- "The theories directory ["^(thys_d())^"]");
-("--fastcompilers", Arg.Unit set_fast_compilers, 
- "Use the fast compilers (ocamlc.opt) [Don't use]");
-("--toolbox", Arg.Unit set_toolbox, 
- "Use the os-neutral files (unreliable)")
-]
-
-let usage_msg = ""
-let anon_fun _= raise (Arg.Bad "unknown option")
-
-let parse_args () = Arg.parse arglist anon_fun usage_msg
-
-(* Emitter functions *)
+(** Variable list *)
 
 let varlist = 
   [
@@ -168,23 +139,33 @@ let varlist =
    ("Prefix", prefix, prefix_d);
    ("BinDir", bindir, bindir_d);
    ("BaseDir", basedir, basedir_d);
-(*   ("IncludeDir", includedir, includedir_d); *)
    ("LibDir", libdir, libdir_d);
    ("ThyDir", thys, thys_d);
  ]
 
 let settinglist =
   [ 
-    ("FastCompilers", fast_compilers);
-    ("TOOLBOX", toolbox)
+    ("FastCompilers", fast_compilers, fast_compilers_d);
+    ("NativeCompilers", native_compilers, native_compilers_d)
   ]
+
+let set_values () =
+  let set_value (_, v, f) = 
+    match !v with
+      None -> set v (f())
+    | _ -> ()
+  in
+  List.iter set_value varlist;
+  List.iter set_value settinglist
+
+(** Emitter functions **)
 
 let print_ml_var oc (v, d, _) =
   match (!d) with
       None -> ()
     | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
 
-let print_ml_setting oc (v, d) =
+let print_ml_setting oc (v, d, _) =
   match (!d) with
       None -> ()
     | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
@@ -194,7 +175,7 @@ let print_make_var oc (v, d, _) =
       None -> ()
     | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
 
-let print_make_setting oc (v, d) =
+let print_make_setting oc (v, d, _) =
   match (!d) with
       None -> ()
     | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
@@ -205,18 +186,20 @@ let make_outfile n =
   else open_out n
 
 let emit_ml ()=
-  let oc = make_outfile (output_d())
+  let oc = make_outfile (output_ml_d())
   in 
   List.iter (print_ml_var oc) varlist;
   List.iter (print_ml_setting oc) settinglist;
-  close_out oc
+  close_out oc;
+  Printf.printf "Wrote file %s\n" (output_ml_d())
 
 let emit_make() = 
   let oc = make_outfile (output_make_d())
   in 
   List.iter (print_make_var oc) varlist;
   List.iter (print_make_setting oc) settinglist;
-  close_out oc
+  close_out oc;
+  Printf.printf "Wrote file %s\n" (output_make_d())
 
 let emit () = 
   if(!ml_code)
@@ -226,15 +209,31 @@ let emit () =
   then emit_make() 
   else ()
 
-(* Main *)
 
-let set_values () =
-  let set_value (_, v, f) = 
-    match !v with
-      None -> set v (f())
-    | _ -> ()
-  in
-  List.iter set_value varlist
+(** Command line arguments **)
+
+let arglist =
+[
+("--basedir", Arg.String (set basedir), 
+ "The installation directory ["^(basedir_d())^"]");
+("--bindir", Arg.String (set bindir), 
+ "The executables directory ["^(bindir_d())^"]");
+("--libdir", Arg.String (set libdir), 
+ "The libraries directory ["^(libdir_d())^"]");
+("--thydir", Arg.String (set thys), 
+ "The theories directory ["^(thys_d())^"]");
+("--fastocaml", Arg.Bool set_fast_compilers, 
+ "Use the fast compilers (ocamlc.opt) ["^(fast_compilers_d())^"]");
+("--nativeocaml", Arg.Bool set_native_compilers, 
+ "Use the native code compilers (ocamlopt) ["^(native_compilers_d())^"]")
+]
+
+let usage_msg = ""
+let anon_fun _= raise (Arg.Bad "unknown option")
+
+let parse_args () = Arg.parse arglist anon_fun usage_msg
+
+(** Main **)
 
 let _ = 
   parse_args();

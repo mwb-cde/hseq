@@ -151,7 +151,7 @@ install-srcdoc: srcdoc
 
 .PHONY: clean
 clean: 
-	$(RM) *~
+	-$(RM) *~
 	$(MAKECLEAN) -C src reallyclean
 	$(MAKECLEAN) -C thys clean
 	$(foreach subdir, $(DOCSUBDIRS), \
@@ -159,8 +159,8 @@ clean:
 
 .PHONY: reallyclean
 reallyclean: clean
-	$(RM) hseq
-	$(RM) lib/*
+	-$(RM) hseq
+	-$(RM) lib/*
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) reallyclean;) $(SKIP)
 	$(foreach subdir, $(DOCSUBDIRS), \
