@@ -21,7 +21,7 @@ OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 OCOPTLIBS =
 
 # SUBDIRS: The sub-directories to build (in order)
-SUBDIRS = quote util tpcore logic parser \
+SUBDIRS = util tpcore logic parser \
 	tpmain simplifier numbers userlib
 
 # CODE: The code to link in to build the executable (in order)
@@ -103,20 +103,26 @@ export IDOCDIR = $(IBASEDIR)/doc/source
 # FASTCOMP: whether to use the fast compilers
 export FASTCOMP = $(FastCompilers)
 
-##
-# Read command definitions
-##
 
-include $(CONFIGDIR)/Makefile.os
 
 ##
 # Build commands
 ##
 
+# CMDSFILE: File defined OS Commands to use in the build
+CMDSFILE ?= $(CONFIGDIR)/Makefile.os
+
+# SUBMAKEFILE: Makefile for subdirectories
+SUBMAKEFILE ?= $(CONFIGDIR)/Makefile.sub
+
+# SUBDATA: File containing definitions for subdirectories
+SUBDATA ?= Makefile.def
+
+# MAKEOPTIONS: Options to pass to make
 MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
 
 #ifdef TOOLBOX
-MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+#MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
 #endif
 
 # BAREMAKE: The make with not options
@@ -128,6 +134,11 @@ DMAKE = make $(MAKEOPTIONS)
 # MAKECLEAN: The make to clean up with
 MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
+##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
 
 ###
 # Compiler definitions
@@ -206,17 +217,19 @@ OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 all: hseq
 
+.PHONY: quote
+quote: 
+	$(DMAKE) -C quote install
+
 .PHONY: code
-code: 
+code: quote
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) \
-			-f Makefile -f $(CONFIGDIR)/Makefile.sub install;)
+		$(DMAKE) -C $(subdir) install;)
 
 .PHONY: doc
 doc:
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) \
-			-f Makefile -f$(CONFIGDIR)/Makefile.sub doc;)
+		$(DMAKE) -C $(subdir) doc;)
 
 ##
 # Executables
@@ -254,9 +267,8 @@ clean:
 	$(RM) *.cmx  
 	$(RM) *.o
 	$(RM) *~
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) \
-			-f Makefile -f $(CONFIGDIR)/Makefile.sub clean; )
+	$(foreach subdir, quote $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) clean; )
 
 .PHONY: libclean
 libclean: 
@@ -264,8 +276,8 @@ libclean:
 	$(RM) *.cma 
 	$(RM) *.cmxa
 	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) \
-			-f Makefile -f $(CONFIGDIR)/Makefile.sub libclean; )
+		$(MAKECLEAN) -C $(subdir) libclean; )
+	$(MAKECLEAN) -C quote libclean
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
@@ -273,10 +285,9 @@ reallyclean: docclean
 	$(RM) hseq
 	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) \
-			-f Makefile -f $(CONFIGDIR)/Makefile.sub reallyclean; )
+		$(MAKECLEAN) -C $(subdir) reallyclean; )
+	$(MAKECLEAN) -C quote reallyclean
 	$(MAKECLEAN) -C $(LIBDIR) reallyclean
-
 
 .PHONY: docclean
 docclean: 

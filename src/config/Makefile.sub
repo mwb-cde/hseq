@@ -1,35 +1,46 @@
 #####
 # Makefile for building sub-directories
 #
-# Should be called from an instance of Makefile.child
+# Should be called with an instance of Makefile.def
 #####
 
+-include Makefile.def
+
 ####
-# The variables to be set in Makefile.child
+# Variables set in Makefile.def
 ###
 
 ###
 # Header, code and optimised code files
 ###
 
+# FILES: The list of file names
+FILES ?=
+
 # HEADERS: the list of header (.cmi) files 
-HEADERS ?= 
+HEADERS ?= $(foreach f, $(FILES), $(f).cmi)
 
-# CODE: the list of code (.cmo) files 
-CODE ?= 
+# MLHEADERS: the list of ML header (.mli) files 
+MLHEADERS ?= $(foreach f, $(FILES), $(f).mli)
 
-# OPTCODE: the list of optimised code (.cmx) files 
-OPTCODE ?= 
+# CODE: the list of byte code (.cmo) files 
+CODE ?= $(foreach f, $(FILES), $(f).cmo)
+
+# NATCODE: the list of native code (.cmx) files 
+NATCODE ?= $(foreach f, $(FILES), $(f).cmx)
 
 ###
 # Generated libraries
 ###
 
-# LIBFILE: The list of library (.cma) files built
-LIBFILE ?= 
+# LIBFILES: The list of library files built
+LIBFILES ?= 
 
-# OPTLIB: The list of optimised library (.cmxa) files built
-OPTLIB ?= 
+# BYTELIBS: The list of library (.cma) files built
+BYTELIBS ?= $(foreach f, $(LIBFILES), $(f).cma)
+
+# NATLIBS: The list of native code library (.cmxa) files built
+NATLIBS ?= $(foreach f, $(LIBFILES), $(f).cmxa)
 
 ###
 # Documentation
@@ -38,7 +49,7 @@ OPTLIB ?=
 DOCTYPE ?= -html
 
 # DOCFILES: File from which documentation is to be built
-DOCFILES ?= 
+DOCFILES ?= $(MLHEADERS)
 
 # DOCDATA: File to be emitted as a link
 DOCDATA ?= 
@@ -49,7 +60,7 @@ DOCPREV ?=
 
 
 ###
-# End of Makefile.child variables
+# End of Makefile.def variables
 ###
 
 ##
@@ -133,7 +144,7 @@ PPCODE ?= $(LIBDIR)/tpquote.cma
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
-# set "PPOPTIONS =" (i.e. an empty value)
+# set PPOPTIONS = "" (i.e. an empty value)
 ifneq (($strip $(PPOPTIONS)), "")
 PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
 endif
@@ -243,29 +254,29 @@ OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 all: $(HEADERS) $(CODE)
 
 # lib: Build the library file
-lib: all $(LIBFILE)
+lib: all $(BYTELIBS)
 
-# lib: Build the optimised library file
-opt: $(OPTLIB)
+# lib: Build the native code library file
+opt: $(NATLIBS)
 
 # install: Install the library and header files.
 ifdef CUSTOM_INSTALL
 	$(CUSTOM_INSTALL)
 else	
 install: lib
-	$(COPY) $(LIBFILE) $(LIBDIR)
+	$(COPY) $(BYTELIBS) $(LIBDIR)
 	$(COPY) $(HEADERS) $(HEADERSDIR)
-	$(COPY) $(HEADERS:.cmi=.mli) $(HEADERSDIR)
-#	$(COPY) *.mli $(HEADERSDIR)
+	$(COPY) $(MLHEADERS) $(HEADERSDIR)
 endif
 
-# installopt: Install the optimised library and header files.
+# installopt: Install the native code library and header files.
 installopt: opt
 ifdef CUSTOM_OPTINSTALL
 	$(CUSTOM_OPTINSTALL)
 else	
-	$(COPY) $(OPTLIB) $(LIBDIR)
+	$(COPY) $(NATLIBS) $(LIBDIR)
 	$(COPY) $(HEADERS) $(HEADERSDIR)
+	$(COPY) $(MLHEADERS) $(HEADERSDIR)
 endif
 
 #doc: Generate the code documentation
@@ -281,14 +292,14 @@ endif
 ##
 
 # The standard library
-$(LIBFILE): $(HEADERS) $(CODE)
-	$(foreach f,$(LIBFILE),\
-		$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE); ) $(SKIP)
+$(BYTELIBS): $(HEADERS) $(CODE)
+	$(foreach f,$(BYTELIBS),\
+		$(OCAMLC) -o $(f) -a $(INCLUDE) $(CODE); )
 
-# The optimised library
-$(OPTLIB): $(HEADERS) $(OPTCODE)
-	$(foreach f,$(LIBFILE),\
-		$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE);) $(SKIP)
+# The native code library
+$(NATLIBS): $(HEADERS) $(NATCODE)
+	$(foreach f,$(BYTELIBS),\
+		$(OCAMLOPT) -o $(f) -a $(INCLUDE) $(CODE);)
 
 
 ##

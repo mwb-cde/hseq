@@ -1,0 +1,63 @@
+#####
+# Makefile for building sub-directories
+#
+# Set variables to be used by Makefile.sub and OMakefile.sub
+# This is a template to be copied into each directory to be built.
+#####
+
+####
+# The variables to be set in Makefile.def
+###
+
+###
+# Header, byte code and native code files
+###
+
+# FILES: The list of file names
+FILES = formula defn logic theory thydb
+
+# HEADERS: the list of header (.cmi) files 
+HEADERS = $(foreach f, $(FILES), $(f).cmi)
+
+# MLHEADERS: the list of ML header (.mli) files 
+MLHEADERS = $(foreach f, $(FILES), $(f).mli)
+
+# CODE: the list of code (.cmo) files 
+CODE = $(foreach f, $(FILES), $(f).cmo)
+
+# NATCODE: the list of native code (.cmx) files 
+NATCODE = $(foreach f, $(FILES), $(f).cmx)
+
+###
+# Generated libraries
+###
+
+# LIBFILE: The list of library files built
+LIBFILES = logic
+
+# BYTELIBS: The list of library (.cma) files built
+BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
+
+# NATLIB: The list of native code library (.cmxa) files built
+NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa)
+
+###
+# Documentation
+###
+
+DOCTYPE = -html
+
+# DOCFILES: File from which documentation is to be built
+DOCFILES = $(MLHEADERS)
+
+# DOCDATA: File to be emitted as a link
+DOCDATA = logic.data
+
+# DOCPREV: File to be loaded as a link to previous documentation
+# (using -load)
+DOCPREV = tpcore.data
+
+
+###
+# End of Makefile.def variables
+###
