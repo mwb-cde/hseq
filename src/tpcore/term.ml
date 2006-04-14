@@ -152,7 +152,7 @@ let dest_qnt t=
 let dest_bound t = 
   match t with 
     Bound(n) -> n
-  | _ -> raise (Failure "Not a binder")
+  | _ -> raise (Failure "dest_bound: Not a binder")
 
 let dest_free t = 
   match t with 
@@ -163,11 +163,6 @@ let dest_var vt =
   match vt with
     (Id (n, t)) -> (n, t)
   | _ -> raise (Failure "Not a variable")
-
-let dest_bound t = 
-  match t with 
-    Bound(n) -> n
-  | _ -> raise (Failure "Not a binder")
 
 let dest_app t = 
   match t with 
@@ -191,13 +186,15 @@ let dest_const t =
 
 let is_meta trm = 
   match trm with
-    Bound (q) ->
-      (match (dest_binding q) with
-	Meta, _, _ -> true
-      | _ -> false)
+    Meta _ -> true
   | _ -> false
 
-let mk_meta n ty = Bound (mk_binding Meta n ty)
+let mk_meta n ty = Meta (mk_binding MetaQ n ty)
+
+let dest_meta t  = 
+  match t with
+      Meta(q) -> q
+    | _ -> raise (Failure "Not a meta variable")
 
 
 (** Typed terms *)
@@ -361,19 +358,22 @@ let get_binder_name x =
   match x with
     Bound(n) -> binder_name n
   | Qnt(n, _) -> binder_name n
+  | Meta(n) -> binder_name n
   | _ -> raise (Failure "get_binder_name: Not a binder")
 
 let get_binder_type x =
   match x with
     Bound(n) -> Basic.binder_type n
   | Qnt(n, _) -> Basic.binder_type n
-  | _ -> raise (Failure "Not a binder")
+  | Meta(n) -> Basic.binder_type n
+  | _ -> raise (Failure "get_binder_type: Not a binder")
 
 let get_binder_kind x =
   match x with
     Bound(n) -> Basic.binder_kind n
   | Qnt(n, _) -> Basic.binder_kind n
-  | _ -> raise (Failure "Not a binder")
+  | Meta(n) -> Basic.binder_kind n
+  | _ -> raise (Failure "get_binder_kind: Not a binder")
 
 let get_qnt_body t = 
   match t with 
@@ -436,6 +436,8 @@ let print_simple trm=
     | Bound(n) -> 
 	Format.printf "@[%s@]" (".."^(binder_name n))
     | Free(n, ty) -> Format.printf "@[%s@]"  n
+    | Meta(n) -> 
+	Format.printf "@[%s@]" (binder_name n)
     | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
     | Typed (trm, ty) ->
 	Format.printf "@[<2>%s" "(";
@@ -710,6 +712,7 @@ let rec string_term_basic t =
     Id(n, ty) -> (Ident.string_of n) (*string_typed_name n ty*)
   | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name t)
+  | Meta(q) -> get_binder_name t
   | Const(c) -> string_const c
   | App(t1, t2) ->
       let f=get_fun t 
@@ -732,6 +735,7 @@ let rec string_term_prec i x =
     Id(n, ty) -> (Ident.string_of n)
   | Free(n, ty) -> n
   | Bound(_) -> "?"^(get_binder_name x)
+  | Meta(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Qnt(q, body) -> 
       let qnt = Basic.binder_kind q
@@ -782,6 +786,7 @@ let rec string_term_inf inf i x =
     Id(n, ty) -> (cfun_string (Ident.string_of n))
   | Free(n, ty) -> n
   | Bound(_) -> (get_binder_name x)
+  | Meta(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
   | Typed (trm, ty) ->
       ("("^(string_term_inf inf i trm)^": "
@@ -843,6 +848,7 @@ let retype tyenv t=
     | Bound(q) -> 
 	(try table_find t qenv
 	with Not_found -> t)
+    | Meta(q) -> t
     | Const(c) -> t
     | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
@@ -890,6 +896,7 @@ let retype_with_check scp tyenv t=
     | Bound(q) -> 
 	(try table_find t qenv
 	with Not_found -> t)
+    | Meta(q) -> t
     | Const(c) -> t
     | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
@@ -928,6 +935,7 @@ let retype_pretty_env typenv trm=
 	let nt, nenv1=Gtypes.mgu_rename_env inf typenv name_env ty
 	in 
 	(Free(n, nt), nenv1)
+    | Meta(q) -> (t, name_env)
     | Bound(q) -> 
 	(let ntrm, nenv=
 	  try (table_find t qenv, name_env)
@@ -1139,6 +1147,8 @@ let rec print_term ppstate (assoc, prec) x =
   | Free(n, ty) -> 
       print_typed_name ppstate (n, ty)
   | Bound(n) -> 
+      Format.printf "@[%s@]" ((get_binder_name x))
+  | Meta(n) -> 
       Format.printf "@[%s@]" ((get_binder_name x))
   | Const(c) -> 
       Format.printf "@[%s@]" (Basic.string_const c);
@@ -1371,7 +1381,7 @@ let set_names scp trm=
 			  None -> Id(nid, ty1)
 			| Some(xty) -> Typed(Id(nid, xty), ty1)
 		  with Not_found -> Free(n, ty1))
-	     | Some(q) -> Bound(q))
+	     | Some(q) -> Meta(q))
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
 	in 
@@ -1383,14 +1393,18 @@ let set_names scp trm=
 	in 
 	Typed(set_aux qnts tt, tty1)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+    | Meta(q) -> 
+	if(Scope.is_meta scp q) 
+	then t 
+	else 
+	  (raise 
+	     (term_error "Meta variable occurs outside binding" [t]))
     | Bound(q) -> 
 	(match Lib.try_find (find (Bound(q))) qnts with
 	    Some(x) -> x
 	  | None -> 
-	      if(Scope.is_meta scp q) then t 
-	      else 
-		(raise 
-		   (term_error "Bound variable occurs outside binding" [t])))
+	      (raise 
+		 (term_error "Bound variable occurs outside binding" [t])))
     | _ -> t
   in set_aux (empty_subst()) trm
 
@@ -1435,6 +1449,7 @@ let close_term qnt free trm=
   let rec close_aux env vs t=
     match t with
       Basic.Id _ -> (t, env, vs)
+    | Basic.Meta _ -> (t, env, vs)
     | Basic.Bound(_) -> 
 	if(member t env)
 	then (t, env, vs)
@@ -1528,139 +1543,6 @@ let rec subst_closed qntenv sb trm =
    [resolve_closed_term scp trm]: resolve names and types in closed
    term [trm] in scope [scp].
 *)
-
-(***
-let resolve_closed_term scp trm=
-  let set_type_name memo s t =
-    Gtypes.set_name ~strict:true ~memo:memo s t
-  in 
-  let id_memo = Lib.empty_env()
-  and scope_memo = Lib.empty_env() 
-  and type_memo = Lib.empty_env()
-  and type_thy_memo = Lib.empty_env()
-  in 
-  let lookup_name n = 
-    try Lib.find n id_memo
-    with Not_found -> 
-      let nth = Scope.thy_of_term scp n
-      in (ignore(Lib.add n nth id_memo); nth)
-  in 
-  let lookup_type id = 
-    try 
-      Gtypes.rename_type_vars (Lib.find id type_memo)
-    with Not_found -> 
-      let ty = Scope.type_of scp id
-      in (ignore(Lib.add id ty type_memo); ty)
-  in 
-  let lookup_var vars t =
-    match Lib.try_find (find t) vars with
-	Some(x) -> (x, vars)
-      | None -> 
-	  let nt = 
-	    (match t with
-		Free(n, ty) -> mk_bound (mk_binding All n ty)
-	      | Bound(q) -> 
-		  mk_bound (mk_binding All (binder_name q) (binder_type q))
-	      | _ -> 
-		  mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
-	  in 
-	    (nt, bind t nt vars)
-  in 
-  let rec set_aux (qnts, vars) t lst=
-    match t with
-      Id(id, ty) -> 
-	let th, n = Ident.dest id
-	in 
-	let nid = 
-	  if(th = Ident.null_thy)
-	  then 
-	    try 
-	      let nth = lookup_name n
-	      in 
-	      Ident.mk_long nth n
-	    with Not_found -> 
-	      raise (term_error "Term not in scope" [t])
-	  else id
-	in 
-	let nty =  
-	  try lookup_type id
-	  with Not_found -> 
-	    raise (term_error "Can't find type for term" [t])
-	in 	
-	let ty1=
-	  try set_type_name type_thy_memo scp ty
-	  with err ->
-	    raise (add_term_error "Invalid type" [t] err)
-	in 
-	let ret_id = Typed(Id(nid, nty), ty1)
-	in 
-	(if (in_scope scope_memo scp ret_id)
-	then (ret_id, vars, lst)
-	else raise (term_error "Term not in scope" [t]))
-    | Free(n, ty) -> 
-	let ty1=
-	  try set_type_name type_thy_memo scp ty
-	  with err -> raise (add_term_error "Invalid type" [t] err)
-	in 
-	let (ntrm, nvars, nlst) =
-	  (match Lib.try_find (Scope.find_meta scp) n with
-	       Some(b) -> (Bound(b), vars, lst)
-	     | None -> 
-		 (try 
-		    let nth = lookup_name n 
-		    in 
-		    let nid = Ident.mk_long nth n
-		    in 
-		    let nty = 
-		      try lookup_type nid
-		      with Not_found -> 
-			raise (term_error "Can't find type for term" [t])
-		    in 
-		      (Id(nid, nty), vars, lst)
-		  with 
-		      Not_found -> 
-			(let (nt, nvars) = lookup_var vars t
-			 in 
-			   (nt, nvars, ((nt, t)::lst)))))
-	in 
-	  set_aux (qnts, nvars) (Typed(ntrm, ty1)) nlst
-    | Qnt(q, b) -> 
-	let nq = binding_set_names ~memo:type_thy_memo scp q
-	in 
-	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
-	in 
-	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
-	in 
-	(Qnt(nq, nb), nvars, nlst)
-    | Typed(tt, tty) -> 
-	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
-	in 
-	  (Typed(nt, tty), nvars, nlst)
-    | App(f, a) -> 
-	let nf, fvars, flst = set_aux (qnts, vars) f lst
-	in 
-	let (na, avars, alst) = set_aux (qnts, fvars) a flst
-	in 
-	  (App(nf, na), avars, alst)
-    | Bound(q) -> 
-	if (is_meta t) && (Scope.is_meta scp q) 
-	then (t, vars, lst)
-	else
-	(match Lib.try_find (find (Bound(q))) qnts with
-	    Some x -> (x, vars, lst)
-	  | None ->
-	      let nt, nvars = lookup_var vars t
-	      in 
-		(nt, nvars, ((nt, t)::lst)))
-    | _ -> (t, vars, lst)
-  in 
-  let (nt, nvars, nlst) =
-    set_aux (empty_subst(), empty_subst()) trm []
-  in 
-    (nt, nlst)
-***)
-
-
 let resolve_closed_term scp trm=
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env() 
@@ -1727,7 +1609,7 @@ let resolve_closed_term scp trm=
 	else raise (term_error "Term not in scope" [t]))
     | Free(n, ty) -> 
 	(match Lib.try_find (Scope.find_meta scp) n with
-	     Some(b) -> (Bound(b), vars, lst)
+	     Some(b) -> (Meta(b), vars, lst)
 	   | None -> 
 	       set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
     | Qnt(q, b) -> 
@@ -1748,10 +1630,13 @@ let resolve_closed_term scp trm=
 	let (na, avars, alst) = set_aux (qnts, fvars) a flst
 	in 
 	  (App(nf, na), avars, alst)
-    | Bound(q) -> 
-	if (is_meta t) && (Scope.is_meta scp q) 
+    | Meta(q) -> 
+	if (Scope.is_meta scp q) 
 	then (t, vars, lst)
-	else
+	else 
+	  (let nt, nvars = lookup_var vars t
+	  in (nt, nvars, ((nt, t)::lst)))
+    | Bound(q) -> 
 	(match Lib.try_find (find (Bound(q))) qnts with
 	    Some x -> (x, vars, lst)
 	  | None ->
@@ -1804,17 +1689,24 @@ let rec term_lt t1 t2 =
   | (Id _, Const _) -> false
   | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
   | (Id _, _) -> true
+  | (Meta _, Const _) -> false
+  | (Meta _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Meta _, _) -> true
   | (Bound _, Const _) -> false
   | (Bound _, Id _) -> false
+  | (Bound _, Meta _) -> false
   | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
   | (Free _, Const _) -> false
   | (Free _, Id _) -> false
+  | (Free _, Meta _) -> false
   | (Free _, Bound _) -> false
   | (Free (n1, _), Free (n2, _)) -> n1<n2
   | (Free _, _) -> true
   | (App _, Const _) -> false
   | (App _, Id _) -> false
+  | (App _, Meta _) -> false
   | (App _, Bound _) -> false
   | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
@@ -1824,6 +1716,7 @@ let rec term_lt t1 t2 =
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
   | (Qnt _, Id _) -> false
+  | (Qnt _, Meta _) -> false
   | (Qnt _, Bound _) -> false
   | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
@@ -1845,17 +1738,24 @@ let rec term_leq t1 t2 =
   | (Id _, Const _) -> false
   | (Id _, Id _) -> atom_leq (dest_var t1) (dest_var t2)
   | (Id _, _) -> true
+  | (Meta _, Const _) -> false
+  | (Meta _, Id _) -> atom_leq (dest_var t1) (dest_var t2)
+  | (Meta b1, Meta b2) -> bound_leq (dest_binding b1) (dest_binding b2)
+  | (Meta _, _) -> true
   | (Bound _, Const _) -> false
   | (Bound _, Id _) -> false
+  | (Bound _, Meta _) -> false
   | (Bound b1, Bound b2) -> bound_leq (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
   | (Free _, Const _) -> false
   | (Free _, Id _) -> false
+  | (Free _, Meta _) -> false
   | (Free _, Bound _) -> false
   | (Free (n1, _), Free (n2, _)) -> n1<=n2
   | (Free _, _) -> true
   | (App _, Const _) -> false
   | (App _, Id _) -> false
+  | (App _, Meta _) -> false
   | (App _, Bound _) -> false
   | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
@@ -1863,7 +1763,8 @@ let rec term_leq t1 t2 =
       else false
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
-  | (Qnt _, Id _) -> false
+  | (Qnt _, Id _) -> false 
+  | (Qnt _, Meta _) -> false
   | (Qnt _, Bound _) -> false
   | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false

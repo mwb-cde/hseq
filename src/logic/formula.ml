@@ -328,10 +328,8 @@ let rec is_closed scp env t =
 	  (Term.mk_free "" (Gtypes.mk_null())) env
       in 
       is_closed scp env1 b
-  | Basic.Bound(q) -> 
-      if(Term.is_meta t)
-      then (Scope.is_meta scp q) 
-      else (Term.member t env)
+  | Basic.Meta (q) -> Scope.is_meta scp q
+  | Basic.Bound(q) -> Term.member t env
   | Basic.Free(_) -> 
       Term.member t env
   | _ -> true

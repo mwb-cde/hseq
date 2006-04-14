@@ -39,6 +39,7 @@ type label =
   | Quant of Basic.quant
   | Const of Basic.const_ty 
   | Cname of Ident.t
+  | Cmeta of string
   | Cfree of string
 
 (** {7 Label operations} *)

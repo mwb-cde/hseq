@@ -306,14 +306,16 @@ module Skolem:
       val get_sklm_indx: skolem_cnst -> int
       val get_sklm_type: skolem_cnst -> Basic.gtype
 
-      val make_skolem_name : Ident.t -> int -> Ident.t
-	  (** 
-	     [make_skole_name i n]: Make the name of a skolem constant
-	     from [i] and [n]
-	   *)
+      val make_skolem_name : Ident.t -> int -> string
+	(** 
+	    [make_skole_name i n]: Make the name of a skolem constant
+	    from [i] and [n]
+	*)
 
+(***
       val decln_of_sklm: skolem_cnst -> (Ident.t * Basic.gtype)
 	  (** Make a declaration from a skolem record *)
+***)
 
 	  (** The record of generated skolem constants *)
       type skolem_type

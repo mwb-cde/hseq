@@ -79,14 +79,14 @@ type quant =
     All
   | Ex
   | Lambda
-  | Meta (* used for skolem constants *)
+  | MetaQ 
 
 let quant_string x =
   match x with 
     All -> "!"
   | Ex -> "?" 
   | Lambda -> "%"
-  | Meta -> ""
+  | MetaQ -> "_"
 
 (**
    [q_type]: The data stored in a binder.
@@ -128,6 +128,7 @@ type term =
     Id of Ident.t* gtype  
   | Bound of q_type ref
   | Free of string * gtype
+  | Meta of q_type ref
   | App of term * term
   | Qnt of binders * term 
   | Const of const_ty

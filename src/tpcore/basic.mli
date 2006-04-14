@@ -56,7 +56,8 @@ val string_const: const_ty -> string
 (** Quantifiers for terms. *)
 type quant =  
     All | Ex | Lambda 
-  | Meta  
+  | MetaQ 
+
 
 val quant_string : quant -> string
 (** The string representation of quantifiers *)
@@ -89,6 +90,7 @@ type term =
     Id of Ident.t* gtype   (** Identifiers *)
   | Bound of binders     (** Bound variables *)
   | Free of string * gtype  (** Free variables *)
+  | Meta of binders       (** Meta variables (use for skolem constants) *)
   | App of term * term    (** Function application *)
   | Qnt of binders * term (** Binding terms *)
   | Const of const_ty     (** Constants *)

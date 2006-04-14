@@ -152,6 +152,7 @@ exception Stop of exn
 type term_key =
     Ident  (** Term [Id] *)
   | BVar   (** Term [Bound] *)
+  | MVar   (** Term [Meta] *)
   | FVar   (** Term [Free] *)
   | Appln  (** Term [App] *)
   | Quant  (** Term [Qnt] *)

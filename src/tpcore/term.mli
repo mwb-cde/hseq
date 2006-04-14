@@ -92,12 +92,13 @@ val dest_var : term -> (Ident.t * gtype)
 (** 
     {7 Meta variables} 
 
-    A meta variable is a bound term with quant [Basic.Meta]. A meta
+    A meta variable is a Meta with quant [Basic.Meta]. A meta
     variable is treated like a term identifier, not a bound variable.
 *)
 
 val mk_meta : string -> gtype -> term
 val is_meta : term -> bool
+val dest_meta : term -> binders
 
 (** {7 Typed terms} *)
 

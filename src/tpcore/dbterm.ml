@@ -37,6 +37,9 @@ let rec of_term_aux env qnts t=
       and nb = of_term_aux env (q::qnts) b
       in 
       Qnt(mk_binder tqnt tqvar (Gtypes.to_save_env env tqtyp), nb)
+  | Basic.Meta(q) ->
+      raise 
+	(Term.term_error "Can't convert meta variables to DB terms" [t])
 	
 let of_term t = of_term_aux (ref []) [] t
 

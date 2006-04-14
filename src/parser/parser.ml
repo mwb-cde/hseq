@@ -1412,6 +1412,14 @@ module Resolver =
 	    with _ -> (ty, env)
 	  in 
 	  (term1, ty0, env0)
+      | Meta(q) -> 
+	  let ty = Term.get_binder_type term
+	  in
+	  let (ty0, env0)=
+	    try (ty, Gtypes.unify_env data.scp expty ty env)
+	    with _ -> (ty, env)
+	  in 
+	  (term, ty0, env0)
       | Const(c) ->
 	  let ty = Logicterm.typeof_cnst c
 	  in

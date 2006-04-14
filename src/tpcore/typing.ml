@@ -42,6 +42,7 @@ let typeof_env scp typenv inf trm =
     match t with
       Id(n, ty) -> (Gtypes.mgu ty env, env)
     | Free(n, ty) -> (Gtypes.mgu ty env, env)
+    | Meta(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Bound(q) -> (Gtypes.mgu (get_binder_type t) env, env)
     | Const(c) -> (Logicterm.typeof_cnst c, env)
     | Qnt(q, b) -> 
@@ -111,6 +112,15 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
 	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
+    | Meta(q) -> 
+	(let ty = get_binder_type t
+	in
+	Gtypes.quick_well_defined scp cache ty;
+	(try 
+	  Gtypes.unify_env scp ty expty env
+	with err -> 
+	  raise (add_typing_error "Typechecking: " t 
+	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Bound(q) -> 
 	(let ty = get_binder_type t
 	in
@@ -226,6 +236,14 @@ let settype_top scp (inf, cache) f typenv exty et =
 	 with err -> 
 	   raise (add_typing_error "Typechecking: " t 
 		    (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
+    | Meta(q) -> 
+	(let ty = get_binder_type t
+	in
+	Gtypes.quick_well_defined scp cache ty;
+	(try Gtypes.unify_env scp ty expty env
+	with err -> 
+	  raise (add_typing_error "Typechecking: "t
+		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
     | Bound(q) -> 
 	(let ty = get_binder_type t
 	in

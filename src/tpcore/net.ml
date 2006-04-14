@@ -29,6 +29,7 @@ type label =
   | Quant of Basic.quant
   | Const of Basic.const_ty 
   | Cname of Ident.t
+  | Cmeta of string
   | Cfree of string
 
 (*** Operations ***)
@@ -62,6 +63,7 @@ let rec term_to_label varp trm rst=
   else 
     match trm with
       Basic.Id(id, _) -> (Cname(id), rst)
+    | Basic.Meta(q) -> (Cmeta(Term.get_binder_name trm), rst)
     | Basic.Free(n, _) -> (Cfree(n), rst)
     | Basic.Qnt(q, b) -> 
 	(Quant(Basic.binder_kind q), b::rst)

@@ -36,17 +36,24 @@ let rec lt_var lvarp rvarp x y=
   | (Id _, Const _) -> false
   | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
   | (Id _, _) -> true
+  | (Meta _, Const _) -> false
+  | (Meta _, Id _) -> false
+  | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Meta _, _) -> true
   | (Bound _, Const _) -> false
   | (Bound _, Id _) -> false
+  | (Bound _, Meta _) -> false
   | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
   | (Bound _ , _ ) -> true
   | (Free _, Const _) -> false
   | (Free _, Id _) -> false
   | (Free _, Bound _) -> false
+  | (Free _, Meta _) -> false
   | (Free (n1, _), Free (n2, _)) -> n1<n2
   | (Free _, _) -> true
   | (App _, Const _) -> false
   | (App _, Id _) -> false
+  | (App _, Meta _) -> false
   | (App _, Bound _) -> false
   | (App _, Free _) -> false
   | (App(f1, a1), App (f2, a2)) -> 
@@ -56,6 +63,7 @@ let rec lt_var lvarp rvarp x y=
   | (App _, _) -> true
   | (Qnt _, Const _) -> false
   | (Qnt _, Id _) -> false
+  | (Qnt _, Meta _) -> false
   | (Qnt _, Bound _) -> false
   | (Qnt _, Free _) -> false
   | (Qnt _, App _) -> false
@@ -70,8 +78,6 @@ let rec lt_var lvarp rvarp x y=
     (false, true) -> true
   | (true, _) -> false
   | _ -> lt_aux lvarp rvarp x y
-
-
 
 (** 
    [get_rr_order rl]: Get the ordering of rule [rl]. Fail if [rl] is

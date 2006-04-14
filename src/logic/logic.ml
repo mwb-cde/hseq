@@ -149,6 +149,7 @@ module Skolem =
     let get_old_sklm n sklms =
       (n, List.assoc n sklms)
 
+(**
     let make_skolem_name id indx = 
       let suffix = 
 	if(indx=0) 
@@ -156,7 +157,16 @@ module Skolem =
 	else (string_of_int indx)
       in 
       Ident.mk_long (Ident.thy_of id) ("_"^(Ident.name_of id)^suffix)
+**)
+    let make_skolem_name id indx = 
+      let suffix = 
+	if(indx=0) 
+	then ""
+	else (string_of_int indx)
+      in 
+      ("_"^(Ident.name_of id)^suffix)
 
+(***
     let decln_of_sklm x= 
       let n = get_sklm_name x
       and indx = get_sklm_indx x
@@ -165,6 +175,7 @@ module Skolem =
       let id = make_skolem_name n indx
       in 
       (id, ty)
+***)
 
 (***
  * Constructing skolem constants
@@ -236,9 +247,9 @@ module Skolem =
 	  in 
 	  let nnam = make_skolem_name oname nindx
 	  in 
-	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
+	  let nty, ntyenv, new_names=mk_nty nnam
 	  in 
-	    (Term.mk_meta (Ident.name_of nnam) nty, nty, 
+	    (Term.mk_meta nnam nty, nty, 
 	     (oname, (nindx, nty))::info.skolems, 
 	     ntyenv, new_names)
       | Some(oldsk) -> 
@@ -250,9 +261,9 @@ module Skolem =
 	  in 
 	  let nnam = make_skolem_name oname nindx
 	  in 
-	  let nty, ntyenv, new_names=mk_nty (Ident.name_of nnam)
+	  let nty, ntyenv, new_names=mk_nty nnam
 	  in 
-	  (Term.mk_meta (Ident.name_of nnam) nty, nty, 
+	  (Term.mk_meta nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
 	   ntyenv, new_names)
   end
@@ -1643,7 +1654,7 @@ module Tactics =
 	let nscp = 
 	  Scope.add_meta 
 	    (Scope.new_local_scope (Sequent.scope_of sq)) 
-	    (Term.dest_bound sv)
+	    (Term.dest_meta sv)
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=
@@ -1702,7 +1713,7 @@ module Tactics =
 	let nscp = 
 	  Scope.add_meta 
 	    (Scope.new_local_scope (Sequent.scope_of sq)) 
-	    (Term.dest_bound sv)
+	    (Term.dest_meta sv)
 	in 
 	(* add skolem constant and type variable to sequent list *)
 	let nsqtys=

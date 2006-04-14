@@ -93,6 +93,7 @@ exception Stop of exn
 type term_key =
     Ident  (** Term [Id] *)
   | BVar   (** Term [Bound] *)
+  | MVar   (** Term [Meta] *)
   | FVar   (** Term [Free] *)
   | Appln  (** Term [App] *)
   | Quant  (** Term [Qnt] *)
@@ -142,6 +143,7 @@ module TermData =
       match n with
 	Basic.Id _ -> Ident
       | Basic.Bound _ -> BVar
+      | Basic.Meta _ -> MVar
       | Basic.Free _ -> FVar
       | Basic.App _ -> Appln
       | Basic.Const _ -> Constn
