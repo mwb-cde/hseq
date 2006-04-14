@@ -1,277 +1,402 @@
 (*-----
-Name: boollib.ml
-   Author: M Wahab <mwahab@users.sourceforge.net>
-   Copyright M Wahab 2005
-   ----*)
+  Name: boollib.ml
+  Author: M Wahab <mwahab@users.sourceforge.net>
+  Copyright M Wahab 2005
+  ----*)
 
 
 open Commands
 open Tactics
 open Lib.Ops
 
-(**********
- * A minimal base theory 
- **********)
-module BaseTheory=
-  struct
-
-    let builder() =
-      begin_theory Logicterm.base_thy [];
-      ignore(typedef 
-	       <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
-
-      ignore(typedef <:def<: bool >>);
-      ignore(typedef <:def<: ind >>);
-
-      ignore
-	(declare
-	   (read_unchecked ((Ident.name_of Logicterm.equalsid)
-			    ^": 'a -> 'a -> bool"))
-	   ~pp:(1000, infixl, Some"="));
-      ignore
-	(declare
-	   (read_unchecked ((Ident.name_of Logicterm.notid)^": bool -> bool"))
-	   ~pp:(110, prefix, Some "not"));
-      ignore
-	(declare
-	   (read_unchecked 
-	      ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
-	   ~pp:(105, infixl, Some "and")); 
-      ignore
-	(define
-	   (read_defn ((Ident.name_of Logicterm.orid)
-		       ^" x y = (not ((not x) and (not y)))"))
-	   ~pp:(105, infixl, Some "or"));
-      ignore
-	(define
-	   (read_defn ((Ident.name_of Logicterm.impliesid)
-		       ^" x y = (not x) or y"))
-	   ~pp:(104, infixl, Some "=>"));
-      ignore
-	(define
-	   (read_defn ((Ident.name_of Logicterm.iffid)
-		       ^" x y = (x => y) and (y => x)"))
-	   ~pp:(104, infixl, Some "iff"));
-      ignore(axiom "false_def" << false = (not true)>>);
-      ignore(axiom "eq_refl" <<!x: x=x>>);
-      ignore(axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
-      ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
-      ignore(axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
-      ignore(
-      define
-	<:def< 
-      IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))
-	>>);
-      ignore(define <:def< any = epsilon (%a: true)>>);
-      ignore(end_theory ~save:false ())
-	
-    let init() = Global.Init.set_base_thy_builder builder
-  end
 
 (**********
- * Printer-Parser for Boolean functions. 
- **********)
+	   * Printer-Parser for Boolean functions. 
+**********)
 module PP = 
-  struct
+struct
 
-(**
-   Printer for negation. Prints [ << base.not x >> ] 
-   as [~x] rather than [~ x].
- *)
-    let negation_pprec = Printer.mk_record 205 Printer.prefix None
+  (**
+     Printer for negation. Prints [ << base.not x >> ] 
+     as [~x] rather than [~ x].
+  *)
+  let negation_pprec = Printer.mk_record 205 Printer.prefix None
 
-    let negation_printer ppstate (fixity, prec) (f, args)=
-      let cprec= negation_pprec.Printer.prec
-      and fixity = negation_pprec.Printer.fixity
-      in 
+  let negation_printer ppstate (fixity, prec) (f, args)=
+    let cprec= negation_pprec.Printer.prec
+    and fixity = negation_pprec.Printer.fixity
+    in 
       match args with 
-	(t::rest) -> 
-	  Format.printf "@[<2>";
-	  Printer.print_bracket prec cprec "(";
-	  Format.printf "~";
-	  Term.print_term ppstate (fixity, cprec) t;
-	  Printer.print_bracket prec cprec ")";
-	  Format.printf "@]";
-	  (match rest with
-	    [] -> ()
-	  | _ -> 
-	      Format.printf "@[";
-	      Printer.print_list
-		((fun x ->
-		  Term.print_term ppstate (fixity, prec) x),
-		 (fun () -> Format.printf "@ "))
-		rest;
-	      Format.printf "@]")
-      | _ -> 
-	  Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
+	  (t::rest) -> 
+	    Format.printf "@[<2>";
+	    Printer.print_bracket prec cprec "(";
+	    Format.printf "~";
+	    Term.print_term ppstate (fixity, cprec) t;
+	    Printer.print_bracket prec cprec ")";
+	    Format.printf "@]";
+	    (match rest with
+		 [] -> ()
+	       | _ -> 
+		   Format.printf "@[";
+		   Printer.print_list
+		     ((fun x ->
+			 Term.print_term ppstate (fixity, prec) x),
+		      (fun () -> Format.printf "@ "))
+		     rest;
+		   Format.printf "@]")
+	| _ -> 
+	    Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
-    let init_negation_printer()=
-      Global.PP.add_term_printer Logicterm.notid negation_printer
+  let init_negation_printer()=
+    Global.PP.add_term_printer Logicterm.notid negation_printer
 
-(***
-   Support for if-then-else 
- ***)
+  (***
+      Support for if-then-else 
+  ***)
 
-(** Parser-Printer for If-Then-else *)
-    open Parser.Pkit
-    open Parser.Utility
-    open Lexer
+  (** Parser-Printer for If-Then-else *)
+  open Parser.Pkit
+  open Parser.Utility
+  open Lexer
 
-    let ifthenelse_id= Ident.mk_long Logicterm.base_thy "IF"
+  let ifthenelse_id= Ident.mk_long Logicterm.base_thy "IF"
 
-    let ifthenelse_parser inf=
-      ((seq
-	  [?$(Lexer.Sym (Lexer.OTHER "IF"));
-	   Parser.Grammars.form inf;
-	   ?$(Lexer.Sym(Lexer.OTHER "THEN"));
-	   Parser.Grammars.form inf;
-	   ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
-	   Parser.Grammars.form inf])
-	 >>
-       (fun l -> 
-	 match l with 
-	   [_; test; _; tbr; _; fbr] ->
-	     Term.mk_fun ifthenelse_id [test; tbr; fbr]
-	 | _ -> raise (ParsingError "Error parsing if-then-else")))
-	
+  let ifthenelse_parser inf=
+    ((seq
+	[?$(Lexer.Sym (Lexer.OTHER "IF"));
+	 Parser.Grammars.form inf;
+	 ?$(Lexer.Sym(Lexer.OTHER "THEN"));
+	 Parser.Grammars.form inf;
+	 ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
+	 Parser.Grammars.form inf])
+     >>
+	(fun l -> 
+	   match l with 
+	       [_; test; _; tbr; _; fbr] ->
+		 Term.mk_fun ifthenelse_id [test; tbr; fbr]
+	     | _ -> raise (ParsingError "Error parsing if-then-else")))
+      
 
-    let ifthenelse_pprec = 
-      let prec=Printer.default_term_prec
-      and fixity = Printer.default_term_fixity
-      in 
+  let ifthenelse_pprec = 
+    let prec=Printer.default_term_prec
+    and fixity = Printer.default_term_fixity
+    in 
       Printer.mk_record prec fixity None
 
-    let init_ifthenelse_parser() = 
-      Parser.add_symbol "if" (Sym(OTHER "IF"));
-      Parser.add_symbol "then" (Sym(OTHER "THEN"));
-      Parser.add_symbol "else" (Sym(OTHER "ELSE"));
-      Parser.add_term_parser Lib.First "IfThenElse" ifthenelse_parser
+  let init_ifthenelse_parser() = 
+    Parser.add_symbol "if" (Sym(OTHER "IF"));
+    Parser.add_symbol "then" (Sym(OTHER "THEN"));
+    Parser.add_symbol "else" (Sym(OTHER "ELSE"));
+    Parser.add_term_parser Lib.First "IfThenElse" ifthenelse_parser
 
-(** Printer for if-then-else **)
-    let ifthenelse_printer ppstate (fixity, prec) (f, args)=
-      let cfixity = Printer.default_term_fixity
-      in 
-      let cprec=(ifthenelse_pprec.Printer.prec)
-      in 
+  (** Printer for if-then-else **)
+  let ifthenelse_printer ppstate (fixity, prec) (f, args)=
+    let cfixity = Printer.default_term_fixity
+    in 
+    let cprec=(ifthenelse_pprec.Printer.prec)
+    in 
       match args with 
-	(b::tbr::fbr::rest) -> 
-	  Format.printf "@[<2>";
-	  Printer.print_bracket prec cprec "(";
-	  Format.printf "if@ ";
-	  Term.print_term ppstate (cfixity, cprec) b;
-	  Format.printf "@ then@ ";
-	  Term.print_term ppstate (cfixity, cprec) tbr;
-	  Format.printf "@ else@ ";
-	  Term.print_term ppstate (cfixity, cprec) fbr;
-	  Printer.print_bracket prec cprec  ")";
-	  if(prec<cprec) then Format.printf "@ " else ();
-	  Format.printf "@]";
-	  (match rest with
-	    [] -> ()
-	  | _ -> 
-	      Format.printf "@[";
-	      Printer.print_list
-		((fun x ->
-		  Term.print_term ppstate (cfixity, prec) x),
-		 (fun () -> Format.printf "@ "))
-		rest;
-	      Format.printf "@]")
-      | _ -> 
-	  Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
+	  (b::tbr::fbr::rest) -> 
+	    Format.printf "@[<2>";
+	    Printer.print_bracket prec cprec "(";
+	    Format.printf "if@ ";
+	    Term.print_term ppstate (cfixity, cprec) b;
+	    Format.printf "@ then@ ";
+	    Term.print_term ppstate (cfixity, cprec) tbr;
+	    Format.printf "@ else@ ";
+	    Term.print_term ppstate (cfixity, cprec) fbr;
+	    Printer.print_bracket prec cprec  ")";
+	    if(prec<cprec) then Format.printf "@ " else ();
+	    Format.printf "@]";
+	    (match rest with
+		 [] -> ()
+	       | _ -> 
+		   Format.printf "@[";
+		   Printer.print_list
+		     ((fun x ->
+			 Term.print_term ppstate (cfixity, prec) x),
+		      (fun () -> Format.printf "@ "))
+		     rest;
+		   Format.printf "@]")
+	| _ -> 
+	    Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
 
-    let init_ifthenelse_printer()=
-      Global.PP.add_term_printer ifthenelse_id
-	ifthenelse_printer
+  let init_ifthenelse_printer()=
+    Global.PP.add_term_printer ifthenelse_id
+      ifthenelse_printer
 
-    let init_ifthenelse()=
-      init_ifthenelse_parser();
-      init_ifthenelse_printer()
+  let init_ifthenelse()=
+    init_ifthenelse_parser();
+    init_ifthenelse_printer()
 
 
-(* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
+  (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
-    let choice_ident = Ident.mk_long Logicterm.base_thy "epsilon"
-    let choice_sym = "@"
-    let choice_pp = 
-      (Printer.default_term_fixity, Printer.default_term_prec) 
+  let choice_ident = Ident.mk_long Logicterm.base_thy "epsilon"
+  let choice_sym = "@"
+  let choice_pp = 
+    (Printer.default_term_fixity, Printer.default_term_prec) 
 
-    let choice_parser =
-      Parser.Grammars.parse_as_binder choice_ident choice_sym
+  let choice_parser =
+    Parser.Grammars.parse_as_binder choice_ident choice_sym
 
-    let init_choice_parser ()=
-      Parser.add_symbol choice_sym (Lexer.Sym(Lexer.OTHER choice_sym));
-      Parser.add_term_parser 
-	(Lib.After "lambda") "epsilon" choice_parser
-	
-    let choice_printer= 
-      Term.print_as_binder choice_pp choice_ident choice_sym
+  let init_choice_parser ()=
+    Parser.add_symbol choice_sym (Lexer.Sym(Lexer.OTHER choice_sym));
+    Parser.add_term_parser 
+      (Lib.After "lambda") "epsilon" choice_parser
+      
+  let choice_printer= 
+    Term.print_as_binder choice_pp choice_ident choice_sym
 
-    let init_choice_printer () =
-      let printer = choice_printer
-      in 
+  let init_choice_printer () =
+    let printer = choice_printer
+    in 
       Global.PP.add_term_printer choice_ident 
 	(fun ppstate ppenv -> printer ppstate ppenv)
 
-    let init_epsilon() = 
-      init_choice_parser();
-      init_choice_printer()
+  let init_epsilon() = 
+    init_choice_parser();
+    init_choice_printer()
 
 
-(* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
+  (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
-    let exists_unique_ident = 
-      Ident.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
-    let exists_unique_sym = "?!"
-    let exists_unique_pp = 
-      (Printer.default_term_fixity, Printer.default_term_prec) 
+  let exists_unique_ident = 
+    Ident.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
+  let exists_unique_sym = "?!"
+  let exists_unique_pp = 
+    (Printer.default_term_fixity, Printer.default_term_prec) 
 
-    let exists_unique_parser =
-      Parser.Grammars.parse_as_binder exists_unique_ident exists_unique_sym
+  let exists_unique_parser =
+    Parser.Grammars.parse_as_binder exists_unique_ident exists_unique_sym
 
-    let init_exists_unique_parser ()=
-      Parser.add_symbol 
-	exists_unique_sym 
-	(Lexer.Sym(Lexer.OTHER exists_unique_sym));
-      Parser.add_term_parser 
-	(Lib.After "lambda") "exists_unique" exists_unique_parser
-	
-    let exists_unique_printer= 
-      Term.print_as_binder 
-	exists_unique_pp exists_unique_ident exists_unique_sym
+  let init_exists_unique_parser ()=
+    Parser.add_symbol 
+      exists_unique_sym 
+      (Lexer.Sym(Lexer.OTHER exists_unique_sym));
+    Parser.add_term_parser 
+      (Lib.After "lambda") "exists_unique" exists_unique_parser
+      
+  let exists_unique_printer= 
+    Term.print_as_binder 
+      exists_unique_pp exists_unique_ident exists_unique_sym
 
-    let init_exists_unique_printer () =
-      let printer = exists_unique_printer
-      in 
+  let init_exists_unique_printer () =
+    let printer = exists_unique_printer
+    in 
       Global.PP.add_term_printer exists_unique_ident 
 	(fun ppstate ppenv -> printer ppstate ppenv)
 
-    let init_exists_unique() = 
-      init_exists_unique_parser();
-      init_exists_unique_printer()
+  let init_exists_unique() = 
+    init_exists_unique_parser();
+    init_exists_unique_printer()
 
-(* PP Initialising functions *)
+  (* PP Initialising functions *)
 
-    let init_parsers () = 
-      init_ifthenelse_parser();
-      init_choice_parser();
-      init_exists_unique_parser()
-	
-    let init_printers ()=
-      init_negation_printer();
-      init_ifthenelse_printer();
-      init_choice_printer() ;
-      init_exists_unique_printer() 
+  let init_parsers () = 
+    init_ifthenelse_parser();
+    init_choice_parser();
+    init_exists_unique_parser()
+      
+  let init_printers ()=
+    init_negation_printer();
+    init_ifthenelse_printer();
+    init_choice_printer() ;
+    init_exists_unique_printer() 
 
-    let init() =
-      init_printers();
-      init_parsers()
+  let init() =
+    init_printers();
+    init_parsers()
 
-  end    
+end    
 
+
+(**********
+* A minimal base theory 
+**********)
+module BaseTheory=
+struct
+
+
+  let builder ()= 
+    begin_theory Logicterm.base_thy [];
+    
+    (** Types *)
+
+    let _ = typedef <:def<: ('a, 'b)FUN >> ~pp:(100, infixr, Some("->")) in
+    let _ = typedef <:def<: bool >> in 
+    let _ = typedef <:def<: ind >> in
+
+    (** Terms *)
+
+    let _ = 
+      let prec = PP.negation_pprec.Printer.prec
+      and fixity = PP.negation_pprec.Printer.fixity
+      in 
+	declare
+	  (Commands.read_unchecked 
+	     ((Ident.name_of Logicterm.notid)^": bool -> bool"))
+	  ~pp:(prec, fixity, Some "~") in 
+
+    let _ = 
+      let prec = PP.negation_pprec.Printer.prec
+      and fixity = PP.negation_pprec.Printer.fixity
+      in 
+	add_term_pp Logicterm.notid prec fixity (Some "not") in 
+
+    (** Equality *)
+    let _ =
+      declare
+	(Commands.read_unchecked 
+	   ((Ident.name_of Logicterm.equalsid)^": 'a -> 'a -> bool"))
+	~pp:(200, infixl, (Some "=")) in 
+
+    (** Conjunction *)
+    let _ =
+      declare
+	(Commands.read_unchecked 
+	   ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
+	~pp:(185, infixr, Some "and") in  
+
+    let _ = add_term_pp Logicterm.andid 185 infixr (Some "&") in 
+
+    (** Disjunction *)
+    let _ =
+      define
+	(Commands.read_defn ((Ident.name_of Logicterm.orid)
+			     ^" x y = (not ((not x) and (not y)))"))
+	~pp:(190, infixr, Some "or") in 
+
+    let _ = add_term_pp Logicterm.orid 190 infixr (Some "|") in 
+
+    (** Implication *)
+    let _ = 
+      define
+	(Commands.read_defn ((Ident.name_of Logicterm.impliesid)
+			     ^" x y = (not x) or y"))
+	~pp:(195, infixr, Some "=>") in 
+
+    (** Equivalance *)
+
+    let _ = 
+      define
+	(Commands.read_defn ((Ident.name_of Logicterm.iffid)
+			     ^" x y = (x => y) and (y => x)"))
+	~pp:(180, infixn, Some "iff") in 
+
+
+    (** Axioms *)
+
+    (** False definition *)
+    let _ = axiom "false_def" << false = (not true)>> in 
+
+    (** Boolean cases *)
+    let _ = 
+      axiom "bool_cases" <<!x: (x=true) or (x=false)>> in 
+
+    (** Equality *)
+
+    let _ = 
+      axiom "eq_refl" <<!x: x=x>> in 
+
+    let _ =
+      define 
+      <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1=x2)>> in 
+
+    let _ = 
+      define <:def< onto f = !y: ?x: y=(f x)>> in 
+
+    let _ = 
+      axiom "infinity_ax" <<?(f: ind -> ind): (one_one f) and (onto f)>> in 
+
+    let _ = 
+      axiom "extensionality"  <<!f g: (!x: (f x) = (g x)) => (f = g)>> in 
+
+    (** Specification operator (epsilon) *)
+    let _ = declare <<epsilon: ('a -> bool) -> 'a>> in 
+
+    let _ = 
+      axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>> in 
+
+    (** Conditional *)
+    let _ = 
+      define
+      <:def< 
+	IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))
+      >> in 
+
+    (** Any value *)
+    let _ = define <:def< any = epsilon (%a: true)>> in 
+
+    (** Unique existence *)
+    let _ =
+      define 
+      <:def<
+	EXISTS_UNIQUE p = 
+      (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
+	>> in 
+
+      end_theory()
+
+  let init() = Global.Init.set_base_thy_builder builder 
+
+  (****
+       let builder() =
+       begin_theory Logicterm.base_thy [];
+       ignore(typedef 
+       <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
+
+       ignore(typedef <:def<: bool >>);
+       ignore(typedef <:def<: ind >>);
+
+       ignore
+       (declare
+       (read_unchecked ((Ident.name_of Logicterm.equalsid)
+       ^": 'a -> 'a -> bool"))
+       ~pp:(1000, infixl, Some"="));
+       ignore
+       (declare
+       (read_unchecked ((Ident.name_of Logicterm.notid)^": bool -> bool"))
+       ~pp:(110, prefix, Some "not"));
+       ignore
+       (declare
+       (read_unchecked 
+       ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
+       ~pp:(105, infixl, Some "and")); 
+       ignore
+       (define
+       (read_defn ((Ident.name_of Logicterm.orid)
+       ^" x y = (not ((not x) and (not y)))"))
+       ~pp:(105, infixl, Some "or"));
+       ignore
+       (define
+       (read_defn ((Ident.name_of Logicterm.impliesid)
+       ^" x y = (not x) or y"))
+       ~pp:(104, infixl, Some "=>"));
+       ignore
+       (define
+       (read_defn ((Ident.name_of Logicterm.iffid)
+       ^" x y = (x => y) and (y => x)"))
+       ~pp:(104, infixl, Some "iff"));
+       ignore(axiom "false_def" << false = (not true)>>);
+       ignore(axiom "eq_refl" <<!x: x=x>>);
+       ignore(axiom "bool_cases" <<!x: (x=true) or (x=false)>>);
+       ignore(declare <<epsilon: ('a -> bool) -> 'a>>);
+       ignore(axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>>);
+       ignore(
+       define
+       <:def< 
+       IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f))))
+       >>);
+       ignore(define <:def< any = epsilon (%a: true)>>);
+       ignore(end_theory ~save:false ())
+       
+  **)
+end
 
 (****
- * Support functions
- *****)
+     * Support functions
+*****)
 
 (**
    [find_unifier scp typenv varp trm ?exclude ?f forms]: Find the first
@@ -283,7 +408,7 @@ module PP =
    [typenv] is the type environment, to pass to the unifier.
    [scp] is the scope, to pass to the unifier.
    Raise Not_found if no unifiable formula is found.
- *)
+*)
 let find_unifier scp typenv varp trm ?exclude forms = 
   let not_this = Lib.get_option exclude (fun _ -> false)
   in 
@@ -2411,6 +2536,7 @@ let equals_tac ?info ?f g =
  ***)
 
 let init_boollib()= 
+(*  BaseTheory.init(); *)
   PP.init()
 
 let _ = Global.Init.add_init init_boollib
