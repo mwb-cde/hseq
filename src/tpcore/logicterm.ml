@@ -265,7 +265,7 @@ let beta_conv t =
       then 
 	(let (q, b)=dest_qnt f
 	in 
-	subst_quick (Bound(q)) a  b)
+	qsubst [(Bound(q), a)]  b)
       else raise (term_error "Can't apply beta-reduction" [t])
   | _ -> raise (term_error "Can't apply beta-reduction" [t])
 
@@ -376,7 +376,7 @@ let beta_reduce trm =
 let eta_conv x ty t=
   let name="a" 
   in let q= mk_binding Basic.Lambda name ty 
-  in App((Qnt(q, subst_quick x (Bound(q)) t)), x)
+  in App((Qnt(q, qsubst [x, Bound(q)] t)), x)
     
 (***
 * Utility functions

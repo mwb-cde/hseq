@@ -603,8 +603,11 @@ let rec subst env trm =
     | Typed(t, ty) -> Typed(subst env t, ty)
     | _ -> trm)
 
-let subst_quick t r trm = 
-  subst (bind t r (empty_subst())) trm
+let qsubst ts trm =
+  let env = 
+    List.fold_left (fun e (t, r) -> bind t r e) (empty_subst()) ts
+  in 
+    subst env trm
 
 (***
 * Chase functions
@@ -658,7 +661,7 @@ let inst t r =
   then 
     (let (q, b) = dest_qnt t
     in 
-    subst_quick (Bound(q)) r b)
+    qsubst [(Bound(q), r)] b)
   else raise (Failure "inst: not a quantified formula")
 
 (*

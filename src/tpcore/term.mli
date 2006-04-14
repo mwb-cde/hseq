@@ -253,11 +253,11 @@ val subst : substitution -> term -> term
    [subst env t]: Substitute the bindings in [env] in term [t].
 *)
 
-val subst_quick : term -> term -> term -> term
+val qsubst: (term * term) list -> term -> term
 (**
-   [subst_quick v r t]: Substitute term [r] for term [v] in term [t].
+   [qsubst_quick [(v1, r1); ..; (vn, rn)] t]: Substitute term [ri] for
+   term [vi] in term [t].
 *)
-
 
 (** {7 Chase functions, needed for unification (some redundancy).} *)
 
