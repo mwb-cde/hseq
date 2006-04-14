@@ -15,7 +15,7 @@ let single_data = (Printer.default_term_fixity, Printer.default_term_prec)
 
 let empty_id = Ident.mk_long set_thy "empty"
 let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
-let empty_term ()= Term.mk_typed_var empty_id (set_ty())
+let empty_term ()= Term.mk_typed_ident empty_id (set_ty())
 
 let add_id = Ident.mk_long set_thy "add"
 
@@ -37,7 +37,7 @@ module SetPP =
 (*      and semicolon = Sym(OTHER semicolon_sym) *)
       in 
       let wrapper t = 
-	let id_term = Term.mk_var set_id
+	let id_term = Term.mk_ident set_id
 	in 
 	Term.mk_app id_term t
       in 
@@ -69,7 +69,7 @@ module SetPP =
 			(empty_term()) ts))
 
 (*
-   ((form inf) >> (fun t -> Term.mk_app (Term.mk_var single_id) t))
+   ((form inf) >> (fun t -> Term.mk_app (Term.mk_ident single_id) t))
 *)
 		  ]))
 	      >>
@@ -103,7 +103,7 @@ module SetPP =
 	    in 
 	    let (qnts, body) = 
 	      Term.strip_fun_qnt 
-		set_id (Term.mk_app (Term.mk_var set_id) a) []
+		set_id (Term.mk_app (Term.mk_ident set_id) a) []
 	    in 
 	    Format.printf "@[<2>";
 	    (if(lambda_arg a)
@@ -120,7 +120,7 @@ module SetPP =
 	    Format.printf "@]"
 	| _ ->
 	    Format.printf "@[";
-	    Term.print_var_as_identifier ppstate (fixity, prec) f;
+	    Term.print_ident_as_identifier ppstate (fixity, prec) f;
 	    Format.printf "@]")
       in 
       printer
@@ -144,7 +144,7 @@ module SetPP =
 	  Format.printf "@]"
       | _ -> 
 	  Format.printf "@[<2>";
-	  Term.print_var_as_identifier ppstate prec f;
+	  Term.print_ident_as_identifier ppstate prec f;
 	  Format.printf "@]"
 
     let init_set_printer()=

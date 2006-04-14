@@ -391,11 +391,11 @@ let dest_defn_term trm=
       if(Term.is_fun lhs)
       then Term.dest_fun lhs
       else 
-	if(Term.is_var lhs)
-	then (Term.get_var_id lhs, [])
+	if(Term.is_ident lhs)
+	then (Term.get_ident_id lhs, [])
 	else err()
     in 
-    let rargs=List.map Term.dest_var args
+    let rargs=List.map Term.dest_ident args
     in
     (Ident.name_of f, 
      (List.map (fun (x, y) -> (Ident.name_of x), y) rargs), rhs)

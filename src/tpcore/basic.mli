@@ -56,8 +56,7 @@ val string_const: const_ty -> string
 (** Quantifiers for terms. *)
 type quant =  
     All | Ex | Lambda 
-  | MetaQ 
-
+  | Gamma (** Meta constants *)
 
 val quant_string : quant -> string
 (** The string representation of quantifiers *)

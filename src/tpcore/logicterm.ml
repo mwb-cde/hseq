@@ -124,7 +124,7 @@ let mk_or l r = mk_fun orid [l; r]
 let mk_implies l r = mk_fun impliesid [l; r]
 let mk_iff l r = mk_fun iffid [l; r]
 let mk_equality l r = mk_fun equalsid [l; r]
-let mk_any=Term.mk_var anyid
+let mk_any=Term.mk_ident anyid
 
 (*** Destructors ***)
 
@@ -242,7 +242,7 @@ let subst_equiv scp term lst =
     | None -> 
 	(match trm with
 	  Qnt(q, b) ->  
-	    let qntenv1=Term.bind (Bound q) (Term.mk_short_var "") qntenv
+	    let qntenv1=Term.bind (Bound q) (Term.mk_short_ident "") qntenv
 	    in 
 	    Qnt(q, subst_aux qntenv1 b)
 	| App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)

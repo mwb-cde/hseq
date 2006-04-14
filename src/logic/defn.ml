@@ -19,7 +19,7 @@ let mk_decln scp name ty =
     try 
       ignore(Scope.type_of scp name);
       raise (Term.term_error "Name exists in scope" 
-	       [Term.mk_typed_var name ty])
+	       [Term.mk_typed_ident name ty])
     with Not_found -> ()
   in
   let new_ty () = Gtypes.set_name scp ty
@@ -32,7 +32,7 @@ let mk_decln scp name ty =
        check_type (new_ty()))
     with err -> 
       raise (Term.add_term_error 
-	       "Invalid declaration " [(Term.mk_typed_var name ty)] err)
+	       "Invalid declaration " [(Term.mk_typed_ident name ty)] err)
   in 
   (name, ret_ty)
 
@@ -77,7 +77,7 @@ let mk_defn scp (name, namety) args rhs =
 *)
   let nty = Gtypes.set_name scp namety
   in 
-  let lhs = Term.mk_comb (Term.mk_typed_var name nty) args
+  let lhs = Term.mk_comb (Term.mk_typed_ident name nty) args
   in 
   let ndn0 = 
     mk_all_from_list scp 
@@ -113,7 +113,7 @@ let mk_defn scp name args rhs =
   in let rty = Typing.typeof scp rhs1
 *)
   in let nty = Gtypes.mk_var ("_"^(Basic.name name)^"_typ")
-  in let lhs = Term.mk_comb (Term.mk_typed_var name nty) ps
+  in let lhs = Term.mk_comb (Term.mk_typed_ident name nty) ps
   in let ndn = 
     mk_all_from_list scp 
       (Logicterm.mk_equality lhs rhs1) 
@@ -352,8 +352,8 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
     Gtypes.rename_type_vars
       (Gtypes.normalize_vars (Logicterm.mk_fun_ty dtype ntype))
   in 
-  let abs_term = Term.mk_typed_var abs_id (Gtypes.mk_var "abs_ty2")
-  and rep_term = Term.mk_typed_var rep_id (Gtypes.mk_var "rep_ty2")
+  let abs_term = Term.mk_typed_ident abs_id (Gtypes.mk_var "abs_ty2")
+  and rep_term = Term.mk_typed_ident rep_id (Gtypes.mk_var "rep_ty2")
   in 
   let rep_T_thm = mk_rep_T setP rep_term
   and rep_T_inv_thm = mk_rep_T_inv rep_term abs_term
@@ -399,8 +399,8 @@ module HolLike =
 (*
    let mk_subtype_prop (setP: Basic.term) (rep: Ident.t)=
    let typedef_term = 
-   Term.mk_var (Ident.mk_long Logicterm.base_thy "Type_Def") 
-   and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
+   Term.mk_ident (Ident.mk_long Logicterm.base_thy "Type_Def") 
+   and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
    in 
    Term.mk_app (Term.mk_app typedef_term setP) rep_term
  *)
@@ -412,7 +412,7 @@ module HolLike =
 	in 
 	let x1= Term.mk_bound x1_b
 	and x2= Term.mk_bound x2_b
-	and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty1")
+	and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
 	in 
 	let lhs =
 	  Logicterm.mk_equality (Term.mk_app rep_term x1) 
@@ -429,7 +429,7 @@ module HolLike =
 	in 
 	let y= Term.mk_bound y_b
 	and y1= Term.mk_bound y1_b
-	and rep_term = Term.mk_typed_var rep (Gtypes.mk_var "rep_ty2")
+	and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty2")
 	in 
 	let lhs = Term.mk_app setP y
 	and rhs =

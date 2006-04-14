@@ -108,7 +108,7 @@ let is_free x =
     Free _ -> true
   | _ -> false
 
-let is_var x = 
+let is_ident x = 
   match x with 
     Id _ -> true
   | _ -> false
@@ -137,9 +137,9 @@ let mk_app f a= (App(f, a))
 let mk_typed t ty= Typed(t, ty)
 let mk_const c = (Const c)
 
-let mk_typed_var n t= (Id(n, t))
-let mk_var n = mk_typed_var n (Gtypes.mk_null ())
-let mk_short_var n = mk_var (Ident.mk_name n)
+let mk_typed_ident n t= (Id(n, t))
+let mk_ident n = mk_typed_ident n (Gtypes.mk_null ())
+let mk_short_ident n = mk_ident (Ident.mk_name n)
 
 
 (* Destructors *)
@@ -159,7 +159,7 @@ let dest_free t =
     Free(n, ty) -> (n, ty)
   | _ -> raise (Failure "Not a free variable")
 
-let dest_var vt =
+let dest_ident vt =
   match vt with
     (Id (n, t)) -> (n, t)
   | _ -> raise (Failure "Not a variable")
@@ -189,7 +189,7 @@ let is_meta trm =
     Meta _ -> true
   | _ -> false
 
-let mk_meta n ty = Meta (mk_binding MetaQ n ty)
+let mk_meta n ty = Meta (mk_binding Gamma n ty)
 
 let dest_meta t  = 
   match t with
@@ -265,7 +265,7 @@ let get_args t =
   in args
 
 let is_fun t =
-  (is_app t) & is_var (get_fun t)
+  (is_app t) & is_ident (get_fun t)
 
 let rator t =
   match t with
@@ -281,7 +281,7 @@ let dest_fun t =
   try 
     let (f, args) = get_fun_args t
     in
-    (fst(dest_var f), args)
+    (fst(dest_ident f), args)
   with _ -> raise (Failure "Not a function")
 
 let dest_unop t =
@@ -296,9 +296,9 @@ let dest_binop t =
 
 let rec strip_fun_qnt f term qs = 
   let is_ident t = 
-    if(is_var t)
+    if(is_ident t)
     then 
-      let n, _ = dest_var t
+      let n, _ = dest_ident t
       in f = n
     else false
   in 
@@ -322,8 +322,8 @@ let rec strip_fun_qnt f term qs =
 * Identifier (Id) terms
 ***)
 
-let get_var_id vt= fst (dest_var vt)
-let get_var_type vt= snd (dest_var vt)
+let get_ident_id vt= fst (dest_ident vt)
+let get_ident_type vt= snd (dest_ident vt)
 
 (***
 * Free variables
@@ -795,9 +795,9 @@ let rec string_term_inf inf i x =
       let f=get_fun x 
       and args = get_args x
       in 
-      if is_var f 
+      if is_ident f 
       then 
-	(let name= fst (dest_var f)
+	(let name= fst (dest_ident f)
 	in 
 	let pr = (try (fst(inf) name) with _ -> -1)
 	in let ti = if pr <=i then pr else i
@@ -1033,8 +1033,8 @@ let print_typed_name ppstate (id, ty)=
   in 
   print_typed_obj 2 printer ppstate (Printer.nonfix, 0) (id, ty)
 
-let print_var_as_identifier ppstate (f, p) v =
-  let (id, ty) = dest_var v 
+let print_ident_as_identifier ppstate (f, p) v =
+  let (id, ty) = dest_ident v 
   in 
   Printer.print_identifier (pplookup ppstate) id
 
@@ -1080,7 +1080,7 @@ let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
   Format.printf "@]"
 
 let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args)=
-  let (id, ty) = dest_var f
+  let (id, ty) = dest_ident f
   in 
   let pprec = 
     try Printer.get_record ppstate.Printer.terms id
@@ -1159,11 +1159,11 @@ let rec print_term ppstate (assoc, prec) x =
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
-      if is_var f 
+      if is_ident f 
       then 
 	(Format.printf "@[";
 	 print_fn_app ppstate
-	   (print_var_as_identifier ppstate,
+	   (print_ident_as_identifier ppstate,
 	    (fun (a, p) t-> print_term ppstate (a, p) t))
 	   (assoc, prec) (f, args);
 	 Format.printf "@]")
@@ -1204,13 +1204,13 @@ let print ppstate x =
   Format.close_box()
 
 let simple_print_fn_app ppstate (assoc, prec) (f, args)=
-  let (id, _) = dest_var f
+  let (id, _) = dest_ident f
   in 
   let pprec = pplookup ppstate id
   in 
   let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
   in 
-  let iprint (a, pr) = print_var_as_identifier ppstate (a, pr)
+  let iprint (a, pr) = print_ident_as_identifier ppstate (a, pr)
   and tprint (a, pr) = print_term ppstate (a, pr)
   in 
   Format.printf "@[<2>";
@@ -1243,7 +1243,7 @@ let print_qnt_body ppstate (assoc, prec) (qs, body) =
 let print_as_binder (sym_assoc, sym_prec) ident sym = 
   let print_qnt ppstate (assoc, prec) arg =
     let (qnts, body) = 
-      strip_fun_qnt ident (mk_app (mk_var ident) arg) []
+      strip_fun_qnt ident (mk_app (mk_ident ident) arg) []
     in 
     Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) "(";
     Format.printf "@[<hov 3>";
@@ -1272,7 +1272,7 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
 	Format.printf "@]"
     | _ ->
 	Format.printf "@[";
-	print_var_as_identifier ppstate prec f;
+	print_ident_as_identifier ppstate prec f;
 	Format.printf "@]")
   in 
   printer
@@ -1687,10 +1687,10 @@ let rec term_lt t1 t2 =
   | (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
-  | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Id _, Id _) -> atom_lt (dest_ident t1) (dest_ident t2)
   | (Id _, _) -> true
   | (Meta _, Const _) -> false
-  | (Meta _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Meta _, Id _) -> false
   | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
   | (Meta _, _) -> true
   | (Bound _, Const _) -> false
@@ -1736,10 +1736,10 @@ let rec term_leq t1 t2 =
   | (Const c1, Const c2) -> Basic.const_leq c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
-  | (Id _, Id _) -> atom_leq (dest_var t1) (dest_var t2)
+  | (Id _, Id _) -> atom_leq (dest_ident t1) (dest_ident t2)
   | (Id _, _) -> true
   | (Meta _, Const _) -> false
-  | (Meta _, Id _) -> atom_leq (dest_var t1) (dest_var t2)
+  | (Meta _, Id _) -> false
   | (Meta b1, Meta b2) -> bound_leq (dest_binding b1) (dest_binding b2)
   | (Meta _, _) -> true
   | (Bound _, Const _) -> false

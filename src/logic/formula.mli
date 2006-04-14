@@ -111,7 +111,7 @@ val is_qnt : t -> bool
 val is_app : t -> bool
 val is_bound: t -> bool
 val is_free : t -> bool
-val is_var : t -> bool
+val is_ident : t -> bool
 val is_typed : t -> bool
 val is_const : t -> bool
 val is_fun: t -> bool

@@ -34,7 +34,7 @@ let rec lt_var lvarp rvarp x y=
   | (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
-  | (Id _, Id _) -> atom_lt (dest_var t1) (dest_var t2)
+  | (Id _, Id _) -> atom_lt (dest_ident t1) (dest_ident t2)
   | (Id _, _) -> true
   | (Meta _, Const _) -> false
   | (Meta _, Id _) -> false

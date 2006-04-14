@@ -27,7 +27,7 @@ module Utility=
     open Pkit
 
     let (?$) tok =
-      ((!$ tok) >> (fun _ -> Term.mk_short_var (Lexer.string_of_token tok)))
+      ((!$ tok) >> (fun _ -> Term.mk_short_ident (Lexer.string_of_token tok)))
     let (?%) tok =
       ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
 	
@@ -786,7 +786,7 @@ module Grammars  =
 		  Gtypes.mk_var ("_"^(Ident.string_of name)^"_ty")
 		in 
 		let f = 
-		  Term.mk_typed_var name fty
+		  Term.mk_typed_ident name fty
 		in 
 		Term.mk_comb f [x; y])
   	  | _ ->
@@ -946,7 +946,7 @@ module Grammars  =
   	   (try (lookup_name i inf)
   	   with Not_found -> mk_free i t)
   	 else 
-  	   mk_typed_var nid t)) toks
+  	   mk_typed_ident nid t)) toks
 
 (**
    [form]/[formula]/[type_primary]/[primary]
@@ -1158,7 +1158,7 @@ end
       let sym_tok = Sym(OTHER sym)
       and colon = Sym(COLON)
       in 
-      let id_term = Term.mk_var ident
+      let id_term = Term.mk_ident ident
       in 
       let wrapper b = Term.mk_app id_term b
       in 

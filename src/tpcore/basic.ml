@@ -79,14 +79,14 @@ type quant =
     All
   | Ex
   | Lambda
-  | MetaQ 
+  | Gamma
 
 let quant_string x =
   match x with 
     All -> "!"
   | Ex -> "?" 
   | Lambda -> "%"
-  | MetaQ -> "_"
+  | Gamma -> "_"
 
 (**
    [q_type]: The data stored in a binder.

@@ -58,7 +58,7 @@ val is_qnt : term -> bool
 val is_app : term -> bool
 val is_bound: term -> bool
 val is_free : term -> bool
-val is_var : term -> bool
+val is_ident : term -> bool
 val is_typed : term -> bool
 val is_const : term -> bool
 
@@ -72,10 +72,10 @@ val mk_free : string -> gtype -> term
 val mk_app : term -> term -> term
 val mk_typed: term -> gtype -> term
 val mk_const : Basic.const_ty -> term
-val mk_typed_var : Ident.t -> gtype -> term
+val mk_typed_ident : Ident.t -> gtype -> term
 
-val mk_var: Ident.t -> term
-val mk_short_var: string -> term
+val mk_ident: Ident.t -> term
+val mk_short_ident: string -> term
 
 (** {7 Destructors} *)
 
@@ -85,7 +85,7 @@ val dest_free :term -> (string * gtype)
 val dest_app : term -> (term * term)
 val dest_typed: term -> (term * gtype)
 val dest_const : term -> Basic.const_ty 
-val dest_var : term -> (Ident.t * gtype)
+val dest_ident : term -> (Ident.t * gtype)
 
 (** {6 Specialised Manipulators} *)
 
@@ -177,8 +177,8 @@ val strip_fun_qnt:
 
 (** {7 Identifier (Id) terms} *)
 
-val get_var_id : term-> Ident.t
-val get_var_type : term-> Basic.gtype
+val get_ident_id : term-> Ident.t
+val get_ident_type : term-> Basic.gtype
 
 (** {7 Free variables} *)
 
@@ -398,12 +398,12 @@ val print_bracket:
    [print_bracket ppstate prec str]: Print bracket [str].
 *)
 
-val print_var_as_identifier:
+val print_ident_as_identifier:
   Printer.ppinfo ->  (Printer.fixity * int) 
       -> term Printer.printer
 (** 
-   [print_var_as_identifier ppstate]: 
-   Print a [Var(id, _)] term as an identifier using 
+   [print_ident_as_identifier ppstate]: 
+   Print a [Id(id, _)] term as an identifier using 
    [Printer.print_identifier ppstate].
 *)
 
