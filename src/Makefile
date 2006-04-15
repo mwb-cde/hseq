@@ -22,7 +22,7 @@ OCOPTLIBS =
 
 # SUBDIRS: The sub-directories to build (in order)
 SUBDIRS = util tpcore logic parser \
-	tpmain simplifier numbers userlib
+	tpmain booleans simplifier numbers userlib
 
 # CODE: The code to link in to build the executable (in order)
 CODE= tpquote.cma util.cma tpcore.cma logic.cma \

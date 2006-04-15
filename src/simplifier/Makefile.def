@@ -56,7 +56,7 @@ DOCDATA = simplifier.data
 
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
-DOCPREV = tpmain.data
+DOCPREV = boollib.data
 
 
 ###

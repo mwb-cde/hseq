@@ -177,44 +177,47 @@ endif
 # FASTCOMP: Use the fast compilers
 
 # OCAMLC: The OCaml byte code compiler
-OCAMLC= ocamlc $(OPTIONS) 
+export OCAMLC= ocamlc $(OPTIONS) 
 
 # OCAMLNATC: The OCaml native code compiler
-OCAMLNATC= ocamlnat $(OPTIONS) 
+export OCAMLNATC= ocamlopt $(OPTIONS) 
 
 # OCAMLDEP: The OCaml dependency generator
-OCAMLDEP = ocamldep $(PPOPTIONS)
+export OCAMLDEP = ocamldep $(PPOPTIONS)
 
 # OCAMLDOC: The documentation generator
-OCAMLDOC = ocamldoc 
+export OCAMLDOC = ocamldoc 
 
 ifeq ($(FASTCOMP), true)
 
 # OCAMLC: The OCaml bytecode compiler
-OCAMLC= ocamlc.opt $(OPTIONS) 
+export OCAMLC= ocamlc.opt $(OPTIONS) 
 
 # OCAMLCNAT: The OCaml native code compiler
-OCAMLCNAT= ocamlnat $(OPTIONS) 
+export OCAMLCNAT= ocamlopt $(OPTIONS) 
 
 # OCAMLDEP: The OCaml dependency generator
-OCAMLDEP = ocamldep.opt $(PPOPTIONS)
+export OCAMLDEP = ocamldep.opt $(PPOPTIONS)
 
 # OCAMLDOC: The documentation generator
-OCAMLDOC = ocamldoc.opt 
+export OCAMLDOC = ocamldoc.opt 
+
+# OCAMLNATC: The OCaml native code compiler
+export OCAMLNATC= ocamlopt.op $(OPTIONS) 
 
 endif
 
 # OCAMLlink: The OCaml byte-code linker
-OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+export OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLNATlink: The OCaml native-code linker
-OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
+export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLCPP : the preprocesor
-OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
+export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
 
 # OCAMLMKTOP: Make a toplevel
-OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
+export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 ###
 # Suffixes and how to handle them
