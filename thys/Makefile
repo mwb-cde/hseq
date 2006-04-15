@@ -124,6 +124,12 @@ HSEQC = $(SRCDIR)/$(HSEQ) $(INCLUDE)
 # Required build targets
 ###
 
+.PHONY: all
+.PHONY: install
+.PHONY: clean
+.PHONY: reallyclean
+.PHONY: install-thys
+
 # all: Build everything
 all: thys
 
