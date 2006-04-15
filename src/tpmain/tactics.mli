@@ -16,7 +16,7 @@ type tactic = Logic.tactic
 (** {7 Error reporting} *)
 
 val error: string -> exn
-(** [error s]: Make a Result.Error exception with message [s]. *)
+(** [error s]: Make a {!Report.Error} exception with message [s]. *)
 
 val add_error : string -> exn -> exn
 (** [add_error s err]: Add [error s] to exception [err]. *)

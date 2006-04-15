@@ -32,8 +32,8 @@ val infixn: fixity
 val catch_errors : ('a -> 'b) -> 'a -> 'b
 (** 
    Error handling. [catch_errors f a] evaluates [(f a)] catching any
-   exception [e]. If [e] is {!Result.Error} then it is printed and
-   exception [Failure] is raised. If [e] is not {!Result.Error} then
+   exception [e]. If [e] is {!Report.Error} then it is printed and
+   exception [Failure] is raised. If [e] is not {!Report.Error} then
    it is raised.
 *)
 
