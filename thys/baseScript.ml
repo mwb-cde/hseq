@@ -43,8 +43,8 @@ let _ = typedef <:def<: ind >>;;
    | ? x: P            (55, nonfix) {Printer, Parser} (Existential quantifier)
 
    | x, y              (10, infixr) {pariLib}  (Pair constructor)
-   | ?! x: P           (10, nonfix) {Boollib.PP} (Unique existance)
-   | @ x: P            (10, nonfix) {Boollib.PP}  (Choice quantifier)
+   | ?! x: P           (10, nonfix) {BoolPP} (Unique existance)
+   | @ x: P            (10, nonfix) {BoolPP}  (Choice quantifier)
 
    Default precedence=10, assoc = non_assoc, fixity=non_fix
 *)
@@ -54,8 +54,8 @@ let _ = typedef <:def<: ind >>;;
    Negation has its own printer [BoolLib.PP.negation_printer] 
 *)
 let _ = 
-  let prec = Boollib.PP.negation_pprec.Printer.prec
-  and fixity = Boollib.PP.negation_pprec.Printer.fixity
+  let prec = BoolPP.negation_pprec.Printer.prec
+  and fixity = BoolPP.negation_pprec.Printer.fixity
   in 
   declare
     (Commands.read_unchecked 
@@ -63,8 +63,8 @@ let _ =
     ~pp:(prec, fixity, Some "~");;
 
 let _ = 
-  let prec = Boollib.PP.negation_pprec.Printer.prec
-  and fixity = Boollib.PP.negation_pprec.Printer.fixity
+  let prec = BoolPP.negation_pprec.Printer.prec
+  and fixity = BoolPP.negation_pprec.Printer.fixity
   in 
   add_term_pp "not" prec fixity (Some "not");;
 

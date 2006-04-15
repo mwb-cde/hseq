@@ -26,8 +26,8 @@ SUBDIRS = util tpcore logic parser \
 
 # CODE: The code to link in to build the executable (in order)
 CODE= tpquote.cma util.cma tpcore.cma logic.cma \
-	parser.cma tpmain.cma simplifier.cma numbers.cma \
-	userlib.cma
+	parser.cma tpmain.cma boollib.cma simplifier.cma \
+	numbers.cma userlib.cma
 
 ####
 # Don't modify anything below this line

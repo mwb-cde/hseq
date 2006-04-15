@@ -15,7 +15,7 @@
 
 # FILES: The list of file names
 FILES = global drule tactics goals commands \
-	display boollib init
+	display init
 
 # HEADERS: the list of header (.cmi) files 
 HEADERS = $(foreach f, $(FILES), $(f).cmi)
