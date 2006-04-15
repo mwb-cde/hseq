@@ -18,6 +18,7 @@ let rec equals x y =
     (App(f1, arg1), App(f2, arg2))->
       (equals f1 f2) & (equals arg1 arg2)
   | (Bound(q1), Bound(q2)) -> q1==q2
+  | (Meta(q1), Meta(q2)) -> q1==q2
   | (Qnt(qn1, b1), Qnt(qn2, b2)) -> 
       (qn1==qn2) && (equals b1 b2)
   | (Typed(t1, ty1), Typed(t2, ty2)) ->
@@ -32,6 +33,13 @@ let rec equals x y =
  let binder_equiv tyenv s t =
   match (s, t) with
     (Bound(b1), Bound(b2)) ->
+      let (qnt1, _, ty1) =dest_binding b1
+      and (qnt2, _, ty2) =dest_binding b2
+      in 
+      if (qnt1 = qnt2) 
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+  | (Meta(b1), Meta(b2)) ->
       let (qnt1, _, ty1) =dest_binding b1
       and (qnt2, _, ty2) =dest_binding b2
       in 
@@ -352,7 +360,8 @@ let get_binder t =
   match t with
     Bound(b) -> b
   | Qnt(b, _) -> b
-  | _ -> raise (Failure "get_binder_name: No binder in term")
+  | Meta(b) -> b
+  | _ -> raise (Failure "get_binder: No binder in term")
 
 let get_binder_name x =
   match x with
@@ -1428,6 +1437,10 @@ let in_scope memo scp trm =
 	in_scp_aux b
     | Bound(_) ->
 	Gtypes.in_scope memo scp (get_binder_type t)
+    | Meta(q) -> 
+	if Scope.is_meta scp q 
+	then true
+	else raise Not_found
     | Typed(tr, ty) ->
 	ignore(in_scp_aux tr);
 	Gtypes.in_scope memo scp ty
@@ -1502,11 +1515,9 @@ let rec is_closed_env env t =
       let env1 = bind (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env
       in 
       is_closed_env env1 b
-  | Basic.Bound(_) -> 
-      if is_meta t then true
-      else member t env
-  | Basic.Free(_) -> 
-      member t env
+  | Basic.Meta(_) -> true
+  | Basic.Bound(_) -> member t env
+  | Basic.Free(_) -> member t env
   | _ -> true
 
 let is_closed vs t = 
