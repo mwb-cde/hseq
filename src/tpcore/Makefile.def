@@ -41,7 +41,7 @@ LIBFILES = tpcore
 BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
 
 # NATLIB: The list of native code library (.cmxa) files built
-NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa)
+NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa $(f).a)
 
 ###
 # Documentation
