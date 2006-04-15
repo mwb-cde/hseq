@@ -7,7 +7,7 @@
 open Lib
 open Basic
 open Gtypes
-open Result
+open Report
 
 (***
 * Equality
@@ -470,7 +470,7 @@ let print_simple trm=
 
 class basictermError s ts =
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val trms = (ts :term list)
     method get() = trms
     method print st = 
@@ -1292,7 +1292,7 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
 
 class termError s ts =
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val trms = (ts :term list)
     method get() = trms
     method print st = 

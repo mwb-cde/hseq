@@ -4,7 +4,7 @@
    Copyright M Wahab 2005
    ----*)
 
-open Result
+open Report
 
 (* Infixes *)
 
@@ -19,8 +19,8 @@ let infixn=Parserkit.Info.infix Parserkit.Info.non_assoc
 let catch_errors f a =
   (try f a 
   with 
-    Result.Error e -> 
-      Result.print_error (Global.PP.info()) (-1) (Result.Error e); 
+    Report.Error e -> 
+      Report.print_error (Global.PP.info()) (-1) (Report.Error e); 
       raise (Failure "failed")
   | x -> raise x)
 
@@ -69,7 +69,7 @@ let theory name =
  
 let begin_theory n parents= 
   if n = "" 
-  then (raise (Result.error "No theory name"))
+  then (raise (Report.error "No theory name"))
   else 
     let importing=
       try
@@ -85,7 +85,7 @@ let begin_theory n parents=
 
 let end_theory ?(save=true) () = 
   if curr_theory_name() = "" 
-  then (raise (Result.error "At base theory"))
+  then (raise (Report.error "At base theory"))
   else 
     (let thy = curr_theory()
     in 
@@ -95,12 +95,12 @@ let end_theory ?(save=true) () =
 
 let open_theory n =
   if n = "" 
-  then (raise (Result.error "No theory name"))
+  then (raise (Report.error "No theory name"))
   else (load_theory_as_cur n)
 
 let close_theory () = 
   if curr_theory_name() = "" 
-  then (raise (Result.error "At base theory"))
+  then (raise (Report.error "At base theory"))
   else 
     (let thy = curr_theory()
     in 
@@ -227,7 +227,7 @@ let axiom ?(simp=false) n trm =
       Global.Thys.set_theories(Thydb.add_axiom n thm props (theories())); 
       thm
   | _ -> 
-      raise (Result.error ("Theorem named "^n^" already exists in theory."))
+      raise (Report.error ("Theorem named "^n^" already exists in theory."))
 
 let prove ?scp trm tac = 
   let uscp = 
@@ -253,8 +253,8 @@ let prove_thm ?(simp=false) n t tacs =
 	 with 
 	     err -> 
 	       raise 
-		 (Result.add_error
-		 (Result.error ("Failed to prove theorem "^n)) err)
+		 (Report.add_error
+		 (Report.error ("Failed to prove theorem "^n)) err)
        in 
 	 ignore(save_thm ~simp:simp n th); th)
     ()
@@ -277,8 +277,8 @@ let get_or_prove name trm tac =
 	with 
 	  err -> 
 	    raise 
-	      (Result.add_error 
-		 (Result.error 
+	      (Report.add_error 
+		 (Report.error 
 		    ("get_or_prove: Failed with theorem "^name)) err)
   in 
   catch_errors act ()
@@ -354,7 +354,7 @@ let typedef ?pp ?simp ?thm ?rep ?abs tydef =
     | Parser.Subtype(n, args, dtyp, set) -> 
 	let thm1=
 	  Lib.dest_option 
-	    ~err:(Result.error 
+	    ~err:(Report.error 
 		    ("Subtype definition must have an existance theorem"))
 	    thm
 	in 
@@ -445,7 +445,7 @@ let declare ?pp trm =
       in 
       Global.Thys.set_theories(Thydb.add_decln dcl [] (theories())); 
       (id, ty)
-    with _ -> raise (Result.error ("Badly formed declaration"))
+    with _ -> raise (Report.error ("Badly formed declaration"))
   in 
   match pp with 
     None -> (n, ty)

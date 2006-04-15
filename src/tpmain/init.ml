@@ -63,7 +63,7 @@ let load_init () =
   if (Sys.file_exists initfile)
   then Unsafe.use_file initfile
   else
-    Result.warning ("Can't find initialising file "^initfile)
+    Report.warning ("Can't find initialising file "^initfile)
 
 
 let init() = 

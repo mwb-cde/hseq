@@ -105,7 +105,7 @@ let falseA ?info ?a goal =
     try false_def()
     with Not_found -> 
       raise 
-	(Result.error 
+	(Report.error 
 	   ("Tactics.Rewriter.falseA: "
 	    ^"Can't find needed theorem false_def: |- false = not true"))
   in 

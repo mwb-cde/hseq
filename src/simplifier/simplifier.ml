@@ -42,7 +42,7 @@ open Simpset
 
 class simpError s ts =
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val trms = (ts :term list)
     method get() = trms
     method print st = 
@@ -57,9 +57,9 @@ class simpError s ts =
       Format.close_box();
   end
 
-let error s t = Result.mk_error((new simpError s t):>Result.error)
+let error s t = Report.mk_error((new simpError s t):>Report.error)
 let add_error s t e =
-  Result.add_error e (error s t) 
+  Report.add_error e (error s t) 
 
 exception No_change
 

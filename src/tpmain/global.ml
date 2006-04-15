@@ -184,8 +184,8 @@ module PP=
       (try (e a)
       with 
 	Pkit.ParsingError x ->
-	  raise (Result.error x)
-      | Lexer.Lexing _ -> raise (Result.error ("Lexing error: "^a)))
+	  raise (Report.error x)
+      | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a)))
 
     let overload_lookup s = 
       let thydb s = Thydb.get_id_options s (Thys.get_theories())
@@ -314,7 +314,7 @@ module Files =
       in 
       try find_file tf (get_thy_path())
       with Not_found -> 
-	raise (Result.error ("Can't find theory "^f))
+	raise (Report.error ("Can't find theory "^f))
 
 (**
    [forbidden]: Theories that can't be used, otherwise a ciruclar
@@ -334,26 +334,26 @@ module Files =
       let db0 = Thys.get_theories()
       in 
       (if (is_forbidden f)
-      then raise (Result.error ("Circular importing, theory "^f))
+      then raise (Report.error ("Circular importing, theory "^f))
       else());
       try 
 	let script = find_file (script_of_thy f) (get_thy_path())
 	in 
 	Thys.set_theories(thydb);
-	Result.warning ("Trying to build theory "^f);
+	Report.warning ("Trying to build theory "^f);
 	(try
 	  (add_forbidden f;
 	   Unsafe.use_file ~silent:false script;
 	   drop_forbidden f)
 	with err -> (drop_forbidden f; raise err));
-	Result.warning ("Built theory "^f);
+	Report.warning ("Built theory "^f);
 	let db1 = Thys.get_theories()
 	in 
 	Thys.set_theories (db0);
 	db1
       with Not_found ->
-	(Result.warning ("Failed to build theory "^f);
-	 raise (Result.error ("Can't find script to build theory "^f)))
+	(Report.warning ("Failed to build theory "^f);
+	 raise (Report.error ("Can't find script to build theory "^f)))
 
 
 (**
@@ -409,7 +409,7 @@ module Files =
 	try 
 	  load_use_file (find_file f path)
 	with Not_found ->
-	  Result.warning ("Can't find file "^f)
+	  Report.warning ("Can't find file "^f)
       in 
       List.iter find_load files
 
@@ -494,7 +494,7 @@ module Init=
 	 match get_base_thy_builder() with
 	   None -> Thys.init_theories()
 	 | Some f -> 
-	     (Result.warning 
+	     (Report.warning 
 		"Building minimal theory from internal data.");
 	     f())
 

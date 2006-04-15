@@ -7,7 +7,7 @@
 
 open Term
 open Format
-open Result
+open Report
 
 let cfun_string c =
   match c with 

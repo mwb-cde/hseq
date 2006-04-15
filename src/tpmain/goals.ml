@@ -21,12 +21,12 @@ struct
 
   let top p = 
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::_) -> x
 
   let pop p = 
     match p with
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (_::xs) -> xs
 
 end
@@ -42,22 +42,22 @@ struct
 
   let top p = 
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::_) -> x
 
   let pop p = 
     match p with
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (_::xs) -> xs
 
   let rotate p = 
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::xs) -> xs@[x]
 
   let lift n p =
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | xs -> 
 	let (l, c, r) = Lib.full_split_at_index n xs
 	in 
@@ -70,20 +70,20 @@ struct
 
   let top_goal p = 
     match p with 
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::_) -> Proof.top x
 
   let pop_goal p = 
     match p with
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::xs) -> (Proof.pop x)::xs
 
   let undo_goal p=
     match p with
-      [] -> raise (Result.error "No goals.")
+      [] -> raise (Report.error "No goals.")
     | (x::xs) ->
 	match (Proof.pop x) with
-	  [] -> raise (Result.error "Can't undo anymore")
+	  [] -> raise (Report.error "Can't undo anymore")
 	| y -> y::xs
 end
 
@@ -112,7 +112,7 @@ let lift n =
     try  ProofStack.lift n (!prflist)
     with err -> 
       raise 
-	(Result.add_error (Result.error "Failed to focus on proof.") err)
+	(Report.add_error (Report.error "Failed to focus on proof.") err)
   in 
   prflist := nlist;
   top()
@@ -120,7 +120,7 @@ let lift n =
 
 let undo() =
   match (!prflist) with
-    [] -> raise (Result.error "No goals")
+    [] -> raise (Report.error "No goals")
   | _ -> 
       (prflist := ProofStack.undo_goal (!prflist); top())
 	
@@ -205,7 +205,7 @@ let by_list ?info trm tacl =
 
 let curr_sqnt () = 
   (match (Logic.get_subgoals (top_goal())) with
-    [] -> raise (Result.error "No subgoals")
+    [] -> raise (Report.error "No subgoals")
   | x::xs -> x)
 
 let get_asm i = 

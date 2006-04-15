@@ -151,7 +151,7 @@ let check_args_unique ags=
     | (x::xs) -> 
 	if (List.exists (fun a -> a=x) xs) 
 	then raise 
-	    (Result.error 
+	    (Report.error 
 	       ("Identifier "^x^" appears twice in argument list"))
 	else check_aux xs 
   in 

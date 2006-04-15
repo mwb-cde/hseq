@@ -161,7 +161,7 @@ let foreach_asm rs sq =
   (let rslt = (each_safe 1) sq
   in 
   if !chng then rslt 
-  else raise (Result.error "No change"))
+  else raise (Report.error "No change"))
 
 let foreach_asm_except excpt rs sq = 
   let exclude t =
@@ -195,7 +195,7 @@ let foreach_asm_except excpt rs sq =
   (let rslt = (each_safe 1) sq
   in 
   if !chng then rslt 
-  else raise (Result.error "No change"))
+  else raise (Report.error "No change"))
 
 
 let foreach_conc rs sq = 
@@ -223,20 +223,20 @@ let foreach_conc rs sq =
   (let rslt = (each_safe 1) sq
   in 
   if !chng then rslt 
-  else raise (Result.error "No change"))
+  else raise (Report.error "No change"))
 
 
 let foreach_formula rs g=
   let chng = ref true
   in let g1=
     (try foreach_asm rs g
-    with (Result.Error _) -> chng:=false; (skip g))
+    with (Report.Error _) -> chng:=false; (skip g))
   in 
   (try
     Logic.foreach (foreach_conc rs) g1
   with 
-    (Result.Error x) -> 
-      if !chng then g1 else (raise (Result.Error x)))
+    (Report.Error x) -> 
+      if !chng then g1 else (raise (Report.Error x)))
 
 let foreach_conc_except excpt rs sq = 
   let exclude t =
@@ -270,20 +270,20 @@ let foreach_conc_except excpt rs sq =
   in
   (let rslt = (each_safe 1) sq
   in 
-  if !chng then rslt else raise (Result.error "No change"))
+  if !chng then rslt else raise (Report.error "No change"))
 
 
 let foreach_except excpt rs g=
   let chng = ref true
   in let b1=
     (try foreach_asm_except excpt rs g
-    with (Result.Error _) -> chng:=false; (skip g))
+    with (Report.Error _) -> chng:=false; (skip g))
   in 
   (try
     Logic.foreach (foreach_conc_except excpt rs) b1
   with 
-    (Result.Error x) -> 
-      if !chng then b1 else (raise (Result.Error x)))
+    (Report.Error x) -> 
+      if !chng then b1 else (raise (Report.Error x)))
 
 let foreach_conc_once r sq =
   let chng = ref false
@@ -297,7 +297,7 @@ let foreach_conc_once r sq =
       with _ -> each_once (i+1) sq)
     else (skip sq)
   in let rslt = each_once 1 sq 
-  in if !chng then rslt else raise (Result.error "No change")
+  in if !chng then rslt else raise (Report.error "No change")
 
 
 let foreach_asm_once r sq =
@@ -312,19 +312,19 @@ let foreach_asm_once r sq =
       with _ -> each_once (i+1) sq)
     else (skip sq)
   in let rslt = each_once 1 sq 
-  in if !chng then rslt else raise (Result.error "No change")
+  in if !chng then rslt else raise (Report.error "No change")
 
 let foreach_once r sq = 
   let chng = ref true
   in let sq1=
     (try foreach_asm_once r sq 
-    with (Result.Error _) -> chng:=false; (skip sq))
+    with (Report.Error _) -> chng:=false; (skip sq))
   in 
   (try
     Logic.foreach (foreach_conc_once r) sq1
   with 
-    (Result.Error x) -> 
-      if !chng then sq1 else (raise (Result.Error x)))
+    (Report.Error x) -> 
+      if !chng then sq1 else (raise (Report.Error x)))
 
 
 let qnt_opt_of kind pred trm=

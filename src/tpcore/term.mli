@@ -500,7 +500,7 @@ val print_qnt_body:
 
 class termError : string -> term list ->
   object
-    inherit Result.error 
+    inherit Report.error 
     val trms : term list
     method get : unit -> term list
   end

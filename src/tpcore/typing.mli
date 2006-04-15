@@ -24,7 +24,7 @@
 
 class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
   object
-    inherit Result.error 
+    inherit Report.error 
     method get_term: unit -> Basic.term 
     method get_types: unit -> Basic.gtype * Basic.gtype
   end

@@ -30,7 +30,7 @@ val thy_of : t -> Scope.marker
 
 class formError : string -> t list ->
   object
-    inherit Result.error 
+    inherit Report.error 
     val forms: t list
     method get : unit -> t list
   end

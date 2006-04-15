@@ -146,7 +146,7 @@ let dest_equality t =
     (match snd(dest_fun t) with
       [l; r] -> (l, r)
     |	_ -> raise (term_error "Badly formed equality" [t]))
-  else raise (Result.error "Not an equality")
+  else raise (Report.error "Not an equality")
 
 (*** Quantified terms *)
 
@@ -294,7 +294,7 @@ let safe_beta_reduce trm =
   in 
     if chng then nt 
     else
-      raise (Result.error "beta_reduce: No change")
+      raise (Report.error "beta_reduce: No change")
 
 let beta_reduce trm =
   let rebuild_app t l = mk_comb t l
@@ -352,7 +352,7 @@ let beta_reduce trm =
   in 
     if chng then nt 
     else
-      raise (Result.error "beta_reduce: No change")
+      raise (Report.error "beta_reduce: No change")
 
 
 

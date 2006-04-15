@@ -64,6 +64,22 @@ DOCPREV ?=
 ###
 
 ##
+# Declare Targets
+##
+
+.PHONY: all  # all: Build everything
+.PHONY: lib  # lib: Build the library file
+.PHONY: opt  # opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: installopt # installopt: Install the native code library 
+                   #             and header files.
+.PHONY: doc  #doc: Generate the code documentation
+
+.PHONY: clean
+.PHONY: libclean
+.PHONY: reallyclean
+
+##
 # Directories
 ##
 
@@ -254,19 +270,15 @@ export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 ###
 
 # all: Build everything
-.PHONY: all
 all: $(HEADERS) $(CODE)
 
 # lib: Build the library file
-.PHONY: lib
 lib: all $(BYTELIBS)
 
-# lib: Build the native code library file
-.PHONY: opt
+# opt: Build the native code library file
 opt: $(NATLIBS)
 
 # install: Install the library and header files.
-.PHONY: install
 ifdef CUSTOM_INSTALL
 	$(CUSTOM_INSTALL)
 else	
@@ -277,7 +289,6 @@ install: lib
 endif
 
 # installopt: Install the native code library and header files.
-.PHONY: installopt
 installopt: opt
 ifdef CUSTOM_OPTINSTALL
 	$(CUSTOM_OPTINSTALL)
@@ -288,7 +299,6 @@ else
 endif
 
 #doc: Generate the code documentation
-.PHONY: doc
 doc: $(DOCFILES)
 ifneq ($(strip $(DOCFILES)), "")
 	$(OCAMLDOC) $(DOCLOAD) $(DOCDUMP) \
@@ -314,10 +324,6 @@ $(NATLIBS): $(HEADERS) $(NATCODE)
 ##
 # Cleaning files
 ##
-
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
 
 clean:
 	$(RM) *.cmo

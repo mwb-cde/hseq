@@ -162,13 +162,13 @@
     then 
       (try 
 	 (Hashtbl.find tbl s; 
-	  raise (Result.error ("Symbol "^s^" exists")))
+	  raise (Report.error ("Symbol "^s^" exists")))
        with 
 	 Not_found ->
 	   (Hashtbl.add tbl s tk;
 	    add_char_info (String.get s 0) sz ls, tbl))
     else 
-      raise (Result.error "Invalid symbol")
+      raise (Report.error "Invalid symbol")
 	
   let find_sym (_, tbl) s=
     Hashtbl.find tbl s

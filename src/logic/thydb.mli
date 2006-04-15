@@ -19,7 +19,7 @@ Name: thydb.mli
 
 class dbError : string -> string list ->
   object
-    inherit Result.error 
+    inherit Report.error 
     val names : string list
     method get : unit -> string list
   end

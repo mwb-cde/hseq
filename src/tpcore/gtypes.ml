@@ -6,7 +6,7 @@
 
 open Basic
 open Lib
-open Result
+open Report
 
 (***
 * Basic Operations
@@ -410,7 +410,7 @@ let print ppinfo x =
 
 class typeError s ts=
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val trms = (ts: gtype list)
     method get() = ts
     method print st = 

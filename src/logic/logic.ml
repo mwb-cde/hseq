@@ -70,12 +70,12 @@ let string_thm x = string_form (formula_of x)
 
 let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es = 
-  raise (Result.add_error (logic_error s t) es)
+  raise (Report.add_error (logic_error s t) es)
 
 let sqntError s = 
-  Result.mk_error(new Result.error s)
+  Report.mk_error(new Report.error s)
 let addsqntError s es = 
-  raise (Result.add_error (sqntError s) es)
+  raise (Report.add_error (sqntError s) es)
 
 (**********
  * Subgoals 
@@ -1611,7 +1611,7 @@ module Tactics =
 	      Sequent.concls sq)),
 	  gtyenv)
 	with x -> 
-	  (raise (Result.add_error
+	  (raise (Report.add_error
 		    (logic_error "allA: " [t]) x))
       else 
 	raise (logic_error "Not a universal quantifier" [t])
@@ -1767,7 +1767,7 @@ module Tactics =
 	      Sequent.asms sq, 
 	      join_up lconcls ((ft, trm2)::rconcls)),
 	   gtyenv)
-	with x -> raise (Result.add_error
+	with x -> raise (Report.add_error
 			   (logic_error "existC:" [t]) x)
       else 
 	raise (logic_error "Not an existential quantifier" [t])
@@ -1877,7 +1877,7 @@ module Tactics =
 	    Sequent.concls sq), 
 	 gtyenv))
       with x -> raise 
-	  (Result.add_error (logic_error "rewrite_intro" []) x)
+	  (Report.add_error (logic_error "rewrite_intro" []) x)
 
     let rewrite_intro ?info plan trm g=
       sqnt_apply (rewrite_intro0 ?info plan trm) g
@@ -1941,7 +1941,7 @@ module Tactics =
 	    Sequent.concls sq), 
 	 gtyenv)
       with x -> raise 
-	  (Result.add_error (logic_error "substA" [form]) x)
+	  (Report.add_error (logic_error "substA" [form]) x)
 
     let substA ?info eqs l g=
       sqnt_apply (substA0 ?info eqs l) g
@@ -1988,7 +1988,7 @@ module Tactics =
 	    new_concls), 
 	 gtyenv)
       with x -> raise 
-	  (Result.add_error (logic_error "substC" [form]) x)
+	  (Report.add_error (logic_error "substC" [form]) x)
 
     let substC ?info eqs l g=
       sqnt_apply (substC0 ?info eqs l) g
@@ -2010,11 +2010,11 @@ module Tactics =
 
 (** [check_name n sq]: test whether [n] is the name of a formula in [sq]. *) 
     let check_name n sq = 
-      if n = "" then raise (Result.error "Invalid formula name.")
+      if n = "" then raise (Report.error "Invalid formula name.")
       else 
 	match Lib.try_app (Sequent.get_named_form n) sq with
 	  None -> ()
-	| _ -> raise (Result.error ("Name "^n^" is used in sequent"))
+	| _ -> raise (Report.error ("Name "^n^" is used in sequent"))
 
     let nameA0 ?info name lbl sqnt = 
       try 
@@ -2096,9 +2096,9 @@ module Conv=
       in 
       try mk_theorem (eq_term term)
       with err -> 
-	raise(Result.add_error
+	raise(Report.add_error
 		(logic_error "beta_conv" [])
-		(Result.add_error 
+		(Report.add_error 
 		   (Term.term_error "beta_conv term: " [term]) err))
 
 (**
@@ -2120,7 +2120,7 @@ module Conv=
       in 
       try conv_aux trm
       with x -> raise 
-	  (Result.add_error 
+	  (Report.add_error 
 	     (Term.term_error "plan_rewrite_conv" [trm]) x)
 
   end 
@@ -2138,7 +2138,7 @@ module Defns =
 
     let defn_error s t = Term.term_error s (List.map Formula.term_of t)
     let add_defn_error s t es = 
-      raise (Result.add_error (defn_error s t) es)
+      raise (Report.add_error (defn_error s t) es)
 
 (*** Data Representation ***)
 

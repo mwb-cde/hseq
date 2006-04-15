@@ -4,7 +4,7 @@
    Copyright M Wahab 2005
    ----*)
 
-open Result
+open Report
 
 exception Importing
 
@@ -14,7 +14,7 @@ exception Importing
 
 class dbError s ns =
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val names = (ns :string list)
     method get() = names
     method print st = 
@@ -24,8 +24,8 @@ class dbError s ns =
       Format.printf "@]@]"
   end
 
-let error s t = mk_error((new dbError s t):>Result.error)
-let add_error s t es = raise (Result.add_error (error s t) es)
+let error s t = mk_error((new dbError s t):>Report.error)
+let add_error s t es = raise (Report.add_error (error s t) es)
 
 (***
  * Databases
@@ -362,7 +362,7 @@ let get_defn th n tdb =
   let r = get_defn_rec th n tdb
   in 
   match r.Theory.def with
-    None -> raise (Result.error ("No definition for "^n))
+    None -> raise (Report.error ("No definition for "^n))
   | Some(d) -> d
 
 let get_id_type th n tdb = 
@@ -644,7 +644,7 @@ module Loader =
 	    (warning ("Imported theory "^name
 		      ^" is more recent than"
 		      ^" its importing theory");
-	     raise (Result.error 
+	     raise (Report.error 
       		      ("Imported theory "^name
 		       ^" is more recent than"
 		       ^" its importing theory")))
@@ -666,7 +666,7 @@ module Loader =
 		 ("Imported theory "^name
 		  ^" is not complete");
 	       raise 
-		 (Result.error 
+		 (Report.error 
 		    ("Imported theory "^name
 		     ^" is not complete"))))
 	  else ()

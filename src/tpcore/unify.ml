@@ -7,7 +7,7 @@
 
 open Basic
 open Term
-open Result
+open Report
 
 (** Unification of terms. *)
 

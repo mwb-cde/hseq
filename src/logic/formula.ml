@@ -24,7 +24,7 @@ let thy_of x = x.thy
 
 class formError s ts =
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val forms = (ts : t list)
     method get() = forms
     method print st = 
@@ -34,8 +34,8 @@ class formError s ts =
       Format.printf "@]@]"
   end
 
-let error s t = Result.mk_error((new formError s t):>Result.error)
-let add_error s t es = raise (Result.add_error (error s t) es)
+let error s t = Report.mk_error((new formError s t):>Report.error)
+let add_error s t es = raise (Report.add_error (error s t) es)
 
 
 (***
@@ -66,7 +66,7 @@ let prepare ?(strict=false) scp tyenv trm =
 	try
 	 Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
 	with x -> 
-	  raise (Result.add_error x 
+	  raise (Report.add_error x 
 		   (Term.term_error "Formula.make: incorrect types" [t1]))
       in 
 	(lst, t1, tyenv1)
@@ -85,7 +85,7 @@ let make_full ?(strict=false) scp tyenv t=
   let t1=
     try Term.resolve_closed_term scp t
     with x -> raise
-	(Result.add_error x
+	(Report.add_error x
 	   (Term.term_error 
 	      "Formula.make: Can't make formula, not a closed term" [t]))
   in 
@@ -96,7 +96,7 @@ let make_full ?(strict=false) scp tyenv t=
     (mk_scoped_formula scp (Term.retype tyenv1 t1),
      tyenv1)
   with x -> 
-    raise (Result.add_error x 
+    raise (Report.add_error x 
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
 *)
 

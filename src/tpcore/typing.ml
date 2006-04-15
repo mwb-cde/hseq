@@ -11,7 +11,7 @@ open Term
 
 class typingError s t ty expty=
   object (self)
-    inherit Result.error s
+    inherit Report.error s
     val trm = (t :term)
     val typs = ((expty, ty): Basic.gtype * Basic.gtype)
     method get_term() = trm
@@ -29,9 +29,9 @@ class typingError s t ty expty=
   end
 
 let typing_error s tr expty ty= 
-  Result.mk_error((new typingError s tr expty ty):>Result.error)
+  Report.mk_error((new typingError s tr expty ty):>Report.error)
 let add_typing_error s tr expty ty es =
-  Result.add_error (typing_error s tr expty ty) es
+  Report.add_error (typing_error s tr expty ty) es
 
 (***
 * Typing a term

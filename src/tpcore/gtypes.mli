@@ -177,7 +177,7 @@ val print : Printer.ppinfo -> gtype Printer.printer
 
 class typeError : string -> gtype list ->
   object
-    inherit Result.error
+    inherit Report.error
     val trms : gtype list
     method get : unit -> gtype list
   end

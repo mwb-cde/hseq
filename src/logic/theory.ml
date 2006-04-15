@@ -103,7 +103,7 @@ let get_files thy = thy.lfiles
 let add_parent n thy =
   if (not thy.protection) & (n<>"") & (not (List.mem n (thy.parents)))
   then thy.parents<-(n::(thy.parents))
-  else raise (Result.error ("add_parent: "^n))
+  else raise (Report.error ("add_parent: "^n))
 
 let rec add_parents ns thy =
   List.iter (fun n -> add_parent n thy) (List.rev ns)
@@ -131,7 +131,7 @@ let remove_file f thy =
 let get_axiom_rec n thy = 
   try Hashtbl.find thy.axioms n
   with Not_found -> 
-    raise (Result.error 
+    raise (Report.error 
 	     ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
 
 let get_axiom n thy = 
@@ -146,8 +146,8 @@ let add_axiom n ax ps thy =
     then 
       let rcrd= { thm = ax; props = ps }
       in Hashtbl.add (thy.axioms) n rcrd
-    else raise (Result.error ("Axiom "^n^" exists"))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+    else raise (Report.error ("Axiom "^n^" exists"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let set_axiom_props n ps thy =
   if not (get_protection thy)
@@ -157,7 +157,7 @@ let set_axiom_props n ps thy =
     let nar= {ar with props=ps}
     in 
     Hashtbl.replace (thy.axioms) n nar
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 
 let get_theorem_rec n thy = 
@@ -168,7 +168,7 @@ let get_theorem n thy =
       try get_theorem_rec n thy
       with Not_found -> 
 	raise 
-	  (Result.error 
+	  (Report.error 
 	     ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   in
   tr.thm
@@ -180,8 +180,8 @@ let add_thm n t ps thy =
     then
       let rcrd= { thm = t; props = ps }
       in Hashtbl.add (thy.theorems) n rcrd
-    else raise (Result.error ("Theorem "^n^" exists"))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+    else raise (Report.error ("Theorem "^n^" exists"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let set_theorem_props n ps thy =
   if not (get_protection thy)
@@ -193,9 +193,9 @@ let set_theorem_props n ps thy =
 	Hashtbl.replace (thy.theorems) n ntr
     | _ -> 
 	raise 
-	  (Result.error 
+	  (Report.error 
 	     ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 
 (*** Type declarations and definitions ***)
@@ -221,7 +221,7 @@ let add_type_rec tr thy =
 	(ctyrec.Logic.Defns.type_name, ctyrec.Logic.Defns.type_args, None)
       else
 	raise 
-	  (Result.error "Theory.add_type_rec: Expected a type definition")
+	  (Report.error "Theory.add_type_rec: Expected a type definition")
   in 
   if not (get_protection thy)
   then 
@@ -233,8 +233,8 @@ let add_type_rec tr thy =
     in 
     if not (Lib.member id thy.typs)
     then Hashtbl.add (thy.typs) id tr
-    else raise (Result.error ("Type "^id^" exists"))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+    else raise (Report.error ("Type "^id^" exists"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 
 let type_exists n thy =
@@ -258,7 +258,7 @@ let get_defn_rec n thy =
 let get_defn n thy = 
   (let r = get_defn_rec n thy
   in match r.def with
-    None -> raise (Result.error ("No definition for "^n))
+    None -> raise (Report.error ("No definition for "^n))
   | Some(d) -> d)
 
 let get_id_type n thy = 
@@ -278,17 +278,17 @@ let set_defn_props n ps thy =
     let ndr= {dr with dprops=ps}
     in 
     Hashtbl.replace (thy.defns) n ndr
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_defn_rec n ty d prop thy =
   if not (get_protection thy)
   then 
     (if id_exists n thy
-    then raise (Result.error ("Identifier "^n^" already exists in theory"))
+    then raise (Report.error ("Identifier "^n^" already exists in theory"))
     else (Hashtbl.add (thy.defns) n 
 	    {typ=ty; def=d;  
 	     dprops=prop}))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_decln_rec n ty props thy =
   add_defn_rec n ty None props thy
@@ -304,9 +304,9 @@ let add_term_pp_rec n ppr thy=
   then 
     (if Lib.member n thy.defns
     then thy.id_pps <- (Lib.insert (<) n ppr thy.id_pps)
-    else raise (Result.error 
+    else raise (Report.error 
 		  ("No name "^n^" defined in theory "^(get_name thy))))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_term_pp_rec n thy = 
   thy.id_pps <- Lib.filter (fun (x, _) -> x=n )thy.id_pps
@@ -324,9 +324,9 @@ let add_type_pp_rec n ppr thy=
   then 
     (if Lib.member n thy.typs
     then thy.type_pps <- (Lib.insert (<) n ppr thy.type_pps)
-    else raise (Result.error
+    else raise (Report.error
 		  ("No type "^n^" defined in theory "^(get_name thy))))
-  else raise (Result.error ("Theory "^(get_name thy)^" is protected"))
+  else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_type_pp_rec n thy = 
   thy.type_pps <- Lib.filter (fun (x, _) -> x=n )thy.type_pps

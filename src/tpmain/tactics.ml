@@ -16,8 +16,8 @@ type tactic = Logic.tactic
 
 (*** Error reporting ***)
 
-let error s = Result.error s
-let add_error s err = Result.add_error (error s) err
+let error s = Report.error s
+let add_error s err = Report.add_error (error s) err
 
 (*** Accessing elements of a list ***)
 
@@ -244,7 +244,7 @@ let seq_some tacs goal =
   let rec some_aux ls g =
     match ls with 
       [] -> 
-	fail ~err:(Result.error "seq_some: no tactic succeeded.") g
+	fail ~err:(Report.error "seq_some: no tactic succeeded.") g
     | (x::xs) ->
 	try (x ++ map_every nofail_tac xs) g
 	with _ -> some_aux xs g
