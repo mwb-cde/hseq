@@ -6,7 +6,7 @@
 
 open Basic
 open Term
-open Logicterm
+open Lterm
 open Simputils
 
 (***
@@ -139,7 +139,7 @@ let termnet_lt x y =
       in 
       (* test for conditional equalities *)
       let (cnd, rl)=
-	if (Logicterm.is_implies t1)         
+	if (Lterm.is_implies t1)         
 	then (* is conditional *)
 	  (let (_, asm, cncl)=Term.dest_binop t1
 	  in 
@@ -148,9 +148,9 @@ let termnet_lt x y =
 	  (None, t1)
       in 
       (* break the equality *)
-      if (Logicterm.is_equality rl)
+      if (Lterm.is_equality rl)
       then 
-	let (lhs, rhs)=Logicterm.dest_equality rl
+	let (lhs, rhs)=Lterm.dest_equality rl
 	in (qs, cnd, lhs, rhs, None)
       else 
 	  raise (Failure 
@@ -394,8 +394,8 @@ let print_rule ppinfo (vars, cond, lhs, rhs, order, src)=
   let trm = 
     Term.rebuild_qnt vars
       (match cond with
-	None -> (Logicterm.mk_equality lhs rhs)
-      | Some c -> (Logicterm.mk_implies c (Logicterm.mk_equality lhs rhs)))
+	None -> (Lterm.mk_equality lhs rhs)
+      | Some c -> (Lterm.mk_implies c (Lterm.mk_equality lhs rhs)))
   in 
   Format.printf "@[";
   (match src with

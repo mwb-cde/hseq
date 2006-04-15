@@ -91,7 +91,7 @@ let make_consts vars env=
 	try 
 	  let nv = Term.find (Basic.Bound x) env
 	  in 
-	  if(Term.is_closed [] nv)
+	  if(Lterm.is_closed [] nv)
 	  then make_aux xs (nv::cnsts)
 	  else cnsts
 	with 
@@ -422,7 +422,7 @@ let match_asm typenv t sq=
   let scp = Logic.Sequent.scope_of sq
   and asms = Logic.Sequent.asms sq
   in 
-  let t1 = Term.set_names scp t
+  let t1 = Lterm.set_names scp t
   in let vars = Term.get_free_vars t1
   in let varp x = 
     try (ignore(List.find (Term.equals x) vars); true)
@@ -446,7 +446,7 @@ let match_asm typenv t sq=
 let match_concl typenv t sq=
   let scp = Logic.Sequent.scope_of sq
   and concls = Logic.Sequent.concls sq
-  in let t1=Term.set_names scp t
+  in let t1= Lterm.set_names scp t
   in let vars = Term.get_free_vars t1
   in let varp x = 
     try (ignore(List.find (Term.equals x) vars); true)

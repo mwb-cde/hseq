@@ -81,16 +81,16 @@ let mk_defn scp (name, namety) args rhs =
   in 
   let ndn0 = 
     mk_all_from_list scp 
-      (Logicterm.mk_equality lhs rhs)  
+      (Lterm.mk_equality lhs rhs)  
       (List.rev args) 
   in
-  let ndn = Term.set_names scp ndn0
+  let ndn = Lterm.set_names scp ndn0
   in 
   let nscp = Scope.extend_with_terms scp [(name, nty)]
   in 
   let tenv= Typing.settype nscp ndn
   in 
-  let tenv1=Typing.typecheck_top nscp tenv ndn (Logicterm.mk_bool_ty())
+  let tenv1=Typing.typecheck_top nscp tenv ndn (Lterm.mk_bool_ty())
   in 
   let nty1 = Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty
   in 
@@ -116,7 +116,7 @@ let mk_defn scp name args rhs =
   in let lhs = Term.mk_comb (Term.mk_typed_ident name nty) ps
   in let ndn = 
     mk_all_from_list scp 
-      (Logicterm.mk_equality lhs rhs1) 
+      (Lterm.mk_equality lhs rhs1) 
       (List.rev ps) 
   in
 (*
@@ -132,7 +132,7 @@ let mk_defn scp name args rhs =
   in 
   let tenv=Typing.settype nscp ndn
   in 
-  let tenv1=Typing.typecheck_top nscp tenv ndn Logicterm.mk_bool_ty
+  let tenv1=Typing.typecheck_top nscp tenv ndn Lterm.mk_bool_ty
   in 
   (name, Gtypes.mgu_rename (ref 0) tenv1 (Gtypes.empty_subst()) nty, 
    (Formula.make nscp (Term.retype tenv ndn)))
@@ -250,14 +250,14 @@ let mk_subtype_exists setp=
 let make_witness_type scp dtype setP =
   let fty = Typing.typeof scp setP
   in 
-  if not (Logicterm.is_fun_ty fty)
+  if not (Lterm.is_fun_ty fty)
   then 
     raise 
       (Term.add_term_error "Expected a function" [setP]
 	 (Gtypes.type_error "Not a function type" [fty]))
   else 
     let tty = 
-      Logicterm.mk_fun_ty dtype (Logicterm.mk_bool_ty())
+      Lterm.mk_fun_ty dtype (Lterm.mk_bool_ty())
     in 
     try 
       let sbs=Gtypes.unify scp fty tty
@@ -294,7 +294,7 @@ let mk_rep_T_inv rep abs=
   let x = Term.mk_bound x_b
   in 
   let body = 
-    Logicterm.mk_equality 
+    Lterm.mk_equality 
       (Term.mk_app abs (Term.mk_app rep x)) x
   in 
   Basic.Qnt(x_b, body)
@@ -311,10 +311,10 @@ let mk_abs_T_inv set rep abs=
   in 
   let lhs = Term.mk_app set x
   and rhs = 
-    Logicterm.mk_equality 
+    Lterm.mk_equality 
       (Term.mk_app rep (Term.mk_app abs x)) x
   in 
-  let body = Logicterm.mk_implies lhs rhs
+  let body = Lterm.mk_implies lhs rhs
   in 
   Basic.Qnt(x_b, body)
       
@@ -347,10 +347,10 @@ let mk_subtype scp name args dtype setP rep_name abs_name=
   in 
   let new_setp = make_witness_type scp dtype setp0
   in 
-  let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
+  let rep_ty = Gtypes.normalize_vars (Lterm.mk_fun_ty ntype dtype)
   and abs_ty = 
     Gtypes.rename_type_vars
-      (Gtypes.normalize_vars (Logicterm.mk_fun_ty dtype ntype))
+      (Gtypes.normalize_vars (Lterm.mk_fun_ty dtype ntype))
   in 
   let abs_term = Term.mk_typed_ident abs_id (Gtypes.mk_var "abs_ty2")
   and rep_term = Term.mk_typed_ident rep_id (Gtypes.mk_var "rep_ty2")
@@ -399,7 +399,7 @@ module HolLike =
 (*
    let mk_subtype_prop (setP: Basic.term) (rep: Ident.t)=
    let typedef_term = 
-   Term.mk_ident (Ident.mk_long Logicterm.base_thy "Type_Def") 
+   Term.mk_ident (Ident.mk_long Lterm.base_thy "Type_Def") 
    and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
    in 
    Term.mk_app (Term.mk_app typedef_term setP) rep_term
@@ -415,11 +415,11 @@ module HolLike =
 	and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
 	in 
 	let lhs =
-	  Logicterm.mk_equality (Term.mk_app rep_term x1) 
+	  Lterm.mk_equality (Term.mk_app rep_term x1) 
 	    (Term.mk_app rep_term x2)
-	and rhs = Logicterm.mk_equality x1 x2
+	and rhs = Lterm.mk_equality x1 x2
 	in 
-	let body = Logicterm.mk_implies lhs rhs
+	let body = Lterm.mk_implies lhs rhs
 	in 
 	Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
       and 
@@ -434,12 +434,12 @@ module HolLike =
 	let lhs = Term.mk_app setP y
 	and rhs =
 	  Basic.Qnt(y1_b, 
-		    (Logicterm.mk_equality y (Term.mk_app rep_term y1)))
+		    (Lterm.mk_equality y (Term.mk_app rep_term y1)))
 	in 
 	Basic.Qnt(y_b, 
-		  Logicterm.mk_equality lhs rhs)
+		  Lterm.mk_equality lhs rhs)
       in 
-      Logicterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)
+      Lterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)
 
 
 (*
@@ -465,7 +465,7 @@ module HolLike =
       check_well_defined scp args dtype;
       let new_setp = make_witness_type scp dtype setP
       in 
-      let rep_ty = Gtypes.normalize_vars (Logicterm.mk_fun_ty ntype dtype)
+      let rep_ty = Gtypes.normalize_vars (Lterm.mk_fun_ty ntype dtype)
       in 
 (*
       let nscp = Scope.extend_with_typedeclns scp [(id, args)]
@@ -524,7 +524,7 @@ let mk_defn_type env atys rty rfrs =
   match atys with
     [] -> rty
   | ts -> 
-      (Logicterm.mk_fun_ty_from_list
+      (Lterm.mk_fun_ty_from_list
 	 (List.map
 	    (fun (x, ty) -> 
  	      Gtypes.mgu  

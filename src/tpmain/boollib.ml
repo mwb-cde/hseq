@@ -48,7 +48,7 @@ struct
 	    Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
   let init_negation_printer()=
-    Global.PP.add_term_printer Logicterm.notid negation_printer
+    Global.PP.add_term_printer Lterm.notid negation_printer
 
   (***
       Support for if-then-else 
@@ -59,7 +59,7 @@ struct
   open Parser.Utility
   open Lexer
 
-  let ifthenelse_id= Ident.mk_long Logicterm.base_thy "IF"
+  let ifthenelse_id= Ident.mk_long Lterm.base_thy "IF"
 
   let ifthenelse_parser inf=
     ((seq
@@ -132,7 +132,7 @@ struct
 
   (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
-  let choice_ident = Ident.mk_long Logicterm.base_thy "epsilon"
+  let choice_ident = Ident.mk_long Lterm.base_thy "epsilon"
   let choice_sym = "@"
   let choice_pp = 
     (Printer.default_term_fixity, Printer.default_term_prec) 
@@ -162,7 +162,7 @@ struct
   (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
   let exists_unique_ident = 
-    Ident.mk_long Logicterm.base_thy "EXISTS_UNIQUE"
+    Ident.mk_long Lterm.base_thy "EXISTS_UNIQUE"
   let exists_unique_sym = "?!"
   let exists_unique_pp = 
     (Printer.default_term_fixity, Printer.default_term_prec) 
@@ -219,7 +219,7 @@ struct
 
 
   let builder ()= 
-    begin_theory Logicterm.base_thy [];
+    begin_theory Lterm.base_thy [];
     
     (** Types *)
 
@@ -235,44 +235,44 @@ struct
       in 
 	declare
 	  (Commands.read_unchecked 
-	     ((Ident.name_of Logicterm.notid)^": bool -> bool"))
+	     ((Ident.name_of Lterm.notid)^": bool -> bool"))
 	  ~pp:(prec, fixity, Some "~") in 
 
     let _ = 
       let prec = PP.negation_pprec.Printer.prec
       and fixity = PP.negation_pprec.Printer.fixity
       in 
-	add_term_pp Logicterm.notid prec fixity (Some "not") in 
+	add_term_pp Lterm.notid prec fixity (Some "not") in 
 
     (** Equality *)
     let _ =
       declare
 	(Commands.read_unchecked 
-	   ((Ident.name_of Logicterm.equalsid)^": 'a -> 'a -> bool"))
+	   ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
 	~pp:(200, infixl, (Some "=")) in 
 
     (** Conjunction *)
     let _ =
       declare
 	(Commands.read_unchecked 
-	   ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
+	   ((Ident.name_of Lterm.andid)^":bool->bool->bool"))
 	~pp:(185, infixr, Some "and") in  
 
-    let _ = add_term_pp Logicterm.andid 185 infixr (Some "&") in 
+    let _ = add_term_pp Lterm.andid 185 infixr (Some "&") in 
 
     (** Disjunction *)
     let _ =
       define
-	(Commands.read_defn ((Ident.name_of Logicterm.orid)
+	(Commands.read_defn ((Ident.name_of Lterm.orid)
 			     ^" x y = (not ((not x) and (not y)))"))
 	~pp:(190, infixr, Some "or") in 
 
-    let _ = add_term_pp Logicterm.orid 190 infixr (Some "|") in 
+    let _ = add_term_pp Lterm.orid 190 infixr (Some "|") in 
 
     (** Implication *)
     let _ = 
       define
-	(Commands.read_defn ((Ident.name_of Logicterm.impliesid)
+	(Commands.read_defn ((Ident.name_of Lterm.impliesid)
 			     ^" x y = (not x) or y"))
 	~pp:(195, infixr, Some "=>") in 
 
@@ -280,7 +280,7 @@ struct
 
     let _ = 
       define
-	(Commands.read_defn ((Ident.name_of Logicterm.iffid)
+	(Commands.read_defn ((Ident.name_of Lterm.iffid)
 			     ^" x y = (x => y) and (y => x)"))
 	~pp:(180, infixn, Some "iff") in 
 
@@ -342,7 +342,7 @@ struct
 
   (****
        let builder() =
-       begin_theory Logicterm.base_thy [];
+       begin_theory Lterm.base_thy [];
        ignore(typedef 
        <:def<: ('a, 'b)FUN >> ~pp:(1000, infixr, Some("->")));
 
@@ -351,31 +351,31 @@ struct
 
        ignore
        (declare
-       (read_unchecked ((Ident.name_of Logicterm.equalsid)
+       (read_unchecked ((Ident.name_of Lterm.equalsid)
        ^": 'a -> 'a -> bool"))
        ~pp:(1000, infixl, Some"="));
        ignore
        (declare
-       (read_unchecked ((Ident.name_of Logicterm.notid)^": bool -> bool"))
+       (read_unchecked ((Ident.name_of Lterm.notid)^": bool -> bool"))
        ~pp:(110, prefix, Some "not"));
        ignore
        (declare
        (read_unchecked 
-       ((Ident.name_of Logicterm.andid)^":bool->bool->bool"))
+       ((Ident.name_of Lterm.andid)^":bool->bool->bool"))
        ~pp:(105, infixl, Some "and")); 
        ignore
        (define
-       (read_defn ((Ident.name_of Logicterm.orid)
+       (read_defn ((Ident.name_of Lterm.orid)
        ^" x y = (not ((not x) and (not y)))"))
        ~pp:(105, infixl, Some "or"));
        ignore
        (define
-       (read_defn ((Ident.name_of Logicterm.impliesid)
+       (read_defn ((Ident.name_of Lterm.impliesid)
        ^" x y = (not x) or y"))
        ~pp:(104, infixl, Some "=>"));
        ignore
        (define
-       (read_defn ((Ident.name_of Logicterm.iffid)
+       (read_defn ((Ident.name_of Lterm.iffid)
        ^" x y = (x => y) and (y => x)"))
        ~pp:(104, infixl, Some "iff"));
        ignore(axiom "false_def" << false = (not true)>>);
@@ -476,7 +476,7 @@ let find_qnt_opt kind pred forms =
 let fresh_thm th = Logic.is_fresh (Global.scope()) th
 
 let make_false_def () = 
-  thm (Logicterm.base_thy ^"."^"false_def")
+  thm (Lterm.base_thy ^"."^"false_def")
 let false_def_var = Lib.freeze make_false_def
 let false_def () = 
   Lib.thaw ~fresh:fresh_thm false_def_var
@@ -529,7 +529,7 @@ let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
 let make_eq_refl_thm () = 
   try 
     thm 
-      (Ident.string_of (Ident.mk_long Logicterm.base_thy "eq_refl"))
+      (Ident.string_of (Ident.mk_long Lterm.base_thy "eq_refl"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_eq_refl_thm:"
@@ -541,7 +541,7 @@ let eq_refl_thm () =  Lib.thaw ~fresh:fresh_thm eq_refl_thm_var
 let make_bool_cases_thm () = 
   try
     thm 
-      (Ident.string_of (Ident.mk_long Logicterm.base_thy "bool_cases"))
+      (Ident.string_of (Ident.mk_long Lterm.base_thy "bool_cases"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_bool_cases_thm:"
@@ -638,10 +638,10 @@ let eq_sym_tac ?info f goal =
 
 let eq_tac ?info ?c goal = 
   let th = 
-    try thm (Logicterm.base_thy ^ ".eq_refl")
+    try thm (Lterm.base_thy ^ ".eq_refl")
     with Not_found -> 
       (raise (error ("eq_tac: Can't find required lemma "
-		     ^Logicterm.base_thy^".eq_refl")))
+		     ^Lterm.base_thy^".eq_refl")))
   in 
   let info1 = Tactics.mk_info()
   in 
@@ -965,7 +965,7 @@ let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
 	in 
 	(if not (exclude tg)
 	    && (qnt_opt_of Basic.All 
-		  (Logicterm.is_equality) (Formula.term_of (drop_tag form)))
+		  (Lterm.is_equality) (Formula.term_of (drop_tag form)))
 	then find_equality_asms xs (tg::rst)
 	else find_equality_asms xs rst)
   in 
@@ -1030,10 +1030,10 @@ let unfold ?info ?f str g=
 
 let is_iff f = 
   try 
-    (fst (Term.dest_fun (Formula.term_of f)) = Logicterm.iffid)
+    (fst (Term.dest_fun (Formula.term_of f)) = Lterm.iffid)
   with _ -> false
 
-let make_iff_def () = defn (Ident.string_of Logicterm.iffid)
+let make_iff_def () = defn (Ident.string_of Lterm.iffid)
 let iff_def_var = Lib.freeze make_iff_def
 let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
 
@@ -1671,7 +1671,7 @@ let cases_of ?info ?thm t g =
   let trm = Global.PP.expand_term scp t
   in 
 *)
-  let trm = Term.set_names scp t
+  let trm = Lterm.set_names scp t
   in 
   let case_thm = 
     match thm with
@@ -1735,7 +1735,7 @@ let mp0_tac ?info a a1lbls g=
   in 
   let (a_label, mp_vars, mp_form) = 
     try
-      find_qnt_opt Basic.All Logicterm.is_implies [get_tagged_asm a g] 
+      find_qnt_opt Basic.All Lterm.is_implies [get_tagged_asm a g] 
     with Not_found -> 
       raise (error "mp_tac: No implications in assumptions")
   and a1_forms = 
@@ -1756,7 +1756,7 @@ let mp0_tac ?info a a1lbls g=
       Not_found -> 
 	raise 
 	  (Term.term_error ("mp_tac: no matching formula in assumptions") 
-	     [Term.mk_fun Logicterm.impliesid [mp_lhs; mp_rhs]])
+	     [Term.mk_fun Lterm.impliesid [mp_lhs; mp_rhs]])
   in 
   let inf1= Tactics.mk_info()
   in 
@@ -1848,7 +1848,7 @@ let back0_tac ?info a cs goal=
   in 
   let (a_label, back_vars, back_form) = 
     try
-      find_qnt_opt Basic.All Logicterm.is_implies [get_tagged_asm a goal] 
+      find_qnt_opt Basic.All Lterm.is_implies [get_tagged_asm a goal] 
     with Not_found -> raise (error "back_tac: No assumption")
   and c_forms = 
     try Lib.map_find (fun x -> get_tagged_concl x goal) cs
@@ -1869,7 +1869,7 @@ let back0_tac ?info a cs goal=
       Not_found -> 
 	raise (Term.term_error 
 		 ("back_tac: no matching formula in conclusion") 
-		 [Term.mk_fun Logicterm.impliesid [back_lhs; back_rhs]])
+		 [Term.mk_fun Lterm.impliesid [back_lhs; back_rhs]])
   in 
   let info1= Tactics.mk_info()
   in 
@@ -1993,8 +1993,8 @@ module Thms =
 	       (Failure "make_iff_equals_thm")
 	   in 
 	   ((cut iff_l2)
-	      ++ inst_tac [Logicterm.mk_iff x_term y_term;
-			   Logicterm.mk_equality x_term y_term]
+	      ++ inst_tac [Lterm.mk_iff x_term y_term;
+			   Lterm.mk_equality x_term y_term]
 	      ++ split_tac
 	      --
 	      [flatten_tac
@@ -2158,7 +2158,7 @@ module Rules=
     let conjunctL scp thm = 
       let trm = Logic.term_of thm
       in 
-      if not (Logicterm.is_conj trm)
+      if not (Lterm.is_conj trm)
       then raise (error "conjunct1: not a conjunction")
       else 
 	let (_, lhs, rhs) = Term.dest_binop trm
@@ -2192,7 +2192,7 @@ module Rules=
     let conjunctR scp thm = 
       let trm = Logic.term_of thm
       in 
-      if not (Logicterm.is_conj trm)
+      if not (Lterm.is_conj trm)
       then raise (error "conjunct1: not a conjunction")
       else 
 	let (_, lhs, rhs) = Term.dest_binop trm
@@ -2224,7 +2224,7 @@ module Rules=
  *)
     let conjuncts scp thm =
       let is_conj_thm thm = 
-	Logicterm.is_conj (Logic.term_of thm)
+	Lterm.is_conj (Logic.term_of thm)
       in 
       let rec conjuncts_aux scp thm result = 
 	if not(is_conj_thm thm)
@@ -2253,7 +2253,7 @@ module Convs=
    [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a 
  *)
     let neg_all_conv scp trm=
-      if(not (Logicterm.is_neg trm))
+      if(not (Lterm.is_neg trm))
       then failwith "neg_all_conv: not a negation"
       else 
 	let (_, trmbody) = Term.dest_unop trm
@@ -2284,10 +2284,10 @@ module Convs=
 	in 
 	let newterm= 
 	  Term.rename 
-	    (Term.rebuild_qnt eqvars (Logicterm.mk_not eqbody))
+	    (Term.rebuild_qnt eqvars (Lterm.mk_not eqbody))
 	in 
 	let goal_term = 
-	  Logicterm.mk_equality trm newterm
+	  Lterm.mk_equality trm newterm
 	in 
 	let info = Tactics.mk_info()
 	in
@@ -2378,7 +2378,7 @@ module Convs=
    [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a 
  *)
     let neg_exists_conv scp trm=
-      if(not (Logicterm.is_neg trm))
+      if(not (Lterm.is_neg trm))
       then failwith "neg_exists_conv: not a negation"
       else 
 	let (_, trmbody) = Term.dest_unop trm
@@ -2409,10 +2409,10 @@ module Convs=
 	in 
 	let newterm= 
 	  Term.rename 
-	    (Term.rebuild_qnt aqvars (Logicterm.mk_not aqbody))
+	    (Term.rebuild_qnt aqvars (Lterm.mk_not aqbody))
 	in 
 	let goal_term = 
-	  Logicterm.mk_equality trm newterm
+	  Lterm.mk_equality trm newterm
 	in 
 	let info = Tactics.mk_info()
 	in

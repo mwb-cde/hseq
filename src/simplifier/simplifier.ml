@@ -28,7 +28,7 @@
 
 open Basic
 open Term
-open Logicterm
+open Lterm
 open Tactics
 open Rewritekit
 open Rewrite
@@ -195,7 +195,7 @@ module Data =
 	try (Net.lookup (get_loopdb cntrl) t)
 	with Not_found -> []
       in
-      List.exists (Logicterm.alpha_equals scp t) opts
+      List.exists (Lterm.alpha_equals scp t) opts
 
     let get_simpset cntrl=cntrl.simpset
     let get_tactic cntrl=cntrl.cond_tac
@@ -559,7 +559,7 @@ let match_rewrite scp tyenv qntenv rl trm =
   try
     (let ntyenv, nenv=find_match lhs trm
     in 
-    let nt = Term.subst_closed qntenv nenv rhs
+    let nt = Lterm.subst_closed qntenv nenv rhs
     in 
     match order with
       None -> (src, ntyenv, nenv, nt)

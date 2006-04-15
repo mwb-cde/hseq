@@ -261,7 +261,7 @@ module TermData =
       in
       let data1 = (scope, qntenv, tyenv)
       in 
-      (data1, Term.subst_closed qntenv env rhs)
+      (data1, Lterm.subst_closed qntenv env rhs)
 
     let add_data data trm = 
       match trm with 
@@ -307,7 +307,7 @@ let rec extract_check_rules scp dir pl =
   let get_test t = 
     let qs, b = Term.strip_qnt Basic.All t
     in 
-    let lhs, rhs = Logicterm.dest_equality b
+    let lhs, rhs = Lterm.dest_equality b
     in 
     if dir = leftright 
     then (qs, lhs, rhs)
@@ -598,7 +598,7 @@ module Make =
       try
 	(let tyenv1, env1=find_match lhs trm
 	in 
-	let nt = Term.subst_closed qntenv env1 rhs
+	let nt = Lterm.subst_closed qntenv env1 rhs
 	in 
 	match order with
 	  None -> (src, nt, tyenv1)
@@ -867,7 +867,7 @@ module TermPlannerData =
     let dest _ trm = 
       let qs, b = strip_qnt Basic.All trm
       in 
-      let lhs, rhs= Logicterm.dest_equality b
+      let lhs, rhs= Lterm.dest_equality b
       in 
       (qs, lhs, rhs, None)
 

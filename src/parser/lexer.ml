@@ -4,7 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
-  open Logicterm
+  open Lterm
 
   exception Lexing of (int * int)
 

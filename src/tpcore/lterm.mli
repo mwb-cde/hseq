@@ -83,6 +83,11 @@ val mk_fun_ty_from_list: gtype list -> gtype -> gtype
 val dest_fun_ty : gtype -> (gtype * gtype)
 (** Destructor for function types. *)
 
+(** {7 Other types} *)
+
+val typeof_cnst  : Basic.const_ty -> gtype
+(** Get the type of a primitive construct *)
+
 (** {5 Terms} *)
 
 (** {7 Identifiers for logic functions and constants} *)
@@ -197,13 +202,6 @@ val alpha_equals : Scope.t -> term -> term -> bool
    for [alpha_convp]. 
 *)
 
-val subst_equiv: Scope.t -> term -> (term * term) list -> term
-(**
-   Substition of equivalents under alpha-conversion. [subst scp f
-   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
-   to [ti] in [f]. Slower than {!Term.subst}.
-*)
-
 (** {7 Beta conversion} *)
 
 val beta_convp:  term -> bool
@@ -230,27 +228,37 @@ val eta_conv: term -> Basic.gtype -> term -> term
    (v:ty). t[v/x]) x)].
 *)
 
-(** {5 Utility functions} *)
 
-val typeof_cnst  : Basic.const_ty -> gtype
-(** Get the type of a primitive construct *)
+(** {5 Closed terms}
 
-(** {7 Closed terms}
-
-   A term is closed if every bound variable occurs within its binding term. 
+   A term is closed if every bound variable occurs within its binding
+   term.
 *)
 
-val is_closed_scope: substitution -> term -> bool
-(** Test whether a term is closed w.r.t a given substitution. *)
-
-val is_closed : term -> bool
-(** Test whether a term is closed. *)
-
-val close_term: term -> term
-(** 
-   Close a term. Constructs outermost universal quantifier for every
-   bound variable without an enclosing binder.
+val is_closed_env: substitution -> Basic.term -> bool
+(**
+   [is_closed ts f] is true iff all bound variables in [f] are in the
+   body of a quantifier or occur in [ts].
 *)
+
+val is_closed: Basic.term list -> Basic.term -> bool
+(**
+   [is_closed ts f] is true iff all bound variables in [f] are in the
+   body of a quantifier or occur in [ts].
+*)
+
+val close_term: 
+  ?qnt:Basic.quant -> ?free:(Basic.term -> bool)
+  -> term -> term
+(**
+   [close_term ?qnt ?free trm]: Close term [trm]. Make variables bound
+   to quantifiers of kind [qnt] to replace free variables and bound
+   variables with no binding quantifier and for which [free] is true.
+
+   If [?qnt] is not given, it is [Basic.All].
+   If [?free] is not given, it is [(fun _ -> true)].
+*)
+
 
 (*** {7 Generalising terms} *)
 
@@ -264,3 +272,91 @@ val gen_term : Basic.binders list -> Basic.term -> Basic.term
 
    (More thorough than [close_term]).
 *)
+
+(** {5 Resolving names} *)
+
+val in_scope: (string, bool)Lib.substype 
+  -> Scope.t -> term -> bool
+(**
+   [in_scope memo spc thy t]: Check that term is in scope.
+   All identifiers and types must be declared in the given scope.
+   [memo] is used to memoise the lookup of names of free variables.
+*)
+
+(**
+   [binding_set_names_types ?strict ?memo scp binding]
+   Find and set names for types in a binding.
+   If [strict=true], unknown types cause an error.
+*)
+val binding_set_names : 
+    ?strict:bool
+  -> ?memo:(string, Ident.thy_id)Hashtbl.t
+    -> Scope.t
+      -> Basic.binders
+	-> Basic.binders
+
+val set_names: Scope.t  -> term -> term
+(**
+   [set_names scp t]: Get and set full identifiers in terms and and types of
+   term [t].
+
+   Each free variable in [t] with the same name as an identifier
+   defined in scope [scp] is replaced by the identifier ([Id]).  The
+   type of the free variable is kept as a [Typed] construct around the
+   new [Id].
+
+   Free variables which are not found in scope are left in place,
+   unlike {!Lterm.resolve_closed_term} which replaces them with new
+   binders.
+*)
+
+val resolve_closed_term: 
+  Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
+(**
+   [resolve_closed_term scp trm]: Resolve names and variables in
+   term [trm].
+     
+   {ul
+   {- Replace each free variable [Var(x, _)] in [trm] with the term
+   associated with [x] in scope [scp].}
+   {- Expands all type names to their long form (theory+name).}
+   {- Expands all identifier terms ([Id]) to their long form
+   (theory+name).}
+   {- Looks up the type [ty'] of each identifier term ([Id(n,
+   ty)]). 
+
+   Replaces the term with [Typed(Id(n, ty), ty')], setting
+   the type [ty'] of the identifier while retaining any information
+   in the given type [ty].}}
+
+   Replaces each free or bound variable which can't be resolved with a
+   universally bound variable. Returns the resolved term, the list of
+   unknown variables and their replacments.
+
+   Fails if
+   {ul
+   {- Any type name is not declared in scope [scp].}
+   {- Any identifier is not declared in [scp].}
+   {- Any free variable can't be replaced with an identifier in scope [scp].}
+   {- Any bound variable occurs outside its binding term.}}
+*)
+
+(** {5 Substitution} *)
+
+val subst_closed: 
+  substitution -> substitution
+    -> Basic.term -> Basic.term 
+(**
+   [subst_closed qntenv sb t]: Substitute the bindings in [sb] in term
+   [t]. Fail, raising [Failure], if any of the substituted terms lead
+   to the term not being closed.
+*)
+
+val subst_equiv: Scope.t -> term -> (term * term) list -> term
+(**
+   Substition of equivalents under alpha-conversion. [subst scp f
+   [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
+   to [ti] in [f]. Slower than {!Term.subst}.
+*)
+
+

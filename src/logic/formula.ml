@@ -51,10 +51,10 @@ let mk_scoped_formula scp f = { thy = Scope.marker_of scp; term = f }
 (** Convert a term to a formula *)
 
 let resolve_term ?(strict=false) scp trm =
-  Term.resolve_closed_term scp trm
+  Lterm.resolve_closed_term scp trm
 
 let prepare ?(strict=false) scp tyenv trm =
-  let t1, lst = Term.resolve_closed_term scp trm
+  let t1, lst = Lterm.resolve_closed_term scp trm
   in 
     if (strict && not (lst=[])) 
     then
@@ -125,7 +125,7 @@ let mk_subterm_unsafe f t = {thy = thy_of f; term = t}
    [f]. Checks that [t] is a closed subterm of [f], fails otherwise. 
 *)
 let mk_subterm f t = 
-  if (Term.is_subterm t (term_of f)) && (Term.is_closed [] t)
+  if (Term.is_subterm t (term_of f)) && (Lterm.is_closed [] t)
   then 
     {thy = thy_of f; term = t}
   else 
@@ -182,13 +182,13 @@ let equals x y = Term.equals (term_of x) (term_of y)
 (*** General tests ***)
 
 let in_scope_memo memo scp f =
-  if ((formula_in_scope scp f) || (Term.in_scope memo scp (term_of f)))
+  if ((formula_in_scope scp f) || (Lterm.in_scope memo scp (term_of f)))
   then true
   else raise (Term.term_error "Badly formed formula" [term_of f])
 
 let in_scope scp f =
   if ((formula_in_scope scp f) 
-    || (Term.in_scope (Lib.empty_env()) scp (term_of f)))
+    || (Lterm.in_scope (Lib.empty_env()) scp (term_of f)))
   then true
   else raise (Term.term_error "Badly formed formula" [term_of f])
 
@@ -205,17 +205,17 @@ let is_typed x = Term.is_typed (term_of x)
 let is_const x = Term.is_const (term_of x)
 let is_fun x= Term.is_fun (term_of x)
 
-let is_true x = Logicterm.is_true (term_of x)
-let is_false x = Logicterm.is_false (term_of x)
-let is_neg x = Logicterm.is_neg (term_of x)
-let is_conj x = Logicterm.is_conj (term_of x)
-let is_disj x = Logicterm.is_disj (term_of x)
-let is_implies x = Logicterm.is_implies (term_of x)
-let is_equality x = Logicterm.is_equality (term_of x)
+let is_true x = Lterm.is_true (term_of x)
+let is_false x = Lterm.is_false (term_of x)
+let is_neg x = Lterm.is_neg (term_of x)
+let is_conj x = Lterm.is_conj (term_of x)
+let is_disj x = Lterm.is_disj (term_of x)
+let is_implies x = Lterm.is_implies (term_of x)
+let is_equality x = Lterm.is_equality (term_of x)
 
-let is_all x = Logicterm.is_all (term_of x)
-let is_exists x = Logicterm.is_exists (term_of x)
-let is_lambda x = Logicterm.is_lambda (term_of x)
+let is_all x = Lterm.is_all (term_of x)
+let is_exists x = Lterm.is_exists (term_of x)
+let is_lambda x = Lterm.is_lambda (term_of x)
 
 (*** Destructors ***)
 
@@ -259,22 +259,22 @@ let get_binder_type x = Term.get_binder_type (term_of x)
 
 (*** Constructors ***)
 
-let mk_true scp = make scp Logicterm.mk_true
-let mk_false scp = make scp Logicterm.mk_false
+let mk_true scp = make scp Lterm.mk_true
+let mk_false scp = make scp Lterm.mk_false
 let mk_bool scp b = if b then mk_true scp else mk_false scp
 
 let mk_not scp f = 
-  fast_make scp [f] (Logicterm.mk_not (term_of f))
+  fast_make scp [f] (Lterm.mk_not (term_of f))
 let mk_and scp a b = 
-  fast_make scp [a; b] (Logicterm.mk_and (term_of a) (term_of b))
+  fast_make scp [a; b] (Lterm.mk_and (term_of a) (term_of b))
 let mk_or scp a b = 
-  fast_make scp [a; b] (Logicterm.mk_or (term_of a) (term_of b))
+  fast_make scp [a; b] (Lterm.mk_or (term_of a) (term_of b))
 let mk_implies scp a b = 
-  fast_make scp [a; b] (Logicterm.mk_implies (term_of a) (term_of b))
+  fast_make scp [a; b] (Lterm.mk_implies (term_of a) (term_of b))
 let mk_iff scp a b = 
-  fast_make scp [a; b] (Logicterm.mk_iff (term_of a) (term_of b))
+  fast_make scp [a; b] (Lterm.mk_iff (term_of a) (term_of b))
 let mk_equality scp a b = 
-  fast_make scp [a; b] (Logicterm.mk_equality (term_of a) (term_of b))
+  fast_make scp [a; b] (Lterm.mk_equality (term_of a) (term_of b))
 
 
 (***
@@ -367,7 +367,7 @@ let subst_equiv scp form lst =
   let repl_list = 
     List.map (fun (t, r) -> ((term_of t), (term_of r))) lst
   in 
-  let nt = Logicterm.subst_equiv scp (term_of form) repl_list
+  let nt = Lterm.subst_equiv scp (term_of form) repl_list
   in 
   fast_make scp (List.map snd lst) nt
 
@@ -433,7 +433,7 @@ let unify_env scp tyenv asmf conclf =
 
 (*** Alpha conversion ***)
 
-let alpha_equals scp x y = Logicterm.alpha_equals scp (term_of x) (term_of y)
+let alpha_equals scp x y = Lterm.alpha_equals scp (term_of x) (term_of y)
 
 let alpha_equals_match scp tyenv asmf conclf= 
   let asm = term_of asmf
@@ -446,9 +446,9 @@ let alpha_equals_match scp tyenv asmf conclf=
 
 (*** Beta conversion ***)
 
-let beta_convp x = Logicterm.beta_convp (term_of x)
-let beta_conv scp x =  make scp (Logicterm.beta_conv (term_of x))
-let beta_reduce scp x = make scp (Logicterm.beta_reduce (term_of x))
+let beta_convp x = Lterm.beta_convp (term_of x)
+let beta_conv scp x =  make scp (Lterm.beta_conv (term_of x))
+let beta_reduce scp x = make scp (Lterm.beta_reduce (term_of x))
 
 (** 
    [mk_beta_reduce_eq scp tyenv trm]: 
@@ -457,9 +457,9 @@ let beta_reduce scp x = make scp (Logicterm.beta_reduce (term_of x))
 let mk_beta_reduce_eq scp tyenv trm = 
   let (lhst, lst) = resolve_term scp trm
   in 
-  let rhst = Logicterm.beta_reduce lhst
+  let rhst = Lterm.beta_reduce lhst
   in 
-  let eqtrm = Logicterm.mk_equality lhst rhst
+  let eqtrm = Lterm.mk_equality lhst rhst
   in 
   let rtrm = 
       List.fold_left 
@@ -471,7 +471,7 @@ let mk_beta_reduce_eq scp tyenv trm =
 let mk_beta_reduce_eq scp tyenv trm = 
   let (lhsf, tyenv1) = make_full scp tyenv trm
   in 
-  let rhsf = fast_make scp [lhsf] (Logicterm.beta_reduce trm)
+  let rhsf = fast_make scp [lhsf] (Lterm.beta_reduce trm)
   in 
     (mk_equality scp lhsf rhsf, tyenv1)
 *)
@@ -480,7 +480,7 @@ let mk_beta_reduce_eq scp tyenv trm =
 (*** Eta conversion ***)
 
 let eta_conv scp f ty x = 
-  make scp (Logicterm.eta_conv (term_of f) ty (term_of x))
+  make scp (Lterm.eta_conv (term_of f) ty (term_of x))
 
 
 (***
@@ -499,7 +499,7 @@ let rec extract_check_rules scp dir pl =
       in 
       let qs, b = Term.strip_qnt Basic.All t
       in 
-      let lhs, rhs = Logicterm.dest_equality b
+      let lhs, rhs = Lterm.dest_equality b
       in 
       if dir = Rewrite.leftright 
       then (qs, lhs, rhs)
@@ -554,7 +554,7 @@ let mk_rewrite_eq scp tyenv plan trm =
   in 
   let (scp1, _, tyenv2) = data1
   in 
-  let eqtrm =  Logicterm.mk_equality lhst nt
+  let eqtrm =  Lterm.mk_equality lhst nt
   in 
   let rtrm =
     List.fold_left 

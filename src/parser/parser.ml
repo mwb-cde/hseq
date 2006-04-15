@@ -659,7 +659,7 @@ module Grammars  =
     let bool_type info toks =
       try 
 	((named_id info type_id (Ident.mk_name "bool"))
-	   >> (fun _ -> Logicterm.mk_bool_ty())) toks
+	   >> (fun _ -> Lterm.mk_bool_ty())) toks
       with _ -> type_error "Not a boolean type" toks
 
 	  (**
@@ -669,7 +669,7 @@ module Grammars  =
     let num_type info toks =
       try 
 	((named_id info type_id (Ident.mk_name "num"))
-	   >> (fun _ -> Logicterm.mk_num_ty())) toks
+	   >> (fun _ -> Lterm.mk_num_ty())) toks
       with _ -> type_error "Not a number type" toks
 
 
@@ -1073,7 +1073,7 @@ end
 	(*   | boolean *)
 	"boolean", 
 	(fun _ -> 
- 	  (boolean >> (fun x -> Logicterm.mk_bool x))); 
+ 	  (boolean >> (fun x -> Lterm.mk_bool x))); 
 	(* '(' form ')' *)
 	"bracketed_term",
 	(fun inf -> 
@@ -1205,7 +1205,7 @@ end
 	  ((short_id type_id inf)
 	     -- 
 	     (optional 
-		(((!$(mk_symbol Logicterm.equalssym))
+		(((!$(mk_symbol Lterm.equalssym))
 		    -- (types inf)) >> (fun (_, x) -> x)))))
 	 >> (fun (args, (name, defn)) 
 	   -> (name, args, defn))) toks
@@ -1224,7 +1224,7 @@ end
 	    -- (form inf))
 	   >> (fun ((ty, _), f) -> (ty, f))) inp
       in 
-      ((lhs -- (!$(mk_symbol Logicterm.equalssym)) -- rhs) 
+      ((lhs -- (!$(mk_symbol Lterm.equalssym)) -- rhs) 
 	 >> (fun (((args, name), _), (ty, trm)) 
 	   -> (name, args, ty, trm))) toks
 
@@ -1256,7 +1256,7 @@ end
 	toks
     and args_opt inf= 
       (((optional (repeat (id_type_opt (short_id id_strict) inf)))
-	  -- (!$(mk_symbol Logicterm.equalssym)))
+	  -- (!$(mk_symbol Lterm.equalssym)))
 	 >> (fun (x, _) -> match x with None -> [] | Some l -> l))
 	// error "Badly formed argument list for definition"
     and defn inf toks =
@@ -1421,7 +1421,7 @@ module Resolver =
 	  in 
 	  (term, ty0, env0)
       | Const(c) ->
-	  let ty = Logicterm.typeof_cnst c
+	  let ty = Lterm.typeof_cnst c
 	  in
 	  let (ty0, env0)=
 	    try (ty, Gtypes.unify_env data.scp expty ty env)
@@ -1453,7 +1453,7 @@ module Resolver =
 	    try (rty0, Gtypes.unify_env data.scp expty rty0 env)
 	    with _ -> (rty0, env)
 	  in 
-	  let fty0 = Logicterm.mk_fun_ty argty rty1
+	  let fty0 = Lterm.mk_fun_ty argty rty1
 	  in 
 	  let (atrm, aty, aenv) = 
 	    resolve_aux data env1 (Gtypes.mgu argty env1) a
@@ -1472,7 +1472,7 @@ module Resolver =
 	      let aty = Term.get_binder_type (Bound qnt1)
 	      and rty = Gtypes.mk_typevar data1.inf
 	      in 
-	      let nty0 = Logicterm.mk_fun_ty aty rty
+	      let nty0 = Lterm.mk_fun_ty aty rty
 	      in 
 	      let (nty1, env1)=
 		try (nty0, Gtypes.unify_env data1.scp expty nty0 env)
@@ -1488,11 +1488,11 @@ module Resolver =
 	      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
 	      in 
 	      let (nty1, env1)=
-		try (Logicterm.mk_bool_ty(), 
+		try (Lterm.mk_bool_ty(), 
 		     Gtypes.unify_env 
 		       data1.scp expty 
-		       (Logicterm.mk_bool_ty()) env)
-		with _ -> (Logicterm.mk_bool_ty(), env)
+		       (Lterm.mk_bool_ty()) env)
+		with _ -> (Lterm.mk_bool_ty(), env)
 	      in 
 	      let (body1, bty, benv)=
 		resolve_aux data1 env1 nty1 body
@@ -1585,7 +1585,7 @@ module Resolver =
 ***)
 
 open Lexer
-open Logicterm
+open Lterm
 
 
 (*** Symbols ***)

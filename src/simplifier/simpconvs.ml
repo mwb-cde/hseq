@@ -303,7 +303,7 @@ let simple_asm_rewrite_tac ?info rule asm node=
   let trm = Formula.term_of f
   in 
   let thm=
-    if (Logicterm.is_all trm)
+    if (Lterm.is_all trm)
     then 
       simple_rewrite_conv scp rule trm
     else 
@@ -342,7 +342,7 @@ let negate_concl_tac ?info c goal=
    test [thm] is of the form |- a and b and ... and z 
  *)
 let is_many_conj thm=
-  Logicterm.is_conj (Logic.term_of thm)
+  Lterm.is_conj (Logic.term_of thm)
 
 (** [is_neg_disj thm]:
    test [thm] is of the form |- not (a or b)
@@ -350,36 +350,36 @@ let is_many_conj thm=
 let is_neg_disj thm=
   let trm = Logic.term_of thm
   in 
-    ((Logicterm.is_neg trm)
+    ((Lterm.is_neg trm)
       &&
-      (Logicterm.is_disj (Term.rand trm)))
+      (Lterm.is_disj (Term.rand trm)))
 
 (** [is_iffterm (vars, cnd, main)]: 
    true if [main] is of the for [a iff b] 
  *)
 let is_iffterm (vars, cnd, main) =
-  (try(fst(Term.dest_fun main) = Logicterm.iffid) with _ -> false)
+  (try(fst(Term.dest_fun main) = Lterm.iffid) with _ -> false)
 
 (** [is_negation (var, cnd, main):  
    true if [main] is of the form [not a]
  *)
 let is_negation (vars, cnd, main)=
-  Logicterm.is_neg main
+  Lterm.is_neg main
 
 (** [is_equality (var, cnd, main): 
    true if [main] is of the form a=b 
  *)
 let is_equality (vars, cnd, main)=
-  Logicterm.is_equality main
+  Lterm.is_equality main
 
 let is_constant clst (qs, c, t)=
   List.exists (Term.equals t) clst
 
 let is_constant_true (qs, c, t)=
-  Logicterm.is_true t
+  Lterm.is_true t
 
 let is_constant_false (qs, c, t)=
-  Logicterm.is_false t
+  Lterm.is_false t
 
 let is_constant_bool (qs, c, t)=
   Pervasives.(||)
@@ -387,19 +387,19 @@ let is_constant_bool (qs, c, t)=
     (is_constant_true (qs, c, t))
 
 let is_neg_all (qs, c, t) = 
-  if (Logicterm.is_neg t)
+  if (Lterm.is_neg t)
   then 
     let (_, not_body)=Term.dest_unop t
     in
-    Logicterm.is_all not_body
+    Lterm.is_all not_body
   else false
 
 let is_neg_exists (qs, c, t) = 
-  if (Logicterm.is_neg t)
+  if (Lterm.is_neg t)
   then 
     let (_, not_body)=Term.dest_unop t
     in
-    Logicterm.is_exists not_body
+    Lterm.is_exists not_body
   else false
 
 (**  
@@ -436,7 +436,7 @@ let is_rr_rule (qs, c, l, r) =
   (cret, rret)
 
 let is_rr_equality (qs, c, a)=
-  if(Logicterm.is_equality a)
+  if(Lterm.is_equality a)
   then 
     let (_, lhs, rhs)= Term.dest_binop a
     in 
@@ -514,7 +514,7 @@ and do_rr_equality ret (scp, thm, (qs, c, a)) =
   else failwith "is_rr_equality: not a rewrite rule"
 
 and do_eq_rule ret (scp, thm, (qs, c, a)) =
-  if (Logicterm.is_equality a)
+  if (Lterm.is_equality a)
   then 
     match is_rr_rule (qs, c, a, None) with
 	(None, _) -> 
@@ -537,7 +537,7 @@ and do_eq_rule ret (scp, thm, (qs, c, a)) =
     failwith "do_eq_rule"    
  
  and do_fact_rule ret (scp, thm, (qs, c, a)) = 
-  if(not (Logicterm.is_equality a))
+  if(not (Lterm.is_equality a))
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
@@ -567,8 +567,8 @@ and do_eq_rule ret (scp, thm, (qs, c, a)) =
     do_eq_rule ret (scp, thm, (qs, c, a))
  
 and do_neg_eq_rule ret (scp, thm, (qs, c, a)) =
-  if ((Logicterm.is_neg a)
-	&& (Logicterm.is_equality (Term.rand a)))
+  if ((Lterm.is_neg a)
+	&& (Lterm.is_equality (Term.rand a)))
   then 
     match c with 
 	None -> 
@@ -589,11 +589,11 @@ and do_neg_eq_rule ret (scp, thm, (qs, c, a)) =
     failwith "do_neg_eq_rule"    
 
 and do_neg_rule ret (scp, thm, (qs, c, a)) = 
-  if (Logicterm.is_neg a)
+  if (Lterm.is_neg a)
   then 
     match is_rr_rule (qs, c, a, None) with
 	(None, _) -> 
-	  if (Logicterm.is_equality (Term.rand a))
+	  if (Lterm.is_equality (Term.rand a))
 	  then (* Convert |- not (a = b) and |- c=> not (a = b) *)
 	    do_neg_eq_rule ret (scp, thm, (qs, c, a))
 	  else 
@@ -607,7 +607,7 @@ and do_neg_rule ret (scp, thm, (qs, c, a)) =
 	    in
 	      (single_thm_to_rules ret scp thm1)
 	  else 
-	    if (Logicterm.is_equality (Term.rand a))
+	    if (Lterm.is_equality (Term.rand a))
 	    then 
 	      (* Convert |- not (a = b) and |- c=> not (a = b) *)
 	      do_neg_eq_rule ret (scp, thm, (qs, c, a))
@@ -833,7 +833,7 @@ and rr_equality_asm ret (tg, (qs, c, a)) g =
   else failwith "rr_equality_asm: not a rewrite rule"
 
 and eq_asm ret (tg, (qs, c, a)) g=
-  if (Logicterm.is_equality a)
+  if (Lterm.is_equality a)
   then 
     let rr_thm =
       match is_rr_rule (qs, c, a, None) with
@@ -862,7 +862,7 @@ and eq_asm ret (tg, (qs, c, a)) g=
     failwith "eq_asm"
 
 and fact_rule_asm ret (tg, (qs, c, a)) g= 
-  if(not (Logicterm.is_equality a))
+  if(not (Lterm.is_equality a))
   then 
     match is_rr_rule (qs, c, a, None) with
       (None, _) -> 
@@ -909,8 +909,8 @@ and fact_rule_asm ret (tg, (qs, c, a)) g=
   else eq_asm ret (tg, (qs, c, a)) g
 
 and neg_eq_asm ret (tg, (qs, c, a)) g=
-  if ((Logicterm.is_neg a)
-	&& (Logicterm.is_equality (Term.rand a)))
+  if ((Lterm.is_neg a)
+	&& (Lterm.is_equality (Term.rand a)))
   then 
     let rr_thm =
       match c with
@@ -938,8 +938,8 @@ and neg_eq_asm ret (tg, (qs, c, a)) g=
     failwith "neg_eq_asm"
 
 and neg_disj_asm ret (tg, (qs, c, a)) g=
-  if ((Logicterm.is_neg a)
-	&& (Logicterm.is_disj (Term.rand a)))
+  if ((Lterm.is_neg a)
+	&& (Lterm.is_disj (Term.rand a)))
   then 
     match c with
 	None -> 
@@ -959,7 +959,7 @@ and neg_disj_asm ret (tg, (qs, c, a)) g=
 
 
 and neg_rule_asm ret (tg, (qs, c, a)) g = 
-  if Logicterm.is_neg a
+  if Lterm.is_neg a
   then 
     let b = Term.rand a
     in 
@@ -974,10 +974,10 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 	      then 	  (** Solve assumption (not true) *)
 		solve_not_true_tac tg g
 	      else 
-		if Logicterm.is_equality b 
+		if Lterm.is_equality b 
 		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else 
-		  if (Logicterm.is_disj b)
+		  if (Lterm.is_disj b)
 		  then
 		    neg_disj_asm ret (tg, (qs, c, a)) g
 		  else
@@ -995,7 +995,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
 		  single_asm_to_rule ret tg
 		] g)
 	      else 
-		if Logicterm.is_equality b 
+		if Lterm.is_equality b 
 		then neg_eq_asm ret (tg, (qs, c, a)) g
 		else 
 		  let info = mk_info()
@@ -1019,7 +1019,7 @@ and neg_rule_asm ret (tg, (qs, c, a)) g =
   else failwith "neg_rule_asm"
 
 and conj_rule_asm ret (tg, (qs, c, a)) g = 
-  if (Logicterm.is_conj a)
+  if (Lterm.is_conj a)
   then 
     let inf = mk_info ()
     in 
@@ -1158,7 +1158,7 @@ let prepare_asm data a goal =
   let false_test g = 
     let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
     in 
-    Logicterm.is_false (Formula.term_of asm)
+    Lterm.is_false (Formula.term_of asm)
   in 
   seq 
     [
@@ -1223,7 +1223,7 @@ let prepare_concl data c goal =
   let true_test g = 
     let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
     in 
-    Logicterm.is_true (Formula.term_of concl)
+    Lterm.is_true (Formula.term_of concl)
   in 
   seq 
     [

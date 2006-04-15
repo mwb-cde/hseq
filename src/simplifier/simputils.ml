@@ -7,7 +7,7 @@
 (** Utility functions for the simplifier *)
 
 open Term
-open Logicterm
+open Lterm
 
 
 (** [is_variable qnts x]:
@@ -94,7 +94,7 @@ let check_variables is_var vars trm=
 let strip_qnt_cond t =
   let (qs, t1)=Term.strip_qnt (Basic.All) t  (* get leading quantifiers *)
   in 
-  if (Logicterm.is_implies t1)  (* deal with conditional equalities *)
+  if (Lterm.is_implies t1)  (* deal with conditional equalities *)
   then 
     (let (_, a, c)=Term.dest_binop t1
     in 

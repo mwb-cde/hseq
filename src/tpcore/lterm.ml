@@ -4,6 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
+open Lib
 open Basic
 open Gtypes
 open Term
@@ -76,6 +77,11 @@ let dest_fun_ty t =
     | _ -> raise (Failure "Not function type")
   else raise (Failure "Not function type")
       
+let typeof_cnst c =
+  match c with
+    Cnum _ -> mk_num_ty ()
+  | Cbool _ -> mk_bool_ty ()
+
 (***
 * Terms 
 ***)
@@ -229,28 +235,6 @@ let alpha_equals scp t1 t2 =
   try ignore(alpha_convp scp t1 t2); true
   with _ -> false
 
-let subst_equiv scp term lst = 
-  let repl t ls = 
-    Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
-  in 
-  let rec subst_aux qntenv trm = 
-    match (repl trm lst) with
-      Some(x) -> 
-	if (Term.is_closed_env qntenv x)
-	then x
-	else raise (Failure "subst_equiv: Not closed")
-    | None -> 
-	(match trm with
-	  Qnt(q, b) ->  
-	    let qntenv1=Term.bind (Bound q) (Term.mk_short_ident "") qntenv
-	    in 
-	    Qnt(q, subst_aux qntenv1 b)
-	| App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
-	| Typed(t, ty) -> Typed(subst_aux qntenv t, ty)
-	| _ -> trm)
-  in 
-  subst_aux (Term.empty_subst()) term
-
 (*** Beta conversion ***)
 
 let beta_convp  =
@@ -371,6 +355,7 @@ let beta_reduce trm =
       raise (Result.error "beta_reduce: No change")
 
 
+
 (*** Eta-abstraction ***)
 
 let eta_conv x ty t=
@@ -378,69 +363,96 @@ let eta_conv x ty t=
   in let q= mk_binding Basic.Lambda name ty 
   in App((Qnt(q, qsubst [x, Bound(q)] t)), x)
     
+
+(*** Closed terms ***)
+
 (***
-* Utility functions
+* Closed terms
 ***)
 
-let typeof_cnst c =
-  match c with
-    Cnum _ -> mk_num_ty ()
-  | Cbool _ -> mk_bool_ty ()
-
-(*** closed terms ***)
-
-exception TermCheck of term
-
-let rec is_closed_aux env t =
+let rec is_closed_env env t =
   match t with
-    App(l, r) -> 
-      is_closed_aux env l;
-      is_closed_aux env r
-  | Typed(a, _) -> 
-      is_closed_aux env a
-  | Qnt(q, b) -> 
-      let nenv=bind (Bound(q)) (mk_bool true) env
+    Basic.App(l, r) -> 
+      (is_closed_env env l && is_closed_env env r)
+  | Basic.Typed(a, _) -> 
+      is_closed_env env a
+  | Basic.Qnt(q, b) -> 
+      let env1 = bind (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env
       in 
-      is_closed_aux nenv b
-  | Bound(q) -> 
-      (try ignore(find t env)
-       with Not_found -> raise (TermCheck t))
-  | _ -> ()
+      is_closed_env env1 b
+  | Basic.Meta(_) -> true
+  | Basic.Bound(_) -> member t env
+  | Basic.Free(_) -> member t env
+  | _ -> true
 
-let is_closed_scope env t =
-  try is_closed_aux env t; true
-  with TermCheck _ -> false
+let is_closed vs t = 
+  (* add bound terms of [vs] to tbl *)
+  let env = 
+    List.fold_left 
+      (fun env x -> 
+	if ((is_bound x) or (is_free x))
+	then bind x (mk_free "" (Gtypes.mk_null())) env
+	else env) (empty_subst()) vs
+  in 
+  try is_closed_env env t
+  with _ -> false
 
-let is_closed t = 
-  try is_closed_aux (empty_subst()) t; true
-  with TermCheck _ -> false
-      
-let close_term t = 
-  let memo = empty_table()
-  and qnts = ref []
-  and mk_univ q = 
-    let (_, n, ty) = Basic.dest_binding q
-    in Basic.mk_binding Basic.All n ty
+
+(**
+   [close_term qnt free trm]: Close term [trm]. Make variables bound
+   to quantifiers of kind [qnt] to replace free variables and bound
+   variables with no binding quantifier and for which [free] is true.
+ *)
+let ct_free _ = true
+
+let close_term ?(qnt=Basic.All) ?(free= ct_free) trm=
+  let rec close_aux env vs t=
+    match t with
+      Basic.Id _ -> (t, env, vs)
+    | Basic.Meta _ -> (t, env, vs)
+    | Basic.Bound(_) -> 
+	if(member t env)
+	then (t, env, vs)
+	else 
+	  if(free t) 
+	  then (t, env, t::vs) 
+	  else (t, env, vs)
+    | Basic.Free(_) -> (t, env, t::vs)
+    | Basic.App(f, a) ->
+	let f1, env1, vs1 = close_aux env vs f
+	in 
+	let a1, env2, vs2= close_aux env1 vs1 a
+	in 
+	(Basic.App(f1, a1), env2, vs2)
+    | Basic.Qnt(q, b) ->
+	let (b1, env1, vs1) = 
+	  close_aux (bind (Basic.Bound(q)) (Basic.Bound(q)) env) vs b
+	in (Basic.Qnt(q, b1), env, vs1)
+    | Basic.Const _ -> (t, env, vs)
+    | Basic.Typed(b, ty) ->
+	let b1, env1, vs1 = close_aux env vs b
+	in 
+	(Basic.Typed(b1, ty), env1, vs1)
   in 
-  let rec close_aux x =
-    match x with
-      Qnt(q, b) ->
-	ignore(table_add (Bound q) (Bound q) memo);
-	close_aux b
-    | Bound(q) ->
-	(try ignore(table_find x memo)
-	 with Not_found ->
-	   let nq = mk_univ q
-	   in 
-	     ignore(table_add x (Bound nq) memo);
-	     qnts:=nq::!qnts)
-    | Typed(tr, _) -> close_aux tr
-    | App(f, a) -> close_aux f; close_aux a
-    | _ -> ()
+  let (nt, env, vars) =  close_aux (empty_subst()) [] trm
   in 
-  close_aux t; 
-  List.fold_left 
-    (fun b q-> Qnt(q, b)) t !qnts
+  let make_qnts qnt (env, ctr, bs) t =
+    let qname = Lib.int_to_name ctr
+    in 
+    let qty = Gtypes.mk_var qname
+    in 
+    let qbind = Basic.mk_binding qnt qname qty
+    in 
+    let qtrm = mk_bound qbind
+    in 
+    (bind t qtrm env, ctr+1, qbind::bs)
+  in 
+  let sb, _, binders = 
+    List.fold_left (make_qnts qnt) (empty_subst(), 0, []) vars
+  in 
+  rebuild_qnt (List.rev binders) (subst sb trm)
+
+
 
 (*** Generalising terms ***)
 
@@ -514,3 +526,308 @@ let gen_term bs trm =
       trm
   in 
   Term.rebuild_qnt qnts trm1
+
+
+(***
+* Resolving names 
+***)
+
+(**
+ [in_scope]: Check that term is in scope.
+*)
+let in_scope memo scp trm =
+  let lookup_id n = 
+    (try (Lib.find n memo)
+    with Not_found -> 
+      if (Scope.in_scope scp n) 
+      then Lib.add n true memo else raise Not_found)
+  in
+  let rec in_scp_aux t =
+    match t with
+      Id(id, ty) -> 
+	ignore(lookup_id (Ident.thy_of id));
+	Gtypes.in_scope memo scp ty
+    | Qnt(_, b) ->
+	ignore(Gtypes.in_scope memo scp (get_binder_type t));
+	in_scp_aux b
+    | Bound(_) ->
+	Gtypes.in_scope memo scp (get_binder_type t)
+    | Meta(q) -> 
+	if Scope.is_meta scp q 
+	then true
+	else raise Not_found
+    | Typed(tr, ty) ->
+	ignore(in_scp_aux tr);
+	Gtypes.in_scope memo scp ty
+    | App(a, b) ->
+	ignore(in_scp_aux a);
+	in_scp_aux b
+    | Free(_) -> raise Not_found
+    | _ -> true
+  in 
+  try ignore(in_scp_aux trm); true
+  with Not_found -> false
+
+
+(**
+   [binding_set_names_types ?memo scp binding]
+   Find and set names for types in a binding.
+*)
+let binding_set_names ?(strict=false) ?memo scp binding =
+  let (qnt, qname, qtype) = Basic.dest_binding binding
+  in 
+  Basic.mk_binding qnt qname 
+    (Gtypes.set_name ~strict:false ?memo:memo scp qtype)
+
+(**
+   [set_names_types scp thy trm]
+   find and set long identifiers and types for variables in [trm]
+   theory is [thy] if no long identifier can be found in scope [scp]
+*)
+let set_names scp trm=
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:false ~memo:memo s t
+  in 
+  let id_memo = Lib.empty_env()
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
+  in 
+  let lookup_id n = 
+    try Lib.find n id_memo
+    with Not_found -> 
+      let nth = Scope.thy_of_term scp n
+      in (ignore(Lib.add n nth id_memo); nth)
+  in 
+  let lookup_type id = 
+    try 
+      Gtypes.rename_type_vars (Lib.find id type_memo)
+    with Not_found -> 
+      let nty = Scope.type_of scp id 
+      in 
+      (ignore(Lib.add id nty type_memo); nty)
+  in 
+  let rec set_aux qnts t=
+    match t with
+      Id(id, ty) -> 
+	let th, n = Ident.dest id
+	in 
+	let nid = 
+	  if(th = Ident.null_thy)
+	  then 
+	    let nth = lookup_id n
+	    in 
+	    Ident.mk_long nth n
+	  else id
+	in 
+	let ty1= set_type_name type_thy_memo scp ty
+	in 
+	let nty =  
+	  (try Some(lookup_type id)
+	  with Not_found -> None)
+	in 	
+	let ret_id = 
+	  match nty with
+	    None -> Id(nid, ty1)
+	  | Some(xty) -> Typed(Id(nid, xty), ty1)
+	in 
+	ret_id
+    | Free(n, ty) -> 
+	(let ty1= set_type_name type_thy_memo scp ty
+	 in 
+	   match try_find (Scope.find_meta scp) n with
+	       None -> 
+		 (try 
+		    let nth1 = lookup_id n 
+		    in 
+		    let nid = Ident.mk_long nth1 n
+		    in 
+		    let nty = 
+		      try Some(lookup_type nid)
+		      with Not_found -> None
+		    in 
+		      match nty with
+			  None -> Id(nid, ty1)
+			| Some(xty) -> Typed(Id(nid, xty), ty1)
+		  with Not_found -> Free(n, ty1))
+	     | Some(q) -> Meta(q))
+    | Qnt(q, b) -> 
+	let nq = binding_set_names ~memo:type_thy_memo scp q
+	in 
+	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	Qnt(nq, set_aux qnts1 b)
+    | Typed(tt, tty) -> 
+	let tty1 = set_type_name type_thy_memo scp tty
+	in 
+	Typed(set_aux qnts tt, tty1)
+    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+    | Meta(q) -> 
+	if(Scope.is_meta scp q) 
+	then t 
+	else 
+	  (raise 
+	     (term_error "Meta variable occurs outside binding" [t]))
+    | Bound(q) -> 
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some(x) -> x
+	  | None -> 
+	      (raise 
+		 (term_error "Bound variable occurs outside binding" [t])))
+    | _ -> t
+  in set_aux (empty_subst()) trm
+
+(**
+   [resolve_closed_term scp trm]: resolve names and types in closed
+   term [trm] in scope [scp].
+*)
+let resolve_closed_term scp trm=
+  let id_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env() 
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
+  in 
+  let lookup_id scp ident ty =
+    let lookup_name n = 
+      try Lib.find n id_memo
+      with Not_found -> 
+	let nth = Scope.thy_of_term scp n
+	in 
+	  (ignore(Lib.add n nth id_memo); nth)
+    in 
+    let lookup_type id = 
+      try Gtypes.rename_type_vars (Lib.find id type_memo)
+      with Not_found -> 
+	let ty = Scope.type_of scp id
+	in (ignore(Lib.add id ty type_memo); ty)
+    in 
+    let th, name = Ident.dest ident
+    in 
+    let nid = 
+      if(th = Ident.null_thy)
+      then Ident.mk_long (lookup_name name) name
+      else ident
+    in 
+    let ty0 = lookup_type ident
+    in 	
+    let ntyenv = Gtypes.unify scp ty0 ty
+    in 
+    let nty = Gtypes.mgu ty0 ntyenv
+    in 
+      Id(nid, nty)
+  in 
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:true ~memo:memo s t
+  in 
+  let lookup_var vars t =
+    match Lib.try_find (find t) vars with
+	Some(x) -> (x, vars)
+      | None -> 
+	  let nt = 
+	    (match t with
+		Free(n, ty) -> mk_bound (mk_binding All n ty)
+	      | Bound(q) -> 
+		  mk_bound (mk_binding All (binder_name q) (binder_type q))
+	      | _ -> 
+		  mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
+	  in 
+	    (nt, bind t nt vars)
+  in 
+  let rec set_aux (qnts, vars) t lst=
+    match t with
+      Id(id, ty) -> 
+	let ty1=
+	  try set_type_name type_thy_memo scp ty
+	  with err -> raise (add_term_error "Invalid type" [t] err)
+	in 
+	let ret_id = lookup_id scp id ty1
+	in 
+	(if (in_scope scope_memo scp ret_id)
+	then (ret_id, vars, lst)
+	else raise (term_error "Term not in scope" [t]))
+    | Free(n, ty) -> 
+	(match Lib.try_find (Scope.find_meta scp) n with
+	     Some(b) -> (Meta(b), vars, lst)
+	   | None -> 
+	       set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
+    | Qnt(q, b) -> 
+	let nq = binding_set_names ~memo:type_thy_memo scp q
+	in 
+	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
+	in 
+	(Qnt(nq, nb), nvars, nlst)
+    | Typed(tt, tty) -> 
+	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
+	in 
+	  (Typed(nt, tty), nvars, nlst)
+    | App(f, a) -> 
+	let nf, fvars, flst = set_aux (qnts, vars) f lst
+	in 
+	let (na, avars, alst) = set_aux (qnts, fvars) a flst
+	in 
+	  (App(nf, na), avars, alst)
+    | Meta(q) -> 
+	if (Scope.is_meta scp q) 
+	then (t, vars, lst)
+	else 
+	  (let nt, nvars = lookup_var vars t
+	  in (nt, nvars, ((nt, t)::lst)))
+    | Bound(q) -> 
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some x -> (x, vars, lst)
+	  | None ->
+	      let nt, nvars = lookup_var vars t
+	      in 
+		(nt, nvars, ((nt, t)::lst)))
+    | _ -> (t, vars, lst)
+  in 
+  let (nt, nvars, nlst) =
+    set_aux (empty_subst(), empty_subst()) trm []
+  in 
+    (nt, nlst)
+
+
+(***
+* Substitution
+***)
+
+let rec subst_closed qntenv sb trm =
+  try 
+    let nt = replace sb trm 
+    in 
+    if (is_closed_env qntenv nt)
+    then subst_closed qntenv sb nt
+    else raise (Failure "subst_closed: Not closed")
+  with Not_found ->
+    (match trm with
+      Qnt(q, b) -> 
+	let qntenv1 = bind (Bound q) (mk_free "" (Gtypes.mk_null())) qntenv
+	in 
+	Qnt(q, subst_closed qntenv1 sb b)
+    | App(f, a) -> 
+	App(subst_closed qntenv sb f, subst_closed qntenv sb a)
+    | Typed(t, ty) -> Typed(subst_closed qntenv sb t, ty)
+    | _ -> trm)
+
+let subst_equiv scp term lst = 
+  let repl t ls = 
+    Lib.try_app (Lib.assocp (alpha_equals scp t)) ls
+  in 
+  let rec subst_aux qntenv trm = 
+    match (repl trm lst) with
+      Some(x) -> 
+	if (is_closed_env qntenv x)
+	then x
+	else raise (Failure "subst_equiv: Not closed")
+    | None -> 
+	(match trm with
+	  Qnt(q, b) ->  
+	    let qntenv1=Term.bind (Bound q) (Term.mk_short_ident "") qntenv
+	    in 
+	    Qnt(q, subst_aux qntenv1 b)
+	| App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
+	| Typed(t, ty) -> Typed(subst_aux qntenv t, ty)
+	| _ -> trm)
+  in 
+  subst_aux (Term.empty_subst()) term

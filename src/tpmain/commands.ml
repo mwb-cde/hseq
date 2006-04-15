@@ -383,9 +383,9 @@ let typedef ?pp ?simp ?thm ?rep ?abs tydef =
 let dest_defn_term trm=
   let err()= failwith "Badly formed definition"
   in 
-  if Logicterm.is_equality trm 
+  if Lterm.is_equality trm 
   then
-    let (lhs, rhs)=Logicterm.dest_equality trm
+    let (lhs, rhs)=Lterm.dest_equality trm
     in 
     let (f, args) =
       if(Term.is_fun lhs)

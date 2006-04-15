@@ -28,7 +28,7 @@ MLHEADERS = $(foreach f, $(FILES), $(f).mli)
 CODE = $(foreach f, $(FILES), $(f).cmo)
 
 # NATCODE: the list of native code (.cmx) files 
-NATCODE = $(foreach f, $(FILES), $(f).cmx)
+NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
 
 ###
 # Generated libraries

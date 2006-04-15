@@ -14,10 +14,10 @@ let add_error s l err = Term.add_term_error s l err
 
 
 (* Term identifiers *)
-let num_thy = Logicterm.nums_thy
+let num_thy = Lterm.nums_thy
 
-let bool_type = Logicterm.mk_bool_ty()
-let num_type = Logicterm.mk_num_ty()
+let bool_type = Lterm.mk_bool_ty()
+let num_type = Lterm.mk_num_ty()
 
 let plusid = Ident.mk_long num_thy "plus"
 let minusid = Ident.mk_long num_thy "minus"
@@ -63,7 +63,7 @@ let typing_typecheck scp x ty =
     ignore (Typing.typecheck_top scp (Gtypes.empty_subst()) x ty)
 
 let is_equals scp ty f a b = 
-  if f=Logicterm.equalsid
+  if f=Lterm.equalsid
   then 
     try 
       (typing_typecheck scp a ty;
@@ -177,6 +177,11 @@ let numterm_to_expr var_env scp t =
     | Basic.Const(_) -> 
 	raise (error "Badly formed expression: not a number" [x])
     | Basic.Qnt(_) -> raise (error "Badly formed expression: quantifier" [x])
+    | Basic.Meta(_) ->
+	  (typing_typecheck scp x (num_type);
+	   let c, env1=add_var env x
+	   in 
+	   (Exprs.Var(c), env1))
     | Basic.Bound(_) ->
 	  (typing_typecheck scp x (num_type);
 	   let c, env1=add_var env x
@@ -291,7 +296,7 @@ let comprsn_to_term env cfn a b =
   match cfn with
     Supinf.Equals -> 
       Term.mk_fun 
-	Logicterm.equalsid 
+	Lterm.equalsid 
 	[(expr_to_numterm env a); (expr_to_numterm env b)]
   | Supinf.Leq -> 
       Term.mk_fun leqid 
@@ -340,11 +345,11 @@ let mk_bool_equals x =
 
 (* Identifiers constructing propositions *)
 let bool_fns =
-  [ Logicterm.notid, mk_not;
-    Logicterm.andid, mk_and;
-    Logicterm.orid, mk_or;
-    Logicterm.iffid, mk_iff;
-    Logicterm.impliesid, mk_implies]
+  [ Lterm.notid, mk_not;
+    Lterm.andid, mk_and;
+    Lterm.orid, mk_or;
+    Lterm.iffid, mk_iff;
+    Lterm.impliesid, mk_implies]
     
 let is_bool_fn x = List.mem_assoc x bool_fns
 let get_bool_fn scp f args = 
@@ -418,6 +423,11 @@ let bterm_to_prop scp bvar_env nvar_env t =
 	 let c, benv1=add_var benv x
 	 in 
 	 (Prop.Var(c), benv1, nenv))
+    | Basic.Meta(b) ->
+	(typing_typecheck scp x (bool_type);
+	 let c, benv1=add_var benv x
+	 in 
+	 (Prop.Var(c), benv1, nenv))
 
 (*
 	let (q, _, qty) = Basic.dest_binding b
@@ -446,18 +456,18 @@ let prop_to_bterm benv nenv e =
   let rec conv_aux t =
     match t with
       Prop.Bool(b) -> 
-	if b then Logicterm.mk_true else Logicterm.mk_false
-    | Prop.Not(a) -> Logicterm.mk_not (conv_aux a)
+	if b then Lterm.mk_true else Lterm.mk_false
+    | Prop.Not(a) -> Lterm.mk_not (conv_aux a)
     | Prop.And(a, b) -> 
-	Logicterm.mk_and (conv_aux a) (conv_aux b)
+	Lterm.mk_and (conv_aux a) (conv_aux b)
     | Prop.Or(a, b) -> 
-	Logicterm.mk_or (conv_aux a) (conv_aux b)
+	Lterm.mk_or (conv_aux a) (conv_aux b)
     | Prop.Implies(a, b) -> 
-	Logicterm.mk_implies (conv_aux a) (conv_aux b)
+	Lterm.mk_implies (conv_aux a) (conv_aux b)
     | Prop.Iff(a, b) -> 
-	Logicterm.mk_iff (conv_aux a) (conv_aux b)
+	Lterm.mk_iff (conv_aux a) (conv_aux b)
     | Prop.Equals(a, b) -> 
-	Logicterm.mk_equality (conv_aux a) (conv_aux b)
+	Lterm.mk_equality (conv_aux a) (conv_aux b)
     | Prop.Bexpr(c, a, b) -> 
 	comprsn_to_term nenv c a b
     | Prop.Var(i) -> get_index benv i
@@ -515,14 +525,14 @@ let reduce_conv scp trm =
   in 
   Logic.mk_axiom 
     (Formula.make scp 
-       (Logicterm.gen_term [] (Logicterm.mk_equality trm nt)))
+       (Lterm.gen_term [] (Lterm.mk_equality trm nt)))
 
 (*
 let reduce_conv scp trm =
   let nt = simp_term_basic scp trm
   in 
   Logic.mk_axiom 
-    (Formula.make scp (Logicterm.close_term (Logicterm.mk_equality trm nt)))
+    (Formula.make scp (Lterm.close_term (Lterm.mk_equality trm nt)))
 *)
 
 (*
@@ -532,7 +542,7 @@ let simp_rewrite scp f =
   let nt = simp_term_basic scp t
   in 
   Logic.mk_axiom 
-    (Formula.make scp (Logicterm.close_term (Logicterm.mk_equality t nt)))
+    (Formula.make scp (Lterm.close_term (Lterm.mk_equality t nt)))
 let simp_conv scp trm = 
   let nt = simp_term_basic scp trm
   in 
@@ -575,18 +585,18 @@ let decide_term_basic scp t =
 let decide_conv scp trm = 
   let result = 
     if(decide_term_basic scp trm)
-    then Logicterm.mk_true
-    else Logicterm.mk_false
+    then Lterm.mk_true
+    else Lterm.mk_false
   in 
   let ntrm=
-    Logicterm.gen_term [] (Logicterm.mk_equality trm result)
+    Lterm.gen_term [] (Lterm.mk_equality trm result)
   in 
   Logic.mk_axiom (Formula.make scp ntrm)
 
 (*
 let decide_term scp t =
-  Logicterm.close_term 
-    (Logicterm.mk_equality t (Logicterm.mk_bool (decide_term_basic scp t)))
+  Lterm.close_term 
+    (Lterm.mk_equality t (Lterm.mk_bool (decide_term_basic scp t)))
 *)
 (**
    [decide_rewrite scp f]: Decide whether formula [f] is true, false
@@ -642,6 +652,7 @@ let rec is_numterm scp trm =
   | Basic.Const(Basic.Cnum _) -> true
   | Basic.Const _ -> false
   | Basic.Bound _ -> has_num_type scp trm
+  | Basic.Meta _ -> has_num_type scp trm
   | Basic.Free _ -> has_num_type scp trm
   | Basic.Id _ -> has_num_type scp trm
   | Basic.App _ -> 
@@ -665,6 +676,7 @@ let rec is_compterm scp trm =
   match trm with
     Basic.Typed(t, _) -> is_compterm scp t
   | Basic.Bound _ -> false
+  | Basic.Meta _ -> false
   | Basic.Free _ -> false
   | Basic.Id _ -> false
   | Basic.Const _ -> false
@@ -691,6 +703,7 @@ let rec is_boolterm scp trm =
     Basic.Typed(t, _) -> is_boolterm scp t
   | Basic.Const _ -> has_bool_type scp trm
   | Basic.Bound _ -> has_bool_type scp trm
+  | Basic.Meta _ -> has_bool_type scp trm
   | Basic.Free _ -> has_bool_type scp trm
   | Basic.Id _ -> has_bool_type scp trm
   | Basic.App _ -> 
@@ -715,8 +728,8 @@ let rec is_boolterm scp trm =
 let is_presburger scp trm = 
   let qnts, body = Term.strip_qnt Basic.All trm
   in 
-  ((not (Logicterm.is_true trm))
-    && (not (Logicterm.is_false trm))
+  ((not (Lterm.is_true trm))
+    && (not (Lterm.is_false trm))
     && (is_boolterm scp body))
 
 (** 
@@ -761,10 +774,10 @@ let simp_decide_conv scp asms trm=
     | (x::xs) ->
 	  let qnts, body = Term.strip_qnt Basic.All trm
 	  in 
-	  let asm = List.fold_left Logicterm.mk_and x xs
+	  let asm = List.fold_left Lterm.mk_and x xs
 	  in 
 	  Term.rebuild_qnt qnts
-	    (Logicterm.mk_implies asm body)
+	    (Lterm.mk_implies asm body)
   in 
   if(is_presburger scp trm)
   then 

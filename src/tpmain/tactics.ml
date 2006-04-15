@@ -96,7 +96,7 @@ let extract_consts vars env=
 	try 
 	  let nv = Term.find (Basic.Bound x) env
 	  in 
-	  if(Term.is_closed [] nv)
+	  if(Lterm.is_closed [] nv)
 	  then extract_aux xs (nv::cnsts)
 	  else cnsts
 	with 
@@ -779,7 +779,7 @@ let find_match_asm typenv t sq=
   let scp = Logic.Sequent.scope_of sq
   and asms = Logic.Sequent.asms sq
   in 
-  let t1 = Term.set_names scp t
+  let t1 = Lterm.set_names scp t
   in let vars = Term.get_free_vars t1
   in let varp x = 
     try (ignore(List.find (Term.equals x) vars); true)
@@ -790,7 +790,7 @@ let find_match_asm typenv t sq=
 let find_match_concl typenv t sq=
   let scp = Logic.Sequent.scope_of sq
   and concls = Logic.Sequent.concls sq
-  in let t1=Term.set_names scp t
+  in let t1= Lterm.set_names scp t
   in let vars = Term.get_free_vars t1
   in let varp x = 
     try (ignore(List.find (Term.equals x) vars); true)
@@ -883,7 +883,7 @@ let rewrite_control
 let is_rewrite_formula t=
   let (_, t1) = Term.strip_qnt Basic.All t
   in 
-  Logicterm.is_equality t1
+  Lterm.is_equality t1
 
 
 (** 
@@ -900,14 +900,14 @@ let conv_rule scp conv thm =
   let (qs, lhs, rhs) = 
     let (qs, body) = Term.strip_qnt Basic.All (Logic.term_of rule)
     in 
-    let (l, r) = Logicterm.dest_equality body
+    let (l, r) = Lterm.dest_equality body
     in 
     (qs, l, r)
   in 
   let goal_term = 
     match qs with 
       [] -> rhs
-    | _ -> Term.close_term Basic.All (fun _ -> true) rhs
+    | _ -> Lterm.close_term rhs
   in 
   let goal = mk_goal ~info:info scp (Formula.make scp goal_term)
   in 
@@ -1040,7 +1040,7 @@ let pure_rewrite_rule plan scp thm =
 let dest_term x p=
   let qs, b = Term.strip_qnt Basic.All x
   in 
-  let lhs, rhs= Logicterm.dest_equality b
+  let lhs, rhs= Lterm.dest_equality b
   in 
   (qs, lhs, rhs, p)
 
