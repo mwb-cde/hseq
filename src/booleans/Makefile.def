@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = boollib
+FILES = boolPP baseTheory boollib
 
 # HEADERS: the list of header (.cmi) files 
 HEADERS = $(foreach f, $(FILES), $(f).cmi)
@@ -33,7 +33,7 @@ NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = 
+LIBFILES = boollib
 
 # BYTELIBS: The list of library (.cma) files built
 BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
