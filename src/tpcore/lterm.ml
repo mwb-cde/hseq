@@ -680,6 +680,129 @@ let set_names scp trm=
    [resolve scp trm]: resolve names and types in term [trm] in [lst]
    in scope [scp].
 *)
+
+let resolve_terms scp trmlist =
+  let id_memo = Lib.empty_env()
+  and scope_memo = Lib.empty_env() 
+  and type_memo = Lib.empty_env()
+  and type_thy_memo = Lib.empty_env()
+  in 
+  let lookup_id scp ident ty =
+    let lookup_name n = 
+      try Lib.find n id_memo
+      with Not_found -> 
+	let nth = Scope.thy_of_term scp n
+	in 
+	  (ignore(Lib.add n nth id_memo); nth)
+    in 
+    let lookup_type id = 
+      try Gtypes.rename_type_vars (Lib.find id type_memo)
+      with Not_found -> 
+	let ty = Scope.type_of scp id
+	in (ignore(Lib.add id ty type_memo); ty)
+    in 
+    let th, name = Ident.dest ident
+    in 
+    let nid = 
+      if(th = Ident.null_thy)
+      then Ident.mk_long (lookup_name name) name
+      else ident
+    in 
+    let ty0 = lookup_type ident
+    in 	
+    let ntyenv = Gtypes.unify scp ty0 ty
+    in 
+    let nty = Gtypes.mgu ty0 ntyenv
+    in 
+      Id(nid, nty)
+  in 
+  let set_type_name memo s t =
+    Gtypes.set_name ~strict:true ~memo:memo s t
+  in 
+  let lookup_var vars t =
+    match Lib.try_find (find t) vars with
+	Some(x) -> (x, vars)
+      | None -> 
+	  let nt = 
+	    (match t with
+		Free(n, ty) -> mk_bound (mk_binding All n ty)
+	      | Bound(q) -> 
+		  mk_bound (mk_binding All (binder_name q) (binder_type q))
+	      | _ -> 
+		  mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
+	  in 
+	    (nt, bind t nt vars)
+  in 
+  let rec set_aux (qnts, vars) t lst=
+    match t with
+      Id(id, ty) -> 
+	let ty1=
+	  try set_type_name type_thy_memo scp ty
+	  with err -> raise (add_term_error "Invalid type" [t] err)
+	in 
+	let ret_id = lookup_id scp id ty1
+	in 
+	(if (in_scope scope_memo scp ret_id)
+	then (ret_id, vars, lst)
+	else raise (term_error "Term not in scope" [t]))
+    | Free(n, ty) -> 
+	(match Lib.try_find (Scope.find_meta scp) n with
+	     Some(b) -> (Meta(b), vars, lst)
+	   | None -> 
+	       set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
+    | Qnt(q, b) -> 
+	let nq = binding_set_names ~memo:type_thy_memo scp q
+	in 
+	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
+	in 
+	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
+	in 
+	(Qnt(nq, nb), nvars, nlst)
+    | Typed(tt, tty) -> 
+	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
+	in 
+	  (Typed(nt, tty), nvars, nlst)
+    | App(f, a) -> 
+	let nf, fvars, flst = set_aux (qnts, vars) f lst
+	in 
+	let (na, avars, alst) = set_aux (qnts, fvars) a flst
+	in 
+	  (App(nf, na), avars, alst)
+    | Meta(q) -> 
+	if (Scope.is_meta scp q) 
+	then (t, vars, lst)
+	else 
+	  (let nt, nvars = lookup_var vars t
+	  in (nt, nvars, ((nt, t)::lst)))
+    | Bound(q) -> 
+	(match Lib.try_find (find (Bound(q))) qnts with
+	    Some x -> (x, vars, lst)
+	  | None ->
+	      let nt, nvars = lookup_var vars t
+	      in 
+		(nt, nvars, ((nt, t)::lst)))
+    | _ -> (t, vars, lst)
+  in 
+  let rec resolve_aux (vars, lst) trms rslt =
+    match trms with
+	[] -> (List.rev rslt, vars, lst)
+      | (t::ts) -> 
+	  let (nt, nvars, nlst) =
+	    set_aux (empty_subst(), vars) t lst
+	  in 
+	    resolve_aux (nvars, nlst) ts (nt::rslt)
+  in 
+    resolve_aux (empty_subst(), []) trmlist []
+
+
+let resolve scp trm = 
+  let (trmlst, vars, lst) = resolve_terms scp [trm]
+  in 
+    match trmlst with 
+	[] -> failwith "Lterm.resolve"
+      | (x::_) -> (x, lst)
+
+(***
 let resolve scp trm=
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env() 
@@ -786,6 +909,7 @@ let resolve scp trm=
     set_aux (empty_subst(), empty_subst()) trm []
   in 
     (nt, nlst)
+***)
 
 
 (***
