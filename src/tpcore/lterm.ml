@@ -677,10 +677,10 @@ let set_names scp trm=
   in set_aux (empty_subst()) trm
 
 (**
-   [resolve_closed_term scp trm]: resolve names and types in closed
-   term [trm] in scope [scp].
+   [resolve scp trm]: resolve names and types in term [trm] in [lst]
+   in scope [scp].
 *)
-let resolve_closed_term scp trm=
+let resolve scp trm=
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env() 
   and type_memo = Lib.empty_env()

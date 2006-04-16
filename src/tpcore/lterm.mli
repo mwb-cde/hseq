@@ -310,36 +310,35 @@ val set_names: Scope.t  -> term -> term
    binders.
 *)
 
-val resolve_closed_term: 
+val resolve: 
   Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
-(**
-   [resolve_closed_term scp trm]: Resolve names and variables in
-   term [trm].
+    (**
+       [resolve scp trm]: Resolve names and variables in term [trm].
      
-   {ul
-   {- Replace each free variable [Var(x, _)] in [trm] with the term
-   associated with [x] in scope [scp].}
-   {- Expands all type names to their long form (theory+name).}
-   {- Expands all identifier terms ([Id]) to their long form
-   (theory+name).}
-   {- Looks up the type [ty'] of each identifier term ([Id(n,
-   ty)]). 
+        {ul
+        {- Replace each free variable [Var(x, _)] in [trm] with the term
+        associated with [x] in scope [scp].}
+        {- Expands all type names to their long form (theory+name).}
+        {- Expands all identifier terms ([Id]) to their long form
+        (theory+name).}
+        {- Looks up the type [ty'] of each identifier term ([Id(n,
+        ty)]). 
 
-   Replaces the term with [Typed(Id(n, ty), ty')], setting
-   the type [ty'] of the identifier while retaining any information
-   in the given type [ty].}}
+        Replaces the term with [Typed(Id(n, ty), ty')], setting
+        the type [ty'] of the identifier while retaining any information
+        in the given type [ty].}}
 
-   Replaces each free or bound variable which can't be resolved with a
-   universally bound variable. Returns the resolved term, the list of
-   unknown variables and their replacments.
+        Replaces each free or bound variable which can't be resolved with a
+        universally bound variable. Returns the resolved term, the list of
+        unknown variables and their replacments.
 
-   Fails if
-   {ul
-   {- Any type name is not declared in scope [scp].}
-   {- Any identifier is not declared in [scp].}
-   {- Any free variable can't be replaced with an identifier in scope [scp].}
-   {- Any bound variable occurs outside its binding term.}}
-*)
+        Fails if
+        {ul
+        {- Any type name is not declared in scope [scp].}
+        {- Any identifier is not declared in [scp].}
+        {- Any free variable can't be replaced with an identifier in scope [scp].}
+        {- Any bound variable occurs outside its binding term.}}
+     *)
 
 (** {5 Substitution} *)
 

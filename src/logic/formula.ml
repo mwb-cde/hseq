@@ -51,10 +51,10 @@ let mk_scoped_formula scp f = { thy = Scope.marker_of scp; term = f }
 (** Convert a term to a formula *)
 
 let resolve_term ?(strict=false) scp trm =
-  Lterm.resolve_closed_term scp trm
+  Lterm.resolve scp trm
 
 let prepare ?(strict=false) scp tyenv trm =
-  let t1, lst = Lterm.resolve_closed_term scp trm
+  let t1, lst = Lterm.resolve scp trm
   in 
     if (strict && not (lst=[])) 
     then
@@ -83,7 +83,7 @@ let make_full ?(strict=false) scp tyenv t=
 
 (*
   let t1=
-    try Term.resolve_closed_term scp t
+    try Lterm.resolve scp t
     with x -> raise
 	(Report.add_error x
 	   (Term.term_error 
