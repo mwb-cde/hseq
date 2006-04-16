@@ -677,11 +677,11 @@ let set_names scp trm=
   in set_aux (empty_subst()) trm
 
 (**
-   [resolve scp trm]: resolve names and types in term [trm] in [lst]
-   in scope [scp].
+   [resolve_terms scp trmlist]: resolve names and types in each term
+   in the list [trmlist], in scope [scp]. The terms in the list are
+   resolved as if they were all parts of the same term.
 *)
-
-let resolve_terms scp trmlist =
+let resolve_term scp vars varlist trm =
   let id_memo = Lib.empty_env()
   and scope_memo = Lib.empty_env() 
   and type_memo = Lib.empty_env()
@@ -783,24 +783,16 @@ let resolve_terms scp trmlist =
 		(nt, nvars, ((nt, t)::lst)))
     | _ -> (t, vars, lst)
   in 
-  let rec resolve_aux (vars, lst) trms rslt =
-    match trms with
-	[] -> (List.rev rslt, vars, lst)
-      | (t::ts) -> 
-	  let (nt, nvars, nlst) =
-	    set_aux (empty_subst(), vars) t lst
-	  in 
-	    resolve_aux (nvars, nlst) ts (nt::rslt)
-  in 
-    resolve_aux (empty_subst(), []) trmlist []
+    set_aux (empty_subst(), vars) trm varlist
 
-
+(**
+   [resolve scp trm]: resolve names and types in term [trm] in [lst]
+   in scope [scp].
+*)
 let resolve scp trm = 
-  let (trmlst, vars, lst) = resolve_terms scp [trm]
+  let (ntrm, vars, lst) = resolve_term scp (empty_subst()) [] trm
   in 
-    match trmlst with 
-	[] -> failwith "Lterm.resolve"
-      | (x::_) -> (x, lst)
+    (ntrm, lst)
 
 (***
 let resolve scp trm=

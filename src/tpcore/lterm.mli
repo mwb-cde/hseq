@@ -310,10 +310,15 @@ val set_names: Scope.t  -> term -> term
    binders.
 *)
 
-val resolve: 
-  Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
-    (**
-       [resolve scp trm]: Resolve names and variables in term [trm].
+        
+val resolve_term: 
+  Scope.t 
+  -> Term.substitution -> (Basic.term * Basic.term) list
+  -> Basic.term 
+  -> (Basic.term * Term.substitution * (Basic.term * Basic.term) list)
+  (**
+       [resolve_term scp vars varlist trm]: Resolve names and
+       variables in term [trm].
      
         {ul
         {- Replace each free variable [Var(x, _)] in [trm] with the term
@@ -324,23 +329,38 @@ val resolve:
         {- Looks up the type [ty'] of each identifier term ([Id(n,
         ty)]). 
 
+        [vars]: an environment binding unknown variables to their
+        replacements. [varlist] is the list to which to add the record
+        of new variables and their bindings.
+
         Replaces the term with [Typed(Id(n, ty), ty')], setting
         the type [ty'] of the identifier while retaining any information
         in the given type [ty].}}
 
-        Replaces each free or bound variable which can't be resolved with a
-        universally bound variable. Returns the resolved term, the list of
-        unknown variables and their replacments.
+        Replaces each free or bound variable which can't be resolved
+        with a universally bound variable. Returns the resolved term,
+        and the unknown variables and their replacments, as a
+        substitution (for the variables) and as a
+        (replacement-variable) list.
 
         Fails if
         {ul
         {- Any type name is not declared in scope [scp].}
         {- Any identifier is not declared in [scp].}
-        {- Any free variable can't be replaced with an identifier in scope [scp].}
+        {- Any free variable can't be replaced with an identifier in
+        scope [scp].}
         {- Any bound variable occurs outside its binding term.}}
-     *)
+          *)
 
-(** {5 Substitution} *)
+val resolve: 
+  Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
+  (**
+       [resolve scp trm]: Resolve names and variables in term [trm].
+       [resolve scp trm] is {!Lterm.resolve_term} [scp
+        (empty_subst()) [] trm].
+   *)
+
+   (** {5 Substitution} *)
 
 val subst_closed: 
   substitution -> substitution
