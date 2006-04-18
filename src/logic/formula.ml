@@ -100,13 +100,13 @@ let make_full ?(strict=false) scp tyenv t=
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
 *)
 
-let make scp ?tyenv t= 
+let make ?strict scp ?tyenv t= 
   let env = 
     match tyenv with
       None -> Gtypes.empty_subst()
     | Some(x) -> x
   in 
-  let (form, _) = make_full scp env t
+  let (form, _) = make_full ?strict scp env t
   in 
   form
 

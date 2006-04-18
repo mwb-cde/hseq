@@ -45,31 +45,45 @@ val make_full:
   -> Gtypes.substitution 
   -> Basic.term -> (t * Gtypes.substitution)
 (**
-   [make_full scp tyenv scp trm]: Make a formula from term [trm] in
-   scope [scp] w.r.t type environment [tyenv]. The theory of the formula
-   is the theory currently in scope. Return the new formula and the
-   updated type environment.
+   [make_full ?(strict=false) scp tyenv trm]: Make a formula from term
+   [trm] in scope [scp] w.r.t type environment [tyenv]. The theory of
+   the formula is the theory currently in scope. Return the new
+   formula and the updated type environment.
    
    {ol 
    {- Replace each free variable [Var(x, _)] in [trm] with the term
-   associated with [x] in scope [scp]. Fail if [x] is not in scope [scp].}
-   {- Fail if any bound variable in [trm] occurs outside its binding term.}
+   associated with [x] in scope [scp]. }
+   {- if [strict=true]: Fail if any bound variable in [trm] occurs
+   outside its binding term or any free variable doesn't resolve to an
+   identifier. }
+   {- if [strict=false]: Replace bound variables occuring outside
+   their binder and free variables which don't resolve to an
+   identifier with a universally quantified variable.}
    {- Fail if any identifier is not in scope.}
    {- Typecheck resulting term, to set correct types. Passing [tyenv]
    to the typechecker.}
    {- Return resulting formula built from resulting term with the type
    substitution obtained from typechecking.}}
-*)
+   *)
 
 
 val make: 
-    Scope.t 
-    -> ?tyenv:Gtypes.substitution -> Basic.term -> t
+   ?strict:bool
+  -> Scope.t 
+  -> ?tyenv:Gtypes.substitution 
+  -> Basic.term -> t
 (**
-   [make scp ?tyenv trm]: Make a formula from term [trm] in scope
+   [make ?strict scp ?tyenv trm]: Make a formula from term [trm] in scope
    [scp] w.r.t type environment [tyenv] if given. If [tyenv] is not
    given, an empty type environment is used. The theory of the formula
    is the theory currently in scope.
+   
+   {- if [strict=true]: Fail if any bound variable in [trm] occurs
+   outside its binding term or any free variable doesn't resolve to an
+   identifier. }
+   {- if [strict=false]: Replace bound variables occuring outside
+   their binder and free variables which don't resolve to an
+   identifier with a universally quantified variable.}
    
    This is a front-end to {!Formula.make_full}.
 *)
