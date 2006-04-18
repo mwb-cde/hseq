@@ -1081,7 +1081,7 @@ module Tactics =
 
 (*** instantiation terms ***)  
     let inst_term scp tyenv t trm =
-      let (fm1, tyenv1) = Formula.make_full scp tyenv trm
+      let (fm1, tyenv1) = Formula.make_full ~strict=true scp tyenv trm
       in 
 	Formula.inst_env scp tyenv1 t fm1
 (*
@@ -1283,7 +1283,7 @@ module Tactics =
       in 
       let nt = Formula.term_of nf
       in 
-      let nasm = (ftag, (Formula.make scp nt))
+      let nasm = (ftag, (Formula.make ~strict:true scp nt))
       in 
       try 
 	let ng = 
