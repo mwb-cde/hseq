@@ -1009,7 +1009,7 @@ let split_tac = splitter_tac
 let flatter_asm_rules =
   [
    (fun inf l -> falseA ~info:inf ~a:l);
-   (fun inf -> Logic.Tactics.negA ~info:inf);
+(*   (fun inf -> Logic.Tactics.negA ~info:inf); *)
    (fun inf -> Logic.Tactics.conjA ~info:inf);
    (fun inf -> Logic.Tactics.existA ~info:inf)
  ]
@@ -2235,19 +2235,12 @@ let unify_in_goal varp atrm ctrm goal =
 *)
     let mini_scatter_tac ?info c goal =
       let asm_rules =
-	[
-	  (fun inf l -> falseA ~info:inf ~a:l); 
-	
-	  (fun inf -> Logic.Tactics.conjA ~info:inf)
-	]
+	[ (fun inf l -> falseA ~info:inf ~a:l) ]
       in 
       let concl_rules =
 	[
 	  (fun inf -> Logic.Tactics.trueC ~info:inf);
-	  
-	  (fun inf -> Logic.Tactics.conjC ~info:inf);
-	  (fun inf -> Logic.Tactics.implC ~info:inf);
-	  (fun inf -> Logic.Tactics.allC ~info:inf)
+	  (fun inf -> Logic.Tactics.conjC ~info:inf)
 	]
       in 
       let main_tac ?info =
@@ -2584,7 +2577,7 @@ let unify_in_goal varp atrm ctrm goal =
 
    See {!Induct.induct_tac}.
 *)
-    let basic_induct_tac c thm goal =
+    let basic_induct_tac ?info c thm goal =
       let tinfo = mk_info()
       in 
       let main_tac c_lbl g =
@@ -2594,13 +2587,13 @@ let unify_in_goal varp atrm ctrm goal =
 	    (fun g1 ->
 	       let a_tag = get_one (aformulas tinfo)
 	       in 
-		 asm_induct_tac (ftag a_tag) c_lbl g1)
+		 asm_induct_tac ?info (ftag a_tag) c_lbl g1)
 	  ] g
       in 
 	main_tac c goal
 
 
-    let induct_tac ?c thm goal =
+    let induct_tac ?info ?c thm goal =
       let targets =
 	match c with
 	    None -> 
@@ -2608,7 +2601,7 @@ let unify_in_goal varp atrm ctrm goal =
 	  | Some(x) -> [x]
       in 
       let main_tac g = 
-	map_first (fun x -> basic_induct_tac x thm) targets g
+	map_first (fun x -> basic_induct_tac ?info x thm) targets g
       in 
 	try main_tac goal
 	with _ -> raise (error "induct_tac: Failed")

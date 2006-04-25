@@ -1110,16 +1110,19 @@ val asm_induct_tac :
 
 
 val basic_induct_tac : 
-  Logic.label -> Logic.thm -> Tactics.tactic
+  ?info:Logic.info
+  -> Logic.label -> Logic.thm -> Tactics.tactic
 (**
     [basic_induct_tac c thm]: Apply induction theorem [thm] to
     conclusion [c].
 
-   @see {!Boollib.InductProof.induct_tac} for details about the induction theorem.
+   @see {!Boollib.InductProof.induct_tac} for details about the
+   induction theorem.
 *)
 
 val induct_tac : 
-  ?c:Logic.label -> Logic.thm -> Tactics.tactic
+  ?info:Logic.info
+  -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (**
    [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
    [c] (or the first
@@ -1135,6 +1138,10 @@ val induct_tac :
    
    The conclusion must be in the form:
    {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
+
+   info: 
+    cformulas=the new conclusions (in arbitray order)
+    subgoals=the new sub-goals (in arbitray order)
 *)
 
 (** {7 Debugging information} *)
@@ -1195,7 +1202,8 @@ val asm_induct_tac :
 
 
 val basic_induct_tac : 
-  Logic.label -> Logic.thm -> Tactics.tactic
+  ?info:Logic.info
+  -> Logic.label -> Logic.thm -> Tactics.tactic
 (**
     [basic_induct_tac c thm]: Apply induction theorem [thm] to
     conclusion [c].
@@ -1205,7 +1213,8 @@ val basic_induct_tac :
 *)
 
 val induct_tac : 
-  ?c:Logic.label -> Logic.thm -> Tactics.tactic
+  ?info:Logic.info
+  -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (**
    [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
    [c] (or the first
