@@ -222,12 +222,11 @@ val beta_reduce :  term -> term
 
 (** {7 Eta conversion} *)
 
-val eta_conv: term -> Basic.gtype -> term -> term 
+val eta_conv: term list -> term -> term 
 (** 
-   Apply the eta-conversion rule. [eta_conv x ty t] is [((%
-   (v:ty). t[v/x]) x)].
+    [eta_conv xs term]: Apply eta-conversion. 
+    Return [ (((% a .. b : term) x) .. y) ] where [xs = [ x ; .. ; y] ].
 *)
-
 
 (** {5 Closed terms}
 
@@ -306,7 +305,7 @@ val set_names: Scope.t  -> term -> term
    new [Id].
 
    Free variables which are not found in scope are left in place,
-   unlike {!Lterm.resolve_closed_term} which replaces them with new
+   unlike {!Lterm.resolve_term} which replaces them with new
    binders.
 *)
 

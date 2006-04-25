@@ -100,7 +100,7 @@ let make_full ?(strict=false) scp tyenv t=
 	     (Term.term_error "Formula.make: incorrect types" [t1]))
 *)
 
-let make ?strict scp ?tyenv t= 
+let make ?strict ?tyenv scp t= 
   let env = 
     match tyenv with
       None -> Gtypes.empty_subst()
@@ -479,8 +479,8 @@ let mk_beta_reduce_eq scp tyenv trm =
 
 (*** Eta conversion ***)
 
-let eta_conv scp f ty x = 
-  make scp (Lterm.eta_conv (term_of f) ty (term_of x))
+let eta_conv scp f x = 
+  make scp (Lterm.eta_conv [term_of f] (term_of x))
 
 
 (***

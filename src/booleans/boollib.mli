@@ -1017,15 +1017,213 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
    [trm] must be quantified by [qnt].
  *)
 
-
  ******)
-
-(** {5 Debugging} *)
-
-val get_type_name: Basic.gtype -> Ident.t
 
 (*
 
    val make_false_def: unit -> Logic.thm
    val make_iff_def: unit -> Logic.thm
  *)
+
+
+(** Induction tactics *)
+module InductProof :
+sig
+
+(*-----
+ Name: induct.mli
+ Author: M Wahab <mwahab@users.sourceforge.net>
+ Copyright M Wahab 2006
+----*)
+
+(** Support for inductive proofs *)
+
+(** {5 Utilities} *)
+
+val dest_qnt_implies :
+  Basic.term 
+  -> (Basic.binders list * Basic.term * Basic.term)
+(**
+   [dest_qnt_implies term]: 
+   Split a term of the form [! a .. b : asm => concl] 
+   into [( a .. b, asm, concl)].
+*)
+
+val unify_in_goal :
+  (Basic.term -> bool) 
+  -> Basic.term -> Basic.term -> Logic.node 
+  -> Term.substitution
+(** 
+    [unify_in_goal varp atrm ctrm goal]:
+    Unify [atrm] with [ctrm] in the scope and type environment of [goal].
+    [varp] identifies the variables.
+*)
+
+
+val close_lambda_app :
+  Basic.binders list 
+  -> Basic.term 
+  -> (Basic.term * Basic.term list)
+(**
+   [close_lambda_app term]:
+   From term [((% a1 .. an: B) v1 .. vn)],
+   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn])
+   where the [x1 .. xn] close unbound variables in [B].
+*)
+
+(** {7 Utility tactics} *)
+
+val mini_scatter_tac :
+  ?info:Logic.info -> Logic.label -> Tactics.tactic
+(**
+   [mini_scatter_tac ?info c goal]: Mini scatter tactic for induction.
+
+   Scatter conclusion [c], using [falseA], [conjA], [existA],
+   [trueC], [implC] and [allC]
+*)
+
+val mini_mp_tac :
+  ?info:Logic.info 
+  -> Logic.label -> Logic.label -> Tactics.tactic
+(**
+   [mini_mp_tac ?info asm1 asm2 goal]: Modus Ponens for the induction
+   tactics.
+
+   Apply modus ponens to [asm1 = A => C] and [asm2 = A] to get [asm3 =
+   C]. info: aformulas=[asm3]; subgoals = [goal1]. Fails if [asm2]
+   doesn't match the assumption of [asm1].
+*)
+
+(** {5 The induction tactic [induct_tac]} *)
+
+
+val asm_induct_tac :
+  ?info:Logic.info 
+  -> Logic.label -> Logic.label -> Tactics.tactic
+(**
+   [asm_induct_tac ?info a c]: Apply the induction scheme of
+   assumption [a] to conclusion [c].
+
+   @see {!Boollib.InductProof.induct_tac} for details about the form of the
+   induction scheme.
+*)
+
+
+val basic_induct_tac : 
+  Logic.label -> Logic.thm -> Tactics.tactic
+(**
+    [basic_induct_tac c thm]: Apply induction theorem [thm] to
+    conclusion [c].
+
+   @see {!Boollib.InductProof.induct_tac} for details about the induction theorem.
+*)
+
+val induct_tac : 
+  ?c:Logic.label -> Logic.thm -> Tactics.tactic
+(**
+   [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
+   [c] (or the first
+   conclusion to succeed).
+
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P d .. e = (! x .. y : (pred x .. y) => (P d .. e x .. y))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
+*)
+
+(** {7 Debugging information} *)
+
+val induct_tac_bindings :
+  Gtypes.substitution -> Scope.t 
+  -> (Basic.binders list * 'a * Basic.term)
+  -> Basic.term 
+  -> (Gtypes.substitution * Term.substitution)
+(**
+   [induct_tac_bindings tyenv scp aterm cterm]: Extract bindings for
+   the induction theorem in [aterm] from conclusion term [cterm] in
+   type environment [tyenv] and scope [scp].
+
+   [aterm] is in the form [(vars, asm, concl)], obtained by 
+   splitting a theorem of the form [! vars : asm => concl]. 
+
+   Returns an updated type environment and a substitution containing
+   bindings for the variables in [vars], with which to instantiate the
+   induction theorem.
+
+   This function is specialized for use by {!Boollib.InductProof.induct_tac}.
+*)
+
+val solve_rh_tac :
+  ?info:Logic.info 
+  -> Logic.label -> Logic.label -> Tactics.tactic
+(**
+   [solve_rh_tac ?info a c goal]: solve the right sub-goal of an
+   induction tactic([t2]).
+	   
+   Formula [a] is of the form [ ! a .. b: A => C ]
+   Formula [c] is of the form [ ! a .. b x .. y: A => C]
+   or of the form [ ! a .. b: A => (! x .. y : C)] 
+
+   Specialize [c], instantiate [a], 
+   implC [c] to get [a1] and [c1]
+   mini_mp_tac [a] and [a2] to replace [a] with [a3]
+   specialize [c1] again, intantiate [a3]
+   basic [c1] and [a3].
+	   
+   Completely solves the goal or fails.
+*)
+
+end
+
+
+val asm_induct_tac :
+  ?info:Logic.info 
+  -> Logic.label -> Logic.label -> Tactics.tactic
+(**
+   [asm_induct_tac ?info a c]: Apply the induction scheme of
+   assumption [a] to conclusion [c].
+
+   @see {!Boollib.InductProof.induct_tac} for details about the form
+   of the induction scheme.
+*)
+
+
+val basic_induct_tac : 
+  Logic.label -> Logic.thm -> Tactics.tactic
+(**
+    [basic_induct_tac c thm]: Apply induction theorem [thm] to
+    conclusion [c].
+
+   @see {!Boollib.InductProof.induct_tac} for details about the
+   induction theorem.
+*)
+
+val induct_tac : 
+  ?c:Logic.label -> Logic.thm -> Tactics.tactic
+(**
+   [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
+   [c] (or the first
+   conclusion to succeed).
+
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P d .. e = (! x .. y : (pred x .. y) => (P d .. e x .. y))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
+*)
+
+(** {5 Debugging} *)
+
+val get_type_name: Basic.gtype -> Ident.t
+

@@ -87,6 +87,19 @@ let in_simp =
     ++ eq_tac
   ];;
 
+let set_equal =
+  prove_thm "set_equal"
+  << ! A B: (A = B) = (!x: (x in A) = (x in B)) >>
+  [
+    flatten_tac ++ equals_tac ++ scatter_tac
+    --
+      [ 
+	simp;
+	cut_back_tac (thm "extensionality")
+	++ simp_all_tac [defn "in"]
+      ]
+  ];;
+
 let in_add=
   prove_thm ~simp:true "in_add"
   <<
@@ -117,18 +130,28 @@ let in_single =
   << !x a: (x in (single a)) = (x = a) >>
   [ simp_tac [defn "single" ] ];;
 
-let set_equal =
-  prove_thm "set_equal"
-  << ! A B: (A = B) = (!x: (x in A) = (x in B)) >>
+let in_member = 
+  prove_thm ~simp:true "in_member"
+  << 
+    (!x a S: (x = a) => (x in (add a S)))
+    & 
+    (!x a S: ~(x = a) => (x in (add a S) = (x in S)))
+  >>
   [
-    flatten_tac ++ equals_tac ++ scatter_tac
+    split_tac
     --
       [ 
-	simp;
-	cut_back_tac (thm "extensionality")
-	++ simp_all_tac [defn "in"]
+	(* 1 *)
+	flatten_tac ++ simp_tac [defn "add" ];
+	(* 2 *)
+	seq
+	  [
+	    specC ++ implC;
+	    simp_tac [defn "add" ]
+	  ]
       ]
-  ];;
+  ]
+
 
 let add_member = 
   prove_thm ~simp:true "add_member"
@@ -196,7 +219,7 @@ let finite_rules =
      ++ back_tac 
      ++ blast_tac];;
 
-(*
+(***
 let empty_finite = 
   prove_thm ~simp:true "empty_finite"
   << finite {} >>
@@ -219,7 +242,7 @@ let add_finite =
     ++ inst_tac [<< _x >> ; << _A >> ]
     ++ scatter_tac ++ simp_all
   ];;
-*)
+***)
 
 (** Properties of neg *)
 
@@ -383,5 +406,83 @@ theorem ~simp:true "subseteq_absorb"
   [unfold "subseteq" ++ split_tac ++ simp ++ equals_tac ++ blast_tac];;
 
 
-let _ = end_theory();;
 
+(** Finite *)
+
+let union_add = 
+  theorem "union_add"
+  << ! a S T: (union (add a S) T) = (add a (union S T)) >>
+  [
+    once_rewriteC_tac [set_equal];
+    flatten_tac;
+    equals_tac ++ iffC ++ flatten_tac
+    --
+      [
+	(* 1 *)
+	seq
+	  [
+	    cut_back_tac in_add; disjC;
+	    simpA; simpC;
+	    disjC; simpA
+	  ];
+	seq
+	  [
+	    simpC; disjC;
+	    cut_back_tac in_add; disjC;
+	    simpA
+	  ]
+      ]
+  ]
+
+let empty_finite = 
+  theorem ~simp:true "empty_finite"
+  << (finite {}) >>
+    [simp_tac [finite_rules]]
+
+let add_finite = 
+  theorem ~simp:true "add_finite"
+  << !x A: (finite A) => (finite (add x A)) >>
+  [
+    flatten_tac;
+    (cases_tac << _x in _A >>
+       --
+       [
+	 (* 1 *) 
+	 seq
+	   [ 
+	     cut finite_rules ++ conjA;
+	     back_tac;
+	     simp
+	   ];
+	 (* 2 *)
+	 simp
+       ])
+  ]
+
+let union_finite0 = 
+  prove
+  << ! A B : (finite A) => (finite B) => (finite (union A B)) >>
+  (induct_tac (thm "finite_induct")
+      --
+      [
+	(* 1 *)
+	simp;
+	(* 2 *)
+	seq
+	  [
+	    rewrite_tac [union_add];
+	    simp_tac [add_finite]
+	  ]
+      ])
+
+let union_finite = 
+  theorem ~simp:true "union_finite"
+  << ! A B : ((finite A) & (finite B)) => (finite (union A B)) >>
+  [
+    flatten_tac;
+    cut_mp_tac ~inst:[<< _A >>; << _B >>] union_finite0;
+    simp
+  ]
+
+
+let _ = end_theory();;

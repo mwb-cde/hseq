@@ -69,21 +69,22 @@ val make_full:
 
 val make: 
    ?strict:bool
-  -> Scope.t 
   -> ?tyenv:Gtypes.substitution 
+  -> Scope.t 
   -> Basic.term -> t
 (**
-   [make ?strict scp ?tyenv trm]: Make a formula from term [trm] in scope
+   [make ?strict ?tyenv scp trm]: Make a formula from term [trm] in scope
    [scp] w.r.t type environment [tyenv] if given. If [tyenv] is not
    given, an empty type environment is used. The theory of the formula
    is the theory currently in scope.
    
+   {ol
    {- if [strict=true]: Fail if any bound variable in [trm] occurs
    outside its binding term or any free variable doesn't resolve to an
    identifier. }
    {- if [strict=false]: Replace bound variables occuring outside
    their binder and free variables which don't resolve to an
-   identifier with a universally quantified variable.}
+   identifier with a universally quantified variable.}}
    
    This is a front-end to {!Formula.make_full}.
 *)
@@ -288,7 +289,7 @@ val mk_beta_reduce_eq :
 
 (** {7 Eta conversion} *)
 
-val eta_conv: Scope.t -> t -> Basic.gtype -> t -> t
+val eta_conv: Scope.t -> t -> t -> t
 (** Eta abstract a formula. *)
 
 (** {5 Rewriting} *)

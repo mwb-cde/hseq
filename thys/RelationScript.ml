@@ -120,6 +120,41 @@ let tc_induct =
     ++ simp_all
   ];;
 
+let tc_cases0 = 
+  prove
+  << 
+    ! R x y: 
+    (TC R x y) => ((R x y) | ? z: (R x z) & (TC R z y))
+  >>
+  (seq
+  [
+    allC;
+    induct_tac (thm "tc_induct") ++ scatter_tac
+      --
+      [
+	(* 1 *)
+	basic;
+	(* 2 *)
+	seq
+	  [
+	    match_concl << ?z: (_R _x z) & (TC _R z _z) >> (nameC "c");
+	    instC ~c:(!$ "c") [<< _y >>];
+	    simp_tac [tc_rule1]
+	  ];
+	(* 3 *)
+	seq
+	  [
+	    instC [ << _y >>];
+	    show << TC _R _y _z >>
+	      (cut ~inst:[<< _R >>; << _y >> ; << _z1 >>; << _z >>]
+		 tc_rule2
+		 ++ simp);
+	    simp
+	  ]
+      ]
+  ]);;
+  
+
 let tc_cases = 
   theorem "tc_cases"
   << 
@@ -131,33 +166,7 @@ let tc_cases =
     --
       [
 	(* 1 *)
-	cut ~inst:[<< (% x y: (_R x y) | (?z: (_R x z) & (TC _R z y))) >>]
-	  (thm "tc_induct")
-	++ instA [<< _R >>]
-	++ betaA
-	++ scatter_tac
-	--
-	  [
-	    (* 1 *)
-	    basic;
-	    (* 2 *)
-	    (match_concl << ?z: (_R _x1 z) & Y >>
-	       (fun l -> instC ~c:l [<< _y1 >>]))
-	    ++ (show << TC _R _y1 _z >>
-		  (cut (thm "tc_rule1") ++ back_tac ++ basic))
-	    ++ simp;
-	    (* 3 *)
-	    (match_concl << ?z: (_R _x1 z) & Y >> liftC)
-	    ++ instC [<<_y1>>]
-	    ++ (show << TC _R _y1 _z >>
-		 (cut ~inst:[<<_R>>; << _y1 >>; << _z1 >>; << _z >>]
-		    (thm "tc_rule2")
-		  ++ back_tac ++ simp))
-	    ++ simp;
-	    (* 4 *)
-	    mp_tac ++ blast_tac
-	    ++ instC [<< _z >>] ++ simp
-	  ];
+	simp_tac [tc_cases0];
 	(* 2 *)
 	scatter_tac
 	--

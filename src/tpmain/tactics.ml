@@ -88,6 +88,7 @@ let set_info dst (sgs, afs, cfs, cnsts) =
     
 (*** Utility functions ***)
 
+(***
 let extract_consts vars env=
   let rec extract_aux qs cnsts=
     match qs with 
@@ -101,6 +102,21 @@ let extract_consts vars env=
 	  else cnsts
 	with 
 	  Not_found -> cnsts
+  in 
+  List.rev (extract_aux vars [])
+***)
+
+let extract_consts vars env=
+  let rec extract_aux qs cnsts=
+    match qs with 
+      [] -> cnsts
+    | (x::xs) -> 
+	try 
+	  let nv = Term.find (Basic.Bound x) env
+	  in 
+	  extract_aux xs (nv::cnsts)
+	with 
+	  Not_found -> extract_aux xs cnsts
   in 
   List.rev (extract_aux vars [])
 

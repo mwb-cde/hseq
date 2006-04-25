@@ -358,11 +358,46 @@ let beta_reduce trm =
 
 (*** Eta-abstraction ***)
 
+(***
 let eta_conv x ty t=
   let name="a" 
   in let q= mk_binding Basic.Lambda name ty 
   in App((Qnt(q, qsubst [x, Bound(q)] t)), x)
+***)
     
+let eta_conv ts term=
+  let rec eta_aux ctr xs (rslt, env) =
+   match xs with 
+       [] -> (rslt, env)
+     | (x::xss) -> 
+	 let name = Lib.int_to_name ctr
+	 in 
+	 let ty = Gtypes.mk_var (name^"_ty")
+	 in 
+	 let binder = Basic.mk_binding Basic.Lambda name ty
+	 in 
+	 let nv = Term.mk_bound binder
+	 in 
+	 let env1 = Term.bind x nv env
+	 in 
+	   eta_aux (ctr+1) xss ((x, nv)::rslt, env1)
+  in 
+  let (nvars, env) = eta_aux 0 (List.rev ts) ([], Term.empty_subst())
+  in 
+  let body = Term.subst env term
+  in 
+  let fterm = 
+    List.fold_left
+      (fun trm (_, v) -> Term.mk_qnt (Term.dest_bound v) trm) 
+      body nvars
+  in 
+  let rterm = 
+    List.fold_left 
+      (fun trm (a, _) -> Term.mk_app trm a) 
+      fterm (List.rev nvars)
+  in 
+    rterm
+
 
 (*** Closed terms ***)
 
