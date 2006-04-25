@@ -279,15 +279,14 @@ let inl_not_inr =
   theorem "inl_not_inr" 
     << !x y: ~((inl x) = (inr y)) >>
   [
-   flatten_tac
+   flatten_tac 
      ++ cut ~inst:[<< _y >>; << _x >>] inr_not_inl
-     ++ flatten_tac
-     ++ simp
+     ++ simpA
  ];;
 
 let outl_thm = 
   theorem "outl_thm" 
-    << (! x: ((outl (inl x)) = x)) >>
+    << ! x: ((outl (inl x)) = x) >>
   [ 
     flatten_tac
       ++ (unfold "outl")
@@ -442,11 +441,8 @@ let isl_thm =
      ++ blast_tac
      -- 
      [
-      instC [ << _x >>] ++ eq_tac; 
-      cut inr_not_inl
-	++ instA [ << _x >>; << _x1 >>] 
-	++ flatten_tac
-	++ simp
+       instC [ << _x >>] ++ eq_tac; 
+       simpA_tac [inr_not_inl]
     ]
  ];;
 

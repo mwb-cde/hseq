@@ -30,7 +30,7 @@ let true_l2 =
 theorem "true_l2" << !x: x => (x=true) >>
 [flatten_tac ++ (cut_thm "bool_cases") ++ (allA << _x >>) ++ disjA ;
 basic;
-rewrite_tac [thm "false_def"]++replace_tac ++ flatten_tac];;
+rewrite_tac [thm "false_def"]++replace_tac ++ scatter_tac];;
 
 let iff_l1 = theorem "iff_l1" <<!x y: (x = y ) => (x => y)>>
 [flatten_tac ++ replace_tac ++ basic];;
@@ -110,13 +110,13 @@ theorem "false_prop" << !x : (x=false) = ~x >>
      ++ cut ~inst:[ << _x >>] (thm "bool_cases")
      ++ rewrite_tac [thm "false_def"] 
      ++ equals_tac ++ blast_tac 
-     ++ (replace_tac ++ flatten_tac)
+     ++ (replace_tac ++ scatter_tac)
  ];;
 
 let true_not_false = 
 theorem "true_not_false" ~simp:true
     << (true = false) = false >>
-[ rewrite_tac [false_prop] ++ flatten_tac ];;
+[ rewrite_tac [false_prop] ++ scatter_tac ];;
 
 let false_not_true = 
 theorem "false_not_true" ~simp:true
@@ -287,21 +287,23 @@ split_tac ++ flatten_tac
 
 let exists_implies = 
 theorem "exists_implies" 
-<< !P Q: (?x: (P x) => (Q x)) = ((?x: not (P x)) or (?x: Q x)) >> 
-[flatten_tac ++ rewrite_tac [equals_bool] ++ unfold "iff"
-++ split_tac ++ flatten_tac;
-split_tac 
--- 
-[match_concl << ?x: not (_P1 x) >>
- (fun l -> inst_tac [ << _x >>] ~f:l)++ flatten_tac ++ basic; 
-match_concl << ?x: (_Q1 x) >>
- (fun l -> inst_tac [ << _x >>] ~f:l) ++ basic];
-(split_tac ++ flatten_tac)
---
-[match_concl << ?x:  (_P1 x) => X>>
- (fun l -> inst_tac [ << _x >>] ~f:l)++ flatten_tac ++ basic; 
-match_concl << ?x: X => (_Q1 x) >>
- (fun l -> inst_tac [ << _x >>] ~f:l) ++ flatten_tac ++ basic]];;
+  << !P Q: (?x: (P x) => (Q x)) = ((?x: not (P x)) or (?x: Q x)) >> 
+[
+  flatten_tac ++ rewrite_tac [equals_bool] ++ unfold "iff"
+  ++ scatter_tac
+  -- 
+    [
+      match_concl << ?x: not (_P1 x) >>
+	(fun l -> inst_tac [ << _x >>] ~f:l)
+      ++ flatten_tac ++ basic; 
+      match_concl << ?x: (_Q1 x) >>
+	(fun l -> inst_tac [ << _x >>] ~f:l) ++ basic;
+      match_concl << ?x:  (_P1 x) => X>>
+	(fun l -> inst_tac [ << _x >>] ~f:l)++ flatten_tac ++ basic; 
+      match_concl << ?x: X => (_Q1 x) >>
+	(fun l -> inst_tac [ << _x >>] ~f:l) ++ flatten_tac ++ basic
+    ]
+];;
 
 
 let exists_and = 
@@ -371,14 +373,14 @@ theorem "eq_fact" ~simp:true
 let if_true=
 theorem ~simp:true "if_true" 
   <<! t f: (if true then t else f) = t>>
-([
+[
 flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
 ++ (allA << (%(z:'a): ((true => (z=_t)) and ((not  true) => (z=_f)))) >>)
 ++ implA;
-(existC <<_t>>) ++ beta_tac 
-++ split_tac -- [flatten_tac ++ eq_tac; flatten_tac];
+existC <<_t>> ++ beta_tac 
+++ scatter_tac ++ eq_tac;
 beta_tac ++ flatten_tac ++ implA -- [trivial; basic]
-]);;
+];;
 
 let if_false=
 theorem ~simp:true "if_false" <<! t f: (if false then t else f) = f>>
@@ -413,7 +415,7 @@ let if_false1=
 theorem ~simp:true "if_false1" 
 << !x a b: (not x)=> ((if x then a else b)=b) >>
   [
-   flatten_tac 
+   scatter_tac 
      ++ (show << _x = false>>
 	 (cut ~inst:[ << _x >>] false_prop 
 	    ++ replace_tac ++ flatten_tac

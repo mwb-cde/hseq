@@ -1658,7 +1658,7 @@ module Thms =
     let make_double_not_thm () = 
       Commands.prove << !x: x=(not (not x)) >> 
       (flatten_tac ++ rewrite_tac [bool_eq_thm()]
-	 ++ split_tac ++ flatten_tac ++ basic)
+	 ++ scatter_tac ++ basic)
 
     let double_not_thm_var = Lib.freeze make_double_not_thm
     let double_not_thm () = Lib.thaw ~fresh:fresh_thm double_not_thm_var
@@ -1690,7 +1690,7 @@ module Thms =
 		-- 
 		[basic;
 		 rewrite_tac [Commands.thm "false_def"]
-		   ++ replace_tac ++ flatten_tac]) g))
+		   ++ replace_tac ++ negA ++ trueC]) g))
       in
       let rule_true_l3 = 
 	Commands.prove <<! x: x iff (x=true)>>
@@ -1720,7 +1720,7 @@ module Thms =
 	   in 
 	   ((once_rewrite_tac [equals_iff_thm()]
 	       ++ unfold "iff"
-	       ++ split_tac ++ flatten_tac)
+	       ++ scatter_tac)
 	      -- 
 	      [
 	       cut_thm "bool_cases" ++ inst_tac [x_term]

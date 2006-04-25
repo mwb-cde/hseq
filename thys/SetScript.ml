@@ -206,7 +206,7 @@ let finite_induct =
 
 
 let finite_rules = 
-  theorem ~simp:true "finite_rules"
+  theorem ~simp:false "finite_rules"
   << 
     (finite empty)
   & (!x A: (~(x in A) & (finite A)) => (finite (add x A)))
@@ -334,6 +334,56 @@ let union_absorb =
       ++ simp ++ equals_tac ++ blast_tac
     ];;
 
+let union_add_left = 
+  theorem "union_add_left"
+  << ! a S T: (union (add a S) T) = (add a (union S T)) >>
+  [
+    once_rewriteC_tac [set_equal];
+    flatten_tac;
+    equals_tac ++ iffC ++ flatten_tac
+    --
+      [
+	(* 1 *)
+	seq
+	  [
+	    cut_back_tac in_add; disjC;
+	    simpA; simpC;
+	    disjC; simpA
+	  ];
+	seq
+	  [
+	    simpC; disjC;
+	    cut_back_tac in_add; disjC;
+	    simpA
+	  ]
+      ]
+  ]
+
+let union_add_right = 
+  theorem "union_add_right"
+  << ! a S T: (union S (add a T)) = (add a (union S T)) >>
+  [
+    once_rewriteC_tac [set_equal];
+    flatten_tac;
+    equals_tac ++ iffC ++ flatten_tac
+    --
+      [
+	(* 1 *)
+	seq
+	  [
+	    cut_back_tac in_add; disjC;
+	    simpA; simpC;
+	    disjC; simpA
+	  ];
+	seq
+	  [
+	    simpC; disjC;
+	    cut_back_tac in_add; disjC;
+	    simpA
+	  ]
+      ]
+  ]
+
 (** Intersection *)
 
 let in_inter =
@@ -409,31 +459,6 @@ theorem ~simp:true "subseteq_absorb"
 
 (** Finite *)
 
-let union_add = 
-  theorem "union_add"
-  << ! a S T: (union (add a S) T) = (add a (union S T)) >>
-  [
-    once_rewriteC_tac [set_equal];
-    flatten_tac;
-    equals_tac ++ iffC ++ flatten_tac
-    --
-      [
-	(* 1 *)
-	seq
-	  [
-	    cut_back_tac in_add; disjC;
-	    simpA; simpC;
-	    disjC; simpA
-	  ];
-	seq
-	  [
-	    simpC; disjC;
-	    cut_back_tac in_add; disjC;
-	    simpA
-	  ]
-      ]
-  ]
-
 let empty_finite = 
   theorem ~simp:true "empty_finite"
   << (finite {}) >>
@@ -462,7 +487,7 @@ let add_finite =
 let union_finite0 = 
   prove
   << ! A B : (finite A) => (finite B) => (finite (union A B)) >>
-  (induct_tac (thm "finite_induct")
+  (induct_tac (thm "finite_induct") ++ flatten_tac
       --
       [
 	(* 1 *)
@@ -470,7 +495,7 @@ let union_finite0 =
 	(* 2 *)
 	seq
 	  [
-	    rewrite_tac [union_add];
+	    rewrite_tac [union_add_left];
 	    simp_tac [add_finite]
 	  ]
       ])
