@@ -624,13 +624,16 @@ val flatten_tac :
    introduce new subgoals. Resulting tag information, in [?info], may
    contain duplicates.
 
-   In the assumptions, eliminates [false], negation ([not]),
-   conjunction ([&]) and existential quantification ([?]).
+   In the assumptions, eliminates [false], conjunction ([&]) and
+   existential quantification ([?]). 
 
    In the conclusions, eliminates [true], negation ([not]),
    disjunction ([|]), implication ([=>]), universal quantification
    ([!]).
- *)
+   
+   Doesn't eliminate negation in the assumptions (to avoid introducing
+   trivial conclusions). 
+*)
 
 (** 
    {7 Scatter subgoals}
