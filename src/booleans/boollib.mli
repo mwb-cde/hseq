@@ -1111,18 +1111,6 @@ val asm_induct_tac :
    induction scheme.
 *)
 
-
-val basic_induct_tac : 
-  ?info:Logic.info
-  -> Logic.label -> Logic.thm -> Tactics.tactic
-(**
-    [basic_induct_tac c thm]: Apply induction theorem [thm] to
-    conclusion [c].
-
-   @see {!Boollib.InductProof.induct_tac} for details about the
-   induction theorem.
-*)
-
 val induct_tac : 
   ?info:Logic.info
   -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
@@ -1201,18 +1189,6 @@ val asm_induct_tac :
 
    @see {!Boollib.InductProof.induct_tac} for details about the form
    of the induction scheme.
-*)
-
-
-val basic_induct_tac : 
-  ?info:Logic.info
-  -> Logic.label -> Logic.thm -> Tactics.tactic
-(**
-    [basic_induct_tac c thm]: Apply induction theorem [thm] to
-    conclusion [c].
-
-   @see {!Boollib.InductProof.induct_tac} for details about the
-   induction theorem.
 *)
 
 val induct_tac : 

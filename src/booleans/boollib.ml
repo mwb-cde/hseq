@@ -2592,24 +2592,51 @@ let unify_in_goal varp atrm ctrm goal =
       in 
 	main_tac c goal
 
+(**
+   [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
+   [c] (or the first
+   conclusion to succeed).
 
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P d .. e = (! x .. y : (pred x .. y) => (P d .. e x .. y))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
+
+   info: 
+    cformulas=the new conclusions (in arbitray order)
+    subgoals=the new sub-goals (in arbitray order)
+*)
     let induct_tac ?info ?c thm goal =
-      let targets =
-	match c with
-	    None -> 
-	      List.map (ftag <+ drop_formula) (concls_of (sequent goal))
-	  | Some(x) -> [x]
+      let one_tac x g = 
+	try basic_induct_tac ?info x thm g
+	with err -> raise (add_error "induct_tac: Failed" err)
       in 
-      let main_tac g = 
-	map_first (fun x -> basic_induct_tac ?info x thm) targets g
+      let all_tac targets g = 
+	try
+	  map_first (fun x -> basic_induct_tac ?info x thm) targets goal
+	with err -> raise (error "induct_tac: Failed")
       in 
-	try main_tac goal
-	with _ -> raise (error "induct_tac: Failed")
-
-
+      match c with
+	  Some(x) -> one_tac x goal
+	| _ -> 
+	    let targets = 
+	      List.map (ftag <+ drop_formula) 
+		(concls_of (sequent goal))
+	    in 
+	      all_tac targets goal
 end
 
-let asm_induct_tac = InductProof.asm_induct_tac
-let basic_induct_tac = InductProof.basic_induct_tac
-let induct_tac = InductProof.induct_tac
+(*** 
+* Induction tactics 
+***)
 
+(*** induct_tac ***)
+
+let asm_induct_tac = InductProof.asm_induct_tac
+let induct_tac = InductProof.induct_tac
