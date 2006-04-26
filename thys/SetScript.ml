@@ -60,14 +60,14 @@ let diff_def =
   <:def< diff A B = {x: x in A & ~x in B } >>
   ~pp:(230, infixr, Some("/"));;
 
-let subseteq_def = 
-  define
-  <:def< subseteq A B = !x: x in A => (x in B) >>
-      ~pp:(225, infixr, Some("<=")) ;;
-
 let subset_def = 
   define
-  <:def< subset A B = ~(A=B) & (A <= B) >>
+  <:def< subset A B = !x: x in A => (x in B) >>
+      ~pp:(225, infixr, Some("<=")) ;;
+
+let psubset_def = 
+  define
+  <:def< psubset A B = ~(A=B) & (A <= B) >>
   ~pp:(225, infixr, Some("<"));;
 
 let set_simp=
@@ -440,20 +440,75 @@ let inter_trivial =
     ++ equals_tac ++ blast_tac
   ];;
 
-(** Subseteq *)
+(** Subset *)
 
-let subseteq_trival =
-  theorem ~simp:true "subseteq_trivial"
+let subset_trival =
+  theorem ~simp:true "subset_trivial"
   << ! A: (A <= A) = true >>
-  [ unfold "subseteq" ++ flatten_tac ++ equals_tac ++ blast_tac ];;
+  [ unfold "subset" ++ flatten_tac ++ equals_tac ++ blast_tac ];;
 
-let subseteq_absorb =
-theorem ~simp:true "subseteq_absorb"
+let subset_absorb =
+theorem ~simp:true "subset_absorb"
   <<
   (! A: (empty <= A) = true)
   & (! A: (A <= univ) = true)
   >>
-  [unfold "subseteq" ++ split_tac ++ simp ++ equals_tac ++ blast_tac];;
+  [unfold "subset" ++ split_tac ++ simp ++ equals_tac ++ blast_tac];;
+
+
+let subset_refl =
+  theorem ~simp:true "subset_refl"
+  << ! A : A <= A >>
+    [ unfold "subset" ++ flatten_tac ++ basic]
+
+let subset_trans =
+  theorem "subset_trans"
+    << !A B C: ((A <= B) & (B <= C)) => (A <= C) >>
+    [ 
+      unfold "subset" ++ flatten_tac 
+      ++ simp
+    ]
+  
+
+let subset_empty = 
+  theorem ~simp:true "subset_empty"
+    << ! A: (A <= {}) = (A = {}) >>
+  [
+    flatten_tac ++ equals_tac ++ iffC
+      --
+    [
+      (* 1 *)
+      once_rewrite_tac [thm "set_equal"]
+	++ flatten_tac
+	++ unfold "subset"
+	++ equals_tac ++ iffC ++ scatter_tac
+	-- [simp; simp_all];
+      (* 2 *)
+      flatten_tac ++ simp
+    ]
+  ]
+
+let subset_add = 
+  theorem "subset_add" ~simp:true
+  << ! x S T: ~(x in S) => ((S <= (add x T)) = (S <= T)) >>
+  [
+    flatten_tac
+      ++ equals_tac 
+      ++ scatter_tac
+      ++ (unfold "subset")
+      ++ flatten_tac
+      ++ mp_tac
+      ++ (unfold "add")
+      ++ simp_all
+      --
+      [
+	(* 1 *)
+	(match_asm << X | Y >> liftA)
+	++ split_tac ++ simp_all;
+        (* 2 *)
+	simp
+      ]
+  ]
 
 
 
@@ -511,3 +566,4 @@ let union_finite =
 
 
 let _ = end_theory();;
+
