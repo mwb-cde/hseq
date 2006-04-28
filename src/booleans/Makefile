@@ -8,8 +8,8 @@
 
 -include Makefile.def
 
-ifndef CONFIGDIR
-CONFIGDIR = ../config
+ifndef SRCCONFIGDIR
+SRCCONFIGDIR = ../config
 endif
 
-include $(CONFIGDIR)/Makefile.sub
+include $(SRCCONFIGDIR)/Makefile.sub

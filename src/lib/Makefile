@@ -3,7 +3,7 @@
 ##
 
 ifndef CONFIGDIR
-CONFIGDIR = ../config
+CONFIGDIR = ../../config
 endif
 
 # Don't use the default dependency generator

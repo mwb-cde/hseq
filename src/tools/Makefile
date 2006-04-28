@@ -5,7 +5,7 @@ TOOLS = hseqc hseqd
 # Compiler settings
 
 INSTALLDIR ?=../bin
-CONFIGDIR ?= ../config
+CONFIGDIR ?= ../../config
 
 SRCDIR=?.
 OCLIBS=

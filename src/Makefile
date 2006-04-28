@@ -40,9 +40,11 @@ CODE= tpquote.cma util.cma tpcore.cma logic.cma \
 # SRCDIR: The source directory
 SRCDIR ?= .
 
+# BUILDDIR: The top of the build directory (relative to a sub-directory).
+BUILDDIR ?= $(SRCDIR)/..
+
 # CONFIGDIR: The configuration directory
-#CONFIGDIR ?= $(SRCDIR)/config
-CONFIGDIR ?= ../config
+CONFIGDIR ?= $(BUILDDIR)/config
 
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(CONFIGDIR)/data.make
