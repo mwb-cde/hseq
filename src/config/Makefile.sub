@@ -86,11 +86,17 @@ DOCPREV ?=
 # SRCDIR: The source directory (relative to a sub-directory).
 SRCDIR ?= ..
 
+# BUILDDIR: The top of the build directory (relative to a sub-directory).
+BUILDDIR ?= $(SRCDIR)/..
+
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(SRCDIR)/config
+CONFIGDIR ?= $(BUILDDIR)/config
+
+# TOPCONFIGDIR: The toplevel configuration directory
+TOPCONFIGDIR ?= $(BUILDDIR)/config
 
 # CONFIGFILE: The configuration file
-CONFIGFILE ?= $(CONFIGDIR)/data.make
+CONFIGFILE ?= $(TOPCONFIGDIR)/data.make
 
 # HEADERSDIR: The location of the compiled header files
 HEADERSDIR ?= $(SRCDIR)/lib
@@ -149,7 +155,7 @@ endif
 ##
 # Load the OS commands
 ##
-include $(CONFIGDIR)/Makefile.os
+include $(TOPCONFIGDIR)/Makefile.os
 
 ##
 # Compiler definitions
@@ -230,7 +236,7 @@ export OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS)
 export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLCPP : the preprocesor
-export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
+export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(TOPCONFIGDIR) 
 
 # OCAMLMKTOP: Make a toplevel
 export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
