@@ -15,6 +15,10 @@ let _ = compile [] "setLib.ml";;
 
 let _ = add_file ~use:true "setLib.cmo";;
 
+(***
+* Main Definitions
+***)
+
 let set_typedef = typedef <:def<: ('a) set = ('a -> bool) >>;;
 
 let set_def = 
@@ -24,7 +28,6 @@ let empty_def =
   define 
   <:def< (empty:('a)set) = SET(% x: false) >>
   ~pp:(Printer.default_term_prec, Printer.default_term_fixity, Some "{}");;
-
 
 let in_def = 
   define 
@@ -36,6 +39,9 @@ let univ_def =
 
 let add_def = 
   define <:def< add x A = {y: (y = x) | (y in A)}>>;;
+
+let remove_def = 
+  define <:def< remove x A = {y: (y in A) & ~(y = x) }>>;;
 
 let single_def = 
   define <:def< single x  = {y: (y = x)}>>;;
@@ -70,111 +76,10 @@ let psubset_def =
   <:def< psubset A B = ~(A=B) & (A <= B) >>
   ~pp:(225, infixr, Some("<"));;
 
-let set_simp=
-  prove_thm ~simp:true "set_simp"
-  << !x A: ((SET A) x) = (A x) >> 
-  [
-    flatten_tac
-    ++ unfold "SET"
-    ++ eq_tac
-  ];;
 
-let in_simp = 
-  prove_thm ~simp:true "in_simp"
-  << !x A: (x in (SET(A)))  = (A x) >>
-  [
-    flatten_tac ++ unfold "in" ++ unfold "SET"
-    ++ eq_tac
-  ];;
-
-let set_equal =
-  prove_thm "set_equal"
-  << ! A B: (A = B) = (!x: (x in A) = (x in B)) >>
-  [
-    flatten_tac ++ equals_tac ++ scatter_tac
-    --
-      [ 
-	simp;
-	cut_back_tac (thm "extensionality")
-	++ simp_all_tac [defn "in"]
-      ]
-  ];;
-
-let in_add=
-  prove_thm ~simp:true "in_add"
-  <<
-    !x y A: ((x = y) | (x in A)) => (x in (add y A))
-  >>
-  [
-    flatten_tac
-    ++ unfold "add"
-    ++ simp
-  ];;
-
-let not_in_empty =
-  prove_thm ~simp:true "not_in_empty"
-  << !x: not (x in {}) >>
-    [
-      unfold "empty"
-      ++ simp 
-      ++ flatten_tac
-    ];;
-
-let in_univ=
-  prove_thm ~simp:true "in_univ"
-  << !x: (x in univ) >>
-    [ simp_tac [defn "univ"] ];;
-
-let in_single = 
-  prove_thm ~simp:true "in_single"
-  << !x a: (x in (single a)) = (x = a) >>
-  [ simp_tac [defn "single" ] ];;
-
-let in_member = 
-  prove_thm ~simp:true "in_member"
-  << 
-    (!x a S: (x = a) => (x in (add a S)))
-    & 
-    (!x a S: ~(x = a) => (x in (add a S) = (x in S)))
-  >>
-  [
-    split_tac
-    --
-      [ 
-	(* 1 *)
-	flatten_tac ++ simp_tac [defn "add" ];
-	(* 2 *)
-	seq
-	  [
-	    specC ++ implC;
-	    simp_tac [defn "add" ]
-	  ]
-      ]
-  ]
-
-
-let add_member = 
-  prove_thm ~simp:true "add_member"
-  << !x A: (x in A) => ((add x A) = A) >>
-  [
-    flatten_tac
-    ++ rewrite_tac [set_equal]
-    ++ simp_tac [defn "add"]
-    ++ (equals_tac ++ scatter_tac ++ simp)
-  ];;
-
-(*
-let finite_def=
-  define 
-  <:def<
-    finite (X:('a)set) =
-  !(P: ('a) set -> bool):
-    ((P { })
-     & (! x (A:('a)set): (~(x in A) & (P A)) => (P (add x A))))
-  => (P X)
-  >>;;
-*)
-
+(***
+* Finite sets
+***)
 (**
    finite empty;
    [ ~x in A; finite A ] --> finite (add x A);
@@ -219,37 +124,165 @@ let finite_rules =
      ++ back_tac 
      ++ blast_tac];;
 
-(***
-let empty_finite = 
-  prove_thm ~simp:true "empty_finite"
-  << finite {} >>
-    [
-      unfold "finite"
-      ++ flatten_tac 
-      ++ basic
-    ];;
 
-let add_finite = 
-  prove_thm ~simp:true "add_finite"
-  << !x A: (finite A) => (finite (add x A)) >>
-  [
-    flatten_tac 
-    ++ unfold "finite"
-    ++ flatten_tac
-    ++ (match_asm << !p: ((p { }) & X) => Y >>
-	(fun l -> inst_tac ~f:l [<< _P >> ]))
-    ++ simp_all
-    ++ inst_tac [<< _x >> ; << _A >> ]
-    ++ scatter_tac ++ simp_all
-  ];;
+(***
+* Primitive properties
 ***)
 
-(** Properties of neg *)
+let set_simp=
+  prove_thm ~simp:true "set_simp"
+  << !x A: ((SET A) x) = (A x) >> 
+  [
+    flatten_tac
+    ++ unfold "SET"
+    ++ eq_tac
+  ];;
 
-let in_neg =
-  theorem ~simp:true "in_neg"
+let in_simp = 
+  prove_thm ~simp:true "in_simp"
+  << !x A: (x in (SET(A)))  = (A x) >>
+  [
+    flatten_tac ++ unfold "in" ++ unfold "SET"
+    ++ eq_tac
+  ];;
+
+let set_equal =
+  prove_thm "set_equal"
+  << ! A B: (A = B) = (!x: (x in A) = (x in B)) >>
+  [
+    flatten_tac ++ equals_tac ++ scatter_tac
+    --
+      [ 
+	simp;
+	cut_back_tac (thm "extensionality")
+	++ simp_all_tac [defn "in"]
+      ]
+  ];;
+
+let add_thm = 
+  theorem "add_thm"
+    << ! x y A : (y in (add x A)) = ((y = x) | (y in A)) >> 
+  [ flatten_tac ++ simp_tac [ defn "add" ] ]
+
+let remove_thm = 
+  theorem "remove_thm"
+    << ! x y A: (y in (remove x A)) = ((y in A) & ~(y = x)) >>
+  [ flatten_tac ++ simp_tac [ defn "remove" ] ]
+
+let neg_thm =
+  theorem ~simp:true "neg_thm"
     << ! x A: (x in (neg A)) = ~(x in A) >>
   [ simp_tac [defn "neg"] ];;
+
+let union_thm =
+  theorem "union_thm"
+  << !x A B: (x in (union A B)) = ((x in A) | (x in B)) >>
+  [ simp_tac [defn "union"] ];;
+
+let inter_thm =
+  theorem "inter_thm"
+  << !x A B: (x in (inter A B)) = ((x in A) & (x in B)) >>
+  [ simp_tac [defn "inter"] ];;
+
+
+(***
+* Membership
+***)
+
+let not_in_empty =
+  prove_thm ~simp:true "not_in_empty"
+  << !x: not (x in {}) >>
+    [
+      unfold "empty"
+      ++ simp 
+      ++ flatten_tac
+    ];;
+
+let in_univ=
+  prove_thm ~simp:true "in_univ"
+  << !x: (x in univ) >>
+    [ simp_tac [defn "univ"] ];;
+
+let in_single = 
+  prove_thm ~simp:true "in_single"
+  << !x a: (x in (single a)) = (x = a) >>
+  [ simp_tac [defn "single" ] ];;
+
+let in_add = 
+  prove_thm ~simp:true "in_add"
+  << 
+    (!x a S: (x = a) => (x in (add a S)))
+    & 
+    (!x a S: ~(x = a) => (x in (add a S) = (x in S)))
+  >>
+  [
+    split_tac
+    --
+      [ 
+	(* 1 *)
+	flatten_tac ++ simp_tac [defn "add" ];
+	(* 2 *)
+	seq
+	  [
+	    specC ++ implC;
+	    simp_tac [defn "add" ]
+	  ]
+      ]
+  ]
+
+let in_remove=
+  theorem ~simp:true "in_remove"
+  <<
+    (!x  A: ~(x in (remove x A)))
+  & (!x y A: ~(x=y) => ((x in (remove y A)) = (x in A)))
+  >>
+  [
+    scatter_tac
+    ++ simp_all_tac [remove_thm]
+    ++ equals_tac ++ scatter_tac ++ basic
+  ]
+
+
+(*** Properties of Add *)
+
+let add_member = 
+  prove_thm ~simp:true "add_member"
+  << !x A: (x in A) => ((add x A) = A) >>
+  [
+    flatten_tac
+    ++ rewrite_tac [set_equal]
+    ++ simp_tac [add_thm]
+    ++ equals_tac ++ scatter_tac ++ simp
+  ];;
+
+let add_remove =
+  theorem ~simp:true "add_remove"
+    << !x A: (add x (remove x A)) = (add x A) >>
+  [
+    simp_tac [set_equal; add_thm; remove_thm]
+    ++ equals_tac ++ scatter_tac ++ basic
+  ]
+
+(** Properties of Remove *)
+
+let remove_member = 
+  theorem ~simp:true "remove_member"
+    << ! x A: ~(x in A) => ((remove x A) = A) >>
+  [
+    simp_tac [set_equal; remove_thm] ++ flatten_tac
+    ++ equals_tac ++ blast_tac
+    ++ simp_all
+  ]
+
+let remove_add = 
+  theorem ~simp:true "remove_add"
+    << !x A: (remove x (add x A)) = (remove x A) >>
+  [
+    simp_tac [set_equal; add_thm; remove_thm]
+    ++ equals_tac ++ blast_tac
+  ]
+
+(** Properties of neg *)
 
 let neg_univ = 
   theorem ~simp:true "neg_univ"
@@ -280,44 +313,35 @@ let neg_inter =
 
 (** Union **)
 
-let in_union =
-  theorem ~simp:true "in_union"
-  << !x A B: (x in (union A B)) = ((x in A) | (x in B)) >>
-  [ simp_tac [defn "union"] ];;
-
 let union_assoc =
-    theorem "union_assoc"
+    theorem ~simp:true "union_assoc"
       << ! A B C: (union A (union B C)) = (union (union A B) C) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; union_thm] 
     ++ equals_tac ++ blast_tac
   ];;
 
 let union_comm =
-  theorem "union_comm"
+  theorem ~simp:true "union_comm"
     << ! A B: (union A B) = (union B A) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; union_thm]
     ++ equals_tac ++ blast_tac
   ];;
   
 let union_lcomm = 
-  theorem "union_lcomm"
+  theorem ~simp:true "union_lcomm"
     << ! A B C: (union A (union B C)) = (union B (union A C)) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; union_thm] 
     ++ equals_tac ++ blast_tac
   ];;
   
 let union_trivial =
-  theorem "union_trivial"
+  theorem ~simp:true "union_trivial"
     << ! A: (union A A) = A >>
   [ 
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; union_thm] 
     ++ equals_tac ++ blast_tac
   ];;
   
@@ -330,91 +354,49 @@ let union_absorb =
     & (! A: (union univ A) = univ)
     >>
     [
-      split_tac ++ once_rewriteC_tac [thm "set_equal"]
-      ++ simp ++ equals_tac ++ blast_tac
+      split_tac ++ simp_tac [set_equal; union_thm]
+      ++ equals_tac ++ blast_tac
     ];;
 
 let union_add_left = 
   theorem "union_add_left"
   << ! a S T: (union (add a S) T) = (add a (union S T)) >>
   [
-    once_rewriteC_tac [set_equal];
-    flatten_tac;
-    equals_tac ++ iffC ++ flatten_tac
-    --
-      [
-	(* 1 *)
-	seq
-	  [
-	    cut_back_tac in_add; disjC;
-	    simpA; simpC;
-	    disjC; simpA
-	  ];
-	seq
-	  [
-	    simpC; disjC;
-	    cut_back_tac in_add; disjC;
-	    simpA
-	  ]
-      ]
-  ]
+    simp_tac [set_equal; union_thm; add_thm]
+    ++ equals_tac ++ blast_tac
+  ];;
 
 let union_add_right = 
   theorem "union_add_right"
   << ! a S T: (union S (add a T)) = (add a (union S T)) >>
   [
-    once_rewriteC_tac [set_equal];
-    flatten_tac;
-    equals_tac ++ iffC ++ flatten_tac
-    --
-      [
-	(* 1 *)
-	seq
-	  [
-	    cut_back_tac in_add; disjC;
-	    simpA; simpC;
-	    disjC; simpA
-	  ];
-	seq
-	  [
-	    simpC; disjC;
-	    cut_back_tac in_add; disjC;
-	    simpA
-	  ]
-      ]
+    simp_tac [set_equal; union_thm; add_thm]
+    ++ equals_tac ++ blast_tac
   ]
 
 (** Intersection *)
 
-let in_inter =
-  theorem ~simp:true "in_inter"
-  << !x A B: (x in (inter A B)) = ((x in A) & (x in B)) >>
-  [ simp_tac [defn "inter"] ];;
-
 let inter_assoc =
-  theorem "inter_assoc"
+  theorem ~simp:true "inter_assoc"
   << ! A B C: (inter A (inter B C)) = (inter (inter A B) C) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; inter_thm] 
     ++ equals_tac ++ blast_tac
   ];;
 
 let inter_comm =
-  theorem "inter_comm"
+  theorem ~simp:true "inter_comm"
     << ! A B: (inter A B) = (inter B A) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; inter_thm] 
     ++ equals_tac ++ blast_tac
   ];;
   
 let inter_lcomm = 
-  theorem "inter_lcomm"
+  theorem ~simp:true "inter_lcomm"
     << ! A B C: (inter A (inter B C)) = (inter B (inter A C)) >>
   [
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; inter_thm] 
     ++ equals_tac ++ blast_tac
   ];;
   
@@ -427,16 +409,16 @@ let inter_absorb =
   & (! A: (inter univ A) = A)
     >>
     [
-      split_tac ++ once_rewriteC_tac [thm "set_equal"]
-      ++ simp ++ equals_tac ++ blast_tac
+      split_tac 
+      ++ simp_tac [set_equal; inter_thm] 
+      ++ equals_tac ++ blast_tac
     ];;
 
 let inter_trivial =
   theorem "inter_trivial"
     << ! A: (inter A A) = A >>
   [ 
-    once_rewrite_tac [thm "set_equal"] 
-    ++ simp
+    simp_tac [set_equal; inter_thm]
     ++ equals_tac ++ blast_tac
   ];;
 
