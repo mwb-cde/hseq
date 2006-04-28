@@ -2124,6 +2124,7 @@ module Convs=
  * More tactics 
  ***)
 
+(****
 let equals_tac ?info ?f g =
   let ff = 
     match f with
@@ -2143,6 +2144,32 @@ let equals_tac ?info ?f g =
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in 
   once_rewrite_tac ?info [thm] ~f:ff g
+***)
+let equals_tac ?info ?f goal =
+  let thm = 
+    try Thms.equals_iff_thm()
+    with Not_found -> 
+      (raise (error "Can't find required lemma Bool.equals_bool"))
+  in 
+  let act_tac x g=
+    once_rewrite_tac ?info [thm] ~f:x g
+  in 
+  let main_tac gl =
+    match f with
+	Some x -> act_tac x goal
+      | _ -> 
+	  let test_tac (tg, form) g = 
+	    if Formula.is_equality form
+	    then act_tac (ftag tg) g
+	    else fail g
+	  in 
+	  let sqnt = sequent gl
+	  in
+	  ((map_first test_tac (concls_of sqnt))
+	     // map_first test_tac (asms_of sqnt)) gl
+  in
+    try main_tac goal
+    with err -> raise (add_error "equals_tac: Failed" err)
 
 
 (***
