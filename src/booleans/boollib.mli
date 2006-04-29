@@ -1070,7 +1070,7 @@ val close_lambda_app :
 (**
    [close_lambda_app term]:
    From term [((% a1 .. an: B) v1 .. vn)],
-   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn])
+   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]]
    where the [x1 .. xn] close unbound variables in [B].
 *)
 
@@ -1099,7 +1099,6 @@ val mini_mp_tac :
 
 (** {5 The induction tactic [induct_tac]} *)
 
-
 val asm_induct_tac :
   ?info:Logic.info 
   -> Logic.label -> Logic.label -> Tactics.tactic
@@ -1107,7 +1106,7 @@ val asm_induct_tac :
    [asm_induct_tac ?info a c]: Apply the induction scheme of
    assumption [a] to conclusion [c].
 
-   @see {!Boollib.InductProof.induct_tac} for details about the form of the
+   See {!Boollib.InductProof.induct_tac} for details about the form of the
    induction scheme.
 *)
 
@@ -1134,6 +1133,8 @@ val induct_tac :
     cformulas=the new conclusions (in arbitray order)
     subgoals=the new sub-goals (in arbitray order)
 *)
+
+(** {5 The induction tactic [induct_on]} *)
 
 val induct_on : 
   ?info:Logic.info
@@ -1255,7 +1256,7 @@ val asm_induct_tac :
    [asm_induct_tac ?info a c]: Apply the induction scheme of
    assumption [a] to conclusion [c].
 
-   @see {!Boollib.InductProof.induct_tac} for details about the form
+   See {!Boollib.InductProof.induct_tac} for details about the form
    of the induction scheme.
 *)
 
