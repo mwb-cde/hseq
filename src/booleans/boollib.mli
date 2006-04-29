@@ -1135,6 +1135,30 @@ val induct_tac :
     subgoals=the new sub-goals (in arbitray order)
 *)
 
+val induct_on : 
+  ?info:Logic.info
+  -> ?thm:Logic.thm -> ?c:Logic.label
+  -> string -> Tactics.tactic
+  (**
+   [induct_on ?info ?thm ?c n]: Apply induction to the first
+   universally quantified variable named [n] in conclusion [c] (or the
+   first conclusion to succeed). The induction theorem is [thm], if
+   given or the theorem [thm "TY_induct"] where [TY] is the name of
+   the type constructor of [n].
+
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P a .. b= (! x : (P x a .. b))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! n f .. g: (C n f ..g) }
+   [n] does not need to be the outermost quantifier.
+   *)
+
 (** {7 Debugging information} *)
 
 val induct_tac_bindings :
@@ -1157,7 +1181,7 @@ val induct_tac_bindings :
    This function is specialized for use by {!Boollib.InductProof.induct_tac}.
 *)
 
-val solve_rh_tac :
+val induct_tac_solve_rh_tac :
   ?info:Logic.info 
   -> Logic.label -> Logic.label -> Tactics.tactic
 (**
@@ -1174,6 +1198,50 @@ val solve_rh_tac :
    specialize [c1] again, intantiate [a3]
    basic [c1] and [a3].
 	   
+   Completely solves the goal or fails.
+*)
+
+val induct_on_bindings :
+  Gtypes.substitution -> Scope.t 
+    -> Basic.binders
+      -> (Basic.binders list * 'a * Basic.term)
+	-> Basic.term 
+	  -> (Gtypes.substitution * Term.substitution)
+(**
+   [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings
+   for the induction theorem in [aterm] from conclusion term [cterm]
+   in type environment [tyenv] and scope [scp], to induct on term
+   [Bound nbind].
+
+   [aterm] is in the form [(vars, asm, concl)], obtained by 
+   splitting a theorem of the form [! vars : asm => concl]. 
+
+   [cterm] is in the form [! xs : body]. 
+
+   [nbind] must be a universally quantified binder.
+
+   Tries to unify [body] and [concl], returns an updated type
+   environment and a substitution containing bindings for the
+   variables in [vars], with which to instantiate the induction
+   theorem.
+
+   This function is specialized for use by [induct_on].
+*)
+
+val induct_on_solve_rh_tac:
+  ?info:Logic.info
+  -> Logic.label -> Logic.label
+  -> Tactics.tactic
+(**
+   [induct_on_solve_rh_tac ?info a c goal]: solve the right sub-goal of an
+   induction tactic([t2]).
+	   
+   Formula [a] is of the form [ ! a .. b: C ]
+   Formula [c] is of the form [ ! a .. b x .. y: C]
+
+   Specialize [c], instantiate [a], 
+   basic [a] and [c]
+
    Completely solves the goal or fails.
 *)
 
@@ -1210,6 +1278,32 @@ val induct_tac :
    The conclusion must be in the form:
    {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
 *)
+
+
+val induct_on : 
+  ?info:Logic.info
+  -> ?thm:Logic.thm -> ?c:Logic.label
+  -> string -> Tactics.tactic
+  (**
+   [induct_on ?info ?thm ?c n]: Apply induction to the first
+   universally quantified variable named [n] in conclusion [c] (or the
+   first conclusion to succeed). The induction theorem is [thm], if
+   given or the theorem [thm "TY_induct"] where [TY] is the name of
+   the type constructor of [n].
+
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P a .. b= (! x : (P x a .. b))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! n f .. g: (C n f ..g) }
+   [n] does not need to be the outermost quantifier.
+   *)
+
 
 (** {5 Debugging} *)
 

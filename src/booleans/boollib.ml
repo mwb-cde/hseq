@@ -2315,7 +2315,6 @@ let unify_in_goal varp atrm ctrm goal =
 * The induction tactic [induct_tac]
 ***)
 
-
 (**
    [induct_tac_bindings tyenv scp aterm cterm]: Extract bindings for
    the induction theorem in [aterm] from conclusion term [cterm] in
@@ -2414,7 +2413,7 @@ let unify_in_goal varp atrm ctrm goal =
 
 
     (**
-       [solve_rh_tac ?info a c goal]: solve the right sub-goal of an
+       [induct_tac_solve_rh_tac ?info a c goal]: solve the right sub-goal of an
        induction tactic([t2]).
 	   
        Formula [a] is of the form [ ! a .. b: A => C ]
@@ -2429,7 +2428,7 @@ let unify_in_goal varp atrm ctrm goal =
 	   
        Completely solves the goal or fails.
     *)
-    let solve_rh_tac ?info a_lbl c_lbl g =
+    let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
       let minfo = mk_info()
       in 
       let (c_tag, c_trm) = 
@@ -2499,7 +2498,8 @@ let unify_in_goal varp atrm ctrm goal =
 		   [
 		     (instA ~a:a3_lbl const_list // skip);
 		     basic ~a:a3_lbl ~c:c1_lbl;
-		     (fun g2 -> fail ~err:(error "solve_rh_goal") g2)
+		     (fun g2 -> 
+			fail ~err:(error "induct_tac_solve_rh_goal") g2)
 		   ] g1)
 	  ] g
 	
@@ -2590,7 +2590,8 @@ let unify_in_goal varp atrm ctrm goal =
 		       in 
 		       let c1_tag = get_one (cformulas tinfo)
 		       in 
-			 solve_rh_tac (ftag a1_tag) (ftag c1_tag) g1)
+			 induct_tac_solve_rh_tac 
+			   (ftag a1_tag) (ftag c1_tag) g1)
 		  ]
 	      ]
 	  ] g
@@ -2657,6 +2658,322 @@ let unify_in_goal varp atrm ctrm goal =
 		(concls_of (sequent goal))
 	    in 
 	      all_tac targets goal
+
+
+
+(*** 
+* The induct-on tactic [induct_on]
+***)
+
+(**
+   [get_binder qnt n trm]: Get the top-most [qnt] binder with name [n]
+   in term [trm]. Raises [Not_found] if the no top-most [qnt] binder
+   named [n] can be found.
+*)
+let get_binder qnt n trm =  
+  let qnt= Basic.All in
+  let rec get_aux t = 
+    match t with
+	Basic.Qnt(b, body) -> 
+	  if (Basic.binder_kind b = qnt)
+	  then 
+	    if(Basic.binder_name b = n)
+	    then b
+	    else get_aux body
+	  else raise Not_found
+      | Basic.Typed(b, _) -> get_aux b
+      | _ -> raise Not_found
+  in 
+    get_aux trm
+
+(**
+   [induct_thm ?thm scp tyenv trm]: Get the induction theorem for
+   [trm].  If [?thm] is given, return [thm].  Othewise, get the
+   theorem named "TY_induct" where [TY] is the type of [trm].
+
+   e.g. if [trm] has type [bool], the induction theorem is
+   [bool_induct] and if [trm] has type [('a, 'b)PAIR], the induction
+   theorem is [PAIR_induct].
+*)
+let induct_thm ?thm scp tyenv trm = 
+  match thm with
+      (Some x) -> x
+    | None ->
+	let ty = 
+	  let sb = Typing.settype scp ~env:tyenv trm
+	  in Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
+	in
+	let (th, id) = Ident.dest (get_type_name ty)
+	in 
+	let thm_name = id^"_induct"
+	in 
+	try 
+	  Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
+	with 
+	  _ ->
+	    try Commands.thm thm_name
+	    with _ -> 
+	      failwith ("Can't find cases theorem "^thm_name)
+
+(**
+   [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings
+   for the induction theorem in [aterm] from conclusion term [cterm]
+   in type environment [tyenv] and scope [scp], to induct on term
+   [Bound nbind].
+
+   [aterm] is in the form [(vars, asm, concl)], obtained by 
+   splitting a theorem of the form [! vars : asm => concl]. 
+
+   [cterm] is in the form [! xs : body]. 
+
+   [nbind] must be a universally quantified binder.
+
+   Tries to unify [body] and [concl], returns an updated type
+   environment and a substitution containing bindings for the
+   variables in [vars], with which to instantiate the induction
+   theorem.
+
+   This function is specialized for use by [induct_on].
+*)
+    let induct_on_bindings typenv scp nbind aterm cterm =
+      let nterm = Term.mk_bound nbind
+      in 
+    (** Split the induction theorem *)
+      let (thm_vars, thm_asm, thm_concl) = aterm
+      in
+      let is_thm_var = Rewrite.is_free_binder thm_vars
+      in 
+    (** Split the theorem conclusion (the hypothesis) *)
+      let (hyp_vars, hyp_body) = Term.strip_qnt Basic.All thm_concl
+      in 
+    (** Split the property application *)
+      let prop_fun, prop_args = Term.get_fun_args hyp_body
+      in 
+    (** Split the target conclusion *)
+      let (concl_vars, concl_body) = Term.strip_qnt Basic.All cterm
+      in 
+    (** 
+	eta abstract the conclusion body, wrt [nbind],
+	close the resulting term.
+    *)
+      let (concl_body_eta, concl_concl_args) = 
+	let concl_concl_trm = Lterm.eta_conv [nterm] concl_body
+	in 
+	let cvars = [ nbind ]
+	in
+	  close_lambda_app cvars concl_concl_trm
+      in 
+      let (ret_typenv, ret_subst) =
+	try 
+	  Unify.unify_fullenv scp typenv (Term.empty_subst())
+	    is_thm_var prop_fun concl_body_eta
+	with err -> 
+	  raise (add_error "Can't unify induction theorem with formula" err)
+      in 
+	(ret_typenv, ret_subst)
+
+(**
+   [induct_on_solve_rh_tac ?info a c goal]: solve the right sub-goal of an
+   induction tactic([t2]).
+	   
+   Formula [a] is of the form [ ! a .. b: C ]
+   Formula [c] is of the form [ ! a .. b x .. y: C]
+
+   Specialize [c], instantiate [a], 
+   basic [a] and [c]
+
+   Completely solves the goal or fails.
+*)
+    let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
+      let minfo = mk_info()
+      in 
+      let (c_tag, c_trm) = 
+	let (tg, cf) = get_tagged_concl c_lbl goal
+	in 
+	  (tg, Formula.term_of cf)
+      in 
+      let (c_vars, c_body) = Term.strip_qnt Basic.All c_trm
+      in 
+      let a_trm = Formula.term_of (get_asm a_lbl goal)
+      in 
+      let (a_vars, a_body) = Term.strip_qnt Basic.All a_trm
+      in 
+      let a_varp = Rewrite.is_free_binder a_vars
+      in 
+	seq
+	  [
+	    (specC ~c:c_lbl
+	     // data_tac (set_info (Some minfo)) ([], [], [c_tag], []));
+	    (fun g1 -> 
+	       let env =
+		 unify_in_goal a_varp a_body c_body g1
+	       in 
+	       let const_list = extract_consts a_vars env
+	       in 
+		 instA ~info:minfo ~a:a_lbl const_list g1);
+	    (fun g1 ->
+	       let c_tag = get_one (cformulas minfo)
+	       in 
+	       let a_tag = get_one (aformulas minfo)
+	       in 
+		 empty_info minfo;
+		 basic ~a:(ftag a_tag) ~c:(ftag c_tag) g1)
+	  ] goal
+
+(**
+   [induct_on ?thm ?c n]: Apply induction to the first universally
+   quantified variable named [n] in conclusion [c] (or the first
+   conclusion to succeed). The induction theorem is [thm], if given or
+   the theorem [thm "TY_induct"] where [TY] is the name of the type
+   constructor of [n].
+
+   Theorem [thm] must be in the form:
+   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
+   where
+   {L 
+   thm_concl P a .. b= (! x : (P x a .. b))
+   }   
+   The order of the outer-most bound variables is not relevant. 
+   
+   The conclusion must be in the form:
+   {L ! n f .. g: (C n f ..g) }
+   [n] does not need to be the outermost quantifier.
+*)
+
+let basic_induct_on ?info ?thm name clabel goal = 
+  let typenv = typenv_of goal
+  and scp = scope_of goal
+  in 
+    (** Get the conclusion *)
+  let (ctag, cform) = get_tagged_concl clabel goal
+  in 
+    (** Get conclusion as a term *)
+  let cterm = Formula.term_of cform
+  in 
+    (** 
+	Get the top-most binder named [name] in [cterm] 
+	Fail if not found.
+    *)
+  let nbinder = 
+    try get_binder Basic.All name cterm
+    with _ -> 
+      raise (Term.term_error 
+	       ("No quantified variable named "^name^" in term")
+	       [cterm])
+  in 
+  let nterm = Term.mk_bound nbinder
+  in
+    (** Get the theorem *)
+  let thm = induct_thm ?thm scp typenv nterm
+  in 
+  let thm_term = Logic.term_of thm
+  in 
+    (** Split the induction theorem *)
+  let (thm_vars, thm_asm, thm_concl) = dest_qnt_implies thm_term
+  in
+    (** Get the bindings for the outer-most theorem variables *)
+  let (consts_typenv, consts_subst) = 
+    induct_on_bindings typenv scp 
+      nbinder (thm_vars, thm_asm, thm_concl) cterm
+  in 
+  let consts_list = Tactics.extract_consts thm_vars consts_subst
+  in 
+    (** tinfo: information built up by the tactics. *)
+  let tinfo = mk_info()
+  in 
+    (**
+       [inst_split_asm_tac]: Instantiate and split the assumption.
+       tinfo: aformulas=[a1]; cformulas=[c1]; subgoals = [t1; t2]
+       
+       Goals:
+       {L 
+       [a, asms |- c, concls]  (a = ! .. : a1 => c)
+       ----> 
+       t1: [asms |- c1, c, concls]; t2: [a1, asms |- c, concls]
+       }
+    *)
+  let inst_split_asm_tac atag g =
+    let minfo = mk_info ()
+    in 
+      seq
+	[
+	  (fun g1 -> 
+	     let albl = ftag atag
+	     in 
+	       (instA ~info:minfo ~a:albl consts_list 
+		++ (betaA ~info:minfo ~a:albl // skip))
+		 g1);
+	  (fun g1 ->
+	     let atag = get_one (aformulas minfo)
+	     in 
+	       implA ~info:tinfo ~a:(ftag atag) g1);
+	] g
+  in
+    (** 
+	[split_lh_tac c]: Split conclusion [c] of the left-hand
+	subgoal. 
+    *)
+  let split_lh_tac c g = 
+    (mini_scatter_tac ?info c // skip) g
+  in 
+    (** the Main tactic *)
+  let main_tac g = 
+    let minfo = mk_info ()
+    in 
+      seq 
+	[
+	  cut ~info:minfo thm;
+	  (fun g1 -> 
+	     let atag = get_one (aformulas minfo)
+	     in 
+	       ((inst_split_asm_tac atag)
+		--
+		[
+		   (** Left-hand sub-goal *)
+		   seq 
+		     [
+		       deleteC (ftag ctag);
+		       (fun g1 -> 
+			  let c1_tag = get_one (cformulas tinfo)
+			  in 
+			    split_lh_tac (ftag c1_tag) g1)
+		     ];
+		   (** Right-hand sub-goal *)
+		   seq
+		     [
+		       (specC ~info:tinfo 
+			// 
+			data_tac 
+			(set_info (Some tinfo)) 
+			([], [], [ctag], []));
+		       (fun g1 -> 
+			  let a1_tag = get_one (aformulas tinfo)
+			  in 
+			  let c1_tag = get_one (cformulas tinfo)
+			  in 
+			    induct_on_solve_rh_tac 
+			      (ftag a1_tag) (ftag c1_tag) g1)
+		     ]
+		 ]) g1)
+	  ] g
+      in 
+	main_tac goal
+	
+
+let induct_on ?info ?thm ?c n goal =
+      match c with
+	  Some(x) -> basic_induct_on ?info ?thm n x goal
+	| _ -> 
+	    let targets =
+	      List.map (ftag <+ drop_formula) (concls_of (sequent goal))
+	    in 
+	    let main_tac g = 
+	      map_first (fun x -> basic_induct_on ?info ?thm n x) targets g
+	    in 
+	      try main_tac goal
+	      with _ -> raise (error "induct_on: Failed")
+
+
 end
 
 (*** 
@@ -2667,3 +2984,6 @@ end
 
 let asm_induct_tac = InductProof.asm_induct_tac
 let induct_tac = InductProof.induct_tac
+
+(*** induct_on ***)
+let induct_on = InductProof.induct_on
