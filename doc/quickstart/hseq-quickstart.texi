@@ -9,7 +9,7 @@
 @include localdefs.texi
 
 @copying
-Copyright @copyright{} 2005, M. Wahab
+Copyright @copyright{} 2006, M. Wahab
 @end copying
 
 @titlepage
@@ -222,6 +222,13 @@ using tactic @var{tac} to prove the truth of @var{t}. @code{cases_tac
 @var{t}} introduces a case split on the truth of term
 @var{t}. @code{case_of @var{t}} introduces a case split on the
 possible values of term @var{t}.
+
+@code{induct_tac @var{thm}} begins a proof by induction on a
+conclusion of the form @code{! x .. y : R => A}. Tactic
+@code{induct_on @var{n}} begins a proof by induction on the quantified
+variable named @var{n}, failing if there is no such variable in the
+conclusions or no appropriate induction theorem. The induction theorem
+used depends on the type of variable @var{n}.
 
 @heading Rewriting and Simplification
 
