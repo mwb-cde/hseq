@@ -20,6 +20,17 @@ let excluded_middle=
 theorem "excluded_middle" <<! x: (not x) or x>>
 [flatten_tac ++ basic];;
 
+(** Induction *)
+let bool_induct = 
+  theorem "bool_induct"
+  << !P: ((P true) & (P false)) => (!(x:bool): P x) >>
+  [
+    flatten_tac
+    ++ cut (thm "bool_cases")
+    ++ instA [ << _x >> ] 
+    ++ disjA ++ replace_tac ++ basic
+  ]
+
 (** Equivalence of boolean equality (=) and equivalence (iff) *)
 
 let true_l1 = 

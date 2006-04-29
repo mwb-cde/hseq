@@ -202,6 +202,20 @@ let pair_inj =
      ++ eq_tac
  ];;
 
+let pair_cases = 
+  save_thm "PAIR_cases" pair_inj
+
+let pair_induct = 
+  theorem "PAIR_induct"
+  << !P: (! x y: (P (x, y))) => (!x: P x) >>
+  [
+    flatten_tac
+   ++ cut pair_cases
+   ++ instA [ << _x >> ]
+   ++ specA 
+   ++ replace_tac ++ unify_tac
+  ]
+
 let surjective_pairing = 
   prove_thm "surjective_pairing" ~simp:true 
     << !p: (pair (fst p) (snd p)) = p >>
