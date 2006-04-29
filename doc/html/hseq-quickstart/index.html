@@ -8,7 +8,7 @@
 <link rel="up" href="../index.html#dir" title="(dir)">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
-Copyright (C) 2005, M. Wahab-->
+Copyright (C) 2006, M. Wahab-->
 <meta http-equiv="Content-Style-Type" content="text/css">
 <style type="text/css"><!--
   pre.display { font-family:inherit }
@@ -31,7 +31,7 @@ Copyright (C) 2005, M. Wahab-->
 
 <h2 class="unnumbered">HSeq Quick Start</h2>
 
-<p>Copyright &copy; 2005, M. Wahab
+<p>Copyright &copy; 2006, M. Wahab
 
    <p>HSeq is a tactical theorem prover for a typed, higher order logic
 based on the sequent calculus. A <em>term</em> is a <em>formula</em> of
@@ -227,6 +227,13 @@ using tactic <var>tac</var> to prove the truth of <var>t</var>. <code>cases_tac
 </code><var>t</var> introduces a case split on the truth of term
 <var>t</var>. <code>case_of </code><var>t</var> introduces a case split on the
 possible values of term <var>t</var>.
+
+   <p><code>induct_tac </code><var>thm</var> begins a proof by induction on a
+conclusion of the form <code>! x .. y : R =&gt; A</code>. Tactic
+<code>induct_on </code><var>n</var> begins a proof by induction on the quantified
+variable named <var>n</var>, failing if there is no such variable in the
+conclusions or no appropriate induction theorem. The induction theorem
+used depends on the type of variable <var>n</var>.
 
 <h3 class="heading">Rewriting and Simplification</h3>
 

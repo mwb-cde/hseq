@@ -1,7 +1,7 @@
 This is hseq-quickstart.info, produced by makeinfo version 4.7 from
 hseq-quickstart.texi.
 
-   Copyright (C) 2005, M. Wahab
+   Copyright (C) 2006, M. Wahab
 
 
 File: hseq-quickstart.info,  Node: Top,  Up: (dir)
@@ -9,7 +9,7 @@ File: hseq-quickstart.info,  Node: Top,  Up: (dir)
 HSeq Quick Start
 ****************
 
-Copyright (C) 2005, M. Wahab
+Copyright (C) 2006, M. Wahab
 
    HSeq is a tactical theorem prover for a typed, higher order logic
 based on the sequent calculus. A _term_ is a _formula_ of the logic if
@@ -184,6 +184,12 @@ conjunction with `match_asm' and `match_concl'.
 prove the truth of T. `cases_tac T' introduces a case split on the
 truth of term T. `case_of T' introduces a case split on the possible
 values of term T.
+
+   `induct_tac THM' begins a proof by induction on a conclusion of the
+form `! x .. y : R => A'. Tactic `induct_on N' begins a proof by
+induction on the quantified variable named N, failing if there is no
+such variable in the conclusions or no appropriate induction theorem.
+The induction theorem used depends on the type of variable N.
 
 Rewriting and Simplification
 ============================
