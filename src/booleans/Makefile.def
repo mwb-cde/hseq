@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = boolPP baseTheory boollib
+FILES = boolPP baseTheory boolutil boollib
 
 # HEADERS: the list of header (.cmi) files 
 HEADERS = $(foreach f, $(FILES), $(f).cmi)
