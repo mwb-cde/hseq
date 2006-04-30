@@ -7,7 +7,7 @@
 (**
    Support for boolean proofs.
 
-   Many (but not all) of the valuesn here are front-ends to
+   Many (but not all) of the values here are front-ends to
    values defined elsewhere. 
  *)
 
