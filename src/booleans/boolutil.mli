@@ -24,6 +24,11 @@ val find_unifier:
    Raise Not_found if no unifiable formula is found.
  *)
 
+val is_iff : Formula.t -> bool
+(**
+   [is_iff f]: Test whether [f] is a boolean equivalence.
+*)
+
 val is_qnt_opt:
     Basic.quant -> (Basic.term -> bool)
   -> Logic.tagged_form -> bool
@@ -69,4 +74,48 @@ val get_type_name: Basic.gtype -> Ident.t
 (**
     [get_type_name ty]: Get the identifier of the constructor of type
     [ty].
+*)
+
+
+
+val dest_qnt_implies :
+  Basic.term 
+  -> (Basic.binders list * Basic.term * Basic.term)
+(**
+   [dest_qnt_implies term]: 
+   Split a term of the form [! a .. b : asm => concl] 
+   into [( a .. b, asm, concl)].
+*)
+
+val unify_in_goal :
+  (Basic.term -> bool) 
+  -> Basic.term -> Basic.term -> Logic.node 
+  -> Term.substitution
+(** 
+    [unify_in_goal varp atrm ctrm goal]:
+    Unify [atrm] with [ctrm] in the scope and type environment of [goal].
+    [varp] identifies the variables.
+*)
+
+
+val close_lambda_app :
+  Basic.binders list 
+  -> Basic.term 
+  -> (Basic.term * Basic.term list)
+(**
+   [close_lambda_app term]:
+   From term [((% a1 .. an: B) v1 .. vn)],
+   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]]
+   where the [x1 .. xn] close unbound variables in [B].
+*)
+
+
+val set_info : 
+  Logic.info option
+  -> (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> unit
+(**
+   [set_info info (gs, asms, concls, consts)]: Set [info] to [subgoals
+   = gs], [aformulas = asms], [cformulas = concls] and
+   [constants=consts]
 *)

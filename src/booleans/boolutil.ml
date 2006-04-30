@@ -38,6 +38,14 @@ let find_unifier scp typenv varp trm ?exclude forms =
 
 
 (**
+   [is_iff f]: Test whether [f] is a boolean equivalence.
+*)
+let is_iff f= 
+  try (fst (Term.dest_fun (Formula.term_of f)) = Lterm.iffid)
+  with _ -> false
+
+
+(**
    [is_qnt_opt kind pred form]: Test whether [form] satifies [pred].
    The formula may by quantified by binders of kind [kind]. 
 *)
@@ -89,3 +97,57 @@ let get_type_name ty =
   match ty with
     Basic.Constr (id, _) -> id
   | _ -> failwith "get_type_name"
+
+(**
+   [dest_qnt_implies term]: 
+   Split a term of the form [! a .. b : asm => concl] 
+   into [( a .. b, asm, concl)].
+*)
+let dest_qnt_implies term = 
+  let thm_vars, body = Term.strip_qnt Basic.All term
+  in 
+    if Lterm.is_implies body
+    then 
+      let (_, thm_asm, thm_concl) = Term.dest_binop body
+      in 
+    	(thm_vars, thm_asm, thm_concl)
+    else
+      raise (error "Badly formed theorem")
+
+
+(** 
+    [unify_in_goal varp atrm ctrm goal]:
+    Unify [atrm] with [ctrm] in the scope and type environment of [goal].
+    [varp] identifies the variables.
+*)
+let unify_in_goal varp atrm ctrm goal = 
+  let tyenv = typenv_of goal
+  and scp = scope_of goal
+  in 
+    Unify.unify ~typenv:tyenv scp varp atrm ctrm
+
+(**
+   [close_lambda_app term]:
+   Form term [((% a1 .. an: B) v1 .. vn)],
+   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn])
+   where the [x1 .. xn] close unbound variables in [B].
+*)
+let close_lambda_app vars term  = 
+  let t1 = Lterm.gen_term vars term
+  in 
+  let nvars, t1 = Term.strip_qnt Basic.All t1
+  in 
+  let c0, cargs = Term.get_fun_args t1
+  in 
+  let cvars, c1 = 
+    let (vs, ct) = Term.strip_qnt Basic.Lambda c0
+    in 
+      (List.rev vs, ct)
+  in 
+  let c2 = Term.rebuild_qnt cvars (Term.rebuild_qnt nvars c1)
+  in 
+    (c2, cargs)
+      
+
+let set_info dst (sgs, afs, cfs, cnsts) = 
+  Logic.add_info dst sgs afs cfs cnsts

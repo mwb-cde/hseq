@@ -6,12 +6,134 @@
 
 (**
    Support for boolean proofs.
+
+   Many (but not all) of the valuesn here are front-ends to
+   values defined elsewhere. 
  *)
 
-(** {5 Basic Tactics} *)
 
-val false_def: unit -> Logic.thm
-(** Get the definition of [false]. *)
+ (** {5 Theorems, Rules and Conversions} *)
+
+module Thms:
+    sig
+(** 
+   Theorems used by tactics. A theorem [n] is accessed by calling
+   function [n_thm()]. This returns the theorem, proving it if
+   necessary. If [n_thm()] has to prove the theorem, it stores the
+   result so that subsequent calls to [n_thm()] do not have to carry
+   out the proof again. Some theorems have a function [make_n_thm()]
+   which actually carries out the proof. 
+ *)
+
+      val false_def: unit -> Logic.thm
+	(** The definition of [false]. *)
+      val iff_def: unit -> Logic.thm
+	(** The definition of [iff]. *)
+
+(**
+   [iff_equals_thm]:  |- !x y: (x iff y) = (x = y)
+ *)
+
+      val make_iff_equals_thm : unit -> Logic.thm
+      val iff_equals_thm : unit -> Logic.thm
+
+(**
+   [equals_iff_thm]:  |- !x y: (x = y) = (x iff y)
+ *)
+
+      val equals_iff_thm : unit -> Logic.thm
+
+
+(**
+s   [bool_eq_thm]: |- !x y: x iff y = ((x => y) and (y=>x))
+ *)
+
+      val make_bool_eq_thm : unit -> Logic.thm
+      val bool_eq_thm : unit -> Logic.thm
+
+(**
+   [double_not_thm]: |- ! x: x = (not (not x))
+ *)
+
+      val make_double_not_thm : unit -> Logic.thm
+      val double_not_thm : unit -> Logic.thm
+
+(**
+   [rule_true_thm]:  |- !x: x = (x=true) 
+ *)
+
+      val make_rule_true_thm : unit -> Logic.thm
+      val rule_true_thm : unit -> Logic.thm
+
+(**
+   rule_false_thm: !x: (not x) = (x=false)
+ *)
+
+      val make_rule_false_thm : unit -> Logic.thm
+      val rule_false_thm : unit -> Logic.thm
+
+      val bool_cases_thm : unit -> Logic.thm
+	(** [bool_cases_thm]: [! (x:bool): (x=true) | (x=false)] *)
+
+      val cases_thm: unit -> Logic.thm
+	(** [cases_thm]: |- !P: (~P) | P *)
+
+
+      val eq_refl_thm : unit -> Logic.thm
+	(** [eql_refl]: [!x : (x = x)] *)
+
+      val eq_sym_thm : unit -> Logic.thm
+	(** [eql_sym]: [!x y: (x = y) = (y = x)] *)
+
+    end
+
+module Rules:
+    sig
+(** 
+   Functions to construct theorems from other theorems. 
+ *)
+
+      val once_rewrite_rule :
+	  Scope.t -> Logic.thm list -> Logic.thm -> Logic.thm
+(** 
+   [once_rewrite_rule scp rules thm]: Rewrite [thm] with [rules] once.
+ *)
+
+      val conjunctL : Scope.t -> Logic.thm -> Logic.thm 
+(**
+   [conjunctL scp thm]: Get the left hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = l]
+ *)
+
+      val conjunctR : Scope.t -> Logic.thm -> Logic.thm 
+(**
+   [conjunctR scp thm]: Get the right hand side of conjunct [thm].
+   [conjunctL scp << l and r >> = r]
+ *)
+
+      val conjuncts : Scope.t -> Logic.thm -> Logic.thm list 
+(**
+   [conjuncts scp thm]: Break theorem [thm] into the list of conjuncts.
+   [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
+ *)
+
+    end
+
+module Convs:
+    sig
+(** 
+   Conversions on boolean operators.
+ *)
+
+(** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
+      val neg_all_conv: Scope.t -> Basic.term -> Logic.thm
+
+(** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
+      val neg_exists_conv: Scope.t -> Basic.term -> Logic.thm
+
+    end
+
+(** {5 Tactics} *)
 
 val falseA: ?info:Logic.info -> ?a:Logic.label -> Tactics.tactic
 (** 
@@ -33,20 +155,6 @@ val cut_thm:
 
 (** {7 Basic equality reasoning} *)
 
-val make_bool_cases_thm : unit -> Logic.thm
-val bool_cases_thm_var : Logic.thm Lib.deferred
-val bool_cases_thm : unit -> Logic.thm
-(** [bool_cases_thm]: [! (x:bool): (x=true) | (x=false)] *)
-
-val make_eq_refl_thm : unit -> Logic.thm
-val eq_refl_thm_var : Logic.thm Lib.deferred
-val eq_refl_thm : unit -> Logic.thm
-(** [eql_refl]: [!x : (x = x)] *)
-
-val make_eq_sym_thm : unit -> Logic.thm
-val eq_sym_thm_var : Logic.thm Lib.deferred
-val eq_sym_thm : unit -> Logic.thm
-(** [eql_sym]: [!x y: (x = y) = (y = x) ] *)
 
 val eq_sym_rule : Scope.t -> Logic.thm -> Logic.thm
 (** 
@@ -83,112 +191,6 @@ val eq_tac :  ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
    and allows the direction of rewriting (left-right/right-left) to be
    specified.
 *)
-
-module Rewriter :
-    sig
-(** 
-   This module implements a usable interface to rewriting, allowing
-   the direction of rewriting to be specified and using theorems and
-   assumptions as the rewrite rules. The conversions and tactics
-   provided here should not be used directly, instead the conversions
-   and the tactics of the main {!Boollib} module
-   (e.g. {!Boollib.rewrite_tac} and {!Boollib.rewrite_conv}) should be
-   used.
-*)
-
-      val rewrite_conv: 
-	  ?ctrl:Rewrite.control -> Logic.rr_type list -> Logic.conv
-(**
-   [rewrite_conv scp ctrl rules trm]:
-   rewrite term [trm] with rules [rrl] in scope [scp].
-
-   Returns |- trm = X 
-   where [X] is the result of rewriting [trm]
-
-   Discards any rule which is not a theorem or an ordered theorem.
-
-   This conversion could be written using the rewriting tactics but
-   this would require two sets of rewriting. The first to construct
-   the term [X] on the rhs of the equality and the second when the
-   rewrite tactic is invoked. By contrast, [rewrite_conv] only does
-   one set of rewriting.
- *)
-
-      val rewrite_rule:
-	  Scope.t 
-	  -> ?ctrl:Rewrite.control 
-	    -> Logic.rr_type list 
-	      -> Logic.thm -> Logic.thm
-(**
-   [rewrite_rule scp ctrl rules thm]:
-   rewrite theorem [thm] with rules [rrl] in scope [scp].
-
-   Returns |- X where [X] is the result of rewriting [thm]
- *)
-
-(** {7 Tactics} *)
-
-      val map_sym_tac:
-	  (Tactics.rule list) ref -> Tactics.rule list -> Tactics.tactic
-(**
-   [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
-   [rules], returning the resulting list in [ret]. The list in [ret]
-   will be in reverse order of [rules]. 
-
-   Used to set assumptions and theorems in the right form for
-   right-left rewriting.
- *)
-      val rewriteA_tac: 
-	  ?info:Logic.info
-	-> ?ctrl:Rewrite.control
-	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
-(** 
-   [rewriteA_tac ctrl rules l]: Rewrite the assumption at label [l] with
-   [rules], passing [ctrl] to the rewriter.
-
-   {L
-   A{_ l}, asms |- concls
-
-   ----> (B is the rewritten assumption)
-
-   B{_ l}, asms |- concls
-   }
-
-   info: [goals = [], aforms=[l], cforms=[], terms = []]
- *)
-
-      val rewriteC_tac : 
-	  ?info:Logic.info
-	-> ?ctrl:Rewrite.control
-	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
-(** 
-   [rewriteC_tac ctrl rules l]: Rewrite the conclusion at label [l] with
-   [rules], passing [ctrl] to the rewriter.
-
-   {L
-   asms |- A{_ l}, concls
-
-   ----> (B is the rewritten conclusion)
-
-   asms |- B{_ l}, concls
-   }
-
-   info: [goals = [], aforms=[], cforms=[l], terms = []]
- *)
-	      
-      val rewrite_tac: 
-	  ?info:Logic.info
-	-> ?ctrl:Rewrite.control
-	  -> Tactics.rule list -> Logic.label -> Tactics.tactic
-(**
-   [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
-   [rules].
-   
-   If [l] is in the conclusions then call [rewriteC_tac]
-   otherwise call [rewriteA_tac].
- *)
-
-    end
 
 val rewrite_conv: 
     ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
@@ -347,12 +349,6 @@ val unfold :
 
 (** {7 Boolean equivalence} *)
 
-val is_iff: Formula.t -> bool
-(** Test whether a formula is a boolean equivalence. *)
-
-val iff_def: unit -> Logic.thm
-(** Get the definition of [iff]. *)
-
 val iffA: ?info:Logic.info -> ?a:Logic.label -> Tactics.tactic
 (** 
    [iffA l sq]: Elminate the equivalance at assumption [l].
@@ -401,9 +397,7 @@ val iffE: ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
    info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
  *)
 
-(** 
-   {5 Eliminating boolean operators} 
- *)
+(**  {5 Eliminating boolean operators}  *)
 
 val direct_alt: 
     (Logic.info -> Logic.label -> Tactics.tactic) list 
@@ -435,7 +429,6 @@ val asm_elim_rules_tac :
    with [crules]. Any new tag which can't be eliminated are stored in
    [?info] (in arbitrary order and may contain duplicates).
  *)
-
 
 val concl_elim_rules_tac :
     ?info:Logic.info 
@@ -495,13 +488,6 @@ val apply_elim_tac :
    split formula [f].
  *)
 
-val split_asm_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** The rules used by {!Boollib.split_tac} to split assumptions *)
-val split_concl_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** The rules used by {!Boollib.split_tac} to conclusions assumptions *)
-
 val split_asms_tac: 
     ?info:Logic.info -> Logic.label -> Tactics.tactic
 (**
@@ -535,17 +521,6 @@ val split_tac :
    flattened} if eliminating the operator results in at most one
    subgoal (or proves the subgoal). For example, {!Tactics.conjA}
    [~a:f] flattens formal [f].
- *)
-
-val flatter_asm_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   The rules used by {!Boollib.flatten_tac} to flatten assumptions. 
- *)
-val flatter_concl_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   The rules used by {!Boollib.flatten_tac} to flatten conclusions.
  *)
 
 val flatter_asms_tac: 
@@ -585,17 +560,6 @@ val flatten_tac :
    Split and flatten subgoals.
  *)
 
-val scatter_asm_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   Rules used by {!Boollib.scatter_tac} to scatter assumptions.
- *)
-val scatter_concl_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   Rules used by {!Boollib.scatter_tac} to scatter conclusions.
- *)
-
 val scatter_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 (**
@@ -612,16 +576,6 @@ val scatter_tac :
    Resulting tag information, in [?info], may contain duplicates.
  *)
 
-val blast_asm_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   Rules used by {!Boollib.blast_tac}.
- *)
-val blast_concl_rules:
-    (Logic.info -> Logic.label -> Tactics.tactic) list
-(** 
-   Rules used by {!Boollib.blast_tac}.
- *)
 
 val blast_tac : 
     ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
@@ -642,9 +596,6 @@ val blast_tac :
  *)
 
 (** {5 Cases} *)
-
-val cases_thm: unit -> Logic.thm
-(** [cases_thm]: |- !P: (~P) | P *)
 
 val cases_tac: ?info:Logic.info -> Basic.term -> Tactics.tactic
 (**
@@ -805,115 +756,6 @@ val back_tac:
    formula.
  *)
 
-(** {5 Theorems, Rules and Conversions} *)
-
-module Thms:
-    sig
-(** 
-   Theorems used by tactics. A theorem [n] is accessed by calling
-   function [n_thm()]. This returns the theorem, proving it if
-   necessary. If [n_thm()] has to prove the theorem, it stores the
-   result so that subsequent calls to [n_thm()] do not have to carry
-   out the proof again. Some theorems have a function [make_n_thm()]
-   which actually carries out the proof. 
- *)
-
-(**
-   [iff_equals_thm]:  |- !x y: (x iff y) = (x = y)
- *)
-
-      val make_iff_equals_thm : unit -> Logic.thm
-      val iff_equals_thm : unit -> Logic.thm
-
-(**
-   [equals_iff_thm]:  |- !x y: (x = y) = (x iff y)
- *)
-
-      val equals_iff_thm : unit -> Logic.thm
-
-
-(**
-   [bool_eq_thm]: |- !x y: x iff y = ((x => y) and (y=>x))
- *)
-
-      val make_bool_eq_thm : unit -> Logic.thm
-      val bool_eq_thm : unit -> Logic.thm
-
-(**
-   [double_not_thm]: |- ! x: x = (not (not x))
- *)
-
-      val make_double_not_thm : unit -> Logic.thm
-      val double_not_thm : unit -> Logic.thm
-
-(**
-   [rule_true_thm]:  |- !x: x = (x=true) 
- *)
-
-      val make_rule_true_thm : unit -> Logic.thm
-      val rule_true_thm : unit -> Logic.thm
-
-(**
-   rule_false_thm: !x: (not x) = (x=false)
- *)
-
-      val make_rule_false_thm : unit -> Logic.thm
-      val rule_false_thm : unit -> Logic.thm
-
-(**
-   eq_sym_thm: !x y: (x = y) = (y = x)
- *)
-
-      val make_eq_sym_thm : unit -> Logic.thm
-      val eq_sym_thm : unit -> Logic.thm
-
-    end
-
-module Rules:
-    sig
-(** 
-   Functions to construct theorems from other theorems. 
- *)
-
-      val once_rewrite_rule :
-	  Scope.t -> Logic.thm list -> Logic.thm -> Logic.thm
-(** 
-   [once_rewrite_rule scp rules thm]: Rewrite [thm] with [rules] once.
- *)
-
-      val conjunctL : Scope.t -> Logic.thm -> Logic.thm 
-(**
-   [conjunctL scp thm]: Get the left hand side of conjunct [thm].
-   [conjunctL scp << l and r >> = l]
- *)
-
-      val conjunctR : Scope.t -> Logic.thm -> Logic.thm 
-(**
-   [conjunctR scp thm]: Get the right hand side of conjunct [thm].
-   [conjunctL scp << l and r >> = r]
- *)
-
-      val conjuncts : Scope.t -> Logic.thm -> Logic.thm list 
-(**
-   [conjuncts scp thm]: Break theorem [thm] into the list of conjuncts.
-   [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2; ..; fn]]
- *)
-
-    end
-
-module Convs:
-    sig
-(** 
-   Conversions on boolean operators.
- *)
-
-(** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-      val neg_all_conv: Scope.t -> Basic.term -> Logic.thm
-
-(** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-      val neg_exists_conv: Scope.t -> Basic.term -> Logic.thm
-
-    end
 
 (** {5 More tactics} *)
 
@@ -921,127 +763,7 @@ val equals_tac: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
 (** Convert boolean equality to iff *)
 
 
-(****** Retired
-
-(** {7 Miscellaneous unification functions} *)
-
-   val unify_formula_for_consts:
-   Gtypes.substitution
-   -> Scope.t
-   -> (Basic.binders list * Basic.term) 
-   -> Basic.term -> Basic.term list
-(**
-   [unify_formula_for_consts scp trm f]: Unify [trm] with formula [f]
-   returning the list of terms needed to make [trm] alpha-equal to [f]
-   by instantiating the topmost quantifiers of [trm].
-
-   raise Not_found, if no unifiable formula found.
- *)
-
-   val unify_concl_for_consts:
-   Basic.quant
-   -> ?c:Logic.label
-   -> Basic.term -> Logic.node -> Basic.term list
-(**
-   [unify_concl_for_consts ?c trm g]: If [c] is given, unify [trm]
-   with the conclusion labelled [c], returning the list of terms
-   needed to make [trm] alpha-equals to the conclusion by
-   instantiating the topmost quantifiers of trm.
-
-   [trm] must be universally quantified.
- *)
-
-   val unify_asm_for_consts:
-   Basic.quant
-   -> ?a:Logic.label
-   -> Basic.term -> Logic.node -> Basic.term list
-(**
-   [unify_asm_for_consts ?a qnt trm g]: If [a] is given, unify [trm]
-   with the assumption labelled [a], returning the list of terms
-   needed to make [trm] alpha-equals to the conclusion by
-   instantiating the topmost quantifiers of trm.
-
-   [trm] must be quantified by [qnt].
- *)
-
- ******)
-
-(*
-
-   val make_false_def: unit -> Logic.thm
-   val make_iff_def: unit -> Logic.thm
- *)
-
-
-(** Induction tactics *)
-module InductProof :
-sig
-
-(*-----
- Name: induct.mli
- Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2006
-----*)
-
-(** Support for inductive proofs *)
-
-(** {5 Utilities} *)
-
-val dest_qnt_implies :
-  Basic.term 
-  -> (Basic.binders list * Basic.term * Basic.term)
-(**
-   [dest_qnt_implies term]: 
-   Split a term of the form [! a .. b : asm => concl] 
-   into [( a .. b, asm, concl)].
-*)
-
-val unify_in_goal :
-  (Basic.term -> bool) 
-  -> Basic.term -> Basic.term -> Logic.node 
-  -> Term.substitution
-(** 
-    [unify_in_goal varp atrm ctrm goal]:
-    Unify [atrm] with [ctrm] in the scope and type environment of [goal].
-    [varp] identifies the variables.
-*)
-
-
-val close_lambda_app :
-  Basic.binders list 
-  -> Basic.term 
-  -> (Basic.term * Basic.term list)
-(**
-   [close_lambda_app term]:
-   From term [((% a1 .. an: B) v1 .. vn)],
-   return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]]
-   where the [x1 .. xn] close unbound variables in [B].
-*)
-
-(** {7 Utility tactics} *)
-
-val mini_scatter_tac :
-  ?info:Logic.info -> Logic.label -> Tactics.tactic
-(**
-   [mini_scatter_tac ?info c goal]: Mini scatter tactic for induction.
-
-   Scatter conclusion [c], using [falseA], [conjA], [existA],
-   [trueC], [implC] and [allC]
-*)
-
-val mini_mp_tac :
-  ?info:Logic.info 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(**
-   [mini_mp_tac ?info asm1 asm2 goal]: Modus Ponens for the induction
-   tactics.
-
-   Apply modus ponens to [asm1 = A => C] and [asm2 = A] to get [asm3 =
-   C]. info: aformulas=[asm3]; subgoals = [goal1]. Fails if [asm2]
-   doesn't match the assumption of [asm1].
-*)
-
-(** {5 The induction tactic [induct_tac]} *)
+(** {7 Induction tactics} *)
 
 val asm_induct_tac :
   ?info:Logic.info 
@@ -1050,157 +772,7 @@ val asm_induct_tac :
    [asm_induct_tac ?info a c]: Apply the induction scheme of
    assumption [a] to conclusion [c].
 
-   See {!Boollib.InductProof.induct_tac} for details about the form of the
-   induction scheme.
-*)
-
-val induct_tac : 
-  ?info:Logic.info
-  -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
-(**
-   [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
-   [c] (or the first
-   conclusion to succeed).
-
-   Theorem [thm] must be in the form:
-   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
-   where
-   {L 
-   thm_concl P d .. e = (! x .. y : (pred x .. y) => (P d .. e x .. y))
-   }   
-   The order of the outer-most bound variables is not relevant. 
-   
-   The conclusion must be in the form:
-   {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
-
-   info: 
-    cformulas=the new conclusions (in arbitray order)
-    subgoals=the new sub-goals (in arbitray order)
-*)
-
-(** {5 The induction tactic [induct_on]} *)
-
-val induct_on : 
-  ?info:Logic.info
-  -> ?thm:Logic.thm -> ?c:Logic.label
-  -> string -> Tactics.tactic
-  (**
-   [induct_on ?info ?thm ?c n]: Apply induction to the first
-   universally quantified variable named [n] in conclusion [c] (or the
-   first conclusion to succeed). The induction theorem is [thm], if
-   given or the theorem [thm "TY_induct"] where [TY] is the name of
-   the type constructor of [n].
-
-   Theorem [thm] must be in the form:
-   {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
-   where
-   {L 
-   thm_concl P a .. b= (! x : (P x a .. b))
-   }   
-   The order of the outer-most bound variables is not relevant. 
-   
-   The conclusion must be in the form:
-   {L ! n f .. g: (C n f ..g) }
-   [n] does not need to be the outermost quantifier.
-   *)
-
-(** {7 Debugging information} *)
-
-val induct_tac_bindings :
-  Gtypes.substitution -> Scope.t 
-  -> (Basic.binders list * 'a * Basic.term)
-  -> Basic.term 
-  -> (Gtypes.substitution * Term.substitution)
-(**
-   [induct_tac_bindings tyenv scp aterm cterm]: Extract bindings for
-   the induction theorem in [aterm] from conclusion term [cterm] in
-   type environment [tyenv] and scope [scp].
-
-   [aterm] is in the form [(vars, asm, concl)], obtained by 
-   splitting a theorem of the form [! vars : asm => concl]. 
-
-   Returns an updated type environment and a substitution containing
-   bindings for the variables in [vars], with which to instantiate the
-   induction theorem.
-
-   This function is specialized for use by {!Boollib.InductProof.induct_tac}.
-*)
-
-val induct_tac_solve_rh_tac :
-  ?info:Logic.info 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(**
-   [solve_rh_tac ?info a c goal]: solve the right sub-goal of an
-   induction tactic([t2]).
-	   
-   Formula [a] is of the form [ ! a .. b: A => C ]
-   Formula [c] is of the form [ ! a .. b x .. y: A => C]
-   or of the form [ ! a .. b: A => (! x .. y : C)] 
-
-   Specialize [c], instantiate [a], 
-   implC [c] to get [a1] and [c1]
-   mini_mp_tac [a] and [a2] to replace [a] with [a3]
-   specialize [c1] again, intantiate [a3]
-   basic [c1] and [a3].
-	   
-   Completely solves the goal or fails.
-*)
-
-val induct_on_bindings :
-  Gtypes.substitution -> Scope.t 
-    -> Basic.binders
-      -> (Basic.binders list * 'a * Basic.term)
-	-> Basic.term 
-	  -> (Gtypes.substitution * Term.substitution)
-(**
-   [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings
-   for the induction theorem in [aterm] from conclusion term [cterm]
-   in type environment [tyenv] and scope [scp], to induct on term
-   [Bound nbind].
-
-   [aterm] is in the form [(vars, asm, concl)], obtained by 
-   splitting a theorem of the form [! vars : asm => concl]. 
-
-   [cterm] is in the form [! xs : body]. 
-
-   [nbind] must be a universally quantified binder.
-
-   Tries to unify [body] and [concl], returns an updated type
-   environment and a substitution containing bindings for the
-   variables in [vars], with which to instantiate the induction
-   theorem.
-
-   This function is specialized for use by [induct_on].
-*)
-
-val induct_on_solve_rh_tac:
-  ?info:Logic.info
-  -> Logic.label -> Logic.label
-  -> Tactics.tactic
-(**
-   [induct_on_solve_rh_tac ?info a c goal]: solve the right sub-goal of an
-   induction tactic([t2]).
-	   
-   Formula [a] is of the form [ ! a .. b: C ]
-   Formula [c] is of the form [ ! a .. b x .. y: C]
-
-   Specialize [c], instantiate [a], 
-   basic [a] and [c]
-
-   Completely solves the goal or fails.
-*)
-
-end
-
-
-val asm_induct_tac :
-  ?info:Logic.info 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(**
-   [asm_induct_tac ?info a c]: Apply the induction scheme of
-   assumption [a] to conclusion [c].
-
-   See {!Boollib.InductProof.induct_tac} for details about the form
+   See {!Boollib.induct_tac} for details about the form
    of the induction scheme.
 *)
 
