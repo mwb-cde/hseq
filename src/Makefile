@@ -5,6 +5,9 @@
 # BINFILE: The name of the executable
 BINFILE = hseq
 
+# BINFILE: The name of the library
+LIBFILE = hseqlib.cma
+
 # INITFILE: The name of the initialising file
 INITFILE = hseqstart.ml
 
@@ -24,10 +27,13 @@ OCOPTLIBS =
 SUBDIRS = util tpcore logic parser \
 	tpmain booleans simplifier numbers userlib
 
-# CODE: The code to link in to build the executable (in order)
-CODE= tpquote.cma util.cma tpcore.cma logic.cma \
+# LIBCODE: The code to link in to build the library (in order)
+LIBCODE= util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma boollib.cma simplifier.cma \
 	numbers.cma userlib.cma
+
+# CODE: The code to link in to build the executable (in order)
+CODE= tpquote.cma
 
 ####
 # Don't modify anything below this line
@@ -173,8 +179,11 @@ INCLUDE = -I $(HEADERSDIR)
 # Flags:
 # FASTCOMP: Use the fast compilers
 
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC=ocamlc
+
 # OCAMLC: The OCaml byte code compiler
-OCAMLC= ocamlc $(OPTIONS) 
+export OCAMLC= $(BAREOCAMLC) $(OPTIONS) 
 
 # OCAMLNATC: The OCaml native code compiler
 OCAMLNATC= ocamlnat $(OPTIONS) 
@@ -187,8 +196,11 @@ OCAMLDOC = ocamldoc
 
 ifeq ($(FASTCOMP), true)
 
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC= ocamlc.opt 
+
 # OCAMLC: The OCaml bytecode compiler
-OCAMLC= ocamlc.opt $(OPTIONS) 
+export OCAMLC= ocamlc.opt $(OPTIONS) 
 
 # OCAMLCNAT: The OCaml native code compiler
 OCAMLCNAT= ocamlnat $(OPTIONS) 
@@ -202,7 +214,7 @@ OCAMLDOC = ocamldoc.opt
 endif
 
 # OCAMLlink: The OCaml byte-code linker
-OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+export OCAMLlink= $(BAREOCAMLC) -custom -a $(INCLUDE) 
 
 # OCAMLNATlink: The OCaml native-code linker
 OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
@@ -240,20 +252,26 @@ doc:
 mkhseq: mkhseq.ml
 	$(OCAMLC) -o mkhseq mkhseq.ml
 
-hseq: code
-	$(OCAMLMKTOP) -o $(BINFILE) $(CODE) 
+$(LIBFILE): code
+	ocamlc.opt -a -custom -o $(LIBFILE) $(INCLUDE) $(LIBCODE)
+#	$(OCAMLlink) -o $(LIBFILE) $(LIBCODE)
 
-install: hseq
+$(BINFILE): code $(LIBFILE)
+	$(OCAMLMKTOP) -o $(BINFILE) $(CODE) $(LIBFILE)
+
+install: $(BINFILE)
 	-$(MKDIR) $(IBASEDIR)
 	-$(MKDIR) $(IBINDIR)
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
 	-$(MKDIR) $(ILIBDIR)
+	-$(COPY) $(INITFILE) $(ILIBDIR)
+	$(foreach f, $(CODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR))
+	$(COPY) $(LIBFILE) $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/*.cmi $(LIBDIR)/*.cmo $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/*.cmo $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/*.cma $(ILIBDIR)
-	-$(COPY) $(INITFILE) $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
+#	-$(COPY) $(LIBDIR)/*.cmo $(ILIBDIR)
+#	-$(COPY) $(LIBDIR)/*.cma $(ILIBDIR)
 
 install-doc: 
 	-$(MKDIR) $(IDOCDIR)
