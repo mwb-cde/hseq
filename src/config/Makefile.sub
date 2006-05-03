@@ -198,8 +198,11 @@ endif
 # Flags:
 # FASTCOMP: Use the fast compilers
 
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC= ocamlc
+
 # OCAMLC: The OCaml byte code compiler
-export OCAMLC= ocamlc $(OPTIONS) 
+export OCAMLC= $(BAREOCAMLC) $(OPTIONS) 
 
 # OCAMLNATC: The OCaml native code compiler
 export OCAMLNATC= ocamlopt $(OPTIONS) 
@@ -211,6 +214,9 @@ export OCAMLDEP = ocamldep $(PPOPTIONS)
 export OCAMLDOC = ocamldoc 
 
 ifeq ($(FASTCOMP), true)
+
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC= ocamlc.opt 
 
 # OCAMLC: The OCaml bytecode compiler
 export OCAMLC= ocamlc.opt $(OPTIONS) 
@@ -230,7 +236,7 @@ export OCAMLNATC= ocamlopt.op $(OPTIONS)
 endif
 
 # OCAMLlink: The OCaml byte-code linker
-export OCAMLlink= $(OCAMLC) -custom -c $(INCLUDE) $(OCLIBS) 
+export OCAMLlink= $(BAREOCAMLC) -custom -a $(INCLUDE) 
 
 # OCAMLNATlink: The OCaml native-code linker
 export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
