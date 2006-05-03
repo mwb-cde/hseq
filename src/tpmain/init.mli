@@ -6,7 +6,7 @@
 
 
 (**
-   System initialisation.
+   System initialisation for interactive use.
 
    With Ocaml 3.06, uses Toploop.parse_toplevel_phrase to call init()
    then restores Toploop.parse_toplevel_phrase to original (ocaml)

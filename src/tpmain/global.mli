@@ -6,7 +6,52 @@
 
 (** The global environment *)
 
-(** {5 Theories} *)
+(** Hooks for interacting with the system *)
+module Hooks :
+sig
+  (**
+     Values in this module depend on the operating environment of the
+     system. Settings for an interactive system (built with
+     [ocamlmktop]) will be different to those for a system built as a
+     library. 
+
+     All values should  be set as part of the initialisation
+     sequence for the system and before {!Global.init} (which sets up
+     the threom prover) is called.
+
+     All functions defined here are allowed to fail arbitrarily. 
+  *)
+
+
+  val load_file : (string -> unit) ref
+    (**
+       [load_file f]: Load a byte-code file [f] into memory. 
+           
+       Used, when loading theories, to load any associated byte-code
+       libraries.
+
+       For interactive systems, this can be set to [Topdirs.dir_load
+       Format.std_formatter].
+
+       For libraries, a possible value is [Dynlink.loadfile]
+    *)
+
+  val use_file : (?silent:bool -> string -> unit) ref
+    (**
+       [use_file ?silent f]: Read file [f] as a script. 
+       If [silent=true], do not report any information.
+
+       Used, when loading theories, to run any associated script.
+       
+       Used if a missing theory is to be built from a script.
+
+       For interactive systems, this can be set to 
+       [Toploop.use_file].
+    *)
+
+end
+
+      (** {5 Theories} *)
 module Thys:
     sig
 
@@ -262,18 +307,18 @@ module Files :
       val get_cdir : unit -> string
 (** The current working directory. *)
 
-      val object_suffix : string list
+      val object_suffix :  string list ref
 	(**
 	   The suffixes of file types which should be treated as
-	   byte-code files.  (=[".cmo"; ".cmi"]).
+	   byte-code files (=[".cmo"; ".cmi"]).
 	*)
 
       val load_use_file : ?silent:bool -> string -> unit
 	(**
 	   [load_use_file ?silent name]: If name is an object file
 	   (with a suffix in [object_suffix]) then call
-	   {!Unsafe.load_file}[ name] otherwise call {!Unsafe.use_file}
-	   [?silent name].
+	   {!Global.Hooks.load_file}[ name] otherwise call
+	   {!Global.Hooks.use_file} [?silent name].
 	*)
 
 	(** {7 Paths} *)
@@ -369,6 +414,7 @@ module Files :
     end
 
 (** {7 Toplevel file functions} *)
+
 val get_thy_path: unit -> string list
 (** Get the list of directories to search for theory files *)
 
@@ -421,6 +467,10 @@ module Init:
 (** {7 Toplevel initialising functions} *)
 
 val init : unit -> unit
-(** Initialise the system *)
+(**
+    Initialise the theorem prover. This should be called before the
+    theorem prover is first used.
+*)
+	
 val reset : unit -> unit
 (** Reset the system. (This is the same as init()). *)

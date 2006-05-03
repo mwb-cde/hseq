@@ -5,8 +5,8 @@
 ----*)
 
 
-(*
-   Initialising TP
+(**
+   Initialising TP for interactive use.
 
    For Ocaml 3.06:
    Use Toploop.parse_toplevel_phrase to call init()
@@ -30,12 +30,24 @@ let tp_init() =
     Global.init();
     Settings.load_thy_level:=tmp
 
-
 (**
    [init()]:  Start up function, called when system first begins.
    Initialise TP and load the startup file.
 *)
 
+
+(** [set_hooks()]: Set the file-handling hooks
+    
+    [Global.Hooks.load_file := Unsafe.load_file]
+    
+    [Global.Hooks.use_file := Unsafe.use_file]
+*)
+let set_hooks() = 
+  Global.Hooks.load_file := Unsafe.load_file;
+  Global.Hooks.use_file := Unsafe.use_file
+
+      
+(** [set_base_dir()]: Get the installation directory *)
 let set_base_dir()=
     try 
       let d = Sys.getenv Settings.base_dir_var 
@@ -46,6 +58,9 @@ let set_base_dir()=
 * Set OCaml toplevel search path
 ***)
 
+(** 
+    [set_directorys()]: Add tp directories to the system search path.
+*)
 let set_directorys ()=
   List.iter Unsafe.add_directory (!Settings.include_dirs);
   Unsafe.add_directory (Settings.libs_dir())
@@ -74,5 +89,6 @@ let init() =
 let _ = 
   set_base_dir();
   set_directorys();
+  set_hooks();
   Unsafe.add_init load_init
 

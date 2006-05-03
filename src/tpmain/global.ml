@@ -7,6 +7,18 @@
 open Basic
 open Parser
 
+(** Hooks for interacting with the system *)
+module Hooks =
+struct
+
+  let default_load_file f = raise (Failure "Built-in load_file")
+  let default_use_file ?silent f = raise (Failure "Built-in use_file")
+
+  let load_file = ref default_load_file
+  let use_file = ref default_use_file
+
+end
+
 module Thys =
   struct
 
@@ -263,12 +275,12 @@ module Files =
 
     let get_cdir () = Sys.getcwd ()
 
-    let object_suffix = [".cmo"; ".cmi"]
+    let object_suffix = ref [".cmo"; ".cmi"]
 
     let load_use_file ?silent f=
-      if(List.exists (fun x -> Filename.check_suffix f x) object_suffix)
-      then Unsafe.load_file f
-      else Unsafe.use_file ?silent f
+      if(List.exists (fun x -> Filename.check_suffix f x) (!object_suffix))
+      then !Hooks.load_file f
+      else !Hooks.use_file ?silent f
 
 (*** Paths ***)
 
@@ -339,11 +351,13 @@ module Files =
       try 
 	let script = find_file (script_of_thy f) (get_thy_path())
 	in 
+	let usefile = !Hooks.use_file ~silent:false
+	in 
 	Thys.set_theories(thydb);
 	Report.warning ("Trying to build theory "^f);
 	(try
 	  (add_forbidden f;
-	   Unsafe.use_file ~silent:false script;
+	   usefile script;
 	   drop_forbidden f)
 	with err -> (drop_forbidden f; raise err));
 	Report.warning ("Built theory "^f);
