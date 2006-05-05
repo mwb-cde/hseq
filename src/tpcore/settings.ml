@@ -54,5 +54,5 @@ let long_identifier=ref false
 let print_type_level=ref 1
 
 
-let load_thy_level=ref 1
+let load_thy_level=ref 0
 

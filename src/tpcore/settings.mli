@@ -95,5 +95,5 @@ val print_type_level: int ref
 
 val load_thy_level: int ref
 (**
-   Amount of information to emit when loading a theory. Initially [1].
+   Amount of information to emit when loading a theory. Initially [0].
 *)

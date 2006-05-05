@@ -37,11 +37,7 @@ let run () =
 
 (** Initialise HSeq (quietly) *)
 let initialise() = 
-  let tmp = !Settings.load_thy_level
-  in 
-    Settings.load_thy_level:=0;
-    Global.init();
-    Settings.load_thy_level:=tmp
+  Global.init()
 
 let _ = 
   initialise();
