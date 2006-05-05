@@ -5,7 +5,7 @@
 # BINFILE: The name of the executable
 BINFILE = hseq
 
-# BINFILE: The name of the library
+# LIBFILE: The name of the library
 LIBFILE = hseqlib.cma
 
 # INITFILE: The name of the initialising file
@@ -24,8 +24,10 @@ OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 OCOPTLIBS =
 
 # SUBDIRS: The sub-directories to build (in order)
-SUBDIRS = util tpcore logic parser \
-	tpmain booleans simplifier numbers userlib
+SUBDIRS = util toplib tpcore logic parser \
+	tpmain booleans simplifier \
+	numbers userlib \
+	hseqtop
 
 # LIBCODE: The code to link in to build the library (in order)
 LIBCODE= util.cma tpcore.cma logic.cma \
@@ -33,7 +35,13 @@ LIBCODE= util.cma tpcore.cma logic.cma \
 	numbers.cma userlib.cma
 
 # CODE: The code to link in to build the executable (in order)
-CODE= tpquote.cma
+CODE= tpquote.cma hseqtop.cma
+
+# TOPLIBCODE: Inteface to the OCaml toplevel, 
+#   to be linked in before anything else
+#   (needed to resolve conflicts with identifiers defined
+#   in the OCaml toplevel).
+TOPLIBCODE = toplib.cma
 
 ####
 # Don't modify anything below this line
@@ -110,7 +118,6 @@ export IDOCDIR = $(IBASEDIR)/doc/source
 
 # FASTCOMP: whether to use the fast compilers
 export FASTCOMP = $(FastCompilers)
-
 
 
 ##
@@ -253,11 +260,11 @@ mkhseq: mkhseq.ml
 	$(OCAMLC) -o mkhseq mkhseq.ml
 
 $(LIBFILE): code
-	ocamlc.opt -a -custom -o $(LIBFILE) $(INCLUDE) $(LIBCODE)
+	$(OCAMLlink)-o $(LIBFILE) $(INCLUDE) $(LIBCODE)
 #	$(OCAMLlink) -o $(LIBFILE) $(LIBCODE)
 
 $(BINFILE): code $(LIBFILE)
-	$(OCAMLMKTOP) -o $(BINFILE) $(CODE) $(LIBFILE)
+	$(OCAMLMKTOP) -o $(BINFILE) $(TOPLIBCODE) $(LIBFILE) $(CODE) 
 
 install: $(BINFILE)
 	-$(MKDIR) $(IBASEDIR)
@@ -265,8 +272,9 @@ install: $(BINFILE)
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
 	-$(MKDIR) $(ILIBDIR)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
-	$(foreach f, $(CODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR))
 	$(COPY) $(LIBFILE) $(ILIBDIR)
+	$(foreach f, $(CODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
+	-$(COPY) $(LIBDIR)/$(TOPLIBCODE) $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
