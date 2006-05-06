@@ -326,7 +326,7 @@ libclean:
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
-reallyclean: clean docclean
+reallyclean: clean libclean docclean
 	$(RM) hseq
 	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), \
