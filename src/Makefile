@@ -317,18 +317,18 @@ clean:
 
 .PHONY: libclean
 libclean: 
-	$(RM) *.cmi
-	$(RM) *.cma 
-	$(RM) *.cmxa
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) libclean; )
 	$(MAKECLEAN) -C quote libclean
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
-reallyclean: clean libclean docclean
+reallyclean: clean docclean
 	$(RM) hseq
 	$(RM) depend
+	$(RM) *.cmi
+	$(RM) *.cma 
+	$(RM) *.cmxa
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) reallyclean; )
 	$(MAKECLEAN) -C quote reallyclean

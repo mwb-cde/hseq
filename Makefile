@@ -161,8 +161,7 @@ clean:
 reallyclean: clean
 	-$(RM) hseq
 	-$(RM) lib/*
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) reallyclean;) $(SKIP)
+	$(MAKECLEAN) -C thys reallyclean
 	$(foreach subdir, $(DOCSUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 
