@@ -57,7 +57,7 @@ DOCDATA = tpcore.data
 
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
-DOCPREV = toplib.data
+DOCPREV = util.data
 
 ###
 # End of Makefile.def variables
