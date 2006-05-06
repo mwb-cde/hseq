@@ -2,10 +2,10 @@ HSeq
 ----------
 
 + Split the system into a library and toplevel part.
-  Library named hseqlib.
+  Library named hseq.
   Toplevel made up of tpquote.cma (the quotation expander),
-  toplib.cma (utility functions for the toplevel) and hseqtop.cma (the
-  interface to the OCaml toplevel).
+  and hseqtop.cma (the interface to the OCaml toplevel).
+
 + Added induction tactics induct_tac and induct_on
 	
 	

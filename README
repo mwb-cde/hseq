@@ -42,9 +42,10 @@ OCaml toplevel.
 
 Library:
 
-The library is named hseqlib.cma and depends on the OCaml libraries
-Nums and Unix. The library should be initialized before it is used, by
-calling Global.init().
+The library is named hseq.cma and depends on the OCaml libraries Nums
+and Unix. The library is built by packing the code into a module named
+Hseq.  The library should be opened, with 'open Hseq', and initialized
+before it is used, by calling Global.init().
 
 File-handling is handled by two hooks: Global.Hooks.load_file and
 Global.Hooks.use_file. Hook load_file is used to load byte-code files,
@@ -59,24 +60,22 @@ build a stand-alone executable.
 
 Toplevel:
 
-The toplevel interface is made up of libraries toplib.cma, tpquote.cma
-and hseqtop.cma. Library toplib.cma is an interface to the OCaml
-toplevel functions. It is separated out to avoid naming
-conflicts. Library tpquote.cma is the quotation expander and
+The toplevel interface is made up of libraries tpquote.cma
+and hseqtop.cma.  Library tpquote.cma is the quotation expander and
 hseqtop.cma is the main toplevel code, mainly to initialize the
 system.
 
 Linking:
 --------
 
-The order in which libraries are linked is significant: toplib
-must come before hseqlib which must come before hseqtop.
-The quotation expander is used with camlp4. 
+The order in which libraries are linked is significant: library hseq
+which must come before hseqtop. The quotation expander is used with
+camlp4.
 
 The link order used to build the standard toplevel is:
    nums.cma unix.cma camlp4.o.cma pa_extend.cmo q_MLast.cmo
-   toplib.cma hseqlib.cma tpquote.cma hseqtop.cma
+   hseq.cma tpquote.cma hseqtop.cma
 
 It should be possible to link with the HSeq library in the sequence
-   nums.cma unix.cma hseqlib.cma
+   nums.cma unix.cma hseq.cma
 
