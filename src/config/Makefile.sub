@@ -84,28 +84,28 @@ DOCPREV ?=
 ##
 
 # SRCDIR: The source directory (relative to a sub-directory).
-SRCDIR ?= ..
+SRCDIR = ..
 
 # BUILDDIR: The top of the build directory (relative to a sub-directory).
-BUILDDIR ?= $(SRCDIR)/..
+BUILDDIR = $(SRCDIR)/..
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(BUILDDIR)/config
+CONFIGDIR = $(BUILDDIR)/config
 
 # TOPCONFIGDIR: The toplevel configuration directory
-TOPCONFIGDIR ?= $(BUILDDIR)/config
+TOPCONFIGDIR = $(BUILDDIR)/config
 
 # CONFIGFILE: The configuration file
-CONFIGFILE ?= $(TOPCONFIGDIR)/data.make
+CONFIGFILE = $(TOPCONFIGDIR)/data.make
 
 # HEADERSDIR: The location of the compiled header files
-HEADERSDIR ?= $(SRCDIR)/lib
+HEADERSDIR = $(SRCDIR)/lib
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= $(SRCDIR)/lib
+LIBDIR = $(SRCDIR)/lib
 
 # DOCDIR: Source code documentation directory
-DOCDIR ?= $(SRCDIR)/doc
+DOCDIR = $(SRCDIR)/doc
 
 ###
 # Configuration variables

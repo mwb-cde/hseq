@@ -4,6 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
+open Hseq
 
 (**
    System initialisation for interactive use.

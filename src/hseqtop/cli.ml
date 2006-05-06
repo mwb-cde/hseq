@@ -4,6 +4,7 @@
    Copyright M Wahab 2005
    ----*)
 
+open Hseq
 open Lib
 
 (***

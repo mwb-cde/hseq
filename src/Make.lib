@@ -1,0 +1,126 @@
+###
+# Makefile for building the HSeq library from object files
+#
+# Should only be called from the main Makefile.
+###
+
+##
+# Calculate the file list
+#
+# Input: 
+#   LIBDIRS: The list of directories (in order) from which to take the 
+#	object files
+# Output:
+#   FILELIST: The list of filenames with which to build the library
+#
+# Clobbered variables:
+#   FILES
+##
+
+SUBDATA = Makefile.def
+
+FILELIST :=
+
+define get_files
+  FILES :=
+  include $(1)/$$(SUBDATA)
+  echo "subdir = $(1)"  
+  FILELIST +=$$(foreach file, $$(FILES),$(1)/$$(file)) 
+endef
+
+$(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
+
+##
+# Targets
+##
+
+# lib: Build the library
+.PHONY: lib
+# obj: Build the object file
+.PHONY: obj
+
+# all: Build the library
+.PHONY: all
+
+# clean: Remove the library and any generated files
+.PHONY: clean
+# reallyclean: Remove the library and any generated files
+.PHONY: reallyclean
+
+# install: Install the library
+.PHONY: install
+
+##
+# Output 
+#  LIBFILE: The name of the library (no suffix)
+#  INSTALLDIR: The directory to install to
+##
+
+LIBFILE = hseq
+
+INSTALLDIR = lib
+
+###
+# Header, byte code and native code files
+###
+
+# HEADERS: the list of header (.cmi) files 
+HEADERS = $(foreach f, $(FILELIST), $(f).cmi)
+
+# MLHEADERS: the list of ML header (.mli) files 
+MLHEADERS = $(foreach f, $(FILELIST), $(f).mli)
+
+# CODE: the list of code (.cmo) files 
+CODE = $(foreach f, $(FILELIST), $(f).cmo)
+
+# NATCODE: the list of native code (.cmx) files 
+NATCODE = $(foreach f, $(FILELIST), $(f).cmx $(f).o)
+
+# LIBHEADER: The generated header
+LIBHEADER = $(LIBFILE).cmi
+
+# BYTEOBJ: The name of the byte-code (.cmo) object file built
+BYTEOBJ = $(LIBFILE).cmo
+
+# BYTELIB: The full name of the byte-code library (.cma) file built
+BYTELIB = $(LIBFILE).cma
+
+# NATOBJ: The name of the native-code object files built
+NATOBJ = $(LIBFILE).cmxo $(LIBFILE).o
+
+# NATLIB: The full name of the native-code libraries (.cma) file built
+NATLIB = $(LIBFILE).cmxa $(LIBFILE).a
+
+##
+# Build targets
+##
+
+obj:
+	@echo "LIBDIRS = $(LIBDIRS)"
+	@echo "FILELIST = $(FILELIST)"
+	$(BAREOCAMLC) $(INCLUDE) -pack -o $(BYTEOBJ) $(CODE)
+
+lib: obj
+	$(OCAMLlink) -o $(BYTELIB) $(INCLUDE) $(BYTEOBJ)
+
+install: lib
+	-$(COPY) $(LIBHEADER) $(INSTALLDIR)
+	-$(COPY) $(BYTELIB) $(INSTALLDIR)
+	-$(COPY) $(NATLIB) $(INSTALLDIR)
+
+
+###
+# Clean up
+###
+
+.PHONY: clean
+clean: 
+	$(RM) $(BYTEOBJ)
+	$(RM) $(NATOBJ)
+
+.PHONY: libclean
+libclean: 
+	$(RM) $(HEADERS)
+	$(RM) $(BYTELIB)
+	$(RM) $(NATLIB)
+

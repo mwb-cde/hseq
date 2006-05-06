@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = init cli
+FILES = unsafe init cli
 
 # HEADERS: the list of header (.cmi) files 
 HEADERS = $(foreach f, $(FILES), $(f).cmi)

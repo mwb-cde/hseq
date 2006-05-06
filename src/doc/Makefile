@@ -2,9 +2,7 @@
 ## DO NOT MODIFY ANYTHING BELOW THIS POINT
 ##
 
-ifndef CONFIGDIR
 CONFIGDIR = ../../config
-endif
 
 # Don't use the default dependency generator
 NODEPEND = "true"

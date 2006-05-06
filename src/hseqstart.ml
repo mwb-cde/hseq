@@ -8,6 +8,8 @@
    HSeq start-up file.
 *)
 
+open Hseq
+
 (**
    Install printers
 *)

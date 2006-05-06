@@ -3,45 +3,54 @@
 ###
 
 # BINFILE: The name of the executable
-BINFILE = hseq
+export BINFILE = hseq
 
 # LIBFILE: The name of the library
-LIBFILE = hseqlib.cma
+#export LIBFILE = hseqlib.cma
+export LIBFILE = hseq.cma
 
 # INITFILE: The name of the initialising file
-INITFILE = hseqstart.ml
+export INITFILE = hseqstart.ml
 
 # BINFILE: The name of the native-code executable
-OPTFILE =
+export OPTFILE =
 
 # OCINCLUDE: Required OCaml include directories
-OCINCLUDE = -I +camlp4
+export OCINCLUDE = -I +camlp4
 
 # OCLIBS: Required OCaml libraries.
-OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+export OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 
 # OCOPTLIBS: The optimised required OCaml libraries.
-OCOPTLIBS =
+export OCOPTLIBS =
 
 # SUBDIRS: The sub-directories to build (in order)
-SUBDIRS = util toplib tpcore logic parser \
+export SUBDIRS = util tpcore logic parser \
 	tpmain booleans simplifier \
 	numbers userlib \
 	hseqtop
 
+# LIBDIRS: The sub-directories to build the library from
+export LIBDIRS = util tpcore logic parser \
+		tpmain booleans simplifier \
+		numbers userlib 
+
+# TLDIRS: The sub-directories to build the top-level
+TLDIRS = hseqtop
+
 # LIBCODE: The code to link in to build the library (in order)
-LIBCODE= util.cma tpcore.cma logic.cma \
+export LIBCODE= util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma boollib.cma simplifier.cma \
 	numbers.cma userlib.cma
 
-# CODE: The code to link in to build the executable (in order)
-CODE= tpquote.cma hseqtop.cma
+# TOPCODE: The code to link in to build the executable (in order)
+export TOPCODE= tpquote.cma hseqtop.cma
 
 # TOPLIBCODE: Inteface to the OCaml toplevel, 
 #   to be linked in before anything else
 #   (needed to resolve conflicts with identifiers defined
 #   in the OCaml toplevel).
-TOPLIBCODE = toplib.cma
+#export TOPLIBCODE = toplib.cma
 
 ####
 # Don't modify anything below this line
@@ -65,16 +74,16 @@ CONFIGFILE = $(CONFIGDIR)/data.make
 
 # SUBCONFIGDIR: The configuration directory for sub-directories
 # (relative to a subdirectory)
-SUBCONFIGDIR ?= ../config
+#export SUBCONFIGDIR ?= ../config
 
 # HEADERSDIR: The location of the compiled header files
-HEADERSDIR ?= $(SRCDIR)/lib
+export HEADERSDIR ?= $(SRCDIR)/lib
 
 # LIBDIR: The location of the compiled files
-LIBDIR ?= $(SRCDIR)/lib
+export LIBDIR ?= $(SRCDIR)/lib
 
 # DOCDIR: Source code documentation directory
-DOCDIR ?= $(SRCDIR)/doc
+export DOCDIR ?= $(SRCDIR)/doc
 
 ###
 # Configuration variables
@@ -125,29 +134,30 @@ export FASTCOMP = $(FastCompilers)
 ##
 
 # CMDSFILE: File defined OS Commands to use in the build
-CMDSFILE ?= $(CONFIGDIR)/Makefile.os
+export CMDSFILE ?= $(CONFIGDIR)/Makefile.os
 
 # SUBMAKEFILE: Makefile for subdirectories
-SUBMAKEFILE ?= $(CONFIGDIR)/Makefile.sub
+#export SUBMAKEFILE ?= $(CONFIGDIR)/Makefile.sub
 
 # SUBDATA: File containing definitions for subdirectories
-SUBDATA ?= Makefile.def
+export SUBDATA ?= Makefile.def
 
 # MAKEOPTIONS: Options to pass to make
-MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
+#MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
+#export MAKEOPTIONS
 
 #ifdef TOOLBOX
 #MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
 #endif
 
 # BAREMAKE: The make with not options
-BAREMAKE = make 
+export BAREMAKE = make 
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = make $(MAKEOPTIONS)
+export DMAKE = make $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
 ##
 # Read command definitions
@@ -164,20 +174,21 @@ include $(CONFIGDIR)/Makefile.os
 ##
 
 # PPCODE: The preprocessor code
-PPCODE ?= $(LIBDIR)/tpquote.cma
+#export PPCODE ?= $(LIBDIR)/tpquote.cma
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set "PPOPTIONS =" (i.e. an empty value)
-ifneq (($strip $(PPOPTIONS)), "")
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
-endif
+#ifneq (($strip $(PPOPTIONS)), "")
+#PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
+#export PPOPTIONS
+#endif
 
 # OPTIONS: Compiler options
-OPTIONS = $(PPOPTIONS)
+export OPTIONS = $(PPOPTIONS)
 
 # INCLUDE: The include directives
-INCLUDE = -I $(HEADERSDIR)
+export INCLUDE = -I $(HEADERSDIR)
 
 ##
 # Compiler Commands
@@ -193,30 +204,30 @@ export BAREOCAMLC=ocamlc
 export OCAMLC= $(BAREOCAMLC) $(OPTIONS) 
 
 # OCAMLNATC: The OCaml native code compiler
-OCAMLNATC= ocamlnat $(OPTIONS) 
+export OCAMLNATC= ocamlnat $(OPTIONS) 
 
 # OCAMLDEP: The OCaml dependency generator
-OCAMLDEP = ocamldep $(PPOPTIONS)
+export OCAMLDEP = ocamldep $(PPOPTIONS)
 
 # OCAMLDOC: The documentation generator
-OCAMLDOC = ocamldoc 
+export OCAMLDOC = ocamldoc 
 
 ifeq ($(FASTCOMP), true)
 
 # BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC= ocamlc.opt 
+export export BAREOCAMLC= ocamlc.opt 
 
 # OCAMLC: The OCaml bytecode compiler
-export OCAMLC= ocamlc.opt $(OPTIONS) 
+export export OCAMLC= ocamlc.opt $(OPTIONS) 
 
 # OCAMLCNAT: The OCaml native code compiler
-OCAMLCNAT= ocamlnat $(OPTIONS) 
+export OCAMLCNAT= ocamlnat $(OPTIONS) 
 
 # OCAMLDEP: The OCaml dependency generator
-OCAMLDEP = ocamldep.opt $(PPOPTIONS)
+export OCAMLDEP = ocamldep.opt $(PPOPTIONS)
 
 # OCAMLDOC: The documentation generator
-OCAMLDOC = ocamldoc.opt 
+export OCAMLDOC = ocamldoc.opt 
 
 endif
 
@@ -224,13 +235,14 @@ endif
 export OCAMLlink= $(BAREOCAMLC) -custom -a $(INCLUDE) 
 
 # OCAMLNATlink: The OCaml native-code linker
-OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
+export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
 
 # OCAMLCPP : the preprocesor
 OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
+export OCAMLCPP
 
 # OCAMLMKTOP: Make a toplevel
-OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
+export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 ###
 # The build targets
@@ -244,7 +256,7 @@ quote:
 
 .PHONY: code
 code: quote
-	$(foreach subdir, $(SUBDIRS), \
+	$(foreach subdir, $(LIBDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
 .PHONY: doc
@@ -259,12 +271,18 @@ doc:
 mkhseq: mkhseq.ml
 	$(OCAMLC) -o mkhseq mkhseq.ml
 
-$(LIBFILE): code
-	$(OCAMLlink)-o $(LIBFILE) $(INCLUDE) $(LIBCODE)
-#	$(OCAMLlink) -o $(LIBFILE) $(LIBCODE)
 
-$(BINFILE): code $(LIBFILE)
-	$(OCAMLMKTOP) -o $(BINFILE) $(TOPLIBCODE) $(LIBFILE) $(CODE) 
+.PHONY: lib
+lib: code
+	$(DMAKE) -f Make.lib install
+
+.PHONY: toplevel
+toplevel: 
+	$(foreach subdir, $(TLDIRS), \
+		$(DMAKE) -C $(subdir) install;)
+
+$(BINFILE): lib toplevel
+	$(OCAMLMKTOP) -o $(BINFILE) $(TOPLIBCODE) $(LIBFILE) $(TOPCODE) 
 
 install: $(BINFILE)
 	-$(MKDIR) $(IBASEDIR)
@@ -273,17 +291,16 @@ install: $(BINFILE)
 	-$(MKDIR) $(ILIBDIR)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
 	$(COPY) $(LIBFILE) $(ILIBDIR)
-	$(foreach f, $(CODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
+	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
 	-$(COPY) $(LIBDIR)/$(TOPLIBCODE) $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
-#	-$(COPY) $(LIBDIR)/*.cmo $(ILIBDIR)
-#	-$(COPY) $(LIBDIR)/*.cma $(ILIBDIR)
 
 install-doc: 
 	-$(MKDIR) $(IDOCDIR)
 	-$(COPY) $(DOCDIR)/* $(IDOCDIR)
+
 
 ###
 # Clean up
@@ -309,7 +326,7 @@ libclean:
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 .PHONY: reallyclean
-reallyclean: docclean
+reallyclean: clean docclean
 	$(RM) hseq
 	$(RM) depend
 	$(foreach subdir, $(SUBDIRS), \

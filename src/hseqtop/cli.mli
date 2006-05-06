@@ -4,6 +4,8 @@
  Copyright M Wahab 2005
 ----*)
 
+open Hseq
+
 (** Simple command line interface.
 
    Provides basic support for recording the commands used to prove a

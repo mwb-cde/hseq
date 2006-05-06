@@ -4,6 +4,7 @@
  Copyright M Wahab 2005
 ----*)
 
+open Hseq
 
 (**
    Initialising TP for interactive use.
