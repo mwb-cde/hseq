@@ -9,22 +9,22 @@
 ##
 
 # CHDIR: Change directory
-CHDIR = cd
+export CHDIR = cd
 
 # MKDIR: Make a directory
-MKDIR = mkdir 
+export MKDIR = mkdir 
 
 # RMDIR: Remove a directory
-RMDIR = rmdir
+export RMDIR = rmdir
 
 # COPY: Copy one or more files
-COPY = cp -f
+export COPY = cp -f
 
 # RM: Delete one or more files
-RM = rm -f
+export RM = rm -f
 
 # SKIP: Do nothing
-SKIP =
+export SKIP =
 
 ##
 # OS independent toolbox Settings
@@ -34,25 +34,25 @@ ifdef TOOLBOX
 ifneq ($(strip $(TOOLBOX)), "")
 
 # Set the shell
-#SHELL=
+#export SHELL=
 
 # CHDIR: Change directory
-CHDIR = echo "CHDIR: not implemented"
+export CHDIR = echo "CHDIR: not implemented"
 
 # MKDIR: Make a directory
-MKDIR = ocaml $(TOOLBOX) --mkdir
+export MKDIR = ocaml $(TOOLBOX) --mkdir
 
 # RMDIR: Remove a directory
-RMDIR = echo "RMDIR: not implemented"
+export RMDIR = echo "RMDIR: not implemented"
 
 # COPY: Copy one or more files
-COPY = ocaml $(TOOLBOX) --cp
+export COPY = ocaml $(TOOLBOX) --cp
 
 # RM: Delete one or more files
-RM = ocaml $(TOOLBOX) --rm
+export RM = ocaml $(TOOLBOX) --rm
 
 # SKIP: Do nothing
-SKIP = echo ""
+export SKIP = echo ""
 
 endif
 endif
@@ -64,28 +64,28 @@ endif
 #ifeq (${OS},"mswin")
 
 # Set the shell
-#SHELL=cmd.exe
+#export SHELL=cmd.exe
 
 # file: Convert a Unix file-name to the OS file-name
-#file=$(subst /,\,$(1))
+#export file=$(subst /,\,$(1))
 
 # CHDIR: Change directory
-#CHDIR = cd
+#export CHDIR = cd
 
 # MKDIR: Make a directory
-#MKDIR = mkdir 
+#export MKDIR = mkdir 
 
 # RMDIR: Remove a directory
-#RMDIR = rmdir /Q
+#export RMDIR = rmdir /Q
 
 # COPY: Copy one or more files
-#COPY = xcopy /S /C /I /Y 
+#export COPY = xcopy /S /C /I /Y 
 
 # RM: Delete one or more files
-#RM = del /Q 
+#export RM = del /Q 
 
 # SKIP: Do nothing
-#SKIP = echo ""
+#export SKIP = echo ""
 
 #endif
 

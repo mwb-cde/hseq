@@ -15,6 +15,8 @@
    where HSEQ is the hseq install directory.
 *)
 
+open Hseq
+
 (** Add the source include directories *)
 let _ = 
   Settings.include_dirs :=

@@ -4,6 +4,8 @@ Author: M Wahab <mwahab@users.sourceforge.net>
 Copyright M Wahab 2006
 ----*)
 
+open Hseq
+
 let set_thy = "Set"
 let set_id = Ident.mk_long set_thy "SET"
 let set_data = (Printer.default_term_fixity, Printer.default_term_prec)

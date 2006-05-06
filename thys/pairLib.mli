@@ -20,6 +20,8 @@ Copyright M Wahab 2006
    where INCLUDEDIR is the directory containing the hseq header files.
 *)
 
+open Hseq
+
 val pair_thy : string
 (** [pair_thy]: The name of the theory of pairs *)
 

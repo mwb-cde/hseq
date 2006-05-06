@@ -19,6 +19,8 @@ Copyright M Wahab 2006
    compile with [compile [] "setLib.mli"; compile [] "setLib.ml"]
 *)
 
+open Hseq
+
 val set_thy: string
 (**
    [set_thy]: The name of the theory of sets.

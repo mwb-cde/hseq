@@ -20,6 +20,7 @@ Copyright M Wahab 2006
    where INCLUDEDIR is the directory containing the hseq header files.
 *)
 
+open Hseq
 open Userlib
 
 let pair_thy = "Pair"

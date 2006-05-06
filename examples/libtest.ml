@@ -11,7 +11,7 @@
   Compile with 
    ocamlc -o test 
       -pp "camlp4o q_MLast.cmo HSEQLIB/tpquote.cma pa_extend.cmo" -I +camlp4
-      -I HSEQLIB nums.cma unix.cma hseqlib.cma
+      -I HSEQLIB nums.cma unix.cma hseq.cma
       libtest.ml
 
   where HSEQLIB is the installation directory for the the HSeq libraries.
@@ -21,6 +21,7 @@
    open Modules
 *)
 
+open Hseq
 open Tactics
 open Boollib
 open Simplib
