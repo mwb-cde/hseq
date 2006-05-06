@@ -19,7 +19,7 @@ Copyright M Wahab 2006
    compile with [compile [] "setLib.mli"; compile [] "setLib.ml"]
 *)
 
-open Hseq
+open HSeq
 
 val set_thy: string
 (**

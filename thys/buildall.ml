@@ -15,7 +15,7 @@
    where HSEQ is the hseq install directory.
 *)
 
-open Hseq
+open HSeq
 
 (** Add the source include directories *)
 let _ = 

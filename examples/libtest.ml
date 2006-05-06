@@ -21,7 +21,7 @@
    open Modules
 *)
 
-open Hseq
+open HSeq
 open Tactics
 open Boollib
 open Simplib

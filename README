@@ -44,7 +44,7 @@ Library:
 
 The library is named hseq.cma and depends on the OCaml libraries Nums
 and Unix. The library is built by packing the code into a module named
-Hseq.  The library should be opened, with 'open Hseq', and initialized
+HSeq.  The library should be opened, with 'open HSeq', and initialized
 before it is used, by calling Global.init().
 
 File-handling is handled by two hooks: Global.Hooks.load_file and

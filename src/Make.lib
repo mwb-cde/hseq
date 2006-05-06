@@ -57,6 +57,7 @@ $(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
 ##
 
 LIBFILE = hseq
+BYTEFILE = HSeq
 
 INSTALLDIR = lib
 
@@ -77,16 +78,16 @@ CODE = $(foreach f, $(FILELIST), $(f).cmo)
 NATCODE = $(foreach f, $(FILELIST), $(f).cmx $(f).o)
 
 # LIBHEADER: The generated header
-LIBHEADER = $(LIBFILE).cmi
+LIBHEADER = $(BYTEFILE).cmi
 
 # BYTEOBJ: The name of the byte-code (.cmo) object file built
-BYTEOBJ = $(LIBFILE).cmo
+BYTEOBJ = $(BYTEFILE).cmo
 
 # BYTELIB: The full name of the byte-code library (.cma) file built
 BYTELIB = $(LIBFILE).cma
 
 # NATOBJ: The name of the native-code object files built
-NATOBJ = $(LIBFILE).cmxo $(LIBFILE).o
+NATOBJ = $(BYTEFILE).cmxo $(BYTEFILE).o
 
 # NATLIB: The full name of the native-code libraries (.cma) file built
 NATLIB = $(LIBFILE).cmxa $(LIBFILE).a

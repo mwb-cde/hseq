@@ -4,7 +4,7 @@ Author: M Wahab <mwahab@users.sourceforge.net>
 Copyright M Wahab 2006
 ----*)
 
-open Hseq
+open HSeq
 
 let set_thy = "Set"
 let set_id = Ident.mk_long set_thy "SET"
