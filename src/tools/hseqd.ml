@@ -18,8 +18,8 @@
 
 (* *)
 
-let bindir = "/home/mw/src/tp/src" ^ "/bin"
-let includedir = "/home/mw/src/tp/src" ^ "/include"
+let bindir = "/home/mw/src/tp"
+let includedir = "/home/mw/src/tp/lib"
 
 (** Start of script *)
 

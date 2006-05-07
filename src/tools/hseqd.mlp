@@ -16,10 +16,10 @@
    continuing to [filen].
 *)
 
-INCLUDE "configure.data"
+INCLUDE "../../config/configure.data"
 
 let bindir = BinDir
-let includedir = HeadersDir
+let includedir = LibDir
 
 (** Start of script *)
 
