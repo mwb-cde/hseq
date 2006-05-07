@@ -85,6 +85,23 @@ let init() =
   starting_mesg(); 
   tp_init()
 
+let init_commands = 
+  [
+    "open HSeq";
+    "open Goals";
+    "open Tactics";
+    "open Boollib";
+    "open Simplib";
+    "open Userlib";
+  ];;
+
+let run_command c = 
+  try Unsafe.use_string (c^";;") 
+  with _ -> ()
+
+let run_commands () = 
+  List.iter run_command init_commands
+
 let new_add_init f =
   let ocaml_init = !Toploop.toplevel_startup_hook
   in 
@@ -100,8 +117,7 @@ let _ =
   set_hooks();
   Unsafe.add_init load_init
 (**
-  init()
-  Format.printf "@[Initialising: 1@]@.";
+  run_commands();
+  init();
   new_add_init load_init;
-  Format.printf "@[Initialising: 2@]@."
 **)
