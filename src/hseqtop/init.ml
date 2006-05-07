@@ -77,19 +77,31 @@ let load_init () =
     Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
   in
   if (Sys.file_exists initfile)
-  then Unsafe.use_file initfile
+  then Unsafe.use_file ~silent:false initfile
   else
     Report.warning ("Can't find initialising file "^initfile)
-
 
 let init() = 
   starting_mesg(); 
   tp_init()
+
+let new_add_init f =
+  let ocaml_init = !Toploop.toplevel_startup_hook
+  in 
+  let startup () = (f(); ocaml_init(); tp_init())
+  in 
+  Toploop.toplevel_startup_hook:=startup
+
 
 (*** The code to run when this module is loaded. **)  
 let _ = 
   set_base_dir();
   set_directorys();
   set_hooks();
-  Unsafe.add_init load_init
-
+  Unsafe.add_init load_init;
+  init()
+(**
+  Format.printf "@[Initialising: 1@]@.";
+  new_add_init load_init;
+  Format.printf "@[Initialising: 2@]@."
+**)

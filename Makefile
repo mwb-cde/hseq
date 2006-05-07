@@ -73,23 +73,49 @@ export FASTCOMP = $(FastCompilers)
 include $(CONFIGDIR)/Makefile.os
 
 ##
+# Targets
+##
+
+.PHONY: all  # all: Build everything
+.PHONY: lib  # lib: Build the library file
+.PHONY: opt  # opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: installopt # installopt: Install the native code library 
+                   #             and header files.
+.PHONY: doc  #doc: Generate the documentation
+
+.PHONY: clean
+.PHONY: libclean
+.PHONY: reallyclean
+.PHONY: docclean
+
+.PHONY: hseq # Build the theorem prover
+.PHONY: thys # Build the theories
+.PHONY: srcdoc # Build the source documentation 
+
+.PHONY: install-hseq # Install the theorem prover
+.PHONY: install-thys # Install the theories
+.PHONY: install-doc  # Install the documentation
+.PHONY: install-srcdoc # Install the source code documentation
+
+##
 # Build commands
 ##
 
-MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
+# MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
 
 #ifdef TOOLBOX
-MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+export MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
 #endif
 
 # BAREMAKE: The make with no options
-BAREMAKE = $(MAKE)
+export BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = make $(MAKEOPTIONS)
+export DMAKE = make $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 
 ###
 # Compiler definitions
@@ -107,21 +133,17 @@ MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 all: hseq thys doc
 
 # hseq: Build the system
-.PHONY: hseq
 hseq:
 	$(DMAKE) -C src all
 
 # thys: Build the theories
-.PHONY: thys
 thys:
 	$(DMAKE) -C thys all
 
 #doc: Buld documentation
-.PHONY: doc
 doc:
-	$(foreach docsubdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;) $(SKIP)
+	$(foreach docsubdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
 
-.PHONE: srcdoc
 srcdoc:
 	$(DMAKE) -C src doc
 
@@ -149,7 +171,6 @@ install-srcdoc: srcdoc
 # Clean up
 ###
 
-.PHONY: clean
 clean: 
 	-$(RM) *~
 	$(MAKECLEAN) -C src reallyclean
@@ -157,7 +178,6 @@ clean:
 	$(foreach subdir, $(DOCSUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
-.PHONY: reallyclean
 reallyclean: clean
 	-$(RM) hseq
 	-$(RM) lib/*

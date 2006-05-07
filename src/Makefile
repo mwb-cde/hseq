@@ -46,12 +46,6 @@ export LIBCODE= util.cma tpcore.cma logic.cma \
 # TOPCODE: The code to link in to build the executable (in order)
 export TOPCODE= tpquote.cma hseqtop.cma
 
-# TOPLIBCODE: Inteface to the OCaml toplevel, 
-#   to be linked in before anything else
-#   (needed to resolve conflicts with identifiers defined
-#   in the OCaml toplevel).
-#export TOPLIBCODE = toplib.cma
-
 ####
 # Don't modify anything below this line
 ####
@@ -127,6 +121,33 @@ export IDOCDIR = $(IBASEDIR)/doc/source
 
 # FASTCOMP: whether to use the fast compilers
 export FASTCOMP = $(FastCompilers)
+
+###
+# Common Targets
+###
+
+.PHONY: all  # all: Build everything
+.PHONY: lib  # lib: Build the library file
+.PHONY: opt  # opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: installopt # installopt: Install the native code library 
+                   #             and header files.
+.PHONY: doc  #doc: Generate the code documentation
+
+
+.PHONY: clean
+.PHONY: libclean
+.PHONY: reallyclean
+.PHONY: docclean
+
+##
+# Local targets
+##
+
+.PHONY: quote # Build the quotation expander
+.PHONY: code  # Build the library code
+.PHONY: toplevel # Build the toplevel
+
 
 
 ##
@@ -250,16 +271,13 @@ export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 all: hseq
 
-.PHONY: quote
 quote: 
 	$(DMAKE) -C quote install
 
-.PHONY: code
 code: quote
 	$(foreach subdir, $(LIBDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
-.PHONY: doc
 doc:
 	$(foreach subdir, $(SUBDIRS), \
 		$(DMAKE) -C $(subdir) doc;)
@@ -272,17 +290,15 @@ mkhseq: mkhseq.ml
 	$(OCAMLC) -o mkhseq mkhseq.ml
 
 
-.PHONY: lib
 lib: code
 	$(DMAKE) -f Make.lib install
 
-.PHONY: toplevel
 toplevel: 
 	$(foreach subdir, $(TLDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
 $(BINFILE): lib toplevel
-	$(OCAMLMKTOP) -o $(BINFILE) $(TOPLIBCODE) $(LIBFILE) $(TOPCODE) 
+	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
 install: $(BINFILE)
 	-$(MKDIR) $(IBASEDIR)
@@ -292,7 +308,6 @@ install: $(BINFILE)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
 	$(COPY) $(LIBFILE) $(ILIBDIR)
 	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
-	-$(COPY) $(LIBDIR)/$(TOPLIBCODE) $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
@@ -306,7 +321,6 @@ install-doc:
 # Clean up
 ###
 
-.PHONY: clean
 clean: 
 	$(RM) *.cmo
 	$(RM) *.cmx  
@@ -315,14 +329,12 @@ clean:
 	$(foreach subdir, quote $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean; )
 
-.PHONY: libclean
 libclean: 
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) libclean; )
 	$(MAKECLEAN) -C quote libclean
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
-.PHONY: reallyclean
 reallyclean: clean docclean
 	$(RM) hseq
 	$(RM) depend
@@ -334,6 +346,5 @@ reallyclean: clean docclean
 	$(MAKECLEAN) -C quote reallyclean
 	$(MAKECLEAN) -C $(LIBDIR) reallyclean
 
-.PHONY: docclean
 docclean: 
 	$(BAREMAKE) -C doc reallyclean

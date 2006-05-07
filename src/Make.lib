@@ -107,7 +107,7 @@ lib: obj
 install: lib
 	-$(COPY) $(LIBHEADER) $(INSTALLDIR)
 	-$(COPY) $(BYTELIB) $(INSTALLDIR)
-	-$(COPY) $(NATLIB) $(INSTALLDIR)
+#	-$(COPY) $(NATLIB) $(INSTALLDIR)
 
 
 ###

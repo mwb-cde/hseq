@@ -38,6 +38,7 @@ SUBCONFIGDIR ?= ../config
 SRCDIR ?= ../src
 
 # LIBDIR: The location of the compiled files
+
 LIBDIR ?= $(SRCDIR)/lib
 
 ###
@@ -125,10 +126,13 @@ HSEQC = $(SRCDIR)/$(HSEQ) $(INCLUDE)
 ###
 
 .PHONY: all
+.PHONY: thys
 .PHONY: install
+.PHONY: install-thys
+.PHONY: doc  
+
 .PHONY: clean
 .PHONY: reallyclean
-.PHONY: install-thys
 
 # all: Build everything
 all: thys
@@ -143,13 +147,11 @@ install: install-thys
 # Clean up
 ###
 
-.PHONY: clean
 clean: 
 	$(RM) *~
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
-.PHONY: reallyclean
 reallyclean: clean
 	$(RM) *.tho *.cmo *.cmi
 	$(foreach subdir, $(SUBDIRS), \
@@ -159,7 +161,6 @@ reallyclean: clean
 # Specialized targets
 ###
 
-.PHONY: thys
 thys:
 #	$(HSEQC) $(BUILDSCRIPT) 
 ifndef TOOLBOX

@@ -51,19 +51,19 @@ LibDir ?=
 ThyDir ?= 
 
 # IPREFIX: The installation prefix
-IPREFIX = $(Prefix)
+export IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(BaseDir)
+export IBASEDIR = $(BaseDir)
 
 # IDOCDIR: The documentation installation directory
-IDOCDIR ?= $(IBASEDIR)/doc
+export IDOCDIR ?= $(IBASEDIR)/doc
 
 # HTMLDIR: HTML Documentation directory
-HTMLDIR ?= $(IDOCDIR)/html
+export HTMLDIR ?= $(IDOCDIR)/html
 
 # INFODIR: Info Documentation directory
-INFODIR ?= $(IDOCDIR)/info
+export INFODIR ?= $(IDOCDIR)/info
 
 ##
 # Read command definitions
@@ -72,17 +72,37 @@ INFODIR ?= $(IDOCDIR)/info
 include ../config/Makefile.os
 
 ##
+# Targets
+##
+
+.PHONY: all  # all: Build everything
+.PHONY: install 
+.PHONY: doc  #doc: Generate the documentation
+
+.PHONY: html
+.PHONY: info
+
+.PHONY: install-html
+.PHONY: install-info
+
+
+.PHONY: clean
+.PHONY: libclean
+.PHONY: reallyclean
+.PHONY: docclean
+
+##
 # Build commands
 ##
 
 # BAREMAKE: The make with no options
-BAREMAKE = $(MAKE)
+export BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
+export DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
 
 # MAKECLEAN: The make to clean up with
-MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
+export MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
 
 ###
 # Compiler definitions
@@ -93,10 +113,10 @@ MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
 ##
 
 # INCLUDE: The include directives
-INCLUDE = 
+export INCLUDE = 
 
 # OPTIONS: Compiler options
-OPTIONS = $(INCLUDE)
+export OPTIONS = $(INCLUDE)
 
 ###
 # The build targets
@@ -106,12 +126,10 @@ OPTIONS = $(INCLUDE)
 # all: Build html
 all: html
 
-.PHONY: html
 html: $(DOCSRC)
 	$(foreach subdir, $(SUBDIRS), \
 		$(DMAKE) -C $(subdir) install-html;) $(SKIP)
 
-.PHONY: info
 info: $(DOCSRC)
 	$(foreach subdir, $(SUBDIRS), \
 		$(DMAKE) -C $(subdir) install-info;) $(SKIP)

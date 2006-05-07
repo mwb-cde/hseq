@@ -118,8 +118,6 @@ clean:
 	$(foreach file, $(DOCSRC), rm -rf $(file);) $(SKIP)
 	$(RM) *.info
 	$(RM) *~
-#	rm -f *.info
-#	rm -f *~
 
 reallyclean: clean 
 	rm -f depend

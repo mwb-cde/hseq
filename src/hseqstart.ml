@@ -8,7 +8,7 @@
    HSeq start-up file.
 *)
 
-open HSeq
+open HSeq;;
 
 (**
    Install printers
@@ -45,5 +45,6 @@ open Userlib;;
     Must be done here since module Init is linked in to HSeq too
     early.
 *)
+(**
 let _ = Init.init();;
-
+**)
