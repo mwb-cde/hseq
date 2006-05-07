@@ -98,9 +98,9 @@ let _ =
   set_base_dir();
   set_directorys();
   set_hooks();
-  Unsafe.add_init load_init;
-  init()
+  Unsafe.add_init load_init
 (**
+  init()
   Format.printf "@[Initialising: 1@]@.";
   new_add_init load_init;
   Format.printf "@[Initialising: 2@]@."
