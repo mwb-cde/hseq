@@ -149,6 +149,7 @@ let finite_cases =
 	       ++ blast_tac;
 	       (* 2 *)
 	       flatten_tac
+	       ++ negA ++ negA
 	       ++ (match_concl << ? X: Y >> liftC)
 	       ++ instC [<< _x >> ; << add _x1 _A1 >>]
 	       ++ simp_tac [finite_rules]
