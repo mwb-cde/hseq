@@ -238,8 +238,12 @@ $(1): $$($(1)_SOURCES)
 	$$(OCAMLC) $$($(1)_OPTIONS) -o $(1) $($(1)_INCLUDE) \
 		$$($(1)_LIBS) $$($(1)_SOURCES)
 
-.PHONY: $(1)_clean
-$(1)_clean: 
+.PHONY: install-$(1)
+install-$(1): $(1)
+	-$$(COPY) $(1) $$(BINDIR)
+
+.PHONY: $(1)-clean
+$(1)-clean: 
 	$$(foreach file, $$($(1)_TEMP), -$$(RM) $$(file);)
 
 endef
@@ -258,7 +262,7 @@ clean:
 	$(RM) *.o
 	$(RM) *~
 
-toolclean: $(foreach tool, $(TOOLS),$(tool)_clean )
+toolclean: $(foreach tool, $(TOOLS),$(tool)-clean )
 
 reallyclean: clean toolclean
 	$(RM) *.cmi
