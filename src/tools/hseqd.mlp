@@ -1,7 +1,7 @@
 (*-----
  Name: hseqd.mlp
  Author: M Wahab <mwahab@users.sourceforge.net>
- Copyright M Wahab 2005
+ Copyright M Wahab 2005, 2006
 ----*)
 
 (**
@@ -23,47 +23,139 @@ let includedir = LibDir
 
 (** Start of script *)
 
-let bin = Filename.concat bindir "hseq";;
-let bin_args =  Array.of_list [""; "-I"; includedir] ;;
+(** Default values *)
 
-let files = 
-  Array.to_list (Array.sub Sys.argv 1 (Array.length Sys.argv - 1));;
+let default_bin = Filename.concat bindir "hseq"
+let default_bin_args = []
+let default_libs = [includedir]
+let default_silent = false
 
-let _ = 
-  if(Sys.file_exists bin)
-  then ()
-  else
-    (output_string stdout "hseqd: can't find executable ";
-     output_string stdout bin;
-     print_newline();
-     flush stdout;
-     exit (-1))
-
+(** Set up the pipe *)
 let (outpipe, inpipe) = Unix.pipe();;
 let outstrm = Unix.out_channel_of_descr inpipe;;
 let instrm = Unix.in_channel_of_descr outpipe;;
 
-let rec run l = 
-  match l with
-    [] -> ()
-  | x::xs -> 
-    let pid = 
-      Unix.create_process bin bin_args
-	outpipe Unix.stdout Unix.stderr
-    in 
-    output_string stdout ("File "^x); print_newline();
-    output_string outstrm ("#use \""^x^"\";;\n#quit;;\n");
+(** [use_command f]: make the command to use file [f] *)
+let use_command ?(silent=false) file = 
+  let use = 
+    if silent 
+    then "Unsafe.use_file ~silent:true"
+    else "Unsafe.use_file ~silent:false"
+  and quote = "\""
+  and eocl = ";;\n"
+  and quit = "#quit"
+  in 
+    use ^quote^ file ^quote ^eocl ^ quit ^eocl
+
+(**
+   [run files]: Run each file in [files] as a script.
+*)
+let run silent bin args file = 
+  let pid = 
+    Unix.create_process bin args
+      outpipe Unix.stdout Unix.stderr
+  in 
+  let command = use_command ~silent:silent file
+  in 
+    Format.printf "@[run %s on file %s@]@." bin file;
+    output_string outstrm command;
     flush outstrm;
-    ignore(Unix.waitpid [Unix.WUNTRACED] pid);
-    run xs;;
+    ignore(Unix.waitpid [Unix.WUNTRACED] pid)
 
-let _ = run files;;
+(** 
+    [process_args ()] Process the command line arguments.
 
+    {ul
+    {- --bin s : use file [s] as the binary}
+    {- --include d: add directory [d] to the search path}
+    {- --quiet: don't echo the script }
+    {- --verbose: echo the script }
+    {- + s: pass argument [s] to the binary}
+    {- s: run file [s] as a script}}
+*)
+let process_args () = 
+  let bin = ref default_bin
+  in 
+  let lib_list = ref default_libs
+  in 
+  let ocaml_args = ref default_bin_args
+  in 
+  let file_list = ref []
+  in 
+  let silent = ref default_silent
+  in 
+  let add_to_list l s = (l:=s::(!l))
+  in
+  let args = 
+    [
+      ("--bin", Arg.Set_string bin, 
+       "set the name of the binary");
+      ("--include", Arg.String (add_to_list lib_list), 
+       "add directory the search list");
+      ("--quiet", Arg.Set silent,
+       "don't echo the results of the script");
+      ("--verbose", Arg.Clear silent,
+       "echo the results of the script");
+      ("+", Arg.String (add_to_list ocaml_args),
+       "pass next option directly to the binary")
+    ]
+  in
+    Arg.parse args (add_to_list file_list) "";
+    let files = List.rev (!file_list)
+    and libs = List.rev (!lib_list)
+    and bin_args = List.rev (!ocaml_args)
+    in 
+      (!bin, files, libs, bin_args, !silent)
+    
+(** [test_bin b] Make sure that binary file b exists *)
+let test_bin b = 
+  if(Sys.file_exists b)
+  then ()
+  else
+    (Format.printf "@[hseqd: can't find executable %s@]@." b;
+     exit (-1))
+
+(** [test_files files]: make sure that there are files to process *)
+let test_files files = 
+  match files with 
+      [] -> 
+	(Format.printf "@[hseqd: no files@]@.";
+	 exit (-1))
+    | _ -> ()
+
+(** 
+    [construct_args libs bin_args]: construct the 
+    argument array to pass to the binary.
+
+    [libs] are set as the include directories
+    [bin_args] are passed as is.
+*)
+let construct_args libs bin_args =
+  let rec make_include l rs=
+    match l with 
+	[] -> rs
+      | (x::xs) -> make_include xs (x::"-I"::rs)
+  in 
+  let full_list = ""::(List.rev_append (make_include libs []) bin_args)
+  in 
+    Array.of_list full_list
+
+(**
+   [main ()] The main function
+*)
+let main () = 
+  let (bin, files, libs, bin_args, silent) = process_args()
+  in 
+    let args = construct_args libs bin_args
+    in 
+      test_bin bin;
+      test_files files;
+      List.iter (run silent bin args) files
+      
 let _ = 
+  main();
+  (** Close the pipe *)
   Unix.close outpipe; 
-  Unix.close inpipe;;
-
-let _ = output_string stdout "\n"; flush stdout;;
-let _ = exit 0;;
-
-
+  Unix.close inpipe;
+  Format.printf "@."; 
+  exit 0
