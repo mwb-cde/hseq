@@ -49,10 +49,10 @@ constructing formulas of the logic.
 <h3 class="heading">Interaction with OCaml</h3>
 
 <p>HSeq is built as an extension to the OCaml toplevel (<code>ocaml</code>). 
-From the command line, <code>hseq </code><var>options</var> <var>file</var> executes
-<var>file</var> as a script and <code>hseq </code><var>options</var> starts the
-interactive interpreter. In both cases, <var>options</var> are the options
-to pass to the OCaml system.
+From the command line, <code>hseq </code><var>options</var> starts the
+interactive interpreter, where <var>options</var> are the options to pass
+to the OCaml system. <code>hseqb </code><var>options</var> <var>file</var> executes
+<var>file</var> as a script.
 
    <p>The OCaml preprocessor is used to embed HSeq terms, types and
 definitions as quotations in OCaml expressions.  For string <var>str</var>,

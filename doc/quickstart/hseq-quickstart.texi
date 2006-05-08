@@ -44,10 +44,10 @@ constructing formulas of the logic.
 @heading Interaction with OCaml
 
 @HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
-From the command line, @code{hseq @var{options} @var{file}} executes
-@var{file} as a script and @code{hseq @var{options}} starts the
-interactive interpreter. In both cases, @var{options} are the options
-to pass to the OCaml system.
+From the command line, @code{hseq @var{options}} starts the
+interactive interpreter, where @var{options} are the options to pass
+to the OCaml system. @code{hseqb @var{options} @var{file}} executes
+@var{file} as a script.
 
 The OCaml preprocessor is used to embed @HSeq{} terms, types and
 definitions as quotations in OCaml expressions.  For string @var{str},

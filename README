@@ -14,7 +14,9 @@ Building HSeq requires GNU Make in a Unix environment.
 
 For installation instructions, see file INSTALL.
 
-To start HSeq, run 'hseq'.
+To start HSeq as a toplevel, run 'hseq'.
+
+To run HSeq on script n, run 'hseqb n'.
 
 The system looks in the installation directory for the libraries and
 theories needed for execution. If the environment variable HSEQ is

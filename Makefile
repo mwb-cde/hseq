@@ -180,6 +180,7 @@ clean:
 
 reallyclean: clean
 	-$(RM) hseq
+	-$(RM) hseqb
 	-$(RM) lib/*
 	$(MAKECLEAN) -C thys reallyclean
 	$(foreach subdir, $(DOCSUBDIRS), \

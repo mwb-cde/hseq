@@ -44,5 +44,6 @@ open Userlib;;
 
     Must be done here to make sure that all modules are loaded before
     the system is started.
-*)
+
 let _ = Init.init();;
+*)

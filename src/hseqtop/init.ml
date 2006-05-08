@@ -115,7 +115,8 @@ let _ =
   set_base_dir();
   set_directorys();
   set_hooks();
-  Unsafe.add_init load_init
+  Unsafe.add_init load_init;
+  init()
 (**
   run_commands();
   init();

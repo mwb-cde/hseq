@@ -1,6 +1,8 @@
 HSeq 
 ----------
 
++ Added executable hseqb to handle scripts.
+
 + Split the system into a library and toplevel part.
   Library named hseq.
   Toplevel made up of tpquote.cma (the quotation expander),

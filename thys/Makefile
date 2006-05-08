@@ -12,6 +12,9 @@ BUILDSCRIPT = buildall.ml
 # HSEQ: The name of the theorem prover executable
 HSEQ=hseq
 
+# HSEQB: The name of the theorem prover scripter
+HSEQB=hseqb
+
 # HSEQLIB: The include directory for $(HSEQ) (before installation and 
 # relative to the src directory).
 HSEQLIB=lib
@@ -113,13 +116,13 @@ MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 ##
 
 # INCLUDE: The include directives
-INCLUDE = -I $(LIBDIR) -I $(SRCDIR)
+INCLUDE = --include $(LIBDIR) --include $(SRCDIR)
 
 # OPTIONS: Compiler options
-OPTIONS = $(INCLUDE)
+OPTIONS = -I $(LIBDIR) -I $(SRCDIR)
 
 # HSEQC: The hseq compiler
-HSEQC = $(SRCDIR)/$(HSEQ) $(INCLUDE)
+HSEQC = $(SRCDIR)/$(HSEQB) --bin $(SRCDIR)/$(HSEQ) $(INCLUDE)
 
 ###
 # Required build targets
@@ -162,12 +165,7 @@ reallyclean: clean
 ###
 
 thys:
-#	$(HSEQC) $(BUILDSCRIPT) 
-ifndef TOOLBOX
-	echo "#use \"$(BUILDSCRIPT)\";;" | $(HSEQC)
-else	
-	$(HSEQC) $(BUILDSCRIPT)
-endif
+	$(HSEQC) $(BUILDSCRIPT) 
 
 .PHONY: install-thys
 install-thys: thys

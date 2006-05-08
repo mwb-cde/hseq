@@ -9,27 +9,27 @@
 
 # TOOLS: The list of tools to build
 
-TOOLS := hseqd
+TOOLS := hseqb
 
 ##
 # Variables for each tool
 ##
 
-# hseqd_SOURCES : The files, in order, to build the tool from
-hseqd_SOURCES := hseqd.ml
+# hseqb_SOURCES : The files, in order, to build the tool from
+hseqb_SOURCES := hseqb.ml
 
-# hseqd_OPTIONS: Options to pass to the compiler when building the tool
-hseqd_OPTIONS := 
+# hseqb_OPTIONS: Options to pass to the compiler when building the tool
+hseqb_OPTIONS := 
 
-# hseqd_INCLUDE: include directories when building the tool
-hseqd_INCLUDE :=
+# hseqb_INCLUDE: include directories when building the tool
+hseqb_INCLUDE :=
 
-# hseqd_LIBS: libraries to link in for the tool
-hseqd_LIBS := unix.cma
+# hseqb_LIBS: libraries to link in for the tool
+hseqb_LIBS := unix.cma
 
-# hseqd_TEMP: files generated when building the tool, which can removed
+# hseqb_TEMP: files generated when building the tool, which can removed
 #   after the tool is build
-hseqd_TEMP := hseqd.ml
+hseqb_TEMP := hseqb.ml
 
 ##
 # Directories

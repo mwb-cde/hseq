@@ -38,6 +38,12 @@ export LIBDIRS = util tpcore logic parser \
 # TLDIRS: The sub-directories to build the top-level
 TLDIRS = hseqtop
 
+# TOOLSDIR: The directory containing the tools
+TOOLSDIR = $(SRCDIR)/tools
+
+# TOOLS: The list of tools
+TOOLS = hseqb
+
 # LIBCODE: The code to link in to build the library (in order)
 export LIBCODE= util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma boollib.cma simplifier.cma \
@@ -147,7 +153,8 @@ export FASTCOMP = $(FastCompilers)
 .PHONY: quote # Build the quotation expander
 .PHONY: code  # Build the library code
 .PHONY: toplevel # Build the toplevel
-
+.PHONY: tools    # Build the additional tools
+.PHONY: install-tools # Install the tools
 
 
 ##
@@ -269,7 +276,7 @@ export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 # The build targets
 ###
 
-all: hseq
+all: hseq tools
 
 quote: 
 	$(DMAKE) -C quote install
@@ -300,7 +307,7 @@ toplevel:
 $(BINFILE): lib toplevel
 	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
-install: $(BINFILE)
+install: $(BINFILE) install-tools
 	-$(MKDIR) $(IBASEDIR)
 	-$(MKDIR) $(IBINDIR)
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
@@ -316,12 +323,30 @@ install-doc:
 	-$(MKDIR) $(IDOCDIR)
 	-$(COPY) $(DOCDIR)/* $(IDOCDIR)
 
+##
+# Targets to build the tools
+##
+
+tools:
+	$(foreach tool, $(TOOLS),\
+		$(DMAKE) -C $(TOOLSDIR) install-$(tool);)
+
+install-tools: tools
+	$(foreach tool, $(TOOLS),\
+		-$(COPY) $(tool) $(IBINDIR);)
+
+tools-clean:
+	$(DMAKE) -C $(TOOLSDIR) clean
+
+tools-reallyclean:
+	$(foreach tool, $(TOOLS), $(RM) $(tool);)
+	$(DMAKE) -C $(TOOLSDIR) reallyclean
 
 ###
 # Clean up
 ###
 
-clean: 
+clean:  tools-clean
 	$(RM) *.cmo
 	$(RM) *.cmx  
 	$(RM) *.o
@@ -335,7 +360,7 @@ libclean:
 	$(MAKECLEAN) -C quote libclean
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
-reallyclean: clean docclean
+reallyclean: clean docclean tools-reallyclean
 	$(RM) hseq
 	$(RM) depend
 	$(RM) *.cmi

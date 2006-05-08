@@ -27,9 +27,9 @@ Interaction with OCaml
 ======================
 
 HSeq is built as an extension to the OCaml toplevel (`ocaml').  From
-the command line, `hseq OPTIONS FILE' executes FILE as a script and
-`hseq OPTIONS' starts the interactive interpreter. In both cases,
-OPTIONS are the options to pass to the OCaml system.
+the command line, `hseq OPTIONS' starts the interactive interpreter,
+where OPTIONS are the options to pass to the OCaml system. `hseqb
+OPTIONS FILE' executes FILE as a script.
 
    The OCaml preprocessor is used to embed HSeq terms, types and
 definitions as quotations in OCaml expressions.  For string STR, the
