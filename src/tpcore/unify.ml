@@ -35,6 +35,11 @@ let bind_occs s t env =
 (** Unify terms w.r.t given type and term contexts *)
 
 let unify_fullenv scp typenv trmenv varp trm1 trm2 =
+  let lookup q sbs = 
+    let r = Bound q
+    in 
+      try Term.find r sbs with Not_found -> r
+  in
   let eq_binder tyenv b1 b2 = 
     let qnt1, _, qty1=dest_binding b1
     and qnt2, _, qty2=dest_binding b2
@@ -45,7 +50,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
       with _ -> (false, tyenv))
     else (false, tyenv)
   in 
-  let rec unify_aux tyenv env t1 t2 = 
+  let rec unify_aux tyenv env qntenv t1 t2 = 
     let s= Term.chase_var varp t1 env
     and t= Term.chase_var varp t2 env
     in 
@@ -59,29 +64,29 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
       else
 	(match (s, t) with
 	  (App(f1, a1), App(f2, a2)) ->
-	    let tyenv1, env1= unify_aux tyenv env f1 f2
+	    let tyenv1, env1= unify_aux tyenv env qntenv f1 f2
 	    in 
-	    let tyenv2, env2= unify_aux tyenv1 env1 a1 a2
+	    let tyenv2, env2= unify_aux tyenv1 env1 qntenv a1 a2
 	    in 
 	    (tyenv2, env2)
 	| (Qnt(q1, b1), Qnt(q2, b2)) ->
-	    if(Basic.binder_kind q1=Basic.binder_kind q2)
-	    then 
-	      let qtst, qtyenv = eq_binder tyenv q1 q2
-	      in 
+	    let qtst, qtyenv = eq_binder tyenv q1 q2
+	    in 
 	      if qtst 
-	      then unify_aux qtyenv env b1 b2
+	      then 
+		let nqntenv = bind (Bound q1) (Bound q2) qntenv
+		in 
+		  unify_aux qtyenv env nqntenv b1 b2
 	      else raise (term_error "unify_aux: qnt" [t1;t2])
-	    else raise (term_error "unify_aux: qnt" [t1;t2])
 	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
 	    (try
 	      let tyenv1=Gtypes.unify_env scp ty1 ty2 tyenv
 	      in 
-	      unify_aux tyenv1 env tt1 tt2
+	      unify_aux tyenv1 env qntenv tt1 tt2
 	    with x -> 
 	      raise (add_error (term_error "unify_aux: typed" [t1; t2]) x))
-	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
-	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
+	| (Typed(tt1, _), x) -> unify_aux tyenv env qntenv tt1 x
+	| (x, Typed(tt2, _)) -> unify_aux tyenv env qntenv x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
@@ -95,10 +100,10 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	     then (tyenv, env)
 	     else raise (term_error"unify_aux: meta" [t1;t2]))
 	| (Bound(q1), Bound(q2)) ->
-	    let qtst, qtyenv=eq_binder tyenv q1 q2
+	    let nq1 = dest_bound (lookup q1 qntenv)
 	    in 
-	      if qtst
-	      then (qtyenv, env)
+	      if binder_equality nq1 q2
+	      then (tyenv, env)
 	      else raise (term_error "unify_aux: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tyenv, env)
@@ -108,7 +113,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 	    then (tyenv, env)
 	    else raise (term_error "unify_aux: default" [t1;t2]))
   in 
-  unify_aux typenv trmenv trm1 trm2
+  unify_aux typenv trmenv (Term.empty_subst()) trm1 trm2
 
 (**  Unify terms in a given term context. *)
 let unify_env ?typenv scp env varp trm1 trm2 =
@@ -138,31 +143,36 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
   in 
   retenv
 
-
-
 (*** Matching ***)
 
 let matches_rewrite scp typenv trmenv varp trm1 trm2 =
-  let eq_binder tydata b1 b2 = 
-    let qnt1, _, qty1=dest_binding b1
-    and qnt2, _, qty2=dest_binding b2
+  let rec matches_aux tydata qntenv env t1 t2 = 
+    let lookup q sbs = 
+      let r = Bound q
+      in 
+	try Term.find r sbs
+	with Not_found -> r
+    in
+    let var_type x = 
+      match x with 
+	  Bound(q) -> Basic.binder_type q
+	| Meta(q) -> Basic.binder_type q
+	| Free(_, ty) -> ty
+	| _ -> 
+	    raise 
+	      (term_error "matches_rewrite: invalid match variable" [x])
+    in
+    let eq_binder tydata b1 b2 = 
+      let qnt1, _, qty1=dest_binding b1
+      and qnt2, _, qty2=dest_binding b2
+      in 
+	if (qnt1=qnt2)
+	then 
+	  (try 
+	     (true, Gtypes.matches_rewrite scp qty1 qty2 tydata)
+	   with _ -> (false, tydata))
+	else (false, tydata)
     in 
-    if (qnt1=qnt2)
-    then 
-      (try 
-	(true, Gtypes.matches_rewrite scp qty1 qty2 tydata)
-      with _ -> (false, tydata))
-    else (false, tydata)
-  in 
-  let var_type x = 
-    match x with 
-	Bound(q) -> Basic.binder_type q
-      | Free(_, ty) -> ty
-      | _ -> 
-	  raise 
-	    (term_error "matches_rewrite: invalid match variable" [x])
-  in 
-  let rec matches_aux tydata env t1 t2 = 
     let s= Term.chase_var varp t1 env
     and t = t2
     in 
@@ -176,30 +186,34 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
     else 
       (match (s, t) with
 	   (App(f1, a1), App(f2, a2)) ->
-	     let tydata1, env1=matches_aux tydata env f1 f2
+	     let tydata1, env1 = 
+	       matches_aux tydata qntenv env f1 f2
 	     in 
-	     let tydata2, env2= matches_aux tydata1 env1 a1 a2
+	     let tydata2, env2 = 
+	       matches_aux tydata1 qntenv env1 a1 a2
 	     in 
 	       (tydata2, env2)
 	 | (Qnt(q1, b1), Qnt(q2, b2)) ->
-	     if(Basic.binder_kind q1=Basic.binder_kind q2)
-	    then 
-	      let qtst, qtydata=eq_binder tydata q1 q2
-	      in 
-	      if qtst
-	      then matches_aux qtydata env b1 b2
-	      else raise (term_error "matches_rewrite: qnts" [t1;t2])
-	    else raise (term_error "matches_rewrite: qnts" [t1;t2])
+	     let qtst, qtydata=eq_binder tydata q1 q2
+	     in 
+	       if qtst
+	       then 
+		let nqntenv = bind (Bound q1) (Bound q2) qntenv
+		in 
+		  matches_aux qtydata nqntenv env b1 b2
+	       else raise (term_error "matches_rewrite: qnts" [t1;t2])
 	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
 	    (try
 	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
 	      in 
-	      matches_aux tydata1 env tt1 tt2
+	      matches_aux tydata1 qntenv env tt1 tt2
 	    with x -> 
 	      raise 
 		(add_error (term_error "matches_rewrite: typed" [t1;t2]) x))
-	| (Typed(tt1, _), x) -> matches_aux tydata env tt1 x
-	| (x, Typed(tt2, _)) -> matches_aux tydata env x tt2
+	| (Typed(tt1, _), x) -> 
+	    matches_aux tydata qntenv env tt1 x
+	| (x, Typed(tt2, _)) -> 
+	    matches_aux tydata qntenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then 
@@ -219,10 +233,10 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 	     then (tydata, env)
 	     else raise (term_error"matches_rewrite: meta" [t1;t2]))
 	| (Bound(q1), Bound(q2)) ->
-	    let qtst, qtydata=eq_binder tydata q1 q2
+	    let nq1 = Term.dest_bound (lookup q1 qntenv)
 	    in 
-	      if qtst
-	      then (qtydata, env)
+	      if (binder_equality nq1 q2)
+	      then (tydata, env)
 	      else raise (term_error"matches_rewrite: bound" [t1;t2])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tydata, env)
@@ -232,14 +246,14 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 	    then (tydata, env) 
 	    else raise (term_error "matches_rewrite: default" [t1;t2]))
   in 
-  let tydata = 
-    {Gtypes.vars = Gtypes.empty_subst(); 
-     Gtypes.tyenv= typenv}
-  in 
-  let (tydata1, trmenv1) =
-    matches_aux tydata trmenv trm1 trm2
-  in 
-    (tydata1.Gtypes.tyenv, trmenv1)
+    let tydata = 
+      {Gtypes.vars = Gtypes.empty_subst(); 
+       Gtypes.tyenv= typenv}
+    in 
+    let (tydata1, trmenv1) =
+      matches_aux tydata (Term.empty_subst()) trmenv trm1 trm2
+    in 
+      (tydata1.Gtypes.tyenv, trmenv1)
 
 
 
