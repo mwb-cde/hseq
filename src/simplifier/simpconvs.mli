@@ -332,6 +332,8 @@ val do_eq_rule :
    Convert [|- (a = b)] to [|- (a = b) = true] and [|-
    (b=a)=true].  Convert [|- c=>(a = b)] to [|- c=>(a = b)
    =true] and [|- c=> (b=a)=true]
+
+   Only called if [do_rr_equality] fails.
    *)
        
 val do_fact_rule :
