@@ -201,7 +201,7 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 		let nqntenv = bind (Bound q1) (Bound q2) qntenv
 		in 
 		  matches_aux qtydata nqntenv env b1 b2
-	       else raise (term_error "matches_rewrite: qnts" [t1;t2])
+	       else raise (term_error "matches_rewrite: qnts" [s;t])
 	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
 	    (try
 	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
@@ -209,7 +209,7 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 	      matches_aux tydata1 qntenv env tt1 tt2
 	    with x -> 
 	      raise 
-		(add_error (term_error "matches_rewrite: typed" [t1;t2]) x))
+		(add_error (term_error "matches_rewrite: typed" [s;t]) x))
 	| (Typed(tt1, _), x) -> 
 	    matches_aux tydata qntenv env tt1 x
 	| (x, Typed(tt2, _)) -> 
@@ -220,31 +220,31 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
 	      in 
 	      (tydata1, env)
-	    else raise (term_error "matches_rewrite: var"[t1;t2])
+	    else raise (term_error "matches_rewrite: var"[s;t])
 	| (Free(n1, ty1), Free(n2, ty2)) ->
 	    if n1=n2 
 	    then 
 	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
 	      in 
 	      (tydata1, env)
-	    else raise (term_error "matches_rewrite: var"[t1;t2])
+	    else raise (term_error "matches_rewrite: var"[s;t])
 	| (Meta(q1), Meta(q2)) -> 
 	    (if (binder_equality q1 q2)
 	     then (tydata, env)
-	     else raise (term_error"matches_rewrite: meta" [t1;t2]))
+	     else raise (term_error"matches_rewrite: meta" [s;t]))
 	| (Bound(q1), Bound(q2)) ->
 	    let nq1 = Term.dest_bound (lookup q1 qntenv)
 	    in 
 	      if (binder_equality nq1 q2)
 	      then (tydata, env)
-	      else raise (term_error"matches_rewrite: bound" [t1;t2])
+	      else raise (term_error"matches_rewrite: bound" [s;t])
 	| (Const(c1), Const(c2)) ->
 	    if c1=c2 then (tydata, env)
-	    else raise (term_error "matches_rewrite: const" [t1;t2])
+	    else raise (term_error "matches_rewrite: const" [s;t])
 	| (_, _) -> 
 	    if Term.equals s t 
 	    then (tydata, env) 
-	    else raise (term_error "matches_rewrite: default" [t1;t2]))
+	    else raise (term_error "matches_rewrite: default" [s;t]))
   in 
     let tydata = 
       {Gtypes.vars = Gtypes.empty_subst(); 

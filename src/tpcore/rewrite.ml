@@ -119,7 +119,7 @@ let decr_depth ctrl =
 
 let is_free_binder qs t= 
   (match t with
-    Bound(q) -> List.exists (fun x ->  x == q) qs
+    Bound(q) -> List.exists (Basic.binder_equality q) qs
   |	_ -> false)
 
 (***
