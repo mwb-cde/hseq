@@ -479,6 +479,7 @@ val solve_not_true_tac: Tag.t -> Tactics.tactic
    [eq_asm]:
     Convert [a=b] to [(a=b) = true] and [(b=a)=true]
     and [c=> (a=b)] to [c=>((a=b) = true)] and [c=>((b=a)=true)]
+    This is only called if [rr_equality_asm] failed.
 
    [fact_rule_asm]: 
    Convert [a] to [a=true]

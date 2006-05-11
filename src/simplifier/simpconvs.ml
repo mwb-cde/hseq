@@ -415,7 +415,8 @@ let is_neg_exists (qs, c, t) =
    [rhs = None] if no [rhs].
  *)
 let is_rr_rule (qs, c, l, r) =
-  let is_var b=List.mem b qs
+(*   let is_var b=List.mem b qs *)
+  let is_var q = List.exists (Basic.binder_equality q) qs
   in 
   let vars = Simputils.find_variables is_var (Term.empty_subst()) l
   in 
@@ -754,6 +755,7 @@ let solve_not_true_tac tg goal =
    [eq_asm]:
     Convert [a=b] to [(a=b) = true] and [(b=a)=true]
     and [c=> (a=b)] to [c=>((a=b) = true)] and [c=>((b=a)=true)]
+    This is only called if [rr_equality_asm] failed.
 
    [fact_rule_asm]: 
    convert |- a to |- a=true 
@@ -835,11 +837,18 @@ and rr_equality_asm ret (tg, (qs, c, a)) g =
 and eq_asm ret (tg, (qs, c, a)) g=
   if (Lterm.is_equality a)
   then 
+    let asm_info = is_rr_rule (qs, c, a, None)
+    in 
     let rr_thm =
-      match is_rr_rule (qs, c, a, None) with
- 	  (None, _) -> eq_sym_thm()
+      match asm_info with
+ 	  (None, _ ) -> eq_sym_thm()
  	| (Some(true), _) -> cond_eq_sym_thm()
  	| _ -> failwith "eq_asm"
+    in 
+    let rr_truth_thm =
+      match asm_info with
+ 	  (Some(true), _) -> cond_rule_true_thm()
+ 	| (_, _) -> rule_true_thm()
     in 
     let info = mk_info()
     in 
@@ -852,9 +861,9 @@ and eq_asm ret (tg, (qs, c, a)) g=
  		     seq 
  		       [
  			 qnt_asm_rewrite_tac rr_thm atg;
- 			 qnt_asm_rewrite_tac (rule_true_thm()) atg;
+ 			 qnt_asm_rewrite_tac rr_truth_thm atg;
  			 add_asm_tac ret atg;
- 			 qnt_asm_rewrite_tac (rule_true_thm()) tg;
+			 qnt_asm_rewrite_tac rr_truth_thm tg;
  			 add_asm_tac ret tg
  		       ] g)
  	] g
