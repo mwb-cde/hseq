@@ -364,25 +364,37 @@ let sum_axiom =
     ! f g : 
     ?! h: (!x: (h (inl x)) = (f x)) & (!x: (h (inr x)) = (g x))
   >> 
-    [flatten_tac
-     ++ (unfold "EXISTS_UNIQUE") ++ simp_all
-     ++ inst_tac 
-     [ << (%x: 
-	     if (?v : (x = (inl v)))
-	     then (_f (@v: x = (inl v)))
-	     else (_g (@v: x = (inr v)))) >> ]
-     ++ (show << !x: ?v: (inl x) = (inl v) >> 
-	 (flatten_tac ++ inst_tac [<< _x >>]  ++ eq_tac))
-     ++ rewrite_tac [inl_eq]
-     ++ split_tac ++ flatten_tac
-     ++ beta_tac
+    [
+      flatten_tac
+     ++ (unfold "EXISTS_UNIQUE") 
+     ++ betaC
+     ++ scatter_tac
      -- 
      [
-       simpC_tac [thm "choice_refl2"; inl_eq];
-       simpC_tac [thm "choice_refl2"; inl_eq; inr_eq; inr_not_inl]
+       (* 1 *)
+       inst_tac 
+	 [ << (%x: 
+		 if (?v : (x = (inl v)))
+		 then (_f (@v: x = (inl v)))
+		 else (_g (@v: x = (inr v)))) >> ]
+       ++ (show << !x: ?v: (inl x) = (inl v) >> 
+	 (flatten_tac ++ inst_tac [<< _x >>]  ++ eq_tac))
+       ++ beta_tac
+       ++ rewrite_tac [inl_eq]
+       ++ split_tac ++ flatten_tac
+       -- 
+	 [
+	   simpC_tac [thm "choice_refl2"; inl_eq];
+	   simpC_tac [thm "choice_refl2"; inl_eq; inr_eq; inr_not_inl]
+	 ];
+       (* 2 *)
+       once_rewriteC_tac [thm "function_eq"]
+       ++ specC
+       ++ cases_of << _x1 >> ++ replace_tac ++ simp
      ]
-    ];;
+    ]
 
+(***
 let sum_axiom_alt = 
   prove
     << 
@@ -391,27 +403,46 @@ let sum_axiom_alt =
    (flatten_tac
      ++ (cut ~inst:[<< _f >>; << _g >>] sum_axiom)
      ++ unfold "EXISTS_UNIQUE"
-     ++ simp_all
-     ++ flatten_tac
-     ++ instC [<< _x >>]
-     ++ split_tac
-     ++ once_rewriteC_tac [thm "function_eq"]
-     ++ simp)
+     ++ beta_tac
+     ++ scatter_tac
+     --
+     [
+       (* 1 *)
+       instC [<< _x >>]
+       ++ split_tac
+       ++ once_rewriteC_tac [thm "function_eq"]
+       ++ simp;
+       (* 2 *)
+       back_tac
+       ++ (repeat (match_asm << (A ++ B) = C >> eq_sym_tac))
+       ++ replace_tac
+       ++ scatter_tac
+       --
+	 [
+	 (* 1 *)
+	   replace_tac ~dir:rightleft
+	   ++ 
+	 (* 2 *)
+	 (* 3 *)
+	 (* 4 *)
+	 ]
+     ])
 ;;
+***)
 
 let sum_fn_exists = 
   theorem "sum_fn_exists"
-    << 
+  << 
   ! f g: ?h: (!x: (h(inl x)) = (f x)) & (!x: (h(inr x)) = (g x))
   >>
   [
    flatten_tac
      ++ cut ~inst:[<< _f >>; << _g >>] sum_axiom
      ++ unfold "EXISTS_UNIQUE"
-     ++ simp_all
+     ++ betaA
      ++ flatten_tac
      ++ instC [<< _x >>]
-     ++ split_tac ++ basic
+     ++ blast_tac ++ unify_tac
  ];;
 
 let sum_unique =

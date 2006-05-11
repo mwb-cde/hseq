@@ -217,7 +217,6 @@ let rtc_rule2=
     [ cut (thm "rtc_rules") ++ conjA ++ basic ];;
 
 
-
 let rtc_induct =
   theorem "rtc_induct"
     << 
@@ -234,27 +233,52 @@ let rtc_induct =
   ];;
 
 
+(**
 let rtc_cases = 
   theorem "rtc_cases"
     << 
     ! R x y: 
-    (RTC R x y) = ((x = y) | ? z: (R x z) & (RTC R z y))
+    (RTC R x y) = ((R x x) | ? z: (R x z) & (RTC R z y))
     >>
     [
       flatten_tac ++ equals_tac ++ iffC 
 	--
 	[
+	  simp_tac [rtc_cases0]
 	  cut (thm "rtc_induct")
-	  ++ instA [ << % x y: x = y | ?z : (_R x z) & (RTC _R z y) >>;
+	  ++ instA [ << % x y: (x = y) | ?z : ((_R x z) & (RTC _R z y)) >>;
 		     << _R >>]
 	  ++ betaA
 	  ++ scatter_tac 
 	    --
 	    [
 	      simp;
-	      once_rewriteA_tac [defn "RTC"]
-	      ++ instA [<< equals >>]
-	      ++ simp_all;
+	      replace_tac
+	      ++ 
+	      (match_concl << ?z: (_R _x1 x) & X >>
+		   liftC)
+	      ++ instC [<< _y1 >> ]
+	      ++ back_tac
+	      ++ simp
+	      ++ flatten_tac
+	      ++ instC [<< _y1 >>]
+	      ++ simp
+	      ++ cut rtc_rules
+	      ++ conjA
+	      ++ back_tac
+
+
+	      (show << RTC _R _y1 _z >> 
+		 (cut (thm "rtc_rules") ++ conjA
+		  ++ (match_asm << !x y z: P >> 
+			(fun l -> 
+			   instA ~a:l [ << _R >>; << _y1 >> ; 
+					<< _z1 >>; << _z>>]
+			++ back_tac ~a:l
+			++ simp))))
+
+
+
 	      (show << RTC _R _y1 _z >> 
 		 (cut (thm "rtc_rules") ++ conjA
 		  ++ (match_asm << !x y z: P >> 
@@ -282,5 +306,6 @@ let rtc_cases =
 	  ++ back_tac ++ simp
 	]
     ];;
+**)
 
 let _ = end_theory ();;

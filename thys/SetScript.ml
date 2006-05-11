@@ -159,6 +159,23 @@ let set_equal =
       ]
   ];;
 
+let set_cases =
+  theorem "SET_cases"
+    << ! A : (A = empty) | ? x: x in A >>
+     [
+       scatter_tac
+       ++ rewriteC_tac [set_equal]
+       ++ flatten_tac ++ equals_tac ++ scatter_tac
+       --
+	 [ 
+	   (* 1 *) 
+	   unify_tac; 
+	   (* 2 *)
+	   simpA_tac [defn "empty"]
+	 ]
+     ]
+
+
 let add_thm = 
   theorem "add_thm"
     << ! x y A : (y in (add x A)) = ((y = x) | (y in A)) >> 
@@ -183,6 +200,18 @@ let inter_thm =
   theorem "inter_thm"
   << !x A B: (x in (inter A B)) = ((x in A) & (x in B)) >>
   [ simp_tac [defn "inter"] ];;
+
+
+
+let subset_thm = 
+  theorem "subset_thm"
+    << ! A B: A <= B = (!x: x in A => x in B) >>
+   [ simp_tac [defn "subset"] ]
+
+let psubset_thm = 
+  theorem "psubset_thm"
+    << ! A B: A < B = (~(A=B) & (A<=B)) >>
+   [ simp_tac [defn "psubset"] ]
 
 
 (***
@@ -424,6 +453,16 @@ let inter_trivial =
 
 (** Subset *)
 
+let subset_cases =
+  theorem "subset_cases"
+    << ! A B : (A <= B) => ((A=B) | ?x: (x in B) & ~(x in A)) >>
+  [
+    flatten_tac
+    ++ simp_all_tac [subset_thm; set_equal]
+    ++ instC [ << _x >>]
+    ++ equals_tac ++ scatter_tac ++ simp
+  ]
+
 let subset_trival =
   theorem ~simp:true "subset_trivial"
   << ! A: (A <= A) = true >>
@@ -436,7 +475,6 @@ theorem ~simp:true "subset_absorb"
   & (! A: (A <= univ) = true)
   >>
   [unfold "subset" ++ split_tac ++ simp ++ equals_tac ++ blast_tac];;
-
 
 let subset_refl =
   theorem ~simp:true "subset_refl"
@@ -492,17 +530,129 @@ let subset_add =
       ]
   ]
 
+let subset_add_remove =
+  theorem "suset_add_remove"
+    << ! x A B: (A <= (add x B)) = ((remove x A) <= B) >>
+  [
+    flatten_tac 
+    ++ equals_tac ++ scatter_tac
+      --
+      [
+	(* 1 *)
+	simp_all_tac [subset_thm]
+	++ flatten_tac
+	++ rewrite_tac [remove_thm]
+	++ flatten_tac
+	++ mp_tac
+	++ simp_all_tac [add_thm];
+	(* 2 *)
+	simp_all_tac [subset_thm]
+	++ flatten_tac
+	++ rewrite_tac [add_thm]
+	++ flatten_tac
+	++ back_tac
+	++ simp_all_tac [remove_thm]
+      ]
+  ]
 
+let subset_remove =
+  theorem "subset_remove" ~simp:true
+    << ! x S: (remove x S) <= S >>
+    [
+      unfold "subset" ++ scatter_tac
+	++ simpA_tac [remove_thm]
+    ]
+
+let subset_inter = 
+  theorem "subset_inter" ~simp:true
+    << 
+    (! A B : (inter A B) <= A)
+    & (! A B : (inter A B) <= B)
+    >>
+    [ simp_tac [subset_thm; inter_thm] ++ blast_tac ]
+
+(** Proper subset *)
+
+let psubset_cases =
+  theorem "psubset_cases"
+    << ! A B : (A < B) => (?x: (x in B) & ~(x in A)) >>
+  [
+    flatten_tac
+    ++ simp_all_tac [psubset_thm; subset_thm; set_equal]
+    ++ scatter_tac
+    ++ equals_tac ++ scatter_tac 
+    -- [simp; instC [ << _x >>] ++ blast_tac]
+  ]
+
+let psubset_empty =
+  theorem "psubset_empty" ~simp:true
+    << ! A : ~(A < {}) >>
+    [
+      simp_tac [psubset_thm]
+      ++ scatter_tac ++ simp
+    ]
+
+let psubset_subset =
+  theorem "psubset_subset" 
+    << !A B : (A < B) => (A <= B) >>
+  [
+    simp_tac [defn "subset"; defn "psubset"]
+    ++ scatter_tac
+    ++ simp
+  ]
+
+let psubset_irrefl =
+  theorem "psubset_irrefl" ~simp:true
+    << ! A : ~(A < A) >>
+    [
+      simp_tac [defn "psubset"]
+    ]
+
+let psubset_trans = 
+  theorem "psubset_trans"
+  << ! A B C : ((A < B) & (B < C)) => (A < B) >>
+  [
+    simp_tac [psubset_thm]
+    ++ blast_tac
+  ]
+  
+
+let psubset_remove =
+  theorem "psubset_remove" ~simp:true
+    << !x A: (x in A) => ((remove x A) < A) >>
+  [
+    simp_tac [defn "psubset"]
+      ++ implC
+      ++ simpC_tac [set_equal; remove_thm]
+      ++ scatter_tac
+      ++ instA [ << _x >> ]
+      ++ once_rewrite_tac [thm "equals_bool"]
+      ++ iffA
+      ++ scatter_tac ++ simp
+  ]
+
+let psubset_add =
+  theorem "psubset_add" ~simp:true
+    << !x A: ~(x in A) => (A < (add x A)) >>
+  [
+    simp_tac [defn "psubset"]
+      ++ flatten_tac
+      ++ simpC_tac [set_equal; add_thm]
+      ++ scatter_tac
+      ++ once_replace_tac
+      ++ flatten_tac
+      ++ eq_tac
+  ]
 
 (** Finite *)
 
-let empty_finite = 
-  theorem ~simp:true "empty_finite"
+let finite_empty = 
+  theorem ~simp:true "finite_empty"
   << (finite {}) >>
     [simp_tac [finite_rules]]
 
-let add_finite = 
-  theorem ~simp:true "add_finite"
+let finite_add = 
+  theorem ~simp:true "finite_add"
   << !x A: (finite A) => (finite (add x A)) >>
   [
     flatten_tac;
@@ -521,7 +671,7 @@ let add_finite =
        ])
   ]
 
-let union_finite0 = 
+let finite_union0 = 
   prove
   << ! A B : (finite A) => (finite B) => (finite (union A B)) >>
   (induct_tac (thm "finite_induct") ++ flatten_tac
@@ -533,19 +683,153 @@ let union_finite0 =
 	seq
 	  [
 	    rewrite_tac [union_add_left];
-	    simp_tac [add_finite]
+	    simp_tac [finite_add]
 	  ]
       ])
 
-let union_finite = 
-  theorem ~simp:true "union_finite"
+let finite_union = 
+  theorem ~simp:true "finite_union"
   << ! A B : ((finite A) & (finite B)) => (finite (union A B)) >>
   [
     flatten_tac;
-    cut_mp_tac ~inst:[<< _A >>; << _B >>] union_finite0;
+    cut_mp_tac ~inst:[<< _A >>; << _B >>] finite_union0;
     simp
   ]
 
+let finite_subset0 =
+  prove 
+  << ! A : (finite A) => (!B: (B <= A) => (finite B)) >>
+  (induct_tac finite_induct 
+   ++ flatten_tac
+   --
+   [
+     (* 1 *)
+     simp_all;
+     (* 2 *)
+     simp_all_tac [subset_add_remove]
+     ++ mp_tac
+     ++ cut_mp_tac ~inst:[<< _x >>; << remove _x _B >>] finite_add
+     ++ simpA
+     ++ cases_tac << _x in _B >> 
+     ++ simpA_tac [remove_member; add_member]
+   ])
+
+
+let finite_subset =
+  theorem "finite_subset" ~simp:true
+  << ! A B : ((finite A) & (B <= A)) => (finite B) >>
+  [
+    flatten_tac
+    ++ cut finite_subset0
+    ++ mp_tac ++ mp_tac
+    ++ basic
+  ]
+
+let finite_psubset =
+  theorem "finite_psubset" ~simp:true
+  << ! A B : ((finite A) & (B < A)) => (finite B) >>
+  [
+    flatten_tac
+    ++ rewriteA_tac [psubset_thm]
+    ++ scatter_tac
+    ++ cut finite_subset0
+    ++ mp_tac ++ mp_tac
+    ++ basic
+  ]
+
+let finite_inter = 
+  theorem "finite_inter" ~simp:true
+    << ! A B: ((finite A) | (finite B)) => (finite (inter A B)) >>
+  [
+    scatter_tac 
+      ++ cut finite_subset
+      --
+      [
+	(* 1 *)
+	instA [ << _A >>];
+	(* 2 *)
+	instA [ << _B >>]
+      ]
+    ++ instA [ << inter _A _B >>]
+    ++ back_tac 
+    ++ cut subset_inter
+    ++ blast_tac
+    ++ unify_tac
+  ]
+
+
+(** Finite set induction properties *)
+
+let finite_strong_induct = 
+  theorem "finite_strong_induct"
+  <<
+    !P:
+    ((P empty)
+     & (! x A: (~(x in A) & (finite A) & (P A)) => (P (add x A))))
+  => 
+  !A : (finite A) => (P A)
+  >>
+  [
+    specC
+      ++ cut ~inst:[<< (%x: (finite x) & (_P x)) >>] finite_induct
+      ++ betaA
+      ++ cut finite_rules
+      ++ blast_tac ++ ((back_tac ++ blast_tac) // skip)
+      ++ 
+      (match_asm << ! X : (finite X) => P >> 
+	  (fun l -> (instA ~a:l [ << _A >> ] ++ blast_tac ~f:l)))
+  ]
+
+
+(***
+
+let finite_complete_induct = 
+  theorem "finite_complete_induct"
+  <<
+    !P:
+    (! S : ((finite S) => (!T: T < S => (P T))) => (P S))
+    => 
+    (!A : (finite A) => (P A))
+  >>
+  [
+    cut finite_induct
+    ++ instA 
+      [
+	<< %X: 
+	  !P: ((!T: T < X => (P T)) => (P X))
+	   => 
+	  ((finite X) => (P X))
+	>>
+      ]
+    ++ betaA
+    ++ blast_tac
+      --
+      [
+	(* 1 *)
+	simpA;
+	(* 2 *)
+	
+      ]
+
+
+    ++ specC ++ implC
+    ++ blast_tac 
+    --
+      [
+	(* 1 *)
+	simp;
+	(* 2 *)
+	simp;
+	(* 3 *)
+	cut_back_tac ~inst:[ << add _x _A >>; << _A >> ] 
+	  finite_subset
+	++ simp;
+	(* 4 *)
+	instA [<< add _x _A >>]
+	++ back_tac
+      ]
+  ]
+***)
 
 let _ = end_theory();;
 

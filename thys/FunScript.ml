@@ -216,7 +216,14 @@ let surj_compose =
 let inj_compose =
   theorem "inj_compose"
     << ! f g: ((inj f) & (inj g)) => (inj f ++ g) >>
-  [ flatten_tac ++ simp_all_tac [defn "inj"] ];;
+  [ 
+    unfold "inj"
+    ++ flatten_tac 
+    ++ rewrite_tac [compose_thm]
+    ++ mp_tac
+    ++ mp_tac
+    ++ basic
+  ];;
 
 (** 
    [inj_on_inverse_intro]: For functions [f, g] and predicate [A], if

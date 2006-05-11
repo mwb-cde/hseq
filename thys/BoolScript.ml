@@ -499,8 +499,12 @@ let exists_unique_refl =
    flatten_tac
      ++ unfold "EXISTS_UNIQUE" 
      ++ simp
-     ++ inst_tac [<< _a >>]
-     ++ simp
+     ++ scatter_tac
+     -- 
+     [
+       inst_tac [<< _a >>]++ simp;
+       simp
+     ]
  ];;
 
 let exists_unique_or = 
@@ -513,10 +517,8 @@ let exists_unique_or =
      ++ cut ~inst:[ << % x: (_Q x) >>] exists_unique_thm
      ++ beta_tac 
      ++ replace_tac
-     ++ simp
-     ++ flatten_tac
-     ++ split_tac 
-     ++ instC [<< _x >>] ++ instC [<< _x >>] ++ basic
+     ++ scatter_tac ++ (unify_tac // skip)
+     ++ back_tac ++ simp
  ];;
 
 let exists_unique_simp = 
@@ -527,6 +529,8 @@ let exists_unique_simp =
      ++ cut ~inst:[ << % x: _P >>] exists_unique_thm
      ++ beta_tac ++ replace_tac
      ++ simp_tac [exists_simp]
+     ++ equals_tac ++ blast_tac 
+    ++ simp
  ];;
 
 (** Epsilon (choice) *)
