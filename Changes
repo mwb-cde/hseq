@@ -10,6 +10,8 @@ HSeq
 
 + Added induction tactics induct_tac and induct_on
 	
+* Fixed soundness bug in rewriter and simplifier. Matching function
+  Unify.matches_rewrite succeeded when it should have failed.
 	
 HSeq Mar06
 ----------

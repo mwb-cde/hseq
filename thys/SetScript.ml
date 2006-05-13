@@ -483,11 +483,22 @@ let subset_refl =
 
 let subset_trans =
   theorem "subset_trans"
-    << !A B C: ((A <= B) & (B <= C)) => (A <= C) >>
+    << !A B C: ((A <= C) & (C <= B)) => (A <= B) >>
     [ 
       unfold "subset" ++ flatten_tac 
       ++ simp
     ]
+  
+let subset_antisym =
+  theorem "subset_antisym"
+    << ! A B: ((A <= B) & (B<=A)) => (A = B) >>
+  [
+    simp_tac [subset_thm] 
+    ++ flatten_tac
+    ++ once_rewrite_tac [set_equal]
+    ++ flatten_tac ++ equals_tac ++ scatter_tac 
+    ++ simp
+  ]
   
 
 let subset_empty = 
@@ -610,10 +621,19 @@ let psubset_irrefl =
 
 let psubset_trans = 
   theorem "psubset_trans"
-  << ! A B C : ((A < B) & (B < C)) => (A < B) >>
+  << ! A B C: ((A < C) & (C < B)) => (A < B) >>
   [
-    simp_tac [psubset_thm]
-    ++ blast_tac
+    simp_tac [psubset_thm] ++ blast_tac
+    --
+      [
+	(* 1 *)
+	replace_tac 
+	++ cut_back_tac subset_antisym
+	++ simp;
+	(* 2 *)
+	cut ~inst:[ << _A >>; << _B >>; << _C >>] subset_trans
+	++ blast_tac
+      ]
   ]
   
 
@@ -696,10 +716,11 @@ let finite_union =
     simp
   ]
 
-let finite_subset0 =
-  prove 
+let finite_subset =
+  theorem "finite_subset"
   << ! A : (finite A) => (!B: (B <= A) => (finite B)) >>
-  (induct_tac finite_induct 
+  [
+    induct_tac finite_induct 
    ++ flatten_tac
    --
    [
@@ -712,27 +733,37 @@ let finite_subset0 =
      ++ simpA
      ++ cases_tac << _x in _B >> 
      ++ simpA_tac [remove_member; add_member]
-   ])
+   ]
+  ]
 
-
-let finite_subset =
-  theorem "finite_subset" ~simp:true
-  << ! A B : ((finite A) & (B <= A)) => (finite B) >>
+let finite_subset_back =
+  theorem "finite_subset_back" 
+  << ! B : (?A: (finite A) & (B <= A)) => (finite B) >>
   [
     flatten_tac
-    ++ cut finite_subset0
+    ++ cut finite_subset
     ++ mp_tac ++ mp_tac
     ++ basic
   ]
 
 let finite_psubset =
-  theorem "finite_psubset" ~simp:true
-  << ! A B : ((finite A) & (B < A)) => (finite B) >>
+  theorem "finite_psubset" 
+  << ! A : (finite A) => (!B: (B < A) => (finite B)) >>
   [
     flatten_tac
     ++ rewriteA_tac [psubset_thm]
     ++ scatter_tac
-    ++ cut finite_subset0
+    ++ cut finite_subset
+    ++ mp_tac ++ mp_tac
+    ++ basic
+  ]
+
+let finite_psubset_back =
+  theorem "finite_psubset_back" 
+  << ! B : (?A: (finite A) & (B < A)) => (finite B) >>
+  [
+    flatten_tac
+    ++ cut finite_psubset
     ++ mp_tac ++ mp_tac
     ++ basic
   ]
@@ -742,16 +773,15 @@ let finite_inter =
     << ! A B: ((finite A) | (finite B)) => (finite (inter A B)) >>
   [
     scatter_tac 
-      ++ cut finite_subset
-      --
+    --
       [
 	(* 1 *)
-	instA [ << _A >>];
+	cut_back_tac finite_subset_back
+	++ instC [ << _A >>];
 	(* 2 *)
-	instA [ << _B >>]
+	cut_back_tac finite_subset_back
+	++ instC [ << _B >>];
       ]
-    ++ instA [ << inter _A _B >>]
-    ++ back_tac 
     ++ cut subset_inter
     ++ blast_tac
     ++ unify_tac
@@ -780,56 +810,6 @@ let finite_strong_induct =
 	  (fun l -> (instA ~a:l [ << _A >> ] ++ blast_tac ~f:l)))
   ]
 
-
-(***
-
-let finite_complete_induct = 
-  theorem "finite_complete_induct"
-  <<
-    !P:
-    (! S : ((finite S) => (!T: T < S => (P T))) => (P S))
-    => 
-    (!A : (finite A) => (P A))
-  >>
-  [
-    cut finite_induct
-    ++ instA 
-      [
-	<< %X: 
-	  !P: ((!T: T < X => (P T)) => (P X))
-	   => 
-	  ((finite X) => (P X))
-	>>
-      ]
-    ++ betaA
-    ++ blast_tac
-      --
-      [
-	(* 1 *)
-	simpA;
-	(* 2 *)
-	
-      ]
-
-
-    ++ specC ++ implC
-    ++ blast_tac 
-    --
-      [
-	(* 1 *)
-	simp;
-	(* 2 *)
-	simp;
-	(* 3 *)
-	cut_back_tac ~inst:[ << add _x _A >>; << _A >> ] 
-	  finite_subset
-	++ simp;
-	(* 4 *)
-	instA [<< add _x _A >>]
-	++ back_tac
-      ]
-  ]
-***)
 
 let _ = end_theory();;
 
