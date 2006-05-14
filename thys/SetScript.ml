@@ -810,6 +810,19 @@ let finite_strong_induct =
 	  (fun l -> (instA ~a:l [ << _A >> ] ++ blast_tac ~f:l)))
   ]
 
+(***
+let finite_complete_induct = 
+  prove 
+    <<
+    ! P :
+    (! S : (finite S) => ((!T: (T < S) => (P T)) => (P S)))
+    => 
+    (!A: (finite A) => (P A))
+    >>
+    ()
+
+let _ = STOP;;
+***)
 
 let _ = end_theory();;
 
