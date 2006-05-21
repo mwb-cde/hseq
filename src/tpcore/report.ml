@@ -78,5 +78,8 @@ let catch_error info depth f a =
 
 let error s = Error (new error s)
 
-let warning s =
-  Format.printf "@[<v>Warning: %s@,@]@\n@?" s
+let warning str =
+  Format.printf "@[Warning: @[%s@]@]@." str
+
+let report str =
+  Format.printf "@[%s@]@." str

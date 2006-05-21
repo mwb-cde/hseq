@@ -59,3 +59,6 @@ val error : string -> exn
 
 val warning: string -> unit
 (** [warning msg]: Print warning message [msg] *)
+
+val report: string -> unit
+(** [report msg]: Print message [msg] *)
