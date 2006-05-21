@@ -354,13 +354,13 @@ module Files =
 	let usefile = !Hooks.use_file ~silent:false
 	in 
 	Thys.set_theories(thydb);
-	Report.warning ("Trying to build theory "^f);
+	Report.report ("Trying to build theory "^f);
 	(try
 	  (add_forbidden f;
 	   usefile script;
 	   drop_forbidden f)
 	with err -> (drop_forbidden f; raise err));
-	Report.warning ("Built theory "^f);
+	Report.report ("Built theory "^f);
 	let db1 = Thys.get_theories()
 	in 
 	Thys.set_theories (db0);
