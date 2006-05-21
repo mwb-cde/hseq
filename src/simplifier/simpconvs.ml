@@ -703,7 +703,7 @@ let thm_to_rules scp thm =
    tg:b, asms |- concl
  *)
 let asm_rewrite_tac ?info thm tg g=
-  once_rewriteA_tac ?info:info [thm] ~f:(ftag tg) g
+  once_rewriteA_tac ?info:info [thm] ~a:(ftag tg) g
    	
 (** 
    [qnt_asm_rewrite_tac thm tg g]:

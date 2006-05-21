@@ -259,33 +259,33 @@ let once_rewrite_tac ?info ?(dir=leftright) ?f ths goal=
   in 
   gen_rewrite_tac ?info:info ctrl rules ?f:f goal
 
-let rewriteA_tac ?info ?(dir=leftright) ?f ths goal=
+let rewriteA_tac ?info ?(dir=leftright) ?a ths goal=
   let ctrl = rewrite_control dir
   in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
-  gen_rewrite_tac ?info:info ~asm:true ctrl ?f:f rules goal 
+  gen_rewrite_tac ?info:info ~asm:true ctrl ?f:a rules goal 
 
-let once_rewriteA_tac ?info ?(dir=leftright) ?f ths goal=
+let once_rewriteA_tac ?info ?(dir=leftright) ?a ths goal=
   let ctrl=rewrite_control ~max:1 dir
   in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
-  gen_rewrite_tac ?info:info ~asm:true ctrl rules ?f:f goal
+  gen_rewrite_tac ?info:info ~asm:true ctrl rules ?f:a goal
 
-let rewriteC_tac ?info ?(dir=leftright) ?f ths goal=
+let rewriteC_tac ?info ?(dir=leftright) ?c ths goal=
   let ctrl = rewrite_control dir
   in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
-  gen_rewrite_tac ?info:info ~asm:false ctrl ?f:f rules goal 
+  gen_rewrite_tac ?info:info ~asm:false ctrl ?f:c rules goal 
 
-let once_rewriteC_tac ?info ?(dir=leftright) ?f ths goal=
+let once_rewriteC_tac ?info ?(dir=leftright) ?c ths goal=
   let ctrl=rewrite_control ~max:1 dir
   in 
   let rules = (List.map (fun x -> Logic.RRThm x) ths) 
   in 
-  gen_rewrite_tac ?info:info ~asm:false ctrl rules ?f:f goal
+  gen_rewrite_tac ?info:info ~asm:false ctrl rules ?f:c goal
 
 let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = sequent goal
