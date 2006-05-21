@@ -582,6 +582,25 @@ let subset_inter =
     >>
     [ simp_tac [subset_thm; inter_thm] ++ blast_tac ]
 
+let subset_psubset =
+  theorem "subset_psubset"
+    << ! A B: (A<=B) = ((A<B) | (A = B)) >>
+  [
+    simp_all_tac [psubset_thm]
+    ++ equals_tac ++ blast_tac
+    ++ simp_all
+  ]
+
+let subset_member =
+  theorem "subset_member"
+    << ! x A B: ((x in A) & (A <= B)) => (x in B) >>
+  [
+    simp_tac [subset_thm]
+    ++ flatten_tac
+    ++ mp_tac 
+    ++ simp_all
+  ]
+
 (** Proper subset *)
 
 let psubset_cases =
@@ -662,6 +681,29 @@ let psubset_add =
       ++ once_replace_tac
       ++ flatten_tac
       ++ eq_tac
+  ]
+
+let psubset_add_subset =
+  theorem "psubset_add_subset" 
+    << ! x A B : ((~x in A) & (A < (add x B))) => (A <= B) >>
+  [
+    blast_tac
+    ++ simp_all_tac [psubset_thm] 
+    ++ blast_tac
+    ++ once_rewriteC_tac [set_equal]
+    ++ flatten_tac
+    ++ equals_tac ++ blast_tac
+    ++ simpA_tac [subset_thm]  ++ mp_tac ++ basic
+  ]
+
+let psubset_member =
+  theorem "psubset_member"
+    << ! x A B: ((x in A) & (A < B)) => (x in B) >>
+  [
+    flatten_tac
+    ++ (show << _A <= _B >> (simp_tac [psubset_subset]))
+    ++ cut ~inst:[<< _x >>; << _A >>; << _B >>] subset_member
+    ++ simp
   ]
 
 (** Finite *)
@@ -810,19 +852,6 @@ let finite_strong_induct =
 	  (fun l -> (instA ~a:l [ << _A >> ] ++ blast_tac ~f:l)))
   ]
 
-(***
-let finite_complete_induct = 
-  prove 
-    <<
-    ! P :
-    (! S : (finite S) => ((!T: (T < S) => (P T)) => (P S)))
-    => 
-    (!A: (finite A) => (P A))
-    >>
-    ()
-
-let _ = STOP;;
-***)
 
 let _ = end_theory();;
 
