@@ -13,12 +13,13 @@ From the toplevel directory:
    This generates files config/data.make and config/configure.data
 
    Options for configure.ml:
-	--help: See the list of options and their default values.
+	--help:      See the list of options and their default values.
 	--basedir d: Set the installation directory to d
-                   [default:/usr/local/lib/hseq]
-	--bindir d: Install the binary in directory d
-        --fastcompilers: Use the fast byte-code compiler (ocamlc)
-                   [default:Use the standard compiler (ocamlc)]
+                     default:/usr/local/lib/hseq
+	--bindir d:  Install the binary in directory d
+        --fast (true/false): 
+                     Use the fast byte-code compiler (ocamlc.opt)
+                     default:false (use ocamlc)
 
    Examples:
 	ocaml configure.ml --help,
@@ -26,7 +27,7 @@ From the toplevel directory:
 	ocaml configure.ml --bindir /usr/local/bin
 	(put the binary in /usr/local/bin)
 
-	ocaml configure.ml --basedir `pwd` --fastcompilers
+	ocaml configure.ml --basedir `pwd` --fast
 	(make the installation directory the same as the build directory
 	and use the fast compilers)
 
@@ -62,12 +63,8 @@ NON-UNIX BUILD
 Building on non-Unix systems is not supported. 
 
 The build system requires a Unix-like shell. HSeq won't build without
-it (and problably won't built with it). Try the GNU Make documentation
-for suggestions.
-
-The build system requires the Unix-like file tools (cp, rm and
-mkdir). For MS Windows systems, the file config/filetools.ml provides
-a usable front-end to the standard Windows tools. To use filetools.ml,
-pass the --toolbox option to the configure.ml script.
+it (and may not build with it). Try the GNU Make documentation for
+suggestions.
 
 Building the documentation also requires the GNU Texinfo system.
+

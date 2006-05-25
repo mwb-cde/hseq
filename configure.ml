@@ -104,7 +104,8 @@ let thys_d () =
   filename (get_opt !basedir (basedir_d())) "thys"
 end
 
-let has_fast_compilers = has_program "ocamlc.opt"
+(* let has_fast_compilers = has_program "ocamlc.opt" *)
+let has_fast_compilers = false
 
 let fast_compilers_d ()= 
   if has_fast_compilers 
@@ -116,7 +117,8 @@ let set_fast_compilers flag =
   then set fast_compilers "true"
   else set fast_compilers "false"
 
-let has_native_compilers = has_program "ocamlopt"
+(* let has_native_compilers = has_program "ocamlopt" *)
+let has_native_compilers = false
 
 let native_compilers_d ()= 
   if has_native_compilers 
