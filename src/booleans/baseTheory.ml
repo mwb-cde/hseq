@@ -12,7 +12,7 @@ open Lib.Ops
 * A minimal base theory 
 **********)
 
-let builder ()= 
+let builder ?(save=false) ()= 
   begin_theory Lterm.base_thy [];
   
   (** Types *)
@@ -130,7 +130,7 @@ let builder ()=
     (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
       >> in 
 
-    end_theory()
+    end_theory ~save:save ()
 
-let init() = Global.Init.set_base_thy_builder builder 
+let init() = Global.Init.set_base_thy_builder (builder ~save:false)
 

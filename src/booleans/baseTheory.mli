@@ -9,8 +9,11 @@
    theory can be found.
 *)
 
-val builder: unit -> unit
-  (** Build the minimal theory. *)
+val builder: ?save:bool -> unit -> unit
+  (** 
+      Build the minimal theory. If [?save] is true, save the theory.
+      (default: save=false)
+  *)
 
 (** {7 Initialising function} *)
 val init: unit -> unit
