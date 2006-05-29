@@ -832,8 +832,8 @@ let finite_inter =
 
 (** Finite set induction properties *)
 
-let finite_strong_induct = 
-  theorem "finite_strong_induct"
+let strong_finite_induct = 
+  theorem "strong_finite_induct"
   <<
     !P:
     ((P empty)
