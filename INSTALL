@@ -27,7 +27,7 @@ From the toplevel directory:
 	ocaml configure.ml --bindir /usr/local/bin
 	(put the binary in /usr/local/bin)
 
-	ocaml configure.ml --basedir `pwd` --fast
+	ocaml configure.ml --fast true --basedir `pwd` 
 	(make the installation directory the same as the build directory
 	and use the fast compilers)
 
