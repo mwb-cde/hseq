@@ -4,7 +4,7 @@ Installation
 Requirements: 
   OCaml version 3.09
   GNU make
-  A Unix-like environment (specifically: the file tools cp, mkdir and rm)
+  A Unix-like environment
 
 From the toplevel directory: 
 1) Run the configuration script:
