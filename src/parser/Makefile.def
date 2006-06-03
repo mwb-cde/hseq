@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = counter lexer parser
+FILES = counter lexer grammars resolver parser
 
 # HEADERS: the list of header (.cmi) files 
 HEADERS = $(foreach f, $(FILES), $(f).cmi)
