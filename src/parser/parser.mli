@@ -196,9 +196,9 @@ val remove_type_token_info: Lexer.tok -> unit
    [tok] from the standard table.
 *)
 
-val mk_info : unit -> Grammars.infotyp
+val mk_info : unit -> Grammars.parser_info
 (** 
-   Make a parser information record ([infotyp)] from the standard
+   Make a parser information record ([parser_info)] from the standard
    term and type token tables.
 *)
 
@@ -308,14 +308,14 @@ val defn_parser :
 (** {7 User defined parsers} *)
 
 val term_parser_list : 
-    unit -> (string, Grammars.infotyp -> Basic.term phrase) Lib.named_list
+    unit -> (string, Grammars.parser_info -> Basic.term phrase) Lib.named_list
 (** 
    The list of user defined term parsers. Parsers added to this list are
    used by the term parser {!Grammars.form}.
  *)
 
 val add_term_parser :  (string) Lib.position -> string
-  -> (Grammars.infotyp -> Basic.term phrase)
+  -> (Grammars.parser_info -> Basic.term phrase)
     -> unit
 (**
    [add_term_parser pos n ph]: Add the term parser [ph] at position
@@ -329,7 +329,7 @@ val remove_term_parser :  string -> unit
  *)
 
 val type_parser_list : 
-    unit -> (string, Grammars.infotyp -> Basic.gtype phrase) Lib.named_list
+    unit -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
 (** 
    The list of user defined type parsers. Parsers added to this list are
    used by the term parser {!Grammars.types}.
@@ -337,7 +337,7 @@ val type_parser_list :
 
 val add_type_parser :  
     (string)Lib.position -> string
-      -> (Grammars.infotyp -> Basic.gtype phrase)
+      -> (Grammars.parser_info -> Basic.gtype phrase)
 	-> unit
 (**
    [add_type_parser pos n ph]: Add the type parser [ph] at position
