@@ -28,9 +28,9 @@ module SetPP =
     let semicolon_sym = ";" 
 
     (* Parser *)
-    open Parser.Pkit
-    open Parser.Grammars
-    open Parser.Utility
+    open Grammars
+    open Pkit
+    open Utility
     open Lexer
 
     let set_parser () =
@@ -50,7 +50,7 @@ module SetPP =
 	      -- (?$ colon))
 	     >> 
 	   (fun (v, _) -> 
-	     Parser.Grammars.qnt_setup_bound_names inf Basic.Lambda [v]))
+	     Grammars.qnt_setup_bound_names inf Basic.Lambda [v]))
 	    -- (form inf))
 	   >>
 	 (fun ((xs:(string*Basic.term)list), body) ->
@@ -63,7 +63,7 @@ module SetPP =
 	       (alt 
 		  [ 
 		    set_body inf; 
-		    ((Parser.Grammars.comma_list (form inf))
+		    ((Grammars.comma_list (form inf))
 		      >> 
 		    (fun ts -> 
 		      List.fold_left

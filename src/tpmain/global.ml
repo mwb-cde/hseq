@@ -195,7 +195,7 @@ module PP=
     let catch_parse_error e a = 
       (try (e a)
       with 
-	Pkit.ParsingError x ->
+	Parser.ParsingError x ->
 	  raise (Report.error x)
       | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a)))
 
@@ -208,9 +208,9 @@ module PP=
 
     let expand_term scp t = 
       let lookup = 
-	Parser.Resolver.make_lookup scp overload_lookup
+	Resolver.make_lookup scp overload_lookup
       in 
-      let (t1, env) = Parser.Resolver.resolve_term scp lookup t
+      let (t1, env) = Resolver.resolve_term scp lookup t
       in 
       t1
 (*
@@ -223,11 +223,11 @@ module PP=
 
     let expand_typedef_names scp t=
       match t with
-	Parser.NewType (n, args) -> t
-      | Parser.TypeAlias (n, args, def) ->
-	  Parser.TypeAlias(n, args, expand_type_names scp def)
-      | Parser.Subtype (n, args, def, set) ->
-	  Parser.Subtype(n, args, 
+	Grammars.NewType (n, args) -> t
+      | Grammars.TypeAlias (n, args, def) ->
+	  Grammars.TypeAlias(n, args, expand_type_names scp def)
+      | Grammars.Subtype (n, args, def, set) ->
+	  Grammars.Subtype(n, args, 
 			 expand_type_names scp def, 
 			 expand_term scp set)
 

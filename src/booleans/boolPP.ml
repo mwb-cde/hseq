@@ -46,8 +46,9 @@ let init_negation_printer()=
 ***)
 
 (** Parser-Printer for If-Then-else *)
-open Parser.Pkit
-open Parser.Utility
+open Grammars
+open Pkit
+open Utility
 open Lexer
 
 let ifthenelse_id= Ident.mk_long Lterm.base_thy "IF"
@@ -55,11 +56,11 @@ let ifthenelse_id= Ident.mk_long Lterm.base_thy "IF"
 let ifthenelse_parser inf=
   ((seq
       [?$(Lexer.Sym (Lexer.OTHER "IF"));
-       Parser.Grammars.form inf;
+       Grammars.form inf;
        ?$(Lexer.Sym(Lexer.OTHER "THEN"));
-       Parser.Grammars.form inf;
+       Grammars.form inf;
        ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
-       Parser.Grammars.form inf])
+       Grammars.form inf])
    >>
       (fun l -> 
 	 match l with 
@@ -129,7 +130,7 @@ let choice_pp =
   (Printer.default_term_fixity, Printer.default_term_prec) 
 
 let choice_parser =
-  Parser.Grammars.parse_as_binder choice_ident choice_sym
+  Grammars.parse_as_binder choice_ident choice_sym
 
 let init_choice_parser ()=
   Parser.add_symbol choice_sym (Lexer.Sym(Lexer.OTHER choice_sym));
@@ -159,7 +160,7 @@ let exists_unique_pp =
   (Printer.default_term_fixity, Printer.default_term_prec) 
 
 let exists_unique_parser =
-  Parser.Grammars.parse_as_binder exists_unique_ident exists_unique_sym
+  Grammars.parse_as_binder exists_unique_ident exists_unique_sym
 
 let init_exists_unique_parser ()=
   Parser.add_symbol 
