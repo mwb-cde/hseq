@@ -26,6 +26,9 @@
 # Variables
 ###
 
+# BINFILE: The name of the executable
+BINFILE = hseq
+
 # The source directory
 SRCDIR = $(dir src)
 
@@ -134,7 +137,7 @@ else
 # How a program is named
 Program(files) =
   if $(equal $(OSTYPE), Win32)
-    return $(addsuffix .exe, $(files))
+    return $(addsuffix .exe,$(files))
   else
     return $(files)
 
@@ -200,7 +203,14 @@ MkIDirs($(IDIRS))
 
 build: build-hseq build-thys
 
-install: build install-hseq install-thys install-doc
+section 
+  INSTALL_TARGETS = build install-hseq install-thys
+
+  if $(not $(equal $(OSTYPE), Win32))
+    INSTALL_TARGETS += install-doc
+    export
+
+  install: $(INSTALL_TARGETS)
 
 ###
 # Clean up
@@ -217,6 +227,14 @@ reallyclean: clean
 # You may want to include some subdirectories in this project.
 # If so, define the subdirectory targets and uncomment this section.
 #
+
+## Some usefull definitions
+
+# BINPROG: The program name
+BINPROG = $(Program $(BINFILE))
+
+# IBINPROG: The installed program
+IBINPROG = $(IBINDIR)/$(BINPROG)
 
 .SUBDIRS: $(SUBDIRS) $(DOCSUBDIRS)
 

@@ -35,28 +35,27 @@ SUBDIRS =
 BUILDSCRIPT = buildall.ml
 
 # HSEQ: The name of the theorem prover executable
-HSEQ = $(file $(SRCDIR)/$(Program hseq))
+HSEQ = "$(SRCDIR)/$(Program hseq)"
 
 # HSEQB: The name of the theorem prover scripter
-HSEQB = $(file $(SRCDIR)/$(Program hseqb))
+HSEQB = "$(SRCDIR)/$(Program hseqb)"
 
 # HSEQLIB: The include directory for $(HSEQ) (before installation and 
 # relative to the src directory).
-HSEQLIB = $(dir $(SRCDIR)/lib)
+HSEQLIB = $(SRCDIR)/lib
 
 ##
 # Settings
 ##
 
 # INCLUDE: The include directives
-INCLUDE = --include $(HSEQLIB) --include $(SRCDIR)
+INCLUDE = -I $(HSEQLIB) -I $(SRCDIR)
 
 # OPTIONS: Compiler options
-OPTIONS = -I $(HSEQLIB) -I $(SRCDIR)
+OPTIONS =
 
 # HSEQC: The hseq compiler
-HSEQC = $(HSEQB) --bin $(HSEQ) $(INCLUDE)
-
+HSEQC = $(HSEQ) $(OPTIONS) $(INCLUDE)
 
 ##
 # Local targets
@@ -65,10 +64,10 @@ HSEQC = $(HSEQB) --bin $(HSEQ) $(INCLUDE)
 .PHONY: thys
 .PHONY: install-thys
 
-thys: build-hseq 
-  $(HSEQC) $(BUILDSCRIPT) 
+thys: $(HSEQ)
+  echo '#use "$(BUILDSCRIPT)";;' | $(HSEQC)
 
-install-thys: thys $(ITHYDIR)
+install-thys: thys $(IBINPROG) $(ITHYDIR)
   -$(COPY) *.tho $(ITHYDIR)
   -$(COPY) *Script.ml $(ITHYDIR)
   -$(COPY) *.cmi $(ITHYDIR)
@@ -78,7 +77,7 @@ install-thys: thys $(ITHYDIR)
 # Global targets
 ##
 
-.DEFAULT: build
+.DEFAULT: build-thys
 
 build-thys: thys
 

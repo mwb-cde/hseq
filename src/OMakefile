@@ -28,9 +28,6 @@ INSTALL_INTERFACES = true
 # Variables
 ###
 
-# BINFILE: The name of the executable
-BINFILE = hseq
-
 # MODULE: The name of the module to contain the library
 MODULE = HSeq
 
@@ -482,9 +479,11 @@ $(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
 
 build-toplevel: $(TLNAME)
 
-install-toplevel: build-toplevel $(IBINDIR) $(ILIBDIR) 
+$(IBINPROG): build-toplevel $(IBINDIR) $(ILIBDIR) 
   -$(COPY) $(TLNAME) $(IBINDIR)
   -$(COPY) $(INITFILE) $(ILIBDIR)
+
+install-toplevel: $(IBINPROG)
 
 ##
 # The tools directory has its own OMakefile

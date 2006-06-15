@@ -15,12 +15,15 @@
    where HSEQ is the hseq install directory.
 *)
 
+(** Open the theroem prover *)
+
 open HSeq
 
 (** Add the source include directories *)
 let _ = 
   Settings.include_dirs :=
     "../src/lib":: "../src"::(!Settings.include_dirs);;
+    
 
 (** Initialise hseq *)
 #use "hseqstart.ml";;
