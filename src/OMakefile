@@ -1,0 +1,547 @@
+########################################################################
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this file, to deal in the File without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the File, and to permit persons to whom the
+# File is furnished to do so, subject to the following condition:
+#
+# THE FILE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE FILE OR
+# THE USE OR OTHER DEALINGS IN THE FILE.
+
+########################################################################
+
+###
+# OMakefile
+# Author: M Wahab <mwahab@users.sourceforge.net>
+# Copyright M Wahab 2006
+###
+
+INSTALL_INTERFACES = true
+
+###
+# Variables
+###
+
+# BINFILE: The name of the executable
+BINFILE = hseq
+
+# MODULE: The name of the module to contain the library
+MODULE = HSeq
+
+# LIBFILE: The name of the library
+LIBFILE = hseq
+
+# INITFILE: The name of the initialising file
+INITFILE = hseqstart.ml
+
+# OCINCLUDE: Required OCaml include directories
+OCINCLUDE = +camlp4
+
+# OCLIBS: Required OCaml libraries.
+OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+
+##
+# Variables for the library
+##
+
+# SUBDIRS: The sub-directories to build (in order)
+SUBDIRS = util tpcore logic parser tpmain \
+	booleans simplifier numbers userlib
+
+# HSEQCODE: The code to link in to build the library (in order)
+HSEQCODE = util tpcore logic parser tpmain booleans simplifier \
+	numbers userlib 
+
+##
+# Variables for the top-level
+##
+
+# TLNAME: The name of the toplevel to build
+TLNAME = $(Program hseq)
+
+# TLDIRS: The sub-directories to build the top-level
+TLDIRS = hseqtop
+
+# TLFILES: The code to link in to build the toplevel (in order)
+TLFILES = tpquote.cma hseqtop.cma
+
+##
+# Variables for the tools
+##
+
+# TOOLS: The list of tools
+TOOLS = hseqb
+
+TOOLPROGS= $(Program $(TOOLS))
+
+##
+# Standard variables for the documentation
+##
+
+# ISDOCDIR: The name of the installation directory for 
+# the source code documentation
+ISDOCDIR = $(dir $(IDOCDIR)/source)
+
+# DOCTYPE: The type of documentation to generate
+if $(not $(defined DOCTYPE))
+  DOCTYPE = -html
+  export
+
+# DOCOPTIONS: Additional options to pass to the generator
+if $(not $(defined DOCOPTIONS))
+  DOCOPTIONS = -html
+  export
+
+##
+# Constants
+##
+
+# SRCDIR: The source directory
+SRCDIR = $(CWD)
+
+# HEADERSDIR: The location of the compiled header files
+HEADERSDIR = $(dir lib)
+
+# LIBDIR: The location of the compiled files
+LIBDIR = $(dir lib)
+
+# TOOLSDIR: The directory containing the tools
+TOOLSDIR = $(dir tools)
+
+# DOCDIR: Source code documentation directory
+DOCDIR = $(dir doc)
+
+# SUBDATA: The name of the Makefile with the definitions for each
+# subdirectory
+SUBDATA = Makefile.def
+
+SRCCONFIG = $(dir config)
+
+# Add the library directory to the include directories
+OCAMLINCLUDES += $(LIBDIR) $(OCINCLUDE) $(dir $(SUBDIRS))
+
+# Add the installation directory to the list of include directories,
+# to make the compiled system look in the installation directory
+# for its header files.
+# Using OCAMLFLAGS is a hack to avoid passing the directory to ocamldep
+# since the directory may not exist when the system is compiled.
+# All of this may be unnecessary, it depends on how ocaml programs
+# find their header files.
+OCAMLFLAGS += -I $(ILIBDIR)
+
+##
+# local targets
+##
+
+.PHONY: build-code
+.PHONY: build-library
+.PHONY: build-toplevel
+.PHONY: build-tools
+
+.PHONY: install-library
+.PHONY: install-toplevel
+.PHONY: install-tools
+
+# srcdoc: Build documentation 
+.PHONY: srcdoc
+
+##
+# Non-code Subdirectories
+##
+
+.SUBDIRS: $(LIBDIR) 
+  clean:
+    $(RM) *.cmi *.mli *.ml *.cmo 
+    $(RM) *.cmx *.o *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa
+
+  reallyclean: clean libclean
+
+
+.SUBDIRS: $(DOCDIR)
+  clean:
+    $(RM) *.data
+    $(RM) *.html *.css
+    $(RM) *.info
+    $(RM) *.cmi *.mli *.cmo *.cmx *.o
+    $(RM) *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa
+
+  reallyclean: clean libclean
+
+
+##
+# Standard targets
+##
+
+
+## FullClean: Targets to clean a subdirectory
+
+FullClean (c, l, r) =
+  clean:
+    $(RM) *.cmo *.cmx *.o *~ 
+    if $(not $(equal $(c), ""))
+      $(RM) $(c)
+
+  libclean: clean
+    $(RM) *.cmi *.cma *.cmxa 
+    if $(not $(equal $(l), ""))
+      $(RM) $(l)
+
+  reallyclean: libclean
+    if $(not $(equal $(r), ""))
+      $(RM) $(r)
+
+StdClean () = 
+  clean:
+    $(RM) *.cmo *.cmx *.o *~
+
+  libclean: clean
+    $(RM) *.cmi *.cma *.cmxa
+
+  reallyclean: libclean
+
+## StdInstall: Build and install targets from a subdirectory
+
+StdInstall(tag, install_files, target) =
+  IFILES = $(filter-exists $(install-files))
+  $(tag): 
+      $(COPY) $(install_files) $(target)
+
+## BuildInstall: Build and install targets from a subdirectory
+
+BuildInstall(tag, build_files, install_files, target) =
+  $(tag):
+    section rule
+      if $(not $(file-exists $(build_files)))
+          $(tag): $(build_files)
+              $(COPY) $(install_files) $(target)
+
+## StdDoc: Build and install the documentation for a subdirectory
+
+StdDoc(tag, dfiles, prev, data) =
+  emptyseq = 
+  docincludes = $`(mapprefix -I, $(OCAMLINCLUDES))
+  docfiles = $(Header $(dfiles))
+  if $(not $(equal $(prev), $(emptyseq)))
+    docprev = $(file $(DOCDIR)/$(prev))
+    docload = -load $(docprev)
+    export
+  else 
+    docprev = 
+    docload = 
+    export
+  if $(not $(equal $(data), $(emptyseq)))
+    docdata = $(file $(DOCDIR)/$(data))
+    docdump = -dump $(docdata)
+    export
+  else 
+    docdata = 
+    docdump = 
+    export
+  $(tag) $(docdata): $(docfiles) $(docprev)
+    $(OCAMLDOC) $(docload) $(docdump) \
+      $(docincludes) $(DOCTYPE) -d $(DOCDIR) $(docfiles)
+
+
+## The sources for a list of files
+
+Source(files) =
+  X = $(addsuffix .ml, $(files))
+  return $(X)
+
+## The headers for a list of files
+
+Header(files) =
+  X = $(addsuffix .mli, $(files))
+  return $(X)
+
+## The interfaces for a list of files
+
+Interface(files) =
+  X = $(addsuffix .cmi, $(files))
+  return $(X)
+
+## The object code for a list of files
+
+ByteCode(files) =
+  return $(addsuffix .cmo, $(files))
+NatCode(files) =
+  return ($(addsuffix .cmxo, $(files)) $(addsuffix .o, $(files)))
+Code(files) =
+  X = $(ByteCode $(files))
+  if $(NATIVE_ENABLED)
+     X += $(NatCode $(files))
+  return $(X)
+
+## The libraries to be built
+
+ByteLib(name) = 
+  return $(name).cma
+NatLib(name) = 
+ return ($(name).cmxa $(name).a)
+
+Lib(name) =
+  X = $(ByteLib $(name))
+  if $(NATIVE_ENABLED)
+     X += $(NatLib $(name))
+  return $(X)
+
+## GetFileList: Get the list of files from each subdirectory, in order
+
+GetFileList(subdirs) =
+  FileList = 
+  foreach (sub, $(subdirs))
+    FILES = 
+    include $(sub)/$(SUBDATA)
+    FileList += $(addprefix $(sub)/,$(FILES))
+    export
+  return($(FileList))
+    
+##
+# Preprocessor setting
+##
+
+# The theorem prover quotation expander
+PPNAME = tpquote
+PPCODE = $(file $(LIBDIR)/$(PPNAME).cma)
+
+# OCAMLCPP : set the preprocesor
+OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
+	-I$(CONFIGDIR) 
+
+%.ml: %.mlp
+  $(OCAMLCPP) -impl $< -o $@
+
+##
+# Build the quotation expander
+##
+
+.SUBDIRS: quote
+  PPOPTIONS = -pp "camlp4o q_MLast.cmo pa_extend.cmo"
+  OCAMLFLAGS += $(PPOPTIONS) 
+  OCAMLDEPFLAGS += $(PPOPTIONS) 
+
+  # Don't try to build a native code expander
+  NATIVE_ENABLED = false
+  BYTE_ENABLED = true
+
+  # Documentation settings
+  DOCPREV = ""
+  DOCDATA = ""
+
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  # Targets
+
+  StdClean()
+  OCamlLibrary($(LIBFILES), $(FILES))
+
+  BuildInstall($(PPCODE), \
+	$(Lib $(LIBFILES)), \
+	$(Lib $(LIBFILES)) $(Header $(FILES)) $(Interface $(FILES)), \
+	$(LIBDIR))
+
+  StdDoc(srcdoc, $(FILES), $(DOCPREV), $(DOCDATA))
+
+## Set up the quotation system
+
+LocalOCamlGeneratedFiles($(PPCODE))
+
+PPOPTIONS = -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo"
+OCAMLFLAGS += $(PPOPTIONS) 
+OCAMLOPTFLAGS += -for-pack $(MODULE)
+OCAMLDEPFLAGS += $(PPOPTIONS) 
+OCAML_LINK_FLAGS += $(OCINCLUDE)
+
+MKTOPINCLUDES = $(OCINCLUDE) $(LIBDIR)
+MKTOPLIBS = $(OCLIBS)
+MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(OCLIBS)
+
+##
+# Build the Library
+##
+
+## Variables
+
+FILES = $(GetFileList $(SUBDIRS))
+BYTECODE = $(ByteCode $(FILES))
+NATCODE = $(NatCode $(FILES))
+
+BYTEMODULE = $(ByteCode $(MODULE))
+NATMODULE = $(NatCode $(MODULE))
+MODULEHEADER = $(Interface $(MODULE))
+
+HSEQLIB = $(Lib $(LIBFILE)) 
+
+HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
+HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEHEADER))
+
+## How to build the subdirectories
+.SUBDIRS: $(SUBDIRS) 
+  # Get the subdirectory data
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  HEADERS = $(Header $(FILES))
+  SOURCES = $(Source $(FILES)) 
+  INTERFACES = $(Interface $(FILES))
+  CODE = $(Code $(FILES))
+  LIBRARY = $(Lib $(LIBFILES))
+
+  # Targets
+
+  StdClean()
+  OCamlLibrary($(LIBFILES), $(FILES))
+
+  BuildInstall(build-code, \
+        $(CODE) $(LIBRARY), \
+	$(Header $(FILES)) $(Interface $(FILES)) $(LIBRARY), \
+	$(LIBDIR))
+
+  StdDoc(srcdoc, $(FILES), $(DOCPREV), $(DOCDATA))
+
+## How to build the library
+$(BYTEMODULE): build-code
+  $(OCAMLLINK) -pack -o $@ $(ByteCode $(FILES))
+
+$(NATMODULE): build-code :effects: $(HSEQLIBINTF)
+  $(OCAMLOPTLINK) -pack -o $@ $(NatCode $(FILES))
+  $(COPY) $(MODULEHEADER) $(LIBDIR)
+
+OCamlLibrary($(LIBFILE), $(MODULE))
+
+$(HSEQLIBCODE) $(HSEQLIBINTF): $(HSEQLIB)
+  $(COPY) $(HSEQLIB) $(MODULEHEADER) $(LIBDIR)
+
+build-library: $(HSEQLIBCODE)
+
+install-library: $(HSEQLIBCODE) $(ILIBDIR) 
+  section
+    LFILES = *.cma *.cmxa *.a *.o *.cmi *.mli
+    FLFILES = $(filter-exists $(glob $(addprefix $(LIBDIR)/, $(LFILES))))
+    $(COPY) $(FLFILES) $(ILIBDIR)
+
+##
+# Build the top-level
+## 
+TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
+
+.SUBDIRS: $(TLDIRS)
+  # Don't try to build a native code top-level
+  NATIVE_ENABLED = false
+  BYTE_ENABLED = true
+
+  # Settings
+
+  # Local settings
+  include $(SUBDATA)
+  if $(file-exists OMakefile)
+    include OMakefile
+    export
+
+  LIBRARY = $(Lib $(LIBFILES))
+  INTERFACES = $(Interface $(FILES))
+  HEADERS = $(Header $(FILES))
+  
+  # Dependencies 
+
+  $(INTERFACES): $(HSEQLIBINTF)
+
+  # Targets
+
+  StdClean()
+  OCamlLibrary($(LIBFILES), $(FILES))
+
+
+#  $(LIBDIR)/$(LIBRARY): $(LIBRARY) :exists: $(HSEQLIBINTF)
+#    $(COPY) $(LIBRARY) $(HEADERS) $(INTERFACES) $(LIBDIR)
+
+  BuildInstall($(LIBDIR)/$(LIBRARY), \
+	$(LIBRARY), \
+	$(LIBRARY) $(HEADERS) $(INTERFACES), \
+	$(LIBDIR))
+
+$(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
+  $(OCAMLMKTOP) $(MKTOPFLAGS) -custom -o $(TLNAME) $(HSEQLIB) $(TLFILES)
+
+build-toplevel: $(TLNAME)
+
+install-toplevel: build-toplevel $(IBINDIR) $(ILIBDIR) 
+  -$(COPY) $(TLNAME) $(IBINDIR)
+  -$(COPY) $(INITFILE) $(ILIBDIR)
+
+##
+# The tools directory has its own OMakefile
+##
+
+.SUBDIRS: $(TOOLSDIR)
+
+build-tools: $`(mapprefix $(SRCDIR)/, $(TOOLPROGS))
+
+install-tools: build-tools $(IBINDIR)
+  -$(COPY) $(TOOLPROGS) $(IBINDIR)
+
+##
+# Build the documentation
+##
+
+# Make the source code documentation directroy
+
+$(ISDOCDIR): $(IDOCDIR)
+  -$(MKDIR) $@
+
+# filter_prec(pred, l): 
+# Remove any elements in l which fail predicate pred
+filter_pred(pred, lst) =
+  X[] = .
+  foreach(fl, $(lst))
+    if $(pred $(fl))
+      X += $(fl)
+      export
+  return ($(X))
+
+EXCLUDE_FILES = CVS Makefile OMakefile OMakefile.omc
+
+install-srcdoc: srcdoc $(ISDOCDIR)
+  section
+    alst = $(glob $(DOCDIR)/*)
+    foreach (name, $(alst))
+      if $(not $(mem $(basename $(name)), $(EXCLUDE_FILES)))
+        if $(test ! -d $(name))
+          $(COPY) $(name) $(ISDOCDIR)
+
+##
+# The top build targets
+##
+
+build-hseq: build-library build-toplevel build-tools
+
+install-hseq: install-library install-toplevel install-tools
+
+##
+# Cleaning files
+##
+
+FullClean("", $(TLNAME), $(TOOLPROGS))
+
+##
+# The default target
+##
+
+.DEFAULT: build-hseq

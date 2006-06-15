@@ -17,18 +17,6 @@
 FILES = global drule tactics goals commands \
 	display 
 
-# HEADERS: the list of header (.cmi) files 
-HEADERS = $(foreach f, $(FILES), $(f).cmi)
-
-# MLHEADERS: the list of ML header (.mli) files 
-MLHEADERS = $(foreach f, $(FILES), $(f).mli)
-
-# CODE: the list of code (.cmo) files 
-CODE = $(foreach f, $(FILES), $(f).cmo)
-
-# NATCODE: the list of native code (.cmx) files 
-NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
-
 ###
 # Generated libraries
 ###
@@ -36,20 +24,11 @@ NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
 # LIBFILE: The list of library files built
 LIBFILES = tpmain
 
-# BYTELIBS: The list of library (.cma) files built
-BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
-
-# NATLIB: The list of native code library (.cmxa) files built
-NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa $(f).a)
-
 ###
 # Documentation
 ###
 
 DOCTYPE = -html
-
-# DOCFILES: File from which documentation is to be built
-DOCFILES = $(MLHEADERS)
 
 # DOCDATA: File to be emitted as a link
 DOCDATA = tpmain.data

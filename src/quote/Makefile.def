@@ -16,18 +16,6 @@
 # FILES: The list of file names
 FILES = tpquote
 
-# HEADERS: the list of header (.cmi) files 
-HEADERS = $(foreach f, $(FILES), $(f).cmi)
-
-# MLHEADERS: the list of ML header (.mli) files 
-MLHEADERS = $(foreach f, $(FILES), $(f).mli)
-
-# CODE: the list of code (.cmo) files 
-CODE = $(foreach f, $(FILES), $(f).cmo)
-
-# NATCODE: the list of native code (.cmx) files 
-NATCODE = $(foreach f, $(FILES), $(f).cmx)
-
 ###
 # Generated libraries
 ###
@@ -35,20 +23,11 @@ NATCODE = $(foreach f, $(FILES), $(f).cmx)
 # LIBFILE: The list of library files built
 LIBFILES = tpquote
 
-# BYTELIBS: The list of library (.cma) files built
-BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
-
-# NATLIB: The list of native code library (.cmxa) files built
-NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa)
-
 ###
 # Documentation
 ###
 
 DOCTYPE = -html
-
-# DOCFILES: File from which documentation is to be built
-DOCFILES = 
 
 # DOCDATA: File to be emitted as a link
 DOCDATA = 
