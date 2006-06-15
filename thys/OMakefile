@@ -67,7 +67,7 @@ HSEQC = $(HSEQ) $(OPTIONS) $(INCLUDE)
 thys: $(HSEQ)
   echo '#use "$(BUILDSCRIPT)";;' | $(HSEQC)
 
-install-thys: thys $(IBINPROG) $(ITHYDIR)
+install-thys: thys $(ITHYDIR)
   -$(COPY) *.tho $(ITHYDIR)
   -$(COPY) *Script.ml $(ITHYDIR)
   -$(COPY) *.cmi $(ITHYDIR)
