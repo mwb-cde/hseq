@@ -211,8 +211,6 @@ clean:
 
 reallyclean: clean
   $(RM) $(filter-proper-targets $(ls R, .))
-#  -$(RM) hseq
-#  -$(RM) hseqb
 
 ########################################################################
 # Subdirectories.
