@@ -227,29 +227,32 @@ BuildInstall(tag, build_files, install_files, target) =
 ## StdDoc: Build and install the documentation for a subdirectory
 
 StdDoc(tag, dfiles, prev, data) =
-  emptyseq = 
+  emptyseq [] = 
   docincludes = $`(mapprefix -I, $(OCAMLINCLUDES))
   docfiles = $(Header $(dfiles))
-  if $(not $(equal $(prev), $(emptyseq)))
-    docprev = $(file $(DOCDIR)/$(prev))
+  if $(not $(equal $(array $(prev)), $(emptyseq)))
+    docprev = $(DOCDIR)/$(prev)
     docload = -load $(docprev)
     export
   else 
     docprev = 
     docload = 
     export
-  if $(not $(equal $(data), $(emptyseq)))
-    docdata = $(file $(DOCDIR)/$(data))
+  if $(not $(equal $(array $(data)), $(emptyseq)))
+    docdata = $(DOCDIR)/$(data)
     docdump = -dump $(docdata)
     export
   else 
     docdata = 
     docdump = 
     export
-  $(tag) $(docdata): $(docfiles) $(docprev)
-    $(OCAMLDOC) $(docload) $(docdump) \
-      $(docincludes) $(DOCTYPE) -d $(DOCDIR) $(docfiles)
-
+  section rule
+    if $(not $(equal $(array $(data)), $(emptyseq)))
+      $(tag) $(docdata): $(docfiles) $(docprev)
+        $(OCAMLDOC) $(docload) $(docdump) \
+        $(docincludes) $(DOCTYPE) -d $(DOCDIR) $(docfiles)
+    else
+      $(tag): $(docfiles)
 
 ## The sources for a list of files
 
