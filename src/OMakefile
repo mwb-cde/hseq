@@ -478,7 +478,7 @@ TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
 	$(LIBDIR))
 
 $(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
-  $(OCAMLMKTOP) $(MKTOPFLAGS) -custom -o $(TLNAME) $(HSEQLIB) $(TLFILES)
+  $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(HSEQLIB) $(TLFILES)
 
 build-toplevel: $(TLNAME)
 

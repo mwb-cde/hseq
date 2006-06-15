@@ -65,7 +65,7 @@ HSEQC = $(HSEQB) --bin $(HSEQ) $(INCLUDE)
 .PHONY: thys
 .PHONY: install-thys
 
-thys: $(HSEQ) $(HSEQB)
+thys: build-hseq 
   $(HSEQC) $(BUILDSCRIPT) 
 
 install-thys: thys $(ITHYDIR)

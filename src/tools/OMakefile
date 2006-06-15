@@ -65,8 +65,8 @@ BuildTool(tool) =
   INCLUDES = $`(mapprefix -I, $(OCAMLINCLUDES))
 
   # Build the tool
-  $(tool): $(getvar $(tool)_SOURCES)
-    $(OCAMLC) $(OCAMLCFLAGS) -o $(tool) $(INCLUDES) $(getvar $(tool)_LIBS) \
+  $(Program $(tool)): $(getvar $(tool)_SOURCES)
+    $(OCAMLC) $(OCAMLCFLAGS) -o $@ $(INCLUDES) $(getvar $(tool)_LIBS) \
        $(getvar $(tool)_SOURCES)
     
 InstallTool(tool) =
@@ -78,8 +78,9 @@ InstallTool(tool) =
 # Rules to build the tools
 ##
 
-foreach (tool, $(TOOLPROGS))
+foreach (tool, $(TOOLS))
   BuildTool($(tool))
+foreach (tool, $(TOOLPROGS))
   InstallTool($(tool))
 
 ##
@@ -97,5 +98,5 @@ foreach (tool, $(TOOLPROGS))
 ##
 
 FullClean("", \
-  $(foreach $(fun t, $(getvar $(t)_TEMP)), $(TOOLPROGS)), \
+  $(foreach $(fun t, $(getvar $(t)_TEMP)), $(TOOLS)), \
   $(TOOLPROGS))
