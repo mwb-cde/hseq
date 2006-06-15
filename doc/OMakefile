@@ -152,21 +152,25 @@ MkIDirs($(IDirs))
 
 EXCLUDE_FILES = CVS Makefile OMakefile OMakefile.omc
 
+CopyFileList (dname) =
+   exclude_files = $(addprefix $(dname)/, $(EXCLUDE_FILES))
+   return $(string $(filter-out $(exclude_files), $(glob $(dname)/*)))
+
 install-info: $(IINFODIR)
   section
-    adir = $(glob $(INFODIR)/*)
+    adir = $(CopyFileList $(INFODIR))
     foreach (name, $(adir))
-      if $(not $(mem $(basename $(name)), $(EXCLUDE_FILES)))
-        $(MKDIR) $(IDOCDIR)/$(name)
-        $(COPY) $(name)/* $(IDOCDIR)/$(name)
+      bdir = $(CopyFileList $(name))
+      $(MKDIR) $(IDOCDIR)/$(name)
+      $(COPY) $(bdir) $(IDOCDIR)/$(name)
 
 install-html: $(IHTMLDIR)
   section
-    adir = $(glob $(HTMLDIR)/*)
+    adir = $(CopyFileList $(HTMLDIR))
     foreach (name, $(adir))
-      if $(not $(mem $(basename $(name)), $(EXCLUDE_FILES)))
-        $(MKDIR) $(IDOCDIR)/$(name)
-        $(COPY) $(name)/* $(IDOCDIR)/$(name)
+      bdir = $(CopyFileList $(name))
+      $(MKDIR) $(IDOCDIR)/$(name)
+      $(COPY) $(bdir) $(IDOCDIR)/$(name)
 
 install-doc: install-html
 
