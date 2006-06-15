@@ -30,12 +30,13 @@ LIBFILES = numbers
 DOCTYPE = -html
 
 # DOCDATA: File to be emitted as a link
-DOCDATA = # numbers.data
+# DOCDATA = numbers.data
+DOCDATA = 
 
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
-DOCPREV = # simplifier.data
-
+# DOCPREV = simplifier.data
+DOCPREV = 
 
 ###
 # End of Makefile.def variables

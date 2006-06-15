@@ -30,7 +30,8 @@ LIBFILES = tpquote
 DOCTYPE = -html
 
 # DOCDATA: File to be emitted as a link
-DOCDATA = # quote.data
+#DOCDATA = quote.data
+DOCDATA = 
 
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
