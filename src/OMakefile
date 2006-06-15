@@ -465,10 +465,6 @@ TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
   StdClean()
   OCamlLibrary($(LIBFILES), $(FILES))
 
-
-#  $(LIBDIR)/$(LIBRARY): $(LIBRARY) :exists: $(HSEQLIBINTF)
-#    $(COPY) $(LIBRARY) $(HEADERS) $(INTERFACES) $(LIBDIR)
-
   BuildInstall($(LIBDIR)/$(LIBRARY), \
 	$(LIBRARY), \
 	$(LIBRARY) $(HEADERS) $(INTERFACES), \
@@ -477,13 +473,11 @@ TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
 $(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
   $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(HSEQLIB) $(TLFILES)
 
-build-toplevel: $(TLNAME)
+build-toplevel: $(TLNAME) 
 
-$(IBINPROG): build-toplevel $(IBINDIR) $(ILIBDIR) 
+install-toplevel: $(TLNAME) $(IBINDIR) $(ILIBDIR) 
   -$(COPY) $(TLNAME) $(IBINDIR)
   -$(COPY) $(INITFILE) $(ILIBDIR)
-
-install-toplevel: $(IBINPROG)
 
 ##
 # The tools directory has its own OMakefile
