@@ -101,11 +101,11 @@ struct
 end
 
 (** The standard Win32 values **)
+(*
 module Windows=
 struct
 
-  let prefix_d () = "\\HSeq"
-(*  let prefix_d () = "\\Program\\ Files" *)
+  let prefix_d () = "\\Program\\ Files" 
 
   let basedir_d () = 
     filename (get_opt !prefix (prefix_d())) "HSeq"
@@ -116,6 +116,9 @@ struct
   let thys_d () = 
     filename (get_opt !basedir (basedir_d())) "thys"
 end
+*)
+
+module Windows = Unix
 
 let prefix_d () = 
    match os_type with
@@ -220,7 +223,7 @@ let print_make_var oc (v, d, _) =
   match (!d) with
       None -> ()
     | _ -> 
-	let str = (get !d)
+	let str = String.escaped (get !d)
 	in 
  	  Printf.fprintf oc "%s = '%s'\n" v str 
 
@@ -228,7 +231,7 @@ let print_make_setting oc (v, d, _) =
   match (!d) with
       None -> ()
     | _ -> 
-	let str = (get !d)
+	let str = String.escaped (get !d)
 	in 
 	  Printf.fprintf oc "%s = %s\n" v str
 
