@@ -81,10 +81,6 @@ TOOLPROGS= $(Program $(TOOLS))
 # Standard variables for the documentation
 ##
 
-# ISDOCDIR: The name of the installation directory for 
-# the source code documentation
-ISDOCDIR = $(dir $(IDOCDIR)/source)
-
 # DOCTYPE: The type of documentation to generate
 if $(not $(defined DOCTYPE))
   DOCTYPE = -html

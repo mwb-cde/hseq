@@ -103,7 +103,10 @@ end
 (** The standard Win32 values **)
 module Windows=
 struct
-  let prefix_d () = "Program Files"
+
+  let prefix_d () = "\\HSeq"
+(*  let prefix_d () = "\\Program\\ Files" *)
+
   let basedir_d () = 
     filename (get_opt !prefix (prefix_d())) "HSeq"
   let bindir_d () = 

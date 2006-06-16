@@ -232,7 +232,7 @@ export OCAMLDEP = ocamldep.opt $(PPOPTIONS)
 export OCAMLDOC = ocamldoc.opt 
 
 # OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlopt.op $(OPTIONS) 
+export OCAMLNATC= ocamlopt.opt $(OPTIONS) 
 
 endif
 

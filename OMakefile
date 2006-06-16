@@ -103,9 +103,37 @@ if $(equal $(NativeCompilers), true)
   NATIVE = true
   export
 
+###
+# Common definitions
+##
+
+# How a program is named
+Program(files) =
+  if $(equal $(OSTYPE), Win32)
+    return $(addsuffix .exe,$(files))
+  else
+    return $(files)
+
+# The documentation generator
+OCAMLDOC = ocamldoc
+
+if $(exists-in-path ocamldoc.opt)
+  OCAMLDOC = ocamldoc.opt
+  export
+
+# Stringify(str): Replace spaces in strings with '\ '
+Stringify (str) =
+  return $(concat \\ , $(array $(str)))
+
 ##
 # Installation settings
 ##
+
+# SBaseDir: The stringified $(BaseDir)
+SBaseDir = $(Stringify $(BaseDir))
+
+# SBinDir: The stringified $(BinDir)
+SBinDir = $(Stringify $(BinDir))
 
 # IPREFIX: The installation prefix
 IPREFIX = $(Prefix)
@@ -125,6 +153,10 @@ ITHYDIR = $(dir $(IBASEDIR)/thys)
 # IBINDIR: Binary installation directory
 IBINDIR = $(dir $(BinDir))
 
+# ISDOCDIR: The name of the installation directory for 
+# the source code documentation
+ISDOCDIR = $(dir $(IDOCDIR)/source)
+
 ##
 # Compile native or byte code?
 ##
@@ -135,24 +167,6 @@ if $(NATIVE)
   NATIVE_ENABLED = true
 else
   NATIVE_ENABLED = false
-
-###
-# Common definitions
-##
-
-# How a program is named
-Program(files) =
-  if $(equal $(OSTYPE), Win32)
-    return $(addsuffix .exe,$(files))
-  else
-    return $(files)
-
-# The documentation generator
-OCAMLDOC = ocamldoc
-
-if $(exists-in-path ocamldoc.opt)
-  OCAMLDOC = ocamldoc.opt
-  export
 
 ##
 # How to create the installation directory
@@ -170,7 +184,6 @@ $(IBASEDIR):
   -$(MKDIR) $@
 
 MkIDirs($(IDIRS))
-
 
 ##
 # Targets
