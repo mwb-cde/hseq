@@ -81,31 +81,66 @@ let get_opt p d=
 (** Default values **)
 
 let bin_d () = "hseq"
-let prefix_d () = "/usr/local"
-let basedir_d () = filename (filename (prefix_d()) "lib") (bin_d())
-let bindir_d () = get_opt !basedir (basedir_d())
-let libdir_d () = 
-  filename (get_opt !basedir (basedir_d())) "lib"
-let thys_d () = 
-  filename (get_opt !basedir (basedir_d())) "thys"
+
+let os_type = Sys.os_type
 
 (** The standard Unix values **)
 module Unix=
 struct
-let prefix_d () = "/usr/local"
-let basedir_d () = 
-  filename (get_opt !prefix (prefix_d()))
-    (filename "lib" (get_opt !bin (bin_d())))
-let bindir_d () = 
-  filename (get_opt !prefix (prefix_d())) "bin"
-let libdir_d () = 
-  filename (get_opt !basedir (basedir_d())) "lib"
-let thys_d () = 
-  filename (get_opt !basedir (basedir_d())) "thys"
+  let prefix_d () = "/usr/local"
+  let basedir_d () = 
+    filename (get_opt !prefix (prefix_d()))
+      (filename "lib" (get_opt !bin (bin_d())))
+  let bindir_d () = 
+    get_opt !basedir (basedir_d())
+(*    filename (get_opt !basedir (basedir_d())) "bin" *)
+  let libdir_d () = 
+    filename (get_opt !basedir (basedir_d())) "lib"
+  let thys_d () = 
+    filename (get_opt !basedir (basedir_d())) "thys"
 end
 
-(* let has_fast_compilers = has_program "ocamlc.opt" *)
-let has_fast_compilers = false
+(** The standard Win32 values **)
+module Windows=
+struct
+  let prefix_d () = "Program Files"
+  let basedir_d () = 
+    filename (get_opt !prefix (prefix_d())) "HSeq"
+  let bindir_d () = 
+    get_opt !basedir (basedir_d())
+  let libdir_d () = 
+    filename (get_opt !basedir (basedir_d())) "lib"
+  let thys_d () = 
+    filename (get_opt !basedir (basedir_d())) "thys"
+end
+
+let prefix_d () = 
+   match os_type with
+     "Win32" -> Windows.prefix_d()
+     | _ -> Unix.prefix_d()
+
+let basedir_d () = 
+   match os_type with
+     "Win32" -> Windows.basedir_d()
+     | _ -> Unix.basedir_d()
+
+let bindir_d () = 
+   match os_type with
+     "Win32" -> Windows.bindir_d()
+     | _ -> Unix.bindir_d()
+
+let libdir_d () = 
+   match os_type with
+     "Win32" -> Windows.libdir_d()
+     | _ -> Unix.libdir_d()
+
+let thys_d () = 
+   match os_type with
+     "Win32" -> Windows.thys_d()
+     | _ -> Unix.thys_d()
+
+
+let has_fast_compilers = has_program "ocamlc.opt" 
 
 let fast_compilers_d ()= 
   if has_fast_compilers 
@@ -165,22 +200,34 @@ let set_values () =
 let print_ml_var oc (v, d, _) =
   match (!d) with
       None -> ()
-    | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
+    | _ -> 
+	let str = String.escaped (get !d)
+	in 
+	  Printf.fprintf oc "DEFINE %s = \"%s\"\n" v str
 
 let print_ml_setting oc (v, d, _) =
   match (!d) with
       None -> ()
-    | _ -> Printf.fprintf oc "DEFINE %s = \"%s\"\n" v (get !d)
+    | _ -> 
+	let str = String.escaped (get !d)
+	in 
+	  Printf.fprintf oc "DEFINE %s = \"%s\"\n" v str
 
 let print_make_var oc (v, d, _) =
   match (!d) with
       None -> ()
-    | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
+    | _ -> 
+	let str = (get !d)
+	in 
+ 	  Printf.fprintf oc "%s = '%s'\n" v str 
 
 let print_make_setting oc (v, d, _) =
   match (!d) with
       None -> ()
-    | _ -> Printf.fprintf oc "%s = %s\n" v (get !d)
+    | _ -> 
+	let str = (get !d)
+	in 
+	  Printf.fprintf oc "%s = %s\n" v str
 
 let make_outfile n = 
   if n = "" 

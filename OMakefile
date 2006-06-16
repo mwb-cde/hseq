@@ -88,13 +88,19 @@ BaseDir =
 IncludeDir = 
 LibDir = 
 ThyDir = 
-NATIVE = false
-FAST = false
+
+FastCompilers = false
+NativeCompilers = false
 
 ## Read from $(CONFIGFILE)
 
 if $(defined CONFIGFILE)
   include $(CONFIGFILE)
+  export
+
+NATIVE = false
+if $(equal $(NativeCompilers), true)
+  NATIVE = true
   export
 
 ##
@@ -105,19 +111,19 @@ if $(defined CONFIGFILE)
 IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(BaseDir)
+IBASEDIR = $(dir $(BaseDir))
 
 # IDOCDIR: The documentation installation directory
-IDOCDIR = $(IBASEDIR)/doc
+IDOCDIR = $(dir $(IBASEDIR)/doc)
 
 # ILIBDIR: Library installation directory
-ILIBDIR = $(IBASEDIR)/lib
+ILIBDIR = $(dir $(IBASEDIR)/lib)
 
 # ITHYDIR: Theory installation directory
-ITHYDIR = $(IBASEDIR)/thys
+ITHYDIR = $(dir $(IBASEDIR)/thys)
 
 # IBINDIR: Binary installation directory
-IBINDIR = $(BinDir)
+IBINDIR = $(dir $(BinDir))
 
 ##
 # Compile native or byte code?

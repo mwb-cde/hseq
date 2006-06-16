@@ -290,6 +290,22 @@ doc:
 		$(DMAKE) -C $(subdir) doc;)
 
 ##
+# Directories
+##
+
+$(IBASEDIR): 
+	-$(MKDIR) $(IBASEDIR)
+
+$(IBINDIR): $(IBASEDIR)
+	-$(MKDIR) $(IBINDIR)
+
+$(ILIBDIR): $(IBASEDIR)
+	-$(MKDIR) $(ILIBDIR)
+
+$(IDOCDIR): $(IBASEDIR)
+	-$(MKDIR) $(IDOCDIR)
+
+##
 # Executables
 ##
 
@@ -307,11 +323,8 @@ toplevel:
 $(BINFILE): lib toplevel
 	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
-install: $(BINFILE) install-tools
-	-$(MKDIR) $(IBASEDIR)
-	-$(MKDIR) $(IBINDIR)
+install: $(IBASEDIR) $(IBINDIR) $(ILIBDIR) $(BINFILE) install-tools
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
-	-$(MKDIR) $(ILIBDIR)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
 	$(COPY) $(LIBFILE) $(ILIBDIR)
 	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
@@ -319,19 +332,18 @@ install: $(BINFILE) install-tools
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
 
-install-doc: 
-	-$(MKDIR) $(IDOCDIR)
+install-doc: $(IDOCDIR)
 	-$(COPY) $(DOCDIR)/* $(IDOCDIR)
 
 ##
 # Targets to build the tools
 ##
 
-tools:
+tools: $(IBINDIR)
 	$(foreach tool, $(TOOLS),\
 		$(DMAKE) -C $(TOOLSDIR) install-$(tool);)
 
-install-tools: tools
+install-tools: $(IBINDIR) tools
 	$(foreach tool, $(TOOLS),\
 		-$(COPY) $(tool) $(IBINDIR);)
 

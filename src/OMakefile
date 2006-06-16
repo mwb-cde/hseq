@@ -223,6 +223,9 @@ BuildInstall(tag, build_files, install_files, target) =
       if $(not $(file-exists $(build_files)))
           $(tag): $(build_files)
               $(COPY) $(install_files) $(target)
+      else
+          $(tag): :value: false
+
 
 ## StdDoc: Build and install the documentation for a subdirectory
 
