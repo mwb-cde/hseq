@@ -610,7 +610,7 @@ let stringify str =
   in 
   let strlen = String.length str1
   in 
-  let (len, lst) = stringify_aux str strlen (0, [])
+  let (len, lst) = stringify_aux str1 strlen (0, [])
   in 
     implode (String.make len '#') lst
 
