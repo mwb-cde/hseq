@@ -573,3 +573,45 @@ let thaw ?fresh var =
 	then x
 	else mk_val fn
 	  
+
+(**
+    [stringify str]: Make [str] suitable for passing to OCaml on the
+    command line.  Escapes the string using [String.escaped] then
+    replaces ' ' with '\ '.
+*)
+let stringify str = 
+  let rec stringify_aux str idx (len, rslt) = 
+    match idx with 
+	0 -> (len, rslt)
+      | _ -> 
+	  let chr = String.get str (idx-1)
+	  in 
+	    if (chr = ' ')
+	    then stringify_aux str (idx-1) (len+2, ('\\'::' '::rslt))
+	    else stringify_aux str (idx-1) (len+1 , (chr::rslt))
+  in
+  let implode str chars =
+    let len = String.length str
+    in 
+    let rec imp_aux idx lst = 
+      if (idx < len)
+      then 
+	match lst with 
+	    [] -> str
+	  | (c::rst) -> 
+	      String.set str idx c;
+	      imp_aux (idx+1) rst
+      else
+	str
+    in 
+      imp_aux 0 chars
+  in 
+  let str1 = String.escaped str
+  in 
+  let strlen = String.length str1
+  in 
+  let (len, lst) = stringify_aux str strlen (0, [])
+  in 
+    implode (String.make len '#') lst
+
+

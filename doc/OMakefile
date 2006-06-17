@@ -37,10 +37,10 @@ HTMLDIR = $(dir $(DOCDIR)/html)
 INFODIR = $(dir $(DOCDIR)/info)
 
 # HTMLDIR: HTML installation Documentation directory
-IHTMLDIR = $(dir $(IDOCDIR)/html)
+IHTMLDIR = $(IDOCDIR)/html
 
 # INFODIR: Info Installation documentation directory
-IINFODIR = $(dir $(IDOCDIR)/info)
+IINFODIR = $(IDOCDIR)/info
 
 ##
 # Local build targets
@@ -137,14 +137,19 @@ DirRules(sub, srcfiles) =
 
 ## How to build the directories
 
-IDirs = html info
+#IDirs = html info
 
-MkIDirs (idirs) =
-  foreach (d, $(idirs))
-    $(IDOCDIR)/$(d): $(IDOCDIR)
-      $(MKDIR) $(IDOCDIR)/$(d)
+#MkIDirs (idirs) =
+#  foreach (d, $(idirs))
+#    $(IDOCDIR)/$(d): $(IDOCDIR)
+#      $(MKDIR) $(IDOCDIR)/$(d)
 
-MkIDirs($(IDirs))
+#MkIDirs($(IDirs))
+
+MkDir(make-iinfodir, $(IINFODIR), make-idocdir)
+
+MkDir(make-ihtmldir, $(IHTMLDIR), make-idocdir)
+
 
 ##
 # Installation targets
@@ -156,7 +161,7 @@ CopyFileList (dname) =
    exclude_files = $(addprefix $(dname)/, $(EXCLUDE_FILES))
    return $(string $(filter-out $(exclude_files), $(glob $(dname)/*)))
 
-install-info: $(IINFODIR)
+install-info: make-iinfodir
   section
     adir = $(CopyFileList $(INFODIR))
     foreach (name, $(adir))
@@ -164,7 +169,7 @@ install-info: $(IINFODIR)
       $(MKDIR) $(IDOCDIR)/$(name)
       $(COPY) $(bdir) $(IDOCDIR)/$(name)
 
-install-html: $(IHTMLDIR)
+install-html: make-ihtmldir
   section
     adir = $(CopyFileList $(HTMLDIR))
     foreach (name, $(adir))

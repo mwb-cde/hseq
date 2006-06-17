@@ -430,7 +430,7 @@ $(HSEQLIBCODE) $(HSEQLIBINTF): $(HSEQLIB)
 
 build-library: $(HSEQLIBCODE)
 
-install-library: $(HSEQLIBCODE) $(ILIBDIR) 
+install-library: $(HSEQLIBCODE) make-ilibdir
   section
     LFILES = *.cma *.cmxa *.a *.o *.cmi *.mli
     FLFILES = $(filter-exists $(glob $(addprefix $(LIBDIR)/, $(LFILES))))
@@ -477,7 +477,7 @@ $(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
 
 build-toplevel: $(TLNAME) 
 
-install-toplevel: $(TLNAME) $(IBINDIR) $(ILIBDIR) 
+install-toplevel: $(TLNAME) make-ibindir make-ilibdir
   -$(COPY) $(TLNAME) $(IBINDIR)
   -$(COPY) $(INITFILE) $(ILIBDIR)
 
@@ -489,17 +489,12 @@ install-toplevel: $(TLNAME) $(IBINDIR) $(ILIBDIR)
 
 build-tools: $`(mapprefix $(SRCDIR)/, $(TOOLPROGS))
 
-install-tools: build-tools $(IBINDIR)
+install-tools: build-tools make-ibindir
   -$(COPY) $(TOOLPROGS) $(IBINDIR)
 
 ##
 # Build the documentation
 ##
-
-# Make the source code documentation directroy
-
-$(ISDOCDIR): $(IDOCDIR)
-  -$(MKDIR) $@
 
 # filter_prec(pred, l): 
 # Remove any elements in l which fail predicate pred
@@ -513,7 +508,7 @@ filter_pred(pred, lst) =
 
 EXCLUDE_FILES = CVS Makefile OMakefile OMakefile.omc
 
-install-srcdoc: srcdoc $(ISDOCDIR)
+install-srcdoc: srcdoc make-isdocdir
   section
     alst = $(glob $(DOCDIR)/*)
     foreach (name, $(alst))

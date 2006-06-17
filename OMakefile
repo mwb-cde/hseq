@@ -125,6 +125,14 @@ if $(exists-in-path ocamldoc.opt)
 Stringify (str) =
   return $(concat \\ , $(array $(str)))
 
+# MkDir: Make a directory
+MkDir(tag, name, dep) =
+  .PHONY: $(tag)
+  $(tag): $(if $(not $(equal $(dep), "")), $(dep))
+    section
+      if $(not $(file-exists $(name)))
+        $(MKDIR) $(name)
+
 ##
 # Installation settings
 ##
@@ -139,23 +147,23 @@ SBinDir = $(Stringify $(BinDir))
 IPREFIX = $(Prefix)
 
 # IBASEDIR: Installation directory
-IBASEDIR = $(dir $(BaseDir))
+IBASEDIR = $(BaseDir)
 
 # IDOCDIR: The documentation installation directory
-IDOCDIR = $(dir $(IBASEDIR)/doc)
+IDOCDIR = $(IBASEDIR)/doc
 
 # ILIBDIR: Library installation directory
-ILIBDIR = $(dir $(IBASEDIR)/lib)
+ILIBDIR = $(IBASEDIR)/lib
 
 # ITHYDIR: Theory installation directory
-ITHYDIR = $(dir $(IBASEDIR)/thys)
+ITHYDIR = $(IBASEDIR)/thys
 
 # IBINDIR: Binary installation directory
-IBINDIR = $(dir $(BinDir))
+IBINDIR = $(BinDir)
 
 # ISDOCDIR: The name of the installation directory for 
 # the source code documentation
-ISDOCDIR = $(dir $(IDOCDIR)/source)
+ISDOCDIR = $(IDOCDIR)/source
 
 ##
 # Compile native or byte code?
@@ -167,23 +175,6 @@ if $(NATIVE)
   NATIVE_ENABLED = true
 else
   NATIVE_ENABLED = false
-
-##
-# How to create the installation directory
-##
-
-IDIRS = $(IDOCDIR) $(ILIBDIR) $(ITHYDIR) $(IBINDIR)
-
-MkIDirs (idirs) =
-  ndirs = $(filter-out $(IBASEDIR), $(set $(idirs)))
-  foreach (d, $(ndirs))
-    $(d): $(IBASEDIR)
-      -$(MKDIR) $(d)
-
-$(IBASEDIR):
-  -$(MKDIR) $@
-
-MkIDirs($(IDIRS))
 
 ##
 # Targets
@@ -214,6 +205,31 @@ MkIDirs($(IDIRS))
 .PHONY: libclean
 .PHONY: reallyclean
 .PHONY: docclean
+
+##
+# How to create the installation directory
+##
+
+#IDIRS = $(IDOCDIR) $(ILIBDIR) $(ITHYDIR) $(IBINDIR)
+
+#MkIDirs (idirs) =
+#  ndirs = $(filter-out $(IBASEDIR), $(set $(idirs)))
+#  foreach (d, $(ndirs))
+#    $(d): $(IBASEDIR)
+#      -$(MKDIR) $(d)
+
+#$(IBASEDIR):
+#  -$(MKDIR) $@
+
+#MkIDirs($(IDIRS))
+
+MkDir(make-ibasedir, $(IBASEDIR), "")
+MkDir(make-idocdir, $(IDOCDIR), make-ibasedir)
+MkDir(make-ilibdir, $(ILIBDIR), make-ibasedir)
+MkDir(make-ithydir, $(ITHYDIR), make-ibasedir)
+MkDir(make-ibindir, $(IBINDIR), make-ibasedir)
+MkDir(make-isdocdir, $(ISDOCDIR), make-idocdir)
+
 
 ##
 # The default target

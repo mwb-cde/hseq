@@ -298,3 +298,11 @@ val thaw: ?fresh:('a -> bool)
    Get the value [x] of the deferred function, evaluating the function
    if necessary or if [fresh x] is false.
 *)
+
+(**
+    [stringify str]: Make [str] suitable for passing to OCaml on the
+    command line.  Escapes the string using [String.escaped] then
+    replaces ' ' with '\ '.
+*)
+val stringify : string -> string
+

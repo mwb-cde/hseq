@@ -123,7 +123,10 @@ export ILIBDIR = $(LibDir)
 export ITHYDIR = $(ThyDir)
 
 # IDOCDIR: Installation documentation directory
-export IDOCDIR = $(IBASEDIR)/doc/source
+export IDOCDIR = $(IBASEDIR)/doc
+
+# ISDOCDIR: Installation source code documentation directory
+export ISDOCDIR = $(IDOCDIR)/source
 
 # FASTCOMP: whether to use the fast compilers
 export FASTCOMP = $(FastCompilers)
@@ -293,17 +296,32 @@ doc:
 # Directories
 ##
 
-$(IBASEDIR): 
+#$(IBASEDIR): 
+#	-$(MKDIR) $(IBASEDIR)
+
+#$(IBINDIR): $(IBASEDIR)
+#	-$(MKDIR) $(IBINDIR)
+
+#$(ILIBDIR): $(IBASEDIR)
+#	-$(MKDIR) $(ILIBDIR)
+
+#$(IDOCDIR): $(IBASEDIR)
+#	-$(MKDIR) $(IDOCDIR)
+
+make-ibasedir:
 	-$(MKDIR) $(IBASEDIR)
 
-$(IBINDIR): $(IBASEDIR)
+make-ibindir: make-ibasedir
 	-$(MKDIR) $(IBINDIR)
 
-$(ILIBDIR): $(IBASEDIR)
+make-ilibdir: make-ibasedir
 	-$(MKDIR) $(ILIBDIR)
 
-$(IDOCDIR): $(IBASEDIR)
+make-idocdir: make-ibasedir
 	-$(MKDIR) $(IDOCDIR)
+
+make-isdocdir: make-idocdir
+	-$(MKDIR) $(ISDOCDIR)
 
 ##
 # Executables
@@ -311,7 +329,6 @@ $(IDOCDIR): $(IBASEDIR)
 
 mkhseq: mkhseq.ml
 	$(OCAMLC) -o mkhseq mkhseq.ml
-
 
 lib: code
 	$(DMAKE) -f Make.lib install
@@ -323,7 +340,7 @@ toplevel:
 $(BINFILE): lib toplevel
 	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
-install: $(IBASEDIR) $(IBINDIR) $(ILIBDIR) $(BINFILE) install-tools
+install: make-ibasedir make-ibindir make-ilibdir $(BINFILE) install-tools
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
 	-$(COPY) $(INITFILE) $(ILIBDIR)
 	$(COPY) $(LIBFILE) $(ILIBDIR)
@@ -332,18 +349,18 @@ install: $(IBASEDIR) $(IBINDIR) $(ILIBDIR) $(BINFILE) install-tools
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
 
-install-doc: $(IDOCDIR)
-	-$(COPY) $(DOCDIR)/* $(IDOCDIR)
+install-doc: make-isdocdir
+	-$(COPY) $(DOCDIR)/* $(ISDOCDIR)
 
 ##
 # Targets to build the tools
 ##
 
-tools: $(IBINDIR)
+tools: make-ibindir
 	$(foreach tool, $(TOOLS),\
 		$(DMAKE) -C $(TOOLSDIR) install-$(tool);)
 
-install-tools: $(IBINDIR) tools
+install-tools: make-ibindir tools
 	$(foreach tool, $(TOOLS),\
 		-$(COPY) $(tool) $(IBINDIR);)
 
