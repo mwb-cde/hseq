@@ -45,6 +45,7 @@ let filename_opt x y =
     then replaces ' ' with '\ '.
 *)
 
+(**
 let stringify str = 
   let rec stringify_aux str idx (len, rslt) = 
     match idx with 
@@ -79,7 +80,9 @@ let stringify str =
   let (len, lst) = stringify_aux str1 strlen (0, [])
   in 
     implode (String.make len '#') lst
+*)
 
+let stringify str = String.escaped str
 
 (** Test that a command exists *)
 
