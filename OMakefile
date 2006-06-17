@@ -130,7 +130,8 @@ MkDir(tag, name, dep) =
   .PHONY: $(tag)
   $(tag): $(if $(not $(equal $(dep), "")), $(dep))
     section
-      if $(not $(file-exists $(name)))
+#      if $(not $(file-exists $(name))) 
+      if $(test ! -e $(name))
         $(MKDIR) $(name)
 
 ##
