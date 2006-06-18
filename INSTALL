@@ -61,6 +61,9 @@ Notes:
 Building the documentation requires the GNU Texinfo system and a GNU
 Make/Unix environment.
 
+Filenames with spaces should be passed to the configure.ml script as
+a string. For example, /a/b c/d should be passed as "/a/b c/d"
+
 OMake Notes:
 ------------
 
@@ -85,11 +88,8 @@ source tree is '/src/hseq', the installation directory can be set to
 '/src/hseq/dist'. 
 
 On Win32 systems, it's better to pass Unix format strings to the
-configuration string. For example, '/src/hseq/' rather than
+configuration script. For example, '/src/hseq/' rather than
 '\src\hseq'.
-
-On Win32 systems, passing directories contaning spaces to the
-configuration script (in step 1) may cause problems.
 
 
 AFTER INSTALLATION
