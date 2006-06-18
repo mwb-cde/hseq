@@ -15,26 +15,29 @@
    using function {!Parserkit.T.parse}.
 
    The grammars are grouped around terms and types, with some
-   miscellaneous utlity parsers. The term parsers include the
-   grammars for term definitions. The type parsers include the
-   grammars for type definitions.
+   miscellaneous utlity parsers. The term parsers include the grammars
+   for term definitions. The type parsers include the grammars for
+   type definitions. 
 
    This module holds the standard symbol tables and token information
    needed for the toplevel parsers. The toplevel function, for
    parsing a string, is {!Parser.read}, which is a specialisation of
    {!Lexer.reader} using the standard symbol table.
 
-   The toplevel term parsing supports operator overloading,
-   implemented in module {!Resolver}. The toplevel term parser
-   is made up of two parts: the first parses a string to construct an
-   initial term. The second resolves names in this term, expanding
-   short names by finding the theory of an identifier with a matching
-   type. The name resolution compares the type inferred for the name
-   with the actual type of the identifiers, chosing the first to
-   succeed.
- *)
+   The terms returned by the term parsers construct are represented by
+   {!Pterm.t}. These can be converted to a {!Basic.term} using
+   {!Pterm.to_term}.  Operator overloading is supported using
+   {!Pterm.resolve}.
+       
+   The toplevel term parser is made up of two parts: the first parses
+   a string to construct an initial term. The second resolves
+   names in this term, expanding short names by finding the theory
+   of an identifier with a matching type. The name resolution
+   compares the type inferred for the name with the actual type of
+   the identifiers, chosing the first to succeed.
+*)
 
-(** {5 Token information} *)
+     (** {5 Token information} *)
     
 type associativity = Grammars.associativity
 (** Token associativity (exactly the same as used by the lexer) *)

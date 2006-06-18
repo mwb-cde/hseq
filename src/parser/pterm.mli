@@ -16,7 +16,7 @@
     them to infer the types required for identifiers and variables.
     
     In addition, operator overloading is supported, in module
-    {!Resolver}, by allowing symbols to be resolved to identifiers
+    {!Pterm.Resolver}, by allowing symbols to be resolved to identifiers
     based on the expected type of the identifier.
 *)
 
@@ -116,9 +116,9 @@ sig
    the list.)
 
    The toplevel for operator overloading is
-   {!Resolver.resolve_term} which takes a function which
+   {!Pterm.Resolver.resolve_term} which takes a function which
    carries out the search for an identifier with a matching
-   type. Function {!Resolver.make_lookup} constructs a suitable
+   type. Function {!Pterm.Resolver.make_lookup} constructs a suitable
    search function, from a symbol look-up table.
 *)
 
@@ -149,7 +149,7 @@ sig
 	-> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
 	(**
 	   [make_lookup scp db]: Make an environment suitable for
-	   {!Resolver.resolve_term} from table [db].
+	   {!Pterm.Resolver.resolve_term} from table [db].
 	   
 	   [db] must raise [Not_found] when items are not found.
 	   

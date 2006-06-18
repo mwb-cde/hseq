@@ -14,7 +14,8 @@
 ###
 
 # FILES: The list of file names
-FILES = counter lexer pterm grammars resolver parser
+FILES = counter lexer pterm grammars parser 
+# resolver parser
 
 ###
 # Generated libraries
