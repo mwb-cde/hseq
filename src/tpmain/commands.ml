@@ -347,11 +347,11 @@ let simple_typedef (n, args, def) =
 let typedef ?pp ?simp ?thm ?rep ?abs tydef = 
   let (name, td) =
     match tydef with
-      Grammars.NewType (n, args) -> 
+      Defn.Parser.NewType (n, args) -> 
 	(n, simple_typedef (n, args, None))
-    | Grammars.TypeAlias(n, args, d) -> 
+    | Defn.Parser.TypeAlias(n, args, d) -> 
 	(n, simple_typedef(n, args, Some(d)))
-    | Grammars.Subtype(n, args, dtyp, set) -> 
+    | Defn.Parser.Subtype(n, args, dtyp, set) -> 
 	let thm1=
 	  Lib.dest_option 
 	    ~err:(Report.error 

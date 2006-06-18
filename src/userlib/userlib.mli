@@ -164,7 +164,7 @@ val typedef:
     -> ?simp:bool
       -> ?thm:Logic.thm
 	-> ?rep:string -> ?abs:string
-	-> Parser.typedef_data
+	-> Defn.Parser.typedef
 	-> Logic.Defns.cdefn
 (**
    Define or declare a type. The exact behaviour of [typedef] depends

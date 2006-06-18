@@ -17,7 +17,6 @@ let single_data = (Printer.default_term_fixity, Printer.default_term_prec)
 
 let empty_id = Ident.mk_long set_thy "empty"
 let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
-let empty_term ()= Term.mk_typed_ident empty_id (set_ty())
 
 let add_id = Ident.mk_long set_thy "add"
 
@@ -33,15 +32,17 @@ module SetPP =
     open Utility
     open Lexer
 
+    let empty_term ()= Pterm.mk_typed_ident empty_id (set_ty())
+
     let set_parser () =
       let ocb_tok = Sym(OTHER ocb_sym)
       and ccb_tok = Sym(OTHER ccb_sym)
 (*      and semicolon = Sym(OTHER semicolon_sym) *)
       in 
       let wrapper t = 
-	let id_term = Term.mk_ident set_id
+	let id_term = Pterm.mk_ident set_id
 	in 
-	Term.mk_app id_term t
+	Pterm.mk_app id_term t
       in 
       let colon = Sym(COLON)
       in 
@@ -53,25 +54,27 @@ module SetPP =
 	     Grammars.qnt_setup_bound_names inf Basic.Lambda [v]))
 	    -- (form inf))
 	   >>
-	 (fun ((xs:(string*Basic.term)list), body) ->
+	 (fun (xs, body) ->
 	   make_term_remove_names inf wrapper xs body)) inp
       in 
-      let main_parser inf inp = 
+      let set_list inf =
+	((Grammars.comma_list (form inf))
+	 >> 
+	 (fun ts -> 
+	    List.fold_left
+	      (fun st elt -> Pterm.mk_fun add_id [elt; st])
+			(empty_term()) ts))      
+      in 
+    let main_parser inf inp = 
 	(seq
 	   [?$ ocb_tok;
 	    (optional 
 	       (alt 
 		  [ 
 		    set_body inf; 
-		    ((Grammars.comma_list (form inf))
-		      >> 
-		    (fun ts -> 
-		      List.fold_left
-			(fun st elt -> Term.mk_fun add_id [elt; st])
-			(empty_term()) ts))
-
+		    set_list inf
 (*
-   ((form inf) >> (fun t -> Term.mk_app (Term.mk_ident single_id) t))
+   ((form inf) >> (fun t -> Pterm.mk_app (Pterm.mk_ident single_id) t))
 *)
 		  ]))
 	      >>

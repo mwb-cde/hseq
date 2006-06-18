@@ -5,11 +5,11 @@
   ----*)
 
 (***
-    * Parser constructors for types and terms 
+* Parser constructors for types and terms 
 ***)
 
 (*** 
-     * Token information 
+* Token information 
 ***)
 
 type associativity=Parserkit.Info.associativity
@@ -56,7 +56,7 @@ struct
   open Pkit
 
   let (?$) tok =
-    ((!$ tok) >> (fun _ -> Term.mk_short_ident (Lexer.string_of_token tok)))
+    ((!$ tok) >> (fun _ -> Pterm.mk_short_ident (Lexer.string_of_token tok)))
   let (?%) tok =
     ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
       
@@ -78,7 +78,7 @@ type typedef_data =
     NewType of (string * (string list))
   | TypeAlias of (string * (string list) * Basic.gtype)
   | Subtype of (string * (string list) 
-		* Basic.gtype * Basic.term)
+		* Basic.gtype * Pterm.t)
 
 
 (*** Grammars ***)
@@ -183,7 +183,7 @@ let token_info tbl t=
 type parser_info = 
     { 
       (* term information *)
-      bound_names: (string* Basic.term) list ref;
+      bound_names: (string* Pterm.t) list ref;
       token_info: (token -> token_info);
 
       (* type information *)
@@ -252,7 +252,7 @@ let drop_name n inf =
 *)
 let get_term n inf = 
   (try lookup_name n inf 
-   with Not_found -> Term.mk_free n (Gtypes.mk_null()))
+   with Not_found -> Pterm.mk_free n (Gtypes.mk_null()))
 
 (**
    [clear_names inf]
@@ -770,7 +770,7 @@ let mk_conn inf t=
   in 
     match t with 
   	ID(i) -> 
-  	  (fun x y -> Term.mk_fun i [x; y])       
+  	  (fun x y -> Pterm.mk_fun i [x; y])       
       | _ -> 
   	  match (lookup t) with
   	      Some (name, _, _) ->
@@ -779,9 +779,9 @@ let mk_conn inf t=
 		     Gtypes.mk_var ("_"^(Ident.string_of name)^"_ty")
 		   in 
 		   let f = 
-		     Term.mk_typed_ident name fty
+		     Pterm.mk_typed_ident name fty
 		   in 
-		     Term.mk_comb f [x; y])
+		     Pterm.mk_comb f [x; y])
   	    | _ ->
   		raise (ParsingError ((string_of_tok t)
   				     ^" is not a connective"))
@@ -797,11 +797,11 @@ let mk_prefix inf t=
   in 
     match t with 
   	ID(i) -> 
-  	  (fun x -> Term.mk_fun i [x])
+  	  (fun x -> Pterm.mk_fun i [x])
       | _ -> 
   	  match (lookup t) with
   	      Some(name, _, _) -> 
-  		(fun x -> Term.mk_fun name [x])
+  		(fun x -> Pterm.mk_fun name [x])
   	    | _ -> 
   		raise (ParsingError ((string_of_tok t)
   				     ^" is not a prefix"))
@@ -817,7 +817,7 @@ let qnt_setup_bound_names inf
     (qnt: Basic.quant) (xs : (string* Basic.gtype) list) =
   List.map 
     (fun (n, ty) -> 
-       let b_id=Term.mk_bound(Basic.mk_binding qnt n ty)
+       let b_id=Pterm.mk_bound(Basic.mk_binding qnt n ty)
        in 
 	 add_name n b_id inf;
 	 (n, b_id)) xs
@@ -829,12 +829,12 @@ let qnt_setup_bound_names inf
 
        remove each name in [xs] from [inf.bound_names] as it is used.
     *)
-let qnt_term_remove_names inf (xs : (string* Basic.term) list) body =
+let qnt_term_remove_names inf (xs : (string* Pterm.t) list) body =
   List.fold_right
     (fun (x, y) b ->
-       let binder=Term.dest_bound y
+       let binder=Pterm.dest_bound y
        in 
-       let nt=Basic.Qnt(binder, b)
+       let nt= Pterm.mk_qnt binder b
        in 
 	 drop_name x inf; nt) xs body
 
@@ -857,9 +857,9 @@ let qnt_remove_bound_names inf xs =
 let make_term_remove_names inf wrapper xs body=
   List.fold_right
     (fun (x, y) b ->
-       let binder=Term.dest_bound y
+       let binder=Pterm.dest_bound y
        in 
-       let nt=wrapper (Basic.Qnt(binder, b))
+       let nt=wrapper (Pterm.mk_qnt binder b)
        in 
 	 drop_name x inf; nt) xs body
 
@@ -929,9 +929,9 @@ let term_identifier inf toks =
   	if(Ident.is_short nid)
   	then 
   	  (try (lookup_name i inf)
-  	   with Not_found -> Term.mk_free i t)
+  	   with Not_found -> Pterm.mk_free i t)
   	else 
-  	  Term.mk_typed_ident nid t)) toks
+  	  Pterm.mk_typed_ident nid t)) toks
 
 (**
    [form]/[formula]/[type_primary]/[primary]
@@ -954,17 +954,17 @@ let term_identifier inf toks =
 let mk_typed_opt (t, oty) = 
   match oty with
       None -> t
-    | Some(ty) -> Term.mk_typed t ty
+    | Some(ty) -> Pterm.mk_typed t ty
 
 let mk_app_opt (f, oa) = 
   match oa with
       None -> f
-    | Some(a) -> Term.mk_app f a
+    | Some(a) -> Pterm.mk_app f a
 
 let rec form inf toks =
   (
     ((formula inf)-- (repeat (formula inf)))
-    >> (fun (x, y) -> Term.mk_comb x y)
+    >> (fun (x, y) -> Pterm.mk_comb x y)
   ) toks
 and formula inf toks= 
   (
@@ -1054,11 +1054,11 @@ let core_term_parser_list =
     (* id '(' id ':' type ')' *)
     "identifier", term_identifier;
     (*   | number *)
-    "number", (fun _ -> (number >> (fun x -> Term.mk_num x)));
+    "number", (fun _ -> (number >> (fun x -> Pterm.mk_num x)));
     (*   | boolean *)
     "boolean", 
     (fun _ -> 
-       (boolean >> (fun x -> Lterm.mk_bool x))); 
+       (boolean >> (fun x -> Pterm.mk_bool x))); 
     (* '(' form ')' *)
     "bracketed_term",
     (fun inf -> 
@@ -1077,7 +1077,7 @@ let core_term_parser_list =
 	       qnt_setup_bound_names inf Basic.All (v::vs)))
 	 -- (form inf))
 	>> 
-	    (fun ((xs:(string*Basic.term)list), body) -> 
+	    (fun ((xs:(string*Pterm.t)list), body) -> 
 	       qnt_term_remove_names inf xs body)));
 
     (* 'EX' { id_type_opt }+ ':' form *)
@@ -1092,7 +1092,7 @@ let core_term_parser_list =
 	       qnt_setup_bound_names inf Basic.Ex (v::vs)))
 	 -- (form inf))
 	>> 
-	    (fun ((xs:(string*Basic.term)list), body) ->
+	    (fun ((xs:(string*Pterm.t)list), body) ->
 	       qnt_term_remove_names inf xs body)));
     (* 'LAM' { id_type_opt }+ ':' form *)
     "lambda", 
@@ -1106,7 +1106,7 @@ let core_term_parser_list =
 	       qnt_setup_bound_names inf Basic.Lambda (v::vs)))
 	 -- (form inf))
 	>> 
-	    (fun ((xs:(string*Basic.term)list), body) ->
+	    (fun ((xs:(string*Pterm.t)list), body) ->
 	       qnt_term_remove_names inf xs body)))
   ]
 
@@ -1143,9 +1143,9 @@ let parse_as_binder ident sym=
   let sym_tok = Sym(OTHER sym)
   and colon = Sym(COLON)
   in 
-  let id_term = Term.mk_ident ident
+  let id_term = Pterm.mk_ident ident
   in 
-  let wrapper b = Term.mk_app id_term b
+  let wrapper b = Pterm.mk_app id_term b
   in 
   let grammar inf inp = 
     (((((!$ sym_tok)
@@ -1158,7 +1158,7 @@ let parse_as_binder ident sym=
       --
 	(form inf))
      >>
-	(fun ((xs:(string*Basic.term)list), body) ->
+	(fun ((xs:(string*Pterm.t)list), body) ->
 	   make_term_remove_names inf wrapper xs body)) inp
   in 
     grammar 
@@ -1209,7 +1209,7 @@ let subtypedef inf toks =
       -- (form inf))
      >> (fun ((ty, _), f) -> (ty, f))) inp
   in 
-    ((lhs -- (!$(mk_symbol Lterm.equalssym)) -- rhs) 
+    ((lhs -- (!$(mk_symbol Lterm.equalssym)) -- rhs)
      >> (fun (((args, name), _), (ty, trm)) 
 	   -> (name, args, ty, trm))) toks
 

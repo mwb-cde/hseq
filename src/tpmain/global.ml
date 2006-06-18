@@ -6,6 +6,7 @@
 
 open Basic
 open Parser
+open Lib.Ops
 
 (** Hooks for interacting with the system *)
 module Hooks =
@@ -208,28 +209,33 @@ module PP=
 
     let expand_term scp t = 
       let lookup = 
-	Resolver.make_lookup scp overload_lookup
+	Pterm.Resolver.make_lookup scp overload_lookup
       in 
-      let (t1, env) = Resolver.resolve_term scp lookup t
+      let (t1, env) = Pterm.Resolver.resolve_term scp lookup t
       in 
       t1
-(*
-      let t2 = Term.retype_pretty env t1
-      in t2
-*)
 
     let expand_type_names scp t=
       Gtypes.set_name ~strict:false scp t
 
     let expand_typedef_names scp t=
       match t with
-	Grammars.NewType (n, args) -> t
+	Grammars.NewType (n, args) -> 
+	  Defn.Parser.NewType (n, args) 
       | Grammars.TypeAlias (n, args, def) ->
-	  Grammars.TypeAlias(n, args, expand_type_names scp def)
+	  Defn.Parser.TypeAlias(n, args, expand_type_names scp def)
       | Grammars.Subtype (n, args, def, set) ->
-	  Grammars.Subtype(n, args, 
+	  Defn.Parser.Subtype(n, args, 
 			 expand_type_names scp def, 
 			 expand_term scp set)
+
+    let expand_defn scp (plhs, prhs) =
+      let rhs = expand_term scp prhs
+      and ((name, ty), pargs) = plhs
+      in 
+      let args = List.map Pterm.to_term pargs
+      in 
+	(((name, ty), args), rhs)
 
     let mk_term scp pt = expand_term scp pt
 
@@ -238,19 +244,19 @@ module PP=
 	(catch_parse_error Parser.read_term str)
 
     let read_unchecked  x=
-      (catch_parse_error Parser.read_term x)
+      catch_parse_error (Pterm.to_term <+ Parser.read_term) x
 
     let read_defn x =
       let (lhs, rhs)= 
 	catch_parse_error (Parser.read defn_parser) x
       in 
-      let rhs1=expand_term (scope()) rhs
-      in 
-      (lhs, rhs1)
+	expand_defn (scope()) (lhs, rhs)
 
     let read_type_defn x =
-      expand_typedef_names (scope())
-	(catch_parse_error (Parser.read Parser.typedef_parser) x)
+      let pdefn = catch_parse_error (Parser.read Parser.typedef_parser) x
+      in 
+      expand_typedef_names (scope()) pdefn
+	
 
     let read_type x = 
       expand_type_names (scope()) (catch_parse_error Parser.read_type x)

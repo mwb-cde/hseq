@@ -79,7 +79,7 @@ let mk_const c = PConst c
 
 let mk_typed_ident n t= PId(n, t)
 let mk_ident n = mk_typed_ident n (Gtypes.mk_null ())
-let mk_short_ident n = mk_ident (Ident.mk_name n)
+let mk_short_ident n = mk_free n (Gtypes.mk_null())
 
 (* Destructors *)
 
@@ -389,10 +389,10 @@ struct
 		in 
 		  (bool_ty, unify_types expty bool_ty env)
 	      in 
-	      let data1=bind_qnt (Bound(qnt)) (Bound(qnt1))
-	      in 
 	      let qnt2 = binding_set_types env1 qnt1
 	      in
+	      let data1=bind_qnt (Bound(qnt)) (Bound(qnt2))
+	      in 
 	      let (body1, bty, benv)=
 		resolve_aux data1 env1 nty1 body
 	      in 

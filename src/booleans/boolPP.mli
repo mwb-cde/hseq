@@ -27,7 +27,7 @@ val ifthenelse_pprec : Printer.record
      [ifthenelse_prec]: Precedence/fixity/associativity of the conditional.
   *)
 
-val ifthenelse_parser: parser_info -> Basic.term phrase
+val ifthenelse_parser: parser_info -> Pterm.t phrase
   (**
      Parser for the conditional. The conditional has syntax [<< if b then
      t else f >>].
@@ -54,7 +54,7 @@ val choice_pp: Printer.fixity * int
      Precedence and fixity of the choice operator.
   *)
 
-val choice_parser: parser_info -> Basic.term phrase
+val choice_parser: parser_info -> Pterm.t phrase
   (**
      Parser for the choice operator. Syntax [<< @ x: P >>]
   *)

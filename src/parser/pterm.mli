@@ -59,6 +59,7 @@ val mk_const : Basic.const_ty -> t
 val mk_typed_ident : Ident.t -> gtype -> t
 
 val mk_ident: Ident.t -> t
+
 val mk_short_ident: string -> t
 
 (** {7 Destructors} *)
@@ -84,6 +85,7 @@ val destnum : t -> Num.num
 val destbool : t -> bool
 
 val mk_num: Num.num -> t
+val mk_bool: bool -> t
 
 val mk_comb: t -> t list -> t
 (**

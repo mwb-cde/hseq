@@ -293,29 +293,29 @@ val type_parser : input -> Basic.gtype
 val typedef_parser : input -> typedef_data
 (** Read a type definition *)
 
-val term_parser : input -> Basic.term
+val term_parser : input -> Pterm.t
 (** Read a term *)
 
 (*
 val defn_parser :
-    input -> (string * (string * Basic.gtype) list) * Basic.term
+    input -> (string * (string * Basic.gtype) list) * Pterm.t
 *)
 val defn_parser :
-    input -> ((string * Basic.gtype) * Basic.term list) * Basic.term
+    input -> ((string * Basic.gtype) * Pterm.t list) * Pterm.t
 
 (** Read a term definition *)
 
 (** {7 User defined parsers} *)
 
 val term_parser_list : 
-    unit -> (string, Grammars.parser_info -> Basic.term phrase) Lib.named_list
+    unit -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
 (** 
    The list of user defined term parsers. Parsers added to this list are
    used by the term parser {!Grammars.form}.
  *)
 
 val add_term_parser :  (string) Lib.position -> string
-  -> (Grammars.parser_info -> Basic.term phrase)
+  -> (Grammars.parser_info -> Pterm.t phrase)
     -> unit
 (**
    [add_term_parser pos n ph]: Add the term parser [ph] at position
@@ -359,7 +359,7 @@ val remove_type_parser :  string -> unit
 val read: 'a parse -> string -> 'a
 (** [read ph str]: Parse string [str] with parser [ph]. *)
 
-val read_term : string -> Basic.term
+val read_term : string -> Pterm.t
 (** [read_term str]: Parse string [str] using the standard term parser. *)
 
 val read_type : string -> Basic.gtype
@@ -368,7 +368,7 @@ val read_type : string -> Basic.gtype
 (** {7 Debugging} *)
 
 val test_lex : string -> Lexer.tok Parserkit.Input.t
-val test : string -> Basic.term
+val test : string -> Pterm.t
 
 
 

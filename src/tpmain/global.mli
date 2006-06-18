@@ -220,7 +220,7 @@ module PP:
 *)
 
       val expand_term : 
-	  Scope.t -> Basic.term -> Basic.term
+	  Scope.t -> Pterm.t -> Basic.term
 (** 
    Resolve symbols and short names in terms and types, replacing them
    with long identifiers where possible. Also retype the term if
@@ -235,12 +235,12 @@ module PP:
    were possible.
 *)
       val expand_typedef_names: 
-	  Scope.t -> Parser.typedef_data -> Parser.typedef_data
+	  Scope.t -> Parser.typedef_data -> Defn.Parser.typedef
 (**
    Resolve symbols and short names in a type definition. 
 *)
 
-      val mk_term : Scope.t -> Basic.term -> Basic.term
+      val mk_term : Scope.t -> Pterm.t -> Basic.term
 (** 
    Resolve symbols and short names in a term, making a parsed term
    suitable for use.
@@ -270,7 +270,7 @@ module PP:
 (** 
    Parse a string a type, resolving short names and symbols where possible. 
 *)
-      val read_type_defn : string -> Parser.typedef_data
+      val read_type_defn : string -> Defn.Parser.typedef
 (** Parse a string as a type definition. *)
 
       val read_identifier: string -> Ident.t
@@ -289,10 +289,11 @@ val read_identifier: string -> Ident.t
 val read_defn :
     string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
 (** Read a term definition. *)
-val read_type_defn : string -> Parser.typedef_data
+
+val read_type_defn : string -> Defn.Parser.typedef
 (** Read a type definition. *)
 
-val mk_term : Basic.term -> Basic.term
+val mk_term : Pterm.t -> Basic.term
 (** 
    Resolve the names and symbols in a parsed term, making it suitable
    for passing to formula constructors.

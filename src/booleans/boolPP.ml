@@ -65,7 +65,7 @@ let ifthenelse_parser inf=
       (fun l -> 
 	 match l with 
 	     [_; test; _; tbr; _; fbr] ->
-	       Term.mk_fun ifthenelse_id [test; tbr; fbr]
+	       Pterm.mk_fun ifthenelse_id [test; tbr; fbr]
 	   | _ -> raise (ParsingError "Error parsing if-then-else")))
     
 

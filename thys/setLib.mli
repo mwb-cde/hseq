@@ -52,7 +52,7 @@ module SetPP:
 
       val set_parser: 
 	  unit 
-	-> (Grammars.parser_info -> Basic.term Parser.phrase)
+	-> (Grammars.parser_info -> Pterm.t Parser.phrase)
       val set_printer : 
 	  unit 
 	-> Printer.ppinfo -> (Printer.fixity * int)
