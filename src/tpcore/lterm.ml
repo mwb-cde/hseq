@@ -631,13 +631,16 @@ let set_names scp trm=
     try Lib.find n id_memo
     with Not_found -> 
       let nth = Scope.thy_of_term scp n
-      in (ignore(Lib.add n nth id_memo); nth)
+      in 
+	(ignore(Lib.add n nth id_memo); nth)
   in 
   let lookup_type id = 
     try 
       Gtypes.rename_type_vars (Lib.find id type_memo)
     with Not_found -> 
-      let nty = Scope.type_of scp id 
+      let nty = 
+	try Scope.type_of scp id 
+	with Not_found -> Gtypes.mk_null()
       in 
       (ignore(Lib.add id nty type_memo); nty)
   in 
@@ -671,19 +674,14 @@ let set_names scp trm=
 	 in 
 	   match try_find (Scope.find_meta scp) n with
 	       None -> 
-		 (try 
-		    let nth1 = lookup_id n 
-		    in 
-		    let nid = Ident.mk_long nth1 n
-		    in 
-		    let nty = 
-		      try Some(lookup_type nid)
-		      with Not_found -> None
-		    in 
-		      match nty with
-			  None -> Id(nid, ty1)
-			| Some(xty) -> Typed(Id(nid, xty), ty1)
-		  with Not_found -> Free(n, ty1))
+		 (match try_find lookup_id n with
+		      None -> Free(n, ty1)
+		    | Some (nth1) ->
+			let nid = Ident.mk_long nth1 n
+			in 
+			  match try_find lookup_type nid with
+			      None -> Id(nid, ty1)
+			    | Some(xty) -> Typed(Id(nid, xty), ty1))
 	     | Some(q) -> Meta(q))
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
@@ -733,7 +731,9 @@ let resolve_term scp vars varlist trm =
     let lookup_type id = 
       try Gtypes.rename_type_vars (Lib.find id type_memo)
       with Not_found -> 
-	let ty = Scope.type_of scp id
+	let ty = 
+	  try Scope.type_of scp id
+	  with Not_found -> Gtypes.mk_null()
 	in (ignore(Lib.add id ty type_memo); ty)
     in 
     let th, name = Ident.dest ident
@@ -775,7 +775,11 @@ let resolve_term scp vars varlist trm =
 	  try set_type_name type_thy_memo scp ty
 	  with err -> raise (add_term_error "Invalid type" [t] err)
 	in 
-	let ret_id = lookup_id scp id ty1
+	let ret_id = 
+	  match (Lib.try_find (lookup_id scp id) ty1) with
+	      None -> raise (term_error "Term not in scope" [t])
+(*	      None -> Free(Ident.name_of id, ty1) *)
+	    | Some x -> x
 	in 
 	(if (in_scope scope_memo scp ret_id)
 	then (ret_id, vars, lst)
