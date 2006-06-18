@@ -157,7 +157,7 @@ OCAMLFLAGS += -I $(ILIBDIR)
     $(RM) *.cmi *.cma *.cmxa
 
   reallyclean: clean libclean
-
+    $(RM) $(filter-proper-targets $(ls R, .))
 
 .SUBDIRS: $(DOCDIR)
   clean:
@@ -171,6 +171,7 @@ OCAMLFLAGS += -I $(ILIBDIR)
     $(RM) *.cmi *.cma *.cmxa
 
   reallyclean: clean libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
 
 
 ##
@@ -203,6 +204,7 @@ StdClean () =
     $(RM) *.cmi *.cma *.cmxa
 
   reallyclean: libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
 
 ## StdInstall: Build and install targets from a subdirectory
 
@@ -528,7 +530,9 @@ install-hseq: install-library install-toplevel install-tools
 # Cleaning files
 ##
 
-FullClean("", $(TLNAME), $(TOOLPROGS))
+FullClean("", $(TLNAME), \
+  $(filter-proper-targets $(ls R, .)) \
+  $(TOOLPROGS))
 
 ##
 # The default target
