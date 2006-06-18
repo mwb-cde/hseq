@@ -435,8 +435,6 @@ let declare ?pp trm =
 	match trm with
 	  Basic.Free(i, t) -> (i, t)
 	| Basic.Id(i, t) -> (Ident.name_of i, t)
-	| Basic.Typed(Basic.Free(i, _), t) -> (i, t)
-	| Basic.Typed(Basic.Id(i, _), t) -> (Ident.name_of i, t)
 	| _ -> raise (Failure "Badly formed declaration")
       in 
       let id = Ident.mk_long (Global.current_name()) v

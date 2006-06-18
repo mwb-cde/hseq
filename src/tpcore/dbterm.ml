@@ -29,7 +29,6 @@ let rec of_term_aux env qnts t=
   | Basic.Free(n, ty) -> Free(n, (Gtypes.to_save_env env ty))
   | Basic.Const(c) -> Const(c)
   | Basic.App(f, a) -> App(of_term_aux env qnts f, of_term_aux env qnts a)
-  | Basic.Typed (trm, ty) -> of_term_aux env qnts trm
   | Basic.Bound(q) ->
       Bound(Lib.index (fun x -> (x==q)) qnts)
   | Basic.Qnt(q, b) -> 

@@ -493,7 +493,6 @@ let from_term trm =
       | App(f, a) -> PApp(from_aux f, from_aux a)
       | Qnt(q, b) -> PQnt(q, from_aux b)
       | Const(c) -> PConst(c)
-      | Typed(x, ty) -> PTyped(from_aux x, ty)
   in 
     from_aux trm
 

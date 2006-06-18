@@ -29,8 +29,6 @@ let rec lt_var lvarp rvarp x y=
   and bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 & q1<q1
   in 
   match (t1, t2) with
-    Typed (trm, _), _ -> lt_var lvarp rvarp trm t2
-  | _, Typed (trm, _) -> lt_var lvarp rvarp t1 trm
   | (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false

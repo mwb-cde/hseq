@@ -213,8 +213,6 @@ let alpha_convp_full scp tenv t1 t2 =
 	  in 
 	  alpha_aux b1 b2 tyenv1 (bind (Bound(q1)) (Bound(q2)) trmenv)
 	else raise (term_error "alpha_convp_aux" [t1;t2]))
-    | (Typed(trm, _), _) -> alpha_aux trm t2 tyenv trmenv
-    | (_, Typed(trm, _)) -> alpha_aux t1 trm tyenv trmenv
     | _ -> 
 	(if equals t1 t2 then (trmenv, tyenv)
 	else raise (term_error "alpha_convp_aux" [t1;t2]))
@@ -281,10 +279,6 @@ let safe_beta_reduce trm =
 	  let nb, chng = beta_aux b env
 	  in 
 	    (Qnt(q, nb), chng)
-      | Typed(tr, ty) -> 
-	  let ntr, chng = beta_aux tr env
-	  in 
-	    (Typed(ntr, ty), chng)
       | Bound(q) -> 
 	  (try (Term.find t env, true)
 	   with Not_found -> (t, false))
@@ -339,10 +333,6 @@ let beta_reduce trm =
 	  let nb, chng = beta_aux b env 
 	  in 
 	    (Qnt(q, nb), chng)
-      | Typed(tr, ty) -> 
-	  let ntr, chng = beta_aux tr env 
-	  in 
-	    (Typed(ntr, ty), chng)
       | Bound(q) -> 
 	  (try (Term.find t env, true)
 	   with Not_found -> (t, false))
@@ -409,8 +399,6 @@ let rec is_closed_env env t =
   match t with
     Basic.App(l, r) -> 
       (is_closed_env env l && is_closed_env env r)
-  | Basic.Typed(a, _) -> 
-      is_closed_env env a
   | Basic.Qnt(q, b) -> 
       let env1 = bind (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env
       in 
@@ -464,10 +452,6 @@ let close_term ?(qnt=Basic.All) ?(free= ct_free) trm=
 	  close_aux (bind (Basic.Bound(q)) (Basic.Bound(q)) env) vs b
 	in (Basic.Qnt(q, b1), env, vs1)
     | Basic.Const _ -> (t, env, vs)
-    | Basic.Typed(b, ty) ->
-	let b1, env1, vs1 = close_aux env vs b
-	in 
-	(Basic.Typed(b1, ty), env1, vs1)
   in 
   let (nt, env, vars) =  close_aux (empty_subst()) [] trm
   in 
@@ -546,11 +530,6 @@ let gen_term bs trm =
 	  gen_aux qnts1 known1 vars1 a
 	in 
 	(Basic.App(f1, a1), qnts2, known2, vars2)
-    | Basic.Typed(t1, ty) -> 
-	let (t2, qnts1, known1, vars1) = 
-	  gen_aux qnts known vars t
-	in 
-	(Basic.Typed(t2, ty), qnts1, known1, vars1)
     | _ -> (t, qnts, known, vars)
   in 
   let (trm1, qnts, _, vars) = 
@@ -591,9 +570,6 @@ let in_scope memo scp trm =
 	if Scope.is_meta scp q 
 	then true
 	else raise Not_found
-    | Typed(tr, ty) ->
-	ignore(in_scp_aux tr);
-	Gtypes.in_scope memo scp ty
     | App(a, b) ->
 	ignore(in_scp_aux a);
 	in_scp_aux b
@@ -615,7 +591,7 @@ let binding_set_names ?(strict=false) ?memo scp binding =
     (Gtypes.set_name ~strict:false ?memo:memo scp qtype)
 
 (**
-   [set_names_types scp thy trm]
+   [set_names scp thy trm]
    find and set long identifiers and types for variables in [trm]
    theory is [thy] if no long identifier can be found in scope [scp]
 *)
@@ -644,6 +620,13 @@ let set_names scp trm=
       in 
       (ignore(Lib.add id nty type_memo); nty)
   in 
+  let unify_types ty1 ty2 = 
+    try 
+      let env = Gtypes.unify scp ty1 ty2
+      in 
+	Gtypes.mgu ty1 env
+    with _ -> ty1
+  in
   let rec set_aux qnts t=
     match t with
       Id(id, ty) -> 
@@ -666,7 +649,7 @@ let set_names scp trm=
 	let ret_id = 
 	  match nty with
 	    None -> Id(nid, ty1)
-	  | Some(xty) -> Typed(Id(nid, xty), ty1)
+	  | Some(xty) -> Id(nid, unify_types xty ty1)
 	in 
 	ret_id
     | Free(n, ty) -> 
@@ -681,7 +664,7 @@ let set_names scp trm=
 			in 
 			  match try_find lookup_type nid with
 			      None -> Id(nid, ty1)
-			    | Some(xty) -> Typed(Id(nid, xty), ty1))
+			    | Some(xty) -> Id(nid, unify_types xty ty1))
 	     | Some(q) -> Meta(q))
     | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q
@@ -689,10 +672,6 @@ let set_names scp trm=
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
 	in 
 	Qnt(nq, set_aux qnts1 b)
-    | Typed(tt, tty) -> 
-	let tty1 = set_type_name type_thy_memo scp tty
-	in 
-	Typed(set_aux qnts tt, tty1)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
     | Meta(q) -> 
 	if(Scope.is_meta scp q) 
@@ -707,7 +686,8 @@ let set_names scp trm=
 	      (raise 
 		 (term_error "Bound variable occurs outside binding" [t])))
     | _ -> t
-  in set_aux (empty_subst()) trm
+  in 
+    set_aux (empty_subst()) trm
 
 (**
    [resolve_terms scp trmlist]: resolve names and types in each term
@@ -797,10 +777,6 @@ let resolve_term scp vars varlist trm =
 	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
 	in 
 	(Qnt(nq, nb), nvars, nlst)
-    | Typed(tt, tty) -> 
-	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
-	in 
-	  (Typed(nt, tty), nvars, nlst)
     | App(f, a) -> 
 	let nf, fvars, flst = set_aux (qnts, vars) f lst
 	in 
@@ -911,10 +887,6 @@ let resolve scp trm=
 	let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
 	in 
 	(Qnt(nq, nb), nvars, nlst)
-    | Typed(tt, tty) -> 
-	let (nt, nvars, nlst) = set_aux (qnts, vars) tt lst
-	in 
-	  (Typed(nt, tty), nvars, nlst)
     | App(f, a) -> 
 	let nf, fvars, flst = set_aux (qnts, vars) f lst
 	in 
@@ -962,7 +934,6 @@ let rec subst_closed qntenv sb trm =
 	Qnt(q, subst_closed qntenv1 sb b)
     | App(f, a) -> 
 	App(subst_closed qntenv sb f, subst_closed qntenv sb a)
-    | Typed(t, ty) -> Typed(subst_closed qntenv sb t, ty)
     | _ -> trm)
 
 let subst_equiv scp term lst = 
@@ -982,7 +953,6 @@ let subst_equiv scp term lst =
 	    in 
 	    Qnt(q, subst_aux qntenv1 b)
 	| App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
-	| Typed(t, ty) -> Typed(subst_aux qntenv t, ty)
 	| _ -> trm)
   in 
   subst_aux (Term.empty_subst()) term

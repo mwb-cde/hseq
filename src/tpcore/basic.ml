@@ -132,7 +132,6 @@ type term =
   | App of term * term
   | Qnt of binders * term 
   | Const of const_ty
-  | Typed of term * gtype
 
 
 

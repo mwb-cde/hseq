@@ -20,7 +20,6 @@ let rec occurs s t =
   else 
     match t with
       App(f, a) -> occurs s f; occurs s a
-    | Typed(tt, _) -> occurs s t
     | Qnt(_, b) -> occurs s b
     | _ -> ()
 
@@ -78,15 +77,6 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 		in 
 		  unify_aux qtyenv env nqntenv b1 b2
 	      else raise (term_error "unify_aux: qnt" [t1;t2])
-	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
-	    (try
-	      let tyenv1=Gtypes.unify_env scp ty1 ty2 tyenv
-	      in 
-	      unify_aux tyenv1 env qntenv tt1 tt2
-	    with x -> 
-	      raise (add_error (term_error "unify_aux: typed" [t1; t2]) x))
-	| (Typed(tt1, _), x) -> unify_aux tyenv env qntenv tt1 x
-	| (x, Typed(tt2, _)) -> unify_aux tyenv env qntenv x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
@@ -202,18 +192,6 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
 		in 
 		  matches_aux qtydata nqntenv env b1 b2
 	       else raise (term_error "matches_rewrite: qnts" [s;t])
-	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
-	    (try
-	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
-	      in 
-	      matches_aux tydata1 qntenv env tt1 tt2
-	    with x -> 
-	      raise 
-		(add_error (term_error "matches_rewrite: typed" [s;t]) x))
-	| (Typed(tt1, _), x) -> 
-	    matches_aux tydata qntenv env tt1 x
-	| (x, Typed(tt2, _)) -> 
-	    matches_aux tydata qntenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then 
@@ -314,15 +292,6 @@ let unify_rewrite scp typenv trmenv varp trm1 trm2 =
 	      then unify_aux qtyenv env b1 b2
 	      else raise (term_error "unify_full: qnts" [t1;t2])
 	    else raise (term_error "unify_full: qnts" [t1;t2])
-	| (Typed(tt1, ty1), Typed(tt2, ty2)) ->
-	    (try
-	      let tyenv1=Gtypes.Retired.unify_for_rewrite scp ty1 ty2 tyenv
-	      in 
-	      unify_aux tyenv1 env tt1 tt2
-	    with x -> 
-	      raise (add_error (term_error "unify_full: typed" [t1;t2]) x))
-	| (Typed(tt1, _), x) -> unify_aux tyenv env tt1 x
-	| (x, Typed(tt2, _)) -> unify_aux tyenv env x tt2
 	| (Id(n1, ty1), Id(n2, ty2)) ->
 	    if n1=n2 
 	    then 

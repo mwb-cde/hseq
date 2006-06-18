@@ -93,5 +93,4 @@ type term =
   | App of term * term    (** Function application *)
   | Qnt of binders * term (** Binding terms *)
   | Const of const_ty     (** Constants *)
-  | Typed of term * gtype  (** Typed terms *)
 

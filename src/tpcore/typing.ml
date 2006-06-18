@@ -62,12 +62,6 @@ let typeof_env scp typenv inf trm =
 	let renv = Gtypes.unify_env scp fty nty aenv
 	in 
 	(Gtypes.mgu retty renv, renv) 
-    | Typed(trm, expty) ->
-	let tty, tenv= typeof_aux trm env
-	in 
-	let renv = Gtypes.unify_env scp tty expty tenv
-	in 
-	(Gtypes.mgu expty renv, renv)
   in typeof_aux trm typenv
 
 let typeof scp ?env t = 
@@ -139,16 +133,6 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t 
 	   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
-    | Typed(trm, ty) -> 
-	(Gtypes.quick_well_defined scp cache ty;
-	 let env1=
-	   (try
-	     Gtypes.unify_env scp ty expty env
-	   with err -> 
-	     raise (add_typing_error "Typechecking: " t 
-	      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
-	 in 
-	 type_aux ty trm env1)
     | App(f, a) -> 
 	let aty = Gtypes.mk_typevar inf       (* make an argument type *)
 	in
@@ -262,19 +246,6 @@ let settype_top scp (inf, cache) f typenv exty et =
 	with err -> 
 	  raise (add_typing_error "Typechecking: " t
 		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)))
-    | Typed(trm, ty) -> 
-	(Gtypes.quick_well_defined scp cache ty;
-	 let env1=
-	   (try
-	     Gtypes.unify_env scp ty expty env
-	   with err -> 
-	     raise (add_typing_error "Typechecking: " t
-	      (Gtypes.mgu expty env) (Gtypes.mgu ty env) err))
-	 in 
-	 (try
-	   settype_aux ty trm env1
-	 with err -> 
-	   raise (Term.add_term_error "Typechecking failure " [t] err)))
     | App(f, a) -> 
 	let aty = Gtypes.mk_typevar inf       (* make an argument type *)
 	in
@@ -376,6 +347,5 @@ let rec check_types scp t =
   | Qnt(q, b) ->
       Gtypes.well_defined scp [] (Term.get_binder_type t);
       check_types scp b
-  | Typed(t, ty) -> Gtypes.well_defined scp [] ty; check_types scp t
   | x -> ()
 

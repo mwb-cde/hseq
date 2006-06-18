@@ -59,7 +59,6 @@ val is_app : term -> bool
 val is_bound: term -> bool
 val is_free : term -> bool
 val is_ident : term -> bool
-val is_typed : term -> bool
 val is_const : term -> bool
 
 (* val is_true : term -> bool *)
@@ -70,7 +69,6 @@ val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
 val mk_free : string -> gtype -> term
 val mk_app : term -> term -> term
-val mk_typed: term -> gtype -> term
 val mk_const : Basic.const_ty -> term
 val mk_typed_ident : Ident.t -> gtype -> term
 
@@ -83,7 +81,6 @@ val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
 val dest_free :term -> (string * gtype)
 val dest_app : term -> (term * term)
-val dest_typed: term -> (term * gtype)
 val dest_const : term -> Basic.const_ty 
 val dest_ident : term -> (Ident.t * gtype)
 
@@ -99,11 +96,6 @@ val dest_ident : term -> (Ident.t * gtype)
 val mk_meta : string -> gtype -> term
 val is_meta : term -> bool
 val dest_meta : term -> binders
-
-(** {7 Typed terms} *)
-
-val strip_typed: term -> term
-(** Strip the outermost [Typed] constructors from [t] *)
 
 (** {7 Constants} *)
 
@@ -332,8 +324,6 @@ val retype: Gtypes.substitution -> term -> term
    [retype tyenv t]:
    Reset the types in term [t] using type substitution [tyenv].
    Substitutes variables with their concrete type in [tyenv].
-
-   Retyping collapses terms of the form [Typed(trm, ty)] to [trm].
 *)
 
 val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
@@ -341,8 +331,6 @@ val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
    [retype_with_check scp tyenv t]: Reset the types in term [t] using type
    substitution [tyenv].  Substitutes variables with their concrete
    type in [tyenv]. Check that the new types are in scope [scp].
-
-   Retyping collapses terms of the form [Typed(trm, ty)] to [trm].
 *)
 
 
@@ -526,8 +514,7 @@ val least: term list -> term
 val term_lt: term -> term -> bool
 (**
    [term_lt]: more complex (and usefull) ordering on terms.
-   [Const < Var <  Bound < App < Qnt
-   (Typed t1) < t2 iff t1<t2]
+   [Const < Var <  Bound < App < Qnt < t2 iff t1<t2]
 *)
 
 val term_leq: term -> term -> bool

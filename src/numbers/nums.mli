@@ -213,7 +213,6 @@ val get_comp_fn :
   Ident.t ->
   Basic.term ->
   Basic.term -> 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
-val strip_typed : Basic.term -> Basic.term
 val compterm_to_comprsn :
   int * (int * Basic.term) list ->
   Scope.t ->

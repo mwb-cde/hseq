@@ -21,8 +21,6 @@ let rec equals x y =
   | (Meta(q1), Meta(q2)) -> q1==q2
   | (Qnt(qn1, b1), Qnt(qn2, b2)) -> 
       (qn1==qn2) && (equals b1 b2)
-  | (Typed(t1, ty1), Typed(t2, ty2)) ->
-      (Gtypes.equals ty1 ty2)  & (equals t1 t2)
   | (_, _) -> x=y)
 
 
@@ -121,11 +119,6 @@ let is_ident x =
     Id _ -> true
   | _ -> false
 
-let is_typed x = 
-  match x with 
-    Typed (_, _) -> true
-  | _ -> false
-
 let is_const x = 
   match x with 
     Const _ -> true
@@ -142,7 +135,6 @@ let mk_qnt b t= Qnt(b, t)
 let mk_bound n = (Bound n)
 let mk_free n ty= Free(n, ty)
 let mk_app f a= (App(f, a))
-let mk_typed t ty= Typed(t, ty)
 let mk_const c = (Const c)
 
 let mk_typed_ident n t= (Id(n, t))
@@ -177,11 +169,6 @@ let dest_app t =
     (App(f, a)) -> (f, a)
   | _ -> raise (Failure "Not a function")
 
-let dest_typed t = 
-  match t with 
-    Typed(trm, ty) -> (trm, ty)
-  | _ -> raise (Failure "Not a typed term")
-
 let dest_const t =
   match t with
     Const c -> c
@@ -204,13 +191,6 @@ let dest_meta t  =
       Meta(q) -> q
     | _ -> raise (Failure "Not a meta variable")
 
-
-(** Typed terms *)
-
-let rec strip_typed term =
-  match term with 
-    Basic.Typed(tt, _) -> strip_typed tt
-  | _ -> term
 
 (** Constants *)
 
@@ -317,13 +297,10 @@ let rec strip_fun_qnt f term qs =
   in 
   match term with 
     Basic.App(l, Basic.Qnt(q, body)) -> 
-      let l0=strip_typed l
-      in 
-      if not((is_ident l0) && (is_lambda q))
+      if not((is_ident l) && (is_lambda q))
       then (qs, term)
       else 
 	strip_fun_qnt f body (q::qs)
-  | Basic.Typed(t, _) -> strip_fun_qnt f t qs
   | _ -> (List.rev qs, term)
 
 (***
@@ -348,7 +325,6 @@ let get_free_vars trm =
       Free(x, ty) -> t::ts
     | Qnt(q, b) -> get_free_vars_aux b ts
     | App(f, a) -> get_free_vars_aux a (get_free_vars_aux f ts)
-    | Typed(tr, ty) ->get_free_vars_aux tr ts
     | _ -> ts
   in get_free_vars_aux trm []
 
@@ -403,7 +379,6 @@ let get_free_binders t =
 	with Not_found ->
 	  ignore(table_add x trtrm memo);
 	  (q::qnts))
-    | Typed(tr, _) -> free_aux qnts tr
     | App(f, a) -> 
 	let fqnts = free_aux qnts f
 	in free_aux fqnts a
@@ -448,10 +423,6 @@ let print_simple trm=
     | Meta(n) -> 
 	Format.printf "@[%s@]" (binder_name n)
     | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
-    | Typed (trm, ty) ->
-	Format.printf "@[<2>%s" "(";
-	print_aux trm;
-	Format.printf "@ %s %s)@]" ":" (Gtypes.string_gtype ty)
     | App(t1, t2) ->
 	Format.printf "@[<2>(";
 	print_aux t1;
@@ -548,10 +519,6 @@ let rename_env typenv trmenv trm =
 	in 
 	has_quantifier:=true;
       	(Qnt(nq, nb), tyenv2, env2)
-    | Typed(b, ty) -> 
-	let nb, tyenv1, env1 = rename_aux b tyenv env
-	in 
-	(Typed(nb, ty), tyenv1, env1)
     | App(f, a) ->
 	let nf, tyenv1, env1=rename_aux f tyenv env
 	in let na, tyenv2, env2=rename_aux a tyenv env1
@@ -611,7 +578,6 @@ let rec subst env trm =
     (match trm with
       Qnt(q, b) ->  Qnt(q, subst env b)
     | App(f, a) -> App(subst env f, subst env a)
-    | Typed(t, ty) -> Typed(subst env t, ty)
     | _ -> trm)
 
 let qsubst ts trm =
@@ -659,7 +625,6 @@ let subst_mgu varp env trm =
       (match trm with
 	Qnt(q, b) ->  Qnt(q, mgu_aux b)
       | App(f, a) -> App(mgu_aux f, mgu_aux a)
-      | Typed(t, ty) -> Typed(mgu_aux t, ty)
       | _ -> trm)
   in mgu_aux trm
 
@@ -693,7 +658,6 @@ let subst_qnt_var scp env trm =
 	  (let r = Lib.find (Ident.mk_name n) env
 	  in ignore(Gtypes.unify scp ty (get_binder_type r)); r)
 	with _ -> t)
-    | (Typed(tt, ty)) -> Typed(subst_aux tt, ty)
     | (App(f, a)) -> App(subst_aux f, subst_aux a)
     | Qnt(q, b) -> Qnt(q, subst_aux b)
     | _ -> t
@@ -735,9 +699,6 @@ let rec string_term_basic t =
       ^" ("^(string_typed_name (Basic.binder_name q) 
 	       (Basic.binder_type q))^"): "
       ^(string_term_basic body)
-  | Typed (trm, ty) -> 
-      ("("^(string_term_basic trm)^": "
-       ^(Gtypes.string_gtype ty)^")")
 
 let rec string_term_prec i x =
   match x with
@@ -768,9 +729,6 @@ let rec string_term_prec i x =
       in 
       ("("^(string_term_prec i f)^" "
        ^(list_string (string_term_prec i) " " args)^")")
-  | Typed (trm, ty) -> 
-      ("("^(string_term_prec i trm)^": "
-       ^(Gtypes.string_gtype ty)^")")
 
 
 let string_term x = string_term_prec 0 x
@@ -797,9 +755,6 @@ let rec string_term_inf inf i x =
   | Bound(_) -> (get_binder_name x)
   | Meta(_) -> (get_binder_name x)
   | Const(c) -> Basic.string_const c
-  | Typed (trm, ty) ->
-      ("("^(string_term_inf inf i trm)^": "
-       ^(Gtypes.string_gtype ty)^")")
   | App(t1, t2) ->
       let f=get_fun x 
       and args = get_args x
@@ -859,7 +814,6 @@ let retype tyenv t=
 	with Not_found -> t)
     | Meta(q) -> t
     | Const(c) -> t
-    | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
 	App(retype_aux f, retype_aux a)
     | Qnt(q, b) ->
@@ -880,8 +834,6 @@ let retype tyenv t=
    [retype_with_check tyenv t]: Reset the types in term [t] using type
    substitution [tyenv].  Substitutes variables with their concrete
    type in [tyenv]. Check that the new types are in scope.
-
-   Retyping collapses terms of the form [Typed(trm, ty)] to [trm].
 *)
 let retype_with_check scp tyenv t=
   let qenv=empty_table()
@@ -907,7 +859,6 @@ let retype_with_check scp tyenv t=
 	with Not_found -> t)
     | Meta(q) -> t
     | Const(c) -> t
-    | Typed(trm, ty) -> retype_aux trm
     | App(f, a) -> 
 	App(retype_aux f, retype_aux a)
     | Qnt(q, b) ->
@@ -961,7 +912,6 @@ let retype_pretty_env typenv trm=
 	in 
 	(ntrm, nenv))
     | Const(c) -> (t, name_env)
-    | Typed(trm, ty) -> retype_aux trm name_env
     | App(f, a) -> 
 	let nf, nenv1=retype_aux f name_env
 	in let na, nenv2=retype_aux a nenv1
@@ -1161,10 +1111,6 @@ let rec print_term ppstate (assoc, prec) x =
       Format.printf "@[%s@]" ((get_binder_name x))
   | Const(c) -> 
       Format.printf "@[%s@]" (Basic.string_const c);
-  | Typed (trm, ty) -> 
-      Format.printf "@[";
-      print_typed_term print_term ppstate (assoc, prec) (trm, ty);
-      Format.printf "@]"
   | App(t1, t2) ->
       let f, args=get_fun_args x 
       in 
@@ -1328,8 +1274,7 @@ let least ts =
 
 (*
    [term_lt]: More complex ordering on terms.
-   Const < Id <  Bound < App < Qnt
-   (Typed t1) < t2 iff t1<t2
+   Const < Id <  Bound < App < Qnt < t2 iff t1<t2
 *)
 let rec term_lt t1 t2 = 
   let atom_lt (a1, ty1) (a2, ty2) =  a1<a2
@@ -1337,9 +1282,7 @@ let rec term_lt t1 t2 =
       bound_lt (q1, n1, _) (q2, n2, _) =  n1<n2 && q1<q1
   in 
   match (t1, t2) with
-    Typed (trm, _), _ -> term_lt trm t2
-  | _, Typed (trm, _) -> term_lt t1 trm
-  | (Const c1, Const c2) -> Basic.const_lt c1 c2
+    (Const c1, Const c2) -> Basic.const_lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
   | (Id _, Id _) -> atom_lt (dest_ident t1) (dest_ident t2)
@@ -1386,8 +1329,6 @@ let rec term_leq t1 t2 =
       bound_leq (q1, n1, ty1) (q2, n2, ty2) =  n1<=n2 && q1<=q2
   in 
   match (t1, t2) with
-    Typed (trm, _), _ -> term_leq trm t2
-  | _, Typed (trm, _) -> term_leq t1 trm
   | (Const c1, Const c2) -> Basic.const_leq c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
@@ -1435,7 +1376,6 @@ let rec is_subterm x y =
     match y with 
       App (f, a) -> (is_subterm x f) || (is_subterm x a)
     | Qnt (_, b) -> (is_subterm x b)
-    | Typed (t, _) -> is_subterm x t
     | _ -> false
 
       

@@ -300,8 +300,9 @@ val set_names: Scope.t  -> term -> term
    term [t].
 
    Each free variable in [t] with the same name as an identifier
-   defined in scope [scp] is replaced by the identifier ([Id]).  The
-   type of the free variable is kept as a [Typed] construct around the
+   defined in scope [scp] is replaced by the identifier ([Id]). 
+
+   The type of the free variable is kept as a [Typed] construct around the
    new [Id].
 
    Free variables which are not found in scope are left in place,

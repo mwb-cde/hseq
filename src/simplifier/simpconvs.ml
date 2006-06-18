@@ -262,10 +262,7 @@ let cond_eq_sym_thm () =
  *)
 let simple_rewrite_conv scp rule trm=
   let key = 
-    Rewrite.neg_key 
-      (Rewrite.alt_key 
-	 Rewrite.allq_key 
-	 Rewrite.tyterm_key)
+    Rewrite.neg_key Rewrite.allq_key
   in 
   let plan = 
     Rewrite.mk_node key [Rewrite.mk_rules [rule]]

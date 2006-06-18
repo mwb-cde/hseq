@@ -821,8 +821,6 @@ let rec find_subterm_bu_tac ret data trm goal=
 		  (acntrl, atyenv, App(nf, na), subplan) g2)
 	    ] g1)
        ] goal
-  | Basic.Typed(tt, ty) -> 
-      find_term_bu_tac ret (ctrl, tyenv, qntenv) tt goal
   | _ -> raise No_change
 and 
 (**
@@ -946,8 +944,6 @@ let rec find_subterm_td_tac ret data trm g=
 		  (acntrl, atyenv, App(nf, na), subplan) g2)
 	    ] g1)
        ] g
-  | Basic.Typed(tt, ty) -> 
-      find_term_td_tac ret (ctrl, tyenv, qntenv) tt g
   | _ -> raise No_change
 and 
 (**

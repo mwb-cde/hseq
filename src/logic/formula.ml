@@ -201,7 +201,6 @@ let is_app x= Term.is_app (term_of x)
 let is_bound x= Term.is_bound (term_of x)
 let is_free x = Term.is_free (term_of x)
 let is_ident x = Term.is_ident (term_of x)
-let is_typed x = Term.is_typed (term_of x)
 let is_const x = Term.is_const (term_of x)
 let is_fun x= Term.is_fun (term_of x)
 
@@ -319,8 +318,6 @@ let rec is_closed scp env t =
   match t with
     Basic.App(l, r) -> 
       (is_closed scp env l && is_closed scp env r)
-  | Basic.Typed(a, _) -> 
-      is_closed scp env a
   | Basic.Qnt(q, b) -> 
       let env1 = 
 	Term.bind 
@@ -350,7 +347,6 @@ let rec subst_closed scp qntenv sb trm =
 	Basic.Qnt(q, subst_closed scp qntenv1 sb b)
     | Basic.App(f, a) -> 
 	Basic.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
-    | Basic.Typed(t, ty) -> Typed(subst_closed scp qntenv sb t, ty)
     | _ -> trm)
 
 let subst scp form lst=
@@ -602,6 +598,5 @@ let rec check_term p t =
     (match t with
       Basic.Qnt(q, b) -> check_term p b
     | Basic.App(f, a) -> check_term p f; check_term p a
-    | Basic.Typed(trm, ty) -> check_term p trm
     | _ -> ())
   else raise (Term.term_error "Term check failed" [t])

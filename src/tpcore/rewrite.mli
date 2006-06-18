@@ -160,7 +160,6 @@ type term_key =
   | ExQ   (** Term [Qnt] ([Ex]) *)
   | LamQ   (** Term [Qnt] ([Lambda]) *)
   | Constn (** Term [Const] *)
-  | TyTerm (** Term [Typed] *)
   | AnyTerm    (** Any term *)
   | NoTerm   (** No term *)
   | Neg of term_key (** Negate a key *)
@@ -462,9 +461,6 @@ val lamq_key : key
 (** Key of [Basic.Qnt], with [Basic.Lam] *)
 val constn_key : key
 (** Key of [Basic.Constn] *)
-val tyterm_key : key
-(** Key of [Basic.Typed] *)
-
 
 
 (** 

@@ -445,7 +445,6 @@ let get_binder qnt n trm =
 	    then b
 	    else get_aux body
 	  else raise Not_found
-      | Basic.Typed(b, _) -> get_aux b
       | _ -> raise Not_found
   in 
     get_aux trm

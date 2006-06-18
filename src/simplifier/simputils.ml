@@ -32,10 +32,7 @@ let rec equal_upto_vars varp x y =
 	(equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
     | (Basic.Qnt(qn1, b1), Basic.Qnt(qn2, b2)) -> 
 	(qn1==qn2) && (equal_upto_vars varp b1 b2)
-    | (Basic.Typed(t1, ty1), Basic.Typed(t2, ty2)) ->
-	(Gtypes.equals ty1 ty2) && (equal_upto_vars varp t1 t2)
     | (_, _) -> Term.equals x y
-
 
 
 (** 
@@ -56,7 +53,6 @@ let find_variables is_var vars trm=
 	    Not_found ->
 	      (Term.bind t t env))
 	else env
-    | Basic.Typed(tr, _) -> find_aux env tr
     | Basic.App(f, a) -> 
 	let nv=find_aux env f
 	in find_aux nv a
@@ -77,7 +73,6 @@ let check_variables is_var vars trm=
 	then 
 	  ignore(Term.find t vars)
 	else ()
-    | Basic.Typed(tr, _) -> check_aux tr
     | Basic.App(f, a) -> check_aux f; check_aux a
     | _ -> ()
   in check_aux trm

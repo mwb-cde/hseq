@@ -101,7 +101,6 @@ type term_key =
   | ExQ   (** Term [Qnt] ([Ex]) *)
   | LamQ   (** Term [Qnt] ([Lambda]) *)
   | Constn (** Term [Const] *)
-  | TyTerm (** Term [Typed] *)
   | AnyTerm    (** Any term *)
   | NoTerm   (** No term *)
   | Neg of term_key (** Negate a key *)
@@ -147,7 +146,6 @@ module TermData =
       | Basic.Free _ -> FVar
       | Basic.App _ -> Appln
       | Basic.Const _ -> Constn
-      | Basic.Typed _ -> TyTerm
       | Basic.Qnt(q, b) -> 
 	  (match (Basic.binder_kind q) with 
 	    Basic.All -> AllQ
@@ -168,14 +166,12 @@ module TermData =
       match n with
 	App(l, r) -> 2
       | Qnt(_, b) -> 1
-      | Typed(t, _) -> 1
       | _ -> 0
 
     let subnodes_of n =
       match n with
 	App(l, r) -> [l; r]
       | Qnt(_, b) -> [b]
-      | Typed(t, _) -> [t]
       | _ -> []
 
     let set_subnodes n xs =
@@ -188,10 +184,6 @@ module TermData =
 	  (match xs with 
 	    [b] -> Qnt(q, b)
 	  | _ -> raise (Quit (Failure "set_subnodes: Qnt")))
-      | Typed(_, ty) ->
-	  (match xs with 
-	    [t] -> Typed(t, ty)
-	  | _ -> raise (Quit (Failure "set_subnodes: Typed")))
       | _ -> raise (Quit (Failure "set_subnodes: other"))
 
 
@@ -206,10 +198,6 @@ module TermData =
 	  (match i with
 	    0 -> b 
 	  | _ -> raise Not_found)
-      | Typed(t, _) -> 
-	  (match i with
-	    0 -> t 
-	  | _ -> raise Not_found)
       | _ -> raise Not_found
 
     let set_subnode n i x =
@@ -222,10 +210,6 @@ module TermData =
       | Qnt(q, b) -> 
 	  (match i with
 	    0 ->  Qnt(q, x)
-	  | _ -> raise Not_found)
-      | Typed(t, ty) -> 
-	  (match i with
-	    0 -> Typed(x, ty)
 	  | _ -> raise Not_found)
       | _ -> raise Not_found
 
@@ -394,8 +378,6 @@ let allq_key = AllQ
 let exq_key = ExQ
 let lamq_key = LamQ
 let constn_key = Constn
-let tyterm_key = TyTerm
-
 
 module Planner =
   struct 
@@ -698,8 +680,6 @@ module Make =
 	    let subplans = pack(mk_branches[fplan; aplan])
 	    in 
 	    (Basic.App(nf, na), aenv, actrl, subplans)
-	| Basic.Typed(tt, ty) -> 
-	    rewrite_td_term ctrl data net tt
 	| _ -> (t, tyenv, ctrl, mk_skip))
     and 
 	rewrite_td_term ctrl data net t = 
@@ -784,8 +764,6 @@ module Make =
 	    in 
 	    rewrite_bu_term actrl 
 	      (scope, qntenv, aenv) net (Basic.App(nf, na)) subplans
-	| Basic.Typed(tt, ty) -> 
-	    rewrite_bu_subterm ctrl data net tt
 	| _ -> 
 	    rewrite_bu_term ctrl data net t mk_skip
     and 

@@ -31,12 +31,6 @@ let geqid = Ident.mk_long num_thy "geq"
 let ltid = Ident.mk_long num_thy "less"
 let leqid = Ident.mk_long num_thy "leq"
 
-let rec strip_typed trm = 
-  match trm with 
-    Basic.Typed(t, _) -> strip_typed t
-  | _ -> trm
-
-
 (* Variable environment *)
 
 type varenv = (int * (int ref *  Basic.term)list)
@@ -49,9 +43,7 @@ let get_index (n, e) i =
     try snd(List.nth e (i-1))
     with _ -> raise Not_found
 let add_var (n, e) t = 
-  let t1 = strip_typed t
-  in 
-  try (get_var (n, e) t1, (n, e))
+  try (get_var (n, e) t, (n, e))
   with Not_found -> (n+1, (n+1, (n+1, t)::e))
 
 
@@ -172,7 +164,6 @@ let numterm_to_expr var_env scp t =
 	   let c, env1=add_var env x
 	   in 
 	   (Exprs.Var(c), env1))
-    | Basic.Typed(y, ty) -> conv_aux env y
     | Basic.Const(Basic.Cnum(i)) -> (Exprs.Val(i), env)
     | Basic.Const(_) -> 
 	raise (error "Badly formed expression: not a number" [x])
@@ -384,7 +375,6 @@ let bterm_to_prop scp bvar_env nvar_env t =
 	 let c, benv1=add_var benv x
 	 in 
 	 (Prop.Var(c), benv1, nenv))
-    | Basic.Typed(y, ty) -> conv_aux y benv nenv
     | Basic.Qnt(_) -> raise (error "Badly formed expression" [x])
     | Basic.Const(Basic.Cbool(b)) -> 
 	if b 
@@ -648,8 +638,7 @@ let is_bool_app scp f args =
 *)
 let rec is_numterm scp trm = 
   match trm with
-    Basic.Typed(t, _) -> is_numterm scp t
-  | Basic.Const(Basic.Cnum _) -> true
+    Basic.Const(Basic.Cnum _) -> true
   | Basic.Const _ -> false
   | Basic.Bound _ -> has_num_type scp trm
   | Basic.Meta _ -> has_num_type scp trm
@@ -674,8 +663,7 @@ let rec is_numterm scp trm =
 *)
 let rec is_compterm scp trm = 
   match trm with
-    Basic.Typed(t, _) -> is_compterm scp t
-  | Basic.Bound _ -> false
+    Basic.Bound _ -> false
   | Basic.Meta _ -> false
   | Basic.Free _ -> false
   | Basic.Id _ -> false
@@ -700,8 +688,7 @@ let rec is_compterm scp trm =
 *)
 let rec is_boolterm scp trm = 
   match trm with
-    Basic.Typed(t, _) -> is_boolterm scp t
-  | Basic.Const _ -> has_bool_type scp trm
+    Basic.Const _ -> has_bool_type scp trm
   | Basic.Bound _ -> has_bool_type scp trm
   | Basic.Meta _ -> has_bool_type scp trm
   | Basic.Free _ -> has_bool_type scp trm

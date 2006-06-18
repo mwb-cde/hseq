@@ -73,8 +73,6 @@ let rec term_to_label varp trm rst=
 	(Bound(qnt), rst)
     | Basic.Const(c) -> 
 	(Const(c), rst)
-    | Basic.Typed(t, _) ->
-	term_to_label varp t rst
     | Basic.App(l, r) ->
 	(App, l::r::rst)
 
