@@ -142,6 +142,35 @@ val mk_subtype:
 *)
 
 
+
+(**
+   Support for definition parsers.
+*)
+module Parser :
+sig
+(**
+   Support for definition parsers.
+*)
+
+(**
+   Information to be returned by type definition parsers.
+*)
+type typedef =
+    NewType of (string * (string list)) 
+      (** A new type: the type name and its arguments. *)
+  | TypeAlias of (string * (string list) * Basic.gtype)
+      (** 
+	  A type alias: the type name, its arguments and the type it aliases
+      *)
+  | Subtype of (string * (string list) 
+		* Basic.gtype * Basic.term)
+      (** 
+	  Subtype definition: The type name, its arguments, the type it
+	  subtypes and the defining predicate
+      *)
+
+end
+
 (*
 module HolLike :
 sig
