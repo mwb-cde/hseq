@@ -22,6 +22,7 @@
    --libdir: the libraries directory.
    --thys: the theories directory.
    --fast: whether to use the optimised compiler (ocamlc.opt)
+   --native: whether to build the native code library (ocamlopt.opt)
 *)
 
 (** File name utilities **)
@@ -327,7 +328,7 @@ let arglist =
  "The theories directory ["^(thys_d())^"]");
 ("--fast", Arg.Bool set_fast_compilers, 
  "Use the fast compilers (ocamlc.opt) ["^(fast_compilers_d())^"]");
-("--nativeocaml", Arg.Bool set_native_compilers, 
+("--native", Arg.Bool set_native_compilers, 
  "Use the native code compilers (ocamlopt) ["^(native_compilers_d())^"]")
 ]
 

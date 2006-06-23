@@ -99,7 +99,7 @@ if $(defined CONFIGFILE)
   export
 
 NATIVE = false
-if $(equal $(NativeCompilers), true)
+if $(NativeCompilers)
   NATIVE = true
   export
 
@@ -171,8 +171,10 @@ BYTE_ENABLED = true
 
 if $(NATIVE)
   NATIVE_ENABLED = true
+  export
 else
   NATIVE_ENABLED = false
+  export
 
 ##
 # Targets
@@ -253,7 +255,7 @@ clean:
   -$(RM) *~
 
 reallyclean: clean
-  $(RM) $(filter-proper-targets $(ls R, .))
+#  $(RM) $(filter-proper-targets $(ls R, .))
 
 ########################################################################
 # Subdirectories.
