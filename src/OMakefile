@@ -63,7 +63,7 @@ HSEQCODE = util tpcore logic parser tpmain booleans simplifier \
 TLNAME = $(Program hseq)
 
 # TLDIRS: The sub-directories to build the top-level
-TLDIRS = hseqtop
+TOPLEVELDIR = $(dir hseqtop)
 
 # TLFILES: The code to link in to build the toplevel (in order)
 TLFILES = tpquote.cma hseqtop.cma
@@ -101,8 +101,11 @@ SRCDIR = $(CWD)
 # HEADERSDIR: The location of the compiled header files
 HEADERSDIR = $(dir lib)
 
-# LIBDIR: The location of the compiled files
+# LIBDIR: The location of the included compiled files
 LIBDIR = $(dir lib)
+
+# OBJDIR: The location of the compiled files
+OBJDIR = $(dir objects)
 
 # TOOLSDIR: The directory containing the tools
 TOOLSDIR = $(dir tools)
@@ -157,7 +160,7 @@ OCAMLFLAGS += -I $(ILIBDIR)
     $(RM) *~
 
   libclean: 
-    $(RM) *.cmi *.cma *.cmxa
+    $(RM) *.cmi *.cma *.cmxa *.a
 
   reallyclean: clean libclean
     $(RM) $(filter-proper-targets $(ls R, .))
@@ -190,17 +193,23 @@ StdClean () =
     $(RM) *.cmo *.cmx *.o *~
 
   libclean: clean
-    $(RM) *.cmi *.cma *.cmxa
+    $(RM) *.cmi *.cma *.cmxa *.a
 
   reallyclean: libclean
     $(RM) $(filter-proper-targets $(ls R, .))
 
+## Copy: copy files into directory
+Copy(files, dst) =
+  IFILES = $(filter-exists $(files))  
+  $(COPY) $(IFILES) $(dst)
+
 ## StdInstall: Build and install targets from a subdirectory
 
-StdInstall(tag, install_files, target) =
-  IFILES = $(filter-exists $(install-files))
-  $(tag): 
-      $(COPY) $(install_files) $(target)
+StdInstall(tag, install-files, target) =
+  $(tag): $(install-files)
+    section
+      IFILES = $(filter-exists $(install-files))
+      $(COPY) $(IFILES) $(target)
 
 ## BuildInstall: Build and install targets from a subdirectory
 
@@ -209,7 +218,9 @@ BuildInstall(tag, build_files, install_files, target) =
     section rule
       if $(not $(file-exists $(build_files)))
           $(tag): $(build_files)
-              $(COPY) $(install_files) $(target)
+            section
+              IFILES = $(filter-exists $(install_files))
+              $(COPY) $(IFILES) $(target)
       else
           $(tag): :value: false
 
@@ -282,26 +293,45 @@ Code(files) =
 
 ByteLib(name) = 
   return $(name).cma
+
 NatLib(name) = 
+ return ($(name).cmxa)
+ObjLib(name) = 
  return ($(name).cmxa $(name).a)
 
 Lib(name) =
   X = $(ByteLib $(name))
   if $(NATIVE_ENABLED)
-     X += $(NatLib $(name))
+     X += $(NatLib $(name)) 
      export
   return $(X)
+
+## ReadVar(var, sub): The value of variable var set in directory sub
+ReadVar(var, sub) =
+   X =
+   include $(addprefix $(sub)/, $(SUBDATA))
+   section
+     X = $(getvar $(var))
+     export
+   return $(X)
+
+## PrintVar(vars): Print the values of variables vars
+PrintVar(vars) =
+  foreach(name, $(vars))
+    val = $(getvar $(name))
+    eprintln($(name) = $(val))
 
 ## GetFileList: Get the list of files from each subdirectory, in order
 
 GetFileList(subdirs) =
   FileList = 
   foreach (sub, $(subdirs))
-    FILES = 
-    include $(sub)/$(SUBDATA)
-    FileList += $(addprefix $(sub)/,$(FILES))
+    F = 
+    F = $(ReadVar FILES, $(sub))
+    FileList += $(addprefix $(SRCDIR)/$(sub)/,$(F))
     export
   return($(FileList))
+
     
 ##
 # Preprocessor setting
@@ -309,8 +339,10 @@ GetFileList(subdirs) =
 
 # The theorem prover quotation expander
 PPNAME = tpquote
-#PPCODE = $(file $(LIBDIR)/$(PPNAME).cma)
-PPCODE = $(LIBDIR)/$(PPNAME).cma
+PPOBJ = $(PPNAME).cma
+PPCODE = $(file $(addprefix $(LIBDIR)/, $(PPOBJ)))
+
+#PPCODE = $(LIBDIR)/$(PPNAME).cma
 
 # OCAMLCPP : set the preprocesor
 OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
@@ -357,7 +389,7 @@ OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
 
 LocalOCamlGeneratedFiles($(PPCODE))
 
-PPOPTIONS = -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo"
+PPOPTIONS = -pp "camlp4o -I $(LIBDIR) q_MLast.cmo $(PPOBJ) pa_extend.cmo"
 OCAMLFLAGS += $(PPOPTIONS) 
 OCAMLDEPFLAGS += $(PPOPTIONS) 
 OCAML_LINK_FLAGS += $(OCINCLUDE)
@@ -375,11 +407,19 @@ MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(OCLIBS)
 FILES = $(GetFileList $(SUBDIRS))
 BASEFILES = $(basename $(FILES))
 
+INTFCODE = $(Interface $(BASEFILES))
+HEADERS = $(Header $(BASEFILES))
+
 BYTECODE = $(ByteCode $(BASEFILES))
 NATCODE = $(NatCode $(BASEFILES))
 OBJCODE = $(NatCode $(BASEFILES))
-INTFCODE = $(Interface $(BASEFILES))
-HEADERS = $(Header $(BASEFILES))
+
+ALLINTFCODE = $(Interface $(FILES))
+ALLHEADERS = $(Header $(FILES))
+
+ALLBYTECODE = $(ByteCode $(FILES))
+ALLNATCODE = $(NatCode $(FILES))
+ALLOBJCODE = $(ObjCode $(FILES))
 
 BYTEMODULE = $(ByteCode $(MODULE))
 NATMODULE = $(NatCode $(MODULE))
@@ -387,10 +427,35 @@ OBJMODULE = $(ObjCode $(MODULE))
 NATOBJMODULE = $(NATMODULE) $(OBJMODULE)
 MODULEINTF = $(Interface $(MODULE))
 
-
 HSEQLIB = $(Lib $(LIBFILE)) 
 HSEQBYTELIB = $(ByteLib $(LIBFILE))
 HSEQNATLIB = $(NatLib $(LIBFILE))
+HSEQOBJLIB = $(ObjLib $(LIBFILE))
+FULLHSEQLIB = $(HSEQBYTELIB) $(HSEQNATLIB) $(HSEQOBJLIB)
+
+HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
+HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
+
+FULLHSEQLIBCODE =$(addprefix $(LIBDIR)/, $(FULLHSEQLIB))
+
+# Object files
+
+OHEADERS = $(addprefix $(OBJDIR)/, $(HEADERS))
+OINTFCODE = $(addprefix $(OBJDIR)/, $(INTFCODE))
+
+OBYTECODE = $(addprefix $(OBJDIR)/, $(BYTECODE))
+ONATCODE = $(addprefix $(OBJDIR)/, $(NATCODE))
+OOBJCODE = $(addprefix $(OBJDIR)/, $(OBJCODE))
+
+OBYTEMODULE = $(addprefix $(OBJDIR)/, $(BYTEMODULE))
+ONATMODULE = $(addprefix $(OBJDIR)/, $(NATMODULE))
+OOBJMODULE = $(addprefix $(OBJDIR)/, $(OBJMODULE))
+
+OMODULEINTF = $(addprefix $(OBJDIR)/, $(MODULEINTF))
+
+OHSEQLIB = $(addprefix $(OBJDIR)/, $(HSEQLIB))
+
+# Library files
 
 LHEADERS = $(addprefix $(LIBDIR)/, $(HEADERS))
 LINTFCODE = $(addprefix $(LIBDIR)/, $(INTFCODE))
@@ -405,9 +470,6 @@ LMODULEINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
 
 LMODULE = $(LBYTEMODULE) $(LNATMODULE) $(LOBJMODULE)
 LCODE = $(LBYTECODE) $(LNATCODE) $(LOBJCODE)
-
-HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
-HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
 
 ## How to build the subdirectories
 
@@ -430,25 +492,152 @@ HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
   # Targets
 
   StdClean()
-  OCamlLibrary($(LIBFILES), $(FILES))
-
-  BuildInstall(build-code, \
-        $(CODE) $(LIBRARY), \
-	$(Header $(FILES)) $(Interface $(FILES)) \
-        $(Code $(FILES)) $(LIBRARY), \
-	$(LIBDIR))
-
-#  $(LBYTECODE) $(LNATCODE) $(LOBJCODE): build-code
-
-#  BuildInstall($(LCODE), \
-#        $(Code $(FILES)), \
-#	$(HEADERS) $(INTFCODE) $(Code $(FILES)) $(LIBRARY), \
-#	$(LIBDIR))
-
   StdDoc(srcdoc, $(FILES), $(DOCPREV), $(DOCDATA))
 
-## How to build the library
+## How to build the object library
 
+.PHONY: build-objects
+
+.SUBDIRS: $(OBJDIR) 
+  # How to clean 
+  clean:
+    $(RM) *.cmi *.mli *.ml *.cmo 
+    $(RM) *.cmx *.o *~
+
+  libclean: 
+    $(RM) *.cmi *.cma *.cmxa *.a
+
+  reallyclean: clean libclean
+    $(RM) $(filter-proper-targets $(ls R, .))
+
+  # Functions
+
+  # InstallIntf: Install interfaces in the obj directory
+  InstallIntf(files, dst) =
+    # Interfaces
+    get_interfaces = $(Interface $(files))
+    make_interfaces = $(basename $(get_interfaces))
+
+    $(make_interfaces): $(get_interfaces)
+      $(COPY) $(get_interfaces) $(dst)
+
+  # InstallCode: Install the code in the obj directory
+  InstallCode(files, dst) =
+    # Interfaces
+    get_interfaces = $(Interface $(files))
+    make_interfaces = $(basename $(get_interfaces))
+
+    # byte files
+    byte_files = $(ByteCode $(files))
+    make_byte_files = $(basename $(byte_files))
+    effects_files = 
+
+    # native code files
+    nat_files = $(NatCode $(files))
+    obj_files = $(ObjCode $(files))
+    make_nat_files = $(basename $(nat_files))
+
+    make_files = $(make_byte_files)
+    get_files = $(byte_files)
+
+    if $(NATIVE_ENABLED)
+      make_files += $(make_nat_files)
+      get_files += $(nat_files) $(obj_files)
+      effects_files += $(basename $(obj_files))
+      export
+
+    $(make_files): $(make_interfaces) $(get_files) :effects: $(effects_files)
+      $(COPY) $(get_files) $(dst)
+
+
+  # BuildModule: build the module 
+  BuildModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+    byte_module = $(ByteCode $(name))
+    byte_code = $(ByteCode $(files))    
+
+    nat_module = $(NatCode $(name))
+    obj_module = $(ObjCode $(name))
+    nat_code = $(NatCode $(files)) 
+    obj_code = $(ObjCode $(files))
+
+    build_module = $(byte_module)
+    build_code = $(byte_code)
+    effects_file = $(module_intf)
+    
+    if $(NATIVE_ENABLED)
+      build_module += $(nat_module) $(obj_module)
+      build_code += $(nat_code)
+      effects_file += $(obj_module)
+      export
+
+    $(build_module): $(build_code) :effects: $(effects_file)
+      $(OCAMLLINK) -pack -o $(byte_module) $(byte_code)
+      if $(NATIVE_ENABLED)
+        $(OCAMLOPTLINK) -pack -o $(nat_module) $(nat_code)
+
+  # BuildByteModule: build the module 
+  BuildByteModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+    byte_module = $(ByteCode $(name))
+    byte_code = $(ByteCode $(files))    
+
+    build_module = $(byte_module)
+    build_code = $(byte_code)
+    effects_file = $(module_intf)
+    
+    $(build_module): $(build_code) :effects: $(effects_file)
+      $(OCAMLLINK) -pack -o $(byte_module) $(byte_code)
+
+  # BuildNatModule: build the native code module 
+  BuildNatModule(name, files) =
+   section rule
+    module_intf = $(Interface $(name))
+
+    nat_module = $(NatCode $(name))
+    obj_module = $(ObjCode $(name))
+    nat_code = $(NatCode $(files)) 
+    obj_code = $(ObjCode $(files))
+
+    build_module = $(nat_module) $(obj_module)
+    build_code = $(nat_code)
+    effects_file = $(module_intf) $(obj_module)
+    
+    $(build_module): $(build_code) :effects: $(effects_file)
+       $(OCAMLOPTLINK) -pack -o $(nat_module) $(nat_code)
+
+
+  # Variables
+
+  LHSEQBYTELIB = $(addprefix $(OBJDIR)/, $(HSEQBYTELIB))
+  LHSEQNATLIB = $(addprefix $(OBJDIR)/, $(HSEQNATLIB))
+
+  ALLINTFCODE = $(Interface $(FILES))
+  ALLHEADERS = $(Header $(FILES))
+  ALLBYTECODE = $(ByteCode $(FILES))
+  ALLNATCODE = $(NatCode $(FILES))
+  ALLOBJCODE = $(ObjCode $(FILES))
+
+  # Build targets
+
+  InstallIntf($(FILES), $(OBJDIR))
+  InstallCode($(FILES), $(OBJDIR))
+
+  BuildByteModule($(MODULE), $(BASEFILES))
+  BuildNatModule($(MODULE), $(BASEFILES))
+
+  $(MODULEINTF): $(BYTEMODULE)
+
+  OCamlLibrary($(LIBFILE), $(MODULE))
+
+  BuildInstall($(HSEQLIBCODE), \
+    $(HSEQLIB), \
+    $(FULLHSEQLIB) $(MODULEINTF) $(ALLHEADERS), \
+    $(LIBDIR))
+
+## How to build the library
 
 .SUBDIRS: $(LIBDIR) 
   # How to clean the library
@@ -457,44 +646,10 @@ HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
     $(RM) *.cmx *.o *~
 
   libclean: 
-    $(RM) *.cmi *.cma *.cmxa
+    $(RM) *.cmi *.cma *.cmxa *.a
 
   reallyclean: clean libclean
-    $(RM) $(filter-proper-targets $(ls R, .)) *.a
-
-  # Variables
-
-  LHSEQBYTELIB = $(addprefix $(LIBDIR)/, $(HSEQBYTELIB))
-  LHSEQNATLIB = $(addprefix $(LIBDIR)/, $(HSEQNATLIB))
-
-
-  # Build targets
-
-#  $(BYTEMODULE): build-code :effects: $(HSEQLIBINTF)
-#  $(BYTEMODULE): $(LBYTECODE) :effects: $(HSEQLIBINTF)
-#    $(OCAMLLINK) -pack -o $@ $(LBYTECODE)
-
-#  $(NATOBJMODULE): build-code :effects: $(HSEQLIBINTF)
-#  $(NATOBJMODULE): $(LNATCODE) $(LOBJCODE) :effects: $(HSEQLIBINTF)
-#    $(OCAMLOPTLINK) -pack -o $@ $(LNATCODE)
-
-#  OCamlLibrary($(LIBFILE), $(MODULE))
-
-#  $(HSEQLIBCODE): $(HSEQLIB)
-
-
-$(BYTEMODULE): build-code
-  cd $(LIBDIR)
-  $(OCAMLLINK) -pack -o $@ $(ByteCode $(FILES))
-
-$(NATOBJMODULE): build-code :effects: $(HSEQLIBINTF)
-  $(OCAMLOPTLINK) -pack -o $@ $(LNATCODE)
-  $(COPY) $(MODULEINTF) $(LIBDIR)
-
-OCamlLibrary($(LIBFILE), $(MODULE))
-
-$(HSEQLIBCODE) $(HSEQLIBINTF): $(HSEQLIB)
-  $(COPY) $(HSEQLIB) $(MODULEINTF) $(LIBDIR)
+    $(RM) $(filter-proper-targets $(ls R, .)) 
 
 build-library: $(HSEQLIBCODE)
 
@@ -507,9 +662,13 @@ install-library: $(HSEQLIBCODE) make-ilibdir
 ##
 # Build the top-level
 ## 
+
 TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
 
-.SUBDIRS: $(TLDIRS)
+BTLNAME = $(addprefix $(TOPLEVELDIR)/, $(TLNAME))
+STLNAME = $(addprefix $(SRCDIR)/, $(TLNAME))
+
+.SUBDIRS: $(TOPLEVELDIR)
   # Don't try to build a native code top-level
   NATIVE_ENABLED = false
   BYTE_ENABLED = true
@@ -525,10 +684,11 @@ TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
   LIBRARY = $(Lib $(LIBFILES))
   INTERFACES = $(Interface $(FILES))
   HEADERS = $(Header $(FILES))
+
+  LLIBRARY = $(addprefix $(LIBDIR)/, $(LIBRARY))
   
   # Dependencies 
 
-#  $(INTERFACES): $(HSEQLIBINTF)
   $(INTERFACES): $(HSEQLIBCODE)
 
   # Targets
@@ -536,18 +696,17 @@ TLCODE = $(addprefix $(LIBDIR)/, $(TLFILES))
   StdClean()
   OCamlLibrary($(LIBFILES), $(FILES))
 
-  BuildInstall($(LIBDIR)/$(LIBRARY), \
-	$(LIBRARY), \
-	$(LIBRARY) $(HEADERS) $(INTERFACES), \
-	$(LIBDIR))
+  BuildInstall($(LLIBRARY), \
+        $(HSEQLIBCODE) $(LIBRARY), \
+        $(LIBRARY) $(HEADERS) $(INTERFACES), \
+        $(LIBDIR))
 
-#$(TLNAME): $(HSEQLIB) $(HSEQLIBCODE) $(TLCODE)
-$(TLNAME): $(HSEQLIBCODE) $(TLCODE)
-  $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(HSEQBYTELIB) $(TLFILES)
+$(STLNAME): $(TLCODE)
+    $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(HSEQBYTELIB) $(TLFILES)
 
-build-toplevel: $(TLNAME) 
+build-toplevel: $(STLNAME)
 
-install-toplevel: $(TLNAME) make-ibindir make-ilibdir
+install-toplevel: build-toplevel make-ibindir make-ilibdir
   -$(COPY) $(TLNAME) $(IBINDIR)
   -$(COPY) $(INITFILE) $(ILIBDIR)
 
