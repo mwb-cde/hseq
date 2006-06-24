@@ -11,17 +11,12 @@ NODEPEND = "true"
 -include $(CONFIGDIR)/Makefile.os
 
 clean:
-	$(RM) *.cmi
-	$(RM) *.mli
-	$(RM) *.ml
-	$(RM) *.cmo
-	$(RM) *.cmx 
-	$(RM) *.o
+	$(RM) *.mli *.ml
+	$(RM) *.cmi *.cmo *.cmx *.o
 	$(RM) *~
 
 libclean: 
-	$(RM) *.cmi
-	$(RM) *.cma *.cmxa
+	$(RM) *.cmi *.cma *.cmxa *.a
 
 reallyclean: clean libclean
 	$(RM) depend
