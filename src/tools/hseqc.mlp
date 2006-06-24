@@ -109,6 +109,9 @@ type options =
       mutable info: bool;
       mutable native: bool;
       mutable verbose: bool;
+      mutable lib: bool;
+      mutable header: bool;
+      mutable pp: bool;
     }
 
 (** Initial option values *)
@@ -117,6 +120,9 @@ let options =
     info = false;
     native = false;
     verbose = false;
+    lib = false;
+    header = false;
+    pp = false;
   }
 
 let set_info option v () =
@@ -128,6 +134,15 @@ let set_native option v () =
 let set_verbose option v () =
    option.verbose <- v
 
+let set_lib option v () =
+   option.lib <- v
+
+let set_header option v () =
+   option.header <- v
+
+let set_pp option v () =
+   option.pp <- v
+
 (** The command arguments *)
 
 let other_args = ref []
@@ -136,12 +151,18 @@ let add_other arg =
 
 let cli_args = 
   [
-    ("--info", Arg.Unit (set_info options true),
-     "print library information");
     ("--native", Arg.Unit (set_native options true),
      "native-code compilation");
     ("--verbose", Arg.Unit (set_verbose options true),
      "print the executed command");
+    ("--pp", Arg.Unit (set_pp options true),
+     "print preprocessor information");
+    ("--lib", Arg.Unit (set_lib options true),
+     "print library information");
+    ("--header", Arg.Unit (set_header options true),
+     "print headers directory information");
+    ("--info", Arg.Unit (set_info options true),
+     "print all information");
     ("--", Arg.Rest (add_other),
      "pass remaining arguments to the compiler");
   ]
@@ -165,10 +186,9 @@ let parse_args () = Arg.parse cli_args anon_fun usage_msg
 
 let add x y = x^y
 
-let make_byte_info () =
-  let pp = 
-    "-pp \""^hseq_pp^"\""
-  in 
+let make_pp() = hseq_pp
+
+let make_header () =
   let headers = 
     String.concat " "
       (List.map (add "-I ") ocamlc_include)
@@ -177,6 +197,9 @@ let make_byte_info () =
     String.concat " "
       (List.map (add "-I ") hseq_include)
   in 
+    String.concat " " [headers; hseq_headers]
+
+let make_byte_libs() = 
   let libs = 
     String.concat " "
       (List.map bytelib ocamlc_libs)
@@ -185,21 +208,9 @@ let make_byte_info () =
     String.concat " "
       (List.map bytelib hseq_libs)
   in 
-    String.concat " "
-      [pp; headers; hseq_headers; libs; hseqlib ]
+    String.concat " " [libs; hseqlib]
 
-let make_nat_info () =
-  let pp = 
-    "-pp \""^hseq_pp^"\""
-  in 
-  let headers = 
-    String.concat " "
-      (List.map (add "-I ") ocamlc_include)
-  in
-  let hseq_headers = 
-    String.concat " "
-      (List.map (add "-I ") hseq_include)
-  in 
+let make_nat_libs() = 
   let libs = 
     String.concat " "
       (List.map natlib ocamlc_libs)
@@ -208,9 +219,26 @@ let make_nat_info () =
     String.concat " "
       (List.map natlib hseq_libs)
   in 
-    String.concat " "
-      [pp; headers; hseq_headers; libs; hseqlib ]
+    String.concat " " [libs; hseqlib]
 
+let make_libs() = 
+  if options.native
+  then make_nat_libs()
+  else make_byte_libs()
+
+let make_byte_info () =
+  let pp = 
+    "-pp \""^(make_pp())^"\""
+  in 
+    String.concat " "
+      [pp; make_header(); make_byte_libs()]
+
+let make_nat_info () =
+  let pp = 
+    "-pp \""^(make_pp())^"\""
+  in 
+    String.concat " "
+      [pp; make_header(); make_nat_libs()]
 
 let make_info() =
   if (options.native)
@@ -246,11 +274,19 @@ let compile info args =
     Sys.command command 
 
 let main() = 
-  let info = make_info ()
-  in 
-    if (options.info)
-    then print_info info
-    else compile info (List.rev (!other_args))
+  if (options.info)
+  then print_info (make_info())
+  else 
+    if options.pp
+    then print_info (make_pp())
+    else 
+      if options.lib 
+      then print_info (make_libs())
+      else 
+	if options.header
+	then print_info (make_header())
+	else
+	  compile (make_info()) (List.rev (!other_args))
 
 let _ = 
   parse_args();
