@@ -179,8 +179,7 @@ clean:
 		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
 reallyclean: clean
-	-$(RM) hseq
-	-$(RM) hseqb
+	-$(RM) hseq hseqb hseqc
 	-$(RM) lib/*
 	$(MAKECLEAN) -C thys reallyclean
 	$(foreach subdir, $(DOCSUBDIRS), \

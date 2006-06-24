@@ -28,13 +28,15 @@
 
 # TOOLS: The list of tools to build
 
-TOOLS = hseqb
+TOOLS = hseqb hseqc
 
 TOOLPROGS= $(Program $(TOOLS))
 
 ##
 # Variables for each tool
 ##
+
+## hseqb
 
 # hseqb_SOURCES : The files, in order, to build the tool from
 hseqb_SOURCES = hseqb.ml
@@ -51,6 +53,25 @@ hseqb_LIBS = unix.cma
 # hseqb_TEMP: files generated when building the tool, which can removed
 #   after the tool is build
 hseqb_TEMP = hseqb.ml
+
+
+## hseqc
+
+# hseqc_SOURCES : The files, in order, to build the tool from
+hseqc_SOURCES = hseqc.ml
+
+# hseqc_OPTIONS: Options to pass to the compiler when building the tool
+hseqc_OPTIONS = 
+
+# hseqc_INCLUDE: include directories when building the tool
+hseqc_INCLUDE =
+
+# hseqc_LIBS: libraries to link in for the tool
+hseqc_LIBS = unix.cma
+
+# hseqc_TEMP: files generated when building the tool, which can removed
+#   after the tool is build
+hseqc_TEMP = hseqc.ml
 
 
 ##

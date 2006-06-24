@@ -80,7 +80,7 @@ TLFILES = $(LIBFILE).cma tpquote.cma hseqtop.cma
 ##
 
 # TOOLS: The list of tools
-TOOLS = hseqb
+TOOLS = hseqb hseqc
 
 TOOLPROGS= $(Program $(TOOLS))
 
@@ -675,7 +675,8 @@ install-toplevel: build-toplevel make-ibindir make-ilibdir
 build-tools: $`(mapprefix $(SRCDIR)/, $(TOOLPROGS))
 
 install-tools: build-tools make-ibindir
-  -$(COPY) $(TOOLPROGS) $(IBINDIR)
+  Copy ($(TOOLPROGS), $(IBINDIR))
+# -$(COPY) $(TOOLPROGS) $(IBINDIR)
 
 ##
 # Build the documentation

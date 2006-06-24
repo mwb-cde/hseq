@@ -9,7 +9,7 @@
 
 # TOOLS: The list of tools to build
 
-TOOLS := hseqb
+TOOLS := hseqb hseqc
 
 ##
 # Variables for each tool
@@ -32,6 +32,24 @@ hseqb_LIBS := unix.cma
 # hseqb_TEMP: files generated when building the tool, which can removed
 #   after the tool is build
 hseqb_TEMP := hseqb.ml
+
+## hseqc
+
+# hseqc_SOURCES : The files, in order, to build the tool from
+hseqc_SOURCES := hseqc.ml
+
+# hseqc_OPTIONS: Options to pass to the compiler when building the tool
+hseqc_OPTIONS := 
+
+# hseqc_INCLUDE: include directories when building the tool
+hseqc_INCLUDE :=
+
+# hseqc_LIBS: libraries to link in for the tool
+hseqc_LIBS := 
+
+# hseqc_TEMP: files generated when building the tool, which can removed
+#   after the tool is build
+hseqc_TEMP := hseqc.ml
 
 ##
 # Directories
@@ -229,7 +247,7 @@ tools: $(TOOLS)
 
 # install: Install the library and header files.
 install: tools
-	$(foreach tool, $(TOOLS), $(COPY) $(tool) $(BINDIR))
+	$(foreach tool, $(TOOLS), $(COPY) $(tool) $(BINDIR);)
 
 ##
 # Target to build the tools
@@ -242,7 +260,7 @@ $(1): $$($(1)_SOURCES)
 
 .PHONY: install-$(1)
 install-$(1): $(1)
-	-$$(COPY) $(1) $$(BINDIR)
+	$$(COPY) $(1) $$(BINDIR)
 
 .PHONY: $(1)-clean
 $(1)-clean: 

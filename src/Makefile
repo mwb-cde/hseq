@@ -42,7 +42,7 @@ TLDIRS = hseqtop
 TOOLSDIR = $(SRCDIR)/tools
 
 # TOOLS: The list of tools
-TOOLS = hseqb
+TOOLS = hseqb hseqc
 
 # LIBCODE: The code to link in to build the library (in order)
 export LIBCODE= util.cma tpcore.cma logic.cma \
@@ -362,7 +362,7 @@ tools: make-ibindir
 
 install-tools: make-ibindir tools
 	$(foreach tool, $(TOOLS),\
-		-$(COPY) $(tool) $(IBINDIR);)
+		$(COPY) $(tool) $(IBINDIR);)
 
 tools-clean:
 	$(DMAKE) -C $(TOOLSDIR) clean
