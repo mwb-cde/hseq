@@ -309,7 +309,8 @@ GetFileList(subdirs) =
 
 # The theorem prover quotation expander
 PPNAME = tpquote
-PPCODE = $(file $(LIBDIR)/$(PPNAME).cma)
+#PPCODE = $(file $(LIBDIR)/$(PPNAME).cma)
+PPCODE = $(LIBDIR)/$(PPNAME).cma
 
 # OCAMLCPP : set the preprocesor
 OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
