@@ -25,15 +25,19 @@ let includedir = LibDir
 
 (** Default values *)
 
-let default_bin = Filename.concat bindir "hseq"
+let default_bin = 
+  let hseq_name = Filename.concat bindir "hseq"
+  in
+  let suffix = 
+    if (Sys.os_type = "Win32")
+    then ".exe"
+    else ""
+  in
+  hseq_name ^ suffix
+
 let default_bin_args = []
 let default_libs = [includedir]
 let default_silent = false
-
-(** Set up the pipe *)
-let (outpipe, inpipe) = Unix.pipe();;
-let outstrm = Unix.out_channel_of_descr inpipe;;
-let instrm = Unix.in_channel_of_descr outpipe;;
 
 (** [use_command f]: make the command to use file [f] *)
 let use_command ?(silent=false) file = 
@@ -61,19 +65,6 @@ let run silent bin args file =
     output_string outstrm command;
     flush outstrm;
     ignore(Unix.close_process_out outstrm)
-
-(***
-let run silent bin args file = 
-  let pid = 
-    Unix.create_process bin args
-      outpipe Unix.stdout Unix.stderr
-  in 
-  let command = use_command ~silent:silent file
-  in 
-    output_string outstrm command;
-    flush outstrm;
-    ignore(Unix.waitpid [Unix.WUNTRACED] pid)
-**)
 
 (** 
     [process_args ()] Process the command line arguments.
@@ -152,7 +143,6 @@ let construct_args libs bin_args =
   let full_list = ""::(List.rev_append (make_include libs []) bin_args)
   in 
     full_list
-(*   Array.of_list full_list *)
 
 (**
    [main ()] The main function
@@ -168,8 +158,5 @@ let main () =
       
 let _ = 
   main();
-  (** Close the pipe *)
-  Unix.close outpipe; 
-  Unix.close inpipe;
   Format.printf "@."; 
   exit 0
