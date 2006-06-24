@@ -22,6 +22,10 @@
 # Copyright M Wahab 2006
 ###
 
+##
+# Settings
+##
+
 INSTALL_INTERFACES = true
 
 ###
@@ -47,6 +51,9 @@ OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 # Variables for the library
 ##
 
+# QUOTEDIR: The sub-directory for the quotation expander
+QUOTEDIR = $(dir quote)
+
 # SUBDIRS: The sub-directories to build (in order)
 SUBDIRS = util tpcore logic parser tpmain \
 	booleans simplifier numbers userlib
@@ -66,7 +73,7 @@ TLNAME = $(Program hseq)
 TOPLEVELDIR = $(dir hseqtop)
 
 # TLFILES: The code to link in to build the toplevel (in order)
-TLFILES = tpquote.cma hseqtop.cma
+TLFILES = $(LIBFILE).cma tpquote.cma hseqtop.cma
 
 ##
 # Variables for the tools
@@ -340,8 +347,11 @@ GetFileList(subdirs) =
 # The theorem prover quotation expander
 PPNAME = tpquote
 PPOBJ = $(PPNAME).cma
-PPCODE = $(file $(addprefix $(LIBDIR)/, $(PPOBJ)))
 
+PPCODE = $(addprefix $(LIBDIR)/, $(PPOBJ))
+QUOTE_PPCODE = $(addprefix $(QUOTEDIR)/, $(PPOBJ))
+
+#PPCODE = $(file $(addprefix $(LIBDIR)/, $(PPOBJ)))
 #PPCODE = $(LIBDIR)/$(PPNAME).cma
 
 # OCAMLCPP : set the preprocesor
@@ -355,7 +365,9 @@ OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
 # Build the quotation expander
 ##
 
-.SUBDIRS: quote
+.SUBDIRS: $(QUOTEDIR)
+
+  # Settings
   PPOPTIONS = -pp "camlp4o q_MLast.cmo pa_extend.cmo"
   OCAMLFLAGS += $(PPOPTIONS) 
   OCAMLDEPFLAGS += $(PPOPTIONS) 
@@ -388,15 +400,15 @@ OCAMLCPP = $(CAMLP4) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
 ## Set up the quotation system
 
 LocalOCamlGeneratedFiles($(PPCODE))
-
 PPOPTIONS = -pp "camlp4o -I $(LIBDIR) q_MLast.cmo $(PPOBJ) pa_extend.cmo"
+
 OCAMLFLAGS += $(PPOPTIONS) 
 OCAMLDEPFLAGS += $(PPOPTIONS) 
 OCAML_LINK_FLAGS += $(OCINCLUDE)
 
 MKTOPINCLUDES = $(OCINCLUDE) $(LIBDIR)
 MKTOPLIBS = $(OCLIBS)
-MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(OCLIBS)
+MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(MKTOPLIBS)
 
 ##
 # Build the Library
@@ -407,69 +419,17 @@ MKTOPFLAGS = $`(mapprefix -I, $(MKTOPINCLUDES)) $(OCLIBS)
 FILES = $(GetFileList $(SUBDIRS))
 BASEFILES = $(basename $(FILES))
 
-INTFCODE = $(Interface $(BASEFILES))
-HEADERS = $(Header $(BASEFILES))
-
-BYTECODE = $(ByteCode $(BASEFILES))
-NATCODE = $(NatCode $(BASEFILES))
-OBJCODE = $(NatCode $(BASEFILES))
-
-ALLINTFCODE = $(Interface $(FILES))
-ALLHEADERS = $(Header $(FILES))
-
-ALLBYTECODE = $(ByteCode $(FILES))
-ALLNATCODE = $(NatCode $(FILES))
-ALLOBJCODE = $(ObjCode $(FILES))
-
 BYTEMODULE = $(ByteCode $(MODULE))
-NATMODULE = $(NatCode $(MODULE))
-OBJMODULE = $(ObjCode $(MODULE))
-NATOBJMODULE = $(NATMODULE) $(OBJMODULE)
 MODULEINTF = $(Interface $(MODULE))
 
 HSEQLIB = $(Lib $(LIBFILE)) 
 HSEQBYTELIB = $(ByteLib $(LIBFILE))
 HSEQNATLIB = $(NatLib $(LIBFILE))
 HSEQOBJLIB = $(ObjLib $(LIBFILE))
+
 FULLHSEQLIB = $(HSEQBYTELIB) $(HSEQNATLIB) $(HSEQOBJLIB)
 
 HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
-HSEQLIBINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
-
-FULLHSEQLIBCODE =$(addprefix $(LIBDIR)/, $(FULLHSEQLIB))
-
-# Object files
-
-OHEADERS = $(addprefix $(OBJDIR)/, $(HEADERS))
-OINTFCODE = $(addprefix $(OBJDIR)/, $(INTFCODE))
-
-OBYTECODE = $(addprefix $(OBJDIR)/, $(BYTECODE))
-ONATCODE = $(addprefix $(OBJDIR)/, $(NATCODE))
-OOBJCODE = $(addprefix $(OBJDIR)/, $(OBJCODE))
-
-OBYTEMODULE = $(addprefix $(OBJDIR)/, $(BYTEMODULE))
-ONATMODULE = $(addprefix $(OBJDIR)/, $(NATMODULE))
-OOBJMODULE = $(addprefix $(OBJDIR)/, $(OBJMODULE))
-
-OMODULEINTF = $(addprefix $(OBJDIR)/, $(MODULEINTF))
-
-OHSEQLIB = $(addprefix $(OBJDIR)/, $(HSEQLIB))
-
-# Library files
-
-LHEADERS = $(addprefix $(LIBDIR)/, $(HEADERS))
-LINTFCODE = $(addprefix $(LIBDIR)/, $(INTFCODE))
-LBYTECODE = $(addprefix $(LIBDIR)/, $(BYTECODE))
-LNATCODE = $(addprefix $(LIBDIR)/, $(NATCODE))
-LOBJCODE = $(addprefix $(LIBDIR)/, $(OBJCODE))
-
-LBYTEMODULE = $(addprefix $(LIBDIR)/, $(BYTEMODULE))
-LNATMODULE = $(addprefix $(LIBDIR)/, $(NATMODULE))
-LOBJMODULE = $(addprefix $(LIBDIR)/, $(OBJMODULE))
-LMODULEINTF = $(addprefix $(LIBDIR)/, $(MODULEINTF))
-
-LMODULE = $(LBYTEMODULE) $(LNATMODULE) $(LOBJMODULE)
-LCODE = $(LBYTECODE) $(LNATCODE) $(LOBJCODE)
 
 ## How to build the subdirectories
 
@@ -614,11 +574,7 @@ LCODE = $(LBYTECODE) $(LNATCODE) $(LOBJCODE)
   LHSEQBYTELIB = $(addprefix $(OBJDIR)/, $(HSEQBYTELIB))
   LHSEQNATLIB = $(addprefix $(OBJDIR)/, $(HSEQNATLIB))
 
-  ALLINTFCODE = $(Interface $(FILES))
   ALLHEADERS = $(Header $(FILES))
-  ALLBYTECODE = $(ByteCode $(FILES))
-  ALLNATCODE = $(NatCode $(FILES))
-  ALLOBJCODE = $(ObjCode $(FILES))
 
   # Build targets
 
@@ -702,7 +658,7 @@ STLNAME = $(addprefix $(SRCDIR)/, $(TLNAME))
         $(LIBDIR))
 
 $(STLNAME): $(TLCODE)
-    $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(HSEQBYTELIB) $(TLFILES)
+    $(OCAMLMKTOP) $(MKTOPFLAGS) -o $(TLNAME) $(TLFILES)
 
 build-toplevel: $(STLNAME)
 

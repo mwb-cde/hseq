@@ -22,6 +22,12 @@
 # Copyright M Wahab 2006
 ###
 
+##
+# Compiler Settings
+##
+
+OCAMLCFLAGS = 
+
 ###
 # Variables
 ###

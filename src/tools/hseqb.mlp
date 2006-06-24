@@ -1,5 +1,5 @@
 (*-----
- Name: hseqd.mlp
+ Name: hseqb.mlp
  Author: M Wahab <mwahab@users.sourceforge.net>
  Copyright M Wahab 2005, 2006
 ----*)
@@ -7,7 +7,7 @@
 (**
    A script to run hseq as a batch compiler.
 
-   Use as [hseqd ocaml-args file1 file2 ... filen]
+   Use as [hseqb ocaml-args file1 file2 ... filen]
    where 
    [ocaml-args] are the arguments to pass to ocaml 
    [file1], [file2], ..., [filen] are the files to compile.
@@ -51,6 +51,19 @@ let use_command ?(silent=false) file =
    [run files]: Run each file in [files] as a script.
 *)
 let run silent bin args file = 
+  let prog = String.concat " " (bin::args)
+  in 
+  let command = use_command ~silent:silent file
+  in 
+  let outstrm = 
+    Unix.open_process_out prog
+  in 
+    output_string outstrm command;
+    flush outstrm;
+    ignore(Unix.close_process_out outstrm)
+
+(***
+let run silent bin args file = 
   let pid = 
     Unix.create_process bin args
       outpipe Unix.stdout Unix.stderr
@@ -60,6 +73,7 @@ let run silent bin args file =
     output_string outstrm command;
     flush outstrm;
     ignore(Unix.waitpid [Unix.WUNTRACED] pid)
+**)
 
 (** 
     [process_args ()] Process the command line arguments.
@@ -111,14 +125,14 @@ let test_bin b =
   if(Sys.file_exists b)
   then ()
   else
-    (Format.printf "@[hseqd: can't find executable %s@]@." b;
+    (Format.printf "@[hseqb: can't find executable %s@]@." b;
      exit (-1))
 
 (** [test_files files]: make sure that there are files to process *)
 let test_files files = 
   match files with 
       [] -> 
-	(Format.printf "@[hseqd: no files@]@.";
+	(Format.printf "@[hseqb: no files@]@.";
 	 exit (-1))
     | _ -> ()
 
@@ -137,7 +151,8 @@ let construct_args libs bin_args =
   in 
   let full_list = ""::(List.rev_append (make_include libs []) bin_args)
   in 
-    Array.of_list full_list
+    full_list
+(*   Array.of_list full_list *)
 
 (**
    [main ()] The main function

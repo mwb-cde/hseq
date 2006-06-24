@@ -15,6 +15,8 @@ TOOLS := hseqb
 # Variables for each tool
 ##
 
+## hseqb
+
 # hseqb_SOURCES : The files, in order, to build the tool from
 hseqb_SOURCES := hseqb.ml
 
