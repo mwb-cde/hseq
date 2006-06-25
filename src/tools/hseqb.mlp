@@ -91,17 +91,18 @@ let process_args () =
   let add_to_list l s = (l:=s::(!l))
   in
   let args = 
+   Arg.align
     [
       ("--bin", Arg.Set_string bin, 
-       "set the name of the binary");
+       "<file> set the name of the binary to <file>");
       ("--include", Arg.String (add_to_list lib_list), 
-       "add directory the search list");
+       "<dir> add directory <dir> to the search list");
       ("--quiet", Arg.Set silent,
-       "don't echo the results of the script");
+       " don't echo the results of the script");
       ("--verbose", Arg.Clear silent,
-       "echo the results of the script");
+       " echo the results of the script");
       ("+", Arg.String (add_to_list ocaml_args),
-       "pass next option directly to the binary")
+       "<option> pass <option> directly to the binary")
     ]
   in
     Arg.parse args (add_to_list file_list) "";

@@ -12,7 +12,7 @@
    Example:
 
    Compile test.ml using the native-code compiler
-     hseqc -- -o test test.ml 
+     hseqc -o test test.ml 
 
    Compile test.ml using the native-code compiler
      hseqc --native -- -o test test.ml 
@@ -163,7 +163,13 @@ let other_args = ref []
 let add_other arg = 
   other_args := arg::(!other_args)
 
+let add_trapped opt arg =
+  let str = String.concat " " [opt; arg]
+  in 
+    add_other str
+
 let cli_args = 
+  Arg.align
   [
     ("--native", Arg.Unit (set_native options true),
      "native-code compilation");
@@ -177,8 +183,12 @@ let cli_args =
      "print headers directory information");
     ("--info", Arg.Unit (set_info options true),
      "print all information");
+    ("-o", Arg.String (add_trapped "-o"),
+     "<file> pass option \"-o <file>\" to the compiler");
+    ("-c", Arg.String (add_trapped "-o"),
+     "<file> pass option \"-c <file>\" to the compiler");
     ("--", Arg.Rest (add_other),
-     "pass remaining arguments to the compiler");
+     "<rest> pass remaining options directly to the compiler");
   ]
 
 let usage_msg = 
@@ -254,14 +264,19 @@ let make_nat_info () =
     String.concat " "
       [pp; make_header(); make_nat_libs()]
 
-let make_info() =
+let make_info () =
   if (options.native)
   then make_nat_info()
   else make_byte_info()
 
-let print_info info =
-  Format.printf "@[%s@]@." info;
-  0
+let print_info info args =
+  let args_str =
+    String.concat " " args
+  in 
+  let info_str = 
+    String.concat " " [info; args_str]
+  in 
+  (Format.printf "@[%s@]@." info_str); 0
 
 let compile info args = 
   let _ = 
@@ -288,19 +303,21 @@ let compile info args =
     Sys.command command 
 
 let main() = 
+  let args = List.rev (!other_args)
+  in 
   if (options.info)
-  then print_info (make_info())
+  then print_info (make_info()) args
   else 
     if options.pp
-    then print_info (make_pp())
+    then print_info (make_pp()) []
     else 
       if options.lib 
-      then print_info (make_libs())
+      then print_info (make_libs()) []
       else 
 	if options.header
-	then print_info (make_header())
+	then print_info (make_header()) []
 	else
-	  compile (make_info()) (List.rev (!other_args))
+	  compile (make_info()) args
 
 let _ = 
   parse_args();
