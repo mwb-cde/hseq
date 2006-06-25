@@ -317,20 +317,23 @@ let emit () =
 (** Command line arguments **)
 
 let arglist =
-[
-("--basedir", Arg.String (set basedir), 
- "The installation directory ["^(basedir_d())^"]");
-("--bindir", Arg.String (set bindir), 
- "The executables directory ["^(bindir_d())^"]");
-("--libdir", Arg.String (set libdir), 
- "The libraries directory ["^(libdir_d())^"]");
-("--thydir", Arg.String (set thys), 
- "The theories directory ["^(thys_d())^"]");
-("--fast", Arg.Bool set_fast_compilers, 
- "Use the fast compilers (ocamlc.opt) ["^(fast_compilers_d())^"]");
-("--native", Arg.Bool set_native_compilers, 
- "Use the native code compilers (ocamlopt) ["^(native_compilers_d())^"]")
-]
+  Arg.align
+    [
+      ("--basedir", Arg.String (set basedir), 
+       "<dir> The installation directory ["^(basedir_d())^"]");
+      ("--bindir", Arg.String (set bindir), 
+       "<dir> The executables directory ["^(bindir_d())^"]");
+      ("--libdir", Arg.String (set libdir), 
+       "<dir> The libraries directory ["^(libdir_d())^"]");
+      ("--thydir", Arg.String (set thys), 
+       "<dir> The theories directory ["^(thys_d())^"]");
+      ("--fast", Arg.Bool set_fast_compilers, 
+       "[true|false] Use the fast compilers (ocamlc.opt) ["
+       ^(fast_compilers_d())^"]");
+      ("--native", Arg.Bool set_native_compilers, 
+       "[true|false] Use the native code compilers (ocamlopt) ["
+       ^(native_compilers_d())^"]")
+    ]
 
 let usage_msg = ""
 let anon_fun _= raise (Arg.Bad "unknown option")
