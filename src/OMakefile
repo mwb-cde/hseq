@@ -134,8 +134,7 @@ OCAMLINCLUDES += $(LIBDIR) $(OCINCLUDE) $(dir $(SUBDIRS))
 # for its header files.
 # Using OCAMLFLAGS is a hack to avoid passing the directory to ocamldep
 # since the directory may not exist when the system is compiled.
-# All of this may be unnecessary, it depends on how ocaml programs
-# find their header files.
+
 OCAMLFLAGS += -I $(ILIBDIR)
 
 ##
@@ -210,6 +209,16 @@ Copy(files, dst) =
   IFILES = $(filter-exists $(files))  
   $(COPY) $(IFILES) $(dst)
 
+## filter_pred(pred, l): 
+# Remove any elements in l which fail predicate pred
+filter_pred(pred, lst) =
+  X[] = .
+  foreach(fl, $(lst))
+    if $(pred $(fl))
+      X += $(fl)
+      export
+  return ($(X))
+
 ## StdInstall: Build and install targets from a subdirectory
 
 StdInstall(tag, install-files, target) =
@@ -225,12 +234,17 @@ BuildInstall(tag, build_files, install_files, target) =
     section rule
       if $(not $(file-exists $(build_files)))
           $(tag): $(build_files)
-            section
-              IFILES = $(filter-exists $(install_files))
-              $(COPY) $(IFILES) $(target)
+            $(Copy $(install_files), $(target))
       else
-          $(tag): :value: false
+          $(tag): 
+            $(Copy $(install_files), $(target))
 
+
+## MakeInstall: Build and install targets from a subdirectory
+
+MakeInstall(tag, build_files, install_files, target) =
+  $(tag): $(build_files)
+       $(Copy $(install_files), $(target))
 
 ## StdDoc: Build and install the documentation for a subdirectory
 
@@ -325,7 +339,7 @@ ReadVar(var, sub) =
 ## PrintVar(vars): Print the values of variables vars
 PrintVar(vars) =
   foreach(name, $(vars))
-    val = $(getvar $(name))
+    val = $(string $(getvar $(name)))
     eprintln($(name) = $(val))
 
 ## GetFileList: Get the list of files from each subdirectory, in order
@@ -607,6 +621,7 @@ HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
   reallyclean: clean libclean
     $(RM) $(filter-proper-targets $(ls R, .)) 
 
+
 build-library: $(HSEQLIBCODE)
 
 install-library: $(HSEQLIBCODE) make-ilibdir
@@ -681,16 +696,6 @@ install-tools: build-tools make-ibindir
 ##
 # Build the documentation
 ##
-
-# filter_prec(pred, l): 
-# Remove any elements in l which fail predicate pred
-filter_pred(pred, lst) =
-  X[] = .
-  foreach(fl, $(lst))
-    if $(pred $(fl))
-      X += $(fl)
-      export
-  return ($(X))
 
 EXCLUDE_FILES = CVS Makefile OMakefile OMakefile.omc
 
