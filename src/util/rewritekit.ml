@@ -41,8 +41,12 @@ type ('k, 'a)plan =
     Rules for rewriting node [n] by plan [p], starting with the
     initial data [d]:
     
-    {b [p=Node(k, ps)]}: Rewrite [n] with [x] and [d] to get new
-    node [n'] and data [d'].
+    {b [p=Node(ps)]}: Rewrite node [n] with plans [ps] and data
+    [d]. The plans [ps] are used in order: if [ps = [x1; x2;
+    .. ]], node [n] is rewritten with plan [x1] and data [d] to
+    get node [n'] and data [d']. Plan [x2] is then used to
+    rewrite node [n'], with data [d'], to get node [n''] and data
+    [d''], and so on until all plans in [ps] have been used.
 
     {b [p=Keyed(k, ps)]}: If [is_key k n]: for each [x] in [ps],
     rewrite [n] with [x] and [d] to get new node [n'] and data [d'].
