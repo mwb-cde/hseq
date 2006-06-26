@@ -38,8 +38,10 @@ exception Quit of exn
 
     (** The specification of a rewriting plan *)
 type ('k, 'a)plan =
-    Node of 'k * (('k, 'a)plan list)
-	(** The rewriting plan for a kind of node *)
+    Node of (('k, 'a)plan list)
+	(** The rewriting plan for a node *)
+  | Keyed of 'k * (('k, 'a)plan list)
+	(** The rewriting plan for a specified kind of node *)
   | Rules of 'a list
 	(** The rules to use to rewrite the current node *)
   | Subnode of (int * ('k, 'a)plan)
@@ -63,7 +65,10 @@ type ('k, 'a)plan =
 	 Rules for rewriting node [n] by plan [p],
 	 starting with the initial data [d]:
 	 
-	 {b [p=Node(k, ps)]}: If [is_key k n]: for each
+	 {b [p=Node(k, ps)]}: Rewrite [n] with [x] and [d] to get new
+	 node [n'] and data [d'].
+
+	 {b [p=Keyed(k, ps)]}: If [is_key k n]: for each
 	 [x] in [ps], rewrite [n] with [x] and [d] to get
 	 new node [n'] and data [d'].
 	 
@@ -93,7 +98,7 @@ type ('k, 'a)plan =
 	 unchanged.
 	 
 	 {b [p=Skip]}: Do nothing, succeeding quietly.
-       *)
+	        *)
 
 (** {7 Functions on plans} *)
 

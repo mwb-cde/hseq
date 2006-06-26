@@ -265,7 +265,7 @@ let simple_rewrite_conv scp rule trm=
     Rewrite.neg_key Rewrite.allq_key
   in 
   let plan = 
-    Rewrite.mk_node key [Rewrite.mk_rules [rule]]
+    Rewrite.mk_keyed key [Rewrite.mk_rules [rule]]
   in 
   let conv = Logic.Conv.rewrite_conv
   in 

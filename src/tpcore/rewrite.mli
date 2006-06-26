@@ -402,8 +402,11 @@ functor (A: Planner.Data) ->
 
 (** {7 Plans} *)
 
-val mk_node: key -> ('a)plan list -> ('a)plan
-(** [mk_node k ps]: Apply plans [ps] to a node with key [k]. *)
+val mk_node: ('a)plan list -> ('a)plan
+(** [mk_node ps]: Apply rewrite a node with plans [ps]. *)
+
+val mk_keyed: key -> ('a)plan list -> ('a)plan
+(** [mk_keyed k ps]: Apply plans [ps] to a node with key [k]. *)
 
 val mk_rules : 'a list -> ('a)plan
 (** [mk_rules rs]: Rewrite the node with rules [rs]. *)
@@ -427,7 +430,8 @@ val pack: ('a)plan -> ('a)plan
 (** [pack p]: Pack plan [p], removing redundant directions. *)
 
 val pack_rules: ('a)list -> ('a)plan
-val pack_node: key -> ('a)plan list -> ('a)plan
+val pack_node: ('a)plan list -> ('a)plan
+val pack_keyed: key -> ('a)plan list -> ('a)plan
 val pack_branches: ('a)plan list -> ('a)plan
 val pack_subnode : int -> 'a plan -> 'a plan
 

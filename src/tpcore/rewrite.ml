@@ -318,7 +318,8 @@ let plan_rewrite scp ?(dir=leftright) plan f =
 
 (*** Rewrite Plans ***)
 
-let mk_node k ps = Rewritekit.Node(k, ps)
+let mk_node ps = Rewritekit.Node(ps)
+let mk_keyed k ps = Rewritekit.Keyed(k, ps)
 let mk_rules rs = Rewritekit.Rules(rs)
 let mk_subnode i p = Rewritekit.Subnode(i, p)
 let mk_branches ps = Rewritekit.Branches(ps)
@@ -329,7 +330,8 @@ let mapping = Rewritekit.mapping
 let rec pack pl = 
   match pl with
     Rewritekit.Rules rs -> pack_rules rs
-  | Rewritekit.Node(k, ps) -> pack_node k ps
+  | Rewritekit.Node(ps) -> pack_node ps
+  | Rewritekit.Keyed(k, ps) -> pack_keyed k ps
   | Rewritekit.Subnode(i, p) -> pack_subnode i p
   | Rewritekit.Branches(ps) -> pack_branches ps
   | Rewritekit.Skip -> Rewritekit.Skip
@@ -339,14 +341,23 @@ and
     [] -> Rewritekit.Skip
   | _ -> Rewritekit.Rules(rs)
 and 
-    pack_node k ps =
+    pack_node ps =
   match ps with 
     [] -> Rewritekit.Skip
   | _ -> 
       let ps1 = 
 	List.filter (fun x -> not (x=Rewritekit.Skip)) ps
       in 
-      Rewritekit.Node(k, ps1)
+      Rewritekit.Node(ps1)
+and 
+    pack_keyed k ps =
+  match ps with 
+    [] -> Rewritekit.Skip
+  | _ -> 
+      let ps1 = 
+	List.filter (fun x -> not (x=Rewritekit.Skip)) ps
+      in 
+      Rewritekit.Keyed(k, ps1)
 and 
     pack_branches ps = 
   match ps with
@@ -705,7 +716,7 @@ module Make =
 	let plan1 = pack(mk_rules (List.rev rules))
 	in 
 	let plan2 = 
-	  pack(mk_node (key_of t) [plan1; subplan])
+	  pack(mk_node [plan1; subplan])
 	in 
 	(t2, env2, ctrl2, plan2)
     and 
@@ -776,7 +787,7 @@ module Make =
       | _ -> ());
       let plan1= pack(mk_rules (List.rev rslt1))
       in 
-      let plan2 = pack(mk_node (key_of t) [subrslt;  plan1])
+      let plan2 = pack(mk_node [subrslt;  plan1])
       in 
       (t1, env1, ctrl1, plan2)
     and

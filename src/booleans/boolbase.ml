@@ -31,8 +31,7 @@ let falseA ?info ?a goal =
 	    ^"Can't find needed theorem false_def: |- false = not true"))
   in 
   let plan = 
-    Rewrite.mk_node 
-      Rewrite.anyterm [Rewrite.mk_rules [Logic.RRThm(th)]]
+    Rewrite.mk_node [Rewrite.mk_rules [Logic.RRThm(th)]]
   in 
   let inf = mk_info()
   in 

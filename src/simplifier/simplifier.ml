@@ -863,7 +863,7 @@ and
 	    let rplan = pack (mk_rules rules)
 	    in 
 	    check_change2 rplan splan;
-	    let plan = pack (mk_node (key_of trm) [splan; rplan])
+	    let plan = pack (mk_node [splan; rplan])
 	    in 
 	    data_tac 
 	      (Lib.set_option ret)
@@ -986,7 +986,7 @@ and
 		  (nctrl, ntyenv, ntrm, mk_skip) 
 	      in 
 	      check_change2 tplan splan;
-	      let plan = pack (mk_node (key_of trm) [tplan; splan])
+	      let plan = pack (mk_node [tplan; splan])
 	      in 
 	      data_tac (Lib.set_option ret)
 		(sctrl, styenv, strm, plan) g2)
