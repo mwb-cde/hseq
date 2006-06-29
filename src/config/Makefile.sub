@@ -4,7 +4,7 @@
 # Should be called with an instance of Makefile.def
 #####
 
--include Makefile.def
+#-include Makefile.def
 
 ####
 # Variables set in Makefile.def
@@ -18,16 +18,16 @@
 FILES ?=
 
 # HEADERS: the list of header (.cmi) files 
-HEADERS ?= $(foreach f, $(FILES), $(f).cmi)
+HEADERS ?= $(addsuffix .cmi, $(FILES))
 
 # MLHEADERS: the list of ML header (.mli) files 
-MLHEADERS ?= $(foreach f, $(FILES), $(f).mli)
+MLHEADERS ?= $(addsuffix .mli, $(FILES))
 
 # CODE: the list of byte code (.cmo) files 
-CODE ?= $(foreach f, $(FILES), $(f).cmo)
+CODE ?= $(addsuffix .cmo, $(FILES))
 
 # NATCODE: the list of native code (.cmx) files 
-NATCODE ?= $(foreach f, $(FILES), $(f).cmx $(f).o)
+NATCODE ?= $(addsuffix .cmxo, $(FILES)) $(addsuffix .o, $(FILES))
 
 ###
 # Generated libraries
@@ -64,23 +64,6 @@ DOCPREV ?=
 ###
 
 ##
-# Declare Targets
-##
-
-.PHONY: all  # all: Build everything
-.PHONY: lib  # lib: Build the library file
-.PHONY: opt  # opt: Build the native code library file
-.PHONY: install # install: Install the library and header files.
-.PHONY: installopt # installopt: Install the native code library 
-                   #             and header files.
-.PHONY: doc  #doc: Generate the code documentation
-
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
-.PHONY: docclean
-
-##
 # Directories
 ##
 
@@ -107,6 +90,12 @@ LIBDIR = $(SRCDIR)/lib
 
 # DOCDIR: Source code documentation directory
 DOCDIR = $(SRCDIR)/doc
+
+# SRCCONFIGDIR: The source directory configuration
+SRCCONFIGDIR ?= $(SRCDIR)/config
+
+# STDDEFS_FILE: Common definitions
+STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
 
 ###
 # Configuration variables
@@ -149,17 +138,22 @@ ITHYDIR ?= $(ThyDir)
 IDOCDIR ?= $(IBASEDIR)/doc/source
 
 # FASTCOMP: whether to use the fast compilers
-ifndef FASTCOMP
-export FASTCOMP = $(FastCompilers)
+ifndef FAST
+export FAST = $(FastCompilers)
 endif
 
 ##
-# Load the OS commands
+# Load the standard settings
 ##
-include $(TOPCONFIGDIR)/Makefile.os
+
+# CMDSFILE: The location of the commands file
+CMDSFILE = $(TOPCONFIGDIR)/Makefile.os
+
+## Include the standard settings
+include $(STDDEFS_FILE)
 
 ##
-# Compiler definitions
+# Compiler settings
 ##
 
 # PPCODE: The preprocessor code
@@ -168,9 +162,23 @@ PPCODE ?= $(LIBDIR)/tpquote.cma
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set PPOPTIONS = "" (i.e. an empty value)
-ifneq (($strip $(PPOPTIONS)), "")
 PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
+
+# DOCLOAD: The previous documentation link
+ifeq '$(DOCPREV)' '' 
+DOCLOAD = 
+else
+DOCLOAD = -load "$(DOCDIR)/$(DOCPREV)"
 endif
+
+# DOCDUMP The documentation link
+ifeq '$(DOCDATA)' '' 
+DOCDUMP = 
+else
+DOCDUMP = -dump "$(DOCDIR)/$(DOCDATA)"
+endif
+
+## Set the options
 
 # OPTIONS: The compiler options
 OPTIONS = $(PPOPTIONS)
@@ -178,75 +186,25 @@ OPTIONS = $(PPOPTIONS)
 # INCLUDE: The include directives
 INCLUDE = -I $(HEADERSDIR)
 
-# DOCLOAD: The previous documentation link
-ifeq ($(DOCPREV),) 
-DOCLOAD = 
-else
-DOCLOAD = -load "$(DOCDIR)/$(DOCPREV)"
-endif
+# Compiler options
+OCAMLC_OPTIONS = $(OPTIONS)
+OCAMLNAT_OPTIONS = $(OPTIONS)
 
-# DOCDUMP The documentation link
-ifeq ($(DOCDATA),) 
-DOCDUMP = 
-else
-DOCDUMP = -dump "$(DOCDIR)/$(DOCDATA)"
-endif
+# Linker options
+OCAMLLINK_OPTIONS = -custom $(INCLUDE)
+OCAMLNATLINK_OPTIONS = -custom $(INCLUDE)
 
-##
-# The compilers
-##
+# Toplevel linker options
+OCAMLMKTOP_OPTIONS = -custom $(INCLUDE) 
 
-# Flags:
-# FASTCOMP: Use the fast compilers
+# ocamldep options
+OCAMLDEP_OPTIONS = $(OPTIONS)
 
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC= ocamlc
-
-# OCAMLC: The OCaml byte code compiler
-export OCAMLC= $(BAREOCAMLC) $(OPTIONS) 
-
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlopt $(OPTIONS) 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep $(PPOPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc 
-
-ifeq ($(FASTCOMP), true)
-
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC= ocamlc.opt 
-
-# OCAMLC: The OCaml bytecode compiler
-export OCAMLC= ocamlc.opt $(OPTIONS) 
-
-# OCAMLCNAT: The OCaml native code compiler
-export OCAMLCNAT= ocamlopt $(OPTIONS) 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep.opt $(PPOPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc.opt 
-
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlopt.opt $(OPTIONS) 
-
-endif
-
-# OCAMLlink: The OCaml byte-code linker
-export OCAMLlink= $(BAREOCAMLC) -custom -a $(INCLUDE) 
-
-# OCAMLNATlink: The OCaml native-code linker
-export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
+# ocamldoc options
+OCAMLDOC_OPTIONS = $(OPTIONS)
 
 # OCAMLCPP : the preprocesor
-export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(TOPCONFIGDIR) 
-
-# OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
+OCAMLCPP_OPPTONS = -I$(TOPCONFIGDIR)
 
 ###
 # Suffixes and how to handle them
@@ -339,15 +297,10 @@ $(NATLIBS): $(HEADERS) $(NATCODE)
 ##
 
 clean:
-	$(RM) *.cmo
-	$(RM) *.cmx  
-	$(RM) *.o
-	$(RM) *~
+	$(RM) *.cmo *.cmx *.o *~
 
 libclean: 
-	$(RM) *.cmi
-	$(RM) *.cma 
-	$(RM) *.cmxa
+	$(RM) *.cmi *.cma *.cmxa
 
 reallyclean: clean libclean
 	$(RM) depend

@@ -6,7 +6,6 @@
 export BINFILE = hseq
 
 # LIBFILE: The name of the library
-#export LIBFILE = hseqlib.cma
 export LIBFILE = hseq.cma
 
 # INITFILE: The name of the initialising file
@@ -72,18 +71,11 @@ CONFIGDIR ?= $(BUILDDIR)/config
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(CONFIGDIR)/data.make
 
-# SUBCONFIGDIR: The configuration directory for sub-directories
-# (relative to a subdirectory)
-#export SUBCONFIGDIR ?= ../config
+# SRCCONFIGDIR: The source directory configuration
+SRCCONFIGDIR ?= $(SRCDIR)/config
 
-# HEADERSDIR: The location of the compiled header files
-export HEADERSDIR ?= $(SRCDIR)/lib
-
-# LIBDIR: The location of the compiled files
-export LIBDIR ?= $(SRCDIR)/lib
-
-# DOCDIR: Source code documentation directory
-export DOCDIR ?= $(SRCDIR)/doc
+# STDDEFS_FILE: Common definitions
+STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
 
 ###
 # Configuration variables
@@ -128,26 +120,20 @@ export IDOCDIR = $(IBASEDIR)/doc
 # ISDOCDIR: Installation source code documentation directory
 export ISDOCDIR = $(IDOCDIR)/source
 
-# FASTCOMP: whether to use the fast compilers
-export FASTCOMP = $(FastCompilers)
-
 ###
-# Common Targets
+# Standard build settings.
 ###
 
-.PHONY: all  # all: Build everything
-.PHONY: lib  # lib: Build the library file
-.PHONY: opt  # opt: Build the native code library file
-.PHONY: install # install: Install the library and header files.
-.PHONY: installopt # installopt: Install the native code library 
-                   #             and header files.
-.PHONY: doc  #doc: Generate the code documentation
+# CMDSFILE: File defined OS Commands to use in the build
+export CMDSFILE ?= $(CONFIGDIR)/Makefile.os
 
+# FAST: whether to use the fast compilers
+export FAST = $(FastCompilers)
 
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
-.PHONY: docclean
+# Read from $(CONFIGFILE)
+ifdef STDDEFS_FILE
+include $(STDDEFS_FILE)
+endif
 
 ##
 # Local targets
@@ -159,13 +145,13 @@ export FASTCOMP = $(FastCompilers)
 .PHONY: tools    # Build the additional tools
 .PHONY: install-tools # Install the tools
 
+.PHONY: installopt # installopt: Install the native code library 
+                   #             and header files.
 
 ##
 # Build commands
 ##
 
-# CMDSFILE: File defined OS Commands to use in the build
-export CMDSFILE ?= $(CONFIGDIR)/Makefile.os
 
 # SUBMAKEFILE: Makefile for subdirectories
 #export SUBMAKEFILE ?= $(CONFIGDIR)/Makefile.sub
@@ -194,25 +180,37 @@ export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 # Read command definitions
 ##
 
-include $(CONFIGDIR)/Makefile.os
+#include $(CONFIGDIR)/Makefile.os
 
 ###
 # Compiler definitions
 ###
 
 ##
-# Variables
+# Directories and files
+##
+
+# HEADERSDIR: The location of the compiled header files
+export HEADERSDIR ?= $(SRCDIR)/lib
+
+# LIBDIR: The location of the compiled files
+export LIBDIR ?= $(SRCDIR)/lib
+
+# DOCDIR: Source code documentation directory
+export DOCDIR ?= $(SRCDIR)/doc
+
+##
+# Compiler settings
 ##
 
 # PPCODE: The preprocessor code
-#export PPCODE ?= $(LIBDIR)/tpquote.cma
+#export PPCODE ?= 
 
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set "PPOPTIONS =" (i.e. an empty value)
 #ifneq (($strip $(PPOPTIONS)), "")
-#PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
-#export PPOPTIONS
+#export PPOPTIONS ?= 
 #endif
 
 # OPTIONS: Compiler options
@@ -221,59 +219,23 @@ export OPTIONS = $(PPOPTIONS)
 # INCLUDE: The include directives
 export INCLUDE = -I $(HEADERSDIR)
 
-##
-# Compiler Commands
-##
+# Compiler options
+OCAMLC_OPTIONS = $(OPTIONS)
+OCAMLNAT_OPTIONS = $(OPTIONS)
 
-# Flags:
-# FASTCOMP: Use the fast compilers
+# Linker options
+OCAMLLINK_OPTIONS = -custom $(INCLUDE)
+OCAMLNATLINK_OPTIONS = -custom $(INCLUDE)
 
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC=ocamlc
+# Toplevel linker options
+OCAMLMKTOP_OPTIONS = -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
-# OCAMLC: The OCaml byte code compiler
-export OCAMLC= $(BAREOCAMLC) $(OPTIONS) 
+# ocamldep options
+OCAMLDEP_OPTIONS = $(OPTIONS)
 
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlnat $(OPTIONS) 
+# ocamldoc options
+OCAMLDOC_OPTIONS = $(OPTIONS)
 
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep $(PPOPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc 
-
-ifeq ($(FASTCOMP), true)
-
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export export BAREOCAMLC= ocamlc.opt 
-
-# OCAMLC: The OCaml bytecode compiler
-export export OCAMLC= ocamlc.opt $(OPTIONS) 
-
-# OCAMLCNAT: The OCaml native code compiler
-export OCAMLCNAT= ocamlnat $(OPTIONS) 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep.opt $(PPOPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc.opt 
-
-endif
-
-# OCAMLlink: The OCaml byte-code linker
-export OCAMLlink= $(BAREOCAMLC) -custom -a $(INCLUDE) 
-
-# OCAMLNATlink: The OCaml native-code linker
-export OCAMLNATlink= $(OCAMLCNAT) -c $(INCLUDE) $(OCLIBS) 
-
-# OCAMLCPP : the preprocesor
-OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(CONFIGDIR) 
-export OCAMLCPP
-
-# OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)
 
 ###
 # The build targets
@@ -295,18 +257,6 @@ doc:
 ##
 # Directories
 ##
-
-#$(IBASEDIR): 
-#	-$(MKDIR) $(IBASEDIR)
-
-#$(IBINDIR): $(IBASEDIR)
-#	-$(MKDIR) $(IBINDIR)
-
-#$(ILIBDIR): $(IBASEDIR)
-#	-$(MKDIR) $(ILIBDIR)
-
-#$(IDOCDIR): $(IBASEDIR)
-#	-$(MKDIR) $(IDOCDIR)
 
 make-ibasedir:
 	-$(MKDIR) $(IBASEDIR)
@@ -376,10 +326,7 @@ tools-reallyclean:
 ###
 
 clean:  tools-clean
-	$(RM) *.cmo
-	$(RM) *.cmx  
-	$(RM) *.o
-	$(RM) *~
+	$(RM) *.cmo *.cmx *.o *~
 	$(foreach subdir, quote $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean; )
 
@@ -390,11 +337,8 @@ libclean:
 	$(MAKECLEAN) -C $(LIBDIR) libclean
 
 reallyclean: clean docclean tools-reallyclean
-	$(RM) hseq
-	$(RM) depend
-	$(RM) *.cmi
-	$(RM) *.cma 
-	$(RM) *.cmxa
+	$(RM) hseq depend
+	$(RM) *.cmi *.cma *.cmxa
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) reallyclean; )
 	$(MAKECLEAN) -C quote reallyclean

@@ -1,0 +1,179 @@
+#####
+# Standard definitions and settings 
+# for source directory makefiles
+#####
+
+##
+# Utility functions
+## 
+
+# mlfile
+export mlfile = $(addsuffix .ml,$(1))
+
+# header
+export header = $(addsuffix .mli,$(1))
+
+# interface
+export interface = $(addsuffix .cmi,$(1))
+
+# bytecode: Add byte-code suffix
+export bytecode = $(addsuffix .cmo,$(1))
+
+# natcode: Add native-code suffix
+export natcode = $(addsuffix .cmxo,$(1))
+
+# objcode: Add object-code suffix
+export objcode = $(addsuffix .o,$(1))
+
+# bytelib: Add byte-lib suffix
+export bytelib = $(addsuffix .cma,$(1))
+
+# natlib: Add native-lib suffix
+export natlib = $(addsuffix .cmxo,$(1))
+
+# objlib: Add object-lib suffix
+export objlib = $(addsuffix .a,$(1))
+
+###
+# Common Targets
+###
+
+.PHONY: all  	# all: Build everything
+.PHONY: lib  	# lib: Build the library file
+.PHONY: opt  	# opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: doc  	# doc: Generate the code documentation
+
+
+.PHONY: clean
+.PHONY: libclean
+.PHONY: reallyclean
+.PHONY: docclean
+
+##
+# File commands
+##
+
+# CMDSFILE: File defining OS Commands to use in the build
+
+ifdef CMDSFILE
+  include $(CMDSFILE)
+endif
+
+## Set undefined file commands
+
+## CHDIR: Change directory
+#export CHDIR ?= cd
+
+## MKDIR: Make a directory
+#export MKDIR ?= mkdir 
+
+## RMDIR: Remove a directory
+#export RMDIR ?= rmdir
+
+## COPY: Copy one or more files
+#export COPY ?= cp -f
+
+## RM: Delete one or more files
+#export RM ?= rm -f
+
+## SKIP: Do nothing
+#export SKIP ?=
+
+##
+# Build commands
+##
+
+## Make settings
+
+# BAREMAKE: The make with not options
+export BAREMAKE = make 
+
+# DMAKE: The make to build sub-directories with.
+export DMAKE = make $(MAKEOPTIONS)
+
+# MAKECLEAN: The make to clean up with
+export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+
+
+## Compiler settings
+
+# Flags:
+#   FAST: Use the fast compilers
+#
+# Options:
+#   OCAMLC_OPTIONS: options for ocamlc
+#   OCAMLNAT_OPTIONS: options for ocamlnat
+#   OCAMLLINK_OPTIONS: options for ocamlc (linker)
+#   OCAMLNATLINK_OPTIONS: options for ocamlnat (linker)
+#
+#   OCAMLDEP_OPTIONS: options for ocamldep
+#
+#   OCAMLDOC_OPTIONS: options for ocamldoc
+
+## Set options to null if undefined
+
+OCAMLC_OPTIONS ?=
+OCAMLNAT_OPTIONS ?=
+OCAMLLINK_OPTIONS ?=
+OCAMLNATLINK_OPTIONS ?=
+OCAMLDEP_OPTIONS ?=
+OCAMLDOC_OPTIONS ?=
+
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC ?= ocamlc
+
+# OCAMLC: The OCaml byte code compiler
+export OCAMLC ?= $(BAREOCAMLC) $(OCAMLC_OPTIONS)
+
+# OCAMLNATC: The OCaml native code compiler
+export OCAMLNATC ?= ocamlnat $(OCAMLNAT_OPTIONS) 
+
+# OCAMLlink: The OCaml byte-code linker
+export OCAMLlink= $(BAREOCAMLC) -a $(OCAMLLINK_OPTIONS)
+
+# OCAMLMKTOP: Make a toplevel
+export OCAMLMKTOP = ocamlmktop $(OCAMLMKTOP_OPTIONS)
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP ?= ocamldep $(OCAMLDEP_OPTIONS)
+
+ifeq '$(FAST)' 'true'
+
+# BAREOCAMLC: The bare OCaml bytecode compiler
+export BAREOCAMLC = ocamlc.opt 
+
+# OCAMLC: The OCaml bytecode compiler
+export OCAMLC = ocamlc.opt $(OPTIONS) 
+
+# OCAMLCNAT: The OCaml native code compiler
+export OCAMLCNAT = ocamlnat.opt $(OPTIONS) 
+
+# OCAMLNATlink: The OCaml native-code linker
+export OCAMLNATlink= $(OCAMLCNAT) -a $(OCAMLNATLINK_OPTIONS)
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP = ocamldep.opt $(OCAMLDEP_OPTIONS)
+
+endif
+
+## Camlp4
+
+## OCAMLPP_OPTIONS : additonal options to pass to camlp4
+OCAMLPP_OPTIONS ?= 
+
+# OCAMLCPP : the preprocesor
+export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
+
+## ocamldoc
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC ?= ocamldoc $(OCAMLDOC_OPTIONS)
+
+ifeq '$(FAST)' 'true'
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC = ocamldoc.opt $(OCAMLDOC_OPTIONS)
+
+endif
+
