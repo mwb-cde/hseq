@@ -15,6 +15,9 @@ endif
 ## 
 PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
 
+# Don't try to build native code 
+NATIVE := "false"
+
 # Don't use the default dependency generator
 NODEPEND = "true"
 
@@ -22,4 +25,5 @@ include $(SRCCONFIGDIR)/Makefile.sub
 
 tpquote.cmi: tpquote.mli
 tpquote.cmo: tpquote.cmi tpquote.ml
+
 

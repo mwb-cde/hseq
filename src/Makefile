@@ -128,7 +128,14 @@ export ISDOCDIR = $(IDOCDIR)/source
 export CMDSFILE ?= $(CONFIGDIR)/Makefile.os
 
 # FAST: whether to use the fast compilers
-export FAST = $(FastCompilers)
+ifndef FAST
+export FAST := $(FastCompilers)
+endif
+
+# NATIVE: Whether to build the native code library
+ifndef NATIVE
+export NATIVE := $(NativeCompilers)
+endif
 
 # Read from $(CONFIGFILE)
 ifdef STDDEFS_FILE
@@ -221,11 +228,11 @@ export INCLUDE = -I $(HEADERSDIR)
 
 # Compiler options
 OCAMLC_OPTIONS = $(OPTIONS)
-OCAMLNAT_OPTIONS = $(OPTIONS)
+OCAMLOPT_OPTIONS = $(OPTIONS)
 
 # Linker options
 OCAMLLINK_OPTIONS = -custom $(INCLUDE)
-OCAMLNATLINK_OPTIONS = -custom $(INCLUDE)
+OCAMLOPTLINK_OPTIONS = -custom $(INCLUDE)
 
 # Toplevel linker options
 OCAMLMKTOP_OPTIONS = -custom $(INCLUDE) $(OCINCLUDE) $(OCLIBS)

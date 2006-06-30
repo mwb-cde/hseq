@@ -20,7 +20,7 @@ export interface = $(addsuffix .cmi,$(1))
 export bytecode = $(addsuffix .cmo,$(1))
 
 # natcode: Add native-code suffix
-export natcode = $(addsuffix .cmxo,$(1))
+export natcode = $(addsuffix .cmx,$(1))
 
 # objcode: Add object-code suffix
 export objcode = $(addsuffix .o,$(1))
@@ -29,7 +29,7 @@ export objcode = $(addsuffix .o,$(1))
 export bytelib = $(addsuffix .cma,$(1))
 
 # natlib: Add native-lib suffix
-export natlib = $(addsuffix .cmxo,$(1))
+export natlib = $(addsuffix .cmxa,$(1))
 
 # objlib: Add object-lib suffix
 export objlib = $(addsuffix .a,$(1))
@@ -111,9 +111,9 @@ export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 #
 # Options:
 #   OCAMLC_OPTIONS: options for ocamlc
-#   OCAMLNAT_OPTIONS: options for ocamlnat
+#   OCAMLOPT_OPTIONS: options for ocamlopt
 #   OCAMLLINK_OPTIONS: options for ocamlc (linker)
-#   OCAMLNATLINK_OPTIONS: options for ocamlnat (linker)
+#   OCAMLOPTLINK_OPTIONS: options for ocamlopt (linker)
 #
 #   OCAMLDEP_OPTIONS: options for ocamldep
 #
@@ -122,23 +122,23 @@ export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 ## Set options to null if undefined
 
 OCAMLC_OPTIONS ?=
-OCAMLNAT_OPTIONS ?=
+OCAMLOPT_OPTIONS ?=
 OCAMLLINK_OPTIONS ?=
-OCAMLNATLINK_OPTIONS ?=
+OCAMLOPTLINK_OPTIONS ?=
 OCAMLDEP_OPTIONS ?=
 OCAMLDOC_OPTIONS ?=
 
 # BAREOCAMLC: The bare OCaml bytecode compiler
 export BAREOCAMLC ?= ocamlc
 
-# BAREOCAMLNAT: The bare OCaml native-code compiler
-export BAREOCAMLNAT ?= ocamlnat
+# BAREOCAMLOPT: The bare OCaml native-code compiler
+export BAREOCAMLOPT ?= ocamlopt
 
 # OCAMLC: The OCaml byte code compiler
 export OCAMLC ?= $(BAREOCAMLC) $(OCAMLC_OPTIONS)
 
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC ?= $(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
+# OCAMLOPT: The OCaml native code compiler
+export OCAMLOPT ?= $(BAREOCAMLOPT) $(OCAMLOPT_OPTIONS) 
 
 # OCAMLlink: The OCaml byte-code linker
 export OCAMLlink= $(BAREOCAMLC) -a $(OCAMLLINK_OPTIONS)
@@ -154,17 +154,17 @@ ifeq '$(FAST)' 'true'
 # BAREOCAMLC: The bare OCaml bytecode compiler
 export BAREOCAMLC = ocamlc.opt 
 
-# BAREOCAMLNAT: The bare OCaml native-code compiler
-export BAREOCAMLNAT ?= ocamlnat.opt
+# BAREOCAMLOPT: The bare OCaml native-code compiler
+export BAREOCAMLOPT = ocamlopt.opt
 
 # OCAMLC: The OCaml bytecode compiler
 export OCAMLC = $(BAREOCAMLC) $(OCAMLC_OPTIONS) 
 
-# OCAMLCNAT: The OCaml native code compiler
-export OCAMLCNAT = $(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
+# OCAMLOPT: The OCaml native code compiler
+export OCAMLOPT = $(BAREOCAMLOPT) $(OCAMLOPT_OPTIONS) 
 
-# OCAMLNATlink: The OCaml native-code linker
-export OCAMLNATlink= $(OCAMLCNAT) -a $(OCAMLNATLINK_OPTIONS)
+# OCAMLOPTlink: The OCaml native-code linker
+export OCAMLOPTlink= $(OCAMLOPT) -a $(OCAMLOPTLINK_OPTIONS)
 
 # OCAMLDEP: The OCaml dependency generator
 export OCAMLDEP = ocamldep.opt $(OCAMLDEP_OPTIONS)
@@ -213,5 +213,5 @@ endif
 	$(OCAMLC) -c $<
 
 .ml.cmx: 
-	$(OCAMLNAT) -c $<
+	$(OCAMLOPT) -c $<
 

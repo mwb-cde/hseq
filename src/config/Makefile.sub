@@ -80,9 +80,14 @@ ITHYDIR ?= $(ThyDir)
 # IDOCDIR: Installation documentation directory
 IDOCDIR ?= $(IBASEDIR)/doc/source
 
-# FASTCOMP: whether to use the fast compilers
+# FAST: whether to use the fast compilers
 ifndef FAST
-export FAST = $(FastCompilers)
+export FAST := $(FastCompilers)
+endif
+
+# NATIVE: Whether to build the native code library
+ifndef NATIVE
+export NATIVE := $(NativeCompilers)
 endif
 
 ##
@@ -193,11 +198,11 @@ INCLUDE = -I $(HEADERSDIR)
 
 # Compiler options
 OCAMLC_OPTIONS = $(OPTIONS) $(INCLUDE)
-OCAMLNAT_OPTIONS = $(OPTIONS) $(INCLUDE)
+OCAMLOPT_OPTIONS = $(OPTIONS) $(INCLUDE)
 
 # Linker options
 OCAMLLINK_OPTIONS = -custom $(INCLUDE)
-OCAMLNATLINK_OPTIONS = -custom $(INCLUDE)
+OCAMLOPTLINK_OPTIONS = $(INCLUDE)
 
 # Toplevel linker options
 OCAMLMKTOP_OPTIONS = -custom $(INCLUDE) 
@@ -262,11 +267,19 @@ INSTALL_LIBS := $(BUILD_LIBS)
 ifeq '$(NATIVE)' 'true'
 
 BUILD_CODE := $(BUILD_CODE) $(NAT_CODE)
-INSTALL_CODE :=  $(INSTALL_CODE) $(NAT_CODE) $(OBJ_CODE)
-BUILD_LIBS := $(BUILD_LIB) $(NAT_LIB)
-INSTALL_LIBS := $(BUILD_LIB) $(OBJ_LIB)
+INSTALL_CODE := $(INSTALL_CODE) $(NAT_CODE) $(OBJ_CODE)
+BUILD_LIBS := $(BUILD_LIBS) $(NAT_LIB)
+INSTALL_LIBS := $(BUILD_LIBS) $(OBJ_LIB)
 
 endif
+
+#$(warning "BUILD_CODE = $(BUILD_CODE)")
+#$(warning "INSTALL_CODE = $(INSTALL_CODE)")
+#$(warning "BUILD_LIBS = $(BUILD_LIBS)")
+#$(warning "INSTALL_LIBS = $(INSTALL_LIBS)")
+
+#$(warning "BUILD_TARGETS = $(BUILD_TARGETS)")
+#$(warning "INSTALL_TARGETS = $(INSTALL_TARGETS)")
 
 ## 
 # The targets
@@ -298,7 +311,7 @@ $(BYTE_LIB): $(HEADERS) $(BYTE_CODE)
 
 # The native-code library
 $(NAT_LIB): $(HEADERS) $(NAT_CODE)
-	$(OCAMLNATlink) $(INCLUDE) -o $(NAT_LIB) $(NAT_CODE)
+	$(OCAMLOPTlink) $(INCLUDE) -o $(NAT_LIB) $(NAT_CODE)
 
 ## Installing
 

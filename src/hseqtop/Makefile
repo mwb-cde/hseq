@@ -12,4 +12,10 @@ ifndef SRCCONFIGDIR
 SRCCONFIGDIR = ../config
 endif
 
+# Don't try to build native code 
+local_NATIVE := $(NATIVE)
+NATIVE := "false"
+
 include $(SRCCONFIGDIR)/Makefile.sub
+
+NATIVE := $(local_NATIVE)

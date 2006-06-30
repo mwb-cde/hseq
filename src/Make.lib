@@ -87,7 +87,7 @@ BYTEOBJ = $(BYTEFILE).cmo
 BYTELIB = $(LIBFILE).cma
 
 # NATOBJ: The name of the native-code object files built
-NATOBJ = $(BYTEFILE).cmxo $(BYTEFILE).o
+NATOBJ = $(BYTEFILE).cmx $(BYTEFILE).o
 
 # NATLIB: The full name of the native-code libraries (.cma) file built
 NATLIB = $(LIBFILE).cmxa $(LIBFILE).a
