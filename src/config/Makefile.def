@@ -3,6 +3,9 @@
 #
 # Set variables to be used by Makefile.sub and OMakefile.sub
 # This is a template to be copied into each directory to be built.
+#
+# This file must be readable by both GNU Make and OMake
+# (so it should only have variable settings of the form 'X = Y').
 #####
 
 ####
@@ -17,16 +20,16 @@
 FILES =
 
 # HEADERS: the list of header (.cmi) files 
-HEADERS = $(foreach f, $(FILES), $(f).cmi)
+# HEADERS =
 
 # MLHEADERS: the list of ML header (.mli) files 
-MLHEADERS = $(foreach f, $(FILES), $(f).mli)
+# MLHEADERS = 
 
 # CODE: the list of code (.cmo) files 
-CODE = $(foreach f, $(FILES), $(f).cmo)
+# CODE =
 
 # NATCODE: the list of native code (.cmx) files 
-NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
+# NATCODE = 
 
 ###
 # Generated libraries
@@ -36,26 +39,26 @@ NATCODE = $(foreach f, $(FILES), $(f).cmx $(f).o)
 LIBFILES = 
 
 # BYTELIBS: The list of library (.cma) files built
-BYTELIBS = $(foreach f, $(LIBFILES), $(f).cma)
+# BYTELIBS = 
 
 # NATLIB: The list of native code library (.cmxa) files built
-NATLIBS = $(foreach f, $(LIBFILES), $(f).cmxa $(f).a)
+# NATLIBS =
 
 ###
 # Documentation
 ###
 
-DOCTYPE = -html
+# DOCTYPE = -html
 
 # DOCFILES: File from which documentation is to be built
-DOCFILES = $(MLHEADERS)
+# DOCFILES = 
 
 # DOCDATA: File to be emitted as a link
-DOCDATA = 
+# DOCDATA = 
 
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
-DOCPREV = 
+# DOCPREV = 
 
 
 ###

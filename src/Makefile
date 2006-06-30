@@ -168,13 +168,13 @@ export SUBDATA ?= Makefile.def
 #endif
 
 # BAREMAKE: The make with not options
-export BAREMAKE = make 
+export BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-export DMAKE = make $(MAKEOPTIONS)
+export DMAKE = $(MAKE) $(MAKEOPTIONS)
 
 # MAKECLEAN: The make to clean up with
-export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+export MAKECLEAN = $(MAKE) NODEPEND=true $(MAKEOPTIONS)
 
 ##
 # Read command definitions
@@ -287,7 +287,7 @@ toplevel:
 	$(foreach subdir, $(TLDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
-$(BINFILE): lib toplevel
+$(BINFILE): | lib toplevel
 	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
 install: make-ibasedir make-ibindir make-ilibdir $(BINFILE) install-tools
@@ -306,7 +306,7 @@ install-doc: make-isdocdir
 # Targets to build the tools
 ##
 
-tools: make-ibindir
+tools: 
 	$(foreach tool, $(TOOLS),\
 		$(DMAKE) -C $(TOOLSDIR) install-$(tool);)
 

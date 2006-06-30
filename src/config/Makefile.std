@@ -38,17 +38,25 @@ export objlib = $(addsuffix .a,$(1))
 # Common Targets
 ###
 
+## General targets
+
 .PHONY: all  	# all: Build everything
 .PHONY: lib  	# lib: Build the library file
 .PHONY: opt  	# opt: Build the native code library file
 .PHONY: install # install: Install the library and header files.
 .PHONY: doc  	# doc: Generate the code documentation
 
-
+## Cleaning targets
 .PHONY: clean
 .PHONY: libclean
 .PHONY: reallyclean
 .PHONY: docclean
+
+
+## build targets
+
+.PHONY: build-headers build-code build-bytecode build-natcode
+.PHONY: install-headers install-code install-bytecode install-natcode
 
 ##
 # File commands
@@ -123,11 +131,14 @@ OCAMLDOC_OPTIONS ?=
 # BAREOCAMLC: The bare OCaml bytecode compiler
 export BAREOCAMLC ?= ocamlc
 
+# BAREOCAMLNAT: The bare OCaml native-code compiler
+export BAREOCAMLNAT ?= ocamlnat
+
 # OCAMLC: The OCaml byte code compiler
 export OCAMLC ?= $(BAREOCAMLC) $(OCAMLC_OPTIONS)
 
 # OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC ?= ocamlnat $(OCAMLNAT_OPTIONS) 
+export OCAMLNATC ?= $(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
 
 # OCAMLlink: The OCaml byte-code linker
 export OCAMLlink= $(BAREOCAMLC) -a $(OCAMLLINK_OPTIONS)
@@ -143,11 +154,14 @@ ifeq '$(FAST)' 'true'
 # BAREOCAMLC: The bare OCaml bytecode compiler
 export BAREOCAMLC = ocamlc.opt 
 
+# BAREOCAMLNAT: The bare OCaml native-code compiler
+export BAREOCAMLNAT ?= ocamlnat.opt
+
 # OCAMLC: The OCaml bytecode compiler
-export OCAMLC = ocamlc.opt $(OPTIONS) 
+export OCAMLC = $(BAREOCAMLC) $(OCAMLC_OPTIONS) 
 
 # OCAMLCNAT: The OCaml native code compiler
-export OCAMLCNAT = ocamlnat.opt $(OPTIONS) 
+export OCAMLCNAT = $(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
 
 # OCAMLNATlink: The OCaml native-code linker
 export OCAMLNATlink= $(OCAMLCNAT) -a $(OCAMLNATLINK_OPTIONS)
@@ -176,4 +190,28 @@ ifeq '$(FAST)' 'true'
 export OCAMLDOC = ocamldoc.opt $(OCAMLDOC_OPTIONS)
 
 endif
+
+
+###
+# Suffixes and how to handle them
+###
+
+.SUFFIXES: .mli .cmi
+.SUFFIXES: .ml .cmo
+.SUFFIXES: .cma 
+.SUFFIXES: .cmx 
+.SUFFIXES: .cmxa 
+.SUFFIXES: .mlp
+
+.mlp.ml:
+	$(OCAMLCPP) -impl $< -o $@
+
+.mli.cmi: 
+	$(OCAMLC) -c $<
+
+.ml.cmo: 
+	$(OCAMLC) -c $<
+
+.ml.cmx: 
+	$(OCAMLNAT) -c $<
 
