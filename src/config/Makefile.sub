@@ -161,6 +161,8 @@ DOCPREV ?=
 # End of Makefile.def variables
 ###
 
+## The name of the module being built
+MODULE_NAME ?= HSeq
 
 ##
 # Compiler settings
@@ -198,7 +200,7 @@ INCLUDE = -I $(HEADERSDIR)
 
 # Compiler options
 OCAMLC_OPTIONS = $(OPTIONS) $(INCLUDE)
-OCAMLOPT_OPTIONS = $(OPTIONS) $(INCLUDE)
+OCAMLOPT_OPTIONS = -for-pack $(MODULE_NAME) $(OPTIONS) $(INCLUDE)
 
 # Linker options
 OCAMLLINK_OPTIONS = -custom $(INCLUDE)

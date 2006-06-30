@@ -56,8 +56,10 @@ $(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
 #  INSTALLDIR: The directory to install to
 ##
 
+MODULE_NAME ?= HSeq
+
 LIBFILE = hseq
-BYTEFILE = HSeq
+BYTEFILE = $(MODULE_NAME)
 
 INSTALLDIR = lib
 

@@ -3,53 +3,56 @@
 ###
 
 # BINFILE: The name of the executable
-export BINFILE = hseq
+export BINFILE := hseq
+
+# BINFILE: The name of the library Module
+export MODULE_NAME := HSeq
 
 # LIBFILE: The name of the library
-export LIBFILE = hseq.cma
+export LIBFILE := hseq.cma
 
 # INITFILE: The name of the initialising file
-export INITFILE = hseqstart.ml
+export INITFILE := hseqstart.ml
 
 # BINFILE: The name of the native-code executable
-export OPTFILE =
+export OPTFILE :=
 
 # OCINCLUDE: Required OCaml include directories
-export OCINCLUDE = -I +camlp4
+export OCINCLUDE := -I +camlp4
 
 # OCLIBS: Required OCaml libraries.
-export OCLIBS = nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+export OCLIBS := nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
 
 # OCOPTLIBS: The optimised required OCaml libraries.
-export OCOPTLIBS =
+export OCOPTLIBS :=
 
 # SUBDIRS: The sub-directories to build (in order)
-export SUBDIRS = util tpcore logic parser \
+export SUBDIRS := util tpcore logic parser \
 	tpmain booleans simplifier \
 	numbers userlib \
 	hseqtop
 
 # LIBDIRS: The sub-directories to build the library from
-export LIBDIRS = util tpcore logic parser \
+export LIBDIRS := util tpcore logic parser \
 		tpmain booleans simplifier \
 		numbers userlib 
 
 # TLDIRS: The sub-directories to build the top-level
-TLDIRS = hseqtop
+TLDIRS := hseqtop
 
 # TOOLSDIR: The directory containing the tools
 TOOLSDIR = $(SRCDIR)/tools
 
 # TOOLS: The list of tools
-TOOLS = hseqb hseqc
+TOOLS := hseqb hseqc
 
 # LIBCODE: The code to link in to build the library (in order)
-export LIBCODE= util.cma tpcore.cma logic.cma \
+export LIBCODE := util.cma tpcore.cma logic.cma \
 	parser.cma tpmain.cma boollib.cma simplifier.cma \
 	numbers.cma userlib.cma
 
 # TOPCODE: The code to link in to build the executable (in order)
-export TOPCODE= tpquote.cma hseqtop.cma
+export TOPCODE := tpquote.cma hseqtop.cma
 
 ####
 # Don't modify anything below this line
