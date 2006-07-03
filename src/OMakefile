@@ -626,7 +626,7 @@ build-library: $(HSEQLIBCODE)
 
 install-library: $(HSEQLIBCODE) make-ilibdir
   section
-    LFILES = *.cma *.cmxa *.a *.cmi *.mli
+    LFILES = *.cma *.cmxa *.a *.cmi *.mli $(INITFILE)
     FLFILES = $(filter-exists $(glob $(addprefix $(LIBDIR)/, $(LFILES))))
     $(COPY) $(FLFILES) $(ILIBDIR)
 
@@ -669,7 +669,7 @@ STLNAME = $(addprefix $(SRCDIR)/, $(TLNAME))
 
   BuildInstall($(LLIBRARY), \
         $(HSEQLIBCODE) $(LIBRARY), \
-        $(LIBRARY) $(HEADERS) $(INTERFACES), \
+        $(LIBRARY) $(HEADERS) $(INTERFACES) $(INITFILE), \
         $(LIBDIR))
 
 $(STLNAME): $(TLCODE)
@@ -679,7 +679,7 @@ build-toplevel: $(STLNAME)
 
 install-toplevel: build-toplevel make-ibindir make-ilibdir
   -$(COPY) $(TLNAME) $(IBINDIR)
-  -$(COPY) $(INITFILE) $(ILIBDIR)
+#  -$(COPY) $(INITFILE) $(ILIBDIR)
 
 ##
 # The tools directory has its own OMakefile

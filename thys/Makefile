@@ -116,7 +116,7 @@ MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 ##
 
 # INCLUDE: The include directives
-INCLUDE = --include $(LIBDIR) --include $(SRCDIR)
+INCLUDE = --include $(LIBDIR)
 
 # OPTIONS: Compiler options
 OPTIONS = -I $(LIBDIR) -I $(SRCDIR)

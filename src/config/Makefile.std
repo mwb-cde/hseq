@@ -57,6 +57,7 @@ export objlib = $(addsuffix .a,$(1))
 
 .PHONY: build-headers build-code build-bytecode build-natcode
 .PHONY: install-headers install-code install-bytecode install-natcode
+.PHONY: install-other
 
 ##
 # File commands
@@ -174,7 +175,7 @@ endif
 ## Camlp4
 
 ## OCAMLPP_OPTIONS : additonal options to pass to camlp4
-OCAMLPP_OPTIONS ?= 
+OCAMLCPP_OPTIONS = 
 
 # OCAMLCPP : the preprocesor
 export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
@@ -214,4 +215,5 @@ endif
 
 .ml.cmx: 
 	$(OCAMLOPT) -c $<
+
 

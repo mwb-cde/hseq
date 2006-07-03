@@ -215,8 +215,8 @@ OCAMLDEP_OPTIONS = $(OPTIONS)
 # ocamldoc options
 OCAMLDOC_OPTIONS = $(OPTIONS) $(INCLUDE)
 
-# OCAMLCPP : the preprocesor
-OCAMLCPP_OPPTONS = -I$(TOPCONFIGDIR) $(INCLUDE)
+# OCAMLCPP : the preprocesor options
+OCAMLCPP_OPTIONS = -I$(TOPCONFIGDIR) $(INCLUDE)
 
 
 ###
@@ -334,11 +334,18 @@ install-bytecode: build-bytecode
 install-natcode: build-natcode
 	$(COPY) $(NAT_LIB) $(OBJ_LIB) $(LIBDIR)
 
+# install-other: install any other files specified 
+#   in INSTALL_OTHER_FILES 
+install-other: 
+ifdef INSTALL_OTHER_FILES
+	$(COPY) $(INSTALL_OTHER_FILES) $(LIBDIR)
+endif
+
 # install: Install the library and header files.
 ifdef CUSTOM_INSTALL
 	$(CUSTOM_INSTALL)
 else	
-install: install-code
+install: install-code install-other
 endif
 
 # installopt: Install the native code library and header files.

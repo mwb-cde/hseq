@@ -16,6 +16,12 @@ endif
 local_NATIVE := $(NATIVE)
 NATIVE := "false"
 
+# Also install hseqstart.ml
+
+INITFILE ?= hseqstart.ml
+
+INSTALL_OTHER_FILES += $(INITFILE)
+
 include $(SRCCONFIGDIR)/Makefile.sub
 
 NATIVE := $(local_NATIVE)

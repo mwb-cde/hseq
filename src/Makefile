@@ -297,17 +297,17 @@ toplevel:
 	$(foreach subdir, $(TLDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
-$(BINFILE): | lib toplevel
+$(BINFILE): lib toplevel
 	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
 
 install: make-ibasedir make-ibindir make-ilibdir $(BINFILE) install-tools
 	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
-	-$(COPY) $(INITFILE) $(ILIBDIR)
 	$(COPY) $(LIBFILE) $(ILIBDIR)
 	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
 	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
 	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
+	-$(COPY) $(LIBDIR)/$(INITFILE) $(ILIBDIR)
 
 install-doc: make-isdocdir
 	-$(COPY) $(DOCDIR)/* $(ISDOCDIR)

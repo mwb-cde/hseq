@@ -49,7 +49,7 @@ HSEQLIB = $(SRCDIR)/lib
 ##
 
 # INCLUDE: The include directives
-INCLUDE = -I $(HSEQLIB) -I $(SRCDIR)
+INCLUDE = -I $(HSEQLIB)
 
 # OPTIONS: Compiler options
 OPTIONS =
