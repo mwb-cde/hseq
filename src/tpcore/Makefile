@@ -12,4 +12,6 @@ ifndef SRCCONFIGDIR
 SRCCONFIGDIR = ../config
 endif
 
+.INTERMEDIATE: defaults.ml
+
 include $(SRCCONFIGDIR)/Makefile.sub
