@@ -93,7 +93,7 @@ export STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
 INSTALL_BIN := $(BINFILE) $(TOOLS) 
 
 # INSTALL_LIB: The files to install in the library directory
-INSTALL_LIB:= $(addprefix $(LIBDIR)/,*.mli *.cmi *.cma *.cmxa *.a)
+INSTALL_LIB:= $(addprefix $(LIBDIR)/,$(INITFILE) *.mli *.cmi *.cma *.cmxa *.a)
 
 ###
 # Configuration variables
