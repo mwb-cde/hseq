@@ -92,8 +92,13 @@ export STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
 # INSTALL_BIN: The files to install in the binary directory
 INSTALL_BIN := $(BINFILE) $(TOOLS) 
 
+# INSTALL_HEADER: files to install as headers
+INSTALL_HEADER := \
+	$(addprefix $(LIBDIR)/,*.mli $(addsuffix .cmi,$(MODULE_NAME))) \
+	$(addprefix $(TLDIRS)/,*.mli *.cmi)
+
 # INSTALL_LIB: The files to install in the library directory
-INSTALL_LIB:= $(addprefix $(LIBDIR)/,$(INITFILE) *.mli *.cmi *.cma *.cmxa *.a)
+INSTALL_LIB:= $(addprefix $(LIBDIR)/,$(INITFILE) *.cma *.cmxa *.a)
 
 ###
 # Configuration variables
@@ -309,6 +314,10 @@ endif
 ifneq '$(INSTALL_LIB)' ''
 	-$(COPY) $(INSTALL_LIB) $(ILIBDIR)
 endif
+ifneq '$(INSTALL_HEADER)' ''
+	-$(COPY) $(INSTALL_HEADER) $(ILIBDIR)
+endif
+
 #	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
 #	$(COPY) $(LIBFILE) $(ILIBDIR)
 #	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
