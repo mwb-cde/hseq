@@ -172,17 +172,17 @@ let cli_args =
   Arg.align
   [
     ("--native", Arg.Unit (set_native options true),
-     "native-code compilation");
+     " native-code compilation");
     ("--verbose", Arg.Unit (set_verbose options true),
-     "print the executed command");
+     " print the executed command");
     ("--pp", Arg.Unit (set_pp options true),
-     "print preprocessor information");
+     " print preprocessor information");
     ("--lib", Arg.Unit (set_lib options true),
-     "print library information");
+     " print library information");
     ("--header", Arg.Unit (set_header options true),
-     "print headers directory information");
+     " print headers directory information");
     ("--info", Arg.Unit (set_info options true),
-     "print all information");
+     " print all information");
     ("-o", Arg.String (add_trapped "-o"),
      "<file> pass option \"-o <file>\" to the compiler");
     ("-c", Arg.String (add_trapped "-o"),

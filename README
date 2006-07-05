@@ -37,12 +37,22 @@ lib: The libraries and files needed for HSeq
 config: Build configuration data
 
 Files
------
+=====
 
 The system builds as a theorem prover library and an interface to the
 OCaml toplevel. 
 
-Library:
+Programs:
+---------
+
+hseq: The interactive theorem prover.
+hseqb <file>: Run the theorem prover on script <file>
+hseqc <file>: Compile script <file> against the HSeq libraries.
+
+Use option --help with hseqb and hseqc for all options.
+
+Libraries:
+----------
 
 The library is named hseq.cma and depends on the OCaml libraries Nums
 and Unix. The library is built by packing the code into a module named
@@ -61,6 +71,7 @@ examples/libtest.ml is a very simple example of using the library to
 build a stand-alone executable.
 
 Toplevel:
+---------
 
 The toplevel interface is made up of libraries tpquote.cma
 and hseqtop.cma.  Library tpquote.cma is the quotation expander and
@@ -70,6 +81,11 @@ system.
 Linking:
 --------
 
+If the toplevel is not needed, program hseqc can be used to handle
+compiling a file against the HSeq libraries. (options --verbose or
+--info will print the command line passed to the ocamlc compilers).
+
+Building a toplevel done with the OCaml tools and the HSeq libraries.
 The order in which libraries are linked is significant: library hseq
 which must come before hseqtop. The quotation expander is used with
 camlp4.

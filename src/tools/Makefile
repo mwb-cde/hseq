@@ -218,6 +218,8 @@ export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(INCLUDE) $(LIBS)
 	$(OCAMLOPT) -c $(INCLUDE) $<
 
 
+.INTERMEDIATE: hseqb.ml hseqc.ml 
+
 ###
 # Build targets
 ###
