@@ -55,8 +55,13 @@ export objlib = $(addsuffix .a,$(1))
 
 ## build targets
 
-.PHONY: build-headers build-code build-bytecode build-natcode
-.PHONY: install-headers install-code install-bytecode install-natcode
+.PHONY: build-headers 
+.PHONY: build-code build-bytecode build-natcode
+.PHONY: build-bytelib build-natlib build-lib
+
+.PHONY: install-headers 
+.PHONY: install-code install-bytecode install-natcode
+.PHONY: install-bytelib install-natlib install-lib
 .PHONY: install-other
 
 ##

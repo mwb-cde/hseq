@@ -21,7 +21,7 @@ FILES = formula defn logic theory thydb
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = logic
+# LIBFILES = logic
 
 ###
 # Documentation

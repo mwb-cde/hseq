@@ -461,7 +461,7 @@ HSEQLIBCODE =$(addprefix $(LIBDIR)/, $(HSEQLIB))
   SOURCES = $(Source $(FILES)) 
   INTERFACES = $(Interface $(FILES))
   CODE = $(Code $(FILES))
-  LIBRARY = $(Lib $(LIBFILES))
+#  LIBRARY = $(Lib $(LIBFILES))
 
   # Targets
 

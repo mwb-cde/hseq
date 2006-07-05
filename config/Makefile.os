@@ -8,8 +8,8 @@
 # Unix settings (default)
 ##
 
-# CHDIR: Change directory
-export CHDIR = cd
+# CD: Change directory
+export CD = cd
 
 # MKDIR: Make a directory
 export MKDIR = mkdir 
@@ -36,8 +36,8 @@ ifneq ($(strip $(TOOLBOX)), "")
 # Set the shell
 #export SHELL=
 
-# CHDIR: Change directory
-export CHDIR = echo "CHDIR: not implemented"
+# CD: Change directory
+export CD = echo "CD: not implemented"
 
 # MKDIR: Make a directory
 export MKDIR = ocaml $(TOOLBOX) --mkdir
@@ -69,8 +69,8 @@ endif
 # file: Convert a Unix file-name to the OS file-name
 #export file=$(subst /,\,$(1))
 
-# CHDIR: Change directory
-#export CHDIR = cd
+# CD: Change directory
+#export CD = cd
 
 # MKDIR: Make a directory
 #export MKDIR = mkdir 

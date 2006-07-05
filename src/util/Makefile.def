@@ -21,7 +21,7 @@ FILES = lib treekit tag parserkit rewritekit
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = util
+# LIBFILES = util
 
 ###
 # Documentation

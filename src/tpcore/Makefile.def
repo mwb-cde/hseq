@@ -23,7 +23,7 @@ FILES = defaults settings ident basic printer \
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = tpcore
+#LIBFILES = tpcore
 
 ###
 # Documentation

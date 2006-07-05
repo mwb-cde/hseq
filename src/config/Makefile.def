@@ -35,8 +35,10 @@ FILES =
 # Generated libraries
 ###
 
-# LIBFILE: The list of library files built
-LIBFILES = 
+# LIBFILES: The list of library files built.
+# If LIBFILES is defined then the library is built and installed
+# If LIBFILES is empty, the code (.cmo) files are built and installed.
+# LIBFILES = 
 
 # BYTELIBS: The list of library (.cma) files built
 # BYTELIBS = 
@@ -59,6 +61,13 @@ LIBFILES =
 # DOCPREV: File to be loaded as a link to previous documentation
 # (using -load)
 # DOCPREV = 
+
+###
+# Installing files
+###
+
+# INSTALL_OTHER_FILES: Additional files to install
+# INSTALL_OTHER_FILES = 
 
 
 ###

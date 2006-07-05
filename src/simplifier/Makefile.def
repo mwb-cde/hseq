@@ -22,7 +22,7 @@ FILES = simputils simpconvs simpset simplifier \
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = simplifier
+# LIBFILES = simplifier
 
 ###
 # Documentation

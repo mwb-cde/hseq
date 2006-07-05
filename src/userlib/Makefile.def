@@ -21,7 +21,7 @@ FILES = userlib
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = userlib
+# LIBFILES = userlib
 
 ###
 # Documentation

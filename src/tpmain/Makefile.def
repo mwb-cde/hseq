@@ -22,7 +22,7 @@ FILES = global drule tactics goals commands \
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = tpmain
+# LIBFILES = tpmain
 
 ###
 # Documentation

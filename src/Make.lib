@@ -8,7 +8,9 @@
 # Calculate the file list
 #
 # Input: 
-#   LIBDIRS: The list of directories (in order) from which to take the 
+#   LIBDIR: The library directory 
+#
+#   OBJDIRS: The list of directories (in order) from which to take the 
 #	object files
 # Output:
 #   FILELIST: The list of filenames with which to build the library
@@ -25,10 +27,49 @@ define get_files
   FILES :=
   include $(1)/$$(SUBDATA)
   echo "subdir = $(1)"  
-  FILELIST +=$$(foreach file, $$(FILES),$(1)/$$(file)) 
+#  FILELIST +=$$(foreach file, $$(FILES),$(1)/$$(file)) 
+  FILELIST +=$$(foreach file, $$(FILES),$$(file)) 
 endef
 
-$(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
+$(foreach subdir, $(OBJDIRS), $(eval $(call get_files, $(subdir))))
+
+###
+# Standard build settings.
+###
+
+# SRCDIR: The source directory
+SRCDIR ?= .
+
+# BUILDDIR: The top of the build directory (relative to a sub-directory).
+BUILDDIR ?= $(SRCDIR)/..
+
+# CONFIGFILE: Configuration data file 
+#CONFIGFILE = $(CONFIGDIR)/data.make
+
+# Read from $(CONFIGFILE)
+ifdef CONFIGFILE
+include $(CONFIGFILE)
+endif
+
+$(warning "CONFIGFILE = $(CONFIGFILE)")
+$(warning "FAST = $(FAST)")
+$(warning "NATIVE = $(NATIVE)")
+
+# FAST: whether to use the fast compilers
+ifndef FAST
+export FAST := $(FastCompilers)
+endif
+
+# NATIVE: Whether to build the native code library
+ifndef NATIVE
+export NATIVE := $(NativeCompilers)
+endif
+
+# STDDEFS_FILE: Common definitions
+STDDEFS_FILE ?= config/Makefile.std
+
+# Read from $(STDDEFS_FILE)
+include $(STDDEFS_FILE)
 
 ##
 # Targets
@@ -50,6 +91,18 @@ $(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
 # install: Install the library
 .PHONY: install
 
+## build targets
+
+.PHONY: build-headers 
+.PHONY: build-code build-bytecode build-natcode
+.PHONY: build-module build-bytemodule build-natmodule
+.PHONY: build-bytelib build-natlib build-lib
+
+.PHONY: install-headers 
+.PHONY: install-code install-bytecode install-natcode
+.PHONY: install-bytelib install-natlib install-lib
+.PHONY: install-other
+
 ##
 # Output 
 #  LIBFILE: The name of the library (no suffix)
@@ -58,8 +111,7 @@ $(foreach subdir, $(LIBDIRS), $(eval $(call get_files, $(subdir))))
 
 MODULE_NAME ?= HSeq
 
-LIBFILE = hseq
-BYTEFILE = $(MODULE_NAME)
+LIBFILE ?= hseq
 
 INSTALLDIR = lib
 
@@ -68,62 +120,98 @@ INSTALLDIR = lib
 ###
 
 # HEADERS: the list of header (.cmi) files 
-HEADERS = $(foreach f, $(FILELIST), $(f).cmi)
+HEADERS = $(call interface,$(FILELIST))
 
 # MLHEADERS: the list of ML header (.mli) files 
-MLHEADERS = $(foreach f, $(FILELIST), $(f).mli)
+MLHEADERS = $(call header,$(FILELIST))
 
 # CODE: the list of code (.cmo) files 
-CODE = $(foreach f, $(FILELIST), $(f).cmo)
+BYTECODE = $(call bytecode,$(FILELIST))
 
 # NATCODE: the list of native code (.cmx) files 
-NATCODE = $(foreach f, $(FILELIST), $(f).cmx $(f).o)
+NATCODE = $(call natcode,$(FILELIST))
+
+# OBJCODE: the list of object code (.o) files 
+OBJCODE = $(call objcode,$(FILELIST))
 
 # LIBHEADER: The generated header
-LIBHEADER = $(BYTEFILE).cmi
+LIBHEADER = $(call interface, $(MODULE_NAME))
 
-# BYTEOBJ: The name of the byte-code (.cmo) object file built
-BYTEOBJ = $(BYTEFILE).cmo
+# BYTEFILE: The name of the byte-code (.cmo) object file built
+BYTEFILE = $(call bytecode,$(MODULE_NAME))
 
 # BYTELIB: The full name of the byte-code library (.cma) file built
-BYTELIB = $(LIBFILE).cma
+BYTELIB = $(call bytelib,$(LIBFILE))
 
-# NATOBJ: The name of the native-code object files built
-NATOBJ = $(BYTEFILE).cmx $(BYTEFILE).o
+# NATFILE: The name of the native-code files built
+NATFILE = $(call natcode,$(MODULE_NAME))
 
-# NATLIB: The full name of the native-code libraries (.cma) file built
-NATLIB = $(LIBFILE).cmxa $(LIBFILE).a
+# NATFILE: The name of the object-code files built
+OBJFILE = $(call objcode,$(MODULE_NAME))
+
+# NATLIB: The name of the native-code libraries (.cmxa) file built
+NATLIB = $(call natlib,$(LIBFILE))
+
+# OBJLIB: The name of the object-code libraries (.a) file built
+OBJLIB = $(call objlib,$(LIBFILE))
+
+
+##
+# Calculate which targets to build
+##
+
+# BUILD_TARGETS: The targets to build
+BUILD_TARGETS:= build-bytelib
+
+ifeq '$(NATIVE)' 'true'
+BUILD_TARGETS := $(BUILD_TARGETS) build-natlib
+endif
 
 ##
 # Build targets
 ##
 
-obj:
-	@echo "LIBDIRS = $(LIBDIRS)"
-	@echo "FILELIST = $(FILELIST)"
-	$(BAREOCAMLC) $(INCLUDE) -pack -o $(BYTEOBJ) $(CODE)
+$(warning "LIBFILE = $(LIBFILE)")
 
-lib: obj
-	$(OCAMLlink) -o $(BYTELIB) $(INCLUDE) $(BYTEOBJ)
+$(LIBDIR)/$(BYTEFILE):
+	($(CD) $(LIBDIR); \
+	$(OCAMLC) $(INCLUDE) -pack -o $(BYTEFILE) $(BYTECODE))
 
-install: lib
-	-$(COPY) $(LIBHEADER) $(INSTALLDIR)
-	-$(COPY) $(BYTELIB) $(INSTALLDIR)
-#	-$(COPY) $(NATLIB) $(INSTALLDIR)
+$(LIBDIR)/$(BYTELIB): $(LIBDIR)/$(BYTEFILE)
+	($(CD) $(LIBDIR); \
+	$(OCAMLlink) -o $(BYTELIB) $(BYTEFILE))
 
+$(LIBDIR)/$(NATFILE):
+	($(CD) $(LIBDIR); \
+	$(OCAMLOPT) $(INCLUDE) -pack -o $(NATFILE) $(NATCODE))
+
+$(LIBDIR)/$(NATLIB): $(LIBDIR)/$(NATFILE)
+	($(CD) $(LIBDIR); \
+	$(OCAMLOPTlink) -o $(NATLIB) $(NATFILE))
+
+build-bytemodule: $(LIBDIR)/$(BYTEFILE)
+
+build-bytelib: $(LIBDIR)/$(BYTELIB)
+
+build-natmodule: $(LIBDIR)/$(NATFILE)
+
+build-natlib: $(LIBDIR)/$(NATLIB)
+
+build: $(BUILD_TARGETS)
+
+install: build
 
 ###
 # Clean up
 ###
 
 .PHONY: clean
-clean: 
-	$(RM) $(BYTEOBJ)
-	$(RM) $(NATOBJ)
+#clean: 
+#	$(RM) $(BYTEFILE) $(NATFILE)
 
 .PHONY: libclean
-libclean: 
-	$(RM) $(HEADERS)
-	$(RM) $(BYTELIB)
-	$(RM) $(NATLIB)
+#libclean: clean
+#	$(RM) $(HEADERS)
+#	$(RM) $(BYTELIB)
+#	$(RM) $(NATLIB)
 

@@ -22,7 +22,7 @@ FILES = counter lexer pterm grammars parser
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = parser
+# LIBFILES = parser
 
 ###
 # Documentation

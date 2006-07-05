@@ -9,7 +9,7 @@ export BINFILE := hseq
 export MODULE_NAME := HSeq
 
 # LIBFILE: The name of the library
-export LIBFILE := hseq.cma
+export LIBFILE := hseq
 
 # INITFILE: The name of the initialising file
 export INITFILE := hseqstart.ml
@@ -32,8 +32,8 @@ export SUBDIRS := util tpcore logic parser \
 	numbers userlib \
 	hseqtop
 
-# LIBDIRS: The sub-directories to build the library from
-export LIBDIRS := util tpcore logic parser \
+# OBJDIRS: The sub-directories to build the library from
+export OBJDIRS := util tpcore logic parser \
 		tpmain booleans simplifier \
 		numbers userlib 
 
@@ -69,16 +69,31 @@ SRCDIR ?= .
 BUILDDIR ?= $(SRCDIR)/..
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(BUILDDIR)/config
+export CONFIGDIR ?= $(BUILDDIR)/config
+
+# HEADERSDIR: The location of the compiled header files
+export HEADERSDIR ?= $(SRCDIR)/lib
+
+# LIBDIR: The location of the compiled files
+export LIBDIR ?= $(SRCDIR)/lib
+
+# DOCDIR: Source code documentation directory
+export DOCDIR ?= $(SRCDIR)/doc
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = $(CONFIGDIR)/data.make
+export CONFIGFILE = $(CONFIGDIR)/data.make
 
 # SRCCONFIGDIR: The source directory configuration
 SRCCONFIGDIR ?= $(SRCDIR)/config
 
 # STDDEFS_FILE: Common definitions
-STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
+export STDDEFS_FILE = $(SRCCONFIGDIR)/Makefile.std
+
+# INSTALL_BIN: The files to install in the binary directory
+INSTALL_BIN := $(BINFILE) $(TOOLS) 
+
+# INSTALL_LIB: The files to install in the library directory
+INSTALL_LIB:= $(addprefix $(LIBDIR)/,*.mli *.cmi *.cma *.cmxa *.a)
 
 ###
 # Configuration variables
@@ -197,19 +212,6 @@ export MAKECLEAN = $(MAKE) NODEPEND=true $(MAKEOPTIONS)
 ###
 
 ##
-# Directories and files
-##
-
-# HEADERSDIR: The location of the compiled header files
-export HEADERSDIR ?= $(SRCDIR)/lib
-
-# LIBDIR: The location of the compiled files
-export LIBDIR ?= $(SRCDIR)/lib
-
-# DOCDIR: Source code documentation directory
-export DOCDIR ?= $(SRCDIR)/doc
-
-##
 # Compiler settings
 ##
 
@@ -257,7 +259,7 @@ quote:
 	$(DMAKE) -C quote install
 
 code: quote
-	$(foreach subdir, $(LIBDIRS), \
+	$(foreach subdir, $(OBJDIRS), \
 		$(DMAKE) -C $(subdir) install;)
 
 doc:
@@ -298,16 +300,22 @@ toplevel:
 		$(DMAKE) -C $(subdir) install;)
 
 $(BINFILE): lib toplevel
-	$(OCAMLMKTOP) -o $(BINFILE) $(LIBFILE) $(TOPCODE) 
+	$(OCAMLMKTOP) -o $(BINFILE) $(call bytelib, $(LIBFILE)) $(TOPCODE) 
 
 install: make-ibasedir make-ibindir make-ilibdir $(BINFILE) install-tools
-	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
-	$(COPY) $(LIBFILE) $(ILIBDIR)
-	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
-	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
-	-$(COPY) $(LIBDIR)/$(INITFILE) $(ILIBDIR)
+ifneq '$(INSTALL_BIN)' ''
+	-$(COPY) $(INSTALL_BIN) $(IBINDIR)
+endif
+ifneq '$(INSTALL_LIB)' ''
+	-$(COPY) $(INSTALL_LIB) $(ILIBDIR)
+endif
+#	$(COPY) $(BINFILE) $(IBINDIR)/$(IBINFILE)
+#	$(COPY) $(LIBFILE) $(ILIBDIR)
+#	$(foreach f, $(TOPCODE), $(COPY) $(LIBDIR)/$(f) $(ILIBDIR);)
+#	-$(COPY) $(LIBDIR)/*.mli $(ILIBDIR)
+#	-$(COPY) $(LIBDIR)/*.ml $(ILIBDIR)
+#	-$(COPY) $(LIBDIR)/*.cmi $(ILIBDIR)
+#	-$(COPY) $(LIBDIR)/$(INITFILE) $(ILIBDIR)
 
 install-doc: make-isdocdir
 	-$(COPY) $(DOCDIR)/* $(ISDOCDIR)

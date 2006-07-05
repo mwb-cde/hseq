@@ -21,7 +21,7 @@ FILES = prop exprs supinf nums
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = numbers
+# LIBFILES = numbers
 
 ###
 # Documentation

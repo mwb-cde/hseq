@@ -228,6 +228,20 @@ OCAMLCPP_OPTIONS = -I$(TOPCONFIGDIR) $(INCLUDE)
 # INSTALL_TARGETS: targets to install
 #
 
+ifneq '$(LIBFILES)' ''
+# build the library
+BUILD_TARGETS := build-bytelib 
+INSTALL_TARGETS := install-bytelib
+
+ifeq '$(NATIVE)' 'true'
+
+BUILD_TARGETS := $(BUILD_TARGETS) build-natlib
+INSTALL_TARGETS := $(INSTALL_TARGETS) install-natlib
+
+endif
+
+else
+# build the code files only
 BUILD_TARGETS := build-bytecode
 INSTALL_TARGETS := install-bytecode
 
@@ -238,14 +252,8 @@ INSTALL_TARGETS := $(INSTALL_TARGETS) install-natcode
 
 endif
 
-## Arguments
-#
-# BUILD_CODE: The code files to build
-# INSTALL_CODE: The code files to install
-#
-# BUILD_LIBS: The library files to build
-# INSTALL_LIB: The library files to install
-#
+endif
+
 
 ## File names
 
@@ -257,23 +265,33 @@ BYTE_LIB := $(call bytelib,$(LIBFILES))
 NAT_LIB := $(call natlib,$(LIBFILES))
 OBJ_LIB := $(call objlib,$(LIBFILES))
 
-## The files to build and install
 
-BUILD_CODE := $(BYTE_CODE)
-INSTALL_CODE := $(BUILD_CODE)
-BUILD_LIBS := $(BYTE_LIB)
-INSTALL_LIBS := $(BUILD_LIBS)
+## Arguments
+#
+# BUILD_CODE: The code files to build
+# INSTALL_CODE: The code files to install
+#
+# BUILD_LIBS: The library files to build
+# INSTALL_LIB: The library files to install
+#
 
-## Whether to build the native code library
+### The files to build and install
 
-ifeq '$(NATIVE)' 'true'
+#BUILD_CODE := $(BYTE_CODE)
+#INSTALL_CODE := $(BUILD_CODE)
+#BUILD_LIBS := $(BYTE_LIB)
+#INSTALL_LIBS := $(BUILD_LIBS)
 
-BUILD_CODE := $(BUILD_CODE) $(NAT_CODE)
-INSTALL_CODE := $(INSTALL_CODE) $(NAT_CODE) $(OBJ_CODE)
-BUILD_LIBS := $(BUILD_LIBS) $(NAT_LIB)
-INSTALL_LIBS := $(BUILD_LIBS) $(OBJ_LIB)
+### Whether to build the native code library
 
-endif
+#ifeq '$(NATIVE)' 'true'
+
+#BUILD_CODE := $(BUILD_CODE) $(NAT_CODE)
+#INSTALL_CODE := $(INSTALL_CODE) $(NAT_CODE) $(OBJ_CODE)
+#BUILD_LIBS := $(BUILD_LIBS) $(NAT_LIB)
+#INSTALL_LIBS := $(BUILD_LIBS) $(OBJ_LIB)
+
+#endif
 
 #$(warning "BUILD_CODE = $(BUILD_CODE)")
 #$(warning "INSTALL_CODE = $(INSTALL_CODE)")
@@ -299,10 +317,16 @@ build-headers: $(HEADERS)
 build-code: build-headers $(BUILD_TARGETS)
 
 # build-bytecode: Build the byte-code
-build-bytecode: $(BYTE_LIB)
+build-bytecode: build-headers $(BYTE_CODE)
 
 # build-natcode: Build the native-code
-build-natcode: $(NAT_LIB)
+build-natcode: build-headers $(NAT_CODE)
+
+# build-bytelib: Build the byte-code library
+build-bytelib: build-headers $(BYTE_LIB)
+
+# build-natlib: Build the native-code library
+build-natlib: build-headers $(NAT_LIB)
 
 # lib: Build the library files
 lib: build-code
@@ -322,16 +346,28 @@ install-headers: build-headers
 	$(COPY) $(HEADERS) $(HEADERSDIR)
 	$(COPY) $(MLHEADERS) $(HEADERSDIR)
 
-# install-code: install the library
-install-code: install-headers build-code
-	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
+# install-code: install the code
+install-code: install-headers $(INSTALL_TARGETS)
+#	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
 
 # install-bytecode: install the byte-code
 install-bytecode: build-bytecode 
-	$(COPY) $(BYTE_LIB) $(LIBDIR)
+	$(COPY) $(BYTE_CODE) $(LIBDIR)
 
 # install-natcode: install the native-code
 install-natcode: build-natcode
+	$(COPY) $(NAT_CODE) $(OBJ_CODE) $(LIBDIR)
+
+# install-lib: install the library
+install-lib: install-headers build-code
+	$(COPY) $(INSTALL_LIBS) $(LIBDIR)
+
+# install-bytelib: install the byte-code library
+install-bytelib: install-headers build-bytelib
+	$(COPY) $(BYTE_LIB) $(LIBDIR)
+
+# install-natlib: install the native-code library
+install-natlib: install-headers build-natlib
 	$(COPY) $(NAT_LIB) $(OBJ_LIB) $(LIBDIR)
 
 # install-other: install any other files specified 

@@ -22,7 +22,7 @@ FILES = boolPP baseTheory boolutil boolbase \
 ###
 
 # LIBFILE: The list of library files built
-LIBFILES = boollib
+# LIBFILES = boollib
 
 ###
 # Documentation
