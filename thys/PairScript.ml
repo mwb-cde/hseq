@@ -53,7 +53,6 @@ let fst_def = define
 let snd_def = define 
     <:def< snd p = epsilon(% y: ?x: p = (pair x y)) >>;;
 
-
 let mk_pair_eq = 
   prove_thm "mk_pair_eq"
     <<
@@ -66,10 +65,10 @@ let mk_pair_eq =
       -- 
       [ (* cut_back_tac mk_pair_eq1 ++ basic; *)
 	(match_asm << X = Y >>
-	 (fun l -> rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
+	 (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
 	  ++ inst_tac [<< _a >> ]
 	  ++ (match_asm << L = R >>
-	      (fun l -> rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
+	      (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
 	  ++ inst_tac [<< _b >> ]
 	  ++ (match_asm << A = B >> 
 	      (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))

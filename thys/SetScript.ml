@@ -173,18 +173,17 @@ let set_cases =
 	   (* 2 *)
 	   simpA_tac [defn "empty"]
 	 ]
-     ]
-
+     ];;
 
 let add_thm = 
   theorem "add_thm"
     << ! x y A : (y in (add x A)) = ((y = x) | (y in A)) >> 
-  [ flatten_tac ++ simp_tac [ defn "add" ] ]
+  [ flatten_tac ++ simp_tac [defn "add"] ];;
 
 let remove_thm = 
   theorem "remove_thm"
     << ! x y A: (y in (remove x A)) = ((y in A) & ~(y = x)) >>
-  [ flatten_tac ++ simp_tac [ defn "remove" ] ]
+  [ flatten_tac ++ simp_tac [ defn "remove" ] ];;
 
 let neg_thm =
   theorem ~simp:true "neg_thm"
@@ -201,8 +200,6 @@ let inter_thm =
   << !x A B: (x in (inter A B)) = ((x in A) & (x in B)) >>
   [ simp_tac [defn "inter"] ];;
 
-
-
 let subset_thm = 
   theorem "subset_thm"
     << ! A B: A <= B = (!x: x in A => x in B) >>
@@ -211,7 +208,7 @@ let subset_thm =
 let psubset_thm = 
   theorem "psubset_thm"
     << ! A B: A < B = (~(A=B) & (A<=B)) >>
-   [ simp_tac [defn "psubset"] ]
+   [ simp_tac [defn "psubset"] ];;
 
 
 (***
@@ -259,6 +256,7 @@ let in_add =
       ]
   ]
 
+
 let in_remove=
   theorem ~simp:true "in_remove"
   <<
@@ -268,7 +266,8 @@ let in_remove=
   [
     scatter_tac
     ++ simp_all_tac [remove_thm]
-    ++ equals_tac ++ scatter_tac ++ basic
+    ++ equals_tac ++ equals_tac
+    ++ blast_tac ++ ((replace_tac // skip) ++ simp // skip)
   ]
 
 
@@ -288,8 +287,8 @@ let add_remove =
   theorem ~simp:true "add_remove"
     << !x A: (add x (remove x A)) = (add x A) >>
   [
-    simp_tac [set_equal; add_thm; remove_thm]
-    ++ equals_tac ++ scatter_tac ++ basic
+    simp_tac [set_equal] ++ simp_tac [add_thm; remove_thm]
+    ++ equals_tac ++ blast_tac
   ]
 
 (** Properties of Remove *)
@@ -298,16 +297,17 @@ let remove_member =
   theorem ~simp:true "remove_member"
     << ! x A: ~(x in A) => ((remove x A) = A) >>
   [
-    simp_tac [set_equal; remove_thm] ++ flatten_tac
-    ++ equals_tac ++ blast_tac
-    ++ simp_all
+    simp_tac [set_equal] ++ simp_tac [remove_thm] 
+      ++ flatten_tac
+      ++ equals_tac ++ blast_tac
+      ++ simp_all
   ]
 
 let remove_add = 
   theorem ~simp:true "remove_add"
     << !x A: (remove x (add x A)) = (remove x A) >>
   [
-    simp_tac [set_equal; add_thm; remove_thm]
+    simp_tac [set_equal] ++ simp_tac [add_thm; remove_thm]
     ++ equals_tac ++ blast_tac
   ]
 
@@ -391,7 +391,7 @@ let union_add_left =
   theorem "union_add_left"
   << ! a S T: (union (add a S) T) = (add a (union S T)) >>
   [
-    simp_tac [set_equal; union_thm; add_thm]
+    simp_tac [set_equal]; simp_tac [union_thm; add_thm]
     ++ equals_tac ++ blast_tac
   ];;
 
@@ -399,7 +399,7 @@ let union_add_right =
   theorem "union_add_right"
   << ! a S T: (union S (add a T)) = (add a (union S T)) >>
   [
-    simp_tac [set_equal; union_thm; add_thm]
+    simp_tac [set_equal]; simp_tac [union_thm; add_thm]
     ++ equals_tac ++ blast_tac
   ]
 
@@ -500,7 +500,6 @@ let subset_antisym =
     ++ simp
   ]
   
-
 let subset_empty = 
   theorem ~simp:true "subset_empty"
     << ! A: (A <= {}) = (A = {}) >>
@@ -662,7 +661,8 @@ let psubset_remove =
   [
     simp_tac [defn "psubset"]
       ++ implC
-      ++ simpC_tac [set_equal; remove_thm]
+      ++ once_rewriteC_tac [set_equal] 
+      ++ simp_tac [remove_thm]
       ++ scatter_tac
       ++ instA [ << _x >> ]
       ++ once_rewrite_tac [thm "equals_bool"]
@@ -676,7 +676,8 @@ let psubset_add =
   [
     simp_tac [defn "psubset"]
       ++ flatten_tac
-      ++ simpC_tac [set_equal; add_thm]
+      ++ once_rewriteC_tac [set_equal]
+      ++ simpC_tac [add_thm]
       ++ scatter_tac
       ++ once_replace_tac
       ++ flatten_tac

@@ -22,7 +22,7 @@ open HSeq
 (** Add the source include directories *)
 let _ = 
   Settings.include_dirs :=
-    "../src/lib":: "../src"::(!Settings.include_dirs);;
+    "../src/lib":: (!Settings.include_dirs);;
     
 
 (** Initialise hseq *)
@@ -35,7 +35,6 @@ let buildall_base_name =
   let str = try Global.Thys.get_base_name() with _ -> "Main"
   in 
   Global.Thys.clear_base_name(); str;;
-
 
 #use "0MainScript.ml";;
 

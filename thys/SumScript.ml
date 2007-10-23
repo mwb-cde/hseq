@@ -4,6 +4,16 @@ Author: M Wahab <mwahab@users.sourceforge.net>
 Copyright M Wahab 2006
 ----*)
 
+(**
+   Open HSeq modules.
+*)
+
+open HSeq
+open Tactics
+open Boollib
+open Simplib
+open Userlib
+
 (** 
    Sum of types.
 
