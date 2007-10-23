@@ -59,7 +59,6 @@ val unify_env:
    context.
 *)
 
-
 val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
   -> Scope.t -> (Basic.term -> bool) 
     -> Basic.term -> Basic.term -> Term.substitution
@@ -101,6 +100,10 @@ val matches_rewrite:
 
    Returns both type and term substitutions
 *)
+
+val term_copy_type: 
+  Gtypes.substitution -> Basic.term 
+  -> (Basic.term * Gtypes.substitution)
 
 module Retired :
 sig

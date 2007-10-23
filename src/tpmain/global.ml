@@ -12,8 +12,13 @@ open Lib.Ops
 module Hooks =
 struct
 
+(*
   let default_load_file f = raise (Failure "Built-in load_file")
   let default_use_file ?silent f = raise (Failure "Built-in use_file")
+*)
+  let default_load_file f = Report.warning ("Failed to load file "^f)
+  let default_use_file ?silent f = 
+    Report.warning ("Failed to use file "^f)
 
   let load_file = ref default_load_file
   let use_file = ref default_use_file
@@ -284,9 +289,14 @@ module Files =
     let object_suffix = ref [".cmo"; ".cmi"]
 
     let load_use_file ?silent f=
-      if(List.exists (fun x -> Filename.check_suffix f x) (!object_suffix))
-      then !Hooks.load_file f
-      else !Hooks.use_file ?silent f
+      (try
+	if(List.exists (fun x -> Filename.check_suffix f x) (!object_suffix))
+	then !Hooks.load_file f
+	else !Hooks.use_file ?silent f
+      with 
+	  Not_found -> Report.warning ("Can't find file "^f)
+	| _ -> Report.warning ("Failed to load file "^f))
+
 
 (*** Paths ***)
 
@@ -426,10 +436,7 @@ module Files =
       let path = get_thy_path()
       in 
       let find_load f = 
-	try 
-	  load_use_file (find_file f path)
-	with Not_found ->
-	  Report.warning ("Can't find file "^f)
+	load_use_file (find_file f path)
       in 
       List.iter find_load files
 

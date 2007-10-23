@@ -11,18 +11,23 @@
 (** String utilities **)
 
 let compile dirs name = 
-  let inc_dirs = 
-    Lib.list_string (fun x -> ("-I \""^x^"\"")) " " dirs
+  let compile_aux () =
+    let inc_dirs = 
+      Lib.list_string (fun x -> ("-I \""^x^"\"")) " " dirs
+    in 
+    let inc_std_dirs =
+      Lib.list_string 
+	(fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
+    in 
+    let inc_string = inc_std_dirs^" "^inc_dirs
+    in 
+    let com_string = "ocamlc -c"
+    in 
+      Sys.command (com_string ^" "^ inc_string ^" "^name)
   in 
-  let inc_std_dirs =
-    Lib.list_string 
-      (fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
-  in 
-  let inc_string = inc_std_dirs^" "^inc_dirs
-  in 
-  let com_string = "ocamlc -c"
-  in 
-  Sys.command (com_string ^" "^ inc_string ^" "^name)
+    if (!Sys.interactive)
+    then compile_aux()
+    else (-1)
 					      
 let catch_errors = Commands.catch_errors
 

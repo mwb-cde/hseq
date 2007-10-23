@@ -185,7 +185,7 @@ let cli_args =
      " print all information");
     ("-o", Arg.String (add_trapped "-o"),
      "<file> pass option \"-o <file>\" to the compiler");
-    ("-c", Arg.String (add_trapped "-o"),
+    ("-c", Arg.String (add_trapped "-c"),
      "<file> pass option \"-c <file>\" to the compiler");
     ("--", Arg.Rest (add_other),
      "<rest> pass remaining options directly to the compiler");

@@ -135,6 +135,7 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 
 (*** Matching ***)
 
+(*
 let matches_rewrite scp typenv trmenv varp trm1 trm2 =
   let rec matches_aux tydata qntenv env t1 t2 = 
     let lookup q sbs = 
@@ -232,8 +233,81 @@ let matches_rewrite scp typenv trmenv varp trm1 trm2 =
       matches_aux tydata (Term.empty_subst()) trmenv trm1 trm2
     in 
       (tydata1.Gtypes.tyenv, trmenv1)
+*)
 
+let retype tyenv t=
+  let qenv=empty_table()
+  in 
+  let rec retype_aux t =
+    match t with
+      Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
+    | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv) 
+    | Bound(q) -> 
+	(try table_find t qenv
+	with Not_found -> t)
+    | Meta(q) -> t
+    | Const(c) -> t
+    | App(f, a) -> 
+	App(retype_aux f, retype_aux a)
+    | Qnt(q, b) ->
+	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
+	in 
+ 	let nty = Gtypes.mgu oqty tyenv 
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	table_add (Bound(q)) (Bound(nq)) qenv;
+	let rt= Qnt(nq, retype_aux b)
+	in 
+	table_remove (Bound(q)) qenv; rt)
+  in 
+  retype_aux t
 
+let term_copy_type env term = 
+  let rec copy_aux qenv tyenv trm = 
+    match trm with
+      Id(n, ty) -> 
+	let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
+	in (Id(n, ty1), tyenv1)
+    | Free(n, ty) -> 
+	let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
+	in (Free(n, ty1), tyenv1)
+    | Bound(q) -> 
+	let qtrm = 
+	  (try Term.find trm qenv with Not_found -> trm)
+	in
+	  (qtrm, tyenv)
+    | Meta(q) -> (trm, tyenv)
+    | Const(c) -> (trm, tyenv)
+    | App(f, a) -> 
+	let ftrm, ftyenv = copy_aux qenv tyenv f
+	in 
+	let atrm, atyenv = copy_aux qenv ftyenv a
+	in
+	  (App(ftrm, atrm), atyenv)
+    | Qnt(q, b) ->
+	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
+	in 
+ 	let nty, ntyenv = Gtypes.rename_type_vars_env tyenv oqty
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	let nqenv = Term.bind (Bound(q)) (Bound(nq)) qenv
+	in 
+	let btrm, btyenv = copy_aux nqenv ntyenv b
+	in 
+	  (Qnt(nq, btrm), btyenv))
+  in 
+    copy_aux (Term.empty_subst()) env term
+      
+(*
+let matches_rewrite scp typenv env varp trm1 trm2 =
+  unify_fullenv scp typenv env varp (Term.rename trm1) trm2
+*)
+let matches_rewrite scp typenv env varp trm1 trm2 =
+  let (trm1a, typenv1) = term_copy_type (Gtypes.empty_subst()) trm1
+  in
+  unify_fullenv scp typenv env varp trm1a trm2
 
 module Retired =
 struct
