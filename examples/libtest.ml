@@ -15,10 +15,15 @@
       libtest.ml
 
   where HSEQLIB is the installation directory for the the HSeq libraries.
+
+  or 
+   hseqc -o test libtest.ml
+  or 
+   hseqc --native -o test libtest.ml
 *)
 
 (**
-   open Modules
+   Open HSeq modules.
 *)
 
 open HSeq

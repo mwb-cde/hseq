@@ -12,7 +12,7 @@
 export CD = cd
 
 # MKDIR: Make a directory
-export MKDIR = mkdir 
+export MKDIR = mkdir -p
 
 # RMDIR: Remove a directory
 export RMDIR = rmdir
