@@ -37,15 +37,19 @@ open Userlib
    Simple test
 *)
 
+(** Initialise HSeq (quietly) *)
+let initialise() = 
+  (Global.init();
+   BaseTheory.builder())
+
 let run () =
   prove << ! x y z: ((x | y) & z) => ((x & z) | (y & z)) >>
   blast_tac
 
-(** Initialise HSeq (quietly) *)
-let initialise() = 
-  Global.init()
-
 let _ = 
   initialise();
 (** Run the proof *)
-  catch_errors run ()
+  let th = catch_errors run ()
+  in 
+    (Display.print_thm th;
+    Format.printf "\n")
