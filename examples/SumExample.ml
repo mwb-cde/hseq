@@ -80,7 +80,7 @@ let sum_tydef =
 
 let mk_suml_is_sum = 
   theorem "mk_suml_is_sum" 
-    <<! x : is_sum (mk_suml x)>>
+    << ! x : is_sum (mk_suml x) >>
   [flatten_tac
      ++ unfold "is_sum" 
      ++ inst_tac [ <<_x>>; << any >> ]
@@ -88,7 +88,7 @@ let mk_suml_is_sum =
 
 let mk_sumr_is_sum = 
   theorem "mk_sumr_is_sum" 
-    <<! x : is_sum (mk_sumr x)>>
+    << ! x : is_sum (mk_sumr x) >>
   [flatten_tac
      ++ unfold "is_sum" 
      ++ inst_tac [ << any >> ; <<_x>> ]
