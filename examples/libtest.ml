@@ -40,7 +40,8 @@ open Userlib
 (** Initialise HSeq (quietly) *)
 let initialise() = 
   (Global.init();
-   BaseTheory.builder())
+   try BaseTheory.builder()
+   with _ -> ())
 
 let run () =
   prove << ! x y z: ((x | y) & z) => ((x & z) | (y & z)) >>

@@ -13,7 +13,6 @@ Copyright M Wahab 2006
    hseqc --native -o sum SumExample.ml
 *)
 
-
 (**
    Open HSeq modules.
 *)
@@ -27,7 +26,8 @@ open Userlib
 (** Initialise the system *)
 
 let _ = 
-  Global.Hooks.load_file := (fun _ -> ());
+(*  Global.Hooks.load_file := (fun _ -> ()); *)
+(*  Global.Hooks.load_file := Dynlink.loadfile; *)
   Global.Hooks.use_file := (fun ?silent _ -> ());
   Global.init()
 

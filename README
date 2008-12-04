@@ -1,5 +1,5 @@
 HSeq Theorem Prover
-May 2006
+December 2008
 M. Wahab <mwahab@users.sourceforge.net>
 ==============
 
@@ -9,7 +9,7 @@ is experimental, alpha-quality code which may have soundness bugs.
 HSeq is distributed under the terms of the BSD License, see file
 COPYRIGHT for details.
 
-Requirements: OCaml 3.09 
+Requirements: OCaml 3.11
 Building HSeq requires GNU Make in a Unix environment.
 
 For installation instructions, see file INSTALL.
@@ -56,19 +56,27 @@ Libraries:
 
 The library is named hseq.cma and depends on the OCaml libraries Nums
 and Unix. The library is built by packing the code into a module named
-HSeq.  The library should be opened, with 'open HSeq', and initialized
+HSeq. The library should be opened, with 'open HSeq', and initialized
 before it is used, by calling Global.init().
 
-File-handling is handled by two hooks: Global.Hooks.load_file and
-Global.Hooks.use_file. Hook load_file is used to load byte-code files,
-hook use_file is used to use script files.
+The handling of theories uses two file-loading functions, which are
+called if a theory needs to be rebuilt or if a theory has support
+libraries. In the interactive toplevel, these are set to functions in
+the OCaml top-level code. In a library, they need to be set
+explicitly. The file-handling functions are called through two hooks:
+Global.Hooks.load_file and Global.Hooks.use_file. Hook load_file is
+used to load byte code, hook use_file is used to run script files. In
+library mode, both are set to do nothing except issue a warning. They
+can be set to the empty function (fun () -> ()) to silence the
+warnings. Alternatively, load_file can be set to Dynlink.loadfile.
 
 The library does not depend on the toplevel interface. Using the
-library without the toplevel hasn't been tested.
+library without the toplevel hasn't been very well tested.
 
 Module Init has more initialization code that may be useful.  File
 examples/libtest.ml is a very simple example of using the library to
-build a stand-alone executable.
+build a stand-alone executable. A more complete example is given in
+examples/SumExample.ml.
 
 Toplevel:
 ---------
@@ -96,4 +104,19 @@ The link order used to build the standard toplevel is:
 
 It should be possible to link with the HSeq library in the sequence
    nums.cma unix.cma hseq.cma
+
+Native-code:
+------------
+
+There is experimental support for building native-code hseq libraries,
+where the platform supports the OCaml native-code compilers. The
+native code library uses the same hooks for loading files and scripts
+as the byte-code library. The native code compilers cannot be used in
+the interactive toplevel.
+
+The easiest way to compile against the native code libraries is to use
+command 'hseq --native'. See the command line options for hseqc
+(printed by 'hseq --help').
+
+
 
