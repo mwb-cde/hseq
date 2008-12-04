@@ -30,11 +30,12 @@ documentation is built and installed (see file INSTALL).
 Directories
 -----------
 
-src: The source code
-thys: Theory scripts, the generated files and their libraries.
-doc: Documentation
-lib: The libraries and files needed for HSeq
-config: Build configuration data
+src      - The source code
+thys     - Theory scripts, the generated files and their libraries.
+doc      - Documentation
+lib      - The libraries and files needed for HSeq
+config   - Build configuration data
+examples - Examples
 
 Files
 =====
@@ -45,9 +46,9 @@ OCaml toplevel.
 Programs:
 ---------
 
-hseq: The interactive theorem prover.
-hseqb <file>: Run the theorem prover on script <file>
-hseqc <file>: Compile script <file> against the HSeq libraries.
+hseq         - The interactive theorem prover.
+hseqb <file> - Run the theorem prover on script <file>
+hseqc <file> - Compile script <file> against the HSeq libraries.
 
 Use option --help with hseqb and hseqc for all options.
 
@@ -104,6 +105,7 @@ The link order used to build the standard toplevel is:
 
 It should be possible to link with the HSeq library in the sequence
    nums.cma unix.cma hseq.cma
+but note that the easiest way is to use hseqc.
 
 Native-code:
 ------------
@@ -114,9 +116,6 @@ native code library uses the same hooks for loading files and scripts
 as the byte-code library. The native code compilers cannot be used in
 the interactive toplevel.
 
-The easiest way to compile against the native code libraries is to use
-command 'hseq --native'. See the command line options for hseqc
-(printed by 'hseq --help').
-
-
-
+As with the byte-code libraries, the easiest way to compile against
+the native code libraries is to use command 'hseq --native'. See the
+command line options for hseqc (printed by 'hseq --help').
