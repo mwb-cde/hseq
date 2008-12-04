@@ -1,3 +1,13 @@
+HSeq Dec08
+----------
+
++ Update to work with OCaml 3.11 which is now the minimum requirement.
+
+* Rework Unify.matches_rewrite and the functions it relies on to make
+  it more discriminating.
+
+* Fix loop when resolving and loading theory dependencies.
+
 HSeq Mar07
 ----------
 
