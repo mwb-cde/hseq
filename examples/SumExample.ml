@@ -94,6 +94,8 @@ let mk_sumr_is_sum =
      ++ inst_tac [ << any >> ; <<_x>> ]
      ++ simpC];;
 
+(***
+STOP;;
 let mk_suml_eq = 
   theorem "mk_suml_eq"
     << !x y: ((mk_suml x) = (mk_suml y)) = (x = y) >>
@@ -128,7 +130,6 @@ let mk_sumr_eq =
       ]
  ];;
 
-
 (** 
    {7 Definitions}
 
@@ -144,6 +145,28 @@ let mk_sumr_eq =
 
    [outr a]: Destructor for [inr]
  *)
+
+let inl_def = 
+  define
+    <:def< inl a = make_SUM (mk_suml a) >>;;
+
+let inr_def = 
+  define
+    <:def< inr b = make_SUM (mk_sumr b) >>;;
+
+let isl_def =
+  define 
+    <:def< isl a = ?x: a = (inl x) >>;;
+
+let isr_def =
+  define 
+    <:def< isr a = ?x: a = (inr x) >>;;
+
+let outl_def = 
+  define <:def< outl x = (@v: x = (inl v)) >>;;
+
+let outr_def = 
+  define <:def< outr x = (@v: x = (inr v)) >>;;
 
 let inl_def = 
   define
@@ -571,7 +594,7 @@ let map_thm =
  split_tac ++ flatten_tac ++ unfold "map" 
    ++ simpC_tac [isl_thm; outl_thm; outr_thm]
 ];;
-
+***)
 
 let _ = end_theory();;
 
