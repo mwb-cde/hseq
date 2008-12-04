@@ -2,17 +2,13 @@ Installation
 ============
 
 Requirements: 
-  OCaml version 3.09
+  OCaml version 3.11
 
 To build:
   GNU Make on Unix 
-  or OMake (omake) on any system OMake supports.
 
 Build:
 ------
-
-The GNU Make and OMake builds are the same. For OMake, use 'omake'
-rather than 'make' and see the notes below.
 
 From the toplevel directory: 
 1) Run the configuration script:
@@ -58,39 +54,10 @@ From the toplevel directory:
 Notes:
 ------
 
-Building the documentation requires the GNU Texinfo system and a GNU
-Make/Unix environment.
+Building the documentation requires the GNU Texinfo system.
 
 Filenames with spaces should be passed to the configure.ml script as
 a string. For example, /a/b c/d should be passed as "/a/b c/d"
-
-OMake Notes:
-------------
-
-The OMake website is at http://omake.metaprl.org
-
-The OMake build can be fragile, in case of difficulties it may be
-worth removing the HSeq source tree and trying again.
-
-The OMake build will not install the documentation by default. The
-command 'omake install-doc' can be used after the build completes or
-the documentation can be copied manually (from directory 'doc/html').
-
-
-NON-UNIX BUILD
-==============
-
-Building on non-Unix systems requires OMake and is fragile.
-
-Building on Win32 systems is fragile. Installing into a sub-directory
-of the source tree seems to work. For example, if the root of the
-source tree is '/src/hseq', the installation directory can be set to
-'/src/hseq/dist'. 
-
-On Win32 systems, it's better to pass Unix format strings to the
-configuration script. For example, '/src/hseq/' rather than
-'\src\hseq'.
-
 
 AFTER INSTALLATION
 ==================
