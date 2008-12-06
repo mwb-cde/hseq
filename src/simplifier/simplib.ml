@@ -28,7 +28,7 @@ let add_conv terms conv =
 
 let init_std_ss() =
   empty_simp();
-  add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv
+  add_conv [ << !x A: (%y: A) x >> ] Logic.Conv.beta_conv
 
 (***
 * Toplevel simplification tactics

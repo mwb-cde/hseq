@@ -87,7 +87,7 @@ let bool_cases_thm_var = Lib.freeze make_bool_cases_thm
 let bool_cases_thm () =  Lib.thaw ~fresh:fresh_thm bool_cases_thm_var
 
 let make_eq_sym_thm () = 
-  match Lib.try_app thm "Bool.eq_sym" with
+  match (Lib.try_app thm "Bool.eq_sym") with
     Some(th) -> th
   | None -> 
       let eq_l1 =

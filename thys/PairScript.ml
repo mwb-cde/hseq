@@ -29,23 +29,27 @@ let is_pair_def =
 
 let pair_exists = 
   prove_thm "pair_exists" << ? p: is_pair p >>
-  [unfold "is_pair";
-   inst_tac  [<<mk_pair true true>>; <<true>>; <<true>>];
-   eq_tac];;
+  [
+    unfold "is_pair";
+    inst_tac  [ << mk_pair true true>>; <<true>>; <<true>> ];
+    eq_tac
+  ];;
 
 let mk_pair_is_pair = 
-  prove_thm "mk_pair_is_pair" <<!x y : is_pair (mk_pair x y)>>
-  [flatten_tac; unfold "is_pair" ; inst_tac [<<_x>>; << _y>>]; eq_tac];;
+  prove_thm "mk_pair_is_pair" << !x y : is_pair (mk_pair x y) >>
+  [
+    flatten_tac; unfold "is_pair" ; inst_tac [ << _x >>; << _y >> ]; eq_tac
+  ];;
 
 let pair_tydef = 
   typedef ~pp:(pair_prec, infixr, Some("*"))
     ~thm:pair_exists
     ~rep:"dest_PAIR" ~abs:"make_PAIR"
-    <:def<: ('a, 'b)PAIR = ('a -> 'b -> bool): is_pair>>;;
+    <:def<: ('a, 'b)PAIR = ('a -> 'b -> bool): is_pair >>;;
 
 let pair_def= define 
     ~pp:(pair_prec, pair_fixity, Some(",")) 
-    <:def< pair x y = make_PAIR (mk_pair x y) >>;;
+    <:def< pair x y = make_PAIR (mk_pair x y) >> ;;
 
 let fst_def = define
     <:def< fst p = (epsilon(% x: ?y: p = (pair x y))) >>;;
@@ -66,10 +70,10 @@ let mk_pair_eq =
       [ (* cut_back_tac mk_pair_eq1 ++ basic; *)
 	(match_asm << X = Y >>
 	 (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
-	  ++ inst_tac [<< _a >> ]
+	  ++ inst_tac [ << _a >> ]
 	  ++ (match_asm << L = R >>
 	      (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
-	  ++ inst_tac [<< _b >> ]
+	  ++ inst_tac [ << _b >> ]
 	  ++ (match_asm << A = B >> 
 	      (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))
 	  ++ unfold "mk_pair" ++ beta_tac
@@ -85,7 +89,7 @@ let rep_abs_pair=
   [
    flatten_tac
      ++ cut_thm "mk_pair_is_pair"
-     ++ inst_tac [<< _x >> ; << _y >>]
+     ++ inst_tac [ << _x >> ; << _y >> ]
      ++ cut_mp_tac (thm "make_PAIR_inverse")
      ++ basic
  ];;
@@ -106,7 +110,7 @@ let inj_on_make_PAIR =
     << inj_on make_PAIR is_pair >>
   [
    cut_thm "inj_on_inverse_intro"
-     ++ inst_tac [<< make_PAIR >>; << is_pair >>; << dest_PAIR >>]
+     ++ inst_tac [ << make_PAIR >>; << is_pair >>; << dest_PAIR >> ]
      ++ cut_thm "make_PAIR_inverse" 
      ++ split_tac 
      -- [ basic; basic ]
@@ -128,11 +132,11 @@ let basic_pair_eq =
 	  unfold "pair"
 	    ++ cut_thm "inj_on_make_PAIR"
 	    ++ unfold "inj_on"
-	    ++ inst_tac [ << mk_pair _a _b >>; << mk_pair _x _y >>]
+	    ++ inst_tac [ << mk_pair _a _b >>; << mk_pair _x _y >> ]
 	    ++ cut_thm "mk_pair_is_pair"
-	    ++ inst_tac [ << _a >> ; << _b >>]
+	    ++ inst_tac [ << _a >> ; << _b >> ]
 	    ++ cut_thm "mk_pair_is_pair"
-	    ++ inst_tac [ << _x >> ; << _y >>]
+	    ++ inst_tac [ << _x >> ; << _y >> ]
 	    ++ (implA -- [conjC ++ basic] )
 	    ++ (implA -- [basic])
 	    ++ rewrite_tac [thm "mk_pair_eq"]
@@ -155,7 +159,7 @@ let fst_thm =
      ++ split_tac 
      --
      [
-      inst_tac [ << _x >> ; << _y >>] ++ eq_tac; 
+      inst_tac [ << _x >> ; << _y >> ] ++ eq_tac; 
       flatten_tac 
 	++ rewrite_tac [basic_pair_eq]
 	++ flatten_tac
@@ -189,11 +193,11 @@ let pair_inj =
     << ! p: ?x y: p = (pair x y) >>
   [
    flatten_tac ++ unfold "pair"
-     ++ cut ~inst:[<< _p >> ](thm "dest_PAIR_mem")
-     ++ cut ~inst:[<< _p >>] (thm "dest_PAIR_inverse") 
+     ++ cut ~inst:[ << _p >> ](thm "dest_PAIR_mem")
+     ++ cut ~inst:[ << _p >> ] (thm "dest_PAIR_inverse") 
      ++ unfold "is_pair"
      ++ flatten_tac
-     ++ inst_tac [<< _x >> ; << _y >>]
+     ++ inst_tac [ << _x >> ; << _y >> ]
      ++ (match_asm << (dest_PAIR x) = Y >> 
 	 (fun l -> replace_tac ?info:None ~dir:rightleft ~asms:[l] ?f:None))
      ++ (match_asm << (make_PAIR (dest_PAIR x)) = Y >> 
@@ -220,7 +224,7 @@ let surjective_pairing =
     << !p: (pair (fst p) (snd p)) = p >>
   [
    flatten_tac
-     ++ cut ~inst:[<< _p >>] pair_inj 
+     ++ cut ~inst:[ << _p >> ] pair_inj 
      ++ flatten_tac
      ++ replace_tac
      ++ rewrite_tac [basic_pair_eq; fst_thm; snd_thm]
@@ -228,12 +232,12 @@ let surjective_pairing =
  ];;
 
 let pair_eq = 
-  prove_thm "pair_eq" ~simp:true
+  prove_thm "pair_eq" 
     << ! p q : (p = q) = (((fst p) = (fst q)) and ((snd p) = (snd q))) >>
   [
    flatten_tac 
      ++ cut ~inst:[ << fst _p >>; << snd _p >> ; 
-	       << fst _q >>; << snd _q >>] basic_pair_eq
+	       << fst _q >>; << snd _q >> ] basic_pair_eq
      ++ rewrite_tac [surjective_pairing]
      ++ basic
  ];;

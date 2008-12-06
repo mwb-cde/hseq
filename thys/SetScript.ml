@@ -164,7 +164,7 @@ let set_cases =
     << ! A : (A = empty) | ? x: x in A >>
      [
        scatter_tac
-       ++ rewriteC_tac [set_equal]
+       ++ once_rewriteC_tac [set_equal]
        ++ flatten_tac ++ equals_tac ++ scatter_tac
        --
 	 [ 
@@ -266,7 +266,8 @@ let in_remove=
   [
     scatter_tac
     ++ simp_all_tac [remove_thm]
-    ++ equals_tac ++ equals_tac
+    ++ equals_tac 
+      (* ++ equals_tac *)
     ++ blast_tac ++ ((replace_tac // skip) ++ simp // skip)
   ]
 
@@ -278,7 +279,7 @@ let add_member =
   << !x A: (x in A) => ((add x A) = A) >>
   [
     flatten_tac
-    ++ rewrite_tac [set_equal]
+    ++ once_rewrite_tac [set_equal]
     ++ simp_tac [add_thm]
     ++ equals_tac ++ scatter_tac ++ simp
   ];;
@@ -459,7 +460,7 @@ let subset_cases =
   [
     flatten_tac
     ++ simp_all_tac [subset_thm; set_equal]
-    ++ instC [ << _x >>]
+    ++ instC [ << _x >> ]
     ++ equals_tac ++ scatter_tac ++ simp
   ]
 
@@ -610,7 +611,7 @@ let psubset_cases =
     ++ simp_all_tac [psubset_thm; subset_thm; set_equal]
     ++ scatter_tac
     ++ equals_tac ++ scatter_tac 
-    -- [simp; instC [ << _x >>] ++ blast_tac]
+    -- [simp; instC [ << _x >> ] ++ blast_tac]
   ]
 
 let psubset_empty =
@@ -649,7 +650,7 @@ let psubset_trans =
 	++ cut_back_tac subset_antisym
 	++ simp;
 	(* 2 *)
-	cut ~inst:[ << _A >>; << _B >>; << _C >>] subset_trans
+	cut ~inst:[ << _A >>; << _B >>; << _C >> ] subset_trans
 	++ blast_tac
       ]
   ]
@@ -703,7 +704,7 @@ let psubset_member =
   [
     flatten_tac
     ++ (show << _A <= _B >> (simp_tac [psubset_subset]))
-    ++ cut ~inst:[<< _x >>; << _A >>; << _B >>] subset_member
+    ++ cut ~inst:[ << _x >>; << _A >>; << _B >> ] subset_member
     ++ simp
   ]
 
@@ -755,7 +756,7 @@ let finite_union =
   << ! A B : ((finite A) & (finite B)) => (finite (union A B)) >>
   [
     flatten_tac;
-    cut_mp_tac ~inst:[<< _A >>; << _B >>] finite_union0;
+    cut_mp_tac ~inst:[ << _A >>; << _B >> ] finite_union0;
     simp
   ]
 
@@ -772,7 +773,7 @@ let finite_subset =
      (* 2 *)
      simp_all_tac [subset_add_remove]
      ++ mp_tac
-     ++ cut_mp_tac ~inst:[<< _x >>; << remove _x _B >>] finite_add
+     ++ cut_mp_tac ~inst:[ << _x >>; << remove _x _B >> ] finite_add
      ++ simpA
      ++ cases_tac << _x in _B >> 
      ++ simpA_tac [remove_member; add_member]
@@ -820,10 +821,10 @@ let finite_inter =
       [
 	(* 1 *)
 	cut_back_tac finite_subset_back
-	++ instC [ << _A >>];
+	++ instC [ << _A >> ];
 	(* 2 *)
 	cut_back_tac finite_subset_back
-	++ instC [ << _B >>];
+	++ instC [ << _B >> ];
       ]
     ++ cut subset_inter
     ++ blast_tac
@@ -844,7 +845,7 @@ let strong_finite_induct =
   >>
   [
     specC
-      ++ cut ~inst:[<< (%x: (finite x) & (_P x)) >>] finite_induct
+      ++ cut ~inst:[ << (%x: (finite x) & (_P x)) >> ] finite_induct
       ++ betaA
       ++ cut finite_rules
       ++ blast_tac ++ ((back_tac ++ blast_tac) // skip)

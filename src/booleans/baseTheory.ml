@@ -86,12 +86,12 @@ let builder ?(save=false) ()=
 
   (** Boolean cases *)
   let _ = 
-    axiom "bool_cases" <<!x: (x=true) or (x=false)>> in 
+    axiom "bool_cases" << !x: (x=true) or (x=false) >> in 
 
   (** Equality *)
 
   let _ = 
-    axiom "eq_refl" <<!x: x=x>> in 
+    axiom "eq_refl" << !x: x=x >> in 
 
   let _ =
     define 
@@ -101,16 +101,16 @@ let builder ?(save=false) ()=
     define <:def< onto f = !y: ?x: y=(f x)>> in 
 
   let _ = 
-    axiom "infinity_ax" <<?(f: ind -> ind): (one_one f) and (onto f)>> in 
+    axiom "infinity_ax" << ?(f: ind -> ind): (one_one f) and (onto f)>> in 
 
   let _ = 
-    axiom "extensionality"  <<!f g: (!x: (f x) = (g x)) => (f = g)>> in 
+    axiom "extensionality"  << !f g: (!x: (f x) = (g x)) => (f = g)>> in 
 
   (** Specification operator (epsilon) *)
   let _ = declare <<epsilon: ('a -> bool) -> 'a>> in 
 
   let _ = 
-    axiom "epsilon_ax" <<!P: (?x: P x) => (P(epsilon P))>> in 
+    axiom "epsilon_ax" << !P: (?x: P x) => (P(epsilon P))>> in 
 
   (** Conditional *)
   let _ = 

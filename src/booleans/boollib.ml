@@ -38,7 +38,7 @@ module Thms =
 	let info = Tactics.mk_info()
 	in 
 	Commands.prove
-	  <<!x y: ((x => y) and (y => x)) => (x=y)>>
+	  << !x y: ((x => y) and (y => x)) => (x=y) >>
 	(allC ~info:info 
 	   ++ allC ~info:info 
 	   ++ 
@@ -59,7 +59,7 @@ module Thms =
       in 
       let info = Tactics.mk_info()
       in 
-      Commands.prove <<!x y: (x iff y) = (x = y)>>
+      Commands.prove << !x y: (x iff y) = (x = y) >>
       (allC ~info ++ allC ~info
 	 ++ 
 	 (fun g -> 
@@ -128,13 +128,13 @@ module Thms =
 
     let make_rule_true_thm ()= 
       let rule_true_l1 =  
-	Commands.prove <<!x: (x=true) => x>> 
+	Commands.prove << !x: (x=true) => x>> 
 	(flatten_tac ++ replace_tac ++ trivial)
       in
       let rule_true_l2 = 
 	let info = Tactics.mk_info()
 	in 
-	Commands.prove <<!x: x => (x=true)>>
+	Commands.prove << !x: x => (x=true) >>
 	(allC ~info:info
 	   ++ 
 	   (fun g -> 
@@ -152,7 +152,7 @@ module Thms =
 		   ++ replace_tac ++ negA ++ trueC]) g))
       in
       let rule_true_l3 = 
-	Commands.prove <<! x: x iff (x=true)>>
+	Commands.prove << ! x: x iff (x=true) >>
 	  ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
 	     --
 	     [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
@@ -169,7 +169,7 @@ module Thms =
     let make_rule_false_thm ()= 
       let info = Tactics.mk_info()
       in 
-      Commands.prove <<! x : (not x)=(x=false)>>
+      Commands.prove << ! x : (not x)=(x=false) >>
       (allC ~info:info
 	 ++
 	 (fun g -> 

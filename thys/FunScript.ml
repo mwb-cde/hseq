@@ -196,7 +196,7 @@ let surj_intro =
   [
    flatten_tac
      ++ unfold "surj" ++ specC
-     ++ instC [<< _g _y >>] 
+     ++ instC [ << _g _y >> ] 
      ++ instA [ << _y >> ]
      ++ simp
  ];;
@@ -207,9 +207,9 @@ let surj_compose =
   [
    flatten_tac
      ++ simp_all_tac [defn "surj"]
-     ++ instA [<< _y >>] ++ specA
-     ++ instA [<< _x  >>] ++ specA
-     ++ instC [<< _x1 >>]
+     ++ instA [ << _y >> ] ++ specA
+     ++ instA [ << _x  >> ] ++ specA
+     ++ instC [ << _x1 >> ]
      ++ simp_all
  ];;
 
@@ -237,8 +237,8 @@ let inj_on_inverse_intro =
    unfold "inj_on"
      ++ flatten_tac
      ++ (match_asm << !x: P >> copyA)
-     ++ inst_tac [<< _x >>]
-     ++ inst_tac [<< _y >>]
+     ++ inst_tac [ << _x >> ]
+     ++ inst_tac [ << _y >> ]
      ++ simp_all 
  ];;
 

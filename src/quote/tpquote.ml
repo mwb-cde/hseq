@@ -32,6 +32,9 @@
    << !: ... >> is a term def
 *)
 
+
+open Camlp4.PreCast
+
 let type_char = ref ':'
 let def_char = ref '!'
 
@@ -65,6 +68,7 @@ let std_check_string str =
   in 
   if size>0 
   then check 0
+
   else (Unknown, str)
 
 let def_check_string str = 
@@ -93,20 +97,23 @@ let def_check_string str =
 (* Syntax tree expander *)
 
 
-(* OCaml-3.07 version *)
+(* OCaml-3.10 version *)
+
 let std_astexpander instr =
+(*
   let pos=  { Lexing.pos_fname="Input"; Lexing.pos_lnum=0;
 	      Lexing.pos_bol = 0;  Lexing.pos_cnum = 0 }
   in
   let _loc= (pos, pos)
   in 
+*)
   let str = String.escaped instr
   in 
   match std_check_string str with 
     (Type, nstr) -> 
-      <:expr<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:expr<(Global.read $str:nstr$)>>
-  | _ -> <:expr< $str:str$ >>
+      <:expr@here< Global.read_type $str:nstr$ >>
+  | (Term, nstr) -> <:expr@here<(Global.read $str:nstr$)>>
+  | _ -> <:expr@here<$str:str$>>
 
 let def_astexpander str =
   let pos=  { Lexing.pos_fname="Input"; Lexing.pos_lnum=0;
@@ -116,10 +123,10 @@ let def_astexpander str =
   in 
   match def_check_string str with 
     (Typedef, nstr) -> 
-      <:expr<Global.read_type_defn $str:nstr$>>
+      <:expr@here<Global.read_type_defn $str:nstr$>>
   | (Def, nstr) -> 
-      <:expr<Global.read_defn $str:nstr$>>
-  | _ -> <:expr< $str:str$ >>
+      <:expr@here<Global.read_defn $str:nstr$>>
+  | _ -> <:expr@here<$str:str$>>
 
 (* OCaml-3.08 version *)
 (*
@@ -154,10 +161,35 @@ let pattexpander str = failwith "Pattern expander not implemented"
 let test_astexpander_fn = ref (fun _ -> failwith "test_astexpander")
 let test_astexpander x = (!test_astexpander_fn) x
 
+(*
 let init() = 
   Quotation.add "def" (Quotation.ExAst (def_astexpander, pattexpander));
   Quotation.add "tp" (Quotation.ExAst (std_astexpander, pattexpander));
   Quotation.add "test" (Quotation.ExAst (test_astexpander, pattexpander));
   Quotation.default:="tp"
+*)
+
+(*
+let init() = 
+  Syntax.Quotation.add "def" 
+    (Syntax.Quotation.ExAst (def_astexpander, pattexpander));
+  Syntax.Quotation.add "tp" 
+    (Syntax.Quotation.ExAst (std_astexpander, pattexpander));
+  Syntax.Quotation.add "test" 
+    (Syntax.Quotation.ExAst (test_astexpander, pattexpander));
+  Syntax.Quotation.default:="tp"
+*)
+
+let expand_quot exp loc _loc_name_opt contents = exp contents
+
+let init() = 
+  Syntax.Quotation.add "def" Quotation.DynAst.expr_tag 
+    (expand_quot def_astexpander);
+  Syntax.Quotation.add "tp" Quotation.DynAst.expr_tag 
+    (expand_quot std_astexpander);
+  Syntax.Quotation.add "test" Quotation.DynAst.expr_tag 
+    (expand_quot test_astexpander);
+  Syntax.Quotation.default:="tp"
+
 
 let _ = init()

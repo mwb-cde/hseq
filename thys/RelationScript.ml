@@ -82,10 +82,10 @@ let tc_rules=
 	  (match_asm << TC R X Y >> 
 	     (fun l -> 
 		once_rewrite_tac [defn "TC"]
-		++ instA ~a: l[<< _P >>]))
+		++ instA ~a: l[ << _P >> ]))
 	  ++ simpA
 	  ++ (match_asm << ! x y z: X >> liftA)
-	  ++ instA [<< _x >> ; << _y >>; << _z >>]
+	  ++ instA [ << _x >> ; << _y >>; << _z >> ]
 	  ++ back_tac
 	  ++ simp
 	]
@@ -138,15 +138,15 @@ let tc_cases0 =
 	seq
 	  [
 	    match_concl << ?z: (_R _x z) & (TC _R z _z) >> (nameC "c");
-	    instC ~c:(!$ "c") [<< _y >>];
+	    instC ~c:(!$ "c") [ << _y >> ];
 	    simp_tac [tc_rule1]
 	  ];
 	(* 3 *)
 	seq
 	  [
-	    instC [ << _y >>];
+	    instC [ << _y >> ];
 	    show << TC _R _y _z >>
-	      (cut ~inst:[<< _R >>; << _y >> ; << _z1 >>; << _z >>]
+	      (cut ~inst:[ << _R >>; << _y >> ; << _z1 >>; << _z >> ]
 		 tc_rule2
 		 ++ simp);
 	    simp
@@ -172,7 +172,7 @@ let tc_cases =
 	--
 	  [
 	    cut_mp_tac (thm "tc_rule1") ++ basic;
-	    cut ~inst:[<<_R>>; << _x >>; << _z >>; << _y >>] 
+	    cut ~inst:[ <<_R>>; << _x >>; << _z >>; << _y >> ] 
 	      (thm "tc_rule2")
 	    ++ back_tac
 	    ++ simp
@@ -197,10 +197,10 @@ let rtc_rules=
 	  (match_asm << RTC R Y Z >> 
 	     (fun l -> 
 		once_rewrite_tac [defn "RTC"]
-		++ instA  ~a:l [<< _P >>]))
+		++ instA  ~a:l [ << _P >> ]))
 	  ++ (implA ++ (simp // skip))
 	  ++ (match_asm << ! x y z: P >>
-	      (fun l -> instA ~a:l [<< _x >> ; << _y >>; << _z >>]))
+	      (fun l -> instA ~a:l [ << _x >> ; << _y >>; << _z >> ]))
 	  ++ (back_tac ++ simp)
 	]
     ];;
@@ -247,7 +247,7 @@ let rtc_cases =
 	  simp_tac [rtc_cases0]
 	  cut (thm "rtc_induct")
 	  ++ instA [ << % x y: (x = y) | ?z : ((_R x z) & (RTC _R z y)) >>;
-		     << _R >>]
+		     << _R >> ]
 	  ++ betaA
 	  ++ scatter_tac 
 	    --
@@ -257,11 +257,11 @@ let rtc_cases =
 	      ++ 
 	      (match_concl << ?z: (_R _x1 x) & X >>
 		   liftC)
-	      ++ instC [<< _y1 >> ]
+	      ++ instC [ << _y1 >> ]
 	      ++ back_tac
 	      ++ simp
 	      ++ flatten_tac
-	      ++ instC [<< _y1 >>]
+	      ++ instC [ << _y1 >> ]
 	      ++ simp
 	      ++ cut rtc_rules
 	      ++ conjA
@@ -273,7 +273,7 @@ let rtc_cases =
 		  ++ (match_asm << !x y z: P >> 
 			(fun l -> 
 			   instA ~a:l [ << _R >>; << _y1 >> ; 
-					<< _z1 >>; << _z>>]
+					<< _z1 >>; << _z>> ]
 			++ back_tac ~a:l
 			++ simp))))
 
@@ -284,11 +284,11 @@ let rtc_cases =
 		  ++ (match_asm << !x y z: P >> 
 			(fun l -> 
 			   instA ~a:l [ << _R >>; << _y1 >> ; 
-					<< _z1 >>; << _z>>]
+					<< _z1 >>; << _z>> ]
 			++ back_tac ~a:l
 			++ simp))))
 	      ++ (match_concl << ?z: X & (RTC _R z _z) >>
-		   (fun l -> instC ~c:l [<< _y1 >>]))
+		   (fun l -> instC ~c:l [ << _y1 >> ]))
 	      ++ simp;
 	      mp_tac ++ split_tac ++ simp
 	    ];
@@ -299,7 +299,7 @@ let rtc_cases =
 	  ++ (split_tac -- [simp])
 	  ++ flatten_tac
 	  ++ (match_asm << !x y z: P >> 
-		(fun l -> instA ~a:l [<< _x >> ; << _z >> ; << _y >>]))
+		(fun l -> instA ~a:l [ << _x >> ; << _z >> ; << _y >> ]))
 	  ++ back_tac ++ simp
 	  ++ (match_asm << RTC R Z Y >>
 		(fun l -> once_rewriteA_tac ~f:l [defn "RTC"]))

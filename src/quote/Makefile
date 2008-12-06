@@ -13,7 +13,8 @@ endif
 ##
 # Preprocessor options
 ## 
-PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+#PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+PPOPTIONS=-pp "camlp4of" -I +camlp4 
 
 # Don't try to build native code 
 NATIVE := "false"

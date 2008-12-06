@@ -323,6 +323,17 @@ val mgu_rename: int ref -> substitution -> substitution
    which only the variables of [x] can be bound.
 *)
 
+val matching_env : 
+    Scope.t -> substitution 
+      -> gtype -> gtype -> substitution
+(**
+   [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
+   context [env]. This unifies [t1] and [t2], but only variables in
+   type [t1] can be bound. 
+
+   Raises an exception if matching fails.
+*)
+
 val matches_env : 
     Scope.t -> substitution 
       -> gtype -> gtype -> substitution
@@ -330,6 +341,8 @@ val matches_env :
    [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
    type [t1] can be bound.
+
+   Silently returns unchanged substitution on failure.
 *)
 
 val matches : Scope.t -> gtype -> gtype -> bool

@@ -21,7 +21,8 @@ export OPTFILE :=
 export OCINCLUDE := -I +camlp4
 
 # OCLIBS: Required OCaml libraries.
-export OCLIBS := nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+#export OCLIBS := nums.cma unix.cma camlp4o.cma pa_extend.cmo q_MLast.cmo
+export OCLIBS := nums.cma unix.cma dynlink.cma camlp4o.cma
 
 # OCOPTLIBS: The optimised required OCaml libraries.
 export OCOPTLIBS :=

@@ -29,9 +29,7 @@ let sum_fixity = infixr;;
 
 let mk_suml_def = 
   define 
-    <:def< 
-  mk_suml v = (% sel l r: ((l = v) & sel))
-    >>;;
+    <:def< mk_suml v = (% sel l r: ((l = v) & sel)) >>;;
 
 let mk_sumr_def = 
   define 
@@ -51,7 +49,7 @@ let sum_exists =
     << ? p: is_sum p >>
   [
    unfold "is_sum"
-     ++ inst_tac  [<<mk_suml true >>; << true >> ; << true >>]
+     ++ inst_tac  [ <<mk_suml true >>; << true >> ; << true >> ]
      ++ flatten_tac ++eq_tac
  ];;
 
@@ -63,18 +61,18 @@ let sum_tydef =
 
 let mk_suml_is_sum = 
   theorem "mk_suml_is_sum" 
-    <<! x : is_sum (mk_suml x)>>
+    << ! x : is_sum (mk_suml x) >>
   [flatten_tac
      ++ unfold "is_sum" 
-     ++ inst_tac [<<_x>>; << any >>]
+     ++ inst_tac [ <<_x>>; << any >> ]
      ++ flatten_tac ++ eq_tac];;
 
 let mk_sumr_is_sum = 
   theorem "mk_sumr_is_sum" 
-    <<! x : is_sum (mk_sumr x)>>
+    << ! x : is_sum (mk_sumr x) >>
   [flatten_tac
      ++ unfold "is_sum" 
-     ++ inst_tac [<< any >> ; <<_x>> ]
+     ++ inst_tac [ << any >> ; <<_x>> ]
      ++ simpC];;
 
 let mk_suml_eq = 
@@ -87,7 +85,7 @@ let mk_suml_eq =
 	repeat
 	  (once_rewriteA_tac [thm "function_eq"] 
 	     ++ beta_tac)
-	  ++ inst_tac [<< true >>; << _x >> ]
+	  ++ inst_tac [ << true >>; << _x >> ]
 	  ++ simpA;
 	simpC
       ]
@@ -105,7 +103,7 @@ let mk_sumr_eq =
 	   repeat
 	     (once_rewrite_tac ~f:l [thm "function_eq"] 
 		++ beta_tac ~f:l)
-	     ++ inst_tac ~f:l [<< false >>; << any >> ; << _y >> ]
+	     ++ inst_tac ~f:l [ << false >>; << any >> ; << _y >> ]
 	     ++ simp ~f:l));
 	simpC
       ]
@@ -204,7 +202,7 @@ let inj_on_make_SUM =
     << inj_on make_SUM is_sum >>
   [
    cut_thm "inj_on_inverse_intro"
-     ++ inst_tac [<< make_SUM >>; << is_sum >>; << dest_SUM >>]
+     ++ inst_tac [ << make_SUM >>; << is_sum >>; << dest_SUM >> ]
      ++ cut_thm "make_SUM_inverse" 
      ++ split_tac 
      -- [ basic; basic ]
@@ -219,7 +217,7 @@ let inl_eq =
        unfold "inl"
 	 ++ cut_thm "inj_on_make_SUM"
 	 ++ unfold "inj_on"
-	 ++ inst_tac [<< mk_suml _x >> ; << mk_suml _y >>]
+	 ++ inst_tac [ << mk_suml _x >> ; << mk_suml _y >> ]
 	 ++ blast_tac ++ (simpC_tac [mk_suml_is_sum] // skip)
 	 ++ rewrite_tac [mk_suml_eq]
 	 ++ basic;
@@ -236,7 +234,7 @@ let inr_eq =
        unfold "inr"
 	 ++ cut_thm "inj_on_make_SUM"
 	 ++ unfold "inj_on"
-	 ++ inst_tac [<< mk_sumr _x >> ; << mk_sumr _y >>]
+	 ++ inst_tac [ << mk_sumr _x >> ; << mk_sumr _y >> ]
 	 ++ blast_tac ++ (simpC_tac [mk_sumr_is_sum] // skip)
 	 ++ rewrite_tac [mk_sumr_eq]
 	 ++ basic;
@@ -258,7 +256,7 @@ let inr_not_inl =
 	 (cut inj_on_make_SUM 
 	    ++ unfold "inj_on"
 	    ++ basic))
-     ++ inst_tac [<< mk_sumr _x >>; << mk_suml _y >>]
+     ++ inst_tac [ << mk_sumr _x >>; << mk_suml _y >> ]
      ++ implA
      --
      [
@@ -274,11 +272,11 @@ let inr_not_inl =
       mp_tac
 	++ unfold "mk_sumr" ++ unfold "mk_suml"
 	++ once_rewrite_tac [thm "function_eq"]
-	++ inst_tac [ << true >>] ++ beta_tac
+	++ inst_tac [ << true >> ] ++ beta_tac
 	++ once_rewrite_tac [thm "function_eq"]
-	++ inst_tac [ << _y >>] ++ beta_tac
+	++ inst_tac [ << _y >> ] ++ beta_tac
 	++ once_rewrite_tac [thm "function_eq"]
-	++ inst_tac [<< _x >>] ++ beta_tac
+	++ inst_tac [ << _x >> ] ++ beta_tac
 	++ once_rewrite_tac [thm "equals_bool"] ++ iffA
 	    ++ blast_tac 
 	    ++ eq_tac
@@ -290,7 +288,7 @@ let inl_not_inr =
     << !x y: ~((inl x) = (inr y)) >>
   [
    flatten_tac 
-     ++ cut ~inst:[<< _y >>; << _x >>] inr_not_inl
+     ++ cut ~inst:[ << _y >>; << _x >> ] inr_not_inl
      ++ simpA
  ];;
 
@@ -322,7 +320,7 @@ let make_SUM_onto =
   !a: ?f : ((a = (make_SUM f)) & (is_sum f))
     >>
   (flatten_tac
-     ++ inst_tac [<< dest_SUM _a >>]
+     ++ inst_tac [ << dest_SUM _a >> ]
      ++ split_tac
      --
      [
@@ -335,11 +333,11 @@ let sum_cases =
     << !(a: ('a + 'b)): ((?x: a = (inl x)) | (?x: a = (inr x))) >>
   [
    flatten_tac
-     ++ cut ~inst:[<< _a >>] make_SUM_onto
+     ++ cut ~inst:[ << _a >> ] make_SUM_onto
      ++ unfold "is_sum"
      ++ flatten_tac
      ++ rewrite_tac [defn "inl"; defn "inr"]
-     ++ inst_tac [<< _l >>] ++ inst_tac [<< _r >>]
+     ++ inst_tac [ << _l >> ] ++ inst_tac [ << _r >> ]
      ++ split_tac ++ simp
  ];;
 
@@ -388,7 +386,7 @@ let sum_axiom =
 		 then (_f (@v: x = (inl v)))
 		 else (_g (@v: x = (inr v)))) >> ]
        ++ (show << !x: ?v: (inl x) = (inl v) >> 
-	 (flatten_tac ++ inst_tac [<< _x >>]  ++ eq_tac))
+	 (flatten_tac ++ inst_tac [ << _x >> ]  ++ eq_tac))
        ++ beta_tac
        ++ rewrite_tac [inl_eq]
        ++ split_tac ++ flatten_tac
@@ -411,14 +409,14 @@ let sum_axiom_alt =
   ! f g : ?! h: ((h ++ inl) = f) & ((h ++ inr) = g)
     >> 
    (flatten_tac
-     ++ (cut ~inst:[<< _f >>; << _g >>] sum_axiom)
+     ++ (cut ~inst:[ << _f >>; << _g >> ] sum_axiom)
      ++ unfold "EXISTS_UNIQUE"
      ++ beta_tac
      ++ scatter_tac
      --
      [
        (* 1 *)
-       instC [<< _x >>]
+       instC [ << _x >> ]
        ++ split_tac
        ++ once_rewriteC_tac [thm "function_eq"]
        ++ simp;
@@ -447,11 +445,11 @@ let sum_fn_exists =
   >>
   [
    flatten_tac
-     ++ cut ~inst:[<< _f >>; << _g >>] sum_axiom
+     ++ cut ~inst:[ << _f >>; << _g >> ] sum_axiom
      ++ unfold "EXISTS_UNIQUE"
      ++ betaA
      ++ flatten_tac
-     ++ instC [<< _x >>]
+     ++ instC [ << _x >> ]
      ++ blast_tac ++ unify_tac
  ];;
 
@@ -466,7 +464,7 @@ let sum_unique =
     >>
 [
  flatten_tac
-   ++ cut ~inst:[<< _f >>; << _g >>] sum_axiom
+   ++ cut ~inst:[ << _f >>; << _g >> ] sum_axiom
    ++ unfold "EXISTS_UNIQUE"
    ++ beta_tac
    ++ flatten_tac
@@ -482,7 +480,7 @@ let isl_thm =
      ++ blast_tac
      -- 
      [
-       instC [ << _x >>] ++ eq_tac; 
+       instC [ << _x >> ] ++ eq_tac; 
        simpA_tac [inr_not_inl]
     ]
  ];;
@@ -495,9 +493,9 @@ let isr_thm =
      ++ blast_tac
      -- 
      [
-      instC [ << _x >>] ++ eq_tac; 
+      instC [ << _x >> ] ++ eq_tac; 
       cut inl_not_inr
-	++ instA [ << _x >>; << _x1 >>] 
+	++ instA [ << _x >>; << _x1 >> ] 
 	++ blast_tac
     ]
  ];;
@@ -513,8 +511,8 @@ let isl_outl =
       rewriteC_tac [outl_thm] ++ eq_tac;
       cut isl_thm 
 	++ flatten_tac
-	++ inst_tac [<< _x1 >>]
-	++ inst_tac [<< _x1 >>]
+	++ inst_tac [ << _x1 >> ]
+	++ inst_tac [ << _x1 >> ]
 	++ blast_tac
     ]
  ];;
@@ -529,8 +527,8 @@ let isr_outr =
      [
       cut isr_thm 
 	++ flatten_tac
-	++ inst_tac [<< _x1 >>]
-	++ inst_tac [<< _x1 >>]
+	++ inst_tac [ << _x1 >> ]
+	++ inst_tac [ << _x1 >> ]
 	++ blast_tac;
       rewriteC_tac [outr_thm] ++ eq_tac
     ]

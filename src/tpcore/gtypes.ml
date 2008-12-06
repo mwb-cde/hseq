@@ -932,10 +932,10 @@ let new_matches scp t1 t2=
    [matching_env scp t1 t2 nenv]: Like unify_env but only variables in
    type [t1] can be bound.
 *)
-let matching_env scp t1 t2 env =  
+let matching_env scp env t1 t2 =  
   let rec match_aux ty1 ty2 env =
     let s = lookup_var ty1 env
-    and t =  ty2 
+    and t = ty2 
     in 
     match (s, t) with
       (Constr(f1, args1), Constr(f2, args2)) ->
@@ -965,18 +965,26 @@ let matching_env scp t1 t2 env =
 	else bind_occs s t env
     | (WeakVar(v1), x) -> 
 	bind_occs s x env
+(*
     | (_, WeakVar(_)) -> env
+*)
+    | _ -> 
+        if (equals s t) 
+        then env
+        else (raise (type_error "Can't match types" [s; t]))
   in
-  match_aux t1 t2 env (* try to match t1 and t2 *)
+    try
+      match_aux t1 t2 env (* try to match t1 and t2 *)
+    with x -> (raise (type_error "Can't match types" [t1; t2]))
 
 let matches_env scp tyenv t1 t2 = 
   try 
-    let nenv=matching_env scp t1 t2 tyenv
+    let nenv=matching_env scp tyenv t1 t2
     in nenv
   with _ -> tyenv
 
 let matches scp t1 t2=
-  try ignore(matching_env scp t1 t2 (empty_subst())) ; true
+  try ignore(matching_env scp (empty_subst()) t1 t2); true
   with _ -> false
 
 

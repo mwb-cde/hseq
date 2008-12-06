@@ -151,6 +151,7 @@ install: install-thys
 ###
 
 clean: 
+	$(RM) *.tho *.cmo *.cmi
 	$(RM) *~
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)

@@ -304,10 +304,94 @@ let term_copy_type env term =
 let matches_rewrite scp typenv env varp trm1 trm2 =
   unify_fullenv scp typenv env varp (Term.rename trm1) trm2
 *)
+
+(** Match terms w.r.t given type and term contexts *)
+
+let matches_full scp typenv trmenv varp trm1 trm2 =
+  let lookup q sbs = 
+    let r = Bound q
+    in 
+      try (Term.find r sbs)
+      with Not_found -> r
+  in
+  let eq_binder tyenv b1 b2 = 
+    let (qnt1, _, qty1) = dest_binding b1
+    and (qnt2, _, qty2) = dest_binding b2
+    in 
+    if (qnt1 = qnt2) 
+    then 
+      (try 
+          (true, Gtypes.matching_env scp tyenv qty1 qty2)
+        with _ -> (false, tyenv))
+    else (false, tyenv)
+  in 
+  let rec matches_aux tyenv env qntenv t1 t2 = 
+    let s = Term.chase_var varp t1 env
+    in 
+    if (varp s) 
+    then
+      if (equals s t2) 
+      then (tyenv, env)
+      else (tyenv, bind_occs s t2 env)
+    else 
+      (match (s, t2) with
+	  (App(f1, a1), App(f2, a2)) ->
+	    let (tyenv1, env1) = matches_aux tyenv env qntenv f1 f2
+	    in 
+	    let (tyenv2, env2) = matches_aux tyenv1 env1 qntenv a1 a2
+	    in 
+	      (tyenv2, env2)
+	| (Qnt(q1, b1), Qnt(q2, b2)) ->
+	    let (qtst, qtyenv) = eq_binder tyenv q1 q2
+	    in 
+	      if qtst 
+	      then 
+		let nqntenv = bind (Bound q1) (Bound q2) qntenv
+		in 
+		  matches_aux qtyenv env nqntenv b1 b2
+	      else 
+                raise (term_error "matches_aux: qnt" [t1;t2])
+	| (Id(n1, ty1), Id(n2, ty2)) ->
+	    if n1=n2 
+	    then (Gtypes.matching_env scp tyenv ty1 ty2, env)
+	    else raise (term_error "matches_aux: var" [t1;t2])
+	| (Free(n1, ty1), Free(n2, ty2)) ->
+	    if n1=n2 
+	    then (Gtypes.matching_env scp tyenv ty1 ty2, env)
+	    else raise (term_error "matches_aux: var" [t1;t2])
+	| (Meta(q1), Meta(q2)) ->
+	    if (binder_equality q1 q2)
+	    then (tyenv, env)
+	    else raise (term_error"matches_aux: meta" [t1;t2])
+	| (Bound(q1), Bound(q2)) ->
+	    let nq1 = dest_bound (lookup q1 qntenv)
+	    in 
+	      if binder_equality nq1 q2
+	      then (tyenv, env)
+	      else raise (term_error "matches_aux: bound" [t1;t2])
+	| (Const(c1), Const(c2)) ->
+	    if c1=c2 then (tyenv, env)
+	    else raise (term_error "matches_aux: const" [t1;t2])
+	| (_, _) -> 
+	    if Term.equals s t2
+	    then (tyenv, env)
+	    else raise (term_error "matches_aux: default" [t1;t2]))
+  in 
+    matches_aux typenv trmenv (Term.empty_subst()) trm1 trm2
+
+
+let matches_rewrite scp typenv env varp trm1 trm2 =
+  let (trm1a, typenv1) = term_copy_type (Gtypes.empty_subst()) trm1
+  in
+  matches_full scp typenv env varp trm1a trm2
+
+(*
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1a, typenv1) = term_copy_type (Gtypes.empty_subst()) trm1
   in
   unify_fullenv scp typenv env varp trm1a trm2
+*)
+
 
 module Retired =
 struct

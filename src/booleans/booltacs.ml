@@ -292,7 +292,7 @@ let blast_tac ?info ?f goal =
  *)
 let make_cases_tac_thm ()= 
   (Commands.get_or_prove "Bool.cases_thm"
-     <<!P: (not P) or P>>
+     << !P: (not P) or P >>
    (allC ++ disjC ++ negC ++ basic))
 
 let cases_thm_var = Lib.freeze make_cases_tac_thm

@@ -15,7 +15,7 @@
    where HSEQ is the hseq install directory.
 *)
 
-(** Open the theroem prover *)
+(** Open the theorem prover *)
 
 open HSeq
 

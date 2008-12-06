@@ -33,6 +33,6 @@ val type_char: char ref
    Set up quotation parsing.
 *)
 
-val test_astexpander_fn : (string -> MLast.expr) ref
-
+(* val test_astexpander_fn : (string -> MLast.expr) ref *)
+val test_astexpander_fn : (string -> Camlp4.PreCast.Ast.expr) ref
 

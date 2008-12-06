@@ -16,8 +16,7 @@ val equals : term -> term -> bool
    [equals s t]: syntactic equality of terms [s] and [t]. This is
    essentially the same as [Pervasives.=] over term except that
    references (type [binders]) are compared as first class objects
-   (using [Pervasives.==]). (If the OCaml [=] was the same as the SML
-   [=], this function would be unnecessary.)
+   (using [Pervasives.==]).
 *)
 
 val binder_equiv : Scope.t -> term -> term -> bool
