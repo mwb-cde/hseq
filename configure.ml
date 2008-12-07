@@ -46,50 +46,12 @@ let filename_opt x y =
     then replaces ' ' with '\ '.
 *)
 
-(**
-let stringify str = 
-  let rec stringify_aux str idx (len, rslt) = 
-    match idx with 
-	0 -> (len, rslt)
-      | _ -> 
-	  let chr = String.get str (idx-1)
-	  in 
-	    if (chr = ' ')
-	    then stringify_aux str (idx-1) (len+2, ('\\'::' '::rslt))
-	    else stringify_aux str (idx-1) (len+1 , (chr::rslt))
-  in
-  let implode str chars =
-    let len = String.length str
-    in 
-    let rec imp_aux idx lst = 
-      if (idx < len)
-      then 
-	match lst with 
-	    [] -> str
-	  | (c::rst) -> 
-	      String.set str idx c;
-	      imp_aux (idx+1) rst
-      else
-	str
-    in 
-      imp_aux 0 chars
-  in 
-  let str1 = String.escaped str
-  in 
-  let strlen = String.length str1
-  in 
-  let (len, lst) = stringify_aux str1 strlen (0, [])
-  in 
-    implode (String.make len '#') lst
-*)
-
 let stringify str = String.escaped str
 
 (** Test that a command exists *)
 
 let has_program s = 
   Sys.command s = 0
-
 
 (** Names of output files **)
 
@@ -99,7 +61,6 @@ let make_data=filename output_dir "data.make"
 
 (** The current directory *)
 let cwd = Sys.getcwd()
-
 
 (** Variables *)
 
@@ -193,7 +154,6 @@ let thys_d () =
    match os_type with
      "Win32" -> Windows.thys_d()
      | _ -> Unix.thys_d()
-
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
@@ -292,18 +252,22 @@ let make_outfile n =
 let emit_ml ()=
   let oc = make_outfile (output_ml_d())
   in 
-  List.iter (print_ml_var oc) varlist;
-  List.iter (print_ml_setting oc) settinglist;
-  close_out oc;
-  Printf.printf "Wrote file %s\n" (output_ml_d())
+    Printf.fprintf oc 
+      "(* Definitions for OCaml pre-processor (auto-generated) *)\n\n";
+    List.iter (print_ml_var oc) varlist;
+    List.iter (print_ml_setting oc) settinglist;
+    close_out oc;
+    Printf.printf "Wrote file %s\n" (output_ml_d())
 
 let emit_make() = 
   let oc = make_outfile (output_make_d())
   in 
-  List.iter (print_make_var oc) varlist;
-  List.iter (print_make_setting oc) settinglist;
-  close_out oc;
-  Printf.printf "Wrote file %s\n" (output_make_d())
+    Printf.fprintf oc 
+      "# Definitions for makefiles (auto-generated) \n\n";
+    List.iter (print_make_var oc) varlist;
+    List.iter (print_make_setting oc) settinglist;
+    close_out oc;
+    Printf.printf "Wrote file %s\n" (output_make_d())
 
 let emit () = 
   if(!ml_code)
@@ -312,7 +276,6 @@ let emit () =
   if(!make_code) 
   then emit_make() 
   else ()
-
 
 (** Command line arguments **)
 
