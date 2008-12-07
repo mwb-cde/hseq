@@ -8,6 +8,8 @@ HSeq Dec08
 
 * Fix loop when resolving and loading theory dependencies.
 
+* Remove OMakefile support.
+
 HSeq Mar07
 ----------
 
