@@ -167,8 +167,8 @@ let set_fast_compilers flag =
   then set fast_compilers "true"
   else set fast_compilers "false"
 
-(* let has_native_compilers = has_program "ocamlopt" *)
-let has_native_compilers = false
+let has_native_compilers = has_program "ocamlopt" 
+(* let has_native_compilers = false *)
 
 let native_compilers_d ()= 
   if has_native_compilers 
@@ -294,7 +294,7 @@ let arglist =
        "[true|false] Use the fast compilers (ocamlc.opt) ["
        ^(fast_compilers_d())^"]");
       ("--native", Arg.Bool set_native_compilers, 
-       "[true|false] Use the native code compilers (ocamlopt) ["
+       "[true|false] Build the native-code libraries ["
        ^(native_compilers_d())^"]")
     ]
 

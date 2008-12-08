@@ -24,6 +24,8 @@ From the toplevel directory:
         --fast (true/false): 
                      Use the fast byte-code compiler (ocamlc.opt)
                      default:false (use ocamlc)
+        --native (true/false):
+                     Build native-code libraries.
 
    Examples:
 	ocaml configure.ml --help,

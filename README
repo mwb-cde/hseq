@@ -3,7 +3,7 @@ December 2008
 M. Wahab <mwahab@users.sourceforge.net>
 ==============
 
-HSeq is a tactical theorem prover for typed higher-order logic.  HSeq
+HSeq is a tactical theorem prover for typed higher-order logic. It
 is experimental, alpha-quality code which may have soundness bugs.
 
 HSeq is distributed under the terms of the BSD License, see file
@@ -64,12 +64,13 @@ The handling of theories uses two file-loading functions, which are
 called if a theory needs to be rebuilt or if a theory has support
 libraries. In the interactive toplevel, these are set to functions in
 the OCaml top-level code. In a library, they need to be set
-explicitly. The file-handling functions are called through two hooks:
-Global.Hooks.load_file and Global.Hooks.use_file. Hook load_file is
-used to load byte code, hook use_file is used to run script files. In
-library mode, both are set to do nothing except issue a warning. They
-can be set to the empty function (fun () -> ()) to silence the
-warnings. Alternatively, load_file can be set to Dynlink.loadfile.
+explicitly. The file-handling functions are called through hooks:
+Global.Hooks.load_file, used to load byte code, and
+Global.Hooks.use_file, used to run script files. In library mode, both
+are set to do nothing except issue a warning. To silence the warnings,
+set them to the empty function (fun () -> ()). An lternative is to set
+load_file to Dynlink.loadfile, which will require the dynlink library
+to be linked in.
 
 The library does not depend on the toplevel interface. Using the
 library without the toplevel hasn't been very well tested.
@@ -119,3 +120,6 @@ the interactive toplevel.
 As with the byte-code libraries, the easiest way to compile against
 the native code libraries is to use command 'hseq --native'. See the
 command line options for hseqc (printed by 'hseq --help').
+
+Use build option --native to build the native-code libraries (see file
+INSTALL).

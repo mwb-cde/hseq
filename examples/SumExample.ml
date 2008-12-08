@@ -26,8 +26,11 @@ open Userlib
 (** Initialise the system *)
 
 let _ = 
-(*  Global.Hooks.load_file := (fun _ -> ()); *)
-(*  Global.Hooks.load_file := Dynlink.loadfile; *)
+(*
+  Global.Hooks.load_file := (fun _ -> ()); 
+  OR 
+  Global.Hooks.load_file := Dynlink.loadfile; 
+*)
   Global.Hooks.use_file := (fun ?silent _ -> ());
   Global.init()
 
