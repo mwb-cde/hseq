@@ -105,21 +105,6 @@ module Data =
 (** visited: formulas visited during the course of simplification *)
 	   visited: Tag.t list;
 
-(****
-(** asm_pairs: 
-   tags of original formulas and the new modified formula
-   (in (a, b) a is the tag of the original assumption,
-   b is the tag of the formula used as a rewrite rule
- *)
-   asm_pairs: (Tag.t*Tag.t) list;
-(** concl_pairs: 
-   tags of original formulas and the new modified formula
-   (in (a, b) a is the tag of the original conclusion
-   b is the tag of the formula used as a rewrite rule
- *)
-   concl_pairs: (Tag.t*Tag.t) list;
- ****)
-
 (** exclude: formulas not to use as a rewrite rule *)
 	   exclude: Tag.t list;
 
@@ -137,9 +122,6 @@ module Data =
        asms=a;
        visited = vs;
        exclude=ex;
-(*
-   asm_pairs = aps; concl_pairs = cps;
- *)
        loopdb=Net.empty()
      }
 
@@ -169,13 +151,6 @@ module Data =
 
     let set_visited cntrl ds=
       {cntrl with visited=ds}
-
-(*
-   let set_asm_pairs cntrl ds=
-   {cntrl with asm_pairs=ds}
-   let set_concl_pairs cntrl ds=
-   {cntrl with concl_pairs=ds}
- *)
 
     let set_exclude cntrl ds=
       {cntrl with exclude=ds}
@@ -207,11 +182,6 @@ module Data =
     let get_asms cntrl =cntrl.asms
 
     let get_visited cntrl =cntrl.visited
-
-(*
-   let get_asm_pairs cntrl =cntrl.asm_pairs
-   let get_concl_pairs cntrl =cntrl.concl_pairs
- *)
 
     let get_exclude cntrl =cntrl.exclude
 
@@ -437,7 +407,7 @@ let prep_cond_tac cntrl ret values thm goal =
     let (cnd_gltg, rl_gltg) =  (* condition-goal, rule-goal *)
       get_two ~msg:"prep_cond_tac: goals" (subgoals inf)
     in 
-    let cnd_ftg= (* condition- formula-tag *)
+    let cnd_ftg= (* condition-formula-tag *)
       get_one ~msg:"prep_cond_tac: forms" (cformulas inf)
     in 
     let ncntrl= Data.add_asm cntrl rl_ftg
@@ -549,10 +519,6 @@ let match_rewrite scp tyenv qntenv rl trm =
   let varp = Rewrite.is_free_binder qs
   in 
   let find_match term1 term2 = 
-(*
-    Unify.unify_rewrite 
-      scp tyenv (Term.empty_subst()) varp term1 term2
-*)
     Unify.matches_rewrite 
       scp tyenv (Term.empty_subst()) varp term1 term2
   in 
@@ -584,10 +550,6 @@ let match_rewrite scp tyenv qntenv rl trm =
  *)
 let find_basic ret data rl trm goal=
   let (cntrl, tyenv, qntenv) = data
-(*
-  let (cntrl, _, qntenv) = data
-  and tyenv = typenv_of goal 
-*)
   in 
   let (qs, c, lhs, rhs, order, thm)= rl
   and scp=scope_of goal
@@ -1148,7 +1110,6 @@ let rec cond_prover_worker_tac ctrl ret tg goal=
       Lib.set_option ret (Data.set_loopdb (ret0) orig_loopdb)
   in 
   seq [ repeat tac; data_tac f () ] goal
-(* repeat (basic_simp_tac ctrl1 ret tg) *)
 
 let cond_prover_tac ctrl tg goal=
   let cond_depth = Data.get_cond_depth ctrl

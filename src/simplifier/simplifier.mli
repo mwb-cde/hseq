@@ -71,23 +71,6 @@ module Data:
 	    visited: Tag.t list;
 (** Formulas visited during the course of simplification *)
 
-(****
-
-(** asm_pairs: 
-   tags of original formulas and the new modified formula
-   (in (a, b) a is the tag of the original assumption,
-   b is the tag of the formula used as a rewrite rule
- *)
-   asm_pairs: (Tag.t*Tag.t) list;
-(** concl_pairs: 
-   tags of original formulas and the new modified formula
-   (in (a, b) a is the tag of the original conclusion
-   b is the tag of the formula used as a rewrite rule
- *)
-   concl_pairs: (Tag.t*Tag.t) list;
-
-****)
-
 	    exclude: Tag.t list;
 (** Formulas not to be used as a rewrite rule. *)
 
@@ -189,7 +172,6 @@ module Data:
 
 (** {5 Utility functions} *)
 
-(* val strip_rrs : Logic.rr_type list -> Basic.term list *)
 (**
    [strip_rrs]: Prepare for direct rewriting of term. (For tests only.)
  *)
