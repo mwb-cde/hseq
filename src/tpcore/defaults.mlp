@@ -32,5 +32,5 @@ INCLUDE "configure.data"
 
 let basedir = BaseDir
 
-let version = "DecO8"
+let version = "Jan2010"
 
