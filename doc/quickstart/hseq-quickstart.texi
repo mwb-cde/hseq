@@ -14,7 +14,7 @@ Copyright @copyright{} 2006, M. Wahab
 
 @titlepage
 @title @HSeq{} Quick Start
-@author M. Wahab <mwahab@users.sourceforge.net>
+@author M. Wahab <mwb.cde@googlemail.com>
 
 @page
 @vskip 0pt plus lfill

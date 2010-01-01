@@ -1,9 +1,3 @@
-(*-----
-Name: SumExample.ml
-Author: M Wahab <mwahab@users.sourceforge.net>
-Copyright M Wahab 2006
-----*)
-
 (**
   Example of linking with the HSeq library.
 
