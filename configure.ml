@@ -86,7 +86,7 @@ let prefix = ref None
 let basedir = ref None
 let bindir = ref None
 let libdir = ref None
-let thys = ref None
+let thysdir = ref None
 let output = ref None
 let fast_compilers = ref None
 let native_compilers = ref None
@@ -108,20 +108,18 @@ let bin_d () = "hseq"
 
 let os_type = Sys.os_type
 
-(** The standard Unix values **)
+(** The default Unix values **)
 module Unix=
 struct
   let prefix_d () = "/usr/local"
   let basedir_d () = 
-    filename (get_opt !prefix (prefix_d()))
-      (filename "lib" (get_opt !bin (bin_d())))
+    get_opt !basedir (prefix_d())
   let bindir_d () = 
-    get_opt !basedir (basedir_d())
-(*    filename (get_opt !basedir (basedir_d())) "bin" *)
+    get_opt !bindir (filename (basedir_d()) "bin")
   let libdir_d () = 
-    filename (get_opt !basedir (basedir_d())) "lib"
-  let thys_d () = 
-    filename (get_opt !basedir (basedir_d())) "thys"
+    get_opt !libdir (filename (basedir_d()) "lib/hseq")
+  let thysdir_d () = 
+    get_opt !thysdir (filename (libdir_d()) "thys")
 end
 
 (** The standard Win32 values **)
@@ -132,14 +130,15 @@ struct
   let prefix_d () = "/Program Files"
 
   let basedir_d () = 
-    filename (get_opt !prefix (prefix_d())) "HSeq"
+    filename (prefix_d()) "HSeq"
   let bindir_d () = 
-    get_opt !basedir (basedir_d())
+    filename (basedir_d()) "bin"
   let libdir_d () = 
-    filename (get_opt !basedir (basedir_d())) "lib"
-  let thys_d () = 
-    filename (get_opt !basedir (basedir_d())) "thys"
+    filename (basedir_d()) "lib"
+  let thysdir_d () = 
+    filename (libdir_d()) "thys"
 end
+
 
 (*
 module Windows = Unix
@@ -165,10 +164,10 @@ let libdir_d () =
      "Win32" -> Windows.libdir_d()
      | _ -> Unix.libdir_d()
 
-let thys_d () = 
+let thysdir_d () = 
    match os_type with
-     "Win32" -> Windows.thys_d()
-     | _ -> Unix.thys_d()
+     "Win32" -> Windows.thysdir_d()
+     | _ -> Unix.thysdir_d()
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
@@ -203,11 +202,11 @@ let output_make_d () = get_opt !output make_data
 let varlist = 
   [
    ("Bin", bin, bin_d);
-   ("Prefix", prefix, prefix_d);
+(*   ("Prefix", prefix, prefix_d);*)
    ("BinDir", bindir, bindir_d);
    ("BaseDir", basedir, basedir_d);
    ("LibDir", libdir, libdir_d);
-   ("ThyDir", thys, thys_d);
+   ("ThyDir", thysdir, thysdir_d);
  ]
 
 let settinglist =
@@ -303,8 +302,8 @@ let arglist =
        "<dir> The executables directory ["^(bindir_d())^"]");
       ("--libdir", Arg.String (set libdir), 
        "<dir> The libraries directory ["^(libdir_d())^"]");
-      ("--thydir", Arg.String (set thys), 
-       "<dir> The theories directory ["^(thys_d())^"]");
+      ("--thydir", Arg.String (set thysdir), 
+       "<dir> The theories directory ["^(thysdir_d())^"]");
       ("--fast", Arg.Bool set_fast_compilers, 
        "[true|false] Use the fast compilers (ocamlc.opt) ["
        ^(fast_compilers_d())^"]");
