@@ -31,6 +31,8 @@
 INCLUDE "configure.data"
 
 let basedir = BaseDir
+let libdir = LibDir
+let thydir = ThyDir
 
 let version = "Jan2010"
 

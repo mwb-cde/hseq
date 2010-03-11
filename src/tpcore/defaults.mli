@@ -26,5 +26,11 @@
 val basedir : string
 (** [basedir]: The directory in which the system is installed *)
 
+val libdir : string
+(** [libdir]: The library directory *)
+
+val thydir : string
+(** [libdir]: The theory directory *)
+
 val version: string
 (** [version]: The version identifier *)
