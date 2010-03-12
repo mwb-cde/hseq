@@ -18,7 +18,7 @@ From the toplevel directory:
 
    Options for configure.ml:
 	--help:      See the list of options and their default values.
-	--basedir d: Set the installation directory to d
+	--prefix d:  Set the installation directory to d
                      default:/usr/local/lib/hseq
 	--bindir d:  Install the binary in directory d
         --fast (true/false): 
@@ -33,7 +33,7 @@ From the toplevel directory:
 	ocaml configure.ml --bindir /usr/local/bin
 	(put the binary in /usr/local/bin)
 
-	ocaml configure.ml --fast true --basedir `pwd` 
+	ocaml configure.ml --fast true --prefix `pwd` 
 	(make the installation directory the same as the build directory
 	and use the fast compilers)
 

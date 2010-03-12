@@ -140,10 +140,6 @@ struct
 end
 
 
-(*
-module Windows = Unix
-*)
-
 let prefix_d () = 
    match os_type with
      "Win32" -> Windows.prefix_d()
@@ -296,7 +292,7 @@ let emit () =
 let arglist =
   Arg.align
     [
-      ("--basedir", Arg.String (set basedir), 
+      ("--prefix", Arg.String (set basedir), 
        "<dir> The installation directory ["^(basedir_d())^"]");
       ("--bindir", Arg.String (set bindir), 
        "<dir> The executables directory ["^(bindir_d())^"]");
