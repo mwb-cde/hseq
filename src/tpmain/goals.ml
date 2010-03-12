@@ -53,6 +53,7 @@ module ProofStack =
 struct 
   type t = Proof.t list
 
+  let empty () = []
   let push x p = x::p
 
   let top p = 
@@ -102,42 +103,41 @@ struct
 	| y -> y::xs
 end
 
-let prflist = ref ([]:ProofStack.t)
-
+let prflist = ref (ProofStack.empty())
 let proofs() = !prflist
+let set_proofs(prfs) = prflist := prfs
 
-let top () = ProofStack.top (!prflist)
-let top_goal () = ProofStack.top_goal (!prflist)
+let top () = ProofStack.top (proofs())
+let top_goal () = ProofStack.top_goal (proofs())
 
-let drop() = prflist:=ProofStack.pop (!prflist)
+let drop() = set_proofs(ProofStack.pop (proofs()))
 
 let goal ?info trm = 
   let f = Formula.make (Global.scope()) trm
   in 
-  prflist:= 
-    ProofStack.push_goal (mk_goal ?info (Global.scope()) f) (!prflist);
-  !save_hook(); top()
+    set_proofs(ProofStack.push_goal (mk_goal ?info (Global.scope()) f) (proofs()));
+    !save_hook(); 
+    top()
 
 let postpone () =
-  prflist := ProofStack.rotate (!prflist);
+  set_proofs(ProofStack.rotate (proofs()));
   top()
 
 let lift n =
   let nlist = 
-    try  ProofStack.lift n (!prflist)
+    try  ProofStack.lift n (proofs())
     with err -> 
       raise 
-	(Report.add_error (Report.error "Failed to focus on proof.") err)
+	(Report.add_error (Report.error "Failed to lift proof.") err)
   in 
-  prflist := nlist;
-  top()
+    set_proofs(nlist);
+    top()
 
 
 let undo() =
-  match (!prflist) with
+  match (proofs()) with
     [] -> raise (Report.error "No goals")
-  | _ -> 
-      (prflist := ProofStack.undo_goal (!prflist); top())
+  | _ -> (set_proofs(ProofStack.undo_goal (proofs())); top())
 	
 let result () = mk_thm (top_goal())
 
@@ -196,9 +196,9 @@ let by_com tac =
   in 
   let g = Logic.Subgoals.apply_to_goal ~report:report tac p
   in 
-  prflist:= (ProofStack.push_goal g) !prflist;
-  !save_hook();
-  top()
+    set_proofs((ProofStack.push_goal g) (proofs()));
+    !save_hook();
+    top()
 
 let by_list ?info trm tacl =
   let fg=mk_goal ?info (Global.scope()) (Formula.make (Global.scope()) trm)
