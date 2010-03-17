@@ -36,6 +36,7 @@ val print_thm: Logic.thm -> unit
 val print_defn: Logic.Defns.cdefn -> unit
 
 val print_prf: Goals.Proof.t -> unit
+val print_prfstk: Goals.ProofStack.t -> unit
 
 val print_fnident: Ident.t -> unit
 

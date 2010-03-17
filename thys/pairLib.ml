@@ -46,29 +46,28 @@ let ppdata = (pair_fixity, pair_prec)
 
 let pair_printer ppstate prec (f, args)=
   match args with 
-    (left::right::rest) -> 
-      Format.printf "@[<2>";
-      Printer.print_assoc_bracket prec ppdata "(";
-      Term.print_term ppstate ppdata left;
-      Format.printf ",@ ";
-      Term.print_term ppstate ppdata right;
-      Printer.print_assoc_bracket prec ppdata  ")";
-      Format.printf "@]";
-      (match rest with
-	[] -> ()
-      | [] -> 
-	  Format.printf "@[";
-	  Printer.print_identifier (Term.pplookup ppstate) pair_id;
-	  Format.printf "@]"
-      | _ -> 
-	  Format.printf "@[";
-	  Printer.print_list
-	    ((fun x ->
-	      Term.print_term ppstate prec x),
-	     (fun () -> Format.printf "@ "))
-	    rest;
-	  Format.printf "@]")
-  | _ -> 
+      (left::right::rest) -> 
+        Format.printf "@[<2>";
+        Printer.print_assoc_bracket prec ppdata "(";
+        Term.print_term ppstate ppdata left;
+        Format.printf ",@ ";
+        Term.print_term ppstate ppdata right;
+        Printer.print_assoc_bracket prec ppdata  ")";
+        Format.printf "@]";
+        (match rest with
+            [] -> 
+	      Format.printf "@[";
+	      Printer.print_identifier (Term.pplookup ppstate) pair_id;
+	      Format.printf "@]"
+          | _ -> 
+	      Format.printf "@[";
+	      Printer.print_list
+	        ((fun x ->
+	          Term.print_term ppstate prec x),
+	        (fun () -> Format.printf "@ "))
+	        rest;
+	      Format.printf "@]")
+    | _ -> 
       Term.simple_print_fn_app ppstate ppdata (f, args)
 
 let init_pair_printer()=

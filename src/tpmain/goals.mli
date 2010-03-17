@@ -34,12 +34,16 @@
    popping the top goal off the list.  *)
 module Proof: 
 sig
-  type t = Logic.goal list
+  type t
 
+  val make : Logic.goal -> t
+  val empty: unit -> t
   val push : Logic.goal -> t -> t
   val top : t -> Logic.goal
   val pop : t -> t
 
+  (* Printer *)
+  val print: Printer.ppinfo -> t -> unit
 end
 
 (**
@@ -48,7 +52,9 @@ end
 *)
 module ProofStack :
     sig
-      type t (* = Proof.t list *)
+      type t 
+
+      val is_empty: t -> bool
       val empty: unit -> t
       val push : Proof.t -> t -> t
       val top : t -> Proof.t
@@ -61,6 +67,8 @@ module ProofStack :
       val top_goal : t -> Logic.goal
       val pop_goal : t -> t
 
+      (* Printer *)
+      val print: Printer.ppinfo -> t -> unit
     end 
 
 (** {7 General operations} *)
@@ -74,7 +82,7 @@ val top : unit -> Proof.t
 val top_goal : unit -> Logic.goal
 (** The current goal. *)
 
-val drop : unit -> unit
+val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
 val goal : ?info:Logic.info -> Basic.term -> Proof.t
