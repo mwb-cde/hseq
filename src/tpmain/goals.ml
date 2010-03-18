@@ -133,24 +133,29 @@ struct
 
   (* Printer *)
   let print ppinfo stk = 
-    let print_short prf = 
-      Format.printf "@[<v>Goal ";
+    let print_short prf idx = 
+      Format.printf "@[<v>Goal %i: " idx;
       Format.printf "@[";
       Term.print ppinfo
         (Formula.term_of (Logic.get_goal (top prf)));
-      Format.printf "@]@]";
+      Format.printf "@]@]"
     and num_prfs = (List.length stk) 
+    in
+    let rec print_short_list prfs ctr = 
+      match prfs with 
+          [] -> ()
+        | (p::ps) -> (print_short p ctr; print_short_list ps (ctr + 1))
     in
     match stk with 
         [] -> Format.printf "@[No goals@]@,"
       | (p::prfs) ->
-          let rprfs = List.rev prfs in
+          let rprfs = List.rev_append prfs [] in
             Format.printf "@[<v>";
             Format.printf "@[%i %s@]@," 
 	      num_prfs 
               (if num_prfs > 1 then "goals" else "goal");
             Format.printf "@[";
-            List.iter print_short rprfs;
+            print_short_list rprfs 1;
             Format.printf "@]@,";
             Proof.print ppinfo p;
             Format.printf "@]"
