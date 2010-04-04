@@ -1,0 +1,14 @@
+# File patterns to ignore
+syntax:glob
+
+# OCaml patterns
+*.cma
+*.cmi
+*.cmo
+*.cmx
+*.o
+*/depend
+
+# HSeq Patterns
+*.tho
+src/lib/*

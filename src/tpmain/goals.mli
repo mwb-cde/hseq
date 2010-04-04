@@ -26,22 +26,25 @@
 
 
 (**
-   Support for an interactive proof.
+   Support for interactive proof.
 
-   A proof is a list of goals. The first is the current current,
-   earlier goals occur later in the list. Each goal is produced from
-   its predecessor by applying a tactic. A tactic is undone by popping
-   the top goal off the list.
- *) 
+   A proof is a list of goals with the current goal at the head of the
+   list.  and earlier goals following in order. Each goal is produced
+   from its predecessor by applying a tactic. A tactic is undone by
+   popping the top goal off the list.  *)
 module Proof: 
-    sig
-      type t = Logic.goal list
+sig
+  type t
 
-      val push : Logic.goal -> t -> t
-      val top : t -> Logic.goal
-      val pop : t -> t
+  val make : Logic.goal -> t
+  val empty: unit -> t
+  val push : Logic.goal -> t -> t
+  val top : t -> Logic.goal
+  val pop : t -> t
 
-    end
+  (* Printer *)
+  val print: Printer.ppinfo -> t -> unit
+end
 
 (**
    Proof stacks for interactive proof. A proof stack is a list of
@@ -49,8 +52,10 @@ module Proof:
 *)
 module ProofStack :
     sig
-      type t = Proof.t list
+      type t 
 
+      val is_empty: t -> bool
+      val empty: unit -> t
       val push : Proof.t -> t -> t
       val top : t -> Proof.t
       val pop : t -> t
@@ -62,6 +67,8 @@ module ProofStack :
       val top_goal : t -> Logic.goal
       val pop_goal : t -> t
 
+      (* Printer *)
+      val print: Printer.ppinfo -> t -> unit
     end 
 
 (** {7 General operations} *)
@@ -75,39 +82,37 @@ val top : unit -> Proof.t
 val top_goal : unit -> Logic.goal
 (** The current goal. *)
 
-val drop : unit -> unit
+val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
 val goal : ?info:Logic.info -> Basic.term -> Proof.t
 (** 
    Start a proof attempt. Creates a goal and pushes it on the top of
-   the proof list.  If [?info] is given, the tag of the goal and
+   the proof stack.  If [?info] is given, the tag of the goal and
    conclusion ([trm]) are stored in it. This allows the tag of the
    conclusion formed from term [trm] to be determined.
 *)
 
 val postpone: unit -> Proof.t
 (**
-   Postpone the current proof, pushing it to the bottom of the list of
-   attempts.
+   Postpone the current proof, pushing it to the bottom of the stack.
 *)
 
 val lift: int -> Proof.t
-(**
-   [lift n]: Focus on the nth proof, making it the current proof
-   attempt. Fails if there is no nth proof.
-*)
+  (** [lift n]: Focus on the nth proof to the top of the stack, making
+      it the current proof attempt. Fails if there is no nth proof.
+  *)
 
 val undo : unit -> Proof.t
-(** 
-   Go back. Pop the top goal off the proof. Fails if there is only one
-   goal in the proof.
-*)
+  (** 
+      Go back. Pop the top goal off the proof. Fails if there is only one
+      goal in the proof.
+  *)
 
 val result: unit-> Logic.thm
 (** 
    Claim that proof is completed. Make a theorem from the proof, fail
-   if the current goal has subgoals.
+   if the current goal has subgoals and is therefore not a theorem.
 *)
 
 val apply: 
@@ -189,7 +194,7 @@ val set_hook : (unit -> unit) -> unit
 (** {7 Miscellaneous} *)
 
 val curr_sqnt : unit -> Logic.Sequent.t
-(** The current sequent *)
+(** The current sequent. *)
 
 val goal_scope: unit -> Scope.t
 (** The scope of the current subgoal. *)

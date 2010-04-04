@@ -32,6 +32,10 @@ module Proof =
 struct
   type t = Logic.goal list
 
+  let make gl = [gl]
+
+  let empty() = []
+
   let push x p = x::p
 
   let top p = 
@@ -44,6 +48,26 @@ struct
       [] -> raise (Report.error "No goals.")
     | (_::xs) -> xs
 
+  (* Printer *)
+  let print ppinfo prf = 
+    let g = top prf
+    in 
+    let subgls = Logic.get_subgoals g
+    in 
+      Format.printf "@[<v>Goal ";
+      Format.printf "@[";
+      Term.print ppinfo
+        (Formula.term_of (Logic.get_goal g));
+      Format.printf "@]@,";
+      (match subgls with
+          [] -> Format.printf "@[No subgoals@]@,"
+        | (x::_) -> 
+            let num_gls = (List.length subgls)
+            in 
+              Format.printf "@[%i %s@]@," 
+	        num_gls (if num_gls>1 then "subgoals" else "subgoal");
+              Logic.print_sqnt ppinfo x);
+      Format.printf "@]"
 end
 
 (***
@@ -53,26 +77,32 @@ module ProofStack =
 struct 
   type t = Proof.t list
 
+  let is_empty stk = 
+    match stk with 
+        [] -> true 
+      |  _ -> false
+
+  let empty () = []
   let push x p = x::p
 
   let top p = 
     match p with 
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (x::_) -> x
 
   let pop p = 
     match p with
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (_::xs) -> xs
 
   let rotate p = 
     match p with 
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (x::xs) -> xs@[x]
 
   let lift n p =
     match p with 
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | xs -> 
 	let (l, c, r) = Lib.full_split_at_index n xs
 	in 
@@ -85,59 +115,96 @@ struct
 
   let top_goal p = 
     match p with 
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (x::_) -> Proof.top x
 
   let pop_goal p = 
     match p with
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (x::xs) -> (Proof.pop x)::xs
 
   let undo_goal p=
     match p with
-      [] -> raise (Report.error "No goals.")
+      [] -> raise (Report.error "No proof attempts.")
     | (x::xs) ->
 	match (Proof.pop x) with
 	  [] -> raise (Report.error "Can't undo anymore")
 	| y -> y::xs
+
+  (* Printer *)
+  let print ppinfo stk = 
+    let print_short prf idx = 
+      Format.printf "@[<v>Goal %i: " idx;
+      Format.printf "@[";
+      Term.print ppinfo
+        (Formula.term_of (Logic.get_goal (top prf)));
+      Format.printf "@]@]"
+    and num_prfs = (List.length stk) 
+    in
+    let rec print_short_list prfs ctr = 
+      match prfs with 
+          [] -> ()
+        | (p::ps) -> (print_short p ctr; print_short_list ps (ctr + 1))
+    in
+    match stk with 
+        [] -> Format.printf "@[No goals@]@,"
+      | (p::prfs) ->
+          let rprfs = List.rev_append prfs [] in
+            Format.printf "@[<v>";
+            Format.printf "@[%i %s@]@," 
+	      num_prfs 
+              (if num_prfs > 1 then "goals" else "goal");
+            Format.printf "@[";
+            print_short_list rprfs 1;
+            Format.printf "@]@,";
+            Proof.print ppinfo p;
+            Format.printf "@]"
 end
 
-let prflist = ref ([]:ProofStack.t)
-
+let prflist = ref (ProofStack.empty())
 let proofs() = !prflist
+let set_proofs(prfs) = prflist := prfs
 
-let top () = ProofStack.top (!prflist)
-let top_goal () = ProofStack.top_goal (!prflist)
+let top () = ProofStack.top (proofs())
+let top_goal () = ProofStack.top_goal (proofs())
 
-let drop() = prflist:=ProofStack.pop (!prflist)
+let drop() = (set_proofs(ProofStack.pop (proofs())); proofs())
 
+(*
 let goal ?info trm = 
   let f = Formula.make (Global.scope()) trm
   in 
-  prflist:= 
-    ProofStack.push_goal (mk_goal ?info (Global.scope()) f) (!prflist);
-  !save_hook(); top()
+    set_proofs(ProofStack.push_goal (mk_goal ?info (Global.scope()) f) (proofs()));
+    !save_hook(); 
+    top()
+*)
+let goal ?info trm = 
+  let frm = Formula.make (Global.scope()) trm in 
+  let gl = mk_goal ?info (Global.scope()) frm in
+  let prf = Proof.make gl in
+    set_proofs(ProofStack.push prf (proofs()));
+    !save_hook(); 
+    top()
 
 let postpone () =
-  prflist := ProofStack.rotate (!prflist);
+  set_proofs(ProofStack.rotate (proofs()));
   top()
 
 let lift n =
   let nlist = 
-    try  ProofStack.lift n (!prflist)
+    try  ProofStack.lift n (proofs())
     with err -> 
       raise 
-	(Report.add_error (Report.error "Failed to focus on proof.") err)
+	(Report.add_error (Report.error "Failed to lift proof.") err)
   in 
-  prflist := nlist;
-  top()
+    set_proofs(nlist);
+    top()
 
 
 let undo() =
-  match (!prflist) with
-    [] -> raise (Report.error "No goals")
-  | _ -> 
-      (prflist := ProofStack.undo_goal (!prflist); top())
+  match (proofs()) with
+    [] -> raise (Report.error "No proof attempts")
+  | _ -> (set_proofs(ProofStack.undo_goal (proofs())); top())
 	
 let result () = mk_thm (top_goal())
 
@@ -196,9 +263,9 @@ let by_com tac =
   in 
   let g = Logic.Subgoals.apply_to_goal ~report:report tac p
   in 
-  prflist:= (ProofStack.push_goal g) !prflist;
-  !save_hook();
-  top()
+    set_proofs((ProofStack.push_goal g) (proofs()));
+    !save_hook();
+    top()
 
 let by_list ?info trm tacl =
   let fg=mk_goal ?info (Global.scope()) (Formula.make (Global.scope()) trm)

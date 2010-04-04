@@ -59,25 +59,9 @@ let print_branch x =
     
 let print_thm t = Logic.print_thm (Global.PP.info()) t
 
-let print_prf p = 
-  let g = Goals.Proof.top p
-  in 
-  let subgls = Logic.get_subgoals g
-  in 
-  Format.printf "@[<v>Goal ";
-  Format.printf "@[";
-  print_term 
-    (Formula.term_of (Logic.get_goal g));
-  Format.printf "@]@,";
-  (match subgls with
-    [] -> Format.printf "@[No subgoals@]@,"
-  | (x::_) -> 
-      let num_gls = (List.length subgls)
-      in 
-      Format.printf "@[%i %s@]@," 
-	num_gls (if num_gls>1 then "subgoals" else "subgoal");
-       print_sqnt x);
-  Format.printf "@]"
+let print_prf p = Goals.Proof.print (Global.PP.info()) p
+let print_prfstk p = Goals.ProofStack.print (Global.PP.info()) p
+
 let print_termdefn def = 
     let n, ty, th = Logic.Defns.dest_termdef def
     in 
@@ -102,14 +86,6 @@ let print_termdecln def =
 
 let print_defn def =
   Logic.Defns.print_cdefn (Global.PP.info()) def
-(*
-  if(Logic.Defns.is_termdef def)
-  then print_termdefn def
-  else 
-    if (Logic.Defns.is_termdecln def)
-    then print_termdecln def
-    else ()
-*)
   
 let print_subst tenv f= 
   Format.printf "@[<2>";

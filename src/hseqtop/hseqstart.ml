@@ -37,6 +37,7 @@ open HSeq;;
 #install_printer Display.print_branch;;
 #install_printer Display.print_thm;;
 #install_printer Display.print_prf;;
+#install_printer Display.print_prfstk;;
 #install_printer Display.print_fnident;;
 #install_printer Display.print_error;;
 #install_printer Display.print_defn;;
