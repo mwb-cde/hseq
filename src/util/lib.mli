@@ -1,34 +1,32 @@
 (*----
- Name: lib.mli
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: lib.mli
+  Copyright M Wahab 2005-2010
+  Author: M Wahab  <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
-(**
-   General purpose functions.
-*)
+(** General purpose functions *)
 
 (** Operators **)
 module Ops : 
 sig
 
   val (<+) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
-      (** Function composition **)
+(** Syntax for function composition. [(f <+ g)(x)] is [f(g(x))]. *)
 
 end
 
@@ -41,9 +39,8 @@ val take : int * 'a list -> 'a list
 val drop : int * 'a list -> 'a list 
 val delete_nth : int -> 'a list -> 'a list
 val replace_nth : int -> 'a list -> 'a -> 'a list
-val insert : 
-  ('a -> 'a -> bool) 
-  -> 'a -> 'b -> ('a * 'b) list -> ('a * 'b) list
+val insert : ('a -> 'a -> bool) -> 'a -> 'b -> ('a * 'b) list 
+  -> ('a * 'b) list
 val replace : 'a -> 'b -> ('a*'b) list -> ('a*'b) list
 val wrap_around: 'a list -> int -> int
 val get_nth: 'a list -> int -> 'a
@@ -54,115 +51,116 @@ val index: ('a -> bool) -> 'a list -> int
 val filter: ('a -> bool) -> 'a list -> 'a list
 val assocp: ('a -> bool) -> ('a* 'b) list -> 'b
 
-type ('a, 'b) substype = ('a, 'b)Hashtbl.t
-val empty_env : unit -> ('a, 'b) Hashtbl.t 
-val env_size : int -> ('a, 'b) Hashtbl.t 
-val find : 'a -> ('a, 'b) Hashtbl.t -> 'b 
-val bind_env : 'a -> 'b -> ('a, 'b) Hashtbl.t -> unit 
-val bind : 'a -> 'b -> ('a, 'b) Hashtbl.t -> ('a, 'b) Hashtbl.t 
-val add : 'a -> 'b -> ('a, 'b) Hashtbl.t -> 'b 
-val chase : ('a -> bool) -> 'a -> ('a, 'a) Hashtbl.t -> 'a
-val fullchase : ('a -> bool) -> 'a -> ('a, 'a) Hashtbl.t -> 'a 
-val member : 'a -> ('a, 'b)Hashtbl.t -> bool
-val remove: 'a -> ('a, 'b)Hashtbl.t -> unit
+type ('a, 'b) substype = ('a, 'b) Hashtbl.t
+val empty_env : unit -> ('a, 'b) substype 
+val env_size : int -> ('a, 'b) substype 
+val find : 'a -> ('a, 'b) substype -> 'b 
+val bind_env : 'a -> 'b -> ('a, 'b) substype -> unit 
+val bind : 'a -> 'b -> ('a, 'b) substype -> ('a, 'b) substype 
+val add : 'a -> 'b -> ('a, 'b) substype -> 'b 
+val chase : ('a -> bool) -> 'a -> ('a, 'a) substype -> 'a
+val fullchase : ('a -> bool) -> 'a -> ('a, 'a) substype -> 'a 
+val member : 'a -> ('a, 'b)substype -> bool
+val remove: 'a -> ('a, 'b)substype -> unit
 val remove_dups: 'a list -> 'a list
 
 val table_to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 (** Convert from a table to a list. *)
+
 val table_from_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 (** Convert from a list to a table. *)
 
 val find_char : char -> int -> string -> int 
-
-(* chop_at c str:
-   cut str into pair of strings (x, y)
-   with x the substring before char c, y the substring after c
-   if no char c in str, then x is the empty string
-*)
+(** [find_char c max str]: Find the the first index of character [c]
+    in string [str], returning [max] if not found.. *)
 
 val chop_at : char -> string -> string * string
-
-(* [int_to_name i]: convert i to a string
-   0 -> a
-   25-> z
-   26 -> a1
+(** [chop_at c str]: Cut [str] into pair of strings [(x, y)] with [x] the
+    substring before char [c], [y] the substring after [c] if no char [c] in
+    [str], then [x] is the empty string.
 *)
+
 val int_to_name: int -> string
-
-(* [num_to_name i]: convert [i] to string
-   0 -> a
-   25-> z
-   26 -> a1
+(** [int_to_name i]: convert i to a string, with
+    0 -> a, 25-> z, 26 -> a1, etc.
 *)
+
 val num_to_name: Num.num -> string
+(** [num_to_name i]: convert [i] to string, with
+    0 -> a, 25-> z, 26 -> a1, etc.
+*)
 
 (**
    Named Lists 
 
    Lists in which elements are named and data can be
-   added by relative position
+   added by relative position.
 
-   Use association list functions for operations other than add.
+   Note that it is better to use association lists functions for
+   operations other than add.
 *)
 type ('a, 'b)named_list = ('a * 'b) list
 
+(** Relative position markers *)
 type ('a)position = 
     First | Last | Before of 'a | After of 'a | Level of 'a
 
 
-(** [named_add l p n x]: 
-   add (n, x) to named list l at position p 
-*)
 val named_add: 
-    ('a, 'b)named_list->('a)position 
-      -> 'a -> 'b -> ('a, 'b) named_list
+  ('a, 'b)named_list->('a)position 
+  -> 'a -> 'b -> ('a, 'b) named_list
+(** [named_add l p n x]: 
+    add [(n, x)] to named list [l] at position [p].
+*)
 
-(* 
+val get_option : 'a option -> 'a -> 'a
+(**
    [get_option x default]:
    If [x] is [Some(y)] then return [y], otherwise return [default].
+*)
 
+val set_option:  'a option ref -> 'a -> unit
+(**
    [set_option x d]:
    If [x] is [Some(y)] then [y:=d].
-
-   [dest_option ?err x]
-   If [x] is [Some(y)] then [y], otherwise raise [err] or [Failure]
 *)
-val get_option : 'a option -> 'a -> 'a
-val set_option:  'a option ref -> 'a -> unit
-val dest_option: ?err:exn -> 'a option -> 'a
 
+val dest_option: ?err:exn -> 'a option -> 'a
+(** [dest_option ?err x]: If [x] is [Some(y)] then [y], otherwise
+    raise [err] or [Failure].
+*)
 
 val set_int_option : int -> int option
 val get_int_option : int option -> int
 val compare_int_option: int option -> int -> bool
 val dec_int_option: int option -> int option
 
-(** [apply_option f a d]
-   
-   Apply to [f] to option [a].
-   if [a] is [Some i] then return [f i] else return [d].
-*)
 val apply_option: ('a -> 'b) -> 'a option -> 'b -> 'b
-
-(** [date]: used to ensure dependencies among theory files *)
-val date: unit -> float
-
-(* 
-   [nice_date f]
-   return date [f] in form [(year, month, day, hour, min)]
+(** [apply_option f a d]: Apply to [f] to option [a].  If [a] is [Some
+    i] then return [f i] else return [d].
 *)
-val nice_date: float -> (int * int * int * int * int)
 
+val date: unit -> float
+(** [date]: Get the current date. *)
+
+val nice_date: float -> (int * int * int * int * int)
+(** [nice_date f]: Return date [f] in form [(year, month, day, hour,
+    min)].
+*)
+
+val get_one : 'a list -> exn -> 'a
 (**
    [get_one l e]: Get first element of list [l].
-   raise exception [e] if [l] is empty.
 
-   [get_two l e]: Get first two elements of list [l].
-   raise exception [e] if length of [l] < 2.
+   @raise exception [e] if [l] is empty.
 *)
-val get_one : 'a list -> exn -> 'a
-val get_two : 'a list -> exn -> ('a * 'a)
 
+val get_two : 'a list -> exn -> ('a * 'a)
+(**
+   [get_two l e]: Get first two elements of list [l].
+
+   @raise exception [e] if length of [l] < 2.
+*)
 
 val split_at_index : int -> 'a list -> ('a list * 'a list)
 (**
@@ -188,39 +186,33 @@ val full_split_at_index: int -> 'a list -> ('a list * 'a * 'a list)
    (counting from [0]).
 
    @raise Not_found if [i] >= [length x].
- *)
-
-(*
-val full_split_at_tag: 
-    Tag.t -> (Tag.t * 'a) list 
-      -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 *)
 
-(**
-   [rotate_left n l]: Rotate list [l] [n] places left 
-
-   [rotate_right n l]: Rotate list [l] [n] places right 
-*)
 val rotate_left : int -> 'a list -> 'a list
+(**
+   [rotate_left n l]: Rotate list [l] [n] places left.
+*)
+
 val rotate_right : int -> 'a list -> 'a list
+(**
+   [rotate_right n l]: Rotate list [l] [n] places right.
+*)
 
 val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
 (** 
-   [apply_nth n f l d]: Apply [f] to [n]th element of list.
-   If list [l] is empty, return [d].
+    [apply_nth n f l d]: Apply [f] to [n]th element of list.
+    If list [l] is empty, return [d].
 *)
 
-(**
-   [fold_map f a l]: 
-   [fold_map f a [b1; ... ; bn]] is
-   [ (fst(f (std f a bn-1) bn),
-   [snd(f a b1); snd(f (fst f a b1) b2) ; ... ; snd(f (fstf a bn-1) bn)])]
-*)
 val fold_map : 
-    ('a -> 'b -> ('a * 'c )) -> 'a -> 'b list -> ('a * 'c list)
+  ('a -> 'b -> ('a * 'c )) -> 'a -> 'b list -> ('a * 'c list)
+(** Combined fold and map. [fold_map f a [b1; ... ; bn]] is [ (fst(f
+    (std f a bn-1) bn), [snd(f a b1); snd(f (fst f a b1) b2) ; ... ;
+    snd(f (fstf a bn-1) bn)])].
+*)
 
-(** [swap p]: [swap (a, b)] is [b, a] *)
 val swap: ('a * 'b) -> ('b * 'a)
+(** [swap (a, b)] is [(b, a)] *)
 
 val map_find: ('a -> 'b) -> 'a list -> 'b list
 (**
@@ -228,19 +220,20 @@ val map_find: ('a -> 'b) -> 'a list -> 'b list
    elements for which [f] raises [Not_found].
 *)
 
+val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
 (**
    [extract p ls]: Extract the first element [x] of [ls] satisfying [p].
    return [(x, ls')], where [ls'] is [ls] with [x] removed.
-   Raise [Not_found] if no element of [ls] satisfies [p].
-*)
-val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
 
-(**
-   [least ord ls]: return least [x] in [ls]. Raise [Invalid_argument]
-   if [ls] is empty
+   @raise [Not_found] if no element of [ls] satisfies [p].
 *)
+
 val least: ('a -> 'a -> bool) -> 'a list -> 'a
+(**
+   [least ord ls]: return least [x] in [ls]. 
 
+   @raise [Invalid_argument] if [ls] is empty.
+*)
 
 val try_find: ('a -> 'b) -> 'a -> 'b option
 (**
@@ -270,14 +263,17 @@ val find_first: ('a -> 'b) -> 'a list -> 'b
 val first: ('a -> bool) -> 'a list -> 'a
 (**
    [first p lst]: Return the first element of [lst] for which [p] is true.
-   Raise [Not_found] if no such element.
+
+   @raise [Not_found] if [p] is false for all elements.
 *)
 
 val apply_first : ('a -> 'b) list -> 'a -> 'b
 (** 
-   [apply_first lst x]: Apply each function in [lst], return the
-   result of the first to succeed.  Fail if all functions in [lst]
-   fail.
+    [apply_first lst x]: Apply each function in [lst], return the
+    result of the first to succeed. Fail if all functions in [lst]
+    fail.
+
+    @raise Failure on failure.
 *)
 
 val apply_flatten: ('a -> ('b list)) -> 'a list -> 'b list
@@ -300,24 +296,22 @@ module StringSet : Set.S with type elt=string
 
 type ('a)deferred
 (** 
-   The type of lazy evaluation. A deferred function is evaluated once
-   and the result stored and used for subsequent evaluation.
+    The type of lazy evaluation. A deferred function is evaluated once
+    and the result stored and used for subsequent evaluation.
 *)
 
 val freeze: (unit -> 'a) -> ('a)deferred
 (** [freeze fn]: Defer the evaluation of [fn]. *)
 
-val thaw: ?fresh:('a -> bool) 
-  -> ('a) deferred -> 'a
+val thaw: ?fresh:('a -> bool) -> ('a) deferred -> 'a
 (** 
-   Get the value [x] of the deferred function, evaluating the function
-   if necessary or if [fresh x] is false.
+    Get the value [x] of the deferred function, evaluating the function
+    if necessary or if [fresh x] is false.
 *)
 
-(**
-    [stringify str]: Make [str] suitable for passing to OCaml on the
-    command line.  Escapes the string using [String.escaped] then
-    replaces ' ' with '\ '.
-*)
 val stringify : string -> string
-
+(**
+   [stringify str]: Make [str] suitable for passing to OCaml on the
+   command line.  Escapes the string using [String.escaped] then
+   replaces ' ' with '\ '.
+*)
