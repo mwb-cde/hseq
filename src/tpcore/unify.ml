@@ -149,106 +149,6 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 
 (*** Matching ***)
 
-(*
-let matches_rewrite scp typenv trmenv varp trm1 trm2 =
-  let rec matches_aux tydata qntenv env t1 t2 = 
-    let lookup q sbs = 
-      let r = Bound q
-      in 
-	try Term.find r sbs
-	with Not_found -> r
-    in
-    let var_type x = 
-      match x with 
-	  Bound(q) -> Basic.binder_type q
-	| Meta(q) -> Basic.binder_type q
-	| Free(_, ty) -> ty
-	| _ -> 
-	    raise 
-	      (term_error "matches_rewrite: invalid match variable" [x])
-    in
-    let eq_binder tydata b1 b2 = 
-      let qnt1, _, qty1=dest_binding b1
-      and qnt2, _, qty2=dest_binding b2
-      in 
-	if (qnt1=qnt2)
-	then 
-	  (try 
-	     (true, Gtypes.matches_rewrite scp qty1 qty2 tydata)
-	   with _ -> (false, tydata))
-	else (false, tydata)
-    in 
-    let s= Term.chase_var varp t1 env
-    and t = t2
-    in 
-    if (varp s) 
-    then 
-      (let (_, tydata1) = Gtypes.copy_set_ty (var_type s) tydata
-       in 
-	 if (equals s t) 
-	 then (tydata1, env)
-	 else (tydata1, bind_occs s t env))
-    else 
-      (match (s, t) with
-	   (App(f1, a1), App(f2, a2)) ->
-	     let tydata1, env1 = 
-	       matches_aux tydata qntenv env f1 f2
-	     in 
-	     let tydata2, env2 = 
-	       matches_aux tydata1 qntenv env1 a1 a2
-	     in 
-	       (tydata2, env2)
-	 | (Qnt(q1, b1), Qnt(q2, b2)) ->
-	     let qtst, qtydata=eq_binder tydata q1 q2
-	     in 
-	       if qtst
-	       then 
-		let nqntenv = bind (Bound q1) (Bound q2) qntenv
-		in 
-		  matches_aux qtydata nqntenv env b1 b2
-	       else raise (term_error "matches_rewrite: qnts" [s;t])
-	| (Id(n1, ty1), Id(n2, ty2)) ->
-	    if n1=n2 
-	    then 
-	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
-	      in 
-	      (tydata1, env)
-	    else raise (term_error "matches_rewrite: var"[s;t])
-	| (Free(n1, ty1), Free(n2, ty2)) ->
-	    if n1=n2 
-	    then 
-	      let tydata1=Gtypes.matches_rewrite scp ty1 ty2 tydata
-	      in 
-	      (tydata1, env)
-	    else raise (term_error "matches_rewrite: var"[s;t])
-	| (Meta(q1), Meta(q2)) -> 
-	    (if (binder_equality q1 q2)
-	     then (tydata, env)
-	     else raise (term_error"matches_rewrite: meta" [s;t]))
-	| (Bound(q1), Bound(q2)) ->
-	    let nq1 = Term.dest_bound (lookup q1 qntenv)
-	    in 
-	      if (binder_equality nq1 q2)
-	      then (tydata, env)
-	      else raise (term_error"matches_rewrite: bound" [s;t])
-	| (Const(c1), Const(c2)) ->
-	    if c1=c2 then (tydata, env)
-	    else raise (term_error "matches_rewrite: const" [s;t])
-	| (_, _) -> 
-	    if Term.equals s t 
-	    then (tydata, env) 
-	    else raise (term_error "matches_rewrite: default" [s;t]))
-  in 
-    let tydata = 
-      {Gtypes.vars = Gtypes.empty_subst(); 
-       Gtypes.tyenv= typenv}
-    in 
-    let (tydata1, trmenv1) =
-      matches_aux tydata (Term.empty_subst()) trmenv trm1 trm2
-    in 
-      (tydata1.Gtypes.tyenv, trmenv1)
-*)
-
 let retype tyenv t=
   let qenv=empty_table()
   in 
@@ -264,53 +164,49 @@ let retype tyenv t=
     | App(f, a) -> 
 	App(retype_aux f, retype_aux a)
     | Qnt(q, b) ->
-	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
-	in 
- 	let nty = Gtypes.mgu oqty tyenv 
-	in 
-	let nq = mk_binding oqnt oqnm nty
-	in 
-	table_add (Bound(q)) (Bound(nq)) qenv;
-	let rt= Qnt(nq, retype_aux b)
-	in 
-	table_remove (Bound(q)) qenv; rt)
+      let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
+      let nty = Gtypes.mgu oqty tyenv in 
+      let nq = mk_binding oqnt oqnm nty 
+      in 
+      (table_add (Bound(q)) (Bound(nq)) qenv;
+       let rt= Qnt(nq, retype_aux b)
+       in 
+       table_remove (Bound(q)) qenv; rt)
   in 
   retype_aux t
 
 let term_copy_type env term = 
-  let rec copy_aux qenv tyenv trm = 
+  let rec copy_aux qntenv tyenv trm = 
     match trm with
       Id(n, ty) -> 
 	let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
-	in (Id(n, ty1), tyenv1)
+	in 
+        (Id(n, ty1), tyenv1)
     | Free(n, ty) -> 
 	let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
-	in (Free(n, ty1), tyenv1)
+	in 
+        (Free(n, ty1), tyenv1)
     | Bound(q) -> 
 	let qtrm = 
-	  (try Term.find trm qenv with Not_found -> trm)
+          try Term.find trm qntenv 
+          with Not_found -> trm
 	in
 	  (qtrm, tyenv)
     | Meta(q) -> (trm, tyenv)
     | Const(c) -> (trm, tyenv)
     | App(f, a) -> 
-	let ftrm, ftyenv = copy_aux qenv tyenv f
-	in 
-	let atrm, atyenv = copy_aux qenv ftyenv a
-	in
-	  (App(ftrm, atrm), atyenv)
+      let ftrm, ftyenv = copy_aux qntenv tyenv f in 
+      let atrm, atyenv = copy_aux qntenv ftyenv a
+      in
+      (App(ftrm, atrm), atyenv)
     | Qnt(q, b) ->
-	(let (oqnt, oqnm, oqty) = Basic.dest_binding q
-	in 
- 	let nty, ntyenv = Gtypes.rename_type_vars_env tyenv oqty
-	in 
-	let nq = mk_binding oqnt oqnm nty
-	in 
-	let nqenv = Term.bind (Bound(q)) (Bound(nq)) qenv
-	in 
-	let btrm, btyenv = copy_aux nqenv ntyenv b
-	in 
-	  (Qnt(nq, btrm), btyenv))
+      let (oqnt, oqnm, oqty) = Basic.dest_binding q in
+      let nty, ntyenv = Gtypes.rename_type_vars_env tyenv oqty in
+      let nq = mk_binding oqnt oqnm nty in
+      let nqntenv = Term.bind (Bound(q)) (Bound(nq)) qntenv in
+      let btrm, btyenv = copy_aux nqntenv ntyenv b 
+      in 
+      (Qnt(nq, btrm), btyenv)
   in 
     copy_aux (Term.empty_subst()) env term
       
@@ -395,7 +291,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
 
 
 let matches_rewrite scp typenv env varp trm1 trm2 =
-  let (trm1a, typenv1) = term_copy_type (Gtypes.empty_subst()) trm1
+  let (trm1a, _) = term_copy_type (Gtypes.empty_subst()) trm1
   in
   matches_full scp typenv env varp trm1a trm2
 
