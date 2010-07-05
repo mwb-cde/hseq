@@ -1,23 +1,23 @@
 (*----
- Name: net.mli
- Copyright M Wahab 2005-2009
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: net.mli
+  Copyright M Wahab 2005-2009
+  Author: M Wahab  <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (**
    Term Nets, structures to store data indexed by a term.  
@@ -31,7 +31,6 @@
    formed by treating a term as a list of labels, this list describes
    the path through the tree to the data. 
 
-
    Nets are used to cut the number of elements that need to be
    considered by more expensive matching, particularly
    unification. Net operations assume some terms will be unification
@@ -44,11 +43,11 @@
 (** {5 Labels} *)
 
 (** 
-   Labels corresponding to the parts of terms considered during
-   matching.
+    Labels corresponding to the parts of terms considered during
+    matching.
 *) 
 type label =
-    Var 
+  | Var 
   | App
   | Bound of Basic.quant
   | Quant of Basic.quant
@@ -77,20 +76,20 @@ type label =
    [?y: ! x: (x | z) & y]  (with no variables,  z is free)
    -->
    [[Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]]
- *)
-val term_to_label : 
-    (Basic.term -> bool) -> Basic.term -> Basic.term list 
-      -> (label * Basic.term list)
+*)
+val term_to_label: 
+  (Basic.term -> bool) -> Basic.term -> Basic.term list 
+  -> (label * Basic.term list)
 
 (** {5 Nets} *)
 
 (** 
-   Nets. Each node holds: data at this level, nets tagged by constant
-   labels, nets tagged by [Var].
+    Nets. Each node holds: data at this level, nets tagged by constant
+    labels, nets tagged by [Var].
 *)
 type 'a net = Node of ('a list                  
-	       * (label * 'a net) list  
-	       * ('a net) option )
+	               * (label * 'a net) list  
+	               * ('a net) option )
 
 (** {7 Operations on nets} *)
 
@@ -102,56 +101,56 @@ val is_empty: 'a net -> bool
 
 val lookup: 'a net -> Basic.term -> 'a list
 (** 
-   [lookup net t]: Return the list of items indexed by terms matching
-   term [t].  Ordered with the best matches first.
+    [lookup net t]: Return the list of items indexed by terms matching
+    term [t].  Ordered with the best matches first.
 
-   Term [t1] is a better match than term [t2 ]if variables in [t1] occur
-   deeper in its term structure than those for [t2]. E.g. with variable
-   [x] and [t=(f 1 2)], [t1=(f x y)] is a better match than [t2=(x 1 2)]
-   because [x] occurs deeper in [t1] than in [t2]. ([t1] is likely to be
-   rejected by exact matching more quickly than [t2] would be.)
- *)
+    Term [t1] is a better match than term [t2 ]if variables in [t1] occur
+    deeper in its term structure than those for [t2]. E.g. with variable
+    [x] and [t=(f 1 2)], [t1=(f x y)] is a better match than [t2=(x 1 2)]
+    because [x] occurs deeper in [t1] than in [t2]. ([t1] is likely to be
+    rejected by exact matching more quickly than [t2] would be.)
+*)
 
 val update: 
-    ('a net -> 'a net) -> (Basic.term -> bool) 
-      -> 'a net -> Basic.term -> 'a net
+  ('a net -> 'a net) -> (Basic.term -> bool) 
+  -> 'a net -> Basic.term -> 'a net
 (** 
-   [update f net trm]: Apply function [f] to the subnet of [net]
-   identified by [trm] to update the subnet. Propagate the changes
-   through the net. If applying function [f] results in an empty
-   subnet, than remove these subnets. This is the basic operation for
-   updating a net. Functions [add] and [insert] provide more usable
-   interfaces to [update].
- *)
+    [update f net trm]: Apply function [f] to the subnet of [net]
+    identified by [trm] to update the subnet. Propagate the changes
+    through the net. If applying function [f] results in an empty
+    subnet, than remove these subnets. This is the basic operation for
+    updating a net. Functions [add] and [insert] provide more usable
+    interfaces to [update].
+*)
 
 val add: 
-    (Basic.term -> bool) -> 'a net 
-      -> Basic.term -> 'a
-	-> 'a net
+  (Basic.term -> bool) -> 'a net 
+  -> Basic.term -> 'a
+  -> 'a net
 (** 
-   [add varp net t r]: Add [r], indexed by term [t] with variables
-   identified by [varp] to [net].  Replaces but doesn't remove
-   previous bindings of [t].
+    [add varp net t r]: Add [r], indexed by term [t] with variables
+    identified by [varp] to [net].  Replaces but doesn't remove
+    previous bindings of [t].
 *)
 
 val insert: 
-    ('a -> 'a -> bool) ->
-      (Basic.term -> bool) -> 'a net 
-	-> Basic.term -> 'a
-	  -> 'a net
+  ('a -> 'a -> bool) ->
+  (Basic.term -> bool) -> 'a net 
+  -> Basic.term -> 'a
+  -> 'a net
 (** 
-   [insert order varp net t r]: Add data [r], indexed by term [t] with
-   variables identified by [varp] to [net]. Data [r] is stored in the
-   order defined by order (smaller terms first).  Replaces but doesn't
-   remove previous bindings of [t]
+    [insert order varp net t r]: Add data [r], indexed by term [t] with
+    variables identified by [varp] to [net]. Data [r] is stored in the
+    order defined by order (smaller terms first).  Replaces but doesn't
+    remove previous bindings of [t].
 *)
 
 val delete: (Basic.term -> bool) -> 'a net
-   -> Basic.term -> ('a -> bool) -> 'a net
+  -> Basic.term -> ('a -> bool) -> 'a net
 (** 
-   [delete varp net t test]: Remove data indexed by [t] in net and
-   satisfying test.  Fails silently if [t] is not found.  Needs the
-   same [varp] as used to add the term to the net.
+    [delete varp net t test]: Remove data indexed by [t] in net and
+    satisfying test.  Fails silently if [t] is not found.  Needs the
+    same [varp] as used to add the term to the net.
 *) 
 
 val iter: ('a -> unit) -> 'a net -> unit
@@ -159,7 +158,7 @@ val iter: ('a -> unit) -> 'a net -> unit
    [iter f net]: Apply [f] to each data item stored in a net.
 *)
 
-val print : ('a -> unit) -> 'a net -> unit
+val print: ('a -> unit) -> 'a net -> unit
 (**
    [print p net]: Print the contents of [net] using printer [p].
 *)
