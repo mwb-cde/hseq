@@ -506,8 +506,7 @@ exception No_quantifier
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv = 
-    let qnt, qv, qty = Basic.dest_binding q
-    in 
+    let qnt, qv, qty = Basic.dest_binding q in 
     let nt, nev = rename_type_vars_env tyenv qty
     in 
     (mk_binding qnt qv nt, nev)
@@ -543,9 +542,9 @@ let rename_env typenv trmenv trm =
 *)
 let rename t = 
   try
-    let nt, _, _ = rename_env (Gtypes.empty_subst()) (empty_subst()) t
+    let new_term, _, _ = rename_env (Gtypes.empty_subst()) (empty_subst()) t
     in 
-    nt		
+    new_term		
   with No_quantifier -> t
 
 (* rename_silent t: silently rename term t *)
