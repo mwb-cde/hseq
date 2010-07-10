@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = formula defn logic theory thydb
+FILES = lterm formula defn logic theory thydb
 
 ###
 # Generated libraries

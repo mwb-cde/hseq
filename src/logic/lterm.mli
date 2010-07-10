@@ -21,7 +21,6 @@
 
 (** Constructing and manipulating logic terms. *)
 
-
 open Basic
 open Gtypes
 open Term

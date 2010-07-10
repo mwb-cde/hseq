@@ -15,7 +15,7 @@
 
 # FILES: The list of file names
 FILES = defaults settings ident basic printer \
-	report scope gtypes term lterm \
+	report scope gtypes term \
 	dbterm typing unify net rewrite 
 
 ###
