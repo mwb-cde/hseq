@@ -107,6 +107,10 @@ sig
   (** [iter tree fn]: Apply [fn] to the data bound to each key.  Only
       the current key bindings are used.  *)
 
+  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
+      the current key bindings are used.  *)
+
   val to_list: 'a t -> ((key * 'a)list)list
 (** [to_list tree]: Return a list of the (lists of) elements in the
     tree, in descending order.
@@ -134,7 +138,6 @@ sig
   type ('a)t= 
     | Nil 
     | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
-
 
   val nil: 'a t
   (** Make an empty tree. *)
@@ -189,6 +192,10 @@ sig
      [iter tree fn]: Apply [fn] to the data bound to each key.
      Only the current key bindings are used.
   *)
+
+  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
+      the current key bindings are used.  *)
 
   val to_list: 'a t -> ((key * 'a)list) list
 (** [to_list tree]: Return a list of the (lists of) elements in the
@@ -282,6 +289,10 @@ sig
 
   val iter: (key -> 'a -> 'b) -> 'a t -> unit
   (** [iter tree fn]: Apply [fn] to the data bound to each key.  Only
+      the current key bindings are used.  *)
+
+  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
       the current key bindings are used.  *)
 
   val to_list: 'a t -> (key * 'a) list list

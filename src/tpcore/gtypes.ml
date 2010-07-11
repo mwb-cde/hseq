@@ -240,6 +240,7 @@ let empty_subst () = TypeTree.nil
 let bind t r env = TypeTree.replace env t r
 let delete t env = TypeTree.delete env t
 let subst_iter = TypeTree.iter
+let subst_fold = TypeTree.fold
 
 let bind_var t r env = 
   if is_any_var t 
