@@ -19,10 +19,7 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(**
-   A minimal base theory, used if no other 
-   theory can be found.
-*)
+(** A minimal base theory, used if no other theory can be found. *)
 
 val builder: ?save:bool -> unit -> unit
 (** Build the minimal theory. If [?save] is true, save the theory.

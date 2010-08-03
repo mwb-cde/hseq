@@ -265,12 +265,12 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
 	       constants inf)
 	  ] g)
     ] goal
-    (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
-        elimination rules to conclusion [f] and to all resulting
-        assumptions and conclusions. Assumptions are eliminated with
-        [arules], conclusions with [crules]. The tag of any new
-        formula for which the elimination rules fails is stored in
-        [?info] (in arbitrary order).  *)
+(** [concl_elim_rules ?info (arules, crules) f goal]: Apply
+    elimination rules to conclusion [f] and to all resulting
+    assumptions and conclusions. Assumptions are eliminated with
+    [arules], conclusions with [crules]. The tag of any new
+    formula for which the elimination rules fails is stored in
+    [?info] (in arbitrary order).  *)
 and concl_elim_rules_tac ?info rules lbl goal =
   let (_, crules) = rules
   and inf = mk_info()
