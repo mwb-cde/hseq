@@ -1,26 +1,26 @@
 (*----
- Name: userlib.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: userlib.ml
+  Copyright M Wahab 2005-2010
+  Author: M Wahab  <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (***
-* Utility functions
+    Utility functions
 ***)
 
 (** String utilities **)
@@ -34,20 +34,19 @@ let compile dirs name =
       Lib.list_string 
 	(fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
     in 
-    let inc_string = inc_std_dirs^" "^inc_dirs
-    in 
+    let inc_string = inc_std_dirs^" "^inc_dirs in 
     let com_string = "ocamlc -c"
     in 
-      Sys.command (com_string ^" "^ inc_string ^" "^name)
+    Sys.command (com_string ^" "^ inc_string ^" "^name)
   in 
-    if (!Sys.interactive)
-    then compile_aux()
-    else (-1)
-					      
+  if !Sys.interactive
+  then compile_aux()
+  else (-1)
+    
 let catch_errors = Commands.catch_errors
 
 (***
-* Printing and parsing 
+    Printing and parsing 
 ***)
 
 type fixity = Commands.fixity
@@ -80,7 +79,7 @@ let remove_type_pp s =
   Commands.remove_type_pp (Ident.mk_long (Global.current_name()) s)
 
 (***
-* Theories 
+    Theories 
 ***)
 
 let begin_theory = Commands.begin_theory
@@ -100,18 +99,18 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
   let defn = 
     Commands.typedef ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
   in 
-  (if (simp && (Logic.Defns.is_subtype defn))
-  then 
-    let tyrec = Logic.Defns.dest_subtype defn
-    in 
-    let rt_thm= tyrec.Logic.Defns.rep_type
-    and rti_thm= tyrec.Logic.Defns.rep_type_inverse
-    and ati_thm= tyrec.Logic.Defns.abs_type_inverse
-    in 
-    List.iter Simplib.add_simp [rt_thm; rti_thm; ati_thm]
-  else ());
+  begin
+    if simp && (Logic.Defns.is_subtype defn)
+    then 
+      let tyrec = Logic.Defns.dest_subtype defn in 
+      let rt_thm = tyrec.Logic.Defns.rep_type
+      and rti_thm = tyrec.Logic.Defns.rep_type_inverse
+      and ati_thm = tyrec.Logic.Defns.abs_type_inverse
+      in 
+      List.iter Simplib.add_simp [rt_thm; rti_thm; ati_thm]
+    else ()
+  end;
   defn
-
 
 (*** Term declaration and definition ***)
 
@@ -120,9 +119,9 @@ let define ?pp ?(simp=false) df =
   in 
   if simp
   then 
-    (let (_, _, thm) = Logic.Defns.dest_termdef ret
+    let (_, _, thm) = Logic.Defns.dest_termdef ret
     in 
-    Simplib.add_simp thm; ret)
+    Simplib.add_simp thm; ret
   else ret
 
 let declare = Commands.declare
@@ -132,7 +131,7 @@ let declare = Commands.declare
 let axiom ?(simp=false) n t =
   let thm = Commands.axiom ~simp:simp n t
   in 
-  if(simp)
+  if simp
   then (Simplib.add_simp thm; thm)
   else thm
 
@@ -155,7 +154,7 @@ let theorem = prove_thm
 let lemma = theorem
 
 (***
-* Information access
+    Information access
 ***)
 
 let theory = Commands.theory
@@ -168,17 +167,15 @@ let scope = Commands.scope
 let goal_scope = Goals.goal_scope
 
 (***
-* Proof commands
+    Proof commands
 ***)
 
 let prove = Commands.prove
-
 let by x = (catch_errors Goals.by_com) x
-
 let qed = Commands.qed
 
 (*** 
-* Initialising functions
+     Initialising functions
 ***)
 
 let init = Global.init
