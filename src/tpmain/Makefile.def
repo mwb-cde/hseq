@@ -14,7 +14,7 @@
 ###
 
 # FILES: The list of file names
-FILES = global drule tactics goals commands \
+FILES = global tactics goals commands \
 	display 
 
 ###

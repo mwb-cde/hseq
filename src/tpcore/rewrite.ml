@@ -1,43 +1,39 @@
 (*----
- Name: rewrite.ml
- Copyright M Wahab 2005-2009
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: rewrite.ml
+  Copyright M Wahab 2005-2009, 2010
+  Author: M Wahab  <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 open Basic
 open Term
 open Report
 
-(***
+(*
  * Rewrite Rules
- ***)
+ *)
 
 
 (** Rule ordering *)
 type order = (Basic.term -> Basic.term -> bool)
 
-(* type pure_rule = *)
-type rule = 
-    (Basic.binders list * Basic.term * Basic.term)
+type rule = (Basic.binders list * Basic.term * Basic.term)
 
-(* type rewrite_rule = *)
-type orule = 
-    (Basic.binders list * Basic.term * Basic.term * order option)
+type orule = (Basic.binders list * Basic.term * Basic.term * order option)
 
 
 (*** Rewrite control ***)
@@ -65,28 +61,25 @@ let is_bottonup t =
 type control =
     { 
       depth: int option; (** (Some i): maximum number of times to rewrite is i,
-			    None : unlimited rewriting (default) *)
+			     None : unlimited rewriting (default) *)
       rr_dir: direction;
       rr_strat: strategy
     }
 
 (** Construct a control *)
 let control ~dir ~strat ~max = 
-  { depth=max; rr_dir=dir; rr_strat=strat }
+  { depth = max; rr_dir = dir; rr_strat = strat }
 
 (** The default control *)
 let default_control= 
-  control 
-    ~strat:TopDown
-    ~dir:leftright
-    ~max:None
+  control ~strat:TopDown ~dir:leftright ~max:None
 
 
 (*** Internal represenation of rewrite rules ***)
 
 (**
    Directed Rewriting
- *)
+*)
 
 exception Quit of exn
 exception Stop of exn
@@ -98,15 +91,13 @@ exception Stop of exn
 
    Rewrites a node [n] by following the direction in a plan [p]. Plan
    [p] specifies the rules to be applied to each node and the order in
-   which a node is to be rewritten.
-
-   (For hseq, a node is a term).
- *)
+   which a node is to be rewritten.  (For hseq, a node is a term.)
+*)
 
 (** {7 Planned rewriting specialised to terms} *)
 
 type term_key =
-    Ident  (** Term [Id] *)
+  | Ident  (** Term [Id] *)
   | BVar   (** Term [Bound] *)
   | MVar   (** Term [Meta] *)
   | FVar   (** Term [Free] *)
@@ -127,172 +118,160 @@ let limit_reached d =
 
 let decr_depth ctrl = 
   match ctrl.depth with 
-    None -> ctrl 
-  | Some x -> 
-      {ctrl with depth=Lib.set_int_option(x-1)}
+    | None -> ctrl 
+    | Some x -> {ctrl with depth=Lib.set_int_option(x-1)}
 
-let is_free_binder qs t= 
-  (match t with
-    Bound(q) -> List.exists (Basic.binder_equality q) qs
-  |	_ -> false)
+let is_free_binder qs t = 
+  match t with
+    | Bound(q) -> List.exists (Basic.binder_equality q) qs
+    |	_ -> false
 
-(***
-*   [TermData]: The data used to instantiate the generic rewriter.
-***)
+(*
+ *   [TermData]: The data used to instantiate the generic rewriter.
+ *)
 type a_rule = rule
 
 module TermData =
-  struct
-    type node = Basic.term
-    type rule = a_rule
-    type substn = Term.substitution
-    type data = 
-	(Scope.t (** Scope *)
-	   * Term.substitution    (** Quantifier environment *)
-	   * Gtypes.substitution)  (** Type environment *)
+struct
+  type node = Basic.term
+  type rule = a_rule
+  type substn = Term.substitution
+  type data = 
+      (Scope.t                (** Scope *)
+       * Term.substitution    (** Quantifier environment *)
+       * Gtypes.substitution) (** Type environment *)
 
-    type key = term_key
+  type key = term_key
 
-    let key_of n = 
-      match n with
-	Basic.Id _ -> Ident
+  let key_of n = 
+    match n with
+      | Basic.Id _ -> Ident
       | Basic.Bound _ -> BVar
       | Basic.Meta _ -> MVar
       | Basic.Free _ -> FVar
       | Basic.App _ -> Appln
       | Basic.Const _ -> Constn
       | Basic.Qnt(q, b) -> 
-	  (match (Basic.binder_kind q) with 
-	    Basic.All -> AllQ
+	(match (Basic.binder_kind q) with 
+	  | Basic.All -> AllQ
 	  | Basic.Ex -> ExQ
 	  | Basic.Lambda -> LamQ
 	  | _ -> Quant)
 
-    let rec is_key k n = 
-      match k with
-	AnyTerm -> true
+  let rec is_key k n = 
+    match k with
+      | AnyTerm -> true
       | NoTerm -> false
       | Alt(x, y) -> (is_key x n || is_key y n)
       | Neg(x) -> not (is_key x n)
       | Quant -> Term.is_qnt n
       | _ -> (k = key_of n)
 
-    let num_subnodes n =
-      match n with
-	App(l, r) -> 2
+  let num_subnodes n =
+    match n with
+      | App(l, r) -> 2
       | Qnt(_, b) -> 1
       | _ -> 0
 
-    let subnodes_of n =
-      match n with
-	App(l, r) -> [l; r]
+  let subnodes_of n =
+    match n with
+      | App(l, r) -> [l; r]
       | Qnt(_, b) -> [b]
       | _ -> []
 
-    let set_subnodes n xs =
-      match n with
-	App(_, _) -> 
-	  (match xs with 
-	    [l; r] -> App(l, r)
+  let set_subnodes n xs =
+    match n with
+      | App(_, _) -> 
+	(match xs with 
+	  | [l; r] -> App(l, r)
 	  | _ -> raise (Quit (Failure "set_subnodes: App")))
       | Qnt(q, _) -> 
-	  (match xs with 
-	    [b] -> Qnt(q, b)
+	(match xs with 
+	  | [b] -> Qnt(q, b)
 	  | _ -> raise (Quit (Failure "set_subnodes: Qnt")))
       | _ -> raise (Quit (Failure "set_subnodes: other"))
 
-
-    let get_subnode n i =
-      match n with
-	App(l, r) -> 
+  let get_subnode n i =
+    match n with
+      | App(l, r) -> 
 	  (match i with
-	    0 -> l 
-	  | 1 -> r 
-	  | _ -> raise Not_found)
+	    | 0 -> l 
+	    | 1 -> r 
+	    | _ -> raise Not_found)
       | Qnt(_, b) -> 
-	  (match i with
-	    0 -> b 
+	(match i with
+	  | 0 -> b 
 	  | _ -> raise Not_found)
       | _ -> raise Not_found
 
-    let set_subnode n i x =
-      match n with
+  let set_subnode n i x =
+    match n with
 	App(l, r) -> 
 	  (match i with
-	    0 -> App(x, r) 
-	  | 1 -> App(l, x) 
-	  | _ -> raise Not_found)
+	    | 0 -> App(x, r) 
+	    | 1 -> App(l, x) 
+	    | _ -> raise Not_found)
       | Qnt(q, b) -> 
-	  (match i with
-	    0 ->  Qnt(q, x)
+	(match i with
+	  | 0 ->  Qnt(q, x)
 	  | _ -> raise Not_found)
       | _ -> raise Not_found
 
 
-    let dest_rule r = r
+  let dest_rule r = r
 
-    let matches data rule trm = 
-      let (scope, qntenv, tyenv) = data
+  let matches data rule trm = 
+    let (scope, qntenv, tyenv) = data in 
+    let (qs, lhs, rhs) = dest_rule rule in
+    let env = Term.empty_subst() in 
+    let varp = is_free_binder qs
+    in 
+    try 
+      let (tyenv1, env1) = 
+	Unify.matches_rewrite scope tyenv env varp lhs trm
       in 
-      let (qs, lhs, rhs) = dest_rule rule 
-      in
-      let env = Term.empty_subst()
-      in 
-      let varp = is_free_binder qs
-      in 
-      try 
-	let tyenv1, env1 = 
-(*
-	  Unify.unify_rewrite scope tyenv env varp lhs trm
-*)
-	  Unify.matches_rewrite scope tyenv env varp lhs trm
-	in 
-	((scope, qntenv, tyenv1), env1)
-      with x ->
-	raise 
-	  (Rewritekit.Quit
-	     (add_error (term_error ("Can't match terms") [lhs; trm]) x))
+      ((scope, qntenv, tyenv1), env1)
+    with x ->
+      raise (Rewritekit.Quit
+	       (add_error (term_error ("Can't match terms") [lhs; trm]) x))
 
-    let subst data rule env = 
-      let (scope, qntenv, tyenv) = data
-      in 
-      let (qs, lhs, rhs) = dest_rule rule 
-      in
-      let data1 = (scope, qntenv, tyenv)
-      in 
-      (data1, Lterm.subst_closed qntenv env rhs)
+  let subst data rule env = 
+    let (scope, qntenv, tyenv) = data in 
+    let (qs, lhs, rhs) = dest_rule rule in
+    let data1 = (scope, qntenv, tyenv)
+    in 
+    (data1, Lterm.subst_closed qntenv env rhs)
 
-    let add_data data trm = 
-      match trm with 
-	Qnt(q, _) -> 
-	  let (scope, qntenv, tyenv) = data
-	  in 
+  let add_data data trm = 
+    match trm with 
+      | Qnt(q, _) -> 
+	  let (scope, qntenv, tyenv) = data in 
 	  let qntenv1 = 
 	    Term.bind 
-	      (Basic.Bound q) (Term.mk_free "" (Gtypes.mk_null()))
+              (Basic.Bound q) 
+              (Term.mk_free "" (Gtypes.mk_null()))
 	      qntenv
 	  in 
 	  (scope, qntenv1, tyenv)
       | _ -> data
-	    
-    let drop_data (data1, trm1) (data2, trm2) =
-      match trm1 with 
-	Qnt(q, _) -> 
-	  let (scope1, qntenv1, tyenv1) = data1
-	  in 
+	
+  let drop_data (data1, trm1) (data2, trm2) =
+    match trm1 with 
+      | Qnt(q, _) -> 
+	  let (scope1, qntenv1, tyenv1) = data1 in 
 	  let (scope2, qntenv2, tyenv2) = data2
 	  in 
 	  (scope2, qntenv1, tyenv2)
       | _ -> data2
 
-  end
+end
 
 type data = TermData.data
 type key = TermData.key
 
-(*** 
-* The Rewriter 
-***)
+(*
+ * The Rewriter 
+ *)
 module TermRewriter=Rewritekit.Make(TermData)
 
 (** {5 Toplevel rewriting functions} *)
@@ -300,12 +279,11 @@ module TermRewriter=Rewritekit.Make(TermData)
 type ('a)plan = (key, 'a)Rewritekit.plan
 
 let rewrite = TermRewriter.rewrite
-    (** [rewrite data p t]: Rewrite term [t] with plan [t]. *)
+(** [rewrite data p t]: Rewrite term [t] with plan [t]. *)
 
 let rec extract_check_rules scp dir pl = 
   let get_test t = 
-    let qs, b = Term.strip_qnt Basic.All t
-    in 
+    let qs, b = Term.strip_qnt Basic.All t in 
     let lhs, rhs = Lterm.dest_equality b
     in 
     if dir = leftright 
@@ -315,12 +293,9 @@ let rec extract_check_rules scp dir pl =
   Rewritekit.mapping get_test pl
 
 let plan_rewrite_env scp ?(dir=leftright) tyenv plan f = 
-  let plan1 = extract_check_rules scp dir plan
-  in 
-  let data = (scp, Term.empty_subst(), tyenv)
-  in 
-  let (data1, nt) = rewrite data plan1 f
-  in 
+  let plan1 = extract_check_rules scp dir plan in 
+  let data = (scp, Term.empty_subst(), tyenv) in 
+  let (data1, nt) = rewrite data plan1 f in 
   let (scp1, qntenv1, tyenv1) = data1
   in 
   (nt, tyenv1)
@@ -344,22 +319,22 @@ let mapping = Rewritekit.mapping
 
 let rec pack pl = 
   match pl with
-    Rewritekit.Rules rs -> pack_rules rs
-  | Rewritekit.Node(ps) -> pack_node ps
-  | Rewritekit.Keyed(k, ps) -> pack_keyed k ps
-  | Rewritekit.Subnode(i, p) -> pack_subnode i p
-  | Rewritekit.Branches(ps) -> pack_branches ps
-  | Rewritekit.Skip -> Rewritekit.Skip
+    | Rewritekit.Rules rs -> pack_rules rs
+    | Rewritekit.Node(ps) -> pack_node ps
+    | Rewritekit.Keyed(k, ps) -> pack_keyed k ps
+    | Rewritekit.Subnode(i, p) -> pack_subnode i p
+    | Rewritekit.Branches(ps) -> pack_branches ps
+    | Rewritekit.Skip -> Rewritekit.Skip
 and 
     pack_rules rs = 
   match rs with 
-    [] -> Rewritekit.Skip
-  | _ -> Rewritekit.Rules(rs)
+    | [] -> Rewritekit.Skip
+    | _ -> Rewritekit.Rules(rs)
 and 
     pack_node ps =
   match ps with 
-    [] -> Rewritekit.Skip
-  | _ -> 
+    | [] -> Rewritekit.Skip
+    | _ -> 
       let ps1 = 
 	List.filter (fun x -> not (x=Rewritekit.Skip)) ps
       in 
@@ -367,8 +342,8 @@ and
 and 
     pack_keyed k ps =
   match ps with 
-    [] -> Rewritekit.Skip
-  | _ -> 
+    | [] -> Rewritekit.Skip
+    | _ -> 
       let ps1 = 
 	List.filter (fun x -> not (x=Rewritekit.Skip)) ps
       in 
@@ -376,17 +351,17 @@ and
 and 
     pack_branches ps = 
   match ps with
-    [] -> Rewritekit.Skip
-  | [Rewritekit.Skip] -> Rewritekit.Skip
-  | [Rewritekit.Skip; x] -> Rewritekit.Subnode(1, x)
-  | [x; Rewritekit.Skip] -> Rewritekit.Subnode(0, x)
-  | [x] -> Rewritekit.Subnode(0, x)
-  | _ -> Rewritekit.Branches ps
+    | [] -> Rewritekit.Skip
+    | [Rewritekit.Skip] -> Rewritekit.Skip
+    | [Rewritekit.Skip; x] -> Rewritekit.Subnode(1, x)
+    | [x; Rewritekit.Skip] -> Rewritekit.Subnode(0, x)
+    | [x] -> Rewritekit.Subnode(0, x)
+    | _ -> Rewritekit.Branches ps
 and 
     pack_subnode i p = 
   match p with
-    Rewritekit.Skip -> Rewritekit.Skip
-  | _ -> Rewritekit.Subnode(i, p)
+    | Rewritekit.Skip -> Rewritekit.Skip
+    | _ -> Rewritekit.Subnode(i, p)
 
 (*** Keys ****)
 
@@ -406,286 +381,257 @@ let lamq_key = LamQ
 let constn_key = Constn
 
 module Planner =
-  struct 
+struct 
 
-    module type Data =
-      sig
-	type rule
-	type data
-	val dest : 
-	    data 
-	  -> rule 
-	    -> (Basic.binders list * Basic.term * Basic.term * order option)
-      end
+  module type Data =
+  sig
+    type rule
+    type data
+    val dest : data -> rule 
+	-> (Basic.binders list * Basic.term * Basic.term * order option)
+  end
 
-    module type T =
-      sig
-(** Rewrite plan constructors.
+  module type T =
+  sig
+    (** Rewrite plan constructors.
 
-   Two planning functions are provided. The first is for general
-   rewriting. The second for rewriting w.r.t a type context.
+        Two planning functions are provided. The first is for general
+        rewriting. The second for rewriting w.r.t a type context.
 
-   Both take rewrite rules as universally quantified equalities of the
-   for [!v1 .. vn. lhs = rhs]. The variables [v1 .. vn] are taken as
-   variables which can be instantiated by the rewriter. If the rule is
-   not an equality then rewriting will fail.
+        Both take rewrite rules as universally quantified equalities of the
+        for [!v1 .. vn. lhs = rhs]. The variables [v1 .. vn] are taken as
+        variables which can be instantiated by the rewriter. If the rule is
+        not an equality then rewriting will fail.
 
-   Rewriting breaks a rule [lhs=rhs] to an equality. If rewriting is
-   left-right, the equality is [lhs=rhs]; if rewriting is right-left
-   then the equality is [rhs=lhs]. 
+        Rewriting breaks a rule [lhs = rhs] to an equality. If rewriting is
+        left-right, the equality is [lhs = rhs]; if rewriting is right-left
+        then the equality is [rhs=lhs]. 
 
-   For left-right rewriting, every variable (from [v1 .. vn])
-   appearing in [rhs] must also appear in [lhs] otherwise the rule
-   cannot be used. Similarly for right-left rewriting.
- *)
+        For left-right rewriting, every variable (from [v1 .. vn])
+        appearing in [rhs] must also appear in [lhs] otherwise the rule
+        cannot be used. Similarly for right-left rewriting.
+    *)
     exception No_change
 
     type a_rule 
     type rule_data
 
     val make :
-	rule_data
+      rule_data
       -> Scope.t -> control -> a_rule list 
-	-> Basic.term -> (Basic.term * (a_rule)plan)
-(** 
-   Make a rewrite plan using a list of universally quantified rewrite
-   rules.
- *)
-	    
+      -> Basic.term 
+      -> (Basic.term * (a_rule)plan)
+    (** Make a rewrite plan using a list of universally quantified
+        rewrite rules.  *)
+      
     val make_env : 
-	rule_data
+      rule_data
       -> Scope.t 
-	-> control 
-	  -> Gtypes.substitution
-	    -> a_rule list -> Basic.term 
-	      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
-(**
-   [make_env tyenv rules trm]: Make a rewrite plan for [trm] w.r.t type
-   environment [tyenv] using [rules]. Return the new term and the type
-   environment contructed during rewriting.
- *)
+      -> control 
+      -> Gtypes.substitution
+      -> a_rule list -> Basic.term 
+      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
+    (** [make_env tyenv rules trm]: Make a rewrite plan for [trm]
+        w.r.t type environment [tyenv] using [rules]. Return the new
+        term and the type environment contructed during rewriting.  *)
 
-(** {7 Exposed for debugging} *)
+    (** {7 Exposed for debugging} *)
 
     type data = 
 	(Scope.t 
-	   * Term.substitution  
-	   * Gtypes.substitution)
+	 * Term.substitution  
+	 * Gtypes.substitution)
 
     type internal_rule = 
 	(Basic.binders list 
-	   * Basic.term 
-	   * Basic.term 
-	   * order option
-	   * a_rule)
+	 * Basic.term 
+	 * Basic.term 
+	 * order option
+	 * a_rule)
 
     type rewrite_net = internal_rule Net.net 
 
     val src_of: internal_rule -> a_rule
 
     val match_rewrite : 
-	control
+      control
       -> data
-	-> internal_rule
-	  -> Basic.term 
-	    -> (a_rule * Basic.term * Gtypes.substitution)
+      -> internal_rule
+      -> Basic.term 
+      -> (a_rule * Basic.term * Gtypes.substitution)
 
     val match_rr_list:
-	control
+      control
       -> data
-	-> internal_rule list
-	  -> Basic.term
-	    -> a_rule list
-	      -> (Basic.term * Gtypes.substitution
-		    * control * (a_rule)list)
+      -> internal_rule list
+      -> Basic.term
+      -> a_rule list
+      -> (Basic.term * Gtypes.substitution
+	  * control * (a_rule)list)
 
     val match_rewrite_list:
-	control
+      control
       -> data
-	-> rewrite_net
-	  -> Basic.term 
-	    -> a_rule list
-	      -> (Basic.term * Gtypes.substitution
-		    * control * (a_rule)list)
+      -> rewrite_net
+      -> Basic.term 
+      -> a_rule list
+      -> (Basic.term * Gtypes.substitution
+	  * control * (a_rule)list)
 
     val check_change : ('a)plan -> unit
     val check_change2 : ('a)plan -> ('a)plan -> unit
 
     val make_list_topdown:
-	control 
+      control 
       -> rewrite_net
-	-> data
-	  -> Basic.term
-	    -> (Basic.term * Gtypes.substitution 
-		  * control * (a_rule)plan)
+      -> data
+      -> Basic.term
+      -> (Basic.term * Gtypes.substitution 
+	  * control * (a_rule)plan)
 
     val make_list_bottomup:
-	control 
+      control 
       -> rewrite_net
-	-> data
-	  -> Basic.term
-	    -> (Basic.term * Gtypes.substitution 
-		  * control * (a_rule)plan)
+      -> data
+      -> Basic.term
+      -> (Basic.term * Gtypes.substitution 
+	  * control * (a_rule)plan)
 
     val make_rewrites: 
-	rule_data -> a_rule list -> rewrite_net
+      rule_data -> a_rule list -> rewrite_net
 
-    val make_list : 
-	rule_data 
+    val make_list: 
+      rule_data 
       -> control 
-	-> Scope.t
-	  -> Gtypes.substitution
-	    -> a_rule list
-	      -> Basic.term
-		-> (Basic.term * Gtypes.substitution * (a_rule)plan)
+      -> Scope.t
+      -> Gtypes.substitution
+      -> a_rule list
+      -> Basic.term
+      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
 
   end
 end
 
 module Make =
   functor (A: Planner.Data) ->
-  struct
+struct
 
-    open Rewritekit
+  open Rewritekit
 
-    type a_rule = A.rule
-    type rule_data = A.data
+  type a_rule = A.rule
+  type rule_data = A.data
 
-    type data = 
-	(Scope.t 
-	   * Term.substitution  
-	   * Gtypes.substitution)
+  type data = (Scope.t 
+               * Term.substitution  
+               * Gtypes.substitution)
 
-    type internal_rule = 
-	(Basic.binders list 
-	   * Basic.term 
-	   * Basic.term 
-	   * order option
-	   * a_rule)
+  type internal_rule = (Basic.binders list 
+                        * Basic.term 
+                        * Basic.term 
+                        * order option
+                        * a_rule)
 
-    type rewrite_net = internal_rule Net.net 
+  type rewrite_net = internal_rule Net.net 
 
-    let src_of (_, _, _, _, r) = r
+  let src_of (_, _, _, _, r) = r
 
-    exception No_change
+  exception No_change
 
-    let null_term = Term.mk_free "" (Gtypes.mk_null())
+  let null_term = Term.mk_free "" (Gtypes.mk_null())
 
+  (** [match_rewrite scp ctrl tyenv varp lhs rhs order trm]: Match
+      [trm] with [lhs].
 
-(** 
-   [find_match scp ctrl tyenv varp lhs term env]: Try to match [lhs]
-   with term in type environment [tyenv] and term environment [env].
-
-   Return a new type environment and term environment if successful.
- *)
-
-(**
-   [match_rewrite scp ctrl tyenv varp lhs rhs order trm]: Match [trm]
-   with [lhs]. 
-
-   If successful, return [rhs], the new type environment and the new
-   term environment. The type and term environments are obtained by
-   unifying [lhs] and [trm] and contain the bindings for unification
-   variables in [rhs].
- *)
-    let match_rewrite ctrl data rule trm = 
-      let (scope, qntenv, tyenv) = data
-      in
-      let env = Term.empty_subst ()
+      If successful, return [rhs], the new type environment and the new
+      term environment. The type and term environments are obtained by
+      unifying [lhs] and [trm] and contain the bindings for unification
+      variables in [rhs].
+  *)
+  let match_rewrite ctrl data rule trm = 
+    let (scope, qntenv, tyenv) = data in
+    let env = Term.empty_subst () in 
+    let (qs, lhs, rhs, order, src) = rule in
+    let varp x = is_free_binder qs x in
+    let find_match term1 term2=
+      Unify.matches_rewrite scope tyenv env varp term1 term2 
+    in 
+    try
+      let tyenv1, env1=find_match lhs trm in 
+      let nt = Lterm.subst_closed qntenv env1 rhs
       in 
-      let (qs, lhs, rhs, order, src) = rule
-      in
-      let varp x = is_free_binder qs x
-      in
-      let find_match term1 term2=
-(*
-	Unify.unify_rewrite scope tyenv env varp term1 term2 
-*)
-	Unify.matches_rewrite scope tyenv env varp term1 term2 
-      in 
-      try
-	(let tyenv1, env1=find_match lhs trm
-	in 
-	let nt = Lterm.subst_closed qntenv env1 rhs
-	in 
-	match order with
-	  None -> (src, nt, tyenv1)
+      match order with
+	| None -> (src, nt, tyenv1)
 	| Some(p) ->  
-	    if (p nt trm)   (* if nt < trm *)
-	    then (src, nt, tyenv1) (* accept nt *) 
-	    else raise (Failure "No match")) (* reject nt *)
-      with err -> 
-	(Term.add_term_error "match_rewrite: failed" [lhs; trm] err)
+	  if (p nt trm)   (* if nt < trm *)
+	  then (src, nt, tyenv1) (* accept nt *) 
+	  else raise (Failure "No match") (* reject nt *)
+    with err -> 
+      (Term.add_term_error "match_rewrite: failed" [lhs; trm] err)
 
 
-(**
-   [match_rr_list scp ctrl tyenv chng rs trm]: Try to rewrite [trm]
-   with the rules in [rs]. Calls [match_rewrite] with each of the
-   rewrite rules, returning the first to succeed.
+  (**
+     [match_rr_list scp ctrl tyenv chng rs trm]: Try to rewrite [trm]
+     with the rules in [rs]. Calls [match_rewrite] with each of the
+     rewrite rules, returning the first to succeed.
+     
+     If any rule succeeds, continues with the replacement (rhs) term
+     given by the rule.
 
-   If any rule succeeds, continues with the replacement (rhs) term
-   given by the rule.
-
-   If no rule matches, raise [No_change].
- *)
-    let rec match_rr_list ctrl data rules trm rslt = 
-      if (limit_reached (ctrl.depth))
-      then raise No_change
-      else 
-	(match rules with
-	  [] -> raise No_change 
+     If no rule matches, raise [No_change].
+  *)
+  let rec match_rr_list ctrl data rules trm rslt = 
+    if limit_reached (ctrl.depth)
+    then raise No_change
+    else 
+      (match rules with
+        | [] -> raise No_change 
 	| r::nxt ->
-	    (match Lib.try_app (match_rewrite ctrl data r) trm with
-	      None -> match_rr_list ctrl data nxt trm rslt
+	  (match Lib.try_app (match_rewrite ctrl data r) trm with
+	    | None -> match_rr_list ctrl data nxt trm rslt
 	    | Some(rl, ntrm, ntyenv) -> 
-		(ntrm, ntyenv, decr_depth ctrl, rl::rslt)))
+	      (ntrm, ntyenv, decr_depth ctrl, rl::rslt)))
 
-(**
-   [match_rewrite_list scp ctrl tyenv chng net trm]: Repeatedly
-   rewrite [trm] using rules stored in term-net [net] until no rule
-   matches or the limit (given by control [ctrl]) is reached. Note
-   that [match_rewrite_list] doesn't descend into the terms' subterms.
+  (** [match_rewrite_list scp ctrl tyenv chng net trm]: Repeatedly
+      rewrite [trm] using rules stored in term-net [net] until no
+      rule matches or the limit (given by control [ctrl]) is
+      reached. Note that [match_rewrite_list] doesn't descend into
+      the terms' subterms.
 
-   If [trm] is not rewritten, return an empty list of rules.
- *)
-    let rec match_rewrite_list ctrl data net trm rslt =
-      let (scope, qntenv, tyenv) = data
-      in 
-      if(limit_reached ctrl.depth)
-      then (trm, tyenv, ctrl, rslt)
-      else 
-	(let rs= Net.lookup net trm
-	in 
-	match 
-	  (Lib.try_app (match_rr_list ctrl data rs trm) rslt)
-	with 
-	  None -> (trm, tyenv, ctrl, rslt)
-	| Some(ntrm, ntyenv, nctrl, nrslt) ->
-	    match_rewrite_list 
-	      nctrl (scope, qntenv, ntyenv) net ntrm nrslt)
+      If [trm] is not rewritten, return an empty list of rules.
+  *)
+  let rec match_rewrite_list ctrl data net trm rslt =
+    let (scope, qntenv, tyenv) = data
+    in 
+    if(limit_reached ctrl.depth)
+    then (trm, tyenv, ctrl, rslt)
+    else 
+      (let rs= Net.lookup net trm
+       in 
+       match (Lib.try_app (match_rr_list ctrl data rs trm) rslt)
+       with 
+	 | None -> (trm, tyenv, ctrl, rslt)
+	 | Some(ntrm, ntyenv, nctrl, nrslt) ->
+	   match_rewrite_list nctrl (scope, qntenv, ntyenv) net ntrm nrslt)
 
-
-    let check_change x = 
-      match x with
-	Skip -> raise No_change
+  let check_change x = 
+    match x with
+      | Skip -> raise No_change
       | _ -> ()
 
-    let check_change2 x y = 
-      match (x, y) with
-	(Skip, Skip) -> raise No_change
+  let check_change2 x y = 
+    match (x, y) with
+      | (Skip, Skip) -> raise No_change
       | _ -> ()
 
-    let rec rewrite_td_subterm ctrl data net t =
-      let (scope, qntenv, tyenv) = data
-      in 
-      if(limit_reached ctrl.depth)
-      then raise No_change
-      else 
-	(match t with
-	  Basic.Qnt(q, b) -> 
-	    let qntenv1 = 
-	      Term.bind (Basic.Bound q) null_term qntenv
-	    in 
+  let rec rewrite_td_subterm ctrl data net t =
+    let (scope, qntenv, tyenv) = data
+    in 
+    if limit_reached ctrl.depth
+    then raise No_change
+    else 
+      (match t with
+        | Basic.Qnt(q, b) -> 
+	    let qntenv1 = Term.bind (Basic.Bound q) null_term qntenv in 
 	    let (nb, benv, bctrl, brslt) = 
 	      rewrite_td_term ctrl (scope, qntenv1, tyenv) net b
 	    in 
@@ -694,71 +640,66 @@ module Make =
 	    in 
 	    (Basic.Qnt(q, nb), benv, bctrl, subplans)
 	| Basic.App(f, a)->
-	    let nf, fenv, fctrl, fplan = 
-	      try (rewrite_td_term ctrl data net f)
-	      with No_change -> (f, tyenv, ctrl, mk_skip)
-	    in
-	    let na, aenv, actrl, aplan = 
-	      try (rewrite_td_term fctrl (scope, qntenv, fenv) net a)
-	      with No_change -> (a, fenv, fctrl, mk_skip)
-	    in 
-	    check_change2 fplan aplan;
-	    let subplans = pack(mk_branches[fplan; aplan])
-	    in 
-	    (Basic.App(nf, na), aenv, actrl, subplans)
+	  let nf, fenv, fctrl, fplan = 
+	    try rewrite_td_term ctrl data net f
+	    with No_change -> (f, tyenv, ctrl, mk_skip)
+	  in
+	  let na, aenv, actrl, aplan = 
+	    try rewrite_td_term fctrl (scope, qntenv, fenv) net a
+	    with No_change -> (a, fenv, fctrl, mk_skip)
+	  in 
+	  check_change2 fplan aplan;
+	  let subplans = pack(mk_branches[fplan; aplan])
+	  in 
+	  (Basic.App(nf, na), aenv, actrl, subplans)
 	| _ -> (t, tyenv, ctrl, mk_skip))
-    and 
-	rewrite_td_term ctrl data net t = 
-      if (limit_reached ctrl.depth)
-      then raise No_change
-      else 
-	let (scope, qntenv, tyenv) = data
-	in 
-	let (t1, env1, ctrl1, rules) =
-	  match_rewrite_list ctrl data net t []
-	in 
-	let (t2, env2, ctrl2, subplan) =
-	  (match 
+  and 
+      rewrite_td_term ctrl data net t = 
+    if limit_reached ctrl.depth
+    then raise No_change
+    else 
+      let (scope, qntenv, tyenv) = data in 
+      let (t1, env1, ctrl1, rules) =
+	match_rewrite_list ctrl data net t []
+      in 
+      let (t2, env2, ctrl2, subplan) =
+	(match 
 	    Lib.try_app 
-	      (rewrite_td_subterm ctrl1 (scope, qntenv, env1) net) t1 
-	  with
-	    Some x -> x
-	  | None -> (t1, env1, ctrl1, mk_skip))
-	in
-	(if rules=[] 
-	then check_change subplan
-	else ());
-	let plan1 = pack(mk_rules (List.rev rules))
-	in 
-	let plan2 = 
-	  pack(mk_node [plan1; subplan])
-	in 
-	(t2, env2, ctrl2, plan2)
-    and 
-	make_list_topdown ctrl net data trm =
+              (rewrite_td_subterm ctrl1 (scope, qntenv, env1) net) t1 
+	 with
+           | Some x -> x
+	   | None -> (t1, env1, ctrl1, mk_skip))
+      in
+      (if rules = [] 
+       then check_change subplan
+       else ());
+      let plan1 = pack (mk_rules (List.rev rules)) in 
+      let plan2 = pack (mk_node [plan1; subplan])
+      in 
+      (t2, env2, ctrl2, plan2)
+  and make_list_topdown ctrl net data trm =
+    let (scope, qntenv, tyenv) = data
+    in 
+    rewrite_td_term ctrl (scope, Term.empty_subst(), tyenv) net trm
+
+  (** [make_list_bottomup scp ctrl tyenv chng net trm]: Rewrite
+      [trm] and its sub-terms, bottom-up.
+
+      Each subterm of [trm] is rewritten (bottom-up) with the rules in
+      [net] then [trm] (after its subterms are replaced) is
+      rewritten. Rewriting continues up to the limit set by [ctrl.depth].
+
+      If [trm] or any of its subterms are rewritten, [chng] is set to
+      [true] other wise it is unchanged.
+  *)
+  let rec rewrite_bu_subterm ctrl data net t=
+    if limit_reached (ctrl.depth)
+    then raise No_change
+    else 
       let (scope, qntenv, tyenv) = data
       in 
-      rewrite_td_term ctrl (scope, Term.empty_subst(), tyenv) net trm
-
-(**
-   [make_list_bottomup scp ctrl tyenv chng net trm]: Rewrite [trm]
-   and its sub-terms, bottom-up.
-
-   Each subterm of [trm] is rewritten (bottom-up) with the rules in
-   [net] then [trm] (after its subterms are replaced) is
-   rewritten. Rewriting continues up to the limit set by [ctrl.depth].
-
-   If [trm] or any of its subterms are rewritten, [chng] is set to
-   [true] other wise it is unchanged.
- *)
-    let rec rewrite_bu_subterm ctrl data net t=
-      if (limit_reached (ctrl.depth))
-      then raise No_change
-      else 
-	let (scope, qntenv, tyenv) = data
-	in 
-	match t with
-	  Basic.Qnt(q, b) -> 
+      match t with
+        | Basic.Qnt(q, b) -> 
 	    let qntenv1 = 
 	      Term.bind (Basic.Bound(q)) null_term qntenv
 	    in 
@@ -774,108 +715,98 @@ module Make =
 	    rewrite_bu_term ctrl 
 	      (scope, qntenv, benv) net (Basic.Qnt(q, nb)) subplans
 	| Basic.App(f, a)->
-	    let (nf, fenv, fctrl, frslt) = 
-	      try rewrite_bu_subterm ctrl data net f
-	      with No_change -> (f, tyenv, ctrl, mk_skip)
-	    in
-	    let (na, aenv, actrl, arslt) = 
-	      try rewrite_bu_subterm fctrl (scope, qntenv, fenv) net a
-	      with No_change -> (a, fenv, fctrl, mk_skip)
-	    in 
-	    let subplans = 
-	      try 
-		check_change2 frslt arslt;
-		pack(mk_branches [frslt; arslt])
-	      with _ -> mk_skip
-	    in 
-	    rewrite_bu_term actrl 
-	      (scope, qntenv, aenv) net (Basic.App(nf, na)) subplans
-	| _ -> 
-	    rewrite_bu_term ctrl data net t mk_skip
-    and 
-	rewrite_bu_term ctrl data net t subrslt =
-      let (t1, env1, ctrl1, rslt1) =
-	(match_rewrite_list ctrl data net t [])
-      in 
-      (match (rslt1, subrslt) with
-	([], _) -> check_change subrslt
-      | _ -> ());
-      let plan1= pack(mk_rules (List.rev rslt1))
-      in 
-      let plan2 = pack(mk_node [subrslt;  plan1])
-      in 
-      (t1, env1, ctrl1, plan2)
-    and
-	make_list_bottomup ctrl net data trm =
-      let (scope, qntenv, tyenv) = data
-      in 
-      rewrite_bu_subterm ctrl (scope, Term.empty_subst(), tyenv) net trm
-
-
-    let make_rewrites rule_data xs = 
-      let rec make_rewrites_aux xs net=
-	match xs with
-	  [] -> net
-	| (rl::rst) -> 
-	    let (vs, key, rep, order) = A.dest rule_data rl
-	    in 
-	    let net_data = (vs, key, rep, order, rl)
-	    in 
-	    make_rewrites_aux rst
-	      (Net.add (is_free_binder vs) net key net_data)
-      in 
-      (make_rewrites_aux (List.rev xs) (Net.empty()))
-
-    let make_list rule_data ctrl scope tyenv rs trm = 
-      let net=make_rewrites rule_data rs
-      in 
-      if (limit_reached ctrl.depth)
-      then raise No_change
-      else 
-	let (ntrm, ntyenv, nctrl, plan) = 
-	  let data = (scope, Term.empty_subst(), tyenv)
+	  let (nf, fenv, fctrl, frslt) = 
+	    try rewrite_bu_subterm ctrl data net f
+	    with No_change -> (f, tyenv, ctrl, mk_skip)
 	  in
-	  if (is_topdown (ctrl.rr_strat))
-	  then make_list_topdown ctrl net data trm
-	  else make_list_bottomup ctrl net data trm
-	in 
-	(ntrm, ntyenv, plan)
+	  let (na, aenv, actrl, arslt) = 
+	    try rewrite_bu_subterm fctrl (scope, qntenv, fenv) net a
+	    with No_change -> (a, fenv, fctrl, mk_skip)
+	  in 
+	  let subplans = 
+	    try 
+	      check_change2 frslt arslt;
+	      pack(mk_branches [frslt; arslt])
+	    with _ -> mk_skip
+	  in 
+	  rewrite_bu_term actrl 
+	    (scope, qntenv, aenv) net (Basic.App(nf, na)) subplans
+	| _ -> 
+	  rewrite_bu_term ctrl data net t mk_skip
+  and 
+      rewrite_bu_term ctrl data net t subrslt =
+    let (t1, env1, ctrl1, rslt1) =
+      match_rewrite_list ctrl data net t []
+    in 
+    (match (rslt1, subrslt) with
+      | ([], _) -> check_change subrslt
+      | _ -> ());
+    let plan1= pack(mk_rules (List.rev rslt1)) in 
+    let plan2 = pack(mk_node [subrslt;  plan1])
+    in 
+    (t1, env1, ctrl1, plan2)
+  and
+      make_list_bottomup ctrl net data trm =
+    let (scope, qntenv, tyenv) = data
+    in 
+    rewrite_bu_subterm ctrl (scope, Term.empty_subst(), tyenv) net trm
 
-(***
- * Toplevel functions
- ***)
+  let make_rewrites rule_data xs = 
+    let rec make_rewrites_aux xs net =
+      match xs with
+        | [] -> net
+	| (rl::rst) -> 
+	  let (vs, key, rep, order) = A.dest rule_data rl in 
+	  let net_data = (vs, key, rep, order, rl)
+	  in 
+	  make_rewrites_aux rst
+	    (Net.add (is_free_binder vs) net key net_data)
+    in 
+    (make_rewrites_aux (List.rev xs) (Net.empty()))
 
-    let make_env rule_data scope ctrl tyenv rrl trm=
-      try make_list rule_data ctrl scope tyenv rrl trm
-      with 
-	No_change -> 
-	  raise (term_error "Rewriting failed" [trm])
+  let make_list rule_data ctrl scope tyenv rs trm = 
+    let net=make_rewrites rule_data rs
+    in 
+    if (limit_reached ctrl.depth)
+    then raise No_change
+    else 
+      let (ntrm, ntyenv, nctrl, plan) = 
+	let data = (scope, Term.empty_subst(), tyenv)
+	in
+	if (is_topdown (ctrl.rr_strat))
+	then make_list_topdown ctrl net data trm
+	else make_list_bottomup ctrl net data trm
+      in 
+      (ntrm, ntyenv, plan)
 
-    let make rule_data scope ctrl rrl trm =
-      let (ret, _, plan) = 
-	make_env rule_data scope ctrl (Gtypes.empty_subst()) rrl trm
-      in (ret, plan)
+  (*
+   * Toplevel functions
+   *)
 
-  end
+  let make_env rule_data scope ctrl tyenv rrl trm=
+    try make_list rule_data ctrl scope tyenv rrl trm
+    with No_change -> raise (term_error "Rewriting failed" [trm])
 
+  let make rule_data scope ctrl rrl trm =
+    let (ret, _, plan) = 
+      make_env rule_data scope ctrl (Gtypes.empty_subst()) rrl trm
+    in (ret, plan)
 
-
+end
 
 (*** Term Rewrite Planner ***)
 
 module TermPlannerData =
-  struct
-    type rule = Basic.term
-    type data = unit
+struct
+  type rule = Basic.term
+  type data = unit
 
-    let dest _ trm = 
-      let qs, b = strip_qnt Basic.All trm
-      in 
-      let lhs, rhs= Lterm.dest_equality b
-      in 
-      (qs, lhs, rhs, None)
-
-  end
+  let dest _ trm = 
+    let qs, b = strip_qnt Basic.All trm in 
+    let lhs, rhs= Lterm.dest_equality b
+    in 
+    (qs, lhs, rhs, None)
+end
 
 module TermPlanner = Make(TermPlannerData)
 (** The Planner. *)
