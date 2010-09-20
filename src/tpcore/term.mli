@@ -218,6 +218,12 @@ val rebuild_qnt: binders list -> term -> term
 val rename: term -> term
 (** [rename t]: Rename bound variables in term [t] (alpha-conversion). *)
 
+(***
+val full_rename: Gtypes.substitution -> term -> (term * Gtypes.substitution)
+(** [full_rename env t]: Rename all type variables and bound variables
+    in term [t]. *)
+***)
+
 type substitution 
 (** The type of term substitutions. *)
 

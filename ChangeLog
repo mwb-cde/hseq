@@ -2,6 +2,7 @@
 + Rename file Changes to ChangeLog.
 + Code clean-up.
 + Tighten handling of rewrite matching.
++ Remove OMake files.
 
 HSeq Jan09
 ----------
