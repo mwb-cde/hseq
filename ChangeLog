@@ -1,3 +1,8 @@
+
++ Rename file Changes to ChangeLog.
++ Code clean-up.
++ Tighten handling of rewrite matching.
+
 HSeq Jan09
 ----------
 
