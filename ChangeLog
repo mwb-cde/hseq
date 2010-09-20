@@ -1,8 +1,8 @@
-
-+ Rename file Changes to ChangeLog.
-+ Code clean-up.
-+ Tighten handling of rewrite matching.
-+ Remove OMake files.
+* Try to handle OCaml/Camlp4 version for both 3.11.2 and 3.12.
+* Rename file Changes to ChangeLog.
+* Code clean-up.
+* Tighten handling of rewrite matching.
+* Remove OMake files.
 
 HSeq Jan09
 ----------
