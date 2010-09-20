@@ -199,7 +199,7 @@ theorem ~simp:true "conj_assoc"
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let conj_comm=
-theorem ~simp:true "conj_comm"
+theorem ~simp:false "conj_comm"
 << !x y: (x and y) = (y and x) >>
 [ flatten_tac ++ equals_tac ++ blast_tac] ;;
 
@@ -221,7 +221,7 @@ theorem ~simp:true "conj_absorb"
 
 let conj_trivial =
 theorem ~simp:true "conj_trivial"
-<< !x : (x&x) = x >>
+<< !x : (x & x) = x >>
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let conj_disj_distrib=
@@ -244,7 +244,7 @@ theorem ~simp:true "disj_assoc"
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let disj_comm=
-theorem ~simp:true "disj_comm"
+theorem ~simp:false "disj_comm"
 << !x y: (x or y) = (y or x) >>
 [ flatten_tac ++ equals_tac ++ blast_tac ];;
 
@@ -265,7 +265,7 @@ and (! x: (x or false) = x)
 
 let disj_trivial =
 theorem ~simp:true "disj_trivial"
-<< !x : (x|x) = x >>
+<< !x : (x | x) = x >>
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let disj_conj_distrib=
@@ -277,7 +277,7 @@ theorem ~simp:false "disj_conj_distrib"
 
 let implies_trivial =
 theorem ~simp:true "implies_trivial"
-<< !x : (x=>x) = true >>
+<< !x : (x => x) = true >>
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let implies_absorb =
@@ -383,7 +383,7 @@ theorem "eq_sym" << !x y : (x = y) = (y = x) >>
 
 let eq_fact = 
 theorem "eq_fact" ~simp:true 
-<< ! x : (x=x) = true >>
+<< ! x : (x = x) = true >>
 [ flatten_tac++ cut_back_tac true_l2 ++ eq_tac];;
 
 (***
