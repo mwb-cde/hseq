@@ -111,6 +111,11 @@ let mk_typevar n =
   in
   n := (!n) + 1; nty
 
+let mk_typevar_ctr ctr =
+  let nty = Var(ref(int_to_name ctr))
+  in
+  (ctr + 1, nty)
+
 let get_var_names ty = 
   let seen = Lib.empty_env() in 
   let rec get_aux names typ =
@@ -822,6 +827,50 @@ let mgu_rename_env inf tyenv name_env typ =
         (Constr(f, nargs), nenv1)
   in 
   rename_aux name_env typ
+
+(**
+   [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
+   with their bindings in substitution [env].  If a variable isn't bound
+   in [env], then it is renamed and bound to that name in [nenv] (which is
+   checked before a new name is created).
+
+   This does the same thing as mgu_rename_env except that it takes
+   [inf] as a scalar, rather than a reference, and returns a new value
+   for [inf].
+*)
+let mgu_rename_simple inf tyenv name_env typ =
+  let new_name_env ctr nenv x =
+    try (lookup x nenv, ctr, nenv)
+    with Not_found ->
+      let (ctr1, newty) = mk_typevar_ctr ctr
+      in 
+      (newty, ctr1, bind_var x newty nenv)
+  in 
+  let rec rename_aux ctr (nenv: substitution) ty =
+    match ty with
+      | Var(_) ->
+	let nt = lookup_var ty tyenv
+	in 
+	if equals ty nt
+	then new_name_env ctr nenv nt
+	else rename_aux ctr nenv nt
+      | WeakVar(_) ->
+	let nt = lookup_var ty tyenv
+	in 
+	if is_weak nt
+        then (nt, ctr, nenv)
+	else rename_aux ctr nenv nt
+      | Constr(f, args) -> 
+        let rename_arg (ctr1, renv) (arg: Basic.gtype) = 
+          let (narg, ctr2, ne) = rename_aux ctr1 renv arg
+          in 
+          ((ctr2, ne), narg)
+        in
+        let ((ctr1, nenv1), nargs) = Lib.fold_map rename_arg (ctr, nenv) args
+        in 
+        (Constr(f, nargs), ctr1, nenv1)
+  in 
+  rename_aux inf name_env typ
 
 let mgu_rename inf env nenv typ =
   let nty, _ = mgu_rename_env inf env nenv typ

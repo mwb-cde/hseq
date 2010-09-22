@@ -72,6 +72,14 @@ val mk_typevar: int ref -> gtype
     [!n] make different names.
 *)
 
+val mk_typevar_ctr: int -> (int * gtype)
+(** [mk_typevar n]: Make a new type variable [t'] with a name derived
+    from [n] and return [(n + 1, t')]. Different values of [n] make
+    different names.
+
+    This is does the same thing as [mk_typevar] but without side-effects.
+*)
+
 val get_var_names: gtype -> string list
 (** [get_var_names ty]: Get the names of variables in [ty]. Ignores
     weak variables.
@@ -320,6 +328,20 @@ val mgu_rename:
   int ref -> substitution 
   -> substitution -> gtype 
   -> gtype 
+
+val mgu_rename_simple: int -> substitution -> substitution 
+  -> gtype -> (gtype * int *substitution)
+(**
+   [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
+   with their bindings in substitution [env].  If a variable isn't bound
+   in [env], then it is renamed and bound to that name in [nenv] (which is
+   checked before a new name is created).
+
+   This does the same thing as mgu_rename_env except that it takes
+   [inf] as a scalar, rather than a reference, and returns a new value
+   for [inf].
+*)
+
 (** Toplevel for [mgu_rename_env]. *)
 
 (** {6 Matching functions} 

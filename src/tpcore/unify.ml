@@ -285,8 +285,16 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
   in 
   matches_aux typenv trmenv (Term.empty_subst()) trm1 trm2
 
+
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1a, _) = term_copy_type (Gtypes.empty_subst()) trm1
   in
   matches_full scp typenv env varp trm1a trm2
+
+(***
+let matches_rewrite scp typenv env varp trm1 trm2 =
+  let (trm1, typenv1) = full_rename typenv trm1
+  in
+  matches_full scp typenv1 env varp trm1 trm2
+***)
 

@@ -570,7 +570,6 @@ let do_rename nb =
 
 let replace env x =  do_rename (basic_find x env)
 
-
 (**
    Retyping.
 
@@ -643,7 +642,7 @@ let retype_with_check scp tyenv t=
 (* retype_pretty: as for retype, make substitution for type variables
    but also replace other type variables with new, prettier names
 *)
-let retype_pretty_env typenv trm=
+let retype_pretty_env typenv trm =
   let inf =ref 0 in 
   let rec retype_aux t name_env qenv =
     match t with
@@ -693,6 +692,102 @@ let retype_pretty typenv trm =
   let new_term, _ = retype_pretty_env typenv trm
   in 
   new_term
+
+(*
+ * Combined type/binder renaming.
+ *)
+
+(** [full_rename env t]: Rename all type variables and bound variables
+    in term [t]. *)
+let full_rename_env type_env term_env trm =
+  let rename_type tyenv trm = 
+    rename_type_vars_env tyenv trm
+  in
+  let rename_binder q tyenv = 
+    let (qnt, qv, qty) = Basic.dest_binding q in 
+    let (nt, nev) = rename_type tyenv qty
+    in 
+    (mk_binding qnt qv nt, nev)
+  in 
+  let rec rename_aux t tyenv env =
+    match t with
+      | Id(n, ty) -> 
+	let (ty1, tyenv1) = rename_type tyenv ty
+	in 
+	(Id(n, ty1), tyenv1, env)
+      | Free(n, ty) -> 
+	let (ty1, tyenv1) = rename_type tyenv ty
+	in 
+	(Free(n, ty1), tyenv1, env)
+      | Meta(q) -> (t, tyenv, env)
+      | Const(c) -> (t, tyenv, env)
+      | Bound(q) -> 
+        let mk_new () = 
+      	  let (q1, tyenv1) = rename_binder q tyenv in 
+          let t1 = Bound(q1) in
+	  let env1 = bind t t1 env 
+          in 
+          (t1, tyenv1, env1)
+        in
+        begin
+          try (find t env, tyenv, env) 
+          with Not_found -> mk_new()
+        end
+      | Qnt(q, b) -> 
+      	let (q1, tyenv1) = rename_binder q tyenv in 
+	let env1 = bind (Bound(q)) (Bound(q1)) env in 
+	let (b1, tyenv2, env2) = rename_aux b tyenv1 env1
+	in 
+      	(Qnt(q1, b1), tyenv2, env2)
+      | App(f, a) ->
+	let f1, tyenv1, env1 = rename_aux f tyenv env in 
+        let a1, tyenv2, env2 = rename_aux a tyenv1 env1
+	in 
+	(App(f1, a1), tyenv2, env2)
+  in 
+  rename_aux trm type_env term_env 
+
+let full_rename tyenv trm =
+  let trmenv = empty_subst()
+  in
+  let (ntrm, ntyenv, ntrmenv) = full_rename_env tyenv trmenv trm
+  in
+  (ntrm, ntyenv)
+
+exception No_quantifier
+
+let rename_env typenv trmenv trm =
+  let copy_binder q tyenv = 
+    let qnt, qv, qty = Basic.dest_binding q in 
+    let nt, nev = rename_type_vars_env tyenv qty
+    in 
+    (mk_binding qnt qv nt, nev)
+  and has_quantifier = ref false
+  in 
+  let rec rename_aux t tyenv env=
+    match t with
+      | Bound(_) -> 
+	(try (find t env, tyenv, env)
+	 with Not_found -> (t, tyenv, env))
+      | Qnt(q, b) -> 
+      	let nq, tyenv1 = copy_binder q tyenv in 
+	let env1 = bind (Bound(q)) (Bound(nq)) env in 
+	let nb, tyenv2, env2 = rename_aux b tyenv1 env1
+	in 
+	has_quantifier:=true;
+      	(Qnt(nq, nb), tyenv2, env2)
+      | App(f, a) ->
+	let nf, tyenv1, env1 = rename_aux f tyenv env in 
+        let na, tyenv2, env2 = rename_aux a tyenv env1
+	in 
+	(App(nf, na), tyenv2, env2)
+      | _ -> (t, tyenv, env)
+  in 
+  let t, ntyenv, nenv = rename_aux trm typenv trmenv 
+  in 
+  if (!has_quantifier) = false 
+  then raise No_quantifier 
+  else (t, ntyenv, nenv)
 
 (*
  * Substitution functions
