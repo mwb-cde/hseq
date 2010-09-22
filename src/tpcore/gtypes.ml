@@ -106,12 +106,7 @@ let dest_constr ty =
 (* Variable types *)
 let is_any_var t = (is_var t) || (is_weak t)
 
-let mk_typevar n =
-  let nty = Var(ref(int_to_name (!n)))
-  in
-  n := (!n) + 1; nty
-
-let mk_typevar_ctr ctr =
+let mk_typevar ctr =
   let nty = Var(ref(int_to_name ctr))
   in
   (ctr + 1, nty)
@@ -794,39 +789,39 @@ let rec mgu t env =
    in [env], then it is renamed and bound to that name in [nenv] (which is
    checked before a new name is created).
 *)
-let mgu_rename_env inf tyenv name_env typ =
-  let new_name_env nenv x =
-    try (lookup x nenv, nenv)
+let mgu_rename_env (inf, tyenv) name_env typ =
+  let new_name_env (ctr, nenv) x =
+    try (lookup x nenv, (ctr, nenv))
     with Not_found ->
-      let newty = mk_typevar inf
+      let (ctr1, newty) = mk_typevar ctr
       in 
-      (newty, bind_var x newty nenv)
+      (newty, (ctr1, bind_var x newty nenv))
   in 
-  let rec rename_aux (nenv: substitution) ty =
+  let rec rename_aux (ctr, (nenv: substitution)) ty =
     match ty with
       | Var(_) ->
 	let nt = lookup_var ty tyenv
 	in 
-	if (equals ty nt)
-	then new_name_env nenv nt
-	else rename_aux nenv nt
+	if equals ty nt
+	then new_name_env (ctr, nenv) nt
+	else rename_aux (ctr, nenv) nt
       | WeakVar(_) ->
-	let nt=lookup_var ty tyenv
+	let nt = lookup_var ty tyenv
 	in 
-	if (is_weak nt) 
-        then (nt, nenv)
-	 else rename_aux nenv nt
+	if is_weak nt 
+        then (nt, (ctr, nenv))
+	else rename_aux (ctr, nenv) nt
       | Constr(f, args) -> 
         let rename_arg renv (arg: Basic.gtype) = 
           let (narg, ne) = rename_aux renv arg
           in 
           (ne, narg)
         in
-        let (nenv1, nargs) = Lib.fold_map rename_arg nenv args
+        let ((ctr1, nenv1), nargs) = Lib.fold_map rename_arg (ctr, nenv) args
         in 
-        (Constr(f, nargs), nenv1)
+        (Constr(f, nargs), (ctr1, nenv1))
   in 
-  rename_aux name_env typ
+  rename_aux (inf, name_env) typ
 
 (**
    [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
@@ -842,7 +837,7 @@ let mgu_rename_simple inf tyenv name_env typ =
   let new_name_env ctr nenv x =
     try (lookup x nenv, ctr, nenv)
     with Not_found ->
-      let (ctr1, newty) = mk_typevar_ctr ctr
+      let (ctr1, newty) = mk_typevar ctr
       in 
       (newty, ctr1, bind_var x newty nenv)
   in 
@@ -873,7 +868,7 @@ let mgu_rename_simple inf tyenv name_env typ =
   rename_aux inf name_env typ
 
 let mgu_rename inf env nenv typ =
-  let nty, _ = mgu_rename_env inf env nenv typ
+  let nty, _ = mgu_rename_env (inf, env) nenv typ
   in
   nty
 

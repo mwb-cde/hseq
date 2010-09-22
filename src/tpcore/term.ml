@@ -643,48 +643,51 @@ let retype_with_check scp tyenv t=
    but also replace other type variables with new, prettier names
 *)
 let retype_pretty_env typenv trm =
-  let inf =ref 0 in 
-  let rec retype_aux t name_env qenv =
+  let rec retype_aux t ctr name_env qenv =
     match t with
       | Id(n, ty) -> 
-	let (nt, nenv1) = Gtypes.mgu_rename_env inf typenv name_env ty
+	let (nt, (ctr1, nenv1)) = 
+          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
 	in 
-	(Id(n, nt), nenv1, qenv)
+	(Id(n, nt), ctr1, nenv1, qenv)
       | Free(n, ty) -> 
-	let (nt, nenv1) = Gtypes.mgu_rename_env inf typenv name_env ty
+	let (nt, (ctr1, nenv1)) = 
+          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
 	in 
-	(Free(n, nt), nenv1, qenv)
-      | Meta(q) -> (t, name_env, qenv)
-      | Const(c) -> (t, name_env, qenv)
+	(Free(n, nt), ctr, nenv1, qenv)
+      | Meta(q) -> (t, ctr, name_env, qenv)
+      | Const(c) -> (t, ctr, name_env, qenv)
       | Bound(q) -> 
-	(try (table_find t qenv, name_env, qenv)
+	(try (table_find t qenv, ctr, name_env, qenv)
 	 with Not_found ->
 	   let (qnt, qnm, qty) = Basic.dest_binding q in 
-	   let (nty, nenv1) =
-	     Gtypes.mgu_rename_env inf typenv name_env qty
+	   let (nty, (ctr1, nenv1)) =
+	     Gtypes.mgu_rename_env (ctr, typenv) name_env qty
 	   in 
 	   let nq = mk_binding qnt qnm nty in
            let qenv1 = table_add (Bound q) (Bound nq) qenv; qenv
 	   in 
-           (Bound(nq), nenv1, qenv1))
+           (Bound(nq), ctr1, nenv1, qenv1))
       | App(f, a) -> 
-	let nf, nenv1, qenv1 = retype_aux f name_env qenv in
-        let na, nenv2, qenv2 = retype_aux a nenv1 qenv1
+	let nf, ctr1, nenv1, qenv1 = retype_aux f ctr name_env qenv in
+        let na, ctr2, nenv2, qenv2 = retype_aux a ctr1 nenv1 qenv1
 	in 
-	(App(nf, na), nenv2, qenv2)
+	(App(nf, na), ctr2, nenv2, qenv2)
       | Qnt(q, b) ->
 	let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
-	let nty, nenv1 =Gtypes.mgu_rename_env inf typenv name_env oqty in
+	let nty, (ctr1, nenv1) =
+          Gtypes.mgu_rename_env (ctr, typenv) name_env oqty 
+        in
 	let nq = mk_binding oqnt oqnm nty in 
         let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-        let nb, nenv2, qenv2 = retype_aux b nenv1 qenv1 in 
+        let nb, ctr2, nenv2, qenv2 = retype_aux b ctr1 nenv1 qenv1 in 
         let new_term = Qnt(nq, nb) in
         let qenv3 = table_remove (Bound(q)) qenv2; qenv2
         in 
-        (new_term, nenv2, qenv3)
+        (new_term, ctr2, nenv2, qenv3)
   in 
-  let (retyped, new_nenv, _) = 
-    retype_aux trm (Gtypes.empty_subst()) (empty_table()) 
+  let (retyped, _, new_nenv, _) = 
+    retype_aux trm 0 (Gtypes.empty_subst()) (empty_table()) 
   in 
   (retyped, new_nenv)
 
@@ -725,19 +728,6 @@ let full_rename_env type_env term_env trm =
         let t1 = try (find t env) with Not_found -> t
         in
         (t1, tyenv)
-(**
-        let mk_new () = 
-      	  let (q1, tyenv1) = rename_binder q tyenv in 
-          let t1 = Bound(q1) in
-	  let env1 = bind t t1 env 
-          in 
-          (t1, tyenv1)
-        in
-        begin
-          try (find t env, tyenv) 
-          with Not_found -> mk_new()
-        end
-**)
       | Qnt(q, b) -> 
       	let (q1, tyenv1) = rename_binder q tyenv in 
 	let env1 = bind (Bound(q)) (Bound(q1)) env in 

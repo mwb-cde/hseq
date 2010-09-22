@@ -178,6 +178,14 @@ let rec mk_comb x y =
 let mk_fun f args = 
   mk_comb (PId(f, Gtypes.mk_var ("_"^(Ident.string_of f)^"_ty"))) args
 
+(** Utility wrapper to use Gtypes.mk_typevar_ctr with references. *)
+let mk_typevar_ref inf = 
+  let ctr = !inf in
+  let (ctr1, nty) = Gtypes.mk_typevar ctr in
+  begin
+    inf := ctr1; 
+    nty
+  end
 
 (*** Operator Overloading ***)
 
@@ -336,8 +344,8 @@ struct
 	in 
 	(trm1, nty2, env2)
       | PApp(lf, a) -> 
-	let argty = Gtypes.mk_typevar data.inf in 
-	let rty0 = Gtypes.mk_typevar data.inf in 
+	let argty = mk_typevar_ref data.inf in 
+	let rty0 = mk_typevar_ref data.inf in 
 	let (rty1, env1) = (rty0, unify_types expty rty0 env) in 
 	let fty0 = Lterm.mk_fun_ty argty rty1 in 
 	let (atrm, aty, aenv) = 
@@ -353,7 +361,7 @@ struct
 	    | Lambda -> 
 	      let qnt1 = binding_set_names qnt in 
 	      let aty = Term.get_binder_type (Bound qnt1)
-	      and rty = Gtypes.mk_typevar data.inf
+	      and rty = mk_typevar_ref data.inf
 	      in 
 	      let nty0 = Lterm.mk_fun_ty aty rty in 
 	      let (nty1, env1) = (nty0, unify_types expty nty0 env) in 
@@ -504,7 +512,7 @@ let to_term ptrm =
         begin
 	  match qnt with
 	    | Lambda -> 
-	      let rty = Gtypes.mk_typevar tyvar_ctr in 
+	      let rty = mk_typevar_ref tyvar_ctr in 
 	      let nty = Lterm.mk_fun_ty qty rty in 
 	      let env1 = unify_types expty nty tyenv in 
 	      let q1 = mk_binding qnt qname (Gtypes.mgu qty env1) in 
@@ -522,8 +530,8 @@ let to_term ptrm =
 	      (Qnt(q1, b1), env2)
         end
       | PApp(f, a) -> 
-	let arg_ty = Gtypes.mk_typevar tyvar_ctr in 
-	let ret_ty = Gtypes.mk_typevar tyvar_ctr in
+	let arg_ty = mk_typevar_ref tyvar_ctr in 
+	let ret_ty = mk_typevar_ref tyvar_ctr in
 	let (a1, env1) = to_aux tyenv trmenv arg_ty a in 
 	let fn_ty = Lterm.mk_fun_ty arg_ty ret_ty in 
 	let env2 = unify_types expty ret_ty env1 in 
@@ -543,7 +551,7 @@ let to_term ptrm =
   let (trm1, _) =
     to_aux 
       (Gtypes.empty_subst()) (Term.empty_subst()) 
-      (Gtypes.mk_typevar tyvar_ctr) ptrm
+      (mk_typevar_ref tyvar_ctr) ptrm
   in 
   trm1
 

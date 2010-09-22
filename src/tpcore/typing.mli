@@ -93,6 +93,6 @@ val settype:
 
 (** {7 Debugging} *)
 val typeof_env:
-  Scope.t -> Gtypes.substitution -> 
-  int ref -> Basic.term -> (Basic.gtype * Gtypes.substitution)
+  Scope.t -> (int * Gtypes.substitution) 
+  -> Basic.term -> (Basic.gtype * (int * Gtypes.substitution))
 

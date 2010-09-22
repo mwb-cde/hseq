@@ -177,41 +177,6 @@ let retype tyenv t=
   in 
   retype_aux (empty_table()) t
 
-(* Rename the binders and type variables in a term. *)
-let term_copy_type env term = 
-  let rec copy_aux qntenv tyenv trm = 
-    match trm with
-      | Id(n, ty) -> 
-	  let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
-	  in 
-          (Id(n, ty1), tyenv1)
-      | Free(n, ty) -> 
-	let ty1, tyenv1 = Gtypes.rename_type_vars_env tyenv ty
-	in 
-        (Free(n, ty1), tyenv1)
-      | Bound(q) -> 
-	let qtrm = 
-          try Term.find trm qntenv 
-          with Not_found -> trm
-	in
-	(qtrm, tyenv)
-      | Meta(q) -> (trm, tyenv)
-      | Const(c) -> (trm, tyenv)
-      | App(f, a) -> 
-        let ftrm, ftyenv = copy_aux qntenv tyenv f in 
-        let atrm, atyenv = copy_aux qntenv ftyenv a
-        in
-        (App(ftrm, atrm), atyenv)
-      | Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-        let nty, ntyenv = Gtypes.rename_type_vars_env tyenv oqty in
-        let nq = mk_binding oqnt oqnm nty in
-        let nqntenv = Term.bind (Bound(q)) (Bound(nq)) qntenv in
-        let btrm, btyenv = copy_aux nqntenv ntyenv b 
-        in 
-        (Qnt(nq, btrm), btyenv)
-  in 
-  copy_aux (Term.empty_subst()) env term
     
 (** Match terms w.r.t given type and term contexts *)
 let matches_full scp typenv trmenv varp trm1 trm2 =
@@ -284,15 +249,6 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
 	  else raise (term_error "matches_aux: default" [t1;t2])
   in 
   matches_aux typenv trmenv (Term.empty_subst()) trm1 trm2
-
-
-(***
-let matches_rewrite scp typenv env varp trm1 trm2 =
-  let (trm1a, _) = term_copy_type (Gtypes.empty_subst()) trm1
-  in
-  matches_full scp typenv env varp trm1a trm2
-***)
-
 
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1, typenv1) = full_rename typenv trm1

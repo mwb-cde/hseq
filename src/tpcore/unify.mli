@@ -107,7 +107,8 @@ val matches_rewrite:
     Returns both type and term substitutions
 *)
 
+(***
 val term_copy_type: 
   Gtypes.substitution -> Basic.term 
   -> (Basic.term * Gtypes.substitution)
-
+***)

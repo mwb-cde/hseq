@@ -66,13 +66,15 @@ val normalize_vars: gtype -> gtype
     variable. Useful when constructing types from existing types.
 *)
 
+(***
 val mk_typevar: int ref -> gtype
 (** [mk_typevar n]: Make a new type variable with a name derived from
     [!n]; increment [n] and return the new type. Different values of
     [!n] make different names.
 *)
+***)
 
-val mk_typevar_ctr: int -> (int * gtype)
+val mk_typevar: int -> (int * gtype)
 (** [mk_typevar n]: Make a new type variable [t'] with a name derived
     from [n] and return [(n + 1, t')]. Different values of [n] make
     different names.
@@ -312,8 +314,8 @@ val mgu: gtype -> substitution -> gtype
     pushes the substitution into the replacement terms.
 *)
 
-val mgu_rename_env: int ref -> substitution -> substitution 
-  -> gtype -> (gtype * substitution)
+val mgu_rename_env: (int * substitution) -> substitution 
+  -> gtype -> (gtype * (int * substitution))
 (** [mgu_rename_env inf env nenv ty]: Replace variables in [ty] with
     their bindings in substitution [env].  If a variable isn't bound
     in [env], then it is renamed and bound to that name in [nenv]
@@ -325,7 +327,7 @@ val mgu_rename_env: int ref -> substitution -> substitution
     Returns the new type and updated nenv.
 *)
 val mgu_rename: 
-  int ref -> substitution 
+  int -> substitution 
   -> substitution -> gtype 
   -> gtype 
 
