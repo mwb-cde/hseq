@@ -714,43 +714,48 @@ let full_rename_env type_env term_env trm =
       | Id(n, ty) -> 
 	let (ty1, tyenv1) = rename_type tyenv ty
 	in 
-	(Id(n, ty1), tyenv1, env)
+	(Id(n, ty1), tyenv1)
       | Free(n, ty) -> 
 	let (ty1, tyenv1) = rename_type tyenv ty
 	in 
-	(Free(n, ty1), tyenv1, env)
-      | Meta(q) -> (t, tyenv, env)
-      | Const(c) -> (t, tyenv, env)
+	(Free(n, ty1), tyenv1)
+      | Meta(q) -> (t, tyenv)
+      | Const(c) -> (t, tyenv)
       | Bound(q) -> 
+        let t1 = try (find t env) with Not_found -> t
+        in
+        (t1, tyenv)
+(**
         let mk_new () = 
       	  let (q1, tyenv1) = rename_binder q tyenv in 
           let t1 = Bound(q1) in
 	  let env1 = bind t t1 env 
           in 
-          (t1, tyenv1, env1)
+          (t1, tyenv1)
         in
         begin
-          try (find t env, tyenv, env) 
+          try (find t env, tyenv) 
           with Not_found -> mk_new()
         end
+**)
       | Qnt(q, b) -> 
       	let (q1, tyenv1) = rename_binder q tyenv in 
 	let env1 = bind (Bound(q)) (Bound(q1)) env in 
-	let (b1, tyenv2, env2) = rename_aux b tyenv1 env1
+	let (b1, tyenv2) = rename_aux b tyenv1 env1
 	in 
-      	(Qnt(q1, b1), tyenv2, env2)
+      	(Qnt(q1, b1), tyenv2)
       | App(f, a) ->
-	let f1, tyenv1, env1 = rename_aux f tyenv env in 
-        let a1, tyenv2, env2 = rename_aux a tyenv1 env1
+	let f1, tyenv1 = rename_aux f tyenv env in 
+        let a1, tyenv2 = rename_aux a tyenv1 env
 	in 
-	(App(f1, a1), tyenv2, env2)
+	(App(f1, a1), tyenv2)
   in 
-  rename_aux trm type_env term_env 
+  rename_aux trm type_env term_env
 
 let full_rename tyenv trm =
   let trmenv = empty_subst()
   in
-  let (ntrm, ntyenv, ntrmenv) = full_rename_env tyenv trmenv trm
+  let (ntrm, ntyenv) = full_rename_env tyenv trmenv trm
   in
   (ntrm, ntyenv)
 

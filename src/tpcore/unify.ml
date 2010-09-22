@@ -177,7 +177,7 @@ let retype tyenv t=
   in 
   retype_aux (empty_table()) t
 
-(* Rename the type variables in a term. *)
+(* Rename the binders and type variables in a term. *)
 let term_copy_type env term = 
   let rec copy_aux qntenv tyenv trm = 
     match trm with
@@ -267,7 +267,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
 	| (Meta(q1), Meta(q2)) ->
 	  if binder_equality q1 q2
 	  then (tyenv, env)
-	  else raise (term_error"matches_aux: meta" [t1;t2])
+	  else raise (term_error "matches_aux: meta" [t1;t2])
 	| (Bound(q1), Bound(q2)) ->
 	  let nq1 = dest_bound (lookup q1 qntenv)
 	  in 
@@ -286,15 +286,16 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
   matches_aux typenv trmenv (Term.empty_subst()) trm1 trm2
 
 
+(***
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1a, _) = term_copy_type (Gtypes.empty_subst()) trm1
   in
   matches_full scp typenv env varp trm1a trm2
+***)
 
-(***
+
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1, typenv1) = full_rename typenv trm1
   in
   matches_full scp typenv1 env varp trm1 trm2
-***)
 
