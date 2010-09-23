@@ -184,7 +184,7 @@ sig
   type resolve_arg =
       {
 	scp: Scope.t;
-	inf: int ref;
+	inf: int;
 	memo: resolve_memo;
 	qnts: Term.substitution;
 	lookup: (string -> Basic.gtype -> (Ident.t * Basic.gtype))
@@ -195,7 +195,7 @@ sig
     -> Gtypes.substitution
     -> Basic.gtype
     -> t
-    -> (Basic.term * Basic.gtype * Gtypes.substitution)
+    -> (Basic.term * Basic.gtype * Gtypes.substitution * resolve_arg)
 
   val memo_find:
     ('a, 'b)Hashtbl.t
