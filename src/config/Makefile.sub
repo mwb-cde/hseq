@@ -156,6 +156,20 @@ DOCDATA ?=
 # (using -load)
 DOCPREV ?= 
 
+# Test whether camlp4 is old.
+ifndef OLDCAMLP4
+
+ifndef CAMLP4VERSION
+# Get the version of camlp4
+export CAMLP4VERSION = OcamlVersion
+endif #CAMLP4VERSION 
+
+ifeq ($(findstring CAMLP4VERSION,3.11),'')
+export OLDCAMLP4 = false
+else
+export OLDCAMLP4 = true
+endif
+endif # OLDCAMLP4
 
 ###
 # End of Makefile.def variables
@@ -174,7 +188,16 @@ PPCODE ?= $(LIBDIR)/tpquote.cma
 # PPOPTIONS: Preprocessor options 
 # To avoid using the preprocessor, 
 # set PPOPTIONS = "" (i.e. an empty value)
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
+# PPOPTIONS ?= -pp "camlp4o q_MLast.cmo $(PPCODE) pa_extend.cmo" -I +camlp4
+
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+ifeq ($(OLDCAMLP4),true)
+PPOPTIONS ?= -pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+else
+PPOPTIONS ?= -pp "camlp4of" -I +camlp4
+endif
+
 
 # DOCLOAD: The previous documentation link
 ifeq '$(DOCPREV)' '' 
@@ -217,7 +240,6 @@ OCAMLDOC_OPTIONS = $(OPTIONS) $(INCLUDE)
 
 # OCAMLCPP : the preprocesor options
 OCAMLCPP_OPTIONS = -I$(TOPCONFIGDIR) $(INCLUDE)
-
 
 ###
 # Build targets
