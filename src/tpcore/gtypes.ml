@@ -305,15 +305,6 @@ let rename_type_vars t =
  * Pretty printing
 *)
 
-type printer_info =
-    { 
-      tbl: substitution; (* used to store pretty replacement variable names *)
-      ctr: int ref; (* used to generate variable names *)
-    }
-
-let empty_printer_info () =
-  { tbl=empty_subst(); ctr = ref 0 }
-
 let pplookup ppstate id =
   try Printer.get_record (ppstate.Printer.types) id
   with Not_found -> 

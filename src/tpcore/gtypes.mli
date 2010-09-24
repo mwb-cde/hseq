@@ -164,13 +164,6 @@ val rename_type_vars: gtype -> gtype
 
 (** {5 Pretty Printing} *)
 
-type printer_info=
-    { 
-      tbl: substitution; (* Replacement variable names for pretty-printing. *)
-      ctr: int ref; (* Used to generate variable names. *)
-    }
-(** Pretty printing information for types. *)
-val empty_printer_info: unit -> printer_info
 (** Make an empty printer information. *)
 val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
