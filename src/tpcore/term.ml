@@ -757,30 +757,30 @@ let rename_env typenv trmenv trm =
     let nt, nev = rename_type_vars_env tyenv qty
     in 
     (mk_binding qnt qv nt, nev)
-  and has_quantifier = ref false
   in 
-  let rec rename_aux t tyenv env=
+  let rec rename_aux t renv =
+    let (tyenv, env, qntd) = renv
+    in
     match t with
       | Bound(_) -> 
-	(try (find t env, tyenv, env)
-	 with Not_found -> (t, tyenv, env))
+	(try (find t env, tyenv, env, qntd)
+	 with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) -> 
       	let nq, tyenv1 = copy_binder q tyenv in 
 	let env1 = bind (Bound(q)) (Bound(nq)) env in 
-	let nb, tyenv2, env2 = rename_aux b tyenv1 env1
+	let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
 	in 
-	has_quantifier:=true;
-      	(Qnt(nq, nb), tyenv2, env2)
+      	(Qnt(nq, nb), tyenv2, env2, true)
       | App(f, a) ->
-	let nf, tyenv1, env1 = rename_aux f tyenv env in 
-        let na, tyenv2, env2 = rename_aux a tyenv env1
+	let (nf, tyenv1, env1, qntd1) = rename_aux f (tyenv, env, qntd) in 
+        let (na, tyenv2, env2, qntd2) = rename_aux a (tyenv, env1, qntd1)
 	in 
-	(App(nf, na), tyenv2, env2)
-      | _ -> (t, tyenv, env)
+	(App(nf, na), tyenv2, env2, qntd2)
+      | _ -> (t, tyenv, env, qntd)
   in 
-  let t, ntyenv, nenv = rename_aux trm typenv trmenv 
+  let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
   in 
-  if (!has_quantifier) = false 
+  if not qntd 
   then raise No_quantifier 
   else (t, ntyenv, nenv)
 
