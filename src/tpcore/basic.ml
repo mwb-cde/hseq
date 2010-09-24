@@ -37,8 +37,21 @@ type ('idtyp, 'tfun) pre_typ =
   | Constr of 'tfun * ('idtyp, 'tfun) pre_typ list
   | WeakVar of 'idtyp
 
+(** [gtype_id]: The type of gtype identifiers. *)
+type gtype_id = string ref
+
+let mk_gtype_id s = ref s
+let gtype_id_string i = (!i)
+let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
+let gtype_id_equal x y = (x == y)
+let gtype_id_compare x y = 
+  if gtype_id_equal x y 
+  then 0
+  else Pervasives.compare x y
+
+
 (** [gtype]: The actual representation of types. *)
-type gtype = (string ref, typ_const)pre_typ
+type gtype = (gtype_id, typ_const)pre_typ
 
 (** String representation of types *)
 let string_tconst n l =

@@ -43,10 +43,10 @@ val mk_constr: Basic.typ_const -> gtype list -> gtype
 
 (** {7 Destructors} *)
 
-val dest_var: gtype -> string ref
+val dest_var: gtype -> Basic.gtype_id
 val get_var_name: gtype -> string
 
-val dest_weak: gtype -> string ref
+val dest_weak: gtype -> Basic.gtype_id
 val get_weak_name: gtype -> string
 
 val dest_constr: gtype -> (Basic.typ_const * gtype list)
@@ -446,7 +446,7 @@ type stypedef_record =
      scharacteristics: string list}
 (** Representation of typedef_records for disk storage. *)
 
-type to_stype_env = (string ref * (string *int)) list
+type to_stype_env = (Basic.gtype_id * (string *int)) list
 (** Data needed to construct a type storage representation. *)
 
 val to_save_env: to_stype_env -> gtype -> (stype * to_stype_env)
@@ -458,7 +458,7 @@ val to_save_env: to_stype_env -> gtype -> (stype * to_stype_env)
 val to_save: gtype -> stype
 (** Toplevel for [to_save_env]. *)
 
-type from_stype_env = ((string * int) * string ref) list
+type from_stype_env = ((string * int) * Basic.gtype_id) list
 (** Data needed to construct a type storage representation. *)
 
 val from_save_env: 

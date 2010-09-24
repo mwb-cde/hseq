@@ -31,12 +31,12 @@ open Report
 let rec equals a b = 
   let struct_equals p = 
     match p with
-      | (Var(v1), Var(v2)) -> v1 == v2
+      | (Var(v1), Var(v2)) -> gtype_id_equal v1 v2
       | (Constr(f1, args1), Constr(f2, args2)) ->
         let test_args () = 
 	  List.iter2 
 	    (fun a b -> 
-	      if (equals a b) 
+	      if equals a b
 	      then () 
 	      else raise (Failure ""))
 	    args1 args2;
@@ -44,7 +44,7 @@ let rec equals a b =
         in
         (f1 = f2) & 
           (try test_args () with _ -> false)
-      | (WeakVar(v1), WeakVar(v2)) -> v1 == v2
+      | (WeakVar(v1), WeakVar(v2)) -> gtype_id_equal v1 v2
       | (x, y) -> x = y
   in 
   (a == b) || (struct_equals (a, b))
@@ -68,8 +68,8 @@ let is_weak t =
 
 (* Constructors *)
 
-let mk_var n = Var(ref n)
-let mk_weak n = WeakVar(ref n)
+let mk_var n = Var(Basic.mk_gtype_id n)
+let mk_weak n = WeakVar(Basic.mk_gtype_id n)
 let mk_constr f l = Constr(f, l)
 
 (* Destructors *)
@@ -81,7 +81,7 @@ let dest_var t =
 
 let get_var_name t = 
   match t with 
-    | Var(n) -> !n
+    | Var(n) -> Basic.gtype_id_string n
     | _ -> raise (Failure "Not a variable")
 
 let dest_weak t =
@@ -91,7 +91,7 @@ let dest_weak t =
 
 let get_weak_name t = 
   match t with 
-    | WeakVar(n) -> !n
+    | WeakVar(n) -> Basic.gtype_id_string n
     | _ -> raise (Failure "Not a weak variable")
 
 let dest_constr ty = 
@@ -107,7 +107,7 @@ let dest_constr ty =
 let is_any_var t = (is_var t) || (is_weak t)
 
 let mk_typevar ctr =
-  let nty = Var(ref(int_to_name ctr))
+  let nty = Var(Basic.mk_gtype_id (int_to_name ctr))
   in
   (ctr + 1, nty)
 
@@ -116,9 +116,11 @@ let get_var_names ty =
   let rec get_aux names typ =
     match typ with
       | Var n -> 
-	if Lib.member (!n) seen
+        let n_str = Basic.gtype_id_string n
+        in
+	if Lib.member n_str seen
 	then names
-	else (ignore(Lib.bind (!n) true seen); (!n)::names)
+	else (ignore(Lib.bind n_str true seen); (n_str::names))
       | Constr(_, args) -> List.fold_left get_aux names args
       | _ -> names
   in 
@@ -277,7 +279,7 @@ let rec rename_type_vars_env env trm =
    | Var(x) -> 
         (try (lookup trm env, env)
          with Not_found -> 
-	   let nt = mk_var (!x)
+	   let nt = mk_var (Basic.gtype_id_string x)
 	   in 
 	   (nt, bind trm nt env))
     | Constr(f, args) ->
@@ -310,7 +312,7 @@ type printer_info =
     }
 
 let empty_printer_info () =
-  { tbl=empty_subst(); ctr=ref 0 }
+  { tbl=empty_subst(); ctr = ref 0 }
 
 let pplookup ppstate id =
   try Printer.get_record (ppstate.Printer.types) id
@@ -427,10 +429,10 @@ let add_type_error s t es = raise (add_error (type_error s t) es)
 
 let rec string_gtype x =
   match x with
-    | Var(a) -> "'"^(!a)
+    | Var(a) -> "'"^(Basic.gtype_id_string a)
     | Constr(f, args) ->  
       string_tconst f (List.map string_gtype args)
-    | WeakVar(a) -> "_"^(!a)
+    | WeakVar(a) -> "_"^(Basic.gtype_id_string a)
 
 (*
  * Support functions to deal with type definitions.
@@ -448,7 +450,7 @@ let rec string_gtype x =
 let rec rewrite_subst t env =
   match t with 
     | Var(a) -> 
-      (try Lib.find (!a) env 
+      (try Lib.find (Basic.gtype_id_string a) env 
        with _ -> raise (type_error "rewrite_subst: Can't find parameter" [t]))
     | Constr(f, l) -> Constr(f, List.map (fun x-> rewrite_subst x env) l) 
     | _ -> t
@@ -578,7 +580,7 @@ let rec well_defined scp args t =
 	   with Not_found -> 
 	     raise (type_error "well_defined: " [t]))
       | Var(v) -> 
-	(try ignore(lookup_var (!v))
+	(try ignore(lookup_var (Basic.gtype_id_string v))
 	 with Not_found -> 
 	   raise (type_error "well_defined, unexpected variable." [t]))
       | WeakVar(v) -> 
@@ -719,7 +721,7 @@ let unify_env scp t1 t2 nenv =
 	  in
           unify_aux x y1 env
         in
-	  if f1=f2   
+	  if f1 = f2   
 	  then 
             (* Matching constructors. *)
 	    (try 
@@ -1071,10 +1073,10 @@ let extract_bindings tyvars src dst =
 (* [stype]: Representation of types for storage on disk *)
 type stype = ((string * int), typ_const) pre_typ
 
-type to_stype_env = (string ref * (string *int)) list
+type to_stype_env = (Basic.gtype_id * (string *int)) list
 (** Data needed to construct a type storage representation. *)
 
-type from_stype_env = ((string * int) * string ref) list
+type from_stype_env = ((string * int) * Basic.gtype_id) list
 (** Data needed to construct a type storage representation. *)
 
 (* [stypedef]: Type definition/declaration records for disk storage *)
@@ -1138,9 +1140,9 @@ let to_save_rec record =
 
 let rec from_save_aux env (ty: stype) =
   match ty with
-    |Var(id) -> 
+    | Var(id) -> 
       let make() = 
-        let nid = ref (fst id) in
+        let nid = Basic.mk_gtype_id (fst id) in
         let env1 = (id, nid)::env
         in
         (nid, env1)
@@ -1210,7 +1212,7 @@ struct
         |Var(x) -> 
 	  (try (lookup_var ty1 env, env)
 	   with Not_found -> 
-	     let nt = mk_var (!x)
+	     let nt = mk_var (Basic.gtype_id_string x)
 	     in 
              (nt, bind ty1 nt env))
         | WeakVar(x) -> 
