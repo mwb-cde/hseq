@@ -166,6 +166,21 @@ ifdef STDDEFS_FILE
 include $(STDDEFS_FILE)
 endif
 
+# Test whether camlp4 is old.
+ifndef OLDCAMLP4
+
+ifndef CAMLP4VERSION
+# Get the version of camlp4
+export CAMLP4VERSION = OcamlVersion
+endif #CAMLP4VERSION 
+
+ifeq ($(findstring CAMLP4VERSION,3.11),'')
+export OLDCAMLP4 = false
+else
+export OLDCAMLP4 = true
+endif
+endif # OLDCAMLP4
+
 ##
 # Local targets
 ##

@@ -1071,6 +1071,12 @@ let extract_bindings tyvars src dst =
 (* [stype]: Representation of types for storage on disk *)
 type stype = ((string * int), typ_const) pre_typ
 
+type to_stype_env = (string ref * (string *int)) list
+(** Data needed to construct a type storage representation. *)
+
+type from_stype_env = ((string * int) * string ref) list
+(** Data needed to construct a type storage representation. *)
+
 (* [stypedef]: Type definition/declaration records for disk storage *)
 type stypedef_record =
     {sname: string; 
@@ -1078,50 +1084,89 @@ type stypedef_record =
      salias: stype option;
      scharacteristics: string list}
 
-let rec to_save_aux inf env ty =
+let rec to_save_aux tyenv ty =
+  let (ctr, env) = tyenv 
+  in
   match ty with
     | Var(id) -> 
-      let nty=
-	(try Lib.assocp (fun x -> id == x) (!env)
-	 with Not_found -> 
-	   let nid= inf:=!inf+1; (!id, !inf)
-	   in 
-	   env:= ((id, nid)::(!env)); nid)
-      in Var(nty)
-    | Constr(f, ats) ->
-      Constr(f, List.map (to_save_aux inf env) ats)
+      let make_new() = 
+        let ctr1 = ctr + 1 in
+        let nid = (get_var_name ty, ctr1) in
+        let env1 = (id, nid)::env
+        in
+        (nid, (ctr1, env1))
+      in
+      let (nty, tyenv1) =
+	try (Lib.assocp (fun x -> id == x) env, tyenv)
+	with Not_found -> make_new()
+      in
+      (Var(nty), tyenv1)
+    | Constr(f, args) ->
+      let make tyenv1 x =
+        let (x1, tyenv1) = to_save_aux tyenv1 x
+        in
+        (tyenv1, x1)
+      in
+      let (tyenv2, args1) = Lib.fold_map make tyenv args
+      in
+      (Constr(f, args1), tyenv2)
     | WeakVar _ -> 
       raise (type_error "Can't save a weak variable" [ty])
 
-let to_save ty = to_save_aux (ref 0) (ref []) ty
-let to_save_env env ty = to_save_aux (ref 0) env ty
+let to_save ty = 
+  let (ty1, _) = to_save_aux (0, []) ty
+  in 
+  ty1
+
+let to_save_env env ty = 
+  let (ty1, (_, env1)) = to_save_aux (0, env) ty
+  in
+  (ty1, env1)
 
 let to_save_rec record = 
-  {sname=record.Scope.name;
-   sargs = record.Scope.args;
-   salias = 
-      (match record.Scope.alias with
-          None -> None
-        | Some(t) -> Some(to_save t));
-   scharacteristics = record.Scope.characteristics}
+  {
+    sname = record.Scope.name;
+    sargs = record.Scope.args;
+    salias = 
+      begin
+        match record.Scope.alias with
+          | None -> None
+          | Some(t) -> Some(to_save t)
+      end;
+    scharacteristics = record.Scope.characteristics
+  }
 
-let rec from_save_aux env ty =
+let rec from_save_aux env (ty: stype) =
   match ty with
     |Var(id) -> 
-      let nty = 
-	try Lib.assocp (fun x -> id = x) (!env)
-	with Not_found ->
-	  let nid = ref(fst id)
-	  in 
-	  (env:=(id, nid)::(!env)); nid
+      let make() = 
+        let nid = ref (fst id) in
+        let env1 = (id, nid)::env
+        in
+        (nid, env1)
+      in
+      let (nty, env1) = 
+	try (Lib.assocp (fun x -> id = x) env, env)
+	with Not_found -> make()
       in 
-      Var(nty)
-    | Constr(f, ats) ->
-      Constr(f, List.map(from_save_aux env) ats)
+      ((Var(nty): gtype), (env1: from_stype_env))
+    | Constr(f, args) ->
+      let make env1 x = 
+        let (x1, env1) = from_save_aux env x
+        in
+        (env1, x1)
+      in
+      let (env2, args1) = Lib.fold_map make env args
+      in
+      (Constr(f, args1), env2)
     | WeakVar _ -> raise (type_error "Can't load a weak variable" [])
 
-let from_save ty = from_save_aux (ref[]) ty
-let from_save_env env ty = from_save_aux env ty
+let from_save ty = 
+  let (ty1, _) = from_save_aux [] ty
+  in 
+  ty1
+
+let from_save_env env ty =  from_save_aux env ty
 
 let from_save_rec record = 
   {

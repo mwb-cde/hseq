@@ -66,14 +66,6 @@ val normalize_vars: gtype -> gtype
     variable. Useful when constructing types from existing types.
 *)
 
-(***
-val mk_typevar: int ref -> gtype
-(** [mk_typevar n]: Make a new type variable with a name derived from
-    [!n]; increment [n] and return the new type. Different values of
-    [!n] make different names.
-*)
-***)
-
 val mk_typevar: int -> (int * gtype)
 (** [mk_typevar n]: Make a new type variable [t'] with a name derived
     from [n] and return [(n + 1, t')]. Different values of [n] make
@@ -454,18 +446,23 @@ type stypedef_record =
      scharacteristics: string list}
 (** Representation of typedef_records for disk storage. *)
 
-val to_save_env: (string ref* (string *int)) list ref 
-  -> gtype -> stype
+type to_stype_env = (string ref * (string *int)) list
+(** Data needed to construct a type storage representation. *)
+
+val to_save_env: to_stype_env -> gtype -> (stype * to_stype_env)
 (** [to_save_env ty env]: Convert [ty] to [stype] storage
     representation.  [env] store the names of type variables already
     encountered.
 *)
+
 val to_save: gtype -> stype
 (** Toplevel for [to_save_env]. *)
 
+type from_stype_env = ((string * int) * string ref) list
+(** Data needed to construct a type storage representation. *)
+
 val from_save_env: 
-  ((string * int)* (string ref)) list ref
-  -> stype -> gtype
+  from_stype_env -> stype -> (gtype * from_stype_env)
 (** [from_save_env ty env]: Convert storage [ty] to [gtype]
     representation.  [env] store the names of type variables already
     encountered.
