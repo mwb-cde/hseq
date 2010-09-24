@@ -150,9 +150,9 @@ let binder_type b =
 (** The representation of a term *)
 type term =
   | Id of Ident.t * gtype  
-  | Bound of q_type ref
+  | Bound of binders
   | Free of string * gtype
-  | Meta of q_type ref
+  | Meta of binders
   | App of term * term
   | Qnt of binders * term 
   | Const of const_ty
