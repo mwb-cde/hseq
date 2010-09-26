@@ -673,20 +673,6 @@ struct
       
       @raise [Failure] if a variable ends up bound to itself.
   *)
-(*
-  let merge_tyenvs env1 env2 = 
-    let env3 = ref env1 in 
-    let assign x z =
-      try
-	let y = Gtypes.lookup_var x env2
-	in 
-	if Gtypes.equals x y
-	then raise (Failure "Can't merge type environments")
-	else env3 := Gtypes.bind x y (!env3)
-      with Not_found -> ()
-    in 
-    Gtypes.subst_iter assign env1; !env3
-*)
   let merge_tyenvs env1 env2 = 
     let assign x env z =
       try

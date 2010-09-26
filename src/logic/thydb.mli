@@ -314,7 +314,7 @@ sig
 	childn: Lib.StringSet.t 
       (** 
           Names of the theories of which name is a parent. 
-          (If name is in [childn] then it is a circular importing.)
+          (If [name] is in [childn] then it is a circular importing.)
       *)
       }
 

@@ -806,7 +806,7 @@ struct
     in 
     if is_loaded name thdb
     then 
-      let thy=get_thy thdb name in 
+      let thy = get_thy thdb name in 
       let new_info = 
         mk_full_info name (Some (Theory.get_date thy)) (Some true) childn
       in 
@@ -822,23 +822,25 @@ struct
 	| None -> (** Loading from file failed, try to rebuild. *)
 	  build_thy info data thdb
 	| Some(saved_thy) -> 
-	  let sparents = Theory.saved_parents saved_thy
-	  and sdate = Theory.saved_date saved_thy
-	  in 
-	  let sinfo = mk_full_info name (Some sdate) (Some true) childn in 
-	  let db1 = load_parents thdb data (info_add sinfo name) sparents in 
-	  let parents_ok = Lib.try_app (check_parents db1 sinfo) sparents
-	  in
-	  match parents_ok with
-	    | None -> (** Parents failed to load, try to rebuild **)
-	      build_thy info data thdb
-	    | Some _ ->  (** Parents loaded succesfully **)
-	      let thy = Theory.from_saved (mk_scope db1) saved_thy in 
-	      let db2 = add_thy db1 thy in 
-	      let db3 = set_curr db2 thy
-	      in 
-	      apply_fn db3 data.thy_fn thy;
-	      db3
+          begin
+	    let sparents = Theory.saved_parents saved_thy
+	    and sdate = Theory.saved_date saved_thy
+	    in 
+	    let sinfo = mk_full_info name (Some sdate) (Some true) childn in 
+	    let db1 = load_parents thdb data (info_add sinfo name) sparents in 
+	    let parents_ok = Lib.try_app (check_parents db1 sinfo) sparents
+	    in
+	    match parents_ok with
+	      | None -> (** Parents failed to load, try to rebuild **)
+	        build_thy info data thdb
+	      | Some _ ->  (** Parents loaded succesfully **)
+	        let thy = Theory.from_saved (mk_scope db1) saved_thy in 
+	        let db2 = add_thy db1 thy in 
+	        let db3 = set_curr db2 thy
+	        in 
+	        apply_fn db3 data.thy_fn thy;
+	        db3
+          end
   (** [load_parents db data name tyme ps imports]: Load the theories
       with names in [ps] as parents of theory named [name] into
       database [db]. Each parent must be no younger then the date
