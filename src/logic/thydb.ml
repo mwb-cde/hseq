@@ -586,8 +586,8 @@ struct
     { 
       name = n;
       date = d;
-      prot = p ; 
-      childn=c
+      prot = p; 
+      childn = c
     }
 
   let info_add inf n = 
@@ -774,6 +774,17 @@ struct
     test_date name tyme (Theory.get_date thy);
     test_protection name info.prot (Theory.get_protection thy)
 
+  (** [check_stheory info thy]: Run tests on disk representation of
+      theory.  For each theory [thy] named in [parents]: - Ensure that
+      the date of [thy] is no more than [info.date] - Ensure that the
+      protection of [thy] is set to [info.prot].  *)
+  let check_stheory info sthy =
+    let name = info.name 
+    and tyme = info.date
+    in 
+    test_date name tyme (Theory.saved_date sthy);
+    test_protection name info.prot (Theory.saved_prot sthy)
+
   (** [check_parents db info parents]: Check parents loaded by a
       theory.  For each theory [thy] named in [parents]: - Ensure that
       the date of [thy] is no more than [info.date] - Ensure that the
@@ -881,6 +892,109 @@ struct
     let thy = get_thy db1 name
     in 
     set_current db1 thy
+
+  module New =
+  struct
+
+    (** [set_loaded_thy]: Set the current theory to an already loaded
+        theory. *)
+    let set_loaded_thy thydb data thyid =
+      let thy = get_thy thydb thyid.name in 
+      let thyid1 = 
+        mk_full_info thyid.name (Some (Theory.get_date thy))
+          (Some true) thyid.childn
+      in 
+      let thydb1 =
+	load_parents thydb data (info_add thyid1 thyid.name)
+	  (Theory.get_parents thy)
+      in 
+      set_curr thydb1 thy
+
+  (** [load_thy spec loader thdb]: Load theory specified by [spec],
+      using [loader.load_fn]. The protection and date of the theory
+      must be as specified by [spec]. Returns the loaded theory as the
+      saved representation of a theory.  *)
+    let load_thy spec loader thdb =
+      let load_aux () = 
+        let saved_thy = loader.load_fn spec
+        in 
+        test_protection spec.name spec.prot (Theory.saved_prot saved_thy);
+        test_date spec.name spec.date (Theory.saved_date saved_thy);
+        if !Settings.load_thy_level > 0
+        then Format.printf "@[Loading theory %s@]@." spec.name
+        else ();
+        saved_thy
+      in 
+      try load_aux()
+      with err -> add_error "Failed to load theory" [spec.name] err
+
+    (** [load_theory thdb data spec]: Load or build theory specified
+        by [spec] and all its parents into database [thdb], applying
+        function [data.thy_fn] to each loaded theory.
+
+        Makes the newly loaded theory the current theory.
+    *)
+    let load_theory thdb loader thy_spec =
+      let rec load_aux thydb spec_list =
+        match spec_list with
+          | [] -> thydb
+          | []::specl -> load_aux thydb specl
+          | (spec::specs) :: specl ->
+            let load_attempt = Lib.try_app (load_thy spec loader) thdb
+            in 
+            begin
+              match load_attempt with 
+	        | None -> 
+                  (* Loading from file failed, try to rebuild. *)
+	          let thydb1 = build_thy spec loader thydb
+                  in
+                  load_aux thydb1 (specs::specl)
+                | Some(saved_thy) ->
+                  (* Loading succeeded *)
+                  (* Add it to the database. *)
+                  let thy = Theory.from_saved (mk_scope thydb) saved_thy in
+                  let thydb1 = add_thy thydb thy in
+                  let thydb2 = set_curr thydb1 thy 
+                  in
+                  apply_fn thydb2 loader.thy_fn thy;
+                  (* Load dependencies. *)
+	          let sparents = Theory.saved_parents saved_thy in 
+                  let sdate = Theory.saved_date saved_thy in
+                  let deps = 
+                    List.map 
+                      (fun n -> mk_info n (Some sdate) (Some true))
+                      sparents
+                  in
+                  load_aux thydb2 (deps::specs::specl)
+            end
+      in
+      load_aux thdb [[thy_spec]]
+
+    (** [load thdb data spec]: Load or build theory specified by
+        [spec] and all its parents into database [thdb], applying
+        function [data.thy_fn] to each loaded theory.
+
+        Makes the newly loaded theory the current theory.
+    *)
+    let rec load thdb data spec =
+      let name = spec.name
+      in 
+      begin
+        try check_importing spec name
+        with err -> add_error "Failed to load theory" [name] err
+      end;
+      if is_loaded name thdb
+      then 
+        set_loaded_thy thdb data spec
+      else 
+        load_theory thdb data spec
+
+  (** [load_parents db data name tyme ps imports]: Load the theories
+      with names in [ps] as parents of theory named [name] into
+      database [db]. Each parent must be no younger then the date
+      given by [tyme].  *)
+
+  end
 
 end      
 
