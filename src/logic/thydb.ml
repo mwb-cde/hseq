@@ -969,15 +969,18 @@ struct
       with Not_found -> ()
 
     let get_loaded spec thydb =
+(**
       let thy = get_thy thydb spec.name
       in
       ignore(check_theory spec thy); thy
+**)
+      get_thy thydb spec.name
 
-    let rec load_aux loader thydb spec_list =
+    let rec load_aux loader thydb date spec_list =
       match spec_list with
         | [] -> thydb
-        | ([], _, _)::specl -> load_aux loader thydb specl
-        | (thy_name::others, date, imports):: specl ->
+        | ([], _)::specl -> load_aux loader thydb date specl
+        | (thy_name::others, imports):: specl ->
           let spec = mk_info thy_name date (Some true) in
           let (thydb1, tyme, dep_list, dep_imports) = 
             begin
@@ -1027,22 +1030,23 @@ struct
                   end
             end
           in
-          match dep_list with
-            | [] -> load_aux loader thydb1 ((others, date, imports)::specl)
-            | _ -> 
-              begin
-              let date1 = 
-                match date with 
-                  | None -> tyme
-                  | Some(d) -> latest_time d tyme
-              in
-              load_aux loader thydb1 
-                ((dep_list, Some date1, dep_imports)
-                 ::(others, Some date1, imports)::specl)
-              end
+          begin
+            let date1 = 
+              match date with 
+                | None -> tyme
+                | Some(d) -> latest_time d tyme
+            in
+            match dep_list with
+              | [] -> 
+                load_aux loader thydb1 (Some date1) ((others, imports)::specl)
+              | _ -> 
+                load_aux loader thydb1 (Some date1)
+                  ((dep_list, dep_imports)
+                   ::(others, imports)::specl)
+          end
 
     let load_theory thdb loader thy_spec =
-      load_aux loader thdb [([thy_spec.name], thy_spec.date, [])]
+      load_aux loader thdb thy_spec.date [([thy_spec.name], [])]
 
     (** [load thdb data spec]: Load or build theory specified by
         [spec] and all its parents into database [thdb], applying
@@ -1083,6 +1087,32 @@ struct
     and prot = true
     in 
     let info = info_add (mk_info name (Some tyme) (Some prot)) name in 
+    let db1 = Old.load_parents db data info ps
+    in 
+    set_current db1 thy  
+
+  let load db data info =
+    let name = info.name in 
+    let db1 = Old.load_theory db data info in 
+    let thy = get_thy db1 name
+    in 
+    set_current db1 thy
+
+  (*
+   * Debug functions
+   *)
+
+  let load_parents = New.load_parents
+  let load_theory = New.load_theory
+
+(****
+  let make_current db data thy = 
+    let ps = Theory.get_parents thy
+    and name = Theory.get_name thy
+    and tyme = Theory.get_date thy
+    and prot = true
+    in 
+    let info = info_add (mk_info name (Some tyme) (Some prot)) name in 
     let db1 = New.load_parents db data info ps
     in 
     set_current db1 thy  
@@ -1100,5 +1130,6 @@ struct
 
   let load_parents = New.load_parents
   let load_theory = New.load_theory
+****)
 end      
 

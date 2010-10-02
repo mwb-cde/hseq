@@ -385,6 +385,9 @@ sig
   val check_parents: thydb -> info -> string list -> unit
   val check_theory: info -> Theory.thy -> unit
   val check_stheory: info -> Theory.saved_thy -> unit
+
+  val latest_time: float -> float -> float
+  val earliest_time: float -> float -> float
 module New:
 sig
   val check_imports: string -> string list -> unit
@@ -392,8 +395,8 @@ sig
 
   val build_thy: info -> data -> thydb -> (Theory.thy * thydb)
   val load_thy: info -> data -> thydb -> Theory.saved_thy
-  val load_aux: data -> thydb 
-    -> (string list * float option * string list) list -> thydb
+  val load_aux: data -> thydb -> float option
+    -> (string list * string list) list -> thydb
   val load_theory: thydb -> data -> info -> thydb
 end
 
@@ -422,4 +425,3 @@ end
 
 val add_importing: thydb -> string list -> thydb
 val mk_importing: thydb -> NameSet.t
-
