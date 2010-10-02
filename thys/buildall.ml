@@ -53,5 +53,10 @@ let buildall_base_name =
 
 #use "0MainScript.ml";;
 
+(***
+
 (* Reset the base theory name *)
 let _ = Global.Thys.set_base_name buildall_base_name;;
+
+
+***)

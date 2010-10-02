@@ -39,6 +39,9 @@ let mainScript_base_name =
   in 
   Global.Thys.clear_base_name(); str;;
 
+
+
+(***
 (** Build theory Main and the theories it depends on *)
 let _ = 
 begin_theory "Main" 
@@ -48,3 +51,5 @@ let _ = end_theory();;
 
 (* Reset the base theory name *)
 let _ = Global.Thys.set_base_name mainScript_base_name;;
+
+***)
