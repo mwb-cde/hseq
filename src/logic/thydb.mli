@@ -387,12 +387,13 @@ sig
   val check_stheory: info -> Theory.saved_thy -> unit
 module New:
 sig
-  val check_imports: info -> info list -> unit
+  val check_imports: string -> string list -> unit
   val get_loaded: info -> thydb -> Theory.thy
 
   val build_thy: info -> data -> thydb -> (Theory.thy * thydb)
   val load_thy: info -> data -> thydb -> Theory.saved_thy
-  val load_aux: data -> thydb -> (info list * info list) list -> thydb
+  val load_aux: data -> thydb 
+    -> (string list * float option * string list) list -> thydb
   val load_theory: thydb -> data -> info -> thydb
 end
 
