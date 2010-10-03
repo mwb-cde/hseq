@@ -397,6 +397,14 @@ sig
   val load_thy: info -> data -> thydb -> Theory.saved_thy
   val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
   val load_theory: thydb -> data -> info -> thydb
+
+  val get_loaded_thy: data -> thydb -> info -> (Theory.thy * thydb)
+  val get_saved_thy: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_deps: data -> thydb -> float -> info list -> (thydb * float)
+
+  val load_parents: thydb -> data -> info -> string list -> thydb
+  val load: thydb -> data -> info -> thydb
 end
 
 end

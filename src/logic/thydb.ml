@@ -1031,7 +1031,8 @@ struct
       in
       check_theory spec3 thy;
       (* Done. *)
-      (thy, thydb1)
+      let thydb2 = set_curr thydb1 thy in 
+      (thy, thydb2)
     (** [get_saved_thy]: Try to get a theory from the disk. *)
     and get_saved_thy loader thydb spec =
       let sthy = load_thy_from_file loader thydb spec
@@ -1062,8 +1063,12 @@ struct
       let spec3 = { spec1 with date = (Some date1); prot = (Some true) }
       in
       check_theory spec3 thy;
+      (* Update the database. *)
+      let thydb2 = add_thy thydb1 thy in 
+      let thydb3 = set_curr thydb2 thy in 
+      apply_fn thydb3 loader.thy_fn thy;
       (* Done. *)
-      (thy, thydb1)
+      (thy, thydb3)
     (** [load_deps]: Load a list of theories, returning the date of
         the most recent. *)
     and load_deps loader thydb date spec_list =
@@ -1077,10 +1082,12 @@ struct
               let tyme = Theory.get_date thy in
               let date1 = latest_time date tyme
               in
-              load_deps loader thydb date1 specl
+              load_deps loader thydb1 date1 specl
             end
       end
     and load_aux loader thydb spec = 
+      (* Check for circular importing. *)
+      check_importing spec spec.name;
       (* Try to get a loaded or a saved theory. *)
       let load_attempt = 
         begin
@@ -1117,7 +1124,7 @@ struct
       let thdb1 = load_theory thdb data spec in
       let thy = get_thy thdb1 spec.name
       in
-      set_curr thdb1 thy
+      set_current thdb1 thy
 
     (** [load_parents db data name tyme ps imports]: Load the theories
         with names in [ps] as parents of theory named [name] into
@@ -1164,31 +1171,5 @@ struct
   let load_parents = New.load_parents
   let load_theory = New.load_theory
 
-(****
-  let make_current db data thy = 
-    let ps = Theory.get_parents thy
-    and name = Theory.get_name thy
-    and tyme = Theory.get_date thy
-    and prot = true
-    in 
-    let info = info_add_child (mk_info name (Some tyme) (Some prot)) name in 
-    let db1 = New.load_parents db data info ps
-    in 
-    set_current db1 thy  
-
-  let load db data info =
-    let name = info.name in 
-    let db1 = New.load_theory db data info in 
-    let thy = get_thy db1 name
-    in 
-    set_current db1 thy
-
-  (*
-   * Debug functions
-   *)
-
-  let load_parents = New.load_parents
-  let load_theory = New.load_theory
-****)
 end      
 
