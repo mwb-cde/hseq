@@ -1146,13 +1146,13 @@ struct
     and prot = true
     in 
     let info = info_add_child (mk_info name (Some tyme) (Some prot)) name in 
-    let db1 = Old.load_parents db data info ps
+    let db1 = New.load_parents db data info ps
     in 
     set_current db1 thy  
 
   let load db data info =
     let name = info.name in 
-    let db1 = Old.load_theory db data info in 
+    let db1 = New.load_theory db data info in 
     let thy = get_thy db1 name
     in 
     set_current db1 thy
