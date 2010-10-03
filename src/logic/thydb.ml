@@ -641,17 +641,17 @@ struct
   (** [time_lessthaneql x y]: Test whether [x] is no later than [y]. *)
   let time_lessthaneql x y = x <= y
 
-  (** [earliest_time x y]: Choose the earliar of [x] and [y]. *)
-  let earliest_time x y = 
-    if time_lessthaneql x y
-    then x
-    else y
-
   (** [latest_time x y]: Choose the later of [x] and [y]. *)
   let latest_time x y = 
     if time_lessthan x y
     then y
     else x
+
+  (** [latest_time x y]: Choose the later of [x] and [y]. *)
+    let latest_opt_time x y = 
+      match x with
+          None -> y
+        | Some(a) -> if time_lessthan a y then y else a
 
   (** [test_data tim thy]: Ensure that the date of theory [thy] is
       not greater then [tim].  *)
@@ -750,6 +750,26 @@ struct
     try check_aux()
     with err -> raise (add_error "Failed to build theory" [name] err)
 
+  (** [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of
+      theory [thy] in scope [mk_scope db]. Ignores all errors.  *)
+  let apply_fn db thy_fn thy =
+    try thy_fn db (Theory.contents thy) 
+    with _ -> ()
+
+  (** [check_theory info thy]: Run tests on theory.  For each theory
+      [thy] named in [parents]: - Ensure that the date of [thy] is no
+      more than [info.date] - Ensure that the protection of [thy] is
+      set to [info.prot].  *)
+  let check_theory info thy=
+    let name = info.name 
+    and tyme = info.date
+    in 
+    test_date name tyme (Theory.get_date thy);
+    test_protection name info.prot (Theory.get_protection thy)
+
+  module Old =
+  struct
+
   (** [build_thy info buildfn thdb]: Build theory named [info.name]
       using function [buildfn]. Function [buildfn] is assumed to add
       the theory to [thdb].
@@ -781,34 +801,6 @@ struct
       add_error "Failed to rebuild theory. Can't make theory current." 
 	 [info.name] err
 
-  (** [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of
-      theory [thy] in scope [mk_scope db]. Ignores all errors.  *)
-  let apply_fn db thy_fn thy =
-    try thy_fn db (Theory.contents thy) 
-    with _ -> ()
-
-  (** [check_theory info thy]: Run tests on theory.  For each theory
-      [thy] named in [parents]: - Ensure that the date of [thy] is no
-      more than [info.date] - Ensure that the protection of [thy] is
-      set to [info.prot].  *)
-  let check_theory info thy=
-    let name = info.name 
-    and tyme = info.date
-    in 
-    test_date name tyme (Theory.get_date thy);
-    test_protection name info.prot (Theory.get_protection thy)
-
-  (** [check_stheory info thy]: Run tests on disk representation of
-      theory.  For each theory [thy] named in [parents]: - Ensure that
-      the date of [thy] is no more than [info.date] - Ensure that the
-      protection of [thy] is set to [info.prot].  *)
-  let check_stheory info sthy =
-    let name = info.name 
-    and tyme = info.date
-    in 
-    test_date name tyme (Theory.saved_date sthy);
-    test_protection name info.prot (Theory.saved_prot sthy) 
-
   (** [check_parents db info parents]: Check parents loaded by a
       theory.  For each theory [thy] named in [parents]: - Ensure that
       the date of [thy] is no more than [info.date] - Ensure that the
@@ -825,8 +817,6 @@ struct
     in 
     check_aux parents
 
-  module Old =
-  struct
 
   (** [load_theory thdb name data]: Load the theory named [name] into
       database [thdb]. Also load the parents of the theory and applies
@@ -902,7 +892,6 @@ struct
 
   module New =
   struct
-
     (** [build_thy info buildfn thdb]: Build theory named [info.name]
         using function [buildfn]. Function [buildfn] is assumed to add
         the theory to [thdb].
@@ -941,44 +930,6 @@ struct
         using [loader.load_fn]. The protection and date of the theory
         must be as specified by [spec]. Returns the loaded theory as the
         saved representation of a theory.  *)
-    let load_thy spec loader thdb =
-      let load_aux () = 
-        let saved_thy = loader.load_fn spec
-        in 
-        check_stheory spec saved_thy;
-        if !Settings.load_thy_level > 0
-        then Format.printf "@[Loading theory %s@]@." spec.name
-        else ();
-        saved_thy
-      in 
-      try load_aux()
-      with err -> 
-        add_error "Failed to load theory" [spec.name] err
-
-    (** [load_theory thdb data spec]: Load or build theory specified
-        by [spec] and all its parents into database [thdb], applying
-        function [data.thy_fn] to each loaded theory.
-
-        Makes the newly loaded theory the current theory.
-    *)
-    let check_imports spec imports = 
-      let info_name_equal x y = 
-        if (x == y) or (x = y) then true else false
-      in
-      try 
-        begin 
-          ignore(Lib.first (info_name_equal spec) imports);
-          raise (error "Circular importing, theory" [spec])
-        end
-      with Not_found -> ()
-
-    let get_loaded spec thydb =
-      get_thy thydb spec.name
-
-    (** [load_thy spec loader thdb]: Load theory specified by [spec],
-        using [loader.load_fn]. The protection and date of the theory
-        must be as specified by [spec]. Returns the loaded theory as the
-        saved representation of a theory.  *)
     let load_thy_from_file loader thdb spec =
       let check_stheory sthy =
         test_protection spec.name (Some true) (Theory.saved_prot sthy) 
@@ -994,15 +945,6 @@ struct
       in 
       try load_aux()
       with err -> add_error "Failed to load theory" [spec.name] err
-
-    (** [zero_time()]: Return 0 for time. *)
-    let zero_time () = 0.0
-
-  (** [latest_time x y]: Choose the later of [x] and [y]. *)
-    let latest_opt_time x y = 
-      match x with
-          None -> y
-        | Some(a) -> if time_lessthan a y then y else a
 
     (** [get_loaded_thy]: Try to get an already loaded theory. *)
     let rec get_loaded_thy loader thydb spec =
@@ -1109,6 +1051,12 @@ struct
       in
       (thy, thydb1)
 
+    (** [load_theory thdb data spec]: Load or build theory specified
+        by [spec] and all its parents into database [thdb], applying
+        function [data.thy_fn] to each loaded theory.
+
+        Makes the newly loaded theory the current theory.
+    *)
     let load_theory thdb loader thy_spec =
       let (thy, thdb1) = load_aux loader thdb thy_spec
       in

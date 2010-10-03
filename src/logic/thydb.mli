@@ -376,25 +376,15 @@ sig
 
   val load_theory: thydb -> data -> info -> thydb
   val load_parents: thydb -> data -> info -> string list -> thydb
-  val load_thy: info -> data -> thydb -> Theory.saved_thy
-  val build_thy: info -> data -> thydb -> thydb
   val check_build: thydb -> thydb -> Theory.thy -> unit
   val set_curr: thydb -> Theory.thy -> thydb
   val test_protection: string -> bool option -> bool -> unit
   val test_date: string -> float option -> float -> unit
-  val check_parents: thydb -> info -> string list -> unit
-  val check_theory: info -> Theory.thy -> unit
-  val check_stheory: info -> Theory.saved_thy -> unit
 
   val latest_time: float -> float -> float
-  val earliest_time: float -> float -> float
 module New:
 sig
-  val check_imports: string -> string list -> unit
-  val get_loaded: info -> thydb -> Theory.thy
-
   val build_thy: data -> thydb -> info -> (Theory.thy * thydb)
-  val load_thy: info -> data -> thydb -> Theory.saved_thy
   val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
   val load_theory: thydb -> data -> info -> thydb
 
