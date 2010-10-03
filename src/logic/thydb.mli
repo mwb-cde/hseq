@@ -320,7 +320,7 @@ sig
 
   val mk_info: string -> float option -> bool option -> info
   (** Constructor for [info]. *)
-  val info_add: info -> string -> info
+  val info_add_child: info -> string -> info
   (** [info_add info n]: Add n to [info.childn]. *)
 
   (** Data needed for loading a theory. [load_fn] loads a theory
@@ -393,10 +393,9 @@ sig
   val check_imports: string -> string list -> unit
   val get_loaded: info -> thydb -> Theory.thy
 
-  val build_thy: info -> data -> thydb -> (Theory.thy * thydb)
+  val build_thy: data -> thydb -> info -> (Theory.thy * thydb)
   val load_thy: info -> data -> thydb -> Theory.saved_thy
-  val load_aux: data -> thydb -> float option
-    -> (string list * string list) list -> thydb
+  val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
   val load_theory: thydb -> data -> info -> thydb
 end
 
