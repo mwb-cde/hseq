@@ -510,30 +510,30 @@ let rename_env typenv trmenv trm =
     let nt, nev = rename_type_vars_env tyenv qty
     in 
     (mk_binding qnt qv nt, nev)
-  and has_quantifier = ref false
   in 
-  let rec rename_aux t tyenv env=
+  let rec rename_aux t r_env = 
+    let (tyenv, env, qntd) = r_env 
+    in
     match t with
       | Bound(_) -> 
-	(try (find t env, tyenv, env)
-	 with Not_found -> (t, tyenv, env))
+	(try (find t env, tyenv, env, qntd)
+	 with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) -> 
       	let nq, tyenv1 = copy_binder q tyenv in 
 	let env1 = bind (Bound(q)) (Bound(nq)) env in 
-	let nb, tyenv2, env2 = rename_aux b tyenv1 env1
+	let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
 	in 
-	has_quantifier:=true;
-      	(Qnt(nq, nb), tyenv2, env2)
+      	(Qnt(nq, nb), tyenv2, env2, true)
       | App(f, a) ->
-	let nf, tyenv1, env1 = rename_aux f tyenv env in 
-        let na, tyenv2, env2 = rename_aux a tyenv env1
+	let (nf, tyenv1, env1, qntd1) = rename_aux f (tyenv, env, qntd) in 
+        let (na, tyenv2, env2, qntd2) = rename_aux a (tyenv1, env1, qntd1)
 	in 
-	(App(nf, na), tyenv2, env2)
-      | _ -> (t, tyenv, env)
+	(App(nf, na), tyenv2, env2, qntd2)
+      | _ -> (t, tyenv, env, qntd)
   in 
-  let t, ntyenv, nenv = rename_aux trm typenv trmenv 
+  let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
   in 
-  if (!has_quantifier) = false 
+  if not qntd
   then raise No_quantifier 
   else (t, ntyenv, nenv)
 
@@ -569,6 +569,220 @@ let do_rename nb =
 	set_subst_alt nb No_rename; (st_term nb)
 
 let replace env x =  do_rename (basic_find x env)
+
+(**
+   Retyping.
+
+   [retype tyenv t]: Retype term [t], substituting type variables
+   occuring in [t] with types in type substitution [tyenv].
+*)
+let retype tyenv t=
+  let rec retype_aux t qenv =
+    match t with
+      | Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
+      | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv) 
+      | Bound(q) -> 
+	(try table_find t qenv
+	 with Not_found -> t)
+      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
+      | Qnt(q, b) ->
+	let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
+ 	let nty = Gtypes.mgu oqty tyenv in 
+	let nq = mk_binding oqnt oqnm nty  in
+        let qenv1 = (table_add (Bound(q)) (Bound(nq)) qenv; qenv) in
+	let new_term = Qnt(nq, retype_aux b qenv1) in 
+        let _ = table_remove (Bound(q)) qenv1; qenv
+        in 
+	new_term
+      | Meta(_) -> t
+      | Const(_) -> t
+  in 
+  retype_aux t (empty_table())
+
+(**
+   [retype_with_check tyenv t]: Reset the types in term [t] using type
+   substitution [tyenv].  Substitutes variables with their concrete
+   type in [tyenv]. Check that the new types are in scope.
+*)
+let retype_with_check scp tyenv t=
+  let memo = Lib.empty_env() in 
+  let mk_new_type ty = 
+    let nty = Gtypes.mgu ty tyenv
+    in 
+    if (Gtypes.in_scope memo scp nty)
+    then nty
+    else raise 
+      (Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
+  in
+  let rec retype_aux t qenv =
+    match t with
+      | Id(n, ty) -> Id(n, mk_new_type ty)
+      | Free(n, ty) -> Free(n, mk_new_type ty) 
+      | Bound(_) -> 
+	(try table_find t qenv
+	 with Not_found -> t)
+      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
+      | Qnt(q, b) ->
+	let (oqnt, oqnm, oqty) = Basic.dest_binding q
+	in 
+ 	let nty = mk_new_type oqty
+	in 
+	let nq = mk_binding oqnt oqnm nty
+	in 
+	let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
+	let new_term = Qnt(nq, retype_aux b qenv1 ) in 
+	let _ = table_remove (Bound(q)) qenv1; qenv
+        in 
+        new_term
+      | Meta(_) -> t
+      | Const(_) -> t
+  in 
+  retype_aux t (empty_table())
+
+(* retype_pretty: as for retype, make substitution for type variables
+   but also replace other type variables with new, prettier names
+*)
+let retype_pretty_env typenv trm =
+  let rec retype_aux t ctr name_env qenv =
+    match t with
+      | Id(n, ty) -> 
+	let (nt, (ctr1, nenv1)) = 
+          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
+	in 
+	(Id(n, nt), ctr1, nenv1, qenv)
+      | Free(n, ty) -> 
+	let (nt, (ctr1, nenv1)) = 
+          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
+	in 
+	(Free(n, nt), ctr, nenv1, qenv)
+      | Meta(q) -> (t, ctr, name_env, qenv)
+      | Const(c) -> (t, ctr, name_env, qenv)
+      | Bound(q) -> 
+	(try (table_find t qenv, ctr, name_env, qenv)
+	 with Not_found ->
+	   let (qnt, qnm, qty) = Basic.dest_binding q in 
+	   let (nty, (ctr1, nenv1)) =
+	     Gtypes.mgu_rename_env (ctr, typenv) name_env qty
+	   in 
+	   let nq = mk_binding qnt qnm nty in
+           let qenv1 = table_add (Bound q) (Bound nq) qenv; qenv
+	   in 
+           (Bound(nq), ctr1, nenv1, qenv1))
+      | App(f, a) -> 
+	let nf, ctr1, nenv1, qenv1 = retype_aux f ctr name_env qenv in
+        let na, ctr2, nenv2, qenv2 = retype_aux a ctr1 nenv1 qenv1
+	in 
+	(App(nf, na), ctr2, nenv2, qenv2)
+      | Qnt(q, b) ->
+	let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
+	let nty, (ctr1, nenv1) =
+          Gtypes.mgu_rename_env (ctr, typenv) name_env oqty 
+        in
+	let nq = mk_binding oqnt oqnm nty in 
+        let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
+        let nb, ctr2, nenv2, qenv2 = retype_aux b ctr1 nenv1 qenv1 in 
+        let new_term = Qnt(nq, nb) in
+        let qenv3 = table_remove (Bound(q)) qenv2; qenv2
+        in 
+        (new_term, ctr2, nenv2, qenv3)
+  in 
+  let (retyped, _, new_nenv, _) = 
+    retype_aux trm 0 (Gtypes.empty_subst()) (empty_table()) 
+  in 
+  (retyped, new_nenv)
+
+let retype_pretty typenv trm = 
+  let new_term, _ = retype_pretty_env typenv trm
+  in 
+  new_term
+
+(*
+ * Combined type/binder renaming.
+ *)
+
+(** [full_rename env t]: Rename all type variables and bound variables
+    in term [t]. *)
+let full_rename_env type_env term_env trm =
+  let rename_type tyenv trm = 
+    rename_type_vars_env tyenv trm
+  in
+  let rename_binder q tyenv = 
+    let (qnt, qv, qty) = Basic.dest_binding q in 
+    let (nt, nev) = rename_type tyenv qty
+    in 
+    (mk_binding qnt qv nt, nev)
+  in 
+  let rec rename_aux t tyenv env =
+    match t with
+      | Id(n, ty) -> 
+	let (ty1, tyenv1) = rename_type tyenv ty
+	in 
+	(Id(n, ty1), tyenv1)
+      | Free(n, ty) -> 
+	let (ty1, tyenv1) = rename_type tyenv ty
+	in 
+	(Free(n, ty1), tyenv1)
+      | Meta(q) -> (t, tyenv)
+      | Const(c) -> (t, tyenv)
+      | Bound(q) -> 
+        let t1 = try (find t env) with Not_found -> t
+        in
+        (t1, tyenv)
+      | Qnt(q, b) -> 
+      	let (q1, tyenv1) = rename_binder q tyenv in 
+	let env1 = bind (Bound(q)) (Bound(q1)) env in 
+	let (b1, tyenv2) = rename_aux b tyenv1 env1
+	in 
+      	(Qnt(q1, b1), tyenv2)
+      | App(f, a) ->
+	let f1, tyenv1 = rename_aux f tyenv env in 
+        let a1, tyenv2 = rename_aux a tyenv1 env
+	in 
+	(App(f1, a1), tyenv2)
+  in 
+  rename_aux trm type_env term_env
+
+let full_rename tyenv trm =
+  let trmenv = empty_subst()
+  in
+  let (ntrm, ntyenv) = full_rename_env tyenv trmenv trm
+  in
+  (ntrm, ntyenv)
+
+exception No_quantifier
+
+let rename_env typenv trmenv trm =
+  let copy_binder q tyenv = 
+    let qnt, qv, qty = Basic.dest_binding q in 
+    let nt, nev = rename_type_vars_env tyenv qty
+    in 
+    (mk_binding qnt qv nt, nev)
+  in 
+  let rec rename_aux t renv =
+    let (tyenv, env, qntd) = renv
+    in
+    match t with
+      | Bound(_) -> 
+	(try (find t env, tyenv, env, qntd)
+	 with Not_found -> (t, tyenv, env, qntd))
+      | Qnt(q, b) -> 
+      	let nq, tyenv1 = copy_binder q tyenv in 
+	let env1 = bind (Bound(q)) (Bound(nq)) env in 
+	let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
+	in 
+      	(Qnt(nq, nb), tyenv2, env2, true)
+      | App(f, a) ->
+	let (nf, tyenv1, env1, qntd1) = rename_aux f (tyenv, env, qntd) in 
+        let (na, tyenv2, env2, qntd2) = rename_aux a (tyenv, env1, qntd1)
+	in 
+	(App(nf, na), tyenv2, env2, qntd2)
+      | _ -> (t, tyenv, env, qntd)
+  in 
+  let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
+  in 
+  if not qntd 
+  then raise No_quantifier 
+  else (t, ntyenv, nenv)
 
 (*
  * Substitution functions
@@ -801,128 +1015,6 @@ let rec string_term_inf inf i x =
 
 let string_inf_term inf x = string_term_inf inf 0 x
 
-(**
-   Retyping.
-
-   [retype tyenv t]: Retype term [t], substituting type variables
-   occuring in [t] with types in type substitution [tyenv].
-*)
-let retype tyenv t=
-  let rec retype_aux t qenv =
-    match t with
-      | Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
-      | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv) 
-      | Bound(q) -> 
-	(try table_find t qenv
-	 with Not_found -> t)
-      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
-      | Qnt(q, b) ->
-	let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
- 	let nty = Gtypes.mgu oqty tyenv in 
-	let nq = mk_binding oqnt oqnm nty  in
-        let qenv1 = (table_add (Bound(q)) (Bound(nq)) qenv; qenv) in
-	let new_term = Qnt(nq, retype_aux b qenv1) in 
-        let _ = table_remove (Bound(q)) qenv1; qenv
-        in 
-	new_term
-      | Meta(_) -> t
-      | Const(_) -> t
-  in 
-  retype_aux t (empty_table())
-
-(**
-   [retype_with_check tyenv t]: Reset the types in term [t] using type
-   substitution [tyenv].  Substitutes variables with their concrete
-   type in [tyenv]. Check that the new types are in scope.
-*)
-let retype_with_check scp tyenv t=
-  let memo = Lib.empty_env() in 
-  let mk_new_type ty = 
-    let nty = Gtypes.mgu ty tyenv
-    in 
-    if (Gtypes.in_scope memo scp nty)
-    then nty
-    else raise 
-      (Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
-  in
-  let rec retype_aux t qenv =
-    match t with
-      | Id(n, ty) -> Id(n, mk_new_type ty)
-      | Free(n, ty) -> Free(n, mk_new_type ty) 
-      | Bound(_) -> 
-	(try table_find t qenv
-	 with Not_found -> t)
-      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
-      | Qnt(q, b) ->
-	let (oqnt, oqnm, oqty) = Basic.dest_binding q
-	in 
- 	let nty = mk_new_type oqty
-	in 
-	let nq = mk_binding oqnt oqnm nty
-	in 
-	let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-	let new_term = Qnt(nq, retype_aux b qenv1 ) in 
-	let _ = table_remove (Bound(q)) qenv1; qenv
-        in 
-        new_term
-      | Meta(_) -> t
-      | Const(_) -> t
-  in 
-  retype_aux t (empty_table())
-
-(* retype_pretty: as for retype, make substitution for type variables
-   but also replace other type variables with new, prettier names
-*)
-let retype_pretty_env typenv trm=
-  let inf =ref 0 in 
-  let rec retype_aux t name_env qenv =
-    match t with
-      | Id(n, ty) -> 
-	let (nt, nenv1) = Gtypes.mgu_rename_env inf typenv name_env ty
-	in 
-	(Id(n, nt), nenv1, qenv)
-      | Free(n, ty) -> 
-	let (nt, nenv1) = Gtypes.mgu_rename_env inf typenv name_env ty
-	in 
-	(Free(n, nt), nenv1, qenv)
-      | Meta(q) -> (t, name_env, qenv)
-      | Const(c) -> (t, name_env, qenv)
-      | Bound(q) -> 
-	(try (table_find t qenv, name_env, qenv)
-	 with Not_found ->
-	   let (qnt, qnm, qty) = Basic.dest_binding q in 
-	   let (nty, nenv1) =
-	     Gtypes.mgu_rename_env inf typenv name_env qty
-	   in 
-	   let nq = mk_binding qnt qnm nty in
-           let qenv1 = table_add (Bound q) (Bound nq) qenv; qenv
-	   in 
-           (Bound(nq), nenv1, qenv1))
-      | App(f, a) -> 
-	let nf, nenv1, qenv1 = retype_aux f name_env qenv in
-        let na, nenv2, qenv2 = retype_aux a nenv1 qenv1
-	in 
-	(App(nf, na), nenv2, qenv2)
-      | Qnt(q, b) ->
-	let (oqnt, oqnm, oqty) = Basic.dest_binding q in 
-	let nty, nenv1 =Gtypes.mgu_rename_env inf typenv name_env oqty in
-	let nq = mk_binding oqnt oqnm nty in 
-        let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-        let nb, nenv2, qenv2 = retype_aux b nenv1 qenv1 in 
-        let new_term = Qnt(nq, nb) in
-        let qenv3 = table_remove (Bound(q)) qenv2; qenv2
-        in 
-        (new_term, nenv2, qenv3)
-  in 
-  let (retyped, new_nenv, _) = 
-    retype_aux trm (Gtypes.empty_subst()) (empty_table()) 
-  in 
-  (retyped, new_nenv)
-
-let retype_pretty typenv trm = 
-  let new_term, _ = retype_pretty_env typenv trm
-  in 
-  new_term
 
 (*
  * Pretty Printing 

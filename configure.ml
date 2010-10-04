@@ -90,6 +90,7 @@ let thysdir = ref None
 let output = ref None
 let fast_compilers = ref None
 let native_compilers = ref None
+let ocaml_version_str = ref None
 
 let set p x = p := Some x
 let get p =
@@ -190,6 +191,11 @@ let set_native_compilers flag =
   then set native_compilers "true"
   else set native_compilers "false"
 
+let ocaml_version_str_d () =
+  Sys.ocaml_version
+
+let set_ocaml_version_str str = str
+
 let output_ml_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
 
@@ -203,6 +209,7 @@ let varlist =
    ("BaseDir", basedir, basedir_d);
    ("LibDir", libdir, libdir_d);
    ("ThyDir", thysdir, thysdir_d);
+   ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
  ]
 
 let settinglist =

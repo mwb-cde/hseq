@@ -146,13 +146,11 @@ type 'a info =
     and precedence as an argument. 
 *)
 
-val mk_info: int->  'a info
+val mk_info: int ->  'a info
 (** Make an info store of size [sz]. *)
 
-val default_info_size: int ref
-(** The size of the tables created by [empty_info].  This is a
-    reference and can be changed by assignment
-*)
+val default_info_size: int 
+(** The size of the tables created by [empty_info].  *)
 
 val empty_info: unit-> 'a info
 (** Create a PP information store using the default size given by

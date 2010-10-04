@@ -13,8 +13,14 @@ endif
 ##
 # Preprocessor options
 ## 
-#PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
-PPOPTIONS=-pp "camlp4of" -I +camlp4 
+
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+ifeq ($(OLDCAMLP4),true)
+PPOPTIONS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+else
+PPOPTIONS=-pp "camlp4of" -I +camlp4
+endif
 
 # Don't try to build native code 
 NATIVE := "false"

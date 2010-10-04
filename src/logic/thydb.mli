@@ -314,13 +314,13 @@ sig
 	childn: Lib.StringSet.t 
       (** 
           Names of the theories of which name is a parent. 
-          (If name is in [childn] then it is a circular importing.)
+          (If [name] is in [childn] then it is a circular importing.)
       *)
       }
 
   val mk_info: string -> float option -> bool option -> info
   (** Constructor for [info]. *)
-  val info_add: info -> string -> info
+  val info_add_child: info -> string -> info
   (** [info_add info n]: Add n to [info.childn]. *)
 
   (** Data needed for loading a theory. [load_fn] loads a theory
@@ -376,14 +376,27 @@ sig
 
   val load_theory: thydb -> data -> info -> thydb
   val load_parents: thydb -> data -> info -> string list -> thydb
-  val load_thy: info -> data -> thydb -> Theory.saved_thy
-  val build_thy: info -> data -> thydb -> thydb
   val check_build: thydb -> thydb -> Theory.thy -> unit
   val set_curr: thydb -> Theory.thy -> thydb
   val test_protection: string -> bool option -> bool -> unit
   val test_date: string -> float option -> float -> unit
-  val check_parents: thydb -> info -> string list -> unit
-    
+
+  val latest_time: float -> float -> float
+module New:
+sig
+  val build_thy: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_theory: thydb -> data -> info -> thydb
+
+  val get_loaded_thy: data -> thydb -> info -> (Theory.thy * thydb)
+  val get_saved_thy: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_aux: data -> thydb -> info -> (Theory.thy * thydb)
+  val load_deps: data -> thydb -> float -> info list -> (thydb * float)
+
+  val load_parents: thydb -> data -> info -> string list -> thydb
+  val load: thydb -> data -> info -> thydb
+end
+
 end
 
 (** {5 Debugging information} *)
@@ -409,4 +422,3 @@ end
 
 val add_importing: thydb -> string list -> thydb
 val mk_importing: thydb -> NameSet.t
-

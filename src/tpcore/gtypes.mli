@@ -43,10 +43,10 @@ val mk_constr: Basic.typ_const -> gtype list -> gtype
 
 (** {7 Destructors} *)
 
-val dest_var: gtype -> string ref
+val dest_var: gtype -> Basic.gtype_id
 val get_var_name: gtype -> string
 
-val dest_weak: gtype -> string ref
+val dest_weak: gtype -> Basic.gtype_id
 val get_weak_name: gtype -> string
 
 val dest_constr: gtype -> (Basic.typ_const * gtype list)
@@ -66,10 +66,12 @@ val normalize_vars: gtype -> gtype
     variable. Useful when constructing types from existing types.
 *)
 
-val mk_typevar: int ref -> gtype
-(** [mk_typevar n]: Make a new type variable with a name derived from
-    [!n]; increment [n] and return the new type. Different values of
-    [!n] make different names.
+val mk_typevar: int -> (int * gtype)
+(** [mk_typevar n]: Make a new type variable [t'] with a name derived
+    from [n] and return [(n + 1, t')]. Different values of [n] make
+    different names.
+
+    This is does the same thing as [mk_typevar] but without side-effects.
 *)
 
 val get_var_names: gtype -> string list
@@ -162,13 +164,6 @@ val rename_type_vars: gtype -> gtype
 
 (** {5 Pretty Printing} *)
 
-type printer_info=
-    { 
-      tbl: substitution; (* Replacement variable names for pretty-printing. *)
-      ctr: int ref; (* Used to generate variable names. *)
-    }
-(** Pretty printing information for types. *)
-val empty_printer_info: unit -> printer_info
 (** Make an empty printer information. *)
 val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
@@ -304,8 +299,8 @@ val mgu: gtype -> substitution -> gtype
     pushes the substitution into the replacement terms.
 *)
 
-val mgu_rename_env: int ref -> substitution -> substitution 
-  -> gtype -> (gtype * substitution)
+val mgu_rename_env: (int * substitution) -> substitution 
+  -> gtype -> (gtype * (int * substitution))
 (** [mgu_rename_env inf env nenv ty]: Replace variables in [ty] with
     their bindings in substitution [env].  If a variable isn't bound
     in [env], then it is renamed and bound to that name in [nenv]
@@ -317,9 +312,23 @@ val mgu_rename_env: int ref -> substitution -> substitution
     Returns the new type and updated nenv.
 *)
 val mgu_rename: 
-  int ref -> substitution 
+  int -> substitution 
   -> substitution -> gtype 
   -> gtype 
+
+val mgu_rename_simple: int -> substitution -> substitution 
+  -> gtype -> (gtype * int *substitution)
+(**
+   [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
+   with their bindings in substitution [env].  If a variable isn't bound
+   in [env], then it is renamed and bound to that name in [nenv] (which is
+   checked before a new name is created).
+
+   This does the same thing as mgu_rename_env except that it takes
+   [inf] as a scalar, rather than a reference, and returns a new value
+   for [inf].
+*)
+
 (** Toplevel for [mgu_rename_env]. *)
 
 (** {6 Matching functions} 
@@ -430,18 +439,23 @@ type stypedef_record =
      scharacteristics: string list}
 (** Representation of typedef_records for disk storage. *)
 
-val to_save_env: (string ref* (string *int)) list ref 
-  -> gtype -> stype
+type to_stype_env = (Basic.gtype_id * (string *int)) list
+(** Data needed to construct a type storage representation. *)
+
+val to_save_env: to_stype_env -> gtype -> (stype * to_stype_env)
 (** [to_save_env ty env]: Convert [ty] to [stype] storage
     representation.  [env] store the names of type variables already
     encountered.
 *)
+
 val to_save: gtype -> stype
 (** Toplevel for [to_save_env]. *)
 
+type from_stype_env = ((string * int) * Basic.gtype_id) list
+(** Data needed to construct a type storage representation. *)
+
 val from_save_env: 
-  ((string * int)* (string ref)) list ref
-  -> stype -> gtype
+  from_stype_env -> stype -> (gtype * from_stype_env)
 (** [from_save_env ty env]: Convert storage [ty] to [gtype]
     representation.  [env] store the names of type variables already
     encountered.

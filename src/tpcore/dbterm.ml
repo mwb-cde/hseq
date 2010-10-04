@@ -40,38 +40,72 @@ type dbterm =
 
 let rec of_term_aux env qnts t =
   match t with
-    | Basic.Id(n, ty) -> Id(n, Gtypes.to_save_env env ty)
-    | Basic.Free(n, ty) -> Free(n, Gtypes.to_save_env env ty)
-    | Basic.Const(c) -> Const(c)
+    | Basic.Id(n, ty) -> 
+      let (ty1, env1) = Gtypes.to_save_env env ty
+      in
+      (Id(n, ty1), env1)
+    | Basic.Free(n, ty) -> 
+      let (ty1, env1) = Gtypes.to_save_env env ty
+      in
+      (Free(n, ty1), env1)
+    | Basic.Const(c) -> (Const(c), env)
     | Basic.App(f, a) -> 
-      App(of_term_aux env qnts f, of_term_aux env qnts a)
+      let f1, env1 = of_term_aux env qnts f in
+      let a1, env2 = of_term_aux env1 qnts a 
+      in
+      (App(f1, a1), env2)
     | Basic.Bound(q) ->
-      Bound(Lib.index (fun x -> (x == q)) qnts)
+      let q_idx = Lib.index (fun x -> (x == q)) qnts
+      in
+      (Bound(q_idx), env)
     | Basic.Qnt(q, b) -> 
       let (tqnt, tqvar, tqtyp) = Basic.dest_binding q
-      and nb = of_term_aux env (q::qnts) b
+      and (b1, env1) = of_term_aux env (q::qnts) b
       in 
-      Qnt(mk_binder tqnt tqvar (Gtypes.to_save_env env tqtyp), nb)
+      let (ty1, env2) = Gtypes.to_save_env env1 tqtyp in
+      let q1 = mk_binder tqnt tqvar ty1
+      in
+      (Qnt(q1, b1), env2)
     | Basic.Meta(q) ->
       raise 
 	(Term.term_error "Can't convert meta variables to DB terms" [t])
 	
-let of_term t = of_term_aux (ref []) [] t
+let of_term t = 
+  let (t1, _) = of_term_aux [] [] t
+  in 
+  t1
 
 let rec to_term_aux env qnts t =
   match t with
-    | Id(n, ty) -> Basic.Id(n, Gtypes.from_save_env env ty)
-    | Free(n, ty) -> Basic.Free(n, Gtypes.from_save_env env ty)
-    | Const(c) -> Basic.Const(c)
+    | Id(n, ty) -> 
+      let (ty1, env1) = Gtypes.from_save_env env ty
+      in
+      (Basic.Id(n, ty1), env1)
+    | Free(n, ty) -> 
+      let (ty1, env1) = Gtypes.from_save_env env ty
+      in
+      (Basic.Free(n, ty1), env1)
+    | Const(c) -> (Basic.Const(c), env)
     | App(f, a) -> 
-      Basic.App(to_term_aux env qnts f, to_term_aux env qnts a)
-    | Bound(q) -> Basic.Bound(List.nth qnts q)
+      let (f1, env1) = to_term_aux env qnts f in
+      let (a1, env2) = to_term_aux env1 qnts a
+      in
+      (Basic.App(f1, a1), env2)
+    | Bound(q) -> 
+      let q_binder = List.nth qnts q
+      in
+      (Basic.Bound(q_binder), env)
     | Qnt(q, b) ->
-      let nq = 
-	Basic.mk_binding (binder_kind q) (binder_name q)
-	  (Gtypes.from_save_env env q.qtyp)
+      let (ty1, env1) = Gtypes.from_save_env env q.qtyp in
+      let q1 = 
+	Basic.mk_binding (binder_kind q) (binder_name q) ty1
       in 
-      Basic.Qnt(nq, to_term_aux env (nq::qnts) b)
+      let (b1, env2) = to_term_aux env1 (q1::qnts) b
+      in
+      (Basic.Qnt(q1, b1), env2)
 
-let to_term t = to_term_aux (ref[]) [] t
+let to_term t = 
+  let (t1, _) = to_term_aux [] [] t
+  in
+  t1
 

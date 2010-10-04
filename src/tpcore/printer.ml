@@ -143,8 +143,8 @@ type 'a info =
 let mk_info sz = 
   {records = Hashtbl.create(sz); printers = Hashtbl.create(sz)}
 
-let default_info_size = ref 53
-let empty_info() = mk_info (!default_info_size)
+let default_info_size = 53
+let empty_info() = mk_info default_info_size
 
 (** Add/access printer records *)
 
@@ -198,7 +198,7 @@ let mk_ppinfo sz =
     terms = mk_info sz;
     types = mk_info sz;
   }
-let empty_ppinfo() = mk_ppinfo (!default_info_size)
+let empty_ppinfo() = mk_ppinfo default_info_size
 
 (** Operations involving term identifiers *)
 

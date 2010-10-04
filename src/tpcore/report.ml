@@ -61,22 +61,29 @@ let add_error e x =
     the exception.
 *)
 let print_error info depth errs =
-  let ctr = ref (depth+1) in 
-  let rec print_aux x =
-    if (!ctr) = 1 
+  let rec print_aux ctr x =
+    if ctr = 1 
     then ()
     else 
-      (ctr := (!ctr)-1;
-       match x with
-         | (Error e) -> 
-	   Format.printf "@[";
-	   e#print info;
-	   Format.printf "@]@,"
-         | (Errors l) -> List.iter print_aux l
-         | _ -> Format.printf "@[%s@]@," (Printexc.to_string x))
+      begin
+        match x with
+          | (Error e) -> 
+	    Format.printf "@[";
+	    e#print info;
+	    Format.printf "@]@,"
+          | (Errors errs) ->
+            begin
+              match errs with
+                | [] -> ()
+                | (e::es) -> 
+                  (ignore(print_aux (ctr - 1) e);
+                   print_aux (ctr - 1) (Errors es))
+            end
+          | _ -> Format.printf "@[%s@]@," (Printexc.to_string x)
+      end
   in 
   Format.printf "@[<v>";
-  List.iter print_aux [errs];
+  List.iter (print_aux (depth + 1)) [errs];
   Format.printf "@]"
 
 (** [catch_error info depth f a]: Apply [f a], catching any error and

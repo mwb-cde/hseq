@@ -48,3 +48,4 @@ let _ = end_theory();;
 
 (* Reset the base theory name *)
 let _ = Global.Thys.set_base_name mainScript_base_name;;
+

@@ -218,6 +218,40 @@ val rebuild_qnt: binders list -> term -> term
 val rename: term -> term
 (** [rename t]: Rename bound variables in term [t] (alpha-conversion). *)
 
+
+(** {5 Retyping} *)
+
+val retype: Gtypes.substitution -> term -> term
+(** [retype tyenv t]: Reset the types in term [t] using type
+    substitution [tyenv].  Substitutes variables with their concrete
+    type in [tyenv].
+*)
+
+val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
+(** [retype_with_check scp tyenv t]: Reset the types in term [t] using
+    type substitution [tyenv].  Substitutes variables with their
+    concrete type in [tyenv]. Check that the new types are in scope
+    [scp].
+*)
+
+val retype_pretty_env: 
+  Gtypes.substitution -> term -> (term * Gtypes.substitution)
+(** [retype_pretty]: Like [retype], make substitution for type
+    variables but also replace other type variables with new, prettier
+    names
+*)
+val retype_pretty: Gtypes.substitution -> term -> term 
+(** [retype_pretty_env]: Like [retype_pretty] but also return the
+    substitution storing from the bindings/replacements generated
+    during retyping.
+*)
+
+(** {5 Combined type/binder renaming} *)
+
+val full_rename: Gtypes.substitution -> term -> (term * Gtypes.substitution)
+(** [full_rename env t]: Rename all type variables and bound variables
+    in term [t]. *)
+
 type substitution 
 (** The type of term substitutions. *)
 
@@ -306,32 +340,6 @@ val string_inf_term:
   ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string
 val string_term_basic: term -> string
 
-(** {5 Retyping} *)
-
-val retype: Gtypes.substitution -> term -> term
-(** [retype tyenv t]: Reset the types in term [t] using type
-    substitution [tyenv].  Substitutes variables with their concrete
-    type in [tyenv].
-*)
-
-val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
-(** [retype_with_check scp tyenv t]: Reset the types in term [t] using
-    type substitution [tyenv].  Substitutes variables with their
-    concrete type in [tyenv]. Check that the new types are in scope
-    [scp].
-*)
-
-val retype_pretty_env: 
-  Gtypes.substitution -> term -> (term * Gtypes.substitution)
-(** [retype_pretty]: Like [retype], make substitution for type
-    variables but also replace other type variables with new, prettier
-    names
-*)
-val retype_pretty: Gtypes.substitution -> term -> term 
-(** [retype_pretty_env]: Like [retype_pretty] but also return the
-    substitution storing from the bindings/replacements generated
-    during retyping.
-*)
 
 (** {5 Pretty printing} *)
 

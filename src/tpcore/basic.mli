@@ -44,7 +44,21 @@ type ('idtyp, 'tfun) pre_typ =
    ML).
 *)
 
-type gtype = (string ref, typ_const)pre_typ
+type gtype_id
+(** Type identifers. *)
+
+val mk_gtype_id: string -> gtype_id
+(** Make a type identifier. *)
+val gtype_id_string: gtype_id -> string
+(** Get a string representation of a type identifier. *)
+val gtype_id_copy: gtype_id -> gtype_id
+(** Make a new, unique with the same string representation as another. *)
+val gtype_id_equal: gtype_id -> gtype_id -> bool
+(** Equality of gtype_id. *)
+val gtype_id_compare: gtype_id -> gtype_id -> int
+(** Comparison of gtype_id. *)
+
+type gtype = (gtype_id, typ_const)pre_typ
 (** The actual representation of types. *)
 
 (** String representation of types. *)
@@ -103,7 +117,7 @@ val binder_equality: binders -> binders -> bool
 
 (** The representation of a term *)
 type term =
-  | Id of Ident.t* gtype   (** Identifiers *)
+  | Id of Ident.t * gtype   (** Identifiers *)
   | Bound of binders     (** Bound variables *)
   | Free of string * gtype  (** Free variables *)
   | Meta of binders       (** Meta variables (use for skolem constants) *)
