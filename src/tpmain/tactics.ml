@@ -69,6 +69,7 @@ let sequent g = Logic.Subgoals.node_sqnt g
 let scope_of g = Logic.Sequent.scope_of (sequent g)
 let typenv_of n = Logic.Subgoals.node_tyenv n
 let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
+let changes n = Logic.Tactics.changes n
 
 let get_tagged_asm i g = Logic.get_label_asm i (sequent g)
 let get_tagged_concl i g= Logic.get_label_cncl i (sequent g)
@@ -91,16 +92,32 @@ let num_subgoals b = List.length (branch_subgoals b)
 
 (*** Information records ***)
 
-let mk_info () = ref (Logic.make_tag_record [] [] [] [])
-let empty_info info = info:=(Logic.make_tag_record[] [] [] [])
+(***
+module Deprecated =
+struct
+  let mk_info () = ref (Logic.make_tag_record [] [] [] [])
+  let empty_info info = info:=(Logic.make_tag_record[] [] [] [])
 
-let subgoals inf = (!inf).Logic.goals
-let aformulas inf = (!inf).Logic.aforms
-let cformulas inf = (!inf).Logic.cforms
-let constants inf = (!inf).Logic.terms
-let set_info dst (sgs, afs, cfs, cnsts) = 
-  Logic.add_info dst sgs afs cfs cnsts
-    
+  let subgoals inf = (!inf).Logic.goals
+  let aformulas inf = (!inf).Logic.aforms
+  let cformulas inf = (!inf).Logic.cforms
+  let constants inf = (!inf).Logic.terms
+  let set_info dst (sgs, afs, cfs, cnsts) = 
+    Logic.add_info dst sgs afs cfs cnsts
+end
+***)    
+
+module New =
+struct
+
+  let changes = Logic.Tactics.changes
+  let subgoals = Changes.goals 
+  let aformulas = Changes.aforms
+  let cformulas = Changes.cforms
+  let constants = Changes.terms
+
+end
+
 (*** Utility functions ***)
 
 let extract_consts vars env=
@@ -154,14 +171,15 @@ let first_concl_label c pred sq =
 
 let foreach = Logic.Subgoals.apply_to_each 
 
-let skip = Logic.Tactics.skip ?info:None
+let skip = Logic.Tactics.skip
 
 let fail ?err sq = 
   match err with 
     | None -> raise (error "failed")
     | Some e -> raise e
 
-let data_tac f info g= f info; skip g
+let data_tac f tacl g = tacl (f g) g
+let query_tac tacl g = tacl (New.changes g) g
 
 (*
  * Tacticals
@@ -216,6 +234,7 @@ let restrict p tac goal =
   if p ng 
   then ng 
   else raise (Failure "restrict_tac")
+
 
 let notify_tac f d tac goal =
   let ng = tac goal
@@ -281,9 +300,9 @@ let foreach_form tac goal =
   let notify () = chng := true
   in 
   let asms_tac g = 
-    (((foreach_asm tac) ++ data_tac notify ()) // skip) g 
+    (((foreach_asm tac) ++ notify_tac notify () skip) // skip) g 
   and concls_tac g = 
-    (((foreach_concl tac) ++ data_tac notify ()) // skip) g 
+    (((foreach_concl tac) ++ notify_tac notify () skip) // skip) g 
   in 
   try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
   with Failure _ -> raise (Failure "foreach_form")
@@ -295,21 +314,21 @@ let foreach_form tac goal =
 
 (*** Formula manipulation ***)
 
-let rotateA ?info g = Logic.Tactics.rotate_asms ?info g
-let rotateC ?info g = Logic.Tactics.rotate_cncls ?info g
+let rotateA g = Logic.Tactics.rotate_asms g
+let rotateC g = Logic.Tactics.rotate_cncls g
 
-let copyA ?info i g = Logic.Tactics.copy_asm ?info i g
-let copyC ?info i g = Logic.Tactics.copy_cncl ?info i g
+let copyA i g = Logic.Tactics.copy_asm i g
+let copyC i g = Logic.Tactics.copy_cncl i g
 
-let liftA ?info l g = Logic.Tactics.lift_asm ?info l g
-let liftC ?info l g = Logic.Tactics.lift_concl ?info l g
-let lift ?info id g = Logic.Tactics.lift ?info id g
+let liftA l g = Logic.Tactics.lift_asm l g
+let liftC l g = Logic.Tactics.lift_concl l g
+let lift id g = Logic.Tactics.lift id g
 
-let deleteA ?info i = Logic.Tactics.deleteA ?info i
-let deleteC ?info i = Logic.Tactics.deleteC ?info i
-let delete ?info i g = 
-  try deleteA ?info i g
-  with Not_found -> deleteC ?info i g
+let deleteA i = Logic.Tactics.deleteA i
+let deleteC i = Logic.Tactics.deleteC i
+let delete i g = 
+  try deleteA i g
+  with Not_found -> deleteC i g
 
 let deleten ns sq = 
   let rec del_aux l b =
@@ -321,75 +340,75 @@ let deleten ns sq =
 
 (*** Logic Rules **)
 
-let trueC ?info ?c sq =
+let trueC ?c sq =
   let cf = first_concl_label c Formula.is_true sq
   in
-  Logic.Tactics.trueC ?info cf sq
+  Logic.Tactics.trueC cf sq
 
-let conjC ?info ?c sq =
+let conjC ?c sq =
   let cf = first_concl_label c Formula.is_conj sq
   in
-  Logic.Tactics.conjC ?info cf sq
+  Logic.Tactics.conjC cf sq
 
-let conjA ?info ?a sq =
+let conjA ?a sq =
   let af = first_asm_label a Formula.is_conj sq
   in
-  Logic.Tactics.conjA ?info af sq
+  Logic.Tactics.conjA af sq
 
-let disjC ?info ?c sq =
+let disjC ?c sq =
   let cf = first_concl_label c Formula.is_disj sq
   in
-  Logic.Tactics.disjC ?info cf sq
+  Logic.Tactics.disjC cf sq
 
-let disjA ?info ?a sq =
+let disjA ?a sq =
   let af = first_asm_label a Formula.is_disj sq
   in
-  Logic.Tactics.disjA ?info af sq
+  Logic.Tactics.disjA af sq
 
-let negC ?info ?c sq =
+let negC ?c sq =
   let cf = first_concl_label c Formula.is_neg sq
   in
-  Logic.Tactics.negC ?info cf sq
+  Logic.Tactics.negC cf sq
 
-let negA ?info ?a sq =
+let negA ?a sq =
   let af = first_asm_label a Formula.is_neg sq
   in
-  Logic.Tactics.negA ?info af sq
+  Logic.Tactics.negA af sq
 
-let implC ?info ?c sq =
+let implC ?c sq =
   let cf = first_concl_label c Formula.is_implies sq
   in
-  Logic.Tactics.implC ?info cf sq
+  Logic.Tactics.implC cf sq
 
-let implA ?info ?a sq =
+let implA ?a sq =
   let af = first_asm_label a Formula.is_implies sq
   in 
-  Logic.Tactics.implA ?info af sq
+  Logic.Tactics.implA af sq
 
-let existC ?info ?c trm sq =
+let existC ?c trm sq =
   let cf = first_concl_label c Formula.is_exists sq
   in
-  Logic.Tactics.existC ?info trm cf sq
+  Logic.Tactics.existC trm cf sq
 
-let existA ?info ?a sq =
+let existA ?a sq =
   let af = first_asm_label a Formula.is_exists sq
   in
-  Logic.Tactics.existA ?info af sq
+  Logic.Tactics.existA af sq
 
-let allC ?info ?c sq =
+let allC ?c sq =
   let cf = first_concl_label c Formula.is_all sq
   in
-  Logic.Tactics.allC ?info cf sq
+  Logic.Tactics.allC cf sq
 
-let allA ?info ?a trm sq =
+let allA ?a trm sq =
   let af = first_asm_label a Formula.is_all sq
   in
-  Logic.Tactics.allA ?info trm af sq
+  Logic.Tactics.allA trm af sq
 
 let nameC = Logic.Tactics.nameC 
 let nameA = Logic.Tactics.nameA
 
-let instA0 ?info l trms goal =
+let instA0 l trms goal =
   let info1 = mk_info ()
   and tag1 = Logic.label_to_tag l (sequent goal)
   in 
@@ -405,12 +424,12 @@ let instA0 ?info l trms goal =
   Logic.add_info info [] (aformulas info1) [] [];
   g1
 
-let instA ?info ?a trms goal = 
+let instA ?a trms goal = 
   let af = first_asm_label a Formula.is_all goal
   in 
-  instA0 ?info af trms goal
+  instA0 af trms goal
 
-let instC0 ?info l trms goal =
+let instC0 l trms goal =
   let info1 = mk_info ()
   and tag1 = Logic.label_to_tag l (sequent goal)
   in 
@@ -426,16 +445,16 @@ let instC0 ?info l trms goal =
   Logic.add_info info [] [] (cformulas info1) [];
   g1
     
-let instC ?info ?c trms goal=
+let instC ?c trms goal=
   let cf= first_concl_label c Formula.is_exists goal
   in 
-  instC0 ?info cf trms goal
+  instC0 cf trms goal
 
-let inst_tac ?info ?f trms goal = 
+let inst_tac ?f trms goal = 
   try instA ?info:info ?a:f trms goal
   with _ -> instC ?info:info ?c:f trms goal
 
-let cut ?info ?inst th goal = 
+let cut ?inst th goal = 
   let cut0 trms g = 
     let info1 = mk_info() in 
     let g1 = Logic.Tactics.cut ~info:info1 th g in 
@@ -445,13 +464,13 @@ let cut ?info ?inst th goal =
     foreach (instA ?info:info ~a:(ftag atag) trms) g1
   in 
   match inst with
-    | None -> Logic.Tactics.cut ?info th goal
+    | None -> Logic.Tactics.cut th goal
     | Some(trms) -> 
       try cut0 trms goal
       with err -> raise (add_error "cut" err)
 
 
-let betaA ?info ?a goal =
+let betaA ?a goal =
   let conv_tac (ft, form) g =
     let scp = scope_of g in 
     let thm = 
@@ -480,7 +499,7 @@ let betaA ?info ?a goal =
     | None -> 
       map_some conv_tac (asms_of (sequent goal)) goal
 
-let betaC ?info ?c goal =
+let betaC ?c goal =
   let conv_tac (ft, form) g =
     let scp = scope_of g in 
     let thm = 
@@ -509,21 +528,21 @@ let betaC ?info ?c goal =
     | None -> 
       map_some conv_tac (concls_of (sequent goal)) goal
 
-let beta_tac ?info ?f goal = 
+let beta_tac ?f goal = 
   try 
     seq_some
       [ 
-	betaC ?info ?c:f;
-	betaA ?info ?a:f
+	betaC ?c:f;
+	betaA ?a:f
       ] goal
   with err -> raise (add_error "beta_tac" err)
 
-let name_tac ?info n lbl goal = 
+let name_tac n lbl goal = 
   let sqnt = sequent goal
   in 
   match Lib.try_app (Logic.get_label_asm lbl) sqnt with
-    | Some _ -> Logic.Tactics.nameA ?info n lbl goal
-    | None -> Logic.Tactics.nameC ?info n lbl goal
+    | Some _ -> Logic.Tactics.nameA n lbl goal
+    | None -> Logic.Tactics.nameC n lbl goal
 
 (*** Unification tactics ***)
 
@@ -557,22 +576,22 @@ let find_basic asm concl node =
   in 
   find_basic_aux node_concls
 
-let basic ?info ?a ?c goal =
+let basic ?a ?c goal =
   match (a, c) with 
     | (Some albl, Some clbl) ->
       begin
-        try Logic.Tactics.basic ?info albl clbl goal
+        try Logic.Tactics.basic albl clbl goal
         with err -> raise (add_error "basic: failed" err)
       end
     | _ -> 
       begin
         match Lib.try_find (find_basic a c) goal with
 	  | None -> raise (error "basic: failed")
-          | Some(al, cl) -> Logic.Tactics.basic ?info al cl goal
+          | Some(al, cl) -> Logic.Tactics.basic al cl goal
       end
 
 
-let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
+let unify_engine_tac (atg, aform) (ctg, cform) goal =
   let sqnt = sequent goal in 
   let scope = Logic.Sequent.scope_of sqnt in 
   let albl = ftag atg
@@ -612,7 +631,7 @@ let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
       (basic ?info:info ~a:albl ~c:clbl // skip) 
     ] goal
 
-let unify_tac ?info ?a ?c goal =
+let unify_tac ?a ?c goal =
   let sqnt = sequent goal
   in 
   let asms = 
@@ -641,9 +660,9 @@ let unify_tac ?info ?a ?c goal =
   try map_first tac concls goal
   with err -> raise (add_error "unify_tac" err)
 
-let substA ?info rs l g = Logic.Tactics.substA ?info rs l g
+let substA rs l g = Logic.Tactics.substA rs l g
 
-let substC ?info rs l g = Logic.Tactics.substC ?info rs l g
+let substC rs l g = Logic.Tactics.substC rs l g
 
 
 (*
@@ -655,7 +674,7 @@ let substC ?info rs l g = Logic.Tactics.substC ?info rs l g
     [cformulas inf] with a name from [cnames], in order. Set
     [info=inf'] where [inf'] is [inf], with the formula tag produced
     by renaming.  *)
-let named_tac ?info tac anames cnames (goal: Logic.node) =
+let named_tac tac anames cnames (goal: Logic.node) =
   let inf1 = mk_info()
   and inf2 = mk_info()
   in 
@@ -751,7 +770,7 @@ let match_formula trm tac g =
     with Not_found ->
       raise (Term.term_error "No matching formula in sequent" [trm])
 
-let specA ?info ?a g =
+let specA ?a g =
   let inf1 = mk_info() in 
   let add_data (atgs, cs) =
     add_info info [] [get_one atgs] [] (List.rev cs) 
@@ -762,12 +781,12 @@ let specA ?info ?a g =
         [ 
 	  repeat (existA ~info:inf1 ?a);
 	  (fun g1 ->
-	    data_tac add_data ((aformulas inf1), (constants inf1)) g1)
+	    notify_tac add_data ((aformulas inf1), (constants inf1)) g1)
         ];
       fail ~err:(error "specA")
     ] g
 
-let specC ?info ?c g =
+let specC ?c g =
   let inf1 = mk_info() in 
   let add_data (ctgs, cs) =
     add_info info [] [] [get_one ctgs] (List.rev cs) 
@@ -778,16 +797,16 @@ let specC ?info ?c g =
         [ 
 	  repeat (allC ~info:inf1 ?c);
 	  (fun g1 ->
-	    data_tac add_data ((cformulas inf1), (constants inf1)) g1)
+	    notify_tac add_data ((cformulas inf1), (constants inf1)) g1)
         ];
       fail ~err:(error "specC")
     ] g
     
-let spec_tac ?info ?f g =
+let spec_tac ?f g =
   alt
     [
-      specC ?info ?c:f;
-      specA ?info ?a:f;
+      specC ?c:f;
+      specA ?a:f;
       fail ~err:(error "specA")
     ] g
 
@@ -864,7 +883,7 @@ let conv_rule scp conv thm =
 
 (** [pure_rewriteA info p l]: Rewrite assumption [l] with plan [p].
 *)
-let pure_rewriteA ?info ?term plan lbl goal =
+let pure_rewriteA ?term plan lbl goal =
   let inf = mk_info() in 
   let ltag = Logic.label_to_tag lbl (sequent goal) in 
   let trm = 
@@ -879,7 +898,7 @@ let pure_rewriteA ?info ?term plan lbl goal =
     in 
     seq
       [
-        Logic.Tactics.substA ?info [ftag (rule_tag)] (ftag ltag);
+        Logic.Tactics.substA [ftag (rule_tag)] (ftag ltag);
         deleteA (ftag rule_tag)
       ] g
   in 
@@ -890,7 +909,7 @@ let pure_rewriteA ?info ?term plan lbl goal =
 
 (** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan [p].
 *)
-let pure_rewriteC ?info ?term plan lbl goal =
+let pure_rewriteC ?term plan lbl goal =
   let inf = mk_info() in 
   let ltag = Logic.label_to_tag lbl (sequent goal) in 
   let trm = 
@@ -905,7 +924,7 @@ let pure_rewriteC ?info ?term plan lbl goal =
     in 
     seq
       [
-        Logic.Tactics.substC ?info [ftag (rule_tag)] (ftag ltag);
+        Logic.Tactics.substC [ftag (rule_tag)] (ftag ltag);
         deleteA (ftag rule_tag)
       ] g
   in 
@@ -918,11 +937,11 @@ let pure_rewriteC ?info ?term plan lbl goal =
     [pure_rewriteA]. First tries [pure_rewriteC] then tries
     [pure_rewriteA].
 *)
-let pure_rewrite_tac ?info ?term plan lbl goal =
+let pure_rewrite_tac ?term plan lbl goal =
   try
     begin
-      try pure_rewriteC ?info ?term plan lbl goal
-      with Not_found -> (pure_rewriteA ?info ?term plan lbl goal)
+      try pure_rewriteC ?term plan lbl goal
+      with Not_found -> (pure_rewriteA ?term plan lbl goal)
     end
   with 
     | Not_found -> raise Not_found
