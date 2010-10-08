@@ -645,7 +645,7 @@ exception Solved_subgoal of Gtypes.substitution
 (** The subgoal package.  Manages the application of rules to the
     subgoals of a goal.
 *)
-module Subgoals=
+module Subgoals =
 struct
 
   (** Subgoals: *)
@@ -693,29 +693,6 @@ struct
       with Not_found -> env
     in 
     Gtypes.subst_fold assign env1 env1
-
-
-  (** [merge_tac_tyenvs n b]: Merge the type environment of [b],
-      resulting from applying a tactic to [n], with the type
-      environment of [n].  Make a new branch with the components of [b]
-      but with the new type environment.  *)
-  let merge_tac_tyenvs n b =
-    let ntyenv = node_tyenv n
-    in 
-    let btag = branch_tag b
-    and btyenv = branch_tyenv b
-    and bsqnts = branch_sqnts b
-    and bchngs = branch_changes b
-    in 
-    let nbtyenv = 
-      try merge_tyenvs btyenv ntyenv
-      with _ -> 
-	raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
-    in 
-    let nbchngs = Changes.combine (node_changes n) bchngs
-    in
-    mk_branch btag nbtyenv bsqnts nbchngs
-
 
   (** [apply tac node]: Apply tactic [tac] to [node].
 
@@ -791,7 +768,7 @@ struct
       begin
         match gs with
 	  | [] -> 
-            mk_branch tg ty (List.rev lst) (Changes.rev_append cs chngs)
+            mk_branch tg ty (List.rev lst) (Changes.rev cs)
 	  | (x::xs) ->
 	    let branch1 = 
               apply_to_node tac (mk_node (Sequent.sqnt_tag x) ty x chngs)
@@ -841,20 +818,23 @@ struct
       example).  tag of the branch is the tag of the original
       branch.  *)
   let zip tacl (Branch(tg, tyenv, sqnts, chngs)) =
-    let rec zip_aux ty tacs subgs change lst =
+    let rec zip_aux ty tacs subgs cs lst =
       match (tacs, subgs) with
-	| (_, []) -> mk_branch tg ty (List.rev lst) change
-	| ([], gs) -> mk_branch tg ty (List.rev_append lst gs) change
+	| (_, []) -> 
+          mk_branch tg ty (List.rev lst) (Changes.rev cs)
+	| ([], gs) -> 
+          mk_branch tg ty (List.rev_append lst gs) (Changes.rev cs)
 	| (tac::ts, g::gs) ->
 	  let branch1 = 
-            apply_to_node tac (mk_node (Sequent.sqnt_tag g) ty g change)
+            apply_to_node tac (mk_node (Sequent.sqnt_tag g) ty g chngs)
 	  in
-	  zip_aux (branch_tyenv branch1) ts gs (branch_changes branch1)
+	  zip_aux (branch_tyenv branch1) ts gs 
+            (Changes.rev_append (branch_changes branch1) cs)
 	    (List.rev_append (branch_sqnts branch1) lst)
     in 
     match sqnts with
       | [] -> raise No_subgoals
-      | _ -> zip_aux tyenv tacl sqnts chngs []
+      | _ -> zip_aux tyenv tacl sqnts (Changes.empty()) []
 
   (** [rule_apply f g]: Apply function [f] to sequent [sg] and type
       environment of node [g] to get [(ng, tyenv)]. [ng] is the list

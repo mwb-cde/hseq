@@ -626,12 +626,6 @@ sig
       raise [Failure] if a variable ends up bound to itself.
   *)
 
-  val merge_tac_tyenvs: node -> branch -> branch
-  (** [merge_tac_tyenvs n b]: Merge the type environment of branch
-      [b], resulting from applying a tactic to node [n], with the
-      type environment of [n].  Make a new branch with the subgoals
-      of [b] but with the new type environment.  *)
-
   (** {7 Applying tactics} *)
 
   val apply: (node -> branch) -> node -> branch
