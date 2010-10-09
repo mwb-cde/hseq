@@ -694,10 +694,12 @@ struct
     in 
     Gtypes.subst_fold assign env1 env1
 
-  (** [apply tac node]: Apply tactic [tac] to [node].
+  (** [apply_basic tac node]: Apply tactic [tac] to [node].
 
       This is the work-horse for applying tactics. All other functions
       should call this to apply a tactic.
+
+      Supports both basic tactic application and applying a fold.
 
       Approach:
       {ol
@@ -710,17 +712,38 @@ struct
 
       @raise [logic_error] on failure.
   *)
-  let apply tac node = 
+  let apply_basic tac d node = 
     let ticket = Tag.create() in 
     let n1 = 
       mk_node ticket (node_tyenv node) (node_sqnt node) (node_changes node)
     in 
-    let new_branch = tac n1
+    let (value, new_branch) = tac d n1
     in 
     if not (Tag.equal ticket (branch_tag new_branch))
-    then raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
-    else replace_branch_tag new_branch (node_tag n1)
+    then
+      raise (logic_error "Subgoal.apply: Invalid result from tactic" [])
+    else 
+      begin
+        let result = replace_branch_tag new_branch (node_tag n1)
+        in
+        (value, result)
+      end
 	
+  let apply tac node = 
+    let app_aux _ n = ((), tac n) in
+    let (_, result) = apply_basic app_aux () node
+    in
+    result
+
+  (** [fold tac d (Node(tyenv, sqnt))]: Apply tactic [tac i] to node,
+      getting [(x, result)].  If tag of goal [result] is the same as
+      the tag of sqnt, then return [(x, result)].  Otherwise raise
+      logic_error.
+  *)
+  let fold tac d node = 
+    apply_basic tac d node
+    
+
   (** [apply_to_node tac (Node(tyenv, sqnt))]: Apply tactic [tac] to
       node, getting [result].  If tag of result is the same as the
       tag of sqnt, then return result.  Otherwise raise
@@ -782,6 +805,34 @@ struct
     if sqnts = []
     then raise No_subgoals
     else app_aux tyenv sqnts (Changes.empty()) []
+
+  (** [apply_fold tac iv (Branch(tg, tyenv, sqnts, chngs))]: Apply
+      tactic [tac] to each subgoal in a branch, folding the initial
+      value across the nodes in the branch. Returns [(x, g)] where [x]
+      is the result of the fold and [g] the new goal. The new goal is
+      produced in the same way as [apply_to_each].
+
+      @raise [No_subgoals] if [sqnts] is empty.
+  *)
+  let apply_fold tac iv (Branch(tg, tyenv, sqnts, chngs)) =
+    let rec app_aux ty d gs cs lst =
+      begin
+        match gs with
+	  | [] -> 
+            (d, mk_branch tg ty (List.rev lst) (Changes.rev cs))
+	  | (x::xs) ->
+	    let (v, branch1) = 
+              fold tac d (mk_node (Sequent.sqnt_tag x) ty x chngs)
+	    in
+	    app_aux 
+              (branch_tyenv branch1) v xs 
+              (Changes.rev_append (branch_changes branch1) cs)
+	      (List.rev_append (branch_sqnts branch1) lst)
+      end
+    in 
+    if sqnts = []
+    then raise No_subgoals
+    else app_aux tyenv iv sqnts (Changes.empty()) []
 
   (** [apply_to_goal tac goal]: Apply tactic [tac] to firat subgoal
       of [goal] using [apply_to_first].  Replace original list of

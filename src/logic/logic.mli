@@ -721,6 +721,19 @@ sig
     discarded. 
 *)
 
+  val apply_fold: 
+    ('a -> node -> ('a * branch)) 
+    -> 'a -> branch -> ('a * branch)
+(** [apply_fold rl i (Branch(tg, tyenv, sqnts))]: Apply tactic [tac] to
+    each subgoal in a branch, folding the initial value across the
+    nodes in the branch. Returns [(x, g)] where [x] is the result of
+    the fold and [g] the new goal. The new goal is produced in the
+    same way as [apply_to_each].
+    
+    @raise [No_subgoals] if [sqnts] is empty.
+*)
+
+
 end
 
 type node = Subgoals.node

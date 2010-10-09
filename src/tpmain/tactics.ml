@@ -178,9 +178,6 @@ let fail ?err sq =
     | None -> raise (error "failed")
     | Some e -> raise e
 
-let data_tac f tacl g = tacl (f g) g
-let query_tac tacl g = tacl (New.changes g) g
-
 (*
  * Tacticals
  *)
@@ -215,8 +212,34 @@ let (//) tac1 tac2 g =
   with  _ -> tac2 g
 
 let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
-
 let (--) = thenl
+
+let apply_fold = Logic.Subgoals.apply_fold
+let fold data rls sq =
+  let rec fold_aux fs d sqs =
+    match fs with 
+      | [] -> (d, sqs)
+      | r::rs ->
+	if has_subgoals sqs
+	then 
+          let (d1, sqs1) = apply_fold r d sqs
+          in
+          fold_aux rs d1 sqs1
+	else 
+          (d, sqs)
+  in 
+  begin
+    match rls with
+      | [] -> raise (error "seq: empty tactic list")
+      | x::xs -> 
+        let (d1, sqs1) = apply_fold x data sq
+        in
+        fold_aux xs d1 sqs1
+  end
+
+let result_tac tac t f g = 
+  try (t, tac g)
+  with _ -> (f, skip g)
 
 let rec repeat tac g =
   (tac ++ ((repeat tac) // skip)) g
@@ -235,11 +258,21 @@ let restrict p tac goal =
   then ng 
   else raise (Failure "restrict_tac")
 
-
 let notify_tac f d tac goal =
   let ng = tac goal
   in 
   f d; ng
+
+let (!!) f d tac goal =
+  let ng = tac goal
+  in 
+  f d; ng
+
+let data_tac f tacl g = tacl (f g) g
+let (>>) f tacl g = tacl (f g) g
+let query_tac tacl g = tacl (New.changes g) g
+let (??) tacl g = tacl (New.changes g) g
+
 
 let rec map_every tac l goal = 
   let rec every_aux ls g =
@@ -271,6 +304,23 @@ let map_some tac l goal =
   in 
   some_aux l goal
 
+
+(****
+let seq_any tacs goal =
+  let nofail_tac tac g = (tac // skip) g
+  in 
+  let try_tac tac g = result_tac tac d false g
+  in
+  let rec any_aux ls g =
+    match ls with 
+      | [] -> fail ~err:(Report.error "seq_any: no tactic succeeded.") g
+      | x::xs ->
+	try (x ++ map_every nofail_tac xs) g
+	with _ -> some_aux xs g
+  in 
+  any_aux tacs goal
+****)
+
 let seq_some tacs goal =
   let nofail_tac tac g = (tac // skip) g
   in 
@@ -295,6 +345,7 @@ let foreach_concl tac goal =
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
 
+(***
 let foreach_form tac goal = 
   let chng = ref false in 
   let notify () = chng := true
@@ -307,6 +358,10 @@ let foreach_form tac goal =
   try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
   with Failure _ -> raise (Failure "foreach_form")
     | err -> raise err
+***)
+
+let foreach_form tac goal =
+  seq_some [foreach_asm tac; foreach_concl tac] goal
 
 (*
  * Tactics

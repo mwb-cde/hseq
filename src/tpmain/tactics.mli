@@ -280,9 +280,16 @@ val skip: tactic
 val fail: ?err:exn -> tactic
 (** The tactic that always fails. Raises [Failure] or [?err] if given. *)
 
-val notify_tac: ('a -> unit) -> 'a -> tactic
-(** Evaluate an expression. [notify_tac f data g] evaluates [(f data)]
-    then behaves like {!Tactics.skip}.
+(** {5 Tacticals} *)
+
+val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
+(** [notify_tac f x tac g]: Notify [tac g] succeeded. Applies [tac g]
+    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
+*)
+
+val (!!): ('a -> unit) -> 'a -> tactic
+(** [(f !! data) g]: Infix notation for [notify_tac].  Applies [tac g]
+    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
 *)
 
 val data_tac: (Logic.node -> 'a) -> ('a -> tactic) -> tactic
@@ -290,12 +297,20 @@ val data_tac: (Logic.node -> 'a) -> ('a -> tactic) -> tactic
     Forms [tac (f g) g].
 *)
 
+val (>>): (Logic.node -> 'a) -> ('a -> tactic) -> tactic
+(** [(f >> tac) g]: Infix notation for data_tac.  Apply a tactic after
+    extracting the change data from a goal. Forms [tac (changes g) g].
+*)
+
 val query_tac: (Changes.t -> tactic) -> tactic
-(** [data_tac f tac g]: Apply a tactic after extracting the change
+(** [query_tac tac g]: Apply a tactic after extracting the change
     data from a goal. Forms [tac (changes g) g].
 *)
 
-(** {5 Tacticals} *)
+val (??): (Changes.t -> tactic) -> tactic
+(** ??tac g]: Prefix notation for [query_tac]. Apply a tactic after
+    extracting the change data from a goal. Forms [tac (changes g) g].
+*)
 
 val seq: tactic list -> tactic 
 (** [seq tacl]: Apply each tactic in [tacl] in sequence to the
@@ -352,11 +367,6 @@ val restrict: (Logic.branch -> bool) -> tactic -> tactic
     Fails if [pred (tac g)] is false otherwise behaves as [(tac g)].
 *)
 
-val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
-(** [notify_tac f x tac g]: Notify [tac g] succeeded.  Applies [tac g]
-    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
-*)
-
 val map_every: ('a -> tactic) -> 'a list -> tactic
 (** [map_every tac xs]: Sequentially apply the tactics formed by [(tac
     x)], for each [x] in [xs].  [map_every tac [y1; y2; .. ; yn]] is
@@ -384,8 +394,8 @@ val map_some: ('a -> tactic) -> 'a list -> tactic
     the tactics [(tac x)] fail. Fails if [xs] is initially empty.
 *)
 
-val seq_some: tactic list -> tactic
-(** [seq_some tacl xs]: Sequentially apply the tactics in [tacl],
+val seq_any: tactic list -> tactic
+(** [seq_any tacl xs]: Sequentially apply the tactics in [tacl],
     allowing some tactics to fail.
 
     Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
