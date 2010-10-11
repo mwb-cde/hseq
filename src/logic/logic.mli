@@ -597,7 +597,9 @@ sig
   val node_tyenv: node -> Gtypes.substitution
   (** The type environment of the goal. *)
   val node_sqnt: node -> Sequent.t
-  (** The subgoal to br proved. *)
+  (** The subgoal to be proved. *)
+  val node_changes: node -> Changes.t
+  (** The subgoals of the branch. *)
 
   (** [branch]: A branch is a list of subgoals and the type
       environment of the goal. A branch also holds the tag of the
@@ -607,6 +609,8 @@ sig
   val branch_tyenv: branch -> Gtypes.substitution
   (** The type environment of the branch. *)
   val branch_sqnts: branch -> Sequent.t list
+  (** The subgoals of the branch. *)
+  val branch_changes: branch -> Changes.t
   (** The subgoals of the branch. *)
 
   (** {7 Utility functions} *)
