@@ -24,6 +24,9 @@ open Logic
 open Rewrite
 
 type tactic = Logic.tactic
+(** A tactic is a function of type [Logic.node -> Logic.branch] *)
+type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
+(** A data tactic is a tactic that returns additional data. *)
 
 (*
  * Support functions 
@@ -142,6 +145,8 @@ struct
 
 end
     
+let info_add_changes = Info.add_changes
+
 module New =
 struct
   let changes = Logic.Tactics.changes
@@ -253,8 +258,6 @@ let (//) tac1 tac2 g =
 let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
 let (--) = thenl
 
-let apply_fold = Logic.Subgoals.apply_fold
-
 let fold data rls sq =
   let rec fold_aux fs d sqs =
     match fs with 
@@ -262,7 +265,7 @@ let fold data rls sq =
       | r::rs ->
 	if has_subgoals sqs
 	then 
-          let (d1, sqs1) = apply_fold r d sqs
+          let (d1, sqs1) = Logic.Subgoals.apply_fold r d sqs
           in
           fold_aux rs d1 sqs1
 	else 
@@ -271,15 +274,7 @@ let fold data rls sq =
   begin
     match rls with
       | [] -> raise (error "seq: empty tactic list")
-      | x::xs -> 
-        let (d1, sqs1) = fold_aux rls data sq
-        in
-        (d1, sqs1)
-(**        
-        let (d1, sqs1) = apply_fold x data sq
-        in
-        fold_aux xs d1 sqs1
-**)
+      | _ -> fold_aux rls data (skip sq)
   end
 
 let result_tac tac t f g = 
@@ -369,7 +364,6 @@ let seq_any tacl goal =
   if succ 
   then goal1
   else fail ~err:(Report.error "seq_any: no tactic succeeded.") goal
-
 
 let foreach_asm tac goal =
   let label_tac tf = tac (ftag (drop_formula tf))
@@ -499,8 +493,10 @@ let allA ?info ?a trm sq =
   in
   lift_info ?info (Logic.Tactics.allA trm af) sq
 
-let nameC = Logic.Tactics.nameC 
-let nameA = Logic.Tactics.nameA
+let nameC ?info s l g = 
+  lift_info ?info (Logic.Tactics.nameC s l) g
+let nameA ?info s l g = 
+  lift_info ?info (Logic.Tactics.nameA s l) g
 
 let instA0 ?info l trms goal =
   let info1 = Info.make ()

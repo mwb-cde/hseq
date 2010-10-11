@@ -85,7 +85,7 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal: Basic.term -> Proof.t
+val goal: ?info:Tactics.Info.t -> Basic.term -> Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack.  If [?info] is given, the tag of the goal and
     conclusion ([trm]) are stored in it. This allows the tag of the

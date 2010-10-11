@@ -20,7 +20,6 @@
   ----*)
 
 open Logic
-open Tactics
 
 let save_hook = ref (fun () -> ())
 let set_hook f = (save_hook := f)
@@ -173,11 +172,21 @@ let top_goal () = ProofStack.top_goal (proofs())
 
 let drop() = set_proofs (ProofStack.pop (proofs())); proofs()
 
+
 let goal ?info trm = 
   let frm = Formula.make (Global.scope()) trm in 
   let gl = mk_goal (Global.scope()) frm in
   let prf = Proof.make gl in
   set_proofs (ProofStack.push prf (proofs()));
+  begin
+    (** This should be
+        [Tactics.Info.add_changes info (Logic.goal_changes gl)]
+        but the compiler refuses to recognise module Tactics.Info.
+    ***)
+    match info with 
+      | None -> ()
+      | Some(vr) -> vr := (Logic.goal_changes gl)
+  end;
   !save_hook(); 
   top()
 

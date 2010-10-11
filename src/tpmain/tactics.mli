@@ -26,6 +26,9 @@ open Rewrite
 type tactic = Logic.tactic
 (** A tactic is a function of type [Logic.node -> Logic.branch] *)
 
+type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
+(** A data tactic is a tactic that returns additional data. *)
+
 (** {5 Support functions} *)
 
 (** {7 Error reporting} *)
@@ -133,9 +136,9 @@ val num_subgoals: Logic.branch -> int
 
 (** {7 Information records} *)
 
-module Info:
+module Info :
 sig
-  type t
+  type t = Changes.t ref
 
   val make: unit -> t
   (** Make an empty sub-goal information record. *)
@@ -349,6 +352,10 @@ val (//): tactic -> tactic -> tactic
     // tac2] is [alt [tac1; tac2]].
 *)
 
+val fold: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
+(** [fold d tacl g]: Fold the data returning tactics in [tacl].
+*)
+
 val thenl: tactic ->  tactic list -> tactic 
 (** [thenl tac tacl]: Apply tactic [tac] then pair each of the tactics
     in [tacl] with a resulting subgoal. If [tag n] results in subgoals
@@ -417,6 +424,13 @@ val seq_some: tactic list -> tactic
     Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
 
     [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
+*)
+
+val seq_any: tactic list -> tactic
+(** [seq_any tacl xs]: Sequentially apply the tactics in [tacl],
+    allowing some tactics to fail.
+
+    Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
 *)
 
 val foreach_asm: (Logic.label -> tactic) -> tactic
