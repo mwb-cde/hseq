@@ -215,6 +215,7 @@ let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
 let (--) = thenl
 
 let apply_fold = Logic.Subgoals.apply_fold
+
 let fold data rls sq =
   let rec fold_aux fs d sqs =
     match fs with 
@@ -232,9 +233,14 @@ let fold data rls sq =
     match rls with
       | [] -> raise (error "seq: empty tactic list")
       | x::xs -> 
+        let (d1, sqs1) = fold_aux rls data sq
+        in
+        (d1, sqs1)
+(**        
         let (d1, sqs1) = apply_fold x data sq
         in
         fold_aux xs d1 sqs1
+**)
   end
 
 let result_tac tac t f g = 
@@ -273,7 +279,6 @@ let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
 let (??) tacl g = tacl (New.changes g) g
 
-
 let rec map_every tac l goal = 
   let rec every_aux ls g =
     match ls with 
@@ -304,23 +309,6 @@ let map_some tac l goal =
   in 
   some_aux l goal
 
-
-(****
-let seq_any tacs goal =
-  let nofail_tac tac g = (tac // skip) g
-  in 
-  let try_tac tac g = result_tac tac d false g
-  in
-  let rec any_aux ls g =
-    match ls with 
-      | [] -> fail ~err:(Report.error "seq_any: no tactic succeeded.") g
-      | x::xs ->
-	try (x ++ map_every nofail_tac xs) g
-	with _ -> some_aux xs g
-  in 
-  any_aux tacs goal
-****)
-
 let seq_some tacs goal =
   let nofail_tac tac g = (tac // skip) g
   in 
@@ -332,6 +320,15 @@ let seq_some tacs goal =
 	with _ -> some_aux xs g
   in 
   some_aux tacs goal
+
+let seq_any tacl goal =
+  let try_tac tac d g = result_tac tac true d g in
+  let (succ, goal1) = fold false (List.map try_tac tacl) goal
+  in
+  if succ 
+  then goal1
+  else fail ~err:(Report.error "seq_any: no tactic succeeded.") goal
+
 
 let foreach_asm tac goal =
   let label_tac tf = tac (ftag (drop_formula tf))
@@ -345,23 +342,8 @@ let foreach_concl tac goal =
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
 
-(***
-let foreach_form tac goal = 
-  let chng = ref false in 
-  let notify () = chng := true
-  in 
-  let asms_tac g = 
-    (((foreach_asm tac) ++ notify_tac notify () skip) // skip) g 
-  and concls_tac g = 
-    (((foreach_concl tac) ++ notify_tac notify () skip) // skip) g 
-  in 
-  try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
-  with Failure _ -> raise (Failure "foreach_form")
-    | err -> raise err
-***)
-
 let foreach_form tac goal =
-  seq_some [foreach_asm tac; foreach_concl tac] goal
+  seq_any [foreach_asm tac; foreach_concl tac] goal
 
 (*
  * Tactics
@@ -465,7 +447,8 @@ let nameA = Logic.Tactics.nameA
 
 let instA0 l trms goal =
   let info1 = mk_info ()
-  and tag1 = Logic.label_to_tag l (sequent goal)
+  in
+  let tag1 = Logic.label_to_tag l (sequent goal)
   in 
   let instf infof trm g = 
     let alabel = get_one ~msg:"instA" (aformulas infof)
