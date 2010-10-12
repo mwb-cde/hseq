@@ -88,7 +88,7 @@ val simple_rewrite_rule:
 *)
 
 val simple_asm_rewrite_tac:
-  ?info:Logic.info
+  ?info:Tactics.Info.t
   -> Logic.thm -> Logic.label -> Tactics.tactic
 (** [simple_asm_rewrite_tac rule l asm]
 
@@ -108,7 +108,7 @@ val simple_asm_rewrite_tac:
 *)
 
 val negate_concl_tac:
-  ?info: Logic.info ->
+  ?info: Tactics.Info.t ->
   Logic.label -> Logic.Subgoals.node -> Logic.Subgoals.branch
 (** [negate_concl_tac info t g]: Negate conclusion [t], making it
     assumption tagged [t'].
@@ -396,7 +396,7 @@ val thm_to_rules: Scope.t -> Logic.thm -> Logic.thm list
 
 (** {7 Rules from assumptions} *)
 
-val asm_rewrite_tac: ?info:Logic.info -> 
+val asm_rewrite_tac: ?info:Tactics.Info.t -> 
   Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
 (** [asm_rewrite thm tg g]:
 
@@ -408,7 +408,7 @@ val asm_rewrite_tac: ?info:Logic.info ->
 *)
 
 
-val qnt_asm_rewrite_tac: ?info:Logic.info -> 
+val qnt_asm_rewrite_tac: ?info:Tactics.Info.t -> 
   Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
 (** [qnt_asm_rewrite_tac thm tg g]: Rewrite a possibly quantified
     assumption.
@@ -481,7 +481,7 @@ module Asms:
 sig
 
   val asm_rewrite_add_tac: 
-    ?info:Logic.info 
+    ?info:Tactics.Info.t 
     -> Logic.tagged_form list ref
     -> Logic.thm -> Tag.t -> Tactics.tactic
   (** [asm_rewrite_add_tac ret thm tg g]:

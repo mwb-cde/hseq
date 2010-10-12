@@ -48,7 +48,7 @@ let make gs hs cs ts =
 
 let goals l = l.goal_tags
 let aforms l = l.asm_tags
-let cforms l = l.asm_tags
+let cforms l = l.cncl_tags
 let terms l = l.term_tags
 
 let add r gs hs cs ts =

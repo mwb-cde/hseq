@@ -61,6 +61,8 @@ rewrite_tac [thm "false_def"]++replace_tac ++ scatter_tac];;
 let iff_l1 = theorem "iff_l1" << !x y: (x = y ) => (x => y)>>
 [flatten_tac ++ replace_tac ++ basic];;
 
+let _ = stop();;
+
 let iff_l2 = theorem "iff_l2"
 << !x y: ((x => y) and (y => x)) => (x=y) >>
 [

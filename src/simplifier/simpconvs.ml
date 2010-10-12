@@ -44,7 +44,7 @@ open Tactics
 (** [cond_rule_true_thm]: |- !x y: (x=>y) = (x => (y=true))
 *)
 let make_cond_rule_true_thm () =
-  let info = Tactics.mk_info () 
+  let info = Tactics.info_make () 
   in 
   Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
       (allC ~info:info ++ allC ~info:info
@@ -64,7 +64,7 @@ let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
 (** [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
 *)
 let make_cond_rule_false_thm () =
-  let info = Tactics.mk_info()
+  let info = Tactics.info_make()
   in 
   Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
       (allC ~info:info ++ allC ~info:info
@@ -119,7 +119,7 @@ let neg_disj_thm () =
 (** [neg_eq_sym]: |- not (a = b) = not (b = a)
 *)
 let make_neg_eq_sym_thm()=
-  let info = mk_info()
+  let info = info_make()
   and atgs = ref None
   and thm = Boollib.Thms.eq_sym_thm()
   in 
@@ -157,7 +157,7 @@ let neg_eq_sym_thm () =
 (** [cond_neg_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
 *)
 let make_cond_neg_eq_sym_thm()=
-  let info = mk_info()
+  let info = info_make()
   and atgs = ref None
   and thm = Boollib.Thms.eq_sym_thm()
   in 
@@ -202,7 +202,7 @@ let cond_neg_eq_sym_thm () =
 (** [cond_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
 *)
 let make_cond_eq_sym_thm()=
-  let info = mk_info()
+  let info = info_make()
   and atgs = ref None
   and thm = Boollib.Thms.eq_sym_thm()
   in 
@@ -307,12 +307,12 @@ let simple_asm_rewrite_tac ?info rule asm node =
     assumption tagged [t'].
 *)
 let negate_concl_tac ?info c goal =
-  let inf = mk_info() in 
-  let add_fn x = Logic.add_info info [] (aformulas x) [] []
+  let inf = info_make() in 
+  let add_fn x = Tactics.info_add info [] (aformulas x) [] []
   in 
   seq [ once_rewrite_tac [double_not_thm()] ~f:c;
-	Logic.Tactics.negC ~info:inf c;
-	data_tac add_fn inf] goal
+	Tactics.negC ~info:inf ~c:c;
+	notify_tac add_fn inf skip] goal
 
 
 (*** Preparing simplifier rules. ***)
@@ -684,12 +684,12 @@ let qnt_asm_rewrite_tac ?info thm tg g =
 let add_asm_tac ret tg g = 
   let aform = get_tagged_asm (ftag tg) g
   in 
-  data_tac (fun _ -> ret := aform::(!ret)) () g
+  notify_tac (fun _ -> ret := aform::(!ret)) () skip g
 
 (** [solve_not_true_tac]: Solve goals of the form [not true |- C].
 *)
 let solve_not_true_tac tg goal = 
-  let info = mk_info()
+  let info = info_make()
   in 
   seq
     [
@@ -788,7 +788,7 @@ struct
     if Lterm.is_equality a
     then 
       let asm_info = is_rr_rule (qs, c, a, None) in 
-      let info = mk_info() in 
+      let info = info_make() in 
       let rr_thm =
         match asm_info with
  	  | (None, _ ) -> eq_sym_thm()
@@ -848,7 +848,7 @@ struct
 	          single_asm_to_rule ret tg
 	        ] g
 	      else 
-	        let info = mk_info()  in 
+	        let info = info_make()  in 
 	        seq
 	          [
 		    copyA ~info:info (ftag tg);
@@ -869,7 +869,7 @@ struct
   and neg_eq_asm ret (tg, (qs, c, a)) g =
     if (Lterm.is_neg a) && (Lterm.is_equality (Term.rand a))
     then 
-      let info = mk_info() in 
+      let info = info_make() in 
       let rr_thm =
         match c with
 	  | None -> neg_eq_sym_thm()
@@ -950,7 +950,7 @@ struct
 	        if Lterm.is_equality b 
 	        then neg_eq_asm ret (tg, (qs, c, a)) g
 	        else 
-		  let info = mk_info() in 
+		  let info = info_make() in 
 		  seq
 		    [
 		      copyA ~info:info (ftag tg);
@@ -973,7 +973,7 @@ struct
   and conj_rule_asm ret (tg, (qs, c, a)) g = 
     if Lterm.is_conj a
     then 
-      let inf = mk_info () in 
+      let inf = info_make () in 
       seq
 	[
 	  conjA ~info:inf ~a:(ftag tg);
@@ -1086,7 +1086,7 @@ let unpack_rule_data rds =
     }
 *)
 let prepare_asm data a goal =
-  let info = mk_info()
+  let info = info_make()
   and new_asm_tags = ref []
   and asm_form = get_tagged_asm (ftag a) goal in 
   let data_fn (new_asm, rules) = 
@@ -1111,7 +1111,7 @@ let prepare_asm data a goal =
 	    (fun g1 -> 
 	      let rules = (!new_asm_tags)
 	      in 
-	      data_tac data_fn (a1form, rules) g1)
+	      notify_tac data_fn (a1form, rules) skip g1)
 	  ] g)
     ] goal
 
@@ -1124,7 +1124,7 @@ let prepare_asms data ams goal =
   seq
     [
       map_every (prepare_asm d) ams;
-      data_tac (fun () -> data := !d) ()
+      notify_tac (fun () -> data := !d) () skip
     ] goal
 
 (** [prepare_concl data c goal]: Prepare conclusion labelled [a] for
@@ -1147,7 +1147,7 @@ let prepare_asms data ams goal =
     }
 *)
 let prepare_concl data c goal =
-  let info = mk_info()
+  let info = info_make()
   and new_asm_tags = ref []
   and concl_form = get_tagged_concl (ftag c) goal in 
   let data_fn (new_asm, rules) = 
@@ -1166,7 +1166,7 @@ let prepare_concl data c goal =
         let c1 = 
 	  get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
         in 
-        empty_info info;
+        info_empty info;
         negate_concl_tac ~info:info (ftag c1) g); 
       (fun g ->
         let a = get_one ~msg:"Simplib.prepare_concl" (aformulas info) in 
@@ -1178,7 +1178,7 @@ let prepare_concl data c goal =
 	    (fun g1 ->
 	      let rules = (!new_asm_tags)
 	      in 
-	      data_tac data_fn (aform, rules) g1)
+	      notify_tac data_fn (aform, rules) skip g1)
 	  ] g)
     ] goal
 
@@ -1191,6 +1191,6 @@ let prepare_concls data cs goal =
   seq
     [
       map_every (prepare_concl d) cs;
-      data_tac (fun () -> data:=(!d)) ()
+      notify_tac (fun () -> data:=(!d)) () skip
     ] goal
 
