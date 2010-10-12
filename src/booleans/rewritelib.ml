@@ -84,7 +84,7 @@ struct
   let map_sym_tac ret rules goal = 
     let scp = scope_of goal in 
     let asm_fn l g = 
-      let info = mk_info() in 
+      let info = info_make() in 
       try 
 	let g2 = eq_symA ~info:info l g in 
 	let nl = Lib.get_one (aformulas info)
@@ -124,13 +124,12 @@ struct
     let urules = ref [] in 
     let tac1 g = 
       if is_lr 
-      then data_tac (fun _ -> urules := rules) () g
+      then notify_tac (fun _ -> urules := rules) () skip g
       else 
 	seq 
 	  [
 	    map_sym_tac urules rules;
-	    (fun g1 -> 
-	      data_tac (fun x -> urules := List.rev !x) urules g1)
+	    notify_tac (fun x -> urules := List.rev !x) urules skip;
 	  ] g
     in 
     let tac2 g = 
@@ -155,13 +154,12 @@ struct
     let urules = ref [] in 
     let tac1 g = 
       if is_lr
-      then data_tac (fun x -> urules := x) rules g
+      then notify_tac (fun x -> urules := x) rules skip g
       else 
 	seq 
 	  [
 	    map_sym_tac urules rules;
-	    (fun g1 -> 
-	      data_tac (fun x -> urules := List.rev !x) urules g1)
+	    notify_tac (fun x -> urules := List.rev !x) urules skip;
 	  ] g
     in 
     let tac2 g = 

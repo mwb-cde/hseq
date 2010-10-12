@@ -185,10 +185,59 @@ sig
     t option -> 
     (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
     -> unit
-  (** A version of {!Logic.add_info}, packaged for use, in tactics, with
-      {!Tactics.data_tac}. *)
+(** A version of {!Logic.add_info}, packaged for use, in tactics, with
+    {!Tactics.data_tac}. *)
 
 end
+
+val info_make: unit -> Info.t
+(** Make an empty sub-goal information record. *)
+
+val info_empty: Info.t -> unit
+  (** [empty_info info]: Empty the information record [info].
+      Equivalent to [info := mk_info()].
+  *)
+
+val subgoals: Info.t -> Tag.t list
+  (** [subgoals info]: Get subgoal tags of [info].  Equivalent to
+      [(!info).goals]
+  *)
+
+val aformulas: Info.t -> Tag.t list
+  (** [aformulas info]: Get tags of assumption formula tags from [info].
+      Equivalent to [(!info).aforms]
+  *)
+
+val cformulas: Info.t -> Tag.t list
+  (** [cformulas info]: Get tags of conclusion formula tags from [info].
+      Equivalent to [(!info).cforms]
+  *)
+
+val constants: Info.t -> Basic.term list
+  (** [constants info]: Get constants from [info].  Equivalent to
+      [(!info).terms]
+  *)
+val info_form: 
+  Info.t option -> 
+  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+  -> unit
+
+val info_form_changes: Info.t option -> Changes.t -> unit
+
+val info_add: 
+  Info.t option -> 
+  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+  -> unit
+
+val info_add_changes: Info.t option -> Changes.t -> unit
+
+val info_set: 
+  Info.t option -> 
+  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> unit
+(** A version of {!Logic.add_info}, packaged for use, in tactics, with
+    {!Tactics.data_tac}. *)
+
 
 
 module New:
@@ -352,8 +401,8 @@ val (//): tactic -> tactic -> tactic
     // tac2] is [alt [tac1; tac2]].
 *)
 
-val fold: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
-(** [fold d tacl g]: Fold the data returning tactics in [tacl].
+val fold_seq: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
+(** [fold_seq d tacl g]: Fold the data returning tactics in [tacl].
 *)
 
 val thenl: tactic ->  tactic list -> tactic 

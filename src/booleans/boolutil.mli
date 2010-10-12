@@ -108,6 +108,7 @@ val close_lambda_app:
     .. xn] close unbound variables in [B].
 *)
 
+(***
 val set_info: 
   Logic.info option
   -> (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
@@ -116,3 +117,4 @@ val set_info:
     [subgoals = gs], [aformulas = asms], [cformulas = concls] and
     [constants=consts]
 *)
+****)

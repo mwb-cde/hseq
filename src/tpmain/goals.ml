@@ -180,7 +180,7 @@ let goal ?info trm =
   set_proofs (ProofStack.push prf (proofs()));
   begin
     (** This should be
-        [Tactics.Info.add_changes info (Logic.goal_changes gl)]
+        [Tactics.info_add_changes info (Logic.goal_changes gl)]
         but the compiler refuses to recognise module Tactics.Info.
     ***)
     match info with 

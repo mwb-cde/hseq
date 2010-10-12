@@ -24,17 +24,17 @@
 val false_def: unit -> Logic.thm
 (** Get the definition of [false]. *)
 
-val falseA: ?info:Logic.info -> ?a:Logic.label -> Tactics.tactic
+val falseA: ?info:Tactics.Info.t -> ?a:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].
 *)
 
-val trivial: ?info:Logic.info -> ?f:Logic.label -> Tactics.tactic
+val trivial: ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].
 *)
 
 val cut_thm: 
-  ?info:Logic.info -> ?inst:Basic.term list 
+  ?info:Tactics.Info.t -> ?inst:Basic.term list 
   -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
@@ -60,28 +60,28 @@ val eq_sym_rule: Scope.t -> Logic.thm -> Logic.thm
     [ |- y=x ].
 *)
 
-val eq_symA: ?info:Logic.info -> Logic.label -> Tactics.tactic
+val eq_symA: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
 *)
 
-val eq_symC: ?info:Logic.info -> Logic.label -> Tactics.tactic
+val eq_symC: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
 *)
 
-val eq_sym_tac: ?info:Logic.info -> Logic.label -> Tactics.tactic
+val eq_sym_tac: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
 (** [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try
     [eq_symC f].
 *)
 
-val eq_tac:  ?info:Logic.info -> ?c:Logic.label -> Tactics.tactic
+val eq_tac:  ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
 (** Prove goals of the form \[A|- x = x{_ c}, C\].
 *)
 
 (**  {5 Eliminating boolean operators}  *)
 
 val direct_alt: 
-  (Logic.info -> Logic.label -> Tactics.tactic) list 
-  ->  Logic.info -> Logic.label -> Tactics.tactic
+  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list 
+  ->  Tactics.Info.t -> Logic.label -> Tactics.tactic
 (** [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
     pass [info] and [l] to each tactic in [tacs].  **)
 
@@ -93,9 +93,9 @@ val direct_map_some:
     fails for [l], then [lst := l::!lst].  **)
 
 val asm_elim_rules_tac:
-  ?info:Logic.info 
-  -> ((Logic.info -> Logic.label -> Tactics.tactic) list
-      * (Logic.info -> Logic.label -> Tactics.tactic) list)
+  ?info:Tactics.Info.t 
+  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
 (** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
@@ -106,9 +106,9 @@ val asm_elim_rules_tac:
 *)
 
 val concl_elim_rules_tac:
-  ?info:Logic.info 
-  -> ((Logic.info -> Logic.label -> Tactics.tactic) list
-      * (Logic.info -> Logic.label -> Tactics.tactic) list)
+  ?info:Tactics.Info.t 
+  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
@@ -120,9 +120,9 @@ val concl_elim_rules_tac:
 *)
 
 val elim_rules_tac:
-  ?info:Logic.info 
-  -> ((Logic.info -> Logic.label -> Tactics.tactic) list
-      * (Logic.info -> Logic.label -> Tactics.tactic) list)
+  ?info:Tactics.Info.t 
+  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
   -> Logic.label list -> Logic.label list
   -> Tactics.tactic
 (** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
@@ -134,10 +134,10 @@ val elim_rules_tac:
 *)
 
 val apply_elim_tac:
-  (?info:Logic.info 
+  (?info:Tactics.Info.t 
    -> Logic.label list -> Logic.label list
    -> Tactics.tactic)
-  -> ?info:Logic.info 
+  -> ?info:Tactics.Info.t 
   -> ?f:Logic.label
   -> Tactics.tactic
 (** [apply_elim_tac tac ?info ?f]: Apply elimination tactic [tac] to

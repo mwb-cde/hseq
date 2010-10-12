@@ -40,8 +40,8 @@ let mini_scatter_tac ?info c goal =
   let asm_rules = [ (fun inf l -> falseA ~info:inf ~a:l) ] in 
   let concl_rules =
     [
-      (fun inf -> Logic.Tactics.trueC ~info:inf);
-      (fun inf -> Logic.Tactics.conjC ~info:inf)
+      (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+      (fun inf l -> Tactics.conjC ~info:inf ~c:l)
     ]
   in 
   let main_tac ?info = elim_rules_tac ?info (asm_rules, concl_rules)
@@ -54,7 +54,7 @@ let mini_scatter_tac ?info c goal =
     [asm1].
 *)
 let mini_mp_tac ?info asm1 asm2 goal =
-  let tinfo = mk_info()
+  let tinfo = info_make()
   in
   let tac g =
     seq
@@ -69,7 +69,7 @@ let mini_mp_tac ?info asm1 asm2 goal =
 	      in 
 	      seq
 		[
-		  data_tac (set_info info) ([g_tag], [a1_tag], [], []);
+		  notify_tac (info_set info) ([g_tag], [a1_tag], [], []) skip;
 		  basic ~a:asm2 ~c:(ftag c_tag);
 		  (fun g2 -> fail ~err:(error "mini_mp_tac") g2)
 		] g1);
@@ -172,7 +172,7 @@ let induct_tac_bindings typenv scp aterm cterm =
     Completely solves the goal or fails.
 *)
 let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
-  let minfo = mk_info() in 
+  let minfo = info_make() in 
   let (c_tag, c_trm) = 
     let (tg, cf) = get_tagged_concl c_lbl g
     in 
@@ -186,7 +186,7 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
   seq
     [
       (specC ~c:c_lbl
-       // data_tac (set_info (Some minfo)) ([], [], [c_tag], []));
+       // notify_tac (info_set (Some minfo)) ([], [], [c_tag], []) skip);
       (fun g1 -> 
 	let env = unify_in_goal a_varp a_lhs c_lhs g1 in 
 	let const_list = extract_consts a_vars env
@@ -200,14 +200,14 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
 	let c_tag = get_one (cformulas minfo) in 
 	let a1_tag, a_tag = get_two (aformulas minfo)
 	in 
-	empty_info minfo;
-	set_info (Some minfo) ([], [], [c_tag], []);
+	info_empty minfo;
+	info_set (Some minfo) ([], [], [c_tag], []);
 	mini_mp_tac ~info:minfo (ftag a_tag) (ftag a1_tag) g1);
       (fun g1 -> 
 	let c1_tag = get_one (cformulas minfo)
 	in 
 	(specC ~info:minfo ~c:(ftag c1_tag)
-	 // data_tac (set_info (Some minfo)) ([], [], [c1_tag], []))
+	 // notify_tac (info_set (Some minfo)) ([], [], [c1_tag], []) skip)
 	  g1);
       (fun g1 -> 
 	let c1_tag = get_one (cformulas minfo) in 
@@ -250,7 +250,7 @@ let asm_induct_tac ?info alabel clabel goal =
   in 
   let consts_list = Tactics.extract_consts thm_vars consts_subst in 
   (** tinfo: information built up by the tactics. *)
-  let tinfo = mk_info() in 
+  let tinfo = info_make() in 
   (** [inst_split_asm_tac]: Instantiate and split the assumption.
       tinfo: aformulas=[a1]; cformulas=[c1]; subgoals = [t1; t2]
 
@@ -262,7 +262,7 @@ let asm_induct_tac ?info alabel clabel goal =
       }
   *)
   let inst_split_asm_tac g =
-    let minfo = mk_info ()
+    let minfo = info_make ()
     in 
     seq
       [
@@ -302,7 +302,9 @@ let asm_induct_tac ?info alabel clabel goal =
 	    seq
 	      [
 		(specC ~info:tinfo 
-		 // data_tac (set_info (Some tinfo)) ([], [], [ctag], []));
+		 // (notify_tac 
+                       (info_set (Some tinfo)) ([], [], [ctag], [])
+                       skip));
 		(fun g1 -> 
 		  let a1_tag = get_one (aformulas tinfo) in 
 		  let c1_tag = get_one (cformulas tinfo)
@@ -321,7 +323,7 @@ let asm_induct_tac ?info alabel clabel goal =
     See {!Induct.induct_tac}.
 *)
 let basic_induct_tac ?info c thm goal =
-  let tinfo = mk_info() in 
+  let tinfo = info_make() in 
   let main_tac c_lbl g =
     seq 
       [
@@ -479,7 +481,7 @@ let induct_on_bindings typenv scp nbind aterm cterm =
     Completely solves the goal or fails.
 *)
 let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
-  let minfo = mk_info() in 
+  let minfo = info_make() in 
   let (c_tag, c_trm) = 
     let (tg, cf) = get_tagged_concl c_lbl goal
     in 
@@ -493,7 +495,7 @@ let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
   seq
     [
       (specC ~c:c_lbl
-       // data_tac (set_info (Some minfo)) ([], [], [c_tag], []));
+       // notify_tac (info_set (Some minfo)) ([], [], [c_tag], []) skip);
       (fun g1 -> 
 	let env = unify_in_goal a_varp a_body c_body g1 in 
 	let const_list = extract_consts a_vars env 
@@ -503,7 +505,7 @@ let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
 	let c_tag = get_one (cformulas minfo) in 
 	let a_tag = get_one (aformulas minfo)
 	in 
-	empty_info minfo;
+	info_empty minfo;
 	basic ~a:(ftag a_tag) ~c:(ftag c_tag) g1)
     ] goal
 
@@ -558,7 +560,7 @@ let basic_induct_on ?info ?thm name clabel goal =
   in 
   let consts_list = Tactics.extract_consts thm_vars consts_subst in 
   (** tinfo: information built up by the tactics. *)
-  let tinfo = mk_info() in 
+  let tinfo = info_make() in 
   (** [inst_split_asm_tac]: Instantiate and split the assumption.
       tinfo: aformulas=[a1]; cformulas=[c1]; subgoals = [t1; t2].
       
@@ -570,7 +572,7 @@ let basic_induct_on ?info ?thm name clabel goal =
       }
   *)
   let inst_split_asm_tac atag g =
-    let minfo = mk_info ()
+    let minfo = info_make ()
     in 
     seq
       [
@@ -592,7 +594,7 @@ let basic_induct_on ?info ?thm name clabel goal =
   in 
   (** the Main tactic *)
   let main_tac g = 
-    let minfo = mk_info ()
+    let minfo = info_make ()
     in 
     seq 
       [
@@ -616,10 +618,10 @@ let basic_induct_on ?info ?thm name clabel goal =
 	       seq
 		 [
 		   (specC ~info:tinfo 
-		    // 
-		      data_tac 
-		      (set_info (Some tinfo)) 
-		      ([], [], [ctag], []));
+		    // (notify_tac 
+		          (info_set (Some tinfo)) 
+		          ([], [], [ctag], []) 
+                          skip));
 		   (fun g1 -> 
 		     let a1_tag = get_one (aformulas tinfo) in 
 		     let c1_tag = get_one (cformulas tinfo)

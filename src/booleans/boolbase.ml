@@ -40,7 +40,7 @@ let falseA ?info ?a goal =
 	        ^"Can't find needed theorem false_def: |- false = not true"))
   in 
   let plan = Rewrite.mk_node [Rewrite.mk_rules [Logic.RRThm(th)]] in 
-  let inf = mk_info()
+  let inf = info_make()
   in 
   seq
     [ 
@@ -168,7 +168,7 @@ let eq_tac ?info ?c goal =
       (raise (error ("eq_tac: Can't find required lemma "
 		     ^Lterm.base_thy^".eq_refl")))
   in 
-  let info1 = Tactics.mk_info() in 
+  let info1 = Tactics.info_make() in 
   let cforms = concls_of (sequent goal) in 
   let tac albl (t, f) g = 
     if Formula.is_equality f
@@ -177,7 +177,7 @@ let eq_tac ?info ?c goal =
   in 
   seq 
     [
-      Logic.Tactics.cut ~info:info1 th; 
+      Tactics.cut ~info:info1 th; 
       (fun g -> 
 	let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
 	in 
@@ -204,7 +204,7 @@ let direct_alt tacl info l g =
     for [l], then [lst := l::!lst].  **)
 let direct_map_some tac lst l goal =
   let add_lbl x = lst := x::(!lst) in 
-  let nofail_tac lbl = (tac lbl // data_tac add_lbl lbl) in 
+  let nofail_tac lbl = (tac lbl // notify_tac add_lbl lbl skip) in 
   let rec some_aux ls g =
     match ls with 
       | [] -> fail ~err:(error "direct_map_some: no tactic succeeded.") g
@@ -222,12 +222,9 @@ let direct_map_some tac lst l goal =
 *)
 let rec asm_elim_rules_tac ?info rules lbl goal =
   let (arules, _) = rules
-  and inf = mk_info()
+  and inf = info_make()
   and alst = ref []
   and clst = ref []
-  in 
-  let set_info dst (sgs, afs, cfs, cnsts) = 
-    Logic.add_info dst sgs afs cfs cnsts
   in 
   seq
     [ 
@@ -254,7 +251,7 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
-	    data_tac (set_info info)
+	    notify_tac (info_set info)
 	      (subgoals inf, 
 	       List.map 
 		 (fun x -> Logic.label_to_tag x sqnt)  
@@ -263,6 +260,7 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
 		 (fun x -> Logic.label_to_tag x sqnt)
                  (List.rev (!clst)), 
 	       constants inf)
+              skip
 	  ] g)
     ] goal
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
@@ -273,12 +271,9 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
     [?info] (in arbitrary order).  *)
 and concl_elim_rules_tac ?info rules lbl goal =
   let (_, crules) = rules
-  and inf = mk_info()
+  and inf = info_make()
   and alst = ref []
   and clst = ref []
-  in 
-  let set_info dst (sgs, afs, cfs, cnsts) = 
-    Logic.add_info dst sgs afs cfs cnsts
   in 
   seq
     [ 
@@ -305,7 +300,7 @@ and concl_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
-	    data_tac (set_info info)
+	    notify_tac (info_set info)
 	      (subgoals inf, 
 	       List.map 
 		 (fun x -> Logic.label_to_tag x sqnt)  
@@ -314,6 +309,7 @@ and concl_elim_rules_tac ?info rules lbl goal =
 		 (fun x -> Logic.label_to_tag x sqnt)  
                  (List.rev (!clst)), 
 	       constants inf)
+              skip
 	  ] g)
     ] goal
 

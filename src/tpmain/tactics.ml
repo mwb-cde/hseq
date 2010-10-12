@@ -145,7 +145,17 @@ struct
 
 end
     
+let info_make = Info.make
+let info_empty = Info.empty
+let subgoals = Info.subgoals
+let aformulas = Info.aformulas
+let cformulas = Info.cformulas
+let constants = Info.constants
+let info_form = Info.form
+let info_form_changes = Info.form_changes
+let info_add = Info.add
 let info_add_changes = Info.add_changes
+let info_set = Info.set
 
 module New =
 struct
@@ -258,7 +268,7 @@ let (//) tac1 tac2 g =
 let thenl tac rls sq = Logic.Subgoals.zip rls (tac sq)
 let (--) = thenl
 
-let fold data rls sq =
+let fold_seq data rls sq =
   let rec fold_aux fs d sqs =
     match fs with 
       | [] -> (d, sqs)
@@ -359,7 +369,7 @@ let seq_some tacs goal =
 
 let seq_any tacl goal =
   let try_tac tac d g = result_tac tac true d g in
-  let (succ, goal1) = fold false (List.map try_tac tacl) goal
+  let (succ, goal1) = fold_seq false (List.map try_tac tacl) goal
   in
   if succ 
   then goal1
