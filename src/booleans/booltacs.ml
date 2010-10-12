@@ -466,7 +466,8 @@ let mp0_tac ?info a a1lbls g =
 	instA 
           ~a:(ftag a_label) 
           (Tactics.extract_consts mp_vars a1_env)
-  and tac2 g2 = Tactics.implA ~info:inf1 ~a:(ftag a_label) g2
+  and tac2 g2 = 
+    Tactics.implA ~info:inf1 ~a:(ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
       Lib.apply_nth 0 

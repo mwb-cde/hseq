@@ -61,10 +61,8 @@ rewrite_tac [thm "false_def"]++replace_tac ++ scatter_tac];;
 let iff_l1 = theorem "iff_l1" << !x y: (x = y ) => (x => y)>>
 [flatten_tac ++ replace_tac ++ basic];;
 
-let _ = stop();;
-
 let iff_l2 = theorem "iff_l2"
-<< !x y: ((x => y) and (y => x)) => (x=y) >>
+<< !x y: ((x => y) and (y => x)) => (x = y) >>
 [
   (flatten_tac ++ (cut_thm ~inst:[ << _x >> ] "bool_cases") ++ disjA);
   cut ~inst:[ << _x >> ] true_l1
@@ -124,8 +122,12 @@ theorem "iff_def" << !x y: (x iff y) = ((x=>y) and (y=> x))>>
 
 (** Truth and falsity of a property *)
 
+(***
+let _ = stop();;
+***)
+
 let true_prop =
-theorem "true_prop" << !x : (x=true) = x >>
+theorem "true_prop" << !x : (x = true) = x >>
 [flatten_tac ++ equals_tac 
 ++ cut ~inst:[ << _x >> ] true_l1
 ++ cut ~inst:[ << _x >> ] true_l2

@@ -47,7 +47,7 @@ struct
     let iff_l2 = 
       let info = Tactics.info_make() in 
       Commands.prove
-      << !x y: ((x => y) and (y => x)) => (x=y) >>
+      << !x y: ((x => y) and (y => x)) => (x = y) >>
 	  (allC ~info:info 
 	   ++ allC ~info:info 
 	   ++ 

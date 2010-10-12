@@ -137,7 +137,10 @@ struct
     begin
       match dst with 
         | None -> ()
-        | Some(vr) -> vr := chngs
+        | Some(vr) -> 
+          let nchngs = Changes.combine chngs (!vr)
+          in
+          vr := nchngs
     end
 
   let set dst (sgs, afs, cfs, cnsts) = 
