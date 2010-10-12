@@ -123,12 +123,12 @@ let iffE ?info ?c goal =
       (seq 
 	 [
 	   rewrite_tac [iff_def()] ~f:(ftag t);
-	   notify_tac (add_goals info) inf
-	     (Tactics.conjC ~info:inf ~c:(ftag t));
+	   (fun g1 -> notify_tac (add_goals info) inf
+	     (Tactics.conjC ~info:inf ~c:(ftag t)) g1);
 	   Tactics.implC ~info:inf ~c:(ftag t)
 	 ]) g
     in 
-    alt [ notify_tac (add_forms info) inf tac; 
+    alt [ (fun g1 -> notify_tac (add_forms info) inf tac g1); 
 	  fail ~err:(error "iffE") ] goal
 
 (*** Splitting formulas ***)
@@ -320,10 +320,10 @@ let cases_tac ?info (t:Basic.term) =
 	        (fun g1 -> 
 	          let nasm_tag = get_one ~msg:"cases_tac 5" (cformulas inf1)
 	          in 
-	          notify_tac 
+	          update_tac 
                     (set_info info)
 		    ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) 
-                    skip g1);
+                    g1);
 	      ] g);
 	  skip
         ]
@@ -356,7 +356,7 @@ let show_tac ?info (trm:Basic.term) tac =
 	    let (_, gl_tag) = get_two (subgoals inf1)
 	    and asm_tag = get_one (aformulas inf1)
 	    in 
-	    notify_tac (set_info info) ([gl_tag], [asm_tag], [], []) skip g)
+	    update_tac (set_info info) ([gl_tag], [asm_tag], [], []) g)
         ]
     ]
 
@@ -414,7 +414,7 @@ let cases_of ?info ?thm t g =
         (fun g -> 
 	  let a_tg = get_one (aformulas inf)
 	  in 
-	  (notify_tac (set_info info) ([a_tg], [], [], []) skip
+	  ((fun g1 -> update_tac (set_info info) ([a_tg], [], [], []) g1)
 	   ++ (disj_splitter_tac ?info:info ~f:(ftag a_tg) // skip)
 	   ++ (specA ?info:info ~a:(ftag a_tg) // skip)) g)
       ] g1
@@ -423,10 +423,10 @@ let cases_of ?info ?thm t g =
     match inf1 with
       | None -> skip g2
       | Some inf2 -> 
-	notify_tac 
+        update_tac 
 	  (set_info info)
           ([], [], (subgoals inf2), (constants inf2)) 
-          skip g2
+          g2
   in 
   try (tac1 ++ tac2) g
   with err -> raise (add_error "cases_of" err)
@@ -481,7 +481,7 @@ let mp0_tac ?info a a1lbls g =
                     (Tactics.cformulas inf1)
 	            (Failure "mp_tac2.2"))))) g3
   and tac4 g4 = 
-    notify_tac (set_info info) ([], aformulas inf1, [], []) skip g4
+    update_tac (set_info info) ([], aformulas inf1, [], []) g4
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4)) g 
     
@@ -585,13 +585,13 @@ let back0_tac ?info a cs goal =
   in 
   let tac4 g4 = delete (ftag c_label) g4 in 
   let tac5 g5 = 
-    notify_tac 
+    update_tac 
       (set_info info)
       ([Lib.get_nth (Tactics.subgoals info1) 0],
        [], 
        [Lib.get_nth (Tactics.cformulas info1) 0],
        [])
-      skip g5
+      g5
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
 

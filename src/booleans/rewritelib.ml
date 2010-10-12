@@ -124,12 +124,12 @@ struct
     let urules = ref [] in 
     let tac1 g = 
       if is_lr 
-      then notify_tac (fun _ -> urules := rules) () skip g
+      then update_tac (fun _ -> urules := rules) () g
       else 
 	seq 
 	  [
 	    map_sym_tac urules rules;
-	    notify_tac (fun x -> urules := List.rev !x) urules skip;
+	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
 	  ] g
     in 
     let tac2 g = 
@@ -154,12 +154,12 @@ struct
     let urules = ref [] in 
     let tac1 g = 
       if is_lr
-      then notify_tac (fun x -> urules := x) rules skip g
+      then update_tac (fun x -> urules := x) rules g
       else 
 	seq 
 	  [
 	    map_sym_tac urules rules;
-	    notify_tac (fun x -> urules := List.rev !x) urules skip;
+	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
 	  ] g
     in 
     let tac2 g = 

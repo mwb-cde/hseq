@@ -380,6 +380,9 @@ val (??): (Changes.t -> tactic) -> tactic
     extracting the change data from a goal. Forms [tac (changes g) g].
 *)
 
+val update_tac: ('a -> unit) -> 'a -> tactic
+(** [update_tac f d g]: Apply side effects. Forms [(f d); tac g]. *)
+
 val seq: tactic list -> tactic 
 (** [seq tacl]: Apply each tactic in [tacl] in sequence to the
     subgoals resulting from the previous tactic. Fails if [tacl] is
@@ -957,3 +960,5 @@ val mk_thm_plan:
 *)
 
 
+(** {7 Debugging} *)
+val lift_info: ?info:Info.t -> tactic -> tactic

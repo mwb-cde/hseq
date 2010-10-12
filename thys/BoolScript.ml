@@ -122,10 +122,6 @@ theorem "iff_def" << !x y: (x iff y) = ((x=>y) and (y=> x))>>
 
 (** Truth and falsity of a property *)
 
-(***
-let _ = stop();;
-***)
-
 let true_prop =
 theorem "true_prop" << !x : (x = true) = x >>
 [flatten_tac ++ equals_tac 

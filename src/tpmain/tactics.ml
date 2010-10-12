@@ -314,7 +314,7 @@ let restrict p tac goal =
 let notify_tac f d tac goal =
   let ng = tac goal
   in 
-  f d; ng
+  (f d); ng
 
 (***
 let (!!) f d tac goal =
@@ -327,6 +327,7 @@ let data_tac f tacl g = tacl (f g) g
 let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
 let (??) tacl g = tacl (New.changes g) g
+let update_tac f d g = ((fun _ -> (f d)) g); skip g
 
 let rec map_every tac l goal = 
   let rec every_aux ls g =
@@ -886,9 +887,10 @@ let specA ?info ?a g =
       seq 
         [ 
 	  repeat (existA ~info:inf1 ?a);
-          notify_tac 
-            add_data ((Info.aformulas inf1), (Info.constants inf1))
-            skip
+          (fun g ->
+            update_tac 
+              add_data ((Info.aformulas inf1), (Info.constants inf1))
+              g)
         ];
       fail ~err:(error "specA")
     ] g
@@ -903,9 +905,9 @@ let specC ?info ?c g =
       seq 
         [ 
 	  repeat (allC ~info:inf1 ?c);
-	  notify_tac
-            add_data ((Info.cformulas inf1), (Info.constants inf1)) 
-            skip
+	  (fun g ->
+            update_tac
+              add_data ((Info.cformulas inf1), (Info.constants inf1)) g)
         ];
       fail ~err:(error "specC")
     ] g

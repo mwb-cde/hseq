@@ -273,8 +273,9 @@ struct
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag)
 				   (List.rev (Tactics.constants info)) g3);
-			       notify_tac 
-				 (fun _ -> Tactics.info_empty info) () skip;
+                               (fun g3 ->
+			         update_tac 
+				   (fun _ -> Tactics.info_empty info) () g3);
 			       Tactics.negC ~info:info ~c:(ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
@@ -312,8 +313,9 @@ struct
 			       (fun g3 -> 
 				 instA ~a:(ftag atag2)
 				   (List.rev (Tactics.constants info)) g3);
-			       notify_tac 
-				 (fun _ -> Tactics.info_empty info) () skip;
+			       (fun g3 ->
+                                 update_tac 
+				   (fun _ -> Tactics.info_empty info) () g3);
 			       Tactics.negA ~info:info ~a:(ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
@@ -394,8 +396,8 @@ struct
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag2)
 				   (List.rev (Tactics.constants info)) g3);
-			       notify_tac 
-				 (fun () -> Tactics.info_empty info) () skip;
+                               (fun g3 -> update_tac
+				 (fun () -> Tactics.info_empty info) () g3);
 			       Tactics.negC ~info:info ~c:(ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
@@ -433,8 +435,8 @@ struct
 			       (fun g3 -> 
 				 instA ~a:(ftag atag)
 				   (List.rev (Tactics.constants info)) g3);
-			       notify_tac 
-				 (fun () -> Tactics.info_empty info) () skip;
+                               (fun g3 -> update_tac
+				 (fun () -> Tactics.info_empty info) () g3);
 			       Tactics.negA ~info:info ~a:(ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 

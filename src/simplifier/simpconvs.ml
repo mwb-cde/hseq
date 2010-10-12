@@ -312,7 +312,7 @@ let negate_concl_tac ?info c goal =
   in 
   seq [ once_rewrite_tac [double_not_thm()] ~f:c;
 	Tactics.negC ~info:inf ~c:c;
-	notify_tac add_fn inf skip] goal
+	update_tac add_fn inf] goal
 
 
 (*** Preparing simplifier rules. ***)
@@ -684,7 +684,7 @@ let qnt_asm_rewrite_tac ?info thm tg g =
 let add_asm_tac ret tg g = 
   let aform = get_tagged_asm (ftag tg) g
   in 
-  notify_tac (fun _ -> ret := aform::(!ret)) () skip g
+  update_tac (fun _ -> ret := aform::(!ret)) () g
 
 (** [solve_not_true_tac]: Solve goals of the form [not true |- C].
 *)
@@ -1111,7 +1111,7 @@ let prepare_asm data a goal =
 	    (fun g1 -> 
 	      let rules = (!new_asm_tags)
 	      in 
-	      notify_tac data_fn (a1form, rules) skip g1)
+	      update_tac data_fn (a1form, rules) g1)
 	  ] g)
     ] goal
 
@@ -1124,7 +1124,7 @@ let prepare_asms data ams goal =
   seq
     [
       map_every (prepare_asm d) ams;
-      notify_tac (fun () -> data := !d) () skip
+      update_tac (fun () -> data := !d) ()
     ] goal
 
 (** [prepare_concl data c goal]: Prepare conclusion labelled [a] for
@@ -1178,7 +1178,7 @@ let prepare_concl data c goal =
 	    (fun g1 ->
 	      let rules = (!new_asm_tags)
 	      in 
-	      notify_tac data_fn (aform, rules) skip g1)
+	      update_tac data_fn (aform, rules) g1)
 	  ] g)
     ] goal
 
@@ -1191,6 +1191,6 @@ let prepare_concls data cs goal =
   seq
     [
       map_every (prepare_concl d) cs;
-      notify_tac (fun () -> data:=(!d)) () skip
+      update_tac (fun () -> data:=(!d)) ()
     ] goal
 

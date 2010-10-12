@@ -204,7 +204,7 @@ let direct_alt tacl info l g =
     for [l], then [lst := l::!lst].  **)
 let direct_map_some tac lst l goal =
   let add_lbl x = lst := x::(!lst) in 
-  let nofail_tac lbl = (tac lbl // notify_tac add_lbl lbl skip) in 
+  let nofail_tac lbl = (tac lbl // (fun g -> update_tac add_lbl lbl g)) in 
   let rec some_aux ls g =
     match ls with 
       | [] -> fail ~err:(error "direct_map_some: no tactic succeeded.") g
@@ -251,16 +251,17 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
-	    notify_tac (info_set info)
-	      (subgoals inf, 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!alst)), 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)
-                 (List.rev (!clst)), 
-	       constants inf)
-              skip
+            (fun g1 ->
+	      update_tac (info_set info)
+	        (subgoals inf, 
+	         List.map 
+		   (fun x -> Logic.label_to_tag x sqnt)  
+                   (List.rev (!alst)), 
+	         List.map 
+		   (fun x -> Logic.label_to_tag x sqnt)
+                   (List.rev (!clst)), 
+	         constants inf)
+                g1)
 	  ] g)
     ] goal
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
@@ -300,16 +301,17 @@ and concl_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
-	    notify_tac (info_set info)
-	      (subgoals inf, 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!alst)), 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!clst)), 
-	       constants inf)
-              skip
+            (fun g1 -> 
+	      update_tac (info_set info)
+	        (subgoals inf, 
+	         List.map 
+		   (fun x -> Logic.label_to_tag x sqnt)  
+                   (List.rev (!alst)), 
+	         List.map 
+		   (fun x -> Logic.label_to_tag x sqnt)  
+                   (List.rev (!clst)), 
+	         constants inf)
+                g1)
 	  ] g)
     ] goal
 
@@ -331,14 +333,16 @@ let elim_rules_tac ?info rules albls clbls =
 	  [
 	    alt 
 	      [
-	        notify_tac notify_chng ()
-		  (map_some (asm_elim_rules_tac ?info rules) albls);
+	        (fun g1 -> 
+                  notify_tac notify_chng ()
+		    (map_some (asm_elim_rules_tac ?info rules) albls) g1);
 	        skip
 	      ];
 	    alt 
 	      [ 
-	        notify_tac notify_chng ()
-		  (map_some (concl_elim_rules_tac ?info rules) clbls); 
+                (fun g1 -> 
+	          notify_tac notify_chng ()
+		    (map_some (concl_elim_rules_tac ?info rules) clbls) g1); 
 	        skip 
 	      ]
 	  ] g
