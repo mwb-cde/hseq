@@ -391,8 +391,23 @@ let foreach_concl tac goal =
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
 
+(***
 let foreach_form tac goal =
   seq_any [foreach_asm tac; foreach_concl tac] goal
+***)
+
+let foreach_form tac goal = 
+  let chng = ref false in 
+  let notify () = chng := true
+  in 
+  let asms_tac g = 
+    (((foreach_asm tac) ++ update_tac notify ()) // skip) g 
+  and concls_tac g = 
+    (((foreach_concl tac) ++ update_tac notify ()) // skip) g 
+  in 
+  try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
+  with Failure _ -> raise (Failure "foreach_form")
+    | err -> raise err
 
 (*
  * Tactics
@@ -465,7 +480,7 @@ let disjC ?info ?c sq =
 let disjA ?info ?a sq =
   let af = first_asm_label a Formula.is_disj sq
   in
-  lift_info ?info (Logic.Tactics.disjA af) sq
+   lift_info ?info (Logic.Tactics.disjA af) sq
 
 let negC ?info ?c sq =
   let cf = first_concl_label c Formula.is_neg sq
@@ -511,6 +526,12 @@ let nameC ?info s l g =
   lift_info ?info (Logic.Tactics.nameC s l) g
 let nameA ?info s l g = 
   lift_info ?info (Logic.Tactics.nameA s l) g
+
+let substA ?info rs l g = 
+  lift_info ?info (Logic.Tactics.substA rs l) g
+
+let substC ?info rs l g = 
+  lift_info ?info (Logic.Tactics.substC rs l) g
 
 let instA0 ?info l trms goal =
   let info1 = Info.make ()
@@ -593,7 +614,7 @@ let betaA ?info ?a goal =
 	  in
 	  seq
 	    [
-	      lift_info ?info:info (Logic.Tactics.substA [tlbl] albl);
+	      substA ?info:info [tlbl] albl;
 	      Logic.Tactics.deleteA tlbl
 	    ] g1)
       ] g
@@ -622,7 +643,7 @@ let betaC ?info ?c goal =
 	  in
 	  seq
 	    [
-	      lift_info ?info:info (Logic.Tactics.substC [tlbl] clbl);
+	      substC ?info:info [tlbl] clbl;
 	      Logic.Tactics.deleteA tlbl
 	    ] g1)
       ] g
@@ -764,12 +785,6 @@ let unify_tac ?info ?a ?c goal =
   in 
   try map_first tac concls goal
   with err -> raise (add_error "unify_tac" err)
-
-let substA ?info rs l g = 
-  lift_info ?info (Logic.Tactics.substA rs l) g
-
-let substC ?info rs l g = 
-  lift_info ?info (Logic.Tactics.substC rs l) g
 
 
 (*
@@ -1010,7 +1025,7 @@ let pure_rewriteA ?info ?term plan lbl goal =
     in 
     seq
       [
-        lift_info ?info (Logic.Tactics.substA [ftag (rule_tag)] (ftag ltag));
+        substA ?info [ftag (rule_tag)] (ftag ltag);
         deleteA (ftag rule_tag)
       ] g
   in 
@@ -1037,8 +1052,7 @@ let pure_rewriteC ?info ?term plan lbl goal =
     in 
     seq
       [
-        lift_info ?info 
-          (Logic.Tactics.substC [ftag (rule_tag)] (ftag ltag));
+        substC ?info [ftag (rule_tag)] (ftag ltag);
         deleteA (ftag rule_tag)
       ] g
   in 

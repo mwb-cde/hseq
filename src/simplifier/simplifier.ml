@@ -368,10 +368,10 @@ let prep_cond_tac cntrl ret values thm goal =
     let (cnd_gltg, rl_gltg) =  (* condition-goal, rule-goal *)
       get_two ~msg:"prep_cond_tac: goals" (subgoals inf)
     in 
-    let cnd_ftg= (* condition-formula-tag *)
+    let cnd_ftg = (* condition-formula-tag *)
       get_one ~msg:"prep_cond_tac: forms" (cformulas inf)
     in 
-    let ncntrl= Data.add_asm cntrl rl_ftg
+    let ncntrl = Data.add_asm cntrl rl_ftg
     in 
     Lib.set_option ret (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg))
   in 
@@ -380,12 +380,12 @@ let prep_cond_tac cntrl ret values thm goal =
       [
        cut_rr_rule ~info:info values thm;
        (fun g1 -> 
-	 let rl_ftg=Lib.get_one (aformulas info) No_change
+	 let rl_ftg = Lib.get_one (aformulas info) No_change
 	 in 
 	 seq
 	   [
 	     Tactics.implA ~info:info ~a:(ftag rl_ftg);
-	     notify_tac (add_data rl_ftg) info skip
+	     (fun g2 -> update_tac (add_data rl_ftg) info g2)
 	  ] g1)
      ] g
   in 
@@ -436,9 +436,9 @@ let prove_cond_tac cntrl ret values entry goal =
 		  Simpset.make_rule 
 		    (Logic.Asm (ftag rl_ftg)) (Formula.term_of form)
 	        in 
-	        notify_tac (fun x -> ret := Some x)
+	        update_tac (fun x -> ret := Some x)
 		  (Data.add_simp_rule rcntrl rule, 
-		   Logic.Asm(ftag rl_ftg)) skip g2)
+		   Logic.Asm(ftag rl_ftg)) g2)
 	    ] g1)
       ] g
   in
@@ -524,12 +524,12 @@ let find_basic ret data rl trm goal =
 	       Lib.dest_option 
 		 ~err:(Failure "find_basic: 1") (!ret1)
 	     in 
-	     notify_tac (Lib.set_option ret) (ncntrl, ntyenv, nt, rr) skip g1)
+	     update_tac (Lib.set_option ret) (ncntrl, ntyenv, nt, rr) g1)
 	 ])
       (fun g1 -> 
 	let (ncntrl, rr) = (cntrl, thm)
 	in 
-	notify_tac (Lib.set_option ret) (ncntrl, ntyenv, nt, rr) skip g1) g
+	update_tac (Lib.set_option ret) (ncntrl, ntyenv, nt, rr) g1) g
   in 
   try tac goal 
   with _ -> raise No_change
@@ -616,8 +616,9 @@ let rec find_all_matches_tac ret data trm goal =
 	      seq
 	        [
 	          (** Add the result to ref_tmp **)
-	          notify_tac (Lib.set_option ret_tmp)
-		    (cntrl1, tyenv, t1, rslt) skip;
+	          (fun g2 ->
+                    update_tac (Lib.set_option ret_tmp)
+		      (cntrl1, tyenv, t1, rslt) g2);
 	          (** Try to go round again **)
 	          (find_aux rslt cntrl1 tyenv1 t1 // skip)
 	        ] g1)
@@ -626,7 +627,8 @@ let rec find_all_matches_tac ret data trm goal =
         seq
 	  [
 	    (** Add information to ret_tmp. **)
-	    notify_tac (Lib.set_option ret_tmp) (c, ty, t, l) skip;
+	    (fun g1 -> 
+              update_tac (Lib.set_option ret_tmp) (c, ty, t, l) g1);
 	    (** Raise failure **)
 	    fail ~err:(Failure "find_all_matches")
 	  ]
@@ -643,8 +645,8 @@ let rec find_all_matches_tac ret data trm goal =
 	 (** Restore original loopdb *)
 	  let rcntrl = Data.set_loopdb rcntrl0 orig_loopdb
 	  in 
-	  notify_tac (Lib.set_option ret)
-	    (rcntrl, rtyenv, rtrm, List.rev rlist) skip g)
+	  update_tac (Lib.set_option ret)
+	    (rcntrl, rtyenv, rtrm, List.rev rlist) g)
       ] goal
   with _ -> raise No_change
 
@@ -684,9 +686,9 @@ let rec find_subterm_bu_tac ret data trm goal=
 	    check_change bplan;
 	    let subplan = pack(mk_subnode 0 bplan)
 	    in 
-	    notify_tac 
+	    update_tac 
 	      (Lib.set_option ret)
-	      (bcntrl, btyenv, Qnt(q, btrm), subplan) skip g1)
+	      (bcntrl, btyenv, Qnt(q, btrm), subplan) g1)
         ] goal
     | Basic.App(f, a)->
       seq 
@@ -714,9 +716,9 @@ let rec find_subterm_bu_tac ret data trm goal=
 		  check_change2 fplan aplan;
 		  let subplan = pack(mk_branches [fplan; aplan])
 		  in 
-		  notify_tac 
+		  update_tac 
 		    (Lib.set_option ret)
-		    (acntrl, atyenv, App(nf, na), subplan) skip g2)
+		    (acntrl, atyenv, App(nf, na), subplan) g2)
 	      ] g1)
         ] goal
     | _ -> raise No_change
@@ -762,9 +764,9 @@ and
 	      check_change2 rplan splan;
 	      let plan = pack (mk_node [splan; rplan])
 	      in 
-	      notify_tac 
+	      update_tac 
 	        (Lib.set_option ret)
-	        (mcntrl, mtyenv, mtrm, plan) skip g2)
+	        (mcntrl, mtyenv, mtrm, plan) g2)
 	  ] g1)
     ] goal
 
@@ -803,9 +805,9 @@ let rec find_subterm_td_tac ret data trm g =
 	    check_change bplan0;
 	    let bplan = pack (mk_subnode 0 bplan0)
 	    in 
-	    notify_tac
+	    update_tac
 	      (Lib.set_option ret) 
-	      (bcntrl, btyenv, Basic.Qnt(q, btrm), bplan) skip g1)
+	      (bcntrl, btyenv, Basic.Qnt(q, btrm), bplan) g1)
         ] g
     | Basic.App(f, a)->
       seq
@@ -834,9 +836,9 @@ let rec find_subterm_td_tac ret data trm g =
 		  check_change2 fplan aplan;
 		  let subplan = pack (mk_branches [fplan; aplan])
 		  in 
-		  notify_tac 
+		  update_tac 
 		    (Lib.set_option ret)
-		    (acntrl, atyenv, App(nf, na), subplan) skip g2)
+		    (acntrl, atyenv, App(nf, na), subplan) g2)
 	      ] g1)
         ] g
     | _ -> raise No_change
@@ -881,8 +883,8 @@ and
 	        check_change2 tplan splan;
 	        let plan = pack (mk_node [tplan; splan])
 	        in 
-	        notify_tac (Lib.set_option ret)
-		  (sctrl, styenv, strm, plan) skip g2)
+	        update_tac (Lib.set_option ret)
+		  (sctrl, styenv, strm, plan) g2)
 	    ] g1)
       ] g
   in 
@@ -955,7 +957,7 @@ let rec basic_simp_tac cntrl ret ft goal =
 	      [
 	        simp_rewrite_tac ~info:info 
 	          is_concl plan trm (ftag ft);
-	        notify_tac (Lib.set_option ret) ncntrl skip
+	        (fun g3 -> update_tac (Lib.set_option ret) ncntrl g3)
 	      ] g2
 	  with _ -> raise No_change
         end
@@ -981,14 +983,14 @@ let rec basic_simp_tac cntrl ret ft goal =
 let simp_asm_tac ctrl ret lbl = 
   seq
     [
-     notify_tac (fun _ -> Lib.set_option ret ctrl) () skip;
-     specA // skip
+      update_tac (fun _ -> Lib.set_option ret ctrl) ();
+      specA // skip
    ]
 
 let simp_concl_tac ctrl ret lbl = 
   seq
     [
-     notify_tac (fun _ -> Lib.set_option ret ctrl) () skip;
+     update_tac (fun _ -> Lib.set_option ret ctrl) ();
      specC // skip
    ]
 
@@ -1031,7 +1033,7 @@ let rec cond_prover_worker_tac ctrl ret tg goal =
     in 
     Lib.set_option ret (Data.set_loopdb (ret0) orig_loopdb)
   in 
-  seq [ repeat tac; notify_tac f () skip ] goal
+  seq [ repeat tac; (fun g1 -> update_tac f () g1) ] goal
 
 let cond_prover_tac ctrl tg goal =
   let cond_depth = Data.get_cond_depth ctrl in 
