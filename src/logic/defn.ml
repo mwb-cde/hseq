@@ -77,13 +77,13 @@ let mk_defn scp (name, namety) args rhs =
       (Lterm.mk_equality lhs rhs)  
       (List.rev args) 
   in
-  let ndn = Lterm.set_names scp ndn0 in 
-  let nscp = Scope.extend_with_terms scp [(name, nty)] in 
-  let tenv= Typing.settype nscp ndn in 
-  let tenv1=Typing.typecheck_top nscp tenv ndn (Lterm.mk_bool_ty()) in 
+  let ndn1 = Lterm.set_names scp ndn0 in 
+  let tenv = Typing.settype scp ndn1 in 
+  let scp1 = Scope.extend_with_terms scp [(name, nty)] in 
+  let tenv1 =Typing.typecheck_top scp1 tenv ndn1 (Lterm.mk_bool_ty()) in 
   let nty1 = Gtypes.mgu_rename 0 tenv1 (Gtypes.empty_subst()) nty
   in 
-  (name, nty1, Formula.make nscp (Term.retype tenv ndn))
+  (name, nty1, Formula.make scp1 (Term.retype tenv1 ndn1))
 
 (*
  * Type definition

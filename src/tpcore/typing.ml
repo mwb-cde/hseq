@@ -211,15 +211,15 @@ let settype_top scp (inf, cache) f typenv exty et =
       | Id(n, ty) -> 
         let set_id_aux () = 
 	  let nt = Scope.type_of scp n in 
-          (* check given type. *) 
+          (* Check given type. *) 
 	  Gtypes.quick_well_defined scp cache ty; 
-	  let env1= 
+	  let env1 = 
 	    try Gtypes.unify_env scp ty nt env
 	    with err -> 
 	      raise (add_typing_error "Typechecking: " t 
 		       (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
 	  in 
-          (* unify with expected type *)
+          (* Unify with expected type. *)
 	  (Gtypes.unify_env scp nt expty env1)
         in
         let env1 = 
@@ -249,12 +249,13 @@ let settype_top scp (inf, cache) f typenv exty et =
 	in
         (ctr, test_type scp cache env t ty expty)
       | App(f, a) -> 
-	let (ctr1, aty) = Gtypes.mk_typevar ctr  (* make an argument type *)
-	in
-	let fty = Lterm.mk_fun_ty aty expty  (* expect a function type *)
-	in 
+        (* Make an argument type. *)
+	let (ctr1, aty) = Gtypes.mk_typevar ctr in
+        (* Expect a function type. *)
+	let fty = Lterm.mk_fun_ty aty expty in 
+        (* Check function type *)
 	let (ctr2, fenv) =
-	  try settype_aux fty f (ctr1, env)   (* check function type *)
+	  try settype_aux fty f (ctr1, env)
 	  with err -> 
 	    raise (Term.add_term_error "Typechecking failure " [t] err)
 	in 

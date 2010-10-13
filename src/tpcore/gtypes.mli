@@ -500,3 +500,11 @@ sig
 *)
 
 end
+
+(** Debugging information *)
+val unify_aux: 
+  Scope.t -> gtype -> gtype 
+  -> substitution -> substitution 
+(** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
+    return a new subsitution.
+*)

@@ -695,37 +695,35 @@ let bind_occs t1 t2 env =
    Scope scp is used to look up definitions of constructors occuring
    in t1 or t2 (if necessary).
 *)
-let unify_env scp t1 t2 nenv =  
-  let rec unify_aux ty1 ty2 env =
+  let rec unify_aux scp ty1 ty2 env =
     let s = lookup_var ty1 env
     and t = lookup_var ty2 env
     in 
     match (s, t) with
       (* Constructors *)
       | (Constr(f1, args1), Constr(f2, args2)) ->
+        begin 
         let expand_left x y = 
 	  let x1 = unfold scp x
 	  in 
-          unify_aux x1 y env
+          unify_aux scp x1 y env
         and expand_right x y = 
 	  let y1 = unfold scp y
 	  in
-          unify_aux x y1 env
+          unify_aux scp x y1 env
         in
 	  if f1 = f2   
 	  then 
             (* Matching constructors. *)
-	    (try 
-	       List.fold_left2
-	         (fun ev x y -> unify_aux x y ev)
-	         env args1 args2
-	       with x -> add_type_error "Can't unify types" [s; t] x)
+	    try unify_aux_list scp args1 args2 env
+	    with x -> add_type_error "Can't unify types" [s; t] x
 	   else 
-              (* Different constructors, try for type aliasing. *)
-	      (try 
-	         (try expand_left s t
-	          with _ -> expand_right s t)
-	       with x ->(add_type_error "x: Can't unify types" [s; t] x))
+            (* Different constructors, try for type aliasing. *)
+            try 
+	      (try expand_left s t
+	       with _ -> expand_right s t)
+	    with x -> add_type_error "x: Can't unify types" [s; t] x
+        end
       (* Variables, bind if not equal, but test for occurence *)
       | (Var(_), Var(_)) -> 
 	if equals s t 
@@ -740,8 +738,22 @@ let unify_env scp t1 t2 nenv =
 	else bind_occs s t env
       | (WeakVar(_), _) -> bind_occs s t env
       | (_, WeakVar(_)) -> bind_occs t s env
-  in
-  unify_aux t1 t2 nenv
+  and
+      unify_aux_list scp tyl1 tyl2 env =
+    begin
+      match (tyl1, tyl2) with
+        | ([], []) -> env
+        | (ty1::l1, ty2::l2) ->
+          let env1 = 
+            try unify_aux scp ty1 ty2 env
+            with x -> add_type_error "Can't unify types" [ty1; ty2] x
+          in
+          unify_aux_list scp l1 l2 env1
+        | _ -> raise (type_error "Can't unbalanced constructor lists" [])
+    end
+
+let unify_env scp t1 t2 nenv =  
+  unify_aux scp t1 t2 nenv
 
 (**
    [unify scp t1 t2]: Unify types t1 and t2, returning the
