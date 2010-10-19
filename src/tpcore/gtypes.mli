@@ -69,9 +69,15 @@ val normalize_vars: gtype -> gtype
 val mk_typevar: int -> (int * gtype)
 (** [mk_typevar n]: Make a new type variable [t'] with a name derived
     from [n] and return [(n + 1, t')]. Different values of [n] make
-    different names.
+    different names. Names are constructed as sequences of alphabetic
+    characters.
+*)
 
-    This is does the same thing as [mk_typevar] but without side-effects.
+val mk_plain_typevar: int -> (int * gtype)
+(** [mk_typevar n]: Make a new type variable [t'] with a name derived
+    from [n] and return [(n + 1, t')]. Different values of [n] make
+    different names. Names are constructed as numbers prefixed by a
+    string.
 *)
 
 val get_var_names: gtype -> string list
@@ -160,6 +166,12 @@ val rename_type_vars_env: substitution -> gtype -> (gtype * substitution)
 val rename_type_vars: gtype -> gtype
 (** [rename_type_vars t]: Make a type equivalent but not equal to [t],
     differing from [t] in the variable names.
+*)
+
+val rename_index: int -> substitution -> gtype -> (gtype * int * substitution)
+(** [rename_index t]: Make a type equivalent but not equal to [t],
+    differing from [t] in the variable names. Use an integer to
+    generate the type names.
 *)
 
 (** {5 Pretty Printing} *)

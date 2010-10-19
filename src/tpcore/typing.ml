@@ -65,11 +65,11 @@ let typeof_env scp (inf, typenv) trm =
       | Qnt(q, b) -> 
         begin
 	  match Basic.binder_kind q with
-	  | Basic.Lambda -> 
-	    let (btyp, (ctr1, benv)) = typeof_aux b (ctr, env)
-	    in 
-	    (Lterm.mk_fun_ty (Term.get_binder_type t) btyp, (ctr1, benv))
-	  | _ -> (Lterm.mk_bool_ty(), (ctr, env))
+	    | Basic.Lambda -> 
+	      let (btyp, (ctr1, benv)) = typeof_aux b (ctr, env)
+	      in 
+	      (Lterm.mk_fun_ty (Term.get_binder_type t) btyp, (ctr1, benv))
+	    | _ -> (Lterm.mk_bool_ty(), (ctr, env))
         end
       | App(f, a) -> 
 	let fty, (ctr1, fenv) = typeof_aux f (ctr, env) in
@@ -136,24 +136,26 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	in
         (ctr, test_type scp cache env trm ty expty)
       | App(f, a) -> 
-        (* make an argument type *)
-	let (ctr1, aty) = Gtypes.mk_typevar ctr in 
-        (* expect a function type *)
+        (* Make an argument type *)
+	let (ctr1, aty) = Gtypes.mk_plain_typevar ctr in 
+        (* Check argument type *)
+        let (ctr2, aenv) =
+	  try type_aux aty a (ctr1, env)
+	  with err -> Term.add_term_error "Typechecking: " [trm] err
+        in
+        (* Expect a function type *)
 	let fty = Lterm.mk_fun_ty aty expty in 
-	let (ctr2, fenv) =
-	  try type_aux fty f (ctr1, env)      (* check function type *)
+        (* Check function type *)
+	let (ctr3, fenv) =
+	  try type_aux fty f (ctr2, aenv) 
 	  with err -> Term.add_term_error "Typechecking:" [trm] err
 	in 
-        (* check argument type *)
-        begin
-	  try type_aux aty a (ctr2, fenv)
-	  with err -> Term.add_term_error "Typechecking: " [trm] err
-        end
+        (ctr3, fenv)
       | Qnt(q, b) ->
         begin
 	  match Basic.binder_kind q with
 	    | Basic.Lambda -> 
-	      let (ctr1, rty) = Gtypes.mk_typevar ctr     (* range *)
+	      let (ctr1, rty) = Gtypes.mk_plain_typevar ctr     (* range *)
 	      and fty = Term.get_binder_type trm  (* domain *)
 	      in
 	      let bty = Lterm.mk_fun_ty fty rty   (* type of term *)
@@ -173,7 +175,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
 	    | _ -> 
 	      let (ctr1, env1) = type_aux (Lterm.mk_bool_ty()) b tyenv in 
               let env2 = 
-	        try Gtypes.unify_env scp expty (Lterm.mk_bool_ty()) env1
+	        try Gtypes.unify_env scp (Lterm.mk_bool_ty()) expty env1
 	        with err -> 
 	          raise (add_typing_error "Typechecking: " trm 
 		           (Gtypes.mgu expty env) 
@@ -197,111 +199,134 @@ let typecheck scp t expty =
 
 (*** Settype based type checking ****)
 
-let settype_top scp (inf, cache) f typenv exty et =
-  let test_type scp cache env trm ty expty = 
-    Gtypes.quick_well_defined scp cache ty;
-    try Gtypes.unify_env scp ty expty env
-    with err -> 
-      raise (add_typing_error "Typechecking: " trm 
-	       (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
-  in 
-  let rec settype_aux expty t tyenv =
-    let (ctr, env) = tyenv in
-    match t with
-      | Id(n, ty) -> 
-        let set_id_aux () = 
-	  let nt = Scope.type_of scp n in 
-          (* Check given type. *) 
-	  Gtypes.quick_well_defined scp cache ty; 
-	  let env1 = 
-	    try Gtypes.unify_env scp ty nt env
-	    with err -> 
-	      raise (add_typing_error "Typechecking: " t 
-		       (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
-	  in 
-          (* Unify with expected type. *)
-	  (Gtypes.unify_env scp nt expty env1)
-        in
-        let env1 = 
-	  try set_id_aux()
-	  with Not_found -> (f env expty t)
-        in
-        (ctr, env1)
-      | Free(n, ty) ->
-        let env1 = 
-	  Gtypes.quick_well_defined scp cache ty;
-	  try Gtypes.unify_env scp ty expty env
-	  with err -> 
-	    raise (add_typing_error "Typechecking: " t 
-		     (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
-        in
-        (ctr, env1)
-      | Meta(q) -> 
-	let ty = get_binder_type t
-	in
-        (ctr, test_type scp cache env t ty expty)
-      | Bound(q) -> 
-	let ty = get_binder_type t
-	in
-        (ctr, test_type scp cache env t ty expty)
-      | Const(c) -> 
-	let ty = Lterm.typeof_cnst c
-	in
-        (ctr, test_type scp cache env t ty expty)
-      | App(f, a) -> 
-        (* Make an argument type. *)
-	let (ctr1, aty) = Gtypes.mk_typevar ctr in
-        (* Expect a function type. *)
-	let fty = Lterm.mk_fun_ty aty expty in 
-        (* Check function type *)
-	let (ctr2, fenv) =
-	  try settype_aux fty f (ctr1, env)
-	  with err -> 
-	    raise (Term.add_term_error "Typechecking failure " [t] err)
-	in 
+type debugType = TermType of (string * Basic.term * (Basic.gtype list))
+let debug_flag = ref false
+let debug_list = ref []
+
+let init_list list = list := []
+let add_to_list t list = 
+  if (!debug_flag)
+  then list := (t:: (!list))
+  else ()
+
+let rec test_type scp cache env trm ty expty = 
+  Gtypes.quick_well_defined scp cache ty;
+  try Gtypes.unify_env scp ty expty env
+  with err -> 
+    raise (add_typing_error "Typechecking: " trm 
+	     (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
+and settype_aux scp (inf, cache, appfn) expty t tyenv =
+  let (ctr, env) = tyenv in
+  match t with
+    | Id(n, ty) -> 
+      Gtypes.quick_well_defined scp cache ty; 
+      let env1 =
         begin
-	  try settype_aux aty a (ctr2, fenv)  (* check argument type *)
-	  with err -> 
-	    raise (Term.add_term_error "Typechecking: " [t] err)
-        end
-      | Qnt(q, b) ->
-        begin
-	  match Basic.binder_kind q with
-            | Basic.Lambda -> 
-	      let (ctr1, rty) = Gtypes.mk_typevar ctr     (* range type *)
-	      and fty = Term.get_binder_type t  (* domain *)
-	      in
-	      let bty = Lterm.mk_fun_ty fty rty (* type of term *)
-	      in 
-              Gtypes.quick_well_defined scp cache fty; (* check domain *)
-	      let env1= 
-	        try Gtypes.unify_env scp bty expty env
-	        with err -> 
-		  raise (add_typing_error "Typechecking: " t
-			   (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)
-	      in 
+          match Lib.try_app (Scope.type_of scp) n with
+            | None -> appfn env expty t
+            | Some(nt) ->
               begin
-	        try settype_aux rty b (ctr1, env1)
+ 	        try Gtypes.unify_env scp nt ty env
 	        with err -> 
-	          raise (Term.add_term_error "Typechecking: " [t] err)
-              end
-	    | _ -> 
-	      let (ctr1, env1) =
-	        try settype_aux (Lterm.mk_bool_ty()) b (ctr, env)
-	        with err -> 
-		  raise (Term.add_term_error "Typechecking: " [t] err)
-	      in 
-              let env2 = 
-	        try Gtypes.unify_env scp expty (Lterm.mk_bool_ty()) env1
-	        with err -> 
-	          raise (add_typing_error "Typechecking: " t
+	          raise (add_typing_error "Typechecking: " t 
 		           (Gtypes.mgu expty env) 
-		           (Lterm.mk_bool_ty()) err)
-              in
-              (ctr1, env2)
+                           (Gtypes.mgu ty env) err)
+              end
         end
-  in
-  settype_aux exty et (inf, typenv)
+      in
+      let env2 = Gtypes.unify_env scp ty expty env1 in
+      add_to_list (TermType("Id", t, [Gtypes.mgu expty env2])) debug_list;
+      (ctr, env2)
+    | Free(n, ty) ->
+      let env1 = 
+	Gtypes.quick_well_defined scp cache ty;
+	try Gtypes.unify_env scp ty expty env
+	with err -> 
+	  raise (add_typing_error "Typechecking: " t 
+		   (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
+      in
+      add_to_list (TermType("Free", t, [Gtypes.mgu expty env1])) debug_list;
+      (ctr, env1)
+    | Meta(q) -> 
+      let ty = get_binder_type t in
+      let env1 = test_type scp cache env t ty expty
+      in
+      add_to_list (TermType("Meta", t, [Gtypes.mgu expty env1])) debug_list;
+      (ctr, env1)
+    | Bound(q) -> 
+      let ty = get_binder_type t in
+      let env1 = test_type scp cache env t ty expty
+      in
+      add_to_list (TermType("Bound", t, [Gtypes.mgu expty env1])) debug_list;
+      (ctr, env1)
+    | Const(c) -> 
+      let ty = Lterm.typeof_cnst c in
+      let env1 = test_type scp cache env t ty expty
+      in
+      add_to_list (TermType("Const", t, [Gtypes.mgu expty env1])) debug_list;
+      (ctr, env1)
+    | App(f, arg) -> 
+      (* Make an argument type. *)
+      let (ctr1, arg_ty) = Gtypes.mk_plain_typevar ctr in
+      (* Check argument type *)
+      let (ctr2, env2) = 
+	try settype_aux scp (inf, cache, appfn) arg_ty arg (ctr1, env)
+	with err -> 
+	  raise (Term.add_term_error "Typechecking: " [t] err)
+      in
+      (* Check function type *)
+      let fty = Lterm.mk_fun_ty arg_ty expty in 
+      let (ctr3, env3) =
+	try settype_aux scp (inf, cache, appfn) fty f (ctr2, env2)
+	with err -> 
+	  raise (Term.add_term_error "Typechecking failure " [t] err)
+      in 
+      add_to_list (TermType("App", t, [Gtypes.mgu expty env3])) debug_list;
+      (ctr3, env3)
+    | Qnt(q, b) ->
+      begin
+	match Basic.binder_kind q with
+          | Basic.Lambda -> 
+	    let (ctr1, rty) = Gtypes.mk_plain_typevar ctr
+	    and fty = Term.get_binder_type t in
+	    let bty = Lterm.mk_fun_ty fty rty 
+	    in 
+            Gtypes.quick_well_defined scp cache fty;
+	    let env1= 
+	      try Gtypes.unify_env scp bty expty env
+	      with err -> 
+		raise (add_typing_error "Typechecking: " t
+			 (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)
+	    in 
+            let (ctr2, env2) = 
+	      try settype_aux scp (inf, cache, appfn) rty b (ctr1, env1)
+	      with err -> 
+	        raise (Term.add_term_error "Typechecking: " [t] err)
+            in
+            add_to_list 
+              (TermType("Lambda", t, [Gtypes.mgu expty env2])) debug_list;
+            (ctr2, env2)
+	  | _ -> 
+	    let (ctr1, env1) =
+	      try settype_aux scp (inf, cache, appfn)
+                    (Lterm.mk_bool_ty()) b (ctr, env)
+	      with err -> 
+		raise (Term.add_term_error "Typechecking: " [t] err)
+	    in 
+            let env2 = 
+	      try Gtypes.unify_env scp (Lterm.mk_bool_ty()) expty env1
+	      with err -> 
+	        raise (add_typing_error "Typechecking: " t
+		         (Gtypes.mgu expty env) 
+		         (Lterm.mk_bool_ty()) err)
+            in
+            add_to_list 
+              (TermType("Qnt", t, [Gtypes.mgu expty env2])) debug_list;
+            (ctr1, env2)
+      end
+and settype_top scp (inf, cache) errfn typenv exty et =
+  init_list debug_list;
+  settype_aux scp (inf, cache, errfn) exty et (inf, typenv)
 
 let settype scp ?env t =
   let inf = 0
@@ -316,7 +341,7 @@ let settype scp ?env t =
       | None -> Gtypes.empty_subst()
       | Some(x) -> x
   in 
-  let (inf1, tyvar) = Gtypes.mk_typevar inf in
+  let (inf1, tyvar) = Gtypes.mk_plain_typevar inf in
   let (_, env1) = settype_top scp (inf1, cache) f tyenv tyvar t
   in 
   env1
@@ -334,7 +359,7 @@ let typecheck_env scp env t expty =
   and f = (fun _ _ t -> 
     match t with 
       | Basic.Id(n, ty) ->
-	  raise (Term.term_error ("Typecheck: unknown identifier ") [t])
+	raise (Term.term_error ("Typecheck: unknown identifier ") [t])
       | _ -> 
 	raise (Term.term_error "Typecheck: unknown error" [t] ))
   in 
@@ -344,7 +369,7 @@ let typecheck_env scp env t expty =
 
 (*
  * Well-definedness of types.
-*)
+ *)
 
 let rec check_types scp t =
   match t with

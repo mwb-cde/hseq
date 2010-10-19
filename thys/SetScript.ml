@@ -92,6 +92,7 @@ let psubset_def =
   ~pp:(225, infixr, Some("<"));;
 
 
+
 (***
 * Finite sets
 ***)
@@ -298,8 +299,6 @@ let add_member =
     ++ simp_tac [add_thm]
     ++ equals_tac ++ scatter_tac ++ simp
   ];;
-
-let _ = stop();;
 
 let add_remove =
   theorem ~simp:true "add_remove"
