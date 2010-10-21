@@ -1,4 +1,7 @@
-
+* Experimental support for tactics that generate non-goal data.
+* Remove some side-effects based code.
+* Record goal-change information as part of the goal.
+* Update some tactics for new goal-change information.
 * Rewrite theory loader code.	
 * Try to handle OCaml/Camlp4 version for both 3.11.2 and 3.12.
 * Rename file Changes to ChangeLog.
