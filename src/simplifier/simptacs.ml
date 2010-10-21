@@ -76,7 +76,8 @@ let add_asms_tac data atags goal =
   let add_tac rdata rl g = 
     let d = Lib.dest_option (!rdata)
     in 
-    data_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+    update_tac
+      (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
   in 
   let tac tg g = 
     let rl = ref [] 
@@ -93,7 +94,7 @@ let add_concls_tac data ctags goal =
   let add_tac rdata rl g = 
     let d = Lib.dest_option (!rdata)
     in 
-    data_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+    update_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
   in 
   let tac tg g = 
     let rl = ref [] 
@@ -103,7 +104,7 @@ let add_concls_tac data ctags goal =
 	Simpconvs.prepare_concl rl tg;
 	(fun g1 -> add_tac data rl g1);
 	(fun g1 -> 
-	  data_tac (log "add_concls_tac 1") 
+	  update_tac (log "add_concls_tac 1") 
 	    (Lib.dest_option (!data)) g1)
       ] g
   in
@@ -146,7 +147,7 @@ let simp_engine_tac cntrl ret tag goal =
 	    (** Clear the return data. **)
 	    seq
 	      [
-	        data_tac (fun () -> ret := None) ();
+	        (fun g1 -> update_tac (fun () -> ret := None) () g1);
 	        alt
 	          [
 		    (** Try simplification. **)
@@ -154,7 +155,7 @@ let simp_engine_tac cntrl ret tag goal =
 		    (** On fail, set the return value. **)
 		    seq 
 		      [ 
-		        data_tac (Lib.set_option ret) ncntrl; 
+		        (fun g1 -> update_tac (Lib.set_option ret) ncntrl g1); 
 		        fail ~err:No_change 
 		      ]
 	          ]
@@ -386,7 +387,7 @@ let simpC_tac cntrl ?c goal =
     seq 
       [
         tac1 ret; 
-        (fun g1 -> data_tac (log "simpC_tac: 2") 
+        (fun g1 -> update_tac (log "simpC_tac: 2") 
 	  (Lib.dest_option (!ret)) g1);
         (fun g1 -> 
 	  let data = Lib.dest_option (!ret)

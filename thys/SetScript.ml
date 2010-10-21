@@ -92,6 +92,7 @@ let psubset_def =
   ~pp:(225, infixr, Some("<"));;
 
 
+
 (***
 * Finite sets
 ***)
@@ -303,8 +304,10 @@ let add_remove =
   theorem ~simp:true "add_remove"
     << !x A: (add x (remove x A)) = (add x A) >>
   [
-    simp_tac [set_equal] ++ simp_tac [add_thm; remove_thm]
-    ++ equals_tac ++ blast_tac
+    simp_tac [set_equal] 
+    ++ simp_tac [add_thm; remove_thm]
+    ++ equals_tac
+    ++ blast_tac
   ]
 
 (** Properties of Remove *)

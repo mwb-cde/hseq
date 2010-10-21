@@ -44,7 +44,7 @@ type ('idtyp, 'tfun) pre_typ =
    ML).
 *)
 
-type gtype_id
+type gtype_id = string ref
 (** Type identifers. *)
 
 val mk_gtype_id: string -> gtype_id

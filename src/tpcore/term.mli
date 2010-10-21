@@ -252,6 +252,10 @@ val full_rename: Gtypes.substitution -> term -> (term * Gtypes.substitution)
 (** [full_rename env t]: Rename all type variables and bound variables
     in term [t]. *)
 
+val retype_index: 
+  int -> term -> (term * int * Gtypes.substitution)
+(** [retype idx t]: Rename all type variables in term [t]. *)
+
 type substitution 
 (** The type of term substitutions. *)
 

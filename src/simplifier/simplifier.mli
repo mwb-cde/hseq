@@ -199,7 +199,7 @@ val clean_up_tac: Data.t -> Tactics.tactic
 *)
 
 val copyA_inst_tac: 
-  ?info:Logic.info -> Basic.term list -> Logic.label
+  ?info:Tactics.Info.t -> Basic.term list -> Logic.label
   -> Tactics.tactic
 (** [copyA_inst_tac info vals x]: Copy assumption [x], instantiate the
     copy with [vals]. info: aformulas = [x1], where [x1] is the tag of
@@ -208,7 +208,7 @@ val copyA_inst_tac:
 *)
 
 val cut_rr_rule:
-  ?info:Logic.info -> Basic.term list -> Logic.rr_type -> tactic
+  ?info:Tactics.Info.t -> Basic.term list -> Logic.rr_type -> tactic
 (** [cut_rr_rule info vals t g]: Cut rule [t] into goal [g],
     instantiating with [vals].  If [t] is a theorem, it is cut into
     the goal.  If [t] is an assumption, it is copied. Fails if there
@@ -218,7 +218,7 @@ val cut_rr_rule:
 *)
 
 val simp_rewrite_tac:
-  ?info:Logic.info 
+  ?info:Tactics.Info.t 
   -> bool
   -> Logic.rr_type Rewrite.plan
   -> Basic.term 
@@ -488,7 +488,7 @@ val check_change2: ('a)plan -> ('a)plan -> unit
 *)
 
 val cond_prover_trueC: 
-  ?info:Logic.info -> Logic.label -> Tactics.tactic
+  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
 val cond_prover_worker_tac: 
   Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
 val is_excluded: 

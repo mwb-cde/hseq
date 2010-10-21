@@ -26,6 +26,9 @@ open Rewrite
 type tactic = Logic.tactic
 (** A tactic is a function of type [Logic.node -> Logic.branch] *)
 
+type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
+(** A data tactic is a tactic that returns additional data. *)
+
 (** {5 Support functions} *)
 
 (** {7 Error reporting} *)
@@ -133,41 +136,129 @@ val num_subgoals: Logic.branch -> int
 
 (** {7 Information records} *)
 
-val mk_info: unit -> Logic.info
+module Info :
+sig
+  type t = Changes.t ref
+
+  val make: unit -> t
+  (** Make an empty sub-goal information record. *)
+
+  val empty: t -> unit
+  (** [empty_info info]: Empty the information record [info].
+      Equivalent to [info := mk_info()].
+  *)
+
+  val subgoals: t -> Tag.t list
+  (** [subgoals info]: Get subgoal tags of [info].  Equivalent to
+      [(!info).goals]
+  *)
+
+  val aformulas: t -> Tag.t list
+  (** [aformulas info]: Get tags of assumption formula tags from [info].
+      Equivalent to [(!info).aforms]
+  *)
+
+  val cformulas: t -> Tag.t list
+  (** [cformulas info]: Get tags of conclusion formula tags from [info].
+      Equivalent to [(!info).cforms]
+  *)
+
+  val constants: t -> Basic.term list
+  (** [constants info]: Get constants from [info].  Equivalent to
+      [(!info).terms]
+  *)
+  val form: 
+    t option -> 
+    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+    -> unit
+
+  val form_changes: t option -> Changes.t -> unit
+
+  val add: 
+    t option -> 
+    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+    -> unit
+
+  val add_changes: t option -> Changes.t -> unit
+
+  val set: 
+    t option -> 
+    (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+    -> unit
+(** A version of {!Logic.add_info}, packaged for use, in tactics, with
+    {!Tactics.data_tac}. *)
+
+end
+
+val info_make: unit -> Info.t
 (** Make an empty sub-goal information record. *)
 
-val empty_info: Logic.info -> unit
-(** [empty_info info]: Empty the information record [info].
-    Equivalent to [info := mk_info()].
-*)
+val info_empty: Info.t -> unit
+  (** [empty_info info]: Empty the information record [info].
+      Equivalent to [info := mk_info()].
+  *)
 
-val subgoals: Logic.info -> Tag.t list
-(** [subgoals info]: Get subgoal tags of [info].  Equivalent to
-    [(!info).goals]
-*)
+val subgoals: Info.t -> Tag.t list
+  (** [subgoals info]: Get subgoal tags of [info].  Equivalent to
+      [(!info).goals]
+  *)
 
-val aformulas: Logic.info -> Tag.t list
-(** [aformulas info]: Get tags of assumption formula tags from [info].
-    Equivalent to [(!info).aforms]
-*)
+val aformulas: Info.t -> Tag.t list
+  (** [aformulas info]: Get tags of assumption formula tags from [info].
+      Equivalent to [(!info).aforms]
+  *)
 
-val cformulas: Logic.info -> Tag.t list
-(** [cformulas info]: Get tags of conclusion formula tags from [info].
-    Equivalent to [(!info).cforms]
-*)
+val cformulas: Info.t -> Tag.t list
+  (** [cformulas info]: Get tags of conclusion formula tags from [info].
+      Equivalent to [(!info).cforms]
+  *)
 
-val constants: Logic.info -> Basic.term list
-(** [constants info]: Get constants from [info].  Equivalent to
-    [(!info).terms]
-*)
+val constants: Info.t -> Basic.term list
+  (** [constants info]: Get constants from [info].  Equivalent to
+      [(!info).terms]
+  *)
+val info_form: 
+  Info.t option -> 
+  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+  -> unit
 
-val set_info: 
-  Logic.info option -> 
+val info_form_changes: Info.t option -> Changes.t -> unit
+
+val info_add: 
+  Info.t option -> 
+  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
+  -> unit
+
+val info_add_changes: Info.t option -> Changes.t -> unit
+
+val info_set: 
+  Info.t option -> 
   (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
   -> unit
 (** A version of {!Logic.add_info}, packaged for use, in tactics, with
-    {!Tactics.data_tac}.
-*)
+    {!Tactics.data_tac}. *)
+
+
+
+module New:
+sig
+
+  val changes: Logic.node -> Changes.t
+ (** Get the goal changes record. *)
+
+  val subgoals: Changes.t -> Tag.t list
+  (** [subgoals info]: Get subgoal tags of [info]. *)
+
+  val aformulas: Changes.t -> Tag.t list
+  (** [aformulas info]: Get tags of assumption formula tags from [info]. *)
+
+  val cformulas: Changes.t -> Tag.t list
+  (** [cformulas info]: Get tags of conclusion formula tags from [info]. *)
+
+  val constants: Changes.t -> Basic.term list
+  (** [constants info]: Get constants from [info]. *)
+end
+
 
 (** {7 Utility functions} *)
 
@@ -255,12 +346,42 @@ val skip: tactic
 val fail: ?err:exn -> tactic
 (** The tactic that always fails. Raises [Failure] or [?err] if given. *)
 
-val data_tac: ('a -> unit) -> 'a -> tactic
-(** Evaluate an expression. [data_tac f data g] evaluates [(f data)]
-    then behaves like {!Tactics.skip}.
+(** {5 Tacticals} *)
+
+val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
+(** [notify_tac f x tac g]: Notify [tac g] succeeded. Applies [tac g]
+    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
 *)
 
-(** {5 Tacticals} *)
+(***
+val (!!): ('a -> unit) -> 'a -> tactic
+(** [(f !! data) g]: Infix notation for [notify_tac].  Applies [tac g]
+    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
+*)
+****)
+
+val data_tac: (Logic.node -> 'a) -> ('a -> tactic) -> tactic
+(** [data_tac f tac g]: Apply a tactic after extracting data from a goal.
+    Forms [tac (f g) g].
+*)
+
+val (>>): (Logic.node -> 'a) -> ('a -> tactic) -> tactic
+(** [(f >> tac) g]: Infix notation for data_tac.  Apply a tactic after
+    extracting the change data from a goal. Forms [tac (changes g) g].
+*)
+
+val query_tac: (Changes.t -> tactic) -> tactic
+(** [query_tac tac g]: Apply a tactic after extracting the change
+    data from a goal. Forms [tac (changes g) g].
+*)
+
+val (??): (Changes.t -> tactic) -> tactic
+(** ??tac g]: Prefix notation for [query_tac]. Apply a tactic after
+    extracting the change data from a goal. Forms [tac (changes g) g].
+*)
+
+val update_tac: ('a -> unit) -> 'a -> tactic
+(** [update_tac f d g]: Apply side effects. Forms [(f d); tac g]. *)
 
 val seq: tactic list -> tactic 
 (** [seq tacl]: Apply each tactic in [tacl] in sequence to the
@@ -281,6 +402,10 @@ val alt:  tactic list -> tactic
 val (//): tactic -> tactic -> tactic
 (** [tac1 // tac2]: Apply [tac1], if that fails, apply [tac2].  [tac1
     // tac2] is [alt [tac1; tac2]].
+*)
+
+val fold_seq: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
+(** [fold_seq d tacl g]: Fold the data returning tactics in [tacl].
 *)
 
 val thenl: tactic ->  tactic list -> tactic 
@@ -315,11 +440,6 @@ val (-->): (Logic.node -> bool) -> tactic -> tactic
 val restrict: (Logic.branch -> bool) -> tactic -> tactic
 (** [restrict pred tac g]: Restrict the result of applying a tactic.
     Fails if [pred (tac g)] is false otherwise behaves as [(tac g)].
-*)
-
-val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
-(** [notify_tac f x tac g]: Notify [tac g] succeeded.  Applies [tac g]
-    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
 *)
 
 val map_every: ('a -> tactic) -> 'a list -> tactic
@@ -358,6 +478,13 @@ val seq_some: tactic list -> tactic
     [seq_some tacl] is equivalent to [map_some tacl (fun x -> x)]
 *)
 
+val seq_any: tactic list -> tactic
+(** [seq_any tacl xs]: Sequentially apply the tactics in [tacl],
+    allowing some tactics to fail.
+
+    Fails if every tactic in [tacl] fails or if [tacl] is initially empty.
+*)
+
 val foreach_asm: (Logic.label -> tactic) -> tactic
 (** [foreach_asm tac goal]: Sequentially apply [tac l] to each
     assumption in [goal], beginning with the first assmuption, where
@@ -388,36 +515,36 @@ val foreach_form: (Logic.label -> tactic) -> tactic
     {!Logic.Tactics}.
 *)
 
-val rotateA: ?info:Logic.info -> tactic
+val rotateA: ?info:Info.t -> tactic
 (** Rotate the assumptions. *)
 
-val rotateC: ?info:Logic.info -> tactic
+val rotateC: ?info:Info.t -> tactic
 (** Rotate the conclusions. *)
 
-val copyA: ?info:Logic.info -> Logic.label -> tactic
+val copyA: ?info:Info.t -> Logic.label -> tactic
 (** Copy an assumption.*)
 
-val copyC: ?info:Logic.info -> Logic.label -> tactic
+val copyC: ?info:Info.t -> Logic.label -> tactic
 (** Copy a conclusion. *)
 
-val liftA: ?info:Logic.info -> Logic.label -> tactic
+val liftA: ?info:Info.t -> Logic.label -> tactic
 (** [liftA a]: Lift assumption [a] to the top of the list.
 *)
-val liftC: ?info:Logic.info -> Logic.label -> tactic
+val liftC: ?info:Info.t -> Logic.label -> tactic
 (** [liftC c]: Lift conclusion [c] to the top of the list.
 *)
 
-val lift: ?info:Logic.info -> Logic.label -> tactic
+val lift: ?info:Info.t -> Logic.label -> tactic
 (** Move a formula to the top of the list of assumptions/conclusions.
 *)
 
-val deleteA: ?info:Logic.info -> Logic.label -> tactic 
+val deleteA: ?info:Info.t -> Logic.label -> tactic 
 (** [deleteA l]: Delete the assumption labelled [l]. *)
 
-val deleteC: ?info:Logic.info -> Logic.label -> tactic 
+val deleteC: ?info:Info.t -> Logic.label -> tactic 
 (** [deleteC l]: Delete the conclusion labelled [l]. *)
 
-val delete: ?info:Logic.info -> Logic.label -> tactic 
+val delete: ?info:Info.t -> Logic.label -> tactic 
 (** [delete l]: Delete the formula labelled [l]. *)
 
 val deleten: Logic.label list -> Logic.tactic
@@ -436,40 +563,40 @@ val deleten: Logic.label list -> Logic.tactic
     Tag information provided by the rules is as in {!Logic.Tactics}.
 *)
 
-val trueC: ?info:Logic.info -> ?c:Logic.label -> tactic
+val trueC: ?info:Info.t -> ?c:Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.trueC}. *)
-val conjC: ?info:Logic.info -> ?c: Logic.label -> tactic
+val conjC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjC}. *)
-val conjA: ?info:Logic.info -> ?a: Logic.label -> tactic
+val conjA: ?info:Info.t -> ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjA}. *)
-val disjC: ?info:Logic.info -> ?c: Logic.label -> tactic
+val disjC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjC}. *)
-val disjA: ?info:Logic.info -> ?a: Logic.label -> tactic
+val disjA: ?info:Info.t -> ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjA}. *)
-val negC: ?info:Logic.info -> ?c: Logic.label -> tactic
+val negC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negC}. *)
-val negA: ?info:Logic.info -> ?a: Logic.label -> tactic
+val negA: ?info:Info.t -> ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negA}. *)
-val implC: ?info:Logic.info -> ?c: Logic.label -> tactic
+val implC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implC}. *)
-val implA: ?info:Logic.info -> ?a: Logic.label -> tactic
+val implA: ?info:Info.t -> ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implA}. *)
-val existC: ?info:Logic.info -> ?c: Logic.label -> Basic.term -> tactic 
+val existC: ?info:Info.t -> ?c: Logic.label -> Basic.term -> tactic 
 (** Entry point to {!Logic.Tactics.existC}. *)
-val existA: ?info:Logic.info -> ?a: Logic.label -> tactic
+val existA: ?info:Info.t -> ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.existA}. *)
-val allC: ?info:Logic.info -> ?c: Logic.label -> tactic
+val allC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.allC}. *)
-val allA: ?info:Logic.info -> ?a: Logic.label -> Basic.term -> tactic
+val allA: ?info:Info.t -> ?a: Logic.label -> Basic.term -> tactic
 (** Entry point to {!Logic.Tactics.allA}. *)
 val nameC: 
-  ?info:Logic.info -> string -> Logic.label -> tactic
+  ?info:Info.t -> string -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.nameC}. *)
 val nameA: 
-  ?info:Logic.info -> string -> Logic.label -> tactic
+  ?info:Info.t -> string -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.nameA}. *)
 
-val instA: ?info:Logic.info
+val instA: ?info:Info.t
   -> ?a:Logic.label -> Basic.term list -> tactic
 (** Instantiate a universally quantified assumption. Generalises
     [allA] to a list of terms. [instA a trms] applies [allA a t] for
@@ -477,7 +604,7 @@ val instA: ?info:Logic.info
     instantiation. Fails if there are more terms then variables.
 *)
 
-val instC: ?info:Logic.info
+val instC: ?info:Info.t
   -> ?c:Logic.label -> Basic.term list -> tactic
 (** Instantiate an existentially quantified conclusion. Generalises
     [existC] to a list of terms. [instc a trms] applies [existC a t]
@@ -485,20 +612,20 @@ val instC: ?info:Logic.info
     instantiation. Fails if there are more terms then variables.
 *)
 
-val inst_tac: ?info:Logic.info
+val inst_tac: ?info:Info.t
   -> ?f:Logic.label -> Basic.term list -> tactic
 (** Instantiate a formula. Tries {!Tactics.instA} then
     {!Tactics.instC}.
 *)
 
-val cut: ?info:Logic.info 
+val cut: ?info:Info.t 
   -> ?inst:Basic.term list -> Logic.thm -> tactic
 (** [cut th]: Cut [th] into the sequent. If [~inst:trms] is given then
     the top-most variables of the theorem are instantiated with
     [trms].  Entry point to {!Logic.Tactics.cut}.
 *)
 
-val betaA: ?info:Logic.info -> ?a:Logic.label -> tactic 
+val betaA: ?info:Info.t -> ?a:Logic.label -> tactic 
 (** [betaA l sq]: beta conversion of assumption [l]
 
     {L
@@ -514,7 +641,7 @@ val betaA: ?info:Logic.info -> ?a:Logic.label -> tactic
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
 
-val betaC: ?info:Logic.info -> ?c:Logic.label -> tactic 
+val betaC: ?info:Info.t -> ?c:Logic.label -> tactic 
 (** [betaC l sq]: beta conversion of conclusion [l]
 
     {L
@@ -531,24 +658,24 @@ val betaC: ?info:Logic.info -> ?c:Logic.label -> tactic
 *)
 
 
-val beta_tac: ?info:Logic.info -> ?f:Logic.label -> tactic
+val beta_tac: ?info:Info.t -> ?f:Logic.label -> tactic
 (** [beta_tac]: Apply beta conversion to a formula in the goal.  If
     [?f] is not given, beta convert conclusions and then the
     assumptions. Fails if no change is made.
 *)
 
-val name_tac: ?info:Logic.info -> string -> Logic.label -> tactic
+val name_tac: ?info:Info.t -> string -> Logic.label -> tactic
 (** [name_tac ?info n lbl]: Name formula [lbl] with [n].  Entry point
     to {!Logic.Tactics.nameA} and {!Logic.Tactics.nameC}.
 *)
 
 val basic: 
-  ?info:Logic.info -> ?a:Logic.label -> ?c:Logic.label -> tactic
+  ?info:Info.t -> ?a:Logic.label -> ?c:Logic.label -> tactic
 (** Proves the goal \[A{_ a}, asms |- B{_ c}, concls\] if A is
     alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.
 *)
 
-val unify_tac: ?info: Logic.info ->  
+val unify_tac: ?info: Info.t ->  
   ?a:Logic.label -> ?c:Logic.label -> Logic.tactic
 (** [unify_tac a c g]: Try to unify assumption [a] with conclusion
     [c].
@@ -567,17 +694,17 @@ val unify_tac: ?info: Logic.info ->
 *)
 
 val substA: 
-  ?info:Logic.info -> Logic.label list -> Logic.label -> tactic
+  ?info:Info.t -> Logic.label list -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.substA}. *)
 
 val substC: 
-  ?info:Logic.info -> Logic.label list -> Logic.label -> tactic
+  ?info:Info.t -> Logic.label list -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.substC}. *)
 
 (** {5 Derived tactics and tacticals} *)
 
 val named_tac: 
-  ?info: Logic.info -> (info:Logic.info -> tactic) 
+  ?info: Info.t -> (info:Info.t -> tactic) 
   -> string list -> string list 
   -> tactic
 (** [named_tac tac anames cnames]: Apply [tac], renaming the
@@ -671,7 +798,7 @@ val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
     the match.
 *)
 
-val specA: ?info:Logic.info
+val specA: ?info:Info.t
   -> ?a:Logic.label -> tactic
 (** Specialize an existentially quantified assumption. [specA a trms]
     repeatedly applies [existA], failing if [a] is not an existentially
@@ -682,7 +809,7 @@ val specA: ?info:Logic.info
     [existA], in the order they were generated.
 *)
 
-val specC: ?info:Logic.info
+val specC: ?info:Info.t
   -> ?c:Logic.label -> tactic
 (** Specialize a universally quantified assumption. [specC a trms]
     repeatedly applies [allC], failing if [c] is not universally
@@ -693,7 +820,7 @@ val specC: ?info:Logic.info
     [allC], in the order they were generated.
 *)
 
-val spec_tac: ?info:Logic.info
+val spec_tac: ?info:Info.t
   -> ?f:Logic.label -> tactic
 (** Specialize a formula. Tries {!Tactics.specC} then
     {!Tactics.specA}.
@@ -731,7 +858,7 @@ val conv_rule:
 (** {7 Tactics} *)
 
 val pure_rewriteA: 
-  ?info:Logic.info -> ?term:Basic.term
+  ?info:Info.t -> ?term:Basic.term
   -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewriteA info p l]: Rewrite assumption [l] with plan
@@ -749,7 +876,7 @@ val pure_rewriteA:
 *)
 
 val pure_rewriteC: 
-  ?info:Logic.info -> ?term:Basic.term
+  ?info:Info.t -> ?term:Basic.term
   -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan
@@ -767,7 +894,7 @@ val pure_rewriteC:
 *)
 
 val pure_rewrite_tac: 
-  ?info:Logic.info -> ?term:Basic.term
+  ?info:Info.t -> ?term:Basic.term
   -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewrite info p l]: Combination of [pure_rewriteC] and
@@ -833,3 +960,5 @@ val mk_thm_plan:
 *)
 
 
+(** {7 Debugging} *)
+val lift_info: ?info:Info.t -> tactic -> tactic

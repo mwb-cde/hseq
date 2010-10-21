@@ -56,7 +56,7 @@ let iffA ?info ?a goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        Logic.Tactics.conjA ?info (ftag t);
+        Tactics.conjA ?info ~a:(ftag t);
       ] goal
 
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
@@ -83,7 +83,7 @@ let iffC ?info ?c goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        Logic.Tactics.conjC ?info (ftag t)
+        Tactics.conjC ?info ~c:(ftag t)
       ] goal
 
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
@@ -105,30 +105,30 @@ let iffE ?info ?c goal =
   in
   let add_goals info inf =
     let gls = subgoals inf in 
-    Logic.add_info info gls [] [] [];
-    empty_info inf
+    info_add info gls [] [] [];
+    info_empty inf
   in 
   let add_forms info inf=
     let atgs = List.rev (aformulas inf)
     and ctgs = List.rev (cformulas inf)
     in 
-    Logic.add_info info [] atgs ctgs [];
-    empty_info inf
+    info_add info [] atgs ctgs [];
+    info_empty inf
   in
   if not (is_iff f) 
   then raise (error "iffE")
   else 
-    let inf = mk_info() in 
+    let inf = info_make() in 
     let tac g =
       (seq 
 	 [
 	   rewrite_tac [iff_def()] ~f:(ftag t);
-	   notify_tac (add_goals info) inf
-	     (Logic.Tactics.conjC ~info:inf (ftag t));
-	   Logic.Tactics.implC ~info:inf (ftag t)
+	   (fun g1 -> notify_tac (add_goals info) inf
+	     (Tactics.conjC ~info:inf ~c:(ftag t)) g1);
+	   Tactics.implC ~info:inf ~c:(ftag t)
 	 ]) g
     in 
-    alt [ notify_tac (add_forms info) inf tac; 
+    alt [ (fun g1 -> notify_tac (add_forms info) inf tac g1); 
 	  fail ~err:(error "iffE") ] goal
 
 (*** Splitting formulas ***)
@@ -136,14 +136,14 @@ let iffE ?info ?c goal =
 let split_asm_rules = 
   [
     (fun inf l -> falseA ~info:inf ~a:l); 
-    (fun inf -> Logic.Tactics.disjA ~info:inf); 
-    (fun inf -> Logic.Tactics.implA ~info:inf)
+    (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
+    (fun inf l -> Tactics.implA ~info:inf ~a:l)
   ]
 
 let split_concl_rules =
   [
-    (fun inf -> Logic.Tactics.trueC ~info:inf); 
-    (fun inf -> Logic.Tactics.conjC ~info:inf)
+    (fun inf l -> Tactics.trueC ~info:inf ~c:l); 
+    (fun inf l -> Tactics.conjC ~info:inf ~c:l)
   ]
 
 
@@ -166,17 +166,17 @@ let split_tac = splitter_tac
 let flatter_asm_rules =
   [
     (fun inf l -> falseA ~info:inf ~a:l);
-    (fun inf -> Logic.Tactics.conjA ~info:inf);
-    (fun inf -> Logic.Tactics.existA ~info:inf)
+    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> Tactics.existA ~info:inf ~a:l)
   ]
 
 let flatter_concl_rules =
   [
-    (fun inf -> Logic.Tactics.trueC ~info:inf);
-    (fun inf -> Logic.Tactics.negC ~info:inf);
-    (fun inf -> Logic.Tactics.disjC ~info:inf);
-    (fun inf -> Logic.Tactics.implC ~info:inf);
-    (fun inf -> Logic.Tactics.allC ~info:inf)
+    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+    (fun inf l -> Tactics.negC ~info:inf ~c:l);
+    (fun inf l -> Tactics.disjC ~info:inf ~c:l);
+    (fun inf l -> Tactics.implC ~info:inf ~c:l);
+    (fun inf l -> Tactics.allC ~info:inf ~c:l)
   ]
 
 let flatter_asms_tac ?info lst = 
@@ -199,25 +199,25 @@ let scatter_asm_rules =
   [
     (fun inf l -> falseA ~info:inf ~a:l); 
 
-    (fun inf -> Logic.Tactics.negA ~info:inf);
-    (fun inf -> Logic.Tactics.conjA ~info:inf);
-    (fun inf -> Logic.Tactics.existA ~info:inf);
+    (fun inf l -> Tactics.negA ~info:inf ~a:l);
+    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> Tactics.existA ~info:inf ~a:l);
 
-    (fun inf -> Logic.Tactics.disjA ~info:inf); 
-    (fun inf -> Logic.Tactics.implA ~info:inf)
+    (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
+    (fun inf l -> Tactics.implA ~info:inf ~a:l)
   ]
 
 let scatter_concl_rules =
   [
-    (fun inf -> Logic.Tactics.trueC ~info:inf);
+    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
 
-    (fun inf -> Logic.Tactics.negC ~info:inf);
-    (fun inf -> Logic.Tactics.disjC ~info:inf);
-    (fun inf -> Logic.Tactics.implC ~info:inf);
-    (fun inf -> Logic.Tactics.allC ~info:inf);
+    (fun inf l -> Tactics.negC ~info:inf ~c:l);
+    (fun inf l -> Tactics.disjC ~info:inf ~c:l);
+    (fun inf l -> Tactics.implC ~info:inf ~c:l);
+    (fun inf l -> Tactics.allC ~info:inf ~c:l);
 
-    (fun inf -> Logic.Tactics.conjC ~info:inf); 
-    (fun inf c -> iffE ~info:inf ~c:c)
+    (fun inf l -> Tactics.conjC ~info:inf ~c:l); 
+    (fun inf l -> iffE ~info:inf ~c:l)
   ]
 
 let scatter_tac ?info ?f goal =
@@ -233,27 +233,27 @@ let blast_asm_rules =
   [
     (fun inf l -> falseA ~info:inf ~a:l); 
 
-    (fun inf -> Logic.Tactics.negA ~info:inf);
-    (fun inf -> Logic.Tactics.conjA ~info:inf);
-    (fun inf -> Logic.Tactics.existA ~info:inf);
+    (fun inf l -> Tactics.negA ~info:inf ~a:l);
+    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> Tactics.existA ~info:inf ~a:l);
 
-    (fun inf -> Logic.Tactics.disjA ~info:inf); 
-    (fun inf -> Logic.Tactics.implA ~info:inf);
+    (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
+    (fun inf l -> Tactics.implA ~info:inf ~a:l);
 
     (fun inf l -> basic ~info:inf ~a:l ?c:None)
   ]
 
 let blast_concl_rules =
   [
-    (fun inf -> Logic.Tactics.trueC ~info:inf);
+    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
 
-    (fun inf -> Logic.Tactics.negC ~info:inf);
-    (fun inf -> Logic.Tactics.disjC ~info:inf);
-    (fun inf -> Logic.Tactics.implC ~info:inf);
-    (fun inf -> Logic.Tactics.allC ~info:inf);
+    (fun inf l -> Tactics.negC ~info:inf ~c:l);
+    (fun inf l -> Tactics.disjC ~info:inf ~c:l);
+    (fun inf l -> Tactics.implC ~info:inf ~c:l);
+    (fun inf l -> Tactics.allC ~info:inf ~c:l);
 
-    (fun inf -> Logic.Tactics.conjC ~info:inf); 
-    (fun inf c -> iffE ~info:inf ~c:c);
+    (fun inf l -> Tactics.conjC ~info:inf ~c:l); 
+    (fun inf l -> iffE ~info:inf ~c:l);
 
     (fun inf l -> basic ~info:inf ?a:None ~c:l)
   ]
@@ -289,23 +289,23 @@ let cases_thm_var = Lib.freeze make_cases_tac_thm
 let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
 
 let set_info dst (sgs, afs, cfs, cnsts) = 
-  Logic.add_info dst sgs afs cfs cnsts
+  Tactics.info_add dst sgs afs cfs cnsts
 
 let cases_tac ?info (t:Basic.term) = 
   let thm = cases_thm()
-  and inf1 = Tactics.mk_info() in 
+  and inf1 = Tactics.info_make() in 
   seq 
     [
       cut ~info:inf1 thm;
       (fun g -> 
         let thm_tag = get_one ~msg:"cases_tac 1" (aformulas inf1)
         in 
-        empty_info inf1; 
+        info_empty inf1; 
         allA ~info:inf1 t ~a:(ftag thm_tag) g);
       (fun g -> 
         let thm_tag = get_one ~msg:"cases_tac 2" (aformulas inf1)
         in 
-        empty_info inf1; 
+        info_empty inf1; 
         disjA ~info:inf1 ~a:(ftag thm_tag) g)
       --
         [
@@ -313,15 +313,17 @@ let cases_tac ?info (t:Basic.term) =
 	    let asm_tag = get_one ~msg:"cases_tac 3" (aformulas inf1)
 	    and lgoal, rgoal = get_two ~msg:"cases_tac 4" (subgoals inf1)
 	    in 
-	    empty_info inf1;
+	    info_empty inf1;
 	    seq
 	      [
 	        negA ~info:inf1 ~a:(ftag asm_tag);
 	        (fun g1 -> 
 	          let nasm_tag = get_one ~msg:"cases_tac 5" (cformulas inf1)
 	          in 
-	          data_tac (set_info info)
-		    ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) g1);
+	          update_tac 
+                    (set_info info)
+		    ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) 
+                    g1);
 	      ] g);
 	  skip
         ]
@@ -329,7 +331,7 @@ let cases_tac ?info (t:Basic.term) =
 
 let show_tac ?info (trm:Basic.term) tac = 
   let thm = cases_thm()
-  and inf1 = Tactics.mk_info()
+  and inf1 = Tactics.info_make()
   in 
   seq 
     [
@@ -337,12 +339,12 @@ let show_tac ?info (trm:Basic.term) tac =
       (fun g -> 
         let thm_tag = get_one ~msg:"show_tac 1" (aformulas inf1)
         in 
-        empty_info inf1; 
+        info_empty inf1; 
         allA ~info:inf1 trm ~a:(ftag thm_tag) g);
       (fun g -> 
         let thm_tag = get_one ~msg:"show_tac 2" (aformulas inf1)
         in 
-        empty_info inf1; 
+        info_empty inf1; 
         disjA ~info:inf1 ~a:(ftag thm_tag) g)
       --
         [
@@ -354,7 +356,7 @@ let show_tac ?info (trm:Basic.term) tac =
 	    let (_, gl_tag) = get_two (subgoals inf1)
 	    and asm_tag = get_one (aformulas inf1)
 	    in 
-	    data_tac (set_info info) ([gl_tag], [asm_tag], [], []) g)
+	    update_tac (set_info info) ([gl_tag], [asm_tag], [], []) g)
         ]
     ]
 
@@ -371,7 +373,7 @@ let show = show_tac
 let disj_splitter_tac ?info ?f goal = 
   let tac ?info =
     elim_rules_tac ?info
-      ([ (fun inf1 -> Logic.Tactics.disjA ~info:inf1) ], []) 
+      ([ (fun inf1 l -> Tactics.disjA ~info:inf1 ~a:l) ], []) 
   in 
   apply_elim_tac tac ?info ?f goal
     
@@ -399,11 +401,11 @@ let cases_of ?info ?thm t g =
 	    with _ -> failwith ("Can't find cases theorem "^thm_name)
         end
   in 
-  let inf = Tactics.mk_info() in 
+  let inf = Tactics.info_make() in 
   let inf1 = 
     match info with 
       | None -> None 
-      | _ -> Some(Tactics.mk_info())
+      | _ -> Some(Tactics.info_make())
   in 
   let tac1 g1 = 
     seq 
@@ -412,7 +414,7 @@ let cases_of ?info ?thm t g =
         (fun g -> 
 	  let a_tg = get_one (aformulas inf)
 	  in 
-	  (data_tac (set_info info) ([a_tg], [], [], [])
+	  ((fun g1 -> update_tac (set_info info) ([a_tg], [], [], []) g1)
 	   ++ (disj_splitter_tac ?info:info ~f:(ftag a_tg) // skip)
 	   ++ (specA ?info:info ~a:(ftag a_tg) // skip)) g)
       ] g1
@@ -421,8 +423,10 @@ let cases_of ?info ?thm t g =
     match inf1 with
       | None -> skip g2
       | Some inf2 -> 
-	data_tac 
-	  (set_info info) ([], [], (subgoals inf2), (constants inf2)) g2
+        update_tac 
+	  (set_info info)
+          ([], [], (subgoals inf2), (constants inf2)) 
+          g2
   in 
   try (tac1 ++ tac2) g
   with err -> raise (add_error "cases_of" err)
@@ -453,24 +457,31 @@ let mp0_tac ?info a a1lbls g =
 	(Term.term_error ("mp_tac: no matching formula in assumptions") 
 	   [Term.mk_fun Lterm.impliesid [mp_lhs; mp_rhs]])
   in 
-  let inf1 = Tactics.mk_info() in 
+  let inf1 = Tactics.info_make() in 
   let tac1 =
     match mp_vars with
       | [] -> skip (* No quantifier *)
-      | _ ->       (* Implication has quantifier *)
-	instA ~a:(ftag a_label) 
+      | _ ->
+        (* Implication has quantifier *)
+	instA 
+          ~a:(ftag a_label) 
           (Tactics.extract_consts mp_vars a1_env)
-  and tac2 g2 = Logic.Tactics.implA ~info:inf1 (ftag a_label) g2
+  and tac2 g2 = 
+    Tactics.implA ~info:inf1 ~a:(ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
-      (Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n)) 
-	 (Tactics.subgoals inf1) false))
+      Lib.apply_nth 0 
+        (Tag.equal (Tactics.node_tag n))
+	(Tactics.subgoals inf1) 
+        false)
      --> 
-     Logic.Tactics.basic ~info:inf1 (ftag a1_label)
-       (ftag (Lib.get_one (Tactics.cformulas inf1) 
-		(Failure "mp_tac2.2")))) g3
+     (Tactics.basic ~info:inf1 
+        ~a:(ftag a1_label)
+        ~c:(ftag (Lib.get_one 
+                    (Tactics.cformulas inf1)
+	            (Failure "mp_tac2.2"))))) g3
   and tac4 g4 = 
-    data_tac (set_info info) ([], aformulas inf1, [], []) g4
+    update_tac (set_info info) ([], aformulas inf1, [], []) g4
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4)) g 
     
@@ -504,7 +515,7 @@ let mp_tac ?info ?a ?h goal =
     in the sequent.
 *)
 let cut_mp_tac ?info ?inst thm ?a g =
-  let info1 = Tactics.mk_info()
+  let info1 = Tactics.info_make()
   and f_label = 
     Lib.apply_option 
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
@@ -554,7 +565,7 @@ let back0_tac ?info a cs goal =
 	       ("back_tac: no matching formula in conclusion") 
 	       [Term.mk_fun Lterm.impliesid [back_lhs; back_rhs]])
   in 
-  let info1 = Tactics.mk_info() in 
+  let info1 = Tactics.info_make() in 
   let tac1=
     match back_vars with
       | [] -> (* No quantifier *)
@@ -562,23 +573,25 @@ let back0_tac ?info a cs goal =
       | _ -> (* Implication has quantifier *)
 	instA ~a:(ftag a_label)
 	  (Tactics.extract_consts back_vars c_env)
-  and tac2 g2 = Logic.Tactics.implA ~info:info1 (ftag a_label) g2
+  and tac2 g2 = Tactics.implA ~info:info1 ~a:(ftag a_label) g2
   and tac3 g3 =
     ((fun n -> 
       (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
 	 (Tactics.subgoals info1) false))
      --> 
-     Logic.Tactics.basic ~info:info1 
-       (ftag (Lib.get_nth (Tactics.aformulas info1) 1))
-       (ftag c_label)) g3
+     Tactics.basic ~info:info1 
+       ~a:(ftag (Lib.get_nth (Tactics.aformulas info1) 1))
+       ~c:(ftag c_label)) g3
   in 
   let tac4 g4 = delete (ftag c_label) g4 in 
   let tac5 g5 = 
-    data_tac (set_info info)
+    update_tac 
+      (set_info info)
       ([Lib.get_nth (Tactics.subgoals info1) 0],
        [], 
        [Lib.get_nth (Tactics.cformulas info1) 0],
-       []) g5
+       [])
+      g5
   in 
   (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
 
@@ -599,7 +612,7 @@ let back_tac ?info ?a ?c goal =
   with err -> raise (error "back_tac: Failed")
 
 let cut_back_tac ?info ?inst thm ?c g =
-  let info1 = Tactics.mk_info()
+  let info1 = Tactics.info_make()
   and c_label = 
     Lib.apply_option 
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))

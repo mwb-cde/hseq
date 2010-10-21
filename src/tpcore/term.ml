@@ -749,6 +749,48 @@ let full_rename tyenv trm =
   in
   (ntrm, ntyenv)
 
+
+let retype_index idx trm =
+  let rename_type ctr tyenv ty = 
+    rename_index ctr tyenv ty
+  in
+  let rename_binder q ctr tyenv = 
+    let (qnt, qv, qty) = Basic.dest_binding q in 
+    let (nty, ctr1, tyenv1) = rename_type ctr tyenv qty in
+    let nbnd = mk_binding qnt qv nty
+    in 
+    (nbnd, ctr1, tyenv1)
+  in 
+  let rec rename_aux t ctr tyenv env =
+    match t with
+      | Id(n, ty) -> 
+	let (ty1, ctr1, tyenv1) = rename_type ctr tyenv ty
+	in 
+	(Id(n, ty1), ctr1, tyenv1)
+      | Free(n, ty) -> 
+	let (ty1, ctr1, tyenv1) = rename_type ctr tyenv ty
+	in 
+	(Free(n, ty1), ctr1, tyenv1)
+      | Meta(q) -> (t, ctr, tyenv)
+      | Const(c) -> (t, ctr, tyenv)
+      | Bound(q) -> 
+        let t1 = try (find t env) with Not_found -> t
+        in
+        (t1, ctr, tyenv)
+      | Qnt(q, b) -> 
+      	let (q1, ctr1, tyenv1) = rename_binder q ctr tyenv in 
+	let env1 = bind (Bound(q)) (Bound(q1)) env in 
+	let (b1, ctr2, tyenv2) = rename_aux b ctr1 tyenv1 env1
+	in 
+      	(Qnt(q1, b1), ctr2, tyenv2)
+      | App(f, a) ->
+	let f1, ctr1, tyenv1 = rename_aux f ctr tyenv env in 
+        let a1, ctr2, tyenv2 = rename_aux a ctr1 tyenv1 env
+	in 
+	(App(f1, a1), ctr2, tyenv2)
+  in 
+  rename_aux trm idx (Gtypes.empty_subst()) (empty_subst())
+
 exception No_quantifier
 
 let rename_env typenv trmenv trm =

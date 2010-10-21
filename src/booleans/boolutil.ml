@@ -142,5 +142,7 @@ let close_lambda_app vars term  =
   (c2, cargs)
     
 
+(***
 let set_info dst (sgs, afs, cfs, cnsts) = 
   Logic.add_info dst sgs afs cfs cnsts
+***)

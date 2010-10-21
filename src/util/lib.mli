@@ -204,12 +204,14 @@ val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
     If list [l] is empty, return [d].
 *)
 
+(***
 val fold_map : 
   ('a -> 'b -> ('a * 'c )) -> 'a -> 'b list -> ('a * 'c list)
 (** Combined fold and map. [fold_map f a [b1; ... ; bn]] is [ (fst(f
     (std f a bn-1) bn), [snd(f a b1); snd(f (fst f a b1) b2) ; ... ;
     snd(f (fstf a bn-1) bn)])].
 *)
+***)
 
 val swap: ('a * 'b) -> ('b * 'a)
 (** [swap (a, b)] is [(b, a)] *)

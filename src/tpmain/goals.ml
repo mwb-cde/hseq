@@ -20,7 +20,6 @@
   ----*)
 
 open Logic
-open Tactics
 
 let save_hook = ref (fun () -> ())
 let set_hook f = (save_hook := f)
@@ -173,11 +172,21 @@ let top_goal () = ProofStack.top_goal (proofs())
 
 let drop() = set_proofs (ProofStack.pop (proofs())); proofs()
 
+
 let goal ?info trm = 
   let frm = Formula.make (Global.scope()) trm in 
-  let gl = mk_goal ?info (Global.scope()) frm in
+  let gl = mk_goal (Global.scope()) frm in
   let prf = Proof.make gl in
   set_proofs (ProofStack.push prf (proofs()));
+  begin
+    (** This should be
+        [Tactics.info_add_changes info (Logic.goal_changes gl)]
+        but the compiler refuses to recognise module Tactics.Info.
+    ***)
+    match info with 
+      | None -> ()
+      | Some(vr) -> vr := (Logic.goal_changes gl)
+  end;
   !save_hook(); 
   top()
 
@@ -204,8 +213,8 @@ let result () = mk_thm (top_goal())
 let apply ?report tac goal =
   Logic.Subgoals.apply_to_goal ?report tac goal
 
-let prove_goal ?info scp trm tac =
-  mk_thm (apply tac (mk_goal ?info scp (Formula.make scp trm)))
+let prove_goal scp trm tac =
+  mk_thm (apply tac (mk_goal scp (Formula.make scp trm)))
 
 let prove ?scp trm tac = 
   let sp = 
@@ -259,10 +268,10 @@ let by_com tac =
   !save_hook();
   top()
 
-let by_list ?info trm tacl =
+let by_list trm tacl =
   let goal_form = Formula.make (Global.scope()) trm
   in
-  let new_goal = mk_goal ?info (Global.scope()) goal_form
+  let new_goal = mk_goal (Global.scope()) goal_form
   in 
   let rec by_aux ts g =
     match ts with 

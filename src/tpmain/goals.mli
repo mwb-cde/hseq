@@ -85,7 +85,7 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal : ?info:Logic.info -> Basic.term -> Proof.t
+val goal: ?info:Tactics.Info.t -> Basic.term -> Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack.  If [?info] is given, the tag of the goal and
     conclusion ([trm]) are stored in it. This allows the tag of the
@@ -124,7 +124,6 @@ val apply:
 (** {7 Batch proofs} *)
 
 val prove_goal: 
-  ?info:Logic.info -> 
   Scope.t -> Basic.term -> Tactics.tactic 
   -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
@@ -140,9 +139,7 @@ val by_com : Tactics.tactic -> Proof.t
     [!save_hook]. Used for interactive proofs.
 *)
 
-val by_list : 
-  ?info:Logic.info 
-  -> Basic.term -> Tactics.tactic list -> Logic.thm
+val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
 (** [by_list ?info trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 

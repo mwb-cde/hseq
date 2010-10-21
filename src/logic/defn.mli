@@ -224,3 +224,7 @@ end
 
   end
 *)
+
+(** Debugging information. *)
+val mk_all_from_list:
+  Scope.t -> Basic.term -> Basic.term list -> Basic.term

@@ -45,9 +45,9 @@ struct
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
   let make_iff_equals_thm () =
     let iff_l2 = 
-      let info = Tactics.mk_info() in 
+      let info = Tactics.info_make() in 
       Commands.prove
-      << !x y: ((x => y) and (y => x)) => (x=y) >>
+      << !x y: ((x => y) and (y => x)) => (x = y) >>
 	  (allC ~info:info 
 	   ++ allC ~info:info 
 	   ++ 
@@ -66,7 +66,7 @@ struct
 		   (basic // trivial);
 		   (replace_tac ++ eq_tac)]) g))
     in 
-    let info = Tactics.mk_info()
+    let info = Tactics.info_make()
     in 
     Commands.prove << !x y: (x iff y) = (x = y) >>
         (allC ~info ++ allC ~info
@@ -133,7 +133,7 @@ struct
       (flatten_tac ++ replace_tac ++ trivial)
     in
     let rule_true_l2 = 
-      let info = Tactics.mk_info() in 
+      let info = Tactics.info_make() in 
       Commands.prove << !x: x => (x=true) >>
 	  (allC ~info:info
 	   ++ 
@@ -165,7 +165,7 @@ struct
 
   (** rule_false_thm: !x: (not x) = (x=false) *)
   let make_rule_false_thm() = 
-    let info = Tactics.mk_info() in 
+    let info = Tactics.info_make() in 
     Commands.prove << ! x: (not x) = (x=false) >>
         (allC ~info:info
 	 ++
@@ -241,14 +241,14 @@ struct
         Term.rename (Term.rebuild_qnt eqvars (Lterm.mk_not eqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let info = Tactics.mk_info() in
+      let info = Tactics.info_make() in
       let proof g = 
 	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
-	     Logic.Tactics.conjC (fnum 1)
+	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
 		 seq 
-		   [Logic.Tactics.implC ~info:info (fnum 1);
+		   [Tactics.implC ~info:info ~c:(fnum 1);
 		    (fun g1 ->
 		      let atag = 
                         Lib.get_one (Tactics.aformulas info)
@@ -257,37 +257,38 @@ struct
 			Lib.get_one (Tactics.cformulas info) 
 			  (Failure "neg_all_conv: 1")
 		      in 
-		      Tactics.empty_info info;
+		      Tactics.info_empty info;
 		      seq
 			[
-			  Logic.Tactics.negA ~info:info (ftag atag);
+			  Tactics.negA ~info:info ~a:(ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
 			      Lib.get_one (Tactics.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.empty_info info;
+			    Tactics.info_empty info;
 			    seq
-			      [repeat (Logic.Tactics.allC 
-					 ~info:info (ftag ctag2));
+			      [repeat (Tactics.allC 
+					 ~info:info ~c:(ftag ctag2));
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag)
 				   (List.rev (Tactics.constants info)) g3);
-			       data_tac 
-				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negC ~info:info (ftag ctag);
+                               (fun g3 ->
+			         update_tac 
+				   (fun _ -> Tactics.info_empty info) () g3);
+			       Tactics.negC ~info:info ~c:(ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
 				   Lib.get_one (Tactics.aformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
-				 Tactics.empty_info info;
-				 Logic.Tactics.basic 
-				   (ftag atag3) (ftag ctag2) g3)
+				 Tactics.info_empty info;
+				 Tactics.basic 
+				   ~a:(ftag atag3) ~c:(ftag ctag2) g3)
 			      ] g2)] g1)];
 		 seq 
 		   [
-                     Logic.Tactics.implC ~info:info (fnum 1);
+                     Tactics.implC ~info:info ~c:(fnum 1);
 		     (fun g1 ->
 		       let atag = 
                          Lib.get_one (Tactics.aformulas info)
@@ -296,32 +297,33 @@ struct
 			Lib.get_one (Tactics.cformulas info) 
 			  (Failure "neg_all_conv: 4")
 		      in 
-		      Tactics.empty_info info;
+		      Tactics.info_empty info;
 		      seq
 			[
-			  Logic.Tactics.negC ~info:info (ftag ctag);
+			  Tactics.negC ~info:info ~c:(ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
 			      Lib.get_one (Tactics.aformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.empty_info info;
+			    Tactics.info_empty info;
 			    seq
-			      [repeat (Logic.Tactics.existA 
-					 ~info:info (ftag atag));
+			      [repeat (Tactics.existA 
+					 ~info:info ~a:(ftag atag));
 			       (fun g3 -> 
 				 instA ~a:(ftag atag2)
 				   (List.rev (Tactics.constants info)) g3);
-			       data_tac 
-				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negA ~info:info (ftag atag);
+			       (fun g3 ->
+                                 update_tac 
+				   (fun _ -> Tactics.info_empty info) () g3);
+			       Tactics.negA ~info:info ~a:(ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
 				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
-				 Logic.Tactics.basic 
-				   (ftag atag2) (ftag ctag3) g3)
+				 Tactics.basic 
+				   ~a:(ftag atag2) ~c:(ftag ctag3) g3)
 			      ] g2)] g1)]]
 	    ] g
       in 
@@ -362,14 +364,14 @@ struct
 	Term.rename (Term.rebuild_qnt aqvars (Lterm.mk_not aqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let info = Tactics.mk_info() in
+      let info = Tactics.info_make() in
       let proof g = 
 	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
-	     Logic.Tactics.conjC (fnum 1)
+	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
 		 seq 
-		   [Logic.Tactics.implC ~info:info (fnum 1);
+		   [Tactics.implC ~info:info ~c:(fnum 1);
 		    (fun g1 ->
 		      let atag =
 			Lib.get_one (Tactics.aformulas info)
@@ -378,36 +380,36 @@ struct
 			Lib.get_one (Tactics.cformulas info) 
 			  (Failure "neg_exists_conv: 1")
 		      in 
-		      Tactics.empty_info info;
+		      Tactics.info_empty info;
 		      seq
 			[
-			  Logic.Tactics.negA ~info:info (ftag atag);
+			  Tactics.negA ~info:info ~a:(ftag atag);
 			  (fun g2-> 
 			    let ctag2 = 
 			      Lib.get_one (Tactics.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.empty_info info;
+			    Tactics.info_empty info;
 			    seq
-			      [repeat (Logic.Tactics.allC 
-					 ~info:info (ftag ctag));
+			      [repeat (Tactics.allC 
+					 ~info:info ~c:(ftag ctag));
 			       (fun g3 -> 
 				 instC ~c:(ftag ctag2)
 				   (List.rev (Tactics.constants info)) g3);
-			       data_tac 
-				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negC ~info:info (ftag ctag);
+                               (fun g3 -> update_tac
+				 (fun () -> Tactics.info_empty info) () g3);
+			       Tactics.negC ~info:info ~c:(ftag ctag);
 			       (fun g3 ->
 				 let atag3 = 
 				   Lib.get_one (Tactics.aformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
-				 Tactics.empty_info info;
-				 Logic.Tactics.basic 
-				   (ftag atag3) (ftag ctag2) g3)
+				 Tactics.info_empty info;
+				 Tactics.basic 
+				   ~a:(ftag atag3) ~c:(ftag ctag2) g3)
 			      ] g2)] g1)];
 		 seq 
-		   [Logic.Tactics.implC ~info:info (fnum 1);
+		   [Tactics.implC ~info:info ~c:(fnum 1);
 		    (fun g1 ->
 		      let atag = 
 			Lib.get_one (Tactics.aformulas info) 
@@ -416,33 +418,33 @@ struct
 			Lib.get_one (Tactics.cformulas info) 
 			  (Failure "neg_exists_conv: 4")
 		      in 
-		      Tactics.empty_info info;
+		      Tactics.info_empty info;
 		      seq
 			[
-			  Logic.Tactics.negC ~info:info (ftag ctag);
+			  Tactics.negC ~info:info ~c:(ftag ctag);
 			  (fun g2-> 
 			    let atag2 = 
 			      Lib.get_one (Tactics.aformulas info)
 				(Failure "neg_exists_conv: 2")
 			    in 
-			    Tactics.empty_info info;
+			    Tactics.info_empty info;
 			    seq
 			      [repeat 
-				  (Logic.Tactics.existA 
-				     ~info:info (ftag atag2));
+				  (Tactics.existA 
+				     ~info:info ~a:(ftag atag2));
 			       (fun g3 -> 
 				 instA ~a:(ftag atag)
 				   (List.rev (Tactics.constants info)) g3);
-			       data_tac 
-				 (fun () -> Tactics.empty_info info) ();
-			       Logic.Tactics.negA ~info:info (ftag atag);
+                               (fun g3 -> update_tac
+				 (fun () -> Tactics.info_empty info) () g3);
+			       Tactics.negA ~info:info ~a:(ftag atag);
 			       (fun g3 ->
 				 let ctag3 = 
 				   Lib.get_one (Tactics.cformulas info)
 				     (Failure "neg_exists_conv: 3")
 				 in 
-				 Logic.Tactics.basic 
-				   (ftag atag2) (ftag ctag3) g3)
+				 Tactics.basic 
+				   ~a:(ftag atag2) ~c:(ftag ctag3) g3)
 			      ] g2)] g1)]]
 	    ] g
       in 
@@ -468,22 +470,22 @@ struct
     then raise (error "conjunct1: not a conjunction")
     else 
       let (_, lhs, rhs) = Term.dest_binop trm in 
-      let info = Tactics.mk_info() in 
+      let info = Tactics.info_make() in 
       let proof l g =
-	seq [Logic.Tactics.cut ~info:info thm;
+	seq [Tactics.cut ~info:info thm;
 	     (fun g1 -> 
 	       let ttag = 
 		 Lib.get_one (Tactics.aformulas info) 
 		   (error "conjunctL")
 	       in 
-	       Tactics.empty_info info;
-	       Logic.Tactics.conjA ~info:info (ftag ttag) g1);
+	       Tactics.info_empty info;
+	       Tactics.conjA ~info:info ~a:(ftag ttag) g1);
 	     (fun g1 -> 
 	       let (ltag, rtag)=
 		 Lib.get_two (Tactics.aformulas info) 
 		   (error "conjunctL")
 	       in 
-	       Logic.Tactics.basic (ftag ltag) l g1)] g
+	       Tactics.basic ~a:(ftag ltag) ~c:l g1)] g
       in 
       Commands.prove ~scp:scp lhs (proof (fnum 1))
 	
@@ -495,22 +497,22 @@ struct
     then raise (error "conjunct1: not a conjunction")
     else 
       let (_, lhs, rhs) = Term.dest_binop trm in 
-      let info = Tactics.mk_info() in 
+      let info = Tactics.info_make() in 
       let proof l g =
-	seq [Logic.Tactics.cut ~info:info thm;
+	seq [Tactics.cut ~info:info thm;
 	     (fun g1 -> 
 	       let ttag = 
 		 Lib.get_one (Tactics.aformulas info) 
 		   (error "conjunctL")
 	       in 
-	       Tactics.empty_info info;
-	       Logic.Tactics.conjA ~info:info (ftag ttag) g1);
+	       Tactics.info_empty info;
+	       Tactics.conjA ~info:info ~a:(ftag ttag) g1);
 	     (fun g1 -> 
 	       let (ltag, rtag)=
 		 Lib.get_two (Tactics.aformulas info) 
 		   (error "conjunctL")
 	       in 
-	       Logic.Tactics.basic (ftag rtag) l g1)] g
+	       Tactics.basic ~a:(ftag rtag) ~c:l g1)] g
       in 
       Commands.prove ~scp:scp rhs (proof (fnum 1))
 

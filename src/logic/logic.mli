@@ -233,6 +233,9 @@ val form_tag: tagged_form -> Tag.t
 val drop_tag: tagged_form -> Formula.t
 (** Drop the tag of a formula. *)
 
+
+module Deprecated:
+sig
 (** 
     {7 Data for tactics} 
 
@@ -253,38 +256,39 @@ val drop_tag: tagged_form -> Formula.t
    [forms]: new forms produced by tactic 
    [terms]: new constants produced by tactic 
 *)
-type tag_record = 
-    { 
-      goals:Tag.t list; 
+  type tag_record = 
+      { 
+        goals:Tag.t list; 
       (** new sub-goals produced by the tactic *) 
-      aforms: Tag.t list;
+        aforms: Tag.t list;
       (** new assumption produced by the tactic *)
-      cforms: Tag.t list;
+        cforms: Tag.t list;
       (** new conclusions produced by the tactic *)
-      terms: Basic.term list
+        terms: Basic.term list
     (** new constants produced by the tactic *)
-    }
+      }
 
 (** Type used to pass information from a tactic.  *)
-type info = tag_record ref
+  type info = tag_record ref
 
-val make_tag_record: 
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> tag_record
+  val make_tag_record: 
+    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> tag_record
 (** Construct a [tag_record]. *)
 
-val do_info: info option ->
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> unit
+  val do_info: info option ->
+    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> unit
 (** [do_info info gs hs cs ts]: If [info] is [Some r] then
     [r:=mk_tag_record gs hs cs ts] otherwise do nothing.
 *)
 
-val add_info: 
-  info option ->
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> unit
+  val add_info: 
+    info option ->
+    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list -> unit
 (** [do_info info gs hs cs ts]: If [info] is [Some r] then add [gs],
     [hs], [cs] and [ts] to [!r.goals], [!r.aforms], [!r.cforms] and
     [!r.terms] respectively.  otherwise do nothing.
 *)
+end
 
 (** Skolem constants *)
 module Skolem:
@@ -505,13 +509,15 @@ val get_subgoals: goal -> Sequent.t list
 (** The subgoals of the goal. *)
 val goal_tyenv: goal -> Gtypes.substitution
 (** The type environment of the goal. *)
+val goal_changes: goal -> Changes.t
+(** The changes made to the goal. *)
 
 val has_subgoals: goal -> bool
 (** Whether a goal has subgoals. *)
 val num_of_subgoals: goal -> int
 (** The number of subgoals in a goal. *)
 
-val mk_goal: ?info:info -> Scope.t -> Formula.t -> goal
+val mk_goal: Scope.t -> Formula.t -> goal
 (** [mk_goal info scp f]: Make formula [f] a goal to be proved in
     scope [scp]. If [info] is given, the tag of the new subgoal and
     conclusion are stored in it.
@@ -591,7 +597,9 @@ sig
   val node_tyenv: node -> Gtypes.substitution
   (** The type environment of the goal. *)
   val node_sqnt: node -> Sequent.t
-  (** The subgoal to br proved. *)
+  (** The subgoal to be proved. *)
+  val node_changes: node -> Changes.t
+  (** The subgoals of the branch. *)
 
   (** [branch]: A branch is a list of subgoals and the type
       environment of the goal. A branch also holds the tag of the
@@ -601,6 +609,8 @@ sig
   val branch_tyenv: branch -> Gtypes.substitution
   (** The type environment of the branch. *)
   val branch_sqnts: branch -> Sequent.t list
+  (** The subgoals of the branch. *)
+  val branch_changes: branch -> Changes.t
   (** The subgoals of the branch. *)
 
   (** {7 Utility functions} *)
@@ -619,12 +629,6 @@ sig
 
       raise [Failure] if a variable ends up bound to itself.
   *)
-
-  val merge_tac_tyenvs: node -> branch -> branch
-  (** [merge_tac_tyenvs n b]: Merge the type environment of branch
-      [b], resulting from applying a tactic to node [n], with the
-      type environment of [n].  Make a new branch with the subgoals
-      of [b] but with the new type environment.  *)
 
   (** {7 Applying tactics} *)
 
@@ -721,6 +725,19 @@ sig
     discarded. 
 *)
 
+  val apply_fold: 
+    ('a -> node -> ('a * branch)) 
+    -> 'a -> branch -> ('a * branch)
+(** [apply_fold rl i (Branch(tg, tyenv, sqnts))]: Apply tactic [tac] to
+    each subgoal in a branch, folding the initial value across the
+    nodes in the branch. Returns [(x, g)] where [x] is the result of
+    the fold and [g] the new goal. The new goal is produced in the
+    same way as [apply_to_each].
+    
+    @raise [No_subgoals] if [sqnts] is empty.
+*)
+
+
 end
 
 type node = Subgoals.node
@@ -761,9 +778,13 @@ type plan = rr_type Rewrite.plan
 module Tactics:
 sig
 
+  val changes: node -> Changes.t
+  (** Utility function to extract changes from a node for use in tactics. *)
+
+
   (** {5 Manipulating Assumptions and Conclusions} *)
 
-  val lift_asm: ?info:info -> label -> tactic
+  val lift_asm: label -> tactic
   (** [lift_asm l sqnt]: Move assumption with label [l] to top of
       the assumptions of subgoal [sqnt]. 
 
@@ -778,7 +799,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = []]
   *)
 
-  val lift_concl: ?info:info -> label -> tactic
+  val lift_concl: label -> tactic
   (** [lift_concl l sqnt]: Move conclusion with label [l] to top
       of the conclusions of subgoal [sqnt].
 
@@ -793,12 +814,12 @@ sig
       info: [goals = [], aforms=[], cforms=[l], terms = []]
   *)
 
-  val lift: ?info:info -> label -> tactic
+  val lift: label -> tactic
   (** [lift l sqnt]: Lift formula with label [l] to the top of
       assumption/conclusions. [lift] tries [lift_asm] then tries
       [lift_concl]. Doesn't change the formula tag.  *)
 
-  val copy_asm: ?info:info -> label -> tactic
+  val copy_asm: label -> tactic
   (** [copy_asm l]: Copy assumption [l].
 
       {L
@@ -810,7 +831,7 @@ sig
       info: [goals = [], aforms=[l'], cforms=[], terms = []]
   *)
 
-  val copy_cncl: ?info:info -> label -> tactic
+  val copy_cncl: label -> tactic
   (** [copy_cncl l]: Copy conclusion [l]
 
       {L
@@ -824,7 +845,7 @@ sig
 
   (*** rotate assumptions conclusions ***)
 
-  val rotate_asms: ?info:info -> tactic
+  val rotate_asms: tactic
   (** [rotate_asm]: Rotate assumptions.
 
       {L
@@ -834,7 +855,7 @@ sig
       info: [goals = [], aforms=[], cforms=[], terms = []]
   *)
 
-  val rotate_cncls: ?info:info -> tactic
+  val rotate_cncls: tactic
   (** [rotate_cncls]: Rotate conclusions.
 
       {L
@@ -846,7 +867,7 @@ sig
       info: [goals = [], aforms=[], cforms=[], terms = []]
   *)
 
-  val deleteA: ?info:info -> label -> tactic
+  val deleteA: label -> tactic
   (** [deleteA l sq]: Delete assumption [l] from subgoal [sq].
 
       {L
@@ -856,7 +877,7 @@ sig
       info: [goals = [], aforms=[], cforms=[], terms = []]
   *)
 
-  val deleteC: ?info:info -> label -> tactic
+  val deleteC: label -> tactic
   (** [delete l sq]: Delete conclusion [l] from subgoal [sq].
 
       If [l] is a conclusion
@@ -869,7 +890,7 @@ sig
 
   (** {5 Logic Rules}  *)
 
-  val skip: ?info:info -> tactic
+  val skip: tactic
   (** [skip]: The do nothing tactic.
 
       {L
@@ -882,7 +903,7 @@ sig
       functions using {!Logic.foreach})
   *)
 
-  val cut: ?info:info -> thm -> tactic
+  val cut: thm -> tactic
   (** [cut th sq]: add theorem [th] to assumptions of [sq].
 
       {L
@@ -892,7 +913,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = []]
   *)
 
-  val basic: ?info:info -> label -> label -> tactic
+  val basic: label -> label -> tactic
   (** [basic i j sq]: solve the subgoal if assumption [i] is
       alpha-equal to conclusion [j].
 
@@ -907,7 +928,7 @@ sig
       info: [goals = [], aforms=[], cforms=[], terms = []]
   *)
 
-  val conjA: ?info:info -> label -> tactic
+  val conjA: label -> tactic
   (** [conjA l sq]: Eliminate the conjunction at assumption [l].
       
       {L
@@ -919,7 +940,7 @@ sig
       info: [goals = [], aforms=[l1, l2], cforms=[], terms = []]
   *)
 
-  val conjC: ?info:info -> label -> tactic
+  val conjC: label -> tactic
   (** [conjC l sq]: Eliminate the conjunction at conclusion [l].
 
 
@@ -934,7 +955,7 @@ sig
       info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
   *)
 
-  val disjA: ?info:info -> label -> tactic
+  val disjA: label -> tactic
   (** [disjA l sq]: Eliminate the disjunction at assumption [l].
 
 
@@ -949,7 +970,7 @@ sig
       info: [goals = [g1; g2], aforms=[l], cforms=[], terms = []]
   *)
 
-  val disjC: ?info:info -> label -> tactic
+  val disjC: label -> tactic
   (** [disjC l sq]: Eliminate the disjunction at conclusion [l].
       
       {L
@@ -961,7 +982,7 @@ sig
       info: [goals = [], aforms=[], cforms=[l1, l2], terms = []]
   *)
 
-  val negA: ?info:info-> label -> tactic
+  val negA: label -> tactic
   (** [negA l sq]: Elminate the negation at assumption [l].
 
       {L
@@ -973,7 +994,7 @@ sig
       info: [goals = [], aforms=[], cforms=[l], terms = []]
   *)
 
-  val negC: ?info:info -> label -> tactic
+  val negC: label -> tactic
   (** [negC l sq]: Elminate the negation at conclusion [l].
 
       {L
@@ -986,7 +1007,7 @@ sig
   *)
 
 
-  val implA: ?info:info -> label -> tactic
+  val implA: label -> tactic
   (** [implA l sq]: Eliminate the implication at assumption [l].
 
       {L
@@ -1000,7 +1021,7 @@ sig
       info: [goals = [g1; g2], aforms=[l], cforms=[l], terms = []]
   *)
 
-  val implC: ?info:info -> label -> tactic
+  val implC: label -> tactic
   (** [implC l sq]: Elminate the implication at conclusion [l].
 
       {L
@@ -1012,7 +1033,7 @@ sig
       info: [goals = [], aforms=[l1], cforms=[l], terms = []]
   *)
 
-  val allA: ?info:info -> Basic.term -> label -> tactic
+  val allA: Basic.term -> label -> tactic
   (** [allA t l sq]: Elminate the universal quantifier at
       assumption [l], instantiating it with [t].
 
@@ -1028,7 +1049,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = []]
   *)
 
-  val allC: ?info:info -> label -> tactic
+  val allC: label -> tactic
   (** [allC l sq]: Elminate the universal quantifier at conclusion
       [l].
 
@@ -1044,7 +1065,7 @@ sig
       info: [goals = [], aforms=[], cforms=[l], terms = [c]]
   *)
 
-  val existA: ?info:info -> label -> tactic
+  val existA: label -> tactic
   (** [existA l sq]: Elminate the existential quantifier at
       assumption [l].
 
@@ -1059,7 +1080,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = [c]]
   *)
 
-  val existC: ?info:info  -> Basic.term -> label -> tactic
+  val existC: Basic.term -> label -> tactic
   (** [existC t l sq]: Elminate the existential quantifier at
       conclusion [l], instantiating it with [t].
 
@@ -1074,7 +1095,7 @@ sig
       info: [goals = [], aforms=[], cforms=[l], terms = []]
   *)
 
-  val trueC: ?info:info -> label -> tactic
+  val trueC: label -> tactic
   (** [trueC i sq]: Truth solves the goal.
 
       {L
@@ -1088,8 +1109,7 @@ sig
 
 
   val rewrite_intro:
-    ?info:info
-    -> (rr_type)Rewrite.plan -> Basic.term -> tactic
+    (rr_type)Rewrite.plan -> Basic.term -> tactic
   (** [rewrite_intro ?info ctrl plan trm sq]: Introduce an equality
       established by rewriting term [trm] with [plan].
 
@@ -1107,7 +1127,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = []]
   *)
 
-  val substA: ?info:info -> label list -> label -> tactic
+  val substA: label list -> label -> tactic
   (** [substA ?info eqs l sq]: Substitute, using the assumptions
       in [eq], into the assumption [l].  The assumptions in [eq]
       must all be equalities of the form [L=R]. The substitution is
@@ -1127,7 +1147,7 @@ sig
       Silently discards the labels of non-existant assumptions in [eqs].
   *)
 
-  val substC: ?info:info -> label list -> label -> tactic
+  val substC: label list -> label -> tactic
   (** [substC ?info eqs l sq]: Substitute, using the assumptions
       in [eq], into the conclusion [l].  The assumptions in [eq]
       must all be equalities of the form [L=R]. The substitution is
@@ -1147,7 +1167,7 @@ sig
       Silently discards the labels of non-existant assumptions in [eqs].
   *)
 
-  val nameA: ?info:info -> string -> label -> tactic
+  val nameA: string -> label -> tactic
   (** [nameA ?info l name sq]: Rename the assumption labelled [l]
       as [name].  The previous name and tag of [l] are both
       discarded.
@@ -1165,7 +1185,7 @@ sig
       Fails if an assumption or conclusion is already named [name].
   *)
 
-  val nameC: ?info:info -> string -> label -> tactic
+  val nameC: string -> label -> tactic
 (** [nameC ?info name l sq]: Rename the conclusion labelled [l] as
     [name].  The previous name and tag of [l] are both discarded.
     
