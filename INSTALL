@@ -40,16 +40,13 @@ From the toplevel directory:
 2) Build the system:
 	make
 
-3) Install the system:
+3) Install the system and documentation.
 	make install
 
-4) Build and install documentation (optional, recommended)
-	make install-doc
-
-5) Build and install source code documentation (optional, recommended)
+4) Build and install source code documentation (optional)
 	make install-srcdoc
 
-6) Clean up
+5) Clean up
 	make clean
 
 
