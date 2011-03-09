@@ -75,9 +75,8 @@ to be linked in.
 The library does not depend on the toplevel interface. Using the
 library without the toplevel hasn't been very well tested.
 
-Module Init has more initialization code that may be useful.  File
-examples/libtest.ml is a very simple example of using the library to
-build a stand-alone executable. A more complete example is given in
+File examples/libtest.ml is a very simple example of using the library
+to build a stand-alone executable. A more complete example is given in
 examples/SumExample.ml.
 
 Toplevel:

@@ -85,16 +85,19 @@ MAKEINFO=makeinfo ${OPTIONS}
 ###
 
 # all: Build html
-all: html
+all: build-html
+info: build-info
+html: build-html
 
 # html: Build html documentation
-.PHONY: html
-html: 
+.PHONY: build-html
+
+build-html: 
 	$(foreach file, $(DOCSRC), -$(MAKEINFO) --html $(file).texi;)
 
 # info: Build info documentation
-.PHONY: info
-info: 
+.PHONY: build-info
+build-info: 
 	$(foreach file, $(DOCSRC), -$(MAKEINFO) $(file).texi;)
 
 # install: Install documentation
@@ -110,7 +113,6 @@ install-html: html
 install-info: info
 	-mkdir $(INFODIR)
 	-cp -Rf *.info $(INFODIR)
-
 
 ##
 # Cleaning files

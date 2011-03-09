@@ -82,9 +82,9 @@ include ../config/Makefile.os
 .PHONY: html
 .PHONY: info
 
-.PHONY: install-html
-.PHONY: install-info
+.PHONY: build-html build-info
 
+.PHONY: install-html install-info
 
 .PHONY: clean
 .PHONY: libclean
@@ -122,26 +122,51 @@ export OPTIONS = $(INCLUDE)
 # The build targets
 ###
 
-
 # all: Build html
-all: html
+all: info html
 
-html: $(DOCSRC)
+#
+# HTML
+# 
+
+build-html: $(DOCSRC)
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) install-html;) $(SKIP)
+		$(DMAKE) -C $(subdir) build-html ;) $(SKIP)
 
-info: $(DOCSRC)
+html: build-html
+
+#
+# GNU Info
+# 
+
+build-info: $(DOCSRC)
 	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) install-info;) $(SKIP)
+		$(DMAKE) -C $(subdir) build-info ;) $(SKIP)
 
-install-html: html
+info: build-info
+
+
+###
+# Installation targets
+###
+
+ifdef IDOCDIR
+$(IDOCDIR):
 	-$(MKDIR) $(IDOCDIR)
+endif
+ifdef HTMLDIR
+$(HTMLDIR): $(IDOCDIR)
 	-$(MKDIR) $(HTMLDIR)
+endif
+ifdef INFODIR
+$(INFODIR): $(IDOCDIR)
+	-$(MKDIR) $(INFODIR)
+endif
+
+install-html: html $(HTMLDIR)
 	-cp -Rf html/* $(HTMLDIR)
 
-install-info: info
-	-$(MKDIR) $(IDOCDIR)
-	-$(MKDIR) $(INFODIR)
+install-info: info $(INFODIR)
 	-cp -Rf info/* $(INFODIR)
 
 install: install-html install-info
