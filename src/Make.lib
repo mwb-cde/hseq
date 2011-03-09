@@ -21,17 +21,18 @@
 
 SUBDATA = Makefile.def
 
+#
+# Read the list of files from each sub-directory into FILELIST.
+# 
+
 FILELIST :=
-
-define get_files
-  FILES :=
-  include $(1)/$$(SUBDATA)
-  echo "subdir = $(1)"  
-#  FILELIST +=$$(foreach file, $$(FILES),$(1)/$$(file)) 
-  FILELIST +=$$(foreach file, $$(FILES),$$(file)) 
+define FILELIST_template
+       FILES :=
+       include $(1)/$$(SUBDATA)
+       $(info "subdir = $(1)")
+       FILELIST += $$(FILES)  
 endef
-
-$(foreach subdir, $(OBJDIRS), $(eval $(call get_files, $(subdir))))
+$(foreach subdir, $(OBJDIRS),$(eval $(call FILELIST_template,$(subdir))))
 
 ###
 # Standard build settings.
