@@ -37,10 +37,11 @@
 export BAREMAKE = $(MAKE)
 
 # DMAKE: The make to build sub-directories with.
-export DMAKE = make $(MAKEOPTIONS)
+#export DMAKE = make $(MAKEOPTIONS)
+export DMAKE = $(MAKE)
 
 # MAKECLEAN: The make to clean up with
-export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+export MAKECLEAN = $(MAKE) NODEPEND=true $(MAKEOPTIONS)
 
 ##
 # OS Commands
@@ -63,6 +64,35 @@ export RM = rm -f
 
 # SKIP: Do nothing
 export SKIP =
+
+##
+# Build Targets
+##
+
+## General targets
+
+.PHONY: all  	# all: Build everything
+.PHONY: lib  	# lib: Build the library file
+.PHONY: opt  	# opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: doc  	# doc: Generate the code documentation
+
+## Cleaning targets
+.PHONY: clean
+.PHONY: libclean
+.PHONY: docclean
+.PHONY: distclean
+
+## build targets
+
+.PHONY: build-headers 
+.PHONY: build-code build-bytecode build-natcode
+.PHONY: build-bytelib build-natlib build-lib
+
+.PHONY: install-headers 
+.PHONY: install-code install-bytecode install-natcode
+.PHONY: install-bytelib install-natlib install-lib
+.PHONY: install-other
 
 #####
 # Constants
@@ -130,17 +160,19 @@ export objlib = $(addsuffix .a,$(1))
 # Compiler settings
 ####
 
+#
 # Flags:
 #   FAST: Use the fast compilers
 #
 # Options:
 #   OCAMLC_OPTIONS: options for ocamlc
-#   OCAMLOPT_OPTIONS: options for ocamlopt
+#   OCAMLNAT_OPTIONS: options for ocamlopt (native code compiler)
 #   OCAMLLINK_OPTIONS: options for ocamlc (linker)
-#   OCAMLOPTLINK_OPTIONS: options for ocamlopt (linker)
+#   OCAMLNATLINK_OPTIONS: options for ocamlnat (linker)
 #   OCAMLDEP_OPTIONS: options for ocamldep
 #   OCAMLDOC_OPTIONS: options for ocamldoc
 #   OCAMLPP_OPTIONS : options to pass to camlp4
+#
 
 ## Feature tests
 
@@ -166,61 +198,68 @@ PPOPTIONS ?= -pp "camlp4of" -I +camlp4
 endif
 
 # BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC = ocamlc
+export BAREOCAMLC=ocamlc
 
-# BAREOCAMLOPT: The bare OCaml native-code compiler
-export BAREOCAMLOPT = ocamlopt
+# BAREOCAMLNAT: The bare OCaml native-code compiler
+export BAREOCAMLNAT=ocamlopt
 
 # OCAMLC: The OCaml byte code compiler
-export OCAMLC = $(BAREOCAMLC) $(OCAMLC_OPTIONS)
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS)
 
-# OCAMLOPT: The OCaml native code compiler
-export OCAMLOPT = $(BAREOCAMLOPT) $(OCAMLOPT_OPTIONS) 
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
 
 # OCAMLlink: The OCaml byte-code linker
-export OCAMLlink = $(BAREOCAMLC) -a $(OCAMLLINK_OPTIONS)
+export OCAMLLINK=$(BAREOCAMLC) -a 
 
 # OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP = ocamlmktop $(OCAMLMKTOP_OPTIONS)
+export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_OPTIONS)
 
 # OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep $(OCAMLDEP_OPTIONS)
+export OCAMLDEP=ocamldep $(OCAMLDEP_OPTIONS)
 
 # OCAMLCPP : the preprocesor
-export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
+export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
 
 # OCAMLDOC: The documentation generator
-export OCAMLDOC ?= ocamldoc $(OCAMLDOC_OPTIONS)
+export OCAMLDOC=ocamldoc $(OCAMLDOC_OPTIONS)
 
-## Native code compilers, only if supported
+###
+# Native code compilers, only if supported
+#
 ifeq '$(FAST)' 'true'
 
 # BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC = ocamlc.opt 
+export BAREOCAMLC=ocamlc.opt 
 
-# BAREOCAMLOPT: The bare OCaml native-code compiler
-export BAREOCAMLOPT = ocamlopt.opt
+# BAREOCAMLNAT: The bare OCaml native-code compiler
+export BAREOCAMLNAT=ocamlopt.opt
 
 # OCAMLC: The OCaml bytecode compiler
-export OCAMLC = $(BAREOCAMLC) $(OCAMLC_OPTIONS) 
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) 
 
-# OCAMLOPT: The OCaml native code compiler
-export OCAMLOPT = $(BAREOCAMLOPT) $(OCAMLOPT_OPTIONS) 
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_OPTIONS) 
 
-# OCAMLOPTlink: The OCaml native-code linker
-export OCAMLOPTlink= $(OCAMLOPT) -a $(OCAMLOPTLINK_OPTIONS)
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK=$(OCAMLNAT) -a 
 
 # OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep.opt $(OCAMLDEP_OPTIONS)
+export OCAMLDEP=ocamldep.opt $(OCAMLDEP_OPTIONS)
 
 # OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc.opt $(OCAMLDOC_OPTIONS)
+export OCAMLDOC=ocamldoc.opt $(OCAMLDOC_OPTIONS)
 
 endif # End of native code compilers
+###
 
-###
-# Suffixes and how to handle them
-###
+#####
+# Build rules
+#####
+
+##
+# Suffixes and their build rules.
+##
 
 .SUFFIXES: .mli .cmi
 .SUFFIXES: .ml .cmo
@@ -239,36 +278,99 @@ endif # End of native code compilers
 	$(OCAMLC) -c $<
 
 .ml.cmx: 
-	$(OCAMLOPT) -c $<
+	$(OCAMLNAT) -c $<
 
-#####
-# Common Targets
-######
+####
+# Templates for use with Makefile.module
+####
 
-## General targets
+#
+# Build order:
+#
+# 1) Run the preprocessor on .mlp files.
+#
+# 2) Build interface from .mli files.
+#
+#    This has to be done before building object files otherwise ocaml
+#    will generate an interface for each .ml file as it is compile,
+#    possibly exposing values that were meant to be internal to the
+#    .ml file.
+#
+# 3) Build objects from .ml files.
+#
+# 4) Build libraries from .ml files.
+#
+# Notes:
+#
+# Native code compilation should use the -dllpath option to ocamlc to
+# pass the library install-directory. This is needed so that the
+# libraries can be found after installation.
+#
 
-.PHONY: all  	# all: Build everything
-.PHONY: lib  	# lib: Build the library file
-.PHONY: opt  	# opt: Build the native code library file
-.PHONY: install # install: Install the library and header files.
-.PHONY: doc  	# doc: Generate the code documentation
+# build_header_template($1): Build headers for $(1) from names in $(1)_SOURCES
+define build_header_template
+build-headers-$(1): $$(call interface,$(1)_SOURCES)
+endef
 
-## Cleaning targets
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
-.PHONY: docclean
+# build_bytecode_template($1): Build byte-code objects for $(1) from
+# names in $(1)_SOURCES
+define build_bytecode_template
+build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
+endef
 
+# build_bytelib_template($1): Build byte-code library for $(1) from
+# names in $(1)_SOURCES
+define build_bytelib_template
+$(call bytelib,$(1)): $$(call bytecode,$(1)_SOURCES)
+	$(OCAMLLINK) $(OCAMLINCLUDE) -o $(call bytelib,$(1)) $$(call bytecode,$(1)_SOURCES)
+#
+build-bytelib-$(1): $(call bytelib,$(1))
+endef
 
-## build targets
+# build_natcode_template($1): Build native-code objects for $(1) from
+# names in $(1)_SOURCES
+define build_natcode_template
+$(call natlib,$(1)): $$(call natcode,$(1)_SOURCES)
+	$(OCAMLNATLINK) $(OCAMLNATLINK_OPTIONS) -o $(call natlib, $1) \
+		$$(call natcode,$(1)_SOURCES)
+build-natcode-$(1): $(call natlib,$(1))
+endef
 
-.PHONY: build-headers 
-.PHONY: build-code build-bytecode build-natcode
-.PHONY: build-bytelib build-natlib build-lib
+####
+# Use the templates to build everything in Makefile.module
+#
 
-.PHONY: install-headers 
-.PHONY: install-code install-bytecode install-natcode
-.PHONY: install-bytelib install-natlib install-lib
-.PHONY: install-other
+##
+# Run the sub-directories.
+ifneq ($(strip $(SUBDIRS)),"")
+module_has_subdirs=1
+endif
 
+ifdef module_has_subdirs
+depend-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) depend ; )
+
+build-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) build ; )
+
+install-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) install ; )
+
+clean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) clean ; )
+
+libclean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) libclean ; )
+
+distclean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) distclean ; )
+endif
+
+## 
+# Build the headers, first for the libraries and then for the programs.
+module_headers=\
+	$(foreach lib,$(LIBRARIES),$(call interface,$(lib_SOURCES))) \
+	$(foreach program,$(PROGRAMS),$(call interface,$(program_SOURCES)))
+
+build_module_headers: $(module_headers)
 
