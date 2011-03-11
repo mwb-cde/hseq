@@ -1,3 +1,24 @@
+########################################################## --*- Makefile -*--
+# Makefile - Toplevel Makefile for  HSeq
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
 
 ###
 # Variables
@@ -17,33 +38,12 @@ DOCSUBDIRS = doc
 # Constants
 ##
 
-# CURRDIR: The current directory
-CURRDIR ?= .
+# LEVEL: Relative path to the root of the source tree. (equivalently:
+# relative path to the dirctory containing directory config.)
+LEVEL:=.
 
-# CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(CURRDIR)/config
-
-# CONFIGFILE: Configuration data file 
-CONFIGFILE = $(CONFIGDIR)/data.make
-
-###
-# Configuration variables
-# Set by data.make
-###
-
-# Read from $(CONFIGFILE)
-ifdef CONFIGFILE
-include $(CONFIGFILE)
-endif
-
-# Variables which are set in $(CONFIGFILE)
-Bin ?= 
-Prefix ?= 
-BinDir ?= 
-BaseDir ?= 
-IncludeDir ?= 
-LibDir ?= 
-ThyDir ?= 
+# Read common definitions
+include $(LEVEL)/Makefile.common
 
 # IPREFIX: The installation prefix
 export IPREFIX = $(Prefix)
@@ -65,12 +65,6 @@ export IBINDIR ?= $(BinDir)
 
 # FASTCOMP: whether to use the fast compilers
 export FASTCOMP = $(FastCompilers)
-
-##
-# Read command definitions
-##
-
-include $(CONFIGDIR)/Makefile.os
 
 ##
 # Targets
@@ -97,34 +91,6 @@ include $(CONFIGDIR)/Makefile.os
 .PHONY: install-thys # Install the theories
 .PHONY: install-doc  # Install the documentation
 .PHONY: install-srcdoc # Install the source code documentation
-
-##
-# Build commands
-##
-
-# MAKEOPTIONS += SUBCONFIGDIR='$(CONFIGDIR)'
-
-#ifdef TOOLBOX
-export MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
-#endif
-
-# BAREMAKE: The make with no options
-export BAREMAKE = $(MAKE)
-
-# DMAKE: The make to build sub-directories with.
-export DMAKE = make $(MAKEOPTIONS)
-
-# MAKECLEAN: The make to clean up with
-export MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
-
-###
-# Compiler definitions
-###
-
-
-##
-# Variables
-##
 
 ###
 # Required build targets
@@ -174,17 +140,16 @@ install-srcdoc: srcdoc
 
 clean: 
 	-$(RM) *~
-	$(MAKECLEAN) -C src reallyclean
-	$(MAKECLEAN) -C thys clean
 	$(foreach subdir, $(DOCSUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
-reallyclean: clean
-	-$(RM) hseq hseqb hseqc
-	-$(RM) lib/*
+distclean: clean
 	$(MAKECLEAN) -C thys reallyclean
 	$(foreach subdir, $(DOCSUBDIRS), \
 		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
+	-$(RM) hseq hseqb hseqc
+	-$(RM) lib/*
+	-$(RM) config/* ## Must be cleaned last.
 
 
 
