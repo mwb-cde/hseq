@@ -106,11 +106,13 @@ endef
 # names in $(1)_SOURCES
 define build-bytelib-template
 bytelib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$(OBJ_ROOT)/$(call bytelib,$(1)): $(OBJ_ROOT) $(call bytelib,$(1))
+	$(COPY) $(call bytelib,$(1)) $(OBJ_ROOT)
 $(call bytelib,$(1)): $$(bytelib_$(1)_objects)
 	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(call bytelib,$(1)) $$(bytelib_$(1)_objects)
 #
 .PHONY: build-bytelib-$(1)
-build-bytelib-$(1): $(call bytelib,$(1))
+build-bytelib-$(1): $(OBJ_ROOT)/$(call bytelib,$(1))
 endef
 
 # build-natcode-template($1): Build native-code objects for $(1) from
@@ -221,7 +223,19 @@ $(eval $(call build-bytelib-template,$(lib))))
 $(foreach prog,$(PROGRAMS),\
 	$(eval $(call build-byteprog-template,$(prog))))
 
+#
+# Directories
+#
+
+$(OBJ_ROOT):
+	$(MKDIR) $(OBJ_ROOT)
+
+.PHONY: build-objdir
+build-objdir: $(OBJ_ROOT)
+
+#
 # Libraries
+#
 
 .PHONY: build-headers
 build-headers: $(module_interfaces)
@@ -231,7 +245,6 @@ build-bytelibs: $(module_interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(
 
 .PHONY: build-programs
 build-programs: $(module_interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
-
 
 ##
 # Dependencies
@@ -269,5 +282,5 @@ distclean: clean libclean
 # Toplevel targets
 
 .PHONY: build
-build: build-headers build-bytelibs build-programs
+build: build-objdir build-headers build-bytelibs build-programs
 

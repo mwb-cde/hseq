@@ -40,31 +40,34 @@ DOCSUBDIRS = doc
 
 # PROJ_ROOT: Relative path to the root of the source tree. (equivalently:
 # relative path to the dirctory containing directory config.)
-PROJ_ROOT:=.
+PROJ_ROOT=.
 
 # Read common definitions
 include $(PROJ_ROOT)/Makefile.common
 
+# OBJ_ROOT: Staging directory for objects
+export OBJ_ROOT=$(PROJ_ROOT)/obj
+
 # IPREFIX: The installation prefix
-export IPREFIX = $(Prefix)
+export IPREFIX ?= $(Prefix)
 
 # IBASEDIR: Installation directory
-export IBASEDIR = $(BaseDir)
+export IBASEDIR?=$(BaseDir)
 
 # IDOCDIR: The documentation installation directory
-export IDOCDIR ?= $(IBASEDIR)/doc
+export IDOCDIR?=$(IBASEDIR)/doc
 
 # ILIBDIR: Library installation directory
-export ILIBDIR ?= $(IBASEDIR)/lib
+export ILIBDIR?=$(IBASEDIR)/lib
 
 # ITHYDIR: Theory installation directory
-export ITHYDIR ?= $(IBASEDIR)/thys
+export ITHYDIR?=$(IBASEDIR)/thys
 
 # IBINDIR: Binary installation directory
-export IBINDIR ?= $(BinDir)
+export IBINDIR?=$(BinDir)
 
 # FASTCOMP: whether to use the fast compilers
-export FASTCOMP = $(FastCompilers)
+export FASTCOMP=$(FastCompilers)
 
 ##
 # Targets
@@ -151,6 +154,7 @@ distclean: clean
 		$(MAKE) -C $(subdir) reallyclean; ) $(SKIP)
 	-$(RM) hseq hseqb hseqc
 	-$(RM) lib/*
+	-$(RM) -r $(OBJ_ROOT)
 	-$(RM) config/configure.data
 	-$(RM) config/data.make
 

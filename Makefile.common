@@ -25,7 +25,6 @@
 #
 # Requirements:
 # -------------
-#
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
 #####
 
@@ -124,6 +123,17 @@ include $(CONFIGFILE)
 ifndef BinDir
 $(error "BinDir not defined")
 endif
+
+####
+# Variable definitions
+# ----------
+
+# OBJ_ROOT: Staging directory for built objects.
+ifndef OBJ_ROOT
+OBJ_ROOT:=$(PROJ_ROOT)/obj
+endif
+OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
+export OBJ_ROOT
 
 ####
 # Compiler settings
