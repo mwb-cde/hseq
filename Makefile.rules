@@ -30,7 +30,14 @@
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
 #####
 
-#
+###
+# Default target
+###
+.PHONY: all
+all: build
+
+
+###
 # Include the common settings.
 #
 
@@ -56,6 +63,7 @@ include $(PROJ_ROOT)/Makefile.common
 # clean: Delete all built objects.
 # libclean: Delete libraries only.
 # distclean: Pristine clean.
+# depend: Calculate dependencies
 #
 
 #
@@ -81,45 +89,48 @@ include $(PROJ_ROOT)/Makefile.common
 # libraries can be found after installation.
 #
 
-# build_header_template($1): Build headers for $(1) from names in $(1)_SOURCES
-define build_header_template
+# build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
+define build-header-template
 .PHONY: build-headers-$(1)
 build-headers-$(1): $$(call interface,$(1)_SOURCES)
 endef
 
-# build_bytecode_template($1): Build byte-code objects for $(1) from
+# build-bytecode-template($1): Build byte-code objects for $(1) from
 # names in $(1)_SOURCES
-define build_bytecode_template
+define build-bytecode-template
 .PHONY: build-bytecode-$(1)
 build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
 endef
 
-# build_bytelib_template($1): Build byte-code library for $(1) from
+# build-bytelib-template($1): Build byte-code library for $(1) from
 # names in $(1)_SOURCES
-define build_bytelib_template
-$(call bytelib,$(1)): $$(call bytecode,$(1)_SOURCES)
-	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(call bytelib,$(1)) $$(call bytecode,$(1)_SOURCES)
+define build-bytelib-template
+bytelib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$(call bytelib,$(1)): $$(bytelib_$(1)_objects)
+	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(call bytelib,$(1)) $$(bytelib_$(1)_objects)
 #
 .PHONY: build-bytelib-$(1)
 build-bytelib-$(1): $(call bytelib,$(1))
 endef
 
-# build_natcode_template($1): Build native-code objects for $(1) from
+# build-natcode-template($1): Build native-code objects for $(1) from
 # names in $(1)_SOURCES
-define build_natcode_template
-$(call natlib,$(1)): $$(call natcode,$(1)_SOURCES)
+define build-natcode-template
+natlib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
+$(call natlib,$(1)): 
 	$$(OCAMLNATLINK) $$(OCAMLNATLINK_OPTIONS) -o $(call natlib, $1) \
-		$$(call natcode,$(1)_SOURCES)
+		$$(natlib_$(1)_objects)
 .PHONY: build-natcode-$(1)
 build-natcode-$(1): $(call natlib,$(1))
 endef
 
-# build_byteprog_template($1): Build byte-code program for $(1) from
+# build-byteprog-template($1): Build byte-code program for $(1) from
 # names in $(1)_SOURCES
-define build_byteprog_template
-$(1): $$(call bytecode,$(1)_SOURCES)
+define build-byteprog-template
+byteprog_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$(1): $$(byteprog_$(1)_objects)
 	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$(($1)_INCLUDE)\
-		$$($(1)_LIBS) $$(call bytecode,$(1)_SOURCES)
+		$$($(1)_LIBS) $$(byteprog_$(1)_objects)
 #
 .PHONY: build-byteprog-$(1)
 build-byteprog-$(1): $(1)
@@ -162,46 +173,101 @@ distclean-subdirs:
 endif
 
 ###
-# Instantiate the targegs
+# Debugging information
 #
 
+$(info "MAKEFILE DEBUGGING")
+$(info "LIBRARIES = $(LIBRARIES)")
+$(info "PROGRAMS = $(PROGRAMS)")
+
+###
+# Instantiate the targets
+#
+
+# module_lib_sources: All library sources
+module_lib_sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES))
+
+# module_prog_sources: All program sources
+module_prog_sources=$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
+
 # module_sources: All sources, with library sources first
-module_sources= $(lib_SOURCES) $(program_sources)
+module_sources=$(module_lib_sources) $(module_prog_sources)
+
+# module_mlsources: All ml sources, with library sources first
+module_mlsources=$(foreach src,$(module_sources),$(call mlfile,$(src)))
 
 # module_headers: All headers, with library headers first
-module_headers= $(foreach source,$(module_sources),$(call interface,$(source)))
+module_headers= $(foreach src,$(module_sources),$(call header,$(src)))
+
+# module_interfaces: All headers, with library headers first
+module_interfaces=$(foreach source,$(module_sources),$(call interface,$(source)))
 
 # module_libobjs: Bytecode files needed to build the libraries
 module_libobjs: $(foreach source,$(lib_SOURCES),$(call bytecode,$source))
 
+$(info "module_lib_sources = $(module_lib_sources)")
+$(info "module_prog_sources = $(module_prog_sources)")
+$(info "module_interfaces = $(module_interfaces)")
+$(info "module_headers = $(module_headers)")
+$(info "module_mlsources = $(module_mlsources)")
+
 ##
 # Instantiate build targets for libraries
 $(foreach lib,$(LIBRARIES),\
-	$(eval $(call build_bytelib_template,$(1))))
+$(eval $(call build-bytelib-template,$(lib))))
 
 ##
 # Instantiate build targets for programs
-$(foreach lib,$(PROGRAMS),\
-	$(eval $(call build_byteprog_template,$(1))))
+$(foreach prog,$(PROGRAMS),\
+	$(eval $(call build-byteprog-template,$(prog))))
 
 # Libraries
 
-.PHONY: build_headers
-build_headers: module_headers
+.PHONY: build-headers
+build-headers: $(module_interfaces)
 
-.PHONY: build_bytelibs
-build_bytelibs: module_headers $(foreach lib,$(LIBRARIES),build_bytelib-$(1) )
+.PHONY: build-bytelibs
+build-bytelibs: $(module_interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
-.PHONY: build_programs
-build_programs: module_headers $(foreach prog,$(LIBRARIES),build_byteprog-$(1) )
+.PHONY: build-programs
+build-programs: $(module_interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+
+
+##
+# Dependencies
+# Define NODEPEND to prevent using depend
+##
+
+depend: $(module_headers) $(module_mlsources)
+	-$(OCAMLDEP) $(module_headers) $(module_mlsources) > depend
+
+ifndef NODEPEND
+include depend
+endif
+
+
+###
+# Clean up
+###
+
+clean: 
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKE) -C $(subdir) clean; )
+	-$(RM) *.cmo *.cmx *.o *~
+
+libclean: clean
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKE) -C $(subdir) libclean; )
+	-$(RM) *.cmi *.cma *.cmxa *~
+
+distclean: clean libclean
+	$(foreach subdir, $(DOCSUBDIRS), \
+		$(MAKE) -C $(subdir) reallyclean; )
+	-$(RM) depend
 
 ###
 # Toplevel targets
 
-# Default target
-.PHONY: all
-all: build
-
 .PHONY: build
-build: build_headers build_bytelibs build_programs
+build: build-headers build-bytelibs build-programs
 

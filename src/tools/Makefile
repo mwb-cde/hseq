@@ -227,7 +227,7 @@ export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(INCLUDE) $(LIBS)
 ##
 # Declare Targets
 ##
-
+:
 .PHONY: all  # all: Build everything
 .PHONY: tools  # lib: Build all tools
 .PHONY: install # install: Install everything
