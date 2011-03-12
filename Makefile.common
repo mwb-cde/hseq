@@ -268,15 +268,15 @@ export objlib = $(addsuffix .a,$(1))
 .SUFFIXES: .cmxa 
 .SUFFIXES: .mlp
 
-.mlp.ml:
+%.ml: %.mlp
 	$(OCAMLCPP) -impl $< -o $@
 
-.mli.cmi: 
+%.cmi: %.mli
 	$(OCAMLC) -c $<
 
-.ml.cmo: 
+%.cmo: %.ml
 	$(OCAMLC) -c $<
 
-.ml.cmx: 
+%.cmx: %.ml
 	$(OCAMLNAT) -c $<
 

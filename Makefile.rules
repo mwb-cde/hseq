@@ -1,0 +1,207 @@
+###################################################### --*- Makefile -*--
+# Makefile.rules - Common make rules for building HSeq modules
+# Copyright 12 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+#####
+# Definitions and rules for Makefiles that build modules.
+#
+# This Makefile provides the necessary infrastructure for building modules
+# and should be included from instances of Makefile.module.
+#
+# Requirements:
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
+#####
+
+#
+# Include the common settings.
+#
+
+# PROJ_ROOT: Relative path to the top of the source tree is required.
+ifndef PROJ_ROOT
+$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(PWD)")
+endif
+
+include $(PROJ_ROOT)/Makefile.common
+
+####
+# Templates for building module objects
+####
+
+#
+# Targets:
+# --------
+#
+# all: synonymous with build.
+# build: Build the module. (required)
+# install: Install the module. (required)
+# doc: Generate documentation.
+# clean: Delete all built objects.
+# libclean: Delete libraries only.
+# distclean: Pristine clean.
+#
+
+#
+# Build order:
+#
+# 1) Run the preprocessor on .mlp files.
+#
+# 2) Build interface from .mli files.
+#
+#    This has to be done before building object files otherwise ocaml
+#    will generate an interface for each .ml file as it is compile,
+#    possibly exposing values that were meant to be internal to the
+#    .ml file.
+#
+# 3) Build objects from .ml files.
+#
+# 4) Build libraries from .ml files.
+#
+# Notes:
+#
+# Native code compilation should use the -dllpath option to ocamlc to
+# pass the library install-directory. This is needed so that the
+# libraries can be found after installation.
+#
+
+# build_header_template($1): Build headers for $(1) from names in $(1)_SOURCES
+define build_header_template
+.PHONY: build-headers-$(1)
+build-headers-$(1): $$(call interface,$(1)_SOURCES)
+endef
+
+# build_bytecode_template($1): Build byte-code objects for $(1) from
+# names in $(1)_SOURCES
+define build_bytecode_template
+.PHONY: build-bytecode-$(1)
+build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
+endef
+
+# build_bytelib_template($1): Build byte-code library for $(1) from
+# names in $(1)_SOURCES
+define build_bytelib_template
+$(call bytelib,$(1)): $$(call bytecode,$(1)_SOURCES)
+	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(call bytelib,$(1)) $$(call bytecode,$(1)_SOURCES)
+#
+.PHONY: build-bytelib-$(1)
+build-bytelib-$(1): $(call bytelib,$(1))
+endef
+
+# build_natcode_template($1): Build native-code objects for $(1) from
+# names in $(1)_SOURCES
+define build_natcode_template
+$(call natlib,$(1)): $$(call natcode,$(1)_SOURCES)
+	$$(OCAMLNATLINK) $$(OCAMLNATLINK_OPTIONS) -o $(call natlib, $1) \
+		$$(call natcode,$(1)_SOURCES)
+.PHONY: build-natcode-$(1)
+build-natcode-$(1): $(call natlib,$(1))
+endef
+
+# build_byteprog_template($1): Build byte-code program for $(1) from
+# names in $(1)_SOURCES
+define build_byteprog_template
+$(1): $$(call bytecode,$(1)_SOURCES)
+	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$(($1)_INCLUDE)\
+		$$($(1)_LIBS) $$(call bytecode,$(1)_SOURCES)
+#
+.PHONY: build-byteprog-$(1)
+build-byteprog-$(1): $(1)
+endef
+
+####
+# Use the templates to build everything in Makefile.module
+#
+
+##
+# Run the sub-directories.
+ifneq ($(strip $(SUBDIRS)),"")
+module_has_subdirs=1
+endif
+
+ifdef module_has_subdirs
+.PHONY: depend-subdirs
+depend-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) depend ; )
+
+.PHONY: build-subdirs
+build-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) build ; )
+
+.PHONY: install-subdirs
+install-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) install ; )
+
+.PHONY: clean-subdirs
+clean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) clean ; )
+
+.PHONY: libclean-subdirs
+libclean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) libclean ; )
+
+.PHONY: distclean-subdirs
+distclean-subdirs:
+	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) distclean ; )
+endif
+
+###
+# Instantiate the targegs
+#
+
+# module_sources: All sources, with library sources first
+module_sources= $(lib_SOURCES) $(program_sources)
+
+# module_headers: All headers, with library headers first
+module_headers= $(foreach source,$(module_sources),$(call interface,$(source)))
+
+# module_libobjs: Bytecode files needed to build the libraries
+module_libobjs: $(foreach source,$(lib_SOURCES),$(call bytecode,$source))
+
+##
+# Instantiate build targets for libraries
+$(foreach lib,$(LIBRARIES),\
+	$(eval $(call build_bytelib_template,$(1))))
+
+##
+# Instantiate build targets for programs
+$(foreach lib,$(PROGRAMS),\
+	$(eval $(call build_byteprog_template,$(1))))
+
+# Libraries
+
+.PHONY: build_headers
+build_headers: module_headers
+
+.PHONY: build_bytelibs
+build_bytelibs: module_headers $(foreach lib,$(LIBRARIES),build_bytelib-$(1) )
+
+.PHONY: build_programs
+build_programs: module_headers $(foreach prog,$(LIBRARIES),build_byteprog-$(1) )
+
+###
+# Toplevel targets
+
+# Default target
+.PHONY: all
+all: build
+
+.PHONY: build
+build: build_headers build_bytelibs build_programs
+
