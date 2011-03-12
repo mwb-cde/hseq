@@ -8,7 +8,7 @@ SUBDIRS = quickstart
 
 
 # Relative path to root of tree.
-LEVEL=..
+PROJ_ROOT=..
 
 ####
 # Don't modify anything below this line
@@ -40,7 +40,7 @@ LIBDIR ?= $(SRCDIR)/lib
 ###
 
 # Read from $(CONFIGFILE)
-include $(LEVEL)/Makefile.common
+include $(PROJ_ROOT)/Makefile.common
 
 # Variables which are set in $(CONFIGFILE)
 Bin ?= 

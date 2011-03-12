@@ -26,11 +26,11 @@
 # REQUIREMENTS
 # ------------
 #
-# Must set LEVEL.
-# LEVEL: Variable containing relative path to top of the source tree.
+# Must set PROJ_ROOT.
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
 #
 # Must end with 
-#    include $(LEVEL)/Makefile.common
+#    include $(PROJ_ROOT)/Makefile.common
 #
 #
 # Variables:
@@ -66,8 +66,8 @@
 # Required definitions
 #  
 
-# LEVEL: Relative path to HSeq root.
-#LEVEL=
+# PROJ_ROOT: Relative path to HSeq root.
+#PROJ_ROOT=
 
 #####
 # Module building settings
@@ -114,11 +114,11 @@
 ###
 # Include common definitions
 
-# Test for LEVEL being defined.
-ifndef LEVEL
-$(error "LEVEL Must be set to relative path to HSeq root")
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
 
-include $(LEVEL)/Makefile.rules
+include $(PROJ_ROOT)/Makefile.rules
 
 

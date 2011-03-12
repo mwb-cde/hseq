@@ -38,12 +38,12 @@ DOCSUBDIRS = doc
 # Constants
 ##
 
-# LEVEL: Relative path to the root of the source tree. (equivalently:
+# PROJ_ROOT: Relative path to the root of the source tree. (equivalently:
 # relative path to the dirctory containing directory config.)
-LEVEL:=.
+PROJ_ROOT:=.
 
 # Read common definitions
-include $(LEVEL)/Makefile.common
+include $(PROJ_ROOT)/Makefile.common
 
 # IPREFIX: The installation prefix
 export IPREFIX = $(Prefix)

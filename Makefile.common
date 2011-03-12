@@ -26,7 +26,7 @@
 # Requirements:
 # -------------
 #
-# LEVEL: Variable containing relative path to top of the source tree.
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
 #####
 
 ##
@@ -98,13 +98,13 @@ export SKIP =
 # Constants
 #####
 
-# LEVEL: Relative path to the top of the source tree is required.
-ifndef LEVEL
-$(error "Error: variable LEVEL not set when using Makefile in directory $(PWD)")
+# PROJ_ROOT: Relative path to the top of the source tree is required.
+ifndef PROJ_ROOT
+$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(PWD)")
 endif
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR = $(LEVEL)/config
+CONFIGDIR = $(PROJ_ROOT)/config
 
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(CONFIGDIR)/data.make
@@ -279,98 +279,4 @@ export objlib = $(addsuffix .a,$(1))
 
 .ml.cmx: 
 	$(OCAMLNAT) -c $<
-
-####
-# Templates for use with Makefile.module
-####
-
-#
-# Build order:
-#
-# 1) Run the preprocessor on .mlp files.
-#
-# 2) Build interface from .mli files.
-#
-#    This has to be done before building object files otherwise ocaml
-#    will generate an interface for each .ml file as it is compile,
-#    possibly exposing values that were meant to be internal to the
-#    .ml file.
-#
-# 3) Build objects from .ml files.
-#
-# 4) Build libraries from .ml files.
-#
-# Notes:
-#
-# Native code compilation should use the -dllpath option to ocamlc to
-# pass the library install-directory. This is needed so that the
-# libraries can be found after installation.
-#
-
-# build_header_template($1): Build headers for $(1) from names in $(1)_SOURCES
-define build_header_template
-build-headers-$(1): $$(call interface,$(1)_SOURCES)
-endef
-
-# build_bytecode_template($1): Build byte-code objects for $(1) from
-# names in $(1)_SOURCES
-define build_bytecode_template
-build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
-endef
-
-# build_bytelib_template($1): Build byte-code library for $(1) from
-# names in $(1)_SOURCES
-define build_bytelib_template
-$(call bytelib,$(1)): $$(call bytecode,$(1)_SOURCES)
-	$(OCAMLLINK) $(OCAMLINCLUDE) -o $(call bytelib,$(1)) $$(call bytecode,$(1)_SOURCES)
-#
-build-bytelib-$(1): $(call bytelib,$(1))
-endef
-
-# build_natcode_template($1): Build native-code objects for $(1) from
-# names in $(1)_SOURCES
-define build_natcode_template
-$(call natlib,$(1)): $$(call natcode,$(1)_SOURCES)
-	$(OCAMLNATLINK) $(OCAMLNATLINK_OPTIONS) -o $(call natlib, $1) \
-		$$(call natcode,$(1)_SOURCES)
-build-natcode-$(1): $(call natlib,$(1))
-endef
-
-####
-# Use the templates to build everything in Makefile.module
-#
-
-##
-# Run the sub-directories.
-ifneq ($(strip $(SUBDIRS)),"")
-module_has_subdirs=1
-endif
-
-ifdef module_has_subdirs
-depend-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) depend ; )
-
-build-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) build ; )
-
-install-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) install ; )
-
-clean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) clean ; )
-
-libclean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) libclean ; )
-
-distclean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) distclean ; )
-endif
-
-## 
-# Build the headers, first for the libraries and then for the programs.
-module_headers=\
-	$(foreach lib,$(LIBRARIES),$(call interface,$(lib_SOURCES))) \
-	$(foreach program,$(PROGRAMS),$(call interface,$(program_SOURCES)))
-
-build_module_headers: $(module_headers)
 
