@@ -126,37 +126,6 @@ $(error "BinDir not defined")
 endif
 
 ####
-# Utility functions
-####
-
-# mlfile: Add ML source suffix to a name
-export mlfile = $(addsuffix .ml,$(1))
-
-# header: Add ML header suffix to a name
-export header = $(addsuffix .mli,$(1))
-
-# interface: Add ML object interface suffix to a nanme
-export interface = $(addsuffix .cmi,$(1))
-
-# bytecode: Add ML object file suffix to a name
-export bytecode = $(addsuffix .cmo,$(1))
-
-# natcode: Add ML native-code file suffix to a name
-export natcode = $(addsuffix .cmx,$(1))
-
-# objcode: Add system object-code suffix to a name
-export objcode = $(addsuffix .o,$(1))
-
-# bytelib: Add byte-lib suffix to a name
-export bytelib = $(addsuffix .cma,$(1))
-
-# natlib: Add native-lib suffix to a name
-export natlib = $(addsuffix .cmxa,$(1))
-
-# objlib: Add object-lib suffix to a name
-export objlib = $(addsuffix .a,$(1))
-
-####
 # Compiler settings
 ####
 
@@ -256,6 +225,37 @@ endif # End of native code compilers
 #####
 # Build rules
 #####
+
+####
+# Utility functions
+####
+
+# mlfile: Add ML source suffix to a name
+export mlfile = $(addsuffix .ml,$(1))
+
+# header: Add ML header suffix to a name
+export header = $(addsuffix .mli,$(1))
+
+# interface: Add ML object interface suffix to a nanme
+export interface = $(addsuffix .cmi,$(1))
+
+# bytecode: Add ML object file suffix to a name
+export bytecode = $(addsuffix .cmo,$(1))
+
+# natcode: Add ML native-code file suffix to a name
+export natcode = $(addsuffix .cmx,$(1))
+
+# objcode: Add system object-code suffix to a name
+export objcode = $(addsuffix .o,$(1))
+
+# bytelib: Add byte-lib suffix to a name
+export bytelib = $(addsuffix .cma,$(1))
+
+# natlib: Add native-lib suffix to a name
+export natlib = $(addsuffix .cmxa,$(1))
+
+# objlib: Add object-lib suffix to a name
+export objlib = $(addsuffix .a,$(1))
 
 ##
 # Suffixes and their build rules.

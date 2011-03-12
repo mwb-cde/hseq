@@ -119,4 +119,6 @@ ifndef LEVEL
 $(error "LEVEL Must be set to relative path to HSeq root")
 endif
 
-include $(LEVEL)/Makefile.common
+include $(LEVEL)/Makefile.rules
+
+

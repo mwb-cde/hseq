@@ -7,6 +7,9 @@
 SUBDIRS = quickstart
 
 
+# Relative path to root of tree.
+LEVEL=..
+
 ####
 # Don't modify anything below this line
 ####
@@ -37,9 +40,7 @@ LIBDIR ?= $(SRCDIR)/lib
 ###
 
 # Read from $(CONFIGFILE)
-ifdef CONFIGFILE
-include $(CONFIGFILE)
-endif
+include $(LEVEL)/Makefile.common
 
 # Variables which are set in $(CONFIGFILE)
 Bin ?= 
@@ -68,8 +69,6 @@ export INFODIR ?= $(IDOCDIR)/info
 ##
 # Read command definitions
 ##
-
-include ../config/Makefile.os
 
 ##
 # Targets

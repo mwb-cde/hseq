@@ -141,15 +141,18 @@ install-srcdoc: srcdoc
 clean: 
 	-$(RM) *~
 	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
-
-distclean: clean
-	$(MAKECLEAN) -C thys reallyclean
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
+		$(MAKE) -C $(subdir) clean;) $(SKIP)
 	-$(RM) hseq hseqb hseqc
 	-$(RM) lib/*
-	-$(RM) config/* ## Must be cleaned last.
+
+distclean: clean
+	$(MAKE) -C thys reallyclean
+	$(foreach subdir, $(DOCSUBDIRS), \
+		$(MAKE) -C $(subdir) reallyclean; ) $(SKIP)
+	-$(RM) hseq hseqb hseqc
+	-$(RM) lib/*
+	-$(RM) config/configure.data
+	-$(RM) config/data.make
 
 
 
