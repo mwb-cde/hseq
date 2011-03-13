@@ -101,13 +101,14 @@ tpquote_SOURCES=tpquote
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
-tpquote_INCLUDE= +camlp4
+tpquote_INCLUDE=+camlp4
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
+tpquote_OCAMLC_FLAGS=-pp "camlp4of"
 
 # object_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
 #object_OCAMLCPP_FLAGS=

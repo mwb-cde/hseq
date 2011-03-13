@@ -183,7 +183,7 @@ export BAREOCAMLC=ocamlc
 export BAREOCAMLNAT=ocamlopt
 
 # OCAMLC: The OCaml byte code compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS)
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(FILE_OCAMLC_OPTIONS)
 
 # OCAMLNAT: The OCaml native code compiler
 export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
@@ -215,7 +215,7 @@ export BAREOCAMLC=ocamlc.opt
 export BAREOCAMLNAT=ocamlopt.opt
 
 # OCAMLC: The OCaml bytecode compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) 
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS)
 
 # OCAMLNAT: The OCaml native code compiler
 export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_OPTIONS) 

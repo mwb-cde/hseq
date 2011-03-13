@@ -36,7 +36,6 @@
 .PHONY: all
 all: build
 
-
 ###
 # Include the common settings.
 #
@@ -105,6 +104,12 @@ endef
 # build-bytelib-template($1): Build byte-code library for $(1) from
 # names in $(1)_SOURCES
 define build-bytelib-template
+$(1)_OPTIONS=$$($(1)_OCAMLC_FLAGS) $$(foreach file,$$($(lib)_INCLUDE),-I $$(file) )
+$$(info "$(1)_OPTIONS = $$($(1)_OPTIONS)")
+FILE_OCAMLC_OPTIONS=$$($(1)_OPTIONS)
+$$(info "FILE_OCAMLC_OPTIONS = $$(FILE_OCAMLC_OPTIONS)")
+$$(info "OCAMLC = $$(OCAMLC)")
+
 bytelib-$(1)-interfaces:=$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
 bytelib-$(1)-lib=$(call bytelib,$(1))
@@ -225,7 +230,7 @@ $(info "module_headers = $(module_headers)")
 $(info "module_mlsources = $(module_mlsources)")
 
 ##
-# Instantiate build targets for libraries
+# Instantiate build targets and settings for libraries
 $(foreach lib,$(LIBRARIES),\
 $(eval $(call build-bytelib-template,$(lib))))
 
@@ -269,7 +274,6 @@ ifndef NODEPEND
 include depend
 endif
 
-
 ###
 # Clean up
 ###
@@ -294,4 +298,3 @@ distclean: clean libclean
 
 .PHONY: build
 build: build-objdir build-headers build-bytelibs build-programs
-
