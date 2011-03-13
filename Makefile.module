@@ -40,6 +40,7 @@
 # LIBRARIES: List of libraries to build.
 # PROGRAMS: List of programs to build.
 # MODULE_INST_PATH: PATH to append to the relative installation path.
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 # MODULE_OBJ_PATH: PATH to append to the staging directory path.
 #
 # For each program or library [object] listed in LIBRARIES or PROGRAMS:
@@ -86,6 +87,9 @@
 # MODULE_OBJ_PATH: PATH to append to the staging directory path for
 # this module and all its sub-directories.
 #MODULE_OBJ_PATH=
+
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+#MODULE_USE_OBJDIR=no
 
 #####
 # Object building settings

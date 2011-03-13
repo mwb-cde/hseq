@@ -105,18 +105,29 @@ endef
 # build-bytelib-template($1): Build byte-code library for $(1) from
 # names in $(1)_SOURCES
 define build-bytelib-template
-bytelib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
-$(OBJ_ROOT)/$(call bytelib,$(1)): $(OBJ_ROOT) $(call bytelib,$(1))
-	$(COPY) $(call bytelib,$(1)) $(OBJ_ROOT)
-$(call bytelib,$(1)): $$(bytelib_$(1)_objects)
-	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(call bytelib,$(1)) $$(bytelib_$(1)_objects)
-#
+bytelib-$(1)-interfaces:=$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+bytelib-$(1)-lib=$(call bytelib,$(1))
+ifeq ($$(strip $$(MODULE_USE_OBJDIR)),yes)
+# Use staging directory
+bytelib-$(1)-target=$$(OBJ_ROOT)/$$(bytelib-$(1)-lib)
+$$(bytelib-$(1)-target): $$(OBJ_ROOT) $$(bytelib-$(1)-lib)
+	$$(COPY) $$(bytelib-$(1)-interfaces) $$(OBJ_ROOT)
+	$$(COPY) $$(bytelib-$(1)-lib) $$(OBJ_ROOT)
+else
+# Don't use staging directory
+bytelib-$(1)-target=$$(bytelib-$(1)-lib)
+endif
+# Build rule for the library.
+$$(bytelib-$(1)-lib): $$(bytelib-$(1)-objects)
+	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(bytelib-$(1)-lib) $$(bytelib-$(1)-objects)
+# Standard build rule.
 .PHONY: build-bytelib-$(1)
-build-bytelib-$(1): $(OBJ_ROOT)/$(call bytelib,$(1))
+build-bytelib-$(1): $$(bytelib-$(1)-target)
 endef
 
 # build-natcode-template($1): Build native-code objects for $(1) from
-# names in $(1)_SOURCES
+# names in $(1)_SOURCES.
 define build-natcode-template
 natlib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
 $(call natlib,$(1)): 
