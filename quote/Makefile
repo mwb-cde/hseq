@@ -69,7 +69,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-#PROJ_ROOT=
+PROJ_ROOT=..
 
 #####
 # Module building settings
@@ -79,14 +79,14 @@
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=
+LIBRARIES=tpquote
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # MODULE_OBJ_PATH: PATH to append to the staging directory path for
 # this module and all its sub-directories.
-#MODULE_OBJ_PATH=
+MODULE_OBJ_PATH=lib
 
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 #MODULE_USE_OBJDIR=no
@@ -97,9 +97,11 @@
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
+tpquote_SOURCES=tpquote
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
+tpquote_INCLUDE= +camlp4
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
@@ -109,6 +111,7 @@
 
 # object_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
 #object_OCAMLCPP_FLAGS=
+#tpquote_OCAMLCPP_FLAGS=
 
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 #object_LINK_FLAGS=
