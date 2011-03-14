@@ -104,25 +104,30 @@ endef
 # build-bytelib-template($1): Build byte-code library for $(1) from
 # names in $(1)_SOURCES
 define build-bytelib-template
-$(1)_OPTIONS=$$($(1)_OCAMLC_FLAGS) $$(foreach file,$$($(lib)_INCLUDE),-I $$(file) )
-$$(info "$(1)_OPTIONS = $$($(1)_OPTIONS)")
-FILE_OCAMLC_OPTIONS=$$($(1)_OPTIONS)
-$$(info "FILE_OCAMLC_OPTIONS = $$(FILE_OCAMLC_OPTIONS)")
-$$(info "OCAMLC = $$(OCAMLC)")
 
+# Bytecode libraries
 bytelib-$(1)-interfaces:=$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
-bytelib-$(1)-lib=$(call bytelib,$(1))
-ifeq ($$(strip $$(MODULE_USE_OBJDIR)),yes)
+bytelib-$(1)-lib:=$(call bytelib,$(1))
+bytelib-$(1)-ocamlc-options:=$$(module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach file,$$($(lib)_INCLUDE),-I $$(file))
+
+$$(info "bytelib-$(1)-lib = $$(bytelib-$(1)-lib)")
+$$(info "bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces)")
+$$(info "bytelib-$(1)-objects = $$(bytelib-$(1)-objects)")
+$$(info "bytelib-$(1)-ocamlc-options = $$(bytelib-$(1)-ocamlc-options)")
+
+ifdef module-uses-objdir
 # Use staging directory
-bytelib-$(1)-target=$$(OBJ_ROOT)/$$(bytelib-$(1)-lib)
-$$(bytelib-$(1)-target): $$(OBJ_ROOT) $$(bytelib-$(1)-lib)
-	$$(COPY) $$(bytelib-$(1)-interfaces) $$(OBJ_ROOT)
-	$$(COPY) $$(bytelib-$(1)-lib) $$(OBJ_ROOT)
+bytelib-$(1)-target=$$(module-obj-dir)/$$(bytelib-$(1)-lib)
+$$(bytelib-$(1)-target): $$(module-obj-dir) $$(bytelib-$(1)-lib)
+	$$(COPY) $$(bytelib-$(1)-interfaces) $$(module-obj-dir)
+	$$(COPY) $$(bytelib-$(1)-lib) $$(module-obj-dir)
 else
 # Don't use staging directory
 bytelib-$(1)-target=$$(bytelib-$(1)-lib)
 endif
+
 # Build rule for the library.
 $$(bytelib-$(1)-lib): $$(bytelib-$(1)-objects)
 	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(bytelib-$(1)-lib) $$(bytelib-$(1)-objects)
@@ -154,9 +159,106 @@ $(1): $$(byteprog_$(1)_objects)
 build-byteprog-$(1): $(1)
 endef
 
-####
+######
 # Use the templates to build everything in Makefile.module
 #
+
+###
+# Module settings
+# 
+
+# module-ocamlc-options: Module wide ocamlc flags.
+module-ocamlc-options=$(global-ocamlc-options)
+
+# module-uses-objdir: Defined iff the module uses a staging directory.
+# module-obj-dir: The staging directory to use.
+ifeq ($(strip $(MODULE_USE_OBJDIR)),yes)
+module-uses-objdir=yes
+module-obj-dir=$(OBJ_ROOT)
+endif
+
+# module-sources: All library and program sources, with library sources first
+module-sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
+	$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
+
+# module-mlsources: All ml sources, with library sources first
+module-mlsources=$(foreach src,$(module-sources),$(call mlfile,$(src)))
+
+# module-headers: All headers, with library headers first
+module-headers= $(foreach src,$(module-sources),$(call header,$(src)))
+
+# module_interfaces: All headers, with library headers first
+module_interfaces=$(foreach source,$(module-sources),$(call interface,$(source)))
+
+$(info "module-lib-sources = $(module-lib-sources)")
+$(info "module-prog-sources = $(module-prog-sources)")
+$(info "module_interfaces = $(module_interfaces)")
+$(info "module-headers = $(module-headers)")
+$(info "module-mlsources = $(module-mlsources)")
+
+###
+# Instantiate the targets
+#
+
+##
+# Instantiate bytelib build targets for each target.
+$(foreach lib,$(LIBRARIES),\
+$(eval $(call build-bytelib-template,$(lib))))
+
+##
+# Instantiate build targets for byte-code programs
+$(foreach prog,$(PROGRAMS),\
+	$(eval $(call build-byteprog-template,$(prog))))
+
+###
+# Directories
+#
+
+$(module-obj-dir):
+	$(MKDIR) $(module-obj-dir)
+
+.PHONY: build-objdir
+build-objdir: $(OBJ_ROOT)
+
+#
+# Libraries
+#
+
+.PHONY: build-headers
+build-headers: $(module_interfaces)
+
+.PHONY: build-bytelibs
+build-bytelibs: $(module_interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+
+.PHONY: build-programs
+build-programs: $(module_interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+
+
+###
+# Clean up
+###
+
+clean: 
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKE) -C $(subdir) clean; )
+	-$(RM) *.cmo *.cmx *.o *~
+
+libclean: clean
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKE) -C $(subdir) libclean; )
+	-$(RM) *.cmi *.cma *.cmxa *~
+
+distclean: clean libclean
+	$(foreach subdir, $(DOCSUBDIRS), \
+		$(MAKE) -C $(subdir) reallyclean; )
+	-$(RM) depend
+
+###
+# Toplevel targets
+
+.PHONY: build
+build: build-objdir build-headers build-bytelibs build-programs
+
 
 ##
 # Run the sub-directories.
@@ -190,111 +292,14 @@ distclean-subdirs:
 	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) distclean ; )
 endif
 
-###
-# Debugging information
-#
-
-$(info "MAKEFILE DEBUGGING")
-$(info "LIBRARIES = $(LIBRARIES)")
-$(info "PROGRAMS = $(PROGRAMS)")
-
-###
-# Instantiate the targets
-#
-
-# module_lib_sources: All library sources
-module_lib_sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES))
-
-# module_prog_sources: All program sources
-module_prog_sources=$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
-
-# module_sources: All sources, with library sources first
-module_sources=$(module_lib_sources) $(module_prog_sources)
-
-# module_mlsources: All ml sources, with library sources first
-module_mlsources=$(foreach src,$(module_sources),$(call mlfile,$(src)))
-
-# module_headers: All headers, with library headers first
-module_headers= $(foreach src,$(module_sources),$(call header,$(src)))
-
-# module_interfaces: All headers, with library headers first
-module_interfaces=$(foreach source,$(module_sources),$(call interface,$(source)))
-
-# module_libobjs: Bytecode files needed to build the libraries
-module_libobjs: $(foreach source,$(lib_SOURCES),$(call bytecode,$source))
-
-$(info "module_lib_sources = $(module_lib_sources)")
-$(info "module_prog_sources = $(module_prog_sources)")
-$(info "module_interfaces = $(module_interfaces)")
-$(info "module_headers = $(module_headers)")
-$(info "module_mlsources = $(module_mlsources)")
-
-##
-# Instantiate build targets and settings for libraries
-$(foreach lib,$(LIBRARIES),\
-$(eval $(call build-bytelib-template,$(lib))))
-
-##
-# Instantiate build targets for programs
-$(foreach prog,$(PROGRAMS),\
-	$(eval $(call build-byteprog-template,$(prog))))
-
-#
-# Directories
-#
-
-$(OBJ_ROOT):
-	$(MKDIR) $(OBJ_ROOT)
-
-.PHONY: build-objdir
-build-objdir: $(OBJ_ROOT)
-
-#
-# Libraries
-#
-
-.PHONY: build-headers
-build-headers: $(module_interfaces)
-
-.PHONY: build-bytelibs
-build-bytelibs: $(module_interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
-
-.PHONY: build-programs
-build-programs: $(module_interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
-
 ##
 # Dependencies
 # Define NODEPEND to prevent using depend
 ##
 
-depend: $(module_headers) $(module_mlsources)
-	-$(OCAMLDEP) $(module_headers) $(module_mlsources) > depend
+depend: $(module-headers) $(module-mlsources)
+	-$(OCAMLDEP) $(module-headers) $(module-mlsources) > depend
 
 ifndef NODEPEND
 include depend
 endif
-
-###
-# Clean up
-###
-
-clean: 
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKE) -C $(subdir) clean; )
-	-$(RM) *.cmo *.cmx *.o *~
-
-libclean: clean
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKE) -C $(subdir) libclean; )
-	-$(RM) *.cmi *.cma *.cmxa *~
-
-distclean: clean libclean
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKE) -C $(subdir) reallyclean; )
-	-$(RM) depend
-
-###
-# Toplevel targets
-
-.PHONY: build
-build: build-objdir build-headers build-bytelibs build-programs
