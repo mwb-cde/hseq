@@ -82,7 +82,7 @@ export BAREOCAMLC=ocamlc
 export BAREOCAMLNAT=ocamlopt
 
 # OCAMLC: The OCaml byte code compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm_file_ocamlc_options)
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm-file-ocamlc-options)
 
 # OCAMLNAT: The OCaml native code compiler
 export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
@@ -94,7 +94,7 @@ export OCAMLLINK=$(BAREOCAMLC) -a
 export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_OPTIONS)
 
 # OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP=ocamldep $(OCAMLDEP_OPTIONS)
+export OCAMLDEP=ocamldep $(OCAMLDEP_OPTIONS) $(lm-file-ocamldep-options)
 
 # OCAMLCPP : the preprocesor
 export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
@@ -114,7 +114,7 @@ ifeq '$(FAST)' 'true'
 # export BAREOCAMLNAT=ocamlopt.opt
 
 # # OCAMLC: The OCaml bytecode compiler
-# export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm_file_ocamlc_options)
+# export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm-file-ocamlc-options)
 
 # # OCAMLNAT: The OCaml native code compiler
 # export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_OPTIONS) 
@@ -230,6 +230,38 @@ export objlib=$(addsuffix .a,$(1))
 # libraries can be found after installation.
 #
 
+# subdir-targets-template($1): Targets for sub-directory $(1).
+define subdir-targets-template
+
+.PHONY: all-subdir-$(1)
+all-subdir-$(1):
+	$$(MAKE) -C $(1) all
+
+.PHONY: depend-subdir-$(1)
+depend-subdir-$(1):
+	$$(MAKE) -C $(1) depend
+
+.PHONY: build-subdir-$(1)
+build-subdir-$(1):
+	$$(MAKE) -C $(1) build
+
+.PHONY: install-subdir-$(1)
+install-subdir-$(1):
+	$$(MAKE) -C $(1) install
+
+.PHONY: clean-subdir-$(1)
+clean-subdir-$(1):
+	$$(MAKE) -C $(1) clean
+
+.PHONY: libclean-subdir-$(1)
+libclean-subdir-$(1):
+	$$(MAKE) -C $(1) libclean
+
+.PHONY: distclean-subdir-$(1)
+distclean-subdir-$(1):
+	$$(MAKE) -C $(1) distclean
+endef
+
 # build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
 define build-header-template
 .PHONY: build-headers-$(1)
@@ -251,16 +283,19 @@ define build-bytelib-template
 bytelib-$(1)-interfaces:=$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
 bytelib-$(1)-lib:=$(call bytelib,$(1))
-bytelib-$(1)-ocamlc-options:=$$(module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach file,$$($(lib)_INCLUDE),-I $$(file))
 
 $$(info bytelib-$(1)-lib = $$(bytelib-$(1)-lib))
 $$(info bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
-$$(info bytelib-$(1)-ocamlc-options = $$(bytelib-$(1)-ocamlc-options))
 
-lm_file_ocamlc_options:=$$(bytelib-$(1)-ocamlc-options)
-$$(info lm_file_ocamlc_options = $$(lm_file_ocamlc_options))
+bytelib-$(1)-ocamlc-options:=$$(module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach file,$$($(lib)_INCLUDE),-I $$(file))
+
+lm-file-ocamlc-options:=$$(bytelib-$(1)-ocamlc-options)
+$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
+
+lm-file-ocamldep-options:=$$(module-ocamldep-options)
+$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
 
 ifdef module-uses-objdir
 # Use staging directory
@@ -312,14 +347,28 @@ endef
 # Module settings
 # 
 
-# module-ocamlc-options: Module wide ocamlc flags.
-module-ocamlc-options=$(global-ocamlc-options)
+# If LOCAL_X_OPTIONS is undefined, use the default.
+ifndef LOCAL_OCAMLC_OPTIONS
+LOCAL_OCAMLC_OPTIONS=$(GLOBAL_OCAMLC_OPTIONS)\
+	$(PPOPTIONS) $(MODULE_OCAMLC_OPTIONS)
+endif
+
+# module-ocamlc-options: Module wide ocamlc flags. 
+module-ocamlc-options=$(LOCAL_OCAMLC_OPTIONS)
+
+# module-ocamldep-options: Module wide ocamldep flags. 
+module-ocamldep-options=$(PPOPTIONS)
 
 # module-uses-objdir: Defined iff the module uses a staging directory.
 # module-obj-dir: The staging directory to use.
 ifeq ($(strip $(MODULE_USE_OBJDIR)),yes)
 module-uses-objdir=yes
 module-obj-dir=$(OBJ_ROOT)
+endif
+
+# module-has-subdirs: Defined iff the module has sub-directories.
+ifneq ($(strip $(SUBDIRS)),)
+module-has-subdirs=yes
 endif
 
 # module-sources: All library and program sources, with library sources first
@@ -344,6 +393,11 @@ $(info module-mlsources = $(module-mlsources))
 ###
 # Instantiate the targets
 #
+
+##
+# Instantiate targets for each sub-directory
+$(foreach sub,$(SUBDIRS),\
+$(eval $(call subdir-targets-template,$(sub))))
 
 ##
 # Instantiate bytelib build targets for each target.
@@ -404,38 +458,28 @@ distclean: clean libclean
 .PHONY: build
 build: build-objdir build-headers build-bytelibs build-programs
 
-
 ##
 # Run the sub-directories.
-ifneq ($(strip $(SUBDIRS)),"")
-module_has_subdirs=1
-endif
 
-ifdef module_has_subdirs
+#ifdef module-has-subdirs
 .PHONY: depend-subdirs
-depend-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) depend ; )
+depend-subdirs: $(foreach sub,$(SUBDIRS), depend-subdir-$(1))
 
 .PHONY: build-subdirs
-build-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) build ; )
+build-subdirs: $(foreach sub,$(SUBDIRS), build-subdir-$(1))
 
 .PHONY: install-subdirs
-install-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) install ; )
+install-subdirs: $(foreach sub,$(SUBDIRS), install-subdir-$(1))
 
 .PHONY: clean-subdirs
-clean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) clean ; )
+clean-subdirs: $(foreach sub,$(SUBDIRS), clean-subdir-$(1))
 
 .PHONY: libclean-subdirs
-libclean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) libclean ; )
+libclean-subdirs: $(foreach sub,$(SUBDIRS), libclean-subdir-$(1))
 
 .PHONY: distclean-subdirs
-distclean-subdirs:
-	$(foreach name,$(SUBDIRS), $(MAKE) -C $(name) distclean ; )
-endif
+distclean-subdirs: $(foreach sub,$(SUBDIRS), distclean-subdir-$(1))
+#endif
 
 ##
 # Dependencies

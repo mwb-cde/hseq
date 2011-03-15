@@ -91,6 +91,8 @@ MODULE_OBJ_PATH=lib
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes
 
+MODULE_OCAMLCPP_FLAGS=-pp camlp4of -I +camlp4
+
 #####
 # Object building settings
 #
@@ -108,7 +110,7 @@ tpquote_INCLUDE=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
-tpquote_OCAMLC_FLAGS=-pp camlp4of -I +camlp4
+tpquote_OCAMLC_FLAGS=
 
 # object_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
 #object_OCAMLCPP_FLAGS=
