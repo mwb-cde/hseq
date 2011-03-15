@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Toplevel Makefile for  HSeq
-# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Makefile - Toplevel HSeq Makefile
+# Copyright 15 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -20,144 +20,162 @@
 # License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
-###
-# Variables
-###
+#####
+# Definitions and rules for building modules.
+#
+# REQUIREMENTS
+# ------------
+#
+# Must set PROJ_ROOT.
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
+#
+# Must end with 
+#    include $(PROJ_ROOT)/Makefile.common
+#
+#
+# Variables:
+# ----------
+#
+# Module settings:
+# 
+# SUBDIRS: List of sub-directories to recurse into.
+# LIBRARIES: List of libraries to build.
+# PROGRAMS: List of programs to build.
+#
+# MODULE_INST_PATH: PATH to append to the relative installation path.
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# MODULE_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
+# MODULE_OBJ_PATH: PATH to append to the staging directory path.
+# MODULE_INST_PATH: PATH to append to the relative installation path.
+#
+# For each program or library [object] listed in LIBRARIES or PROGRAMS:
+#
+# object_SOURCES: List of source file names, without suffixes.
+# object_INCLUDE: Directories to include when compiling [object].
+# object_LIBS: Libraries to include when linking [object].
+# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# object_LINK_FLAGS: Flags to pass to the linker for [object].
+# object_INST_PATH: PATH to append to the relative installation path.
+#
+# Inherited variables:
+#
+# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# GLOBAL_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+# GLOBAL_LINK_FLAGS: Flags to pass to the linker for [object].
+# GLOBAL_OBJ_PATH: PATH staging directory path.
+# GLOBAL_INST_PATH: PATH installation path.
+#
+# Other variales
+# LOCAL_OCAMLC_FLAGS: Actual flags to pass to the compiler for [object].
+# LOCAL_OCAMLPP_FLAGS: flags to pass to the preprocessor for [object].
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
+#
+# Notes:
+#
+# The flags for each tool X are formed as 
+#    (LOCAL_X_FLAGS) (object_X_FLAGS)
+#
+# If LOCAL_X_FLAGS is not defined, it defaults to
+#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
+#
+# The global flags for X passed to each sub-directory is
+#     (LOCAL_X_FLAGS)
+#
+# An object will be installed into the directory formed by 
+#      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
+#
+#####
 
-# SUBDIRS: The sub-directories to build (in order) 
-SUBDIRS = src thys
+#####
+# Required definitions
+#  
 
-# DOCSUBDIRS: The sub-directories containing documentation
-DOCSUBDIRS = doc
-
-####
-# Don't modify anything below this line
-####
-
-##
-# Constants
-##
-
-# PROJ_ROOT: Relative path to the root of the source tree. (equivalently:
-# relative path to the dirctory containing directory config.)
+# PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=.
 
-# Read common definitions
-include $(PROJ_ROOT)/Makefile.common
+#####
+# Module building settings
+#
 
-# OBJ_ROOT: Staging directory for objects
-export OBJ_ROOT=$(PROJ_ROOT)/obj
+# SUBDIRS: List of sub-directories to build.
+SUBDIRS=quote
 
-# IPREFIX: The installation prefix
-export IPREFIX ?= $(Prefix)
+# LIBRARIES: List of libraries to build.
+#LIBRARIES=
 
-# IBASEDIR: Installation directory
-export IBASEDIR?=$(BaseDir)
+# PROGRAMS: List of programs to build.
+#PROGRAMS=
 
-# IDOCDIR: The documentation installation directory
-export IDOCDIR?=$(IBASEDIR)/doc
+#####
+# Object building settings
+#
 
-# ILIBDIR: Library installation directory
-export ILIBDIR?=$(IBASEDIR)/lib
+# object_SOURCES: List of source file names, without suffixes.
+#object_SOURCES=
 
-# ITHYDIR: Theory installation directory
-export ITHYDIR?=$(IBASEDIR)/thys
+# object_INCLUDE: Directories to include when compiling [object].
+#object_INCLUDE=
 
-# IBINDIR: Binary installation directory
-export IBINDIR?=$(BinDir)
+# object_LIBS: Libraries to include when linking [object].
+#object_LIBS=
 
-# FASTCOMP: whether to use the fast compilers
-export FASTCOMP=$(FastCompilers)
+# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#object_OCAMLC_FLAGS=
 
-##
-# Targets
-##
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+#object_OCAMLPP_FLAGS=
 
-.PHONY: all  # all: Build everything
-.PHONY: lib  # lib: Build the library file
-.PHONY: opt  # opt: Build the native code library file
-.PHONY: install # install: Install the library and header files.
-.PHONY: installopt # installopt: Install the native code library 
-                   #             and header files.
-.PHONY: doc  #doc: Generate the documentation
+# object_LINK_FLAGS: Flags to pass to the linker for [object].
+#object_LINK_FLAGS=
 
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
-.PHONY: docclean
+# object_INST_PATH: PATH to append to the relative installation path.
+#object_INST_PATH=
 
-.PHONY: hseq # Build the theorem prover
-.PHONY: thys # Build the theories
-.PHONY: srcdoc # Build the source documentation 
+#####
+# Module build tool settings
 
-.PHONY: install-hseq # Install the theorem prover
-.PHONY: install-thys # Install the theories
-.PHONY: install-doc  # Install the documentation
-.PHONY: install-srcdoc # Install the source code documentation
+# MODULE_OBJ_PATH: PATH to append to the staging directory path for
+# this module and all its sub-directories.
+#MODULE_OBJ_PATH=
 
-###
-# Required build targets
-###
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+#MODULE_USE_OBJDIR=no
 
-# all: Build everything
-all: hseq thys doc
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
 
-# hseq: Build the system
-hseq:
-	$(DMAKE) -C src all
+# MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
+#MODULE_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
-# thys: Build the theories
-thys:
-	$(DMAKE) -C thys all
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
+#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
-#doc: Buld documentation
-doc:
-	$(foreach docsubdir, $(SUBDIRS), $(DMAKE) -C $(subdir) doc;)
+#####
+# Default settings
 
-srcdoc:
-	$(DMAKE) -C src doc
+# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
 
-#install: Install everything
-install: install-hseq install-thys install-doc
+# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
+#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
-# install-hseq: Install the system
-install-hseq: hseq
-	$(DMAKE) -C src install
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
+#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
-# install-thys: Install the thys
-install-thys: thys
-	$(DMAKE) -C thys install
-
-# install-doc: Install the documentation
-install-doc: doc
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(DMAKE) -C $(subdir) install;) $(SKIP)
-
-# install-srcdoc: Install the documentation for the source code
-install-srcdoc: srcdoc
-	$(DMAKE) -C src install-doc
+######################################################################
+# DO NOT CHANGE ANYTHING BELOW THIS LINE
+######################################################################
 
 ###
-# Clean up
-###
+# Include common definitions
 
-clean: 
-	-$(RM) *~
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKE) -C $(subdir) clean;) $(SKIP)
-	-$(RM) hseq hseqb hseqc
-	-$(RM) lib/*
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
+endif
 
-distclean: clean
-	$(MAKE) -C thys reallyclean
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKE) -C $(subdir) reallyclean; ) $(SKIP)
-	-$(RM) hseq hseqb hseqc
-	-$(RM) lib/*
-	-$(RM) -r $(OBJ_ROOT)
-	-$(RM) config/configure.data
-	-$(RM) config/data.make
-
-
+include $(PROJ_ROOT)/Makefile.rules
 
 

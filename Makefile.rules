@@ -194,6 +194,12 @@ export objlib=$(addsuffix .a,$(1))
 # Templates for building module objects
 ####
 
+###
+# Values that are passed in.
+$(info GLOBAL_OCAMLPP_FLAGS = $(GLOBAL_OCAMLPP_FLAGS))
+$(info GLOBAL_OCAMLDEP_FLAGS = $(GLOBAL_OCAMLDEP_FLAGS))
+$(info GLOBAL_OCAMLC_FLAGS = $(GLOBAL_OCAMLC_FLAGS))
+
 #
 # Targets:
 # --------
@@ -400,12 +406,12 @@ module-mlsources=$(foreach src,$(module-sources),$(call mlfile,$(src)))
 # module-headers: All headers, with library headers first
 module-headers= $(foreach src,$(module-sources),$(call header,$(src)))
 
-# module_interfaces: All headers, with library headers first
-module_interfaces=$(foreach source,$(module-sources),$(call interface,$(source)))
+# module-interfaces: All headers, with library headers first
+module-interfaces=$(foreach source,$(module-sources),$(call interface,$(source)))
 
 $(info module-lib-sources = $(module-lib-sources))
 $(info module-prog-sources = $(module-prog-sources))
-$(info module_interfaces = $(module_interfaces))
+$(info module-interfaces = $(module-interfaces))
 $(info module-headers = $(module-headers))
 $(info module-mlsources = $(module-mlsources))
 
@@ -443,13 +449,13 @@ build-objdir: $(OBJ_ROOT)
 #
 
 .PHONY: build-headers
-build-headers: $(module_interfaces)
+build-headers: $(module-interfaces)
 
 .PHONY: build-bytelibs
-build-bytelibs: $(module_interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+build-bytelibs: $(module-interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
 .PHONY: build-programs
-build-programs: $(module_interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+build-programs: $(module-interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
 
 
 ###
@@ -475,29 +481,35 @@ distclean: clean libclean
 # Toplevel targets
 
 .PHONY: build
-build: build-objdir build-headers build-bytelibs build-programs
+build: build-objdir build-subdirs build-headers build-bytelibs build-programs
 
 ##
 # Run the sub-directories.
 
 #ifdef module-has-subdirs
 .PHONY: depend-subdirs
-depend-subdirs: $(foreach sub,$(SUBDIRS), depend-subdir-$(1))
+lm-subdir-depend-target=$(foreach sub,$(SUBDIRS), depend-subdir-$(sub))
+depend-subdirs: $(lm-subdir-depend-target)
 
 .PHONY: build-subdirs
-build-subdirs: $(foreach sub,$(SUBDIRS), build-subdir-$(1))
+lm-subdir-build-target=$(foreach sub,$(SUBDIRS), build-subdir-$(sub))
+build-subdirs: $(lm-subdir-build-target)
 
 .PHONY: install-subdirs
-install-subdirs: $(foreach sub,$(SUBDIRS), install-subdir-$(1))
+lm-subdir-install-target=$(foreach sub,$(SUBDIRS), install-subdir-$(sub))
+install-subdirs: $(lm-subdir-install-target)
 
 .PHONY: clean-subdirs
-clean-subdirs: $(foreach sub,$(SUBDIRS), clean-subdir-$(1))
+lm-subdir-clean-target=$(foreach sub,$(SUBDIRS), clean-subdir-$(sub))
+clean-subdirs: $(lm-subdir-clean-target)
 
 .PHONY: libclean-subdirs
-libclean-subdirs: $(foreach sub,$(SUBDIRS), libclean-subdir-$(1))
+lm-subdir-libclean-target=$(foreach sub,$(SUBDIRS), libclean-subdir-$(sub))
+libclean-subdirs: $(lm-subdir-libclean-target)
 
 .PHONY: distclean-subdirs
-distclean-subdirs: $(foreach sub,$(SUBDIRS), distclean-subdir-$(1))
+lm-subdir-distclean-target=$(foreach sub,$(SUBDIRS), distclean-subdir-$(sub))
+distclean-subdirs: $(lm-subdir-distclean-target)
 #endif
 
 ##
@@ -505,11 +517,13 @@ distclean-subdirs: $(foreach sub,$(SUBDIRS), distclean-subdir-$(1))
 # Define NODEPEND to prevent using depend
 ##
 
+ifneq ($(strip $(module-headers) $(module-mlsources)),)
+ifndef NODEPEND
 depend: $(module-headers) $(module-mlsources)
 	-$(OCAMLDEP) $(module-headers) $(module-mlsources) > depend
 
-ifndef NODEPEND
 include depend
+endif # NODEPEND
 endif
 
 
