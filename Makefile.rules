@@ -511,3 +511,9 @@ depend: $(module-headers) $(module-mlsources)
 ifndef NODEPEND
 include depend
 endif
+
+
+####
+# Variables that should not be exported
+unexport module-uses-objdir
+unexport module-has-subdirs
