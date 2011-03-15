@@ -56,13 +56,13 @@ include $(PROJ_ROOT)/Makefile.common
 #   FAST: Use the fast compilers
 #
 # Options:
-#   OCAMLC_OPTIONS: options for ocamlc
-#   OCAMLNAT_OPTIONS: options for ocamlopt (native code compiler)
-#   OCAMLLINK_OPTIONS: options for ocamlc (linker)
-#   OCAMLNATLINK_OPTIONS: options for ocamlnat (linker)
-#   OCAMLDEP_OPTIONS: options for ocamldep
-#   OCAMLDOC_OPTIONS: options for ocamldoc
-#   OCAMLPP_OPTIONS : options to pass to camlp4
+#   OCAMLC_FLAGS: options for ocamlc
+#   OCAMLNAT_FLAGS: options for ocamlopt (native code compiler)
+#   OCAMLLINK_FLAGS: options for ocamlc (linker)
+#   OCAMLNATLINK_FLAGS: options for ocamlnat (linker)
+#   OCAMLDEP_FLAGS: options for ocamldep
+#   OCAMLDOC_FLAGS: options for ocamldoc
+#   OCAMLPP_FLAGS : options to pass to camlp4
 #
 
 ## Tool and option selection 
@@ -82,25 +82,25 @@ export BAREOCAMLC=ocamlc
 export BAREOCAMLNAT=ocamlopt
 
 # OCAMLC: The OCaml byte code compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm-file-ocamlc-options)
+export OCAMLC=$(BAREOCAMLC) $(OCAMLC_FLAGS) $(lm-file-ocamlc-options)
 
 # OCAMLNAT: The OCaml native code compiler
-export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
+export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_FLAGS) 
 
 # OCAMLlink: The OCaml byte-code linker
 export OCAMLLINK=$(BAREOCAMLC) -a 
 
 # OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_OPTIONS)
+export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_FLAGS)
 
 # OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP=ocamldep $(OCAMLDEP_OPTIONS) $(lm-file-ocamldep-options)
+export OCAMLDEP=ocamldep $(OCAMLDEP_FLAGS) $(lm-file-ocamldep-options)
 
 # OCAMLCPP : the preprocesor
-export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
+export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_FLAGS)
 
 # OCAMLDOC: The documentation generator
-export OCAMLDOC=ocamldoc $(OCAMLDOC_OPTIONS)
+export OCAMLDOC=ocamldoc $(OCAMLDOC_FLAGS)
 
 ###
 # Native code compilers, only if supported
@@ -114,19 +114,19 @@ ifeq '$(FAST)' 'true'
 # export BAREOCAMLNAT=ocamlopt.opt
 
 # # OCAMLC: The OCaml bytecode compiler
-# export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(lm-file-ocamlc-options)
+# export OCAMLC=$(BAREOCAMLC) $(OCAMLC_FLAGS) $(lm-file-ocamlc-options)
 
 # # OCAMLNAT: The OCaml native code compiler
-# export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_OPTIONS) 
+# export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_FLAGS) 
 
 # # OCAMLNATLINK: The OCaml native-code linker
 # export OCAMLNATLINK=$(OCAMLNAT) -a 
 
 # # OCAMLDEP: The OCaml dependency generator
-# export OCAMLDEP=ocamldep.opt $(OCAMLDEP_OPTIONS)
+# export OCAMLDEP=ocamldep.opt $(OCAMLDEP_FLAGS)
 
 # # OCAMLDOC: The documentation generator
-# export OCAMLDOC=ocamldoc.opt $(OCAMLDOC_OPTIONS)
+# export OCAMLDOC=ocamldoc.opt $(OCAMLDOC_FLAGS)
 
 endif # End of native code compilers
 ###
@@ -294,7 +294,7 @@ bytelib-$(1)-ocamlc-options:=$$(module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
 lm-file-ocamlc-options:=$$(bytelib-$(1)-ocamlc-options)
 $$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
 
-lm-file-ocamldep-options:=$$(module-ocamldep-options)
+lm-file-ocamldep-options:=$$(module-ocamlpp-options) $$(module-ocamldep-options)
 $$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
 
 ifdef module-uses-objdir
@@ -321,7 +321,7 @@ endef
 define build-natcode-template
 natlib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
 $(call natlib,$(1)): 
-	$$(OCAMLNATLINK) $$(OCAMLNATLINK_OPTIONS) -o $(call natlib, $1) \
+	$$(OCAMLNATLINK) $$(OCAMLNATLINK_FLAGS) -o $(call natlib, $1) \
 		$$(natlib_$(1)_objects)
 .PHONY: build-natcode-$(1)
 build-natcode-$(1): $(call natlib,$(1))
@@ -347,17 +347,36 @@ endef
 # Module settings
 # 
 
-# If LOCAL_X_OPTIONS is undefined, use the default.
-ifndef LOCAL_OCAMLC_OPTIONS
-LOCAL_OCAMLC_OPTIONS=$(GLOBAL_OCAMLC_OPTIONS)\
-	$(PPOPTIONS) $(MODULE_OCAMLC_OPTIONS)
+##
+# If LOCAL_X_FLAGS is undefined, use the default.
+
+ifndef LOCAL_OCAMLPP_FLAGS
+LOCAL_OCAMLPP_FLAGS:=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 endif
 
-# module-ocamlc-options: Module wide ocamlc flags. 
-module-ocamlc-options=$(LOCAL_OCAMLC_OPTIONS)
+ifndef LOCAL_OCAMLDEP_FLAGS
+LOCAL_OCAMLDEP_FLAGS:=$(GLOBAL_OCAMLDEP_FLAGS) $(MODULE_OCAMLDEP_FLAGS)
+endif
+
+ifndef LOCAL_OCAMLC_FLAGS
+LOCAL_OCAMLC_FLAGS:=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+endif
+
+# module-ocamlpp-options: Module wide ocamlpp flags. 
+module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
 # module-ocamldep-options: Module wide ocamldep flags. 
-module-ocamldep-options=$(PPOPTIONS)
+module-ocamldep-options=$(module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
+
+# module-ocamlc-options: Module wide ocamlc flags. 
+module-ocamlc-options=$(module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
+
+##
+# Options to pass to sub-directorys
+module-subdir-args=\
+	GLOBAL_OCAMLPP_FLAGS=$(LOCAL_OCAMLPP_FLAGS) \
+	GLOBAL_OCAMLDEP_FLAGS=$(LOCAL_OCAMLDEP_FLAGS)
+	GLOBAL_OCAMLC_FLAGS=$(LOCAL_OCAMLC_FLAGS)
 
 # module-uses-objdir: Defined iff the module uses a staging directory.
 # module-obj-dir: The staging directory to use.

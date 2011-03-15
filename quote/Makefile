@@ -49,7 +49,7 @@
 # object_INCLUDE: Directories to include when compiling [object].
 # object_LIBS: Libraries to include when linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-# object_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
 #
@@ -91,7 +91,13 @@ MODULE_OBJ_PATH=lib
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes
 
-MODULE_OCAMLCPP_FLAGS=-pp camlp4of -I +camlp4
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+ifeq ($(OLDCAMLP4),true)
+MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+else
+MODULE_OCAMLPP_FLAGS=-pp camlp4of -I +camlp4
+endif
 
 #####
 # Object building settings
@@ -112,9 +118,8 @@ tpquote_INCLUDE=
 #object_OCAMLC_FLAGS=
 tpquote_OCAMLC_FLAGS=
 
-# object_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLCPP_FLAGS=
-#tpquote_OCAMLCPP_FLAGS=
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+#object_OCAMLPP_FLAGS=
 
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 #object_LINK_FLAGS=
