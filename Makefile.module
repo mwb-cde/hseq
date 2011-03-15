@@ -36,12 +36,19 @@
 # Variables:
 # ----------
 #
+# Module settings:
+# 
 # SUBDIRS: List of sub-directories to recurse into.
 # LIBRARIES: List of libraries to build.
 # PROGRAMS: List of programs to build.
+#
 # MODULE_INST_PATH: PATH to append to the relative installation path.
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 # MODULE_OBJ_PATH: PATH to append to the staging directory path.
+# MODULE_INST_PATH: PATH to append to the relative installation path.
 #
 # For each program or library [object] listed in LIBRARIES or PROGRAMS:
 #
@@ -53,15 +60,33 @@
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
 #
+# Inherited variables:
+#
+# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the preprocessor for [object].
+# GLOBAL_LINK_FLAGS: Flags to pass to the linker for [object].
+# GLOBAL_OBJ_PATH: PATH staging directory path.
+# GLOBAL_INST_PATH: PATH installation path.
+#
+# Other variales
+# LOCAL_OCAMLC_FLAGS: Actual flags to pass to the compiler for [object].
+# LOCAL_OCAMLCPP_FLAGS: flags to pass to the preprocessor for [object].
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #
 # Notes:
 #
-# All object-specific flags are appended to the flags passed to 
-# the relevant tool.
+# The flags for each tool X are formed as 
+#    (LOCAL_X_FLAGS) (object_X_FLAGS)
 #
+# If LOCAL_X_FLAGS is not defined, it defaults to
+#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
+#
+# The global flags for X passed to each sub-directory is
+#     (LOCAL_X_FLAGS)
 #
 # An object will be installed into the directory formed by 
-#       $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
+#      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
+#
 #####
 
 #####
@@ -83,13 +108,6 @@
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
-
-# MODULE_OBJ_PATH: PATH to append to the staging directory path for
-# this module and all its sub-directories.
-#MODULE_OBJ_PATH=
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
 
 #####
 # Object building settings
@@ -115,6 +133,37 @@
 
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
+
+#####
+# Module build tool settings
+
+# MODULE_OBJ_PATH: PATH to append to the staging directory path for
+# this module and all its sub-directories.
+#MODULE_OBJ_PATH=
+
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+#MODULE_USE_OBJDIR=no
+
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the pre-processor for [object].
+#MODULE_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
+#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+
+#####
+# Default settings
+
+# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+
+# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the pre-processor for [object].
+#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
+#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

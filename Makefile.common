@@ -125,35 +125,8 @@ $(error "BinDir not defined")
 endif
 
 ####
-# Variable definitions
-# ----------
-
-# OBJ_ROOT: Staging directory for built objects.
-ifndef OBJ_ROOT
-OBJ_ROOT:=$(PROJ_ROOT)/obj
-endif
-OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
-export OBJ_ROOT
-
-####
-# Compiler settings
-####
-
+# Feature tests
 #
-# Flags:
-#   FAST: Use the fast compilers
-#
-# Options:
-#   OCAMLC_OPTIONS: options for ocamlc
-#   OCAMLNAT_OPTIONS: options for ocamlopt (native code compiler)
-#   OCAMLLINK_OPTIONS: options for ocamlc (linker)
-#   OCAMLNATLINK_OPTIONS: options for ocamlnat (linker)
-#   OCAMLDEP_OPTIONS: options for ocamldep
-#   OCAMLDOC_OPTIONS: options for ocamldoc
-#   OCAMLPP_OPTIONS : options to pass to camlp4
-#
-
-## Feature tests
 
 # Whether camlp4 is old.
 ifndef OLDCAMLP4
@@ -166,127 +139,15 @@ export OLDCAMLP4=true
 endif
 endif # OLDCAMLP4
 
-## Tool and option selection 
-
-# Use the camlp4 version to select the correct 
-# prepropcessor options.
-ifeq ($(OLDCAMLP4),true)
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
-else
-PPOPTIONS ?= -pp "camlp4of" -I +camlp4
-endif
-
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC=ocamlc
-
-# BAREOCAMLNAT: The bare OCaml native-code compiler
-export BAREOCAMLNAT=ocamlopt
-
-# OCAMLC: The OCaml byte code compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS) $(FILE_OCAMLC_OPTIONS)
-
-# OCAMLNAT: The OCaml native code compiler
-export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_OPTIONS) 
-
-# OCAMLlink: The OCaml byte-code linker
-export OCAMLLINK=$(BAREOCAMLC) -a 
-
-# OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_OPTIONS)
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP=ocamldep $(OCAMLDEP_OPTIONS)
-
-# OCAMLCPP : the preprocesor
-export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_OPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC=ocamldoc $(OCAMLDOC_OPTIONS)
-
-###
-# Native code compilers, only if supported
+####
+# Variable definitions
 #
-ifeq '$(FAST)' 'true'
 
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC=ocamlc.opt 
+# OBJ_ROOT: Staging directory for built objects.
+ifndef OBJ_ROOT
+OBJ_ROOT:=$(PROJ_ROOT)/obj
+endif
+OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
+export OBJ_ROOT
 
-# BAREOCAMLNAT: The bare OCaml native-code compiler
-export BAREOCAMLNAT=ocamlopt.opt
-
-# OCAMLC: The OCaml bytecode compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_OPTIONS)
-
-# OCAMLNAT: The OCaml native code compiler
-export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_OPTIONS) 
-
-# OCAMLNATLINK: The OCaml native-code linker
-export OCAMLNATLINK=$(OCAMLNAT) -a 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP=ocamldep.opt $(OCAMLDEP_OPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC=ocamldoc.opt $(OCAMLDOC_OPTIONS)
-
-endif # End of native code compilers
-###
-
-#####
-# Build rules
-#####
-
-####
-# Utility functions
-####
-
-# mlfile: Add ML source suffix to a name
-export mlfile=$(addsuffix .ml,$(1))
-
-# header: Add ML header suffix to a name
-export header=$(addsuffix .mli,$(1))
-
-# interface: Add ML object interface suffix to a nanme
-export interface=$(addsuffix .cmi,$(1))
-
-# bytecode: Add ML object file suffix to a name
-export bytecode=$(addsuffix .cmo,$(1))
-
-# natcode: Add ML native-code file suffix to a name
-export natcode=$(addsuffix .cmx,$(1))
-
-# objcode: Add system object-code suffix to a name
-export objcode=$(addsuffix .o,$(1))
-
-# bytelib: Add byte-lib suffix to a name
-export bytelib=$(addsuffix .cma,$(1))
-
-# natlib: Add native-lib suffix to a name
-export natlib=$(addsuffix .cmxa,$(1))
-
-# objlib: Add object-lib suffix to a name
-export objlib=$(addsuffix .a,$(1))
-
-##
-# Suffixes and their build rules.
-##
-
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
-.SUFFIXES: .mlp
-
-%.ml: %.mlp
-	$(OCAMLCPP) -impl $< -o $@
-
-%.cmi: %.mli
-	$(OCAMLC) -c $<
-
-%.cmo: %.ml
-	$(OCAMLC) -c $<
-
-%.cmx: %.ml
-	$(OCAMLNAT) -c $<
 
