@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote
+SUBDIRS=quote src
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
@@ -144,13 +144,13 @@ SUBDIRS=quote
 #MODULE_USE_OBJDIR=no
 
 # MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+#MODULE_OCAMLC_FLAGS=
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+#MODULE_OCAMLPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+#MODULE_LINK_FLAGS=
 
 #####
 # Default settings
@@ -163,6 +163,16 @@ SUBDIRS=quote
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+
+#####
+# Extra settings
+
+#####
+# Sub-directory building options
+
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
+SUBDIR_MAKE_OPTIONS=
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

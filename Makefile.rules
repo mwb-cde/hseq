@@ -26,8 +26,11 @@
 # This Makefile provides the necessary infrastructure for building modules
 # and should be included from instances of Makefile.module.
 #
-# Requirements:
+# Requires:
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
+#
+# Provides:
+# SRC_ROOT: Absolute path to root of the source tree.
 #####
 
 ###
@@ -42,7 +45,7 @@ all: build
 
 # PROJ_ROOT: Relative path to the top of the source tree is required.
 ifndef PROJ_ROOT
-$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(PWD)")
+$(error Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR))
 endif
 
 include $(PROJ_ROOT)/Makefile.common
@@ -196,6 +199,7 @@ export objlib=$(addsuffix .a,$(1))
 
 ###
 # Values that are passed in.
+$(info Directory $(CURDIR))
 $(info GLOBAL_OCAMLPP_FLAGS = $(GLOBAL_OCAMLPP_FLAGS))
 $(info GLOBAL_OCAMLDEP_FLAGS = $(GLOBAL_OCAMLDEP_FLAGS))
 $(info GLOBAL_OCAMLC_FLAGS = $(GLOBAL_OCAMLC_FLAGS))
@@ -241,31 +245,31 @@ define subdir-targets-template
 
 .PHONY: all-subdir-$(1)
 all-subdir-$(1):
-	$$(MAKE) -C $(1) all
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) all
 
 .PHONY: depend-subdir-$(1)
 depend-subdir-$(1):
-	$$(MAKE) -C $(1) depend
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) depend
 
 .PHONY: build-subdir-$(1)
 build-subdir-$(1):
-	$$(MAKE) -C $(1) build
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) build
 
 .PHONY: install-subdir-$(1)
 install-subdir-$(1):
-	$$(MAKE) -C $(1) install
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) install
 
 .PHONY: clean-subdir-$(1)
 clean-subdir-$(1):
-	$$(MAKE) -C $(1) clean
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) clean
 
 .PHONY: libclean-subdir-$(1)
 libclean-subdir-$(1):
-	$$(MAKE) -C $(1) libclean
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) libclean
 
 .PHONY: distclean-subdir-$(1)
 distclean-subdir-$(1):
-	$$(MAKE) -C $(1) distclean
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) distclean
 endef
 
 # build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
@@ -294,21 +298,21 @@ $$(info bytelib-$(1)-lib = $$(bytelib-$(1)-lib))
 $$(info bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
 
-bytelib-$(1)-ocamlc-options:=$$(module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+bytelib-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
 	$$(foreach file,$$($(lib)_INCLUDE),-I $$(file))
 
 lm-file-ocamlc-options:=$$(bytelib-$(1)-ocamlc-options)
 $$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
 
-lm-file-ocamldep-options:=$$(module-ocamlpp-options) $$(module-ocamldep-options)
+lm-file-ocamldep-options:=$$(lm-module-ocamlpp-options) $$(lm-module-ocamldep-options)
 $$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
 
-ifdef module-uses-objdir
+ifdef lm-module-uses-objdir
 # Use staging directory
-bytelib-$(1)-target=$$(module-obj-dir)/$$(bytelib-$(1)-lib)
-$$(bytelib-$(1)-target): $$(module-obj-dir) $$(bytelib-$(1)-lib)
-	$$(COPY) $$(bytelib-$(1)-interfaces) $$(module-obj-dir)
-	$$(COPY) $$(bytelib-$(1)-lib) $$(module-obj-dir)
+bytelib-$(1)-target=$$(lm-module-obj-dir)/$$(bytelib-$(1)-lib)
+$$(bytelib-$(1)-target): $$(lm-module-obj-dir) $$(bytelib-$(1)-lib)
+	$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-module-obj-dir)
+	$$(COPY) $$(bytelib-$(1)-lib) $$(lm-module-obj-dir)
 else
 # Don't use staging directory
 bytelib-$(1)-target=$$(bytelib-$(1)-lib)
@@ -368,52 +372,54 @@ ifndef LOCAL_OCAMLC_FLAGS
 LOCAL_OCAMLC_FLAGS:=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
 endif
 
-# module-ocamlpp-options: Module wide ocamlpp flags. 
-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
+# lm-module-ocamlpp-options: Module wide ocamlpp flags. 
+lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
-# module-ocamldep-options: Module wide ocamldep flags. 
-module-ocamldep-options=$(module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
+# lm-module-ocamldep-options: Module wide ocamldep flags. 
+lm-module-ocamldep-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
 
-# module-ocamlc-options: Module wide ocamlc flags. 
-module-ocamlc-options=$(module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
+# lm-module-ocamlc-options: Module wide ocamlc flags. 
+lm-module-ocamlc-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
 
 ##
 # Options to pass to sub-directorys
-module-subdir-args=\
-	GLOBAL_OCAMLPP_FLAGS=$(LOCAL_OCAMLPP_FLAGS) \
-	GLOBAL_OCAMLDEP_FLAGS=$(LOCAL_OCAMLDEP_FLAGS)
-	GLOBAL_OCAMLC_FLAGS=$(LOCAL_OCAMLC_FLAGS)
+lm-module-subdir-args=\
+	GLOBAL_OCAMLPP_FLAGS='$(strip $(LOCAL_OCAMLPP_FLAGS))' \
+	GLOBAL_OCAMLDEP_FLAGS='$(strip $(LOCAL_OCAMLDEP_FLAGS))' \
+	GLOBAL_OCAMLC_FLAGS='$(strip $(LOCAL_OCAMLC_FLAGS))' \
+	$(SUBDIR_MAKE_OPTIONS)
 
-# module-uses-objdir: Defined iff the module uses a staging directory.
-# module-obj-dir: The staging directory to use.
+# lm-module-uses-objdir: Defined iff the module uses a staging directory.
+# lm-module-obj-dir: The staging directory to use.
 ifeq ($(strip $(MODULE_USE_OBJDIR)),yes)
-module-uses-objdir=yes
-module-obj-dir=$(OBJ_ROOT)
+lm-module-uses-objdir=yes
+lm-module-obj-dir=$(OBJ_ROOT)
 endif
 
-# module-has-subdirs: Defined iff the module has sub-directories.
+# lm-module-has-subdirs: Defined iff the module has sub-directories.
 ifneq ($(strip $(SUBDIRS)),)
-module-has-subdirs=yes
+lm-module-has-subdirs=yes
 endif
 
-# module-sources: All library and program sources, with library sources first
-module-sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
+# lm-module-sources: All library and program sources, with library sources first
+lm-module-sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
 	$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
 
-# module-mlsources: All ml sources, with library sources first
-module-mlsources=$(foreach src,$(module-sources),$(call mlfile,$(src)))
+# lm-module-mlsources: All ml sources, with library sources first
+lm-module-mlsources=$(foreach src,$(lm-module-sources),$(call mlfile,$(src)))
 
-# module-headers: All headers, with library headers first
-module-headers= $(foreach src,$(module-sources),$(call header,$(src)))
+# lm-module-headers: All headers, with library headers first
+lm-module-headers= $(foreach src,$(lm-module-sources),$(call header,$(src)))
 
-# module-interfaces: All headers, with library headers first
-module-interfaces=$(foreach source,$(module-sources),$(call interface,$(source)))
+# lm-module-interfaces: All headers, with library headers first
+lm-module-interfaces=$(foreach source,$(lm-module-sources),$(call interface,$(source)))
 
-$(info module-lib-sources = $(module-lib-sources))
-$(info module-prog-sources = $(module-prog-sources))
-$(info module-interfaces = $(module-interfaces))
-$(info module-headers = $(module-headers))
-$(info module-mlsources = $(module-mlsources))
+$(info lm-module-lib-sources = $(lm-module-lib-sources))
+$(info lm-module-prog-sources = $(lm-module-prog-sources))
+$(info lm-module-interfaces = $(lm-module-interfaces))
+$(info lm-module-headers = $(lm-module-headers))
+$(info lm-module-mlsources = $(lm-module-mlsources))
+$(info lm-module-subdir-args = $(lm-module-subdir-args))
 
 ###
 # Instantiate the targets
@@ -438,24 +444,30 @@ $(foreach prog,$(PROGRAMS),\
 # Directories
 #
 
-$(module-obj-dir):
-	$(MKDIR) $(module-obj-dir)
+ifeq ($(lm-module-uses-objdir),yes)
+lm-module-objdir=$(OBJ_ROOT)
+
+$(lm-module-objdir):
+	$(MKDIR) $(lm-module-objdir)
+else
+lm-module-objdir=
+endif
 
 .PHONY: build-objdir
-build-objdir: $(OBJ_ROOT)
+build-objdir: $(lm-module-objdir)
 
 #
 # Libraries
 #
 
 .PHONY: build-headers
-build-headers: $(module-interfaces)
+build-headers: $(lm-module-interfaces)
 
 .PHONY: build-bytelibs
-build-bytelibs: $(module-interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+build-bytelibs: $(lm-module-interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
 .PHONY: build-programs
-build-programs: $(module-interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+build-programs: $(lm-module-interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
 
 
 ###
@@ -481,12 +493,13 @@ distclean: clean libclean
 # Toplevel targets
 
 .PHONY: build
-build: build-objdir build-subdirs build-headers build-bytelibs build-programs
+build: build-objdir build-subdirs \
+	build-headers build-bytelibs build-programs
 
 ##
 # Run the sub-directories.
 
-#ifdef module-has-subdirs
+#ifdef lm-module-has-subdirs
 .PHONY: depend-subdirs
 lm-subdir-depend-target=$(foreach sub,$(SUBDIRS), depend-subdir-$(sub))
 depend-subdirs: $(lm-subdir-depend-target)
@@ -517,10 +530,10 @@ distclean-subdirs: $(lm-subdir-distclean-target)
 # Define NODEPEND to prevent using depend
 ##
 
-ifneq ($(strip $(module-headers) $(module-mlsources)),)
+ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
 ifndef NODEPEND
-depend: $(module-headers) $(module-mlsources)
-	-$(OCAMLDEP) $(module-headers) $(module-mlsources) > depend
+depend: $(lm-module-headers) $(lm-module-mlsources)
+	-$(OCAMLDEP) $(lm-module-headers) $(lm-module-mlsources) > depend
 
 include depend
 endif # NODEPEND
@@ -529,5 +542,5 @@ endif
 
 ####
 # Variables that should not be exported
-unexport module-uses-objdir
-unexport module-has-subdirs
+unexport lm-module-uses-objdir
+unexport lm-module-has-subdirs

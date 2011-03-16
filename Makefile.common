@@ -99,7 +99,7 @@ export SKIP =
 
 # PROJ_ROOT: Relative path to the top of the source tree is required.
 ifndef PROJ_ROOT
-$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(PWD)")
+$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR)")
 endif
 
 # CONFIGDIR: The configuration directory
@@ -120,8 +120,12 @@ endif
 # Read $(CONFIGFILE)
 include $(CONFIGFILE)
 
+ifndef SrcDir
+$(error Error in $(CONFIGFILE): SrcDir not defined)
+endif
+
 ifndef BinDir
-$(error "BinDir not defined")
+$(error Error in $(CONFIGFILE): BinDir not defined)
 endif
 
 ####
@@ -145,11 +149,21 @@ endif # OLDCAMLP4
 # Variable definitions
 #
 
+# SRC_ROOT: Absolute path to the root of the source tree. Defined in
+# config/data.make by configure.ml.
+export SRC_ROOT:=$(SrcDir)
+
 # OBJ_ROOT: Staging directory for built objects.
 ifndef OBJ_ROOT
-OBJ_ROOT:=$(PROJ_ROOT)/obj
+OBJ_ROOT:=$(SRC_ROOT)/obj
 endif
 OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
 export OBJ_ROOT
 
 
+
+####
+# HSeq building variables
+
+# The quotation parser to use when building libraries and programs.
+export TPQUOTELIB='$(OBJ_ROOT)/lib/tpquote.cma'

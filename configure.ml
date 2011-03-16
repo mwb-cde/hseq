@@ -84,6 +84,7 @@ let make_code= ref true
 let bin = ref None
 let prefix = ref None
 let basedir = ref None
+let srcdir = ref (Some(Sys.getcwd()))
 let bindir = ref None
 let libdir = ref None
 let thysdir = ref None
@@ -193,8 +194,9 @@ let set_native_compilers flag =
 
 let ocaml_version_str_d () =
   Sys.ocaml_version
-
 let set_ocaml_version_str str = str
+
+let srcdir_d() = Sys.getcwd()
 
 let output_ml_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
@@ -203,13 +205,13 @@ let output_make_d () = get_opt !output make_data
 
 let varlist = 
   [
-   ("Bin", bin, bin_d);
-(*   ("Prefix", prefix, prefix_d);*)
-   ("BinDir", bindir, bindir_d);
-   ("BaseDir", basedir, basedir_d);
-   ("LibDir", libdir, libdir_d);
-   ("ThyDir", thysdir, thysdir_d);
-   ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
+    ("SrcDir", srcdir, srcdir_d);
+    ("Bin", bin, bin_d);
+    ("BinDir", bindir, bindir_d);
+    ("BaseDir", basedir, basedir_d);
+    ("LibDir", libdir, libdir_d);
+    ("ThyDir", thysdir, thysdir_d);
+    ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
  ]
 
 let settinglist =
