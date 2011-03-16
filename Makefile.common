@@ -166,7 +166,7 @@ export OBJ_ROOT
 # HSeq building variables
 
 # The quotation parser to use when building libraries and programs.
-export TPQUOTELIB='$(OBJ_ROOT)/lib/tpquote.cma'
+export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 
 ###
 # Global tool options

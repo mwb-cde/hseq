@@ -149,7 +149,7 @@ SUBDIRS=util tpcore
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
-MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
+#MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
