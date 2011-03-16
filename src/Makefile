@@ -104,7 +104,7 @@ SUBDIRS=util tpcore logic parser tpmain booleans \
 	simplifier numbers userlib
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=
+LIBRARIES=hseq
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -115,12 +115,20 @@ SUBDIRS=util tpcore logic parser tpmain booleans \
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
+#hseq_SOURCES=
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
+#hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
+#	tpmain/tpmain booleans/boollib simplifier/simplifier \
+#	numbers/numbers userlib/userlib
+
+hseq_LIBS=util tpcore logic parser \
+	tpmain boollib simplifier \
+	numbers userlib
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

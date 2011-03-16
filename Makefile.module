@@ -55,6 +55,8 @@
 # object_SOURCES: List of source file names, without suffixes.
 # object_INCLUDE: Directories to include when compiling [object].
 # object_LIBS: Libraries to include when linking [object].
+# object_BYTELIBS: Libraries to include when byte-code linking [object].
+# object_NATLIBS: Libraries to include when native-code linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
