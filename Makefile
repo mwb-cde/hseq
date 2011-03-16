@@ -167,6 +167,31 @@ SUBDIRS=quote src
 #####
 # Extra settings
 
+###
+# Installation options
+# (Defaults if undefined are as given.)
+
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
+
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+
+###
+# Makefile commands
+
+# EXTRA_CLEAN: Command to add to the clean target.
+#EXTRA_CLEAN=
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+EXTRA_LIBCLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
+
 #####
 # Sub-directory building options
 

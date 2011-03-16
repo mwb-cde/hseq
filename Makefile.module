@@ -161,6 +161,32 @@
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
 
+###
+# Installation options
+# (Defaults if undefined are as given.)
+
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
+
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+
+###
+# Makefile commands
+
+# EXTRA_CLEAN: Command to add to the clean target.
+#EXTRA_CLEAN=
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+#EXTRA_LIBCLEAN=
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
+
+
 #####
 # Default settings
 

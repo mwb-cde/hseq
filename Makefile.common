@@ -172,18 +172,23 @@ export TPQUOTELIB='$(OBJ_ROOT)/lib/tpquote.cma'
 # Global tool options
 
 # GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-GLOBAL_OCAMLC_FLAGS=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_OCAMLC_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor (which is
 # used as a front-end to the compiler).
 #GLOBAL_OCAMLPP_FLAGS?=
 
 # GLOBAL_LINK_FLAGS: Flags to pass to the linker.
-#GLOBAL_LINK_FLAGS=
+GLOBAL_LINK_FLAGS?=-custom -I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
+GLOBAL_OCAMLNAT_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_NATLINK_FLAGS: Flags to pass to the native-code linker.
+GLOBAL_NATLINK_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
 # converts from .mlp to .ml files).
-#GLOBAL_OCAMLCPP_FLAGS=
-GLOBAL_OCAMLCPP_FLAGS=-I $(SRC_ROOT)/$(CONFIGDIR)
+GLOBAL_OCAMLCPP_FLAGS?=-I $(SRC_ROOT)/$(CONFIGDIR)
 
 

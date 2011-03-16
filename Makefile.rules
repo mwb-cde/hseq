@@ -87,11 +87,14 @@ export BAREOCAMLNAT=ocamlopt
 # OCAMLC: The OCaml byte code compiler
 export OCAMLC=$(BAREOCAMLC) $(OCAMLC_FLAGS) $(lm-file-ocamlc-options)
 
+# OCAMLLINK: The OCaml byte-code linker
+export OCAMLLINK=$(BAREOCAMLC) -a $(lm-file-ocamllink-options)
+
 # OCAMLNAT: The OCaml native code compiler
 export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_FLAGS) 
 
-# OCAMLlink: The OCaml byte-code linker
-export OCAMLLINK=$(BAREOCAMLC) -a 
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK=$(BAREOCAMLNAT) -a $(lm-file-ocamllink-options)
 
 # OCAMLMKTOP: Make a toplevel
 export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_FLAGS)
@@ -342,7 +345,10 @@ $$(bytelib-$(1)-target): $$(lm-file-obj-dir) $$(bytelib-$(1)-lib)
 	$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-file-obj-dir)
 	$$(COPY) $$(bytelib-$(1)-lib) $$(lm-file-obj-dir)
 
-$(eval $(call make-dir-template,$(1)))
+#$$(lm-file-obj-dir):
+#	$$(MKDIR) $$(lm-file-obj-dir)
+
+$$(eval $$(call make-dir-template,$$(lm-file-obj-dir)))
 
 else
 # Don't use staging directory
@@ -351,7 +357,8 @@ endif
 
 # Build rule for the library.
 $$(bytelib-$(1)-lib): $$(bytelib-$(1)-objects)
-	$$(OCAMLLINK) $$(OCAMLINCLUDE) -o $$(bytelib-$(1)-lib) $$(bytelib-$(1)-objects)
+	$$(info Linking with "$$(OCAMLLINK) -o $$(bytelib-$(1)-lib) $$(bytelib-$(1)-objects"))
+	$$(OCAMLLINK) -o $$(bytelib-$(1)-lib) $$(bytelib-$(1)-objects)
 # Standard build rule.
 .PHONY: build-bytelib-$(1)
 build-bytelib-$(1): $$(bytelib-$(1)-target)
@@ -515,16 +522,19 @@ clean:
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKE) -C $(subdir) clean; )
 	-$(RM) *.cmo *.cmx *.o *~
+	$(EXTRA_CLEAN)
 
 libclean: clean
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKE) -C $(subdir) libclean; )
 	-$(RM) *.cmi *.cma *.cmxa *~
+	$(EXTRA_LIBCLEAN)
 
 distclean: clean libclean
 	$(foreach subdir, $(DOCSUBDIRS), \
 		$(MAKE) -C $(subdir) reallyclean; )
 	-$(RM) depend
+	$(EXTRA_DISTCLEAN)
 
 ###
 # Toplevel targets
