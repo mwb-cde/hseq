@@ -253,7 +253,7 @@ let print_make_var oc (v, d, _) =
     | _ -> 
 	let str = String.escaped (get !d)
 	in 
- 	  Printf.fprintf oc "%s = '%s'\n" v str 
+ 	  Printf.fprintf oc "%s=%s\n" v str 
 
 let print_make_setting oc (v, d, _) =
   match (!d) with
@@ -261,7 +261,7 @@ let print_make_setting oc (v, d, _) =
     | _ -> 
 	let str = String.escaped (get !d)
 	in 
-	  Printf.fprintf oc "%s = %s\n" v str
+	  Printf.fprintf oc "%s=%s\n" v str
 
 let make_outfile n = 
   if n = "" 

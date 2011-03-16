@@ -103,10 +103,10 @@ $(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CU
 endif
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR = $(PROJ_ROOT)/config
+CONFIGDIR=config
 
 # CONFIGFILE: Configuration data file 
-CONFIGFILE = $(CONFIGDIR)/data.make
+CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/data.make
 
 ###
 # Configuration variables
@@ -154,12 +154,12 @@ endif # OLDCAMLP4
 export SRC_ROOT:=$(SrcDir)
 
 # OBJ_ROOT: Staging directory for built objects.
+OBJ_DIR?=obj
 ifndef OBJ_ROOT
-OBJ_ROOT:=$(SRC_ROOT)/obj
+OBJ_ROOT:=$(SRC_ROOT)/$(OBJ_DIR)
 endif
 OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
 export OBJ_ROOT
-
 
 
 ####
@@ -167,3 +167,23 @@ export OBJ_ROOT
 
 # The quotation parser to use when building libraries and programs.
 export TPQUOTELIB='$(OBJ_ROOT)/lib/tpquote.cma'
+
+###
+# Global tool options
+
+# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+GLOBAL_OCAMLC_FLAGS=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor (which is
+# used as a front-end to the compiler).
+#GLOBAL_OCAMLPP_FLAGS?=
+
+# GLOBAL_LINK_FLAGS: Flags to pass to the linker.
+#GLOBAL_LINK_FLAGS=
+
+# GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
+# converts from .mlp to .ml files).
+#GLOBAL_OCAMLCPP_FLAGS=
+GLOBAL_OCAMLCPP_FLAGS=-I $(SRC_ROOT)/$(CONFIGDIR)
+
+

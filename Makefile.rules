@@ -100,7 +100,8 @@ export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_FLAGS)
 export OCAMLDEP=ocamldep $(OCAMLDEP_FLAGS) $(lm-file-ocamldep-options)
 
 # OCAMLCPP : the preprocesor
-export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo $(OCAMLCPP_FLAGS)
+export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
+	$(OCAMLCPP_FLAGS) $(lm-file-ocamlcpp-options)
 
 # OCAMLDOC: The documentation generator
 export OCAMLDOC=ocamldoc $(OCAMLDOC_FLAGS)
@@ -203,8 +204,24 @@ $(info Directory $(CURDIR))
 $(info GLOBAL_OCAMLPP_FLAGS = $(GLOBAL_OCAMLPP_FLAGS))
 $(info GLOBAL_OCAMLDEP_FLAGS = $(GLOBAL_OCAMLDEP_FLAGS))
 $(info GLOBAL_OCAMLC_FLAGS = $(GLOBAL_OCAMLC_FLAGS))
+$(info GLOBAL_OCAMLCPP_FLAGS = $(GLOBAL_OCAMLCPP_FLAGS))
 
-#
+###
+# Values
+
+# lm-lib-dirname: Library directory name
+lm-lib-dirname=lib
+
+# lm-header-dirname: Library directory name
+lm-header-dirname=lib
+
+# lm-bin-dirname: Binary directory name
+lm-bin-dirname=bin
+
+# lm-doc-dirname: Document directory name
+lm-doc-dirname=doc
+
+####
 # Targets:
 # --------
 #
@@ -272,6 +289,12 @@ distclean-subdir-$(1):
 	$$(MAKE) -C $(1) $$(lm-module-subdir-args) distclean
 endef
 
+# make-dir-template($1): Make a directory named $(1)
+define make-dir-template
+$(1):
+	$$(MKDIR) $(1)
+endef
+
 # build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
 define build-header-template
 .PHONY: build-headers-$(1)
@@ -304,15 +327,23 @@ bytelib-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) 
 lm-file-ocamlc-options:=$$(bytelib-$(1)-ocamlc-options)
 $$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
 
-lm-file-ocamldep-options:=$$(lm-module-ocamlpp-options) $$(lm-module-ocamldep-options)
+lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
 $$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
+
+lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
 
 ifdef lm-module-uses-objdir
 # Use staging directory
-bytelib-$(1)-target=$$(lm-module-obj-dir)/$$(bytelib-$(1)-lib)
-$$(bytelib-$(1)-target): $$(lm-module-obj-dir) $$(bytelib-$(1)-lib)
-	$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-module-obj-dir)
-	$$(COPY) $$(bytelib-$(1)-lib) $$(lm-module-obj-dir)
+lm-file-obj-dir=$$(lm-module-obj-dir)/$$(lm-lib-dirname)
+bytelib-$(1)-target=$$(lm-file-obj-dir)/$$(bytelib-$(1)-lib)
+
+$$(bytelib-$(1)-target): $$(lm-file-obj-dir) $$(bytelib-$(1)-lib)
+	$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-file-obj-dir)
+	$$(COPY) $$(bytelib-$(1)-lib) $$(lm-file-obj-dir)
+
+$(eval $(call make-dir-template,$(1)))
+
 else
 # Don't use staging directory
 bytelib-$(1)-target=$$(bytelib-$(1)-lib)
@@ -372,6 +403,10 @@ ifndef LOCAL_OCAMLC_FLAGS
 LOCAL_OCAMLC_FLAGS:=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
 endif
 
+ifndef LOCAL_OCAMLCPP_FLAGS
+LOCAL_OCAMLCPP_FLAGS:=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+endif
+
 # lm-module-ocamlpp-options: Module wide ocamlpp flags. 
 lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
@@ -381,17 +416,21 @@ lm-module-ocamldep-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
 # lm-module-ocamlc-options: Module wide ocamlc flags. 
 lm-module-ocamlc-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
 
+# lm-module-ocamlcpp-options: Module wide macro-expander flags. 
+lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)
+
 ##
 # Options to pass to sub-directorys
 lm-module-subdir-args=\
 	GLOBAL_OCAMLPP_FLAGS='$(strip $(LOCAL_OCAMLPP_FLAGS))' \
 	GLOBAL_OCAMLDEP_FLAGS='$(strip $(LOCAL_OCAMLDEP_FLAGS))' \
 	GLOBAL_OCAMLC_FLAGS='$(strip $(LOCAL_OCAMLC_FLAGS))' \
+	GLOBAL_OCAMLCPP_FLAGS='$(strip $(LOCAL_OCAMLCPP_FLAGS))' \
 	$(SUBDIR_MAKE_OPTIONS)
 
 # lm-module-uses-objdir: Defined iff the module uses a staging directory.
 # lm-module-obj-dir: The staging directory to use.
-ifeq ($(strip $(MODULE_USE_OBJDIR)),yes)
+ifneq ($(strip $(MODULE_USE_OBJDIR)),no)
 lm-module-uses-objdir=yes
 lm-module-obj-dir=$(OBJ_ROOT)
 endif
@@ -446,9 +485,7 @@ $(foreach prog,$(PROGRAMS),\
 
 ifeq ($(lm-module-uses-objdir),yes)
 lm-module-objdir=$(OBJ_ROOT)
-
-$(lm-module-objdir):
-	$(MKDIR) $(lm-module-objdir)
+$(eval $(call make-dir-template,$(lm-module-objdir)))
 else
 lm-module-objdir=
 endif

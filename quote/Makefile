@@ -86,7 +86,7 @@ LIBRARIES=tpquote
 
 # MODULE_OBJ_PATH: PATH to append to the staging directory path for
 # this module and all its sub-directories.
-MODULE_OBJ_PATH=lib
+#MODULE_OBJ_PATH=
 
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes

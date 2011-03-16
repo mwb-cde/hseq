@@ -100,7 +100,8 @@ PROJ_ROOT=..
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=util
+SUBDIRS=util tpcore 
+	# logic parser tpmain booleans simplifier numbers userlib hseqtop
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
