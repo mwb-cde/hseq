@@ -176,6 +176,16 @@
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=<all .mli files and all built .cmi files>
 
+# INSTALL_EXTRA_LIBRARIES: Additional files to install with the
+# libraries. Extra headers belong in this list.
+#INSTALL_EXTRA_LIBRARIES=
+
+# INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
+#INSTALL_EXTRA_PROGRAMS=
+
+# INSTALL_EXTRA_DATA: Additional files to install with the built data.
+#INSTALL_EXTRA_DATA=
+
 ###
 # Makefile commands
 
