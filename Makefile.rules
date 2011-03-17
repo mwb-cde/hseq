@@ -361,22 +361,25 @@ lm-file-obj-dir=$$(lm-module-obj-dir)/$$(lm-lib-dirname)
 bytelib-$(1)-target=$$(lm-file-obj-dir)/$$(bytelib-$(1)-libname)
 
 ifneq ($$(strip $$(bytelib-$(1)-interfaces)),)
-lm-bytelib-copy-interface=$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-file-obj-dir)
+#lm-bytelib-copy-interface=$$(COPY) $$(bytelib-$(1)-interfaces) $$(lm-file-obj-dir)
+lm-bytelib-copy-interface=$$(COPYTO) -D $$(bytelib-$(1)-interfaces) $$(lm-file-obj-dir) 
 else
 lm-bytelib-copy-interface=
 endif
 
 ifneq ($$(strip $$(bytelib-$(1)-interfaces)),)
-lm-bytelib-copy-libname=$$(COPY) $$(bytelib-$(1)-libname) $$(lm-file-obj-dir)
+#lm-bytelib-copy-libname=$$(COPY) $$(bytelib-$(1)-libname) $$(lm-file-obj-dir)
+lm-bytelib-copy-libname=$$(COPYTO) -D $$(bytelib-$(1)-libname) $$(lm-file-obj-dir) 
 else
 lm-bytelib-copy-libname=
 endif
 
-$$(bytelib-$(1)-target): $$(lm-file-obj-dir) $$(bytelib-$(1)-libname)
+#$$(bytelib-$(1)-target): $$(lm-file-obj-dir) $$(bytelib-$(1)-libname)
+$$(bytelib-$(1)-target): $$(bytelib-$(1)-libname)
 	$$(lm-bytelib-copy-interface) 
 	$$(lm-bytelib-copy-libname)
 
-$$(eval $$(call make-dir-template,$$(lm-file-obj-dir)))
+#$$(eval $$(call make-dir-template,$$(lm-file-obj-dir)))
 
 else
 # Don't use staging directory
@@ -530,13 +533,14 @@ $(foreach prog,$(PROGRAMS),\
 
 ifeq ($(lm-module-uses-objdir),yes)
 lm-module-objdir=$(OBJ_ROOT)
-$(eval $(call make-dir-template,$(lm-module-objdir)))
+#$(eval $(call make-dir-template,$(lm-module-objdir)))
 else
 lm-module-objdir=
 endif
 
 .PHONY: build-objdir
-build-objdir: $(lm-module-objdir)
+#build-objdir: $(lm-module-objdir)
+build-objdir: 
 
 #
 # Libraries

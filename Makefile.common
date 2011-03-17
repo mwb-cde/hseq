@@ -47,22 +47,32 @@ export MAKECLEAN = $(MAKE) NODEPEND=true $(MAKEOPTIONS)
 ##
 
 # CD: Change directory
-export CD = cd
+export CD?=cd
 
 # MKDIR: Make a directory
-export MKDIR = mkdir -p
+export MKDIR?=mkdir -p
 
 # RMDIR: Remove a directory
-export RMDIR = rmdir
+export RMDIR?=rmdir
+
+# COPYTO: Copy one or more files, creating directories if necessary.
+export COPYTO
+ifndef COPYTO
+ifdef INSTALL
+COPYTO=$(INSTALL)
+else
+COPYTO=install 
+endif
+endif
 
 # COPY: Copy one or more files
-export COPY = cp -f
+export COPY?=cp -f
 
 # RM: Delete one or more files
-export RM = rm -f
+export RM?=rm -f
 
 # SKIP: Do nothing
-export SKIP =
+export SKIP=
 
 ##
 # Build Targets
@@ -103,7 +113,8 @@ $(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CU
 endif
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR=config
+#CONFIGDIR=config
+CONFIGDIR=
 
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/data.make

@@ -70,7 +70,7 @@ let has_program s =
 
 (** Names of output files **)
 
-let output_dir = "config"
+let output_dir = ""
 let ml_data=filename output_dir "configure.data"
 let make_data=filename output_dir "data.make"
 
