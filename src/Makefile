@@ -109,6 +109,12 @@ LIBRARIES=hseq
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
+# PACKED: List of packed libraries to build
+#PACKED=hseq
+
+# PACKING: List of packing modules to build
+#PACKING=
+
 #####
 # Object building settings
 #
@@ -128,16 +134,18 @@ hseq_INCLUDE=util tpcore logic parser tpmain booleans \
 #	tpmain/tpmain booleans/boollib simplifier/simplifier \
 #	numbers/numbers userlib/userlib
 
-hseq_LIBS=util tpcore logic parser \
+hseq_LIBS=tpcore logic parser \
 	tpmain boollib simplifier \
 	numbers userlib
 
-# object_PACK: Name of packed module to generate (libraries only).
-#object_PACK=
-#hseq_PACK=HSeq
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
+# object_PACK_NAME: Name of pack to build
+#object_PACK_NAME=
+object_PACK_NAME=HSeq
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+object_PACK_DIR=.
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

@@ -343,20 +343,6 @@ bytelib-$(1)-natlibs:=\
 	$$($(1)_NATLIBS)
 bytelib-$(1)-libname:=$(call bytelib,$(1))
 
-# Packing
-ifneq ($$(strip $$($(1)_PACK)),)
-bytelib-$(1)-is-packed=yes
-bytelib-$(1)-packlib=$$(call bytecode,$$($(1)_PACK))
-else
-bytelib-$(1)-is-packed=
-endif
-
-ifneq ($$(strip $$($(1)_PACK_FOR)),)
-bytelib-$(1)-is-packed-for=yes
-else
-bytelib-$(1)-is-packed-for=
-endif
-
 $$(info bytelib-$(1)-libname = $$(bytelib-$(1)-libname))
 $$(info bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
@@ -387,26 +373,98 @@ $$(info bytelib-$(1)-target = $$(bytelib-$(1)-target))
 $$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
 
-ifeq ($$(strip $$(bytelib-$(1)-is-packed)),)
-bytelib-$(1)-build2-objs=$$(bytelib-$(1)-objects) 
-bytelib-$(1)-build2-link-objs=$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
-bytelib-$(1)-pack-option=
-else
-bytelib-$(1)-build2-link-objs=$$(bytelib-$(1)-packlib) 
-bytelib-$(1)-pack-option=-pack
-
-$$(bytelib-$(1)-packlib): $$(bytelib-$(1)-objects)
-	$$(OCAMLC) -pack -o $$(bytelib-$(1)-packlib) \
-		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
-endif
-
-$$(bytelib-$(1)-libname): $$(bytelib-$(1)-build2-objs)
+$$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
 	$$(info Linking $(bytelib-$(1)-libname))
-	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) $$(bytelib-$(1)-build2-link-objs)
+	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) \
+		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
+
 
 # Build rule to call
 .PHONY: build-bytelib-$(1)
 build-bytelib-$(1): $$(bytelib-$(1)-interfaces) $$(bytelib-$(1)-target)
+endef
+
+
+# build-packing-template($1): Build packing objects for $(1) from
+# names in $(1)_SOURCES
+define build-packing-template
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+packing-$(1)-headers=$$($(1)_HEADERS)
+else
+packing-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+packing-$(1)-interfaces:=$$(foreach src,$$(packing-$(1)-headers),\
+				$$(call interface,$$(src)))
+packing-$(1)-sources:=$$(foreach src,$$($(1)_SOURCES),$$(call mlcode,$$(src)))
+packing-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+packing-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call packing,$$(obj))) \
+	$$($(1)_PACKING)
+packing-$(1)-natlibs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
+	$$($(1)_NATLIBS)
+
+ifeq ($$(strip $$(($1)_PACK_NAME)),)
+$$(error $(1)_PACK_NAME must be defined when building for a packed object.)
+endif
+packing-$(1)-packname:=$$($(1)_PACK_NAME)
+
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+packing-$(1)-fileprefix=$$($(1)_PACK_DIR)/
+
+$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
+
+else
+packing-$(1)-fileprefix=
+endif
+
+# Packing
+
+$$(info packing-$(1)-packname = $$(packing-$(1)-packname))
+$$(info packing-$(1)-interfaces = $$(packing-$(1)-interfaces))
+$$(info packing-$(1)-objects = $$(packing-$(1)-objects))
+$$(info packing-$(1)-libs = $$(packing-$(1)-libs))
+
+lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
+
+lm-file-ocamlnat-options:=-pack-for $$(packing-$(1)-packname) \
+	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-file-ocamlnat-options = $$(lm-file-ocamlnat-options))
+
+lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
+
+lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
+
+# Build rule for the targets
+$$(packing-$(1)-objects): $$(packing-$(1)-sources)
+
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+packing-$(1)-targets:=$$(foreach obj,$$(packing-$(1)-objects),\
+	$$(packing-$(1)-fileprefix)$$(obj))
+
+$$(packing-$(1)-targets): $$(packing-$(1)-objects) $$($(1)_PACK_DIR)
+	$$(COPY) $$(packing-$(1)-objects) $$($(1)_PACK_DIR)
+else
+packing-$(1)-targets:=$$(packing-$(1)-objects)
+endif
+
+$$(info packing-$(1)-targets = $$(packing-$(1)-targets))
+$$(info packing-$(1)-libs = $$(packing-$(1)-libs))
+$$(info packing-$(1)-sources = $$(packing-$(1)-sources))
+$$(info packing-$(1)-objects = $$(packing-$(1)-objects))
+
+# Build rule to call
+$$(info target build-packing-$(1))
+.PHONY: build-packing-$(1)
+build-packing-$(1): $$(packing-$(1)-interfaces) $$(packing-$(1)-targets)
 endef
 
 # install-module-template($1,$2):Install module files to directory
@@ -447,13 +505,13 @@ lm-module-install-libfiles:=\
 	$$(INSTALL_EXTRA_LIBRARIES)
 
 # List of intermediate files to install, use module definitions when given.
-ifneq ($$(origin INSTALL_CODE),undefined)
-lm-module-install-code:=$$(strip $$(INSTALL_CODE))
-else
-lm-module-install-code:=\
-$$(foreach lib,$$(lm-module-install-libs),\
-	$$(foreach src,$$($$(lib)_SOURCES),$$(call bytecode,$$(src))))
-endif # INSTALL_LIBRARIES
+#ifneq ($$(origin INSTALL_CODE),undefined)
+#lm-module-install-code:=$$(strip $$(INSTALL_CODE))
+#else
+#lm-module-install-code:=\
+#$$(foreach lib,$$(lm-module-install-libs),\
+#	$$(foreach src,$$($$(lib)_SOURCES),$$(call bytecode,$$(src))))
+#endif # INSTALL_LIBRARIES
 
 # List of binariess to install, use module definitions when given.
 ifdef INSTALL_PROGRAMS
@@ -733,6 +791,11 @@ $(eval $(call build-bytelib-template,$(lib))))
 $(foreach prog,$(PROGRAMS),\
 $(eval $(call build-byteprog-template,$(prog))))
 
+##
+# Instantiate packings build targets for each target.
+$(foreach lib,$(PACKING),\
+$(eval $(call build-packing-template,$(lib))))
+
 ###
 # Directories
 #
@@ -756,6 +819,10 @@ build-headers: $(lm-module-interfaces)
 .PHONY: build-bytelibs
 $(info LIBRARIES = $(LIBRARIES))
 build-bytelibs: $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+
+.PHONY: build-packings
+$(info PACKING = $(PACKING))
+build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
 
 .PHONY: build-programs
 build-programs: $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
@@ -788,7 +855,7 @@ distclean: clean libclean
 
 .PHONY: build
 build: build-objdir build-subdirs \
-	build-bytelibs build-programs \
+	build-bytelibs build-programs build-packings \
 	module-install-objdir
 
 ##

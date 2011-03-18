@@ -103,10 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=util
+#LIBRARIES=util
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=util
 
 #####
 # Object building settings
@@ -122,12 +125,13 @@ util_SOURCES=lib treekit tag parserkit rewritekit
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
-# object_PACK: Name of packed module to generate (libraries only).
-#object_PACK=
+# object_PACK_NAME: Name of pack to build
+#object_PACK_NAME=
+util_PACK_NAME=HSeq
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-util_PACK_FOR=HSeq
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+util_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

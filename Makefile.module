@@ -138,7 +138,10 @@
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
-# object_PACK_FOR: Directory to use for packing.
+# object_PACK_NAME: Name of pack to build
+#object_PACK_NAME=
+
+# object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
