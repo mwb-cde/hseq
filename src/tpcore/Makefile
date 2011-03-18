@@ -161,6 +161,17 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
 
+###
+# Installation options
+
+# For src/* modules, install headers but not libraries.
+
+# INSTALL_LIBRARIES: Libraries to install
+INSTALL_LIBRARIES=
+
+# INSTALL_HEADERS: Headers to install
+INSTALL_HEADERS=$(addsuffix .cmi,$(tpcore_SOURCES)) $(addsuffix .mli,$(tpcore_SOURCES))
+
 #####
 # Default settings
 

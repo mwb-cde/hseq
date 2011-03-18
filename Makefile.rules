@@ -378,26 +378,26 @@ lm-module-data-dir:=$(2)/$$(lm-lib-dataname)
 lm-module-doc-dir:=$(2)/$$(lm-lib-docname)
 
 # List of libraries to install, use module definitions when given.
-ifdef INSTALL_LIBRARIES
-lm-module-install-libs=$$(strip $$(INSTALL_LIBRARIES))
+ifneq ($$(origin INSTALL_LIBRARIES),undefined)
+lm-module-install-libs:=$$(strip $$(INSTALL_LIBRARIES))
 else
 lm-module-install-libs=$$(LIBRARIES)
 endif # INSTALL_LIBRARIES
 
-# Calculate library files to install
-lm-module-install-libfiles:=\
+# List of headers to install, use module definitions when given.
+ifneq ($$(origin INSTALL_HEADERS),undefined)
+lm-module-install-headers:=$$(strip $$(INSTALL_HEADERS))
+else
+lm-module-install-headers:=\
 	$$(foreach lib,$$(lm-module-install-libs),\
-		$$(call bytelib,$$(lib)) \
 		$$(foreach src,$$($$(lib)_SOURCES),\
 			$$(call interface,$$(src)) $$(call header,$$(src))))
+endif # INSTALL_LIBRARIES
 
-# Add native libraries if necessary
-#lm-module-install-libfiles:=$$(lm-module-install-libfiles) \
-#	$$(foreach lib,$$(lm-module-install-libs),\
-#		$$(call natlib,$$(lib)) $$(call objlib,$$(lib)))
-
-# Add any extra libraries
-lm-module-install-libfiles:=$$(lm-module-install-libfiles) \
+# Calculate library files to install
+lm-module-install-libfiles:=\
+	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib))) \
+	$$(lm-module-install-headers) \
 	$$(INSTALL_EXTRA_LIBRARIES)
 
 # List of binariess to install, use module definitions when given.
@@ -406,10 +406,6 @@ lm-module-install-bins=$$(strip $$(INSTALL_PROGRAMS))
 else
 lm-module-install-bins=$$(PROGRAMS)
 endif # INSTALL_PROGRAMS
-
-$$(info lm-module-install-libs = $$(lm-module-install-libs))
-$$(info lm-module-install-libfiles = $$(lm-module-install-libfiles))
-$$(info lm-module-install-binfiles = $$(lm-module-install-binfiles))
 
 # Calculate binary files to install
 lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS)

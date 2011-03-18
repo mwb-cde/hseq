@@ -165,16 +165,14 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 
 ###
 # Installation options
-# (Defaults if undefined are as given.)
+
+# For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-#INSTALL_LIBRARIES=<all built libraries>
-
-# INSTALL_PROGRAMS: Programs to install
-#INSTALL_PROGRAMS=<all built programs>
+INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+INSTALL_HEADERS=$(addsuffix .cmi,$(logic_SOURCES)) $(addsuffix .mli,$(logic_SOURCES))
 
 ###
 # Makefile commands

@@ -134,6 +134,17 @@ util_SOURCES=lib treekit tag parserkit rewritekit
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
 
+###
+# Installation options
+
+# For src/* modules, install headers but not libraries.
+
+# INSTALL_LIBRARIES: Libraries to install
+INSTALL_LIBRARIES=
+
+# INSTALL_HEADERS: Headers to install
+INSTALL_HEADERS=$(addsuffix .cmi,$(util_SOURCES)) $(addsuffix .mli,$(util_SOURCES))
+
 #####
 # Module build tool settings
 

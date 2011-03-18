@@ -119,6 +119,8 @@ LIBRARIES=hseq
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
+hseq_INCLUDE=util tpcore logic parser tpmain booleans \
+	simplifier numbers userlib
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
