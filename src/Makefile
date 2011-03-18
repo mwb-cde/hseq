@@ -132,6 +132,13 @@ hseq_LIBS=util tpcore logic parser \
 	tpmain boollib simplifier \
 	numbers userlib
 
+# object_PACK: Name of packed module to generate (libraries only).
+#object_PACK=
+#hseq_PACK=HSeq
+
+# object_PACK_FOR: Module to pack for (libraries only).
+#object_PACK_FOR=
+
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 

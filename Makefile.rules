@@ -343,6 +343,20 @@ bytelib-$(1)-natlibs:=\
 	$$($(1)_NATLIBS)
 bytelib-$(1)-libname:=$(call bytelib,$(1))
 
+# Packing
+ifneq ($$(strip $$($(1)_PACK)),)
+bytelib-$(1)-is-packed=yes
+bytelib-$(1)-packlib=$$(call bytecode,$$($(1)_PACK))
+else
+bytelib-$(1)-is-packed=
+endif
+
+ifneq ($$(strip $$($(1)_PACK_FOR)),)
+bytelib-$(1)-is-packed-for=yes
+else
+bytelib-$(1)-is-packed-for=
+endif
+
 $$(info bytelib-$(1)-libname = $$(bytelib-$(1)-libname))
 $$(info bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
@@ -373,10 +387,22 @@ $$(info bytelib-$(1)-target = $$(bytelib-$(1)-target))
 $$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
 
-$$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
+ifeq ($$(strip $$(bytelib-$(1)-is-packed)),)
+bytelib-$(1)-build2-objs=$$(bytelib-$(1)-objects) 
+bytelib-$(1)-build2-link-objs=$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
+bytelib-$(1)-pack-option=
+else
+bytelib-$(1)-build2-link-objs=$$(bytelib-$(1)-packlib) 
+bytelib-$(1)-pack-option=-pack
+
+$$(bytelib-$(1)-packlib): $$(bytelib-$(1)-objects)
+	$$(OCAMLC) -pack -o $$(bytelib-$(1)-packlib) \
+		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
+endif
+
+$$(bytelib-$(1)-libname): $$(bytelib-$(1)-build2-objs)
 	$$(info Linking $(bytelib-$(1)-libname))
-	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) \
-		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects)
+	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) $$(bytelib-$(1)-build2-link-objs)
 
 # Build rule to call
 .PHONY: build-bytelib-$(1)
@@ -390,6 +416,7 @@ define install-module-template
 # List of required directories
 lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)
 lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)
+lm-module-code-dir:=$(2)/$$(lm-code-dirname)
 lm-module-data-dir:=$(2)/$$(lm-data-dirname)
 lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)
 
@@ -419,6 +446,15 @@ lm-module-install-libfiles:=\
 	$$(lm-module-install-headers) \
 	$$(INSTALL_EXTRA_LIBRARIES)
 
+# List of intermediate files to install, use module definitions when given.
+ifneq ($$(origin INSTALL_CODE),undefined)
+lm-module-install-code:=$$(strip $$(INSTALL_CODE))
+else
+lm-module-install-code:=\
+$$(foreach lib,$$(lm-module-install-libs),\
+	$$(foreach src,$$($$(lib)_SOURCES),$$(call bytecode,$$(src))))
+endif # INSTALL_LIBRARIES
+
 # List of binariess to install, use module definitions when given.
 ifdef INSTALL_PROGRAMS
 lm-module-install-bins=$$(strip $$(INSTALL_PROGRAMS))
@@ -429,10 +465,14 @@ endif # INSTALL_PROGRAMS
 # Calculate binary files to install
 lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS)
 
+# Calculate code files to install
+lm-module-install-codefiles:=$$(lm-module-install-code)
+
 # Make sure that required directories exist.
 ifneq ($$(strip $$(MODULE_INSTALL_PATH)),)
 lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
 lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-code-dir:=$(2)/$$(lm-code-dirname)/$$(MODULE_INSTALL_PATH)
 lm-module-data-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
 lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
 
@@ -442,6 +482,9 @@ $$(eval $$(call make-dir-template,$$(lm-module-lib-dir)))
 endif
 ifneq ($$(strip $$(lm-module-install-binfiles)),)
 $$(eval $$(call make-dir-template,$$(lm-module-bin-dir)))
+endif
+ifneq ($$(strip $$(lm-module-install-codefiles)),)
+$$(eval $$(call make-dir-template,$$(lm-module-code-dir)))
 endif
 ifneq ($$(strip $$(lm-module-install-datafiles)),)
 $$(eval $$(call make-dir-template,$$(lm-module-data-dir)))
@@ -461,6 +504,12 @@ ifneq ($$(strip $$(lm-module-install-binfiles)),)
 lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 	lm-$(1)-module-install-bin
 endif
+
+ifneq ($$(strip $$(lm-module-install-codefiles)),)
+lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
+	lm-$(1)-module-install-code
+endif
+
 ifneq ($$(strip $$(lm-module-install-datafiles)),)
 lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 	lm-$(1)-module-install-data
@@ -481,12 +530,19 @@ lm-$(1)-module-install-lib:
 endif
 
 .PHONY: lm-$(1)-module-install-bin
-#$$(info lm-module-bin-dir=$$(lm-module-bin-dir))
 ifneq ($$(strip $$(lm-module-install-binfiles)),)
 lm-$(1)-module-install-bin: $$(lm-module-bin-dir)
 	$$(COPY) $$(lm-module-install-binfiles) $$(lm-module-bin-dir)
 else
 lm-$(1)-module-install-bin:
+endif
+
+.PHONY: lm-$(1)-module-install-code
+ifneq ($$(strip $$(lm-module-install-codefiles)),)
+lm-$(1)-module-install-code: $$(lm-module-code-dir)
+	$$(COPY) $$(lm-module-install-codefiles) $$(lm-module-code-dir)
+else
+lm-$(1)-module-install-code:
 endif
 
 .PHONY: lm-$(1)-module-install-data

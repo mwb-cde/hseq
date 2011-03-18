@@ -122,6 +122,13 @@ util_SOURCES=lib treekit tag parserkit rewritekit
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
+# object_PACK: Name of packed module to generate (libraries only).
+#object_PACK=
+
+# object_PACK_FOR: Module to pack for (libraries only).
+#object_PACK_FOR=
+util_PACK_FOR=HSeq
+
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 
@@ -144,6 +151,9 @@ INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
 INSTALL_HEADERS=$(addsuffix .cmi,$(util_SOURCES)) $(addsuffix .mli,$(util_SOURCES))
+
+# INSTALL_CODE: Intermediate objects to install
+INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
 
 #####
 # Module build tool settings

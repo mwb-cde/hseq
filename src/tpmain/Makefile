@@ -128,6 +128,13 @@ tpmain_SOURCES=global tactics goals commands display
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
+# object_PACK: Name of packed module to generate (libraries only).
+#object_PACK=
+
+# object_PACK_FOR: Module to pack for (libraries only).
+#object_PACK_FOR=
+tpmain_PACK_FOR=HSeq
+
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 

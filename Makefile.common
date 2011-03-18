@@ -194,7 +194,6 @@ else
 export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
 endif
 
-
 $(lm-objdir-lib):
 	$(MKDIR) $(lm-objdir-lib)
 
@@ -279,6 +278,16 @@ $(lm-objdir-thys):
 
 $(lm-installdir-thys):
 	$(MKDIR) $(lm-installdir-thys)
+
+#
+# lm-data-dirname: Intermediate objects, which are not installed
+export lm-code-dirname:=code
+
+# lm-objdir-code: Intermediate objects directory
+export lm-objdir-code=$(OBJ_ROOT)/$(lm-code-dirname)
+
+$(lm-objdir-code):
+	$(MKDIR) $(lm-objdir-code)
 
 ####
 # HSeq building variables
