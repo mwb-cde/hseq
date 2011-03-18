@@ -138,20 +138,6 @@ ifeq '$(FAST)' 'true'
 endif # End of native code compilers
 ###
 
-### 
-# Directory names
-
-# lm-lib-dirname: Libraries
-lm-lib-dirname:=lib
-
-# lm-bin-dirname: Binaries
-lm-bin-dirname:=bin
-
-# lm-data-dirname: Shared data
-lm-data-dirname:=share
-
-# lm-doc-dirname: Shared doc
-lm-doc-dirname:=share
 
 #####
 # Build rules
@@ -628,18 +614,6 @@ endif #DEBUG_MAKE
 ###
 # Instantiate the targets
 #
-
-## 
-# Staging directories
-
-$(eval $(call make-dir-template,$(OBJ_ROOT)/$(lm-lib-dirname)))
-
-$(eval $(call make-dir-template,$(OBJ_ROOT)/$(lm-bin-dirname)))
-
-$(eval $(call make-dir-template,$(OBJ_ROOT)/$(lm-data-dirname)))
-
-$(eval $(call make-dir-template,$(OBJ_ROOT)/$(lm-doc-dirname)))
-
 
 ##
 # Instantiate obj-dir install targets
