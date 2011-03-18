@@ -1,7 +1,0 @@
-DEFINE Bin = hseq 
-DEFINE Prefix = /usr/local/ 
-DEFINE BinDir = /usr/local/bin 
-DEFINE BaseDir = /usr/local/lib/hseq 
-DEFINE IncludeDir = /usr/local/lib/hseq/include 
-DEFINE LibDir = /usr/local/lib/hseq/libs 
-DEFINE ThyDir = /usr/local/lib/hseq/thys 
