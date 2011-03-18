@@ -33,7 +33,7 @@
      hseqc --native -- -o test test.ml 
 *)
 
-INCLUDE "../../config/configure.data"
+INCLUDE "../configure.data"
 
 (** [bindir]: The hseq binary directory *)
 let bindir = BinDir

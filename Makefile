@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote src
+SUBDIRS=quote src tools
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
@@ -184,10 +184,10 @@ SUBDIRS=quote src
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=
+EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
-EXTRA_LIBCLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
+#EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=

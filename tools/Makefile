@@ -1,294 +1,243 @@
+########################################################## --*- Makefile -*--
+# Makefile.module - Makefile to build modules
+# Copyright 18 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
 #####
-# Makefile for building tools
+# Definitions and rules for building modules.
+#
+# REQUIREMENTS
+# ------------
+#
+# Must set PROJ_ROOT.
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
+#
+# Must end with 
+#    include $(PROJ_ROOT)/Makefile.common
+#
+#
+# Variables:
+# ----------
+#
+# Module settings:
+# 
+# SUBDIRS: List of sub-directories to recurse into.
+# LIBRARIES: List of libraries to build.
+# PROGRAMS: List of programs to build.
+#
+# MODULE_INST_PATH: PATH to append to the relative installation path.
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# MODULE_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
+# MODULE_OBJ_PATH: PATH to append to the staging directory path.
+# MODULE_INST_PATH: PATH to append to the relative installation path.
+#
+# For each program or library [object] listed in LIBRARIES or PROGRAMS:
+#
+# object_SOURCES: List of source file names, without suffixes.
+# object_INCLUDE: Directories to include when compiling [object].
+# object_LIBS: Libraries to include when linking [object].
+# object_BYTELIBS: Libraries to include when byte-code linking [object].
+# object_NATLIBS: Libraries to include when native-code linking [object].
+# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# object_LINK_FLAGS: Flags to pass to the linker for [object].
+# object_INST_PATH: PATH to append to the relative installation path.
+#
+# Inherited variables:
+#
+# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# GLOBAL_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+# GLOBAL_LINK_FLAGS: Flags to pass to the linker for [object].
+# GLOBAL_OBJ_PATH: PATH staging directory path.
+# GLOBAL_INST_PATH: PATH installation path.
+#
+# Other variales
+# LOCAL_OCAMLC_FLAGS: Actual flags to pass to the compiler for [object].
+# LOCAL_OCAMLPP_FLAGS: flags to pass to the preprocessor for [object].
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
+#
+# Notes:
+#
+# The flags for each tool X are formed as 
+#    (LOCAL_X_FLAGS) (object_X_FLAGS)
+#
+# If LOCAL_X_FLAGS is not defined, it defaults to
+#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
+#
+# The global flags for X passed to each sub-directory is
+#     (LOCAL_X_FLAGS)
+#
+# An object will be installed into the directory formed by 
+#      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
+#
 #####
 
+#####
+# Required definitions
+#  
 
-####
-# Variables 
+# PROJ_ROOT: Relative path to HSeq root.
+PROJ_ROOT=..
+
+#####
+# Module building settings
+#
+
+# SUBDIRS: List of sub-directories to build.
+#SUBDIRS=
+
+# LIBRARIES: List of libraries to build.
+#LIBRARIES=
+
+# PROGRAMS: List of programs to build.
+PROGRAMS=hseqb hseqc
+
+#####
+# Sub-directory building options
+
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
+
+#####
+# Object building settings
+#
+
+# object_SOURCES: List of source file names, without suffixes.
+#object_SOURCES=
+hseqb_SOURCES=hseqb
+hseqc_SOURCES=hseqc
+
+# object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
+#object_HEADERS=$(object_SOURCES)
+hseqb_HEADERS=
+hseqc_HEADERS=
+
+# object_INCLUDE: Directories to include when compiling [object].
+#object_INCLUDE=
+
+# object_LIBS: Libraries to include when linking [object].
+#object_LIBS=
+hseqb_LIBS=unix.cma
+
+# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#object_OCAMLC_FLAGS=
+
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+#object_OCAMLPP_FLAGS=
+
+# object_LINK_FLAGS: Flags to pass to the linker for [object].
+#object_LINK_FLAGS=
+
+# object_INST_PATH: PATH to append to the relative installation path.
+#object_INST_PATH=
+
+#####
+# Module build tool settings
+
+# hseqb.ml is generated from hseqb.mlp.
+# hseqc.ml is generated from hseqc.mlp.
+.INTERMEDIATE: hseqb.ml hseqc.ml
+
+# MODULE_OBJ_PATH: PATH to append to the staging directory path for
+# this module and all its sub-directories.
+#MODULE_OBJ_PATH=
+
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+#MODULE_USE_OBJDIR=no
+
+# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#MODULE_OCAMLC_FLAGS=
+
+# MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
+#MODULE_OCAMLPP_FLAGS=
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
+#MODULE_OCAMLCPP_FLAGS=
+
+# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
+#MODULE_LINK_FLAGS=
+
 ###
+# Installation options
+# (Defaults if undefined are as given.)
 
-# TOOLS: The list of tools to build
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
 
-TOOLS := hseqb hseqc
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
 
-##
-# Variables for each tool
-##
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
 
-## hseqb
+# INSTALL_EXTRA_LIBRARIES: Additional files to install with the
+# libraries. Extra headers belong in this list.
+#INSTALL_EXTRA_LIBRARIES=
 
-# hseqb_SOURCES : The files, in order, to build the tool from
-hseqb_SOURCES := hseqb.ml
+# INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
+#INSTALL_EXTRA_PROGRAMS=
 
-# hseqb_OPTIONS: Options to pass to the compiler when building the tool
-hseqb_OPTIONS := 
-
-# hseqb_INCLUDE: include directories when building the tool
-hseqb_INCLUDE :=
-
-# hseqb_LIBS: libraries to link in for the tool
-hseqb_LIBS := unix.cma
-
-# hseqb_TEMP: files generated when building the tool, which can removed
-#   after the tool is build
-hseqb_TEMP := hseqb.ml
-
-## hseqc
-
-# hseqc_SOURCES : The files, in order, to build the tool from
-hseqc_SOURCES := hseqc.ml
-
-# hseqc_OPTIONS: Options to pass to the compiler when building the tool
-hseqc_OPTIONS := 
-
-# hseqc_INCLUDE: include directories when building the tool
-hseqc_INCLUDE :=
-
-# hseqc_LIBS: libraries to link in for the tool
-hseqc_LIBS := 
-
-# hseqc_TEMP: files generated when building the tool, which can removed
-#   after the tool is build
-hseqc_TEMP := hseqc.ml
-
-##
-# Directories
-##
-
-# SRCDIR: The source directory (relative to a sub-directory).
-SRCDIR = ..
-
-# BUILDDIR: The top of the build directory (relative to a sub-directory).
-BUILDDIR ?= $(SRCDIR)/..
-
-# TOPCONFIGDIR: The toplevel configuration directory
-TOPCONFIGDIR = $(BUILDDIR)/config
-
-# CONFIGFILE: The configuration file
-CONFIGFILE = $(TOPCONFIGDIR)/data.make
-
-# HEADERSDIR: The location of the compiled header files
-HEADERSDIR = $(SRCDIR)/lib
-
-# LIBDIR: The location of the compiled files
-LIBDIR = $(SRCDIR)/lib
-
-# LIBDIR: The location of the compiled files
-BINDIR = $(SRCDIR)
-
-# DOCDIR: Source code documentation directory
-DOCDIR = $(SRCDIR)/doc
+# INSTALL_EXTRA_DATA: Additional files to install with the built data.
+#INSTALL_EXTRA_DATA=
 
 ###
-# Configuration variables
-# Set by data.make
-###
+# Makefile commands
 
-# Read from $(CONFIGFILE)
-ifdef CONFIGFILE
--include $(CONFIGFILE)
+# EXTRA_CLEAN: Command to add to the clean target.
+#EXTRA_CLEAN=
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+#EXTRA_LIBCLEAN=
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
+
+
+#####
+# Default settings
+
+# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+
+# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
+#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+
+# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
+#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+
+# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
+#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+
+######################################################################
+# DO NOT CHANGE ANYTHING BELOW THIS LINE
+######################################################################
+
+###
+# Include common definitions
+
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
 
-# Variables which are set in $(CONFIGFILE)
-Bin ?= 
-Prefix ?= 
-BinDir ?= 
-BaseDir ?= 
-IncludeDir ?= 
-LibDir ?= 
-ThyDir ?= 
+include $(PROJ_ROOT)/Makefile.rules
 
-# IBINFILE: The installed binary
-IBINFILE ?= $(BINFILE)
-
-# IPREFIX: The installation prefix
-IPREFIX ?= $(Prefix)
-
-# IBINDIR: Installation binary directory
-IBINDIR ?= $(BinDir)
-
-# IBASEDIR: Installation directory
-IBASEDIR ?= $(strip $(BaseDir))
-
-# ILIBDIR: Installation library directory
-ILIBDIR ?= $(LibDir)
-
-# ITHYDIR: Installation theory directory
-ITHYDIR ?= $(ThyDir)
-
-# IDOCDIR: Installation documentation directory
-IDOCDIR ?= $(IBASEDIR)/doc/source
-
-# FASTCOMP: whether to use the fast compilers
-ifndef FASTCOMP
-export FASTCOMP = $(FastCompilers)
-endif
-
-##
-# Load the OS commands
-##
-include $(TOPCONFIGDIR)/Makefile.os
-
-###
-# Compiler definitions
-###
-
-##
-# Global Variables
-##
-
-# OPTIONS: options to pass to the compilers
-OPTIONS ?= 
-
-# INCLUDE: include directorives for the compilers
-INCLUDE ?= 
-
-# LIBS: Libraries to pass to the compilers
-LIBS ?= 
-
-##
-# The compilers
-##
-
-# Flags:
-# FASTCOMP: Use the fast compilers
-
-# BAREOCAML: The bare compiler
-export BAREOCAMLC= ocamlc
-
-# OCAMLC: The OCaml byte code compiler
-export OCAMLC= ocamlc $(OPTIONS) 
-
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlopt $(OPTIONS) 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep 
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc 
-
-ifeq ($(FASTCOMP), true)
-
-# OCAMLC: The OCaml bytecode compiler
-export OCAMLC= ocamlc.opt $(OPTIONS) 
-
-# OCAMLNATC: The OCaml native code compiler
-export OCAMLNATC= ocamlopt.opt $(OPTIONS) 
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP = ocamldep.opt $(OPTIONS)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC = ocamldoc.opt 
-
-endif
-
-# OCAMLlink: The OCaml byte-code linker
-export OCAMLlink= $(BAREOCAMLC) -a $(INCLUDE) $(LIBS)
-
-# OCAMLNATlink: The OCaml native-code linker
-export OCAMLNATlink= $(OCAMLCNAT) -a $(INCLUDE) $(LIBS) 
-
-# OCAMLCPP : the preprocesor
-export OCAMLCPP = camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo -I$(TOPCONFIGDIR) 
-
-# OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP = ocamlmktop -custom $(INCLUDE) $(INCLUDE) $(LIBS)
-
-###
-# Suffixes and how to handle them
-###
-
-.SUFFIXES: .mli .cmi
-.SUFFIXES: .ml .cmo
-.SUFFIXES: .cmx 
-.SUFFIXES: .mlp
-
-.mlp.ml:
-	$(OCAMLCPP) -impl $< -o $@
-
-.mli.cmi: 
-	$(OCAMLC) -c $(INCLUDE) $<
-
-.ml.cmo: 
-	$(OCAMLC) -c $(INCLUDE) $<
-
-.ml.cmx: 
-	$(OCAMLOPT) -c $(INCLUDE) $<
-
-
-.INTERMEDIATE: hseqb.ml hseqc.ml 
-
-###
-# Build targets
-###
-
-##
-# Declare Targets
-##
-:
-.PHONY: all  # all: Build everything
-.PHONY: tools  # lib: Build all tools
-.PHONY: install # install: Install everything
-.PHONY: doc  #doc: Generate documentation
-
-.PHONY: clean
-.PHONY: reallyclean
-.PHONY: docclean
-
-##
-# Main targets
-##
-
-# all: Build everything
-all: tools
-
-# tools: Build the tools
-tools: $(TOOLS)
-
-# install: Install the library and header files.
-install: tools
-	$(foreach tool, $(TOOLS), $(COPY) $(tool) $(BINDIR);)
-
-##
-# Target to build the tools
-##
-
-define build_tool
-$(1): $$($(1)_SOURCES)
-	$$(OCAMLC) $$($(1)_OPTIONS) -o $(1) $($(1)_INCLUDE) \
-		$$($(1)_LIBS) $$($(1)_SOURCES)
-
-.PHONY: install-$(1)
-install-$(1): $(1)
-	$$(COPY) $(1) $$(BINDIR)
-
-.PHONY: $(1)-clean
-$(1)-clean: 
-	$$(foreach file, $$($(1)_TEMP), -$$(RM) $$(file);)
-
-endef
-
-$(foreach tool, $(TOOLS), $(eval $(call build_tool,$(tool))))
-
-
-
-##
-# Cleaning files
-##
-
-clean:
-	$(RM) *.cmo
-	$(RM) *.cmx  
-	$(RM) *.o
-	$(RM) *~
-
-toolclean: $(foreach tool, $(TOOLS),$(tool)-clean )
-
-reallyclean: clean toolclean
-	$(RM) *.cmi
-	$(RM) *.cma 
-	$(RM) *.cmxa
-	$(foreach tool, $(TOOLS), $(RM) $(tool);)
 

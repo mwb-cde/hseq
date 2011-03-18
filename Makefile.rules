@@ -302,8 +302,16 @@ endef
 
 # build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
 define build-header-template
+
+# Calculate the headers
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-$(1)-headers=$$(($1)_SOURCES)
+endif
+
 .PHONY: build-headers-$(1)
-build-headers-$(1): $$(call interface,$(1)_SOURCES)
+build-headers-$(1): $$(call interface,$$(lm-$(1)-headers))
 endef
 
 # build-bytecode-template($1): Build byte-code objects for $(1) from
@@ -318,7 +326,14 @@ endef
 define build-bytelib-template
 
 # Bytecode libraries
-bytelib-$(1)-interfaces:=$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+ifneq ($$(origin $(1)_HEADERS),undefined)
+bytelib-$(1)-headers=$$($(1)_HEADERS)
+else
+bytelib-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+bytelib-$(1)-interfaces:=$$(foreach src,$$(bytelib-$(1)-headers),\
+				$$(call interface,$$(src)))
 bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
 bytelib-$(1)-libs:=\
 	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
@@ -357,6 +372,7 @@ bytelib-$(1)-target:=$$(bytelib-$(1)-libname)
 $$(info bytelib-$(1)-target = $$(bytelib-$(1)-target))
 $$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
+
 $$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
 	$$(info Linking $(bytelib-$(1)-libname))
 	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) \
@@ -364,7 +380,7 @@ $$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
 
 # Build rule to call
 .PHONY: build-bytelib-$(1)
-build-bytelib-$(1): $$(bytelib-$(1)-target)
+build-bytelib-$(1): $$(bytelib-$(1)-interfaces) $$(bytelib-$(1)-target)
 endef
 
 # install-module-template($1,$2):Install module files to directory
@@ -373,9 +389,9 @@ define install-module-template
 
 # List of required directories
 lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)
-lm-module-bin-dir:=$(2)/$$(lm-lib-binname)
-lm-module-data-dir:=$(2)/$$(lm-lib-dataname)
-lm-module-doc-dir:=$(2)/$$(lm-lib-docname)
+lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)
+lm-module-data-dir:=$(2)/$$(lm-data-dirname)
+lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)
 
 # List of libraries to install, use module definitions when given.
 ifneq ($$(origin INSTALL_LIBRARIES),undefined)
@@ -389,9 +405,12 @@ ifneq ($$(origin INSTALL_HEADERS),undefined)
 lm-module-install-headers:=$$(strip $$(INSTALL_HEADERS))
 else
 lm-module-install-headers:=\
-	$$(foreach lib,$$(lm-module-install-libs),\
+$$(foreach lib,$$(lm-module-install-libs),\
+	$$(if $$(findstring undefined,$$(origin $$(lib)_HEADERS)),\
+		$$(foreach src,$$($$(lib)_HEADERS),\
+			$$(call interface,$$(src)) $$(call header,$$(src))), \
 		$$(foreach src,$$($$(lib)_SOURCES),\
-			$$(call interface,$$(src)) $$(call header,$$(src))))
+			$$(call interface,$$(src)) $$(call header,$$(src)))))
 endif # INSTALL_LIBRARIES
 
 # Calculate library files to install
@@ -413,9 +432,9 @@ lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS
 # Make sure that required directories exist.
 ifneq ($$(strip $$(MODULE_INSTALL_PATH)),)
 lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-bin-dir:=$(2)/$$(lm-lib-binname)/$$(MODULE_INSTALL_PATH)
-lm-module-data-dir:=$(2)/$$(lm-lib-dataname)/$$(MODULE_INSTALL_PATH)
-lm-module-doc-dir:=$(2)/$$(lm-lib-docname)/$$(MODULE_INSTALL_PATH)
+lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-data-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
 
 # Has a distinct installation path
 ifneq ($$(strip $$(lm-module-install-libfiles)),)
@@ -452,8 +471,6 @@ lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 endif
 
 # Install directories
-#$$(info lm-module-lib-dir=$$(lm-module-lib-dir))
-#$$(info lm-module-install-libfiles=$$(lm-module-install-libfiles))
 .PHONY: lm-$(1)-module-install-lib
 ifneq ($$(strip $$(lm-module-install-libfiles)),)
 lm-$(1)-module-install-lib: $$(lm-module-lib-dir)
@@ -508,13 +525,43 @@ endef
 # build-byteprog-template($1): Build byte-code program for $(1) from
 # names in $(1)_SOURCES
 define build-byteprog-template
-byteprog_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
-$(1): $$(byteprog_$(1)_objects)
-	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$(($1)_INCLUDE)\
-		$$($(1)_LIBS) $$(byteprog_$(1)_objects)
-#
+
+ifneq ($$(origin $(1)_HEADERS),undefined)
+byteprog-$(1)-headers=$$($(1)_HEADERS)
+else
+byteprog-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+byteprog-$(1)-interfaces:=$$(foreach src,$$(byteprog-$(1)-headers),\
+				$$(call interface,$$(src)))
+byteprog-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+
+#byteprog-$(1)-libs:=$$(foreach src,$$($(1)_LIBS),$$(call bytecode,$$(src)))
+byteprog-$(1)-libs:=$$($(1)_LIBS)
+$$(info byteprog-$(1)-libs=$$(byteprog-$(1)-libs))
+
+lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
+
+lm-file-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-file-link-options = $$(lm-file-link-options))
+
+lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
+
+lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
+
+$(1): $$(byteprog-$(1)-interfaces) $$(byteprog-$(1)-objects)
+	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$($(1)_INCLUDE)\
+		$$(byteprog-$(1)-libs) $$(byteprog-$(1)-objects)
+
 .PHONY: build-byteprog-$(1)
 build-byteprog-$(1): $(1)
+
 endef
 
 ######
@@ -652,10 +699,10 @@ build-headers: $(lm-module-interfaces)
 
 .PHONY: build-bytelibs
 $(info LIBRARIES = $(LIBRARIES))
-build-bytelibs: $(lm-module-interfaces) $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+build-bytelibs: $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
 .PHONY: build-programs
-build-programs: $(lm-module-interfaces) $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+build-programs: $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
 
 
 ###
@@ -685,7 +732,7 @@ distclean: clean libclean
 
 .PHONY: build
 build: build-objdir build-subdirs \
-	build-headers build-bytelibs build-programs \
+	build-bytelibs build-programs \
 	module-install-objdir
 
 ##
@@ -724,9 +771,10 @@ distclean-subdirs: $(lm-subdir-distclean-target)
 
 ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
 ifndef NODEPEND
-depend: $(lm-module-headers) $(lm-module-mlsources)
-	-$(OCAMLDEP) $(lm-module-headers) $(lm-module-mlsources) > depend
-
+#depend: $(lm-module-headers)
+#	-$(OCAMLDEP) $(lm-module-headers) $(lm-module-mlsources) > depend
+depend: $(lm-module-mlsources)
+	-$(OCAMLDEP) *.mli  $(lm-module-mlsources) > depend
 include depend
 endif # NODEPEND
 endif
