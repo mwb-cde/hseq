@@ -188,7 +188,12 @@ export lm-lib-dirname:=lib
 export lm-objdir-lib=$(OBJ_ROOT)/$(lm-lib-dirname)
 
 # lm-installdir-lib: Libraries directory in installation directory
+ifdef LibDir
+export lm-installdir-lib=$(LibDir)
+else
 export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
+endif
+
 
 $(lm-objdir-lib):
 	$(MKDIR) $(lm-objdir-lib)
@@ -204,7 +209,11 @@ lm-bin-dirname:=bin
 export lm-objdir-bin=$(OBJ_ROOT)/$(lm-bin-dirname)
 
 # lm-installdir-bin: Binaries directory in installation directory
+ifdef BinDir
+export lm-installdir-bin=$(BinDir)
+else
 export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
+endif
 
 $(lm-objdir-bin):
 	$(MKDIR) $(lm-objdir-bin)
@@ -220,7 +229,11 @@ lm-data-dirname:=share
 export lm-objdir-data=$(OBJ_ROOT)/$(lm-data-dirname)
 
 # lm-installdir-data: Data directory in installation directory
+ifdef DataDir
+export lm-installdir-data=$(DataDir)
+else
 export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
+endif
 
 $(lm-objdir-data):
 	$(MKDIR) $(lm-objdir-data)
@@ -236,7 +249,11 @@ lm-doc-dirname:=share/doc
 export lm-objdir-doc=$(OBJ_ROOT)/$(lm-doc-dirname)
 
 # lm-installdir-doc: Document directory in installation directory
+ifdef DocDir
+export lm-installdir-doc=$(DocDir)
+else
 export lm-installdir-doc=$(lm-install-prefix)/$(lm-doc-dirname)
+endif
 
 $(lm-objdir-doc):
 	$(MKDIR) $(lm-objdir-doc)
@@ -251,7 +268,11 @@ export lm-thys-dirname:=lib/thys
 export lm-objdir-thys=$(OBJ_ROOT)/$(lm-thys-dirname)
 
 # lm-installdir-thys: Theories directory in installation directory
+ifdef ThyDir
+export lm-installdir-thys=$(ThyDir)
+else
 export lm-installdir-thys=$(lm-install-prefix)/$(lm-thys-dirname)
+endif
 
 $(lm-objdir-thys):
 	$(MKDIR) $(lm-objdir-thys)
