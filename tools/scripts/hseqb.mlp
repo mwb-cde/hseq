@@ -31,7 +31,7 @@
    continuing to [filen].
 *)
 
-INCLUDE "../configure.data"
+INCLUDE "../../configure.data"
 
 let bindir = BinDir
 let includedir = LibDir
