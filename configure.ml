@@ -119,7 +119,7 @@ struct
   let bindir_d () = 
     get_opt !bindir (filename (basedir_d()) "bin")
   let libdir_d () = 
-    get_opt !libdir (filename (basedir_d()) "lib/hseq")
+    get_opt !libdir (filename (basedir_d()) "lib")
   let thysdir_d () = 
     get_opt !thysdir (filename (libdir_d()) "thys")
 end
