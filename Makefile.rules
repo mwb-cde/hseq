@@ -230,9 +230,9 @@ lm-doc-dirname=doc
 # packed into a module using 'ocaml -pack'.
 lm-pack-filename:=PACKLIST_
 
-# lm-pack-variable: Prefix for variable storing list of objects to be
-# packed into a module using 'ocaml -pack'.
-lm-pack-variable:=PACKLIST_
+# lm-pack-bytecode-variable: Prefix for variable storing list of bytecode
+# objects to be packed into a module using 'ocaml -pack'.
+lm-pack-bytecode-variable:=PACKLIST_
 
 ####
 # Targets:
@@ -485,8 +485,8 @@ $$(info packing-$(1)-sources = $$(packing-$(1)-sources))
 $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
 
 # Build rule to generate the file list.
-$$(packing-$(1)-filelist):
-	echo $$(lm-pack-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
+$$(packing-$(1)-filelist): $$(packing-$(1)-fileprefix)
+	echo $$(lm-pack-bytecode-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
 
 # Build rule to call
 $$(info target build-packing-$(1))
@@ -497,8 +497,83 @@ endef
 ########
 
 ########
+# include-pack-filelist-template: Generate an include directive for file $(1).
+define include-file-template
+$$(info Including $(1))
+include $(1)
+endef
+########
+
+########
+# include-packing-filelist-template: Generate an include directive and
+# build-rule for the packing file for group $(2) in marshalling
+# directory $(1).
+define include-packing-file-template
+include $(1)$$(lm-packfilename)$(2)
+$(1)$$(lm-packfilename)$(2): 
+	$(MAKE) -C $(2) $$(lm-module-subdir-args) build-packing-$(2)
+endef
+########
+
+########
+# read-file-template: Set variable $(1) to the contents of file $(2).
+define read-file-template
+$$(info Setting $(1) to contents of file $(2))
+$(1)=$$(shell cat $(2))
+$$(info Set $(1)=$(2))
+endef
+########
+
+########
 # build-packed-template($1): Build packed library $(1).
 define build-packed-template
+
+# The packing groups and marshalling directory.
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+packed-$(1)-packdir:=$$($(1)_PACK_DIR)/
+else
+packed-$(1)-packdir:=.
+endif
+packed-$(1)-groups:=$$($(1)_GROUPS)
+
+$$(info packed-$(1)-packdir=$$(packed-$(1)-packdir))
+$$(info packed-$(1)-groups=$$(packed-$(1)-groups))
+
+# Get the list of files, in group order.
+$$(foreach group,$$($(1)_GROUPS),\
+$$(eval $$(call include-packing-file-template,$$(packed-$(1)-packdir),$$(group))))
+
+packed-$(1)-groupfiles=
+$$(eval $$(foreach $(group),$$($(1)_GROUPS),\
+packed-$(1)-groupfiles+=$$(lm-pack-bytecode-variable)$(group)\
+))\
+$$(info packed-$(1)-groupfiles=$$(packed-$(1)-groupfiles))
+
+# The files to be generated
+packed-$(1)-bytelib:=$$(call bytelib,$(1))
+packed-$(1)-interface:=$$(call interface,$$($(1)_PACK_NAME))
+packed-$(1)-module:=$$(call bytecode,$$($(1)_PACK_NAME))
+
+# Build rule for the module
+$$(packed-$(1)-packdir)/$$(packed-$(1)-module) \
+$$(packed-$(1)-packdir)/$$(packed-$(1)-interface):
+	(cd $$(packed-$(1)-packdir); \
+	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$(packing-$(1)-objects))
+
+$$(packed-$(1)-module): $$(packed-$(1)-packdir)/$$(packed-$(1)-module)
+	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-module) $$(packed-$(1)-module)
+
+$$(packed-$(1)-interface): $$(packed-$(1)-packdir)/$$(packed-$(1)-interface)
+	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-interface) $$(packed-$(1)-interface)
+
+# Build rule for the packed library
+$$(packed-$(1)-bytelib): $$(packed-$(1)-interface) $$(packed-$(1)-module)
+	$$(OCAMLC) -a -o $$(packed-$(1)-bytelib) $$(packed-$(1)-module)
+
+# Build rule to call
+packed-$(1)-target:=$$(packed-$(1)-bytelib) $$(packed-$(1)-interface)
+.PHONY: build-packed-$(1)
+build-packed-$(1): $$(packed-$(1)-target)
 endef
 ########
 
@@ -534,20 +609,17 @@ $$(foreach lib,$$(lm-module-install-libs),\
 			$$(call interface,$$(src)) $$(call header,$$(src)))))
 endif # INSTALL_LIBRARIES
 
+# List of packings to install.
+lm-module-install-packed:=\
+$$(foreach lib,$$(PACKED), \
+	$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
+
 # Calculate library files to install
 lm-module-install-libfiles:=\
 	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib))) \
 	$$(lm-module-install-headers) \
+	$$(lm-module-install-packed) \
 	$$(INSTALL_EXTRA_LIBRARIES)
-
-# List of intermediate files to install, use module definitions when given.
-#ifneq ($$(origin INSTALL_CODE),undefined)
-#lm-module-install-code:=$$(strip $$(INSTALL_CODE))
-#else
-#lm-module-install-code:=\
-#$$(foreach lib,$$(lm-module-install-libs),\
-#	$$(foreach src,$$($$(lib)_SOURCES),$$(call bytecode,$$(src))))
-#endif # INSTALL_LIBRARIES
 
 # List of binariess to install, use module definitions when given.
 ifdef INSTALL_PROGRAMS
@@ -836,6 +908,12 @@ $(eval $(call build-byteprog-template,$(prog))))
 # Instantiate packings build targets for each target.
 $(foreach lib,$(PACKING),\
 $(eval $(call build-packing-template,$(lib))))
+##
+
+# Instantiate packed build targets for each target.
+$(foreach lib,$(PACKED),\
+$(eval $(call build-packed-template,$(lib))))
+
 
 ###
 # Directories
@@ -861,12 +939,17 @@ build-headers: $(lm-module-interfaces)
 $(info LIBRARIES = $(LIBRARIES))
 build-bytelibs: $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
+.PHONY: build-programs
+build-programs: $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+
 .PHONY: build-packings
 $(info PACKING = $(PACKING))
 build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
 
-.PHONY: build-programs
-build-programs: $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+.PHONY: build-packed
+$(info PACKED = $(PACKED))
+build-packings: $(foreach lib,$(PACKED),build-packed-$(lib) )
+
 
 
 ###

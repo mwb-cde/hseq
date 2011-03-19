@@ -120,15 +120,15 @@
 #
 # To support packing, the build system allows a 'packed' library L to
 # be constructed from 'packing' objects O, with 'pack name' P. The
-# packing objects are built in one or more seperate directories and
-# marshalled into a packing directory named P_PACK_DIR where the
-# packed object P.cmo and its interface P.cmi are built and linked
-# to construt packed library L.
+# packing objects are built as 'groups', with each group G built in
+# sub-directory G, and marshalled into a packing directory named
+# P_PACK_DIR where the packed object P.cmo and its interface P.cmi are
+# built and linked to construt packed library L.
 
 # PACKED: List of packed libraries to build
 #PACKED=
 
-# PACKING: List of packing objects to build
+# PACKING: List of packing groups to build
 #PACKING=
 
 #####
@@ -158,6 +158,9 @@
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
+
+# object_GROUPS: List of packing groups to use for packed library [object]
+#object_GROUPS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
