@@ -110,10 +110,25 @@
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
+##
+# Building packed libraries (with option -pack) is complicated by the
+# ocaml compiler requiring that all objects making up the packed
+# library, together with their interfaces, must be in the same
+# directory. The native-code compilers also require that a objects
+# that is to be combined into a pack must be compiled with the
+# -for-pack option. 
+#
+# To support packing, the build system allows a 'packed' library L to
+# be constructed from 'packing' objects O, with 'pack name' P. The
+# packing objects are built in one or more seperate directories and
+# marshalled into a packing directory named P_PACK_DIR where the
+# packed object P.cmo and its interface P.cmi are built and linked
+# to construt packed library L.
+
 # PACKED: List of packed libraries to build
 #PACKED=
 
-# PACKING: List of packing modules to build
+# PACKING: List of packing objects to build
 #PACKING=
 
 #####

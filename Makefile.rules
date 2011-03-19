@@ -226,6 +226,14 @@ lm-bin-dirname=bin
 # lm-doc-dirname: Document directory name
 lm-doc-dirname=doc
 
+# lm-pack-filename: Prefix for file storing list of objects to be
+# packed into a module using 'ocaml -pack'.
+lm-pack-filename:=PACKLIST_
+
+# lm-pack-variable: Prefix for variable storing list of objects to be
+# packed into a module using 'ocaml -pack'.
+lm-pack-variable:=PACKLIST_
+
 ####
 # Targets:
 # --------
@@ -262,6 +270,7 @@ lm-doc-dirname=doc
 # libraries can be found after installation.
 #
 
+########
 # subdir-targets-template($1): Targets for sub-directory $(1).
 define subdir-targets-template
 
@@ -293,13 +302,17 @@ libclean-subdir-$(1):
 distclean-subdir-$(1):
 	$$(MAKE) -C $(1) $$(lm-module-subdir-args) distclean
 endef
+########
 
+########
 # make-dir-template($1): Make a directory named $(1)
 define make-dir-template
 $(1):
 	$$(MKDIR) $(1)
 endef
+########
 
+########
 # build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
 define build-header-template
 
@@ -313,14 +326,18 @@ endif
 .PHONY: build-headers-$(1)
 build-headers-$(1): $$(call interface,$$(lm-$(1)-headers))
 endef
+########
 
+########
 # build-bytecode-template($1): Build byte-code objects for $(1) from
 # names in $(1)_SOURCES
 define build-bytecode-template
 .PHONY: build-bytecode-$(1)
 build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
 endef
+########
 
+########
 # build-bytelib-template($1): Build byte-code library for $(1) from
 # names in $(1)_SOURCES
 define build-bytelib-template
@@ -383,8 +400,9 @@ $$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
 .PHONY: build-bytelib-$(1)
 build-bytelib-$(1): $$(bytelib-$(1)-interfaces) $$(bytelib-$(1)-target)
 endef
+########
 
-
+########
 # build-packing-template($1): Build packing objects for $(1) from
 # names in $(1)_SOURCES
 define build-packing-template
@@ -421,8 +439,11 @@ else
 packing-$(1)-fileprefix=
 endif
 
+packing-$(1)-filelist:=$$(strip $$(packing-$(1)-fileprefix)$$(lm-pack-filename)$(1))
+
 # Packing
 
+$$(info packing-$(1)-filelist = $$(packing-$(1)-filelist))
 $$(info packing-$(1)-packname = $$(packing-$(1)-packname))
 $$(info packing-$(1)-interfaces = $$(packing-$(1)-interfaces))
 $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
@@ -450,7 +471,9 @@ ifneq ($$(strip $$($(1)_PACK_DIR)),)
 packing-$(1)-targets:=$$(foreach obj,$$(packing-$(1)-objects),\
 	$$(packing-$(1)-fileprefix)$$(obj))
 
-$$(packing-$(1)-targets): $$(packing-$(1)-objects) $$($(1)_PACK_DIR)
+$$(packing-$(1)-targets): $$(packing-$(1)-objects) \
+		$$(packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(packing-$(1)-interfaces) $$($(1)_PACK_DIR)
 	$$(COPY) $$(packing-$(1)-objects) $$($(1)_PACK_DIR)
 else
 packing-$(1)-targets:=$$(packing-$(1)-objects)
@@ -461,12 +484,25 @@ $$(info packing-$(1)-libs = $$(packing-$(1)-libs))
 $$(info packing-$(1)-sources = $$(packing-$(1)-sources))
 $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
 
+# Build rule to generate the file list.
+$$(packing-$(1)-filelist):
+	echo $$(lm-pack-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
+
 # Build rule to call
 $$(info target build-packing-$(1))
 .PHONY: build-packing-$(1)
-build-packing-$(1): $$(packing-$(1)-interfaces) $$(packing-$(1)-targets)
+build-packing-$(1): $$(packing-$(1)-interfaces) $$(packing-$(1)-targets) \
+			$$(packing-$(1)-filelist)
 endef
+########
 
+########
+# build-packed-template($1): Build packed library $(1).
+define build-packed-template
+endef
+########
+
+########
 # install-module-template($1,$2):Install module files to directory
 # $(2) with build target $(1).
 define install-module-template
@@ -623,7 +659,9 @@ $$(info lm-module-install-$(1)-target = $$(lm-module-install-$(1)-target))
 .PHONY: $(1)
 module-install-$(1): $$(lm-module-install-$(1)-target) 
 endef
+########
 
+########
 # build-natcode-template($1): Build native-code objects for $(1) from
 # names in $(1)_SOURCES.
 define build-natcode-template
@@ -635,7 +673,9 @@ $(call natlib,$(1)):
 .PHONY: build-natcode-$(1)
 build-natcode-$(1): $(call natlib,$(1))
 endef
+########
 
+########
 # build-byteprog-template($1): Build byte-code program for $(1) from
 # names in $(1)_SOURCES
 define build-byteprog-template
@@ -677,6 +717,7 @@ $(1): $$(byteprog-$(1)-interfaces) $$(byteprog-$(1)-objects)
 build-byteprog-$(1): $(1)
 
 endef
+########
 
 ######
 # Use the templates to build everything in Makefile.module
