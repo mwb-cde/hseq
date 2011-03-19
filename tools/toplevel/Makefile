@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
 # Makefile.module - Makefile to build modules
-# Copyright 17 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -105,10 +105,31 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=hseqtop
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
-#PROGRAMS=
+PROGRAMS=hseq
+
+##
+# Building packed libraries (with option -pack) is complicated by the
+# ocaml compiler requiring that all objects making up the packed
+# library, together with their interfaces, must be in the same
+# directory. The native-code compilers also require that a objects
+# that is to be combined into a pack must be compiled with the
+# -for-pack option. 
+#
+# To support packing, the build system allows a 'packed' library L to
+# be constructed from 'packing' objects O, with 'pack name' P. The
+# packing objects are built as 'groups', with each group G built in
+# sub-directory G, and marshalled into a packing directory named
+# P_PACK_DIR where the packed object P.cmo and its interface P.cmi are
+# built and linked to construt packed library L.
+
+# PACKED: List of packed libraries to build
+#PACKED=
+
+# PACKING: List of packing groups to build
+#PACKING=
 
 #####
 # Sub-directory building options
@@ -120,18 +141,31 @@ LIBRARIES=hseqtop
 # Object building settings
 #
 
+# Rule for building hseq toplevel is:
+#    ocamlmktop -custom -I ./obj/lib -I +camlp4 nums.cma unix.cma dynlink.cma camlp4o.cma -o hseq hseq.cma tpquote.cma hseqtop.cma
+
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-hseqtop_SOURCES=unsafe init cli
 
 # object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
 #object_HEADERS=$(object_SOURCES)
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
+hseq_INCLUDE=+camlp4
 
 # object_LIBS: Libraries to include when linking [object].
-hseq_LIBS=
+#object_LIBS=
+hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma tpquote.cma hseqtop.cma
+
+# object_PACK_NAME: Name of pack to build
+#object_PACK_NAME=
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+
+# object_GROUPS: List of packing groups to use for packed library [object]
+#object_GROUPS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -182,7 +216,7 @@ hseq_LIBS=
 
 # INSTALL_EXTRA_LIBRARIES: Additional files to install with the
 # libraries. Extra headers belong in this list.
-INSTALL_EXTRA_LIBRARIES=hseqstart.ml
+#INSTALL_EXTRA_LIBRARIES=
 
 # INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
 #INSTALL_EXTRA_PROGRAMS=

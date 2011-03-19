@@ -488,8 +488,7 @@ $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
 
 # Build rule to generate the file list.
 $$(packing-$(1)-filelist): $$(packing-$(1)-fileprefix)
-	echo $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
-#	echo $$(lm-pack-bytecode-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
+	echo -n "$$(packing-$(1)-objects) "> $$(packing-$(1)-filelist)
 
 # Build rule to call
 $$(info target build-packing-$(1))
@@ -564,8 +563,9 @@ packed-$(1)-module:=$$(call bytecode,$$($(1)_PACK_NAME))
 $$(packed-$(1)-packdir)/$$(packed-$(1)-module) \
 $$(packed-$(1)-packdir)/$$(packed-$(1)-interface): $$(packed-$(1)-packfiles)
 	@( $(CD) $$(packed-$(1)-packdir) ; \
-	echo "Linking packed module $(1)" ; \
-	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$$$(cat $$(packed-$(1)-packlist)) )
+	cat $$(packed-$(1)-packlist) > $(1)_FULL_PACK_LIST ; \
+	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_PACK_LIST)" ; \
+	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$$$(cat $(1)_FULL_PACK_LIST) )
 
 $$(packed-$(1)-module): $$(packed-$(1)-packdir)/$$(packed-$(1)-module)
 	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-module) $$(packed-$(1)-module)

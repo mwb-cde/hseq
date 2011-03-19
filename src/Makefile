@@ -134,7 +134,7 @@ hseq_INCLUDE=util tpcore logic parser tpmain booleans \
 #	tpmain/tpmain booleans/boollib simplifier/simplifier \
 #	numbers/numbers userlib/userlib
 
-hseq_LIBS=tpcore logic parser \
+hseq_LIBS=util tpcore logic parser \
 	tpmain boollib simplifier \
 	numbers userlib
 
@@ -148,7 +148,7 @@ hseq_PACK_NAME=HSeq
 hseq_PACK_DIR=./HSeqOBJS
 
 # object_GROUPS: List of packing groups to use for packed library [object]
-hseq_GROUPS=tpcore logic parser \
+hseq_GROUPS=util tpcore logic parser \
 	tpmain boollib simplifier \
 	numbers userlib
 
