@@ -148,7 +148,9 @@ hseq_PACK_NAME=HSeq
 hseq_PACK_DIR=./HSeqOBJS
 
 # object_GROUPS: List of packing groups to use for packed library [object]
-hseq_GROUPS=util tpcore
+hseq_GROUPS=tpcore logic parser \
+	tpmain boollib simplifier \
+	numbers userlib
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -181,6 +183,18 @@ hseq_GROUPS=util tpcore
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
+
+###
+# Makefile commands
+
+# EXTRA_CLEAN: Command to add to the clean target.
+EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+#EXTRA_LIBCLEAN=
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
 
 #####
 # Default settings

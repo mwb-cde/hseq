@@ -232,7 +232,8 @@ lm-pack-filename:=PACKLIST_
 
 # lm-pack-bytecode-variable: Prefix for variable storing list of bytecode
 # objects to be packed into a module using 'ocaml -pack'.
-lm-pack-bytecode-variable:=PACKLIST_
+#lm-pack-bytecode-variable:=PACKLIST_
+lm-pack-bytecode-variable:=
 
 ####
 # Targets:
@@ -487,7 +488,8 @@ $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
 
 # Build rule to generate the file list.
 $$(packing-$(1)-filelist): $$(packing-$(1)-fileprefix)
-	echo $$(lm-pack-bytecode-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
+	echo $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
+#	echo $$(lm-pack-bytecode-variable)$(1):= $$(packing-$(1)-objects) > $$(packing-$(1)-filelist)
 
 # Build rule to call
 $$(info target build-packing-$(1))
@@ -510,6 +512,7 @@ endef
 # build-rule for the packing file for group $(2) in marshalling
 # directory $(1).
 define include-packing-file-template
+$$(info Adding build rule for '$(1)$$(lm-pack-filename)$(2)')
 $(1)$$(lm-pack-filename)$(2): 
 	$(MAKE) -C $(2) $$(lm-module-subdir-args) build-packing-$(2)
 endef
@@ -519,7 +522,6 @@ endef
 # read-file-template: Set variable $(1) to the contents of file $(2).
 define read-file-template
 $$(info Setting $(1) to contents of file $(2))
-$(1)=$$(shell cat $(2))
 $$(info Set $(1)=$(2))
 endef
 ########
@@ -549,14 +551,6 @@ $$(foreach f,$$(packed-$(1)-packlist),$$(packed-$(1)-packdir)$$(f))
 
 $$(info packed-$(1)-packfiles=$$(packed-$(1)-packfiles))
 
-packed-$(1)-packobjs=\
-$$(if $$(strip $$(packed-$(1)-packfiles)),\
-$$(eval $$(shell cat $$(packed-$(1)-packfiles))))
-$$(info packed-$(1)-packobjs1=$$(packed-$(1)-packobjs))
-
-packed-$(1)-packobjs=$$(shell cat $$(packed-$(1)-packfiles))
-$$(info packed-$(1)-packobjs=$$(packed-$(1)-packobjs))
-
 # Get the list of files, in group order.
 $$(foreach group,$$($(1)_GROUPS),\
 $$(eval $$(call include-packing-file-template,$$(packed-$(1)-packdir),$$(group))))
@@ -568,9 +562,10 @@ packed-$(1)-module:=$$(call bytecode,$$($(1)_PACK_NAME))
 
 # Build rule for the module
 $$(packed-$(1)-packdir)/$$(packed-$(1)-module) \
-$$(packed-$(1)-packdir)/$$(packed-$(1)-interface):
-	(cd $$(packed-$(1)-packdir); \
-	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$(packing-$(1)-objects))
+$$(packed-$(1)-packdir)/$$(packed-$(1)-interface): $$(packed-$(1)-packfiles)
+	@( $(CD) $$(packed-$(1)-packdir) ; \
+	echo "Linking packed module $(1)" ; \
+	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$$$(cat $$(packed-$(1)-packlist)) )
 
 $$(packed-$(1)-module): $$(packed-$(1)-packdir)/$$(packed-$(1)-module)
 	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-module) $$(packed-$(1)-module)
