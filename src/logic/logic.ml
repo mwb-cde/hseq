@@ -152,7 +152,7 @@ end
 module Skolem = 
 struct
 
-  type skolem_cnst = (Ident.t * (int * Basic.gtype))
+  type skolem_cnst = (Hident.t * (int * Basic.gtype))
 
   let make_sklm x ty i = (x, (i, ty))
   let get_sklm_name (x, (_, _)) = x
@@ -170,7 +170,7 @@ struct
       then ""
       else (string_of_int indx)
     in 
-    ("_"^(Ident.name_of id)^suffix)
+    ("_"^(Hident.name_of id)^suffix)
 
 
   (*
@@ -180,7 +180,7 @@ struct
   (** Data needed to generate a skolem constant. *)
   type new_skolem_data=
       {
-	name: Ident.t;
+	name: Hident.t;
 	ty: Basic.gtype;
 	tyenv: Gtypes.substitution;
 	scope: Scope.t;
@@ -1590,7 +1590,7 @@ struct
       let sv, sty, nsklms, styenv, ntynms =
 	Skolem.mk_new_skolem 
 	  {
-	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
+	    Skolem.name = Hident.mk_long (Sequent.thy_of_sqnt sq) nv;
 	    Skolem.ty = nty;
 	    Skolem.tyenv = tyenv;
 	    Skolem.scope = Sequent.scope_of sq;
@@ -1643,7 +1643,7 @@ struct
       let sv, sty, nsklms, styenv, ntynms =
 	Skolem.mk_new_skolem
 	  {
-	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
+	    Skolem.name = Hident.mk_long (Sequent.thy_of_sqnt sq) nv;
 	    Skolem.ty = nty;
 	    Skolem.tyenv = tyenv;
 	    Skolem.scope = Sequent.scope_of sq;
@@ -2067,13 +2067,13 @@ struct
   (** Checked and subtype definitions. Elements of [cdefn] and
       [ctypedef] have been correctly defined.  *)
   type cdefn =
-    | TypeAlias of Ident.t * string list * Basic.gtype option
+    | TypeAlias of Hident.t * string list * Basic.gtype option
     | TypeDef of ctypedef
-    | TermDecln of Ident.t * Basic.gtype
-    | TermDef of Ident.t * Basic.gtype	* thm 
+    | TermDecln of Hident.t * Basic.gtype
+    | TermDef of Hident.t * Basic.gtype	* thm 
   and ctypedef =
       {
-	type_name: Ident.t;       (* name of new type *)
+	type_name: Hident.t;       (* name of new type *)
 	type_args: string list;   (* arguments of new type *)
 	type_base: Basic.gtype;   (* the base type *)
 	type_rep: cdefn;          (* representation function *)
@@ -2087,13 +2087,13 @@ struct
   (*** Representations for permanent storage ***)
 
   type saved_cdefn =
-    | STypeAlias of Ident.t * string list * Gtypes.stype option
+    | STypeAlias of Hident.t * string list * Gtypes.stype option
     | STypeDef of saved_ctypedef
-    | STermDecln of Ident.t * Gtypes.stype
-    | STermDef of Ident.t * Gtypes.stype * saved_thm 
+    | STermDecln of Hident.t * Gtypes.stype
+    | STermDef of Hident.t * Gtypes.stype * saved_thm 
   and saved_ctypedef =
       {
-	stype_name: Ident.t;             (* name of new type *)
+	stype_name: Hident.t;             (* name of new type *)
 	stype_args: string list;         (* arguments of new type *)
 	stype_base: Gtypes.stype; 
 	stype_rep: saved_cdefn;          (* representation function *)
@@ -2200,7 +2200,7 @@ struct
       [ty] in scope [scp].  Fails if identifier [name] is already
       defined in [scp] or if [ty] is not well defined.  *)
   let mk_termdecln scp n ty =
-    let name = Ident.mk_long (Scope.thy_of scp) n in 
+    let name = Hident.mk_long (Scope.thy_of scp) n in 
     let (id, typ) = Defn.mk_decln scp name ty
     in 
     TermDecln(id, typ)
@@ -2238,7 +2238,7 @@ struct
 	  with err -> 
 	     raise (Gtypes.add_type_error "Badly formed definition" [a] err)
     in 
-    TypeAlias((Ident.mk_long th n), ags, dfn)
+    TypeAlias((Hident.mk_long th n), ags, dfn)
 
   (**** Type definition: Subtypes ****)
 
@@ -2339,7 +2339,7 @@ struct
   let print_termdefn ppinfo (n, ty, th) = 
     Format.printf "@[";
     Format.printf "@[";
-    Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+    Printer.print_ident (Hident.mk_long Hident.null_thy (Hident.name_of n));
     Format.printf ":@ ";
     Gtypes.print ppinfo ty;
     Format.printf "@],@ ";
@@ -2348,7 +2348,7 @@ struct
 
   let print_termdecln ppinfo (n, ty) = 
     Format.printf "@[";
-    Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+    Printer.print_ident (Hident.mk_long Hident.null_thy (Hident.name_of n));
     Format.printf ":@ ";
     Gtypes.print ppinfo ty;
     Format.printf "@]"

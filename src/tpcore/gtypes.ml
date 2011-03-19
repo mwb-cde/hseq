@@ -643,7 +643,7 @@ let rec quick_well_defined scp cache t =
 	    | None -> 
 	      raise (Invalid_argument 
 		       ("quick_well_defined, not found: "
-			^(Ident.string_of n)
+			^(Hident.string_of n)
 			^" in "^(string_gtype t)))))
     | _ -> ()
 
@@ -1057,7 +1057,7 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
 	with Not_found -> 
 	  if strict
 	  then raise  (type_error "Type doesn't occur in scope" 
-		         [mk_def (Ident.mk_name n) []])
+		         [mk_def (Hident.mk_name n) []])
 	  else Scope.thy_of scp
       in 
       ignore(Lib.add n nth memo); nth
@@ -1065,13 +1065,13 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
   let rec set_aux t =
     match t with
       | Constr(id, args) -> 
-	let (th, n) = Ident.dest id in 
+	let (th, n) = Hident.dest id in 
 	let nth = 
-          if th = Ident.null_thy
+          if th = Hident.null_thy
 	  then lookup_id n
 	  else th
 	in 
-	let nid = Ident.mk_long nth n
+	let nid = Hident.mk_long nth n
 	in 
         Constr(nid, List.map set_aux args)
       | _ -> t
@@ -1096,7 +1096,7 @@ let in_scope memo scp ty =
     match t with
       | Var(_) -> ()
       | Constr(id, args) ->
-	ignore(lookup_id (Ident.thy_of id));
+	ignore(lookup_id (Hident.thy_of id));
 	List.iter in_scp_aux args
       | WeakVar _ -> ()
   in 

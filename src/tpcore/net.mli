@@ -52,7 +52,7 @@ type label =
   | Bound of Basic.quant
   | Quant of Basic.quant
   | Const of Basic.const_ty 
-  | Cname of Ident.t
+  | Cname of Hident.t
   | Cmeta of string
   | Cfree of string
 

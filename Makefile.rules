@@ -450,6 +450,7 @@ $$(info packing-$(1)-objects = $$(packing-$(1)-objects))
 $$(info packing-$(1)-libs = $$(packing-$(1)-libs))
 
 lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(if $$(strip $$($(1)_PACK_DIR)),-I $$($(1)_PACK_DIR)) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
 $$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
 
@@ -509,8 +510,7 @@ endef
 # build-rule for the packing file for group $(2) in marshalling
 # directory $(1).
 define include-packing-file-template
-include $(1)$$(lm-packfilename)$(2)
-$(1)$$(lm-packfilename)$(2): 
+$(1)$$(lm-pack-filename)$(2): 
 	$(MAKE) -C $(2) $$(lm-module-subdir-args) build-packing-$(2)
 endef
 ########
@@ -532,22 +532,34 @@ define build-packed-template
 ifneq ($$(strip $$($(1)_PACK_DIR)),)
 packed-$(1)-packdir:=$$($(1)_PACK_DIR)/
 else
-packed-$(1)-packdir:=.
+packed-$(1)-packdir:=./
 endif
 packed-$(1)-groups:=$$($(1)_GROUPS)
 
 $$(info packed-$(1)-packdir=$$(packed-$(1)-packdir))
 $$(info packed-$(1)-groups=$$(packed-$(1)-groups))
 
+packed-$(1)-packlist:=\
+$$(foreach group,$$(packed-$(1)-groups),$$(lm-pack-filename)$$(group) )
+
+$$(info packed-$(1)-packlist=$$(packed-$(1)-packlist))
+
+packed-$(1)-packfiles=\
+$$(foreach f,$$(packed-$(1)-packlist),$$(packed-$(1)-packdir)$$(f))
+
+$$(info packed-$(1)-packfiles=$$(packed-$(1)-packfiles))
+
+packed-$(1)-packobjs=\
+$$(if $$(strip $$(packed-$(1)-packfiles)),\
+$$(eval $$(shell cat $$(packed-$(1)-packfiles))))
+$$(info packed-$(1)-packobjs1=$$(packed-$(1)-packobjs))
+
+packed-$(1)-packobjs=$$(shell cat $$(packed-$(1)-packfiles))
+$$(info packed-$(1)-packobjs=$$(packed-$(1)-packobjs))
+
 # Get the list of files, in group order.
 $$(foreach group,$$($(1)_GROUPS),\
 $$(eval $$(call include-packing-file-template,$$(packed-$(1)-packdir),$$(group))))
-
-packed-$(1)-groupfiles=
-$$(eval $$(foreach $(group),$$($(1)_GROUPS),\
-packed-$(1)-groupfiles+=$$(lm-pack-bytecode-variable)$(group)\
-))\
-$$(info packed-$(1)-groupfiles=$$(packed-$(1)-groupfiles))
 
 # The files to be generated
 packed-$(1)-bytelib:=$$(call bytelib,$(1))

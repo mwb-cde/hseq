@@ -26,7 +26,7 @@ open Basic
 
 (** The representation of a parsed term *)
 type t =
-  | PId of Ident.t* gtype   (** Identifiers *)
+  | PId of Hident.t* gtype   (** Identifiers *)
   | PBound of binders     (** Bound variables *)
   | PFree of string * gtype  (** Free variables *)
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
@@ -176,7 +176,7 @@ let rec mk_comb x y =
     | t::ts -> mk_comb (mk_app x t) ts
 
 let mk_fun f args = 
-  mk_comb (PId(f, Gtypes.mk_var ("_"^(Ident.string_of f)^"_ty"))) args
+  mk_comb (PId(f, Gtypes.mk_var ("_"^(Hident.string_of f)^"_ty"))) args
 
 (*** Operator Overloading ***)
 
@@ -196,10 +196,10 @@ struct
   (** reolve_memo: Memoised tables *)
   type resolve_memo =
       { 
-	types: (Ident.t, Basic.gtype)Hashtbl.t;
-	idents: (string, Ident.t)Hashtbl.t;
-	symbols: (string, Ident.t)Hashtbl.t;
-	type_names: (string, Ident.thy_id) Hashtbl.t
+	types: (Hident.t, Basic.gtype)Hashtbl.t;
+	idents: (string, Hident.t)Hashtbl.t;
+	symbols: (string, Hident.t)Hashtbl.t;
+	type_names: (string, Hident.thy_id) Hashtbl.t
       }
 
   (** resolve_arg: The argument to the resolver *)
@@ -209,7 +209,7 @@ struct
 	inf: int;
 	memo: resolve_memo;
 	qnts: Term.substitution;
-	lookup: (string -> gtype -> (Ident.t * gtype))
+	lookup: (string -> gtype -> (Hident.t * gtype))
       }
 	
   (** [resolve_aux data env expty term]: Resolve names in [term].
@@ -246,7 +246,7 @@ struct
       let ident_find n s = 
 	let thy = Scope.thy_of_term s n
 	in 
-	Ident.mk_long thy n
+	Hident.mk_long thy n
       in 
       Lib.try_find (memo_find rdata.memo.idents ident_find rdata.scp) n
     and find_type n rdata = 
@@ -272,8 +272,8 @@ struct
     in
     match term with
       | PId(n, ty) -> 
-	  if Ident.is_short n
-	  then resolve_aux data env expty (PFree(Ident.name_of n, ty))
+	  if Hident.is_short n
+	  then resolve_aux data env expty (PFree(Hident.name_of n, ty))
 	  else
 	    let id_ty = find_type n data in 
 	    let nty = set_type_name ty data in 

@@ -103,10 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=logic
+#LIBRARIES=logic
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=logic
 
 #####
 # Sub-directory building options
@@ -134,6 +137,10 @@ logic_SOURCES=changes formula defn logic theory thydb
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
 logic_PACK_FOR=HSeq
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+logic_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

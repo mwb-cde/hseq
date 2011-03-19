@@ -43,7 +43,7 @@ struct
    * Theories
    *)
 
-  let empty_thy_name = Ident.null_thy
+  let empty_thy_name = Hident.null_thy
   let anon_thy() = Theory.mk_thy empty_thy_name []
 
   (** base_thy: The theory on which all user theories are based *)
@@ -96,13 +96,13 @@ struct
   let add_term_pp id prec fixity repr =
     Printer.add_term_info (info()) id prec fixity repr;
     Parser.add_token 
-      id (Lib.get_option repr (Ident.name_of id)) fixity prec
+      id (Lib.get_option repr (Hident.name_of id)) fixity prec
 
   let add_term_pp_record id rcrd =
     Printer.add_term_record (info()) id rcrd;
     Parser.add_token 
       id 
-      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (Lib.get_option rcrd.Printer.repr (Hident.name_of id)) 
       (rcrd.Printer.fixity)
       (rcrd.Printer.prec)
 
@@ -110,7 +110,7 @@ struct
     let (_, _, sym) = get_term_pp id
     in 
     Printer.remove_term_info (info()) id;
-    Parser.remove_token (Lib.get_option sym (Ident.name_of id))
+    Parser.remove_token (Lib.get_option sym (Hident.name_of id))
 
   (*** Types ***)
 
@@ -119,13 +119,13 @@ struct
   let add_type_pp id prec fixity repr =
     Printer.add_type_info (info()) id prec fixity repr;
     Parser.add_type_token 
-      id (Lib.get_option repr (Ident.name_of id)) fixity prec
+      id (Lib.get_option repr (Hident.name_of id)) fixity prec
 
   let add_type_pp_record id rcrd =
     Printer.add_type_record (info()) id rcrd;
     Parser.add_type_token 
       id 
-      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (Lib.get_option rcrd.Printer.repr (Hident.name_of id)) 
       (rcrd.Printer.fixity)
       (rcrd.Printer.prec)
 
@@ -133,7 +133,7 @@ struct
     let (_, _, sym) = get_type_pp id
     in 
     Printer.remove_type_info (info()) id;
-    Parser.remove_type_token (Lib.get_option sym (Ident.name_of id))
+    Parser.remove_type_token (Lib.get_option sym (Hident.name_of id))
 
   (*** User-defined printers ***)
 
@@ -174,7 +174,7 @@ struct
     and pp_list = List.rev th.Theory.cid_pps
     in 
     let add_pp (id, (rcrd, pos)) = 
-      add_id_record (Ident.mk_long thy_name id) rcrd;
+      add_id_record (Hident.mk_long thy_name id) rcrd;
       let repr = rcrd.Printer.repr
       in 
       match repr with
@@ -185,7 +185,7 @@ struct
 	    let id_type = id_record.Theory.typ
 	    in 
 	    Parser.add_overload sym pos
-              (Ident.mk_long thy_name id, id_type)
+              (Hident.mk_long thy_name id, id_type)
 	  with _ -> ()
     in 
     List.iter add_pp pp_list
@@ -195,7 +195,7 @@ struct
     and pp_list = List.rev th.Theory.ctype_pps
     in 
     let add_pp (id, rcrd) = 
-      add_type_record (Ident.mk_long thy_name id) rcrd
+      add_type_record (Hident.mk_long thy_name id) rcrd
     in 
     List.iter add_pp pp_list
 

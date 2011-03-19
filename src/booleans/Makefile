@@ -103,10 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=boollib
+#LIBRARIES=boollib
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=boollib
 
 #####
 # Sub-directory building options
@@ -135,6 +138,10 @@ boollib_SOURCES=boolPP baseTheory boolutil boolbase \
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
 boollib_PACK_FOR=HSeq
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+boollib_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

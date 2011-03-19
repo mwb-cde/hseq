@@ -105,10 +105,10 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=
+LIBRARIES=hseqtop
 
 # PROGRAMS: List of programs to build.
-PROGRAMS=hseq
+#PROGRAMS=
 
 #####
 # Sub-directory building options
@@ -122,7 +122,7 @@ PROGRAMS=hseq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-hseq_SOURCES=cli init unsafe
+hseqtop_SOURCES=init unsafe cli
 
 # object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
 #object_HEADERS=$(object_SOURCES)
@@ -131,7 +131,7 @@ hseq_SOURCES=cli init unsafe
 #object_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
-#object_LIBS=
+hseq_LIBS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

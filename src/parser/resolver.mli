@@ -45,7 +45,7 @@
 
 val resolve_term:
   Scope.t
-  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
+  -> (string -> Basic.gtype -> (Hident.t * Basic.gtype))
   -> Basic.term
   -> (Basic.term * Gtypes.substitution)
 (** [resolve_term scp env t]: Resolve the symbols in term [t].
@@ -62,8 +62,8 @@ val resolve_term:
 
 val make_lookup: 
   Scope.t
-  -> (string -> (Ident.t * Basic.gtype) list) 
-  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
+  -> (string -> (Hident.t * Basic.gtype) list) 
+  -> (string -> Basic.gtype -> (Hident.t * Basic.gtype)) 
 (** [make_lookup scp db]: Make an environment suitable for
     {!Resolver.resolve_term} from table [db].
 
@@ -80,15 +80,15 @@ val make_lookup:
 (** {7 Debugging} *)
 
 val default: 
-  string -> Basic.gtype -> (Ident.t * Basic.gtype) list
-  -> (Ident.t * Basic.gtype) option
+  string -> Basic.gtype -> (Hident.t * Basic.gtype) list
+  -> (Hident.t * Basic.gtype) option
 
 type resolve_memo =
     { 
-      types: (Ident.t, Basic.gtype)Hashtbl.t;
-      idents: (string, Ident.t)Hashtbl.t;
-      symbols: (string, Ident.t)Hashtbl.t;
-      type_names: (string, Ident.thy_id)Hashtbl.t
+      types: (Hident.t, Basic.gtype)Hashtbl.t;
+      idents: (string, Hident.t)Hashtbl.t;
+      symbols: (string, Hident.t)Hashtbl.t;
+      type_names: (string, Hident.thy_id)Hashtbl.t
     }
 
 type resolve_arg =
@@ -97,7 +97,7 @@ type resolve_arg =
       inf: int ref;
       memo: resolve_memo;
       qnts: Term.substitution;
-      lookup: (string -> Basic.gtype -> (Ident.t * Basic.gtype))
+      lookup: (string -> Basic.gtype -> (Hident.t * Basic.gtype))
     }
 
 val resolve_aux:
@@ -116,7 +116,7 @@ val memo_find:
 val find_type : 
   Scope.t 
   -> string
-  -> Basic.gtype -> (Ident.t * Basic.gtype) list 
-  -> (Ident.t * Basic.gtype)
+  -> Basic.gtype -> (Hident.t * Basic.gtype) list 
+  -> (Hident.t * Basic.gtype)
 
 

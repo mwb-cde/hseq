@@ -30,7 +30,7 @@ val negation_pprec: Printer.record
     [~x] rather than [~ x].
 *)
 
-val ifthenelse_id: Ident.t
+val ifthenelse_id: Hident.t
 (** [ifthenelse_id]: Identifier for the conditional.
 *)
 
@@ -50,7 +50,7 @@ val ifthenelse_printer:
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the conditional. *)
 
-val choice_ident: Ident.t
+val choice_ident: Hident.t
 (** Identifier for choice (the Hilbert epsilon) *)
 
 val choice_sym: string

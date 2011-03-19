@@ -67,7 +67,7 @@ let print_termdefn def =
   in 
   Format.printf "@[";
   Format.printf "@[";
-  print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+  print_fnident (Hident.mk_long Hident.null_thy (Hident.name_of n));
   Format.printf ":@ ";
   print_type ty;
   Format.printf "@],@ ";
@@ -78,7 +78,7 @@ let print_termdecln def =
   let n, ty = Logic.Defns.dest_termdecln def
   in 
   Format.printf "@[";
-  print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+  print_fnident (Hident.mk_long Hident.null_thy (Hident.name_of n));
   Format.printf ":@ ";
   print_type ty;
   Format.printf "@]"

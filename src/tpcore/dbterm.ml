@@ -29,7 +29,7 @@ let binder_name q = q.qvar
 let binder_type q = q.qtyp
 
 type dbterm =
-  | Id of Ident.t * Gtypes.stype
+  | Id of Hident.t * Gtypes.stype
   | Free of string * Gtypes.stype
   | Qnt of binder * dbterm
   | Bound of int

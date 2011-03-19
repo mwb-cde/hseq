@@ -117,7 +117,7 @@ PACKING=tpcore
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-tpcore_SOURCES=defaults settings ident basic printer \
+tpcore_SOURCES=defaults settings hident basic printer \
 		report scope gtypes term lterm \
 		dbterm typing unify net rewrite 
 

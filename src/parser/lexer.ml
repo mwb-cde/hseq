@@ -34,14 +34,14 @@
   type keys = ALL | EX | LAM 
 	
   type token_info = 
-      (Ident.t   (* identifiers represented by symbols *)
+      (Hident.t   (* identifiers represented by symbols *)
 	 * Parserkit.Info.fixity      
 	 * int)     (* precedence *)
 
   type tok = 
       Key of keys 
     | Sym of symbols 
-    | ID of Ident.t 
+    | ID of Hident.t 
     | PrimedID of string
     | NUM of string 
     | BOOL of bool 
@@ -66,7 +66,7 @@
     | Key ALL -> "ALL"
     | Key EX -> "EXISTS"
     | Key LAM -> "LAMBDA"
-    | ID(s) -> (Ident.string_of s)
+    | ID(s) -> (Hident.string_of s)
     | PrimedID s -> ("'"^s)
     | NUM(n) -> n
     | BOOL(b) -> string_of_bool b
@@ -90,7 +90,7 @@
     | Key ALL -> "ALL"
     | Key EX -> "EXISTS"
     | Key LAM -> "LAMBDA"
-    | ID(s) -> (Ident.string_of s)
+    | ID(s) -> (Hident.string_of s)
     | PrimedID(s) -> ("'"^s)
     | NUM(n) -> n
     | BOOL(b) -> string_of_bool b
@@ -452,10 +452,10 @@ let match_identifier symtable inp =
 	let rtok =
 	  (try
 	    find_sym symtable n
-	  with Not_found -> mk_ident(Ident.mk_name n))
+	  with Not_found -> mk_ident(Hident.mk_name n))
 	in 
 	(true, rtok)
-    | [th;n] -> (true, mk_ident (Ident.mk_long th n))
+    | [th;n] -> (true, mk_ident (Hident.mk_long th n))
     | _ -> raise (Lexing(0, Stream.count inp))
   else (false, null_tok)
 

@@ -103,10 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=tpmain
+#LIBRARIES=tpmain
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=tpmain
 
 #####
 # Sub-directory building options
@@ -134,6 +137,10 @@ tpmain_SOURCES=global tactics goals commands display
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
 tpmain_PACK_FOR=HSeq
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+tpmain_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

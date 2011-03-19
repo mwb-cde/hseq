@@ -93,7 +93,7 @@ type typedef_data =
 open Lexer
 open Pkit
 
-type token_info = (Ident.t * fixity * int) option
+type token_info = (Hident.t * fixity * int) option
 
 (** [string_of_tok], [string_tokens]: Get string representation of
     tokens.
@@ -430,7 +430,7 @@ let id_relaxed info inp =
   and mk x = 
     match x with 
       | ID(s) -> s
-      | Sym(OTHER x) -> (Ident.mk_name x)
+      | Sym(OTHER x) -> (Hident.mk_name x)
       | _ -> error "Not an identifier" inp
   in 
   try Pkit.get comp mk inp
@@ -446,8 +446,8 @@ let named_id info idparser name inp =
 	else 
 	  error 
 	    ("Expected identifier "
-	     ^(Ident.string_of name)^" but got "
-	     ^(Ident.string_of x)) inp))
+	     ^(Hident.string_of name)^" but got "
+	     ^(Hident.string_of x)) inp))
     inp
 
 (** [short_id idparser inf toks]: Parse a short (unqualified)
@@ -456,7 +456,7 @@ let named_id info idparser name inp =
 let short_id idparser inf toks =
   (idparser inf >> 
      (fun x -> 
-       match Ident.dest x with 
+       match Hident.dest x with 
 	 | ("", s) -> s 
 	 | _ -> error "Not a short identifier" toks))
     toks
@@ -467,7 +467,7 @@ let short_id idparser inf toks =
 let long_id idparser inf toks = 
   (idparser inf >> 
      (fun x -> 
-       match Ident.dest x with 
+       match Hident.dest x with 
 	 | (_, "") -> error "Badly formed identifier" toks
 	 | _ -> x))
     toks
@@ -475,7 +475,7 @@ let long_id idparser inf toks =
 (** [mk_short_id id inf]: Parse a possibly qualified identifer with
     [id inf], make it a short identifier.  *)
 let mk_short_id id inf toks =
-  (long_id id inf >> (fun x -> Ident.name_of x)) toks
+  (long_id id inf >> (fun x -> Hident.name_of x)) toks
 
 (*
  * Type parsers
@@ -577,7 +577,7 @@ let primed_id inf toks =
 (** [bool_type info]: Parse type "bool". *)
 let bool_type info toks =
   try 
-    ((named_id info type_id (Ident.mk_name "bool"))
+    ((named_id info type_id (Hident.mk_name "bool"))
      >> (fun _ -> Lterm.mk_bool_ty())) toks
   with _ -> type_error "Not a boolean type" toks
 
@@ -585,7 +585,7 @@ let bool_type info toks =
 *)
 let num_type info toks =
   try 
-    ((named_id info type_id (Ident.mk_name "num"))
+    ((named_id info type_id (Hident.mk_name "num"))
      >> (fun _ -> Lterm.mk_num_ty())) toks
   with _ -> type_error "Not a number type" toks
 
@@ -687,7 +687,7 @@ let mk_conn inf t =
           | Some (name, _, _) ->
 	    (fun x y ->
 	      let fty = 
-		Gtypes.mk_var ("_"^(Ident.string_of name)^"_ty")
+		Gtypes.mk_var ("_"^(Hident.string_of name)^"_ty")
 	      in 
 	      let f = Pterm.mk_typed_ident name fty
 	      in 
@@ -826,9 +826,9 @@ let id_type_opt idnt inf toks =
 *)
 let term_identifier inf toks =
   let action ((n, i), t) =
-       let nid=Ident.mk_long n i
+       let nid=Hident.mk_long n i
        in 
-       if(Ident.is_short nid)
+       if(Hident.is_short nid)
        then 
   	 (try (lookup_name i inf)
   	  with Not_found -> Pterm.mk_free i t)

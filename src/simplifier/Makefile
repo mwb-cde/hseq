@@ -103,10 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=simplifier
+#LIBRARIES=simplifier
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=simplifier
 
 #####
 # Sub-directory building options
@@ -135,6 +138,10 @@ simplifier_SOURCES=simputils simpconvs simpset simplifier \
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
 simplifier_PACK_FOR=HSeq
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+simplifier_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

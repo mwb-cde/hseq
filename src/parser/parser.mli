@@ -222,7 +222,7 @@ val mk_info : unit -> Grammars.parser_info
 
 (** {7 Toplevel symbol and token functions} *)
 
-val add_token: Ident.t -> string -> fixity -> int -> unit
+val add_token: Hident.t -> string -> fixity -> int -> unit
 (** 
    [add_token id sym fix prec]: Add symbol [sym] as representation for
    term identifier [id], with fixity [fix] and precedence [prec]. 
@@ -235,7 +235,7 @@ val remove_token : string -> unit
    from the term symbol and token tables.
 *)
 
-val add_type_token: Ident.t -> string -> fixity -> int -> unit
+val add_type_token: Hident.t -> string -> fixity -> int -> unit
 (** 
    [add_type_token id sym fix prec]: Add symbol [sym] as representation for
    type identifier [id], with fixity [fix] and precedence [prec]. 
@@ -254,26 +254,26 @@ val overload_table_size : int ref
 (** The initial size of the overloading table. *)
 
 val overload_table: 
-    (string,  (Ident.t * Basic.gtype) list) Hashtbl.t ref
+    (string,  (Hident.t * Basic.gtype) list) Hashtbl.t ref
 (** The table of overloaded symbols and possible identifiers. *)
 
 val init_overload: unit -> unit
 (** Initialise the overloading table. *)
 
 val add_overload:
-    string -> Theory.sym_pos -> (Ident.t * Basic.gtype) -> unit
+    string -> Theory.sym_pos -> (Hident.t * Basic.gtype) -> unit
 (** 
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
    type [ty] on symbol [sym]. Put [id] in position [pos]. 
 *)
 val get_overload_list: 
-    string -> (Ident.t * Basic.gtype) list
+    string -> (Hident.t * Basic.gtype) list
 (** 
    [get_overload_list sym]: Get the list of identifiers overloaded on
    symbol [sym].
 *)
 val remove_overload:
-    string -> Ident.t -> unit
+    string -> Hident.t -> unit
 (** 
    [remove_overload sym id]: Remove [id] from the list of identifiers
    overloading symbol [sym].
@@ -302,7 +302,7 @@ val init : unit -> unit
 val parse : 'a phrase -> 'a parse
 (** Make a parser from a phrase *)
 
-val identifier_parser : input -> Ident.t
+val identifier_parser : input -> Hident.t
 (** Read a possibly long identifier *)
 
 val type_parser : input -> Basic.gtype

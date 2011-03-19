@@ -41,7 +41,7 @@ type binder =
    and binders are not stored as references.
 *)
 type dbterm =
-  | Id of Ident.t * Gtypes.stype
+  | Id of Hident.t * Gtypes.stype
   | Free of string * Gtypes.stype
   | Qnt of binder * dbterm
   | Bound of int

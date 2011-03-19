@@ -64,7 +64,7 @@ val typecheck: Scope.t -> Basic.term -> Basic.gtype -> unit
 (** [typecheck scp t ty]: Check that term [t] has type [ty] in scope
     [scp].
 
-    Identifiers ([Id(n, ty)]) are assumed to have already been
+    Hidentifiers ([Id(n, ty)]) are assumed to have already been
     assigned their types. The type used is [ty], whatever type [n] has
     in [scp].
 *)
@@ -98,7 +98,7 @@ val typeof_env:
 
 val settype_aux: 
   Scope.t ->
-  int * (Ident.t * int, bool) Hashtbl.t *
+  int * (Hident.t * int, bool) Hashtbl.t *
     (Gtypes.substitution ->
      Basic.gtype -> Basic.term -> Gtypes.substitution) ->
   Basic.gtype ->
@@ -107,7 +107,7 @@ val settype_aux:
 
 val test_type: 
   Scope.t ->
-  (Ident.t * int, bool) Hashtbl.t ->
+  (Hident.t * int, bool) Hashtbl.t ->
   Gtypes.substitution ->
   Basic.term ->
   Basic.gtype ->

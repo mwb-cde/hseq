@@ -97,7 +97,7 @@ exception Stop of exn
 (** {7 Planned rewriting specialised to terms} *)
 
 type term_key =
-  | Ident  (** Term [Id] *)
+  | Hident  (** Term [Id] *)
   | BVar   (** Term [Bound] *)
   | MVar   (** Term [Meta] *)
   | FVar   (** Term [Free] *)
@@ -145,7 +145,7 @@ struct
 
   let key_of n = 
     match n with
-      | Basic.Id _ -> Ident
+      | Basic.Id _ -> Hident
       | Basic.Bound _ -> BVar
       | Basic.Meta _ -> MVar
       | Basic.Free _ -> FVar
@@ -370,7 +370,7 @@ let anyterm = AnyTerm
 let noterm = NoTerm 
 let alt_key x y = Alt(x, y)
 let neg_key x = Neg(x)
-let ident_key = Ident
+let ident_key = Hident
 let bvar_key = BVar
 let fvar_key = FVar
 let appln_key = Appln

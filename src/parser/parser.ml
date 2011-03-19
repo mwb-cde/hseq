@@ -81,10 +81,10 @@ module Resolver =
 (** reolve_memo: Memoised tables *)
     type resolve_memo =
 	{ 
-	  types : (Ident.t, Basic.gtype)Hashtbl.t;
-	  idents: (string, Ident.t)Hashtbl.t;
-	  symbols : (string, Ident.t)Hashtbl.t;
-	  type_names: (string, Ident.thy_id) Hashtbl.t
+	  types : (Hident.t, Basic.gtype)Hashtbl.t;
+	  idents: (string, Hident.t)Hashtbl.t;
+	  symbols : (string, Hident.t)Hashtbl.t;
+	  type_names: (string, Hident.thy_id) Hashtbl.t
 	}
 
 (** resolve_arg: The argument to the resolver *)
@@ -94,7 +94,7 @@ module Resolver =
 	 inf : int ref;
 	 memo: resolve_memo;
 	 qnts: Term.substitution;
-	 lookup: (string -> gtype -> (Ident.t * gtype))
+	 lookup: (string -> gtype -> (Hident.t * gtype))
        }
 	  
 (** 
@@ -131,7 +131,7 @@ module Resolver =
 	let ident_find n s = 
 	  let thy = Scope.thy_of_term s n
 	  in 
-	  Ident.mk_long thy n
+	  Hident.mk_long thy n
 	in 
 	Lib.try_find (memo_find data.memo.idents ident_find data.scp) n
       in 
@@ -152,8 +152,8 @@ module Resolver =
       in 
       match term with
 	Id(n, ty) -> 
-	  if(Ident.is_short n)
-	  then resolve_aux data env expty (Free((Ident.name_of n), ty))
+	  if(Hident.is_short n)
+	  then resolve_aux data env expty (Free((Hident.name_of n), ty))
 	  else
 	    (let id_ty = find_type n
 	    in 
@@ -445,7 +445,7 @@ let add_token id sym fx pr=
   (* lexer information *)
   add_symbol sym (Sym (OTHER sym)); 
   (* parser information *)
-  add_token_info (Sym(OTHER sym)) (Some(Ident.mk_name sym, fx, pr))
+  add_token_info (Sym(OTHER sym)) (Some(Hident.mk_name sym, fx, pr))
 
 let remove_token sym=
   remove_symbol sym;

@@ -57,11 +57,11 @@ type type_record =
 type t=
     { 
       curr_thy : marker;
-      term_type : Ident.t -> gtype; 
-      term_thy : string -> Ident.thy_id;
-      type_defn: Ident.t -> type_record;
-      type_thy : string -> Ident.thy_id;
-      thy_in_scope : Ident.thy_id -> bool;
+      term_type : Hident.t -> gtype; 
+      term_thy : string -> Hident.thy_id;
+      type_defn: Hident.t -> type_record;
+      type_thy : string -> Hident.thy_id;
+      thy_in_scope : Hident.thy_id -> bool;
       marker_in_scope : marker -> bool;
       meta_vars: meta_db 
     }
@@ -75,7 +75,7 @@ let empty_scope () =
   let dummy x = raise Not_found
   in 
   {
-    curr_thy = mk_marker Ident.null_thy;
+    curr_thy = mk_marker Hident.null_thy;
     term_type = dummy;
     term_thy = dummy;
     type_defn = dummy;
@@ -124,9 +124,9 @@ let extend_with_terms scp declns =
   and ext_thy x = 
     try 
       let (id, _) = 
-        List.find (fun (y, _) -> x = (Ident.name_of y)) declns
+        List.find (fun (y, _) -> x = (Hident.name_of y)) declns
       in 
-      Ident.thy_of id
+      Hident.thy_of id
     with Not_found -> thy_of_term scp x
   in 
   {scp with 
@@ -142,9 +142,9 @@ let extend_with_typedefs scp declns =
   and ext_thy x = 
     try 
       let (id, _) = 
-        List.find (fun (y, _) -> x = (Ident.name_of y)) declns
+        List.find (fun (y, _) -> x = (Hident.name_of y)) declns
       in 
-      Ident.thy_of id
+      Hident.thy_of id
     with Not_found -> thy_of_type scp x
   in 
   {scp with type_defn = ext_defn; type_thy = ext_thy}
@@ -156,7 +156,7 @@ let extend_with_typedefs scp declns =
 let extend_with_typedeclns scp declns=
   let mk_def (id, args)=  
     (id, 
-     {name = Ident.name_of id; 
+     {name = Hident.name_of id; 
       args = args; 
       alias = None;
       characteristics = []})

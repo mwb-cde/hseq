@@ -63,7 +63,7 @@ open Pkit
 open Utility
 open Lexer
 
-let ifthenelse_id = Ident.mk_long Lterm.base_thy "IF"
+let ifthenelse_id = Hident.mk_long Lterm.base_thy "IF"
 
 let ifthenelse_parser inf =
   ((seq
@@ -132,7 +132,7 @@ let init_ifthenelse() =
 
 (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
-let choice_ident = Ident.mk_long Lterm.base_thy "epsilon"
+let choice_ident = Hident.mk_long Lterm.base_thy "epsilon"
 let choice_sym = "@"
 let choice_pp = (Printer.default_term_fixity, Printer.default_term_prec) 
 
@@ -158,7 +158,7 @@ let init_epsilon() =
 (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
 let exists_unique_ident = 
-  Ident.mk_long Lterm.base_thy "EXISTS_UNIQUE"
+  Hident.mk_long Lterm.base_thy "EXISTS_UNIQUE"
 let exists_unique_sym = "?!"
 let exists_unique_pp = 
   (Printer.default_term_fixity, Printer.default_term_prec) 

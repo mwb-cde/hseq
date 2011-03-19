@@ -39,7 +39,7 @@ open Basic
 
 (** The representation of a parsed term *)
 type t =
-  | PId of Ident.t* gtype   (** Identifiers *)
+  | PId of Hident.t* gtype   (** Identifiers *)
   | PBound of binders     (** Bound variables *)
   | PFree of string * gtype  (** Free variables *)
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
@@ -69,8 +69,8 @@ val mk_free: string -> gtype -> t
 val mk_app: t -> t -> t
 val mk_typed: t -> gtype -> t
 val mk_const: Basic.const_ty -> t
-val mk_typed_ident: Ident.t -> gtype -> t
-val mk_ident: Ident.t -> t
+val mk_typed_ident: Hident.t -> gtype -> t
+val mk_ident: Hident.t -> t
 val mk_short_ident: string -> t
 
 (** {7 Destructors} *)
@@ -81,7 +81,7 @@ val dest_free:t -> (string * gtype)
 val dest_app: t -> (t * t)
 val dest_typed: t -> (t * gtype)
 val dest_const: t -> Basic.const_ty 
-val dest_ident: t -> (Ident.t * gtype)
+val dest_ident: t -> (Hident.t * gtype)
 
 (** {6 Specialised Manipulators} *)
 
@@ -104,7 +104,7 @@ val mk_comb: t -> t list -> t
     [mk_comb f [a1;a2;...;an]] is [((((f a1) a2) ...) an)]
 *)
 
-val mk_fun: Ident.t -> t list -> t
+val mk_fun: Hident.t -> t list -> t
 (** [mk_fun f args]: make function application [f args]. *)
 
 (** Operator Overloading *)
@@ -134,7 +134,7 @@ sig
 
   val resolve_term:
     Scope.t
-    -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
+    -> (string -> Basic.gtype -> (Hident.t * Basic.gtype))
     -> t
     -> (Basic.term * Gtypes.substitution)
   (** [resolve_term scp env t]: Resolve the symbols in term [t].
@@ -152,8 +152,8 @@ sig
     
   val make_lookup: 
     Scope.t
-    -> (string -> (Ident.t * Basic.gtype) list) 
-    -> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
+    -> (string -> (Hident.t * Basic.gtype) list) 
+    -> (string -> Basic.gtype -> (Hident.t * Basic.gtype)) 
   (** [make_lookup scp db]: Make an environment suitable for
       {!Pterm.Resolver.resolve_term} from table [db].
       
@@ -170,15 +170,15 @@ sig
   (** {7 Debugging} *)
 
   val default: 
-    string -> Basic.gtype -> (Ident.t * Basic.gtype) list
-    -> (Ident.t * Basic.gtype) option
+    string -> Basic.gtype -> (Hident.t * Basic.gtype) list
+    -> (Hident.t * Basic.gtype) option
 
   type resolve_memo =
       { 
-	types: (Ident.t, Basic.gtype)Hashtbl.t;
-	idents: (string, Ident.t)Hashtbl.t;
-	symbols: (string, Ident.t)Hashtbl.t;
-	type_names: (string, Ident.thy_id)Hashtbl.t
+	types: (Hident.t, Basic.gtype)Hashtbl.t;
+	idents: (string, Hident.t)Hashtbl.t;
+	symbols: (string, Hident.t)Hashtbl.t;
+	type_names: (string, Hident.thy_id)Hashtbl.t
       }
 
   type resolve_arg =
@@ -187,7 +187,7 @@ sig
 	inf: int;
 	memo: resolve_memo;
 	qnts: Term.substitution;
-	lookup: (string -> Basic.gtype -> (Ident.t * Basic.gtype))
+	lookup: (string -> Basic.gtype -> (Hident.t * Basic.gtype))
       }
 
   val resolve_aux:
@@ -206,8 +206,8 @@ sig
   val find_type: 
     Scope.t 
     -> string
-    -> Basic.gtype -> (Ident.t * Basic.gtype) list 
-    -> (Ident.t * Basic.gtype)
+    -> Basic.gtype -> (Hident.t * Basic.gtype) list 
+    -> (Hident.t * Basic.gtype)
 
 end
 
@@ -227,7 +227,7 @@ val to_term: t -> term
 
 val resolve: 
   Scope.t
-  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
+  -> (string -> Basic.gtype -> (Hident.t * Basic.gtype))
   -> t
   -> (Basic.term * Gtypes.substitution)
 (** [resolve scp env pt]: Construct the term represented by [pt],
@@ -249,8 +249,8 @@ val resolve:
 
 val make_lookup: 
   Scope.t
-  -> (string -> (Ident.t * Basic.gtype) list) 
-  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
+  -> (string -> (Hident.t * Basic.gtype) list) 
+  -> (string -> Basic.gtype -> (Hident.t * Basic.gtype)) 
 (** [make_lookup scp db]: Make an environment suitable for
     {!Pterm.resolve} from table [db].
     

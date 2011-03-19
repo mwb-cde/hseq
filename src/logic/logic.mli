@@ -308,27 +308,27 @@ sig
   *)
 
   (** The record of an individual skolem constant. *)
-  type skolem_cnst = (Ident.t * (int * Basic.gtype))
+  type skolem_cnst = (Hident.t * (int * Basic.gtype))
 
-  val get_sklm_name: skolem_cnst -> Ident.t
+  val get_sklm_name: skolem_cnst -> Hident.t
   val get_sklm_indx: skolem_cnst -> int
   val get_sklm_type: skolem_cnst -> Basic.gtype
 
-  val make_skolem_name: Ident.t -> int -> string
+  val make_skolem_name: Hident.t -> int -> string
   (** [make_skolem_name i n]: Make the name of a skolem constant from
       [i] and [n]. *)
 
   (** The record of generated skolem constants. *)
   type skolem_type
 
-  val get_old_sklm: Ident.t -> skolem_type -> skolem_cnst
+  val get_old_sklm: Hident.t -> skolem_type -> skolem_cnst
   (** Get the record of the skolem constant previously generated
       from an identifier.  *)
 
   (** Information needed to generate a new skolem constant *)
   type new_skolem_data=
       {
-	name: Ident.t;
+	name: Hident.t;
 	ty: Basic.gtype;
 	tyenv: Gtypes.substitution;
 	scope: Scope.t;
@@ -1262,7 +1262,7 @@ sig
       assumed to be correctly defined.  *)
   type ctypedef =
       {
-        type_name: Ident.t;       (* name of new type *)
+        type_name: Hident.t;       (* name of new type *)
         type_args: string list;   (* arguments of new type *)
         type_base: Basic.gtype;   (* the base type *)
         type_rep: cdefn;          (* representation function *)
@@ -1283,7 +1283,7 @@ sig
       storage.  *)
   type saved_ctypedef =
       {
-        stype_name: Ident.t;             (* name of new type *)
+        stype_name: Hident.t;             (* name of new type *)
         stype_args: string list;         (* arguments of new type *)
         stype_base: Gtypes.stype; 
         stype_rep: saved_cdefn;          (* representation function *)
@@ -1307,12 +1307,12 @@ sig
   (** Recogniser for term definitions. *)
 
   val dest_termdef: cdefn -> 
-    Ident.t * Basic.gtype * thm
+    Hident.t * Basic.gtype * thm
   (** Get the components of a certified definition. *)
 
   val mk_termdef: 
     Scope.t 
-    -> (Ident.t * Basic.gtype) 
+    -> (Hident.t * Basic.gtype) 
     -> Basic.term list -> Basic.term 
     -> cdefn
   (** [mk_termdef scp i args trm]: Make a certified definition.
@@ -1324,7 +1324,7 @@ sig
   (** Recogniser for term declarations. *)
 
   val dest_termdecln: cdefn 
-    -> Ident.t * Basic.gtype 
+    -> Hident.t * Basic.gtype 
   (** Get the components of a term declaration.  *)
 
   val mk_termdecln:
@@ -1343,7 +1343,7 @@ sig
   val is_typealias: cdefn -> bool 
   (** Recogniser for definition of a type declaration or alias. *)
   val dest_typealias: cdefn ->
-    Ident.t * string list * Basic.gtype option
+    Hident.t * string list * Basic.gtype option
   (** Get the components of a type declaration or alias.  *)
   val mk_typealias: Scope.t 
     -> string -> string list -> Basic.gtype option -> cdefn
