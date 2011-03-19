@@ -190,7 +190,7 @@ EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
 #EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
-#EXTRA_DISTCLEAN=
+EXTRA_DISTCLEAN=$(RM) configure.data data.make
 
 #####
 # Sub-directory building options
