@@ -109,7 +109,7 @@ PROJ_ROOT=../..
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=tpmain
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=tpmain
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-tpmain_SOURCES=global tactics goals commands display 
+HSeq_SOURCES=global tactics goals commands display 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -134,13 +134,9 @@ tpmain_SOURCES=global tactics goals commands display
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-tpmain_PACK_FOR=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-tpmain_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -186,7 +182,7 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(tpmain_SOURCES)) $(addsuffix .mli,$(tpmain_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

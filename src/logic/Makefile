@@ -103,13 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=logic
+#LIBRARIES=HSeq
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=logic
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=logic
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-logic_SOURCES=changes formula defn logic theory thydb
+HSeq_SOURCES=changes formula defn logic theory thydb
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -136,11 +136,11 @@ logic_SOURCES=changes formula defn logic theory thydb
 
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
-logic_PACK_FOR=HSeq
+HSeq_PACK_FOR=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-logic_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -183,10 +183,10 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
+#INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(logic_SOURCES)) $(addsuffix .mli,$(logic_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

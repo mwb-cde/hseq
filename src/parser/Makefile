@@ -103,13 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=parser
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=parser
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=parser
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-parser_SOURCES=counter lexer pterm grammars parser 
+HSeq_SOURCES=counter lexer pterm grammars parser 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -136,11 +136,11 @@ parser_SOURCES=counter lexer pterm grammars parser
 
 # object_PACK_FOR: Module to pack for (libraries only).
 #object_PACK_FOR=
-parser_PACK_FOR=HSeq
+HSeq_PACK_FOR=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-parser_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -186,7 +186,7 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(parser_SOURCES)) $(addsuffix .mli,$(parser_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

@@ -427,10 +427,6 @@ packing-$(1)-natlibs:=\
 	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
 	$$($(1)_NATLIBS)
 
-ifeq ($$(strip $$(($1)_PACK_NAME)),)
-$$(error $(1)_PACK_NAME must be defined when building for a packed object.)
-endif
-packing-$(1)-packname:=$$($(1)_PACK_NAME)
 
 ifneq ($$(strip $$($(1)_PACK_DIR)),)
 packing-$(1)-fileprefix=$$($(1)_PACK_DIR)/
@@ -441,7 +437,17 @@ else
 packing-$(1)-fileprefix=
 endif
 
-packing-$(1)-filelist:=$$(strip $$(packing-$(1)-fileprefix)$$(lm-pack-filename)$(1))
+# If the group name is not specified, it is the same as the
+# subdirectory being built.
+ifeq ($$(strip $$($(1)_PACK_GROUP)),)
+packing-$(1)-group=$$(lastword $$(subst /, ,$$(CURDIR)))
+else
+packing-$(1)-group=$$($(1)_PACK_GROUP)
+endif
+$$(info Building packing group $$(packing-$(1)-group))
+
+packing-$(1)-filelist:=\
+$$(strip $$(packing-$(1)-fileprefix)$$(lm-pack-filename)$$(packing-$(1)-group))
 
 # Packing
 

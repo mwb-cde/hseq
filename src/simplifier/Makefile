@@ -103,13 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=simplifier
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=simplifier
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=simplifier
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-simplifier_SOURCES=simputils simpconvs simpset simplifier \
+HSeq_SOURCES=simputils simpconvs simpset simplifier \
 		   simptacs simplib
 
 # object_INCLUDE: Directories to include when compiling [object].
@@ -135,13 +135,9 @@ simplifier_SOURCES=simputils simpconvs simpset simplifier \
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-simplifier_PACK_FOR=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-simplifier_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -184,11 +180,10 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
+#INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(simplifier_SOURCES)) \
-	$(addsuffix .mli,$(simplifier_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

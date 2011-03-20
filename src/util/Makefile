@@ -109,7 +109,7 @@ PROJ_ROOT=../..
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=util
+PACKING=HSeq
 
 #####
 # Object building settings
@@ -117,7 +117,7 @@ PACKING=util
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-util_SOURCES=lib treekit tag parserkit rewritekit
+HSeq_SOURCES=lib treekit tag parserkit rewritekit
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -125,13 +125,9 @@ util_SOURCES=lib treekit tag parserkit rewritekit
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
-# object_PACK_NAME: Name of pack to build
-#object_PACK_NAME=
-util_PACK_NAME=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-util_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -154,10 +150,10 @@ util_PACK_DIR=../HSeqOBJS
 INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(util_SOURCES)) $(addsuffix .mli,$(util_SOURCES))
+INSTALL_HEADERS=
 
 # INSTALL_CODE: Intermediate objects to install
-INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
+#INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
 
 #####
 # Module build tool settings

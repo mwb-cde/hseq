@@ -103,13 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=tpcore
+#LIBRARIES=HSeq
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=tpcore
+PACKING=HSeq
 
 #####
 # Object building settings
@@ -117,7 +117,7 @@ PACKING=tpcore
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-tpcore_SOURCES=defaults settings hident basic printer \
+HSeq_SOURCES=defaults settings hident basic printer \
 		report scope gtypes term lterm \
 		dbterm typing unify net rewrite 
 
@@ -130,13 +130,9 @@ tpcore_SOURCES=defaults settings hident basic printer \
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-tpcore_PACK_FOR=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-tpcore_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -184,7 +180,7 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(tpcore_SOURCES)) $(addsuffix .mli,$(tpcore_SOURCES))
+#INSTALL_HEADERS=
 
 #####
 # Default settings

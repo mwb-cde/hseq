@@ -109,7 +109,7 @@ PROJ_ROOT=../..
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=boollib
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=boollib
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-boollib_SOURCES=boolPP baseTheory boolutil boolbase \
+HSeq_SOURCES=boolPP baseTheory boolutil boolbase \
 		rewritelib booltacs boolinduct boollib
 
 # object_INCLUDE: Directories to include when compiling [object].
@@ -135,13 +135,13 @@ boollib_SOURCES=boolPP baseTheory boolutil boolbase \
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-boollib_PACK_FOR=HSeq
+# object_PACK_GROUP: Name of packing group to build object for.
+#object_PACK_GROUP=
+HSeq_PACK_GROUP=boollib
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-boollib_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -184,10 +184,10 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
+#INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(boollib_SOURCES)) $(addsuffix .mli,$(boollib_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

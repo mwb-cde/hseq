@@ -109,7 +109,7 @@ PROJ_ROOT=../..
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=numbers
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=numbers
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-numbers_SOURCES=prop exprs supinf nums
+HSeq_SOURCES=prop exprs supinf nums
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -134,13 +134,9 @@ numbers_SOURCES=prop exprs supinf nums
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-numbers_PACK_FOR=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-numbers_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -183,10 +179,10 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
+#INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(numbers_SOURCES)) $(addsuffix .mli,$(numbers_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands

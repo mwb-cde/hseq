@@ -103,13 +103,13 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=userlib
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
 # PACKING: List of packing modules to build
-PACKING=userlib
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -123,7 +123,7 @@ PACKING=userlib
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-userlib_SOURCES=userlib
+HSeq_SOURCES=userlib
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -134,13 +134,9 @@ userlib_SOURCES=userlib
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
 
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-userlib_PACK_FOR=HSeq
-
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-userlib_PACK_DIR=../HSeqOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -183,10 +179,10 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
+#INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=$(addsuffix .cmi,$(userlib_SOURCES)) $(addsuffix .mli,$(userlib_SOURCES))
+#INSTALL_HEADERS=
 
 ###
 # Makefile commands
