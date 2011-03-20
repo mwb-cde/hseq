@@ -228,14 +228,13 @@ hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma tpquote.cma hseqtop
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=
+EXTRA_CLEAN=$(RM) hseq
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
-
 
 # Use a custom build target
 # CUSTOM_TARGET_build: If defined, use a custom build target.
