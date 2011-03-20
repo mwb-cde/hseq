@@ -130,42 +130,6 @@ hseqtop_SOURCES=unsafe init cli
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
 
-# object_LIBS: Libraries to include when linking [object].
-hseq_LIBS=
-
-# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#object_OCAMLC_FLAGS=
-
-# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLPP_FLAGS=
-
-# object_LINK_FLAGS: Flags to pass to the linker for [object].
-#object_LINK_FLAGS=
-
-# object_INST_PATH: PATH to append to the relative installation path.
-#object_INST_PATH=
-
-#####
-# Module build tool settings
-
-# MODULE_OBJ_PATH: PATH to append to the staging directory path for
-# this module and all its sub-directories.
-#MODULE_OBJ_PATH=
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
-
-# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=
-
-# MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=
-
-# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
-#MODULE_OCAMLCPP_FLAGS=
-
-# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=
 
 ###
 # Installation options
@@ -179,6 +143,7 @@ hseq_LIBS=
 
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=<all .mli files and all built .cmi files>
+INSTALL_HEADERS=unsafe.cmi cli.cmi init.cmi
 
 # INSTALL_EXTRA_LIBRARIES: Additional files to install with the
 # libraries. Extra headers belong in this list.

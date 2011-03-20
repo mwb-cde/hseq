@@ -64,7 +64,7 @@ let use_command ?(silent=false) file =
   and eocl = ";;\n"
   and quit = "#quit"
   in 
-    use ^quote^ file ^quote ^eocl ^ quit ^eocl
+  use ^quote^ file ^quote ^eocl ^ quit ^eocl
 
 (**
    [run files]: Run each file in [files] as a script.
@@ -125,7 +125,7 @@ let process_args () =
     and libs = List.rev (!lib_list)
     and bin_args = List.rev (!ocaml_args)
     in 
-      (!bin, files, libs, bin_args, !silent)
+    (!bin, files, libs, bin_args, !silent)
     
 (** [test_bin b] Make sure that binary file b exists *)
 let test_bin b = 
