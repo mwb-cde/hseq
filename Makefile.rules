@@ -391,11 +391,12 @@ $$(info bytelib-$(1)-target = $$(bytelib-$(1)-target))
 $$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
 $$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
 
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 $$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
 	$$(info Linking $(bytelib-$(1)-libname))
 	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) \
 		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
-
+endif
 
 # Build rule to call
 .PHONY: build-bytelib-$(1)
@@ -574,8 +575,10 @@ $$(packed-$(1)-interface): $$(packed-$(1)-packdir)/$$(packed-$(1)-interface)
 	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-interface) $$(packed-$(1)-interface)
 
 # Build rule for the packed library
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 $$(packed-$(1)-bytelib): $$(packed-$(1)-interface) $$(packed-$(1)-module)
 	$$(OCAMLC) -a -o $$(packed-$(1)-bytelib) $$(packed-$(1)-module)
+endif
 
 # Build rule to call
 packed-$(1)-target:=$$(packed-$(1)-bytelib) $$(packed-$(1)-interface)
@@ -769,7 +772,6 @@ byteprog-$(1)-interfaces:=$$(foreach src,$$(byteprog-$(1)-headers),\
 				$$(call interface,$$(src)))
 byteprog-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
 
-#byteprog-$(1)-libs:=$$(foreach src,$$($(1)_LIBS),$$(call bytecode,$$(src)))
 byteprog-$(1)-libs:=$$($(1)_LIBS)
 $$(info byteprog-$(1)-libs=$$(byteprog-$(1)-libs))
 
@@ -788,9 +790,11 @@ $$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
 lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
 $$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
 
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 $(1): $$(byteprog-$(1)-interfaces) $$(byteprog-$(1)-objects)
 	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$($(1)_INCLUDE)\
 		$$(byteprog-$(1)-libs) $$(byteprog-$(1)-objects)
+endif
 
 .PHONY: build-byteprog-$(1)
 build-byteprog-$(1): $(1)
@@ -984,10 +988,12 @@ distclean: clean libclean
 ###
 # Toplevel targets
 
+ifneq ($(strip CUSTOM_TARGET_build),no)
 .PHONY: build
 build: build-objdir build-subdirs \
 	build-bytelibs build-programs build-packings \
 	module-install-objdir
+endif
 
 ##
 # Run the sub-directories.

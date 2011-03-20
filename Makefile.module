@@ -231,6 +231,9 @@
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
 
+# CUSTOM_TARGET_build: If defined, use a custom build target.
+#CUSTOM_TARGET_build=
+
 
 #####
 # Default settings

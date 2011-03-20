@@ -237,20 +237,19 @@ hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma tpquote.cma hseqtop
 #EXTRA_DISTCLEAN=
 
 
-#####
-# Default settings
+# Use a custom build target
+# CUSTOM_TARGET_build: If defined, use a custom build target.
+#CUSTOM_TARGET_build=yes
 
-# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+hseq_CUSTOM_BUILD=yes
+hseq:
+	ocamlmktop -custom -I $(OBJ_ROOT)/lib -I +camlp4 -o hseq \
+		nums.cma unix.cma dynlink.cma camlp4o.cma \
+		hseq.cma tpquote.cma hseqtop.cma
 
-# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
-# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
-#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
-#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
