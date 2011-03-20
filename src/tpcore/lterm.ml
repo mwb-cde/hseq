@@ -35,12 +35,12 @@ let nums_thy = "nums"
  * Types
  *)
 
-(*** Hidentifiers for base types ***)
+(*** Identifiers for base types ***)
 
-let bool_ty_id = Hident.mk_long base_thy "bool"
-let fun_ty_id = Hident.mk_long base_thy "FUN"
-let ind_ty_id = Hident.mk_long base_thy "ind"
-let num_ty_id = Hident.mk_long nums_thy "num"
+let bool_ty_id = Ident.mk_long base_thy "bool"
+let fun_ty_id = Ident.mk_long base_thy "FUN"
+let ind_ty_id = Ident.mk_long base_thy "ind"
+let num_ty_id = Ident.mk_long nums_thy "num"
 
 (** The type ind *)
 
@@ -102,18 +102,18 @@ let typeof_cnst c =
  * Terms 
  *)
 
-(*** Hidentifiers for logic functions and constants *)
+(*** Identifiers for logic functions and constants *)
 
-let trueid = Hident.mk_long base_thy "true"
-let falseid = Hident.mk_long base_thy "false"
-let notid = Hident.mk_long base_thy "not"
-let andid = Hident.mk_long base_thy "and"
-let orid = Hident.mk_long base_thy "or"
-let impliesid = Hident.mk_long base_thy "implies"
-let iffid = Hident.mk_long base_thy "iff"
-let equalsid = Hident.mk_long base_thy "equals"
+let trueid = Ident.mk_long base_thy "true"
+let falseid = Ident.mk_long base_thy "false"
+let notid = Ident.mk_long base_thy "not"
+let andid = Ident.mk_long base_thy "and"
+let orid = Ident.mk_long base_thy "or"
+let impliesid = Ident.mk_long base_thy "implies"
+let iffid = Ident.mk_long base_thy "iff"
+let equalsid = Ident.mk_long base_thy "equals"
 let equalssym = "="
-let anyid = Hident.mk_long base_thy "any"
+let anyid = Ident.mk_long base_thy "any"
 
 (*** Recognisers ***)
 
@@ -551,7 +551,7 @@ let in_scope memo scp trm =
   let rec in_scp_aux t =
     match t with
       | Id(id, ty) -> 
-	  ignore(lookup_id (Hident.thy_of id));
+	  ignore(lookup_id (Ident.thy_of id));
 	  Gtypes.in_scope memo scp ty
       | Qnt(_, b) ->
 	ignore(Gtypes.in_scope memo scp (get_binder_type t));
@@ -617,10 +617,10 @@ let set_names scp trm =
   let rec set_aux qnts t=
     match t with
       | Id(id, ty) -> 
-	let th, n = Hident.dest id in 
+	let th, n = Ident.dest id in 
 	let nid = 
-	  if(th = Hident.null_thy)
-	    then Hident.mk_long (lookup_id n) n
+	  if(th = Ident.null_thy)
+	    then Ident.mk_long (lookup_id n) n
 	    else id
 	in 
 	let ty1 = set_type_name type_thy_memo scp ty in 
@@ -643,7 +643,7 @@ let set_names scp trm =
 	    (match try_find lookup_id n with
 	      | None -> Free(n, ty1)
 	      | Some (nth1) ->
-		let nid = Hident.mk_long nth1 n
+		let nid = Ident.mk_long nth1 n
 		in 
 		match try_find lookup_type nid with
 		  | None -> Id(nid, ty1)
@@ -695,11 +695,11 @@ let resolve_term scp vars varlist trm =
 	  with Not_found -> Gtypes.mk_null()
 	in (ignore(Lib.add id ty type_memo); ty)
     in 
-    let (th, name) = Hident.dest ident
+    let (th, name) = Ident.dest ident
     in 
     let nid = 
-      if th = Hident.null_thy
-      then Hident.mk_long (lookup_name name) name
+      if th = Ident.null_thy
+      then Ident.mk_long (lookup_name name) name
       else ident
     in 
     let ty0 = lookup_type ident in 	
@@ -742,7 +742,7 @@ let resolve_term scp vars varlist trm =
       | Free(n, ty) -> 
 	(match Lib.try_find (Scope.find_meta scp) n with
 	    Some(b) -> (Meta(b), vars, lst)
-	  | None -> set_aux (qnts, vars) (Id (Hident.mk_name n, ty)) lst)
+	  | None -> set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
       | Qnt(q, b) -> 
 	let nq = binding_set_names ~memo:type_thy_memo scp q in 
 	let qnts1 = bind (Bound(q)) (Bound(nq)) qnts in 

@@ -182,7 +182,7 @@ val get_id_type: string -> string -> thydb -> Basic.gtype
     [th].
 *)
 
-val get_id_options: string -> thydb -> (Hident.t * Basic.gtype) list
+val get_id_options: string -> thydb -> (Ident.t * Basic.gtype) list
 (** [get_id_options n db]: Get list of term identifiers with the name
     [n], together with their types.  The list is in the order of
     appearence in the importing list.
@@ -251,7 +251,7 @@ val remove_type_pp_rec:
 *)
 
 val get_type_pplist: 
-  string -> thydb -> (Hident.t * Printer.record) list
+  string -> thydb -> (Ident.t * Printer.record) list
 (** [get_type_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)
@@ -277,7 +277,7 @@ val remove_term_pp_rec: string -> string -> thydb -> unit
 
 val get_term_pplist: 
   string -> thydb 
-  -> (Hident.t * (Printer.record * Theory.sym_pos)) list
+  -> (Ident.t * (Printer.record * Theory.sym_pos)) list
 (** [get_term_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)

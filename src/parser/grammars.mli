@@ -125,7 +125,7 @@ type typedef_data =
       
 (** {7 Utility types and functions} *)
       
-type token_info = (Hident.t * fixity * int) option
+type token_info = (Ident.t * fixity * int) option
 
 val string_of_tok: Lexer.tok -> string
 val string_tokens: Lexer.tok list -> string
@@ -278,41 +278,41 @@ val repeat_term: 'a phrase -> 'b phrase -> 'a list phrase
   
 (** {5 Identifier Parsers} *)
 
-val id_parser: (Lexer.tok -> token_info) -> Hident.t phrase
+val id_parser: (Lexer.tok -> token_info) -> Ident.t phrase
 (** [id_parser info inp]: General identifier parser.  Matches
     identifiers and symbols which translate to identifiers.
 *)
   
-val id_strict: (Lexer.tok -> token_info) -> Hident.t phrase
+val id_strict: (Lexer.tok -> token_info) -> Ident.t phrase
 (** [id_strict info inp]: Strict identifier parser.  Matches (possibly
     qualified) identifiers only, not symbols.  *)
 
-val id_relaxed: parser_info -> Hident.t phrase
+val id_relaxed: parser_info -> Ident.t phrase
 (** [id_relaxed info inp]: Relaxed identifier parser.  Matches
     (possibly qualified) identifiers and symbols.  *)
 
 val named_id: 
   parser_info 
-  -> (parser_info -> Hident.t phrase)
-  -> Hident.t -> Hident.t phrase
+  -> (parser_info -> Ident.t phrase)
+  -> Ident.t -> Ident.t phrase
 (** [named_id info ph name inp]: Parse an identifier [name].  Fail if
     token doesn't match the given name. Uses parser [ph inf] to parse
     the identifier.
 *)
 
-val short_id: (parser_info -> Hident.t phrase) 
+val short_id: (parser_info -> Ident.t phrase) 
   -> parser_info -> string phrase
 (** [short_id ph inf toks]: Parse a short (unqualified)
     identifier. Uses parser [ph inf] to parse the identifier.
 *)
 
-val long_id: (parser_info -> Hident.t phrase)
-  -> parser_info -> Hident.t phrase
+val long_id: (parser_info -> Ident.t phrase)
+  -> parser_info -> Ident.t phrase
 (** [short_id ph inf toks]: Parse a long (possibly qualified)
     identifier. Uses parser [ph inf] to parse the identifier.
 *)
 
-val mk_short_id: (parser_info -> Hident.t phrase)
+val mk_short_id: (parser_info -> Ident.t phrase)
   -> parser_info -> string phrase
 (** [mk_short_id ph inf]: Parse a possibly qualified identifer with
     [ph inf], make it a short identifier.  *)
@@ -367,7 +367,7 @@ val mk_type_unary_constr:
   
 (** {7 The parsers} *)
   
-val type_id: parser_info -> Hident.t phrase
+val type_id: parser_info -> Ident.t phrase
 (** [type_id]: Parse a type identifier. *)
 
 val primed_id: parser_info -> Basic.gtype phrase
@@ -515,7 +515,7 @@ val optional_type : parser_info -> Basic.gtype option phrase
     [ optional_type ::= [ ':' types ] ]
 *)
 
-val id: parser_info -> Hident.t phrase
+val id: parser_info -> Ident.t phrase
 (** [id]: Parse identifiers which occur in terms *)
 
 val id_type_opt:
@@ -572,7 +572,7 @@ val remove_parser: string -> unit
 *)
 
 val parse_as_binder:
-  Hident.t -> string -> parser_info -> Pterm.t phrase
+  Ident.t -> string -> parser_info -> Pterm.t phrase
 (** [parse_as_binder f sym]: Construct a grammar to parse function
     applications of the form [f (%x: P)] as [sym x: P].
 

@@ -421,10 +421,10 @@ let induct_thm ?thm scp tyenv trm =
 	  in 
           Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
         in
-        let (th, id) = Hident.dest (get_type_name ty) in 
+        let (th, id) = Ident.dest (get_type_name ty) in 
         let thm_name = id^"_induct"
         in 
-        try Commands.thm (Hident.string_of (Hident.mk_long th thm_name))
+        try Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
         with _ ->
 	  (try Commands.thm thm_name
 	   with _ -> failwith ("Can't find cases theorem "^thm_name))

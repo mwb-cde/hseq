@@ -25,7 +25,7 @@
 
 type property = string
 let simp_property = "simp"
-type sym_pos = Hident.t Lib.position
+type sym_pos = Ident.t Lib.position
 
 type id_record = 
     {
@@ -241,7 +241,7 @@ let add_type_rec tr thy =
   if not (get_protection thy)
   then 
     let (lid, args, df) = dest_tydef tr in 
-    let id = Hident.name_of lid in 
+    let id = Ident.name_of lid in 
     let tr = mk_typedef_rec id args df []
     in 
     if not (Lib.member id thy.typs)
@@ -323,7 +323,7 @@ let get_term_pplist thy =
   let ppl = thy.id_pps
   and tn = thy.name 
   in 
-  List.map (fun (x, y) -> (Hident.mk_long tn x , y)) ppl
+  List.map (fun (x, y) -> (Ident.mk_long tn x , y)) ppl
 
 let get_type_pp_rec n thy = List.assoc n thy.type_pps
 
@@ -343,7 +343,7 @@ let get_type_pplist thy =
   let ppl = thy.type_pps
   and tn = thy.name 
   in
-  List.map (fun (x, y) -> (Hident.mk_long tn x, y)) ppl
+  List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
 
 (*
  * Theory Storage 
@@ -453,12 +453,12 @@ let from_saved scp sthy =
   let thy_scp = 
     let scp1 = new_thy_scope thy scp 
     and new_tydefs_list = 
-      List.map (fun (id, rd) -> (Hident.mk_long name id, rd)) tydefs_list
+      List.map (fun (id, rd) -> (Ident.mk_long name id, rd)) tydefs_list
     in
     let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in 
     let new_defns = 
       List.map 
-	(fun (id, rd) -> Hident.mk_long name id, Gtypes.from_save rd.sty)
+	(fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
         sthy.sdefns
     in 
     Scope.extend_with_terms scp2 new_defns

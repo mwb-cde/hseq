@@ -30,7 +30,7 @@ open Lib.Ops
 
 (*** Boolean equivalence ***)
 
-let make_iff_def () = defn (Hident.string_of Lterm.iffid)
+let make_iff_def () = defn (Ident.string_of Lterm.iffid)
 let iff_def_var = Lib.freeze make_iff_def
 let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
 
@@ -392,10 +392,10 @@ let cases_of ?info ?thm t g =
 	    let sb = Typing.settype scp ~env:tyenv trm
 	    in Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
 	  in
-	  let (th, id) = Hident.dest (get_type_name ty) in 
+	  let (th, id) = Ident.dest (get_type_name ty) in 
 	  let thm_name = id^"_cases" 
           in 
-	  try Commands.thm (Hident.string_of (Hident.mk_long th thm_name))
+	  try Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
 	  with _ ->
 	    try Commands.thm thm_name
 	    with _ -> failwith ("Can't find cases theorem "^thm_name)

@@ -23,7 +23,7 @@
 
 (** {5 Base representation of logic types} *)
 
-type typ_const = Hident.t
+type typ_const = Ident.t
 (** Representation of user-defined type constructors (could merged
     into [pre_typ]).
 *)
@@ -117,7 +117,7 @@ val binder_equality: binders -> binders -> bool
 
 (** The representation of a term *)
 type term =
-  | Id of Hident.t * gtype   (** Identifiers *)
+  | Id of Ident.t * gtype   (** Identifiers *)
   | Bound of binders     (** Bound variables *)
   | Free of string * gtype  (** Free variables *)
   | Meta of binders       (** Meta variables (use for skolem constants) *)

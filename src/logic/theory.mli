@@ -61,7 +61,7 @@ val simp_property: property
 (** The precedence of a term identifier overloaded on a
     symbol. (Default [First].)
 *)
-type sym_pos = Hident.t Lib.position
+type sym_pos = Ident.t Lib.position
 
 (** Records of identifier declarations and definitions. *)
 type id_record =
@@ -213,7 +213,7 @@ val add_term_pp_rec:
 val remove_term_pp_rec: string -> thy -> unit
 (** Remove term Printer-Parser record from a theory. *)
 val get_term_pplist: 
-  thy -> (Hident.t * (Printer.record * sym_pos)) list
+  thy -> (Ident.t * (Printer.record * sym_pos)) list
 (** Get all term Printer-Parser records of a theory. *)
 
 val get_type_pp_rec: string  -> thy -> Printer.record
@@ -224,7 +224,7 @@ val add_type_pp_rec:
 (** Add a type Printer-Parser record to a theory. *)
 val remove_type_pp_rec: string -> thy -> unit
 (** Remove type Printer-Parser record from a theory. *)
-val get_type_pplist: thy -> (Hident.t * Printer.record) list
+val get_type_pplist: thy -> (Ident.t * Printer.record) list
 (** Get all type Printer-Parser records of a theory. *)
 
 (** {5 Theory Storage} 

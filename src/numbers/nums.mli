@@ -22,17 +22,17 @@
 val error: string -> Basic.term list -> exn
 
 val num_thy: string
-val plusid: Hident.t
-val minusid: Hident.t
-val multid: Hident.t
-val negid: Hident.t
-val maxid: Hident.t
-val minid: Hident.t
+val plusid: Ident.t
+val minusid: Ident.t
+val multid: Ident.t
+val negid: Ident.t
+val maxid: Ident.t
+val minid: Ident.t
 
-val gtid: Hident.t
-val geqid: Hident.t
-val ltid: Hident.t
-val leqid: Hident.t
+val gtid: Ident.t
+val geqid: Ident.t
+val ltid: Ident.t
+val leqid: Ident.t
 
 val numterm_to_expr:
   int * (int * Basic.term) list 
@@ -171,15 +171,15 @@ val mk_mult: Exprs.expr list -> Exprs.expr
 val mk_minus: Exprs.expr list -> Exprs.expr
 val mk_negate: Exprs.expr list -> Exprs.expr
 val num_thy: string
-val plusid: Hident.t
-val minusid: Hident.t
-val multid: Hident.t
-val negid: Hident.t
-val maxid: Hident.t
-val minid: Hident.t
-val num_fns: (Hident.t * (Exprs.expr list -> Exprs.expr)) list
-val is_num_fn: Hident.t -> bool
-val get_num_fn: Hident.t -> Exprs.expr list -> Exprs.expr
+val plusid: Ident.t
+val minusid: Ident.t
+val multid: Ident.t
+val negid: Ident.t
+val maxid: Ident.t
+val minid: Ident.t
+val num_fns: (Ident.t * (Exprs.expr list -> Exprs.expr)) list
+val is_num_fn: Ident.t -> bool
+val get_num_fn: Ident.t -> Exprs.expr list -> Exprs.expr
 val numterm_to_expr:
   int * (int * Basic.term) list ->
   Scope.t -> Basic.term -> Exprs.expr * (int * (int * Basic.term) list)
@@ -188,37 +188,37 @@ val mk_gt: 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
 val mk_geq: 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
 val mk_lt: 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
 val mk_leq: 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
-val gtid: Hident.t
-val geqid: Hident.t
-val ltid: Hident.t
-val leqid: Hident.t
+val gtid: Ident.t
+val geqid: Ident.t
+val ltid: Ident.t
+val leqid: Ident.t
 val comp_fns:
-  (Hident.t * ('a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr))
+  (Ident.t * ('a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr))
   list
 val is_equals:
-  Scope.t -> Basic.gtype -> Hident.t -> Basic.term -> Basic.term -> bool
+  Scope.t -> Basic.gtype -> Ident.t -> Basic.term -> Basic.term -> bool
 val is_num_equals:
-  Scope.t -> Hident.t -> Basic.term -> Basic.term -> bool
+  Scope.t -> Ident.t -> Basic.term -> Basic.term -> bool
 val is_bool_equals:
-  Scope.t -> Hident.t -> Basic.term -> Basic.term -> bool
+  Scope.t -> Ident.t -> Basic.term -> Basic.term -> bool
 
 val is_bool_app:
-  Scope.t -> Hident.t -> Basic.term list -> bool
+  Scope.t -> Ident.t -> Basic.term list -> bool
 val is_num_app: 
-  Scope.t -> Hident.t -> Basic.term list -> bool
+  Scope.t -> Ident.t -> Basic.term list -> bool
 val is_comp_app: 
-  Scope.t -> Hident.t -> Basic.term list -> bool
+  Scope.t -> Ident.t -> Basic.term list -> bool
 
-val is_comp_fn: Hident.t -> bool
+val is_comp_fn: Ident.t -> bool
 val get_comp_fn:
   Scope.t ->
-  Hident.t ->
+  Ident.t ->
   Basic.term ->
   Basic.term -> 'a -> 'b -> (Supinf.compfn * 'a * 'b, 'c) Prop.boolexpr
 val compterm_to_comprsn:
   int * (int * Basic.term) list ->
   Scope.t ->
-  Hident.t ->
+  Ident.t ->
   Basic.term list ->
   (Supinf.compfn * Exprs.expr * Exprs.expr, 'a) Prop.boolexpr *
     (int * (int * Basic.term) list)
@@ -237,12 +237,12 @@ val mk_implies: ('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr
 val mk_iff: ('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr
 val mk_bool_equals: ('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr
 val bool_fns:
-  (Hident.t * (('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr))
+  (Ident.t * (('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr))
   list
-val is_bool_fn: Hident.t -> bool
+val is_bool_fn: Ident.t -> bool
 val get_bool_fn:
   Scope.t ->
-  Hident.t ->
+  Ident.t ->
   Basic.term list -> ('a, 'b) Prop.boolexpr list -> ('a, 'b) Prop.boolexpr
 val bterm_to_prop:
   Scope.t ->

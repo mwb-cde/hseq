@@ -67,7 +67,7 @@ let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
 (*** Basic equality reasoning ***)
 
 let make_eq_refl_thm () = 
-  try thm (Hident.string_of (Hident.mk_long Lterm.base_thy "eq_refl"))
+  try thm (Ident.string_of (Ident.mk_long Lterm.base_thy "eq_refl"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_eq_refl_thm:"
@@ -77,7 +77,7 @@ let eq_refl_thm_var = Lib.freeze make_eq_refl_thm
 let eq_refl_thm () =  Lib.thaw ~fresh:fresh_thm eq_refl_thm_var
 
 let make_bool_cases_thm () = 
-  try thm (Hident.string_of (Hident.mk_long Lterm.base_thy "bool_cases"))
+  try thm (Ident.string_of (Ident.mk_long Lterm.base_thy "bool_cases"))
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_bool_cases_thm:"

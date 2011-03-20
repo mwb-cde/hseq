@@ -138,51 +138,51 @@ sig
   (** {7 Terms} *)
 
   val get_term_pp: 
-    Hident.t -> (int * Printer.fixity * string option)
+    Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for term identifer.  Returns
       [(default_term_prec, default_term_fixity, None)] if not
       found.  *)
 
   val add_term_pp: 
-    Hident.t -> int -> Printer.fixity 
+    Ident.t -> int -> Printer.fixity 
     -> string option -> unit
   (** Add printer information for term identifer. *)
 
   val add_term_pp_record: 
-    Hident.t -> Printer.record -> unit
+    Ident.t -> Printer.record -> unit
   (** Add printer record for term identifer. *)
 
-  val remove_term_pp: Hident.t -> unit
+  val remove_term_pp: Ident.t -> unit
   (** Remove PP information for term identifer occuring in a term. *)
 
   (** {7 Types} *)
 
-  val get_type_pp: Hident.t -> (int * Printer.fixity * string option)
+  val get_type_pp: Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for type identifer. *)
 
   val add_type_pp: 
-    Hident.t 
+    Ident.t 
     -> int -> Printer.fixity -> string option 
     -> unit
   (** Add PP information for type identifer. *)
 
   val add_type_pp_record: 
-    Hident.t -> Printer.record -> unit
+    Ident.t -> Printer.record -> unit
   (** Add PP record for type identifer. *)
 
-  val remove_type_pp: Hident.t -> unit
+  val remove_type_pp: Ident.t -> unit
   (** Remove PP record for type identifer. *)
 
   (** {6 User-defined printers} *)
 
   val get_term_printer:
-    Hident.t -> 
+    Ident.t -> 
     (Printer.fixity * int 
      -> (Basic.term * (Basic.term list)) Printer.printer)
   (** Get printer for terms. *)
 
   val add_term_printer: 
-    Hident.t -> 
+    Ident.t -> 
     (Printer.ppinfo 
      -> (Printer.fixity * int) 
      -> (Basic.term * (Basic.term list)) Printer.printer) -> unit
@@ -194,20 +194,20 @@ sig
       prec the precedence active when the printer is called and f
       is the identifier term.  *)
 
-  val remove_term_printer: Hident.t -> unit
+  val remove_term_printer: Ident.t -> unit
   (** Remove printer for terms. *)
 
   val get_type_printer:
-    Hident.t 
+    Ident.t 
     -> (Printer.fixity * int 
-	-> (Hident.t * (Basic.gtype list)) Printer.printer)
+	-> (Ident.t * (Basic.gtype list)) Printer.printer)
   (** Get printer for types *)
 
   val add_type_printer: 
-    Hident.t -> 
+    Ident.t -> 
     (Printer.ppinfo 
      -> (Printer.fixity * int) 
-     -> (Hident.t * (Basic.gtype list)) Printer.printer) -> unit
+     -> (Ident.t * (Basic.gtype list)) Printer.printer) -> unit
   (** [add_type_printer id p]: Add printer p for types. The
       printer is keyed by type identifier and triggered on a
       constructor expression (args)id (where args may be an empty
@@ -215,12 +215,12 @@ sig
       args)) where info is the PP information, fix the fixity and
       prec the precedence active when the printer is called.  *)
 
-  val remove_type_printer: Hident.t -> unit
+  val remove_type_printer: Ident.t -> unit
   (** Remove printer for types *)
 
   (** {6 Parsing} *)
 
-  val overload_lookup: string -> (Hident.t * Basic.gtype) list
+  val overload_lookup: string -> (Ident.t * Basic.gtype) list
   (** [overload_lookup s]: Find the list of identifiers which may
       be overloaded on [s]. String [s] may be a symbol or the
       short name of a term.  *)
@@ -268,7 +268,7 @@ sig
   val read_type_defn: string -> Defn.Parser.typedef
   (** Parse a string as a type definition. *)
 
-  val read_identifier: string -> Hident.t
+  val read_identifier: string -> Ident.t
 (** Parse a string as an identifier. *)
 end
 
@@ -278,7 +278,7 @@ val read: string -> Basic.term
 (** Read a term. *)
 val read_type: string -> Basic.gtype
 (** Read a type. *)
-val read_identifier: string -> Hident.t
+val read_identifier: string -> Ident.t
 (** Read an identifier. *)
 
 val read_defn:

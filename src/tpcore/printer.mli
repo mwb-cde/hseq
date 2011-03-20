@@ -131,8 +131,8 @@ val empty_record: unit -> record
 
 type 'a info = 
     {
-      records: (Hident.t, record) Hashtbl.t;
-      printers: (Hident.t, (fixity * int) -> 'a printer) Hashtbl.t 
+      records: (Ident.t, record) Hashtbl.t;
+      printers: (Ident.t, (fixity * int) -> 'a printer) Hashtbl.t 
     }
 (** The table of records and printers for a set of identifiers. There
     are seperate [info] tables for terms and types. User defined
@@ -162,20 +162,20 @@ val empty_info: unit-> 'a info
     added/accessed.
 *)
 
-val get_record: 'a info -> Hident.t -> record
+val get_record: 'a info -> Ident.t -> record
 (** Get the pretty printing record for identifer [id].  
 
     @raise [Not_found] if no record.
 *)
 
 val add_record: 
-  'a info -> Hident.t -> record -> unit
+  'a info -> Ident.t -> record -> unit
 (** Add a pretty printing record for an identifer. *)
 
-val remove_record: 'a info -> Hident.t -> unit
+val remove_record: 'a info -> Ident.t -> unit
 (** Remove record for identifer. *)
 
-val get_info: 'a info -> Hident.t -> (int * fixity * string option)
+val get_info: 'a info -> Ident.t -> (int * fixity * string option)
 (** [get_info info id]: Get pretty printing information for identifer
     [id] from [info].
 
@@ -187,7 +187,7 @@ val get_info: 'a info -> Hident.t -> (int * fixity * string option)
 *)
 
 val add_info: 
-  'a info -> Hident.t -> int -> fixity 
+  'a info -> Ident.t -> int -> fixity 
   -> string option -> unit
 (**
    [add_info info id prec fixity repr]: Add pretty printing
@@ -197,16 +197,16 @@ val add_info:
    (optional) string representation to use rather than [id].
 *)
 
-val remove_info: 'a info -> Hident.t -> unit
+val remove_info: 'a info -> Ident.t -> unit
 (** Remove pretty printing information for identifer. *)
 
-val get_printer: 'a info -> Hident.t -> (fixity * int -> 'a printer)
+val get_printer: 'a info -> Ident.t -> (fixity * int -> 'a printer)
 (** Get the user defined printer for an identifier *)
 
-val add_printer: 'a info -> Hident.t -> (fixity * int -> 'a printer) -> unit
+val add_printer: 'a info -> Ident.t -> (fixity * int -> 'a printer) -> unit
 (** Add a user defined printer for an identifier *)
 
-val remove_printer: 'a info -> Hident.t -> unit
+val remove_printer: 'a info -> Ident.t -> unit
 (** Remove a user defined printer for an identifier *)
 
 
@@ -215,7 +215,7 @@ val remove_printer: 'a info -> Hident.t -> unit
 type ppinfo =
     {
       terms:  (Basic.term * (Basic.term)list)info;
-      types:  (Hident.t * (Basic.gtype)list)info
+      types:  (Ident.t * (Basic.gtype)list)info
     }
 (**
    The combined printer information for terms and types.
@@ -242,7 +242,7 @@ val empty_ppinfo: unit-> ppinfo
 
 (** {7 Term printer information} *)
 
-val get_term_info: ppinfo -> Hident.t -> (int * fixity * string option)
+val get_term_info: ppinfo -> Ident.t -> (int * fixity * string option)
 (**
    [get_term_info ppinfo id]: Get pretty printing information for term
    identifer [id].  Returns [(default_term_prec, default_term_fixity,
@@ -250,7 +250,7 @@ val get_term_info: ppinfo -> Hident.t -> (int * fixity * string option)
 *)
 
 val add_term_info: 
-  ppinfo -> Hident.t -> int -> fixity 
+  ppinfo -> Ident.t -> int -> fixity 
   -> string option -> unit
 (**
    [add_term_info ppinfo id prec fixity repr]
@@ -263,7 +263,7 @@ val add_term_info:
 *)
 
 val add_term_record: 
-  ppinfo -> Hident.t -> record -> unit
+  ppinfo -> Ident.t -> record -> unit
 (**
    [add_term_record info id record]
    Add pretty printing record for a term identifer.
@@ -272,34 +272,34 @@ val add_term_record:
    @param record PP record
 *)
 
-val remove_term_info: ppinfo ->  Hident.t -> unit
+val remove_term_info: ppinfo ->  Ident.t -> unit
 (** [remove_term_info info id] Remove pretty printing information for
     a term identifer.
 *)
 
 val get_term_printer:
-  ppinfo -> Hident.t 
+  ppinfo -> Ident.t 
   -> (fixity * int -> (Basic.term * (Basic.term list)) printer)
 (** Get the user defined printer for a term identifier. *)
 
 val add_term_printer: 
-  ppinfo -> Hident.t 
+  ppinfo -> Ident.t 
   -> (fixity * int -> (Basic.term * (Basic.term list)) printer) 
   -> unit
 (** Add a user defined printer for a term identifier. *)
 
-val remove_term_printer: ppinfo -> Hident.t -> unit
+val remove_term_printer: ppinfo -> Ident.t -> unit
 (** Remove user defined printer for a term identifier. *)
 
 (** {7 Gype printer information} *)
 
-val get_type_info: ppinfo -> Hident.t -> (int * fixity * string option)
+val get_type_info: ppinfo -> Ident.t -> (int * fixity * string option)
 (**
    Get pretty printing information for a type identifer.
 *)
 
 val add_type_info: 
-  ppinfo -> Hident.t -> int -> fixity -> string option -> unit
+  ppinfo -> Ident.t -> int -> fixity -> string option -> unit
 (**
    [add_type_info info id prec fixity repr]
    Add pretty printing information for type identifer [id].
@@ -310,7 +310,7 @@ val add_type_info:
    @param repr representation (if any).
 *)
 
-val add_type_record: ppinfo -> Hident.t -> record -> unit
+val add_type_record: ppinfo -> Ident.t -> record -> unit
 (**
    [add_type_record info id record]
    Add a pretty printing record for a type identifer.
@@ -319,29 +319,29 @@ val add_type_record: ppinfo -> Hident.t -> record -> unit
    @param record PP record
 *)
 
-val remove_type_info: ppinfo -> Hident.t -> unit
+val remove_type_info: ppinfo -> Ident.t -> unit
 (**
    [remove_type_info info id]
    Remove pretty printing information for a type identifer.
 *)
 
 val get_type_printer:
-  ppinfo -> Hident.t 
-  -> (fixity * int -> (Hident.t * (Basic.gtype list)) printer)
+  ppinfo -> Ident.t 
+  -> (fixity * int -> (Ident.t * (Basic.gtype list)) printer)
 (** Get the user defined printer for a type identifier *)
 
 val add_type_printer: 
-  ppinfo -> Hident.t -> 
-  (fixity * int -> (Hident.t * (Basic.gtype list)) printer) 
+  ppinfo -> Ident.t -> 
+  (fixity * int -> (Ident.t * (Basic.gtype list)) printer) 
   -> unit
 (** Add a user defined printer for a type identifier *)
 
-val remove_type_printer: ppinfo -> Hident.t -> unit
+val remove_type_printer: ppinfo -> Ident.t -> unit
 (** Remove a user defined printer for a type identifier *)
 
 (** {5 Pretty-printing utility functions} *)
 
-val string_identifier: Hident.t -> record -> string
+val string_identifier: Ident.t -> record -> string
 (** Convert an identifier to a string, using its PP representation if
     any.
 *)
@@ -383,12 +383,12 @@ val print_sep_list: ('a printer * string) -> 'a list printer
     printer [pr].  Printer [print_string sep] prints the separator.
 *)
 
-val print_ident: Hident.t printer
+val print_ident: Ident.t printer
 (** [print_ident i]: Simple printer for identifier [i]. Printer theory
     part and name part as strings seperated by "."
 *)
 
-val print_identifier: (Hident.t -> record) -> Hident.t printer
+val print_identifier: (Ident.t -> record) -> Ident.t printer
 (** [print_identifier info id]: Print identifier [id] using
     representation given in [info]. If no representation in [info] then
     just print the identifier.

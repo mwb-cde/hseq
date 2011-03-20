@@ -32,17 +32,17 @@ let num_thy = Lterm.nums_thy
 let bool_type = Lterm.mk_bool_ty()
 let num_type = Lterm.mk_num_ty()
 
-let plusid = Hident.mk_long num_thy "plus"
-let minusid = Hident.mk_long num_thy "minus"
-let multid = Hident.mk_long num_thy "mult"
-let negid = Hident.mk_long num_thy "negate"
-let maxid = Hident.mk_long num_thy "max"
-let minid = Hident.mk_long num_thy "min"
+let plusid = Ident.mk_long num_thy "plus"
+let minusid = Ident.mk_long num_thy "minus"
+let multid = Ident.mk_long num_thy "mult"
+let negid = Ident.mk_long num_thy "negate"
+let maxid = Ident.mk_long num_thy "max"
+let minid = Ident.mk_long num_thy "min"
 
-let gtid = Hident.mk_long num_thy "greater"
-let geqid = Hident.mk_long num_thy "geq"
-let ltid = Hident.mk_long num_thy "less"
-let leqid = Hident.mk_long num_thy "leq"
+let gtid = Ident.mk_long num_thy "greater"
+let geqid = Ident.mk_long num_thy "geq"
+let ltid = Ident.mk_long num_thy "less"
+let leqid = Ident.mk_long num_thy "leq"
 
 (* Variable environment *)
 

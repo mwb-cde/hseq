@@ -154,7 +154,7 @@ exception Stop of exn
     [term_key]: Keys identifying terms.
 *)
 type term_key =
-  | Hident  (** Term [Id] *)
+  | Ident  (** Term [Id] *)
   | BVar   (** Term [Bound] *)
   | MVar   (** Term [Meta] *)
   | FVar   (** Term [Free] *)

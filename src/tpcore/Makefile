@@ -117,7 +117,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=defaults settings hident basic printer \
+HSeq_SOURCES=defaults settings ident basic printer \
 		report scope gtypes term lterm \
 		dbterm typing unify net rewrite 
 

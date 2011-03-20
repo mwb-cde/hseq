@@ -43,7 +43,7 @@ type label =
   | Bound of Basic.quant
   | Quant of Basic.quant
   | Const of Basic.const_ty 
-  | Cname of Hident.t
+  | Cname of Ident.t
   | Cmeta of string
   | Cfree of string
 

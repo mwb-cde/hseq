@@ -39,7 +39,7 @@ open HSeq
 open Userlib
 
 let pair_thy = "Pair"
-let pair_id = Hident.mk_long pair_thy "pair"
+let pair_id = Ident.mk_long pair_thy "pair"
 let pair_prec = 10
 let pair_fixity = infixr
 let ppdata = (pair_fixity, pair_prec)

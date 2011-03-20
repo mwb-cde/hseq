@@ -148,12 +148,12 @@ let remove_file f = Theory.remove_file f (curr_theory())
 (*** Types ***)
 let add_type_pp_rec id rcrd =
   Global.Thys.set_theories
-    (Thydb.add_type_pp_rec (Hident.name_of id) rcrd (theories()));
+    (Thydb.add_type_pp_rec (Ident.name_of id) rcrd (theories()));
   Global.PP.add_type_pp_record id rcrd
     
 let remove_type_pp_rec id =
   Thydb.remove_type_pp_rec
-    (Hident.thy_of id) (Hident.name_of id) (theories());
+    (Ident.thy_of id) (Ident.name_of id) (theories());
   Global.PP.remove_type_pp id
 
 let get_type_pp_rec id = Global.PP.get_type_pp id 
@@ -162,19 +162,19 @@ let get_type_pp_rec id = Global.PP.get_type_pp id
 
 let add_term_pp_rec id ?(pos=Lib.First) rcrd =
   Global.Thys.set_theories
-    (Thydb.add_term_pp_rec (Hident.name_of id) (rcrd, pos) (theories()));
+    (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) (theories()));
   Global.PP.add_term_pp_record id rcrd
     
 let get_term_pp_rec id = Global.PP.get_type_pp id 
 
 let remove_term_pp_rec id =
   Thydb.remove_term_pp_rec
-    (Hident.thy_of id) (Hident.name_of id) (theories());
+    (Ident.thy_of id) (Ident.name_of id) (theories());
   Global.PP.remove_term_pp id
 
 let add_overload sym ?(pos=Lib.First) id = 
   let ty = 
-    Thydb.get_id_type (Hident.thy_of id) (Hident.name_of id) (theories())
+    Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories())
   in 
   Parser.add_overload sym pos (id, ty)
 
@@ -363,7 +363,7 @@ let typedef ?pp ?simp ?thm ?rep ?abs tydef =
     match pp with 
       | None -> ()
       | Some(prec, fx, repr) -> 
-        let lname = Hident.mk_long (Theory.get_name (Global.current())) name
+        let lname = Ident.mk_long (Theory.get_name (Global.current())) name
         in 
         add_type_pp lname prec fx repr
   end;
@@ -395,8 +395,8 @@ let dest_defn_term trm =
     in 
     let rargs = List.map Term.dest_ident args
     in
-    (Hident.name_of f, 
-     List.map (fun (x, y) -> (Hident.name_of x), y) rargs, 
+    (Ident.name_of f, 
+     List.map (fun (x, y) -> (Ident.name_of x), y) rargs, 
      rhs)
   else err()
     
@@ -408,7 +408,7 @@ let define ?pp ?(simp=false) (((name, nty), args), rhs) =
     let curr_thy_name = Theory.get_name (Global.current())
     in
     Logic.Defns.mk_termdef scp
-      (Hident.mk_long curr_thy_name name, nty)
+      (Ident.mk_long curr_thy_name name, nty)
       args rhs
   in 
   let props = 
@@ -419,7 +419,7 @@ let define ?pp ?(simp=false) (((name, nty), args), rhs) =
   let (n, ty, d) = Logic.Defns.dest_termdef new_def
   in 
   Global.Thys.set_theories
-    (Thydb.add_defn (Hident.name_of n) ty d props (theories())); 
+    (Thydb.add_defn (Ident.name_of n) ty d props (theories())); 
   begin
     match pp with 
       | None -> ()
@@ -435,10 +435,10 @@ let declare ?pp trm =
       let v, ty =
 	match trm with
 	  | Basic.Free(i, t) -> (i, t)
-	  | Basic.Id(i, t) -> (Hident.name_of i, t)
+	  | Basic.Id(i, t) -> (Ident.name_of i, t)
 	  | _ -> raise (Failure "Badly formed declaration")
       in 
-      let id = Hident.mk_long (Global.current_name()) v in 
+      let id = Ident.mk_long (Global.current_name()) v in 
       let dcl = Logic.Defns.mk_termdecln (Global.scope()) v ty
       in 
       Global.Thys.set_theories(Thydb.add_decln dcl [] (theories())); 
@@ -451,8 +451,8 @@ let declare ?pp trm =
     | None -> (val_name, val_type)
     | Some(prec, fx, repr) ->
       let longname = 
-	if (Hident.thy_of val_name) = Hident.null_thy 
-	then Hident.mk_long (Global.current_name()) (Hident.name_of val_name)
+	if (Ident.thy_of val_name) = Ident.null_thy 
+	then Ident.mk_long (Global.current_name()) (Ident.name_of val_name)
 	else val_name
       in 
       add_term_pp longname prec fx repr;

@@ -27,31 +27,31 @@ open Term
 
 (** {5 Theories} *)
 
-val base_thy: Hident.thy_id 
+val base_thy: Ident.thy_id 
 (** The name of the base theory. This is the theory at the root of the
     theory tree. The basic types and functions must be defined or
     declared in this theory. [base_thy="base"]
 *)
 
-val nums_thy: Hident.thy_id 
+val nums_thy: Ident.thy_id 
 (** The name of the nums theory. This is the theory in which numbers
     and their operators are defined.
 *)
 
 (** {5 Types} *)
 
-(** {7 Hidentifiers for base types} *)
+(** {7 Identifiers for base types} *)
 
-val bool_ty_id: Hident.t
+val bool_ty_id: Ident.t
 (** The identifier for the type of booleans. *)
 
-val fun_ty_id: Hident.t
+val fun_ty_id: Ident.t
 (** The identifier for the type of functions. *)
 
-val ind_ty_id: Hident.t
+val ind_ty_id: Ident.t
 (** The identifier for the ind type. *)
 
-val num_ty_id: Hident.t
+val num_ty_id: Ident.t
 (** The identifier for the number type. *)
 
 (** {7 The type of individuals} *)
@@ -102,22 +102,22 @@ val typeof_cnst : Basic.const_ty -> gtype
 
 (** {5 Terms} *)
 
-(** {7 Hidentifiers for logic functions and constants} *)
+(** {7 Identifiers for logic functions and constants} *)
 
-val trueid: Hident.t
-val falseid: Hident.t
-val notid: Hident.t
-val andid: Hident.t
-val orid: Hident.t
-val iffid: Hident.t
-val impliesid: Hident.t
-val equalsid: Hident.t
+val trueid: Ident.t
+val falseid: Ident.t
+val notid: Ident.t
+val andid: Ident.t
+val orid: Ident.t
+val iffid: Ident.t
+val impliesid: Ident.t
+val equalsid: Ident.t
 val equalssym: string
 (** 
     PP symbol for equals. (Should be in some other, more appropriate, module.)
 *)
 
-val anyid: Hident.t 
+val anyid: Ident.t 
 (** An arbitrary choice operator, [base.any=base.epsilon(%x: true)] *)
 
 (** {7 Recognisers} *)
@@ -281,7 +281,7 @@ val in_scope: (string, bool)Lib.substype
 
 val binding_set_names: 
   ?strict:bool
-  -> ?memo:(string, Hident.thy_id)Hashtbl.t
+  -> ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t
   -> Basic.binders
   -> Basic.binders

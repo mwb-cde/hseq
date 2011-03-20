@@ -161,10 +161,10 @@ let check_well_defined scp args ty =
 *)
 type subtype_defn = 
     {
-      id: Hident.t;
+      id: Ident.t;
       args : string list;
-      rep : (Hident.t* Basic.gtype);
-      abs: (Hident.t* Basic.gtype);
+      rep : (Ident.t* Basic.gtype);
+      abs: (Ident.t* Basic.gtype);
       set: Basic.term;
       rep_T: Basic.term;
       rep_T_inverse: Basic.term;
@@ -250,9 +250,9 @@ let mk_abs_T_inv set rep abs =
 *)
 let mk_subtype scp name args dtype setP rep_name abs_name =
   let th = Scope.thy_of scp in 
-  let id = Hident.mk_long th name
-  and rep_id = Hident.mk_long th rep_name
-  and abs_id = Hident.mk_long th abs_name
+  let id = Ident.mk_long th name
+  and rep_id = Ident.mk_long th rep_name
+  and abs_id = Ident.mk_long th abs_name
   in 
   let ntype = Gtypes.mk_constr id (List.map Gtypes.mk_var args)
   in
@@ -330,8 +330,8 @@ struct
       (!x: (P x) = (?x1: x=(rep x1)))>>
       to be used as the subtype theorem.
     *)
-  let mk_subtype_prop (setP: Basic.term) (rep: Hident.t) =
-    let mk_subtype_1 (rep: Hident.t) =
+  let mk_subtype_prop (setP: Basic.term) (rep: Ident.t) =
+    let mk_subtype_1 (rep: Ident.t) =
       let x1_b = Basic.mk_binding Basic.All "x1" (Gtypes.mk_var "x1_ty")
       and x2_b = Basic.mk_binding Basic.All "x2" (Gtypes.mk_var "x2_ty")
       in 
@@ -348,7 +348,7 @@ struct
       in 
       Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
     and 
-	mk_subtype_2 (setP:Basic.term) (rep: Hident.t) =
+	mk_subtype_2 (setP:Basic.term) (rep: Ident.t) =
       let y_b = Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty")
       and y1_b = Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty")
       in 
@@ -376,7 +376,7 @@ struct
     *)
   let mk_subtype scp name args dtype setP rep =
     let th = Scope.thy_of scp in 
-    let id = Hident.mk_long th name in 
+    let id = Ident.mk_long th name in 
     let ntype = Gtypes.mk_constr id (List.map Gtypes.mk_var args)
     in
     check_type_name scp id;

@@ -29,7 +29,7 @@
 
 (** [typ_const]: Representation of user-defined type constructors
     (could merged into [pre_typ]). *)
-type typ_const = Hident.t
+type typ_const = Ident.t
 
 (** [pre_typ]: The base representation of types. *)
 type ('idtyp, 'tfun) pre_typ =
@@ -55,7 +55,7 @@ type gtype = (gtype_id, typ_const)pre_typ
 
 (** String representation of types *)
 let string_tconst n l =
-  (Hident.string_of n)
+  (Ident.string_of n)
   ^"("
   ^(Lib.list_string (fun x-> x) ", " l)
   ^")"
@@ -149,7 +149,7 @@ let binder_type b =
 
 (** The representation of a term *)
 type term =
-  | Id of Hident.t * gtype  
+  | Id of Ident.t * gtype  
   | Bound of binders
   | Free of string * gtype
   | Meta of binders

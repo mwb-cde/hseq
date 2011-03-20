@@ -152,7 +152,7 @@ let mk_const c = (Const c)
 
 let mk_typed_ident n t = (Id(n, t))
 let mk_ident n = mk_typed_ident n (Gtypes.mk_null ())
-let mk_short_ident n = mk_ident (Hident.mk_name n)
+let mk_short_ident n = mk_ident (Ident.mk_name n)
 
 (* Destructors *)
 
@@ -233,7 +233,7 @@ let rec mk_comb x y =
     | t::ts -> mk_comb (mk_app x t) ts
 
 let mk_fun f args = 
-  let f_ty = Gtypes.mk_var ("_"^(Hident.string_of f)^"_ty")
+  let f_ty = Gtypes.mk_var ("_"^(Ident.string_of f)^"_ty")
   in
   mk_comb (Id(f, f_ty)) args
 
@@ -315,7 +315,7 @@ let rec strip_fun_qnt f term qs =
     | _ -> (List.rev qs, term)
 
 (*
- * Hidentifier (Id) terms
+ * Identifier (Id) terms
  *)
 
 let get_ident_id vt = fst (dest_ident vt)
@@ -427,7 +427,7 @@ let print_simple trm =
   let rec print_aux t =
     match t with
       | Id(n, ty) -> 
-	let (th, x) = Hident.dest n
+	let (th, x) = Ident.dest n
 	in 
 	Format.printf "@[%s@]" (th^"."^x)
       | Bound(n) -> 
@@ -919,7 +919,7 @@ let subst_qnt_var scp env trm =
 	   with _ -> t)
       | Free(n, ty) -> 
 	(try 
-	   let r = Lib.find (Hident.mk_name n) env
+	   let r = Lib.find (Ident.mk_name n) env
 	   in 
            ignore(Gtypes.unify scp ty (get_binder_type r)); r
 	 with _ -> t)
@@ -931,7 +931,7 @@ let subst_qnt_var scp env trm =
 
 let mk_typed_qnt_name scp q ty n b =
   let t = mk_binding q n ty in 
-  let bnd_env = Lib.bind (Hident.mk_name n) (Bound t) (Lib.empty_env()) in
+  let bnd_env = Lib.bind (Ident.mk_name n) (Bound t) (Lib.empty_env()) in
   let nb = subst_qnt_var scp bnd_env b
   in
   Qnt(t, nb)
@@ -948,7 +948,7 @@ let string_typed_name n t =
 
 let rec string_term_basic t =
   match t with
-    | Id(n, ty) -> (Hident.string_of n) (*string_typed_name n ty*)
+    | Id(n, ty) -> (Ident.string_of n) (*string_typed_name n ty*)
     | Free(n, ty) -> n
     | Bound(_) -> "?"^(get_binder_name t)
     | Meta(q) -> get_binder_name t
@@ -967,7 +967,7 @@ let rec string_term_basic t =
 
 let rec string_term_prec i x =
   match x with
-    | Id(n, ty) -> (Hident.string_of n)
+    | Id(n, ty) -> (Ident.string_of n)
     | Free(n, ty) -> n
     | Bound(_) -> "?"^(get_binder_name x)
     | Meta(_) -> (get_binder_name x)
@@ -1013,7 +1013,7 @@ let cfun_string c =
 
 let rec string_term_inf inf i x =
   match x with
-    | Id(n, ty) -> cfun_string (Hident.string_of n)
+    | Id(n, ty) -> cfun_string (Ident.string_of n)
     | Free(n, ty) -> n
     | Bound(_) -> (get_binder_name x)
     | Meta(_) -> (get_binder_name x)
@@ -1031,7 +1031,7 @@ let rec string_term_inf inf i x =
         if try (snd(inf)) name with _ -> false
 	then 
 	    string_infix 
-              (cfun_string (Hident.string_of name))
+              (cfun_string (Ident.string_of name))
 	      (List.map (string_term_inf inf ti) args)
 	else 
 	    ("("^(string_term_inf inf i f)^" "

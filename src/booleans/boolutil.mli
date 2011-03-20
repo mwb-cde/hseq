@@ -78,7 +78,7 @@ val fresh_thm: Logic.thm -> bool
     the current global scope).
 *)
 
-val get_type_name: Basic.gtype -> Hident.t
+val get_type_name: Basic.gtype -> Ident.t
 (** [get_type_name ty]: Get the identifier of the constructor of type
     [ty].
 *)
