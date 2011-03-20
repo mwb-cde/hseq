@@ -143,7 +143,7 @@ hseqtop_SOURCES=unsafe init cli
 
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=<all .mli files and all built .cmi files>
-INSTALL_HEADERS=unsafe.cmi cli.cmi init.cmi
+#INSTALL_HEADERS=unsafe.cmi cli.cmi init.cmi
 
 # INSTALL_EXTRA_LIBRARIES: Additional files to install with the
 # libraries. Extra headers belong in this list.
@@ -166,22 +166,6 @@ INSTALL_EXTRA_LIBRARIES=hseqstart.ml
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
-
-
-#####
-# Default settings
-
-# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
-
-# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
-#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
-
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
-#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

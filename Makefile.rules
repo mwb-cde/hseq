@@ -613,10 +613,11 @@ else
 lm-module-install-headers:=\
 $$(foreach lib,$$(lm-module-install-libs),\
 	$$(if $$(findstring undefined,$$(origin $$(lib)_HEADERS)),\
-		$$(foreach src,$$($$(lib)_HEADERS),\
-			$$(call interface,$$(src)) $$(call header,$$(src))), \
 		$$(foreach src,$$($$(lib)_SOURCES),\
+			$$(call interface,$$(src)) $$(call header,$$(src))),\
+		$$(foreach src,$$($$(lib)_HEADERS),\
 			$$(call interface,$$(src)) $$(call header,$$(src)))))
+
 endif # INSTALL_LIBRARIES
 
 # List of packings to install.
