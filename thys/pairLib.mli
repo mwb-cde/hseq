@@ -40,7 +40,7 @@ open HSeq
 val pair_thy : string
 (** [pair_thy]: The name of the theory of pairs *)
 
-val pair_id : Ident.t
+val pair_id : Hident.t
 (** [pair_id] The identifier of the pair constructor *)
 
 (** 

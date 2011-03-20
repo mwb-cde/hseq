@@ -28,21 +28,16 @@ HSEQLIB=lib
 ##
 
 # CONFIGDIR: The configuration directory
-CONFIGDIR ?= ../config
+CONFIGDIR ?= ..
 
 # CONFIGFILE: Configuration data file 
 CONFIGFILE = $(CONFIGDIR)/data.make
 
-# SUBCONFIGDIR: The configuration directory for sub-directories
-# (relative to a subdirectory)
-SUBCONFIGDIR ?= ../config
-
-# SRCDIR: The source directory
-SRCDIR ?= ../src
 
 # LIBDIR: The location of the compiled files
-
-LIBDIR ?= $(SRCDIR)/lib
+OBJ_ROOT?=../obj
+LIBDIR ?= $(OBJ_ROOT)/lib
+BINDIR ?= $(OBJ_ROOT)/bin
 
 ###
 # Configuration variables
@@ -82,13 +77,6 @@ HTMLDIR ?= $(IDOCDIR)/html
 INFODIR ?= $(IDOCDIR)/info
 
 ##
-# Read command definitions
-##
-
-include $(CONFIGDIR)/Makefile.os
-
-
-##
 # Build commands
 ##
 
@@ -119,10 +107,10 @@ MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
 INCLUDE = --include $(LIBDIR)
 
 # OPTIONS: Compiler options
-OPTIONS = -I $(LIBDIR) -I $(SRCDIR)
+OPTIONS = -I $(LIBDIR) 
 
 # HSEQC: The hseq compiler
-HSEQC = $(SRCDIR)/$(HSEQB) --bin $(SRCDIR)/$(HSEQ) $(INCLUDE)
+HSEQC = $(BINDIR)/$(HSEQB) --bin $(BINDIR)/$(HSEQ) $(INCLUDE)
 
 ###
 # Required build targets

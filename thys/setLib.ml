@@ -22,18 +22,18 @@
 open HSeq
 
 let set_thy = "Set"
-let set_id = Ident.mk_long set_thy "SET"
+let set_id = Hident.mk_long set_thy "SET"
 let set_data = (Printer.default_term_fixity, Printer.default_term_prec)
 let set_ty ()= 
-  Gtypes.mk_def (Ident.mk_long set_thy "set") [Gtypes.mk_null()]
+  Gtypes.mk_def (Hident.mk_long set_thy "set") [Gtypes.mk_null()]
 
-let single_id = Ident.mk_long set_thy "single"
+let single_id = Hident.mk_long set_thy "single"
 let single_data = (Printer.default_term_fixity, Printer.default_term_prec)
 
-let empty_id = Ident.mk_long set_thy "empty"
+let empty_id = Hident.mk_long set_thy "empty"
 let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
 
-let add_id = Ident.mk_long set_thy "add"
+let add_id = Hident.mk_long set_thy "add"
 
 module SetPP =
   struct
@@ -52,7 +52,6 @@ module SetPP =
     let set_parser () =
       let ocb_tok = Sym(OTHER ocb_sym)
       and ccb_tok = Sym(OTHER ccb_sym)
-(*      and semicolon = Sym(OTHER semicolon_sym) *)
       in 
       let wrapper t = 
 	let id_term = Pterm.mk_ident set_id
@@ -88,9 +87,6 @@ module SetPP =
 		  [ 
 		    set_body inf; 
 		    set_list inf
-(*
-   ((form inf) >> (fun t -> Pterm.mk_app (Pterm.mk_ident single_id) t))
-*)
 		  ]))
 	      >>
 	    (fun s -> Lib.get_option s (empty_term()));

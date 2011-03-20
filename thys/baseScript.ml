@@ -74,7 +74,7 @@ let _ =
   in 
   declare
     (Commands.read_unchecked 
-       ((Ident.name_of Lterm.notid)^": bool -> bool"))
+       ((Hident.name_of Lterm.notid)^": bool -> bool"))
     ~pp:(prec, fixity, Some "~");;
 
 let _ = 
@@ -87,13 +87,13 @@ let _ =
 let _ =
 declare
 (Commands.read_unchecked 
-   ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
+   ((Hident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
   ~pp:(200, infixl, (Some "="));;
 
 (** Conjunction *)
 let _ =
 declare
-(Commands.read_unchecked ((Ident.name_of Lterm.andid)^":bool->bool->bool"))
+(Commands.read_unchecked ((Hident.name_of Lterm.andid)^":bool->bool->bool"))
   ~pp:(185, infixr, Some "and");; 
 
 let _ = add_term_pp "and" 185 infixr (Some "&");;
@@ -101,7 +101,7 @@ let _ = add_term_pp "and" 185 infixr (Some "&");;
 (** Disjunction *)
 let or_def =
 define
-(Commands.read_defn ((Ident.name_of Lterm.orid)
+(Commands.read_defn ((Hident.name_of Lterm.orid)
 	    ^" x y = (not ((not x) and (not y)))"))
   ~pp:(190, infixr, Some "or");;
 
@@ -110,7 +110,7 @@ let _ = add_term_pp "or" 190 infixr (Some "|");;
 (** Implication *)
 let implies_def = 
 define
-(Commands.read_defn ((Ident.name_of Lterm.impliesid)
+(Commands.read_defn ((Hident.name_of Lterm.impliesid)
 	    ^" x y = (not x) or y"))
   ~pp:(195, infixr, Some "=>");;
 
@@ -118,7 +118,7 @@ define
 
 let iff_def = 
 define
-(Commands.read_defn ((Ident.name_of Lterm.iffid)
+(Commands.read_defn ((Hident.name_of Lterm.iffid)
 	    ^" x y = (x => y) and (y => x)"))
   ~pp:(180, infixn, Some "iff");;
 

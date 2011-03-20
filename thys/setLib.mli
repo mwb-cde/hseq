@@ -41,7 +41,7 @@ val set_thy: string
    [set_thy]: The name of the theory of sets.
 *)
 
-val set_id : Ident.t
+val set_id : Hident.t
 (**
    [set_id] The identifier of the set constructor
 *)
@@ -56,7 +56,7 @@ val set_data:(Printer.fixity* int)
 
    [empty_data] PP data for the empty set.
 *)
-val empty_id : Ident.t
+val empty_id : Hident.t
 val empty_data:(Printer.fixity* int)
 
 

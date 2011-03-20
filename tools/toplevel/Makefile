@@ -242,8 +242,9 @@ EXTRA_CLEAN=$(RM) hseq
 
 hseq_CUSTOM_BUILD=yes
 hseq:
-	ocamlmktop -custom -I $(OBJ_ROOT)/lib -I +camlp4 -o hseq \
+	ocamlmktop -custom -I $(OBJ_ROOT)/lib -I +camlp4 \
 		nums.cma unix.cma dynlink.cma camlp4o.cma \
+		-o hseq \
 		hseq.cma tpquote.cma hseqtop.cma
 
 
