@@ -35,6 +35,8 @@
    --basedir: the install directory
    --bindir: the executables directory
    --libdir: the libraries directory.
+   --docdir: the documenation directory.
+   --datadir: the data directory (not used).
    --thys: the theories directory.
    --fast: whether to use the optimised compiler (ocamlc.opt)
    --native: whether to build the native code library (ocamlopt.opt)
@@ -87,6 +89,8 @@ let basedir = ref None
 let srcdir = ref (Some(Sys.getcwd()))
 let bindir = ref None
 let libdir = ref None
+let docdir = ref None
+let datadir = ref None
 let thysdir = ref None
 let output = ref None
 let fast_compilers = ref None
@@ -122,6 +126,10 @@ struct
     get_opt !libdir (filename (basedir_d()) "lib")
   let thysdir_d () = 
     get_opt !thysdir (filename (libdir_d()) "thys")
+  let docdir_d () = 
+    get_opt !docdir (filename (basedir_d()) "doc")
+  let datadir_d () = 
+    get_opt !datadir (filename (basedir_d()) "share/hseq-data")
 end
 
 (** The standard Win32 values **)
@@ -139,6 +147,10 @@ struct
     filename (basedir_d()) "lib"
   let thysdir_d () = 
     filename (libdir_d()) "thys"
+  let docdir_d () = 
+    filename (basedir_d()) "doc"
+  let datadir_d () = 
+    filename (basedir_d()) "hseq-data"
 end
 
 
@@ -166,6 +178,16 @@ let thysdir_d () =
    match os_type with
      "Win32" -> Windows.thysdir_d()
      | _ -> Unix.thysdir_d()
+
+let docdir_d () = 
+   match os_type with
+     "Win32" -> Windows.docdir_d()
+     | _ -> Unix.docdir_d()
+
+let datadir_d () = 
+   match os_type with
+     "Win32" -> Windows.datadir_d()
+     | _ -> Unix.datadir_d()
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
@@ -207,10 +229,12 @@ let varlist =
   [
     ("SrcDir", srcdir, srcdir_d);
     ("Bin", bin, bin_d);
-    ("BinDir", bindir, bindir_d);
     ("BaseDir", basedir, basedir_d);
+    ("BinDir", bindir, bindir_d);
     ("LibDir", libdir, libdir_d);
     ("ThyDir", thysdir, thysdir_d);
+    ("DocDir", docdir, docdir_d);
+    ("DataDir", datadir, datadir_d);
     ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
  ]
 
@@ -309,6 +333,10 @@ let arglist =
        "<dir> The libraries directory ["^(libdir_d())^"]");
       ("--thydir", Arg.String (set thysdir), 
        "<dir> The theories directory ["^(thysdir_d())^"]");
+      ("--docdir", Arg.String (set docdir), 
+       "<dir> The documentation directory ["^(docdir_d())^"]");
+      ("--datadir", Arg.String (set datadir), 
+       "<dir> The data directory ["^(datadir_d())^"]");
       ("--fast", Arg.Bool set_fast_compilers, 
        "[true|false] Use the fast compilers (ocamlc.opt) ["
        ^(fast_compilers_d())^"]");
