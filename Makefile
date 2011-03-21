@@ -199,6 +199,28 @@ EXTRA_DISTCLEAN=$(RM) configure.data data.make
 #SUBDIR_MAKE_OPTIONS=
 SUBDIR_MAKE_OPTIONS=
 
+####
+# Installation targets
+
+# Default target
+.PHONY: toplevel_target
+toplevel_target: all
+
+# CUSTOM_TARGET_install: If defined, use a custom install target.
+CUSTOM_TARGET_install=
+
+lm-file-permissions=755
+
+.PHONY: toplevel_target install-bin install-lib install-data install-doc
+install-bin: install-toplevel-bin
+install-lib: install-toplevel-lib
+install-data: install-toplevel-data
+install-doc: install-toplevel-doc
+
+install: build install-toplevel-bin install-toplevel-lib \
+	install-toplevel-doc install-toplevel-data
+
+
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
 ######################################################################

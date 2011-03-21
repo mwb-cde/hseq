@@ -238,6 +238,9 @@
 # CUSTOM_TARGET_build: If defined, use a custom build target.
 #CUSTOM_TARGET_build=
 
+# CUSTOM_TARGET_install: If defined, use a custom install target.
+#CUSTOM_TARGET_install=
+
 
 #####
 # Default settings

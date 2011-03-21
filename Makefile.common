@@ -65,8 +65,14 @@ COPYTO=install
 endif
 endif
 
+# INSTALL: Install one or more files
+export INSTALL?=install
+
 # COPY: Copy one or more files
 export COPY?=cp -f
+
+# CHMOD: Set file permissions.
+export CHMOD?=chmod
 
 # RM: Delete one or more files
 export RM?=rm -f
@@ -193,6 +199,7 @@ export lm-installdir-lib=$(LibDir)
 else
 export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
 endif
+$(info lm-installdir-lib=$(lm-installdir-lib))
 
 $(lm-objdir-lib):
 	$(MKDIR) $(lm-objdir-lib)
@@ -213,6 +220,7 @@ export lm-installdir-bin=$(BinDir)
 else
 export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
 endif
+$(info lm-installdir-bin=$(lm-installdir-bin))
 
 $(lm-objdir-bin):
 	$(MKDIR) $(lm-objdir-bin)
@@ -222,7 +230,7 @@ $(lm-installdir-bin):
 
 #
 # lm-data-dirname: Shared data
-lm-data-dirname:=share
+lm-data-dirname:=share/hseq-data
 
 # lm-objdir-data: Data directory in staging directory
 export lm-objdir-data=$(OBJ_ROOT)/$(lm-data-dirname)
@@ -233,6 +241,7 @@ export lm-installdir-data=$(DataDir)
 else
 export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
 endif
+$(info lm-installdir-data=$(lm-installdir-data))
 
 $(lm-objdir-data):
 	$(MKDIR) $(lm-objdir-data)
@@ -242,7 +251,7 @@ $(lm-installdir-data):
 
 #
 # lm-doc-dirname: Shared doc
-lm-doc-dirname:=share/doc
+lm-doc-dirname:=share/hseq-doc
 
 # lm-objdir-doc: Doc directory in staging directory
 export lm-objdir-doc=$(OBJ_ROOT)/$(lm-doc-dirname)
@@ -288,6 +297,38 @@ export lm-objdir-code=$(OBJ_ROOT)/$(lm-code-dirname)
 
 $(lm-objdir-code):
 	$(MKDIR) $(lm-objdir-code)
+
+#########
+# Toplevel installation targets
+
+
+.PHONY: install-toplevel-bin
+install-toplevel-bin: 
+	-$(MKDIR) $(lm-installdir-bin)
+	$(COPY) -r $(lm-objdir-bin)/* $(lm-installdir-bin)
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-bin)
+
+.PHONY: install-toplevel-lib
+install-toplevel-lib: 
+	-$(MKDIR) $(lm-installdir-lib)
+	$(COPY) -r $(lm-objdir-lib)/* $(lm-installdir-lib)
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
+
+.PHONY: install-toplevel-doc
+install-toplevel-doc: 
+	if [ -d $(lm-objdir-doc) ] ; then \
+	$(INSTALL) -d $(lm-installdir-doc) ; \
+	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
+	fi 
+
+.PHONY: install-toplevel-data
+install-toplevel-data:
+	if [ -d $(lm-objdir-data) ] ; then \
+	$(INSTALL) -d $(lm-installdir-data) ; \
+	$(COPY) -r $(lm-objdir-data)/* $(lm-installdir-data) ; \
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-data) ;\
+	fi
 
 ####
 # HSeq building variables

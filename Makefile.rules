@@ -995,11 +995,16 @@ distclean: clean libclean
 ###
 # Toplevel targets
 
-ifneq ($(strip CUSTOM_TARGET_build),no)
 .PHONY: build
+ifneq ($(strip CUSTOM_TARGET_build),yes)
 build: build-objdir build-subdirs \
 	build-bytelibs build-programs build-packings \
 	module-install-objdir
+endif
+
+.PHONY: install
+ifneq ($(strip CUSTOM_TARGET_install),yes)
+install: build
 endif
 
 ##

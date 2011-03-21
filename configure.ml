@@ -113,7 +113,7 @@ let os_type = Sys.os_type
 (** The default Unix values **)
 module Unix=
 struct
-  let prefix_d () = "/usr/local"
+  let prefix_d () = "/usr/local/lib/hseq"
   let basedir_d () = 
     get_opt !basedir (prefix_d())
   let bindir_d () = 
