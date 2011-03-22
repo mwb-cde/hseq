@@ -405,6 +405,126 @@ endef
 ########
 
 ########
+# library-targets-template($1): Targets for library $(1).
+define library-targets-template
+
+$$(info Build variables for library $(1))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+$$(info $(1)_BYTELIBS=$$($(1)_BYTELIBS))
+$$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-lib-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-lib-$(1)-headers=$$($(1)_SOURCES)
+endif
+$$(info lm-lib-$(1)-headers=$$(lm-lib-$(1)-headers))
+
+lm-lib-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-lib-$(1)-headers),$$(call interface,$$(src)))
+$$(info lm-lib-$(1)-interfaces=$$(lm-lib-$(1)-interfaces))
+
+lm-lib-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$$(info lm-lib-$(1)-objects=$$(lm-lib-$(1)-objects))
+
+lm-lib-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
+	$$($(1)_BYTELIBS)
+$$(info lm-lib-$(1)-libs=$$(lm-lib-$(1)-libs))
+
+lm-lib-$(1)-natlibs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
+	$$($(1)_NATLIBS)
+$$(info lm-lib-$(1)-natlibs=$$(lm-lib-$(1)-natlibs))
+
+lm-lib-$(1)-libname:=$(call bytelib,$(1))
+$$(info lm-lib-$(1)-libname=$$(lm-lib-$(1)-libname))
+
+lm-lib-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-lib-$(1)-ocamlc-options=$$(lm-lib-$(1)-ocamlc-options))
+
+lm-lib-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-lib-$(1)-link-options=$$(lm-lib-$(1)-link-options))
+
+lm-lib-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-lib-$(1)-ocamldep-options=$$(lm-lib-$(1)-ocamldep-options))
+
+lm-lib-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
+
+###
+# Preprocessor rules
+#$$(addsuffix .ml,$$($(1)_SOURCES)): $$(addsuffix .mlp,$$($(1)_SOURCES))
+#	$(OCAMLCPP) $$(lm-lib-$(1)-ocamlcpp-optins) -impl $$< -o $$@
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(addsuffix .cmi,$$(lm-lib-$(1)-headers)): $$(addsuffix .mli,$$(lm-lib-$(1)-headers))
+	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(info Bytecode object files: $$(addsuffix .cmo,$$($(1)_SOURCES)))
+$$(addsuffix .cmo,$$($(1)_SOURCES)): $$(addsuffix .ml,$$($(1)_SOURCES))
+	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+
+# Bytecode library.
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+$$(lm-lib-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
+	$$(info Linking $(lm-lib-$(1)-libname))
+	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
+		-o $$(lm-lib-$(1)-libname) \
+		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects) 
+endif
+
+# Bytecode library in staging directory.
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+$$(lm-module-lib-dir)/$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-libname) \
+						$$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
+endif
+
+###
+# Toplevel rules
+
+# build
+lm-lib-$(1)-target:=$$(lm-lib-$(1)-libname)
+$$(info lm-lib-$(1)-target=$$(lm-lib-$(1)-target))
+
+.PHONY: build-lib-$(1)
+build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
+
+.PHONY: build-bytelib-$(1)
+build-bytelib-$(1): build-lib-$(1)
+
+# clean
+.PHONY: clean-lib-$(1)
+clean-lib-$(1):
+	$$(RM) $$(lm-lib-$(1)-libname)
+	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects)
+
+# libclean
+.PHONY: libclean-lib-$(1)
+libclean-lib-$(1): clean-lib-$(1)
+	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects) $$(lm-lib-$(1)-libname)
+
+# distclean
+.PHONY: build-lib-$(1)
+distclean-lib-$(1): libclean-$(1)
+	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects) $$(lm-lib-$(1)-libname)
+
+endef
+########
+
+########
 # build-packing-template($1): Build packing objects for $(1) from
 # names in $(1)_SOURCES
 define build-packing-template
@@ -702,6 +822,13 @@ lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 	lm-$(1)-module-install-doc
 endif
 
+## Copying
+$$(lm-module-lib-dir)/%: % $$(lm-module-lib-dir)
+	$$(COPY) % $$(lm-module-lib-dir)
+
+$$(lm-module-bin-dir)/%: % $$(lm-module-bin-dir)
+	$$(COPY) % $$(lm-module-bin-dir)
+
 # Install directories
 .PHONY: lm-$(1)-module-install-lib
 ifneq ($$(strip $$(lm-module-install-libfiles)),)
@@ -916,6 +1043,9 @@ $(eval $(call subdir-targets-template,$(sub))))
 # Instantiate bytelib build targets for each target.
 $(foreach lib,$(LIBRARIES),\
 $(eval $(call build-bytelib-template,$(lib))))
+
+#$(foreach lib,$(LIBRARIES),\
+#$(eval $(call library-targets-template,$(lib))))
 
 ##
 # Instantiate build targets for byte-code programs
