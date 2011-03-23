@@ -468,12 +468,12 @@ $$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
 # Bytecode rules
 
 # Interfaces
-$$(addsuffix .cmi,$$(lm-lib-$(1)-headers)): $$(addsuffix .mli,$$(lm-lib-$(1)-headers))
+$$(addsuffix .cmi,$$(lm-lib-$(1)-headers)): %.cmi: %.mli
 	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
 
 # Bytecode object files
 $$(info Bytecode object files: $$(addsuffix .cmo,$$($(1)_SOURCES)))
-$$(addsuffix .cmo,$$($(1)_SOURCES)): $$(addsuffix .ml,$$($(1)_SOURCES))
+$$(addsuffix .cmo,$$($(1)_SOURCES)): %.cmo: %.ml
 	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
 
 # Bytecode library.
@@ -486,10 +486,23 @@ $$(lm-lib-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
 endif
 
 # Bytecode library in staging directory.
+.PHONY: install-objdir-lib-$(1)
+
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
 $$(lm-module-lib-dir)/$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-libname) \
 						$$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
+	$$(COPY) $$(addsuffix .mli,$$(lm-lib-$(1)-headers)) $$(lm-module-lib-dir)
 	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
+
+install-objdir-lib-$(1): $$(lm-module-lib-dir) $$(lm-lib-$(1)-libname) \
+		$$(lm-lib-$(1)-interfaces)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
+	$$(COPY) $$(addsuffix .mli,$$(lm-lib-$(1)-headers)) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
+else
+install-objdir-lib-$(1):
+
 endif
 
 ###
@@ -1041,11 +1054,11 @@ $(eval $(call subdir-targets-template,$(sub))))
 
 ##
 # Instantiate bytelib build targets for each target.
-$(foreach lib,$(LIBRARIES),\
-$(eval $(call build-bytelib-template,$(lib))))
-
 #$(foreach lib,$(LIBRARIES),\
-#$(eval $(call library-targets-template,$(lib))))
+#$(eval $(call build-bytelib-template,$(lib))))
+
+$(foreach lib,$(LIBRARIES),\
+$(eval $(call library-targets-template,$(lib))))
 
 ##
 # Instantiate build targets for byte-code programs
