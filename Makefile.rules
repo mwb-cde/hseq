@@ -314,31 +314,6 @@ endef
 ########
 
 ########
-# build-header-template($1): Build headers for $(1) from names in $(1)_SOURCES
-define build-header-template
-
-# Calculate the headers
-ifneq ($$(origin $(1)_HEADERS),undefined)
-lm-$(1)-headers=$$($(1)_HEADERS)
-else
-lm-$(1)-headers=$$(($1)_SOURCES)
-endif
-
-.PHONY: build-headers-$(1)
-build-headers-$(1): $$(call interface,$$(lm-$(1)-headers))
-endef
-########
-
-########
-# build-bytecode-template($1): Build byte-code objects for $(1) from
-# names in $(1)_SOURCES
-define build-bytecode-template
-.PHONY: build-bytecode-$(1)
-build-bytecode-$(1): $$(call bytecode,$(1)_SOURCES)
-endef
-########
-
-########
 # library-targets-template($1): Targets for library $(1).
 define library-targets-template
 
@@ -988,19 +963,6 @@ module-install-$(1): $$(lm-module-install-$(1)-target)
 endef
 ########
 
-########
-# build-natcode-template($1): Build native-code objects for $(1) from
-# names in $(1)_SOURCES.
-define build-natcode-template
-natlib_$(1)_objects=$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
-natlib_$(1)_libs=$$($(1)_NATLIBS) $$(foreach src,$$($(1)_SOURCES),$$(call natlib,$$(src)))
-$(call natlib,$(1)): 
-	$$(OCAMLNATLINK) $$(OCAMLNATLINK_FLAGS) -o $(call natlib, $1) \
-		$$(natlib_$(1)_libs) $$(natlib_$(1)_objects)
-.PHONY: build-natcode-$(1)
-build-natcode-$(1): $(call natlib,$(1))
-endef
-########
 
 ########
 # build-byteprog-template($1): Build byte-code program for $(1) from
