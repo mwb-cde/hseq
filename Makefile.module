@@ -160,7 +160,8 @@
 # object_PACK_NAME: Name of pack to build, if different from [object].
 #object_PACK_NAME=
 
-# object_PACK_DIR: Directory to use for packing.
+# object_PACK_DIR: Directory to use for packing (required when for
+#packed libraries (PACKED) and for packing groups (PACKING)). 
 #object_PACK_DIR=
 
 # object_GROUPS: List of packing groups to use for packed library [object]

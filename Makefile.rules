@@ -423,6 +423,8 @@ lm-lib-$(1)-headers=$$($(1)_SOURCES)
 endif
 $$(info lm-lib-$(1)-headers=$$(lm-lib-$(1)-headers))
 
+lm-lib-$(1)-mlheaders:=$$(foreach src,$$(lm-lib-$(1)-headers),\
+				$$(call header,$$(src)))
 lm-lib-$(1)-interfaces:=\
 	$$(foreach src,$$(lm-lib-$(1)-headers),$$(call interface,$$(src)))
 $$(info lm-lib-$(1)-interfaces=$$(lm-lib-$(1)-interfaces))
@@ -492,13 +494,13 @@ ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
 $$(lm-module-lib-dir)/$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-libname) \
 						$$(lm-module-lib-dir)
 	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
-	$$(COPY) $$(addsuffix .mli,$$(lm-lib-$(1)-headers)) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-lib-dir)
 	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
 
 install-objdir-lib-$(1): $$(lm-module-lib-dir) $$(lm-lib-$(1)-libname) \
 		$$(lm-lib-$(1)-interfaces)
 	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
-	$$(COPY) $$(addsuffix .mli,$$(lm-lib-$(1)-headers)) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-lib-dir)
 	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
 else
 install-objdir-lib-$(1):
@@ -549,6 +551,8 @@ else
 packing-$(1)-headers=$$($(1)_SOURCES)
 endif
 
+packing-$(1)-mlheaders:=$$(foreach src,$$(packing-$(1)-headers),\
+				$$(call header,$$(src)))
 packing-$(1)-interfaces:=$$(foreach src,$$(packing-$(1)-headers),\
 				$$(call interface,$$(src)))
 packing-$(1)-sources:=$$(foreach src,$$($(1)_SOURCES),$$(call mlcode,$$(src)))
@@ -635,6 +639,187 @@ $$(info target build-packing-$(1))
 .PHONY: build-packing-$(1)
 build-packing-$(1): $$(packing-$(1)-interfaces) $$(packing-$(1)-targets) \
 			$$(packing-$(1)-filelist)
+endef
+########
+
+########
+# packing-targets-template($1): Targets for packing $(1).
+# Requires $(1)_PACK_DIR to be defined.
+define packing-targets-template
+
+# Print variables
+$$(info Packing group $(1) build variables)
+$$(info $(1)_PACK_DIR=$$($(1)_PACK_DIR) (required))
+$$(info $(1)_PACK_GROUP=$$($(1)_PACK_GROUP))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+
+# Packing directory is required.
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+lm-packing-$(1)-dirprefix=$$($(1)_PACK_DIR)/
+else
+$$(error Variable $(1)_PACK_DIR must be defined for packing group $(1).)
+endif
+
+# If the group name is not specified, it is the same as the
+# subdirectory being built.
+ifeq ($$(strip $$($(1)_PACK_GROUP)),)
+lm-packing-$(1)-group=$$(lastword $$(subst /, ,$$(CURDIR)))
+else
+lm-packing-$(1)-group=$$($(1)_PACK_GROUP)
+endif
+$$(info Packing group name $$(lm-packing-$(1)-group))
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-packing-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-packing-$(1)-headers=$$($(1)_SOURCES)
+endif
+$$(info lm-packing-$(1)-headers=$$(lm-packing-$(1)-headers))
+
+
+# Sources and libraries
+lm-packing-$(1)-mlheaders:=\
+	$$(foreach src,$$(lm-packing-$(1)-headers),$$(call header,$$(src)))
+$$(info lm-packing-$(1)-mlheaders=$$(lm-packing-$(1)-mlheaders))
+
+lm-packing-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-packing-$(1)-headers),$$(call interface,$$(src)))
+$$(info lm-packing-$(1)-interfaces=$$(lm-packing-$(1)-interfaces))
+
+lm-packing-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$$(info lm-packing-$(1)-objects=$$(lm-packing-$(1)-objects))
+
+lm-packing-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
+	$$($(1)_BYTELIBS)
+$$(info lm-packing-$(1)-libs=$$(lm-packing-$(1)-libs))
+
+lm-packing-$(1)-natlibs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
+	$$($(1)_NATLIBS)
+$$(info lm-packing-$(1)-natlibs=$$(lm-packing-$(1)-natlibs))
+
+lm-packing-$(1)-libname:=$(call bytelib,$(1))
+$$(info lm-packing-$(1)-libname=$$(lm-packing-$(1)-libname))
+
+# The name of the file in which to store the packing group object list.
+lm-packing-$(1)-filelist:=\
+$$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-filename)$$(lm-packing-$(1)-group))
+$$(info lm-packing-$(1)-filelist=$$(lm-packing-$(1)-filelist))
+
+# Build options
+lm-packing-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	-I $$($(1)_PACK_DIR) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-packing-$(1)-ocamlc-options=$$(lm-packing-$(1)-ocamlc-options))
+
+lm-packing-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-packing-$(1)-link-options=$$(lm-packing-$(1)-link-options))
+
+lm-packing-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-packing-$(1)-ocamldep-options=$$(lm-packing-$(1)-ocamldep-options))
+
+lm-packing-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-packing-$(1)-ocamlcpp-options=$$(lm-packing-$(1)-ocamlcpp-options))
+
+###
+# Preprocessor rules
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-packing-$(1)-interfaces): %.cmi: %.mli
+	$(OCAMLC) $$(lm-packing-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(lm-packing-$(1)-objects): %.cmo: %.ml
+	$(OCAMLC) $$(lm-packing-$(1)-ocamlc-options) -c $$<
+
+# Packing directory targets
+lm-packing-$(1)-targets:=$$(foreach obj,$$(lm-packing-$(1)-objects),\
+	$$(lm-packing-$(1)-dirprefix)$$(obj))
+$$(info lm-packing-$(1)-targets = $$(lm-packing-$(1)-targets))
+
+# Build rule to make the packing directory.
+$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
+
+# Build rule to generate the file list.
+$$(lm-packing-$(1)-filelist): $$(lm-packing-$(1)-dirprefix)
+	echo -n "$$(lm-packing-$(1)-objects) "> $$(lm-packing-$(1)-filelist)
+
+$$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-objects) \
+		$$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-objects) $$($(1)_PACK_DIR)
+
+
+# Bytecode library.
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+$$(lm-packing-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
+	$$(info Linking $(lm-packing-$(1)-libname))
+	$$(OCAMLLINK) $$(lm-packing-$(1)-link-options) \
+		-o $$(lm-packing-$(1)-libname) \
+		$$(lm-packing-$(1)-libs) $$(lm-packing-$(1)-objects) 
+endif
+
+# Bytecode library in staging directory.
+.PHONY: install-objdir-packing-$(1)
+
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+$$(lm-module-lib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
+						$$(lm-module-lib-dir)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-packing-$(1)-libname) $$(lm-module-packing-dir)
+
+install-objdir-packing-$(1): $$(lm-module-lib-dir) $$(lm-packing-$(1)-libname) \
+		$$(lm-packing-$(1)-interfaces)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-packing-dir)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-packing-$(1)-packingname) $$(lm-module-lib-dir)
+else
+install-objdir-packing-$(1):
+
+endif
+
+###
+# Toplevel rules
+
+# build
+.PHONY: build-packing-$(1)
+build-packing-$(1): $$(lm-packing-$(1)-interfaces) \
+			$$(lm-packing-$(1)-targets) \
+			$$(lm-packing-$(1)-filelist)
+
+
+# clean
+.PHONY: clean-packing-$(1)
+clean-packing-$(1):
+	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-objects)
+	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-interfaces),\
+			$$(lm-packing-$(1)-dirprefix)/$$(file))
+	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-mlheaders),\
+			$$(lm-packing-$(1)-dirprefix)/$$(file))
+	-$$(RM) $$(lm-packing-$(1)-targets) $$(lm-packing-$(1)-filelist)
+	-$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR)
+
+# libclean
+.PHONY: packingclean-packing-$(1)
+libclean-packing-$(1): clean-packing-$(1)
+
+# distclean
+.PHONY: dist-packing-$(1)
+distclean-packing-$(1): libclean-$(1)
+
+
 endef
 ########
 
@@ -1067,8 +1252,11 @@ $(eval $(call build-byteprog-template,$(prog))))
 
 ##
 # Instantiate packings build targets for each target.
+#$(foreach lib,$(PACKING),\
+#$(eval $(call build-packing-template,$(lib))))
+
 $(foreach lib,$(PACKING),\
-$(eval $(call build-packing-template,$(lib))))
+$(eval $(call packing-targets-template,$(lib))))
 ##
 
 # Instantiate packed build targets for each target.
@@ -1117,7 +1305,9 @@ build-packings: $(foreach lib,$(PACKED),build-packed-$(lib) )
 # Clean up
 ###
 
-clean: 
+
+clean: $(foreach lib,$(LIBRARIES),clean-lib-$(lib)) \
+	$(foreach group,$(PACKING),clean-packing-$(group))
 	$(foreach subdir, $(SUBDIRS), \
 		$(MAKE) -C $(subdir) clean; )
 	-$(RM) *.cmo *.cmx *.o *~
