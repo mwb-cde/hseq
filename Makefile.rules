@@ -400,17 +400,17 @@ endif
 .PHONY: install-objdir-lib-$(1)
 
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-$$(lm-module-lib-dir)/$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-libname) \
-						$$(lm-module-lib-dir)
-	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
+$$(lm-module-objlib-dir)/$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-libname) \
+						$$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-objlib-dir)
 
-install-objdir-lib-$(1): $$(lm-module-lib-dir) $$(lm-lib-$(1)-libname) \
+install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-libname) \
 		$$(lm-lib-$(1)-interfaces)
-	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-libname) $$(lm-module-objlib-dir)
 else
 install-objdir-lib-$(1):
 
@@ -580,17 +580,17 @@ endif
 .PHONY: install-objdir-packing-$(1)
 
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-$$(lm-module-lib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
-						$$(lm-module-lib-dir)
-	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-lib-dir)
+$$(lm-module-objlib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
+						$$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
 	$$(COPY) $$(lm-packing-$(1)-libname) $$(lm-module-packing-dir)
 
-install-objdir-packing-$(1): $$(lm-module-lib-dir) $$(lm-packing-$(1)-libname) \
+install-objdir-packing-$(1): $$(lm-module-objlib-dir) $$(lm-packing-$(1)-libname) \
 		$$(lm-packing-$(1)-interfaces)
 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-packing-dir)
-	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-packing-$(1)-packingname) $$(lm-module-lib-dir)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-packing-$(1)-packingname) $$(lm-module-objlib-dir)
 else
 install-objdir-packing-$(1):
 
@@ -804,12 +804,21 @@ endef
 # $(2) with build target $(1).
 define install-module-template
 
-# List of required directories
-lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)
-lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)
-lm-module-code-dir:=$(2)/$$(lm-code-dirname)
-lm-module-data-dir:=$(2)/$$(lm-data-dirname)
-lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)
+###
+# Directories
+
+# Staging directories
+lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)
+lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)
+lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)
+lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)
+lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)
+
+# Installation directories
+lm-module-finallib-dir:=$$(lm-installdir-lib)
+lm-module-finalbin-dir:=$$(lm-installdir-bin)
+lm-module-finaldata-dir:=$$(lm-installdir-data)
+lm-module-finaldoc-dir:=$$(lm-installdir-doc)
 
 # List of libraries to install, use module definitions when given.
 ifneq ($$(origin INSTALL_LIBRARIES),undefined)
@@ -854,32 +863,26 @@ endif # INSTALL_PROGRAMS
 # Calculate binary files to install
 lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS)
 
-# Calculate code files to install
-lm-module-install-codefiles:=$$(lm-module-install-code)
-
 # Make sure that required directories exist.
 ifneq ($$(strip $$(MODULE_INSTALL_PATH)),)
-lm-module-lib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-bin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-code-dir:=$(2)/$$(lm-code-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-data-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-doc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
 
 # Has a distinct installation path
 ifneq ($$(strip $$(lm-module-install-libfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-lib-dir)))
+$$(eval $$(call make-dir-template,$$(lm-module-objlib-dir)))
 endif
 ifneq ($$(strip $$(lm-module-install-binfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-bin-dir)))
-endif
-ifneq ($$(strip $$(lm-module-install-codefiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-code-dir)))
+$$(eval $$(call make-dir-template,$$(lm-module-objbin-dir)))
 endif
 ifneq ($$(strip $$(lm-module-install-datafiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-data-dir)))
+$$(eval $$(call make-dir-template,$$(lm-module-objdata-dir)))
 endif
 ifneq ($$(strip $$(lm-module-install-docfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-doc-dir)))
+$$(eval $$(call make-dir-template,$$(lm-module-objdoc-dir)))
 endif
 endif # MODULE_INSTALL_PATH
 
@@ -894,11 +897,6 @@ lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 	lm-$(1)-module-install-bin
 endif
 
-ifneq ($$(strip $$(lm-module-install-codefiles)),)
-lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
-	lm-$(1)-module-install-code
-endif
-
 ifneq ($$(strip $$(lm-module-install-datafiles)),)
 lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 	lm-$(1)-module-install-data
@@ -909,17 +907,17 @@ lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
 endif
 
 ## Copying
-$$(lm-module-lib-dir)/%: % $$(lm-module-lib-dir)
-	$$(COPY) % $$(lm-module-lib-dir)
+$$(lm-module-objlib-dir)/%: % $$(lm-module-objlib-dir)
+	$$(COPY) % $$(lm-module-objlib-dir)
 
-$$(lm-module-bin-dir)/%: % $$(lm-module-bin-dir)
-	$$(COPY) % $$(lm-module-bin-dir)
+$$(lm-module-objbin-dir)/%: % $$(lm-module-objbin-dir)
+	$$(COPY) % $$(lm-module-objbin-dir)
 
 # Install directories
 .PHONY: lm-$(1)-module-install-lib
 ifneq ($$(strip $$(lm-module-install-libfiles)),)
-lm-$(1)-module-install-lib: $$(lm-module-lib-dir)
-	$$(COPY) $$(lm-module-install-libfiles) $$(lm-module-lib-dir)
+lm-$(1)-module-install-lib: $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-module-install-libfiles) $$(lm-module-objlib-dir)
 else
 lm-$(1)-module-install-lib:
 
@@ -927,32 +925,24 @@ endif
 
 .PHONY: lm-$(1)-module-install-bin
 ifneq ($$(strip $$(lm-module-install-binfiles)),)
-lm-$(1)-module-install-bin: $$(lm-module-bin-dir)
-	$$(COPY) $$(lm-module-install-binfiles) $$(lm-module-bin-dir)
+lm-$(1)-module-install-bin: $$(lm-module-objbin-dir)
+	$$(COPY) $$(lm-module-install-binfiles) $$(lm-module-objbin-dir)
 else
 lm-$(1)-module-install-bin:
 endif
 
-.PHONY: lm-$(1)-module-install-code
-ifneq ($$(strip $$(lm-module-install-codefiles)),)
-lm-$(1)-module-install-code: $$(lm-module-code-dir)
-	$$(COPY) $$(lm-module-install-codefiles) $$(lm-module-code-dir)
-else
-lm-$(1)-module-install-code:
-endif
-
 .PHONY: lm-$(1)-module-install-data
 ifneq ($$(strip $$(lm-module-install-datafiles)),)
-lm-$(1)-module-install-data: $$(lm-module-data-dir)
-	$$(COPY) $$(lm-module-install-datafiles) $$(lm-module-data-dir)
+lm-$(1)-module-install-data: $$(lm-module-objdata-dir)
+	$$(COPY) $$(lm-module-install-datafiles) $$(lm-module-objdata-dir)
 else
 lm-$(1)-module-install-data:
 endif
 
 .PHONY: lm-$(1)-module-install-doc
 ifneq ($$(strip $$(lm-module-install-docfiles)),)
-lm-$(1)-module-install-doc: $$(lm-module-doc-dir)
-	$$(COPY) $$(lm-module-install-docfiles) $$(lm-module-doc-dir)
+lm-$(1)-module-install-doc: $$(lm-module-objdoc-dir)
+	$$(COPY) $$(lm-module-install-docfiles) $$(lm-module-objdoc-dir)
 else
 lm-$(1)-module-install-doc: 
 endif
@@ -1045,10 +1035,10 @@ endif
 
 # Bytecode program in staging directory.
 .PHONY: install-objdir-prog-$(1)
-$$(lm-module-bin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
-						$$(lm-module-bin-dir)
-	$$(INSTALL) $$(lm-prog-$(1)-program) $$(lm-module-bin-dir)
-install-objdir-prog-$(1): $$(lm-module-bin-dir)/$$(lm-prog-$(1)-program)
+$$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
+						$$(lm-module-objbin-dir)
+	$$(INSTALL) $$(lm-prog-$(1)-program) $$(lm-module-objbin-dir)
+install-objdir-prog-$(1): $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program)
 
 
 ###
