@@ -157,10 +157,10 @@
 # object_PACK_GROUP: Name of packing group to build object for.
 #object_PACK_GROUP=
 
-# object_PACK_NAME: Name of pack to build, if different from [object].
+# object_PACK_NAME: Name of packed module to build (required for packed libraries).
 #object_PACK_NAME=
 
-# object_PACK_DIR: Directory to use for packing (required when for
+# object_PACK_DIR: Directory to use for packing (required for
 #packed libraries (PACKED) and for packing groups (PACKING)). 
 #object_PACK_DIR=
 

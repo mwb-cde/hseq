@@ -339,72 +339,6 @@ endef
 ########
 
 ########
-# build-bytelib-template($1): Build byte-code library for $(1) from
-# names in $(1)_SOURCES
-define build-bytelib-template
-
-# Bytecode libraries
-ifneq ($$(origin $(1)_HEADERS),undefined)
-bytelib-$(1)-headers=$$($(1)_HEADERS)
-else
-bytelib-$(1)-headers=$$($(1)_SOURCES)
-endif
-
-bytelib-$(1)-interfaces:=$$(foreach src,$$(bytelib-$(1)-headers),\
-				$$(call interface,$$(src)))
-bytelib-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
-bytelib-$(1)-libs:=\
-	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
-	$$($(1)_BYTELIBS)
-bytelib-$(1)-natlibs:=\
-	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
-	$$($(1)_NATLIBS)
-bytelib-$(1)-libname:=$(call bytelib,$(1))
-
-$$(info bytelib-$(1)-libname = $$(bytelib-$(1)-libname))
-$$(info bytelib-$(1)-interfaces = $$(bytelib-$(1)-interfaces))
-$$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
-$$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
-
-$$(info $(1)_LIBS = $$($(1)_LIBS))
-$$(info $(1)_BYTELIBS = $$($(1)_BYTELIBS))
-$$(info $(1)_NATLIBS = $$($(1)_NATLIBS))
-
-lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
-
-lm-file-link-options:=$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-link-options = $$(lm-file-link-options))
-
-lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
-$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
-
-lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
-$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
-
-# Build rule for the library.
-bytelib-$(1)-target:=$$(bytelib-$(1)-libname)
-$$(info bytelib-$(1)-target = $$(bytelib-$(1)-target))
-$$(info bytelib-$(1)-libs = $$(bytelib-$(1)-libs))
-$$(info bytelib-$(1)-objects = $$(bytelib-$(1)-objects))
-
-ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$$(bytelib-$(1)-libname): $$(bytelib-$(1)-objects)
-	$$(info Linking $(bytelib-$(1)-libname))
-	$$(OCAMLLINK) -o $$(bytelib-$(1)-libname) \
-		$$(bytelib-$(1)-libs) $$(bytelib-$(1)-objects) 
-endif
-
-# Build rule to call
-.PHONY: build-bytelib-$(1)
-build-bytelib-$(1): $$(bytelib-$(1)-interfaces) $$(bytelib-$(1)-target)
-endef
-########
-
-########
 # library-targets-template($1): Targets for library $(1).
 define library-targets-template
 
@@ -536,109 +470,6 @@ libclean-lib-$(1): clean-lib-$(1)
 distclean-lib-$(1): libclean-$(1)
 	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects) $$(lm-lib-$(1)-libname)
 
-endef
-########
-
-########
-# build-packing-template($1): Build packing objects for $(1) from
-# names in $(1)_SOURCES
-define build-packing-template
-
-# Bytecode libraries
-ifneq ($$(origin $(1)_HEADERS),undefined)
-packing-$(1)-headers=$$($(1)_HEADERS)
-else
-packing-$(1)-headers=$$($(1)_SOURCES)
-endif
-
-packing-$(1)-mlheaders:=$$(foreach src,$$(packing-$(1)-headers),\
-				$$(call header,$$(src)))
-packing-$(1)-interfaces:=$$(foreach src,$$(packing-$(1)-headers),\
-				$$(call interface,$$(src)))
-packing-$(1)-sources:=$$(foreach src,$$($(1)_SOURCES),$$(call mlcode,$$(src)))
-packing-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
-packing-$(1)-libs:=\
-	$$(foreach obj,$$($(1)_LIBS),$$(call packing,$$(obj))) \
-	$$($(1)_PACKING)
-packing-$(1)-natlibs:=\
-	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
-	$$($(1)_NATLIBS)
-
-
-ifneq ($$(strip $$($(1)_PACK_DIR)),)
-packing-$(1)-fileprefix=$$($(1)_PACK_DIR)/
-
-$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
-
-else
-packing-$(1)-fileprefix=
-endif
-
-# If the group name is not specified, it is the same as the
-# subdirectory being built.
-ifeq ($$(strip $$($(1)_PACK_GROUP)),)
-packing-$(1)-group=$$(lastword $$(subst /, ,$$(CURDIR)))
-else
-packing-$(1)-group=$$($(1)_PACK_GROUP)
-endif
-$$(info Building packing group $$(packing-$(1)-group))
-
-packing-$(1)-filelist:=\
-$$(strip $$(packing-$(1)-fileprefix)$$(lm-pack-filename)$$(packing-$(1)-group))
-
-# Packing
-
-$$(info packing-$(1)-filelist = $$(packing-$(1)-filelist))
-$$(info packing-$(1)-packname = $$(packing-$(1)-packname))
-$$(info packing-$(1)-interfaces = $$(packing-$(1)-interfaces))
-$$(info packing-$(1)-objects = $$(packing-$(1)-objects))
-$$(info packing-$(1)-libs = $$(packing-$(1)-libs))
-
-lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(if $$(strip $$($(1)_PACK_DIR)),-I $$($(1)_PACK_DIR)) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
-
-lm-file-ocamlnat-options:=-pack-for $$(packing-$(1)-packname) \
-	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-ocamlnat-options = $$(lm-file-ocamlnat-options))
-
-lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
-$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
-
-lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
-$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
-
-# Build rule for the targets
-$$(packing-$(1)-objects): $$(packing-$(1)-sources)
-
-ifneq ($$(strip $$($(1)_PACK_DIR)),)
-packing-$(1)-targets:=$$(foreach obj,$$(packing-$(1)-objects),\
-	$$(packing-$(1)-fileprefix)$$(obj))
-
-$$(packing-$(1)-targets): $$(packing-$(1)-objects) \
-		$$(packing-$(1)-interfaces) $$($(1)_PACK_DIR)
-	$$(COPY) $$(packing-$(1)-interfaces) $$($(1)_PACK_DIR)
-	$$(COPY) $$(packing-$(1)-objects) $$($(1)_PACK_DIR)
-else
-packing-$(1)-targets:=$$(packing-$(1)-objects)
-endif
-
-$$(info packing-$(1)-targets = $$(packing-$(1)-targets))
-$$(info packing-$(1)-libs = $$(packing-$(1)-libs))
-$$(info packing-$(1)-sources = $$(packing-$(1)-sources))
-$$(info packing-$(1)-objects = $$(packing-$(1)-objects))
-
-# Build rule to generate the file list.
-$$(packing-$(1)-filelist): $$(packing-$(1)-fileprefix)
-	echo -n "$$(packing-$(1)-objects) "> $$(packing-$(1)-filelist)
-
-# Build rule to call
-$$(info target build-packing-$(1))
-.PHONY: build-packing-$(1)
-build-packing-$(1): $$(packing-$(1)-interfaces) $$(packing-$(1)-targets) \
-			$$(packing-$(1)-filelist)
 endef
 ########
 
@@ -819,95 +650,177 @@ libclean-packing-$(1): clean-packing-$(1)
 .PHONY: dist-packing-$(1)
 distclean-packing-$(1): libclean-$(1)
 
-
 endef
 ########
 
 ########
-# include-pack-filelist-template: Generate an include directive for file $(1).
-define include-file-template
-$$(info Including $(1))
-include $(1)
-endef
-########
+# packed-targets-template($1): Targets for packed library $(1).
+# Requires $(1)_PACK_DIR to be defined.
+define packed-targets-template
 
-########
-# include-packing-filelist-template: Generate an include directive and
-# build-rule for the packing file for group $(2) in marshalling
-# directory $(1).
-define include-packing-file-template
-$$(info Adding build rule for '$(1)$$(lm-pack-filename)$(2)')
-$(1)$$(lm-pack-filename)$(2): 
-	$(MAKE) -C $(2) $$(lm-module-subdir-args) build-packing-$(2)
-endef
-########
+# Print variables
+$$(info Packed library $(1) build variables)
+$$(info $(1)_PACK_NAME=$$($(1)_PACK_NAME) (required))
+$$(info $(1)_PACK_DIR=$$($(1)_PACK_DIR) (required))
+$$(info $(1)_GROUPS=$$($(1)_GROUPS))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
 
-########
-# read-file-template: Set variable $(1) to the contents of file $(2).
-define read-file-template
-$$(info Setting $(1) to contents of file $(2))
-$$(info Set $(1)=$(2))
-endef
-########
-
-########
-# build-packed-template($1): Build packed library $(1).
-define build-packed-template
-
-# The packing groups and marshalling directory.
+# Packed directory is required.
 ifneq ($$(strip $$($(1)_PACK_DIR)),)
-packed-$(1)-packdir:=$$($(1)_PACK_DIR)/
+lm-packed-$(1)-packdir:=$$($(1)_PACK_DIR)/
 else
-packed-$(1)-packdir:=./
+$$(error Variable $(1)_PACK_DIR must be defined for packed library $(1).)
 endif
-packed-$(1)-groups:=$$($(1)_GROUPS)
+$$(info lm-packed-$(1)-packdir=$$(lm-packed-$(1)-packdir))
 
-$$(info packed-$(1)-packdir=$$(packed-$(1)-packdir))
-$$(info packed-$(1)-groups=$$(packed-$(1)-groups))
+ifneq ($$(strip $$($(1)_PACK_NAME)),)
+lm-packed-$(1)-packname:=$$($(1)_PACK_NAME)
+else
+$$(error Variable $(1)_PACK_NAME must be defined for packed library $(1).)
+endif
+$$(info lm-packed-$(1)-packname=$$(lm-packed-$(1)-packname))
 
-packed-$(1)-packlist:=\
-$$(foreach group,$$(packed-$(1)-groups),$$(lm-pack-filename)$$(group) )
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-packed-$(1)-headers:=$$($(1)_HEADERS)
+else
+lm-packed-$(1)-headers:=
+endif
+$$(info lm-packed-$(1)-headers=$$(lm-packed-$(1)-headers))
 
-$$(info packed-$(1)-packlist=$$(packed-$(1)-packlist))
+# Packing groups
+lm-packed-$(1)-groups:=$$(strip $$($(1)_GROUPS))
+$$(info lm-packed-$(1)-groups=$$(lm-packed-$(1)-groups))
 
-packed-$(1)-packfiles=\
-$$(foreach f,$$(packed-$(1)-packlist),$$(packed-$(1)-packdir)$$(f))
+lm-packed-$(1)-packlist:=\
+$$(foreach group,$$(lm-packed-$(1)-groups),$$(lm-pack-filename)$$(group) )
+$$(info lm-packed-$(1)-packlist=$$(lm-packed-$(1)-packlist))
 
-$$(info packed-$(1)-packfiles=$$(packed-$(1)-packfiles))
+lm-packed-$(1)-packfiles=\
+$$(foreach f,$$(lm-packed-$(1)-packlist),$$(lm-packed-$(1)-packdir)$$(f))
+$$(info lm-packed-$(1)-packfiles=$$(lm-packed-$(1)-packfiles))
 
-# Get the list of files, in group order.
-$$(foreach group,$$($(1)_GROUPS),\
-$$(eval $$(call include-packing-file-template,$$(packed-$(1)-packdir),$$(group))))
+# The file in which to store the packed group object list.
+lm-packed-$(1)-filelist:=\
+$$(strip $$(lm-packed-$(1)-packdir)$$(lm-pack-filename)$$(lm-packed-$(1)-packname))
+$$(info lm-packed-$(1)-filelist=$$(lm-packed-$(1)-filelist))
 
+# Extra libraries
+lm-packed-$(1)-mlheaders:=\
+	$$(foreach src,$$(lm-packed-$(1)-headers),$$(call header,$$(src)))
+$$(info lm-packed-$(1)-mlheaders=$$(lm-packed-$(1)-mlheaders))
+
+lm-packed-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-packed-$(1)-headers),$$(call interface,$$(src)))
+$$(info lm-packed-$(1)-interfaces=$$(lm-packed-$(1)-interfaces))
+
+lm-packed-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
+	$$($(1)_BYTELIBS)
+$$(info lm-packed-$(1)-libs=$$(lm-packed-$(1)-libs))
+
+lm-packed-$(1)-natlibs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
+	$$($(1)_NATLIBS)
+$$(info lm-packed-$(1)-natlibs=$$(lm-packed-$(1)-natlibs))
+
+#
 # The files to be generated
-packed-$(1)-bytelib:=$$(call bytelib,$(1))
-packed-$(1)-interface:=$$(call interface,$$($(1)_PACK_NAME))
-packed-$(1)-module:=$$(call bytecode,$$($(1)_PACK_NAME))
+lm-packed-$(1)-interface:=$$(call interface,$$(lm-packed-$(1)-packname))
+$$(info lm-packed-$(1)-interface=$$(lm-packed-$(1)-interface))
 
+lm-packed-$(1)-module:=$$(call bytecode,$$(lm-packed-$(1)-packname))
+$$(info lm-packed-$(1)-module=$$(lm-packed-$(1)-module))
+
+lm-packed-$(1)-bytelib:=$$(call bytelib,$(1))
+$$(info lm-packed-$(1)-bytelib=$$(lm-packed-$(1)-bytelib))
+
+#
+# Build options
+lm-packed-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+$$(info lm-packed-$(1)-ocamlc-options=$$(lm-packed-$(1)-ocamlc-options))
+
+lm-packed-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-packed-$(1)-libs)
+$$(info lm-packed-$(1)-link-options=$$(lm-packed-$(1)-link-options))
+
+lm-packed-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-packed-$(1)-ocamldep-options=$$(lm-packed-$(1)-ocamldep-options))
+
+lm-packed-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-packed-$(1)-ocamlcpp-options=$$(lm-packed-$(1)-ocamlcpp-options))
+
+##
+# Build rule to make the packed directory.
+$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
+
+##
 # Build rule for the module
-$$(packed-$(1)-packdir)/$$(packed-$(1)-module) \
-$$(packed-$(1)-packdir)/$$(packed-$(1)-interface): $$(packed-$(1)-packfiles)
-	@( $(CD) $$(packed-$(1)-packdir) ; \
-	cat $$(packed-$(1)-packlist) > $(1)_FULL_PACK_LIST ; \
+
+# File list
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface):
+	@( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	cat $$(lm-packed-$(1)-packlist) > $(1)_FULL_PACK_LIST ; \
 	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_PACK_LIST)" ; \
-	$$(OCAMLC) -pack -o $$(packed-$(1)-module) $$$$(cat $(1)_FULL_PACK_LIST) )
+	$$(OCAMLC) -pack -o $$(lm-packed-$(1)-module) $$$$(cat $(1)_FULL_PACK_LIST) )
 
-$$(packed-$(1)-module): $$(packed-$(1)-packdir)/$$(packed-$(1)-module)
-	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-module) $$(packed-$(1)-module)
+$$(lm-packed-$(1)-module): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
+		$$(lm-packed-$(1)-module)
 
-$$(packed-$(1)-interface): $$(packed-$(1)-packdir)/$$(packed-$(1)-interface)
-	$$(COPY) $$(packed-$(1)-packdir)/$$(packed-$(1)-interface) $$(packed-$(1)-interface)
+$$(lm-packed-$(1)-interface): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-interface)
 
 # Build rule for the packed library
-ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$$(packed-$(1)-bytelib): $$(packed-$(1)-interface) $$(packed-$(1)-module)
-	$$(OCAMLC) -a -o $$(packed-$(1)-bytelib) $$(packed-$(1)-module)
+$$(lm-packed-$(1)-bytelib): $$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-module)
+	$$(OCAMLC) -a -o $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-module)
+
+# Install to staging directory.
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-interface): \
+		$$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
+
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-bytelib): \
+		$$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
+
+.PHONY: install-objdir-packed-$(1)
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+install-objdir-packed-$(1): $$(lm-module-obj-dir)/$$(lm-packed-$(1)-bytelib)
+else
+install-objdir-packed-$(1):
 endif
 
-# Build rule to call
-packed-$(1)-target:=$$(packed-$(1)-bytelib) $$(packed-$(1)-interface)
+###
+# Toplevel rules
+
+# Build
 .PHONY: build-packed-$(1)
-build-packed-$(1): $$(packed-$(1)-target)
+build-packed-$(1): $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-interface)
+
+# clean
+.PHONY: clean-packed-$(1)
+clean-packed-$(1):
+	$$(RM) $$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-module) \
+			$$(lm-packed-$(1)-bytelib)
+	$$(RM) $$(lm-packed-$(1)-packdir)$(1)_FULL_PACK_LIST
+	-$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR)
+
+# libclean
+.PHONY: packedclean-packed-$(1)
+libclean-packed-$(1): clean-packed-$(1)
+
+# distclean
+.PHONY: dist-packed-$(1)
+distclean-packed-$(1): libclean-$(1)
+
 endef
 ########
 
@@ -1239,9 +1152,6 @@ $(eval $(call subdir-targets-template,$(sub))))
 
 ##
 # Instantiate bytelib build targets for each target.
-#$(foreach lib,$(LIBRARIES),\
-#$(eval $(call build-bytelib-template,$(lib))))
-
 $(foreach lib,$(LIBRARIES),\
 $(eval $(call library-targets-template,$(lib))))
 
@@ -1252,17 +1162,13 @@ $(eval $(call build-byteprog-template,$(prog))))
 
 ##
 # Instantiate packings build targets for each target.
-#$(foreach lib,$(PACKING),\
-#$(eval $(call build-packing-template,$(lib))))
-
 $(foreach lib,$(PACKING),\
 $(eval $(call packing-targets-template,$(lib))))
-##
+
 
 # Instantiate packed build targets for each target.
 $(foreach lib,$(PACKED),\
-$(eval $(call build-packed-template,$(lib))))
-
+$(eval $(call packed-targets-template,$(lib))))
 
 ###
 # Directories
