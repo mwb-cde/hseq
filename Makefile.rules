@@ -379,17 +379,17 @@ $$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
 # Bytecode rules
 
 # Interfaces
-$$(addsuffix .cmi,$$(lm-lib-$(1)-headers)): %.cmi: %.mli
+$$(lm-lib-$(1)-interfaces): %.cmi: %.mli
 	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
 
 # Bytecode object files
-$$(info Bytecode object files: $$(addsuffix .cmo,$$($(1)_SOURCES)))
-$$(addsuffix .cmo,$$($(1)_SOURCES)): %.cmo: %.ml
+$$(info Bytecode object files: $$(lm-lib-$(1)-objects))
+$$(lm-lib-$(1)-objects): %.cmo: %.ml
 	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
 
 # Bytecode library.
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$$(lm-lib-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
+$$(lm-lib-$(1)-libname): $$(lm-lib-$(1)-objects)
 	$$(info Linking $(lm-lib-$(1)-libname))
 	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
 		-o $$(lm-lib-$(1)-libname) \
@@ -963,48 +963,114 @@ module-install-$(1): $$(lm-module-install-$(1)-target)
 endef
 ########
 
-
 ########
-# build-byteprog-template($1): Build byte-code program for $(1) from
-# names in $(1)_SOURCES
-define build-byteprog-template
+# program-targets-template($1): Targets for program $(1).
+define program-targets-template
 
+$$(info Build variables for programs $(1))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+$$(info $(1)_BYTELIBS=$$($(1)_BYTELIBS))
+$$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
+
+# Bytecode libraries
 ifneq ($$(origin $(1)_HEADERS),undefined)
-byteprog-$(1)-headers=$$($(1)_HEADERS)
+lm-prog-$(1)-headers=$$($(1)_HEADERS)
 else
-byteprog-$(1)-headers=$$($(1)_SOURCES)
+lm-prog-$(1)-headers=$$($(1)_SOURCES)
 endif
+$$(info lm-prog-$(1)-headers=$$(lm-prog-$(1)-headers))
 
-byteprog-$(1)-interfaces:=$$(foreach src,$$(byteprog-$(1)-headers),\
-				$$(call interface,$$(src)))
-byteprog-$(1)-objects:=$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+lm-prog-$(1)-mlheaders:=$$(foreach src,$$(lm-prog-$(1)-headers),\
+				$$(call header,$$(src)))
+$$(info lm-prog-$(1)-mlheaders=$$(lm-prog-$(1)-mlheaders))
 
-byteprog-$(1)-libs:=$$($(1)_LIBS)
-$$(info byteprog-$(1)-libs=$$(byteprog-$(1)-libs))
+lm-prog-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-prog-$(1)-headers),$$(call interface,$$(src)))
+$$(info lm-prog-$(1)-interfaces=$$(lm-prog-$(1)-interfaces))
 
-lm-file-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+lm-prog-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+$$(info lm-prog-$(1)-objects=$$(lm-prog-$(1)-objects))
+
+lm-prog-$(1)-libs:=$$($(1)_LIBS)
+$$(info lm-prog-$(1)-libs=$$(lm-prog-$(1)-libs))
+
+lm-prog-$(1)-natlibs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) $$($(1)_NATLIBS)
+$$(info lm-prog-$(1)-natlibs=$$(lm-prog-$(1)-natlibs))
+
+lm-prog-$(1)-program:=$(1)
+$$(info lm-prog-$(1)-program=$$(lm-prog-$(1)-program))
+
+##
+# Build options
+
+lm-prog-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-ocamlc-options = $$(lm-file-ocamlc-options))
+$$(info lm-prog-$(1)-ocamlc-options=$$(lm-prog-$(1)-ocamlc-options))
 
-lm-file-link-options:=$$(lm-module-link-options) \
+lm-prog-$(1)-link-options:=$$(lm-module-link-options) \
 	$$($(1)_LINK_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-$$(info lm-file-link-options = $$(lm-file-link-options))
+$$(info lm-prog-$(1)-link-options=$$(lm-prog-$(1)-link-options))
 
-lm-file-ocamldep-options:=$$(lm-module-ocamldep-options)
-$$(info lm-file-ocamldep-options = $$(lm-file-ocamldep-options))
+lm-prog-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+$$(info lm-prog-$(1)-ocamldep-options=$$(lm-prog-$(1)-ocamldep-options))
 
-lm-file-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
-$$(info lm-file-ocamlcpp-options = $$(lm-file-ocamlcpp-options))
+lm-prog-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+$$(info lm-prog-$(1)-ocamlcpp-options=$$(lm-prog-$(1)-ocamlcpp-options))
 
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-prog-$(1)-interfaces): %.cmi: %.mli
+	$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(info Bytecode object files: $$(addsuffix .cmo,$$($(1)_SOURCES)))
+$$(lm-prog-$(1)-objects): %.cmo: %.ml
+	$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) -c $$<
+
+# Bytecode program
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$(1): $$(byteprog-$(1)-interfaces) $$(byteprog-$(1)-objects)
-	$$(OCAMLC) $$($(1)_OCAMLC_FLAGS) -o $(1) $$($(1)_INCLUDE)\
-		$$(byteprog-$(1)-libs) $$(byteprog-$(1)-objects)
+$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects) 
+	$$(info Linking $(lm-prog-$(1)-program))
+	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) \
+		-o $$(lm-prog-$(1)-program) \
+		$$(lm-prog-$(1)-libs) $$(lm-prog-$(1)-objects) 
 endif
 
-.PHONY: build-byteprog-$(1)
-build-byteprog-$(1): $(1)
+# Bytecode program in staging directory.
+.PHONY: install-objdir-prog-$(1)
+$$(lm-module-bin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
+						$$(lm-module-bin-dir)
+	$$(INSTALL) $$(lm-prog-$(1)-program) $$(lm-module-bin-dir)
+install-objdir-prog-$(1): $$(lm-module-bin-dir)/$$(lm-prog-$(1)-program)
+
+
+###
+# Toplevel rules
+
+# build
+.PHONY: build-program-$(1)
+build-program-$(1): install-objdir-prog-$(1)
+
+# clean
+.PHONY: clean-program-$(1)
+clean-program-$(1):
+	$$(RM) $$(lm-prog-$(1)-interfaces) $$(lm-prog-objects)
+	$$(RM) $$(lm-prog-$(1)-program)
+
+# libclean
+.PHONY: libclean-program-$(1)
+libclean-program-$(1): clean-program-$(1)
+
+# distclean
+.PHONY: build-program-$(1)
+distclean-program-$(1): libclean-program-$(1)
 
 endef
 ########
@@ -1119,8 +1185,12 @@ $(eval $(call library-targets-template,$(lib))))
 
 ##
 # Instantiate build targets for byte-code programs
+#$(foreach prog,$(PROGRAMS),\
+#$(eval $(call build-byteprog-template,$(prog))))
+
 $(foreach prog,$(PROGRAMS),\
-$(eval $(call build-byteprog-template,$(prog))))
+$(eval $(call program-targets-template,$(prog))))
+
 
 ##
 # Instantiate packings build targets for each target.
@@ -1157,7 +1227,7 @@ $(info LIBRARIES = $(LIBRARIES))
 build-bytelibs: $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
 
 .PHONY: build-programs
-build-programs: $(foreach prog,$(PROGRAMS),build-byteprog-$(prog) )
+build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
 
 .PHONY: build-packings
 $(info PACKING = $(PACKING))
