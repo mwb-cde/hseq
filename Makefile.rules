@@ -50,93 +50,6 @@ endif
 
 include $(PROJ_ROOT)/Makefile.common
 
-####
-# Compiler settings
-####
-
-#
-# Flags:
-#   FAST: Use the fast compilers
-#
-# Options:
-#   OCAMLC_FLAGS: options for ocamlc
-#   OCAMLNAT_FLAGS: options for ocamlopt (native code compiler)
-#   LINK_FLAGS: options for ocamlc (linker)
-#   OCAMLNATLINK_FLAGS: options for ocamlnat (linker)
-#   OCAMLDEP_FLAGS: options for ocamldep
-#   OCAMLDOC_FLAGS: options for ocamldoc
-#   OCAMLPP_FLAGS : options to pass to camlp4
-#
-
-## Tool and option selection 
-
-# Use the camlp4 version to select the correct 
-# prepropcessor options.
-ifeq ($(OLDCAMLP4),true)
-PPOPTIONS ?= -pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
-else
-PPOPTIONS ?= -pp camlp4of -I +camlp4
-endif
-
-# BAREOCAMLC: The bare OCaml bytecode compiler
-export BAREOCAMLC=ocamlc
-
-# BAREOCAMLNAT: The bare OCaml native-code compiler
-export BAREOCAMLNAT=ocamlopt
-
-# OCAMLC: The OCaml byte code compiler
-export OCAMLC=$(BAREOCAMLC) $(OCAMLC_FLAGS) $(lm-file-ocamlc-options)
-
-# OCAMLLINK: The OCaml byte-code linker
-export OCAMLLINK=$(BAREOCAMLC) -a $(lm-file-link-options)
-
-# OCAMLNAT: The OCaml native code compiler
-export OCAMLNAT=$(BAREOCAMLNAT) $(OCAMLNAT_FLAGS) 
-
-# OCAMLNATLINK: The OCaml native-code linker
-export OCAMLNATLINK=$(BAREOCAMLNAT) -a $(lm-file-link-options)
-
-# OCAMLMKTOP: Make a toplevel
-export OCAMLMKTOP=ocamlmktop $(OCAMLMKTOP_FLAGS)
-
-# OCAMLDEP: The OCaml dependency generator
-export OCAMLDEP=ocamldep $(OCAMLDEP_FLAGS) $(lm-file-ocamldep-options)
-
-# OCAMLCPP : the preprocesor
-export OCAMLCPP=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo \
-	$(OCAMLCPP_FLAGS) $(lm-file-ocamlcpp-options)
-
-# OCAMLDOC: The documentation generator
-export OCAMLDOC=ocamldoc $(OCAMLDOC_FLAGS)
-
-###
-# Native code compilers, only if supported
-#
-ifeq '$(FAST)' 'true'
-
-# # BAREOCAMLC: The bare OCaml bytecode compiler
-# export BAREOCAMLC=ocamlc.opt 
-
-# # BAREOCAMLNAT: The bare OCaml native-code compiler
-# export BAREOCAMLNAT=ocamlopt.opt
-
-# # OCAMLC: The OCaml bytecode compiler
-# export OCAMLC=$(BAREOCAMLC) $(OCAMLC_FLAGS) $(lm-file-ocamlc-options)
-
-# # OCAMLNAT: The OCaml native code compiler
-# export OCAMLNAT=$(BAREOCAML) $(OCAMLNAT_FLAGS) 
-
-# # OCAMLNATLINK: The OCaml native-code linker
-# export OCAMLNATLINK=$(OCAMLNAT) -a 
-
-# # OCAMLDEP: The OCaml dependency generator
-# export OCAMLDEP=ocamldep.opt $(OCAMLDEP_FLAGS)
-
-# # OCAMLDOC: The documentation generator
-# export OCAMLDOC=ocamldoc.opt $(OCAMLDOC_FLAGS)
-
-endif # End of native code compilers
-###
 
 
 #####
@@ -1037,7 +950,7 @@ endif
 .PHONY: install-objdir-prog-$(1)
 $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
 						$$(lm-module-objbin-dir)
-	$$(INSTALL) $$(lm-prog-$(1)-program) $$(lm-module-objbin-dir)
+	$$(COPY) $$(lm-prog-$(1)-program) $$(lm-module-objbin-dir)
 install-objdir-prog-$(1): $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program)
 
 
@@ -1106,7 +1019,7 @@ lm-module-ocamldep-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
 lm-module-ocamlc-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
 
 # lm-module-ocamlc-options: Module wide link flags. 
-lm-module-link-options=$(LOCAL_LINK_FLAGS)
+m-module-link-options=$(LOCAL_LINK_FLAGS)
 
 # lm-module-ocamlcpp-options: Module wide macro-expander flags. 
 lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)

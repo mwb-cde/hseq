@@ -202,7 +202,6 @@ let set_fast_compilers flag =
   else set fast_compilers "false"
 
 let has_native_compilers = has_program "ocamlopt" 
-(* let has_native_compilers = false *)
 
 let native_compilers_d ()= 
   if has_native_compilers 

@@ -28,23 +28,66 @@
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
 #####
 
-##
-# Build commands
-##
+#####
+# Constants
+#####
 
-# BAREMAKE: The make with no options
-export BAREMAKE = $(MAKE)
+# PROJ_ROOT: Relative path to the top of the source tree is required.
+ifndef PROJ_ROOT
+$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR)")
+endif
 
-# DMAKE: The make to build sub-directories with.
-#export DMAKE = make $(MAKEOPTIONS)
-export DMAKE = $(MAKE)
+# CONFIGDIR: The configuration directory
+CONFIGDIR=
 
-# MAKECLEAN: The make to clean up with
-export MAKECLEAN = $(MAKE) NODEPEND=true $(MAKEOPTIONS)
+# CONFIGFILE: Configuration data file 
+CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/data.make
 
-##
+######
+# Configuration variables
+# Set by configure.ml, stored in data.make
+#
+
+ifndef CONFIGFILE
+$(error "CONFIGFILE not defined")
+endif
+
+# Read $(CONFIGFILE)
+include $(CONFIGFILE)
+
+ifndef SrcDir
+$(error Error in $(CONFIGFILE): SrcDir not defined)
+endif
+
+ifndef BinDir
+$(error Error in $(CONFIGFILE): BinDir not defined)
+endif
+
+####
+# Feature tests
+#
+
+# Whether camlp4 is old.
+ifndef OLDCAMLP4
+# Get the version of camlp4
+export CAMLP4VERSION=OcamlVersion
+ifeq ($(findstring CAMLP4VERSION,3.11),'')
+$(info "Using OCaml 3.11.?")
+export OLDCAMLP4=true
+else
+$(info "Using OCaml 3.12+")
+export OLDCAMLP4=false
+endif
+endif # OLDCAMLP4
+
+
+#####
+# Compilers and Tools
+#####
+
+####
 # OS Commands
-##
+#
 
 # CD: Change directory
 export CD?=cd
@@ -80,87 +123,122 @@ export RM?=rm -f
 # SKIP: Do nothing
 export SKIP=
 
-##
-# Build Targets
-##
-
-## General targets
-
-.PHONY: all  	# all: Build everything
-.PHONY: lib  	# lib: Build the library file
-.PHONY: opt  	# opt: Build the native code library file
-.PHONY: install # install: Install the library and header files.
-.PHONY: doc  	# doc: Generate the code documentation
-
-## Cleaning targets
-.PHONY: clean
-.PHONY: libclean
-.PHONY: docclean
-.PHONY: distclean
-
-## build targets
-
-.PHONY: build-headers 
-.PHONY: build-code build-bytecode build-natcode
-.PHONY: build-bytelib build-natlib build-lib
-
-.PHONY: install-headers 
-.PHONY: install-code install-bytecode install-natcode
-.PHONY: install-bytelib install-natlib install-lib
-.PHONY: install-other
-
-#####
-# Constants
-#####
-
-# PROJ_ROOT: Relative path to the top of the source tree is required.
-ifndef PROJ_ROOT
-$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR)")
-endif
-
-# CONFIGDIR: The configuration directory
-#CONFIGDIR=config
-CONFIGDIR=
-
-# CONFIGFILE: Configuration data file 
-CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/data.make
-
-###
-# Configuration variables
-# Set by data.make
-###
-
-ifndef CONFIGFILE
-$(error "CONFIGFILE not defined")
-endif
-
-# Read $(CONFIGFILE)
-include $(CONFIGFILE)
-
-ifndef SrcDir
-$(error Error in $(CONFIGFILE): SrcDir not defined)
-endif
-
-ifndef BinDir
-$(error Error in $(CONFIGFILE): BinDir not defined)
-endif
-
 ####
-# Feature tests
+# Compiler tools selection
+#
+# Flags:
+#   FastCompilers: Use the fast compilers (set by configure.ml).
+#
+# Options:
+#   OCAMLC_FLAGS: options for ocamlc
+#   OCAMLNAT_FLAGS: options for ocamlopt (native code compiler)
+#   LINK_FLAGS: options for ocamlc (linker)
+#   OCAMLNATLINK_FLAGS: options for ocamlnat (linker)
+#   OCAMLDEP_FLAGS: options for ocamldep
+#   OCAMLDOC_FLAGS: options for ocamldoc
+#   OCAMLPP_FLAGS : options to pass to camlp4
 #
 
-# Whether camlp4 is old.
-ifndef OLDCAMLP4
-# Get the version of camlp4
-export CAMLP4VERSION=OcamlVersion
-ifeq ($(findstring CAMLP4VERSION,3.11),'')
-$(info "Using OCaml 3.11.?")
-export OLDCAMLP4=true
-else
-$(info "Using OCaml 3.12+")
-export OLDCAMLP4=false
-endif
-endif # OLDCAMLP4
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+# ifeq ($(OLDCAMLP4),true)
+# OCAMLPP_OPTIONS?=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+# else
+# OCAMLPP_OPTIONS?=-pp camlp4of -I +camlp4
+# endif
+
+###
+# Use the standard compilers if the fast compilers are not available.
+ifneq ($(strip $(FastCompilers)),true)
+
+$(info Using standard compilers)
+
+# OCAMLC: The OCaml byte code compiler
+export OCAMLC?=ocamlc
+
+# OCAMLLINK: The OCaml byte-code linker
+export OCAMLLINK?=ocamlc
+
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT?=ocamlopt
+
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK?=ocamlopt -a
+
+# OCAMLMKTOP: Make a toplevel
+export OCAMLMKTOP?=ocamlmktop
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP?=ocamldep
+
+# OCAMLCPP : the preprocesor
+export OCAMLCPP?=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC?=ocamldoc $(OCAMLDOC_FLAGS)
+
+endif # End of standard compilers
+###
+
+###
+# Use the fast compilers, if available
+ifeq ($(strip $(FastCompilers)),true)
+
+$(info Using fast compilers)
+
+
+# OCAMLC: The OCaml byte code compiler
+export OCAMLC?=ocamlc.opt
+
+# OCAMLLINK: The OCaml byte-code linker
+export OCAMLLINK?=ocamlc.opt -a
+
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT?=ocamlopt.opt
+
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK?=ocamlopt.opt -a
+
+# OCAMLMKTOP: Make a toplevel
+export OCAMLMKTOP?=ocamlmktop
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP?=ocamldep.opt
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC?=ocamldoc.opt
+
+# OCAMLCPP : the preprocesor
+export OCAMLCPP?=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
+
+endif # End of fast compilers
+###
+
+####
+# Add flags to the build tools
+
+# OCAMLC: The OCaml byte code compiler
+OCAMLC+= $(OCAMLC_FLAGS) $(GLOBAL_OCAMLPP_FLAGS)
+
+# OCAMLLINK: The OCaml byte-code linker
+OCAMLLINK+=-a $(OCAMLLINK_FLAGS) $(GLOBAL_LINK_FLAGS)
+
+# OCAMLNAT: The OCaml native code compiler
+OCAMLNAT+= $(OCAMLNAT_FLAGS) $(GLOBAL_OCAMLNAT_FLAGS)
+
+# OCAMLNATLINK: The OCaml native-code linker
+OCAMLNATLINK+= $(OCAMLNATLINK_FLAGS) $(GLOBAL_NATLINK_FLAGS)
+
+# OCAMLMKTOP: Make a toplevel
+OCAMLMKTOP+= $(OCAMLMKTOP_FLAGS)
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP+= $(OCAMLDEP_FLAGS)
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC+= $(OCAMLDOC_FLAGS)
+
+
 
 ####
 # Variable definitions
@@ -298,7 +376,38 @@ export lm-objdir-code=$(OBJ_ROOT)/$(lm-code-dirname)
 $(lm-objdir-code):
 	$(MKDIR) $(lm-objdir-code)
 
-#########
+
+#####
+# Build Targets
+#
+
+##
+# General targets
+
+.PHONY: all  	# all: Build everything
+.PHONY: lib  	# lib: Build the library file
+.PHONY: opt  	# opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: doc  	# doc: Generate the code documentation
+
+## Cleaning targets
+.PHONY: clean
+.PHONY: libclean
+.PHONY: docclean
+.PHONY: distclean
+
+## build targets
+
+.PHONY: build-headers 
+.PHONY: build-code build-bytecode build-natcode
+.PHONY: build-bytelib build-natlib build-lib
+
+.PHONY: install-headers 
+.PHONY: install-code install-bytecode install-natcode
+.PHONY: install-bytelib install-natlib install-lib
+.PHONY: install-other
+
+###
 # Toplevel installation targets
 
 
@@ -341,10 +450,6 @@ export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 
 # GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 GLOBAL_OCAMLC_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
-
-# GLOBAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor (which is
-# used as a front-end to the compiler).
-#GLOBAL_OCAMLPP_FLAGS?=
 
 # GLOBAL_LINK_FLAGS: Flags to pass to the linker.
 GLOBAL_LINK_FLAGS?=-custom -I $(SRC_ROOT)/$(OBJ_DIR)/lib
