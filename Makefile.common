@@ -151,8 +151,6 @@ export SKIP=
 # Use the standard compilers if the fast compilers are not available.
 ifneq ($(strip $(FastCompilers)),true)
 
-$(info Using standard compilers)
-
 # OCAMLC: The OCaml byte code compiler
 export OCAMLC?=ocamlc
 
@@ -183,9 +181,6 @@ endif # End of standard compilers
 ###
 # Use the fast compilers, if available
 ifeq ($(strip $(FastCompilers)),true)
-
-$(info Using fast compilers)
-
 
 # OCAMLC: The OCaml byte code compiler
 export OCAMLC?=ocamlc.opt
@@ -277,7 +272,6 @@ export lm-installdir-lib=$(LibDir)
 else
 export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
 endif
-$(info lm-installdir-lib=$(lm-installdir-lib))
 
 $(lm-objdir-lib):
 	$(MKDIR) $(lm-objdir-lib)
@@ -298,7 +292,6 @@ export lm-installdir-bin=$(BinDir)
 else
 export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
 endif
-$(info lm-installdir-bin=$(lm-installdir-bin))
 
 $(lm-objdir-bin):
 	$(MKDIR) $(lm-objdir-bin)
@@ -319,7 +312,6 @@ export lm-installdir-data=$(DataDir)
 else
 export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
 endif
-$(info lm-installdir-data=$(lm-installdir-data))
 
 $(lm-objdir-data):
 	$(MKDIR) $(lm-objdir-data)
