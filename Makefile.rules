@@ -144,9 +144,13 @@ lm-bin-dirname=bin
 # lm-doc-dirname: Document directory name
 lm-doc-dirname=doc
 
-# lm-pack-filename: Prefix for file storing list of objects to be
+# lm-pack-filename: Prefix for file storing list of byte-code objects to be
 # packed into a module using 'ocaml -pack'.
 lm-pack-filename:=PACKLIST_
+
+# lm-pack-nat-filename: Prefix for file storing list of native code objects to be
+# packed into a module using 'ocaml -pack'.
+lm-pack-nat-filename:=PACKLIST_NAT_
 
 # lm-nativecode: Defined iff compile-to-native code is supported.
 ifeq ($(strip $(NativeCompilers)),true)
@@ -361,7 +365,7 @@ endif
 build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 
 .PHONY: build-lib-$(1)
-build-natlib-$(1): build-natlib-$(1)
+build-natlib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-nattarget)
 
 # clean
 .PHONY: clean-lib-$(1)
@@ -452,9 +456,13 @@ lm-packing-$(1)-natlibs:=\
 
 lm-packing-$(1)-libname:=$(call bytelib,$(1))
 
-# The name of the file in which to store the packing group object list.
+# The name of the file in which to store the packing group byte-code object list.
 lm-packing-$(1)-filelist:=\
 $$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-filename)$$(lm-packing-$(1)-group))
+
+# The name of the file in which to store the packing group native-code object list.
+lm-packing-$(1)-nat-filelist:=\
+$$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-nat-filename)$$(lm-packing-$(1)-group))
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info Packing group name $$(lm-packing-$(1)-group))
@@ -535,7 +543,7 @@ endif
 # Build rule to make the packing directory.
 $$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
 
-# Build rule to generate the file list.
+# Build rule to generate the byte-code file list.
 $$(lm-packing-$(1)-filelist): $$(lm-packing-$(1)-dirprefix)
 	echo -n "$$(lm-packing-$(1)-objects) "> $$(lm-packing-$(1)-filelist)
 
@@ -547,6 +555,11 @@ $$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
 	$$(COPY) $$(lm-packing-$(1)-objects) $$($(1)_PACK_DIR)
 
 ifdef lm-nativecode
+# Build rule to generate the native-code file list.
+$$(lm-packing-$(1)-nat-filelist): $$(lm-packing-$(1)-dirprefix)
+	echo -n "$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects)" > \
+		 $$(lm-packing-$(1)-nat-filelist)
+
 $$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
 			$$(lm-packing-$(1)-interfaces) \
 		$$(lm-packing-$(1)-natobjects) \
@@ -558,25 +571,10 @@ $$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
 		 $$($(1)_PACK_DIR)
 endif
 
-# Bytecode library.
-# ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-# $$(lm-packing-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
-# 	$$(info Linking $(lm-packing-$(1)-libname))
-# 	$$(OCAMLLINK) $$(lm-packing-$(1)-link-options) \
-# 		-o $$(lm-packing-$(1)-libname) \
-# 		$$(lm-packing-$(1)-libs) $$(lm-packing-$(1)-objects) 
-# endif
-
 # Bytecode library in staging directory.
 .PHONY: install-objdir-packing-$(1)
 
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-# $$(lm-module-objlib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
-# 						$$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-packing-$(1)-libname) $$(lm-module-packing-dir)
-
 install-objdir-packing-$(1): $$(lm-module-objlib-dir) $$(lm-packing-$(1)-libname) \
 		$$(lm-packing-$(1)-interfaces)
 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-packing-dir)
@@ -584,7 +582,6 @@ install-objdir-packing-$(1): $$(lm-module-objlib-dir) $$(lm-packing-$(1)-libname
 	$$(COPY) $$(lm-packing-$(1)-packingname) $$(lm-module-objlib-dir)
 else
 install-objdir-packing-$(1):
-
 endif
 
 ###
@@ -602,7 +599,7 @@ ifdef lm-nativecode
 build-natpacking-$(1)-targets:=$$(lm-packing-$(1)-interfaces) \
 			$$(lm-packing-$(1)-nattargets) \
 			$$(lm-packing-$(1)-ctargets) \
-			$$(lm-packing-$(1)-filelist)
+			$$(lm-packing-$(1)-nat-filelist)
 endif
 $$(info lm-packing-$(1)-nattargets=$$(lm-packing-$(1)-nattargets))
 $$(info lm-packing-$(1)-ctargets=$$(lm-packing-$(1)-ctargets))
@@ -708,9 +705,7 @@ lm-packed-$(1)-natlibs:=\
 #
 # The files to be generated
 lm-packed-$(1)-interface:=$$(call interface,$$(lm-packed-$(1)-packname))
-
 lm-packed-$(1)-module:=$$(call bytecode,$$(lm-packed-$(1)-packname))
-
 lm-packed-$(1)-bytelib:=$$(call bytelib,$(1))
 
 ifdef lm-DEBUG-MAKEFILE
