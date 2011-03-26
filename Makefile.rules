@@ -149,14 +149,16 @@ lm-doc-dirname=doc
 lm-pack-filename:=PACKLIST_
 
 # lm-nativecode: Defined iff compile-to-native code is supported.
-#ifeq ($(strip $(NativeCompilers)),true)
-#lm-nativecode:=
-#endif
+ifeq ($(strip $(NativeCompilers)),true)
+lm-nativecode:=true
+endif
 
 ifdef lm-nativecode
-ifdef lm-DEBUG-MAKEFILE
+#ifdef lm-DEBUG-MAKEFILE
 $(info Compilation to native code is supported.)
-endif
+#endif
+else
+$(info Compilation to native code is not supported.)
 endif
 
 ####
@@ -358,8 +360,8 @@ endif
 .PHONY: build-lib-$(1)
 build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 
-.PHONY: build-bytelib-$(1)
-build-bytelib-$(1): build-lib-$(1)
+.PHONY: build-lib-$(1)
+build-natlib-$(1): build-natlib-$(1)
 
 # clean
 .PHONY: clean-lib-$(1)
@@ -515,13 +517,14 @@ $$(lm-packing-$(1)-natobjects):%.cmx: %.ml
 
 $$(lm-packing-$(1)-cobjects):%.o: %.cmx
 
-
 # Packing directory targets
 lm-packing-$(1)-targets:=$$(foreach obj,$$(lm-packing-$(1)-objects), \
 		$$(lm-packing-$(1)-dirprefix)$$(obj))
 
 ifdef lm-nativecode
-lm-packing-$(1)-targets+=$$(foreach obj,$$(lm-packing-$(1)-natobjects), \
+lm-packing-$(1)-nattargets:=$$(foreach obj,$$(lm-packing-$(1)-natobjects), \
+		$$(lm-packing-$(1)-dirprefix)$$(obj))
+lm-packing-$(1)-ctargets:=$$(foreach obj,$$(lm-packing-$(1)-cobjects), \
 		$$(lm-packing-$(1)-dirprefix)$$(obj))
 endif # lm-nativecode
 
@@ -537,33 +540,42 @@ $$(lm-packing-$(1)-filelist): $$(lm-packing-$(1)-dirprefix)
 	echo -n "$$(lm-packing-$(1)-objects) "> $$(lm-packing-$(1)-filelist)
 
 $$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
-		$$(lm-packing-$(1)-objects) \
-		$$(lm-packing-$(1)-natobjects) \
+		$$(lm-packing-$(1)-objects)  \
 		$$($(1)_PACK_DIR)
 	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$($(1)_PACK_DIR)
 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
-	$$(COPY) $$(lm-packing-$(1)-objects) \
-		 $$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
+	$$(COPY) $$(lm-packing-$(1)-objects) $$($(1)_PACK_DIR)
+
+ifdef lm-nativecode
+$$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
+			$$(lm-packing-$(1)-interfaces) \
+		$$(lm-packing-$(1)-natobjects) \
+		$$(lm-packing-$(1)-cobjects) \
+		$$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
 		 $$($(1)_PACK_DIR)
+endif
 
 # Bytecode library.
-ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$$(lm-packing-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
-	$$(info Linking $(lm-packing-$(1)-libname))
-	$$(OCAMLLINK) $$(lm-packing-$(1)-link-options) \
-		-o $$(lm-packing-$(1)-libname) \
-		$$(lm-packing-$(1)-libs) $$(lm-packing-$(1)-objects) 
-endif
+# ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+# $$(lm-packing-$(1)-libname): $$(addsuffix .cmo,$$($(1)_SOURCES))
+# 	$$(info Linking $(lm-packing-$(1)-libname))
+# 	$$(OCAMLLINK) $$(lm-packing-$(1)-link-options) \
+# 		-o $$(lm-packing-$(1)-libname) \
+# 		$$(lm-packing-$(1)-libs) $$(lm-packing-$(1)-objects) 
+# endif
 
 # Bytecode library in staging directory.
 .PHONY: install-objdir-packing-$(1)
 
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-$$(lm-module-objlib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
-						$$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-packing-$(1)-libname) $$(lm-module-packing-dir)
+# $$(lm-module-objlib-dir)/$$(lm-packing-$(1)-libname): $$(lm-packing-$(1)-libname) \
+# 						$$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-packing-$(1)-libname) $$(lm-module-packing-dir)
 
 install-objdir-packing-$(1): $$(lm-module-objlib-dir) $$(lm-packing-$(1)-libname) \
 		$$(lm-packing-$(1)-interfaces)
@@ -578,23 +590,46 @@ endif
 ###
 # Toplevel rules
 
-# build
+# Build byte-code
 .PHONY: build-packing-$(1)
 build-packing-$(1): $$(lm-packing-$(1)-interfaces) \
 			$$(lm-packing-$(1)-targets) \
 			$$(lm-packing-$(1)-filelist)
 
+# Build native-code
+.PHONY: build-natpacking-$(1)
+ifdef lm-nativecode
+build-natpacking-$(1)-targets:=$$(lm-packing-$(1)-interfaces) \
+			$$(lm-packing-$(1)-nattargets) \
+			$$(lm-packing-$(1)-ctargets) \
+			$$(lm-packing-$(1)-filelist)
+endif
+$$(info lm-packing-$(1)-nattargets=$$(lm-packing-$(1)-nattargets))
+$$(info lm-packing-$(1)-ctargets=$$(lm-packing-$(1)-ctargets))
+$$(info build-natpacking-$(1)-targets=$$(build-natpacking-$(1)-targets))
+build-natpacking-$(1): $$(build-natpacking-$(1)-targets)
 
 # clean
-.PHONY: clean-packing-$(1)
-clean-packing-$(1):
-	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-objects)
+.PHONY: clean-packing-$(1)-
+clean-packing-$(1)-files:
+	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-objects) \
+		$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects)
 	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-interfaces),\
 			$$(lm-packing-$(1)-dirprefix)/$$(file))
 	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-mlheaders),\
 			$$(lm-packing-$(1)-dirprefix)/$$(file))
-	-$$(RM) $$(lm-packing-$(1)-targets) $$(lm-packing-$(1)-filelist)
-	-$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR)
+	-$$(RM) $$(lm-packing-$(1)-targets) \
+		$$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets)\
+		$$(lm-packing-$(1)-filelist)
+
+.PHONY: clean-packing-$(1)-packdir
+clean-packing-$(1)-packdir:
+	if [ -e $$($(1)_PACK_DIR) ] ; then \
+		$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR) ; \
+	fi
+
+.PHONY: clean-packing-$(1)
+clean-packing-$(1): clean-packing-$(1)-files clean-packing-$(1)-packdir
 
 # libclean
 .PHONY: packingclean-packing-$(1)
@@ -1210,24 +1245,36 @@ endif
 .PHONY: build-objdir
 build-objdir: $(lm-module-objdir)
 
-#
-# Libraries
-#
 
+# Headers
 .PHONY: build-headers
 build-headers: $(lm-module-interfaces)
 
-.PHONY: build-bytelibs
-build-bytelibs: $(foreach lib,$(LIBRARIES),build-bytelib-$(lib) )
+# Libraries
+lm-build-libs-target:=$(foreach lib,$(LIBRARIES),build-lib-$(lib) )
+ifdef lm-nativecode
+lm-build-libs-target+=$(foreach lib,$(LIBRARIES),build-natlib-$(lib) )
+endif
+.PHONY: build-libs
+build-libs: $(lm-build-libs-target)
 
+
+# Program
 .PHONY: build-programs
 build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
 
+# Packings
+lm-build-packings-target:=$(foreach lib,$(PACKING),build-packing-$(lib) )
+ifdef lm-nativecode
+lm-build-packings-target+=$(foreach lib,$(PACKING),build-natpacking-$(lib) )
+endif
+$(info lm-build-packings-target=$(lm-build-packings-target))
 .PHONY: build-packings
-build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
+build-packings: $(lm-build-packings-target)
 
+# Packed
 .PHONY: build-packed
-build-packings: $(foreach lib,$(PACKED),build-packed-$(lib) )
+build-packed: $(foreach lib,$(PACKED),build-packed-$(lib) )
 
 ifdef lm-DEBUG-MAKEFILE
 $(info LIBRARIES = $(LIBRARIES))
@@ -1266,7 +1313,10 @@ distclean: clean libclean
 .PHONY: build
 ifneq ($(strip CUSTOM_TARGET_build),yes)
 build: build-objdir build-subdirs \
-	build-bytelibs build-programs build-packings \
+	build-libs \
+	build-programs \
+	build-packings \
+	build-packed \
 	module-install-objdir
 endif
 
