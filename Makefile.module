@@ -170,11 +170,17 @@
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 
-# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLPP_FLAGS=
-
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 #object_LINK_FLAGS=
+
+# object_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
+#object_OCAMLNAT_FLAGS=
+
+# object_LINKNAT_FLAGS: Flags to pass to the native-code linker for [object].
+#object_LINK_FLAGS=
+
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+#object_OCAMLPP_FLAGS=
 
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
@@ -242,6 +248,8 @@
 # CUSTOM_TARGET_install: If defined, use a custom install target.
 #CUSTOM_TARGET_install=
 
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+#DISABLE_NATIVECODE=no
 
 #####
 # Default settings

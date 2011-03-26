@@ -81,13 +81,6 @@ PROJ_ROOT=..
 # LIBRARIES: List of libraries to build.
 LIBRARIES=tpquote
 
-# PROGRAMS: List of programs to build.
-#PROGRAMS=
-
-# MODULE_OBJ_PATH: PATH to append to the staging directory path for
-# this module and all its sub-directories.
-#MODULE_OBJ_PATH=
-
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes
 
@@ -98,6 +91,9 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4
 else
 MODULE_OCAMLPP_FLAGS=-pp camlp4of -I +camlp4
 endif
+
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+DISABLE_NATIVECODE=yes
 
 #####
 # Object building settings
