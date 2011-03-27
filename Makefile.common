@@ -256,6 +256,7 @@ ifndef BaseDir
 $(error Installation prefix must bedefined.)
 endif
 export lm-install-prefix=$(BaseDir)
+export INSTALLDIR_ROOT:=$(lm-install-prefix)
 
 ##
 # Directory names and build targets
@@ -272,6 +273,7 @@ export lm-installdir-lib=$(LibDir)
 else
 export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
 endif
+export INSTALLDIR_LIB:=$(lm-installdir-lib)
 
 $(lm-objdir-lib):
 	$(MKDIR) $(lm-objdir-lib)
@@ -292,6 +294,7 @@ export lm-installdir-bin=$(BinDir)
 else
 export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
 endif
+export INSTALLDIR_BIN:=$(lm-installdir-bin)
 
 $(lm-objdir-bin):
 	$(MKDIR) $(lm-objdir-bin)
@@ -312,6 +315,7 @@ export lm-installdir-data=$(DataDir)
 else
 export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
 endif
+export INSTALLDIR_DATA:=$(lm-installdir-data)
 
 $(lm-objdir-data):
 	$(MKDIR) $(lm-objdir-data)
@@ -332,6 +336,7 @@ export lm-installdir-doc=$(DocDir)
 else
 export lm-installdir-doc=$(lm-install-prefix)/$(lm-doc-dirname)
 endif
+export INSTALLDIR_DOC:=$(lm-installdir-doc)
 
 $(lm-objdir-doc):
 	$(MKDIR) $(lm-objdir-doc)
@@ -351,6 +356,7 @@ export lm-installdir-thys=$(ThyDir)
 else
 export lm-installdir-thys=$(lm-install-prefix)/$(lm-thys-dirname)
 endif
+export INSTALLDIR_THYS:=$(lm-installdir-thys)
 
 $(lm-objdir-thys):
 	$(MKDIR) $(lm-objdir-thys)
@@ -447,10 +453,10 @@ GLOBAL_OCAMLC_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 GLOBAL_LINK_FLAGS?=-custom -I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
-GLOBAL_OCAMLNAT_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_OCAMLNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_NATLINK_FLAGS: Flags to pass to the native-code linker.
-GLOBAL_NATLINK_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_LINKNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
 # converts from .mlp to .ml files).

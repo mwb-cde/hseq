@@ -65,6 +65,8 @@ $(info GLOBAL_OCAMLPP_FLAGS = $(GLOBAL_OCAMLPP_FLAGS))
 $(info GLOBAL_OCAMLDEP_FLAGS = $(GLOBAL_OCAMLDEP_FLAGS))
 $(info GLOBAL_OCAMLC_FLAGS = $(GLOBAL_OCAMLC_FLAGS))
 $(info GLOBAL_LINK_FLAGS = $(GLOBAL_LINK_FLAGS))
+$(info GLOBAL_OCAMLNAT_FLAGS = $(GLOBAL_OCAMLNAT_FLAGS))
+$(info GLOBAL_LINKNAT_FLAGS = $(GLOBAL_LINKNAT_FLAGS))
 $(info GLOBAL_OCAMLCPP_FLAGS = $(GLOBAL_OCAMLCPP_FLAGS))
 endif
 
@@ -571,7 +573,7 @@ $$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
 ifdef lm-nativecode
 # Build rule to generate the native-code file list.
 $$(lm-packing-$(1)-nat-filelist): $$(lm-packing-$(1)-dirprefix)
-	echo -n "$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects)" > \
+	echo -n "$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) " > \
 		 $$(lm-packing-$(1)-nat-filelist)
 
 $$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
@@ -697,6 +699,12 @@ $$(foreach group,$$(lm-packed-$(1)-groups),$$(lm-pack-filename)$$(group) )
 lm-packed-$(1)-packfiles=\
 $$(foreach f,$$(lm-packed-$(1)-packlist),$$(lm-packed-$(1)-packdir)$$(f))
 
+lm-packed-$(1)-nat-packlist:=\
+$$(foreach group,$$(lm-packed-$(1)-groups),$$(lm-pack-nat-filename)$$(group) )
+
+lm-packed-$(1)-nat-packfiles=\
+$$(foreach f,$$(lm-packed-$(1)-nat-packlist),$$(lm-packed-$(1)-packdir)$$(f))
+
 # The file in which to store the packed group object list.
 lm-packed-$(1)-filelist:=\
 $$(strip $$(lm-packed-$(1)-packdir)$$(lm-pack-filename)$$(lm-packed-$(1)-packname))
@@ -721,6 +729,10 @@ lm-packed-$(1)-nat-libs:=\
 lm-packed-$(1)-interface:=$$(call interface,$$(lm-packed-$(1)-packname))
 lm-packed-$(1)-module:=$$(call bytecode,$$(lm-packed-$(1)-packname))
 lm-packed-$(1)-bytelib:=$$(call bytelib,$(1))
+lm-packed-$(1)-natmodule:=$$(call natcode,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-cmodule:=$$(call objcode,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-natlib:=$$(call natlib,$(1))
+lm-packed-$(1)-clib:=$$(call objlib,$(1))
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-packed-$(1)-packdir=$$(lm-packed-$(1)-packdir))
@@ -729,6 +741,8 @@ $$(info lm-packed-$(1)-headers=$$(lm-packed-$(1)-headers))
 $$(info lm-packed-$(1)-groups=$$(lm-packed-$(1)-groups))
 $$(info lm-packed-$(1)-packlist=$$(lm-packed-$(1)-packlist))
 $$(info lm-packed-$(1)-packfiles=$$(lm-packed-$(1)-packfiles))
+$$(info lm-packed-$(1)-nat-packlist=$$(lm-packed-$(1)-nat-packlist))
+$$(info lm-packed-$(1)-nat-packfiles=$$(lm-packed-$(1)-nat-packfiles))
 $$(info lm-packed-$(1)-filelist=$$(lm-packed-$(1)-filelist))
 $$(info lm-packed-$(1)-mlheaders=$$(lm-packed-$(1)-mlheaders))
 $$(info lm-packed-$(1)-interfaces=$$(lm-packed-$(1)-interfaces))
@@ -749,6 +763,14 @@ lm-packed-$(1)-link-options:=$$(lm-module-link-options) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-packed-$(1)-libs)
 
+lm-packed-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packed-$(1)-linknat-options:=$$(lm-module-linknat-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-packed-$(1)-libs)
+
 lm-packed-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
 lm-packed-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
@@ -756,8 +778,20 @@ lm-packed-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-packed-$(1)-ocamlc-options=$$(lm-packed-$(1)-ocamlc-options))
 $$(info lm-packed-$(1)-link-options=$$(lm-packed-$(1)-link-options))
+$$(info lm-packed-$(1)-ocamlnat-options=$$(lm-packed-$(1)-ocamlnat-options))
+$$(info lm-packed-$(1)-linknat-options=$$(lm-packed-$(1)-linknat-options))
 $$(info lm-packed-$(1)-ocamldep-options=$$(lm-packed-$(1)-ocamldep-options))
 $$(info lm-packed-$(1)-ocamlcpp-options=$$(lm-packed-$(1)-ocamlcpp-options))
+endif
+
+# Targets to build and install
+lm-packed-$(1)-targets:=$$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-bytelib)
+ifdef lm-nativecode
+lm-packed-$(1)-targets+= $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib)
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packed-$(1)-targets=$$(lm-packed-$(1)-targets))
 endif
 
 ##
@@ -767,25 +801,59 @@ $$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
 ##
 # Build rule for the module
 
-# File list
 $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
 $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface):
-	@( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
 	cat $$(lm-packed-$(1)-packlist) > $(1)_FULL_PACK_LIST ; \
 	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_PACK_LIST)" ; \
 	$$(OCAMLC) -pack -o $$(lm-packed-$(1)-module) $$$$(cat $(1)_FULL_PACK_LIST) )
 
-$$(lm-packed-$(1)-module): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module)
-	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
-		$$(lm-packed-$(1)-module)
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule)\
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule):
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	cat $$(lm-packed-$(1)-nat-packlist) > $(1)_FULL_NAT_PACK_LIST ; \
+	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_NAT_PACK_LIST)";\
+	$$(OCAMLNAT) -pack -o $$(lm-packed-$(1)-natmodule) \
+		$$$$(cat $(1)_FULL_NAT_PACK_LIST) )
 
 $$(lm-packed-$(1)-interface): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface)
 	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
 		$$(lm-packed-$(1)-interface)
 
+$$(lm-packed-$(1)-natmodule) $$(lm-packed-$(1)-cmodule): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-natmodule)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule) \
+		$$(lm-packed-$(1)-cmodule)
+
 # Build rule for the packed library
-$$(lm-packed-$(1)-bytelib): $$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-module)
-	$$(OCAMLC) -a -o $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-module)
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module)
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	$(OCAMLC) -a -o $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-module) )
+
+$$(lm-packed-$(1)-bytelib): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib) \
+		$$(lm-packed-$(1)-bytelib)
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule)
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	$$(OCAMLNAT) -a -o $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-natmodule))
+
+$$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+		$$(lm-packed-$(1)-natlib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib) \
+		$$(lm-packed-$(1)-clib)
 
 # Install to staging directory.
 $$(lm-module-obj-dir)/$$(lm-packed-$(1)-interface): \
@@ -794,28 +862,30 @@ $$(lm-module-obj-dir)/$$(lm-packed-$(1)-interface): \
 
 $$(lm-module-obj-dir)/$$(lm-packed-$(1)-bytelib): \
 		$$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
-	$$(COPY) $$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
 	$$(COPY) $$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
 
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-natlib) \
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib) \
+		$$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib) $$(lm-module-obj-dir)
+
+
 .PHONY: install-objdir-packed-$(1)
-ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-install-objdir-packed-$(1): $$(lm-module-obj-dir)/$$(lm-packed-$(1)-bytelib)
-else
-install-objdir-packed-$(1):
-endif
+install-objdir-packed-$(1): \
+	$$(foreach t,$$(lm-packed-$(1)-targets),$$(lm-module-obj-dir)/$$(t))
 
 ###
 # Toplevel rules
 
 # Build
 .PHONY: build-packed-$(1)
-build-packed-$(1): $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-interface)
+build-packed-$(1): $$(lm-packed-$(1)-targets)
 
 # clean
 .PHONY: clean-packed-$(1)
 clean-packed-$(1):
-	$$(RM) $$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-module) \
-			$$(lm-packed-$(1)-bytelib)
+	$$(RM) $$(lm-packed-$(1)-targets)
 	$$(RM) $$(lm-packed-$(1)-packdir)$(1)_FULL_PACK_LIST
 	-$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR)
 
@@ -874,8 +944,14 @@ endif # INSTALL_LIBRARIES
 
 # List of packings to install.
 lm-module-install-packed:=\
-$$(foreach lib,$$(PACKED), \
-	$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
+	$$(foreach lib,$$(PACKED), \
+		$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
+
+ifdef lm-nativecode
+lm-module-install-packed+=\
+	$$(foreach lib,$$(PACKED), \
+		$$(call natlib,$$(lib)) $$(call objlib,$$(lib)))
+endif
 
 # Calculate library files to install
 lm-module-install-libfiles:=\
@@ -883,6 +959,11 @@ lm-module-install-libfiles:=\
 	$$(lm-module-install-headers) \
 	$$(lm-module-install-packed) \
 	$$(INSTALL_EXTRA_LIBRARIES)
+ifdef lm-nativecode
+lm-module-install-packed+=\
+	$$(foreach lib,$$(lm-module-install-libs), \
+		$$(call natlib,$$(lib)) $$(call clib,$$(lib))) 
+endif
 
 # List of binariess to install, use module definitions when given.
 ifdef INSTALL_PROGRAMS
@@ -1134,6 +1215,15 @@ ifndef LOCAL_LINK_FLAGS
 LOCAL_LINK_FLAGS:=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 endif
 
+ifndef LOCAL_OCAMLNAT_FLAGS
+LOCAL_OCAMLNAT_FLAGS:=$(GLOBAL_OCAMLNAT_FLAGS) $(MODULE_OCAMLNAT_FLAGS)
+endif
+
+ifndef LOCAL_LINKNAT_FLAGS
+LOCAL_LINK_FLAGS:=$(GLOBAL_LINKNAT_FLAGS) $(MODULE_LINKNAT_FLAGS)
+endif
+
+
 ifndef LOCAL_OCAMLCPP_FLAGS
 LOCAL_OCAMLCPP_FLAGS:=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 endif
@@ -1155,7 +1245,7 @@ lm-module-ocamlnat-options=$(lm-module-ocamlpp-options) \
 	$(LOCAL_OCAMLNAT_FLAGS) 
 
 # lm-module-linknat-options: Module wide native code link flags. 
-lm-module-linknat-options=$(LOCAL_LINK_FLAGS)
+lm-module-linknat-options=$(LOCAL_LINKNAT_FLAGS)
 
 # lm-module-ocamlcpp-options: Module wide macro-expander flags. 
 lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)
@@ -1167,6 +1257,8 @@ lm-module-subdir-args=\
 	GLOBAL_OCAMLDEP_FLAGS='$(strip $(LOCAL_OCAMLDEP_FLAGS))' \
 	GLOBAL_OCAMLC_FLAGS='$(strip $(LOCAL_OCAMLC_FLAGS))' \
 	GLOBAL_LINK_FLAGS='$(strip $(LOCAL_LINK_FLAGS))' \
+	GLOBAL_OCAMLNAT_FLAGS='$(strip $(LOCAL_OCAMLNAT_FLAGS))' \
+	GLOBAL_LINKNAT_FLAGS='$(strip $(LOCAL_LINKNAT_FLAGS))' \
 	GLOBAL_OCAMLCPP_FLAGS='$(strip $(LOCAL_OCAMLCPP_FLAGS))' \
 	$(SUBDIR_MAKE_OPTIONS)
 
