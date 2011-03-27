@@ -406,8 +406,9 @@ build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 .PHONY: clean-lib-$(1)
 clean-lib-$(1):
 	$$(RM) $$(lm-lib-$(1)-target)
-	$$(RM) $$(lm-lib-$(1)-interfaces) 
-	$$(RM) $$(lm-lib-objects) $$(lm-lib-natobjects) $$(lm-lib-cobjects)
+	$$(RM) $$(lm-lib-$(1)-interfaces) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+	$$(RM) $$(lm-lib-$(1)-objects) $$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
 
 # libclean
 .PHONY: libclean-lib-$(1)
@@ -646,7 +647,8 @@ build-packing-$(1): $$(lm-packing-$(1)-build-targets)
 .PHONY: clean-packing-$(1)-
 clean-packing-$(1)-files:
 	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-$(1)-objects) \
-		$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects)
+		$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-interfaces),\
 			$$(lm-packing-$(1)-dirprefix)/$$(file))
 	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-mlheaders),\
@@ -1246,7 +1248,8 @@ build-program-$(1): install-objdir-prog-$(1)
 # clean
 .PHONY: clean-program-$(1)
 clean-program-$(1):
-	$$(RM) $$(lm-prog-$(1)-interfaces) 
+	$$(RM) $$(lm-prog-$(1)-interfaces) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 	$$(RM) $$(lm-prog-$(1)-objects) \
 		$$(lm-prog-$(1)-natobjects) $$(lm-prog-$(1)-cobjects)
 	$$(RM) $$(lm-prog-$(1)-program) $$(lm-prog-$(1)-natprogram)
