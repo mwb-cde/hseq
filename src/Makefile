@@ -189,7 +189,7 @@ hseq_GROUPS=util tpcore logic parser \
 
 # EXTRA_CLEAN: Command to add to the clean target.
 #EXTRA_CLEAN=$(RMDIR) --ignore-fail $(hseq_PACK_DIR)
-EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
+#EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=

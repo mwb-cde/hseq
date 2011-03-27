@@ -54,7 +54,7 @@ include $(PROJ_ROOT)/Makefile.common
 # Makefile debugging
 
 # Uncomment to generate debug messages
-#lm-DEBUG-MAKEFILE:=yes
+lm-DEBUG-MAKEFILE:=yes
 
 ###
 # Values that are passed in.
@@ -386,8 +386,9 @@ build-natlib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-nattarget)
 # clean
 .PHONY: clean-lib-$(1)
 clean-lib-$(1):
-	$$(RM) $$(lm-lib-$(1)-bytelib)
-	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects)
+	$$(RM) $$(lm-lib-$(1)-bytelib) $$(lm-lib-$(1)-natlib)
+	$$(RM) $$(lm-lib-$(1)-interfaces) 
+	$$(RM) $$(lm-lib-objects) $$(lm-lib-natobjects) $$(lm-lib-cobjects)
 
 # libclean
 .PHONY: libclean-lib-$(1)
@@ -633,7 +634,7 @@ clean-packing-$(1)-files:
 			$$(lm-packing-$(1)-dirprefix)/$$(file))
 	-$$(RM) $$(lm-packing-$(1)-targets) \
 		$$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets)\
-		$$(lm-packing-$(1)-filelist)
+		$$(lm-packing-$(1)-filelist) $$(lm-packing-$(1)-nat-filelist)
 
 .PHONY: clean-packing-$(1)-packdir
 clean-packing-$(1)-packdir:
@@ -883,11 +884,24 @@ install-objdir-packed-$(1): \
 build-packed-$(1): $$(lm-packed-$(1)-targets)
 
 # clean
+.PHONY: clean-packed-$(1)-files
+clean-packed-$(1)-files:
+	$$(RM) $$(lm-packed-$(1)-targets)\
+		$$(foreach f,$$(lm-packed-$(1)-targets),$$(lm-packed-$(1)-packdir)$$(f))
+	$$(RM) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule)
+	$$(RM) $$(lm-packed-$(1)-packdir)$(1)_FULL_PACK_LIST \
+		$$(lm-packed-$(1)-packdir)$(1)_FULL_NAT_PACK_LIST
+
+.PHONY: clean-packed-$(1)-packdir
+clean-packed-$(1)-packdir:
+	if [ -e $$($(1)_PACK_DIR) ] ; then \
+		$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR) ; \
+	fi
+
 .PHONY: clean-packed-$(1)
-clean-packed-$(1):
-	$$(RM) $$(lm-packed-$(1)-targets)
-	$$(RM) $$(lm-packed-$(1)-packdir)$(1)_FULL_PACK_LIST
-	-$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR)
+clean-packed-$(1): clean-packed-$(1)-files clean-packed-$(1)-packdir
 
 # libclean
 .PHONY: packedclean-packed-$(1)
@@ -1389,22 +1403,29 @@ endif
 ###
 
 
-clean: $(foreach lib,$(LIBRARIES),clean-lib-$(lib)) \
-	$(foreach group,$(PACKING),clean-packing-$(group))
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKE) -C $(subdir) clean; )
-	-$(RM) *.cmo *.cmx *.o *~
+.PHONY: clean-subdirs
+clean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) clean; )
+
+clean: 	clean-subdirs \
+		$(foreach lib,$(LIBRARIES),clean-lib-$(lib) )\
+		$(foreach group,$(PACKING),clean-packing-$(group) )\
+		$(foreach lib,$(PACKED),clean-packed-$(lib) )
 	$(EXTRA_CLEAN)
 
-libclean: clean
-	$(foreach subdir, $(SUBDIRS), \
-		$(MAKE) -C $(subdir) libclean; )
+.PHONY: libclean-subdirs
+libclean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
+
+libclean: libclean-subdirs
 	-$(RM) *.cmi *.cma *.cmxa *~
 	$(EXTRA_LIBCLEAN)
 
-distclean: clean libclean
-	$(foreach subdir, $(DOCSUBDIRS), \
-		$(MAKE) -C $(subdir) reallyclean; )
+.PHONY: distclean-subdirs
+distclean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
+
+distclean: distclean-subdirs libclean
 	-$(RM) depend
 	$(EXTRA_DISTCLEAN)
 
