@@ -114,80 +114,20 @@ let bin_d () = "hseq"
 
 let os_type = Sys.os_type
 
-(** The default Unix values **)
-module Unix=
-struct
-  let prefix_d () = "/usr/local/lib/hseq"
-  let basedir_d () = 
-    get_opt !basedir (prefix_d())
-  let bindir_d () = 
-    get_opt !bindir (filename (basedir_d()) "bin")
-  let libdir_d () = 
-    get_opt !libdir (filename (basedir_d()) "lib")
-  let thysdir_d () = 
-    get_opt !thysdir (filename (libdir_d()) "thys")
-  let docdir_d () = 
-    get_opt !docdir (filename (basedir_d()) "doc")
-  let datadir_d () = 
-    get_opt !datadir (filename (basedir_d()) "share/hseq-data")
-end
-
-(** The standard Win32 values **)
-
-module Windows=
-struct
-
-  let prefix_d () = "/Program Files"
-
-  let basedir_d () = 
-    filename (prefix_d()) "HSeq"
-  let bindir_d () = 
-    filename (basedir_d()) "bin"
-  let libdir_d () = 
-    filename (basedir_d()) "lib"
-  let thysdir_d () = 
-    filename (libdir_d()) "thys"
-  let docdir_d () = 
-    filename (basedir_d()) "doc"
-  let datadir_d () = 
-    filename (basedir_d()) "hseq-data"
-end
-
-
-let prefix_d () = 
-   match os_type with
-     "Win32" -> Windows.prefix_d()
-     | _ -> Unix.prefix_d()
-
+(** The default values **)
+let prefix_d () = "/usr/local/lib/hseq"
 let basedir_d () = 
-   match os_type with
-     "Win32" -> Windows.basedir_d()
-     | _ -> Unix.basedir_d()
-
+  get_opt !basedir (prefix_d())
 let bindir_d () = 
-   match os_type with
-     "Win32" -> Windows.bindir_d()
-     | _ -> Unix.bindir_d()
-
+  get_opt !bindir (filename (basedir_d()) "bin")
 let libdir_d () = 
-   match os_type with
-     "Win32" -> Windows.libdir_d()
-     | _ -> Unix.libdir_d()
-
+  get_opt !libdir (filename (basedir_d()) "lib")
 let thysdir_d () = 
-   match os_type with
-     "Win32" -> Windows.thysdir_d()
-     | _ -> Unix.thysdir_d()
-
+  get_opt !thysdir (filename (libdir_d()) "thys")
 let docdir_d () = 
-   match os_type with
-     "Win32" -> Windows.docdir_d()
-     | _ -> Unix.docdir_d()
-
+  get_opt !docdir (filename (basedir_d()) "doc")
 let datadir_d () = 
-   match os_type with
-     "Win32" -> Windows.datadir_d()
-     | _ -> Unix.datadir_d()
+  get_opt !datadir (filename (basedir_d()) "share")
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
