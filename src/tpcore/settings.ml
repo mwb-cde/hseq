@@ -41,7 +41,7 @@ let make_directory f = (get_base_dir())^"/"^f
 
 let libs_dir () = Defaults.libdir
 let thys_dir () = Defaults.thydir
-let include_dirs = ref [libs_dir()]
+let include_dirs = ref [libs_dir(); thys_dir()]
 
 let init_file = "hseqstart.ml"
 

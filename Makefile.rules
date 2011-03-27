@@ -54,7 +54,7 @@ include $(PROJ_ROOT)/Makefile.common
 # Makefile debugging
 
 # Uncomment to generate debug messages
-#lm-DEBUG-MAKEFILE:=yes
+lm-DEBUG-MAKEFILE:=yes
 
 ###
 # Values that are passed in.
@@ -508,6 +508,7 @@ $$(info lm-packing-$(1)-libs=$$(lm-packing-$(1)-libs))
 $$(info lm-packing-$(1)-nat-libs=$$(lm-packing-$(1)-nat-libs))
 $$(info lm-packing-$(1)-bytelib=$$(lm-packing-$(1)-bytelib))
 $$(info lm-packing-$(1)-filelist=$$(lm-packing-$(1)-filelist))
+$$(info lm-packing-$(1)-nat-filelist=$$(lm-packing-$(1)-nat-filelist))
 endif
 
 # Build options
@@ -577,6 +578,7 @@ $$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
 
 # Build rule to generate the byte-code file list.
 $$(lm-packing-$(1)-filelist): $$(lm-packing-$(1)-dirprefix)
+	@echo "Generating byte-code object list"
 	echo -n "$$(lm-packing-$(1)-objects) "> $$(lm-packing-$(1)-filelist)
 
 $$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
@@ -586,11 +588,11 @@ $$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
 	$$(COPY) $$(lm-packing-$(1)-objects) $$($(1)_PACK_DIR)
 
-ifdef lm-nativecode
+
 # Build rule to generate the native-code file list.
 $$(lm-packing-$(1)-nat-filelist): $$(lm-packing-$(1)-dirprefix)
-	echo -n "$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) " > \
-		 $$(lm-packing-$(1)-nat-filelist)
+	@echo "Generating native-code object list"
+	echo -n "$$(lm-packing-$(1)-natobjects) " > $$(lm-packing-$(1)-nat-filelist)
 
 $$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
 			$$(lm-packing-$(1)-interfaces) \
@@ -601,7 +603,9 @@ $$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
 	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
 	$$(COPY) $$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
 		 $$($(1)_PACK_DIR)
-endif
+
+#ifdef lm-nativecode
+#endif
 
 # Bytecode library in staging directory.
 .PHONY: install-objdir-packing-$(1)
@@ -619,24 +623,24 @@ endif
 ###
 # Toplevel rules
 
-# Build byte-code
-.PHONY: build-packing-$(1)
-build-packing-$(1): $$(lm-packing-$(1)-interfaces) \
-			$$(lm-packing-$(1)-targets) \
-			$$(lm-packing-$(1)-filelist)
+# Build 
 
-# Build native-code
-.PHONY: build-natpacking-$(1)
+lm-packing-$(1)-build-targets:=$$(lm-packing-$(1)-interfaces) \
+				$$(lm-packing-$(1)-targets) \
+				$$(lm-packing-$(1)-filelist)
+
 ifdef lm-nativecode
-build-natpacking-$(1)-targets:=$$(lm-packing-$(1)-interfaces) \
-			$$(lm-packing-$(1)-nattargets) \
-			$$(lm-packing-$(1)-ctargets) \
-			$$(lm-packing-$(1)-nat-filelist)
+lm-packing-$(1)-build-targets+= $$(lm-packing-$(1)-nattargets) \
+				$$(lm-packing-$(1)-ctargets) \
+				$$(lm-packing-$(1)-nat-filelist)
 endif
-$$(info lm-packing-$(1)-nattargets=$$(lm-packing-$(1)-nattargets))
-$$(info lm-packing-$(1)-ctargets=$$(lm-packing-$(1)-ctargets))
-$$(info build-natpacking-$(1)-targets=$$(build-natpacking-$(1)-targets))
-build-natpacking-$(1): $$(build-natpacking-$(1)-targets)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packing-$(1)-build-targets=$$(lm-packing-$(1)-build-targets))
+endif
+
+.PHONY: build-packing-$(1)
+build-packing-$(1): $$(lm-packing-$(1)-build-targets)
 
 # clean
 .PHONY: clean-packing-$(1)-
@@ -1322,13 +1326,13 @@ lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)
 ##
 # Options to pass to sub-directorys
 lm-module-subdir-args=\
-	GLOBAL_OCAMLPP_FLAGS='$(strip $(LOCAL_OCAMLPP_FLAGS))' \
-	GLOBAL_OCAMLDEP_FLAGS='$(strip $(LOCAL_OCAMLDEP_FLAGS))' \
-	GLOBAL_OCAMLC_FLAGS='$(strip $(LOCAL_OCAMLC_FLAGS))' \
-	GLOBAL_LINK_FLAGS='$(strip $(LOCAL_LINK_FLAGS))' \
-	GLOBAL_OCAMLNAT_FLAGS='$(strip $(LOCAL_OCAMLNAT_FLAGS))' \
-	GLOBAL_LINKNAT_FLAGS='$(strip $(LOCAL_LINKNAT_FLAGS))' \
-	GLOBAL_OCAMLCPP_FLAGS='$(strip $(LOCAL_OCAMLCPP_FLAGS))' \
+	GLOBAL_OCAMLPP_FLAGS='$(strip $(GLOBAL_OCAMLPP_FLAGS))' \
+	GLOBAL_OCAMLDEP_FLAGS='$(strip $(GLOBAL_OCAMLDEP_FLAGS))' \
+	GLOBAL_OCAMLC_FLAGS='$(strip $(GLOBAL_OCAMLC_FLAGS))' \
+	GLOBAL_LINK_FLAGS='$(strip $(GLOBAL_LINK_FLAGS))' \
+	GLOBAL_OCAMLNAT_FLAGS='$(strip $(GLOBAL_OCAMLNAT_FLAGS))' \
+	GLOBAL_LINKNAT_FLAGS='$(strip $(GLOBAL_LINKNAT_FLAGS))' \
+	GLOBAL_OCAMLCPP_FLAGS='$(strip $(GLOBAL_OCAMLCPP_FLAGS))' \
 	$(SUBDIR_MAKE_OPTIONS)
 
 # lm-module-uses-objdir: Defined iff the module uses a staging directory.

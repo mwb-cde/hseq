@@ -161,7 +161,7 @@ export OCAMLLINK?=ocamlc
 export OCAMLNAT?=ocamlopt
 
 # OCAMLNATLINK: The OCaml native-code linker
-export OCAMLNATLINK?=ocamlopt -a
+export OCAMLNATLINK?=ocamlopt
 
 # OCAMLMKTOP: Make a toplevel
 export OCAMLMKTOP?=ocamlmktop
@@ -449,7 +449,9 @@ GLOBAL_OCAMLC_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
 			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_LINK_FLAGS: Flags to pass to the linker.
-GLOBAL_LINK_FLAGS?=-custom -I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+#GLOBAL_LINK_FLAGS?=-custom -I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+#			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_LINK_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
 			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
