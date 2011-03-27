@@ -445,16 +445,20 @@ export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 # Global tool options
 
 # GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-GLOBAL_OCAMLC_FLAGS?=-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_OCAMLC_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_LINK_FLAGS: Flags to pass to the linker.
-GLOBAL_LINK_FLAGS?=-custom -I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_LINK_FLAGS?=-custom -I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
-GLOBAL_OCAMLNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_OCAMLNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_NATLINK_FLAGS: Flags to pass to the native-code linker.
-GLOBAL_LINKNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_LINKNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
 
 # GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
 # converts from .mlp to .ml files).

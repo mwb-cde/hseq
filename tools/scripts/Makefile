@@ -137,6 +137,9 @@ hseqc_HEADERS=
 #object_LIBS=
 hseqb_LIBS=unix.cma
 
+# object_NATLIBS: Libraries to include when native-code linking [object].
+hseqb_NATLIBS=unix.cmxa
+
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 

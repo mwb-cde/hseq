@@ -97,6 +97,9 @@
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=../..
 
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+DISABLE_NATIVECODE=yes
+
 #####
 # Module building settings
 #
