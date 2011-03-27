@@ -54,8 +54,7 @@
 #
 # object_SOURCES: List of source file names, without suffixes.
 # object_INCLUDE: Directories to include when compiling [object].
-# object_LIBS: Libraries to include when linking [object].
-# object_BYTELIBS: Libraries to include when byte-code linking [object].
+# object_LIBS: Libraries to include when byte-code linking [object].
 # object_NATLIBS: Libraries to include when native-code linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
@@ -151,8 +150,11 @@
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
 
-# object_LIBS: Libraries to include when linking [object].
+# object_LIBS: Libraries to include when byte-code linking [object].
 #object_LIBS=
+
+# object_NATLIBS: Libraries to include when native-code linking [object].
+#object_NATLIBS=
 
 # object_PACK_GROUP: Name of packing group to build object for.
 #object_PACK_GROUP=
@@ -177,7 +179,7 @@
 #object_OCAMLNAT_FLAGS=
 
 # object_LINKNAT_FLAGS: Flags to pass to the native-code linker for [object].
-#object_LINK_FLAGS=
+#object_LINKNAT_FLAGS=
 
 # object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
 #object_OCAMLPP_FLAGS=

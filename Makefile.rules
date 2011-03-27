@@ -54,7 +54,7 @@ include $(PROJ_ROOT)/Makefile.common
 # Makefile debugging
 
 # Uncomment to generate debug messages
-lm-DEBUG-MAKEFILE:=yes
+#lm-DEBUG-MAKEFILE:=yes
 
 ###
 # Values that are passed in.
@@ -280,23 +280,32 @@ lm-lib-$(1)-libs:=\
 	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj))) \
 	$$($(1)_BYTELIBS)
 
-lm-lib-$(1)-nat-libs:=\
-	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj))) \
-	$$($(1)_NATLIBS)
-
 lm-lib-$(1)-bytelib:=$(call bytelib,$(1))
 
-lm-lib-$(1)-natlib:=$(call natlib,$(1))
+lm-lib-$(1)-natobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
 
+lm-lib-$(1)-cobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call objcode,$$(src)))
+
+lm-lib-$(1)-nat-libs:=\
+	$$(foreach obj,$$($(1)_NATLIBS),$$(call natlib,$$(obj))) \
+	$$($(1)_NATLIBS)
+
+lm-lib-$(1)-natlib:=$(call natlib,$(1))
+lm-lib-$(1)-clib:=$(call objlib,$(1))
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-headers=$$(lm-lib-$(1)-headers))
 $$(info lm-lib-$(1)-interfaces=$$(lm-lib-$(1)-interfaces))
 $$(info lm-lib-$(1)-objects=$$(lm-lib-$(1)-objects))
 $$(info lm-lib-$(1)-libs=$$(lm-lib-$(1)-libs))
-$$(info lm-lib-$(1)-nat-libs=$$(lm-lib-$(1)-nat-libs))
 $$(info lm-lib-$(1)-bytelib=$$(lm-lib-$(1)-bytelib))
+$$(info lm-lib-$(1)-natobjects=$$(lm-lib-$(1)-natobjects))
+$$(info lm-lib-$(1)-cobjects=$$(lm-lib-$(1)-cobjects))
+$$(info lm-lib-$(1)-nat-libs=$$(lm-lib-$(1)-nat-libs))
 $$(info lm-lib-$(1)-natlib=$$(lm-lib-$(1)-natlib))
+$$(info lm-lib-$(1)-clib=$$(lm-lib-$(1)-clib))
 endif
 
 # Build options
@@ -338,13 +347,27 @@ $$(lm-lib-$(1)-interfaces): %.cmi: %.mli
 $$(lm-lib-$(1)-objects): %.cmo: %.ml
 	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
 
-# Bytecode library.
+# Native-code object files
+$$(lm-lib-$(1)-natobjects):%.cmx: %.ml
+	$(OCAMLNAT) $$(lm-lib-$(1)-ocamlnat-options) -c $$<
+
+$$(lm-lib-$(1)-cobjects):%.o: %.cmx
+
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
-$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-objects)
+# Bytecode library.
+$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-objects)
 	$$(info Linking $(lm-lib-$(1)-bytelib))
 	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
 		-o $$(lm-lib-$(1)-bytelib) \
 		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects) 
+
+# Native-code library.
+$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): $$(lm-lib-$(1)-interfaces)\
+		$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects) 
+	$$(info Linking $(lm-lib-$(1)-natlib))
+	$$(OCAMLNATLINK) $$(lm-lib-$(1)-linknat-options) \
+		-o $$(lm-lib-$(1)-natlib) \
+		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-natobjects) 
 endif
 
 # Bytecode library in staging directory.
@@ -372,6 +395,9 @@ endif
 
 # build
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
+ifdef lm-nativecode
+lm-lib-$(1)-target+= $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
+endif
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-target=$$(lm-lib-$(1)-target))
@@ -380,25 +406,20 @@ endif
 .PHONY: build-lib-$(1)
 build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 
-.PHONY: build-lib-$(1)
-build-natlib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-nattarget)
-
 # clean
 .PHONY: clean-lib-$(1)
 clean-lib-$(1):
-	$$(RM) $$(lm-lib-$(1)-bytelib) $$(lm-lib-$(1)-natlib)
+	$$(RM) $$(lm-lib-$(1)-target)
 	$$(RM) $$(lm-lib-$(1)-interfaces) 
 	$$(RM) $$(lm-lib-objects) $$(lm-lib-natobjects) $$(lm-lib-cobjects)
 
 # libclean
 .PHONY: libclean-lib-$(1)
 libclean-lib-$(1): clean-lib-$(1)
-	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects) $$(lm-lib-$(1)-bytelib)
 
 # distclean
 .PHONY: build-lib-$(1)
 distclean-lib-$(1): libclean-$(1)
-	$$(RM) $$(lm-lib-$(1)-interfaces) $$(lm-lib-objects) $$(lm-lib-$(1)-bytelib)
 
 endef
 ########
@@ -969,15 +990,18 @@ endif
 
 # Calculate library files to install
 lm-module-install-libfiles:=\
-	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib))) \
-	$$(lm-module-install-headers) \
-	$$(lm-module-install-packed) \
-	$$(INSTALL_EXTRA_LIBRARIES)
+	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib)))
+
 ifdef lm-nativecode
-lm-module-install-packed+=\
+lm-module-install-libfiles+=\
 	$$(foreach lib,$$(lm-module-install-libs), \
 		$$(call natlib,$$(lib)) $$(call clib,$$(lib))) 
 endif
+
+lm-module-install-libfiles+=$$(lm-module-install-headers) \
+	$$(lm-module-install-packed) \
+	$$(INSTALL_EXTRA_LIBRARIES)
+
 
 # List of binariess to install, use module definitions when given.
 ifdef INSTALL_PROGRAMS
@@ -1234,9 +1258,8 @@ LOCAL_OCAMLNAT_FLAGS:=$(GLOBAL_OCAMLNAT_FLAGS) $(MODULE_OCAMLNAT_FLAGS)
 endif
 
 ifndef LOCAL_LINKNAT_FLAGS
-LOCAL_LINK_FLAGS:=$(GLOBAL_LINKNAT_FLAGS) $(MODULE_LINKNAT_FLAGS)
+LOCAL_LINKNAT_FLAGS:=$(GLOBAL_LINKNAT_FLAGS) $(MODULE_LINKNAT_FLAGS)
 endif
-
 
 ifndef LOCAL_OCAMLCPP_FLAGS
 LOCAL_OCAMLCPP_FLAGS:=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
@@ -1330,9 +1353,6 @@ $(eval $(call library-targets-template,$(lib))))
 
 ##
 # Instantiate build targets for byte-code programs
-#$(foreach prog,$(PROGRAMS),\
-#$(eval $(call build-byteprog-template,$(prog))))
-
 $(foreach prog,$(PROGRAMS),\
 $(eval $(call program-targets-template,$(prog))))
 
@@ -1360,32 +1380,21 @@ endif
 .PHONY: build-objdir
 build-objdir: $(lm-module-objdir)
 
-
 # Headers
 .PHONY: build-headers
 build-headers: $(lm-module-interfaces)
 
 # Libraries
-lm-build-libs-target:=$(foreach lib,$(LIBRARIES),build-lib-$(lib) )
-ifdef lm-nativecode
-lm-build-libs-target+=$(foreach lib,$(LIBRARIES),build-natlib-$(lib) )
-endif
 .PHONY: build-libs
-build-libs: $(lm-build-libs-target)
-
+build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) )
 
 # Program
 .PHONY: build-programs
 build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
 
 # Packings
-lm-build-packings-target:=$(foreach lib,$(PACKING),build-packing-$(lib) )
-ifdef lm-nativecode
-lm-build-packings-target+=$(foreach lib,$(PACKING),build-natpacking-$(lib) )
-endif
-$(info lm-build-packings-target=$(lm-build-packings-target))
 .PHONY: build-packings
-build-packings: $(lm-build-packings-target)
+build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
 
 # Packed
 .PHONY: build-packed

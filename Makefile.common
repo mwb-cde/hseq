@@ -186,13 +186,13 @@ ifeq ($(strip $(FastCompilers)),true)
 export OCAMLC?=ocamlc.opt
 
 # OCAMLLINK: The OCaml byte-code linker
-export OCAMLLINK?=ocamlc.opt -a
+export OCAMLLINK?=ocamlc.opt
 
 # OCAMLNAT: The OCaml native code compiler
 export OCAMLNAT?=ocamlopt.opt
 
 # OCAMLNATLINK: The OCaml native-code linker
-export OCAMLNATLINK?=ocamlopt.opt -a
+export OCAMLNATLINK?=ocamlopt.opt
 
 # OCAMLMKTOP: Make a toplevel
 export OCAMLMKTOP?=ocamlmktop
@@ -222,7 +222,7 @@ OCAMLLINK+=-a $(OCAMLLINK_FLAGS) $(GLOBAL_LINK_FLAGS)
 OCAMLNAT+= $(OCAMLNAT_FLAGS) $(GLOBAL_OCAMLNAT_FLAGS)
 
 # OCAMLNATLINK: The OCaml native-code linker
-OCAMLNATLINK+= $(OCAMLNATLINK_FLAGS) $(GLOBAL_NATLINK_FLAGS)
+OCAMLNATLINK+=-a $(OCAMLNATLINK_FLAGS) $(GLOBAL_NATLINK_FLAGS)
 
 # OCAMLMKTOP: Make a toplevel
 OCAMLMKTOP+= $(OCAMLMKTOP_FLAGS)
@@ -232,8 +232,6 @@ OCAMLDEP+= $(OCAMLDEP_FLAGS)
 
 # OCAMLDOC: The documentation generator
 OCAMLDOC+= $(OCAMLDOC_FLAGS)
-
-
 
 ####
 # Variable definitions
