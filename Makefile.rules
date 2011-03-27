@@ -54,7 +54,7 @@ include $(PROJ_ROOT)/Makefile.common
 # Makefile debugging
 
 # Uncomment to generate debug messages
-#lm-DEBUG-MAKEFILE:=yes
+lm-DEBUG-MAKEFILE:=yes
 
 ###
 # Values that are passed in.
@@ -119,7 +119,7 @@ export objlib=$(addsuffix .a,$(1))
 .SUFFIXES: .mlp
 
 %.ml: %.mlp
-	$(OCAMLCPP) -impl $< -o $@
+	$(OCAMLCPP) $(LOCAL_OCAMLCPP_FLAGS) -impl $< -o $@
 
 %.cmi: %.mli
 	$(OCAMLC) -c $<
@@ -645,7 +645,7 @@ build-packing-$(1): $$(lm-packing-$(1)-build-targets)
 # clean
 .PHONY: clean-packing-$(1)-
 clean-packing-$(1)-files:
-	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-objects) \
+	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-$(1)-objects) \
 		$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects)
 	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-interfaces),\
 			$$(lm-packing-$(1)-dirprefix)/$$(file))
