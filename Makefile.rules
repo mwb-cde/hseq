@@ -54,7 +54,7 @@ include $(PROJ_ROOT)/Makefile.common
 # Makefile debugging
 
 # Uncomment to generate debug messages
-lm-DEBUG-MAKEFILE:=yes
+#lm-DEBUG-MAKEFILE:=yes
 
 ###
 # Values that are passed in.
