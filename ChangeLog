@@ -1,14 +1,8 @@
-* Replace build system:
-	- Makefile.common: Common settings for all makefiles.
-	- Makefile.modules: Per-module makefile to hold build settings for
-	Makefile.rules.
-	- Makefile.rules: Generic build rules using values from per-module makefiles.
-* Remove Windows build support.
 * Experimental support for tactics that generate non-goal data.
 * Remove some side-effects based code.
 * Record goal-change information as part of the goal.
 * Update some tactics for new goal-change information.
-* Rewrite theory loader code.
+* Rewrite theory loader code.	
 * Try to handle OCaml/Camlp4 version for both 3.11.2 and 3.12.
 * Rename file Changes to ChangeLog.
 * Code clean-up.

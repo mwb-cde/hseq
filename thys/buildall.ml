@@ -36,8 +36,8 @@ open HSeq
 
 (** Add the source include directories *)
 let _ = 
- Settings.include_dirs :=
-    "../obj/lib":: (!Settings.include_dirs);;
+  Settings.include_dirs :=
+    "../src/lib":: (!Settings.include_dirs);;
     
 
 (** Initialise hseq *)

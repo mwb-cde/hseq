@@ -35,8 +35,6 @@
    --basedir: the install directory
    --bindir: the executables directory
    --libdir: the libraries directory.
-   --docdir: the documenation directory.
-   --datadir: the data directory (not used).
    --thys: the theories directory.
    --fast: whether to use the optimised compiler (ocamlc.opt)
    --native: whether to build the native code library (ocamlopt.opt)
@@ -72,7 +70,7 @@ let has_program s =
 
 (** Names of output files **)
 
-let output_dir = ""
+let output_dir = "config"
 let ml_data=filename output_dir "configure.data"
 let make_data=filename output_dir "data.make"
 
@@ -86,11 +84,8 @@ let make_code= ref true
 let bin = ref None
 let prefix = ref None
 let basedir = ref None
-let srcdir = ref (Some(Sys.getcwd()))
 let bindir = ref None
 let libdir = ref None
-let docdir = ref None
-let datadir = ref None
 let thysdir = ref None
 let output = ref None
 let fast_compilers = ref None
@@ -114,20 +109,62 @@ let bin_d () = "hseq"
 
 let os_type = Sys.os_type
 
-(** The default values **)
-let prefix_d () = "/usr/local/lib/hseq"
+(** The default Unix values **)
+module Unix=
+struct
+  let prefix_d () = "/usr/local"
+  let basedir_d () = 
+    get_opt !basedir (prefix_d())
+  let bindir_d () = 
+    get_opt !bindir (filename (basedir_d()) "bin")
+  let libdir_d () = 
+    get_opt !libdir (filename (basedir_d()) "lib/hseq")
+  let thysdir_d () = 
+    get_opt !thysdir (filename (libdir_d()) "thys")
+end
+
+(** The standard Win32 values **)
+
+module Windows=
+struct
+
+  let prefix_d () = "/Program Files"
+
+  let basedir_d () = 
+    filename (prefix_d()) "HSeq"
+  let bindir_d () = 
+    filename (basedir_d()) "bin"
+  let libdir_d () = 
+    filename (basedir_d()) "lib"
+  let thysdir_d () = 
+    filename (libdir_d()) "thys"
+end
+
+
+let prefix_d () = 
+   match os_type with
+     "Win32" -> Windows.prefix_d()
+     | _ -> Unix.prefix_d()
+
 let basedir_d () = 
-  get_opt !basedir (prefix_d())
+   match os_type with
+     "Win32" -> Windows.basedir_d()
+     | _ -> Unix.basedir_d()
+
 let bindir_d () = 
-  get_opt !bindir (filename (basedir_d()) "bin")
+   match os_type with
+     "Win32" -> Windows.bindir_d()
+     | _ -> Unix.bindir_d()
+
 let libdir_d () = 
-  get_opt !libdir (filename (basedir_d()) "lib")
+   match os_type with
+     "Win32" -> Windows.libdir_d()
+     | _ -> Unix.libdir_d()
+
 let thysdir_d () = 
-  get_opt !thysdir (filename (libdir_d()) "thys")
-let docdir_d () = 
-  get_opt !docdir (filename (basedir_d()) "doc")
-let datadir_d () = 
-  get_opt !datadir (filename (basedir_d()) "share")
+   match os_type with
+     "Win32" -> Windows.thysdir_d()
+     | _ -> Unix.thysdir_d()
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
@@ -142,6 +179,7 @@ let set_fast_compilers flag =
   else set fast_compilers "false"
 
 let has_native_compilers = has_program "ocamlopt" 
+(* let has_native_compilers = false *)
 
 let native_compilers_d ()= 
   if has_native_compilers 
@@ -155,9 +193,8 @@ let set_native_compilers flag =
 
 let ocaml_version_str_d () =
   Sys.ocaml_version
-let set_ocaml_version_str str = str
 
-let srcdir_d() = Sys.getcwd()
+let set_ocaml_version_str str = str
 
 let output_ml_d () = get_opt !output ml_data
 let output_make_d () = get_opt !output make_data
@@ -166,15 +203,13 @@ let output_make_d () = get_opt !output make_data
 
 let varlist = 
   [
-    ("SrcDir", srcdir, srcdir_d);
-    ("Bin", bin, bin_d);
-    ("BaseDir", basedir, basedir_d);
-    ("BinDir", bindir, bindir_d);
-    ("LibDir", libdir, libdir_d);
-    ("ThyDir", thysdir, thysdir_d);
-    ("DocDir", docdir, docdir_d);
-    ("DataDir", datadir, datadir_d);
-    ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
+   ("Bin", bin, bin_d);
+(*   ("Prefix", prefix, prefix_d);*)
+   ("BinDir", bindir, bindir_d);
+   ("BaseDir", basedir, basedir_d);
+   ("LibDir", libdir, libdir_d);
+   ("ThyDir", thysdir, thysdir_d);
+   ("OcamlVersion", ocaml_version_str, ocaml_version_str_d)
  ]
 
 let settinglist =
@@ -216,7 +251,7 @@ let print_make_var oc (v, d, _) =
     | _ -> 
 	let str = String.escaped (get !d)
 	in 
- 	  Printf.fprintf oc "%s=%s\n" v str 
+ 	  Printf.fprintf oc "%s = '%s'\n" v str 
 
 let print_make_setting oc (v, d, _) =
   match (!d) with
@@ -224,7 +259,7 @@ let print_make_setting oc (v, d, _) =
     | _ -> 
 	let str = String.escaped (get !d)
 	in 
-	  Printf.fprintf oc "%s=%s\n" v str
+	  Printf.fprintf oc "%s = %s\n" v str
 
 let make_outfile n = 
   if n = "" 
@@ -272,10 +307,6 @@ let arglist =
        "<dir> The libraries directory ["^(libdir_d())^"]");
       ("--thydir", Arg.String (set thysdir), 
        "<dir> The theories directory ["^(thysdir_d())^"]");
-      ("--docdir", Arg.String (set docdir), 
-       "<dir> The documentation directory ["^(docdir_d())^"]");
-      ("--datadir", Arg.String (set datadir), 
-       "<dir> The data directory ["^(datadir_d())^"]");
       ("--fast", Arg.Bool set_fast_compilers, 
        "[true|false] Use the fast compilers (ocamlc.opt) ["
        ^(fast_compilers_d())^"]");

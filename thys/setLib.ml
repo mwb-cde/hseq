@@ -52,6 +52,7 @@ module SetPP =
     let set_parser () =
       let ocb_tok = Sym(OTHER ocb_sym)
       and ccb_tok = Sym(OTHER ccb_sym)
+(*      and semicolon = Sym(OTHER semicolon_sym) *)
       in 
       let wrapper t = 
 	let id_term = Pterm.mk_ident set_id
@@ -87,6 +88,9 @@ module SetPP =
 		  [ 
 		    set_body inf; 
 		    set_list inf
+(*
+   ((form inf) >> (fun t -> Pterm.mk_app (Pterm.mk_ident single_id) t))
+*)
 		  ]))
 	      >>
 	    (fun s -> Lib.get_option s (empty_term()));

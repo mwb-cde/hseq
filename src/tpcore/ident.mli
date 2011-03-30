@@ -1,5 +1,5 @@
 (*----
-  Name: hident.mli
+  Name: ident.mli
   Copyright M Wahab 2005-2009, 2010
   Author: M Wahab  <mwb.cde@googlemail.com>
 

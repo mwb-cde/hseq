@@ -1,41 +1,10 @@
 
-########################################################## --*- Makefile -*--
-# Makefile.module - Makefile to build modules
-# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
-#
-# Released under the Lesser GPLv3 license:
-# ========================================
-# This file is part of HSeq.
-#
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
-#
-# You should have received a copy of the Lesser GNU General Public
-# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-######################################################################
-
-#####
-# Definitions and rules for building theories.
-#####
-
-#####
-# Required definitions
-#  
-
-# PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=..
-
-
 ###
 # Variables
 ###
+
+# SUBDIRS: The sub-directories to build (in order)
+SUBDIRS =
 
 # BUILDSCRIPT: The name of the build script
 BUILDSCRIPT = buildall.ml
@@ -47,17 +16,99 @@ HSEQ=hseq
 HSEQB=hseqb
 
 # HSEQLIB: The include directory for $(HSEQ) (before installation and 
-# relative to the PROJ_ROOT directory).
-HSEQLIB=$(OBJ_ROOT)
+# relative to the src directory).
+HSEQLIB=lib
 
 ####
 # Don't modify anything below this line
 ####
 
-include $(PROJ_ROOT)/Makefile.rules
+##
+# Constants
+##
+
+# CONFIGDIR: The configuration directory
+CONFIGDIR ?= ../config
+
+# CONFIGFILE: Configuration data file 
+CONFIGFILE = $(CONFIGDIR)/data.make
+
+# SUBCONFIGDIR: The configuration directory for sub-directories
+# (relative to a subdirectory)
+SUBCONFIGDIR ?= ../config
+
+# SRCDIR: The source directory
+SRCDIR ?= ../src
+
+# LIBDIR: The location of the compiled files
+
+LIBDIR ?= $(SRCDIR)/lib
 
 ###
-# Compiler options
+# Configuration variables
+# Set by data.make
+###
+
+# Read from $(CONFIGFILE)
+ifdef CONFIGFILE
+include $(CONFIGFILE)
+endif
+
+# Variables which are set in $(CONFIGFILE)
+Bin ?= 
+Prefix ?= 
+BinDir ?= 
+BaseDir ?= 
+IncludeDir ?= 
+LibDir ?= 
+ThyDir ?= 
+
+# IPREFIX: The installation prefix
+IPREFIX = $(strip $(Prefix))
+
+# IBASEDIR: Installation directory
+IBASEDIR = $(BaseDir)
+
+# ITHYDIR: Theories installation directory
+ITHYDIR = $(ThyDir)
+
+# IDOCDIR: The documentation installation directory
+IDOCDIR ?= $(IBASEDIR)/doc
+
+# HTMLDIR: HTML Documentation directory
+HTMLDIR ?= $(IDOCDIR)/html
+
+# INFODIR: Info Documentation directory
+INFODIR ?= $(IDOCDIR)/info
+
+##
+# Read command definitions
+##
+
+include $(CONFIGDIR)/Makefile.os
+
+
+##
+# Build commands
+##
+
+MAKEOPTIONS += 
+
+#ifdef TOOLBOX
+MAKEOPTIONS += TOOLBOX=$(TOOLBOX)
+#endif
+
+# BAREMAKE: The make with not options
+BAREMAKE = make 
+
+# DMAKE: The make to build sub-directories with.
+DMAKE = make $(MAKEOPTIONS)
+
+# MAKECLEAN: The make to clean up with
+MAKECLEAN = make NODEPEND=true $(MAKEOPTIONS)
+
+###
+# Compiler definitions
 ###
 
 ##
@@ -65,10 +116,13 @@ include $(PROJ_ROOT)/Makefile.rules
 ##
 
 # INCLUDE: The include directives
-HSEQ_INCLUDE=--include $(OBJ_ROOT)/lib
+INCLUDE = --include $(LIBDIR)
+
+# OPTIONS: Compiler options
+OPTIONS = -I $(LIBDIR) -I $(SRCDIR)
 
 # HSEQC: The hseq compiler
-HSEQC = $(OBJ_ROOT)/bin/$(HSEQB) --bin $(OBJ_ROOT)/bin/$(HSEQ) $(HSEQ_INCLUDE)
+HSEQC = $(SRCDIR)/$(HSEQB) --bin $(SRCDIR)/$(HSEQ) $(INCLUDE)
 
 ###
 # Required build targets
@@ -81,30 +135,31 @@ HSEQC = $(OBJ_ROOT)/bin/$(HSEQB) --bin $(OBJ_ROOT)/bin/$(HSEQ) $(HSEQ_INCLUDE)
 .PHONY: doc  
 
 .PHONY: clean
-.PHONY: libclean
-.PHONY: distclean
+.PHONY: reallyclean
 
-# build: Build everything
-CUSTOM_TARGET=build=yes
-build: thys install-thys-objdir
+# all: Build everything
+all: thys
+
+#doc: Buld documentation
+doc:
 
 #install: Install everything
-#install: install-thys
+install: install-thys
 
 ###
 # Clean up
 ###
 
+clean: 
+	$(RM) *.tho *.cmo *.cmi
+	$(RM) *~
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) clean;) $(SKIP)
 
-EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~
-
-# clean: 
-# 	$(RM) *.tho *.cmo *.cmi
-# 	$(RM) *~
-
-# libclean: clean
-
-# distclean: libclean
+reallyclean: clean
+	$(RM) *.tho *.cmo *.cmi
+	$(foreach subdir, $(SUBDIRS), \
+		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
 
 ###
 # Specialized targets
@@ -113,9 +168,10 @@ EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~
 thys:
 	$(HSEQC) $(BUILDSCRIPT) 
 
-.PHONY: install-thys-objdir
-install-thys-objdir: thys $(lm-objdir-thys)
-	-$(COPY) *.tho $(lm-objdir-thys)
-	-$(COPY) *Script.ml $(lm-objdir-thys)
-	-$(COPY) *.cmi $(lm-objdir-thys)
-	-$(COPY) *.cmo $(lm-objdir-thys)
+.PHONY: install-thys
+install-thys: thys
+	-$(MKDIR) $(ITHYDIR)
+	-$(COPY) *.tho $(ITHYDIR)
+	-$(COPY) *Script.ml $(ITHYDIR)
+	-$(COPY) *.cmi $(ITHYDIR)
+	-$(COPY) *.cmo $(ITHYDIR)
