@@ -1455,28 +1455,36 @@ endif
 clean-subdirs:
 	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) clean; )
 
-clean: 	clean-subdirs \
-		$(foreach lib,$(LIBRARIES),clean-lib-$(lib) )\
-		$(foreach group,$(PACKING),clean-packing-$(group) )\
-		$(foreach lib,$(PACKED),clean-packed-$(lib) ) \
-		$(foreach prog,$(PROGRAMS),clean-program-$(prog) )
+.PHONY: clean-dir
+clean-dir: $(foreach lib,$(LIBRARIES),clean-lib-$(lib) )  \
+	$(foreach group,$(PACKING),clean-packing-$(group) ) \
+	$(foreach lib,$(PACKED),clean-packed-$(lib) ) \
+	$(foreach prog,$(PROGRAMS),clean-program-$(prog) )
 	$(EXTRA_CLEAN)
+
+clean: 	clean-subdirs clean-dir
 
 .PHONY: libclean-subdirs
 libclean-subdirs:
 	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
 
-libclean: libclean-subdirs
+.PHONY: libclean-dir
+libclean-dir: clean-dir
 	-$(RM) *.cmi *.cma *.cmxa *~
 	$(EXTRA_LIBCLEAN)
+
+libclean: libclean-subdirs libclean-dir
 
 .PHONY: distclean-subdirs
 distclean-subdirs:
 	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
 
-distclean: distclean-subdirs libclean
+.PHONY: distclean-dir
+distclean-dir: libclean-dir
 	-$(RM) depend
 	$(EXTRA_DISTCLEAN)
+
+distclean: distclean-subdirs distclean-dir
 
 ###
 # Toplevel targets
