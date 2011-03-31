@@ -780,6 +780,8 @@ sig
   val changes: node -> Changes.t
   (** Utility function to extract changes from a node for use in tactics. *)
 
+  val set_changes: branch -> Changes.t -> branch
+  (** Utility function to set the change information reported by a branch. *)
 
   (** {5 Manipulating Assumptions and Conclusions} *)
 

@@ -656,6 +656,7 @@ struct
   let node_tyenv (Node(_, ty, _, _)) = ty
   let node_sqnt (Node(_, _, s, _)) = s
   let node_changes (Node(_, _, _, c)) = c
+  let node_set_changes (Node(tg, ty, s, _)) c = mk_node tg ty s c
 
   type branch = 
       Branch of (Tag.t * Gtypes.substitution * Sequent.t list * Changes.t)
@@ -665,6 +666,7 @@ struct
   let branch_tyenv (Branch(_, ty, _, _)) = ty
   let branch_sqnts (Branch(_, _, s, _)) = s
   let branch_changes (Branch(_, _, _, c)) = c
+  let branch_set_changes (Branch(tg, ty, s, _)) c = mk_branch tg ty s c
 
   (** [replace_branch_tag b tg]: Replace the tag of branch [b] with
       [tg].  *)
@@ -673,7 +675,7 @@ struct
 
   (** [branch_node node]: make a branch from [node]. *)
   let branch_node (Node(tg, tyenv, sqnt, chngs)) =
-    Branch(tg, tyenv, [sqnt], chngs)
+    mk_branch tg tyenv [sqnt] chngs
 
   (** [merge env1 env2]: merge type environments.
 
@@ -1026,6 +1028,7 @@ struct
 
   let get_sqnt = Subgoals.node_sqnt
   let changes = Subgoals.node_changes
+  let set_changes = Subgoals.branch_set_changes
 
   (** [sqnt_apply f g]: apply function f to the first subgoal of
       [g] *)
