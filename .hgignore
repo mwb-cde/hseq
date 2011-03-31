@@ -1,6 +1,9 @@
 # File patterns to ignore
 syntax:glob
 
+# Mercurial
+.hgtags
+
 # OCaml patterns
 *.cma
 *.cmi
