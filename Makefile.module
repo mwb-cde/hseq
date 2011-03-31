@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Makefile to HSeq library
-# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Makefile.module - Makefile to build modules
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -54,7 +54,8 @@
 #
 # object_SOURCES: List of source file names, without suffixes.
 # object_INCLUDE: Directories to include when compiling [object].
-# object_LIBS: Libraries to include when linking [object].
+# object_LIBS: Libraries to include when byte-code linking [object].
+# object_NATLIBS: Libraries to include when native-code linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
@@ -93,27 +94,48 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=..
+#PROJ_ROOT=
 
 #####
 # Module building settings
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+#SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=hseq
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
-# PACKED: List of packed libraries to build
-PACKED=hseq
+##
+# Building packed libraries (with option -pack) is complicated by the
+# ocaml compiler requiring that all objects making up the packed
+# library, together with their interfaces, must be in the same
+# directory. The native-code compilers also require that a objects
+# that is to be combined into a pack must be compiled with the
+# -for-pack option. 
+#
+# To support packing, the build system allows a 'packed' library L to
+# be constructed from 'packing' objects O, with 'pack name' P. The
+# packing objects are built in 'groups', with each group G built in a
+# sub-directory, and marshalled into a packing directory named
+# P_PACK_DIR. The packing groups for P are found in the subdirectories
+# listed in P_GROUPS. The packed object P.cmo and its interface P.cmi
+# are built and linked, in P_PACK_DIR, to construt packed library L.
 
-# PACKING: List of packing modules to build
+# PACKED: List of packed libraries to build
+#PACKED=
+
+# PACKING: List of packing groups to build.
 #PACKING=
+
+#####
+# Sub-directory building options
+
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
 
 #####
 # Object building settings
@@ -121,45 +143,46 @@ PACKED=hseq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-#hseq_SOURCES=
+
+# object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
+#object_HEADERS=$(object_SOURCES)
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
-hseq_INCLUDE=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
 
-# object_LIBS: Libraries to include when linking [object].
+# object_LIBS: Libraries to include when byte-code linking [object].
 #object_LIBS=
-#hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
-#	tpmain/tpmain booleans/boollib simplifier/simplifier \
-#	numbers/numbers userlib/userlib
 
-hseq_LIBS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
+# object_NATLIBS: Libraries to include when native-code linking [object].
+#object_NATLIBS=
 
+# object_PACK_GROUP: Name of packing group to build object for.
+#object_PACK_GROUP=
 
-# object_PACK_NAME: Name of pack to build
+# object_PACK_NAME: Name of packed module to build (required for packed libraries).
 #object_PACK_NAME=
-hseq_PACK_NAME=HSeq
 
-# object_PACK_DIR: Directory to use for packing.
+# object_PACK_DIR: Directory to use for packing (required for
+#packed libraries (PACKED) and for packing groups (PACKING)). 
 #object_PACK_DIR=
-hseq_PACK_DIR=./HSeqOBJS
 
 # object_GROUPS: List of packing groups to use for packed library [object]
-hseq_GROUPS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
+#object_GROUPS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
 
-# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLPP_FLAGS=
-
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 #object_LINK_FLAGS=
+
+# object_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
+#object_OCAMLNAT_FLAGS=
+
+# object_LINKNAT_FLAGS: Flags to pass to the native-code linker for [object].
+#object_LINKNAT_FLAGS=
+
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
+#object_OCAMLPP_FLAGS=
 
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
@@ -179,23 +202,56 @@ hseq_GROUPS=util tpcore logic parser \
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
-#MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
+#MODULE_OCAMLCPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
 
 ###
+# Installation options
+# (Defaults if undefined are as given.)
+
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
+
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+
+# INSTALL_EXTRA_LIBRARIES: Additional files to install with the
+# libraries. Extra headers belong in this list.
+#INSTALL_EXTRA_LIBRARIES=
+
+# INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
+#INSTALL_EXTRA_PROGRAMS=
+
+# INSTALL_EXTRA_DATA: Additional files to install with the built data.
+#INSTALL_EXTRA_DATA=
+
+###
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=$(RMDIR) --ignore-fail $(hseq_PACK_DIR)
-#EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
+#EXTRA_CLEAN=
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
+
+# CUSTOM_TARGET_build: If defined, use a custom build target.
+#CUSTOM_TARGET_build=
+
+# CUSTOM_TARGET_install: If defined, use a custom install target.
+#CUSTOM_TARGET_install=
+
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+#DISABLE_NATIVECODE=no
 
 #####
 # Default settings
@@ -205,6 +261,9 @@ hseq_GROUPS=util tpcore logic parser \
 
 # LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+
+# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
+#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)

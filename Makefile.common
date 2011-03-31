@@ -1,0 +1,469 @@
+###################################################### --*- Makefile -*--
+# Makefile.common - Common make rules for HSeq
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+#####
+# Common definitions and rules for Makefiles
+#
+# Requirements:
+# -------------
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
+#####
+
+#####
+# Constants
+#####
+
+# PROJ_ROOT: Relative path to the top of the source tree is required.
+ifndef PROJ_ROOT
+$(error "Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR)")
+endif
+
+# CONFIGDIR: The configuration directory
+CONFIGDIR=
+
+# CONFIGFILE: Configuration data file 
+CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/data.make
+
+######
+# Configuration variables
+# Set by configure.ml, stored in data.make
+#
+
+ifndef CONFIGFILE
+$(error "CONFIGFILE not defined")
+endif
+
+# Read $(CONFIGFILE)
+include $(CONFIGFILE)
+
+ifndef SrcDir
+$(error Error in $(CONFIGFILE): SrcDir not defined)
+endif
+
+ifndef BinDir
+$(error Error in $(CONFIGFILE): BinDir not defined)
+endif
+
+####
+# Feature tests
+#
+
+# Whether camlp4 is old.
+ifndef OLDCAMLP4
+# Get the version of camlp4
+export CAMLP4VERSION=OcamlVersion
+ifeq ($(findstring CAMLP4VERSION,3.11),'')
+$(info "Using OCaml 3.11.?")
+export OLDCAMLP4=true
+else
+$(info "Using OCaml 3.12+")
+export OLDCAMLP4=false
+endif
+endif # OLDCAMLP4
+
+
+#####
+# Compilers and Tools
+#####
+
+####
+# OS Commands
+#
+
+# CD: Change directory
+export CD?=cd
+
+# MKDIR: Make a directory
+export MKDIR?=mkdir -p
+
+# RMDIR: Remove a directory
+export RMDIR?=rmdir
+
+# COPYTO: Copy one or more files, creating directories if necessary.
+export COPYTO
+ifndef COPYTO
+ifdef INSTALL
+COPYTO=$(INSTALL)
+else
+COPYTO=install 
+endif
+endif
+
+# INSTALL: Install one or more files
+export INSTALL?=install
+
+# COPY: Copy one or more files
+export COPY?=cp -f
+
+# CHMOD: Set file permissions.
+export CHMOD?=chmod
+
+# RM: Delete one or more files
+export RM?=rm -f
+
+# SKIP: Do nothing
+export SKIP=
+
+####
+# Compiler tools selection
+#
+# Flags:
+#   FastCompilers: Use the fast compilers (set by configure.ml).
+#
+# Options:
+#   OCAMLC_FLAGS: options for ocamlc
+#   OCAMLNAT_FLAGS: options for ocamlopt (native code compiler)
+#   LINK_FLAGS: options for ocamlc (linker)
+#   OCAMLNATLINK_FLAGS: options for ocamlnat (linker)
+#   OCAMLDEP_FLAGS: options for ocamldep
+#   OCAMLDOC_FLAGS: options for ocamldoc
+#   OCAMLPP_FLAGS : options to pass to camlp4
+#
+
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+# ifeq ($(OLDCAMLP4),true)
+# OCAMLPP_OPTIONS?=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+# else
+# OCAMLPP_OPTIONS?=-pp camlp4of -I +camlp4
+# endif
+
+###
+# Use the standard compilers if the fast compilers are not available.
+ifneq ($(strip $(FastCompilers)),true)
+
+# OCAMLC: The OCaml byte code compiler
+export OCAMLC?=ocamlc
+
+# OCAMLLINK: The OCaml byte-code linker
+export OCAMLLINK?=ocamlc
+
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT?=ocamlopt
+
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK?=ocamlopt
+
+# OCAMLMKTOP: Make a toplevel
+export OCAMLMKTOP?=ocamlmktop
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP?=ocamldep
+
+# OCAMLCPP : the preprocesor
+export OCAMLCPP?=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC?=ocamldoc $(OCAMLDOC_FLAGS)
+
+endif # End of standard compilers
+###
+
+###
+# Use the fast compilers, if available
+ifeq ($(strip $(FastCompilers)),true)
+
+# OCAMLC: The OCaml byte code compiler
+export OCAMLC?=ocamlc.opt
+
+# OCAMLLINK: The OCaml byte-code linker
+export OCAMLLINK?=ocamlc.opt
+
+# OCAMLNAT: The OCaml native code compiler
+export OCAMLNAT?=ocamlopt.opt
+
+# OCAMLNATLINK: The OCaml native-code linker
+export OCAMLNATLINK?=ocamlopt.opt
+
+# OCAMLMKTOP: Make a toplevel
+export OCAMLMKTOP?=ocamlmktop
+
+# OCAMLDEP: The OCaml dependency generator
+export OCAMLDEP?=ocamldep.opt
+
+# OCAMLDOC: The documentation generator
+export OCAMLDOC?=ocamldoc.opt
+
+# OCAMLCPP : the preprocesor
+export OCAMLCPP?=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
+
+endif # End of fast compilers
+###
+
+####
+# Add flags to the build tools
+
+# OCAMLC: The OCaml byte code compiler
+OCAMLC+= $(OCAMLC_FLAGS) $(GLOBAL_OCAMLPP_FLAGS)
+
+# OCAMLLINK: The OCaml byte-code linker
+OCAMLLINK+=-a $(OCAMLLINK_FLAGS) $(GLOBAL_LINK_FLAGS)
+
+# OCAMLNAT: The OCaml native code compiler
+OCAMLNAT+= $(OCAMLNAT_FLAGS) $(GLOBAL_OCAMLNAT_FLAGS)
+
+# OCAMLNATLINK: The OCaml native-code linker
+OCAMLNATLINK+=-a $(OCAMLNATLINK_FLAGS) $(GLOBAL_NATLINK_FLAGS)
+
+# OCAMLMKTOP: Make a toplevel
+OCAMLMKTOP+= $(OCAMLMKTOP_FLAGS)
+
+# OCAMLDEP: The OCaml dependency generator
+OCAMLDEP+= $(OCAMLDEP_FLAGS)
+
+# OCAMLDOC: The documentation generator
+OCAMLDOC+= $(OCAMLDOC_FLAGS)
+
+####
+# Variable definitions
+#
+
+# SRC_ROOT: Absolute path to the root of the source tree. Defined in
+# config/data.make by configure.ml.
+export SRC_ROOT:=$(SrcDir)
+
+# OBJ_ROOT: Staging directory for built objects.
+OBJ_DIR?=obj
+ifndef OBJ_ROOT
+OBJ_ROOT:=$(SRC_ROOT)/$(OBJ_DIR)
+endif
+OBJ_ROOT:=$(OBJ_ROOT)/$(MODULE_OBJ_PATH)
+export OBJ_ROOT
+
+# lm-install-prefix: Root of the installation directory
+ifndef BaseDir
+$(error Installation prefix must bedefined.)
+endif
+export lm-install-prefix=$(BaseDir)
+export INSTALLDIR_ROOT:=$(lm-install-prefix)
+
+##
+# Directory names and build targets
+
+# lm-lib-dirname: Libraries directory
+export lm-lib-dirname:=lib
+
+# lm-objdir-lib: Libraries directory in staging directory
+export lm-objdir-lib=$(OBJ_ROOT)/$(lm-lib-dirname)
+
+# lm-installdir-lib: Libraries directory in installation directory
+ifdef LibDir
+export lm-installdir-lib=$(LibDir)
+else
+export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
+endif
+export INSTALLDIR_LIB:=$(lm-installdir-lib)
+
+$(lm-objdir-lib):
+	$(MKDIR) $(lm-objdir-lib)
+
+$(lm-installdir-lib):
+	$(MKDIR) $(lm-installdir-lib)
+
+#
+# lm-bin-dirname: Binaries
+lm-bin-dirname:=bin
+
+# lm-objdir-bin: Binaries directory in staging directory
+export lm-objdir-bin=$(OBJ_ROOT)/$(lm-bin-dirname)
+
+# lm-installdir-bin: Binaries directory in installation directory
+ifdef BinDir
+export lm-installdir-bin=$(BinDir)
+else
+export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
+endif
+export INSTALLDIR_BIN:=$(lm-installdir-bin)
+
+$(lm-objdir-bin):
+	$(MKDIR) $(lm-objdir-bin)
+
+$(lm-installdir-bin):
+	$(MKDIR) $(lm-installdir-bin)
+
+#
+# lm-data-dirname: Shared data
+lm-data-dirname:=share/hseq-data
+
+# lm-objdir-data: Data directory in staging directory
+export lm-objdir-data=$(OBJ_ROOT)/$(lm-data-dirname)
+
+# lm-installdir-data: Data directory in installation directory
+ifdef DataDir
+export lm-installdir-data=$(DataDir)
+else
+export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
+endif
+export INSTALLDIR_DATA:=$(lm-installdir-data)
+
+$(lm-objdir-data):
+	$(MKDIR) $(lm-objdir-data)
+
+$(lm-installdir-data):
+	$(MKDIR) $(lm-installdir-data)
+
+#
+# lm-doc-dirname: Shared doc
+lm-doc-dirname:=share/hseq-doc
+
+# lm-objdir-doc: Doc directory in staging directory
+export lm-objdir-doc=$(OBJ_ROOT)/$(lm-doc-dirname)
+
+# lm-installdir-doc: Document directory in installation directory
+ifdef DocDir
+export lm-installdir-doc=$(DocDir)
+else
+export lm-installdir-doc=$(lm-install-prefix)/$(lm-doc-dirname)
+endif
+export INSTALLDIR_DOC:=$(lm-installdir-doc)
+
+$(lm-objdir-doc):
+	$(MKDIR) $(lm-objdir-doc)
+
+$(lm-installdir-doc):
+	$(MKDIR) $(lm-installdir-doc)
+
+# lm-thys-dirname: Theories directory
+export lm-thys-dirname:=lib/thys
+
+# lm-objdir-thys: Theories directory in staging directory
+export lm-objdir-thys=$(OBJ_ROOT)/$(lm-thys-dirname)
+
+# lm-installdir-thys: Theories directory in installation directory
+ifdef ThyDir
+export lm-installdir-thys=$(ThyDir)
+else
+export lm-installdir-thys=$(lm-install-prefix)/$(lm-thys-dirname)
+endif
+export INSTALLDIR_THYS:=$(lm-installdir-thys)
+
+$(lm-objdir-thys):
+	$(MKDIR) $(lm-objdir-thys)
+
+$(lm-installdir-thys):
+	$(MKDIR) $(lm-installdir-thys)
+
+#
+# lm-data-dirname: Intermediate objects, which are not installed
+export lm-code-dirname:=code
+
+# lm-objdir-code: Intermediate objects directory
+export lm-objdir-code=$(OBJ_ROOT)/$(lm-code-dirname)
+
+$(lm-objdir-code):
+	$(MKDIR) $(lm-objdir-code)
+
+
+#####
+# Build Targets
+#
+
+##
+# General targets
+
+.PHONY: all  	# all: Build everything
+.PHONY: lib  	# lib: Build the library file
+.PHONY: opt  	# opt: Build the native code library file
+.PHONY: install # install: Install the library and header files.
+.PHONY: doc  	# doc: Generate the code documentation
+
+## Cleaning targets
+.PHONY: clean
+.PHONY: libclean
+.PHONY: docclean
+.PHONY: distclean
+
+## build targets
+
+.PHONY: build-headers 
+.PHONY: build-code build-bytecode build-natcode
+.PHONY: build-bytelib build-natlib build-lib
+
+.PHONY: install-headers 
+.PHONY: install-code install-bytecode install-natcode
+.PHONY: install-bytelib install-natlib install-lib
+.PHONY: install-other
+
+###
+# Toplevel installation targets
+
+
+.PHONY: install-toplevel-bin
+install-toplevel-bin: 
+	-$(MKDIR) $(lm-installdir-bin)
+	$(COPY) -r $(lm-objdir-bin)/* $(lm-installdir-bin)
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-bin)
+
+.PHONY: install-toplevel-lib
+install-toplevel-lib: 
+	-$(MKDIR) $(lm-installdir-lib)
+	$(COPY) -r $(lm-objdir-lib)/* $(lm-installdir-lib)
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
+
+.PHONY: install-toplevel-doc
+install-toplevel-doc: 
+	if [ -d $(lm-objdir-doc) ] ; then \
+	$(INSTALL) -d $(lm-installdir-doc) ; \
+	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
+	fi 
+
+.PHONY: install-toplevel-data
+install-toplevel-data:
+	if [ -d $(lm-objdir-data) ] ; then \
+	$(INSTALL) -d $(lm-installdir-data) ; \
+	$(COPY) -r $(lm-objdir-data)/* $(lm-installdir-data) ; \
+	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-data) ;\
+	fi
+
+####
+# HSeq building variables
+
+# The quotation parser to use when building libraries and programs.
+export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
+
+###
+# Global tool options
+
+# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+GLOBAL_OCAMLC_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_LINK_FLAGS: Flags to pass to the linker.
+#GLOBAL_LINK_FLAGS?=-custom -I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+#			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+GLOBAL_LINK_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_OCAMLNAT_FLAGS: Flags to pass to the native-code compiler for [object].
+GLOBAL_OCAMLNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_NATLINK_FLAGS: Flags to pass to the native-code linker.
+GLOBAL_LINKNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
+			-I $(SRC_ROOT)/$(OBJ_DIR)/lib
+
+# GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
+# converts from .mlp to .ml files).
+GLOBAL_OCAMLCPP_FLAGS?=-I $(SRC_ROOT)/$(CONFIGDIR)
+
+

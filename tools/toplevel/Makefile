@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Makefile to HSeq library
-# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Makefile.module - Makefile to build modules
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -55,6 +55,8 @@
 # object_SOURCES: List of source file names, without suffixes.
 # object_INCLUDE: Directories to include when compiling [object].
 # object_LIBS: Libraries to include when linking [object].
+# object_BYTELIBS: Libraries to include when byte-code linking [object].
+# object_NATLIBS: Libraries to include when native-code linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
@@ -93,64 +95,80 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=..
+PROJ_ROOT=../..
+
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+DISABLE_NATIVECODE=yes
 
 #####
 # Module building settings
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+#SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=hseq
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
-#PROGRAMS=
+PROGRAMS=hseq
+
+##
+# Building packed libraries (with option -pack) is complicated by the
+# ocaml compiler requiring that all objects making up the packed
+# library, together with their interfaces, must be in the same
+# directory. The native-code compilers also require that a objects
+# that is to be combined into a pack must be compiled with the
+# -for-pack option. 
+#
+# To support packing, the build system allows a 'packed' library L to
+# be constructed from 'packing' objects O, with 'pack name' P. The
+# packing objects are built as 'groups', with each group G built in
+# sub-directory G, and marshalled into a packing directory named
+# P_PACK_DIR where the packed object P.cmo and its interface P.cmi are
+# built and linked to construt packed library L.
 
 # PACKED: List of packed libraries to build
-PACKED=hseq
+#PACKED=
 
-# PACKING: List of packing modules to build
+# PACKING: List of packing groups to build
 #PACKING=
+
+#####
+# Sub-directory building options
+
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
 
 #####
 # Object building settings
 #
 
+# Rule for building hseq toplevel is:
+#    ocamlmktop -custom -I ./obj/lib -I +camlp4 nums.cma unix.cma dynlink.cma camlp4o.cma -o hseq hseq.cma tpquote.cma hseqtop.cma
+
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-#hseq_SOURCES=
+
+# object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
+#object_HEADERS=$(object_SOURCES)
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
-hseq_INCLUDE=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+hseq_INCLUDE=+camlp4
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
-#hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
-#	tpmain/tpmain booleans/boollib simplifier/simplifier \
-#	numbers/numbers userlib/userlib
-
-hseq_LIBS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
-
+hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma tpquote.cma hseqtop.cma
 
 # object_PACK_NAME: Name of pack to build
 #object_PACK_NAME=
-hseq_PACK_NAME=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-hseq_PACK_DIR=./HSeqOBJS
 
 # object_GROUPS: List of packing groups to use for packed library [object]
-hseq_GROUPS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
+#object_GROUPS=
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -179,17 +197,41 @@ hseq_GROUPS=util tpcore logic parser \
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
-#MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
+#MODULE_OCAMLCPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
 
 ###
+# Installation options
+# (Defaults if undefined are as given.)
+
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
+
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+
+# INSTALL_EXTRA_LIBRARIES: Additional files to install with the
+# libraries. Extra headers belong in this list.
+#INSTALL_EXTRA_LIBRARIES=
+
+# INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
+#INSTALL_EXTRA_PROGRAMS=
+
+# INSTALL_EXTRA_DATA: Additional files to install with the built data.
+#INSTALL_EXTRA_DATA=
+
+###
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=$(RMDIR) --ignore-fail $(hseq_PACK_DIR)
-#EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
+EXTRA_CLEAN=$(RM) hseq
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=
@@ -197,17 +239,20 @@ hseq_GROUPS=util tpcore logic parser \
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
 
-#####
-# Default settings
+# Use a custom build target
+# CUSTOM_TARGET_build: If defined, use a custom build target.
+#CUSTOM_TARGET_build=yes
 
-# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+hseq_CUSTOM_BUILD=yes
+hseq:
+	ocamlmktop -custom -I $(OBJ_ROOT)/lib -I +camlp4 \
+		nums.cma unix.cma dynlink.cma camlp4o.cma \
+		-o hseq \
+		hseq.cma tpquote.cma hseqtop.cma
 
-# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
-#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+
+
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

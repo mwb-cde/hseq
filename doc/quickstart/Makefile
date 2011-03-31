@@ -44,20 +44,14 @@ DIRSEP ?= /
 # Directories
 ##
 
-# SRCDIR: The source directory (relative to a sub-directory).
-SRCDIR ?= ..
-
-# CONFIGDIR: The configuration directory
-CONFIGDIR ?= ${SRCDIR}/config
-
-# DOCDIR: Documentation directory
-DOCDIR ?= ${SRCDIR}
+# DOC_DIR: Documentation directory
+DOC_DIR?=..
 
 # HTMLDIR: HTML Documentation directory
-HTMLDIR ?= ${DOCDIR}/html
+HTMLDIR?=${DOC_DIR}/html
 
 # INFODIR: Info Documentation directory
-INFODIR ?= ${DOCDIR}/info
+INFODIR?=${DOC_DIR}/info
 
 ##
 # Compiler definitions
@@ -74,7 +68,9 @@ OPTIONS = ${INCLUDE}
 ##
 
 # MAKEINFO: The makeinfo program
-MAKEINFO=makeinfo ${OPTIONS}
+MAKEINFO?=makeinfo ${OPTIONS}
+COPY?=cp
+MKDIR?=mkdir -p
 
 ###
 # Suffixes and how to handle them
@@ -92,13 +88,24 @@ html: build-html
 # html: Build html documentation
 .PHONY: build-html
 
-build-html: 
-	$(foreach file, $(DOCSRC), -$(MAKEINFO) --html $(file).texi;)
+$(HTMLDIR):
+	$(MKDIR) $(HTMLDIR)
+
+build-html: $(foreach file,$(DOCSRC),$(file).texi) $(HTMLDIR)
+	$(foreach file, $(DOCSRC), \
+	$(MAKEINFO) --html $(file).texi; \
+	$(COPY) -R $(file) $(HTMLDIR))
+
 
 # info: Build info documentation
+$(INFODIR):
+	$(MKDIR) $(INFODIR)
+
 .PHONY: build-info
-build-info: 
-	$(foreach file, $(DOCSRC), -$(MAKEINFO) $(file).texi;)
+build-info: $(foreach file,$(DOCSRC),$(file).texi) $(INFODIR)
+	$(foreach file, $(DOCSRC), \
+	$(MAKEINFO) $(file).texi;\
+	$(COPY) -r $(file)*.info $(INFODIR))
 
 # install: Install documentation
 install: install-html install-info
@@ -125,17 +132,4 @@ clean:
 
 reallyclean: clean 
 	rm -f depend
-
-##
-# Dependencies
-#
-# Define NODEPEND to prevent using depend
-##
-
-#depend: 
-#	${OCAMLDEP} *.mli *.ml > depend
-
-#ifndef NODEPEND
-#include depend
-#endif
 

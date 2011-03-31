@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Makefile to HSeq library
-# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Makefile.module - Makefile to build modules
+# Copyright 17 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -54,7 +54,8 @@
 #
 # object_SOURCES: List of source file names, without suffixes.
 # object_INCLUDE: Directories to include when compiling [object].
-# object_LIBS: Libraries to include when linking [object].
+# object_LIBS: Libraries to include when byte-code linking [object].
+# object_NATLIBS: Libraries to include when native-code linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
@@ -93,27 +94,26 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=..
+PROJ_ROOT=../..
 
 #####
 # Module building settings
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+#SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=hseq
+LIBRARIES=hseqtop
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
 
-# PACKED: List of packed libraries to build
-PACKED=hseq
+#####
+# Sub-directory building options
 
-# PACKING: List of packing modules to build
-#PACKING=
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
 
 #####
 # Object building settings
@@ -121,93 +121,50 @@ PACKED=hseq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-#hseq_SOURCES=
+hseqtop_SOURCES=unsafe init cli
+
+# object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
+#object_HEADERS=$(object_SOURCES)
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
-hseq_INCLUDE=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
-
-# object_LIBS: Libraries to include when linking [object].
-#object_LIBS=
-#hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
-#	tpmain/tpmain booleans/boollib simplifier/simplifier \
-#	numbers/numbers userlib/userlib
-
-hseq_LIBS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
 
 
-# object_PACK_NAME: Name of pack to build
-#object_PACK_NAME=
-hseq_PACK_NAME=HSeq
+###
+# Installation options
+# (Defaults if undefined are as given.)
 
-# object_PACK_DIR: Directory to use for packing.
-#object_PACK_DIR=
-hseq_PACK_DIR=./HSeqOBJS
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=<all built libraries>
 
-# object_GROUPS: List of packing groups to use for packed library [object]
-hseq_GROUPS=util tpcore logic parser \
-	tpmain boollib simplifier \
-	numbers userlib
+# INSTALL_PROGRAMS: Programs to install
+#INSTALL_PROGRAMS=<all built programs>
 
-# object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#object_OCAMLC_FLAGS=
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=<all .mli files and all built .cmi files>
+#INSTALL_HEADERS=unsafe.cmi cli.cmi init.cmi
 
-# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLPP_FLAGS=
+# INSTALL_EXTRA_LIBRARIES: Additional files to install with the
+# libraries. Extra headers belong in this list.
+INSTALL_EXTRA_LIBRARIES=hseqstart.ml
 
-# object_LINK_FLAGS: Flags to pass to the linker for [object].
-#object_LINK_FLAGS=
+# INSTALL_EXTRA_PROGRAMS: Additional files to install with the programs.
+#INSTALL_EXTRA_PROGRAMS=
 
-# object_INST_PATH: PATH to append to the relative installation path.
-#object_INST_PATH=
-
-#####
-# Module build tool settings
-
-# MODULE_OBJ_PATH: PATH to append to the staging directory path for
-# this module and all its sub-directories.
-#MODULE_OBJ_PATH=
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
-
-# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=
-
-# MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=
-#MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
-
-# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=
+# INSTALL_EXTRA_DATA: Additional files to install with the built data.
+#INSTALL_EXTRA_DATA=
 
 ###
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=$(RMDIR) --ignore-fail $(hseq_PACK_DIR)
-#EXTRA_CLEAN=$(RM) -r $(hseq_PACK_DIR)
+#EXTRA_CLEAN=
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
 #EXTRA_DISTCLEAN=
-
-#####
-# Default settings
-
-# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
-
-# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
-#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

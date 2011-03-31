@@ -1,75 +1,61 @@
+########################################################## --*- Makefile -*--
+# Makefile.module - Makefile to build modules
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+#####
+# Definitions and rules for building theories.
+#####
+
+#####
+# Required definitions
+#  
+
+# PROJ_ROOT: Relative path to HSeq root.
+PROJ_ROOT=..
 
 ###
 # Variables
 ###
 
-# SUBDIRS: The sub-directories to build (in order)
-SUBDIRS = quickstart
-
+# DOC_SUBDIRS: The sub-directories to build (in order)
+DOC_SUBDIRS = quickstart
 
 ####
 # Don't modify anything below this line
 ####
 
-##
-# Constants
-##
-
-# SRCDIR: The source directory
-SRCDIR ?= .
-
-# CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(SRCDIR)/config
-
-# CONFIGFILE: Configuration data file 
-CONFIGFILE = $(CONFIGDIR)/data.make
-
-# SUBCONFIGDIR: The configuration directory for sub-directories
-# (relative to a subdirectory)
-SUBCONFIGDIR ?= ../config
-
-# LIBDIR: The location of the compiled files
-LIBDIR ?= $(SRCDIR)/lib
-
-###
-# Configuration variables
-# Set by data.make
-###
-
-# Read from $(CONFIGFILE)
-ifdef CONFIGFILE
-include $(CONFIGFILE)
-endif
-
-# Variables which are set in $(CONFIGFILE)
-Bin ?= 
-Prefix ?= 
-BinDir ?= 
-BaseDir ?= 
-IncludeDir ?= 
-LibDir ?= 
-ThyDir ?= 
-
-# IPREFIX: The installation prefix
-export IPREFIX = $(Prefix)
-
-# IBASEDIR: Installation directory
-export IBASEDIR = $(BaseDir)
+include $(PROJ_ROOT)/Makefile.rules
 
 # IDOCDIR: The documentation installation directory
-export IDOCDIR ?= $(IBASEDIR)/doc
+export OBJDOCDIR?=$(OBJ_ROOT)/doc
 
 # HTMLDIR: HTML Documentation directory
-export HTMLDIR ?= $(IDOCDIR)/html
+export HTMLDIR?=$(OBJDOCDIR)/html
 
 # INFODIR: Info Documentation directory
-export INFODIR ?= $(IDOCDIR)/info
+export INFODIR?=$(OBJDOCDIR)/info
 
 ##
 # Read command definitions
 ##
-
-include ../config/Makefile.os
 
 ##
 # Targets
@@ -82,6 +68,7 @@ include ../config/Makefile.os
 .PHONY: html
 .PHONY: info
 
+.PHONY: build
 .PHONY: build-html build-info
 
 .PHONY: install-html install-info
@@ -91,47 +78,26 @@ include ../config/Makefile.os
 .PHONY: reallyclean
 .PHONY: docclean
 
-##
-# Build commands
-##
-
-# BAREMAKE: The make with no options
-export BAREMAKE = $(MAKE)
-
-# DMAKE: The make to build sub-directories with.
-export DMAKE = $(MAKE) SUBCONFIGDIR='$(CONFIGDIR)'
-
-# MAKECLEAN: The make to clean up with
-export MAKECLEAN = $(MAKE) NODEPEND=true SUBCONFIGDIR='$(CONFIGDIR)'
-
-###
-# Compiler definitions
-###
-
-##
-# Variables
-##
-
-# INCLUDE: The include directives
-export INCLUDE = 
-
-# OPTIONS: Compiler options
-export OPTIONS = $(INCLUDE)
-
 ###
 # The build targets
 ###
 
+CUSTOM_TARGET_build=
+CUSTOM_TARGET_install=
+
 # all: Build html
-all: info html
+all: build
+
+build: build-info build-html
 
 #
 # HTML
 # 
 
-build-html: $(DOCSRC)
-	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) build-html ;) $(SKIP)
+build-html: $(DOCSRC) $(HTMLDIR)
+	$(foreach subdir, $(DOC_SUBDIRS), \
+	$(MAKE) -C $(subdir) \
+		DOC_DIR=$(SRC_ROOT)/doc HTMLDIR=$(HTMLDIR) build-html ;) $(SKIP)
 
 html: build-html
 
@@ -139,29 +105,26 @@ html: build-html
 # GNU Info
 # 
 
-build-info: $(DOCSRC)
-	$(foreach subdir, $(SUBDIRS), \
-		$(DMAKE) -C $(subdir) build-info ;) $(SKIP)
+build-info: $(DOCSRC) $(INFODIR)
+	$(foreach subdir, $(DOC_SUBDIRS), \
+	$(MAKE) -C $(subdir) \
+		DOC_DIR=$(SRC_ROOT)/doc INFODIR=$(INFODIR) build-info ;) $(SKIP)
 
 info: build-info
 
+#
+# Directories
+#
+
+$(INFODIR):
+	$(MKDIR) $(INFODIR)
+
+$(HTMLDIR):
+	$(MKDIR) $(HTMLDIR)
 
 ###
 # Installation targets
 ###
-
-ifdef IDOCDIR
-$(IDOCDIR):
-	-$(MKDIR) $(IDOCDIR)
-endif
-ifdef HTMLDIR
-$(HTMLDIR): $(IDOCDIR)
-	-$(MKDIR) $(HTMLDIR)
-endif
-ifdef INFODIR
-$(INFODIR): $(IDOCDIR)
-	-$(MKDIR) $(INFODIR)
-endif
 
 install-html: html $(HTMLDIR)
 	-cp -Rf html/* $(HTMLDIR)
@@ -175,17 +138,11 @@ install: install-html install-info
 # Clean up
 ###
 
-.PHONY: clean
-clean: 
-	-$(RM) *~
-	-$(foreach subdir, \
-		$(SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; )$(SKIP)
+EXTRA_CLEAN=$(RM) *~; \
+$(foreach subdir, $(DOC_SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; ) \
+$(RM) info/*; $(RM) -r html/*
 
-.PHONY: reallyclean
-reallyclean: clean
-	-$(RM) source/*
-	-$(foreach subdir, $(SUBDIRS), \
-		$(MAKECLEAN) -C $(subdir) reallyclean; ) $(SKIP)
+
 
 
 

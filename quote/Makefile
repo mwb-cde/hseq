@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Makefile to build modules
-# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Makefile.module - Makefile to build modules
+# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -36,19 +36,12 @@
 # Variables:
 # ----------
 #
-# Module settings:
-# 
 # SUBDIRS: List of sub-directories to recurse into.
 # LIBRARIES: List of libraries to build.
 # PROGRAMS: List of programs to build.
-#
 # MODULE_INST_PATH: PATH to append to the relative installation path.
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-# MODULE_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 # MODULE_OBJ_PATH: PATH to append to the staging directory path.
-# MODULE_INST_PATH: PATH to append to the relative installation path.
 #
 # For each program or library [object] listed in LIBRARIES or PROGRAMS:
 #
@@ -56,36 +49,19 @@
 # object_INCLUDE: Directories to include when compiling [object].
 # object_LIBS: Libraries to include when linking [object].
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
+# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
 # object_LINK_FLAGS: Flags to pass to the linker for [object].
 # object_INST_PATH: PATH to append to the relative installation path.
 #
-# Inherited variables:
-#
-# GLOBAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-# GLOBAL_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-# GLOBAL_LINK_FLAGS: Flags to pass to the linker for [object].
-# GLOBAL_OBJ_PATH: PATH staging directory path.
-# GLOBAL_INST_PATH: PATH installation path.
-#
-# Other variales
-# LOCAL_OCAMLC_FLAGS: Actual flags to pass to the compiler for [object].
-# LOCAL_OCAMLPP_FLAGS: flags to pass to the preprocessor for [object].
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #
 # Notes:
 #
-# The flags for each tool X are formed as 
-#    (LOCAL_X_FLAGS) (object_X_FLAGS)
+# All object-specific flags are appended to the flags passed to 
+# the relevant tool.
 #
-# If LOCAL_X_FLAGS is not defined, it defaults to
-#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
-#
-# The global flags for X passed to each sub-directory is
-#     (LOCAL_X_FLAGS)
 #
 # An object will be installed into the directory formed by 
-#      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
-#
+#       $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
 #####
 
 #####
@@ -93,7 +69,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../..
+PROJ_ROOT=..
 
 #####
 # Module building settings
@@ -103,13 +79,21 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=util
+LIBRARIES=tpquote
 
-# PROGRAMS: List of programs to build.
-#PROGRAMS=
+# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
+MODULE_USE_OBJDIR=yes
 
-# PACKING: List of packing modules to build
-PACKING=HSeq
+# Use the camlp4 version to select the correct 
+# prepropcessor options.
+ifeq ($(OLDCAMLP4),true)
+MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
+else
+MODULE_OCAMLPP_FLAGS=-pp camlp4of -I +camlp4
+endif
+
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+DISABLE_NATIVECODE=yes
 
 #####
 # Object building settings
@@ -117,20 +101,18 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=lib treekit tag parserkit rewritekit
+tpquote_SOURCES=tpquote
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
+tpquote_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
 
-# object_PACK_DIR: Directory to use for packing.
-#object_PACK_DIR=
-HSeq_PACK_DIR=../HSeqOBJS
-
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
+tpquote_OCAMLC_FLAGS=
 
 # object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
 #object_OCAMLPP_FLAGS=
@@ -140,51 +122,6 @@ HSeq_PACK_DIR=../HSeqOBJS
 
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
-
-###
-# Installation options
-
-# For src/* modules, install headers but not libraries.
-
-# INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
-
-# INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=
-
-# INSTALL_CODE: Intermediate objects to install
-#INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
-
-#####
-# Module build tool settings
-
-# MODULE_OBJ_PATH: PATH to append to the staging directory path for
-# this module and all its sub-directories.
-#MODULE_OBJ_PATH=
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
-
-# MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
-
-# MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
-
-#####
-# Default settings
-
-# LOCAL_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#LOCAL_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
-
-# LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
-#LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

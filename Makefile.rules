@@ -1,0 +1,1555 @@
+###################################################### --*- Makefile -*--
+# Makefile.rules - Common make rules for building HSeq modules
+# Copyright 12 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+#
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+#####
+# Definitions and rules for Makefiles that build modules.
+#
+# This Makefile provides the necessary infrastructure for building modules
+# and should be included from instances of Makefile.module.
+#
+# Requires:
+# PROJ_ROOT: Variable containing relative path to top of the source tree.
+#
+# Provides:
+# SRC_ROOT: Absolute path to root of the source tree.
+#####
+
+###
+# Default target
+###
+.PHONY: all
+all: build
+
+###
+# Include the common settings.
+#
+
+# PROJ_ROOT: Relative path to the top of the source tree is required.
+ifndef PROJ_ROOT
+$(error Error: variable PROJ_ROOT not set when using Makefile in directory $(CURDIR))
+endif
+
+include $(PROJ_ROOT)/Makefile.common
+
+###
+# Makefile debugging
+
+# Uncomment to generate debug messages
+#lm-DEBUG-MAKEFILE:=yes
+
+###
+# Values that are passed in.
+$(info Directory $(CURDIR))
+
+ifdef lm-DEBUG-MAKEFILE
+$(info GLOBAL_OCAMLPP_FLAGS = $(GLOBAL_OCAMLPP_FLAGS))
+$(info GLOBAL_OCAMLDEP_FLAGS = $(GLOBAL_OCAMLDEP_FLAGS))
+$(info GLOBAL_OCAMLC_FLAGS = $(GLOBAL_OCAMLC_FLAGS))
+$(info GLOBAL_LINK_FLAGS = $(GLOBAL_LINK_FLAGS))
+$(info GLOBAL_OCAMLNAT_FLAGS = $(GLOBAL_OCAMLNAT_FLAGS))
+$(info GLOBAL_LINKNAT_FLAGS = $(GLOBAL_LINKNAT_FLAGS))
+$(info GLOBAL_OCAMLCPP_FLAGS = $(GLOBAL_OCAMLCPP_FLAGS))
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$(info lm-installdir-lib=$(lm-installdir-lib))
+$(info lm-installdir-bin=$(lm-installdir-bin))
+$(info lm-installdir-data=$(lm-installdir-data))
+endif
+
+####
+# Utility functions
+####
+
+# mlfile: Add ML source suffix to a name
+export mlfile=$(addsuffix .ml,$(1))
+
+# header: Add ML header suffix to a name
+export header=$(addsuffix .mli,$(1))
+
+# interface: Add ML object interface suffix to a nanme
+export interface=$(addsuffix .cmi,$(1))
+
+# bytecode: Add ML object file suffix to a name
+export bytecode=$(addsuffix .cmo,$(1))
+
+# natcode: Add ML native-code file suffix to a name
+export natcode=$(addsuffix .cmx,$(1))
+
+# objcode: Add system object-code suffix to a name
+export objcode=$(addsuffix .o,$(1))
+
+# bytelib: Add byte-lib suffix to a name
+export bytelib=$(addsuffix .cma,$(1))
+
+# natlib: Add native-lib suffix to a name
+export natlib=$(addsuffix .cmxa,$(1))
+
+# objlib: Add object-lib suffix to a name
+export objlib=$(addsuffix .a,$(1))
+
+##
+# Suffixes and their build rules.
+##
+
+.SUFFIXES: .mli .cmi
+.SUFFIXES: .ml .cmo
+.SUFFIXES: .cma 
+.SUFFIXES: .cmx 
+.SUFFIXES: .cmxa 
+.SUFFIXES: .mlp
+
+%.ml: %.mlp
+	$(OCAMLCPP) $(LOCAL_OCAMLCPP_FLAGS) -impl $< -o $@
+
+%.cmi: %.mli
+	$(OCAMLC) -c $<
+
+%.cmo: %.ml
+	$(OCAMLC) -c $<
+
+%.cmx: %.ml
+	$(OCAMLNAT) -c $<
+
+
+###
+# Values
+
+# lm-lib-dirname: Library directory name
+lm-lib-dirname=lib
+
+# lm-header-dirname: Library directory name
+lm-header-dirname=lib
+
+# lm-bin-dirname: Binary directory name
+lm-bin-dirname=bin
+
+# lm-doc-dirname: Document directory name
+lm-doc-dirname=doc
+
+# lm-pack-filename: Prefix for file storing list of byte-code objects to be
+# packed into a module using 'ocaml -pack'.
+lm-pack-filename:=PACKLIST_
+
+# lm-pack-nat-filename: Prefix for file storing list of native code objects to be
+# packed into a module using 'ocaml -pack'.
+lm-pack-nat-filename:=PACKLIST_NAT_
+
+# lm-nativecode: Defined iff compile-to-native code is supported.
+ifneq ($(strip $(DISABLE_NATIVECODE)),yes)
+ifeq ($(strip $(NativeCompilers)),true)
+lm-nativecode:=true
+endif
+endif
+
+ifdef lm-nativecode
+#ifdef lm-DEBUG-MAKEFILE
+$(info Compilation to native code is supported.)
+#endif
+else
+$(info Compilation to native code is not supported.)
+endif
+
+####
+# Targets:
+# --------
+#
+# all: synonymous with build.
+# build: Build the module. (required)
+# install: Install the module. (required)
+# doc: Generate documentation.
+# clean: Delete all built objects.
+# libclean: Delete libraries only.
+# distclean: Pristine clean.
+# depend: Calculate dependencies
+#
+#
+# Build order:
+#
+# 1) Run the preprocessor on .mlp files.
+#
+# 2) Build interface from .mli files.
+#
+#    This has to be done before building object files otherwise ocaml
+#    will generate an interface for each .ml file as it is compile,
+#    possibly exposing values that were meant to be internal to the
+#    .ml file.
+#
+# 3) Build objects from .ml files.
+#
+# 4) Build libraries from .ml files.
+#
+# Notes:
+#
+# Native code compilation should use the -dllpath option to ocamlc to
+# pass the library install-directory. This is needed so that the
+# libraries can be found after installation.
+#
+
+########
+# subdir-targets-template($1): Targets for sub-directory $(1).
+define subdir-targets-template
+
+.PHONY: all-subdir-$(1)
+all-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) all
+
+.PHONY: depend-subdir-$(1)
+depend-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) depend
+
+.PHONY: build-subdir-$(1)
+build-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) build
+
+.PHONY: install-subdir-$(1)
+install-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) install
+
+.PHONY: clean-subdir-$(1)
+clean-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) clean
+
+.PHONY: libclean-subdir-$(1)
+libclean-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) libclean
+
+.PHONY: distclean-subdir-$(1)
+distclean-subdir-$(1):
+	$$(MAKE) -C $(1) $$(lm-module-subdir-args) distclean
+endef
+########
+
+########
+# make-dir-template($1): Make a directory named $(1)
+define make-dir-template
+$(1):
+	$$(MKDIR) $(1)
+endef
+########
+
+########
+# library-targets-template($1): Targets for library $(1).
+define library-targets-template
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info Library $(1))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+$$(info $(1)_BYTELIBS=$$($(1)_BYTELIBS))
+$$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
+endif
+
+# Sources and objects
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-lib-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-lib-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+lm-lib-$(1)-mlheaders:=$$(foreach src,$$(lm-lib-$(1)-headers),\
+				$$(call header,$$(src)))
+
+lm-lib-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-lib-$(1)-headers),$$(call interface,$$(src)))
+
+lm-lib-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+
+lm-lib-$(1)-libs:=$$($(1)_LIBS)
+
+lm-lib-$(1)-bytelib:=$(call bytelib,$(1))
+
+lm-lib-$(1)-natobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
+
+lm-lib-$(1)-cobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call objcode,$$(src)))
+
+lm-lib-$(1)-nat-libs:=$$($(1)_NATLIBS)
+
+lm-lib-$(1)-natlib:=$(call natlib,$(1))
+lm-lib-$(1)-clib:=$(call objlib,$(1))
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-lib-$(1)-headers=$$(lm-lib-$(1)-headers))
+$$(info lm-lib-$(1)-interfaces=$$(lm-lib-$(1)-interfaces))
+$$(info lm-lib-$(1)-objects=$$(lm-lib-$(1)-objects))
+$$(info lm-lib-$(1)-libs=$$(lm-lib-$(1)-libs))
+$$(info lm-lib-$(1)-bytelib=$$(lm-lib-$(1)-bytelib))
+$$(info lm-lib-$(1)-natobjects=$$(lm-lib-$(1)-natobjects))
+$$(info lm-lib-$(1)-cobjects=$$(lm-lib-$(1)-cobjects))
+$$(info lm-lib-$(1)-nat-libs=$$(lm-lib-$(1)-nat-libs))
+$$(info lm-lib-$(1)-natlib=$$(lm-lib-$(1)-natlib))
+$$(info lm-lib-$(1)-clib=$$(lm-lib-$(1)-clib))
+endif
+
+# Build options
+lm-lib-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-lib-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-lib-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLNAT_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-lib-$(1)-linknat-options:=$$(lm-module-linknat-options) \
+	$$($(1)_LINKNAT_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-lib-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+
+lm-lib-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-lib-$(1)-ocamlc-options=$$(lm-lib-$(1)-ocamlc-options))
+$$(info lm-lib-$(1)-link-options=$$(lm-lib-$(1)-link-options))
+$$(info lm-lib-$(1)-ocamlnat-options=$$(lm-lib-$(1)-ocamlnat-options))
+$$(info lm-lib-$(1)-linknat-options=$$(lm-lib-$(1)-linknat-options))
+$$(info lm-lib-$(1)-ocamldep-options=$$(lm-lib-$(1)-ocamldep-options))
+$$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
+endif
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-lib-$(1)-interfaces): %.cmi: %.mli
+	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(lm-lib-$(1)-objects): %.cmo: %.ml
+	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+
+# Native-code object files
+$$(lm-lib-$(1)-natobjects):%.cmx: %.ml
+	$(OCAMLNAT) $$(lm-lib-$(1)-ocamlnat-options) -c $$<
+
+$$(lm-lib-$(1)-cobjects):%.o: %.cmx
+
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+# Bytecode library.
+$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-objects)
+	$$(info Linking $(lm-lib-$(1)-bytelib))
+	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
+		-o $$(lm-lib-$(1)-bytelib) \
+		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects) 
+
+# Native-code library.
+$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): $$(lm-lib-$(1)-interfaces)\
+		$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects) 
+	$$(info Linking $(lm-lib-$(1)-natlib))
+	$$(OCAMLNATLINK) $$(lm-lib-$(1)-linknat-options) \
+		-o $$(lm-lib-$(1)-natlib) \
+		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-natobjects) 
+endif
+
+# Bytecode library in staging directory.
+.PHONY: install-objdir-lib-$(1)
+
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+$$(lm-module-objlib-dir)/$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-bytelib) \
+						$$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-bytelib) $$(lm-module-objlib-dir)
+
+install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-bytelib) \
+		$$(lm-lib-$(1)-interfaces)
+	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-bytelib) $$(lm-module-objlib-dir)
+else
+install-objdir-lib-$(1):
+
+endif
+
+###
+# Toplevel rules
+
+# build
+lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
+ifdef lm-nativecode
+lm-lib-$(1)-target+= $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-lib-$(1)-target=$$(lm-lib-$(1)-target))
+endif
+
+.PHONY: build-lib-$(1)
+build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
+
+# clean
+.PHONY: clean-lib-$(1)
+clean-lib-$(1):
+	$$(RM) $$(lm-lib-$(1)-target)
+	$$(RM) $$(lm-lib-$(1)-interfaces) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+	$$(RM) $$(lm-lib-$(1)-objects) $$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
+
+# libclean
+.PHONY: libclean-lib-$(1)
+libclean-lib-$(1): clean-lib-$(1)
+
+# distclean
+.PHONY: build-lib-$(1)
+distclean-lib-$(1): libclean-$(1)
+
+endef
+########
+
+########
+# packing-targets-template($1): Targets for packing $(1).
+# Requires $(1)_PACK_DIR to be defined.
+define packing-targets-template
+
+# Print variables
+ifdef lm-DEBUG-MAKEFILE
+$$(info Packing group $(1))
+$$(info $(1)_PACK_DIR=$$($(1)_PACK_DIR) (required))
+$$(info $(1)_PACK_GROUP=$$($(1)_PACK_GROUP))
+$$(info $(1)_PACK_NAME=$$($(1)_PACK_NAME))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+endif
+
+# Packing directory is required.
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+lm-packing-$(1)-dirprefix=$$($(1)_PACK_DIR)/
+else
+$$(error Variable $(1)_PACK_DIR must be defined for packing group $(1).)
+endif
+
+# If the group name is not specified, it is the same as the
+# subdirectory being built.
+ifeq ($$(strip $$($(1)_PACK_GROUP)),)
+lm-packing-$(1)-group=$$(lastword $$(subst /, ,$$(CURDIR)))
+else
+lm-packing-$(1)-group=$$($(1)_PACK_GROUP)
+endif
+
+# If the pack name is not specified, it is the argument to the template.
+ifneq ($$(strip $$($(1)_PACK_NAME)),)
+lm-packing-$(1)-packname:=$$($(1)_PACK_NAME)
+else
+lm-packing-$(1)-packname:=$(1)
+endif
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-packing-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-packing-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+# Sources and libraries
+lm-packing-$(1)-mlheaders:=\
+	$$(foreach src,$$(lm-packing-$(1)-headers),$$(call header,$$(src)))
+
+lm-packing-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-packing-$(1)-headers),$$(call interface,$$(src)))
+
+lm-packing-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+
+lm-packing-$(1)-natobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
+lm-packing-$(1)-cobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call objcode,$$(src)))
+
+lm-packing-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj)))
+
+lm-packing-$(1)-nat-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call natlib,$$(obj)))
+
+lm-packing-$(1)-bytelib:=$(call bytelib,$(1))
+
+# The name of the file in which to store the packing group byte-code object list.
+lm-packing-$(1)-filelist:=\
+$$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-filename)$$(lm-packing-$(1)-group))
+
+# The name of the file in which to store the packing group native-code object list.
+lm-packing-$(1)-nat-filelist:=\
+$$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-nat-filename)$$(lm-packing-$(1)-group))
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info Packing group name $$(lm-packing-$(1)-group))
+$$(info lm-packing-$(1)-packname=$$(lm-packing-$(1)-packname))
+$$(info lm-packing-$(1)-headers=$$(lm-packing-$(1)-headers))
+$$(info lm-packing-$(1)-mlheaders=$$(lm-packing-$(1)-mlheaders))
+$$(info lm-packing-$(1)-interfaces=$$(lm-packing-$(1)-interfaces))
+$$(info lm-packing-$(1)-objects=$$(lm-packing-$(1)-objects))
+$$(info lm-packing-$(1)-natobjects=$$(lm-packing-$(1)-natobjects))
+$$(info lm-packing-$(1)-libs=$$(lm-packing-$(1)-libs))
+$$(info lm-packing-$(1)-nat-libs=$$(lm-packing-$(1)-nat-libs))
+$$(info lm-packing-$(1)-bytelib=$$(lm-packing-$(1)-bytelib))
+$$(info lm-packing-$(1)-filelist=$$(lm-packing-$(1)-filelist))
+$$(info lm-packing-$(1)-nat-filelist=$$(lm-packing-$(1)-nat-filelist))
+endif
+
+# Build options
+lm-packing-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	-I $$($(1)_PACK_DIR) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packing-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packing-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) \
+	$$($(1)_OCAMLNAT_FLAGS) \
+	-I $$($(1)_PACK_DIR) \
+	-for-pack $$(lm-packing-$(1)-packname) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packing-$(1)-linknat-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packing-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+
+lm-packing-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packing-$(1)-ocamlc-options=$$(lm-packing-$(1)-ocamlc-options))
+$$(info lm-packing-$(1)-link-options=$$(lm-packing-$(1)-link-options))
+$$(info lm-packing-$(1)-ocamldep-options=$$(lm-packing-$(1)-ocamldep-options))
+$$(info lm-packing-$(1)-ocamlcpp-options=$$(lm-packing-$(1)-ocamlcpp-options))
+endif
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-packing-$(1)-interfaces): %.cmi: %.mli
+	$(OCAMLC) $$(lm-packing-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(lm-packing-$(1)-objects): %.cmo: %.ml
+	$(OCAMLC) $$(lm-packing-$(1)-ocamlc-options) -c $$<
+
+# Native-code object files
+$$(lm-packing-$(1)-natobjects):%.cmx: %.ml
+	$(OCAMLNAT) $$(lm-packing-$(1)-ocamlnat-options) -c $$<
+
+$$(lm-packing-$(1)-cobjects):%.o: %.cmx
+
+# Packing directory targets
+lm-packing-$(1)-targets:=$$(foreach obj,$$(lm-packing-$(1)-objects), \
+		$$(lm-packing-$(1)-dirprefix)$$(obj))
+
+ifdef lm-nativecode
+lm-packing-$(1)-nattargets:=$$(foreach obj,$$(lm-packing-$(1)-natobjects), \
+		$$(lm-packing-$(1)-dirprefix)$$(obj))
+lm-packing-$(1)-ctargets:=$$(foreach obj,$$(lm-packing-$(1)-cobjects), \
+		$$(lm-packing-$(1)-dirprefix)$$(obj))
+endif # lm-nativecode
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packing-$(1)-targets = $$(lm-packing-$(1)-targets))
+endif
+
+# Build rule to make the packing directory.
+$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
+
+# Build rule to generate the byte-code file list.
+$$(lm-packing-$(1)-filelist): $$(lm-packing-$(1)-dirprefix)
+	@echo "Generating byte-code object list"
+	echo -n "$$(lm-packing-$(1)-objects) "> $$(lm-packing-$(1)-filelist)
+
+$$(lm-packing-$(1)-targets): $$(lm-packing-$(1)-interfaces) \
+		$$(lm-packing-$(1)-objects)  \
+		$$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-objects) $$($(1)_PACK_DIR)
+
+
+# Build rule to generate the native-code file list.
+$$(lm-packing-$(1)-nat-filelist): $$(lm-packing-$(1)-dirprefix)
+	@echo "Generating native-code object list"
+	echo -n "$$(lm-packing-$(1)-natobjects) " > $$(lm-packing-$(1)-nat-filelist)
+
+$$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets): \
+			$$(lm-packing-$(1)-interfaces) \
+		$$(lm-packing-$(1)-natobjects) \
+		$$(lm-packing-$(1)-cobjects) \
+		$$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$($(1)_PACK_DIR)
+	$$(COPY) $$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
+		 $$($(1)_PACK_DIR)
+
+#ifdef lm-nativecode
+#endif
+
+# Bytecode library in staging directory.
+.PHONY: install-objdir-packing-$(1)
+
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+install-objdir-packing-$(1): $$(lm-module-objlib-dir) $$(lm-packing-$(1)-bytelib) \
+		$$(lm-packing-$(1)-interfaces)
+	$$(COPY) $$(lm-packing-$(1)-interfaces) $$(lm-module-packing-dir)
+	$$(COPY) $$(lm-packing-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-packing-$(1)-packingname) $$(lm-module-objlib-dir)
+else
+install-objdir-packing-$(1):
+endif
+
+###
+# Toplevel rules
+
+# Build 
+
+lm-packing-$(1)-build-targets:=$$(lm-packing-$(1)-interfaces) \
+				$$(lm-packing-$(1)-targets) \
+				$$(lm-packing-$(1)-filelist)
+
+ifdef lm-nativecode
+lm-packing-$(1)-build-targets+= $$(lm-packing-$(1)-nattargets) \
+				$$(lm-packing-$(1)-ctargets) \
+				$$(lm-packing-$(1)-nat-filelist)
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packing-$(1)-build-targets=$$(lm-packing-$(1)-build-targets))
+endif
+
+.PHONY: build-packing-$(1)
+build-packing-$(1): $$(lm-packing-$(1)-build-targets)
+
+# clean
+.PHONY: clean-packing-$(1)-
+clean-packing-$(1)-files:
+	$$(RM) $$(lm-packing-$(1)-interfaces) $$(lm-packing-$(1)-objects) \
+		$$(lm-packing-$(1)-natobjects) $$(lm-packing-$(1)-cobjects) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-interfaces),\
+			$$(lm-packing-$(1)-dirprefix)/$$(file))
+	-$$(RM) $$(foreach file,$$(lm-packing-$(1)-mlheaders),\
+			$$(lm-packing-$(1)-dirprefix)/$$(file))
+	-$$(RM) $$(lm-packing-$(1)-targets) \
+		$$(lm-packing-$(1)-nattargets) $$(lm-packing-$(1)-ctargets)\
+		$$(lm-packing-$(1)-filelist) $$(lm-packing-$(1)-nat-filelist)
+
+.PHONY: clean-packing-$(1)-packdir
+clean-packing-$(1)-packdir:
+	if [ -e $$($(1)_PACK_DIR) ] ; then \
+		$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR) ; \
+	fi
+
+.PHONY: clean-packing-$(1)
+clean-packing-$(1): clean-packing-$(1)-files clean-packing-$(1)-packdir
+
+# libclean
+.PHONY: packingclean-packing-$(1)
+libclean-packing-$(1): clean-packing-$(1)
+
+# distclean
+.PHONY: dist-packing-$(1)
+distclean-packing-$(1): libclean-$(1)
+
+endef
+########
+
+########
+# packed-targets-template($1): Targets for packed library $(1).
+# Requires $(1)_PACK_DIR to be defined.
+define packed-targets-template
+
+# Print variables
+ifdef lm-DEBUG-MAKEFILE
+$$(info Packed library $(1) build variables)
+$$(info $(1)_PACK_NAME=$$($(1)_PACK_NAME) (required))
+$$(info $(1)_PACK_DIR=$$($(1)_PACK_DIR) (required))
+$$(info $(1)_GROUPS=$$($(1)_GROUPS))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+endif
+
+# Packed directory is required.
+ifneq ($$(strip $$($(1)_PACK_DIR)),)
+lm-packed-$(1)-packdir:=$$($(1)_PACK_DIR)/
+else
+$$(error Variable $(1)_PACK_DIR must be defined for packed library $(1).)
+endif
+
+ifneq ($$(strip $$($(1)_PACK_NAME)),)
+lm-packed-$(1)-packname:=$$($(1)_PACK_NAME)
+else
+$$(error Variable $(1)_PACK_NAME must be defined for packed library $(1).)
+endif
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-packed-$(1)-headers:=$$($(1)_HEADERS)
+else
+lm-packed-$(1)-headers:=
+endif
+
+# Packing groups
+lm-packed-$(1)-groups:=$$(strip $$($(1)_GROUPS))
+
+lm-packed-$(1)-packlist:=\
+$$(foreach group,$$(lm-packed-$(1)-groups),$$(lm-pack-filename)$$(group) )
+
+lm-packed-$(1)-packfiles=\
+$$(foreach f,$$(lm-packed-$(1)-packlist),$$(lm-packed-$(1)-packdir)$$(f))
+
+lm-packed-$(1)-nat-packlist:=\
+$$(foreach group,$$(lm-packed-$(1)-groups),$$(lm-pack-nat-filename)$$(group) )
+
+lm-packed-$(1)-nat-packfiles=\
+$$(foreach f,$$(lm-packed-$(1)-nat-packlist),$$(lm-packed-$(1)-packdir)$$(f))
+
+# The file in which to store the packed group object list.
+lm-packed-$(1)-filelist:=\
+$$(strip $$(lm-packed-$(1)-packdir)$$(lm-pack-filename)$$(lm-packed-$(1)-packname))
+
+# Extra libraries
+lm-packed-$(1)-mlheaders:=\
+	$$(foreach src,$$(lm-packed-$(1)-headers),$$(call header,$$(src)))
+
+lm-packed-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-packed-$(1)-headers),$$(call interface,$$(src)))
+
+lm-packed-$(1)-libs:=\
+	$$(foreach obj,$$($(1)_LIBS),$$(call bytelib,$$(obj)))
+
+lm-packed-$(1)-nat-libs:=$$($(1)_NATLIBS)
+
+#
+# The files to be generated
+lm-packed-$(1)-interface:=$$(call interface,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-module:=$$(call bytecode,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-bytelib:=$$(call bytelib,$(1))
+lm-packed-$(1)-natmodule:=$$(call natcode,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-cmodule:=$$(call objcode,$$(lm-packed-$(1)-packname))
+lm-packed-$(1)-natlib:=$$(call natlib,$(1))
+lm-packed-$(1)-clib:=$$(call objlib,$(1))
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packed-$(1)-packdir=$$(lm-packed-$(1)-packdir))
+$$(info lm-packed-$(1)-packname=$$(lm-packed-$(1)-packname))
+$$(info lm-packed-$(1)-headers=$$(lm-packed-$(1)-headers))
+$$(info lm-packed-$(1)-groups=$$(lm-packed-$(1)-groups))
+$$(info lm-packed-$(1)-packlist=$$(lm-packed-$(1)-packlist))
+$$(info lm-packed-$(1)-packfiles=$$(lm-packed-$(1)-packfiles))
+$$(info lm-packed-$(1)-nat-packlist=$$(lm-packed-$(1)-nat-packlist))
+$$(info lm-packed-$(1)-nat-packfiles=$$(lm-packed-$(1)-nat-packfiles))
+$$(info lm-packed-$(1)-filelist=$$(lm-packed-$(1)-filelist))
+$$(info lm-packed-$(1)-mlheaders=$$(lm-packed-$(1)-mlheaders))
+$$(info lm-packed-$(1)-interfaces=$$(lm-packed-$(1)-interfaces))
+$$(info lm-packed-$(1)-libs=$$(lm-packed-$(1)-libs))
+$$(info lm-packed-$(1)-nat-libs=$$(lm-packed-$(1)-nat-libs))
+$$(info lm-packed-$(1)-interface=$$(lm-packed-$(1)-interface))
+$$(info lm-packed-$(1)-module=$$(lm-packed-$(1)-module))
+$$(info lm-packed-$(1)-bytelib=$$(lm-packed-$(1)-bytelib))
+endif
+
+#
+# Build options
+lm-packed-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packed-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-packed-$(1)-libs)
+
+lm-packed-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-packed-$(1)-linknat-options:=$$(lm-module-linknat-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-packed-$(1)-libs)
+
+lm-packed-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+
+lm-packed-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packed-$(1)-ocamlc-options=$$(lm-packed-$(1)-ocamlc-options))
+$$(info lm-packed-$(1)-link-options=$$(lm-packed-$(1)-link-options))
+$$(info lm-packed-$(1)-ocamlnat-options=$$(lm-packed-$(1)-ocamlnat-options))
+$$(info lm-packed-$(1)-linknat-options=$$(lm-packed-$(1)-linknat-options))
+$$(info lm-packed-$(1)-ocamldep-options=$$(lm-packed-$(1)-ocamldep-options))
+$$(info lm-packed-$(1)-ocamlcpp-options=$$(lm-packed-$(1)-ocamlcpp-options))
+endif
+
+# Targets to build and install
+lm-packed-$(1)-targets:=$$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-bytelib)
+ifdef lm-nativecode
+lm-packed-$(1)-targets+= $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib)
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-packed-$(1)-targets=$$(lm-packed-$(1)-targets))
+endif
+
+##
+# Build rule to make the packed directory.
+$$(eval $$(call make-dir-template,$$($(1)_PACK_DIR)))
+
+##
+# Build rule for the module
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface):
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	cat $$(lm-packed-$(1)-packlist) > $(1)_FULL_PACK_LIST ; \
+	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_PACK_LIST)" ; \
+	$$(OCAMLC) -pack -o $$(lm-packed-$(1)-module) $$$$(cat $(1)_FULL_PACK_LIST) )
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule)\
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule):
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	cat $$(lm-packed-$(1)-nat-packlist) > $(1)_FULL_NAT_PACK_LIST ; \
+	echo "Linking packed module $(1) with files $$$$(cat $(1)_FULL_NAT_PACK_LIST)";\
+	$$(OCAMLNAT) -pack -o $$(lm-packed-$(1)-natmodule) \
+		$$$$(cat $(1)_FULL_NAT_PACK_LIST) )
+
+$$(lm-packed-$(1)-interface): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-interface)
+
+$$(lm-packed-$(1)-natmodule) $$(lm-packed-$(1)-cmodule): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-natmodule)
+	$$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule) \
+		$$(lm-packed-$(1)-cmodule)
+
+# Build rule for the packed library
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module)
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	$(OCAMLC) -a -o $$(lm-packed-$(1)-bytelib) $$(lm-packed-$(1)-module) )
+
+$$(lm-packed-$(1)-bytelib): $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-bytelib) \
+		$$(lm-packed-$(1)-bytelib)
+
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-interface) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule)
+	( $(CD) $$(lm-packed-$(1)-packdir) ; \
+	$$(OCAMLNAT) -a -o $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-natmodule))
+
+$$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natlib) \
+		$$(lm-packed-$(1)-natlib)
+	$(COPY) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-clib) \
+		$$(lm-packed-$(1)-clib)
+
+# Install to staging directory.
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-interface): \
+		$$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-interface) $$(lm-module-obj-dir)
+
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-bytelib): \
+		$$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-bytelib) $$(lm-module-obj-dir)
+
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-natlib) \
+$$(lm-module-obj-dir)/$$(lm-packed-$(1)-clib): \
+		$$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib) \
+		$$(lm-module-obj-dir)
+	$$(COPY) $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib) $$(lm-module-obj-dir)
+
+
+.PHONY: install-objdir-packed-$(1)
+install-objdir-packed-$(1): \
+	$$(foreach t,$$(lm-packed-$(1)-targets),$$(lm-module-obj-dir)/$$(t))
+
+###
+# Toplevel rules
+
+# Build
+.PHONY: build-packed-$(1)
+build-packed-$(1): $$(lm-packed-$(1)-targets)
+
+# clean
+.PHONY: clean-packed-$(1)-files
+clean-packed-$(1)-files:
+	$$(RM) $$(lm-packed-$(1)-targets)\
+		$$(foreach f,$$(lm-packed-$(1)-targets),$$(lm-packed-$(1)-packdir)$$(f))
+	$$(RM) $$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-module) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-natmodule) \
+		$$(lm-packed-$(1)-packdir)$$(lm-packed-$(1)-cmodule)
+	$$(RM) $$(lm-packed-$(1)-packdir)$(1)_FULL_PACK_LIST \
+		$$(lm-packed-$(1)-packdir)$(1)_FULL_NAT_PACK_LIST
+
+.PHONY: clean-packed-$(1)-packdir
+clean-packed-$(1)-packdir:
+	if [ -e $$($(1)_PACK_DIR) ] ; then \
+		$$(RMDIR) --ignore-fail $$($(1)_PACK_DIR) ; \
+	fi
+
+.PHONY: clean-packed-$(1)
+clean-packed-$(1): clean-packed-$(1)-files clean-packed-$(1)-packdir
+
+# libclean
+.PHONY: packedclean-packed-$(1)
+libclean-packed-$(1): clean-packed-$(1)
+
+# distclean
+.PHONY: dist-packed-$(1)
+distclean-packed-$(1): libclean-$(1)
+
+endef
+########
+
+########
+# install-module-template($1,$2):Install module files to directory
+# $(2) with build target $(1).
+define install-module-template
+
+###
+# Directories
+
+# Staging directories
+lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)
+lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)
+lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)
+lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)
+lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)
+
+# Installation directories
+lm-module-finallib-dir:=$$(lm-installdir-lib)
+lm-module-finalbin-dir:=$$(lm-installdir-bin)
+lm-module-finaldata-dir:=$$(lm-installdir-data)
+lm-module-finaldoc-dir:=$$(lm-installdir-doc)
+
+# List of libraries to install, use module definitions when given.
+ifneq ($$(origin INSTALL_LIBRARIES),undefined)
+lm-module-install-libs:=$$(strip $$(INSTALL_LIBRARIES))
+else
+lm-module-install-libs=$$(LIBRARIES)
+endif # INSTALL_LIBRARIES
+
+# List of headers to install, use module definitions when given.
+ifneq ($$(origin INSTALL_HEADERS),undefined)
+lm-module-install-headers:=$$(strip $$(INSTALL_HEADERS))
+else
+lm-module-install-headers:=\
+$$(foreach lib,$$(lm-module-install-libs),\
+	$$(if $$(findstring undefined,$$(origin $$(lib)_HEADERS)),\
+		$$(foreach src,$$($$(lib)_SOURCES),\
+			$$(call interface,$$(src)) $$(call header,$$(src))),\
+		$$(foreach src,$$($$(lib)_HEADERS),\
+			$$(call interface,$$(src)) $$(call header,$$(src)))))
+
+endif # INSTALL_LIBRARIES
+
+# List of packings to install.
+lm-module-install-packed:=\
+	$$(foreach lib,$$(PACKED), \
+		$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
+
+ifdef lm-nativecode
+lm-module-install-packed+=\
+	$$(foreach lib,$$(PACKED), \
+		$$(call natlib,$$(lib)) $$(call objlib,$$(lib)))
+endif
+
+# Calculate library files to install
+lm-module-install-libfiles:=\
+	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib)))
+
+ifdef lm-nativecode
+lm-module-install-libfiles+=\
+	$$(foreach lib,$$(lm-module-install-libs), \
+		$$(call natlib,$$(lib)) $$(call clib,$$(lib))) 
+endif
+
+lm-module-install-libfiles+=$$(lm-module-install-headers) \
+	$$(lm-module-install-packed) \
+	$$(INSTALL_EXTRA_LIBRARIES)
+
+
+# List of binariess to install, use module definitions when given.
+ifdef INSTALL_PROGRAMS
+lm-module-install-bins=$$(strip $$(INSTALL_PROGRAMS))
+else
+#lm-module-install-bins=$$(PROGRAMS)
+endif # INSTALL_PROGRAMS
+
+# Calculate binary files to install
+lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS)
+
+# Make sure that required directories exist.
+ifneq ($$(strip $$(MODULE_INSTALL_PATH)),)
+lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
+lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
+
+# Has a distinct installation path
+ifneq ($$(strip $$(lm-module-install-libfiles)),)
+$$(eval $$(call make-dir-template,$$(lm-module-objlib-dir)))
+endif
+ifneq ($$(strip $$(lm-module-install-binfiles)),)
+$$(eval $$(call make-dir-template,$$(lm-module-objbin-dir)))
+endif
+ifneq ($$(strip $$(lm-module-install-datafiles)),)
+$$(eval $$(call make-dir-template,$$(lm-module-objdata-dir)))
+endif
+ifneq ($$(strip $$(lm-module-install-docfiles)),)
+$$(eval $$(call make-dir-template,$$(lm-module-objdoc-dir)))
+endif
+endif # MODULE_INSTALL_PATH
+
+# Select targets
+ifneq ($$(strip $$(lm-module-install-libfiles)),)
+lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
+	lm-$(1)-module-install-lib
+endif
+
+ifneq ($$(strip $$(lm-module-install-binfiles)),)
+lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
+	lm-$(1)-module-install-bin
+endif
+
+ifneq ($$(strip $$(lm-module-install-datafiles)),)
+lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
+	lm-$(1)-module-install-data
+endif
+ifneq ($$(strip $$(lm-module-install-docfiles)),)
+lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
+	lm-$(1)-module-install-doc
+endif
+
+## Copying
+$$(lm-module-objlib-dir)/%: % $$(lm-module-objlib-dir)
+	$$(COPY) % $$(lm-module-objlib-dir)
+
+$$(lm-module-objbin-dir)/%: % $$(lm-module-objbin-dir)
+	$$(COPY) % $$(lm-module-objbin-dir)
+
+# Install directories
+.PHONY: lm-$(1)-module-install-lib
+ifneq ($$(strip $$(lm-module-install-libfiles)),)
+lm-$(1)-module-install-lib: $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-module-install-libfiles) $$(lm-module-objlib-dir)
+else
+lm-$(1)-module-install-lib:
+
+endif
+
+.PHONY: lm-$(1)-module-install-bin
+ifneq ($$(strip $$(lm-module-install-binfiles)),)
+lm-$(1)-module-install-bin: $$(lm-module-objbin-dir)
+	$$(COPY) $$(lm-module-install-binfiles) $$(lm-module-objbin-dir)
+else
+lm-$(1)-module-install-bin:
+endif
+
+.PHONY: lm-$(1)-module-install-data
+ifneq ($$(strip $$(lm-module-install-datafiles)),)
+lm-$(1)-module-install-data: $$(lm-module-objdata-dir)
+	$$(COPY) $$(lm-module-install-datafiles) $$(lm-module-objdata-dir)
+else
+lm-$(1)-module-install-data:
+endif
+
+.PHONY: lm-$(1)-module-install-doc
+ifneq ($$(strip $$(lm-module-install-docfiles)),)
+lm-$(1)-module-install-doc: $$(lm-module-objdoc-dir)
+	$$(COPY) $$(lm-module-install-docfiles) $$(lm-module-objdoc-dir)
+else
+lm-$(1)-module-install-doc: 
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-module-install-$(1)-target = $$(lm-module-install-$(1)-target))
+endif
+
+.PHONY: $(1)
+module-install-$(1): $$(lm-module-install-$(1)-target) 
+endef
+########
+
+########
+# program-targets-template($1): Targets for program $(1).
+define program-targets-template
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info Program $(1))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+$$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
+endif
+
+# Bytecode libraries
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-prog-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-prog-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+lm-prog-$(1)-mlheaders:=$$(foreach src,$$(lm-prog-$(1)-headers),\
+				$$(call header,$$(src)))
+
+lm-prog-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-prog-$(1)-headers),$$(call interface,$$(src)))
+
+lm-prog-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+
+lm-prog-$(1)-libs:=$$($(1)_LIBS)
+
+lm-prog-$(1)-natobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
+lm-prog-$(1)-cobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call objcode,$$(src)))
+
+lm-prog-$(1)-nat-libs:=$$($(1)_NATLIBS)
+
+lm-prog-$(1)-program:=$(1)
+lm-prog-$(1)-natprogram:=$(1).opt
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-prog-$(1)-headers=$$(lm-prog-$(1)-headers))
+$$(info lm-prog-$(1)-mlheaders=$$(lm-prog-$(1)-mlheaders))
+$$(info lm-prog-$(1)-interfaces=$$(lm-prog-$(1)-interfaces))
+$$(info lm-prog-$(1)-objects=$$(lm-prog-$(1)-objects))
+$$(info lm-prog-$(1)-libs=$$(lm-prog-$(1)-libs))
+$$(info lm-prog-$(1)-natobjects=$$(lm-prog-$(1)-natobjects))
+$$(info lm-prog-$(1)-cobjects=$$(lm-prog-$(1)-cobjects))
+$$(info lm-prog-$(1)-nat-libs=$$(lm-prog-$(1)-nat-libs))
+$$(info lm-prog-$(1)-program=$$(lm-prog-$(1)-program))
+$$(info lm-prog-$(1)-natprogram=$$(lm-prog-$(1)-natprogram))
+endif
+
+##
+# Build options
+
+lm-prog-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-prog-$(1)-link-options:=$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-prog-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLnat_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-prog-$(1)-linknat-options:=$$(lm-module-linknat-options) \
+	$$($(1)_LINKNAT_FLAGS) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+
+lm-prog-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+
+lm-prog-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-prog-$(1)-ocamlc-options=$$(lm-prog-$(1)-ocamlc-options))
+$$(info lm-prog-$(1)-link-options=$$(lm-prog-$(1)-link-options))
+$$(info lm-prog-$(1)-ocamlnat-options=$$(lm-prog-$(1)-ocamlnat-options))
+$$(info lm-prog-$(1)-linknat-options=$$(lm-prog-$(1)-linknat-options))
+$$(info lm-prog-$(1)-ocamldep-options=$$(lm-prog-$(1)-ocamldep-options))
+$$(info lm-prog-$(1)-ocamlcpp-options=$$(lm-prog-$(1)-ocamlcpp-options))
+endif
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-prog-$(1)-interfaces): %.cmi: %.mli
+	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(lm-prog-$(1)-objects): %.cmo: %.ml
+	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) -c $$<
+
+# Native-code object files
+#$$(lm-prog-$(1)-natobjects): %.cmx: %.ml
+#	$$(OCAMLNAT) $$(lm-prog-$(1)-ocamlnat-options) -c $$<
+
+#$$(lm-prog-$(1)-cobjects): %.o: %.cmx
+
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+# Bytecode program
+$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects) 
+	$$(info Linking $(lm-prog-$(1)-program))
+	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) \
+		-o $$(lm-prog-$(1)-program) \
+		$$(lm-prog-$(1)-libs) $$(lm-prog-$(1)-objects) 
+
+# Native-code program
+$$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
+		$$(lm-prog-$(1)-natobjects) $$(lm-prog-$(1)-cobjects) 
+	$$(info Linking $(lm-prog-$(1)-natprogram))
+	$$(OCAMLNAT) $$(lm-prog-$(1)-ocamlnat-options) \
+		-o $$(lm-prog-$(1)-natprogram) \
+		$$(lm-prog-$(1)-nat-libs) $$(lm-prog-$(1)-natobjects) 
+endif
+
+# Program in staging directory.
+# $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
+# 						$$(lm-module-objbin-dir)
+# 	$$(COPY) $$(lm-prog-$(1)-program) $$(lm-module-objbin-dir)
+
+# $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-natprogram) \
+# 						$$(lm-module-objbin-dir)
+# 	$$(COPY) $$(lm-prog-$(1)-natprogram) $$(lm-module-objbin-dir)
+
+lm-prog-$(1)-objdir-files:=$$(lm-prog-$(1)-program)
+ifdef lm-nativecode
+lm-prog-$(1)-objdir-files+= $$(lm-prog-$(1)-natprogram)
+endif
+
+.PHONY: install-objdir-prog-$(1)
+install-objdir-prog-$(1): $$(lm-prog-$(1)-objdir-files) $$(lm-module-objbin-dir)
+	$$(COPY) $$(lm-prog-$(1)-objdir-files) $$(lm-module-objbin-dir)
+
+###
+# Toplevel rules
+
+# build
+.PHONY: build-program-$(1)
+build-program-$(1): install-objdir-prog-$(1)
+
+# clean
+.PHONY: clean-program-$(1)
+clean-program-$(1):
+	$$(RM) $$(lm-prog-$(1)-interfaces) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+	$$(RM) $$(lm-prog-$(1)-objects) \
+		$$(lm-prog-$(1)-natobjects) $$(lm-prog-$(1)-cobjects)
+	$$(RM) $$(lm-prog-$(1)-program) $$(lm-prog-$(1)-natprogram)
+
+# libclean
+.PHONY: libclean-program-$(1)
+libclean-program-$(1): clean-program-$(1)
+
+# distclean
+.PHONY: build-program-$(1)
+distclean-program-$(1): libclean-program-$(1)
+
+endef
+########
+
+######
+# Use the templates to build everything in Makefile.module
+#
+
+###
+# Module settings
+# 
+
+##
+# If LOCAL_X_FLAGS is undefined, use the default.
+
+ifndef LOCAL_OCAMLPP_FLAGS
+LOCAL_OCAMLPP_FLAGS:=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+endif
+
+ifndef LOCAL_OCAMLDEP_FLAGS
+LOCAL_OCAMLDEP_FLAGS:=$(GLOBAL_OCAMLDEP_FLAGS) $(MODULE_OCAMLDEP_FLAGS)
+endif
+
+ifndef LOCAL_OCAMLC_FLAGS
+LOCAL_OCAMLC_FLAGS:=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+endif
+
+ifndef LOCAL_LINK_FLAGS
+LOCAL_LINK_FLAGS:=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+endif
+
+ifndef LOCAL_OCAMLNAT_FLAGS
+LOCAL_OCAMLNAT_FLAGS:=$(GLOBAL_OCAMLNAT_FLAGS) $(MODULE_OCAMLNAT_FLAGS)
+endif
+
+ifndef LOCAL_LINKNAT_FLAGS
+LOCAL_LINKNAT_FLAGS:=$(GLOBAL_LINKNAT_FLAGS) $(MODULE_LINKNAT_FLAGS)
+endif
+
+ifndef LOCAL_OCAMLCPP_FLAGS
+LOCAL_OCAMLCPP_FLAGS:=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+endif
+
+# lm-module-ocamlpp-options: Module wide ocamlpp flags. 
+lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
+
+# lm-module-ocamldep-options: Module wide ocamldep flags. 
+lm-module-ocamldep-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
+
+# lm-module-ocamlc-options: Module wide ocamlc flags. 
+lm-module-ocamlc-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
+
+# lm-module-link-options: Module wide link flags. 
+lm-module-link-options=$(LOCAL_LINK_FLAGS)
+
+# lm-module-ocamlnat-options: Module wide native code compiler flags. 
+lm-module-ocamlnat-options=$(lm-module-ocamlpp-options) \
+	$(LOCAL_OCAMLNAT_FLAGS) 
+
+# lm-module-linknat-options: Module wide native code link flags. 
+lm-module-linknat-options=$(LOCAL_LINKNAT_FLAGS)
+
+# lm-module-ocamlcpp-options: Module wide macro-expander flags. 
+lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)
+
+##
+# Options to pass to sub-directorys
+lm-module-subdir-args=\
+	GLOBAL_OCAMLPP_FLAGS='$(strip $(GLOBAL_OCAMLPP_FLAGS))' \
+	GLOBAL_OCAMLDEP_FLAGS='$(strip $(GLOBAL_OCAMLDEP_FLAGS))' \
+	GLOBAL_OCAMLC_FLAGS='$(strip $(GLOBAL_OCAMLC_FLAGS))' \
+	GLOBAL_LINK_FLAGS='$(strip $(GLOBAL_LINK_FLAGS))' \
+	GLOBAL_OCAMLNAT_FLAGS='$(strip $(GLOBAL_OCAMLNAT_FLAGS))' \
+	GLOBAL_LINKNAT_FLAGS='$(strip $(GLOBAL_LINKNAT_FLAGS))' \
+	GLOBAL_OCAMLCPP_FLAGS='$(strip $(GLOBAL_OCAMLCPP_FLAGS))' \
+	$(SUBDIR_MAKE_OPTIONS)
+
+# lm-module-uses-objdir: Defined iff the module uses a staging directory.
+# lm-module-obj-dir: The staging directory to use.
+ifneq ($(strip $(MODULE_USE_OBJDIR)),no)
+lm-module-uses-objdir=yes
+lm-module-obj-dir=$(OBJ_ROOT)
+endif
+
+# lm-module-has-subdirs: Defined iff the module has sub-directories.
+ifneq ($(strip $(SUBDIRS)),)
+lm-module-has-subdirs=yes
+endif
+
+# lm-module-sources: All library and program sources, with library sources first
+lm-module-sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
+	$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
+
+# lm-module-mlsources: All ml sources, with library sources first
+lm-module-mlsources=$(foreach src,$(lm-module-sources),$(call mlfile,$(src)))
+
+# lm-module-headers: All headers, with library headers first
+lm-module-headers= $(foreach src,$(lm-module-sources),$(call header,$(src)))
+
+# lm-module-interfaces: All headers, with library headers first
+lm-module-interfaces=$(foreach source,$(lm-module-sources),$(call interface,$(source)))
+
+ifdef lm-DEBUG-MAKEFILE
+$(info lm-module-lib-sources = $(lm-module-lib-sources))
+$(info lm-module-prog-sources = $(lm-module-prog-sources))
+$(info lm-module-interfaces = $(lm-module-interfaces))
+$(info lm-module-headers = $(lm-module-headers))
+$(info lm-module-mlsources = $(lm-module-mlsources))
+$(info lm-module-subdir-args = $(lm-module-subdir-args))
+endif
+
+###
+# Instantiate the targets
+#
+
+##
+# Instantiate obj-dir install targets
+$(eval $(call install-module-template,objdir,$(OBJ_ROOT)))
+
+##
+# Instantiate targets for each sub-directory
+$(foreach sub,$(SUBDIRS),\
+$(eval $(call subdir-targets-template,$(sub))))
+
+##
+# Instantiate bytelib build targets for each target.
+$(foreach lib,$(LIBRARIES),\
+$(eval $(call library-targets-template,$(lib))))
+
+##
+# Instantiate build targets for byte-code programs
+$(foreach prog,$(PROGRAMS),\
+$(eval $(call program-targets-template,$(prog))))
+
+
+##
+# Instantiate packings build targets for each target.
+$(foreach lib,$(PACKING),\
+$(eval $(call packing-targets-template,$(lib))))
+
+
+# Instantiate packed build targets for each target.
+$(foreach lib,$(PACKED),\
+$(eval $(call packed-targets-template,$(lib))))
+
+###
+# Directories
+#
+ifeq ($(lm-module-uses-objdir),yes)
+lm-module-objdir=$(OBJ_ROOT)
+$(eval $(call make-dir-template,$(lm-module-objdir)))
+else
+lm-module-objdir=
+endif
+
+.PHONY: build-objdir
+build-objdir: $(lm-module-objdir)
+
+# Headers
+.PHONY: build-headers
+build-headers: $(lm-module-interfaces)
+
+# Libraries
+.PHONY: build-libs
+build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) )
+
+# Program
+.PHONY: build-programs
+build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
+
+# Packings
+.PHONY: build-packings
+build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
+
+# Packed
+.PHONY: build-packed
+build-packed: $(foreach lib,$(PACKED),build-packed-$(lib) )
+
+ifdef lm-DEBUG-MAKEFILE
+$(info LIBRARIES = $(LIBRARIES))
+$(info PROGRAMS = $(PROGRAMS))
+$(info PACKING = $(PACKING))
+$(info PACKED = $(PACKED))
+endif
+
+###
+# Clean up
+###
+
+
+.PHONY: clean-subdirs
+clean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) clean; )
+
+.PHONY: clean-dir
+clean-dir: $(foreach lib,$(LIBRARIES),clean-lib-$(lib) )  \
+	$(foreach group,$(PACKING),clean-packing-$(group) ) \
+	$(foreach lib,$(PACKED),clean-packed-$(lib) ) \
+	$(foreach prog,$(PROGRAMS),clean-program-$(prog) )
+	$(EXTRA_CLEAN)
+
+clean: 	clean-subdirs clean-dir
+
+.PHONY: libclean-subdirs
+libclean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
+
+.PHONY: libclean-dir
+libclean-dir: clean-dir
+	-$(RM) *.cmi *.cma *.cmxa *~
+	$(EXTRA_LIBCLEAN)
+
+libclean: libclean-subdirs libclean-dir
+
+.PHONY: distclean-subdirs
+distclean-subdirs:
+	$(foreach subdir, $(SUBDIRS), $(MAKE) -C $(subdir) libclean; )
+
+.PHONY: distclean-dir
+distclean-dir: libclean-dir
+	-$(RM) depend
+	$(EXTRA_DISTCLEAN)
+
+distclean: distclean-subdirs distclean-dir
+
+###
+# Toplevel targets
+
+.PHONY: build
+ifneq ($(strip CUSTOM_TARGET_build),yes)
+build: build-objdir build-subdirs \
+	build-libs \
+	build-programs \
+	build-packings \
+	build-packed \
+	module-install-objdir
+endif
+
+.PHONY: install
+ifneq ($(strip CUSTOM_TARGET_install),yes)
+install: build
+endif
+
+##
+# Run the sub-directories.
+
+#ifdef lm-module-has-subdirs
+.PHONY: depend-subdirs
+lm-subdir-depend-target=$(foreach sub,$(SUBDIRS), depend-subdir-$(sub))
+depend-subdirs: $(lm-subdir-depend-target)
+
+.PHONY: build-subdirs
+lm-subdir-build-target=$(foreach sub,$(SUBDIRS), build-subdir-$(sub))
+build-subdirs: $(lm-subdir-build-target)
+
+.PHONY: install-subdirs
+lm-subdir-install-target=$(foreach sub,$(SUBDIRS), install-subdir-$(sub))
+install-subdirs: $(lm-subdir-install-target)
+
+.PHONY: clean-subdirs
+lm-subdir-clean-target=$(foreach sub,$(SUBDIRS), clean-subdir-$(sub))
+clean-subdirs: $(lm-subdir-clean-target)
+
+.PHONY: libclean-subdirs
+lm-subdir-libclean-target=$(foreach sub,$(SUBDIRS), libclean-subdir-$(sub))
+libclean-subdirs: $(lm-subdir-libclean-target)
+
+.PHONY: distclean-subdirs
+lm-subdir-distclean-target=$(foreach sub,$(SUBDIRS), distclean-subdir-$(sub))
+distclean-subdirs: $(lm-subdir-distclean-target)
+#endif
+
+##
+# Dependencies
+# Define NODEPEND to prevent using depend
+##
+
+ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
+ifndef NODEPEND
+#depend: $(lm-module-headers)
+#	-$(OCAMLDEP) $(lm-module-headers) $(lm-module-mlsources) > depend
+depend: $(lm-module-mlsources)
+	-$(OCAMLDEP) *.mli  $(lm-module-mlsources) > depend
+include depend
+endif # NODEPEND
+endif
+
+
+####
+# Variables that should not be exported
+unexport lm-module-uses-objdir
+unexport lm-module-has-subdirs

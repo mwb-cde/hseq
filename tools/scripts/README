@@ -1,0 +1,16 @@
+
+Tools for use with the hseq system.
+
+hseqc: 
+
+Executes scripts with hseq from the command line. `hseqc f` is
+equivalent to `hseq -I DIR f` (where HSEQDIR is the include directory
+for hseq).
+
+hseqb:
+
+Run HSeq in batch-mode, to build theories from the command line.
+
+Build notes:
+
+Programs depend on configure.data in the toplevel directory.
