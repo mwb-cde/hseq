@@ -656,7 +656,8 @@ struct
   let node_tyenv (Node(_, ty, _, _)) = ty
   let node_sqnt (Node(_, _, s, _)) = s
   let node_changes (Node(_, _, _, c)) = c
-  let node_set_changes (Node(tg, ty, s, _)) c = mk_node tg ty s c
+  let node_set_changes (Node(tg, ty, s, _)) c = 
+    mk_node tg ty s c
 
   type branch = 
       Branch of (Tag.t * Gtypes.substitution * Sequent.t list * Changes.t)
@@ -666,7 +667,8 @@ struct
   let branch_tyenv (Branch(_, ty, _, _)) = ty
   let branch_sqnts (Branch(_, _, s, _)) = s
   let branch_changes (Branch(_, _, _, c)) = c
-  let branch_set_changes (Branch(tg, ty, s, _)) c = mk_branch tg ty s c
+  let branch_set_changes (Branch(tg, ty, s, _)) c = 
+    mk_branch tg ty s c
 
   (** [replace_branch_tag b tg]: Replace the tag of branch [b] with
       [tg].  *)
