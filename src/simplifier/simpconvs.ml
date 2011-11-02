@@ -788,7 +788,6 @@ struct
     if Lterm.is_equality a
     then 
       let asm_info = is_rr_rule (qs, c, a, None) in 
-      let info = info_make() in 
       let rr_thm =
         match asm_info with
  	  | (None, _ ) -> eq_sym_thm()
@@ -801,10 +800,10 @@ struct
  	  | (_, _) -> rule_true_thm()
       in 
       seq
- 	[
- 	  copyA ~info:info (ftag tg);
- 	  (fun g ->
- 	    let atg = get_one ~msg:"eq_asm" (aformulas info)
+        [
+          copyA (ftag tg);
+          ?> (fun info g1 ->
+ 	    let atg = get_one ~msg:"eq_asm" (New.aformulas info)
  	    in 
  	    seq 
  	      [
@@ -813,8 +812,8 @@ struct
  		add_asm_tac ret atg;
 		qnt_asm_rewrite_tac rr_truth_thm tg;
  		add_asm_tac ret tg
- 	      ] g)
- 	] g
+ 	      ] g1)
+        ] g
     else 
       failwith "eq_asm"
 
@@ -848,12 +847,11 @@ struct
 	          single_asm_to_rule ret tg
 	        ] g
 	      else 
-	        let info = info_make()  in 
 	        seq
 	          [
-		    copyA ~info:info (ftag tg);
-		    (fun g1 -> 
-		      let atg = get_one ~msg:"neg_eq_asm" (aformulas info)
+		    copyA (ftag tg);
+		    ?> (fun info g1 -> 
+		      let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
 		      in 
 		      seq
 		        [
@@ -869,7 +867,6 @@ struct
   and neg_eq_asm ret (tg, (qs, c, a)) g =
     if (Lterm.is_neg a) && (Lterm.is_equality (Term.rand a))
     then 
-      let info = info_make() in 
       let rr_thm =
         match c with
 	  | None -> neg_eq_sym_thm()
@@ -877,9 +874,9 @@ struct
       in 
       seq
 	[
-	  copyA ~info:info (ftag tg);
-	  (fun g1 ->
-	    let atg = get_one ~msg:"neg_eq_asm" (aformulas info)
+	  copyA (ftag tg);
+	  ?> (fun info g1 ->
+	    let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
 	    in 
 	    seq 
 	      [
@@ -950,13 +947,12 @@ struct
 	        if Lterm.is_equality b 
 	        then neg_eq_asm ret (tg, (qs, c, a)) g
 	        else 
-		  let info = info_make() in 
 		  seq
 		    [
-		      copyA ~info:info (ftag tg);
-		      (fun g1 -> 
+		      copyA (ftag tg);
+		      ?> (fun info g1 -> 
 		        let atg = 
-			  get_one ~msg:"neg_rule_asm" (aformulas info)
+			  get_one ~msg:"neg_rule_asm" (New.aformulas info)
 		        in 
 		        seq
 			  [
@@ -973,13 +969,12 @@ struct
   and conj_rule_asm ret (tg, (qs, c, a)) g = 
     if Lterm.is_conj a
     then 
-      let inf = info_make () in 
       seq
 	[
-	  conjA ~info:inf ~a:(ftag tg);
-	  (fun g1 -> 
+	  conjA ~a:(ftag tg);
+	  ?> (fun inf g1 -> 
 	    let ltg, rtg = 
-	      get_two ~msg:"Simpconvs.conj_rule_asm" (aformulas inf)
+	      get_two ~msg:"Simpconvs.conj_rule_asm" (New.aformulas inf)
 	    in 
 	    seq
 	      [
@@ -1086,8 +1081,7 @@ let unpack_rule_data rds =
     }
 *)
 let prepare_asm data a goal =
-  let info = info_make()
-  and new_asm_tags = ref []
+  let new_asm_tags = ref []
   and asm_form = get_tagged_asm (ftag a) goal in 
   let data_fn (new_asm, rules) = 
     data := (mk_rule_data asm_form new_asm rules)::(!data)
@@ -1100,9 +1094,9 @@ let prepare_asm data a goal =
   seq 
     [
       (false_test --> Boollib.falseA ~a:(ftag a));
-      copyA ~info:info (ftag a);
-      (fun g ->
-        let a1 = get_one ~msg:"Simplib.prepare_asm" (aformulas info) in 
+      copyA (ftag a);
+      ?> (fun info g ->
+        let a1 = get_one ~msg:"Simplib.prepare_asm" (New.aformulas info) in 
         let a1form = drop_tag (get_tagged_asm (ftag a1) g)
         in 
         seq 
@@ -1161,10 +1155,10 @@ let prepare_concl data c goal =
   seq 
     [
       (true_test --> Logic.Tactics.trueC (ftag c));
-      copyC ~info:info (ftag c);
-      (fun g -> 
+      copyC (ftag c);
+      ?> (fun chngs g -> 
         let c1 = 
-	  get_one ~msg:"Simplib.prepare_concl" (cformulas info) 
+	  get_one ~msg:"Simplib.prepare_concl" (New.cformulas chngs) 
         in 
         info_empty info;
         negate_concl_tac ~info:info (ftag c1) g); 

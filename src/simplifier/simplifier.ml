@@ -311,13 +311,11 @@ let clean_up_tac ctrl g=
     variables in [x].
 *)
 let copyA_inst_tac ?info vals x goal =
-  let inf1 = info_make()
-  in 
   seq
     [
-      copyA ~info:inf1 x;
-      (fun g ->
-        let x1 = get_one ~msg:"copyA_inst_tac" (aformulas inf1);
+      copyA x;
+      ?> (fun inf1 g ->
+        let x1 = get_one ~msg:"copyA_inst_tac" (New.aformulas inf1);
         in 
         instA ?info:info ~a:(ftag x1) vals g)
     ] goal

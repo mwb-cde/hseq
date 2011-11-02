@@ -242,7 +242,6 @@ val info_set:
 
 module New:
 sig
-
   val changes: Logic.node -> Changes.t
  (** Get the goal changes record. *)
 
@@ -258,7 +257,6 @@ sig
   val constants: Changes.t -> Basic.term list
   (** [constants info]: Get constants from [info]. *)
 end
-
 
 (** {7 Utility functions} *)
 
@@ -375,8 +373,8 @@ val query_tac: (Changes.t -> tactic) -> tactic
     data from a goal. Forms [tac (changes g) g].
 *)
 
-val (??): (Changes.t -> tactic) -> tactic
-(** ??tac g]: Prefix notation for [query_tac]. Apply a tactic after
+val (?>): (Changes.t -> tactic) -> tactic
+(** ?>tac g]: Prefix notation for [query_tac]. Apply a tactic after
     extracting the change data from a goal. Forms [tac (changes g) g].
 *)
 
@@ -515,40 +513,40 @@ val foreach_form: (Logic.label -> tactic) -> tactic
     {!Logic.Tactics}.
 *)
 
-val rotateA: ?info:Info.t -> tactic
+val rotateA: tactic
 (** Rotate the assumptions. *)
 
-val rotateC: ?info:Info.t -> tactic
+val rotateC: tactic
 (** Rotate the conclusions. *)
 
-val copyA: ?info:Info.t -> Logic.label -> tactic
+val copyA: Logic.label -> tactic
 (** Copy an assumption.*)
 
-val copyC: ?info:Info.t -> Logic.label -> tactic
+val copyC: Logic.label -> tactic
 (** Copy a conclusion. *)
 
-val liftA: ?info:Info.t -> Logic.label -> tactic
+val liftA: Logic.label -> tactic
 (** [liftA a]: Lift assumption [a] to the top of the list.
 *)
-val liftC: ?info:Info.t -> Logic.label -> tactic
+val liftC: Logic.label -> tactic
 (** [liftC c]: Lift conclusion [c] to the top of the list.
 *)
 
-val lift: ?info:Info.t -> Logic.label -> tactic
+val lift: Logic.label -> tactic
 (** Move a formula to the top of the list of assumptions/conclusions.
 *)
 
-val deleteA: ?info:Info.t -> Logic.label -> tactic 
+val deleteA: Logic.label -> tactic 
 (** [deleteA l]: Delete the assumption labelled [l]. *)
 
-val deleteC: ?info:Info.t -> Logic.label -> tactic 
+val deleteC: Logic.label -> tactic 
 (** [deleteC l]: Delete the conclusion labelled [l]. *)
 
-val delete: ?info:Info.t -> Logic.label -> tactic 
+val delete: Logic.label -> tactic 
 (** [delete l]: Delete the formula labelled [l]. *)
 
 val deleten: Logic.label list -> Logic.tactic
-(**  [deleten ls]: Delete the formulas identified by a label in [ls]. *)
+(**  [deleten ls]: Delete the formulas identified by the labels in [ls]. *)
 
 (** {7 Logic rules}
 

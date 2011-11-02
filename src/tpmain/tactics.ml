@@ -326,7 +326,7 @@ let (!!) f d tac goal =
 let data_tac f tacl g = tacl (f g) g
 let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
-let (??) tacl g = tacl (New.changes g) g
+let (?>) tacl g = tacl (New.changes g) g
 let update_tac f d g = ((fun _ -> (f d)) g); skip g
 
 let rec map_every tac l goal = 
@@ -420,32 +420,22 @@ let lift_info ?info tac goal =
   in
   Info.add_changes info (branch_changes result); result
 
-let rotateA ?info g = 
-  lift_info ?info Logic.Tactics.rotate_asms g
-  
-let rotateC ?info g = 
-  lift_info ?info Logic.Tactics.rotate_cncls g
+let rotateA = Logic.Tactics.rotate_asms
+let rotateC = Logic.Tactics.rotate_cncls
 
-let copyA ?info i g = 
-  lift_info ?info (Logic.Tactics.copy_asm i) g
-let copyC ?info i g = 
-  lift_info ?info (Logic.Tactics.copy_cncl i) g
+let copyA = Logic.Tactics.copy_asm 
+let copyC = Logic.Tactics.copy_cncl
 
-let liftA ?info l g = 
-  lift_info ?info (Logic.Tactics.lift_asm l) g
-let liftC ?info l g = 
-  lift_info ?info (Logic.Tactics.lift_concl l) g
-let lift ?info id g =
-  lift_info ?info (Logic.Tactics.lift id) g
+let liftA = Logic.Tactics.lift_asm
+let liftC =  Logic.Tactics.lift_concl
+let lift = Logic.Tactics.lift
 
-let deleteA ?info i = 
-  lift_info ?info (Logic.Tactics.deleteA i)
-let deleteC ?info i = 
-  lift_info ?info (Logic.Tactics.deleteC i)
+let deleteA = Logic.Tactics.deleteA
+let deleteC = Logic.Tactics.deleteC
 
-let delete ?info i g = 
-  try  deleteA ?info i g
-  with Not_found -> deleteC ?info i g
+let delete i g = 
+  try  deleteA i g
+  with Not_found -> deleteC i g
 
 let deleten ns sq = 
   let rec del_aux l b =
