@@ -447,10 +447,17 @@ let deleten ns sq =
 
 (*** Logic Rules **)
 
+(***
 let trueC ?info ?c sq =
   let cf = first_concl_label c Formula.is_true sq
   in
   lift_info ?info (Logic.Tactics.trueC cf) sq
+***)
+let trueC ?c sq =
+  let cf = first_concl_label c Formula.is_true sq
+  in
+  Logic.Tactics.trueC cf sq
+
 
 let conjC ?info ?c sq =
   let cf = first_concl_label c Formula.is_conj sq

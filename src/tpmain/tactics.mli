@@ -561,8 +561,9 @@ val deleten: Logic.label list -> Logic.tactic
     Tag information provided by the rules is as in {!Logic.Tactics}.
 *)
 
-val trueC: ?info:Info.t -> ?c:Logic.label -> tactic
+val trueC: ?c:Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.trueC}. *)
+
 val conjC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjC}. *)
 val conjA: ?info:Info.t -> ?a: Logic.label -> tactic

@@ -1014,7 +1014,7 @@ let simp_prep_tac ctrl ret lbl goal =
     If not(ctrl.conds > 0) fail.
 *) 
       
-let cond_prover_trueC ?info l = Tactics.trueC ?info ~c:l
+let cond_prover_trueC ?info l = Tactics.trueC ~c:l
 
 let rec cond_prover_worker_tac ctrl ret tg goal = 
   let ctrl1 = 
@@ -1061,7 +1061,7 @@ let cond_prover_tac ctrl tg goal =
 
 let simp_asm_elims =
   [
-    (fun inf l -> Boollib.falseA ~info:inf ~a:l);
+    (fun inf l -> Boollib.falseA ~a:l);
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
     (fun inf l -> Tactics.conjA ~info:inf ~a:l);
     (fun inf l -> Tactics.existA ~info:inf ~a:l)
@@ -1069,7 +1069,7 @@ let simp_asm_elims =
 
 let simp_concl_elims =
   [
-    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+    (fun inf l -> Tactics.trueC ~c:l);
     (fun inf l -> Tactics.disjC ~info:inf ~c:l);
     (fun inf l -> Tactics.allC ~info:inf ~c:l)
   ]

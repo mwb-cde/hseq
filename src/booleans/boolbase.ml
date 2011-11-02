@@ -30,7 +30,7 @@ let make_false_def () = thm (Lterm.base_thy ^"."^"false_def")
 let false_def_var = Lib.freeze make_false_def
 let false_def () = Lib.thaw ~fresh:fresh_thm false_def_var
 
-let falseA ?info ?a goal =
+let falseA ?a goal =
   let af = first_asm_label a Formula.is_false goal in 
   let th =
     try false_def()
@@ -57,9 +57,9 @@ let falseA ?info ?a goal =
 	      trueC ~c:(ftag ctag) g1)
 	  ] g)
     ] goal
-    
-let trivial ?info ?f g =  
-  try (trueC ?info ?c:f // falseA ?info ?a:f) g
+
+let trivial ?f g =  
+  try (trueC ?c:f // falseA ?a:f) g
   with _ -> raise (error "trivial")
 
 let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))

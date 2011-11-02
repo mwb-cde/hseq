@@ -37,10 +37,10 @@ open Rewritelib
     [trueC], [implC] and [allC]
 *)
 let mini_scatter_tac ?info c goal =
-  let asm_rules = [ (fun inf l -> falseA ~info:inf ~a:l) ] in 
+  let asm_rules = [ (fun inf l -> falseA ~a:l) ] in 
   let concl_rules =
     [
-      (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+      (fun inf l -> Tactics.trueC ~c:l);
       (fun inf l -> Tactics.conjC ~info:inf ~c:l)
     ]
   in 

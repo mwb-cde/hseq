@@ -120,12 +120,12 @@ end
 
 (** {5 Tactics} *)
 
-val falseA: ?info:Tactics.Info.t -> ?a:Logic.label -> Tactics.tactic
+val falseA: ?a:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].  [info] is
     unchanged.
 *)
 
-val trivial: ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+val trivial: ?f:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].  [info] is unchanged.
 *)

@@ -135,14 +135,14 @@ let iffE ?info ?c goal =
 
 let split_asm_rules = 
   [
-    (fun inf l -> falseA ~info:inf ~a:l); 
+    (fun inf l -> falseA ~a:l); 
     (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
     (fun inf l -> Tactics.implA ~info:inf ~a:l)
   ]
 
 let split_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~info:inf ~c:l); 
+    (fun inf l -> Tactics.trueC ~c:l); 
     (fun inf l -> Tactics.conjC ~info:inf ~c:l)
   ]
 
@@ -165,14 +165,14 @@ let split_tac = splitter_tac
 
 let flatter_asm_rules =
   [
-    (fun inf l -> falseA ~info:inf ~a:l);
+    (fun inf l -> falseA ~a:l);
     (fun inf l -> Tactics.conjA ~info:inf ~a:l);
     (fun inf l -> Tactics.existA ~info:inf ~a:l)
   ]
 
 let flatter_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+    (fun inf l -> Tactics.trueC ~c:l);
     (fun inf l -> Tactics.negC ~info:inf ~c:l);
     (fun inf l -> Tactics.disjC ~info:inf ~c:l);
     (fun inf l -> Tactics.implC ~info:inf ~c:l);
@@ -197,7 +197,7 @@ let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
 
 let scatter_asm_rules =
   [
-    (fun inf l -> falseA ~info:inf ~a:l); 
+    (fun inf l -> falseA ~a:l); 
 
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
     (fun inf l -> Tactics.conjA ~info:inf ~a:l);
@@ -209,7 +209,7 @@ let scatter_asm_rules =
 
 let scatter_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+    (fun inf l -> Tactics.trueC ~c:l);
 
     (fun inf l -> Tactics.negC ~info:inf ~c:l);
     (fun inf l -> Tactics.disjC ~info:inf ~c:l);
@@ -231,7 +231,7 @@ let scatter_tac ?info ?f goal =
 
 let blast_asm_rules =
   [
-    (fun inf l -> falseA ~info:inf ~a:l); 
+    (fun inf l -> falseA ~a:l); 
 
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
     (fun inf l -> Tactics.conjA ~info:inf ~a:l);
@@ -245,7 +245,7 @@ let blast_asm_rules =
 
 let blast_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~info:inf ~c:l);
+    (fun inf l -> Tactics.trueC ~c:l);
 
     (fun inf l -> Tactics.negC ~info:inf ~c:l);
     (fun inf l -> Tactics.disjC ~info:inf ~c:l);
