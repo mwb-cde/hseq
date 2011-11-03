@@ -685,7 +685,7 @@ val cut:
     [trms].  Entry point to {!Logic.Tactics.cut}.
 *)
 
-val betaA: ?info:Info.t -> ?a:Logic.label -> tactic 
+val betaA: ?a:Logic.label -> tactic 
 (** [betaA l sq]: beta conversion of assumption [l]
 
     {L
@@ -701,7 +701,7 @@ val betaA: ?info:Info.t -> ?a:Logic.label -> tactic
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
 
-val betaC: ?info:Info.t -> ?c:Logic.label -> tactic 
+val betaC: ?c:Logic.label -> tactic 
 (** [betaC l sq]: beta conversion of conclusion [l]
 
     {L
@@ -717,20 +717,19 @@ val betaC: ?info:Info.t -> ?c:Logic.label -> tactic
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
 
-
-val beta_tac: ?info:Info.t -> ?f:Logic.label -> tactic
+val beta_tac: ?f:Logic.label -> tactic
 (** [beta_tac]: Apply beta conversion to a formula in the goal.  If
     [?f] is not given, beta convert conclusions and then the
     assumptions. Fails if no change is made.
 *)
 
-val name_tac: ?info:Info.t -> string -> Logic.label -> tactic
+val name_tac: string -> Logic.label -> tactic
 (** [name_tac ?info n lbl]: Name formula [lbl] with [n].  Entry point
     to {!Logic.Tactics.nameA} and {!Logic.Tactics.nameC}.
 *)
 
 val basic: 
-  ?info:Info.t -> ?a:Logic.label -> ?c:Logic.label -> tactic
+  ?a:Logic.label -> ?c:Logic.label -> tactic
 (** Proves the goal \[A{_ a}, asms |- B{_ c}, concls\] if A is
     alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.
 *)

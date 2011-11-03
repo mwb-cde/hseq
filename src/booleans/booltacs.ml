@@ -257,7 +257,7 @@ let blast_asm_rules =
     (fun inf l -> lift_info ~info:inf (Tactics.disjA ~a:l)); 
     (fun inf l -> lift_info ~info:inf (Tactics.implA ~a:l));
 
-    (fun inf l -> basic ~info:inf ~a:l ?c:None)
+    (fun inf l -> lift_info ~info:inf (basic ~a:l ?c:None))
   ]
 
 let blast_concl_rules =
@@ -278,7 +278,7 @@ let blast_concl_rules =
 **)
     (fun inf l -> iffE ~info:inf ~c:l);
 
-    (fun inf l -> basic ~info:inf ?a:None ~c:l)
+    (fun inf l -> lift_info ~info:inf (basic ?a:None ~c:l))
   ]
 
 let blast_tac ?info ?f goal =
@@ -490,13 +490,16 @@ let mp0_tac ?info a a1lbls g =
 	(Tactics.subgoals inf1) 
         false)
      --> 
-     (Tactics.basic ~info:inf1 
+     (Tactics.basic 
         ~a:(ftag a1_label)
         ~c:(ftag (Lib.get_one (Tactics.cformulas inf1)
 	            (Failure "mp_tac2.2"))))) g3
-  and tac4 g4 = set_info_tac ?info ([], aformulas inf1, [], []) g4
   in 
-  seq [tac1; tac2; tac3; tac4 ] g
+  seq [tac1; tac2; 
+       (tac3 ++
+          (?> (fun inf4 ->
+            set_info_tac ?info ([], New.aformulas inf4, [], []))))
+      ] g
 
     
 let mp_tac ?info ?a ?h goal =
@@ -592,9 +595,9 @@ let back0_tac ?info a cs goal =
       (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
 	 (Tactics.subgoals info1) false))
      --> 
-     Tactics.basic ~info:info1 
-       ~a:(ftag (Lib.get_nth (Tactics.aformulas info1) 1))
-       ~c:(ftag c_label)) g3
+     lift_info ~info:info1 
+       (Tactics.basic ~a:(ftag (Lib.get_nth (Tactics.aformulas info1) 1))
+          ~c:(ftag c_label))) g3
   in 
   let tac4 g4 = delete (ftag c_label) g4 in 
   let tac5 g5 = 

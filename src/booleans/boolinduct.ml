@@ -266,22 +266,14 @@ let asm_induct_tac ?info alabel clabel goal =
       }
   *)
   let inst_split_asm_tac g =
-    let minfo = info_make ()
+    let albl = ftag atag
     in 
     seq
       [
 	(fun g1 -> 
-	  let albl = ftag atag
-	  in 
-	  (lift_info ~info:minfo (instA ~a:albl consts_list) 
-	   ++ (betaA ~info:minfo ~a:albl // skip))
-	    g1);
-	(fun g1 ->
-	  let atag = 
-            get_one ~msg:"asm_induct_tac.inst_split_asm_tac"
-              (aformulas minfo)
-	  in 
-	  lift_info ~info:tinfo (implA ~a:(ftag atag)) g1);
+	  (instA ~a:albl consts_list
+	   ++ (betaA ~a:albl // skip)) g1);
+	implA ~a:albl
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
@@ -581,20 +573,12 @@ let basic_induct_on ?info ?thm name clabel goal =
       }
   *)
   let inst_split_asm_tac atag g =
-    let minfo = info_make ()
-    in 
+    let albl = ftag atag in 
     seq
       [
-	(fun g1 -> 
-	  let albl = ftag atag
-	  in 
-	  (lift_info ~info:minfo (instA ~a:albl consts_list)
-	   ++ (betaA ~info:minfo ~a:albl // skip))
-	    g1);
-	(fun g1 ->
-	  let atag = get_one (aformulas minfo)
-	  in 
-	  lift_info ~info:tinfo (implA ~a:(ftag atag)) g1);
+	((instA ~a:albl consts_list)
+	 ++ (betaA ~a:albl // skip));
+        implA ~a:(ftag atag)
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand

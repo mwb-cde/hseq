@@ -50,6 +50,7 @@ let goals l = l.goal_tags
 let aforms l = l.asm_tags
 let cforms l = l.cncl_tags
 let terms l = l.term_tags
+let dest l = (goals l, aforms l, cforms l, terms l)
 
 let add r gs hs cs ts =
   make (gs@r.goal_tags) (hs@r.asm_tags) (cs@r.cncl_tags) (ts@r.term_tags)

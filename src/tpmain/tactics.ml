@@ -670,27 +670,28 @@ let cut ?inst th goal =
       try cut0 trms goal
       with err -> raise (add_error "cut" err)
 
-let betaA ?info ?a goal =
+let betaA ?a goal =
   let conv_tac (ft, form) g =
     let scp = scope_of g in 
     let thm = 
       try Logic.Conv.beta_conv scp (Formula.term_of form)
       with err -> raise (add_error "betaA" err)
     in 
-    let info1 = Info.make()
-    and albl = ftag ft
+    let albl = ftag ft
     in 
     seq 
       [
-	lift_info ~info:info1 (cut thm);
-	(fun g1 ->
+	cut thm;
+	(?> fun info1 g1 ->
 	  let tlbl = 
-	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
+	    ftag (Lib.get_one (New.aformulas info1) (error "Tactics.betaA"))
 	  in
 	  seq
 	    [
-	      lift_info ?info (substA [tlbl] albl);
-	      Logic.Tactics.deleteA tlbl
+	      substA [tlbl] albl;
+	      (?> fun info2 g2 ->
+                (Logic.Tactics.deleteA tlbl
+                 ++ set_changes_tac (Changes.dest info2)) g2)
 	    ] g1)
       ] g
   in 
@@ -699,27 +700,28 @@ let betaA ?info ?a goal =
     | None -> 
       map_some conv_tac (asms_of (sequent goal)) goal
 
-let betaC ?info ?c goal =
+let betaC ?c goal =
   let conv_tac (ft, form) g =
     let scp = scope_of g in 
     let thm = 
       try Logic.Conv.beta_conv scp (Formula.term_of form)
       with err -> raise (add_error "betaC" err)
     in 
-    let info1 = Info.make()
-    and clbl = ftag ft
+    let clbl = ftag ft
     in 
     seq 
       [
-	lift_info ~info:info1 (cut thm);
-	(fun g1 ->
+	cut thm;
+	(?> fun info1 g1 ->
 	  let tlbl = 
-	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
+	    ftag (Lib.get_one (New.aformulas info1) (error "Tactics.betaC"))
 	  in
 	  seq
 	    [
-	      lift_info ?info (substC [tlbl] clbl);
-	      Logic.Tactics.deleteA tlbl
+	      substC [tlbl] clbl;
+              (?> fun info2 g2 ->
+	        (Logic.Tactics.deleteA tlbl
+                 ++ set_changes_tac (Changes.dest info2)) g2)
 	    ] g1)
       ] g
   in 
@@ -728,21 +730,21 @@ let betaC ?info ?c goal =
     | None -> 
       map_some conv_tac (concls_of (sequent goal)) goal
 
-let beta_tac ?info ?f goal = 
+let beta_tac ?f goal = 
   try 
     seq_some
       [ 
-	betaC ?info ?c:f;
-	betaA ?info ?a:f
+	betaC ?c:f;
+	betaA ?a:f
       ] goal
   with err -> raise (add_error "beta_tac" err)
 
-let name_tac ?info n lbl goal = 
+let name_tac n lbl goal = 
   let sqnt = sequent goal
   in 
   match Lib.try_app (Logic.get_label_asm lbl) sqnt with
-    | Some _ -> lift_info ?info (Logic.Tactics.nameA n lbl) goal
-    | None -> lift_info ?info (Logic.Tactics.nameC n lbl) goal
+    | Some _ -> Logic.Tactics.nameA n lbl goal
+    | None -> Logic.Tactics.nameC n lbl goal
 
 (*** Unification tactics ***)
 
@@ -776,11 +778,11 @@ let find_basic asm concl node =
   in 
   find_basic_aux node_concls
 
-let basic ?info ?a ?c goal =
+let basic ?a ?c goal =
   match (a, c) with 
     | (Some albl, Some clbl) ->
       begin
-        try lift_info ?info (Logic.Tactics.basic albl clbl) goal
+        try Logic.Tactics.basic albl clbl goal
         with err -> raise (add_error "basic: failed" err)
       end
     | _ -> 
@@ -788,7 +790,7 @@ let basic ?info ?a ?c goal =
         match Lib.try_find (find_basic a c) goal with
 	  | None -> raise (error "basic: failed")
           | Some(al, cl) -> 
-            lift_info ?info (Logic.Tactics.basic al cl) goal
+            Logic.Tactics.basic al cl goal
       end
 
 
@@ -829,7 +831,7 @@ let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
     [
       lift_info ?info (instA ~a:albl asm_consts);
       lift_info ?info (instC ~c:clbl concl_consts);
-      (basic ?info:info ~a:albl ~c:clbl // skip) 
+      lift_info ?info (basic ~a:albl ~c:clbl // skip) 
     ] goal
 
 let unify_tac ?info ?a ?c goal =
@@ -880,7 +882,8 @@ let named_tac ?info tac anames cnames (goal: Logic.node) =
       | ([], _) -> g
       | (_, []) -> g
       | (x::xs, y::ys) -> 
-	name_list xs ys (foreach (name_tac ~info:inf2 x y) g)
+	name_list xs ys 
+          (foreach (lift_info ~info:inf2 (name_tac x y)) g)
   in 
   let g1 = tac ~info:inf1 goal in 
   let albls = List.map ftag (Info.aformulas inf1)

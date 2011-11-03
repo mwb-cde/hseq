@@ -43,6 +43,7 @@ type t =
 val empty: unit -> t
 
 (** Accessors *)
+val dest: t -> (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
 val goals: t -> Tag.t list
 val aforms: t -> Tag.t list
 val cforms: t -> Tag.t list
