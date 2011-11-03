@@ -1063,7 +1063,11 @@ let simp_asm_elims =
   [
     (fun inf l -> Boollib.falseA ~a:l);
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
-    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
+(***
+    (fun inf l -> (Tactics.conjA ~a:l 
+                   ++ changes_to_info_tac ~info:inf));
+***)
     (fun inf l -> Tactics.existA ~info:inf ~a:l)
   ]
 

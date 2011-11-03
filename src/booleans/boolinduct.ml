@@ -41,7 +41,12 @@ let mini_scatter_tac ?info c goal =
   let concl_rules =
     [
       (fun inf l -> Tactics.trueC ~c:l);
-      (fun inf l -> Tactics.conjC ~info:inf ~c:l)
+      (fun inf l -> lift_info ~info:inf (Tactics.conjC ~c:l))
+
+(**
+      (fun inf l -> (Tactics.conjC ~c:l 
+                     ++ changes_to_info_tac ~info:inf))
+**)
     ]
   in 
   let main_tac ?info = elim_rules_tac ?info (asm_rules, concl_rules)
@@ -69,8 +74,7 @@ let mini_mp_tac ?info asm1 asm2 goal =
 	      in 
 	      seq
 		[
-		  (fun g2 -> 
-                    update_tac (info_set info) ([g_tag], [a1_tag], [], []) g2);
+                  set_info_tac ?info ([g_tag], [a1_tag], [], []);
 		  basic ~a:asm2 ~c:(ftag c_tag);
 		  (fun g2 -> fail ~err:(error "mini_mp_tac") g2)
 		] g1);
@@ -187,9 +191,7 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
   seq
     [
       (specC ~c:c_lbl
-       //
-         (fun g1 -> 
-           update_tac (info_set (Some minfo)) ([], [], [c_tag], []) g1));
+       // (set_info_tac ~info:minfo ([], [], [c_tag], [])));
       (fun g1 -> 
 	let env = unify_in_goal a_varp a_lhs c_lhs g1 in 
 	let const_list = extract_consts a_vars env
@@ -204,15 +206,14 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
 	let a1_tag, a_tag = get_two (aformulas minfo)
 	in 
 	info_empty minfo;
-	info_set (Some minfo) ([], [], [c_tag], []);
+	info_set (Some minfo) [] [] [c_tag] [];
 	mini_mp_tac ~info:minfo (ftag a_tag) (ftag a1_tag) g1);
       (fun g1 -> 
 	let c1_tag = get_one (cformulas minfo)
 	in 
 	((specC ~info:minfo ~c:(ftag c1_tag))
 	 // 
-           (fun g2 ->
-             update_tac (info_set (Some minfo)) ([], [], [c1_tag], []) g2))
+           (set_info_tac ~info:minfo ([], [], [c1_tag], [])))
 	  g1);
       (fun g1 -> 
 	let c1_tag = get_one (cformulas minfo) in 
@@ -278,7 +279,9 @@ let asm_induct_tac ?info alabel clabel goal =
 	   ++ (betaA ~info:minfo ~a:albl // skip))
 	    g1);
 	(fun g1 ->
-	  let atag = get_one (aformulas minfo)
+	  let atag = 
+            get_one ~msg:"asm_induct_tac.inst_split_asm_tac"
+              (aformulas minfo)
 	  in 
 	  implA ~info:tinfo ~a:(ftag atag) g1);
       ] g
@@ -299,7 +302,9 @@ let asm_induct_tac ?info alabel clabel goal =
 	      [
 		deleteC (ftag ctag);
 		(fun g1 -> 
-		  let c1_tag = get_one (cformulas tinfo)
+		  let c1_tag = 
+                    get_one ~msg:"asm_induct_tac.main_tac:1"
+                      (cformulas tinfo)
 		  in 
 		  split_lh_tac (ftag c1_tag) g1)
 	      ];
@@ -308,12 +313,14 @@ let asm_induct_tac ?info alabel clabel goal =
 	      [
 		(specC ~info:tinfo 
 		 // 
-                   (fun g1 ->
-                     update_tac 
-                       (info_set (Some tinfo)) ([], [], [ctag], []) g1));
+                   set_info_tac ~info:tinfo ([], [], [ctag], []));
 		(fun g1 -> 
-		  let a1_tag = get_one (aformulas tinfo) in 
-		  let c1_tag = get_one (cformulas tinfo)
+		  let a1_tag = 
+                    get_one ~msg:"asm_induct_tac.main_tac:2"
+                      (aformulas tinfo) in 
+		  let c1_tag = 
+                    get_one  ~msg:"asm_induct_tac.main_tac:3"
+                      (cformulas tinfo)
 		  in 
 		  induct_tac_solve_rh_tac 
 		    (ftag a1_tag) (ftag c1_tag) g1)
@@ -335,7 +342,7 @@ let basic_induct_tac ?info c thm goal =
       [
 	cut ~info:tinfo thm;
 	(fun g1 ->
-	  let a_tag = get_one (aformulas tinfo)
+	  let a_tag = get_one ~msg:"basic_induct_tac" (aformulas tinfo)
 	  in 
 	  asm_induct_tac ?info (ftag a_tag) c_lbl g1)
       ] g
@@ -501,9 +508,7 @@ let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
   seq
     [
       (specC ~c:c_lbl
-       // 
-         (fun g1 ->
-           update_tac (info_set (Some minfo)) ([], [], [c_tag], []) g1));
+       // set_info_tac ~info:minfo ([], [], [c_tag], []));
       (fun g1 -> 
 	let env = unify_in_goal a_varp a_body c_body g1 in 
 	let const_list = extract_consts a_vars env 
@@ -626,12 +631,7 @@ let basic_induct_on ?info ?thm name clabel goal =
 	       seq
 		 [
 		   (specC ~info:tinfo 
-		    // 
-                      (fun g1 ->
-                        update_tac 
-		          (info_set (Some tinfo)) 
-		          ([], [], [ctag], []) 
-                          g1));
+		    // set_info_tac ~info:tinfo ([], [], [ctag], []));
 		   (fun g1 -> 
 		     let a1_tag = get_one (aformulas tinfo) in 
 		     let c1_tag = get_one (cformulas tinfo)

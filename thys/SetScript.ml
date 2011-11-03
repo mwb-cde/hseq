@@ -751,7 +751,7 @@ let finite_add =
 	 (* 2 *)
 	 simp
        ])
-  ]
+  ];;
 
 let finite_union0 = 
   prove

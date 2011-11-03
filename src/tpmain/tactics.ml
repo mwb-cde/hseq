@@ -143,9 +143,15 @@ struct
           vr := nchngs
     end
 
-  let set dst (sgs, afs, cfs, cnsts) = 
-    add dst sgs afs cfs cnsts
-
+  let set dst sgs afs cfs cnsts =
+    begin
+      match dst with 
+        | None -> ()
+        | Some(vr) -> 
+          let chngs = Changes.add (Changes.empty()) sgs afs cfs cnsts
+          in
+          vr := chngs
+    end
 end
     
 let info_make = Info.make
@@ -162,13 +168,74 @@ let info_set = Info.set
 
 module New =
 struct
+  let empty = Changes.empty
   let changes = Logic.Tactics.changes
+  let branch_changes = Logic.Tactics.branch_changes
+  let set_changes = Logic.Tactics.set_changes
 
   let subgoals = Changes.goals
   let aformulas = Changes.aforms
   let cformulas = Changes.cforms
   let constants = Changes.terms
+
 end
+
+let record_changes_tac setter (tac: tactic) g = 
+  let g1 = tac g in
+  let chngs = setter (New.branch_changes g1)
+  in
+  New.set_changes g1 chngs
+
+let set_changes_tac (sgs, afs, cfs, cnsts) g =
+  let setter _ = Changes.make sgs afs cfs cnsts
+  in
+  record_changes_tac setter Logic.Tactics.skip g
+
+let add_changes_tac (sgs, afs, cfs, cnsts) g =
+  let setter chngs = Changes.add chngs sgs afs cfs cnsts
+  in
+  record_changes_tac setter Logic.Tactics.skip g
+
+let record_info_tac ?info setter (tac: tactic) g = 
+  let g1 = tac g in
+  let chngs = New.branch_changes g1 in
+  begin
+    setter ?info (New.subgoals chngs,
+                  New.aformulas chngs,
+                  New.cformulas chngs,
+                  New.constants chngs);
+    g1
+  end
+
+let set_info_tac ?info (sgs, afs, cfs, cnsts) g =
+  let setter ?info _ =
+    Info.set info sgs afs cfs cnsts
+  in
+  record_info_tac setter Logic.Tactics.skip g
+
+let add_info_tac ?info (sgs, afs, cfs, cnsts) g =
+  let setter ?info _ =
+    Info.add info sgs afs cfs cnsts
+  in
+  record_info_tac setter Logic.Tactics.skip g
+
+let changes_to_info_tac ?info g =
+  let chngs = New.changes g 
+  in 
+  set_info_tac ?info 
+    (New.subgoals chngs,
+     New.aformulas chngs,
+     New.cformulas chngs,
+     New.constants chngs) g
+
+let add_changes_to_info_tac ?info g =
+  let chngs = New.changes g 
+  in 
+  add_info_tac ?info 
+    (New.subgoals chngs,
+     New.aformulas chngs,
+     New.cformulas chngs,
+     New.constants chngs) g
 
 (*** Utility functions ***)
 
@@ -290,6 +357,25 @@ let fold_seq data rls sq =
       | _ -> fold_aux rls data (skip sq)
   end
 
+let (fold:
+       ('a -> 'b -> 'b data_tactic) -> 'a list -> 'b -> 'b data_tactic)
+    tac alist b0 goal =
+  let apply_fold a b sqs = 
+    Logic.Subgoals.apply_fold (tac a) b sqs
+  in
+  let rec fold_aux alist b sqs =
+    match alist with 
+      | [] -> (b, sqs)
+      | (a::rest) ->
+	if has_subgoals sqs
+        then 
+          let (b1, sqs1) = apply_fold a b sqs
+          in
+          fold_aux rest b1 sqs1
+	else (b, sqs)
+  in 
+  fold_aux alist b0 (skip goal)
+
 let result_tac tac t f g = 
   try (t, tac g)
   with _ -> (f, skip g)
@@ -315,13 +401,6 @@ let notify_tac f d tac goal =
   let ng = tac goal
   in 
   (f d); ng
-
-(***
-let (!!) f d tac goal =
-  let ng = tac goal
-  in 
-  f d; ng
-***)
 
 let data_tac f tacl g = tacl (f g) g
 let (>>) f tacl g = tacl (f g) g
@@ -447,18 +526,22 @@ let deleten ns sq =
 
 (*** Logic Rules **)
 
-(***
-let trueC ?info ?c sq =
-  let cf = first_concl_label c Formula.is_true sq
-  in
-  lift_info ?info (Logic.Tactics.trueC cf) sq
-***)
 let trueC ?c sq =
   let cf = first_concl_label c Formula.is_true sq
   in
   Logic.Tactics.trueC cf sq
 
+let conjC ?c sq =
+  let cf = first_concl_label c Formula.is_conj sq
+  in
+  Logic.Tactics.conjC cf sq
 
+let conjA ?a sq =
+  let af = first_asm_label a Formula.is_conj sq
+  in
+  Logic.Tactics.conjA af sq
+
+(*****
 let conjC ?info ?c sq =
   let cf = first_concl_label c Formula.is_conj sq
   in
@@ -468,6 +551,7 @@ let conjA ?info ?a sq =
   let af = first_asm_label a Formula.is_conj sq
   in
   lift_info ?info (Logic.Tactics.conjA af) sq
+****)
 
 let disjC ?info ?c sq =
   let cf = first_concl_label c Formula.is_disj sq

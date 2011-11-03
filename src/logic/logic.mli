@@ -779,6 +779,9 @@ sig
   val changes: node -> Changes.t
   (** Utility function to extract changes from a node for use in tactics. *)
 
+  val branch_changes: branch -> Changes.t
+  (** Utility function to extract changes from a node for use in tactics. *)
+
   val set_changes: branch -> Changes.t -> branch
   (** Utility function to set the change information reported by a branch. *)
 
@@ -1201,6 +1204,7 @@ sig
 
     Fails if an assumption or conclusion is already named [name].
 *)
+
 end
 
 (** Conversions are functions constructing theorems which express an

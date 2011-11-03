@@ -56,7 +56,7 @@ let iffA ?info ?a goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        Tactics.conjA ?info ~a:(ftag t);
+        lift_info ?info (Tactics.conjA ~a:(ftag t));
       ] goal
 
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
@@ -83,7 +83,7 @@ let iffC ?info ?c goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        Tactics.conjC ?info ~c:(ftag t)
+        lift_info ?info (Tactics.conjC ~c:(ftag t));
       ] goal
 
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
@@ -124,7 +124,7 @@ let iffE ?info ?c goal =
 	 [
 	   rewrite_tac [iff_def()] ~f:(ftag t);
 	   (fun g1 -> notify_tac (add_goals info) inf
-	     (Tactics.conjC ~info:inf ~c:(ftag t)) g1);
+	     (Tactics.conjC ~c:(ftag t)) g1);
 	   Tactics.implC ~info:inf ~c:(ftag t)
 	 ]) g
     in 
@@ -143,7 +143,8 @@ let split_asm_rules =
 let split_concl_rules =
   [
     (fun inf l -> Tactics.trueC ~c:l); 
-    (fun inf l -> Tactics.conjC ~info:inf ~c:l)
+    (fun inf l -> 
+      lift_info ~info:inf (Tactics.conjC ~c:l))
   ]
 
 
@@ -166,7 +167,12 @@ let split_tac = splitter_tac
 let flatter_asm_rules =
   [
     (fun inf l -> falseA ~a:l);
-    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> 
+      lift_info ~info:inf (Tactics.conjA ~a:l));
+(**
+    (fun inf l -> (Tactics.conjA ~a:l  ++ changes_to_info_tac ~info:inf));
+**)
+
     (fun inf l -> Tactics.existA ~info:inf ~a:l)
   ]
 
@@ -200,7 +206,11 @@ let scatter_asm_rules =
     (fun inf l -> falseA ~a:l); 
 
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
-    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
+(**
+    (fun inf l -> (Tactics.conjA ~a:l
+                   ++ changes_to_info_tac ~info:inf));
+**)
     (fun inf l -> Tactics.existA ~info:inf ~a:l);
 
     (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
@@ -216,7 +226,13 @@ let scatter_concl_rules =
     (fun inf l -> Tactics.implC ~info:inf ~c:l);
     (fun inf l -> Tactics.allC ~info:inf ~c:l);
 
-    (fun inf l -> Tactics.conjC ~info:inf ~c:l); 
+    (fun inf l -> 
+      lift_info ~info:inf (Tactics.conjC ~c:l));
+
+(*
+    (fun inf l -> (Tactics.conjC ~c:l
+                   ++ changes_to_info_tac ~info:inf)); 
+*)
     (fun inf l -> iffE ~info:inf ~c:l)
   ]
 
@@ -234,7 +250,11 @@ let blast_asm_rules =
     (fun inf l -> falseA ~a:l); 
 
     (fun inf l -> Tactics.negA ~info:inf ~a:l);
-    (fun inf l -> Tactics.conjA ~info:inf ~a:l);
+    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
+(**
+    (fun inf l -> (Tactics.conjA ~a:l 
+                   ++ changes_to_info_tac ~info:inf));
+**)
     (fun inf l -> Tactics.existA ~info:inf ~a:l);
 
     (fun inf l -> Tactics.disjA ~info:inf ~a:l); 
@@ -252,7 +272,13 @@ let blast_concl_rules =
     (fun inf l -> Tactics.implC ~info:inf ~c:l);
     (fun inf l -> Tactics.allC ~info:inf ~c:l);
 
-    (fun inf l -> Tactics.conjC ~info:inf ~c:l); 
+    (fun inf l -> 
+      lift_info ~info:inf (Tactics.conjC ~c:l));
+
+(**
+    (fun inf l -> (Tactics.conjC ~c:l 
+                   ++ changes_to_info_tac ~info:inf)); 
+**)
     (fun inf l -> iffE ~info:inf ~c:l);
 
     (fun inf l -> basic ~info:inf ?a:None ~c:l)

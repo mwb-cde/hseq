@@ -181,12 +181,14 @@ sig
 
   val add_changes: t option -> Changes.t -> unit
 
+(**
   val set: 
     t option -> 
     (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
     -> unit
 (** A version of {!Logic.add_info}, packaged for use, in tactics, with
     {!Tactics.data_tac}. *)
+**)
 
 end
 
@@ -233,17 +235,18 @@ val info_add_changes: Info.t option -> Changes.t -> unit
 
 val info_set: 
   Info.t option -> 
-  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
   -> unit
-(** A version of {!Logic.add_info}, packaged for use, in tactics, with
-    {!Tactics.data_tac}. *)
-
-
 
 module New:
 sig
   val changes: Logic.node -> Changes.t
- (** Get the goal changes record. *)
+  (** Get the changes record of a node. Used to extract the changes
+      before a tactic is applied. *)
+    
+  val branch_changes: Logic.branch -> Changes.t
+  (** Get the changes record of a branch. Used to extract the changes
+      after a tactic is applied. *)
 
   val subgoals: Changes.t -> Tag.t list
   (** [subgoals info]: Get subgoal tags of [info]. *)
@@ -257,6 +260,54 @@ sig
   val constants: Changes.t -> Basic.term list
   (** [constants info]: Get constants from [info]. *)
 end
+
+val record_changes_tac: (Changes.t -> Changes.t) -> tactic -> tactic
+(** Tactial to set the changes made by tactic.
+
+    [record_changes_tac setter tac g] applies [(tac g)], updating the
+    resulting goal with the change record obtained by [(setter
+    (branch_changes (tac g)))].
+*)
+
+val set_changes_tac: 
+  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> tactic
+(** Tactic to record changes in a goal and behave like [skip]. *)
+
+val add_changes_tac: 
+  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> tactic
+(** Tactic to add to changes in a goal and behave like [skip]. *)
+
+val record_info_tac: 
+  ?info:Info.t
+  -> (?info:Info.t 
+      -> Tag.t list * Tag.t list * Tag.t list * Basic.term list
+      -> Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> tactic 
+  -> tactic
+(** Tactial to set the infomation record of a tactic.
+
+    [record_info_tac ?info setter tac g] applies [(tac g)], updating the
+    resulting goal with the Info record obtained by [(setter
+    (branch_changes (tac g)))].
+*)
+
+val add_info_tac: ?info:Info.t ->
+  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> tactic
+(** Tactic to set [info] and behave like [skip]. *)
+
+val set_info_tac: ?info:Info.t ->
+  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
+  -> tactic
+(** Tactic to set [info] and behave like [skip]. *)
+
+val changes_to_info_tac: ?info:Info.t -> tactic
+(** Tactic to set info from changes in a goal and behave like [skip]. *)
+
+val add_changes_to_info_tac: ?info:Info.t -> tactic
+(** Tactic to add info from changes in a goal and behave like [skip]. *)
 
 (** {7 Utility functions} *)
 
@@ -404,6 +455,12 @@ val (//): tactic -> tactic -> tactic
 
 val fold_seq: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
 (** [fold_seq d tacl g]: Fold the data returning tactics in [tacl].
+*)
+
+val fold:
+  ('a -> 'b -> ('b) data_tactic) -> 'a list -> 'b -> ('b) data_tactic
+(** [fold tac alist b g]: Fold the data returning tactic [tac] over
+    the list [alist] with initial value [b].
 *)
 
 val thenl: tactic ->  tactic list -> tactic 
@@ -564,10 +621,12 @@ val deleten: Logic.label list -> Logic.tactic
 val trueC: ?c:Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.trueC}. *)
 
-val conjC: ?info:Info.t -> ?c: Logic.label -> tactic
+val conjC: ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjC}. *)
-val conjA: ?info:Info.t -> ?a: Logic.label -> tactic
+val conjA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjA}. *)
+
+
 val disjC: ?info:Info.t -> ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjC}. *)
 val disjA: ?info:Info.t -> ?a: Logic.label -> tactic

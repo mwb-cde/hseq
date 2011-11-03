@@ -198,7 +198,6 @@ let direct_alt tacl info l g =
 	with _ -> alt_aux tacs
   in alt_aux tacl 
 
-
 (** [direct_map_some tac lst l]: Directed map_some. Like
     {!Tactics.map_som} but pass [info] and [l] to [tac]. If [tac] fails
     for [l], then [lst := l::!lst].  **)
@@ -214,10 +213,28 @@ let direct_map_some tac lst l goal =
   in 
   some_aux l goal
 
+let new_direct_map_some tac lst l goal =
+  let app lbl (flag, fail_list) node =
+    try 
+      let branch1 = tac lbl node
+      in
+      ((true, fail_list), branch1)
+    with _ -> ((flag, lbl::fail_list), skip node)
+  in
+  match lst with
+    | [] -> ([], fail ~err:(error "direct_map_some: no data.") goal)
+    | _ ->
+      let ((flag, fail_list), branch) = fold app lst (false, []) goal
+      in
+      if not flag
+      then (fail_list, 
+            fail ~err:(error "direct_map_some: no tactic suceeded") goal)
+      else (fail_list, branch)
+
 (** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
     rules to assumption [f] and to all resulting assumptions and
     conclusions. Assumptions are eliminated with [arules], conclusions
-    with [crules]. Any new tag which can't be eliminated are stored in
+    with [crules]. Any new tag which can't be eliminated is stored in
     [?info] (in arbitrary order).
 *)
 let rec asm_elim_rules_tac ?info rules lbl goal =
@@ -251,17 +268,16 @@ let rec asm_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
-            (fun g1 ->
-	      update_tac (info_set info)
-	        (subgoals inf, 
-	         List.map 
-		   (fun x -> Logic.label_to_tag x sqnt)  
-                   (List.rev (!alst)), 
-	         List.map 
-		   (fun x -> Logic.label_to_tag x sqnt)
-                   (List.rev (!clst)), 
-	         constants inf)
-                g1)
+            set_info_tac ?info
+	      (subgoals inf, 
+	       List.map 
+		 (fun x -> Logic.label_to_tag x sqnt)  
+                 (List.rev (!alst)), 
+	       List.map 
+		 (fun x -> Logic.label_to_tag x sqnt)
+                 (List.rev (!clst)), 
+	       constants inf)
+
 	  ] g)
     ] goal
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
@@ -301,6 +317,17 @@ and concl_elim_rules_tac ?info rules lbl goal =
 	        skip
 	      ];
 	    (* Save failing labels and any other information. *)
+            set_info_tac ?info
+	      (subgoals inf, 
+	       List.map 
+		 (fun x -> Logic.label_to_tag x sqnt)  
+                 (List.rev (!alst)), 
+	       List.map 
+		 (fun x -> Logic.label_to_tag x sqnt)  
+                 (List.rev (!clst)), 
+	       constants inf)
+
+(****
             (fun g1 -> 
 	      update_tac (info_set info)
 	        (subgoals inf, 
@@ -312,6 +339,7 @@ and concl_elim_rules_tac ?info rules lbl goal =
                    (List.rev (!clst)), 
 	         constants inf)
                 g1)
+****)
 	  ] g)
     ] goal
 

@@ -479,7 +479,8 @@ struct
 		   (error "conjunctL")
 	       in 
 	       Tactics.info_empty info;
-	       Tactics.conjA ~info:info ~a:(ftag ttag) g1);
+               lift_info ~info:info (Tactics.conjA ~a:(ftag ttag))
+                 g1);
 	     (fun g1 -> 
 	       let (ltag, rtag)=
 		 Lib.get_two (Tactics.aformulas info) 
@@ -506,7 +507,8 @@ struct
 		   (error "conjunctL")
 	       in 
 	       Tactics.info_empty info;
-	       Tactics.conjA ~info:info ~a:(ftag ttag) g1);
+               lift_info ~info:info (Tactics.conjA ~a:(ftag ttag))
+               g1);
 	     (fun g1 -> 
 	       let (ltag, rtag)=
 		 Lib.get_two (Tactics.aformulas info) 

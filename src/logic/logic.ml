@@ -1030,6 +1030,7 @@ struct
 
   let get_sqnt = Subgoals.node_sqnt
   let changes = Subgoals.node_changes
+  let branch_changes = Subgoals.branch_changes
   let set_changes = Subgoals.branch_set_changes
 
   (** [sqnt_apply f g]: apply function f to the first subgoal of
