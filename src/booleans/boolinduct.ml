@@ -59,18 +59,16 @@ let mini_scatter_tac ?info c goal =
     [asm1].
 *)
 let mini_mp_tac ?info asm1 asm2 goal =
-  let tinfo = info_make()
-  in
   let tac g =
     seq
       [
-	implA ~info:tinfo ~a:asm1
+	implA ~a:asm1
 	--
 	  [
-	    (fun g1 -> 
-	      let a1_tag = get_one (aformulas tinfo) in 
-	      let c_tag = get_one (cformulas tinfo) in 
-	      let (_, g_tag) = get_two (subgoals tinfo)
+	    (?> fun tinfo g1 -> 
+	      let a1_tag = get_one (New.aformulas tinfo) in 
+	      let c_tag = get_one (New.cformulas tinfo) in 
+	      let (_, g_tag) = get_two (New.subgoals tinfo)
 	      in 
 	      seq
 		[
@@ -198,8 +196,8 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
 	in 
 	seq
 	  [
-	    instA ~info:minfo ~a:a_lbl const_list;
-	    implC ~info:minfo ~c:c_lbl
+	    lift_info ~info:minfo (instA ~a:a_lbl const_list);
+	    lift_info ~info:minfo (implC ~c:c_lbl)
 	  ] g1);
       (fun g1 ->
 	let c_tag = get_one (cformulas minfo) in 
@@ -275,7 +273,7 @@ let asm_induct_tac ?info alabel clabel goal =
 	(fun g1 -> 
 	  let albl = ftag atag
 	  in 
-	  (instA ~info:minfo ~a:albl consts_list 
+	  (lift_info ~info:minfo (instA ~a:albl consts_list) 
 	   ++ (betaA ~info:minfo ~a:albl // skip))
 	    g1);
 	(fun g1 ->
@@ -283,7 +281,7 @@ let asm_induct_tac ?info alabel clabel goal =
             get_one ~msg:"asm_induct_tac.inst_split_asm_tac"
               (aformulas minfo)
 	  in 
-	  implA ~info:tinfo ~a:(ftag atag) g1);
+	  lift_info ~info:tinfo (implA ~a:(ftag atag)) g1);
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
@@ -336,13 +334,12 @@ let asm_induct_tac ?info alabel clabel goal =
     See {!Induct.induct_tac}.
 *)
 let basic_induct_tac ?info c thm goal =
-  let tinfo = info_make() in 
   let main_tac c_lbl g =
     seq 
       [
-	cut ~info:tinfo thm;
-	(fun g1 ->
-	  let a_tag = get_one ~msg:"basic_induct_tac" (aformulas tinfo)
+	cut thm;
+	(?> fun tinfo g1 ->
+	  let a_tag = get_one ~msg:"basic_induct_tac" (New.aformulas tinfo)
 	  in 
 	  asm_induct_tac ?info (ftag a_tag) c_lbl g1)
       ] g
@@ -513,12 +510,11 @@ let induct_on_solve_rh_tac ?info a_lbl c_lbl goal =
 	let env = unify_in_goal a_varp a_body c_body g1 in 
 	let const_list = extract_consts a_vars env 
         in 
-	instA ~info:minfo ~a:a_lbl const_list g1);
-      (fun g1 ->
-	let c_tag = get_one (cformulas minfo) in 
-	let a_tag = get_one (aformulas minfo)
+	instA ~a:a_lbl const_list g1);
+      (?> fun minfo g1 ->
+	let c_tag = get_one (New.cformulas minfo) in 
+	let a_tag = get_one (New.aformulas minfo)
 	in 
-	info_empty minfo;
 	basic ~a:(ftag a_tag) ~c:(ftag c_tag) g1)
     ] goal
 
@@ -592,13 +588,13 @@ let basic_induct_on ?info ?thm name clabel goal =
 	(fun g1 -> 
 	  let albl = ftag atag
 	  in 
-	  (instA ~info:minfo ~a:albl consts_list 
+	  (lift_info ~info:minfo (instA ~a:albl consts_list)
 	   ++ (betaA ~info:minfo ~a:albl // skip))
 	    g1);
 	(fun g1 ->
 	  let atag = get_one (aformulas minfo)
 	  in 
-	  implA ~info:tinfo ~a:(ftag atag) g1);
+	  lift_info ~info:tinfo (implA ~a:(ftag atag)) g1);
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
@@ -607,13 +603,11 @@ let basic_induct_on ?info ?thm name clabel goal =
   in 
   (** the Main tactic *)
   let main_tac g = 
-    let minfo = info_make ()
-    in 
     seq 
       [
-	cut ~info:minfo thm;
-	(fun g1 -> 
-	  let atag = get_one (aformulas minfo)
+	cut thm;
+	(?> fun minfo g1 -> 
+	  let atag = get_one (New.aformulas minfo)
 	  in 
 	  ((inst_split_asm_tac atag)
 	   --

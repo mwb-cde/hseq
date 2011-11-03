@@ -66,3 +66,6 @@ val rev: t -> t
 
 (** [combine l r]: Do [rev_append (rev l) r]. *)
 val combine: t -> t -> t
+
+(** [flatten l]: flatten the list of changes [l]. *)
+val flatten: t list -> t

@@ -70,3 +70,11 @@ let rev r =
 
 let combine l r =
   rev_append (rev l) r
+
+let flatten l = 
+  let rec flatten_aux lst sum =
+    match lst with
+      | [] -> rev sum
+      | (chng::rest) -> flatten_aux rest (rev_append chng sum)
+  in
+  flatten_aux l (empty())

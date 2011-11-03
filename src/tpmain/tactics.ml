@@ -307,17 +307,27 @@ let data_tac f info g= f info; skip g
  *)
 
 let seq rls sq =
-  let rec seq_aux fs sqs =
+  let rec seq_aux fs chng_list sqs =
     match fs with 
-      | [] -> sqs 
+      | [] -> (sqs, chng_list)
       | r::rs ->
 	if has_subgoals sqs
-	then seq_aux rs (foreach r sqs)
-	else sqs
+	then 
+          let sqs1 = foreach r sqs in
+          let chngs = New.branch_changes sqs1 
+          in
+          seq_aux rs (chngs::chng_list) sqs1
+	else (sqs, chng_list)
   in 
   match rls with
     | [] -> raise (error "seq: empty tactic list")
-    | x::xs -> seq_aux xs (x sq)
+    | tac::xs ->
+      let sqs = tac sq in
+      let chng = New.branch_changes sqs in
+      let (sqs, chnglst) = seq_aux rls [chng] sqs in
+      let chnglst1 = Changes.flatten (List.rev chnglst)
+      in
+      New.set_changes sqs chnglst1
 
 let (++) tac1 tac2 g = seq [tac1; tac2] g
 
@@ -541,140 +551,124 @@ let conjA ?a sq =
   in
   Logic.Tactics.conjA af sq
 
-(*****
-let conjC ?info ?c sq =
-  let cf = first_concl_label c Formula.is_conj sq
-  in
-  lift_info ?info (Logic.Tactics.conjC cf) sq
-
-let conjA ?info ?a sq =
-  let af = first_asm_label a Formula.is_conj sq
-  in
-  lift_info ?info (Logic.Tactics.conjA af) sq
-****)
-
-let disjC ?info ?c sq =
+let disjC ?c sq =
   let cf = first_concl_label c Formula.is_disj sq
   in
-  lift_info ?info (Logic.Tactics.disjC cf) sq
+  Logic.Tactics.disjC cf sq
 
-let disjA ?info ?a sq =
+let disjA ?a sq =
   let af = first_asm_label a Formula.is_disj sq
   in
-   lift_info ?info (Logic.Tactics.disjA af) sq
+  Logic.Tactics.disjA af sq
 
-let negC ?info ?c sq =
+let negC ?c sq =
   let cf = first_concl_label c Formula.is_neg sq
   in
-  lift_info ?info (Logic.Tactics.negC cf) sq
+  Logic.Tactics.negC cf sq
 
-let negA ?info ?a sq =
+let negA ?a sq =
   let af = first_asm_label a Formula.is_neg sq
   in
-  lift_info ?info (Logic.Tactics.negA af) sq
+  Logic.Tactics.negA af sq
 
-let implC ?info ?c sq =
+let implC ?c sq =
   let cf = first_concl_label c Formula.is_implies sq
   in
-  lift_info ?info (Logic.Tactics.implC cf) sq
+  Logic.Tactics.implC cf sq
 
-let implA ?info ?a sq =
+let implA ?a sq =
   let af = first_asm_label a Formula.is_implies sq
   in 
-  lift_info ?info (Logic.Tactics.implA af) sq
+  Logic.Tactics.implA af sq
 
-let existC ?info ?c trm sq =
+let existC ?c trm sq =
   let cf = first_concl_label c Formula.is_exists sq
   in
-  lift_info ?info (Logic.Tactics.existC trm cf) sq
+  Logic.Tactics.existC trm cf sq
 
-let existA ?info ?a sq =
+let existA ?a sq =
   let af = first_asm_label a Formula.is_exists sq
   in
-  lift_info ?info (Logic.Tactics.existA af) sq
+  Logic.Tactics.existA af sq
 
-let allC ?info ?c sq =
+let allC ?c sq =
   let cf = first_concl_label c Formula.is_all sq
   in
-  lift_info ?info (Logic.Tactics.allC cf) sq
+  Logic.Tactics.allC cf sq
 
-let allA ?info ?a trm sq =
+let allA ?a trm sq =
   let af = first_asm_label a Formula.is_all sq
   in
-  lift_info ?info (Logic.Tactics.allA trm af) sq
+  Logic.Tactics.allA trm af sq
 
-let nameC ?info s l g = 
-  lift_info ?info (Logic.Tactics.nameC s l) g
-let nameA ?info s l g = 
-  lift_info ?info (Logic.Tactics.nameA s l) g
+let nameC s l g = 
+  Logic.Tactics.nameC s l g
 
-let substA ?info rs l g = 
-  lift_info ?info (Logic.Tactics.substA rs l) g
+let nameA s l g = 
+  Logic.Tactics.nameA s l g
 
-let substC ?info rs l g = 
-  lift_info ?info (Logic.Tactics.substC rs l) g
+let substA rs l g = 
+  Logic.Tactics.substA rs l g
 
-let instA0 ?info l trms goal =
-  let info1 = Info.make ()
-  and tag1 = Logic.label_to_tag l (sequent goal)
+let substC rs l g = 
+  Logic.Tactics.substC rs l g
+
+let instA0 l trms goal =
+  let instf trm g = 
+    (?> 
+        fun info ->
+          let alabel = get_one ~msg:"instA" (New.aformulas info) 
+          in
+          allA ~a:(ftag alabel) trm) g
   in 
-  let instf infof trm g = 
-    let alabel = get_one ~msg:"instA" (Info.aformulas infof)
-    in
-    Info.empty infof;
-    allA ~info:infof ~a:(ftag alabel) trm g
-  in 
-  Info.form (Some info1) [] [tag1]  [] [];
-  let g1 = map_every (instf info1) trms goal
-  in 
-  Info.add info [] (Info.aformulas info1) [] [];
-  g1
+  match trms with 
+    | [] -> raise (error "instA")
+    | fst::rest ->
+      (allA ~a:l fst ++ map_every instf rest ) goal
 
-let instA ?info ?a trms goal = 
+let instA ?a trms goal = 
   let af = first_asm_label a Formula.is_all goal
   in 
-  instA0 ?info af trms goal
+  instA0 af trms goal
 
-let instC0 ?info l trms goal =
-  let info1 = Info.make ()
-  and tag1 = Logic.label_to_tag l (sequent goal)
+let instC0 l trms goal =
+  let instf trm g = 
+    (?> 
+        fun info ->
+          let clabel = get_one ~msg:"instC" (New.cformulas info) 
+          in
+          existC ~c:(ftag clabel) trm) g
   in 
-  let instf infof trm g = 
-    let clabel = get_one ~msg:"instC" (Info.cformulas infof)
-    in
-    Info.empty infof;
-    existC ~info:infof ~c:(ftag clabel) trm g
-  in 
-  Info.form (Some info1) [] [] [tag1] [];
-  let g1 = map_every (instf info1) trms goal
-  in 
-  Info.add info [] [] (Info.cformulas info1) [];
-  g1
+  match trms with 
+    | [] -> raise (error "instC")
+    | fst::rest ->
+      (existC ~c:l fst ++ map_every instf rest ) goal
+
     
-let instC ?info ?c trms goal=
+let instC ?c trms goal=
   let cf= first_concl_label c Formula.is_exists goal
   in 
-  instC0 ?info cf trms goal
+  instC0 cf trms goal
 
-let inst_tac ?info ?f trms goal = 
-  try instA ?info:info ?a:f trms goal
-  with _ -> instC ?info:info ?c:f trms goal
+let inst_tac ?f trms goal = 
+  try instA ?a:f trms goal
+  with _ -> instC ?c:f trms goal
 
-let cut ?info ?inst th goal = 
+let cut ?inst th goal = 
   let cut0 trms g = 
-    let info1 = Info.make() in 
-    let g1 = lift_info ~info:info1 (Logic.Tactics.cut th) g in 
-    let atag = get_one ~msg:"cut" (Info.aformulas info1)
-    in 
-    Info.empty info1;
-    foreach (instA ?info:info ~a:(ftag atag) trms) g1
+    seq [
+      Logic.Tactics.cut th;
+      (?> 
+          fun info ->
+            let atag = get_one ~msg:"cut" (New.aformulas info) in
+            instA ~a:(ftag atag) trms)
+    ] g
   in 
   match inst with
-    | None -> lift_info ?info (Logic.Tactics.cut th) goal
+    | None -> Logic.Tactics.cut th goal
     | Some(trms) -> 
       try cut0 trms goal
       with err -> raise (add_error "cut" err)
-
 
 let betaA ?info ?a goal =
   let conv_tac (ft, form) g =
@@ -688,14 +682,14 @@ let betaA ?info ?a goal =
     in 
     seq 
       [
-	cut ~info:info1 thm;
+	lift_info ~info:info1 (cut thm);
 	(fun g1 ->
 	  let tlbl = 
 	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
 	  in
 	  seq
 	    [
-	      substA ?info:info [tlbl] albl;
+	      lift_info ?info (substA [tlbl] albl);
 	      Logic.Tactics.deleteA tlbl
 	    ] g1)
       ] g
@@ -717,14 +711,14 @@ let betaC ?info ?c goal =
     in 
     seq 
       [
-	cut ~info:info1 thm;
+	lift_info ~info:info1 (cut thm);
 	(fun g1 ->
 	  let tlbl = 
 	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
 	  in
 	  seq
 	    [
-	      substC ?info:info [tlbl] clbl;
+	      lift_info ?info (substC [tlbl] clbl);
 	      Logic.Tactics.deleteA tlbl
 	    ] g1)
       ] g
@@ -833,8 +827,8 @@ let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
   in 
   seq 
     [
-      instA ?info:info ~a:albl asm_consts;
-      instC ?info:info ~c:clbl concl_consts;
+      lift_info ?info (instA ~a:albl asm_consts);
+      lift_info ?info (instC ~c:clbl concl_consts);
       (basic ?info:info ~a:albl ~c:clbl // skip) 
     ] goal
 
@@ -982,7 +976,7 @@ let specA ?info ?a g =
     [
       seq 
         [ 
-	  repeat (existA ~info:inf1 ?a);
+	  repeat (lift_info ~info:inf1 (existA ?a));
           (fun g ->
             update_tac 
               add_data ((Info.aformulas inf1), (Info.constants inf1))
@@ -1000,7 +994,7 @@ let specC ?info ?c g =
     [
       seq 
         [ 
-	  repeat (allC ~info:inf1 ?c);
+	  repeat (lift_info ~info:inf1 (allC ?c));
 	  (fun g ->
             update_tac
               add_data ((Info.cformulas inf1), (Info.constants inf1)) g)
@@ -1063,27 +1057,27 @@ let conv_rule scp conv thm =
     in 
     seq
       [ 
-	cut ~info:info thm;
-	fun g1 ->
+	cut thm;
+        (?> fun info ->
           begin
 	    let atag = 
-	      Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
+	      Lib.get_one (New.aformulas info) (Failure "pure_rewrite_rule")
 	    in 
 	    seq
 	      [
-	        cut ~info:info rule;
-	        (fun g2 ->
+	        cut rule;
+                (?> fun info ->
 	          let rtag = 
-		    Lib.get_one (Info.aformulas info)
+		    Lib.get_one (New.aformulas info)
 		      (error "pure_rewrite_rule: cut rule")
 	          in 
 	          seq
 		    [
-		      substA ~info:info [ftag rtag] (ftag atag);
+		      substA [ftag rtag] (ftag atag);
 		      basic ~a:(ftag atag) ~c:(ftag ctag)
-		    ] g2)
-	      ] g1
-          end
+		    ])
+	      ]
+          end)
       ] g
   in
   mk_thm (Logic.Subgoals.apply_to_goal tac goal)
@@ -1106,7 +1100,7 @@ let pure_rewriteA ?info ?term plan lbl goal =
     in 
     seq
       [
-        substA ?info [ftag (rule_tag)] (ftag ltag);
+        lift_info ?info (substA [ftag (rule_tag)] (ftag ltag));
         deleteA (ftag rule_tag)
       ] g
   in 
@@ -1133,7 +1127,7 @@ let pure_rewriteC ?info ?term plan lbl goal =
     in 
     seq
       [
-        substC ?info [ftag (rule_tag)] (ftag ltag);
+        lift_info ?info (substC [ftag (rule_tag)] (ftag ltag));
         deleteA (ftag rule_tag)
       ] g
   in 

@@ -627,57 +627,59 @@ val conjA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjA}. *)
 
 
-val disjC: ?info:Info.t -> ?c: Logic.label -> tactic
+val disjC: ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjC}. *)
-val disjA: ?info:Info.t -> ?a: Logic.label -> tactic
+val disjA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjA}. *)
-val negC: ?info:Info.t -> ?c: Logic.label -> tactic
+
+val negC: ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negC}. *)
-val negA: ?info:Info.t -> ?a: Logic.label -> tactic
+val negA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negA}. *)
-val implC: ?info:Info.t -> ?c: Logic.label -> tactic
+
+val implC: ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implC}. *)
-val implA: ?info:Info.t -> ?a: Logic.label -> tactic
+val implA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implA}. *)
-val existC: ?info:Info.t -> ?c: Logic.label -> Basic.term -> tactic 
+val existC: ?c: Logic.label -> Basic.term -> tactic 
 (** Entry point to {!Logic.Tactics.existC}. *)
-val existA: ?info:Info.t -> ?a: Logic.label -> tactic
+val existA: ?a: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.existA}. *)
-val allC: ?info:Info.t -> ?c: Logic.label -> tactic
+val allC: ?c: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.allC}. *)
-val allA: ?info:Info.t -> ?a: Logic.label -> Basic.term -> tactic
+val allA: ?a: Logic.label -> Basic.term -> tactic
 (** Entry point to {!Logic.Tactics.allA}. *)
 val nameC: 
-  ?info:Info.t -> string -> Logic.label -> tactic
+  string -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.nameC}. *)
 val nameA: 
-  ?info:Info.t -> string -> Logic.label -> tactic
+  string -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.nameA}. *)
 
-val instA: ?info:Info.t
-  -> ?a:Logic.label -> Basic.term list -> tactic
+val instA: 
+  ?a:Logic.label -> Basic.term list -> tactic
 (** Instantiate a universally quantified assumption. Generalises
     [allA] to a list of terms. [instA a trms] applies [allA a t] for
     each [t] in [trms]. [?info] is set to the result of the last
     instantiation. Fails if there are more terms then variables.
 *)
-
-val instC: ?info:Info.t
-  -> ?c:Logic.label -> Basic.term list -> tactic
+  
+val instC: 
+  ?c:Logic.label -> Basic.term list -> tactic
 (** Instantiate an existentially quantified conclusion. Generalises
     [existC] to a list of terms. [instc a trms] applies [existC a t]
     for each [t] in [trms]. [?info] is set to the result of the last
     instantiation. Fails if there are more terms then variables.
 *)
 
-val inst_tac: ?info:Info.t
-  -> ?f:Logic.label -> Basic.term list -> tactic
+val inst_tac:
+  ?f:Logic.label -> Basic.term list -> tactic
 (** Instantiate a formula. Tries {!Tactics.instA} then
     {!Tactics.instC}.
 *)
 
-val cut: ?info:Info.t 
-  -> ?inst:Basic.term list -> Logic.thm -> tactic
+val cut: 
+  ?inst:Basic.term list -> Logic.thm -> tactic
 (** [cut th]: Cut [th] into the sequent. If [~inst:trms] is given then
     the top-most variables of the theorem are instantiated with
     [trms].  Entry point to {!Logic.Tactics.cut}.
@@ -752,11 +754,11 @@ val unify_tac: ?info: Info.t ->
 *)
 
 val substA: 
-  ?info:Info.t -> Logic.label list -> Logic.label -> tactic
+  Logic.label list -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.substA}. *)
 
 val substC: 
-  ?info:Info.t -> Logic.label list -> Logic.label -> tactic
+  Logic.label list -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.substC}. *)
 
 (** {5 Derived tactics and tacticals} *)

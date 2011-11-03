@@ -44,19 +44,17 @@ open Tactics
 (** [cond_rule_true_thm]: |- !x y: (x=>y) = (x => (y=true))
 *)
 let make_cond_rule_true_thm () =
-  let info = Tactics.info_make () 
-  in 
   Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
-      (allC ~info:info ++ allC ~info:info
-       ++
-         (fun g-> 
-           let y_term, x_term = 
-	     Lib.get_two (Tactics.constants info) 
-	       (Failure "make_cond_rule_true_thm")
-           in 
-           (cut (rule_true_thm()) ++ inst_tac [ y_term ]
-	    ++ once_replace_tac
-	    ++ eq_tac) g))
+      (seq[
+        allC; allC;
+        (?> fun info g-> 
+          let y_term, x_term = 
+	    Lib.get_two (New.constants info) 
+	      (Failure "make_cond_rule_true_thm")
+          in 
+          (cut (rule_true_thm()) ++ inst_tac [ y_term ]
+	   ++ once_replace_tac
+	   ++ eq_tac) g)])
 
 let cond_rule_true_var = Lib.freeze (make_cond_rule_true_thm)
 let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
@@ -64,14 +62,11 @@ let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
 (** [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
 *)
 let make_cond_rule_false_thm () =
-  let info = Tactics.info_make()
-  in 
   Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
-      (allC ~info:info ++ allC ~info:info
-       ++ 
-         (fun g -> 
+      (allC ++ allC
+       ++ (?> fun info g -> 
            let y_term, x_term = 
-	     Lib.get_two (Tactics.constants info) 
+	     Lib.get_two (New.constants info) 
 	       (Failure "make_cond_rule_false_thm")
            in 
            (cut (rule_false_thm()) ++ inst_tac [y_term]
@@ -310,9 +305,12 @@ let negate_concl_tac ?info c goal =
   let inf = info_make() in 
   let add_fn x = Tactics.info_add info [] (aformulas x) [] []
   in 
-  seq [ once_rewrite_tac [double_not_thm()] ~f:c;
-	Tactics.negC ~info:inf ~c:c;
-	update_tac add_fn inf] goal
+  seq 
+    [ 
+      once_rewrite_tac [double_not_thm()] ~f:c;
+      lift_info ~info:inf (Tactics.negC ~c:c);
+      update_tac add_fn inf
+    ] goal
 
 
 (*** Preparing simplifier rules. ***)
@@ -693,7 +691,7 @@ let solve_not_true_tac tg goal =
   in 
   seq
     [
-      negA ~info:info ~a:(ftag tg);
+      lift_info ~info:info (negA ~a:(ftag tg));
       (fun g ->
 	let ctg = get_one ~msg:"solve_not_true_tac" (cformulas info)
 	in 

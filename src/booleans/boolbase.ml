@@ -50,7 +50,7 @@ let falseA ?a goal =
 	in 
 	seq
 	  [ 
-	    negA ~info:inf ~a:(ftag atag);
+	    lift_info ~info:inf (negA ~a:(ftag atag));
 	    (fun g1  -> 
 	      let ctag = Lib.get_one (cformulas inf) (error "falseA")
 	      in 
@@ -62,7 +62,7 @@ let trivial ?f g =
   try (trueC ?c:f // falseA ?a:f) g
   with _ -> raise (error "trivial")
 
-let cut_thm ?info ?inst str = (cut ?info ?inst (thm str))
+let cut_thm ?inst str = cut ?inst (thm str)
 
 (*** Basic equality reasoning ***)
 
@@ -168,7 +168,6 @@ let eq_tac ?info ?c goal =
       (raise (error ("eq_tac: Can't find required lemma "
 		     ^Lterm.base_thy^".eq_refl")))
   in 
-  let info1 = Tactics.info_make() in 
   let cforms = concls_of (sequent goal) in 
   let tac albl (t, f) g = 
     if Formula.is_equality f
@@ -177,9 +176,9 @@ let eq_tac ?info ?c goal =
   in 
   seq 
     [
-      Tactics.cut ~info:info1 th; 
-      (fun g -> 
-	let af = get_one ~msg:"eq_tac" (Tactics.aformulas info1)
+      Tactics.cut th; 
+      (?> fun info1 g ->
+	let af = get_one ~msg:"eq_tac" (New.aformulas info1)
 	in 
 	map_first (tac (ftag af)) cforms g)
     ] goal

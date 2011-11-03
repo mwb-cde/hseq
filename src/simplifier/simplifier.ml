@@ -317,7 +317,7 @@ let copyA_inst_tac ?info vals x goal =
       ?> (fun inf1 g ->
         let x1 = get_one ~msg:"copyA_inst_tac" (New.aformulas inf1);
         in 
-        instA ?info:info ~a:(ftag x1) vals g)
+        lift_info ?info:info (instA ~a:(ftag x1) vals) g)
     ] goal
     
 (** [cut_rr_rule info vals t g] Cut rule [t] into goal [g],
@@ -329,13 +329,13 @@ let copyA_inst_tac ?info vals x goal =
 let cut_rr_rule ?info vals t g =
   match t with
     | Logic.RRThm(th) ->
-      cut ?info:info ~inst:vals th g
+      lift_info ?info (cut ~inst:vals th) g
     | Logic.ORRThm(th, _) ->
-      cut ?info:info ~inst:vals th g
+      lift_info ?info:info (cut ~inst:vals th) g
     | Logic.Asm(x) ->
-      copyA_inst_tac ?info:info vals x g
+      lift_info ?info (copyA_inst_tac vals x) g
     | Logic.OAsm(x, _) ->
-      copyA_inst_tac ?info:info vals x g
+      lift_info ?info (copyA_inst_tac vals x) g
 
 (** [simp_rewrite_tac ?info is_concl plan term lbl]: Local interface
     to the main rewriting tactics. If [is_concl] is true, call
@@ -361,13 +361,13 @@ let simp_rewrite_tac ?info is_concl plan trm lbl goal =
     ret=(ncntrl, [cgltg; rgltg], [cftg; rrftg])
 *)
 let prep_cond_tac cntrl ret values thm goal =
-  let info = Tactics.info_make() in
-  let add_data rl_ftg inf= 
-    let (cnd_gltg, rl_gltg) =  (* condition-goal, rule-goal *)
-      get_two ~msg:"prep_cond_tac: goals" (subgoals inf)
+  let add_data rl_ftg (sgls, cforms) = 
+    let (cnd_gltg, rl_gltg) = 
+      (* condition-goal, rule-goal *)
+      get_two ~msg:"prep_cond_tac: goals" sgls
     in 
     let cnd_ftg = (* condition-formula-tag *)
-      get_one ~msg:"prep_cond_tac: forms" (cformulas inf)
+      get_one ~msg:"prep_cond_tac: forms" cforms
     in 
     let ncntrl = Data.add_asm cntrl rl_ftg
     in 
@@ -376,15 +376,14 @@ let prep_cond_tac cntrl ret values thm goal =
   let tac g =
     seq
       [
-       cut_rr_rule ~info:info values thm;
-       (fun g1 -> 
-	 let rl_ftg = Lib.get_one (aformulas info) No_change
+       cut_rr_rule values thm;
+       (?> fun info g1 -> 
+	 let rl_ftg = Lib.get_one (New.aformulas info) No_change
 	 in 
-	 seq
-	   [
-	     Tactics.implA ~info:info ~a:(ftag rl_ftg);
-	     (fun g2 -> update_tac (add_data rl_ftg) info g2)
-	  ] g1)
+	 (Tactics.implA ~a:(ftag rl_ftg);
+	  ++ (?> fun info g2 ->
+            (add_data rl_ftg (New.subgoals info, New.cformulas info));
+            skip g2)) g1)
      ] g
   in 
   try tac goal
@@ -1062,20 +1061,20 @@ let cond_prover_tac ctrl tg goal =
 let simp_asm_elims =
   [
     (fun inf l -> Boollib.falseA ~a:l);
-    (fun inf l -> Tactics.negA ~info:inf ~a:l);
+    (fun inf l -> lift_info ~info:inf (Tactics.negA ~a:l));
     (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
 (***
     (fun inf l -> (Tactics.conjA ~a:l 
                    ++ changes_to_info_tac ~info:inf));
 ***)
-    (fun inf l -> Tactics.existA ~info:inf ~a:l)
+    (fun inf l -> lift_info ~info:inf (Tactics.existA ~a:l))
   ]
 
 let simp_concl_elims =
   [
     (fun inf l -> Tactics.trueC ~c:l);
-    (fun inf l -> Tactics.disjC ~info:inf ~c:l);
-    (fun inf l -> Tactics.allC ~info:inf ~c:l)
+    (fun inf l -> lift_info ~info:inf (Tactics.disjC ~c:l));
+    (fun inf l -> lift_info ~info:inf (Tactics.allC ~c:l))
   ]
 
 let simp_flatten_asms_tac ?info lst = 

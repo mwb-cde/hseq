@@ -131,7 +131,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
 *)
 
 val cut_thm: 
-  ?info:Tactics.Info.t -> ?inst:Basic.term list 
+  ?inst:Basic.term list 
   -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
