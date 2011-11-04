@@ -784,8 +784,7 @@ let basic ?a ?c goal =
             Logic.Tactics.basic al cl goal
       end
 
-
-let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
+let unify_engine_tac (atg, aform) (ctg, cform) goal =
   let sqnt = sequent goal in 
   let scope = Logic.Sequent.scope_of sqnt in 
   let albl = ftag atg
@@ -816,15 +815,15 @@ let unify_engine_tac ?info (atg, aform) (ctg, cform) goal =
 	  with _ -> raise (error "Can't unify formulas")
   in 
   let asm_consts = extract_consts asm_vars env1
-  and concl_consts = extract_consts concl_vars env1
   in 
-  seq 
-    [
-      lift_info ?info (instA ~a:albl asm_consts);
-      lift_info ?info (instC ~c:clbl concl_consts);
-      lift_info ?info (basic ~a:albl ~c:clbl // skip) 
-    ] goal
-
+  seq [
+    instA ~a:albl asm_consts;
+    (?> fun info1 ->
+      let albl1 = ftag (get_one (New.aformulas info1))
+      in
+      basic ~a:albl1 ~c:clbl)
+  ] goal
+    
 let unify_tac ?info ?a ?c goal =
   let sqnt = sequent goal
   in 

@@ -472,34 +472,25 @@ let mp0_tac ?info a a1lbls g =
 	(Term.term_error ("mp_tac: no matching formula in assumptions") 
 	   [Term.mk_fun Lterm.impliesid [mp_lhs; mp_rhs]])
   in 
-  let inf1 = Tactics.info_make() in
   let tac1 =
     match mp_vars with
       | [] -> skip (* No quantifier *)
-      | _ ->
-        (* Implication has quantifier *)
-	instA 
-          ~a:(ftag a_label) 
+      | _ -> (* Implication has quantifier *)
+	instA ~a:(ftag a_label) 
           (Tactics.extract_consts mp_vars a1_env)
-  and tac2 g2 = 
-    lift_info ~info:inf1 (Tactics.implA ~a:(ftag a_label)) g2
-  and tac3 g3 =
-    ((fun n -> 
-      Lib.apply_nth 0 
-        (Tag.equal (Tactics.node_tag n))
-	(Tactics.subgoals inf1) 
-        false)
-     --> 
-     (Tactics.basic 
-        ~a:(ftag a1_label)
-        ~c:(ftag (Lib.get_one (Tactics.cformulas inf1)
-	            (Failure "mp_tac2.2"))))) g3
   in 
-  seq [tac1; tac2; 
-       (tac3 ++
-          (?> (fun inf4 ->
-            set_info_tac ?info ([], New.aformulas inf4, [], []))))
-      ] g
+  seq [
+    tac1; 
+    Tactics.implA ~a:(ftag a_label);
+    (?> fun inf1 ->
+      ((fun n -> Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n))
+	(New.subgoals inf1) false)
+       --> 
+       (Tactics.basic ~a:(ftag a1_label)
+          ~c:(ftag (Lib.get_one (New.cformulas inf1)
+	            (Failure "mp_tac2.2"))))));
+    (?> fun inf4 -> set_info_tac ?info ([], New.aformulas inf4, [], []))
+  ] g
 
     
 let mp_tac ?info ?a ?h goal =
