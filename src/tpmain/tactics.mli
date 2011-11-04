@@ -269,14 +269,10 @@ val record_changes_tac: (Changes.t -> Changes.t) -> tactic -> tactic
     (branch_changes (tac g)))].
 *)
 
-val set_changes_tac: 
-  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> tactic
+val set_changes_tac: Changes.t -> tactic
 (** Tactic to record changes in a goal and behave like [skip]. *)
 
-val add_changes_tac: 
-  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> tactic
+val add_changes_tac: Changes.t -> tactic
 (** Tactic to add to changes in a goal and behave like [skip]. *)
 
 val record_info_tac: 
@@ -734,7 +730,7 @@ val basic:
     alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.
 *)
 
-val unify_tac: ?info: Info.t ->  
+val unify_tac: 
   ?a:Logic.label -> ?c:Logic.label -> Logic.tactic
 (** [unify_tac a c g]: Try to unify assumption [a] with conclusion
     [c].

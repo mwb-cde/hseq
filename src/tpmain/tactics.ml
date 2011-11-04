@@ -186,12 +186,14 @@ let record_changes_tac setter (tac: tactic) g =
   in
   New.set_changes g1 chngs
 
-let set_changes_tac (sgs, afs, cfs, cnsts) g =
+let set_changes_tac chng g =
+  let (sgs, afs, cfs, cnsts) = Changes.dest chng in
   let setter _ = Changes.make sgs afs cfs cnsts
   in
   record_changes_tac setter Logic.Tactics.skip g
 
-let add_changes_tac (sgs, afs, cfs, cnsts) g =
+let add_changes_tac chng g =
+  let (sgs, afs, cfs, cnsts) = Changes.dest chng in
   let setter chngs = Changes.add chngs sgs afs cfs cnsts
   in
   record_changes_tac setter Logic.Tactics.skip g
@@ -682,7 +684,7 @@ let betaA ?a goal =
 	      substA [tlbl] albl;
 	      (?> fun info2 g2 ->
                 (Logic.Tactics.deleteA tlbl
-                 ++ set_changes_tac (Changes.dest info2)) g2)
+                 ++ set_changes_tac info2) g2)
 	    ] g1)
       ] g
   in 
@@ -712,7 +714,7 @@ let betaC ?c goal =
 	      substC [tlbl] clbl;
               (?> fun info2 g2 ->
 	        (Logic.Tactics.deleteA tlbl
-                 ++ set_changes_tac (Changes.dest info2)) g2)
+                 ++ set_changes_tac info2) g2)
 	    ] g1)
       ] g
   in 
@@ -824,7 +826,7 @@ let unify_engine_tac (atg, aform) (ctg, cform) goal =
       basic ~a:albl1 ~c:clbl)
   ] goal
     
-let unify_tac ?info ?a ?c goal =
+let unify_tac ?a ?c goal =
   let sqnt = sequent goal
   in 
   let asms = 
@@ -850,7 +852,7 @@ let unify_tac ?info ?a ?c goal =
   in 
   let tac c g = map_first (fun x -> unify_engine_tac x c) asms g
   in 
-  try map_first tac concls goal
+  try ((map_first tac concls) ++ set_changes_tac (Changes.empty())) goal
   with err -> raise (add_error "unify_tac" err)
 
 
