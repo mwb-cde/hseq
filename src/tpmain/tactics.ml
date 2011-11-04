@@ -865,16 +865,40 @@ let unify_tac ?a ?c goal =
     [Info.cformulas inf] with a name from [cnames], in order. Set
     [info=inf'] where [inf'] is [inf], with the formula tag produced
     by renaming.  *)
+
+let named_tac tac anames cnames (goal: Logic.node) =
+  let rec name_list_tac ns ls chng br = 
+    match (ns, ls) with 
+      | ([], _) -> (chng, br)
+      | (_, []) -> (chng, br)
+      | (x::xs, y::ys) -> 
+        let br1 = foreach (name_tac x y) br in
+        let chng1 = Changes.rev_append (New.branch_changes br1) chng
+        in
+	name_list_tac xs ys chng1 br1
+  in 
+  let g1 = tac goal in 
+  let chng1 = New.branch_changes g1 in
+  let chng1r = Changes.rev chng1 in
+  let albls = List.map ftag (New.aformulas chng1)
+  and clbls = List.map ftag (New.cformulas chng1)
+  in 
+  let (chng2, g2) = name_list_tac anames albls chng1r g1 in 
+  let (chng3, g3) = name_list_tac cnames clbls chng2 g2
+  in 
+  (New.set_changes g3 (Changes.rev chng3))
+
+(**
 let named_tac ?info tac anames cnames (goal: Logic.node) =
   let inf1 = Info.make()
   and inf2 = Info.make()
   in 
-  let rec name_list ns ls g = 
+  let rec name_list_tac ns ls g = 
     match (ns, ls) with 
       | ([], _) -> g
       | (_, []) -> g
       | (x::xs, y::ys) -> 
-	name_list xs ys 
+	name_list_tac xs ys 
           (foreach (lift_info ~info:inf2 (name_tac x y)) g)
   in 
   let g1 = tac ~info:inf1 goal in 
@@ -884,12 +908,14 @@ let named_tac ?info tac anames cnames (goal: Logic.node) =
   let g2 = name_list anames albls g1 in 
   let g3 = name_list cnames clbls g2
   in 
+  let chngs = Changes.make 
   Info.add info 
     (Info.subgoals inf1) 
     (List.rev (Info.aformulas inf2)) 
     (List.rev (Info.cformulas inf2))
     (Info.constants inf1);
   g3
+**)
 
 
 (*** Pattern matching tacticals ***)

@@ -759,7 +759,7 @@ val substC:
 (** {5 Derived tactics and tacticals} *)
 
 val named_tac: 
-  ?info: Info.t -> (info:Info.t -> tactic) 
+  tactic 
   -> string list -> string list 
   -> tactic
 (** [named_tac tac anames cnames]: Apply [tac], renaming the
