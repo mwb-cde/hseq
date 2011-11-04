@@ -307,27 +307,18 @@ let data_tac f info g= f info; skip g
  *)
 
 let seq rls sq =
-  let rec seq_aux fs chng_list sqs =
+  let rec seq_aux fs sqs =
     match fs with 
-      | [] -> (sqs, chng_list)
+      | [] -> sqs
       | r::rs ->
 	if has_subgoals sqs
-	then 
-          let sqs1 = foreach r sqs in
-          let chngs = New.branch_changes sqs1 
-          in
-          seq_aux rs (chngs::chng_list) sqs1
-	else (sqs, chng_list)
+	then seq_aux rs (foreach r sqs)
+	else sqs
   in 
   match rls with
     | [] -> raise (error "seq: empty tactic list")
-    | tac::xs ->
-      let sqs = tac sq in
-      let chng = New.branch_changes sqs in
-      let (sqs, chnglst) = seq_aux rls [chng] sqs in
-      let chnglst1 = Changes.flatten (List.rev chnglst)
-      in
-      New.set_changes sqs chnglst1
+    | tac::xs -> seq_aux xs (tac sq)
+
 
 let (++) tac1 tac2 g = seq [tac1; tac2] g
 
