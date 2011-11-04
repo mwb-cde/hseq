@@ -209,7 +209,7 @@ let induct_tac_solve_rh_tac ?info a_lbl c_lbl g =
       (fun g1 -> 
 	let c1_tag = get_one (cformulas minfo)
 	in 
-	((specC ~info:minfo ~c:(ftag c1_tag))
+	((lift_info ~info:minfo (specC ~c:(ftag c1_tag)))
 	 // 
            (set_info_tac ~info:minfo ([], [], [c1_tag], [])))
 	  g1);
@@ -301,7 +301,7 @@ let asm_induct_tac ?info alabel clabel goal =
 	    (** Right-hand sub-goal *)
 	    seq
 	      [
-		(specC ~info:tinfo 
+		(lift_info ~info:tinfo specC
 		 // 
                    set_info_tac ~info:tinfo ([], [], [ctag], []));
 		(fun g1 -> 
@@ -608,7 +608,7 @@ let basic_induct_on ?info ?thm name clabel goal =
 	       (** Right-hand sub-goal *)
 	       seq
 		 [
-		   (specC ~info:tinfo 
+		   (lift_info ~info:tinfo specC
 		    // set_info_tac ~info:tinfo ([], [], [ctag], []));
 		   (fun g1 -> 
 		     let a1_tag = get_one (aformulas tinfo) in 

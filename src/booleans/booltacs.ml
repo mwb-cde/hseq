@@ -430,7 +430,7 @@ let cases_of ?info ?thm t g =
           seq [
             set_info_tac ?info ([a_tg], [], [], []);
 	    (disj_splitter_tac ?info:info ~f:(ftag a_tg) // skip);
-	    (specA ?info:info ~a:(ftag a_tg) // skip)
+	    lift_info ?info:info (specA ~a:(ftag a_tg) // skip)
           ] g)
       ] g1
   in 

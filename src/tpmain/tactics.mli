@@ -853,8 +853,7 @@ val match_formula: Basic.term -> (Logic.label -> tactic) -> tactic
     the match.
 *)
 
-val specA: ?info:Info.t
-  -> ?a:Logic.label -> tactic
+val specA: ?a:Logic.label -> tactic
 (** Specialize an existentially quantified assumption. [specA a trms]
     repeatedly applies [existA], failing if [a] is not an existentially
     quantified formula.
@@ -864,8 +863,7 @@ val specA: ?info:Info.t
     [existA], in the order they were generated.
 *)
 
-val specC: ?info:Info.t
-  -> ?c:Logic.label -> tactic
+val specC: ?c:Logic.label -> tactic
 (** Specialize a universally quantified assumption. [specC a trms]
     repeatedly applies [allC], failing if [c] is not universally
     quantified.
@@ -875,8 +873,7 @@ val specC: ?info:Info.t
     [allC], in the order they were generated.
 *)
 
-val spec_tac: ?info:Info.t
-  -> ?f:Logic.label -> tactic
+val spec_tac: ?f:Logic.label -> tactic
 (** Specialize a formula. Tries {!Tactics.specC} then
     {!Tactics.specA}.
 

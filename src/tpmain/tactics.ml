@@ -888,36 +888,6 @@ let named_tac tac anames cnames (goal: Logic.node) =
   in 
   (New.set_changes g3 (Changes.rev chng3))
 
-(**
-let named_tac ?info tac anames cnames (goal: Logic.node) =
-  let inf1 = Info.make()
-  and inf2 = Info.make()
-  in 
-  let rec name_list_tac ns ls g = 
-    match (ns, ls) with 
-      | ([], _) -> g
-      | (_, []) -> g
-      | (x::xs, y::ys) -> 
-	name_list_tac xs ys 
-          (foreach (lift_info ~info:inf2 (name_tac x y)) g)
-  in 
-  let g1 = tac ~info:inf1 goal in 
-  let albls = List.map ftag (Info.aformulas inf1)
-  and clbls = List.map ftag (Info.cformulas inf1)
-  in 
-  let g2 = name_list anames albls g1 in 
-  let g3 = name_list cnames clbls g2
-  in 
-  let chngs = Changes.make 
-  Info.add info 
-    (Info.subgoals inf1) 
-    (List.rev (Info.aformulas inf2)) 
-    (List.rev (Info.cformulas inf2))
-    (Info.constants inf1);
-  g3
-**)
-
-
 (*** Pattern matching tacticals ***)
 
 (** [find_match_formulas typenv scp varp t fs]
@@ -988,46 +958,57 @@ let match_formula trm tac g =
     with Not_found ->
       raise (Term.term_error "No matching formula in sequent" [trm])
 
-let specA ?info ?a g =
-  let inf1 = Info.make() in 
-  let add_data (atgs, cs) =
-    Info.add info [] [get_one atgs] [] (List.rev cs) 
-  in 
+let specA ?a g =
+  let existA_rule ?asm = 
+    (?> fun info1 -> 
+      record_changes_tac 
+        (fun info2 -> Changes.combine info2 info1)
+        (existA ?a:asm))
+  in
   alt
     [
       seq 
         [ 
-	  repeat (lift_info ~info:inf1 (existA ?a));
-          (fun g ->
-            update_tac 
-              add_data ((Info.aformulas inf1), (Info.constants inf1))
-              g)
+	  repeat (existA_rule ?asm:a);
+          (?> fun info ->
+            (set_changes_tac 
+               (Changes.make 
+                  [] 
+                  [get_one (New.aformulas info)]
+                  [] 
+                  (List.rev (New.constants info)))))
         ];
       fail ~err:(error "specA")
     ] g
 
-let specC ?info ?c g =
-  let inf1 = Info.make() in 
-  let add_data (ctgs, cs) =
-    Info.add info [] [] [get_one ctgs] (List.rev cs) 
-  in 
+let specC ?c g =
+  let allC_rule ?conc = 
+    (?> fun info1 -> 
+      record_changes_tac 
+        (fun info2 -> Changes.combine info2 info1)
+        (allC ?c:conc))
+  in
   alt
     [
       seq 
         [ 
-	  repeat (lift_info ~info:inf1 (allC ?c));
-	  (fun g ->
-            update_tac
-              add_data ((Info.cformulas inf1), (Info.constants inf1)) g)
+	  repeat (allC_rule ?conc:c);
+          (?> fun info ->
+            (set_changes_tac 
+               (Changes.make 
+                  [] 
+                  [] 
+                  [get_one (New.cformulas info)]
+                  (List.rev (New.constants info)))))
         ];
       fail ~err:(error "specC")
     ] g
     
-let spec_tac ?info ?f g =
+let spec_tac ?f g =
   alt
     [
-      specC ?info ?c:f;
-      specA ?info ?a:f;
+      specC ?c:f;
+      specA ?a:f;
       fail ~err:(error "specA")
     ] g
 
