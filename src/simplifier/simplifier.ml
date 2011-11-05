@@ -345,8 +345,8 @@ let cut_rr_rule ?info vals t g =
 *)
 let simp_rewrite_tac ?info is_concl plan trm lbl goal =
   if is_concl 
-  then pure_rewriteC ?info plan ~term:trm lbl goal
-  else pure_rewriteA ?info plan ~term:trm lbl goal
+  then lift_info ?info (pure_rewriteC plan ~term:trm lbl) goal
+  else lift_info ?info (pure_rewriteA plan ~term:trm lbl) goal
 
 (*** Conditional rule tactics ***)
 

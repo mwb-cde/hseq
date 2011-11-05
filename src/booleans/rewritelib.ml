@@ -136,7 +136,7 @@ struct
       let rls = !urules in 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls aterm
       in 
-      Tactics.pure_rewriteA ?info plan (ftag atag) g
+      lift_info ?info (Tactics.pure_rewriteA plan (ftag atag)) g
     in 
     let tac3 g = 
       if is_lr
@@ -166,7 +166,7 @@ struct
       let rls = !urules in 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls cterm
       in 
-      Tactics.pure_rewriteC ?info plan (ftag ctag) g
+      lift_info ?info (Tactics.pure_rewriteC plan (ftag ctag)) g
     in 
     let tac3 g = 
       if is_lr

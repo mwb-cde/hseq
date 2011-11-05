@@ -44,7 +44,7 @@ let falseA ?a goal =
   in 
   seq
     [ 
-      pure_rewriteA ~info:inf plan af;
+      lift_info ~info:inf (pure_rewriteA plan af);
       (fun g ->
 	let atag = Lib.get_one (aformulas inf) (Tactics.error "falseA")
 	in 
@@ -146,7 +146,7 @@ let eq_symA ?info a goal =
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
   in 
-  Tactics.pure_rewriteA ?info plan (ftag atag) goal
+  lift_info ?info (Tactics.pure_rewriteA plan (ftag atag)) goal
 
 let eq_symC ?info c goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
@@ -155,7 +155,7 @@ let eq_symC ?info c goal =
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
   in 
-  Tactics.pure_rewriteC ?info plan (ftag ctag) goal
+  lift_info ?info (Tactics.pure_rewriteC plan (ftag ctag)) goal
     
 let eq_sym_tac ?info f goal = 
   try eq_symA ?info f goal

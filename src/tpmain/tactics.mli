@@ -664,7 +664,7 @@ val instC:
   ?c:Logic.label -> Basic.term list -> tactic
 (** Instantiate an existentially quantified conclusion. Generalises
     [existC] to a list of terms. [instc a trms] applies [existC a t]
-    for each [t] in [trms]. [?info] is set to the result of the last
+    for each [t] in [trms]. Records the result of the last
     instantiation. Fails if there are more terms then variables.
 *)
 
@@ -720,7 +720,7 @@ val beta_tac: ?f:Logic.label -> tactic
 *)
 
 val name_tac: string -> Logic.label -> tactic
-(** [name_tac ?info n lbl]: Name formula [lbl] with [n].  Entry point
+(** [name_tac n lbl]: Name formula [lbl] with [n].  Entry point
     to {!Logic.Tactics.nameA} and {!Logic.Tactics.nameC}.
 *)
 
@@ -910,8 +910,7 @@ val conv_rule:
 (** {7 Tactics} *)
 
 val pure_rewriteA: 
-  ?info:Info.t -> ?term:Basic.term
-  -> (rule)plan -> Logic.label
+  ?term:Basic.term -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewriteA info p l]: Rewrite assumption [l] with plan
     [p]. This is a front end to [rewrite_intro]/[substA].  If [term]
@@ -928,8 +927,7 @@ val pure_rewriteA:
 *)
 
 val pure_rewriteC: 
-  ?info:Info.t -> ?term:Basic.term
-  -> (rule)plan -> Logic.label
+  ?term:Basic.term -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan
     [p]. This is a front end to [rewrite_intro]/[substC]. If [term] is
@@ -946,8 +944,7 @@ val pure_rewriteC:
 *)
 
 val pure_rewrite_tac: 
-  ?info:Info.t -> ?term:Basic.term
-  -> (rule)plan -> Logic.label
+  ?term:Basic.term -> (rule)plan -> Logic.label
   -> tactic
 (** [pure_rewrite info p l]: Combination of [pure_rewriteC] and
     [pure_rewriteA]. First tries [pure_rewriteC] then tries

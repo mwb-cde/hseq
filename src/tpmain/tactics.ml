@@ -171,7 +171,7 @@ struct
   let empty = Changes.empty
   let changes = Logic.Tactics.changes
   let branch_changes = Logic.Tactics.branch_changes
-  let set_changes = Logic.Tactics.set_changes
+  let set_changes chngs g = Logic.Tactics.set_changes g chngs
 
   let subgoals = Changes.goals
   let aformulas = Changes.aforms
@@ -184,7 +184,7 @@ let record_changes_tac setter (tac: tactic) g =
   let g1 = tac g in
   let chngs = setter (New.branch_changes g1)
   in
-  New.set_changes g1 chngs
+  New.set_changes chngs g1
 
 let set_changes_tac chng g =
   let (sgs, afs, cfs, cnsts) = Changes.dest chng in
@@ -295,7 +295,13 @@ let branch_changes = Logic.Subgoals.branch_changes
 
 let foreach = Logic.Subgoals.apply_to_each 
 
-let skip = Logic.Tactics.skip
+(** skip: Do-nothing tactic. Unlike Logic.Tactics.skip, preserves the
+    change record of the node. *)
+
+let skip g = 
+  let chngs = New.changes g 
+  in
+  New.set_changes chngs (Logic.Tactics.skip g)
 
 let fail ?err sq = 
   match err with 
@@ -886,7 +892,7 @@ let named_tac tac anames cnames (goal: Logic.node) =
   let (chng2, g2) = name_list_tac anames albls chng1r g1 in 
   let (chng3, g3) = name_list_tac cnames clbls chng2 g2
   in 
-  (New.set_changes g3 (Changes.rev chng3))
+  (New.set_changes (Changes.rev chng3) g3)
 
 (*** Pattern matching tacticals ***)
 
@@ -1086,67 +1092,73 @@ let conv_rule scp conv thm =
 
 (** [pure_rewriteA info p l]: Rewrite assumption [l] with plan [p].
 *)
-let pure_rewriteA ?info ?term plan lbl goal =
-  let inf = Info.make() in 
+let pure_rewriteA ?term plan lbl goal =
   let ltag = Logic.label_to_tag lbl (sequent goal) in 
   let trm = 
     match term with
       | None -> Formula.term_of (get_asm lbl goal)
       | Some(x) -> x
   in 
-  let tac1 g = 
-    lift_info ~info:inf (Logic.Tactics.rewrite_intro plan trm) g
-  in 
-  let tac2 g =
-    let rule_tag = get_one (Info.aformulas inf)
-    in 
-    seq
-      [
-        lift_info ?info (substA [ftag (rule_tag)] (ftag ltag));
-        deleteA (ftag rule_tag)
+  let tac g =
+    seq[
+      Logic.Tactics.rewrite_intro plan trm;
+      (?> fun inf1 ->
+        let rule_tag = get_one (New.aformulas inf1) in 
+        seq 
+          [
+            substA [ftag (rule_tag)] (ftag ltag);
+            ?> fun inf2 ->
+              let asm_tag = get_one (New.aformulas inf2) in
+              (deleteA (ftag rule_tag) ++
+                 set_changes_tac (Changes.make [] [asm_tag] [] []))
+          ])
       ] g
   in 
-  try seq [ tac1; tac2 ] goal 
+  try tac goal    
   with 
     | Not_found -> raise Not_found
     | err -> raise (add_error "Tactics.Rewriter.pure_rewriteA" err)
 
 (** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan [p].
 *)
-let pure_rewriteC ?info ?term plan lbl goal =
-  let inf = Info.make() in 
+let pure_rewriteC ?term plan lbl goal =
   let ltag = Logic.label_to_tag lbl (sequent goal) in 
   let trm = 
     match term with
       | None -> Formula.term_of (get_concl lbl goal)
       | Some(x) -> x
   in 
-  let tac1 g =
-    lift_info ~info:inf (Logic.Tactics.rewrite_intro plan trm) g
-  in 
-  let tac2 g =
-    let rule_tag = get_one (Info.aformulas inf)
-    in 
-    seq
+  let tac g = 
+    seq 
       [
-        lift_info ?info (substC [ftag (rule_tag)] (ftag ltag));
-        deleteA (ftag rule_tag)
+        Logic.Tactics.rewrite_intro plan trm;
+        ?> fun inf1 -> 
+         let rule_tag = get_one (New.aformulas inf1) in
+         seq
+           [
+             substC [ftag (rule_tag)] (ftag ltag);
+             ?> fun inf2 ->
+               let cncl_tag = get_one (New.cformulas inf2) 
+               in
+               (deleteA (ftag rule_tag) ++
+                  set_changes_tac (Changes.make [] [] [cncl_tag] []))
+           ]
       ] g
-  in 
-  try seq [ tac1; tac2 ] goal 
+  in
+  try tac goal 
   with 
       Not_found -> raise Not_found
-    | err -> raise (add_error "Tactics.Rewriter.pure_rewriteA" err)
+    | err -> raise (add_error "Tactics.Rewriter.pure_rewriteC" err)
 
 (** [pure_rewrite info p l]: Combination of [pure_rewriteC] and
     [pure_rewriteA]. First tries [pure_rewriteC] then tries
     [pure_rewriteA].
 *)
-let pure_rewrite_tac ?info ?term plan lbl goal =
+let pure_rewrite_tac ?term plan lbl goal =
   try
     begin
-      try pure_rewriteC ?info ?term plan lbl goal
-      with Not_found -> (pure_rewriteA ?info ?term plan lbl goal)
+      try pure_rewriteC ?term plan lbl goal
+      with Not_found -> (pure_rewriteA ?term plan lbl goal)
     end
   with 
     | Not_found -> raise Not_found
