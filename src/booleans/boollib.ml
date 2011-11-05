@@ -49,47 +49,54 @@ struct
       << !x y: ((x => y) and (y => x)) => (x = y) >>
       (seq [
         allC;
-	allC ;
-	(?> fun info g -> 
-	  let y_term, x_term = 
-	    Lib.get_two (New.constants info) 
-	      (Failure "make_iff_equals_thm")
-	  in 
-	  (flatten_tac
-	   ++ (cut_thm "bool_cases" ++ allA x_term)
-	   ++ (cut_thm "bool_cases" ++ allA y_term)
-	   ++ split_tac 
-	   ++ 
-	     alt 
-	     [(replace_tac ++ (basic // trivial));
-	      (basic // trivial);
-	      (replace_tac ++ eq_tac)]) g)
-      ])
-    in 
-    Commands.prove << !x y: (x iff y) = (x = y) >>
+        (?> fun info1 ->
+          seq [
+	    allC ;
+	    (?> fun info2 g -> 
+              let x_term = Lib.get_one (New.constants info1)
+                (Failure "make_iff_equals_thm: x_term")
+	      and y_term = Lib.get_one (New.constants info2) 
+                (Failure "make_iff_equals_thm: y_term")
+	      in 
+	      (flatten_tac
+	       ++ (cut_thm "bool_cases" ++ allA x_term)
+	       ++ (cut_thm "bool_cases" ++ allA y_term)
+	       ++ split_tac 
+	       ++ 
+	         alt 
+	         [(replace_tac ++ (basic // trivial));
+	          (basic // trivial);
+	          (replace_tac ++ eq_tac)]) g)
+          ])])
+    in Commands.prove << !x y: (x iff y) = (x = y) >>
         (seq [
           allC;
-          allC;
-	  (?> fun info g -> 
-	    let y_term, x_term = 
-	      Lib.get_two (New.constants info) 
-	        (Failure "make_iff_equals_thm")
-	    in 
-	    ((cut iff_l2)
-	     ++ inst_tac [Lterm.mk_iff x_term y_term;
-			  Lterm.mk_equality x_term y_term]
-	     ++ split_tac
-	     --
-	       [flatten_tac
-		 ++ cut iff_l2 ++ inst_tac [x_term; y_term]
-		 ++ unfold "iff" ~f:(!~2)
-		 ++ (implA --  [basic; basic]);
-	        flatten_tac
-		++ replace_tac
-		++ unfold "iff" ~f:(!! 1)
-		++ split_tac ++ flatten_tac ++ basic;
-	        replace_tac ++ eq_tac]) g)
-        ])
+          (?> fun info1 ->
+            seq [
+              allC;
+	      (?> fun info2 g -> 
+	        let x_term = Lib.get_one (New.constants info1) 
+                  (Failure "make_iff_equals_thm: x_term")
+                and y_term = Lib.get_one (New.constants info2)
+                (Failure "make_iff_equals_thm: y_term")
+	        in 
+	        ((cut iff_l2)
+	         ++ inst_tac [Lterm.mk_iff x_term y_term;
+			      Lterm.mk_equality x_term y_term]
+	         ++ split_tac
+	         --
+	           [
+                     flatten_tac
+		     ++ cut iff_l2 ++ inst_tac [x_term; y_term]
+		     ++ unfold "iff" ~f:(!~2)
+		     ++ (implA --  [basic; basic]);
+	             flatten_tac
+		     ++ replace_tac
+		     ++ unfold "iff" ~f:(!! 1)
+		     ++ split_tac ++ flatten_tac ++ basic;
+	             replace_tac ++ eq_tac]) g)
+            ])])
+
 
   let iff_equals_thm_var = Lib.freeze make_iff_equals_thm
   let iff_equals_thm() = Lib.thaw ~fresh:fresh_thm iff_equals_thm_var

@@ -124,10 +124,12 @@ theorem "iff_def" << !x y: (x iff y) = ((x=>y) and (y=> x))>>
 
 let true_prop =
 theorem "true_prop" << !x : (x = true) = x >>
-[flatten_tac ++ equals_tac 
-++ cut ~inst:[ << _x >> ] true_l1
-++ cut ~inst:[ << _x >> ] true_l2
-++ blast_tac ];;
+[
+  flatten_tac ++ equals_tac 
+  ++ cut ~inst:[ << _x >> ] true_l1
+  ++ cut ~inst:[ << _x >> ] true_l2
+  ++ blast_tac 
+];;
 
 let false_prop =
 theorem "false_prop" << !x : (x=false) = ~x >>
@@ -419,7 +421,7 @@ flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
 -- [flatten_tac ; flatten_tac ++ eq_tac];
 beta_tac ++ flatten_tac ++
   (match_asm << (not false) => C >> 
-   (fun l -> (implA ?info:None ~a:l))) 
+   (fun l -> (implA ~a:l))) 
    -- [flatten_tac; basic]
 ]);;
 
@@ -632,19 +634,6 @@ theorem "eta" << !f: (% x: f x) = f >>
 -- 
 [flatten_tac ++ beta_tac ++ eq_tac;
 basic]];;
-
-(*
-let false_l1=
-theorem "false_l1" << !x: (not x) = (x=false) >>
-[flatten_tac ++ equals_tac  ++ blast_tac
---
-   [
-    equals_tac ++ blast_tac;
-    replace_tac ++ trivial
-  ]
-];;
-
-*)
 
 end_theory();;  (* end of theory *)
 
