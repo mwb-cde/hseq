@@ -398,23 +398,12 @@ val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
     then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
 *)
 
-(***
-val (!!): ('a -> unit) -> 'a -> tactic
-(** [(f !! data) g]: Infix notation for [notify_tac].  Applies [tac g]
-    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
-*)
-****)
-
-
 val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
-(***
-val (>>): (Logic.node -> 'a) -> ('a -> tactic) -> tactic
-(** [(f >> tac) g]: Infix notation for data_tac.  Apply a tactic after
-    extracting the change data from a goal. Forms [tac (changes g) g].
-*)
-***)
+val try_tac: tactic -> (bool) data_tactic
+(** [try_tac tac g]: Return [(true, tac g)] or [(false, skip g)] if
+    [tac g] fails. *)
 
 val query_tac: (Changes.t -> tactic) -> tactic
 (** [query_tac tac g]: Apply a tactic after extracting the change

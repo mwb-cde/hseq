@@ -581,6 +581,9 @@ val rotate_subgoals_right: int -> goal -> goal
     {!Logic.Subgoals.apply}).
 *)
 
+exception No_subgoals
+(** No subgoals. A tactic was applied to a goal with no sub-goals. *)
+
 module Subgoals:
 sig
   

@@ -293,7 +293,10 @@ let branch_changes = Logic.Subgoals.branch_changes
  * Basic tacticals and tactics
  *)
 
-let foreach = Logic.Subgoals.apply_to_each 
+let foreach tac br = 
+  if has_subgoals br
+  then Logic.Subgoals.apply_to_each tac br
+  else raise (error "No subgoals")
 
 (** skip: Do-nothing tactic. Unlike Logic.Tactics.skip, preserves the
     change record of the node. *)
@@ -307,8 +310,6 @@ let fail ?err sq =
   match err with 
     | None -> raise (error "failed")
     | Some e -> raise e
-
-let data_tac f info g= f info; skip g
 
 (*
  * Tacticals
@@ -415,6 +416,10 @@ let query_tac tacl g = tacl (New.changes g) g
 let (?>) tacl g = tacl (New.changes g) g
 let update_tac f d g = ((fun _ -> (f d)) g); skip g
 
+let try_tac tac g = 
+  try (true, tac g)
+  with _ -> (false, skip g)
+
 let apply_tac data_tac tac g =
   let (data, br1) = data_tac g
   in
@@ -484,11 +489,6 @@ let foreach_concl tac goal =
   in 
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
-
-(***
-let foreach_form tac goal =
-  seq_any [foreach_asm tac; foreach_concl tac] goal
-***)
 
 let foreach_form tac goal = 
   let chng = ref false in 

@@ -162,8 +162,8 @@ let split_tac = splitter_tac
 let flatter_asm_rules =
   [
     (fun l -> falseA ~a:l);
-    (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.negA ~a:l);
+    (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.existA ~a:l)
   ]
 
@@ -197,7 +197,6 @@ let scatter_asm_rules =
     (fun l -> falseA ~a:l); 
 
     (fun l -> Tactics.negA ~a:l);
-    (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.existA ~a:l);
 
     (fun l -> Tactics.disjA ~a:l);
@@ -209,8 +208,6 @@ let scatter_concl_rules =
     (fun l -> Tactics.trueC ~c:l);
 
     (fun l -> Tactics.negC ~c:l);
-    (fun l -> Tactics.disjC ~c:l);
-    (fun l -> Tactics.implC ~c:l);
     (fun l -> Tactics.allC ~c:l);
 
     (fun l -> Tactics.conjC ~c:l);
