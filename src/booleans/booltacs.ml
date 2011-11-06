@@ -132,30 +132,28 @@ let iffE ?info ?c goal =
 
 let split_asm_rules = 
   [
-    (fun inf l -> falseA ~a:l); 
-    (fun inf l -> lift_info ~info:inf (Tactics.disjA ~a:l)); 
-    (fun inf l -> lift_info ~info:inf (Tactics.implA ~a:l))
+    (fun l -> falseA ~a:l); 
+    (fun l -> Tactics.disjA ~a:l); 
+    (fun  l -> Tactics.implA ~a:l)
   ]
 
 let split_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~c:l); 
-    (fun inf l -> 
-      lift_info ~info:inf (Tactics.conjC ~c:l))
+    (fun l -> Tactics.trueC ~c:l); 
+    (fun l -> Tactics.conjC ~c:l)
   ]
 
-
 let split_asms_tac ?info lst = 
-  asm_elim_rules_tac ?info (split_asm_rules, []) lst
+  lift_info ?info (asm_elim_rules_tac (split_asm_rules, []) lst)
 
 let split_concls_tac ?info lst = 
-  concl_elim_rules_tac ?info ([], split_concl_rules) lst
+  lift_info ?info (concl_elim_rules_tac ([], split_concl_rules) lst)
 
 let splitter_tac ?info ?f goal =
   let basic_splitter ?info = 
-    elim_rules_tac ?info (split_asm_rules, split_concl_rules)
+    elim_rules_tac (split_asm_rules, split_concl_rules)
   in 
-  apply_elim_tac basic_splitter ?info ?f goal
+  apply_elim_tac basic_splitter ?f goal
 
 let split_tac = splitter_tac 
 
@@ -163,36 +161,32 @@ let split_tac = splitter_tac
 
 let flatter_asm_rules =
   [
-    (fun inf l -> falseA ~a:l);
-    (fun inf l -> 
-      lift_info ~info:inf (Tactics.conjA ~a:l));
-(**
-    (fun inf l -> (Tactics.conjA ~a:l  ++ changes_to_info_tac ~info:inf));
-**)
-
-    (fun inf l -> lift_info ~info:inf (Tactics.existA ~a:l))
+    (fun l -> falseA ~a:l);
+    (fun l -> Tactics.conjA ~a:l);
+    (fun l -> Tactics.negA ~a:l);
+    (fun l -> Tactics.existA ~a:l)
   ]
 
 let flatter_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~c:l);
-    (fun inf l -> lift_info ~info:inf (Tactics.negC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.disjC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.implC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.allC ~c:l))
+    (fun l -> Tactics.trueC ~c:l);
+    (fun l -> Tactics.negC ~c:l);
+    (fun l -> Tactics.disjC ~c:l);
+    (fun l -> Tactics.implC ~c:l);
+    (fun l -> Tactics.allC ~c:l)
   ]
 
 let flatter_asms_tac ?info lst = 
-  asm_elim_rules_tac ?info (flatter_asm_rules, []) lst
+  lift_info ?info (asm_elim_rules_tac (flatter_asm_rules, []) lst)
 
 let flatter_concls_tac ?info lst = 
-  concl_elim_rules_tac ?info ([], flatter_concl_rules) lst
+  lift_info ?info (concl_elim_rules_tac ([], flatter_concl_rules) lst)
 
 let flatter_tac ?info ?f goal =
   let basic_flatter ?info =
-    elim_rules_tac ?info (flatter_asm_rules, flatter_concl_rules)
+    elim_rules_tac (flatter_asm_rules, flatter_concl_rules)
   in 
-  apply_elim_tac basic_flatter ?info ?f goal
+  apply_elim_tac basic_flatter ?f goal
 
 let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
 
@@ -200,92 +194,73 @@ let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
 
 let scatter_asm_rules =
   [
-    (fun inf l -> falseA ~a:l); 
+    (fun l -> falseA ~a:l); 
 
-    (fun inf l -> lift_info ~info:inf (Tactics.negA ~a:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
-(**
-    (fun inf l -> (Tactics.conjA ~a:l
-                   ++ changes_to_info_tac ~info:inf));
-**)
-    (fun inf l -> lift_info ~info:inf (Tactics.existA ~a:l));
+    (fun l -> Tactics.negA ~a:l);
+    (fun l -> Tactics.conjA ~a:l);
+    (fun l -> Tactics.existA ~a:l);
 
-    (fun inf l -> lift_info ~info:inf (Tactics.disjA ~a:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.implA ~a:l))
+    (fun l -> Tactics.disjA ~a:l);
+    (fun l -> Tactics.implA ~a:l)
   ]
 
 let scatter_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~c:l);
+    (fun l -> Tactics.trueC ~c:l);
 
-    (fun inf l -> lift_info ~info:inf (Tactics.negC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.disjC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.implC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.allC ~c:l));
+    (fun l -> Tactics.negC ~c:l);
+    (fun l -> Tactics.disjC ~c:l);
+    (fun l -> Tactics.implC ~c:l);
+    (fun l -> Tactics.allC ~c:l);
 
-    (fun inf l -> 
-      lift_info ~info:inf (Tactics.conjC ~c:l));
-
-(*
-    (fun inf l -> (Tactics.conjC ~c:l
-                   ++ changes_to_info_tac ~info:inf)); 
-*)
-    (fun inf l -> iffE ~info:inf ~c:l)
+    (fun l -> Tactics.conjC ~c:l);
+    (fun l -> iffE ?info:None ~c:l)
   ]
 
 let scatter_tac ?info ?f goal =
   let tac ?info =
-    elim_rules_tac ?info (scatter_asm_rules, scatter_concl_rules)
+    elim_rules_tac (scatter_asm_rules, scatter_concl_rules)
   in 
-  apply_elim_tac tac ?info ?f goal
+  apply_elim_tac tac ?f goal
 
 
 (*** Scattering, solving formulas ***)
 
 let blast_asm_rules =
   [
-    (fun inf l -> falseA ~a:l); 
+    (fun l -> falseA ~a:l); 
 
-    (fun inf l -> lift_info ~info:inf (Tactics.negA ~a:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
-(**
-    (fun inf l -> (Tactics.conjA ~a:l 
-                   ++ changes_to_info_tac ~info:inf));
-**)
-    (fun inf l -> lift_info ~info:inf (Tactics.existA ~a:l));
+    (fun l -> Tactics.negA ~a:l);
+    (fun l -> Tactics.conjA ~a:l);
+    (fun l -> Tactics.existA ~a:l);
 
-    (fun inf l -> lift_info ~info:inf (Tactics.disjA ~a:l)); 
-    (fun inf l -> lift_info ~info:inf (Tactics.implA ~a:l));
+    (fun l -> Tactics.disjA ~a:l); 
+    (fun l -> Tactics.implA ~a:l);
 
-    (fun inf l -> lift_info ~info:inf (basic ~a:l ?c:None))
+    (fun l -> basic ~a:l ?c:None)
   ]
 
 let blast_concl_rules =
   [
-    (fun inf l -> Tactics.trueC ~c:l);
+    (fun l -> Tactics.trueC ~c:l);
 
-    (fun inf l -> lift_info ~info:inf (Tactics.negC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.disjC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.implC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.allC ~c:l));
+    (fun l -> Tactics.negC ~c:l);
+    (fun l -> Tactics.disjC ~c:l);
+    (fun l -> Tactics.implC ~c:l);
+    (fun l -> Tactics.allC ~c:l);
 
-    (fun inf l -> 
-      lift_info ~info:inf (Tactics.conjC ~c:l));
+    (fun l -> Tactics.conjC ~c:l);
 
-(**
-    (fun inf l -> (Tactics.conjC ~c:l 
-                   ++ changes_to_info_tac ~info:inf)); 
-**)
-    (fun inf l -> iffE ~info:inf ~c:l);
+    (fun l -> iffE ?info:None ~c:l);
 
-    (fun inf l -> lift_info ~info:inf (basic ?a:None ~c:l))
+    (fun l -> basic ?a:None ~c:l)
   ]
 
 let blast_tac ?info ?f goal =
   let tac ?info =
-    elim_rules_tac ?info (blast_asm_rules, blast_concl_rules)
+    elim_rules_tac (blast_asm_rules, blast_concl_rules)
   in 
-  apply_elim_tac tac ?info ?f goal
+  apply_elim_tac tac ?f goal
 
 (*** Cases ***)
 
@@ -386,10 +361,9 @@ let show = show_tac
 *)
 let disj_splitter_tac ?info ?f goal = 
   let tac ?info =
-    elim_rules_tac ?info
-      ([ (fun inf1 l -> lift_info ~info:inf1 (Tactics.disjA ~a:l)) ], []) 
+    elim_rules_tac ([ (fun l -> Tactics.disjA ~a:l) ], []) 
   in 
-  apply_elim_tac tac ?info ?f goal
+  apply_elim_tac tac ?f goal
     
 
 let cases_of ?info ?thm t g =

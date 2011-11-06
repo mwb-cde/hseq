@@ -1060,32 +1060,27 @@ let cond_prover_tac ctrl tg goal =
 
 let simp_asm_elims =
   [
-    (fun inf l -> Boollib.falseA ~a:l);
-    (fun inf l -> lift_info ~info:inf (Tactics.negA ~a:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.conjA ~a:l));
-(***
-    (fun inf l -> (Tactics.conjA ~a:l 
-                   ++ changes_to_info_tac ~info:inf));
-***)
-    (fun inf l -> lift_info ~info:inf (Tactics.existA ~a:l))
+    (fun l -> Boollib.falseA ~a:l);
+    (fun l -> Tactics.negA ~a:l);
+    (fun l -> Tactics.conjA ~a:l);
+    (fun l -> Tactics.existA ~a:l)
   ]
-
 let simp_concl_elims =
   [
-    (fun inf l -> Tactics.trueC ~c:l);
-    (fun inf l -> lift_info ~info:inf (Tactics.disjC ~c:l));
-    (fun inf l -> lift_info ~info:inf (Tactics.allC ~c:l))
+    (fun l -> Tactics.trueC ~c:l);
+    (fun l -> Tactics.disjC ~c:l);
+    (fun l -> Tactics.allC ~c:l)
   ]
 
 let simp_flatten_asms_tac ?info lst = 
-  Boollib.asm_elim_rules_tac ?info (simp_asm_elims, []) lst
+  lift_info ?info (Boollib.asm_elim_rules_tac (simp_asm_elims, []) lst)
 
 let simp_flatten_concls_tac ?info lst = 
-  Boollib.concl_elim_rules_tac ?info ([], simp_concl_elims) lst
+  lift_info ?info (Boollib.concl_elim_rules_tac ([], simp_concl_elims) lst)
 
 let simp_flatten_tac excluded ?f goal =
-  let basic_flatter ?info =
-    Boollib.elim_rules_tac ?info:info (simp_asm_elims, simp_concl_elims)
+  let basic_flatter g =
+    Boollib.elim_rules_tac (simp_asm_elims, simp_concl_elims) g
   in 
   match f with
     | None -> Boollib.apply_elim_tac basic_flatter ?f goal

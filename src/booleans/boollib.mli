@@ -142,20 +142,20 @@ val eq_sym_rule: Scope.t -> Logic.thm -> Logic.thm
     [ |- y=x ].
 *)
 
-val eq_symA: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+val eq_symA: Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
 *)
 
-val eq_symC: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+val eq_symC: Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
 *)
 
-val eq_sym_tac: ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+val eq_sym_tac: Logic.label -> Tactics.tactic
 (** [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try
     [eq_symC f].
 *)
 
-val eq_tac:  ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
+val eq_tac: ?c:Logic.label -> Tactics.tactic
 (** Prove goals of the form \[A|- x=x{_ c}, C\].  [info] is unchanged.
 *)
 
@@ -357,22 +357,21 @@ val iffE: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
 (**  {5 Eliminating boolean operators}  *)
 
 val direct_alt: 
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list 
-  ->  Tactics.Info.t -> Logic.label -> Tactics.tactic
+  'a -> ('a -> Tactics.tactic) list 
+  -> Tactics.tactic
 (** [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
     pass [info] and [l] to each tactic in [tacs].  **)
 
 val direct_map_some: 
-  (Logic.label -> Tactics.tactic)
-  -> Logic.label list ref -> Logic.label list -> Tactics.tactic
+  ('a -> Tactics.tactic)
+  -> 'a list ref -> 'a list -> Tactics.tactic
 (** [direct_map_some tac lst l]: Directed map_some. Like
     {!Tactics.map_some} but pass [info] and [l] to [tac]. If [tac]
     fails for [l], then [lst:=l::!lst].  **)
 
 val asm_elim_rules_tac:
-  ?info:Tactics.Info.t 
-  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
-      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
+  ((Logic.label -> Tactics.tactic) list
+   * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
 (** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
@@ -383,9 +382,8 @@ val asm_elim_rules_tac:
 *)
 
 val concl_elim_rules_tac:
-  ?info:Tactics.Info.t 
-  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
-      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
+  ((Logic.label -> Tactics.tactic) list
+   * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
@@ -398,31 +396,26 @@ val concl_elim_rules_tac:
 
 
 val elim_rules_tac:
-  ?info:Tactics.Info.t 
-  -> ((Tactics.Info.t -> Logic.label -> Tactics.tactic) list
-      * (Tactics.Info.t -> Logic.label -> Tactics.tactic) list)
+  ((Logic.label -> Tactics.tactic) list
+   * (Logic.label -> Tactics.tactic) list)
   -> Logic.label list -> Logic.label list
   -> Tactics.tactic
 (** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
     elimination rules to all assumptions with a label in [albls] and
     all conclusions with a label in [clbls] and with to all resulting
     assumptions and conclusions. The tag of any new formula for which
-    the elimination rules fails is stored in [?info] (in arbitrary
-    order and may contain duplicates).
+    the elimination rules fails is stored in arbitrary order and may
+    contain duplicates.
 *)
 
 val apply_elim_tac:
-  (?info:Tactics.Info.t 
-   -> Logic.label list -> Logic.label list
+  (Logic.label list -> Logic.label list
    -> Tactics.tactic)
-  -> ?info:Tactics.Info.t 
-  -> ?f:Logic.label
-  -> Tactics.tactic
-(** [apply_elim_tac tac ?info ?f]: Apply elimination tactic [tac] to
-    formula [?f]. If [?f] is not given, use all formulas in the
-    sequent. The tag of any new formula for which the elimination rules
-    fails is stored in [?info] (in arbitrary order and may contain
-    duplicates).
+  -> ?f:Logic.label -> Tactics.tactic
+(** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to formula
+    [?f]. If [?f] is not given, use all formulas in the sequent. The
+    tag of any new formula for which the elimination rules fails is
+    stored in arbitrary order and may contain duplicates.
 
     [apply_elim_tac] is intended to be used to wrap
     {!Boollib.elim_rules_tac}.

@@ -80,10 +80,10 @@ val iffE: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
 *)
 
 val split_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.split_tac} to split assumptions *)
 val split_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.split_tac} to conclusions assumptions *)
 
 val split_asms_tac: 
@@ -118,11 +118,11 @@ val split_tac:
 *)
 
 val flatter_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.flatten_tac} to flatten assumptions.
 *)
 val flatter_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.flatten_tac} to flatten conclusions.
 *)
 
@@ -160,11 +160,11 @@ val flatten_tac:
 *)
 
 val scatter_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.scatter_tac} to scatter assumptions.
 *)
 val scatter_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.scatter_tac} to scatter conclusions.
 *)
 
@@ -184,11 +184,11 @@ val scatter_tac:
 *)
 
 val blast_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.blast_tac}.
 *)
 val blast_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.blast_tac}.
 *)
 

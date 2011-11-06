@@ -327,7 +327,6 @@ let seq rls sq =
     | [] -> raise (error "seq: empty tactic list")
     | tac::xs -> seq_aux xs (tac sq)
 
-
 let (++) tac1 tac2 g = seq [tac1; tac2] g
 
 let alt tacl g = 
@@ -366,8 +365,7 @@ let fold_seq data rls sq =
       | _ -> fold_aux rls data (skip sq)
   end
 
-let (fold:
-       ('a -> 'b -> 'b data_tactic) -> 'a list -> 'b -> 'b data_tactic)
+let (fold: ('a -> 'b -> 'b data_tactic) -> 'a list -> 'b -> 'b data_tactic)
     tac alist b0 goal =
   let apply_fold a b sqs = 
     Logic.Subgoals.apply_fold (tac a) b sqs
@@ -411,11 +409,18 @@ let notify_tac f d tac goal =
   in 
   (f d); ng
 
-let data_tac f tacl g = tacl (f g) g
+let data_tac f tac g = (f g, tac g)
 let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
 let (?>) tacl g = tacl (New.changes g) g
 let update_tac f d g = ((fun _ -> (f d)) g); skip g
+
+let apply_tac data_tac tac g =
+  let (data, br1) = data_tac g
+  in
+  if has_subgoals br1
+  then foreach (tac data) br1
+  else br1 
 
 let rec map_every tac l goal = 
   let rec every_aux ls g =
@@ -430,22 +435,23 @@ let map_first tac l goal =
     match ls with 
       | [] -> fail ~err:(error "map_first: no tactic succeeded.") g
       | x::xs -> 
-	try tac x g
-	with _ -> every_aux xs g
+	(try tac x g 
+         with _ -> every_aux xs g)
   in 
   every_aux l goal
     
-let map_some tac l goal =
-  let nofail_tac l = (tac l // skip)
+let map_some tac lst goal =
+  let nofail_tac l g = (tac l // skip) g
   in 
-  let rec some_aux ls g =
+  let rec some_aux tac ls g =
     match ls with 
       | [] -> fail ~err:(error "map_some: no tactic succeeded.") g
+      | x::[] -> tac x g
       | x::xs ->
-	try (tac x ++ map_every nofail_tac xs) g
-	with _ -> some_aux xs g
+	(try (tac x ++ some_aux nofail_tac xs) g
+	 with _ -> some_aux tac xs g)
   in 
-  some_aux l goal
+  some_aux tac lst goal
 
 let seq_some tacs goal =
   let nofail_tac tac g = (tac // skip) g
@@ -454,8 +460,8 @@ let seq_some tacs goal =
     match ls with 
       | [] -> fail ~err:(Report.error "seq_some: no tactic succeeded.") g
       | x::xs ->
-	try (x ++ map_every nofail_tac xs) g
-	with _ -> some_aux xs g
+	(try (x ++ map_every nofail_tac xs) g
+	 with _ -> some_aux xs g)
   in 
   some_aux tacs goal
 

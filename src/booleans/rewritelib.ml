@@ -84,10 +84,9 @@ struct
   let map_sym_tac ret rules goal = 
     let scp = scope_of goal in 
     let asm_fn l g = 
-      let info = info_make() in 
       try 
-	let g2 = eq_symA ~info:info l g in 
-	let nl = Lib.get_one (aformulas info)
+	let g2 = eq_symA l g in 
+	let nl = Lib.get_one (New.aformulas (New.branch_changes g2))
 	  (error "Rewriter.map_sym_tac: Invalid assumption")
 	in 
 	(ftag nl, g2)

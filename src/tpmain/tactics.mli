@@ -405,15 +405,16 @@ val (!!): ('a -> unit) -> 'a -> tactic
 *)
 ****)
 
-val data_tac: (Logic.node -> 'a) -> ('a -> tactic) -> tactic
-(** [data_tac f tac g]: Apply a tactic after extracting data from a goal.
-    Forms [tac (f g) g].
-*)
 
+val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
+(** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
+
+(***
 val (>>): (Logic.node -> 'a) -> ('a -> tactic) -> tactic
 (** [(f >> tac) g]: Infix notation for data_tac.  Apply a tactic after
     extracting the change data from a goal. Forms [tac (changes g) g].
 *)
+***)
 
 val query_tac: (Changes.t -> tactic) -> tactic
 (** [query_tac tac g]: Apply a tactic after extracting the change
@@ -423,6 +424,11 @@ val query_tac: (Changes.t -> tactic) -> tactic
 val (?>): (Changes.t -> tactic) -> tactic
 (** ?>tac g]: Prefix notation for [query_tac]. Apply a tactic after
     extracting the change data from a goal. Forms [tac (changes g) g].
+*)
+
+val apply_tac: ('a)data_tactic -> ('a -> tactic) -> tactic
+(** [query_tac tac g]: Apply a tactic after extracting the change
+    data from a goal. Forms [tac (changes g) g].
 *)
 
 val update_tac: ('a -> unit) -> 'a -> tactic

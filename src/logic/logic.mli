@@ -580,6 +580,7 @@ val rotate_subgoals_right: int -> goal -> goal
     lists of subgoals (all of which are based around
     {!Logic.Subgoals.apply}).
 *)
+
 module Subgoals:
 sig
   

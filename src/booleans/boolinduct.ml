@@ -37,21 +37,16 @@ open Rewritelib
     [trueC], [implC] and [allC]
 *)
 let mini_scatter_tac ?info c goal =
-  let asm_rules = [ (fun inf l -> falseA ~a:l) ] in 
+  let asm_rules = [ (fun l -> falseA ~a:l) ] in 
   let concl_rules =
     [
-      (fun inf l -> Tactics.trueC ~c:l);
-      (fun inf l -> lift_info ~info:inf (Tactics.conjC ~c:l))
-
-(**
-      (fun inf l -> (Tactics.conjC ~c:l 
-                     ++ changes_to_info_tac ~info:inf))
-**)
+      (fun l -> Tactics.trueC ~c:l);
+      (fun l -> Tactics.conjC ~c:l)
     ]
   in 
-  let main_tac ?info = elim_rules_tac ?info (asm_rules, concl_rules)
+  let main_tac ?info = elim_rules_tac (asm_rules, concl_rules)
   in 
-  apply_elim_tac main_tac ?info ~f:c goal
+  apply_elim_tac main_tac ~f:c goal
 
 (** [mini_mp_tac ?info asm1 asm2 goal]: Apply modus ponens to [asm1 =
     A => C] and [asm2 = A] to get [asm3 = C].  info: aformulas=[asm3];

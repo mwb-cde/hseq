@@ -139,29 +139,29 @@ let eq_sym_rule scp thm=
   in 
   Tactics.pure_rewrite_rule plan scp thm
 
-let eq_symA ?info a goal =
+let eq_symA a goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (atag, form) = get_tagged_asm a goal in 
   let term = Formula.term_of form in 
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
   in 
-  lift_info ?info (Tactics.pure_rewriteA plan (ftag atag)) goal
+  Tactics.pure_rewriteA plan (ftag atag) goal
 
-let eq_symC ?info c goal =
+let eq_symC c goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (ctag, form) = (get_tagged_concl c goal) in 
   let term = Formula.term_of form in 
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
   in 
-  lift_info ?info (Tactics.pure_rewriteC plan (ftag ctag)) goal
+  Tactics.pure_rewriteC plan (ftag ctag) goal
     
-let eq_sym_tac ?info f goal = 
-  try eq_symA ?info f goal
-  with Not_found -> eq_symC ?info f goal
+let eq_sym_tac f goal = 
+  try eq_symA f goal
+  with Not_found -> eq_symC f goal
 
-let eq_tac ?info ?c goal = 
+let eq_tac ?c goal = 
   let th = 
     try thm (Lterm.base_thy ^ ".eq_refl")
     with Not_found -> 
@@ -186,16 +186,15 @@ let eq_tac ?info ?c goal =
 
 (*** Eliminating boolean operators ***)
 
-(** [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
-    pass [info] and [l] to each tactic in [tacs].  **)
-let direct_alt tacl info l g =
-  let rec alt_aux ts =
+(** [direct_alt lbl tacs]: Directed alt. Like {!Tactics.alt} but
+    pass [lbl] to each tactic in [tacs].  **)
+let direct_alt lbl tacl goal =
+  let rec alt_aux ts g = 
     match ts with
-      | [] -> raise (error "direct_alt: no successful tactic")
-      | tac::tacs ->
-	try tac info l g
-	with _ -> alt_aux tacs
-  in alt_aux tacl 
+      | [] -> raise (Failure "direct_alt: no successful tactic")
+      | tac::rest ->
+	(try tac lbl g with _ -> alt_aux rest g)
+  in alt_aux tacl goal
 
 (** [direct_map_some tac lst l]: Directed map_some. Like
     {!Tactics.map_som} but pass [info] and [l] to [tac]. If [tac] fails
@@ -212,7 +211,7 @@ let direct_map_some tac lst l goal =
   in 
   some_aux l goal
 
-let new_direct_map_some tac lst l goal =
+let new_direct_map_some tac lst goal =
   let app lbl (flag, fail_list) node =
     try 
       let branch1 = tac lbl node
@@ -230,118 +229,165 @@ let new_direct_map_some tac lst l goal =
             fail ~err:(error "direct_map_some: no tactic suceeded") goal)
       else (fail_list, branch)
 
-(** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
-    rules to assumption [f] and to all resulting assumptions and
+let try_tac tac g =
+  try (true, tac g)
+  with _ -> (false, tac g)
+
+let swap_pair data = 
+  match data with 
+    | (a, (b, c)) -> ((a, b), c)
+
+(** [asm_elim_rules (arules, crules) f goal]: Apply elimination rules
+    to assumption [f] and to all resulting assumptions and
     conclusions. Assumptions are eliminated with [arules], conclusions
-    with [crules]. Any new tag which can't be eliminated is stored in
-    [?info] (in arbitrary order).
+    with [crules]. Any new tag which can't be eliminated is recorded
+    (in arbitrary order).
 *)
-let rec asm_elim_rules_tac ?info rules lbl goal =
-  let (arules, _) = rules
-  and inf = info_make()
-  and alst = ref []
-  and clst = ref []
-  in 
-  seq
-    [ 
-      (* Try to elminate the operator. *)
-      direct_alt arules inf lbl;
-      (* Eliminate new assumptions and conclusions. *)
-      (fun g -> 
-	let albls = List.map ftag (aformulas inf)
-	and clbls = List.map ftag (cformulas inf)
-	and sqnt = sequent g
-	in 
-	seq
-	  [
-	    (* Eliminate assumptions, saving failing labels. *)
-	    alt
-	      [ 
-	        direct_map_some (asm_elim_rules_tac ?info rules) alst albls;
-	        skip
-	      ];
-	    (* Eliminate conclusions, saving failing labels. *)
-	    alt
-	      [ 
-	        direct_map_some (concl_elim_rules_tac ?info rules) clst clbls;
-	        skip
-	      ];
-	    (* Save failing labels and any other information. *)
-            set_info_tac ?info
-	      (subgoals inf, 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!alst)), 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)
-                 (List.rev (!clst)), 
-	       constants inf)
-
-	  ] g)
-    ] goal
+let rec asm_elim_rules_tac rules lbl goal = 
+  base_asm_elim_rules_tac rules [lbl] goal
 (** [concl_elim_rules ?info (arules, crules) f goal]: Apply
-    elimination rules to conclusion [f] and to all resulting
-    assumptions and conclusions. Assumptions are eliminated with
-    [arules], conclusions with [crules]. The tag of any new
-    formula for which the elimination rules fails is stored in
-    [?info] (in arbitrary order).  *)
-and concl_elim_rules_tac ?info rules lbl goal =
-  let (_, crules) = rules
-  and inf = info_make()
-  and alst = ref []
-  and clst = ref []
-  in 
-  seq
-    [ 
-      (* Try to elminate the operator. *)
-      direct_alt crules inf lbl;
-      (* Eliminate new assumptions and conclusions. *)
-      (fun g -> 
-	let albls = List.map ftag (aformulas inf)
-	and clbls = List.map ftag (cformulas inf)
-	and sqnt = sequent g
-	in 
-	seq
-	  [
-	    (* Eliminate conclusions, saving failing labels. *)
-	    alt
-	      [ 
-	        direct_map_some (concl_elim_rules_tac ?info rules) clst clbls;
-	        skip
-	      ];
-	    (* Eliminate assumptions, saving failing labels. *)
-	    alt
-	      [ 
-	        direct_map_some (asm_elim_rules_tac ?info rules) alst albls;
-	        skip
-	      ];
-	    (* Save failing labels and any other information. *)
-            set_info_tac ?info
-	      (subgoals inf, 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!alst)), 
-	       List.map 
-		 (fun x -> Logic.label_to_tag x sqnt)  
-                 (List.rev (!clst)), 
-	       constants inf)
+   elimination rules to conclusion [f] and to all resulting
+   assumptions and conclusions. Assumptions are eliminated with
+   [arules], conclusions with [crules]. The tag of any new
+   formula for which the elimination rules fails is stored in
+   [?info] (in arbitrary order).  *)
+and concl_elim_rules_tac rules lbl goal = 
+  base_concl_elim_rules_tac rules [lbl] goal
+and formulas inf = (List.map ftag (New.aformulas inf), 
+                    List.map ftag (New.cformulas inf))
+and asms_tac rules lbls g = 
+  try new_direct_map_some (asm_elim_rules_tac rules) lbls g
+  with _ -> ([], skip g)
+and concls_tac rules lbls g = 
+  try new_direct_map_some (concl_elim_rules_tac rules) lbls g
+  with _ -> ([], skip g)
+and info_tac alst clst = 
+  (?> fun info g -> 
+    let chngs = 
+      let sqnt = sequent g in
+      Changes.make (New.subgoals info)
+	(List.map (fun x -> Logic.label_to_tag x sqnt)  
+           (List.rev alst))
+	(List.map (fun x -> Logic.label_to_tag x sqnt)
+           (List.rev clst))
+	(New.constants info)
+    in
+    set_changes_tac chngs g)
+and plain_asm_elim_rules_tac (arules, _) lbl_list goal = 
+  let try_arule_tac flist lbl g = 
+    try ((true, flist), direct_alt lbl arules g)
+    with _ -> 
+      let sqnt = sequent g in
+      ((false, (Logic.label_to_tag lbl sqnt)::flist), 
+       (?> fun inf g1 ->
+         let chngs = Changes.make (New.subgoals inf)
+           [] (New.cformulas inf) (New.constants inf) 
+         in
+         set_changes_tac chngs g1) g)
+  in
+  let rec asm_tac (flag, flist) lbls g =
+    match lbls with
+      | [] -> 
+        if not flag
+        then fail ~err:(error "asm_elim_rules_tac: No tactic suceeded.") g
+        else
+          (?> fun inf g1 -> 
+            let chngs = Changes.make (New.subgoals inf)
+              flist (New.cformulas inf) (New.constants inf) 
+            in
+            set_changes_tac chngs g1) g
+      | lbl::rest ->
+        (?> fun inf1 ->
+          apply_tac (try_arule_tac flist lbl)
+          (fun (flag1, flist1) g1 -> (?> fun inf2 g2 -> 
+            let albls = List.map ftag (New.aformulas inf2) in
+            let chngs = Changes.make (New.subgoals inf2)
+              [] (New.cformulas inf2) (New.constants inf2)
+            in
+            let lbls1 = List.rev_append albls rest 
+            and chngs2 = Changes.rev_append chngs inf1 in
+            (set_changes_tac chngs2 ++
+               asm_tac (flag1 or flag, flist1) lbls1) g2) g1)) g
+  in
+  asm_tac (false, []) lbl_list goal
+and base_asm_elim_rules_tac rules lbl_list goal = 
+  seq [
+    plain_asm_elim_rules_tac rules lbl_list ;
+    (?> fun info g ->
+      (* Extract failing assumptions and eliminate new
+         conclusions. *)
+      let concls = List.map ftag (New.cformulas info) 
+      and asm_fails = New.aformulas info 
+      in
+      seq [
+        (base_concl_elim_rules_tac rules concls // skip);
+        (* Form final change record. *)
+        (?> fun info1 g1 ->
+          let chngs = Changes.make (New.subgoals info1)
+            (List.rev_append asm_fails (New.aformulas info1))
+            (New.cformulas info1) (New.constants info1)
+          in
+          set_changes_tac chngs g1)
+      ] g)
+  ] goal
+and base_concl_elim_rules_tac rules lbl_list goal = 
+  seq [
+    plain_concl_elim_rules_tac rules lbl_list ;
+    (?> fun info g ->
+      (* Extract failing conclusions and eliminate new assumptions. *)
+      let asms = List.map ftag (New.aformulas info) 
+      and concl_fails = New.cformulas info 
+      in
+      seq [
+        (base_asm_elim_rules_tac rules asms // skip);
+        (* Form final change record. *)
+        (?> fun info1 g1 ->
+          let chngs = Changes.make (New.subgoals info1)
+            (New.aformulas info1)
+            (List.rev_append concl_fails (New.cformulas info1))
+            (New.constants info1)
+          in
+          set_changes_tac chngs g1)
+      ] g)
+  ] goal
 
-(****
-            (fun g1 -> 
-	      update_tac (info_set info)
-	        (subgoals inf, 
-	         List.map 
-		   (fun x -> Logic.label_to_tag x sqnt)  
-                   (List.rev (!alst)), 
-	         List.map 
-		   (fun x -> Logic.label_to_tag x sqnt)  
-                   (List.rev (!clst)), 
-	         constants inf)
-                g1)
-****)
-	  ] g)
-    ] goal
-
+and plain_concl_elim_rules_tac (_, crules) lbl_list goal = 
+  let try_crule_tac flist lbl g = 
+    try ((true, flist), direct_alt lbl crules g)
+    with _ -> 
+      let sqnt = sequent g in
+      ((false, (Logic.label_to_tag lbl sqnt)::flist), 
+       (?> fun inf g1 ->
+         let chngs = Changes.make (New.subgoals inf)
+           (New.aformulas inf) [] (New.constants inf) 
+         in
+         set_changes_tac chngs g1) g)
+  in
+  let rec concl_tac (flag, flist) lbls g =
+    match lbls with
+      | [] -> 
+        if not flag
+        then fail ~err:(error "concl_elim_rules_tac: No tactic suceeded.") g
+        else
+          (?> fun inf g1 -> 
+            let chngs = Changes.make (New.subgoals inf)
+              (New.aformulas inf) flist (New.constants inf) 
+            in
+            set_changes_tac chngs g1) g
+      | lbl::rest ->
+        (?> fun inf1 ->
+          apply_tac (try_crule_tac flist lbl)
+          (fun (flag1, flist1) g1 -> (?> fun inf2 g2 -> 
+            let clbls = List.map ftag (New.cformulas inf2) in
+            let chngs = Changes.make (New.subgoals inf2)
+              (New.aformulas inf2) [] (New.constants inf2)
+            in
+            let lbls1 = List.rev_append clbls rest 
+            and chngs2 = Changes.rev_append chngs inf1 in
+            (set_changes_tac chngs2 ++
+               concl_tac (flag1 or flag, flist1) lbls1) g2) g1)) g
+  in
+  concl_tac (false, []) lbl_list goal
 (** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
     elimination rules to all assumptions with a label in [albls] and
     all conclusions with a label in [clbls] and to all resulting
@@ -349,46 +395,37 @@ and concl_elim_rules_tac ?info rules lbl goal =
     the elimination rules fails is stored in [?info] (in arbitrary
     order).
 *)
-let elim_rules_tac ?info rules albls clbls =
-  match albls with 
-    | [] -> map_some (concl_elim_rules_tac ?info rules) clbls
-    | _ ->
-      let chng = ref false in 
-      let notify_chng _ = chng := true in
-      let tac g =
-	seq
-	  [
-	    alt 
-	      [
-	        (fun g1 -> 
-                  notify_tac notify_chng ()
-		    (map_some (asm_elim_rules_tac ?info rules) albls) g1);
-	        skip
-	      ];
-	    alt 
-	      [ 
-                (fun g1 -> 
-	          notify_tac notify_chng ()
-		    (map_some (concl_elim_rules_tac ?info rules) clbls) g1); 
-	        skip 
-	      ]
-	  ] g
-      in 
-      restrict (fun _ -> !chng) tac
 
-(** [apply_elim_tac tac ?info ?f]: Apply elimination tactic [tac] to
+let elim_rules_tac rules albls clbls g =
+  if (albls != [])
+  then
+    apply_tac
+      (try_tac (map_some (asm_elim_rules_tac rules) albls))
+      (fun good g1->
+        try map_some (concl_elim_rules_tac rules) clbls g1
+        with _ -> 
+          if good 
+          then skip g1 
+          else (fail ~err:(error "elim_rules_tac") g1)) g
+  else
+    try map_some (concl_elim_rules_tac rules) clbls g
+    with _ -> fail ~err:(error "elim_rules_tac") g
+
+
+(** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
     formula [?f]. If [?f] is not given, use all formulas in the
     sequent. The tag of any new formula for which the elimination rules
-    fails is stored in [?info] (in arbitrary order).
+    fails is recorded in arbitrary order.
 
     [apply_elim_tac] is a wrapper for [elim_rules_tac].
 *)
-let apply_elim_tac tac ?info ?f goal =
+let apply_elim_tac tac ?f goal =
   let sqnt = sequent goal in 
   let alst, clst = 
     match f with 
       | None -> 
-        let get_formula_ftag x = ftag (drop_formula x) in
+        let get_formula_ftag x = ftag (drop_formula x) 
+        in
 	(List.map get_formula_ftag (asms_of sqnt), 
 	 List.map get_formula_ftag (concls_of sqnt))
       | Some(x) ->
@@ -398,4 +435,4 @@ let apply_elim_tac tac ?info ?f goal =
 	    | _ -> ([x], [])
         end
   in 
-  tac ?info alst clst goal
+  tac alst clst goal
