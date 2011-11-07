@@ -548,7 +548,7 @@ let exists_unique_simp =
      ++ beta_tac ++ replace_tac
      ++ simp_tac [exists_simp]
      ++ equals_tac ++ blast_tac 
-    ++ simp
+     ++ (back_tac // skip) ++ simp
  ];;
 
 (** Epsilon (choice) *)
