@@ -725,6 +725,9 @@ val basic:
     alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.
 *)
 
+val unify_engine_tac: 
+  (Tag.t * Formula.t) -> (Tag.t * Formula.t) -> Logic.tactic
+
 val unify_tac: 
   ?a:Logic.label -> ?c:Logic.label -> Logic.tactic
 (** [unify_tac a c g]: Try to unify assumption [a] with conclusion

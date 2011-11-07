@@ -803,7 +803,7 @@ let unify_engine_tac (atg, aform) (ctg, cform) goal =
   let asm = Formula.term_of aform
   and concl = Formula.term_of cform
   in 
-  let asm_vars, asm_body =  Term.strip_qnt Basic.All asm
+  let asm_vars, asm_body = Term.strip_qnt Basic.All asm
   and concl_vars, concl_body = Term.strip_qnt Basic.Ex concl
   in 
   let asm_varp x = Rewrite.is_free_binder asm_vars x
@@ -825,13 +825,34 @@ let unify_engine_tac (atg, aform) (ctg, cform) goal =
 	  with _ -> raise (error "Can't unify formulas")
   in 
   let asm_consts = extract_consts asm_vars env1
-  in 
+  and concl_consts = extract_consts concl_vars env1
+  in
+  let inst_asms g = 
+    if asm_consts = [] 
+    then skip g
+    else instA ~a:albl asm_consts g
+  and inst_concls g = 
+    if concl_consts = []
+    then skip g
+    else instC ~c:clbl concl_consts g
+  in
   seq [
-    instA ~a:albl asm_consts;
-    (?> fun info1 ->
-      let albl1 = ftag (get_one (New.aformulas info1))
-      in
-      basic ~a:albl1 ~c:clbl)
+    (* Instantiate assumption. *)
+    inst_asms;
+    (* Instantiate conclusion *)
+    (?> fun inf1 g1 ->
+      (inst_concls ++
+         (?> fun inf2 g2 ->
+           let albl1 = 
+             if asm_consts = [] 
+             then albl
+             else ftag (get_one (New.aformulas inf1))
+           and clbl1 = 
+             if concl_consts = []
+             then clbl 
+             else ftag (get_one (New.cformulas inf2))
+           in
+           basic ~a:albl1 ~c:clbl1 g2)) g1)
   ] goal
     
 let unify_tac ?a ?c goal =
