@@ -237,12 +237,11 @@ let new_direct_map_some tac lst goal =
 *)
 let rec asm_elim_rules_tac rules lbl goal = 
   base_asm_elim_rules_tac rules [lbl] goal
-(** [concl_elim_rules ?info (arules, crules) f goal]: Apply
-   elimination rules to conclusion [f] and to all resulting
-   assumptions and conclusions. Assumptions are eliminated with
-   [arules], conclusions with [crules]. The tag of any new
-   formula for which the elimination rules fails is stored in
-   [?info] (in arbitrary order).  *)
+(** [concl_elim_rules (arules, crules) f goal]: Apply elimination
+    rules to conclusion [f] and to all resulting assumptions and
+    conclusions. Assumptions are eliminated with [arules], conclusions
+    with [crules]. The tag of any new formula for which the elimination
+    rules fails is stored in arbitrary order.  *)
 and concl_elim_rules_tac rules lbl goal = 
   base_concl_elim_rules_tac rules [lbl] goal
 and formulas inf = (List.map ftag (New.aformulas inf), 
@@ -371,14 +370,12 @@ and base_concl_elim_rules_tac rules lbl_list goal =
       ] g)
   ] goal
 
-(** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
-    elimination rules to all assumptions with a label in [albls] and
-    all conclusions with a label in [clbls] and to all resulting
+(** [elim_rules_tac (arules, crules) albls clbls]: Apply elimination
+    rules to all assumptions with a label in [albls] and all
+    conclusions with a label in [clbls] and to all resulting
     assumptions and conclusions. The tag of any new formula for which
-    the elimination rules fails is stored in [?info] (in arbitrary
-    order).
+    the elimination rules fails is stored in arbitrary order.
 *)
-
 let elim_rules_tac rules albls clbls g =
   if (albls != [])
   then

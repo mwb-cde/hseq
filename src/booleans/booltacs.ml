@@ -44,7 +44,7 @@ let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
 
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
-let iffA ?info ?a goal = 
+let iffA ?a goal = 
   let af = first_asm_label a is_iff goal in 
   let sqnt = Tactics.sequent goal in 
   let (t, f) = 
@@ -56,7 +56,7 @@ let iffA ?info ?a goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        lift_info ?info (Tactics.conjA ~a:(ftag t));
+        Tactics.conjA ~a:(ftag t);
       ] goal
 
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
@@ -71,7 +71,7 @@ let iffA ?info ?a goal =
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 **)
 
-let iffC ?info ?c goal = 
+let iffC ?c goal = 
   let cf = first_concl_label c is_iff goal in 
   let sqnt=sequent goal in 
   let (t, f) =
@@ -83,7 +83,7 @@ let iffC ?info ?c goal =
     seq 
       [
         rewrite_tac [iff_def()] ~f:(ftag t);
-        lift_info ?info (Tactics.conjC ~c:(ftag t));
+        Tactics.conjC ~c:(ftag t);
       ] goal
 
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
