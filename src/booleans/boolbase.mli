@@ -124,8 +124,7 @@ val concl_elim_rules_tac:
 *)
 
 val plain_concl_elim_rules_tac:
-  ((Logic.label -> Tactics.tactic) list
-   * (Logic.label -> Tactics.tactic) list)
+  (Logic.label -> Tactics.tactic) list
   -> Logic.label list
   -> Tactics.tactic
 val base_concl_elim_rules_tac:
@@ -135,8 +134,7 @@ val base_concl_elim_rules_tac:
   -> Tactics.tactic
 
 val plain_asm_elim_rules_tac:
-  ((Logic.label -> Tactics.tactic) list
-   * (Logic.label -> Tactics.tactic) list)
+  (Logic.label -> Tactics.tactic) list
   -> Logic.label list
   -> Tactics.tactic
 val base_asm_elim_rules_tac:

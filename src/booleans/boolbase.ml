@@ -247,14 +247,14 @@ and concl_elim_rules_tac rules lbl goal =
   base_concl_elim_rules_tac rules [lbl] goal
 and formulas inf = (List.map ftag (New.aformulas inf), 
                     List.map ftag (New.cformulas inf))
-and plain_asm_elim_rules_tac (arules, _) lbl_list goal = 
+and plain_asm_elim_rules_tac arules lbl_list goal = 
   (* Try to apply one of the rules, making an empty change record on
      failure. *)
   let try_arule_tac flist lbl g = 
     try ((true, flist), direct_alt lbl arules g)
     with _ -> 
       let sqnt = sequent g in
-      ((false, (Logic.label_to_tag lbl sqnt)::flist), 
+      ((false, (Logic.label_to_tag lbl sqnt)::flist),
        set_changes_tac (Changes.empty()) g)
   in
   (* Iterate through the labels, try to apply one of the rules. New
@@ -265,8 +265,8 @@ and plain_asm_elim_rules_tac (arules, _) lbl_list goal =
         if not flag
         then fail ~err:(error "asm_elim_rules_tac: No tactic suceeded.") g
         else 
-          let chngs1 = Changes.make (New.subgoals chngs)
-            flist (New.cformulas chngs) (New.constants chngs) 
+          let chngs1 = (Changes.make (New.subgoals chngs)
+                          flist (New.cformulas chngs) (New.constants chngs))
           in
           set_changes_tac chngs1 g
       | lbl::rest ->
@@ -274,20 +274,24 @@ and plain_asm_elim_rules_tac (arules, _) lbl_list goal =
           (fun (flag1, flist1) -> (?> fun inf2 g2 -> 
             let albls = List.map ftag (New.aformulas inf2) 
             and chngs1 = 
-              Changes.make (New.subgoals inf2)
-                [] (New.cformulas inf2) (New.constants inf2)
+              Changes.rev_append
+                (Changes.make 
+                   (New.subgoals inf2)
+                   [] (New.cformulas inf2) 
+                   (New.constants inf2))
+                chngs
             in
             let albls1 = List.rev_append albls rest 
-            and chngs2 = Changes.rev_append chngs1 chngs
             in
-            asm_tac (flag1 or flag, flist1, chngs2) albls1 g2)) g
+            asm_tac ((flag1 or flag), flist1, chngs1) albls1 g2)) g
   in
   asm_tac (false, [], Changes.empty()) lbl_list goal
 (* Iterate through the labels trying to apply one of the rules then
    eliminate any resulting conclusions. *)
 and base_asm_elim_rules_tac rules lbl_list goal = 
+  let (arules, _) = rules in
   seq [
-    plain_asm_elim_rules_tac rules lbl_list ;
+    plain_asm_elim_rules_tac arules lbl_list ;
     (?> fun info g ->
       (* Extract failing assumptions and eliminate new
          conclusions. *)
@@ -305,30 +309,10 @@ and base_asm_elim_rules_tac rules lbl_list goal =
           set_changes_tac chngs g1)
       ] g)
   ] goal
+
 (* Iterate through the labels trying to apply one of the rules then
    eliminate any resulting assumptions. *)
-and base_concl_elim_rules_tac rules lbl_list goal = 
-  seq [
-    plain_concl_elim_rules_tac rules lbl_list ;
-    (?> fun info g ->
-      (* Extract failing conclusions and eliminate new assumptions. *)
-      let asms = List.map ftag (New.aformulas info) 
-      and concl_fails = New.cformulas info 
-      in
-      seq [
-        (base_asm_elim_rules_tac rules asms // skip);
-        (* Form final change record. *)
-        (?> fun info1 g1 ->
-          let chngs = Changes.make (New.subgoals info1)
-            (New.aformulas info1)
-            (List.rev_append concl_fails (New.cformulas info1))
-            (New.constants info1)
-          in
-          set_changes_tac chngs g1)
-      ] g)
-  ] goal
-
-and plain_concl_elim_rules_tac (_, crules) lbl_list goal = 
+and plain_concl_elim_rules_tac crules lbl_list goal = 
   (* Try to apply one of the rules, making an empty change record on
      failure. *)
   let try_crule_tac flist lbl g = 
@@ -354,15 +338,39 @@ and plain_concl_elim_rules_tac (_, crules) lbl_list goal =
         apply_tac (try_crule_tac flist lbl)
           (fun (flag1, flist1) -> (?> fun inf2 g2 -> 
             let clbls = List.map ftag (New.cformulas inf2) 
-            and chngs1 = Changes.make (New.subgoals inf2)
-              (New.aformulas inf2) [] (New.constants inf2)
+            and chngs1 = 
+              Changes.rev_append 
+                (Changes.make (New.subgoals inf2)
+                   (New.aformulas inf2) [] (New.constants inf2))
+                chngs
             in
             let clbls1 = List.rev_append clbls rest 
-            and chngs2 = Changes.rev_append chngs1 chngs 
             in
-            concl_tac (flag1 or flag, flist1, chngs2) clbls1 g2)) g
+            concl_tac (flag1 or flag, flist1, chngs1) clbls1 g2)) g
   in
   concl_tac (false, [], Changes.empty()) lbl_list goal
+and base_concl_elim_rules_tac rules lbl_list goal = 
+  let (_, crules) = rules in
+  seq [
+    plain_concl_elim_rules_tac crules lbl_list ;
+    (?> fun info g ->
+      (* Extract failing conclusions and eliminate new assumptions. *)
+      let asms = List.map ftag (New.aformulas info) 
+      and concl_fails = New.cformulas info 
+      in
+      seq [
+        (base_asm_elim_rules_tac rules asms // skip);
+        (* Form final change record. *)
+        (?> fun info1 g1 ->
+          let chngs = Changes.make (New.subgoals info1)
+            (New.aformulas info1)
+            (List.rev_append concl_fails (New.cformulas info1))
+            (New.constants info1)
+          in
+          set_changes_tac chngs g1)
+      ] g)
+  ] goal
+
 (** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
     elimination rules to all assumptions with a label in [albls] and
     all conclusions with a label in [clbls] and to all resulting

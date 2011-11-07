@@ -351,20 +351,16 @@ let fold_seq data rls sq =
   let rec fold_aux fs d sqs =
     match fs with 
       | [] -> (d, sqs)
-      | r::rs ->
+      | tac::rest ->
 	if has_subgoals sqs
 	then 
-          let (d1, sqs1) = Logic.Subgoals.apply_fold r d sqs
+          let (d1, sqs1) = Logic.Subgoals.apply_fold tac d sqs
           in
-          fold_aux rs d1 sqs1
+          fold_aux rest d1 sqs1
 	else 
           (d, sqs)
   in 
-  begin
-    match rls with
-      | [] -> raise (error "seq: empty tactic list")
-      | _ -> fold_aux rls data (skip sq)
-  end
+  fold_aux rls data (Logic.Tactics.skip sq)
 
 let (fold: ('a -> 'b -> 'b data_tactic) -> 'a list -> 'b -> 'b data_tactic)
     tac alist b0 goal =

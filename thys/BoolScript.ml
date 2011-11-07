@@ -324,6 +324,7 @@ theorem "exists_implies"
       match_concl << ?x: not (_P1 x) >>
 	(fun l -> inst_tac [ << _x >> ] ~f:l)
       ++ flatten_tac ++ basic; 
+
       match_concl << ?x: (_Q1 x) >>
 	(fun l -> inst_tac [ << _x >> ] ~f:l) ++ basic;
       match_concl << ?x:  (_P1 x) => X>>
