@@ -302,9 +302,10 @@ let foreach tac br =
     change record of the node. *)
 
 let skip g = 
-  let chngs = New.changes g 
-  in
-  New.set_changes chngs (Logic.Tactics.skip g)
+  Logic.Tactics.skip g
+
+let pass g = 
+  set_changes_tac (Changes.empty()) g
 
 let fail ?err sq = 
   match err with 

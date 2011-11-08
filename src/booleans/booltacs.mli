@@ -214,8 +214,8 @@ val blast_tac:
 val cases_thm: unit -> Logic.thm
 (** [cases_thm]: |- !P: (~P) | P *)
 
-val cases_tac: ?info:Tactics.Info.t -> Basic.term -> Tactics.tactic
-(** [cases_tac ?info x g]: Cases tactic.
+val cases_tac: Basic.term -> Tactics.tactic
+(** [cases_tac x g]: Cases tactic.
 
     Add formula [x] to assumptions of [g] and create new subgoal in
     which to prove [x].
@@ -232,16 +232,14 @@ val cases_tac: ?info:Tactics.Info.t -> Basic.term -> Tactics.tactic
 *)
 
 val show_tac: 
-  ?info:Tactics.Info.t
-  -> Basic.term -> Tactics.tactic -> Tactics.tactic
+  Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
 val show: 
-  ?info:Tactics.Info.t
-  -> Basic.term -> Tactics.tactic -> Tactics.tactic
+  Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
     introduces [trm] as the conclusion of a new subgoal.
@@ -249,12 +247,10 @@ val show:
     {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
 
-
 val cases_of: 
-  ?info:Tactics.Info.t 
-  -> ?thm:Logic.thm -> Basic.term 
+  ?thm:Logic.thm -> Basic.term 
   -> Tactics.tactic
-(** [cases_of ?info ?thm trm]: Try to introduce a case split based on
+(** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
     theorem. If [thm] is not given, the theorem named ["T_cases"] is
     used, where [T] is the name of the type of [trm].

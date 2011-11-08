@@ -386,7 +386,12 @@ val foreach: tactic -> Logic.branch -> Logic.branch
 (** [foreach tac br]: Apply [tac] to each subgoal of branch [br]. *)
 
 val skip: tactic
-(** The tactic that does nothing. Alway succeeds. *)
+(** The tactic that does nothing. Alway succeeds. Preserves the
+    incoming change record. *)
+
+val pass: tactic
+(** The tactic that does nothing. Alway succeeds. Clears the
+    change record. *)
 
 val fail: ?err:exn -> tactic
 (** The tactic that always fails. Raises [Failure] or [?err] if given. *)

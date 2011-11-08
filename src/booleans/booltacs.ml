@@ -281,63 +281,56 @@ let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
 let set_info dst (sgs, afs, cfs, cnsts) = 
   Tactics.info_add dst sgs afs cfs cnsts
 
-let cases_tac ?info (t:Basic.term) = 
+let cases_tac (t:Basic.term) = 
   let thm = cases_thm() in
   seq 
     [
       cut thm;
-      (?> fun inf1 g -> 
-        let thm_tag = get_one ~msg:"cases_tac 1" (New.aformulas inf1)
-        in 
+      (?> fun inf g -> 
+        let thm_tag = get_one ~msg:"cases_tac 1" (New.aformulas inf) in 
         allA t ~a:(ftag thm_tag) g);
-      (?> fun inf1 g -> 
-        let thm_tag = get_one ~msg:"cases_tac 2" (New.aformulas inf1)
-        in 
+      (?> fun inf g -> 
+        let thm_tag = get_one ~msg:"cases_tac 2" (New.aformulas inf) in 
         disjA ~a:(ftag thm_tag) g)
       --
         [
-	  (?> fun inf1 g ->
+	  (?> fun inf1 g1 ->
 	    let asm_tag = get_one ~msg:"cases_tac 3" (New.aformulas inf1)
 	    and lgoal, rgoal = get_two ~msg:"cases_tac 4" (New.subgoals inf1)
 	    in 
-	    seq
-	      [
-	        negA ~a:(ftag asm_tag);
-	        (?> fun inf1 g1 -> 
-	          let nasm_tag = get_one ~msg:"cases_tac 5" (New.cformulas inf1)
-	          in 
-                  set_info_tac ?info
-		    ([lgoal; rgoal], [nasm_tag], [nasm_tag], []) g1)
-	      ] g);
+            (negA ~a:(ftag asm_tag) ++
+	       (?> fun inf2 g2 -> 
+	         let nasm_tag = get_one ~msg:"cases_tac 5" (New.cformulas inf1)
+                 in
+                 set_changes_tac 
+                   (Changes.make [lgoal; rgoal] [nasm_tag] [nasm_tag] []) g2))
+	      g1);
 	  skip
         ]
     ]
 
-let show_tac ?info (trm:Basic.term) tac = 
-  let thm = cases_thm()
-  in 
+let show_tac (trm: Basic.term) tac = 
+  let thm = cases_thm() in 
   seq 
     [
       cut thm;
-      (?> fun inf1 g -> 
-        let thm_tag = get_one ~msg:"show_tac 1" (New.aformulas inf1)
-        in 
-        allA trm ~a:(ftag thm_tag) g);
-      (?> fun inf1 g -> 
-        let thm_tag = get_one ~msg:"show_tac 2" (New.aformulas inf1)
-        in 
-        lift_info (disjA ~a:(ftag thm_tag)) g)
+      (?> fun inf1 g1 -> 
+        let thm_tag = get_one ~msg:"show_tac 1" (New.aformulas inf1) in 
+        allA trm ~a:(ftag thm_tag) g1);
+      (?> fun inf1 g1 -> 
+        let thm_tag = get_one ~msg:"show_tac 2" (New.aformulas inf1) in 
+        lift_info (disjA ~a:(ftag thm_tag)) g1)
       --
         [
-	  (?> fun inf1 g ->
+	  (?> fun inf1 g1 ->
 	    let asm_tag = get_one ~msg:"show_tac 3" (New.aformulas inf1)
 	    in 
-	    seq [ negA ~a:(ftag asm_tag); tac ] g);
-	  (?> fun inf1 g -> 
+	    (negA ~a:(ftag asm_tag) ++ tac ) g1);
+	  (?> fun inf1 g1 -> 
 	    let (_, gl_tag) = get_two (New.subgoals inf1)
 	    and asm_tag = get_one (New.aformulas inf1)
 	    in 
-            set_info_tac ?info ([gl_tag], [asm_tag], [], []) g)
+            set_changes_tac (Changes.make [gl_tag] [asm_tag] [] []) g1)
         ]
     ]
 
@@ -351,26 +344,24 @@ let show = show_tac
 
 (** [disj_splitter_tac ?info ?f]: Split an assumption using disjA
 *)
-let disj_splitter_tac ?info ?f goal = 
-  let tac ?info =
-    elim_rules_tac ([ (fun l -> Tactics.disjA ~a:l) ], []) 
+let disj_splitter_tac ?f goal = 
+  let tac g =
+    elim_rules_tac ([ (fun l -> Tactics.disjA ~a:l) ], []) g
   in 
   apply_elim_tac tac ?f goal
     
 
-let cases_of ?info ?thm t g =
-  let scp = Tactics.scope_of g
-  and tyenv = Tactics.typenv_of g in 
+let cases_of ?thm t goal =
+  let scp = Tactics.scope_of goal
+  and tyenv = Tactics.typenv_of goal in 
   let trm = Lterm.set_names scp t in 
   let case_thm = 
     match thm with
       | Some x -> x
       | _ -> 
         begin
-          
-	  let ty = 
-	    let sb = Typing.settype scp ~env:tyenv trm
-	    in Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
+	  let sb = Typing.settype scp ~env:tyenv trm in
+	  let ty = Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
 	  in
 	  let (th, id) = Ident.dest (get_type_name ty) in 
 	  let thm_name = id^"_cases" 
@@ -381,35 +372,25 @@ let cases_of ?info ?thm t g =
 	    with _ -> failwith ("Can't find cases theorem "^thm_name)
         end
   in 
-  let inf1 = 
-    match info with 
-      | None -> None 
-      | _ -> Some(Tactics.info_make())
-  in 
-  let tac1 g1 = 
-    seq 
-      [
+  try
+    seq [
         cut ~inst:[trm] case_thm;
-        (?> fun inf g -> 
-	  let a_tg = get_one (New.aformulas inf)
+        (?> fun inf1 g1 -> 
+	  let a_tg = get_one (New.aformulas inf1)
 	  in 
           seq [
-            set_info_tac ?info ([a_tg], [], [], []);
-	    (disj_splitter_tac ?info:info ~f:(ftag a_tg) // skip);
-	    lift_info ?info:info (specA ~a:(ftag a_tg) // skip)
-          ] g)
-      ] g1
-  in 
-  let tac2 g2 = 
-    match inf1 with
-      | None -> skip g2
-      | Some inf2 -> 
-        update_tac 
-	  (set_info info)
-          ([], [], (subgoals inf2), (constants inf2)) 
-          g2
-  in 
-  try (tac1 ++ tac2) g
+	    (disj_splitter_tac ~f:(ftag a_tg) // skip);
+            (?> fun inf2 g2 ->
+	      ((specA ~a:(ftag a_tg) // skip) 
+               ++ (?> fun inf3 g3 ->
+                 set_changes_tac 
+                   (Changes.add_aforms inf2 (New.aformulas inf3)) g3)) g2)
+
+          ] g1);
+        (?> fun inf ->
+          set_changes_tac 
+            (Changes.make [] [] (New.subgoals inf) (New.constants inf)))
+    ] goal
   with err -> raise (add_error "cases_of" err)
     
 
