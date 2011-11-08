@@ -290,7 +290,7 @@ let simple_asm_rewrite_tac ?info rule asm node =
     then simple_rewrite_conv scp rule trm
     else rule
   in 
-  once_rewrite_tac ?info:info [thm] ~f:asm node
+  lift_info ?info (once_rewrite_tac [thm] ~f:asm) node
 
 
 (*** 
@@ -660,7 +660,7 @@ let thm_to_rules scp thm =
     tg:b, asms |- concl
 *)
 let asm_rewrite_tac ?info thm tg g =
-  once_rewriteA_tac ?info:info [thm] ~a:(ftag tg) g
+  lift_info ?info (once_rewriteA_tac [thm] ~a:(ftag tg)) g
     
 (** [qnt_asm_rewrite_tac thm tg g]:
 

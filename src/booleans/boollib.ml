@@ -625,13 +625,13 @@ let cut_back_tac = Booltacs.cut_back_tac
 
 (*** Equality ***)
 
-let equals_tac ?info ?f goal =
+let equals_tac ?f goal =
   let thm = 
     try Thms.equals_iff_thm()
     with Not_found -> 
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in 
-  let act_tac x g = once_rewrite_tac ?info [thm] ~f:x g in 
+  let act_tac x g = once_rewrite_tac [thm] ~f:x g in 
   let main_tac gl =
     match f with
       | Some x -> act_tac x goal

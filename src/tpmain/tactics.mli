@@ -261,6 +261,8 @@ sig
   (** [constants info]: Get constants from [info]. *)
 end
 
+val info_to_changes:  Info.t option -> Changes.t
+
 val record_changes_tac: (Changes.t -> Changes.t) -> tactic -> tactic
 (** Tactial to set the changes made by tactic.
 
@@ -274,6 +276,9 @@ val set_changes_tac: Changes.t -> tactic
 
 val add_changes_tac: Changes.t -> tactic
 (** Tactic to add to changes in a goal and behave like [skip]. *)
+
+val append_changes_tac: Changes.t -> tactic
+(** Tactic to add changes after goal changes. *)
 
 val record_info_tac: 
   ?info:Info.t
@@ -303,7 +308,7 @@ val changes_to_info_tac: ?info:Info.t -> tactic
 (** Tactic to set info from changes in a goal and behave like [skip]. *)
 
 val add_changes_to_info_tac: ?info:Info.t -> tactic
-(** Tactic to add info from changes in a goal and behave like [skip]. *)
+(** Tactic to add info to changes in a goal and behave like [skip]. *)
 
 (** {7 Utility functions} *)
 

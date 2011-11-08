@@ -187,13 +187,12 @@ val rewrite_rule:
 *)
 
 val gen_rewrite_tac: 
-  ?info: Tactics.Info.t 
-  -> ?asm:bool
+  ?asm:bool
   -> Rewrite.control
   -> ?f:Logic.label 
   -> Logic.rr_type list 
   -> Logic.tactic
-(** [gen_rewrite_tac ?info ?asm ctrl rules f]: General rewriting
+(** [gen_rewrite_tac ?asm ctrl rules f]: General rewriting
     tactic.
 
     Rewrite formula [f] with list of theorems and assumptions given in
@@ -207,8 +206,7 @@ val gen_rewrite_tac:
 *)
 
 val rewrite_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
+  ?dir:Rewrite.direction
   -> ?f:Logic.label
   -> Logic.thm list 
   -> Logic.tactic
@@ -218,68 +216,65 @@ val rewrite_tac:
 *)
 
 val once_rewrite_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
+  ?dir:Rewrite.direction -> 
   ?f:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir f thms]: Rewrite formula [f] once.  If
+(** [once_rewrite_tac dir f thms]: Rewrite formula [f] once.  If
     [f] is not given, rewrite all formulas in sequent.
     [dir=leftright] by default.
 *)
 
 val rewriteC_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
+  ?dir:Rewrite.direction
   -> ?c:Logic.label
   -> Logic.thm list 
   -> Logic.tactic
-(** [rewriteC_tac info dir c thms]: Rewrite conclusion [c] with list
-    of theorems [thms]. If [c] is not given, rewrite all conclusions
-    in sequent. [dir=leftright] by default.
+(** [rewriteC_tac dir c thms]: Rewrite conclusion [c] with list of
+    theorems [thms]. If [c] is not given, rewrite all conclusions in
+    sequent. [dir=leftright] by default.
 *)
 
 val once_rewriteC_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
+  ?dir:Rewrite.direction -> 
   ?c:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir c thms]: Rewrite conclusion [c] once.
-    If [c] is not given, rewrite all conclusions in sequent.
+(** [once_rewrite_tac dir c thms]: Rewrite conclusion [c] once.  If
+    [c] is not given, rewrite all conclusions in sequent.
     [dir=leftright] by default.
 *)
 
 val rewriteA_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
+  ?dir:Rewrite.direction
   -> ?a:Logic.label
   -> Logic.thm list 
   -> Logic.tactic
-(** [rewriteA_tac info dir a thms]: Rewrite assumption [a] with list
-    of theorems [thms]. If [a] is not given, rewrite all assumptions
-    in sequent.  [dir=leftright] by default.
+(** [rewriteA_tac dir a thms]: Rewrite assumption [a] with list of
+    theorems [thms]. If [a] is not given, rewrite all assumptions in
+    sequent.  [dir=leftright] by default.
 *)
 
 val once_rewriteA_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
+  ?dir:Rewrite.direction -> 
   ?a:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir a thms]: Rewrite assumption [a] once.
+(** [once_rewrite_tac dir a thms]: Rewrite assumption [a] once.
     If [a] is not given, rewrite all assumptions in sequent.
     [dir=leftright] by default.
 *)
 
 
 val gen_replace_tac: 
-  ?info:Tactics.Info.t -> ?ctrl:Rewrite.control
-  -> ?asms:Logic.label list 
+  ?ctrl:Rewrite.control -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [gen_replace_tac info ctrl asms f]: Rewrite formula [f] with the
+(** [gen_replace_tac ctrl asms f]: Rewrite formula [f] with the
     assumptions in list [asms].  If [f] is not given, rewrite all
-    formulas in sequent. If [asms] is not given, use all assumptions of
-    the form [l=r] or [!x1 .. xn: l = r]. Doesn't rewrite the
+    formulas in sequent. If [asms] is not given, use all assumptions
+    of the form [l=r] or [!x1 .. xn: l = r]. Doesn't rewrite the
     assumptions used as rewrite rules.
 *)
 
 val replace_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction
+  ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [replace_tac info dir asms f]: Rewrite formula [f] with
+(** [replace_tac dir asms f]: Rewrite formula [f] with
     assumptions in list [asms].  If [f] is not given, rewrite all
     formulas in sequent.  If [asms] is not given, use all assumptions
     of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
@@ -287,10 +282,10 @@ val replace_tac:
 *)
 
 val once_replace_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction
+  ?dir:Rewrite.direction
   -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [once_replace_tac info dir asms f]: Rewrite formula [f] with
+(** [once_replace_tac dir asms f]: Rewrite formula [f] with
     assumptions in list [asms] once. If [f] is not given, rewrite all
     formulas in sequent.  If [asms] is not given, use all assumptions
     of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
@@ -299,7 +294,7 @@ val once_replace_tac:
 
 
 val unfold: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> string -> Tactics.tactic
+  ?f:Logic.label -> string -> Tactics.tactic
 (** [unfold ?f n]: Unfold the definition of [n] at formula [?f].
 
     info: [aforms=[f'], cforms=[]] or [aforms=[], cforms=[f']]
@@ -374,7 +369,7 @@ val asm_elim_rules_tac:
    * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
-(** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
+(** [asm_elim_rules (arules, crules) f goal]: Apply elimination
     rules to assumption [f] and to all resulting assumptions and
     conclusions. Assumptions are eliminated with [arules], conclusions
     with [crules]. Any new tag which can't be eliminated are stored in
@@ -386,7 +381,7 @@ val concl_elim_rules_tac:
    * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
-(** [concl_elim_rules ?info (arules, crules) f goal]: Apply
+(** [concl_elim_rules (arules, crules) f goal]: Apply
     elimination rules to conclusion [f] and to all resulting
     assumptions and conclusions. Assumptions are eliminated with
     [arules], conclusions with [crules]. The tag of any new formula
@@ -400,7 +395,7 @@ val elim_rules_tac:
    * (Logic.label -> Tactics.tactic) list)
   -> Logic.label list -> Logic.label list
   -> Tactics.tactic
-(** [elim_rules_tac ?info (arules, crules) albls clbls]: Apply
+(** [elim_rules_tac (arules, crules) albls clbls]: Apply
     elimination rules to all assumptions with a label in [albls] and
     all conclusions with a label in [clbls] and with to all resulting
     assumptions and conclusions. The tag of any new formula for which
@@ -564,7 +559,7 @@ val show:
 val cases_of: 
   ?thm:Logic.thm -> Basic.term 
   -> Tactics.tactic
-(** [cases_of ?info ?thm trm]: Try to introduce a case split based on
+(** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
     theorem. If [thm] is not given, the theorem named ["T_cases"] is
     used, where [T] is the name of the type of [trm].
@@ -670,14 +665,14 @@ val cut_back_tac:
 
 (** {5 More tactics} *)
 
-val equals_tac: ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+val equals_tac: ?f:Logic.label -> Tactics.tactic
 (** Convert boolean equality to iff *)
 
 (** {7 Induction tactics} *)
 
 val asm_induct_tac:
   Logic.label -> Logic.label -> Tactics.tactic
-(** [asm_induct_tac ?info a c]: Apply the induction scheme of
+(** [asm_induct_tac a c]: Apply the induction scheme of
     assumption [a] to conclusion [c].
 
     See {!Boollib.induct_tac} for details about the form of the

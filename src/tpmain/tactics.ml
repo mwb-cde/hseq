@@ -180,6 +180,13 @@ struct
 
 end
 
+let info_to_changes info = 
+  match info with
+    | None -> Changes.empty()
+    | Some(inf) -> 
+      Changes.make (Info.subgoals inf)
+        (Info.aformulas inf) (Info.cformulas inf) (Info.constants inf)
+
 let record_changes_tac setter (tac: tactic) g = 
   let g1 = tac g in
   let chngs = setter (New.branch_changes g1)
@@ -194,6 +201,12 @@ let set_changes_tac chng g =
 let add_changes_tac chng g =
   let setter new_chng = 
     Changes.combine chng new_chng 
+  in
+  record_changes_tac setter Logic.Tactics.skip g
+
+let append_changes_tac chng g =
+  let setter new_chng = 
+    Changes.combine new_chng chng 
   in
   record_changes_tac setter Logic.Tactics.skip g
 
