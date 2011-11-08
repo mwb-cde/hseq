@@ -99,8 +99,6 @@ let iffC ?c goal =
 **)
 let iffE ?c goal = 
   let sqnt = sequent goal
-  and add_goals info gls = Changes.add info gls [] [] [] 
-  and add_forms info atgs ctgs = Changes.add info [] atgs ctgs []
   and cf = first_concl_label c is_iff goal 
   in
   let (t, f) = 
@@ -170,19 +168,19 @@ let flatter_concl_rules =
     (fun l -> Tactics.allC ~c:l)
   ]
 
-let flatter_asms_tac ?info lst = 
-  lift_info ?info (asm_elim_rules_tac (flatter_asm_rules, []) lst)
+let flatter_asms_tac lst g = 
+  asm_elim_rules_tac (flatter_asm_rules, []) lst g
 
-let flatter_concls_tac ?info lst = 
-  lift_info ?info (concl_elim_rules_tac ([], flatter_concl_rules) lst)
+let flatter_concls_tac lst g = 
+  concl_elim_rules_tac ([], flatter_concl_rules) lst g
 
-let flatter_tac ?info ?f goal =
-  let basic_flatter ?info =
-    elim_rules_tac (flatter_asm_rules, flatter_concl_rules)
+let flatter_tac ?f goal =
+  let basic_flatter g  =
+    elim_rules_tac (flatter_asm_rules, flatter_concl_rules) g
   in 
   apply_elim_tac basic_flatter ?f goal
 
-let flatten_tac ?info ?f g = flatter_tac ?info:info ?f:f g
+let flatten_tac ?f g = flatter_tac ?f:f g
 
 (*** Scattering formulas ***)
 
@@ -211,9 +209,9 @@ let scatter_concl_rules =
     (fun l -> iffE ~c:l)
   ]
 
-let scatter_tac ?info ?f goal =
-  let tac ?info =
-    elim_rules_tac (scatter_asm_rules, scatter_concl_rules)
+let scatter_tac ?f goal =
+  let tac g =
+    elim_rules_tac (scatter_asm_rules, scatter_concl_rules) g
   in 
   apply_elim_tac tac ?f goal
 
@@ -250,9 +248,9 @@ let blast_concl_rules =
     (fun l -> basic ?a:None ~c:l)
   ]
 
-let blast_tac ?info ?f goal =
-  let tac ?info =
-    elim_rules_tac (blast_asm_rules, blast_concl_rules)
+let blast_tac ?f goal =
+  let tac g =
+    elim_rules_tac (blast_asm_rules, blast_concl_rules) g
   in 
   apply_elim_tac tac ?f goal
 

@@ -100,8 +100,8 @@ val split_concls_tac:
 val split_tac: 
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
-    introduce new subgoals. Resulting tag information, in [?info], may
-    contain duplicates.
+    introduce new subgoals. Resulting tag information may contain
+    duplicates.
 
     In the assumptions, eliminates [false], disjunction ([|]),
     implication ([=>]).
@@ -127,21 +127,21 @@ val flatter_concl_rules:
 *)
 
 val flatter_asms_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
 val flatter_concls_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
 
 val flatten_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which don't
-    introduce new subgoals. Resulting tag information, in [?info], may
-    contain duplicates.
+    introduce new subgoals. Resulting tag information may contain
+    duplicates.
 
     In the assumptions, eliminates [false], conjunction ([&]) and
     existential quantification ([?]).
@@ -169,7 +169,7 @@ val scatter_concl_rules:
 *)
 
 val scatter_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions.
 
     In the assumptions, eliminates [false], negation ([not]),
@@ -180,7 +180,7 @@ val scatter_tac:
     disjunction ([|]), implication ([=>]), universal quantification
     ([!]), conjunction ([&]) and boolean equivalence ([iff]).
 
-    Resulting tag information, in [?info], may contain duplicates.
+    Resulting tag information may contain duplicates.
 *)
 
 val blast_asm_rules:
@@ -193,7 +193,7 @@ val blast_concl_rules:
 *)
 
 val blast_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions
     then try to solve subgoals.
 
