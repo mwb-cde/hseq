@@ -128,7 +128,7 @@ let make_neg_eq_sym_thm()=
 	          get_two ~msg:"make_neg_eq_sym_thm" (aformulas info)
 	        in 
 	        Lib.set_option atgs (atg1, atg2)) info
-	      (iffE ~info:info))
+	      (lift_info ~info:info iffE))
 	   --
 	     [
 	       (fun g -> 
@@ -167,7 +167,7 @@ let make_cond_neg_eq_sym_thm()=
 	           get_two ~msg:"make_neg_eq_sym_thm" (aformulas info)
 	         in 
 	         Lib.set_option atgs (atg1, atg2)) info
-	       (iffE ~info:info)) ++ implC)
+	       (lift_info ~info:info iffE)) ++ implC)
 	   --
 	     [
 	       implA
@@ -212,7 +212,7 @@ let make_cond_eq_sym_thm()=
 	           get_two ~msg:"make_eq_sym_thm" (aformulas info)
 	         in 
 	         Lib.set_option atgs (atg1, atg2)) info
-	       (iffE ~info:info)) ++ implC)
+	       (lift_info ~info iffE)) ++ implC)
 	   --
 	     [
 	       implA

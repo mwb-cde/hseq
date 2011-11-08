@@ -56,7 +56,7 @@ val iffC: ?c:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 *)
 
-val iffE: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
+val iffE: ?c:Logic.label -> Tactics.tactic
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
     {L

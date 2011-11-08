@@ -97,36 +97,30 @@ let iffC ?c goal =
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 **)
-let iffE ?info ?c goal = 
-  let cf = first_concl_label c is_iff goal in 
-  let sqnt = sequent goal in 
+let iffE ?c goal = 
+  let sqnt = sequent goal
+  and add_goals info gls = Changes.add info gls [] [] [] 
+  and add_forms info atgs ctgs = Changes.add info [] atgs ctgs []
+  and cf = first_concl_label c is_iff goal 
+  in
   let (t, f) = 
     Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt
-  in
-  let add_goals info gls = info_add info gls [] [] []
-  in 
-  let add_forms info atgs ctgs = info_add info [] atgs ctgs []
   in
   if not (is_iff f) 
   then raise (error "iffE")
   else 
     let tac g =
-      seq 
-	[
-	  rewrite_tac [iff_def()] ~f:(ftag t);
-          (?> fun inf g1 ->
-            add_goals info (New.subgoals inf);
-	    Tactics.conjC ~c:(ftag t) g1);
-	  Tactics.implC ~c:(ftag t)
-	] g
+      (rewrite_tac [iff_def()] ~f:(ftag t) ++
+        (?> fun inf1 ->
+	  Tactics.conjC ~c:(ftag t) ++
+	    Tactics.implC ~c:(ftag t) ++
+              (?> fun inf2 ->
+                set_changes_tac 
+                  (Changes.make (New.subgoals inf1)
+                     (New.aformulas inf2)
+                     (New.cformulas inf2) [])))) g
     in 
-    alt [ 
-      (tac ++ 
-         (?> fun inf g1 ->
-           add_forms info (New.aformulas inf) (New.cformulas inf);
-           skip g1));
-      fail ~err:(error "iffE") 
-    ] goal
+    alt [ tac; fail ~err:(error "iffE") ] goal
 
 (*** Splitting formulas ***)
 
@@ -214,7 +208,7 @@ let scatter_concl_rules =
     (fun l -> Tactics.disjC ~c:l);
     (fun l -> Tactics.conjC ~c:l);
     (fun l -> Tactics.implC ~c:l);
-    (fun l -> iffE ?info:None ~c:l)
+    (fun l -> iffE ~c:l)
   ]
 
 let scatter_tac ?info ?f goal =
@@ -251,7 +245,7 @@ let blast_concl_rules =
 
     (fun l -> Tactics.conjC ~c:l);
 
-    (fun l -> iffE ?info:None ~c:l);
+    (fun l -> iffE ~c:l);
 
     (fun l -> basic ?a:None ~c:l)
   ]

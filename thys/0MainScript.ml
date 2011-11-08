@@ -45,7 +45,7 @@ begin_theory "Main"
 (**
  ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];; 
 **)
- ["Bool"; "base"];; 
+ ["Relation"; "Bool"; "base"];; 
 
 let _ = end_theory();;
 

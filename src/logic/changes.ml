@@ -36,38 +36,35 @@ type t =
         (** new assumption produced by the tactic. *)
       cncl_tags: Tag.t list;
         (** new conclusions produced by the tactic. *)
-      term_tags: Basic.term list
+      term_list: Basic.term list
       (** new constants produced by the tactic. *)
     }
 
 let empty () = 
-  { goal_tags = []; asm_tags = []; cncl_tags = []; term_tags = [] }
+  { goal_tags = []; asm_tags = []; cncl_tags = []; term_list = [] }
 
 let make gs hs cs ts = 
-  { goal_tags = gs; asm_tags = hs; cncl_tags = cs; term_tags = ts }
+  { goal_tags = gs; asm_tags = hs; cncl_tags = cs; term_list = ts }
 
 let goals l = l.goal_tags
 let aforms l = l.asm_tags
 let cforms l = l.cncl_tags
-let terms l = l.term_tags
+let terms l = l.term_list
 let dest l = (goals l, aforms l, cforms l, terms l)
-
-let add r gs hs cs ts =
-  make (gs@r.goal_tags) (hs@r.asm_tags) (cs@r.cncl_tags) (ts@r.term_tags)
 
 let rev_append l r =
   make 
     (List.rev_append l.goal_tags r.goal_tags) 
     (List.rev_append l.asm_tags r.asm_tags)
     (List.rev_append l.cncl_tags r.cncl_tags)
-    (List.rev_append l.term_tags r.term_tags)
+    (List.rev_append l.term_list r.term_list)
 
 let rev r =
   make 
     (List.rev r.goal_tags) 
     (List.rev r.asm_tags)
     (List.rev r.cncl_tags)
-    (List.rev r.term_tags)
+    (List.rev r.term_list)
 
 let combine l r =
   rev_append (rev l) r
@@ -79,3 +76,24 @@ let flatten l =
       | (chng::rest) -> flatten_aux rest (rev_append chng sum)
   in
   flatten_aux l (empty())
+
+let add r gs hs cs ts =
+  combine (make gs hs cs ts) r
+
+let add_goals inf l = 
+  make (List.rev_append (List.rev l) (goals inf))
+    (aforms inf) (cforms inf) (terms inf)
+
+let add_aforms inf l = 
+  make (goals inf)
+    (List.rev_append (List.rev l) (aforms inf) )
+    (cforms inf) (terms inf)
+
+let add_cforms inf l = 
+  make (goals inf) (aforms inf) 
+    (List.rev_append (List.rev l) (cforms inf) )
+    (terms inf)
+
+let add_terms inf l = 
+  make (goals inf) (aforms inf) (cforms inf)
+    (List.rev_append (List.rev l) (terms inf))
