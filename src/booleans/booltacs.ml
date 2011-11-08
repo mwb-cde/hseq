@@ -336,13 +336,13 @@ let show_tac (trm: Basic.term) tac =
 
 let show = show_tac
 
-(** [cases_of ?info ?thm trm]: Try to introduce a case split based on
+(** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
     theorem. If [thm] is not given, the theorem named ["T_cases"] is
     used, where [T] is the name of the type of [trm].
 *)
 
-(** [disj_splitter_tac ?info ?f]: Split an assumption using disjA
+(** [disj_splitter_tac ?f]: Split an assumption using disjA
 *)
 let disj_splitter_tac ?f goal = 
   let tac g =
@@ -396,7 +396,7 @@ let cases_of ?thm t goal =
 
 (*** Modus Ponens ***)
 
-let mp0_tac ?info a a1lbls g =
+let mp0_tac a a1lbls g =
   let typenv = Tactics.typenv_of g
   and sqnt = Tactics.sequent g in 
   let scp = Logic.Sequent.scope_of sqnt in 
@@ -430,17 +430,18 @@ let mp0_tac ?info a a1lbls g =
     tac1; 
     Tactics.implA ~a:(ftag a_label);
     (?> fun inf1 ->
-      ((fun n -> Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n))
-	(New.subgoals inf1) false)
+      ((fun n -> 
+        Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n))
+	  (New.subgoals inf1) false)
        --> 
        (Tactics.basic ~a:(ftag a1_label)
           ~c:(ftag (Lib.get_one (New.cformulas inf1)
 	            (Failure "mp_tac2.2"))))));
-    (?> fun inf4 -> set_info_tac ?info ([], New.aformulas inf4, [], []))
+    (?> fun inf4 -> 
+      set_changes_tac (Changes.make [] (New.aformulas inf4) [] []))
   ] g
 
-    
-let mp_tac ?info ?a ?h goal =
+let mp_tac ?a ?h goal =
   let sqnt = sequent goal
   in 
   let albls = 
@@ -452,12 +453,10 @@ let mp_tac ?info ?a ?h goal =
       | None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
       | Some(x) -> [x]
   in 
-  let tac g = map_first (fun x -> mp0_tac ?info x hlbls) albls g
-  in 
-  try tac goal
+  try map_first (fun x -> mp0_tac x hlbls) albls goal
   with err -> raise (error "mp_tac: Failed")
 
-(** [cut_mp_tac ?info thm ?a]
+(** [cut_mp_tac thm ?a]
 
     Apply modus ponens to theorem [thm] and assumption [a].  [thm]
     must be a (possibly quantified) implication [!x1 .. xn: l=>r] and
@@ -466,27 +465,26 @@ let mp_tac ?info ?a ?h goal =
     If [a] is not given, finds a suitable assumption to unify with
     [l].
 
-    info [] [thm_tag] [] [] where tag [thm_tag] identifies the theorem
+    info: [] [thm_tag] [] [] where tag [thm_tag] identifies the theorem
     in the sequent.
 *)
-let cut_mp_tac ?info ?inst thm ?a g =
+let cut_mp_tac ?inst thm ?a goal =
   let f_label = 
     Lib.apply_option 
-      (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
+      (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent goal))))
       a None
   in 
-  let tac1 = Tactics.cut ?inst:inst thm in 
-  let tac2 info1 g2 = 
-    begin
-      let a_tag = 
-        Lib.get_one (New.aformulas info1) 
-	  (Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
-	     [Logic.formula_of thm])
-      in 
-      mp_tac ?info:info ~a:(ftag a_tag) ?h:f_label g2
-    end
-  in 
-  (tac1 ++ (?> tac2)) g
+  (Tactics.cut ?inst:inst thm ++ 
+     (?> fun inf1 g1 ->
+       let a_tag = 
+         Lib.get_one (New.aformulas inf1) 
+	   (Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
+	      [Logic.formula_of thm])
+       in 
+       ((mp_tac ~a:(ftag a_tag) ?h:f_label) ++
+           (?> fun inf2 g2 ->
+             set_changes_tac 
+               (Changes.add_aforms inf1 (New.aformulas inf2)) g2)) g1)) goal
 
 (** [back_tac]: Backward match tactic. [back0_tac] is the main engine.
 
@@ -495,7 +493,7 @@ let cut_mp_tac ?info ?inst thm ?a g =
     [g_tag] is the new goal
     [c_tag] identifies the new conclusion.
 *)
-let back0_tac ?info a cs goal =
+let back0_tac a cs goal =
   let typenv = Tactics.typenv_of goal
   and sqnt = Tactics.sequent goal in 
   let scp = Logic.Sequent.scope_of sqnt in 
@@ -519,37 +517,37 @@ let back0_tac ?info a cs goal =
 	       ("back_tac: no matching formula in conclusion") 
 	       [Term.mk_fun Lterm.impliesid [back_lhs; back_rhs]])
   in 
-  let info1 = Tactics.info_make() in 
-  let tac1=
-    match back_vars with
-      | [] -> (* No quantifier *)
-	skip
-      | _ -> (* Implication has quantifier *)
-	instA ~a:(ftag a_label)
-	  (Tactics.extract_consts back_vars c_env)
-  and tac2 g2 = lift_info ~info:info1 (Tactics.implA ~a:(ftag a_label)) g2
-  and tac3 g3 =
-    ((fun n -> 
-      (Lib.apply_nth 1 (Tag.equal (Tactics.node_tag n)) 
-	 (Tactics.subgoals info1) false))
-     --> 
-     lift_info ~info:info1 
-       (Tactics.basic ~a:(ftag (Lib.get_nth (Tactics.aformulas info1) 1))
-          ~c:(ftag c_label))) g3
+  let tac1 =
+    if back_vars = []
+    then (* No quantifier *)
+      skip 
+    else (* Implication has quantifier *)
+      instA ~a:(ftag a_label) 
+        (Tactics.extract_consts back_vars c_env)
+  and tac2 = Tactics.implA ~a:(ftag a_label)
+  and tac3 =
+    (?> fun inf3 g3 ->
+      let atag3 = get_one (New.aformulas inf3) in
+      ((fun n -> 
+        (Lib.apply_nth 1 
+           (Tag.equal (Tactics.node_tag n)) 
+	   (New.subgoals inf3) false))
+       --> 
+       (Tactics.basic
+          ~a:(ftag atag3)
+          ~c:(ftag c_label))) g3)
   in 
-  let tac4 g4 = delete (ftag c_label) g4 in 
-  let tac5 g5 = 
-    update_tac 
-      (set_info info)
-      ([Lib.get_nth (Tactics.subgoals info1) 0],
-       [], 
-       [Lib.get_nth (Tactics.cformulas info1) 0],
-       [])
-      g5
+  let tac4 = 
+    (?> fun inf4 g4 ->
+     (delete (ftag c_label) ++
+        set_changes_tac 
+        (Changes.make 
+           [get_one (New.subgoals inf4)] [] 
+           [get_one (New.cformulas inf4)] [])) g4)
   in 
-  (tac1++ (tac2 ++ tac3 ++ tac4 ++ tac5)) goal
+  (tac1 ++ seq [tac2; tac3; tac4]) goal
 
-let back_tac ?info ?a ?c goal =
+let back_tac ?a ?c goal =
   let sqnt = sequent goal in 
   let alabels = 
     match a with
@@ -560,26 +558,24 @@ let back_tac ?info ?a ?c goal =
       | None -> List.map (ftag <+ drop_formula) (concls_of sqnt)
       | Some(x) -> [x]
   in
-  let tac g = map_first (fun x -> back0_tac ?info x clabels) alabels g
-  in 
-  try tac goal
+  try map_first (fun x -> back0_tac x clabels) alabels goal
   with err -> raise (error "back_tac: Failed")
 
-let cut_back_tac ?info ?inst thm ?c g =
+let cut_back_tac ?inst thm ?c g =
   let c_label = 
     Lib.apply_option 
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
       c None
   in 
   let tac1 = Tactics.cut ?inst:inst thm in 
-  let tac2 info1 g2 = 
-    begin
+  let tac2 =
+    (?> fun inf2 g2 ->
       let a_tag = 
-        Lib.get_one (New.aformulas info1) 
+        Lib.get_one 
+          (New.aformulas inf2) 
 	  (Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	     [Logic.formula_of thm])
       in 
-      back_tac ?info:info ~a:(ftag a_tag) ?c:c_label g2
-    end
+      back_tac ~a:(ftag a_tag) ?c:c_label g2)
   in 
-  (tac1 ++ (?> tac2)) g
+  (tac1 ++ tac2) g

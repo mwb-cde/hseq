@@ -69,7 +69,7 @@ let iff_l2 = theorem "iff_l2"
     ++ (match_asm << (A = B) => C >>
     (fun a -> 
       (match_asm << (A = B) >> 
-       (fun f -> mp_tac ?info:None ~a:a ~h:f))))
+       (fun f -> mp_tac ~a:a ~h:f))))
 ++ mp_tac 
 ++ (cut true_l2) ++ (allA <<_y>>) ++ mp_tac
 ++ replace_tac ++ eq_tac;
@@ -78,7 +78,7 @@ let iff_l2 = theorem "iff_l2"
 ++ (match_asm << (_y => C) >>
     (fun a -> 
       (match_asm << _y >> 
-       (fun f -> mp_tac ?info:None ~a:a ~h:f))))
+       (fun f -> mp_tac ~a:a ~h:f))))
 ++ (cut true_l2) ++ (allA <<_x>>) ++ mp_tac
 ++ replace_tac ++ eq_tac;
 replace_tac ++ eq_tac];;
@@ -92,7 +92,7 @@ conjC ++ flatten_tac;
 mp_tac ++ basic;
 (match_asm << _y => _x >> 
  (fun a -> match_asm << _y >> 
-   (fun f -> mp_tac ?info:None ~a:a ~h:f)))
+   (fun f -> mp_tac ~a:a ~h:f)))
 ++basic;
 basic;
 flatten_tac ++ replace_tac

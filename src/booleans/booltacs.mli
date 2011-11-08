@@ -260,8 +260,7 @@ val cases_of:
 (** {5 Modus Ponens} *)
 
 val mp_tac: 
-  ?info:Tactics.Info.t
-  -> ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
+  ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
 (** [mp_tac ?a ?h]: Modus ponens.
 
     {L
@@ -283,8 +282,7 @@ val mp_tac:
 *)
 
 val cut_mp_tac:
-  ?info:Tactics.Info.t 
-  -> ?inst:Basic.term list
+  ?inst:Basic.term list
   -> Logic.thm 
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
@@ -311,8 +309,7 @@ val cut_mp_tac:
 *)
 
 val back_tac: 
-  ?info:Tactics.Info.t 
-  -> ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
+  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
 (** [back_tac ~a ~c]: Match, backward tactic.
 
     {L
@@ -334,7 +331,7 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?info:Tactics.Info.t -> ?inst:Basic.term list 
+  ?inst:Basic.term list 
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 
