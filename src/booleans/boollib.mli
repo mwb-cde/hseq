@@ -676,8 +676,7 @@ val equals_tac: ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
 (** {7 Induction tactics} *)
 
 val asm_induct_tac:
-  ?info:Tactics.Info.t 
-  -> Logic.label -> Logic.label -> Tactics.tactic
+  Logic.label -> Logic.label -> Tactics.tactic
 (** [asm_induct_tac ?info a c]: Apply the induction scheme of
     assumption [a] to conclusion [c].
 
@@ -686,8 +685,7 @@ val asm_induct_tac:
 *)
 
 val induct_tac: 
-  ?info:Tactics.Info.t
-  -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
+  ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
 
@@ -705,10 +703,9 @@ val induct_tac:
 
 
 val induct_on: 
-  ?info:Tactics.Info.t
-  -> ?thm:Logic.thm -> ?c:Logic.label
+  ?thm:Logic.thm -> ?c:Logic.label
   -> string -> Tactics.tactic
-(** [induct_on ?info ?thm ?c n]: Apply induction to the first
+(** [induct_on ?thm ?c n]: Apply induction to the first
     universally quantified variable named [n] in conclusion [c] (or the
     first conclusion to succeed). The induction theorem is [thm], if
     given or the theorem [thm "TY_induct"] where [TY] is the name of

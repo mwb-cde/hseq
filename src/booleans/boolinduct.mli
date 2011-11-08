@@ -24,8 +24,8 @@
 (** {7 Utility tactics} *)
 
 val mini_scatter_tac:
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
-(** [mini_scatter_tac ?info c goal]: Mini scatter tactic for
+  Logic.label -> Tactics.tactic
+(** [mini_scatter_tac c goal]: Mini scatter tactic for
     induction.
 
     Scatter conclusion [c], using [falseA], [conjA], [existA],
@@ -33,9 +33,8 @@ val mini_scatter_tac:
 *)
 
 val mini_mp_tac:
-  ?info:Tactics.Info.t 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(** [mini_mp_tac ?info asm1 asm2 goal]: Modus Ponens for the induction
+  Logic.label -> Logic.label -> Tactics.tactic
+(** [mini_mp_tac asm1 asm2 goal]: Modus Ponens for the induction
     tactics.
 
     Apply modus ponens to [asm1 = A => C] and [asm2 = A] to get [asm3
@@ -46,9 +45,8 @@ val mini_mp_tac:
 (** {5 The induction tactic [induct_tac]} *)
 
 val asm_induct_tac:
-  ?info:Tactics.Info.t 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(** [asm_induct_tac ?info a c]: Apply the induction scheme of
+  Logic.label -> Logic.label -> Tactics.tactic
+(** [asm_induct_tac a c]: Apply the induction scheme of
     assumption [a] to conclusion [c].
 
     See {!Boolinduct.induct_tac} for details about the form of the
@@ -56,8 +54,7 @@ val asm_induct_tac:
 *)
 
 val induct_tac: 
-  ?info:Tactics.Info.t
-  -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
+  ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
 
@@ -80,10 +77,9 @@ val induct_tac:
 (** {5 The induction tactic [induct_on]} *)
 
 val induct_on: 
-  ?info:Tactics.Info.t
-  -> ?thm:Logic.thm -> ?c:Logic.label
+  ?thm:Logic.thm -> ?c:Logic.label
   -> string -> Tactics.tactic
-(** [induct_on ?info ?thm ?c n]: Apply induction to the first
+(** [induct_on ?thm ?c n]: Apply induction to the first
     universally quantified variable named [n] in conclusion [c] (or the
     first conclusion to succeed). The induction theorem is [thm], if
     given or the theorem [thm "TY_induct"] where [TY] is the name of
@@ -124,9 +120,8 @@ val induct_tac_bindings:
 *)
 
 val induct_tac_solve_rh_tac:
-  ?info:Tactics.Info.t 
-  -> Logic.label -> Logic.label -> Tactics.tactic
-(** [solve_rh_tac ?info a c goal]: solve the right sub-goal of an
+  Logic.label -> Logic.label -> Tactics.tactic
+(** [solve_rh_tac a c goal]: solve the right sub-goal of an
     induction tactic ([t2]).
     
     Formula [a] is of the form [ ! a .. b: A => C ]. Formula [c] is of
@@ -167,10 +162,9 @@ val induct_on_bindings:
 *)
 
 val induct_on_solve_rh_tac:
-  ?info:Tactics.Info.t
-  -> Logic.label -> Logic.label
+  Logic.label -> Logic.label
   -> Tactics.tactic
-(** [induct_on_solve_rh_tac ?info a c goal]: solve the right sub-goal
+(** [induct_on_solve_rh_tac a c goal]: solve the right sub-goal
     of an induction tactic ([t2]).
     
     Formula [a] is of the form [ ! a .. b: C ].  Formula [c] is of the

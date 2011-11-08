@@ -187,14 +187,13 @@ let record_changes_tac setter (tac: tactic) g =
   New.set_changes chngs g1
 
 let set_changes_tac chng g =
-  let (sgs, afs, cfs, cnsts) = Changes.dest chng in
-  let setter _ = Changes.make sgs afs cfs cnsts
+  let setter _ = chng
   in
   record_changes_tac setter Logic.Tactics.skip g
 
 let add_changes_tac chng g =
-  let (sgs, afs, cfs, cnsts) = Changes.dest chng in
-  let setter chngs = Changes.add chngs sgs afs cfs cnsts
+  let setter new_chng = 
+    Changes.combine chng new_chng 
   in
   record_changes_tac setter Logic.Tactics.skip g
 
