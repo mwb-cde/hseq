@@ -137,15 +137,15 @@ let split_concl_rules =
     (fun l -> Tactics.conjC ~c:l)
   ]
 
-let split_asms_tac ?info lst = 
-  lift_info ?info (asm_elim_rules_tac (split_asm_rules, []) lst)
+let split_asms_tac lst = 
+  asm_elim_rules_tac (split_asm_rules, []) lst
 
-let split_concls_tac ?info lst = 
-  lift_info ?info (concl_elim_rules_tac ([], split_concl_rules) lst)
+let split_concls_tac lst = 
+  concl_elim_rules_tac ([], split_concl_rules) lst
 
-let splitter_tac ?info ?f goal =
-  let basic_splitter ?info = 
-    elim_rules_tac (split_asm_rules, split_concl_rules)
+let splitter_tac ?f goal =
+  let basic_splitter g = 
+    elim_rules_tac (split_asm_rules, split_concl_rules) g
   in 
   apply_elim_tac basic_splitter ?f goal
 

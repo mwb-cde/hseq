@@ -87,18 +87,18 @@ val split_concl_rules:
 (** The rules used by {!Booltacs.split_tac} to conclusions assumptions *)
 
 val split_asms_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
 val split_concls_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
 
 val split_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
     introduce new subgoals. Resulting tag information, in [?info], may
     contain duplicates.
