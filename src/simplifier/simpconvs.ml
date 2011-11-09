@@ -21,7 +21,6 @@
 
 let log_message = ref None
 let log x = log_message:=Some x
-
 let log_tac x g = log x; Tactics.skip g
 
 (** Functions to prepare theorems and assumptions being added to a
@@ -29,12 +28,10 @@ let log_tac x g = log x; Tactics.skip g
 *)
 
 open Simputils
-
 open Boollib
 open Boollib.Thms
 open Boollib.Convs
 open Boollib.Rules
-
 open Tactics
 
 (*** Theorems and conversions used by the simplifier. ***)
@@ -282,7 +279,6 @@ let simple_asm_rewrite_tac rule asm node =
   in 
   once_rewrite_tac [thm] ~f:asm node
 
-
 (*** 
      Functions manipulating theorems, needed to
      convert theorems to rewriting rules.
@@ -299,7 +295,6 @@ let negate_concl_tac c goal =
       (?> fun inf -> 
         set_changes_tac (Changes.make [] (New.aformulas inf) [] []))
     ] goal
-
 
 (*** Preparing simplifier rules. ***)
 
@@ -335,11 +330,8 @@ let is_negation (vars, cnd, main) = Lterm.is_neg main
 let is_equality (vars, cnd, main) = Lterm.is_equality main
 
 let is_constant clst (qs, c, t) = List.exists (Term.equals t) clst
-
 let is_constant_true (qs, c, t) = Lterm.is_true t
-
 let is_constant_false (qs, c, t) = Lterm.is_false t
-
 let is_constant_bool (qs, c, t) =
   Pervasives.(||)
     (is_constant_true (qs, c, t))
@@ -348,16 +340,14 @@ let is_constant_bool (qs, c, t) =
 let is_neg_all (qs, c, t) = 
   if Lterm.is_neg t
   then 
-    let (_, not_body) = Term.dest_unop t
-    in
+    let (_, not_body) = Term.dest_unop t in
     Lterm.is_all not_body
   else false
 
 let is_neg_exists (qs, c, t) = 
   if Lterm.is_neg t
   then 
-    let (_, not_body)=Term.dest_unop t
-    in
+    let (_, not_body)=Term.dest_unop t in
     Lterm.is_exists not_body
   else false
 
@@ -1120,10 +1110,11 @@ let prepare_asm data atg goal =
   in 
   fold_seq []
     [
-      (fun l -> seq [
-        (false_test --> Boollib.falseA ~a:(ftag atg));
-        copyA (ftag atg)
-      ] +< l);
+      (fun l -> seq 
+        [
+          (false_test --> Boollib.falseA ~a:(ftag atg));
+          copyA (ftag atg)
+        ] +< l);
     (fun _ g ->
       let info = New.changes g in
       let a1 = get_one ~msg:"Simplib.prepare_asm" (New.aformulas info) in 

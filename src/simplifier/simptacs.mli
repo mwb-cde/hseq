@@ -38,17 +38,15 @@ val add_rule_data:
 (** {7 Adding assumptions and conclusions} *)
 
 val add_asms_tac:
-  Data.t option ref
-  -> Tag.t list
-  -> Tactics.tactic
+  Data.t -> Tag.t list
+  -> (Data.t) Tactics.data_tactic
 (** [add_asms_tac data tags g]: Prepare the assumptions in [tags] for
     use as simp-rules. Add them to [data].
 *)
 
 val add_concls_tac:
-  Data.t option ref
-  -> Tag.t list
-  -> Tactics.tactic
+  Data.t -> Tag.t list
+  -> (Data.t) Tactics.data_tactic
 (** [add_concls_tac data tags g]: Prepare the conclusions in [tags]
     for use as simp-rules. Add them to [data].
 *)
@@ -74,19 +72,15 @@ val simp_engine_tac:
 *)
 
 val simpA_engine_tac:
-  Data.t 
-  -> Data.t option ref 
-  -> bool ref
-  -> Logic.label -> Tactics.tactic
+  Data.t -> Logic.label 
+  -> (Data.t) Tactics.data_tactic
 (** [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
     returning the updated data in [ret]. Sets [chng] to true on
     success. Doesn't clean-up.  *)
 
 val simpC_engine_tac:
-  Data.t 
-  -> Data.t option ref 
-  -> bool ref
-  -> Logic.label -> Tactics.tactic
+  Data.t -> Logic.label 
+  -> (Data.t) Tactics.data_tactic
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
     returning the updated data in [ret]. Sets [chng] to true on
     success. Doesn't clean-up.  *)
@@ -96,9 +90,8 @@ val simpC_engine_tac:
 
 val simpA0_tac:
   Data.t 
-  -> Data.t option ref 
   -> ?a:Logic.label
-  -> Tactics.tactic
+  -> (Data.t) Tactics.data_tactic
 (** [simpA1_tac cntrl ret ?a goal]: Simplify assumptions
 
     If [a] is given, add other assumptions to the simpset and then
@@ -110,7 +103,8 @@ val simpA0_tac:
 *)
 
 val simpA_tac:
-  Data.t -> ?a:Logic.label -> Tactics.tactic
+  Data.t -> ?a:Logic.label 
+  -> Tactics.tactic
 (** [simpA_tac cntrl ?a goal]: Simplify assumptions
 
     If [a] is given, add other assumptions to the simpset and then
@@ -126,9 +120,8 @@ val simpA_tac:
 
 val simpC0_tac:
   Data.t 
-  -> Data.t option ref 
   -> ?c:Logic.label
-  -> Tactics.tactic
+  -> (Data.t) Tactics.data_tactic
 (** [simpC1_tac cntrl ret ?c goal]: Simplify conclusions.
 
     If [c] is given, add other conclusions to the simpset and simplify
@@ -140,7 +133,8 @@ val simpC0_tac:
 *)
 
 val simpC_tac:
-  Data.t -> ?c:Logic.label -> Tactics.tactic
+  Data.t -> ?c:Logic.label
+  -> Tactics.tactic
 (** [simpC_tac cntrl ?c goal]: Simplify conclusions.
 
     If [c] is given, add other conclusions to the simpset and simplify
@@ -156,8 +150,7 @@ val simpC_tac:
 
 val full_simp0_tac:
   Data.t 
-  -> Data.t option ref 
-  -> Tactics.tactic
+  -> (Data.t)Tactics.data_tactic
 (** [full_simp0_tac cntrl ret goal]: Simplify subgoal
 
     {ul

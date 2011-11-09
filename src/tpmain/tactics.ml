@@ -433,6 +433,7 @@ let permute_tac perm tac g =
   in
   (perm d, g1)
 
+let (>/) tac perm g = permute_tac perm tac g
 
 let try_tac tac g = 
   try (true, tac g)

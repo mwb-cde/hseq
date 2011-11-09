@@ -425,6 +425,11 @@ val permute_tac:
   -> ('b) data_tactic
 (** [permute_tac p tac g]:  *)
 
+val (>/):
+  ('a) data_tactic -> ('a -> 'b)
+  -> ('b) data_tactic
+(** [tac >/ p] is [permute_tac p tac]:  *)
+
 val try_tac: tactic -> (bool) data_tactic
 (** [try_tac tac g]: Return [(true, tac g)] or [(false, skip g)] if
     [tac g] fails. *)

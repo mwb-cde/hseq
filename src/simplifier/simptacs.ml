@@ -72,6 +72,7 @@ let add_rule_data data rules =
 
 (*** Adding assumptions and conclusions ***)
 
+(*
 let add_asms_tac data atags goal =
   let add_tac rdata rl g = 
     let d = Lib.dest_option (!rdata)
@@ -85,29 +86,20 @@ let add_asms_tac data atags goal =
       (fun lst -> add_tac data lst) g
   in
   map_some tac atags goal
+*)
+let add_asms_tac data atags goal =
+  let tac data1 tg g = 
+    ((Simpconvs.prepare_asm [] tg)
+        >/ (add_rule_data data1 )) g
+  in
+  fold_data tac data atags goal
 
 let add_concls_tac data ctags goal =
-  let add_tac rdata rl g = 
-    let d = Lib.dest_option (!rdata)
-    in 
-    update_tac (fun _ -> Lib.set_option rdata (add_rule_data d rl)) () g
-  in 
-  let tac tg g = 
-    apply_tac
-      (Simpconvs.prepare_concl [] tg)
-      (fun lst -> add_tac data lst) g
-(*
-    seq 
-      [ 
-	Simpconvs.prepare_concl rl tg;
-	(fun g1 -> add_tac data rl g1);
-	(fun g1 -> 
-	  update_tac (log "add_concls_tac 1") 
-	    (Lib.dest_option (!data)) g1)
-      ] g
-*)
+  let tac data1 tg g = 
+    ((Simpconvs.prepare_concl [] tg)
+        >/ (add_rule_data data1)) g
   in
-  map_some tac ctags goal
+  fold_data tac data ctags goal
 
 (***
     Simplification engines
@@ -177,34 +169,32 @@ let simp_engine_tac cntrl ret tag goal =
 
     Doesn't clean-up.
 *) 
-let simpA_engine_tac cntrl ret chng l goal = 
+let simpA_engine_tac cntrl l goal = 
   let (atag, _) = 
     try get_tagged_asm l goal
     with Not_found -> raise No_change
   in 
   let loopdb = Data.get_loopdb cntrl in 
-  let ngoal = simp_engine_tac cntrl ret atag goal
+  let oret = ref (Some cntrl) in
+  let ngoal = simp_engine_tac cntrl oret atag goal
   in 
-  chng := true;
-  Lib.set_option ret (Data.set_loopdb (Lib.dest_option (!ret)) loopdb); 
-  ngoal
+  ((Data.set_loopdb (Lib.dest_option (!oret)) loopdb), ngoal)
 
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
     returning the updated data in [ret]. Set [chng] to true on success.
 
     Doesn't clean-up.
 *) 
-let simpC_engine_tac cntrl ret chng l goal = 
+let simpC_engine_tac cntrl l goal = 
   let (ctag, _) = 
     try get_tagged_concl l goal
     with Not_found -> raise No_change
   in 
   let loopdb = Data.get_loopdb cntrl in 
-  let ngoal = simp_engine_tac cntrl ret ctag goal
+  let oret = ref (Some cntrl) in
+  let ngoal = simp_engine_tac cntrl oret ctag goal
   in 
-  chng := true;
-  Lib.set_option ret (Data.set_loopdb (Lib.dest_option (!ret)) loopdb); 
-  ngoal
+  (Data.set_loopdb (Lib.dest_option (!oret)) loopdb, ngoal)
 
 (***
     Simplifying assumptions
@@ -217,7 +207,7 @@ let simpC_engine_tac cntrl ret chng l goal =
 
     Doesn't clean-up.
 *)
-let simpA0_tac cntrl ret ?a goal = 
+let simpA0_tac cntrl ?a goal = 
   let sqnt = sequent goal in 
   let excluded_tags = Data.get_exclude cntrl in 
   let except_tag x = List.exists (Tag.equal x) excluded_tags in 
@@ -235,41 +225,46 @@ let simpA0_tac cntrl ret ?a goal =
 	in 
 	([atag], List.filter (not <+ (except_or atag)) asm_tags)
   in 
-  let asms_tac reg g = add_asms_tac ret asms g in 
-  let concls_tac ret g = add_concls_tac ret concls g in 
-  let target_tac chng ret tg g =
-    let cntrl = Lib.dest_option (!ret)
-    in 
-    seq
+  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let target_tac (ret: Data.t) tg g =
+    fold_seq (false, ret)
       [
         (** Simplify the target **)
-        alt
-	  [
-	    simpA_engine_tac cntrl ret chng (ftag tg);
-	    skip
-	  ];
+	(fun (fl1, ret1) g1 ->
+          try 
+            ((simpA_engine_tac cntrl (ftag tg))
+                >/ (fun ret2 -> (fl1, ret2))) g1
+          with _ -> ((false, ret1), (pass g1)));
         (** Add the assumption to the simpset *)
-        (fun g1 -> add_asms_tac ret [tg] g1)
+        (fun (fl, ret1) -> 
+          ((add_asms_tac ret1 [tg]) >/ (fun ret2 -> (fl, ret2))))
       ] g
   in 
-  let main_tac chng ret g = 
-    seq_some
+  let main_tac ret g = 
+    let sum_fn (fl1, r) fl2 = (sum_flag fl1 fl2, r) in
+    fold_seq (false, ret)
       [
         (** Add non-target assumptions to the simpset *)
-        asms_tac ret; 
+        (fun (fl1, ret1) -> 
+          ((add_asms_tac ret1 asms)
+           >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
         (** Add conclusions to the simpset *)
-        concls_tac ret;
+        (fun (fl1, ret1) -> 
+          ((add_concls_tac ret1 concls)) 
+          >/ (fun ret2 -> (sum_fn (fl1, ret2) true)));
         (** Simplify the targets *)
-        (fun g1 -> map_some (target_tac chng ret) targets g1)  
+        (fun (fl1, ret1) ->
+          fold_data
+            (fun (fl2, ret2) l -> 
+              (target_tac ret2 l) 
+              >/ (fun arg -> (sum_fn arg fl2)))
+            (fl1, ret1) targets)
       ] g
   in
-  let chng = ref false
-  in 
   try 
-    let ngoal = main_tac chng ret goal
-    in 
-    if (!chng) 
-    then ngoal
+    let ((ok, ret1), ngoal) = main_tac cntrl goal in 
+    if ok
+    then (ret1, ngoal)
     else raise No_change
   with _ -> raise No_change
 
@@ -282,22 +277,7 @@ let simpA0_tac cntrl ret ?a goal =
     Doesn't clean-up.
 *)
 let simpA_tac cntrl ?a goal =
-  let tac1 ret g = simpA0_tac cntrl ret g in 
-  let tac2 data g = 
-    let ncntrl = Lib.dest_option ~err:(Failure "simpA_tac") (!data)
-    in 
-    clean_up_tac ncntrl g
-  in 
-  let main_tac ret g = 
-    seq
-      [
-        tac1 ret; 
-        (fun g1 -> tac2 ret g1)
-      ] g
-  in 
-  let ret = ref (Some (cntrl))
-  in 
-  try main_tac ret goal
+  try apply_tac (simpA0_tac cntrl ?a) clean_up_tac goal
   with _ -> raise No_change
 
 (***
@@ -311,7 +291,7 @@ let simpA_tac cntrl ?a goal =
 
     Doesn't clean-up.
 *)
-let simpC0_tac cntrl ret ?c goal = 
+let simpC0_tac cntrl ?c goal = 
   let sqnt = sequent goal in 
   let excluded_tags = Data.get_exclude cntrl in 
   let except_tag x = List.exists (Tag.equal x) excluded_tags in 
@@ -329,41 +309,46 @@ let simpC0_tac cntrl ret ?c goal =
 	in 
 	([ctag], List.filter (not <+ (except_or ctag)) concl_tags)
   in 
-  let asms_tac ret g = add_asms_tac ret asms g in 
-  let concls_tac ret g = add_concls_tac ret concls g in 
-  let target_tac chng ret ct g = 
-    let cntrl = Lib.dest_option (!ret)
-    in 
-    seq
+  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let target_tac ret ct g = 
+    fold_seq (false, ret)
       [
         (** Simplify the target *)
-        alt
-	  [
-	    simpC_engine_tac cntrl ret chng (ftag ct);
-	    skip
-	  ];
+        (fun (fl1, ret1) g1 ->
+          try
+	    ((simpC_engine_tac ret1 (ftag ct))
+                >/ (fun ret2 -> (fl1, ret2))) g1
+          with _ -> ((false, ret1), pass g1));
         (** Add it to the assumptions *)
-        (fun g1 -> add_concls_tac ret [ct] g1);
+        (fun (fl1, ret1) ->
+          ((add_concls_tac ret1 [ct]) >/ (fun ret2 -> (fl1, ret2))))
       ] g
   in 
-  let main_tac chng ret g = 
-    seq_some
+  let main_tac ret g = 
+    let sum_fn (fl1, r) fl2 = (sum_flag fl1 fl2, r) in
+    fold_seq (false, ret)
       [
         (** Add assumptions to the simpset *)
-        asms_tac ret;
+        (fun (fl1, ret1) ->
+          ((add_asms_tac ret1 asms) 
+              >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
         (** Add non-target conclusions to the simpset *)
-        concls_tac ret;
+        (fun (fl1, ret1) ->
+          ((add_concls_tac ret1 concls)
+           >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
         (** Simplify the targets (in reverse order) *)
-        (fun g1 -> map_some (target_tac chng ret) (List.rev targets) g1);
+        (fun (fl1, ret1) ->
+          fold_data
+            (fun (fl2, ret2) l -> 
+              ((target_tac ret2 l)
+               >/ (fun arg -> sum_fn arg fl2)))
+            (fl1, ret1) targets)
       ] g
   in
-  let chng = ref false
-  in 
   try 
-    let ngoal = main_tac chng ret goal
-    in
-    if (!chng) 
-    then ngoal
+    let ((ok, ret1), ngoal) = main_tac cntrl goal in
+    if ok
+    then (ret1, ngoal)
     else raise No_change
   with _ -> raise No_change
 
@@ -374,27 +359,7 @@ let simpC0_tac cntrl ret ?c goal =
     assumptions after it is simplified.
 *)
 let simpC_tac cntrl ?c goal =
-  let tac1 data g =
-    let ncntrl = Lib.dest_option (!data)
-    in 
-    simpC0_tac ncntrl data ?c g
-  in 
-  let tac2 data g = clean_up_tac data g in 
-  let main_tac g = 
-    let ret = ref (Some (cntrl))
-    in 
-    seq 
-      [
-        tac1 ret; 
-        (fun g1 -> update_tac (log "simpC_tac: 2") 
-	  (Lib.dest_option (!ret)) g1);
-        (fun g1 -> 
-	  let data = Lib.dest_option (!ret)
-	  in
-	  tac2 data g1)
-      ] g
-  in 
-  try main_tac goal
+  try apply_tac (simpC0_tac cntrl ?c) clean_up_tac goal
   with _ -> raise No_change
 
 (***
@@ -411,7 +376,7 @@ let simpC_tac cntrl ?c goal =
 
     Doesn't clean-up.
 *)
-let full_simp0_tac cntrl ret goal = 
+let full_simp0_tac cntrl goal = 
   let excluded = Data.get_exclude cntrl in 
   let except x = List.exists (Tag.equal x) excluded
   and sqnt = sequent goal
@@ -421,50 +386,59 @@ let full_simp0_tac cntrl ret goal =
   and concls = 
     List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
   in 
-  let asm_tac chng ret tg g =
-    let cntrl = Lib.dest_option (!ret)
-    in 
-    seq
+  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let asm_tac ret tg g =
+    fold_seq (false, ret)
       [
         (** Simplify the assumption **)
-        alt
-	  [
-	    simpA_engine_tac cntrl ret chng (ftag tg);
-	    skip
-	  ];
+	(fun (fl1, ret1) g1 ->
+          try ((simpA_engine_tac ret1 (ftag tg))
+               >/ (fun ret2 -> (fl1, ret2))) g1
+          with _ -> ((false, ret1), skip g1));
         (** Add the assumption to the simpset *)
-        (fun g1 -> add_asms_tac ret [tg] g1)
+        (fun (fl, ret1) ->
+          (add_asms_tac ret1 [tg]) >/ (fun ret2 -> fl, ret2))
       ] g
   in 
-  let concl_tac chng ret tg g = 
-    let cntrl = Lib.dest_option (!ret) in 
-    seq
+  let concl_tac ret tg g = 
+    fold_seq (false, ret)
       [
         (** Simplify the conclusion **)
-        alt
-	  [ 
-	    simpC_engine_tac cntrl ret chng (ftag tg);
-	    skip
-	  ];
+	(fun (fl1, ret1) g1 ->
+          try
+	    ((simpC_engine_tac ret1 (ftag tg))
+                >/ (fun ret2 -> (fl1, ret2))) g1
+          with _ -> ((false, ret1), pass g1));
         (** Add the conclusion to the simpset *)
-        (fun g1 -> add_concls_tac ret [tg] g1)
+        (fun (fl, ret1) ->
+          (add_concls_tac ret1 [tg]) >/ (fun ret2 -> fl, ret2))
       ] g
   in 
-  let main_tac chng ret g = 
-    seq_some
+  let sum_fn fl2 (fl1, r) = (sum_flag fl1 fl2, r) in
+  let main_tac ret g = 
+    fold_seq (false, ret)
       [
         (** Simplify the assumptions *)
-        map_some (asm_tac chng ret) asms;
-       (** Simplify the conclusions (in reverse order) *)
-        (fun g1 -> map_some (concl_tac chng ret) (List.rev concls) g1)
+        (fun (fl1, ret1) -> 
+          fold_data 
+          (fun (fl2, ret2) tg -> 
+            ((asm_tac ret1 tg) >/ (sum_fn fl2)))
+            (fl1, ret1)
+            asms);
+        (** Simplify the conclusions (in reverse order) *)
+        (fun (fl1, ret1) ->
+          fold_data 
+          (fun (fl2, ret2) tg -> 
+            ((concl_tac ret1 tg) >/ (sum_fn fl2)))
+            (fl1, ret1)
+            (List.rev concls));
       ] g
   in
-  let chng = ref false in 
   try 
-    let ngoal = main_tac chng ret goal
+    let ((ok, ret1), ngoal) = main_tac cntrl goal
     in 
-    if (!chng)
-    then ngoal
+    if (ok)
+    then (ret1, ngoal)
     else raise No_change
   with _ -> raise No_change
 
@@ -477,14 +451,10 @@ let full_simp0_tac cntrl ret goal =
     simpset rules after it is simplified.}}
 *)
 let full_simp_tac cntrl goal =
-  let ret = ref (Some (cntrl)) in 
-  let tac1 g = full_simp0_tac cntrl ret g in 
-  let tac2 g = 
-    let ncntrl = Lib.dest_option ~err:(Failure "full_simp_tac") (!ret)
-    in 
+  let clean_tac cntrl1 g = 
+    let ncntrl = Lib.dest_option cntrl1 in
     clean_up_tac ncntrl g
   in 
-  let main_tac g = seq_some [tac1; tac2] g
-  in 
-  try main_tac goal
+  try apply_tac (full_simp0_tac cntrl) 
+        (fun cntrl1 -> clean_tac (Some cntrl) )goal
   with _ -> raise No_change
