@@ -77,16 +77,12 @@ let add_asms_tac data atags goal =
     let d = Lib.dest_option (!rdata)
     in 
     update_tac
-      (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+      (fun _ -> Lib.set_option rdata (add_rule_data d rl)) () g
   in 
   let tac tg g = 
-    let rl = ref [] 
-    in 
-    seq 
-      [ 
-	Simpconvs.prepare_asm rl tg;
-	(fun g1 -> add_tac data rl g1)
-      ] g
+    apply_tac
+      (Simpconvs.prepare_asm [] tg)
+      (fun lst -> add_tac data lst) g
   in
   map_some tac atags goal
 
@@ -94,11 +90,13 @@ let add_concls_tac data ctags goal =
   let add_tac rdata rl g = 
     let d = Lib.dest_option (!rdata)
     in 
-    update_tac (fun _ -> Lib.set_option rdata (add_rule_data d (!rl))) () g
+    update_tac (fun _ -> Lib.set_option rdata (add_rule_data d rl)) () g
   in 
   let tac tg g = 
-    let rl = ref [] 
-    in 
+    apply_tac
+      (Simpconvs.prepare_concl [] tg)
+      (fun lst -> add_tac data lst) g
+(*
     seq 
       [ 
 	Simpconvs.prepare_concl rl tg;
@@ -107,6 +105,7 @@ let add_concls_tac data ctags goal =
 	  update_tac (log "add_concls_tac 1") 
 	    (Lib.dest_option (!data)) g1)
       ] g
+*)
   in
   map_some tac ctags goal
 

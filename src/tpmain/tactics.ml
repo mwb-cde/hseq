@@ -424,6 +424,16 @@ let query_tac tacl g = tacl (New.changes g) g
 let (?>) tacl g = tacl (New.changes g) g
 let update_tac f d g = ((fun _ -> (f d)) g); skip g
 
+let inject_tac f tac g = (f, tac g)
+let (>+) = inject_tac
+let (+<) tac d = inject_tac d tac
+
+let permute_tac perm tac g =
+  let (d, g1) = tac g
+  in
+  (perm d, g1)
+
+
 let try_tac tac g = 
   try (true, tac g)
   with _ -> (false, skip g)

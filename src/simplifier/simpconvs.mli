@@ -88,8 +88,7 @@ val simple_rewrite_rule:
 *)
 
 val simple_asm_rewrite_tac:
-  ?info:Tactics.Info.t
-  -> Logic.thm -> Logic.label -> Tactics.tactic
+  Logic.thm -> Logic.label -> Tactics.tactic
 (** [simple_asm_rewrite_tac rule l asm]
 
     Rewrite assumption [asm] with [rule] by descending through topmost
@@ -108,7 +107,6 @@ val simple_asm_rewrite_tac:
 *)
 
 val negate_concl_tac:
-  ?info: Tactics.Info.t ->
   Logic.label -> Logic.Subgoals.node -> Logic.Subgoals.branch
 (** [negate_concl_tac info t g]: Negate conclusion [t], making it
     assumption tagged [t'].
@@ -396,7 +394,7 @@ val thm_to_rules: Scope.t -> Logic.thm -> Logic.thm list
 
 (** {7 Rules from assumptions} *)
 
-val asm_rewrite_tac: ?info:Tactics.Info.t -> 
+val asm_rewrite_tac:
   Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
 (** [asm_rewrite thm tg g]:
 
@@ -407,8 +405,7 @@ val asm_rewrite_tac: ?info:Tactics.Info.t ->
     b{_ tg}, asms |- concl
 *)
 
-
-val qnt_asm_rewrite_tac: ?info:Tactics.Info.t -> 
+val qnt_asm_rewrite_tac: 
   Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
 (** [qnt_asm_rewrite_tac thm tg g]: Rewrite a possibly quantified
     assumption.
@@ -420,17 +417,6 @@ val qnt_asm_rewrite_tac: ?info:Tactics.Info.t ->
     -->
     tg:b, asms |- concl
 *)
-
-
-val add_asm_tac:
-  Logic.tagged_form list ref
-  -> Tag.t -> Tactics.tactic
-(** [add_asm_tac ret tg g]: Add the assumption labelled [tg] to [ret].
-    
-    If g = [ a{_ tg}, asms |- concl ]
-    then return [ret = [a]::!(reg)]
-*)
-
 
 val solve_not_true_tac: Tag.t -> Tactics.tactic
 (** [solve_not_true_tac]: Solve goals of the form [(not true){_ tg} |-
@@ -481,9 +467,9 @@ module Asms:
 sig
 
   val asm_rewrite_add_tac: 
-    ?info:Tactics.Info.t 
-    -> Logic.tagged_form list ref
-    -> Logic.thm -> Tag.t -> Tactics.tactic
+    Logic.tagged_form list
+    -> Logic.thm -> Tag.t 
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** [asm_rewrite_add_tac ret thm tg g]:
 
       Rewrite assumption [tg] with rule [thm] = |- a=b
@@ -496,77 +482,78 @@ sig
   *)
 
   val accept_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [a] to [a=true] and delete [true]. Always succeeds.
   *)
 
   val rr_equality_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Accept [l=r] or [c=> l=r].  *)
 
   val eq_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [a=b] to [(a=b) = true] and [(b=a)=true] and [c=> (a=b)]
       to [c=>((a=b) = true)] and [c=>((b=a)=true)] *)
 
   val fact_rule_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [a] to [a=true] and [c=> false] to [(not c)] and [c=> a]
       to [c => a=true]; [ (c=>a) = true ] pass [(a=b)] and [c=>(a=b)]
       to [eq_asm] and solve [false |- C].  *)
 
   val neg_disj_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [not (a or b)] to [(not a) and (not b)] *)
     
   val neg_eq_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [not (a=b)] to [(a=b) = false] and [(b=a)=false] and
       [c=>not (a=b)] to [c=>((a=b) = false)]; [c=>((b=a)=false)] *)
 
   val neg_rule_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert and [c=> not true] to [not c] and [not a] to [a=false]
       and [c=> not a] to [c=> a=false]; [(c => not a) = true] pass [not
       (a=b)] and [c=>not(a=b)] to [neg_eq_asm] and solve [not true |-
       C] *)
 
   val conj_rule_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [a & b] to [a] and [b].  *)
 
   val neg_all_rule_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [not (!a: b)] to [?a: not b] then convert the new
       theorem. (Not used) *)
 
   val neg_exists_rule_asm:
-    Logic.tagged_form list ref 
+    Logic.tagged_form list 
     -> Tag.t * (Basic.binders list * Basic.term option * Basic.term) 
-    -> Tactics.tactic
+    -> (Logic.tagged_form list) Tactics.data_tactic
   (** Convert [not (?a: b)] to [!a: not b] then convert the new
       theorem.  *)
 
   val single_asm_to_rule: 
-    Logic.tagged_form list ref -> Tag.t -> Tactics.tactic
+    Logic.tagged_form list -> Tag.t 
+    -> (Logic.tagged_form list) Tactics.data_tactic
 (** [single_asm_to_rules f g]: Convert the assumption [f] stating a
     single fact to a rewrite-rule. Formula [f] must be an assumption of
     [g].
@@ -574,7 +561,8 @@ sig
 end
 
 val asm_to_rules: 
-  Logic.tagged_form list ref -> Tag.t -> Tactics.tactic
+  Logic.tagged_form list -> Tag.t
+  -> (Logic.tagged_form list) Tactics.data_tactic
 (** [asm_to_rules tg ret g]: Toplevel conversion function.  Convert
     assumption [tg] of goal [g] to one or more rules.  Solves trivial
     goals involving [false] or [not true] in the assumptions. The
@@ -612,9 +600,8 @@ val unpack_rule_data:
 (** {7 Rules from assumptions and conclusions} *)
 
 val prepare_asm:
-  rule_data list ref 
-  -> Tag.t 
-  -> Tactics.tactic
+  rule_data list -> Tag.t 
+  -> (rule_data list) Tactics.data_tactic
 (** [prepare_asm data a goal]: Prepare assumption labelled [a] for use
     as a simp rule.
 
@@ -632,17 +619,15 @@ val prepare_asm:
 *)
 
 val prepare_asms:
-  rule_data list ref 
-  -> Tag.t list 
-  -> Tactics.tactic
+  rule_data list -> Tag.t list 
+  -> (rule_data list) Tactics.data_tactic
 (** [prepare_asms data asm g]: Apply [prepare_asm] to each assumption
     in the list [asms]. Return the cumulative results.
 *)
 
 val prepare_concl:
-  rule_data list ref 
-  -> Tag.t 
-  -> Tactics.tactic
+  rule_data list -> Tag.t 
+  -> (rule_data list)Tactics.data_tactic
 (** [prepare_concl data c goal]: Prepare conclusion labelled [a] for
     use as a simp rule.
 
@@ -661,9 +646,8 @@ val prepare_concl:
 *)
 
 val prepare_concls:
-  rule_data list ref
-  -> Tag.t list 
-  -> Tactics.tactic
+  rule_data list -> Tag.t list 
+  -> (rule_data list)Tactics.data_tactic
 (** [prepare_concls data concls g]: Apply [prepare_concl] to each
     assumption in the list [concls]. Return the cumulative results.
 *)

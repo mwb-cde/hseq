@@ -111,36 +111,31 @@ let neg_disj_var = Lib.freeze (make_neg_disj_thm)
 let neg_disj_thm () =
   Lib.thaw ~fresh:fresh_thm neg_disj_var
 
-(** [neg_eq_sym]: |- not (a = b) = not (b = a)
-*)
+(** [neg_eq_sym]: |- not (a = b) = not (b = a) *)
 let make_neg_eq_sym_thm()=
-  let info = info_make()
-  and atgs = ref None
-  and thm = Boollib.Thms.eq_sym_thm()
+  let thm = Boollib.Thms.eq_sym_thm()
   in 
   Commands.prove << !x y: (not (x = y)) = (not (y = x)) >>
       (seq
          [ 
-	   allC; allC; equals_tac; 
-	   (notify_tac 
-	      (fun inf ->
-	        let atg1, atg2 = 
-	          get_two ~msg:"make_neg_eq_sym_thm" (aformulas info)
-	        in 
-	        Lib.set_option atgs (atg1, atg2)) info
-	      (lift_info ~info:info iffE))
-	   --
+	   allC; allC; equals_tac;
+           iffE
+           --
 	     [
-	       (fun g -> 
-	         let (atg, _) = Lib.dest_option (!atgs)
+	       (?> fun info g -> 
+	         let (atg, _) = 
+                   Lib.get_two (New.aformulas info)
+                     (error "simpconvs.make_neg_eq_sym_thm:1")
 	         in 
-		 (once_rewrite_tac ~f:(ftag atg) [thm]
-		  ++ basic) g);
-	       (fun g -> 
-	         let (_, atg) = Lib.dest_option (!atgs)
+	         (once_rewrite_tac ~f:(ftag atg) [thm]
+	          ++ basic) g);
+	       (?> fun info g -> 
+	         let (_, atg) = 
+                   Lib.get_two (New.aformulas info)
+                      (error "simpconvs.make_neg_eq_sym_thm:1")
 	         in 
-		 (once_rewrite_tac ~f:(ftag atg) [thm]
-		  ++ basic) g)
+	         (once_rewrite_tac ~f:(ftag atg) [thm]
+	          ++ basic) g)
 	     ]
          ])
       
@@ -152,40 +147,37 @@ let neg_eq_sym_thm () =
 (** [cond_neg_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
 *)
 let make_cond_neg_eq_sym_thm()=
-  let info = info_make()
-  and atgs = ref None
-  and thm = Boollib.Thms.eq_sym_thm()
+  let thm = Boollib.Thms.eq_sym_thm()
   in 
   Commands.prove 
   << !c x y: (c => (not (x = y))) = (c => (not (y = x))) >>
       (seq
          [ 
 	   allC; allC; allC; equals_tac; 
-	   ((notify_tac 
-	       (fun inf ->
-	         let atg1, atg2 = 
-	           get_two ~msg:"make_neg_eq_sym_thm" (aformulas info)
-	         in 
-	         Lib.set_option atgs (atg1, atg2)) info
-	       (lift_info ~info:info iffE)) ++ implC)
+	   (iffE ++ (?> fun info -> implC ++ set_changes_tac info))
 	   --
 	     [
-	       implA
-	       --
-	         [basic;
-	          (fun g -> 
-		    let (atg, _) = Lib.dest_option (!atgs)
-		    in 
-		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) g)];
-	       implA
-	       --
-	         [basic;
-	          (fun g -> 
-		    let (_, atg) = Lib.dest_option (!atgs)
-		    in 
-		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) g)]
+               (?> fun info ->
+	       implA --
+	         [
+                   basic;
+	           (fun g -> 
+		     let (atg, _) = 
+                       Lib.get_two (New.aformulas info)
+                         (error "simpconvs.make_cond_neg_eq_sym_thm:1")
+		     in 
+		     (once_rewrite_tac ~f:(ftag atg) [thm]
+		      ++ basic) g)]);
+               (?> fun info ->
+	         implA --
+	           [basic;
+	            (fun g -> 
+		      let (_, atg) = 
+                        Lib.get_two (New.aformulas info)
+                          (error "simpconvs.make_cond_neg_eq_sym_thm:2")
+		      in 
+		      (once_rewrite_tac ~f:(ftag atg) [thm]
+		       ++ basic) g)])
 	     ]
          ])
 
@@ -197,40 +189,38 @@ let cond_neg_eq_sym_thm () =
 (** [cond_eq_sym]: |- (c=> not (a = b)) = (c => not (b = a))
 *)
 let make_cond_eq_sym_thm()=
-  let info = info_make()
-  and atgs = ref None
-  and thm = Boollib.Thms.eq_sym_thm()
+  let thm = Boollib.Thms.eq_sym_thm()
   in 
   Commands.prove 
   << !c x y: (c => (x = y)) = (c => (y = x)) >>
       (seq
          [ 
 	   allC; allC; allC; equals_tac; 
-	   ((notify_tac 
-	       (fun inf ->
-	         let atg1, atg2 = 
-	           get_two ~msg:"make_eq_sym_thm" (aformulas info)
-	         in 
-	         Lib.set_option atgs (atg1, atg2)) info
-	       (lift_info ~info iffE)) ++ implC)
+           (iffE ++ (?> fun info -> implC ++ set_changes_tac info))
 	   --
 	     [
+               (?> fun info ->
 	       implA
 	       --
 	         [basic;
 	          (fun g -> 
-		    let (atg, _) = Lib.dest_option (!atgs)
+		    let (atg, _) =
+                        Lib.get_two (New.aformulas info)
+                          (error "simpconvs.make_cond_eq_sym_thm:1")
 		    in 
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) g)];
+		     ++ basic) g)]);
+               (?> fun info ->
 	       implA
 	       --
 	         [basic;
 	          (fun g -> 
-		    let (_, atg) = Lib.dest_option (!atgs)
+		    let (_, atg) = 
+                        Lib.get_two (New.aformulas info)
+                          (error "simpconvs.make_cond_eq_sym_thm:2")
 		    in 
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) g)]
+		     ++ basic) g)])
 	     ]
          ])
 
@@ -280,7 +270,7 @@ let simple_rewrite_rule scp rule thm =
     -->
     asm:rhs, A |- C
 *)
-let simple_asm_rewrite_tac ?info rule asm node =
+let simple_asm_rewrite_tac rule asm node =
   let sqnt = sequent node in 
   let (_, f) = Logic.get_label_asm asm sqnt
   and scp = scope_of node in 
@@ -290,7 +280,7 @@ let simple_asm_rewrite_tac ?info rule asm node =
     then simple_rewrite_conv scp rule trm
     else rule
   in 
-  lift_info ?info (once_rewrite_tac [thm] ~f:asm) node
+  once_rewrite_tac [thm] ~f:asm node
 
 
 (*** 
@@ -301,15 +291,13 @@ let simple_asm_rewrite_tac ?info rule asm node =
 (** [negate_concl_tac info t g]: Negate conclusion [t], making it
     assumption tagged [t'].
 *)
-let negate_concl_tac ?info c goal =
-  let inf = info_make() in 
-  let add_fn x = Tactics.info_add info [] (aformulas x) [] []
-  in 
+let negate_concl_tac c goal =
   seq 
     [ 
       once_rewrite_tac [double_not_thm()] ~f:c;
-      lift_info ~info:inf (Tactics.negC ~c:c);
-      update_tac add_fn inf
+      Tactics.negC ~c:c;
+      (?> fun inf -> 
+        set_changes_tac (Changes.make [] (New.aformulas inf) [] []))
     ] goal
 
 
@@ -659,8 +647,8 @@ let thm_to_rules scp thm =
     -->
     tg:b, asms |- concl
 *)
-let asm_rewrite_tac ?info thm tg g =
-  lift_info ?info (once_rewriteA_tac [thm] ~a:(ftag tg)) g
+let asm_rewrite_tac thm tg g =
+  once_rewriteA_tac [thm] ~a:(ftag tg) g
     
 (** [qnt_asm_rewrite_tac thm tg g]:
 
@@ -671,18 +659,25 @@ let asm_rewrite_tac ?info thm tg g =
     -->
     tg:b, asms |- concl
 *)
-let qnt_asm_rewrite_tac ?info thm tg g =
-  simple_asm_rewrite_tac ?info:info thm (ftag tg) g
+let qnt_asm_rewrite_tac thm tg g =
+  simple_asm_rewrite_tac thm (ftag tg) g
 
 (** [add_asm_tac ret tg g]: Add the assumption labelled [tg] to [ret].
     
     If g = [ a{_ tg}, asms |- concl ]
     then return [ret = [a]::!(reg)]
 *)
+(**
 let add_asm_tac ret tg g = 
   let aform = get_tagged_asm (ftag tg) g
   in 
   update_tac (fun _ -> ret := aform::(!ret)) () g
+**)
+
+let new_add_asm ret tg g = 
+  let aform = get_tagged_asm (ftag tg) g in 
+  aform::ret
+
 
 (** [solve_not_true_tac]: Solve goals of the form [not true |- C].
 *)
@@ -758,31 +753,27 @@ struct
 
       Return [ret = [b]::!(reg)]
   *)
-  let asm_rewrite_add_tac ?info ret thm tg goal =
-    seq
-      [
-        qnt_asm_rewrite_tac ?info thm tg;
-        add_asm_tac ret tg
-      ] goal
+  let asm_rewrite_add_tac ret thm tg goal =
+    (new_add_asm ret tg goal, qnt_asm_rewrite_tac thm tg goal)
 
-  let rec accept_asm ret (tg, (qs, c, a)) g =
+  let rec accept_asm ret (tg, (qs, c, a)) goal =
     if is_constant_true (qs, c, a)
     then 
       (** Delete assumption true *)
-      deleteA (ftag tg) g
+      (ret, deleteA (ftag tg) goal)
     else 
       if is_constant_false (qs, c, a)
       then (** Solve assumption false *)
-        falseA ~a:(ftag tg) g
+        (ret, falseA ~a:(ftag tg) goal)
       else 
-        asm_rewrite_add_tac ret (rule_true_thm()) tg g
+        asm_rewrite_add_tac ret (rule_true_thm()) tg goal
 
   and rr_equality_asm ret (tg, (qs, c, a)) g =
     if is_rr_equality (qs, c, a)
-    then add_asm_tac ret tg g
+    then (new_add_asm ret tg g, skip g)
     else failwith "rr_equality_asm: not a rewrite rule"
 
-  and eq_asm ret (tg, (qs, c, a)) g =
+  and eq_asm (ret: 'a list) (tg, (qs, c, a)) g =
     if Lterm.is_equality a
     then 
       let asm_info = is_rr_rule (qs, c, a, None) in 
@@ -797,19 +788,24 @@ struct
  	  | (Some(true), _) -> cond_rule_true_thm()
  	  | (_, _) -> rule_true_thm()
       in 
-      seq
+      fold_seq []
         [
-          copyA (ftag tg);
-          ?> (fun info g1 ->
+          (fun ret g1 -> (ret, copyA (ftag tg) g1));
+          (fun ret g1 ->
+            let info = New.changes g1 in
  	    let atg = get_one ~msg:"eq_asm" (New.aformulas info)
  	    in 
- 	    seq 
+ 	    fold_seq ret
  	      [
- 		qnt_asm_rewrite_tac rr_thm atg;
- 		qnt_asm_rewrite_tac rr_truth_thm atg;
- 		add_asm_tac ret atg;
-		qnt_asm_rewrite_tac rr_truth_thm tg;
- 		add_asm_tac ret tg
+                (fun l g3 -> 
+ 		  (l, qnt_asm_rewrite_tac rr_thm atg g3));
+                (fun l g3 ->
+ 		  (l, qnt_asm_rewrite_tac rr_truth_thm atg g3));
+ 		(fun ret g3 -> 
+                  (new_add_asm ret atg g3, skip g3));
+		(fun ret g3 ->
+                  (new_add_asm ret tg g3, 
+                   qnt_asm_rewrite_tac rr_truth_thm tg g3))
  	      ] g1)
         ] g
     else 
@@ -824,40 +820,47 @@ struct
 	    if is_constant_true (qs, c, a)
 	    then 
 	      (** Delete assumption true *)
-	      deleteA (ftag tg) g
+	      (ret, deleteA (ftag tg) g)
 	    else 
 	      if is_constant_false (qs, c, a)
 	      then (** Solve assumption false *)
-	        falseA ~a:(ftag tg) g
+	        (ret, falseA ~a:(ftag tg) g)
 	      else 
  	        asm_rewrite_add_tac ret (rule_true_thm()) tg g
           | (Some(true), _) -> 
 	    if is_constant_true (qs, c, a)
 	    then 
 	    (** Delete assumption true *)
-	      deleteA (ftag tg) g
+	      (ret, deleteA (ftag tg) g)
 	    else 
 	    (** |- c => false -> |- not c*)
 	      if is_constant_false (qs, c, a)
 	      then 
-	        seq [
-	          qnt_asm_rewrite_tac (cond_rule_imp_false_thm()) tg;
-	          single_asm_to_rule ret tg
+	        fold_seq ret
+                  [
+                    (fun lst1 g1 -> 
+                      (lst1, 
+	               qnt_asm_rewrite_tac (cond_rule_imp_false_thm()) tg g1));
+                      (fun lst1 ->
+	                single_asm_to_rule lst1 tg)
 	        ] g
 	      else 
-	        seq
+	        fold_seq ret
 	          [
-		    copyA (ftag tg);
-		    ?> (fun info g1 -> 
+		    (fun lst g1 -> lst, copyA (ftag tg) g1);
+		    (fun lst g1 -> 
+                      let info = New.changes g1 in
 		      let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
 		      in 
-		      seq
+                      fold_seq lst
 		        [
-			  asm_rewrite_add_tac ret (cond_rule_true_thm()) tg;
-			  asm_rewrite_add_tac ret (rule_true_thm()) atg
-		        ] g1
-		    )
-	          ]g
+                          (fun lst1 ->
+			    asm_rewrite_add_tac lst1
+                              (cond_rule_true_thm()) tg);
+                          (fun lst1 ->
+			    asm_rewrite_add_tac lst1 (rule_true_thm()) atg);
+		        ] g1)
+	          ] g
           | _ -> failwith "do_fact_asm"
       end
     else eq_asm ret (tg, (qs, c, a)) g
@@ -870,43 +873,53 @@ struct
 	  | None -> neg_eq_sym_thm()
 	  | _ -> cond_neg_eq_sym_thm()
       in 
-      seq
+      fold_seq ret
 	[
-	  copyA (ftag tg);
-	  ?> (fun info g1 ->
+	  (fun lst g2 -> lst, copyA (ftag tg) g2);
+	  (fun ret1 g1 ->
+            let info = New.changes g1 in
 	    let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
 	    in 
-	    seq 
+	    fold_seq ret1
 	      [
-		qnt_asm_rewrite_tac rr_thm atg;
-		qnt_asm_rewrite_tac (rule_false_thm()) atg;
-		add_asm_tac ret atg;
-		qnt_asm_rewrite_tac (rule_false_thm()) tg;
-		add_asm_tac ret tg
+		(fun lst g2 ->
+                  (lst, qnt_asm_rewrite_tac rr_thm atg g2));
+                (fun lst g2 -> 
+                  (lst,
+		   qnt_asm_rewrite_tac (rule_false_thm()) atg g2));
+                (fun lst g2 ->
+		  (new_add_asm lst atg g2,
+		   qnt_asm_rewrite_tac (rule_false_thm()) tg g2));
+                (fun lst g2 ->
+		  new_add_asm lst tg g2, skip g2)
 	      ] g1)
 	] g
     else
       failwith "neg_eq_asm"
 
-  and neg_disj_asm ret (tg, (qs, c, a)) g=
+  and neg_disj_asm (ret: 'a list) (tg, (qs, c, a)) g=
     if (Lterm.is_neg a) && (Lterm.is_disj (Term.rand a))
     then 
       match c with
 	| None -> 
-	    alt
-	      [
-	        seq
+          begin
+            try
+              begin
+	        fold_seq ret
 		  [
-		    asm_rewrite_tac (neg_disj_thm()) tg;
-		    single_asm_to_rule ret tg
-		  ];
-	        asm_rewrite_add_tac ret (rule_false_thm()) tg
-	      ] g
+                    (fun lst g1 -> 
+                      (lst, 
+		       asm_rewrite_tac (neg_disj_thm()) tg g1));
+                    (fun lst -> single_asm_to_rule lst tg)
+		  ] g
+              end 
+            with _ -> asm_rewrite_add_tac ret (rule_false_thm()) tg g
+          end
         | Some _ ->  
 	  failwith "neg_disj_asm: Not an unconditional negated disjunction"
     else failwith "neg_disj_asm"
 
-  and neg_rule_asm ret (tg, (qs, c, a)) g = 
+  and neg_rule_asm (ret: 'a list) (tg, (qs, c, a)) g = 
     if Lterm.is_neg a
     then 
       let b = Term.rand a in 
@@ -916,12 +929,12 @@ struct
 	    if is_constant_false (qs, c, b)
 	    then 
 	      (** Delete assumption (not false) *)
-	      deleteA (ftag tg) g
+	      (ret, deleteA (ftag tg) g)
 	    else
 	      if is_constant_true (qs, c, b)
 	      then
                 (** Solve assumption (not true) *)
-		solve_not_true_tac tg g
+		(ret, solve_not_true_tac tg g)
 	      else 
 		if Lterm.is_equality b 
 		then neg_eq_asm ret (tg, (qs, c, a)) g
@@ -931,33 +944,39 @@ struct
 		  else asm_rewrite_add_tac ret (rule_false_thm()) tg g
 	  | (Some(true), _) -> 
 	    if is_constant_false (qs, c, b)
-	    then deleteA (ftag tg) g
+	    then (ret, deleteA (ftag tg) g)
 	    else
 	      (** |- c => not true -> |- not c*)
 	      if is_constant_true (qs, c, b)
 	      then 
-	        seq 
+	        fold_seq ret 
                   [
-		    qnt_asm_rewrite_tac (cond_rule_imp_not_true_thm()) tg;
-		    single_asm_to_rule ret tg
+                    (fun lst g1 -> 
+                      (lst, 
+                       qnt_asm_rewrite_tac
+                        (cond_rule_imp_not_true_thm()) tg g1));
+		    (fun lst g1 -> single_asm_to_rule lst tg g1)
 	          ] g
 	      else 
 	        if Lterm.is_equality b 
 	        then neg_eq_asm ret (tg, (qs, c, a)) g
 	        else 
-		  seq
+		  fold_seq ret
 		    [
-		      copyA (ftag tg);
-		      ?> (fun info g1 -> 
+		      (fun lst g1 -> lst, copyA (ftag tg) g1);
+                      (fun lst g1 ->
+                        let info = New.changes g1 in
 		        let atg = 
 			  get_one ~msg:"neg_rule_asm" (New.aformulas info)
 		        in 
-		        seq
+		        fold_seq lst
 			  [
-			    asm_rewrite_add_tac ret 
-			      (cond_rule_false_thm()) tg;
-			    asm_rewrite_add_tac ret
-			      (rule_true_thm()) atg
+                            (fun lst1 ->
+			      asm_rewrite_add_tac lst1
+			        (cond_rule_false_thm()) tg);
+                            (fun lst1 -> 
+			      asm_rewrite_add_tac lst1
+			        (rule_true_thm()) atg)
 			  ] g1)
 		    ] g
 	  | _ -> failwith "neg_rule_asm"
@@ -967,17 +986,18 @@ struct
   and conj_rule_asm ret (tg, (qs, c, a)) g = 
     if Lterm.is_conj a
     then 
-      seq
+      fold_seq ret
 	[
-	  conjA ~a:(ftag tg);
-	  ?> (fun inf g1 -> 
+	  (fun lst g1 -> lst, conjA ~a:(ftag tg) g1);
+          (fun lst g1 ->
+            let inf = New.changes g1 in
 	    let ltg, rtg = 
 	      get_two ~msg:"Simpconvs.conj_rule_asm" (New.aformulas inf)
 	    in 
-	    seq
+	    fold_seq lst
 	      [
-		single_asm_to_rule ret ltg;
-		single_asm_to_rule ret rtg
+		(fun lst1 -> single_asm_to_rule lst1 ltg);
+		(fun lst1 -> single_asm_to_rule lst1 rtg)
 	      ] g1)
 	] g
     else failwith "conj_rule_asm"
@@ -988,21 +1008,29 @@ struct
       | None -> 
           if is_neg_all (qs, c, a)
           then 
-	    (asm_rewrite_tac (neg_all_conv scp a) tg 
-	     ++ single_asm_to_rule ret tg) g
+            fold_seq ret
+              [
+	        (fun lst g1 -> 
+                  (lst, asm_rewrite_tac (neg_all_conv scp a) tg g1));
+                (fun lst -> single_asm_to_rule lst tg)
+              ] g
           else failwith "neg_all_rule_asm: Not a negated universal quantifier"
       | Some _ ->  
         failwith 
 	  "neg_all_rule_asm: Not an unconditional negated universal quantifier"
 
-  and neg_exists_rule_asm ret (tg, (qs, c, a)) g = 
+  and neg_exists_rule_asm (ret: 'a list) (tg, (qs, c, a)) g = 
     let scp = scope_of g in 
     match c with 
       | None -> 
           if is_neg_exists (qs, c, a)
           then 
-	    (asm_rewrite_tac (neg_exists_conv scp a) tg 
-	     ++ single_asm_to_rule ret tg) g
+            fold_seq ret
+	      [ 
+                (fun lst g1 -> 
+                  lst, asm_rewrite_tac (neg_exists_conv scp a) tg g1);
+                (fun lst -> single_asm_to_rule lst tg)
+              ] g
           else 
 	    failwith "neg_exists_rule_asm: Not a negated existential quantifier"
       | Some _ ->  
@@ -1014,7 +1042,7 @@ struct
     let tform =  Logic.Sequent.get_tagged_asm tg (sequent goal) in 
     let trm = Formula.term_of (drop_tag tform) in 
     let (qs, c, a) = strip_qnt_cond trm in 
-    let make x = 
+    let make g = 
       Lib.apply_first 
         [
           (*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
@@ -1025,15 +1053,20 @@ struct
           conj_rule_asm ret (tg, (qs, c, a));
           fact_rule_asm ret (tg, (qs, c, a));
           accept_asm ret (tg, (qs, c, a))
-        ]  x 
+        ] g
     in 
     try make goal
     with err ->  raise (add_error "single_asm_to_rule" err)
 end
 
+(*
 let asm_to_rules ret tg goal = 
-  Asms.single_asm_to_rule ret tg goal
-
+  let ret1, goal1 = Asms.single_asm_to_rule (!ret) tg goal
+  in
+  ret := ret1;
+  goal1
+*)
+let asm_to_rules ret tg goal = Asms.single_asm_to_rule ret tg goal
 
 (*** Rules from assumptions and conclusions. ***)
 
@@ -1078,46 +1111,34 @@ let unpack_rule_data rds =
     {- Return the result in [data]. }
     }
 *)
-let prepare_asm data a goal =
-  let new_asm_tags = ref []
-  and asm_form = get_tagged_asm (ftag a) goal in 
-  let data_fn (new_asm, rules) = 
-    data := (mk_rule_data asm_form new_asm rules)::(!data)
-  in 
+
+let prepare_asm data atg goal =
+  let asm_form = get_tagged_asm (ftag atg) goal in 
   let false_test g = 
-    let (_, asm) = Logic.Sequent.get_tagged_asm a (sequent g)
-    in 
+    let (_, asm) = Logic.Sequent.get_tagged_asm atg (sequent g) in 
     Lterm.is_false (Formula.term_of asm)
   in 
-  seq 
+  fold_seq []
     [
-      (false_test --> Boollib.falseA ~a:(ftag a));
-      copyA (ftag a);
-      ?> (fun info g ->
-        let a1 = get_one ~msg:"Simplib.prepare_asm" (New.aformulas info) in 
-        let a1form = drop_tag (get_tagged_asm (ftag a1) g)
-        in 
-        seq 
-	  [
-	    asm_to_rules new_asm_tags a1;
-	    (fun g1 -> 
-	      let rules = (!new_asm_tags)
-	      in 
-	      update_tac data_fn (a1form, rules) g1)
-	  ] g)
+      (fun l -> seq [
+        (false_test --> Boollib.falseA ~a:(ftag atg));
+        copyA (ftag atg)
+      ] +< l);
+    (fun _ g ->
+      let info = New.changes g in
+      let a1 = get_one ~msg:"Simplib.prepare_asm" (New.aformulas info) in 
+      let a1form = drop_tag (get_tagged_asm (ftag a1) g) in
+      let mk_data rules = 
+        (mk_rule_data asm_form a1form rules)::data
+      in 
+      permute_tac mk_data (asm_to_rules [] a1) g)
     ] goal
 
 (** [prepare_asms data asm g]: Apply [prepare_asm] to each assumption
     in the list [asms]. Return the cumulative results.
 *)
 let prepare_asms data ams goal =
-  let d = ref []
-  in 
-  seq
-    [
-      map_every (prepare_asm d) ams;
-      update_tac (fun () -> data := !d) ()
-    ] goal
+  fold_data prepare_asm data ams goal
 
 (** [prepare_concl data c goal]: Prepare conclusion labelled [a] for
     use as a simp rule.
@@ -1139,50 +1160,37 @@ let prepare_asms data ams goal =
     }
 *)
 let prepare_concl data c goal =
-  let info = info_make()
-  and new_asm_tags = ref []
-  and concl_form = get_tagged_concl (ftag c) goal in 
-  let data_fn (new_asm, rules) = 
-    data := (mk_rule_data concl_form new_asm rules)::(!data)
-  in 
+  let concl_form = get_tagged_concl (ftag c) goal in 
   let true_test g = 
     let (_, concl) = Logic.Sequent.get_tagged_cncl c (sequent g)
     in 
     Lterm.is_true (Formula.term_of concl)
   in 
-  seq 
+  fold_seq []
     [
-      (true_test --> Logic.Tactics.trueC (ftag c));
-      copyC (ftag c);
-      ?> (fun chngs g -> 
-        let c1 = 
-	  get_one ~msg:"Simplib.prepare_concl" (New.cformulas chngs) 
+      (fun l ->
+        seq [
+          (true_test --> Logic.Tactics.trueC (ftag c));
+          copyC (ftag c);
+          (?> fun info g -> 
+            let c1 = get_one ~msg:"Simplib.prepare_concl" 
+              (New.cformulas info) 
+            in 
+            negate_concl_tac (ftag c1) g)
+        ] +< l);
+      (fun _ g ->
+        let info = New.changes g in 
+        let a = get_one ~msg:"Simplib.prepare_concl" (New.aformulas info) 
         in 
-        info_empty info;
-        negate_concl_tac ~info:info (ftag c1) g); 
-      (fun g ->
-        let a = get_one ~msg:"Simplib.prepare_concl" (aformulas info) in 
-        let aform = drop_tag (get_tagged_asm (ftag a) g)
+        let aform = drop_tag (get_tagged_asm (ftag a) g) in 
+        let mk_data rules = 
+          (mk_rule_data concl_form aform rules)::data 
         in 
-        seq 
-	  [
-	    asm_to_rules new_asm_tags a;
-	    (fun g1 ->
-	      let rules = (!new_asm_tags)
-	      in 
-	      update_tac data_fn (aform, rules) g1)
-	  ] g)
+        permute_tac mk_data (asm_to_rules [] a) g)
     ] goal
 
 (** [prepare_concls data concls g]: Apply [prepare_concl] to each
     assumption in the list [concls]. Return the cumulative results.
 *)
 let prepare_concls data cs goal =
-  let d = ref []
-  in 
-  seq
-    [
-      map_every (prepare_concl d) cs;
-      update_tac (fun () -> data:=(!d)) ()
-    ] goal
-
+  fold_data prepare_concl data cs goal

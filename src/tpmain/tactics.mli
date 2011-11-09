@@ -411,6 +411,20 @@ val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
 val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
+val inject_tac: 'a -> tactic -> 'a data_tactic
+(** [inj_tac d tac g]: Form the data_tactic [(d, tag g)]. *)
+
+val (>+): 'a -> tactic -> 'a data_tactic
+(** [(d >- tac)]: Synonym for [inj_tac d tac]. *)
+
+val (+<): tactic -> 'a -> 'a data_tactic
+(** [(tac +< d)]: Synonym for [inj_tac d tac]. *)
+
+val permute_tac: 
+  ('a -> 'b) -> ('a) data_tactic 
+  -> ('b) data_tactic
+(** [permute_tac p tac g]:  *)
+
 val try_tac: tactic -> (bool) data_tactic
 (** [try_tac tac g]: Return [(true, tac g)] or [(false, skip g)] if
     [tac g] fails. *)
