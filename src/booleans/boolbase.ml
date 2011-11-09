@@ -212,7 +212,7 @@ let direct_map_some tac lst l goal =
   some_aux l goal
 
 let new_direct_map_some tac lst goal =
-  let app lbl (flag, fail_list) node =
+  let app (flag, fail_list) lbl node =
     try 
       let branch1 = tac lbl node
       in
@@ -222,7 +222,8 @@ let new_direct_map_some tac lst goal =
   match lst with
     | [] -> ([], fail ~err:(error "direct_map_some: no data.") goal)
     | _ ->
-      let ((flag, fail_list), branch) = fold app lst (false, []) goal
+      let ((flag, fail_list), branch) = 
+        fold_data app (false, []) lst goal
       in
       if not flag
       then (fail_list, 

@@ -81,7 +81,7 @@ struct
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
       [ret] will be in reverse order of [rules].  *)
-  let map_sym_tac ret rules goal = 
+  let map_sym_tac (rules: Tactics.rule list) goal = 
     let scp = scope_of goal in 
     let asm_fn l g = 
       try 
@@ -99,52 +99,39 @@ struct
 	| Logic.ORRThm(th, o) -> 
 	  (Logic.ORRThm(eq_sym_rule scp th, o), skip g)
 	| Logic.Asm(l) -> 
-	  let (nl, ng) = asm_fn l g
-	  in 
+	  let (nl, ng) = asm_fn l g in 
 	  (Logic.Asm(nl), ng)
 	| Logic.OAsm(l, o) -> 
-	  let (nl, ng) = asm_fn l g
-	  in 
+	  let (nl, ng) = asm_fn l g in 
 	  (Logic.OAsm(nl, o), ng)
     in 
     let mapping lst rl g = 
-      let (nr, g2) = fn_tac rl g
-      in 
-      lst := nr::(!lst); g2
+      let (nr, g2) = fn_tac rl g in 
+      (nr::lst, g2)
     in 
-    map_every (mapping ret) rules goal
+    fold_data mapping [] rules goal
 
-  let rewriteA_tac 
-      ?(ctrl=Formula.default_rr_control) 
+  let rewriteA_tac ?(ctrl=Formula.default_rr_control) 
       rules albl goal =
     let (atag, aform) = get_tagged_asm albl goal in 
     let aterm = Formula.term_of aform in 
     let is_lr = not (ctrl.Rewrite.rr_dir = rightleft) in 
-    let urules = ref [] in 
     let tac1 g = 
       if is_lr 
-      then update_tac (fun _ -> urules := rules) () g
+      then (rules, pass g)
       else 
-	seq 
+        fold_seq rules
 	  [
-	    map_sym_tac urules rules;
-	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
+            map_sym_tac;
+            (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
-    let tac2 g = 
-      let rls = !urules in 
+    let tac2 rls g = 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls aterm
       in 
       Tactics.pure_rewriteA plan (ftag atag) g
     in 
-    let tac3 g = 
-      if is_lr
-      then skip g
-      else map_sym_tac (ref []) rules g
-    in 
-    try seq [ tac1; tac2; 
-              (?> fun inf -> tac3 ++ (set_changes_tac inf))
-            ] goal
+    try  apply_tac tac1 tac2 goal
     with err -> raise (add_error "Rewriter.rewriteA_tac" err)
 
   let rewriteC_tac  ?(ctrl=Formula.default_rr_control) 
@@ -152,32 +139,23 @@ struct
     let (ctag, cform) = get_tagged_concl clbl goal in 
     let cterm = Formula.term_of cform in 
     let is_lr = (ctrl.Rewrite.rr_dir = leftright) in 
-    let urules = ref [] in 
     let tac1 g = 
-      if is_lr
-      then update_tac (fun x -> urules := x) rules g
+      if is_lr 
+      then (rules, pass g)
       else 
-	seq 
+        fold_seq rules
 	  [
-	    map_sym_tac urules rules;
-	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
+            map_sym_tac;
+            (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
-    let tac2 g = 
-      let rls = !urules in 
+    let tac2 rls g = 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls cterm
       in 
       Tactics.pure_rewriteC plan (ftag ctag) g
     in 
-    let tac3 g = 
-      if is_lr
-      then skip g
-      else map_sym_tac (ref []) rules g
-    in 
-    try seq [tac1; tac2;
-             (?> fun inf -> tac3 ++ (set_changes_tac inf))
-            ] goal
-    with err -> raise (add_error "Rewriter.rewriteA_tac" err)
+    try apply_tac tac1 tac2 goal
+    with err -> raise (add_error "Rewriter.rewriteC_tac" err)
 
   (** [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
       [rules].
@@ -211,7 +189,8 @@ let gen_rewrite_tac ?asm ctrl ?f rules goal =
 	    seq_some
 	      [
 	        foreach_asm
-	          (fun l -> (?> fun inf1 ->
+	          (fun l -> 
+                    (?> fun inf1 ->
                       Rewriter.rewriteA_tac ~ctrl:ctrl rules l
                       ++ append_changes_tac inf1));
 	        foreach_concl

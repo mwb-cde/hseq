@@ -66,8 +66,8 @@ sig
 
   (** {7 Tactics} *)
 
-  val map_sym_tac:
-    (Tactics.rule list) ref -> Tactics.rule list -> Tactics.tactic
+  val map_sym_tac: 
+    Tactics.rule list -> (Tactics.rule list)Tactics.data_tactic
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
       [ret] will be in reverse order of [rules].

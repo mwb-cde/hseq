@@ -458,10 +458,10 @@ val fold_seq: 'a -> ('a -> ('a)data_tactic) list -> ('a)data_tactic
 (** [fold_seq d tacl g]: Fold the data returning tactics in [tacl].
 *)
 
-val fold:
-  ('a -> 'b -> ('b) data_tactic) -> 'a list -> 'b -> ('b) data_tactic
-(** [fold tac alist b g]: Fold the data returning tactic [tac] over
-    the list [alist] with initial value [b].
+val fold_data:
+  ('a -> 'b -> ('a) data_tactic) -> 'a -> 'b list -> ('a) data_tactic
+(** [fold tac a blist  g]: Fold the data returning tactic [tac] over
+    the list [blist] with initial value [a].
 *)
 
 val thenl: tactic ->  tactic list -> tactic 

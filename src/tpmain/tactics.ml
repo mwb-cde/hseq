@@ -375,23 +375,22 @@ let fold_seq data rls sq =
   in 
   fold_aux rls data (Logic.Tactics.skip sq)
 
-let (fold: ('a -> 'b -> 'b data_tactic) -> 'a list -> 'b -> 'b data_tactic)
-    tac alist b0 goal =
-  let apply_fold a b sqs = 
-    Logic.Subgoals.apply_fold (tac a) b sqs
+let fold_data tac a0 blist goal =
+  let apply_tac a b sqs = 
+    Logic.Subgoals.apply_fold (fun c -> tac c b) a sqs
   in
-  let rec fold_aux alist b sqs =
-    match alist with 
-      | [] -> (b, sqs)
-      | (a::rest) ->
+  let rec fold_aux a blist sqs =
+    match blist with 
+      | [] -> (a, sqs)
+      | (b::rest) ->
 	if has_subgoals sqs
         then 
-          let (b1, sqs1) = apply_fold a b sqs
+          let (a1, sqs1) = apply_tac a b sqs
           in
-          fold_aux rest b1 sqs1
-	else (b, sqs)
+          fold_aux a1 rest sqs1
+	else (a, sqs)
   in 
-  fold_aux alist b0 (skip goal)
+  fold_aux a0 blist (pass goal)
 
 let result_tac tac t f g = 
   try (t, tac g)
