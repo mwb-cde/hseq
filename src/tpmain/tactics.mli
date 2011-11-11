@@ -411,6 +411,11 @@ val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
 val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
+val return_tac: tactic -> ('a) data_tactic -> ('a) data_tactic
+(** [return_tac tac dtac g]: Form the data tactic equivalent of [ tac
+    ++ dtac ]).
+*)
+
 val inject_tac: 'a -> tactic -> 'a data_tactic
 (** [inj_tac d tac g]: Form the data_tactic [(d, tag g)]. *)
 
@@ -481,6 +486,12 @@ val fold_data:
   ('a -> 'b -> ('a) data_tactic) -> 'a -> 'b list -> ('a) data_tactic
 (** [fold tac a blist  g]: Fold the data returning tactic [tac] over
     the list [blist] with initial value [a].
+*)
+
+val alt_data:
+  'a -> ('a -> ('b) data_tactic) list -> ('b) data_tactic
+(** [alt_data d tacl]: Try [tac d] for each tactic [tac] in [tacl], in
+    sequence, until one succeeds.  Fails if no tactic succeeds.
 *)
 
 val thenl: tactic ->  tactic list -> tactic 

@@ -108,14 +108,14 @@ let add_concls_tac data ctags goal =
 (** [initial_prep_tac ctrl ret lbl goal]: Prepare formula [lbl] for
     simplification.  This just tries to apply [allC] or [existA].
 *)
-let initial_prep_tac ctrl ret lbl goal = 
+let initial_prep_tac ctrl lbl goal = 
   let is_asm =
     try ignore(get_tagged_asm lbl goal); true
     with _ -> false
   in 
   if is_asm
-  then specA goal
-  else specC goal
+  then specA ~a:lbl goal
+  else specC ~c:lbl goal
 
 (** [simp_engine_tac cntrl ret l goal]: The engine for [simp_tac].
 
@@ -124,44 +124,45 @@ let initial_prep_tac ctrl ret lbl goal =
     - solve trivial goals
     - repeat until nothing works
 *)
-let simp_engine_tac cntrl ret tag goal =
-  (** tac2: Simplify **)
-  let tac2 g =
-    let ncntrl = Lib.get_option (!ret) cntrl 
-    in 
-    alt
+let simp_engine_tac cntrl tag goal =
+  (** main_tac: Repeatedly simplify **)
+  let rec main_tac (chng, ncntrl) g =
+    fold_seq (false, ncntrl)
       [
-        seq_some
-	  [
-	    (** Prepare the goal for simplification. **)
-	    initial_prep_tac cntrl ret (ftag tag);
-	    (** Clear the return data. **)
-	    seq
-	      [
-	        (fun g1 -> update_tac (fun () -> ret := None) () g1);
-	        alt
-	          [
-		    (** Try simplification. **)
-		    basic_simp_tac ncntrl ret tag;
-		    (** On fail, set the return value. **)
-		    seq 
-		      [ 
-		        (fun g1 -> update_tac (Lib.set_option ret) ncntrl g1); 
-		        fail ~err:No_change 
-		      ]
-	          ]
-	      ];
-	    (** Fail if nothing worked *)
-	    fail ~err:No_change 
-	  ]
+	(** Prepare the goal for simplification *)
+        (fun (chng2, ncntrl2) ->
+          try_tac (initial_prep_tac ncntrl2 (ftag tag))
+          >/ (fun c -> (chng2 or c, ncntrl2)));
+        
+	(** Try simplification. **)
+        (fun (chng2, ncntrl2) g2 ->
+          try ((basic_simp_tac ncntrl2 tag 
+               >/ (fun ncntrl3 -> (true, ncntrl3))) g2)
+          with _ -> ((chng2, ncntrl2) >+ skip) g2);
+
+        (** Go round again if something changed on this iteration.
+            Fail if nothing changed on an iteration.
+        *) 
+        (fun (chng2, ncntrl2) g2 ->
+          if chng2
+          then main_tac (chng2, ncntrl2) g2
+          else 
+            if chng
+            then ((chng, ncntrl2) >+ skip) g2
+            else raise No_change)
       ] g
   in 
   (** trivia_tac: Clean up trivial goals. **)
   let trivia_tac g = 
     alt [Boollib.trivial ~f:(ftag tag); skip] g
   in 
-  ret := None; 
-  try seq [repeat tac2 ; trivia_tac] goal
+  try
+    (fold_seq (false, cntrl)
+      [
+        main_tac;
+        (fun (chng, cntrl1) -> ((chng, cntrl1) >+ trivia_tac))
+      ]
+      >/ (fun (_, cntrl1) -> cntrl)) goal
   with _ -> raise No_change
 
 (** [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
@@ -173,12 +174,10 @@ let simpA_engine_tac cntrl l goal =
   let (atag, _) = 
     try get_tagged_asm l goal
     with Not_found -> raise No_change
-  in 
+  in
   let loopdb = Data.get_loopdb cntrl in 
-  let oret = ref (Some cntrl) in
-  let ngoal = simp_engine_tac cntrl oret atag goal
-  in 
-  ((Data.set_loopdb (Lib.dest_option (!oret)) loopdb), ngoal)
+  (simp_engine_tac cntrl atag
+     >/ (fun cntrl1 -> Data.set_loopdb cntrl1 loopdb)) goal
 
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
     returning the updated data in [ret]. Set [chng] to true on success.
@@ -191,11 +190,8 @@ let simpC_engine_tac cntrl l goal =
     with Not_found -> raise No_change
   in 
   let loopdb = Data.get_loopdb cntrl in 
-  let oret = ref (Some cntrl) in
-  let ngoal = simp_engine_tac cntrl oret ctag goal
-  in 
-  (Data.set_loopdb (Lib.dest_option (!oret)) loopdb, ngoal)
-
+  (simp_engine_tac cntrl ctag
+     >/ (fun cntrl1 -> Data.set_loopdb cntrl1 loopdb)) goal
 (***
     Simplifying assumptions
 ***)

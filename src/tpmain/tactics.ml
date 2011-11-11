@@ -392,6 +392,13 @@ let fold_data tac a0 blist goal =
   in 
   fold_aux a0 blist (pass goal)
 
+let rec alt_data data tacl g = 
+  match tacl with 
+    | [] -> raise (Failure "alt_data: no successful tactic")
+    | tac::rest -> 
+      try (tac data) g
+      with _ -> alt_data data rest g
+
 let result_tac tac t f g = 
   try (t, tac g)
   with _ -> (f, skip g)
@@ -422,9 +429,12 @@ let data_tac f tac g = (f g, tac g)
 let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
 let (?>) tacl g = tacl (New.changes g) g
+
+
 let update_tac f d g = ((fun _ -> (f d)) g); skip g
 
-let inject_tac f tac g = (f, tac g)
+
+let inject_tac d tac g = (d, tac g)
 let (>+) = inject_tac
 let (+<) tac d = inject_tac d tac
 
@@ -445,6 +455,19 @@ let apply_tac data_tac tac g =
   if has_subgoals br1
   then foreach (tac data) br1
   else br1 
+
+let return_tac tac data_tac goal =
+  let extractor x = 
+      match x with
+        | None -> raise (Invalid_argument "return_tac")
+        | Some(y) -> y
+  in
+  (fold_seq None
+    [
+      (fun _ -> inject_tac None tac);
+      (fun _ -> data_tac >/ (fun x -> Some(x)))
+    ] >/ extractor) 
+    goal
 
 let rec map_every tac l goal = 
   let rec every_aux ls g =

@@ -453,6 +453,7 @@ theorem ~simp:true "if_false1"
      ++ rewrite_tac [if_false] ++ eq_tac
  ];;
 
+
 let if_expand=
 theorem ~simp:false "if_expand" 
 << ! x a b : (if x then a else b) = ((x and a) or (not x and b)) >>

@@ -54,10 +54,8 @@ val add_concls_tac:
 (** {5 Simplification engines} *)
 
 val simp_engine_tac:
-  Data.t 
-  -> (Data.t option) ref
-  -> Tag.t 
-  -> Tactics.tactic
+  Data.t -> Tag.t 
+  -> (Data.t) Tactics.data_tactic
 (** The engine for [simp_tac]. 
 
     [simp_engine_tac ret cntrl l goal]:
