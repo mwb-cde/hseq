@@ -53,9 +53,9 @@ struct
           seq [
 	    allC ;
 	    (?> fun info2 g -> 
-              let x_term = Lib.get_one (New.constants info1)
+              let x_term = Lib.get_one (Info.constants info1)
                 (Failure "make_iff_equals_thm: x_term")
-	      and y_term = Lib.get_one (New.constants info2) 
+	      and y_term = Lib.get_one (Info.constants info2) 
                 (Failure "make_iff_equals_thm: y_term")
 	      in 
 	      (flatten_tac
@@ -75,9 +75,9 @@ struct
             seq [
               allC;
 	      (?> fun info2 g -> 
-	        let x_term = Lib.get_one (New.constants info1) 
+	        let x_term = Lib.get_one (Info.constants info1) 
                   (Failure "make_iff_equals_thm: x_term")
-                and y_term = Lib.get_one (New.constants info2)
+                and y_term = Lib.get_one (Info.constants info2)
                 (Failure "make_iff_equals_thm: y_term")
 	        in 
 	        ((cut iff_l2)
@@ -144,7 +144,7 @@ struct
       (allC
        ++ (?> fun info g -> 
 	 let x_term = 
-	   Lib.get_one (New.constants info) 
+	   Lib.get_one (Info.constants info) 
 	     (Failure "rule_true_l2")
 	 in 
 	 (flatten_tac 
@@ -174,7 +174,7 @@ struct
         (allC 
 	 ++ (?> fun info g -> 
 	   let x_term = 
-	     Lib.get_one (New.constants info)
+	     Lib.get_one (Info.constants info)
 	       (Failure "make_rule_false_thm")
 	   in 
 	   ((once_rewrite_tac [equals_iff_thm()]
@@ -254,10 +254,10 @@ struct
                      Tactics.implC ~c:(fnum 1);
 		     (?> fun info g1 ->
 		      let atag = 
-                        Lib.get_one (New.aformulas info)
+                        Lib.get_one (Info.aformulas info)
 			  (Failure "neg_all_conv: 1")
 		      and ctag = 
-			Lib.get_one (New.cformulas info) 
+			Lib.get_one (Info.cformulas info) 
 			  (Failure "neg_all_conv: 1")
 		      in 
 		      seq
@@ -265,7 +265,7 @@ struct
 			  Tactics.negA ~a:(ftag atag);
 			  (?> fun info g2-> 
 			    let ctag2 = 
-			      Lib.get_one (New.cformulas info)
+			      Lib.get_one (Info.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    seq
@@ -276,11 +276,11 @@ struct
                                     ++ append_changes_tac info));
 			        (?> fun info g3 -> 
 				  instC ~c:(ftag ctag)
-				    (List.rev (New.constants info)) g3);
+				    (List.rev (Info.constants info)) g3);
 			        Tactics.negC ~c:(ftag ctag);
 			        (?> fun info g3 ->
 				  let atag3 = 
-				    Lib.get_one (New.aformulas info)
+				    Lib.get_one (Info.aformulas info)
 				      (Failure "neg_all_conv: 3")
 				  in 
 				  Tactics.basic 
@@ -291,10 +291,10 @@ struct
                      Tactics.implC ~c:(fnum 1);
 		     (?> fun info g1 ->
 		       let atag = 
-                         Lib.get_one (New.aformulas info)
+                         Lib.get_one (Info.aformulas info)
 			 (Failure "neg_all_conv: 4")
 		      and ctag = 
-			Lib.get_one (New.cformulas info) 
+			Lib.get_one (Info.cformulas info) 
 			  (Failure "neg_all_conv: 4")
 		      in 
 		      seq
@@ -302,7 +302,7 @@ struct
                           Tactics.negC ~c:(ftag ctag);
 			  (?> fun info g2-> 
 			    let atag2 = 
-			      Lib.get_one (New.aformulas info)
+			      Lib.get_one (Info.aformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    seq
@@ -313,11 +313,11 @@ struct
                                     ++ append_changes_tac info));
 			        (?> fun info g3 -> 
 				  instA ~a:(ftag atag2)
-				    (List.rev (New.constants info)) g3);
+				    (List.rev (Info.constants info)) g3);
                                 Tactics.negA ~a:(ftag atag);
 			        (?> fun info g3 ->
 				 let ctag3 = 
-				   Lib.get_one (New.cformulas info)
+				   Lib.get_one (Info.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 Tactics.basic 
@@ -372,10 +372,10 @@ struct
                      Tactics.implC ~c:(fnum 1);
 		     (?> fun info g1 ->
 		      let atag =
-			Lib.get_one (New.aformulas info)
+			Lib.get_one (Info.aformulas info)
 			  (Failure "neg_exists_conv: 1")
 		      and ctag = 
-			Lib.get_one (New.cformulas info) 
+			Lib.get_one (Info.cformulas info) 
 			  (Failure "neg_exists_conv: 1")
 		      in 
 		      seq
@@ -383,7 +383,7 @@ struct
                           Tactics.negA ~a:(ftag atag);
 			  (?> fun info g2-> 
 			    let ctag2 = 
-			      Lib.get_one (New.cformulas info)
+			      Lib.get_one (Info.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
 			    seq
@@ -394,11 +394,11 @@ struct
                                      ++ append_changes_tac info));
 			        (?> fun info g3 -> 
 				  instC ~c:(ftag ctag2)
-				    (List.rev (New.constants info)) g3);
+				    (List.rev (Info.constants info)) g3);
 			        Tactics.negC ~c:(ftag ctag);
 			        (?> fun info g3 ->
 				  let atag3 = 
-				    Lib.get_one (New.aformulas info)
+				    Lib.get_one (Info.aformulas info)
 				      (Failure "neg_exists_conv: 3")
 				  in 
 				  Tactics.basic 
@@ -409,10 +409,10 @@ struct
                      Tactics.implC ~c:(fnum 1);
 		     (?> fun info g1 ->
 		      let atag = 
-			Lib.get_one (New.aformulas info) 
+			Lib.get_one (Info.aformulas info) 
 			  (Failure "neg_exists_conv: 4")
 		      and ctag = 
-			Lib.get_one (New.cformulas info) 
+			Lib.get_one (Info.cformulas info) 
 			  (Failure "neg_exists_conv: 4")
 		      in 
 		      seq
@@ -420,7 +420,7 @@ struct
 			  Tactics.negC ~c:(ftag ctag);
 			  (?> fun info g2-> 
 			    let atag2 = 
-			      Lib.get_one (New.aformulas info)
+			      Lib.get_one (Info.aformulas info)
 				(Failure "neg_exists_conv: 2")
 			    in 
 			    seq
@@ -431,11 +431,11 @@ struct
                                      ++ append_changes_tac info));
 			       (?> fun info g3 -> 
 				 instA ~a:(ftag atag)
-				   (List.rev (New.constants info)) g3);
+				   (List.rev (Info.constants info)) g3);
 			        Tactics.negA ~a:(ftag atag);
 			        (?> fun info g3 ->
 				  let ctag3 = 
-				    Lib.get_one (New.cformulas info)
+				    Lib.get_one (Info.cformulas info)
 				      (Failure "neg_exists_conv: 3")
 				  in 
 				  Tactics.basic 
@@ -469,13 +469,13 @@ struct
 	seq [Tactics.cut thm;
 	     (?> fun info g1 -> 
 	       let ttag = 
-		 Lib.get_one (New.aformulas info) 
+		 Lib.get_one (Info.aformulas info) 
 		   (error "conjunctL")
 	       in 
                Tactics.conjA ~a:(ftag ttag) g1);
 	     (?> fun info g1 -> 
 	       let (ltag, rtag)=
-		 Lib.get_two (New.aformulas info) 
+		 Lib.get_two (Info.aformulas info) 
 		   (error "conjunctL")
 	       in 
 	       Tactics.basic ~a:(ftag ltag) ~c:l g1)] g
@@ -494,13 +494,13 @@ struct
 	seq [Tactics.cut thm;
 	     (?> fun info g1 -> 
 	       let ttag = 
-		 Lib.get_one (New.aformulas info) 
+		 Lib.get_one (Info.aformulas info) 
 		   (error "conjunctL")
 	       in 
                Tactics.conjA ~a:(ftag ttag) g1);
 	     (?> fun info g1 -> 
 	       let (ltag, rtag)=
-		 Lib.get_two (New.aformulas info) 
+		 Lib.get_two (Info.aformulas info) 
 		   (error "conjunctL")
 	       in 
 	       Tactics.basic ~a:(ftag rtag) ~c:l g1)] g

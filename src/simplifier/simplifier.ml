@@ -315,7 +315,7 @@ let copyA_inst_tac vals x goal =
     [
       copyA x;
       (?> fun inf1 g ->
-        let x1 = get_one ~msg:"copyA_inst_tac" (New.aformulas inf1);
+        let x1 = get_one ~msg:"copyA_inst_tac" (Info.aformulas inf1);
         in 
         instA ~a:(ftag x1) vals g)
     ] goal
@@ -382,15 +382,15 @@ let prep_cond_tac cntrl values thm goal =
     return_tac
       (cut_rr_rule values thm)
       (fun g1 -> 
-        let info1 = New.changes g1 in
-	let rl_ftg = Lib.get_one (New.aformulas info1) No_change
+        let info1 = Info.changes g1 in
+	let rl_ftg = Lib.get_one (Info.aformulas info1) No_change
 	in 
         return_tac
 	  (Tactics.implA ~a:(ftag rl_ftg))
 	  (fun g2 ->
-            let info2 = New.changes g2 in
+            let info2 = Info.changes g2 in
             ((add_data cntrl rl_ftg 
-                (New.subgoals info2, New.cformulas info2))
+                (Info.subgoals info2, Info.cformulas info2))
              >+ skip) g2) g1) g
   in 
   try tac goal

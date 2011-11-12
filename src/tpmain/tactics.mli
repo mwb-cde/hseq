@@ -136,134 +136,32 @@ val num_subgoals: Logic.branch -> int
 
 (** {7 Information records} *)
 
-module Info :
+module Info:
 sig
-  type t = Changes.t ref
+  type t = Changes.t
 
-  val make: unit -> t
-  (** Make an empty sub-goal information record. *)
-
-  val empty: t -> unit
-  (** [empty_info info]: Empty the information record [info].
-      Equivalent to [info := mk_info()].
-  *)
-
-  val subgoals: t -> Tag.t list
-  (** [subgoals info]: Get subgoal tags of [info].  Equivalent to
-      [(!info).goals]
-  *)
-
-  val aformulas: t -> Tag.t list
-  (** [aformulas info]: Get tags of assumption formula tags from [info].
-      Equivalent to [(!info).aforms]
-  *)
-
-  val cformulas: t -> Tag.t list
-  (** [cformulas info]: Get tags of conclusion formula tags from [info].
-      Equivalent to [(!info).cforms]
-  *)
-
-  val constants: t -> Basic.term list
-  (** [constants info]: Get constants from [info].  Equivalent to
-      [(!info).terms]
-  *)
-  val form: 
-    t option -> 
-    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
-    -> unit
-
-  val form_changes: t option -> Changes.t -> unit
-
-  val add: 
-    t option -> 
-    Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
-    -> unit
-
-  val add_changes: t option -> Changes.t -> unit
-
-(**
-  val set: 
-    t option -> 
-    (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-    -> unit
-(** A version of {!Logic.add_info}, packaged for use, in tactics, with
-    {!Tactics.data_tac}. *)
-**)
-
-end
-
-val info_make: unit -> Info.t
-(** Make an empty sub-goal information record. *)
-
-val info_empty: Info.t -> unit
-  (** [empty_info info]: Empty the information record [info].
-      Equivalent to [info := mk_info()].
-  *)
-
-val subgoals: Info.t -> Tag.t list
-  (** [subgoals info]: Get subgoal tags of [info].  Equivalent to
-      [(!info).goals]
-  *)
-
-val aformulas: Info.t -> Tag.t list
-  (** [aformulas info]: Get tags of assumption formula tags from [info].
-      Equivalent to [(!info).aforms]
-  *)
-
-val cformulas: Info.t -> Tag.t list
-  (** [cformulas info]: Get tags of conclusion formula tags from [info].
-      Equivalent to [(!info).cforms]
-  *)
-
-val constants: Info.t -> Basic.term list
-  (** [constants info]: Get constants from [info].  Equivalent to
-      [(!info).terms]
-  *)
-val info_form: 
-  Info.t option -> 
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
-  -> unit
-
-val info_form_changes: Info.t option -> Changes.t -> unit
-
-val info_add: 
-  Info.t option -> 
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
-  -> unit
-
-val info_add_changes: Info.t option -> Changes.t -> unit
-
-val info_set: 
-  Info.t option -> 
-  Tag.t list -> Tag.t list -> Tag.t list -> Basic.term list
-  -> unit
-
-module New:
-sig
-  val changes: Logic.node -> Changes.t
+  val changes: Logic.node -> t
   (** Get the changes record of a node. Used to extract the changes
       before a tactic is applied. *)
     
-  val branch_changes: Logic.branch -> Changes.t
+  val branch_changes: Logic.branch -> t
   (** Get the changes record of a branch. Used to extract the changes
       after a tactic is applied. *)
 
-  val subgoals: Changes.t -> Tag.t list
+  val subgoals: t -> Tag.t list
   (** [subgoals info]: Get subgoal tags of [info]. *)
 
-  val aformulas: Changes.t -> Tag.t list
+  val aformulas: t -> Tag.t list
   (** [aformulas info]: Get tags of assumption formula tags from [info]. *)
 
-  val cformulas: Changes.t -> Tag.t list
+  val cformulas: t -> Tag.t list
   (** [cformulas info]: Get tags of conclusion formula tags from [info]. *)
 
-  val constants: Changes.t -> Basic.term list
+  val constants: t -> Basic.term list
   (** [constants info]: Get constants from [info]. *)
 end
 
-val info_to_changes:  Info.t option -> Changes.t
-
-val record_changes_tac: (Changes.t -> Changes.t) -> tactic -> tactic
+val record_changes_tac: (Info.t -> Info.t) -> tactic -> tactic
 (** Tactial to set the changes made by tactic.
 
     [record_changes_tac setter tac g] applies [(tac g)], updating the
@@ -271,44 +169,15 @@ val record_changes_tac: (Changes.t -> Changes.t) -> tactic -> tactic
     (branch_changes (tac g)))].
 *)
 
-val set_changes_tac: Changes.t -> tactic
+val set_changes_tac: Info.t -> tactic
 (** Tactic to record changes in a goal and behave like [skip]. *)
 
-val add_changes_tac: Changes.t -> tactic
+val add_changes_tac: Info.t -> tactic
 (** Tactic to add to changes in a goal and behave like [skip]. *)
 
-val append_changes_tac: Changes.t -> tactic
+val append_changes_tac: Info.t -> tactic
 (** Tactic to add changes after goal changes. *)
 
-val record_info_tac: 
-  ?info:Info.t
-  -> (?info:Info.t 
-      -> Tag.t list * Tag.t list * Tag.t list * Basic.term list
-      -> Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> tactic 
-  -> tactic
-(** Tactial to set the infomation record of a tactic.
-
-    [record_info_tac ?info setter tac g] applies [(tac g)], updating the
-    resulting goal with the Info record obtained by [(setter
-    (branch_changes (tac g)))].
-*)
-
-val add_info_tac: ?info:Info.t ->
-  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> tactic
-(** Tactic to set [info] and behave like [skip]. *)
-
-val set_info_tac: ?info:Info.t ->
-  (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> tactic
-(** Tactic to set [info] and behave like [skip]. *)
-
-val changes_to_info_tac: ?info:Info.t -> tactic
-(** Tactic to set info from changes in a goal and behave like [skip]. *)
-
-val add_changes_to_info_tac: ?info:Info.t -> tactic
-(** Tactic to add info to changes in a goal and behave like [skip]. *)
 
 (** {7 Utility functions} *)
 
@@ -434,12 +303,12 @@ val try_tac: tactic -> (bool) data_tactic
 (** [try_tac tac g]: Return [(true, tac g)] or [(false, skip g)] if
     [tac g] fails. *)
 
-val query_tac: (Changes.t -> tactic) -> tactic
+val query_tac: (Info.t -> tactic) -> tactic
 (** [query_tac tac g]: Apply a tactic after extracting the change
     data from a goal. Forms [tac (changes g) g].
 *)
 
-val (?>): (Changes.t -> tactic) -> tactic
+val (?>): (Info.t -> tactic) -> tactic
 (** ?>tac g]: Prefix notation for [query_tac]. Apply a tactic after
     extracting the change data from a goal. Forms [tac (changes g) g].
 *)
@@ -1038,6 +907,3 @@ val mk_thm_plan:
     N.B. The [rr_dir] field of [ctrl] is ignored.
 *)
 
-
-(** {7 Debugging} *)
-val lift_info: ?info:Info.t -> tactic -> tactic

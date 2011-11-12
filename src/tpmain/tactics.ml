@@ -97,77 +97,7 @@ let num_subgoals b = List.length (branch_subgoals b)
 
 module Info =
 struct
-  type t = Changes.t ref
-
-  let make () = ref (Changes.empty())
-  let empty info = info := (Changes.empty())
-  let subgoals inf = Changes.goals (!inf)
-  let aformulas inf = Changes.aforms (!inf)
-  let cformulas inf = Changes.cforms (!inf)
-  let constants inf = Changes.terms (!inf)
-
-  let form dst sgs afs cfs cnsts =
-    begin
-      match dst with 
-        | None -> ()
-        | Some(vr) -> 
-          let chngs = Changes.make sgs afs cfs cnsts
-          in
-          vr := chngs
-    end
-
-  let form_changes dst chngs =
-    begin
-      match dst with 
-        | None -> ()
-        | Some(vr) -> vr := chngs
-    end
-
-  let add dst sgs afs cfs cnsts =
-    begin
-      match dst with 
-        | None -> ()
-        | Some(vr) -> 
-          let chngs = Changes.add (!vr) sgs afs cfs cnsts
-          in
-          vr := chngs
-    end
-
-  let add_changes dst chngs = 
-    begin
-      match dst with 
-        | None -> ()
-        | Some(vr) -> 
-          let nchngs = Changes.combine chngs (!vr)
-          in
-          vr := nchngs
-    end
-
-  let set dst sgs afs cfs cnsts =
-    begin
-      match dst with 
-        | None -> ()
-        | Some(vr) -> 
-          let chngs = Changes.add (Changes.empty()) sgs afs cfs cnsts
-          in
-          vr := chngs
-    end
-end
-    
-let info_make = Info.make
-let info_empty = Info.empty
-let subgoals = Info.subgoals
-let aformulas = Info.aformulas
-let cformulas = Info.cformulas
-let constants = Info.constants
-let info_form = Info.form
-let info_form_changes = Info.form_changes
-let info_add = Info.add
-let info_add_changes = Info.add_changes
-let info_set = Info.set
-
-module New =
-struct
+  type t = Changes.t
   let empty = Changes.empty
   let changes = Logic.Tactics.changes
   let branch_changes = Logic.Tactics.branch_changes
@@ -180,18 +110,11 @@ struct
 
 end
 
-let info_to_changes info = 
-  match info with
-    | None -> Changes.empty()
-    | Some(inf) -> 
-      Changes.make (Info.subgoals inf)
-        (Info.aformulas inf) (Info.cformulas inf) (Info.constants inf)
-
 let record_changes_tac setter (tac: tactic) g = 
   let g1 = tac g in
-  let chngs = setter (New.branch_changes g1)
+  let chngs = setter (Info.branch_changes g1)
   in
-  New.set_changes chngs g1
+  Info.set_changes chngs g1
 
 let set_changes_tac chng g =
   let setter _ = chng
@@ -209,47 +132,6 @@ let append_changes_tac chng g =
     Changes.combine new_chng chng 
   in
   record_changes_tac setter Logic.Tactics.skip g
-
-let record_info_tac ?info setter (tac: tactic) g = 
-  let g1 = tac g in
-  let chngs = New.branch_changes g1 in
-  begin
-    setter ?info (New.subgoals chngs,
-                  New.aformulas chngs,
-                  New.cformulas chngs,
-                  New.constants chngs);
-    g1
-  end
-
-let set_info_tac ?info (sgs, afs, cfs, cnsts) g =
-  let setter ?info _ =
-    Info.set info sgs afs cfs cnsts
-  in
-  record_info_tac setter Logic.Tactics.skip g
-
-let add_info_tac ?info (sgs, afs, cfs, cnsts) g =
-  let setter ?info _ =
-    Info.add info sgs afs cfs cnsts
-  in
-  record_info_tac setter Logic.Tactics.skip g
-
-let changes_to_info_tac ?info g =
-  let chngs = New.changes g 
-  in 
-  set_info_tac ?info 
-    (New.subgoals chngs,
-     New.aformulas chngs,
-     New.cformulas chngs,
-     New.constants chngs) g
-
-let add_changes_to_info_tac ?info g =
-  let chngs = New.changes g 
-  in 
-  add_info_tac ?info 
-    (New.subgoals chngs,
-     New.aformulas chngs,
-     New.cformulas chngs,
-     New.constants chngs) g
 
 (*** Utility functions ***)
 
@@ -422,8 +304,8 @@ let restrict p tac goal =
 
 let data_tac f tac g = (f g, tac g)
 let (>>) f tacl g = tacl (f g) g
-let query_tac tacl g = tacl (New.changes g) g
-let (?>) tacl g = tacl (New.changes g) g
+let query_tac tacl g = tacl (Info.changes g) g
+let (?>) tacl g = tacl (Info.changes g) g
 
 let inject_tac d tac g = (d, tac g)
 let (>+) = inject_tac
@@ -523,21 +405,6 @@ let foreach_concl tac goal =
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
 
-(**
-let foreach_form tac goal = 
-  let chng = ref false in 
-  let notify () = chng := true
-  in 
-  let asms_tac g = 
-    (((foreach_asm tac) ++ update_tac notify ()) // skip) g 
-  and concls_tac g = 
-    (((foreach_concl tac) ++ update_tac notify ()) // skip) g 
-  in 
-  try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
-  with Failure _ -> raise (Failure "foreach_form")
-    | err -> raise err
-**)
-
 let foreach_form tac goal = 
   let asms_tac ok g = 
     ((try_tac (foreach_asm tac)) >/ (fun x -> ok or x)) g
@@ -554,11 +421,6 @@ let foreach_form tac goal =
  *)
 
 (*** Formula manipulation ***)
-
-let lift_info ?info tac goal = 
-  let (result: Logic.branch) = tac goal 
-  in
-  Info.add_changes info (branch_changes result); result
 
 let rotateA = Logic.Tactics.rotate_asms
 let rotateC = Logic.Tactics.rotate_cncls
@@ -668,7 +530,7 @@ let instA0 l trms goal =
   let instf trm g = 
     (?> 
         fun info ->
-          let alabel = get_one ~msg:"instA" (New.aformulas info) 
+          let alabel = get_one ~msg:"instA" (Info.aformulas info) 
           in
           allA ~a:(ftag alabel) trm) g
   in 
@@ -686,7 +548,7 @@ let instC0 l trms goal =
   let instf trm g = 
     (?> 
         fun info ->
-          let clabel = get_one ~msg:"instC" (New.cformulas info) 
+          let clabel = get_one ~msg:"instC" (Info.cformulas info) 
           in
           existC ~c:(ftag clabel) trm) g
   in 
@@ -711,7 +573,7 @@ let cut ?inst th goal =
       Logic.Tactics.cut th;
       (?> 
           fun info ->
-            let atag = get_one ~msg:"cut" (New.aformulas info) in
+            let atag = get_one ~msg:"cut" (Info.aformulas info) in
             instA ~a:(ftag atag) trms)
     ] g
   in 
@@ -735,7 +597,7 @@ let betaA ?a goal =
 	cut thm;
 	(?> fun info1 g1 ->
 	  let tlbl = 
-	    ftag (Lib.get_one (New.aformulas info1) (error "Tactics.betaA"))
+	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
 	  in
 	  seq
 	    [
@@ -765,7 +627,7 @@ let betaC ?c goal =
 	cut thm;
 	(?> fun info1 g1 ->
 	  let tlbl = 
-	    ftag (Lib.get_one (New.aformulas info1) (error "Tactics.betaC"))
+	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
 	  in
 	  seq
 	    [
@@ -896,11 +758,11 @@ let unify_engine_tac (atg, aform) (ctg, cform) goal =
            let albl1 = 
              if asm_consts = [] 
              then albl
-             else ftag (get_one (New.aformulas inf1))
+             else ftag (get_one (Info.aformulas inf1))
            and clbl1 = 
              if concl_consts = []
              then clbl 
-             else ftag (get_one (New.cformulas inf2))
+             else ftag (get_one (Info.cformulas inf2))
            in
            basic ~a:albl1 ~c:clbl1 g2)) g1)
   ] goal
@@ -952,20 +814,20 @@ let named_tac tac anames cnames (goal: Logic.node) =
       | (_, []) -> (chng, br)
       | (x::xs, y::ys) -> 
         let br1 = foreach (name_tac x y) br in
-        let chng1 = Changes.rev_append (New.branch_changes br1) chng
+        let chng1 = Changes.rev_append (Info.branch_changes br1) chng
         in
 	name_list_tac xs ys chng1 br1
   in 
   let g1 = tac goal in 
-  let chng1 = New.branch_changes g1 in
+  let chng1 = Info.branch_changes g1 in
   let chng1r = Changes.rev chng1 in
-  let albls = List.map ftag (New.aformulas chng1)
-  and clbls = List.map ftag (New.cformulas chng1)
+  let albls = List.map ftag (Info.aformulas chng1)
+  and clbls = List.map ftag (Info.cformulas chng1)
   in 
   let (chng2, g2) = name_list_tac anames albls chng1r g1 in 
   let (chng3, g3) = name_list_tac cnames clbls chng2 g2
   in 
-  (New.set_changes (Changes.rev chng3) g3)
+  (Info.set_changes (Changes.rev chng3) g3)
 
 (*** Pattern matching tacticals ***)
 
@@ -1053,9 +915,9 @@ let specA ?a g =
             (set_changes_tac 
                (Changes.make 
                   [] 
-                  [get_one (New.aformulas info)]
+                  [get_one (Info.aformulas info)]
                   [] 
-                  (List.rev (New.constants info)))))
+                  (List.rev (Info.constants info)))))
         ];
       fail ~err:(error "specA")
     ] g
@@ -1077,8 +939,8 @@ let specC ?c g =
                (Changes.make 
                   [] 
                   [] 
-                  [get_one (New.cformulas info)]
-                  (List.rev (New.constants info)))))
+                  [get_one (Info.cformulas info)]
+                  (List.rev (Info.constants info)))))
         ];
       fail ~err:(error "specC")
     ] g
@@ -1116,7 +978,6 @@ let is_rewrite_formula t =
 (** [conv_rule scp conv thm] apply conversion [conv] to theorem [thm]
 *)
 let conv_rule scp conv thm =
-  let info = Info.make() in 
   let term = Logic.term_of thm in 
   let rule = conv scp term in 
   let (qs, lhs, rhs) = 
@@ -1131,35 +992,35 @@ let conv_rule scp conv thm =
       | _ -> Lterm.close_term rhs
   in 
   let goal = mk_goal scp (Formula.make scp goal_term) in 
-  let _ = Info.form_changes (Some info) (goal_changes goal) in
-  let tac g =
-    let ctag = 
+  let tac  =
+    (?> fun info g -> 
+      let ctag = 
       Lib.get_one (Info.cformulas info) (Failure "pure_rewrite_rule")
-    in 
-    seq
-      [ 
-	cut thm;
-        (?> fun info ->
-          begin
-	    let atag = 
-	      Lib.get_one (New.aformulas info) (Failure "pure_rewrite_rule")
-	    in 
-	    seq
-	      [
-	        cut rule;
-                (?> fun info ->
-	          let rtag = 
-		    Lib.get_one (New.aformulas info)
-		      (error "pure_rewrite_rule: cut rule")
-	          in 
-	          seq
-		    [
-		      substA [ftag rtag] (ftag atag);
-		      basic ~a:(ftag atag) ~c:(ftag ctag)
-		    ])
-	      ]
-          end)
-      ] g
+      in 
+      seq
+        [ 
+	  cut thm;
+          (?> fun info ->
+            begin
+	      let atag = 
+	        Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
+	      in 
+	      seq
+	        [
+	          cut rule;
+                  (?> fun info ->
+	            let rtag = 
+		      Lib.get_one (Info.aformulas info)
+		        (error "pure_rewrite_rule: cut rule")
+	            in 
+	            seq
+		      [
+		        substA [ftag rtag] (ftag atag);
+		        basic ~a:(ftag atag) ~c:(ftag ctag)
+		      ])
+	        ]
+            end)
+        ] g)
   in
   mk_thm (Logic.Subgoals.apply_to_goal tac goal)
 
@@ -1176,12 +1037,12 @@ let pure_rewriteA ?term plan lbl goal =
     seq[
       Logic.Tactics.rewrite_intro plan trm;
       (?> fun inf1 ->
-        let rule_tag = get_one (New.aformulas inf1) in 
+        let rule_tag = get_one (Info.aformulas inf1) in 
         seq 
           [
             substA [ftag (rule_tag)] (ftag ltag);
             ?> fun inf2 ->
-              let asm_tag = get_one (New.aformulas inf2) in
+              let asm_tag = get_one (Info.aformulas inf2) in
               (deleteA (ftag rule_tag) ++
                  set_changes_tac (Changes.make [] [asm_tag] [] []))
           ])
@@ -1206,12 +1067,12 @@ let pure_rewriteC ?term plan lbl goal =
       [
         Logic.Tactics.rewrite_intro plan trm;
         ?> fun inf1 -> 
-         let rule_tag = get_one (New.aformulas inf1) in
+         let rule_tag = get_one (Info.aformulas inf1) in
          seq
            [
              substC [ftag (rule_tag)] (ftag ltag);
              ?> fun inf2 ->
-               let cncl_tag = get_one (New.cformulas inf2) 
+               let cncl_tag = get_one (Info.cformulas inf2) 
                in
                (deleteA (ftag rule_tag) ++
                   set_changes_tac (Changes.make [] [] [cncl_tag] []))

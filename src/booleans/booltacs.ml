@@ -114,9 +114,9 @@ let iffE ?c goal =
 	    Tactics.implC ~c:(ftag t) ++
               (?> fun inf2 ->
                 set_changes_tac 
-                  (Changes.make (New.subgoals inf1)
-                     (New.aformulas inf2)
-                     (New.cformulas inf2) [])))) g
+                  (Changes.make (Info.subgoals inf1)
+                     (Info.aformulas inf2)
+                     (Info.cformulas inf2) [])))) g
     in 
     alt [ tac; fail ~err:(error "iffE") ] goal
 
@@ -278,29 +278,26 @@ let make_cases_tac_thm () =
 let cases_thm_var = Lib.freeze make_cases_tac_thm
 let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
 
-let set_info dst (sgs, afs, cfs, cnsts) = 
-  Tactics.info_add dst sgs afs cfs cnsts
-
 let cases_tac (t:Basic.term) = 
   let thm = cases_thm() in
   seq 
     [
       cut thm;
       (?> fun inf g -> 
-        let thm_tag = get_one ~msg:"cases_tac 1" (New.aformulas inf) in 
+        let thm_tag = get_one ~msg:"cases_tac 1" (Info.aformulas inf) in 
         allA t ~a:(ftag thm_tag) g);
       (?> fun inf g -> 
-        let thm_tag = get_one ~msg:"cases_tac 2" (New.aformulas inf) in 
+        let thm_tag = get_one ~msg:"cases_tac 2" (Info.aformulas inf) in 
         disjA ~a:(ftag thm_tag) g)
       --
         [
 	  (?> fun inf1 g1 ->
-	    let asm_tag = get_one ~msg:"cases_tac 3" (New.aformulas inf1)
-	    and lgoal, rgoal = get_two ~msg:"cases_tac 4" (New.subgoals inf1)
+	    let asm_tag = get_one ~msg:"cases_tac 3" (Info.aformulas inf1)
+	    and lgoal, rgoal = get_two ~msg:"cases_tac 4" (Info.subgoals inf1)
 	    in 
             (negA ~a:(ftag asm_tag) ++
 	       (?> fun inf2 g2 -> 
-	         let nasm_tag = get_one ~msg:"cases_tac 5" (New.cformulas inf1)
+	         let nasm_tag = get_one ~msg:"cases_tac 5" (Info.cformulas inf1)
                  in
                  set_changes_tac 
                    (Changes.make [lgoal; rgoal] [nasm_tag] [nasm_tag] []) g2))
@@ -315,20 +312,20 @@ let show_tac (trm: Basic.term) tac =
     [
       cut thm;
       (?> fun inf1 g1 -> 
-        let thm_tag = get_one ~msg:"show_tac 1" (New.aformulas inf1) in 
+        let thm_tag = get_one ~msg:"show_tac 1" (Info.aformulas inf1) in 
         allA trm ~a:(ftag thm_tag) g1);
       (?> fun inf1 g1 -> 
-        let thm_tag = get_one ~msg:"show_tac 2" (New.aformulas inf1) in 
-        lift_info (disjA ~a:(ftag thm_tag)) g1)
+        let thm_tag = get_one ~msg:"show_tac 2" (Info.aformulas inf1) in 
+        disjA ~a:(ftag thm_tag) g1)
       --
         [
 	  (?> fun inf1 g1 ->
-	    let asm_tag = get_one ~msg:"show_tac 3" (New.aformulas inf1)
+	    let asm_tag = get_one ~msg:"show_tac 3" (Info.aformulas inf1)
 	    in 
 	    (negA ~a:(ftag asm_tag) ++ tac ) g1);
 	  (?> fun inf1 g1 -> 
-	    let (_, gl_tag) = get_two (New.subgoals inf1)
-	    and asm_tag = get_one (New.aformulas inf1)
+	    let (_, gl_tag) = get_two (Info.subgoals inf1)
+	    and asm_tag = get_one (Info.aformulas inf1)
 	    in 
             set_changes_tac (Changes.make [gl_tag] [asm_tag] [] []) g1)
         ]
@@ -376,7 +373,7 @@ let cases_of ?thm t goal =
     seq [
         cut ~inst:[trm] case_thm;
         (?> fun inf1 g1 -> 
-	  let a_tg = get_one (New.aformulas inf1)
+	  let a_tg = get_one (Info.aformulas inf1)
 	  in 
           seq [
 	    (disj_splitter_tac ~f:(ftag a_tg) // skip);
@@ -384,12 +381,12 @@ let cases_of ?thm t goal =
 	      ((specA ~a:(ftag a_tg) // skip) 
                ++ (?> fun inf3 g3 ->
                  set_changes_tac 
-                   (Changes.add_aforms inf2 (New.aformulas inf3)) g3)) g2)
+                   (Changes.add_aforms inf2 (Info.aformulas inf3)) g3)) g2)
 
           ] g1);
         (?> fun inf ->
           set_changes_tac 
-            (Changes.make [] [] (New.subgoals inf) (New.constants inf)))
+            (Changes.make [] [] (Info.subgoals inf) (Info.constants inf)))
     ] goal
   with err -> raise (add_error "cases_of" err)
     
@@ -432,13 +429,13 @@ let mp0_tac a a1lbls g =
     (?> fun inf1 ->
       ((fun n -> 
         Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n))
-	  (New.subgoals inf1) false)
+	  (Info.subgoals inf1) false)
        --> 
        (Tactics.basic ~a:(ftag a1_label)
-          ~c:(ftag (Lib.get_one (New.cformulas inf1)
+          ~c:(ftag (Lib.get_one (Info.cformulas inf1)
 	            (Failure "mp_tac2.2"))))));
     (?> fun inf4 -> 
-      set_changes_tac (Changes.make [] (New.aformulas inf4) [] []))
+      set_changes_tac (Changes.make [] (Info.aformulas inf4) [] []))
   ] g
 
 let mp_tac ?a ?h goal =
@@ -477,14 +474,14 @@ let cut_mp_tac ?inst thm ?a goal =
   (Tactics.cut ?inst:inst thm ++ 
      (?> fun inf1 g1 ->
        let a_tag = 
-         Lib.get_one (New.aformulas inf1) 
+         Lib.get_one (Info.aformulas inf1) 
 	   (Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	      [Logic.formula_of thm])
        in 
        ((mp_tac ~a:(ftag a_tag) ?h:f_label) ++
            (?> fun inf2 g2 ->
              set_changes_tac 
-               (Changes.add_aforms inf1 (New.aformulas inf2)) g2)) g1)) goal
+               (Changes.add_aforms inf1 (Info.aformulas inf2)) g2)) g1)) goal
 
 (** [back_tac]: Backward match tactic. [back0_tac] is the main engine.
 
@@ -527,11 +524,11 @@ let back0_tac a cs goal =
   and tac2 = Tactics.implA ~a:(ftag a_label)
   and tac3 =
     (?> fun inf3 g3 ->
-      let atag3 = get_one (New.aformulas inf3) in
+      let atag3 = get_one (Info.aformulas inf3) in
       ((fun n -> 
         (Lib.apply_nth 1 
            (Tag.equal (Tactics.node_tag n)) 
-	   (New.subgoals inf3) false))
+	   (Info.subgoals inf3) false))
        --> 
        (Tactics.basic
           ~a:(ftag atag3)
@@ -542,8 +539,8 @@ let back0_tac a cs goal =
      (delete (ftag c_label) ++
         set_changes_tac 
         (Changes.make 
-           [get_one (New.subgoals inf4)] [] 
-           [get_one (New.cformulas inf4)] [])) g4)
+           [get_one (Info.subgoals inf4)] [] 
+           [get_one (Info.cformulas inf4)] [])) g4)
   in 
   (tac1 ++ seq [tac2; tac3; tac4]) goal
 
@@ -572,7 +569,7 @@ let cut_back_tac ?inst thm ?c g =
     (?> fun inf2 g2 ->
       let a_tag = 
         Lib.get_one 
-          (New.aformulas inf2) 
+          (Info.aformulas inf2) 
 	  (Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	     [Logic.formula_of thm])
       in 

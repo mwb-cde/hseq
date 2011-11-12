@@ -40,19 +40,17 @@ let falseA ?a goal =
 	        ^"Can't find needed theorem false_def: |- false = not true"))
   in 
   let plan = Rewrite.mk_node [Rewrite.mk_rules [Logic.RRThm(th)]] in 
-  let inf = info_make()
-  in 
   seq
     [ 
-      lift_info ~info:inf (pure_rewriteA plan af);
-      (fun g ->
-	let atag = Lib.get_one (aformulas inf) (Tactics.error "falseA")
+      pure_rewriteA plan af;
+      (?> fun inf g ->
+	let atag = Lib.get_one (Info.aformulas inf) (Tactics.error "falseA")
 	in 
 	seq
 	  [ 
-	    lift_info ~info:inf (negA ~a:(ftag atag));
-	    (fun g1  -> 
-	      let ctag = Lib.get_one (cformulas inf) (error "falseA")
+	    negA ~a:(ftag atag);
+	    (?> fun inf g1  -> 
+	      let ctag = Lib.get_one (Info.cformulas inf) (error "falseA")
 	      in 
 	      trueC ~c:(ftag ctag) g1)
 	  ] g)
@@ -178,7 +176,7 @@ let eq_tac ?c goal =
     [
       Tactics.cut th; 
       (?> fun info1 g ->
-	let af = get_one ~msg:"eq_tac" (New.aformulas info1)
+	let af = get_one ~msg:"eq_tac" (Info.aformulas info1)
 	in 
 	map_first (tac (ftag af)) cforms g)
     ] goal
@@ -230,8 +228,8 @@ let rec asm_elim_rules_tac rules lbl goal =
     rules fails is stored in arbitrary order.  *)
 and concl_elim_rules_tac rules lbl goal = 
   base_concl_elim_rules_tac rules [lbl] goal
-and formulas inf = (List.map ftag (New.aformulas inf), 
-                    List.map ftag (New.cformulas inf))
+and formulas inf = (List.map ftag (Info.aformulas inf), 
+                    List.map ftag (Info.cformulas inf))
 and plain_asm_elim_rules_tac arules lbl_list goal = 
   (* Try to apply one of the rules, making an empty change record on
      failure. *)
@@ -250,20 +248,20 @@ and plain_asm_elim_rules_tac arules lbl_list goal =
         if not flag
         then fail ~err:(error "asm_elim_rules_tac: No tactic suceeded.") g
         else 
-          let chngs1 = (Changes.make (New.subgoals chngs)
-                          flist (New.cformulas chngs) (New.constants chngs))
+          let chngs1 = (Changes.make (Info.subgoals chngs)
+                          flist (Info.cformulas chngs) (Info.constants chngs))
           in
           set_changes_tac chngs1 g
       | lbl::rest ->
         apply_tac (try_arule_tac flist lbl)
           (fun (flag1, flist1) -> (?> fun inf2 g2 -> 
-            let albls = List.map ftag (New.aformulas inf2) 
+            let albls = List.map ftag (Info.aformulas inf2) 
             and chngs1 = 
               Changes.rev_append
                 (Changes.make 
-                   (New.subgoals inf2)
-                   [] (New.cformulas inf2) 
-                   (New.constants inf2))
+                   (Info.subgoals inf2)
+                   [] (Info.cformulas inf2) 
+                   (Info.constants inf2))
                 chngs
             in
             let albls1 = List.rev_append albls rest 
@@ -280,16 +278,16 @@ and base_asm_elim_rules_tac rules lbl_list goal =
     (?> fun info g ->
       (* Extract failing assumptions and eliminate new
          conclusions. *)
-      let concls = List.map ftag (New.cformulas info) 
-      and asm_fails = New.aformulas info 
+      let concls = List.map ftag (Info.cformulas info) 
+      and asm_fails = Info.aformulas info 
       in
       seq [
         (base_concl_elim_rules_tac rules concls // skip);
         (* Form final change record. *)
         (?> fun info1 g1 ->
-          let chngs = Changes.make (New.subgoals info1)
-            (List.rev_append asm_fails (New.aformulas info1))
-            (New.cformulas info1) (New.constants info1)
+          let chngs = Changes.make (Info.subgoals info1)
+            (List.rev_append asm_fails (Info.aformulas info1))
+            (Info.cformulas info1) (Info.constants info1)
           in
           set_changes_tac chngs g1)
       ] g)
@@ -315,18 +313,18 @@ and plain_concl_elim_rules_tac crules lbl_list goal =
         if not flag
         then fail ~err:(error "concl_elim_rules_tac: No tactic suceeded.") g
         else
-          let chngs1 = Changes.make (New.subgoals chngs)
-            (New.aformulas chngs) flist (New.constants chngs) 
+          let chngs1 = Changes.make (Info.subgoals chngs)
+            (Info.aformulas chngs) flist (Info.constants chngs) 
           in
           set_changes_tac chngs1 g
       | lbl::rest ->
         apply_tac (try_crule_tac flist lbl)
           (fun (flag1, flist1) -> (?> fun inf2 g2 -> 
-            let clbls = List.map ftag (New.cformulas inf2) 
+            let clbls = List.map ftag (Info.cformulas inf2) 
             and chngs1 = 
               Changes.rev_append 
-                (Changes.make (New.subgoals inf2)
-                   (New.aformulas inf2) [] (New.constants inf2))
+                (Changes.make (Info.subgoals inf2)
+                   (Info.aformulas inf2) [] (Info.constants inf2))
                 chngs
             in
             let clbls1 = List.rev_append clbls rest 
@@ -340,17 +338,17 @@ and base_concl_elim_rules_tac rules lbl_list goal =
     plain_concl_elim_rules_tac crules lbl_list ;
     (?> fun info g ->
       (* Extract failing conclusions and eliminate new assumptions. *)
-      let asms = List.map ftag (New.aformulas info) 
-      and concl_fails = New.cformulas info 
+      let asms = List.map ftag (Info.aformulas info) 
+      and concl_fails = Info.cformulas info 
       in
       seq [
         (base_asm_elim_rules_tac rules asms // skip);
         (* Form final change record. *)
         (?> fun info1 g1 ->
-          let chngs = Changes.make (New.subgoals info1)
-            (New.aformulas info1)
-            (List.rev_append concl_fails (New.cformulas info1))
-            (New.constants info1)
+          let chngs = Changes.make (Info.subgoals info1)
+            (Info.aformulas info1)
+            (List.rev_append concl_fails (Info.cformulas info1))
+            (Info.constants info1)
           in
           set_changes_tac chngs g1)
       ] g)

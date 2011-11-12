@@ -46,7 +46,7 @@ let make_cond_rule_true_thm () =
         allC; allC;
         (?> fun info g-> 
           let y_term, x_term = 
-	    Lib.get_two (New.constants info) 
+	    Lib.get_two (Info.constants info) 
 	      (Failure "make_cond_rule_true_thm")
           in 
           (cut (rule_true_thm()) ++ inst_tac [ y_term ]
@@ -63,7 +63,7 @@ let make_cond_rule_false_thm () =
       (allC ++ allC
        ++ (?> fun info g -> 
            let y_term, x_term = 
-	     Lib.get_two (New.constants info) 
+	     Lib.get_two (Info.constants info) 
 	       (Failure "make_cond_rule_false_thm")
            in 
            (cut (rule_false_thm()) ++ inst_tac [y_term]
@@ -121,14 +121,14 @@ let make_neg_eq_sym_thm()=
 	     [
 	       (?> fun info g -> 
 	         let (atg, _) = 
-                   Lib.get_two (New.aformulas info)
+                   Lib.get_two (Info.aformulas info)
                      (error "simpconvs.make_neg_eq_sym_thm:1")
 	         in 
 	         (once_rewrite_tac ~f:(ftag atg) [thm]
 	          ++ basic) g);
 	       (?> fun info g -> 
 	         let (_, atg) = 
-                   Lib.get_two (New.aformulas info)
+                   Lib.get_two (Info.aformulas info)
                       (error "simpconvs.make_neg_eq_sym_thm:1")
 	         in 
 	         (once_rewrite_tac ~f:(ftag atg) [thm]
@@ -160,7 +160,7 @@ let make_cond_neg_eq_sym_thm()=
                    basic;
 	           (fun g -> 
 		     let (atg, _) = 
-                       Lib.get_two (New.aformulas info)
+                       Lib.get_two (Info.aformulas info)
                          (error "simpconvs.make_cond_neg_eq_sym_thm:1")
 		     in 
 		     (once_rewrite_tac ~f:(ftag atg) [thm]
@@ -170,7 +170,7 @@ let make_cond_neg_eq_sym_thm()=
 	           [basic;
 	            (fun g -> 
 		      let (_, atg) = 
-                        Lib.get_two (New.aformulas info)
+                        Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_neg_eq_sym_thm:2")
 		      in 
 		      (once_rewrite_tac ~f:(ftag atg) [thm]
@@ -202,7 +202,7 @@ let make_cond_eq_sym_thm()=
 	         [basic;
 	          (fun g -> 
 		    let (atg, _) =
-                        Lib.get_two (New.aformulas info)
+                        Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:1")
 		    in 
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
@@ -213,7 +213,7 @@ let make_cond_eq_sym_thm()=
 	         [basic;
 	          (fun g -> 
 		    let (_, atg) = 
-                        Lib.get_two (New.aformulas info)
+                        Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:2")
 		    in 
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
@@ -293,7 +293,7 @@ let negate_concl_tac c goal =
       once_rewrite_tac [double_not_thm()] ~f:c;
       Tactics.negC ~c:c;
       (?> fun inf -> 
-        set_changes_tac (Changes.make [] (New.aformulas inf) [] []))
+        set_changes_tac (Changes.make [] (Info.aformulas inf) [] []))
     ] goal
 
 (*** Preparing simplifier rules. ***)
@@ -672,13 +672,11 @@ let new_add_asm ret tg g =
 (** [solve_not_true_tac]: Solve goals of the form [not true |- C].
 *)
 let solve_not_true_tac tg goal = 
-  let info = info_make()
-  in 
   seq
     [
-      lift_info ~info:info (negA ~a:(ftag tg));
-      (fun g ->
-	let ctg = get_one ~msg:"solve_not_true_tac" (cformulas info)
+      negA ~a:(ftag tg);
+      (?> fun info g ->
+	let ctg = get_one ~msg:"solve_not_true_tac" (Info.cformulas info)
 	in 
 	trueC ~c:(ftag ctg) g)
     ] goal
@@ -782,8 +780,8 @@ struct
         [
           (fun ret g1 -> (ret, copyA (ftag tg) g1));
           (fun ret g1 ->
-            let info = New.changes g1 in
- 	    let atg = get_one ~msg:"eq_asm" (New.aformulas info)
+            let info = Info.changes g1 in
+ 	    let atg = get_one ~msg:"eq_asm" (Info.aformulas info)
  	    in 
  	    fold_seq ret
  	      [
@@ -839,8 +837,8 @@ struct
 	          [
 		    (fun lst g1 -> lst, copyA (ftag tg) g1);
 		    (fun lst g1 -> 
-                      let info = New.changes g1 in
-		      let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
+                      let info = Info.changes g1 in
+		      let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
 		      in 
                       fold_seq lst
 		        [
@@ -867,8 +865,8 @@ struct
 	[
 	  (fun lst g2 -> lst, copyA (ftag tg) g2);
 	  (fun ret1 g1 ->
-            let info = New.changes g1 in
-	    let atg = get_one ~msg:"neg_eq_asm" (New.aformulas info)
+            let info = Info.changes g1 in
+	    let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
 	    in 
 	    fold_seq ret1
 	      [
@@ -955,9 +953,9 @@ struct
 		    [
 		      (fun lst g1 -> lst, copyA (ftag tg) g1);
                       (fun lst g1 ->
-                        let info = New.changes g1 in
+                        let info = Info.changes g1 in
 		        let atg = 
-			  get_one ~msg:"neg_rule_asm" (New.aformulas info)
+			  get_one ~msg:"neg_rule_asm" (Info.aformulas info)
 		        in 
 		        fold_seq lst
 			  [
@@ -980,9 +978,9 @@ struct
 	[
 	  (fun lst g1 -> lst, conjA ~a:(ftag tg) g1);
           (fun lst g1 ->
-            let inf = New.changes g1 in
+            let inf = Info.changes g1 in
 	    let ltg, rtg = 
-	      get_two ~msg:"Simpconvs.conj_rule_asm" (New.aformulas inf)
+	      get_two ~msg:"Simpconvs.conj_rule_asm" (Info.aformulas inf)
 	    in 
 	    fold_seq lst
 	      [
@@ -1116,8 +1114,8 @@ let prepare_asm data atg goal =
           copyA (ftag atg)
         ] +< l);
     (fun _ g ->
-      let info = New.changes g in
-      let a1 = get_one ~msg:"Simplib.prepare_asm" (New.aformulas info) in 
+      let info = Info.changes g in
+      let a1 = get_one ~msg:"Simplib.prepare_asm" (Info.aformulas info) in 
       let a1form = drop_tag (get_tagged_asm (ftag a1) g) in
       let mk_data rules = 
         (mk_rule_data asm_form a1form rules)::data
@@ -1165,13 +1163,13 @@ let prepare_concl data c goal =
           copyC (ftag c);
           (?> fun info g -> 
             let c1 = get_one ~msg:"Simplib.prepare_concl" 
-              (New.cformulas info) 
+              (Info.cformulas info) 
             in 
             negate_concl_tac (ftag c1) g)
         ] +< l);
       (fun _ g ->
-        let info = New.changes g in 
-        let a = get_one ~msg:"Simplib.prepare_concl" (New.aformulas info) 
+        let info = Info.changes g in 
+        let a = get_one ~msg:"Simplib.prepare_concl" (Info.aformulas info) 
         in 
         let aform = drop_tag (get_tagged_asm (ftag a) g) in 
         let mk_data rules = 

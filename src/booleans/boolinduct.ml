@@ -61,9 +61,9 @@ let mini_mp_tac asm1 asm2 goal =
 	--
 	  [
 	    (?> fun tinfo g1 -> 
-	      let a1_tag = get_one (New.aformulas tinfo) in 
-	      let c_tag = get_one (New.cformulas tinfo) in 
-	      let (_, g_tag) = get_two (New.subgoals tinfo)
+	      let a1_tag = get_one (Info.aformulas tinfo) in 
+	      let c_tag = get_one (Info.cformulas tinfo) in 
+	      let (_, g_tag) = get_two (Info.subgoals tinfo)
 	      in 
 	      seq
 		[
@@ -195,11 +195,11 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
              (?> fun inf3 ->
                set_changes_tac (Changes.combine inf3 inf2))) g2)) g1);
       (?> fun inf1 g1 ->
-        let a1_tag, a_tag = get_two (New.aformulas inf1)
+        let a1_tag, a_tag = get_two (Info.aformulas inf1)
 	in 
         (mini_mp_tac (ftag a_tag) (ftag a1_tag) ++
            (?> fun inf2 g2 ->
-	     let c1_tag = get_one (New.cformulas inf2)
+	     let c1_tag = get_one (Info.cformulas inf2)
 	     in 
 	     (specC ~c:(ftag c1_tag) // 
                 ((set_changes_tac (Changes.make [] [] [c1_tag] []) ++
@@ -207,8 +207,8 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
                       add_changes_tac (Changes.combine inf2 inf1))))) g2)) 
           g1);
       (?> fun inf1 g1 ->
-	let c1_tag = get_one (New.cformulas inf1) 
-        and a3_tag = get_one (New.aformulas inf1) in 
+	let c1_tag = get_one (Info.cformulas inf1) 
+        and a3_tag = get_one (Info.aformulas inf1) in 
 	let c1_lbl = ftag c1_tag in 
 	let c1_trm = Formula.term_of (get_concl c1_lbl g1) in 
 	let a3_lbl = ftag a3_tag in 
@@ -285,7 +285,7 @@ let asm_induct_tac alabel clabel goal =
 	        deleteC (ftag ctag);
 		(fun g1 -> 
 		  let c1_tag = get_one ~msg:"asm_induct_tac.main_tac:1"
-                    (New.cformulas tinfo)
+                    (Info.cformulas tinfo)
 		  in 
 		  split_lh_tac (ftag c1_tag) g1)
 	      ]);
@@ -296,9 +296,9 @@ let asm_induct_tac alabel clabel goal =
                    set_changes_tac (Changes.make [] [] [ctag] []));
                 (?> fun tinfo g1 ->
 		    let a1_tag = get_one ~msg:"asm_induct_tac.main_tac:2"
-                      (New.aformulas tinfo) 
+                      (Info.aformulas tinfo) 
 		    and c1_tag = get_one  ~msg:"asm_induct_tac.main_tac:3"
-                      (New.cformulas tinfo)
+                      (Info.cformulas tinfo)
 		    in 
 		    induct_tac_solve_rh_tac 
 		      (ftag a1_tag) (ftag c1_tag) g1)
@@ -319,7 +319,7 @@ let basic_induct_tac c thm goal =
       [
 	cut thm;
 	(?> fun tinfo g1 ->
-	  let a_tag = get_one ~msg:"basic_induct_tac" (New.aformulas tinfo)
+	  let a_tag = get_one ~msg:"basic_induct_tac" (Info.aformulas tinfo)
 	  in 
 	  asm_induct_tac (ftag a_tag) c_lbl g1)
       ] g
@@ -494,8 +494,8 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
         in 
         (instA ~a:a_lbl const_list ++
            (?> fun inf2 g2 ->
-	     let c_tag = get_one (New.cformulas inf2) 
-	     and a_tag = get_one (New.aformulas inf2)
+	     let c_tag = get_one (Info.cformulas inf2) 
+	     and a_tag = get_one (Info.aformulas inf2)
 	     in 
 	     basic ~a:(ftag a_tag) ~c:(ftag c_tag) g2)) g1)
     ] goal
@@ -578,7 +578,7 @@ let basic_induct_on ?thm name clabel goal =
       [
 	cut thm;
 	(?> fun inf1 g1 -> 
-	  let atag = get_one (New.aformulas inf1) in 
+	  let atag = get_one (Info.aformulas inf1) in 
 	  (inst_split_asm_tac atag
 	   --
 	     [
@@ -586,7 +586,7 @@ let basic_induct_on ?thm name clabel goal =
                (?> fun inf2 g2 -> 
 		 (deleteC (ftag ctag) ++
 		 (fun g3 -> 
-		   let c1_tag = get_one (New.cformulas inf2) in 
+		   let c1_tag = get_one (Info.cformulas inf2) in 
 		   split_lh_tac (ftag c1_tag) g3)) g2);
 	       (** Right-hand sub-goal *)
 	       seq
@@ -595,8 +595,8 @@ let basic_induct_on ?thm name clabel goal =
 		     ((specC //
 		        set_changes_tac (Changes.make [] [] [ctag] [])) ++
                        (?> fun inf3 g3 ->
-		         let a1_tag = get_one (New.aformulas inf2) in 
-		         let c1_tag = get_one (New.cformulas inf3)
+		         let a1_tag = get_one (Info.aformulas inf2) in 
+		         let c1_tag = get_one (Info.cformulas inf3)
 		         in 
 		         induct_on_solve_rh_tac 
 		           (ftag a1_tag) (ftag c1_tag) g3)) g2)

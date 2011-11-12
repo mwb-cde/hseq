@@ -86,7 +86,7 @@ struct
     let asm_fn l g = 
       try 
 	let g2 = eq_symA l g in 
-	let nl = Lib.get_one (New.aformulas (New.branch_changes g2))
+	let nl = Lib.get_one (Info.aformulas (Info.branch_changes g2))
 	  (error "Rewriter.map_sym_tac: Invalid assumption")
 	in 
 	(ftag nl, g2)
