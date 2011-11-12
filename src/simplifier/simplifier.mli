@@ -342,9 +342,8 @@ val find_all_matches_tac:
 
 val find_term_bu_tac:
   match_data -> Basic.term
-  -> 
-  (match_data * Basic.term
-   * Logic.rr_type Rewrite.plan) Tactics.data_tactic
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_term_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
     [trm], bottom-up, constructing a rewrite plan.
 
@@ -356,8 +355,8 @@ val find_term_bu_tac:
 
 val find_subterm_bu_tac:
   match_data-> Basic.term
-  ->  (match_data * Basic.term
-       * Logic.rr_type Rewrite.plan) Tactics.data_tactic
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_subterm_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
     to rewrite, bottom-up, the subterms of [trm].
 

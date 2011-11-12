@@ -679,15 +679,15 @@ let rec find_subterm_bu_tac data trm goal =
                 (rw_term_tac (data1, fplan1) f1 >/ 
                    (fun (data2, f1, fplan2) ->
                      ({data2 with qntenv = qntenv0}, 
-                      f1, a, fplan2, aplan1))));
+                      f1, a1, fplan2, aplan1))));
 
 	      (** Rewrite argument term **)
-              (fun (data1, nf, a1, fplan1, aplan1) ->
+              (fun (data1, f1, a1, fplan1, aplan1) ->
                 (rw_term_tac (data1, aplan1) a1
                  >/ 
                    (fun (data2, a1, aplan2) ->
                      ({data2 with qntenv = qntenv0},
-                      nf, a1, fplan1, aplan2))))
+                      f1, a1, fplan1, aplan2))))
             ]) >/ finalize) goal
       end
     | _ -> raise No_change
@@ -750,7 +750,7 @@ and find_term_bu_tac data trm goal =
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
 let rec find_subterm_td_tac data trm goal =
-  let (ctrl, tyenv, qntenv) = dest_match_data data in 
+  let (_, _, qntenv) = dest_match_data data in 
   match trm with
     | Basic.Qnt(q, b) -> 
       let qntenv2 = Term.bind (Basic.Bound(q)) null_term qntenv
@@ -780,7 +780,7 @@ let rec find_subterm_td_tac data trm goal =
 	check_change2 fplan1 aplan1;
 	let subplan = pack (mk_branches [fplan1; aplan1])
 	in 
-	({data1 with qntenv = qntenv}, App(nf, na), subplan)
+	(data1, App(nf, na), subplan)
       in
       begin
         (fold_seq (data, f, a, mk_skip, mk_skip)
@@ -824,7 +824,7 @@ and find_term_td_tac data trm goal =
     with _ -> ((data1, trm1, mplan1, splan1) >+ skip) g
   in
   let tac g = 
-    fold_seq (data, trm, mk_skip, mk_skip)
+    fold_seq (data, trm, mk_rules [], mk_skip)
       [
         (** Rewrite the current term, ignoring errors **)
         rw_term_tac ;
@@ -897,7 +897,7 @@ let basic_simp_tac cntrl ft goal =
     then ((data1, trm1, plan1) >+ Boollib.trivial ~f:(ftag ft)) g1
     else 
       begin
-	  (** Reset the control data **)
+	(** Reset the control data **)
 	let ncntrl = 
           Data.set_rr_depth 
             (Data.set_conds cntrl1 (rr_conds cntrl1)) 
@@ -906,7 +906,7 @@ let basic_simp_tac cntrl ft goal =
         let ndata = {data1 with cntrl = ncntrl} in
 	try
           ((ndata, trm1, plan1) 
-           >+ (simp_rewrite_tac is_concl plan1 trm1 (ftag ft))) g1
+           >+ (simp_rewrite_tac is_concl plan1 trm (ftag ft))) g1
 	with _ -> raise No_change
       end
   in 
