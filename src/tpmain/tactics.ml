@@ -420,19 +420,10 @@ let restrict p tac goal =
   then ng 
   else raise (Failure "restrict_tac")
 
-let notify_tac f d tac goal =
-  let ng = tac goal
-  in 
-  (f d); ng
-
 let data_tac f tac g = (f g, tac g)
 let (>>) f tacl g = tacl (f g) g
 let query_tac tacl g = tacl (New.changes g) g
 let (?>) tacl g = tacl (New.changes g) g
-
-
-let update_tac f d g = ((fun _ -> (f d)) g); skip g
-
 
 let inject_tac d tac g = (d, tac g)
 let (>+) = inject_tac
@@ -532,6 +523,7 @@ let foreach_concl tac goal =
   try map_some label_tac (concls_of (sequent goal)) goal
   with err -> raise (add_error "foreach_concl: no change." err)
 
+(**
 let foreach_form tac goal = 
   let chng = ref false in 
   let notify () = chng := true
@@ -544,6 +536,18 @@ let foreach_form tac goal =
   try restrict (fun _ -> !chng) (asms_tac ++ concls_tac) goal
   with Failure _ -> raise (Failure "foreach_form")
     | err -> raise err
+**)
+
+let foreach_form tac goal = 
+  let asms_tac ok g = 
+    ((try_tac (foreach_asm tac)) >/ (fun x -> ok or x)) g
+  and concls_tac ok g = 
+    ((try_tac (foreach_concl tac)) >/ (fun x -> ok or x)) g
+  in 
+  apply_tac 
+    (fold_seq false [ asms_tac; concls_tac ])
+    (fun ok g -> 
+      if ok then skip g else raise (Failure "foreach_form")) goal
 
 (*
  * Tactics

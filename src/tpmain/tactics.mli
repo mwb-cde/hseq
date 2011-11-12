@@ -403,11 +403,6 @@ val fail: ?err:exn -> tactic
 
 (** {5 Tacticals} *)
 
-val notify_tac: ('a -> unit) -> 'a -> tactic -> tactic
-(** [notify_tac f x tac g]: Notify [tac g] succeeded. Applies [tac g]
-    then, if the tactic suceeded, apply [f x].  Fails if [tac g] fails.
-*)
-
 val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
@@ -453,9 +448,6 @@ val apply_tac: ('a)data_tactic -> ('a -> tactic) -> tactic
 (** [query_tac tac g]: Apply a tactic after extracting the change
     data from a goal. Forms [tac (changes g) g].
 *)
-
-val update_tac: ('a -> unit) -> 'a -> tactic
-(** [update_tac f d g]: Apply side effects. Forms [(f d); tac g]. *)
 
 val seq: tactic list -> tactic 
 (** [seq tacl]: Apply each tactic in [tacl] in sequence to the

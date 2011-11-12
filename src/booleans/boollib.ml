@@ -244,88 +244,80 @@ struct
         Term.rename (Term.rebuild_qnt eqvars (Lterm.mk_not eqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let info = Tactics.info_make() in
       let proof g = 
 	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
 		 seq 
-		   [lift_info ~info:info (Tactics.implC ~c:(fnum 1));
-		    (fun g1 ->
+		   [
+                     Tactics.implC ~c:(fnum 1);
+		     (?> fun info g1 ->
 		      let atag = 
-                        Lib.get_one (Tactics.aformulas info)
+                        Lib.get_one (New.aformulas info)
 			  (Failure "neg_all_conv: 1")
 		      and ctag = 
-			Lib.get_one (Tactics.cformulas info) 
+			Lib.get_one (New.cformulas info) 
 			  (Failure "neg_all_conv: 1")
 		      in 
-		      Tactics.info_empty info;
 		      seq
 			[
-			  lift_info ~info:info (Tactics.negA ~a:(ftag atag));
-			  (fun g2-> 
+			  Tactics.negA ~a:(ftag atag);
+			  (?> fun info g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Tactics.cformulas info)
+			      Lib.get_one (New.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.info_empty info;
 			    seq
-			      [repeat (lift_info ~info:info 
-                                         (Tactics.allC ~c:(ftag ctag2)));
-			       (fun g3 -> 
-				 instC ~c:(ftag ctag)
-				   (List.rev (Tactics.constants info)) g3);
-                               (fun g3 ->
-			         update_tac 
-				   (fun _ -> Tactics.info_empty info) () g3);
-			       lift_info ~info:info 
-                                 (Tactics.negC ~c:(ftag ctag));
-			       (fun g3 ->
-				 let atag3 = 
-				   Lib.get_one (Tactics.aformulas info)
-				     (Failure "neg_all_conv: 3")
-				 in 
-				 Tactics.info_empty info;
-				 Tactics.basic 
-				   ~a:(ftag atag3) ~c:(ftag ctag2) g3)
+			      [
+                                repeat 
+                                  (?> fun info ->
+                                   (Tactics.allC ~c:(ftag ctag2)
+                                    ++ append_changes_tac info));
+			        (?> fun info g3 -> 
+				  instC ~c:(ftag ctag)
+				    (List.rev (New.constants info)) g3);
+			        Tactics.negC ~c:(ftag ctag);
+			        (?> fun info g3 ->
+				  let atag3 = 
+				    Lib.get_one (New.aformulas info)
+				      (Failure "neg_all_conv: 3")
+				  in 
+				  Tactics.basic 
+				    ~a:(ftag atag3) ~c:(ftag ctag2) g3)
 			      ] g2)] g1)];
 		 seq 
 		   [
-                     lift_info ~info:info (Tactics.implC ~c:(fnum 1));
-		     (fun g1 ->
+                     Tactics.implC ~c:(fnum 1);
+		     (?> fun info g1 ->
 		       let atag = 
-                         Lib.get_one (Tactics.aformulas info)
+                         Lib.get_one (New.aformulas info)
 			 (Failure "neg_all_conv: 4")
 		      and ctag = 
-			Lib.get_one (Tactics.cformulas info) 
+			Lib.get_one (New.cformulas info) 
 			  (Failure "neg_all_conv: 4")
 		      in 
-		      Tactics.info_empty info;
 		      seq
 			[
-			  lift_info ~info:info
-                            (Tactics.negC ~c:(ftag ctag));
-			  (fun g2-> 
+                          Tactics.negC ~c:(ftag ctag);
+			  (?> fun info g2-> 
 			    let atag2 = 
-			      Lib.get_one (Tactics.aformulas info)
+			      Lib.get_one (New.aformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.info_empty info;
 			    seq
-			      [repeat (lift_info ~info:info 
-                                         (Tactics.existA ~a:(ftag atag)));
-			       (fun g3 -> 
-				 instA ~a:(ftag atag2)
-				   (List.rev (Tactics.constants info)) g3);
-			       (fun g3 ->
-                                 update_tac 
-				   (fun _ -> Tactics.info_empty info) () g3);
-                               lift_info ~info:info
-			         (Tactics.negA ~a:(ftag atag));
-			       (fun g3 ->
+			      [
+                                repeat 
+                                  (?> fun info ->
+                                    (Tactics.existA ~a:(ftag atag)
+                                    ++ append_changes_tac info));
+			        (?> fun info g3 -> 
+				  instA ~a:(ftag atag2)
+				    (List.rev (New.constants info)) g3);
+                                Tactics.negA ~a:(ftag atag);
+			        (?> fun info g3 ->
 				 let ctag3 = 
-				   Lib.get_one (Tactics.cformulas info)
+				   Lib.get_one (New.cformulas info)
 				     (Failure "neg_all_conv: 3")
 				 in 
 				 Tactics.basic 
@@ -370,91 +362,84 @@ struct
 	Term.rename (Term.rebuild_qnt aqvars (Lterm.mk_not aqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let info = Tactics.info_make() in
       let proof g = 
 	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
 		 seq 
-		   [lift_info ~info:info (Tactics.implC ~c:(fnum 1));
-		    (fun g1 ->
+		   [
+                     Tactics.implC ~c:(fnum 1);
+		     (?> fun info g1 ->
 		      let atag =
-			Lib.get_one (Tactics.aformulas info)
+			Lib.get_one (New.aformulas info)
 			  (Failure "neg_exists_conv: 1")
 		      and ctag = 
-			Lib.get_one (Tactics.cformulas info) 
+			Lib.get_one (New.cformulas info) 
 			  (Failure "neg_exists_conv: 1")
 		      in 
-		      Tactics.info_empty info;
 		      seq
 			[
-			  lift_info ~info:info
-                            (Tactics.negA ~a:(ftag atag));
-			  (fun g2-> 
+                          Tactics.negA ~a:(ftag atag);
+			  (?> fun info g2-> 
 			    let ctag2 = 
-			      Lib.get_one (Tactics.cformulas info)
+			      Lib.get_one (New.cformulas info)
 				(Failure "neg_all_conv: 2")
 			    in 
-			    Tactics.info_empty info;
 			    seq
-			      [repeat (lift_info ~info:info
-                                         (Tactics.allC ~c:(ftag ctag)));
-			       (fun g3 -> 
-				 instC ~c:(ftag ctag2)
-				   (List.rev (Tactics.constants info)) g3);
-                               (fun g3 -> update_tac
-				 (fun () -> Tactics.info_empty info) () g3);
-                               lift_info ~info:info
-			         (Tactics.negC ~c:(ftag ctag));
-			       (fun g3 ->
-				 let atag3 = 
-				   Lib.get_one (Tactics.aformulas info)
-				     (Failure "neg_exists_conv: 3")
-				 in 
-				 Tactics.info_empty info;
-				 Tactics.basic 
-				   ~a:(ftag atag3) ~c:(ftag ctag2) g3)
+			      [
+                                repeat 
+                                  (?> fun info -> 
+                                    (Tactics.allC ~c:(ftag ctag)
+                                     ++ append_changes_tac info));
+			        (?> fun info g3 -> 
+				  instC ~c:(ftag ctag2)
+				    (List.rev (New.constants info)) g3);
+			        Tactics.negC ~c:(ftag ctag);
+			        (?> fun info g3 ->
+				  let atag3 = 
+				    Lib.get_one (New.aformulas info)
+				      (Failure "neg_exists_conv: 3")
+				  in 
+				  Tactics.basic 
+				    ~a:(ftag atag3) ~c:(ftag ctag2) g3)
 			      ] g2)] g1)];
 		 seq 
-		   [lift_info ~info:info (Tactics.implC ~c:(fnum 1));
-		    (fun g1 ->
+		   [
+                     Tactics.implC ~c:(fnum 1);
+		     (?> fun info g1 ->
 		      let atag = 
-			Lib.get_one (Tactics.aformulas info) 
+			Lib.get_one (New.aformulas info) 
 			  (Failure "neg_exists_conv: 4")
 		      and ctag = 
-			Lib.get_one (Tactics.cformulas info) 
+			Lib.get_one (New.cformulas info) 
 			  (Failure "neg_exists_conv: 4")
 		      in 
-		      Tactics.info_empty info;
 		      seq
 			[
-                          lift_info ~info:info
-			    (Tactics.negC ~c:(ftag ctag));
-			  (fun g2-> 
+			  Tactics.negC ~c:(ftag ctag);
+			  (?> fun info g2-> 
 			    let atag2 = 
-			      Lib.get_one (Tactics.aformulas info)
+			      Lib.get_one (New.aformulas info)
 				(Failure "neg_exists_conv: 2")
 			    in 
-			    Tactics.info_empty info;
 			    seq
-			      [repeat 
-				  (lift_info ~info:info
-                                     (Tactics.existA ~a:(ftag atag2)));
-			       (fun g3 -> 
+			      [
+                                repeat 
+                                  (?> fun info ->
+                                    (Tactics.existA ~a:(ftag atag2)
+                                     ++ append_changes_tac info));
+			       (?> fun info g3 -> 
 				 instA ~a:(ftag atag)
-				   (List.rev (Tactics.constants info)) g3);
-                               (fun g3 -> update_tac
-				 (fun () -> Tactics.info_empty info) () g3);
-                               lift_info ~info:info
-			         (Tactics.negA ~a:(ftag atag));
-			       (fun g3 ->
-				 let ctag3 = 
-				   Lib.get_one (Tactics.cformulas info)
-				     (Failure "neg_exists_conv: 3")
-				 in 
-				 Tactics.basic 
-				   ~a:(ftag atag2) ~c:(ftag ctag3) g3)
+				   (List.rev (New.constants info)) g3);
+			        Tactics.negA ~a:(ftag atag);
+			        (?> fun info g3 ->
+				  let ctag3 = 
+				    Lib.get_one (New.cformulas info)
+				      (Failure "neg_exists_conv: 3")
+				  in 
+				  Tactics.basic 
+				    ~a:(ftag atag2) ~c:(ftag ctag3) g3)
 			      ] g2)] g1)]]
 	    ] g
       in 

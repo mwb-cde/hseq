@@ -358,8 +358,8 @@ val direct_alt:
     pass [info] and [l] to each tactic in [tacs].  **)
 
 val direct_map_some: 
-  ('a -> Tactics.tactic)
-  -> 'a list ref -> 'a list -> Tactics.tactic
+  ('a -> Tactics.tactic) -> 'a list 
+  ->('a list) Tactics.data_tactic
 (** [direct_map_some tac lst l]: Directed map_some. Like
     {!Tactics.map_some} but pass [info] and [l] to [tac]. If [tac]
     fails for [l], then [lst:=l::!lst].  **)

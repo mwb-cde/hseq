@@ -196,22 +196,7 @@ let direct_alt lbl tacl goal =
 	(try tac lbl g with _ -> alt_aux rest g)
   in alt_aux tacl goal
 
-(** [direct_map_some tac lst l]: Directed map_some. Like
-    {!Tactics.map_som} but pass [info] and [l] to [tac]. If [tac] fails
-    for [l], then [lst := l::!lst].  **)
-let direct_map_some tac lst l goal =
-  let add_lbl x = lst := x::(!lst) in 
-  let nofail_tac lbl = (tac lbl // (fun g -> update_tac add_lbl lbl g)) in 
-  let rec some_aux ls g =
-    match ls with 
-      | [] -> fail ~err:(error "direct_map_some: no tactic succeeded.") g
-      | (x::xs) ->
-	try (tac x ++ map_every nofail_tac xs) g
-	with _ -> add_lbl x; some_aux xs g
-  in 
-  some_aux l goal
-
-let new_direct_map_some tac lst goal =
+let direct_map_some tac lst goal =
   let app (flag, fail_list) lbl node =
     try 
       let branch1 = tac lbl node
