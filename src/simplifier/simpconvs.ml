@@ -742,7 +742,16 @@ struct
       Return [ret = [b]::!(reg)]
   *)
   let asm_rewrite_add_tac ret thm tg goal =
-    (new_add_asm ret tg goal, qnt_asm_rewrite_tac thm tg goal)
+    fold_seq ret
+      [
+        (fun lst -> (lst >+ qnt_asm_rewrite_tac thm tg));
+        (fun lst g ->
+          let info = Info.changes g in
+          let tg1 = get_one ~msg:"Simpconvs.Asms.asm_rewrite_add_tac"
+            (Info.aformulas info)
+          in
+          ((new_add_asm lst tg1 g) >+ skip) g)
+      ] goal
 
   let rec accept_asm ret (tg, (qs, c, a)) goal =
     if is_constant_true (qs, c, a)
@@ -1113,14 +1122,14 @@ let prepare_asm data atg goal =
           (false_test --> Boollib.falseA ~a:(ftag atg));
           copyA (ftag atg)
         ] +< l);
-    (fun _ g ->
-      let info = Info.changes g in
-      let a1 = get_one ~msg:"Simplib.prepare_asm" (Info.aformulas info) in 
-      let a1form = drop_tag (get_tagged_asm (ftag a1) g) in
-      let mk_data rules = 
-        (mk_rule_data asm_form a1form rules)::data
-      in 
-      permute_tac mk_data (asm_to_rules [] a1) g)
+      (fun _ g ->
+        let info = Info.changes g in
+        let a1 = get_one ~msg:"Simplib.prepare_asm" (Info.aformulas info) in 
+        let a1form = drop_tag (get_tagged_asm (ftag a1) g) in
+        let mk_data rules = 
+          (mk_rule_data asm_form a1form rules)::data
+        in 
+        permute_tac mk_data (asm_to_rules [] a1) g)
     ] goal
 
 (** [prepare_asms data asm g]: Apply [prepare_asm] to each assumption

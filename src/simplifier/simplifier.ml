@@ -605,12 +605,12 @@ let rec find_all_matches_tac data trm goal =
               (fun (data2, trm2, rrlist2) -> 
                 (find_match_tac data2 trm2
                  >/ (fun (data3, trm3, rr3)
-                   -> 
-                     ({data3 with qntenv = qntenv1},
-                      trm3, rr3::rrlist2))));
+                 -> 
+                   ({data3 with qntenv = qntenv1},
+                    trm3, rr3::rrlist2))));
               (fun (data3, trm3, rrlist3) ->
                 find_aux data3 trm3 rrlist3)
-              ] g1
+            ] g1
         with _ -> ((data1, trm1, rrlist1) >+ skip) g1
       end
   in 

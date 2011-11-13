@@ -223,7 +223,7 @@ let simpA0_tac cntrl ?a goal =
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
   let target_tac (ret: Data.t) tg g =
-    fold_seq (false, ret)
+    fold_seq (true, ret)
       [
         (** Simplify the target **)
 	(fun (fl1, ret1) g1 ->
@@ -237,24 +237,27 @@ let simpA0_tac cntrl ?a goal =
       ] g
   in 
   let main_tac ret g = 
-    let sum_fn (fl1, r) fl2 = (sum_flag fl1 fl2, r) in
+    let sum_fn fl1 (fl, r) = (sum_flag fl1 fl, r) in
+    let try_rule dt null g1 =
+      try (dt >/ (fun x -> (true, x))) g1
+      with _ -> ((false, null) >+ skip) g1
+    in
     fold_seq (false, ret)
       [
         (** Add non-target assumptions to the simpset *)
         (fun (fl1, ret1) -> 
-          ((add_asms_tac ret1 asms)
-           >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
+          try_rule (add_asms_tac ret1 asms) ret1
+          >/ (sum_fn fl1));
         (** Add conclusions to the simpset *)
         (fun (fl1, ret1) -> 
-          ((add_concls_tac ret1 concls)) 
-          >/ (fun ret2 -> (sum_fn (fl1, ret2) true)));
+          ((try_rule (add_concls_tac ret1 concls)) ret1)
+          >/ (sum_fn fl1));
         (** Simplify the targets *)
         (fun (fl1, ret1) ->
           fold_data
-            (fun (fl2, ret2) l -> 
-              (target_tac ret2 l) 
-              >/ (fun arg -> (sum_fn arg fl2)))
-            (fl1, ret1) targets)
+            (fun (fl2, ret2) l -> target_tac ret2 l
+              >/ (sum_fn fl2))
+            (false, ret1) targets)
       ] g
   in
   try 
@@ -307,7 +310,7 @@ let simpC0_tac cntrl ?c goal =
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
   let target_tac ret ct g = 
-    fold_seq (false, ret)
+    fold_seq (true, ret)
       [
         (** Simplify the target *)
         (fun (fl1, ret1) g1 ->
@@ -321,24 +324,24 @@ let simpC0_tac cntrl ?c goal =
       ] g
   in 
   let main_tac ret g = 
-    let sum_fn (fl1, r) fl2 = (sum_flag fl1 fl2, r) in
+    let sum_fn fl1 fl2 r = (sum_flag fl1 fl2, r) in
     fold_seq (false, ret)
       [
         (** Add assumptions to the simpset *)
         (fun (fl1, ret1) ->
-          ((add_asms_tac ret1 asms) 
-              >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
+          (add_asms_tac ret1 asms) 
+          >/ (sum_fn fl1 true));
         (** Add non-target conclusions to the simpset *)
         (fun (fl1, ret1) ->
-          ((add_concls_tac ret1 concls)
-           >/ (fun ret2 -> (sum_fn (fl1, ret2) true))));
+          (add_concls_tac ret1 concls)
+           >/ (sum_fn fl1 true));
         (** Simplify the targets (in reverse order) *)
         (fun (fl1, ret1) ->
           fold_data
             (fun (fl2, ret2) l -> 
               ((target_tac ret2 l)
-               >/ (fun arg -> sum_fn arg fl2)))
-            (fl1, ret1) targets)
+               >/ (fun (fl3, ret3) -> sum_fn fl2 fl3 ret3)))
+            (false, ret1) targets)
       ] g
   in
   try 
