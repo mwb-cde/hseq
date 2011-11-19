@@ -1308,17 +1308,17 @@ endif
 lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
 # lm-module-ocamldep-options: Module wide ocamldep flags. 
-lm-module-ocamldep-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLDEP_FLAGS)
+lm-module-ocamldep-options=$(LOCAL_OCAMLDEP_FLAGS) $(lm-module-ocamlpp-options)
 
 # lm-module-ocamlc-options: Module wide ocamlc flags. 
-lm-module-ocamlc-options=$(lm-module-ocamlpp-options) $(LOCAL_OCAMLC_FLAGS)
+lm-module-ocamlc-options=$(LOCAL_OCAMLC_FLAGS) $(lm-module-ocamlpp-options)
 
 # lm-module-link-options: Module wide link flags. 
 lm-module-link-options=$(LOCAL_LINK_FLAGS)
 
 # lm-module-ocamlnat-options: Module wide native code compiler flags. 
-lm-module-ocamlnat-options=$(lm-module-ocamlpp-options) \
-	$(LOCAL_OCAMLNAT_FLAGS) 
+lm-module-ocamlnat-options=$(LOCAL_OCAMLNAT_FLAGS) \
+	$(lm-module-ocamlpp-options)
 
 # lm-module-linknat-options: Module wide native code link flags. 
 lm-module-linknat-options=$(LOCAL_LINKNAT_FLAGS)

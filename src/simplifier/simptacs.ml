@@ -203,9 +203,9 @@ let simpC_engine_tac cntrl l goal =
 
     Doesn't clean-up.
 *)
-let simpA0_tac cntrl ?a goal = 
+let simpA0_tac data ?a goal = 
   let sqnt = sequent goal in 
-  let excluded_tags = Data.get_exclude cntrl in 
+  let excluded_tags = Data.get_exclude data in 
   let except_tag x = List.exists (Tag.equal x) excluded_tags in 
   let concls = 
     List.filter (not <+ except_tag) (List.map drop_formula (concls_of sqnt))
@@ -222,46 +222,45 @@ let simpA0_tac cntrl ?a goal =
 	([atag], List.filter (not <+ (except_or atag)) asm_tags)
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
-  let target_tac (ret: Data.t) tg g =
-    fold_seq (true, ret)
+  let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
+  let try_rule dt null g1 =
+    try (dt >/ (fun x -> (true, x))) g1
+    with _ -> ((false, null) >+ skip) g1
+  in
+  let target_tac (ctrl: Data.t) tg g =
+    fold_seq (false, ctrl)
       [
         (** Simplify the target **)
-	(fun (fl1, ret1) g1 ->
-          try 
-            ((simpA_engine_tac cntrl (ftag tg))
-                >/ (fun ret2 -> (fl1, ret2))) g1
-          with _ -> ((false, ret1), (pass g1)));
+	(fun (fl1, ctrl1) ->
+          try_rule (simpA_engine_tac ctrl (ftag tg)) ctrl1
+            >/ (sum_fn fl1));
         (** Add the assumption to the simpset *)
-        (fun (fl, ret1) -> 
-          ((add_asms_tac ret1 [tg]) >/ (fun ret2 -> (fl, ret2))))
+        (fun (fl1, ctrl1) -> 
+          try_rule (add_asms_tac ctrl1 [tg]) ctrl1 
+          >/ (sum_fn fl1))
       ] g
   in 
-  let main_tac ret g = 
-    let sum_fn fl1 (fl, r) = (sum_flag fl1 fl, r) in
-    let try_rule dt null g1 =
-      try (dt >/ (fun x -> (true, x))) g1
-      with _ -> ((false, null) >+ skip) g1
-    in
-    fold_seq (false, ret)
+  let main_tac ctrl g = 
+    fold_seq (false, ctrl)
       [
         (** Add non-target assumptions to the simpset *)
-        (fun (fl1, ret1) -> 
-          try_rule (add_asms_tac ret1 asms) ret1
+        (fun (fl1, ctrl1) -> 
+          try_rule (add_asms_tac ctrl1 asms) ctrl1
           >/ (sum_fn fl1));
         (** Add conclusions to the simpset *)
-        (fun (fl1, ret1) -> 
-          ((try_rule (add_concls_tac ret1 concls)) ret1)
+        (fun (fl1, ctrl1) -> 
+          try_rule (add_concls_tac ctrl1 concls) ctrl1
           >/ (sum_fn fl1));
         (** Simplify the targets *)
-        (fun (fl1, ret1) ->
+        (fun (fl1, ctrl1) ->
           fold_data
-            (fun (fl2, ret2) l -> target_tac ret2 l
+            (fun (fl2, ctrl2) l -> target_tac ctrl2 l
               >/ (sum_fn fl2))
-            (false, ret1) targets)
+            (fl1, ctrl1) targets)
       ] g
   in
   try 
-    let ((ok, ret1), ngoal) = main_tac cntrl goal in 
+    let ((ok, ret1), ngoal) = main_tac data goal in 
     if ok
     then (ret1, ngoal)
     else raise No_change
@@ -290,9 +289,9 @@ let simpA_tac cntrl ?a goal =
 
     Doesn't clean-up.
 *)
-let simpC0_tac cntrl ?c goal = 
+let simpC0_tac data ?c goal = 
   let sqnt = sequent goal in 
-  let excluded_tags = Data.get_exclude cntrl in 
+  let excluded_tags = Data.get_exclude data in 
   let except_tag x = List.exists (Tag.equal x) excluded_tags in 
   let asms = 
     List.filter (not <+ except_tag) (List.map drop_formula (asms_of sqnt))
@@ -309,45 +308,47 @@ let simpC0_tac cntrl ?c goal =
 	([ctag], List.filter (not <+ (except_or ctag)) concl_tags)
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
+  let try_rule dt null g1 =
+    try (dt >/ (fun x -> (true, x))) g1
+    with _ -> ((false, null) >+ skip) g1
+  in
   let target_tac ret ct g = 
     fold_seq (true, ret)
       [
         (** Simplify the target *)
-        (fun (fl1, ret1) g1 ->
-          try
-	    ((simpC_engine_tac ret1 (ftag ct))
-                >/ (fun ret2 -> (fl1, ret2))) g1
-          with _ -> ((false, ret1), pass g1));
+        (fun (fl1, ret1) ->
+          try_rule (simpC_engine_tac ret1 (ftag ct)) ret1
+          >/ (sum_fn fl1));
         (** Add it to the assumptions *)
         (fun (fl1, ret1) ->
-          ((add_concls_tac ret1 [ct]) >/ (fun ret2 -> (fl1, ret2))))
+          try_rule (add_concls_tac ret1 [ct]) ret1
+          >/ (sum_fn fl1))
       ] g
   in 
   let main_tac ret g = 
-    let sum_fn fl1 fl2 r = (sum_flag fl1 fl2, r) in
     fold_seq (false, ret)
       [
         (** Add assumptions to the simpset *)
         (fun (fl1, ret1) ->
-          (add_asms_tac ret1 asms) 
-          >/ (sum_fn fl1 true));
+          try_rule (add_asms_tac ret1 asms) ret1
+          >/ (sum_fn fl1));
         (** Add non-target conclusions to the simpset *)
         (fun (fl1, ret1) ->
-          (add_concls_tac ret1 concls)
-           >/ (sum_fn fl1 true));
+          try_rule (add_concls_tac ret1 concls) ret1
+          >/ (sum_fn fl1));
         (** Simplify the targets (in reverse order) *)
         (fun (fl1, ret1) ->
           fold_data
             (fun (fl2, ret2) l -> 
-              ((target_tac ret2 l)
-               >/ (fun (fl3, ret3) -> sum_fn fl2 fl3 ret3)))
-            (false, ret1) targets)
+              (target_tac ret2 l) >/ (sum_fn fl2))
+            (fl1, ret1) targets)
       ] g
   in
   try 
-    let ((ok, ret1), ngoal) = main_tac cntrl goal in
+    let ((ok, data1), ngoal) = main_tac data goal in
     if ok
-    then (ret1, ngoal)
+    then (data1, ngoal)
     else raise No_change
   with _ -> raise No_change
 
@@ -375,8 +376,8 @@ let simpC_tac cntrl ?c goal =
 
     Doesn't clean-up.
 *)
-let full_simp0_tac cntrl goal = 
-  let excluded = Data.get_exclude cntrl in 
+let full_simp0_tac data goal = 
+  let excluded = Data.get_exclude data in 
   let except x = List.exists (Tag.equal x) excluded
   and sqnt = sequent goal
   in 
@@ -386,55 +387,55 @@ let full_simp0_tac cntrl goal =
     List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
+  let try_rule dt null g1 =
+    try (dt >/ (fun x -> (true, x))) g1
+    with _ -> ((false, null) >+ skip) g1
+  in
   let asm_tac ret tg g =
     fold_seq (false, ret)
       [
         (** Simplify the assumption **)
-	(fun (fl1, ret1) g1 ->
-          try ((simpA_engine_tac ret1 (ftag tg))
-               >/ (fun ret2 -> (fl1, ret2))) g1
-          with _ -> ((false, ret1), skip g1));
+	(fun (fl1, ret1) ->
+          try_rule (simpA_engine_tac ret1 (ftag tg)) ret1
+          >/ (sum_fn fl1));
         (** Add the assumption to the simpset *)
-        (fun (fl, ret1) ->
-          (add_asms_tac ret1 [tg]) >/ (fun ret2 -> fl, ret2))
+        (fun (fl1, ret1) ->
+          try_rule (add_asms_tac ret1 [tg]) ret1 >/ (sum_fn fl1))
       ] g
   in 
   let concl_tac ret tg g = 
     fold_seq (false, ret)
       [
         (** Simplify the conclusion **)
-	(fun (fl1, ret1) g1 ->
-          try
-	    ((simpC_engine_tac ret1 (ftag tg))
-                >/ (fun ret2 -> (fl1, ret2))) g1
-          with _ -> ((false, ret1), pass g1));
+	(fun (fl1, ret1) ->
+          try_rule (simpC_engine_tac ret1 (ftag tg)) ret1
+          >/ (sum_fn fl1));
         (** Add the conclusion to the simpset *)
-        (fun (fl, ret1) ->
-          (add_concls_tac ret1 [tg]) >/ (fun ret2 -> fl, ret2))
+        (fun (fl1, ret1) ->
+          try_rule (add_concls_tac ret1 [tg]) ret1
+          >/ (sum_fn fl1))
       ] g
   in 
-  let sum_fn fl2 (fl1, r) = (sum_flag fl1 fl2, r) in
   let main_tac ret g = 
     fold_seq (false, ret)
       [
         (** Simplify the assumptions *)
         (fun (fl1, ret1) -> 
           fold_data 
-          (fun (fl2, ret2) tg -> 
-            ((asm_tac ret1 tg) >/ (sum_fn fl2)))
-            (fl1, ret1)
-            asms);
+            (fun (fl2, ret2) tg -> 
+              ((asm_tac ret1 tg) >/ (sum_fn fl2)))
+            (fl1, ret1) asms);
         (** Simplify the conclusions (in reverse order) *)
         (fun (fl1, ret1) ->
           fold_data 
-          (fun (fl2, ret2) tg -> 
-            ((concl_tac ret1 tg) >/ (sum_fn fl2)))
-            (fl1, ret1)
-            (List.rev concls));
+             (fun (fl2, ret2) tg -> 
+               ((concl_tac ret1 tg) >/ (sum_fn fl2)))
+             (fl1, ret1) (List.rev concls))
       ] g
   in
   try 
-    let ((ok, ret1), ngoal) = main_tac cntrl goal
+    let ((ok, ret1), ngoal) = main_tac data goal
     in 
     if (ok)
     then (ret1, ngoal)
