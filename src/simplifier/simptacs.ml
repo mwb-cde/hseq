@@ -72,21 +72,6 @@ let add_rule_data data rules =
 
 (*** Adding assumptions and conclusions ***)
 
-(*
-let add_asms_tac data atags goal =
-  let add_tac rdata rl g = 
-    let d = Lib.dest_option (!rdata)
-    in 
-    update_tac
-      (fun _ -> Lib.set_option rdata (add_rule_data d rl)) () g
-  in 
-  let tac tg g = 
-    apply_tac
-      (Simpconvs.prepare_asm [] tg)
-      (fun lst -> add_tac data lst) g
-  in
-  map_some tac atags goal
-*)
 let add_asms_tac data atags goal =
   let tac data1 tg g = 
     ((Simpconvs.prepare_asm [] tg)
@@ -124,7 +109,11 @@ let initial_prep_tac ctrl lbl goal =
     - solve trivial goals
     - repeat until nothing works
 *)
-let simp_engine_tac cntrl tag goal =
+let simp_engine_tac data tag goal =
+  let try_rule dt null g1 =
+    try (dt >/ (fun x -> (true, x))) g1
+    with _ -> ((false, null) >+ skip) g1
+  in
   (** main_tac: Repeatedly simplify **)
   let rec main_tac (chng, ncntrl) g =
     fold_seq (false, ncntrl)
@@ -135,10 +124,9 @@ let simp_engine_tac cntrl tag goal =
           >/ (fun c -> (chng2 or c, ncntrl2)));
         
 	(** Try simplification. **)
-        (fun (chng2, ncntrl2) g2 ->
-          try ((basic_simp_tac ncntrl2 tag 
-               >/ (fun ncntrl3 -> (true, ncntrl3))) g2)
-          with _ -> ((chng2, ncntrl2) >+ skip) g2);
+        (fun (chng2, ncntrl2) ->
+          try_rule (basic_simp_tac ncntrl2 tag) ncntrl2
+          >/ (fun (chng3, ncntrl3) -> (chng2 or chng3, ncntrl3)));
 
         (** Go round again if something changed on this iteration.
             Fail if nothing changed on an iteration.
@@ -153,17 +141,15 @@ let simp_engine_tac cntrl tag goal =
       ] g
   in 
   (** trivia_tac: Clean up trivial goals. **)
-  let trivia_tac g = 
-    alt [Boollib.trivial ~f:(ftag tag); skip] g
+  let apply_trivial_tac arg g = 
+    (arg >+ alt [Boollib.trivial ~f:(ftag tag); skip]) g
   in 
-  try
-    (fold_seq (false, cntrl)
-      [
-        main_tac;
-        (fun (chng, cntrl1) -> ((chng, cntrl1) >+ trivia_tac))
-      ]
-      >/ (fun (_, cntrl1) -> cntrl)) goal
-  with _ -> raise No_change
+  (fold_seq (false, data)
+    [
+      main_tac; apply_trivial_tac
+    ]
+   >/ (fun (_, cntrl1) -> cntrl1)) goal
+
 
 (** [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
     returning the updated data in [ret]. Set [chng] to true on success.
@@ -192,6 +178,7 @@ let simpC_engine_tac cntrl l goal =
   let loopdb = Data.get_loopdb cntrl in 
   (simp_engine_tac cntrl ctag
      >/ (fun cntrl1 -> Data.set_loopdb cntrl1 loopdb)) goal
+
 (***
     Simplifying assumptions
 ***)
@@ -237,7 +224,8 @@ let simpA0_tac data ?a goal =
         (** Add the assumption to the simpset *)
         (fun (fl1, ctrl1) -> 
           try_rule (add_asms_tac ctrl1 [tg]) ctrl1 
-          >/ (sum_fn fl1))
+(*          >/ (sum_fn fl1)) *)
+          >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 
   let main_tac ctrl g = 
@@ -246,11 +234,13 @@ let simpA0_tac data ?a goal =
         (** Add non-target assumptions to the simpset *)
         (fun (fl1, ctrl1) -> 
           try_rule (add_asms_tac ctrl1 asms) ctrl1
-          >/ (sum_fn fl1));
+(*          >/ (sum_fn fl1) *)
+         >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Add conclusions to the simpset *)
         (fun (fl1, ctrl1) -> 
           try_rule (add_concls_tac ctrl1 concls) ctrl1
-          >/ (sum_fn fl1));
+(*          >/ (sum_fn fl1)*)
+         >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Simplify the targets *)
         (fun (fl1, ctrl1) ->
           fold_data
@@ -314,7 +304,7 @@ let simpC0_tac data ?c goal =
     with _ -> ((false, null) >+ skip) g1
   in
   let target_tac ret ct g = 
-    fold_seq (true, ret)
+    fold_seq (false, ret)
       [
         (** Simplify the target *)
         (fun (fl1, ret1) ->
@@ -323,7 +313,7 @@ let simpC0_tac data ?c goal =
         (** Add it to the assumptions *)
         (fun (fl1, ret1) ->
           try_rule (add_concls_tac ret1 [ct]) ret1
-          >/ (sum_fn fl1))
+            >/ (fun (_, ret2) -> (fl1, ret2)))
       ] g
   in 
   let main_tac ret g = 
@@ -332,11 +322,13 @@ let simpC0_tac data ?c goal =
         (** Add assumptions to the simpset *)
         (fun (fl1, ret1) ->
           try_rule (add_asms_tac ret1 asms) ret1
-          >/ (sum_fn fl1));
+         >/ (fun (_, ret2) -> (fl1, ret2)));
+
         (** Add non-target conclusions to the simpset *)
         (fun (fl1, ret1) ->
           try_rule (add_concls_tac ret1 concls) ret1
-          >/ (sum_fn fl1));
+         >/ (fun (_, ret2) -> (fl1, ret2)));
+
         (** Simplify the targets (in reverse order) *)
         (fun (fl1, ret1) ->
           fold_data
@@ -401,7 +393,8 @@ let full_simp0_tac data goal =
           >/ (sum_fn fl1));
         (** Add the assumption to the simpset *)
         (fun (fl1, ret1) ->
-          try_rule (add_asms_tac ret1 [tg]) ret1 >/ (sum_fn fl1))
+          try_rule (add_asms_tac ret1 [tg]) ret1 
+         >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 
   let concl_tac ret tg g = 
@@ -414,7 +407,7 @@ let full_simp0_tac data goal =
         (** Add the conclusion to the simpset *)
         (fun (fl1, ret1) ->
           try_rule (add_concls_tac ret1 [tg]) ret1
-          >/ (sum_fn fl1))
+          >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 
   let main_tac ret g = 
@@ -424,23 +417,22 @@ let full_simp0_tac data goal =
         (fun (fl1, ret1) -> 
           fold_data 
             (fun (fl2, ret2) tg -> 
-              ((asm_tac ret1 tg) >/ (sum_fn fl2)))
-            (fl1, ret1) asms);
+              ((asm_tac ret2 tg) >/ (sum_fn fl2)))
+            (fl1, ret1) 
+            asms);
         (** Simplify the conclusions (in reverse order) *)
         (fun (fl1, ret1) ->
           fold_data 
-             (fun (fl2, ret2) tg -> 
-               ((concl_tac ret1 tg) >/ (sum_fn fl2)))
-             (fl1, ret1) (List.rev concls))
+            (fun (fl2, ret2) tg -> 
+              ((concl_tac ret2 tg) >/ (sum_fn fl2)))
+            (fl1, ret1)
+            (List.rev concls))
       ] g
   in
-  try 
-    let ((ok, ret1), ngoal) = main_tac data goal
-    in 
-    if (ok)
-    then (ret1, ngoal)
-    else raise No_change
-  with _ -> raise No_change
+  let ((ok, ret1), ngoal) = main_tac data goal
+  in 
+  if ok then (ret1, ngoal)
+  else raise No_change
 
 (** [full_simp0_tac ret cntrl goal]: Simplify subgoal
 
@@ -456,5 +448,5 @@ let full_simp_tac cntrl goal =
     clean_up_tac ncntrl g
   in 
   try apply_tac (full_simp0_tac cntrl) 
-        (fun cntrl1 -> clean_tac (Some cntrl) )goal
+        (fun cntrl1 -> clean_tac (Some cntrl1) )goal
   with _ -> raise No_change
