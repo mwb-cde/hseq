@@ -12,3 +12,4 @@ syntax:glob
 # HSeq Patterns
 *.tho
 src/lib/*
+obj/*
