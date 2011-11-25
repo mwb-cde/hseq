@@ -290,11 +290,17 @@ let simple_asm_rewrite_tac rule asm node =
 (** [negate_concl_tac info t g]: Negate conclusion [t], making it
     assumption tagged [t'].
 *)
-let negate_concl_tac c goal =
+let negate_concl_tac clbl goal =
+  let make_neg_concl c g =
+    let cform = get_concl c g in
+    if (Formula.is_neg cform)
+    then skip g
+    else once_rewrite_tac [double_not_thm()] ~f:c g
+  in
   seq 
     [ 
-      once_rewrite_tac [double_not_thm()] ~f:c;
-      Tactics.negC ~c:c;
+      make_neg_concl clbl;
+      Tactics.negC ~c:clbl;
       (?> fun inf -> 
         set_changes_tac (Changes.make [] (Info.aformulas inf) [] []))
     ] goal

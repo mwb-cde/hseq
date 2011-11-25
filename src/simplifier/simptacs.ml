@@ -236,12 +236,10 @@ let simpA0_tac data ?a goal =
         (** Add non-target assumptions to the simpset *)
         (fun (fl1, ctrl1) -> 
           try_rule (add_asms_tac ctrl1 asms) ctrl1
-(*          >/ (sum_fn fl1) *)
          >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Add conclusions to the simpset *)
         (fun (fl1, ctrl1) -> 
           try_rule (add_concls_tac ctrl1 concls) ctrl1
-(*          >/ (sum_fn fl1)*)
          >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Simplify the targets *)
         (fun (fl1, ctrl1) ->

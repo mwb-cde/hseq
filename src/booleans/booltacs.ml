@@ -297,10 +297,10 @@ let cases_tac (t:Basic.term) =
 	    in 
             (negA ~a:(ftag asm_tag) ++
 	       (?> fun inf2 g2 -> 
-	         let nasm_tag = get_one ~msg:"cases_tac 5" (Info.cformulas inf1)
+	         let nasm_tag = get_one ~msg:"cases_tac 5" (Info.cformulas inf2)
                  in
                  set_changes_tac 
-                   (Changes.make [lgoal; rgoal] [nasm_tag] [nasm_tag] []) g2))
+                   (Changes.make [lgoal; rgoal] [asm_tag] [nasm_tag] []) g2))
 	      g1);
 	  skip
         ]
