@@ -314,10 +314,13 @@ let copyA_inst_tac vals x goal =
   seq
     [
       copyA x;
-      (?> fun inf1 g ->
-        let x1 = get_one ~msg:"copyA_inst_tac" (Info.aformulas inf1);
-        in 
-        instA ~a:(ftag x1) vals g)
+      (?> fun inf1 g1 ->
+        let asm_tg = get_one ~msg:"copyA_inst_tac" (Info.aformulas inf1) in 
+        let asm_form = drop_tag (get_tagged_asm (ftag asm_tg) g1)
+        in
+        if (Formula.is_all asm_form)
+        then instA ~a:(ftag asm_tg) vals g1
+        else skip g1)
     ] goal
     
 (** [cut_rr_rule info vals t g] Cut rule [t] into goal [g],
@@ -405,7 +408,7 @@ let prep_cond_tac cntrl values thm goal =
       | _ -> failwith "prep_cond_tac: Failed to prepare condition."
   in 
   try (main_tac >/ extractor) goal
-  with _ -> raise No_change
+  with x -> raise (Report.add_error (Failure "prep_cond_tac") x)
 
 
 (** [prove_cond_tac cntrl tac values entry g]: Prepare a conditional

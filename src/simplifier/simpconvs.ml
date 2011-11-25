@@ -905,15 +905,12 @@ struct
 	| None -> 
           begin
             try
-              begin
-	        fold_seq ret
-		  [
-                    (fun lst g1 -> 
-                      (lst, 
-		       asm_rewrite_tac (neg_disj_thm()) tg g1));
-                    (fun lst -> single_asm_to_rule lst tg)
-		  ] g
-              end 
+	      fold_seq ret
+		[
+                  (fun lst -> 
+                    (lst >+ asm_rewrite_tac (neg_disj_thm()) tg));
+                  (fun lst -> single_asm_to_rule lst tg)
+		] g
             with _ -> asm_rewrite_add_tac ret (rule_false_thm()) tg g
           end
         | Some _ ->  
@@ -952,11 +949,11 @@ struct
 	      then 
 	        fold_seq ret 
                   [
-                    (fun lst g1 -> 
-                      (lst, 
-                       qnt_asm_rewrite_tac
-                        (cond_rule_imp_not_true_thm()) tg g1));
-		    (fun lst g1 -> single_asm_to_rule lst tg g1)
+                    (fun lst -> 
+                      (lst >+
+                         qnt_asm_rewrite_tac 
+                         (cond_rule_imp_not_true_thm()) tg));
+		    (fun lst -> single_asm_to_rule lst tg)
 	          ] g
 	      else 
 	        if Lterm.is_equality b 
@@ -964,7 +961,7 @@ struct
 	        else 
 		  fold_seq ret
 		    [
-		      (fun lst g1 -> lst, copyA (ftag tg) g1);
+		      (fun lst -> (lst >+ copyA (ftag tg)));
                       (fun lst g1 ->
                         let info = Info.changes g1 in
 		        let atg = 
@@ -989,7 +986,7 @@ struct
     then 
       fold_seq ret
 	[
-	  (fun lst g1 -> lst, conjA ~a:(ftag tg) g1);
+	  (fun lst -> (lst >+ conjA ~a:(ftag tg)));
           (fun lst g1 ->
             let inf = Info.changes g1 in
 	    let ltg, rtg = 
