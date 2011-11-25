@@ -175,3 +175,5 @@ val induct_on_solve_rh_tac:
     Completely solves the goal or fails.
 *)
 
+
+val basic_induct_tac: Logic.label -> Logic.thm -> Tactics.tactic

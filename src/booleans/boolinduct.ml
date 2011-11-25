@@ -172,12 +172,17 @@ let induct_tac_bindings typenv scp aterm cterm =
 *)
 let induct_tac_solve_rh_tac a_lbl c_lbl g =
   let (c_tag, c_trm) = 
-    let (tg, cf) = get_tagged_concl c_lbl g
+    let (tg, cf) = 
+      try get_tagged_concl c_lbl g
+      with _ -> failwith "induct_tac_solve_rh_tac: can't get (c_tag, c_trm)"
     in 
     (tg, Formula.term_of cf)
   in 
   let (c_vars, c_lhs, c_rhs) = dest_qnt_implies c_trm in 
-  let a_trm = Formula.term_of (get_asm a_lbl g) in 
+  let a_trm = 
+    try Formula.term_of (get_asm a_lbl g) 
+    with _ -> failwith "induct_tac_solve_rh_tac: can't get a_trm"
+  in 
   let (a_vars, a_lhs, a_rhs) = dest_qnt_implies a_trm in 
   let a_varp = Rewrite.is_free_binder a_vars
   in 
@@ -199,24 +204,36 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
 	in 
         (mini_mp_tac (ftag a_tag) (ftag a1_tag) ++
            (?> fun inf2 g2 ->
-	     let c1_tag = get_one (Info.cformulas inf2)
+	     let c1_tag = get_one (Info.cformulas inf1)
+	     and a3_tag = get_one (Info.aformulas inf2)
 	     in 
-	     (specC ~c:(ftag c1_tag) // 
-                ((set_changes_tac (Changes.make [] [] [c1_tag] []) ++
-                    (?> fun inf2 ->
-                      add_changes_tac (Changes.combine inf2 inf1))))) g2)) 
+	     ((specC ~c:(ftag c1_tag) // skip) ++
+                 (set_changes_tac
+                    (Changes.make [] [a3_tag] [c1_tag] []))) 
+               g2))
           g1);
       (?> fun inf1 g1 ->
 	let c1_tag = get_one (Info.cformulas inf1) 
         and a3_tag = get_one (Info.aformulas inf1) in 
 	let c1_lbl = ftag c1_tag in 
-	let c1_trm = Formula.term_of (get_concl c1_lbl g1) in 
+	let c1_trm =
+          try Formula.term_of (get_concl c1_lbl g1) 
+          with _ -> failwith "induct_tac_solve_rh_tac: can't get c1_trm"
+        in 
 	let a3_lbl = ftag a3_tag in 
-	let a3_trm = Formula.term_of (get_asm a3_lbl g1) in 
+	let a3_trm = 
+          try Formula.term_of (get_asm a3_lbl g1) 
+          with _ -> failwith "induct_tac_solve_rh_tac: can't get a3_trm"
+        in 
 	let (a3_vars, a3_body) = Term.strip_qnt Basic.All a3_trm in 
 	let a3_varp = Rewrite.is_free_binder a3_vars in 
 	let const_list = 
-          extract_consts a3_vars (unify_in_goal a3_varp a3_body c1_trm g1)
+          try
+            extract_consts a3_vars (unify_in_goal a3_varp a3_body c1_trm g1)
+          with err -> 
+            raise (add_error 
+                     "induct_tac_solve_rh_tac: can't get const_list"
+                     err)
 	in 
 	seq
 	  [
@@ -263,8 +280,8 @@ let asm_induct_tac alabel clabel goal =
     let albl = ftag atag in 
     seq
       [
-	(instA ~a:albl consts_list
-	 ++ (betaA ~a:albl // skip));
+	instA ~a:albl consts_list;
+	(betaA ~a:albl // skip);
 	implA ~a:albl
       ] g
   in
@@ -280,29 +297,25 @@ let asm_induct_tac alabel clabel goal =
 	--
 	  [
 	    (** Left-hand sub-goal *)
-            (?> fun tinfo -> 
+            (?> fun tinfo g1 -> 
+	      let c1_tag = get_one ~msg:"asm_induct_tac.main_tac:1"
+                (Info.cformulas tinfo)
+	      in 
               seq [
 	        deleteC (ftag ctag);
-		(fun g1 -> 
-		  let c1_tag = get_one ~msg:"asm_induct_tac.main_tac:1"
-                    (Info.cformulas tinfo)
-		  in 
-		  split_lh_tac (ftag c1_tag) g1)
-	      ]);
+		split_lh_tac (ftag c1_tag)
+	      ] g1);
 	    (** Right-hand sub-goal *)
-	    seq
-	      [
-		(specC //
-                   set_changes_tac (Changes.make [] [] [ctag] []));
-                (?> fun tinfo g1 ->
-		    let a1_tag = get_one ~msg:"asm_induct_tac.main_tac:2"
-                      (Info.aformulas tinfo) 
-		    and c1_tag = get_one  ~msg:"asm_induct_tac.main_tac:3"
-                      (Info.cformulas tinfo)
-		    in 
-		    induct_tac_solve_rh_tac 
-		      (ftag a1_tag) (ftag c1_tag) g1)
-	      ]
+            (?> fun tinfo g1 ->
+	      let a1_tag = get_one ~msg:"asm_induct_tac.main_tac:2"
+                (Info.aformulas tinfo) 
+              in
+	      seq
+	        [
+		  (specC // skip);
+		  induct_tac_solve_rh_tac 
+		    (ftag a1_tag) (ftag ctag)
+	        ] g1)
 	  ]
       ] g
   in 
@@ -347,17 +360,16 @@ let basic_induct_tac c thm goal =
 let induct_tac ?c thm goal =
   let one_tac x g = 
     try basic_induct_tac x thm g
-    with err -> raise (add_error "induct_tac: Failed" err)
+    with err -> 
+      raise (add_error "induct_tac: applying basic_induct_tac failed " err)
   in 
   let all_tac targets g = 
     try map_first 
-          (fun l ->
-            (?> fun inf1 ->
-              record_changes_tac 
-                (fun inf2 -> Changes.combine inf2 inf1)
-                (basic_induct_tac l thm)))
+          (fun l -> basic_induct_tac l thm)
           targets goal
-    with err -> raise (error "induct_tac: Failed")
+    with err -> 
+      raise (error ("induct_tac: failed to apply induction to"
+                    ^" any formula in the conclusions."))
   in 
   match c with
     | Some(x) -> one_tac x goal
@@ -367,7 +379,7 @@ let induct_tac ?c thm goal =
 	  List.map (ftag <+ drop_formula) (concls_of (sequent goal))
         in 
         all_tac targets goal
-        end
+      end
 
 
 (*** The induct-on tactic [induct_on]. ***)
@@ -589,18 +601,14 @@ let basic_induct_on ?thm name clabel goal =
 		   let c1_tag = get_one (Info.cformulas inf2) in 
 		   split_lh_tac (ftag c1_tag) g3)) g2);
 	       (** Right-hand sub-goal *)
-	       seq
-		 [
-		   (?> fun inf2 g2 -> 
-		     ((specC //
-		        set_changes_tac (Changes.make [] [] [ctag] [])) ++
-                       (?> fun inf3 g3 ->
-		         let a1_tag = get_one (Info.aformulas inf2) in 
-		         let c1_tag = get_one (Info.cformulas inf3)
-		         in 
-		         induct_on_solve_rh_tac 
-		           (ftag a1_tag) (ftag c1_tag) g3)) g2)
-		 ]
+	       (?> fun inf2 g2 -> 
+		 let a1_tag = get_one (Info.aformulas inf2) in 
+	         seq
+		   [
+		     (specC // skip);
+		     induct_on_solve_rh_tac 
+		       (ftag a1_tag) (ftag ctag)
+                   ] g2)
 	     ]) g1)
       ] g
   in 
@@ -616,11 +624,7 @@ let induct_on ?thm ?c n goal =
         in 
         let main_tac g = 
 	  map_first 
-          (fun l ->
-            (?> fun inf1 ->
-              record_changes_tac 
-                (fun inf2 -> Changes.combine inf2 inf1)
-                (basic_induct_on ?thm n l)))
+            (fun l -> basic_induct_on ?thm n l)
             targets g
         in 
         try main_tac goal
