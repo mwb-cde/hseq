@@ -739,7 +739,6 @@ sig
     @raise [No_subgoals] if [sqnts] is empty.
 *)
 
-
 end
 
 type node = Subgoals.node

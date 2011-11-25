@@ -275,11 +275,6 @@ val fail: ?err:exn -> tactic
 val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
-val return_tac: tactic -> ('a) data_tactic -> ('a) data_tactic
-(** [return_tac tac dtac g]: Form the data tactic equivalent of [ tac
-    ++ dtac ]).
-*)
-
 val inject_tac: 'a -> tactic -> 'a data_tactic
 (** [inj_tac d tac g]: Form the data_tactic [(d, tag g)]. *)
 

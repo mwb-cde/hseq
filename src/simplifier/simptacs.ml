@@ -110,6 +110,8 @@ let initial_prep_tac ctrl lbl goal =
     - repeat until nothing works
 *)
 let simp_engine_tac data tag goal =
+  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
   let try_rule dt null g1 =
     try (dt >/ (fun x -> (true, x))) g1
     with _ -> ((false, null) >+ skip) g1
@@ -121,15 +123,15 @@ let simp_engine_tac data tag goal =
 	(** Prepare the goal for simplification *)
         (fun (chng2, ncntrl2) ->
           try_tac (initial_prep_tac ncntrl2 (ftag tag))
-          >/ (fun c -> (chng2 or c, ncntrl2)));
+          >/ (fun c -> ((sum_flag chng2 c), ncntrl2)));
         
 	(** Try simplification. **)
         (fun (chng2, ncntrl2) ->
           try_rule (basic_simp_tac ncntrl2 tag) ncntrl2
-          >/ (fun (chng3, ncntrl3) -> (chng2 or chng3, ncntrl3)));
+          >/ (sum_fn chng2));
 
         (** Go round again if something changed on this iteration.
-            Fail if nothing changed on an iteration.
+            Fail if nothing changed on any iteration.
         *) 
         (fun (chng2, ncntrl2) g2 ->
           if chng2

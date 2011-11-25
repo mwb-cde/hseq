@@ -41,17 +41,20 @@ open Tactics
 (** [cond_rule_true_thm]: |- !x y: (x=>y) = (x => (y=true))
 *)
 let make_cond_rule_true_thm () =
-  Commands.prove << !x y: (x=>y) = (x => (y=true)) >>
-      (seq[
-        allC; allC;
-        (?> fun info g-> 
-          let y_term, x_term = 
-	    Lib.get_two (Info.constants info) 
-	      (Failure "make_cond_rule_true_thm")
-          in 
-          (cut (rule_true_thm()) ++ inst_tac [ y_term ]
-	   ++ once_replace_tac
-	   ++ eq_tac) g)])
+  Commands.prove << !x y: (x => y) = (x => (y = true)) >>
+  (allC ++ allC ++
+     (?> fun info1 g1 ->
+       let y_term =
+	 Lib.get_one (Info.constants info1) 
+	   (Failure "make_cond_rule_true_thm: y-term")
+       in 
+       seq 
+         [
+           cut (rule_true_thm());
+           inst_tac [ y_term ];
+	   once_replace_tac;
+	   eq_tac
+         ] g1))
 
 let cond_rule_true_var = Lib.freeze (make_cond_rule_true_thm)
 let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
@@ -60,16 +63,16 @@ let cond_rule_true_thm () = Lib.thaw ~fresh:fresh_thm cond_rule_true_var
 *)
 let make_cond_rule_false_thm () =
   Commands.prove << !x y: (x=>(not y)) = (x => (y=false)) >>
-      (allC ++ allC
-       ++ (?> fun info g -> 
-           let y_term, x_term = 
-	     Lib.get_two (Info.constants info) 
-	       (Failure "make_cond_rule_false_thm")
-           in 
-           (cut (rule_false_thm()) ++ inst_tac [y_term]
-	    ++ once_replace_tac
-	    ++ eq_tac) g))
-
+  (allC ++ allC ++
+     (?> fun info g -> 
+       let y_term = 
+	 Lib.get_one (Info.constants info) 
+	   (Failure "make_cond_rule_false_thm: y-term")
+       in 
+       (cut (rule_false_thm()) ++ inst_tac [y_term]
+	++ once_replace_tac
+	++ eq_tac) g))
+  
 let cond_rule_false_var = Lib.freeze make_cond_rule_false_thm
 
 let cond_rule_false_thm () =
@@ -835,16 +838,17 @@ struct
 	      then 
 	        fold_seq ret
                   [
-                    (fun lst1 g1 -> 
-                      (lst1, 
-	               qnt_asm_rewrite_tac (cond_rule_imp_false_thm()) tg g1));
-                      (fun lst1 ->
-	                single_asm_to_rule lst1 tg)
+                    (fun lst1 ->
+                      (lst1 >+ 
+                         (qnt_asm_rewrite_tac 
+                            (cond_rule_imp_false_thm()) tg)));
+
+                    (fun lst1 -> single_asm_to_rule lst1 tg)
 	        ] g
 	      else 
 	        fold_seq ret
 	          [
-		    (fun lst g1 -> lst, copyA (ftag tg) g1);
+		    (fun lst -> (lst >+ copyA (ftag tg)));
 		    (fun lst g1 -> 
                       let info = Info.changes g1 in
 		      let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)

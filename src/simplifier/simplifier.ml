@@ -378,30 +378,42 @@ let prep_cond_tac cntrl values thm goal =
     in 
     (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg))
   in 
-  let tac g =
-    return_tac
-      (cut_rr_rule values thm)
-      (fun g1 -> 
-        let info1 = Info.changes g1 in
-	let rl_ftg = Lib.get_one (Info.aformulas info1) No_change
-	in 
-        return_tac
-	  (Tactics.implA ~a:(ftag rl_ftg))
-	  (fun g2 ->
-            let info2 = Info.changes g2 in
-            ((add_data cntrl rl_ftg 
-                (Info.subgoals info2, Info.cformulas info2))
-             >+ skip) g2) g1) g
+  let main_tac g =
+    fold_seq (None, Tag.create())
+      [
+        (* Add the theorem to the sequent. *)
+        (fun fold_data -> (fold_data >+ cut_rr_rule values thm));
+        (* Apply implA *)
+        (fun (data, _) g1 ->
+          let info1 = Info.changes g1 in
+	  let rl_ftg = Lib.get_one (Info.aformulas info1) No_change
+          in
+          ((data, rl_ftg) >+ Tactics.implA ~a:(ftag rl_ftg)) g1);
+        (* Extract the data from the subgoal *)
+        (fun (data, rl_ftg) g1 ->          
+          let info1 = Info.changes g1 in
+          let asm_tg = List.hd (Info.aformulas info1) in
+          let ret_data = (add_data cntrl asm_tg
+                            (Info.subgoals info1, Info.cformulas info1))
+          in
+          ((Some(ret_data), asm_tg) >+ skip) g1)
+      ] g
+  in
+  let extractor data = 
+    match data with
+      | (Some(d), _) -> d
+      | _ -> failwith "prep_cond_tac: Failed to prepare condition."
   in 
-  try tac goal
+  try (main_tac >/ extractor) goal
   with _ -> raise No_change
+
 
 (** [prove_cond_tac cntrl tac values entry g]: Prepare a conditional
     simp rule [entry] for use in rewriting.
     
-    Use [prep_cond_tac] add the rule to the goal to create a subgoal
-    for the condition. Use tactic [cntrl.cond_tac] to prove the
-    condition, failing if it fails to prove the condition.
+    Use [prep_cond_tac] to add the rule to the goal and create a
+    subgoal for the condition. Use tactic [cntrl.cond_tac] to prove
+    the condition, failing if the condition can't be proved.
 
     Return [ret = (ncntrl, rl)] where [ncntrl] is the new simp data and
     [rl] the rewrite rule built from the new theorem/assumption.
@@ -410,34 +422,39 @@ let prove_cond_tac cntrl values entry goal =
   let thm = Simpset.rule_src entry
   and orig_loopdb = Data.get_loopdb cntrl
   in 
-  let tac cntrl g =
+  let main_tac cntrl g =
     fold_seq (None, None)
       [
        (** Add rule to the goal assumptions. *)
-        (fun _ -> (prep_cond_tac cntrl values thm) >/ 
-          (fun x -> (Some x, None)));
+        (fun (_, data2) -> (prep_cond_tac cntrl values thm) 
+          >/ (fun x -> (Some x, data2)));
+
         (** Prove the condition. **)
-        (fun (data1, _) g1 -> 
+        (fun (cond_data, data2) g1 -> 
 	  let (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg)) =
-	    Lib.dest_option ~err:(Failure "prove_cond_tac: 1") data1
+	    Lib.dest_option ~err:(Failure "prove_cond_tac: 1") cond_data
 	  in
 	  let prover_tac = Data.get_tactic ncntrl 
           in 
-          (** Restrict to the condition sub-goal. **)
-          return_tac
-            ((fun g2 -> Tag.equal cnd_gltg (node_tag g2))
-             --> prover_tac ncntrl cnd_ftg)
-	    (** Add the data to ret. *)
-	    (fun g2 ->
-	      let form = drop_tag(get_tagged_asm (ftag rl_ftg) g2) in 
-	      let rcntrl = Data.set_loopdb ncntrl orig_loopdb in 
+          (** Apply the prover to the sub-goal with the condition to
+              prove. *)
+          if (Tag.equal cnd_gltg (node_tag g1))
+          then ((cond_data, data2) >+ prover_tac ncntrl cnd_ftg) g1
+          else 
+	    (** Get the rule-data from the other sub-goal.*)
+            begin
+	      let rcntrl = Data.set_loopdb ncntrl orig_loopdb
+	      and form = drop_tag(get_tagged_asm (ftag rl_ftg) g1) in
 	      let rule = 
 		Simpset.make_rule 
-		  (Logic.Asm (ftag rl_ftg)) (Formula.term_of form)
-	      in 
-              ((data1, 
-                Some(Data.add_simp_rule rcntrl rule, Logic.Asm(ftag rl_ftg)))
-               >+ skip) g2) g1)
+		  (Logic.Asm (ftag rl_ftg))
+                  (Formula.term_of form)
+              in
+              let rule_data = Some(Data.add_simp_rule rcntrl rule, 
+                                   Logic.Asm(ftag rl_ftg))
+              in
+              ((cond_data, rule_data) >+ skip) g1
+            end)
       ] g
   in
   let extractor x =
@@ -451,7 +468,7 @@ let prove_cond_tac cntrl values entry goal =
       | [ x ] -> true
       | _ -> false
   in 
-  let (det, br) = (tac cntrl >/ extractor) goal
+  let (det, br) = (main_tac cntrl >/ extractor) goal
   in
   if test_result br then (det, br)
   else failwith "prove_cond_tac"

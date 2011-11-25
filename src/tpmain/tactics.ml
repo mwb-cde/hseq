@@ -329,19 +329,6 @@ let apply_tac data_tac tac g =
   then foreach (tac data) br1
   else br1 
 
-let return_tac tac data_tac goal =
-  let extractor x = 
-      match x with
-        | None -> raise (Invalid_argument "return_tac")
-        | Some(y) -> y
-  in
-  (fold_seq None
-    [
-      (fun _ -> inject_tac None tac);
-      (fun _ -> data_tac >/ (fun x -> Some(x)))
-    ] >/ extractor) 
-    goal
-
 let rec map_every tac l goal = 
   let rec every_aux ls g =
     match ls with 
