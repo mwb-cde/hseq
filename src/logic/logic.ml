@@ -906,9 +906,11 @@ struct
   *)
   let rule_apply r (Node(ntag, tyenv, sqnt, chngs)) =
     try
-       let (rg, rtyenv, rchngs) = r tyenv sqnt
-       in 
-       Branch(ntag, rtyenv, rg, rchngs)
+      begin
+        let (rg, rtyenv, rchngs) = r tyenv sqnt
+        in 
+        Branch(ntag, rtyenv, rg, rchngs)
+      end
      with 
        | No_subgoals -> 
          Branch(ntag, tyenv, [], Changes.empty())
