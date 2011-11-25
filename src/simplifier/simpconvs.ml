@@ -796,17 +796,17 @@ struct
       in 
       fold_seq []
         [
-          (fun ret g1 -> (ret, copyA (ftag tg) g1));
+          (fun ret -> (ret >+ copyA (ftag tg)));
           (fun ret g1 ->
             let info = Info.changes g1 in
  	    let atg = get_one ~msg:"eq_asm" (Info.aformulas info)
  	    in 
  	    fold_seq ret
  	      [
-                (fun l g3 -> 
- 		  (l, qnt_asm_rewrite_tac rr_thm atg g3));
-                (fun l g3 ->
- 		  (l, qnt_asm_rewrite_tac rr_truth_thm atg g3));
+                (fun l -> 
+ 		  (l >+ qnt_asm_rewrite_tac rr_thm atg));
+                (fun l ->
+ 		  (l >+ qnt_asm_rewrite_tac rr_truth_thm atg));
  		(fun ret g3 -> 
                   (new_add_asm ret atg g3, skip g3));
 		(fun ret g3 ->

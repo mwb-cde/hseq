@@ -43,9 +43,6 @@ let mainScript_base_name =
 let _ = 
 begin_theory "Main" 
  ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];; 
-(**
- ["Relation"; "Bool"; "base"];; 
-**)
 
 let _ = end_theory();;
 
