@@ -560,7 +560,7 @@ let subset_add =
   ]
 
 let subset_add_remove =
-  theorem "suset_add_remove"
+  theorem "subset_add_remove"
     << ! x A B: (A <= (add x B)) = ((remove x A) <= B) >>
   [
     flatten_tac 
@@ -573,7 +573,8 @@ let subset_add_remove =
 	++ rewrite_tac [remove_thm]
 	++ flatten_tac
 	++ mp_tac
-	++ simp_all_tac [add_thm];
+	++ rewrite_tac [add_thm]
+        ++ blast_tac;
 	(* 2 *)
 	simp_all_tac [subset_thm]
 	++ flatten_tac
@@ -751,7 +752,7 @@ let finite_add =
 	 (* 2 *)
 	 simp
        ])
-  ]
+  ];;
 
 let finite_union0 = 
   prove

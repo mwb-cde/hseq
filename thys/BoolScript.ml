@@ -69,7 +69,7 @@ let iff_l2 = theorem "iff_l2"
     ++ (match_asm << (A = B) => C >>
     (fun a -> 
       (match_asm << (A = B) >> 
-       (fun f -> mp_tac ?info:None ~a:a ~h:f))))
+       (fun f -> mp_tac ~a:a ~h:f))))
 ++ mp_tac 
 ++ (cut true_l2) ++ (allA <<_y>>) ++ mp_tac
 ++ replace_tac ++ eq_tac;
@@ -78,7 +78,7 @@ let iff_l2 = theorem "iff_l2"
 ++ (match_asm << (_y => C) >>
     (fun a -> 
       (match_asm << _y >> 
-       (fun f -> mp_tac ?info:None ~a:a ~h:f))))
+       (fun f -> mp_tac ~a:a ~h:f))))
 ++ (cut true_l2) ++ (allA <<_x>>) ++ mp_tac
 ++ replace_tac ++ eq_tac;
 replace_tac ++ eq_tac];;
@@ -92,7 +92,7 @@ conjC ++ flatten_tac;
 mp_tac ++ basic;
 (match_asm << _y => _x >> 
  (fun a -> match_asm << _y >> 
-   (fun f -> mp_tac ?info:None ~a:a ~h:f)))
+   (fun f -> mp_tac ~a:a ~h:f)))
 ++basic;
 basic;
 flatten_tac ++ replace_tac
@@ -124,10 +124,12 @@ theorem "iff_def" << !x y: (x iff y) = ((x=>y) and (y=> x))>>
 
 let true_prop =
 theorem "true_prop" << !x : (x = true) = x >>
-[flatten_tac ++ equals_tac 
-++ cut ~inst:[ << _x >> ] true_l1
-++ cut ~inst:[ << _x >> ] true_l2
-++ blast_tac ];;
+[
+  flatten_tac ++ equals_tac 
+  ++ cut ~inst:[ << _x >> ] true_l1
+  ++ cut ~inst:[ << _x >> ] true_l2
+  ++ blast_tac 
+];;
 
 let false_prop =
 theorem "false_prop" << !x : (x=false) = ~x >>
@@ -322,6 +324,7 @@ theorem "exists_implies"
       match_concl << ?x: not (_P1 x) >>
 	(fun l -> inst_tac [ << _x >> ] ~f:l)
       ++ flatten_tac ++ basic; 
+
       match_concl << ?x: (_Q1 x) >>
 	(fun l -> inst_tac [ << _x >> ] ~f:l) ++ basic;
       match_concl << ?x:  (_P1 x) => X>>
@@ -419,7 +422,7 @@ flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
 -- [flatten_tac ; flatten_tac ++ eq_tac];
 beta_tac ++ flatten_tac ++
   (match_asm << (not false) => C >> 
-   (fun l -> (implA ?info:None ~a:l))) 
+   (fun l -> (implA ~a:l))) 
    -- [flatten_tac; basic]
 ]);;
 
@@ -449,6 +452,7 @@ theorem ~simp:true "if_false1"
      ++ replace_tac
      ++ rewrite_tac [if_false] ++ eq_tac
  ];;
+
 
 let if_expand=
 theorem ~simp:false "if_expand" 
@@ -545,7 +549,7 @@ let exists_unique_simp =
      ++ beta_tac ++ replace_tac
      ++ simp_tac [exists_simp]
      ++ equals_tac ++ blast_tac 
-    ++ simp
+     ++ (back_tac // skip) ++ simp
  ];;
 
 (** Epsilon (choice) *)
@@ -632,19 +636,6 @@ theorem "eta" << !f: (% x: f x) = f >>
 -- 
 [flatten_tac ++ beta_tac ++ eq_tac;
 basic]];;
-
-(*
-let false_l1=
-theorem "false_l1" << !x: (not x) = (x=false) >>
-[flatten_tac ++ equals_tac  ++ blast_tac
---
-   [
-    equals_tac ++ blast_tac;
-    replace_tac ++ trivial
-  ]
-];;
-
-*)
 
 end_theory();;  (* end of theory *)
 

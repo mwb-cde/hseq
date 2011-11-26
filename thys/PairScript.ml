@@ -214,9 +214,9 @@ let pair_inj =
      ++ flatten_tac
      ++ inst_tac [ << _x >> ; << _y >> ]
      ++ (match_asm << (dest_PAIR x) = Y >> 
-	 (fun l -> replace_tac ?info:None ~dir:rightleft ~asms:[l] ?f:None))
+	 (fun l -> replace_tac ~dir:rightleft ~asms:[l] ?f:None))
      ++ (match_asm << (make_PAIR (dest_PAIR x)) = Y >> 
-	 (fun l -> replace_tac ?info:None ?dir:None ~asms:[l] ?f:None))
+	 (fun l -> replace_tac ?dir:None ~asms:[l] ?f:None))
      ++ eq_tac
  ];;
 

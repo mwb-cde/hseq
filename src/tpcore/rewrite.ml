@@ -663,16 +663,14 @@ struct
 	match_rewrite_list ctrl data net t []
       in 
       let (t2, env2, ctrl2, subplan) =
-	(match 
-	    Lib.try_app 
-              (rewrite_td_subterm ctrl1 (scope, qntenv, env1) net) t1 
-	 with
-           | Some x -> x
-	   | None -> (t1, env1, ctrl1, mk_skip))
+        try rewrite_td_subterm ctrl1 (scope, qntenv, env1) net t1 
+        with _ -> (t1, env1, ctrl1, mk_skip)
       in
-      (if rules = [] 
-       then check_change subplan
-       else ());
+      begin
+        if rules = [] 
+        then check_change subplan
+        else ()
+      end;
       let plan1 = pack (mk_rules (List.rev rules)) in 
       let plan2 = pack (mk_node [plan1; subplan])
       in 

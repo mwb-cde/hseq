@@ -35,7 +35,7 @@ type t =
       (** new assumption produced by the tactic. *)
       cncl_tags: Tag.t list;
       (** new conclusions produced by the tactic. *)
-      term_tags: Basic.term list
+      term_list: Basic.term list
     (** new constants produced by the tactic. *)
     }
 
@@ -43,6 +43,7 @@ type t =
 val empty: unit -> t
 
 (** Accessors *)
+val dest: t -> (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
 val goals: t -> Tag.t list
 val aforms: t -> Tag.t list
 val cforms: t -> Tag.t list
@@ -66,3 +67,15 @@ val rev: t -> t
 
 (** [combine l r]: Do [rev_append (rev l) r]. *)
 val combine: t -> t -> t
+
+(** [flatten l]: flatten the list of changes [l]. *)
+val flatten: t list -> t
+
+(** [add_goals: inf l]: Add list [l] to the goals of [inf] *)
+val add_goals: t -> Tag.t list -> t
+(** [add_aforms: inf l]: Add list [l] to the assumptions of [inf] *)
+val add_aforms: t -> Tag.t list -> t
+(** [add_cforms: inf l]: Add list [l] to the conclusions of [inf] *)
+val add_cforms: t -> Tag.t list -> t
+(** [add_terms: inf l]: Add list [l] to the constants of [inf] *)
+val add_terms: t -> Basic.term list -> t

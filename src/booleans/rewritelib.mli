@@ -66,8 +66,8 @@ sig
 
   (** {7 Tactics} *)
 
-  val map_sym_tac:
-    (Tactics.rule list) ref -> Tactics.rule list -> Tactics.tactic
+  val map_sym_tac: 
+    Tactics.rule list -> (Tactics.rule list)Tactics.data_tactic
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
       [ret] will be in reverse order of [rules].
@@ -76,8 +76,7 @@ sig
       right-left rewriting.
   *)
   val rewriteA_tac: 
-    ?info:Tactics.Info.t
-    -> ?ctrl:Rewrite.control
+    ?ctrl:Rewrite.control
     -> Tactics.rule list -> Logic.label -> Tactics.tactic
   (** [rewriteA_tac ctrl rules l]: Rewrite the assumption at label [l]
       with [rules], passing [ctrl] to the rewriter.
@@ -94,8 +93,7 @@ sig
   *)
 
   val rewriteC_tac: 
-    ?info:Tactics.Info.t
-    -> ?ctrl:Rewrite.control
+    ?ctrl:Rewrite.control
     -> Tactics.rule list -> Logic.label -> Tactics.tactic
   (** [rewriteC_tac ctrl rules l]: Rewrite the conclusion at label [l]
       with [rules], passing [ctrl] to the rewriter.
@@ -112,8 +110,7 @@ sig
   *)
     
   val rewrite_tac: 
-    ?info:Tactics.Info.t
-    -> ?ctrl:Rewrite.control
+    ?ctrl:Rewrite.control
     -> Tactics.rule list -> Logic.label -> Tactics.tactic
 (** [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
     [rules].
@@ -145,14 +142,10 @@ val rewrite_rule:
 *)
 
 val gen_rewrite_tac: 
-  ?info: Tactics.Info.t 
-  -> ?asm:bool
-  -> Rewrite.control
-  -> ?f:Logic.label 
+  ?asm:bool -> Rewrite.control -> ?f:Logic.label 
   -> Logic.rr_type list 
   -> Logic.tactic
-(** [gen_rewrite_tac ?info ?asm ctrl rules f]: General rewriting
-    tactic.
+(** [gen_rewrite_tac ?asm ctrl rules f]: General rewriting tactic.
 
     Rewrite formula [f] with list of theorems and assumptions given in
     [rules]. 
@@ -165,12 +158,10 @@ val gen_rewrite_tac:
 *)
 
 val rewrite_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
-  -> ?f:Logic.label
+  ?dir:Rewrite.direction -> ?f:Logic.label
   -> Logic.thm list 
   -> Logic.tactic
-(** [rewrite_tac info dir f thms]: Rewrite formula [f] with list of
+(** [rewrite_tac dir f thms]: Rewrite formula [f] with list of
     theorems [thms]. If [f] is not given, rewrite all formulas in
     sequent.
 
@@ -178,64 +169,59 @@ val rewrite_tac:
 *)
 
 val once_rewrite_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
-  ?f:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir f thms]: Rewrite formula [f] once.  If
-    [f] is not given, rewrite all formulas in sequent.
+  ?dir:Rewrite.direction -> 
+  ?f:Logic.label -> Logic.thm list 
+  -> Logic.tactic
+(** [once_rewrite_tac dir f thms]: Rewrite formula [f] once.  If [f]
+    is not given, rewrite all formulas in sequent.
 
     [dir = leftright] by default.
 *)
 
 val rewriteC_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
-  -> ?c:Logic.label
-  -> Logic.thm list 
+  ?dir:Rewrite.direction -> ?c:Logic.label -> Logic.thm list 
   -> Logic.tactic
-(** [rewriteC_tac info dir c thms]: Rewrite conclusion [c] with list
-    of theorems [thms]. If [c] is not given, rewrite all conclusions
-    in sequent.
+(** [rewriteC_tac dir c thms]: Rewrite conclusion [c] with list of
+    theorems [thms]. If [c] is not given, rewrite all conclusions in
+    sequent.
 
     [dir = leftright] by default.
 *)
 
 val once_rewriteC_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
+  ?dir:Rewrite.direction -> 
   ?c:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir c thms]: Rewrite conclusion [c] once.
-    If [c] is not given, rewrite all conclusions in sequent.
+(** [once_rewrite_tac dir c thms]: Rewrite conclusion [c] once.  If
+    [c] is not given, rewrite all conclusions in sequent.
 
     [dir = leftright] by default.
 *)
 
 val rewriteA_tac: 
-  ?info:Tactics.Info.t 
-  -> ?dir:Rewrite.direction
-  -> ?a:Logic.label
-  -> Logic.thm list 
+  ?dir:Rewrite.direction
+  -> ?a:Logic.label -> Logic.thm list 
   -> Logic.tactic
-(** [rewrite_tac info dir a thms]: Rewrite assumption [a] with list of
+(** [rewrite_tac dir a thms]: Rewrite assumption [a] with list of
     theorems [thms]. If [a] is not given, rewrite all assumptions in
-    sequent. 
+    sequent.
 
     [dir = leftright] by default.
 *)
 
 val once_rewriteA_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction -> 
+  ?dir:Rewrite.direction -> 
   ?a:Logic.label -> Logic.thm list -> Logic.tactic
-(** [once_rewrite_tac info dir a thms]: Rewrite assumption [a] once.
-    If [a] is not given, rewrite all assumptions in sequent.
+(** [once_rewrite_tac dir a thms]: Rewrite assumption [a] once.  If
+    [a] is not given, rewrite all assumptions in sequent.
 
     [dir = leftright] by default.
 *)
 
 
 val gen_replace_tac: 
-  ?info:Tactics.Info.t -> ?ctrl:Rewrite.control
-  -> ?asms:Logic.label list 
+  ?ctrl:Rewrite.control -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [gen_replace_tac info ctrl asms f]: Rewrite formula [f] with the
+(** [gen_replace_tac ctrl asms f]: Rewrite formula [f] with the
     assumptions in list [asms].  If [f] is not given, rewrite all
     formulas in sequent. If [asms] is not given, use all assumptions of
     the form [l=r] or [!x1 .. xn: l = r]. Doesn't rewrite the
@@ -243,23 +229,21 @@ val gen_replace_tac:
 *)
 
 val replace_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction
-  -> ?asms:Logic.label list 
+  ?dir:Rewrite.direction -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [replace_tac info dir asms f]: Rewrite formula [f] with
-    assumptions in list [asms].  If [f] is not given, rewrite all
-    formulas in sequent.  If [asms] is not given, use all assumptions
-    of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
+(** [replace_tac dir asms f]: Rewrite formula [f] with assumptions in
+    list [asms].  If [f] is not given, rewrite all formulas in
+    sequent.  If [asms] is not given, use all assumptions of the form
+    [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
     assumptions.
 
     [dir = leftright] by default.
 *)
 
 val once_replace_tac: 
-  ?info:Tactics.Info.t -> ?dir:Rewrite.direction
-  -> ?asms:Logic.label list 
+  ?dir:Rewrite.direction -> ?asms:Logic.label list 
   -> ?f:Logic.label -> Logic.tactic
-(** [once_replace_tac info dir asms f]: Rewrite formula [f] with
+(** [once_replace_tac dir asms f]: Rewrite formula [f] with
     assumptions in list [asms] once. If [f] is not given, rewrite all
     formulas in sequent.  If [asms] is not given, use all assumptions
     of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
@@ -270,7 +254,7 @@ val once_replace_tac:
 
 
 val unfold: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> string -> Tactics.tactic
+  ?f:Logic.label -> string -> Tactics.tactic
 (** [unfold ?f n]: Unfold the definition of [n] at formula [?f].
 
     info: [aforms=[f'], cforms=[]] or [aforms=[], cforms=[f']]

@@ -42,8 +42,6 @@ DOC_SUBDIRS = quickstart
 # Don't modify anything below this line
 ####
 
-include $(PROJ_ROOT)/Makefile.rules
-
 # IDOCDIR: The documentation installation directory
 export OBJDOCDIR?=$(OBJ_ROOT)/doc
 
@@ -139,10 +137,18 @@ install: install-html install-info
 ###
 
 EXTRA_CLEAN=$(RM) *~; \
-$(foreach subdir, $(DOC_SUBDIRS), $(MAKECLEAN) -C $(subdir) clean; ) \
+$(foreach subdir, $(DOC_SUBDIRS), $(MAKE) -C $(subdir) clean; ) \
 $(RM) info/*; $(RM) -r html/*
 
+###
+# Include common definitions
 
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
+endif
+include $(PROJ_ROOT)/Makefile.rules
 
-
-
+ifndef RM
+$(error "RM is not defined")
+endif

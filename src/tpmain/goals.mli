@@ -85,11 +85,12 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal: ?info:Tactics.Info.t -> Basic.term -> Proof.t
+val goal: Basic.term -> Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
-    the proof stack.  If [?info] is given, the tag of the goal and
-    conclusion ([trm]) are stored in it. This allows the tag of the
-    conclusion formed from term [trm] to be determined.
+    the proof stack. 
+
+    Info: [ subgoals=[gl] ] [ cformulas=[trm] ]
+    Where [gl] is the tag of the goal and [trm] the conclusion.
 *)
 
 val postpone: unit -> Proof.t
@@ -140,7 +141,7 @@ val by_com : Tactics.tactic -> Proof.t
 *)
 
 val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
-(** [by_list ?info trm tacl]: Apply the list of tactics [tacl] to the
+(** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 
     [by_list] applies each tactic in the list to the first subgoal of
@@ -150,11 +151,6 @@ val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
     proof. By contrast, {!Goals.prove_goal} requires a structured
     proof, a tactic which completely solves the goal, to be constructed
     from the tactics used in an interactive proof.
-
-    If [?info] is given, the tag of the goal and conclusion ([trm]) are
-    stored in it before the tactics are applied. This allows the
-    tactics to determine the tag of the conclusion formed from term
-    [trm].
 *)
 
 (** {7 Support for proof recording} *)

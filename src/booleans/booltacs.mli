@@ -26,7 +26,7 @@
 val iff_def: unit -> Logic.thm
 (** Get the definition of [iff]. *)
 
-val iffA: ?info:Tactics.Info.t -> ?a:Logic.label -> Tactics.tactic
+val iffA: ?a:Logic.label -> Tactics.tactic
 (** [iffA l sq]: Elminate the equivalance at assumption [l].
 
     {L
@@ -41,7 +41,7 @@ val iffA: ?info:Tactics.Info.t -> ?a:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 *)
 
-val iffC: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
+val iffC: ?c:Logic.label -> Tactics.tactic
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
 
     {L
@@ -56,7 +56,7 @@ val iffC: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 *)
 
-val iffE: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
+val iffE: ?c:Logic.label -> Tactics.tactic
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
     {L
@@ -80,28 +80,28 @@ val iffE: ?info:Tactics.Info.t -> ?c:Logic.label -> Tactics.tactic
 *)
 
 val split_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.split_tac} to split assumptions *)
 val split_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.split_tac} to conclusions assumptions *)
 
 val split_asms_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
 val split_concls_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
 
 val split_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
-    introduce new subgoals. Resulting tag information, in [?info], may
-    contain duplicates.
+    introduce new subgoals. Resulting tag information may contain
+    duplicates.
 
     In the assumptions, eliminates [false], disjunction ([|]),
     implication ([=>]).
@@ -118,30 +118,30 @@ val split_tac:
 *)
 
 val flatter_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.flatten_tac} to flatten assumptions.
 *)
 val flatter_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.flatten_tac} to flatten conclusions.
 *)
 
 val flatter_asms_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
 val flatter_concls_tac: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
 
 val flatten_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which don't
-    introduce new subgoals. Resulting tag information, in [?info], may
-    contain duplicates.
+    introduce new subgoals. Resulting tag information may contain
+    duplicates.
 
     In the assumptions, eliminates [false], conjunction ([&]) and
     existential quantification ([?]).
@@ -160,16 +160,16 @@ val flatten_tac:
 *)
 
 val scatter_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.scatter_tac} to scatter assumptions.
 *)
 val scatter_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.scatter_tac} to scatter conclusions.
 *)
 
 val scatter_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions.
 
     In the assumptions, eliminates [false], negation ([not]),
@@ -180,20 +180,20 @@ val scatter_tac:
     disjunction ([|]), implication ([=>]), universal quantification
     ([!]), conjunction ([&]) and boolean equivalence ([iff]).
 
-    Resulting tag information, in [?info], may contain duplicates.
+    Resulting tag information may contain duplicates.
 *)
 
 val blast_asm_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.blast_tac}.
 *)
 val blast_concl_rules:
-  (Tactics.Info.t -> Logic.label -> Tactics.tactic) list
+  (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.blast_tac}.
 *)
 
 val blast_tac: 
-  ?info:Tactics.Info.t -> ?f:Logic.label -> Tactics.tactic
+  ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions
     then try to solve subgoals.
 
@@ -214,8 +214,8 @@ val blast_tac:
 val cases_thm: unit -> Logic.thm
 (** [cases_thm]: |- !P: (~P) | P *)
 
-val cases_tac: ?info:Tactics.Info.t -> Basic.term -> Tactics.tactic
-(** [cases_tac ?info x g]: Cases tactic.
+val cases_tac: Basic.term -> Tactics.tactic
+(** [cases_tac x g]: Cases tactic.
 
     Add formula [x] to assumptions of [g] and create new subgoal in
     which to prove [x].
@@ -232,16 +232,14 @@ val cases_tac: ?info:Tactics.Info.t -> Basic.term -> Tactics.tactic
 *)
 
 val show_tac: 
-  ?info:Tactics.Info.t
-  -> Basic.term -> Tactics.tactic -> Tactics.tactic
+  Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
 val show: 
-  ?info:Tactics.Info.t
-  -> Basic.term -> Tactics.tactic -> Tactics.tactic
+  Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
     introduces [trm] as the conclusion of a new subgoal.
@@ -249,12 +247,10 @@ val show:
     {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
 
-
 val cases_of: 
-  ?info:Tactics.Info.t 
-  -> ?thm:Logic.thm -> Basic.term 
+  ?thm:Logic.thm -> Basic.term 
   -> Tactics.tactic
-(** [cases_of ?info ?thm trm]: Try to introduce a case split based on
+(** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
     theorem. If [thm] is not given, the theorem named ["T_cases"] is
     used, where [T] is the name of the type of [trm].
@@ -264,8 +260,7 @@ val cases_of:
 (** {5 Modus Ponens} *)
 
 val mp_tac: 
-  ?info:Tactics.Info.t
-  -> ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
+  ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
 (** [mp_tac ?a ?h]: Modus ponens.
 
     {L
@@ -287,8 +282,7 @@ val mp_tac:
 *)
 
 val cut_mp_tac:
-  ?info:Tactics.Info.t 
-  -> ?inst:Basic.term list
+  ?inst:Basic.term list
   -> Logic.thm 
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
@@ -315,8 +309,7 @@ val cut_mp_tac:
 *)
 
 val back_tac: 
-  ?info:Tactics.Info.t 
-  -> ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
+  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
 (** [back_tac ~a ~c]: Match, backward tactic.
 
     {L
@@ -338,7 +331,7 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?info:Tactics.Info.t -> ?inst:Basic.term list 
+  ?inst:Basic.term list 
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 

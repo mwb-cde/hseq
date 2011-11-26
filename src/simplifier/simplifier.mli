@@ -199,7 +199,7 @@ val clean_up_tac: Data.t -> Tactics.tactic
 *)
 
 val copyA_inst_tac: 
-  ?info:Tactics.Info.t -> Basic.term list -> Logic.label
+  Basic.term list -> Logic.label
   -> Tactics.tactic
 (** [copyA_inst_tac info vals x]: Copy assumption [x], instantiate the
     copy with [vals]. info: aformulas = [x1], where [x1] is the tag of
@@ -208,7 +208,7 @@ val copyA_inst_tac:
 *)
 
 val cut_rr_rule:
-  ?info:Tactics.Info.t -> Basic.term list -> Logic.rr_type -> tactic
+  Basic.term list -> Logic.rr_type -> tactic
 (** [cut_rr_rule info vals t g]: Cut rule [t] into goal [g],
     instantiating with [vals].  If [t] is a theorem, it is cut into
     the goal.  If [t] is an assumption, it is copied. Fails if there
@@ -218,26 +218,22 @@ val cut_rr_rule:
 *)
 
 val simp_rewrite_tac:
-  ?info:Tactics.Info.t 
-  -> bool
-  -> Logic.rr_type Rewrite.plan
-  -> Basic.term 
-  -> Logic.label
+  bool -> Logic.rr_type Rewrite.plan
+  -> Basic.term -> Logic.label
   -> tactic
-(** [simp_rewrite_tac ?info is_concl plan term lbl]: Local interface
+(** [simp_rewrite_tac is_concl plan term lbl]: Local interface
     to the main rewriting tactics. If [is_concl] is true, call
-    [Tactics.pure_rewriteC ?info plan ~term:trm lbl goal] otherwise
-    call [Tactics.pure_rewriteA ?info plan ~term:trm lbl goal].
+    [Tactics.pure_rewriteC plan ~term:trm lbl goal] otherwise
+    call [Tactics.pure_rewriteA plan ~term:trm lbl goal].
 
 *)
 
 (** {5 Conditional rule tactics} *)
 
+type tag_pair = (Tag.t * Tag.t)
 val prep_cond_tac:
-  Data.t 
-  -> (Data.t * (Tag.t * Tag.t) * (Tag.t * Tag.t)) option ref
-  -> Basic.term list -> Logic.rr_type 
-  -> Tactics.tactic
+  Data.t  -> Basic.term list -> Logic.rr_type 
+  -> (Data.t * tag_pair * tag_pair) Tactics.data_tactic
 (** [prep_cond_tac cntrl ret values thm g]: Prepare [thm], which is
     assumed to be a conditional rules, for proof of condition and use.
 
@@ -251,9 +247,8 @@ val prep_cond_tac:
 *)
 
 val prove_cond_tac:
-  Data.t -> (Data.t * Logic.rr_type) option ref 
-  -> Basic.term list -> Simpset.rule
-  -> Tactics.tactic
+  Data.t -> Basic.term list -> Simpset.rule
+  -> (Data.t * Logic.rr_type)Tactics.data_tactic
 (** [prove_cond_tac cntrl tac values entry g]: Prepare a conditional
     simp rule [entry] for use in rewriting.
     
@@ -267,10 +262,22 @@ val prove_cond_tac:
 
 (** {5 Simplifier functions} *)
 
+(*
 type data = 
     (Data.t  (** Simplifier data *)
      * Gtypes.substitution (** Type environment *)
      * Term.substitution)   (** Quantifier environment *)
+*)
+type match_data = 
+    {
+      (** Simplifier data *)
+      cntrl: Data.t;
+      (** Type environment *)
+      tyenv: Gtypes.substitution;
+      (** Quantifier environment *)
+      qntenv: Term.substitution;
+    }
+
 (** Data passed between the simplifier functions *)
 
 val match_rewrite:
@@ -279,9 +286,7 @@ val match_rewrite:
   -> Term.substitution 
   -> Simpset.rule
   -> Basic.term 
-  -> (Logic.rr_type 
-      * Gtypes.substitution 
-      * Term.substitution 
+  -> (Logic.rr_type * Gtypes.substitution * Term.substitution 
       * Basic.term)
 (** [match_rewrite scp tyenv qntenv trmenv rule trm]: Try to match lhs
     of [rule] with [trm] in type envivornment [tyenv] and term bindings
@@ -291,14 +296,8 @@ val match_rewrite:
 *)
 
 val find_basic:
-  (Data.t 
-   * Gtypes.substitution 
-   * Basic.term 
-   * Logic.rr_type) option ref 
-  -> data
-  -> Simpset.rule
-  -> Basic.term 
-  -> Tactics.tactic
+  match_data -> Simpset.rule -> Basic.term -> 
+  (match_data * Basic.term * Logic.rr_type) Tactics.data_tactic
 (** [find_basic ret data rl trm g]: Try to match simp rule [rl] with
     term [trm] in goal [g], with [data = (cntrl, tyenv, qntenv)]. If
     [rl] matches but is conditional, try to prove the condition using
@@ -312,13 +311,8 @@ val find_basic:
 *)
 
 val find_match_tac:
-  (Data.t 
-   * Gtypes.substitution 
-   * Basic.term 
-   * Logic.rr_type) option ref 
-  -> data 
-  -> Basic.term 
-  -> Tactics.tactic
+  match_data -> Basic.term -> 
+  (match_data * Basic.term * Logic.rr_type) Tactics.data_tactic
 (**
    [find_match_tac ret data trm g]: Find a rule in simpset [set] which
    matches term [trm] in goal [g], with [data = (cntrl, tyenv,
@@ -334,13 +328,9 @@ val find_match_tac:
 *)
 
 val find_all_matches_tac:
-  (Data.t 
-   * Gtypes.substitution 
-   * Basic.term
-   * Logic.rr_type list) option ref
-  -> data
-  -> Basic.term 
-  -> Tactics.tactic
+  match_data -> Basic.term -> 
+  (match_data * Basic.term * Logic.rr_type list)
+    Tactics.data_tactic
 (** [find_all_matches ret (cntrl, tyenv, qntenv) trm g]: Find all
     rules in simpset [cntrl.set] which can be used to rewrite term
     [trm] in goal [g].
@@ -351,12 +341,9 @@ val find_all_matches_tac:
 *)
 
 val find_term_bu_tac:
-  (Data.t * Gtypes.substitution 
-   * Basic.term
-   * Logic.rr_type Rewrite.plan) option ref
-  -> data
-  -> Basic.term
-  -> Tactics.tactic
+  match_data -> Basic.term
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_term_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
     [trm], bottom-up, constructing a rewrite plan.
 
@@ -367,12 +354,9 @@ val find_term_bu_tac:
 *)
 
 val find_subterm_bu_tac:
-  (Data.t * Gtypes.substitution 
-   * Basic.term
-   * Logic.rr_type Rewrite.plan) option ref
-  -> data
-  -> Basic.term
-  -> Tactics.tactic
+  match_data-> Basic.term
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_subterm_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
     to rewrite, bottom-up, the subterms of [trm].
 
@@ -384,14 +368,10 @@ val find_subterm_bu_tac:
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
 
-
 val find_term_td_tac: 
-  (Data.t * Gtypes.substitution 
-   * Basic.term
-   * Logic.rr_type Rewrite.plan) option ref
-  -> data
-  -> Basic.term
-  -> Tactics.tactic
+  match_data -> Basic.term 
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan)Tactics.data_tactic
 (** [find_term_td_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
     [trm], top-down, constructing a rewrite plan.
 
@@ -402,12 +382,9 @@ val find_term_td_tac:
 *)
 
 val find_subterm_td_tac: 
-  (Data.t * Gtypes.substitution 
-   * Basic.term
-   * Logic.rr_type Rewrite.plan) option ref
-  -> data
-  -> Basic.term
-  -> Tactics.tactic
+  match_data-> Basic.term
+  -> (match_data * Basic.term
+      * Logic.rr_type Rewrite.plan)Tactics.data_tactic
 (** [find_subterm_td_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
     to rewrite, top-down, the subterms of [trm].
 
@@ -419,9 +396,8 @@ val find_subterm_td_tac:
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
 
-
 val basic_simp_tac:
-  Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
+  Data.t -> Tag.t -> (Data.t)Tactics.data_tactic
 (** [basic_simp_tac data ret tag goal]: Main interface to the basic
     simplifier functions.
 
@@ -443,7 +419,7 @@ val basic_simp_tac:
 (** {5 Derived simplifier functions} *)
 
 val simp_prep_tac:
-  'a -> 'a option ref -> Logic.label -> Tactics.tactic
+  Data.t -> Logic.label -> (Data.t)Tactics.data_tactic
 (** [simp_prep_tac data ret lbl g]: Prepare goal [g] for simplifying
     formula [lbl].
 
@@ -467,8 +443,7 @@ val cond_prover_tac:
 (** {5 Debugging information} *)
 
 val check_add_loop: 
-  Scope.t -> Data.t -> Basic.term
-  ->  Data.t
+  Scope.t -> Data.t -> Basic.term ->  Data.t
 (** [check_add_loop scp cntrl trm]: Test whether term [trm] is in
     [cntrl.loopDB]. If it is, raise [Failure] otherwise add it to
     [cntrl.loopDB].
@@ -488,9 +463,9 @@ val check_change2: ('a)plan -> ('a)plan -> unit
 *)
 
 val cond_prover_trueC: 
-  ?info:Tactics.Info.t -> Logic.label -> Tactics.tactic
+  Logic.label -> Tactics.tactic
 val cond_prover_worker_tac: 
-  Data.t -> Data.t option ref -> Tag.t -> Tactics.tactic
+  Data.t -> Tag.t -> (Data.t)Tactics.data_tactic
 val is_excluded: 
   Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
 

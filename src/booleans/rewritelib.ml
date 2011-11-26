@@ -81,13 +81,12 @@ struct
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
       [ret] will be in reverse order of [rules].  *)
-  let map_sym_tac ret rules goal = 
+  let map_sym_tac (rules: Tactics.rule list) goal = 
     let scp = scope_of goal in 
     let asm_fn l g = 
-      let info = info_make() in 
       try 
-	let g2 = eq_symA ~info:info l g in 
-	let nl = Lib.get_one (aformulas info)
+	let g2 = eq_symA l g in 
+	let nl = Lib.get_one (Info.aformulas (Info.branch_changes g2))
 	  (error "Rewriter.map_sym_tac: Invalid assumption")
 	in 
 	(ftag nl, g2)
@@ -100,92 +99,74 @@ struct
 	| Logic.ORRThm(th, o) -> 
 	  (Logic.ORRThm(eq_sym_rule scp th, o), skip g)
 	| Logic.Asm(l) -> 
-	  let (nl, ng) = asm_fn l g
-	  in 
+	  let (nl, ng) = asm_fn l g in 
 	  (Logic.Asm(nl), ng)
 	| Logic.OAsm(l, o) -> 
-	  let (nl, ng) = asm_fn l g
-	  in 
+	  let (nl, ng) = asm_fn l g in 
 	  (Logic.OAsm(nl, o), ng)
     in 
     let mapping lst rl g = 
-      let (nr, g2) = fn_tac rl g
-      in 
-      lst := nr::(!lst); g2
+      let (nr, g2) = fn_tac rl g in 
+      (nr::lst, g2)
     in 
-    map_every (mapping ret) rules goal
+    fold_data mapping [] rules goal
 
-  let rewriteA_tac 
-      ?info ?(ctrl=Formula.default_rr_control) 
+  let rewriteA_tac ?(ctrl=Formula.default_rr_control) 
       rules albl goal =
     let (atag, aform) = get_tagged_asm albl goal in 
     let aterm = Formula.term_of aform in 
     let is_lr = not (ctrl.Rewrite.rr_dir = rightleft) in 
-    let urules = ref [] in 
     let tac1 g = 
       if is_lr 
-      then update_tac (fun _ -> urules := rules) () g
+      then (rules, pass g)
       else 
-	seq 
+        fold_seq rules
 	  [
-	    map_sym_tac urules rules;
-	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
+            map_sym_tac;
+            (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
-    let tac2 g = 
-      let rls = !urules in 
+    let tac2 rls g = 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls aterm
       in 
-      Tactics.pure_rewriteA ?info plan (ftag atag) g
+      Tactics.pure_rewriteA plan (ftag atag) g
     in 
-    let tac3 g = 
-      if is_lr
-      then skip g
-      else map_sym_tac (ref []) rules g
-    in 
-    try seq [tac1; tac2; tac3] goal
+    try  apply_tac tac1 tac2 goal
     with err -> raise (add_error "Rewriter.rewriteA_tac" err)
 
-  let rewriteC_tac ?info ?(ctrl=Formula.default_rr_control) 
+  let rewriteC_tac  ?(ctrl=Formula.default_rr_control) 
       rules clbl goal =
     let (ctag, cform) = get_tagged_concl clbl goal in 
     let cterm = Formula.term_of cform in 
     let is_lr = (ctrl.Rewrite.rr_dir = leftright) in 
-    let urules = ref [] in 
     let tac1 g = 
-      if is_lr
-      then update_tac (fun x -> urules := x) rules g
+      if is_lr 
+      then (rules, pass g)
       else 
-	seq 
+        fold_seq rules
 	  [
-	    map_sym_tac urules rules;
-	    (fun g1 -> update_tac (fun x -> urules := List.rev !x) urules g1);
+            map_sym_tac;
+            (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
-    let tac2 g = 
-      let rls = !urules in 
+    let tac2 rls g = 
       let plan = Tactics.mk_plan ~ctrl:ctrl g rls cterm
       in 
-      Tactics.pure_rewriteC ?info plan (ftag ctag) g
+      Tactics.pure_rewriteC plan (ftag ctag) g
     in 
-    let tac3 g = 
-      if is_lr
-      then skip g
-      else map_sym_tac (ref []) rules g
-    in 
-    try seq [tac1; tac2; tac3] goal
-    with err -> raise (add_error "Rewriter.rewriteA_tac" err)
+    try apply_tac tac1 tac2 goal
+    with err -> raise (add_error "Rewriter.rewriteC_tac" err)
 
   (** [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
       [rules].
       
       If [l] is in the conclusions then call [rewriteC_tac] otherwise
       call [rewriteA_tac].  *)
-  let rewrite_tac ?info ?(ctrl=Formula.default_rr_control) rls f g =
+  let rewrite_tac ?(ctrl=Formula.default_rr_control) rls f g =
     try
       begin
-        try rewriteA_tac ?info ~ctrl:ctrl rls f g
-        with Not_found -> rewriteC_tac ?info ~ctrl:ctrl rls f g
+        try rewriteA_tac ~ctrl:ctrl rls f g
+        with Not_found -> rewriteC_tac ~ctrl:ctrl rls f g
       end
     with err -> raise (add_error "Rewriter.rewrite_tac" err)
 
@@ -199,7 +180,7 @@ let rewrite_rule scp ?ctrl rls thm =
   Rewriter.rewrite_rule ?ctrl scp 
     (List.map (fun x -> Logic.RRThm(x)) rls) thm
 
-let gen_rewrite_tac ?info ?asm ctrl ?f rules goal =
+let gen_rewrite_tac ?asm ctrl ?f rules goal =
   match f with
     | None -> 
       begin
@@ -208,56 +189,67 @@ let gen_rewrite_tac ?info ?asm ctrl ?f rules goal =
 	    seq_some
 	      [
 	        foreach_asm
-	          (Rewriter.rewriteA_tac ?info ~ctrl:ctrl rules);
+	          (fun l -> 
+                    (?> fun inf1 ->
+                      Rewriter.rewriteA_tac ~ctrl:ctrl rules l
+                      ++ append_changes_tac inf1));
 	        foreach_concl
-	          (Rewriter.rewriteC_tac ?info ~ctrl:ctrl rules);
+                  (fun l -> (?> fun inf1 ->
+	            Rewriter.rewriteC_tac ~ctrl:ctrl rules l 
+                    ++ append_changes_tac inf1));
 	      ] goal
           | Some(x) ->
 	    if x 
-	    then foreach_asm
-	      (Rewriter.rewriteA_tac ?info ~ctrl:ctrl rules) goal
+	    then 
+              foreach_asm
+	        (fun l -> (?> fun inf1 ->
+                  Rewriter.rewriteA_tac ~ctrl:ctrl rules l
+                    ++ append_changes_tac inf1))
+                goal
 	    else foreach_concl
-	      (Rewriter.rewriteC_tac ?info ~ctrl:ctrl rules) goal
+	      (fun l -> (?> fun inf1 ->
+                Rewriter.rewriteC_tac  ~ctrl:ctrl rules l
+                ++ append_changes_tac inf1)) goal
       end
-    | Some (x) ->Rewriter.rewrite_tac ?info ~ctrl:ctrl rules x goal
+    | Some (x) -> Rewriter.rewrite_tac ~ctrl:ctrl rules x goal
 	
-let rewrite_tac ?info ?(dir=leftright) ?f ths goal =
+let rewrite_tac ?(dir=leftright) ?f ths goal =
   let ctrl = rewrite_control dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac ?info:info ctrl ?f:f rules goal 
+  gen_rewrite_tac ctrl ?f:f rules goal
 
-let once_rewrite_tac ?info ?(dir=leftright) ?f ths goal =
-  let ctrl=rewrite_control ~max:1 dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+let once_rewrite_tac ?(dir=leftright) ?f ths goal =
+  let ctrl= rewrite_control ~max:1 dir in 
+  let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac ?info:info ctrl rules ?f:f goal
+  gen_rewrite_tac ctrl rules ?f:f goal
 
-let rewriteA_tac ?info ?(dir=leftright) ?a ths goal =
+let rewriteA_tac ?(dir=leftright) ?a ths goal =
   let ctrl = rewrite_control dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  let rules = List.map (fun x -> Logic.RRThm x) ths
   in 
-  gen_rewrite_tac ?info:info ~asm:true ctrl ?f:a rules goal 
+  gen_rewrite_tac ~asm:true ctrl ?f:a rules goal 
 
-let once_rewriteA_tac ?info ?(dir=leftright) ?a ths goal =
-  let ctrl=rewrite_control ~max:1 dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+let once_rewriteA_tac ?(dir=leftright) ?a ths goal =
+  let ctrl= rewrite_control ~max:1 dir in 
+  let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac ?info:info ~asm:true ctrl rules ?f:a goal
+  gen_rewrite_tac ~asm:true ctrl rules ?f:a goal
 
-let rewriteC_tac ?info ?(dir=leftright) ?c ths goal =
+let rewriteC_tac ?(dir=leftright) ?c ths goal =
   let ctrl = rewrite_control dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+  let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac ?info:info ~asm:false ctrl ?f:c rules goal 
+  gen_rewrite_tac ~asm:false ctrl ?f:c rules goal 
 
-let once_rewriteC_tac ?info ?(dir=leftright) ?c ths goal =
-  let ctrl=rewrite_control ~max:1 dir in 
-  let rules = (List.map (fun x -> Logic.RRThm x) ths) 
+let once_rewriteC_tac ?(dir=leftright) ?c ths goal =
+  let ctrl= rewrite_control ~max:1 dir in 
+  let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac ?info:info ~asm:false ctrl rules ?f:c goal
+  gen_rewrite_tac ~asm:false ctrl rules ?f:c goal
 
-let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
+let gen_replace_tac ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = sequent goal in
   (*** ttag: The tag of tag of the target (if given) ***)
   let ttag = 
@@ -299,7 +291,7 @@ let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
     if List.exists (Tag.equal (Logic.label_to_tag x sqnt)) asm_tags
     then fail ~err:(error "gen_replace")
     else 
-      gen_rewrite_tac ?info ?asm:None ctrl rules ~f:x
+      gen_rewrite_tac ?asm:None ctrl rules ~f:x
   in 
   (*** tac: apply filter_replace to an identified formula or to all
        formulas in the sequent.  ***)
@@ -315,17 +307,17 @@ let gen_replace_tac ?info ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
     ] goal
 
 
-let replace_tac ?info ?(dir=leftright) ?asms ?f goal =
+let replace_tac ?(dir=leftright) ?asms ?f goal =
   let ctrl=rewrite_control dir
   in 
-  gen_replace_tac ?info:info ~ctrl:ctrl ?asms:asms ?f:f goal
+  gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f goal
 
-let once_replace_tac ?info ?(dir=leftright) ?asms ?f goal =
+let once_replace_tac ?(dir=leftright) ?asms ?f goal =
   let ctrl=rewrite_control ~max:1 dir
   in 
-  gen_replace_tac ?info:info ~ctrl:ctrl ?asms:asms ?f:f goal
+  gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f goal
 
-let unfold ?info ?f str g = 
+let unfold ?f str g = 
   match Lib.try_find defn str with
     | None -> raise (error ("unfold: Can't find definition of "^str))
-    | Some th -> rewrite_tac ?info ?f [th] g
+    | Some th -> rewrite_tac ?f [th] g
