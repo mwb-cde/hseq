@@ -1,0 +1,417 @@
+(*----
+  Name: context.ml
+  Copyright M Wahab 2012
+  Author: M Wahab  <mwb.cde@googlemail.com>
+
+  This file is part of HSeq
+
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
+
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
+
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
+
+open Basic
+open Parser
+open Lib.Ops
+
+(** Default values. *)
+module Default = 
+struct
+
+  (** {6 File handling} *)
+
+  let load f = Report.warning ("Failed to load file "^f)
+  let use ?silent f = Report.warning ("Failed to use file "^f)
+  let build ?silent f = raise (Failure("Can't build theory "^f))
+
+  (** {6 Theories} *)
+
+  let empty_thy_name = Ident.null_thy
+  let base_thy_name = "Main"
+end
+
+(** Global context *)
+(***
+module Context =
+struct
+***)
+
+  (** File handling functions *)
+  type file_t =
+      {
+        (** [load_file f]: Load a byte-code file [f] into memory. *)
+        load_f: string -> unit;
+
+        (** [use_file ?silent f]: Read file [f] as a script.  If
+            [silent=true], do not report any information. *)
+        use_f: ?silent:bool -> string -> unit;
+
+        (** [build ?silent th]: Build theory [th] from a script.
+            [silent=true], do not report any information.  @raise
+            Failure on failure. *)
+        build_f: ?silent:bool -> string -> unit;
+        
+        (** [path]: List of directories to search for theories,
+            libraries and scripts.*)
+        path_f: string list;
+
+        (** obj_suffix: List of possible suffixes for an object file. *)
+        obj_suffix_f: string list;
+
+        (** thy_suffix: Suffix for a theory file. *)
+        thy_suffix_f: string;
+
+        (** script_suffix: Suffix for a script file. *)
+        script_suffix_f: string;
+      }
+  let empty_file_t ()= 
+    { 
+      load_f = Default.load;
+      use_f = Default.use;
+      build_f = Default.build;
+      path_f = [];
+      obj_suffix_f = [];
+      thy_suffix_f = "";
+      script_suffix_f = "";
+    }
+
+  (** Theory data *)
+  type thy_t =
+    {
+      (** Name of the theory on which all user theories are based *)
+      base_name_f: string option;
+
+      (** The theory data base. *)
+      thydb_f: Thydb.thydb;
+
+      (** Information needed for the theory database loader. *)
+      loader_data_f: Thydb.Loader.data
+    }
+
+  let empty_thy_t () = 
+    {
+      base_name_f = None;
+      thydb_f = Thydb.empty();
+      loader_data_f = Thydb.Loader.mk_empty();
+    }
+
+  (** Printer Parser *)
+  type pp_t =
+      {
+        info_f: Printer.ppinfo ref;
+      }
+
+  let empty_pp_t () = 
+    {
+      info_f = ref(Printer.empty_ppinfo())
+    }
+
+  (** Top-level context *)
+  type t = 
+      {
+        (** File handling functions *)
+        file_f: file_t;
+
+        (** Theory data *)
+        thys_f: thy_t;
+
+        (** Scope *)
+        scope_f: Scope.t;
+
+        (** Printer-parser *)
+        pp_f: pp_t;
+
+        (** A list of functions to invoke on a theory when it is added
+            to the data-base. *)
+        load_functions_f: (t -> Theory.contents -> t) list;
+      }
+
+  let empty_scope_t () = 
+    Scope.empty_scope()
+
+  let empty() = 
+    {
+      file_f = empty_file_t();
+      thys_f = empty_thy_t();
+      scope_f = empty_scope_t();
+      pp_f = empty_pp_t();
+      load_functions_f = [];
+    }
+
+  (** {5 Accessor Functions} *)
+
+  (** {6 File handling} *)
+
+  let set_load f t = 
+    let file1 = {t.file_f with load_f = f} in
+    { t with file_f = file1 }
+
+  let load t = t.file_f.load_f
+
+  let set_use f t = 
+    let file1 = {t.file_f with use_f = f} in
+    { t with file_f = file1 }
+ 
+  let use t = t.file_f.use_f
+
+  let set_build f t = 
+    let file1 = {t.file_f with build_f = f} in
+    { t with file_f = file1 }
+
+  let build t = t.file_f.build_f
+
+  let set_path p t = 
+    let file1 = {t.file_f with path_f = p} in
+    { t with file_f = file1 }
+
+  let path t = t.file_f.path_f
+
+  let set_obj_suffix sl t = 
+    let file1 = {t.file_f with obj_suffix_f = sl} in
+    { t with file_f = file1 }
+
+  let obj_suffix t = t.file_f.obj_suffix_f
+
+  let set_thy_suffix sl t = 
+    let file1 = {t.file_f with thy_suffix_f = sl} in
+    { t with file_f = file1 }
+
+  let thy_suffix t = t.file_f.thy_suffix_f
+
+  let set_script_suffix sl t = 
+    let file1 = {t.file_f with script_suffix_f = sl} in
+    { t with file_f = file1 }
+
+  let script_suffix t = t.file_f.script_suffix_f
+
+  (** {6 Theory handling} *)
+
+  let set_base_name n t = 
+    let thys1 = {t.thys_f with base_name_f = Some(n)}
+    in 
+    { t with thys_f = thys1 }
+
+  let base_name t = 
+    match t.thys_f.base_name_f with
+      | Some(x) -> x
+      | _ -> ""
+
+  let has_base_name t = 
+    not ((t.thys_f.base_name_f) = None)
+
+  let clear_base_name t = 
+    let thys1 = {t.thys_f with base_name_f = None}
+    in 
+    { t with thys_f = thys1 }
+
+  let set_thydb db t =
+    let thys1 = { t.thys_f with thydb_f = db }
+    in 
+    { t with thys_f = thys1 }
+
+  let thydb t = t.thys_f.thydb_f
+
+  let set_loader_data lf t =
+    let thys1 = { t.thys_f with loader_data_f = lf }
+    in 
+    { t with thys_f = thys1 }
+
+  let loader_data t = t.thys_f.loader_data_f
+
+  let set_load_functions fl t =
+    { t with load_functions_f = fl }
+
+  let load_functions t = t.load_functions_f
+
+  (** Scope handling *)
+
+  let set_scope scp t = 
+    { t with scope_f = scp}
+
+  let scope t = t.scope_f
+
+(** Pretty printer information *)
+
+  let set_ppinfo inf t =
+    t.pp_f.info_f := inf
+
+  let ppinfo t = !(t.pp_f.info_f)
+
+
+(***
+    **)
+(***
+end
+**)
+
+module Thys =
+struct
+
+  (*
+   * Theories
+   *)
+
+  let empty_thy_name = Ident.null_thy
+  let anon_thy() = Theory.mk_thy empty_thy_name []
+
+  let get_base_name ctxt = base_name ctxt
+  let set_base_name x ctxt = set_base_name x ctxt 
+  let clear_base_name ctxt = clear_base_name ctxt 
+
+  (** The theory database *)
+  let theories ctxt = thydb ctxt
+  let get_theories = theories
+  let set_theories thydb ctxt = set_thydb thydb ctxt
+  let init_theories ctxt = set_theories (Thydb.empty())
+
+  (** The current theory *)
+  let current ctxt = Thydb.current (get_theories ctxt)
+  let curr_theory= current
+  let current_name ctxt = Theory.get_name (current ctxt)
+  let set_current thy ctxt = 
+    let thydb = Thydb.set_current (get_theories ctxt) thy in
+    set_theories thydb ctxt
+end
+
+(** {5 File-Handling} *)
+
+module Files =
+struct 
+
+  let get_cdir () = Sys.getcwd ()
+
+  let load_use_file ?silent ctxt f =
+    try
+      if List.exists (Filename.check_suffix f) (obj_suffix ctxt)
+      then load ctxt f
+      else use ctxt f
+    with 
+      | Not_found -> Report.warning ("Can't find file "^f)
+      | _ -> Report.warning ("Failed to load file "^f)
+
+  (** {7 Paths} ***)
+
+  let set_path = set_path
+  let get_path = path
+  let add_path x ctxt = set_path (x::(get_path ctxt)) ctxt
+  let remove_path x ctxt = 
+    let pth = get_path ctxt in
+    set_path (Lib.filter (fun y -> x = y) pth) ctxt
+
+  let init_thy_path ctxt = 
+    set_path ["."; Settings.thys_dir()] ctxt
+
+  let get_thy_path ctxt = path ctxt
+  let add_thy_path x ctxt = add_path x ctxt
+  let set_thy_path x ctxt = set_path x ctxt
+  let remove_from_path x ctxt = remove_path x ctxt
+
+  let init_paths ctxt = init_thy_path ctxt
+
+  (*** Theory files ***)
+
+  let file_of_thy ctxt th = th^(thy_suffix ctxt)
+  let script_of_thy ctxt th = th^(script_suffix ctxt)
+
+  let find_file f path =
+    let rec find_aux ths =
+      match ths with
+	| [] -> raise Not_found
+	| (t::ts) ->
+	  let nf = Filename.concat t f in 
+	  if Sys.file_exists nf then nf 
+	  else find_aux ts
+    in 
+    if Filename.is_relative f 
+    then find_aux path
+    else f
+
+  let find_thy_file ctxt f =
+    try 
+      find_file (file_of_thy ctxt f) (get_thy_path ctxt)
+    with Not_found -> raise (Report.error ("Can't find theory "^f))
+
+  (** [build_thy_file f]: build a theory by running script file f.  *)
+  let build_thy_file ctxt thyname = build ctxt thyname
+
+  (** [load_thy_file info]: Load the file storing the theory named
+      [info.name] with protection [info.prot] and date no later than
+      [info.date]. Finds the file from the path [get_thy_path()].  *)
+  let load_thy_file ctxt info = 
+    let test_protection prot b =
+      match prot with 
+	| None -> true
+	| (Some p) -> p && b
+    in 
+    let test_date tym d = 
+      match tym with 
+	| None -> true
+	| (Some tim) -> d <= tim
+    in 
+    let name = info.Thydb.Loader.name
+    and date = info.Thydb.Loader.date
+    and prot = info.Thydb.Loader.prot
+    in 
+    let thyfile =file_of_thy ctxt name
+    in 
+    let rec load_aux ths =
+      match ths with
+	| [] -> raise Not_found
+	| (t::ts) ->
+	  let filename = Filename.concat t thyfile
+	  in 
+	  if Sys.file_exists filename
+	  then 
+	    let sthy = Theory.load_theory filename
+	    in 
+	    if (test_protection prot (Theory.saved_prot sthy))
+	      && (test_date date (Theory.saved_date sthy))
+	    then sthy
+	    else load_aux ts
+	  else load_aux ts
+    in 
+    load_aux (get_thy_path ctxt)
+
+  (** [load_use_theory thy]: Load or use each of the files named in
+      theory [thy].  *)
+  let load_use_theory_files ctxt thy = 
+    let files = thy.Theory.cfiles in
+    let path = get_thy_path ctxt in 
+    let find_load f = load_use_file ctxt (find_file f path)
+    in 
+    List.iter find_load files
+
+  (*** Theory inspection functions ***)
+
+  (** [default_load_function]: The default list of functions to call
+      on a newly-loaded theory.  *)
+  let default_load_functions = 
+    [
+      load_use_theory_files;    (* load files *)
+(*
+      PP.add_loaded_type_pp;    (* add type PP information *)
+      PP.add_loaded_term_pp;    (* add term PP information *)
+*)
+    ]
+
+  let load_functions = ref default_load_functions
+  let add_load_fn f = load_functions := (f::!load_functions)
+  let init_load_functions () = 
+    load_functions := default_load_functions
+
+  (** [on_load_thy]: The toplevel function that is passed a newly
+      loaded theory. This just passes the theory to the functions in
+      [load_functions].  *)
+  let on_load_thy db th =
+    List.iter (fun f -> f (empty()) th) (List.rev !load_functions)
+
+end

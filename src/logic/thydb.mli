@@ -363,6 +363,9 @@ sig
     -> data
   (** Constructor for [data]. *)
 
+  val mk_empty: unit -> data
+  (** Make empty loader data. *)
+
   val make_current:  thydb -> data -> Theory.thy -> thydb
   (** [make_current db thy]: Load the parents of [thy] into [db] and
       make theory [thy] the current theory.  *)

@@ -613,6 +613,13 @@ struct
   let mk_data tfn lfn bfn = 
     { thy_fn = tfn; load_fn = lfn; build_fn = bfn }
 
+  let mk_empty () = 
+    { 
+      thy_fn = (fun _ _ -> ());
+      load_fn = (fun _ -> failwith "empty Thydb.Loader.load_fn");
+      build_fn = (fun _ -> failwith "empty Thydb.Loader.build_fn");
+    }
+
   (*** Support functions for loading a theory ***)
 
   (** A version of [set_current] for internal use. Sets the current

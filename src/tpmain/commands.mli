@@ -50,12 +50,13 @@ val catch_errors: ('a -> 'b) -> 'a -> 'b
     it is raised.
 *)
 
-val save_theory: Theory.thy -> bool -> unit
+val save_theory: Context.t -> Theory.thy -> bool -> unit
 (** [save_theory thy prot]: Save theory [thy] to disk, setting its
     protection to [prot].
 *)
 
-val load_theory_as_cur: string -> unit
+val load_theory_as_cur: 
+  Context.t -> string -> Context.t
 (** [load_theory n]: Load the theory named [n] into the database,
     making it the current theory.
 *)
@@ -72,19 +73,19 @@ val read_defn:
 
 (** {5 Theories} *)
 
-val scope: unit -> Scope.t
+val scope: Context.t -> Scope.t
 (** Get the current scope. *)
 
-val theories: unit -> Thydb.thydb
+val theories: Context.t -> Thydb.thydb
 (** Get the theory database. *)
 
-val curr_theory: unit -> Theory.thy
+val curr_theory: Context.t -> Theory.thy
 (** Get the current theory. *)
 
-val curr_theory_name: unit -> string
+val curr_theory_name: Context.t -> string
 (** Get the name of the current theory. *)
 
-val theory: string -> Theory.thy
+val theory: Context.t -> string -> Theory.thy
 (** [theory n]: Get the theory named [n] if it is in the theory
     database, raising Not_found it it isn't. if [n=""], get the
     current theory.
@@ -92,25 +93,27 @@ val theory: string -> Theory.thy
 
 (** {7 Begining and Ending theories} *)
 
-val begin_theory: string -> string list -> unit
-(** [begin_theory th ths]: Begin a new theory named [th] with parents
-    [ths] and make it the current theory.
+val begin_theory: 
+  Context.t -> string -> string list -> Context.t
+(** [begin_theory ctxt th ths]: Begin a new theory named [th] with
+    parents [ths] and make it the current theory.
 *)
 
-val end_theory: ?save:bool -> unit -> unit
+val end_theory:
+  Context.t -> ?save:bool -> unit -> Context.t
 (** [end_theory ~save ()]: End the current theory (protect it from
     being extended) and save it to disk (if [save=true]).Calling
     [end_theory] allows the theory to be used as a parent to subsequent
     theories. [save] is [true] by default.
 *)
 
-val open_theory: string -> unit
+val open_theory: Context.t -> string -> Context.t
 (** [open_theory th]: Load theory [th] as the current theory, to allow
     it to be extended. Fails if the theory is protected.  [open_theory]
     Allows a theory to be defined in a series of sessions.
 *)
 
-val close_theory: unit -> unit
+val close_theory: Context.t -> unit
 (** [close_theory()]: Save the current theory to disk, but don't
     protect it. Calling [close_theory] allows the theory to be opened
     with [open_theory] but not to be a parent to a theory.
@@ -118,12 +121,12 @@ val close_theory: unit -> unit
 
 (** {7 Theory properties} *)
 
-val parents: string list -> unit
+val parents: Context.t -> string list -> Context.t
 (** Add parents to the current theory, loading the parents theories if
     necessary.
 *)
 
-val add_file: ?use:bool -> string -> unit
+val add_file: Context.t -> ?use:bool -> string -> unit
 (** [add_file ?(use=false) f]: Add file [f] to the list to be
     loaded/used when the theory is loaded. If [use=true] then also
     load/use [f] immediately.
@@ -132,7 +135,7 @@ val add_file: ?use:bool -> string -> unit
     and used otherwise (see {!Global.Files.load_use_file}).
 *)
 
-val remove_file: string -> unit
+val remove_file: Context.t -> string -> unit 
 (** [remove_file f]: Remove file [f] from the list to be loaded/used
     when the theory is loaded.
 *)
@@ -141,9 +144,9 @@ val remove_file: string -> unit
 
 (** {7 Basic PP functions} *)
 
-val add_type_pp_rec: Ident.t -> Printer.record -> unit
+val add_type_pp_rec: Context.t -> Ident.t -> Printer.record -> Context.t 
 (** Add a PP record for a type identifier. Updates Printer and Parser. *)
-val remove_type_pp_rec: Ident.t -> unit
+val remove_type_pp_rec: Context.t -> Ident.t -> unit
 (** Remove the PP record for a type identifier. Updates Printer and
     Parser.
 *)
@@ -152,13 +155,14 @@ val get_type_pp_rec:
 (** Get the PP record for a type identifier. *)
 
 val add_term_pp_rec: 
-  Ident.t -> ?pos:Theory.sym_pos -> Printer.record -> unit
+  Context.t -> Ident.t -> ?pos:Theory.sym_pos -> Printer.record 
+  -> Context.t 
 (** Add a PP record for a term identifier. Updates Printer and Parser
     tables. (Experimental) Add overloading information to the parser
     with relative position [pos] (Default is [First]).
 *)
 
-val remove_term_pp_rec: Ident.t -> unit
+val remove_term_pp_rec: Context.t -> Ident.t -> unit
 (** Remove the PP record for a term identifier. Updates Printer and
     Parser tables.
 *)
@@ -166,7 +170,8 @@ val get_term_pp_rec:
   Ident.t -> (int * fixity * string option)
 (** Get the PP record for a term identifier. *)
 
-val add_overload: string -> ?pos:Theory.sym_pos -> Ident.t -> unit
+val add_overload: 
+  Context.t -> string -> ?pos:Theory.sym_pos -> Ident.t -> unit
 (** [add_overload sym ?post id]: Overload [sym] with term identifier
     [id]. Make identifier [id] have position [?pos] (default [First])
     in the list of options for symbol [sym]. (Experimental.)
@@ -178,12 +183,13 @@ val remove_overload: string -> Ident.t -> unit
 
 (** {7 Toplevel Printer and Parser information functions} *)
 
-val add_type_pp: Ident.t -> int -> fixity -> string option -> unit
+val add_type_pp: 
+  Context.t -> Ident.t -> int -> fixity -> string option -> Context.t
 (** Add a PP information for a type identifier. Updates Printer and
     Parser tables.
 *)
 
-val remove_type_pp: Ident.t -> unit
+val remove_type_pp: Context.t -> Ident.t -> unit
 (** Remove PP information for a type identifier. Updates Printer and
     Parser tables.
 *)
@@ -192,15 +198,14 @@ val get_type_pp: Ident.t -> (int * fixity * string option)
 (** Get PP information for a type identifier. *)
 
 val add_term_pp: 
-  Ident.t 
-  -> ?pos:Theory.sym_pos 
-  -> int -> fixity -> string option -> unit
+  Context.t -> Ident.t -> ?pos:Theory.sym_pos 
+  -> int -> fixity -> string option -> Context.t
 (** Add a PP information for a term identifier. Updates Printer and
     Parser tables. (Experimental) Add overloading information to the
     parser.
 *)
 
-val remove_term_pp: Ident.t -> unit
+val remove_term_pp: Context.t -> Ident.t -> unit
 (** Remove PP information for a term identifier. Updates Printer and
     Parser tables.
 *)
@@ -221,18 +226,20 @@ val get_term_pp: Ident.t -> (int * fixity * string option)
     theorem from a goal.
 *)
 
-val defn: string -> Logic.thm
+val defn: Context.t -> string -> Logic.thm
 (** Get a named definition from the current theory. *)
 
-val get_theorem: string -> Logic.thm
+val get_theorem: Context.t -> string -> Logic.thm
 (** Get a named axiom or theorem from the current theory. *)
 
-val thm: string -> Logic.thm
+val thm: Context.t -> string -> Logic.thm
 (** [thm id]: Get the axiom or theorem or definition named [id], which
     be a long identifier (of the form [th.name])
 *)
 
-val axiom: ?simp:bool -> string -> Basic.term -> Logic.thm
+val axiom: 
+  Context.t -> ?simp:bool -> string -> Basic.term 
+  -> (Context.t * Logic.thm)
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
 
@@ -242,13 +249,15 @@ val axiom: ?simp:bool -> string -> Basic.term -> Logic.thm
 *)
 
 val prove: 
-  ?scp:Scope.t -> Basic.term -> Logic.tactic -> Logic.thm
+  Context.t -> Basic.term -> Logic.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
 *)
 
-val save_thm: ?simp:bool -> string ->  Logic.thm ->  Logic.thm
+val save_thm: 
+  Context.t -> ?simp:bool -> string ->  Logic.thm 
+  -> (Context.t * Logic.thm)
 (** [save_thm n thm]: Add theorem [thm] to the current theory, storing
     it under name [n].
 
@@ -258,7 +267,9 @@ val save_thm: ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 *)
 
 val prove_thm: 
-  ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
+  Context.t ->
+  ?simp:bool -> string -> Basic.term -> Logic.tactic list 
+  -> (Context.t * Logic.thm)
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
@@ -272,7 +283,9 @@ val prove_thm:
 *)
 
 val theorem: 
-  ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
+  Context.t 
+  -> ?simp:bool -> string -> Basic.term -> Logic.tactic list 
+  -> (Context.t * Logic.thm)
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
@@ -289,7 +302,9 @@ val theorem:
 *)
 
 val lemma:
-  ?simp:bool -> string -> Basic.term -> Logic.tactic list -> Logic.thm
+  Context.t 
+  -> ?simp:bool -> string -> Basic.term -> Logic.tactic list 
+  -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
 val qed: string -> Logic.thm
@@ -298,7 +313,8 @@ val qed: string -> Logic.thm
 *)
 
 val get_or_prove: 
-  string -> Basic.term -> Logic.tactic -> Logic.thm
+  Context.t 
+  -> string -> Basic.term -> Logic.tactic -> Logic.thm
 (** [get_or_prove n trm tacs ()]: Try to find the definition or
     theorem named [n], using {!Commands.thm}. If not found, prove
     theorem [trm] using tactic [tac]. This function allows tactic
@@ -309,12 +325,13 @@ val get_or_prove:
 (** {5 Definitions and Declarations} *)
 
 val typedef:
-  ?pp:(int*fixity*string option) 
+  Context.t 
+  -> ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ?thm:Logic.thm
   -> ?rep:string -> ?abs:string
   -> Defn.Parser.typedef
-  -> Logic.Defns.cdefn
+  -> (Context.t * Logic.Defns.cdefn)
 
 (** Define or declare a type. The exact behaviour of [typedef] depends
     on the form of its argument and is either a declaration, a alias
@@ -371,10 +388,11 @@ val typedef:
 *)
 
 val define: 
-  ?pp: (int * fixity * string option) 
+  Context.t 
+  -> ?pp: (int * fixity * string option) 
   -> ?simp:bool
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
-  -> Logic.Defns.cdefn
+  -> (Context.t * Logic.Defns.cdefn)
 (**
    [define ?simp term pp]: Define a term. 
 
@@ -396,8 +414,8 @@ val define:
 *)
 
 val declare: 
-  ?pp:(int* fixity* string option) 
-  -> Basic.term -> (Ident.t * Basic.gtype)
+  Context.t -> ?pp:(int* fixity* string option) 
+  -> Basic.term -> (Context.t * Ident.t * Basic.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -415,10 +433,12 @@ val declare:
 (** {7 Debugging} *)
 
 val simple_typedef: 
-  (string * string list * Basic.gtype option) 
-  -> Logic.Defns.cdefn
+  Context.t 
+  -> (string * string list * Basic.gtype option) 
+  -> (Context.t * Logic.Defns.cdefn)
 val subtypedef: 
-  (string * string list * Basic.gtype * Basic.term) 
+  Context.t 
+  -> (string * string list * Basic.gtype * Basic.term) 
   -> (string option * string option)
   -> ?simp:bool -> Logic.thm 
-  -> Logic.Defns.cdefn
+  -> (Context.t * Logic.Defns.cdefn)

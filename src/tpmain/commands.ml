@@ -39,25 +39,25 @@ let catch_errors f a =
       raise (Failure "failed")
     | x -> raise x
 
-let save_theory thy prot = 
+let save_theory ctxt thy prot = 
   let fname = 
     Filename.concat
-    (Global.Files.get_cdir()) 
-    (Global.Files.file_of_thy (Theory.get_name thy))
+    (Context.Files.get_cdir()) 
+    (Context.Files.file_of_thy ctxt (Theory.get_name thy))
   in 
   Theory.save_theory thy fname
 
-let load_theory_as_cur n = 
+let load_theory_as_cur ctxt n = 
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in
     if t = n then n else chop t
   in 
   let db = 
-    Thydb.Loader.load (Global.theories()) Global.Files.loader_data
+    Thydb.Loader.load (Context.thydb ctxt) (Context.loader_data ctxt)
       (Thydb.Loader.mk_info n None None)
   in 
-  Global.Thys.set_theories(db)
+  Context.Thys.set_theories db ctxt
 
 let read x = catch_errors Global.read x
 let read_unchecked  x= catch_errors Global.PP.read_unchecked x
@@ -67,114 +67,122 @@ let read_defn  x= catch_errors Global.read_defn x
  * Theories
  *)
 
-let scope() = Global.scope()
-let theories() = Global.theories()
+let scope ctxt = Context.scope ctxt
+let theories ctxt = Context.Thys.theories ctxt
 
-let curr_theory() = Global.current()
-let curr_theory_name() = Global.current_name()
+let curr_theory = Context.Thys.current
+let curr_theory_name  = Context.Thys.current_name
 
-let theory name = 
+let theory ctxt name = 
   if name = "" 
-  then curr_theory()
-  else Thydb.get_thy (theories()) name
+  then curr_theory ctxt
+  else Thydb.get_thy (theories ctxt) name
 
 (*** Begining and Ending theories ***)
     
-let begin_theory n parents = 
+let begin_theory ctxt n parents = 
   if n = "" 
   then raise (Report.error "No theory name")
   else 
     let importing =
-      try List.append parents [(Global.Thys.get_base_name())]
+      try List.append parents [(Context.Thys.get_base_name ctxt)]
       with Not_found -> parents
     in 
-    let db = theories()
+    let db = Context.Thys.theories ctxt
     and thy = Theory.mk_thy n importing
     in
-    let db1 = Thydb.Loader.make_current db Global.Files.loader_data thy
+    let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy
     in 
-    Global.Thys.set_theories(db1)
+    Context.Thys.set_theories db1 ctxt
 
-let end_theory ?(save=true) () = 
-  if curr_theory_name() = "" 
+let end_theory ctxt ?(save=true) () = 
+  if (curr_theory_name ctxt) = "" 
   then raise (Report.error "At base theory")
   else 
     begin
-      let thy = curr_theory()
+      let thy = curr_theory ctxt
       in 
       Theory.end_theory thy true;
-      if save then save_theory thy true else ()
+      if save then save_theory ctxt thy true else ();
+      ctxt
     end
 
-let open_theory n =
+let open_theory ctxt n =
   if n = "" 
   then raise (Report.error "No theory name")
-  else load_theory_as_cur n
+  else load_theory_as_cur ctxt n
 
-let close_theory() = 
-  if curr_theory_name() = "" 
+let close_theory ctxt = 
+  if (curr_theory_name ctxt) = "" 
   then raise (Report.error "At base theory")
   else 
     begin
-      let thy = curr_theory()
+      let thy = curr_theory ctxt
       in 
       Theory.end_theory thy false;
-      save_theory thy false
+      save_theory ctxt thy false
     end
 
 (*** Theory properties ***)
 
-let parents ns = 
-  let thy = curr_theory()
-  and db = theories()
+let parents ctxt ns = 
+  let thy = Context.Thys.curr_theory ctxt
+  and db = Context.Thys.theories ctxt
   in 
   Theory.add_parents ns thy;
-  let db1 = Thydb.Loader.make_current db Global.Files.loader_data thy
+  let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy
   in 
-  Global.Thys.set_theories db1
+  Context.Thys.set_theories db1 ctxt
 
-let add_file ?(use=false) f =
-  Theory.add_file f (curr_theory());
+let add_file ctxt ?(use=false) f =
+  Theory.add_file f (Context.Thys.curr_theory ctxt);
   if use
-  then Global.Files.load_use_file f
+  then Context.Files.load_use_file ctxt f
   else ()
     
-let remove_file f = Theory.remove_file f (curr_theory())
+let remove_file ctxt f = Theory.remove_file f (curr_theory ctxt)
 
 (*** Printer and Parser information ***)
 
 (*** Basic PP functions ***)
 
 (*** Types ***)
-let add_type_pp_rec id rcrd =
-  Global.Thys.set_theories
-    (Thydb.add_type_pp_rec (Ident.name_of id) rcrd (theories()));
-  Global.PP.add_type_pp_record id rcrd
+let add_type_pp_rec ctxt id rcrd =
+  let ctxt1 =
+    Context.Thys.set_theories 
+      (Thydb.add_type_pp_rec (Ident.name_of id) rcrd (Context.Thys.theories ctxt))
+      ctxt
+  in
+  Global.PP.add_type_pp_record id rcrd;
+  ctxt1
     
-let remove_type_pp_rec id =
-  Thydb.remove_type_pp_rec
-    (Ident.thy_of id) (Ident.name_of id) (theories());
+let remove_type_pp_rec ctxt id =
+  Thydb.remove_type_pp_rec 
+    (Ident.thy_of id) (Ident.name_of id) (Context.Thys.theories ctxt);
   Global.PP.remove_type_pp id
 
 let get_type_pp_rec id = Global.PP.get_type_pp id 
 
 (*** Terms ***)
 
-let add_term_pp_rec id ?(pos=Lib.First) rcrd =
-  Global.Thys.set_theories
-    (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) (theories()));
-  Global.PP.add_term_pp_record id rcrd
+let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
+  let ctxt1 = 
+    Context.Thys.set_theories
+      (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) (Context.Thys.theories ctxt))
+      ctxt
+  in
+  Global.PP.add_term_pp_record id rcrd; ctxt1
     
 let get_term_pp_rec id = Global.PP.get_type_pp id 
 
-let remove_term_pp_rec id =
+let remove_term_pp_rec ctxt id =
   Thydb.remove_term_pp_rec
-    (Ident.thy_of id) (Ident.name_of id) (theories());
+    (Ident.thy_of id) (Ident.name_of id) (theories ctxt);
   Global.PP.remove_term_pp id
 
-let add_overload sym ?(pos=Lib.First) id = 
+let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 
-    Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories())
+    Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in 
   Parser.add_overload sym pos (id, ty)
 
@@ -184,75 +192,78 @@ let remove_overload sym id =
 (*** User-level PP Functions ***)
 
 (*** Types ***)
-let add_type_pp id prec fx repr =
+let add_type_pp ctxt id prec fx repr =
   let rcrd = Printer.mk_record prec fx repr
   in 
-  add_type_pp_rec id rcrd
+  add_type_pp_rec ctxt id rcrd
 
 let remove_type_pp id = remove_type_pp_rec id
 let get_type_pp id = get_type_pp_rec id
 
 (*** Terms ***)
 
-let add_term_pp id ?(pos=Lib.First) prec fx repr =
+let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
   let rcrd = Printer.mk_record prec fx repr
   in 
-  add_term_pp_rec id ~pos:pos rcrd;
-  match repr with
-    | None -> () 
-    | Some(sym) -> add_overload sym ~pos:pos id
+  let ctxt1 = add_term_pp_rec ctxt id ~pos:pos rcrd
+  in
+  begin
+    match repr with
+      | None -> ()
+      | Some(sym) -> add_overload ctxt1 sym ~pos:pos id
+  end;
+  ctxt1
 
 let remove_term_pp id = remove_term_pp_rec id
 let get_term_pp id = get_term_pp_rec id
 
 (** Axioms and Theorems ***)
 
-let defn id =
+let defn ctxt id =
   let t, n = Global.read_identifier id in 
-  let thys = theories()
+  let thys = theories ctxt
   in
   Thydb.get_defn t n thys
 
-let get_theorem id =
+let get_theorem ctxt id =
   let t, n = Global.read_identifier id in 
-  let thys = theories()
+  let thys = theories ctxt
   in 
   try Thydb.get_axiom t n thys
   with Not_found -> Thydb.get_theorem t n thys
 
-let thm id =
+let thm ctxt id =
   let t, n = Global.read_identifier id in 
-  let thys = theories()
+  let thys = theories ctxt
   in 
   Thydb.get_lemma t n thys
 
-let axiom ?(simp=false) n trm =
+let axiom ctxt ?(simp=false) n trm =
   let thm = Logic.mk_axiom (Formula.make (Global.scope()) trm)
   and props = if simp then [Theory.simp_property] else []
   in 
-  match Lib.try_find (Theory.get_theorem_rec n) (curr_theory()) with
-    | None -> 
-      Global.Thys.set_theories(Thydb.add_axiom n thm props (theories())); 
-      thm
-    | _ -> 
-      raise (Report.error ("Theorem named "^n^" already exists in theory."))
+  begin
+    match Lib.try_find (Theory.get_theorem_rec n) (curr_theory ctxt) with
+      | Some _ -> 
+        raise (Report.error ("Theorem named "^n^" already exists in theory."))
+      | _ -> 
+        (Context.Thys.set_theories (Thydb.add_axiom n thm props (theories ctxt)) ctxt,
+         thm)
+  end
 
-let prove ?scp trm tac = 
-  let uscp = 
-    match scp with
-      | None -> scope()
-      | Some x -> x
+let prove ctxt trm tac = 
+  let uscp = scope ctxt
   in
   Goals.prove_goal uscp trm tac
 
-let save_thm ?(simp=false) n th =
+let save_thm ctxt ?(simp=false) n th =
   let props = if simp then [Theory.simp_property] else []
   in 
   catch_errors 
-    (fun x -> Global.Thys.set_theories(Thydb.add_thm n th props x); th) 
-    (theories())
+    (fun x -> (Context.Thys.set_theories(Thydb.add_thm n th props x) ctxt, th)) 
+    (Context.Thys.theories ctxt)
 
-let prove_thm ?(simp=false) n t tacs =
+let prove_thm ctxt ?(simp=false) n t tacs =
   let prove_aux _ = 
     let thm = 
       try Goals.by_list t tacs
@@ -260,7 +271,8 @@ let prove_thm ?(simp=false) n t tacs =
         raise (Report.add_error
 		 (Report.error ("Failed to prove theorem "^n)) err)
     in 
-    ignore(save_thm ~simp:simp n thm); thm
+    let (cntxt1, _) = save_thm ctxt ~simp:simp n thm in
+    (cntxt1, thm)
   in 
   catch_errors prove_aux ()
 
@@ -268,17 +280,19 @@ let theorem = prove_thm
 let lemma = theorem
 
 let qed n = 
-  let thm = Goals.result() 
-  in 
-  Global.Thys.set_theories(Thydb.add_thm n (Goals.result()) [] (theories())); 
-  thm
+  let thm = Goals.result() in  
+  let ctxt = Global.state() in
+  let thydb = Thydb.add_thm n (Goals.result()) [] (Context.thydb ctxt) in
+  let ctxt1 = Context.set_thydb thydb ctxt 
+  in
+  Global.set_state ctxt1; thm
 
-let get_or_prove name trm tac = 
+let get_or_prove ctxt name trm tac = 
   let act () =
-    match Lib.try_find thm name with
+    match Lib.try_find (thm ctxt) name with
       | Some x -> x
       | _ -> 
-	try prove trm tac
+	try prove ctxt trm tac
 	with err -> 
 	  raise (Report.add_error 
 	           (Report.error 
@@ -294,12 +308,12 @@ let get_or_prove name trm tac =
 
 (*** Subtype definitions ***)
 
-let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
+let subtypedef ctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
   let tydef = 
-    Logic.Defns.mk_subtype (Global.scope()) 
+    Logic.Defns.mk_subtype (Global.Old.scope()) 
       name args dtype set rep_name abs_name thm
   in 
   (* Extract the type definition and the declarations of rep and abs *)
@@ -312,12 +326,12 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
      Add the type definition and the declarations of rep and abs to the
      global database
   *)
-  let db = theories() in 
+  let db = theories ctxt in 
   let db1 = Thydb.add_type_rec tydef db in 
   let db2 = Thydb.add_decln rep_decln [] db1 in 
   let db3 = Thydb.add_decln abs_decln [] db2
   in 
-  Global.Thys.set_theories(db3);
+  let ctxt1 = Context.Thys.set_theories db3 ctxt in
   (* Add the theorems *)
   let rep_type = tyrec.Logic.Defns.rep_type
   and rt_name = rep_name^"_mem"
@@ -326,48 +340,52 @@ let subtypedef (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   and abs_type_inverse = tyrec.Logic.Defns.abs_type_inverse
   and ati_name = abs_name^"_inverse"
   in 
-  ignore(save_thm ~simp:simp rt_name rep_type);
-  ignore(save_thm ~simp:simp rti_name rep_type_inverse);
-  ignore(save_thm ~simp:simp ati_name abs_type_inverse);
-  tydef
+  let (ctxt2, _) = save_thm ctxt1 ~simp:simp rt_name rep_type in
+  let (ctxt3, _) = save_thm ctxt2 ~simp:simp rti_name rep_type_inverse in
+  let (ctxt4, _) = save_thm ctxt3 ~simp:simp ati_name abs_type_inverse in
+  (ctxt4, tydef)
     
 (*** Simple type definitions ***)
-let simple_typedef (n, args, def) =
+let simple_typedef ctxt (n, args, def) =
   let def1 = 
     match def with 
       | None -> None
-      | Some(x) -> Some(Gtypes.set_name (Global.scope()) x)
+      | Some(x) -> Some(Gtypes.set_name (scope ctxt) x)
   in 
-  let tydef = Logic.Defns.mk_typealias (Global.scope()) n args def1
-  in 
-  Global.Thys.set_theories(Thydb.add_type_rec tydef (theories())); tydef
+  let tydef = Logic.Defns.mk_typealias (scope ctxt) n args def1 in 
+  let ctxt1 =
+    Context.Thys.set_theories (Thydb.add_type_rec tydef (theories ctxt)) ctxt
+  in
+  (ctxt1, tydef)
 
 (*** Toplevel type definitions and declarations ***)
-let typedef ?pp ?simp ?thm ?rep ?abs tydef = 
-  let (name, ret_def) =
+let typedef (ctxt: Context.t) ?pp ?simp ?thm ?rep ?abs tydef = 
+  let (name, (ctxt1, ret_def)) =
     match tydef with
       | Defn.Parser.NewType (n, args) -> 
-	(n, simple_typedef (n, args, None))
+	(n, simple_typedef ctxt (n, args, None))
       | Defn.Parser.TypeAlias(n, args, d) -> 
-	(n, simple_typedef(n, args, Some(d)))
+	(n, simple_typedef ctxt (n, args, Some(d)))
       | Defn.Parser.Subtype(n, args, dtyp, set) -> 
 	let thm1=
 	  Lib.dest_option 
-	    ~err:(Report.error 
-		    ("Subtype definition must have an existance theorem"))
+	    ~err:(Report.error ("Subtype definition must have an existance theorem"))
 	    thm
 	in 
-	(n, subtypedef (n, args, dtyp, set) (rep, abs) ?simp:simp thm1)
+	(n, subtypedef ctxt (n, args, dtyp, set) (rep, abs) ?simp:simp thm1)
   in 
-  begin
-    match pp with 
-      | None -> ()
-      | Some(prec, fx, repr) -> 
-        let lname = Ident.mk_long (Theory.get_name (Global.current())) name
-        in 
-        add_type_pp lname prec fx repr
-  end;
-  ret_def
+  let ctxt2 = 
+    begin
+      match pp with 
+        | None -> ctxt1
+        | Some(prec, fx, repr) -> 
+          let lname = 
+            Ident.mk_long (Theory.get_name (Context.Thys.current ctxt1)) name
+          in 
+          add_type_pp ctxt1 lname prec fx repr
+    end
+  in
+  (ctxt2, ret_def)
 
 (*** Term declerations and definitions ***)
 
@@ -402,35 +420,34 @@ let dest_defn_term trm =
     
 (*** Term definitions ***)
 
-let define ?pp ?(simp=false) (((name, nty), args), rhs) =
-  let scp = Global.scope() in 
-  let new_def=
-    let curr_thy_name = Theory.get_name (Global.current())
-    in
+let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
+  let scp = scope ctxt in 
+  let new_def =
+    let curr_thy_name = Theory.get_name (Context.Thys.current ctxt) in
     Logic.Defns.mk_termdef scp
       (Ident.mk_long curr_thy_name name, nty)
       args rhs
   in 
-  let props = 
-    if simp
-    then [Theory.simp_property]
-    else []
-  in 
+  let props = if simp then [Theory.simp_property] else [] in 
   let (n, ty, d) = Logic.Defns.dest_termdef new_def
   in 
-  Global.Thys.set_theories
-    (Thydb.add_defn (Ident.name_of n) ty d props (theories())); 
-  begin
-    match pp with 
-      | None -> ()
-      | Some(prec, fx, repr) -> add_term_pp n prec fx repr
-  end;
-  new_def
+  let ctxt1 = 
+    Context.Thys.set_theories
+      (Thydb.add_defn (Ident.name_of n) ty d props (theories ctxt)) ctxt 
+  in
+  let ctxt2 = 
+    begin
+      match pp with 
+        | None -> ctxt1
+        | Some(prec, fx, repr) -> add_term_pp ctxt1 n prec fx repr
+    end 
+  in
+  (ctxt2, new_def)
 
 (*** Term declarations ***)
 
-let declare ?pp trm = 
-  let val_name, val_type =
+let declare ctxt ?pp trm = 
+  let (ctxt2, val_name, val_type) =
     let declare_aux () = 
       let v, ty =
 	match trm with
@@ -438,23 +455,26 @@ let declare ?pp trm =
 	  | Basic.Id(i, t) -> (Ident.name_of i, t)
 	  | _ -> raise (Failure "Badly formed declaration")
       in 
-      let id = Ident.mk_long (Global.current_name()) v in 
-      let dcl = Logic.Defns.mk_termdecln (Global.scope()) v ty
-      in 
-      Global.Thys.set_theories(Thydb.add_decln dcl [] (theories())); 
-      (id, ty)
+      let id = Ident.mk_long (Context.Thys.current_name ctxt) v in 
+      let dcl = Logic.Defns.mk_termdecln (scope ctxt) v ty in 
+      let ctxt1 = 
+        Context.Thys.set_theories(Thydb.add_decln dcl [] (theories ctxt)) ctxt
+      in
+      (ctxt1, id, ty)
     in
-    try declare_aux()
+    try declare_aux ()
     with _ -> raise (Report.error ("Badly formed declaration"))
   in 
-  match pp with 
-    | None -> (val_name, val_type)
-    | Some(prec, fx, repr) ->
-      let longname = 
-	if (Ident.thy_of val_name) = Ident.null_thy 
-	then Ident.mk_long (Global.current_name()) (Ident.name_of val_name)
-	else val_name
-      in 
-      add_term_pp longname prec fx repr;
-      (val_name, val_type)
-
+  begin
+    match pp with 
+      | None -> (ctxt2, val_name, val_type)
+      | Some(prec, fx, repr) ->
+        let longname = 
+	  if (Ident.thy_of val_name) = Ident.null_thy 
+	  then 
+            Ident.mk_long (Context.Thys.current_name ctxt2) (Ident.name_of val_name)
+	  else val_name
+        in 
+        let ctxt3 = add_term_pp ctxt2 longname prec fx repr in
+        (ctxt3, val_name, val_type)
+  end

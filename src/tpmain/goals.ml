@@ -173,8 +173,8 @@ let top_goal () = ProofStack.top_goal (proofs())
 let drop() = set_proofs (ProofStack.pop (proofs())); proofs()
 
 let goal trm = 
-  let frm = Formula.make (Global.scope()) trm in 
-  let gl = mk_goal (Global.scope()) frm in
+  let frm = Formula.make (Global.Old.scope ()) trm in 
+  let gl = mk_goal (Global.Old.scope ()) frm in
   let prf = Proof.make gl in
   set_proofs (ProofStack.push prf (proofs()));
   !save_hook(); 
@@ -206,10 +206,10 @@ let apply ?report tac goal =
 let prove_goal scp trm tac =
   mk_thm (apply tac (mk_goal scp (Formula.make scp trm)))
 
-let prove ?scp trm tac = 
+let prove scp trm tac = 
   let sp = 
     match scp with 
-      | None -> Global.scope()
+      | None -> Global.Old.scope()
       | Some x -> x
   in 
   prove_goal sp trm tac
@@ -259,9 +259,9 @@ let by_com tac =
   top()
 
 let by_list trm tacl =
-  let goal_form = Formula.make (Global.scope()) trm
+  let goal_form = Formula.make (Global.Old.scope()) trm
   in
-  let new_goal = mk_goal (Global.scope()) goal_form
+  let new_goal = mk_goal (Global.Old.scope()) goal_form
   in 
   let rec by_aux ts g =
     match ts with 
