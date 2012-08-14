@@ -1,6 +1,6 @@
 (*----
   Name: global.mli
-  Copyright M Wahab 2005-2010
+  Copyright M Wahab 2005-2010, 2012
   Author: M Wahab  <mwb.cde@googlemail.com>
 
   This file is part of HSeq

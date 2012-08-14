@@ -1,23 +1,66 @@
 (**----
-  Name: userlib.mli
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+   Name: userlib.mli
+   Copyright M Wahab 2005-2010, 2012
+   Author: M Wahab  <mwb.cde@googlemail.com>
 
-  This file is part of HSeq
+   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+   HSeq is free software; you can redistribute it and/or modify it under
+   the terms of the Lesser GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+   HSeq is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+   License for more details.
 
-  You should have received a copy of the Lesser GNU General Public
-  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-  ----*)
+   You should have received a copy of the Lesser GNU General Public
+   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+   ----*)
+
+(** {5 Global state} *)
+
+module Global: 
+sig
+  (** The default context. *)
+  val default_context: unit -> Context.t
+
+  (** Global state *)
+  val state : unit -> Context.t
+  val set_state: Context.t -> unit
+
+  (** Short cut to {!Thys.get_theories.} *)
+  val theories: unit -> Thydb.thydb
+
+  (** Short cut to {!Thys.current.} *)
+  val current: unit -> Theory.thy
+
+  (** Short cut to {!Thys.current_name.} *)
+  val current_name: unit -> string
+
+  (** The global scope. Constructed from the theory database. *)
+  val scope: unit -> Scope.t
+
+  (** {5 Printing and Parsing}
+
+      Global printer tables and functions to add, query and remove
+      combined printer-parser information.  *)
+  module PP:
+  sig
+    (** Get the global printer information table. *)
+    val info: unit -> Printer.ppinfo
+
+    (** Set the global PP information table. *)
+    val set: Printer.ppinfo -> unit
+
+    (** Initialise the printer and parser tables. *)
+    val init: unit -> unit
+  end
+
+  (** Initialise the global state. *)
+  val init: unit -> unit
+end
 
 (** The user level commands.
 
@@ -216,9 +259,7 @@ val typedef:
     {!Global.read_type_defn}.
 *)
 
-
 (** {7 Term Declaration and definition} *)
-
 
 val define: 
   ?pp:(int*fixity*string option) 

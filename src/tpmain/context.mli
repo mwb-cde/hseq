@@ -337,6 +337,5 @@ sig
       when a theory is loaded from a file, not went it is built from a
       script.  Files are searched for in the theory path
       [get_thy_path()].  *)
-    
-
 end
+

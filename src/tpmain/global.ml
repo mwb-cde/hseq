@@ -1,6 +1,6 @@
 (*----
   Name: global.ml
-  Copyright M Wahab 2005-2010
+  Copyright M Wahab 2005-2010,2012
   Author: M Wahab  <mwb.cde@googlemail.com>
 
   This file is part of HSeq
@@ -22,7 +22,6 @@
 open Basic
 open Parser
 open Lib.Ops
-
 
 (** {7 Toplevel state} *)
 
@@ -52,7 +51,7 @@ let current_name () = Context.Thys.current_name (state())
 let scope () = Thydb.mk_scope(theories())
 
 (*** Pretty printing ***)
-module PP=
+module PP =
 struct
 
   (*** Printer tables ***)
