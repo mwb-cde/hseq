@@ -214,6 +214,29 @@ val mk_term: Pterm.t -> Basic.term
     for passing to formula constructors.
 *)
 
+(** Convenience module, so that readers are available *)
+module Read:
+sig
+
+  val term: string -> Basic.term
+  (** Read a term. *)
+
+  val ltype: string -> Basic.gtype
+  (** Read a type. *)
+
+  val identifier: string -> Ident.t
+  (** Read an identifier. *)
+
+  val defn:
+    string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
+  (** Read a term definition. *)
+
+  val typedef: string -> Defn.Parser.typedef
+  (** Read a type definition. *)
+
+end
+
+
 (** The global environment *)
 
 module Old:

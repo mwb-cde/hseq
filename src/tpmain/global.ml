@@ -253,6 +253,17 @@ let read_type_defn = PP.read_type_defn
 
 let mk_term t = PP.mk_term (scope()) t
 
+(** Convenience module, so that readers are available *)
+module Read = 
+struct
+
+  let term = PP.read
+  let ltype = PP.read_type
+  let identifier = PP.read_identifier
+  let defn = PP.read_defn
+  let typedef = PP.read_type_defn
+end
+
 
 (**** OLD ****)
 
