@@ -43,9 +43,9 @@ struct
       proving it if necessary *)
 
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
-  let make_iff_equals_thm () =
+  let make_iff_equals_thm ctxt =
     let iff_l2 = 
-      Commands.prove
+      Commands.prove ctxt
       << !x y: ((x => y) and (y => x)) => (x = y) >>
       (seq [
         allC;
@@ -58,139 +58,168 @@ struct
 	      and y_term = Lib.get_one (Info.constants info2) 
                 (Failure "make_iff_equals_thm: y_term")
 	      in 
-	      (flatten_tac
-	       ++ (cut_thm "bool_cases" ++ allA x_term)
-	       ++ (cut_thm "bool_cases" ++ allA y_term)
-	       ++ split_tac 
+	      (flatten_tac ctxt
+	       ++ (cut_thm ctxt "bool_cases" ++ allA x_term)
+	       ++ (cut_thm ctxt "bool_cases" ++ allA y_term)
+	       ++ split_tac ctxt
 	       ++ 
 	         alt 
-	         [(replace_tac ++ (basic // trivial));
-	          (basic // trivial);
-	          (replace_tac ++ eq_tac)]) g)
+	         [(replace_tac ctxt ++ (basic // trivial ctxt));
+	          (basic // trivial ctxt);
+	          (replace_tac ctxt ++ eq_tac ctxt)]) g)
           ])])
-    in Commands.prove << !x y: (x iff y) = (x = y) >>
-        (seq [
-          allC;
-          (?> fun info1 ->
-            seq [
-              allC;
-	      (?> fun info2 g -> 
-	        let x_term = Lib.get_one (Info.constants info1) 
-                  (Failure "make_iff_equals_thm: x_term")
-                and y_term = Lib.get_one (Info.constants info2)
+    in 
+    Commands.prove ctxt << !x y: (x iff y) = (x = y) >>
+      (seq [
+        allC;
+        (?> fun info1 ->
+          seq [
+            allC;
+	    (?> fun info2 g -> 
+	      let x_term = Lib.get_one (Info.constants info1) 
+                (Failure "make_iff_equals_thm: x_term")
+              and y_term = Lib.get_one (Info.constants info2)
                 (Failure "make_iff_equals_thm: y_term")
-	        in 
-	        ((cut iff_l2)
-	         ++ inst_tac [Lterm.mk_iff x_term y_term;
-			      Lterm.mk_equality x_term y_term]
-	         ++ split_tac
-	         --
-	           [
-                     flatten_tac
-		     ++ cut iff_l2 ++ inst_tac [x_term; y_term]
-		     ++ unfold "iff" ~f:(!~2)
-		     ++ (implA --  [basic; basic]);
-	             flatten_tac
-		     ++ replace_tac
-		     ++ unfold "iff" ~f:(!! 1)
-		     ++ split_tac ++ flatten_tac ++ basic;
-	             replace_tac ++ eq_tac]) g)
-            ])])
+	      in 
+	      ((cut iff_l2)
+	       ++ inst_tac [Lterm.mk_iff x_term y_term;
+			    Lterm.mk_equality x_term y_term]
+	       ++ split_tac ctxt
+	       --
+	         [
+                   flatten_tac ctxt
+		   ++ cut iff_l2 ++ inst_tac [x_term; y_term]
+		   ++ unfold ctxt "iff" ~f:(!~2)
+		   ++ (implA --  [basic; basic]);
+	           flatten_tac ctxt
+		   ++ replace_tac ctxt
+		   ++ unfold ctxt "iff" ~f:(!! 1)
+		   ++ split_tac ctxt ++ flatten_tac ctxt ++ basic;
+	           replace_tac ctxt ++ eq_tac ctxt]) g)
+          ])])
 
-
+(*
   let iff_equals_thm_var = Lib.freeze make_iff_equals_thm
-  let iff_equals_thm() = Lib.thaw ~fresh:fresh_thm iff_equals_thm_var
+  let iff_equals_thm() = Lib.thaw ~fresh:fresh_tthm iff_equals_thm_var
+*)
+  let iff_equals_id = Ident.mk_long "Bool" "equals_bool"
+  let iff_equals_thm ctxt =
+    Context.find_thm ctxt iff_equals_id make_iff_equals_thm
 
   (** [equals_iff_thm]: |- !x y: (x = y) = (x iff y) *)
-  let make_equals_iff_thm() =
-    get_or_prove "Bool.equals_bool"
+  let equals_iff_id = Ident.mk_long "Bool" "equals_iff"
+  let make_equals_iff_thm ctxt =
+    get_or_prove ctxt (Ident.string_of equals_iff_id)
     << !x y: (x = y) = (x iff y) >>
-    (flatten_tac 
-     ++ (rewrite_tac [iff_equals_thm()])
-     ++ eq_tac)
+    (flatten_tac ctxt
+     ++ (rewrite_tac ctxt [iff_equals_thm ctxt])
+     ++ eq_tac ctxt)
 
+(*
   let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
   let equals_iff_thm() = Lib.thaw ~fresh:fresh_thm equals_iff_thm_var
+*)
+  let equals_iff_thm ctxt = 
+    Context.find_thm ctxt equals_iff_id make_equals_iff_thm
 
   (** [bool_eq_thm]: |- !x y: x = y = ((x => y) and (y=>x)) *)
-  let make_bool_eq_thm() = 
-    prove << !x y: (x = y) = ((x => y) and (y => x)) >>
-    (flatten_tac 
-     ++ rewrite_tac [equals_iff_thm()]
-     ++ unfold "iff"
-     ++ (split_tac ++ flatten_tac ++ split_tac ++ flatten_tac ++ basic))
+  let bool_eq_thm_id = Ident.mk_long "Bool" "bool_eq"
+  let make_bool_eq_thm ctxt = 
+    prove ctxt << !x y: (x = y) = ((x => y) and (y => x)) >>
+    (flatten_tac ctxt
+     ++ rewrite_tac ctxt [equals_iff_thm ctxt]
+     ++ unfold ctxt "iff"
+     ++ (split_tac ctxt ++ flatten_tac ctxt
+         ++ split_tac ctxt ++ flatten_tac ctxt ++ basic))
 
+(*
   let bool_eq_thm_var=  Lib.freeze make_bool_eq_thm
   let bool_eq_thm() =  Lib.thaw ~fresh:fresh_thm bool_eq_thm_var
+*)
+  let bool_eq_thm ctxt =
+    Context.find_thm ctxt bool_eq_thm_id make_bool_eq_thm
 
   (** [double_not_thm]: |- ! x: x = (not (not x)) *)
-  let make_double_not_thm () = 
-    Commands.prove << !x: x = (not (not x)) >> 
-    (flatten_tac ++ rewrite_tac [bool_eq_thm()]
-     ++ scatter_tac ++ basic)
+  let double_not_id = Ident.mk_long "Bool" "double_not"
+  let make_double_not_thm ctxt = 
+    Commands.prove ctxt << !x: x = (not (not x)) >> 
+    (flatten_tac ctxt ++ rewrite_tac ctxt [bool_eq_thm ctxt]
+     ++ scatter_tac ctxt ++ basic)
 
+(*
   let double_not_thm_var = Lib.freeze make_double_not_thm
   let double_not_thm () = Lib.thaw ~fresh:fresh_thm double_not_thm_var
+*)
+  let double_not_thm ctxt = 
+    Context.find_thm ctxt double_not_id make_double_not_thm
 
   (** [rule_true_thm]: |- !x: x = (x=true) *)
-
-  let make_rule_true_thm() = 
+  let rule_true_id = Ident.mk_long "Bool" "rule_true"
+  let make_rule_true_thm ctxt = 
     let rule_true_l1 =  
-      Commands.prove << !x: (x=true) => x>> 
-      (flatten_tac ++ replace_tac ++ trivial)
+      Commands.prove ctxt << !x: (x=true) => x>> 
+      (flatten_tac ctxt ++ replace_tac ctxt ++ trivial ctxt)
     in
     let rule_true_l2 = 
-      Commands.prove << !x: x => (x=true) >>
+      Commands.prove ctxt << !x: x => (x=true) >>
       (allC
        ++ (?> fun info g -> 
 	 let x_term = 
-	   Lib.get_one (Info.constants info) 
-	     (Failure "rule_true_l2")
+	   Lib.get_one (Info.constants info) (Failure "rule_true_l2")
 	 in 
-	 (flatten_tac 
-	  ++ (cut_thm "bool_cases") 
+	 (flatten_tac ctxt
+	  ++ (cut_thm ctxt "bool_cases") 
 	  ++ (allA x_term) 
 	  ++ disjA
 	  -- 
 	    [basic;
-	     rewrite_tac [Commands.thm "false_def"]
-	     ++ replace_tac ++ negA ++ trueC]) g))
+	     rewrite_tac ctxt [Commands.thm ctxt "false_def"]
+	     ++ replace_tac ctxt ++ negA ++ trueC]) g))
     in
     let rule_true_l3 = 
-      Commands.prove << ! x: x iff (x=true) >>
-	((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
+      Commands.prove ctxt << ! x: x iff (x=true) >>
+	((flatten_tac ctxt ++ unfold ctxt "iff" ~f:(!! 1) ++ conjC)
 	 --
 	   [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	    cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
     in 
-    rewrite_rule (Global.scope()) [iff_equals_thm()] rule_true_l3
+    rewrite_rule ctxt [iff_equals_thm ctxt] rule_true_l3
 
+(*
   let rule_true_thm_var = Lib.freeze make_rule_true_thm
   let rule_true_thm() = Lib.thaw ~fresh:fresh_thm rule_true_thm_var
+*)
+  let rule_true_thm ctxt = 
+    Context.find_thm ctxt rule_true_id make_rule_true_thm
 
   (** rule_false_thm: !x: (not x) = (x=false) *)
-  let make_rule_false_thm() = 
-    Commands.prove << ! x: (not x) = (x=false) >>
+  let rule_false_id = Ident.mk_long "Bool" "rule_false"
+  let make_rule_false_thm ctxt = 
+    Commands.prove ctxt << ! x: (not x) = (x=false) >>
         (allC 
 	 ++ (?> fun info g -> 
 	   let x_term = 
 	     Lib.get_one (Info.constants info)
 	       (Failure "make_rule_false_thm")
 	   in 
-	   ((once_rewrite_tac [equals_iff_thm()]
-	     ++ unfold "iff"
-	     ++ scatter_tac)
+	   ((once_rewrite_tac ctxt [equals_iff_thm ctxt]
+	     ++ unfold ctxt "iff"
+	     ++ scatter_tac ctxt)
 	    -- 
 	      [
-	        cut_thm "bool_cases" ++ inst_tac [x_term]
+	        cut_thm ctxt "bool_cases" ++ inst_tac [x_term]
 		++
-		  (split_tac 
-		   ++ replace_tac 
-		   ++ (trivial // eq_tac));
-	        replace_tac ++ trivial]) g))
+		  (split_tac ctxt
+		   ++ replace_tac ctxt
+		   ++ (trivial ctxt // eq_tac ctxt));
+	        replace_tac ctxt ++ trivial ctxt]) g))
 
+(*
   let rule_false_thm_var = Lib.freeze make_rule_false_thm
   let rule_false_thm() = Lib.thaw ~fresh:fresh_thm rule_false_thm_var
+*)
+  let rule_false_thm ctxt =
+    Context.find_thm ctxt rule_false_id make_rule_false_thm
 
   let bool_cases_thm = Boolbase.bool_cases_thm
   let cases_thm = Booltacs.cases_thm
@@ -209,7 +238,7 @@ struct
   open Thms
 
   (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-  let neg_all_conv scp trm =
+  let neg_all_conv ctxt trm =
     if not (Lterm.is_neg trm)
     then failwith "neg_all_conv: not a negation"
     else 
@@ -245,7 +274,7 @@ struct
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
       let proof g = 
-	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
+	seq [once_rewrite_tac ctxt [bool_eq_thm ctxt] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
@@ -325,10 +354,10 @@ struct
 			      ] g2)] g1)]]
 	    ] g
       in 
-      Commands.prove ~scp:scp goal_term proof
+      Commands.prove ctxt goal_term proof
 
   (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-  let neg_exists_conv scp trm =
+  let neg_exists_conv ctxt trm =
     if not (Lterm.is_neg trm)
     then failwith "neg_exists_conv: not a negation"
     else 
@@ -363,7 +392,7 @@ struct
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
       let proof g = 
-	seq [once_rewrite_tac [bool_eq_thm()] ~f:(fnum 1);
+	seq [once_rewrite_tac ctxt [bool_eq_thm ctxt] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
@@ -443,7 +472,7 @@ struct
 			      ] g2)] g1)]]
 	    ] g
       in 
-      Commands.prove ~scp:scp goal_term proof
+      Commands.prove ctxt goal_term proof
 
 end
 
@@ -459,7 +488,7 @@ struct
 
   (** [conjunctL scp thm] Get the left hand side of conjunct [thm].
       [conjunctL scp << l and r >> = l] *)
-  let conjunctL scp thm = 
+  let conjunctL ctxt thm = 
     let trm = Logic.term_of thm in 
     if not (Lterm.is_conj trm)
     then raise (error "conjunct1: not a conjunction")
@@ -480,11 +509,11 @@ struct
 	       in 
 	       Tactics.basic ~a:(ftag ltag) ~c:l g1)] g
       in 
-      Commands.prove ~scp:scp lhs (proof (fnum 1))
+      Commands.prove ctxt lhs (proof (fnum 1))
 	
   (** [conjunctR scp thm] Get the right hand side of conjunct [thm].
       [conjunctL scp << l and r >> = r] *)
-  let conjunctR scp thm = 
+  let conjunctR ctxt thm = 
     let trm = Logic.term_of thm in 
     if not (Lterm.is_conj trm)
     then raise (error "conjunct1: not a conjunction")
@@ -505,24 +534,24 @@ struct
 	       in 
 	       Tactics.basic ~a:(ftag rtag) ~c:l g1)] g
       in 
-      Commands.prove ~scp:scp rhs (proof (fnum 1))
+      Commands.prove ctxt rhs (proof (fnum 1))
 
   (** [conjuncts scp thm] break theorem [thm] into the list of
       conjuncts.  [conjuncts scp << f1 and f2 and .. and fn>> = [f1;
       f2; ..; fn]] *)
-  let conjuncts scp thm =
+  let conjuncts ctxt thm =
     let is_conj_thm thm = Lterm.is_conj (Logic.term_of thm) in 
     let rec conjuncts_aux scp thm result = 
-      if not(is_conj_thm thm)
+      if not (is_conj_thm thm)
       then thm::result
       else 
 	let lhs = conjunctL scp thm 
 	and rhs = conjunctR scp thm in 
 	let result1=conjuncts_aux scp rhs result
 	in 
-	conjuncts_aux scp lhs result1
+	conjuncts_aux ctxt lhs result1
     in 
-    conjuncts_aux scp thm []
+    conjuncts_aux ctxt thm []
 
 end
 
@@ -610,13 +639,13 @@ let cut_back_tac = Booltacs.cut_back_tac
 
 (*** Equality ***)
 
-let equals_tac ?f goal =
+let equals_tac ctxt ?f goal =
   let thm = 
-    try Thms.equals_iff_thm()
+    try Thms.equals_iff_thm ctxt
     with Not_found -> 
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in 
-  let act_tac x g = once_rewrite_tac [thm] ~f:x g in 
+  let act_tac x g = once_rewrite_tac ctxt [thm] ~f:x g in 
   let main_tac gl =
     match f with
       | Some x -> act_tac x goal
@@ -647,7 +676,8 @@ let induct_on = Boolinduct.induct_on
 
 (*** Initialisation ***)
 
+(*
 let init_boollib() = BoolPP.init()
 let _ = Global.Init.add_init init_boollib
-
+*)
 

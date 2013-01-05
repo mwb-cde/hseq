@@ -30,9 +30,14 @@ open Lib.Ops
 
 (*** Boolean equivalence ***)
 
-let make_iff_def () = defn (Ident.string_of Lterm.iffid)
+let iff_def_id = Lterm.iffid
+let make_iff_def ctxt = defn ctxt (Ident.string_of Lterm.iffid)
+(*
 let iff_def_var = Lib.freeze make_iff_def
 let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
+*)
+let iff_def ctxt = 
+  Context.find_thm ctxt iff_def_id make_iff_def
 
 (** [iffA l sq]: Elminate the equivalance at assumptin [l]
 
@@ -44,18 +49,19 @@ let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
 
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
-let iffA ?a goal = 
+let iffA ctxt0 ?a goal = 
   let af = first_asm_label a is_iff goal in 
   let sqnt = Tactics.sequent goal in 
   let (t, f) = 
     Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
   in 
+  let ctxt = context_of ctxt0 goal in
   if not (is_iff f) 
   then raise (error "iffA")
   else 
     seq 
       [
-        rewrite_tac [iff_def()] ~f:(ftag t);
+        rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t);
         Tactics.conjA ~a:(ftag t);
       ] goal
 
@@ -71,7 +77,8 @@ let iffA ?a goal =
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 **)
 
-let iffC ?c goal = 
+let iffC ctxt0 ?c goal = 
+  let ctxt = context_of ctxt0 goal in
   let cf = first_concl_label c is_iff goal in 
   let sqnt=sequent goal in 
   let (t, f) =
@@ -82,7 +89,7 @@ let iffC ?c goal =
   else 
     seq 
       [
-        rewrite_tac [iff_def()] ~f:(ftag t);
+        rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t);
         Tactics.conjC ~c:(ftag t);
       ] goal
 
@@ -97,7 +104,8 @@ let iffC ?c goal =
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 **)
-let iffE ?c goal = 
+let iffE ctxt0 ?c goal = 
+  let ctxt = context_of ctxt0 goal in
   let sqnt = sequent goal
   and cf = first_concl_label c is_iff goal 
   in
@@ -108,7 +116,7 @@ let iffE ?c goal =
   then raise (error "iffE")
   else 
     let tac g =
-      (rewrite_tac [iff_def()] ~f:(ftag t) ++
+      (rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t) ++
         (?> fun inf1 ->
 	  Tactics.conjC ~c:(ftag t) ++
 	    Tactics.implC ~c:(ftag t) ++
@@ -122,28 +130,28 @@ let iffE ?c goal =
 
 (*** Splitting formulas ***)
 
-let split_asm_rules = 
+let split_asm_rules ctxt = 
   [
-    (fun l -> falseA ~a:l); 
+    (fun l -> falseA ctxt ~a:l); 
     (fun l -> Tactics.disjA ~a:l); 
     (fun  l -> Tactics.implA ~a:l)
   ]
 
-let split_concl_rules =
+let split_concl_rules _ =
   [
     (fun l -> Tactics.trueC ~c:l); 
     (fun l -> Tactics.conjC ~c:l)
   ]
 
-let split_asms_tac lst = 
-  asm_elim_rules_tac (split_asm_rules, []) lst
+let split_asms_tac ctxt lst = 
+  asm_elim_rules_tac (split_asm_rules ctxt, []) lst
 
-let split_concls_tac lst = 
-  concl_elim_rules_tac ([], split_concl_rules) lst
+let split_concls_tac ctxt lst = 
+  concl_elim_rules_tac ([], split_concl_rules ctxt) lst
 
-let splitter_tac ?f goal =
+let splitter_tac ctxt ?f goal =
   let basic_splitter g = 
-    elim_rules_tac (split_asm_rules, split_concl_rules) g
+    elim_rules_tac (split_asm_rules ctxt, split_concl_rules ctxt) g
   in 
   apply_elim_tac basic_splitter ?f goal
 
@@ -151,15 +159,15 @@ let split_tac = splitter_tac
 
 (*** Flattening formulas. ***)
 
-let flatter_asm_rules =
+let flatter_asm_rules ctxt =
   [
-    (fun l -> falseA ~a:l);
+    (fun l -> falseA ctxt ~a:l);
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.existA ~a:l)
   ]
 
-let flatter_concl_rules =
+let flatter_concl_rules _ =
   [
     (fun l -> Tactics.trueC ~c:l);
     (fun l -> Tactics.negC ~c:l);
@@ -168,25 +176,25 @@ let flatter_concl_rules =
     (fun l -> Tactics.allC ~c:l)
   ]
 
-let flatter_asms_tac lst g = 
-  asm_elim_rules_tac (flatter_asm_rules, []) lst g
+let flatter_asms_tac ctxt lst g = 
+  asm_elim_rules_tac (flatter_asm_rules ctxt, []) lst g
 
-let flatter_concls_tac lst g = 
-  concl_elim_rules_tac ([], flatter_concl_rules) lst g
+let flatter_concls_tac ctxt lst g = 
+  concl_elim_rules_tac ([], flatter_concl_rules ctxt) lst g
 
-let flatter_tac ?f goal =
+let flatter_tac ctxt ?f goal =
   let basic_flatter g  =
-    elim_rules_tac (flatter_asm_rules, flatter_concl_rules) g
+    elim_rules_tac (flatter_asm_rules ctxt, flatter_concl_rules ctxt) g
   in 
   apply_elim_tac basic_flatter ?f goal
 
-let flatten_tac ?f g = flatter_tac ?f:f g
+let flatten_tac ctxt ?f g = flatter_tac ctxt ?f:f g
 
 (*** Scattering formulas ***)
 
-let scatter_asm_rules =
+let scatter_asm_rules ctxt =
   [
-    (fun l -> falseA ~a:l); 
+    (fun l -> falseA ctxt ~a:l); 
 
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.existA ~a:l);
@@ -196,7 +204,7 @@ let scatter_asm_rules =
     (fun l -> Tactics.implA ~a:l)
   ]
 
-let scatter_concl_rules =
+let scatter_concl_rules ctxt =
   [
     (fun l -> Tactics.trueC ~c:l);
 
@@ -206,21 +214,21 @@ let scatter_concl_rules =
     (fun l -> Tactics.disjC ~c:l);
     (fun l -> Tactics.conjC ~c:l);
     (fun l -> Tactics.implC ~c:l);
-    (fun l -> iffE ~c:l)
+    (fun l -> iffE ctxt ~c:l)
   ]
 
-let scatter_tac ?f goal =
+let scatter_tac ctxt ?f goal =
   let tac g =
-    elim_rules_tac (scatter_asm_rules, scatter_concl_rules) g
+    elim_rules_tac (scatter_asm_rules ctxt, scatter_concl_rules ctxt) g
   in 
   apply_elim_tac tac ?f goal
 
 
 (*** Scattering, solving formulas ***)
 
-let blast_asm_rules =
+let blast_asm_rules ctxt =
   [
-    (fun l -> falseA ~a:l); 
+    (fun l -> falseA ctxt ~a:l); 
 
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.conjA ~a:l);
@@ -232,7 +240,7 @@ let blast_asm_rules =
     (fun l -> basic ~a:l ?c:None)
   ]
 
-let blast_concl_rules =
+let blast_concl_rules ctxt =
   [
     (fun l -> Tactics.trueC ~c:l);
 
@@ -243,14 +251,14 @@ let blast_concl_rules =
 
     (fun l -> Tactics.conjC ~c:l);
 
-    (fun l -> iffE ~c:l);
+    (fun l -> iffE ctxt ~c:l);
 
     (fun l -> basic ?a:None ~c:l)
   ]
 
-let blast_tac ?f goal =
+let blast_tac ctxt ?f goal =
   let tac g =
-    elim_rules_tac (blast_asm_rules, blast_concl_rules) g
+    elim_rules_tac (blast_asm_rules ctxt, blast_concl_rules ctxt) g
   in 
   apply_elim_tac tac ?f goal
 
@@ -271,15 +279,21 @@ let blast_tac ?f goal =
 
     info: [goals = [g1; g2], aforms=[l], cforms=[l], terms = []]
 *)
-let make_cases_tac_thm () = 
-  Commands.get_or_prove "Bool.cases_thm"
-  << !P: (not P) or P >> (allC ++ disjC ++ negC ++ basic)
+let cases_thm_id = Ident.mk_long "Bool" "cases_thm"
+let make_cases_tac_thm ctxt = 
+  Commands.get_or_prove ctxt (Ident.string_of cases_thm_id)
+  << !P: (not P) or P >> 
+    (allC ++ disjC ++ negC ++ basic)
 
+(*
 let cases_thm_var = Lib.freeze make_cases_tac_thm
 let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
+*)
+let cases_thm ctxt = Context.find_thm ctxt cases_thm_id make_cases_tac_thm
 
-let cases_tac (t:Basic.term) = 
-  let thm = cases_thm() in
+let cases_tac ctxt0 (t:Basic.term) goal = 
+  let ctxt = context_of ctxt0 goal in
+  let thm = cases_thm ctxt in
   seq 
     [
       cut thm;
@@ -304,10 +318,11 @@ let cases_tac (t:Basic.term) =
 	      g1);
 	  skip
         ]
-    ]
+    ] goal
 
-let show_tac (trm: Basic.term) tac = 
-  let thm = cases_thm() in 
+let show_tac ctxt0 (trm: Basic.term) tac goal = 
+  let ctxt = context_of ctxt0 goal in 
+  let thm = cases_thm ctxt in 
   seq 
     [
       cut thm;
@@ -329,7 +344,7 @@ let show_tac (trm: Basic.term) tac =
 	    in 
             set_changes_tac (Changes.make [gl_tag] [asm_tag] [] []) g1)
         ]
-    ]
+    ] goal
 
 let show = show_tac
 
@@ -348,10 +363,11 @@ let disj_splitter_tac ?f goal =
   apply_elim_tac tac ?f goal
     
 
-let cases_of ?thm t goal =
+let cases_of ctxt0 ?thm t goal =
+  let ctxt = context_of ctxt0 goal in
   let scp = Tactics.scope_of goal
   and tyenv = Tactics.typenv_of goal in 
-  let trm = Lterm.set_names scp t in 
+  let trm = Lterm.set_names scp t in  
   let case_thm = 
     match thm with
       | Some x -> x
@@ -361,11 +377,10 @@ let cases_of ?thm t goal =
 	  let ty = Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
 	  in
 	  let (th, id) = Ident.dest (get_type_name ty) in 
-	  let thm_name = id^"_cases" 
-          in 
-	  try Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
+	  let thm_name = id^"_cases" in 
+	  try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
 	  with _ ->
-	    try Commands.thm thm_name
+	    try Commands.thm ctxt thm_name
 	    with _ -> failwith ("Can't find cases theorem "^thm_name)
         end
   in 

@@ -2011,7 +2011,7 @@ struct
     simple_sqnt_apply (nameC0 name l) g
 end
 
-type conv = Scope.t -> Basic.term -> thm
+type conv = Basic.term -> thm
 
 module Conv =
 struct

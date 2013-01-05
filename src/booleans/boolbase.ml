@@ -26,14 +26,19 @@ open Lib.Ops
 
 (*** Basic Tactics ***)
 
-let make_false_def () = thm (Lterm.base_thy ^"."^"false_def")
-let false_def_var = Lib.freeze make_false_def
-let false_def () = Lib.thaw ~fresh:fresh_thm false_def_var
+let false_id = Ident.mk_long Lterm.base_thy "false_def"
+let make_false_def ctxt = thm ctxt (Lterm.base_thy ^ "false_def")
+(*
+let false_def_var ctxt = Lib.freeze (make_false_def ctxt)
+let false_def ctxt = Lib.thaw ~fresh:fresh_thm (false_def_var ctxt)
+*)
+let false_def ctxt = 
+  Context.find_thm ctxt false_id make_false_def
 
-let falseA ?a goal =
+let falseA ctxt ?a goal =
   let af = first_asm_label a Formula.is_false goal in 
   let th =
-    try false_def()
+    try false_def ctxt
     with Not_found -> 
       raise (Report.error 
 	       ("Tactics.Rewriter.falseA: "
@@ -56,61 +61,70 @@ let falseA ?a goal =
 	  ] g)
     ] goal
 
-let trivial ?f g =  
-  try (trueC ?c:f // falseA ?a:f) g
+let trivial ctxt ?f g =  
+  try (trueC ?c:f // falseA ctxt ?a:f) g
   with _ -> raise (error "trivial")
 
-let cut_thm ?inst str = cut ?inst (thm str)
+let cut_thm ctxt ?inst str = cut ?inst (thm ctxt str)
 
 (*** Basic equality reasoning ***)
 
-let make_eq_refl_thm () = 
-  try thm (Ident.string_of (Ident.mk_long Lterm.base_thy "eq_refl"))
+let eq_refl_thm_id = Ident.mk_long Lterm.base_thy "eq_refl"
+let make_eq_refl_thm ctxt = 
+  try thm ctxt (Ident.string_of eq_refl_thm_id)
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_eq_refl_thm:"
 	      ^"Can't find needed axiom eq_refl: |- !x: (x = x)"))
       
+(*
 let eq_refl_thm_var = Lib.freeze make_eq_refl_thm
 let eq_refl_thm () =  Lib.thaw ~fresh:fresh_thm eq_refl_thm_var
+*)
+let eq_refl_thm  = make_eq_refl_thm
 
-let make_bool_cases_thm () = 
-  try thm (Ident.string_of (Ident.mk_long Lterm.base_thy "bool_cases"))
+let bool_cases_id = Ident.mk_long Lterm.base_thy "bool_cases"
+let make_bool_cases_thm ctxt = 
+  try thm ctxt (Ident.string_of bool_cases_id)
   with Not_found ->
     raise (error 
 	     ("Tactics.Rewriter.make_bool_cases_thm:"
 	      ^"Can't find needed axiom bool_cases: "
 	      ^"|- !x: (x = true) | (x=false)"))
 
+(*
 let bool_cases_thm_var = Lib.freeze make_bool_cases_thm
 let bool_cases_thm () = Lib.thaw ~fresh:fresh_thm bool_cases_thm_var
+*)
+let bool_cases_thm = make_bool_cases_thm
 
-let make_eq_sym_thm () = 
-  match Lib.try_app thm "Bool.eq_sym" with
+let eq_sym_thm_id = Ident.mk_long "Bool" "eq_sym"
+let make_eq_sym_thm ctxt = 
+  match Lib.try_app (thm ctxt) (Ident.string_of eq_sym_thm_id) with
     | Some(th) -> th
     | None -> 
       begin
         let eq_l1 =
-	  prove << !x y : (x = y) => (y = x) >>
+	  prove ctxt << !x y : (x = y) => (y = x) >>
 	  ((repeat allC) ++ implC
 	   ++ substC [!~1] (!! 1) 
-	   ++ cut ~inst:[ << _y >> ] (eq_refl_thm ()) ++ basic)
+	   ++ cut ~inst:[ << _y >> ] (eq_refl_thm ctxt ) ++ basic)
         in 
         let eq_l2 =
-	  prove << !x y : ((x => y) & (y => x)) => (x = y)>>
+	  prove ctxt << !x y : ((x => y) & (y => x)) => (x = y)>>
 	  ((repeat allC)
-	   ++ cut ~inst:[ << _x >>] (bool_cases_thm()) ++ disjA
-	   ++ cut ~inst:[ << _y >>] (bool_cases_thm()) ++ disjA
+	   ++ cut ~inst:[ << _x >>] (bool_cases_thm ctxt) ++ disjA
+	   ++ cut ~inst:[ << _y >>] (bool_cases_thm ctxt) ++ disjA
 	   ++ substC [ !~ 1; !~ 2] (!! 1) ++ implC
 	   --
 	     [
-	       cut ~inst:[ << true >> ] (eq_refl_thm()) ++ basic ;
-	       conjA ++ implA ++ trivial;
-	       conjA ++ implA ++ implA ++ trivial;
-	       cut ~inst:[ << false >> ] (eq_refl_thm()) ++ basic
+	       cut ~inst:[ << true >> ] (eq_refl_thm ctxt) ++ basic ;
+	       conjA ++ implA ++ (trivial ctxt);
+	       conjA ++ implA ++ implA ++ (trivial ctxt);
+	       cut ~inst:[ << false >> ] (eq_refl_thm ctxt) ++ basic
 	     ])
         in 
-        prove << !x y : (x = y) = (y = x)>>
+        prove ctxt << !x y : (x = y) = (y = x)>>
             ((repeat allC)
 	     ++ cut ~inst:[ << _x = _y >> ; << _y = _x >>] eq_l2
 	     ++ implA 
@@ -126,32 +140,37 @@ let make_eq_sym_thm () =
 	       ])
       end
 
+(*
 let eq_sym_thm_var = Lib.freeze make_eq_sym_thm
 let eq_sym_thm () = Lib.thaw ~fresh:fresh_thm eq_sym_thm_var
+*)
+let eq_sym_thm ctxt = 
+  Context.find_thm ctxt eq_sym_thm_id make_eq_sym_thm
 
-let eq_sym_rule scp thm= 
+let eq_sym_rule ctxt thm = 
+  let scp = Context.scope ctxt in
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let term = Logic.term_of thm in 
   let plan = 
-    Tactics.mk_thm_plan scp ~ctrl:ctrl [ Logic.RRThm (eq_sym_thm()) ] term
+    Tactics.mk_thm_plan scp ~ctrl:ctrl [ Logic.RRThm (eq_sym_thm ctxt) ] term
   in 
   Tactics.pure_rewrite_rule plan scp thm
 
-let eq_symA a goal =
+let eq_symA ctxt a goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (atag, form) = get_tagged_asm a goal in 
   let term = Formula.term_of form in 
   let plan = 
-    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
+    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm ctxt) ] term
   in 
   Tactics.pure_rewriteA plan (ftag atag) goal
 
-let eq_symC c goal =
+let eq_symC ctxt c goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (ctag, form) = (get_tagged_concl c goal) in 
   let term = Formula.term_of form in 
   let plan = 
-    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm()) ] term
+    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm ctxt) ] term
   in 
   Tactics.pure_rewriteC plan (ftag ctag) goal
     
@@ -159,9 +178,9 @@ let eq_sym_tac f goal =
   try eq_symA f goal
   with Not_found -> eq_symC f goal
 
-let eq_tac ?c goal = 
+let eq_tac ctxt ?c goal = 
   let th = 
-    try thm (Lterm.base_thy ^ ".eq_refl")
+    try thm ctxt (Lterm.base_thy ^ ".eq_refl")
     with Not_found -> 
       (raise (error ("eq_tac: Can't find required lemma "
 		     ^Lterm.base_thy^".eq_refl")))

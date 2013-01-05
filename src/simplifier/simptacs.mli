@@ -38,14 +38,14 @@ val add_rule_data:
 (** {7 Adding assumptions and conclusions} *)
 
 val add_asms_tac:
-  Data.t -> Tag.t list
+  Context.t -> Data.t -> Tag.t list
   -> (Data.t) Tactics.data_tactic
 (** [add_asms_tac data tags g]: Prepare the assumptions in [tags] for
     use as simp-rules. Add them to [data].
 *)
 
 val add_concls_tac:
-  Data.t -> Tag.t list
+  Context.t -> Data.t -> Tag.t list
   -> (Data.t) Tactics.data_tactic
 (** [add_concls_tac data tags g]: Prepare the conclusions in [tags]
     for use as simp-rules. Add them to [data].
@@ -54,7 +54,7 @@ val add_concls_tac:
 (** {5 Simplification engines} *)
 
 val simp_engine_tac:
-  Data.t -> Tag.t 
+  Context.t -> Data.t -> Tag.t 
   -> (Data.t) Tactics.data_tactic
 (** The engine for [simp_tac]. 
 
@@ -70,14 +70,14 @@ val simp_engine_tac:
 *)
 
 val simpA_engine_tac:
-  Data.t -> Logic.label 
+  Context.t -> Data.t -> Logic.label 
   -> (Data.t) Tactics.data_tactic
 (** [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
     returning the updated data in [ret]. Sets [chng] to true on
     success. Doesn't clean-up.  *)
 
 val simpC_engine_tac:
-  Data.t -> Logic.label 
+  Context.t -> Data.t -> Logic.label 
   -> (Data.t) Tactics.data_tactic
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
     returning the updated data in [ret]. Sets [chng] to true on
@@ -87,8 +87,7 @@ val simpC_engine_tac:
 (** {5 Simplifying assumptions} *)
 
 val simpA0_tac:
-  Data.t 
-  -> ?a:Logic.label
+  Context.t -> Data.t -> ?a:Logic.label
   -> (Data.t) Tactics.data_tactic
 (** [simpA1_tac cntrl ret ?a goal]: Simplify assumptions
 
@@ -101,7 +100,7 @@ val simpA0_tac:
 *)
 
 val simpA_tac:
-  Data.t -> ?a:Logic.label 
+  Context.t -> Data.t -> ?a:Logic.label 
   -> Tactics.tactic
 (** [simpA_tac cntrl ?a goal]: Simplify assumptions
 
@@ -117,8 +116,7 @@ val simpA_tac:
 (** {5 Simplifying conclusions} *)
 
 val simpC0_tac:
-  Data.t 
-  -> ?c:Logic.label
+  Context.t -> Data.t -> ?c:Logic.label
   -> (Data.t) Tactics.data_tactic
 (** [simpC1_tac cntrl ret ?c goal]: Simplify conclusions.
 
@@ -131,7 +129,7 @@ val simpC0_tac:
 *)
 
 val simpC_tac:
-  Data.t -> ?c:Logic.label
+  Context.t -> Data.t -> ?c:Logic.label
   -> Tactics.tactic
 (** [simpC_tac cntrl ?c goal]: Simplify conclusions.
 
@@ -147,8 +145,7 @@ val simpC_tac:
 (** {5 Simplifying subgoals} *)
 
 val full_simp0_tac:
-  Data.t 
-  -> (Data.t)Tactics.data_tactic
+  Context.t -> Data.t -> (Data.t)Tactics.data_tactic
 (** [full_simp0_tac cntrl ret goal]: Simplify subgoal
 
     {ul
@@ -161,7 +158,7 @@ val full_simp0_tac:
 *)
   
 val full_simp_tac:
-  Data.t -> Tactics.tactic
+  Context.t -> Data.t -> Tactics.tactic
 (** [full_simp_tac cntrl ret goal]: Simplify subgoal
 
     {ul

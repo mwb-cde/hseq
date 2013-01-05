@@ -21,58 +21,65 @@
 
 (** Basic boolean tactics *)
 
-val false_def: unit -> Logic.thm
+val false_def: Context.t -> Logic.thm
 (** Get the definition of [false]. *)
 
-val falseA: ?a:Logic.label -> Tactics.tactic
+val falseA: Context.t -> ?a:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].
 *)
 
-val trivial: ?f:Logic.label -> Tactics.tactic
+val trivial: Context.t -> ?f:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].
 *)
 
 val cut_thm: 
-  ?inst:Basic.term list -> string -> Tactics.tactic
+  Context.t -> ?inst:Basic.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
 (** {7 Basic equality reasoning} *)
 
-val make_bool_cases_thm: unit -> Logic.thm
+val bool_cases_id: Ident.t
+val make_bool_cases_thm: Context.t -> Logic.thm
+(*
 val bool_cases_thm_var: Logic.thm Lib.deferred
-val bool_cases_thm: unit -> Logic.thm
+*)
+val bool_cases_thm: Context.t -> Logic.thm
 (** [bool_cases_thm]: [! (x:bool): (x = true) | (x = false)]. *)
 
-val make_eq_refl_thm: unit -> Logic.thm
+val eq_refl_thm_id: Ident.t
+val make_eq_refl_thm: Context.t -> Logic.thm
+(*
 val eq_refl_thm_var: Logic.thm Lib.deferred
-val eq_refl_thm: unit -> Logic.thm
+*)
+val eq_refl_thm: Context.t -> Logic.thm
 (** [eql_refl]: [!x: (x = x)]. *)
 
-val make_eq_sym_thm: unit -> Logic.thm
-val eq_sym_thm_var: Logic.thm Lib.deferred
-val eq_sym_thm: unit -> Logic.thm
+val eq_sym_thm_id: Ident.t
+val make_eq_sym_thm: Context.t -> Logic.thm
+(* val eq_sym_thm_var: Logic.thm Lib.deferred *)
+val eq_sym_thm: Context.t -> Logic.thm
 (** [eql_sym]: [!x y: (x = y) = (y = x) ]. *)
 
-val eq_sym_rule: Scope.t -> Logic.thm -> Logic.thm
+val eq_sym_rule: Context.t -> Logic.thm -> Logic.thm
 (** [eq_sym_rule scp thm]: If the body of [thm] is [ |- x = y], return
     [ |- y=x ].
 *)
 
-val eq_symA: Logic.label -> Tactics.tactic
+val eq_symA: Context.t -> Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
 *)
 
-val eq_symC: Logic.label -> Tactics.tactic
+val eq_symC: Context.t -> Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
 *)
 
-val eq_sym_tac: Logic.label -> Tactics.tactic
+val eq_sym_tac: Context.t -> Logic.label -> Tactics.tactic
 (** [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try
     [eq_symC f].
 *)
 
-val eq_tac: ?c:Logic.label -> Tactics.tactic
+val eq_tac: Context.t -> ?c:Logic.label -> Tactics.tactic
 (** Prove goals of the form \[A|- x = x{_ c}, C\].
 *)
 

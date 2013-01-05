@@ -1220,12 +1220,15 @@ end
     conversions which are generally useful and which would be too
     inefficient if written in terms of tactics.
 *)
+(*
 type conv = Scope.t -> Basic.term -> thm
+*)
+type conv = Basic.term -> thm
 
 module Conv:
 sig
 
-  val beta_conv: conv
+  val beta_conv: Scope.t -> conv
   (** [beta_conv scp term]: Apply beta reduction to [term].
 
       Returns |- ((%x: F) y) = F' 
@@ -1235,7 +1238,7 @@ sig
       level.
   *)
 
-  val rewrite_conv: (thm) Rewrite.plan -> conv
+  val rewrite_conv: (thm) Rewrite.plan -> Scope.t -> conv
 (** [rewrite_conv plan scp trm]: rewrite term [trm] according to
     [plan] in scope [scp].
 

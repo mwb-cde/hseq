@@ -94,10 +94,10 @@ struct
       thydb_f: Thydb.thydb;
 
       (** Information needed for the theory database loader. *)
-      loader_data_f: Thydb.Loader.data
+      loader_data_f: Thydb.Loader.data;
     }
 
-  let empty_thy_t () = 
+  let empty_thy_t () =
     {
       base_name_f = None;
       thydb_f = Thydb.empty();
@@ -133,6 +133,9 @@ struct
         (** A list of functions to invoke on a theory when it is added
             to the data-base. *)
         load_functions_f: (t -> Theory.contents -> t) list;
+
+        (** Theorems caches *)
+        thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
       }
 
   let empty_scope_t () = 
@@ -145,6 +148,7 @@ struct
       scope_f = empty_scope_t();
       pp_f = empty_pp_t();
       load_functions_f = [];
+      thm_cache = Hashtbl.create(13);
     }
 
   (** {5 Accessor Functions} *)
@@ -234,7 +238,7 @@ struct
 
   (** Scope handling *)
 
-  let set_scope scp t = 
+  let set_scope t scp = 
     { t with scope_f = scp}
 
   let scope t = t.scope_f
@@ -247,8 +251,41 @@ struct
   let ppinfo t = !(t.pp_f.info_f)
 
 
-(***
-    **)
+(** Theorem cache *)
+  let cache_thm t id thm = 
+    if not (Hashtbl.mem t.thm_cache id)
+    then
+      (Hashtbl.add t.thm_cache id thm; t)
+    else t
+
+  let remove_cached_thm t id = 
+    if Hashtbl.mem t.thm_cache id
+    then
+      (Hashtbl.remove t.thm_cache id; t)
+    else t
+
+  let lookup_thm t id = 
+    let thm = Hashtbl.find t.thm_cache id
+    in 
+    if Logic.is_fresh (scope t) thm
+    then
+      thm
+    else
+      begin
+        ignore(remove_cached_thm t id);
+        raise Not_found
+      end
+        
+  let find_thm t id fn =  
+   try lookup_thm t id
+    with Not_found ->
+      begin
+        let thm = fn t in 
+        let _ = cache_thm t id thm
+        in 
+        thm
+      end
+
 (***
 end
 **)

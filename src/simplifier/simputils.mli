@@ -68,7 +68,7 @@ val fresh_thm: Logic.thm -> bool
     scope.
 *)
 
-val simp_beta_conv: Logic.conv
+val simp_beta_conv: Scope.t -> Logic.conv
 (** [simp_beta_conv scp t]: Apply {!Logic.Conv.beta_conv} to [t] if
     [t] is of the form << (% x: F) a >>.  Raise [Failure] if [t] is not
     an application.

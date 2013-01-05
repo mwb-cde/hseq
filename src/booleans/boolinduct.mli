@@ -24,7 +24,7 @@
 (** {7 Utility tactics} *)
 
 val mini_scatter_tac:
-  Logic.label -> Tactics.tactic
+  Context.t -> Logic.label -> Tactics.tactic
 (** [mini_scatter_tac c goal]: Mini scatter tactic for
     induction.
 
@@ -45,7 +45,7 @@ val mini_mp_tac:
 (** {5 The induction tactic [induct_tac]} *)
 
 val asm_induct_tac:
-  Logic.label -> Logic.label -> Tactics.tactic
+  Context.t -> Logic.label -> Logic.label -> Tactics.tactic
 (** [asm_induct_tac a c]: Apply the induction scheme of
     assumption [a] to conclusion [c].
 
@@ -54,7 +54,7 @@ val asm_induct_tac:
 *)
 
 val induct_tac: 
-  ?c:Logic.label -> Logic.thm -> Tactics.tactic
+  Context.t -> ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
 
@@ -77,7 +77,7 @@ val induct_tac:
 (** {5 The induction tactic [induct_on]} *)
 
 val induct_on: 
-  ?thm:Logic.thm -> ?c:Logic.label
+  Context.t -> ?thm:Logic.thm -> ?c:Logic.label
   -> string -> Tactics.tactic
 (** [induct_on ?thm ?c n]: Apply induction to the first
     universally quantified variable named [n] in conclusion [c] (or the
@@ -176,4 +176,5 @@ val induct_on_solve_rh_tac:
 *)
 
 
-val basic_induct_tac: Logic.label -> Logic.thm -> Tactics.tactic
+val basic_induct_tac: 
+  Context.t -> Logic.label -> Logic.thm -> Tactics.tactic

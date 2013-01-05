@@ -120,6 +120,9 @@ val get_concl: Logic.label -> Logic.node -> Formula.t
 val get_form: Logic.label -> Logic.node -> Formula.t
 (** Get a formula by label. First tries [get_concl] then [get_asm]. *)
 
+val context_of: Context.t -> Logic.node -> Context.t
+(** Set the scope of context to the scope of a node. *)
+
 (** {7 Branches} *)
 
 val branch_tyenv: Logic.branch -> Gtypes.substitution
@@ -797,7 +800,7 @@ val rewrite_control:
 
 val conv_rule:
   Scope.t ->
-  (Scope.t -> Basic.term -> Logic.thm) -> Logic.thm -> Logic.thm
+  (Scope.t -> Logic.conv) -> Logic.thm -> Logic.thm
 (** [conv_rule scp conv thm]: Apply conversion [conv] to theorem [thm]
 *)
 
@@ -845,7 +848,7 @@ val pure_rewrite_tac:
     [pure_rewriteA].
 *)
   
-val pure_rewrite_conv: (Logic.thm) plan -> Logic.conv
+val pure_rewrite_conv: (Logic.thm) plan -> Scope.t -> Logic.conv
 (** [pure_rewrite_conv plan scp trm]: rewrite term [trm] according to
     [plan] in scope [scp]. This is an interface to
     {!Logic.Conv.rewrite_conv}.

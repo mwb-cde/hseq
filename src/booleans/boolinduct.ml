@@ -36,8 +36,8 @@ open Rewritelib
     Scatter conclusion [c], using [falseA], [conjA], [existA],
     [trueC], [implC] and [allC]
 *)
-let mini_scatter_tac c goal =
-  let asm_rules = [ (fun l -> falseA ~a:l) ] in 
+let mini_scatter_tac ctxt c goal =
+  let asm_rules = [ (fun l -> falseA ctxt ~a:l) ] in 
   let concl_rules =
     [
       (fun l -> Tactics.trueC ~c:l);
@@ -45,7 +45,7 @@ let mini_scatter_tac c goal =
     ]
   in 
   let main_tac g = elim_rules_tac (asm_rules, concl_rules) g
-  in 
+  in
   apply_elim_tac main_tac ~f:c goal
 
 (** [mini_mp_tac asm1 asm2 goal]: Apply modus ponens to [asm1 =
@@ -243,7 +243,8 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
 	  ] g1)
     ] g
     
-let asm_induct_tac alabel clabel goal = 
+let asm_induct_tac ctxt0 alabel clabel goal = 
+  let ctxt = context_of ctxt0 goal in
   let typenv = typenv_of goal
   and scp = scope_of goal
   in 
@@ -287,7 +288,7 @@ let asm_induct_tac alabel clabel goal =
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
       subgoal.  *)
-  let split_lh_tac c g = (mini_scatter_tac c // skip) g
+  let split_lh_tac c g = (mini_scatter_tac ctxt c // skip) g
   in 
   (** the Main tactic *)
   let main_tac g = 
@@ -326,7 +327,7 @@ let asm_induct_tac alabel clabel goal =
 
     See {!Induct.induct_tac}.
 *)
-let basic_induct_tac c thm goal =
+let basic_induct_tac ctxt c thm goal =
   let main_tac c_lbl g =
     seq 
       [
@@ -334,7 +335,7 @@ let basic_induct_tac c thm goal =
 	(?> fun tinfo g1 ->
 	  let a_tag = get_one ~msg:"basic_induct_tac" (Info.aformulas tinfo)
 	  in 
-	  asm_induct_tac (ftag a_tag) c_lbl g1)
+	  asm_induct_tac ctxt (ftag a_tag) c_lbl g1)
       ] g
   in 
   main_tac c goal
@@ -357,15 +358,15 @@ let basic_induct_tac c thm goal =
     cformulas=the new conclusions (in arbitray order).
     subgoals=the new sub-goals (in arbitray order).
 *)
-let induct_tac ?c thm goal =
+let induct_tac ctxt ?c thm goal =
   let one_tac x g = 
-    try basic_induct_tac x thm g
+    try basic_induct_tac ctxt x thm g
     with err -> 
       raise (add_error "induct_tac: applying basic_induct_tac failed " err)
   in 
   let all_tac targets g = 
     try map_first 
-          (fun l -> basic_induct_tac l thm)
+          (fun l -> basic_induct_tac ctxt l thm)
           targets goal
     with err -> 
       raise (error ("induct_tac: failed to apply induction to"
@@ -411,7 +412,7 @@ let get_binder qnt n trm =
     [bool_induct] and if [trm] has type [('a, 'b)PAIR], the induction
     theorem is [PAIR_induct].
 *)
-let induct_thm ?thm scp tyenv trm = 
+let induct_thm ctxt ?thm scp tyenv trm = 
   match thm with
     | Some x -> x
     | None ->
@@ -424,9 +425,9 @@ let induct_thm ?thm scp tyenv trm =
         let (th, id) = Ident.dest (get_type_name ty) in 
         let thm_name = id^"_induct"
         in 
-        try Commands.thm (Ident.string_of (Ident.mk_long th thm_name))
+        try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
         with _ ->
-	  (try Commands.thm thm_name
+	  (try Commands.thm ctxt thm_name
 	   with _ -> failwith ("Can't find cases theorem "^thm_name))
       end
 
@@ -531,7 +532,8 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
     [n] does not need to be the outermost quantifier.
 *)
 
-let basic_induct_on ?thm name clabel goal = 
+let basic_induct_on ctxt0 ?thm name clabel goal = 
+  let ctxt = context_of ctxt0 goal in
   let typenv = typenv_of goal
   and scp = scope_of goal
   in 
@@ -550,7 +552,7 @@ let basic_induct_on ?thm name clabel goal =
   in 
   let nterm = Term.mk_bound nbinder in
   (** Get the theorem *)
-  let thm = induct_thm ?thm scp typenv nterm in 
+  let thm = induct_thm ctxt ?thm scp typenv nterm in 
   let thm_term = Logic.term_of thm in 
   (** Split the induction theorem *)
   let (thm_vars, thm_asm, thm_concl) = dest_qnt_implies thm_term in
@@ -582,7 +584,7 @@ let basic_induct_on ?thm name clabel goal =
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
       subgoal.  *)
-  let split_lh_tac c g = (mini_scatter_tac c // skip) g
+  let split_lh_tac c g = (mini_scatter_tac ctxt c // skip) g
   in 
   (** the Main tactic *)
   let main_tac g = 
@@ -614,9 +616,9 @@ let basic_induct_on ?thm name clabel goal =
   in 
   main_tac goal
 
-let induct_on ?thm ?c n goal =
+let induct_on ctxt ?thm ?c n goal =
   match c with
-    | Some(x) -> basic_induct_on ?thm n x goal
+    | Some(x) -> basic_induct_on ctxt ?thm n x goal
     | _ -> 
       begin
         let targets =
@@ -624,7 +626,7 @@ let induct_on ?thm ?c n goal =
         in 
         let main_tac g = 
 	  map_first 
-            (fun l -> basic_induct_on ?thm n l)
+            (fun l -> basic_induct_on ctxt ?thm n l)
             targets g
         in 
         try main_tac goal
