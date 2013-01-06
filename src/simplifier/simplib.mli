@@ -19,10 +19,37 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** The simplifier libray.
+(** The simplifier libray. *)
+
+(** {5 Simplification sets} *)
+
+val empty_simp: unit -> Simpset.simpset
+(** [empty_simp()]: Clear the standard simpset.
 *)
 
-(** {5 The standard simplification set} *)
+val add_simps: 
+  Context.t -> Scope.t -> Simpset.simpset -> Logic.thm list
+  -> Simpset.simpset
+(** [add_simps thms]: Add [thms] to the standard simpset. *)
+
+val add_simp: 
+  Context.t -> Scope.t -> Simpset.simpset -> Logic.thm
+  -> Simpset.simpset
+(** [add_simp thm]: Add [thm] to the standard simpset.
+*)
+
+val add_conv: 
+  Simpset.simpset -> Basic.term list 
+  -> (Context.t -> Logic.conv) -> Simpset.simpset
+(** [add_conv trms conv]: Add conversion [conv] to the standard
+    simpset, with [trms] as the representative keys.  Example:
+    [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies
+    [beta_conv] on all terms matching [(%y: A) x].
+*)
+
+(** Global state *)
+module User :  
+sig
 
 val std_ss: unit -> Simpset.simpset 
 (** [std_ss()]: The standard simpset
@@ -32,31 +59,15 @@ val set_std_ss: Simpset.simpset -> unit
 (** [set_std_ss set]: Set the standard simpset to [set]
 *)
 
-val empty_simp: unit -> unit
-(** [empty_simp()]: Clear the standard simpset.
-*)
-
-val add_simps: Logic.thm list -> unit
-(** [add_simps thms]: Add [thms] to the standard simpset.
-*)
-
-val add_simp: Logic.thm -> unit
-(** [add_simp thm]: Add [thm] to the standard simpset.
-*)
-
-val add_conv: Basic.term list -> Logic.conv -> unit
-(** [add_conv trms conv]: Add conversion [conv] to the standard
-    simpset, with [trms] as the representative keys.  Example:
-    [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies
-    [beta_conv] on all terms matching [(%y: A) x].
-*)
+end
 
 (** {5 User level simplification tactics} *)
 
 val simpA_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
+  -> Context.t
+  -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?a:Logic.label
   -> Logic.thm list
@@ -93,7 +104,10 @@ val simpA_tac:
     @raise No_change If no change is made.
 *)
 
-val simpA: ?a:Logic.label ->  Tactics.tactic
+val simpA:
+  Context.t -> Simpset.simpset 
+  -> ?a:Logic.label
+  -> Tactics.tactic
 (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
     
     @raise No_change If no change is made.
@@ -102,7 +116,8 @@ val simpA: ?a:Logic.label ->  Tactics.tactic
 val simpC_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
+  -> Context.t
+  -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?c:Logic.label
   -> Logic.thm list
@@ -139,7 +154,9 @@ val simpC_tac:
     @raise No_change If no change is made.
 *)
 
-val simpC: ?c:Logic.label ->  Tactics.tactic
+val simpC: 
+  Context.t -> Simpset.simpset
+  -> ?c:Logic.label ->  Tactics.tactic
 (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
     
     @raise No_change If no change is made.
@@ -148,7 +165,8 @@ val simpC: ?c:Logic.label ->  Tactics.tactic
 val simp_all_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
+  -> Context.t 
+  -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> Logic.thm list
   -> Tactics.tactic
@@ -179,7 +197,7 @@ val simp_all_tac:
     @raise No_change If no change is made.
 *)
 
-val simp_all: Tactics.tactic
+val simp_all: Context.t -> Simpset.simpset -> Tactics.tactic
 (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
     
     @raise No_change If no change is made.
@@ -188,7 +206,8 @@ val simp_all: Tactics.tactic
 val simp_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
+  -> Context.t
+  -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?f:Logic.label
   -> Logic.thm list
@@ -226,7 +245,8 @@ val simp_tac:
 *)
 
 
-val simp: ?f:Logic.label ->  Tactics.tactic
+val simp: 
+  Context.t -> Simpset.simpset -> ?f:Logic.label ->  Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
     
     @raise No_change If no change is made.
@@ -235,6 +255,7 @@ val simp: ?f:Logic.label ->  Tactics.tactic
 
 (** {5 Initialising functions} *)
 
+(**
 val on_load: Theory.contents -> unit
 (** Function to call when a theory is loaded. *)
 
@@ -254,3 +275,4 @@ val print_set: Simpset.simpset -> unit
 val has_property: 'a -> 'a list -> bool
 val thm_is_simp: ('a * Theory.thm_record) -> unit
 val def_is_simp: ('a * Theory.id_record) -> unit
+*)
