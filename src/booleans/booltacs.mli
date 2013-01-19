@@ -23,7 +23,7 @@
 
 (** {5 Boolean equivalence} *)
 
-val iff_def: Context.t -> Logic.thm
+val iff_def: Context.scoped -> Logic.thm
 (** Get the definition of [iff]. *)
 
 val iffA: Context.t -> ?a:Logic.label -> Tactics.tactic
@@ -209,7 +209,7 @@ val blast_tac:
 
 (** {5 Cases} *)
 
-val cases_thm: Context.t -> Logic.thm
+val cases_thm: Context.scoped -> Logic.thm
 (** [cases_thm]: |- !P: (~P) | P *)
 
 val cases_tac: Context.t -> Basic.term -> Tactics.tactic

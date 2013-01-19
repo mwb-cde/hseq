@@ -38,45 +38,45 @@ sig
       theorems have a function [make_n_thm()] which actually
       carries out the proof.  *)
 
-  val false_def: Context.t -> Logic.thm
+  val false_def: Context.scoped -> Logic.thm
   (** The definition of [false]. *)
-  val iff_def: Context.t -> Logic.thm
+  val iff_def: Context.scoped -> Logic.thm
   (** The definition of [iff]. *)
 
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
-  val make_iff_equals_thm: Context.t -> Logic.thm
-  val iff_equals_thm: Context.t -> Logic.thm
+  val make_iff_equals_thm: Context.scoped -> Logic.thm
+  val iff_equals_thm: Context.scoped -> Logic.thm
 
   (** [equals_iff_thm]: |- !x y: (x = y) = (x iff y) *)
-  val equals_iff_thm: Context.t -> Logic.thm
+  val equals_iff_thm: Context.scoped -> Logic.thm
 
 
   (** [bool_eq_thm]: |- !x y: x iff y = ((x => y) and (y=>x)) *)
-  val make_bool_eq_thm: Context.t -> Logic.thm
-  val bool_eq_thm: Context.t -> Logic.thm
+  val make_bool_eq_thm: Context.scoped -> Logic.thm
+  val bool_eq_thm: Context.scoped -> Logic.thm
 
   (** [double_not_thm]: |- ! x: x = (not (not x)) *)
-  val make_double_not_thm: Context.t -> Logic.thm
-  val double_not_thm: Context.t -> Logic.thm
+  val make_double_not_thm: Context.scoped -> Logic.thm
+  val double_not_thm: Context.scoped -> Logic.thm
 
   (** [rule_true_thm]: |- !x: x = (x=true) *)
-  val make_rule_true_thm: Context.t -> Logic.thm
-  val rule_true_thm: Context.t -> Logic.thm
+  val make_rule_true_thm: Context.scoped -> Logic.thm
+  val rule_true_thm: Context.scoped -> Logic.thm
 
   (** rule_false_thm: !x: (not x) = (x=false) *)
-  val make_rule_false_thm: Context.t -> Logic.thm
-  val rule_false_thm: Context.t -> Logic.thm
+  val make_rule_false_thm: Context.scoped -> Logic.thm
+  val rule_false_thm: Context.scoped -> Logic.thm
 
-  val bool_cases_thm: Context.t -> Logic.thm
+  val bool_cases_thm: Context.scoped -> Logic.thm
   (** [bool_cases_thm]: [! (x:bool): (x=true) | (x=false)] *)
 
-  val cases_thm: Context.t -> Logic.thm
+  val cases_thm: Context.scoped -> Logic.thm
   (** [cases_thm]: |- !P: (~P) | P *)
 
-  val eq_refl_thm: Context.t -> Logic.thm
+  val eq_refl_thm: Context.scoped -> Logic.thm
   (** [eql_refl]: [!x: (x = x)] *)
 
-  val eq_sym_thm: Context.t -> Logic.thm
+  val eq_sym_thm: Context.scoped -> Logic.thm
 (** [eql_sym]: [!x y: (x = y) = (y = x)] *)
 
 end
@@ -86,19 +86,19 @@ sig
   (** Functions to construct theorems from other theorems.  *)
 
   val once_rewrite_rule:
-    Context.t -> Logic.thm list -> Logic.thm -> Logic.thm
+    Context.scoped -> Logic.thm list -> Logic.thm -> Logic.thm
   (** [once_rewrite_rule scp rules thm]: Rewrite [thm] with [rules]
       once.  *)
 
-  val conjunctL: Context.t -> Logic.thm -> Logic.thm 
+  val conjunctL: Context.scoped -> Logic.thm -> Logic.thm 
   (** [conjunctL scp thm]: Get the left hand side of conjunct [thm].
       [conjunctL scp << l and r >> = l] *)
 
-  val conjunctR: Context.t -> Logic.thm -> Logic.thm 
+  val conjunctR: Context.scoped -> Logic.thm -> Logic.thm 
   (** [conjunctR scp thm]: Get the right hand side of conjunct [thm].
       [conjunctL scp << l and r >> = r] *)
 
-  val conjuncts: Context.t -> Logic.thm -> Logic.thm list 
+  val conjuncts: Context.scoped -> Logic.thm -> Logic.thm list 
 (** [conjuncts scp thm]: Break theorem [thm] into the list of
     conjuncts.  [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2;
     ..; fn]]
@@ -111,10 +111,10 @@ sig
   (** Conversions on boolean operators.  *)
 
   (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-  val neg_all_conv: Context.t -> Basic.term -> Logic.thm
+  val neg_all_conv: Context.scoped -> Basic.term -> Logic.thm
 
   (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-  val neg_exists_conv: Context.t -> Basic.term -> Logic.thm
+  val neg_exists_conv: Context.scoped -> Basic.term -> Logic.thm
 
 end
 
@@ -136,7 +136,7 @@ val cut_thm:
 
 (** {7 Basic equality reasoning} *)
 
-val eq_sym_rule: Context.t -> Logic.thm -> Logic.thm
+val eq_sym_rule: Context.scoped -> Logic.thm -> Logic.thm
 (** [eq_sym_rule scp thm]: If the body of [thm] is [ |- x = y], return
     [ |- y=x ].
 *)
@@ -146,7 +146,7 @@ val eq_symA: Context.t -> Logic.label -> Tactics.tactic
 *)
 
 val eq_symC: Context.t -> Logic.label -> Tactics.tactic
-(** [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
+(** [eq_symC a]: Rewrite conclusion [c] with [eq_sym_thm] once.
 *)
 
 val eq_sym_tac: Context.t -> Logic.label -> Tactics.tactic
@@ -167,7 +167,7 @@ val eq_tac: Context.t -> ?c:Logic.label -> Tactics.tactic
 *)
 
 val rewrite_conv: 
-  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
+  Context.scoped -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
 (** [rewrite_conv scp ctrl rules trm]: Rewrite term [trm] with
     theorems [rules] in scope [scp].
 
@@ -176,7 +176,7 @@ val rewrite_conv:
 *)
 
 val rewrite_rule:
-  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list 
+  Context.scoped -> ?ctrl:Rewrite.control -> Logic.thm list 
   -> Logic.thm -> Logic.thm
 (** [rewrite_rule scp ctrl rules thm]: Rewrite theorem [thm] with
     theorems [rules] in scope [scp].
@@ -185,7 +185,7 @@ val rewrite_rule:
 *)
 
 val gen_rewrite_tac: 
-  Context.t 
+  Context.t
   -> ?asm:bool
   -> Rewrite.control
   -> ?f:Logic.label 

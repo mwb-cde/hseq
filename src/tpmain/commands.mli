@@ -73,8 +73,18 @@ val read_defn:
 
 (** {5 Theories} *)
 
-val scope: Context.t -> Scope.t
-(** Get the current scope. *)
+val scoped: Context.t -> Scope.t -> Context.scoped
+(** Make a scoped context. *)
+val scope_of: Context.scoped -> Scope.t
+(** Get the scope. *)
+val set_scope: Context.scoped -> Scope.t -> Context.scoped
+(** Set the scope. *)
+
+val context_of: Context.scoped -> Context.t
+(** Get the context. *)
+val set_context: Context.scoped -> Context.t -> Context.scoped
+(** Set the context. *)
+
 
 val theories: Context.t -> Thydb.thydb
 (** Get the theory database. *)
@@ -249,7 +259,7 @@ val axiom:
 *)
 
 val prove: 
-  Context.t -> Basic.term -> Logic.tactic -> Logic.thm
+  Context.scoped -> Basic.term -> Logic.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
@@ -313,7 +323,7 @@ val qed: string -> Logic.thm
 *)
 
 val get_or_prove: 
-  Context.t 
+  Context.scoped 
   -> string -> Basic.term -> Logic.tactic -> Logic.thm
 (** [get_or_prove n trm tacs ()]: Try to find the definition or
     theorem named [n], using {!Commands.thm}. If not found, prove
@@ -325,13 +335,13 @@ val get_or_prove:
 (** {5 Definitions and Declarations} *)
 
 val typedef:
-  Context.t 
+  Context.scoped 
   -> ?pp:(int*fixity*string option) 
   -> ?simp:bool
   -> ?thm:Logic.thm
   -> ?rep:string -> ?abs:string
   -> Defn.Parser.typedef
-  -> (Context.t * Logic.Defns.cdefn)
+  -> (Context.scoped * Logic.Defns.cdefn)
 
 (** Define or declare a type. The exact behaviour of [typedef] depends
     on the form of its argument and is either a declaration, a alias
@@ -388,11 +398,11 @@ val typedef:
 *)
 
 val define: 
-  Context.t 
+  Context.scoped
   -> ?pp: (int * fixity * string option) 
   -> ?simp:bool
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
-  -> (Context.t * Logic.Defns.cdefn)
+  -> (Context.scoped * Logic.Defns.cdefn)
 (**
    [define ?simp term pp]: Define a term. 
 
@@ -414,8 +424,10 @@ val define:
 *)
 
 val declare: 
-  Context.t -> ?pp:(int* fixity* string option) 
-  -> Basic.term -> (Context.t * Ident.t * Basic.gtype)
+  Context.scoped 
+  -> ?pp:(int* fixity* string option) 
+  -> Basic.term 
+  -> (Context.scoped * Ident.t * Basic.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -433,12 +445,12 @@ val declare:
 (** {7 Debugging} *)
 
 val simple_typedef: 
-  Context.t 
+  Context.scoped 
   -> (string * string list * Basic.gtype option) 
-  -> (Context.t * Logic.Defns.cdefn)
+  -> (Context.scoped * Logic.Defns.cdefn)
 val subtypedef: 
-  Context.t 
+  Context.scoped 
   -> (string * string list * Basic.gtype * Basic.term) 
   -> (string option * string option)
   -> ?simp:bool -> Logic.thm 
-  -> (Context.t * Logic.Defns.cdefn)
+  -> (Context.scoped * Logic.Defns.cdefn)

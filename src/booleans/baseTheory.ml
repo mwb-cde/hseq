@@ -27,70 +27,77 @@ open Lib.Ops
 
 let rec swap f = (fun x y -> f y x)
 
-let builder ctxt ?(save=false) () =
+let builder sctxt ?(save=false) () =
   begin
-    let ctxt1 = begin_theory ctxt Lterm.base_thy [] 
+    let ctxt = context_of sctxt in
+    let sctxt1 = set_context sctxt (begin_theory ctxt Lterm.base_thy [])
     in
-
     (** Types *)
-    let (ctxt2, _) = 
-      typedef ctxt1 <:def<: ('a, 'b)FUN >>
+    let (sctxt2, _) = 
+      typedef sctxt1 <:def<: ('a, 'b)FUN >>
         ~pp:(100, infixr, Some("->"))
     in
-    let (ctxt3, _) = typedef ctxt2 <:def<: bool >> in 
-    let (ctxt4, _) = typedef ctxt3 <:def<: ind >>  in
+    let (sctxt3, _) = typedef sctxt2 <:def<: bool >> in 
+    let (sctxt4, _) = typedef sctxt3 <:def<: ind >>  in
 
     (** Terms *)
-    let (ctxt5, _, _) = 
+    let (sctxt5, _, _) = 
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      declare ctxt4
+      declare sctxt4
         (Commands.read_unchecked 
 	   ((Ident.name_of Lterm.notid)^": bool -> bool"))
         ~pp:(prec, fixity, Some "~") 
     in 
-    let ctxt6 = 
+    let sctxt6 = 
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      add_term_pp ctxt5 Lterm.notid prec fixity (Some "not") 
+      set_context sctxt5  
+        (add_term_pp (context_of sctxt5)
+           Lterm.notid prec fixity (Some "not"))
     in 
     (** Equality *)
-    let (ctxt7, _, _) =
-      declare ctxt6
+    let (sctxt7, _, _) =
+      declare sctxt6
         (Commands.read_unchecked 
 	   ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
         ~pp:(200, infixl, (Some "=")) 
     in 
     (** Conjunction *)
-    let (ctxt8, _, _) =
-      declare ctxt7
+    let (sctxt8, _, _) =
+      declare sctxt7
         (Commands.read_unchecked 
 	   ((Ident.name_of Lterm.andid)^": bool -> bool -> bool"))
         ~pp:(185, infixr, Some "and") 
     in  
-    let ctxt9 = add_term_pp ctxt8 Lterm.andid 185 infixr (Some "&") 
+    let sctxt9 = 
+      set_context sctxt8 
+        (add_term_pp (context_of sctxt8)
+           Lterm.andid 185 infixr (Some "&"))
     in 
     (** Disjunction *)
-    let (ctxt10, _) =
-      define ctxt9
+    let (sctxt10, _) =
+      define sctxt9
         (Commands.read_defn ((Ident.name_of Lterm.orid)
 			     ^" x y = (not ((not x) and (not y)))"))
         ~pp:(190, infixr, Some "or") 
     in 
-    let ctxt11 = add_term_pp ctxt10 Lterm.orid 190 infixr (Some "|") 
+    let sctxt11 = 
+      set_context sctxt10
+        (add_term_pp (context_of sctxt10) Lterm.orid 190 infixr (Some "|") )
     in 
     (** Implication *)
-    let (ctxt12, _) = 
-      define ctxt11
+    let (sctxt12, _) = 
+      define sctxt11
         (Commands.read_defn ((Ident.name_of Lterm.impliesid)
 			     ^" x y = (not x) or y"))
         ~pp:(195, infixr, Some "=>") 
     in 
     (** Equivalance *)
-    let (ctxt13, _) = 
-      define ctxt12
+    let (sctxt13, _) = 
+      define sctxt12
         (Commands.read_defn ((Ident.name_of Lterm.iffid)
 			     ^" x y = (x => y) and (y => x)"))
         ~pp:(180, infixn, Some "iff") 
@@ -99,7 +106,8 @@ let builder ctxt ?(save=false) () =
     (** Axioms *)
 
     (** False definition *)
-    let (ctxt14, _) = axiom ctxt13 "false_def" << false = (not true)>> in 
+    let (ctxt14, _) = axiom (context_of sctxt13)
+      "false_def" << false = (not true)>> in 
 
     (** Boolean cases *)
     let (ctxt15, _) = 
@@ -108,14 +116,15 @@ let builder ctxt ?(save=false) () =
     in 
     (** Equality *)
     let (ctxt16, _) = axiom ctxt15 "eq_refl" << !x: x = x >> in 
-    let (ctxt17, _) =
-      define ctxt16 
-      <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2)>> 
+    let (sctxt17, _) =
+      define (set_context sctxt13 ctxt16)
+      <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2) >> 
     in 
-    let (ctxt18, _) = define ctxt17 <:def< onto f = !y: ?x: y = (f x)>> 
+    let (sctxt18, _) = 
+      define sctxt17 <:def< onto f = !y: ?x: y = (f x) >> 
     in 
     let (ctxt19, _) = 
-      axiom ctxt18 "infinity_ax" 
+      axiom (context_of sctxt18) "infinity_ax" 
       << ?(f: ind -> ind): (one_one f) and (onto f)>> 
     in 
     let (ctxt20, _) = 
@@ -123,31 +132,36 @@ let builder ctxt ?(save=false) () =
       << !f g: (!x: (f x) = (g x)) => (f = g)>> 
     in 
     (** Specification operator (epsilon) *)
-    let (ctxt21, _, _) = declare ctxt20 <<epsilon: ('a -> bool) -> 'a>> 
+    let (sctxt21, _, _) = 
+      declare (set_context sctxt18 ctxt20)
+      <<epsilon: ('a -> bool) -> 'a>> 
     in 
     let (ctxt22, _) = 
-      axiom ctxt21 "epsilon_ax" << !P: (?x: P x) => (P(epsilon P))>> 
+      axiom (context_of sctxt21) "epsilon_ax"
+      << !P: (?x: P x) => (P(epsilon P))>> 
     in 
 
     (** Conditional *)
-    let (ctxt23, _) = 
-      define ctxt22
+    let (sctxt23, _) = 
+      define (set_context sctxt21 ctxt22)
       <:def< 
         IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))
       >> 
     in 
     (** Any value *)
-    let (ctxt24, _) = define ctxt23 <:def< any = epsilon (%a: true)>> 
+    let (sctxt24, _) = define sctxt23 <:def< any = epsilon (%a: true)>> 
     in 
     (** Unique existence *)
-    let (ctxt25, _) =
-      define ctxt24
+    let (sctxt25, _) =
+      define sctxt24
       <:def<
         EXISTS_UNIQUE p = 
       (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
         >> in 
 
-    end_theory ctxt25 ~save:save ();
+    let ctxt26 = end_theory (context_of sctxt25) ~save:save ()
+    in 
+    set_context sctxt25 ctxt26
   end
 
 (*

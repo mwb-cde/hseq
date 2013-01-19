@@ -120,9 +120,10 @@ val get_concl: Logic.label -> Logic.node -> Formula.t
 val get_form: Logic.label -> Logic.node -> Formula.t
 (** Get a formula by label. First tries [get_concl] then [get_asm]. *)
 
-val context_of: Context.t -> Logic.node -> Context.t
+(*
+val context_of: Context.scoped -> Logic.node -> Context.t
 (** Set the scope of context to the scope of a node. *)
-
+*)
 (** {7 Branches} *)
 
 val branch_tyenv: Logic.branch -> Gtypes.substitution

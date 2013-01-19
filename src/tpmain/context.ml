@@ -124,8 +124,10 @@ struct
         (** Theory data *)
         thys_f: thy_t;
 
+(*
         (** Scope *)
         scope_f: Scope.t;
+*)
 
         (** Printer-parser *)
         pp_f: pp_t;
@@ -138,18 +140,36 @@ struct
         thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
       }
 
+(*
   let empty_scope_t () = 
     Scope.empty_scope()
+*)
 
   let empty() = 
     {
       file_f = empty_file_t();
       thys_f = empty_thy_t();
+(*
       scope_f = empty_scope_t();
+*)
       pp_f = empty_pp_t();
       load_functions_f = [];
       thm_cache = Hashtbl.create(13);
     }
+
+  (** {6 Scoped contexts} *)
+  type scoped = (t * Scope.t)
+  (** The type of scoped contexts *)
+
+  let scoped ctxt scp = (ctxt, scp)
+  (** Constructor for scoped contexts *)
+  let scope_of (_, scp) = scp
+  (** Get the scope *)
+  let context_of (ctxt, _) = ctxt
+
+  (** Constructor for scoped contexts *)
+  let set_scope sctxt scp = scoped (context_of sctxt) scp
+  let set_context sctxt ctxt = scoped ctxt (scope_of sctxt)
 
   (** {5 Accessor Functions} *)
 
@@ -236,12 +256,14 @@ struct
 
   let load_functions t = t.load_functions_f
 
+(*
   (** Scope handling *)
 
   let set_scope t scp = 
     { t with scope_f = scp}
 
   let scope t = t.scope_f
+*)
 
 (** Pretty printer information *)
 
@@ -264,24 +286,25 @@ struct
       (Hashtbl.remove t.thm_cache id; t)
     else t
 
-  let lookup_thm t id = 
-    let thm = Hashtbl.find t.thm_cache id
+  let lookup_thm sctxt id = 
+    let ctxt = context_of sctxt 
+    and scp = scope_of sctxt in
+    let thm = Hashtbl.find ctxt.thm_cache id
     in 
-    if Logic.is_fresh (scope t) thm
-    then
-      thm
+    if Logic.is_fresh scp thm
+    then thm
     else
       begin
-        ignore(remove_cached_thm t id);
+        ignore(remove_cached_thm ctxt id);
         raise Not_found
       end
         
-  let find_thm t id fn =  
-   try lookup_thm t id
+  let find_thm sctxt id fn =  
+   try lookup_thm sctxt id
     with Not_found ->
       begin
-        let thm = fn t in 
-        let _ = cache_thm t id thm
+        let thm = fn sctxt in 
+        let _ = cache_thm (context_of sctxt) id thm
         in 
         thm
       end

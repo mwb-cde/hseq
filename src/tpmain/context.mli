@@ -113,8 +113,10 @@ type t =
     (** Theory data *)
     thys_f: thy_t;
 
+(*
     (** Scope *)
     scope_f: Scope.t;
+*)
 
     (** Printer-parser *)
     pp_f: pp_t;
@@ -127,11 +129,25 @@ type t =
     thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
   }
 
-(** [empty_scope_t()]: The default value for [Scope.t]. *)
-val empty_scope_t: unit -> Scope.t
-  
 (** [empty()]: The empty context. *)
 val empty: unit -> t
+
+  (** {6 Scoped contexts} *)
+type scoped = (t * Scope.t)
+  (** The type of scoped contexts *)
+
+val scoped: t -> Scope.t -> scoped
+  (** Constructor for scoped contexts *)
+val scope_of: scoped -> Scope.t
+  (** Get the scope *)
+val context_of: scoped -> t
+(** Get the context *)
+
+val set_scope: scoped -> Scope.t -> scoped
+  (** Set the scope *)
+val set_context: scoped -> t -> scoped
+(** Set the context *)
+
 
 (** {5 Accessor Functions} *)
 
@@ -213,6 +229,7 @@ val set_load_functions :
 val load_functions : t -> (t -> Theory.contents -> t) list
 (** [load_functions t]: Get the load functions of context [t]. *)
 
+(*
 (** {6 Scope handling} *)
 
 val set_scope : t -> Scope.t -> t
@@ -220,6 +237,7 @@ val set_scope : t -> Scope.t -> t
 
 val scope : t -> Scope.t
 (** [scope t]: Get the scope in context [t]. *)
+*)
 
 (** {6 Pretty-printer handling} *)
 
@@ -232,10 +250,10 @@ val ppinfo : t -> Printer.ppinfo
 val cache_thm: t -> Ident.t -> Logic.thm -> t
 (** Cache a theorem *)
 
-val lookup_thm: t -> Ident.t -> Logic.thm
+val lookup_thm: scoped -> Ident.t -> Logic.thm
 (** Lookup a cached theorem, raising Not_found if not found. *)
 
-val find_thm: t -> Ident.t -> (t -> Logic.thm) -> Logic.thm
+val find_thm: scoped-> Ident.t -> (scoped -> Logic.thm) -> Logic.thm
 (** Lookup a cached theorem, creating and caching it if not found. *)
 
 (***

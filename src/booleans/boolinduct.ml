@@ -243,8 +243,7 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
 	  ] g1)
     ] g
     
-let asm_induct_tac ctxt0 alabel clabel goal = 
-  let ctxt = context_of ctxt0 goal in
+let asm_induct_tac ctxt alabel clabel goal = 
   let typenv = typenv_of goal
   and scp = scope_of goal
   in 
@@ -532,8 +531,7 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
     [n] does not need to be the outermost quantifier.
 *)
 
-let basic_induct_on ctxt0 ?thm name clabel goal = 
-  let ctxt = context_of ctxt0 goal in
+let basic_induct_on ctxt ?thm name clabel goal = 
   let typenv = typenv_of goal
   and scp = scope_of goal
   in 

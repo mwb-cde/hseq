@@ -21,7 +21,7 @@
 
 (** Basic boolean tactics *)
 
-val false_def: Context.t -> Logic.thm
+val false_def: Context.scoped -> Logic.thm
 (** Get the definition of [false]. *)
 
 val falseA: Context.t -> ?a:Logic.label -> Tactics.tactic
@@ -40,28 +40,22 @@ val cut_thm:
 (** {7 Basic equality reasoning} *)
 
 val bool_cases_id: Ident.t
-val make_bool_cases_thm: Context.t -> Logic.thm
-(*
-val bool_cases_thm_var: Logic.thm Lib.deferred
-*)
-val bool_cases_thm: Context.t -> Logic.thm
+val make_bool_cases_thm: Context.scoped -> Logic.thm
+val bool_cases_thm: Context.scoped -> Logic.thm
 (** [bool_cases_thm]: [! (x:bool): (x = true) | (x = false)]. *)
 
 val eq_refl_thm_id: Ident.t
-val make_eq_refl_thm: Context.t -> Logic.thm
-(*
-val eq_refl_thm_var: Logic.thm Lib.deferred
-*)
-val eq_refl_thm: Context.t -> Logic.thm
+val make_eq_refl_thm: Context.scoped -> Logic.thm
+val eq_refl_thm: Context.scoped -> Logic.thm
 (** [eql_refl]: [!x: (x = x)]. *)
 
 val eq_sym_thm_id: Ident.t
-val make_eq_sym_thm: Context.t -> Logic.thm
+val make_eq_sym_thm: Context.scoped -> Logic.thm
 (* val eq_sym_thm_var: Logic.thm Lib.deferred *)
-val eq_sym_thm: Context.t -> Logic.thm
+val eq_sym_thm: Context.scoped -> Logic.thm
 (** [eql_sym]: [!x y: (x = y) = (y = x) ]. *)
 
-val eq_sym_rule: Context.t -> Logic.thm -> Logic.thm
+val eq_sym_rule: Context.scoped -> Logic.thm -> Logic.thm
 (** [eq_sym_rule scp thm]: If the body of [thm] is [ |- x = y], return
     [ |- y=x ].
 *)

@@ -31,13 +31,10 @@ open Lib.Ops
 (*** Boolean equivalence ***)
 
 let iff_def_id = Lterm.iffid
-let make_iff_def ctxt = defn ctxt (Ident.string_of Lterm.iffid)
-(*
-let iff_def_var = Lib.freeze make_iff_def
-let iff_def () = Lib.thaw ~fresh:fresh_thm iff_def_var
-*)
-let iff_def ctxt = 
-  Context.find_thm ctxt iff_def_id make_iff_def
+let make_iff_def sctxt = 
+  defn (context_of sctxt) (Ident.string_of Lterm.iffid)
+let iff_def sctxt = 
+  Context.find_thm sctxt iff_def_id make_iff_def
 
 (** [iffA l sq]: Elminate the equivalance at assumptin [l]
 
@@ -49,19 +46,19 @@ let iff_def ctxt =
 
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
-let iffA ctxt0 ?a goal = 
+let iffA ctxt ?a goal = 
   let af = first_asm_label a is_iff goal in 
   let sqnt = Tactics.sequent goal in 
   let (t, f) = 
     Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
   in 
-  let ctxt = context_of ctxt0 goal in
   if not (is_iff f) 
   then raise (error "iffA")
   else 
+    let sctxt = scoped ctxt (scope_of goal) in
     seq 
       [
-        rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t);
+        rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
         Tactics.conjA ~a:(ftag t);
       ] goal
 
@@ -77,8 +74,7 @@ let iffA ctxt0 ?a goal =
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 **)
 
-let iffC ctxt0 ?c goal = 
-  let ctxt = context_of ctxt0 goal in
+let iffC ctxt ?c goal = 
   let cf = first_concl_label c is_iff goal in 
   let sqnt=sequent goal in 
   let (t, f) =
@@ -87,9 +83,10 @@ let iffC ctxt0 ?c goal =
   if not (is_iff f) 
   then raise (error "iffC")
   else 
+    let sctxt = scoped ctxt (scope_of goal) in
     seq 
       [
-        rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t);
+        rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
         Tactics.conjC ~c:(ftag t);
       ] goal
 
@@ -104,8 +101,7 @@ let iffC ctxt0 ?c goal =
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 **)
-let iffE ctxt0 ?c goal = 
-  let ctxt = context_of ctxt0 goal in
+let iffE ctxt ?c goal = 
   let sqnt = sequent goal
   and cf = first_concl_label c is_iff goal 
   in
@@ -116,7 +112,8 @@ let iffE ctxt0 ?c goal =
   then raise (error "iffE")
   else 
     let tac g =
-      (rewrite_tac ctxt [iff_def ctxt] ~f:(ftag t) ++
+      let sctxt = scoped ctxt (scope_of g) in
+      (rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t) ++
         (?> fun inf1 ->
 	  Tactics.conjC ~c:(ftag t) ++
 	    Tactics.implC ~c:(ftag t) ++
@@ -192,7 +189,7 @@ let flatten_tac ctxt ?f g = flatter_tac ctxt ?f:f g
 
 (*** Scattering formulas ***)
 
-let scatter_asm_rules ctxt =
+let scatter_asm_rules (ctxt: Context.t) =
   [
     (fun l -> falseA ctxt ~a:l); 
 
@@ -204,7 +201,7 @@ let scatter_asm_rules ctxt =
     (fun l -> Tactics.implA ~a:l)
   ]
 
-let scatter_concl_rules ctxt =
+let scatter_concl_rules (ctxt: Context.t) =
   [
     (fun l -> Tactics.trueC ~c:l);
 
@@ -285,15 +282,11 @@ let make_cases_tac_thm ctxt =
   << !P: (not P) or P >> 
     (allC ++ disjC ++ negC ++ basic)
 
-(*
-let cases_thm_var = Lib.freeze make_cases_tac_thm
-let cases_thm () =  Lib.thaw ~fresh:fresh_thm cases_thm_var
-*)
-let cases_thm ctxt = Context.find_thm ctxt cases_thm_id make_cases_tac_thm
+let cases_thm sctxt =
+  Context.find_thm sctxt cases_thm_id make_cases_tac_thm
 
-let cases_tac ctxt0 (t:Basic.term) goal = 
-  let ctxt = context_of ctxt0 goal in
-  let thm = cases_thm ctxt in
+let cases_tac ctxt (t: Basic.term) goal = 
+  let thm = cases_thm (scoped ctxt (scope_of goal)) in
   seq 
     [
       cut thm;
@@ -320,9 +313,8 @@ let cases_tac ctxt0 (t:Basic.term) goal =
         ]
     ] goal
 
-let show_tac ctxt0 (trm: Basic.term) tac goal = 
-  let ctxt = context_of ctxt0 goal in 
-  let thm = cases_thm ctxt in 
+let show_tac ctxt (trm: Basic.term) tac goal = 
+  let thm = cases_thm (scoped ctxt (scope_of goal)) in 
   seq 
     [
       cut thm;
@@ -363,8 +355,7 @@ let disj_splitter_tac ?f goal =
   apply_elim_tac tac ?f goal
     
 
-let cases_of ctxt0 ?thm t goal =
-  let ctxt = context_of ctxt0 goal in
+let cases_of ctxt ?thm t goal =
   let scp = Tactics.scope_of goal
   and tyenv = Tactics.typenv_of goal in 
   let trm = Lterm.set_names scp t in  

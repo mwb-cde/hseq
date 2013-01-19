@@ -83,7 +83,9 @@ let get_form i g =
   try get_concl i g
   with Not_found -> get_asm i g
 
+(*
 let context_of ctxt g = Context.set_scope ctxt (scope_of g)
+*)
 
 (*** Branches ***)
 

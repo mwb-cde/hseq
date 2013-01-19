@@ -36,7 +36,7 @@ struct
       Returns |- trm = X where [X] is the result of rewriting [trm]
   *)
   let rewrite_conv ctxt ?ctrl (rls: Logic.rr_type list) term = 
-    let scp = Context.scope ctxt in
+    let scp = Context.scope_of ctxt in
     let c = Lib.get_option ctrl Rewrite.default_control in 
     let is_rl = c.Rewrite.rr_dir = rightleft in 
     let mapper f x = 
@@ -61,7 +61,7 @@ struct
       Returns |- X where [X] is the result of rewriting [thm]
   *)
   let rewrite_rule ctxt ?ctrl rls thm = 
-    let scp = Context.scope ctxt in
+    let scp = Context.scope_of ctxt in
     let c = Lib.get_option ctrl Rewrite.default_control in 
     let is_rl = c.Rewrite.rr_dir=rightleft in 
     let mapper f x = 
@@ -83,9 +83,7 @@ struct
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
       [ret] will be in reverse order of [rules].  *)
-  let map_sym_tac context (rules: Tactics.rule list) goal = 
-    let scp = scope_of goal in 
-    let ctxt = Context.set_scope context scp in
+  let map_sym_tac ctxt (rules: Tactics.rule list) goal = 
     let asm_fn l g = 
       try 
 	let g2 = eq_symA ctxt l g in 
@@ -96,11 +94,12 @@ struct
       with err -> raise (add_error "Rewriter.map_sym_tac" err)
     in 
     let fn_tac r g =
+      let sctxt = scoped ctxt (scope_of g) in
       match r with
 	| Logic.RRThm(th) -> 
-	  (Logic.RRThm(eq_sym_rule ctxt th), skip g)
+	  (Logic.RRThm(eq_sym_rule sctxt th), skip g)
 	| Logic.ORRThm(th, o) -> 
-	  (Logic.ORRThm(eq_sym_rule ctxt th, o), skip g)
+	  (Logic.ORRThm(eq_sym_rule sctxt th, o), skip g)
 	| Logic.Asm(l) -> 
 	  let (nl, ng) = asm_fn l g in 
 	  (Logic.Asm(nl), ng)
@@ -125,7 +124,7 @@ struct
       else 
         fold_seq rules
 	  [
-            (map_sym_tac (context_of ctxt g));
+            map_sym_tac ctxt;
             (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
@@ -134,7 +133,7 @@ struct
       in 
       Tactics.pure_rewriteA plan (ftag atag) g
     in 
-    try  apply_tac tac1 tac2 goal
+    try apply_tac tac1 tac2 goal
     with err -> raise (add_error "Rewriter.rewriteA_tac" err)
 
   let rewriteC_tac ctxt ?(ctrl=Formula.default_rr_control) 
@@ -148,7 +147,7 @@ struct
       else 
         fold_seq rules
 	  [
-            map_sym_tac (context_of ctxt g);
+            map_sym_tac ctxt;
             (fun x g1 -> (List.rev x, pass g1))
 	  ] g
     in 
@@ -175,16 +174,15 @@ struct
 
 end
 
-let rewrite_conv ctxt ?ctrl rls trm = 
-  Rewriter.rewrite_conv ctxt ?ctrl 
+let rewrite_conv sctxt ?ctrl rls trm = 
+  Rewriter.rewrite_conv sctxt ?ctrl 
     (List.map (fun x -> Logic.RRThm(x)) rls) trm
 
-let rewrite_rule ctxt ?ctrl rls thm = 
-  Rewriter.rewrite_rule ctxt ?ctrl
+let rewrite_rule sctxt ?ctrl rls thm = 
+  Rewriter.rewrite_rule sctxt ?ctrl
     (List.map (fun x -> Logic.RRThm(x)) rls) thm
 
-let gen_rewrite_tac ctxt0 ?asm ctrl ?f rules goal =
-  let ctxt = context_of ctxt0 goal in
+let gen_rewrite_tac ctxt ?asm ctrl ?f rules goal =
   match f with
     | None -> 
       begin
@@ -221,41 +219,40 @@ let rewrite_tac ctxt ?(dir=leftright) ?f ths goal =
   let ctrl = rewrite_control dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac (context_of ctxt goal) ctrl ?f:f rules goal
+  gen_rewrite_tac ctxt ctrl ?f:f rules goal
 
 let once_rewrite_tac ctxt ?(dir=leftright) ?f ths goal =
   let ctrl= rewrite_control ~max:1 dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac (context_of ctxt goal) ctrl rules ?f:f goal
+  gen_rewrite_tac ctxt ctrl rules ?f:f goal
 
 let rewriteA_tac ctxt ?(dir=leftright) ?a ths goal =
   let ctrl = rewrite_control dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in 
-  gen_rewrite_tac (context_of ctxt goal) ~asm:true ctrl ?f:a rules goal 
+  gen_rewrite_tac ctxt ~asm:true ctrl ?f:a rules goal 
 
 let once_rewriteA_tac ctxt ?(dir=leftright) ?a ths goal =
   let ctrl= rewrite_control ~max:1 dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in 
-  gen_rewrite_tac (context_of ctxt goal) ~asm:true ctrl rules ?f:a goal
+  gen_rewrite_tac ctxt ~asm:true ctrl rules ?f:a goal
 
 let rewriteC_tac ctxt ?(dir=leftright) ?c ths goal =
   let ctrl = rewrite_control dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac (context_of ctxt goal) ~asm:false ctrl ?f:c rules goal 
+  gen_rewrite_tac ctxt ~asm:false ctrl ?f:c rules goal 
 
 let once_rewriteC_tac ctxt ?(dir=leftright) ?c ths goal =
   let ctrl= rewrite_control ~max:1 dir in 
   let rules = List.map (fun x -> Logic.RRThm x) ths 
   in 
-  gen_rewrite_tac (context_of ctxt goal) ~asm:false ctrl rules ?f:c goal
+  gen_rewrite_tac ctxt ~asm:false ctrl rules ?f:c goal
 
 let gen_replace_tac 
-    ctxt0 ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
-  let ctxt = context_of ctxt0 goal in 
+    ctxt ?(ctrl=Formula.default_rr_control) ?asms ?f goal =
   let sqnt = sequent goal in
   (*** ttag: The tag of tag of the target (if given) ***)
   let ttag = 
@@ -323,8 +320,7 @@ let once_replace_tac ctxt ?(dir=leftright) ?asms ?f goal =
   in 
   gen_replace_tac ctxt ~ctrl:ctrl ?asms:asms ?f:f goal
 
-let unfold ctxt0 ?f str g = 
-  let ctxt = context_of ctxt0 g in 
+let unfold ctxt ?f str g = 
   match Lib.try_find (defn ctxt) str with
     | None -> raise (error ("unfold: Can't find definition of "^str))
     | Some th -> rewrite_tac ctxt ?f [th] g
