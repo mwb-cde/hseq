@@ -33,7 +33,7 @@ let false_def sctxt =
   Context.find_thm sctxt false_id make_false_def
 
 let falseA ctxt ?a goal =
-  let sctxt = scoped ctxt (scope_of goal) in
+  let sctxt = scoped ctxt (scope_of_goal goal) in
   let af = first_asm_label a Formula.is_false goal in 
   let th =
     try false_def sctxt
@@ -149,7 +149,7 @@ let eq_symA ctxt a goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (atag, form) = get_tagged_asm a goal in 
   let term = Formula.term_of form in 
-  let sctxt = scoped ctxt (scope_of goal) in
+  let sctxt = scoped ctxt (scope_of_goal goal) in
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in 
@@ -159,7 +159,7 @@ let eq_symC ctxt c goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let (ctag, form) = (get_tagged_concl c goal) in 
   let term = Formula.term_of form in 
-  let sctxt = scoped ctxt (scope_of goal) in
+  let sctxt = scoped ctxt (scope_of_goal goal) in
   let plan = 
     Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in 

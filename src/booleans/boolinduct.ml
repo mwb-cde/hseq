@@ -245,7 +245,7 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
     
 let asm_induct_tac ctxt alabel clabel goal = 
   let typenv = typenv_of goal
-  and scp = scope_of goal
+  and scp = scope_of_goal goal
   in 
   (** Get the theorem and conclusion *)
   let (atag, aform) = get_tagged_asm alabel goal
@@ -533,7 +533,7 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
 
 let basic_induct_on ctxt ?thm name clabel goal = 
   let typenv = typenv_of goal
-  and scp = scope_of goal
+  and scp = scope_of_goal goal
   in 
   (** Get the conclusion *)
   let (ctag, cform) = get_tagged_concl clabel goal in 

@@ -31,6 +31,11 @@ type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
 (*
  * Support functions 
  *)
+let scoped = Context.scoped
+let set_scope = Context.set_scope
+let set_context = Context.set_context
+let context_of = Context.context_of
+let scope_of = Context.scope_of
 
 (*** Error reporting ***)
 
@@ -69,10 +74,12 @@ let sqnt_tag  = Logic.Sequent.sqnt_tag
 (*** Nodes ***)
 
 let sequent g = Logic.Subgoals.node_sqnt g
-let scope_of g = Logic.Sequent.scope_of (sequent g)
+let scope_of_goal g = Logic.Sequent.scope_of (sequent g)
 let typenv_of n = Logic.Subgoals.node_tyenv n
 let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
 let changes n = Logic.Tactics.changes n
+
+let goal_context ctxt g = scoped ctxt (scope_of_goal g)
 
 let get_tagged_asm i g = Logic.get_label_asm i (sequent g)
 let get_tagged_concl i g= Logic.get_label_cncl i (sequent g)
@@ -576,7 +583,7 @@ let cut ?inst th goal =
 
 let betaA ?a goal =
   let conv_tac (ft, form) g =
-    let scp = scope_of g in 
+    let scp = scope_of_goal g in 
     let thm = 
       try Logic.Conv.beta_conv scp (Formula.term_of form)
       with err -> raise (add_error "betaA" err)
@@ -606,7 +613,7 @@ let betaA ?a goal =
 
 let betaC ?c goal =
   let conv_tac (ft, form) g =
-    let scp = scope_of g in 
+    let scp = scope_of_goal g in 
     let thm = 
       try Logic.Conv.beta_conv scp (Formula.term_of form)
       with err -> raise (add_error "betaC" err)
@@ -654,7 +661,7 @@ let name_tac n lbl goal =
 
 let find_basic asm concl node = 
   let sqnt = sequent node in 
-  let scp = scope_of node
+  let scp = scope_of_goal node
   and node_asms = 
     match asm with 
       | None -> asms_of sqnt
@@ -1169,7 +1176,7 @@ end
 module Planner = Rewrite.Make(PlannerData)
 
 let mk_plan ?(ctrl=Formula.default_rr_control) goal rules term =
-  let scp = scope_of goal in 
+  let scp = scope_of_goal goal in 
   let (_, plan) = Planner.make (Some(goal)) scp ctrl rules term
   in 
   plan

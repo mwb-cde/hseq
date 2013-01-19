@@ -273,7 +273,7 @@ struct
       let goal_term = Lterm.mk_equality trm newterm in 
       let ctxt = context_of sctxt in
       let proof g = 
-        let sctxt1 = set_scope sctxt (scope_of g) in
+        let sctxt1 = set_scope sctxt (scope_of_goal g) in
 	seq [once_rewrite_tac ctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
@@ -393,7 +393,7 @@ struct
       let goal_term = Lterm.mk_equality trm newterm in 
       let ctxt = context_of sctxt in
       let proof g = 
-        let sctxt1 = set_scope sctxt (scope_of g) in
+        let sctxt1 = set_scope sctxt (scope_of_goal g) in
 	seq [once_rewrite_tac ctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
@@ -642,7 +642,7 @@ let cut_back_tac = Booltacs.cut_back_tac
 (*** Equality ***)
 
 let equals_tac ctxt ?f goal =
-  let sctxt = scoped ctxt (scope_of goal) in
+  let sctxt = scoped ctxt (scope_of_goal goal) in
   let thm = 
     try Thms.equals_iff_thm sctxt
     with Not_found -> 

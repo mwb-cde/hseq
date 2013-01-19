@@ -55,7 +55,7 @@ let iffA ctxt ?a goal =
   if not (is_iff f) 
   then raise (error "iffA")
   else 
-    let sctxt = scoped ctxt (scope_of goal) in
+    let sctxt = scoped ctxt (scope_of_goal goal) in
     seq 
       [
         rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
@@ -83,7 +83,7 @@ let iffC ctxt ?c goal =
   if not (is_iff f) 
   then raise (error "iffC")
   else 
-    let sctxt = scoped ctxt (scope_of goal) in
+    let sctxt = scoped ctxt (scope_of_goal goal) in
     seq 
       [
         rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
@@ -112,7 +112,7 @@ let iffE ctxt ?c goal =
   then raise (error "iffE")
   else 
     let tac g =
-      let sctxt = scoped ctxt (scope_of g) in
+      let sctxt = scoped ctxt (scope_of_goal g) in
       (rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t) ++
         (?> fun inf1 ->
 	  Tactics.conjC ~c:(ftag t) ++
@@ -286,7 +286,7 @@ let cases_thm sctxt =
   Context.find_thm sctxt cases_thm_id make_cases_tac_thm
 
 let cases_tac ctxt (t: Basic.term) goal = 
-  let thm = cases_thm (scoped ctxt (scope_of goal)) in
+  let thm = cases_thm (scoped ctxt (scope_of_goal goal)) in
   seq 
     [
       cut thm;
@@ -314,7 +314,7 @@ let cases_tac ctxt (t: Basic.term) goal =
     ] goal
 
 let show_tac ctxt (trm: Basic.term) tac goal = 
-  let thm = cases_thm (scoped ctxt (scope_of goal)) in 
+  let thm = cases_thm (scoped ctxt (scope_of_goal goal)) in 
   seq 
     [
       cut thm;
@@ -356,7 +356,7 @@ let disj_splitter_tac ?f goal =
     
 
 let cases_of ctxt ?thm t goal =
-  let scp = Tactics.scope_of goal
+  let scp = Tactics.scope_of_goal goal
   and tyenv = Tactics.typenv_of goal in 
   let trm = Lterm.set_names scp t in  
   let case_thm = 

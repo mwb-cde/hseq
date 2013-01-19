@@ -94,7 +94,7 @@ struct
       with err -> raise (add_error "Rewriter.map_sym_tac" err)
     in 
     let fn_tac r g =
-      let sctxt = scoped ctxt (scope_of g) in
+      let sctxt = scoped ctxt (scope_of_goal g) in
       match r with
 	| Logic.RRThm(th) -> 
 	  (Logic.RRThm(eq_sym_rule sctxt th), skip g)

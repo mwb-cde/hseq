@@ -26,48 +26,48 @@
 
 (** [cond_rule_true_thm]: |- !x y: (x=>y) = (x => (y=true))
 *)
-val make_cond_rule_true_thm: Context.t -> Logic.thm
-val cond_rule_true_thm: Context.t -> Logic.thm
+val make_cond_rule_true_thm: Context.scoped -> Logic.thm
+val cond_rule_true_thm: Context.scoped -> Logic.thm
 
 (** [cond_rule_false_thm]: |- !x y: (x=>~y) = (x => (y=false))
 *)
-val make_cond_rule_false_thm: Context.t -> Logic.thm
-val cond_rule_false_thm: Context.t -> Logic.thm
+val make_cond_rule_false_thm: Context.scoped -> Logic.thm
+val cond_rule_false_thm: Context.scoped -> Logic.thm
 
 (** [cond_rule_imp_false_thm]: |- !x: (x=>false) = (not x)
 *)
-val make_cond_rule_imp_false_thm: Context.t -> Logic.thm
-val cond_rule_imp_false_thm: Context.t -> Logic.thm
+val make_cond_rule_imp_false_thm: Context.scoped -> Logic.thm
+val cond_rule_imp_false_thm: Context.scoped -> Logic.thm
 
 (** [cond_rule_imp_not_true_thm]: |- !x: (x=>not true) = (not x)
 *)
-val make_cond_rule_imp_not_true_thm: Context.t -> Logic.thm
-val cond_rule_imp_not_true_thm: Context.t -> Logic.thm
+val make_cond_rule_imp_not_true_thm: Context.scoped -> Logic.thm
+val cond_rule_imp_not_true_thm: Context.scoped -> Logic.thm
 
 (** [neg_disj]: |- not (a | b) = ((not a) & (not b))
 *)
-val make_neg_disj_thm: Context.t -> Logic.thm
-val neg_disj_thm: Context.t -> Logic.thm
+val make_neg_disj_thm: Context.scoped -> Logic.thm
+val neg_disj_thm: Context.scoped -> Logic.thm
 
 (** [neg_eq_sym]: |- not (a = b) = not (b = a)
 *)
-val make_neg_eq_sym_thm: Context.t -> Logic.thm
-val neg_eq_sym_thm: Context.t -> Logic.thm
+val make_neg_eq_sym_thm: Context.scoped -> Logic.thm
+val neg_eq_sym_thm: Context.scoped -> Logic.thm
 
 (** [cond_neg_eq_sym]: |- (c => not (a = b)) = (c => not (b = a))
 *)
-val make_cond_neg_eq_sym_thm: Context.t -> Logic.thm
-val cond_neg_eq_sym_thm: Context.t -> Logic.thm
+val make_cond_neg_eq_sym_thm: Context.scoped -> Logic.thm
+val cond_neg_eq_sym_thm: Context.scoped -> Logic.thm
 
 (** [cond_eq_sym]: |- (c => (a = b)) = (c => (b = a))
 *)
-val make_cond_eq_sym_thm: Context.t -> Logic.thm
-val cond_eq_sym_thm: Context.t -> Logic.thm
+val make_cond_eq_sym_thm: Context.scoped -> Logic.thm
+val cond_eq_sym_thm: Context.scoped -> Logic.thm
 
 (** {5 Rewriting conversions and tactics} *)
 
 val simple_rewrite_conv:
-  Scope.t -> Logic.thm -> Basic.term -> Logic.thm
+  Context.scoped -> Logic.thm -> Basic.term -> Logic.thm
 (** [simple_rewrite_conv scp rule trm]
 
     Form an equality from term [trm=!x .. y: body] and [rule=(l=r)] by
@@ -82,7 +82,7 @@ val simple_rewrite_conv:
 *)
 
 val simple_rewrite_rule:
-  Scope.t -> Logic.thm -> Logic.thm -> Logic.thm
+  Context.scoped -> Logic.thm -> Logic.thm -> Logic.thm
 (** [simple_rewrite_rule scp rule thm]: Apply [simple_rewrite_conv] to
     theorem [thm].
 *)
@@ -295,7 +295,7 @@ sig
 
   val accept_all_thms:
     Logic.thm list -> 
-    (Context.t * Scope.t * Logic.thm 
+    (Context.scoped * Logic.thm 
      * (Basic.binders list * Basic.term option * Basic.term))
     -> Logic.thm list
   (** Convert [|- a] -> [|- a=true] but ignore [|-true]. Always
@@ -304,14 +304,14 @@ sig
 
   val do_rr_equality:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Accept [|- l=r] or [|= c=> l=r] *)
 
   val do_eq_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- (a = b)] to [|- (a = b) = true] and [|- (b=a)=true].
@@ -323,7 +323,7 @@ sig
     
   val do_fact_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- a] -> [|- a=true] and [|- c=>a] -> [|- c => a=true];
@@ -333,7 +333,7 @@ sig
 
   val do_neg_eq_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- not (a = b)] to [|- (a = b) =false] and [|-
@@ -342,7 +342,7 @@ sig
     
   val do_neg_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- not a] to [|- a=false] and [|- c=> not a] to [|- c=>
@@ -351,7 +351,7 @@ sig
 
   val do_neg_all_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- not (!a: b)] -> [|- ?a: not b] then convert the new
@@ -359,7 +359,7 @@ sig
 
   val do_neg_exists_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- not (?a: b)] -> [|- !a: not b] then convert the new
@@ -367,7 +367,7 @@ sig
 
   val do_neg_disj_rule:
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- not (a | b)] -> [|- (not a) & (not b)] then convert
@@ -375,20 +375,21 @@ sig
 
   val do_conj_rule: 
     Logic.thm list -> 
-    Context.t * Scope.t * Logic.thm 
+    Context.scoped * Logic.thm 
     * (Basic.binders list * Basic.term option * Basic.term) 
     -> Logic.thm list
   (** Convert [|- a and b] -> [|- a] and [|- b].  *)
 
   val single_thm_to_rules: 
-    Context.t -> Logic.thm list -> Scope.t -> Logic.thm -> Logic.thm list
+    Context.scoped -> Logic.thm list 
+    -> Logic.thm -> Logic.thm list
 (** Convert a theorem to rewrite rules suitable for the simplifier.
 *)
 
 end
 
 val thm_to_rules: 
-  Context.t -> Scope.t -> Logic.thm -> Logic.thm list
+  Context.scoped -> Logic.thm -> Logic.thm list
 (** Toplevel conversion function.  Convert theorem [thm] to a list of
     rules.
 *)
@@ -396,7 +397,7 @@ val thm_to_rules:
 (** {7 Rules from assumptions} *)
 
 val asm_rewrite_tac:
-  Context.t -> Logic.thm -> Tag.t -> Logic.node -> Logic.Subgoals.branch
+  Context.t -> Logic.thm -> Tag.t -> Tactics.tactic
 (** [asm_rewrite thm tg g]:
 
     Rewrite assumption [tg] with rule [thm] = [|- a=b]

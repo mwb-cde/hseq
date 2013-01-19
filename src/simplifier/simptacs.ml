@@ -74,16 +74,14 @@ let add_rule_data data rules =
 
 let add_asms_tac ctxt data atags goal =
   let tac data1 tg g = 
-    let gctxt = context_of ctxt goal in 
-    ((Simpconvs.prepare_asm gctxt [] tg)
+    ((Simpconvs.prepare_asm ctxt [] tg)
         >/ (add_rule_data data1 )) g
   in
   fold_data tac data atags goal
 
 let add_concls_tac ctxt data ctags goal =
   let tac data1 tg g = 
-    let gctxt = context_of ctxt goal in 
-    ((Simpconvs.prepare_concl gctxt [] tg)
+    ((Simpconvs.prepare_concl ctxt [] tg)
         >/ (add_rule_data data1)) g
   in
   fold_data tac data ctags goal
@@ -120,7 +118,6 @@ let simp_engine_tac ctxt data tag goal =
   in
   (** main_tac: Repeatedly simplify **)
   let rec main_tac (chng, ncntrl) g =
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ncntrl)
       [
 	(** Prepare the goal for simplification *)
@@ -130,7 +127,7 @@ let simp_engine_tac ctxt data tag goal =
         
 	(** Try simplification. **)
         (fun (chng2, ncntrl2) ->
-          try_rule (basic_simp_tac gctxt ncntrl2 tag) ncntrl2
+          try_rule (basic_simp_tac ctxt ncntrl2 tag) ncntrl2
           >/ (sum_fn chng2));
 
         (** Go round again if something changed on this iteration.
@@ -147,13 +144,11 @@ let simp_engine_tac ctxt data tag goal =
   in 
   (** trivia_tac: Clean up trivial goals. **)
   let apply_trivial_tac ctxt arg g = 
-    let gctxt = context_of ctxt g in 
-    (arg >+ alt [Boollib.trivial gctxt ~f:(ftag tag); skip]) g
+    (arg >+ alt [Boollib.trivial ctxt ~f:(ftag tag); skip]) g
   in 
-  let gctxt = context_of ctxt goal in 
   (fold_seq (false, data)
     [
-      main_tac; apply_trivial_tac gctxt 
+      main_tac; apply_trivial_tac ctxt 
     ]
    >/ (fun (_, cntrl1) -> cntrl1)) goal
 
@@ -169,8 +164,7 @@ let simpA_engine_tac ctxt cntrl l goal =
     with Not_found -> raise No_change
   in
   let loopdb = Data.get_loopdb cntrl in 
-  let gctxt = context_of ctxt goal in 
-  (simp_engine_tac gctxt cntrl atag
+  (simp_engine_tac ctxt cntrl atag
      >/ (fun cntrl1 -> Data.set_loopdb cntrl1 loopdb)) goal
 
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
@@ -184,8 +178,7 @@ let simpC_engine_tac ctxt cntrl l goal =
     with Not_found -> raise No_change
   in 
   let loopdb = Data.get_loopdb cntrl in 
-  let gctxt = context_of ctxt goal in 
-  (simp_engine_tac gctxt cntrl ctag
+  (simp_engine_tac ctxt cntrl ctag
      >/ (fun cntrl1 -> Data.set_loopdb cntrl1 loopdb)) goal
 
 (***
@@ -224,31 +217,29 @@ let simpA0_tac ctxt data ?a goal =
     with _ -> ((false, null) >+ skip) g1
   in
   let target_tac (ctrl: Data.t) tg g =
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ctrl)
       [
         (** Simplify the target **)
 	(fun (fl1, ctrl1) ->
-          try_rule (simpA_engine_tac gctxt ctrl (ftag tg)) ctrl1
+          try_rule (simpA_engine_tac ctxt ctrl (ftag tg)) ctrl1
             >/ (sum_fn fl1));
         (** Add the assumption to the simpset *)
         (fun (fl1, ctrl1) -> 
-          try_rule (add_asms_tac gctxt ctrl1 [tg]) ctrl1 
+          try_rule (add_asms_tac ctxt ctrl1 [tg]) ctrl1 
 (*          >/ (sum_fn fl1)) *)
           >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 
   let main_tac ctrl g = 
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ctrl)
       [
         (** Add non-target assumptions to the simpset *)
         (fun (fl1, ctrl1) -> 
-          try_rule (add_asms_tac gctxt ctrl1 asms) ctrl1
+          try_rule (add_asms_tac ctxt ctrl1 asms) ctrl1
          >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Add conclusions to the simpset *)
         (fun (fl1, ctrl1) -> 
-          try_rule (add_concls_tac gctxt ctrl1 concls) ctrl1
+          try_rule (add_concls_tac ctxt ctrl1 concls) ctrl1
          >/ (fun (_, ret2) -> (fl1, ret2)));
         (** Simplify the targets *)
         (fun (fl1, ctrl1) ->
@@ -313,31 +304,29 @@ let simpC0_tac ctxt data ?c goal =
     with _ -> ((false, null) >+ skip) g1
   in
   let target_tac ret ct g = 
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ret)
       [
         (** Simplify the target *)
         (fun (fl1, ret1) ->
-          try_rule (simpC_engine_tac gctxt ret1 (ftag ct)) ret1
+          try_rule (simpC_engine_tac ctxt ret1 (ftag ct)) ret1
           >/ (sum_fn fl1));
         (** Add it to the assumptions *)
         (fun (fl1, ret1) ->
-          try_rule (add_concls_tac gctxt ret1 [ct]) ret1
+          try_rule (add_concls_tac ctxt ret1 [ct]) ret1
             >/ (fun (_, ret2) -> (fl1, ret2)))
       ] g
   in 
   let main_tac ret g = 
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ret)
       [
         (** Add assumptions to the simpset *)
         (fun (fl1, ret1) ->
-          try_rule (add_asms_tac gctxt ret1 asms) ret1
+          try_rule (add_asms_tac ctxt ret1 asms) ret1
          >/ (fun (_, ret2) -> (fl1, ret2)));
 
         (** Add non-target conclusions to the simpset *)
         (fun (fl1, ret1) ->
-          try_rule (add_concls_tac gctxt ret1 concls) ret1
+          try_rule (add_concls_tac ctxt ret1 concls) ret1
          >/ (fun (_, ret2) -> (fl1, ret2)));
 
         (** Simplify the targets (in reverse order) *)
@@ -396,30 +385,28 @@ let full_simp0_tac ctxt data goal =
     with _ -> ((false, null) >+ skip) g1
   in
   let asm_tac ret tg g =
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ret)
       [
         (** Simplify the assumption **)
 	(fun (fl1, ret1) ->
-          try_rule (simpA_engine_tac gctxt ret1 (ftag tg)) ret1
+          try_rule (simpA_engine_tac ctxt ret1 (ftag tg)) ret1
           >/ (sum_fn fl1));
         (** Add the assumption to the simpset *)
         (fun (fl1, ret1) ->
-          try_rule (add_asms_tac gctxt ret1 [tg]) ret1 
+          try_rule (add_asms_tac ctxt ret1 [tg]) ret1 
          >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 
   let concl_tac ret tg g = 
-    let gctxt = context_of ctxt g in 
     fold_seq (false, ret)
       [
         (** Simplify the conclusion **)
 	(fun (fl1, ret1) ->
-          try_rule (simpC_engine_tac gctxt ret1 (ftag tg)) ret1
+          try_rule (simpC_engine_tac ctxt ret1 (ftag tg)) ret1
           >/ (sum_fn fl1));
         (** Add the conclusion to the simpset *)
         (fun (fl1, ret1) ->
-          try_rule (add_concls_tac gctxt ret1 [tg]) ret1
+          try_rule (add_concls_tac ctxt ret1 [tg]) ret1
           >/ (fun (_, ret2) -> (fl1, ret2)));
       ] g
   in 

@@ -200,7 +200,7 @@ let make_asm_rules except forms =
 *)
 type simpset = 
     { 
-      convs: (Context.t -> Logic.conv) Net.net;
+      convs: (Context.scoped -> Logic.conv) Net.net;
       basic: rule Net.net;          (* global rules *)
       next: simpset option          (* next simpset *)
     } 
@@ -261,8 +261,7 @@ let add_conv (vars, key) conv s =
 (** [lookup_conv scp set trm list]: Look up [trm] in the conversions
     of [set]. Raise [Not_found] on failure.
 *)
-let rec lookup_conv ctxt scp set trm list =
-  let sctxt = Context.set_scope ctxt scp in
+let rec lookup_conv sctxt set trm list =
   let conv_list = Net.lookup set.convs trm
   in 
   try 
@@ -278,9 +277,9 @@ let rec lookup_conv ctxt scp set trm list =
     the rewrite rules then the next set in the chain (if any). The
     rules are added, in the order they are found, to [lst].
 *)
-let rec lookup_all ctxt scp set term list = 
+let rec lookup_all sctxt set term list = 
   let list1 = 
-    try lookup_conv ctxt scp set term list
+    try lookup_conv sctxt set term list
     with Not_found -> list
   in 
   let list2 = 
@@ -289,7 +288,7 @@ let rec lookup_all ctxt scp set term list =
   in 
   match set.next with
     | None -> List.rev list2
-    | Some(s) -> lookup_all ctxt scp s term list2
+    | Some(s) -> lookup_all sctxt s term list2
 
 
 (** [lookup trm set]: find list of possible matches for term [trm] in
@@ -297,7 +296,7 @@ let rec lookup_all ctxt scp set term list =
     rewrite rules then the next set in the chain (if any). The rules
     are returned in the order they are found.
 *)
-let rec lookup ctxt scp set trm = lookup_all ctxt scp set trm []
+let rec lookup sctxt set trm = lookup_all sctxt set trm []
 
 (*** Adding rules to a simpset ***)
 
@@ -315,22 +314,22 @@ let make_thm_rule thm =
 
 (** [thm_to_entries scp thm]: Convert a theorem to a list of simpset
     entries.  *)
-let thm_to_entries ctxt scp thm =
-  let rules = Simpconvs.thm_to_rules ctxt scp thm
+let thm_to_entries (sctxt: Context.scoped) (thm: Logic.thm) =
+  let rules = Simpconvs.thm_to_rules sctxt thm
   in 
   List.map make_thm_rule rules
 
 (** [simpset_add_thm scp set thm]: Add rewrites from [thm] to simpset
     [set].  *)
-let simpset_add_thm ctxt scp sset thm =
-  let entries = thm_to_entries ctxt scp thm
+let simpset_add_thm ctxt sset thm =
+  let entries = thm_to_entries ctxt thm
   in 
   simpset_add_rules sset entries
 
 (** [simpset_add_thms scp set thms]: Apply [simpset_add_thm] to each
     theorem in [thms].  *)
-let simpset_add_thms ctxt scp set thms =
-  List.fold_left (simpset_add_thm ctxt scp) set thms
+let simpset_add_thms sctxt set thms =
+  List.fold_left (simpset_add_thm sctxt) set thms
 
 (*** Assumptions ***)
 

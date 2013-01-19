@@ -120,7 +120,7 @@ let dest_qnt_implies term =
 *)
 let unify_in_goal varp atrm ctrm goal = 
   let tyenv = typenv_of goal
-  and scp = scope_of goal
+  and scp = scope_of_goal goal
   in 
   Unify.unify ~typenv:tyenv scp varp atrm ctrm
 

@@ -426,7 +426,6 @@ let prove_cond_tac ctxt cntrl values entry goal =
   and orig_loopdb = Data.get_loopdb cntrl
   in 
   let main_tac cntrl g =
-    let gctxt = context_of ctxt g in 
     fold_seq (None, None)
       [
        (** Add rule to the goal assumptions. *)
@@ -443,7 +442,7 @@ let prove_cond_tac ctxt cntrl values entry goal =
           (** Apply the prover to the sub-goal with the condition to
               prove. *)
           if (Tag.equal cnd_gltg (node_tag g1))
-          then ((cond_data, data2) >+ prover_tac ncntrl gctxt cnd_ftg) g1
+          then ((cond_data, data2) >+ prover_tac ncntrl ctxt cnd_ftg) g1
           else 
 	    (** Get the rule-data from the other sub-goal.*)
             begin
@@ -534,10 +533,10 @@ let match_rewrite scp tyenv qntenv rl trm =
     rewriting [trm] and [rl] the rewrite rule to add to the list being
     compiled.
 *)
-let find_basic ctxt data rl trm goal =
+let find_basic ctxt data rl trm (goal: Logic.node) =
   let (cntrl, tyenv, qntenv) = (data.cntrl, data.tyenv, data.qntenv) 
   and (qs, c, lhs, rhs, order, thm) = rl
-  and scp = scope_of goal in 
+  and scp = scope_of_goal goal in 
   (* Test whether the rule is a match, throws an exception on
      failure.  *)
   let (src, ntyenv, ntenv, ntrm) =
@@ -549,19 +548,18 @@ let find_basic ctxt data rl trm goal =
     with _ -> raise No_change
   in 
   let tac g =
-    let gctxt = context_of ctxt g in
     if (is_conditional rl)
     then
       let values = extract_consts qs ntenv 
       in 
-      ((prove_cond_tac gctxt cntrl1 values rl) >/
+      ((prove_cond_tac ctxt cntrl1 values rl) >/
 	  (fun (ncntrl, rr) -> 
             ({data with cntrl = ncntrl; tyenv = ntyenv}, 
              ntrm, rr))) g
     else
       (skip +< ({data with cntrl = cntrl1}, ntrm, thm)) g
   in 
-  try tac goal 
+  try tac goal
   with _ -> raise No_change
 
 (** [find_match_tac data trm g]: Find a rule in simpset [set] which
@@ -577,13 +575,12 @@ let find_basic ctxt data rl trm goal =
     Raise [No_change] and set [ret:=None] if no matches.
 *)
 let find_match_tac ctxt data trm goal =
-  let (cntrl, tyenv, qntenv) = (data.cntrl, data.tyenv, data.qntenv) in 
-  let scp = scope_of goal
-  and sqnt = sequent goal 
+  let (cntrl, tyenv, qntenv) = (data.cntrl, data.tyenv, data.qntenv)
+  in
+  let sqnt = sequent goal 
   and excluded = Data.get_exclude cntrl
   in 
   let rec find_aux rls t g = 
-    let gctxt = context_of ctxt g in 
     match rls with
       | [] -> raise No_change 
       | rl::nxt ->
@@ -593,12 +590,13 @@ let find_match_tac ctxt data trm goal =
 	then find_aux nxt t g
 	else 
 	  begin
-            try find_basic gctxt data rl t g
+            try find_basic ctxt data rl t g
 	    with _ -> find_aux nxt t g
           end
   in 
+  let gctxt = goal_context ctxt goal in 
   let lst = 
-    try lookup ctxt scp (Data.get_simpset cntrl) trm
+    try lookup gctxt (Data.get_simpset cntrl) trm
     with _ -> raise No_change
   in 
   find_aux lst trm goal
@@ -616,8 +614,7 @@ let rec find_all_matches_tac ctxt data trm goal =
     (** Try to find a match, checking that rr_depth is not reached.
     **)
     let (cntrl1, tyenv1, qntenv1) = dest_match_data data in
-    let cntrl2 = Data.dec_rr_depth cntrl1 in
-    let gctxt = context_of ctxt g1
+    let cntrl2 = Data.dec_rr_depth cntrl1 
     in 
     if Lib.compare_int_option (Data.get_rr_depth cntrl2) 0
     then ((data1, trm1, rrlist1) >+ skip) g1
@@ -627,7 +624,7 @@ let rec find_all_matches_tac ctxt data trm goal =
           fold_seq (data1, trm1, rrlist1)
             [
               (fun (data2, trm2, rrlist2) -> 
-                (find_match_tac gctxt data2 trm2
+                (find_match_tac ctxt data2 trm2
                  >/ (fun (data3, trm3, rr3)
                  -> 
                    ({data3 with qntenv = qntenv1},
@@ -724,7 +721,6 @@ let rec find_subterm_bu_tac ctxt data trm goal =
     plan.
 *)
 and find_term_bu_tac ctxt data trm goal =
-  let gctxt = context_of ctxt goal in
   let (cntrl, tyenv, qntenv) = dest_match_data data
   in 
   let finalize (data1, trm1, mplan, splan) =
@@ -734,8 +730,7 @@ and find_term_bu_tac ctxt data trm goal =
     ({data1 with qntenv = qntenv}, trm1, plan)
   in
   let rw_term_tac (data1, trm1, mplan1, splan1) g =
-    let gctxt = context_of ctxt g in
-    try (find_all_matches_tac gctxt data1 trm1
+    try (find_all_matches_tac ctxt data1 trm1
          >/ 
            (fun (data2, trm2, rrlist) -> 
              let mplan2 = pack (mk_rules rrlist) 
@@ -752,7 +747,7 @@ and find_term_bu_tac ctxt data trm goal =
            alt_data fold_arg
              [
                (fun (data1, trm1, mplan1, splan1) ->
-                 (find_subterm_bu_tac gctxt data1 trm1
+                 (find_subterm_bu_tac ctxt data1 trm1
                   >/ 
                     (fun (data2, trm2, plan2) -> 
                       ({data2 with qntenv = qntenv},
@@ -776,7 +771,6 @@ and find_term_bu_tac ctxt data trm goal =
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
 let rec find_subterm_td_tac ctxt data trm goal =
-  let gctxt = context_of ctxt goal in  
   let (_, _, qntenv) = dest_match_data data in 
   match trm with
     | Basic.Qnt(q, b) -> 
@@ -786,7 +780,7 @@ let rec find_subterm_td_tac ctxt data trm goal =
         (** Rewrite quantifier body, top-down **)
         (alt_data ({data with qntenv = qntenv2}, b, mk_skip)
           [
-            (fun (data1, b1, plan1) -> find_term_td_tac gctxt data1 b1);
+            (fun (data1, b1, plan1) -> find_term_td_tac ctxt data1 b1);
             (fun alt_arg -> (alt_arg >+ skip))
           ]
          >/ 
@@ -800,8 +794,7 @@ let rec find_subterm_td_tac ctxt data trm goal =
       end
     | Basic.App(f, a)->
       let rw_term_tac ((data: match_data), plan) t g =
-        let gctxt = context_of ctxt g in  
-        try find_term_td_tac gctxt data t g
+        try find_term_td_tac ctxt data t g
         with _ -> ((data, t, plan) >+ skip) g
       in
       let finalize (data1, nf, na, fplan1, aplan1) =
@@ -841,9 +834,8 @@ and find_term_td_tac ctxt data trm goal =
   let (cntrl, tyenv, qntenv) = dest_match_data data 
   in 
   let rw_term_tac ((data1: match_data), trm1, mplan1, splan1) g =
-    let gctxt = context_of ctxt g in  
     try
-      (find_all_matches_tac gctxt data1 trm1
+      (find_all_matches_tac ctxt data1 trm1
        >/
          (fun (data2, trm2, rrlist) ->
            let mplan2 = pack (mk_rules rrlist) 
@@ -853,7 +845,6 @@ and find_term_td_tac ctxt data trm goal =
     with _ -> ((data1, trm1, mplan1, splan1) >+ skip) g
   in
   let tac g = 
-    let gctxt = context_of ctxt g in  
     fold_seq (data, trm, mk_rules [], mk_skip)
       [
         (** Rewrite the current term, ignoring errors **)
@@ -864,7 +855,7 @@ and find_term_td_tac ctxt data trm goal =
           (alt_data fold_arg
              [
                (fun (data1, trm1, mplan1, splan1) ->
-	         find_subterm_td_tac gctxt data trm1
+	         find_subterm_td_tac ctxt data trm1
                  >/
                    (fun (data2, trm2, splan2) ->
                      ({data2 with qntenv = qntenv},
@@ -908,25 +899,23 @@ let basic_simp_tac ctxt cntrl ft goal =
     (Formula.term_of (Logic.drop_tag ftrm), flag)
   in 
   let tac1 ((data1: match_data), trm1, _) g1 = 
-    let gctxt = context_of ctxt g1 in  
     (** Get the rewrite plan **)
     let rr_cntrl = Data.get_control (data1.cntrl) in
     if (rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
-    then find_term_bu_tac gctxt data1 trm1 g1
-    else find_term_td_tac gctxt data1 trm1 g1
+    then find_term_bu_tac ctxt data1 trm1 g1
+    else find_term_td_tac ctxt data1 trm1 g1
   in 
   let tac2 (data1, trm1, plan1) g1 = 
     (** Apply the rewrite plan found by tac1 **)
-    let gctxt = context_of ctxt g1 in
     let cntrl1 = data1.cntrl in
     begin
-      if Data.mem_loopdb (scope_of g1) cntrl1 trm1
+      if Data.mem_loopdb (scope_of_goal g1) cntrl1 trm1
       then raise No_change
       else ()
     end;
     (** Check the rewrite plan **)
     if (Lib.try_app check_change plan1) = None
-    then ((data1, trm1, plan1) >+ Boollib.trivial gctxt ~f:(ftag ft)) g1
+    then ((data1, trm1, plan1) >+ Boollib.trivial ctxt ~f:(ftag ft)) g1
     else 
       begin
 	(** Reset the control data **)
@@ -1001,7 +990,6 @@ let simp_prep_tac ctrl lbl goal =
 
  let cond_prover_worker_tac ctxt ctrl tg goal = 
    let rec main_tac ctrl1 g1 = 
-     let gctxt = context_of ctxt goal in 
      let ctrl2 = Data.set_loopdb ctrl1 (Net.empty())
      in 
      alt_data ctrl2
@@ -1009,7 +997,7 @@ let simp_prep_tac ctrl lbl goal =
          (fun ctrl3 ->
            fold_seq ctrl3
              [
-               (fun ctrl4 -> basic_simp_tac gctxt ctrl4 tg);
+               (fun ctrl4 -> basic_simp_tac ctxt ctrl4 tg);
                (fun ctrl4 -> main_tac ctrl4)
              ]);
          (fun ctrl3 -> (ctrl3 >+ skip))
@@ -1020,7 +1008,6 @@ let simp_prep_tac ctrl lbl goal =
    (main_tac ctrl >/ finalize) goal
 
  let cond_prover_tac ctrl ctxt tg goal =
-   let gctxt = context_of ctxt goal in 
    let cond_depth = Data.get_cond_depth ctrl in 
    if Lib.apply_option (fun i -> i>0) cond_depth true
    then 
@@ -1033,7 +1020,7 @@ let simp_prep_tac ctrl lbl goal =
            (fold_seq data
               [
                 (fun ctrl1 -> simp_prep_tac ctrl1 (ftag tg));
-                (fun ctrl1 -> cond_prover_worker_tac gctxt ctrl1 tg)
+                (fun ctrl1 -> cond_prover_worker_tac ctxt ctrl1 tg)
               ])
            (fun _ -> cond_prover_trueC (ftag tg))
        ] goal

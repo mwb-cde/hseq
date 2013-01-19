@@ -73,19 +73,6 @@ val read_defn:
 
 (** {5 Theories} *)
 
-val scoped: Context.t -> Scope.t -> Context.scoped
-(** Make a scoped context. *)
-val scope_of: Context.scoped -> Scope.t
-(** Get the scope. *)
-val set_scope: Context.scoped -> Scope.t -> Context.scoped
-(** Set the scope. *)
-
-val context_of: Context.scoped -> Context.t
-(** Get the context. *)
-val set_context: Context.scoped -> Context.t -> Context.scoped
-(** Set the context. *)
-
-
 val theories: Context.t -> Thydb.thydb
 (** Get the theory database. *)
 

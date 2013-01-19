@@ -24,7 +24,7 @@ open Tactics
 (** Simpset functions *)
 let empty_simp = Simpset.empty_set
 let add_simps = Simpset.simpset_add_thms 
-let add_simp ctxt scp set thm = add_simps ctxt scp set [thm]
+let add_simp ctxt set thm = add_simps ctxt set [thm]
 
 let add_conv set terms conv =
   let add_aux set trm = 
@@ -68,8 +68,8 @@ end
 let simpC_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     ctxt set ?add ?c rules goal =
-  let scp = scope_of goal in 
   (** uset: The simpset to use. **)
+  let sctxt = goal_context ctxt goal in 
   let uset = 
     let uset1 = 
       match add with
@@ -79,7 +79,7 @@ let simpC_tac
     (** If there are rules, make a simpset from them. **)
     match rules with 
       | [] -> uset1
-      | _ -> Simpset.simpset_add_thms ctxt scp uset1 rules
+      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -102,7 +102,7 @@ let simpC ctxt set ?c goal = simpC_tac ctxt set ?c [] goal
 let simpA_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     ctxt set ?add ?a rules goal =
-  let scp = scope_of goal in 
+  let sctxt = goal_context ctxt goal in 
   (** uset: The simpset to use. **)
   let uset = 
     let uset1 = 
@@ -113,7 +113,7 @@ let simpA_tac
     (** If there are rules, make a simpset from them. **)
     match rules with 
       | [] -> uset1
-      | _ -> Simpset.simpset_add_thms ctxt scp uset1 rules
+      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -136,7 +136,7 @@ let simpA ctxt set ?a goal = simpA_tac ctxt ?a set [] goal
 let simp_all_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     ctxt set ?add rules goal =
-  let scp = scope_of goal in 
+  let sctxt = goal_context ctxt goal in 
   (** uset: The simpset to use. **)
   let uset = 
     let uset1 = 
@@ -147,7 +147,7 @@ let simp_all_tac
     (** If there are rules, make a simpset from them. **)
     match rules with 
       | [] -> uset1
-      | _ -> Simpset.simpset_add_thms ctxt scp uset1 rules
+      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
@@ -196,20 +196,20 @@ let simp ctxt set ?f goal = simp_tac ctxt ?f set [] goal
 
 let has_property p ps = List.mem p ps
 
-let thm_is_simp ctxt scp set (_, tr) =
+let thm_is_simp ctxt set (_, tr) =
   if has_property Theory.simp_property tr.Theory.props
   then 
-    try add_simp ctxt scp set tr.Theory.thm
+    try add_simp ctxt set tr.Theory.thm
     with _ -> set
   else set
 
-let def_is_simp ctxt scp set (_, dr) =
+let def_is_simp ctxt set (_, dr) =
   match dr.Theory.def with
     | None -> set
     | Some(thm) -> 
       if has_property Theory.simp_property dr.Theory.dprops
       then 
-        try add_simp ctxt scp set thm 
+        try add_simp ctxt set thm 
         with _ -> set
       else set
         

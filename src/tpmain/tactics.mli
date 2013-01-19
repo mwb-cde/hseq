@@ -31,6 +31,20 @@ type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
 
 (** {5 Support functions} *)
 
+val scoped: Context.t -> Scope.t -> Context.scoped
+(** Make a scoped context. *)
+val scope_of: Context.scoped -> Scope.t
+(** Get the scope. *)
+val context_of: Context.scoped -> Context.t
+(** Get the context. *)
+val set_scope: Context.scoped -> Scope.t -> Context.scoped
+(** Set the scope. *)
+val set_context: Context.scoped -> Context.t -> Context.scoped
+(** Set the context. *)
+
+val goal_context: Context.t -> Logic.node -> Context.scoped
+(** Make scoped context from the scope of a goal. *)
+
 (** {7 Error reporting} *)
 
 val error: string -> exn
@@ -96,7 +110,7 @@ val sqnt_tag: Logic.Sequent.t -> Tag.t
 val sequent: Logic.node -> Logic.Sequent.t
 (** Get sequent of a node. *)
 
-val scope_of: Logic.node -> Scope.t
+val scope_of_goal: Logic.node -> Scope.t
 (** Get the scope of a node. *)
 
 val typenv_of: Logic.node -> Gtypes.substitution
@@ -120,10 +134,6 @@ val get_concl: Logic.label -> Logic.node -> Formula.t
 val get_form: Logic.label -> Logic.node -> Formula.t
 (** Get a formula by label. First tries [get_concl] then [get_asm]. *)
 
-(*
-val context_of: Context.scoped -> Logic.node -> Context.t
-(** Set the scope of context to the scope of a node. *)
-*)
 (** {7 Branches} *)
 
 val branch_tyenv: Logic.branch -> Gtypes.substitution
