@@ -136,6 +136,9 @@ exception ParsingError of string
 
 (** {7 Symbols} *)
 
+(** Symbol tables *)
+type table = Lexer.symtable
+
 val syms_list : (string * Lexer.tok) list
 (** The list of builtin symbols *)
 
@@ -143,7 +146,7 @@ val syms_list : (string * Lexer.tok) list
 val symtable_size : int ref
 (** The initial size of the standard symbol table. *)
 
-val symtable : unit -> Lexer.symtable
+val symtable : unit -> table
 (** Get the standard symbol table *)
 
 val add_symbol : string -> Lexer.tok -> unit
@@ -163,7 +166,7 @@ val remove_symbol : string -> unit
    Fails silently if [sym] already exists
  *)
 
-val init_symtable : unit -> unit
+val init_symtable : int -> unit
 (**
    Initialise the symbol table and add the standard symbols.
  *)
@@ -281,6 +284,29 @@ val remove_overload:
 
 val print_overloads: Printer.ppinfo -> unit
 (** Print the overloads table. *)
+
+(** {5 Parser Tables} *)
+(** Parser tables *)
+module Table:
+sig
+  (** Parser tables *)
+  type t =
+      {
+        tokens: Grammars.token_table;
+        type_tokens: Grammars.token_table;
+        symbols: Lexer.symtable;
+        overloads: (string, (Ident.t * Basic.gtype) list) Hashtbl.t;
+      }
+
+  (** Default sizes *)
+  val default_size: (int * int * int * int)
+
+  (** The empty table, of given size *)
+  val empty: (int * int * int * int) -> t
+
+  (** Initialize a table *)
+  val init: t -> t
+end
 
 (** {5 Initialising functions} *)
 

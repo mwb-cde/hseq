@@ -382,6 +382,9 @@ open Lterm
 
 (*** Symbols ***)
 
+(** Symbol tables *)
+type table = Lexer.symtable
+
 let syms_list = 
   [(".", Sym DOT); 
    ("(", Sym ORB);
@@ -395,7 +398,8 @@ let syms_list =
    ("?", Key EX); ("exists", Key EX);
    ("%", Key LAM); "lambda", Key LAM]
 
-let symtable_size= ref 51
+let default_symtable_size = 51
+let symtable_size= ref default_symtable_size
 let symbols= ref (mk_symtable (! symtable_size))
 let symtable()= !symbols
 
@@ -409,13 +413,13 @@ let find_symbol sym= Lexer.find_sym (!symbols) sym
 let remove_symbol sym =
   symbols:=Lexer.remove_sym (!symbols) sym
 
-let init_symtable()= 
-  symbols:=(mk_symtable !symtable_size);
+let init_symtable sz = 
+  symbols := (mk_symtable sz);
   List.iter (fun (s, t) ->  add_symbol s t) syms_list
 
 (*** Tokens ***)
 
-let token_table=Grammars.token_table_new()
+let token_table=Grammars.token_table_new Grammars.default_table_size
 
 let add_token_info tok tok_info=
   Grammars.token_table_add token_table tok tok_info
@@ -426,7 +430,7 @@ let get_token_info tok=
 let remove_token_info tok =
   Grammars.token_table_remove token_table tok 
 
-let type_token_table=Grammars.token_table_new()
+let type_token_table=Grammars.token_table_new Grammars.default_table_size
 
 let add_type_token_info tok tok_info=
   Grammars.token_table_add type_token_table tok tok_info
@@ -464,12 +468,13 @@ let remove_type_token sym=
 
 (*** Overloading ***)
 
-let overload_table_size = ref 127
-let mk_overload_table () = Hashtbl.create (! overload_table_size)
-let overload_table = ref (Hashtbl.create (! overload_table_size))
+let default_overload_table_size = 127
+let overload_table_size = ref default_overload_table_size
+let mk_overload_table sz = Hashtbl.create sz
+let overload_table = ref (mk_overload_table default_overload_table_size)
 
 let init_overload () = 
-  overload_table := mk_overload_table()
+  overload_table := mk_overload_table default_overload_table_size
 
 let get_overload_list sym =
   Hashtbl.find (!overload_table) sym
@@ -542,6 +547,46 @@ let print_overloads info =
   Hashtbl.iter print_fn (!overload_table);
   Format.printf "@]"
 
+(** Parser tables *)
+module Table = 
+struct
+  type t =
+      {
+        tokens: Grammars.token_table;
+        type_tokens: Grammars.token_table;
+        symbols: Lexer.symtable;
+        overloads: (string, (Ident.t * Basic.gtype) list) Hashtbl.t;
+      }
+
+  let default_size = (Grammars.default_table_size,
+                      Grammars.default_table_size,
+                      default_symtable_size,
+                      default_overload_table_size)
+
+  let empty (tok_size, tytok_size, stm_size, ov_size) = 
+    {
+      tokens = Grammars.token_table_new tok_size;
+      type_tokens = Grammars.token_table_new tytok_size;
+      symbols = Lexer.mk_symtable stm_size;
+      overloads = mk_overload_table ov_size;
+    }
+
+  let init_symbols symtbl syms = 
+    List.fold_left 
+      (fun tbl (s, t) -> Lexer.add_sym tbl s t) 
+      symtbl syms
+
+  let init tbl = 
+    let toks = Grammars.token_table_reset tbl.tokens
+    and tytoks = Grammars.token_table_reset tbl.type_tokens
+    and symtab = init_symbols tbl.symbols syms_list;
+    and ovltab = mk_overload_table default_overload_table_size
+    in 
+    {
+      tokens = toks; type_tokens = tytoks;
+      symbols = symtab; overloads = ovltab
+    }
+end 
 
 (*** Initialising functions ***)
 
@@ -552,9 +597,9 @@ let init_type_token_table()=
   Grammars.token_table_reset type_token_table
     
 let init_tables ()=
-  init_symtable();
-  init_type_token_table();
-  init_token_table();
+  init_symtable default_symtable_size;
+  ignore(init_type_token_table());
+  ignore(init_token_table());
   init_overload()
 
 let init_parsers () = 

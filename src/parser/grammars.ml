@@ -116,12 +116,18 @@ type token_table =
       table: (token, token_info) Hashtbl.t
     }
 
+(*
 let token_table_new () =
   { memo = None; table=Hashtbl.create default_table_size }
+*)
+let token_table_new sz =
+  { memo = None; table=Hashtbl.create sz }
+
 
 let token_table_reset tbl =
   tbl.memo <- None;
-  Hashtbl.clear tbl.table
+  Hashtbl.clear tbl.table;
+  tbl
 
 (* token_table_add: should fail if token already exists (but doesn't
  *fixme* )

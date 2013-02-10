@@ -1,7 +1,7 @@
 (*----
   Name: userlib.ml
-  Copyright M Wahab 2005-2010, 2012
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2013
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -24,57 +24,59 @@
 module Global =
 struct
 
+  module Old  = 
+  struct
   (** The default context. *)
-  let default_context() = 
-    let ctxt = Context.empty() in
-    let ctxt1 = Context.set_obj_suffix [".cmo"; "cmi"] ctxt in
-    let ctxt2 = Context.set_script_suffix (Settings.script_suffix) ctxt1 in
-    let ctxt3 = Context.set_thy_suffix (Settings.thy_suffix) ctxt2 in  
-    ctxt3
+    let default_context() = 
+      let ctxt = Context.empty() in
+      let ctxt1 = Context.set_obj_suffix [".cmo"; "cmi"] ctxt in
+      let ctxt2 = Context.set_script_suffix (Settings.script_suffix) ctxt1 in
+      let ctxt3 = Context.set_thy_suffix (Settings.thy_suffix) ctxt2 in  
+      ctxt3
 
   (** Variables *)
-  let state_var = ref (default_context())
+    let state_var = ref (default_context())
 
-  let state () = !state_var
-  let set_state ctxt = state_var := ctxt
+    let state () = !state_var
+    let set_state ctxt = state_var := ctxt
 
-  (** Short cut to {!Thys.theories.} *)
-  let theories() = Context.Thys.get_theories (state())
+    (** Short cut to {!Thys.theories.} *)
+    let theories() = Context.Thys.get_theories (state())
 
-  (** Short cut to {!Thys.current.} *)
-  let current() = Context.Thys.current (state())
+    (** Short cut to {!Thys.current.} *)
+    let current() = Context.Thys.current (state())
 
-  (** Short cut to {!Thys.current_name.} *)
-  let current_name () = Context.Thys.current_name (state())
+    (** Short cut to {!Thys.current_name.} *)
+    let current_name () = Context.Thys.current_name (state())
 
-  (** The global scope. Constructed from the theory database. *)
-  let scope () = Thydb.mk_scope(theories())
+    (** The global scope. Constructed from the theory database. *)
+    let scope () = Thydb.mk_scope(theories())
 
-  (** Printer-Parser *)
-  module PP =
-  struct
+    (** Printer-Parser *)
+    module PP =
+    struct
     (*** Printer tables ***)
-    let tp_pp_info = ref (Printer.empty_ppinfo())
-    let info() = !tp_pp_info 
-    let set info = tp_pp_info := info
-    let pp_reset() = set (Printer.empty_ppinfo())
+      let tp_pp_info = ref (Printer.empty_ppinfo())
+      let info() = !tp_pp_info 
+      let set info = tp_pp_info := info
+      let pp_reset() = set (Printer.empty_ppinfo())
 
     (*** Parser tables ***)
-    let sym_init() = Parser.init()
-    let sym_info() = Parser.symtable()
-    let sym_reset () = Parser.init()
+      let sym_init() = Parser.init()
+      let sym_info() = Parser.symtable()
+      let sym_reset () = Parser.init()
 
     (** Initialiser *)
-    let init() = pp_reset(); sym_init()
-  end
-
-  (** Initialise the global state. *)
-  let init () =
-    begin
-      set_state(default_context());
-      PP.init()
+      let init() = pp_reset(); sym_init()
     end
 
+  (** Initialise the global state. *)
+    let init () =
+      begin
+        set_state(default_context());
+        PP.init()
+      end
+  end
 end
 
 (***
@@ -82,7 +84,6 @@ end
 ***)
 
 (** String utilities **)
-
 let compile dirs name = 
   let compile_aux () =
     let inc_dirs = 

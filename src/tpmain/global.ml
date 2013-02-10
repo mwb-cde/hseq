@@ -38,6 +38,7 @@ let state_var = ref (default_context())
 let state () = !state_var
 let set_state ctxt = state_var := ctxt
 
+
 (** Short cut to {!Thys.theories.} *)
 let theories() = Context.Thys.get_theories (state())
 

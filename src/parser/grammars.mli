@@ -139,9 +139,11 @@ val string_tokens: Lexer.tok list -> string
   
 type token_table
 (** Token tables *)
-val token_table_new: unit -> token_table
+val default_table_size: int
+(** Default token table size *)
+val token_table_new: int -> token_table
 (** Make a token table *)
-val token_table_reset: token_table -> unit
+val token_table_reset: token_table -> token_table
 (** Reset a token table *)
 val token_table_add: token_table -> Lexer.tok -> token_info -> unit
 (** Add a token to token table *)
