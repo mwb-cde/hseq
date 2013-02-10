@@ -19,64 +19,116 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
+open Basic
+open Parser
+open Lib.Ops
+
 (** {5 Global state} *)
 
 module Global =
 struct
 
-  module Old  = 
-  struct
-  (** The default context. *)
-    let default_context() = 
-      let ctxt = Context.empty() in
-      let ctxt1 = Context.set_obj_suffix [".cmo"; "cmi"] ctxt in
-      let ctxt2 = Context.set_script_suffix (Settings.script_suffix) ctxt1 in
-      let ctxt3 = Context.set_thy_suffix (Settings.thy_suffix) ctxt2 in  
-      ctxt3
-
-  (** Variables *)
-    let state_var = ref (default_context())
-
-    let state () = !state_var
-    let set_state ctxt = state_var := ctxt
-
-    (** Short cut to {!Thys.theories.} *)
-    let theories() = Context.Thys.get_theories (state())
-
-    (** Short cut to {!Thys.current.} *)
-    let current() = Context.Thys.current (state())
-
-    (** Short cut to {!Thys.current_name.} *)
-    let current_name () = Context.Thys.current_name (state())
-
-    (** The global scope. Constructed from the theory database. *)
-    let scope () = Thydb.mk_scope(theories())
-
-    (** Printer-Parser *)
-    module PP =
-    struct
-    (*** Printer tables ***)
-      let tp_pp_info = ref (Printer.empty_ppinfo())
-      let info() = !tp_pp_info 
-      let set info = tp_pp_info := info
-      let pp_reset() = set (Printer.empty_ppinfo())
-
-    (*** Parser tables ***)
-      let sym_init() = Parser.init()
-      let sym_info() = Parser.symtable()
-      let sym_reset () = Parser.init()
-
-    (** Initialiser *)
-      let init() = pp_reset(); sym_init()
-    end
+  (** State *)
+  let state = Userstate.state
 
   (** Initialise the global state. *)
-    let init () =
-      begin
-        set_state(default_context());
-        PP.init()
-      end
-  end
+  let init () = Userstate.init()
+
+  (** Scope *)
+  let scope = Userstate.scope
+  let set_scope = Userstate.set_scope
+
+  (** Context *)
+  let context = Userstate.context
+  let scoped = Userstate.scoped
+  let set_context = Userstate.set_context
+
+  let theories() = Context.Thys.get_theories (context())
+  let current() = Context.Thys.current (context())
+  let current_name () = Context.Thys.current_name (context())
+
+  (** Pretty-printing *)
+  let ppinfo = Userstate.ppinfo
+  let set_ppinfo = Userstate.set_ppinfo
+
+  (** Parser tables *)
+  let parsers = Userstate.parsers
+  let set_parsers = Userstate.set_parsers
+
+end
+
+(** Parsers and printers *)
+module PP =
+struct
+
+  (** Tables access *)
+  let overloads () = Parser.Table.get_overloads (Global.parsers())
+
+  let catch_parse_error e a = 
+    try (e a)
+    with 
+    | Parser.ParsingError x -> raise (Report.error x)
+    | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
+      
+  let overload_lookup s = 
+    let thydb s = Thydb.get_id_options s (Global.theories())
+    and parserdb s = 
+      Parser.get_overload_list ~ovltbl:(overloads()) s
+    in 
+    try parserdb s
+    with Not_found -> thydb s
+
+  let expand_term scp t = 
+    let lookup = Pterm.Resolver.make_lookup scp overload_lookup in 
+    let (new_term, env) = Pterm.Resolver.resolve_term scp lookup t
+    in 
+    new_term
+
+  let expand_type_names scp t = Gtypes.set_name ~strict:false scp t
+
+  let expand_typedef_names scp t=
+    match t with
+    | Grammars.NewType (n, args) -> 
+      Defn.Parser.NewType (n, args) 
+    | Grammars.TypeAlias (n, args, def) ->
+      Defn.Parser.TypeAlias(n, args, expand_type_names scp def)
+    | Grammars.Subtype (n, args, def, set) ->
+      Defn.Parser.Subtype(n, args, 
+			  expand_type_names scp def, 
+			  expand_term scp set)
+
+  let expand_defn scp (plhs, prhs) =
+    let rhs = expand_term scp prhs
+    and ((name, ty), pargs) = plhs
+    in 
+    let args = List.map Pterm.to_term pargs
+    in 
+    (((name, ty), args), rhs)
+
+  let mk_term scp pt = expand_term scp pt
+
+  let read str= 
+    mk_term (Global.scope()) (catch_parse_error Parser.read_term str)
+
+  let read_unchecked x =
+    catch_parse_error (Pterm.to_term <+ Parser.read_term) x
+
+  let read_defn x =
+    let (lhs, rhs) = catch_parse_error (Parser.read defn_parser) x
+    in 
+    expand_defn (Global.scope()) (lhs, rhs)
+
+  let read_type_defn x =
+    let pdefn = catch_parse_error (Parser.read Parser.typedef_parser) x
+    in 
+    expand_typedef_names (Global.scope()) pdefn
+      
+  let read_type x = 
+    expand_type_names (Global.scope()) (catch_parse_error Parser.read_type x)
+
+  let read_identifier x = 
+    catch_parse_error (Parser.read Parser.identifier_parser) x
+
 end
 
 (***
@@ -116,26 +168,38 @@ let infixl = Commands.infixl
 let infixr = Commands.infixr
 let infixn = Commands.infixn
 
+let mk_term = PP.mk_term
+let read = PP.read
+let read_unchecked = PP.read_unchecked
+let read_defn = PP.read_defn
+let read_type_defn = PP.read_type_defn
+let read_type = PP.read_type
+let read_identifier = PP.read_identifier
+
 let first_pos = Lib.First
 let last_pos = Lib.Last
-let before_pos s = Lib.Before (Global.read_identifier s)
-let after_pos s = Lib.After (Global.read_identifier s)
-let at_pos s = Lib.Level (Global.read_identifier s)
+let before_pos s = Lib.Before (read_identifier s)
+let after_pos s = Lib.After (read_identifier s)
+let at_pos s = Lib.Level (read_identifier s)
+
 
 let add_term_pp s ?(pos=Lib.First) i f sym = 
-  Commands.add_term_pp 
+  Commands.add_term_pp (Global.context())
     (Ident.mk_long (Global.current_name()) s) ~pos:pos i f sym
 let get_term_pp s = 
   Commands.get_term_pp (Ident.mk_long (Global.current_name()) s)
 let remove_term_pp s = 
-  Commands.remove_term_pp (Ident.mk_long (Global.current_name()) s)
+  Commands.remove_term_pp (Global.context())
+    (Ident.mk_long (Global.current_name()) s)
 
 let add_type_pp s = 
-  Commands.add_type_pp (Ident.mk_long (Global.current_name()) s)
+  Commands.add_type_pp (Global.context())
+    (Ident.mk_long (Global.current_name()) s)
 let get_type_pp s = 
   Commands.get_type_pp (Ident.mk_long (Global.current_name()) s)
 let remove_type_pp s =
-  Commands.remove_type_pp (Ident.mk_long (Global.current_name()) s)
+  Commands.remove_type_pp (Global.context())
+    (Ident.mk_long (Global.current_name()) s)
 
 (***
     Theories 
@@ -238,4 +302,4 @@ let qed = Commands.qed
 ***)
 
 let init = Global.init
-let reset = Global.reset 
+let reset = Global.init

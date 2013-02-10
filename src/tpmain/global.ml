@@ -54,7 +54,6 @@ let scope () = Thydb.mk_scope(theories())
 (*** Pretty printing ***)
 module PP =
 struct
-
   (*** Printer tables ***)
   let tp_pp_info = ref (Printer.empty_ppinfo())
   let info() = !tp_pp_info 

@@ -256,33 +256,38 @@ val remove_type_token : string -> unit
 val overload_table_size : int ref
 (** The initial size of the overloading table. *)
 
-val overload_table: 
-    (string,  (Ident.t * Basic.gtype) list) Hashtbl.t ref
+type overload_table_t = (string,  (Ident.t * Basic.gtype) list) Hashtbl.t
+val overload_table: overload_table_t ref
 (** The table of overloaded symbols and possible identifiers. *)
 
 val init_overload: unit -> unit
 (** Initialise the overloading table. *)
 
-val add_overload:
-    string -> Theory.sym_pos -> (Ident.t * Basic.gtype) -> unit
+val add_overload: 
+  ?ovltbl:overload_table_t 
+  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) -> unit
 (** 
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
    type [ty] on symbol [sym]. Put [id] in position [pos]. 
 *)
 val get_overload_list: 
-    string -> (Ident.t * Basic.gtype) list
+  ?ovltbl:overload_table_t 
+  -> string -> (Ident.t * Basic.gtype) list
 (** 
    [get_overload_list sym]: Get the list of identifiers overloaded on
    symbol [sym].
 *)
 val remove_overload:
-    string -> Ident.t -> unit
+  ?ovltbl:overload_table_t 
+  -> string -> Ident.t -> unit
 (** 
    [remove_overload sym id]: Remove [id] from the list of identifiers
    overloading symbol [sym].
 *)
 
-val print_overloads: Printer.ppinfo -> unit
+val print_overloads: 
+  ?ovltbl:overload_table_t 
+  -> Printer.ppinfo -> unit
 (** Print the overloads table. *)
 
 (** {5 Parser Tables} *)
@@ -295,7 +300,7 @@ sig
         tokens: Grammars.token_table;
         type_tokens: Grammars.token_table;
         symbols: Lexer.symtable;
-        overloads: (string, (Ident.t * Basic.gtype) list) Hashtbl.t;
+        overloads: overload_table_t;
       }
 
   (** Default sizes *)
@@ -306,6 +311,12 @@ sig
 
   (** Initialize a table *)
   val init: t -> t
+
+  (** Accessors *)
+  val get_tokens: t -> Grammars.token_table 
+  val get_type_tokens: t -> Grammars.token_table
+  val get_symbols: t -> Lexer.symtable
+  val get_overloads: t -> overload_table_t
 end
 
 (** {5 Initialising functions} *)
@@ -400,19 +411,19 @@ val remove_type_parser :  string -> unit
    Read and parse a string
 *)
 
-val read: 'a parse -> string -> 'a
+val read: ?tbl:Lexer.symtable -> 'a parse -> string -> 'a
 (** [read ph str]: Parse string [str] with parser [ph]. *)
 
-val read_term : string -> Pterm.t
+val read_term : ?tbl:Lexer.symtable ->string -> Pterm.t
 (** [read_term str]: Parse string [str] using the standard term parser. *)
 
-val read_type : string -> Basic.gtype
+val read_type : ?tbl:Lexer.symtable ->string -> Basic.gtype
 (** [read_type str]: Parse string [str] using the standard term parser. *)
 
 (** {7 Debugging} *)
 
-val test_lex : string -> Lexer.tok Parserkit.Input.t
-val test : string -> Pterm.t
+val test_lex : ?tbl:Lexer.symtable ->string -> Lexer.tok Parserkit.Input.t
+val test : ?tbl:Lexer.symtable ->string -> Pterm.t
 
 
 

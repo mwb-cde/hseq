@@ -23,6 +23,13 @@
  * Parsers for terms and types.
  ***)
 
+
+(** Utility functions *)
+let get_optvalue v f = 
+  match v with 
+  | Some(y) -> y
+  | None -> (f())
+
 (*** 
  * Token information 
  ***)
@@ -468,16 +475,20 @@ let remove_type_token sym=
 
 (*** Overloading ***)
 
+type overload_table_t = (string, (Ident.t * Basic.gtype) list) Hashtbl.t
+
 let default_overload_table_size = 127
 let overload_table_size = ref default_overload_table_size
 let mk_overload_table sz = Hashtbl.create sz
 let overload_table = ref (mk_overload_table default_overload_table_size)
+let get_overload_table () = ((!overload_table): overload_table_t)
 
 let init_overload () = 
   overload_table := mk_overload_table default_overload_table_size
 
-let get_overload_list sym =
-  Hashtbl.find (!overload_table) sym
+let get_overload_list ?ovltbl sym =
+  let ovltab = get_optvalue ovltbl get_overload_table in 
+  Hashtbl.find ovltab sym
 
 let insert_pos pos d lst = 
   let rec split_at s l r =
@@ -511,27 +522,30 @@ let insert_pos pos d lst =
       in 
       List.rev_append (List.rev lt) (d::rt)
 
-let add_overload sym pos (id, ty) =
+let add_overload ?ovltbl sym pos (id, ty) =
+  let table = get_optvalue ovltbl get_overload_table
+  in 
   let list0 = 
-    try 
-      get_overload_list sym
+    try (get_overload_list ~ovltbl:table sym)
     with Not_found -> []
   in 
   let list1 = insert_pos pos (id, ty) list0
   in 
-  Hashtbl.replace (! overload_table) sym list1
+  Hashtbl.replace table sym list1
     
-let remove_overload sym id =
-  let list0 = get_overload_list sym
+let remove_overload ?ovltbl sym id =
+  let table = get_optvalue ovltbl get_overload_table in
+  let list0 = get_overload_list ~ovltbl:table sym
   in 
   let list1 = 
     List.remove_assoc id list0
   in 
   match list1 with
-    [] -> Hashtbl.remove (!overload_table) sym
-  | _ -> Hashtbl.replace (!overload_table) sym list1
+    [] -> Hashtbl.remove table sym
+  | _ -> Hashtbl.replace table sym list1
 
-let print_overloads info = 
+let print_overloads ?ovltbl info = 
+  let table = get_optvalue ovltbl get_overload_table in
   let print_fn sym list= 
     Format.printf "@[<2>%s@ " sym;
     List.iter
@@ -544,7 +558,7 @@ let print_overloads info =
     Format.printf "@]@,"
   in 
   Format.printf "@[<v>";
-  Hashtbl.iter print_fn (!overload_table);
+  Hashtbl.iter print_fn table;
   Format.printf "@]"
 
 (** Parser tables *)
@@ -555,7 +569,7 @@ struct
         tokens: Grammars.token_table;
         type_tokens: Grammars.token_table;
         symbols: Lexer.symtable;
-        overloads: (string, (Ident.t * Basic.gtype) list) Hashtbl.t;
+        overloads: overload_table_t;
       }
 
   let default_size = (Grammars.default_table_size,
@@ -586,6 +600,11 @@ struct
       tokens = toks; type_tokens = tytoks;
       symbols = symtab; overloads = ovltab
     }
+
+  let get_tokens t = t.tokens
+  let get_type_tokens t = t.type_tokens
+  let get_symbols t = t.symbols
+  let get_overloads t = t.overloads
 end 
 
 (*** Initialising functions ***)
@@ -645,18 +664,25 @@ let remove_type_parser = Grammars.remove_type_parser
 
 (*** Readers: read and parse a string ***)
 
-let read ph str =
-  Lexer.reader (scan (symtable())) ph str
+let get_symtab tbl = 
+  get_optvalue tbl symtable
 
-let read_term str = 
-  read term_parser str
+let read ?tbl ph str =
+  let symtab = get_symtab tbl in 
+  Lexer.reader (scan symtab) ph str
 
-let read_type str = 
-  read type_parser str
+let read_term ?tbl str = 
+  read ?tbl term_parser str
 
-let test_lex str = scan (symtable()) (Stream.of_string str);;
+let read_type ?tbl str = 
+  read ?tbl type_parser str
 
-let test str =  
-  reader (scan (symtable())) term_parser str
+let test_lex ?tbl str = 
+  let symtab = get_symtab tbl in 
+  scan symtab (Stream.of_string str);;
+
+let test ?tbl str =  
+  let symtab = get_symtab tbl in   
+  reader (scan symtab) term_parser str
 
 
