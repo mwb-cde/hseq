@@ -164,7 +164,8 @@ let add_type_pp_rec ctxt id rcrd =
 let remove_type_pp_rec ctxt id =
   Thydb.remove_type_pp_rec 
     (Ident.thy_of id) (Ident.name_of id) (Context.Thys.theories ctxt);
-  Global.PP.remove_type_pp id
+  Global.PP.remove_type_pp id;
+  ctxt
 
 let get_type_pp_rec id = Global.PP.get_type_pp id 
 
@@ -183,7 +184,8 @@ let get_term_pp_rec id = Global.PP.get_type_pp id
 let remove_term_pp_rec ctxt id =
   Thydb.remove_term_pp_rec
     (Ident.thy_of id) (Ident.name_of id) (theories ctxt);
-  Global.PP.remove_term_pp id
+  Global.PP.remove_term_pp id;
+  ctxt
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 
@@ -202,7 +204,7 @@ let add_type_pp ctxt id prec fx repr =
   in 
   add_type_pp_rec ctxt id rcrd
 
-let remove_type_pp id = remove_type_pp_rec id
+let remove_type_pp ctxt id = ignore(remove_type_pp_rec ctxt id)
 let get_type_pp id = get_type_pp_rec id
 
 (*** Terms ***)
@@ -219,7 +221,7 @@ let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
   end;
   ctxt1
 
-let remove_term_pp id = remove_term_pp_rec id
+let remove_term_pp ctxt id = ignore(remove_term_pp_rec ctxt id)
 let get_term_pp id = get_term_pp_rec id
 
 (** Axioms and Theorems ***)

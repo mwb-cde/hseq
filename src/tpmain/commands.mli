@@ -143,7 +143,7 @@ val remove_file: Context.t -> string -> unit
 
 val add_type_pp_rec: Context.t -> Ident.t -> Printer.record -> Context.t 
 (** Add a PP record for a type identifier. Updates Printer and Parser. *)
-val remove_type_pp_rec: Context.t -> Ident.t -> unit
+val remove_type_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a type identifier. Updates Printer and
     Parser.
 *)
@@ -159,7 +159,7 @@ val add_term_pp_rec:
     with relative position [pos] (Default is [First]).
 *)
 
-val remove_term_pp_rec: Context.t -> Ident.t -> unit
+val remove_term_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a term identifier. Updates Printer and
     Parser tables.
 *)

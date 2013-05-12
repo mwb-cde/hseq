@@ -23,12 +23,15 @@
 
 module Global: 
 sig
+(***
   (** The default context. *)
   val default_context: unit -> Context.t
+***)
+  type state_t = Userstate.State.t
 
   (** Global state *)
-  val state : unit -> Context.t
-  val set_state: Context.t -> unit
+  val state : unit -> Userstate.State.t
+  val set_state: Userstate.State.t -> unit
 
   (** Short cut to {!Thys.get_theories.} *)
   val theories: unit -> Thydb.thydb
@@ -40,12 +43,13 @@ sig
   val current_name: unit -> string
 
   (** The global scope. Constructed from the theory database. *)
-  val scope: unit -> Scope.t
+  val scope: Userstate.State.t -> Scope.t
 
   (** {5 Printing and Parsing}
 
       Global printer tables and functions to add, query and remove
       combined printer-parser information.  *)
+(*****
   module PP:
   sig
     (** Get the global printer information table. *)
@@ -57,6 +61,7 @@ sig
     (** Initialise the printer and parser tables. *)
     val init: unit -> unit
   end
+****)
 
   (** Initialise the global state. *)
   val init: unit -> unit
@@ -93,7 +98,7 @@ val catch_errors: ('a -> 'b) -> 'a -> 'b
 (** {5 Printing and Parsing} *)
 
 (** Infixes *)
-type fixity = Commands.fixity
+type fixity = Printer.fixity
 (** Fixity of symbols for printers and parsers. *)
 val nonfix: fixity  
 (** Non-fix. This is the default *)
@@ -123,17 +128,20 @@ val add_term_pp:
     [id] as [sym] with precedent [prec] and fixity [fixity].
 *)
 
-val get_term_pp: string -> (int * Printer.fixity * string option)
+val get_term_pp:
+  string -> (int * Printer.fixity * string option)
 (** [get_term_pp id]: get printer-parser information for term
     identifier [id].
 *)
 
-val remove_term_pp: string -> unit
+val remove_term_pp: 
+  string -> unit
 (** [remove_term_pp id]: remove last-added printer-parser information
     for term identifier [id].
 *)
 
-val add_type_pp: string -> int -> Printer.fixity 
+val add_type_pp: 
+  string -> int -> Printer.fixity 
   -> string option -> unit
 (** [add_type_pp id prec fixity sym]: add printer-parser information
     for term identifier [id]. Parser/print term identifier [id] as
@@ -387,8 +395,7 @@ val goal_scope: unit -> Scope.t
     Note that most proof commands are in module {!Goals}.
 *)
 
-val prove: 
-  ?scp:Scope.t -> Basic.term -> Tactics.tactic -> Logic.thm
+val prove: Basic.term -> Tactics.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
