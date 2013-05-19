@@ -72,12 +72,12 @@ struct
   let get_term_pp id = Printer.get_term_info (info()) id
 
   let add_term_pp id prec fixity repr =
-    Printer.add_term_info (info()) id prec fixity repr;
+    ignore(Printer.add_term_info (info()) id prec fixity repr);
     Parser.add_token 
       id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
   let add_term_pp_record id rcrd =
-    Printer.add_term_record (info()) id rcrd;
+    ignore(Printer.add_term_record (info()) id rcrd);
     Parser.add_token 
       id 
       (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
@@ -87,7 +87,7 @@ struct
   let remove_term_pp id =
     let (_, _, sym) = get_term_pp id
     in 
-    Printer.remove_term_info (info()) id;
+    ignore(Printer.remove_term_info (info()) id);
     Parser.remove_token (Lib.get_option sym (Ident.name_of id))
 
   (*** Types ***)
@@ -95,12 +95,12 @@ struct
   let get_type_pp id = Printer.get_type_info (info()) id
 
   let add_type_pp id prec fixity repr =
-    Printer.add_type_info (info()) id prec fixity repr;
+    ignore(Printer.add_type_info (info()) id prec fixity repr);
     Parser.add_type_token 
       id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
   let add_type_pp_record id rcrd =
-    Printer.add_type_record (info()) id rcrd;
+    ignore(Printer.add_type_record (info()) id rcrd);
     Parser.add_type_token 
       id 
       (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
@@ -110,7 +110,7 @@ struct
   let remove_type_pp id =
     let (_, _, sym) = get_type_pp id
     in 
-    Printer.remove_type_info (info()) id;
+    ignore(Printer.remove_type_info (info()) id);
     Parser.remove_type_token (Lib.get_option sym (Ident.name_of id))
 
   (*** User-defined printers ***)
@@ -119,19 +119,19 @@ struct
     Printer.get_term_printer (info()) id
 
   let add_term_printer id printer =
-    Printer.add_term_printer (info()) id (printer (info()))
+    ignore(Printer.add_term_printer (info()) id (printer (info())))
 
   let remove_term_printer id =
-    Printer.remove_term_printer (info()) id
+    ignore(Printer.remove_term_printer (info()) id)
 
   let get_type_printer id =
     Printer.get_type_printer (info()) id
 
   let add_type_printer id printer =
-    Printer.add_type_printer (info()) id (printer (info()))
+    ignore(Printer.add_type_printer (info()) id (printer (info())))
 
   let remove_type_printer id =
-    Printer.remove_type_printer (info()) id
+    ignore(Printer.remove_type_printer (info()) id)
 
   (** Functions to add PP information when a theory is loaded *)
 
@@ -253,26 +253,34 @@ struct
     Printer.get_term_info (Context.ppinfo ctxt) id
 
   let add_term_pp ctxt id prec fixity repr =
-    Printer.add_term_info (Context.ppinfo ctxt) id prec fixity repr;
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.add_term_info (Context.ppinfo ctxt) id prec fixity repr)
+    in
     Parser.add_token 
       id (Lib.get_option repr (Ident.name_of id)) fixity prec;
-    ctxt
+    ctxt1
 
   let add_term_pp_record ctxt id rcrd =
-    Printer.add_term_record (Context.ppinfo ctxt) id rcrd;
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.add_term_record (Context.ppinfo ctxt) id rcrd)
+    in
     Parser.add_token 
       id 
       (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
       (rcrd.Printer.fixity)
       (rcrd.Printer.prec);
-    ctxt
+    ctxt1
 
   let remove_term_pp ctxt id =
-    let (_, _, sym) = get_term_pp ctxt id
-    in 
-    Printer.remove_term_info (Context.ppinfo ctxt) id;
+    let (_, _, sym) = get_term_pp ctxt id in 
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.remove_term_info (Context.ppinfo ctxt) id)
+    in
     Parser.remove_token (Lib.get_option sym (Ident.name_of id));
-    ctxt
+    ctxt1
 
   (*** Types ***)
 
@@ -280,26 +288,34 @@ struct
     Printer.get_type_info (Context.ppinfo ctxt) id
 
   let add_type_pp ctxt id prec fixity repr =
-    Printer.add_type_info (Context.ppinfo ctxt) id prec fixity repr;
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.add_type_info (Context.ppinfo ctxt) id prec fixity repr)
+    in
     Parser.add_type_token 
       id (Lib.get_option repr (Ident.name_of id)) fixity prec;
-    ctxt
+    ctxt1
 
   let add_type_pp_record ctxt id rcrd =
-    Printer.add_type_record (Context.ppinfo ctxt) id rcrd;
+    let ctxt1 =
+      Context.set_ppinfo ctxt
+        (Printer.add_type_record (Context.ppinfo ctxt) id rcrd)
+    in
     Parser.add_type_token 
       id 
       (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
       (rcrd.Printer.fixity)
       (rcrd.Printer.prec);
-    ctxt
+    ctxt1
 
   let remove_type_pp ctxt id =
-    let (_, _, sym) = get_type_pp ctxt id
-    in 
-    Printer.remove_type_info (Context.ppinfo ctxt) id;
+    let (_, _, sym) = get_type_pp ctxt id in 
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.remove_type_info (Context.ppinfo ctxt) id)
+    in
     Parser.remove_type_token (Lib.get_option sym (Ident.name_of id)); 
-    ctxt
+    ctxt1
 
   (*** User-defined printers ***)
 
@@ -307,25 +323,37 @@ struct
     Printer.get_term_printer (Context.ppinfo ctxt) id
 
   let add_term_printer ctxt id printer =
-    Printer.add_term_printer (Context.ppinfo ctxt) id 
-      (printer (Context.ppinfo ctxt));
-    ctxt
+    let ctxt1 = 
+      Context.set_ppinfo ctxt 
+        (Printer.add_term_printer (Context.ppinfo ctxt) id 
+           (printer (Context.ppinfo ctxt)))
+    in
+    ctxt1
 
   let remove_term_printer ctxt id =
-    Printer.remove_term_printer (Context.ppinfo ctxt) id;
-    ctxt
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.remove_term_printer (Context.ppinfo ctxt) id)
+    in
+    ctxt1
 
   let get_type_printer ctxt id =
     Printer.get_type_printer (Context.ppinfo ctxt) id
 
   let add_type_printer ctxt id printer =
-    Printer.add_type_printer (Context.ppinfo ctxt) id
-      (printer (Context.ppinfo ctxt));
-    ctxt    
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+      (Printer.add_type_printer (Context.ppinfo ctxt) id
+         (printer (Context.ppinfo ctxt)))
+    in
+    ctxt1
 
   let remove_type_printer ctxt id =
-    Printer.remove_type_printer (Context.ppinfo ctxt) id;
-    ctxt
+    let ctxt1 = 
+      Context.set_ppinfo ctxt
+        (Printer.remove_type_printer (Context.ppinfo ctxt) id)
+    in
+    ctxt1
 
   (** Functions to add PP information when a theory is loaded *)
 
@@ -534,12 +562,12 @@ struct
       Printer.get_term_info (info()) id
 
     let add_term_pp id prec fixity repr =
-      Printer.add_term_info (info()) id prec fixity repr;
+      ignore(Printer.add_term_info (info()) id prec fixity repr);
       Parser.add_token 
         id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
     let add_term_pp_record id rcrd =
-      Printer.add_term_record (info()) id rcrd;
+      ignore(Printer.add_term_record (info()) id rcrd);
       Parser.add_token 
         id 
         (Lib.get_option rcrd.Printer.repr (Ident.name_of id))
@@ -549,7 +577,7 @@ struct
     let remove_term_pp id =
       let (_, _, sym) = get_term_pp id
       in 
-      Printer.remove_term_info (info()) id;
+      ignore(Printer.remove_term_info (info()) id);
       Parser.remove_token (Lib.get_option sym (Ident.name_of id))
 
   (*** Types ***)
@@ -558,12 +586,12 @@ struct
       Printer.get_type_info (info()) id
 
     let add_type_pp id prec fixity repr =
-      Printer.add_type_info (info()) id prec fixity repr;
+      ignore(Printer.add_type_info (info()) id prec fixity repr);
       Parser.add_type_token 
         id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
     let add_type_pp_record id rcrd =
-      Printer.add_type_record (info()) id rcrd;
+      ignore(Printer.add_type_record (info()) id rcrd);
       Parser.add_type_token 
         id 
         (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
@@ -573,7 +601,7 @@ struct
     let remove_type_pp id =
       let (_, _, sym) = get_type_pp id
       in 
-      Printer.remove_type_info (info()) id;
+      ignore(Printer.remove_type_info (info()) id);
       Parser.remove_type_token (Lib.get_option sym (Ident.name_of id))
 
   (*** User-defined printers ***)
@@ -582,19 +610,19 @@ struct
       Printer.get_term_printer (info()) id
 
     let add_term_printer id printer =
-      Printer.add_term_printer (info()) id (printer (info()))
+      ignore(Printer.add_term_printer (info()) id (printer (info())))
 
     let remove_term_printer id =
-      Printer.remove_term_printer (info()) id
+      ignore(Printer.remove_term_printer (info()) id)
 
     let get_type_printer id =
       Printer.get_type_printer (info()) id
 
     let add_type_printer id printer =
-      Printer.add_type_printer (info()) id (printer (info()))
+      ignore(Printer.add_type_printer (info()) id (printer (info())))
 
     let remove_type_printer id =
-      Printer.remove_type_printer (info()) id
+      ignore(Printer.remove_type_printer (info()) id)
 
   (** Functions to add PP information when a theory is loaded *)
 
@@ -715,6 +743,7 @@ struct
   let read_type_defn = PP.read_type_defn
 
   let mk_term t = PP.mk_term (scope()) t
+
 
 (*** File-Handling ***)
   module Files =

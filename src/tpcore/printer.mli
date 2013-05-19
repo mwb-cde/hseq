@@ -169,10 +169,10 @@ val get_record: 'a info -> Ident.t -> record
 *)
 
 val add_record: 
-  'a info -> Ident.t -> record -> unit
+  'a info -> Ident.t -> record -> 'a info
 (** Add a pretty printing record for an identifer. *)
 
-val remove_record: 'a info -> Ident.t -> unit
+val remove_record: 'a info -> Ident.t -> 'a info
 (** Remove record for identifer. *)
 
 val get_info: 'a info -> Ident.t -> (int * fixity * string option)
@@ -188,7 +188,7 @@ val get_info: 'a info -> Ident.t -> (int * fixity * string option)
 
 val add_info: 
   'a info -> Ident.t -> int -> fixity 
-  -> string option -> unit
+  -> string option -> 'a info
 (**
    [add_info info id prec fixity repr]: Add pretty printing
    information for an identifer.
@@ -197,18 +197,19 @@ val add_info:
    (optional) string representation to use rather than [id].
 *)
 
-val remove_info: 'a info -> Ident.t -> unit
+val remove_info: 'a info -> Ident.t -> 'a info
 (** Remove pretty printing information for identifer. *)
 
 val get_printer: 'a info -> Ident.t -> (fixity * int -> 'a printer)
 (** Get the user defined printer for an identifier *)
 
-val add_printer: 'a info -> Ident.t -> (fixity * int -> 'a printer) -> unit
+val add_printer: 
+  'a info -> Ident.t -> (fixity * int -> 'a printer) -> 'a info
+
 (** Add a user defined printer for an identifier *)
 
-val remove_printer: 'a info -> Ident.t -> unit
+val remove_printer: 'a info -> Ident.t -> 'a info
 (** Remove a user defined printer for an identifier *)
-
 
 (** {5 Combined printer information tables} *)
 
@@ -251,7 +252,7 @@ val get_term_info: ppinfo -> Ident.t -> (int * fixity * string option)
 
 val add_term_info: 
   ppinfo -> Ident.t -> int -> fixity 
-  -> string option -> unit
+  -> string option -> ppinfo
 (**
    [add_term_info ppinfo id prec fixity repr]
    Add pretty printing information for term identifer [id].
@@ -263,7 +264,7 @@ val add_term_info:
 *)
 
 val add_term_record: 
-  ppinfo -> Ident.t -> record -> unit
+  ppinfo -> Ident.t -> record -> ppinfo
 (**
    [add_term_record info id record]
    Add pretty printing record for a term identifer.
@@ -272,7 +273,7 @@ val add_term_record:
    @param record PP record
 *)
 
-val remove_term_info: ppinfo ->  Ident.t -> unit
+val remove_term_info: ppinfo ->  Ident.t -> ppinfo
 (** [remove_term_info info id] Remove pretty printing information for
     a term identifer.
 *)
@@ -285,10 +286,10 @@ val get_term_printer:
 val add_term_printer: 
   ppinfo -> Ident.t 
   -> (fixity * int -> (Basic.term * (Basic.term list)) printer) 
-  -> unit
+  -> ppinfo
 (** Add a user defined printer for a term identifier. *)
 
-val remove_term_printer: ppinfo -> Ident.t -> unit
+val remove_term_printer: ppinfo -> Ident.t -> ppinfo
 (** Remove user defined printer for a term identifier. *)
 
 (** {7 Gype printer information} *)
@@ -299,7 +300,7 @@ val get_type_info: ppinfo -> Ident.t -> (int * fixity * string option)
 *)
 
 val add_type_info: 
-  ppinfo -> Ident.t -> int -> fixity -> string option -> unit
+  ppinfo -> Ident.t -> int -> fixity -> string option -> ppinfo
 (**
    [add_type_info info id prec fixity repr]
    Add pretty printing information for type identifer [id].
@@ -310,7 +311,7 @@ val add_type_info:
    @param repr representation (if any).
 *)
 
-val add_type_record: ppinfo -> Ident.t -> record -> unit
+val add_type_record: ppinfo -> Ident.t -> record -> ppinfo
 (**
    [add_type_record info id record]
    Add a pretty printing record for a type identifer.
@@ -319,7 +320,7 @@ val add_type_record: ppinfo -> Ident.t -> record -> unit
    @param record PP record
 *)
 
-val remove_type_info: ppinfo -> Ident.t -> unit
+val remove_type_info: ppinfo -> Ident.t -> ppinfo
 (**
    [remove_type_info info id]
    Remove pretty printing information for a type identifer.
@@ -333,10 +334,10 @@ val get_type_printer:
 val add_type_printer: 
   ppinfo -> Ident.t -> 
   (fixity * int -> (Ident.t * (Basic.gtype list)) printer) 
-  -> unit
+  -> ppinfo
 (** Add a user defined printer for a type identifier *)
 
-val remove_type_printer: ppinfo -> Ident.t -> unit
+val remove_type_printer: ppinfo -> Ident.t -> ppinfo
 (** Remove a user defined printer for a type identifier *)
 
 (** {5 Pretty-printing utility functions} *)

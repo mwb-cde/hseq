@@ -242,14 +242,15 @@ end
 module Old:
 sig
 
+(***
   (** {7 Toplevel theory functions} *)
-
   val theories: unit -> Thydb.thydb
   (** Short cut to {!Thys.get_theories.} *)
   val current: unit -> Theory.thy
   (** Short cut to {!Thys.current.} *)
   val current_name: unit -> string
   (** Short cut to {!Thys.current_name.} *)
+*)
 
   val scope: unit -> Scope.t
   (** The global scope. Constructed from the theory database. *)
@@ -297,179 +298,8 @@ sig
   end
 ******************************************************)
 
-(******************************************************
-(** {5 Theories} *)
-  module Thys:
-  sig
 
-    val empty_thy_name: string
-  (** The name of the anonymous theory. *)
-
-    val anon_thy: unit -> Theory.thy
-  (** Make an anonymous theory. *)
-
-    val base_name: (string)option ref
-  (** The name of the base theory [[default: base]]. *)
-
-    val get_base_name: unit -> string
-  (** Get the name of the base theory. 
-
-      @raise Not_Found if no base theory set.  
-  *)
-
-    val set_base_name: string -> unit
-  (** Set the name of the base theory. *)
-    val clear_base_name: unit -> unit
-  (** Clear the base name. *)
-
-  (** {5 The theory database} *)
-
-    val theoryDB: Thydb.thydb ref
-  (** The theory database. *)
-
-    val get_theories: unit -> Thydb.thydb
-  (** Get the theory database. *)
-    val set_theories: Thydb.thydb -> unit
-  (** Set the theory database. *)
-
-    val current: unit -> Theory.thy
-  (** Get the current theory. @raise [Not_found] if no current
-      theory. *)
-    val current_name: unit -> string
-  (** The name of the current theory.
-      @raise [Not_found] if no current theory.  *)
-
-    val set_current: Theory.thy -> unit
-(** Set the current theory. *)
-  end
-
-(** {7 Toplevel theory functions} *)
-
-  val theories: unit -> Thydb.thydb
-(** Short cut to {!Thys.get_theories.} *)
-  val current: unit -> Theory.thy
-(** Short cut to {!Thys.current.} *)
-  val current_name: unit -> string
-(** Short cut to {!Thys.current_name.} *)
-
-  val scope: unit -> Scope.t
-(** The global scope. Constructed from the theory database. *)
-
-(** {5 File-Handling} *)
-
-(** Filenames and paths for theory files *)
-  module Files: 
-  sig
-
-    val get_cdir: unit -> string
-  (** The current working directory. *)
-
-    val object_suffix:  string list ref
-  (** The suffixes of file types which should be treated as byte-code
-      files (=[".cmo"; ".cmi"]).  *)
-
-    val load_use_file: ?silent:bool -> string -> unit
-  (** [load_use_file ?silent name]: If name is an object file (with a
-      suffix in [object_suffix]) then call {!Global.Hooks.load_file}[
-      name] otherwise call {!Global.Hooks.use_file} [?silent name].  *)
-
-  (** {7 Paths} *)
-
-    val get_path: string list ref -> string list
-  (** Get a list of directories from a path. *)
-    val set_path: string list -> string list ref -> unit
-  (** Set a path. *)
-    val add_path: string -> string list ref -> unit
-  (** Add a directory to a path. *)
-    val remove_path: string -> string list ref -> unit
-  (** Remove a directory from a path.*)
-
-    val get_thy_path: unit -> string list
-  (** The path for theory files. *)
-
-    val add_thy_path: string -> unit
-  (** Add a directory to the theory path. *)
-
-    val set_thy_path: string list -> unit
-  (** Set the theory path. *)
-
-    val remove_from_path: string -> unit
-  (** Remove a directory from the theory path. *)
-
-    val find_file: string -> string list -> string
-  (** [find_file f p]: Find file [f] in the path [p].  Returns the
-      full path to the file, raises [Not_found] if not found.  If [f]
-      is an absolute file name, just returns [f].  *)
-
-  (** {7 Theory files} *)
-
-    val file_of_thy: string -> string
-  (** [file_of_thy th]: Make the name of the file of theory [th]. *)
-
-    val script_of_thy: string -> string
-  (** [file_of_thy th]: Make the name of the script to build theory
-      [th]. *)
-
-    val find_thy_file: string -> string
-  (** Find the a theory file. *)
-
-  (** {7 Theory loading and building} *)
-
-    val build_thy_file: Thydb.thydb -> string -> Thydb.thydb
-  (** Function to build a theory from a script. *)
-
-    val load_thy_file: Thydb.Loader.info -> Theory.saved_thy
-  (** Function to load a theory from a file. *)
-
-    val load_use_theory_files: Theory.contents -> unit
-  (** Load or use the files named by a theory. This is only called
-      when a theory is loaded from a file, not went it is built from a
-      script.  Files are searched for in the theory path
-      [get_thy_path()].  *)
-
-  (** {7 Theory load functions}
-
-      Functions invoked when a theory is loaded from disk. When a
-      theory is loaded from disk, these functions are invoked on the
-      theory contents, e.g. to set-up the print and parse information
-      and pass informatin to proof tools.  *)
-
-    val load_functions: (Theory.contents -> unit) list ref
-  (** The list of functions to invoke on a theory. *)
-    val add_load_fn: (Theory.contents -> unit) -> unit
-  (** Add an inspection function. *)
-
-    val init_load_functions: unit -> unit
-  (** Initialise the inspection functions. *)
-
-    val on_load_thy: Thydb.thydb -> Theory.contents -> unit
-  (** The top-level inspection functions. Simply iterates through the
-      list of functions !load_functions in the reverse order that they
-      were added.  *)
-
-  (** {7 Miscellaneous} *)
-    val loader_data: Thydb.Loader.data
-  (** Default information needed for the theory database loader. *)
-
-  (** {7 Debugging} *)
-    val forbidden:  Lib.StringSet.t ref
-    val init_forbidden: unit -> unit 
-    val add_forbidden: string -> unit 
-    val drop_forbidden: string -> unit 
-    val is_forbidden: string -> bool
-      
-  end
-
-(** {7 Toplevel file functions} *)
-
-  val get_thy_path: unit -> string list
-(** Get the list of directories to search for theory files. *)
-
-  val add_thy_path: string -> unit
-(** Add to the list of directories to search for theory files. *)
-
-******************************************************)
-
+(*****
 (** {5 Initialising functions} *)
   module Init:
   sig
@@ -518,8 +348,9 @@ sig
     
   val reset: unit -> unit
 (** Reset the system. (This is the same as [init()].) *)
-
+*)
 end (* module Old *)
+
 
 (** {5 Printing and Parsing}
 

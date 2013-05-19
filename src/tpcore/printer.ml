@@ -150,19 +150,19 @@ let empty_info() = mk_info default_info_size
 
 let get_record info id = Hashtbl.find info.records id
 let add_record info id rcrd = 
-  Hashtbl.replace info.records id rcrd
+  Hashtbl.replace info.records id rcrd;
+  info
 let remove_record info id  = 
-  Hashtbl.remove info.records id
+  Hashtbl.remove info.records id;
+  info
 
 (** Construct printer records to be added/accessed from [info] *)
 
 let get_info info id = 
   try 
-    let r = Hashtbl.find (info.records) id
-    in 
+    let r = Hashtbl.find (info.records) id in 
     (r.prec, r.fixity, r.repr)
-  with 
-      Not_found -> (default_term_prec, default_term_fixity, None)
+  with Not_found -> (default_term_prec, default_term_fixity, None)
 
 let add_info inf id pr fx rp = 
   let r = {prec = pr; fixity = fx; repr = rp}
@@ -170,17 +170,19 @@ let add_info inf id pr fx rp =
   add_record inf id r
 
 let remove_info inf id = 
-  Hashtbl.remove inf.records id
+  Hashtbl.remove inf.records id;
+  inf
 
 (** User defined printers *)
 
 let get_printer info id = 
   Hashtbl.find info.printers id 
 let add_printer info id prntr = 
-  Hashtbl.add info.printers id prntr
+  Hashtbl.add info.printers id prntr;
+  info
 let remove_printer info id = 
-  Hashtbl.remove info.printers id
-
+  Hashtbl.remove info.printers id;
+  info
 
 (*
  * Combined printer information tables} 
@@ -203,34 +205,35 @@ let empty_ppinfo() = mk_ppinfo default_info_size
 (** Operations involving term identifiers *)
 
 let get_term_info info x = get_info (info.terms) x
+let set_term_info info x = {info with terms = x}
 let add_term_info info id prec fixity repr = 
-  add_info (info.terms) id prec fixity repr
+  set_term_info info (add_info (info.terms) id prec fixity repr)
 let add_term_record info id record = 
-  add_record (info.terms) id record
+  set_term_info info (add_record (info.terms) id record)
 let remove_term_info info id = 
-  remove_info (info.terms) id 
+  set_term_info info (remove_info (info.terms) id)
 
 let get_term_printer info x = get_printer (info.terms) x
 let add_term_printer info id prnt = 
-  add_printer (info.terms) id prnt
+  set_term_info info (add_printer (info.terms) id prnt)
 let remove_term_printer info id = 
-  remove_printer (info.terms) id 
-
+  set_term_info info (remove_printer (info.terms) id)
 (** Operations involving type identifiers *)
 
 let get_type_info info x = get_info (info.types) x
+let set_type_info info x = {info with types = x}
 let add_type_info info id prec fixity repr = 
-  add_info (info.types) id prec fixity repr
+  set_type_info info (add_info (info.types) id prec fixity repr)
 let add_type_record info id record = 
-  add_record (info.types) id record
+  set_type_info info (add_record (info.types) id record)
 let remove_type_info info id = 
-  remove_info (info.types) id 
+  set_type_info info (remove_info (info.types) id)
 
 let get_type_printer info x = get_printer (info.types) x
 let add_type_printer info id prnt = 
-  add_printer (info.types) id prnt
+  set_type_info info (add_printer (info.types) id prnt)
 let remove_type_printer info id = 
-  remove_printer (info.types) id 
+  set_type_info info (remove_printer (info.types) id)
 
 (*
  * Pretty-printing utility functions
