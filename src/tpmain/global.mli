@@ -520,3 +520,150 @@ sig
 (** Reset the system. (This is the same as [init()].) *)
 
 end (* module Old *)
+
+(** {5 Printing and Parsing}
+
+    Global printer tables and functions to add, query and remove
+    combined printer-parser information.
+*)
+module NewPP:
+sig
+
+  (** {7 Terms} *)
+
+  val get_term_pp: Context.t ->
+    Ident.t -> (int * Printer.fixity * string option)
+  (** Get PP information for term identifer.  Returns
+      [(default_term_prec, default_term_fixity, None)] if not
+      found.  *)
+
+  val add_term_pp: Context.t ->
+    Ident.t -> int -> Printer.fixity 
+    -> string option -> Context.t
+  (** Add printer information for term identifer. *)
+
+  val add_term_pp_record: Context.t ->
+    Ident.t -> Printer.record -> Context.t
+  (** Add printer record for term identifer. *)
+
+  val remove_term_pp: Context.t -> Ident.t -> Context.t
+  (** Remove PP information for term identifer occuring in a term. *)
+
+  (** {7 Types} *)
+
+  val get_type_pp:
+    Context.t -> Ident.t -> (int * Printer.fixity * string option)
+  (** Get PP information for type identifer. *)
+
+  val add_type_pp: 
+    Context.t -> Ident.t 
+    -> int -> Printer.fixity -> string option 
+    -> Context.t
+  (** Add PP information for type identifer. *)
+
+  val add_type_pp_record: 
+    Context.t -> Ident.t -> Printer.record -> Context.t
+  (** Add PP record for type identifer. *)
+
+  val remove_type_pp: Context.t -> Ident.t -> Context.t
+  (** Remove PP record for type identifer. *)
+
+  (** {6 User-defined printers} *)
+
+  val get_term_printer:
+    Context.t -> Ident.t -> 
+    (Printer.fixity * int 
+     -> (Basic.term * (Basic.term list)) Printer.printer)
+  (** Get printer for terms. *)
+
+  val add_term_printer: 
+    Context.t -> Ident.t -> 
+    (Printer.ppinfo 
+     -> (Printer.fixity * int) 
+     -> (Basic.term * (Basic.term list)) Printer.printer) -> Context.t
+  (** [add_term_printer id p]: Add printer p for terms. The
+      printer is keyed by term identifier and triggered on a
+      function application (id args) (where args may be an empty
+      list). Printer p is invoked as (p info (fix, prec) (f,
+      args)) where info is the PP information, fix the fixity and
+      prec the precedence active when the printer is called and f
+      is the identifier term.  *)
+
+  val remove_term_printer: Context.t -> Ident.t -> Context.t
+  (** Remove printer for terms. *)
+
+  val get_type_printer:
+    Context.t -> Ident.t 
+    -> (Printer.fixity * int 
+	-> (Ident.t * (Basic.gtype list)) Printer.printer)
+  (** Get printer for types *)
+
+  val add_type_printer: 
+    Context.t -> Ident.t -> 
+    (Printer.ppinfo 
+     -> (Printer.fixity * int) 
+     -> (Ident.t * (Basic.gtype list)) Printer.printer) -> Context.t
+  (** [add_type_printer id p]: Add printer p for types. The
+      printer is keyed by type identifier and triggered on a
+      constructor expression (args)id (where args may be an empty
+      list). Printer p is invoked as (p info (fix, prec) (id,
+      args)) where info is the PP information, fix the fixity and
+      prec the precedence active when the printer is called.  *)
+
+  val remove_type_printer: Context.t -> Ident.t -> Context.t
+  (** Remove printer for types *)
+
+  (** {6 Parsing} *)
+
+  val overload_lookup:
+    string -> (Ident.t * Basic.gtype) list
+  (** [overload_lookup s]: Find the list of identifiers which may
+      be overloaded on [s]. String [s] may be a symbol or the
+      short name of a term.  *)
+
+  val expand_term: 
+    Scope.t -> Pterm.t -> Basic.term
+  (** Resolve symbols and short names in terms and types, replacing
+      them with long identifiers where possible. Also retype the term
+      if possible. Intended to make a parsed term suitable for passing
+      to {!Formula.make}. Never fails but resulting term may be
+      inconsistently typed.  *)
+
+  val expand_type_names: 
+    Scope.t -> Basic.gtype -> Basic.gtype
+  (** Replace symbols and short names in a type with the long
+      identifier, were possible.  *)
+  val expand_typedef_names: 
+    Scope.t -> Parser.typedef_data -> Defn.Parser.typedef
+  (** Resolve symbols and short names in a type definition.  *)
+
+  val mk_term: Scope.t -> Pterm.t -> Basic.term
+  (** Resolve symbols and short names in a term, making a parsed term
+      suitable for use.
+      
+      Replaces short names and symbols with their long identifiers where
+      possible. Also retypes the term if possible. Never fails but
+      resulting term may be inconsistently typed.
+  *)
+
+  val read: string -> Basic.term
+  (** Parse a string as a term, resolving short names and
+      symbols. *)
+
+  val read_unchecked: string -> Basic.term
+  (** Parse a string as a term, return the term as is, without
+      expanding terms and resolving symbols.  *)
+
+  val read_defn:
+    string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
+  (** Parse a string as a term definition. *)
+
+  val read_type: string -> Basic.gtype
+  (** Parse a string a type, resolving short names and symbols where
+      possible.  *)
+  val read_type_defn: string -> Defn.Parser.typedef
+  (** Parse a string as a type definition. *)
+
+  val read_identifier: string -> Ident.t
+(** Parse a string as an identifier. *)
+end

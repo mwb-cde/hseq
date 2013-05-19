@@ -95,10 +95,16 @@ type thy_t =
 (** [empty_thy_t()]: The default value for [thy_t]. *)
 val empty_thy_t: unit -> thy_t
 
-(** Printer Parser *)
+(** Pretty printer *)
 type pp_t =
   {
-    info_f: Printer.ppinfo ref;
+    pp_info_f: Printer.ppinfo ref;
+  }
+
+  (** Parsers *)
+type parser_t =
+  {
+    parser_info_f: Parser.Table.t ref;
   }
 
 (** [empty_pp_t()]: The default value for [pp_t]. *)
@@ -113,13 +119,11 @@ type t =
     (** Theory data *)
     thys_f: thy_t;
 
-(*
-    (** Scope *)
-    scope_f: Scope.t;
-*)
-
-    (** Printer-parser *)
+    (** Pretty printer *)
     pp_f: pp_t;
+
+    (** Parsers *)
+    parser_f: parser_t;
     
     (** A list of functions to invoke on a theory when it is added
         to the data-base. *)
@@ -148,48 +152,47 @@ val set_scope: scoped -> Scope.t -> scoped
 val set_context: scoped -> t -> scoped
 (** Set the context *)
 
-
 (** {5 Accessor Functions} *)
 
 (** {6 File handling} *)
 
-val set_load : (string -> unit) -> t -> t
+val set_load : t -> (string -> unit) -> t
 (** [set_load f t]: Set the file-loading function in context [t] to [f]. *)
 
 val load : t -> (string -> unit)
 (** [load t]: Get the file-loading function of context [t]. *)
 
-val set_use : (?silent:bool -> string -> unit) -> t -> t
+val set_use : t -> (?silent:bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
 val use : t -> (?silent:bool -> string -> unit)
 (** [use t]: Get the script-loading function of context [t]. *)
 
-val set_build : (?silent:bool -> string -> unit) -> t -> t
+val set_build : t ->  (?silent:bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
 val build : t -> (?silent:bool -> string -> unit)
 (** [use t]: Get the script-loading function of context [t]. *)
 
-val set_path : string list -> t -> t
+val set_path : t-> string list -> t
 (** [set_path p t]: Set the path in context [t] to [p]. *)
 
 val path : t -> string list
 (** [path t]: Get the path of context [t]. *)
 
-val set_obj_suffix : string list -> t -> t
+val set_obj_suffix : t -> string list -> t
 (** [set_obj_suffix sl t]: Set the object suffix list in context [t] to [sl]. *)
 
 val obj_suffix : t -> string list
 (** [obj_suffix t]: Get the object suffix list of context [t]. *)
 
-val set_thy_suffix : string -> t -> t
+val set_thy_suffix : t -> string -> t
 (** [set_obj_suffix sl t]: Set the theory suffix in context [t] to [sl]. *)
 
 val thy_suffix : t -> string
 (** [obj_suffix t]: Get the theory suffix  of context [t]. *)
 
-val set_script_suffix : string -> t -> t
+val set_script_suffix : t-> string -> t
 (** [set_obj_suffix sl t]: Set the script suffix in context [t] to [sl]. *)
 
 val script_suffix : t -> string
@@ -197,7 +200,7 @@ val script_suffix : t -> string
 
 (** {6 Theory handling} *)
 
-val set_base_name : string -> t -> t
+val set_base_name : t -> string -> t
 (** [set_base_name n t]: Set the theory base name in context [t] to [n]. *)
 
 val base_name : t -> string
@@ -209,42 +212,37 @@ val has_base_name : t -> bool
 val clear_base_name : t -> t
 (** [clear_base_name t]: Clear the theory base name in context [t]. *)
 
-val set_thydb : Thydb.thydb -> t -> t
+val set_thydb : t-> Thydb.thydb -> t
 (** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
 
 val thydb : t -> Thydb.thydb
 (** [thydb t]: Get the theory database of context [t]. *)
 
-val set_loader_data : Thydb.Loader.data -> t -> t
+val set_loader_data : t-> Thydb.Loader.data -> t 
 (** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
 
 val loader_data : t -> Thydb.Loader.data
 (** [thydb t]: Get the theory database of context [t]. *)
 
-val set_load_functions : 
-  (t -> Theory.contents -> t) list -> t -> t
+val set_load_functions : t-> (t -> Theory.contents -> t) list -> t
 (** [set_load_functions fl t]: Set the load functions in context
     [t] to [fl]. *)
 
 val load_functions : t -> (t -> Theory.contents -> t) list
 (** [load_functions t]: Get the load functions of context [t]. *)
 
-(*
-(** {6 Scope handling} *)
-
-val set_scope : t -> Scope.t -> t
-(** [set_scope n t]: Set the scope in context [t] to [n]. *)
-
-val scope : t -> Scope.t
-(** [scope t]: Get the scope in context [t]. *)
-*)
-
 (** {6 Pretty-printer handling} *)
 
-val set_ppinfo : Printer.ppinfo -> t -> unit
+val set_ppinfo : t -> Printer.ppinfo -> t
 (** [set_ppinfo n t]: Update the PP data in context [t] to [n]. *)
 
 val ppinfo : t -> Printer.ppinfo
+(** [ppinfo t]: Get the PP data in context [t]. *)
+
+val set_parsers : t-> Parser.Table.t -> t
+(** [set_ppinfo n t]: Update the PP data in context [t] to [n]. *)
+
+val parsers : t -> Parser.Table.t
 (** [ppinfo t]: Get the PP data in context [t]. *)
 
 val cache_thm: t -> Ident.t -> Logic.thm -> t
@@ -276,7 +274,7 @@ sig
   *)
   val get_base_name: t -> string
 
-  val set_base_name: string -> t -> t
+  val set_base_name: t -> string -> t
   (** Set the name of the base theory. *)
 
   (** Clear the base name. *)
@@ -289,7 +287,7 @@ sig
   val get_theories: t -> Thydb.thydb
 
   (** Set the theory database. *)
-  val set_theories: Thydb.thydb -> t -> t
+  val set_theories: t-> Thydb.thydb -> t
 
   (** Get the current theory. @raise [Not_found] if no current
       theory. *)
@@ -301,7 +299,7 @@ sig
   val current_name: t -> string
 
   (** Set the current theory. *)
-  val set_current: Theory.thy -> t -> t
+  val set_current: t -> Theory.thy -> t
 
 end
 
@@ -318,23 +316,23 @@ sig
 
   (** {7 Paths} *)
 
-  val set_path: string list -> t -> t
+  val set_path: t -> string list -> t
   (** Set the search path. *)
   val get_path: t -> string list
   (** Get the search path. *)
-  val add_path: string -> t -> t
+  val add_path: t -> string -> t
   (** Add a directory to a path. *)
-  val remove_path: string -> t -> t
+  val remove_path: t -> string -> t
   (** Remove a directory from a path.*)
 
   val get_thy_path: t -> string list
   (** The path for theory files. *)
 
-  val add_thy_path: string -> t -> t
+  val add_thy_path: t -> string -> t
   (** Add a directory to the theory path. *)
-  val set_thy_path: string list -> t -> t
+  val set_thy_path: t -> string list -> t
   (** Set the theory path. *)
-  val remove_from_path: string -> t -> t
+  val remove_from_path: t -> string -> t
   (** Remove a directory from the theory path. *)
 
   val find_file: string -> string list -> string

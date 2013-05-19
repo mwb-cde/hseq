@@ -73,6 +73,7 @@ struct
         (** script_suffix: Suffix for a script file. *)
         script_suffix_f: string;
       }
+
   let empty_file_t ()= 
     { 
       load_f = Default.load;
@@ -104,15 +105,26 @@ struct
       loader_data_f = Thydb.Loader.mk_empty();
     }
 
-  (** Printer Parser *)
+  (** Printer info *)
   type pp_t =
       {
-        info_f: Printer.ppinfo ref;
+        pp_info_f: Printer.ppinfo ref;
       }
 
   let empty_pp_t () = 
     {
-      info_f = ref(Printer.empty_ppinfo())
+      pp_info_f = ref(Printer.empty_ppinfo())
+    }
+
+  (** Parser info *)
+  type parser_t =
+      {
+        parser_info_f: Parser.Table.t ref;
+      }
+
+  let empty_parser_t () = 
+    {
+      parser_info_f = ref(Parser.Table.empty Parser.Table.default_size)
     }
 
   (** Top-level context *)
@@ -124,13 +136,11 @@ struct
         (** Theory data *)
         thys_f: thy_t;
 
-(*
-        (** Scope *)
-        scope_f: Scope.t;
-*)
-
-        (** Printer-parser *)
+        (** Pretty Printer *)
         pp_f: pp_t;
+
+        (** Parsers *)
+        parser_f: parser_t;
 
         (** A list of functions to invoke on a theory when it is added
             to the data-base. *)
@@ -140,19 +150,12 @@ struct
         thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
       }
 
-(*
-  let empty_scope_t () = 
-    Scope.empty_scope()
-*)
-
   let empty() = 
     {
       file_f = empty_file_t();
       thys_f = empty_thy_t();
-(*
-      scope_f = empty_scope_t();
-*)
       pp_f = empty_pp_t();
+      parser_f = empty_parser_t();
       load_functions_f = [];
       thm_cache = Hashtbl.create(13);
     }
@@ -175,43 +178,43 @@ struct
 
   (** {6 File handling} *)
 
-  let set_load f t = 
+  let set_load t f = 
     let file1 = {t.file_f with load_f = f} in
     { t with file_f = file1 }
 
   let load t = t.file_f.load_f
 
-  let set_use f t = 
+  let set_use t f = 
     let file1 = {t.file_f with use_f = f} in
     { t with file_f = file1 }
  
   let use t = t.file_f.use_f
 
-  let set_build f t = 
+  let set_build t f = 
     let file1 = {t.file_f with build_f = f} in
     { t with file_f = file1 }
 
   let build t = t.file_f.build_f
 
-  let set_path p t = 
+  let set_path t p = 
     let file1 = {t.file_f with path_f = p} in
     { t with file_f = file1 }
 
   let path t = t.file_f.path_f
 
-  let set_obj_suffix sl t = 
+  let set_obj_suffix t sl = 
     let file1 = {t.file_f with obj_suffix_f = sl} in
     { t with file_f = file1 }
 
   let obj_suffix t = t.file_f.obj_suffix_f
 
-  let set_thy_suffix sl t = 
+  let set_thy_suffix t sl = 
     let file1 = {t.file_f with thy_suffix_f = sl} in
     { t with file_f = file1 }
 
   let thy_suffix t = t.file_f.thy_suffix_f
 
-  let set_script_suffix sl t = 
+  let set_script_suffix t sl = 
     let file1 = {t.file_f with script_suffix_f = sl} in
     { t with file_f = file1 }
 
@@ -219,7 +222,7 @@ struct
 
   (** {6 Theory handling} *)
 
-  let set_base_name n t = 
+  let set_base_name t n = 
     let thys1 = {t.thys_f with base_name_f = Some(n)}
     in 
     { t with thys_f = thys1 }
@@ -237,43 +240,38 @@ struct
     in 
     { t with thys_f = thys1 }
 
-  let set_thydb db t =
+  let set_thydb t db =
     let thys1 = { t.thys_f with thydb_f = db }
     in 
     { t with thys_f = thys1 }
 
   let thydb t = t.thys_f.thydb_f
 
-  let set_loader_data lf t =
+  let set_loader_data t lf =
     let thys1 = { t.thys_f with loader_data_f = lf }
     in 
     { t with thys_f = thys1 }
 
   let loader_data t = t.thys_f.loader_data_f
 
-  let set_load_functions fl t =
+  let set_load_functions t fl =
     { t with load_functions_f = fl }
 
   let load_functions t = t.load_functions_f
 
-(*
-  (** Scope handling *)
+  (** Pretty printer information *)
+  let set_ppinfo t inf =
+    t.pp_f.pp_info_f := inf; t
 
-  let set_scope t scp = 
-    { t with scope_f = scp}
+  let ppinfo t = !(t.pp_f.pp_info_f)
 
-  let scope t = t.scope_f
-*)
+  (** Parser information *)
+  let set_parsers t inf =
+    t.parser_f.parser_info_f := inf; t
 
-(** Pretty printer information *)
+  let parsers t = !(t.parser_f.parser_info_f)
 
-  let set_ppinfo inf t =
-    t.pp_f.info_f := inf
-
-  let ppinfo t = !(t.pp_f.info_f)
-
-
-(** Theorem cache *)
+  (** Theorem cache *)
   let cache_thm t id thm = 
     if not (Hashtbl.mem t.thm_cache id)
     then
@@ -324,22 +322,22 @@ struct
   let anon_thy() = Theory.mk_thy empty_thy_name []
 
   let get_base_name ctxt = base_name ctxt
-  let set_base_name x ctxt = set_base_name x ctxt 
+  let set_base_name ctxt x = set_base_name ctxt x 
   let clear_base_name ctxt = clear_base_name ctxt 
 
   (** The theory database *)
   let theories ctxt = thydb ctxt
   let get_theories = theories
   let set_theories thydb ctxt = set_thydb thydb ctxt
-  let init_theories ctxt = set_theories (Thydb.empty())
+  let init_theories ctxt = set_theories ctxt (Thydb.empty())
 
   (** The current theory *)
   let current ctxt = Thydb.current (get_theories ctxt)
   let curr_theory= current
   let current_name ctxt = Theory.get_name (current ctxt)
-  let set_current thy ctxt = 
+  let set_current ctxt thy = 
     let thydb = Thydb.set_current (get_theories ctxt) thy in
-    set_theories thydb ctxt
+    set_theories ctxt thydb
 end
 
 (** {5 File-Handling} *)
@@ -362,18 +360,18 @@ struct
 
   let set_path = set_path
   let get_path = path
-  let add_path x ctxt = set_path (x::(get_path ctxt)) ctxt
-  let remove_path x ctxt = 
+  let add_path ctxt x = set_path ctxt (x::(get_path ctxt))
+  let remove_path ctxt x = 
     let pth = get_path ctxt in
-    set_path (Lib.filter (fun y -> x = y) pth) ctxt
+    set_path ctxt (Lib.filter (fun y -> x = y) pth)
 
   let init_thy_path ctxt = 
-    set_path ["."; Settings.thys_dir()] ctxt
+    set_path ctxt ["."; Settings.thys_dir()]
 
   let get_thy_path ctxt = path ctxt
-  let add_thy_path x ctxt = add_path x ctxt
-  let set_thy_path x ctxt = set_path x ctxt
-  let remove_from_path x ctxt = remove_path x ctxt
+  let add_thy_path ctxt x = add_path ctxt x
+  let set_thy_path ctxt x = set_path ctxt x
+  let remove_from_path ctxt x = remove_path ctxt x
 
   let init_paths ctxt = init_thy_path ctxt
 
@@ -396,8 +394,7 @@ struct
     else f
 
   let find_thy_file ctxt f =
-    try 
-      find_file (file_of_thy ctxt f) (get_thy_path ctxt)
+    try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
     with Not_found -> raise (Report.error ("Can't find theory "^f))
 
   (** [build_thy_file f]: build a theory by running script file f.  *)

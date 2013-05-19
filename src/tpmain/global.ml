@@ -27,9 +27,9 @@ open Lib.Ops
 
 let default_context() = 
   let ctxt = Context.empty() in
-  let ctxt1 = Context.set_obj_suffix [".cmo"; "cmi"] ctxt in
-  let ctxt2 = Context.set_script_suffix (Settings.script_suffix) ctxt1 in
-  let ctxt3 = Context.set_thy_suffix (Settings.thy_suffix) ctxt2 in  
+  let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
+  let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
+  let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
   ctxt3
 
 (** Variables *)
@@ -245,6 +245,202 @@ struct
     catch_parse_error (Parser.read Parser.identifier_parser) x
 end
 
+(*** New Pretty printing based on Context.t ***)
+module NewPP =
+struct
+  (*** Terms ***)
+  let get_term_pp ctxt id = 
+    Printer.get_term_info (Context.ppinfo ctxt) id
+
+  let add_term_pp ctxt id prec fixity repr =
+    Printer.add_term_info (Context.ppinfo ctxt) id prec fixity repr;
+    Parser.add_token 
+      id (Lib.get_option repr (Ident.name_of id)) fixity prec;
+    ctxt
+
+  let add_term_pp_record ctxt id rcrd =
+    Printer.add_term_record (Context.ppinfo ctxt) id rcrd;
+    Parser.add_token 
+      id 
+      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (rcrd.Printer.fixity)
+      (rcrd.Printer.prec);
+    ctxt
+
+  let remove_term_pp ctxt id =
+    let (_, _, sym) = get_term_pp ctxt id
+    in 
+    Printer.remove_term_info (Context.ppinfo ctxt) id;
+    Parser.remove_token (Lib.get_option sym (Ident.name_of id));
+    ctxt
+
+  (*** Types ***)
+
+  let get_type_pp ctxt id = 
+    Printer.get_type_info (Context.ppinfo ctxt) id
+
+  let add_type_pp ctxt id prec fixity repr =
+    Printer.add_type_info (Context.ppinfo ctxt) id prec fixity repr;
+    Parser.add_type_token 
+      id (Lib.get_option repr (Ident.name_of id)) fixity prec;
+    ctxt
+
+  let add_type_pp_record ctxt id rcrd =
+    Printer.add_type_record (Context.ppinfo ctxt) id rcrd;
+    Parser.add_type_token 
+      id 
+      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (rcrd.Printer.fixity)
+      (rcrd.Printer.prec);
+    ctxt
+
+  let remove_type_pp ctxt id =
+    let (_, _, sym) = get_type_pp ctxt id
+    in 
+    Printer.remove_type_info (Context.ppinfo ctxt) id;
+    Parser.remove_type_token (Lib.get_option sym (Ident.name_of id)); 
+    ctxt
+
+  (*** User-defined printers ***)
+
+  let get_term_printer ctxt id =
+    Printer.get_term_printer (Context.ppinfo ctxt) id
+
+  let add_term_printer ctxt id printer =
+    Printer.add_term_printer (Context.ppinfo ctxt) id 
+      (printer (Context.ppinfo ctxt));
+    ctxt
+
+  let remove_term_printer ctxt id =
+    Printer.remove_term_printer (Context.ppinfo ctxt) id;
+    ctxt
+
+  let get_type_printer ctxt id =
+    Printer.get_type_printer (Context.ppinfo ctxt) id
+
+  let add_type_printer ctxt id printer =
+    Printer.add_type_printer (Context.ppinfo ctxt) id
+      (printer (Context.ppinfo ctxt));
+    ctxt    
+
+  let remove_type_printer ctxt id =
+    Printer.remove_type_printer (Context.ppinfo ctxt) id;
+    ctxt
+
+  (** Functions to add PP information when a theory is loaded *)
+
+  let add_id_record ctxt id rcrd =
+    let pr, fx, repr = 
+      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+    in 
+    add_term_pp ctxt id pr fx repr
+
+  let add_type_record ctxt id rcrd =
+    let pr, fx, repr = 
+      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+    in 
+    add_type_pp ctxt id pr fx repr
+
+  let add_loaded_term_pp ctxt th =
+    let thy_name = th.Theory.cname
+    and pp_list = List.rev th.Theory.cid_pps
+    in 
+    let add_pp (id, (rcrd, pos)) = 
+      let _ = add_id_record ctxt (Ident.mk_long thy_name id) rcrd in
+      let repr = rcrd.Printer.repr
+      in 
+      match repr with
+	| None -> ()
+	| Some(sym) -> 
+	  try
+	    let id_record = List.assoc id th.Theory.cdefns in 
+	    let id_type = id_record.Theory.typ
+	    in 
+	    Parser.add_overload sym pos
+              (Ident.mk_long thy_name id, id_type)
+	  with _ -> ()
+    in 
+    List.iter add_pp pp_list;
+    ctxt
+
+  let add_loaded_type_pp ctxt th =
+    let thy_name = th.Theory.cname
+    and pp_list = List.rev th.Theory.ctype_pps
+    in 
+    let add_pp (id, rcrd) = 
+      ignore (add_type_record ctxt (Ident.mk_long thy_name id) rcrd)
+    in 
+    List.iter add_pp pp_list;
+    ctxt
+
+      
+  (*** Parsing ***)
+
+  let catch_parse_error e a = 
+    try (e a)
+    with 
+      | Parser.ParsingError x -> raise (Report.error x)
+      | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
+        
+  let overload_lookup s = 
+    let thydb s = Thydb.get_id_options s (theories())
+    and parserdb s = Parser.get_overload_list s
+    in 
+    try parserdb s
+    with Not_found -> thydb s
+
+  let expand_term scp t = 
+    let lookup = Pterm.Resolver.make_lookup scp overload_lookup in 
+    let (new_term, env) = Pterm.Resolver.resolve_term scp lookup t
+    in 
+    new_term
+
+  let expand_type_names scp t =  Gtypes.set_name ~strict:false scp t
+
+  let expand_typedef_names scp t=
+    match t with
+      | Grammars.NewType (n, args) -> 
+	Defn.Parser.NewType (n, args) 
+      | Grammars.TypeAlias (n, args, def) ->
+	Defn.Parser.TypeAlias(n, args, expand_type_names scp def)
+      | Grammars.Subtype (n, args, def, set) ->
+	Defn.Parser.Subtype(n, args, 
+			    expand_type_names scp def, 
+			    expand_term scp set)
+
+  let expand_defn scp (plhs, prhs) =
+    let rhs = expand_term scp prhs
+    and ((name, ty), pargs) = plhs
+    in 
+    let args = List.map Pterm.to_term pargs
+    in 
+    (((name, ty), args), rhs)
+
+  let mk_term scp pt = expand_term scp pt
+
+  let read str= 
+    mk_term (scope()) (catch_parse_error Parser.read_term str)
+
+  let read_unchecked x =
+    catch_parse_error (Pterm.to_term <+ Parser.read_term) x
+
+  let read_defn x =
+    let (lhs, rhs) = catch_parse_error (Parser.read defn_parser) x
+    in 
+    expand_defn (scope()) (lhs, rhs)
+
+  let read_type_defn x =
+    let pdefn = catch_parse_error (Parser.read Parser.typedef_parser) x
+    in 
+    expand_typedef_names (scope()) pdefn
+      
+  let read_type x = 
+    expand_type_names (scope()) (catch_parse_error Parser.read_type x)
+
+  let read_identifier x = 
+    catch_parse_error (Parser.read Parser.identifier_parser) x
+end
+
 let read = PP.read
 let read_type = PP.read_type
 let read_identifier = PP.read_identifier
@@ -334,7 +530,8 @@ struct
 
   (*** Terms ***)
 
-    let get_term_pp id = Printer.get_term_info (info()) id
+    let get_term_pp id =
+      Printer.get_term_info (info()) id
 
     let add_term_pp id prec fixity repr =
       Printer.add_term_info (info()) id prec fixity repr;
@@ -345,7 +542,7 @@ struct
       Printer.add_term_record (info()) id rcrd;
       Parser.add_token 
         id 
-        (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+        (Lib.get_option rcrd.Printer.repr (Ident.name_of id))
         (rcrd.Printer.fixity)
         (rcrd.Printer.prec)
 
@@ -357,7 +554,8 @@ struct
 
   (*** Types ***)
 
-    let get_type_pp id = Printer.get_type_info (info()) id
+    let get_type_pp id = 
+      Printer.get_type_info (info()) id
 
     let add_type_pp id prec fixity repr =
       Printer.add_type_info (info()) id prec fixity repr;
@@ -450,7 +648,7 @@ struct
       with 
         | Parser.ParsingError x -> raise (Report.error x)
         | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
-          
+
     let overload_lookup s = 
       let thydb s = Thydb.get_id_options s (Thys.get_theories())
       and parserdb s = Parser.get_overload_list s
@@ -464,7 +662,7 @@ struct
       in 
       new_term
 
-    let expand_type_names scp t =  Gtypes.set_name ~strict:false scp t
+    let expand_type_names scp t = Gtypes.set_name ~strict:false scp t
 
     let expand_typedef_names scp t=
       match t with
