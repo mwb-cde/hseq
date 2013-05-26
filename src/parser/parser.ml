@@ -531,7 +531,8 @@ let add_overload ?ovltbl sym pos (id, ty) =
   in 
   let list1 = insert_pos pos (id, ty) list0
   in 
-  Hashtbl.replace table sym list1
+  Hashtbl.replace table sym list1;
+  table
     
 let remove_overload ?ovltbl sym id =
   let table = get_optvalue ovltbl get_overload_table in
@@ -540,9 +541,12 @@ let remove_overload ?ovltbl sym id =
   let list1 = 
     List.remove_assoc id list0
   in 
-  match list1 with
-    [] -> Hashtbl.remove table sym
-  | _ -> Hashtbl.replace table sym list1
+  begin
+    match list1 with
+      [] -> Hashtbl.remove table sym
+    | _ -> Hashtbl.replace table sym list1
+  end;
+  table
 
 let print_overloads ?ovltbl info = 
   let table = get_optvalue ovltbl get_overload_table in

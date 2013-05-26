@@ -265,7 +265,8 @@ val init_overload: unit -> unit
 
 val add_overload: 
   ?ovltbl:overload_table_t 
-  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) -> unit
+  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) 
+  -> overload_table_t
 (** 
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
    type [ty] on symbol [sym]. Put [id] in position [pos]. 
@@ -279,7 +280,7 @@ val get_overload_list:
 *)
 val remove_overload:
   ?ovltbl:overload_table_t 
-  -> string -> Ident.t -> unit
+  -> string -> Ident.t -> overload_table_t
 (** 
    [remove_overload sym id]: Remove [id] from the list of identifiers
    overloading symbol [sym].

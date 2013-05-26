@@ -168,12 +168,12 @@ val get_term_pp_rec:
 (** Get the PP record for a term identifier. *)
 
 val add_overload: 
-  Context.t -> string -> ?pos:Theory.sym_pos -> Ident.t -> unit
+  Context.t -> string -> ?pos:Theory.sym_pos -> Ident.t -> Context.t
 (** [add_overload sym ?post id]: Overload [sym] with term identifier
     [id]. Make identifier [id] have position [?pos] (default [First])
     in the list of options for symbol [sym]. (Experimental.)
 *)
-val remove_overload: string -> Ident.t -> unit
+val remove_overload: Context.t -> string -> Ident.t -> Context.t
 (** [remove_overload sym id]: Remove overloading of term identifier
     [id] for [sym]. (Experimental.)
 *)

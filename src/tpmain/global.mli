@@ -50,6 +50,7 @@ sig
 
   val info: unit -> Printer.ppinfo
   (** Get the global printer information table. *)
+
 (***
   val set: Printer.ppinfo -> unit
   (** Set the global PP information table. *)

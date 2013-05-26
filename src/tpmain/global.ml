@@ -176,8 +176,8 @@ struct
 	    let id_record = List.assoc id th.Theory.cdefns in 
 	    let id_type = id_record.Theory.typ
 	    in 
-	    Parser.add_overload sym pos
-              (Ident.mk_long thy_name id, id_type)
+	    ignore(Parser.add_overload sym pos
+                     (Ident.mk_long thy_name id, id_type))
 	  with _ -> ()
     in 
     List.iter add_pp pp_list
@@ -396,8 +396,8 @@ struct
 	    let id_record = List.assoc id th.Theory.cdefns in 
 	    let id_type = id_record.Theory.typ
 	    in 
-	    Parser.add_overload sym pos
-              (Ident.mk_long thy_name id, id_type)
+	    ignore(Parser.add_overload sym pos
+                     (Ident.mk_long thy_name id, id_type))
 	  with _ -> ()
     in 
     List.iter add_pp pp_list;
@@ -665,8 +665,8 @@ struct
 	      let id_record = List.assoc id th.Theory.cdefns in 
 	      let id_type = id_record.Theory.typ
 	      in 
-	      Parser.add_overload sym pos
-                (Ident.mk_long thy_name id, id_type)
+	      ignore(Parser.add_overload sym pos
+                       (Ident.mk_long thy_name id, id_type))
 	    with _ -> ()
       in 
       List.iter add_pp pp_list

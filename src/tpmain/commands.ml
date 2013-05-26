@@ -191,10 +191,10 @@ let add_overload ctxt sym ?(pos=Lib.First) id =
   let ty = 
     Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in 
-  Parser.add_overload sym pos (id, ty)
+  Parser.add_overload sym pos (id, ty); ctxt
 
-let remove_overload sym id =
-  Parser.remove_overload sym id
+let remove_overload ctxt sym id =
+  Parser.remove_overload sym id; ctxt
 
 (*** User-level PP Functions ***)
 
@@ -216,7 +216,7 @@ let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
   in
   begin
     match repr with
-      | None -> ()
+      | None -> ctxt1
       | Some(sym) -> add_overload ctxt1 sym ~pos:pos id
   end;
   ctxt1
