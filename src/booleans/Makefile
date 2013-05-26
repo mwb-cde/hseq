@@ -123,7 +123,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=boolPP baseTheory boolutil boolbase \
+HSeq_SOURCES=baseTheory boolutil boolbase \
 		rewritelib booltacs boolinduct boollib
 
 # object_INCLUDE: Directories to include when compiling [object].

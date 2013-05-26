@@ -1187,7 +1187,7 @@ let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args) =
         print_bracket (assoc, prec) (nfixity, nprec) "(";
         std_printer (nfixity, nprec) (f, args);
         print_bracket (assoc, prec) (nfixity, nprec) ")"
-      | Some p -> p (assoc, prec) (f, args)
+      | Some p -> p ppstate (assoc, prec) (f, args)
   end;
   Format.printf "@]"
 
@@ -1218,7 +1218,7 @@ let rec print_term ppstate (assoc, prec) x =
         in 
         (match user_printer with
 	    None -> print_typed_identifier ppstate (n, ty)
-          | Some(p) -> p (assoc, prec) (x, []))
+          | Some(p) -> p ppstate (assoc, prec) (x, []))
     | Free(n, ty) -> 
       print_typed_name ppstate (n, ty)
     | Bound(n) -> 

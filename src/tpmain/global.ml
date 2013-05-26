@@ -54,23 +54,30 @@ let scope () = Thydb.mk_scope(theories())
 (*** Pretty printing ***)
 module PP =
 struct
+
   (*** Printer tables ***)
+(*
   let tp_pp_info = ref (Printer.empty_ppinfo())
   let info() = !tp_pp_info 
   let set info = tp_pp_info := info
   let pp_reset() = set (Printer.empty_ppinfo())
+*)
+  let info() = BoolPP.ppinfo()
 
   (*** Parser tables ***)
   let sym_init() = Parser.init()
   let sym_info() = Parser.symtable()
   let sym_reset () = Parser.init()
 
+(**
   let init() = pp_reset(); sym_init()
+**)
 
   (*** Terms ***)
 
   let get_term_pp id = Printer.get_term_info (info()) id
 
+(***
   let add_term_pp id prec fixity repr =
     ignore(Printer.add_term_info (info()) id prec fixity repr);
     Parser.add_token 
@@ -89,11 +96,13 @@ struct
     in 
     ignore(Printer.remove_term_info (info()) id);
     Parser.remove_token (Lib.get_option sym (Ident.name_of id))
+**)
 
   (*** Types ***)
 
   let get_type_pp id = Printer.get_type_info (info()) id
 
+(***
   let add_type_pp id prec fixity repr =
     ignore(Printer.add_type_info (info()) id prec fixity repr);
     Parser.add_type_token 
@@ -112,6 +121,7 @@ struct
     in 
     ignore(Printer.remove_type_info (info()) id);
     Parser.remove_type_token (Lib.get_option sym (Ident.name_of id))
+**)
 
   (*** User-defined printers ***)
 
@@ -135,17 +145,21 @@ struct
 
   (** Functions to add PP information when a theory is loaded *)
 
-  let add_id_record id rcrd =
+  let add_id_record id rcrd = ()
+(***
     let pr, fx, repr = 
       (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
     in 
     add_term_pp id pr fx repr
+****)
 
-  let add_type_record id rcrd =
+  let add_type_record id rcrd = ()
+(****
     let pr, fx, repr = 
       (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
     in 
     add_type_pp id pr fx repr
+****)
 
   let add_loaded_term_pp th =
     let thy_name = th.Theory.cname
@@ -325,8 +339,7 @@ struct
   let add_term_printer ctxt id printer =
     let ctxt1 = 
       Context.set_ppinfo ctxt 
-        (Printer.add_term_printer (Context.ppinfo ctxt) id 
-           (printer (Context.ppinfo ctxt)))
+        (Printer.add_term_printer (Context.ppinfo ctxt) id printer)
     in
     ctxt1
 
@@ -343,8 +356,7 @@ struct
   let add_type_printer ctxt id printer =
     let ctxt1 = 
       Context.set_ppinfo ctxt
-      (Printer.add_type_printer (Context.ppinfo ctxt) id
-         (printer (Context.ppinfo ctxt)))
+      (Printer.add_type_printer (Context.ppinfo ctxt) id printer)
     in
     ctxt1
 

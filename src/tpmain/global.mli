@@ -50,11 +50,15 @@ sig
 
   val info: unit -> Printer.ppinfo
   (** Get the global printer information table. *)
+(***
   val set: Printer.ppinfo -> unit
   (** Set the global PP information table. *)
+***)
 
+(***
   val init: unit -> unit
   (** Initialise the printer and parser tables. *)
+***)
 
   (** {7 Terms} *)
 
@@ -62,8 +66,10 @@ sig
     Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for term identifer.  Returns
       [(default_term_prec, default_term_fixity, None)] if not
-      found.  *)
+      found.  
+  *)
 
+(***
   val add_term_pp: 
     Ident.t -> int -> Printer.fixity 
     -> string option -> unit
@@ -75,33 +81,34 @@ sig
 
   val remove_term_pp: Ident.t -> unit
   (** Remove PP information for term identifer occuring in a term. *)
+***)
 
   (** {7 Types} *)
 
   val get_type_pp: Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for type identifer. *)
 
+(***
   val add_type_pp: 
-    Ident.t 
-    -> int -> Printer.fixity -> string option 
-    -> unit
+    Context.t -> Ident.t -> int -> Printer.fixity -> string option 
+    -> Context.t
   (** Add PP information for type identifer. *)
 
   val add_type_pp_record: 
-    Ident.t -> Printer.record -> unit
+    Context.t -> Ident.t -> Printer.record -> Context.t
   (** Add PP record for type identifer. *)
 
-  val remove_type_pp: Ident.t -> unit
+  val remove_type_pp: 
+    Context.t -> Ident.t -> Context.t
   (** Remove PP record for type identifer. *)
+***)
 
   (** {6 User-defined printers} *)
 
-  val get_term_printer:
-    Ident.t -> 
-    (Printer.fixity * int 
-     -> (Basic.term * (Basic.term list)) Printer.printer)
+  val get_term_printer: Ident.t -> Printer.term_printer
   (** Get printer for terms. *)
 
+(***
   val add_term_printer: 
     Ident.t -> 
     (Printer.ppinfo 
@@ -117,13 +124,12 @@ sig
 
   val remove_term_printer: Ident.t -> unit
   (** Remove printer for terms. *)
+***)
 
-  val get_type_printer:
-    Ident.t 
-    -> (Printer.fixity * int 
-	-> (Ident.t * (Basic.gtype list)) Printer.printer)
+  val get_type_printer: Ident.t -> Printer.gtype_printer
   (** Get printer for types *)
 
+(***
   val add_type_printer: 
     Ident.t -> 
     (Printer.ppinfo 
@@ -138,6 +144,7 @@ sig
 
   val remove_type_printer: Ident.t -> unit
   (** Remove printer for types *)
+***)
 
   (** {6 Parsing} *)
 
@@ -402,16 +409,12 @@ sig
   (** {6 User-defined printers} *)
 
   val get_term_printer:
-    Context.t -> Ident.t -> 
-    (Printer.fixity * int 
-     -> (Basic.term * (Basic.term list)) Printer.printer)
+    Context.t -> Ident.t -> Printer.term_printer
   (** Get printer for terms. *)
 
   val add_term_printer: 
-    Context.t -> Ident.t -> 
-    (Printer.ppinfo 
-     -> (Printer.fixity * int) 
-     -> (Basic.term * (Basic.term list)) Printer.printer) -> Context.t
+    Context.t -> Ident.t -> Printer.term_printer
+    -> Context.t
   (** [add_term_printer id p]: Add printer p for terms. The
       printer is keyed by term identifier and triggered on a
       function application (id args) (where args may be an empty
@@ -424,16 +427,12 @@ sig
   (** Remove printer for terms. *)
 
   val get_type_printer:
-    Context.t -> Ident.t 
-    -> (Printer.fixity * int 
-	-> (Ident.t * (Basic.gtype list)) Printer.printer)
+    Context.t -> Ident.t -> Printer.gtype_printer
   (** Get printer for types *)
 
   val add_type_printer: 
-    Context.t -> Ident.t -> 
-    (Printer.ppinfo 
-     -> (Printer.fixity * int) 
-     -> (Ident.t * (Basic.gtype list)) Printer.printer) -> Context.t
+    Context.t -> Ident.t -> Printer.gtype_printer
+    -> Context.t
   (** [add_type_printer id p]: Add printer p for types. The
       printer is keyed by type identifier and triggered on a
       constructor expression (args)id (where args may be an empty

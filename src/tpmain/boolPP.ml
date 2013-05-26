@@ -26,7 +26,7 @@
 *)
 let negation_pprec = Printer.mk_record 205 Printer.prefix None
 
-let negation_printer ppstate (fixity, prec) (f, args) =
+let negation_printer ppstate ((fixity: Printer.fixity), prec) (f, args) =
   let cprec= negation_pprec.Printer.prec
   and fixity = negation_pprec.Printer.fixity
   in 
@@ -52,8 +52,9 @@ let negation_printer ppstate (fixity, prec) (f, args) =
         end
     | _ -> Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
-let init_negation_printer() =
-  Global.PP.add_term_printer Lterm.notid negation_printer
+
+let init_negation_printer inf =
+  Printer.add_term_printer inf Lterm.notid negation_printer
 
 (*** Support for if-then-else ***)
 
@@ -123,12 +124,15 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
       end
     | _ -> Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
 
-let init_ifthenelse_printer() =
-  Global.PP.add_term_printer ifthenelse_id ifthenelse_printer
 
+let init_ifthenelse_printer inf =
+  Printer.add_term_printer inf ifthenelse_id ifthenelse_printer
+
+(**
 let init_ifthenelse() =
   init_ifthenelse_parser();
   init_ifthenelse_printer()
+*)
 
 (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
@@ -146,14 +150,15 @@ let init_choice_parser () =
 let choice_printer = 
   Term.print_as_binder choice_pp choice_ident choice_sym
 
-let init_choice_printer () =
-  let printer = choice_printer in 
-  Global.PP.add_term_printer choice_ident 
-    (fun ppstate ppenv -> printer ppstate ppenv)
+let init_choice_printer inf =
+  Printer.add_term_printer inf choice_ident choice_printer
 
+
+(**
 let init_epsilon() = 
   init_choice_parser();
   init_choice_printer()
+*)
 
 (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
@@ -177,17 +182,21 @@ let exists_unique_printer =
   Term.print_as_binder 
     exists_unique_pp exists_unique_ident exists_unique_sym
 
+(*
 let init_exists_unique_printer() =
   let printer = exists_unique_printer in 
   Global.PP.add_term_printer exists_unique_ident 
     (fun ppstate ppenv -> printer ppstate ppenv)
+*)
 
+(**
 let init_exists_unique() = 
   init_exists_unique_parser();
   init_exists_unique_printer()
+*)
 
+(**
 (* PP Initialising functions *)
-
 let init_parsers () = 
   init_ifthenelse_parser();
   init_choice_parser();
@@ -202,4 +211,30 @@ let init_printers () =
 let init () =
   init_printers();
   init_parsers()
+*)
+
+let base_ppinfo =
+  let printers = 
+    [
+      (Lterm.notid, negation_printer);
+      (ifthenelse_id, ifthenelse_printer);
+      (choice_ident, choice_printer);
+      (exists_unique_ident, exists_unique_printer)
+    ]
+  and symbols = [] 
+  in
+  let inf0 = Printer.empty_ppinfo() in 
+  let inf1 = 
+    List.fold_left 
+      (fun infa (i, p) -> Printer.add_term_printer infa i p) inf0 printers 
+  in
+  let inf2 = 
+    List.fold_left 
+      (fun infa (i, r) -> Printer.add_term_record infa i r)
+      inf1 symbols 
+  in
+  inf2
+
+let ppinfo () = base_ppinfo
+
 

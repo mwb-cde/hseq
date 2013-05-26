@@ -159,14 +159,13 @@ let add_type_pp_rec ctxt id rcrd =
       (Thydb.add_type_pp_rec (Ident.name_of id) rcrd
          (Context.Thys.theories ctxt))
    in
-  Global.PP.add_type_pp_record id rcrd;
-  ctxt1
+  let ctxt2 = Global.NewPP.add_type_pp_record ctxt1 id rcrd in
+  ctxt2
     
 let remove_type_pp_rec ctxt id =
   Thydb.remove_type_pp_rec 
     (Ident.thy_of id) (Ident.name_of id) (Context.Thys.theories ctxt);
-  Global.PP.remove_type_pp id;
-  ctxt
+  Global.NewPP.remove_type_pp ctxt id
 
 let get_type_pp_rec id = Global.PP.get_type_pp id 
 
@@ -179,15 +178,14 @@ let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
       (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) 
          (Context.Thys.theories ctxt))
   in
-  Global.PP.add_term_pp_record id rcrd; ctxt1
+  Global.NewPP.add_term_pp_record ctxt1 id rcrd
     
 let get_term_pp_rec id = Global.PP.get_type_pp id 
 
 let remove_term_pp_rec ctxt id =
   Thydb.remove_term_pp_rec
     (Ident.thy_of id) (Ident.name_of id) (theories ctxt);
-  Global.PP.remove_term_pp id;
-  ctxt
+  Global.NewPP.remove_term_pp ctxt id
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 

@@ -134,10 +134,10 @@ let empty_record() = mk_record (-1) nonfix None
  *)
 
 (** The table of records and printers for a set of identifiers. *)
-type 'a info = 
+type ('a, 'b) info = 
     {
       records: (Ident.t, record) Hashtbl.t;
-      printers: (Ident.t, (fixity * int) -> 'a printer) Hashtbl.t
+      printers: (Ident.t, 'a -> (fixity * int) -> 'b printer) Hashtbl.t
     }
 
 let mk_info sz = 
@@ -191,8 +191,8 @@ let remove_printer info id =
 (** The combined printer information for terms and types. *)
 type ppinfo = 
     {
-      terms:  (Basic.term * (Basic.term)list)info;
-      types:  (Ident.t * (Basic.gtype)list)info
+      terms:  (ppinfo, Basic.term * (Basic.term)list) info;
+      types:  (ppinfo, Ident.t * (Basic.gtype)list) info
     }
 
 let mk_ppinfo sz = 
@@ -204,6 +204,9 @@ let empty_ppinfo() = mk_ppinfo default_info_size
 
 (** Operations involving term identifiers *)
 
+type term_printer = 
+  ppinfo -> (fixity * int) -> (Basic.term * Basic.term list) printer
+
 let get_term_info info x = get_info (info.terms) x
 let set_term_info info x = {info with terms = x}
 let add_term_info info id prec fixity repr = 
@@ -213,13 +216,16 @@ let add_term_record info id record =
 let remove_term_info info id = 
   set_term_info info (remove_info (info.terms) id)
 
-let get_term_printer info x = get_printer (info.terms) x
+let get_term_printer info x = 
+  get_printer (info.terms) x
 let add_term_printer info id prnt = 
   set_term_info info (add_printer (info.terms) id prnt)
 let remove_term_printer info id = 
   set_term_info info (remove_printer (info.terms) id)
-(** Operations involving type identifiers *)
 
+(** Operations involving type identifiers *)
+type gtype_printer = 
+  ppinfo -> (fixity * int) -> (Ident.t * (Basic.gtype list)) printer
 let get_type_info info x = get_info (info.types) x
 let set_type_info info x = {info with types = x}
 let add_type_info info id prec fixity repr = 
