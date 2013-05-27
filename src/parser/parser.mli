@@ -52,7 +52,7 @@
    the identifiers, chosing the first to succeed.
 *)
 
-     (** {5 Token information} *)
+(** {5 Token information} *)
     
 type associativity = Grammars.associativity
 (** Token associativity (exactly the same as used by the lexer) *)
@@ -134,171 +134,17 @@ exception ParsingError of string
    table, with appropriate fixity and precedence.
  *)
 
-(** {7 Symbols} *)
-
-(** Symbol tables *)
-type table = Lexer.symtable
-
-val syms_list : (string * Lexer.tok) list
+type symbol_table = Lexer.symtable
+val default_symtable_size: int
+(** The default size of the table of symbols *)
+val core_symbols : (string * Lexer.tok) list
 (** The list of builtin symbols *)
 
-(* tables of symbols and token (parsing) information *)
-val symtable_size : int ref
-(** The initial size of the standard symbol table. *)
-
-val symtable : unit -> table
-(** Get the standard symbol table *)
-
-val add_symbol : string -> Lexer.tok -> unit
-(**
-   [add_symbol sym tok]: add [sym] as the symbol representing token [tok].
-   Fails silently if [sym] already exists
- *)
-val find_symbol : string -> Lexer.tok
-(**
-   [find_symbol sym]: Lookup [sym] in the symbol table.
-   Raise [Not_found] on failure.
- *)
-
-val remove_symbol : string -> unit
-(**
-   [remove_symbol sym]: Remove [sym] from the standard symbol table.
-   Fails silently if [sym] already exists
- *)
-
-val init_symtable : int -> unit
-(**
-   Initialise the symbol table and add the standard symbols.
- *)
-
-(** {7 Tokens} *)
-
-val token_table: Grammars.token_table
-(** Table of tokens which can appear in a term parser *)
-
-val add_token_info: 
-  Lexer.tok -> Grammars.token_info -> Grammars.token_table
-(**
-   [add_token_info tok info]: add parsing information [info] for term
-   token [tok] to the standard token table, fail if token information
-   exists.
-*)
-
-val get_token_info: Lexer.tok -> Grammars.token_info
-(**
-   [get_token_info tok]: Get parsing information for term token [tok]
-   from the standard table, fail if token information exists.
-*)
-
-val remove_token_info: Lexer.tok -> Grammars.token_table
-(**
-   [remove_token_info tok]: Remove parsing information for term token
-   [tok] from the standard table.
-*)
-
-val type_token_table: Grammars.token_table
-(** Table of tokens which can appear in a type parser *)
-
-val add_type_token_info: 
-  Lexer.tok -> Grammars.token_info -> Grammars.token_table
-(**
-   [add_type_token_info tok info]: Add parsing information [info] for
-   type token [tok] to the standard type token table, fail if token
-   information exists
- *)
-
-val get_type_token_info: 
-  Lexer.tok -> Grammars.token_info
-(**
-   [get_token_info tok]: Get parsing information for type token
-   [tok] from the standard table.
-*)
-
-val remove_type_token_info: 
-  Lexer.tok -> Grammars.token_table
-(**
-   [remove_type_token_info tok]: Remove parsing information for type token
-   [tok] from the standard table.
-*)
-
-val mk_info: unit -> Grammars.parser_info
-(** 
-   Make a parser information record ([parser_info)] from the standard
-   term and type token tables.
-*)
-
-(** {7 Toplevel symbol and token functions} *)
-
-val add_token: 
-  Ident.t -> string -> fixity -> int -> Grammars.token_table
-(** 
-   [add_token id sym fix prec]: Add symbol [sym] as representation for
-   term identifier [id], with fixity [fix] and precedence [prec]. 
-   Updates term symbol and token tables. 
-*)
-
-val remove_token : string -> Grammars.token_table
-(**
-   [remove_token sym]: Remove [sym] and associated token information
-   from the term symbol and token tables.
-*)
-
-val add_type_token:
-  Ident.t -> string -> fixity -> int -> Grammars.token_table  
-(** 
-   [add_type_token id sym fix prec]: Add symbol [sym] as representation for
-   type identifier [id], with fixity [fix] and precedence [prec]. 
-   Updates type symbol and token tables. 
-*)
-
-val remove_type_token : string -> Grammars.token_table
-(**
-   [remove_type_token sym]: Remove [sym] and associated token information
-   from the type symbol and token tables.
-*)
-
-(** {7 Overloading} *)
-
-val overload_table_size : int ref
-(** The initial size of the overloading table. *)
-
 type overload_table_t = (string,  (Ident.t * Basic.gtype) list) Hashtbl.t
-val overload_table: overload_table_t ref
-(** The table of overloaded symbols and possible identifiers. *)
-
-val init_overload: unit -> unit
-(** Initialise the overloading table. *)
-
-val add_overload: 
-  ?ovltbl:overload_table_t 
-  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) 
-  -> overload_table_t
-(** 
-   [add_overload sym pos (id, ty)]: Overload identifier [id], with
-   type [ty] on symbol [sym]. Put [id] in position [pos]. 
-*)
-val get_overload_list: 
-  ?ovltbl:overload_table_t 
-  -> string -> (Ident.t * Basic.gtype) list
-(** 
-   [get_overload_list sym]: Get the list of identifiers overloaded on
-   symbol [sym].
-*)
-val remove_overload:
-  ?ovltbl:overload_table_t 
-  -> string -> Ident.t -> overload_table_t
-(** 
-   [remove_overload sym id]: Remove [id] from the list of identifiers
-   overloading symbol [sym].
-*)
-
-val print_overloads: 
-  ?ovltbl:overload_table_t 
-  -> Printer.ppinfo -> unit
-(** Print the overloads table. *)
+val default_overload_table_size : int 
+(** The default size of the overloading table. *)
 
 (** {5 Parser Tables} *)
-(** Parser tables *)
 module Table:
 sig
   (** Parser tables *)
@@ -347,12 +193,71 @@ sig
     -> t
 end
 
+(** {7 Toplevel symbol and token functions} *)
+
+val add_token: 
+  Table.t -> Ident.t -> string -> fixity -> int -> Table.t
+(** 
+   [add_token id sym fix prec]: Add symbol [sym] as representation for
+   term identifier [id], with fixity [fix] and precedence [prec]. 
+   Updates term symbol and token tables. 
+*)
+
+val remove_token: Table.t -> string -> Table.t
+(**
+   [remove_token sym]: Remove [sym] and associated token information
+   from the term symbol and token tables.
+*)
+
+val add_type_token:
+  Table.t -> Ident.t -> string -> fixity -> int -> Table.t
+(** 
+   [add_type_token id sym fix prec]: Add symbol [sym] as representation for
+   type identifier [id], with fixity [fix] and precedence [prec]. 
+   Updates type symbol and token tables. 
+*)
+
+val remove_type_token : Table.t -> string -> Table.t
+(**
+   [remove_type_token sym]: Remove [sym] and associated token information
+   from the type symbol and token tables.
+*)
+
+val add_overload: 
+  Table.t
+  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) 
+  -> Table.t
+(** 
+   [add_overload sym pos (id, ty)]: Overload identifier [id], with
+   type [ty] on symbol [sym]. Put [id] in position [pos]. 
+*)
+val get_overload_list: 
+  Table.t-> string -> (Ident.t * Basic.gtype) list
+(** 
+   [get_overload_list sym]: Get the list of identifiers overloaded on
+   symbol [sym].
+*)
+val remove_overload:
+  Table.t -> string -> Ident.t -> Table.t
+(** 
+   [remove_overload sym id]: Remove [id] from the list of identifiers
+   overloading symbol [sym].
+*)
+
+
+val mk_info: Table.t -> Grammars.parser_info
+(** Make parser information ([parser_info)] from a table.  *)
+
+val print_overloads: Table.t -> Printer.ppinfo -> unit
+(** Print the overloads table. *)
+
+
 (** {5 Initialising functions} *)
 
 val init_parsers : Table.t -> Table.t
 (** Initialise the type and term parsers *)
 
-val init : unit -> unit
+val init : unit -> Table.t
 (** 
    Initialise the parser tables (symbols, tokens and overloading).
    This must be called before any of the parsers are used.
@@ -367,26 +272,27 @@ val init : unit -> unit
 val parse : 'a phrase -> 'a parse
 (** Make a parser from a phrase *)
 
-val identifier_parser : input -> Ident.t
+val identifier_parser: Table.t -> input -> Ident.t
 (** Read a possibly long identifier *)
 
-val type_parser : input -> Basic.gtype
+val type_parser : Table.t -> input -> Basic.gtype
 (** Read a type. *)
 
-val typedef_parser : input -> typedef_data
+val typedef_parser : Table.t -> input -> typedef_data
 (** Read a type definition *)
 
-val term_parser : input -> Pterm.t
+val term_parser : Table.t -> input -> Pterm.t
 (** Read a term *)
 
-(*
 val defn_parser :
-    input -> (string * (string * Basic.gtype) list) * Pterm.t
-*)
-val defn_parser :
-    input -> ((string * Basic.gtype) * Pterm.t list) * Pterm.t
-
+  Table.t -> input -> ((string * Basic.gtype) * Pterm.t list) * Pterm.t
 (** Read a term definition *)
+
+(** {7 Symbols} *)
+
+val add_symbol: Table.t -> string -> Lexer.tok -> Table.t
+val find_symbol: Table.t -> string -> Lexer.tok
+val remove_symbol: Table.t -> string -> Table.t
 
 (** {7 User defined parsers} *)
 
@@ -439,19 +345,19 @@ val remove_type_parser: Table.t -> string -> Table.t
    Read and parse a string
 *)
 
-val read: ?tbl:Lexer.symtable -> 'a parse -> string -> 'a
+val read: Table.t -> (Table.t -> ('a)parse) -> string -> 'a
 (** [read ph str]: Parse string [str] with parser [ph]. *)
 
-val read_term : ?tbl:Lexer.symtable ->string -> Pterm.t
+val read_term : Table.t -> string -> Pterm.t
 (** [read_term str]: Parse string [str] using the standard term parser. *)
 
-val read_type : ?tbl:Lexer.symtable ->string -> Basic.gtype
+val read_type : Table.t -> string -> Basic.gtype
 (** [read_type str]: Parse string [str] using the standard term parser. *)
 
 (** {7 Debugging} *)
 
-val test_lex : ?tbl:Lexer.symtable ->string -> Lexer.tok Parserkit.Input.t
-val test : ?tbl:Lexer.symtable ->string -> Pterm.t
+val test_lex : Table.t -> string -> Lexer.tok Parserkit.Input.t
+val test : Table.t -> string -> Pterm.t
 
 
 

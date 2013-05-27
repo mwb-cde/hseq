@@ -187,7 +187,12 @@ type parser_info =
       (** Extra type parsers *)
     }
       
-val mk_inf: token_table -> token_table -> parser_info
+val mk_info: 
+  (token_table * token_table 
+     * (string, parser_info -> Pterm.t phrase) Lib.named_list
+     * (string, parser_info -> (Basic.gtype phrase)) Lib.named_list)
+  -> 
+  parser_info
 (** [mk_inf tbl type_tbl]: Make parsing information from tables [tbl]
     and [type_tbl] of term and type token information.
 *)

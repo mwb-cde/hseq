@@ -113,11 +113,11 @@ val match_tokens : tok -> tok -> bool
    [n] is also stored.
  *)
     
-type symbol_table=(string, tok)Hashtbl.t
+type symbol_table= (string, tok)Hashtbl.t
 type symtable = (char * int Counter.t) list * symbol_table
 
-val mk_symtable : int -> 'a list * ('b, 'c) Hashtbl.t
-
+val mk_symtable : int -> symtable
+val clear_symtable : symtable -> symtable
 val add_sym :
     symtable -> string -> tok -> symtable
 (**

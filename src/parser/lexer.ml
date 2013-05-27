@@ -127,6 +127,7 @@
 	 * symbol_table)
 
   let mk_symtable size = ([], Hashtbl.create size)
+  let clear_symtable (_, tbl) = Hashtbl.clear tbl; ([], tbl)
 
   let add_sym_size sz lst=Counter.add sz lst
 

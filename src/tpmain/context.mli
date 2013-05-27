@@ -486,7 +486,7 @@ sig
       inconsistently typed.  *)
 
   val expand_type_names: 
-    Scope.t -> Basic.gtype -> Basic.gtype
+    scoped -> Basic.gtype -> Basic.gtype
   (** Replace symbols and short names in a type with the long
       identifier, were possible.  *)
   val expand_typedef_names: 
@@ -506,7 +506,7 @@ sig
   (** Parse a string as a term, resolving short names and
       symbols. *)
 
-  val read_unchecked: string -> Basic.term
+  val read_unchecked: scoped -> string -> Basic.term
   (** Parse a string as a term, return the term as is, without
       expanding terms and resolving symbols.  *)
 
@@ -521,6 +521,6 @@ sig
   val read_type_defn: scoped -> string -> Defn.Parser.typedef
   (** Parse a string as a type definition. *)
 
-  val read_identifier: string -> Ident.t
+  val read_identifier: scoped -> string -> Ident.t
 (** Parse a string as an identifier. *)
 end

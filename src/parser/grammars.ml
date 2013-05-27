@@ -206,16 +206,16 @@ type parser_info =
 (** [mk_inf tbl type_tbl] Make parsing information from table [tbl]
     and [type_tbl] of term and type token information.
 *)
-let mk_inf tbl type_tbl = 
+let mk_info (tbl, type_tbl, tparsers, typarsers) = 
   { 
     bound_names = ref [];
     token_info = token_info tbl;
-    term_parsers = [];
+    term_parsers = tparsers;
 
     typ_indx = ref 0;
     typ_names = ref [];
     type_token_info = token_info type_tbl;
-    type_parsers = [];
+    type_parsers = typarsers;
   }
     
 (*** Utility functions ***)

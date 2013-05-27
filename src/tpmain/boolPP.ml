@@ -87,11 +87,21 @@ let ifthenelse_pprec =
   in 
   Printer.mk_record prec fixity None
 
-let init_ifthenelse_parser() = 
-  Parser.add_symbol "if" (Sym(OTHER "IF"));
-  Parser.add_symbol "then" (Sym(OTHER "THEN"));
-  Parser.add_symbol "else" (Sym(OTHER "ELSE"));
-  Parser.add_term_parser Lib.First "IfThenElse" ifthenelse_parser
+let init_ifthenelse_parser ppstate = 
+  let ite_syms = 
+    [
+      ("if", (Sym(OTHER "IF")));
+      ("then", (Sym(OTHER "THEN")));
+      ("else", (Sym(OTHER "ELSE")));
+    ]
+  in
+  let ppinf1 =
+    List.fold_left 
+      (fun t (x, y) -> Parser.add_symbol t x y)
+      ppstate
+      ite_syms
+  in
+  Parser.add_term_parser ppinf1 Lib.First "IfThenElse" ifthenelse_parser
 
 (** Printer for if-then-else **)
 let ifthenelse_printer ppstate (fixity, prec) (f, args) =
@@ -142,9 +152,11 @@ let choice_pp = (Printer.default_term_fixity, Printer.default_term_prec)
 
 let choice_parser = Grammars.parse_as_binder choice_ident choice_sym
 
-let init_choice_parser () =
-  Parser.add_symbol choice_sym (Lexer.Sym(Lexer.OTHER choice_sym));
-  Parser.add_term_parser 
+let init_choice_parser tbl =
+  let tbl0 =
+    Parser.add_symbol tbl choice_sym (Lexer.Sym(Lexer.OTHER choice_sym))
+  in 
+  Parser.add_term_parser tbl0
     (Lib.After "lambda") "epsilon" choice_parser
     
 let choice_printer = 
@@ -171,11 +183,13 @@ let exists_unique_pp =
 let exists_unique_parser =
   Grammars.parse_as_binder exists_unique_ident exists_unique_sym
 
-let init_exists_unique_parser() =
-  Parser.add_symbol 
-    exists_unique_sym 
-    (Lexer.Sym(Lexer.OTHER exists_unique_sym));
-  Parser.add_term_parser 
+let init_exists_unique_parser tbl =
+  let tbl0 = 
+    Parser.add_symbol tbl
+      exists_unique_sym 
+      (Lexer.Sym(Lexer.OTHER exists_unique_sym))
+  in
+  Parser.add_term_parser tbl0
     (Lib.After "lambda") "exists_unique" exists_unique_parser
     
 let exists_unique_printer = 
