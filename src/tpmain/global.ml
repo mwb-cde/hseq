@@ -56,12 +56,6 @@ module PP =
 struct
 
   (*** Printer tables ***)
-(*
-  let tp_pp_info = ref (Printer.empty_ppinfo())
-  let info() = !tp_pp_info 
-  let set info = tp_pp_info := info
-  let pp_reset() = set (Printer.empty_ppinfo())
-*)
   let info() = BoolPP.ppinfo()
 
   (*** Parser tables ***)
@@ -69,59 +63,12 @@ struct
   let sym_info() = Parser.symtable()
   let sym_reset () = Parser.init()
 
-(**
-  let init() = pp_reset(); sym_init()
-**)
-
   (*** Terms ***)
-
   let get_term_pp id = Printer.get_term_info (info()) id
-
-(***
-  let add_term_pp id prec fixity repr =
-    ignore(Printer.add_term_info (info()) id prec fixity repr);
-    Parser.add_token 
-      id (Lib.get_option repr (Ident.name_of id)) fixity prec
-
-  let add_term_pp_record id rcrd =
-    ignore(Printer.add_term_record (info()) id rcrd);
-    Parser.add_token 
-      id 
-      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
-      (rcrd.Printer.fixity)
-      (rcrd.Printer.prec)
-
-  let remove_term_pp id =
-    let (_, _, sym) = get_term_pp id
-    in 
-    ignore(Printer.remove_term_info (info()) id);
-    Parser.remove_token (Lib.get_option sym (Ident.name_of id))
-**)
 
   (*** Types ***)
 
   let get_type_pp id = Printer.get_type_info (info()) id
-
-(***
-  let add_type_pp id prec fixity repr =
-    ignore(Printer.add_type_info (info()) id prec fixity repr);
-    Parser.add_type_token 
-      id (Lib.get_option repr (Ident.name_of id)) fixity prec
-
-  let add_type_pp_record id rcrd =
-    ignore(Printer.add_type_record (info()) id rcrd);
-    Parser.add_type_token 
-      id 
-      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
-      (rcrd.Printer.fixity)
-      (rcrd.Printer.prec)
-
-  let remove_type_pp id =
-    let (_, _, sym) = get_type_pp id
-    in 
-    ignore(Printer.remove_type_info (info()) id);
-    Parser.remove_type_token (Lib.get_option sym (Ident.name_of id))
-**)
 
   (*** User-defined printers ***)
 
@@ -146,20 +93,7 @@ struct
   (** Functions to add PP information when a theory is loaded *)
 
   let add_id_record id rcrd = ()
-(***
-    let pr, fx, repr = 
-      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
-    in 
-    add_term_pp id pr fx repr
-****)
-
   let add_type_record id rcrd = ()
-(****
-    let pr, fx, repr = 
-      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
-    in 
-    add_type_pp id pr fx repr
-****)
 
   let add_loaded_term_pp th =
     let thy_name = th.Theory.cname
@@ -259,7 +193,6 @@ struct
     catch_parse_error (Parser.read Parser.identifier_parser) x
 end
 
-
 let read = PP.read
 let read_type = PP.read_type
 let read_identifier = PP.read_identifier
@@ -271,14 +204,12 @@ let mk_term t = PP.mk_term (scope()) t
 (** Convenience module, so that readers are available *)
 module Read = 
 struct
-
   let term = PP.read
   let ltype = PP.read_type
   let identifier = PP.read_identifier
   let defn = PP.read_defn
   let typedef = PP.read_type_defn
 end
-
 
 (**** OLD ****)
 
