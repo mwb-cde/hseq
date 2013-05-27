@@ -60,8 +60,8 @@ let load_theory_as_cur ctxt n =
   Context.Thys.set_theories ctxt db
 
 let read x = catch_errors Global.read x
-let read_unchecked  x= catch_errors Global.PP.read_unchecked x
-let read_defn  x= catch_errors Global.read_defn x
+let read_unchecked x = catch_errors Global.PP.read_unchecked x
+let read_defn x = catch_errors Global.read_defn x
 
 (*
  * Theories
@@ -159,15 +159,15 @@ let add_type_pp_rec ctxt id rcrd =
       (Thydb.add_type_pp_rec (Ident.name_of id) rcrd
          (Context.Thys.theories ctxt))
    in
-  let ctxt2 = Global.NewPP.add_type_pp_record ctxt1 id rcrd in
+  let ctxt2 = Context.NewPP.add_type_pp_record ctxt1 id rcrd in
   ctxt2
     
 let remove_type_pp_rec ctxt id =
   Thydb.remove_type_pp_rec 
     (Ident.thy_of id) (Ident.name_of id) (Context.Thys.theories ctxt);
-  Global.NewPP.remove_type_pp ctxt id
+  Context.NewPP.remove_type_pp ctxt id
 
-let get_type_pp_rec id = Global.PP.get_type_pp id 
+let get_type_pp_rec ctxt id = Context.NewPP.get_type_pp ctxt id 
 
 (*** Terms ***)
 
@@ -178,14 +178,14 @@ let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
       (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) 
          (Context.Thys.theories ctxt))
   in
-  Global.NewPP.add_term_pp_record ctxt1 id rcrd
+  Context.NewPP.add_term_pp_record ctxt1 id rcrd
     
-let get_term_pp_rec id = Global.PP.get_type_pp id 
+let get_term_pp_rec ctxt id = Context.NewPP.get_term_pp ctxt id 
 
 let remove_term_pp_rec ctxt id =
   Thydb.remove_term_pp_rec
     (Ident.thy_of id) (Ident.name_of id) (theories ctxt);
-  Global.NewPP.remove_term_pp ctxt id
+  Context.NewPP.remove_term_pp ctxt id
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 

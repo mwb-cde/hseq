@@ -298,10 +298,10 @@ sig
   (** Parser tables *)
   type t =
       {
-        tokens: Grammars.token_table;
-        type_tokens: Grammars.token_table;
-        symbols: Lexer.symtable;
-        overloads: overload_table_t;
+        tokens_f: Grammars.token_table;
+        type_tokens_f: Grammars.token_table;
+        symbols_f: Lexer.symtable;
+        overloads_f: overload_table_t;
       }
 
   (** Default sizes *)
@@ -314,10 +314,14 @@ sig
   val init: t -> t
 
   (** Accessors *)
-  val get_tokens: t -> Grammars.token_table 
-  val get_type_tokens: t -> Grammars.token_table
-  val get_symbols: t -> Lexer.symtable
-  val get_overloads: t -> overload_table_t
+  val tokens: t -> Grammars.token_table 
+  val set_tokens: t -> Grammars.token_table -> t
+  val type_tokens: t -> Grammars.token_table
+  val set_type_tokens: t -> Grammars.token_table -> t
+  val symbols: t -> Lexer.symtable
+  val set_symbols: t -> Lexer.symtable -> t
+  val overloads: t -> overload_table_t
+  val set_overloads: t -> overload_table_t -> t
 end
 
 (** {5 Initialising functions} *)

@@ -68,6 +68,7 @@ type typedef_data = Grammars.typedef_data
 
 exception ParsingError = Grammars.ParsingError
 
+
 (********
 (***
 * Resolver for operator overloading
@@ -472,9 +473,7 @@ let remove_type_token sym=
   remove_symbol sym;
   remove_type_token_info (Sym(OTHER sym))
 
-
-(*** Overloading ***)
-
+(*** Overloading *)
 type overload_table_t = (string, (Ident.t * Basic.gtype) list) Hashtbl.t
 
 let default_overload_table_size = 127
@@ -565,15 +564,16 @@ let print_overloads ?ovltbl info =
   Hashtbl.iter print_fn table;
   Format.printf "@]"
 
+
 (** Parser tables *)
 module Table = 
 struct
   type t =
       {
-        tokens: Grammars.token_table;
-        type_tokens: Grammars.token_table;
-        symbols: Lexer.symtable;
-        overloads: overload_table_t;
+        tokens_f: Grammars.token_table;
+        type_tokens_f: Grammars.token_table;
+        symbols_f: Lexer.symtable;
+        overloads_f: overload_table_t;
       }
 
   let default_size = (Grammars.default_table_size,
@@ -583,10 +583,10 @@ struct
 
   let empty (tok_size, tytok_size, stm_size, ov_size) = 
     {
-      tokens = Grammars.token_table_new tok_size;
-      type_tokens = Grammars.token_table_new tytok_size;
-      symbols = Lexer.mk_symtable stm_size;
-      overloads = mk_overload_table ov_size;
+      tokens_f = Grammars.token_table_new tok_size;
+      type_tokens_f = Grammars.token_table_new tytok_size;
+      symbols_f = Lexer.mk_symtable stm_size;
+      overloads_f = mk_overload_table ov_size;
     }
 
   let init_symbols symtbl syms = 
@@ -595,20 +595,24 @@ struct
       symtbl syms
 
   let init tbl = 
-    let toks = Grammars.token_table_reset tbl.tokens
-    and tytoks = Grammars.token_table_reset tbl.type_tokens
-    and symtab = init_symbols tbl.symbols syms_list;
+    let toks = Grammars.token_table_reset tbl.tokens_f
+    and tytoks = Grammars.token_table_reset tbl.type_tokens_f
+    and symtab = init_symbols tbl.symbols_f syms_list;
     and ovltab = mk_overload_table default_overload_table_size
     in 
     {
-      tokens = toks; type_tokens = tytoks;
-      symbols = symtab; overloads = ovltab
+      tokens_f = toks; type_tokens_f = tytoks;
+      symbols_f = symtab; overloads_f = ovltab
     }
 
-  let get_tokens t = t.tokens
-  let get_type_tokens t = t.type_tokens
-  let get_symbols t = t.symbols
-  let get_overloads t = t.overloads
+  let tokens t = t.tokens_f
+  let set_tokens t x = {t with tokens_f = x}
+  let type_tokens t = t.type_tokens_f
+  let set_type_tokens t x = {t with type_tokens_f = x}
+  let symbols t = t.symbols_f
+  let set_symbols t x = {t with symbols_f = x}
+  let overloads t = t.overloads_f
+  let set_overloads t x = {t with overloads_f = x}
 end 
 
 (*** Initialising functions ***)

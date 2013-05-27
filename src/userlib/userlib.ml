@@ -76,7 +76,7 @@ module PP =
 struct
   (** Tables access *)
   let overloads () = 
-    Parser.Table.get_overloads (Global.parsers (Global.state()))
+    Parser.Table.overloads (Global.parsers (Global.state()))
 
   let catch_parse_error e a = 
     try (e a)

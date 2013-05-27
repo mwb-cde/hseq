@@ -148,7 +148,7 @@ val remove_type_pp_rec: Context.t -> Ident.t -> Context.t
     Parser.
 *)
 val get_type_pp_rec: 
-  Ident.t -> (int * fixity * string option)
+  Context.t -> Ident.t -> (int * fixity * string option)
 (** Get the PP record for a type identifier. *)
 
 val add_term_pp_rec: 
@@ -164,7 +164,7 @@ val remove_term_pp_rec: Context.t -> Ident.t -> Context.t
     Parser tables.
 *)
 val get_term_pp_rec: 
-  Ident.t -> (int * fixity * string option)
+  Context.t -> Ident.t -> (int * fixity * string option)
 (** Get the PP record for a term identifier. *)
 
 val add_overload: 
@@ -191,7 +191,7 @@ val remove_type_pp: Context.t -> Ident.t -> unit
     Parser tables.
 *)
 
-val get_type_pp: Ident.t -> (int * fixity * string option)
+val get_type_pp: Context.t -> Ident.t -> (int * fixity * string option)
 (** Get PP information for a type identifier. *)
 
 val add_term_pp: 
@@ -207,7 +207,7 @@ val remove_term_pp: Context.t -> Ident.t -> unit
     Parser tables.
 *)
 
-val get_term_pp: Ident.t -> (int * fixity * string option)
+val get_term_pp: Context.t -> Ident.t -> (int * fixity * string option)
 (** Get PP information for a term identifier. *)
 
 (** {5 Axioms and theorems} 

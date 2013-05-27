@@ -39,276 +39,276 @@ struct
   let base_thy_name = "Main"
 end
 
-(** Global context *)
-(***
-module Context =
-struct
-***)
+  (** Global context *)
+  (***
+      module Context =
+      struct
+  ***)
 
   (** File handling functions *)
-  type file_t =
-      {
+type file_t =
+  {
         (** [load_file f]: Load a byte-code file [f] into memory. *)
-        load_f: string -> unit;
+    load_f: string -> unit;
 
         (** [use_file ?silent f]: Read file [f] as a script.  If
             [silent=true], do not report any information. *)
-        use_f: ?silent:bool -> string -> unit;
+    use_f: ?silent:bool -> string -> unit;
 
         (** [build ?silent th]: Build theory [th] from a script.
             [silent=true], do not report any information.  @raise
             Failure on failure. *)
-        build_f: ?silent:bool -> string -> unit;
-        
+    build_f: ?silent:bool -> string -> unit;
+    
         (** [path]: List of directories to search for theories,
             libraries and scripts.*)
-        path_f: string list;
+    path_f: string list;
 
         (** obj_suffix: List of possible suffixes for an object file. *)
-        obj_suffix_f: string list;
+    obj_suffix_f: string list;
 
         (** thy_suffix: Suffix for a theory file. *)
-        thy_suffix_f: string;
+    thy_suffix_f: string;
 
         (** script_suffix: Suffix for a script file. *)
-        script_suffix_f: string;
-      }
+    script_suffix_f: string;
+  }
 
-  let empty_file_t ()= 
-    { 
-      load_f = Default.load;
-      use_f = Default.use;
-      build_f = Default.build;
-      path_f = [];
-      obj_suffix_f = [];
-      thy_suffix_f = "";
-      script_suffix_f = "";
-    }
+let empty_file_t ()= 
+  { 
+    load_f = Default.load;
+    use_f = Default.use;
+    build_f = Default.build;
+    path_f = [];
+    obj_suffix_f = [];
+    thy_suffix_f = "";
+    script_suffix_f = "";
+  }
 
   (** Theory data *)
-  type thy_t =
-    {
+type thy_t =
+  {
       (** Name of the theory on which all user theories are based *)
-      base_name_f: string option;
+    base_name_f: string option;
 
       (** The theory data base. *)
-      thydb_f: Thydb.thydb;
+    thydb_f: Thydb.thydb;
 
       (** Information needed for the theory database loader. *)
-      loader_data_f: Thydb.Loader.data;
-    }
+    loader_data_f: Thydb.Loader.data;
+  }
 
-  let empty_thy_t () =
-    {
-      base_name_f = None;
-      thydb_f = Thydb.empty();
-      loader_data_f = Thydb.Loader.mk_empty();
-    }
+let empty_thy_t () =
+  {
+    base_name_f = None;
+    thydb_f = Thydb.empty();
+    loader_data_f = Thydb.Loader.mk_empty();
+  }
 
   (** Printer info *)
-  type pp_t =
-      {
-        pp_info_f: Printer.ppinfo ref;
-      }
+type pp_t =
+  {
+    pp_info_f: Printer.ppinfo ref;
+  }
 
-  let empty_pp_t () = 
-    {
-      pp_info_f = ref(Printer.empty_ppinfo())
-    }
+let empty_pp_t () = 
+  {
+    pp_info_f = ref(Printer.empty_ppinfo())
+  }
 
   (** Parser info *)
-  type parser_t =
-      {
-        parser_info_f: Parser.Table.t ref;
-      }
+type parser_t =
+  {
+    parser_info_f: Parser.Table.t ref;
+  }
 
-  let empty_parser_t () = 
-    {
-      parser_info_f = ref(Parser.Table.empty Parser.Table.default_size)
-    }
+let empty_parser_t () = 
+  {
+    parser_info_f = ref(Parser.Table.empty Parser.Table.default_size)
+  }
 
   (** Top-level context *)
-  type t = 
-      {
+type t = 
+  {
         (** File handling functions *)
-        file_f: file_t;
+    file_f: file_t;
 
         (** Theory data *)
-        thys_f: thy_t;
+    thys_f: thy_t;
 
         (** Pretty Printer *)
-        pp_f: pp_t;
+    pp_f: pp_t;
 
         (** Parsers *)
-        parser_f: parser_t;
+    parser_f: parser_t;
 
         (** A list of functions to invoke on a theory when it is added
             to the data-base. *)
-        load_functions_f: (t -> Theory.contents -> t) list;
+    load_functions_f: (t -> Theory.contents -> t) list;
 
         (** Theorems caches *)
-        thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
-      }
+    thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
+  }
 
-  let empty() = 
-    {
-      file_f = empty_file_t();
-      thys_f = empty_thy_t();
-      pp_f = empty_pp_t();
-      parser_f = empty_parser_t();
-      load_functions_f = [];
-      thm_cache = Hashtbl.create(13);
-    }
+let empty() = 
+  {
+    file_f = empty_file_t();
+    thys_f = empty_thy_t();
+    pp_f = empty_pp_t();
+    parser_f = empty_parser_t();
+    load_functions_f = [];
+    thm_cache = Hashtbl.create(13);
+  }
 
   (** {6 Scoped contexts} *)
-  type scoped = (t * Scope.t)
+type scoped = (t * Scope.t)
   (** The type of scoped contexts *)
 
-  let scoped ctxt scp = (ctxt, scp)
+let scoped ctxt scp = (ctxt, scp)
   (** Constructor for scoped contexts *)
-  let scope_of (_, scp) = scp
+let scope_of (_, scp) = scp
   (** Get the scope *)
-  let context_of (ctxt, _) = ctxt
+let context_of (ctxt, _) = ctxt
 
   (** Constructor for scoped contexts *)
-  let set_scope sctxt scp = scoped (context_of sctxt) scp
-  let set_context sctxt ctxt = scoped ctxt (scope_of sctxt)
+let set_scope sctxt scp = scoped (context_of sctxt) scp
+let set_context sctxt ctxt = scoped ctxt (scope_of sctxt)
 
   (** {5 Accessor Functions} *)
 
   (** {6 File handling} *)
 
-  let set_load t f = 
-    let file1 = {t.file_f with load_f = f} in
-    { t with file_f = file1 }
+let set_load t f = 
+  let file1 = {t.file_f with load_f = f} in
+  { t with file_f = file1 }
 
-  let load t = t.file_f.load_f
+let load t = t.file_f.load_f
 
-  let set_use t f = 
-    let file1 = {t.file_f with use_f = f} in
-    { t with file_f = file1 }
- 
-  let use t = t.file_f.use_f
+let set_use t f = 
+  let file1 = {t.file_f with use_f = f} in
+  { t with file_f = file1 }
+    
+let use t = t.file_f.use_f
 
-  let set_build t f = 
-    let file1 = {t.file_f with build_f = f} in
-    { t with file_f = file1 }
+let set_build t f = 
+  let file1 = {t.file_f with build_f = f} in
+  { t with file_f = file1 }
 
-  let build t = t.file_f.build_f
+let build t = t.file_f.build_f
 
-  let set_path t p = 
-    let file1 = {t.file_f with path_f = p} in
-    { t with file_f = file1 }
+let set_path t p = 
+  let file1 = {t.file_f with path_f = p} in
+  { t with file_f = file1 }
 
-  let path t = t.file_f.path_f
+let path t = t.file_f.path_f
 
-  let set_obj_suffix t sl = 
-    let file1 = {t.file_f with obj_suffix_f = sl} in
-    { t with file_f = file1 }
+let set_obj_suffix t sl = 
+  let file1 = {t.file_f with obj_suffix_f = sl} in
+  { t with file_f = file1 }
 
-  let obj_suffix t = t.file_f.obj_suffix_f
+let obj_suffix t = t.file_f.obj_suffix_f
 
-  let set_thy_suffix t sl = 
-    let file1 = {t.file_f with thy_suffix_f = sl} in
-    { t with file_f = file1 }
+let set_thy_suffix t sl = 
+  let file1 = {t.file_f with thy_suffix_f = sl} in
+  { t with file_f = file1 }
 
-  let thy_suffix t = t.file_f.thy_suffix_f
+let thy_suffix t = t.file_f.thy_suffix_f
 
-  let set_script_suffix t sl = 
-    let file1 = {t.file_f with script_suffix_f = sl} in
-    { t with file_f = file1 }
+let set_script_suffix t sl = 
+  let file1 = {t.file_f with script_suffix_f = sl} in
+  { t with file_f = file1 }
 
-  let script_suffix t = t.file_f.script_suffix_f
+let script_suffix t = t.file_f.script_suffix_f
 
   (** {6 Theory handling} *)
 
-  let set_base_name t n = 
-    let thys1 = {t.thys_f with base_name_f = Some(n)}
-    in 
-    { t with thys_f = thys1 }
+let set_base_name t n = 
+  let thys1 = {t.thys_f with base_name_f = Some(n)}
+  in 
+  { t with thys_f = thys1 }
 
-  let base_name t = 
-    match t.thys_f.base_name_f with
-      | Some(x) -> x
-      | _ -> ""
+let base_name t = 
+  match t.thys_f.base_name_f with
+  | Some(x) -> x
+  | _ -> ""
 
-  let has_base_name t = 
-    not ((t.thys_f.base_name_f) = None)
+let has_base_name t = 
+  not ((t.thys_f.base_name_f) = None)
 
-  let clear_base_name t = 
-    let thys1 = {t.thys_f with base_name_f = None}
-    in 
-    { t with thys_f = thys1 }
+let clear_base_name t = 
+  let thys1 = {t.thys_f with base_name_f = None}
+  in 
+  { t with thys_f = thys1 }
 
-  let set_thydb t db =
-    let thys1 = { t.thys_f with thydb_f = db }
-    in 
-    { t with thys_f = thys1 }
+let set_thydb t db =
+  let thys1 = { t.thys_f with thydb_f = db }
+  in 
+  { t with thys_f = thys1 }
 
-  let thydb t = t.thys_f.thydb_f
+let thydb t = t.thys_f.thydb_f
 
-  let set_loader_data t lf =
-    let thys1 = { t.thys_f with loader_data_f = lf }
-    in 
-    { t with thys_f = thys1 }
+let set_loader_data t lf =
+  let thys1 = { t.thys_f with loader_data_f = lf }
+  in 
+  { t with thys_f = thys1 }
 
-  let loader_data t = t.thys_f.loader_data_f
+let loader_data t = t.thys_f.loader_data_f
 
-  let set_load_functions t fl =
-    { t with load_functions_f = fl }
+let set_load_functions t fl =
+  { t with load_functions_f = fl }
 
-  let load_functions t = t.load_functions_f
+let load_functions t = t.load_functions_f
 
   (** Pretty printer information *)
-  let set_ppinfo t inf =
-    t.pp_f.pp_info_f := inf; t
+let set_ppinfo t inf =
+  t.pp_f.pp_info_f := inf; t
 
-  let ppinfo t = !(t.pp_f.pp_info_f)
+let ppinfo t = !(t.pp_f.pp_info_f)
 
   (** Parser information *)
-  let set_parsers t inf =
-    t.parser_f.parser_info_f := inf; t
+let set_parsers t inf =
+  t.parser_f.parser_info_f := inf; t
 
-  let parsers t = !(t.parser_f.parser_info_f)
+let parsers t = !(t.parser_f.parser_info_f)
 
   (** Theorem cache *)
-  let cache_thm t id thm = 
-    if not (Hashtbl.mem t.thm_cache id)
-    then
-      (Hashtbl.add t.thm_cache id thm; t)
-    else t
+let cache_thm t id thm = 
+  if not (Hashtbl.mem t.thm_cache id)
+  then
+    (Hashtbl.add t.thm_cache id thm; t)
+  else t
 
-  let remove_cached_thm t id = 
-    if Hashtbl.mem t.thm_cache id
-    then
-      (Hashtbl.remove t.thm_cache id; t)
-    else t
+let remove_cached_thm t id = 
+  if Hashtbl.mem t.thm_cache id
+  then
+    (Hashtbl.remove t.thm_cache id; t)
+  else t
 
-  let lookup_thm sctxt id = 
-    let ctxt = context_of sctxt 
-    and scp = scope_of sctxt in
-    let thm = Hashtbl.find ctxt.thm_cache id
-    in 
-    if Logic.is_fresh scp thm
-    then thm
-    else
-      begin
-        ignore(remove_cached_thm ctxt id);
-        raise Not_found
-      end
-        
-  let find_thm sctxt id fn =  
-   try lookup_thm sctxt id
-    with Not_found ->
-      begin
-        let thm = fn sctxt in 
-        let _ = cache_thm (context_of sctxt) id thm
-        in 
-        thm
-      end
+let lookup_thm sctxt id = 
+  let ctxt = context_of sctxt 
+  and scp = scope_of sctxt in
+  let thm = Hashtbl.find ctxt.thm_cache id
+  in 
+  if Logic.is_fresh scp thm
+  then thm
+  else
+    begin
+      ignore(remove_cached_thm ctxt id);
+      raise Not_found
+    end
+      
+let find_thm sctxt id fn =  
+  try lookup_thm sctxt id
+  with Not_found ->
+    begin
+      let thm = fn sctxt in 
+      let _ = cache_thm (context_of sctxt) id thm
+      in 
+      thm
+    end
 
 (***
-end
+    end
 **)
 
 module Thys =
@@ -353,8 +353,8 @@ struct
       then load ctxt f
       else use ctxt f
     with 
-      | Not_found -> Report.warning ("Can't find file "^f)
-      | _ -> Report.warning ("Failed to load file "^f)
+    | Not_found -> Report.warning ("Can't find file "^f)
+    | _ -> Report.warning ("Failed to load file "^f)
 
   (** {7 Paths} ***)
 
@@ -383,11 +383,11 @@ struct
   let find_file f path =
     let rec find_aux ths =
       match ths with
-	| [] -> raise Not_found
-	| (t::ts) ->
-	  let nf = Filename.concat t f in 
-	  if Sys.file_exists nf then nf 
-	  else find_aux ts
+      | [] -> raise Not_found
+      | (t::ts) ->
+	let nf = Filename.concat t f in 
+	if Sys.file_exists nf then nf 
+	else find_aux ts
     in 
     if Filename.is_relative f 
     then find_aux path
@@ -406,13 +406,13 @@ struct
   let load_thy_file ctxt info = 
     let test_protection prot b =
       match prot with 
-	| None -> true
-	| (Some p) -> p && b
+      | None -> true
+      | (Some p) -> p && b
     in 
     let test_date tym d = 
       match tym with 
-	| None -> true
-	| (Some tim) -> d <= tim
+      | None -> true
+      | (Some tim) -> d <= tim
     in 
     let name = info.Thydb.Loader.name
     and date = info.Thydb.Loader.date
@@ -422,19 +422,19 @@ struct
     in 
     let rec load_aux ths =
       match ths with
-	| [] -> raise Not_found
-	| (t::ts) ->
-	  let filename = Filename.concat t thyfile
+      | [] -> raise Not_found
+      | (t::ts) ->
+	let filename = Filename.concat t thyfile
+	in 
+	if Sys.file_exists filename
+	then 
+	  let sthy = Theory.load_theory filename
 	  in 
-	  if Sys.file_exists filename
-	  then 
-	    let sthy = Theory.load_theory filename
-	    in 
-	    if (test_protection prot (Theory.saved_prot sthy))
-	      && (test_date date (Theory.saved_date sthy))
-	    then sthy
-	    else load_aux ts
+	  if (test_protection prot (Theory.saved_prot sthy))
+	    && (test_date date (Theory.saved_date sthy))
+	  then sthy
 	  else load_aux ts
+	else load_aux ts
     in 
     load_aux (get_thy_path ctxt)
 
@@ -454,10 +454,10 @@ struct
   let default_load_functions = 
     [
       load_use_theory_files;    (* load files *)
-(*
+    (*
       PP.add_loaded_type_pp;    (* add type PP information *)
       PP.add_loaded_term_pp;    (* add term PP information *)
-*)
+    *)
     ]
 
   let load_functions = ref default_load_functions
@@ -471,4 +471,249 @@ struct
   let on_load_thy db th =
     List.iter (fun f -> f (empty()) th) (List.rev !load_functions)
 
+end
+
+(*** New Pretty printing based on Context.t ***)
+module NewPP =
+struct
+  (*** Terms ***)
+  let get_term_pp ctxt id = 
+    Printer.get_term_info (ppinfo ctxt) id
+
+  let add_term_pp ctxt id prec fixity repr =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.add_term_info (ppinfo ctxt) id prec fixity repr)
+    in
+    Parser.add_token 
+      id (Lib.get_option repr (Ident.name_of id)) fixity prec;
+    ctxt1
+
+  let add_term_pp_record ctxt id rcrd =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.add_term_record (ppinfo ctxt) id rcrd)
+    in
+    Parser.add_token 
+      id 
+      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (rcrd.Printer.fixity)
+      (rcrd.Printer.prec);
+    ctxt1
+
+  let remove_term_pp ctxt id =
+    let (_, _, sym) = get_term_pp ctxt id in 
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.remove_term_info (ppinfo ctxt) id)
+    in
+    Parser.remove_token (Lib.get_option sym (Ident.name_of id));
+    ctxt1
+
+  (*** Types ***)
+
+  let get_type_pp ctxt id = 
+    Printer.get_type_info (ppinfo ctxt) id
+
+  let add_type_pp ctxt id prec fixity repr =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.add_type_info (ppinfo ctxt) id prec fixity repr)
+    in
+    Parser.add_type_token 
+      id (Lib.get_option repr (Ident.name_of id)) fixity prec;
+    ctxt1
+
+  let add_type_pp_record ctxt id rcrd =
+    let ctxt1 =
+      set_ppinfo ctxt
+        (Printer.add_type_record (ppinfo ctxt) id rcrd)
+    in
+    Parser.add_type_token 
+      id 
+      (Lib.get_option rcrd.Printer.repr (Ident.name_of id)) 
+      (rcrd.Printer.fixity)
+      (rcrd.Printer.prec);
+    ctxt1
+
+  let remove_type_pp ctxt id =
+    let (_, _, sym) = get_type_pp ctxt id in 
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.remove_type_info (ppinfo ctxt) id)
+    in
+    Parser.remove_type_token (Lib.get_option sym (Ident.name_of id)); 
+    ctxt1
+
+  (*** User-defined printers ***)
+
+  let get_term_printer ctxt id =
+    Printer.get_term_printer (ppinfo ctxt) id
+
+  let add_term_printer ctxt id printer =
+    let ctxt1 = 
+      set_ppinfo ctxt 
+        (Printer.add_term_printer (ppinfo ctxt) id printer)
+    in
+    ctxt1
+
+  let remove_term_printer ctxt id =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.remove_term_printer (ppinfo ctxt) id)
+    in
+    ctxt1
+
+  let get_type_printer ctxt id =
+    Printer.get_type_printer (ppinfo ctxt) id
+
+  let add_type_printer ctxt id printer =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.add_type_printer (ppinfo ctxt) id printer)
+    in
+    ctxt1
+
+  let remove_type_printer ctxt id =
+    let ctxt1 = 
+      set_ppinfo ctxt
+        (Printer.remove_type_printer (ppinfo ctxt) id)
+    in
+    ctxt1
+
+  (** {7 Overloading} *)
+
+  let overload_lookup ctxt sym =
+    let ovltbl = Parser.Table.overloads (parsers ctxt) in
+    Parser.get_overload_list ~ovltbl:ovltbl sym
+
+  let add_overload ctxt sym pos (id, ty) =
+    let ovltbl0 = Parser.Table.overloads (parsers ctxt) in
+    let ovltbl1 = Parser.add_overload ~ovltbl:ovltbl0 sym pos (id, ty)
+    in
+    set_parsers ctxt (Parser.Table.set_overloads (parsers ctxt) ovltbl1)
+
+  let remove_overload ctxt sym id =
+    let ovltbl0 = Parser.Table.overloads (parsers ctxt) in
+    let ovltbl1 = Parser.remove_overload ~ovltbl:ovltbl0 sym id
+    in
+    set_parsers ctxt (Parser.Table.set_overloads (parsers ctxt) ovltbl1)
+
+
+  (** Functions to add PP information when a theory is loaded *)
+
+  let add_id_record ctxt id rcrd =
+    let pr, fx, repr = 
+      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+    in 
+    add_term_pp ctxt id pr fx repr
+
+  let add_type_record ctxt id rcrd =
+    let pr, fx, repr = 
+      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+    in 
+    add_type_pp ctxt id pr fx repr
+
+  let add_loaded_term_pp ctxt th =
+    let thy_name = th.Theory.cname
+    and pp_list = List.rev th.Theory.cid_pps
+    in 
+    let add_pp (id, (rcrd, pos)) = 
+      let _ = add_id_record ctxt (Ident.mk_long thy_name id) rcrd in
+      let repr = rcrd.Printer.repr
+      in 
+      match repr with
+      | None -> ()
+      | Some(sym) -> 
+	try
+	  let id_record = List.assoc id th.Theory.cdefns in 
+	  let id_type = id_record.Theory.typ
+	  in 
+	  ignore(Parser.add_overload sym pos
+                   (Ident.mk_long thy_name id, id_type))
+	with _ -> ()
+    in 
+    List.iter add_pp pp_list;
+    ctxt
+
+  let add_loaded_type_pp ctxt th =
+    let thy_name = th.Theory.cname
+    and pp_list = List.rev th.Theory.ctype_pps
+    in 
+    let add_pp (id, rcrd) = 
+      ignore (add_type_record ctxt (Ident.mk_long thy_name id) rcrd)
+    in 
+    List.iter add_pp pp_list;
+    ctxt
+
+      
+  (*** Parsing ***)
+
+  let catch_parse_error e a = 
+    try (e a)
+    with 
+    | Parser.ParsingError x -> raise (Report.error x)
+    | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
+      
+  let overload_lookup ctxt s = 
+    let thydb s = Thydb.get_id_options s (Thys.theories ctxt)
+    and parserdb s = 
+      Parser.get_overload_list 
+        ~ovltbl:(Parser.Table.overloads (parsers ctxt)) s
+    in 
+    try parserdb s
+    with Not_found -> thydb s
+
+  let expand_term scpd t = 
+    let scp, ctxt = (scope_of scpd, context_of scpd) in
+    let lookup = Pterm.Resolver.make_lookup scp (overload_lookup ctxt) 
+    in 
+    let (new_term, env) = Pterm.Resolver.resolve_term scp lookup t
+    in 
+    new_term
+
+  let expand_type_names scp t =  Gtypes.set_name ~strict:false scp t
+
+  let expand_typedef_names scpd t=
+    match t with
+    | Grammars.NewType (n, args) -> 
+      Defn.Parser.NewType (n, args) 
+    | Grammars.TypeAlias (n, args, def) ->
+      Defn.Parser.TypeAlias(n, args, expand_type_names (scope_of scpd) def)
+    | Grammars.Subtype (n, args, def, set) ->
+      Defn.Parser.Subtype(n, args, 
+			  expand_type_names (scope_of scpd) def, 
+			  expand_term scpd set)
+
+  let expand_defn scpd (plhs, prhs) =
+    let rhs = expand_term scpd prhs
+    and ((name, ty), pargs) = plhs
+    in 
+    let args = List.map Pterm.to_term pargs
+    in 
+    (((name, ty), args), rhs)
+
+  let mk_term scp pt = expand_term scp pt
+
+  let read scp str = 
+    mk_term scp (catch_parse_error Parser.read_term str)
+
+  let read_unchecked x =
+    catch_parse_error (Pterm.to_term <+ Parser.read_term) x
+
+  let read_defn scpd x =
+    let (lhs, rhs) = catch_parse_error (Parser.read defn_parser) x
+    in 
+    expand_defn scpd (lhs, rhs)
+
+  let read_type_defn scpd x =
+    let pdefn = catch_parse_error (Parser.read Parser.typedef_parser) x
+    in 
+    expand_typedef_names scpd pdefn
+      
+  let read_type scpd x = 
+    expand_type_names (scope_of scpd) (catch_parse_error Parser.read_type x)
+
+  let read_identifier x = 
+    catch_parse_error (Parser.read Parser.identifier_parser) x
 end
