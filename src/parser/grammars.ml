@@ -132,7 +132,8 @@ let token_table_reset tbl =
 (* token_table_add: should fail if token already exists (but doesn't
  *fixme* )
  *)
-let token_table_add tbl s tok =  Hashtbl.add (tbl.table) s tok
+let token_table_add tbl s tok = 
+  Hashtbl.add (tbl.table) s tok; tbl
 
 let token_table_find tbl s =
   let mfind =
@@ -153,12 +154,15 @@ let token_table_find tbl s =
 
 let token_table_remove tbl s =
   Hashtbl.remove tbl.table s;
-  match tbl.memo with
+  begin
+    match tbl.memo with
     | Some(x, y) ->
-	if Lexer.match_tokens s x 
-	then tbl.memo <- None 
-	else ()
+      if Lexer.match_tokens s x 
+      then tbl.memo <- None 
+      else ()
     | _ -> ()
+  end; 
+  tbl
 
 (** [token_info tbl t]: Look up the information of token [t] in token
     table [tbl]. Return [None] if [t] is not in [tbl].
@@ -189,11 +193,14 @@ type parser_info =
       (* term information *)
       bound_names: (string* Pterm.t) list ref;
       token_info: (token -> token_info);
-
+      term_parsers: 
+        (string, parser_info -> Pterm.t phrase) Lib.named_list;
       (* type information *)
       typ_indx: int ref;
       typ_names: (string* Basic.gtype) list ref;
       type_token_info: (token ->token_info);
+      type_parsers: 
+        (string, parser_info -> (Basic.gtype phrase)) Lib.named_list;
     }
 
 (** [mk_inf tbl type_tbl] Make parsing information from table [tbl]
@@ -203,10 +210,12 @@ let mk_inf tbl type_tbl =
   { 
     bound_names = ref [];
     token_info = token_info tbl;
+    term_parsers = [];
 
     typ_indx = ref 0;
     typ_names = ref [];
-    type_token_info = token_info type_tbl
+    type_token_info = token_info type_tbl;
+    type_parsers = [];
   }
     
 (*** Utility functions ***)
@@ -254,7 +263,7 @@ let get_term n inf =
    [clear_names inf]
    Clear the bound names of [inf]
 *)
-let clear_names inf = inf.bound_names:=[]
+let clear_names inf = { inf with bound_names = ref [] }
 
 let get_type_indx inf = 
   inf.typ_indx := (!(inf.typ_indx)) + 1; !(inf.typ_indx)
@@ -288,7 +297,7 @@ let get_type n inf =
 
 (** [clear_type_names inf] Clear the record of type variable names.
 *)
-let clear_type_names inf = inf.typ_names := []
+let clear_type_names inf = { inf with typ_names = ref [] }
 
 
 (*
@@ -617,20 +626,19 @@ let rec inner_types inf toks =
 and atomic_types inf toks =
   ((type_parsers inf) // type_error "") toks
     (* Core Type Parsers: *)
-and type_parsers_list = ref []
+and type_parsers_list inf = inf.type_parsers
   (**
      [type_parsers inf]
      Try each of the parsers in the list 
      [type_parsers_list].
   *)
 and type_parsers inf toks = 
-  named_alt (!type_parsers_list) inf toks
+  named_alt (type_parsers_list inf) inf toks
 
 (** [types inf]: Toplevel for the type parser.
 *)
 let rec types inf toks = 
-  clear_type_names inf; 
-  inner_types inf toks
+  inner_types (clear_type_names inf) toks
     
 let core_type_parsers = 
   [
@@ -655,20 +663,22 @@ let core_type_parsers =
        >> (fun x -> fst (snd x))))
   ]
 
-let init_type_parsers () = type_parsers_list := core_type_parsers
+let init_type_parsers inf = 
+  { inf with type_parsers = core_type_parsers }
 (** Support for adding type parsers.
 *)
 
 (** [add_type_parser pos n ph]: Add type parser [ph] at position [pos]
     with name [n].
 *)
-let add_type_parser pos n ph = 
-  type_parsers_list := Lib.named_add (!type_parsers_list) pos n ph
+let add_type_parser inf pos n ph = 
+  { inf with 
+    type_parsers = (Lib.named_add (type_parsers_list inf) pos n ph) }
 
 (** [remove_type_parser n]: Remove the type parser named [n].
 *)
-let remove_type_parser n =
-  type_parsers_list := List.remove_assoc n (!type_parsers_list)
+let remove_type_parser inf n =
+  { inf with type_parsers = (List.remove_assoc n (type_parsers_list inf)) }
 
 
 (*
@@ -895,11 +905,11 @@ and
 
 (** [term_parsers_list]: List of term parsers.
 *)
-and term_parsers_list  = ref []
+and term_parsers_list inf = inf.term_parsers
 (** [term_parsers inf tok]: Parse using parsers in
     [term_parsers_list].  *)
 and term_parsers inf toks = 
-  named_alt (!term_parsers_list) inf toks
+  named_alt (term_parsers_list inf) inf toks
 
 module Alt =
 struct
@@ -953,7 +963,7 @@ end
 (** [core_term_parser_list]: The primary term parsers are stored in a
     named list.
 *)
-let core_term_parser_list = 
+let core_term_parsers = 
   [ 
     (* id '(' id ':' type ')' *)
     "identifier", term_identifier;
@@ -1015,7 +1025,8 @@ let core_term_parser_list =
   ]
 
 (** [init_term_parsers]: Initilalise the term parsers *)
-let init_term_parsers () = term_parsers_list := core_term_parser_list
+let init_term_parsers inf = 
+  {inf with term_parsers = core_term_parsers}
 
 (*
  *    Support functions
@@ -1024,13 +1035,15 @@ let init_term_parsers () = term_parsers_list := core_term_parser_list
 (** [add_parser pos n ph]: Add term parser [ph] with name [n] in
     position [pos].
 *)
-let add_parser pos n ph = 
-  term_parsers_list := Lib.named_add (!term_parsers_list) pos n ph
+let add_parser inf pos n ph = 
+  { inf with 
+    term_parsers = (Lib.named_add (term_parsers_list inf) pos n ph) }
 
 (** [remove_parser n]: Remove term parser named [n].
 *)
-let remove_parser n = 
-  term_parsers_list := List.remove_assoc n (!term_parsers_list)
+let remove_parser inf n = 
+  { inf with 
+    term_parsers = (List.remove_assoc n (term_parsers_list inf)) }
 
 (** [parse_as_binder f sym]: Construct a grammar to parse function
     applications of the form [f (%x: P)] as [sym x: P].

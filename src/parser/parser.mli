@@ -176,7 +176,8 @@ val init_symtable : int -> unit
 val token_table: Grammars.token_table
 (** Table of tokens which can appear in a term parser *)
 
-val add_token_info : Lexer.tok -> Grammars.token_info -> unit
+val add_token_info: 
+  Lexer.tok -> Grammars.token_info -> Grammars.token_table
 (**
    [add_token_info tok info]: add parsing information [info] for term
    token [tok] to the standard token table, fail if token information
@@ -189,7 +190,7 @@ val get_token_info: Lexer.tok -> Grammars.token_info
    from the standard table, fail if token information exists.
 *)
 
-val remove_token_info: Lexer.tok -> unit
+val remove_token_info: Lexer.tok -> Grammars.token_table
 (**
    [remove_token_info tok]: Remove parsing information for term token
    [tok] from the standard table.
@@ -198,26 +199,29 @@ val remove_token_info: Lexer.tok -> unit
 val type_token_table: Grammars.token_table
 (** Table of tokens which can appear in a type parser *)
 
-val add_type_token_info : Lexer.tok -> Grammars.token_info -> unit
+val add_type_token_info: 
+  Lexer.tok -> Grammars.token_info -> Grammars.token_table
 (**
    [add_type_token_info tok info]: Add parsing information [info] for
    type token [tok] to the standard type token table, fail if token
    information exists
  *)
 
-val get_type_token_info: Lexer.tok -> Grammars.token_info
+val get_type_token_info: 
+  Lexer.tok -> Grammars.token_info
 (**
    [get_token_info tok]: Get parsing information for type token
    [tok] from the standard table.
 *)
 
-val remove_type_token_info: Lexer.tok -> unit
+val remove_type_token_info: 
+  Lexer.tok -> Grammars.token_table
 (**
    [remove_type_token_info tok]: Remove parsing information for type token
    [tok] from the standard table.
 *)
 
-val mk_info : unit -> Grammars.parser_info
+val mk_info: unit -> Grammars.parser_info
 (** 
    Make a parser information record ([parser_info)] from the standard
    term and type token tables.
@@ -225,27 +229,29 @@ val mk_info : unit -> Grammars.parser_info
 
 (** {7 Toplevel symbol and token functions} *)
 
-val add_token: Ident.t -> string -> fixity -> int -> unit
+val add_token: 
+  Ident.t -> string -> fixity -> int -> Grammars.token_table
 (** 
    [add_token id sym fix prec]: Add symbol [sym] as representation for
    term identifier [id], with fixity [fix] and precedence [prec]. 
    Updates term symbol and token tables. 
 *)
 
-val remove_token : string -> unit
+val remove_token : string -> Grammars.token_table
 (**
    [remove_token sym]: Remove [sym] and associated token information
    from the term symbol and token tables.
 *)
 
-val add_type_token: Ident.t -> string -> fixity -> int -> unit
+val add_type_token:
+  Ident.t -> string -> fixity -> int -> Grammars.token_table  
 (** 
    [add_type_token id sym fix prec]: Add symbol [sym] as representation for
    type identifier [id], with fixity [fix] and precedence [prec]. 
    Updates type symbol and token tables. 
 *)
 
-val remove_type_token : string -> unit
+val remove_type_token : string -> Grammars.token_table
 (**
    [remove_type_token sym]: Remove [sym] and associated token information
    from the type symbol and token tables.
@@ -302,6 +308,12 @@ sig
         type_tokens_f: Grammars.token_table;
         symbols_f: Lexer.symtable;
         overloads_f: overload_table_t;
+        term_parsers_f:
+          (string,
+           Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
+        type_parsers_f: 
+          (string, 
+           Grammars.parser_info -> (Basic.gtype phrase)) Lib.named_list;
       }
 
   (** Default sizes *)
@@ -322,11 +334,22 @@ sig
   val set_symbols: t -> Lexer.symtable -> t
   val overloads: t -> overload_table_t
   val set_overloads: t -> overload_table_t -> t
+  val term_parsers: 
+    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
+  val set_term_parsers: 
+    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list 
+    -> t
+  val type_parsers: 
+    t -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
+  val set_type_parsers: 
+    t 
+    -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list 
+    -> t
 end
 
 (** {5 Initialising functions} *)
 
-val init_parsers : unit -> unit
+val init_parsers : Table.t -> Table.t
 (** Initialise the type and term parsers *)
 
 val init : unit -> unit
@@ -368,48 +391,48 @@ val defn_parser :
 (** {7 User defined parsers} *)
 
 val term_parser_list : 
-    unit -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
+    Table.t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
 (** 
    The list of user defined term parsers. Parsers added to this list are
    used by the term parser {!Grammars.form}.
  *)
 
-val add_term_parser :  (string) Lib.position -> string
+val add_term_parser:
+  Table.t -> (string) Lib.position -> string
   -> (Grammars.parser_info -> Pterm.t phrase)
-    -> unit
+  -> Table.t
 (**
    [add_term_parser pos n ph]: Add the term parser [ph] at position
    [pos] with name [n] to {!Parser.term_parser_list}.
 *)
 
-val remove_term_parser :  string -> unit
+val remove_term_parser: Table.t -> string -> Table.t
 (**
    [remove_term_parser s]: Remove the term parser named [s] from
    {!Parser.term_parser_list}. Raise [Not_found] if not present.
  *)
 
 val type_parser_list : 
-    unit -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
+  Table.t -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
 (** 
    The list of user defined type parsers. Parsers added to this list are
    used by the term parser {!Grammars.types}.
  *)
 
-val add_type_parser :  
-    (string)Lib.position -> string
-      -> (Grammars.parser_info -> Basic.gtype phrase)
-	-> unit
+val add_type_parser:  
+  Table.t -> (string)Lib.position -> string
+  -> (Grammars.parser_info -> Basic.gtype phrase)
+  -> Table.t
 (**
    [add_type_parser pos n ph]: Add the type parser [ph] at position
    [pos] with name [n] to {!Parser.type_parser_list}.
 *)
 
-val remove_type_parser :  string -> unit
+val remove_type_parser: Table.t -> string -> Table.t
 (**
    [remove_type_parser s]: Remove the type parser named [s] from
    {!Parser.type_parser_list}. Raise [Not_found] if not present.
  *)
-
 
 (** {7 Readers} 
 

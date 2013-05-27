@@ -145,11 +145,18 @@ val token_table_new: int -> token_table
 (** Make a token table *)
 val token_table_reset: token_table -> token_table
 (** Reset a token table *)
+(*
 val token_table_add: token_table -> Lexer.tok -> token_info -> unit
+*)
+val token_table_add: 
+  token_table -> Lexer.tok -> token_info -> token_table
 (** Add a token to token table *)
 val token_table_find: token_table -> Lexer.tok-> token_info
 (** Lookup a token in a token table *)
+(*
 val token_table_remove: token_table -> Lexer.tok -> unit
+*)
+val token_table_remove: token_table -> Lexer.tok -> token_table
 (** Remove a token from a token table *)
 
 (** {7 Parser information}  *)
@@ -165,13 +172,19 @@ type parser_info =
 	  with *)
       token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a term *)
-      
+      term_parsers: 
+        (string, parser_info -> Pterm.t phrase) Lib.named_list;
+      (** Extra term parsers *)
+
       (* Type information *)
       typ_indx: int ref; (** Counter to generate type names *)
       typ_names: (string* Basic.gtype)list ref;
       (** Names found in a type and their replacements *)
-      type_token_info: Pkit.token -> token_info
-    (** Get the information for a token found in a type *)
+      type_token_info: Pkit.token -> token_info;
+      (** Get the information for a token found in a type *)
+      type_parsers: 
+        (string, parser_info -> (Basic.gtype phrase)) Lib.named_list;
+      (** Extra type parsers *)
     }
       
 val mk_inf: token_table -> token_table -> parser_info
@@ -179,7 +192,6 @@ val mk_inf: token_table -> token_table -> parser_info
     and [type_tbl] of term and type token information.
 *)
 
-  
 val lookup_name: string -> parser_info -> Pterm.t
 (** [lookup_name n inf]: Look up [n] in [inf.bound_names].  raise
     [Not_found] if not found.
@@ -206,7 +218,7 @@ val get_term: string -> parser_info -> Pterm.t
     made from [n] (as [mk_free n (Gtype.mk_null())]).
 *)
 
-val clear_names: parser_info -> unit
+val clear_names: parser_info -> parser_info
 (** [clear_names inf]: Clear the bound names of [inf].
 *)
 
@@ -235,10 +247,9 @@ val get_type: string -> parser_info -> Basic.gtype
     associate [n] with [ty] in [inf] and return [ty].
 *)
 
-val clear_type_names: parser_info -> unit
+val clear_type_names: parser_info -> parser_info
 (** [clear_type_names inf]: Clear the record of type variable names.
 *)
-
 
 (** {7 Token information utility functions} *)
 
@@ -387,7 +398,8 @@ val atomic_types: parser_info -> Basic.gtype phrase
 (** The atomic types (num, bool, etc) *)
 
 val type_parsers_list: 
-  (string, parser_info -> (Basic.gtype phrase)) Lib.named_list ref
+  parser_info -> 
+  (string, parser_info -> (Basic.gtype phrase)) Lib.named_list
 (** A record of the type parsers used by {!Grammars.inner_types}.  Can
     be extended with user-defined parsers.
 *)
@@ -402,7 +414,8 @@ val core_type_parsers:
   (string, parser_info -> (Basic.gtype phrase)) Lib.named_list
 (** The built-in type parsers *)
   
-val init_type_parsers: unit -> unit
+val init_type_parsers: 
+  parser_info -> parser_info
 (** Initialise the type parsers *)
   
 (** {7 Support for adding parsers} 
@@ -414,14 +427,14 @@ val init_type_parsers: unit -> unit
 *)
 
 val add_type_parser:  
-  (string)Lib.position -> string
+  parser_info -> (string)Lib.position -> string
   -> (parser_info -> Basic.gtype phrase)
-  -> unit
+  -> parser_info
 (** [add_type_parser pos n ph]: Add type parser [ph] at position [pos]
     with name [n].
 *)
 
-val remove_type_parser: string -> unit
+val remove_type_parser: parser_info -> string -> parser_info
 (* [remove_type_parser n]: Remove the type parser named [n], raise
    [Not_found] if not present.
 *)
@@ -543,7 +556,7 @@ val typed_primary: parser_info -> Pterm.t phrase
 (** Parse a possibly typed atomic term *)
 
 val term_parsers_list:
-  (string, parser_info -> Pterm.t phrase) Lib.named_list ref
+  parser_info -> (string, parser_info -> (Pterm.t)phrase) Lib.named_list
 (** The list of atomic term parsers. Can be extended with user-defined
     parsers.
 *)
@@ -552,23 +565,23 @@ val term_parsers: parser_info ->Pterm.t phrase
 val primary: parser_info -> Pterm.t phrase
 (** Parser for the atomic terms *)
   
-val core_term_parser_list: 
+val core_term_parsers: 
   (string, parser_info -> (Pterm.t phrase)) Lib.named_list
 (** The built-in term parsers *)
   
-val init_term_parsers: unit -> unit
+val init_term_parsers: parser_info -> parser_info
 (** Initialise the term parsers *)
   
 (** {7 Support functions} *)
   
 val add_parser: 
-  string Lib.position
-  -> string -> (parser_info -> Pterm.t phrase) -> unit
+  parser_info -> string Lib.position
+  -> string -> (parser_info -> Pterm.t phrase) -> parser_info
 (** [add_parser pos n ph]: Add term parser [ph] with name [n] in
     position [pos] to {!Grammars.term_parsers_list}.
 *)
   
-val remove_parser: string -> unit
+val remove_parser: parser_info -> string -> parser_info
 (** [remove_parser n]: Remove the term parser named [n] from
     {!Grammars.term_parsers_list}.
 *)

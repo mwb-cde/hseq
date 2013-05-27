@@ -574,6 +574,12 @@ struct
         type_tokens_f: Grammars.token_table;
         symbols_f: Lexer.symtable;
         overloads_f: overload_table_t;
+        term_parsers_f:
+          (string, 
+           Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
+        type_parsers_f: 
+          (string, 
+           Grammars.parser_info -> (Basic.gtype phrase)) Lib.named_list;
       }
 
   let default_size = (Grammars.default_table_size,
@@ -587,6 +593,8 @@ struct
       type_tokens_f = Grammars.token_table_new tytok_size;
       symbols_f = Lexer.mk_symtable stm_size;
       overloads_f = mk_overload_table ov_size;
+      term_parsers_f = Grammars.core_term_parsers;
+      type_parsers_f = Grammars.core_type_parsers;
     }
 
   let init_symbols symtbl syms = 
@@ -602,17 +610,23 @@ struct
     in 
     {
       tokens_f = toks; type_tokens_f = tytoks;
-      symbols_f = symtab; overloads_f = ovltab
+      symbols_f = symtab; overloads_f = ovltab;
+      term_parsers_f = Grammars.core_term_parsers;
+      type_parsers_f = Grammars.core_type_parsers;
     }
 
   let tokens t = t.tokens_f
   let set_tokens t x = {t with tokens_f = x}
-  let type_tokens t = t.type_tokens_f
+  let type_tokens t = t.type_tokens_f 
   let set_type_tokens t x = {t with type_tokens_f = x}
   let symbols t = t.symbols_f
   let set_symbols t x = {t with symbols_f = x}
   let overloads t = t.overloads_f
   let set_overloads t x = {t with overloads_f = x}
+  let term_parsers t = t.term_parsers_f
+  let set_term_parsers t x = {t with term_parsers_f = x}
+  let type_parsers t = t.type_parsers_f
+  let set_type_parsers t x = {t with type_parsers_f = x}
 end 
 
 (*** Initialising functions ***)
@@ -623,19 +637,21 @@ let init_token_table()=
 let init_type_token_table()=
   Grammars.token_table_reset type_token_table
     
-let init_tables ()=
+let init_tables tbl =
   init_symtable default_symtable_size;
   ignore(init_type_token_table());
   ignore(init_token_table());
   init_overload()
 
-let init_parsers () = 
-  Grammars.init_type_parsers();
-  Grammars.init_term_parsers()
+let init_parsers tbl = 
+  let tbl0 = Table.set_type_parsers tbl Grammars.core_type_parsers in
+  let tbl1 = Table.set_term_parsers tbl Grammars.core_term_parsers in
+  tbl1
 
-let init ()= 
-  init_tables (); 
-  init_parsers()
+let init () = 
+  let tbl0 = init_parsers (Table.empty Table.default_size) in
+  init_tables tbl0
+  
 
 (**
    Parsers
@@ -660,15 +676,23 @@ let defn_parser inp =
 
 (*** User defined parsers ***)
 
-let term_parser_list ()= 
-  !(Grammars.term_parsers_list)
+let term_parser_list tbl = Table.term_parsers tbl
+let add_term_parser tbl pos n ph = 
+  let plist0 = Table.term_parsers tbl in 
+  Table.set_term_parsers tbl (Lib.named_add plist0 pos n ph)
 
-let add_term_parser = Grammars.add_parser
-let remove_term_parser = Grammars.remove_parser
+let remove_term_parser tbl n =
+  let plist0 = Table.term_parsers tbl in 
+  Table.set_term_parsers tbl (List.remove_assoc n plist0)
 
-let type_parser_list ()= !(Grammars.type_parsers_list)
-let add_type_parser = Grammars.add_type_parser
-let remove_type_parser = Grammars.remove_type_parser
+let type_parser_list tbl = Table.type_parsers tbl
+let add_type_parser tbl pos n ph = 
+  let plist0 = Table.type_parsers tbl in 
+  Table.set_type_parsers tbl (Lib.named_add plist0 pos n ph)
+
+let remove_type_parser tbl n = 
+  let plist0 = Table.type_parsers tbl in 
+  Table.set_type_parsers tbl (List.remove_assoc n plist0)
 
 (*** Readers: read and parse a string ***)
 
