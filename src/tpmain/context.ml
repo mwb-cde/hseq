@@ -39,38 +39,34 @@ struct
   let base_thy_name = "Main"
 end
 
-  (** Global context *)
-  (***
-      module Context =
-      struct
-  ***)
+(** Global context *)
 
-  (** File handling functions *)
+(** File handling functions *)
 type file_t =
   {
-        (** [load_file f]: Load a byte-code file [f] into memory. *)
+    (** [load_file f]: Load a byte-code file [f] into memory. *)
     load_f: string -> unit;
 
-        (** [use_file ?silent f]: Read file [f] as a script.  If
-            [silent=true], do not report any information. *)
+    (** [use_file ?silent f]: Read file [f] as a script.  If
+        [silent=true], do not report any information. *)
     use_f: ?silent:bool -> string -> unit;
 
-        (** [build ?silent th]: Build theory [th] from a script.
-            [silent=true], do not report any information.  @raise
-            Failure on failure. *)
+    (** [build ?silent th]: Build theory [th] from a script.
+        [silent=true], do not report any information.  @raise
+        Failure on failure. *)
     build_f: ?silent:bool -> string -> unit;
     
-        (** [path]: List of directories to search for theories,
-            libraries and scripts.*)
+    (** [path]: List of directories to search for theories,
+        libraries and scripts.*)
     path_f: string list;
 
-        (** obj_suffix: List of possible suffixes for an object file. *)
+    (** obj_suffix: List of possible suffixes for an object file. *)
     obj_suffix_f: string list;
 
-        (** thy_suffix: Suffix for a theory file. *)
+    (** thy_suffix: Suffix for a theory file. *)
     thy_suffix_f: string;
 
-        (** script_suffix: Suffix for a script file. *)
+    (** script_suffix: Suffix for a script file. *)
     script_suffix_f: string;
   }
 
@@ -85,16 +81,16 @@ let empty_file_t ()=
     script_suffix_f = "";
   }
 
-  (** Theory data *)
+(** Theory data *)
 type thy_t =
   {
-      (** Name of the theory on which all user theories are based *)
+    (** Name of the theory on which all user theories are based *)
     base_name_f: string option;
 
-      (** The theory data base. *)
+    (** The theory data base. *)
     thydb_f: Thydb.thydb;
 
-      (** Information needed for the theory database loader. *)
+    (** Information needed for the theory database loader. *)
     loader_data_f: Thydb.Loader.data;
   }
 
@@ -105,7 +101,7 @@ let empty_thy_t () =
     loader_data_f = Thydb.Loader.mk_empty();
   }
 
-  (** Printer info *)
+(** Printer info *)
 type pp_t =
   {
     pp_info_f: Printer.ppinfo ref;
@@ -116,7 +112,7 @@ let empty_pp_t () =
     pp_info_f = ref(Printer.empty_ppinfo())
   }
 
-  (** Parser info *)
+(** Parser info *)
 type parser_t =
   {
     parser_info_f: Parser.Table.t ref;
@@ -127,27 +123,30 @@ let empty_parser_t () =
     parser_info_f = ref(Parser.Table.empty Parser.Table.default_size)
   }
 
-  (** Top-level context *)
+(** Top-level context *)
 type t = 
   {
-        (** File handling functions *)
+    (** File handling functions *)
     file_f: file_t;
 
-        (** Theory data *)
+    (** Theory data *)
     thys_f: thy_t;
 
-        (** Pretty Printer *)
+    (** Pretty Printer *)
     pp_f: pp_t;
 
-        (** Parsers *)
+    (** Parsers *)
     parser_f: parser_t;
 
-        (** A list of functions to invoke on a theory when it is added
-            to the data-base. *)
+    (** A list of functions to invoke on a theory when it is added
+        to the data-base. *)
     load_functions_f: (t -> Theory.contents -> t) list;
 
-        (** Theorems caches *)
-    thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
+    (** Theorems caches *)
+    thm_cache_f: (Ident.t, Logic.thm) Hashtbl.t;
+
+    (** Scope attached to this context. *)
+    scope_f: Scope.t;
   }
 
 let empty() = 
@@ -157,26 +156,30 @@ let empty() =
     pp_f = empty_pp_t();
     parser_f = empty_parser_t();
     load_functions_f = [];
-    thm_cache = Hashtbl.create(13);
+    thm_cache_f = Hashtbl.create(13);
+    scope_f = Scope.empty_scope();
   }
 
-  (** {6 Scoped contexts} *)
-type scoped = (t * Scope.t)
-  (** The type of scoped contexts *)
+(** {6 Scoped contexts} *)
+(* type scoped = (t * Scope.t) *)
+type scoped = t
+(** The type of scoped contexts *)
 
+(***
 let scoped ctxt scp = (ctxt, scp)
-  (** Constructor for scoped contexts *)
 let scope_of (_, scp) = scp
-  (** Get the scope *)
 let context_of (ctxt, _) = ctxt
+***)
 
-  (** Constructor for scoped contexts *)
-let set_scope sctxt scp = scoped (context_of sctxt) scp
-let set_context sctxt ctxt = scoped ctxt (scope_of sctxt)
+let scope_of sctxt = sctxt.scope_f
+let context_of sctxt = sctxt
+let set_scope sctxt scp = {sctxt with scope_f = scp}
+let set_context sctxt ctxt = set_scope ctxt (scope_of sctxt)
+let scoped ctxt scp = set_scope ctxt scp
 
-  (** {5 Accessor Functions} *)
+(** {5 Accessor Functions} *)
 
-  (** {6 File handling} *)
+(** {6 File handling} *)
 
 let set_load t f = 
   let file1 = {t.file_f with load_f = f} in
@@ -220,7 +223,7 @@ let set_script_suffix t sl =
 
 let script_suffix t = t.file_f.script_suffix_f
 
-  (** {6 Theory handling} *)
+(** {6 Theory handling} *)
 
 let set_base_name t n = 
   let thys1 = {t.thys_f with base_name_f = Some(n)}
@@ -259,35 +262,34 @@ let set_load_functions t fl =
 
 let load_functions t = t.load_functions_f
 
-  (** Pretty printer information *)
+(** Pretty printer information *)
 let set_ppinfo t inf =
   t.pp_f.pp_info_f := inf; t
 
 let ppinfo t = !(t.pp_f.pp_info_f)
 
-  (** Parser information *)
+(** Parser information *)
 let set_parsers t inf =
   t.parser_f.parser_info_f := inf; t
 
 let parsers t = !(t.parser_f.parser_info_f)
 
-  (** Theorem cache *)
+(** Theorem cache *)
 let cache_thm t id thm = 
-  if not (Hashtbl.mem t.thm_cache id)
-  then
-    (Hashtbl.add t.thm_cache id thm; t)
+  if not (Hashtbl.mem t.thm_cache_f id)
+  then (Hashtbl.add t.thm_cache_f id thm; t)
   else t
 
 let remove_cached_thm t id = 
-  if Hashtbl.mem t.thm_cache id
+  if Hashtbl.mem t.thm_cache_f id
   then
-    (Hashtbl.remove t.thm_cache id; t)
+    (Hashtbl.remove t.thm_cache_f id; t)
   else t
 
 let lookup_thm sctxt id = 
   let ctxt = context_of sctxt 
   and scp = scope_of sctxt in
-  let thm = Hashtbl.find ctxt.thm_cache id
+  let thm = Hashtbl.find ctxt.thm_cache_f id
   in 
   if Logic.is_fresh scp thm
   then thm
@@ -306,10 +308,6 @@ let find_thm sctxt id fn =
       in 
       thm
     end
-
-(***
-    end
-**)
 
 module Thys =
 struct

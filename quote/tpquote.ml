@@ -112,8 +112,8 @@ let std_astexpander instr =
   let str = String.escaped instr
   in 
   match std_check_string str with 
-    (Type, nstr) -> <:expr@here< Global.read_type $str:nstr$ >>
-  | (Term, nstr) -> <:expr@here<(Global.read $str:nstr$)>>
+    (Type, nstr) -> <:expr@here< BoolPP.read_type $str:nstr$ >>
+  | (Term, nstr) -> <:expr@here<(BoolPP.read $str:nstr$)>>
   | _ -> <:expr@here<$str:str$>>
 
 let def_astexpander str =
@@ -126,8 +126,8 @@ let def_astexpander str =
   let _loc= (pos, pos)
   in 
   match def_check_string str with 
-    (Typedef, nstr) -> <:expr@here<Global.read_type_defn $str:nstr$>>
-  | (Def, nstr) -> <:expr@here<Global.read_defn $str:nstr$>>
+    (Typedef, nstr) -> <:expr@here<BoolPP.read_type_defn $str:nstr$>>
+  | (Def, nstr) -> <:expr@here<BoolPP.read_defn $str:nstr$>>
   | _ -> <:expr@here<$str:str$>>
 
 
@@ -137,8 +137,8 @@ let pattexpander str =
   in 
   match check_string str with 
     (Type, nstr) -> 
-      <:patt<Global.read_type $str:nstr$>>
-  | (Term, nstr) -> <:patt<Global.Parsing.read_unchecked $str:nstr$>>
+      <:patt<BoolPP.read_type $str:nstr$>>
+  | (Term, nstr) -> <:patt<BoolPP.Parsing.read_unchecked $str:nstr$>>
   | (_, nstr) -> <:patt< $str:nstr$ >>
 *)
 

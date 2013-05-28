@@ -130,20 +130,26 @@ type t =
     load_functions_f: (t -> Theory.contents -> t) list;
 
     (** Theorems caches *)
-    thm_cache: (Ident.t, Logic.thm) Hashtbl.t;
+    thm_cache_f: (Ident.t, Logic.thm) Hashtbl.t;
+
+    (** Scope attached to this context. *)
+    scope_f: Scope.t;
   }
 
 (** [empty()]: The empty context. *)
 val empty: unit -> t
 
-  (** {6 Scoped contexts} *)
+(** {6 Scoped contexts} *)
+(**
 type scoped = (t * Scope.t)
-  (** The type of scoped contexts *)
+*)
+type scoped
+(** The type of scoped contexts *)
 
 val scoped: t -> Scope.t -> scoped
-  (** Constructor for scoped contexts *)
+(** Constructor for scoped contexts *)
 val scope_of: scoped -> Scope.t
-  (** Get the scope *)
+(** Get the scope *)
 val context_of: scoped -> t
 (** Get the context *)
 
