@@ -59,9 +59,9 @@ let load_theory_as_cur ctxt n =
   in 
   Context.Thys.set_theories ctxt db
 
-let read x = catch_errors Global.read x
-let read_unchecked x = catch_errors Global.PP.read_unchecked x
-let read_defn x = catch_errors Global.read_defn x
+let read x = catch_errors BoolPP.read x
+let read_unchecked x = catch_errors BoolPP.read_unchecked x
+let read_defn x = catch_errors BoolPP.read_defn x
 
 (*
  * Theories
@@ -191,10 +191,10 @@ let add_overload ctxt sym ?(pos=Lib.First) id =
   let ty = 
     Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in 
-  Parser.add_overload sym pos (id, ty); ctxt
+  Context.NewPP.add_overload ctxt sym pos (id, ty)
 
 let remove_overload ctxt sym id =
-  Parser.remove_overload sym id; ctxt
+  Context.NewPP.remove_overload ctxt sym id
 
 (*** User-level PP Functions ***)
 
@@ -218,8 +218,7 @@ let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
     match repr with
       | None -> ctxt1
       | Some(sym) -> add_overload ctxt1 sym ~pos:pos id
-  end;
-  ctxt1
+  end
 
 let remove_term_pp ctxt id = ignore(remove_term_pp_rec ctxt id)
 let get_term_pp id = get_term_pp_rec id
@@ -227,20 +226,20 @@ let get_term_pp id = get_term_pp_rec id
 (** Axioms and Theorems ***)
 
 let defn ctxt id =
-  let t, n = Global.read_identifier id in 
+  let t, n = Context.NewPP.read_identifier ctxt id in 
   let thys = theories ctxt
   in
   Thydb.get_defn t n thys
 
 let get_theorem ctxt id =
-  let t, n = Global.read_identifier id in 
+  let t, n = Context.NewPP.read_identifier ctxt id in 
   let thys = theories ctxt
   in 
   try Thydb.get_axiom t n thys
   with Not_found -> Thydb.get_theorem t n thys
 
 let thm ctxt id =
-  let t, n = Global.read_identifier id in 
+  let t, n = Context.NewPP.read_identifier ctxt id in 
   let thys = theories ctxt
   in 
   Thydb.get_lemma t n thys
@@ -270,15 +269,15 @@ let save_thm ctxt ?(simp=false) n th =
       (Context.Thys.set_theories ctxt (Thydb.add_thm n th props x), th)) 
     (Context.Thys.theories ctxt)
 
-let prove_thm ctxt  ?(simp=false) n t tacs =
+let prove_thm scpd ?(simp=false) n t tacs =
   let prove_aux _ = 
     let thm = 
-      try Goals.by_list t tacs
+      try Goals.by_list (Context.scope_of scpd) t tacs
       with err -> 
         raise (Report.add_error
 		 (Report.error ("Failed to prove theorem "^n)) err)
     in 
-    let (cntxt1, _) = save_thm ctxt ~simp:simp n thm in
+    let (cntxt1, _) = save_thm (Context.context_of scpd) ~simp:simp n thm in
     (cntxt1, thm)
   in 
   catch_errors prove_aux ()
@@ -317,11 +316,12 @@ let get_or_prove sctxt name trm tac =
 
 let subtypedef sctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   let ctxt = context_of sctxt in
+  let scp = scope_of sctxt in
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
   let tydef = 
-    Logic.Defns.mk_subtype (Global.Old.scope()) 
+    Logic.Defns.mk_subtype scp
       name args dtype set rep_name abs_name thm
   in 
   (* Extract the type definition and the declarations of rep and abs *)

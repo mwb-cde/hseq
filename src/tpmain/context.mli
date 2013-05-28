@@ -379,6 +379,15 @@ sig
 
   (** {7 Terms} *)
 
+  val add_term_parser: 
+    t -> (string) Lib.position -> string 
+    -> (Grammars.parser_info -> Pterm.t Grammars.phrase) 
+    -> t
+  (** Add a term parser *)
+
+  val remove_term_parser: t -> string  -> t
+  (** Remove a term parser, rasing Not_found if no such parser *)
+
   val get_term_pp: t ->
     Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for term identifer.  Returns
@@ -398,6 +407,15 @@ sig
   (** Remove PP information for term identifer occuring in a term. *)
 
   (** {7 Types} *)
+
+  val add_type_parser: 
+    t -> (string) Lib.position -> string 
+    -> (Grammars.parser_info -> Basic.gtype Grammars.phrase) 
+    -> t
+  (** Add a type parser *)
+
+  val remove_type_parser: t -> string  -> t
+  (** Remove a type parser, rasing Not_found if no such parser *)
 
   val get_type_pp:
     t -> Ident.t -> (int * Printer.fixity * string option)
@@ -423,8 +441,7 @@ sig
   (** Get printer for terms. *)
 
   val add_term_printer: 
-    t -> Ident.t -> Printer.term_printer
-    -> t
+    t -> Ident.t -> Printer.term_printer -> t
   (** [add_term_printer id p]: Add printer p for terms. The
       printer is keyed by term identifier and triggered on a
       function application (id args) (where args may be an empty
@@ -506,12 +523,11 @@ sig
   (** Parse a string as a term, resolving short names and
       symbols. *)
 
-  val read_unchecked: scoped -> string -> Basic.term
+  val read_unchecked: t -> string -> Basic.term
   (** Parse a string as a term, return the term as is, without
       expanding terms and resolving symbols.  *)
 
-  val read_defn:
-    scoped -> string 
+  val read_defn:scoped -> string 
     -> ((string * Basic.gtype) * Basic.term list) * Basic.term
   (** Parse a string as a term definition. *)
 
@@ -521,6 +537,6 @@ sig
   val read_type_defn: scoped -> string -> Defn.Parser.typedef
   (** Parse a string as a type definition. *)
 
-  val read_identifier: scoped -> string -> Ident.t
+  val read_identifier: t -> string -> Ident.t
 (** Parse a string as an identifier. *)
 end

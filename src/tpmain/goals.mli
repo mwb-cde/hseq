@@ -85,7 +85,7 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal: Basic.term -> Proof.t
+val goal: Scope.t -> Basic.term -> Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack. 
 
@@ -140,7 +140,7 @@ val by_com : Tactics.tactic -> Proof.t
     [!save_hook]. Used for interactive proofs.
 *)
 
-val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
+val by_list : Scope.t -> Basic.term -> Tactics.tactic list -> Logic.thm
 (** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 

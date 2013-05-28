@@ -192,22 +192,47 @@ let init_exists_unique_parser tbl =
   Parser.add_term_parser tbl0
     (Lib.After "lambda") "exists_unique" exists_unique_parser
     
-let exists_unique_printer = 
-  Term.print_as_binder 
-    exists_unique_pp exists_unique_ident exists_unique_sym
+let exists_unique_printer  =
+  (Term.print_as_binder 
+    exists_unique_pp exists_unique_ident exists_unique_sym) 
 
-(*
-let init_exists_unique_printer() =
-  let printer = exists_unique_printer in 
-  Global.PP.add_term_printer exists_unique_ident 
-    (fun ppstate ppenv -> printer ppstate ppenv)
-*)
+let init_exists_unique_printer inf =
+  Printer.add_term_printer inf 
+    exists_unique_ident 
+    exists_unique_printer
 
 (**
 let init_exists_unique() = 
   init_exists_unique_parser();
   init_exists_unique_printer()
 *)
+
+let bool_parsers = 
+  [ ifthenelse_parser; choice_parser; exists_unique_parser ]
+
+let bool_parsers_init = 
+  [ init_ifthenelse_parser; init_choice_parser; init_exists_unique_parser ]
+
+let init_bool_parsers ctxt = 
+  let ptbl0 = Context.parsers ctxt in
+  let ptbl1 = 
+    List.fold_left (fun x f -> f x) ptbl0 bool_parsers_init
+  in
+  Context.set_parsers ctxt ptbl1
+
+let bool_printers_init = 
+  [
+    init_ifthenelse_printer; 
+    init_choice_printer; 
+    init_exists_unique_printer;
+  ]
+
+let init_bool_printers ctxt = 
+  let ppinf0 = Context.ppinfo ctxt in
+  let ppinf1 = 
+    List.fold_left (fun x f -> f x) ppinf0 bool_printers_init
+  in
+  Context.set_ppinfo ctxt ppinf1
 
 (**
 (* PP Initialising functions *)
@@ -251,4 +276,30 @@ let base_ppinfo =
 
 let ppinfo () = base_ppinfo
 
+(** {7 OCaml Quotations support} *)
+
+let quote_context =
+  let ctxt0 = Context.empty() in
+  let ctxt1 = init_bool_parsers ctxt0 in
+  ctxt1
+
+let quote_scoped = Context.scoped quote_context (Scope.empty_scope())
+
+(** Parse a string as a term, resolving short names and symbols. *)
+let read str = Context.NewPP.read quote_scoped str
+
+(** Parse a string as a term, resolving short names and symbols. *)
+let read_unchecked str = Context.NewPP.read_unchecked quote_context str
+
+(** Parse a string as a term definition. *)
+let read_defn str = Context.NewPP.read_defn quote_scoped str
+
+(** Parse a string a type, resolving short names and symbols where
+    possible.  *)
+let read_type str = Context.NewPP.read_type quote_scoped str
+
+(** Parse a string as a type definition. *)
+let read_type_defn str = Context.NewPP.read_type_defn quote_scoped str
+
+let read_identifier str = Context.NewPP.read_identifier quote_context str
 

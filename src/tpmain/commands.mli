@@ -264,7 +264,7 @@ val save_thm:
 *)
 
 val prove_thm: 
-  Context.t ->
+  Context.scoped ->
   ?simp:bool -> string -> Basic.term -> Logic.tactic list 
   -> (Context.t * Logic.thm)
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
@@ -280,7 +280,7 @@ val prove_thm:
 *)
 
 val theorem: 
-  Context.t 
+  Context.scoped 
   -> ?simp:bool -> string -> Basic.term -> Logic.tactic list 
   -> (Context.t * Logic.thm)
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
@@ -299,7 +299,7 @@ val theorem:
 *)
 
 val lemma:
-  Context.t 
+  Context.scoped 
   -> ?simp:bool -> string -> Basic.term -> Logic.tactic list 
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)

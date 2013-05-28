@@ -476,7 +476,16 @@ end
 (*** New Pretty printing based on Context.t ***)
 module NewPP =
 struct
+
   (*** Terms ***)
+  let add_term_parser ctxt pos id ph =
+    set_parsers ctxt 
+      (Parser.add_term_parser (parsers ctxt) pos id ph)
+
+  let remove_term_parser ctxt id =
+    set_parsers ctxt 
+      (Parser.remove_term_parser (parsers ctxt) id)
+
   let get_term_pp ctxt id = 
     Printer.get_term_info (ppinfo ctxt) id
 
@@ -499,7 +508,6 @@ struct
          (rcrd.Printer.fixity)
          (rcrd.Printer.prec))
 
-
   let remove_term_pp ctxt id =
     let (_, _, sym) = get_term_pp ctxt id in 
     let ctxt0 = 
@@ -510,6 +518,14 @@ struct
          (Lib.get_option sym (Ident.name_of id)))
 
   (*** Types ***)
+
+  let add_type_parser ctxt pos id ph =
+    set_parsers ctxt 
+      (Parser.add_type_parser (parsers ctxt) pos id ph)
+
+  let remove_type_parser ctxt id =
+    set_parsers ctxt 
+      (Parser.remove_type_parser (parsers ctxt) id)
 
   let get_type_pp ctxt id = 
     Printer.get_type_info (ppinfo ctxt) id
@@ -674,8 +690,8 @@ struct
     mk_term scpd
       (catch_parse_error (Parser.read_term ptable) str)
 
-  let read_unchecked scpd x =
-    let ptable = parsers (context_of scpd) in
+  let read_unchecked ctxt x =
+    let ptable = parsers ctxt in
     catch_parse_error 
       (Pterm.to_term <+ (Parser.read_term ptable)) x
 
@@ -687,7 +703,7 @@ struct
     expand_defn scpd (lhs, rhs)
 
   let read_type_defn scpd x =
-    let ptable = parsers (context_of scpd) in
+    let ptable = parsers (context_of scpd)in
     let pdefn = 
       catch_parse_error 
         (Parser.read ptable Parser.typedef_parser) x
@@ -699,8 +715,8 @@ struct
     expand_type_names scpd
       (catch_parse_error (Parser.read_type ptable) x)
 
-  let read_identifier scpd x = 
-    let ptable = parsers (context_of scpd) in
+  let read_identifier ctxt x = 
+    let ptable = parsers ctxt in
     catch_parse_error 
       (Parser.read ptable Parser.identifier_parser) x
 end

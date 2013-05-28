@@ -86,3 +86,23 @@ val init: unit -> unit
 
 (** {7 Minimal printer and parser information} *)
 val ppinfo: unit -> Printer.ppinfo
+
+(** {7 OCaml Quotations support} *)
+
+val read: string -> Basic.term
+(** Parse a string as a term, resolving short names and
+    symbols. *)
+val read_unchecked: string -> Basic.term
+(** Parse a string as a term, resolving short names and
+    symbols. *)
+val read_defn:
+  string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
+(** Parse a string as a term definition. *)
+val read_type: string -> Basic.gtype
+(** Parse a string a type, resolving short names and symbols where
+    possible.  *)
+val read_type_defn : string -> Defn.Parser.typedef
+(** Parse a string as a type definition. *)
+
+val read_identifier: string -> Ident.t
+(** Parse a string as an identifier. *)

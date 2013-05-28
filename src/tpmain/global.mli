@@ -146,6 +146,7 @@ sig
   val remove_type_printer: Ident.t -> unit
   (** Remove printer for types *)
 ***)
+(*****
 
   (** {6 Parsing} *)
 
@@ -199,8 +200,11 @@ sig
 
   val read_identifier: string -> Ident.t
 (** Parse a string as an identifier. *)
+****)
+
 end
 
+(*****
   (** {7 Toplevel parsing functions} *)
 
 val read: string -> Basic.term
@@ -221,7 +225,9 @@ val mk_term: Pterm.t -> Basic.term
 (** Resolve the names and symbols in a parsed term, making it suitable
     for passing to formula constructors.
 *)
+****)
 
+(*****
 (** Convenience module, so that readers are available *)
 module Read:
 sig
@@ -243,120 +249,5 @@ sig
   (** Read a type definition. *)
 
 end
-
-
-(** The global environment *)
-
-module Old:
-sig
-
-(***
-  (** {7 Toplevel theory functions} *)
-  val theories: unit -> Thydb.thydb
-  (** Short cut to {!Thys.get_theories.} *)
-  val current: unit -> Theory.thy
-  (** Short cut to {!Thys.current.} *)
-  val current_name: unit -> string
-  (** Short cut to {!Thys.current_name.} *)
-*)
-
-  val scope: unit -> Scope.t
-  (** The global scope. Constructed from the theory database. *)
-
-(******************************************************
-(** Hooks for interacting with the system *)
-  module Hooks:
-  sig
-  (** Values in this module depend on the operating environment of the
-      system. Settings for an interactive system (built with
-      [ocamlmktop]) will be different to those for a system built as a
-      library.
-
-      All values should  be set as part of the initialisation
-      sequence for the system and before {!Global.init} (which sets up
-      the threom prover) is called.
-
-      All functions defined here are allowed to fail arbitrarily. 
-  *)
-
-    val load_file: (string -> unit) ref
-  (** [load_file f]: Load a byte-code file [f] into memory.
-      
-      Used, when loading theories, to load any associated byte-code
-      libraries.
-
-      For interactive systems, this can be set to [Topdirs.dir_load
-      Format.std_formatter].
-
-      For libraries, a possible value is [Dynlink.loadfile].
-  *)
-
-    val use_file: (?silent:bool -> string -> unit) ref
-(** [use_file ?silent f]: Read file [f] as a script.  If
-    [silent=true], do not report any information.
-
-    Used, when loading theories, to run any associated script.
-    
-    Used if a missing theory is to be built from a script.
-
-    For interactive systems, this can be set to 
-    [Toploop.use_file].
-*)
-
-  end
-******************************************************)
-
-
-(*****
-(** {5 Initialising functions} *)
-  module Init:
-  sig
-
-    val set_base_thy_builder: (unit -> unit) -> unit
-  (** Set the function to use if the base theory must be rebuilt. *)
-    val get_base_thy_builder: unit -> (unit -> unit) option
-  (** Get the function to use if the base theory must be
-      rebuilt. *)
-    val load_base_thy: unit -> unit
-  (** Try to load the base theory and make it the current theory.  If
-      unsuccessful use an empty theory as the current theory.  then if
-      [get_base_thy_builder()=Some(f)], call [f], otherwise clear the
-      base theory name ([clear_base_name()]). *)
-
-    val init_theoryDB: unit -> unit
-  (** Initialise the theory database and try to load the base theory. *)
-
-    val init_list: (unit -> unit) list ref
-  (** The list of functions to call to initialise the system. *)
-    val add_init: (unit-> unit) -> unit
-  (** Add an initialising function. Functions are invoked in the
-      reverse order that they were added.  *)
-
-    val init: unit -> unit
-  (** Initialise the system. *)
-
-
-    val reset_list: (unit -> unit) list ref
-  (** The functions to call when the system is to be reset. *)
-    val add_reset: (unit-> unit) -> unit
-  (** Add a reset function. *)
-
-    val reset: unit -> unit
-(** Reset the system. Calls all functions in !reset_list then calls
-    [init()].
-*)
-  end
-
-(** {7 Toplevel initialising functions} *)
-
-  val init: unit -> unit
-(** Initialise the theorem prover. This should be called before the
-    theorem prover is first used.
-*)
-    
-  val reset: unit -> unit
-(** Reset the system. (This is the same as [init()].) *)
-*)
-end (* module Old *)
-
+****)
 
