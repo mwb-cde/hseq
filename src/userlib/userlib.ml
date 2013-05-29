@@ -84,67 +84,25 @@ struct
     | Parser.ParsingError x -> raise (Report.error x)
     | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
       
-  let overload_lookup s = 
-    let thydb s = Thydb.get_id_options s (Global.theories())
-    and parserdb s = 
-      Parser.get_overload_list ~ovltbl:(overloads()) s
-    in 
-    try parserdb s
-    with Not_found -> thydb s
+  let mk_term = Context.NewPP.mk_term
 
-  let expand_term scp t = 
-    let lookup = Pterm.Resolver.make_lookup scp overload_lookup in 
-    let (new_term, env) = Pterm.Resolver.resolve_term scp lookup t
-    in 
-    new_term
+  let read str = 
+    Context.NewPP.read (Global.scoped (Global.state())) str
 
-  let expand_type_names scp t = Gtypes.set_name ~strict:false scp t
+  let read_unchecked str =
+    Context.NewPP.read_unchecked (Global.context (Global.state())) str
 
-  let expand_typedef_names scp t=
-    match t with
-    | Grammars.NewType (n, args) -> 
-      Defn.Parser.NewType (n, args) 
-    | Grammars.TypeAlias (n, args, def) ->
-      Defn.Parser.TypeAlias(n, args, expand_type_names scp def)
-    | Grammars.Subtype (n, args, def, set) ->
-      Defn.Parser.Subtype(n, args, 
-			  expand_type_names scp def, 
-			  expand_term scp set)
+  let read_defn str =
+    Context.NewPP.read_defn (Global.scoped (Global.state())) str
 
-  let expand_defn scp (plhs, prhs) =
-    let rhs = expand_term scp prhs
-    and ((name, ty), pargs) = plhs
-    in 
-    let args = List.map Pterm.to_term pargs
-    in 
-    (((name, ty), args), rhs)
-
-  let mk_term scp pt = expand_term scp pt
-
-  let read str= 
-    mk_term (Global.scope (Global.state())) 
-      (catch_parse_error Parser.read_term str)
-
-  let read_unchecked x =
-    catch_parse_error (Pterm.to_term <+ Parser.read_term) x
-
-  let read_defn x =
-    let (lhs, rhs) = catch_parse_error (Parser.read defn_parser) x
-    in 
-    expand_defn (Global.scope(Global.state())) (lhs, rhs)
-
-  let read_type_defn x =
-    let pdefn = catch_parse_error (Parser.read Parser.typedef_parser) x
-    in 
-    expand_typedef_names (Global.scope(Global.state())) pdefn
+  let read_type_defn str =
+    Context.NewPP.read_type_defn (Global.scoped (Global.state())) str
       
-  let read_type x = 
-    expand_type_names (Global.scope(Global.state())) 
-      (catch_parse_error Parser.read_type x)
+  let read_type str = 
+    Context.NewPP.read_type (Global.scoped (Global.state())) str
 
-  let read_identifier x = 
-    catch_parse_error (Parser.read Parser.identifier_parser) x
-
+  let read_identifier str = 
+    Context.NewPP.read_identifier (Global.context (Global.state())) str
 end
 
 (** {6 Utility functions} *)
@@ -194,16 +152,17 @@ let before_pos s = Lib.Before (read_identifier s)
 let after_pos s = Lib.After (read_identifier s)
 let at_pos s = Lib.Level (read_identifier s)
 
-let add_term_pp s ?(pos=Lib.First) i f sym = 
+let add_term_pp str ?(pos=Lib.First) pr fx sym = 
   let st = Global.state() in 
   let nctxt = 
     Commands.add_term_pp (Global.context st)
-      (Ident.mk_long (Global.current_name()) s) ~pos:pos i f sym
+      (Ident.mk_long (Global.current_name()) str) ~pos:pos pr fx sym
   in 
-  Global.set_state (Global.set_context st nctxt)
+  Global.set_state (Global.set_context (Global.state()) nctxt)
 
 let get_term_pp s = 
-  Commands.get_term_pp (Ident.mk_long (Global.current_name()) s)
+  Commands.get_term_pp (Global.context (Global.state()))
+    (Ident.mk_long (Global.current_name()) s)
 
 let remove_term_pp s = 
   let st = Global.state() in
@@ -221,7 +180,9 @@ let add_type_pp s prec fixity repr =
   Global.set_state (Global.set_context st ctxt1)
 
 let get_type_pp s = 
-  Commands.get_type_pp (Ident.mk_long (Global.current_name()) s)
+  Commands.get_type_pp 
+    (Global.context (Global.state()))
+    (Ident.mk_long (Global.current_name()) s)
 
 let remove_type_pp s =
   let st = Global.state() in
@@ -360,7 +321,8 @@ let save_thm ?(simp=false) n thm =
 
 let prove_thm ?(simp=false) n t tac =
   let st = Global.state() in 
-  let ctxt, thm = Commands.prove_thm (Global.context st) ~simp:simp n t tac
+  let ctxt, thm = 
+    Commands.prove_thm (Global.scoped st) ~simp:simp n t tac
   in 
   let st0 = Global.set_context st ctxt in 
   let st1 = 
