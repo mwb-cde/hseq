@@ -36,8 +36,8 @@ module Proof:
 sig
   type t
 
-  val make : Logic.goal -> t
   val empty: unit -> t
+  val make : Logic.goal -> t
   val push : Logic.goal -> t -> t
   val top : t -> Logic.goal
   val pop : t -> t
@@ -67,16 +67,16 @@ sig
   val top_goal : t -> Logic.goal
   val pop_goal : t -> t
 
+  val save_hook: t -> (unit -> unit)
+  val set_hook: (unit -> unit) -> t -> t
+  (** User interface hook called when an application a proof command
+      is successful.  *)
+
   (* Printer *)
   val print: Printer.ppinfo -> t -> unit
 end 
 
 (** {7 General operations} *)
-
-(***
-val proofs : unit -> ProofStack.t
-(** Get the stack of proofs. *)
-***)
 
 val top : ProofStack.t -> Proof.t
 (** The current proof attempt *)
@@ -157,7 +157,7 @@ val by_list : Scope.t -> Basic.term -> Tactics.tactic list -> Logic.thm
 
 (** {7 Support for proof recording} *)
 
-val save_hook: (unit -> unit) ref 
+val save_hook: ProofStack.t -> (unit -> unit) 
 (** User interface hook called when an application a proof command is
     successful.
 
@@ -165,7 +165,7 @@ val save_hook: (unit -> unit) ref
     {!Goals.goal}.
 *)
 
-val set_hook : (unit -> unit) -> unit
+val set_hook : (unit -> unit) -> ProofStack.t -> ProofStack.t
 (** Set the user interface hook to a given function. *)
 
 (** {7 Miscellaneous} *)

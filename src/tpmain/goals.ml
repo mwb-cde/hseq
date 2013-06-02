@@ -21,19 +21,15 @@
 
 open Logic
 
-let save_hook = ref (fun () -> ())
-let set_hook f = (save_hook := f)
-
 (*** Single interactive proofs ***)
 module Proof = 
 struct
   type t = Logic.goal list
 
+  let empty() = []
   let make gl = [gl]
 
-  let empty() = []
-
-  let push x p = x::p
+  let push x p =  x::p
 
   let top p = 
     match p with 
@@ -71,72 +67,83 @@ end
 (*** Multiple interactive proofs ****)
 module ProofStack = 
 struct 
-  type t = Proof.t list
+  type t =
+    { 
+      stck_f : Proof.t list;
+      save_hook_f: unit -> unit
+    }
 
   let is_empty stk = 
-    match stk with 
+    match stk.stck_f with 
       | [] -> true 
       |  _ -> false
 
-  let empty () = []
-  let push x p = x::p
+  let empty () = { stck_f = []; save_hook_f = (fun () -> ()) }
+  let push x p = { p with stck_f = x::(p.stck_f) }
 
   let top p = 
-    match p with 
+    match p.stck_f with 
       | [] -> raise (Report.error "No proof attempts.")
       | (x::_) -> x
 
   let pop p = 
-    match p with
+    match p.stck_f with
       | [] -> raise (Report.error "No proof attempts.")
-      | (_::xs) -> xs
+      | (_::xs) -> { p with stck_f = xs }
 
   let rotate p = 
-    match p with 
+    match p.stck_f with 
       | [] -> raise (Report.error "No proof attempts.")
-      | (x::xs) -> xs @ [x]
+      | (x::xs) -> { p with stck_f = xs @ [x] }
 
   let lift n p =
-    match p with 
+    match p.stck_f with 
       | [] -> raise (Report.error "No proof attempts.")
       | xs -> 
 	let (l, c, r) = Lib.full_split_at_index n xs
 	in 
-	c::(List.rev_append l r)
+	{ p with stck_f = c::(List.rev_append l r) }
 
-  let push_goal g p = 
-    match p with 
+  let push_goal (g: Logic.goal) p = 
+    let nlst = 
+      match p.stck_f with 
       | [] -> (Proof.push g [])::[]
       | (x::xs) -> (Proof.push g x)::xs
+    in
+    { p with stck_f = nlst }
 
   let top_goal p = 
-    match p with 
+    match p.stck_f with 
       | [] -> raise (Report.error "No proof attempts.")
-      | (x::_) -> Proof.top x
+      | (x::_) -> (Proof.top x)
 
   let pop_goal p = 
-    match p with
+    match p.stck_f with
       | [] -> raise (Report.error "No proof attempts.")
-      | (x::xs) -> (Proof.pop x)::xs
+      | (x::xs) -> 
+        { p with stck_f = (Proof.pop x)::xs }
 
   let undo_goal p =
-    match p with
+    match p.stck_f with
       | [] -> raise (Report.error "No proof attempts.")
       | (x::xs) ->
         begin
 	  match Proof.pop x with
 	    | [] -> raise (Report.error "Can't undo anymore")
-	    | y -> y::xs
+	    | y -> { p with stck_f = (y::xs) }
         end
+
+  let save_hook p = p.save_hook_f
+  let set_hook f p = { p with save_hook_f = f }
 
   (* Printer *)
   let print ppinfo stk = 
     let print_short prf idx = 
       Format.printf "@[<v>Goal %i: " idx;
       Format.printf "@[";
-      Term.print ppinfo (Formula.term_of (Logic.get_goal (top prf)));
+      Term.print ppinfo (Formula.term_of (Logic.get_goal (Proof.top prf)));
       Format.printf "@]@]"
-    and num_prfs = List.length stk 
+    and num_prfs = List.length stk.stck_f
     in
     let rec print_short_list prfs ctr = 
       match prfs with 
@@ -147,7 +154,7 @@ struct
             print_short_list ps (ctr + 1)
           end
     in
-    match stk with 
+    match stk.stck_f with 
       | [] -> Format.printf "@[No goals@]@,"
       | p::prfs ->
         let rprfs = List.rev_append prfs [] 
@@ -162,12 +169,6 @@ struct
         Proof.print ppinfo p;
         Format.printf "@]"
 end
-
-(***
-let prflist = ref (ProofStack.empty())
-let proofs() = !prflist
-let set_proofs(prfs) = prflist := prfs
-***)
 
 let top pstk = ProofStack.top pstk
 let top_goal pstk = ProofStack.top_goal pstk
@@ -192,9 +193,9 @@ let lift pstk n =
   nlist
 
 let undo pstk =
-  match pstk with
-    | [] -> raise (Report.error "No proof attempts")
-    | _ -> ProofStack.undo_goal pstk
+  if ProofStack.is_empty pstk
+  then raise (Report.error "No proof attempts")
+  else ProofStack.undo_goal pstk
       
 let result ptsk = mk_thm (top_goal ptsk)
 
@@ -266,6 +267,9 @@ let by_list scp trm tacl =
 
 
 (*** Miscellaneous ***)
+
+let set_hook = ProofStack.set_hook
+let save_hook = ProofStack.save_hook
 
 let curr_sqnt pstk = 
   match Logic.get_subgoals (top_goal pstk) with
