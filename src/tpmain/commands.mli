@@ -304,7 +304,7 @@ val lemma:
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
-val qed: string -> Logic.thm
+val qed: Goals.ProofStack.t -> string -> (Context.t * Logic.thm)
 (** Declare a proof results in a theorem and store this theorem under
     the given name.
 *)

@@ -37,32 +37,37 @@ struct
   (** Initialise the global state. *)
   let init () = Userstate.init()
 
-  (** Scope *)
-  let scope = Userstate.scope
-  let set_scope = Userstate.set_scope
+  let context () = Userstate.context (state())
+  let set_context ctxt = 
+    set_state (Userstate.set_context (state()) ctxt)
 
-  (** Context *)
-  let context = Userstate.context
-  let set_context = Userstate.set_context
+  let scope () = Userstate.scope (state())
+  let set_scope ctxt = 
+    set_state (Userstate.set_scope (state()) ctxt)
 
-  let scoped = Userstate.scoped
-  let set_scoped = Userstate.set_scoped
+  let scoped () = Userstate.scoped (state())
+  let set_scoped x = 
+    set_state (Userstate.State.set_scoped (state()) x)
 
-  (** Pretty-printing *)
-  let ppinfo = Userstate.ppinfo
-  let set_ppinfo = Userstate.set_ppinfo
+  let ppinfo () = Userstate.ppinfo (state())
+  let set_ppinfo ctxt = 
+    set_state (Userstate.set_ppinfo (state()) ctxt)
 
-  (** Parser tables *)
-  let parsers = Userstate.parsers
-  let set_parsers = Userstate.set_parsers
+  let parsers () = Userstate.parsers (state())
+  let set_parsers ctxt = 
+    set_state (Userstate.set_parsers (state()) ctxt)
 
-  (** Simpset *)
-  let simpset = Userstate.simpset
-  let set_simpset = Userstate.set_simpset
+  let simpset () = Userstate.simpset (state())
+  let set_simpset ctxt = 
+    set_state (Userstate.set_simpset (state()) ctxt)
 
-  let theories() = Context.Thys.get_theories (context (state()))
-  let current() = Context.Thys.current (context (state()))
-  let current_name () = Context.Thys.current_name (context (state()))
+  let proofstack () = Userstate.proofstack (state())
+  let set_proofstack ctxt = 
+    set_state (Userstate.set_proofstack (state()) ctxt)
+
+  let theories() = Context.Thys.get_theories (context ())
+  let current() = Context.Thys.current (context ())
+  let current_name () = Context.Thys.current_name (context ())
 
 end
 
@@ -76,7 +81,7 @@ module PP =
 struct
   (** Tables access *)
   let overloads () = 
-    Parser.Table.overloads (Global.parsers (Global.state()))
+    Parser.Table.overloads (Global.parsers ())
 
   let catch_parse_error e a = 
     try (e a)
@@ -87,22 +92,22 @@ struct
   let mk_term = Context.NewPP.mk_term
 
   let read str = 
-    Context.NewPP.read (Global.scoped (Global.state())) str
+    Context.NewPP.read (Global.scoped ()) str
 
   let read_unchecked str =
-    Context.NewPP.read_unchecked (Global.context (Global.state())) str
+    Context.NewPP.read_unchecked (Global.context ()) str
 
   let read_defn str =
-    Context.NewPP.read_defn (Global.scoped (Global.state())) str
+    Context.NewPP.read_defn (Global.scoped ()) str
 
   let read_type_defn str =
-    Context.NewPP.read_type_defn (Global.scoped (Global.state())) str
+    Context.NewPP.read_type_defn (Global.scoped ()) str
       
   let read_type str = 
-    Context.NewPP.read_type (Global.scoped (Global.state())) str
+    Context.NewPP.read_type (Global.scoped ()) str
 
   let read_identifier str = 
-    Context.NewPP.read_identifier (Global.context (Global.state())) str
+    Context.NewPP.read_identifier (Global.context ()) str
 end
 
 (** {6 Utility functions} *)
@@ -153,92 +158,80 @@ let after_pos s = Lib.After (read_identifier s)
 let at_pos s = Lib.Level (read_identifier s)
 
 let add_term_pp str ?(pos=Lib.First) pr fx sym = 
-  let st = Global.state() in 
   let nctxt = 
-    Commands.add_term_pp (Global.context st)
+    Commands.add_term_pp (Global.context ())
       (Ident.mk_long (Global.current_name()) str) ~pos:pos pr fx sym
   in 
-  Global.set_state (Global.set_context (Global.state()) nctxt)
+  Global.set_context nctxt
 
 let get_term_pp s = 
-  Commands.get_term_pp (Global.context (Global.state()))
+  Commands.get_term_pp (Global.context ())
     (Ident.mk_long (Global.current_name()) s)
 
 let remove_term_pp s = 
-  let st = Global.state() in
   let id = Ident.mk_long (Global.current_name()) s in
-  let nctxt = Commands.remove_term_pp_rec (Global.context st) id
+  let nctxt = Commands.remove_term_pp_rec (Global.context ()) id
   in
-  Global.set_state (Global.set_context st nctxt)  
+  Global.set_context nctxt
 
 let add_type_pp s prec fixity repr = 
-  let st = Global.state() in 
   let id = Ident.mk_long (Global.current_name()) s in
-  let ctxt0 = Global.context st in
+  let ctxt0 = Global.context () in
   let ctxt1 = Commands.add_type_pp ctxt0 id prec fixity repr
   in 
-  Global.set_state (Global.set_context st ctxt1)
+  Global.set_context ctxt1
 
 let get_type_pp s = 
   Commands.get_type_pp 
-    (Global.context (Global.state()))
+    (Global.context ())
     (Ident.mk_long (Global.current_name()) s)
 
 let remove_type_pp s =
-  let st = Global.state() in
-  let ctxt0 = Global.context st in
+  let ctxt0 = Global.context () in
   let nctxt = 
     Commands.remove_type_pp ctxt0 
       (Ident.mk_long (Global.current_name()) s); 
     ctxt0
   in 
-    Global.set_state (Global.set_context st nctxt)
+  Global.set_context nctxt
 
 (** {6 Theories} *)
 let begin_theory n ps =
-  let st = Global.state() in 
-  let nctxt = Commands.begin_theory (Global.context st) n ps in
-  Global.set_state (Global.set_context st nctxt)
+  let nctxt = Commands.begin_theory (Global.context ()) n ps in
+  Global.set_context nctxt
 
 let end_theory ?save () = 
-  let st = Global.state() in 
-  let nctxt = Commands.end_theory (Global.context st) ?save:save () in
-  Global.set_state (Global.set_context st nctxt)
+  let nctxt = Commands.end_theory (Global.context ()) ?save:save () in
+  Global.set_context nctxt
 
 let open_theory n = 
-  let st = Global.state() in 
-  let nctxt = Commands.open_theory (Global.context st) n  in
-  Global.set_state (Global.set_context st nctxt)
+  let nctxt = Commands.open_theory (Global.context ()) n  in
+  Global.set_context nctxt
 
 let close_theory () = 
-  let st = Global.state() in 
-  Commands.close_theory (Global.context st)
+  Commands.close_theory (Global.context ())
 
 (** {6 Theory properties} *)
 
 let parents ps = 
-  let st = Global.state() in 
-  let nctxt = Commands.parents (Global.context st) ps in
-  Global.set_state (Global.set_context st nctxt)
+  let nctxt = Commands.parents (Global.context ()) ps in
+  Global.set_context nctxt
 
 let add_file ?use n = 
-  let st = Global.state() in 
-  Commands.add_file (Global.context st) ?use:use n
+  Commands.add_file (Global.context ()) ?use:use n
 
 let remove_file n = 
-  let st = Global.state() in 
-  Commands.remove_file (Global.context st) n
+  Commands.remove_file (Global.context ()) n
 
 (** {6 Type declaration and definition} *)
 
 let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef = 
-  let state = Global.state() in 
-  let scpd = Global.scoped state in
+  let scpd = Global.scoped () in
   let (scpd1, defn) = 
     Commands.typedef scpd ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
   in 
-  let state1 = Global.set_scoped state scpd1 in
   begin
+    Global.set_scoped scpd1;
     if simp && (Logic.Defns.is_subtype defn)
     then 
       let tyrec = Logic.Defns.dest_subtype defn in 
@@ -247,94 +240,74 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
       and ati_thm = tyrec.Logic.Defns.abs_type_inverse
       in 
       let nsimpset = 
-        Simplib.add_simps scpd1 (Global.simpset state1)
+        Simplib.add_simps scpd1 (Global.simpset ())
           [rt_thm; rti_thm; ati_thm]
       in 
-      Global.set_state (Global.set_simpset state1 nsimpset)
-    else 
-      Global.set_state state1
+      Global.set_simpset nsimpset
+    else ()
   end;
   defn
 
 (** {6 Term declaration and definition} *)
 
 let define ?pp ?(simp=false) df =
-  let st = Global.state() in
-  let scpd = Global.scoped st in
-  let scpd1, ret = Commands.define scpd ?pp ~simp:simp df
-  in 
-  let st1 = Global.set_scoped st scpd1 in
+  let scpd = Global.scoped () in
+  let scpd1, ret = Commands.define scpd ?pp ~simp:simp df in 
+  Global.set_scoped scpd1;
   if simp
   then 
     let (_, _, thm) = Logic.Defns.dest_termdef ret in 
     let nsimpset = 
-      Simplib.add_simp (Global.scoped st1)(Global.simpset st1) thm 
+      Simplib.add_simp scpd1 (Global.simpset ()) thm 
     in
-    begin
-      Global.set_state 
-        (Global.set_simpset st1 nsimpset);
-      ret
-    end
+    (Global.set_simpset nsimpset); ret
   else 
     ret
 
 let declare ?pp trm = 
-  let st = Global.state() in 
-  let nscpd, id, ty = Commands.declare (Global.scoped st) ?pp trm in
-  Global.set_state (Global.set_scoped st nscpd);
+  let nscpd, id, ty = Commands.declare (Global.scoped ()) ?pp trm in
+  Global.set_scoped nscpd;
   (id, ty)
 
 (** {6 Axioms and theorems} *)
 
 let axiom ?(simp=false) n t =
-  let st = Global.state() in 
-  let ctxt0, thm = Commands.axiom (Global.context st) ~simp:simp n t in
-  let st0 = Global.set_context st ctxt0 in 
-  let st1 = 
-    if simp
-    then 
-      let nsimp = 
-        Simplib.add_simp (Global.scoped st0) (Global.simpset st0) thm
-      in
-      Global.set_simpset st0 nsimp
-    else st0
-  in
-  Global.set_state st1;
+  let ctxt0, thm = Commands.axiom (Global.context ()) ~simp:simp n t in
+  Global.set_context ctxt0;
+  if simp
+  then 
+    let nsimp = 
+      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) thm
+    in
+    Global.set_simpset nsimp
+  else ();
   thm
 
 let save_thm ?(simp=false) n thm =
-  let st = Global.state() in 
-  let ctxt, ret = Commands.save_thm (Global.context st) ~simp:simp n thm
+  let ctxt, ret = Commands.save_thm (Global.context ()) ~simp:simp n thm
   in 
-  let st0 = Global.set_context st ctxt in 
-  let st1 = 
-    if simp 
-    then 
-      let nsimp = 
-        Simplib.add_simp (Global.scoped st0) (Global.simpset st0) ret
-      in
-      Global.set_simpset st0 nsimp
-    else st0
-  in
-  Global.set_state st1;
+  Global.set_context ctxt;
+  if simp 
+  then 
+    let nsimp = 
+      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) ret
+    in
+    Global.set_simpset nsimp
+  else ();
   ret
 
 let prove_thm ?(simp=false) n t tac =
-  let st = Global.state() in 
   let ctxt, thm = 
-    Commands.prove_thm (Global.scoped st) ~simp:simp n t tac
+    Commands.prove_thm (Global.scoped ()) ~simp:simp n t tac
   in 
-  let st0 = Global.set_context st ctxt in 
-  let st1 = 
-    if simp 
-    then 
-      let nsimp = 
-        Simplib.add_simp (Global.scoped st0) (Global.simpset st0) thm
-      in
-      Global.set_simpset st0 nsimp
-    else st0
-  in
-  Global.set_state st1;
+  Global.set_context ctxt;
+  if simp 
+  then 
+    let nsimp = 
+      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) thm
+    in
+    Global.set_simpset nsimp
+  else ();
   thm
 
 let theorem = prove_thm
@@ -343,32 +316,41 @@ let lemma = theorem
 (** {6 Information access} *)
 
 let theory n = 
-  let st = Global.state() in 
-  Commands.theory (Global.context st) n
+  Commands.theory (Global.context ()) n
 
 let theories () = 
-  let st = Global.state() in 
-  Commands.theories (Global.context st)
+  Commands.theories (Global.context ())
 
 let defn n = 
-  let st = Global.state() in 
-  Commands.defn (Global.context st) n
+  Commands.defn (Global.context ()) n
+
 let thm n =
-  let st = Global.state() in
-  Commands.thm (Global.context st) n
+  Commands.thm (Global.context ()) n
 
-let state = Global.state()
-let scope () = Global.scope (Global.state())
-let goal_scope = Goals.goal_scope
+let state = Global.state
+let scope () = Global.scope ()
 
-(** {6 Proof commands} *)
+(** {6 Goals and proofs} *)
+
+let proofstack() = Global.proofstack ()
+let set_proofstack pstk = Global.set_proofstack pstk
+let top() = Goals.top (proofstack())
+let top_goal() = Goals.top_goal (proofstack())
+let drop() = Goals.drop (proofstack())
+
+let goal_scope () = Goals.goal_scope (proofstack ())
 
 let prove a tac = 
-  let st = Global.state() in 
-  Commands.prove (Global.scoped st) a tac
+  Commands.prove (Global.scoped ()) a tac
 
-let by x = (catch_errors Goals.by_com) x
-let qed = Commands.qed
+let by x = 
+  set_proofstack ((catch_errors Goals.by_com (proofstack())) x);
+  top()
+
+let qed n = 
+  let (ctxt, thm) = Commands.qed (proofstack()) n in
+  Global.set_context ctxt;
+  thm
 
 (** {6 Initialising functions} *)
 

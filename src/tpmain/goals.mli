@@ -73,19 +73,21 @@ end
 
 (** {7 General operations} *)
 
+(***
 val proofs : unit -> ProofStack.t
 (** Get the stack of proofs. *)
+***)
 
-val top : unit -> Proof.t
+val top : ProofStack.t -> Proof.t
 (** The current proof attempt *)
 
-val top_goal : unit -> Logic.goal
+val top_goal : ProofStack.t -> Logic.goal
 (** The current goal. *)
 
-val drop : unit -> ProofStack.t
+val drop : ProofStack.t -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal: Scope.t -> Basic.term -> Proof.t
+val goal: ProofStack.t -> Scope.t -> Basic.term -> ProofStack.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack. 
 
@@ -93,21 +95,21 @@ val goal: Scope.t -> Basic.term -> Proof.t
     Where [gl] is the tag of the goal and [trm] the conclusion.
 *)
 
-val postpone: unit -> Proof.t
+val postpone: ProofStack.t -> ProofStack.t
 (** Postpone the current proof, pushing it to the bottom of the stack.
 *)
 
-val lift: int -> Proof.t
+val lift: ProofStack.t -> int -> ProofStack.t
 (** [lift n]: Focus on the nth proof to the top of the stack, making
     it the current proof attempt. Fails if there is no nth proof.
 *)
 
-val undo : unit -> Proof.t
+val undo : ProofStack.t -> ProofStack.t
 (** Go back. Pop the top goal off the proof. Fails if there is only
     one goal in the proof.
 *)
 
-val result: unit-> Logic.thm
+val result: ProofStack.t -> Logic.thm
 (** Claim that proof is completed. Make a theorem from the proof, fail
     if the current goal has subgoals and is therefore not a theorem.
 *)
@@ -135,7 +137,7 @@ val prove_goal:
 
 (** {7 Interactive proofs} *)
 
-val by_com : Tactics.tactic -> Proof.t
+val by_com : ProofStack.t -> Tactics.tactic -> ProofStack.t
 (** Apply a tactic to the current goal. If the tactic succeeds, call
     [!save_hook]. Used for interactive proofs.
 *)
@@ -168,16 +170,16 @@ val set_hook : (unit -> unit) -> unit
 
 (** {7 Miscellaneous} *)
 
-val curr_sqnt : unit -> Logic.Sequent.t
+val curr_sqnt : ProofStack.t -> Logic.Sequent.t
 (** The current sequent. *)
 
-val goal_scope: unit -> Scope.t
+val goal_scope: ProofStack.t -> Scope.t
 (** The scope of the current subgoal. *)
 
-val get_asm: int -> (Tag.t * Basic.term)
+val get_asm: ProofStack.t -> int -> (Tag.t * Basic.term)
 (** Get an assumption from the current sequent. *)
 
-val get_concl: int -> (Tag.t * Basic.term)
+val get_concl: ProofStack.t -> int -> (Tag.t * Basic.term)
 (** Get a conclusion from the current sequent. *)
 
 

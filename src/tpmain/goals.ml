@@ -163,42 +163,40 @@ struct
         Format.printf "@]"
 end
 
+(***
 let prflist = ref (ProofStack.empty())
 let proofs() = !prflist
 let set_proofs(prfs) = prflist := prfs
+***)
 
-let top () = ProofStack.top (proofs())
-let top_goal () = ProofStack.top_goal (proofs())
+let top pstk = ProofStack.top pstk
+let top_goal pstk = ProofStack.top_goal pstk
 
-let drop() = set_proofs (ProofStack.pop (proofs())); proofs()
+let drop pstk = ProofStack.pop pstk
 
-let goal scp trm = 
+let goal pstk scp trm = 
   let frm = Formula.make scp trm in 
   let gl = mk_goal scp frm in
   let prf = Proof.make gl in
-  set_proofs (ProofStack.push prf (proofs()));
-  !save_hook(); 
-  top()
+  ProofStack.push prf pstk
 
-let postpone () =
-  set_proofs (ProofStack.rotate (proofs()));
-  top()
+let postpone pstk =
+  ProofStack.rotate pstk
 
-let lift n =
+let lift pstk n =
   let nlist = 
-    try ProofStack.lift n (proofs())
+    try ProofStack.lift n pstk
     with err -> 
       raise (Report.add_error (Report.error "Failed to lift proof.") err)
   in 
-  set_proofs nlist;
-  top()
+  nlist
 
-let undo() =
-  match (proofs()) with
+let undo pstk =
+  match pstk with
     | [] -> raise (Report.error "No proof attempts")
-    | _ -> set_proofs (ProofStack.undo_goal (proofs())); top()
+    | _ -> ProofStack.undo_goal pstk
       
-let result () = mk_thm (top_goal())
+let result ptsk = mk_thm (top_goal ptsk)
 
 let apply ?report tac goal =
   Logic.Subgoals.apply_to_goal ?report tac goal
@@ -245,13 +243,11 @@ let report node branch =
 	 print_subgoals 1 sqnts)
       else ()
 
-let by_com tac =
-  let p = (top_goal(): Logic.goal) in 
+let by_com pstk tac =
+  let p = top_goal pstk in 
   let g = Logic.Subgoals.apply_to_goal ~report:report tac p
   in 
-  set_proofs (ProofStack.push_goal g (proofs()));
-  !save_hook();
-  top()
+  ProofStack.push_goal g pstk
 
 let by_list scp trm tacl =
   let goal_form = Formula.make scp trm
@@ -271,23 +267,23 @@ let by_list scp trm tacl =
 
 (*** Miscellaneous ***)
 
-let curr_sqnt () = 
-  match Logic.get_subgoals (top_goal()) with
+let curr_sqnt pstk = 
+  match Logic.get_subgoals (top_goal pstk) with
     | [] -> raise (Report.error "No subgoals")
     | x::xs -> x
 
-let get_asm i = 
-  let (ft, nt) = Logic.Sequent.get_asm i (curr_sqnt ())
+let get_asm pstk i = 
+  let (ft, nt) = Logic.Sequent.get_asm i (curr_sqnt pstk )
   in 
   (ft, Formula.term_of nt)
 
-let get_concl i = 
-  let (ft, nt) = Logic.Sequent.get_cncl i (curr_sqnt ())
+let get_concl pstk i = 
+  let (ft, nt) = Logic.Sequent.get_cncl i (curr_sqnt pstk)
   in 
   (ft, Formula.term_of nt)
 
-let goal_scope () = 
-  Logic.Sequent.scope_of (curr_sqnt())
+let goal_scope pstk = 
+  Logic.Sequent.scope_of (curr_sqnt pstk)
 
-let goal_changes() = 
-  Logic.goal_changes (top_goal())
+let goal_changes pstk = 
+  Logic.goal_changes (top_goal pstk)

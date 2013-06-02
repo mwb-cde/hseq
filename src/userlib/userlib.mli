@@ -42,26 +42,20 @@ sig
   (** Short cut to {!Thys.current_name.} *)
   val current_name: unit -> string
 
-  (** The global scope. Constructed from the theory database. *)
-  val scope: Userstate.State.t -> Scope.t
+  (** Access/update the global variables *)
+  val context: unit -> Context.t
+  val set_context: Context.t -> unit
+
+  val scope: unit -> Scope.t
+  val set_scope: Scope.t -> unit
+
+  val scoped: unit -> Context.scoped
+  val set_scoped: Context.scoped -> unit
 
   (** {5 Printing and Parsing}
 
       Global printer tables and functions to add, query and remove
       combined printer-parser information.  *)
-(*****
-  module PP:
-  sig
-    (** Get the global printer information table. *)
-    val info: unit -> Printer.ppinfo
-
-    (** Set the global PP information table. *)
-    val set: Printer.ppinfo -> unit
-
-    (** Initialise the printer and parser tables. *)
-    val init: unit -> unit
-  end
-****)
 
   (** Initialise the global state. *)
   val init: unit -> unit

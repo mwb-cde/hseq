@@ -285,13 +285,13 @@ let prove_thm scpd ?(simp=false) n t tacs =
 let theorem = prove_thm
 let lemma = theorem
 
-let qed n = 
-  let thm = Goals.result() in  
+let qed pstk n = 
+  let thm = Goals.result pstk in  
   let ctxt = Global.state() in
-  let thydb = Thydb.add_thm n (Goals.result()) [] (Context.thydb ctxt) in
+  let thydb = Thydb.add_thm n thm [] (Context.thydb ctxt) in
   let ctxt1 = Context.set_thydb ctxt thydb 
   in
-  Global.set_state ctxt1; thm
+  (ctxt1, thm)
 
 let get_or_prove sctxt name trm tac = 
   let act () =
