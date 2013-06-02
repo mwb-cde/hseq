@@ -128,15 +128,13 @@ val get_term_pp:
     identifier [id].
 *)
 
-val remove_term_pp: 
-  string -> unit
+val remove_term_pp: string -> unit
 (** [remove_term_pp id]: remove last-added printer-parser information
     for term identifier [id].
 *)
 
 val add_type_pp: 
-  string -> int -> Printer.fixity 
-  -> string option -> unit
+  string -> int -> Printer.fixity -> string option -> unit
 (** [add_type_pp id prec fixity sym]: add printer-parser information
     for term identifier [id]. Parser/print term identifier [id] as
     [sym] with precedent [prec] and fixity [fixity].
@@ -384,6 +382,44 @@ val scope: unit -> Scope.t
 val goal_scope: unit -> Scope.t
 (** The scope of the current subgoal (if any). *)
 
+val curr_sqnt : unit -> Logic.Sequent.t
+(** The current sequent. *)
+val get_asm: int -> (Tag.t * Basic.term)
+(** Get an assumption from the current sequent. *)
+val get_concl: int -> (Tag.t * Basic.term)
+(** Get a conclusion from the current sequent. *)
+
+val top : unit -> Goals.Proof.t
+(** The current proof attempt *)
+
+val top_goal : unit -> Logic.goal
+(** The current goal. *)
+
+val drop : unit -> unit
+(** Drop the current proof.  *)
+
+val goal: Basic.term -> unit
+(** Start a proof attempt. Creates a goal and pushes it on the top of
+    the proof stack. 
+
+    Info: [ subgoals=[gl] ] [ cformulas=[trm] ]
+    Where [gl] is the tag of the goal and [trm] the conclusion.
+*)
+
+val postpone: unit -> unit
+(** Postpone the current proof, pushing it to the bottom of the stack.
+*)
+
+val lift: int -> unit
+(** [lift n]: Focus on the nth proof to the top of the stack, making
+    it the current proof attempt. Fails if there is no nth proof.
+*)
+
+val undo : unit -> unit
+(** Go back. Pop the top goal off the proof. Fails if there is only
+    one goal in the proof.
+*)
+
 (** {5 Proof commands} 
 
     Note that most proof commands are in module {!Goals}.
@@ -395,14 +431,47 @@ val prove: Basic.term -> Tactics.tactic -> Logic.thm
     it is [scope()]. The theorem is not added to the theory.
 *)
 
+val prove_goal: 
+  Basic.term -> Tactics.tactic -> Logic.thm
+(** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
+    using tactic [tac] in scope [scp]. Used for batch proofs. If
+    [?info] is given, the tag of the goal and conclusion ([trm]) are
+    stored in it before the tactic [tac] is applied.
+*)
+
+val result: unit -> Logic.thm
+(** Claim that proof is completed. Make a theorem from the proof, fail
+    if the current goal has subgoals and is therefore not a theorem.
+*)
+
 val by: Tactics.tactic -> Goals.Proof.t
 (** Apply a tactic to the current sub-goal in a proof attempt,
     catching and printing errors.
 *)
 
+val by_com : Tactics.tactic -> unit
+(** Apply a tactic to the current goal. If the tactic succeeds, call
+    [save_hook]. Used for interactive proofs.
+*)
+
+val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
+(** [by_list trm tacl]: Apply the list of tactics [tacl] to the
+    goal formed from term [trm] in the standard scope.
+*)
+
 val qed: string -> Logic.thm
 (** Declare a proof results in a theorem to be stored in the current
     theory under the given name.
+*)
+
+val apply: 
+  ?report:(Logic.node -> Logic.branch -> unit) 
+  -> Tactics.tactic -> Logic.goal -> Logic.goal
+(** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
+    {!Logic.Subgoals.apply_to_goal}.
+
+    Applies [tac] to the first subgoal [n] of [goal]. Returns the goal 
+    with the subgoals [tac n] appended to the remaining subgoals of goal.
 *)
 
 (** {5 Initialising functions} *)

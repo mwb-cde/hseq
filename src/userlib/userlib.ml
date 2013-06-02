@@ -336,21 +336,49 @@ let proofstack() = Global.proofstack ()
 let set_proofstack pstk = Global.set_proofstack pstk
 let top() = Goals.top (proofstack())
 let top_goal() = Goals.top_goal (proofstack())
-let drop() = Goals.drop (proofstack())
-
+let drop() = set_proofstack (Goals.drop (proofstack()))
 let goal_scope () = Goals.goal_scope (proofstack ())
+let curr_sqnt () = Goals.curr_sqnt (proofstack())
+let get_asm i = Goals.get_asm (proofstack()) i
+let get_concl i = Goals.get_concl (proofstack()) i
 
 let prove a tac = 
   Commands.prove (Global.scoped ()) a tac
 
-let by x = 
-  set_proofstack ((catch_errors Goals.by_com (proofstack())) x);
-  top()
+let prove_goal trm tac = 
+  Goals.prove_goal (Global.scope()) trm tac
+
+let drop () = 
+  set_proofstack (Goals.drop (proofstack()))
+
+let lift i = 
+  set_proofstack (Goals.lift (proofstack()) i)
+
+let undo () =
+  set_proofstack (Goals.undo (proofstack()))
+
+let postpone () =
+  set_proofstack (Goals.postpone (proofstack()))
+
+let goal trm = 
+  set_proofstack (Goals.goal (proofstack()) (scope()) trm)
+
+let result () = Goals.result (proofstack())
+
+let by_com tac = 
+  set_proofstack (catch_errors (Goals.by_com (Global.proofstack())) tac)
+
+let by tac = 
+  by_com tac; top()
+
+let by_list trm tl = Goals.by_list (Global.scope()) trm tl
 
 let qed n = 
   let (ctxt, thm) = Commands.qed (proofstack()) n in
   Global.set_context ctxt;
   thm
+
+let apply = Goals.apply
 
 (** {6 Initialising functions} *)
 
