@@ -73,7 +73,7 @@ val find_qnt_opt:
   -> Logic.tagged_form list 
   -> (Tag.t * Basic.binders list * Basic.term)
 
-val fresh_thm: Logic.thm -> bool
+val fresh_thm: Scope.t -> Logic.thm -> bool
 (** [fresh_thm th]: Test whether theorem [th] is fresh (a formula of
     the current global scope).
 *)

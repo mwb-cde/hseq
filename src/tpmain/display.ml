@@ -35,57 +35,57 @@ let cfun_string c =
 
 let print_fnident x = Printer.print_ident x
 
-let print_term x = 
+let print_term ppinf x = 
   open_box 0;
-  Term.print (Global.PP.info()) x;
+  Term.print ppinf x;
   close_box()
 
-let print_formula x = 
+let print_formula ppinf x = 
   open_box 0;
-  Term.print (Global.PP.info()) (Formula.term_of x);
+  Term.print ppinf (Formula.term_of x);
   close_box()
 
-let rec print_type x = 
+let rec print_type ppinf x = 
   Format.printf "@[";
-  Gtypes.print (Global.PP.info())  x; 
+  Gtypes.print ppinf x; 
   Format.printf "@]"
 
-let print_sqnt x = 
-  Logic.print_sqnt (Global.PP.info()) x
-let print_node x = 
-  Logic.print_node (Global.PP.info()) x
-let print_branch x = 
-  Logic.print_branch (Global.PP.info()) x
+let print_sqnt ppinf x = 
+  Logic.print_sqnt ppinf x
+let print_node ppinf x = 
+  Logic.print_node ppinf x
+let print_branch ppinf x = 
+  Logic.print_branch ppinf x
     
-let print_thm t = Logic.print_thm (Global.PP.info()) t
+let print_thm ppinf t = Logic.print_thm ppinf t
 
-let print_prf p = Goals.Proof.print (Global.PP.info()) p
-let print_prfstk p = Goals.ProofStack.print (Global.PP.info()) p
+let print_prf ppinf p = Goals.Proof.print ppinf p
+let print_prfstk ppinf p = Goals.ProofStack.print ppinf p
 
-let print_termdefn def = 
+let print_termdefn ppinf def = 
   let n, ty, th = Logic.Defns.dest_termdef def
   in 
   Format.printf "@[";
   Format.printf "@[";
   print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
   Format.printf ":@ ";
-  print_type ty;
+  print_type ppinf ty;
   Format.printf "@],@ ";
-  print_thm th;
+  print_thm ppinf th;
   Format.printf "@]"
 
-let print_termdecln def = 
+let print_termdecln ppinf def = 
   let n, ty = Logic.Defns.dest_termdecln def
   in 
   Format.printf "@[";
   print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
   Format.printf ":@ ";
-  print_type ty;
+  print_type ppinf ty;
   Format.printf "@]"
 
 
-let print_defn def =
-  Logic.Defns.print_cdefn (Global.PP.info()) def
+let print_defn ppinf def =
+  Logic.Defns.print_cdefn ppinf def
     
 let print_subst tenv f= 
   Format.printf "@[<2>";
@@ -94,7 +94,7 @@ let print_subst tenv f=
     tenv;
   Format.printf "@]"
     
-let print_error r = (r#print) (Global.PP.info())
+let print_error ppinf r = (r#print) ppinf
 
-let print_theory x = 
-  Theory.print (Global.PP.info()) x
+let print_theory ppinf x = 
+  Theory.print ppinf x

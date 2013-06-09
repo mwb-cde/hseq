@@ -93,7 +93,8 @@ let find_qnt_opt kind pred forms =
   in 
   (tag, vs, term)
 
-let fresh_thm th = Logic.is_fresh (Global.scope()) th
+let fresh_thm scp th = 
+  Logic.is_fresh scp th
 
 let get_type_name ty =
   match ty with

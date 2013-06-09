@@ -43,7 +43,7 @@ val infixr: fixity
 val infixn: fixity  
 (** infix, non-associative *)
 
-val catch_errors: ('a -> 'b) -> 'a -> 'b
+val catch_errors: Printer.ppinfo -> ('a -> 'b) -> 'a -> 'b
 (** Error handling. [catch_errors f a] evaluates [(f a)] catching any
     exception [e]. If [e] is {!Report.Error} then it is printed and
     exception [Failure] is raised. If [e] is not {!Report.Error} then
@@ -235,8 +235,8 @@ val thm: Context.t -> string -> Logic.thm
 *)
 
 val axiom: 
-  Context.t -> ?simp:bool -> string -> Basic.term 
-  -> (Context.t * Logic.thm)
+  Context.scoped -> ?simp:bool -> string -> Basic.term 
+  -> (Context.scoped * Logic.thm)
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
 
@@ -304,7 +304,9 @@ val lemma:
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
-val qed: Goals.ProofStack.t -> string -> (Context.t * Logic.thm)
+val qed: 
+  Context.t -> Goals.ProofStack.t -> string 
+  -> (Context.t * Logic.thm)
 (** Declare a proof results in a theorem and store this theorem under
     the given name.
 *)

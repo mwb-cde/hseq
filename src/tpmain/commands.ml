@@ -31,11 +31,11 @@ let infixl = Parserkit.Info.infix Parserkit.Info.left_assoc
 let infixr = Parserkit.Info.infix Parserkit.Info.right_assoc
 let infixn = Parserkit.Info.infix Parserkit.Info.non_assoc
 
-let catch_errors f a =
+let catch_errors ppinf f a =
   try f a 
   with 
     | Report.Error e -> 
-      Report.print_error (Global.PP.info()) (-1) (Report.Error e); 
+      Report.print_error ppinf (-1) (Report.Error e); 
       raise (Failure "failed")
     | x -> raise x
 
@@ -59,9 +59,9 @@ let load_theory_as_cur ctxt n =
   in 
   Context.Thys.set_theories ctxt db
 
-let read x = catch_errors BoolPP.read x
-let read_unchecked x = catch_errors BoolPP.read_unchecked x
-let read_defn x = catch_errors BoolPP.read_defn x
+let read x = catch_errors (BoolPP.ppinfo()) BoolPP.read x
+let read_unchecked x = catch_errors (BoolPP.ppinfo()) BoolPP.read_unchecked x
+let read_defn x = catch_errors (BoolPP.ppinfo()) BoolPP.read_defn x
 
 (*
  * Theories
@@ -244,19 +244,22 @@ let thm ctxt id =
   in 
   Thydb.get_lemma t n thys
 
-let axiom ctxt ?(simp=false) n trm =
-  let thm = Logic.mk_axiom (Formula.make (Global.scope()) trm)
+let axiom sctxt ?(simp=false) n trm =
+  let thm = Logic.mk_axiom (Formula.make (Context.scope_of sctxt) trm)
+  and ctxt = context_of sctxt 
   and props = if simp then [Theory.simp_property] else []
   in 
+  let nctxt = 
   begin
     match Lib.try_find (Theory.get_theorem_rec n) (curr_theory ctxt) with
       | Some _ -> 
         raise (Report.error ("Theorem named "^n^" already exists in theory."))
       | _ -> 
         (Context.Thys.set_theories ctxt
-           (Thydb.add_axiom n thm props (theories ctxt)),
-         thm)
+           (Thydb.add_axiom n thm props (theories ctxt)))
   end
+  in 
+  (scoped nctxt (scope_of sctxt), thm)
 
 let prove sctxt trm tac = 
   Goals.prove_goal (Context.scope_of sctxt) trm tac
@@ -264,7 +267,7 @@ let prove sctxt trm tac =
 let save_thm ctxt ?(simp=false) n th =
   let props = if simp then [Theory.simp_property] else []
   in 
-  catch_errors 
+  catch_errors (Context.ppinfo ctxt)
     (fun x -> 
       (Context.Thys.set_theories ctxt (Thydb.add_thm n th props x), th)) 
     (Context.Thys.theories ctxt)
@@ -280,14 +283,13 @@ let prove_thm scpd ?(simp=false) n t tacs =
     let (cntxt1, _) = save_thm (Context.context_of scpd) ~simp:simp n thm in
     (cntxt1, thm)
   in 
-  catch_errors prove_aux ()
+  catch_errors (Context.ppinfo (Context.context_of scpd)) prove_aux ()
 
 let theorem = prove_thm
 let lemma = theorem
 
-let qed pstk n = 
+let qed ctxt pstk n = 
   let thm = Goals.result pstk in  
-  let ctxt = Global.state() in
   let thydb = Thydb.add_thm n thm [] (Context.thydb ctxt) in
   let ctxt1 = Context.set_thydb ctxt thydb 
   in
@@ -304,7 +306,7 @@ let get_or_prove sctxt name trm tac =
 	           (Report.error 
 		      ("get_or_prove: Failed with theorem "^name)) err)
   in 
-  catch_errors act ()
+  catch_errors (Context.ppinfo (context_of sctxt)) act ()
 
 (*
  * Definitions and Declarations 

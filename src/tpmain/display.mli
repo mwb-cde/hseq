@@ -23,22 +23,22 @@
 
 open Basic
 
-val print_term: Basic.term -> unit
-val print_formula: Formula.t -> unit
-val print_type: Basic.gtype -> unit
-val print_theory: Theory.thy -> unit
+val print_term: Printer.ppinfo -> Basic.term -> unit
+val print_formula: Printer.ppinfo -> Formula.t -> unit
+val print_type: Printer.ppinfo -> Basic.gtype -> unit
+val print_theory: Printer.ppinfo -> Theory.thy -> unit
 
-val print_sqnt: Logic.Sequent.t -> unit
-val print_node: Logic.node -> unit
-val print_branch: Logic.branch -> unit
+val print_sqnt: Printer.ppinfo -> Logic.Sequent.t -> unit
+val print_node: Printer.ppinfo -> Logic.node -> unit
+val print_branch: Printer.ppinfo -> Logic.branch -> unit
 
-val print_thm: Logic.thm -> unit
-val print_defn: Logic.Defns.cdefn -> unit
+val print_thm: Printer.ppinfo -> Logic.thm -> unit
+val print_defn: Printer.ppinfo -> Logic.Defns.cdefn -> unit
 
-val print_prf: Goals.Proof.t -> unit
-val print_prfstk: Goals.ProofStack.t -> unit
+val print_prf: Printer.ppinfo -> Goals.Proof.t -> unit
+val print_prfstk: Printer.ppinfo -> Goals.ProofStack.t -> unit
 
 val print_fnident: Ident.t -> unit
 
 val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
-val print_error: Report.error -> unit
+val print_error: Printer.ppinfo -> Report.error -> unit

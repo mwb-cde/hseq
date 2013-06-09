@@ -117,7 +117,7 @@ let apply_merge_list f ls =
 (** [fresh_thm th]: Test whether theorem [th] is fresh in the global
     scope.
 *)
-let fresh_thm th = Logic.is_fresh (Global.scope()) th
+let fresh_thm scp th = Logic.is_fresh scp th
 
 (** [simp_beta_conv scp t]: Apply {!Logic.Conv.beta_conv} to [t] if
     [t] is of the form << (% x: F) a >>.  Raise [Failure] if [t] is not

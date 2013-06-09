@@ -208,7 +208,7 @@ let prove_goal scp trm tac =
 let prove scp trm tac = 
   prove_goal scp trm tac
 
-let report node branch = 
+let report ppinf node branch = 
   let rec print_subgoals i gs = 
     match gs with 
       | [] -> ()
@@ -219,7 +219,7 @@ let report node branch =
 	Format.print_string ")";
 	Format.close_box();
 	Format.print_newline();
-	Logic.print_sqnt (Global.PP.info()) y;
+	Logic.print_sqnt ppinf y;
 	Format.print_newline();
 	print_subgoals (i+1) ys
   in 
@@ -244,9 +244,11 @@ let report node branch =
 	 print_subgoals 1 sqnts)
       else ()
 
-let by_com pstk tac =
+let by_com ctxt pstk tac =
   let p = top_goal pstk in 
-  let g = Logic.Subgoals.apply_to_goal ~report:report tac p
+  let g = 
+    Logic.Subgoals.apply_to_goal 
+      ~report:(report (Context.ppinfo ctxt)) tac p
   in 
   ProofStack.push_goal g pstk
 

@@ -137,7 +137,8 @@ val prove_goal:
 
 (** {7 Interactive proofs} *)
 
-val by_com : ProofStack.t -> Tactics.tactic -> ProofStack.t
+val by_com :
+  Context.t -> ProofStack.t -> Tactics.tactic -> ProofStack.t
 (** Apply a tactic to the current goal. If the tactic succeeds, call
     [!save_hook]. Used for interactive proofs.
 *)

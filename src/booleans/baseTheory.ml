@@ -106,7 +106,7 @@ let builder sctxt ?(save=false) () =
     (** Axioms *)
 
     (** False definition *)
-    let (ctxt14, _) = axiom (context_of sctxt13)
+    let (ctxt14, _) = axiom sctxt13
       "false_def" << false = (not true)>> in 
 
     (** Boolean cases *)
@@ -117,14 +117,14 @@ let builder sctxt ?(save=false) () =
     (** Equality *)
     let (ctxt16, _) = axiom ctxt15 "eq_refl" << !x: x = x >> in 
     let (sctxt17, _) =
-      define (set_context sctxt13 ctxt16)
+      define ctxt16
       <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2) >> 
     in 
     let (sctxt18, _) = 
       define sctxt17 <:def< onto f = !y: ?x: y = (f x) >> 
     in 
     let (ctxt19, _) = 
-      axiom (context_of sctxt18) "infinity_ax" 
+      axiom sctxt18 "infinity_ax" 
       << ?(f: ind -> ind): (one_one f) and (onto f)>> 
     in 
     let (ctxt20, _) = 
@@ -133,17 +133,17 @@ let builder sctxt ?(save=false) () =
     in 
     (** Specification operator (epsilon) *)
     let (sctxt21, _, _) = 
-      declare (set_context sctxt18 ctxt20)
+      declare ctxt20
       <<epsilon: ('a -> bool) -> 'a>> 
     in 
     let (ctxt22, _) = 
-      axiom (context_of sctxt21) "epsilon_ax"
+      axiom sctxt21 "epsilon_ax"
       << !P: (?x: P x) => (P(epsilon P))>> 
     in 
 
     (** Conditional *)
     let (sctxt23, _) = 
-      define (set_context sctxt21 ctxt22)
+      define ctxt22
       <:def< 
         IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))
       >> 

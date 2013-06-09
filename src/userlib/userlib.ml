@@ -131,7 +131,7 @@ let compile dirs name =
   then compile_aux()
   else (-1)
     
-let catch_errors = Commands.catch_errors
+let catch_errors x = Commands.catch_errors (Global.ppinfo()) x
 
 (** {6 Printing and parsing} *)
 
@@ -272,8 +272,8 @@ let declare ?pp trm =
 (** {6 Axioms and theorems} *)
 
 let axiom ?(simp=false) n t =
-  let ctxt0, thm = Commands.axiom (Global.context ()) ~simp:simp n t in
-  Global.set_context ctxt0;
+  let ctxt0, thm = Commands.axiom (Global.scoped ()) ~simp:simp n t in
+  Global.set_scoped ctxt0;
   if simp
   then 
     let nsimp = 
@@ -366,7 +366,11 @@ let goal trm =
 let result () = Goals.result (proofstack())
 
 let by_com tac = 
-  set_proofstack (catch_errors (Goals.by_com (Global.proofstack())) tac)
+  let nprfstk = 
+    catch_errors 
+      (Goals.by_com (Global.context()) (Global.proofstack())) tac
+  in
+  set_proofstack nprfstk
 
 let by tac = 
   by_com tac; top()
@@ -374,7 +378,8 @@ let by tac =
 let by_list trm tl = Goals.by_list (Global.scope()) trm tl
 
 let qed n = 
-  let (ctxt, thm) = Commands.qed (proofstack()) n in
+  let (ctxt, thm) = Commands.qed (Global.context()) (proofstack()) n 
+  in
   Global.set_context ctxt;
   thm
 
