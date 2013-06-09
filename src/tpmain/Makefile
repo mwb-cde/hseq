@@ -123,7 +123,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=context boolPP global tactics goals commands display 
+HSeq_SOURCES=context boolPP tactics goals commands display 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
