@@ -38,7 +38,7 @@ sig
       should be used.  *)
 
   val rewrite_conv: 
-    Context.scoped -> ?ctrl:Rewrite.control -> Tactics.rule list 
+    Context.t -> ?ctrl:Rewrite.control -> Tactics.rule list 
     -> Logic.conv
   (** [rewrite_conv scp ctrl rules trm]: rewrite term [trm] with rules
       [rrl] in scope [scp].
@@ -55,7 +55,7 @@ sig
       one set of rewriting.  *)
 
   val rewrite_rule:
-    Context.scoped 
+    Context.t 
     -> ?ctrl:Rewrite.control 
     -> Logic.rr_type list 
     -> Logic.thm -> Logic.thm
@@ -123,7 +123,7 @@ sig
 
 end
 val rewrite_conv: 
-  Context.scoped -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
+  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
 (** [rewrite_conv scp ctrl rules trm]: Rewrite term [trm] with
     theorems [rules] in scope [scp].
 
@@ -132,7 +132,7 @@ val rewrite_conv:
 *)
 
 val rewrite_rule:
-  Context.scoped 
+  Context.t 
   -> ?ctrl:Rewrite.control -> Logic.thm list 
   -> Logic.thm -> Logic.thm
 (** [rewrite_rule scp ctrl rules thm]: Rewrite theorem [thm] with

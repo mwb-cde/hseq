@@ -31,10 +31,12 @@ type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
 (*
  * Support functions 
  *)
+(***
 let scoped = Context.scoped
-let set_scope = Context.set_scope
 let set_context = Context.set_context
 let context_of = Context.context_of
+***)
+let set_scope = Context.set_scope
 let scope_of = Context.scope_of
 
 (*** Error reporting ***)
@@ -79,7 +81,7 @@ let typenv_of n = Logic.Subgoals.node_tyenv n
 let node_tag n = Logic.Sequent.sqnt_tag (sequent n)
 let changes n = Logic.Tactics.changes n
 
-let goal_context ctxt g = scoped ctxt (scope_of_goal g)
+let goal_context ctxt g = set_scope ctxt (scope_of_goal g)
 
 let get_tagged_asm i g = Logic.get_label_asm i (sequent g)
 let get_tagged_concl i g= Logic.get_label_cncl i (sequent g)

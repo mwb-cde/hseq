@@ -28,19 +28,19 @@ val empty_simp: unit -> Simpset.simpset
 *)
 
 val add_simps: 
-  Context.scoped -> Simpset.simpset -> Logic.thm list
+  Context.t -> Simpset.simpset -> Logic.thm list
   -> Simpset.simpset
 (** [add_simps thms]: Add [thms] to the standard simpset. *)
 
 val add_simp: 
-  Context.scoped -> Simpset.simpset -> Logic.thm
+  Context.t -> Simpset.simpset -> Logic.thm
   -> Simpset.simpset
 (** [add_simp thm]: Add [thm] to the standard simpset.
 *)
 
 val add_conv: 
   Simpset.simpset -> Basic.term list 
-  -> (Context.scoped -> Logic.conv) -> Simpset.simpset
+  -> (Context.t -> Logic.conv) -> Simpset.simpset
 (** [add_conv trms conv]: Add conversion [conv] to the standard
     simpset, with [trms] as the representative keys.  Example:
     [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies

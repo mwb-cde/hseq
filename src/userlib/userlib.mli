@@ -49,9 +49,6 @@ sig
   val scope: unit -> Scope.t
   val set_scope: Scope.t -> unit
 
-  val scoped: unit -> Context.scoped
-  val set_scoped: Context.scoped -> unit
-
   (** {5 Printing and Parsing}
 
       Global printer tables and functions to add, query and remove

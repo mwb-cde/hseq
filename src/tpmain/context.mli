@@ -41,10 +41,7 @@ sig
 end
 
 (** The theorem prover context. *)
-(****
-     module Context:
-     sig
-***)
+
 (** Types *)
 
 (** File handling functions *)
@@ -140,23 +137,12 @@ type t =
 val empty: unit -> t
 
 (** {6 Scoped contexts} *)
-(**
-type scoped = (t * Scope.t)
-*)
-type scoped
-(** The type of scoped contexts *)
 
-val scoped: t -> Scope.t -> scoped
-(** Constructor for scoped contexts *)
-val scope_of: scoped -> Scope.t
+val scope_of: t -> Scope.t
 (** Get the scope *)
-val context_of: scoped -> t
-(** Get the context *)
 
-val set_scope: scoped -> Scope.t -> scoped
-  (** Set the scope *)
-val set_context: scoped -> t -> scoped
-(** Set the context *)
+val set_scope: t -> Scope.t -> t
+(** Set the scope *)
 
 (** {5 Accessor Functions} *)
 
@@ -254,15 +240,12 @@ val parsers : t -> Parser.Table.t
 val cache_thm: t -> Ident.t -> Logic.thm -> t
 (** Cache a theorem *)
 
-val lookup_thm: scoped -> Ident.t -> Logic.thm
+val lookup_thm: t -> Ident.t -> Logic.thm
 (** Lookup a cached theorem, raising Not_found if not found. *)
 
-val find_thm: scoped-> Ident.t -> (scoped -> Logic.thm) -> Logic.thm
+val find_thm: 
+  t -> Ident.t -> (t -> Logic.thm) -> Logic.thm
 (** Lookup a cached theorem, creating and caching it if not found. *)
-
-(***
-    end
-***)
 
 (** {5 Theories} *)
 module Thys:
@@ -501,7 +484,7 @@ sig
   (** {6 Parsing} *)
 
   val expand_term: 
-    scoped -> Pterm.t -> Basic.term
+    t -> Pterm.t -> Basic.term
   (** Resolve symbols and short names in terms and types, replacing
       them with long identifiers where possible. Also retype the term
       if possible. Intended to make a parsed term suitable for passing
@@ -509,14 +492,14 @@ sig
       inconsistently typed.  *)
 
   val expand_type_names: 
-    scoped -> Basic.gtype -> Basic.gtype
+    t -> Basic.gtype -> Basic.gtype
   (** Replace symbols and short names in a type with the long
       identifier, were possible.  *)
   val expand_typedef_names: 
-    scoped -> Parser.typedef_data -> Defn.Parser.typedef
+    t -> Parser.typedef_data -> Defn.Parser.typedef
   (** Resolve symbols and short names in a type definition.  *)
 
-  val mk_term: scoped -> Pterm.t -> Basic.term
+  val mk_term: t -> Pterm.t -> Basic.term
   (** Resolve symbols and short names in a term, making a parsed term
       suitable for use.
       
@@ -525,7 +508,7 @@ sig
       resulting term may be inconsistently typed.
   *)
 
-  val read: scoped -> string -> Basic.term
+  val read: t -> string -> Basic.term
   (** Parse a string as a term, resolving short names and
       symbols. *)
 
@@ -533,14 +516,15 @@ sig
   (** Parse a string as a term, return the term as is, without
       expanding terms and resolving symbols.  *)
 
-  val read_defn:scoped -> string 
+  val read_defn:
+    t -> string 
     -> ((string * Basic.gtype) * Basic.term list) * Basic.term
   (** Parse a string as a term definition. *)
 
-  val read_type: scoped -> string -> Basic.gtype
+  val read_type: t -> string -> Basic.gtype
   (** Parse a string a type, resolving short names and symbols where
       possible.  *)
-  val read_type_defn: scoped -> string -> Defn.Parser.typedef
+  val read_type_defn: t -> string -> Defn.Parser.typedef
   (** Parse a string as a type definition. *)
 
   val read_identifier: t -> string -> Ident.t

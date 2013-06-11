@@ -45,10 +45,6 @@ struct
   let set_scope ctxt = 
     set_state (Userstate.set_scope (state()) ctxt)
 
-  let scoped () = Userstate.scoped (state())
-  let set_scoped x = 
-    set_state (Userstate.State.set_scoped (state()) x)
-
   let ppinfo () = Userstate.ppinfo (state())
   let set_ppinfo ctxt = 
     set_state (Userstate.set_ppinfo (state()) ctxt)
@@ -92,19 +88,19 @@ struct
   let mk_term = Context.NewPP.mk_term
 
   let read str = 
-    Context.NewPP.read (Global.scoped ()) str
+    Context.NewPP.read (Global.context ()) str
 
   let read_unchecked str =
     Context.NewPP.read_unchecked (Global.context ()) str
 
   let read_defn str =
-    Context.NewPP.read_defn (Global.scoped ()) str
+    Context.NewPP.read_defn (Global.context ()) str
 
   let read_type_defn str =
-    Context.NewPP.read_type_defn (Global.scoped ()) str
+    Context.NewPP.read_type_defn (Global.context ()) str
       
   let read_type str = 
-    Context.NewPP.read_type (Global.scoped ()) str
+    Context.NewPP.read_type (Global.context ()) str
 
   let read_identifier str = 
     Context.NewPP.read_identifier (Global.context ()) str
@@ -226,12 +222,12 @@ let remove_file n =
 (** {6 Type declaration and definition} *)
 
 let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef = 
-  let scpd = Global.scoped () in
+  let scpd = Global.context () in
   let (scpd1, defn) = 
     Commands.typedef scpd ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
   in 
   begin
-    Global.set_scoped scpd1;
+    Global.set_context scpd1;
     if simp && (Logic.Defns.is_subtype defn)
     then 
       let tyrec = Logic.Defns.dest_subtype defn in 
@@ -251,9 +247,9 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
 (** {6 Term declaration and definition} *)
 
 let define ?pp ?(simp=false) df =
-  let scpd = Global.scoped () in
+  let scpd = Global.context () in
   let scpd1, ret = Commands.define scpd ?pp ~simp:simp df in 
-  Global.set_scoped scpd1;
+  Global.set_context scpd1;
   if simp
   then 
     let (_, _, thm) = Logic.Defns.dest_termdef ret in 
@@ -265,19 +261,19 @@ let define ?pp ?(simp=false) df =
     ret
 
 let declare ?pp trm = 
-  let nscpd, id, ty = Commands.declare (Global.scoped ()) ?pp trm in
-  Global.set_scoped nscpd;
+  let nscpd, id, ty = Commands.declare (Global.context ()) ?pp trm in
+  Global.set_context nscpd;
   (id, ty)
 
 (** {6 Axioms and theorems} *)
 
 let axiom ?(simp=false) n t =
-  let ctxt0, thm = Commands.axiom (Global.scoped ()) ~simp:simp n t in
-  Global.set_scoped ctxt0;
+  let ctxt0, thm = Commands.axiom (Global.context ()) ~simp:simp n t in
+  Global.set_context ctxt0;
   if simp
   then 
     let nsimp = 
-      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) thm
+      Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
     in
     Global.set_simpset nsimp
   else ();
@@ -290,7 +286,7 @@ let save_thm ?(simp=false) n thm =
   if simp 
   then 
     let nsimp = 
-      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) ret
+      Simplib.add_simp (Global.context ()) (Global.simpset ()) ret
     in
     Global.set_simpset nsimp
   else ();
@@ -298,13 +294,13 @@ let save_thm ?(simp=false) n thm =
 
 let prove_thm ?(simp=false) n t tac =
   let ctxt, thm = 
-    Commands.prove_thm (Global.scoped ()) ~simp:simp n t tac
+    Commands.prove_thm (Global.context ()) ~simp:simp n t tac
   in 
   Global.set_context ctxt;
   if simp 
   then 
     let nsimp = 
-      Simplib.add_simp (Global.scoped ()) (Global.simpset ()) thm
+      Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
     in
     Global.set_simpset nsimp
   else ();
@@ -343,7 +339,7 @@ let get_asm i = Goals.get_asm (proofstack()) i
 let get_concl i = Goals.get_concl (proofstack()) i
 
 let prove a tac = 
-  Commands.prove (Global.scoped ()) a tac
+  Commands.prove (Global.context ()) a tac
 
 let prove_goal trm tac = 
   Goals.prove_goal (Global.scope()) trm tac

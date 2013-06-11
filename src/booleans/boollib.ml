@@ -44,7 +44,6 @@ struct
 
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
   let make_iff_equals_thm sctxt =
-    let ctxt = context_of sctxt in 
     let iff_l2 = 
       Commands.prove sctxt
       << !x y: ((x => y) and (y => x)) => (x = y) >>
@@ -59,15 +58,15 @@ struct
 	      and y_term = Lib.get_one (Info.constants info2) 
                 (Failure "make_iff_equals_thm: y_term")
 	      in 
-	      (flatten_tac ctxt
-	       ++ (cut_thm ctxt "bool_cases" ++ allA x_term)
-	       ++ (cut_thm ctxt "bool_cases" ++ allA y_term)
-	       ++ split_tac ctxt
+	      (flatten_tac sctxt
+	       ++ (cut_thm sctxt "bool_cases" ++ allA x_term)
+	       ++ (cut_thm sctxt "bool_cases" ++ allA y_term)
+	       ++ split_tac sctxt
 	       ++ 
 	         alt 
-	         [(replace_tac ctxt ++ (basic // trivial ctxt));
-	          (basic // trivial ctxt);
-	          (replace_tac ctxt ++ eq_tac ctxt)]) g)
+	         [(replace_tac sctxt ++ (basic // trivial sctxt));
+	          (basic // trivial sctxt);
+	          (replace_tac sctxt ++ eq_tac sctxt)]) g)
           ])])
     in 
     Commands.prove sctxt << !x y: (x iff y) = (x = y) >>
@@ -85,18 +84,18 @@ struct
 	      ((cut iff_l2)
 	       ++ inst_tac [Lterm.mk_iff x_term y_term;
 			    Lterm.mk_equality x_term y_term]
-	       ++ split_tac ctxt
+	       ++ split_tac sctxt
 	       --
 	         [
-                   flatten_tac ctxt
+                   flatten_tac sctxt
 		   ++ cut iff_l2 ++ inst_tac [x_term; y_term]
-		   ++ unfold ctxt "iff" ~f:(!~2)
+		   ++ unfold sctxt "iff" ~f:(!~2)
 		   ++ (implA --  [basic; basic]);
-	           flatten_tac ctxt
-		   ++ replace_tac ctxt
-		   ++ unfold ctxt "iff" ~f:(!! 1)
-		   ++ split_tac ctxt ++ flatten_tac ctxt ++ basic;
-	           replace_tac ctxt ++ eq_tac ctxt]) g)
+	           flatten_tac sctxt
+		   ++ replace_tac sctxt
+		   ++ unfold sctxt "iff" ~f:(!! 1)
+		   ++ split_tac sctxt ++ flatten_tac sctxt ++ basic;
+	           replace_tac sctxt ++ eq_tac sctxt]) g)
           ])])
 
 (*
@@ -110,12 +109,11 @@ struct
   (** [equals_iff_thm]: |- !x y: (x = y) = (x iff y) *)
   let equals_iff_id = Ident.mk_long "Bool" "equals_iff"
   let make_equals_iff_thm sctxt =
-    let ctxt = context_of sctxt in 
     get_or_prove sctxt (Ident.string_of equals_iff_id)
     << !x y: (x = y) = (x iff y) >>
-      (flatten_tac ctxt
-       ++ (rewrite_tac ctxt [iff_equals_thm sctxt])
-       ++ eq_tac ctxt)
+      (flatten_tac sctxt
+       ++ (rewrite_tac sctxt [iff_equals_thm sctxt])
+       ++ eq_tac sctxt)
 
 (*
   let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
@@ -126,11 +124,10 @@ struct
 
   (** [bool_eq_thm]: |- !x y: x = y = ((x => y) and (y=>x)) *)
   let bool_eq_thm_id = Ident.mk_long "Bool" "bool_eq"
-  let make_bool_eq_thm sctxt = 
-    let ctxt = context_of sctxt in
-    prove sctxt << !x y: (x = y) = ((x => y) and (y => x)) >>
+  let make_bool_eq_thm ctxt = 
+    prove ctxt << !x y: (x = y) = ((x => y) and (y => x)) >>
     (flatten_tac ctxt
-     ++ rewrite_tac ctxt [equals_iff_thm sctxt]
+     ++ rewrite_tac ctxt [equals_iff_thm ctxt]
      ++ unfold ctxt "iff"
      ++ (split_tac ctxt ++ flatten_tac ctxt
          ++ split_tac ctxt ++ flatten_tac ctxt ++ basic))
@@ -140,10 +137,9 @@ struct
 
   (** [double_not_thm]: |- ! x: x = (not (not x)) *)
   let double_not_id = Ident.mk_long "Bool" "double_not"
-  let make_double_not_thm sctxt = 
-    let ctxt = context_of sctxt in
-    Commands.prove sctxt << !x: x = (not (not x)) >> 
-    (flatten_tac ctxt ++ rewrite_tac ctxt [bool_eq_thm sctxt]
+  let make_double_not_thm ctxt = 
+    Commands.prove ctxt << !x: x = (not (not x)) >> 
+    (flatten_tac ctxt ++ rewrite_tac ctxt [bool_eq_thm ctxt]
      ++ scatter_tac ctxt ++ basic)
 
   let double_not_thm ctxt = 
@@ -151,14 +147,13 @@ struct
 
   (** [rule_true_thm]: |- !x: x = (x=true) *)
   let rule_true_id = Ident.mk_long "Bool" "rule_true"
-  let make_rule_true_thm sctxt = 
-    let ctxt = context_of sctxt in
+  let make_rule_true_thm ctxt = 
     let rule_true_l1 =  
-      Commands.prove sctxt << !x: (x=true) => x>> 
+      Commands.prove ctxt << !x: (x=true) => x>> 
       (flatten_tac ctxt ++ replace_tac ctxt ++ trivial ctxt)
     in
     let rule_true_l2 = 
-      Commands.prove sctxt << !x: x => (x=true) >>
+      Commands.prove ctxt << !x: x => (x=true) >>
       (allC
        ++ (?> fun info g -> 
 	 let x_term = 
@@ -174,13 +169,13 @@ struct
 	     ++ replace_tac ctxt ++ negA ++ trueC]) g))
     in
     let rule_true_l3 = 
-      Commands.prove sctxt << ! x: x iff (x=true) >>
+      Commands.prove ctxt << ! x: x iff (x=true) >>
 	((flatten_tac ctxt ++ unfold ctxt "iff" ~f:(!! 1) ++ conjC)
 	 --
 	   [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	    cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
     in 
-    rewrite_rule sctxt [iff_equals_thm sctxt] rule_true_l3
+    rewrite_rule ctxt [iff_equals_thm ctxt] rule_true_l3
 
 (*
   let rule_true_thm_var = Lib.freeze make_rule_true_thm
@@ -191,16 +186,15 @@ struct
 
   (** rule_false_thm: !x: (not x) = (x=false) *)
   let rule_false_id = Ident.mk_long "Bool" "rule_false"
-  let make_rule_false_thm sctxt = 
-    let ctxt = context_of sctxt in
-    Commands.prove sctxt << ! x: (not x) = (x=false) >>
+  let make_rule_false_thm ctxt = 
+    Commands.prove ctxt << ! x: (not x) = (x=false) >>
         (allC 
 	 ++ (?> fun info g -> 
 	   let x_term = 
 	     Lib.get_one (Info.constants info)
 	       (Failure "make_rule_false_thm")
 	   in 
-	   ((once_rewrite_tac ctxt [equals_iff_thm sctxt]
+	   ((once_rewrite_tac ctxt [equals_iff_thm ctxt]
 	     ++ unfold ctxt "iff"
 	     ++ scatter_tac ctxt)
 	    -- 
@@ -271,10 +265,9 @@ struct
         Term.rename (Term.rebuild_qnt eqvars (Lterm.mk_not eqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let ctxt = context_of sctxt in
       let proof g = 
         let sctxt1 = set_scope sctxt (scope_of_goal g) in
-	seq [once_rewrite_tac ctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
+	seq [once_rewrite_tac sctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
@@ -391,10 +384,9 @@ struct
 	Term.rename (Term.rebuild_qnt aqvars (Lterm.mk_not aqbody))
       in 
       let goal_term = Lterm.mk_equality trm newterm in 
-      let ctxt = context_of sctxt in
       let proof g = 
         let sctxt1 = set_scope sctxt (scope_of_goal g) in
-	seq [once_rewrite_tac ctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
+	seq [once_rewrite_tac sctxt [bool_eq_thm sctxt1] ~f:(fnum 1);
 	     Tactics.conjC ~c:(fnum 1)
 	     --
 	       [
@@ -642,7 +634,7 @@ let cut_back_tac = Booltacs.cut_back_tac
 (*** Equality ***)
 
 let equals_tac ctxt ?f goal =
-  let sctxt = scoped ctxt (scope_of_goal goal) in
+  let sctxt = set_scope ctxt (scope_of_goal goal) in
   let thm = 
     try Thms.equals_iff_thm sctxt
     with Not_found -> 

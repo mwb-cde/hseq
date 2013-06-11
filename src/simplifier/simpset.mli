@@ -115,7 +115,7 @@ val make_asm_rules:
 (** Simpsets *)
 type simpset = 
     { 
-      convs: (Context.scoped -> Logic.conv) Net.net;
+      convs: (Context.t -> Logic.conv) Net.net;
       (** Conversions **)
       basic: rule Net.net; 
       (** Rewrite-rules. *)
@@ -144,7 +144,7 @@ val add_rule: rule -> simpset -> simpset
 
 val add_conv: 
   (Basic.binders list * Basic.term) 
-  -> (Context.scoped -> Logic.conv) -> simpset -> simpset
+  -> (Context.t -> Logic.conv) -> simpset -> simpset
 (** [add_conv (vars, key) conv s]: Add conversion [conv] to set [s],
     indexed by terms of [key] in which [vars] are the list of unifiable
     variables.
@@ -153,14 +153,14 @@ val add_conv:
 (** {7 Look-up functions} *)
 
 val lookup_conv: 
-  Context.scoped -> simpset -> Basic.term -> rule list -> rule list
+  Context.t -> simpset -> Basic.term -> rule list -> rule list
 (** [lookup_conv scp set trm lst]: Look up [trm] in the conversions of
     [set]. Add new rules to [lst], in the order they are found. Raise
     [Not_found] on failure.
 *)
 
 val lookup_all: 
-  Context.scoped -> simpset -> Basic.term -> rule list -> rule list
+  Context.t -> simpset -> Basic.term -> rule list -> rule list
 (** [lookup_all scp set trm lst]: Lookup trm in [set], adding list of
     matches to list. First the conversions of [set] are searched then
     the rewrite rules then the next set in the chain (if any). The
@@ -168,7 +168,7 @@ val lookup_all:
 *)
 
 val lookup: 
-  Context.scoped -> simpset -> Basic.term -> rule list
+  Context.t -> simpset -> Basic.term -> rule list
 (** [lookup trm set]: find list of possible matches for term [trm] in
     [set].  First the conversions of [set] are searched then the
     rewrite rules then the next set in the chain (if any). The rules
@@ -191,13 +191,13 @@ val simpset_add_rules:
 (** [simpset_add_rules set rules]: Add [rules] to simpset [set]. *)
 
 val simpset_add_thm:
-  Context.scoped -> simpset -> Logic.thm -> simpset
+  Context.t -> simpset -> Logic.thm -> simpset
 (** [simpset_add_thm scp set thms]: Add theorem [thm] to simpset
     [set].
 *)
 
 val simpset_add_thms:
-  Context.scoped -> simpset -> Logic.thm list -> simpset
+  Context.t -> simpset -> Logic.thm list -> simpset
 (** [simpset_add_thms scp set thms]: Add theorems [thms] to simpset
     [set].
 *)
@@ -227,6 +227,6 @@ val print: Printer.ppinfo -> simpset -> unit
 (** {5 Debugging information} *)
 
 val make_thm_rule: Logic.thm -> rule
-val thm_to_entries: Context.scoped -> Logic.thm -> rule list
+val thm_to_entries: Context.t -> Logic.thm -> rule list
 val make_asm_rule: Logic.tagged_form -> rule
 

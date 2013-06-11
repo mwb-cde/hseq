@@ -22,7 +22,7 @@
 (** A minimal base theory, used if no other theory can be found. *)
 
 val builder: 
-  Context.scoped -> ?save:bool -> unit -> Context.scoped
+  Context.t -> ?save:bool -> unit -> Context.t
 (** Build the minimal theory. If [?save] is true, save the theory.
     (default: save=false)
 *)

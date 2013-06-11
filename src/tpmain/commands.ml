@@ -67,11 +67,13 @@ let read_defn x = catch_errors (BoolPP.ppinfo()) BoolPP.read_defn x
  * Theories
  *)
 
+(***
 let scoped = Context.scoped
-let scope_of = Context.scope_of 
 let context_of = Context.context_of 
-let set_scope = Context.set_scope
 let set_context = Context.set_context
+***)
+let set_scope = Context.set_scope
+let scope_of = Context.scope_of 
 
 let theories ctxt = Context.Thys.theories ctxt
 
@@ -246,20 +248,19 @@ let thm ctxt id =
 
 let axiom sctxt ?(simp=false) n trm =
   let thm = Logic.mk_axiom (Formula.make (Context.scope_of sctxt) trm)
-  and ctxt = context_of sctxt 
   and props = if simp then [Theory.simp_property] else []
   in 
   let nctxt = 
   begin
-    match Lib.try_find (Theory.get_theorem_rec n) (curr_theory ctxt) with
+    match Lib.try_find (Theory.get_theorem_rec n) (curr_theory sctxt) with
       | Some _ -> 
         raise (Report.error ("Theorem named "^n^" already exists in theory."))
       | _ -> 
-        (Context.Thys.set_theories ctxt
-           (Thydb.add_axiom n thm props (theories ctxt)))
+        (Context.Thys.set_theories sctxt
+           (Thydb.add_axiom n thm props (theories sctxt)))
   end
   in 
-  (scoped nctxt (scope_of sctxt), thm)
+  (set_scope nctxt (scope_of sctxt), thm)
 
 let prove sctxt trm tac = 
   Goals.prove_goal (Context.scope_of sctxt) trm tac
@@ -272,18 +273,18 @@ let save_thm ctxt ?(simp=false) n th =
       (Context.Thys.set_theories ctxt (Thydb.add_thm n th props x), th)) 
     (Context.Thys.theories ctxt)
 
-let prove_thm scpd ?(simp=false) n t tacs =
+let prove_thm ctxt ?(simp=false) n t tacs =
   let prove_aux _ = 
     let thm = 
-      try Goals.by_list (Context.scope_of scpd) t tacs
+      try Goals.by_list (Context.scope_of ctxt) t tacs
       with err -> 
         raise (Report.add_error
 		 (Report.error ("Failed to prove theorem "^n)) err)
     in 
-    let (cntxt1, _) = save_thm (Context.context_of scpd) ~simp:simp n thm in
+    let (cntxt1, _) = save_thm ctxt ~simp:simp n thm in
     (cntxt1, thm)
   in 
-  catch_errors (Context.ppinfo (Context.context_of scpd)) prove_aux ()
+  catch_errors (Context.ppinfo ctxt) prove_aux ()
 
 let theorem = prove_thm
 let lemma = theorem
@@ -295,18 +296,18 @@ let qed ctxt pstk n =
   in
   (ctxt1, thm)
 
-let get_or_prove sctxt name trm tac = 
+let get_or_prove ctxt name trm tac = 
   let act () =
-    match Lib.try_find (thm (context_of sctxt)) name with
+    match Lib.try_find (thm ctxt) name with
       | Some x -> x
       | _ -> 
-	try prove sctxt trm tac
+	try prove ctxt trm tac
 	with err -> 
 	  raise (Report.add_error 
 	           (Report.error 
 		      ("get_or_prove: Failed with theorem "^name)) err)
   in 
-  catch_errors (Context.ppinfo (context_of sctxt)) act ()
+  catch_errors (Context.ppinfo ctxt) act ()
 
 (*
  * Definitions and Declarations 
@@ -316,9 +317,8 @@ let get_or_prove sctxt name trm tac =
 
 (*** Subtype definitions ***)
 
-let subtypedef sctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
-  let ctxt = context_of sctxt in
-  let scp = scope_of sctxt in
+let subtypedef ctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
+  let scp = scope_of ctxt in
   let rep_name = Lib.get_option rep ("REP_"^name)
   and abs_name = Lib.get_option abs ("ABS_"^name)
   in 
@@ -353,12 +353,11 @@ let subtypedef sctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   let (ctxt2, _) = save_thm ctxt1 ~simp:simp rt_name rep_type in
   let (ctxt3, _) = save_thm ctxt2 ~simp:simp rti_name rep_type_inverse in
   let (ctxt4, _) = save_thm ctxt3 ~simp:simp ati_name abs_type_inverse in
-  (set_context sctxt ctxt4, tydef)
+  (ctxt4, tydef)
     
 (*** Simple type definitions ***)
-let simple_typedef sctxt (n, args, def) =
-  let scp = scope_of sctxt 
-  and ctxt = context_of sctxt in 
+let simple_typedef ctxt (n, args, def) =
+  let scp = scope_of ctxt in
   let def1 = 
     match def with 
       | None -> None
@@ -368,10 +367,10 @@ let simple_typedef sctxt (n, args, def) =
   let ctxt1 =
     Context.Thys.set_theories ctxt (Thydb.add_type_rec tydef (theories ctxt))
   in
-  (set_context sctxt ctxt1, tydef)
+  (ctxt1, tydef)
 
 (*** Toplevel type definitions and declarations ***)
-let typedef (sctxt: Context.scoped) ?pp ?simp ?thm ?rep ?abs tydef = 
+let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef = 
   let (name, (sctxt1, ret_def)) =
     match tydef with
       | Defn.Parser.NewType (n, args) -> 
@@ -391,19 +390,18 @@ let typedef (sctxt: Context.scoped) ?pp ?simp ?thm ?rep ?abs tydef =
         in 
 	(n, (ctxt1, def))
   in 
-  let ctxt2 = 
-    let ctxt1 = context_of sctxt1 in
+  let sctxt2 = 
     begin
       match pp with 
-        | None -> ctxt1
+        | None -> sctxt1
         | Some(prec, fx, repr) -> 
           let lname = 
-            Ident.mk_long (Theory.get_name (Context.Thys.current ctxt1)) name
+            Ident.mk_long (Theory.get_name (Context.Thys.current sctxt1)) name
           in 
-          add_type_pp ctxt1 lname prec fx repr
+          add_type_pp sctxt1 lname prec fx repr
     end
   in
-  (set_context sctxt ctxt2, ret_def)
+  (sctxt2, ret_def)
 
 (*** Term declerations and definitions ***)
 
@@ -438,9 +436,8 @@ let dest_defn_term trm =
     
 (*** Term definitions ***)
 
-let define sctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
-  let scp = scope_of sctxt 
-  and ctxt = context_of sctxt in 
+let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
+  let scp = scope_of ctxt in
   let new_def =
     let curr_thy_name = 
       Theory.get_name (Context.Thys.current ctxt) in
@@ -462,12 +459,11 @@ let define sctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
         | Some(prec, fx, repr) -> add_term_pp ctxt1 n prec fx repr
     end 
   in
-  (set_context sctxt ctxt2, new_def)
+  (ctxt2, new_def)
 
 (*** Term declarations ***)
 
-let declare sctxt ?pp trm = 
-  let ctxt = context_of sctxt in 
+let declare ctxt ?pp trm = 
   let (ctxt2, val_name, val_type) =
     let declare_aux () = 
       let v, ty =
@@ -477,7 +473,7 @@ let declare sctxt ?pp trm =
 	  | _ -> raise (Failure "Badly formed declaration")
       in 
       let id = Ident.mk_long (Context.Thys.current_name ctxt) v in 
-      let dcl = Logic.Defns.mk_termdecln (scope_of sctxt) v ty in 
+      let dcl = Logic.Defns.mk_termdecln (scope_of ctxt) v ty in 
       let ctxt1 = 
         Context.Thys.set_theories ctxt
           (Thydb.add_decln dcl [] (theories ctxt))
@@ -489,7 +485,7 @@ let declare sctxt ?pp trm =
   in 
   begin
     match pp with 
-      | None -> (set_context sctxt ctxt2, val_name, val_type)
+      | None -> (ctxt2, val_name, val_type)
       | Some(prec, fx, repr) ->
         let longname = 
 	  if (Ident.thy_of val_name) = Ident.null_thy 
@@ -500,5 +496,5 @@ let declare sctxt ?pp trm =
         in 
         let ctxt3 = add_term_pp ctxt2 longname prec fx repr 
         in
-        (set_context sctxt ctxt3, val_name, val_type)
+        (ctxt3, val_name, val_type)
   end

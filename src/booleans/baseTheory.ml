@@ -27,10 +27,9 @@ open Lib.Ops
 
 let rec swap f = (fun x y -> f y x)
 
-let builder sctxt ?(save=false) () =
+let builder ctxt ?(save=false) () =
   begin
-    let ctxt = context_of sctxt in
-    let sctxt1 = set_context sctxt (begin_theory ctxt Lterm.base_thy [])
+    let sctxt1 = begin_theory ctxt Lterm.base_thy []
     in
     (** Types *)
     let (sctxt2, _) = 
@@ -54,9 +53,8 @@ let builder sctxt ?(save=false) () =
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      set_context sctxt5  
-        (add_term_pp (context_of sctxt5)
-           Lterm.notid prec fixity (Some "not"))
+      add_term_pp sctxt5
+        Lterm.notid prec fixity (Some "not")
     in 
     (** Equality *)
     let (sctxt7, _, _) =
@@ -73,9 +71,7 @@ let builder sctxt ?(save=false) () =
         ~pp:(185, infixr, Some "and") 
     in  
     let sctxt9 = 
-      set_context sctxt8 
-        (add_term_pp (context_of sctxt8)
-           Lterm.andid 185 infixr (Some "&"))
+      add_term_pp sctxt8 Lterm.andid 185 infixr (Some "&")
     in 
     (** Disjunction *)
     let (sctxt10, _) =
@@ -85,8 +81,7 @@ let builder sctxt ?(save=false) () =
         ~pp:(190, infixr, Some "or") 
     in 
     let sctxt11 = 
-      set_context sctxt10
-        (add_term_pp (context_of sctxt10) Lterm.orid 190 infixr (Some "|") )
+      add_term_pp sctxt10 Lterm.orid 190 infixr (Some "|")
     in 
     (** Implication *)
     let (sctxt12, _) = 
@@ -159,9 +154,9 @@ let builder sctxt ?(save=false) () =
       (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
         >> in 
 
-    let ctxt26 = end_theory (context_of sctxt25) ~save:save ()
+    let ctxt26 = end_theory sctxt25 ~save:save ()
     in 
-    set_context sctxt25 ctxt26
+    ctxt26
   end
 
 (*

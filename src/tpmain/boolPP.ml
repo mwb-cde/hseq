@@ -283,23 +283,21 @@ let quote_context =
   let ctxt1 = init_bool_parsers ctxt0 in
   ctxt1
 
-let quote_scoped = Context.scoped quote_context (Scope.empty_scope())
-
 (** Parse a string as a term, resolving short names and symbols. *)
-let read str = Context.NewPP.read quote_scoped str
+let read str = Context.NewPP.read quote_context str
 
 (** Parse a string as a term, resolving short names and symbols. *)
 let read_unchecked str = Context.NewPP.read_unchecked quote_context str
 
 (** Parse a string as a term definition. *)
-let read_defn str = Context.NewPP.read_defn quote_scoped str
+let read_defn str = Context.NewPP.read_defn quote_context str
 
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
-let read_type str = Context.NewPP.read_type quote_scoped str
+let read_type str = Context.NewPP.read_type quote_context str
 
 (** Parse a string as a type definition. *)
-let read_type_defn str = Context.NewPP.read_type_defn quote_scoped str
+let read_type_defn str = Context.NewPP.read_type_defn quote_context str
 
 let read_identifier str = Context.NewPP.read_identifier quote_context str
 

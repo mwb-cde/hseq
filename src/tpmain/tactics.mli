@@ -31,18 +31,26 @@ type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
 
 (** {5 Support functions} *)
 
+(***
 val scoped: Context.t -> Scope.t -> Context.scoped
 (** Make a scoped context. *)
-val scope_of: Context.scoped -> Scope.t
-(** Get the scope. *)
-val context_of: Context.scoped -> Context.t
-(** Get the context. *)
-val set_scope: Context.scoped -> Scope.t -> Context.scoped
-(** Set the scope. *)
-val set_context: Context.scoped -> Context.t -> Context.scoped
-(** Set the context. *)
+***)
 
-val goal_context: Context.t -> Logic.node -> Context.scoped
+val scope_of: Context.t -> Scope.t
+(** Get the scope. *)
+
+(***
+val context_of: Context.t -> Context.t
+(** Get the context. *)
+
+val set_context: Context.t -> Context.t -> Context.t
+(** Set the context. *)
+***)
+
+val set_scope: Context.t -> Scope.t -> Context.t
+(** Set the scope. *)
+
+val goal_context: Context.t -> Logic.node -> Context.t
 (** Make scoped context from the scope of a goal. *)
 
 (** {7 Error reporting} *)

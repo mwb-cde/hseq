@@ -49,13 +49,12 @@ let make_cond_rule_true_thm sctxt =
 	 Lib.get_one (Info.constants info1) 
 	   (Failure "make_cond_rule_true_thm: y-term")
        in 
-       let ctxt = Context.context_of sctxt in
        seq 
          [
            cut (rule_true_thm sctxt);
            inst_tac [y_term];
-	   once_replace_tac ctxt;
-	   eq_tac ctxt
+	   once_replace_tac sctxt;
+	   eq_tac sctxt
          ] g1))
 
 let cond_rule_true_thm ctxt = 
@@ -72,10 +71,9 @@ let make_cond_rule_false_thm sctxt =
 	 Lib.get_one (Info.constants info) 
 	   (Failure "make_cond_rule_false_thm: y-term")
        in 
-       let ctxt = Context.context_of sctxt in
        (cut (rule_false_thm sctxt) ++ inst_tac [y_term]
-	++ once_replace_tac ctxt
-	++ eq_tac ctxt) g))
+	++ once_replace_tac sctxt
+	++ eq_tac sctxt) g))
   
 let cond_rule_false_thm ctxt =
   Context.find_thm ctxt cond_rule_false_id make_cond_rule_false_thm
@@ -85,9 +83,8 @@ let cond_rule_false_thm ctxt =
 let cond_rule_imp_false_id = 
   Ident.mk_long "_simplifier" "cond_rule_imp_false"
 let make_cond_rule_imp_false_thm sctxt =
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt << !x: (x => false) = (not x) >>
-  (allC ++ equals_tac ctxt ++ blast_tac ctxt)
+  (allC ++ equals_tac sctxt ++ blast_tac sctxt)
 
 let cond_rule_imp_false_thm sctxt =
   Context.find_thm sctxt cond_rule_false_id make_cond_rule_imp_false_thm
@@ -98,9 +95,8 @@ let cond_rule_imp_not_true_id =
   Ident.mk_long "_simplifier" "cond_rule_imp_not_true"
 
 let make_cond_rule_imp_not_true_thm sctxt =
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt << !x: (x => (not true)) = (not x) >>
-  (allC  ++ equals_tac ctxt ++ blast_tac ctxt)
+  (allC  ++ equals_tac sctxt ++ blast_tac sctxt)
 
 let cond_rule_imp_not_true_thm ctxt =
   Context.find_thm ctxt 
@@ -113,9 +109,8 @@ let neg_disj_id =
   Ident.mk_long "_simplifier" "neg_disj"
 
 let make_neg_disj_thm sctxt =
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt << !x y: (not (x or y)) = ((not x) and (not y)) >>
-  (allC ++ allC ++ equals_tac ctxt ++ blast_tac ctxt)
+  (allC ++ allC ++ equals_tac sctxt ++ blast_tac sctxt)
 
 let neg_disj_thm ctxt = 
   Context.find_thm ctxt neg_disj_id make_neg_disj_thm
@@ -125,13 +120,12 @@ let neg_eq_sym_id =
   Ident.mk_long "_simplifier" "neg_eq_sym"
 let make_neg_eq_sym_thm sctxt =
   let thm = Boollib.Thms.eq_sym_thm sctxt in 
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt 
   << !x y: (not (x = y)) = (not (y = x)) >>
     (seq
        [ 
-	 allC; allC; equals_tac ctxt;
-         iffE ctxt
+	 allC; allC; equals_tac sctxt;
+         iffE sctxt
          --
 	   [
 	     (?> fun info g -> 
@@ -139,14 +133,14 @@ let make_neg_eq_sym_thm sctxt =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
 	       in 
-	       (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+	       (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 	        ++ basic) g);
 	     (?> fun info g -> 
 	       let (_, atg) = 
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
 	       in 
-	       (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+	       (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 	        ++ basic) g)
 	   ]
        ])
@@ -164,13 +158,12 @@ let cond_neg_eq_sym_id = Ident.mk_long "_simplifier" "cond_neg_eq_sym"
 let make_cond_neg_eq_sym_thm sctxt=
   let thm = Boollib.Thms.eq_sym_thm sctxt
   in 
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt
   << !c x y: (c => (not (x = y))) = (c => (not (y = x))) >>
       (seq
          [ 
-	   allC; allC; allC; equals_tac ctxt; 
-	   (iffE ctxt ++ (?> fun info -> implC ++ set_changes_tac info))
+	   allC; allC; allC; equals_tac sctxt; 
+	   (iffE sctxt ++ (?> fun info -> implC ++ set_changes_tac info))
 	   --
 	     [
                (?> fun info ->
@@ -182,7 +175,7 @@ let make_cond_neg_eq_sym_thm sctxt=
                        Lib.get_two (Info.aformulas info)
                          (error "simpconvs.make_cond_neg_eq_sym_thm:1")
 		     in 
-		     (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+		     (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 		      ++ basic) g)]);
                (?> fun info ->
 	         implA --
@@ -192,7 +185,7 @@ let make_cond_neg_eq_sym_thm sctxt=
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_neg_eq_sym_thm:2")
 		      in 
-		      (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+		      (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 		       ++ basic) g)])
 	     ]
          ])
@@ -211,13 +204,12 @@ let cond_eq_sym_id = Ident.mk_long "_simplifier" "cond_eq_sym"
 let make_cond_eq_sym_thm sctxt =
   let thm = Boollib.Thms.eq_sym_thm sctxt
   in 
-  let ctxt = Context.context_of sctxt in
   Commands.prove sctxt
   << !c x y: (c => (x = y)) = (c => (y = x)) >>
       (seq
          [ 
-	   allC; allC; allC; equals_tac ctxt; 
-           (iffE ctxt ++ (?> fun info -> implC ++ set_changes_tac info))
+	   allC; allC; allC; equals_tac sctxt; 
+           (iffE sctxt ++ (?> fun info -> implC ++ set_changes_tac info))
 	   --
 	     [
                (?> fun info ->
@@ -229,7 +221,7 @@ let make_cond_eq_sym_thm sctxt =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:1")
 		    in 
-		    (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+		    (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 		     ++ basic) g)]);
                (?> fun info ->
 	       implA
@@ -240,7 +232,7 @@ let make_cond_eq_sym_thm sctxt =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:2")
 		    in 
-		    (once_rewrite_tac ctxt ~f:(ftag atg) [thm]
+		    (once_rewrite_tac sctxt ~f:(ftag atg) [thm]
 		     ++ basic) g)])
 	     ]
          ])
@@ -270,7 +262,7 @@ let cond_eq_sym_thm ctxt =
     ->
     [ |- (!x y z: f x y z) = (! x y z: (f x y z = true))  ]
 *)
-let simple_rewrite_conv (sctxt: Context.scoped) rule trm =
+let simple_rewrite_conv sctxt rule trm =
   let key = Rewrite.neg_key Rewrite.allq_key in 
   let plan =  Rewrite.mk_keyed key [Rewrite.mk_rules [rule]] in 
   let conv = Logic.Conv.rewrite_conv
@@ -514,7 +506,7 @@ struct
     else
       failwith "do_eq_rule"    
         
-  and do_fact_rule ret ((sctxt: Context.scoped), thm, (qs, c, a)) = 
+  and do_fact_rule ret (sctxt, thm, (qs, c, a)) = 
     if not (Lterm.is_equality a)
     then 
       match is_rr_rule (qs, c, a, None) with
@@ -793,7 +785,7 @@ struct
       ] goal
 
   let rec accept_asm ret ((ctxt: Context.t), tg, (qs, c, a)) goal =
-    let sctxt = Context.scoped ctxt (scope_of_goal goal) in
+    let sctxt = Context.set_scope ctxt (scope_of_goal goal) in
     if is_constant_true (qs, c, a)
     then 
       (** Delete assumption true *)

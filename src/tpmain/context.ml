@@ -161,21 +161,11 @@ let empty() =
   }
 
 (** {6 Scoped contexts} *)
-(* type scoped = (t * Scope.t) *)
-type scoped = t
-(** The type of scoped contexts *)
-
-(***
-let scoped ctxt scp = (ctxt, scp)
-let scope_of (_, scp) = scp
-let context_of (ctxt, _) = ctxt
-***)
 
 let scope_of sctxt = sctxt.scope_f
 let context_of sctxt = sctxt
 let set_scope sctxt scp = {sctxt with scope_f = scp}
 let set_context sctxt ctxt = set_scope ctxt (scope_of sctxt)
-let scoped ctxt scp = set_scope ctxt scp
 
 (** {5 Accessor Functions} *)
 

@@ -200,7 +200,7 @@ let make_asm_rules except forms =
 *)
 type simpset = 
     { 
-      convs: (Context.scoped -> Logic.conv) Net.net;
+      convs: (Context.t -> Logic.conv) Net.net;
       basic: rule Net.net;          (* global rules *)
       next: simpset option          (* next simpset *)
     } 
@@ -314,7 +314,7 @@ let make_thm_rule thm =
 
 (** [thm_to_entries scp thm]: Convert a theorem to a list of simpset
     entries.  *)
-let thm_to_entries (sctxt: Context.scoped) (thm: Logic.thm) =
+let thm_to_entries (sctxt: Context.t) (thm: Logic.thm) =
   let rules = Simpconvs.thm_to_rules sctxt thm
   in 
   List.map make_thm_rule rules
