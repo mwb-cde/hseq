@@ -342,7 +342,7 @@ let prove a tac =
   Commands.prove (Global.context ()) a tac
 
 let prove_goal trm tac = 
-  Goals.prove_goal (Global.scope()) trm tac
+  Goals.prove_goal (Global.context()) trm tac
 
 let drop () = 
   set_proofstack (Goals.drop (proofstack()))
@@ -371,7 +371,7 @@ let by_com tac =
 let by tac = 
   by_com tac; top()
 
-let by_list trm tl = Goals.by_list (Global.scope()) trm tl
+let by_list trm tl = Goals.by_list (Global.context()) trm tl
 
 let qed n = 
   let (ctxt, thm) = Commands.qed (Global.context()) (proofstack()) n 
@@ -379,7 +379,8 @@ let qed n =
   Global.set_context ctxt;
   thm
 
-let apply = Goals.apply
+let apply ?report tac g = 
+  Goals.apply ?report (Global.context()) tac g
 
 (** {6 Initialising functions} *)
 
