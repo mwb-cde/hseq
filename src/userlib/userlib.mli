@@ -23,10 +23,6 @@
 
 module Global: 
 sig
-(***
-  (** The default context. *)
-  val default_context: unit -> Context.t
-***)
   type state_t = Userstate.State.t
 
   (** Global state *)
