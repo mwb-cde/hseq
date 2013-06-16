@@ -23,35 +23,25 @@ open Rewrite
 
 (** Tactics and Tacticals *)
 
-type tactic = Logic.tactic
+type tactic = Context.t -> Logic.tactic
 (** A tactic is a function of type [Logic.node -> Logic.branch] *)
 
-type ('a)data_tactic = Logic.node -> ('a * Logic.branch)
+type ('a)data_tactic = Context.t -> Logic.node -> ('a * Logic.branch)
 (** A data tactic is a tactic that returns additional data. *)
 
 (** {5 Support functions} *)
 
-(***
-val scoped: Context.t -> Scope.t -> Context.scoped
-(** Make a scoped context. *)
-***)
-
 val scope_of: Context.t -> Scope.t
 (** Get the scope. *)
-
-(***
-val context_of: Context.t -> Context.t
-(** Get the context. *)
-
-val set_context: Context.t -> Context.t -> Context.t
-(** Set the context. *)
-***)
 
 val set_scope: Context.t -> Scope.t -> Context.t
 (** Set the scope. *)
 
 val goal_context: Context.t -> Logic.node -> Context.t
 (** Make scoped context from the scope of a goal. *)
+
+val context_tac : (Context.t -> Context.t) -> tactic -> tactic
+(** [context_tac f tac]: Set the context of [tac] to [f ctxt]. *)
 
 (** {7 Error reporting} *)
 
@@ -278,7 +268,7 @@ val first_concl_label:
     Primitive tactics and tacticals needed by the tacticals.
 *)
 
-val foreach: tactic -> Logic.branch -> Logic.branch
+val foreach: tactic -> Context.t -> Logic.branch -> Logic.branch
 (** [foreach tac br]: Apply [tac] to each subgoal of branch [br]. *)
 
 val skip: tactic
@@ -298,7 +288,7 @@ val data_tac: (Logic.node -> 'a) -> tactic -> ('a) data_tactic
 (** [data_tac f tac g]: Form a data tactic from [((f g), tag g)]. *)
 
 val inject_tac: 'a -> tactic -> 'a data_tactic
-(** [inj_tac d tac g]: Form the data_tactic [(d, tag g)]. *)
+(** [inj_tac f tac g]: Form the data_tactic [(f, tac g)]. *)
 
 val (>+): 'a -> tactic -> 'a data_tactic
 (** [(d >- tac)]: Synonym for [inj_tac d tac]. *)
@@ -331,7 +321,7 @@ val (?>): (Info.t -> tactic) -> tactic
 *)
 
 val apply_tac: ('a)data_tactic -> ('a -> tactic) -> tactic
-(** [query_tac tac g]: Apply a tactic after extracting the change
+(** [apply_tac tac g]: Apply a tactic after extracting the change
     data from a goal. Forms [tac (changes g) g].
 *)
 
@@ -511,7 +501,7 @@ val deleteC: Logic.label -> tactic
 val delete: Logic.label -> tactic 
 (** [delete l]: Delete the formula labelled [l]. *)
 
-val deleten: Logic.label list -> Logic.tactic
+val deleten: Logic.label list -> tactic
 (**  [deleten ls]: Delete the formulas identified by the labels in [ls]. *)
 
 (** {7 Logic rules}
@@ -644,10 +634,10 @@ val basic:
 *)
 
 val unify_engine_tac: 
-  (Tag.t * Formula.t) -> (Tag.t * Formula.t) -> Logic.tactic
+  (Tag.t * Formula.t) -> (Tag.t * Formula.t) -> tactic
 
 val unify_tac: 
-  ?a:Logic.label -> ?c:Logic.label -> Logic.tactic
+  ?a:Logic.label -> ?c:Logic.label -> tactic
 (** [unify_tac a c g]: Try to unify assumption [a] with conclusion
     [c].
 

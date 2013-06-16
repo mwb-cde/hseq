@@ -199,11 +199,13 @@ let undo pstk =
       
 let result ptsk = mk_thm (top_goal ptsk)
 
-let apply ?report tac goal =
-  Logic.Subgoals.apply_to_goal ?report tac goal
+let apply ?report ctxt tac goal =
+  Logic.Subgoals.apply_to_goal ?report (tac ctxt) goal
 
-let prove_goal scp trm tac =
-  mk_thm (apply tac (mk_goal scp (Formula.make scp trm)))
+let prove_goal ctxt trm tac =
+  mk_thm (apply ctxt tac 
+            (mk_goal (Context.scope_of ctxt)
+               (Formula.make (Context.scope_of ctxt) trm)))
 
 let prove scp trm tac = 
   prove_goal scp trm tac
@@ -248,21 +250,21 @@ let by_com ctxt pstk tac =
   let p = top_goal pstk in 
   let g = 
     Logic.Subgoals.apply_to_goal 
-      ~report:(report (Context.ppinfo ctxt)) tac p
+      ~report:(report (Context.ppinfo ctxt)) (tac ctxt) p
   in 
   ProofStack.push_goal g pstk
 
-let by_list scp trm tacl =
-  let goal_form = Formula.make scp trm
+let by_list ctxt trm tacl =
+  let goal_form = Formula.make (Context.scope_of ctxt) trm
   in
-  let new_goal = mk_goal scp goal_form
+  let new_goal = mk_goal (Context.scope_of ctxt) goal_form
   in 
   let rec by_aux ts g =
     match ts with 
       | [] -> g
       | (x::xs) -> 
 	if Logic.has_subgoals g
-	then by_aux xs (apply x g)
+	then by_aux xs (apply ctxt x g)
 	else g
   in 
   mk_thm (by_aux tacl new_goal)

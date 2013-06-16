@@ -116,6 +116,7 @@ val result: ProofStack.t -> Logic.thm
 
 val apply: 
   ?report:(Logic.node -> Logic.branch -> unit) 
+  -> Context.t
   -> Tactics.tactic -> Logic.goal -> Logic.goal
 (** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
     {!Logic.Subgoals.apply_to_goal}.
@@ -127,7 +128,7 @@ val apply:
 (** {7 Batch proofs} *)
 
 val prove_goal: 
-  Scope.t -> Basic.term -> Tactics.tactic 
+  Context.t -> Basic.term -> Tactics.tactic 
   -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
     using tactic [tac] in scope [scp]. Used for batch proofs. If
@@ -143,7 +144,8 @@ val by_com :
     [!save_hook]. Used for interactive proofs.
 *)
 
-val by_list : Scope.t -> Basic.term -> Tactics.tactic list -> Logic.thm
+val by_list : 
+  Context.t -> Basic.term -> Tactics.tactic list -> Logic.thm
 (** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 

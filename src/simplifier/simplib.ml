@@ -67,7 +67,7 @@ end
 
 let simpC_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
-    ctxt set ?add ?c rules goal =
+    set ?add ?c rules ctxt goal =
   (** uset: The simpset to use. **)
   let sctxt = goal_context ctxt goal in 
   let uset = 
@@ -95,13 +95,13 @@ let simpC_tac
       (Simplifier.Data.set_control data1 cntrl)
       uset
   in 
-  Simptacs.simpC_tac ctxt simp_data ?c goal
+  Simptacs.simpC_tac simp_data ?c ctxt goal
 
-let simpC ctxt set ?c goal = simpC_tac ctxt set ?c [] goal
+let simpC set ?c ctxt goal = simpC_tac set ?c [] ctxt goal
 
 let simpA_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
-    ctxt set ?add ?a rules goal =
+    set ?add ?a rules ctxt goal =
   let sctxt = goal_context ctxt goal in 
   (** uset: The simpset to use. **)
   let uset = 
@@ -129,13 +129,13 @@ let simpA_tac
       (Simplifier.Data.set_control data1 cntrl)
       uset
   in 
-  Simptacs.simpA_tac ctxt simp_data ?a goal
+  Simptacs.simpA_tac simp_data ?a ctxt goal
 
-let simpA ctxt set ?a goal = simpA_tac ctxt ?a set [] goal
+let simpA set ?a ctxt goal = simpA_tac ?a set [] ctxt goal
 
 let simp_all_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
-    ctxt set ?add rules goal =
+    set ?add rules ctxt goal =
   let sctxt = goal_context ctxt goal in 
   (** uset: The simpset to use. **)
   let uset = 
@@ -164,33 +164,33 @@ let simp_all_tac
       (Simplifier.Data.set_control data1 cntrl)
       uset
   in 
-  Simptacs.full_simp_tac ctxt simp_data goal
+  Simptacs.full_simp_tac simp_data ctxt goal
 
-let simp_all ctxt set goal = simp_all_tac ctxt set [] goal
+let simp_all set ctxt goal = simp_all_tac set [] ctxt goal
 
 let simp_tac 
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
-    (ctxt: Context.t) set ?add ?f rules goal =
+    set ?add ?f rules (ctxt: Context.t) goal =
   let sqnt = Tactics.sequent goal in 
-  let tac = 
+  let tac =
     match f with 
       | None ->
-        simpC_tac ~cntrl:cntrl ~ignore:ignore ctxt set ?add rules
+        simpC_tac ~cntrl:cntrl ~ignore:ignore set ?add rules
       | Some(x) -> 
 	let tg = Logic.label_to_tag x sqnt in 
         begin
 	  match Lib.try_find (get_tagged_concl (ftag tg)) goal with
 	    | None -> 
 	      simpA_tac ~cntrl:cntrl ~ignore:ignore 
-                ctxt set ?add ~a:(ftag tg)rules
+                set ?add ~a:(ftag tg)rules
 	    | _ -> 
 	      simpC_tac ~cntrl:cntrl ~ignore:ignore 
-                 ctxt set ?add ~c:(ftag tg)rules
+                set ?add ~c:(ftag tg)rules
         end
   in 
-  tac goal
+  tac ctxt goal
     
-let simp ctxt set ?f goal = simp_tac ctxt ?f set [] goal
+let simp set ?f ctxt goal = simp_tac ?f set [] ctxt goal
 
 (*** Initialising functions ***)
 

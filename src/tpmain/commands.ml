@@ -48,11 +48,13 @@ let save_theory ctxt thy prot =
   Theory.save_theory thy fname
 
 let load_theory_as_cur ctxt n = 
+(*
   let rec chop n = 
     let t = try (Filename.chop_extension n) with _ -> n
     in
     if t = n then n else chop t
   in 
+*)
   let db = 
     Thydb.Loader.load (Context.thydb ctxt) (Context.loader_data ctxt)
       (Thydb.Loader.mk_info n None None)
@@ -263,7 +265,7 @@ let axiom sctxt ?(simp=false) n trm =
   (set_scope nctxt (scope_of sctxt), thm)
 
 let prove sctxt trm tac = 
-  Goals.prove_goal (Context.scope_of sctxt) trm tac
+  Goals.prove_goal sctxt trm tac
 
 let save_thm ctxt ?(simp=false) n th =
   let props = if simp then [Theory.simp_property] else []
@@ -276,7 +278,7 @@ let save_thm ctxt ?(simp=false) n th =
 let prove_thm ctxt ?(simp=false) n t tacs =
   let prove_aux _ = 
     let thm = 
-      try Goals.by_list (Context.scope_of ctxt) t tacs
+      try Goals.by_list ctxt t tacs
       with err -> 
         raise (Report.add_error
 		 (Report.error ("Failed to prove theorem "^n)) err)

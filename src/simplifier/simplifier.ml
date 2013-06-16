@@ -87,7 +87,7 @@ struct
 	simpset:Simpset.simpset;
         (** [cond_tac]: the tactic used to prove conditions of rewrite
             rules *)
-	cond_tac: t -> Context.t -> Tag.t -> Tactics.tactic;
+	cond_tac: t -> Tag.t -> Tactics.tactic;
         (** [control]: rewrite control ([direction] is ignored *)
 	control: Rewrite.control;
         (** conds: max. no. of conditions to try and prove at once *)
@@ -196,7 +196,7 @@ struct
 
       (** [default]: The default control information *)
       let default = make (Simpset.empty_set(),
-	                  (fun _ _ _ -> skip),
+	                  (fun _ __ -> skip),
 	                  Formula.default_rr_control,
 	                  (!default_cond_depth), 
                           (!default_rr_depth), 
@@ -310,18 +310,18 @@ let clean_up_tac ctrl g=
     the new assumption.  Fails if there are more terms in [vals] then
     variables in [x].
 *)
-let copyA_inst_tac vals x goal =
+let copyA_inst_tac vals x ctxt goal =
   seq
     [
       copyA x;
-      (?> fun inf1 g1 ->
+      (?> fun inf1 ctxt1 g1 ->
         let asm_tg = get_one ~msg:"copyA_inst_tac" (Info.aformulas inf1) in 
         let asm_form = drop_tag (get_tagged_asm (ftag asm_tg) g1)
         in
         if (Formula.is_all asm_form)
-        then instA ~a:(ftag asm_tg) vals g1
-        else skip g1)
-    ] goal
+        then instA ~a:(ftag asm_tg) vals ctxt1 g1
+        else skip ctxt1 g1)
+    ] ctxt goal
     
 (** [cut_rr_rule info vals t g] Cut rule [t] into goal [g],
     instantiating with vals.  If [t] is a theorem, it is cut into the
@@ -366,7 +366,7 @@ type tag_pair = (Tag.t * Tag.t)
     ret=(ncntrl, [cgltg; rgltg], [cftg; rrftg])
 *)
 
-let prep_cond_tac cntrl values thm goal =
+let prep_cond_tac cntrl values thm ctxt goal =
   let add_data cntrl rl_ftg (sgls, cforms) = 
     (* (condition-goal, rule-goal) *)
     let (cnd_gltg, rl_gltg) = 
@@ -381,33 +381,33 @@ let prep_cond_tac cntrl values thm goal =
     in 
     (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg))
   in 
-  let main_tac g =
+  let main_tac ctxt0 g =
     fold_seq (None, Tag.create())
       [
         (* Add the theorem to the sequent. *)
         (fun fold_data -> (fold_data >+ cut_rr_rule values thm));
         (* Apply implA *)
-        (fun (data, _) g1 ->
+        (fun (data, _) ctxt1 g1 ->
           let info1 = Info.changes g1 in
 	  let rl_ftg = Lib.get_one (Info.aformulas info1) No_change
           in
-          ((data, rl_ftg) >+ Tactics.implA ~a:(ftag rl_ftg)) g1);
+          ((data, rl_ftg) >+ Tactics.implA ~a:(ftag rl_ftg)) ctxt1 g1);
         (* Extract the data from the subgoal *)
-        (fun (data, rl_ftg) g1 ->          
+        (fun (data, rl_ftg) ctxt1 g1 ->
           let info1 = Info.changes g1 in
           let asm_tg = List.hd (Info.aformulas info1) in
           let ret_data = (add_data cntrl asm_tg
                             (Info.subgoals info1, Info.cformulas info1))
           in
-          ((Some(ret_data), asm_tg) >+ skip) g1)
-      ] g
+          ((Some(ret_data), asm_tg) >+ skip) ctxt1 g1)
+      ] ctxt0 g
   in
   let extractor data = 
     match data with
       | (Some(d), _) -> d
       | _ -> failwith "prep_cond_tac: Failed to prepare condition."
   in 
-  try (main_tac >/ extractor) goal
+  try (main_tac >/ extractor) ctxt goal
   with x -> raise (Report.add_error (Failure "prep_cond_tac") x)
 
 
@@ -421,19 +421,18 @@ let prep_cond_tac cntrl values thm goal =
     Return [ret = (ncntrl, rl)] where [ncntrl] is the new simp data and
     [rl] the rewrite rule built from the new theorem/assumption.
 *)
-let prove_cond_tac ctxt cntrl values entry goal = 
-  let thm = Simpset.rule_src entry
+let prove_cond_tac (cntrl: Data.t) values entry ctxt goal =
+  let (thm: Logic.rr_type) = Simpset.rule_src entry
   and orig_loopdb = Data.get_loopdb cntrl
   in 
-  let main_tac cntrl g =
+  let main_tac cntrl ctxt0 g =
     fold_seq (None, None)
       [
        (** Add rule to the goal assumptions. *)
-        (fun (_, data2) -> (prep_cond_tac cntrl values thm) 
+        (fun (_, data2) -> (prep_cond_tac cntrl values thm)
           >/ (fun x -> (Some x, data2)));
-
         (** Prove the condition. **)
-        (fun (cond_data, data2) g1 -> 
+        (fun (cond_data, data2) ctxt1 g1 -> 
 	  let (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg)) =
 	    Lib.dest_option ~err:(Failure "prove_cond_tac: 1") cond_data
 	  in
@@ -442,12 +441,12 @@ let prove_cond_tac ctxt cntrl values entry goal =
           (** Apply the prover to the sub-goal with the condition to
               prove. *)
           if (Tag.equal cnd_gltg (node_tag g1))
-          then ((cond_data, data2) >+ prover_tac ncntrl ctxt cnd_ftg) g1
+          then ((cond_data, data2) >+ prover_tac ncntrl cnd_ftg) ctxt1 g1
           else 
 	    (** Get the rule-data from the other sub-goal.*)
             begin
 	      let rcntrl = Data.set_loopdb ncntrl orig_loopdb
-	      and form = drop_tag(get_tagged_asm (ftag rl_ftg) g1) in
+	      and form = drop_tag (get_tagged_asm (ftag rl_ftg) g1) in
 	      let rule = 
 		Simpset.make_rule 
 		  (Logic.Asm (ftag rl_ftg))
@@ -456,9 +455,9 @@ let prove_cond_tac ctxt cntrl values entry goal =
               let rule_data = Some(Data.add_simp_rule rcntrl rule, 
                                    Logic.Asm(ftag rl_ftg))
               in
-              ((cond_data, rule_data) >+ skip) g1
+              ((cond_data, rule_data) >+ skip) ctxt1 g1
             end)
-      ] g
+      ] ctxt0 g
   in
   let extractor x =
     match x with 
@@ -471,7 +470,7 @@ let prove_cond_tac ctxt cntrl values entry goal =
       | [ x ] -> true
       | _ -> false
   in 
-  let (det, br) = (main_tac cntrl >/ extractor) goal
+  let (det, br) = (main_tac cntrl >/ extractor) ctxt goal
   in
   if test_result br then (det, br)
   else failwith "prove_cond_tac"
@@ -533,7 +532,7 @@ let match_rewrite scp tyenv qntenv rl trm =
     rewriting [trm] and [rl] the rewrite rule to add to the list being
     compiled.
 *)
-let find_basic ctxt data rl trm (goal: Logic.node) =
+let find_basic data rl trm ctxt (goal: Logic.node) =
   let (cntrl, tyenv, qntenv) = (data.cntrl, data.tyenv, data.qntenv) 
   and (qs, c, lhs, rhs, order, thm) = rl
   and scp = scope_of_goal goal in 
@@ -552,14 +551,14 @@ let find_basic ctxt data rl trm (goal: Logic.node) =
     then
       let values = extract_consts qs ntenv 
       in 
-      ((prove_cond_tac ctxt cntrl1 values rl) >/
+      ((prove_cond_tac cntrl1 values rl) >/
 	  (fun (ncntrl, rr) -> 
             ({data with cntrl = ncntrl; tyenv = ntyenv}, 
              ntrm, rr))) g
     else
       (skip +< ({data with cntrl = cntrl1}, ntrm, thm)) g
   in 
-  try tac goal
+  try tac ctxt goal
   with _ -> raise No_change
 
 (** [find_match_tac data trm g]: Find a rule in simpset [set] which
@@ -574,24 +573,24 @@ let find_basic ctxt data rl trm (goal: Logic.node) =
 
     Raise [No_change] and set [ret:=None] if no matches.
 *)
-let find_match_tac ctxt data trm goal =
+let find_match_tac data trm ctxt goal =
   let (cntrl, tyenv, qntenv) = (data.cntrl, data.tyenv, data.qntenv)
   in
   let sqnt = sequent goal 
   and excluded = Data.get_exclude cntrl
   in 
-  let rec find_aux rls t g = 
+  let rec find_aux rls t ctxt0 g = 
     match rls with
       | [] -> raise No_change 
       | rl::nxt ->
 	let src = Simpset.rule_src rl
 	in 
 	if is_excluded excluded sqnt src
-	then find_aux nxt t g
+	then find_aux nxt t ctxt0 g
 	else 
 	  begin
-            try find_basic ctxt data rl t g
-	    with _ -> find_aux nxt t g
+            try find_basic data rl t ctxt0 g
+	    with _ -> find_aux nxt t ctxt0 g
           end
   in 
   let gctxt = goal_context ctxt goal in 
@@ -599,7 +598,7 @@ let find_match_tac ctxt data trm goal =
     try lookup gctxt (Data.get_simpset cntrl) trm
     with _ -> raise No_change
   in 
-  find_aux lst trm goal
+  find_aux lst trm gctxt goal
 
 (** [find_all_matches ret (cntrl, tyenv, qntenv) trm g]: Find all
     rules in simpset [cntrl.set] which can be used to rewrite term
@@ -609,30 +608,30 @@ let find_match_tac ctxt data trm goal =
     term. The new simp data is built by adding the rules used to
     rewrite the term, in the order they are applied.
 *)
-let rec find_all_matches_tac ctxt data trm goal =
-  let rec find_aux data1 trm1 rrlist1 g1 =
+let rec find_all_matches_tac data trm ctxt goal =
+  let rec find_aux data1 trm1 rrlist1 ctxt1 g1 =
     (** Try to find a match, checking that rr_depth is not reached.
     **)
     let (cntrl1, tyenv1, qntenv1) = dest_match_data data in
     let cntrl2 = Data.dec_rr_depth cntrl1 
     in 
     if Lib.compare_int_option (Data.get_rr_depth cntrl2) 0
-    then ((data1, trm1, rrlist1) >+ skip) g1
+    then ((data1, trm1, rrlist1) >+ skip) ctxt1 g1
     else 
       begin
         try 
           fold_seq (data1, trm1, rrlist1)
             [
               (fun (data2, trm2, rrlist2) -> 
-                (find_match_tac ctxt data2 trm2
+                (find_match_tac data2 trm2
                  >/ (fun (data3, trm3, rr3)
                  -> 
                    ({data3 with qntenv = qntenv1},
                     trm3, rr3::rrlist2))));
               (fun (data3, trm3, rrlist3) ->
                 find_aux data3 trm3 rrlist3)
-            ] g1
-        with _ -> ((data1, trm1, rrlist1) >+ skip) g1
+            ] ctxt1 g1
+        with _ -> ((data1, trm1, rrlist1) >+ skip) ctxt1 g1
       end
   in 
   (** Get the original loopdb *)
@@ -649,7 +648,7 @@ let rec find_all_matches_tac ctxt data trm goal =
            let cntrl2 = Data.set_loopdb cntrl0 orig_loopdb 
            in
            ({data1 with cntrl = cntrl2}, trm1, List.rev rlist)))
-        goal
+        ctxt goal
     end
   with _ -> raise No_change
 
@@ -663,10 +662,10 @@ let rec find_all_matches_tac ctxt data trm goal =
 
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
-let rec find_subterm_bu_tac ctxt data trm goal =
-  let rw_term_tac ((data: match_data), plan) t g =
-    try find_term_bu_tac ctxt data t g
-    with _ -> ((data, t, plan) >+ skip) g
+let rec find_subterm_bu_tac data trm ctxt goal =
+  let rw_term_tac ((data: match_data), plan) t ctxt0 g =
+    try find_term_bu_tac data t ctxt0 g
+    with _ -> ((data, t, plan) >+ skip) ctxt0 g
   in
   let (ctrl, tyenv, qntenv0) = dest_match_data data 
   in 
@@ -683,7 +682,7 @@ let rec find_subterm_bu_tac ctxt data trm goal =
       in 
       begin
         (** Rewrite quantifier body **)
-        (rw_term_tac (data1, mk_skip) b >/ finalize) goal
+        (rw_term_tac (data1, mk_skip) b >/ finalize) ctxt goal
       end
     | Basic.App(f, a)->
       let finalize (data, nf, na, fplan, aplan) =
@@ -709,7 +708,7 @@ let rec find_subterm_bu_tac ctxt data trm goal =
                    (fun (data2, a1, aplan2) ->
                      ({data2 with qntenv = qntenv0},
                       f1, a1, fplan1, aplan2))))
-            ]) >/ finalize) goal
+            ]) >/ finalize) ctxt goal
       end
     | _ -> raise No_change
 (** [find_term_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
@@ -720,7 +719,7 @@ let rec find_subterm_bu_tac ctxt data trm goal =
     resulting from simplification and [plan] the constructed rewriting
     plan.
 *)
-and find_term_bu_tac ctxt data trm goal =
+and find_term_bu_tac data trm ctxt goal =
   let (cntrl, tyenv, qntenv) = dest_match_data data
   in 
   let finalize (data1, trm1, mplan, splan) =
@@ -729,15 +728,15 @@ and find_term_bu_tac ctxt data trm goal =
     in
     ({data1 with qntenv = qntenv}, trm1, plan)
   in
-  let rw_term_tac (data1, trm1, mplan1, splan1) g =
-    try (find_all_matches_tac ctxt data1 trm1
+  let rw_term_tac (data1, trm1, mplan1, splan1) ctxt0 g =
+    try (find_all_matches_tac data1 trm1
          >/ 
            (fun (data2, trm2, rrlist) -> 
              let mplan2 = pack (mk_rules rrlist) 
              in
              ({data2 with qntenv = qntenv},
-              trm2, mplan2, splan1))) g
-    with _ -> ((data1, trm1, mplan1, splan1) >+ skip) g
+              trm2, mplan2, splan1))) ctxt0 g
+    with _ -> ((data1, trm1, mplan1, splan1) >+ skip) ctxt0 g
   in
   begin
     (fold_seq (data, trm, mk_skip, mk_skip)
@@ -747,17 +746,16 @@ and find_term_bu_tac ctxt data trm goal =
            alt_data fold_arg
              [
                (fun (data1, trm1, mplan1, splan1) ->
-                 (find_subterm_bu_tac ctxt data1 trm1
+                 (find_subterm_bu_tac data1 trm1
                   >/ 
                     (fun (data2, trm2, plan2) -> 
                       ({data2 with qntenv = qntenv},
                        trm2, mplan1, plan2))));
                  (fun alt_arg -> (alt_arg >+ skip))
              ]);
-
          (** Rewrite main term *)
          rw_term_tac
-       ] >/ finalize) goal
+       ] >/ finalize) ctxt goal
   end
 
 (** [find_subterm_td_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
@@ -770,7 +768,7 @@ and find_term_bu_tac ctxt data trm goal =
 
     This is a companion function to {!Simplifier.find_term_bu_tac}.
 *)
-let rec find_subterm_td_tac ctxt data trm goal =
+let rec find_subterm_td_tac data trm ctxt goal =
   let (_, _, qntenv) = dest_match_data data in 
   match trm with
     | Basic.Qnt(q, b) -> 
@@ -780,7 +778,7 @@ let rec find_subterm_td_tac ctxt data trm goal =
         (** Rewrite quantifier body, top-down **)
         (alt_data ({data with qntenv = qntenv2}, b, mk_skip)
           [
-            (fun (data1, b1, plan1) -> find_term_td_tac ctxt data1 b1);
+            (fun (data1, b1, plan1) -> find_term_td_tac data1 b1);
             (fun alt_arg -> (alt_arg >+ skip))
           ]
          >/ 
@@ -790,11 +788,11 @@ let rec find_subterm_td_tac ctxt data trm goal =
 	    let plan = pack (mk_subnode 0 plan1)
 	    in 
 	    ({data1 with qntenv = qntenv}, 
-             Basic.Qnt(q, trm1), plan))) goal
+             Basic.Qnt(q, trm1), plan))) ctxt goal
       end
     | Basic.App(f, a)->
       let rw_term_tac ((data: match_data), plan) t g =
-        try find_term_td_tac ctxt data t g
+        try find_term_td_tac data t g
         with _ -> ((data, t, plan) >+ skip) g
       in
       let finalize (data1, nf, na, fplan1, aplan1) =
@@ -820,7 +818,7 @@ let rec find_subterm_td_tac ctxt data trm goal =
                     (fun (data2, a2, aplan2) ->
                       (data2, f1, a2, fplan1, aplan2))))
            ]
-         >/ finalize) goal
+         >/ finalize) ctxt goal
       end
     | _ -> raise No_change
 (** [find_term_td_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
@@ -830,21 +828,21 @@ let rec find_subterm_td_tac ctxt data trm goal =
     the new simp data, [ntyenv] the new type-environment, [ntrm]
     the term resulting from simplification and [plan] the
     constructed rewriting plan.  *)
-and find_term_td_tac ctxt data trm goal =
+and find_term_td_tac (data: match_data) trm (ctxt: Context.t) goal =
   let (cntrl, tyenv, qntenv) = dest_match_data data 
   in 
-  let rw_term_tac ((data1: match_data), trm1, mplan1, splan1) g =
+  let rw_term_tac ((data1: match_data), trm1, mplan1, splan1) ctxt0 g =
     try
-      (find_all_matches_tac ctxt data1 trm1
+      (find_all_matches_tac data1 trm1
        >/
          (fun (data2, trm2, rrlist) ->
            let mplan2 = pack (mk_rules rrlist) 
            in
            ({data2 with qntenv = qntenv},
-            trm2, mplan2, splan1))) g
-    with _ -> ((data1, trm1, mplan1, splan1) >+ skip) g
+            trm2, mplan2, splan1))) ctxt0 g
+    with _ -> ((data1, trm1, mplan1, splan1) >+ skip) ctxt0 g
   in
-  let tac g = 
+  let tac ctxt0 g = 
     fold_seq (data, trm, mk_rules [], mk_skip)
       [
         (** Rewrite the current term, ignoring errors **)
@@ -855,14 +853,14 @@ and find_term_td_tac ctxt data trm goal =
           (alt_data fold_arg
              [
                (fun (data1, trm1, mplan1, splan1) ->
-	         find_subterm_td_tac ctxt data trm1
+	         find_subterm_td_tac data trm1
                  >/
                    (fun (data2, trm2, splan2) ->
                      ({data2 with qntenv = qntenv},
                       trm2, mplan1, splan2)));
                (fun alt_arg -> (alt_arg >+ skip))
              ]))
-      ] g
+      ] ctxt0 g
   in
   let finalize (data1, trm1, tplan, splan) =
     check_change2 tplan splan;
@@ -870,7 +868,7 @@ and find_term_td_tac ctxt data trm goal =
     in 
     (data1, trm1, plan)
   in 
-  (tac >/ finalize) goal
+  (tac >/ finalize) ctxt goal
 
 (** [basic_simp_tac data ret tag goal]: Main interface to the basic
     simplifier functions.
@@ -888,7 +886,7 @@ and find_term_td_tac ctxt data trm goal =
 
     raise [No_change] if no rules can be found.
 *)
-let basic_simp_tac ctxt cntrl ft goal =
+let basic_simp_tac cntrl ft ctxt goal =
   let rr_depth cntrl = Data.get_rr_depth cntrl
   and rr_conds cntrl = Data.get_cond_depth cntrl 
   in
@@ -898,14 +896,14 @@ let basic_simp_tac ctxt cntrl ft goal =
     in
     (Formula.term_of (Logic.drop_tag ftrm), flag)
   in 
-  let tac1 ((data1: match_data), trm1, _) g1 = 
+  let tac1 ((data1: match_data), trm1, _) ctxt1 g1 = 
     (** Get the rewrite plan **)
     let rr_cntrl = Data.get_control (data1.cntrl) in
     if (rr_cntrl.Rewrite.rr_strat = Rewrite.bottomup)
-    then find_term_bu_tac ctxt data1 trm1 g1
-    else find_term_td_tac ctxt data1 trm1 g1
+    then find_term_bu_tac data1 trm1 ctxt1 g1
+    else find_term_td_tac data1 trm1 ctxt1 g1
   in 
-  let tac2 (data1, trm1, plan1) g1 = 
+  let tac2 (data1, trm1, plan1) ctxt1 g1 = 
     (** Apply the rewrite plan found by tac1 **)
     let cntrl1 = data1.cntrl in
     begin
@@ -915,7 +913,7 @@ let basic_simp_tac ctxt cntrl ft goal =
     end;
     (** Check the rewrite plan **)
     if (Lib.try_app check_change plan1) = None
-    then ((data1, trm1, plan1) >+ Boollib.trivial ctxt ~f:(ftag ft)) g1
+    then ((data1, trm1, plan1) >+ Boollib.trivial ~f:(ftag ft)) ctxt1 g1
     else 
       begin
 	(** Reset the control data **)
@@ -927,7 +925,7 @@ let basic_simp_tac ctxt cntrl ft goal =
         let ndata = {data1 with cntrl = ncntrl} in
 	try
           ((ndata, trm1, plan1) 
-           >+ (simp_rewrite_tac is_concl plan1 trm (ftag ft))) g1
+           >+ (simp_rewrite_tac is_concl plan1 trm (ftag ft))) ctxt1 g1
 	with _ -> raise No_change
       end
   in 
@@ -940,7 +938,7 @@ let basic_simp_tac ctxt cntrl ft goal =
        [
          tac1; 
          tac2
-       ] >/ finalize) goal
+       ] >/ finalize) ctxt goal
   with _ -> raise No_change
 
 
@@ -961,17 +959,17 @@ let basic_simp_tac ctxt cntrl ft goal =
 let simp_asm_tac ctrl lbl goal = 
   (ctrl >+ (specA ~a:lbl // skip)) goal
 
-let simp_concl_tac ctrl lbl goal = 
-  (ctrl >+ (specC ~c:lbl // skip)) goal
+let simp_concl_tac ctrl lbl ctxt goal = 
+  (ctrl >+ (specC ~c:lbl // skip)) ctxt goal
 
-let simp_prep_tac ctrl lbl goal = 
+let simp_prep_tac ctrl lbl ctxt goal = 
   let is_asm =
     try ignore(get_tagged_asm lbl goal); true
     with _ -> false
   in 
   if is_asm
-  then simp_asm_tac ctrl lbl goal
-  else simp_concl_tac ctrl lbl goal
+  then simp_asm_tac ctrl lbl ctxt goal
+  else simp_concl_tac ctrl lbl ctxt goal
 
 (** [cond_prover_tac ctrl tg g]: The tactic used to prove the
     conditions of rewrite rules.
@@ -988,8 +986,8 @@ let simp_prep_tac ctrl lbl goal =
       
  let cond_prover_trueC l = Tactics.trueC ~c:l
 
- let cond_prover_worker_tac ctxt ctrl tg goal = 
-   let rec main_tac ctrl1 g1 = 
+ let cond_prover_worker_tac ctrl tg ctxt goal = 
+   let rec main_tac ctrl1 ctxt1 g1 = 
      let ctrl2 = Data.set_loopdb ctrl1 (Net.empty())
      in 
      alt_data ctrl2
@@ -997,17 +995,17 @@ let simp_prep_tac ctrl lbl goal =
          (fun ctrl3 ->
            fold_seq ctrl3
              [
-               (fun ctrl4 -> basic_simp_tac ctxt ctrl4 tg);
+               (fun ctrl4 -> basic_simp_tac ctrl4 tg);
                (fun ctrl4 -> main_tac ctrl4)
              ]);
          (fun ctrl3 -> (ctrl3 >+ skip))
-       ] (g1: Logic.node)
+       ] ctxt1 (g1: Logic.node)
    in 
    let finalize ctrl1 = Data.set_loopdb ctrl1 (Data.get_loopdb ctrl)
    in
-   (main_tac ctrl >/ finalize) goal
+   (main_tac ctrl >/ finalize) ctxt goal
 
- let cond_prover_tac ctrl ctxt tg goal =
+ let cond_prover_tac ctrl tg ctxt goal =
    let cond_depth = Data.get_cond_depth ctrl in 
    if Lib.apply_option (fun i -> i>0) cond_depth true
    then 
@@ -1015,16 +1013,16 @@ let simp_prep_tac ctrl lbl goal =
      in 
      alt
        [
-         Logic.Tactics.trueC (ftag tg);
+         Tactics.trueC ~c:(ftag tg);
          apply_tac
            (fold_seq data
               [
                 (fun ctrl1 -> simp_prep_tac ctrl1 (ftag tg));
-                (fun ctrl1 -> cond_prover_worker_tac ctxt ctrl1 tg)
+                (fun ctrl1 -> cond_prover_worker_tac ctrl1 tg)
               ])
            (fun _ -> cond_prover_trueC (ftag tg))
-       ] goal
-  else fail ~err:No_change goal
+       ] ctxt goal
+  else fail ~err:No_change ctxt goal
 
 (** [inital_flatten_tac exclude g]: Prepare goal for simplification.
 
@@ -1032,39 +1030,39 @@ let simp_prep_tac ctrl lbl goal =
     trivial facts. Put conclusions into assumptions (by negation)
 *)
 
-let simp_asm_elims ctxt =
+let simp_asm_elims =
   [
-    (fun l -> Boollib.falseA ctxt ~a:l);
+    (fun l -> Boollib.falseA ~a:l);
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.existA ~a:l)
   ]
-let simp_concl_elims ctxt =
+let simp_concl_elims =
   [
     (fun l -> Tactics.trueC ~c:l);
     (fun l -> Tactics.disjC ~c:l);
     (fun l -> Tactics.allC ~c:l)
   ]
 
-let simp_flatten_asms_tac ctxt lst = 
-  Boollib.asm_elim_rules_tac (simp_asm_elims ctxt, []) lst
+let simp_flatten_asms_tac lst = 
+  Boollib.asm_elim_rules_tac (simp_asm_elims, []) lst
 
-let simp_flatten_concls_tac ctxt lst = 
-  Boollib.concl_elim_rules_tac ([], simp_concl_elims ctxt) lst
+let simp_flatten_concls_tac lst = 
+  Boollib.concl_elim_rules_tac ([], simp_concl_elims) lst
 
-let simp_flatten_tac ctxt excluded ?f goal =
-  let basic_flatter g =
-    Boollib.elim_rules_tac (simp_asm_elims ctxt, simp_concl_elims ctxt) g
+let simp_flatten_tac excluded ?f ctxt goal =
+  let basic_flatter ctxt1 g1 =
+    Boollib.elim_rules_tac (simp_asm_elims, simp_concl_elims) ctxt1 g1
   in 
   match f with
-    | None -> Boollib.apply_elim_tac basic_flatter ?f goal
+    | None -> Boollib.apply_elim_tac basic_flatter ?f ctxt goal
     | Some(l) -> 
       let tg = Logic.label_to_tag l (sequent goal)
       in 
       if List.exists (Tag.equal tg) excluded
-      then skip goal
-      else Boollib.apply_elim_tac basic_flatter ?f goal
+      then skip ctxt goal
+      else Boollib.apply_elim_tac basic_flatter ?f ctxt goal
 
-let initial_flatten_tac exclude goal =
-  simp_flatten_tac exclude goal 
+let initial_flatten_tac exclude ctxt goal =
+  simp_flatten_tac exclude ctxt goal 
 

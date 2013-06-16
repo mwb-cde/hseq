@@ -24,17 +24,17 @@
 val false_def: Context.t -> Logic.thm
 (** Get the definition of [false]. *)
 
-val falseA: Context.t -> ?a:Logic.label -> Tactics.tactic
+val falseA: ?a:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].
 *)
 
-val trivial: Context.t -> ?f:Logic.label -> Tactics.tactic
+val trivial: ?f:Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].
 *)
 
 val cut_thm: 
-  Context.t -> ?inst:Basic.term list -> string -> Tactics.tactic
+  ?inst:Basic.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
 (** {7 Basic equality reasoning} *)
@@ -60,20 +60,20 @@ val eq_sym_rule: Context.t -> Logic.thm -> Logic.thm
     [ |- y=x ].
 *)
 
-val eq_symA: Context.t -> Logic.label -> Tactics.tactic
+val eq_symA: Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite assumption [a] with [eq_sym_thm] once.
 *)
 
-val eq_symC: Context.t -> Logic.label -> Tactics.tactic
+val eq_symC: Logic.label -> Tactics.tactic
 (** [eq_symA a]: Rewrite conclusion [c] with [eq_sym_thm] once.
 *)
 
-val eq_sym_tac: Context.t -> Logic.label -> Tactics.tactic
+val eq_sym_tac: Logic.label -> Tactics.tactic
 (** [eq_sym_tac f]: Try to apply [eq_symA f], if that fails, try
     [eq_symC f].
 *)
 
-val eq_tac: Context.t -> ?c:Logic.label -> Tactics.tactic
+val eq_tac: ?c:Logic.label -> Tactics.tactic
 (** Prove goals of the form \[A|- x = x{_ c}, C\].
 *)
 
@@ -153,8 +153,7 @@ val elim_rules_tac:
 *)
 
 val apply_elim_tac:
-  (Logic.label list -> Logic.label list
-   -> Tactics.tactic)
+  (Logic.label list -> Logic.label list -> Tactics.tactic)
   -> ?f:Logic.label -> Tactics.tactic
 (** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
     formula [?f]. If [?f] is not given, use all formulas in the

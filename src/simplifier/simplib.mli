@@ -66,7 +66,6 @@ end
 val simpA_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> Context.t
   -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?a:Logic.label
@@ -105,7 +104,7 @@ val simpA_tac:
 *)
 
 val simpA:
-  Context.t -> Simpset.simpset 
+  Simpset.simpset 
   -> ?a:Logic.label
   -> Tactics.tactic
 (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
@@ -116,7 +115,6 @@ val simpA:
 val simpC_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> Context.t
   -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?c:Logic.label
@@ -155,7 +153,7 @@ val simpC_tac:
 *)
 
 val simpC: 
-  Context.t -> Simpset.simpset
+  Simpset.simpset
   -> ?c:Logic.label ->  Tactics.tactic
 (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
     
@@ -165,7 +163,6 @@ val simpC:
 val simp_all_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> Context.t 
   -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> Logic.thm list
@@ -197,7 +194,7 @@ val simp_all_tac:
     @raise No_change If no change is made.
 *)
 
-val simp_all: Context.t -> Simpset.simpset -> Tactics.tactic
+val simp_all: Simpset.simpset -> Tactics.tactic
 (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
     
     @raise No_change If no change is made.
@@ -206,7 +203,6 @@ val simp_all: Context.t -> Simpset.simpset -> Tactics.tactic
 val simp_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
-  -> Context.t
   -> Simpset.simpset
   -> ?add:Simpset.simpset
   -> ?f:Logic.label
@@ -246,7 +242,7 @@ val simp_tac:
 
 
 val simp: 
-  Context.t -> Simpset.simpset -> ?f:Logic.label ->  Tactics.tactic
+  Simpset.simpset -> ?f:Logic.label ->  Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
     
     @raise No_change If no change is made.

@@ -46,7 +46,7 @@ let iff_def sctxt =
 
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
-let iffA ctxt ?a goal = 
+let iffA ?a ctxt goal = 
   let af = first_asm_label a is_iff goal in 
   let sqnt = Tactics.sequent goal in 
   let (t, f) = 
@@ -58,9 +58,9 @@ let iffA ctxt ?a goal =
     let sctxt = set_scope ctxt (scope_of_goal goal) in
     seq 
       [
-        rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
+        rewrite_tac [iff_def sctxt] ~f:(ftag t);
         Tactics.conjA ~a:(ftag t);
-      ] goal
+      ] sctxt goal
 
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
 
@@ -74,7 +74,7 @@ let iffA ctxt ?a goal =
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 **)
 
-let iffC ctxt ?c goal = 
+let iffC ?c ctxt goal = 
   let cf = first_concl_label c is_iff goal in 
   let sqnt=sequent goal in 
   let (t, f) =
@@ -86,9 +86,9 @@ let iffC ctxt ?c goal =
     let sctxt = set_scope ctxt (scope_of_goal goal) in
     seq 
       [
-        rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t);
+        rewrite_tac [iff_def sctxt] ~f:(ftag t);
         Tactics.conjC ~c:(ftag t);
-      ] goal
+      ] sctxt goal
 
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
@@ -101,7 +101,7 @@ let iffC ctxt ?c goal =
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 **)
-let iffE ctxt ?c goal = 
+let iffE ?c ctxt goal = 
   let sqnt = sequent goal
   and cf = first_concl_label c is_iff goal 
   in
@@ -111,9 +111,9 @@ let iffE ctxt ?c goal =
   if not (is_iff f) 
   then raise (error "iffE")
   else 
-    let tac g =
-      let sctxt = set_scope ctxt (scope_of_goal g) in
-      (rewrite_tac ctxt [iff_def sctxt] ~f:(ftag t) ++
+    let tac ctxt0 g =
+      let sctxt = set_scope ctxt0 (scope_of_goal g) in
+      (rewrite_tac [iff_def sctxt] ~f:(ftag t) ++
         (?> fun inf1 ->
 	  Tactics.conjC ~c:(ftag t) ++
 	    Tactics.implC ~c:(ftag t) ++
@@ -121,50 +121,50 @@ let iffE ctxt ?c goal =
                 set_changes_tac 
                   (Changes.make (Info.subgoals inf1)
                      (Info.aformulas inf2)
-                     (Info.cformulas inf2) [])))) g
+                     (Info.cformulas inf2) [])))) sctxt g
     in 
-    alt [ tac; fail ~err:(error "iffE") ] goal
+    alt [ tac; fail ~err:(error "iffE") ] ctxt goal
 
 (*** Splitting formulas ***)
 
-let split_asm_rules ctxt = 
+let split_asm_rules = 
   [
-    (fun l -> falseA ctxt ~a:l); 
+    (fun l -> falseA ~a:l); 
     (fun l -> Tactics.disjA ~a:l); 
     (fun  l -> Tactics.implA ~a:l)
   ]
 
-let split_concl_rules _ =
+let split_concl_rules =
   [
     (fun l -> Tactics.trueC ~c:l); 
     (fun l -> Tactics.conjC ~c:l)
   ]
 
-let split_asms_tac ctxt lst = 
-  asm_elim_rules_tac (split_asm_rules ctxt, []) lst
+let split_asms_tac lst = 
+  asm_elim_rules_tac (split_asm_rules, []) lst
 
-let split_concls_tac ctxt lst = 
-  concl_elim_rules_tac ([], split_concl_rules ctxt) lst
+let split_concls_tac lst = 
+  concl_elim_rules_tac ([], split_concl_rules) lst
 
-let splitter_tac ctxt ?f goal =
-  let basic_splitter g = 
-    elim_rules_tac (split_asm_rules ctxt, split_concl_rules ctxt) g
+let splitter_tac ?f ctxt goal =
+  let basic_splitter ctxt0 g = 
+    elim_rules_tac (split_asm_rules, split_concl_rules) ctxt0 g
   in 
-  apply_elim_tac basic_splitter ?f goal
+  apply_elim_tac basic_splitter ?f ctxt goal
 
 let split_tac = splitter_tac 
 
 (*** Flattening formulas. ***)
 
-let flatter_asm_rules ctxt =
+let flatter_asm_rules =
   [
-    (fun l -> falseA ctxt ~a:l);
+    (fun l -> falseA ~a:l);
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.conjA ~a:l);
     (fun l -> Tactics.existA ~a:l)
   ]
 
-let flatter_concl_rules _ =
+let flatter_concl_rules =
   [
     (fun l -> Tactics.trueC ~c:l);
     (fun l -> Tactics.negC ~c:l);
@@ -173,25 +173,25 @@ let flatter_concl_rules _ =
     (fun l -> Tactics.allC ~c:l)
   ]
 
-let flatter_asms_tac ctxt lst g = 
-  asm_elim_rules_tac (flatter_asm_rules ctxt, []) lst g
+let flatter_asms_tac lst ctxt g = 
+  asm_elim_rules_tac (flatter_asm_rules, []) lst ctxt g
 
-let flatter_concls_tac ctxt lst g = 
-  concl_elim_rules_tac ([], flatter_concl_rules ctxt) lst g
+let flatter_concls_tac lst ctxt g = 
+  concl_elim_rules_tac ([], flatter_concl_rules) lst ctxt g
 
-let flatter_tac ctxt ?f goal =
+let flatter_tac ?f ctxt goal =
   let basic_flatter g  =
-    elim_rules_tac (flatter_asm_rules ctxt, flatter_concl_rules ctxt) g
+    elim_rules_tac (flatter_asm_rules, flatter_concl_rules) g
   in 
-  apply_elim_tac basic_flatter ?f goal
+  apply_elim_tac basic_flatter ?f ctxt goal
 
-let flatten_tac ctxt ?f g = flatter_tac ctxt ?f:f g
+let flatten_tac ?f ctxt g = flatter_tac ?f:f ctxt g
 
 (*** Scattering formulas ***)
 
-let scatter_asm_rules (ctxt: Context.t) =
+let scatter_asm_rules =
   [
-    (fun l -> falseA ctxt ~a:l); 
+    (fun l -> falseA ~a:l); 
 
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.existA ~a:l);
@@ -201,7 +201,7 @@ let scatter_asm_rules (ctxt: Context.t) =
     (fun l -> Tactics.implA ~a:l)
   ]
 
-let scatter_concl_rules (ctxt: Context.t) =
+let scatter_concl_rules =
   [
     (fun l -> Tactics.trueC ~c:l);
 
@@ -211,21 +211,20 @@ let scatter_concl_rules (ctxt: Context.t) =
     (fun l -> Tactics.disjC ~c:l);
     (fun l -> Tactics.conjC ~c:l);
     (fun l -> Tactics.implC ~c:l);
-    (fun l -> iffE ctxt ~c:l)
+    (fun l -> iffE ~c:l)
   ]
 
-let scatter_tac ctxt ?f goal =
-  let tac g =
-    elim_rules_tac (scatter_asm_rules ctxt, scatter_concl_rules ctxt) g
+let scatter_tac ?f ctxt goal =
+  let tac ctxt0 g =
+    elim_rules_tac (scatter_asm_rules, scatter_concl_rules) ctxt0 g
   in 
-  apply_elim_tac tac ?f goal
-
+  apply_elim_tac tac ?f ctxt goal
 
 (*** Scattering, solving formulas ***)
 
-let blast_asm_rules ctxt =
+let blast_asm_rules =
   [
-    (fun l -> falseA ctxt ~a:l); 
+    (fun l -> falseA ~a:l); 
 
     (fun l -> Tactics.negA ~a:l);
     (fun l -> Tactics.conjA ~a:l);
@@ -237,7 +236,7 @@ let blast_asm_rules ctxt =
     (fun l -> basic ~a:l ?c:None)
   ]
 
-let blast_concl_rules ctxt =
+let blast_concl_rules =
   [
     (fun l -> Tactics.trueC ~c:l);
 
@@ -248,16 +247,16 @@ let blast_concl_rules ctxt =
 
     (fun l -> Tactics.conjC ~c:l);
 
-    (fun l -> iffE ctxt ~c:l);
+    (fun l -> iffE ~c:l);
 
     (fun l -> basic ?a:None ~c:l)
   ]
 
-let blast_tac ctxt ?f goal =
-  let tac g =
-    elim_rules_tac (blast_asm_rules ctxt, blast_concl_rules ctxt) g
+let blast_tac ?f ctxt goal =
+  let tac ctxt0 g =
+    elim_rules_tac (blast_asm_rules, blast_concl_rules) ctxt0 g
   in 
-  apply_elim_tac tac ?f goal
+  apply_elim_tac tac ?f ctxt goal
 
 (*** Cases ***)
 
@@ -285,20 +284,20 @@ let make_cases_tac_thm ctxt =
 let cases_thm sctxt =
   Context.find_thm sctxt cases_thm_id make_cases_tac_thm
 
-let cases_tac ctxt (t: Basic.term) goal = 
+let cases_tac (t: Basic.term) ctxt goal = 
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in
   seq 
     [
       cut thm;
-      (?> fun inf g -> 
+      (?> fun inf -> 
         let thm_tag = get_one ~msg:"cases_tac 1" (Info.aformulas inf) in 
-        allA t ~a:(ftag thm_tag) g);
-      (?> fun inf g -> 
+        allA t ~a:(ftag thm_tag));
+      (?> fun inf -> 
         let thm_tag = get_one ~msg:"cases_tac 2" (Info.aformulas inf) in 
-        disjA ~a:(ftag thm_tag) g)
+        disjA ~a:(ftag thm_tag))
       --
         [
-	  (?> fun inf1 g1 ->
+	  (?> fun inf1 ->
 	    let asm_tag = get_one ~msg:"cases_tac 3" (Info.aformulas inf1)
 	    and lgoal, rgoal = get_two ~msg:"cases_tac 4" (Info.subgoals inf1)
 	    in 
@@ -307,36 +306,35 @@ let cases_tac ctxt (t: Basic.term) goal =
 	         let nasm_tag = get_one ~msg:"cases_tac 5" (Info.cformulas inf2)
                  in
                  set_changes_tac 
-                   (Changes.make [lgoal; rgoal] [asm_tag] [nasm_tag] []) g2))
-	      g1);
+                   (Changes.make [lgoal; rgoal] [asm_tag] [nasm_tag] []) g2)));
 	  skip
         ]
-    ] goal
+    ] ctxt goal
 
-let show_tac ctxt (trm: Basic.term) tac goal = 
+let show_tac (trm: Basic.term) tac ctxt goal = 
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in 
   seq 
     [
       cut thm;
-      (?> fun inf1 g1 -> 
+      (?> fun inf1 -> 
         let thm_tag = get_one ~msg:"show_tac 1" (Info.aformulas inf1) in 
-        allA trm ~a:(ftag thm_tag) g1);
-      (?> fun inf1 g1 -> 
+        allA trm ~a:(ftag thm_tag));
+      (?> fun inf1 -> 
         let thm_tag = get_one ~msg:"show_tac 2" (Info.aformulas inf1) in 
-        disjA ~a:(ftag thm_tag) g1)
+        disjA ~a:(ftag thm_tag))
       --
         [
-	  (?> fun inf1 g1 ->
+	  (?> fun inf1 ->
 	    let asm_tag = get_one ~msg:"show_tac 3" (Info.aformulas inf1)
 	    in 
-	    (negA ~a:(ftag asm_tag) ++ tac ) g1);
-	  (?> fun inf1 g1 -> 
+	    (negA ~a:(ftag asm_tag) ++ tac));
+	  (?> fun inf1 -> 
 	    let (_, gl_tag) = get_two (Info.subgoals inf1)
 	    and asm_tag = get_one (Info.aformulas inf1)
 	    in 
-            set_changes_tac (Changes.make [gl_tag] [asm_tag] [] []) g1)
+            set_changes_tac (Changes.make [gl_tag] [asm_tag] [] []))
         ]
-    ] goal
+    ] ctxt goal
 
 let show = show_tac
 
@@ -355,7 +353,7 @@ let disj_splitter_tac ?f goal =
   apply_elim_tac tac ?f goal
     
 
-let cases_of ctxt ?thm t goal =
+let cases_of ?thm t ctxt goal =
   let scp = Tactics.scope_of_goal goal
   and tyenv = Tactics.typenv_of goal in 
   let trm = Lterm.set_names scp t in  
@@ -378,28 +376,27 @@ let cases_of ctxt ?thm t goal =
   try
     seq [
         cut ~inst:[trm] case_thm;
-        (?> fun inf1 g1 -> 
+        (?> fun inf1 -> 
 	  let a_tg = get_one (Info.aformulas inf1)
 	  in 
           seq [
 	    (disj_splitter_tac ~f:(ftag a_tg) // skip);
-            (?> fun inf2 g2 ->
+            (?> fun inf2 ->
 	      ((specA ~a:(ftag a_tg) // skip) 
-               ++ (?> fun inf3 g3 ->
+               ++ (?> fun inf3 ->
                  set_changes_tac 
-                   (Changes.add_aforms inf2 (Info.aformulas inf3)) g3)) g2)
-
-          ] g1);
+                   (Changes.add_aforms inf2 (Info.aformulas inf3)))))
+          ]);
         (?> fun inf ->
           set_changes_tac 
             (Changes.make [] [] (Info.subgoals inf) (Info.constants inf)))
-    ] goal
+    ] ctxt goal
   with err -> raise (add_error "cases_of" err)
     
 
 (*** Modus Ponens ***)
 
-let mp0_tac a a1lbls g =
+let mp0_tac a a1lbls ctxt g =
   let typenv = Tactics.typenv_of g
   and sqnt = Tactics.sequent g in 
   let scp = Logic.Sequent.scope_of sqnt in 
@@ -442,9 +439,9 @@ let mp0_tac a a1lbls g =
 	            (Failure "mp_tac2.2"))))));
     (?> fun inf4 -> 
       set_changes_tac (Changes.make [] (Info.aformulas inf4) [] []))
-  ] g
+  ] ctxt g
 
-let mp_tac ?a ?h goal =
+let mp_tac ?a ?h ctxt goal =
   let sqnt = sequent goal
   in 
   let albls = 
@@ -456,7 +453,7 @@ let mp_tac ?a ?h goal =
       | None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
       | Some(x) -> [x]
   in 
-  try map_first (fun x -> mp0_tac x hlbls) albls goal
+  try map_first (fun x -> mp0_tac x hlbls) albls ctxt goal
   with err -> raise (error "mp_tac: Failed")
 
 (** [cut_mp_tac thm ?a]
@@ -471,23 +468,24 @@ let mp_tac ?a ?h goal =
     info: [] [thm_tag] [] [] where tag [thm_tag] identifies the theorem
     in the sequent.
 *)
-let cut_mp_tac ?inst thm ?a goal =
+let cut_mp_tac ?inst thm ?a ctxt goal =
   let f_label = 
     Lib.apply_option 
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent goal))))
       a None
   in 
   (Tactics.cut ?inst:inst thm ++ 
-     (?> fun inf1 g1 ->
+     (?> fun inf1 ->
        let a_tag = 
          Lib.get_one (Info.aformulas inf1) 
 	   (Logic.logic_error "cut_mp_tac: Failed to cut theorem" 
 	      [Logic.formula_of thm])
        in 
        ((mp_tac ~a:(ftag a_tag) ?h:f_label) ++
-           (?> fun inf2 g2 ->
+           (?> fun inf2 ->
              set_changes_tac 
-               (Changes.add_aforms inf1 (Info.aformulas inf2)) g2)) g1)) goal
+               (Changes.add_aforms inf1 (Info.aformulas inf2))))))
+    ctxt goal
 
 (** [back_tac]: Backward match tactic. [back0_tac] is the main engine.
 
@@ -496,7 +494,7 @@ let cut_mp_tac ?inst thm ?a goal =
     [g_tag] is the new goal
     [c_tag] identifies the new conclusion.
 *)
-let back0_tac a cs goal =
+let back0_tac a cs ctxt goal =
   let typenv = Tactics.typenv_of goal
   and sqnt = Tactics.sequent goal in 
   let scp = Logic.Sequent.scope_of sqnt in 
@@ -548,9 +546,9 @@ let back0_tac a cs goal =
            [get_one (Info.subgoals inf4)] [] 
            [get_one (Info.cformulas inf4)] [])) g4)
   in 
-  (tac1 ++ seq [tac2; tac3; tac4]) goal
+  (tac1 ++ seq [tac2; tac3; tac4]) ctxt goal
 
-let back_tac ?a ?c goal =
+let back_tac ?a ?c ctxt goal =
   let sqnt = sequent goal in 
   let alabels = 
     match a with
@@ -561,10 +559,10 @@ let back_tac ?a ?c goal =
       | None -> List.map (ftag <+ drop_formula) (concls_of sqnt)
       | Some(x) -> [x]
   in
-  try map_first (fun x -> back0_tac x clabels) alabels goal
+  try map_first (fun x -> back0_tac x clabels) alabels ctxt goal
   with err -> raise (error "back_tac: Failed")
 
-let cut_back_tac ?inst thm ?c g =
+let cut_back_tac ?inst thm ?c ctxt g =
   let c_label = 
     Lib.apply_option 
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
@@ -572,13 +570,13 @@ let cut_back_tac ?inst thm ?c g =
   in 
   let tac1 = Tactics.cut ?inst:inst thm in 
   let tac2 =
-    (?> fun inf2 g2 ->
+    (?> fun inf2 ->
       let a_tag = 
         Lib.get_one 
           (Info.aformulas inf2) 
 	  (Logic.logic_error "cut_back_tac: Failed to cut theorem" 
 	     [Logic.formula_of thm])
       in 
-      back_tac ~a:(ftag a_tag) ?c:c_label g2)
+      back_tac ~a:(ftag a_tag) ?c:c_label)
   in 
-  (tac1 ++ tac2) g
+  (tac1 ++ tac2) ctxt g

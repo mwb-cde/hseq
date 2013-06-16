@@ -36,31 +36,31 @@ open Rewritelib
     Scatter conclusion [c], using [falseA], [conjA], [existA],
     [trueC], [implC] and [allC]
 *)
-let mini_scatter_tac ctxt c goal =
-  let asm_rules = [ (fun l -> falseA ctxt ~a:l) ] in 
+let mini_scatter_tac c ctxt goal =
+  let asm_rules = [ (fun l -> falseA ~a:l) ] in 
   let concl_rules =
     [
       (fun l -> Tactics.trueC ~c:l);
       (fun l -> Tactics.conjC ~c:l)
     ]
   in 
-  let main_tac g = elim_rules_tac (asm_rules, concl_rules) g
+  let main_tac ctxt0 g = elim_rules_tac (asm_rules, concl_rules) ctxt0 g
   in
-  apply_elim_tac main_tac ~f:c goal
+  apply_elim_tac main_tac ~f:c ctxt goal
 
 (** [mini_mp_tac asm1 asm2 goal]: Apply modus ponens to [asm1 =
     A => C] and [asm2 = A] to get [asm3 = C].  info: aformulas=[asm3];
     subgoals = [goal1] Fails if [asm2] doesn't match the assumption of
     [asm1].
 *)
-let mini_mp_tac asm1 asm2 goal =
-  let tac g =
+let mini_mp_tac asm1 asm2 ctxt goal =
+  let tac =
     seq
       [
 	implA ~a:asm1
 	--
 	  [
-	    (?> fun tinfo g1 -> 
+	    (?> fun tinfo -> 
 	      let a1_tag = get_one (Info.aformulas tinfo) in 
 	      let c_tag = get_one (Info.cformulas tinfo) in 
 	      let (_, g_tag) = get_two (Info.subgoals tinfo)
@@ -70,13 +70,13 @@ let mini_mp_tac asm1 asm2 goal =
                   set_changes_tac 
                     (Changes.make [g_tag] [a1_tag] [] []);
 		  basic ~a:asm2 ~c:(ftag c_tag);
-		  (fun g2 -> fail ~err:(error "mini_mp_tac") g2)
-		] g1);
+		  (fun ctxt1 -> fail ~err:(error "mini_mp_tac") ctxt1)
+		]);
 	    skip
 	  ]
-      ] g
+      ]
   in 
-  tac goal 
+  tac ctxt goal 
 
 (*** The induction tactic [induct_tac] ***)
 
@@ -170,7 +170,7 @@ let induct_tac_bindings typenv scp aterm cterm =
     
     Completely solves the goal or fails.
 *)
-let induct_tac_solve_rh_tac a_lbl c_lbl g =
+let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
   let (c_tag, c_trm) = 
     let (tg, cf) = 
       try get_tagged_concl c_lbl g
@@ -190,29 +190,27 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
     [
       (specC ~c:c_lbl
        // (set_changes_tac (Changes.make [] [] [c_tag] [])));
-      (?> fun inf1 g1 -> 
+      (?> fun inf1 ctxt0 g0 -> 
 	let const_list = 
-          extract_consts a_vars (unify_in_goal a_varp a_lhs c_lhs g1)
+          extract_consts a_vars (unify_in_goal a_varp a_lhs c_lhs g0)
 	in 
 	(instA ~a:a_lbl const_list ++
-	   (?> fun inf2 g2 -> 
+	   (?> fun inf2 -> 
              (implC ~c:c_lbl ++
              (?> fun inf3 ->
-               set_changes_tac (Changes.combine inf3 inf2))) g2)) g1);
-      (?> fun inf1 g1 ->
+               set_changes_tac (Changes.combine inf3 inf2))))) ctxt0 g0);
+      (?> fun inf1 ->
         let a1_tag, a_tag = get_two (Info.aformulas inf1)
 	in 
         (mini_mp_tac (ftag a_tag) (ftag a1_tag) ++
-           (?> fun inf2 g2 ->
+           (?> fun inf2 ->
 	     let c1_tag = get_one (Info.cformulas inf1)
 	     and a3_tag = get_one (Info.aformulas inf2)
 	     in 
 	     ((specC ~c:(ftag c1_tag) // skip) ++
                  (set_changes_tac
-                    (Changes.make [] [a3_tag] [c1_tag] []))) 
-               g2))
-          g1);
-      (?> fun inf1 g1 ->
+                    (Changes.make [] [a3_tag] [c1_tag] []))))));
+      (?> fun inf1 ctxt1 g1 ->
 	let c1_tag = get_one (Info.cformulas inf1) 
         and a3_tag = get_one (Info.aformulas inf1) in 
 	let c1_lbl = ftag c1_tag in 
@@ -240,10 +238,10 @@ let induct_tac_solve_rh_tac a_lbl c_lbl g =
 	    (instA ~a:a3_lbl const_list // skip);
 	    basic ~a:a3_lbl ~c:c1_lbl;
 	    (fun g2 -> fail ~err:(error "induct_tac_solve_rh_goal") g2)
-	  ] g1)
-    ] g
+	  ] ctxt1 g1)
+    ] ctxt g
     
-let asm_induct_tac ctxt alabel clabel goal = 
+let asm_induct_tac alabel clabel ctxt goal = 
   let typenv = typenv_of goal
   and scp = scope_of_goal goal
   in 
@@ -287,26 +285,26 @@ let asm_induct_tac ctxt alabel clabel goal =
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
       subgoal.  *)
-  let split_lh_tac c g = (mini_scatter_tac ctxt c // skip) g
+  let split_lh_tac c ctxt0 g = (mini_scatter_tac c // skip) ctxt0 g
   in 
   (** the Main tactic *)
-  let main_tac g = 
+  let main_tac ctxt0 g = 
     seq 
       [
 	inst_split_asm_tac 
 	--
 	  [
 	    (** Left-hand sub-goal *)
-            (?> fun tinfo g1 -> 
+            (?> fun tinfo -> 
 	      let c1_tag = get_one ~msg:"asm_induct_tac.main_tac:1"
                 (Info.cformulas tinfo)
 	      in 
               seq [
 	        deleteC (ftag ctag);
 		split_lh_tac (ftag c1_tag)
-	      ] g1);
+	      ]);
 	    (** Right-hand sub-goal *)
-            (?> fun tinfo g1 ->
+            (?> fun tinfo ->
 	      let a1_tag = get_one ~msg:"asm_induct_tac.main_tac:2"
                 (Info.aformulas tinfo) 
               in
@@ -315,33 +313,33 @@ let asm_induct_tac ctxt alabel clabel goal =
 		  (specC // skip);
 		  induct_tac_solve_rh_tac 
 		    (ftag a1_tag) (ftag ctag)
-	        ] g1)
+	        ])
 	  ]
-      ] g
+      ] ctxt0 g
   in 
-  main_tac goal
+  main_tac ctxt goal
 
 (** [basic_induct_tac c thm]: Apply induction theorem [thm] to
     conclusion [c].
 
     See {!Induct.induct_tac}.
 *)
-let basic_induct_tac ctxt c thm goal =
-  let main_tac c_lbl g =
+let basic_induct_tac c thm ctxt goal =
+  let main_tac c_lbl ctxt0 g =
     seq 
       [
 	cut thm;
-	(?> fun tinfo g1 ->
+	(?> fun tinfo ->
 	  let a_tag = get_one ~msg:"basic_induct_tac" (Info.aformulas tinfo)
 	  in 
-	  asm_induct_tac ctxt (ftag a_tag) c_lbl g1)
-      ] g
+	  asm_induct_tac (ftag a_tag) c_lbl)
+      ] ctxt0 g
   in 
-  main_tac c goal
+  main_tac c ctxt goal
 
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
-
+y
     Theorem [thm] must be in the form:
     {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
     where
@@ -357,28 +355,28 @@ let basic_induct_tac ctxt c thm goal =
     cformulas=the new conclusions (in arbitray order).
     subgoals=the new sub-goals (in arbitray order).
 *)
-let induct_tac ctxt ?c thm goal =
-  let one_tac x g = 
-    try basic_induct_tac ctxt x thm g
+let induct_tac ?c thm ctxt goal =
+  let one_tac x ctxt0 g = 
+    try basic_induct_tac x thm ctxt0 g
     with err -> 
       raise (add_error "induct_tac: applying basic_induct_tac failed " err)
   in 
-  let all_tac targets g = 
-    try map_first 
-          (fun l -> basic_induct_tac ctxt l thm)
-          targets goal
+  let all_tac targets ctxt0 g = 
+    try 
+      map_first (fun l -> basic_induct_tac l thm)
+        targets ctxt0 g
     with err -> 
       raise (error ("induct_tac: failed to apply induction to"
                     ^" any formula in the conclusions."))
   in 
   match c with
-    | Some(x) -> one_tac x goal
+    | Some(x) -> one_tac x ctxt goal
     | _ -> 
       begin
         let targets = 
 	  List.map (ftag <+ drop_formula) (concls_of (sequent goal))
         in 
-        all_tac targets goal
+        all_tac targets ctxt goal
       end
 
 
@@ -486,7 +484,7 @@ let induct_on_bindings typenv scp nbind aterm cterm =
 
     Completely solves the goal or fails.
 *)
-let induct_on_solve_rh_tac a_lbl c_lbl goal =
+let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
   let (c_tag, c_trm) = 
     let (tg, cf) = get_tagged_concl c_lbl goal in 
     (tg, Formula.term_of cf)
@@ -500,17 +498,17 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
     [
       (specC ~c:c_lbl
        // set_changes_tac (Changes.make [] [] [c_tag] []));
-      (?> fun inf1 g1 -> 
+      (?> fun inf1 ctxt1 g1 -> 
 	let const_list = 
           extract_consts a_vars (unify_in_goal a_varp a_body c_body g1)
         in 
         (instA ~a:a_lbl const_list ++
-           (?> fun inf2 g2 ->
+           (?> fun inf2 ->
 	     let c_tag = get_one (Info.cformulas inf2) 
 	     and a_tag = get_one (Info.aformulas inf2)
 	     in 
-	     basic ~a:(ftag a_tag) ~c:(ftag c_tag) g2)) g1)
-    ] goal
+	     basic ~a:(ftag a_tag) ~c:(ftag c_tag))) ctxt1 g1)
+    ] ctxt goal
 
 (** [induct_on ?thm ?c n]: Apply induction to the first universally
     quantified variable named [n] in conclusion [c] (or the first
@@ -531,7 +529,7 @@ let induct_on_solve_rh_tac a_lbl c_lbl goal =
     [n] does not need to be the outermost quantifier.
 *)
 
-let basic_induct_on ctxt ?thm name clabel goal = 
+let basic_induct_on ?thm name clabel ctxt goal = 
   let typenv = typenv_of goal
   and scp = scope_of_goal goal
   in 
@@ -582,52 +580,52 @@ let basic_induct_on ctxt ?thm name clabel goal =
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
       subgoal.  *)
-  let split_lh_tac c g = (mini_scatter_tac ctxt c // skip) g
+  let split_lh_tac c = (mini_scatter_tac c // skip) 
   in 
   (** the Main tactic *)
-  let main_tac g = 
+  let main_tac ctxt0 g = 
     seq 
       [
 	cut thm;
-	(?> fun inf1 g1 -> 
+	(?> fun inf1 -> 
 	  let atag = get_one (Info.aformulas inf1) in 
 	  (inst_split_asm_tac atag
 	   --
 	     [
 	       (** Left-hand sub-goal *)
-               (?> fun inf2 g2 -> 
+               (?> fun inf2 -> 
 		 (deleteC (ftag ctag) ++
 		 (fun g3 -> 
 		   let c1_tag = get_one (Info.cformulas inf2) in 
-		   split_lh_tac (ftag c1_tag) g3)) g2);
+		   split_lh_tac (ftag c1_tag) g3)));
 	       (** Right-hand sub-goal *)
-	       (?> fun inf2 g2 -> 
+	       (?> fun inf2 -> 
 		 let a1_tag = get_one (Info.aformulas inf2) in 
 	         seq
 		   [
 		     (specC // skip);
 		     induct_on_solve_rh_tac 
 		       (ftag a1_tag) (ftag ctag)
-                   ] g2)
-	     ]) g1)
-      ] g
+                   ])
+	     ]))
+      ] ctxt0 g
   in 
-  main_tac goal
+  main_tac ctxt goal
 
-let induct_on ctxt ?thm ?c n goal =
+let induct_on ?thm ?c n ctxt goal =
   match c with
-    | Some(x) -> basic_induct_on ctxt ?thm n x goal
+    | Some(x) -> basic_induct_on ?thm n x ctxt goal
     | _ -> 
       begin
         let targets =
 	  List.map (ftag <+ drop_formula) (concls_of (sequent goal))
         in 
-        let main_tac g = 
+        let main_tac = 
 	  map_first 
-            (fun l -> basic_induct_on ctxt ?thm n l)
-            targets g
+            (fun l -> basic_induct_on ?thm n l)
+            targets 
         in 
-        try main_tac goal
+        try main_tac ctxt goal
         with _ -> raise (error "induct_on: Failed")
       end
 
