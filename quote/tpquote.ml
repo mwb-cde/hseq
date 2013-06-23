@@ -1,7 +1,7 @@
 (*----
- Name: tpquote.ml
+ Name: userquote.ml
  Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -20,7 +20,7 @@
 ----*)
 
 (**
-   TPQuotation
+   User Quotation
 
    Using the OCaml/Camlp4 quotation system to read terms and types.
    
@@ -126,27 +126,14 @@ let def_astexpander str =
   let _loc= (pos, pos)
   in 
   match def_check_string str with 
-    (Typedef, nstr) -> <:expr@here<BoolPP.read_type_defn $str:nstr$>>
-  | (Def, nstr) -> <:expr@here<BoolPP.read_defn $str:nstr$>>
+    (Typedef, nstr) -> <:expr@here<Userlib.read_type_defn $str:nstr$>>
+  | (Def, nstr) -> <:expr@here<Userlib.read_defn $str:nstr$>>
   | _ -> <:expr@here<$str:str$>>
 
 
-(* OCaml-3.08 version
-let pattexpander str =
-  let loc=(0, 0)
-  in 
-  match check_string str with 
-    (Type, nstr) -> 
-      <:patt<BoolPP.read_type $str:nstr$>>
-  | (Term, nstr) -> <:patt<BoolPP.Parsing.read_unchecked $str:nstr$>>
-  | (_, nstr) -> <:patt< $str:nstr$ >>
-*)
-
 let pattexpander str = failwith "Pattern expander not implemented"
 
-(* 
-   Tester
-*)
+(* Tester *)
 let test_astexpander_fn = ref (fun _ -> failwith "test_astexpander")
 let test_astexpander x = (!test_astexpander_fn) x
 

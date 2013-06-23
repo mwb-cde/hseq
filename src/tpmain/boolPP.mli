@@ -71,19 +71,6 @@ val choice_printer:
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the choice operator. *)
 
-(****
-(** {7 Initialising functions } *)
-
-val init_printers: unit -> unit
-(** Initialise printers. *)   
-
-val init_parsers: unit -> unit
-(** Initialise parsers. *)
-
-val init: unit -> unit
-(** Initialise printers and parsers. *)
-****)
-
 (** {7 Minimal printer and parser information} *)
 val ppinfo: unit -> Printer.ppinfo
 

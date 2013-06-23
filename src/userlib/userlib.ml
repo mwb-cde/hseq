@@ -108,6 +108,22 @@ end
 
 (** {6 Utility functions} *)
 
+let load_file_func () = 
+  Context.load (Global.context())
+let set_load_file_func f = 
+  Global.set_context (Context.set_load (Global.context()) f)
+
+let use_file_func () = 
+  Context.use (Global.context())
+let set_use_file_func f = 
+  Global.set_context (Context.set_use (Global.context()) f)
+
+let get_proof_hook () =
+  Goals.save_hook (Global.proofstack ())
+
+let set_proof_hook f = 
+  Global.set_proofstack (Goals.set_hook f (Global.proofstack()))
+
 (** String utilities **)
 let compile dirs name = 
   let compile_aux () =

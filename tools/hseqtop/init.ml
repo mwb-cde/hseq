@@ -43,7 +43,7 @@ let tp_init() =
   let tmp = !Settings.load_thy_level
   in 
     Settings.load_thy_level:=0;
-    Global.init();
+    Userlib.init();
     Settings.load_thy_level:=tmp
 
 (**
@@ -59,9 +59,8 @@ let tp_init() =
     [Global.Hooks.use_file := Unsafe.use_file]
 *)
 let set_hooks() = 
-  Global.Hooks.load_file := Unsafe.load_file;
-  Global.Hooks.use_file := Unsafe.use_file
-
+  Userlib.set_load_file_func (Unsafe.load_file);
+  Userlib.set_use_file_func (Unsafe.use_file)
       
 (** [set_base_dir()]: Get the installation directory *)
 let set_base_dir()=

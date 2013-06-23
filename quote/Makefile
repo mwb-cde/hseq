@@ -79,7 +79,8 @@ PROJ_ROOT=..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-LIBRARIES=tpquote
+#LIBRARIES=tpquote buildquote userquote
+LIBRARIES=buildquote tpquote
 
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes
@@ -100,7 +101,8 @@ DISABLE_NATIVECODE=yes
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-#object_SOURCES=
+#tpquote_SOURCES=tpquote
+buildquote_SOURCES=buildquote
 tpquote_SOURCES=tpquote
 
 # object_INCLUDE: Directories to include when compiling [object].

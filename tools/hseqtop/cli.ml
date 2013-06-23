@@ -67,11 +67,13 @@ let clear ()= history := []
 let get () = List.rev (!history)
 
 let start () = 
-  clear(); repl_flag:=true; Goals.set_hook signal; repl()
+  clear(); repl_flag:=true; 
+  Userlib.set_proof_hook signal;
+  repl()
 
 let stop ()= 
   repl_flag:=false; should_save:=false; 
-  Goals.set_hook (fun () -> ()) 
+  Userlib.set_proof_hook (fun () -> ())
 
 let restart () = 
   repl_flag:=true; Goals.set_hook signal; repl()

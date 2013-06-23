@@ -66,6 +66,18 @@ end
     different module.
 *)
 
+val load_file_func: unit -> (string -> unit)
+val set_load_file_func: (string -> unit) -> unit
+(** Set the load file function *)
+
+val use_file_func: unit -> (?silent:bool -> string -> unit)
+val set_use_file_func: (?silent:bool -> string -> unit) -> unit
+(** Set the use file function *)
+
+val set_proof_hook: (unit -> unit) -> unit
+val get_proof_hook: unit -> (unit -> unit) 
+(** Get/set proof hook *)
+
 (** {5 Utility functions} *)
 
 val compile: string list -> string -> int
@@ -142,6 +154,23 @@ val remove_type_pp: string -> unit
 (** [remove_type_pp id]: remove last-added printer-parser information
     for term identifier [id].
 *)
+
+val read: string -> Basic.term
+(** User level parsing of a string as a term. *)
+val read_unchecked: string -> Basic.term
+(** User level parsing of a string as a raw term.. *)
+val read_defn: 
+  string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+(** User level parsing of a string as a term definition. *)
+
+val read_type: string -> Basic.gtype
+(** Parse a string a type, resolving short names and symbols where
+    possible.  *)
+val read_type_defn : string -> Defn.Parser.typedef
+(** Parse a string as a type definition. *)
+
+val read_identifier: string -> Ident.t
+(** Parse a string as an identifier. *)
 
 (** {5 Theories} *)
 
