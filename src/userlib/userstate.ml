@@ -108,38 +108,26 @@ let init_state = Var.init
 (** The global context *)
 let context = State.context
 let set_context = State.set_context
-let init_context st = 
-  set_context st (Default.context())
 
 (** The global scope *)
 let scope = State.scope
 let set_scope = State.set_scope
-let init_scope st = 
-  set_scope st (Default.scope())
 
 (** Global pretty printer *)
 let ppinfo = State.ppinfo
 let set_ppinfo = State.set_ppinfo
-let init_ppinfo st = 
-  set_ppinfo st (Default.printers())
 
 (** Parser tables *)
 let parsers = State.parsers
 let set_parsers = State.set_parsers
-let init_parsers st = 
-  set_parsers st (Default.parsers())
 
 (** The simpset *)
 let simpset = State.simpset
 let set_simpset = State.set_simpset
-let init_simpset st = 
-  set_simpset st (Default.simpset())
 
 (** The proofstack *)
 let proofstack = State.proofstack
 let set_proofstack = State.set_proofstack
-let init_proofstack st = 
-  set_proofstack st (Default.proofstack())
 
 module Access = 
 struct
@@ -168,7 +156,72 @@ struct
   let init_proofstack () = set_proofstack (Default.proofstack())
 end
 
+
+(** Build theories from a script *)
+module TheoryScriptReader =
+struct
+  let forbidden = ref(Lib.StringSet.empty)
+  let init_forbidden() = forbidden := Lib.StringSet.empty
+  and is_forbidden s = Lib.StringSet.mem s (!forbidden)
+  and add_forbidden s = forbidden := Lib.StringSet.add s (!forbidden)
+  and drop_forbidden s = forbidden := Lib.StringSet.remove s (!forbidden)
+
+  let build_thy_file thyname =
+    let ctxt = context (state()) in 
+    let thydb0 = Context.Thys.theories ctxt in
+    let build_aux file =
+      let script = 
+        Context.Files.find_file 
+          (Context.Files.script_of_thy ctxt file) 
+          (Context.Files.get_thy_path ctxt) 
+      in 
+      let usefile = Context.use ctxt ~silent:false
+      in 
+      Report.report ("Trying to build theory "^file);
+      begin
+        try
+          begin
+            add_forbidden file; 
+            usefile script; 
+            drop_forbidden file
+          end
+        with err -> (drop_forbidden file; raise err)
+      end;
+      Report.report ("Built theory "^file);
+      let ctxt1 = context(state()) in
+      let thydb1 = Context.Thys.theories ctxt1 in 
+      ignore(set_context (state()) (Context.Thys.set_theories ctxt thydb0));
+      thydb1
+    in 
+    if (is_forbidden thyname)
+    then raise (Report.error ("Circular importing, theory "^thyname))
+    else ();
+    try build_aux thyname
+    with Not_found ->
+      (Report.warning ("Failed to build theory "^thyname);
+       raise (Report.error ("Can't find script to build theory "^thyname)))
+
+  let builder ?silent name = ignore(build_thy_file name)
+end
+
 (** State initializer *)
+
+let init_context st = 
+  let ctxt0 = Default.context() in
+  let ctxt = Context.set_build ctxt0 TheoryScriptReader.builder in
+  set_context st ctxt
+
+let init_scope st = 
+  set_scope st (Default.scope())
+let init_ppinfo st = 
+  set_ppinfo st (Default.printers())
+let init_parsers st = 
+  set_parsers st (Default.parsers())
+let init_simpset st = 
+  set_simpset st (Default.simpset())
+let init_proofstack st = 
+  set_proofstack st (Default.proofstack())
+
 let init () = 
   let st = 
     List.fold_left (fun a f -> f a) (State.empty())
@@ -177,3 +230,5 @@ let init () =
        init_simpset; init_proofstack]
   in
   set_state st
+
+
