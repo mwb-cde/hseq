@@ -1,7 +1,7 @@
 (*----
  Name: hseqstart.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -24,25 +24,26 @@
 *)
 
 open HSeq;;
+open Userlib;;
 
 (**
    Install printers
 *)
 
-#install_printer Display.print_term;; 
-#install_printer Display.print_formula;;
-#install_printer Display.print_type;;
-#install_printer Display.print_sqnt;;
-#install_printer Display.print_node;;
-#install_printer Display.print_branch;;
-#install_printer Display.print_thm;;
-#install_printer Display.print_prf;;
-#install_printer Display.print_prfstk;;
-#install_printer Display.print_fnident;;
-#install_printer Display.print_error;;
-#install_printer Display.print_defn;;
-#install_printer Display.print_theory;;
-#install_printer Simplib.print_set;;
+#install_printer HSeq.Userlib.Display.print_term;; 
+#install_printer HSeq.Userlib.Display.print_formula;;
+#install_printer HSeq.Userlib.Display.print_type;;
+#install_printer HSeq.Userlib.Display.print_sqnt;;
+#install_printer HSeq.Userlib.Display.print_node;;
+#install_printer HSeq.Userlib.Display.print_branch;;
+#install_printer HSeq.Userlib.Display.print_thm;;
+#install_printer HSeq.Userlib.Display.print_prf;;
+#install_printer HSeq.Userlib.Display.print_prfstk;;
+#install_printer HSeq.Userlib.Display.print_fnident;;
+#install_printer HSeq.Userlib.Display.print_error;;
+#install_printer HSeq.Userlib.Display.print_defn;;
+#install_printer HSeq.Userlib.Display.print_theory;;
+#install_printer HSeq.Userlib.Display.print_simpset;;
 #install_printer Thydb.print;;
 
 (**

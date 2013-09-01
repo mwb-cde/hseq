@@ -398,6 +398,42 @@ let qed n =
 let apply ?report tac g = 
   Goals.apply ?report (Global.context()) tac g
 
+(** Top-level pretty printers *)
+module Display =
+struct
+
+  let print_fnident = Display.print_fnident
+
+  let print_term x = Display.print_term (Global.ppinfo()) x
+
+  let print_formula x = Display.print_formula (Global.ppinfo()) x
+
+  let rec print_type x = Display.print_type (Global.ppinfo()) x
+
+  let print_sqnt x = Display.print_sqnt (Global.ppinfo()) x
+  let print_node x = Display.print_node (Global.ppinfo()) x
+  let print_branch x = Display.print_branch (Global.ppinfo()) x
+  let print_thm t = Logic.print_thm (Global.ppinfo()) t
+
+  let print_prf p = Display.print_prf (Global.ppinfo()) p
+  let print_prfstk p = Display.print_prfstk (Global.ppinfo()) p
+
+(***
+  let print_termdefn def = Display.print_termdefn (Global.ppinfo()) def
+  let print_termdecln def = Display.print_termdecln (Global.ppinfo()) def
+**)
+
+  let print_defn def = Display.print_defn (Global.ppinfo()) def
+  let print_subst = Display.print_subst
+      
+  let print_error r = Display.print_error (Global.ppinfo()) r
+
+  let print_theory x = Display.print_theory (Global.ppinfo()) x
+
+  let print_simpset x = Simpset.print (Global.ppinfo()) x
+
+end (* Display *)
+
 (** {6 Initialising functions} *)
 
 let init = Global.init

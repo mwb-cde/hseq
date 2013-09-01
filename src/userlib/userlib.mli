@@ -496,6 +496,33 @@ val apply:
     with the subgoals [tac n] appended to the remaining subgoals of goal.
 *)
 
+(** Top-level pretty printers *)
+module Display : 
+sig
+  val print_term: Basic.term -> unit
+  val print_formula: Formula.t -> unit
+  val print_type: Basic.gtype -> unit
+  val print_theory: Theory.thy -> unit
+
+  val print_sqnt: Logic.Sequent.t -> unit
+  val print_node: Logic.node -> unit
+  val print_branch: Logic.branch -> unit
+
+  val print_thm: Logic.thm -> unit
+  val print_defn: Logic.Defns.cdefn -> unit
+
+  val print_prf: Goals.Proof.t -> unit
+  val print_prfstk: Goals.ProofStack.t -> unit
+
+  val print_fnident: Ident.t -> unit
+
+  val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
+  val print_error: Report.error -> unit
+
+  val print_simpset: Simpset.simpset -> unit
+end (* Display *)
+
+
 (** {5 Initialising functions} *)
 
 val init: unit -> unit
@@ -503,3 +530,5 @@ val init: unit -> unit
 
 val reset: unit -> unit
 (** Reset then initialise the system. *)
+
+

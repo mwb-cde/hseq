@@ -33,6 +33,7 @@
 (** Open the theorem prover *)
 
 open HSeq
+open HSeq.Userlib
 
 (** Add the source include directories *)
 let _ = 
@@ -47,9 +48,12 @@ let _ =
    This is part of the standard library so clear the theory base name.
 *)
 let buildall_base_name = 
-  let str = try Global.Thys.get_base_name() with _ -> "Main"
+  let str = 
+    try Context.Thys.get_base_name(Global.context()) 
+    with _ -> "Main"
   in 
-  Global.Thys.clear_base_name(); str;;
+  Global.set_context(Context.Thys.clear_base_name (Global.context())); 
+  str;;
 
 #use "0MainScript.ml";;
 
