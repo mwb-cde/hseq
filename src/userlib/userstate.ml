@@ -42,6 +42,9 @@ struct
 
   (* Proof stack *)
   let proofstack() = Goals.ProofStack.empty()
+
+  (* base_thy_builder *)
+  let base_thy_builder () = (fun x -> x)
 end
 
 (** {5 Global state} *)
@@ -52,7 +55,8 @@ struct
       context_f : Context.t;
       scope_f : Scope.t;
       simpset_f : Simpset.simpset;
-      proofstack_f: Goals.ProofStack.t
+      proofstack_f: Goals.ProofStack.t; 
+      base_thy_builder_f: t -> t;
     }
 
     (** Initializer *)
@@ -62,6 +66,7 @@ struct
         scope_f = Default.scope();
         simpset_f = Default.simpset();
         proofstack_f = Default.proofstack();
+        base_thy_builder_f = Default.base_thy_builder();
       }
 
     let context st = st.context_f
@@ -88,6 +93,10 @@ struct
     let proofstack st = st.proofstack_f
     let set_proofstack st s = 
       { st with proofstack_f = s }
+
+    let base_thy_builder st = st.base_thy_builder_f
+    let set_base_thy_builder st f = 
+      { st with base_thy_builder_f = f }
 end
 
 (** {5 Variables } *)
@@ -128,6 +137,10 @@ let set_simpset = State.set_simpset
 (** The proofstack *)
 let proofstack = State.proofstack
 let set_proofstack = State.set_proofstack
+
+(** The base theory builder *)
+let base_thy_builder = State.base_thy_builder
+let set_base_thy_builder = State.set_base_thy_builder
 
 module Access = 
 struct
@@ -221,6 +234,13 @@ let init_simpset st =
   set_simpset st (Default.simpset())
 let init_proofstack st = 
   set_proofstack st (Default.proofstack())
+let init_base_thy_builder st = 
+  let builder st1 = 
+    let ctxt1 = BaseTheory.builder (context st1) ~save:false 
+    in
+    set_context st ctxt1
+  in
+  set_base_thy_builder st builder
 
 let init () = 
   let st = 

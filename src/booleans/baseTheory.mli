@@ -21,8 +21,7 @@
 
 (** A minimal base theory, used if no other theory can be found. *)
 
-val builder: 
-  Context.t -> ?save:bool -> unit -> Context.t
+val builder: ?save:bool -> Context.t -> Context.t
 (** Build the minimal theory. If [?save] is true, save the theory.
     (default: save=false)
 *)

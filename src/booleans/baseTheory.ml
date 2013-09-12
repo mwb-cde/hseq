@@ -27,7 +27,7 @@ open Lib.Ops
 
 let rec swap f = (fun x y -> f y x)
 
-let builder ctxt ?(save=false) () =
+let builder ?(save=false) ctxt =
   begin
     let sctxt1 = begin_theory ctxt Lterm.base_thy []
     in

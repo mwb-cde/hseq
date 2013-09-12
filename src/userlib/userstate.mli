@@ -28,7 +28,8 @@ sig
       context_f : Context.t;
       scope_f : Scope.t;
       simpset_f : Simpset.simpset;
-      proofstack_f: Goals.ProofStack.t
+      proofstack_f: Goals.ProofStack.t;
+      base_thy_builder_f: t -> t
     }
     
   val empty: unit -> t
@@ -50,6 +51,9 @@ sig
 
   val proofstack: t -> Goals.ProofStack.t
   val set_proofstack: t -> Goals.ProofStack.t -> t
+
+  val base_thy_builder: t -> (t -> t)
+  val set_base_thy_builder: t -> (t -> t) -> t
 end
 
 val state: unit -> State.t
@@ -98,6 +102,13 @@ val set_proofstack: State.t -> Goals.ProofStack.t -> State.t
 (** Set the global simplifier set *)
 val init_proofstack: State.t -> State.t
 (** Initialize the global proofstack *)
+
+val base_thy_builder: State.t -> (State.t -> State.t)
+(** The base theory builder *)
+val set_base_thy_builder: State.t -> (State.t -> State.t) -> State.t
+(** Set the base theory builder *)
+val init_base_thy_builder: State.t -> State.t
+(** Initialize the base theory builder *)
 
 module Access :
 sig
