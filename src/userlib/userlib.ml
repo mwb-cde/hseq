@@ -1,6 +1,6 @@
 (*----
   Name: userlib.ml
-  Copyright M Wahab 2005-2013
+  Copyright M Wahab 2013
   Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -35,7 +35,7 @@ struct
   let set_state = Userstate.set_state
 
   (** Initialise the global state. *)
-  let init () = Userstate.init()
+  let init () = Userinit.init()
 
   let context () = Userstate.context (state())
   let set_context ctxt = 
@@ -109,14 +109,14 @@ end
 (** {6 Utility functions} *)
 
 let load_file_func () = 
-  Context.load (Global.context())
+  Context.loader (Global.context())
 let set_load_file_func f = 
-  Global.set_context (Context.set_load (Global.context()) f)
+  Global.set_context (Context.set_loader (Global.context()) f)
 
 let use_file_func () = 
-  Context.use (Global.context())
+  Context.scripter (Global.context())
 let set_use_file_func f = 
-  Global.set_context (Context.set_use (Global.context()) f)
+  Global.set_context (Context.set_scripter (Global.context()) f)
 
 let get_proof_hook () =
   Goals.save_hook (Global.proofstack ())

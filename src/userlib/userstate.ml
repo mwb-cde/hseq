@@ -1,6 +1,6 @@
 (**----
-   Name: userlib.mli
-   Copyright M Wahab 2005-2013
+   Name: userlib.ml
+   Copyright M Wahab 2013
    Author: M Wahab  <mwb.cde@gmail.com>
 
    This file is part of HSeq
@@ -188,7 +188,7 @@ struct
           (Context.Files.script_of_thy ctxt file) 
           (Context.Files.get_thy_path ctxt) 
       in 
-      let usefile = Context.use ctxt ~silent:false
+      let usefile = Context.scripter ctxt ~silent:false
       in 
       Report.report ("Trying to build theory "^file);
       begin
@@ -221,7 +221,7 @@ end
 
 let init_context st = 
   let ctxt0 = Default.context() in
-  let ctxt = Context.set_build ctxt0 TheoryScriptReader.builder in
+  let ctxt = Context.set_builder ctxt0 TheoryScriptReader.builder in
   set_context st ctxt
 
 let init_scope st = 
@@ -229,11 +229,12 @@ let init_scope st =
 let init_ppinfo st = 
   set_ppinfo st (Default.printers())
 let init_parsers st = 
-  set_parsers st (Default.parsers())
+  set_parsers st (Parser.init ())
 let init_simpset st = 
   set_simpset st (Default.simpset())
 let init_proofstack st = 
   set_proofstack st (Default.proofstack())
+
 let init_base_thy_builder st = 
   let builder st1 = 
     let ctxt1 = BaseTheory.builder (context st1) ~save:false 
@@ -242,6 +243,16 @@ let init_base_thy_builder st =
   in
   set_base_thy_builder st builder
 
+(**
+let init_file_loading st = 
+  let scripter = Unsafe.use_file 
+  and loader = Unsafe.load_file 
+  in 
+  let ctxt0 = context st in
+  let ctxt1 = Context.set_loader ctxt0 loader in
+  let ctxt2 = Context.set_scripter ctxt1 scripter in 
+  set_context st ctxt2
+**)
 let init () = 
   let st = 
     List.fold_left (fun a f -> f a) (State.empty())

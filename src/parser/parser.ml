@@ -317,6 +317,11 @@ let print_overloads tbl info =
 
 (*** Initialising functions ***)
 
+let init_symbols tbl = 
+  let symtab = Table.init_symbols (Table.symbols tbl) core_symbols
+  in 
+  Table.set_symbols tbl symtab 
+
 let init_token_table tbl =
   Table.set_tokens tbl (Grammars.token_table_reset (Table.tokens tbl))
 
@@ -325,7 +330,7 @@ let init_type_token_table tbl =
     (Grammars.token_table_reset (Table.type_tokens tbl))
     
 let init_tables tbl =
-  let tbl0 = init_symtable tbl default_symtable_size in
+  let tbl0 = init_symbols tbl in
   let tbl1 = init_token_table tbl0 in
   let tbl2 = init_type_token_table tbl1 in
   init_overload tbl2

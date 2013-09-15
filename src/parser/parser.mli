@@ -254,6 +254,9 @@ val print_overloads: Table.t -> Printer.ppinfo -> unit
 
 (** {5 Initialising functions} *)
 
+val init_symbols: Table.t -> Table.t
+(** Initialise the symbols *)
+
 val init_parsers : Table.t -> Table.t
 (** Initialise the type and term parsers *)
 

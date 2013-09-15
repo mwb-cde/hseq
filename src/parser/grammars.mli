@@ -396,6 +396,13 @@ val bool_type: parser_info -> Basic.gtype phrase
 val num_type: parser_info -> Basic.gtype phrase
 (** [num_type info]: Parse type "num" *)
   
+val type_constructor_parser: parser_info -> Basic.gtype phrase
+(** [type_constructor_parser inf]: Parse "['(' <args> ')']<constructor>" *)
+
+val bracketed_type_parser: parser_info -> Basic.gtype phrase
+(** [bracketed_type_parser info]: Parse "'(' <type> ')'" *)
+
+
 val inner_types: parser_info -> Basic.gtype Pkit.phrase
 (** Parse infix/prefix/suffix type operators *)
   

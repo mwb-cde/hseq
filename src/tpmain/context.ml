@@ -1,7 +1,7 @@
 (*----
   Name: context.ml
-  Copyright M Wahab 2012
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2012, 2013
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -171,23 +171,23 @@ let set_context sctxt ctxt = set_scope ctxt (scope_of sctxt)
 
 (** {6 File handling} *)
 
-let set_load t f = 
+let set_loader t f = 
   let file1 = {t.file_f with load_f = f} in
   { t with file_f = file1 }
 
-let load t = t.file_f.load_f
+let loader t = t.file_f.load_f
 
-let set_use t f = 
+let set_scripter t f = 
   let file1 = {t.file_f with use_f = f} in
   { t with file_f = file1 }
     
-let use t = t.file_f.use_f
+let scripter t = t.file_f.use_f
 
-let set_build t f = 
+let set_builder t f = 
   let file1 = {t.file_f with build_f = f} in
   { t with file_f = file1 }
 
-let build t = t.file_f.build_f
+let builder t = t.file_f.build_f
 
 let set_path t p = 
   let file1 = {t.file_f with path_f = p} in
@@ -223,7 +223,7 @@ let set_base_name t n =
 let base_name t = 
   match t.thys_f.base_name_f with
   | Some(x) -> x
-  | _ -> ""
+  | _ -> raise Not_found
 
 let has_base_name t = 
   not ((t.thys_f.base_name_f) = None)
@@ -326,139 +326,6 @@ struct
   let set_current ctxt thy = 
     let thydb = Thydb.set_current (get_theories ctxt) thy in
     set_theories ctxt thydb
-end
-
-(** {5 File-Handling} *)
-
-module Files =
-struct 
-
-  let get_cdir () = Sys.getcwd ()
-
-  let load_use_file ?silent ctxt f =
-    try
-      if List.exists (Filename.check_suffix f) (obj_suffix ctxt)
-      then load ctxt f
-      else use ctxt f
-    with 
-    | Not_found -> Report.warning ("Can't find file "^f)
-    | _ -> Report.warning ("Failed to load file "^f)
-
-  (** {7 Paths} ***)
-
-  let set_path = set_path
-  let get_path = path
-  let add_path ctxt x = set_path ctxt (x::(get_path ctxt))
-  let remove_path ctxt x = 
-    let pth = get_path ctxt in
-    set_path ctxt (Lib.filter (fun y -> x = y) pth)
-
-  let init_thy_path ctxt = 
-    set_path ctxt ["."; Settings.thys_dir()]
-
-  let get_thy_path ctxt = path ctxt
-  let add_thy_path ctxt x = add_path ctxt x
-  let set_thy_path ctxt x = set_path ctxt x
-  let remove_from_path ctxt x = remove_path ctxt x
-
-  let init_paths ctxt = init_thy_path ctxt
-
-  (*** Theory files ***)
-
-  let file_of_thy ctxt th = th^(thy_suffix ctxt)
-  let script_of_thy ctxt th = th^(script_suffix ctxt)
-
-  let find_file f path =
-    let rec find_aux ths =
-      match ths with
-      | [] -> raise Not_found
-      | (t::ts) ->
-	let nf = Filename.concat t f in 
-	if Sys.file_exists nf then nf 
-	else find_aux ts
-    in 
-    if Filename.is_relative f 
-    then find_aux path
-    else f
-
-  let find_thy_file ctxt f =
-    try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
-    with Not_found -> raise (Report.error ("Can't find theory "^f))
-
-  (** [build_thy_file f]: build a theory by running script file f.  *)
-  let build_thy_file ctxt thyname = build ctxt thyname
-
-  (** [load_thy_file info]: Load the file storing the theory named
-      [info.name] with protection [info.prot] and date no later than
-      [info.date]. Finds the file from the path [get_thy_path()].  *)
-  let load_thy_file ctxt info = 
-    let test_protection prot b =
-      match prot with 
-      | None -> true
-      | (Some p) -> p && b
-    in 
-    let test_date tym d = 
-      match tym with 
-      | None -> true
-      | (Some tim) -> d <= tim
-    in 
-    let name = info.Thydb.Loader.name
-    and date = info.Thydb.Loader.date
-    and prot = info.Thydb.Loader.prot
-    in 
-    let thyfile =file_of_thy ctxt name
-    in 
-    let rec load_aux ths =
-      match ths with
-      | [] -> raise Not_found
-      | (t::ts) ->
-	let filename = Filename.concat t thyfile
-	in 
-	if Sys.file_exists filename
-	then 
-	  let sthy = Theory.load_theory filename
-	  in 
-	  if (test_protection prot (Theory.saved_prot sthy))
-	    && (test_date date (Theory.saved_date sthy))
-	  then sthy
-	  else load_aux ts
-	else load_aux ts
-    in 
-    load_aux (get_thy_path ctxt)
-
-  (** [load_use_theory thy]: Load or use each of the files named in
-      theory [thy].  *)
-  let load_use_theory_files ctxt thy = 
-    let files = thy.Theory.cfiles in
-    let path = get_thy_path ctxt in 
-    let find_load f = load_use_file ctxt (find_file f path)
-    in 
-    List.iter find_load files
-
-  (*** Theory inspection functions ***)
-
-  (** [default_load_function]: The default list of functions to call
-      on a newly-loaded theory.  *)
-  let default_load_functions = 
-    [
-      load_use_theory_files;    (* load files *)
-    (*
-      PP.add_loaded_type_pp;    (* add type PP information *)
-      PP.add_loaded_term_pp;    (* add term PP information *)
-    *)
-    ]
-
-  let load_functions = ref default_load_functions
-  let add_load_fn f = load_functions := (f::!load_functions)
-  let init_load_functions () = 
-    load_functions := default_load_functions
-
-  (** [on_load_thy]: The toplevel function that is passed a newly
-      loaded theory. This just passes the theory to the functions in
-      [load_functions].  *)
-  let on_load_thy db th =
-    List.iter (fun f -> f (empty()) th) (List.rev !load_functions)
-
 end
 
 (*** New Pretty printing based on Context.t ***)
@@ -596,7 +463,7 @@ struct
     in 
     add_type_pp ctxt id pr fx repr
 
-  let add_loaded_term_pp ctxt th =
+  let add_theory_term_pp ctxt th =
     let thy_name = th.Theory.cname
     and pp_list = List.rev th.Theory.cid_pps
     in 
@@ -616,7 +483,7 @@ struct
     in 
     List.fold_left add_pp ctxt pp_list
 
-  let add_loaded_type_pp ctxt th =
+  let add_theory_type_pp ctxt th =
     let thy_name = th.Theory.cname
     and pp_list = List.rev th.Theory.ctype_pps
     in 
@@ -691,7 +558,7 @@ struct
     expand_defn scpd (lhs, rhs)
 
   let read_type_defn scpd x =
-    let ptable = parsers (context_of scpd)in
+    let ptable = parsers (context_of scpd) in
     let pdefn = 
       catch_parse_error 
         (Parser.read ptable Parser.typedef_parser) x
@@ -707,4 +574,136 @@ struct
     let ptable = parsers ctxt in
     catch_parse_error 
       (Parser.read ptable Parser.identifier_parser) x
+end
+
+(** {5 File-Handling} *)
+
+module Files =
+struct 
+
+  let get_cdir () = Sys.getcwd ()
+
+  let load_use_file ?silent ctxt f =
+    try
+      if List.exists (Filename.check_suffix f) (obj_suffix ctxt)
+      then loader ctxt f
+      else scripter ctxt f
+    with 
+    | Not_found -> Report.warning ("Can't find file "^f)
+    | _ -> Report.warning ("Failed to load file "^f)
+
+  (** {7 Paths} ***)
+
+  let set_path = set_path
+  let get_path = path
+  let add_path ctxt x = set_path ctxt (x::(get_path ctxt))
+  let remove_path ctxt x = 
+    let pth = get_path ctxt in
+    set_path ctxt (Lib.filter (fun y -> x = y) pth)
+
+  let init_thy_path ctxt = 
+    set_path ctxt ["."; Settings.thys_dir()]
+
+  let get_thy_path ctxt = path ctxt
+  let add_thy_path ctxt x = add_path ctxt x
+  let set_thy_path ctxt x = set_path ctxt x
+  let remove_from_path ctxt x = remove_path ctxt x
+
+  let init_paths ctxt = init_thy_path ctxt
+
+  (*** Theory files ***)
+
+  let file_of_thy ctxt th = th^(thy_suffix ctxt)
+  let script_of_thy ctxt th = th^(script_suffix ctxt)
+
+  let find_file f path =
+    let rec find_aux ths =
+      match ths with
+      | [] -> raise Not_found
+      | (t::ts) ->
+	let nf = Filename.concat t f in 
+	if Sys.file_exists nf then nf 
+	else find_aux ts
+    in 
+    if Filename.is_relative f 
+    then find_aux path
+    else f
+
+  let find_thy_file ctxt f =
+    try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
+    with Not_found -> raise (Report.error ("Can't find theory "^f))
+
+  (** [build_thy_file f]: build a theory by running script file f.  *)
+  let build_thy_file ctxt thyname = builder ctxt thyname
+
+  (** [load_thy_file info]: Load the file storing the theory named
+      [info.name] with protection [info.prot] and date no later than
+      [info.date]. Finds the file from the path [get_thy_path()].  *)
+  let load_thy_file ctxt info = 
+    let test_protection prot b =
+      match prot with 
+      | None -> true
+      | (Some p) -> p && b
+    in 
+    let test_date tym d = 
+      match tym with 
+      | None -> true
+      | (Some tim) -> d <= tim
+    in 
+    let name = info.Thydb.Loader.name
+    and date = info.Thydb.Loader.date
+    and prot = info.Thydb.Loader.prot
+    in 
+    let thyfile =file_of_thy ctxt name
+    in 
+    let rec load_aux ths =
+      match ths with
+      | [] -> raise Not_found
+      | (t::ts) ->
+	let filename = Filename.concat t thyfile
+	in 
+	if Sys.file_exists filename
+	then 
+	  let sthy = Theory.load_theory filename
+	  in 
+	  if (test_protection prot (Theory.saved_prot sthy))
+	    && (test_date date (Theory.saved_date sthy))
+	  then sthy
+	  else load_aux ts
+	else load_aux ts
+    in 
+    load_aux (get_thy_path ctxt)
+
+  (** [load_use_theory thy]: Load or use each of the files named in
+      theory [thy].  *)
+  let load_use_theory_files ctxt thy = 
+    let files = thy.Theory.cfiles in
+    let path = get_thy_path ctxt in 
+    let find_load f = load_use_file ctxt (find_file f path)
+    in 
+    List.iter find_load files
+
+  (*** Theory inspection functions ***)
+
+  (** [default_load_function]: The default list of functions to call
+      on a newly-loaded theory.  *)
+  let default_load_functions = 
+    [
+      load_use_theory_files;    (* load files *)
+(**
+      NewPP.add_theory_type_pp;    (* add type PP information *)
+      NewPP.add_theory_term_pp;    (* add term PP information *)
+**)
+    ]
+
+  let load_functions = ref default_load_functions
+  let add_load_fn f = load_functions := (f::!load_functions)
+  let init_load_functions () = 
+    load_functions := default_load_functions
+
+  (** [on_load_thy]: The toplevel function that is passed a newly
+      loaded theory. This just passes the theory to the functions in
+      [load_functions].  *)
+  let on_load_thy db th =
+    List.iter (fun f -> f (empty()) th) (List.rev !load_functions)
 end

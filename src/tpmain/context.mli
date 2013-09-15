@@ -148,23 +148,23 @@ val set_scope: t -> Scope.t -> t
 
 (** {6 File handling} *)
 
-val set_load : t -> (string -> unit) -> t
-(** [set_load f t]: Set the file-loading function in context [t] to [f]. *)
+val set_loader : t -> (string -> unit) -> t
+(** [set_loader f t]: Set the file-loading function in context [t] to [f]. *)
 
-val load : t -> (string -> unit)
-(** [load t]: Get the file-loading function of context [t]. *)
+val loader : t -> (string -> unit)
+(** [loader t]: Get the file-loading function of context [t]. *)
 
-val set_use : t -> (?silent:bool -> string -> unit) -> t
+val set_scripter : t -> (?silent:bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
-val use : t -> (?silent:bool -> string -> unit)
+val scripter: t -> (?silent:bool -> string -> unit)
 (** [use t]: Get the script-loading function of context [t]. *)
 
-val set_build : t ->  (?silent:bool -> string -> unit) -> t
+val set_builder : t ->  (?silent:bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
-val build : t -> (?silent:bool -> string -> unit)
-(** [use t]: Get the script-loading function of context [t]. *)
+val builder : t -> (?silent:bool -> string -> unit)
+(** [use t]: Get the theory function of context [t]. *)
 
 val set_path : t-> string list -> t
 (** [set_path p t]: Set the path in context [t] to [p]. *)
@@ -395,6 +395,9 @@ sig
   val remove_term_pp: t -> Ident.t -> t
   (** Remove PP information for term identifer occuring in a term. *)
 
+  val add_theory_term_pp: t -> Theory.contents -> t
+  (** Add printer records from a theory . *)
+
   (** {7 Types} *)
 
   val add_type_parser: 
@@ -422,6 +425,9 @@ sig
 
   val remove_type_pp: t -> Ident.t -> t
   (** Remove PP record for type identifer. *)
+
+  val add_theory_type_pp: t -> Theory.contents -> t
+  (** Add printer records from a theory . *)
 
   (** {6 User-defined printers} *)
 

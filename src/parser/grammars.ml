@@ -640,27 +640,31 @@ and type_parsers inf toks =
 let rec types inf toks = 
   inner_types (clear_type_names inf) toks
     
+let type_constructor_parser inf toks = 
+  let form_type (a, i) = 
+    match a with 
+      None -> Gtypes.mk_def i []
+    | Some(ts) -> Gtypes.mk_def i ts 
+  in
+  ((((optional 
+       (((!$(Sym ORB) 
+	  -- ((comma_list (inner_types inf))
+	      -- (!$(Sym CRB)))))
+	>> (fun (_, (args, _)) -> args))))
+    -- (long_id id_strict inf))
+   >> form_type) toks
+
+let bracketed_type_parser inf toks = 
+  ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
+       >> (fun x -> fst (snd x))) toks
+
 let core_type_parsers = 
   [
     "primed_id", primed_id;
     "num_type", num_type;
     "bool_type", bool_type;
-    "type_constructor", 
-    (fun inf ->
-      (((optional 
-	   (((!$(Sym ORB) 
-	      -- ((comma_list (inner_types inf))
-		  -- (!$(Sym CRB)))))
-	    >> (fun (_, (args, _)) -> args)))
-	-- (long_id id_strict inf))
-       >> (fun (a, i) -> 
-	 match a with
-	     None -> Gtypes.mk_def i []
-	   | Some(ts) -> Gtypes.mk_def i ts)));
-    "bracketed_type", 
-    (fun inf -> 
-      ((!$(Sym ORB) -- ((inner_types inf) -- !$(Sym CRB)))
-       >> (fun x -> fst (snd x))))
+    "type_constructor", type_constructor_parser;
+    "bracketed_type", bracketed_type_parser;
   ]
 
 let init_type_parsers inf = 
