@@ -112,7 +112,7 @@ let std_astexpander instr =
   let str = String.escaped instr
   in 
   match std_check_string str with 
-    (Type, nstr) -> <:expr@here< BoolPP.read_type $str:nstr$ >>
+    (Type, nstr) -> <:expr@here<(BoolPP.read_type $str:nstr$)>>
   | (Term, nstr) -> <:expr@here<(BoolPP.read $str:nstr$)>>
   | _ -> <:expr@here<$str:str$>>
 

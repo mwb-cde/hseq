@@ -280,8 +280,11 @@ let ppinfo () = base_ppinfo
 
 let quote_context =
   let ctxt0 = Context.empty() in
-  let ctxt1 = init_bool_parsers ctxt0 in
-  ctxt1
+  let ctxt1 = 
+    Context.set_parsers ctxt0 (Parser.init_parsers (Context.parsers ctxt0)) 
+  in 
+  let ctxt2 = init_bool_parsers ctxt1 in
+  ctxt2
 
 (** Parse a string as a term, resolving short names and symbols. *)
 let read str = Context.NewPP.read quote_context str

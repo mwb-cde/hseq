@@ -61,13 +61,11 @@ val load_theory_as_cur:
     making it the current theory.
 *)
 
-val read: string -> Basic.term
+val read: ?ctxt:Context.t -> string -> Basic.term
 (** User level parsing of a string as a term. *)
-val read_unchecked: string -> Basic.term
+val read_unchecked: ?ctxt:Context.t -> string -> Basic.term
 (** User level parsing of a string as a raw term.. *)
-
-val read_defn: 
-  string 
+val read_defn: ?ctxt:Context.t -> string 
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 

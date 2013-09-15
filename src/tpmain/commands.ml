@@ -61,9 +61,16 @@ let load_theory_as_cur ctxt n =
   in 
   Context.Thys.set_theories ctxt db
 
-let read x = catch_errors (BoolPP.ppinfo()) BoolPP.read x
-let read_unchecked x = catch_errors (BoolPP.ppinfo()) BoolPP.read_unchecked x
-let read_defn x = catch_errors (BoolPP.ppinfo()) BoolPP.read_defn x
+let read ?ctxt (x: string) = 
+  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
+  catch_errors (BoolPP.ppinfo()) Context.NewPP.read pctxt x
+let read_unchecked ?ctxt x = 
+  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
+  catch_errors (BoolPP.ppinfo()) Context.NewPP.read_unchecked pctxt x
+let read_defn ?ctxt x =
+  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
+  catch_errors (BoolPP.ppinfo()) Context.NewPP.read_defn pctxt x
+
 
 (*
  * Theories

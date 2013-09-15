@@ -221,15 +221,16 @@ end
 
 let init_context st = 
   let ctxt0 = Default.context() in
-  let ctxt = Context.set_builder ctxt0 TheoryScriptReader.builder in
-  set_context st ctxt
+  let ctxt1 = Context.set_builder ctxt0 TheoryScriptReader.builder in
+  let st1 = set_parsers (set_context st ctxt1) (Parser.init ()) in
+  st1
 
 let init_scope st = 
   set_scope st (Default.scope())
 let init_ppinfo st = 
   set_ppinfo st (Default.printers())
-let init_parsers st = 
-  set_parsers st (Parser.init ())
+let init_parsers st = st
+(* set_parsers st (Parser.init ()) *)
 let init_simpset st = 
   set_simpset st (Default.simpset())
 let init_proofstack st = 

@@ -336,13 +336,13 @@ let init_tables tbl =
   init_overload tbl2
 
 let init_parsers tbl = 
-  let tbl0 = Table.set_type_parsers tbl Grammars.core_type_parsers in
-  let tbl1 = Table.set_term_parsers tbl0 Grammars.core_term_parsers in
-  tbl1
+  let tbl0 = init_tables tbl in
+  let tbl1 = Table.set_type_parsers tbl0 Grammars.core_type_parsers in
+  let tbl2 = Table.set_term_parsers tbl1 Grammars.core_term_parsers in
+  tbl2
 
 let init () = 
-  let tbl0 = init_parsers (Table.empty Table.default_size) in
-  init_tables tbl0
+  init_parsers (Table.empty Table.default_size)
   
 
 (**

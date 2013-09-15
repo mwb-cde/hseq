@@ -162,5 +162,6 @@ let builder ?(save=false) ctxt =
 (*
 let init() = 
   Global.Init.set_base_thy_builder (builder ~save:false)
-*)
+
 let init() = failwith("baseTheory.init no longer supported")
+*)

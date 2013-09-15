@@ -27,7 +27,9 @@ val builder: ?save:bool -> Context.t -> Context.t
 *)
 
 (** {7 Initialising function} *)
+(*
 val init: unit -> unit
+*)
 (** Set {!Global.Init.set_base_thy_builder} to {!BaseTheory.builder}.
 *)
 

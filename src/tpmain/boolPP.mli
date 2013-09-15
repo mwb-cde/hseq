@@ -76,6 +76,7 @@ val ppinfo: unit -> Printer.ppinfo
 
 (** {7 OCaml Quotations support} *)
 
+val quote_context: Context.t
 val read: string -> Basic.term
 (** Parse a string as a term, resolving short names and
     symbols. *)
@@ -90,6 +91,5 @@ val read_type: string -> Basic.gtype
     possible.  *)
 val read_type_defn : string -> Defn.Parser.typedef
 (** Parse a string as a type definition. *)
-
 val read_identifier: string -> Ident.t
 (** Parse a string as an identifier. *)
