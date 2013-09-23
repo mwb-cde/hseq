@@ -164,7 +164,7 @@ val set_builder : t ->  (?silent:bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
 val builder : t -> (?silent:bool -> string -> unit)
-(** [use t]: Get the theory function of context [t]. *)
+(** [builder t]: Get the theory builder function of context [t]. *)
 
 val set_path : t-> string list -> t
 (** [set_path p t]: Set the path in context [t] to [p]. *)
