@@ -214,11 +214,12 @@ struct
       (Report.warning ("Failed to build theory "^thyname);
        raise (Report.error ("Can't find script to build theory "^thyname)))
 
-  let builder ?silent name = ignore(build_thy_file name)
+  let builder ?silent name = 
+    ignore(build_thy_file name)
 end
 
-(** State initializer *)
 
+(** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
   let ctxt1 = Context.set_builder ctxt0 TheoryScriptReader.builder in
@@ -243,24 +244,3 @@ let init_base_thy_builder st =
     set_context st ctxt1
   in
   set_base_thy_builder st builder
-
-(**
-let init_file_loading st = 
-  let scripter = Unsafe.use_file 
-  and loader = Unsafe.load_file 
-  in 
-  let ctxt0 = context st in
-  let ctxt1 = Context.set_loader ctxt0 loader in
-  let ctxt2 = Context.set_scripter ctxt1 scripter in 
-  set_context st ctxt2
-**)
-let init () = 
-  let st = 
-    List.fold_left (fun a f -> f a) (State.empty())
-      [init_context; init_scope;
-       init_ppinfo; init_parsers;
-       init_simpset; init_proofstack]
-  in
-  set_state st
-
-

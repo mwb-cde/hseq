@@ -65,48 +65,50 @@ val context: State.t -> Context.t
 (** The global context *)
 val set_context: State.t -> Context.t -> State.t
   (** Set the global context *)
-val init_context: State.t -> State.t
-  (** Initialize the global context *)
 
 val scope: State.t -> Scope.t
   (** The global Scope *)
 val set_scope: State.t -> Scope.t -> State.t
   (** Set the global scope *)
-val init_scope: State.t -> State.t
-  (** Initialize the global scope *)
 
 val ppinfo: State.t -> Printer.ppinfo
   (** The global pretty printers *)
 val set_ppinfo: State.t -> Printer.ppinfo -> State.t
   (** Set the global pretty printers *)
-val init_ppinfo: State.t -> State.t
-  (** Initialize the global pretty printers *)
 
 val parsers: State.t -> Parser.Table.t
   (** The global parser tables *)
 val set_parsers: State.t -> Parser.Table.t -> State.t
   (** Set the global parser tables *)
-val init_parsers: State.t -> State.t
-  (** Initialize the global parser tables *)
 
 val simpset: State.t -> Simpset.simpset
   (** The standard simplifier set *)
 val set_simpset: State.t -> Simpset.simpset -> State.t
   (** Set the global simplifier set *)
-val init_simpset: State.t -> State.t
-(** Initialize the global simpset *)
 
 val proofstack: State.t -> Goals.ProofStack.t
 (** The standard simplifier set *)
 val set_proofstack: State.t -> Goals.ProofStack.t -> State.t
 (** Set the global simplifier set *)
-val init_proofstack: State.t -> State.t
-(** Initialize the global proofstack *)
 
 val base_thy_builder: State.t -> (State.t -> State.t)
 (** The base theory builder *)
 val set_base_thy_builder: State.t -> (State.t -> State.t) -> State.t
 (** Set the base theory builder *)
+
+
+val init_context: State.t -> State.t
+  (** Initialize the global context *)
+val init_scope: State.t -> State.t
+  (** Initialize the global scope *)
+val init_ppinfo: State.t -> State.t
+  (** Initialize the global pretty printers *)
+val init_parsers: State.t -> State.t
+  (** Initialize the global parser tables *)
+val init_simpset: State.t -> State.t
+(** Initialize the global simpset *)
+val init_proofstack: State.t -> State.t
+(** Initialize the global proofstack *)
 val init_base_thy_builder: State.t -> State.t
 (** Initialize the base theory builder *)
 
@@ -155,5 +157,3 @@ sig
 (** Initialize the global proofstack *)
 end
 
-(** Top level initializer *)
-val init: unit -> unit
