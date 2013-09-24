@@ -226,7 +226,8 @@ module Make =
       then (fn t, Input.accept inp)
       else 
         raise 
-          (ParsingError ("Unexpected symbol "^(A.string_of_token t)))
+          (ParsingError 
+             ("Unexpected symbol: \""^(A.string_of_token t)^"\""))
 
     let (!$) tok inp = 
       get (fun t -> matches tok t) (fun t -> t) inp

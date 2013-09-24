@@ -205,7 +205,8 @@ val clear_base_name : t -> t
 (** [clear_base_name t]: Clear the theory base name in context [t]. *)
 
 val set_thydb : t-> Thydb.thydb -> t
-(** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
+(** [set_thydb db t]: Set the theory database in context [t] to [db]. Also
+    updates the scope. *)
 
 val thydb : t -> Thydb.thydb
 (** [thydb t]: Get the theory database of context [t]. *)
@@ -275,7 +276,7 @@ sig
   val theories: t -> Thydb.thydb
   val get_theories: t -> Thydb.thydb
 
-  (** Set the theory database. *)
+  (** Set the theory database and the scope. *)
   val set_theories: t-> Thydb.thydb -> t
 
   (** Get the current theory. @raise [Not_found] if no current

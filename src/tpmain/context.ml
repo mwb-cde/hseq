@@ -164,7 +164,8 @@ let empty() =
 
 let scope_of sctxt = sctxt.scope_f
 let context_of sctxt = sctxt
-let set_scope sctxt scp = {sctxt with scope_f = scp}
+let set_scope sctxt scp = 
+  { sctxt with scope_f = scp }
 let set_context sctxt ctxt = set_scope ctxt (scope_of sctxt)
 
 (** {5 Accessor Functions} *)
@@ -234,9 +235,10 @@ let clear_base_name t =
   { t with thys_f = thys1 }
 
 let set_thydb t db =
-  let thys1 = { t.thys_f with thydb_f = db }
-  in 
-  { t with thys_f = thys1 }
+  let thys1 = { t.thys_f with thydb_f = db } in 
+  let scp1 = Thydb.mk_scope db in 
+  let t1 = { t with thys_f = thys1 } in
+  set_scope t1 scp1
 
 let thydb t = t.thys_f.thydb_f
 

@@ -45,7 +45,7 @@ let builder ?(save=false) ctxt =
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
       declare sctxt4
-        (Commands.read_unchecked 
+        (Commands.read_unchecked ~ctxt:sctxt4
 	   ((Ident.name_of Lterm.notid)^": bool -> bool"))
         ~pp:(prec, fixity, Some "~") 
     in 
@@ -59,14 +59,14 @@ let builder ?(save=false) ctxt =
     (** Equality *)
     let (sctxt7, _, _) =
       declare sctxt6
-        (Commands.read_unchecked 
+        (Commands.read_unchecked ~ctxt:sctxt6
 	   ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
         ~pp:(200, infixl, (Some "=")) 
     in 
     (** Conjunction *)
     let (sctxt8, _, _) =
       declare sctxt7
-        (Commands.read_unchecked 
+        (Commands.read_unchecked ~ctxt:sctxt7
 	   ((Ident.name_of Lterm.andid)^": bool -> bool -> bool"))
         ~pp:(185, infixr, Some "and") 
     in  
@@ -76,8 +76,9 @@ let builder ?(save=false) ctxt =
     (** Disjunction *)
     let (sctxt10, _) =
       define sctxt9
-        (Commands.read_defn ((Ident.name_of Lterm.orid)
-			     ^" x y = (not ((not x) and (not y)))"))
+        (Commands.read_defn ~ctxt:sctxt9
+           ((Ident.name_of Lterm.orid)
+	    ^" x y = (not ((not x) and (not y)))"))
         ~pp:(190, infixr, Some "or") 
     in 
     let sctxt11 = 
@@ -86,15 +87,17 @@ let builder ?(save=false) ctxt =
     (** Implication *)
     let (sctxt12, _) = 
       define sctxt11
-        (Commands.read_defn ((Ident.name_of Lterm.impliesid)
-			     ^" x y = (not x) or y"))
+        (Commands.read_defn ~ctxt:sctxt11
+           ((Ident.name_of Lterm.impliesid)
+	    ^" x y = (not x) or y"))
         ~pp:(195, infixr, Some "=>") 
     in 
     (** Equivalance *)
     let (sctxt13, _) = 
       define sctxt12
-        (Commands.read_defn ((Ident.name_of Lterm.iffid)
-			     ^" x y = (x => y) and (y => x)"))
+        (Commands.read_defn ~ctxt:sctxt12
+           ((Ident.name_of Lterm.iffid)
+	    ^" x y = (x => y) and (y => x)"))
         ~pp:(180, infixn, Some "iff") 
     in 
 
