@@ -48,13 +48,6 @@ let save_theory ctxt thy prot =
   Theory.save_theory thy fname
 
 let load_theory_as_cur ctxt n = 
-(*
-  let rec chop n = 
-    let t = try (Filename.chop_extension n) with _ -> n
-    in
-    if t = n then n else chop t
-  in 
-*)
   let db = 
     Thydb.Loader.load (Context.thydb ctxt) 
       (Context.loader_data ctxt)
