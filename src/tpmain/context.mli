@@ -84,9 +84,6 @@ type thy_t =
 
     (** The theory data-base. *)
     thydb_f: Thydb.thydb;
-
-    (** Information needed for the theory database loader. *)
-    loader_data_f: Thydb.Loader.data
   }
 
 (** [empty_thy_t()]: The default value for [thy_t]. *)
@@ -125,6 +122,9 @@ type t =
     (** A list of functions to invoke on a theory when it is added
         to the data-base. *)
     load_functions_f: (t -> Theory.contents -> t) list;
+
+    (** Information needed for the theory database loader. *)
+    loader_data_f: (t -> Thydb.Loader.data);
 
     (** Theorems caches *)
     thm_cache_f: (Ident.t, Logic.thm) Hashtbl.t;
@@ -210,7 +210,7 @@ val set_thydb : t-> Thydb.thydb -> t
 val thydb : t -> Thydb.thydb
 (** [thydb t]: Get the theory database of context [t]. *)
 
-val set_loader_data : t-> Thydb.Loader.data -> t 
+val set_loader_data : t -> (t -> Thydb.Loader.data) -> t 
 (** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
 
 val loader_data : t -> Thydb.Loader.data

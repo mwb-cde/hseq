@@ -89,16 +89,12 @@ type thy_t =
 
     (** The theory data base. *)
     thydb_f: Thydb.thydb;
-
-    (** Information needed for the theory database loader. *)
-    loader_data_f: Thydb.Loader.data;
   }
 
 let empty_thy_t () =
   {
     base_name_f = None;
     thydb_f = Thydb.empty();
-    loader_data_f = Thydb.Loader.mk_empty();
   }
 
 (** Printer info *)
@@ -142,6 +138,9 @@ type t =
         to the data-base. *)
     load_functions_f: (t -> Theory.contents -> t) list;
 
+    (** Information needed for the theory database loader. *)
+    loader_data_f: (t -> Thydb.Loader.data);
+
     (** Theorems caches *)
     thm_cache_f: (Ident.t, Logic.thm) Hashtbl.t;
 
@@ -156,6 +155,7 @@ let empty() =
     pp_f = empty_pp_t();
     parser_f = empty_parser_t();
     load_functions_f = [];
+    loader_data_f = (fun _ -> Thydb.Loader.mk_empty());
     thm_cache_f = Hashtbl.create(13);
     scope_f = Scope.empty_scope();
   }
@@ -241,11 +241,9 @@ let set_thydb t db =
 let thydb t = t.thys_f.thydb_f
 
 let set_loader_data t lf =
-  let thys1 = { t.thys_f with loader_data_f = lf }
-  in 
-  { t with thys_f = thys1 }
+  { t with loader_data_f = lf }
 
-let loader_data t = t.thys_f.loader_data_f
+let loader_data t = t.loader_data_f t
 
 let set_load_functions t fl =
   { t with load_functions_f = fl }

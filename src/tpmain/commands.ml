@@ -56,7 +56,8 @@ let load_theory_as_cur ctxt n =
   in 
 *)
   let db = 
-    Thydb.Loader.load (Context.thydb ctxt) (Context.loader_data ctxt)
+    Thydb.Loader.load (Context.thydb ctxt) 
+      (Context.loader_data ctxt)
       (Thydb.Loader.mk_info n None None)
   in 
   Context.Thys.set_theories ctxt db
@@ -107,7 +108,8 @@ let begin_theory ctxt n parents =
     let db = Context.Thys.theories ctxt
     and thy = Theory.mk_thy n importing
     in
-    let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy
+    let db1 = 
+      Thydb.Loader.make_current db (Context.loader_data ctxt) thy
     in 
     Context.Thys.set_theories ctxt db1
 
