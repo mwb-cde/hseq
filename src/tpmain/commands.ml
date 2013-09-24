@@ -70,11 +70,6 @@ let read_defn ?ctxt x =
  * Theories
  *)
 
-(***
-let scoped = Context.scoped
-let context_of = Context.context_of 
-let set_context = Context.set_context
-***)
 let set_scope = Context.set_scope
 let scope_of = Context.scope_of 
 
