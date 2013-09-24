@@ -222,7 +222,10 @@ end
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
+(*
   let ctxt1 = Context.set_builder ctxt0 TheoryScriptReader.builder in
+*)
+  let ctxt1 = ctxt0 in
   let st1 = set_parsers (set_context st ctxt1) (Parser.init ()) in
   st1
 
