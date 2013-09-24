@@ -371,9 +371,14 @@ sig
       make theory [thy] the current theory.  *)
 
   val load: thydb -> data -> info -> thydb
-  (** [load db info data]: Load a theory and, if neccessary, it
-      parents from disc into the database. Make it the current
-      theory.  *)
+  (** [load db info data]: Load a theory and, if neccessary, it parents from
+      disc into the database. Make it the current theory. If no theory file is
+      available, try to build it from a theory script.
+
+      Uses [data.load_fn] to try to load the theory and [data.build_fn] to try
+      to build the theory. Applies [data.thy_fn] if a theory was loaded from a
+      file (but not if it was built from a script).
+  *)
 
   (** {7 Debugging information} *)
 

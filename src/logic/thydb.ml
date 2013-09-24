@@ -616,8 +616,10 @@ struct
   let mk_empty () = 
     { 
       thy_fn = (fun _ _ -> ());
-      load_fn = (fun _ -> failwith "empty Thydb.Loader.load_fn");
-      build_fn = (fun _ -> failwith "empty Thydb.Loader.build_fn");
+      load_fn = 
+        (fun _ -> failwith "Thydb.Loader.mk_empty: Thydb.Loader.load_fn");
+      build_fn = 
+        (fun _ -> failwith "Thydb.Loader.mk_empty: Thydb.Loader.build_fn");
     }
 
   (*** Support functions for loading a theory ***)
