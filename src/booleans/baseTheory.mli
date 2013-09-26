@@ -19,7 +19,13 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
+
+
 (** A minimal base theory, used if no other theory can be found. *)
+
+val context: unit -> Context.t
+(** The minimal context needed to build the base theory. Contains the parser and
+    printer information needed to declare terms and types. *)
 
 val builder: ?save:bool -> Context.t -> Context.t
 (** Build the minimal theory. If [?save] is true, save the theory.

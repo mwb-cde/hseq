@@ -23,143 +23,164 @@ open Commands
 open Tactics
 open Lib.Ops
 
+(** {5 The minimal context} 
+
+    Has the minimal parser and printer information needed for the base theory.
+*)
+let context() = BoolPP.quote_context
+
 (*** A minimal base theory ***)
 
 let rec swap f = (fun x y -> f y x)
+let read_unchecked ctxt = Commands.read_unchecked ~ctxt:ctxt
+let read_defn ctxt = Commands.read_defn ~ctxt:ctxt
+let name_of = Ident.name_of
 
 let builder ?(save=false) ctxt =
   begin
-    let sctxt1 = begin_theory ctxt Lterm.base_thy []
+    let ctxt1 = begin_theory ctxt Lterm.base_thy []
     in
     (** Types *)
-    let (sctxt2, _) = 
-      typedef sctxt1 <:def<: ('a, 'b)FUN >>
+    let (ctxt2, _) = 
+      typedef ctxt1 <:def<: ('a, 'b)FUN >>
         ~pp:(100, infixr, Some("->"))
     in
-    let (sctxt3, _) = typedef sctxt2 <:def<: bool >> in 
-    let (sctxt4, _) = typedef sctxt3 <:def<: ind >>  in
+    let (ctxt3, _) = typedef ctxt2 <:def<: bool >> in 
+    let (ctxt4, _) = typedef ctxt3 <:def<: ind >>  in
 
     (** Terms *)
-    let (sctxt5, _, _) = 
+    let (ctxt5, _, _) = 
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      declare sctxt4
-        (Commands.read_unchecked ~ctxt:sctxt4
-	   ((Ident.name_of Lterm.notid)^": bool -> bool"))
+      declare ctxt4
+        (read_unchecked ctxt4
+	   ((name_of Lterm.notid)^": bool -> bool"))
         ~pp:(prec, fixity, Some "~") 
     in 
-    let sctxt6 = 
+    let ctxt6 = 
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      add_term_pp sctxt5
+      add_term_pp ctxt5
         Lterm.notid prec fixity (Some "not")
     in 
     (** Equality *)
-    let (sctxt7, _, _) =
-      declare sctxt6
-        (Commands.read_unchecked ~ctxt:sctxt6
-	   ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
+    let (ctxt7, _, _) =
+      declare ctxt6
+        (read_unchecked ctxt6
+	   ((name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
         ~pp:(200, infixl, (Some "=")) 
     in 
     (** Conjunction *)
-    let (sctxt8, _, _) =
-      declare sctxt7
-        (Commands.read_unchecked ~ctxt:sctxt7
-	   ((Ident.name_of Lterm.andid)^": bool -> bool -> bool"))
+    let (ctxt8, _, _) =
+      declare ctxt7
+        (read_unchecked ctxt7
+	   ((name_of Lterm.andid)^": bool -> bool -> bool"))
         ~pp:(185, infixr, Some "and") 
     in  
-    let sctxt9 = 
-      add_term_pp sctxt8 Lterm.andid 185 infixr (Some "&")
+    let ctxt9 = 
+      add_term_pp ctxt8 Lterm.andid 185 infixr (Some "&")
     in 
     (** Disjunction *)
-    let (sctxt10, _) =
-      define sctxt9
-        (Commands.read_defn ~ctxt:sctxt9
-           ((Ident.name_of Lterm.orid)
+    let (ctxt10, _) =
+      define ctxt9
+        (read_defn ctxt9
+           ((name_of Lterm.orid)
 	    ^" x y = (not ((not x) and (not y)))"))
         ~pp:(190, infixr, Some "or") 
     in 
-    let sctxt11 = 
-      add_term_pp sctxt10 Lterm.orid 190 infixr (Some "|")
+    let ctxt11 = 
+      add_term_pp ctxt10 Lterm.orid 190 infixr (Some "|")
     in 
+
     (** Implication *)
-    let (sctxt12, _) = 
-      define sctxt11
-        (Commands.read_defn ~ctxt:sctxt11
-           ((Ident.name_of Lterm.impliesid)
-	    ^" x y = (not x) or y"))
+    let (ctxt12, _) = 
+      define ctxt11
+        (read_defn ctxt11
+           ((name_of Lterm.impliesid)^" x y = (not x) or y"))
         ~pp:(195, infixr, Some "=>") 
     in 
     (** Equivalance *)
-    let (sctxt13, _) = 
-      define sctxt12
-        (Commands.read_defn ~ctxt:sctxt12
-           ((Ident.name_of Lterm.iffid)
-	    ^" x y = (x => y) and (y => x)"))
+    let (ctxt13, _) = 
+      define ctxt12
+        (read_defn ctxt12
+           ((name_of Lterm.iffid)^" x y = (x => y) and (y => x)"))
         ~pp:(180, infixn, Some "iff") 
     in 
 
     (** Axioms *)
 
     (** False definition *)
-    let (ctxt14, _) = axiom sctxt13
-      "false_def" << false = (not true)>> in 
+    let (ctxt14, _) = 
+      axiom ctxt13 "false_def" 
+      (read_unchecked ctxt13 
+         ((name_of Lterm.falseid)^" = (not true)"))
+    in 
+(**
 
     (** Boolean cases *)
     let (ctxt15, _) = 
       axiom ctxt14 "bool_cases" 
-      << !x: (x = true) or (x = false) >> 
+        (read_unchecked ctxt14
+         " !x: (x = true) or (x = false) ")
     in 
+
     (** Equality *)
-    let (ctxt16, _) = axiom ctxt15 "eq_refl" << !x: x = x >> in 
-    let (sctxt17, _) =
-      define ctxt16
-      <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2) >> 
+    let (ctxt16, _) = 
+      axiom ctxt15 "eq_refl" (read_unchecked ctxt15 " !x: x = x ") 
     in 
-    let (sctxt18, _) = 
-      define sctxt17 <:def< onto f = !y: ?x: y = (f x) >> 
+    let (ctxt17, _) =
+      define ctxt16
+        (read_defn ctxt16
+           "one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2)")
+    in 
+
+    let (ctxt18, _) = 
+      define ctxt17 
+        (read_defn ctxt17 "onto f = !y: ?x: y = (f x)")
     in 
     let (ctxt19, _) = 
-      axiom sctxt18 "infinity_ax" 
-      << ?(f: ind -> ind): (one_one f) and (onto f)>> 
+      axiom ctxt18 "infinity_ax" 
+      (read_unchecked ctxt18 "?(f: ind -> ind): (one_one f) and (onto f)")
     in 
     let (ctxt20, _) = 
       axiom ctxt19 "extensionality" 
-      << !f g: (!x: (f x) = (g x)) => (f = g)>> 
+        (read_unchecked ctxt19
+           "!f g: (!x: (f x) = (g x)) => (f = g)")
     in 
     (** Specification operator (epsilon) *)
-    let (sctxt21, _, _) = 
+    let (ctxt21, _, _) = 
       declare ctxt20
-      <<epsilon: ('a -> bool) -> 'a>> 
+        (read_unchecked ctxt20 "epsilon: ('a -> bool) -> 'a")
     in 
     let (ctxt22, _) = 
-      axiom sctxt21 "epsilon_ax"
-      << !P: (?x: P x) => (P(epsilon P))>> 
+      axiom ctxt21 "epsilon_ax"
+      (read_unchecked ctxt21 "!P: (?x: P x) => (P(epsilon P))")
     in 
-
     (** Conditional *)
-    let (sctxt23, _) = 
+    let (ctxt23, _) = 
       define ctxt22
-      <:def< 
-        IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))
-      >> 
+        (read_defn ctxt22 
+           "IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))")
     in 
     (** Any value *)
-    let (sctxt24, _) = define sctxt23 <:def< any = epsilon (%a: true)>> 
+    let (ctxt24, _) = 
+      define ctxt23 
+        (read_defn ctxt22 "any = epsilon (%a: true)")
     in 
     (** Unique existence *)
-    let (sctxt25, _) =
-      define sctxt24
-      <:def<
-        EXISTS_UNIQUE p = 
-      (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
-        >> in 
+    let (ctxt25, _) =
+      define ctxt24
+        (read_defn ctxt24
+           "EXISTS_UNIQUE p = 
+      (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))") in 
 
-    let ctxt26 = end_theory sctxt25 ~save:save ()
+    let ctxt26 = end_theory ctxt25 ~save:save ()
     in 
     ctxt26
+    **)
+ctxt14
   end
 
 (*

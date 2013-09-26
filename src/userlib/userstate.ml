@@ -23,7 +23,7 @@
 module Default =
 struct
   let context() = 
-    let ctxt = Context.empty() in
+    let ctxt = BaseTheory.context() in
     let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
