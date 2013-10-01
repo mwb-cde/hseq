@@ -62,8 +62,7 @@ let builder ?(save=false) ctxt =
       let prec = BoolPP.negation_pprec.Printer.prec
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
-      add_term_pp ctxt5
-        Lterm.notid prec fixity (Some "not")
+      add_term_pp ctxt5 Lterm.notid prec fixity (Some "not")
     in 
     (** Equality *)
     let (ctxt7, _, _) =
@@ -121,8 +120,7 @@ let builder ?(save=false) ctxt =
     (** Boolean cases *)
     let (ctxt15, _) = 
       axiom ctxt14 "bool_cases" 
-        (read ctxt14
-           " !x: (x = true) or (x = false) ")
+        << !x: (x = true) or (x = false) >>
     in 
 
     (** Equality *)
@@ -131,17 +129,16 @@ let builder ?(save=false) ctxt =
     in 
     let (ctxt17, _) =
       define ctxt16
-        (read_defn ctxt16
-           "one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2)")
+        <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2) >>
     in 
 
     let (ctxt18, _) = 
       define ctxt17 
-        (read_defn ctxt17 "onto f = !y: ?x: y = (f x)")
-    in 
+        <:def< onto f = !y: ?x: y = (f x) >>
+   in 
     let (ctxt19, _) = 
       axiom ctxt18 "infinity_ax" 
-        (read ctxt18 "?(f: ind -> ind): (one_one f) and (onto f)")
+        << ?(f: ind -> ind): (one_one f) and (onto f) >>
     in 
     let (ctxt20, _) = 
       axiom ctxt19 "extensionality" 
@@ -150,30 +147,29 @@ let builder ?(save=false) ctxt =
     (** Specification operator (epsilon) *)
     let (ctxt21, _, _) = 
       declare ctxt20
-        (read ctxt20 "epsilon: ('a -> bool) -> 'a")
+        << epsilon: ('a -> bool) -> 'a >>
     in 
     let (ctxt22, _) = 
       axiom ctxt21 "epsilon_ax"
-        (read ctxt21 "!P: (?x: P x) => (P(epsilon P))")
+        << !P: (?x: P x) => (P(epsilon P)) >>
     in 
     (** Conditional *)
     let (ctxt23, _) = 
-      define ctxt22
-        (read_defn ctxt22 
-           "IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))")
+      define ctxt22 <:def<
+    IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f)))) >>
     in 
     (** Any value *)
     let (ctxt24, _) = 
       define ctxt23 
-        (read_defn ctxt22 "any = epsilon (%a: true)")
+        <:def< any = epsilon (%a: true) >>
     in 
     (** Unique existence *)
     let (ctxt25, _) =
       define ctxt24
-        (read_defn ctxt24
-           "EXISTS_UNIQUE p = 
-      (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))") in 
-
+        <:def< 
+           EXISTS_UNIQUE p = 
+      (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y)) >>
+    in 
     let ctxt26 = end_theory ctxt25 ~save:save ()
     in 
     ctxt26
