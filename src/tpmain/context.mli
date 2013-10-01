@@ -536,4 +536,8 @@ sig
 
   val read_identifier: t -> string -> Ident.t
 (** Parse a string as an identifier. *)
+
+  (*** Debug information *)
+  val catch_parse_error: (string -> 'a) -> string -> 'a
+
 end

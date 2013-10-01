@@ -32,8 +32,8 @@ let context() = BoolPP.quote_context
 (*** A minimal base theory ***)
 
 let rec swap f = (fun x y -> f y x)
-let read_unchecked ctxt = Commands.read_unchecked ~ctxt:ctxt
-let read_defn ctxt = Commands.read_defn ~ctxt:ctxt
+let read ctxt x = Commands.read ~ctxt:ctxt x
+let read_defn ctxt x = Commands.read_defn ~ctxt:ctxt x
 let name_of = Ident.name_of
 
 let builder ?(save=false) ctxt =
@@ -54,7 +54,7 @@ let builder ?(save=false) ctxt =
       and fixity = BoolPP.negation_pprec.Printer.fixity
       in 
       declare ctxt4
-        (read_unchecked ctxt4
+        (read ctxt4
 	   ((name_of Lterm.notid)^": bool -> bool"))
         ~pp:(prec, fixity, Some "~") 
     in 
@@ -68,14 +68,14 @@ let builder ?(save=false) ctxt =
     (** Equality *)
     let (ctxt7, _, _) =
       declare ctxt6
-        (read_unchecked ctxt6
+        (read ctxt6
 	   ((name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
         ~pp:(200, infixl, (Some "=")) 
     in 
     (** Conjunction *)
     let (ctxt8, _, _) =
       declare ctxt7
-        (read_unchecked ctxt7
+        (read ctxt7
 	   ((name_of Lterm.andid)^": bool -> bool -> bool"))
         ~pp:(185, infixr, Some "and") 
     in  
@@ -114,21 +114,20 @@ let builder ?(save=false) ctxt =
     (** False definition *)
     let (ctxt14, _) = 
       axiom ctxt13 "false_def" 
-      (read_unchecked ctxt13 
-         ((name_of Lterm.falseid)^" = (not true)"))
+        (read ctxt13 
+           ((name_of Lterm.falseid)^" = (not true)"))
     in 
-(**
 
     (** Boolean cases *)
     let (ctxt15, _) = 
       axiom ctxt14 "bool_cases" 
-        (read_unchecked ctxt14
-         " !x: (x = true) or (x = false) ")
+        (read ctxt14
+           " !x: (x = true) or (x = false) ")
     in 
 
     (** Equality *)
     let (ctxt16, _) = 
-      axiom ctxt15 "eq_refl" (read_unchecked ctxt15 " !x: x = x ") 
+      axiom ctxt15 "eq_refl" << !x: x = x >> 
     in 
     let (ctxt17, _) =
       define ctxt16
@@ -142,21 +141,20 @@ let builder ?(save=false) ctxt =
     in 
     let (ctxt19, _) = 
       axiom ctxt18 "infinity_ax" 
-      (read_unchecked ctxt18 "?(f: ind -> ind): (one_one f) and (onto f)")
+        (read ctxt18 "?(f: ind -> ind): (one_one f) and (onto f)")
     in 
     let (ctxt20, _) = 
       axiom ctxt19 "extensionality" 
-        (read_unchecked ctxt19
-           "!f g: (!x: (f x) = (g x)) => (f = g)")
+        << !f g: (!x: (f x) = (g x)) => (f = g) >>
     in 
     (** Specification operator (epsilon) *)
     let (ctxt21, _, _) = 
       declare ctxt20
-        (read_unchecked ctxt20 "epsilon: ('a -> bool) -> 'a")
+        (read ctxt20 "epsilon: ('a -> bool) -> 'a")
     in 
     let (ctxt22, _) = 
       axiom ctxt21 "epsilon_ax"
-      (read_unchecked ctxt21 "!P: (?x: P x) => (P(epsilon P))")
+        (read ctxt21 "!P: (?x: P x) => (P(epsilon P))")
     in 
     (** Conditional *)
     let (ctxt23, _) = 
@@ -179,13 +177,5 @@ let builder ?(save=false) ctxt =
     let ctxt26 = end_theory ctxt25 ~save:save ()
     in 
     ctxt26
-    **)
-ctxt14
   end
 
-(*
-let init() = 
-  Global.Init.set_base_thy_builder (builder ~save:false)
-
-let init() = failwith("baseTheory.init no longer supported")
-*)
