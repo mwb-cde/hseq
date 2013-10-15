@@ -27,7 +27,7 @@ struct
     let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
-    let ctxt4 = Context.set_loader_data ctxt3 Thyloader.default_loader in
+    let ctxt4 = Context.set_loader_data ctxt3 Thyloader.loader_data in
     ctxt4
 
   let scope () = Thydb.mk_scope(Context.Thys.theories(context()))

@@ -13,3 +13,4 @@ syntax:glob
 *.tho
 src/lib/*
 obj/*
+*~

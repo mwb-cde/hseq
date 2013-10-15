@@ -42,9 +42,11 @@ open HSeq
 let tp_init() = 
   let tmp = !Settings.load_thy_level
   in 
-    Settings.load_thy_level:=0;
+    Settings.load_thy_level := 0;
     Userlib.init();
-    Settings.load_thy_level:=tmp
+    Thyloader.set_load_file Unsafe.load_file;
+    Thyloader.set_use_file Unsafe.use_file;
+    Settings.load_thy_level := tmp
 
 (**
    [init()]:  Start up function, called when system first begins.

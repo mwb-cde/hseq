@@ -76,7 +76,11 @@ let stop ()=
   Userlib.set_proof_hook (fun () -> ())
 
 let restart () = 
-  repl_flag:=true; Goals.set_hook signal; repl()
+  repl_flag:=true; 
+  Userstate.set_state
+    (Userstate.set_proofstack (Userstate.state())
+       (Goals.set_hook signal (Userstate.proofstack (Userstate.state())))); 
+  repl()
 
 let print () = 
   let rec print_aux hs = 
