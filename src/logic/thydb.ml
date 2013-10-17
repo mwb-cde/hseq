@@ -458,12 +458,12 @@ let get_type_pp_rec th n tdb =
     
 let remove_type_pp_rec th n tdb = 
   let get_aux cur = 
-    try Theory.remove_type_pp_rec n cur
+    try ignore(Theory.remove_type_pp_rec n cur)
     with _ -> raise Not_found
   in 
   if th = "" 
-  then find get_aux tdb
-  else quick_find get_aux th tdb
+  then (find get_aux tdb; tdb)
+  else (quick_find get_aux th tdb; tdb)
 
 let get_type_pplist th tdb =
   let get_aux cur = Theory.get_type_pplist cur
@@ -486,12 +486,12 @@ let get_term_pp_rec th n tdb =
     
 let remove_term_pp_rec th n tdb = 
   let get_aux cur = 
-    try Theory.remove_term_pp_rec n cur
+    try ignore(Theory.remove_term_pp_rec n cur)
     with _ -> raise Not_found
   in 
   if th = "" 
-  then find get_aux tdb
-  else quick_find get_aux th tdb
+  then (find get_aux tdb; tdb)
+  else (quick_find get_aux th tdb; tdb)
 
 let get_term_pplist th tdb =
   let get_aux cur = Theory.get_term_pplist cur

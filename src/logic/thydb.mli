@@ -245,7 +245,7 @@ val get_type_pp_rec:
 *)
 
 val remove_type_pp_rec: 
-  string -> string -> thydb -> unit
+  string -> string -> thydb -> thydb
 (** [remove_type_pp_rec th n db]: Remove the PP record [r] for type
     identifier [n] in theory [th].
 *)
@@ -270,7 +270,7 @@ val get_term_pp_rec:
     identifier [n] in theory [th].
 *)
 
-val remove_term_pp_rec: string -> string -> thydb -> unit
+val remove_term_pp_rec: string -> string -> thydb -> thydb
 (** [remove_term_pp_rec th n db]: Remove the PP record [r] for term
     identifier [n] in theory [th].
 *)

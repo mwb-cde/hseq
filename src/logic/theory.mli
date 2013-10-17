@@ -133,17 +133,17 @@ val get_protection: thy -> bool
 val get_files: thy -> string list
 (** Get the files of a theory. *)
 
-val add_parents: string list -> thy -> unit
+val add_parents: string list -> thy -> thy
 (** Add parents to a theory. *)
 
-val set_protection: thy -> unit
+val set_protection: thy -> thy
 (** Set the protection of a theory. *)
 
-val set_files: string list -> thy -> unit
+val set_files: string list -> thy -> thy
 (** Set the files of a theory. *)
-val add_file: string -> thy -> unit
+val add_file: string -> thy -> thy
 (** Add a file to the files of a theory. *)
-val remove_file: string -> thy -> unit
+val remove_file: string -> thy -> thy
 (** Remove a file from a theory. *)
 
 (** {5 Theory Components} *)
@@ -155,25 +155,25 @@ val get_axiom_rec: string -> thy -> thm_record
 val get_axiom: string -> thy -> Logic.thm
 (** Get an axiom. @raise [Not_found] on failure. *)
 
-val add_axiom: string -> Logic.thm -> property list -> thy -> unit
+val add_axiom: string -> Logic.thm -> property list -> thy -> thy
 (** Add an axiom to a theory. *)
-val set_axiom_props: string -> property list -> thy -> unit
+val set_axiom_props: string -> property list -> thy -> thy
 (** Set the properties of an axiom. *)
 
 val get_theorem_rec: string -> thy -> thm_record
 (** Get a theorems' record. @raise [Not_found] on failure. *)
 val get_theorem: string -> thy -> Logic.thm
 (** Get a theorem. @raise {!Report.Error} on failure. *)
-val add_thm: string -> Logic.thm -> property list -> thy -> unit
+val add_thm: string -> Logic.thm -> property list -> thy -> thy
 (** Add a theorem to a theory. @raise [Not_found] on failure. *)
-val set_theorem_props: string -> property list -> thy -> unit
+val set_theorem_props: string -> property list -> thy -> thy
 (** Set the properties of a theorem. *)
 
 (** {7 Type declarations and definitions} *)
 
 val get_type_rec: string -> thy -> Gtypes.typedef_record 
 (** Get the record of a type. @raise [Not_found] on failure. *)
-val add_type_rec: Logic.Defns.cdefn -> thy -> unit
+val add_type_rec: Logic.Defns.cdefn -> thy -> thy
 (** Add a type declaration or definition. *)
 val type_exists: string -> thy -> bool
 (** Test whether a type exists in the theory. *)
@@ -188,17 +188,17 @@ val get_id_type: string -> thy -> Basic.gtype
 (** Get the type of an identifier. @raise [Not_found] on failure. *)
 val id_exists: string -> thy -> bool
 (** Test whether an identifier is declared in the theory. *)
-val set_defn_props: string -> property list -> thy -> unit
+val set_defn_props: string -> property list -> thy -> thy
 (** Set the properties of a definition. *)
 
 val add_defn_rec:
   string -> Basic.gtype 
   -> Logic.thm option 
-  -> property list -> thy -> unit
+  -> property list -> thy -> thy
 (** Add a term definition record. *)
 
 val add_decln_rec: 
-  string  -> Basic.gtype -> property list -> thy -> unit
+  string  -> Basic.gtype -> property list -> thy -> thy
 (** Add the declaration of a term. *)
 
 (** {7 Printer-Parser records} *)
@@ -208,9 +208,9 @@ val get_term_pp_rec: string  -> thy -> (Printer.record * sym_pos)
 val add_term_pp_rec: 
   string 
   -> (Printer.record * sym_pos)
-  -> thy -> unit
+  -> thy -> thy
 (** Add a term Printer-Parser record to a theory. *)
-val remove_term_pp_rec: string -> thy -> unit
+val remove_term_pp_rec: string -> thy -> thy
 (** Remove term Printer-Parser record from a theory. *)
 val get_term_pplist: 
   thy -> (Ident.t * (Printer.record * sym_pos)) list
@@ -220,9 +220,9 @@ val get_type_pp_rec: string  -> thy -> Printer.record
 (** Get a type Printer-Parser record to a theory. *)
 val add_type_pp_rec: 
   string -> Printer.record
-  -> thy -> unit
+  -> thy -> thy
 (** Add a type Printer-Parser record to a theory. *)
-val remove_type_pp_rec: string -> thy -> unit
+val remove_type_pp_rec: string -> thy -> thy
 (** Remove type Printer-Parser record from a theory. *)
 val get_type_pplist: thy -> (Ident.t * Printer.record) list
 (** Get all type Printer-Parser records of a theory. *)
@@ -307,7 +307,7 @@ val save_theory: thy -> string -> unit
 (** [save_theory thy n]: Save theory [thy] to file [n].
 *)
 
-val end_theory: thy -> bool -> unit
+val end_theory: thy -> bool -> thy
 (** [end_theory thy prot]: End theory [thy].
 
     Update date of theory, set protection to [prot].

@@ -26,6 +26,7 @@
 type property = string
 let simp_property = "simp"
 type sym_pos = Ident.t Lib.position
+module Tree = Treekit.StringTree
 
 type id_record = 
     {
@@ -46,12 +47,12 @@ type thy =
       marker: Scope.marker;
       mutable protection: bool;
       mutable date: float;
-      mutable parents:  string list;
+      mutable parents: string list;
       mutable lfiles: string list;
-      axioms: (string, thm_record) Hashtbl.t;
-      theorems: (string, thm_record) Hashtbl.t;
-      defns: (string, id_record) Hashtbl.t;
-      typs: (string, Gtypes.typedef_record) Hashtbl.t;
+      axioms: (thm_record) Tree.t;
+      theorems: (thm_record) Tree.t;
+      defns: (id_record) Tree.t;
+      typs: (Gtypes.typedef_record) Tree.t;
       mutable type_pps: (string * Printer.record) list;
       mutable id_pps: (string * (Printer.record * sym_pos)) list
     }
@@ -83,15 +84,24 @@ let mk_thy n ps =
       date = 0.0;
       parents = ps;
       lfiles = [];
-      axioms = Hashtbl.create 1;
-      theorems = Hashtbl.create 1;
-      defns = Hashtbl.create 1; 
-      typs = Hashtbl.create 1;
+      axioms = Tree.nil;
+      theorems = Tree.nil;
+      defns = Tree.nil;
+      typs = Tree.nil;
       type_pps = [];
       id_pps = []  
     }
   in 
   set_date thy; thy
+
+let flatten_list l =
+  let rec flatten_aux ls rs =
+      match ls with 
+      | [] -> rs
+      | (n::_)::xs -> flatten_aux xs (n::rs)
+      | [] :: xs -> flatten_aux xs rs
+  in
+  flatten_aux l []
 
 let contents thy = 
   {
@@ -101,10 +111,10 @@ let contents thy =
     cdate = thy.date;
     cparents = thy.parents;
     cfiles = thy.lfiles;
-    caxioms = Lib.table_to_list thy.axioms;
-    ctheorems = Lib.table_to_list thy.theorems;
-    cdefns = Lib.table_to_list thy.defns;
-    ctyps = Lib.table_to_list thy.typs;
+    caxioms = flatten_list (Tree.to_list thy.axioms);
+    ctheorems = flatten_list (Tree.to_list thy.theorems);
+    cdefns = flatten_list (Tree.to_list thy.defns);
+    ctyps = flatten_list (Tree.to_list thy.typs);
     ctype_pps = thy.type_pps;
     cid_pps = thy.id_pps
   }
@@ -120,21 +130,37 @@ let get_files thy = thy.lfiles
 
 let add_parent n thy =
   if (not thy.protection) & (n<>"") & (not (List.mem n (thy.parents)))
-  then thy.parents <- (n::(thy.parents))
+  then 
+    begin
+      thy.parents <- (n::(thy.parents));
+      thy
+    end
   else raise (Report.error ("add_parent: "^n))
 
 let rec add_parents ns thy =
-  List.iter (fun n -> add_parent n thy) (List.rev ns)
+  List.fold_left (fun th n -> add_parent n th) thy (List.rev ns)
 
-let set_protection thy = thy.protection<-true; set_date thy
+let set_protection thy = 
+  begin
+    thy.protection<-true; 
+    set_date thy;
+    thy
+  end
 
-let set_files fs thy = thy.lfiles <- fs
+let set_files fs thy = 
+  begin
+    thy.lfiles <- fs;
+    thy
+  end
 
-let add_file f thy = set_files (f::(get_files thy)) thy
+let add_file f thy = 
+  set_files (f::(get_files thy)) thy
 
 let remove_file f thy = 
   set_files 
-    (List.filter (fun x -> (String.compare x f) != 0) (get_files thy)) thy
+    (List.filter 
+       (fun x -> (String.compare x f) != 0) (get_files thy)) thy
+     
 
 (*
  * Theory Components
@@ -142,8 +168,11 @@ let remove_file f thy =
 
 (*** Axioms and theorems ***)
 
+let get_axioms thy = thy.axioms
+let set_axioms thy x = { thy with axioms = x }
+
 let get_axiom_rec n thy = 
-  try Hashtbl.find thy.axioms n
+  try Tree.find thy.axioms n
   with Not_found -> 
     raise (Report.error 
 	     ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
@@ -156,11 +185,11 @@ let get_axiom n thy =
 let add_axiom n ax ps thy =
   if not (get_protection thy)
   then 
-    if not (Lib.member n thy.axioms)
+    if not (Tree.mem thy.axioms n)
     then 
       let rcrd= { thm = ax; props = ps }
       in 
-      Hashtbl.add (thy.axioms) n rcrd
+      set_axioms thy (Tree.add (get_axioms thy) n rcrd)
     else raise (Report.error ("Axiom "^n^" exists"))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -170,11 +199,14 @@ let set_axiom_props n ps thy =
     let ar = get_axiom_rec n thy in 
     let nar= { ar with props=ps }
     in 
-    Hashtbl.replace (thy.axioms) n nar
+    set_axioms thy (Tree.replace (thy.axioms) n nar)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
+let get_theorems thy = thy.theorems
+let set_theorems thy x = { thy with theorems = x }
+
 let get_theorem_rec n thy = 
-  Hashtbl.find thy.theorems n
+  Tree.find (get_theorems thy) n
 
 let get_theorem n thy = 
   let tr = 
@@ -188,11 +220,11 @@ let get_theorem n thy =
 let add_thm n t ps thy =
   if not (get_protection thy)
   then 
-    if not (Lib.member n thy.theorems)
+    if not (Tree.mem thy.theorems n)
     then
       let rcrd= { thm = t; props = ps }
       in
-      Hashtbl.add (thy.theorems) n rcrd
+      set_theorems thy (Tree.add (get_theorems thy) n rcrd)
     else raise (Report.error ("Theorem "^n^" exists"))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -201,9 +233,9 @@ let set_theorem_props n ps thy =
   then 
     match Lib.try_find (get_theorem_rec n) thy with
       | Some(tr) -> 
-	  let ntr = { tr with props=ps }
+	  let ntr = { tr with props = ps }
 	  in 
-	  Hashtbl.replace (thy.theorems) n ntr
+	  set_theorems thy (Tree.replace (thy.theorems) n ntr)
       | _ -> 
 	raise (Report.error 
                  ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
@@ -212,7 +244,9 @@ let set_theorem_props n ps thy =
 
 (*** Type declarations and definitions ***)
 
-let get_type_rec n thy = Hashtbl.find (thy.typs) n
+let get_typs thy = thy.typs
+let set_typs thy x = { thy with typs = x }
+let get_type_rec n thy = Tree.find (get_typs thy) n
 
 let add_type_rec tr thy =
   let mk_typedef_rec n ags d cs =
@@ -244,8 +278,8 @@ let add_type_rec tr thy =
     let id = Ident.name_of lid in 
     let tr = mk_typedef_rec id args df []
     in 
-    if not (Lib.member id thy.typs)
-    then Hashtbl.add (thy.typs) id tr
+    if not (Tree.mem (get_typs thy) id)
+    then set_typs thy (Tree.add (get_typs thy) id tr)
     else raise (Report.error ("Type "^id^" exists"))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -255,8 +289,11 @@ let type_exists n thy =
 
 (*** Term declarations and definitions ***)
 
+let get_defns thy = thy.defns
+let set_defns thy xs = { thy with defns = xs }
+
 let get_defn_rec n thy = 
-  let rcrd = Hashtbl.find (thy.defns) n
+  let rcrd = Tree.find (get_defns thy) n
   in 
   {
     typ = Gtypes.rename_type_vars (rcrd.typ); 
@@ -286,7 +323,7 @@ let set_defn_props n ps thy =
     let dr = get_defn_rec n thy in 
     let ndr = { dr with dprops=ps }
     in 
-    Hashtbl.replace (thy.defns) n ndr
+    set_defns thy (Tree.replace (get_defns thy) n ndr)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_defn_rec n ty d prop thy =
@@ -297,7 +334,7 @@ let add_defn_rec n ty d prop thy =
     else 
       let new_record = { typ=ty; def=d; dprops=prop }
       in 
-      Hashtbl.add (thy.defns) n new_record
+      set_defns thy (Tree.add (get_defns thy) n new_record)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_decln_rec n ty props thy =
@@ -305,22 +342,28 @@ let add_decln_rec n ty props thy =
 
 (*** Printer-Parser records ***)
 
+let get_id_pps thy = thy.id_pps
+let set_id_pps thy x = thy.id_pps <- x; thy
+
+let get_type_pps thy = thy.type_pps
+let set_type_pps thy x =  thy.type_pps <- x; thy
+
 let get_term_pp_rec n thy = List.assoc n thy.id_pps
 
 let add_term_pp_rec n ppr thy=
   if not (get_protection thy)
   then 
-    if Lib.member n thy.defns
-    then thy.id_pps <- (Lib.insert (<) n ppr thy.id_pps)
+    if Tree.mem (get_defns thy) n
+    then set_id_pps thy (Lib.insert (<) n ppr thy.id_pps)
     else raise (Report.error 
 		  ("No name "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_term_pp_rec n thy = 
-  thy.id_pps <- Lib.filter (fun (x, _) -> x=n )thy.id_pps
+  set_id_pps thy (Lib.filter (fun (x, _) -> x=n ) (get_id_pps thy))
     
 let get_term_pplist thy =
-  let ppl = thy.id_pps
+  let ppl = get_id_pps thy
   and tn = thy.name 
   in 
   List.map (fun (x, y) -> (Ident.mk_long tn x , y)) ppl
@@ -330,17 +373,17 @@ let get_type_pp_rec n thy = List.assoc n thy.type_pps
 let add_type_pp_rec n ppr thy=
   if not (get_protection thy)
   then 
-    if Lib.member n thy.typs
-    then thy.type_pps <- (Lib.insert (<) n ppr thy.type_pps)
+    if Tree.mem thy.typs n
+    then set_type_pps thy (Lib.insert (<) n ppr (get_type_pps thy))
     else raise (Report.error
 		  ("No type "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_type_pp_rec n thy = 
-  thy.type_pps <- Lib.filter (fun (x, _) -> x = n) thy.type_pps
+  set_type_pps thy (Lib.filter (fun (x, _) -> x = n) (get_type_pps thy))
 
 let get_type_pplist thy =
-  let ppl = thy.type_pps
+  let ppl = get_type_pps thy
   and tn = thy.name 
   in
   List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
@@ -443,7 +486,10 @@ let new_thy_scope thy scp =
 (** Make a theory from a saved theory. *)
 let from_saved scp sthy = 
   let unsave f xs = 
-    Lib.table_from_list (List.map (fun (x, y) -> (x, f y)) xs)
+    List.fold_left 
+      (fun tr (k, d) -> Tree.add tr k d)
+      Tree.nil
+      (List.map (fun (x, y) -> (x, f y)) xs)
   in 
   let name = sthy.sname in 
   let thy = mk_thy name (sthy.sparents)
@@ -470,7 +516,10 @@ let from_saved scp sthy =
   and axs = unsave (thm_from_save thy_scp) sthy.saxioms
   and thms = unsave (thm_from_save thy_scp) sthy.stheorems
   and defs = unsave (from_save thy_scp) sthy.sdefns
-  and tydefs_table = Lib.table_from_list tydefs_list
+  and tydefs_table = 
+    List.fold_left 
+      (fun tr (k, d) -> Tree.add tr k d)
+      Tree.nil tydefs_list
   and ntype_pps = sthy.stype_pps
   and nid_pps = sthy.sid_pps
   in 
@@ -491,12 +540,13 @@ let from_saved scp sthy =
 (*** Primitive input/output of theories ***)
 
 let output_theory oc thy = 
+  let tree_to_list xs = flatten_list (Tree.to_list xs) in
   let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs 
   in 
-  let saxs = mk_save thm_to_save (Lib.table_to_list thy.axioms)
-  and sthms = mk_save thm_to_save (Lib.table_to_list thy.theorems)
-  and sdefs = mk_save to_save (Lib.table_to_list thy.defns)
-  and stypes = mk_save Gtypes.to_save_rec (Lib.table_to_list thy.typs)
+  let saxs = mk_save thm_to_save (tree_to_list thy.axioms)
+  and sthms = mk_save thm_to_save (tree_to_list thy.theorems)
+  and sdefs = mk_save to_save (tree_to_list thy.defns)
+  and stypes = mk_save Gtypes.to_save_rec (tree_to_list thy.typs)
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
   in 
@@ -540,8 +590,8 @@ let end_theory thy prot =
   then 
     if prot 
     then (set_date thy; set_protection thy)
-    else ()
-  else ()
+    else thy
+  else thy
 
 (*
  * Pretty-Printer 
