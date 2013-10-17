@@ -1,3 +1,4 @@
+
 (**----
    Name: thyloader.ml
    Copyright M Wahab 2013
@@ -110,6 +111,23 @@ let default_load_fn
   raise (Failure ("Thyloader.default_load_fn("^file_data.Thydb.Loader.name^")"))
 ***)
 
+let build_fn
+    (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+  let scripter = Context.scripter ctxt in
+  let script_name = Context.Files.script_of_thy ctxt thyname in
+  if (thyname = Lterm.base_thy)
+  then Context.Thys.theories (BaseTheory.builder ctxt)
+  else 
+      let saved_state = Userstate.state() in
+      let st1 = Userstate.set_context saved_state ctxt in
+      begin
+        Userstate.set_state st1;
+        scripter ~silent:false script_name;
+        let st2 = Userstate.state() in
+        Userstate.set_state saved_state;
+        Context.thydb (Userstate.context st2)
+      end
+
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   if (thyname = Lterm.base_thy)
@@ -134,4 +152,4 @@ let loader_data ctxt =
   Thydb.Loader.mk_data 
     (default_thy_fn ctxt)
     (Context.Files.load_thy_file ctxt)
-    (default_build_fn ctxt)
+    (build_fn ctxt)

@@ -19,6 +19,18 @@
    License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
    ----*)
 
+(** {5 Default values} *)
+module Default :
+sig
+  val context: unit -> Context.t
+  val scope: unit -> Scope.t
+  val printers: unit -> Printer.ppinfo
+  val parsers: unit -> Parser.Table.t
+  val simpset: unit -> Simpset.simpset
+  val proofstack: unit -> Goals.ProofStack.t
+  val base_thy_builder: unit -> unit -> unit
+end
+
 (** {5 Global state} *)
 
 module State: 

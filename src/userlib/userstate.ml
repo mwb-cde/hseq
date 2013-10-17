@@ -22,13 +22,17 @@
 (** {5 Default values} *)
 module Default =
 struct
+
   let context() = 
     let ctxt = BaseTheory.context() in
     let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
+    ctxt3
+(***
     let ctxt4 = Context.set_loader_data ctxt3 Thyloader.loader_data in
     ctxt4
+***)
 
   let scope () = Thydb.mk_scope(Context.Thys.theories(context()))
 
@@ -223,9 +227,6 @@ end
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
-(*
-  let ctxt1 = Context.set_builder ctxt0 TheoryScriptReader.builder in
-*)
   let ctxt1 = ctxt0 in
   let st1 = set_parsers (set_context st ctxt1) (Parser.init ()) in
   st1
@@ -241,6 +242,8 @@ let init_simpset st =
 let init_proofstack st = 
   set_proofstack st (Default.proofstack())
 
+let init_base_thy_builder st = st
+(**
 let init_base_thy_builder st = 
   let builder st1 = 
     let ctxt1 = BaseTheory.builder (context st1) ~save:false 
@@ -248,3 +251,4 @@ let init_base_thy_builder st =
     set_context st ctxt1
   in
   set_base_thy_builder st builder
+***)
