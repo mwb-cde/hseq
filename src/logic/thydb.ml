@@ -308,7 +308,7 @@ let quick_find f th tdb =
 (*** Types ***)
 
 let add_type_rec tr thdb = 
-  Theory.add_type_rec tr (current thdb); thdb
+  Theory.add_type_rec tr (current thdb)
 
 let get_type_rec th n tdb=
   let get_aux cur= 
@@ -406,10 +406,10 @@ let thy_of th name thdb =
 (*** Theorems ***)
 
 let add_axiom s th ps thdb =
-  Theory.add_axiom s th ps (current thdb); thdb
+  Theory.add_axiom s th ps (current thdb)
 
 let add_thm s th ps thdb =
-  Theory.add_thm s th ps (current thdb); thdb
+  Theory.add_thm s th ps (current thdb)
 
 let get_axiom th n tdb =
   let get_aux cur = 

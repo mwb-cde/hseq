@@ -139,7 +139,7 @@ val add_parents: string list -> thy -> thy
 val set_protection: thy -> thy
 (** Set the protection of a theory. *)
 
-val set_files: string list -> thy -> thy
+val set_files: thy -> string list -> thy
 (** Set the files of a theory. *)
 val add_file: string -> thy -> thy
 (** Add a file to the files of a theory. *)

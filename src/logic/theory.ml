@@ -45,16 +45,16 @@ type thy =
     {
       name: string;
       marker: Scope.marker;
-      mutable protection: bool;
-      mutable date: float;
-      mutable parents: string list;
-      mutable lfiles: string list;
+      protection: bool;
+      date: float;
+      parents: string list;
+      lfiles: string list;
       axioms: (thm_record) Tree.t;
       theorems: (thm_record) Tree.t;
       defns: (id_record) Tree.t;
       typs: (Gtypes.typedef_record) Tree.t;
-      mutable type_pps: (string * Printer.record) list;
-      mutable id_pps: (string * (Printer.record * sym_pos)) list
+      type_pps: (string * Printer.record) list;
+      id_pps: (string * (Printer.record * sym_pos)) list
     }
 
 type contents=
@@ -73,7 +73,8 @@ type contents=
       cid_pps: (string * (Printer.record * sym_pos)) list 
     }
 
-let set_date thy = thy.date<-Lib.date()
+let get_date thy = thy.date
+let set_date thy = { thy with date = Lib.date() }
 
 let mk_thy n ps = 
   let thy = 
@@ -92,7 +93,7 @@ let mk_thy n ps =
       id_pps = []  
     }
   in 
-  set_date thy; thy
+  set_date thy
 
 let flatten_list l =
   let rec flatten_aux ls rs =
@@ -122,45 +123,34 @@ let contents thy =
 (*** Basic Theory Operations ***)
 
 let get_name thy = thy.name
+let set_name thy x = { thy with name = x }
 let get_marker thy = thy.marker
-let get_date thy = thy.date
+let set_marker thy x = { thy with marker = x }
 let get_parents thy = thy.parents
+let set_parents thy x = { thy with parents = x }
 let get_protection thy = thy.protection
 let get_files thy = thy.lfiles
+let set_files thy x = { thy with lfiles = x }
 
 let add_parent n thy =
   if (not thy.protection) & (n<>"") & (not (List.mem n (thy.parents)))
-  then 
-    begin
-      thy.parents <- (n::(thy.parents));
-      thy
-    end
+  then set_parents thy (n::(thy.parents))
   else raise (Report.error ("add_parent: "^n))
 
 let rec add_parents ns thy =
   List.fold_left (fun th n -> add_parent n th) thy (List.rev ns)
 
 let set_protection thy = 
-  begin
-    thy.protection<-true; 
-    set_date thy;
-    thy
-  end
-
-let set_files fs thy = 
-  begin
-    thy.lfiles <- fs;
-    thy
-  end
+  let thy1 = { thy with protection = true } in
+  set_date thy1
 
 let add_file f thy = 
-  set_files (f::(get_files thy)) thy
+  set_files thy (f::(get_files thy))
 
 let remove_file f thy = 
-  set_files 
+  set_files thy
     (List.filter 
-       (fun x -> (String.compare x f) != 0) (get_files thy)) thy
-     
+       (fun x -> (String.compare x f) != 0) (get_files thy))
 
 (*
  * Theory Components
@@ -343,10 +333,10 @@ let add_decln_rec n ty props thy =
 (*** Printer-Parser records ***)
 
 let get_id_pps thy = thy.id_pps
-let set_id_pps thy x = thy.id_pps <- x; thy
+let set_id_pps thy x = { thy with id_pps = x }
 
 let get_type_pps thy = thy.type_pps
-let set_type_pps thy x =  thy.type_pps <- x; thy
+let set_type_pps thy x =  { thy with type_pps = x }
 
 let get_term_pp_rec n thy = List.assoc n thy.id_pps
 
