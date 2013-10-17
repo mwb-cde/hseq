@@ -406,6 +406,8 @@ sig
     val load: thydb -> data -> info -> thydb
   end
 
+    (** For Debugging. *)
+  val check_importing : info -> string -> unit
 end
 
 (** {5 Debugging information} *)

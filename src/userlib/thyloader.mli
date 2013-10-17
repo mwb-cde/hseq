@@ -91,6 +91,9 @@ val default_load_fn:
 val default_build_fn: 
   Context.t -> Thydb.thydb -> string -> Thydb.thydb
 
+val build_fn: 
+  Context.t -> Thydb.thydb -> string -> Thydb.thydb
+
 val default_loader:
   Context.t -> Thydb.Loader.data
 val loader_data:

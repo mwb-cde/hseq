@@ -113,11 +113,16 @@ let default_load_fn
 
 let build_fn
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+(*
   let scripter = Context.scripter ctxt in
+*)
+  let scripter = get_use_file() in
   let script_name = Context.Files.script_of_thy ctxt thyname in
+(*
   if (thyname = Lterm.base_thy)
   then Context.Thys.theories (BaseTheory.builder ctxt)
   else 
+*)
       let saved_state = Userstate.state() in
       let st1 = Userstate.set_context saved_state ctxt in
       begin
