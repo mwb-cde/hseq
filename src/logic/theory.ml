@@ -579,7 +579,7 @@ let end_theory thy prot =
   if not (get_protection thy)
   then 
     if prot 
-    then (set_date thy; set_protection thy)
+    then (set_protection thy)
     else thy
   else thy
 

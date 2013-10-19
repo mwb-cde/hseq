@@ -202,8 +202,7 @@ let remove_type_pp s =
   let ctxt0 = Global.context () in
   let nctxt = 
     Commands.remove_type_pp ctxt0 
-      (Ident.mk_long (Global.current_name()) s); 
-    ctxt0
+      (Ident.mk_long (Global.current_name()) s)
   in 
   Global.set_context nctxt
 
@@ -221,7 +220,8 @@ let open_theory n =
   Global.set_context nctxt
 
 let close_theory () = 
-  Commands.close_theory (Global.context ())
+  let nctxt = Commands.close_theory (Global.context ()) in
+  Global.set_context nctxt
 
 (** {6 Theory properties} *)
 
@@ -230,10 +230,12 @@ let parents ps =
   Global.set_context nctxt
 
 let add_file ?use n = 
-  Commands.add_file (Global.context ()) ?use:use n
+  let nctxt = Commands.add_file (Global.context ()) ?use:use n in
+  Global.set_context nctxt
 
 let remove_file n = 
-  Commands.remove_file (Global.context ()) n
+  let nctxt = Commands.remove_file (Global.context ()) n in
+  Global.set_context nctxt
 
 (** {6 Type declaration and definition} *)
 

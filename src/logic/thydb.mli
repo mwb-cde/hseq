@@ -106,6 +106,9 @@ val get_thy: thydb -> string -> Theory.thy
 val get_parents: thydb -> string -> string list
 (** Get the parents of a theory. *)
 
+val end_current: thydb -> bool -> thydb
+(** Mark the current theory as closed, setting the date and read-only flag. *)
+
 (** {5 Pretty Printer} *)
 
 val print: thydb -> unit
@@ -280,6 +283,18 @@ val get_term_pplist:
   -> (Ident.t * (Printer.record * Theory.sym_pos)) list
 (** [get_term_pplist n db]: Get the list of PP records for identifiers
     with name [n].
+*)
+
+(** {5 Files } *)
+
+val add_file: string -> string -> thydb -> thydb
+(** [add_file thyname filename]: add file [filename] to the list to be loaded
+    for theory [thyname].
+*)
+
+val remove_file: string -> string -> thydb -> thydb
+(** [remove_file thyname filename]: remove file [filename] from the list to be
+    loaded for theory [thyname].
 *)
 
 (** {5 Scopes from databases} *)

@@ -99,9 +99,7 @@ struct
 end
 
 module Tree = Treekit.StringTree
-
 type table_t = (Theory.thy)Tree.t
-
 type thydb = 
     {
       db: table_t;
@@ -111,14 +109,21 @@ type thydb =
 
 let empty () = 
   {
-    db= Tree.nil; 
-    curr=None;
+    db = Tree.nil; 
+    curr = None;
     importing = NameSet.empty
   }
 
 let table thdb = thdb.db
+let set_table thdb tbl = { thdb with db = tbl }
+
 let current thdb = 
   Lib.dest_option ~err:(Failure "No current theory") thdb.curr
+let set_current thdb c = 
+  { thdb with curr = c }
+
+let set_importing thdb s =
+  { thdb with importing = s }
 let imported thdb = NameSet.to_list thdb.importing
 let thys thdb = NameSet.to_set thdb.importing
 
@@ -140,7 +145,7 @@ let expunge db =
   in 
   let tbl1 = List.fold_left Treekit.StringTree.delete tbl not_used
   in 
-  { db with db=tbl1 }
+  set_table db tbl1
 
 (*
  * Operations on Theories
@@ -155,21 +160,37 @@ let is_imported th thdb = NameSet.mem thdb.importing th
 let is_loaded name thdb = Tree.mem thdb.db name
 
 let add_thy thdb thy = 
-  let name = Theory.get_name thy
+  let name = Theory.get_name thy 
   in 
   if is_loaded name thdb
   then raise (error ("Theory "^name^" already present in database.") [])
-  else { thdb with db =Tree.add thdb.db name thy }
+  else set_table thdb (Tree.add thdb.db name thy)
 
-let remove_thy thdb n= 
-  if (n=current_name thdb) || (is_imported n thdb)
-  then raise (error ("Theory "^n^" is being used in the database.") [])
-  else { thdb with db = Tree.delete thdb.db n }
+let remove_thy thdb n = 
+  if (n = current_name thdb) || (is_imported n thdb)
+  then raise (error ("Theory "^n^" is in use.") [])
+  else 
+    set_table thdb (Tree.delete (table thdb) n)
 
-let get_thy thdb name = Tree.find thdb.db name
+let replace_thy thydb thy = 
+  let name = Theory.get_name thy 
+  in 
+  if not (is_loaded name thydb)
+  then raise (error ("Thydb.replace_thy: Theory "^name^" not in database.") [])
+  else 
+    let thydb1 = set_table thydb (Tree.replace (table thydb) name thy) in
+    if ((Theory.get_name thy) = (current_name thydb1))
+    then set_current thydb1 (Some thy)
+    else thydb1
 
+let update_current thydb thy = 
+  let name = Theory.get_name thy 
+  in 
+  let thydb1 = set_table thydb (Tree.replace (table thydb) name thy) in
+  set_current thydb1 (Some thy)
+
+let get_thy thdb name = Tree.find (table thdb) name
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
-
 
 (*
  * Printer 
@@ -226,7 +247,7 @@ let add_importing thdb ls =
   then 
     let thys1 = List.fold_left NameSet.add thdb.importing ls1
     in 
-    { thdb with importing = thys1 }
+    set_importing thdb thys1
   else thdb
 
 (** [mk_importing db]: Build the importing list of the current theory
@@ -260,8 +281,7 @@ let set_current thdb thy =
       | None -> true
       | (Some x) -> ((x == n) || (x = n))
   in 
-  let name = Theory.get_name thy 
-  in
+  let name = Theory.get_name thy in
   let test_loaded () = 
     try ignore(all_loaded thdb (imported thdb))
     with e -> 
@@ -270,8 +290,8 @@ let set_current thdb thy =
   let set_aux () = 
     test_loaded();
     let db1 = try add_thy thdb thy with _ -> thdb in 
-    let db2 = { db1 with curr = Some(thy) } in 
-    let db3 = { db2 with importing = mk_importing db2 }
+    let db2 = set_current db1 (Some(thy)) in 
+    let db3 = set_importing db2 (mk_importing db2)
     in 
     if check_first name (imported db3)
     then db3
@@ -295,7 +315,8 @@ let find f tdb =
       | x::xs ->
 	try f (get_thy tdb x)
 	with Not_found -> find_aux xs
-  in find_aux (imported tdb)
+  in 
+  find_aux (imported tdb)
 
 (** [quick_find f th tdb]: apply [f] to theory [th] if it is in the
     importing list. Raise [Not_found] if not found.
@@ -308,7 +329,8 @@ let quick_find f th tdb =
 (*** Types ***)
 
 let add_type_rec tr thdb = 
-  Theory.add_type_rec tr (current thdb)
+  let nthy = Theory.add_type_rec tr (current thdb) in 
+  update_current thdb nthy
 
 let get_type_rec th n tdb=
   let get_aux cur= 
@@ -332,22 +354,22 @@ let thy_of_type th name thdb =
 let add_decln_rec dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb);
-  thdb
+  let nthy = Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb) in
+  update_current thdb nthy
 
 let add_decln dcl ps thdb =
   let s, ty = Logic.Defns.dest_termdecln dcl
   in 
-  Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb);
-  thdb
+  let nthy = Theory.add_decln_rec (Ident.name_of s) ty ps (current thdb) in
+  update_current thdb nthy
 
 let add_defn_rec s ty def ps thdb =
-  Theory.add_defn_rec s ty def ps (current thdb);
-  thdb
+  let nthy = Theory.add_defn_rec s ty def ps (current thdb) in 
+  update_current thdb nthy
 
 let add_defn s ty def ps thdb =
-  Theory.add_defn_rec s ty (Some def) ps (current thdb);
-  thdb
+  let nthy = Theory.add_defn_rec s ty (Some def) ps (current thdb) in 
+  update_current thdb nthy
 
 let get_defn_rec th n tdb =
   let get_aux cur = 
@@ -403,13 +425,19 @@ let thy_of th name thdb =
   in 
   find is_thy_of thdb 
 
+let end_current thdb prot =
+  let nthy = Theory.end_theory (current thdb) prot in 
+  update_current thdb nthy
+
 (*** Theorems ***)
 
 let add_axiom s th ps thdb =
-  Theory.add_axiom s th ps (current thdb)
+  let nthy = Theory.add_axiom s th ps (current thdb) in
+  update_current thdb nthy
 
 let add_thm s th ps thdb =
-  Theory.add_thm s th ps (current thdb)
+  let nthy = Theory.add_thm s th ps (current thdb) in
+  update_current thdb nthy
 
 let get_axiom th n tdb =
   let get_aux cur = 
@@ -445,7 +473,8 @@ let get_lemma th n tdb =
 (*** Type Printer-Parser records ***)
 
 let add_type_pp_rec n ppr thdb = 
-  Theory.add_type_pp_rec n ppr (current thdb); thdb
+  let nthy = Theory.add_type_pp_rec n ppr (current thdb) in
+  update_current thdb nthy
 
 let get_type_pp_rec th n tdb =
   let get_aux cur = 
@@ -456,14 +485,17 @@ let get_type_pp_rec th n tdb =
   then find get_aux tdb
   else quick_find get_aux th tdb
     
-let remove_type_pp_rec th n tdb = 
+let remove_type_pp_rec th n thdb = 
   let get_aux cur = 
-    try ignore(Theory.remove_type_pp_rec n cur)
+    try Theory.remove_type_pp_rec n cur
     with _ -> raise Not_found
   in 
-  if th = "" 
-  then (find get_aux tdb; tdb)
-  else (quick_find get_aux th tdb; tdb)
+  let nthy = 
+    if th = "" 
+    then (find get_aux thdb)
+    else (quick_find get_aux th thdb)
+  in
+  replace_thy thdb nthy
 
 let get_type_pplist th tdb =
   let get_aux cur = Theory.get_type_pplist cur
@@ -473,7 +505,8 @@ let get_type_pplist th tdb =
 (*** Term Printer-Parser records ***)
 
 let add_term_pp_rec n ppr thdb = 
-  Theory.add_term_pp_rec n ppr (current thdb); thdb
+  let nthy = Theory.add_term_pp_rec n ppr (current thdb) in
+  update_current thdb nthy
 
 let get_term_pp_rec th n tdb =
   let get_aux cur = 
@@ -484,19 +517,48 @@ let get_term_pp_rec th n tdb =
   then find get_aux tdb
   else quick_find get_aux th tdb
     
-let remove_term_pp_rec th n tdb = 
+let remove_term_pp_rec th n thdb = 
   let get_aux cur = 
-    try ignore(Theory.remove_term_pp_rec n cur)
+    try Theory.remove_term_pp_rec n cur
     with _ -> raise Not_found
   in 
-  if th = "" 
-  then (find get_aux tdb; tdb)
-  else (quick_find get_aux th tdb; tdb)
+  let nthy = 
+    if th = "" 
+    then (find get_aux thdb)
+    else (quick_find get_aux th thdb)
+  in
+  replace_thy thdb nthy
 
 let get_term_pplist th tdb =
   let get_aux cur = Theory.get_term_pplist cur
   in
   quick_find get_aux th tdb
+
+(* Files *)
+
+let add_file (thyname: string) (f: string) thdb = 
+  let get_aux cur = 
+    try Theory.add_file f cur 
+    with _ -> raise Not_found
+  in
+  let nthy = 
+    if thyname = ""
+    then find get_aux thdb
+    else quick_find get_aux thyname thdb
+  in
+  replace_thy thdb nthy
+
+let remove_file (thyname: string) (f: string) thdb = 
+  let get_aux cur = 
+    try Theory.remove_file f cur 
+    with _ -> raise Not_found
+  in
+  let nthy = 
+    if thyname = ""
+    then find get_aux thdb
+    else quick_find get_aux thyname thdb
+  in
+  replace_thy thdb nthy
 
 (*
  * Scopes from database 
@@ -531,7 +593,7 @@ let scope_type_thy thy_name db x =
   thy_of_type thy_name x db
 
 let scope_thy_in_scope db th1 = 
-  if th1=Ident.null_thy  (* ignore the empty scope *)
+  if th1 = Ident.null_thy  (* ignore the empty scope *)
   then true
   else is_imported th1 db
 
@@ -659,8 +721,8 @@ struct
   (** [latest_time x y]: Choose the later of [x] and [y]. *)
     let latest_opt_time x y = 
       match x with
-          None -> y
         | Some(a) -> if time_lessthan a y then y else a
+        | _ -> y
 
   (** [test_data tim thy]: Ensure that the date of theory [thy] is
       not greater then [tim].  *)
@@ -670,14 +732,11 @@ struct
       | Some(tim) ->
 	if time_lessthaneql thy_date tim
 	then () 
-	else 
-	  (warning ("Imported theory "^name
-		    ^" is more recent than"
-		    ^" its importing theory");
-	   raise (Report.error 
-      		    ("Imported theory "^name
-		     ^" is more recent than"
-		     ^" its importing theory")))
+	else (warning ("Imported theory "^name^" is more recent than"
+		       ^" its importing theory");
+	      raise (Report.error 
+      		       ("Imported theory "^name^" is more recent than"
+		        ^" its importing theory")))
 
   (** [test_protection prot thy]: Ensure that the protection of theory
       [thy] is [prot].  *)
@@ -687,16 +746,10 @@ struct
       | (Some pval) ->
 	if pval
 	then 
-          if thy_prot
-	  then ()
-	  else 
-	    (warning 
-	       ("Imported theory "^name
-		^" is not complete");
+          if thy_prot then ()
+	  else (warning ("Imported theory "^name^" is not complete");
 	     raise 
-	       (Report.error 
-		  ("Imported theory "^name
-		   ^" is not complete")))
+	       (Report.error ("Imported theory "^name^" is not complete")))
 	else ()
 
   (** [load_thy info ]: Load theory specified by [info], using
@@ -1129,4 +1182,3 @@ struct
   let load_theory = New.load_theory
 
 end      
-

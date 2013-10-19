@@ -50,10 +50,8 @@ val catch_errors: Printer.ppinfo -> ('a -> 'b) -> 'a -> 'b
     it is raised.
 *)
 
-val save_theory: Context.t -> Theory.thy -> bool -> unit
-(** [save_theory thy prot]: Save theory [thy] to disk, setting its
-    protection to [prot].
-*)
+val save_theory: Context.t -> Theory.thy -> unit
+(** [save_theory thy prot]: Save theory [thy] to disk. *)
 
 val load_theory_as_cur: 
   Context.t -> string -> Context.t
@@ -108,7 +106,7 @@ val open_theory: Context.t -> string -> Context.t
     Allows a theory to be defined in a series of sessions.
 *)
 
-val close_theory: Context.t -> unit
+val close_theory: Context.t -> Context.t
 (** [close_theory()]: Save the current theory to disk, but don't
     protect it. Calling [close_theory] allows the theory to be opened
     with [open_theory] but not to be a parent to a theory.
@@ -121,7 +119,7 @@ val parents: Context.t -> string list -> Context.t
     necessary.
 *)
 
-val add_file: Context.t -> ?use:bool -> string -> unit
+val add_file: Context.t -> ?use:bool -> string -> Context.t
 (** [add_file ?(use=false) f]: Add file [f] to the list to be
     loaded/used when the theory is loaded. If [use=true] then also
     load/use [f] immediately.
@@ -130,7 +128,7 @@ val add_file: Context.t -> ?use:bool -> string -> unit
     and used otherwise (see {!Global.Files.load_use_file}).
 *)
 
-val remove_file: Context.t -> string -> unit 
+val remove_file: Context.t -> string -> Context.t
 (** [remove_file f]: Remove file [f] from the list to be loaded/used
     when the theory is loaded.
 *)
@@ -184,7 +182,7 @@ val add_type_pp:
     Parser tables.
 *)
 
-val remove_type_pp: Context.t -> Ident.t -> unit
+val remove_type_pp: Context.t -> Ident.t -> Context.t
 (** Remove PP information for a type identifier. Updates Printer and
     Parser tables.
 *)
@@ -200,7 +198,7 @@ val add_term_pp:
     parser.
 *)
 
-val remove_term_pp: Context.t -> Ident.t -> unit
+val remove_term_pp: Context.t -> Ident.t -> Context.t
 (** Remove PP information for a term identifier. Updates Printer and
     Parser tables.
 *)

@@ -39,7 +39,7 @@ let catch_errors ppinf f a =
       raise (Failure "failed")
     | x -> raise x
 
-let save_theory ctxt thy prot = 
+let save_theory ctxt thy  = 
   let fname = 
     Filename.concat
     (Context.Files.get_cdir()) 
@@ -105,11 +105,12 @@ let end_theory ctxt ?(save=true) () =
   then raise (Report.error "At base theory")
   else 
     begin
-      let thy = curr_theory ctxt
-      in 
-      Theory.end_theory thy true;
-      if save then save_theory ctxt thy true else ();
-      ctxt
+      let db1 = Thydb.end_current (Context.Thys.theories ctxt) true in
+      let ctxt1 = Context.Thys.set_theories ctxt db1 in
+      (if save 
+       then save_theory ctxt1 (Context.Thys.current ctxt1) 
+       else ());
+      ctxt1
     end
 
 let open_theory ctxt n =
@@ -122,10 +123,10 @@ let close_theory ctxt =
   then raise (Report.error "At base theory")
   else 
     begin
-      let thy = curr_theory ctxt
-      in 
-      Theory.end_theory thy false;
-      save_theory ctxt thy false
+      let db1 = Thydb.end_current (Context.Thys.theories ctxt) false in
+      let ctxt1 = Context.Thys.set_theories ctxt db1 in
+      save_theory ctxt1 (Context.Thys.current ctxt1);
+      ctxt1
     end
 
 (*** Theory properties ***)
@@ -134,18 +135,25 @@ let parents ctxt ns =
   let thy = Context.Thys.curr_theory ctxt
   and db = Context.Thys.theories ctxt
   in 
-  Theory.add_parents ns thy;
-  let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy
+  let thy1 = Theory.add_parents ns thy in
+  let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy1
   in 
   Context.Thys.set_theories ctxt db1
 
 let add_file ctxt ?(use=false) f =
-  Theory.add_file f (Context.Thys.curr_theory ctxt);
-  if use
-  then Context.Files.load_use_file ctxt f
-  else ()
+  let db0 = Context.Thys.theories ctxt in
+  let db1 = Thydb.add_file f (curr_theory_name ctxt) db0 in
+  let ctxt1 = Context.Thys.set_theories ctxt db1 
+  in
+  (if use
+   then Context.Files.load_use_file ctxt f  
+   else ());
+  ctxt1
     
-let remove_file ctxt f = Theory.remove_file f (curr_theory ctxt)
+let remove_file ctxt f = 
+  let db0 = Context.Thys.theories ctxt in
+  let db1 = Thydb.remove_file f (curr_theory_name ctxt) db0 in
+  Context.Thys.set_theories ctxt db1
 
 (*** Printer and Parser information ***)
 
@@ -163,9 +171,13 @@ let add_type_pp_rec ctxt id rcrd =
   ctxt2
     
 let remove_type_pp_rec ctxt id =
-  Thydb.remove_type_pp_rec 
-    (Ident.thy_of id) (Ident.name_of id) (Context.Thys.theories ctxt);
-  Context.NewPP.remove_type_pp ctxt id
+  let db1 = 
+    Thydb.remove_type_pp_rec 
+      (Ident.thy_of id) (Ident.name_of id) 
+      (Context.Thys.theories ctxt)
+  in
+  let ctxt1 = Context.Thys.set_theories ctxt db1 in
+  Context.NewPP.remove_type_pp ctxt1 id
 
 let get_type_pp_rec ctxt id = Context.NewPP.get_type_pp ctxt id 
 
@@ -183,9 +195,12 @@ let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
 let get_term_pp_rec ctxt id = Context.NewPP.get_term_pp ctxt id 
 
 let remove_term_pp_rec ctxt id =
-  Thydb.remove_term_pp_rec
-    (Ident.thy_of id) (Ident.name_of id) (theories ctxt);
-  Context.NewPP.remove_term_pp ctxt id
+  let db1 = 
+    Thydb.remove_term_pp_rec
+      (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
+  in
+  let ctxt1 = Context.Thys.set_theories ctxt db1 in
+  Context.NewPP.remove_term_pp ctxt1 id
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 
@@ -204,7 +219,7 @@ let add_type_pp ctxt id prec fx repr =
   in 
   add_type_pp_rec ctxt id rcrd
 
-let remove_type_pp ctxt id = ignore(remove_type_pp_rec ctxt id)
+let remove_type_pp ctxt id = remove_type_pp_rec ctxt id
 let get_type_pp id = get_type_pp_rec id
 
 (*** Terms ***)
@@ -220,7 +235,7 @@ let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
       | Some(sym) -> add_overload ctxt1 sym ~pos:pos id
   end
 
-let remove_term_pp ctxt id = ignore(remove_term_pp_rec ctxt id)
+let remove_term_pp ctxt id = remove_term_pp_rec ctxt id
 let get_term_pp id = get_term_pp_rec id
 
 (** Axioms and Theorems ***)
