@@ -58,7 +58,6 @@ struct
   type t =
     {
       context_f : Context.t;
-      scope_f : Scope.t;
       simpset_f : Simpset.simpset;
       proofstack_f: Goals.ProofStack.t; 
       base_thy_builder_f: t -> t;
@@ -68,7 +67,6 @@ struct
     let empty() = 
       {
         context_f = Default.context();
-        scope_f = Default.scope();
         simpset_f = Default.simpset();
         proofstack_f = Default.proofstack();
         base_thy_builder_f = Default.base_thy_builder();
@@ -78,9 +76,9 @@ struct
     let set_context st ctxt = 
       { st with context_f = ctxt }
 
-    let scope st = st.scope_f
+    let scope st = Context.scope_of (context st)
     let set_scope st scp = 
-      { st with scope_f = scp }
+      set_context st (Context.set_scope (context st) scp)
 
     let ppinfo st = Context.ppinfo (context st)
     let set_ppinfo st pp = 

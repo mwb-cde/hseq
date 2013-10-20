@@ -38,7 +38,6 @@ sig
   type t =
     {
       context_f : Context.t;
-      scope_f : Scope.t;
       simpset_f : Simpset.simpset;
       proofstack_f: Goals.ProofStack.t;
       base_thy_builder_f: t -> t

@@ -129,7 +129,9 @@ let build_fn
         Userstate.set_state st1;
         scripter ~silent:false script_name;
         let st2 = Userstate.state() in
+(**
         Userstate.set_state saved_state;
+**)
         Context.thydb (Userstate.context st2)
       end
 

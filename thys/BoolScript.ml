@@ -29,7 +29,7 @@ begin_theory "Bool" ["base"];;
 
 let cases_thm=
 theorem "cases_thm" << !P: (not P) or P >>
-[flatten_tac++ basic];;
+[flatten_tac ++ basic];;
 
 let excluded_middle=
 theorem "excluded_middle" << ! x: (not x) or x>>
