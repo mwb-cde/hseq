@@ -417,10 +417,10 @@ val top : unit -> Goals.Proof.t
 val top_goal : unit -> Logic.goal
 (** The current goal. *)
 
-val drop : unit -> unit
+val drop : unit -> Goals.Proof.t
 (** Drop the current proof.  *)
 
-val goal: Basic.term -> unit
+val goal: Basic.term -> Goals.Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack. 
 
@@ -428,16 +428,16 @@ val goal: Basic.term -> unit
     Where [gl] is the tag of the goal and [trm] the conclusion.
 *)
 
-val postpone: unit -> unit
+val postpone: unit -> Goals.Proof.t
 (** Postpone the current proof, pushing it to the bottom of the stack.
 *)
 
-val lift: int -> unit
+val lift: int -> Goals.Proof.t
 (** [lift n]: Focus on the nth proof to the top of the stack, making
     it the current proof attempt. Fails if there is no nth proof.
 *)
 
-val undo : unit -> unit
+val undo : unit -> Goals.Proof.t
 (** Go back. Pop the top goal off the proof. Fails if there is only
     one goal in the proof.
 *)

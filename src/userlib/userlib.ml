@@ -350,7 +350,7 @@ let proofstack() = Global.proofstack ()
 let set_proofstack pstk = Global.set_proofstack pstk
 let top() = Goals.top (proofstack())
 let top_goal() = Goals.top_goal (proofstack())
-let drop() = set_proofstack (Goals.drop (proofstack()))
+let drop() = set_proofstack (Goals.drop (proofstack())); top()
 let goal_scope () = Goals.goal_scope (proofstack ())
 let curr_sqnt () = Goals.curr_sqnt (proofstack())
 let get_asm i = Goals.get_asm (proofstack()) i
@@ -363,19 +363,25 @@ let prove_goal trm tac =
   Goals.prove_goal (Global.context()) trm tac
 
 let drop () = 
-  set_proofstack (Goals.drop (proofstack()))
+  set_proofstack (Goals.drop (proofstack()));
+  top()
 
 let lift i = 
-  set_proofstack (Goals.lift (proofstack()) i)
+  set_proofstack (Goals.lift (proofstack()) i);
+  top()
 
 let undo () =
-  set_proofstack (Goals.undo (proofstack()))
+  set_proofstack (Goals.undo (proofstack()));
+  top()
 
 let postpone () =
-  set_proofstack (Goals.postpone (proofstack()))
+  set_proofstack (Goals.postpone (proofstack()));
+  top()
+
 
 let goal trm = 
-  set_proofstack (Goals.goal (proofstack()) (scope()) trm)
+  set_proofstack (Goals.goal (proofstack()) (scope()) trm);
+  top()
 
 let result () = Goals.result (proofstack())
 
