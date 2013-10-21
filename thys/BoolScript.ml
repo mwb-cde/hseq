@@ -83,20 +83,18 @@ let iff_l2 = theorem "iff_l2"
 ++ replace_tac ++ eq_tac;
 replace_tac ++ eq_tac];;
 
-let iff_equals = 
-theorem "iff_equals" << !x y: (x iff y) iff (x = y)>>
-([flatten_tac ++ (rewrite_tac [(defn "iff")]) ++ conjC;
-flatten_tac ++ (cut iff_l2) ++ (inst_tac [ <<_x>>; << _y >> ])
-++ implA;
-conjC ++ flatten_tac;
-mp_tac ++ basic;
-(match_asm << _y => _x >> 
- (fun a -> match_asm << _y >> 
-   (fun f -> mp_tac ~a:a ~h:f)))
-++basic;
-basic;
-flatten_tac ++ replace_tac
-++ split_tac ++ (flatten_tac ++ basic)]);;
+let iff_equals = theorem "iff_equals" << !x y: (x iff y) iff (x = y)>>
+  ([flatten_tac ++ (rewrite_tac [(defn "iff")]) ++ conjC;
+     ((flatten_tac ++ (cut iff_l2) ++ (inst_tac [ << _x >>; << _y >> ])
+      ++ implA)
+     -- 
+       [
+         conjC ++ basic;
+         basic;
+       ]);
+     flatten_tac 
+     ++ conjC ++ replace_tac ++ flatten_tac ++ basic])
+   ;;
 
 let equals_iff=
 theorem "equals_iff" << !x y: (x iff y) = (x = y)>>
