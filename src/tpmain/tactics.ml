@@ -219,7 +219,7 @@ let fail ?err (_: Context.t) sq =
  * Tacticals
  *)
 
-let seq rls ctxt sq =
+let seq rls ctxt (sq: Logic.node) =
   let rec seq_aux fs sqs =
     match fs with 
       | [] -> sqs
@@ -234,19 +234,18 @@ let seq rls ctxt sq =
 
 let (++) tac1 tac2 ctxt g = seq [tac1; tac2] ctxt g
 
-let alt tacl g = 
+let alt tacl ctxt (g: Logic.node) = 
   let rec alt_aux ts =
     match ts with
-      | [] -> raise (error "alt: empty tactic list")
-      | x::[] -> x g
+      | [] -> raise (error "alt: No tactic succeeded")
       | x::xs ->
-	try x g
+	try x ctxt g
 	with _ -> alt_aux xs
   in alt_aux tacl 
 
-let (//) tac1 tac2 g =
-  try tac1 g 
-  with  _ -> tac2 g
+let (//) tac1 tac2 ctxt g =
+  try tac1 ctxt g 
+  with  _ -> tac2 ctxt g
 
 let thenl tac rls ctxt sq = 
   let apply_tac r g = r ctxt g in 
@@ -899,7 +898,7 @@ let match_formula trm tac ctxt g =
     with Not_found ->
       raise (Term.term_error "No matching formula in sequent" [trm])
 
-let specA ?a g =
+let specA ?a ctxt g =
   let existA_rule ?asm = 
     (?> fun info1 -> 
       record_changes_tac 
@@ -920,9 +919,9 @@ let specA ?a g =
                   (List.rev (Info.constants info)))))
         ];
       fail ~err:(error "specA")
-    ] g
+    ] ctxt g
 
-let specC ?c g =
+let specC ?c ctxt g =
   let allC_rule ?conc = 
     (?> fun info1 -> 
       record_changes_tac 
@@ -943,15 +942,15 @@ let specC ?c g =
                   (List.rev (Info.constants info)))))
         ];
       fail ~err:(error "specC")
-    ] g
+    ] ctxt g
     
-let spec_tac ?f g =
+let spec_tac ?f ctxt g =
   alt
     [
       specC ?c:f;
       specA ?a:f;
       fail ~err:(error "specA")
-    ] g
+    ] ctxt g
 
 (*
  * Rewriting 

@@ -193,13 +193,14 @@ let eq_tac ?c ctxt goal =
 
 (** [direct_alt lbl tacs]: Directed alt. Like {!Tactics.alt} but
     pass [lbl] to each tactic in [tacs].  **)
-let direct_alt lbl tacl goal =
-  let rec alt_aux ts g = 
+let direct_alt lbl tacl ctxt (goal: Logic.node) =
+  let rec direct_alt_aux ts = 
     match ts with
       | [] -> raise (Failure "direct_alt: no successful tactic")
-      | tac::rest ->
-	(try tac lbl g with _ -> alt_aux rest g)
-  in alt_aux tacl goal
+      | (tac::rest) ->
+	(try tac lbl ctxt goal
+         with _ -> direct_alt_aux rest)
+  in direct_alt_aux tacl
 
 let direct_map_some tac lst ctxt goal =
   let app (flag, fail_list) lbl ctxt node =
@@ -320,7 +321,9 @@ and plain_concl_elim_rules_tac crules lbl_list ctxt goal =
       | [] -> 
         if not flag
         then 
-          fail ~err:(error "concl_elim_rules_tac: No tactic suceeded.") ctxt g
+          (fail 
+             ~err:(error "plain_concl_elim_rules_tac: No tactic suceeded.") 
+             ctxt g)
         else
           let chngs1 = Changes.make (Info.subgoals chngs)
             (Info.aformulas chngs) flist (Info.constants chngs) 
