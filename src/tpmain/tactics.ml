@@ -489,7 +489,7 @@ let implC ?c _ sq =
   in
   Logic.Tactics.implC cf sq
 
-let implA ?a _ sq =
+let implA ?a (_: Context.t) sq =
   let af = first_asm_label a Formula.is_implies sq
   in 
   Logic.Tactics.implA af sq

@@ -203,11 +203,8 @@ let direct_alt lbl tacl ctxt (goal: Logic.node) =
   in direct_alt_aux tacl
 
 let direct_map_some tac lst ctxt goal =
-  let app (flag, fail_list) lbl ctxt node =
-    try 
-      let branch1 = tac lbl ctxt node
-      in
-      ((true, fail_list), branch1)
+  let app (flag, fail_list) lbl ctxt (node: Logic.node) =
+    try ((true, fail_list), tac lbl ctxt node)
     with _ -> ((flag, lbl::fail_list), skip ctxt node)
   in
   match lst with
@@ -236,11 +233,11 @@ let rec asm_elim_rules_tac rules lbl ctxt goal =
     rules fails is stored in arbitrary order.  *)
 and concl_elim_rules_tac rules lbl ctxt goal = 
   base_concl_elim_rules_tac rules [lbl] ctxt goal
-and formulas inf = (List.map ftag (Info.aformulas inf), 
-                    List.map ftag (Info.cformulas inf))
+and formulas inf = 
+  (List.map ftag (Info.aformulas inf), 
+   List.map ftag (Info.cformulas inf))
 and plain_asm_elim_rules_tac arules lbl_list ctxt goal = 
-  (* Try to apply one of the rules, making an empty change record on
-     failure. *)
+  (* Try to apply one of the rules, making an empty change record on failure. *)
   let try_arule_tac flist lbl ctxt0 g = 
     try ((true, flist), direct_alt lbl arules ctxt0 g)
     with _ -> 
@@ -252,25 +249,29 @@ and plain_asm_elim_rules_tac arules lbl_list ctxt goal =
      assumptions are added to list of labels to eliminate. *)
   let rec asm_tac (flag, flist, chngs) lbls ctxt0 g =
     match lbls with
-      | [] -> 
-        if not flag
-        then 
-          fail ~err:(error "asm_elim_rules_tac: No tactic suceeded.") ctxt0 g
-        else 
-          let chngs1 = (Changes.make (Info.subgoals chngs)
-                          flist (Info.cformulas chngs) (Info.constants chngs))
-          in
-          set_changes_tac chngs1 ctxt0 g
-      | lbl::rest ->
-        apply_tac (try_arule_tac flist lbl)
-          (fun (flag1, flist1) -> 
-            (?> fun inf2 -> 
+    | [] -> 
+      if not flag
+      then 
+        fail 
+          ~err:(error "plain_asm_elim_rules_tac: No tactic suceeded.")
+          ctxt0 g
+      else 
+        let chngs1 = 
+          (Changes.make (Info.subgoals chngs)
+             flist (Info.cformulas chngs) (Info.constants chngs))
+        in
+        set_changes_tac chngs1 ctxt0 g
+    | lbl::rest ->
+      apply_tac (try_arule_tac flist lbl)
+        (fun (flag1, flist1) -> 
+          (?> fun inf2 -> 
             let albls = List.map ftag (Info.aformulas inf2) 
             and chngs1 = 
               Changes.rev_append
                 (Changes.make 
                    (Info.subgoals inf2)
-                   [] (Info.cformulas inf2) 
+                   [] 
+                   (Info.cformulas inf2) 
                    (Info.constants inf2))
                 chngs
             in
@@ -348,7 +349,7 @@ and plain_concl_elim_rules_tac crules lbl_list ctxt goal =
 and base_concl_elim_rules_tac rules lbl_list ctxt goal = 
   let (_, crules) = rules in
   seq [
-    plain_concl_elim_rules_tac crules lbl_list ;
+    (plain_concl_elim_rules_tac crules lbl_list // skip);
     (?> fun info ->
       (* Extract failing conclusions and eliminate new assumptions. *)
       let asms = List.map ftag (Info.aformulas info) 

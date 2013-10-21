@@ -43,13 +43,13 @@ struct
       proving it if necessary *)
 
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
-  let make_iff_equals_thm sctxt =
+  let make_iff_equals_thm (sctxt: Context.t) =
     let iff_l2 = 
       Commands.prove sctxt
       << !x y: ((x => y) and (y => x)) => (x = y) >>
       (seq [
         allC;
-        (?> fun info1 ->
+        (?> fun (info1: Info.t) ->
           seq [
 	    allC ;
 	    (?> fun info2 -> 
