@@ -21,6 +21,7 @@
 
 (** Basic boolean tactics *)
 
+val make_false_def: Context.t -> Logic.thm
 val false_def: Context.t -> Logic.thm
 (** Get the definition of [false]. *)
 

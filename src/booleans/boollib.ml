@@ -42,8 +42,8 @@ struct
   (** [make_n_thm()]: prove theorem n [n_thm()]: get theorem n,
       proving it if necessary *)
 
-  (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
-  let make_iff_equals_thm (sctxt: Context.t) =
+  (** [equals_iff_thm]: |- !x y: (x iff y) = (x = y) *)
+  let make_equals_iff_thm (sctxt: Context.t) =
     let iff_l2 = 
       Commands.prove sctxt
       << !x y: ((x => y) and (y => x)) => (x = y) >>
@@ -54,9 +54,9 @@ struct
 	    allC ;
 	    (?> fun info2 -> 
               let x_term = Lib.get_one (Info.constants info1)
-                (Failure "make_iff_equals_thm: x_term")
+                (Failure "make_equals_iff_thm: x_term")
 	      and y_term = Lib.get_one (Info.constants info2) 
-                (Failure "make_iff_equals_thm: y_term")
+                (Failure "make_equals_iff_thm: y_term")
 	      in 
 	      (flatten_tac
 	       ++ (cut_thm "bool_cases" ++ allA x_term)
@@ -77,9 +77,9 @@ struct
             allC;
 	    (?> fun info2 -> 
 	      let x_term = Lib.get_one (Info.constants info1) 
-                (Failure "make_iff_equals_thm: x_term")
+                (Failure "make_equals_iff_thm: x_term")
               and y_term = Lib.get_one (Info.constants info2)
-                (Failure "make_iff_equals_thm: y_term")
+                (Failure "make_equals_iff_thm: y_term")
 	      in 
 	      ((cut iff_l2)
 	       ++ inst_tac [Lterm.mk_iff x_term y_term;
@@ -99,35 +99,35 @@ struct
           ])])
 
 (*
-  let iff_equals_thm_var = Lib.freeze make_iff_equals_thm
-  let iff_equals_thm() = Lib.thaw ~fresh:fresh_tthm iff_equals_thm_var
+  let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
+  let equals_iff_thm() = Lib.thaw ~fresh:fresh_tthm equals_iff_thm_var
 *)
-  let iff_equals_id = Ident.mk_long "Bool" "equals_bool"
-  let iff_equals_thm ctxt =
-    Context.find_thm ctxt iff_equals_id make_iff_equals_thm
-
-  (** [equals_iff_thm]: |- !x y: (x = y) = (x iff y) *)
   let equals_iff_id = Ident.mk_long "Bool" "equals_iff"
-  let make_equals_iff_thm sctxt =
-    get_or_prove sctxt (Ident.string_of equals_iff_id)
+  let equals_iff_thm ctxt =
+    Context.find_thm ctxt equals_iff_id make_equals_iff_thm
+
+  (** [equals_bool_thm]: |- !x y: (x = y) = (x iff y) *)
+  let equals_bool_id = Ident.mk_long "Bool" "equals_bool"
+  let make_equals_bool_thm sctxt =
+    get_or_prove sctxt (Ident.string_of equals_bool_id)
     << !x y: (x = y) = (x iff y) >>
       (flatten_tac
-       ++ (rewrite_tac [iff_equals_thm sctxt])
+       ++ (rewrite_tac [equals_iff_thm sctxt])
        ++ eq_tac)
 
 (*
-  let equals_iff_thm_var = Lib.freeze make_equals_iff_thm
-  let equals_iff_thm() = Lib.thaw ~fresh:fresh_thm equals_iff_thm_var
+  let equals_bool_thm_var = Lib.freeze make_equals_bool_thm
+  let equals_bool_thm() = Lib.thaw ~fresh:fresh_thm equals_bool_thm_var
 *)
-  let equals_iff_thm ctxt = 
-    Context.find_thm ctxt equals_iff_id make_equals_iff_thm
+  let equals_bool_thm ctxt = 
+    Context.find_thm ctxt equals_bool_id make_equals_bool_thm
 
   (** [bool_eq_thm]: |- !x y: x = y = ((x => y) and (y=>x)) *)
   let bool_eq_thm_id = Ident.mk_long "Bool" "bool_eq"
   let make_bool_eq_thm ctxt = 
     prove ctxt << !x y: (x = y) = ((x => y) and (y => x)) >>
     (flatten_tac
-     ++ rewrite_tac [equals_iff_thm ctxt]
+     ++ rewrite_tac [equals_bool_thm ctxt]
      ++ unfold "iff"
      ++ (split_tac ++ flatten_tac
          ++ split_tac ++ flatten_tac ++ basic))
@@ -175,7 +175,7 @@ struct
 	   [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1); 
 	    cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
     in 
-    rewrite_rule ctxt [iff_equals_thm ctxt] rule_true_l3
+    rewrite_rule ctxt [equals_iff_thm ctxt] rule_true_l3
 
 (*
   let rule_true_thm_var = Lib.freeze make_rule_true_thm
@@ -194,7 +194,7 @@ struct
 	     Lib.get_one (Info.constants info)
 	       (Failure "make_rule_false_thm")
 	   in 
-	   ((once_rewrite_tac [equals_iff_thm ctxt]
+	   ((once_rewrite_tac [equals_bool_thm ctxt]
 	     ++ unfold "iff"
 	     ++ scatter_tac)
 	    -- 
@@ -635,7 +635,7 @@ let cut_back_tac = Booltacs.cut_back_tac
 
 let equals_tac ?f ctxt goal =
   let thm = 
-    try Thms.equals_iff_thm ctxt
+    try Thms.equals_bool_thm ctxt
     with Not_found -> 
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in 

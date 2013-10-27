@@ -44,11 +44,11 @@ sig
   (** The definition of [iff]. *)
 
   (** [iff_equals_thm]: |- !x y: (x iff y) = (x = y) *)
-  val make_iff_equals_thm: Context.t -> Logic.thm
-  val iff_equals_thm: Context.t -> Logic.thm
-
-  (** [equals_iff_thm]: |- !x y: (x = y) = (x iff y) *)
+  val make_equals_iff_thm: Context.t -> Logic.thm
   val equals_iff_thm: Context.t -> Logic.thm
+
+  (** [equals_bool_thm]: |- !x y: (x = y) = (x iff y) *)
+  val equals_bool_thm: Context.t -> Logic.thm
 
 
   (** [bool_eq_thm]: |- !x y: x iff y = ((x => y) and (y=>x)) *)
