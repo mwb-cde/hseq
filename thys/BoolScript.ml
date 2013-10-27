@@ -356,7 +356,7 @@ let forall_and=
 theorem "forall_and" 
   << !P Q: (!x: (P x) and (Q x))= ((!x: P x) and (!x: Q x)) >>
 [flatten_tac ++ equals_tac ++ scatter_tac 
-++ inst_tac [ << _x>> ] 
+++ (repeat (inst_tac [ << _x >> ] ))
 ++ (blast_tac // inst_tac [ << _x>> ] ++ basic)]
 
 let forall_or=
