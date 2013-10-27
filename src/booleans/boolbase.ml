@@ -28,7 +28,7 @@ open Lib.Ops
 
 let false_id = Ident.mk_long Lterm.base_thy "false_def"
 let make_false_def sctxt = 
-  thm sctxt (Lterm.base_thy ^ "false_def")
+  thm sctxt (Ident.string_of false_id)
 let false_def sctxt = 
   Context.find_thm sctxt false_id make_false_def
 
