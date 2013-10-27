@@ -166,7 +166,7 @@ struct
 
   let make_skolem_name id indx = 
     let suffix = 
-      if(indx=0) 
+      if (indx = 0) 
       then ""
       else (string_of_int indx)
     in 
@@ -208,30 +208,59 @@ struct
         Make a new skolem constant with name [n] and type [ty] scope
         [scp] is needed for unification return the new identifier, its
         type and the updated information for skolem building *)
-  let mk_new_skolem info=
+  let mk_new_skolem info =
     (* tyname: if ty is a variable then use its name for the weak
        variable otherwise use the empty string *)
-    let tyname x=
+    let tyname x =
       if Gtypes.is_var info.ty 
       then new_weak_type (Gtypes.get_var_name info.ty) info.tylist
       else new_weak_type (x^"_ty") info.tylist
     in
     (* make the weak type *)
-    let mk_nty x=
-      let ty_name, nnames=tyname x in 
+    let mk_nty x =
+      let ty_name, nnames = tyname x in 
       let tty=Gtypes.mk_weak ty_name in 
       (* unify the weak type with the given type *)
-      let ntyenv=Gtypes.unify_env info.scope tty info.ty info.tyenv
+      let ntyenv = Gtypes.unify_env info.scope tty info.ty info.tyenv
       in 
       (Gtypes.mgu tty ntyenv, ntyenv, nnames)
+    in
+    (* Make a name not already associated with a skolem or meta variable *)
+    let skname0, skindx0 = 
+      (* First the skolems *)
+      begin
+        match (Lib.try_find (get_old_sklm info.name) info.skolems) with 
+        | Some(oldsk) -> 
+          (* Get next available skolem index for the name *)
+	  let nindx = (get_sklm_indx oldsk)+1 in 
+          (info.name, nindx)
+        | _ -> (info.name, 0)
+      end
+    in
+    (* Next, the meta variables *)
+    let skname1, skindx1 = 
+      let rec find_new_meta scp n idx = 
+        let nname = make_skolem_name n idx in 
+        if Scope.is_meta scp 
+          (Term.dest_meta (Term.mk_meta nname (Gtypes.mk_weak "_ty")))
+        then find_new_meta scp n (idx + 1)
+        else (n, idx)
+      in 
+      find_new_meta info.scope skname0 skindx0
     in 
+    let nnam = make_skolem_name skname1 skindx1 in 
+    let nty, ntyenv, new_names = mk_nty nnam in
+    (Term.mk_meta nnam nty, nty, 
+     (info.name, (skindx1, nty))::info.skolems, ntyenv, new_names)
+
+(***
     (* see if name is already associated with a skolem *)
     match (Lib.try_find (get_old_sklm info.name) info.skolems) with 
       | None -> 
 	  let nindx = 0 in 
 	  let oname = info.name in 
 	  let nnam = make_skolem_name oname nindx in 
-	  let nty, ntyenv, new_names=mk_nty nnam
+	  let nty, ntyenv, new_names = mk_nty nnam
 	  in 
 	  (Term.mk_meta nnam nty, nty, 
 	   (oname, (nindx, nty))::info.skolems, 
@@ -242,11 +271,12 @@ struct
 	(* make the new identifier *)
 	let oname = info.name in
 	let nnam = make_skolem_name oname nindx	in 
-	let nty, ntyenv, new_names=mk_nty nnam
+	let nty, ntyenv, new_names = mk_nty nnam
 	in 
 	(Term.mk_meta nnam nty, nty, 
 	 (oname, (nindx, nty))::info.skolems, 
 	 ntyenv, new_names)
+***)
 end
 
 (******************************************************************************)
@@ -1595,22 +1625,19 @@ struct
     then 
       let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
       in 
+      let localscope = Scope.new_local_scope (Sequent.scope_of sq) in 
       let sv, sty, nsklms, styenv, ntynms =
 	Skolem.mk_new_skolem 
 	  {
 	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
 	    Skolem.ty = nty;
 	    Skolem.tyenv = tyenv;
-	    Skolem.scope = Sequent.scope_of sq;
+            Skolem.scope = localscope;
 	    Skolem.skolems = Sequent.sklm_cnsts sq;
 	    Skolem.tylist = Sequent.sqnt_tynames sq
 	  }
       in 
-      let nscp = 
-	Scope.add_meta 
-	  (Scope.new_local_scope (Sequent.scope_of sq)) 
-	  (Term.dest_meta sv)
-      in 
+      let nscp = Scope.add_meta localscope (Term.dest_meta sv) in 
       let nsqtys=
 	if Gtypes.is_weak sty
 	then sty::(Sequent.sqnt_tyvars sq)
@@ -1648,22 +1675,19 @@ struct
     then 
       let (nv, nty) = (Formula.get_binder_name t, Formula.get_binder_type t)
       in 
+      let localscope = Scope.new_local_scope (Sequent.scope_of sq) in 
       let sv, sty, nsklms, styenv, ntynms =
 	Skolem.mk_new_skolem
 	  {
 	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
 	    Skolem.ty = nty;
 	    Skolem.tyenv = tyenv;
-	    Skolem.scope = Sequent.scope_of sq;
+	    Skolem.scope = localscope;
 	    Skolem.skolems = Sequent.sklm_cnsts sq;
 	    Skolem.tylist = Sequent.sqnt_tynames sq
 	  }
       in 
-       let nscp = 
-	 Scope.add_meta 
-	   (Scope.new_local_scope (Sequent.scope_of sq)) 
-	   (Term.dest_meta sv)
-       in 
+       let nscp = Scope.add_meta localscope (Term.dest_meta sv) in 
        let nsqtys=
 	 if Gtypes.is_weak sty
 	 then sty::(Sequent.sqnt_tyvars sq)

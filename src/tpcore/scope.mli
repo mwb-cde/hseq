@@ -42,7 +42,6 @@ val mk_marker: string -> marker
 val marker_name : marker -> string
 (** Marker destructor *)
 
-
 type meta_db  (* = (Basic.binders)Treekit.StringTree.t  *)
 (** Meta variables
     
@@ -50,7 +49,7 @@ type meta_db  (* = (Basic.binders)Treekit.StringTree.t  *)
     only needed by goal scopes.
 *)
 
-val empty_meta_db: meta_db
+val empty_meta_db: unit -> meta_db
 (** The empty [meta_db]. *)
 
 val meta_db_add: string -> Basic.binders -> meta_db -> meta_db

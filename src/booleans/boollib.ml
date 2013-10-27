@@ -634,13 +634,13 @@ let cut_back_tac = Booltacs.cut_back_tac
 (*** Equality ***)
 
 let equals_tac ?f ctxt goal =
-  let sctxt = set_scope ctxt (scope_of_goal goal) in
   let thm = 
-    try Thms.equals_iff_thm sctxt
+    try Thms.equals_iff_thm ctxt
     with Not_found -> 
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in 
-  let act_tac x ctxt0 g = once_rewrite_tac [thm] ~f:x ctxt0 g in 
+  let sctxt = set_scope ctxt (scope_of_goal goal) in
+  let act_tac x ctxt0 g = once_rewrite_tac [thm] ~f:x sctxt g in 
   let main_tac ctxt0 gl =
     match f with
       | Some x -> act_tac x ctxt0 goal

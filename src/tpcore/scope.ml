@@ -1,6 +1,6 @@
 (*----
   Name: scope.ml
-  Copyright M Wahab 2005-2009, 2010 
+  Copyright M Wahab 2005-20013
   Author: M Wahab  <mwb.cde@googlemail.com>
 
   This file is part of HSeq
@@ -29,15 +29,12 @@ open Basic
 
 (** Theory markers. *)
 type marker = Tag.t
-
 let mk_marker = Tag.named
 let marker_name = Tag.name 
 
 (** Meta variables *)
 type meta_db = (Basic.binders)Treekit.StringTree.t 
-
-let empty_meta_db = Treekit.StringTree.nil
-
+let empty_meta_db ()= Treekit.StringTree.nil
 let meta_db_add n b db =
   Treekit.StringTree.add db n b
 
@@ -82,7 +79,7 @@ let empty_scope () =
     type_thy = dummy;
     thy_in_scope = (fun x -> false);
     marker_in_scope = (fun x -> false);
-    meta_vars = empty_meta_db
+    meta_vars = empty_meta_db()
   }
 
 (** [marker_of scp]: Get the theory marker of scope [scp] *)
@@ -196,7 +193,6 @@ let find_meta scp n =
 
 let is_meta scp v = 
   let n = Basic.binder_name v in 
-  let m = find_meta scp n
-  in 
-  (Basic.binder_equality v m)
+  try ignore(find_meta scp n); true
+  with Not_found -> false
 
