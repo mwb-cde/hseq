@@ -213,12 +213,11 @@ let bool_parsers =
 let bool_parsers_init = 
   [ init_ifthenelse_parser; init_choice_parser; init_exists_unique_parser ]
 
-let init_bool_parsers ctxt = 
-  let ptbl0 = Context.parsers ctxt in
+let init_bool_parsers ptbl0 = 
   let ptbl1 = 
     List.fold_left (fun x f -> f x) ptbl0 bool_parsers_init
   in
-  Context.set_parsers ctxt ptbl1
+  ptbl1
 
 let bool_printers_init = 
   [
@@ -227,12 +226,12 @@ let bool_printers_init =
     init_exists_unique_printer;
   ]
 
-let init_bool_printers ctxt = 
-  let ppinf0 = Context.ppinfo ctxt in
+let init_bool_printers ppinfo = 
   let ppinf1 = 
-    List.fold_left (fun x f -> f x) ppinf0 bool_printers_init
+    List.fold_left (fun x f -> f x) ppinfo bool_printers_init
   in
-  Context.set_ppinfo ctxt ppinf1
+  ppinf1
+
 
 (**
 (* PP Initialising functions *)
@@ -252,7 +251,7 @@ let init () =
   init_parsers()
 *)
 
-let base_ppinfo =
+let base_ppinfo () =
   let printers = 
     [
       (Lterm.notid, negation_printer);
@@ -274,17 +273,15 @@ let base_ppinfo =
   in
   inf2
 
-let ppinfo () = base_ppinfo
+let ppinfo = base_ppinfo
 
 (** {7 OCaml Quotations support} *)
 
 let quote_context =
   let ctxt0 = Context.empty() in
-  let ctxt1 = 
-    Context.set_parsers ctxt0 (Parser.init_parsers (Context.parsers ctxt0)) 
-  in 
-  let ctxt2 = init_bool_parsers ctxt1 in
-  ctxt2
+  let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
+  let ptbl2 = init_bool_parsers ptbl1 in
+  Context.set_parsers ctxt0 ptbl2
 
 (** Parse a string as a term, resolving short names and symbols. *)
 let read str = Context.NewPP.read quote_context str

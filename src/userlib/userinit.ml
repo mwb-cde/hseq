@@ -25,21 +25,22 @@ open Userstate
 let init_context st = 
   let ctxt0 = Default.context() in
   let ctxt1 = Context.set_loader_data ctxt0 Thyloader.loader_data in
-  let st1 = set_parsers (set_context st ctxt1) (Parser.init ()) in
-  st1
+  set_context st ctxt1
 
 let init_scope st = 
   set_scope st (Default.scope())
 let init_ppinfo st = 
-  set_ppinfo st (Default.printers())
-let init_parsers st = st
-(* set_parsers st (Parser.init ()) *)
+  set_ppinfo st (BoolPP.init_bool_printers (Default.printers()))
+let init_parsers st = 
+  set_parsers st (BoolPP.init_bool_parsers (Parser.init ()))
 let init_simpset st = 
   set_simpset st (Default.simpset())
 let init_proofstack st = 
   set_proofstack st (Default.proofstack())
 
 let init_base_thy_builder st = st
+
+(** {5 Initialising functions} *)
 
 let init () = 
   let st = 
@@ -51,8 +52,4 @@ let init () =
   in
   set_state st
 
-(** {5 Initialising functions} *)
-(**
-let init () = Userstate.init()
-**)
 let reset() = init()

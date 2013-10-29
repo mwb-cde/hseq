@@ -71,6 +71,9 @@ val choice_printer:
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the choice operator. *)
 
+val init_bool_parsers: Parser.Table.t -> Parser.Table.t
+val init_bool_printers: Printer.ppinfo -> Printer.ppinfo
+
 (** {7 Minimal printer and parser information} *)
 val ppinfo: unit -> Printer.ppinfo
 

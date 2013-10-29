@@ -399,7 +399,7 @@ theorem "eq_fact" ~simp:true
 
 let if_true=
 theorem ~simp:true "if_true" 
-  << ! t f: (if true then t else f) = t>>
+  << ! t f: (if true then t else f) = t >>
 [
 flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
 ++ (allA << (%(z:'a): ((true => (z=_t)) and ((not  true) => (z=_f)))) >>)
