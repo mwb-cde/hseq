@@ -52,7 +52,7 @@ open Userlib;;
 open Goals;;
 open Tactics;;
 open Boollib;;
-open Simplib;;
+(**open Simplib;; **)
 open Userlib;;
 
 

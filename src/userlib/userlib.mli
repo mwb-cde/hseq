@@ -45,6 +45,9 @@ sig
   val scope: unit -> Scope.t
   val set_scope: Scope.t -> unit
 
+  val simpset: unit -> Simpset.simpset
+  val set_simpset: Simpset.simpset -> unit
+
   (** {5 Printing and Parsing}
 
       Global printer tables and functions to add, query and remove
@@ -531,4 +534,40 @@ val init: unit -> unit
 val reset: unit -> unit
 (** Reset then initialise the system. *)
 
+
+(** {6 Simplifier} *)
+
+val add_simps: Logic.thm list -> unit
+(** [add_simps thms]: Add [thms] to the standard simpset. *)
+
+val add_simp: Logic.thm -> unit
+(** [add_simp thm]: Add [thm] to the standard simpset. *)
+
+val add_conv: 
+  Basic.term list -> (Context.t -> Logic.conv) -> unit
+(** [add_conv trms conv]: Add conversion [conv] to the standard
+    simpset, with [trms] as the representative keys.  Example:
+    [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies
+    [beta_conv] on all terms matching [(%y: A) x].
+*)
+
+val simp_tac:
+  ?cntrl:Simplifier.control
+  -> ?ignore:Logic.label list
+  -> ?set:Simpset.simpset
+  -> ?add:Simpset.simpset
+  -> ?f:Logic.label
+  -> Logic.thm list
+  -> Tactics.tactic
+(** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
+    
+    Simplifier tactic.
+*)
+
+val simp: 
+  ?set:Simpset.simpset -> ?f:Logic.label -> Tactics.tactic
+(** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+    
+    @raise No_change If no change is made.
+*)
 

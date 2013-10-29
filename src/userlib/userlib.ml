@@ -446,3 +446,48 @@ end (* Display *)
 
 let init = Global.init
 let reset = Global.init
+
+
+(** {6 Simplifier} *)
+
+let add_simps thms =
+  let ctxt0 = Global.context() in 
+  let set0 = Global.simpset() in
+  let set1 = Simplib.add_simps ctxt0 set0 thms in
+  Global.set_simpset set1
+    
+let add_simp  thm =
+  let ctxt0 = Global.context() in 
+  let set0 = Global.simpset() in
+  let set1 = Simplib.add_simp ctxt0 set0 thm in
+  Global.set_simpset set1
+
+let add_conv trms conv =
+  let set0 = Global.simpset() in
+  let set1 = Simplib.add_conv set0 trms conv
+  in
+  Global.set_simpset set1
+
+(** [add_conv trms conv]: Add conversion [conv] to the standard
+    simpset, with [trms] as the representative keys.  Example:
+    [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies
+    [beta_conv] on all terms matching [(%y: A) x].
+*)
+
+let simp_tac ?cntrl ?ignore ?set ?add ?f thms =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simp_tac ?cntrl ?ignore set0 thms
+(** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
+    
+    Simplifier tactic.
+*)
+
+
+let simp ?set ?f g =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simp set0 ?f g
+(** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+    
+    @raise No_change If no change is made.
+*)
+
