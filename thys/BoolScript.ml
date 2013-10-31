@@ -452,7 +452,7 @@ theorem ~simp:true "if_false1"
  ];;
 
 
-let if_expand=
+let if_expand =
 theorem ~simp:false "if_expand" 
 << ! x a b : (if x then a else b) = ((x and a) or (not x and b)) >>
 [

@@ -928,13 +928,12 @@ struct
       match c with
 	| None -> 
           begin
-            try
-	      fold_seq ret
-		[
-                  (fun lst -> 
-                    (lst >+ asm_rewrite_tac (neg_disj_thm gctxt) tg));
-                  (fun lst -> single_asm_to_rule lst tg)
-		] ctxt g
+            try fold_seq ret
+		  [
+                    (fun lst -> 
+                      (lst >+ asm_rewrite_tac (neg_disj_thm gctxt) tg));
+                    (fun lst -> single_asm_to_rule lst tg)
+		  ] ctxt g
             with _ ->
               asm_rewrite_add_tac ret (rule_false_thm gctxt) tg ctxt g
           end
@@ -1070,18 +1069,18 @@ struct
     let tform =  Logic.Sequent.get_tagged_asm tg (sequent goal) in 
     let trm = Formula.term_of (drop_tag tform) in 
     let (qs, c, a) = strip_qnt_cond trm in 
-    let make  = 
+    let make mctxt g = 
       Lib.apply_first 
         [
           (*     neg_all_rule_asm ret (tg, (qs, c, a)); *)
-          neg_disj_asm ret (tg, (qs, c, a));
-          neg_exists_rule_asm ret (tg, (qs, c, a));
-          rr_equality_asm ret (tg, (qs, c, a));
-          neg_rule_asm ret (tg, (qs, c, a));
-          conj_rule_asm ret (tg, (qs, c, a));
-          fact_rule_asm ret (tg, (qs, c, a));
-          accept_asm ret (tg, (qs, c, a))
-        ] 
+          neg_disj_asm ret (tg, (qs, c, a)) mctxt;
+          neg_exists_rule_asm ret (tg, (qs, c, a)) mctxt;
+          rr_equality_asm ret (tg, (qs, c, a)) mctxt;
+          neg_rule_asm ret (tg, (qs, c, a)) mctxt;
+          conj_rule_asm ret (tg, (qs, c, a)) mctxt;
+          fact_rule_asm ret (tg, (qs, c, a)) mctxt;
+          accept_asm ret (tg, (qs, c, a)) mctxt;
+        ] g
     in 
     try make ctxt goal
     with err ->  raise (add_error "single_asm_to_rule" err)

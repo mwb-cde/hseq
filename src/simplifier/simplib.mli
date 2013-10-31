@@ -47,6 +47,7 @@ val add_conv:
     [beta_conv] on all terms matching [(%y: A) x].
 *)
 
+(****
 (** Global state *)
 module User :  
 sig
@@ -58,8 +59,8 @@ val std_ss: unit -> Simpset.simpset
 val set_std_ss: Simpset.simpset -> unit
 (** [set_std_ss set]: Set the standard simpset to [set]
 *)
-
 end
+****)
 
 (** {5 User level simplification tactics} *)
 

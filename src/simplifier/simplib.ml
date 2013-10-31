@@ -35,6 +35,7 @@ let add_conv set terms conv =
   List.fold_left add_aux set terms
 
 (** Global state *)
+(*
 module User = 
 struct
   let std_simpset = ref(empty_simp())
@@ -42,7 +43,7 @@ struct
   let std_ss() = !std_simpset
   let set_std_ss s = std_simpset := s
   let empty_simp () = set_std_ss (Simpset.empty_set())
-(*
+
   let add_simps ctxt thms = 
     set_std_ss (Simpset.simpset_add_thms ctxt (Global.scope()) (std_ss()) thms)
   let add_simp thm = add_simps [thm]
@@ -60,8 +61,8 @@ struct
   let init_std_ss () =
     empty_simp();
     add_conv [ << !x A: (%y: A) x >> ] Logic.Conv.beta_conv
-*)
 end
+*)
 
 (*** Toplevel simplification tactics ***)
 
