@@ -791,9 +791,9 @@ let rec find_subterm_td_tac data trm ctxt goal =
              Basic.Qnt(q, trm1), plan))) ctxt goal
       end
     | Basic.App(f, a)->
-      let rw_term_tac ((data: match_data), plan) t g =
-        try find_term_td_tac data t g
-        with _ -> ((data, t, plan) >+ skip) g
+      let rw_term_tac ((data: match_data), plan) t ctxt1 g =
+        try find_term_td_tac data t ctxt1 g
+        with _ -> ((data, t, plan) >+ skip) ctxt1 g
       in
       let finalize (data1, nf, na, fplan1, aplan1) =
 	check_change2 fplan1 aplan1;
@@ -832,14 +832,18 @@ and find_term_td_tac (data: match_data) trm (ctxt: Context.t) goal =
   let (cntrl, tyenv, qntenv) = dest_match_data data 
   in 
   let rw_term_tac ((data1: match_data), trm1, mplan1, splan1) ctxt0 g =
+  let (_, _, qntenv1) = dest_match_data data1
+  in 
     try
-      (find_all_matches_tac data1 trm1
-       >/
-         (fun (data2, trm2, rrlist) ->
-           let mplan2 = pack (mk_rules rrlist) 
-           in
-           ({data2 with qntenv = qntenv},
-            trm2, mplan2, splan1))) ctxt0 g
+      begin
+        (find_all_matches_tac data1 trm1
+         >/
+           (fun (data2, trm2, rrlist) ->
+             let mplan2 = pack (mk_rules rrlist) 
+             in
+             ({data2 with qntenv = qntenv1},
+              trm2, mplan2, splan1))) ctxt0 g
+      end
     with _ -> ((data1, trm1, mplan1, splan1) >+ skip) ctxt0 g
   in
   let tac ctxt0 g = 
