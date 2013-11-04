@@ -29,6 +29,7 @@ type tactic = Context.t -> Logic.tactic
 type ('a)data_tactic = Context.t -> Logic.node -> ('a * Logic.branch)
 (** A data tactic is a tactic that returns additional data. *)
 
+
 (** {5 Support functions} *)
 
 val scope_of: Context.t -> Scope.t

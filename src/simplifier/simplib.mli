@@ -47,6 +47,10 @@ val add_conv:
     [beta_conv] on all terms matching [(%y: A) x].
 *)
 
+val init_std_ss: unit -> Simpset.simpset
+(** The initial standard simpset *)
+  
+
 (****
 (** Global state *)
 module User :  

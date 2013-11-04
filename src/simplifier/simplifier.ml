@@ -546,7 +546,7 @@ let find_basic data rl trm ctxt (goal: Logic.node) =
     try check_add_loop scp cntrl ntrm
     with _ -> raise No_change
   in 
-  let tac g =
+  let tac ctxt0 g =
     if (is_conditional rl)
     then
       let values = extract_consts qs ntenv 
@@ -554,9 +554,9 @@ let find_basic data rl trm ctxt (goal: Logic.node) =
       ((prove_cond_tac cntrl1 values rl) >/
 	  (fun (ncntrl, rr) -> 
             ({data with cntrl = ncntrl; tyenv = ntyenv}, 
-             ntrm, rr))) g
+             ntrm, rr))) ctxt0 g
     else
-      (skip +< ({data with cntrl = cntrl1}, ntrm, thm)) g
+      (skip +< ({data with cntrl = cntrl1}, ntrm, thm)) ctxt0 g
   in 
   try tac ctxt goal
   with _ -> raise No_change

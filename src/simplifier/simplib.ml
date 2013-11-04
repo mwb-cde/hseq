@@ -34,6 +34,11 @@ let add_conv set terms conv =
   in 
   List.fold_left add_aux set terms
 
+(** Initial simpset *)
+let init_std_ss () =
+  add_conv (empty_simp()) [ << !x A: (%y: A) x >> ] 
+    (fun ctxt -> Logic.Conv.beta_conv (Context.scope_of ctxt))
+
 (** Global state *)
 (*
 module User = 

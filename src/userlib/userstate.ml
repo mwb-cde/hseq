@@ -43,7 +43,7 @@ struct
   let parsers () = Parser.Table.empty Parser.Table.default_size
 
   (* Simplifier set *)
-  let simpset() = Simplib.empty_simp()
+  let simpset() = Simplib.init_std_ss()
 
   (* Proof stack *)
   let proofstack() = Goals.ProofStack.empty()
