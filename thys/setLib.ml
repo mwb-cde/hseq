@@ -38,7 +38,7 @@ let add_id = Ident.mk_long set_thy "add"
 module SetPP =
   struct
 
-    let ocb_sym, ccb_sym = ("{", "}")
+    let (ocb_sym, ccb_sym) = ("{", "}")
     let semicolon_sym = ";" 
 
     (* Parser *)
@@ -99,10 +99,20 @@ module SetPP =
       in 
       main_parser
 
-    let init_set_parser ()= 
-      Parser.add_symbol ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym));
-      Parser.add_symbol ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym));
-      Parser.add_term_parser Lib.Last "Set" (set_parser())
+    let init_set_parser () = 
+      let ptable0 = Userstate.Access.parsers () in
+      let ptable1 =
+        Parser.add_symbol ptable0 ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym))
+          
+      in 
+      let ptable2 = 
+        Parser.add_symbol ptable1 ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym)) 
+      in 
+      let ptable3 = 
+        Parser.add_term_parser ptable2 Lib.Last "Set" (set_parser())
+      in
+      Userstate.Access.set_parsers ptable3
+          
 
 
 	(* Printer *)
@@ -166,13 +176,12 @@ module SetPP =
     let init_set_printer()=
       let set_print = set_printer()
       in 
-      Global.PP.add_term_printer set_id set_print;
-      Global.PP.add_term_printer single_id single_set_printer
+      let inf0 = Userstate.Access.ppinfo() in
+      let inf1 = Printer.add_term_printer inf0 set_id set_print in
+      let inf2 = Printer.add_term_printer inf1 single_id single_set_printer 
+      in
+      Userstate.Access.set_ppinfo inf2
 
-(*
-	(fun ppstate i -> set_print ppstate (Printer.nonfix i));
-	(fun ppstate i -> single_set_printer ppstate (Printer.nonfix, i))
-*)
   end
 
 open SetPP;;
