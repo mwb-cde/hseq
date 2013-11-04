@@ -133,14 +133,13 @@ let eq_sym_thm sctxt =
   Context.find_thm sctxt eq_sym_thm_id make_eq_sym_thm
 
 let eq_sym_rule sctxt thm = 
-  let scp = Context.scope_of sctxt in
-  let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 
+  let ctrl = { Formula.default_rr_control with Rewrite.depth = Some 1} in 
   let term = Logic.term_of thm in 
   let plan = 
-    Tactics.mk_thm_plan scp ~ctrl:ctrl 
+    Tactics.mk_thm_plan sctxt ~ctrl:ctrl 
       [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in 
-  Tactics.pure_rewrite_rule plan scp thm
+  Tactics.pure_rewrite_rule plan sctxt thm
 
 let eq_symA a ctxt goal =
   let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in 

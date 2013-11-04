@@ -36,7 +36,6 @@ struct
       Returns |- trm = X where [X] is the result of rewriting [trm]
   *)
   let rewrite_conv ctxt ?ctrl (rls: Logic.rr_type list) term = 
-    let scp = Context.scope_of ctxt in
     let c = Lib.get_option ctrl Rewrite.default_control in 
     let is_rl = c.Rewrite.rr_dir = rightleft in 
     let mapper f x = 
@@ -51,9 +50,9 @@ struct
       then List.map (mapper (eq_sym_rule ctxt)) rls
       else rls
     in
-    let plan = Tactics.mk_thm_plan scp ~ctrl:c rules term
+    let plan = Tactics.mk_thm_plan ctxt ~ctrl:c rules term
     in 
-    Tactics.pure_rewrite_conv plan scp term
+    Tactics.pure_rewrite_conv plan ctxt term
 
   (** [rewrite_rule scp ctrl rules thm: rewrite theorem [thm] with rules
       [rrl] in scope [scp].
@@ -61,7 +60,6 @@ struct
       Returns |- X where [X] is the result of rewriting [thm]
   *)
   let rewrite_rule ctxt ?ctrl rls thm = 
-    let scp = Context.scope_of ctxt in
     let c = Lib.get_option ctrl Rewrite.default_control in 
     let is_rl = c.Rewrite.rr_dir=rightleft in 
     let mapper f x = 
@@ -76,9 +74,9 @@ struct
       then List.map (mapper (eq_sym_rule ctxt)) rls
       else rls
     in
-    let plan = Tactics.mk_thm_plan scp ~ctrl:c rules (Logic.term_of thm)
+    let plan = Tactics.mk_thm_plan ctxt ~ctrl:c rules (Logic.term_of thm)
     in 
-    Tactics.pure_rewrite_rule plan scp thm
+    Tactics.pure_rewrite_rule plan ctxt thm
 
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in

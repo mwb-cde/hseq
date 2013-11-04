@@ -28,6 +28,9 @@ type tactic = Context.t -> Logic.tactic
 type ('a)data_tactic = Context.t -> Logic.node -> ('a * Logic.branch)
 (** A data tactic is a tactic that returns additional data. *)
 
+type conv = Context.t -> Logic.conv
+(** A conversion is a function of type [term -> thm] *)
+
 let make_tac f (ctxt: Context.t) (g: Logic.node) = 
   ((f ctxt g): Logic.branch)
 
@@ -976,7 +979,7 @@ let is_rewrite_formula t =
 
 (** [conv_rule scp conv thm] apply conversion [conv] to theorem [thm]
 *)
-let conv_rule ctxt conv thm =
+let conv_rule (ctxt: Context.t) conv thm =
   let term = Logic.term_of thm in 
   let rule = conv ctxt term in 
   let (qs, lhs, rhs) = 
@@ -990,7 +993,8 @@ let conv_rule ctxt conv thm =
       | [] -> rhs
       | _ -> Lterm.close_term rhs
   in 
-  let goal = mk_goal ctxt (Formula.make ctxt goal_term) in 
+  let goal = mk_goal (scope_of ctxt) (Formula.make (scope_of ctxt) goal_term)
+  in 
   let tac  =
     (?> fun info ctxt1 g -> 
       let ctag = 
@@ -1104,15 +1108,16 @@ let pure_rewrite_tac ?term plan lbl goal =
 
     Returns [|- trm = X] where [X] is the result of rewriting [trm]
 *)
-let pure_rewrite_conv = Logic.Conv.rewrite_conv
+let pure_rewrite_conv plan (ctxt: Context.t) trm
+    = Logic.Conv.rewrite_conv plan (scope_of ctxt) trm
 
 (** [pure_rewrite_rule plan scp thm]: rewrite theorem [thm] according
     to [plan] in scope [scp].
 
     Returns [|- X] where [X] is the result of rewriting [trm]
 *)
-let pure_rewrite_rule plan scp thm =
-  conv_rule scp (pure_rewrite_conv plan) thm
+let pure_rewrite_rule plan (ctxt: Context.t) thm =
+  conv_rule ctxt (pure_rewrite_conv plan) thm
 
 (*
  * Rewrite planner
@@ -1199,8 +1204,8 @@ let dest_rr_thm src =
 let to_thm_plan plan = 
   mapping dest_rr_thm plan
 
-let mk_thm_plan scp ?(ctrl=Formula.default_rr_control) rules term =
-  let (_, plan) = Planner.make None scp ctrl rules term
+let mk_thm_plan ctxt ?(ctrl=Formula.default_rr_control) rules term =
+  let (_, plan) = Planner.make None (scope_of ctxt) ctrl rules term
   in 
   to_thm_plan plan
 

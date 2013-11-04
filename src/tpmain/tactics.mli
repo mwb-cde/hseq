@@ -21,7 +21,7 @@
 
 open Rewrite
 
-(** Tactics and Tacticals *)
+(** Tactics, Tacticals  and Conversions *)
 
 type tactic = Context.t -> Logic.tactic
 (** A tactic is a function of type [Logic.node -> Logic.branch] *)
@@ -29,6 +29,8 @@ type tactic = Context.t -> Logic.tactic
 type ('a)data_tactic = Context.t -> Logic.node -> ('a * Logic.branch)
 (** A data tactic is a tactic that returns additional data. *)
 
+type conv = Context.t -> Logic.conv
+(** A conversion is a function of type [term -> thm] *)
 
 (** {5 Support functions} *)
 
@@ -808,11 +810,16 @@ val rewrite_control:
     strategy is top-down ([?strat = Rewrite.topdown]).
 *)
 
+(*
 val conv_rule:
-  Scope.t ->
-  (Scope.t -> Logic.conv) -> Logic.thm -> Logic.thm
+  Scope.t -> (Scope.t -> Logic.conv) -> Logic.thm -> Logic.thm
 (** [conv_rule scp conv thm]: Apply conversion [conv] to theorem [thm]
 *)
+*)
+
+val conv_rule:
+  Context.t -> conv -> Logic.thm -> Logic.thm
+(** [conv_rule ctxt conv thm]: Apply conversion [conv] to theorem [thm] *)
 
 (** {7 Tactics} *)
 
@@ -858,16 +865,16 @@ val pure_rewrite_tac:
     [pure_rewriteA].
 *)
   
-val pure_rewrite_conv: (Logic.thm) plan -> Scope.t -> Logic.conv
-(** [pure_rewrite_conv plan scp trm]: rewrite term [trm] according to
-    [plan] in scope [scp]. This is an interface to
+val pure_rewrite_conv: (Logic.thm) plan -> conv
+(** [pure_rewrite_conv plan ctxt trm]: rewrite term [trm] according to
+    [plan] in scope [ctxt]. This is an interface to
     {!Logic.Conv.rewrite_conv}.
 
     Returns [|- trm = X] where [X] is the result of rewriting [trm]
 *)
 
 val pure_rewrite_rule: 
-  (Logic.thm) plan -> Scope.t -> Logic.thm -> Logic.thm
+  (Logic.thm) plan -> Context.t -> Logic.thm -> Logic.thm
 (** [pure_rewrite_rule plan scp thm]: rewrite theorem [thm] according
     to [plan] in scope [scp].
 
@@ -905,7 +912,7 @@ val mk_plan:
 *)
 
 val mk_thm_plan: 
-  Scope.t -> ?ctrl:Rewrite.control 
+  Context.t -> ?ctrl:Rewrite.control 
   -> rule list -> Basic.term -> Logic.thm plan
 (** The theorem rewrite planner, for use with conversions and rules.
 

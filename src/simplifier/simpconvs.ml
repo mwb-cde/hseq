@@ -264,7 +264,7 @@ let simple_rewrite_conv sctxt rule trm =
     Apply [simple_rewrite_conv] to theorem [thm].
 *)
 let simple_rewrite_rule sctxt rule thm =
-  conv_rule (scope_of sctxt) 
+  conv_rule sctxt
     (fun s -> simple_rewrite_conv sctxt rule) thm
 
 (** [simple_asm_rewrite_tac rule asm]
