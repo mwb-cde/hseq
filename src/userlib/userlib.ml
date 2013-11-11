@@ -491,9 +491,49 @@ let add_conv trms conv =
     [beta_conv] on all terms matching [(%y: A) x].
 *)
 
+let simpA_tac ?cntrl ?ignore ?set ?add ?a rules =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simpA_tac ?cntrl ?ignore set0 ?add ?a rules 
+(** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
+    
+    Simplify assumptions.
+*)
+let simpA ?set ?a rules = 
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simpA_tac set0 ?a rules 
+
+let simpC_tac ?cntrl ?ignore ?set ?add ?c rules =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simpC_tac ?cntrl ?ignore set0 ?add ?c rules 
+
+let simpC ?set ?c rules = 
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simpC_tac set0 ?c rules 
+
+let simp_all_tac ?cntrl ?ignore ?set ?add thms =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simp_all_tac ?cntrl ?ignore set0 ?add thms
+
+let simp_all_tac ?cntrl ?ignore ?set ?add thms =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simp_all_tac ?cntrl ?ignore set0 ?add thms
+(** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+    
+    Simplify each formula in the subgoal.
+*)
+
+let simp_all ?set thms =
+  let set0 = Lib.get_option set (Global.simpset()) in
+  Simplib.simp_all_tac set0 thms
+(** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
+    
+    @raise No_change If no change is made.
+*)
+
+
 let simp_tac ?cntrl ?ignore ?set ?add ?f thms =
   let set0 = Lib.get_option set (Global.simpset()) in
-  Simplib.simp_tac ?cntrl ?ignore set0 thms
+  Simplib.simp_tac ?cntrl ?ignore set0 ?add ?f thms
 (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
     
     Simplifier tactic.

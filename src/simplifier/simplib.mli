@@ -205,6 +205,7 @@ val simp_all: Simpset.simpset -> Tactics.tactic
     @raise No_change If no change is made.
 *)
 
+
 val simp_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list

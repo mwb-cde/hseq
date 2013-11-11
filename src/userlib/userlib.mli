@@ -551,6 +551,97 @@ val add_conv:
     [beta_conv] on all terms matching [(%y: A) x].
 *)
 
+val simpA_tac:
+  ?cntrl:Simplifier.control
+  -> ?ignore:Logic.label list
+  -> ?set:Simpset.simpset
+  -> ?add:Simpset.simpset
+  -> ?a:Logic.label
+  -> Logic.thm list
+  -> Tactics.tactic
+(** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
+    
+    Simplify assumptions.
+
+    If [a] is not given then all assumptions are to be simplified.
+
+    {ul
+    {- Add all conclusions as simp rules.}
+    {- Add all assumptions other than the targets as simp
+    rules.}
+    {- Simplify the assumption and then add it as a simp rule.
+    Repeat for all assumptions to be simplified.}}
+
+    Doesn't use formulas identified by a label in [ignore].
+*)
+
+val simpA:
+  ?set:Simpset.simpset -> ?a:Logic.label -> Logic.thm list
+  -> Tactics.tactic
+(** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
+    
+    @raise No_change If no change is made.
+*)
+
+val simpC_tac:
+  ?cntrl:Simplifier.control
+  -> ?ignore:Logic.label list
+  -> ?set:Simpset.simpset
+  -> ?add:Simpset.simpset
+  -> ?c:Logic.label
+  -> Logic.thm list
+  -> Tactics.tactic
+(** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
+    
+    Simplify assumptions.
+
+    If [c] is not given then all conclusions are to be simplified.
+
+    {ul
+    {- Add all assumptions as simp rules.}
+    {- Add all conclusions other than the target conclusions as simp
+    rules.}
+    {- Simplify the conclusions and then add it as a simp rule.
+    Repeat for all assumptions to be simplified.}}
+
+    Doesn't use formulas identified by a label in [ignore].
+*)
+
+val simpC: 
+  ?set:Simpset.simpset -> ?c:Logic.label -> Logic.thm list
+  ->  Tactics.tactic
+(** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+    
+    @raise No_change If no change is made.
+*)
+
+val simp_all_tac:
+  ?cntrl:Simplifier.control
+  -> ?ignore:Logic.label list
+  -> ?set:Simpset.simpset
+  -> ?add:Simpset.simpset
+  -> Logic.thm list
+  -> Tactics.tactic
+(** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+    
+    Simplify each formula in the subgoal.
+
+    {ul 
+    {- Simplify each assumption, starting with the first (most recent),
+    adding it to the simpset}
+    {- Simplify each conclusion, starting with the last (least recent),
+    adding it to the simpset.}}
+
+    Don't use formulas identified by a label in [ignore].
+*)
+
+val simp_all: 
+  ?set:Simpset.simpset -> Logic.thm list -> Tactics.tactic
+(** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
+    
+    @raise No_change If no change is made.
+*)
+
 val simp_tac:
   ?cntrl:Simplifier.control
   -> ?ignore:Logic.label list
