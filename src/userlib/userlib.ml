@@ -72,6 +72,23 @@ let state_opt st =
     None -> Global.state()
   | Some(x) -> x
 
+module Files =
+struct
+  let set_load_file loader = 
+    begin
+      Thyloader.set_load_file loader;
+      let ctxt = Thyloader.set_file_handlers (Global.context()) in
+      Global.set_context ctxt
+    end
+
+  let set_use_file scripter = 
+    begin
+      Thyloader.set_use_file scripter;
+      let ctxt = Thyloader.set_file_handlers (Global.context()) in
+      Global.set_context ctxt
+    end
+end
+
 (** Parsers and printers *)
 module PP =
 struct
@@ -111,12 +128,12 @@ end
 let load_file_func () = 
   Context.loader (Global.context())
 let set_load_file_func f = 
-  Global.set_context (Context.set_loader (Global.context()) f)
+  Files.set_load_file f
 
 let use_file_func () = 
   Context.scripter (Global.context())
 let set_use_file_func f = 
-  Global.set_context (Context.set_scripter (Global.context()) f)
+  Files.set_use_file f
 
 let get_proof_hook () =
   Goals.save_hook (Global.proofstack ())

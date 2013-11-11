@@ -448,3 +448,7 @@ end
 
 val add_importing: thydb -> string list -> thydb
 val mk_importing: thydb -> NameSet.t
+
+val get_thy: thydb -> string -> Theory.thy
+val find: (Theory.thy -> 'a) -> thydb -> 'a
+val quick_find: (Theory.thy -> 'a) -> string -> thydb -> 'a

@@ -189,7 +189,11 @@ let update_current thydb thy =
   let thydb1 = set_table thydb (Tree.replace (table thydb) name thy) in
   set_current thydb1 (Some thy)
 
-let get_thy thdb name = Tree.find (table thdb) name
+let get_thy thdb name = 
+  let curr_name = (current_name thdb) in
+  if (name == curr_name) or (name = curr_name)
+  then current thdb
+  else Tree.find (table thdb) name
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 
 (*
@@ -320,6 +324,14 @@ let find f tdb =
 
 (** [quick_find f th tdb]: apply [f] to theory [th] if it is in the
     importing list. Raise [Not_found] if not found.
+*)
+(*
+let quick_find f th tdb =
+  let curr_name = (current_name tdb) in
+  if ((th == curr_name) or (th = curr_name) 
+      or (is_imported th tdb))
+  then f (get_thy tdb th)
+  else raise Not_found
 *)
 let quick_find f th tdb =
   if is_imported th tdb

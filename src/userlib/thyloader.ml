@@ -101,39 +101,18 @@ let set_load_file f = Var.load_file := f
 let get_use_file() = !(Var.use_file)
 let set_use_file f = Var.use_file := f
 
-(***
-let default_thy_fn 
-    (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
-  raise (Failure ("Thyloader.default_thy_fn("^(thy.Theory.cname)^")"))
-     
-let default_load_fn 
-    (ctxt: Context.t) (file_data: Thydb.Loader.info) =
-  raise (Failure ("Thyloader.default_load_fn("^file_data.Thydb.Loader.name^")"))
-***)
-
 let build_fn
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
-(*
-  let scripter = Context.scripter ctxt in
-*)
   let scripter = get_use_file() in
   let script_name = Context.Files.script_of_thy ctxt thyname in
-(*
-  if (thyname = Lterm.base_thy)
-  then Context.Thys.theories (BaseTheory.builder ctxt)
-  else 
-*)
-      let saved_state = Userstate.state() in
-      let st1 = Userstate.set_context saved_state ctxt in
-      begin
-        Userstate.set_state st1;
-        scripter ~silent:false script_name;
-        let st2 = Userstate.state() in
-(**
-        Userstate.set_state saved_state;
-**)
-        Context.thydb (Userstate.context st2)
-      end
+  let saved_state = Userstate.state() in
+  let st1 = Userstate.set_context saved_state ctxt in
+  begin
+    Userstate.set_state st1;
+    scripter ~silent:false script_name;
+    let st2 = Userstate.state() in
+    Context.thydb (Userstate.context st2)
+  end
 
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
@@ -158,5 +137,14 @@ let default_loader ctxt =
 let loader_data ctxt = 
   Thydb.Loader.mk_data 
     (default_thy_fn ctxt)
-    (Context.Files.load_thy_file ctxt)
+    (default_load_fn ctxt)
     (build_fn ctxt)
+
+let load_file fname = (get_load_file()) fname
+let script_file ?(silent=false) fname = 
+  (get_use_file()) ~silent fname
+
+let set_file_handlers ctxt = 
+  let ctxt1 = Context.set_loader ctxt load_file  in
+  let ctxt2 = Context.set_scripter ctxt1 script_file in
+  ctxt2

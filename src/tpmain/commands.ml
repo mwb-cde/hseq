@@ -142,7 +142,7 @@ let parents ctxt ns =
 
 let add_file ctxt ?(use=false) f =
   let db0 = Context.Thys.theories ctxt in
-  let db1 = Thydb.add_file f (curr_theory_name ctxt) db0 in
+  let db1 = Thydb.add_file (curr_theory_name ctxt) f db0 in
   let ctxt1 = Context.Thys.set_theories ctxt db1 
   in
   (if use

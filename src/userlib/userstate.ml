@@ -29,10 +29,6 @@ struct
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
     ctxt3
-(***
-    let ctxt4 = Context.set_loader_data ctxt3 Thyloader.loader_data in
-    ctxt4
-***)
 
   let scope () = Thydb.mk_scope(Context.Thys.theories(context()))
 
@@ -241,12 +237,3 @@ let init_proofstack st =
   set_proofstack st (Default.proofstack())
 
 let init_base_thy_builder st = st
-(**
-let init_base_thy_builder st = 
-  let builder st1 = 
-    let ctxt1 = BaseTheory.builder (context st1) ~save:false 
-    in
-    set_context st ctxt1
-  in
-  set_base_thy_builder st builder
-***)

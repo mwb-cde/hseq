@@ -98,3 +98,5 @@ val default_loader:
   Context.t -> Thydb.Loader.data
 val loader_data:
   Context.t -> Thydb.Loader.data
+
+val set_file_handlers: Context.t -> Context.t
