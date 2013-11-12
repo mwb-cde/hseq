@@ -272,7 +272,6 @@ let in_add =
       ]
   ]
 
-
 let in_remove=
   theorem ~simp:true "in_remove"
   <<
@@ -280,12 +279,8 @@ let in_remove=
   & (!x y A: ~(x=y) => ((x in (remove y A)) = (x in A)))
   >>
   [
-    scatter_tac
-    ++ simp_all_tac [remove_thm]
-    ++ equals_tac 
-      (* ++ equals_tac *)
-    ++ blast_tac ++ ((replace_tac // skip) ++ simp // skip)
-  ]
+    scatter_tac -- [ simp_all_tac [remove_thm] ; simp_tac [remove_thm]]
+  ];;
 
 
 (*** Properties of Add *)
@@ -319,7 +314,7 @@ let remove_member =
     simp_tac [set_equal] ++ simp_tac [remove_thm] 
       ++ flatten_tac
       ++ equals_tac ++ blast_tac
-      ++ simp_all
+      ++ simp_all []
   ]
 
 let remove_add = 
@@ -531,7 +526,7 @@ let subset_empty =
 	++ flatten_tac
 	++ unfold "subset"
 	++ equals_tac ++ iffC ++ scatter_tac
-	-- [simp; simp_all];
+	-- [simp; simp_all []];
       (* 2 *)
       flatten_tac ++ simp
     ]
@@ -548,12 +543,12 @@ let subset_add =
       ++ flatten_tac
       ++ mp_tac
       ++ (unfold "add")
-      ++ simp_all
+      ++ simp_all []
       --
       [
 	(* 1 *)
 	(match_asm << X | Y >> liftA)
-	++ split_tac ++ simp_all;
+	++ split_tac ++ simp_all [];
         (* 2 *)
 	simp
       ]
@@ -607,7 +602,7 @@ let subset_psubset =
   [
     simp_all_tac [psubset_thm]
     ++ equals_tac ++ blast_tac
-    ++ simp_all
+    ++ simp
   ]
 
 let subset_member =
@@ -617,7 +612,7 @@ let subset_member =
     simp_tac [subset_thm]
     ++ flatten_tac
     ++ mp_tac 
-    ++ simp_all
+    ++ simp_all []
   ]
 
 (** Proper subset *)
@@ -686,8 +681,7 @@ let psubset_remove =
       ++ scatter_tac
       ++ instA [ << _x >> ]
       ++ once_rewrite_tac [thm "equals_bool"]
-      ++ iffA
-      ++ scatter_tac ++ simp
+      ++ iffA ++ simpA[]
   ]
 
 let psubset_add =
@@ -788,12 +782,12 @@ let finite_subset =
    --
    [
      (* 1 *)
-     simp_all;
+     simp_all [];
      (* 2 *)
      simp_all_tac [subset_add_remove]
      ++ mp_tac
      ++ cut_mp_tac ~inst:[ << _x >>; << remove _x _B >> ] finite_add
-     ++ simpA
+     ++ simpA[]
      ++ cases_tac << _x in _B >> 
      ++ simpA_tac [remove_member; add_member]
    ]

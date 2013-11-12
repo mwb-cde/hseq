@@ -40,34 +40,6 @@ let init_std_ss () =
     (fun ctxt -> Logic.Conv.beta_conv (Context.scope_of ctxt))
 
 (** Global state *)
-(*
-module User = 
-struct
-  let std_simpset = ref(empty_simp())
-
-  let std_ss() = !std_simpset
-  let set_std_ss s = std_simpset := s
-  let empty_simp () = set_std_ss (Simpset.empty_set())
-
-  let add_simps ctxt thms = 
-    set_std_ss (Simpset.simpset_add_thms ctxt (Global.scope()) (std_ss()) thms)
-  let add_simp thm = add_simps [thm]
-
-  let add_conv terms conv =
-    let add_aux set trm = 
-      let (vs, body) = Term.strip_qnt Basic.All trm
-      in 
-      Simpset.add_conv (vs, body) conv set
-    in 
-    let set1 = List.fold_left add_aux (std_ss()) terms
-    in 
-    set_std_ss set1
-
-  let init_std_ss () =
-    empty_simp();
-    add_conv [ << !x A: (%y: A) x >> ] Logic.Conv.beta_conv
-end
-*)
 
 (*** Toplevel simplification tactics ***)
 
@@ -89,8 +61,7 @@ let simpC_tac
   in 
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags = 
-    let sqnt = Tactics.sequent goal 
-    in 
+    let sqnt = Tactics.sequent goal in 
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
   in 
   (** simp_data: The simpset data. *)

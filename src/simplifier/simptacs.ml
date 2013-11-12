@@ -212,9 +212,9 @@ let simpA0_tac data ?a ctxt goal =
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
   let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
-  let try_rule dt null g1 =
-    try (dt >/ (fun x -> (true, x))) g1
-    with _ -> ((false, null) >+ skip) g1
+  let try_rule dt null ctxt0 g1 =
+    try (dt >/ (fun x -> (true, x))) ctxt0 g1
+    with _ -> ((false, null) >+ skip) ctxt0 g1
   in
   let target_tac (ctrl: Data.t) tg ctxt1 g1 =
     fold_seq (false, ctrl)
@@ -298,9 +298,9 @@ let simpC0_tac data ?c ctxt goal =
   in 
   let sum_flag fl1 fl2 = fl1 or fl2 in
   let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
-  let try_rule dt null g1 =
-    try (dt >/ (fun x -> (true, x))) g1
-    with _ -> ((false, null) >+ skip) g1
+  let try_rule dt null ctxt0 g1 =
+    try (dt >/ (fun x -> (true, x))) ctxt0 g1
+    with _ -> ((false, null) >+ skip) ctxt0 g1
   in
   let target_tac ret ct ctxt0 g = 
     fold_seq (false, ret)
@@ -377,11 +377,11 @@ let full_simp0_tac data ctxt goal =
   and concls = 
     List.filter (not <+ except) (List.map drop_formula (concls_of sqnt))
   in 
-  let sum_flag fl1 fl2 = fl1 or fl2 in
-  let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
-  let try_rule dt null g1 =
-    try (dt >/ (fun x -> (true, x))) g1
-    with _ -> ((false, null) >+ skip) g1
+  let try_rule dt null ctxt1 g1 =
+    try (dt >/ (fun x -> (true, x))) ctxt1 g1
+    with _ -> ((false, null) >+ skip) ctxt1 g1
+  in
+  let sum_fn fl1 (fl2, r2) = (fl1 or fl2, r2) 
   in
   let asm_tac ret tg ctxt0 g =
     fold_seq (false, ret)
@@ -417,7 +417,7 @@ let full_simp0_tac data ctxt goal =
           fold_data 
             (fun (fl2, ret2) tg -> 
               ((asm_tac ret2 tg) >/ (sum_fn fl2)))
-            (fl1, ret1) 
+            (fl1, ret1)
             asms);
         (** Simplify the conclusions (in reverse order) *)
         (fun (fl1, ret1) ->
@@ -425,7 +425,7 @@ let full_simp0_tac data ctxt goal =
             (fun (fl2, ret2) tg -> 
               ((concl_tac ret2 tg) >/ (sum_fn fl2)))
             (fl1, ret1)
-            (List.rev concls))
+            (List.rev concls) )
       ] ctxt0 g
   in
   let ((ok, ret1), ngoal) = main_tac data ctxt goal
@@ -433,7 +433,7 @@ let full_simp0_tac data ctxt goal =
   if ok then (ret1, ngoal)
   else raise No_change
 
-(** [full_simp0_tac ret cntrl goal]: Simplify subgoal
+(** [full_simp_tac ret cntrl goal]: Simplify subgoal
 
     {ul
     {- Simplify each assumption, starting with the first, adding it to the
@@ -446,6 +446,8 @@ let full_simp_tac cntrl ctxt goal =
     let ncntrl = Lib.dest_option cntrl1 in
     clean_up_tac ncntrl ctxt0 g
   in 
-  try apply_tac (full_simp0_tac cntrl) 
-        (fun cntrl1 -> clean_tac (Some cntrl1)) ctxt goal
+  try 
+    apply_tac 
+      (full_simp0_tac cntrl) 
+      (fun cntrl1 -> clean_tac (Some cntrl1)) ctxt goal
   with _ -> raise No_change
