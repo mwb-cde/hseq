@@ -21,11 +21,20 @@
 
 open Userstate
 
+let simp_thy_fn ctxt thy = 
+  let set = Userstate.Access.simpset() in
+  let set1 = Simplib.on_load ctxt set thy in
+  begin
+    Userstate.Access.set_simpset set1;
+    Userstate.Access.context()
+  end
+
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
   let ctxt1 = Context.set_loader_data ctxt0 Thyloader.loader_data in
-  set_context st ctxt1
+  let ctxt2 = Context.add_load_functions ctxt1 [simp_thy_fn]  in
+  set_context st ctxt2
 
 let init_scope st = 
   set_scope st (Default.scope())

@@ -25,6 +25,7 @@
 (* builder <whether-to-save> <context> *)
 type builder = bool -> Context.t -> Context.t
 
+(***
 module LoaderDB :
 sig
   type t = 
@@ -56,7 +57,7 @@ sig
   val set_lib_path: t -> string list -> t
 *)
 end
-
+***)
 
 (** Data to pass to ThyDB loader. *)
 module Old: 
@@ -94,8 +95,10 @@ val default_build_fn:
 val build_fn: 
   Context.t -> Thydb.thydb -> string -> Thydb.thydb
 
+(**
 val default_loader:
   Context.t -> Thydb.Loader.data
+*)
 val loader_data:
   Context.t -> Thydb.Loader.data
 

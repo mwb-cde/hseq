@@ -192,6 +192,12 @@ let def_is_simp ctxt set (_, dr) =
         
 (** Function to call when a theory is loaded **)
 
+let on_load (ctxt:Context.t) (set:Simpset.simpset) thy = 
+  let set1 = List.fold_left (thm_is_simp ctxt) set thy.Theory.caxioms in 
+  let set2 = List.fold_left (thm_is_simp ctxt) set1 thy.Theory.ctheorems in
+  let set3 = List.fold_left (def_is_simp ctxt) set2 thy.Theory.cdefns in
+  set3
+
 (**
 let on_load thy =
   List.iter thm_is_simp thy.Theory.caxioms;

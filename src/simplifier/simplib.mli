@@ -257,9 +257,12 @@ val simp:
 
 (** {5 Initialising functions} *)
 
-(**
-val on_load: Theory.contents -> unit
+val on_load: 
+  Context.t -> Simpset.simpset -> Theory.contents -> Simpset.simpset
 (** Function to call when a theory is loaded. *)
+
+(**
+
 
 val init: unit -> unit
 (** Initialise the simplification library. Reset the standard simp set

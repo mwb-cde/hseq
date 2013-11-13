@@ -576,12 +576,9 @@ let save_theory thy fname=
   close_out oc
 
 let end_theory thy prot = 
-  if not (get_protection thy)
-  then 
-    if prot 
-    then (set_protection thy)
-    else thy
-  else thy
+  if (get_protection thy) or (not prot)
+  then thy
+  else set_protection thy
 
 (*
  * Pretty-Printer 

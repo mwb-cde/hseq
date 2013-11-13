@@ -75,7 +75,7 @@ let empty_file_t ()=
     load_f = Default.load;
     use_f = Default.use;
     build_f = Default.build;
-    path_f = [];
+    path_f = [Settings.thys_dir()];
     obj_suffix_f = [];
     thy_suffix_f = "";
     script_suffix_f = "";
@@ -251,6 +251,10 @@ let set_load_functions t fl =
   { t with load_functions_f = fl }
 
 let load_functions t = t.load_functions_f
+
+let add_load_functions t fl = 
+  let nl = List.rev_append (load_functions t) (List.rev fl) in
+  set_load_functions t nl
 
 (** Pretty printer information *)
 let set_ppinfo t inf =
@@ -580,7 +584,6 @@ end
 
 module Files =
 struct 
-
   let get_cdir () = Sys.getcwd ()
 
   let load_use_file ?silent ctxt f =
@@ -619,7 +622,9 @@ struct
   let find_file f path =
     let rec find_aux ths =
       match ths with
-      | [] -> raise Not_found
+      | [] -> 
+	if Sys.file_exists f then f 
+	else raise Not_found
       | (t::ts) ->
 	let nf = Filename.concat t f in 
 	if Sys.file_exists nf then nf 

@@ -221,6 +221,9 @@ val set_load_functions : t-> (t -> Theory.contents -> t) list -> t
 (** [set_load_functions fl t]: Set the load functions in context
     [t] to [fl]. *)
 
+val add_load_functions : t-> (t -> Theory.contents -> t) list -> t
+(** [add_load_functions fl t]: Add the load functions [fl] to context [t]. *)
+
 val load_functions : t -> (t -> Theory.contents -> t) list
 (** [load_functions t]: Get the load functions of context [t]. *)
 
@@ -340,7 +343,7 @@ sig
       [th]. *)
 
   val find_thy_file: t -> string -> string
-  (** Find the a theory file. *)
+  (** Find a theory file. *)
 
   (** {7 Theory loading and building} *)
 
