@@ -98,7 +98,7 @@ let tc_rules=
 	     (fun l -> 
 		once_rewrite_tac [defn "TC"]
 		++ instA ~a: l[ << _P >> ]))
-	  ++ simpA
+	  ++ simpA []
 	  ++ (match_asm << ! x y z: X >> liftA)
 	  ++ instA [ << _x >> ; << _y >>; << _z >> ]
 	  ++ back_tac
@@ -132,7 +132,7 @@ let tc_induct =
     flatten_tac ++ once_rewrite_tac [defn "TC"]
     ++ (match_asm << !P: X => (P _x _y) >> liftA)
     ++ back_tac
-    ++ simp_all
+    ++ simp_all []
   ];;
 
 let tc_cases0 = 
@@ -244,7 +244,7 @@ let rtc_induct =
     >>
     [
       flatten_tac ++ once_rewrite_tac [defn "RTC"]
-      ++ back_tac ++ simp_all
+      ++ back_tac ++ simp_all []
   ];;
 
 

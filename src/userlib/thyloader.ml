@@ -1,4 +1,3 @@
-
 (**----
    Name: thyloader.ml
    Copyright M Wahab 2013
@@ -22,6 +21,7 @@
 
 (** {5 Theory building and loading} *)
 
+(***
 (* builder <whether-to-save> <context> *)
 type builder = bool -> Context.t -> Context.t
 
@@ -79,7 +79,7 @@ struct
       seen_name: string -> bool;
     }
 end
-
+*)
 let null_thy_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
   raise (Failure ("Thyloader.default_thy_fn("^(thy.Theory.cname)^")"))
@@ -128,13 +128,8 @@ let default_thy_fn
     (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
   ()
 
-let default_loader ctxt = 
-  Thydb.Loader.mk_data 
-    (default_thy_fn ctxt)
-    (default_load_fn ctxt)
-    (default_build_fn ctxt)
 
-let loader_data ctxt = 
+let default_loader ctxt = 
   Thydb.Loader.mk_data 
     (default_thy_fn ctxt)
     (default_load_fn ctxt)

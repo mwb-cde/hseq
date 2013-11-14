@@ -225,7 +225,7 @@ let surj_compose =
      ++ instA [ << _y >> ] ++ specA
      ++ instA [ << _x  >> ] ++ specA
      ++ instC [ << _x1 >> ]
-     ++ simp_all
+     ++ simp_all []
  ];;
 
 let inj_compose =
@@ -254,7 +254,7 @@ let inj_on_inverse_intro =
      ++ (match_asm << !x: P >> copyA)
      ++ inst_tac [ << _x >> ]
      ++ inst_tac [ << _y >> ]
-     ++ simp_all 
+     ++ simp_all []
  ];;
 
 let invf_compose =

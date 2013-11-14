@@ -21,6 +21,8 @@
 
 open Userstate
 
+
+(** Simplifier functions *)
 let simp_thy_fn ctxt thy = 
   let set = Userstate.Access.simpset() in
   let set1 = Simplib.on_load ctxt set thy in
@@ -32,9 +34,10 @@ let simp_thy_fn ctxt thy =
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
-  let ctxt1 = Context.set_loader_data ctxt0 Thyloader.loader_data in
+  let ctxt1 = Context.set_loader_data ctxt0 Thyloader.default_loader in
   let ctxt2 = Context.add_load_functions ctxt1 [simp_thy_fn]  in
-  set_context st ctxt2
+  let ctxt3 = Context.set_path ctxt2 ["."; Settings.thys_dir()] in
+  set_context st ctxt3
 
 let init_scope st = 
   set_scope st (Default.scope())

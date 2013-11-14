@@ -22,10 +22,10 @@
 (** {5 Theory building and loading} *)
 
 
+(***
 (* builder <whether-to-save> <context> *)
 type builder = bool -> Context.t -> Context.t
 
-(***
 module LoaderDB :
 sig
   type t = 
@@ -60,6 +60,7 @@ end
 ***)
 
 (** Data to pass to ThyDB loader. *)
+(*
 module Old: 
 sig
   type load_data = 
@@ -70,7 +71,9 @@ sig
       seen_name: string -> bool;
     }
 end
+  *)
 
+(** Get and set functions to load/use a file *)
 val set_load_file:
   (string -> unit) -> unit
 val get_load_file:
@@ -80,11 +83,10 @@ val set_use_file:
 val get_use_file:
   unit -> (?silent:bool -> string -> unit)
 
-val null_thy_fn: 
-  Context.t -> Thydb.thydb -> Theory.contents -> unit
-val null_load_file: string -> unit
-val null_use_file: ?silent:bool -> string -> unit
+(** Update a context with the functions to load/use a file *)
+val set_file_handlers: Context.t -> Context.t
 
+(** Default functions *)
 val default_thy_fn: 
   Context.t -> Thydb.thydb -> Theory.contents -> unit
 val default_load_fn: 
@@ -92,14 +94,13 @@ val default_load_fn:
 val default_build_fn: 
   Context.t -> Thydb.thydb -> string -> Thydb.thydb
 
-val build_fn: 
-  Context.t -> Thydb.thydb -> string -> Thydb.thydb
+(** Function to build or load a theory *)
+val build_fn: Context.t -> Thydb.thydb -> string -> Thydb.thydb
+val default_loader: Context.t -> Thydb.Loader.data
 
-(**
-val default_loader:
-  Context.t -> Thydb.Loader.data
-*)
-val loader_data:
-  Context.t -> Thydb.Loader.data
 
-val set_file_handlers: Context.t -> Context.t
+(** {5 Debugging} *)
+val null_thy_fn: 
+  Context.t -> Thydb.thydb -> Theory.contents -> unit
+val null_load_file: string -> unit
+val null_use_file: ?silent:bool -> string -> unit

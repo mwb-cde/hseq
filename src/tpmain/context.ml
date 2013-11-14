@@ -75,7 +75,7 @@ let empty_file_t ()=
     load_f = Default.load;
     use_f = Default.use;
     build_f = Default.build;
-    path_f = [Settings.thys_dir()];
+    path_f = [];
     obj_suffix_f = [];
     thy_suffix_f = "";
     script_suffix_f = "";
@@ -659,7 +659,7 @@ struct
     and date = info.Thydb.Loader.date
     and prot = info.Thydb.Loader.prot
     in 
-    let thyfile =file_of_thy ctxt name
+    let thyfile = file_of_thy ctxt name
     in 
     let rec load_aux ths =
       match ths with
