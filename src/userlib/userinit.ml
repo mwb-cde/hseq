@@ -36,7 +36,7 @@ let init_context st =
   let ctxt0 = Default.context() in
   let ctxt1 = Context.set_loader_data ctxt0 Thyloader.default_loader in
   let ctxt2 = Context.add_load_functions ctxt1 [simp_thy_fn]  in
-  let ctxt3 = Context.set_path ctxt2 ["."; Settings.thys_dir()] in
+  let ctxt3 = Context.set_path ctxt2 [Settings.thys_dir()] in
   set_context st ctxt3
 
 let init_scope st = 

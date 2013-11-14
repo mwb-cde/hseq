@@ -622,17 +622,15 @@ struct
   let find_file f path =
     let rec find_aux ths =
       match ths with
-      | [] -> 
-	if Sys.file_exists f then f 
-	else raise Not_found
+      | [] -> raise Not_found
       | (t::ts) ->
 	let nf = Filename.concat t f in 
 	if Sys.file_exists nf then nf 
 	else find_aux ts
     in 
-    if Filename.is_relative f 
-    then find_aux path
-    else f
+    if Sys.file_exists f 
+    then f 
+    else find_aux path
 
   let find_thy_file ctxt f =
     try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
@@ -659,25 +657,28 @@ struct
     and date = info.Thydb.Loader.date
     and prot = info.Thydb.Loader.prot
     in 
-    let thyfile = file_of_thy ctxt name
-    in 
+    let thyfile = file_of_thy ctxt name in 
+    let thyload filename = 
+	if Sys.file_exists filename
+	then 
+	  let sthy = Theory.load_theory filename in 
+	  if (test_protection prot (Theory.saved_prot sthy))
+	    && (test_date date (Theory.saved_date sthy))
+	  then sthy
+	  else raise Not_found
+        else raise Not_found
+    in
     let rec load_aux ths =
       match ths with
       | [] -> raise Not_found
       | (t::ts) ->
 	let filename = Filename.concat t thyfile
 	in 
-	if Sys.file_exists filename
-	then 
-	  let sthy = Theory.load_theory filename
-	  in 
-	  if (test_protection prot (Theory.saved_prot sthy))
-	    && (test_date date (Theory.saved_date sthy))
-	  then sthy
-	  else load_aux ts
-	else load_aux ts
+        try thyload filename 
+        with Not_found -> load_aux ts
     in 
-    load_aux (get_thy_path ctxt)
+    try thyload thyfile 
+    with Not_found -> load_aux (get_thy_path ctxt)
 
   (** [load_use_theory thy]: Load or use each of the files named in
       theory [thy].  *)
