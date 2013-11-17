@@ -74,7 +74,7 @@ let core_symbols =
   [(".", Sym DOT); 
    ("(", Sym ORB);
    (")", Sym CRB); 
-   (",", Sym comma_sym); 
+   (",", Sym comma_sym);
    ("'", Sym PRIME);
    (":", Sym COLON);
    ("true", BOOL true); ("false", BOOL false);

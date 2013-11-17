@@ -1,7 +1,7 @@
 (*----
  Name: 0MainScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -44,10 +44,7 @@ let mainScript_base_name =
 (** Build theory Main and the theories it depends on *)
 let _ = 
 begin_theory "Main" 
- [ "Relation"; "Bool"; "base"];; 
-(*
  ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];; 
-*)
 
 let _ = end_theory();;
 
@@ -56,6 +53,3 @@ let _ =
   Global.set_context(Context.Thys.set_base_name 
                        (Global.context()) 
                        mainScript_base_name);;
-(*
-let _ = Global.Thys.set_base_name mainScript_base_name;;
-*)

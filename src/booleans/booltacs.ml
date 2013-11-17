@@ -346,12 +346,11 @@ let show = show_tac
 
 (** [disj_splitter_tac ?f]: Split an assumption using disjA
 *)
-let disj_splitter_tac ?f goal = 
-  let tac g =
-    elim_rules_tac ([ (fun l -> Tactics.disjA ~a:l) ], []) g
+let disj_splitter_tac ?f ctxt goal = 
+  let tac =
+    elim_rules_tac ([ (fun l -> Tactics.disjA ~a:l) ], []) 
   in 
-  apply_elim_tac tac ?f goal
-    
+  apply_elim_tac tac ?f ctxt goal
 
 let cases_of ?thm t ctxt goal =
   let scp = Tactics.scope_of_goal goal

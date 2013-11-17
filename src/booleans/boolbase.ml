@@ -373,20 +373,20 @@ and base_concl_elim_rules_tac rules lbl_list ctxt goal =
     assumptions and conclusions. The tag of any new formula for which
     the elimination rules fails is stored in arbitrary order.
 *)
-let elim_rules_tac rules albls clbls g =
+let elim_rules_tac rules albls clbls ctxt g =
   if (albls != [])
   then
     apply_tac
       (try_tac (map_some (asm_elim_rules_tac rules) albls))
-      (fun good g1->
-        try (map_some (concl_elim_rules_tac rules) clbls) g1
+      (fun good ctxt1 g1->
+        try (map_some (concl_elim_rules_tac rules) clbls) ctxt1 g1
         with _ -> 
           if good 
-          then skip g1 
-          else (fail ~err:(error "elim_rules_tac") g1)) g
+          then skip ctxt g1 
+          else (fail ~err:(error "elim_rules_tac") ctxt1 g1)) ctxt g
   else
-    try map_some (concl_elim_rules_tac rules) clbls g
-    with _ -> fail ~err:(error "elim_rules_tac") g
+    try map_some (concl_elim_rules_tac rules) clbls ctxt g
+    with _ -> fail ~err:(error "elim_rules_tac") ctxt g
 
 (** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
     formula [?f]. If [?f] is not given, use all formulas in the

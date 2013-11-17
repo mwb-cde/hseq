@@ -171,23 +171,24 @@
     in 
     remove_aux lst
 
+  let find_sym (_, tbl) s = Hashtbl.find tbl s
+
   let add_sym (ls, tbl) s tk =
-    let sz=String.length s
+    let sz = String.length s
     in 
-    if(sz>0)
-    then 
-      (try 
-	 (Hashtbl.find tbl s; 
-	  raise (Report.error ("Symbol "^s^" exists")))
-       with 
-	 Not_found ->
-	   (Hashtbl.add tbl s tk;
-	    add_char_info (String.get s 0) sz ls, tbl))
-    else 
-      raise (Report.error "Invalid symbol")
-	
-  let find_sym (_, tbl) s=
-    Hashtbl.find tbl s
+    if not (sz > 0)
+    then raise (Report.error "Invalid symbol")
+    else
+      begin
+        if Hashtbl.mem tbl s
+        then 
+          (ls, tbl)
+        else
+          begin 
+            Hashtbl.add tbl s tk;
+	    ((add_char_info (String.get s 0) sz ls), tbl)
+          end
+      end
 
   let remove_sym (ls, tbl) s=
     Hashtbl.remove tbl s;

@@ -1,23 +1,23 @@
 (*----
- Name: setLib.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: setLib.ml
+  Copyright M Wahab 2005-2013
+  Author: M Wahab  <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 open HSeq
 
@@ -36,153 +36,152 @@ let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
 let add_id = Ident.mk_long set_thy "add"
 
 module SetPP =
-  struct
+struct
 
-    let (ocb_sym, ccb_sym) = ("{", "}")
-    let semicolon_sym = ";" 
+  let (ocb_sym, ccb_sym) = ("{", "}")
+  let semicolon_sym = ";" 
 
     (* Parser *)
-    open Grammars
-    open Pkit
-    open Utility
-    open Lexer
+  open Grammars
+  open Pkit
+  open Utility
+  open Lexer
 
-    let empty_term ()= Pterm.mk_typed_ident empty_id (set_ty())
+  let empty_term ()= Pterm.mk_typed_ident empty_id (set_ty())
 
-    let set_parser () =
-      let ocb_tok = Sym(OTHER ocb_sym)
-      and ccb_tok = Sym(OTHER ccb_sym)
+  let set_parser () =
+    let ocb_tok = Sym(OTHER ocb_sym)
+    and ccb_tok = Sym(OTHER ccb_sym)
+    in 
+    let wrapper t = 
+      let id_term = Pterm.mk_ident set_id
       in 
-      let wrapper t = 
-	let id_term = Pterm.mk_ident set_id
-	in 
-	Pterm.mk_app id_term t
-      in 
-      let colon = Sym(COLON)
-      in 
-      let set_body inf inp =
-	(((((id_type_opt (short_id id) inf)
-	      -- (?$ colon))
-	     >> 
+      Pterm.mk_app id_term t
+    in 
+    let colon = Sym(COLON)
+    in 
+    let set_body inf inp =
+      (((((id_type_opt (short_id id) inf)
+	  -- (?$ colon))
+	 >> 
 	   (fun (v, _) -> 
 	     Grammars.qnt_setup_bound_names inf Basic.Lambda [v]))
-	    -- (form inf))
-	   >>
+	-- (form inf))
+       >>
 	 (fun (xs, body) ->
 	   make_term_remove_names inf wrapper xs body)) inp
-      in 
-      let set_list inf =
-	((Grammars.comma_list (form inf))
-	 >> 
+    in 
+    let set_list inf =
+      ((Grammars.comma_list (form inf))
+       >> 
 	 (fun ts -> 
-	    List.fold_left
-	      (fun st elt -> Pterm.mk_fun add_id [elt; st])
-			(empty_term()) ts))      
-      in 
+	   List.fold_left
+	     (fun st elt -> Pterm.mk_fun add_id [elt; st])
+	     (empty_term()) ts))      
+    in 
     let main_parser inf inp = 
-	(seq
-	   [?$ ocb_tok;
-	    (optional 
-	       (alt 
-		  [ 
-		    set_body inf; 
-		    set_list inf
-		  ]))
-	      >>
+      (seq
+	 [?$ ocb_tok;
+	  (optional 
+	     (alt 
+		[ 
+		  set_body inf; 
+		  set_list inf
+		]))
+	  >>
 	    (fun s -> Lib.get_option s (empty_term()));
-	    ?$ ccb_tok]
-	   >> 
+	  ?$ ccb_tok]
+       >> 
 	 (fun l ->
 	   match l with
 	     [_; s; _] -> s
 	   | _ -> raise (ParsingError "Not a set"))) inp
-      in 
-      main_parser
+    in 
+    main_parser
 
-    let init_set_parser () = 
-      let ptable0 = Userstate.Access.parsers () in
-      let ptable1 =
-        Parser.add_symbol ptable0 ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym))
-          
-      in 
-      let ptable2 = 
-        Parser.add_symbol ptable1 ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym)) 
-      in 
-      let ptable3 = 
-        Parser.add_term_parser ptable2 Lib.Last "Set" (set_parser())
-      in
-      Userstate.Access.set_parsers ptable3
-          
+  let init_set_parser () = 
+    let ptable0 = Userstate.Access.parsers () in
+    let ptable1 =
+      Parser.add_symbol ptable0 ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym))
+        
+    in 
+    let ptable2 = 
+      Parser.add_symbol ptable1 ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym)) 
+    in 
+    let ptable3 = 
+      Parser.add_term_parser ptable2 Lib.Last "Set" (set_parser())
+    in
+    Userstate.Access.set_parsers ptable3
+      
 
-
-	(* Printer *)
-    let set_printer () = 
-      let lambda_arg x = 
-	match x with
-	  Basic.Qnt(q, body) -> (Basic.binder_kind q)=Basic.Lambda
-	| _ -> false
-      in 
-      let printer ppstate (fixity, prec) (f, args) =
-	(match args with 
-	  (a::rest) -> 
-	    let set_fix, set_prec = set_data
-	    in 
-	    let (qnts, body) = 
-	      Term.strip_fun_qnt 
-		set_id (Term.mk_app (Term.mk_ident set_id) a) []
-	    in 
-	    Format.printf "@[<2>";
-	    (if(lambda_arg a)
-	    then 
+    (* Printer *)
+  let set_printer () = 
+    let lambda_arg x = 
+      match x with
+	Basic.Qnt(q, body) -> (Basic.binder_kind q)=Basic.Lambda
+      | _ -> false
+    in 
+    let printer ppstate (fixity, prec) (f, args) =
+      (match args with 
+	(a::rest) -> 
+	  let set_fix, set_prec = set_data
+	  in 
+	  let (qnts, body) = 
+	    Term.strip_fun_qnt 
+	      set_id (Term.mk_app (Term.mk_ident set_id) a) []
+	  in 
+	  Format.printf "@[<2>";
+	  (if(lambda_arg a)
+	   then 
 	      (Format.printf "%s" ocb_sym;
-	      Term.print_qnt_body ppstate (set_fix, set_prec) (qnts, body);
-	      Format.printf "%s" ccb_sym)
-	    else 
+	       Term.print_qnt_body ppstate (set_fix, set_prec) (qnts, body);
+	       Format.printf "%s" ccb_sym)
+	   else 
 	      Term.simple_print_fn_app 
 		ppstate (set_fix, set_prec) (f, args));
-	    Printer.print_list 
-	      (Term.print_term ppstate 
-		 (fixity, prec), Printer.print_space) rest;
-	    Format.printf "@]"
-	| _ ->
-	    Format.printf "@[";
-	    Term.print_ident_as_identifier ppstate (fixity, prec) f;
-	    Format.printf "@]")
-      in 
-      printer
+	  Printer.print_list 
+	    (Term.print_term ppstate 
+	       (fixity, prec), Printer.print_space) rest;
+	  Format.printf "@]"
+      | _ ->
+	Format.printf "@[";
+	Term.print_ident_as_identifier ppstate (fixity, prec) f;
+	Format.printf "@]")
+    in 
+    printer
 
-    let empty_set_printer ppstate prec (f, args) = 
+  let empty_set_printer ppstate prec (f, args) = 
+    Format.printf "@[<2>";
+    Format.printf "%s%s" ocb_sym ccb_sym;
+    Printer.print_list 
+      (Term.print_term ppstate prec, Printer.print_space) args;
+    Format.printf "@]"
+
+  let single_set_printer ppstate prec (f, args) = 
+    match args with 
+      (a::rest) -> 
+	Format.printf "@[<2>";
+	Format.printf "%s" ocb_sym;
+	Term.print_term ppstate prec a;
+	Format.printf "%s" ccb_sym;
+	Printer.print_list 
+	  (Term.print_term ppstate prec, Printer.print_space) rest;
+	Format.printf "@]"
+    | _ -> 
       Format.printf "@[<2>";
-      Format.printf "%s%s" ocb_sym ccb_sym;
-      Printer.print_list 
-	(Term.print_term ppstate prec, Printer.print_space) args;
+      Term.print_ident_as_identifier ppstate prec f;
       Format.printf "@]"
 
-    let single_set_printer ppstate prec (f, args) = 
-      match args with 
-	(a::rest) -> 
-	  Format.printf "@[<2>";
-	  Format.printf "%s" ocb_sym;
-	  Term.print_term ppstate prec a;
-	  Format.printf "%s" ccb_sym;
-	  Printer.print_list 
-	    (Term.print_term ppstate prec, Printer.print_space) rest;
-	  Format.printf "@]"
-      | _ -> 
-	  Format.printf "@[<2>";
-	  Term.print_ident_as_identifier ppstate prec f;
-	  Format.printf "@]"
+  let init_set_printer()=
+    let set_print = set_printer()
+    in 
+    let inf0 = Userstate.Access.ppinfo() in
+    let inf1 = Printer.add_term_printer inf0 set_id set_print in
+    let inf2 = Printer.add_term_printer inf1 single_id single_set_printer 
+    in
+    Userstate.Access.set_ppinfo inf2
 
-    let init_set_printer()=
-      let set_print = set_printer()
-      in 
-      let inf0 = Userstate.Access.ppinfo() in
-      let inf1 = Printer.add_term_printer inf0 set_id set_print in
-      let inf2 = Printer.add_term_printer inf1 single_id single_set_printer 
-      in
-      Userstate.Access.set_ppinfo inf2
-
-  end
+end
 
 open SetPP;;
 

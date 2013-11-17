@@ -1,7 +1,7 @@
 (*----
  Name: pairLib.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -36,12 +36,11 @@
 *)
 
 open HSeq
-open Userlib
 
 let pair_thy = "Pair"
 let pair_id = Ident.mk_long pair_thy "pair"
 let pair_prec = 10
-let pair_fixity = infixr
+let pair_fixity = Printer.infixr
 let ppdata = (pair_fixity, pair_prec)
 
 let pair_printer ppstate prec (f, args)=
@@ -71,7 +70,9 @@ let pair_printer ppstate prec (f, args)=
       Term.simple_print_fn_app ppstate ppdata (f, args)
 
 let init_pair_printer()=
-  Global.PP.add_term_printer pair_id pair_printer
+  let inf0 = Userstate.Access.ppinfo () in
+  let inf1 = Printer.add_term_printer inf0 pair_id pair_printer in
+  Userstate.Access.set_ppinfo inf1
 
 let init_pair()=
   init_pair_printer() 
