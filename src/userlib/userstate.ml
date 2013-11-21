@@ -36,9 +36,6 @@ struct
   let printers () = Printer.empty_ppinfo()
 
   (* Parser tables *)
-(*
-  let parsers () = Parser.Table.empty Parser.Table.default_size
-*)
   let parsers () = BoolPP.init_bool_parsers (Parser.init ())
 
   (* Simplifier set *)

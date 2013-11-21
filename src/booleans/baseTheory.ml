@@ -27,6 +27,20 @@ open Lib.Ops
 
     Has the minimal parser and printer information needed for the base theory.
 *)
+
+let pplist = 
+  [
+    (100, infixr, Some("->"));
+    (BoolPP.negation_pprec.Printer.prec, 
+     BoolPP.negation_pprec.Printer.fixity, 
+     Some "~");
+    (200, infixl, (Some "=")) ;
+    (185, infixr, Some "and") ;
+    (190, infixr, Some "or") ;
+    (195, infixr, Some "=>") ;
+    (180, infixn, Some "iff") ;
+  ];;
+
 let context() = BoolPP.quote_context
 
 (*** A minimal base theory ***)
@@ -56,7 +70,7 @@ let builder ?(save=false) ctxt =
       declare ctxt4
         (read ctxt4
 	   ((name_of Lterm.notid)^": bool -> bool"))
-        ~pp:(prec, fixity, Some "~") 
+(*        ~pp:(prec, fixity, Some "~")  *)
     in 
     let ctxt6 = 
       let prec = BoolPP.negation_pprec.Printer.prec

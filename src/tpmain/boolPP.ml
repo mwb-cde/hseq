@@ -138,12 +138,6 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
 let init_ifthenelse_printer inf =
   Printer.add_term_printer inf ifthenelse_id ifthenelse_printer
 
-(**
-let init_ifthenelse() =
-  init_ifthenelse_parser();
-  init_ifthenelse_printer()
-*)
-
 (* Support for printing/parsing [epsilon(%x: P)] as [@x: P] *)
 
 let choice_ident = Ident.mk_long Lterm.base_thy "epsilon"
@@ -164,13 +158,6 @@ let choice_printer =
 
 let init_choice_printer inf =
   Printer.add_term_printer inf choice_ident choice_printer
-
-
-(**
-let init_epsilon() = 
-  init_choice_parser();
-  init_choice_printer()
-*)
 
 (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
@@ -201,12 +188,6 @@ let init_exists_unique_printer inf =
     exists_unique_ident 
     exists_unique_printer
 
-(**
-let init_exists_unique() = 
-  init_exists_unique_parser();
-  init_exists_unique_printer()
-*)
-
 let bool_parsers = 
   [ ifthenelse_parser; choice_parser; exists_unique_parser ]
 
@@ -232,48 +213,38 @@ let init_bool_printers ppinfo =
   in
   ppinf1
 
-
-(**
-(* PP Initialising functions *)
-let init_parsers () = 
-  init_ifthenelse_parser();
-  init_choice_parser();
-  init_exists_unique_parser()
-    
-let init_printers () =
-  init_negation_printer();
-  init_ifthenelse_printer();
-  init_choice_printer() ;
-  init_exists_unique_printer() 
-
-let init () =
-  init_printers();
-  init_parsers()
-*)
-
-let base_ppinfo () =
-  let printers = 
+let init_bool_pp ctxt = 
+  let type_symbols =
     [
-      (Lterm.notid, negation_printer);
-      (ifthenelse_id, ifthenelse_printer);
-      (choice_ident, choice_printer);
-      (exists_unique_ident, exists_unique_printer)
+      (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
     ]
-  and symbols = [] 
+  and term_symbols = 
+    [
+      (Lterm.notid, negation_pprec.Printer.prec, 
+       negation_pprec.Printer.fixity, 
+       Some "~");
+      (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
+      (Lterm.andid, 185, Printer.infixr, Some "and") ;
+      (Lterm.orid, 190, Printer.infixr, Some "or") ;
+      (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
+      (Lterm.iffid, 180, Printer.infixn, Some "iff") ;
+    ]
   in
-  let inf0 = Printer.empty_ppinfo() in 
-  let inf1 = 
+  let ctxt1 = 
     List.fold_left 
-      (fun infa (i, p) -> Printer.add_term_printer infa i p) inf0 printers 
+      (fun infa (n, p, i, r) -> 
+        Context.NewPP.add_type_pp infa n p i r)
+      ctxt type_symbols 
   in
-  let inf2 = 
+  let ctxt2 = 
     List.fold_left 
-      (fun infa (i, r) -> Printer.add_term_record infa i r)
-      inf1 symbols 
+      (fun infa (n, p, i, r) -> 
+        Context.NewPP.add_term_pp infa n p i r)
+      ctxt1 term_symbols 
   in
-  inf2
+  ctxt2
 
-let ppinfo = base_ppinfo
+let ppinfo () = Printer.empty_ppinfo()
 
 (** {7 OCaml Quotations support} *)
 
@@ -281,7 +252,9 @@ let quote_context =
   let ctxt0 = Context.empty() in
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
-  Context.set_parsers ctxt0 ptbl2
+  let ctxt1 = Context.set_parsers ctxt0 ptbl2 in
+  init_bool_pp ctxt1
+
 
 (** Parse a string as a term, resolving short names and symbols. *)
 let read str = Context.NewPP.read quote_context str
@@ -298,6 +271,5 @@ let read_type str = Context.NewPP.read_type quote_context str
 
 (** Parse a string as a type definition. *)
 let read_type_defn str = Context.NewPP.read_type_defn quote_context str
-
 let read_identifier str = Context.NewPP.read_identifier quote_context str
 

@@ -696,10 +696,6 @@ struct
   let default_load_functions = 
     [
       load_use_theory_files;    (* load files *)
-(**
-      NewPP.add_theory_type_pp;    (* add type PP information *)
-      NewPP.add_theory_term_pp;    (* add term PP information *)
-**)
     ]
 
   let load_functions = ref default_load_functions
