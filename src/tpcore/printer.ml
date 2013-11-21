@@ -136,53 +136,52 @@ let empty_record() = mk_record (-1) nonfix None
 (** The table of records and printers for a set of identifiers. *)
 type ('a, 'b) info = 
     {
-      records: (Ident.t, record) Hashtbl.t;
-      printers: (Ident.t, 'a -> (fixity * int) -> 'b printer) Hashtbl.t
+      records: (record) Ident.tree;
+      printers: ('a -> (fixity * int) -> ('b printer)) Ident.tree
     }
 
 let mk_info sz = 
-  {records = Hashtbl.create(sz); printers = Hashtbl.create(sz)}
+  {records = Ident.Tree.empty(); printers = Ident.Tree.empty()}
 
 let default_info_size = 53
 let empty_info() = mk_info default_info_size
 
 (** Add/access printer records *)
 
-let get_record info id = Hashtbl.find info.records id
+let get_record info id = 
+  Ident.Tree.find info.records id
 let add_record info id rcrd = 
-  Hashtbl.replace info.records id rcrd;
-  info
+  { info with records = Ident.Tree.replace info.records id rcrd }
 let remove_record info id  = 
-  Hashtbl.remove info.records id;
-  info
+  { info with records = Ident.Tree.remove info.records id }
 
 (** Construct printer records to be added/accessed from [info] *)
 
 let get_info info id = 
   try 
-    let r = Hashtbl.find (info.records) id in 
+    let r = Ident.Tree.find (info.records) id in 
     (r.prec, r.fixity, r.repr)
   with Not_found -> (default_term_prec, default_term_fixity, None)
 
-let add_info inf id pr fx rp = 
+let add_info (inf:('a, 'b)info) id pr fx rp = 
   let r = {prec = pr; fixity = fx; repr = rp}
   in 
   add_record inf id r
 
-let remove_info inf id = 
-  Hashtbl.remove inf.records id;
-  inf
+let remove_info info id = 
+  { info with records = Ident.Tree.remove info.records id }
 
 (** User defined printers *)
 
 let get_printer info id = 
-  Hashtbl.find info.printers id 
+  Ident.Tree.find info.printers id 
+
 let add_printer info id prntr = 
-  Hashtbl.add info.printers id prntr;
-  info
+  { info with printers = Ident.Tree.add info.printers id prntr }
+
 let remove_printer info id = 
-  Hashtbl.remove info.printers id;
-  info
+  { info with printers = Ident.Tree.remove info.printers id }
+
 
 (*
  * Combined printer information tables} 

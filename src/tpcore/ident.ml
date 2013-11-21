@@ -29,7 +29,6 @@ type thy_id = string
 type t = (thy_id * string)
 
 let null_thy = ""
-
 let null = ("", "")
 
 let is_null x = x=null
@@ -47,6 +46,21 @@ let dest x = x
 let thy_of (t, _) = t
 let name_of (_, n) = n
 
+(*** Comparisons ***)
+
+let equals x y = 
+  ((x == y) or (Pervasives.compare x y) = 0)
+let lessthan x y = 
+  if (x == y) then false
+  else 
+    begin
+      let cmp = Pervasives.compare (thy_of x) (thy_of y) in
+      if (cmp < 0) then true
+      else if cmp = 0
+      then (Pervasives.compare (name_of x) (name_of y)) < 0
+      else false
+    end
+
 (*** Utility functions ***)
 
 let string_of n =
@@ -54,3 +68,12 @@ let string_of n =
   then name_of n
   else (thy_of n)^"."^(name_of n)
 
+(* [('a)tree]: Balanced trees indexed by identifiers *)
+module IdentTreeData =
+struct
+  type key = t
+  let equals x y = ((x == y) or (Pervasives.compare x y) = 0)
+  let lessthan x y = lessthan x y
+end
+module Tree = Treekit.BTree(IdentTreeData)
+type ('a)tree = ('a) Tree.t

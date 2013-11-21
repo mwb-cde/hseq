@@ -21,65 +21,6 @@
 
 (** {5 Theory building and loading} *)
 
-(***
-(* builder <whether-to-save> <context> *)
-type builder = bool -> Context.t -> Context.t
-
-type load_data = Thydb.Loader.data
-
-module LoaderDB = 
-struct
-  type t = 
-    {
-      (** Search path for theories and build scripts *)
-      thy_path_f: string list;
-      (** Search path for libraries *)
-      lib_path_f: string list;
-      (** Builders: indexed by theory name *)
-      builders_f: (string, builder)Hashtbl.t;
-    }
-
-  let empty() =
-    {
-      thy_path_f = [];
-      lib_path_f = [];
-      builders_f = Hashtbl.create(13);
-    }
-
-  let builder db n = 
-    try Hashtbl.find db.builders_f n
-    with _ -> raise Not_found
-
-  let add_builder db (n:string) b = 
-    Hashtbl.add db.builders_f n b;
-    db
-
-  let remove_builder db n = 
-    Hashtbl.remove db.builders_f n; 
-    db
-
-  (* Search paths *)
-  let thy_path db = db.thy_path_f
-  let set_thy_path x y = 
-    {x with thy_path_f = y;}
-
-  let lib_path db = (db.lib_path_f)
-  let set_lib_path db pl = 
-    { db with lib_path_f = pl }
-end
-
-module Old =
-struct 
-(** Data to pass to ThyDB loader. *)
-  type load_data = 
-    {
-    (** Record a theory name being loaded *)
-      record_name: string -> unit;
-    (** Test whether a name has been recorded *)
-      seen_name: string -> bool;
-    }
-end
-*)
 let null_thy_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
   raise (Failure ("Thyloader.default_thy_fn("^(thy.Theory.cname)^")"))

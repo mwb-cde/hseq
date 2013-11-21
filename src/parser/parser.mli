@@ -140,7 +140,9 @@ val default_symtable_size: int
 val core_symbols : (string * Lexer.tok) list
 (** The list of builtin symbols *)
 
-type overload_table_t = (string,  (Ident.t * Basic.gtype) list) Hashtbl.t
+module OverloadTree : Treekit.SimpleTreeType with type key = string
+type overload_table_t = ((Ident.t * Basic.gtype) list) OverloadTree.t
+
 val default_overload_table_size : int 
 (** The default size of the overloading table. *)
 

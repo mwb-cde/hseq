@@ -62,9 +62,7 @@ type keys =
   | LAM  (** Lambda quantifier *)
 
 type token_info = 
-    Ident.t
-      * Parserkit.Info.fixity 
-      * int
+  (Ident.t * Parserkit.Info.fixity  * int)
 (** Identifier fixity and precdence information. *)
 
 (** Tokens. These are the tokens passed to the parser. *)
@@ -113,7 +111,8 @@ val match_tokens : tok -> tok -> bool
    [n] is also stored.
  *)
     
-type symbol_table= (string, tok)Hashtbl.t
+module SymbolTree: Treekit.SimpleTreeType with type key = string
+type symbol_table= (tok) SymbolTree.t
 type symtable = (char * int Counter.t) list * symbol_table
 
 val mk_symtable : int -> symtable

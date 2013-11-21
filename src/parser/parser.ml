@@ -88,9 +88,10 @@ let mk_symtable sz = Lexer.mk_symtable sz
 let clear_symtable tb = Lexer.clear_symtable tb
 
 (*** Overloading *)
-type overload_table_t = (string, (Ident.t * Basic.gtype) list) Hashtbl.t
+module OverloadTree = Treekit.StringTree
+type overload_table_t = ((Ident.t * Basic.gtype) list) OverloadTree.t
 let default_overload_table_size = 127
-let mk_overload_table sz = Hashtbl.create sz
+let mk_overload_table sz = OverloadTree.empty()
 
 (** Parser tables *)
 module Table = 
@@ -243,7 +244,7 @@ let init_overload tbl =
   Table.set_overloads tbl (mk_overload_table default_overload_table_size)
 
 let get_overload_list tbl sym =
-  Hashtbl.find (Table.overloads tbl) sym
+  OverloadTree.find (Table.overloads tbl) sym
 
 let insert_pos pos d lst = 
   let rec split_at s l r =
@@ -284,19 +285,21 @@ let add_overload tbl sym pos (id, ty) =
   in 
   let list1 = insert_pos pos (id, ty) list0 in 
   let ovltbl = Table.overloads tbl in 
-  Hashtbl.replace ovltbl sym list1;
-  Table.set_overloads tbl ovltbl
-    
+  let ovltbl1 = OverloadTree.replace ovltbl sym list1 in
+  Table.set_overloads tbl ovltbl1
+
 let remove_overload tbl sym id =
   let list0 = get_overload_list tbl sym in 
   let list1 = List.remove_assoc id list0 in 
   let ovltbl = Table.overloads tbl in 
-  begin
-    match list1 with
-      [] -> Hashtbl.remove ovltbl sym
-    | _ -> Hashtbl.replace ovltbl sym list1
-  end;
-  Table.set_overloads tbl ovltbl
+  let ovltbl1 = 
+    begin
+      match list1 with
+        [] -> OverloadTree.remove ovltbl sym
+      | _ -> OverloadTree.replace ovltbl sym list1
+    end 
+  in
+  Table.set_overloads tbl ovltbl1
 
 let print_overloads tbl info = 
   let table = Table.overloads tbl in
@@ -312,7 +315,7 @@ let print_overloads tbl info =
     Format.printf "@]@,"
   in 
   Format.printf "@[<v>";
-  Hashtbl.iter print_fn table;
+  OverloadTree.iter print_fn table;
   Format.printf "@]"
 
 (*** Initialising functions ***)

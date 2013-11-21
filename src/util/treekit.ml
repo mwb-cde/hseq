@@ -65,6 +65,9 @@ sig
     (* nil: make an empty tree *)
   val nil : 'a t
 
+  val empty: unit -> 'a t
+    (* Make an empty tree *)
+    
     (* create: make a branch with data *)
   val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
 
@@ -122,6 +125,7 @@ sig
       does nothing if key is not in tree
     *)
   val delete : 'a t -> key -> 'a t
+  val remove : 'a t -> key -> 'a t
 
     (* 
        iter tree fn:
@@ -146,8 +150,7 @@ end
 
 
 
-module Tree=
-  functor (A: TreeData)->
+module Tree = functor (A: TreeData)->
 struct
 
   type key = A.key
@@ -166,6 +169,8 @@ struct
   let nil = Nil
   let create x l r = Branch(x, l, r)
 
+  let empty () = nil
+  (** Make an empty tree *)
 
     (*
       tree information/manipulation
@@ -419,7 +424,7 @@ struct
 	  then Branch((k, y)::data, delete l key, r)
 	  else Branch((k, y)::data, l, delete r key)
       | Branch([], _, _) -> failwith ("Tree.delete")
-
+  let remove = delete
 
     (* 
        iter tree fn:
@@ -532,8 +537,12 @@ sig
     (* nil: make an empty tree *)
   val nil : 'a t
 
+  (* make an empty tree *)
+  val empty : unit -> 'a t
+
     (* create: make a branch with data *)
   val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
+
 
     (*
       tree information/manipulation
@@ -592,6 +601,7 @@ sig
     *)
 
   val delete : 'a t -> key -> 'a t
+  val remove : 'a t -> key -> 'a t
 
     (* 
        find tree key
@@ -655,6 +665,7 @@ struct
 
   let nil = Nil
   let create x l r = Branch(x, l, r, 1)
+  let empty () = nil
 
     (*
       tree information/manipulation
@@ -923,57 +934,6 @@ struct
       then rebalancing at every level
     *)
 
-    (* add_rightmost dst src: 
-       add src to the rightmost tip of dst
-       rebalancing on the way back up
-       both src and dst are assumed to be balanced
-    *)
-
-    (*
-      let add_rightmost dst src =
-      let nd = depth src
-      in 
-      let rec add_aux tr =
-      match tr with 
-      Nil -> src
-      | Branch(x, l, Nil, d) -> 
-      balance (Branch(x, l, src, d+nd))
-      | Branch(x, l, r, d) -> 
-      balance (Branch (x, l, add_aux r, d+nd))
-      in 
-      match src with
-      Nil -> dst
-      | _ -> add_aux dst
-
-      let remove tree key =
-      let rec remove_aux tr =
-      match tr with
-      Nil -> tr
-      | Branch(((y, z)::ys), l, r, d) ->
-      if(eql key y)
-      then 
-      (match (list_delete key ((y, z)::ys)) with
-      []  -> add_rightmost l r
-      | nlst -> Branch(nlst, l, r, d))
-      else 
-      if (lessthan key y)
-      then 
-      let nl=remove_aux l
-      in 
-      balance(Branch((y, z)::ys, 
-      nl, r, 
-      (max (depth nl) (depth r))+1))
-      else 
-      let nr=remove_aux r
-      in 
-      balance(Branch((y, z):: ys, 
-      l, nr,
-      (max (depth l) (depth nr)) +1))
-      | _ -> failwith "Tree.remove"
-      in 
-      remove_aux tree
-    *)
-
     (* delete tree key
 
        removes the data currently bound to key in tree
@@ -1057,6 +1017,7 @@ struct
 	| Branch([], _, _, _) -> failwith ("Tree.delete")
     in 
     delete_aux tree
+  let remove = delete
 
     (* 
        find tree key
@@ -1300,7 +1261,10 @@ sig
 
 
   val nil : 'a t
-    (** Make an empty tree *)
+  (** The empty tree *)
+
+  val empty: unit -> 'a t
+  (** Make an empty tree *)
 
   val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
     (** Make a branch with data *)
@@ -1348,6 +1312,7 @@ sig
        [delete tree key]: Remove the data currently bound to [key] in
        [tree].  Does nothing if key is not in tree
     *)
+  val remove : 'a t -> key -> 'a t
 
   val find : 'a t -> key -> 'a
     (**
@@ -1392,9 +1357,9 @@ module SimpleTree =
       (struct 
         type key = A.key
         let equals x y = 
-	  ((x==y) || (Pervasives.compare x y) = 0)
+	  ((x == y) or (Pervasives.compare x y) = 0)
         let lessthan x y = 
-	  (not(x==y) && ((Pervasives.compare x y) < 0))
+	  ((not (x == y)) && ((Pervasives.compare x y) < 0))
        end)
 
 

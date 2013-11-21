@@ -92,13 +92,13 @@ val empty_thy_t: unit -> thy_t
 (** Pretty printer *)
 type pp_t =
   {
-    pp_info_f: Printer.ppinfo ref;
+    pp_info_f: Printer.ppinfo;
   }
 
   (** Parsers *)
 type parser_t =
   {
-    parser_info_f: Parser.Table.t ref;
+    parser_info_f: Parser.Table.t;
   }
 
 (** [empty_pp_t()]: The default value for [pp_t]. *)

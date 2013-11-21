@@ -36,7 +36,10 @@ struct
   let printers () = Printer.empty_ppinfo()
 
   (* Parser tables *)
+(*
   let parsers () = Parser.Table.empty Parser.Table.default_size
+*)
+  let parsers () = BoolPP.init_bool_parsers (Parser.init ())
 
   (* Simplifier set *)
   let simpset() = Simplib.init_std_ss()
@@ -229,8 +232,8 @@ let init_scope st =
   set_scope st (Default.scope())
 let init_ppinfo st = 
   set_ppinfo st (Default.printers())
-let init_parsers st = st
-(* set_parsers st (Parser.init ()) *)
+let init_parsers st = 
+  set_parsers st (Default.parsers())
 let init_simpset st = 
   set_simpset st (Default.simpset())
 let init_proofstack st = 

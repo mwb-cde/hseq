@@ -76,7 +76,7 @@ val default_type_fixity: fixity
 (** {5 Parser grammars} *)
 
 (** Parser constructors specialised to tokens from {!Lexer}. *)
-module Pkit: (Parserkit.T with type token =Lexer.tok) 
+module Pkit: (Parserkit.T with type token = Lexer.tok) 
 
 (** Useful parser constructors  *)
 module Utility: 
@@ -137,6 +137,8 @@ val string_tokens: Lexer.tok list -> string
     input stream.
 *)
   
+module TokenTree: Treekit.SimpleTreeType with type key = Pkit.token
+
 type token_table
 (** Token tables *)
 val default_table_size: int

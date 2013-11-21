@@ -68,7 +68,7 @@ let binder_equiv tyenv s t =
 (* [('a)tree]: Balanced trees indexed by terms *)
 module TermTreeData =
 struct
-  type key =term
+  type key = term
   let equals = equals
   let lessthan x y = (Pervasives.compare x y) < 0
 end

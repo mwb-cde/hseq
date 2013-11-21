@@ -110,30 +110,24 @@ let string_tokens toks = Lib.list_string string_of_tok " " toks
 *)
 let default_table_size = 253;
 
+module TokenTree = Treekit.SimpleTree (struct type key = token end)
 type token_table = 
     { 
       mutable memo: (token * token_info) option;
-      table: (token, token_info) Hashtbl.t
+      table: (token_info) TokenTree.t
     }
 
-(*
-let token_table_new () =
-  { memo = None; table=Hashtbl.create default_table_size }
-*)
 let token_table_new sz =
-  { memo = None; table=Hashtbl.create sz }
-
+  { memo = None; table = TokenTree.empty() }
 
 let token_table_reset tbl =
-  tbl.memo <- None;
-  Hashtbl.clear tbl.table;
-  tbl
+  { memo = None; table = TokenTree.empty() }
 
 (* token_table_add: should fail if token already exists (but doesn't
  *fixme* )
  *)
 let token_table_add tbl s tok = 
-  Hashtbl.add (tbl.table) s tok; tbl
+  { tbl with table = TokenTree.add (tbl.table) s tok }
 
 let token_table_find tbl s =
   let mfind =
@@ -147,22 +141,21 @@ let token_table_find tbl s =
   match mfind with
     | Some(r) -> r
     | _ -> 
-      let ret = Hashtbl.find (tbl.table) s
-      in 
+      let ret = TokenTree.find (tbl.table) s in 
       tbl.memo <- Some(s, ret);
       ret
 
 let token_table_remove tbl s =
-  Hashtbl.remove tbl.table s;
-  begin
+  let table1 = TokenTree.remove tbl.table s in
+  let memo1 = 
     match tbl.memo with
     | Some(x, y) ->
       if Lexer.match_tokens s x 
-      then tbl.memo <- None 
-      else ()
-    | _ -> ()
-  end; 
-  tbl
+      then None 
+      else tbl.memo
+    | _ -> None
+  in
+  { memo = memo1; table = table1 }
 
 (** [token_info tbl t]: Look up the information of token [t] in token
     table [tbl]. Return [None] if [t] is not in [tbl].

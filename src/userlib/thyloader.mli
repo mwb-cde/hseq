@@ -21,57 +21,7 @@
 
 (** {5 Theory building and loading} *)
 
-
-(***
-(* builder <whether-to-save> <context> *)
-type builder = bool -> Context.t -> Context.t
-
-module LoaderDB :
-sig
-  type t = 
-    {
-      (** Search path for theories and build scripts *)
-      thy_path_f: string list;
-      (** Search path for libraries *)
-      lib_path_f: string list;
-      (** Builders: indexed by theory name *)
-      builders_f: (string, builder)Hashtbl.t;
-    }
-
-  (** An empty DB*)
-  val empty: unit -> t
-
-  (** Find a builder for a theory name, raising Not_found *)
-  val builder: t -> string -> builder
-  (** Add a builder for a theory name *)
-  val add_builder: t -> string -> builder -> t
-  (** Remove a builder for a theory name *)
-  val remove_builder: t -> string -> t
-
-  (** Search paths *)
-(*
-  val thy_path: t -> string list
-  val set_thy_path: t -> string list -> t
-
-  val lib_path: t -> string list
-  val set_lib_path: t -> string list -> t
-*)
-end
-***)
-
 (** Data to pass to ThyDB loader. *)
-(*
-module Old: 
-sig
-  type load_data = 
-    {
-    (** Record a theory name being loaded *)
-      record_name: string -> unit;
-    (** Test whether a name has been recorded *)
-      seen_name: string -> bool;
-    }
-end
-  *)
 
 (** Get and set functions to load/use a file *)
 val set_load_file:

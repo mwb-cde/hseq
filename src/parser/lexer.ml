@@ -120,16 +120,14 @@
    is also stored.
 *)
 
-  type symbol_table=(string, tok)Hashtbl.t
+  module SymbolTree = Treekit.StringTree
+  type symbol_table= (tok) SymbolTree.t
+  type symtable = (char * int Counter.t) list * symbol_table
 
-  type symtable=
-      ((char * (int)Counter.t) list  (* (this could be made a tree) *)
-	 * symbol_table)
+  let mk_symtable size = ([], SymbolTree.empty())
+  let clear_symtable (_, tbl) = ([], SymbolTree.empty())
 
-  let mk_symtable size = ([], Hashtbl.create size)
-  let clear_symtable (_, tbl) = Hashtbl.clear tbl; ([], tbl)
-
-  let add_sym_size sz lst=Counter.add sz lst
+  let add_sym_size sz lst = Counter.add sz lst
 
   let add_char_info c sz lst=
     let rec add_aux ls =
@@ -137,8 +135,7 @@
 	[] -> [(c, add_sym_size sz (Counter.empty()))]
       | (ch, sizes) :: xs ->
 	  if(ch=c)
-	  then 
-	    (ch, add_sym_size sz sizes)::xs
+	  then (ch, add_sym_size sz sizes)::xs
 	  else
 	    if(ch>c)
 	    then 
@@ -171,7 +168,7 @@
     in 
     remove_aux lst
 
-  let find_sym (_, tbl) s = Hashtbl.find tbl s
+  let find_sym (_, tbl) s = SymbolTree.find tbl s
 
   let add_sym (ls, tbl) s tk =
     let sz = String.length s
@@ -180,19 +177,19 @@
     then raise (Report.error "Invalid symbol")
     else
       begin
-        if Hashtbl.mem tbl s
+        if SymbolTree.mem tbl s
         then 
           (ls, tbl)
         else
           begin 
-            Hashtbl.add tbl s tk;
-	    ((add_char_info (String.get s 0) sz ls), tbl)
+	    (add_char_info (String.get s 0) sz ls,
+             SymbolTree.add tbl s tk)
           end
       end
 
   let remove_sym (ls, tbl) s=
-    Hashtbl.remove tbl s;
-    (remove_char_info (String.get s 0) (String.length s) ls, tbl)
+    (remove_char_info (String.get s 0) (String.length s) ls, 
+     SymbolTree.remove tbl s)
 
   let find_char_info c lst=List.assoc c lst
 

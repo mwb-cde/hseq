@@ -100,23 +100,23 @@ let empty_thy_t () =
 (** Printer info *)
 type pp_t =
   {
-    pp_info_f: Printer.ppinfo ref;
+    pp_info_f: Printer.ppinfo; 
   }
 
 let empty_pp_t () = 
   {
-    pp_info_f = ref(Printer.empty_ppinfo())
+    pp_info_f = Printer.empty_ppinfo()
   }
 
 (** Parser info *)
 type parser_t =
   {
-    parser_info_f: Parser.Table.t ref;
+    parser_info_f: Parser.Table.t
   }
 
 let empty_parser_t () = 
   {
-    parser_info_f = ref(Parser.Table.empty Parser.Table.default_size)
+    parser_info_f = Parser.Table.empty Parser.Table.default_size
   }
 
 (** Top-level context *)
@@ -257,16 +257,16 @@ let add_load_functions t fl =
   set_load_functions t nl
 
 (** Pretty printer information *)
+let ppinfo t = t.pp_f.pp_info_f
 let set_ppinfo t inf =
-  t.pp_f.pp_info_f := inf; t
-
-let ppinfo t = !(t.pp_f.pp_info_f)
+  let pinf = { pp_info_f = inf } in
+  { t with pp_f = pinf }
 
 (** Parser information *)
+let parsers t = t.parser_f.parser_info_f
 let set_parsers t inf =
-  t.parser_f.parser_info_f := inf; t
-
-let parsers t = !(t.parser_f.parser_info_f)
+  let ptable = { parser_info_f = inf } in
+  { t with parser_f = ptable }
 
 (** Theorem cache *)
 let cache_thm t id thm = 

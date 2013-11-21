@@ -1,7 +1,7 @@
 (*----
   Name: printer.mli
-  Copyright M Wahab 2005-2009
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2013
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -131,8 +131,8 @@ val empty_record: unit -> record
 
 type ('a, 'b) info = 
     {
-      records: (Ident.t, record) Hashtbl.t;
-      printers: (Ident.t, 'a -> (fixity * int) -> ('b printer)) Hashtbl.t
+      records: (record) Ident.tree;
+      printers: ('a -> (fixity * int) -> ('b printer)) Ident.tree
     }
 
 (** The table of records and printers for a set of identifiers. There

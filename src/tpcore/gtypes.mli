@@ -108,20 +108,6 @@ val get_typdef: Scope.t -> Ident.t -> typedef_record
 
 (** {5 Data storage indexed by gtypes} *)
 
-(** {7 Hash tables} *)
-module type RHASHKEYS=
-sig 
-  type t = gtype
-  val equal: t -> t -> bool
-  val hash: t -> int
-end
-module type RHASH = (Hashtbl.S with type key = (gtype))
-module Rhash: RHASH
-
-type ('a)table = ('a)Rhash.t
-(** Hashtables with keys of type gtype. *)
-
-
 (** {7 Balanced Trees} *)
 module TypeTreeData: Treekit.TreeData
 

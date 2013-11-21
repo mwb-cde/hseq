@@ -23,7 +23,7 @@
    Boolean operators and their basic properties.
 *)
 
-begin_theory "Bool" ["base"];; 
+let _ = begin_theory "Bool" ["base"];; 
 
 (** Cases/excluded middle *)
 

@@ -52,7 +52,7 @@ type ('a)tree = ('a)TermTree.t
 (** {7 Hashtables} *)
 
 type ('a)table 
-(** Hashtables with a term as the key. *)
+(** Tables with a term as the key. *)
 
 val empty_table: unit -> ('a) table
 val table_find: term -> 'a table -> 'a

@@ -211,24 +211,6 @@ end
 module TypeTree=Treekit.BTree(TypeTreeData)      
 type ('a)tree = ('a)TypeTree.t
 
-(*  [('a)table]: Hash tables indexed by gtypes *)
-module type RHASHKEYS =
-sig 
-  type t = gtype
-  val equal: t -> t -> bool
-  val hash: t -> int
-end
-
-module Rhashkeys:RHASHKEYS =
-struct
-  type t = gtype
-  let equal = equals
-  let hash= Hashtbl.hash
-end
-module type RHASH = (Hashtbl.S with type key = (gtype))
-module Rhash:RHASH = Hashtbl.Make(Rhashkeys)
-type ('a)table = ('a)Rhash.t
-
 (*
  *   Substitution.
  *)

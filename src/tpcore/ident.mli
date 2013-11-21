@@ -79,3 +79,7 @@ val name_of : t -> string
 val string_of: t -> string
 (** String representation of identifier [i]. *)
 
+(* [('a)tree]: Balanced trees indexed by identifiers *)
+module IdentTreeData: Treekit.TreeData
+module Tree: (Treekit.BTreeType with type key = t)
+type ('a)tree = ('a) Tree.t

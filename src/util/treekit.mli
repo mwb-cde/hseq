@@ -74,6 +74,9 @@ sig
   (** Get the right branch of tree. *)
 
   val nil: 'a t
+  (** The empty tree. *)
+
+  val empty: unit -> 'a t
   (** Make an empty tree. *)
 
   val create: (key * 'a)list -> 'a t -> 'a t -> 'a t
@@ -102,6 +105,7 @@ sig
   val delete: 'a t -> key -> 'a t
   (** [delete tree key]: Remove the data currently bound to [key] in
       [tree].  Does nothing if key is not in tree.  *)
+  val remove: 'a t -> key -> 'a t
 
   val iter: (key -> 'a -> 'b) -> 'a t -> unit
   (** [iter tree fn]: Apply [fn] to the data bound to each key.  Only
@@ -140,6 +144,9 @@ sig
     | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
 
   val nil: 'a t
+  (** The empty tree. *)
+
+  val empty: unit -> 'a t
   (** Make an empty tree. *)
 
   val create: (key * 'a) list -> 'a t -> 'a t -> 'a t
@@ -171,6 +178,7 @@ sig
   val delete: 'a t -> key -> 'a t
   (** [delete tree key]: Remove the data currently bound to [key] in
       [tree].  Does nothing if [key] is not in [tree]. *)
+  val remove: 'a t -> key -> 'a t
 
   val find: 'a t -> key -> 'a
   (** [find_all tree key]: Finds all bindings of [key] in [tree] with
@@ -238,6 +246,9 @@ sig
     | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
 
   val nil: 'a t
+  (** The empty tree. *)
+
+  val empty: unit -> 'a t
   (** Make an empty tree. *)
 
   val create: (key * 'a)list -> 'a t -> 'a t -> 'a t
@@ -269,6 +280,8 @@ sig
   val delete: 'a t -> key -> 'a t
   (** [delete tree key]: Remove the data currently bound to [key] in
       [tree].  Does nothing if key is not in tree. *)
+  val remove: 'a t -> key -> 'a t
+
 
   val find: 'a t -> key -> 'a
   (** [find_all tree key]: Finds all bindings of [key] in [tree] with
@@ -305,7 +318,6 @@ end
 (** Balanced Trees indexed by type A.key *)
 module SimpleTree: 
   functor (A:Data) -> (SimpleTreeType with type key = A.key)
-
 
 (** Balanced Trees indexed by strings *)
 module StringTree: SimpleTreeType with type key = string
