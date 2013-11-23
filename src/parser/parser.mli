@@ -363,7 +363,3 @@ val read_type : Table.t -> string -> Basic.gtype
 
 val test_lex : Table.t -> string -> Lexer.tok Parserkit.Input.t
 val test : Table.t -> string -> Pterm.t
-
-
-
-

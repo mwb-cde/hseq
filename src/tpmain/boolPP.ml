@@ -213,48 +213,86 @@ let init_bool_printers ppinfo =
   in
   ppinf1
 
-let init_bool_pp ctxt = 
-  let type_symbols =
-    [
-      (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
-    ]
-  and term_symbols = 
-    [
-      (Lterm.notid, negation_pprec.Printer.prec, 
-       negation_pprec.Printer.fixity, 
-       Some "~");
-      (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
-      (Lterm.andid, 185, Printer.infixr, Some "and") ;
-      (Lterm.orid, 190, Printer.infixr, Some "or") ;
-      (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
-      (Lterm.iffid, 180, Printer.infixn, Some "iff") ;
-    ]
-  in
-  let ctxt1 = 
-    List.fold_left 
-      (fun infa (n, p, i, r) -> 
-        Context.NewPP.add_type_pp infa n p i r)
-      ctxt type_symbols 
-  in
-  let ctxt2 = 
-    List.fold_left 
-      (fun infa (n, p, i, r) -> 
-        Context.NewPP.add_term_pp infa n p i r)
-      ctxt1 term_symbols 
-  in
-  ctxt2
+let add_type_token ptable id repr fixity prec =
+  Parser.add_type_token ptable 
+    id (Lib.get_option repr (Ident.name_of id)) fixity prec 
 
-let ppinfo () = Printer.empty_ppinfo()
+let add_token ptable id repr fixity prec =
+  Parser.add_token ptable 
+    id (Lib.get_option repr (Ident.name_of id)) fixity prec 
+
+let type_symbols =
+  [
+    (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
+  ]
+and term_symbols = 
+  [
+    (Lterm.notid, negation_pprec.Printer.prec, 
+     negation_pprec.Printer.fixity, 
+     Some "not");
+    (Lterm.notid, negation_pprec.Printer.prec, 
+     negation_pprec.Printer.fixity, 
+     Some "~");
+    (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
+    (Lterm.andid, 185, Printer.infixr, Some "and") ;
+    (Lterm.andid, 185, Printer.infixr, Some "&") ;
+    (Lterm.orid, 190, Printer.infixr, Some "or") ; 
+    (Lterm.orid, 190, Printer.infixr, Some "|") ;
+    (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
+    (Lterm.iffid, 180, Printer.infixn, Some "iff") ;
+  ]
+
+let init_bool_tokens ptable = 
+  let ptable1 = 
+    List.fold_left
+      (fun infa (id, p, f, r) -> add_type_token infa id r f p)
+      ptable type_symbols 
+  in
+  let ptable2 = 
+    List.fold_left 
+      (fun infa (id, p, f, r) ->  add_token infa id r f p)
+      ptable1 term_symbols 
+  in 
+  ptable2
+
+let init_bool_ppinfo ppinfo =
+  let ppinfo1 = 
+    List.fold_left
+      (fun infa (id, p, f, r) ->
+        Printer.add_type_info infa id p f r)
+      ppinfo type_symbols 
+  in
+  let ppinfo2 = 
+    List.fold_left 
+      (fun infa (id, p, f, r) ->  
+        Printer.add_term_info infa id p f r)
+      ppinfo1 term_symbols 
+  in 
+  ppinfo2
 
 (** {7 OCaml Quotations support} *)
+
+let basethy_context =
+  let ctxt0 = Context.empty() in
+  let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
+  let ptbl2 = init_bool_parsers ptbl1 in
+  let ptbl3 = init_bool_tokens ptbl2 in
+  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
+  let ppinf0 = Context.ppinfo ctxt1 in
+  let ppinf1 = init_bool_ppinfo ppinf0 in
+  Context.set_ppinfo ctxt1 ppinf1
 
 let quote_context =
   let ctxt0 = Context.empty() in
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
-  let ctxt1 = Context.set_parsers ctxt0 ptbl2 in
-  init_bool_pp ctxt1
+  let ptbl3 = init_bool_tokens ptbl2 in
+  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
+  let ppinf0 = Context.ppinfo ctxt1 in
+  let ppinf1 = init_bool_ppinfo ppinf0 in
+  Context.set_ppinfo ctxt1 ppinf1
 
+let ppinfo () = Context.ppinfo quote_context
 
 (** Parse a string as a term, resolving short names and symbols. *)
 let read str = Context.NewPP.read quote_context str

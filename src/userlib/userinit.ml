@@ -42,9 +42,15 @@ let init_context st =
 let init_scope st = 
   set_scope st (Default.scope())
 let init_ppinfo st = 
-  set_ppinfo st (BoolPP.init_bool_printers (Default.printers()))
+  let ppinf0 = BoolPP.init_bool_printers (Default.printers()) in
+  let ppinf1 = BoolPP.init_bool_ppinfo ppinf0 in 
+  set_ppinfo st ppinf1
+
 let init_parsers st = 
-  set_parsers st (BoolPP.init_bool_parsers (Parser.init ()))
+  let ptable0 = BoolPP.init_bool_parsers (Parser.init ()) in 
+  let ptable1 = BoolPP.init_bool_tokens (Parser.init ()) in 
+  set_parsers st ptable1
+
 let init_simpset st = 
   set_simpset st (Default.simpset())
 let init_proofstack st = 
@@ -58,7 +64,7 @@ let init () =
   let st = 
     List.fold_left (fun a f -> f a) (State.empty())
       [init_context; init_scope;
-       init_ppinfo; init_parsers;
+       init_ppinfo; init_parsers; 
        init_simpset; init_proofstack;
        init_base_thy_builder]
   in

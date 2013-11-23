@@ -131,17 +131,6 @@ let def_astexpander str =
   | _ -> <:expr@here<$str:str$>>
 
 
-(* OCaml-3.08 version
-let pattexpander str =
-  let loc=(0, 0)
-  in 
-  match check_string str with 
-    (Type, nstr) -> 
-      <:patt<BoolPP.read_type $str:nstr$>>
-  | (Term, nstr) -> <:patt<BoolPP.Parsing.read_unchecked $str:nstr$>>
-  | (_, nstr) -> <:patt< $str:nstr$ >>
-*)
-
 let pattexpander str = failwith "Pattern expander not implemented"
 
 (* 

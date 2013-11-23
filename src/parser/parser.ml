@@ -210,18 +210,13 @@ let remove_type_token_info tbl tok =
   in
   Table.set_type_tokens tbl toks0
 
-(***
-let mk_info () = 
-  Grammars.mk_inf token_table type_token_table
-***)
-
 (*** Toplevel symbol and token functions *)
 
 let add_token tbl id sym fx pr=
   (* lexer information *)
   let tbl0 = add_symbol tbl sym (Sym (OTHER sym)) in
   (* parser information *)
-  add_token_info tbl0 (Sym(OTHER sym)) (Some(Ident.mk_name sym, fx, pr))
+  add_token_info tbl0 (Sym(OTHER sym)) (Some(id, fx, pr))
 
 let remove_token tbl sym =
   let tbl0 = remove_symbol tbl sym in
