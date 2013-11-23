@@ -58,8 +58,16 @@ let build_fn
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   if (thyname = Lterm.base_thy)
-  then Context.Thys.theories (BaseTheory.builder ctxt)
+  then 
+    begin
+      let ctxt1 = BaseTheory.builder ~save:true ctxt in
+      let st1 = Userstate.set_context (Userstate.state()) ctxt1 in
+      Context.thydb (Userstate.context st1)
+    end
+  else build_fn ctxt db thyname
+(*
   else raise (Failure ("Thyloader.default_load_fn("^thyname^")"))
+*)
 
 let default_load_fn 
     (ctxt: Context.t) (file_data: Thydb.Loader.info) =
@@ -74,7 +82,7 @@ let default_loader ctxt =
   Thydb.Loader.mk_data 
     (default_thy_fn ctxt)
     (default_load_fn ctxt)
-    (build_fn ctxt)
+    (default_build_fn ctxt)
 
 let load_file fname = (get_load_file()) fname
 let script_file ?(silent=false) fname = 
