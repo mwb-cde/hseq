@@ -71,17 +71,26 @@ val choice_printer:
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the choice operator. *)
 
+type symbol = (Ident.t * int * Printer.fixity * string option)
+
+val basethy_type_symbols: symbol list
+val basethy_term_symbols: symbol list
+val quote_type_symbols: symbol list
+val quote_term_symbols: symbol list
+
 val init_bool_parsers: Parser.Table.t -> Parser.Table.t
 val init_bool_printers: Printer.ppinfo -> Printer.ppinfo
-val init_bool_ppinfo: Printer.ppinfo -> Printer.ppinfo
-val init_bool_tokens: Parser.Table.t -> Parser.Table.t
+val init_bool_ppinfo: 
+  Printer.ppinfo -> ((symbol list) * (symbol list)) -> Printer.ppinfo
+val init_bool_tokens: 
+  Parser.Table.t -> ((symbol list) * (symbol list)) -> Parser.Table.t
 
 (** {7 Minimal printer and parser information} *)
 val ppinfo: unit -> Printer.ppinfo
 
 (** {7 OCaml Quotations support} *)
 
-val basethy_context: Context.t
+val basethy_context: unit -> Context.t
 val quote_context: Context.t
 val read: string -> Basic.term
 (** Parse a string as a term, resolving short names and

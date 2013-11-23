@@ -43,12 +43,20 @@ let init_scope st =
   set_scope st (Default.scope())
 let init_ppinfo st = 
   let ppinf0 = BoolPP.init_bool_printers (Default.printers()) in
-  let ppinf1 = BoolPP.init_bool_ppinfo ppinf0 in 
+  let ppinf1 = 
+    BoolPP.init_bool_ppinfo 
+      ppinf0 
+      (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols) 
+  in 
   set_ppinfo st ppinf1
 
 let init_parsers st = 
   let ptable0 = BoolPP.init_bool_parsers (Parser.init ()) in 
-  let ptable1 = BoolPP.init_bool_tokens (Parser.init ()) in 
+  let ptable1 = 
+    BoolPP.init_bool_tokens 
+      ptable0 
+      (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols)       
+  in 
   set_parsers st ptable1
 
 let init_simpset st = 

@@ -28,20 +28,7 @@ open Lib.Ops
     Has the minimal parser and printer information needed for the base theory.
 *)
 
-let pplist = 
-  [
-    (100, infixr, Some("->"));
-    (BoolPP.negation_pprec.Printer.prec, 
-     BoolPP.negation_pprec.Printer.fixity, 
-     Some "~");
-    (200, infixl, (Some "=")) ;
-    (185, infixr, Some "and") ;
-    (190, infixr, Some "or") ;
-    (195, infixr, Some "=>") ;
-    (180, infixn, Some "iff") ;
-  ];;
-
-let context() = BoolPP.quote_context
+let context() = BoolPP.basethy_context()
 
 (*** A minimal base theory ***)
 
@@ -50,9 +37,9 @@ let read ctxt x = Commands.read ~ctxt:ctxt x
 let read_defn ctxt x = Commands.read_defn ~ctxt:ctxt x
 let name_of = Ident.name_of
 
-let builder ?(save=false) ctxt0 =
+let builder ?(save=false) _ =
   begin
-    let ctxt = BoolPP.basethy_context in
+    let ctxt = BoolPP.basethy_context() in
     let ctxt1 = begin_theory ctxt Lterm.base_thy []
     in
     (** Types *)

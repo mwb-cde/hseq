@@ -21,6 +21,8 @@
 
 (*** Printer-Parser for Boolean functions. ***)
 
+type symbol = Ident.t * int * Printer.fixity * (string option)
+
 (** Printer for negation. Prints [ << base.not x >> ] as [~x] rather
     than [~ x].
 *)
@@ -221,11 +223,31 @@ let add_token ptable id repr fixity prec =
   Parser.add_token ptable 
     id (Lib.get_option repr (Ident.name_of id)) fixity prec 
 
-let type_symbols =
+let basethy_type_symbols =
+  [
+(*
+    (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
+*)
+  ]
+and basethy_term_symbols = 
+  [
+(*
+    (Lterm.notid, negation_pprec.Printer.prec, 
+     negation_pprec.Printer.fixity, 
+     Some "~");
+    (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
+    (Lterm.andid, 185, Printer.infixr, Some "&") ;
+    (Lterm.orid, 190, Printer.infixr, Some "|") ;
+    (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
+    (Lterm.iffid, 180, Printer.infixn, Some "<=>") ;
+*)
+  ]
+
+let quote_type_symbols =
   [
     (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
   ]
-and term_symbols = 
+and quote_term_symbols = 
   [
     (Lterm.notid, negation_pprec.Printer.prec, 
      negation_pprec.Printer.fixity, 
@@ -242,54 +264,59 @@ and term_symbols =
     (Lterm.iffid, 180, Printer.infixn, Some "iff") ;
   ]
 
-let init_bool_tokens ptable = 
+let init_bool_tokens ptable (tysyms, trmsyms) = 
   let ptable1 = 
     List.fold_left
       (fun infa (id, p, f, r) -> add_type_token infa id r f p)
-      ptable type_symbols 
+      ptable tysyms
   in
   let ptable2 = 
     List.fold_left 
       (fun infa (id, p, f, r) ->  add_token infa id r f p)
-      ptable1 term_symbols 
+      ptable1 trmsyms
   in 
   ptable2
 
-let init_bool_ppinfo ppinfo =
+let init_bool_ppinfo ppinfo (tysyms, trmsyms) =
   let ppinfo1 = 
     List.fold_left
       (fun infa (id, p, f, r) ->
         Printer.add_type_info infa id p f r)
-      ppinfo type_symbols 
+      ppinfo tysyms
   in
   let ppinfo2 = 
     List.fold_left 
       (fun infa (id, p, f, r) ->  
         Printer.add_term_info infa id p f r)
-      ppinfo1 term_symbols 
+      ppinfo1 trmsyms
   in 
   ppinfo2
 
 (** {7 OCaml Quotations support} *)
 
-let basethy_context =
+let basethy_context () =
+  let syms = (basethy_type_symbols, basethy_term_symbols) in
   let ctxt0 = Context.empty() in
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
-  let ptbl3 = init_bool_tokens ptbl2 in
+  let ptbl3 = init_bool_tokens ptbl2 syms in
   let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
+  ctxt1
+(*
   let ppinf0 = Context.ppinfo ctxt1 in
-  let ppinf1 = init_bool_ppinfo ppinf0 in
-  Context.set_ppinfo ctxt1 ppinf1
+  let ppinf1 = init_bool_ppinfo ppinf0 syms in 
+  Context.set_ppinfo ctxt1 ppinf0
+*)
 
 let quote_context =
+  let syms = (quote_type_symbols, quote_term_symbols) in
   let ctxt0 = Context.empty() in
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
-  let ptbl3 = init_bool_tokens ptbl2 in
+  let ptbl3 = init_bool_tokens ptbl2 syms in
   let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
   let ppinf0 = Context.ppinfo ctxt1 in
-  let ppinf1 = init_bool_ppinfo ppinf0 in
+  let ppinf1 = init_bool_ppinfo ppinf0 syms in
   Context.set_ppinfo ctxt1 ppinf1
 
 let ppinfo () = Context.ppinfo quote_context
