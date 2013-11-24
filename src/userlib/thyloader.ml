@@ -57,6 +57,7 @@ let build_fn
 
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+  Report.report ("Thyloader.default_build_fn("^thyname^")");
   if (thyname = Lterm.base_thy)
   then 
     begin
@@ -65,18 +66,18 @@ let default_build_fn
       Context.thydb (Userstate.context st1)
     end
   else build_fn ctxt db thyname
-(*
-  else raise (Failure ("Thyloader.default_load_fn("^thyname^")"))
-*)
 
 let default_load_fn 
     (ctxt: Context.t) (file_data: Thydb.Loader.info) =
+  Report.report 
+    ("Thyloader.default_load_fn("^(file_data.Thydb.Loader.name)^")");
   Context.Files.load_thy_file ctxt file_data
 
 let default_thy_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+  Report.report 
+    ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
   ()
-
 
 let default_loader ctxt = 
   Thydb.Loader.mk_data 

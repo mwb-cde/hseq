@@ -54,7 +54,8 @@ type thy =
       defns: (id_record) Tree.t;
       typs: (Gtypes.typedef_record) Tree.t;
       type_pps: (string * Printer.record) list;
-      id_pps: (string * (Printer.record * sym_pos)) list
+      id_pps: (string * (Printer.record * sym_pos)) list;
+      pp_syms: (string * string) list;
     }
 
 type contents=
@@ -70,7 +71,8 @@ type contents=
       cdefns: (string * id_record) list;
       ctyps: (string * Gtypes.typedef_record) list;
       ctype_pps: (string * Printer.record) list;
-      cid_pps: (string * (Printer.record * sym_pos)) list 
+      cid_pps: (string * (Printer.record * sym_pos)) list;
+      cpp_syms: (string * string) list;
     }
 
 let get_date thy = thy.date
@@ -90,7 +92,8 @@ let mk_thy n ps =
       defns = Tree.nil;
       typs = Tree.nil;
       type_pps = [];
-      id_pps = []  
+      id_pps = [];
+      pp_syms = [];
     }
   in 
   set_date thy
@@ -117,7 +120,8 @@ let contents thy =
     cdefns = flatten_list (Tree.to_list thy.defns);
     ctyps = flatten_list (Tree.to_list thy.typs);
     ctype_pps = thy.type_pps;
-    cid_pps = thy.id_pps
+    cid_pps = thy.id_pps;
+    cpp_syms = thy.pp_syms;
   }
 
 (*** Basic Theory Operations ***)
@@ -332,6 +336,13 @@ let add_decln_rec n ty props thy =
 
 (*** Printer-Parser records ***)
 
+let get_symbols thy = thy.pp_syms
+let set_symbols thy ls = { thy with pp_syms = ls }
+let add_symbol thy p = { thy with pp_syms = (p::(get_symbols thy)) }
+
+let get_id_pps thy = thy.id_pps
+let set_id_pps thy x = { thy with id_pps = x }
+
 let get_id_pps thy = thy.id_pps
 let set_id_pps thy x = { thy with id_pps = x }
 
@@ -446,7 +457,8 @@ type saved_thy =
       sdefns: (string * id_save_record) list;
       stypes: (string * Gtypes.stypedef_record) list;
       stype_pps: (string * Printer.record) list;
-      sid_pps: (string * (Printer.record * sym_pos)) list
+      sid_pps: (string * (Printer.record * sym_pos)) list;
+      spp_syms: (string * string) list;
     }
 
 let saved_name sthy = sthy.sname
@@ -512,6 +524,7 @@ let from_saved scp sthy =
       Tree.nil tydefs_list
   and ntype_pps = sthy.stype_pps
   and nid_pps = sthy.sid_pps
+  and npp_syms = sthy.spp_syms
   in 
   {
     thy with
@@ -524,7 +537,8 @@ let from_saved scp sthy =
       defns = defs;
       typs = tydefs_table;
       type_pps = ntype_pps;
-      id_pps = nid_pps
+      id_pps = nid_pps;
+      pp_syms = npp_syms;
   }
 
 (*** Primitive input/output of theories ***)
@@ -539,14 +553,15 @@ let output_theory oc thy =
   and stypes = mk_save Gtypes.to_save_rec (tree_to_list thy.typs)
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
+  and spp_syms = thy.pp_syms
   in 
   output_value oc 
     (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
-     saxs, sthms, sdefs, stypes, styp_pps, sid_pps)
+     saxs, sthms, sdefs, stypes, styp_pps, sid_pps, spp_syms)
 
 let input_theory ic = 
   let (n, prot, tim, prnts, lfls, saxs, sthms, 
-       sdefs, stys, ntype_pps, nid_pps) = input_value ic 
+       sdefs, stys, ntype_pps, nid_pps, npp_syms) = input_value ic 
   in 
   { 
     sname = n;
@@ -559,7 +574,8 @@ let input_theory ic =
     sdefns = sdefs;
     stypes = stys;
     stype_pps = ntype_pps;
-    sid_pps = nid_pps
+    sid_pps = nid_pps;
+    spp_syms = npp_syms;
   }
 
 (*** Toplevel input/output of theories ***)
@@ -775,6 +791,15 @@ let print_type_pps n pps =
      (fun _ -> ())) sorted_pps;
   Format.printf "@]@,"
 
+let print_pp_syms n pps = 
+  let print_sym (s, t) = Format.printf "\"%s\":\"%s\"" s t in
+  begin
+    print_section n;
+    Format.printf "@[<v>";
+    Printer.print_list (print_sym, (fun _ -> Format.printf "@ ")) pps;
+    Format.printf "@]@,"
+  end
+
 let print ppstate thy = 
   let content = contents thy 
   in 
@@ -800,6 +825,12 @@ let print ppstate thy =
       | [] -> ()
       | _ -> 
         print_term_pps "Term printer/parser information" content.cid_pps
+  end;
+  begin
+    match content.cpp_syms with 
+      | [] -> ()
+      | _ -> 
+        print_pp_syms "Parser symbols" content.cpp_syms
   end;
   Format.printf "@[-------------@]@,";
   Format.printf "@]"

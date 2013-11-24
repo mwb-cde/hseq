@@ -54,13 +54,12 @@ struct
     and ccb_tok = Sym(OTHER ccb_sym)
     in 
     let wrapper t = 
-      let id_term = Pterm.mk_ident set_id
-      in 
+      let id_term = Pterm.mk_ident set_id in 
       Pterm.mk_app id_term t
     in 
     let colon = Sym(COLON)
     in 
-    let set_body inf inp =
+    let set_body (inf: Grammars.parser_info) inp =
       (((((id_type_opt (short_id id) inf)
 	  -- (?$ colon))
 	 >> 
@@ -79,7 +78,7 @@ struct
 	     (fun st elt -> Pterm.mk_fun add_id [elt; st])
 	     (empty_term()) ts))      
     in 
-    let main_parser inf inp = 
+    let main_parser (inf: Grammars.parser_info) inp = 
       (seq
 	 [?$ ocb_tok;
 	  (optional 
@@ -103,7 +102,6 @@ struct
     let ptable0 = Userstate.Access.parsers () in
     let ptable1 =
       Parser.add_symbol ptable0 ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym))
-        
     in 
     let ptable2 = 
       Parser.add_symbol ptable1 ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym)) 

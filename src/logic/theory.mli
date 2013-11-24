@@ -108,8 +108,10 @@ type contents =
       (** Type definitions and declarations. *)
       ctype_pps: (string * Printer.record) list;
       (** Type printer and parser information. *)
-      cid_pps: (string * (Printer.record * sym_pos)) list 
-    (** Term printer and parser information. *)
+      cid_pps: (string * (Printer.record * sym_pos)) list;
+      (** Term printer and parser information. *)
+      cpp_syms: (string * string) list;
+    (** Lexer symbols and their matching token. *)
     }
 
 (** {7 Basic Theory Operations} *)
@@ -226,6 +228,20 @@ val remove_type_pp_rec: string -> thy -> thy
 (** Remove type Printer-Parser record from a theory. *)
 val get_type_pplist: thy -> (Ident.t * Printer.record) list
 (** Get all type Printer-Parser records of a theory. *)
+
+val get_symbols: thy -> (string * string) list
+(** Get the lexer symbols for the theory. For each pair [(str, tok)], [str] is
+    the string to match and [Sym(OTHER(tok))] is the token that the lexer will
+    return for [str].
+*)
+val set_symbols: thy -> (string * string) list -> thy
+(** Set the lexer symbols for the theory. For each pair [(str, tok)], [str] is
+    the string to match and [Sym(OTHER(tok))] is the token that the lexer will
+    return for [str].
+*)
+val add_symbol: thy -> (string * string) -> thy
+(** Add a lexer symbol for the theory. *)
+
 
 (** {5 Theory Storage} 
 

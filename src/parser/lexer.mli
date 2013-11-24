@@ -192,7 +192,7 @@ val is_special : char -> bool
 val is_special_alpha : char -> bool
 (** [is_special_alpha c]: [c] is a special alpha-numeric character. *)
 val is_dot : char  -> bool
-(** [is_doc c]: character [c] is a dot. *)
+(** [is_dot c]: character [c] is a dot. *)
 val is_prime : char -> bool
 (** [is_prime c]: character [c] is a prime ("'") *)
 

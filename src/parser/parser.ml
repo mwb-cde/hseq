@@ -71,17 +71,19 @@ open Lterm
 type symbol_table = Lexer.symtable
 
 let core_symbols = 
-  [(".", Sym DOT); 
-   ("(", Sym ORB);
-   (")", Sym CRB); 
-   (",", Sym comma_sym);
-   ("'", Sym PRIME);
-   (":", Sym COLON);
-   ("true", BOOL true); ("false", BOOL false);
-   ("!", Key ALL); ("all", Key ALL); 
-   ("forall", Key ALL);
-   ("?", Key EX); ("exists", Key EX);
-   ("%", Key LAM); "lambda", Key LAM]
+  [
+    (".", Sym DOT); 
+    ("(", Sym ORB);
+    (")", Sym CRB); 
+    (",", Sym comma_sym);
+    ("'", Sym PRIME);
+    (":", Sym COLON);
+    ("true", BOOL true); ("false", BOOL false);
+    ("!", Key ALL); ("all", Key ALL); 
+    ("forall", Key ALL);
+    ("?", Key EX); ("exists", Key EX);
+    ("%", Key LAM); "lambda", Key LAM
+  ]
 
 let default_symtable_size = 51
 let mk_symtable sz = Lexer.mk_symtable sz

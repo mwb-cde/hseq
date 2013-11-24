@@ -178,8 +178,7 @@
     else
       begin
         if SymbolTree.mem tbl s
-        then 
-          (ls, tbl)
+        then      (ls, tbl)
         else
           begin 
 	    (add_char_info (String.get s 0) sz ls,
@@ -206,7 +205,7 @@
       match ls with
 	[] -> raise Not_found
       |	(sz, nm)::xs ->
-	  if(sz>str_sz)
+	  if (sz>str_sz)
 	  then lookup_aux xs
 	  else
 	  try
@@ -509,7 +508,6 @@ let rec lex symtable str=
   in 
     if rslt then tok
     else raise (Lexing (0, 0))
-
 
 (**
    scan symtab strm:
