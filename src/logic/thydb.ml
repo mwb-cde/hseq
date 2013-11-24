@@ -546,6 +546,14 @@ let get_term_pplist th tdb =
   in
   quick_find get_aux th tdb
 
+let add_pp_symbol sym tdb = 
+  let nthy = Theory.add_symbol (current tdb) sym in
+  update_current tdb nthy
+
+let get_pp_symbols th tdb = 
+  let get_aux cur = Theory.get_symbols cur in
+  quick_find get_aux th tdb
+
 (* Files *)
 
 let add_file (thyname: string) (f: string) thdb = 

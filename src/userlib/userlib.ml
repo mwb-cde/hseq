@@ -186,6 +186,12 @@ let before_pos s = Lib.Before (read_identifier s)
 let after_pos s = Lib.After (read_identifier s)
 let at_pos s = Lib.Level (read_identifier s)
 
+let add_symbol str sym = 
+  let nctxt = 
+    Commands.add_symbol (Global.context ()) str sym
+  in 
+  Global.set_context nctxt
+
 let add_term_pp str ?(pos=Lib.First) pr fx sym = 
   let nctxt = 
     Commands.add_term_pp (Global.context ())

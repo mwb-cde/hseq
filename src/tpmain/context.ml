@@ -453,6 +453,12 @@ struct
     set_parsers ctxt 
       (Parser.remove_overload (parsers ctxt) sym id)
 
+  (** Lexer symbols *)
+  let add_pp_symbol ctxt str sym =
+    let tok = Lexer.Sym (Lexer.OTHER sym) in
+    set_parsers ctxt 
+      (Parser.add_symbol (parsers ctxt) str tok)
+
   (** Functions to add PP information when a theory is loaded *)
 
   let add_id_record ctxt id rcrd =

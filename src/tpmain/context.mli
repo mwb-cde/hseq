@@ -469,6 +469,9 @@ sig
   val remove_type_printer: t -> Ident.t -> t
   (** Remove printer for types *)
 
+  (** {7 Lexer symbols} *)
+  val add_pp_symbol: t -> string -> string -> t
+
   (** {7 Overloading} *)
 
   val overload_lookup:

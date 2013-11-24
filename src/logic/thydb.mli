@@ -285,6 +285,12 @@ val get_term_pplist:
     with name [n].
 *)
 
+val add_pp_symbol: (string * string) -> thydb -> thydb
+(** [add_pp_symbol (str, tok) db]: Add a symbol to the current theory *)
+
+val get_pp_symbols: string -> thydb -> (string * string) list
+(**[get_pp_symbols th db]: Get the PP symbols for theory [th] *)
+
 (** {5 Files } *)
 
 val add_file: string -> string -> thydb -> thydb

@@ -174,6 +174,11 @@ val remove_overload: Context.t -> string -> Ident.t -> Context.t
     [id] for [sym]. (Experimental.)
 *)
 
+val add_symbol: Context.t -> string -> string -> Context.t
+(** [add_symbol ctxt sym tok]: Add symbol [sym], as lexer token [tok] to the
+    current context.
+*)
+
 (** {7 Toplevel Printer and Parser information functions} *)
 
 val add_type_pp: 

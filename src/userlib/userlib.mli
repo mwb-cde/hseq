@@ -121,6 +121,9 @@ val before_pos: string -> Theory.sym_pos
 val after_pos: string -> Theory.sym_pos
 val at_pos: string -> Theory.sym_pos
 
+val add_symbol: string -> string -> unit
+(** [add_symbol sym tok]: Add symbol [sym] to produce lexical token [tok] *)
+
 val add_term_pp: 
   string 
   -> ?pos:Theory.sym_pos

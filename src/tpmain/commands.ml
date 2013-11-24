@@ -181,6 +181,13 @@ let remove_type_pp_rec ctxt id =
 
 let get_type_pp_rec ctxt id = Context.NewPP.get_type_pp ctxt id 
 
+let add_symbol ctxt str sym = 
+  let ctxt1 = 
+    Context.Thys.set_theories ctxt
+      (Thydb.add_pp_symbol (str, sym) (Context.Thys.theories ctxt))
+  in
+  Context.NewPP.add_pp_symbol ctxt1 str sym
+
 (*** Terms ***)
 
 let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
