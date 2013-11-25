@@ -48,9 +48,19 @@ val default_build_fn:
 val build_fn: Context.t -> Thydb.thydb -> string -> Thydb.thydb
 val default_loader: Context.t -> Thydb.Loader.data
 
+val load_file: string -> unit
+val script_file: ?silent:bool -> string -> unit
+
+val set_file_handlers: Context.t -> Context.t
 
 (** {5 Debugging} *)
 val null_thy_fn: 
   Context.t -> Thydb.thydb -> Theory.contents -> unit
 val null_load_file: string -> unit
 val null_use_file: ?silent:bool -> string -> unit
+
+(**
+val inc_canary: unit -> unit
+val canary: unit -> int
+val set_canary: int -> unit
+**)

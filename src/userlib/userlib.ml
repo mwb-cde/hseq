@@ -252,9 +252,14 @@ let parents ps =
   let nctxt = Commands.parents (Global.context ()) ps in
   Global.set_context nctxt
 
-let add_file ?use n = 
-  let nctxt = Commands.add_file (Global.context ()) ?use:use n in
-  Global.set_context nctxt
+let add_file ?(use=false) n = 
+  let nctxt = Commands.add_file (Global.context ()) n in
+  begin
+    Global.set_context nctxt;
+    if use
+    then Context.Files.load_use_file (Global.context()) n
+    else ()
+  end
 
 let remove_file n = 
   let nctxt = Commands.remove_file (Global.context ()) n in

@@ -547,3 +547,7 @@ sig
   val catch_parse_error: (string -> 'a) -> string -> 'a
 
 end
+
+(*
+val find_term_parser: string -> Parser.Table.t -> unit
+*)

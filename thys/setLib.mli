@@ -65,12 +65,23 @@ module SetPP:
       val ocb_sym: string
       val ccb_sym: string
 
+      val main_parser: 
+	(Grammars.parser_info -> Pterm.t Parser.phrase)
+
+      val set_list: 
+	(Grammars.parser_info -> Pterm.t Parser.phrase)
+
+      val set_body: 
+	(Grammars.parser_info -> Pterm.t Parser.phrase)
+
       val set_parser: 
-	  unit 
-	-> (Grammars.parser_info -> Pterm.t Parser.phrase)
+	(Grammars.parser_info -> Pterm.t Parser.phrase)
       val set_printer : 
 	  unit 
 	-> Printer.ppinfo -> (Printer.fixity * int)
 	  -> (Basic.term * Basic.term list) Printer.printer
 
+      val init_set_parser : unit -> unit
+      val init_set_printer : unit -> unit
 end
+

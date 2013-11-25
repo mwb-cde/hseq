@@ -140,16 +140,13 @@ let parents ctxt ns =
   in 
   Context.Thys.set_theories ctxt db1
 
-let add_file ctxt ?(use=false) f =
+let add_file ctxt f =
   let db0 = Context.Thys.theories ctxt in
   let db1 = Thydb.add_file (curr_theory_name ctxt) f db0 in
   let ctxt1 = Context.Thys.set_theories ctxt db1 
-  in
-  (if use
-   then Context.Files.load_use_file ctxt f  
-   else ());
-  ctxt1
-    
+  in 
+  ctxt1 
+
 let remove_file ctxt f = 
   let db0 = Context.Thys.theories ctxt in
   let db1 = Thydb.remove_file f (curr_theory_name ctxt) db0 in

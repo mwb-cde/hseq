@@ -119,10 +119,9 @@ val parents: Context.t -> string list -> Context.t
     necessary.
 *)
 
-val add_file: Context.t -> ?use:bool -> string -> Context.t
-(** [add_file ?(use=false) f]: Add file [f] to the list to be
-    loaded/used when the theory is loaded. If [use=true] then also
-    load/use [f] immediately.
+val add_file: Context.t -> string -> Context.t
+(** [add_file f]: Add file [f] to the list to be loaded/used when the theory is
+    loaded. 
 
     A file is loaded if it is a byte-code library (with suffix .cmo)
     and used otherwise (see {!Global.Files.load_use_file}).

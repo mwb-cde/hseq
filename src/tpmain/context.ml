@@ -29,9 +29,9 @@ struct
 
   (** {6 File handling} *)
 
-  let load f = Report.warning ("Failed to load file "^f)
-  let use ?silent f = Report.warning ("Failed to use file "^f)
-  let build ?silent f = raise (Failure("Can't build theory "^f))
+  let load f = Report.warning ("Context.load: Failed to load file "^f)
+  let use ?silent f = Report.warning ("Context.use: Failed to use file "^f)
+  let build ?silent f = raise (Failure("Context.build: Can't build theory "^f))
 
   (** {6 Theories} *)
 
@@ -704,14 +704,14 @@ struct
       load_use_theory_files;    (* load files *)
     ]
 
-  let load_functions = ref default_load_functions
-  let add_load_fn f = load_functions := (f::!load_functions)
-  let init_load_functions () = 
-    load_functions := default_load_functions
-
-  (** [on_load_thy]: The toplevel function that is passed a newly
-      loaded theory. This just passes the theory to the functions in
-      [load_functions].  *)
-  let on_load_thy db th =
-    List.iter (fun f -> f (empty()) th) (List.rev !load_functions)
 end
+
+(***
+let find_term_parser n ptable =
+  let plist = Parser.Table.term_parsers ptable in
+  if List.mem_assoc n plist
+  then
+    Report.report ("find_term_parser("^n^"): present")
+  else
+    Report.report ("find_term_parser("^n^"): missing")
+***)

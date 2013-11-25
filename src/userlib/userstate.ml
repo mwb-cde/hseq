@@ -83,6 +83,9 @@ struct
 
     let parsers st = Context.parsers (context st)
     let set_parsers st pp = 
+(*
+      Report.report "Userstate.Global.set_parsers";
+*)
       set_context st (Context.set_parsers (context st) pp)
 
     let simpset st = st.simpset_f
@@ -237,3 +240,4 @@ let init_proofstack st =
   set_proofstack st (Default.proofstack())
 
 let init_base_thy_builder st = st
+

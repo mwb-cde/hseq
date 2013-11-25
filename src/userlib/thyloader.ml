@@ -57,7 +57,9 @@ let build_fn
 
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+(*
   Report.report ("Thyloader.default_build_fn("^thyname^")");
+*)
   if (thyname = Lterm.base_thy)
   then 
     begin
@@ -69,14 +71,18 @@ let default_build_fn
 
 let default_load_fn 
     (ctxt: Context.t) (file_data: Thydb.Loader.info) =
+(*
   Report.report 
     ("Thyloader.default_load_fn("^(file_data.Thydb.Loader.name)^")");
+*)
   Context.Files.load_thy_file ctxt file_data
 
 let default_thy_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+(*
   Report.report 
     ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
+*)
   ()
 
 let default_loader ctxt = 
@@ -85,11 +91,20 @@ let default_loader ctxt =
     (default_load_fn ctxt)
     (default_build_fn ctxt)
 
-let load_file fname = (get_load_file()) fname
+let load_file fname = 
+(*
+  Report.report ("Thyloader.load_file("^fname^")");
+*)
+  (get_load_file()) fname
 let script_file ?(silent=false) fname = 
+(*
+  Report.report ("Thyloader.script_file("^fname^")");
+*)
   (get_use_file()) ~silent fname
 
 let set_file_handlers ctxt = 
   let ctxt1 = Context.set_loader ctxt load_file  in
   let ctxt2 = Context.set_scripter ctxt1 script_file in
   ctxt2
+
+

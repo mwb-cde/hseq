@@ -20,6 +20,7 @@
   ----*)
 
 open HSeq
+open HSeq.Userlib
 
 let set_thy = "Set"
 let set_id = Ident.mk_long set_thy "SET"
@@ -41,7 +42,7 @@ struct
   let (ocb_sym, ccb_sym) = ("{", "}")
   let semicolon_sym = ";" 
 
-    (* Parser *)
+  (* Parser *)
   open Grammars
   open Pkit
   open Utility
@@ -49,16 +50,15 @@ struct
 
   let empty_term ()= Pterm.mk_typed_ident empty_id (set_ty())
 
-  let set_parser () =
     let ocb_tok = Sym(OTHER ocb_sym)
     and ccb_tok = Sym(OTHER ccb_sym)
-    in 
+
     let wrapper t = 
       let id_term = Pterm.mk_ident set_id in 
       Pterm.mk_app id_term t
-    in 
+
     let colon = Sym(COLON)
-    in 
+
     let set_body (inf: Grammars.parser_info) inp =
       (((((id_type_opt (short_id id) inf)
 	  -- (?$ colon))
@@ -69,15 +69,15 @@ struct
        >>
 	 (fun (xs, body) ->
 	   make_term_remove_names inf wrapper xs body)) inp
-    in 
-    let set_list inf =
+
+    let set_list inf inp =
       ((Grammars.comma_list (form inf))
        >> 
 	 (fun ts -> 
 	   List.fold_left
 	     (fun st elt -> Pterm.mk_fun add_id [elt; st])
-	     (empty_term()) ts))      
-    in 
+	     (empty_term()) ts)) inp
+
     let main_parser (inf: Grammars.parser_info) inp = 
       (seq
 	 [?$ ocb_tok;
@@ -95,11 +95,12 @@ struct
 	   match l with
 	     [_; s; _] -> s
 	   | _ -> raise (ParsingError "Not a set"))) inp
-    in 
-    main_parser
+
+  let set_parser inf inp =
+    main_parser inf inp
 
   let init_set_parser () = 
-    let ptable0 = Userstate.Access.parsers () in
+    let ptable0 = Context.parsers (Userlib.Global.context()) in
     let ptable1 =
       Parser.add_symbol ptable0 ocb_sym (Lexer.Sym(Lexer.OTHER ocb_sym))
     in 
@@ -107,12 +108,11 @@ struct
       Parser.add_symbol ptable1 ccb_sym (Lexer.Sym(Lexer.OTHER ccb_sym)) 
     in 
     let ptable3 = 
-      Parser.add_term_parser ptable2 Lib.Last "Set" (set_parser())
+      Parser.add_term_parser ptable2 Lib.Last set_thy set_parser
     in
-    Userstate.Access.set_parsers ptable3
-      
+    Global.set_context (Context.set_parsers (Global.context()) ptable3)
 
-    (* Printer *)
+  (* Printer *)
   let set_printer () = 
     let lambda_arg x = 
       match x with
@@ -181,7 +181,8 @@ struct
 
 end
 
-open SetPP;;
+open SetPP
 
-let _ = SetPP.init_set_parser();;
-let _ = SetPP.init_set_printer();;
+let _ = SetPP.init_set_printer()
+let _ = SetPP.init_set_parser()
+
