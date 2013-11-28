@@ -28,7 +28,7 @@ val context: unit -> Context.t
     printer information needed to declare terms and types. *)
 
 
-val builder: ?save:bool -> 'a -> Context.t
+val builder: ?save:bool -> Context.t -> Context.t
 (** Build the minimal theory. If [?save] is true, save the theory.
     (default: save=false)
 *)

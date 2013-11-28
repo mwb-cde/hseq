@@ -37,10 +37,13 @@ let read ctxt x = Commands.read ~ctxt:ctxt x
 let read_defn ctxt x = Commands.read_defn ~ctxt:ctxt x
 let name_of = Ident.name_of
 
-let builder ?(save=false) _ =
+let builder ?(save=false) ctxt =
   begin
-    let ctxt = BoolPP.basethy_context() in
-    let ctxt1 = begin_theory ctxt Lterm.base_thy []
+    let ctxt0 =
+      Context.set_thy_suffix 
+        (BoolPP.basethy_context()) (Context.thy_suffix ctxt)
+    in
+    let ctxt1 = begin_theory ctxt0 Lterm.base_thy []
     in
     (** Types *)
     let (ctxt2, _) = 

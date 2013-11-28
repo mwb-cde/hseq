@@ -624,10 +624,10 @@ struct
     else
       failwith "do_neg_disj_rule: Not a negated disjunction."
 
-  and single_thm_to_rules sctxt ret thm = 
+  and single_thm_to_rules sctxt rlst thm = 
     let (qs, c, a) = strip_qnt_cond (Logic.term_of thm)
     in 
-    let make x = 
+    let make ret x = 
       Lib.apply_first 
         [
           do_neg_disj_rule ret;
@@ -639,7 +639,7 @@ struct
           accept_all_thms ret
         ] x
     in 
-    try make (sctxt, thm, (qs, c, a))
+    try make rlst (sctxt, thm, (qs, c, a))
     with err -> raise (add_error "Simpconvs.single_thm_to_rules" err)
 
 end

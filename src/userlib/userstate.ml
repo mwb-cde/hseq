@@ -221,6 +221,19 @@ struct
 end
 
 
+(** Simplifier functions *)
+let simp_thy_fn _ thy = 
+  let set = Access.simpset() in
+  let set1 = Simplib.on_load (Access.context()) set thy in
+  begin
+    Report.report 
+      ("Userstate.simp_thy_fn("^thy.Theory.cname^")");
+    Access.set_simpset set1;
+    Access.context()
+  end
+
+let thy_fn_list = [simp_thy_fn]
+
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in

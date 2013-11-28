@@ -276,8 +276,10 @@ val print_set: Simpset.simpset -> unit
 (** Print a simp set. **)
 
 (** {5 Debugging} *)
+*)
 
 val has_property: 'a -> 'a list -> bool
-val thm_is_simp: ('a * Theory.thm_record) -> unit
-val def_is_simp: ('a * Theory.id_record) -> unit
-*)
+val thm_is_simp: 
+  Context.t -> Simpset.simpset -> ('a * Theory.thm_record) -> Simpset.simpset
+val def_is_simp: 
+  Context.t -> Simpset.simpset -> ('a * Theory.id_record) -> Simpset.simpset

@@ -175,9 +175,11 @@ let has_property p ps = List.mem p ps
 
 let thm_is_simp ctxt set (_, tr) =
   if has_property Theory.simp_property tr.Theory.props
-  then 
+  then add_simp ctxt set tr.Theory.thm
+(*
     try add_simp ctxt set tr.Theory.thm
     with _ -> set
+*)
   else set
 
 let def_is_simp ctxt set (_, dr) =
@@ -185,9 +187,11 @@ let def_is_simp ctxt set (_, dr) =
     | None -> set
     | Some(thm) -> 
       if has_property Theory.simp_property dr.Theory.dprops
-      then 
+      then add_simp ctxt set thm 
+(*
         try add_simp ctxt set thm 
         with _ -> set
+*)
       else set
         
 (** Function to call when a theory is loaded **)

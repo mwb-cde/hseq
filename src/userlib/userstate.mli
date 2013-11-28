@@ -168,3 +168,5 @@ sig
 (** Initialize the global proofstack *)
 end
 
+val simp_thy_fn: Context.t -> Theory.contents -> Context.t
+val thy_fn_list: (Context.t -> Theory.contents -> Context.t) list

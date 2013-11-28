@@ -373,7 +373,7 @@ let print_rule ppinfo (vars, cond, lhs, rhs, order, src) =
         Format.printf "Theorem: ";
         Logic.print_thm ppinfo thm
       | Logic.ORRThm (othm, _) -> 
-        Format.printf "Orderd theorem: ";
+        Format.printf "Ordered theorem: ";
         Logic.print_thm ppinfo othm
   end;
   Format.printf "@]"
