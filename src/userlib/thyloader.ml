@@ -42,6 +42,15 @@ let set_load_file f = Var.load_file := f
 let get_use_file() = !(Var.use_file)
 let set_use_file f = Var.use_file := f
 
+let default_thy_fn 
+    (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+  Report.report 
+    ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
+  let thy_fn_list = (Context.load_functions ctxt) in
+  let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
+  in 
+  ignore(ctxt1)
+
 let build_fn
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   let scripter = get_use_file() in
@@ -72,19 +81,9 @@ let default_load_fn
   Report.report 
     ("Thyloader.default_load_fn("^file_data.Thydb.Loader.name^")");
   Context.Files.load_thy_file ctxt file_data
-
-let default_thy_fn 
-    (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
-  Report.report 
-    ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
-  let thy_fn_list = (Context.load_functions ctxt) in
-  let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
-  in 
-  ignore(ctxt1)
-
+    
 let default_loader ctxt = 
   Thydb.Loader.mk_data 
-    (default_thy_fn ctxt)
     (default_load_fn ctxt)
     (default_build_fn ctxt)
 
@@ -93,6 +92,7 @@ let load_file fname =
   Report.report ("Thyloader.load_file("^fname^")");
 *)
   (get_load_file()) fname
+
 let script_file ?(silent=false) fname = 
 (*
   Report.report ("Thyloader.script_file("^fname^")");

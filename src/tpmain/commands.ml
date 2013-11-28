@@ -48,13 +48,15 @@ let save_theory ctxt thy  =
   Theory.save_theory thy fname
 
 let load_theory_as_cur ctxt n = 
+  Context.Files.load_theory_as_cur ctxt n
+(****
   let db = 
     Thydb.Loader.load (Context.thydb ctxt) 
       (Context.loader_data ctxt)
       (Thydb.Loader.mk_info n None None)
   in 
   Context.Thys.set_theories ctxt db
-
+***)
 let read ?ctxt (x: string) = 
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
   catch_errors (Context.ppinfo pctxt) Context.NewPP.read pctxt x
@@ -92,13 +94,8 @@ let begin_theory ctxt n parents =
       try List.append parents [(Context.Thys.get_base_name ctxt)]
       with Not_found -> parents
     in 
-    let db = Context.Thys.theories ctxt
-    and thy = Theory.mk_thy n importing
-    in
-    let db1 = 
-      Thydb.Loader.make_current db (Context.loader_data ctxt) thy
-    in 
-    Context.Thys.set_theories ctxt db1
+    let thy = Theory.mk_thy n importing in
+    Context.Files.make_current ctxt thy
 
 let end_theory ctxt ?(save=true) () = 
   if (curr_theory_name ctxt) = "" 
@@ -133,12 +130,9 @@ let close_theory ctxt =
 
 let parents ctxt ns = 
   let thy = Context.Thys.curr_theory ctxt
-  and db = Context.Thys.theories ctxt
   in 
   let thy1 = Theory.add_parents ns thy in
-  let db1 = Thydb.Loader.make_current db (Context.loader_data ctxt) thy1
-  in 
-  Context.Thys.set_theories ctxt db1
+  Context.Files.make_current ctxt thy1
 
 let add_file ctxt f =
   let db0 = Context.Thys.theories ctxt in

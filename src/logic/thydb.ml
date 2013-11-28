@@ -684,20 +684,17 @@ struct
   (*** Data needed for loading a theory. ***)
   type data = 
       {
-	thy_fn: (thydb -> Theory.contents -> unit);
-	(** Function to apply to a successfully loaded theory.  *)
 	load_fn: info -> Theory.saved_thy;
 	(** Function to find and load a theory file. *)
 	build_fn: thydb -> string -> thydb
        (** Function to build the theory if it can't be loaded. *)
       }
 
-  let mk_data tfn lfn bfn = 
-    { thy_fn = tfn; load_fn = lfn; build_fn = bfn }
+  let mk_data lfn bfn = 
+    { load_fn = lfn; build_fn = bfn }
 
   let mk_empty () = 
     { 
-      thy_fn = (fun _ _ -> ());
       load_fn = 
         (fun _ -> failwith "Thydb.Loader.mk_empty: Thydb.Loader.load_fn");
       build_fn = 
@@ -832,11 +829,14 @@ struct
     try check_aux()
     with err -> raise (add_error "Failed to build theory" [name] err)
 
+(**
   (** [apply_fn db thy_fn thy]: Apply [thy_fn] to the contents of
       theory [thy] in scope [mk_scope db]. Ignores all errors.  *)
   let apply_fn db thy_fn thy =
     try thy_fn db (Theory.contents thy) 
     with _ -> ()
+***)
+
 
   (** [check_theory info thy]: Run tests on theory.  For each theory
       [thy] named in [parents]: - Ensure that the date of [thy] is no
@@ -849,6 +849,7 @@ struct
     test_date name tyme (Theory.get_date thy);
     test_protection name info.prot (Theory.get_protection thy)
 
+(****
   module Old =
   struct
 
@@ -900,13 +901,11 @@ struct
       check_aux parents
 
 
-  (** [load_theory thdb name data]: Load the theory named [name] into
-      database [thdb]. Also load the parents of the theory and applies
-      the functions [data.thy_fn] to each loaded theory.
-
+  (** [load_theory_main thdb name data]: Load the theory named [name] into
+      database [thdb]. 
       Makes the newly loaded theory the current theory.
   *)
-    let rec load_theory thdb data info =
+    let rec load_theory_main thdb data info ret =
       let name = info.name
       and childn = info.childn
       in 
@@ -920,57 +919,63 @@ struct
         let new_info = 
           mk_full_info name (Some (Theory.get_date thy)) (Some true) childn
         in 
-        let db1 =
-	  load_parents thdb data (info_add_child new_info name)
-	    (Theory.get_parents thy)
+        let (db1, ret1) =
+	  load_parents_main thdb data (info_add_child new_info name)
+	    (Theory.get_parents thy) ret
         in 
-        set_curr db1 thy
+        (set_curr db1 thy, ret1)
       else 
         let load_attempt = Lib.try_app (load_thy info data) thdb
         in 
         match load_attempt with 
 	| None -> (** Loading from file failed, try to rebuild. *)
-	  build_thy info data thdb
+	  (build_thy info data thdb, ret)
 	| Some(saved_thy) -> 
           begin
 	    let sparents = Theory.saved_parents saved_thy
-	    and sdate = Theory.saved_date saved_thy
-	    in 
-	    let sinfo = mk_full_info name (Some sdate) (Some true) childn in 
-	    let db1 = 
-              load_parents thdb data (info_add_child sinfo name) sparents in 
+	    and sdate = Theory.saved_date saved_thy in 
+	    let sinfo = mk_full_info name (Some sdate) (Some true) childn 
+            in 
+	    let (db1, ret1) = 
+              load_parents_main 
+                thdb data (info_add_child sinfo name) sparents ret
+            in 
 	    let parents_ok = Lib.try_app (check_parents db1 sinfo) sparents
 	    in
 	    match parents_ok with
 	    | None -> (** Parents failed to load, try to rebuild **)
-	      build_thy info data thdb
+	      (build_thy info data thdb, ret1)
 	    | Some _ ->  (** Parents loaded succesfully **)
 	      let thy = Theory.from_saved (mk_scope db1) saved_thy in 
 	      let db2 = add_thy db1 thy in 
-	      let db3 = set_curr db2 thy
-	      in 
-	      apply_fn db3 data.thy_fn thy;
-	      db3
+	      (set_curr db2 thy, (Theory.contents thy)::ret1)
           end
-  (** [load_parents db data name tyme ps imports]: Load the theories
+  (** [load_parents_main db data name tyme ps imports]: Load the theories
       with names in [ps] as parents of theory named [name] into
       database [db]. Each parent must be no younger then the date
       given by [tyme].  *)
     and 
-        load_parents db bundle info ps =
+        load_parents_main db bundle info ps ret =
       let tyme = info.date
       and prot = info.prot
       and childn = info.childn
       in 
       match ps with 
-      | [] -> db
+      | [] -> (db, ret)
       | x::xs ->
-	let db1 = 
-	  load_theory db bundle 
-	    (mk_full_info x tyme prot childn)
-	in 
-	load_parents db1 bundle info xs
+	let (db1, ret1) = 
+	  load_theory_main db bundle 
+	    (mk_full_info x tyme prot childn) []
+        in
+	load_parents_main db1 bundle info xs (List.rev ret1)
+
+    let load_parents db bundle info ps = 
+      load_parents_main db bundle info ps []
+    let load_theory db bundle info = 
+      load_theory_main db bundle info []
+
   end
+****)
 
   module New =
   struct
@@ -1029,7 +1034,7 @@ struct
       with err -> add_error "Failed to load theory" [spec.name] err
 
     (** [get_loaded_thy]: Try to get an already loaded theory. *)
-    let rec get_loaded_thy loader thydb spec =
+    let rec get_loaded_thy loader thydb thylist spec =
       let thy = get_thy thydb spec.name
       in
       let tyme = Theory.get_date thy
@@ -1048,7 +1053,8 @@ struct
           (fun p -> mk_full_info p (Some tyme) (Some true) spec2.childn)
           parent_list
       in
-      let (thydb1, date1) = load_deps loader thydb tyme dep_list
+      let (thylist1, thydb1, date1) = 
+        load_deps loader thydb thylist tyme dep_list
       in
       (* Check the vilidity of the theory. *)
       let spec3 = { spec1 with date = (Some date1); prot = (Some true) }
@@ -1056,9 +1062,9 @@ struct
       check_theory spec3 thy;
       (* Done. *)
       let thydb2 = set_curr thydb1 thy in 
-      (thy, thydb2)
+      (thy::thylist1, thy, thydb2)
     (** [get_saved_thy]: Try to get a theory from the disk. *)
-    and get_saved_thy loader thydb spec =
+    and get_saved_thy loader thydb thylist spec =
       let sthy = load_thy_from_file loader thydb spec
       in
       let tyme = Theory.saved_date sthy
@@ -1077,7 +1083,8 @@ struct
           (fun p -> mk_full_info p (Some tyme) (Some true) spec2.childn)
           parent_list
       in
-      let (thydb1, date1) = load_deps loader thydb tyme dep_list
+      let (thylist1, thydb1, date1) = 
+        load_deps loader thydb thylist tyme dep_list
       in
       (* Make the theory. *)
       let scp = mk_scope thydb1 in
@@ -1090,59 +1097,61 @@ struct
       (* Update the database. *)
       let thydb2 = add_thy thydb1 thy in 
       let thydb3 = set_curr thydb2 thy in 
-      apply_fn thydb3 loader.thy_fn thy;
       (* Done. *)
-      (thy, thydb3)
+      (thy::thylist1, thy, thydb3)
     (** [load_deps]: Load a list of theories, returning the date of
         the most recent. *)
-    and load_deps loader thydb date spec_list =
+    and load_deps loader thydb thylist date spec_list =
       begin
         match spec_list with
-        | [] -> (thydb, date)
+        | [] -> (thylist, thydb, date)
         | spec::specl ->
           begin
-            let (thy, thydb1) = load_aux loader thydb spec
+            let (thylist1, thy, thydb1) = 
+              load_aux loader thydb thylist spec
             in
             let tyme = Theory.get_date thy in
             let date1 = latest_time date tyme
             in
-            load_deps loader thydb1 date1 specl
+            load_deps loader thydb1 (thy::thylist1) date1 specl
           end
       end
-    and load_aux loader thydb spec = 
+    and load_aux loader thydb thylist spec = 
       (* Check for circular importing. *)
       check_importing spec spec.name;
       (* Try to get a loaded or a saved theory. *)
       let load_attempt = 
         begin
-          match Lib.try_app (get_loaded_thy loader thydb) spec with
+          match Lib.try_app (get_loaded_thy loader thydb thylist) spec with
           | None ->
-            Lib.try_app (get_saved_thy loader thydb) spec
+            Lib.try_app (get_saved_thy loader thydb thylist) spec
           | x -> x
         end
       in
       (* Build the theory if necessary. *)
-      let (thy, thydb1) =
+      let (thylist1, thy, thydb1) =
         begin
           match load_attempt with
           | Some(x) -> x
           | None ->
               (* Failed to load the theory. Build it. *)
-            build_thy loader thydb spec
+            let thy2, thydb2 = build_thy loader thydb spec in
+            (thylist, thy2, thydb2)
         end
       in
-      (thy, thydb1)
+      (thy::thylist1, thy, thydb1)
 
     (** [load_theory thdb data spec]: Load or build theory specified
-        by [spec] and all its parents into database [thdb], applying
-        function [data.thy_fn] to each loaded theory.
+        by [spec] and all its parents into database [thdb].
 
         Makes the newly loaded theory the current theory.
+        Returns the list of loaded theories.
+
     *)
     let load_theory thdb loader thy_spec =
-      let (thy, thdb1) = load_aux loader thdb thy_spec
+      let (thylist, thy, thdb1) = load_aux loader thdb [] thy_spec 
       in
-      thdb1
+      (thdb1, thy, List.map Theory.contents thylist)
 
     (** [load thdb data spec]: Load or build theory specified by
         [spec] and all its parents into database [thdb], applying
@@ -1150,26 +1159,31 @@ struct
 
         Makes the newly loaded theory the current theory.
     *)
-    let rec load thdb data spec =
-      let thdb1 = load_theory thdb data spec in
-      let thy = get_thy thdb1 spec.name
+    let rec load_main thdb data spec ret =
+      let (thdb1, thy, thylist) = load_theory thdb data spec 
       in
-      set_current thdb1 thy
+      (set_current thdb1 thy, thylist)
+
+    let rec load thdb data spec = load_main thdb data spec []
 
     (** [load_parents db data name tyme ps imports]: Load the theories
         with names in [ps] as parents of theory named [name] into
         database [db]. Each parent must be no younger then the date
         given by [tyme].  *)
-    let rec load_parents db bundle info ps =
+    let rec load_parents_main db bundle info ps ret =
       let tyme = info.date
       and prot = info.prot
       in 
       match ps with 
-      | [] -> db
+      | [] -> (db, List.rev ret)
       | x::xs ->
-	let db1 = load db bundle (mk_info x tyme prot)
+	let (db1, ret1) = load_main db bundle (mk_info x tyme prot) ret
 	in 
-	load_parents db1 bundle info xs
+	load_parents_main db1 bundle info xs ret1
+
+    let load_parents db bundle info ps = 
+      load_parents_main db bundle info ps []
+
   end
 
   (*
@@ -1183,22 +1197,23 @@ struct
     and prot = true
     in 
     let info = info_add_child (mk_info name (Some tyme) (Some prot)) name in 
-    let db1 = New.load_parents db data info ps
+    let (db1, thylist) = New.load_parents db data info ps
     in 
-    set_current db1 thy  
+    (set_current db1 thy, thylist)
 
   let load db data info =
     let name = info.name in 
-    let db1 = New.load_theory db data info in 
-    let thy = get_thy db1 name
-    in 
-    set_current db1 thy
+    let (db1, thy, thylist) = New.load_theory db data info in 
+    (set_current db1 thy, thylist)
 
   (*
    * Debug functions
    *)
 
   let load_parents = New.load_parents
-  let load_theory = New.load_theory
+
+  let load_theory db l sp = 
+    let (db1, _, thylist) = New.load_theory db l sp in
+    (db1, thylist)
 
 end      

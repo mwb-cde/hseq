@@ -222,14 +222,14 @@ end
 
 
 (** Simplifier functions *)
-let simp_thy_fn _ thy = 
+let simp_thy_fn ctxt thy = 
   let set = Access.simpset() in
-  let set1 = Simplib.on_load (Access.context()) set thy in
+  let set1 = Simplib.on_load ctxt set thy in
   begin
     Report.report 
       ("Userstate.simp_thy_fn("^thy.Theory.cname^")");
     Access.set_simpset set1;
-    Access.context()
+    ctxt
   end
 
 let thy_fn_list = [simp_thy_fn]

@@ -359,6 +359,13 @@ sig
     script.  Files are searched for in the theory path
     [get_thy_path()].  *)
 
+  val apply_thy_fns: t -> Theory.contents list -> t
+  val load_theory_as_cur: t -> string -> t
+
+   val make_current:  t -> Theory.thy  -> t
+(** [make_current ctxt thy]: Load the parents of [thy] and make theory [thy]
+    the current theory.  *)
+
 end
 
 

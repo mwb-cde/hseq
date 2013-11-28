@@ -704,14 +704,28 @@ struct
       load_use_theory_files;    (* load files *)
     ]
 
-end
+  let apply_thy_fns ctxt thylist = 
+    let thyfns = load_functions ctxt in
+    let rthylist = List.rev thylist in
+    let apply_thy_fn fnlist (ct0: t) (thy: Theory.contents) = 
+      List.fold_left (fun (ct: t) f -> f ct thy) ct0 fnlist
+    in
+    List.fold_left (apply_thy_fn thyfns) ctxt rthylist
 
-(***
-let find_term_parser n ptable =
-  let plist = Parser.Table.term_parsers ptable in
-  if List.mem_assoc n plist
-  then
-    Report.report ("find_term_parser("^n^"): present")
-  else
-    Report.report ("find_term_parser("^n^"): missing")
-***)
+  let load_theory_as_cur ctxt n = 
+    let (db, thylist) = 
+      Thydb.Loader.load (thydb ctxt) 
+        (loader_data ctxt)
+        (Thydb.Loader.mk_info n None None) 
+    in
+    let ctxt1 = Thys.set_theories ctxt db in
+    apply_thy_fns ctxt1 thylist
+
+  let make_current ctxt thy = 
+    let db = Thys.theories ctxt in
+    let (db1, thylist) = Thydb.Loader.make_current db (loader_data ctxt) thy
+    in 
+    let ctxt1 = Thys.set_theories ctxt db1 in
+    apply_thy_fns ctxt1 thylist
+      
+end
