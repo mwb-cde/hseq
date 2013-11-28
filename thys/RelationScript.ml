@@ -80,7 +80,8 @@ let trans_closure_def =
     => (P a b)
     >>;;
 
-let tc_rules=
+
+let tc_rules =
   theorem "tc_rules"
     << 
     (!R x y: (R x y) => (TC R x y))
@@ -101,7 +102,7 @@ let tc_rules=
 	  ++ simpA []
 	  ++ (match_asm << ! x y z: X >> liftA)
 	  ++ instA [ << _x >> ; << _y >>; << _z >> ]
-	  ++ back_tac
+          ++ back_tac 
 	  ++ simp
 	]
     ];;

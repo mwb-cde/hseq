@@ -56,10 +56,6 @@ let buildall_base_name =
   Global.set_context(Context.Thys.clear_base_name (Global.context())); 
   str;;
 
-(**
-let _ = BaseTheory.builder (Context.empty())
-**)
-
 #use "0MainScript.ml";;
 
 (***

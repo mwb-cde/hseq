@@ -44,10 +44,15 @@ let mainScript_base_name =
 (** Build theory Main and the theories it depends on *)
 let _ = 
 begin_theory "Main" 
- ["Set"; "Bool"; "base"];; 
 (*
- ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];; 
+ ["Set"; "Relation"; "Bool"; "base"];; 
 *)
+(*
+ ["Relation"; "Bool"; "base"];; 
+*)
+
+ ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];; 
+
 
 
 let _ = end_theory();;

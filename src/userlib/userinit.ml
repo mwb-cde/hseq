@@ -21,7 +21,6 @@
 
 open Userstate
 
-
 (** Simplifier functions *)
 let simp_thy_fn ctxt thy = 
   let set = Userstate.Access.simpset() in
