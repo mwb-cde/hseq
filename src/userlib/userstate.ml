@@ -46,6 +46,9 @@ struct
 
   (* base_thy_builder *)
   let base_thy_builder () = (fun x -> x)
+
+  (* Theory set *)
+  let thyset() = Lib.StringSet.empty
 end
 
 (** {5 Global state} *)
@@ -57,6 +60,7 @@ struct
       simpset_f : Simpset.simpset;
       proofstack_f: Goals.ProofStack.t; 
       base_thy_builder_f: t -> t;
+      thyset_f: Lib.StringSet.t;
     }
 
     (** Initializer *)
@@ -66,6 +70,7 @@ struct
         simpset_f = Default.simpset();
         proofstack_f = Default.proofstack();
         base_thy_builder_f = Default.base_thy_builder();
+        thyset_f = Default.thyset();
       }
 
     let context st = st.context_f
@@ -99,6 +104,9 @@ struct
     let base_thy_builder st = st.base_thy_builder_f
     let set_base_thy_builder st f = 
       { st with base_thy_builder_f = f }
+
+    let thyset st = st.thyset_f
+    let set_thyset st s = { st with thyset_f = s }
 end
 
 (** {5 Variables } *)
@@ -144,6 +152,16 @@ let set_proofstack = State.set_proofstack
 let base_thy_builder = State.base_thy_builder
 let set_base_thy_builder = State.set_base_thy_builder
 
+(** Theory set *)
+let thyset = State.thyset
+let set_thyset = State.set_thyset
+
+let thyset_add st t = 
+  let set1 = Lib.StringSet.add t (thyset st) in
+  set_thyset st set1
+let thyset_mem st t =
+  Lib.StringSet.mem t (thyset st)
+
 module Access = 
 struct
   let context() = context (state())
@@ -162,9 +180,19 @@ struct
   let set_parsers pp = set_state (set_parsers (state()) pp)
   let init_parsers () = set_parsers (Default.parsers())
 
+  let thyset() = thyset (state())
+  let set_thyset s = set_state (set_thyset (state()) s)
+  let init_thyset () = set_thyset (Default.thyset())
+  let thyset_add t = 
+    let set1 = Lib.StringSet.add t (thyset ()) in
+    set_thyset set1
+  let thyset_mem t = thyset_mem (state()) t
+
   let simpset() = simpset (state())
   let set_simpset s = set_state (set_simpset (state()) s)
-  let init_simpset () = set_simpset (Default.simpset())
+  let init_simpset () = 
+    set_thyset (Default.thyset());
+    set_simpset (Default.simpset())
 
   let proofstack() = proofstack (state())
   let set_proofstack s = set_state (set_proofstack (state()) s)
@@ -221,16 +249,25 @@ struct
 end
 
 
+(** Remember loaded theories *)
+let record_thy_fn ctxt thy = 
+  let n = thy.Theory.cname in
+  Access.thyset_add n; 
+  ctxt
+
 (** Simplifier functions *)
 let simp_thy_fn ctxt thy = 
-  let set = Access.simpset() in
-  let set1 = Simplib.on_load ctxt set thy in
-  begin
-    Report.report 
-      ("Userstate.simp_thy_fn("^thy.Theory.cname^")");
-    Access.set_simpset set1;
-    ctxt
-  end
+  let thyname = thy.Theory.cname in
+  if (Access.thyset_mem thyname) then ctxt 
+  else
+    let set = Access.simpset() in
+    let set1 = Simplib.on_load ctxt set thy in
+    begin
+      Report.report 
+        ("Userstate.simp_thy_fn("^thy.Theory.cname^")");
+      Access.set_simpset set1;
+      record_thy_fn ctxt thy
+    end
 
 let thy_fn_list = [simp_thy_fn]
 
@@ -248,7 +285,8 @@ let init_ppinfo st =
 let init_parsers st = 
   set_parsers st (Default.parsers())
 let init_simpset st = 
-  set_simpset st (Default.simpset())
+  let st1 = set_thyset st (Default.thyset()) in
+  set_simpset st1 (Default.simpset())
 let init_proofstack st = 
   set_proofstack st (Default.proofstack())
 

@@ -231,6 +231,7 @@ let remove_type_pp s =
 
 (** {6 Theories} *)
 let begin_theory n ps =
+  Userstate.Access.init_simpset();
   let nctxt = Commands.begin_theory (Global.context ()) n ps in
   Global.set_context nctxt
 

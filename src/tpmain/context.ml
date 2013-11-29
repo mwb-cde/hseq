@@ -706,7 +706,17 @@ struct
 
   let apply_thy_fns ctxt thylist = 
     let thyfns = load_functions ctxt in
-    let rthylist = List.rev thylist in
+    let uthylist = 
+      begin 
+        let thyset = ((Lib.empty_env()):(string, bool)Lib.substype) in
+        List.filter 
+          (fun x -> 
+            if Lib.member (x.Theory.cname) thyset then false
+            else Lib.add (x.Theory.cname) true thyset)
+          thylist
+      end
+    in
+    let rthylist = List.rev uthylist in
     let apply_thy_fn fnlist (ct0: t) (thy: Theory.contents) = 
       List.fold_left (fun (ct: t) f -> f ct thy) ct0 fnlist
     in

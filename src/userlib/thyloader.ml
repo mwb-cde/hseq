@@ -64,6 +64,21 @@ let build_fn
     Context.thydb (Userstate.context st2)
   end
 
+let buildthy (ctxt: Context.t) (thyname: string) =
+  let saved_state = Userstate.state() in
+  let db1 = 
+    if (thyname = Lterm.base_thy)
+    then 
+      begin
+        let ctxt1 = BaseTheory.builder ~save:true ctxt in
+        let st1 = Userstate.set_context (Userstate.state()) ctxt1 in
+        Context.thydb (Userstate.context st1)
+      end
+    else build_fn ctxt (Context.thydb ctxt) thyname
+  in 
+  (Userstate.set_state saved_state; db1)
+
+
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   Report.report ("Thyloader.default_build_fn("^thyname^")");
@@ -76,11 +91,37 @@ let default_build_fn
     end
   else build_fn ctxt db thyname
 
+
+(***
+let default_build_fn 
+    (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+  Report.report ("Thyloader.default_build_fn("^thyname^")");
+  raise Not_found
+***)
+
 let default_load_fn 
     (ctxt: Context.t) (file_data: Thydb.Loader.info) =
   Report.report 
     ("Thyloader.default_load_fn("^file_data.Thydb.Loader.name^")");
   Context.Files.load_thy_file ctxt file_data
+
+(***
+let default_load_fn 
+    (ctxt: Context.t) (file_data: Thydb.Loader.info) =
+  Report.report 
+    ("Thyloader.default_load_fn("^file_data.Thydb.Loader.name^")");
+  try Context.Files.load_thy_file ctxt file_data
+  with Not_found ->
+    begin
+      begin
+        try ignore(buildthy ctxt (file_data.Thydb.Loader.name))
+        with _ -> 
+          raise (Report.error 
+            ("Failed to load or build "^file_data.Thydb.Loader.name))
+      end;
+      Context.Files.load_thy_file ctxt file_data
+    end
+***)
     
 let default_loader ctxt = 
   Thydb.Loader.mk_data 

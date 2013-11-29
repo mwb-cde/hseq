@@ -29,6 +29,7 @@ sig
   val simpset: unit -> Simpset.simpset
   val proofstack: unit -> Goals.ProofStack.t
   val base_thy_builder: unit -> unit -> unit
+  val thyset: unit -> Lib.StringSet.t
 end
 
 (** {5 Global state} *)
@@ -40,7 +41,8 @@ sig
       context_f : Context.t;
       simpset_f : Simpset.simpset;
       proofstack_f: Goals.ProofStack.t;
-      base_thy_builder_f: t -> t
+      base_thy_builder_f: t -> t;
+      thyset_f: Lib.StringSet.t;
     }
     
   val empty: unit -> t
@@ -65,6 +67,9 @@ sig
 
   val base_thy_builder: t -> (t -> t)
   val set_base_thy_builder: t -> (t -> t) -> t
+
+  val thyset: t -> Lib.StringSet.t 
+  val set_thyset: t -> Lib.StringSet.t -> t
 end
 
 val state: unit -> State.t
@@ -107,6 +112,10 @@ val base_thy_builder: State.t -> (State.t -> State.t)
 val set_base_thy_builder: State.t -> (State.t -> State.t) -> State.t
 (** Set the base theory builder *)
 
+val thyset: State.t -> Lib.StringSet.t 
+val set_thyset: State.t -> Lib.StringSet.t -> State.t
+val thyset_add: State.t -> string -> State.t
+val thyset_mem: State.t -> string -> bool
 
 val init_context: State.t -> State.t
   (** Initialize the global context *)
@@ -158,7 +167,12 @@ sig
   val set_simpset: Simpset.simpset -> unit
   (** Set the global simplifier set *)
   val init_simpset: unit -> unit
-(** Initialize the global simpset *)
+  (** Initialize the global simpset *)
+
+  val thyset: unit -> Lib.StringSet.t 
+  val set_thyset: Lib.StringSet.t -> unit
+  val thyset_add: string -> unit
+  val thyset_mem: string -> bool
 
   val proofstack: unit -> Goals.ProofStack.t
   (** The standard proofstack *)
