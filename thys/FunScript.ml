@@ -50,7 +50,7 @@ let compose_def =
 let compose_thm = 
 theorem ~simp:true "compose_thm" 
 << !f g x: ((f ++ g) x) = (f (g x)) >>
-[simp_tac [defn "compose"]];;
+[simp_tac [defn "compose"] ++ eq_tac];;
 
 let compose_assoc = 
 theorem ~simp:true "compose_assoc"
