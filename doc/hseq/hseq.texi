@@ -27,12 +27,12 @@
 @copying
 This manual is for @HSeq{}.
 
-Copyright @copyright{} 2005, M. Wahab
+Copyright @copyright{} 2005-2013, M. Wahab
 @end copying
 
 @titlepage
 @title @HSeq{} Description
-@author M. Wahab <mwb.cde@googlemail.com>
+@author M. Wahab <@email{mwb.cde@gmail.com}>
 
 @page
 @vskip 0pt plus lfill

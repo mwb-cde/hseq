@@ -1,7 +1,7 @@
 (*----
   Name: settings.ml
   Copyright M Wahab 2005-2009, 2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Author: M Wahab  <mwb.cde@gmail.com.com>
 
   This file is part of HSeq
 

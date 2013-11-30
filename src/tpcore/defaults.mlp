@@ -34,5 +34,5 @@ let basedir = BaseDir
 let libdir = LibDir
 let thydir = ThyDir
 
-let version = "Sept2010"
+let version = "Dec2013"
 
