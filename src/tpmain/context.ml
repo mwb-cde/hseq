@@ -708,7 +708,7 @@ struct
     let thyfns = load_functions ctxt in
     let uthylist = 
       begin 
-        let thyset = ((Lib.empty_env()):(string, bool)Lib.substype) in
+        let thyset = Lib.empty_env() in
         List.filter 
           (fun x -> 
             if Lib.member (x.Theory.cname) thyset then false

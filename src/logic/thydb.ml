@@ -677,8 +677,8 @@ struct
       {
 	load_fn: info -> Theory.saved_thy;
 	(** Function to find and load a theory file. *)
-	build_fn: thydb -> string -> thydb
-       (** Function to build the theory if it can't be loaded. *)
+	build_fn: thydb -> string -> (thydb * Theory.thy list)
+      (** Function to build the theory if it can't be loaded. *)
       }
 
   let mk_data lfn bfn = 
@@ -852,7 +852,7 @@ struct
         Returns the database with the newly built theory as the current
         theory.  *)
     let build_thy data thdb info = 
-      let db = 
+      let (db, thylist) = 
         try data.build_fn thdb info.name
         with err -> 
           add_error "Failed to rebuild theory" [info.name] err
@@ -869,7 +869,7 @@ struct
         check_build thdb db thy;
         let db1 = set_curr db thy
         in
-        (thy, db1)
+        (thy::thylist, thy, db1)
       in
       try build_aux()
       with err -> 
@@ -895,7 +895,7 @@ struct
       in 
       try load_aux()
       with err -> add_error "Failed to load theory" [spec.name] err
-
+        
     (** [get_loaded_thy]: Try to get an already loaded theory. *)
     let rec get_loaded_thy loader thydb thylist spec =
       let thy = get_thy thydb spec.name
@@ -998,8 +998,9 @@ struct
           | Some(x) -> x
           | None ->
               (* Failed to load the theory. Build it and try again *)
-            let thy2, thydb2 = build_thy loader thydb spec in
-            (thylist, thy2, thydb2)
+            let (thylist2, thy2, thydb2) = build_thy loader thydb spec in
+            let thylist3 = List.rev_append (List.rev thylist2) thylist in
+            (thylist3, thy2, thydb2)
         end
       in
       (thy::thylist1, thy, thydb1)

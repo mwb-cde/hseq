@@ -368,16 +368,16 @@ sig
       {
 	load_fn: info -> Theory.saved_thy;
 	(** Function to find and load a theory file. *)
-	build_fn: thydb -> string -> thydb
-      (** Function to build the theory if it can't be loaded. The
-	  function should take the database in which the theory is to
-	  be built and return the database with the new theory as the
-	  current theory.  *)
+	build_fn: thydb -> string -> (thydb * Theory.thy list)
+      (** Function to build the theory if it can't be loaded. The function
+	  should take the database in which the theory is to be built and return
+	  the database with the new theory as the current theory and the list of
+	  all theories that the newly built theory depends on.  *)
       }
 
   val mk_data: 
     (info -> Theory.saved_thy)
-    -> (thydb -> string -> thydb)
+    -> (thydb -> string -> (thydb * Theory.thy list))
     -> data
   (** Constructor for [data]. *)
 
@@ -415,7 +415,8 @@ sig
 
   module New:
   sig
-    val build_thy: data -> thydb -> info -> (Theory.thy * thydb)
+    val build_thy: 
+      data -> thydb -> info -> (Theory.thy list * Theory.thy * thydb)
     val load_aux: data -> thydb -> info -> bool -> (Theory.thy * thydb)
     val load_theory:
       thydb -> data -> info -> (thydb * (Theory.contents list))

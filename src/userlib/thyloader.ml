@@ -51,6 +51,21 @@ let default_thy_fn
   in 
   ignore(ctxt1)
 
+let rec thy_importing_list ret thydb thy = 
+  let ret = find_thy_parents ret thydb thy in
+  ret
+and work_thy ret thydb thyname = 
+  let thy = Thydb.get_thy thydb thyname in
+  find_thy_parents (thy::ret) thydb thy
+and find_thy_parents ret thydb thy =
+  let ps = Theory.get_parents thy in
+  let thylist = 
+    List.fold_left 
+      (fun tlst name -> work_thy tlst thydb name)
+      ret ps
+  in 
+  thylist
+  
 let build_fn
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   let scripter = get_use_file() in
@@ -77,11 +92,13 @@ let buildthy (ctxt: Context.t) (thyname: string) =
   in 
   (Userstate.set_state saved_state; db1)
 
-
 let default_build_fn 
     (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
   Report.report ("Thyloader.default_build_fn("^thyname^")");
-  buildthy (Context.set_thydb ctxt db) thyname
+  let db1 = buildthy (Context.set_thydb ctxt db) thyname in
+  let thy = Thydb.get_thy db1 thyname in
+  let thylist = thy_importing_list [] db1 thy in
+  (db1, thylist)
 
 let default_load_fn 
     (ctxt: Context.t) (file_data: Thydb.Loader.info) =

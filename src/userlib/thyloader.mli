@@ -42,7 +42,8 @@ val default_thy_fn:
 val default_load_fn: 
   Context.t -> Thydb.Loader.info -> Theory.saved_thy
 val default_build_fn: 
-  Context.t -> Thydb.thydb -> string -> Thydb.thydb
+  Context.t -> Thydb.thydb -> string 
+  -> (Thydb.thydb * Theory.thy list)
 
 (** Function to build or load a theory *)
 val build_fn: Context.t -> Thydb.thydb -> string -> Thydb.thydb
@@ -64,3 +65,12 @@ val inc_canary: unit -> unit
 val canary: unit -> int
 val set_canary: int -> unit
 **)
+val thy_importing_list: 
+  Theory.thy list -> Thydb.thydb -> Theory.thy 
+  -> Theory.thy list
+val work_thy:
+  Theory.thy list -> Thydb.thydb -> string
+  -> Theory.thy list
+val find_thy_parents:
+  Theory.thy list -> Thydb.thydb -> Theory.thy
+  -> Theory.thy list
