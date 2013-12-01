@@ -238,3 +238,18 @@ sig
     Theory.thy list -> Thydb.thydb -> Theory.thy
     -> Theory.thy list
 end
+
+module Init :
+sig
+(** {5 State initialising functions} *)
+
+  (** Initialise the global state *)
+  val init: unit -> unit
+  (** Reset the global state *)
+  val reset: unit -> unit
+end
+
+(** Initialise the global state *)
+val init: unit -> unit
+(** Reset the global state *)
+val reset: unit -> unit

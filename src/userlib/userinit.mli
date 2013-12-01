@@ -19,6 +19,8 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
+(***
+
 
 (** {5 State initialising functions} *)
 
@@ -26,3 +28,4 @@
 val init: unit -> unit
 (** Reset the global state *)
 val reset: unit -> unit
+  ***)

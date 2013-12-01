@@ -35,7 +35,7 @@ struct
   let set_state = Userstate.set_state
 
   (** Initialise the global state. *)
-  let init () = Userinit.init()
+  let init () = Userstate.init()
 
   let context () = Userstate.context (state())
   let set_context ctxt = 

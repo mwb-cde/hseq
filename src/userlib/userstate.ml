@@ -196,7 +196,6 @@ struct
   let init_proofstack () = set_proofstack (Default.proofstack())
 end
 
-
 (** Build theories from a script *)
 module TheoryScriptReader =
 struct
@@ -371,25 +370,68 @@ struct
 
 end
 
+module Init = 
+struct
+
 (** State initializer *)
-let init_context st = 
-  let ctxt0 = Default.context() in
-  let ctxt1 = ctxt0 in
-  let st1 = set_parsers (set_context st ctxt1) (Parser.init ()) in
-  st1
+  let init_context st = 
+    let ctxt0 = Default.context() in
+    let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
+    let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
+    let ctxt3 = Context.set_path ctxt2 [Settings.thys_dir()] in
+    let ctxt4 = Loader.set_file_handlers ctxt3 in 
+    set_context st ctxt4
 
-let init_scope st = 
-  set_scope st (Default.scope())
-let init_ppinfo st = 
-  set_ppinfo st (Default.printers())
-let init_parsers st = 
-  set_parsers st (Default.parsers())
-let init_simpset st = 
-  let st1 = set_thyset st (Default.thyset()) in
-  set_simpset st1 (Default.simpset())
-let init_proofstack st = 
-  set_proofstack st (Default.proofstack())
+  let init_scope st = 
+    set_scope st (Default.scope())
 
-let init_base_thy_builder st = st
+  let init_ppinfo st = 
+    let ppinf0 = BoolPP.init_bool_printers (Default.printers()) in
+    let ppinf1 = 
+      BoolPP.init_bool_ppinfo 
+        ppinf0 
+        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols) 
+    in 
+    set_ppinfo st ppinf1
 
+  let init_parsers st = 
+    let ptable0 = BoolPP.init_bool_parsers (Parser.init ()) in 
+    let ptable1 = 
+      BoolPP.init_bool_tokens 
+        ptable0 
+        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols)       
+    in 
+    set_parsers st ptable1
 
+  let init_simpset st = 
+    set_simpset st (Default.simpset())
+
+  let init_proofstack st = 
+    set_proofstack st (Default.proofstack())
+
+  let init_base_thy_builder st = st
+
+(** {5 Initialising functions} *)
+
+  let init () = 
+    let st = 
+      List.fold_left (fun a f -> f a) (State.empty())
+        [init_context; init_scope;
+         init_ppinfo; init_parsers; 
+         init_simpset; init_proofstack;
+         init_base_thy_builder]
+    in
+    set_state st
+
+  let reset() = init()
+end
+
+let init_context = Init.init_context
+let init_scope = Init.init_scope
+let init_ppinfo = Init.init_ppinfo
+let init_parsers = Init.init_parsers
+let init_simpset = Init.init_simpset
+let init_proofstack =  Init.init_proofstack
+let init_base_thy_builder = Init.init_base_thy_builder
+let init = Init.init
+let reset = Init.reset

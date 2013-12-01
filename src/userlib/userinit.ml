@@ -19,6 +19,7 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
+(***
 open Userstate
 
 (** State initializer *)
@@ -70,3 +71,4 @@ let init () =
   set_state st
 
 let reset() = init()
+  ***)
