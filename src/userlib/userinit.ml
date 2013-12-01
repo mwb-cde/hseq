@@ -21,14 +21,13 @@
 
 open Userstate
 
-
 (** State initializer *)
 let init_context st = 
   let ctxt0 = Default.context() in
-  let ctxt1 = Context.set_loader_data ctxt0 Thyloader.default_loader in
-  let ctxt2 = Context.set_load_functions ctxt1 Userstate.thy_fn_list in
+  let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
+  let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
   let ctxt3 = Context.set_path ctxt2 [Settings.thys_dir()] in
-  let ctxt4 = Thyloader.set_file_handlers ctxt3 in 
+  let ctxt4 = Loader.set_file_handlers ctxt3 in 
   set_context st ctxt4
 
 let init_scope st = 

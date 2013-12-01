@@ -64,49 +64,46 @@ struct
     }
 
     (** Initializer *)
-    let empty() = 
-      {
-        context_f = Default.context();
-        simpset_f = Default.simpset();
-        proofstack_f = Default.proofstack();
-        base_thy_builder_f = Default.base_thy_builder();
-        thyset_f = Default.thyset();
-      }
+  let empty() = 
+    {
+      context_f = Default.context();
+      simpset_f = Default.simpset();
+      proofstack_f = Default.proofstack();
+      base_thy_builder_f = Default.base_thy_builder();
+      thyset_f = Default.thyset();
+    }
 
-    let context st = st.context_f
-    let set_context st ctxt = 
-      { st with context_f = ctxt }
+  let context st = st.context_f
+  let set_context st ctxt = 
+    { st with context_f = ctxt }
 
-    let scope st = Context.scope_of (context st)
-    let set_scope st scp = 
-      set_context st (Context.set_scope (context st) scp)
+  let scope st = Context.scope_of (context st)
+  let set_scope st scp = 
+    set_context st (Context.set_scope (context st) scp)
 
-    let ppinfo st = Context.ppinfo (context st)
-    let set_ppinfo st pp = 
-      let ctxt = context st in
-      set_context st (Context.set_ppinfo ctxt pp)
+  let ppinfo st = Context.ppinfo (context st)
+  let set_ppinfo st pp = 
+    let ctxt = context st in
+    set_context st (Context.set_ppinfo ctxt pp)
 
-    let parsers st = Context.parsers (context st)
-    let set_parsers st pp = 
-(*
-      Report.report "Userstate.Global.set_parsers";
-*)
-      set_context st (Context.set_parsers (context st) pp)
+  let parsers st = Context.parsers (context st)
+  let set_parsers st pp = 
+    set_context st (Context.set_parsers (context st) pp)
 
-    let simpset st = st.simpset_f
-    let set_simpset st s = 
-      { st with simpset_f = s }
+  let simpset st = st.simpset_f
+  let set_simpset st s = 
+    { st with simpset_f = s }
 
-    let proofstack st = st.proofstack_f
-    let set_proofstack st s = 
-      { st with proofstack_f = s }
+  let proofstack st = st.proofstack_f
+  let set_proofstack st s = 
+    { st with proofstack_f = s }
 
-    let base_thy_builder st = st.base_thy_builder_f
-    let set_base_thy_builder st f = 
-      { st with base_thy_builder_f = f }
+  let base_thy_builder st = st.base_thy_builder_f
+  let set_base_thy_builder st f = 
+    { st with base_thy_builder_f = f }
 
-    let thyset st = st.thyset_f
-    let set_thyset st s = { st with thyset_f = s }
+  let thyset st = st.thyset_f
+  let set_thyset st s = { st with thyset_f = s }
 end
 
 (** {5 Variables } *)
@@ -248,28 +245,131 @@ struct
     ignore(build_thy_file name)
 end
 
+module Loader =
+struct
 
 (** Remember loaded theories *)
-let record_thy_fn ctxt thy = 
-  let n = thy.Theory.cname in
-  Access.thyset_add n; 
-  ctxt
+  let record_thy_fn ctxt thy = 
+    let n = thy.Theory.cname in
+    Access.thyset_add n; 
+    ctxt
 
 (** Simplifier functions *)
-let simp_thy_fn ctxt thy = 
-  let thyname = thy.Theory.cname in
-  if (Access.thyset_mem thyname) then ctxt 
-  else
-    let set = Access.simpset() in
-    let set1 = Simplib.on_load ctxt set thy in
+  let simp_thy_fn ctxt thy = 
+    let thyname = thy.Theory.cname in
+    if (Access.thyset_mem thyname) then ctxt 
+    else
+      let set = Access.simpset() in
+      let set1 = Simplib.on_load ctxt set thy in
+      begin
+        Access.set_simpset set1;
+        record_thy_fn ctxt thy
+      end
+
+  let thy_fn_list = [simp_thy_fn]
+
+(** {5 Theory building and loading} *)
+
+  let null_thy_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+    raise (Failure ("Thyloader.default_thy_fn("^(thy.Theory.cname)^")"))
+      
+  let null_load_file (fname: string) =
+    raise (Failure ("Thyloader.null_load_file("^fname^")"))
+
+  let null_use_file ?silent:bool (fname: string) = 
+    raise (Failure ("Thyloader.null_use_file"^fname^")"))
+
+  module Var =
+  struct
+    let load_file = ref null_load_file
+    let use_file = ref null_use_file
+  end
+
+  let get_load_file() = !(Var.load_file)
+  let set_load_file f = Var.load_file := f
+  let get_use_file() = !(Var.use_file)
+  let set_use_file f = Var.use_file := f
+
+  let default_thy_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+    Report.report 
+      ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
+    let thy_fn_list = (Context.load_functions ctxt) in
+    let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
+    in 
+    ignore(ctxt1)
+
+  let rec thy_importing_list ret thydb thy = 
+    let ret = find_thy_parents ret thydb thy in
+    ret
+  and work_thy ret thydb thyname = 
+    let thy = Thydb.get_thy thydb thyname in
+    find_thy_parents (thy::ret) thydb thy
+  and find_thy_parents ret thydb thy =
+    let ps = Theory.get_parents thy in
+    let thylist = 
+      List.fold_left 
+        (fun tlst name -> work_thy tlst thydb name)
+        ret ps
+    in 
+    thylist
+      
+  let build_fn
+      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+    let scripter = get_use_file() in
+    let script_name = Context.Files.script_of_thy ctxt thyname in
+    let saved_state = state() in
+    let st1 = set_context saved_state ctxt in
     begin
-      Report.report 
-        ("Userstate.simp_thy_fn("^thy.Theory.cname^")");
-      Access.set_simpset set1;
-      record_thy_fn ctxt thy
+      set_state st1;
+      scripter ~silent:false script_name;
+      let st2 = state() in
+      Context.thydb (context st2)
     end
 
-let thy_fn_list = [simp_thy_fn]
+  let buildthy (ctxt: Context.t) (thyname: string) =
+    let saved_state = state() in
+    let db1 = 
+      if (thyname = Lterm.base_thy)
+      then 
+        begin
+          let ctxt1 = BaseTheory.builder ~save:true ctxt in
+          Context.thydb ctxt1
+        end
+      else build_fn ctxt (Context.thydb ctxt) thyname
+    in 
+    (set_state saved_state; db1)
+
+  let default_build_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+    let db1 = buildthy (Context.set_thydb ctxt db) thyname in
+    let thy = Thydb.get_thy db1 thyname in
+    let thylist = thy_importing_list [] db1 thy in
+    (db1, thylist)
+
+  let default_load_fn 
+      (ctxt: Context.t) (file_data: Thydb.Loader.info) =
+    Context.Files.load_thy_file ctxt file_data
+
+      
+  let default_loader ctxt = 
+    Thydb.Loader.mk_data 
+      (default_load_fn ctxt)
+      (default_build_fn ctxt)
+
+  let load_file fname = 
+    (get_load_file()) fname
+
+  let script_file ?(silent=false) fname = 
+    (get_use_file()) ~silent fname
+
+  let set_file_handlers ctxt = 
+    let ctxt1 = Context.set_loader ctxt load_file  in
+    let ctxt2 = Context.set_scripter ctxt1 script_file in
+    ctxt2
+
+end
 
 (** State initializer *)
 let init_context st = 
@@ -291,4 +391,5 @@ let init_proofstack st =
   set_proofstack st (Default.proofstack())
 
 let init_base_thy_builder st = st
+
 

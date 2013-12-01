@@ -19,6 +19,7 @@
    License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
    ----*)
 
+(*
 (** {5 Theory building and loading} *)
 
 (** Data to pass to ThyDB loader. *)
@@ -74,3 +75,4 @@ val work_thy:
 val find_thy_parents:
   Theory.thy list -> Thydb.thydb -> Theory.thy
   -> Theory.thy list
+  *)

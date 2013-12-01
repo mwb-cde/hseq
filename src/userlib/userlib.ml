@@ -76,15 +76,15 @@ module Files =
 struct
   let set_load_file loader = 
     begin
-      Thyloader.set_load_file loader;
-      let ctxt = Thyloader.set_file_handlers (Global.context()) in
+      Userstate.Loader.set_load_file loader;
+      let ctxt = Userstate.Loader.set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
 
   let set_use_file scripter = 
     begin
-      Thyloader.set_use_file scripter;
-      let ctxt = Thyloader.set_file_handlers (Global.context()) in
+      Userstate.Loader.set_use_file scripter;
+      let ctxt = Userstate.Loader.set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
 end

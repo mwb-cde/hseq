@@ -44,7 +44,7 @@ sig
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
     }
-    
+      
   val empty: unit -> t
 
   val context: t -> Context.t
@@ -80,27 +80,27 @@ val set_state: State.t -> unit
 val context: State.t -> Context.t
 (** The global context *)
 val set_context: State.t -> Context.t -> State.t
-  (** Set the global context *)
+(** Set the global context *)
 
 val scope: State.t -> Scope.t
-  (** The global Scope *)
+(** The global Scope *)
 val set_scope: State.t -> Scope.t -> State.t
-  (** Set the global scope *)
+(** Set the global scope *)
 
 val ppinfo: State.t -> Printer.ppinfo
-  (** The global pretty printers *)
+(** The global pretty printers *)
 val set_ppinfo: State.t -> Printer.ppinfo -> State.t
-  (** Set the global pretty printers *)
+(** Set the global pretty printers *)
 
 val parsers: State.t -> Parser.Table.t
-  (** The global parser tables *)
+(** The global parser tables *)
 val set_parsers: State.t -> Parser.Table.t -> State.t
-  (** Set the global parser tables *)
+(** Set the global parser tables *)
 
 val simpset: State.t -> Simpset.simpset
-  (** The standard simplifier set *)
+(** The standard simplifier set *)
 val set_simpset: State.t -> Simpset.simpset -> State.t
-  (** Set the global simplifier set *)
+(** Set the global simplifier set *)
 
 val proofstack: State.t -> Goals.ProofStack.t
 (** The standard simplifier set *)
@@ -118,13 +118,13 @@ val thyset_add: State.t -> string -> State.t
 val thyset_mem: State.t -> string -> bool
 
 val init_context: State.t -> State.t
-  (** Initialize the global context *)
+(** Initialize the global context *)
 val init_scope: State.t -> State.t
-  (** Initialize the global scope *)
+(** Initialize the global scope *)
 val init_ppinfo: State.t -> State.t
-  (** Initialize the global pretty printers *)
+(** Initialize the global pretty printers *)
 val init_parsers: State.t -> State.t
-  (** Initialize the global parser tables *)
+(** Initialize the global parser tables *)
 val init_simpset: State.t -> State.t
 (** Initialize the global simpset *)
 val init_proofstack: State.t -> State.t
@@ -182,5 +182,59 @@ sig
 (** Initialize the global proofstack *)
 end
 
-val simp_thy_fn: Context.t -> Theory.contents -> Context.t
-val thy_fn_list: (Context.t -> Theory.contents -> Context.t) list
+module Loader :
+sig
+
+  val simp_thy_fn: Context.t -> Theory.contents -> Context.t
+  val thy_fn_list: (Context.t -> Theory.contents -> Context.t) list
+
+(** {5 Theory building and loading} *)
+
+(** Data to pass to ThyDB loader. *)
+
+(** Get and set functions to load/use a file *)
+  val set_load_file:
+    (string -> unit) -> unit
+  val get_load_file:
+    unit -> (string -> unit)
+  val set_use_file:
+    (?silent:bool -> string -> unit) -> unit
+  val get_use_file:
+    unit -> (?silent:bool -> string -> unit)
+
+(** Update a context with the functions to load/use a file *)
+  val set_file_handlers: Context.t -> Context.t
+
+(** Default functions *)
+  val default_thy_fn: 
+    Context.t -> Thydb.thydb -> Theory.contents -> unit
+  val default_load_fn: 
+    Context.t -> Thydb.Loader.info -> Theory.saved_thy
+  val default_build_fn: 
+    Context.t -> Thydb.thydb -> string 
+    -> (Thydb.thydb * Theory.thy list)
+
+(** Function to build or load a theory *)
+  val build_fn: Context.t -> Thydb.thydb -> string -> Thydb.thydb
+  val default_loader: Context.t -> Thydb.Loader.data
+
+  val load_file: string -> unit
+  val script_file: ?silent:bool -> string -> unit
+
+  val set_file_handlers: Context.t -> Context.t
+
+(** {5 Debugging} *)
+  val null_thy_fn: 
+    Context.t -> Thydb.thydb -> Theory.contents -> unit
+  val null_load_file: string -> unit
+  val null_use_file: ?silent:bool -> string -> unit
+  val thy_importing_list: 
+    Theory.thy list -> Thydb.thydb -> Theory.thy 
+    -> Theory.thy list
+  val work_thy:
+    Theory.thy list -> Thydb.thydb -> string
+    -> Theory.thy list
+  val find_thy_parents:
+    Theory.thy list -> Thydb.thydb -> Theory.thy
+    -> Theory.thy list
+end
