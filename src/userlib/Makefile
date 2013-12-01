@@ -125,7 +125,7 @@ PACKING=HSeq
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-HSeq_SOURCES=userstate userinit userlib
+HSeq_SOURCES=userstate userlib
 
 # object_INCLUDE: Directories to include when compiling [object].
 #HSeq_INCLUDE="+compiler-libs"
