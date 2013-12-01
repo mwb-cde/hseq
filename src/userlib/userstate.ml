@@ -104,6 +104,7 @@ struct
 
   let thyset st = st.thyset_f
   let set_thyset st s = { st with thyset_f = s }
+
 end
 
 (** {5 Variables } *)
@@ -196,64 +197,16 @@ struct
   let init_proofstack () = set_proofstack (Default.proofstack())
 end
 
-(** Build theories from a script *)
-module TheoryScriptReader =
-struct
-  let forbidden = ref(Lib.StringSet.empty)
-  let init_forbidden() = forbidden := Lib.StringSet.empty
-  and is_forbidden s = Lib.StringSet.mem s (!forbidden)
-  and add_forbidden s = forbidden := Lib.StringSet.add s (!forbidden)
-  and drop_forbidden s = forbidden := Lib.StringSet.remove s (!forbidden)
-
-  let build_thy_file thyname =
-    let ctxt = context (state()) in 
-    let thydb0 = Context.Thys.theories ctxt in
-    let build_aux file =
-      let script = 
-        Context.Files.find_file 
-          (Context.Files.script_of_thy ctxt file) 
-          (Context.Files.get_thy_path ctxt) 
-      in 
-      let usefile = Context.scripter ctxt ~silent:false
-      in 
-      Report.report ("Trying to build theory "^file);
-      begin
-        try
-          begin
-            add_forbidden file; 
-            usefile script; 
-            drop_forbidden file
-          end
-        with err -> (drop_forbidden file; raise err)
-      end;
-      Report.report ("Built theory "^file);
-      let ctxt1 = context(state()) in
-      let thydb1 = Context.Thys.theories ctxt1 in 
-      ignore(set_context (state()) (Context.Thys.set_theories ctxt thydb0));
-      thydb1
-    in 
-    if (is_forbidden thyname)
-    then raise (Report.error ("Circular importing, theory "^thyname))
-    else ();
-    try build_aux thyname
-    with Not_found ->
-      (Report.warning ("Failed to build theory "^thyname);
-       raise (Report.error ("Can't find script to build theory "^thyname)))
-
-  let builder ?silent name = 
-    ignore(build_thy_file name)
-end
-
 module Loader =
 struct
 
-(** Remember loaded theories *)
+  (** Remember loaded theories *)
   let record_thy_fn ctxt thy = 
     let n = thy.Theory.cname in
     Access.thyset_add n; 
     ctxt
 
-(** Simplifier functions *)
+  (** Set up simpset from loaded theory *)
   let simp_thy_fn ctxt thy = 
     let thyname = thy.Theory.cname in
     if (Access.thyset_mem thyname) then ctxt 
@@ -265,22 +218,17 @@ struct
         record_thy_fn ctxt thy
       end
 
+  (** List of functions to apply to a loaded theory *)
   let thy_fn_list = [simp_thy_fn]
 
-(** {5 Theory building and loading} *)
-
-  let null_thy_fn 
-      (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
-    raise (Failure ("Thyloader.default_thy_fn("^(thy.Theory.cname)^")"))
-      
-  let null_load_file (fname: string) =
-    raise (Failure ("Thyloader.null_load_file("^fname^")"))
-
-  let null_use_file ?silent:bool (fname: string) = 
-    raise (Failure ("Thyloader.null_use_file"^fname^")"))
-
+  (** {5 Theory building and loading} *)
   module Var =
   struct
+    let null_load_file (fname: string) =
+      raise (Failure ("Thyloader.null_load_file("^fname^")"))
+    let null_use_file ?silent:bool (fname: string) = 
+      raise (Failure ("Thyloader.null_use_file"^fname^")"))
+
     let load_file = ref null_load_file
     let use_file = ref null_use_file
   end
@@ -299,6 +247,8 @@ struct
     in 
     ignore(ctxt1)
 
+  (** Generate the list of theories imported by a theory. For use in
+      Thydb.Loader, when applying the theory functions *)
   let rec thy_importing_list ret thydb thy = 
     let ret = find_thy_parents ret thydb thy in
     ret
@@ -351,7 +301,6 @@ struct
       (ctxt: Context.t) (file_data: Thydb.Loader.info) =
     Context.Files.load_thy_file ctxt file_data
 
-      
   let default_loader ctxt = 
     Thydb.Loader.mk_data 
       (default_load_fn ctxt)
@@ -367,7 +316,6 @@ struct
     let ctxt1 = Context.set_loader ctxt load_file  in
     let ctxt2 = Context.set_scripter ctxt1 script_file in
     ctxt2
-
 end
 
 module Init = 

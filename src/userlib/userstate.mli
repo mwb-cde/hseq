@@ -185,14 +185,8 @@ end
 module Loader :
 sig
 
-  val simp_thy_fn: Context.t -> Theory.contents -> Context.t
-  val thy_fn_list: (Context.t -> Theory.contents -> Context.t) list
-
-(** {5 Theory building and loading} *)
-
-(** Data to pass to ThyDB loader. *)
-
-(** Get and set functions to load/use a file *)
+  (** {5 Theory building and loading} *)
+  (** Get and set functions to load/use a file *)
   val set_load_file:
     (string -> unit) -> unit
   val get_load_file:
@@ -202,10 +196,10 @@ sig
   val get_use_file:
     unit -> (?silent:bool -> string -> unit)
 
-(** Update a context with the functions to load/use a file *)
+  (** Update a context with the functions to load/use a file *)
   val set_file_handlers: Context.t -> Context.t
 
-(** Default functions *)
+  (** Default functions *)
   val default_thy_fn: 
     Context.t -> Thydb.thydb -> Theory.contents -> unit
   val default_load_fn: 
@@ -213,35 +207,18 @@ sig
   val default_build_fn: 
     Context.t -> Thydb.thydb -> string 
     -> (Thydb.thydb * Theory.thy list)
-
-(** Function to build or load a theory *)
-  val build_fn: Context.t -> Thydb.thydb -> string -> Thydb.thydb
   val default_loader: Context.t -> Thydb.Loader.data
 
   val load_file: string -> unit
   val script_file: ?silent:bool -> string -> unit
 
+  (** Set the default file handlers for a context *)
   val set_file_handlers: Context.t -> Context.t
-
-(** {5 Debugging} *)
-  val null_thy_fn: 
-    Context.t -> Thydb.thydb -> Theory.contents -> unit
-  val null_load_file: string -> unit
-  val null_use_file: ?silent:bool -> string -> unit
-  val thy_importing_list: 
-    Theory.thy list -> Thydb.thydb -> Theory.thy 
-    -> Theory.thy list
-  val work_thy:
-    Theory.thy list -> Thydb.thydb -> string
-    -> Theory.thy list
-  val find_thy_parents:
-    Theory.thy list -> Thydb.thydb -> Theory.thy
-    -> Theory.thy list
 end
 
 module Init :
 sig
-(** {5 State initialising functions} *)
+  (** {5 State initialising functions} *)
 
   (** Initialise the global state *)
   val init: unit -> unit
