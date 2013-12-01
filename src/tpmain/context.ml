@@ -332,8 +332,8 @@ struct
     set_theories ctxt thydb
 end
 
-(*** New Pretty printing based on Context.t ***)
-module NewPP =
+(*** Printer/parser support ***)
+module PP =
 struct
 
   (*** Terms ***)

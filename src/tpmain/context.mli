@@ -374,7 +374,7 @@ end
     Global printer tables and functions to add, query and remove
     combined printer-parser information.
 *)
-module NewPP:
+module PP:
 sig
 
   (** {7 Terms} *)

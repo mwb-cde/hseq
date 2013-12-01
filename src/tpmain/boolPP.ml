@@ -322,19 +322,19 @@ let quote_context =
 let ppinfo () = Context.ppinfo quote_context
 
 (** Parse a string as a term, resolving short names and symbols. *)
-let read str = Context.NewPP.read quote_context str
+let read str = Context.PP.read quote_context str
 
 (** Parse a string as a term, resolving short names and symbols. *)
-let read_unchecked str = Context.NewPP.read_unchecked quote_context str
+let read_unchecked str = Context.PP.read_unchecked quote_context str
 
 (** Parse a string as a term definition. *)
-let read_defn str = Context.NewPP.read_defn quote_context str
+let read_defn str = Context.PP.read_defn quote_context str
 
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
-let read_type str = Context.NewPP.read_type quote_context str
+let read_type str = Context.PP.read_type quote_context str
 
 (** Parse a string as a type definition. *)
-let read_type_defn str = Context.NewPP.read_type_defn quote_context str
-let read_identifier str = Context.NewPP.read_identifier quote_context str
+let read_type_defn str = Context.PP.read_type_defn quote_context str
+let read_identifier str = Context.PP.read_identifier quote_context str
 

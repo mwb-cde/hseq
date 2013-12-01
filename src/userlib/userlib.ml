@@ -102,25 +102,25 @@ struct
     | Parser.ParsingError x -> raise (Report.error x)
     | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
       
-  let mk_term = Context.NewPP.mk_term
+  let mk_term = Context.PP.mk_term
 
   let read str = 
-    Context.NewPP.read (Global.context ()) str
+    Context.PP.read (Global.context ()) str
 
   let read_unchecked str =
-    Context.NewPP.read_unchecked (Global.context ()) str
+    Context.PP.read_unchecked (Global.context ()) str
 
   let read_defn str =
-    Context.NewPP.read_defn (Global.context ()) str
+    Context.PP.read_defn (Global.context ()) str
 
   let read_type_defn str =
-    Context.NewPP.read_type_defn (Global.context ()) str
+    Context.PP.read_type_defn (Global.context ()) str
       
   let read_type str = 
-    Context.NewPP.read_type (Global.context ()) str
+    Context.PP.read_type (Global.context ()) str
 
   let read_identifier str = 
-    Context.NewPP.read_identifier (Global.context ()) str
+    Context.PP.read_identifier (Global.context ()) str
 end
 
 (** {6 Utility functions} *)

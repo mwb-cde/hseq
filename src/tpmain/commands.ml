@@ -59,13 +59,13 @@ let load_theory_as_cur ctxt n =
 ***)
 let read ?ctxt (x: string) = 
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
-  catch_errors (Context.ppinfo pctxt) Context.NewPP.read pctxt x
+  catch_errors (Context.ppinfo pctxt) Context.PP.read pctxt x
 let read_unchecked ?ctxt x = 
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
-  catch_errors (Context.ppinfo pctxt) Context.NewPP.read_unchecked pctxt x
+  catch_errors (Context.ppinfo pctxt) Context.PP.read_unchecked pctxt x
 let read_defn ?ctxt x =
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
-  catch_errors (Context.ppinfo pctxt) Context.NewPP.read_defn pctxt x
+  catch_errors (Context.ppinfo pctxt) Context.PP.read_defn pctxt x
 
 (*
  * Theories
@@ -158,7 +158,7 @@ let add_type_pp_rec ctxt id rcrd =
       (Thydb.add_type_pp_rec (Ident.name_of id) rcrd
          (Context.Thys.theories ctxt))
    in
-  let ctxt2 = Context.NewPP.add_type_pp_record ctxt1 id rcrd in
+  let ctxt2 = Context.PP.add_type_pp_record ctxt1 id rcrd in
   ctxt2
     
 let remove_type_pp_rec ctxt id =
@@ -168,16 +168,16 @@ let remove_type_pp_rec ctxt id =
       (Context.Thys.theories ctxt)
   in
   let ctxt1 = Context.Thys.set_theories ctxt db1 in
-  Context.NewPP.remove_type_pp ctxt1 id
+  Context.PP.remove_type_pp ctxt1 id
 
-let get_type_pp_rec ctxt id = Context.NewPP.get_type_pp ctxt id 
+let get_type_pp_rec ctxt id = Context.PP.get_type_pp ctxt id 
 
 let add_symbol ctxt str sym = 
   let ctxt1 = 
     Context.Thys.set_theories ctxt
       (Thydb.add_pp_symbol (str, sym) (Context.Thys.theories ctxt))
   in
-  Context.NewPP.add_pp_symbol ctxt1 str sym
+  Context.PP.add_pp_symbol ctxt1 str sym
 
 (*** Terms ***)
 
@@ -188,9 +188,9 @@ let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
       (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) 
          (Context.Thys.theories ctxt))
   in
-  Context.NewPP.add_term_pp_record ctxt1 id rcrd
+  Context.PP.add_term_pp_record ctxt1 id rcrd
     
-let get_term_pp_rec ctxt id = Context.NewPP.get_term_pp ctxt id 
+let get_term_pp_rec ctxt id = Context.PP.get_term_pp ctxt id 
 
 let remove_term_pp_rec ctxt id =
   let db1 = 
@@ -198,16 +198,16 @@ let remove_term_pp_rec ctxt id =
       (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in
   let ctxt1 = Context.Thys.set_theories ctxt db1 in
-  Context.NewPP.remove_term_pp ctxt1 id
+  Context.PP.remove_term_pp ctxt1 id
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
   let ty = 
     Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in 
-  Context.NewPP.add_overload ctxt sym pos (id, ty)
+  Context.PP.add_overload ctxt sym pos (id, ty)
 
 let remove_overload ctxt sym id =
-  Context.NewPP.remove_overload ctxt sym id
+  Context.PP.remove_overload ctxt sym id
 
 (*** User-level PP Functions ***)
 
@@ -239,20 +239,20 @@ let get_term_pp id = get_term_pp_rec id
 (** Axioms and Theorems ***)
 
 let defn ctxt id =
-  let t, n = Context.NewPP.read_identifier ctxt id in 
+  let t, n = Context.PP.read_identifier ctxt id in 
   let thys = theories ctxt
   in
   Thydb.get_defn t n thys
 
 let get_theorem ctxt id =
-  let t, n = Context.NewPP.read_identifier ctxt id in 
+  let t, n = Context.PP.read_identifier ctxt id in 
   let thys = theories ctxt
   in 
   try Thydb.get_axiom t n thys
   with Not_found -> Thydb.get_theorem t n thys
 
 let thm ctxt id =
-  let t, n = Context.NewPP.read_identifier ctxt id in 
+  let t, n = Context.PP.read_identifier ctxt id in 
   let thys = theories ctxt
   in 
   Thydb.get_lemma t n thys
