@@ -20,6 +20,7 @@
 ----*)
 
 open HSeq
+open HSeqUser
 open Lib
 
 (***

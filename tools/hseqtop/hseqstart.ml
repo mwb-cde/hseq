@@ -24,26 +24,27 @@
 *)
 
 open HSeq;;
-open Userlib;;
+open HSeqUser
+open HSeqUser.Userlib;;
 
 (**
    Install printers
 *)
 
-#install_printer HSeq.Userlib.Display.print_term;; 
-#install_printer HSeq.Userlib.Display.print_formula;;
-#install_printer HSeq.Userlib.Display.print_type;;
-#install_printer HSeq.Userlib.Display.print_sqnt;;
-#install_printer HSeq.Userlib.Display.print_node;;
-#install_printer HSeq.Userlib.Display.print_branch;;
-#install_printer HSeq.Userlib.Display.print_thm;;
-#install_printer HSeq.Userlib.Display.print_prf;;
-#install_printer HSeq.Userlib.Display.print_prfstk;;
-#install_printer HSeq.Userlib.Display.print_fnident;;
-#install_printer HSeq.Userlib.Display.print_error;;
-#install_printer HSeq.Userlib.Display.print_defn;;
-#install_printer HSeq.Userlib.Display.print_theory;;
-#install_printer HSeq.Userlib.Display.print_simpset;;
+#install_printer HSeqUser.Userlib.Display.print_term;; 
+#install_printer HSeqUser.Userlib.Display.print_formula;;
+#install_printer HSeqUser.Userlib.Display.print_type;;
+#install_printer HSeqUser.Userlib.Display.print_sqnt;;
+#install_printer HSeqUser.Userlib.Display.print_node;;
+#install_printer HSeqUser.Userlib.Display.print_branch;;
+#install_printer HSeqUser.Userlib.Display.print_thm;;
+#install_printer HSeqUser.Userlib.Display.print_prf;;
+#install_printer HSeqUser.Userlib.Display.print_prfstk;;
+#install_printer HSeqUser.Userlib.Display.print_fnident;;
+#install_printer HSeqUser.Userlib.Display.print_error;;
+#install_printer HSeqUser.Userlib.Display.print_defn;;
+#install_printer HSeqUser.Userlib.Display.print_theory;;
+#install_printer HSeqUser.Userlib.Display.print_simpset;;
 #install_printer Thydb.print;;
 
 (**

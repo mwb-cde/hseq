@@ -33,7 +33,8 @@
 (** Open the theorem prover *)
 
 open HSeq
-open HSeq.Userlib
+open HSeqUser
+open Userlib
 
 
 (** Add the source include directories *)

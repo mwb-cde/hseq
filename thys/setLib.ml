@@ -20,7 +20,8 @@
   ----*)
 
 open HSeq
-open HSeq.Userlib
+open HSeqUser
+open Userlib
 
 let set_thy = "Set"
 let set_id = Ident.mk_long set_thy "SET"

@@ -36,6 +36,8 @@
 *)
 
 open HSeq
+open HSeqUser
+open Userlib
 
 let pair_thy = "Pair"
 let pair_id = Ident.mk_long pair_thy "pair"

@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../..
+PROJ_ROOT=../../..
 
 # The quotation parser to use.
 export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
@@ -102,17 +102,8 @@ export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 # Module building settings
 #
 
-# SUBDIRS: List of sub-directories to build.
-#SUBDIRS=
-
-# LIBRARIES: List of libraries to build.
-#LIBRARIES=
-
-# PROGRAMS: List of programs to build.
-#PROGRAMS=
-
 # PACKING: List of packing modules to build
-PACKING=HSeq
+PACKING=HSeqUser
 
 #####
 # Sub-directory building options
@@ -125,7 +116,7 @@ PACKING=HSeq
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-HSeq_SOURCES=userstate userlib
+HSeqUser_SOURCES=userstate userlib
 
 # object_INCLUDE: Directories to include when compiling [object].
 #HSeq_INCLUDE="+compiler-libs"
@@ -134,11 +125,11 @@ HSeq_SOURCES=userstate userlib
 #HSeq_LIBS=
 
 # object_PACK: Name of packed module to generate (libraries only).
-#object_PACK=
+#object_PACK=Hs
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-HSeq_PACK_DIR=../HSeqOBJS
+HSeqUser_PACK_DIR=../HSeqUserOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=

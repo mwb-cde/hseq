@@ -20,6 +20,9 @@
 ----*)
 
 open HSeq
+open HSeqUser
+open Userlib
+
 
 (**
    Initialising TP for interactive use.

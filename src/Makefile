@@ -101,7 +101,7 @@ PROJ_ROOT=..
 
 # SUBDIRS: List of sub-directories to build.
 SUBDIRS=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+	simplifier numbers 
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=hseq
@@ -121,7 +121,7 @@ PACKED=hseq
 
 # object_INCLUDE: Directories to include when compiling [object].
 hseq_INCLUDE=util tpcore logic parser tpmain booleans \
-	simplifier numbers userlib
+	simplifier numbers 
 
 # object_LIBS: Libraries to include when linking [object].
 #hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
@@ -130,7 +130,7 @@ hseq_INCLUDE=util tpcore logic parser tpmain booleans \
 
 hseq_LIBS=util tpcore logic parser \
 	tpmain boollib simplifier \
-	numbers userlib
+	numbers 
 
 # object_PACK_NAME: Name of pack to build
 #object_PACK_NAME=
@@ -143,7 +143,7 @@ hseq_PACK_DIR=./HSeqOBJS
 # object_GROUPS: List of packing groups to use for packed library [object]
 hseq_GROUPS=util tpcore logic parser \
 	tpmain boollib simplifier \
-	numbers userlib
+	numbers 
 
 
 ######################################################################

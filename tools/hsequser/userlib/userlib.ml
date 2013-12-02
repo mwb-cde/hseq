@@ -19,6 +19,7 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
+open HSeq
 open Basic
 open Parser
 open Lib.Ops
