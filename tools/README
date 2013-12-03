@@ -1,0 +1,13 @@
+Tools subdirectories
+--------------------
+
+hsequser - the HSeqUser library: Defines a global state and user level interface
+         to the HSeq library.
+
+hseqtop: Library for the hseqtop toplevel. Sets up system specific values and
+         initialization.
+
+toplevel - hseq: The toplevel for Hseq.
+
+scripts: Scripts for using the toplevel as a batch command.
+

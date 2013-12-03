@@ -50,18 +50,9 @@ open HSeqUser.Userlib;;
 (**
    Open modules
 *)
+
 open Goals;;
 open Tactics;;
 open Boollib;;
-(**open Simplib;; **)
-open Userlib;;
 
 
-(** 
-    Initialise the system
-
-    Must be done here to make sure that all modules are loaded before
-    the system is started.
-
-let _ = Init.init();;
-*)
