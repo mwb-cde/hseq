@@ -102,7 +102,7 @@ PROJ_ROOT=..
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=hsequser scripts hseqtop toplevel
+SUBDIRS=scripts hseqtop toplevel
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
