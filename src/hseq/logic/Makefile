@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../..
+PROJ_ROOT=../../..
 
 #####
 # Module building settings

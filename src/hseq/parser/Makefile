@@ -1,5 +1,5 @@
 ########################################################## --*- Makefile -*--
-# Makefile - Makefile to build modules
+# Makefile.module - Makefile to build modules
 # Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../..
+PROJ_ROOT=../../..
 
 #####
 # Module building settings
@@ -103,7 +103,7 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=util
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -112,18 +112,31 @@ PROJ_ROOT=../..
 PACKING=HSeq
 
 #####
+# Sub-directory building options
+
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
+
+#####
 # Object building settings
 #
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=lib treekit tag parserkit rewritekit
+HSeq_SOURCES=counter lexer pterm grammars parser 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
+
+# object_PACK: Name of packed module to generate (libraries only).
+#object_PACK=
+
+# object_PACK_FOR: Module to pack for (libraries only).
+#object_PACK_FOR=
+HSeq_PACK_FOR=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
@@ -141,20 +154,6 @@ HSeq_PACK_DIR=../HSeqOBJS
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
 
-###
-# Installation options
-
-# For src/* modules, install headers but not libraries.
-
-# INSTALL_LIBRARIES: Libraries to install
-INSTALL_LIBRARIES=
-
-# INSTALL_HEADERS: Headers to install
-INSTALL_HEADERS=
-
-# INSTALL_CODE: Intermediate objects to install
-#INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
-
 #####
 # Module build tool settings
 
@@ -166,13 +165,41 @@ INSTALL_HEADERS=
 #MODULE_USE_OBJDIR=no
 
 # MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
+#MODULE_OCAMLC_FLAGS=
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+#MODULE_OCAMLPP_FLAGS=
+MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +camlp4
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
+#MODULE_OCAMLCPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
+#MODULE_LINK_FLAGS=
+
+###
+# Installation options
+
+# For src/* modules, install headers but not libraries.
+
+# INSTALL_LIBRARIES: Libraries to install
+INSTALL_LIBRARIES=
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=
+
+###
+# Makefile commands
+
+# EXTRA_CLEAN: Command to add to the clean target.
+#EXTRA_CLEAN=
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+#EXTRA_LIBCLEAN=
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
+
 
 #####
 # Default settings
@@ -182,6 +209,9 @@ INSTALL_HEADERS=
 
 # LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
+
+# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
+#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)

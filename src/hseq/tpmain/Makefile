@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../..
+PROJ_ROOT=../../..
 
 #####
 # Module building settings
@@ -103,7 +103,7 @@ PROJ_ROOT=../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=numbers
+#LIBRARIES=tpmain
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -123,7 +123,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=prop exprs supinf nums
+HSeq_SOURCES=context boolPP tactics goals commands display 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -179,7 +179,7 @@ MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I +c
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-#INSTALL_LIBRARIES=
+INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=
