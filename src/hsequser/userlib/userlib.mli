@@ -53,6 +53,25 @@ sig
 
       Global printer tables and functions to add, query and remove
       combined printer-parser information.  *)
+  val ppinfo: unit -> Printer.ppinfo
+  (** The global pretty printers *)
+  val set_ppinfo: Printer.ppinfo -> unit
+  (** Set the global pretty printers *)
+
+  val parsers: unit -> Parser.Table.t
+  (** The global parser tables *)
+  val set_parsers: Parser.Table.t -> unit
+  (** Set the global parser tables *)
+
+  val thyset: unit -> Lib.StringSet.t 
+  val set_thyset: Lib.StringSet.t -> unit
+  val thyset_add: string -> unit
+  val thyset_mem: string -> bool
+
+  val proofstack: unit -> Goals.ProofStack.t
+  (** The standard proofstack *)
+  val set_proofstack: Goals.ProofStack.t -> unit
+  (** Set the global proofstack *)
 
   (** Initialise the global state. *)
   val init: unit -> unit
@@ -537,7 +556,6 @@ val init: unit -> unit
 
 val reset: unit -> unit
 (** Reset then initialise the system. *)
-
 
 (** {6 Simplifier} *)
 

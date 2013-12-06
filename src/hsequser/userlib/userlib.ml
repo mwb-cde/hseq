@@ -24,19 +24,27 @@ open Basic
 open Parser
 open Lib.Ops
 
-(** {5 Global state} *)
+(** {5 Variables } *)
+module Var = 
+struct
+  let (state_v: Userstate.State.t ref) = ref (Userstate.State.empty())
+  let state () = !state_v
+  let set_state st = state_v := st
+  let init() = set_state (Userstate.State.empty())
+end
 
+(** {5 Global access } *)
 module Global =
 struct
 
   type state_t = Userstate.State.t
 
   (** State *)
-  let state = Userstate.state
-  let set_state = Userstate.set_state
+  let state = Var.state
+  let set_state = Var.set_state
 
   (** Initialise the global state. *)
-  let init () = Userstate.init()
+  let init st = set_state (Userstate.init (state()))
 
   let context () = Userstate.context (state())
   let set_context ctxt = 
@@ -66,6 +74,18 @@ struct
   let current() = Context.Thys.current (context ())
   let current_name () = Context.Thys.current_name (context ())
 
+  let thyset() = Userstate.thyset (state())
+  let set_thyset s = 
+    set_state (Userstate.set_thyset (state()) s)
+  let thyset_add t = 
+    let set1 = Lib.StringSet.add t (thyset ()) in
+    set_thyset set1
+  let thyset_mem t = Userstate.thyset_mem (state()) t
+
+  let proofstack() = Userstate.proofstack (state())
+  let set_proofstack s =
+    set_state (Userstate.set_proofstack (state()) s)
+
 end
 
 let state_opt st =
@@ -73,19 +93,181 @@ let state_opt st =
     None -> Global.state()
   | Some(x) -> x
 
-module Files =
+module Access = 
 struct
+  let context() = Userstate.context (Global.state())
+  let set_context ctxt = 
+    Global.set_state (Userstate.set_context (Global.state()) ctxt)
+  let init_context () = Global.set_context (Userstate.Default.context())
+
+  let scope() = Userstate.scope (Global.state())
+  let set_scope scp = 
+    Global.set_state (Userstate.set_scope (Global.state()) scp)
+  let init_scope () = Global.set_scope (Userstate.Default.scope())
+
+  let ppinfo() = Userstate.ppinfo (Global.state())
+  let set_ppinfo pp = 
+    Global.set_state (Userstate.set_ppinfo (Global.state()) pp)
+  let init_ppinfo () = set_ppinfo (Userstate.Default.printers())
+
+  let parsers() = Userstate.parsers (Global.state())
+  let set_parsers pp = 
+    Global.set_state (Userstate.set_parsers (Global.state()) pp)
+  let init_parsers () = 
+    set_parsers (Userstate.Default.parsers())
+
+  let thyset() = Userstate.thyset (Global.state())
+  let set_thyset s = 
+    Global.set_state (Userstate.set_thyset (Global.state()) s)
+  let init_thyset () = 
+    set_thyset (Userstate.Default.thyset())
+  let thyset_add t = 
+    let set1 = Lib.StringSet.add t (thyset ()) in
+    set_thyset set1
+  let thyset_mem t = Userstate.thyset_mem (Global.state()) t
+
+  let simpset() = Userstate.simpset (Global.state())
+  let set_simpset s = 
+    Global.set_state (Userstate.set_simpset (Global.state()) s)
+  let init_simpset () = 
+    set_thyset (Userstate.Default.thyset());
+    set_simpset (Userstate.Default.simpset())
+
+  let proofstack() = Userstate.proofstack (Global.state())
+  let set_proofstack s =
+    Global.set_state (Userstate.set_proofstack (Global.state()) s)
+  let init_proofstack () = set_proofstack (Userstate.Default.proofstack())
+end
+
+(** {5 File loader} *)
+module Loader =
+struct
+  (** Remember loaded theories *)
+  let record_thy_fn ctxt thy = 
+    let n = thy.Theory.cname in
+    Global.set_state (Userstate.thyset_add (Global.state()) n);
+    ctxt
+
+  (** Set up simpset from loaded theory *)
+  let simp_thy_fn ctxt thy = 
+    let thyname = thy.Theory.cname in
+    let st = Global.state() in
+    if Userstate.thyset_mem st thyname then ctxt
+    else
+      let set = Userstate.simpset st in
+      let set1 = Simplib.on_load ctxt set thy in
+      Global.set_state (Userstate.set_simpset st set1);
+      record_thy_fn ctxt thy
+
+  (** List of functions to apply to a loaded theory *)
+  let thy_fn_list = [simp_thy_fn]
+
+  (** {5 Theory building and loading} *)
+  module Var =
+  struct
+    let null_load_file (fname: string) =
+      raise (Failure ("Thyloader.null_load_file("^fname^")"))
+    let null_use_file ?silent:bool (fname: string) = 
+      raise (Failure ("Thyloader.null_use_file"^fname^")"))
+
+    let load_file = ref null_load_file
+    let use_file = ref null_use_file
+  end
+
+  let get_load_file() = !(Var.load_file)
+  let set_load_file f = Var.load_file := f
+  let get_use_file() = !(Var.use_file)
+  let set_use_file f = Var.use_file := f
+
+  let default_thy_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
+    Report.report 
+      ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
+    let thy_fn_list = (Context.load_functions ctxt) in
+    let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
+    in 
+    ignore(ctxt1)
+
+  (** Generate the list of theories imported by a theory. For use in
+      Thydb.Loader, when applying the theory functions *)
+  let rec thy_importing_list ret thydb thy = 
+    let ret = find_thy_parents ret thydb thy in
+    ret
+  and work_thy ret thydb thyname = 
+    let thy = Thydb.get_thy thydb thyname in
+    find_thy_parents (thy::ret) thydb thy
+  and find_thy_parents ret thydb thy =
+    let ps = Theory.get_parents thy in
+    let thylist = 
+      List.fold_left 
+        (fun tlst name -> work_thy tlst thydb name)
+        ret ps
+    in 
+    thylist
+      
+  let build_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+    let scripter = get_use_file() in
+    let script_name = Context.Files.script_of_thy ctxt thyname in
+    let saved_state = Global.state() in
+    let st1 = Userstate.set_context saved_state ctxt in
+    begin
+      Global.set_state st1;
+      scripter ~silent:false script_name;
+      let st2 = Global.state() in
+      Context.thydb (Userstate.context st2)
+    end
+
+  let buildthy (ctxt: Context.t) (thyname: string) =
+    let saved_state = Global.state() in
+    let db1 = 
+      if (thyname = Lterm.base_thy)
+      then 
+        begin
+          let ctxt1 = BaseTheory.builder ~save:true ctxt in
+          Context.thydb ctxt1
+        end
+      else build_fn ctxt (Context.thydb ctxt) thyname
+    in 
+    (Global.set_state saved_state; db1)
+
+  let default_build_fn 
+      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+    let db1 = buildthy (Context.set_thydb ctxt db) thyname in
+    let thy = Thydb.get_thy db1 thyname in
+    let thylist = thy_importing_list [] db1 thy in
+    (db1, thylist)
+
+  let default_load_fn 
+      (ctxt: Context.t) (file_data: Thydb.Loader.info) =
+    Context.Files.load_thy_file ctxt file_data
+
+  let default_loader ctxt = 
+    Thydb.Loader.mk_data 
+      (default_load_fn ctxt)
+      (default_build_fn ctxt)
+
+  let load_file fname = 
+    (get_load_file()) fname
+
+  let script_file ?(silent=false) fname = 
+    (get_use_file()) ~silent fname
+
+  let set_file_handlers ctxt = 
+    let ctxt1 = Context.set_loader ctxt load_file  in
+    Context.set_scripter ctxt1 script_file
+
   let set_load_file loader = 
     begin
-      Userstate.Loader.set_load_file loader;
-      let ctxt = Userstate.Loader.set_file_handlers (Global.context()) in
+      set_load_file loader;
+      let ctxt = set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
 
   let set_use_file scripter = 
     begin
-      Userstate.Loader.set_use_file scripter;
-      let ctxt = Userstate.Loader.set_file_handlers (Global.context()) in
+      set_use_file scripter;
+      let ctxt = set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
 end
@@ -129,12 +311,12 @@ end
 let load_file_func () = 
   Context.loader (Global.context())
 let set_load_file_func f = 
-  Files.set_load_file f
+  Loader.set_load_file f
 
 let use_file_func () = 
   Context.scripter (Global.context())
 let set_use_file_func f = 
-  Files.set_use_file f
+  Loader.set_use_file f
 
 let get_proof_hook () =
   Goals.save_hook (Global.proofstack ())
@@ -232,7 +414,7 @@ let remove_type_pp s =
 
 (** {6 Theories} *)
 let begin_theory n ps =
-  Userstate.Access.init_simpset();
+  Access.init_simpset();
   let nctxt = Commands.begin_theory (Global.context ()) n ps in
   Global.set_context nctxt
 
@@ -474,9 +656,16 @@ end (* Display *)
 
 (** {6 Initialising functions} *)
 
-let init = Global.init
-let reset = Global.init
+let init () = 
+  let st0 = Userstate.init (Global.state()) in
+  let ctxt0 = Userstate.context st0 in
+  let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
+  let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
+  let ctxt3 = Loader.set_file_handlers ctxt2 in 
+  let st1 = Userstate.set_context st0 ctxt3 in
+  Global.set_state st1
 
+let reset = init
 
 (** {6 Simplifier} *)
 

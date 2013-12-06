@@ -74,10 +74,12 @@ sig
   val set_thyset: t -> Lib.StringSet.t -> t
 end
 
+(***
 val state: unit -> State.t
 (** The global state *)
 val set_state: State.t -> unit
 (** Set the global state *)
+***)
 
 val context: State.t -> Context.t
 (** The global context *)
@@ -134,6 +136,7 @@ val init_proofstack: State.t -> State.t
 val init_base_thy_builder: State.t -> State.t
 (** Initialize the base theory builder *)
 
+(***
 module Access :
 sig
   val context: unit -> Context.t
@@ -183,11 +186,14 @@ sig
   val init_proofstack: unit -> unit
 (** Initialize the global proofstack *)
 end
+***)
 
+(****
 module Loader :
 sig
 
   (** {5 Theory building and loading} *)
+(***
   (** Get and set functions to load/use a file *)
   val set_load_file:
     (string -> unit) -> unit
@@ -197,9 +203,10 @@ sig
     (?silent:bool -> string -> unit) -> unit
   val get_use_file:
     unit -> (?silent:bool -> string -> unit)
+***)
 
   (** Update a context with the functions to load/use a file *)
-  val set_file_handlers: Context.t -> Context.t
+  val set_file_handlers: State.t -> State.t
 
   (** Default functions *)
   val default_thy_fn: 
@@ -213,22 +220,20 @@ sig
 
   val load_file: string -> unit
   val script_file: ?silent:bool -> string -> unit
-
-  (** Set the default file handlers for a context *)
-  val set_file_handlers: Context.t -> Context.t
 end
+***)
 
 module Init :
 sig
   (** {5 State initialising functions} *)
 
   (** Initialise the global state *)
-  val init: unit -> unit
+  val init: State.t -> State.t
   (** Reset the global state *)
-  val reset: unit -> unit
+  val reset: State.t -> State.t
 end
 
 (** Initialise the global state *)
-val init: unit -> unit
+val init: State.t -> State.t
 (** Reset the global state *)
-val reset: unit -> unit
+val reset: State.t -> State.t

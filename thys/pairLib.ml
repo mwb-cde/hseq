@@ -72,9 +72,9 @@ let pair_printer ppstate prec (f, args)=
       Term.simple_print_fn_app ppstate ppdata (f, args)
 
 let init_pair_printer()=
-  let inf0 = Userstate.Access.ppinfo () in
+  let inf0 = Global.ppinfo () in
   let inf1 = Printer.add_term_printer inf0 pair_id pair_printer in
-  Userstate.Access.set_ppinfo inf1
+  Global.set_ppinfo inf1
 
 let init_pair()=
   init_pair_printer() 

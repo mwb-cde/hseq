@@ -21,6 +21,7 @@
 
 open HSeq
 open HSeqUser
+open HSeqUser.Userlib
 open Lib
 
 (***
@@ -78,9 +79,9 @@ let stop ()=
 
 let restart () = 
   repl_flag:=true; 
-  Userstate.set_state
-    (Userstate.set_proofstack (Userstate.state())
-       (Goals.set_hook signal (Userstate.proofstack (Userstate.state())))); 
+  Global.set_state
+    (Userstate.set_proofstack (Global.state())
+       (Goals.set_hook signal (Userstate.proofstack (Global.state())))); 
   repl()
 
 let print () = 

@@ -174,11 +174,11 @@ struct
   let init_set_printer()=
     let set_print = set_printer()
     in 
-    let inf0 = Userstate.Access.ppinfo() in
+    let inf0 = Userlib.Global.ppinfo() in
     let inf1 = Printer.add_term_printer inf0 set_id set_print in
     let inf2 = Printer.add_term_printer inf1 single_id single_set_printer 
     in
-    Userstate.Access.set_ppinfo inf2
+    Global.set_ppinfo inf2
 
 end
 

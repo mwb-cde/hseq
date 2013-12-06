@@ -20,6 +20,7 @@
    ----*)
 
 open HSeq
+
 (** {5 Default values} *)
 module Default =
 struct
@@ -108,6 +109,7 @@ struct
 
 end
 
+(**
 (** {5 Variables } *)
 module Var = 
 struct
@@ -117,11 +119,15 @@ struct
   let set st = state_v := st
   let init() = set (State.empty())
 end
+  ***)
 
+(****
 (** The global state *)
 let state = Var.state
 let set_state = Var.set
 let init_state = Var.init
+***)
+
 
 (** The global context *)
 let context = State.context
@@ -161,163 +167,8 @@ let thyset_add st t =
 let thyset_mem st t =
   Lib.StringSet.mem t (thyset st)
 
-module Access = 
-struct
-  let context() = context (state())
-  let set_context ctxt = set_state (set_context (state()) ctxt)
-  let init_context () = set_context (Default.context())
-
-  let scope() = scope (state())
-  let set_scope scp = set_state (set_scope (state()) scp)
-  let init_scope () = set_scope (Default.scope())
-
-  let ppinfo() = ppinfo (state())
-  let set_ppinfo pp = set_state (set_ppinfo (state()) pp)
-  let init_ppinfo () = set_ppinfo (Default.printers())
-
-  let parsers() = parsers (state())
-  let set_parsers pp = set_state (set_parsers (state()) pp)
-  let init_parsers () = set_parsers (Default.parsers())
-
-  let thyset() = thyset (state())
-  let set_thyset s = set_state (set_thyset (state()) s)
-  let init_thyset () = set_thyset (Default.thyset())
-  let thyset_add t = 
-    let set1 = Lib.StringSet.add t (thyset ()) in
-    set_thyset set1
-  let thyset_mem t = thyset_mem (state()) t
-
-  let simpset() = simpset (state())
-  let set_simpset s = set_state (set_simpset (state()) s)
-  let init_simpset () = 
-    set_thyset (Default.thyset());
-    set_simpset (Default.simpset())
-
-  let proofstack() = proofstack (state())
-  let set_proofstack s = set_state (set_proofstack (state()) s)
-  let init_proofstack () = set_proofstack (Default.proofstack())
-end
-
-module Loader =
-struct
-
-  (** Remember loaded theories *)
-  let record_thy_fn ctxt thy = 
-    let n = thy.Theory.cname in
-    Access.thyset_add n; 
-    ctxt
-
-  (** Set up simpset from loaded theory *)
-  let simp_thy_fn ctxt thy = 
-    let thyname = thy.Theory.cname in
-    if (Access.thyset_mem thyname) then ctxt 
-    else
-      let set = Access.simpset() in
-      let set1 = Simplib.on_load ctxt set thy in
-      begin
-        Access.set_simpset set1;
-        record_thy_fn ctxt thy
-      end
-
-  (** List of functions to apply to a loaded theory *)
-  let thy_fn_list = [simp_thy_fn]
-
-  (** {5 Theory building and loading} *)
-  module Var =
-  struct
-    let null_load_file (fname: string) =
-      raise (Failure ("Thyloader.null_load_file("^fname^")"))
-    let null_use_file ?silent:bool (fname: string) = 
-      raise (Failure ("Thyloader.null_use_file"^fname^")"))
-
-    let load_file = ref null_load_file
-    let use_file = ref null_use_file
-  end
-
-  let get_load_file() = !(Var.load_file)
-  let set_load_file f = Var.load_file := f
-  let get_use_file() = !(Var.use_file)
-  let set_use_file f = Var.use_file := f
-
-  let default_thy_fn 
-      (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
-    Report.report 
-      ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
-    let thy_fn_list = (Context.load_functions ctxt) in
-    let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
-    in 
-    ignore(ctxt1)
-
-  (** Generate the list of theories imported by a theory. For use in
-      Thydb.Loader, when applying the theory functions *)
-  let rec thy_importing_list ret thydb thy = 
-    let ret = find_thy_parents ret thydb thy in
-    ret
-  and work_thy ret thydb thyname = 
-    let thy = Thydb.get_thy thydb thyname in
-    find_thy_parents (thy::ret) thydb thy
-  and find_thy_parents ret thydb thy =
-    let ps = Theory.get_parents thy in
-    let thylist = 
-      List.fold_left 
-        (fun tlst name -> work_thy tlst thydb name)
-        ret ps
-    in 
-    thylist
-      
-  let build_fn
-      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
-    let scripter = get_use_file() in
-    let script_name = Context.Files.script_of_thy ctxt thyname in
-    let saved_state = state() in
-    let st1 = set_context saved_state ctxt in
-    begin
-      set_state st1;
-      scripter ~silent:false script_name;
-      let st2 = state() in
-      Context.thydb (context st2)
-    end
-
-  let buildthy (ctxt: Context.t) (thyname: string) =
-    let saved_state = state() in
-    let db1 = 
-      if (thyname = Lterm.base_thy)
-      then 
-        begin
-          let ctxt1 = BaseTheory.builder ~save:true ctxt in
-          Context.thydb ctxt1
-        end
-      else build_fn ctxt (Context.thydb ctxt) thyname
-    in 
-    (set_state saved_state; db1)
-
-  let default_build_fn 
-      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
-    let db1 = buildthy (Context.set_thydb ctxt db) thyname in
-    let thy = Thydb.get_thy db1 thyname in
-    let thylist = thy_importing_list [] db1 thy in
-    (db1, thylist)
-
-  let default_load_fn 
-      (ctxt: Context.t) (file_data: Thydb.Loader.info) =
-    Context.Files.load_thy_file ctxt file_data
-
-  let default_loader ctxt = 
-    Thydb.Loader.mk_data 
-      (default_load_fn ctxt)
-      (default_build_fn ctxt)
-
-  let load_file fname = 
-    (get_load_file()) fname
-
-  let script_file ?(silent=false) fname = 
-    (get_use_file()) ~silent fname
-
-  let set_file_handlers ctxt = 
-    let ctxt1 = Context.set_loader ctxt load_file  in
-    let ctxt2 = Context.set_scripter ctxt1 script_file in
-    ctxt2
-end
+(***
+***)
 
 module Init = 
 struct
@@ -325,12 +176,15 @@ struct
 (** State initializer *)
   let init_context st = 
     let ctxt0 = Default.context() in
+    let ctxt1 = Context.set_path ctxt0 [Settings.thys_dir()] in
+    set_context st ctxt1
+
+(***
     let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
     let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
-    let ctxt3 = Context.set_path ctxt2 [Settings.thys_dir()] in
     let ctxt4 = Loader.set_file_handlers ctxt3 in 
     set_context st ctxt4
-
+***)
   let init_scope st = 
     set_scope st (Default.scope())
 
@@ -362,17 +216,17 @@ struct
 
 (** {5 Initialising functions} *)
 
-  let init () = 
-    let st = 
+  let init st = 
+    let st1 = 
       List.fold_left (fun a f -> f a) (State.empty())
         [init_context; init_scope;
          init_ppinfo; init_parsers; 
          init_simpset; init_proofstack;
          init_base_thy_builder]
     in
-    set_state st
+    st1
 
-  let reset() = init()
+  let reset = init
 end
 
 let init_context = Init.init_context
