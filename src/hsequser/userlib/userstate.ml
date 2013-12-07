@@ -32,7 +32,7 @@ struct
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
     ctxt3
 
-  let scope () = Thydb.mk_scope(Context.Thys.theories(context()))
+  let scope () = Thydb.mk_scope(Context.thydb(context()))
 
   (* Printer tables *)
   let printers () = Printer.empty_ppinfo()

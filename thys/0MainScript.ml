@@ -35,10 +35,10 @@
 (* Clear the base theory name. *)
 let mainScript_base_name = 
   let str = 
-    try Context.Thys.get_base_name(Global.context()) 
+    try Context.base_name(Global.context()) 
     with _ -> "Main"
   in 
-  Global.set_context(Context.Thys.clear_base_name (Global.context())); 
+  Global.set_context(Context.clear_base_name (Global.context())); 
   str;;
 
 (** Build theory Main and the theories it depends on *)
@@ -50,6 +50,6 @@ let _ = end_theory();;
 
 (* Reset the base theory name *)
 let _ = 
-  Global.set_context(Context.Thys.set_base_name 
+  Global.set_context(Context.set_base_name 
                        (Global.context()) 
                        mainScript_base_name);;

@@ -54,11 +54,6 @@ type file_t =
         [silent=true], do not report any information. *)
     use_f: ?silent:bool -> string -> unit;
 
-    (** [build ?silent th]: Build theory [th] from a script.
-        [silent=true], do not report any information.  @raise
-        Failure on failure. *)
-    build_f: ?silent:bool -> string -> unit;
-
     (** [path]: List of directories to search for theories,
         libraries and scripts.*)
     path_f: string list;
@@ -160,12 +155,6 @@ val set_scripter : t -> (?silent:bool -> string -> unit) -> t
 val scripter: t -> (?silent:bool -> string -> unit)
 (** [use t]: Get the script-loading function of context [t]. *)
 
-val set_builder : t ->  (?silent:bool -> string -> unit) -> t
-(** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
-
-val builder : t -> (?silent:bool -> string -> unit)
-(** [builder t]: Get the theory builder function of context [t]. *)
-
 val set_path : t-> string list -> t
 (** [set_path p t]: Set the path in context [t] to [p]. *)
 
@@ -211,6 +200,14 @@ val set_thydb : t-> Thydb.thydb -> t
 val thydb : t -> Thydb.thydb
 (** [thydb t]: Get the theory database of context [t]. *)
 
+val current: t -> Theory.thy
+(** Get the current theory. @raise [Not_found] if no current  theory. *)
+val current_name: t -> string
+(** The name of the current theory.  @raise [Not_found] if no current
+    theory.  *)
+val set_current: t -> Theory.thy -> t
+(** Set the current theory. *)
+
 val set_loader_data : t -> (t -> Thydb.Loader.data) -> t 
 (** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
 
@@ -251,50 +248,12 @@ val find_thm:
   t -> Ident.t -> (t -> Logic.thm) -> Logic.thm
 (** Lookup a cached theorem, creating and caching it if not found. *)
 
-(** {5 Theories} *)
-module Thys:
-sig
 
-  (** [empty_thy_name]: The name of the anonymous theory. *)
-  val empty_thy_name: string
+val empty_thy_name: string
+(** [empty_thy_name]: The name of the anonymous theory. *)
 
-  (** Make an anonymous theory. *)
-  val anon_thy: unit -> Theory.thy
-
-  (** Get the name of the base theory. 
-
-      @raise Not_Found if no base theory set.  
-  *)
-  val get_base_name: t -> string
-
-  val set_base_name: t -> string -> t
-  (** Set the name of the base theory. *)
-
-  (** Clear the base name. *)
-  val clear_base_name: t -> t
-
-  (** {5 The theory database} *)
-
-  (** Get the theory database. *)
-  val theories: t -> Thydb.thydb
-  val get_theories: t -> Thydb.thydb
-
-  (** Set the theory database and the scope. *)
-  val set_theories: t-> Thydb.thydb -> t
-
-  (** Get the current theory. @raise [Not_found] if no current
-      theory. *)
-  val current: t -> Theory.thy
-  val curr_theory: t -> Theory.thy
-
-  (** The name of the current theory.
-      @raise [Not_found] if no current theory.  *)
-  val current_name: t -> string
-
-  (** Set the current theory. *)
-  val set_current: t -> Theory.thy -> t
-
-end
+val anon_thy: unit -> Theory.thy
+(** Make an anonymous theory. *)
 
 (** {5 File-Handling} *)
 
@@ -346,9 +305,6 @@ sig
   (** Find a theory file. *)
 
   (** {7 Theory loading and building} *)
-
-  val build_thy_file: t -> string -> unit
-  (** Function to build a theory from a script. *)
 
   val load_thy_file: t -> Thydb.Loader.info -> Theory.saved_thy
   (** Function to load a theory from a file. *)
@@ -555,6 +511,3 @@ sig
 
 end
 
-(*
-val find_term_parser: string -> Parser.Table.t -> unit
-*)

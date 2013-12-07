@@ -70,9 +70,9 @@ struct
   let set_proofstack ctxt = 
     set_state (Userstate.set_proofstack (state()) ctxt)
 
-  let theories() = Context.Thys.get_theories (context ())
-  let current() = Context.Thys.current (context ())
-  let current_name () = Context.Thys.current_name (context ())
+  let theories() = Context.thydb (context ())
+  let current() = Context.current (context ())
+  let current_name () = Context.current_name (context ())
 
   let thyset() = Userstate.thyset (state())
   let set_thyset s = 

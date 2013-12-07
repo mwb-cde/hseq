@@ -31,7 +31,6 @@ struct
 
   let load f = Report.warning ("Context.load: Failed to load file "^f)
   let use ?silent f = Report.warning ("Context.use: Failed to use file "^f)
-  let build ?silent f = raise (Failure("Context.build: Can't build theory "^f))
 
   (** {6 Theories} *)
 
@@ -51,11 +50,6 @@ type file_t =
         [silent=true], do not report any information. *)
     use_f: ?silent:bool -> string -> unit;
 
-    (** [build ?silent th]: Build theory [th] from a script.
-        [silent=true], do not report any information.  @raise
-        Failure on failure. *)
-    build_f: ?silent:bool -> string -> unit;
-    
     (** [path]: List of directories to search for theories,
         libraries and scripts.*)
     path_f: string list;
@@ -74,7 +68,6 @@ let empty_file_t ()=
   { 
     load_f = Default.load;
     use_f = Default.use;
-    build_f = Default.build;
     path_f = [];
     obj_suffix_f = [];
     thy_suffix_f = "";
@@ -184,12 +177,6 @@ let set_scripter t f =
     
 let scripter t = t.file_f.use_f
 
-let set_builder t f = 
-  let file1 = {t.file_f with build_f = f} in
-  { t with file_f = file1 }
-
-let builder t = t.file_f.build_f
-
 let set_path t p = 
   let file1 = {t.file_f with path_f = p} in
   { t with file_f = file1 }
@@ -234,13 +221,20 @@ let clear_base_name t =
   in 
   { t with thys_f = thys1 }
 
+let thydb t = t.thys_f.thydb_f
 let set_thydb t db =
   let thys1 = { t.thys_f with thydb_f = db } in 
   let scp1 = Thydb.mk_scope db in 
   let t1 = { t with thys_f = thys1 } in
   set_scope t1 scp1
+let init_thydb ctxt = set_thydb ctxt (Thydb.empty())
 
-let thydb t = t.thys_f.thydb_f
+  (** The current theory *)
+let current ctxt = Thydb.current (thydb ctxt)
+let current_name ctxt = Theory.get_name (current ctxt)
+let set_current ctxt thy = 
+  let thydb = Thydb.set_current (thydb ctxt) thy in
+  set_thydb ctxt thydb
 
 let set_loader_data t lf =
   { t with loader_data_f = lf }
@@ -303,34 +297,8 @@ let find_thm sctxt id fn =
       thm
     end
 
-module Thys =
-struct
-
-  (*
-   * Theories
-   *)
-
-  let empty_thy_name = Ident.null_thy
-  let anon_thy() = Theory.mk_thy empty_thy_name []
-
-  let get_base_name ctxt = base_name ctxt
-  let set_base_name ctxt x = set_base_name ctxt x 
-  let clear_base_name ctxt = clear_base_name ctxt 
-
-  (** The theory database *)
-  let theories ctxt = thydb ctxt
-  let get_theories = theories
-  let set_theories thydb ctxt = set_thydb thydb ctxt
-  let init_theories ctxt = set_theories ctxt (Thydb.empty())
-
-  (** The current theory *)
-  let current ctxt = Thydb.current (get_theories ctxt)
-  let curr_theory= current
-  let current_name ctxt = Theory.get_name (current ctxt)
-  let set_current ctxt thy = 
-    let thydb = Thydb.set_current (get_theories ctxt) thy in
-    set_theories ctxt thydb
-end
+let empty_thy_name = Ident.null_thy
+let anon_thy() = Theory.mk_thy empty_thy_name []
 
 (*** Printer/parser support ***)
 module PP =
@@ -512,7 +480,7 @@ struct
     | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
       
   let overload_lookup ctxt s = 
-    let thydb s = Thydb.get_id_options s (Thys.theories ctxt)
+    let thydb s = Thydb.get_id_options s (thydb ctxt)
     and parserdb s = Parser.get_overload_list (parsers ctxt) s
     in 
     try parserdb s
@@ -642,9 +610,6 @@ struct
     try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
     with Not_found -> raise (Report.error ("Can't find theory "^f))
 
-  (** [build_thy_file f]: build a theory by running script file f.  *)
-  let build_thy_file ctxt thyname = builder ctxt thyname
-
   (** [load_thy_file info]: Load the file storing the theory named
       [info.name] with protection [info.prot] and date no later than
       [info.date]. Finds the file from the path [get_thy_path()].  *)
@@ -728,14 +693,14 @@ struct
         (loader_data ctxt)
         (Thydb.Loader.mk_info n None None) 
     in
-    let ctxt1 = Thys.set_theories ctxt db in
+    let ctxt1 = set_thydb ctxt db in
     apply_thy_fns ctxt1 thylist
 
   let make_current ctxt thy = 
-    let db = Thys.theories ctxt in
+    let db = thydb ctxt in
     let (db1, thylist) = Thydb.Loader.make_current db (loader_data ctxt) thy
     in 
-    let ctxt1 = Thys.set_theories ctxt db1 in
+    let ctxt1 = set_thydb ctxt db1 in
     apply_thy_fns ctxt1 thylist
       
 end

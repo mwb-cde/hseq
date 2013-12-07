@@ -49,14 +49,6 @@ let save_theory ctxt thy  =
 
 let load_theory_as_cur ctxt n = 
   Context.Files.load_theory_as_cur ctxt n
-(****
-  let db = 
-    Thydb.Loader.load (Context.thydb ctxt) 
-      (Context.loader_data ctxt)
-      (Thydb.Loader.mk_info n None None)
-  in 
-  Context.Thys.set_theories ctxt db
-***)
 let read ?ctxt (x: string) = 
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in 
   catch_errors (Context.ppinfo pctxt) Context.PP.read pctxt x
@@ -74,10 +66,10 @@ let read_defn ?ctxt x =
 let set_scope = Context.set_scope
 let scope_of = Context.scope_of 
 
-let theories ctxt = Context.Thys.theories ctxt
+let theories ctxt = Context.thydb ctxt
 
-let curr_theory = Context.Thys.current
-let curr_theory_name  = Context.Thys.current_name
+let curr_theory = Context.current
+let curr_theory_name  = Context.current_name
 
 let theory ctxt name = 
   if name = "" 
@@ -91,7 +83,7 @@ let begin_theory ctxt n parents =
   then raise (Report.error "No theory name")
   else 
     let importing =
-      try List.append parents [(Context.Thys.get_base_name ctxt)]
+      try List.append parents [(Context.base_name ctxt)]
       with Not_found -> parents
     in 
     let thy = Theory.mk_thy n importing in
@@ -102,10 +94,10 @@ let end_theory ctxt ?(save=true) () =
   then raise (Report.error "At base theory")
   else 
     begin
-      let db1 = Thydb.end_current (Context.Thys.theories ctxt) true in
-      let ctxt1 = Context.Thys.set_theories ctxt db1 in
+      let db1 = Thydb.end_current (Context.thydb ctxt) true in
+      let ctxt1 = Context.set_thydb ctxt db1 in
       (if save 
-       then save_theory ctxt1 (Context.Thys.current ctxt1) 
+       then save_theory ctxt1 (Context.current ctxt1) 
        else ());
       ctxt1
     end
@@ -120,31 +112,31 @@ let close_theory ctxt =
   then raise (Report.error "At base theory")
   else 
     begin
-      let db1 = Thydb.end_current (Context.Thys.theories ctxt) false in
-      let ctxt1 = Context.Thys.set_theories ctxt db1 in
-      save_theory ctxt1 (Context.Thys.current ctxt1);
+      let db1 = Thydb.end_current (Context.thydb ctxt) false in
+      let ctxt1 = Context.set_thydb ctxt db1 in
+      save_theory ctxt1 (Context.current ctxt1);
       ctxt1
     end
 
 (*** Theory properties ***)
 
 let parents ctxt ns = 
-  let thy = Context.Thys.curr_theory ctxt
+  let thy = Context.current ctxt
   in 
   let thy1 = Theory.add_parents ns thy in
   Context.Files.make_current ctxt thy1
 
 let add_file ctxt f =
-  let db0 = Context.Thys.theories ctxt in
-  let db1 = Thydb.add_file (curr_theory_name ctxt) f db0 in
-  let ctxt1 = Context.Thys.set_theories ctxt db1 
+  let db0 = Context.thydb ctxt in
+  let db1 = Thydb.add_file (Context.current_name ctxt) f db0 in
+  let ctxt1 = Context.set_thydb ctxt db1 
   in 
   ctxt1 
 
 let remove_file ctxt f = 
-  let db0 = Context.Thys.theories ctxt in
-  let db1 = Thydb.remove_file f (curr_theory_name ctxt) db0 in
-  Context.Thys.set_theories ctxt db1
+  let db0 = Context.thydb ctxt in
+  let db1 = Thydb.remove_file f (Context.current_name ctxt) db0 in
+  Context.set_thydb ctxt db1
 
 (*** Printer and Parser information ***)
 
@@ -153,10 +145,10 @@ let remove_file ctxt f =
 (*** Types ***)
 let add_type_pp_rec ctxt id rcrd =
   let ctxt1 =
-    Context.Thys.set_theories 
+    Context.set_thydb 
       ctxt
       (Thydb.add_type_pp_rec (Ident.name_of id) rcrd
-         (Context.Thys.theories ctxt))
+         (Context.thydb ctxt))
    in
   let ctxt2 = Context.PP.add_type_pp_record ctxt1 id rcrd in
   ctxt2
@@ -165,17 +157,17 @@ let remove_type_pp_rec ctxt id =
   let db1 = 
     Thydb.remove_type_pp_rec 
       (Ident.thy_of id) (Ident.name_of id) 
-      (Context.Thys.theories ctxt)
+      (Context.thydb ctxt)
   in
-  let ctxt1 = Context.Thys.set_theories ctxt db1 in
+  let ctxt1 = Context.set_thydb ctxt db1 in
   Context.PP.remove_type_pp ctxt1 id
 
 let get_type_pp_rec ctxt id = Context.PP.get_type_pp ctxt id 
 
 let add_symbol ctxt str sym = 
   let ctxt1 = 
-    Context.Thys.set_theories ctxt
-      (Thydb.add_pp_symbol (str, sym) (Context.Thys.theories ctxt))
+    Context.set_thydb ctxt
+      (Thydb.add_pp_symbol (str, sym) (Context.thydb ctxt))
   in
   Context.PP.add_pp_symbol ctxt1 str sym
 
@@ -183,10 +175,10 @@ let add_symbol ctxt str sym =
 
 let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
   let ctxt1 = 
-    Context.Thys.set_theories
+    Context.set_thydb
       ctxt
       (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos) 
-         (Context.Thys.theories ctxt))
+         (Context.thydb ctxt))
   in
   Context.PP.add_term_pp_record ctxt1 id rcrd
     
@@ -197,7 +189,7 @@ let remove_term_pp_rec ctxt id =
     Thydb.remove_term_pp_rec
       (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in
-  let ctxt1 = Context.Thys.set_theories ctxt db1 in
+  let ctxt1 = Context.set_thydb ctxt db1 in
   Context.PP.remove_term_pp ctxt1 id
 
 let add_overload ctxt sym ?(pos=Lib.First) id = 
@@ -263,11 +255,11 @@ let axiom sctxt ?(simp=false) n trm =
   in 
   let nctxt = 
   begin
-    match Lib.try_find (Theory.get_theorem_rec n) (curr_theory sctxt) with
+    match Lib.try_find (Theory.get_theorem_rec n) (Context.current sctxt) with
       | Some _ -> 
         raise (Report.error ("Theorem named "^n^" already exists in theory."))
       | _ -> 
-        (Context.Thys.set_theories sctxt
+        (Context.set_thydb sctxt
            (Thydb.add_axiom n thm props (theories sctxt)))
   end
   in 
@@ -281,8 +273,8 @@ let save_thm ctxt ?(simp=false) n th =
   in 
   catch_errors (Context.ppinfo ctxt)
     (fun x -> 
-      (Context.Thys.set_theories ctxt (Thydb.add_thm n th props x), th)) 
-    (Context.Thys.theories ctxt)
+      (Context.set_thydb ctxt (Thydb.add_thm n th props x), th)) 
+    (Context.thydb ctxt)
 
 let prove_thm ctxt ?(simp=false) n t tacs =
   let prove_aux _ = 
@@ -352,7 +344,7 @@ let subtypedef ctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   let db2 = Thydb.add_decln rep_decln [] db1 in 
   let db3 = Thydb.add_decln abs_decln [] db2
   in 
-  let ctxt1 = Context.Thys.set_theories ctxt db3 in
+  let ctxt1 = Context.set_thydb ctxt db3 in
   (* Add the theorems *)
   let rep_type = tyrec.Logic.Defns.rep_type
   and rt_name = rep_name^"_mem"
@@ -376,7 +368,7 @@ let simple_typedef ctxt (n, args, def) =
   in 
   let tydef = Logic.Defns.mk_typealias scp n args def1 in 
   let ctxt1 =
-    Context.Thys.set_theories ctxt (Thydb.add_type_rec tydef (theories ctxt))
+    Context.set_thydb ctxt (Thydb.add_type_rec tydef (theories ctxt))
   in
   (ctxt1, tydef)
 
@@ -407,7 +399,7 @@ let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef =
         | None -> sctxt1
         | Some(prec, fx, repr) -> 
           let lname = 
-            Ident.mk_long (Theory.get_name (Context.Thys.current sctxt1)) name
+            Ident.mk_long (Theory.get_name (Context.current sctxt1)) name
           in 
           add_type_pp sctxt1 lname prec fx repr
     end
@@ -451,7 +443,7 @@ let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
   let scp = scope_of ctxt in
   let new_def =
     let curr_thy_name = 
-      Theory.get_name (Context.Thys.current ctxt) in
+      Theory.get_name (Context.current ctxt) in
     Logic.Defns.mk_termdef scp
       (Ident.mk_long curr_thy_name name, nty)
       args rhs
@@ -460,7 +452,7 @@ let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
   let (n, ty, d) = Logic.Defns.dest_termdef new_def
   in 
   let ctxt1 = 
-    Context.Thys.set_theories ctxt
+    Context.set_thydb ctxt
       (Thydb.add_defn (Ident.name_of n) ty d props (theories ctxt))
   in
   let ctxt2 = 
@@ -483,10 +475,10 @@ let declare ctxt ?pp trm =
 	  | Basic.Id(i, t) -> (Ident.name_of i, t)
 	  | _ -> raise (Failure "Badly formed declaration")
       in 
-      let id = Ident.mk_long (Context.Thys.current_name ctxt) v in 
+      let id = Ident.mk_long (Context.current_name ctxt) v in 
       let dcl = Logic.Defns.mk_termdecln (scope_of ctxt) v ty in 
       let ctxt1 = 
-        Context.Thys.set_theories ctxt
+        Context.set_thydb ctxt
           (Thydb.add_decln dcl [] (theories ctxt))
       in
       (ctxt1, id, ty)
@@ -501,7 +493,7 @@ let declare ctxt ?pp trm =
         let longname = 
 	  if (Ident.thy_of val_name) = Ident.null_thy 
 	  then 
-            Ident.mk_long (Context.Thys.current_name ctxt2) 
+            Ident.mk_long (Context.current_name ctxt2) 
               (Ident.name_of val_name)
 	  else val_name
         in 
