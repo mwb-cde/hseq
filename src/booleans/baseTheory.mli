@@ -1,7 +1,7 @@
 (*----
   Name: baseTheory.mli
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,8 +19,6 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-
-
 (** A minimal base theory, used if no other theory can be found. *)
 
 val context: unit -> Context.t
@@ -33,10 +31,4 @@ val builder: ?save:bool -> Context.t -> Context.t
     (default: save=false)
 *)
 
-(** {7 Initialising function} *)
-(*
-val init: unit -> unit
-*)
-(** Set {!Global.Init.set_base_thy_builder} to {!BaseTheory.builder}.
-*)
 

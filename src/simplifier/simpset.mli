@@ -1,7 +1,7 @@
 (*----
   Name: simpset.mli
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -85,7 +85,6 @@ val termnet_lt: rule -> rule -> bool
     Net.insert. Makes variables larger than any other term, making
     terms with variables larger than terms without.
 *)
-
 
 val dest_rr_rule: 
   Basic.term -> 

@@ -1,7 +1,7 @@
 (*----
   Name: boolinduct.ml
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -339,7 +339,7 @@ let basic_induct_tac c thm ctxt goal =
 
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
-y
+
     Theorem [thm] must be in the form:
     {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
     where

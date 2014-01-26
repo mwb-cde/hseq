@@ -1,7 +1,7 @@
 (*----
   Name: context.mli
-  Copyright M Wahab 2012
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2012-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -555,6 +555,3 @@ sig
 
 end
 
-(*
-val find_term_parser: string -> Parser.Table.t -> unit
-*)

@@ -1,7 +1,7 @@
 (*----
   Name: boolPP.ml
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -225,22 +225,9 @@ let add_token ptable id repr fixity prec =
 
 let basethy_type_symbols =
   [
-(*
-    (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
-*)
   ]
 and basethy_term_symbols = 
   [
-(*
-    (Lterm.notid, negation_pprec.Printer.prec, 
-     negation_pprec.Printer.fixity, 
-     Some "~");
-    (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
-    (Lterm.andid, 185, Printer.infixr, Some "&") ;
-    (Lterm.orid, 190, Printer.infixr, Some "|") ;
-    (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
-    (Lterm.iffid, 180, Printer.infixn, Some "<=>") ;
-*)
   ]
 
 let quote_type_symbols =
@@ -302,11 +289,6 @@ let basethy_context () =
   let ptbl3 = init_bool_tokens ptbl2 syms in
   let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
   ctxt1
-(*
-  let ppinf0 = Context.ppinfo ctxt1 in
-  let ppinf1 = init_bool_ppinfo ppinf0 syms in 
-  Context.set_ppinfo ctxt1 ppinf0
-*)
 
 let quote_context =
   let syms = (quote_type_symbols, quote_term_symbols) in

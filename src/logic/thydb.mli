@@ -1,7 +1,7 @@
 (*----
   Name: thydb.mli
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -325,19 +325,19 @@ sig
 
   (** Information about a theory passed to file-handling functions. *)
   type info =
-      { 
-	name: string; 
+    { 
+      name: string; 
         (** The name of the theory. *)
-	date: float option; 
+      date: float option; 
         (** The maximum date of the theory (optional). *)
-	prot: bool option ;
+      prot: bool option ;
         (** Whether the theory is protected (optional). *)
-	childn: Lib.StringSet.t 
+      childn: Lib.StringSet.t 
       (** 
           Names of the theories of which name is a parent. 
           (If [name] is in [childn] then it is a circular importing.)
       *)
-      }
+    }
 
   val mk_info: string -> float option -> bool option -> info
   (** Constructor for [info]. *)
@@ -365,15 +365,15 @@ sig
       [db] is not in the table of [db'].
   *)
   type data = 
-      {
-	load_fn: info -> Theory.saved_thy;
+    {
+      load_fn: info -> Theory.saved_thy;
 	(** Function to find and load a theory file. *)
-	build_fn: thydb -> string -> (thydb * Theory.thy list)
+      build_fn: thydb -> string -> (thydb * Theory.thy list)
       (** Function to build the theory if it can't be loaded. The function
 	  should take the database in which the theory is to be built and return
 	  the database with the new theory as the current theory and the list of
 	  all theories that the newly built theory depends on.  *)
-      }
+    }
 
   val mk_data: 
     (info -> Theory.saved_thy)
@@ -382,89 +382,78 @@ sig
   (** Constructor for [data]. *)
 
   val mk_empty: unit -> data
-  (** Make empty loader data. *)
+   (** Make empty loader data. *)
 
-   val make_current:  thydb -> data -> Theory.thy 
-   -> (thydb * (Theory.contents list))
+  val make_current:  thydb -> data -> Theory.thy 
+    -> (thydb * (Theory.contents list))
   (** [make_current db thy]: Load the parents of [thy] into [db] and
       make theory [thy] the current theory.  *)
 
   val load: thydb -> data -> info -> (thydb * (Theory.contents list))
-  (** [load db info data]: Load a theory and, if neccessary, it parents from
-      disc into the database. Make it the current theory. If no theory file is
-      available, try to build it from a theory script. 
+    (** [load db info data]: Load a theory and, if neccessary, it parents from
+        disc into the database. Make it the current theory. If no theory file is
+        available, try to build it from a theory script. 
 
-      Uses [data.load_fn] to try to load the theory and [data.build_fn] to try
-      to build the theory. Returns the updated thydb and the contents of the
-      loaded theories *)
+        Uses [data.load_fn] to try to load the theory and [data.build_fn] to try
+        to build the theory. Returns the updated thydb and the contents of the
+        loaded theories *)
 
-  (** {7 Debugging information} *)
+  val build_thy: 
+    data -> thydb -> info -> (Theory.thy list * Theory.thy * thydb)
+  val load_aux: data -> thydb -> info -> bool -> (Theory.thy * thydb)
+  val load_theory:
+    thydb -> data -> info -> (thydb * (Theory.contents list))
+
+  val get_loaded_thy: data -> thydb -> Theory.thy list -> info 
+    -> (Theory.thy list * Theory.thy * thydb)
+  val get_saved_thy: data -> thydb -> Theory.thy list -> info
+    -> (Theory.thy list * Theory.thy * thydb)
+  val load_aux: data -> thydb -> Theory.thy list -> info
+    -> (Theory.thy list * Theory.thy * thydb)
+  val load_deps: data -> thydb -> Theory.thy list -> float -> info list
+    -> (Theory.thy list * thydb * float)
 
   val load_theory: 
-    thydb -> data -> info -> (thydb * Theory.contents list)
+    thydb -> data -> info -> (thydb * Theory.thy * Theory.contents list)
   val load_parents: 
     thydb -> data -> info -> string list -> (thydb * Theory.contents list)
 
+  val load_main: 
+    thydb -> data -> info -> Theory.contents list
+    -> (thydb * Theory.contents list)
+  val load_parents_main: 
+    thydb -> data -> info -> string list -> Theory.contents list
+    -> (thydb * Theory.contents list)
+
+  val load: 
+    thydb -> data -> info
+    -> (thydb * Theory.contents list)
+
+  val load_parents:
+    thydb -> data -> info -> string list
+    -> (thydb * Theory.contents list)
+
+
+
+  (** {7 Debugging information} *)
 
   val check_build: thydb -> thydb -> Theory.thy -> unit
   val set_curr: thydb -> Theory.thy -> thydb
   val test_protection: string -> bool option -> bool -> unit
   val test_date: string -> float option -> float -> unit
-
   val latest_time: float -> float -> float
-
-  module New:
-  sig
-    val build_thy: 
-      data -> thydb -> info -> (Theory.thy list * Theory.thy * thydb)
-    val load_aux: data -> thydb -> info -> bool -> (Theory.thy * thydb)
-    val load_theory:
-      thydb -> data -> info -> (thydb * (Theory.contents list))
-
-    val get_loaded_thy: data -> thydb -> Theory.thy list -> info 
-      -> (Theory.thy list * Theory.thy * thydb)
-    val get_saved_thy: data -> thydb -> Theory.thy list -> info
-      -> (Theory.thy list * Theory.thy * thydb)
-    val load_aux: data -> thydb -> Theory.thy list -> info
-      -> (Theory.thy list * Theory.thy * thydb)
-    val load_deps: data -> thydb -> Theory.thy list -> float -> info list
-      -> (Theory.thy list * thydb * float)
-
-    val load_theory: 
-      thydb -> data -> info -> (thydb * Theory.thy * Theory.contents list)
-    val load_parents: 
-      thydb -> data -> info -> string list -> (thydb * Theory.contents list)
-
-    val load_main: 
-      thydb -> data -> info -> Theory.contents list
-      -> (thydb * Theory.contents list)
-    val load_parents_main: 
-      thydb -> data -> info -> string list -> Theory.contents list
-      -> (thydb * Theory.contents list)
-
-    val load: 
-      thydb -> data -> info
-      -> (thydb * Theory.contents list)
-
-    val load_parents:
-      thydb -> data -> info -> string list
-      -> (thydb * Theory.contents list)
-
-  end
-
-    (** For Debugging. *)
   val check_importing : info -> string -> unit
+
 end
 
 (** {5 Debugging information} *)
-
 module NameSet:
 sig
   type t = 
-      {
-        list: string list ; 
-	set: Lib.StringSet.t
-      }
+    {
+      list: string list ; 
+      set: Lib.StringSet.t
+    }
 
   val empty: t
   val add: t -> string -> t 

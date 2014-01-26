@@ -1,7 +1,7 @@
 (*----
   Name: simplifier.mli
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -262,12 +262,6 @@ val prove_cond_tac:
 
 (** {5 Simplifier functions} *)
 
-(*
-type data = 
-    (Data.t  (** Simplifier data *)
-     * Gtypes.substitution (** Type environment *)
-     * Term.substitution)   (** Quantifier environment *)
-*)
 type match_data = 
     {
       (** Simplifier data *)

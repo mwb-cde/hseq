@@ -1,7 +1,7 @@
 (*----
   Name: simplib.ml
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -202,19 +202,3 @@ let on_load (ctxt:Context.t) (set:Simpset.simpset) thy =
   let set3 = List.fold_left (def_is_simp ctxt) set2 thy.Theory.cdefns in
   set3
 
-(**
-let on_load thy =
-  List.iter thm_is_simp thy.Theory.caxioms;
-  List.iter thm_is_simp thy.Theory.ctheorems;
-  List.iter def_is_simp thy.Theory.cdefns
-
-(** Initialise the simp set. **)
-let init () =
-  init_std_ss();
-  Global.Files.add_load_fn on_load
-
-let _ = Global.Init.add_init init
-
-(*** Printer ***)
-let print_set set = Simpset.print (Global.PP.info()) set
-*)

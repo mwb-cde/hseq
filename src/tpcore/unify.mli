@@ -1,7 +1,7 @@
 (*----
   Name: unify.mli
-  Copyright M Wahab 2005-2009, 2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -107,8 +107,3 @@ val matches_rewrite:
     Returns both type and term substitutions
 *)
 
-(***
-val term_copy_type: 
-  Gtypes.substitution -> Basic.term 
-  -> (Basic.term * Gtypes.substitution)
-***)

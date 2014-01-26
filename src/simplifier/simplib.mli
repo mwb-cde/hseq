@@ -1,7 +1,7 @@
 (*----
   Name: simplib.mli
-  Copyright M Wahab 2005-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -49,22 +49,6 @@ val add_conv:
 
 val init_std_ss: unit -> Simpset.simpset
 (** The initial standard simpset *)
-  
-
-(****
-(** Global state *)
-module User :  
-sig
-
-val std_ss: unit -> Simpset.simpset 
-(** [std_ss()]: The standard simpset
-*)
-
-val set_std_ss: Simpset.simpset -> unit
-(** [set_std_ss set]: Set the standard simpset to [set]
-*)
-end
-****)
 
 (** {5 User level simplification tactics} *)
 
@@ -261,23 +245,10 @@ val on_load:
   Context.t -> Simpset.simpset -> Theory.contents -> Simpset.simpset
 (** Function to call when a theory is loaded. *)
 
-(**
-
-
-val init: unit -> unit
-(** Initialise the simplification library. Reset the standard simp set
-    and add {!Simplib.on_load} to the functions called when a theory
-    is loaded.
-*)
 
 (** {5 Printer} *)
 
-val print_set: Simpset.simpset -> unit
-(** Print a simp set. **)
-
 (** {5 Debugging} *)
-*)
-
 val has_property: 'a -> 'a list -> bool
 val thm_is_simp: 
   Context.t -> Simpset.simpset -> ('a * Theory.thm_record) -> Simpset.simpset

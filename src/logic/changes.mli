@@ -1,7 +1,7 @@
 (*----
   Name: changes.mli
-  Copyright M Wahab 2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2010-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
