@@ -1,7 +1,7 @@
 (*----
  Name: FunScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -50,7 +50,7 @@ let compose_def =
 let compose_thm = 
 theorem ~simp:true "compose_thm" 
 << !f g x: ((f ++ g) x) = (f (g x)) >>
-[simp_tac [defn "compose"]];;
+[simp_tac [defn "compose"] ++ eq_tac];;
 
 let compose_assoc = 
 theorem ~simp:true "compose_assoc"
@@ -225,7 +225,7 @@ let surj_compose =
      ++ instA [ << _y >> ] ++ specA
      ++ instA [ << _x  >> ] ++ specA
      ++ instC [ << _x1 >> ]
-     ++ simp_all
+     ++ simp_all []
  ];;
 
 let inj_compose =
@@ -254,7 +254,7 @@ let inj_on_inverse_intro =
      ++ (match_asm << !x: P >> copyA)
      ++ inst_tac [ << _x >> ]
      ++ inst_tac [ << _y >> ]
-     ++ simp_all 
+     ++ simp_all []
  ];;
 
 let invf_compose =

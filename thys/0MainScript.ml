@@ -1,7 +1,7 @@
 (*----
  Name: 0MainScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -21,7 +21,6 @@
 
 (**
    Create theory "Main" 
-
    Theory Main is the top-level theory (the "base theory") for the
    standard theory library.  It is imported into all theories (except
    those in the standard library).
@@ -35,9 +34,12 @@
 
 (* Clear the base theory name. *)
 let mainScript_base_name = 
-  let str = try Global.Thys.get_base_name() with _ -> "Main"
+  let str = 
+    try Context.base_name(Global.context()) 
+    with _ -> "Main"
   in 
-  Global.Thys.clear_base_name(); str;;
+  Global.set_context(Context.clear_base_name (Global.context())); 
+  str;;
 
 (** Build theory Main and the theories it depends on *)
 let _ = 
@@ -47,5 +49,7 @@ begin_theory "Main"
 let _ = end_theory();;
 
 (* Reset the base theory name *)
-let _ = Global.Thys.set_base_name mainScript_base_name;;
-
+let _ = 
+  Global.set_context(Context.set_base_name 
+                       (Global.context()) 
+                       mainScript_base_name);;

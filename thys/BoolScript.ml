@@ -1,7 +1,7 @@
 (*----
  Name: BoolScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -23,13 +23,13 @@
    Boolean operators and their basic properties.
 *)
 
-begin_theory "Bool" ["base"];; 
+let _ = begin_theory "Bool" ["base"];; 
 
 (** Cases/excluded middle *)
 
 let cases_thm=
 theorem "cases_thm" << !P: (not P) or P >>
-[flatten_tac++ basic];;
+[flatten_tac ++ basic];;
 
 let excluded_middle=
 theorem "excluded_middle" << ! x: (not x) or x>>
@@ -83,20 +83,18 @@ let iff_l2 = theorem "iff_l2"
 ++ replace_tac ++ eq_tac;
 replace_tac ++ eq_tac];;
 
-let iff_equals = 
-theorem "iff_equals" << !x y: (x iff y) iff (x = y)>>
-([flatten_tac ++ (rewrite_tac [(defn "iff")]) ++ conjC;
-flatten_tac ++ (cut iff_l2) ++ (inst_tac [ <<_x>>; << _y >> ])
-++ implA;
-conjC ++ flatten_tac;
-mp_tac ++ basic;
-(match_asm << _y => _x >> 
- (fun a -> match_asm << _y >> 
-   (fun f -> mp_tac ~a:a ~h:f)))
-++basic;
-basic;
-flatten_tac ++ replace_tac
-++ split_tac ++ (flatten_tac ++ basic)]);;
+let iff_equals = theorem "iff_equals" << !x y: (x iff y) iff (x = y)>>
+  ([flatten_tac ++ (rewrite_tac [(defn "iff")]) ++ conjC;
+     ((flatten_tac ++ (cut iff_l2) ++ (inst_tac [ << _x >>; << _y >> ])
+      ++ implA)
+     -- 
+       [
+         conjC ++ basic;
+         basic;
+       ]);
+     flatten_tac 
+     ++ conjC ++ replace_tac ++ flatten_tac ++ basic])
+   ;;
 
 let equals_iff=
 theorem "equals_iff" << !x y: (x iff y) = (x = y)>>
@@ -358,7 +356,7 @@ let forall_and=
 theorem "forall_and" 
   << !P Q: (!x: (P x) and (Q x))= ((!x: P x) and (!x: Q x)) >>
 [flatten_tac ++ equals_tac ++ scatter_tac 
-++ inst_tac [ << _x>> ] 
+++ (repeat (inst_tac [ << _x >> ] ))
 ++ (blast_tac // inst_tac [ << _x>> ] ++ basic)]
 
 let forall_or=
@@ -401,7 +399,7 @@ theorem "eq_fact" ~simp:true
 
 let if_true=
 theorem ~simp:true "if_true" 
-  << ! t f: (if true then t else f) = t>>
+  << ! t f: (if true then t else f) = t >>
 [
 flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
 ++ (allA << (%(z:'a): ((true => (z=_t)) and ((not  true) => (z=_f)))) >>)
@@ -454,7 +452,7 @@ theorem ~simp:true "if_false1"
  ];;
 
 
-let if_expand=
+let if_expand =
 theorem ~simp:false "if_expand" 
 << ! x a b : (if x then a else b) = ((x and a) or (not x and b)) >>
 [

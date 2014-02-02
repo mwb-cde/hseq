@@ -1,7 +1,7 @@
 (*----
  Name: SumScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -88,7 +88,7 @@ let mk_sumr_is_sum =
   [flatten_tac
      ++ unfold "is_sum" 
      ++ inst_tac [ << any >> ; <<_x>> ]
-     ++ simpC];;
+     ++ simpC []];;
 
 let mk_suml_eq = 
   theorem "mk_suml_eq"
@@ -101,8 +101,8 @@ let mk_suml_eq =
 	  (once_rewriteA_tac [thm "function_eq"] 
 	     ++ beta_tac)
 	  ++ inst_tac [ << true >>; << _x >> ]
-	  ++ simpA;
-	simpC
+	  ++ simpA [];
+	simpC []
       ]
  ];;
 
@@ -120,9 +120,10 @@ let mk_sumr_eq =
 		++ beta_tac ~f:l)
 	     ++ inst_tac ~f:l [ << false >>; << any >> ; << _y >> ]
 	     ++ simp ~f:l));
-	simpC
-      ]
- ];;
+	 simpC []
+       ]
+  ];;
+
 
 
 (** 
@@ -236,7 +237,7 @@ let inl_eq =
 	 ++ blast_tac ++ (simpC_tac [mk_suml_is_sum] // skip)
 	 ++ rewrite_tac [mk_suml_eq]
 	 ++ basic;
-       simp
+       simp 
      ]
   ];;
 
@@ -276,14 +277,6 @@ let inr_not_inl =
      --
      [
       simpC_tac  [mk_sumr_is_sum; mk_suml_is_sum];
-(*
-      split_tac  
-	-- 
-	[ 
-	  cut mk_sumr_is_sum ++ unify_tac; 
-	  cut mk_suml_is_sum ++ unify_tac
-	];
-*)
       mp_tac
 	++ unfold "mk_sumr" ++ unfold "mk_suml"
 	++ once_rewrite_tac [thm "function_eq"]
@@ -293,8 +286,7 @@ let inr_not_inl =
 	++ once_rewrite_tac [thm "function_eq"]
 	++ inst_tac [ << _x >> ] ++ beta_tac
 	++ once_rewrite_tac [thm "equals_bool"] ++ iffA
-	    ++ blast_tac 
-	    ++ eq_tac
+        ++ simpA []
     ]
  ];;
 
@@ -304,7 +296,7 @@ let inl_not_inr =
   [
    flatten_tac 
      ++ cut ~inst:[ << _y >>; << _x >> ] inr_not_inl
-     ++ simpA
+     ++ simpA []
  ];;
 
 let outl_thm = 
@@ -365,8 +357,7 @@ let forall_sum =
   [
    flatten_tac ++ equals_tac ++ blast_tac
        ++ (unify_tac // skip)
-     ++ cases_of  << _x >> 
-     ++ simp
+    ++ cases_of  << _x >> ++ simp
  ];;
     
 let sum_induct=
@@ -413,7 +404,9 @@ let sum_axiom =
        (* 2 *)
        once_rewriteC_tac [thm "function_eq"]
        ++ specC
-       ++ cases_of << _x1 >> ++ replace_tac ++ simp
+       ++ cases_of << _x1 >> 
+       ++ split_tac 
+       ++ simp
      ]
     ]
 
@@ -567,7 +560,6 @@ let map_thm =
  split_tac ++ flatten_tac ++ unfold "map" 
    ++ simpC_tac [isl_thm; outl_thm; outr_thm]
 ];;
-
 
 
 let _ = end_theory();;

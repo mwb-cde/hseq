@@ -439,7 +439,7 @@ install-toplevel-data:
 # HSeq building variables
 
 # The quotation parser to use when building libraries and programs.
-export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
+export TPQUOTELIB?=$(SRC_ROOT)/$(OBJ_DIR)/lib/buildquote.cma
 
 ###
 # Global tool options

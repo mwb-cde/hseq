@@ -1,7 +1,7 @@
 (*----
  Name: RelationScript.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -80,7 +80,8 @@ let trans_closure_def =
     => (P a b)
     >>;;
 
-let tc_rules=
+
+let tc_rules =
   theorem "tc_rules"
     << 
     (!R x y: (R x y) => (TC R x y))
@@ -98,10 +99,10 @@ let tc_rules=
 	     (fun l -> 
 		once_rewrite_tac [defn "TC"]
 		++ instA ~a: l[ << _P >> ]))
-	  ++ simpA
+	  ++ simpA []
 	  ++ (match_asm << ! x y z: X >> liftA)
 	  ++ instA [ << _x >> ; << _y >>; << _z >> ]
-	  ++ back_tac
+          ++ back_tac 
 	  ++ simp
 	]
     ];;
@@ -132,7 +133,7 @@ let tc_induct =
     flatten_tac ++ once_rewrite_tac [defn "TC"]
     ++ (match_asm << !P: X => (P _x _y) >> liftA)
     ++ back_tac
-    ++ simp_all
+    ++ simp_all []
   ];;
 
 let tc_cases0 = 
@@ -244,7 +245,7 @@ let rtc_induct =
     >>
     [
       flatten_tac ++ once_rewrite_tac [defn "RTC"]
-      ++ back_tac ++ simp_all
+      ++ back_tac ++ simp_all []
   ];;
 
 

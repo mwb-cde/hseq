@@ -9,10 +9,14 @@ syntax:glob
 *.cmi
 *.cmo
 *.cmx
+*.cmxa
 *.o
+*.a
 */depend
 
 # HSeq Patterns
 *.tho
 src/lib/*
+src/HSeqOBJS
 obj/*
+*~

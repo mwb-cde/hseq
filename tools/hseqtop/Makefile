@@ -120,14 +120,13 @@ LIBRARIES=hseqtop
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-#object_SOURCES=
 hseqtop_SOURCES=unsafe init cli
 
 # object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
 #object_HEADERS=$(object_SOURCES)
 
 # object_INCLUDE: Directories to include when compiling [object].
-#object_INCLUDE=
+hseqtop_INCLUDE="+compiler-libs"
 
 
 ###

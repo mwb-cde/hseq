@@ -1,7 +1,7 @@
 (*----
  Name: buildall.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+ Copyright M Wahab 2005-2013
+ Author: M Wahab  <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -33,6 +33,9 @@
 (** Open the theorem prover *)
 
 open HSeq
+open HSeqUser
+open Userlib
+
 
 (** Add the source include directories *)
 let _ = 
@@ -47,9 +50,12 @@ let _ =
    This is part of the standard library so clear the theory base name.
 *)
 let buildall_base_name = 
-  let str = try Global.Thys.get_base_name() with _ -> "Main"
+  let str = 
+    try Context.base_name(Global.context()) 
+    with _ -> "Main"
   in 
-  Global.Thys.clear_base_name(); str;;
+  Global.set_context(Context.clear_base_name (Global.context())); 
+  str;;
 
 #use "0MainScript.ml";;
 

@@ -159,7 +159,7 @@ hseq_INCLUDE=+camlp4
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
-hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma tpquote.cma hseqtop.cma
+hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma hseq.cma hsequser.cma tpquote.cma hseqtop.cma
 
 # object_PACK_NAME: Name of pack to build
 #object_PACK_NAME=
@@ -248,7 +248,7 @@ hseq:
 	ocamlmktop -custom -I $(OBJ_ROOT)/lib -I +camlp4 \
 		nums.cma unix.cma dynlink.cma camlp4o.cma \
 		-o hseq \
-		hseq.cma tpquote.cma hseqtop.cma
+		hseq.cma hsequser.cma tpquote.cma hseqtop.cma
 
 
 

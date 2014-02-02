@@ -1,0 +1,10 @@
+Tools subdirectories
+--------------------
+
+hseqtop: Library for the hseqtop toplevel. Sets up system specific values and
+         initialization.
+
+toplevel - hseq: The toplevel for Hseq.
+
+scripts: Scripts for using the toplevel as a batch command.
+

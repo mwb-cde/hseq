@@ -33,7 +33,10 @@ let use_file ?(silent=false) f =
   then ignore(Toploop.use_silently Format.std_formatter f)
   else ignore(Toploop.use_file Format.std_formatter f)
 
+(*
 let load_file f = Topdirs.dir_load Format.std_formatter f
+*)
+let load_file f = ignore(Topdirs.load_file Format.std_formatter f)
 
 let add_directory s = Topdirs.dir_directory s
 

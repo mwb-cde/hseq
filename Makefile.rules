@@ -305,19 +305,24 @@ $$(info lm-lib-$(1)-clib=$$(lm-lib-$(1)-clib))
 endif
 
 # Build options
-lm-lib-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-lib-$(1)-ocamlc-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) 	
 
-lm-lib-$(1)-link-options:=$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-lib-$(1)-link-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS)
 
-lm-lib-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLNAT_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-lib-$(1)-ocamlnat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlnat-options) \
+	$$($(1)_OCAMLNAT_FLAGS) 
 
-lm-lib-$(1)-linknat-options:=$$(lm-module-linknat-options) \
-	$$($(1)_LINKNAT_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-lib-$(1)-linknat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-linknat-options) \
+	$$($(1)_LINKNAT_FLAGS)
 
 lm-lib-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
@@ -513,23 +518,27 @@ $$(info lm-packing-$(1)-nat-filelist=$$(lm-packing-$(1)-nat-filelist))
 endif
 
 # Build options
-lm-packing-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
+lm-packing-$(1)-ocamlc-options:=\
 	-I $$($(1)_PACK_DIR) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
 
-lm-packing-$(1)-link-options:=$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-packing-$(1)-link-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) 
 
-lm-packing-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) \
+lm-packing-$(1)-ocamlnat-options:=\
+	-I $$($(1)_PACK_DIR) \
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlnat-options) \
 	$$($(1)_OCAMLNAT_FLAGS) \
-	-I $$($(1)_PACK_DIR) \
-	-for-pack $$(lm-packing-$(1)-packname) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+	-for-pack $$(lm-packing-$(1)-packname)
 
-lm-packing-$(1)-linknat-options:=$$(lm-module-link-options) \
+lm-packing-$(1)-linknat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$($(1)_LINK_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+	$$(lm-module-link-options)
 
 lm-packing-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
@@ -774,20 +783,26 @@ endif
 
 #
 # Build options
-lm-packed-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-
-lm-packed-$(1)-link-options:=$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) \
+lm-packed-$(1)-ocamlc-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlc-options) \
+	$$($(1)_OCAMLC_FLAGS) 
+
+lm-packed-$(1)-link-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) \
 	$$(lm-packed-$(1)-libs)
 
-lm-packed-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
-
-lm-packed-$(1)-linknat-options:=$$(lm-module-linknat-options) \
-	$$($(1)_LINK_FLAGS) \
+lm-packed-$(1)-ocamlnat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlnat-options) \
+	$$($(1)_OCAMLC_FLAGS)
+
+lm-packed-$(1)-linknat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-linknat-options) \
+	$$($(1)_LINK_FLAGS) \
 	$$(lm-packed-$(1)-libs)
 
 lm-packed-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
@@ -1159,19 +1174,25 @@ endif
 ##
 # Build options
 
-lm-prog-$(1)-ocamlc-options:=$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-prog-$(1)-ocamlc-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlc-options) \
+	$$($(1)_OCAMLC_FLAGS)
 
-lm-prog-$(1)-link-options:=$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-prog-$(1)-link-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-link-options) \
+	$$($(1)_LINK_FLAGS) 
 
-lm-prog-$(1)-ocamlnat-options:=$$(lm-module-ocamlnat-options) $$($(1)_OCAMLnat_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
+lm-prog-$(1)-ocamlnat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-ocamlnat-options) \
+	$$($(1)_OCAMLnat_FLAGS)
 
-lm-prog-$(1)-linknat-options:=$$(lm-module-linknat-options) \
+lm-prog-$(1)-linknat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$(lm-module-linknat-options) \
 	$$($(1)_LINKNAT_FLAGS) \
-	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir))
 
 lm-prog-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
@@ -1219,15 +1240,6 @@ $$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
 		-o $$(lm-prog-$(1)-natprogram) \
 		$$(lm-prog-$(1)-nat-libs) $$(lm-prog-$(1)-natobjects) 
 endif
-
-# Program in staging directory.
-# $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-program) \
-# 						$$(lm-module-objbin-dir)
-# 	$$(COPY) $$(lm-prog-$(1)-program) $$(lm-module-objbin-dir)
-
-# $$(lm-module-objbin-dir)/$$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-natprogram) \
-# 						$$(lm-module-objbin-dir)
-# 	$$(COPY) $$(lm-prog-$(1)-natprogram) $$(lm-module-objbin-dir)
 
 lm-prog-$(1)-objdir-files:=$$(lm-prog-$(1)-program)
 ifdef lm-nativecode

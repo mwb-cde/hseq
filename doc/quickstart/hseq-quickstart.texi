@@ -9,12 +9,12 @@
 @include localdefs.texi
 
 @copying
-Copyright @copyright{} 2006, M. Wahab
+Copyright @copyright{} 2005-2013, M. Wahab
 @end copying
 
 @titlepage
 @title @HSeq{} Quick Start
-@author M. Wahab <mwb.cde@googlemail.com>
+@author M. Wahab <@email{mwb.cde@@gmail.com}>
 
 @page
 @vskip 0pt plus lfill

@@ -20,6 +20,8 @@
 ----*)
 
 open HSeq
+open HSeqUser
+open HSeqUser.Userlib
 open Lib
 
 (***
@@ -67,14 +69,20 @@ let clear ()= history := []
 let get () = List.rev (!history)
 
 let start () = 
-  clear(); repl_flag:=true; Goals.set_hook signal; repl()
+  clear(); repl_flag:=true; 
+  Userlib.set_proof_hook signal;
+  repl()
 
 let stop ()= 
   repl_flag:=false; should_save:=false; 
-  Goals.set_hook (fun () -> ()) 
+  Userlib.set_proof_hook (fun () -> ())
 
 let restart () = 
-  repl_flag:=true; Goals.set_hook signal; repl()
+  repl_flag:=true; 
+  Global.set_state
+    (Userstate.set_proofstack (Global.state())
+       (Goals.set_hook signal (Userstate.proofstack (Global.state())))); 
+  repl()
 
 let print () = 
   let rec print_aux hs = 

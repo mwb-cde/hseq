@@ -20,6 +20,9 @@
 ----*)
 
 open HSeq
+open HSeqUser
+open Userlib
+
 
 (**
    Initialising TP for interactive use.
@@ -28,10 +31,6 @@ open HSeq
    Use Toploop.parse_toplevel_phrase to call init()
    then restore Toploop.parse_toplevel_phrase to original (ocaml) value
    once init() has been called.
-
-   For Ocaml 3.07:
-   it may be possible to use Toploop.toplevel_startup_hook
-   for a rather less tricksy approach
 *)
 
 (* Theorem Prover initialising functions *)
@@ -42,9 +41,11 @@ open HSeq
 let tp_init() = 
   let tmp = !Settings.load_thy_level
   in 
-    Settings.load_thy_level:=0;
-    Global.init();
-    Settings.load_thy_level:=tmp
+    Settings.load_thy_level := 0;
+    Userlib.init();
+    Userlib.set_load_file_func Unsafe.load_file;
+    Userlib.set_use_file_func Unsafe.use_file;
+    Settings.load_thy_level := tmp
 
 (**
    [init()]:  Start up function, called when system first begins.
@@ -52,16 +53,10 @@ let tp_init() =
 *)
 
 
-(** [set_hooks()]: Set the file-handling hooks
-    
-    [Global.Hooks.load_file := Unsafe.load_file]
-    
-    [Global.Hooks.use_file := Unsafe.use_file]
-*)
+(** [set_hooks()]: Set the file-handling functions *)
 let set_hooks() = 
-  Global.Hooks.load_file := Unsafe.load_file;
-  Global.Hooks.use_file := Unsafe.use_file
-
+  Userlib.set_load_file_func (Unsafe.load_file);
+  Userlib.set_use_file_func (Unsafe.use_file)
       
 (** [set_base_dir()]: Get the installation directory *)
 let set_base_dir()=
@@ -91,39 +86,13 @@ let load_init () =
   let initfile=
     Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
   in
-  if (Sys.file_exists initfile)
+  if Sys.file_exists initfile
   then Unsafe.use_file ~silent:false initfile
-  else
-    Report.warning ("Can't find initialising file "^initfile)
+  else Report.warning ("Can't find initialising file "^initfile)
 
 let init() = 
   starting_mesg(); 
   tp_init()
-
-let init_commands = 
-  [
-    "open HSeq";
-    "open Goals";
-    "open Tactics";
-    "open Boollib";
-    "open Simplib";
-    "open Userlib";
-  ];;
-
-let run_command c = 
-  try Unsafe.use_string (c^";;") 
-  with _ -> ()
-
-let run_commands () = 
-  List.iter run_command init_commands
-
-let new_add_init f =
-  let ocaml_init = !Toploop.toplevel_startup_hook
-  in 
-  let startup () = (f(); ocaml_init(); tp_init())
-  in 
-  Toploop.toplevel_startup_hook:=startup
-
 
 (*** The code to run when this module is loaded. **)  
 let _ = 
@@ -132,8 +101,3 @@ let _ =
   set_hooks();
   Unsafe.add_init load_init;
   init()
-(**
-  run_commands();
-  init();
-  new_add_init load_init;
-**)
