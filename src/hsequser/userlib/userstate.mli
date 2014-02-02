@@ -1,6 +1,6 @@
 (**----
    Name: userlib.mli
-   Copyright M Wahab 2013
+   Copyright M Wahab 2013-2014
    Author: M Wahab  <mwb.cde@gmail.com>
 
    This file is part of HSeq

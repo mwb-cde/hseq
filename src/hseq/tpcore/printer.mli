@@ -1,6 +1,6 @@
 (*----
   Name: printer.mli
-  Copyright M Wahab 2005-2013
+  Copyright M Wahab 2005-2014
   Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -221,13 +221,7 @@ type ppinfo =
       terms:  (ppinfo, (Basic.term * (Basic.term)list)) info;
       types:  (ppinfo, (Ident.t * (Basic.gtype)list)) info
     }
-(****
-type ppinfo =
-    {
-      terms:  (Basic.term * (Basic.term)list)info;
-      types:  (Ident.t * (Basic.gtype)list)info
-    }
-****)
+
 (**
    The combined printer information for terms and types.
 

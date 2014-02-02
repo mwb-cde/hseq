@@ -1,7 +1,7 @@
 (*----
   Name: boolutil.mli
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -108,13 +108,3 @@ val close_lambda_app:
     .. xn] close unbound variables in [B].
 *)
 
-(***
-val set_info: 
-  Logic.info option
-  -> (Tag.t list * Tag.t list * Tag.t list * Basic.term list)
-  -> unit
-(** [set_info info (gs, asms, concls, consts)]: Set [info] to
-    [subgoals = gs], [aformulas = asms], [cformulas = concls] and
-    [constants=consts]
-*)
-****)

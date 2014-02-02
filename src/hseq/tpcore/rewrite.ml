@@ -1,7 +1,7 @@
 (*----
   Name: rewrite.ml
-  Copyright M Wahab 2005-2009, 2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -27,14 +27,10 @@ open Report
  * Rewrite Rules
  *)
 
-
 (** Rule ordering *)
 type order = (Basic.term -> Basic.term -> bool)
-
 type rule = (Basic.binders list * Basic.term * Basic.term)
-
 type orule = (Basic.binders list * Basic.term * Basic.term * order option)
-
 
 (*** Rewrite control ***)
 

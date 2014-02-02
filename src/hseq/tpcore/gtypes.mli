@@ -1,7 +1,7 @@
 (*----
   Name: gtypes.mli
-  Copyright M Wahab 2005-2009, 2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2005-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -477,27 +477,6 @@ val from_save_rec: stypedef_record -> typedef_record
  *)
 
 val print_subst: substitution -> unit
-
-module Retired: 
-sig
-
-  val unify_for_rewrite: 
-    Scope.t -> gtype -> gtype 
-    -> substitution -> substitution
-(** [unify_for_rewrite scp tyl tyr env]: Unify types [tyl'] and [tyr]
-    in given context [env], where [tyl' = rename_type_vars tyl]. If
-    [sb] is the returned substitution, then the type formed by [mgu tyr
-    sb] will not have any type variable in common with [tyl].
-    
-    [unify_for_rewrite sc l r s] is equivalent, but faster than, to
-    [unify_env sc (rename_type_vars l) r s].
-    
-    This function is used for term-rewriting, where there is a danger
-    that the same type may occur in different contexts (e.g. as the type
-    of an identifier which occurs in different parts of the term).
-*)
-
-end
 
 (** Debugging information *)
 val unify_aux: 

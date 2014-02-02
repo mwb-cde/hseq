@@ -1,7 +1,7 @@
 (*----
   Name: boolinduct.mli
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -174,7 +174,6 @@ val induct_on_solve_rh_tac:
 
     Completely solves the goal or fails.
 *)
-
 
 val basic_induct_tac: 
   Logic.label -> Logic.thm -> Tactics.tactic

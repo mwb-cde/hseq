@@ -1,7 +1,7 @@
 (*----
   Name: boollib.ml
-  Copyright M Wahab 2006-2010
-  Author: M Wahab  <mwb.cde@googlemail.com>
+  Copyright M Wahab 2006-2014
+  Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -669,10 +669,4 @@ let induct_tac = Boolinduct.induct_tac
 (*** induct_on ***)
 let induct_on = Boolinduct.induct_on
 
-(*** Initialisation ***)
-
-(*
-let init_boollib() = BoolPP.init()
-let _ = Global.Init.add_init init_boollib
-*)
 
