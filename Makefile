@@ -1,6 +1,6 @@
-########################################################## --*- Makefile -*--
+# --*- Makefile -*--#################################################
 # Makefile - Toplevel HSeq Makefile
-# Copyright 15 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================

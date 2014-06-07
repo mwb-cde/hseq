@@ -32,7 +32,7 @@ Copyright @copyright{} 2005-2013, M. Wahab
 
 @titlepage
 @title @HSeq{} Description
-@author M. Wahab <@email{mwb.cde@gmail.com}>
+@author M. Wahab <@email{mwb.cde@@gmail.com}>
 
 @page
 @vskip 0pt plus lfill

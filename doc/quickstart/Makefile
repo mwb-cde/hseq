@@ -1,135 +1,63 @@
-#####
-# Makefile for building sub-directories
+# --*- Makefile -*--##################################################
+# Makefile.module - Makefile to build modules
+# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
 #
-# Should be called from an instance of Makefile.child
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+###
+# The project root
+PROJ_ROOT=../..
+
+##
+# The document to build
+DOCUMENTS=hseq-quickstart
+
+##
+# Module settings
+
+# The module include directories
+MODULE_INCLUDE=$(PROJ_ROOT)/doc
+
+##
+# Settings for each document
+
+# The texinfo sources
+hseq-quickstart_TEXINFO=hseq-quickstart.texi
+
+# Document include directory [default: $(MODULE_INCLUDE)]
+#hseq-quickstart_INCLUDE=
+
+# Document output name [default: hseq-quickstart]
+#hseq-quickstart_OUTPUT=
+
+# Name of the output html directory 
+#    [default: $(hseq-quickstart_output).html]
+#hseq-quickstart_HTMLDIR=
+
+# Name of the output info directory [default: $(hseq-quickstart_output).info]
+#hseq-quickstart_INFODIR=
+
+
+######################################################################
+# Don't edit anything below this line.
 #####
 
-# Load the OS commands
-# include Makefile.os
-
-####
-# The variables to be set in Makefile.child
-###
-
-###
-# texi documentation source files
-###
-
-# DOCSRC: The source files to be compiled
-DOCSRC ?= hseq-quickstart
-
-###
-# Generated files and directories
-###
-
-# OUTFILES: Generated files, to be moved
-OUTFILES ?= 
-
-# OUTDIR: Name of the directory in which to put the generated files
-OUTDIR ?= 
-
-###
-# End of Makefile.child variables
-###
-
-###
-# Useful definitions
-###
-
-# DIRSEP: The seperator for directories
-# On Unix DIRSEP=/, on windows DIRSEP=\
-DIRSEP ?= /
-
-##
-# Directories
-##
-
-# DOC_DIR: Documentation directory
-DOC_DIR?=..
-
-# HTMLDIR: HTML Documentation directory
-HTMLDIR?=${DOC_DIR}/html
-
-# INFODIR: Info Documentation directory
-INFODIR?=${DOC_DIR}/info
-
-##
-# Compiler definitions
-##
-
-# INCLUDE: The include directives
-INCLUDE = 
-
-# OPTIONS: The compiler options
-OPTIONS = ${INCLUDE}
-
-##
-# The compilers
-##
-
-# MAKEINFO: The makeinfo program
-MAKEINFO?=makeinfo ${OPTIONS}
-COPY?=cp
-MKDIR?=mkdir -p
-
-###
-# Suffixes and how to handle them
-###
-
-###
-# Build targets
-###
-
-# all: Build html
-all: build-html
-info: build-info
-html: build-html
-
-# html: Build html documentation
-.PHONY: build-html
-
-$(HTMLDIR):
-	$(MKDIR) $(HTMLDIR)
-
-build-html: $(foreach file,$(DOCSRC),$(file).texi) $(HTMLDIR)
-	$(foreach file, $(DOCSRC), \
-	$(MAKEINFO) --html $(file).texi; \
-	$(COPY) -R $(file) $(HTMLDIR))
-
-
-# info: Build info documentation
-$(INFODIR):
-	$(MKDIR) $(INFODIR)
-
-.PHONY: build-info
-build-info: $(foreach file,$(DOCSRC),$(file).texi) $(INFODIR)
-	$(foreach file, $(DOCSRC), \
-	$(MAKEINFO) $(file).texi;\
-	$(COPY) -r $(file)*.info $(INFODIR))
-
-# install: Install documentation
-install: install-html install-info
-
-# install-html: Install html documentation
-install-html: html
-	-mkdir $(HTMLDIR)
-	$(foreach file, $(DOCSRC), -cp -Rf $(file) $(HTMLDIR);)
-
-
-# install-info: Install html documentation
-install-info: info
-	-mkdir $(INFODIR)
-	-cp -Rf *.info $(INFODIR)
-
-##
-# Cleaning files
-##
-
-clean:
-	$(foreach file, $(DOCSRC), rm -rf $(file);)
-	rm -f *.info
-	rm -f *~
-
-reallyclean: clean 
-	rm -f depend
+# Include the standard template.
+include $(PROJ_ROOT)/doc/Makefile.docrules
 

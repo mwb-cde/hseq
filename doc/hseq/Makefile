@@ -1,137 +1,63 @@
-#####
-# Makefile for building sub-directories
+# --*- Makefile -*--##################################################
+# Makefile.module - Makefile to build modules
+# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
 #
-# Should be called from an instance of Makefile.child
+# Released under the Lesser GPLv3 license:
+# ========================================
+# This file is part of HSeq.
+#
+# HSeq is free software; you can redistribute it and/or modify it
+# under the terms of the Lesser GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# HSeq is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+# License for more details.
+#
+# You should have received a copy of the Lesser GNU General Public
+# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+######################################################################
+
+###
+# The project root
+PROJ_ROOT=../..
+
+##
+# The document to build
+DOCUMENTS=hseq
+
+##
+# Module settings
+
+# The module include directories
+MODULE_INCLUDE=$(PROJ_ROOT)/doc
+
+##
+# Settings for each document
+
+# The texinfo sources
+hseq_TEXINFO=hseq.texi
+
+# Document include directory [default: $(MODULE_INCLUDE)]
+#hseq_INCLUDE=
+
+# Document output name [default: hseq]
+#hseq_OUTPUT=
+
+# Name of the output html directory 
+#    [default: $(hseq_output).html]
+#hseq_HTMLDIR=
+
+# Name of the output info directory [default: $(hseq_output).info]
+#hseq_INFODIR=
+
+
+######################################################################
+# Don't edit anything below this line.
 #####
 
-# Load the OS commands
-# include Makefile.os
-
-####
-# The variables to be set in Makefile.child
-###
-
-###
-# texi documentation source files
-###
-
-# DOCSRC: The source files to be compiled (root file names)
-DOCSRC ?= hseq
-
-###
-# Generated files and directories
-###
-
-# OUTFILES: Generated files, to be moved
-OUTFILES ?= 
-
-# OUTDIR: Name of the directory in which to put the generated files
-OUTDIR ?= 
-
-###
-# End of Makefile.child variables
-###
-
-###
-# Useful definitions
-###
-
-# DIRSEP: The seperator for directories
-# On Unix DIRSEP=/, on windows DIRSEP=\
-DIRSEP ?= /
-
-##
-# Directories
-##
-
-# SRCDIR: The source directory (relative to a sub-directory).
-SRCDIR ?= ..
-
-# CONFIGDIR: The configuration directory
-CONFIGDIR ?= $(SRCDIR)/config
-
-# DOCDIR: Documentation directory
-DOCDIR ?= $(SRCDIR)
-
-# HTMLDIR: HTML Documentation directory
-HTMLDIR ?= $(DOCDIR)/html
-
-# INFODIR: Info Documentation directory
-INFODIR ?= $(DOCDIR)/info
-
-##
-# Compiler definitions
-##
-
-# INCLUDE: The include directives
-INCLUDE = 
-
-# OPTIONS: The compiler options
-OPTIONS = $(INCLUDE)
-
-##
-# The compilers
-##
-
-# MAKEINFO: The makeinfo program
-MAKEINFO=makeinfo $(OPTIONS)
-
-###
-# Suffixes and how to handle them
-###
-
-###
-# Build targets
-###
-
-# all: Build html
-all: html
-
-# html: Build html documentation
-.PHONY: html
-html: 
-	$(foreach file, $(DOCSRC), -$(MAKEINFO) --html $(file).texi;)
-
-# info: Build info documentation
-.PHONY: info
-info: 
-	$(foreach file, $(DOCSRC), -$(MAKEINFO) $(file).texi;)
-
-# install: Install documentation
-install: install-html install-info
-
-# install-html: Install html documentation
-install-html: html
-	-mkdir $(HTMLDIR)
-	$(foreach file, $(DOCSRC), cp -Rf $(file) $(HTMLDIR);)
-
-# install-info: Install html documentation
-install-info: mkinfo
-	-mkdir $(INFODIR)
-	cp -Rf *.info $(INFODIR)
-
-##
-# Cleaning files
-##
-
-clean:
-	$(foreach file, $(DOCSRC), rm -rf $(file);) $(SKIP)
-	$(RM) *.info
-	$(RM) *~
-
-reallyclean: clean 
-	rm -f depend
-
-##
-# Dependencies
-#
-# Define NODEPEND to prevent using depend
-##
-
-#depend: 
-#	$(OCAMLDEP) *.mli *.ml > depend
-
-#ifndef NODEPEND
-#include depend
-#endif
+# Include the standard template.
+include $(PROJ_ROOT)/doc/Makefile.docrules
 
