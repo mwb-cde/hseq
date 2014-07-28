@@ -41,62 +41,111 @@ without proof. Theorems, definitions and declarations are stored in
 @emph{theories} which provide the scope for other theories and for
 constructing formulas of the logic.
 
-@heading Interaction with OCaml
+@chapter Interaction with OCaml
 
 @HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
+
 From the command line, @code{hseq @var{options}} starts the
 interactive interpreter, where @var{options} are the options to pass
 to the OCaml system. @code{hseqb @var{options} @var{file}} executes
-@var{file} as a script.
-
-The OCaml preprocessor is used to embed @HSeq{} terms, types and
-definitions as quotations in OCaml expressions.  For string @var{str},
-the quotation @code{<< str >>} parses @var{str} as a term and the
-quotation @code{<<: str >>} is parsed as a type.  The quotation
-@code{<:def< str >>} parses @var{str} as a term definition and the
-quotation @code{<:def<: str >>} parses @var{str} as a type definition
-or declaration.
+@var{file} as a script. 
 
 @code{reset()} resets the @HSeq{} system to its initial state.
 
-@heading Types
+@section Quotations
 
-A type has OCaml type @code{Basic.gtype} and is a @emph{type
-variable}, a @emph{type constructor} or a @emph{weak type variable}.
-A type @code{'a} is a type variable of name @emph{a}.  A type
-@code{'_a} is a weak type variable of name @emph{a}.  A type
-@code{(t1, @dots{}, t@var{n})f} is a constructed type with constructor
-@emph{f} and @var{n} arguments. If there are no arguments the type is
-in the form @code{f}. If identifier @emph{f} is in the form
-@code{@var{T}.@var{n}} then it is constructor named @var{n} declared
-in the theory named @var{T}. If @emph{f} is @code{@var{n}}, the scope
-of the type is searched for a theory @var{T} in which @var{n} is
-declared.
+@HSeq{} terms, types and definitions can be used in OCaml expressions
+using quotations of the form @code{<< .. >>}. The accepted forms are:
+@table @code
+@item @code{<< str >>}
+parses @var{str} as a term 
+@item @code{<<: str >>}
+parses @var{str}  as a type.  
+@item @code{<:def< str >>}
+parses @var{str} as a term definition 
+@item @code{<:def<: str >>}
+parses @var{str} as a type definition or declaration.
+@end table
 
-A weak type variable is a type variable which cannot match a type
-variable, only other weak type variable or type constructors. Weak
-type variables occur only in sequents. If a weak type variable @var{v}
-is bound to a type @var{t} in a sequent, all instances of @var{v} are
-bound to @var{t}. Weak type variables are treated as ordinary type
-variables by the parser.
+@chapter Types
 
-The standard types are: @code{bool}, the booleans; @code{'a -> 'b},
-functions from @code{'a} to @code{'b}; @code{('a)set}, sets of
-@code{'a} and @code{'a * 'b}, the product of @code{'a} and @code{'b}.
+A type in the logic has OCaml type @code{Basic.gtype} and is a
+@emph{type variable}, a @emph{type constructor} or a @emph{weak type
+variable}.
 
-@heading Terms
+The standard syntax of the types is:
+@table @code
+@item @code{'a}
+ a type variable of name @emph{a}.  
+@item @code{'_a} 
+ a weak type variable of name @emph{a}.
+@item @code{(t1, @dots{}, t@var{n})f}
+a constructed type, with constructor identifier @emph{f} and @var{n}
+arguments. 
+@item @code{f}
+a constructed type, with constructor identifier @emph{f} and no arguments. 
+@end table
 
-A term has OCaml type @code{Basic.term} and is an identifier, a free
-variable, a bound variable, a binding term or a function application.
-The boolean true and false are @code{true} and @code{false}; a
-function application is @code{f a} and has lower priority than other
-operators; negation is @code{~a} or @code{not a}; conjunction is
-@code{a & b} or @code{a and b}; disjunction is @code{a | b} or @code{a
-or b}; implication is @code{a => b}; boolean equivalence is @code{a
-iff b}. Equality is @code{a = b} and has higher priority than the
-boolean operators. The type @var{ty} of a term @var{t} can be
-explicitly stated by enclosing the specification in brackets as the
-form @code{(@var{t}:@var{ty})}.
+Some types may also have a specialized form that can be used as an
+alternative to the standard syntax.
+
+If the identifier @emph{f} is in the form @code{@var{T}.@var{n}} then
+it is the constructor named @var{n} declared in the theory named
+@var{T}. If @emph{f} is @code{@var{n}}, the scope of the type is
+searched for a definition or declaration of @var{n}.
+
+A weak type variable is a type variable which cannot be bound to a
+type variable. It can bind only with another weak type variables or
+with a a type constructor. Weak type variables occur only in
+sequents. If a weak type variable @var{v} is bound to a type @var{t}
+in a sequent, all instances of @var{v} are bound to @var{t}. Weak type
+variables are treated as ordinary type variables by the parser.
+
+The standard types are: 
+@table @code
+@item @code{bool}
+the booleans
+@item @code{'a -> 'b}
+functions from @code{'a} to @code{'b}.
+@item @code{('a)set} 
+sets of @code{'a} 
+@item @code{'a * 'b}
+the product of @code{'a} and @code{'b}.
+@end table
+
+@chapter Terms
+
+A term has OCaml type @code{Basic.term} and is an @emph{identifier}, a
+@emph{free variable}, a @emph{bound variable}, a @emph{binding term}
+or a function application. 
+
+The standard syntax for term is:
+@table @code
+@item @code{true}, @code{false}
+The boolean true and false.
+@item @code{f a}
+A function application. 
+@item @code{~a}, @code{not a}
+The negation of term @code{a}.
+@item @code{a & b}, @code{a and b}
+The conjunction of terms @code{a} and @code{b}
+@item @code{a | b}, @code{a or b}
+The disjunction of terms @code{a} and @code{b}
+@item @code{a => b}, @code{a implies b}
+Implication for terms @code{a} and @code{b}
+@item @code{a iff b}
+The boolean of terms @code{a} and @code{b}.
+@item @code{a = b}
+The equality of terms @code{a} and @code{b}.
+@item @code{(@var{t}:@var{ty})}.
+Specifies that term @var{t} has type @var{ty}.
+@item @code{@@ x: F}
+The choice operator (i.e. some @code{x} for which @code{F} is true)
+@end table
+
+The operators have the usual priorities, brackets can be used as
+normal.  Function application has lower priority than other operators
+and the equality operator has higher priority than boolean equivalent.
 
 A term identifier @var{f} is either in the form @code{@var{T}.@var{n}}
 or @var{n}. For @code{@var{T}.@var{n}}, the identifier is the name
@@ -111,15 +160,126 @@ existential quantification. A binding term (with some symbol
 @var{SYM}) is written @code{@var{SYM} x : F} and binds variable
 @code{x} in term @code{F}. The binding generalizes to a list of
 variables: @code{@var{SYM} x1 x2 @dots{} xn : F} binds variables
-@code{x1}, @code{x2}, @dots{}, @code{xn} in term @code{F}.  A lambda
-term is @code{% x: F}; universal quantification is @code{! x: F} and
-existential quantification is @code{? x: F}. The choice operator is
-@code{@@ x: F} and the unique existential binding is @code{?! x: F}.
-The variable @code{x} can be typed in which case it is written with
-brackets as @code{(x: ty)}.  For example, @code{! x (y: bool) z : ?
-(A:('a)set): (y and z) | (x = A)}.
+@code{x1}, @code{x2}, @dots{}, @code{xn} in term @code{F}. 
 
-@heading Interactive Proofs
+The binding terms are:
+@table @code
+@item @code{% x: F}
+A lambda term.
+@item @code{! x: F}
+Universal quantification is @code{! x: F} 
+@item @code{? x: F}
+existential quantification. 
+@item @code{?! x: F}.
+the unique existential binding (i.e. there exists one @code{x} such
+that @code{F} is true).
+@end table
+
+A variable @code{x} in a binding can be typed in which case it is
+written with brackets as @code{(x: ty)}.  For example, @code{! x (y:
+bool) z : ?  (A:('a)set): (y and z) | (x = A)}.
+
+@chapter Theories
+
+A theory @var{T} is built from a @emph{script file} named
+@code{@var{T}Script.ml}. It is saved to a @emph{theory file} named
+@code{@var{T}.tho}. A theory may depend on other theories (its
+@emph{parents}). When a theory is built or loaded from file, its
+parents are also loaded. If the parent of a theory does not have a
+theory file, it is rebuilt from its script file. All theories must be
+younger than the theories they depend on and theories are
+automatically rebuilt if necessary.
+
+A theory is either @emph{closed} or @emph{writable}. A closed theory
+can be the parent of other theories but cannot be modified. A writable
+theory can be modified but cannot be used as the parent of another
+theory.
+
+The main theory for @HSeq{} is called @code{Main} and is automatically
+set as a parent for each new theory.
+
+@code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]} begins a
+theory named @var{n} with parents @var{p1}, @dots{},
+@var{pn}. @code{end_theory()} ends the currently open theory, marking
+it as closed and saving it to a theory file. 
+
+@code{add_file @var{n}} marks file @var{n} as a library to be loaded
+when the theory is loaded. If @var{n} ends with suffix @code{.ml}, it
+is loaded using @code{#use}. If @var{n} ends with suffix @code{.cmi}
+or @code{.cmo} it is loaded with @code{#load}.  @code{compile
+@var{path} @var{n}} compiles file @var{n} with the standard @HSeq{}
+libraries. @var{path} is the list of additional include directories to
+use.
+
+@code{declare << @var{D} >>} declares a term. @var{D} should be in the
+form @code{@var{n}:@var{ty}} where @var{n} is the identifier and
+@var{ty} the type. Note that @code{declare} uses the term quotation
+parser (@code{<< @dots{} >>}) not the definition quotation parser.
+Example: @code{declare <:def< and:(bool -> bool -> bool) >>}.
+
+@code{define <:def< @var{D} >>} defines a term. @var{D} must
+be in the form @code{@var{n} @var{a1} @dots{} @var{an} = @var{T}}
+where @var{n} is the identifier being defined, @var{a1} @dots{}
+@var{an} are the parameters and @var{T} the body of the definition.
+Example: @code{define <:def< or x y = (not (not x) and (not y)) >>}.
+
+@code{typedef <:def<: @var{D} >>} declares or defines a type
+constructor.  @code{typedef <:def<: @var{ty} >>} declares the new type
+@var{ty} constructor. @code{typedef <:def<: @var{ty1} = @var{ty2} >>}
+declares @var{ty1} to be an alias for type @var{ty2}.  Example:
+(declaration) @code{typedef <:def<: bool >>} and (aliasing)
+@code{typedef <:def<: ('a)set = ('a -> bool)>>}.
+
+@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred}
+>>} defines @var{ty1} as the subtype of type @var{ty2} containing
+elements which satisfy term @var{pred} (which should have type
+@code{@var{ty2} -> bool}). Existence theorem @var{T} must be in the
+form @code{?x: @var{pred} x}. Example: @code{typedef <:def<: ('a,
+'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
+
+The declaration and definition commands take an optional argument
+named @code{pp} to specify printer-parser information. This sets the
+precedence, fixity and the symbol to use for the identifier or
+constructor. Fixity values are @code{prefix}, @code{infixl} (infix,
+left associative), @code{infixr} (infix, right associative),
+@code{infixn} (infix, non-associative) and @code{suffix}.
+
+@code{axiom @var{T}} declares term @var{T} as an axiom. 
+
+@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]} adds term
+@var{T} as a theorem using list of tactics as a proof. A goal is
+constructed from term @var{T} and each tactic in the list is applied,
+in order, to the first subgoal. 
+
+Note that the list of tactics used by @code{theorem} is an
+unstructured proof: the tactics are always applied to the first
+sub-goal, as they are in interactive proofs. This makes it easier to
+transfer interactive proofs to a batch proof.
+
+@code{axiom} and @code{theorem} take the optional argument @code{simp}
+which marks the axiom/theorem for use as a simplification rule.
+
+@section Information Access
+
+@code{theory @var{x}} displays theory @var{n}. If @var{x} is
+the empty string (@code{""}), the current theory is displayed.
+
+@code{defn @var{x}} gets the defining theorem for term @var{x}. If
+@var{x} is in the form @code{@var{T}.@var{n}}, it identifies term
+@var{n} from theory @var{T}, otherwise the scope is searched for a
+definition of @var{x}.
+
+@code{thm @var{x}} get the theorem named @var{x}. Note that axioms are
+theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
+identifies theorem @var{n} from theory @var{T}, otherwise the scope is
+searched for a theorem named @var{x}.
+
+@code{scope()} get the current scope. 
+
+@code{goal_scope()} get the scope of the current goal (in an
+interactive proof).
+
+@chapter Interactive Proofs
 
 In sequent @code{@var{asm} |- @var{concl}}, @var{asm} is the list of
 assumptions and @var{concl} is the list of conclusions. The
@@ -147,7 +307,7 @@ to the current subgoal. @code{undo()} drops the result of the last
 Function @code{prove @var{t} @var{tac}} proves the theorem built from
 term @var{t} using tactic @var{tac}, failing if the tactic fails.
 
-@heading Tactics
+@section Tactics
 
 Tactics are generally named with suffix '_tac'. Tactics ending with a
 'A' act on the assumptions of a sub-goal. Tactics ending with 'C' act
@@ -230,7 +390,7 @@ variable named @var{n}, failing if there is no such variable in the
 conclusions or no appropriate induction theorem. The induction theorem
 used depends on the type of variable @var{n}.
 
-@heading Rewriting and Simplification
+@section Rewriting and Simplification
 
 Tactics @code{rewriteA_tac}, @code{rewriteC_tac} and
 @code{rewrite_tac} rewrite assumptions, conclusions and sequent
@@ -262,7 +422,7 @@ simplification rules. Tactics @code{simpA}, @code{simpC},
 @code{simp_all} and @code{simp} are short-hand for the simplification
 tactics with no additional rules (@code{simp = simp_tac []}).
 
-@heading Sequencing Tactics
+@section Sequencing Tactics
 
 @code{skip} is the tactic that does nothing and always
 succeeds. @code{fail} is the tactic that does nothing and always
@@ -293,105 +453,6 @@ sub-goals are added to the end of the final list (as if the list of
 tactics was padded with @code{skip}). If there are more tactics than
 sub-goals, the extra tactics are ignored.
 
-@heading Theories
-
-A theory @var{T} is built from a @emph{script file} named
-@code{@var{T}Script.ml} and is saved to a @emph{theory file} named
-@code{@var{T}.tho}.  A theory may depend on other theories (its
-@emph{parents}). When a theory is built or loaded from file, its
-parents are also loaded. If the parent of a theory does not have a
-theory file, it is rebuilt from its script file. All theories must be
-younger than the theories they depend on and theories are
-automatically rebuilt if necessary. 
-
-A theory is either @emph{closed} or @emph{writable}. A closed theory
-can be the parent of other theories but cannot be modified. A writable
-theory can be modified but cannot be used as the parent of another
-theory.
-
-The main theory for @HSeq{} is called @code{Main} and is automatically
-set as a parent for each new theory.
-
-@code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]} begins a
-theory named @var{n} with parents @var{p1}, @dots{},
-@var{pn}. @code{end_theory()} ends the currently open theory, marking
-it as closed and saving it to a theory file. 
-
-@code{add_file @var{n}} marks file @var{n} as a library to be loaded
-when the theory is loaded. If @var{n} ends with suffix @code{.ml}, it
-is loaded using @code{#use}. If @var{n} ends with suffix @code{.cmi}
-or @code{.cmo} it is loaded with @code{#load}.  @code{compile
-@var{path} @var{n}} compiles file @var{n} with the standard @HSeq{}
-libraries. @var{path} is the list of additional include directories to
-use.
-
-@code{declare << @var{D} >>} declares a term. @var{D} should be in the
-form @code{@var{n}:@var{ty}} where @var{n} is the identifier and
-@var{ty} the type. Note that @code{declare} uses the term quotation
-parser (@code{<< @dots{} >>}) not the definition quotation parser.
-Example: @code{declare <:def< and:(bool -> bool -> bool) >>}.
-
-@code{define <:def< @var{D} >>} defines a term. @var{D} must
-be in the form @code{@var{n} @var{a1} @dots{} @var{an} = @var{T}}
-where @var{n} is the identifier being defined, @var{a1} @dots{}
-@var{an} are the parameters and @var{T} the body of the definition.
-Example: @code{define <:def< or x y = (not (not x) and (not y)) >>}.
-
-@code{typedef <:def<: @var{D} >>} declares or defines a type
-constructor.  @code{typedef <:def<: @var{ty} >>} declares the new type
-@var{ty} constructor. @code{typedef <:def<: @var{ty1} = @var{ty2} >>}
-declares @var{ty1} to be an alias for type @var{ty2}.  Example:
-(declaration) @code{typedef <:def<: bool >>} and (aliasing)
-@code{typedef <:def<: ('a)set = ('a -> bool)>>}.
-
-@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred}
->>} defines @var{ty1} as the subtype of type @var{ty2} containing
-elements which satisfy term @var{pred} (which should have type
-@code{@var{ty2} -> bool}). Existence theorem @var{T} must be in the
-form @code{?x: @var{pred} x}. Example: @code{typedef <:def<: ('a,
-'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
-
-The declaration and definition commands take an optional argument
-named @code{pp} to specify printer-parser information. This sets the
-precedence, fixity and the symbol to use for the identifier or
-constructor. Fixity values are @code{prefix}, @code{infixl} (infix,
-left associative), @code{infixr} (infix, right associative),
-@code{infixn} (infix, non-associative) and @code{suffix}.
-
-@code{axiom @var{T}} declares term @var{T} as an axiom. 
-
-@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]} adds term
-@var{T} as a theorem using list of tactics as a proof. A goal is
-constructed from term @var{T} and each tactic in the list is applied,
-in order, to the first subgoal. 
-
-Note that the list of tactics used by @code{theorem} is an
-unstructured proof: the tactics are always applied to the first
-sub-goal, as they are in interactive proofs. This makes it easier to
-transfer interactive proofs to a batch proof.
-
-@code{axiom} and @code{theorem} take the optional argument @code{simp}
-which marks the axiom/theorem for use as a simplification rule.
-
-@heading Information Access
-
-@code{theory @var{x}} displays theory @var{n}. If @var{x} is
-the empty string (@code{""}), the current theory is displayed.
-
-@code{defn @var{x}} gets the defining theorem for term @var{x}. If
-@var{x} is in the form @code{@var{T}.@var{n}}, it identifies term
-@var{n} from theory @var{T}, otherwise the scope is searched for a
-definition of @var{x}.
-
-@code{thm @var{x}} get the theorem named @var{x}. Note that axioms are
-theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
-identifies theorem @var{n} from theory @var{T}, otherwise the scope is
-searched for a theorem named @var{x}.
-
-@code{scope()} get the current scope. 
-
-@code{goal_scope()} get the scope of the current goal (in an
-interactive proof).
 
 @c
 @c End of document
