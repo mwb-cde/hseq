@@ -9,12 +9,12 @@
 @include localdefs.texi
 
 @copying
-Copyright @copyright{} 2005-2013, M. Wahab
+Copyright @copyright{} 2005-2014, Matthew Wahab
 @end copying
 
 @titlepage
 @title @HSeq{} Quick Start
-@author M. Wahab <@email{mwb.cde@@gmail.com}>
+@author Matthew Wahab <@email{mwb.cde@@gmail.com}>
 
 @page
 @vskip 0pt plus lfill
@@ -117,9 +117,10 @@ the product of @code{'a} and @code{'b}.
 
 A term has OCaml type @code{Basic.term} and is an @emph{identifier}, a
 @emph{free variable}, a @emph{bound variable}, a @emph{binding term}
-or a function application. 
+or a function application. Terms have types and a @emph{formula} is a
+well-formed term that is correctly typed in some @emph{scope}.
 
-The standard syntax for term is:
+The core terms and their syntax are:
 @table @code
 @item @code{true}, @code{false}
 The boolean true and false.
@@ -155,12 +156,12 @@ theories in which @var{n} is defined or declared. The name @var{n} is
 resolved by choosing the first declaration or definition which matches
 the type of @var{f}.
 
-Standard binding terms are lambda-abstraction, universal and
-existential quantification. A binding term (with some symbol
+Binding terms are lambda-abstractions, the epsilong and the universal
+and existential quantifiers. A binding term (with some symbol
 @var{SYM}) is written @code{@var{SYM} x : F} and binds variable
 @code{x} in term @code{F}. The binding generalizes to a list of
 variables: @code{@var{SYM} x1 x2 @dots{} xn : F} binds variables
-@code{x1}, @code{x2}, @dots{}, @code{xn} in term @code{F}. 
+@code{x1}, @code{x2}, @dots{}, @code{xn} in term @code{F}.
 
 The binding terms are:
 @table @code
@@ -179,11 +180,14 @@ A variable @code{x} in a binding can be typed in which case it is
 written with brackets as @code{(x: ty)}.  For example, @code{! x (y:
 bool) z : ?  (A:('a)set): (y and z) | (x = A)}.
 
-@chapter Theories
+@section Theories
+
+A @emph{theory} is a set of declarations, defintions and theorems. A
+theory provides the @emph{scope} in which formulas are constructed.
 
 A theory @var{T} is built from a @emph{script file} named
 @code{@var{T}Script.ml}. It is saved to a @emph{theory file} named
-@code{@var{T}.tho}. A theory may depend on other theories (its
+@code{@var{T}.tho}. A theory can depend on other theories (its
 @emph{parents}). When a theory is built or loaded from file, its
 parents are also loaded. If the parent of a theory does not have a
 theory file, it is rebuilt from its script file. All theories must be
@@ -198,18 +202,43 @@ theory.
 The main theory for @HSeq{} is called @code{Main} and is automatically
 set as a parent for each new theory.
 
+@subsection Theory Functions
+
 @code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]} begins a
 theory named @var{n} with parents @var{p1}, @dots{},
-@var{pn}. @code{end_theory()} ends the currently open theory, marking
-it as closed and saving it to a theory file. 
+@var{pn}. 
+
+@code{end_theory()} ends the currently open theory, marking it as
+closed and saving it to a theory file.
 
 @code{add_file @var{n}} marks file @var{n} as a library to be loaded
 when the theory is loaded. If @var{n} ends with suffix @code{.ml}, it
 is loaded using @code{#use}. If @var{n} ends with suffix @code{.cmi}
-or @code{.cmo} it is loaded with @code{#load}.  @code{compile
-@var{path} @var{n}} compiles file @var{n} with the standard @HSeq{}
-libraries. @var{path} is the list of additional include directories to
-use.
+or @code{.cmo} it is loaded with @code{#load}.  
+
+@code{compile @var{path} @var{n}} compiles file @var{n} with the
+standard @HSeq{} libraries. @var{path} is the list of additional
+include directories to use.
+
+@code{theory @var{x}} displays theory @var{n}. If @var{x} is
+the empty string (@code{""}), the current theory is displayed.
+
+@code{defn @var{x}} gets the defining theorem for term @var{x}. If
+@var{x} is in the form @code{@var{T}.@var{n}}, it identifies term
+@var{n} from theory @var{T}, otherwise the scope is searched for a
+definition of @var{x}.
+
+@code{thm @var{x}} get the theorem named @var{x}. Note that axioms are
+theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
+identifies theorem @var{n} from theory @var{T}, otherwise the scope is
+searched for a theorem named @var{x}.
+
+@code{scope()} get the current scope. 
+
+@code{goal_scope()} get the scope of the current goal (in an
+interactive proof).
+
+@subsection Declarations and Definitions
 
 @code{declare << @var{D} >>} declares a term. @var{D} should be in the
 form @code{@var{n}:@var{ty}} where @var{n} is the identifier and
@@ -244,12 +273,14 @@ constructor. Fixity values are @code{prefix}, @code{infixl} (infix,
 left associative), @code{infixr} (infix, right associative),
 @code{infixn} (infix, non-associative) and @code{suffix}.
 
+@subsection Axioms and Theorems
+
 @code{axiom @var{T}} declares term @var{T} as an axiom. 
 
 @code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]} adds term
-@var{T} as a theorem using list of tactics as a proof. A goal is
-constructed from term @var{T} and each tactic in the list is applied,
-in order, to the first subgoal. 
+@var{T} as a theorem using the list of @emph{tactics} @var{tac1} @dots{}
+@var{tacn} as a proof. A goal is constructed from term @var{T} and
+each tactic in the list is applied, in order, to the first subgoal.
 
 Note that the list of tactics used by @code{theorem} is an
 unstructured proof: the tactics are always applied to the first
@@ -258,26 +289,6 @@ transfer interactive proofs to a batch proof.
 
 @code{axiom} and @code{theorem} take the optional argument @code{simp}
 which marks the axiom/theorem for use as a simplification rule.
-
-@section Information Access
-
-@code{theory @var{x}} displays theory @var{n}. If @var{x} is
-the empty string (@code{""}), the current theory is displayed.
-
-@code{defn @var{x}} gets the defining theorem for term @var{x}. If
-@var{x} is in the form @code{@var{T}.@var{n}}, it identifies term
-@var{n} from theory @var{T}, otherwise the scope is searched for a
-definition of @var{x}.
-
-@code{thm @var{x}} get the theorem named @var{x}. Note that axioms are
-theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
-identifies theorem @var{n} from theory @var{T}, otherwise the scope is
-searched for a theorem named @var{x}.
-
-@code{scope()} get the current scope. 
-
-@code{goal_scope()} get the scope of the current goal (in an
-interactive proof).
 
 @chapter Interactive Proofs
 
