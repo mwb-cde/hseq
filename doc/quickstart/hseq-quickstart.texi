@@ -27,28 +27,24 @@ Copyright @copyright{} 2005-2014, Matthew Wahab
 @insertcopying
 @end ifnottex
 
-
 @HSeq{} is a tactical theorem prover for a typed, higher order logic
-based on the sequent calculus. A @emph{term} is a @emph{formula} of
-the logic if it is well-formed in a particular @emph{scope}.  A scope
-is a record of term and type definitions and declarations. A
-@emph{theorem} is a formula which has been proved to be a true
-statement. A proof is constructed by stating a @emph{goal} and
-applying @emph{tactics} to reduce the goal to @emph{true}. A tactic
-reduces a goal to sub-goals; if there are no sub-goals, the tactic
-proves the goal. An @emph{axiom} is a formula asserted to be true
-without proof. Theorems, definitions and declarations are stored in
-@emph{theories} which provide the scope for other theories and for
-constructing formulas of the logic.
+based on the sequent calculus. It is written in OCaml and can 
+be used interactively through the OCaml toplevel or as a library
+linked into an application. This manual assumes that it is used
+through the OCaml toplevel.
+
+@HSeq{} is experimental, alpha-quality code which may have soundness
+bugs.
 
 @chapter Interaction with OCaml
 
 @HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
 
-From the command line, @code{hseq @var{options}} starts the
-interactive interpreter, where @var{options} are the options to pass
-to the OCaml system. @code{hseqb @var{options} @var{file}} executes
-@var{file} as a script. 
+@code{hseq @var{options}} starts the interactive interpreter and makes
+the @HSeq{} extensions available @var{options} are the options to pass
+to the OCaml system.
+
+@code{hseqb @var{options} @var{file}} executes @var{file} as a script.
 
 @code{reset()} resets the @HSeq{} system to its initial state.
 
@@ -58,14 +54,57 @@ to the OCaml system. @code{hseqb @var{options} @var{file}} executes
 using quotations of the form @code{<< .. >>}. The accepted forms are:
 @table @code
 @item @code{<< str >>}
-parses @var{str} as a term 
+parses @var{str} as a term.
 @item @code{<<: str >>}
-parses @var{str}  as a type.  
+parses @var{str}  as a type.
 @item @code{<:def< str >>}
-parses @var{str} as a term definition 
+parses @var{str} as a term definition
 @item @code{<:def<: str >>}
 parses @var{str} as a type definition or declaration.
 @end table
+
+@chapter Overview
+
+@HSeq{} is a system for proving a statement n the logic are true by
+constructing a a proof that shows that the can be derived from axioms
+of the logic by applying inference rules of the logic. 
+
+A statement in the logic is expressed in @HSeq{} as a @emph{term}
+which is constructed from operators and values and which has a
+@emph{type}. Similarly, a type can be formed from more constructors
+and from more basic types. A term is a @emph{formula} if it is
+syntactically well-formed and has a valid type. Definitions and
+declarations can be used to introduce new term or type constructors. A
+@emph{theorem} is a formula that has been proved to be true; an
+@emph{axiom} is a formula that has been declared without proof to be a
+true statement.
+
+@section Theories
+
+In @HSeq{}, a @emph{theory} is a record of declaration, definitions
+and theorems that provides a context (equivalently, a @emph{scope}) in
+which types, terms and proofs can be constructed. A term and or type
+is well-formed in a theory iff all constructors and operators used in
+term or type are available in the context provided by the theory. A
+theory @emph{T} can have one or more @emph{parent} theories. All
+declarations, definitions and theorems available in the parent of a
+theory are also available in the theory. @HSeq{} theories are
+effectively a module system providing a means to structure the
+declarations, definitions and theorems that make up a logical theory.
+
+@section Proofs
+
+
+A @emph{term} is a @emph{formula} of the logic if it is well-formed in
+a particular @emph{scope}. A scope is a record of term and type
+definitions and declarations. A @emph{theorem} is a formula which has
+been proved to be a true statement. A proof is constructed by stating
+a @emph{goal} and applying @emph{tactics} to reduce the goal to
+@emph{true}. A tactic reduces a goal to sub-goals; if there are no
+sub-goals, the tactic proves the goal. An @emph{axiom} is a formula
+asserted to be true without proof. Theorems, definitions and
+declarations are stored in @emph{theories} which provide the scope for
+other theories and for constructing formulas of the logic.
 
 @chapter Types
 
