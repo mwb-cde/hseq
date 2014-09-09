@@ -67,14 +67,14 @@ let std_check_string str =
   let size=String.length str
   in 
   let rec check i =
-    if i<size 
+    if i < size 
     then
       let ch=String.get str i
       in 
       if is_space ch
       then check (i+1)
       else 
-	if ch= (!type_char)
+	if ch = (!type_char)
 	then (Type, String.sub str (i+1) (size - (i+1)))
 	else (Term, String.sub str i (size - i))
     else (Unknown, str)
@@ -101,7 +101,7 @@ let def_check_string str =
 	  (Def, String.sub str i (size - i))
     else (Unknown, str)
   in 
-  if size>0 
+  if size > 0 
   then check 0
   else (Unknown, str)
 
@@ -144,8 +144,10 @@ let init() =
     (expand_quot def_astexpander);
   Syntax.Quotation.add "tp" Quotation.DynAst.expr_tag 
     (expand_quot std_astexpander);
+(*
   Syntax.Quotation.add "test" Quotation.DynAst.expr_tag 
     (expand_quot test_astexpander);
+*)
   Syntax.Quotation.default:="tp"
 
 
