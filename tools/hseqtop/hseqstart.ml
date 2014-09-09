@@ -23,10 +23,6 @@
    HSeq start-up file.
 *)
 
-open HSeq;;
-open HSeqUser
-open HSeqUser.Userlib;;
-
 (**
    Install printers
 *)
@@ -45,14 +41,18 @@ open HSeqUser.Userlib;;
 #install_printer HSeqUser.Userlib.Display.print_defn;;
 #install_printer HSeqUser.Userlib.Display.print_theory;;
 #install_printer HSeqUser.Userlib.Display.print_simpset;;
-#install_printer Thydb.print;;
+#install_printer HSeq.Thydb.print;;
 
 (**
    Open modules
 *)
 
-open Goals;;
-open Tactics;;
-open Boollib;;
+open HSeq.Goals;;
+open HSeq.Tactics;;
+open HSeq.Boollib;;
 
+
+open HSeq;;
+open HSeqUser;;
+open HSeqUser.Userlib;;
 

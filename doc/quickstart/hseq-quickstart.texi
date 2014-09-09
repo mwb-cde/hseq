@@ -1,8 +1,8 @@
 \input texinfo  @c -*-texinfo-*-
+
 @c %**start of header
 @setfilename hseq-quickstart.info
 @settitle HSeq Quick Start
-
 @c %**end of header
 
 @c Local definitions
@@ -28,27 +28,226 @@ Copyright @copyright{} 2005-2014, Matthew Wahab
 @end ifnottex
 
 @HSeq{} is a tactical theorem prover for a typed, higher order logic
-based on the sequent calculus. It is written in OCaml and can 
-be used interactively through the OCaml toplevel or as a library
-linked into an application. This manual assumes that it is used
-through the OCaml toplevel.
+based on the sequent calculus. It is written in OCaml and can be used
+interactively through the OCaml toplevel or as a library linked into
+an application. This manual assumes that it is used through the OCaml
+toplevel.
 
-@HSeq{} is experimental, alpha-quality code which may have soundness
-bugs.
+@HSeq{} is experimental, alpha-quality code that may have soundness bugs.
 
-@chapter Interaction with OCaml
+@chapter Overview
+
+@HSeq{} is a system for constructing theories and trying to prove a
+statement in the logic. A logical statement is expressed in @HSeq{} as
+a @emph{term} which is constructed from operators and values. Every
+term has a @emph{type}, formed from type constructors and constructors
+and primitive types. 
+
+For example, the following are terms and types in @HSeq{}:
+@example
+Terms:
+  @code{!x: x = x}
+  @code{!f g: (!x: (f x) = (g x)) => f = g}
+
+Types:
+  @code{bool}        (The booleans)
+  @code{('a, 'b)FUN} (Functions)
+  @code{('a -> 'b)}  (Functions)
+@end example
+
+A term is a @emph{formula} if it is syntactically well-formed and has
+a valid type. A @emph{theorem} is a formula that has been proved to be
+true. An @emph{axiom} is a formula that has been declared without
+proof to be a true statement. Definitions and declarations can be used
+to introduce new constructors for terms or types. A declaration
+introduces an uninterpreted identifier, a definition introduces an
+identifier as a short-hand for a more complex term.
+
+For example, the following are formulas, theorems and definitons in @HSeq{}:
+@example Formulas etc
+Formulas:
+  @code{!x: (true & x) = x}
+  @code{!x y z: (x & y | z) = ((x & y) | (x & z))}
+  @code{!(P: bool -> bool): ((P true) & (P false)) => (!(x: bool): P x)}
+
+Theorems:
+  @code{|- !t f: (if true then t else f) = t}
+  @code{|- !x A: (finite A) => (finite add x A)}
+  @code{|- !(A: ('a)set): A = empty | (?(x: 'a): in x A)}
+
+Type definitions:
+  @code{('a)set='a -> bool}
+
+Term definitions:
+  @code{in:  'a -> ('a)set -> bool 
+        |- !x A: (in x A) = (A x)}
+  @code{compose:  ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
+        |- !f g: (compose f g) = (%x: f g x)}
+@end example
+
+@section Theories
+
+In @HSeq{}, a @emph{theory} is a record of declarations, definitions
+and theorems that provides a context (equivalently, a @emph{scope}) in
+which types, terms and proofs can be constructed. A term and or type
+is well-formed in a theory iff all constructors and operators used in
+term or type are available in the context provided by the theory.
+
+A theory @var{T} can have one or more @emph{parent} theories. All
+declarations, definitions and theorems available in the parent of a
+theory are also available in the theory @var{T}. All theories have
+@code{Main} as a parent, which makes the built-in theories
+available. @HSeq{} theories are effectively a module system providing
+a means to structure the declarations, definitions and theorems that
+make up a logical theory.
+
+For example, the following defines a new theory @code{N}, which
+has two different definitions of a function:
+@example
+begin_theory "N" []
+
+(* Declaration and axiom *)
+declare << aexamp : 'a -> 'a -> 'a >>
+axiom "aexamp_axiom" << !a b: (aexamp a b) = (if a then b else a) >>
+
+(* Definition *)
+define <:def< bexamp x y = if x then y else x >>
+
+end_theory()
+@end example
+
+@section Proofs
+
+In @HSeq{}, a proof is made of up a @emph{goal} to be proved and
+@emph{tactics} which implement the steps of the proof. A goal is made
+up of the formula to be proved and a set of @emph{sequents}. Each
+sequent is a sub-goal to be proved and formed of a set of
+@emph{assumptions} and a set of @emph{conclusions}. Initially, a goal
+has one sequent with no assumptions and the formula to be proved as
+the only conclusion.
+
+Example:
+@example
+# goal << !x y: (x = y) => (x => (y & x)) >>;;
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+1 subgoal
+----------------------
+[1] !x y: x = y => x => (y & x)
+@end example
+
+A goal is manipulated by applying @emph{tactics}, which implement the
+inference rules to manipulate and simplify sequents, possibly
+introducing new sub-goals that are easier to prove. Tactics can be
+combined, using @emph{tacticals}, allowing for complex proof
+procedures to be built from the the basic inference rules. 
+
+Example:
+@example
+# by (allC ++ allC ++ implC ++ implC);;
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+1 subgoal
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _y & _x
+
+# by split_tac;;
+2 subgoals
+(Subgoal 1)
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _y
+
+(Subgoal 2)
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _x
+
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+2 subgoals
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _y
+@end example
+
+
+A proof is constructed as a single tactic, which can be built from
+tacticals.  These reduce the initial sequent to one or more simpler
+sub-goals until the goal is reduced to a set of sequents which are
+simple enough to be proved from the basic rules of the logic.
+
+Example, an interactive proof:
+@example
+# goal << !x y: (x = y) => (x => (y & x)) >>;;
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+1 subgoal
+----------------------
+[1] !x y: x = y => x => (y & x)
+# by (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac);;
+Subgoal solved
+- : HSeq.Goals.Proof.t = Goal !x y: x = y => x => (y & x)
+                         No subgoals
+# result();;  (* get the proved theorem *)
+- : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+
+# qed "q1";;  (* get the proved theorem, store it as "q1" in the current theory *)
+- : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end example
+
+Example, proof for a theory definition:
+@example
+# (lemma "l1" << !x y: (x = y) => (x => (y & x)) >> 
+   [allC;  allC ; implC ; implC ;split_tac ++ (replace_tac ++ blast_tac)]);;
+  - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end example
+
+Example, a constructed proof:
+@example
+# (prove << !x y: (x = y) => (x => (y & x)) >> 
+   (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac));;
+- : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end example
+
+Tactics are functions in OCaml and new tactics can be implemented, in
+terms of existing tactics and tacticals, by function definition.
+Functions making use of @HSeq{} goals and proofs can also be defined.
+
+A @emph{conversion} is a function that creates a specialized theorem
+from a given term. Typically, a conversion of term @code{T} generates
+theorem of the form @code{T=true} (or @code{T=false}). A conversion
+works by generating a goal trying to construct a proof for the
+theorem. If the theorem can't be be proven, the conversion fails.
+
+@chapter Programs
 
 @HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
 
-@code{hseq @var{options}} starts the interactive interpreter and makes
-the @HSeq{} extensions available @var{options} are the options to pass
-to the OCaml system.
+@strong{@code{hseq @var{options}}} starts the interactive interpreter
+and makes the @HSeq{} extensions available @var{options} are the
+options to pass to the OCaml system.
 
-@code{hseqb @var{options} @var{file}} executes @var{file} as a script.
+@strong{@code{hseqb @var{options} @var{file}}} executes @var{file} as a script.
 
-@code{reset()} resets the @HSeq{} system to its initial state.
+@strong{@code{hseqc @var{options} @var{file}}} compiles the OCaml file
+@var{file} against the @HSeq{} headers and libraries.
 
-@section Quotations
+@section Toplevel
+
+The usual way to interact with @HSeq{} is through the toplevel
+system. This has a number of functions to help 
+
+
+@strong{@code{reset()}} resets the @HSeq{} system to its initial state.
+
+
+@subsection Quotations
 
 @HSeq{} terms, types and definitions can be used in OCaml expressions
 using quotations of the form @code{<< .. >>}. The accepted forms are:
@@ -62,66 +261,6 @@ parses @var{str} as a term definition
 @item @code{<:def<: str >>}
 parses @var{str} as a type definition or declaration.
 @end table
-
-@chapter Overview
-
-@HSeq{} is a system for proving a statement n the logic are true by
-constructing a a proof that shows that the can be derived from axioms
-of the logic by applying inference rules of the logic. 
-
-A statement in the logic is expressed in @HSeq{} as a @emph{term}
-which is constructed from operators and values and which has a
-@emph{type}. Similarly, a type can be formed from more constructors
-and from more basic types. A term is a @emph{formula} if it is
-syntactically well-formed and has a valid type. Definitions and
-declarations can be used to introduce new term or type constructors. A
-@emph{theorem} is a formula that has been proved to be true; an
-@emph{axiom} is a formula that has been declared without proof to be a
-true statement.
-
-@section Theories
-
-In @HSeq{}, a @emph{theory} is a record of declaration, definitions
-and theorems that provides a context (equivalently, a @emph{scope}) in
-which types, terms and proofs can be constructed. A term and or type
-is well-formed in a theory iff all constructors and operators used in
-term or type are available in the context provided by the theory. A
-theory @emph{T} can have one or more @emph{parent} theories. All
-declarations, definitions and theorems available in the parent of a
-theory are also available in the theory. @HSeq{} theories are
-effectively a module system providing a means to structure the
-declarations, definitions and theorems that make up a logical theory.
-
-@section Proofs
-
-In @HSeq{}, a proof is made of up a @emph{goal} to be proved and
-@emph{tactics} which implement the steps of the proof. A goal is made
-up of the formula to be proved and a set of @emph{sequents}. Each
-sequent is a sub-goal to be proved and is made up of a set of
-@emph{assumptions} and a set of @emph{conclusions}. Initially, a goal
-has one sequent with the formula to be proved as the only conclusion.
-
-A goal is manipulated by applying @emph{tactics}, which implement the
-inference rules to manipulate and simplify sequents, possibly
-introducing new sub-goals that are easier to prove. Tactics can be
-combined, using @emph{tacticals}, allowing for complex proof
-procedures to be built from the the basic inference rules. 
-
-The proof that a formula is a theorem is constructed as a single
-tactic, which can be built as a combination of other tactics.  These
-reduce the initial sequent to one or more simpler sub-goals until the
-goal is reduced to a set of sequents which are simple enough to be
-proved from the basic rules of the logic.
-
-Tactics are functions in OCaml and new tactics can be implemented, in
-terms of existing tactics and tacticals, by function definition.
-
-Functions making use of @HSeq{} goals and proofs can also be defined.
-A @emph{conversion} is a function that creates a specialized theorem
-from a given term. Typically, a conversion of term @code{T} generates
-theorem of the form @code{T=true} (or @code{T=false}). A conversion
-works by generating a goal trying to construct a proof for the
-theorem. If the theorem can't be be proven, the conversion fails.
 
 
 @chapter Types

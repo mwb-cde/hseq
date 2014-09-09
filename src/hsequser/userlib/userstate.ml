@@ -30,7 +30,8 @@ struct
     let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
     let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
-    ctxt3
+    let ctxt4 = Context.set_base_name ctxt3 (Context.Default.base_thy_name) in  
+    ctxt4
 
   let scope () = Thydb.mk_scope(Context.thydb(context()))
 
