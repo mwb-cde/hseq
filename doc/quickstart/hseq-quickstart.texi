@@ -234,7 +234,6 @@ and makes the @HSeq{} extensions available @var{options} are the
 options to pass to the OCaml system.
 
 @strong{@code{hseqb @var{options} @var{file}}} executes @var{file} as a script.
-
 @strong{@code{hseqc @var{options} @var{file}}} compiles the OCaml file
 @var{file} against the @HSeq{} headers and libraries.
 
@@ -403,89 +402,103 @@ set as a parent for each new theory.
 
 @section Theory Functions
 
-@strong{@code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]}}
-begins a theory named @var{n} with parents @var{p1}, @dots{},
+@table @code
+@item @strong{@code{begin_theory @var{n} [@var{p1}; @dots{}; @var{pn}]}}
+Begins a theory named @var{n} with parents @var{p1}, @dots{},
 @var{pn}.
 
-@strong{@code{end_theory()}} ends the currently open theory, marking
-it as closed and saving it to a theory file.
+@item @strong{@code{end_theory()}}
+Ends the currently open theory, marking it as closed and saving it to
+a theory file.
 
-@strong{@code{add_file @var{n}}} marks file @var{n} as a library to be
-loaded when the theory is loaded. If @var{n} ends with suffix
-@code{.ml}, it is loaded using @code{#use}. If @var{n} ends with
-suffix @code{.cmi} or @code{.cmo} it is loaded with @code{#load}.
+@item @strong{@code{add_file @var{n}}}
+Marks file @var{n} as a library to be loaded when the theory is
+loaded. If @var{n} ends with suffix @code{.ml}, it is loaded using
+@code{#use}. If @var{n} ends with suffix @code{.cmi} or @code{.cmo} it
+is loaded with @code{#load}.
 
-@strong{@code{compile @var{path} @var{n}}} compiles file @var{n} with the
-standard @HSeq{} libraries. @var{path} is the list of additional
-include directories to use.
+@item @strong{@code{compile @var{path} @var{n}}}
+Compiles file @var{n} with the standard @HSeq{} libraries. @var{path}
+is the list of additional include directories to use.
+@end table
 
 @subsection Query Functions
 
-@strong{@code{theory @var{x}}} displays theory @var{n}. If @var{x} is
-the empty string (@code{""}), the current theory is displayed.
+@table @code
+@item @strong{@code{theory @var{x}}}
+Displays theory @var{n}. If @var{x} is the empty string (@code{""}),
+the current theory is displayed.
 
-@strong{@code{defn @var{x}}} gets the defining theorem for term
-@var{x}. If @var{x} is in the form @code{@var{T}.@var{n}}, it
-identifies term @var{n} from theory @var{T}, otherwise the scope is
-searched for a definition of @var{x}.
+@item @strong{@code{defn @var{x}}}
+Gets the defining theorem for term @var{x}. If @var{x} is in the form
+@code{@var{T}.@var{n}}, it identifies term @var{n} from theory
+@var{T}, otherwise the scope is searched for a definition of @var{x}.
 
-@strong{@code{thm @var{x}}} get the theorem named @var{x}. Note that axioms are
-theorems. If @var{x} is in the form @code{@var{T}.@var{n}}, it
-identifies theorem @var{n} from theory @var{T}, otherwise the scope is
-searched for a theorem named @var{x}.
+@item @strong{@code{thm @var{x}}} 
+Get the theorem named @var{x}. Note that axioms are theorems. If
+@var{x} is in the form @code{@var{T}.@var{n}}, it identifies theorem
+@var{n} from theory @var{T}, otherwise the scope is searched for a
+theorem named @var{x}.
 
-@strong{@code{scope()}} get the current scope. 
+@item @strong{@code{scope()}}
+Get the current scope. 
 
-@strong{@code{goal_scope()}} get the scope of the current goal (in an
-interactive proof).
+@item @strong{@code{goal_scope()}}
+Get the scope of the current goal (in an interactive proof).
+@end table
 
 @section Declarations and Definitions
 
-@strong{@code{declare << @var{D} >>}} declares a term. @var{D} should
-be in the form @code{@var{n}:@var{ty}} where @var{n} is the identifier
-and @var{ty} the type. Note that @code{declare} uses the term
-quotation parser (@code{<< @dots{} >>}) not the definition quotation
-parser.
+@table @code
+@item @strong{@code{declare << @var{D} >>}}
+Declares a term. @var{D} should be in the form @code{@var{n}:@var{ty}}
+where @var{n} is the identifier and @var{ty} the type. Note that
+@code{declare} uses the term quotation parser (@code{<< @dots{} >>})
+not the definition quotation parser.
 
 Example:
 @example
 @code{declare <:def< and:(bool -> bool -> bool) >>}.
 @end example
 
-@strong{@code{define <:def< @var{D} >>}} defines a term. @var{D} must
-be in the form @code{@var{n} @var{a1} @dots{} @var{an} = @var{T}}
-where @var{n} is the identifier being defined, @var{a1} @dots{}
-@var{an} are the parameters and @var{T} the body of the definition.
+@item @strong{@code{define <:def< @var{D} >>}} 
+Defines a term. @var{D} must be in the form @code{@var{n} @var{a1}
+@dots{} @var{an} = @var{T}} where @var{n} is the identifier being
+defined, @var{a1} @dots{}  @var{an} are the parameters and @var{T} the
+body of the definition.
 
 Example:
 @example
 @code{define <:def< or x y = (not (not x) and (not y)) >>}.
 @end example
 
-@strong{@code{typedef <:def<: @var{D} >>}} declares or defines a type
-constructor.  @code{typedef <:def<: @var{ty} >>} declares the new type
-@var{ty} constructor. @code{typedef <:def<: @var{ty1} = @var{ty2} >>}
-declares @var{ty1} to be an alias for type @var{ty2}.  
+@item @strong{@code{typedef <:def<: @var{D} >>}} 
+Declares or defines a type constructor.  @code{typedef <:def<:
+@var{ty} >>} declares the new type @var{ty} constructor. @code{typedef
+<:def<: @var{ty1} = @var{ty2} >>} declares @var{ty1} to be an alias
+for type @var{ty2}.
 
 Example:
 @example
 (declaration) @code{typedef <:def<: bool >>}
-(aliasing) @code{typedef <:def<: ('a)set = ('a -> bool)>>}.
+(aliasing)    @code{typedef <:def<: ('a)set = ('a -> bool)>>}.
 @end example
 
-@strong{@code{typedef ~thm:@var{T} <:def<: @var{ty1} =
-@var{ty2}:@var{pred} >>}} defines @var{ty1} as the subtype of type
-@var{ty2} containing elements which satisfy term @var{pred} (which
-should have type @code{@var{ty2} -> bool}). Existence theorem @var{T}
-must be in the form @code{?x: @var{pred} x}.
+@item @strong{@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred} >>}} 
+Defines @var{ty1} as the subtype of type @var{ty2} containing elements
+which satisfy term @var{pred} (which should have type @code{@var{ty2}
+-> bool}). Existence theorem @var{T} must be in the form @code{?x:
+@var{pred} x}.
 
 Example
 @example 
 @code{typedef <:def<: ('a, 'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
 @end example
 
+@end table
+
 The declaration and definition commands take an optional argument
-named @code{pp} to specify printer-parser information. This sets the
+named @code{?pp} to specify printer-parser information. This sets the
 precedence, fixity and the symbol to use for the identifier or
 constructor.
 
@@ -495,19 +508,24 @@ associative), @code{infixr} (infix, right associative), @code{infixn}
 
 @section Axioms and Theorems
 
-@strong{@code{axiom @var{T}}} declares term @var{T} as an axiom. 
+@table @code
+@item @strong{@code{axiom @var{T}}} 
+Declares term @var{T} as an axiom. 
 
-@strong{@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]}} adds term
-@var{T} as a theorem using the list of @emph{tactics} @var{tac1} @dots{}
-@var{tacn} as a proof. A goal is constructed from term @var{T} and
-each tactic in the list is applied, in order, to the first subgoal.
+@item @strong{@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]}}
+Adds term @var{T} as a theorem using the list of @emph{tactics}
+@var{tac1} @dots{}  @var{tacn} as a proof. A goal is constructed from
+term @var{T} and each tactic in the list is applied, in order, to the
+first subgoal.
 
-Note that the list of tactics used by @code{theorem} is an
-unstructured proof: the tactics are always applied to the first
-sub-goal, as they are in interactive proofs. This makes it easier to
-transfer interactive proofs to a batch proof.
+The list of tactics used by @code{theorem} is an unstructured proof:
+the tactics are always applied to the first sub-goal, as they are in
+interactive proofs. This makes it easier to transfer interactive
+proofs to a batch proof.
 
-@code{axiom} and @code{theorem} take the optional argument @code{simp}
+@end table
+
+@code{axiom} and @code{theorem} take the optional argument @code{?simp}
 which marks the axiom/theorem for use as a simplification rule.
 
 @chapter Interactive Proofs
@@ -530,135 +548,176 @@ the label is referred by the OCaml expression @code{!$
 @var{str}}. When a string is set as the label of a sequent formula, it
 replaces the integer normally displayed with the formula.
 
-@strong{@code{goal @var{t}}} sets term @var{t} as the goal 
-in an interactive proof.
+@table @code
+@item @strong{@code{goal @var{t}}} 
+Set term @var{t} as the goal in an interactive proof.
 
-@strong{@code{by @var{tac}}} applies tactic @var{tac}
-to the current subgoal. 
+@item @strong{@code{by @var{tac}}} 
+Applies tactic @var{tac} to the current subgoal.
 
-@strong{@code{undo()}} drops the result of the last
-@code{by} command. 
+@item @strong{@code{undo()}} 
+Drops the result of the last @code{by} command.
 
-@strong{@code{top()}} displays the current sub-goal.
+@item @strong{@code{top()}} 
+Displays the current sub-goal.
 
-@strong{@code{prove @var{t} @var{tac}}} proves the theorem built from
-term @var{t} using tactic @var{tac}, failing if the tactic fails.
+@item @strong{@code{prove @var{t} @var{tac}}}
+Proves the theorem built from term @var{t} using tactic @var{tac},
+failing if the tactic fails.
+@end table
 
 @section Tactics
 
+In @HSeq{}, a tactic is a fundamental type, defined in module
+@code{HSeq.Logic}. These are defined as the type @code{node ->
+branch}, where @code{node} is the goal on which a tactic operates and
+@code{branch} the resulting sub-goals.
+
+For normal use, the tactics of type @code{HSeq.Tactics.tactic =
+Context.t -> Logic.node -> Logic.branch} are more useful. These take a
+theory context, making it easier to use definitions and theorems in a
+proof.
+
+Module @code{HSeq.Tactics} also defines @emph{data-tactics} as
+@code{('a) data_tactic = Context.t -> Logic.node -> ('a *
+Logic.branch)}. These are tactics that can extract data from a goal
+and are typically used when implementing procedures to pass data from
+one tactic to another.
+
 Tactics are generally named with suffix '_tac'. Tactics ending with a
 'A' act on the assumptions of a sub-goal. Tactics ending with 'C' act
-on the conclusions. Optional arguments are generally named @var{a} for
-an assumption, @var{c} for a conclusion, @var{f} for an assumption or
-conclusion and @var{inst} for a list of terms.
+on the conclusions. Optional arguments are generally named @code{?a} for
+an assumption, @code{?c} for a conclusion, @code{?f} for an assumption or
+conclusion and @code{?inst} for a list of terms.
 
-The @strong{basic tactics} are @code{conjA}, @code{conjC},
-@code{disjA}, @code{disjC}, @code{implA}, @code{implC}, @code{negA},
-@code{negC}, @code{existA}, @code{existC}, @code{allA}, @code{allC}
-which eliminate conjunctions, disjunctions, implications, negation and
-existential and universal quantifiers. 
+@table @code
+@item @strong{Basic tactics}
+@code{conjA}, @code{conjC}, @code{disjA}, @code{disjC}, @code{implA},
+@code{implC}, @code{negA}, @code{negC}, @code{existA}, @code{existC},
+@code{allA}, @code{allC} which eliminate conjunctions, disjunctions,
+implications, negation and existential and universal quantifiers.
 
-@strong{@code{betaA}}, @strong{@code{betaC}} and
-@strong{@code{beta_tac}} beta reduce formulas.
+@item @strong{@code{betaA}}, @strong{@code{betaC}} and @strong{@code{beta_tac}} 
+Beta reduce formulas.
 
-@strong{@code{basic}} solves sub-goals of the form @code{t,
-@var{asm}|- t, @var{concl}} (a formula appearing in both assumptions
-and conclusions).
+@item @strong{@code{basic}} 
+Solves sub-goals of the form @code{t, @var{asm}|- t, @var{concl}} (a
+formula appearing in both assumptions and conclusions).
 
-@strong{@code{trivial}} solves subgoals in which @code{true}
-appears in the conclusions or @code{false} appears in the
-assumptions. 
+@item @strong{@code{trivial}} 
+Solves subgoals in which @code{true} appears in the conclusions or
+@code{false} appears in the assumptions.
 
-@strong{@code{eq_tac}} solves subgoals in which term @code{x=x}
-appears in the conclusions.
+@item @strong{@code{eq_tac}} 
+Solves subgoals in which term @code{x=x} appears in the conclusions.
 
-@strong{@code{flatten_tac}} eliminates basic boolean operators without
-splitting the sub-goal. 
+@item @strong{@code{flatten_tac}} 
+Eliminates basic boolean operators without splitting the sub-goal.
 
-@strong{@code{split_tac}} eliminates the basic boolean operators,
-splitting the sub-goal.
+@item @strong{@code{split_tac}} 
+Eliminates the basic boolean operators, splitting the sub-goal.
 
-@strong{@code{scatter_tac}} combines @code{flatten_tac} and
-@code{split_tac}.
+@item @strong{@code{scatter_tac}} 
+Combines @code{flatten_tac} and @code{split_tac}.
 
-@strong{@code{blast_tac}} is @code{scatter_tac} followed by
-@code{basic}.
+@item @strong{@code{blast_tac}} 
+Applies @code{scatter_tac} followed by @code{basic}.
 
-@strong{@code{iffA}} and @strong{@code{iffC}} eliminate boolean
-equivalence and
+@item @strong{@code{equals_tac}} 
+Replaces equality (=) between booleans with boolean equivalence (iff).
 
-@strong{@code{equals_tac}} replaces equality (=) between booleans with
-boolean equivalence (iff).
+@item @strong{@code{iffA}} and @strong{@code{iffC}} 
+Eliminate boolean equivalence.
 
-@strong{@code{instA}}, @strong{@code{instC}} instantiate assumptions
-and conclusions with a given list of terms. @strong{@code{inst_tac}} first
-tries @code{instA} then @code{instC}. 
+@item @strong{@code{instA}}, @strong{@code{instC}}
+Iinstantiate assumptions and conclusions with a given list of
+terms. 
 
-@strong{@code{specA}}, @strong{@code{specC}} and
-@strong{@code{spec_tac}} specialize assumptions and conclusions.
+@item @strong{@code{inst_tac}} 
+First tries @code{instA} then @code{instC}.
 
-@strong{@code{cut @var{thm}}} introduces theorem @var{thm} as an
-assumption. The optional argument @code{inst} can be used to
-instantiate the assumption with values.
+@item @strong{@code{specA}}, @strong{@code{specC}}, @strong{@code{spec_tac}} 
+Specialize assumptions and conclusions.
+
+@item @strong{@code{cut @var{thm}}} 
+Introduces theorem @var{thm} as an assumption. The optional argument
+@code{?inst} can be used to instantiate the assumption with values.
+@end table
 
 The order of assumptions and conclusions can be significant for
 tactics which search for a formula.  
 
-@strong{@code{liftA @var{l}}} and @strong{@code{liftC @var{l}}} lift
-the assumption or conclusion labelled @var{l} to the front of the list
-of assumptions or conclusions.
+@table @code
+@item @strong{@code{liftA @var{l}}} and @strong{@code{liftC @var{l}}} 
+Lift the assumption or conclusion labelled @var{l} to the front of the
+list of assumptions or conclusions.
 
-@strong{@code{copyA @var{l}}} and @strong{@code{copyC @var{l}}} copy
-the assumption or conclusion with label @var{l}. 
+@item @strong{@code{copyA @var{l}}} and @strong{@code{copyC @var{l}}} 
+Copy the assumption or conclusion with label @var{l}.
 
-@strong{@code{deleteA @var{l}}} and @strong{@code{deleteC @var{l}}}
-delete the assumption or conclusion labelled @var{l}.
+@item @strong{@code{deleteA @var{l}}} and @strong{@code{deleteC @var{l}}}
+Delete the assumption or conclusion labelled @var{l}.
 
-@strong{@code{match_asm @var{t} tac}} and @strong{@code{match_concl
-@var{t} @var{tac}}} search the sequent for an assumption or conclusion
-matching the term @var{t}, applying @code{@var{tac} @var{l}} where
-@var{l} is the label of the matched formula. Free variables in @var{t}
-match sub-terms in the assumptions/conclusions. 
+@item @strong{@code{match_asm @var{t} tac}} and @strong{@code{match_concl @var{t} @var{tac}}}
+Search the sequent for an assumption or conclusion matching the term
+@var{t}, applying @code{@var{tac} @var{l}} where @var{l} is the label
+of the matched formula. Free variables in @var{t} match sub-terms in
+the assumptions/conclusions.
 
 Example:
 @example
 @samp{match_asm << !x y z: A => C >> liftA}.
 @end example
 
-@strong{@code{nameA @var{str} @var{l}}} and @strong{@code{nameC
-@var{str} @var{l}}} set string @var{str} as the label of the
-assumption or conclusion with label @var{l}. These should be used in
-conjunction with @code{match_asm} and @code{match_concl}.
+@item @strong{@code{nameA @var{str} @var{l}}} and @strong{@code{nameC @var{str} @var{l}}}
+Set string @var{str} as the label of the assumption or conclusion with
+label @var{l}. These should be used in conjunction with
+@code{match_asm} and @code{match_concl}.
+@end table
 
-@strong{@code{back_tac}} matches a possibly quantified assumption of
-the from @code{a => c} with a conclusion of the form @code{c},
-replacing the conclusion with @code{a}.
+Some other useful tactics include:
+@table @code
 
-@strong{@code{mp_tac}} matches a possibly quantified assumption of the
-from @code{a => c} with an assumption of the form @code{a}, replacing
-it with assumption @code{c}.
+@item @strong{@code{unify_tac}}
+Try to unify an assumption with a conclusion. Fails if no assumption
+can be unified with any conclusion. The assumption and conclusion can
+optionally be given.
 
-@strong{@code{cut_back_tac}} and @strong{@code{cut_mp_tac}} operate
-with theorems of the form @code{a=>c} (which may be universally
-quantified).
+@item @strong{@code{back_tac}}
+Matches a possibly quantified assumption of the from @code{a => c}
+with a conclusion of the form @code{c}, replacing the conclusion with
+@code{a}.
 
-@strong{@code{show @var{t} @var{tac}}} introduces term @var{t} as an
-assumption, using tactic @var{tac} to prove the truth of
-@var{t}. 
+@item @strong{@code{mp_tac}}
+Matches a possibly quantified assumption of the from @code{a => c}
+with an assumption of the form @code{a}, replacing it with assumption
+@code{c}.
 
-@strong{@code{cases_tac @var{t}}} introduces a case split on the truth
-of term @var{t}. 
+@item @strong{@code{cut_back_tac}} and @strong{@code{cut_mp_tac}} 
+Operate with theorems of the form @code{a=>c} (which may be
+universally quantified). The conclusion @code{c} is unified with an
+assumption and replaced with the assumption @code{a}.
 
-@strong{@code{case_of @var{t}}} introduces a case split on the
-possible values of term @var{t}.
+@item @strong{@code{show @var{t} @var{tac}}} 
+Introduces term @var{t} as an assumption, using tactic @var{tac} to
+prove the truth of @var{t}.
 
-@strong{@code{induct_tac @var{thm}}} begins a proof by induction on a
-conclusion of the form @code{! x .. y : R => A}. 
+@item @strong{@code{cases_tac @var{t}}} 
+Introduces a case split on the truth of term @var{t}.
 
-@strong{@code{induct_on @var{n}}} begins a proof by induction on the
-quantified variable named @var{n}, failing if there is no such
-variable in the conclusions or no appropriate induction theorem. The
-induction theorem used depends on the type of variable @var{n}.
+@item @strong{@code{case_of @var{t}}} 
+Introduces a case split on the possible values of term @var{t}.
+
+@item @strong{@code{induct_tac @var{thm}}} 
+Begins a proof by induction on a conclusion of the form @code{! x .. y
+: R => A}.
+
+@item @strong{@code{induct_on @var{n}}} 
+Begins a proof by induction on the quantified variable named @var{n},
+failing if there is no such variable in the conclusions or no
+appropriate induction theorem. The induction theorem used depends on
+the type of variable @var{n}.
+@end table
 
 @section Rewriting and Simplification
 
@@ -666,45 +725,51 @@ Rewriting works on rewrite rules of the form @code{! @var{x}:
 @var{A}(@var{x}) => @var{C}(@var{x})}. Rewrites rules can be theorems
 or be assumptions in a sequent, e.g. introduced using @code{cut}.
 
-A rewrite tactics may take an optional argument @code{dir} to specify
-the rewriting direction. Possible values are @strong{@code{rightleft}}
-or @strong{@code{leftright}}.
+Some rewriting tactics take an optional argument @code{?dir} to specify
+the rewriting direction. The possible values are
+@strong{@code{rightleft}} or @strong{@code{leftright}}.
 
-@strong{@code{rewriteA_tac}}, @strong{@code{rewriteC_tac}} and
-@strong{@code{rewrite_tac}} rewrite assumptions, conclusions and sequent
-formulas with a list of rewrite rules, provided as theorems. 
+@table @code
+@item @strong{@code{rewriteA_tac}}, @strong{@code{rewriteC_tac}} and @strong{@code{rewrite_tac}} 
+Rewrite tactics for assumptions, conclusions and sequent formulas with
+rewrite rules provided as a list of theorems.
 
-@strong{@code{once_rewriteA_tac}}, @strong{@code{once_rewriteC_tac}}
-and @strong{@code{once_rewrite_tac}} apply a rewrite rule once.
+@item @strong{@code{once_rewriteA_tac}}, @strong{@code{once_rewriteC_tac}} and @strong{@code{once_rewrite_tac}}
+Apply a rewrite rule once in the assumption, conclusion or anywhere in
+the sequent.
 
-@strong{@code{replace_tac}} and @strong{@code{once_replace_tac}}
-rewrite formulas with rules from the assumptions. 
+@item @strong{@code{replace_tac}} and @strong{@code{once_replace_tac}}
+Rewrite formulas with rules from the assumptions. 
 
-@strong{@code{unfold @var{n}}} unfolds the definition of the term
-@var{n}.
+@item @strong{@code{unfold @var{n}}} 
+Unfold the definition of term @var{n}.
+@end table
+
 
 The main simplification tactics are @code{simpA_tac},
-@code{simpC_tac}, @code{simp_all_tac} and
-@code{simp_tac}.
+@code{simpC_tac}, @code{simp_all_tac} and @code{simp_tac}.
 
-@strong{@code{simpA_tac}} simplifies the assumptions, starting with
-the first.
+@table @code
+@item @strong{@code{simpA_tac}} 
+Simplifies the assumptions, starting with the first.
 
-@strong{@code{simpC_tac}} simplifies the conclusions, starting with
-the last.
+@item @strong{@code{simpC_tac}} 
+Simplifies the conclusions, starting with the last.
 
-@strong{@code{simp_all_tac}} simplifies the assumptions, starting with
-the first, and then the conclusions, starting with the last.
+@item @strong{@code{simp_all_tac}} 
+Simplifies the assumptions, starting with the first, and then the
+conclusions, starting with the last.
 
-@strong{@code{simp_tac}} takes an optional formula
-label. If the label is given, then @code{simp_tac} is either
-@code{simpC_tac} or @code{simpA_tac}, otherwise it is
-@code{simpC_tac}.
+@item @strong{@code{simp_tac}}
+Simplify a sequent formula, chosen from an optional label. If the
+label is given then @code{simp_tac} is either @code{simpC_tac} or
+@code{simpA_tac}, otherwise it is @code{simpC_tac}.
+@end table
 
 The simplification tactics use the standard simplification rules,
 obtained by calling @strong{@code{std_ss()}}. The simplification
 tactics ending with @code{_tac} also take a list of theorems to use as
-additional simplification rules. 
+additional simplification rules.
 
 Tactics @strong{@code{simpA}}, @strong{@code{simpC}},
 @strong{@code{simp_all}} and @strong{@code{simp}} are short-hand for
@@ -713,38 +778,54 @@ simp_tac []}).
 
 @section Tacticals
 
-@strong{@code{skip}} is the tactic that does nothing and always
-succeeds. 
+@table @code
+@item @strong{@code{skip}} 
+The tactic that does nothing and always succeeds.
 
-@strong{@code{fail}} is the tactic that does nothing and always
-fails.
+@item @strong{@code{fail}}
+The tactic that does nothing and always fails.
 
-The @strong{sequential composition} of tactics is
-@strong{@code{seq[@var{tac1}; @var{tac2}; @dots{};
-@var{tacn}]}}. The tactics are applied in sequence starting with
-@var{tac1} and each tactic @var{tac_(i+1)} is applied to all the
-sub-goals generated by @var{taci}. The sequence continues until all
-tactics have been applied, the goal is solved or a tactic fails.
+@item @strong{@code{seq[@var{tac_1}; @var{tac_2}; @dots{}; @var{tac_n}]}}
+THe @strong{sequential composition} of tactics. The tactics are
+applied in sequence starting with @var{tac_1} and each tactic
+@var{tac_(i+1)} is applied to all the sub-goals generated by
+@var{tac_i}. The sequence continues until all tactics have been
+applied, the goal is solved or a tactic fails.
 
-@strong{@code{@var{tac1}++@var{tac2}}} is shorthand for @code{seq[@var{tac1};
-@var{tac2}]}. 
+@strong{@code{@var{tac_1}++@var{tac_2}}} is shorthand for
+@code{seq[@var{tac_1}; @var{tac_2}]}.
 
-@strong{@code{alt[@var{tac1}; @var{tac2}; @dots{}; @var{tacn}]}} is
-alternation between tactics. Each tactic is tried in sequence,
-starting with @var{tac1}, until one of the tactics succeeds. The
+@item @strong{@code{alt[@var{tac_1}; @var{tac_2}; @dots{}; @var{tac_n}]}}
+Alternation between tactics. Each tactic is tried in sequence,
+starting with @var{tac_1}, until one of the tactics succeeds. The
 alternation fails if all the tactics fail.
 
-@strong{@code{@var{tac1}//@var{tac2}}} is shorthand for
-@code{alt[@var{tac1}; @var{tac2}]}.
+@strong{@code{@var{tac_1}//@var{tac_2}}} is shorthand for
+@code{alt[@var{tac_1}; @var{tac_2}]}.
 
-@strong{Branching} tactical @strong{@code{@var{tac} -- [@var{tac1}; @dots{};
-@var{tacn}]}} applies tactic @var{tac}. Each tactic @var{taci} is then
-applied to the @var{i}'th resulting sub-goal. All sub-goals are then
-combined (in the order they were generated) to form the final list of
-sub-goals. If there are more sub-goals than tactics, the extra
-sub-goals are added to the end of the final list (as if the list of
-tactics was padded with @code{skip}). If there are more tactics than
-sub-goals, the extra tactics are ignored.
+@item @strong{@code{@var{tac} -- [@var{tac_1}; @dots{}; @var{tac_n}]}}
+The @strong{branching} tactical. First applies tactic @var{tac} then
+each tactic @var{tac_i} is applied to the @var{i}'th resulting
+sub-goal. All sub-goals are then combined (in the order they were
+generated) to form the final list of sub-goals. If there are more
+sub-goals than tactics, the extra sub-goals are added to the end of
+the final list (as if the list of tactics was padded with
+@code{skip}). If there are more tactics than sub-goals, the extra
+tactics are ignored.
+
+@item @strong{@code{repeat @var{tac}}}
+Repetition. Apply @var{tac} at least once then repeat until it fails
+or there are no more subgoals.
+
+@item @strong{@code{cond @var{pred} @var{tac_1} @var{tac_2}}}
+Conditional. Apply predicate @var{pred} to a goal, if the result is
+@code{true} then apply @var{tac_1} to the goal otherwise apply
+@var{tac_2}.
+
+@strong{@code{@var{pred} --> @var{tac}}} is shorthand for
+@code{cond @var{pred} @var{tac} @code{skip}}.
+
+@end table
 
 @c
 @c End of document
