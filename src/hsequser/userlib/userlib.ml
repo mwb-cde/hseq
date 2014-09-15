@@ -430,6 +430,10 @@ let close_theory () =
   let nctxt = Commands.close_theory (Global.context ()) in
   Global.set_context nctxt
 
+let load_theory th = 
+  let nctxt = Commands.load_theory_as_cur (Global.context ()) th  in
+  Global.set_context nctxt
+  
 (** {6 Theory properties} *)
 
 let parents ps = 
@@ -663,7 +667,10 @@ let init () =
   let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
   let ctxt3 = Loader.set_file_handlers ctxt2 in 
   let st1 = Userstate.set_context st0 ctxt3 in
-  Global.set_state st1
+  Global.set_state st1;
+  (try ignore(load_theory (Context.base_name (Global.context())))
+   with _ -> ())
+
 
 let reset = init
 

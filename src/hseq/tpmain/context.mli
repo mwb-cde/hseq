@@ -37,7 +37,7 @@ sig
   val empty_thy_name: string
 
   (** The name of the base theory. *)
-  val base_thy_name:string
+  val base_thy_name: string
 end
 
 (** The theorem prover context. *)

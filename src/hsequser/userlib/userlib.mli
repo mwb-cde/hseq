@@ -215,13 +215,18 @@ val end_theory: ?save:bool -> unit -> unit
 val open_theory: string -> unit
 (** [open_theory th]: Load theory [th] as the current theory, to allow
     it to be extended. Fails if the theory is protected.  [open_theory]
-    Allows a theory to be defined in a series of sessions.
+    allows a theory to be defined in a series of sessions.
 *)
 
 val close_theory: unit -> unit
 (** [close_theory ()]: Save the current theory to disk, but don't
     protect it. Calling [close_theory] allows the theory to be opened
     with [open_theory] but not to be a parent to a theory.
+*)
+
+val load_theory: string -> unit
+(** [load_theory th]: Load theory [th] as the current theory, for read-only
+    access.
 *)
 
 (** {7 Theory properties} *)

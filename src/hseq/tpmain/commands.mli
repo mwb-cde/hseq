@@ -55,7 +55,7 @@ val save_theory: Context.t -> Theory.thy -> unit
 
 val load_theory_as_cur: 
   Context.t -> string -> Context.t
-(** [load_theory n]: Load the theory named [n] into the database,
+(** [load_theory_as_cur n]: Load the theory named [n] into the database,
     making it the current theory.
 *)
 

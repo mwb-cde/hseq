@@ -66,7 +66,7 @@ struct
       thyset_f: Lib.StringSet.t;
     }
 
-    (** Initializer *)
+  (** Initializer *)
   let empty() = 
     {
       context_f = Default.context();
@@ -180,12 +180,6 @@ struct
     let ctxt1 = Context.set_path ctxt0 [Settings.thys_dir()] in
     set_context st ctxt1
 
-(***
-    let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
-    let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
-    let ctxt4 = Loader.set_file_handlers ctxt3 in 
-    set_context st ctxt4
-***)
   let init_scope st = 
     set_scope st (Default.scope())
 

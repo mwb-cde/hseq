@@ -78,7 +78,7 @@ Theorems:
 Type definitions:
   @code{('a)set='a -> bool}
 
-Term definitions:
+Definitions:
   @code{in:  'a -> ('a)set -> bool 
         |- !x A: (in x A) = (A x)}
   @code{compose:  ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
@@ -118,13 +118,13 @@ end_theory()
 
 @section Proofs
 
-In @HSeq{}, a proof is made of up a @emph{goal} to be proved and
-@emph{tactics} which implement the steps of the proof. A goal is made
-up of the formula to be proved and a set of @emph{sequents}. Each
-sequent is a sub-goal to be proved and formed of a set of
-@emph{assumptions} and a set of @emph{conclusions}. Initially, a goal
-has one sequent with no assumptions and the formula to be proved as
-the only conclusion.
+In @HSeq{}, a proof is made up of a @emph{goal} and one or more
+@emph{tactics} which implement the steps of the proof. A goal consists
+of the formula to be proved and a set of @emph{sequents}. A sequent is
+a sub-goal to be proved and is formed of a set of @emph{assumptions}
+and a set of @emph{conclusions}. Initially, a goal has one sequent
+which has no assumptions and the formula to be proved as the single
+conclusion.
 
 Example:
 @example
@@ -136,11 +136,11 @@ Goal !x y: x = y => x => (y & x)
 [1] !x y: x = y => x => (y & x)
 @end example
 
-A goal is manipulated by applying @emph{tactics}, which implement the
-inference rules to manipulate and simplify sequents, possibly
-introducing new sub-goals that are easier to prove. Tactics can be
-combined, using @emph{tacticals}, allowing for complex proof
-procedures to be built from the the basic inference rules. 
+Tactics implement the inference rules and proof procedures of the
+logic.  A goal is manipulated by applying tactics to manipulate and
+simplify sequents, possibly introducing new sub-goals that are easier
+to prove. Tactics can be combined, using @emph{tacticals}, allowing
+complex procedures to be built up from the more basic rules.
 
 Example:
 @example
@@ -176,11 +176,10 @@ Goal !x y: x = y => x => (y & x)
 [1] _y
 @end example
 
-
-A proof is constructed as a single tactic, which can be built from
-tacticals.  These reduce the initial sequent to one or more simpler
-sub-goals until the goal is reduced to a set of sequents which are
-simple enough to be proved from the basic rules of the logic.
+In an interactive proof, the goal is stated first and the tactics
+given seperately in a sequence of steps. This makes finding a proof
+simpler since it is easier to match the tactics with the sub-goals to
+prove.
 
 Example, an interactive proof:
 @example
@@ -190,16 +189,37 @@ Goal !x y: x = y => x => (y & x)
 1 subgoal
 ----------------------
 [1] !x y: x = y => x => (y & x)
-# by (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac);;
+
+# by (allC ++ allC ++ implC ++ implC);;
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+1 subgoal
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _y & _x
+
+# by ( split_tac ++ replace_tac ++ blast_tac);;
 Subgoal solved
 - : HSeq.Goals.Proof.t = Goal !x y: x = y => x => (y & x)
                          No subgoals
-# result();;  (* get the proved theorem *)
-- : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 
-# qed "q1";;  (* get the proved theorem, store it as "q1" in the current theory *)
+# qed "t1";;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end example
+
+The command @code{qed @var{n}} stores the theorem under name
+@var{n}; it can be retrieved using command @code{thm @var{n}}. For
+example, 
+@example
+# thm "t1";;
+- : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end example
+
+An interactive proof is useful for finding the tactics needed to
+justify a theorem. Once found, a more compact form, that is faster to
+process, can be used to repeat the proof in the script used to build a
+theory.
 
 Example, proof for a theory definition:
 @example
@@ -207,6 +227,12 @@ Example, proof for a theory definition:
    [allC;  allC ; implC ; implC ;split_tac ++ (replace_tac ++ blast_tac)]);;
   - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end example
+As before, the command @code{thm "l1"} will retrieve the theorem.
+
+If a theorem doesn't need to be stored permanently, the formula and
+tactic need to prove it can combined into a single command
+@code{prove}. This is useful for constructing specialized lemmas that
+are too specific for general use.
 
 Example, a constructed proof:
 @example
@@ -215,12 +241,12 @@ Example, a constructed proof:
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end example
 
-Tactics are functions in OCaml and new tactics can be implemented, in
-terms of existing tactics and tacticals, by function definition.
-Functions making use of @HSeq{} goals and proofs can also be defined.
-
-A @emph{conversion} is a function that creates a specialized theorem
-from a given term. Typically, a conversion of term @code{T} generates
+Tactics, including those providing the basic rules of inference, are
+functions in OCaml. New tactics can be implemented by function
+definition in terms of the existing tactics and tactical.  Functions
+making use of @HSeq{} goals and proofs can also be defined.  A
+@emph{conversion} is a function that creates a specialized theorem
+from a term. Typically, a conversion of term @code{T} generates a
 theorem of the form @code{T=true} (or @code{T=false}). A conversion
 works by generating a goal trying to construct a proof for the
 theorem. If the theorem can't be be proven, the conversion fails.
@@ -317,25 +343,25 @@ well-formed term that is correctly typed in some @emph{scope}.
 
 The core terms and their syntax are:
 @table @code
-@item @code{true}, @code{false}
+@item @strong{@code{true}}, @strong{@code{false}}
 The boolean true and false.
-@item @code{f a}
-A function application. 
-@item @code{~a}, @code{not a}
+@item @strong{@code{f a}}
+Function application. 
+@item @code{@strong{~}a}, @code{@strong{not} a}
 The negation of term @code{a}.
-@item @code{a & b}, @code{a and b}
+@item @code{a @strong{&} b}, @code{a @strong{and} b}
 The conjunction of terms @code{a} and @code{b}
-@item @code{a | b}, @code{a or b}
+@item @code{a @strong{|} b}, @code{a @strong{or} b}
 The disjunction of terms @code{a} and @code{b}
-@item @code{a => b}, @code{a implies b}
+@item @code{a @strong{=>} b}, @code{a @strong{implies} b}
 Implication for terms @code{a} and @code{b}
-@item @code{a iff b}
+@item @code{a @strong{iff} b}
 The boolean of terms @code{a} and @code{b}.
-@item @code{a = b}
+@item @code{a @strong{=} b}
 The equality of terms @code{a} and @code{b}.
-@item @code{(@var{t}:@var{ty})}.
+@item @code{(@var{t}@strong{:}@var{ty})}.
 Specifies that term @var{t} has type @var{ty}.
-@item @code{@@ x: F}
+@item @code{@strong{@@} x@strong{:} F}
 The choice operator (i.e. some @code{x} for which @code{F} is true)
 @end table
 
@@ -360,15 +386,15 @@ variables: @code{@var{SYM} x1 x2 @dots{} xn : F} binds variables
 
 The binding terms are:
 @table @code
-@item @code{% x: F}
+@item @code{@strong{%} x@strong{:} F}
 A lambda term.
-@item @code{! x: F}
-Universal quantification is @code{! x: F} 
-@item @code{? x: F}
-existential quantification. 
-@item @code{?! x: F}.
-the unique existential binding (i.e. there exists one @code{x} such
-that @code{F} is true).
+@item @code{@strong{!} x@strong{:} F}
+Universal quantification.
+@item @code{@strong{?} x@strong{:} F}
+Existential quantification. 
+@item @code{@strong{?!} x@strong{:} F}.
+Unique existential binding (i.e. there exists one @code{x} such that
+@code{F} is true).
 @end table
 
 A variable @code{x} in a binding can be typed in which case it is
@@ -502,9 +528,10 @@ named @code{?pp} to specify printer-parser information. This sets the
 precedence, fixity and the symbol to use for the identifier or
 constructor.
 
-Fixity values are @code{prefix}, @code{infixl} (infix, left
-associative), @code{infixr} (infix, right associative), @code{infixn}
-(infix, non-associative) and @code{suffix}.
+THe fixity values are @strong{@code{prefix}}, @strong{@code{infixl}}
+(infix, left associative), @strong{@code{infixr}} (infix, right
+associative), @strong{@code{infixn}} (infix, non-associative) and
+@strong{@code{suffix}}.
 
 @section Axioms and Theorems
 
@@ -591,18 +618,45 @@ an assumption, @code{?c} for a conclusion, @code{?f} for an assumption or
 conclusion and @code{?inst} for a list of terms.
 
 @table @code
-@item @strong{Basic tactics}
-@code{conjA}, @code{conjC}, @code{disjA}, @code{disjC}, @code{implA},
-@code{implC}, @code{negA}, @code{negC}, @code{existA}, @code{existC},
-@code{allA}, @code{allC} which eliminate conjunctions, disjunctions,
-implications, negation and existential and universal quantifiers.
+
+@item @strong{@code{conjA}}, @strong{@code{conjC}}
+@itemx @strong{@code{disjA}}, @strong{@code{disjC}}
+@itemx @strong{@code{implA}}, @strong{@code{implC}},
+@itemx @strong{@code{negA}}, @strong{@code{negC}}
+@itemx @strong{@code{existA}}, @strong{@code{existC}}
+@itemx @strong{@code{allA}}, @strong{@code{allC}}
+Eliminate conjunctions, disjunctions, implications, negation and
+existential and universal quantifiers.
+
+For example,
+@table @code
+@item conjA
+reduces @code{[@var{A} and @var{B}, @var{asms} |- @var{concls}]}
+to
+@code{[@var{A}, @var{B}, @var{asms} |- @var{concls}]}
+
+@item conjC
+splits @code{[@var{asms} |- @var{A} and @var{B}, @var{concls}]}
+to
+@code{[@var{asms} |- @var{A}, @var{concls}]}
+and @code{[@var{asms} |- @var{B}, @var{concls}]}
+@end table
 
 @item @strong{@code{betaA}}, @strong{@code{betaC}} and @strong{@code{beta_tac}} 
 Beta reduce formulas.
 
+For example, 
+@table @code
+@item betaA
+reduces @code{[(% x: (f x)) true, @var{asms} |- @var{concls}]}
+to
+@code{[(f true), @var{asms} |- @var{concls}]}
+@end table
+
 @item @strong{@code{basic}} 
-Solves sub-goals of the form @code{t, @var{asm}|- t, @var{concl}} (a
-formula appearing in both assumptions and conclusions).
+Solves sub-goals of the form @code{[@var{F}, @var{asm} |- @var{F},
+@var{concl}]} (a formula appearing in both assumptions and
+conclusions).
 
 @item @strong{@code{trivial}} 
 Solves subgoals in which @code{true} appears in the conclusions or
@@ -610,6 +664,23 @@ Solves subgoals in which @code{true} appears in the conclusions or
 
 @item @strong{@code{eq_tac}} 
 Solves subgoals in which term @code{x=x} appears in the conclusions.
+
+@item @strong{@code{equals_tac}} 
+Replaces equality (=) between booleans with boolean equivalence (iff).
+
+@item @strong{@code{iffA}} and @strong{@code{iffC}} 
+Eliminate boolean equivalence.
+
+@item @strong{@code{instA}}, @strong{@code{instC}}, @strong{@code{inst_tac}} 
+Instantiate assumptions and conclusions with a given list of
+terms. 
+
+@item @strong{@code{specA}}, @strong{@code{specC}}, @strong{@code{spec_tac}} 
+Specialize assumptions and conclusions.
+
+@item @strong{@code{cut @var{thm}}} 
+Introduces theorem @var{thm} as an assumption. The optional argument
+@code{?inst} can be used to instantiate the assumption with values.
 
 @item @strong{@code{flatten_tac}} 
 Eliminates basic boolean operators without splitting the sub-goal.
@@ -623,25 +694,6 @@ Combines @code{flatten_tac} and @code{split_tac}.
 @item @strong{@code{blast_tac}} 
 Applies @code{scatter_tac} followed by @code{basic}.
 
-@item @strong{@code{equals_tac}} 
-Replaces equality (=) between booleans with boolean equivalence (iff).
-
-@item @strong{@code{iffA}} and @strong{@code{iffC}} 
-Eliminate boolean equivalence.
-
-@item @strong{@code{instA}}, @strong{@code{instC}}
-Iinstantiate assumptions and conclusions with a given list of
-terms. 
-
-@item @strong{@code{inst_tac}} 
-First tries @code{instA} then @code{instC}.
-
-@item @strong{@code{specA}}, @strong{@code{specC}}, @strong{@code{spec_tac}} 
-Specialize assumptions and conclusions.
-
-@item @strong{@code{cut @var{thm}}} 
-Introduces theorem @var{thm} as an assumption. The optional argument
-@code{?inst} can be used to instantiate the assumption with values.
 @end table
 
 The order of assumptions and conclusions can be significant for

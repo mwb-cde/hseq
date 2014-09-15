@@ -22,7 +22,7 @@ From the toplevel directory:
                      default:/usr/local/lib/hseq
 	--bindir d:  Install the binary in directory d
         --fast (true/false): 
-                     Use the fast byte-code compiler (ocamlc.opt)
+                     Use the fast compiler (ocamlc.opt)
                      default:false (use ocamlc)
         --native (true/false):
                      Build native-code libraries.
@@ -53,10 +53,10 @@ From the toplevel directory:
 Notes:
 ------
 
-Building the documentation requires the GNU Texinfo system.
+- Building the documentation requires the GNU Texinfo system.
 
-Filenames with spaces should be passed to the configure.ml script as
-a string. For example, /a/b c/d should be passed as "/a/b c/d"
+- Filenames with spaces should be passed to the configure.ml script as a
+  string. For example, /a/b c/d should be passed as "/a/b c/d"
 
 AFTER INSTALLATION
 ==================
