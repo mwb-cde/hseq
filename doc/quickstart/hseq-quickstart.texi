@@ -30,21 +30,49 @@ Copyright @copyright{} 2005-2014, Matthew Wahab
 @HSeq{} is a tactical theorem prover for a typed, higher order logic
 based on the sequent calculus. It is written in OCaml and can be used
 interactively through the OCaml toplevel or as a library linked into
-an application. This manual assumes that it is used through the OCaml
-toplevel.
+an application. 
 
-@HSeq{} is experimental, alpha-quality code that may have soundness bugs.
+Note that @HSeq{} is experimental, alpha-quality code that may have
+soundness bugs.
+
+@chapter Programs
+
+@HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
+
+@strong{@code{hseq @var{options}}} starts the interactive interpreter
+and makes the @HSeq{} extensions available @var{options} are the
+options to pass to the OCaml system.
+
+@strong{@code{hseqb @var{options} @var{file}}} executes @var{file} as a script.
+@strong{@code{hseqc @var{options} @var{file}}} compiles the OCaml file
+@var{file} against the @HSeq{} headers and libraries.
+
+@section Toplevel
+
+The usual way to interact with @HSeq{} is through the toplevel
+system. 
+
+@table @code
+@item @code{@strong{init()}}
+@itemx @code{@strong{reset()}}
+Resets the @HSeq{} system to its initial state.
+
+@item @code{@strong{compile} @var{dirs} @var{f}}
+Compile file @var{f} against the @HSeq{} headers and libraries, with
+the list of directories @var{dirs} added to headers search path.
+@end table
 
 @chapter Overview
 
-@HSeq{} is a system for constructing theories and trying to prove a
-statement in the logic. A logical statement is expressed in @HSeq{} as
-a @emph{term} which is constructed from operators and values. Every
+@HSeq{} is a system for constructing theories and for trying to prove
+statements in the logic. A logical statement is expressed in @HSeq{}
+as a @emph{term} which is constructed from operators and values. Every
 term has a @emph{type}, formed from type constructors and constructors
-and primitive types. 
+and primitive types.
 
-For example, the following are terms and types in @HSeq{}:
 @example
+For example, the following are terms and types in @HSeq{}:
+
 Terms:
   @code{!x: x = x}
   @code{!f g: (!x: (f x) = (g x)) => f = g}
@@ -63,8 +91,8 @@ to introduce new constructors for terms or types. A declaration
 introduces an uninterpreted identifier, a definition introduces an
 identifier as a short-hand for a more complex term.
 
+@example
 For example, the following are formulas, theorems and definitons in @HSeq{}:
-@example Formulas etc
 Formulas:
   @code{!x: (true & x) = x}
   @code{!x y z: (x & y | z) = ((x & y) | (x & z))}
@@ -101,9 +129,10 @@ available. @HSeq{} theories are effectively a module system providing
 a means to structure the declarations, definitions and theorems that
 make up a logical theory.
 
+@example
 For example, the following defines a new theory @code{N}, which
 has two different definitions of a function:
-@example
+@verbatim
 begin_theory "N" []
 
 (* Declaration and axiom *)
@@ -114,6 +143,7 @@ axiom "aexamp_axiom" << !a b: (aexamp a b) = (if a then b else a) >>
 define <:def< bexamp x y = if x then y else x >>
 
 end_theory()
+@end verbatim
 @end example
 
 @section Proofs
@@ -122,18 +152,40 @@ In @HSeq{}, a proof is made up of a @emph{goal} and one or more
 @emph{tactics} which implement the steps of the proof. A goal consists
 of the formula to be proved and a set of @emph{sequents}. A sequent is
 a sub-goal to be proved and is formed of a set of @emph{assumptions}
-and a set of @emph{conclusions}. Initially, a goal has one sequent
-which has no assumptions and the formula to be proved as the single
-conclusion.
+and a set of @emph{conclusions}. 
 
-Example:
+Sequents are displayed with the goal to prove, the number of
+subgoals still to prove and then the asssumptions above the conclusions.
 @example
+Goal @var{goal}
+@var{n} subgoal(s)
+[~1] @var{assumption}
+[~2] @var{assumption}
+...
+----------------------
+[1] @var{conclusion}
+[2] @var{conclusion}
+...
+@end example
+
+For brevity, a sequent with assumptions @var{asms} and conclusions
+@var{concls} will sometimes be written @code{[@var{asms} |-
+@var{concls}]}. The assumptions and conclusions are the
+@emph{formulas} of the sequent.
+
+Initially, a goal has one sequent which has no assumptions and the
+formula to be proved as the single conclusion.
+
+@example
+Example:
+@verbatim
 # goal << !x y: (x = y) => (x => (y & x)) >>;;
 - : HSeq.Goals.Proof.t =
 Goal !x y: x = y => x => (y & x)
 1 subgoal
 ----------------------
 [1] !x y: x = y => x => (y & x)
+@end verbatim
 @end example
 
 Tactics implement the inference rules and proof procedures of the
@@ -142,8 +194,9 @@ simplify sequents, possibly introducing new sub-goals that are easier
 to prove. Tactics can be combined, using @emph{tacticals}, allowing
 complex procedures to be built up from the more basic rules.
 
-Example:
 @example
+Example, continuing the proof started in the previous example:
+@verbatim
 # by (allC ++ allC ++ implC ++ implC);;
 - : HSeq.Goals.Proof.t =
 Goal !x y: x = y => x => (y & x)
@@ -174,6 +227,58 @@ Goal !x y: x = y => x => (y & x)
 [~2] _x = _y
 ----------------------
 [1] _y
+@end verbatim
+@end example
+
+Tactics, including those providing the basic rules of inference, are
+functions in OCaml. New tactics can be implemented by function
+definition in terms of the existing tactics and tactical.  Functions
+making use of @HSeq{} goals and proofs can also be defined.
+
+Each sequent formula can be uniquely identified by the number assigned
+to it when the sequent is displayed. Assumptions are assigned negative
+numbers, conclusions are assigned positive numbers. These identifiers
+can be passed to tactics to specify the formulas that the tactic
+should operate on. 
+
+@example
+In the sequent
+@verbatim
+[~1] _x
+[~2] _x = _y
+----------------------
+[1] _y & _x
+@end verbatim
+The assumptions are identified by numbers @code{~1} and @code{~2} and
+the conclusion has number @code{1}.
+@end example
+
+The operator @code{(!! @var{n})} (or @code{fnum @var{n}}) constructs
+the identifier for formula @var{n}. Arbitrary strings can be assigned
+as an identifier for a formula, using tactic @code{name_tac} but no
+attempt is made to keep the string identifiers unique.
+
+@example
+@verbatim
+# by (name_tac "asm_a" (!! -2));;
+- : HSeq.Goals.Proof.t =
+Goal !x y: (x & x = y) => (y & x)
+1 subgoal
+[~1] _x
+[asm_a] _x = _y
+----------------------
+[1] _y & _x
+
+# by (name_tac "c2" (!! 1));;
+- : HSeq.Goals.Proof.t =
+Goal !x y: (x & x = y) => (y & x)
+1 subgoal
+[~1] _x
+[asm_a] _x = _y
+----------------------
+[c2] _y & _x
+
+@end verbatim
 @end example
 
 In an interactive proof, the goal is stated first and the tactics
@@ -181,8 +286,9 @@ given seperately in a sequence of steps. This makes finding a proof
 simpler since it is easier to match the tactics with the sub-goals to
 prove.
 
-Example, an interactive proof:
 @example
+An example of an interactive proof:
+@verbatim
 # goal << !x y: (x = y) => (x => (y & x)) >>;;
 - : HSeq.Goals.Proof.t =
 Goal !x y: x = y => x => (y & x)
@@ -206,14 +312,17 @@ Subgoal solved
 
 # qed "t1";;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end verbatim
 @end example
 
 The command @code{qed @var{n}} stores the theorem under name
-@var{n}; it can be retrieved using command @code{thm @var{n}}. For
-example, 
+@var{n}; it can be retrieved using command @code{thm @var{n}}. 
 @example
+For example,
+@verbatim
 # thm "t1";;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end verbatim
 @end example
 
 An interactive proof is useful for finding the tactics needed to
@@ -221,11 +330,13 @@ justify a theorem. Once found, a more compact form, that is faster to
 process, can be used to repeat the proof in the script used to build a
 theory.
 
-Example, proof for a theory definition:
 @example
+Example, proof for a theory definition:
+@verbatim
 # (lemma "l1" << !x y: (x = y) => (x => (y & x)) >> 
    [allC;  allC ; implC ; implC ;split_tac ++ (replace_tac ++ blast_tac)]);;
   - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end verbatim
 @end example
 As before, the command @code{thm "l1"} will retrieve the theorem.
 
@@ -234,83 +345,94 @@ tactic need to prove it can combined into a single command
 @code{prove}. This is useful for constructing specialized lemmas that
 are too specific for general use.
 
-Example, a constructed proof:
 @example
+Example, a constructed proof:
+@verbatim
 # (prove << !x y: (x = y) => (x => (y & x)) >> 
    (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac));;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
+@end verbatim
 @end example
 
-Tactics, including those providing the basic rules of inference, are
-functions in OCaml. New tactics can be implemented by function
-definition in terms of the existing tactics and tactical.  Functions
-making use of @HSeq{} goals and proofs can also be defined.  A
-@emph{conversion} is a function that creates a specialized theorem
+A @emph{conversion} is a function that creates a specialized theorem
 from a term. Typically, a conversion of term @code{T} generates a
 theorem of the form @code{T=true} (or @code{T=false}). A conversion
 works by generating a goal trying to construct a proof for the
 theorem. If the theorem can't be be proven, the conversion fails.
 
-@chapter Programs
+@chapter Parsers and Quotations
 
-@HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
+@HSeq{} Types and terms are read through OCaml parsers and through the
+quotation system. The main @HSeq{} syntactic forms are identifiers,
+terms, types and definitions.
 
-@strong{@code{hseq @var{options}}} starts the interactive interpreter
-and makes the @HSeq{} extensions available @var{options} are the
-options to pass to the OCaml system.
-
-@strong{@code{hseqb @var{options} @var{file}}} executes @var{file} as a script.
-@strong{@code{hseqc @var{options} @var{file}}} compiles the OCaml file
-@var{file} against the @HSeq{} headers and libraries.
-
-@section Toplevel
-
-The usual way to interact with @HSeq{} is through the toplevel
-system. This has a number of functions to help 
-
-
-@strong{@code{reset()}} resets the @HSeq{} system to its initial state.
-
-
-@subsection Quotations
-
-@HSeq{} terms, types and definitions can be used in OCaml expressions
-using quotations of the form @code{<< .. >>}. The accepted forms are:
+The main parse functions are:
 @table @code
-@item @code{<< str >>}
-parses @var{str} as a term.
-@item @code{<<: str >>}
-parses @var{str}  as a type.
-@item @code{<:def< str >>}
-parses @var{str} as a term definition
-@item @code{<:def<: str >>}
-parses @var{str} as a type definition or declaration.
+
+@item @code{@strong{read} @var{str}}
+@itemx @code{<< @var{str} >>}
+Parses @var{str} as a term.
+
+@item @code{@strong{read_type} @var{str}}
+@itemx @code{<< : @var{str} >>}
+Parses @var{str} as a type. Note that the quotation must have a space
+(' ') after the opening @code{<<} quote.
+
+@item @code{@strong{read_defn} @var{str}}
+@itemx @code{<:def< @var{str} >>}
+Parses @var{str} as a term definition
+
+@item @code{@strong{read_type_defn} @var{str}}
+@itemx @code{<:def< : @var{str} >>}
+Parses @var{str} as a type definition or declaration.
+
+@item @code{@strong{read_unchecked} @var{str}}
+Parses @var{str} as a term without checking that the term is valid.
 @end table
 
+@example
+Terms: 
+@code{<< ! x: (not x) or x>>} (excluded_middle)
+@code{<< ! t f: (if true then t else f) = t >>}
+@code{read "! t f: (if true then t else f) = t"}
 
-@chapter Types
+Types:
+@code{<< :bool >>}
+@code{read_type "bool -> bool"}
+
+Term definition:
+@code{<:def< compose f g = (%x : f (g x)) >>} (function composition)
+
+Type definition:
+@code{<:def<: ('a, 'b)PAIR = ('a -> 'b -> bool): is_pair >>}
+
+@end example
+
+@chapter @HSeq{} Types
 
 A type in the logic has OCaml type @code{Basic.gtype} and is a
 @emph{type variable}, a @emph{type constructor} or a @emph{weak type
 variable}.
 
-The standard syntax of the types is:
+The standard syntax for types is:
 @table @code
 @item @code{'a}
- a type variable of name @emph{a}.  
+a type variable of name @emph{a}.  
 @item @code{'_a} 
- a weak type variable of name @emph{a}.
+a weak type variable of name @emph{a}.
 @item @code{(t1, @dots{}, t@var{n})f}
-a constructed type, with constructor identifier @emph{f} and @var{n}
-arguments. 
+a constructed type, with constructor @strong{@emph{identifier}} @var{f} and
+@var{n} arguments.
 @item @code{f}
 a constructed type, with constructor identifier @emph{f} and no arguments. 
 @end table
 
-Some types may also have a specialized form that can be used as an
-alternative to the standard syntax.
+A type can have a specialized syntax, in addition to the standard
+form. For example, the type of functions has the standard form
+@code{FUN('a, 'b)} but is normally written in its specialized form
+@code{'a -> 'b}.
 
-If the identifier @emph{f} is in the form @code{@var{T}.@var{n}} then
+If the type identifier @emph{f} is in the form @code{@var{T}.@var{n}} then
 it is the constructor named @var{n} declared in the theory named
 @var{T}. If @emph{f} is @code{@var{n}}, the scope of the type is
 searched for a definition or declaration of @var{n}.
@@ -324,17 +446,17 @@ variables are treated as ordinary type variables by the parser.
 
 The standard types are: 
 @table @code
-@item @code{bool}
-the booleans
-@item @code{'a -> 'b}
-functions from @code{'a} to @code{'b}.
-@item @code{('a)set} 
-sets of @code{'a} 
-@item @code{'a * 'b}
-the product of @code{'a} and @code{'b}.
+@item @strong{@code{bool}}
+The booleans.
+@item @strong{@code{'a -> 'b}}
+Functions from @code{'a} to @code{'b}.
+@item @strong{@code{('a)set}}
+Sets of @strong{@code{'a}}
+@item @strong{@code{'a * 'b}}
+The product of @code{'a} and @code{'b}.
 @end table
 
-@chapter Terms
+@chapter @HSeq{} Terms
 
 A term has OCaml type @code{Basic.term} and is an @emph{identifier}, a
 @emph{free variable}, a @emph{bound variable}, a @emph{binding term}
@@ -376,6 +498,13 @@ the scope of the term is searched for a list of theories in which
 @var{n} is defined or declared. The name @var{n} is resolved by
 choosing the first declaration or definition which matches the type of
 @var{f}.
+
+As with @HSeq{} types, a term can have a specialized syntax in
+addition to it form in the standard syntax. For example, sets can be
+written in the custom form @code{@{ x :| P @}}, rather than the
+standard form @code{SET(%x : P)} that follows from their definition.
+
+@section Binding Terms
 
 Binding terms are lambda-abstractions, the epsilon and the universal
 and existential quantifiers. A binding term (with some symbol

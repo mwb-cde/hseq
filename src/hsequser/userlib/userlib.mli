@@ -224,10 +224,12 @@ val close_theory: unit -> unit
     with [open_theory] but not to be a parent to a theory.
 *)
 
+(***
 val load_theory: string -> unit
 (** [load_theory th]: Load theory [th] as the current theory, for read-only
     access.
 *)
+***)
 
 (** {7 Theory properties} *)
 
