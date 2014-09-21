@@ -31,37 +31,49 @@ struct
 
   let push x p =  x::p
 
+  let is_empty p =
+    match p with 
+      [] -> true
+    | _ -> false
+
   let top p = 
     match p with 
-      | [] -> raise (Report.error "No goals.")
+      | [] -> raise (Report.error "No goals")
       | (x::_) -> x
 
   let pop p = 
     match p with
-      | [] -> raise (Report.error "No goals.")
+      | [] -> raise (Report.error "No goals")
       | (_::xs) -> xs
 
   (* Printer *)
   let print ppinfo prf = 
-    let g = top prf in 
-    let subgls = Logic.get_subgoals g
-    in 
-    Format.printf "@[<v>Goal ";
-    Format.printf "@[";
-    Term.print ppinfo (Formula.term_of (Logic.get_goal g));
-    Format.printf "@]@,";
-    begin
-      match subgls with
-        | [] -> Format.printf "@[No subgoals@]@,"
-        | (x::_) -> 
-          let num_gls = List.length subgls
-          in 
-          Format.printf "@[%i %s@]@," 
-	    num_gls 
-            (if num_gls > 1 then "subgoals" else "subgoal");
-          Logic.print_sqnt ppinfo x
-    end;
-    Format.printf "@]"
+    let print_aux g = 
+      begin
+        let subgls = Logic.get_subgoals g
+        in 
+        Format.printf "@[<v>Goal ";
+        Format.printf "@[";
+        Term.print ppinfo (Formula.term_of (Logic.get_goal g));
+        Format.printf "@]@,";
+        begin
+          match subgls with
+          | [] -> Format.printf "@[No subgoals@]@,"
+          | (x::_) -> 
+            let num_gls = List.length subgls
+            in 
+            Format.printf "@[%i %s@]@," 
+	      num_gls 
+              (if num_gls > 1 then "subgoals" else "subgoal");
+            Logic.print_sqnt ppinfo x
+        end;
+        Format.printf "@]"
+      end
+    in
+    if is_empty prf
+    then Format.printf "@[No goals@]@,"
+    else print_aux (top prf) 
+
 end
 
 (*** Multiple interactive proofs ****)
@@ -83,22 +95,22 @@ struct
 
   let top p = 
     match p.stck_f with 
-      | [] -> raise (Report.error "No proof attempts.")
+      | [] -> raise (Report.error "No proof attempts")
       | (x::_) -> x
 
   let pop p = 
     match p.stck_f with
-      | [] -> raise (Report.error "No proof attempts.")
+      | [] -> raise (Report.error "No proof attempts")
       | (_::xs) -> { p with stck_f = xs }
 
   let rotate p = 
     match p.stck_f with 
-      | [] -> raise (Report.error "No proof attempts.")
+      | [] -> raise (Report.error "No proof attempts")
       | (x::xs) -> { p with stck_f = xs @ [x] }
 
   let lift n p =
     match p.stck_f with 
-      | [] -> raise (Report.error "No proof attempts.")
+      | [] -> raise (Report.error "No proof attempts")
       | xs -> 
 	let (l, c, r) = Lib.full_split_at_index n xs
 	in 
@@ -114,7 +126,7 @@ struct
 
   let top_goal p = 
     match p.stck_f with 
-      | [] -> raise (Report.error "No proof attempts.")
+      | [] -> raise (Report.error "No proof attempts")
       | (x::_) -> (Proof.top x)
 
   let pop_goal p = 
@@ -170,10 +182,18 @@ struct
         Format.printf "@]"
 end
 
-let top pstk = ProofStack.top pstk
+let has_proofs pstk = not (ProofStack.is_empty pstk)
+let top pstk = 
+  if has_proofs pstk
+  then ProofStack.top pstk
+  else Proof.empty()
+
 let top_goal pstk = ProofStack.top_goal pstk
 
-let drop pstk = ProofStack.pop pstk
+let drop pstk =   
+  if has_proofs pstk
+  then ProofStack.pop pstk
+  else pstk
 
 let goal pstk scp trm = 
   let frm = Formula.make scp trm in 

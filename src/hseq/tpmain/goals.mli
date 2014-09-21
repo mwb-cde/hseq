@@ -78,6 +78,9 @@ end
 
 (** {7 General operations} *)
 
+val has_proofs : ProofStack.t -> bool
+(** Test for proof attempts *)
+
 val top : ProofStack.t -> Proof.t
 (** The current proof attempt *)
 
