@@ -29,11 +29,15 @@ Copyright @copyright{} 2005-2014, Matthew Wahab
 
 @HSeq{} is a tactical theorem prover for a typed, higher order logic
 based on the sequent calculus. It is written in OCaml and can be used
-interactively through the OCaml toplevel or as a library linked into
-an application. 
+as an interactive proof tool, through the OCaml toplevel. It is also
+programmable, supporting the development of new proof procedures both
+by building up from the basic rules of inference and by the simple
+combination of existing procedures. There is also experimental support
+for using @HSeq{} as a library which can be linked into a standalone
+program.
 
 Note that @HSeq{} is experimental, alpha-quality code that may have
-soundness bugs.
+both soundness and correctness bugs.
 
 @chapter Programs
 
