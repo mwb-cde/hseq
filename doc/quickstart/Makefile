@@ -47,10 +47,10 @@ hseq-quickstart_TEXINFO=hseq-quickstart.texi
 #hseq-quickstart_OUTPUT=
 
 # Name of the output html directory 
-#    [default: $(hseq-quickstart_output).html]
+#    [default: $(hseq-quickstart).html]
 #hseq-quickstart_HTMLDIR=
 
-# Name of the output info directory [default: $(hseq-quickstart_output).info]
+# Name of the output info directory [default: $(hseq-quickstart).info]
 #hseq-quickstart_INFODIR=
 
 

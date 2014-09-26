@@ -74,6 +74,7 @@ ifdef lm-DEBUG-MAKEFILE
 $(info lm-installdir-lib=$(lm-installdir-lib))
 $(info lm-installdir-bin=$(lm-installdir-bin))
 $(info lm-installdir-data=$(lm-installdir-data))
+$(info lm-installdir-doc=$(lm-installdir-doc))
 endif
 
 ####

@@ -305,13 +305,13 @@ $(lm-installdir-bin):
 lm-data-dirname:=share/hseq-data
 
 # lm-objdir-data: Data directory in staging directory
-export lm-objdir-data=$(OBJ_ROOT)/$(lm-data-dirname)
+export lm-objdir-data:=$(OBJ_ROOT)/$(lm-data-dirname)
 
 # lm-installdir-data: Data directory in installation directory
 ifdef DataDir
-export lm-installdir-data=$(DataDir)
+export lm-installdir-data:=$(DataDir)
 else
-export lm-installdir-data=$(lm-install-prefix)/$(lm-data-dirname)
+export lm-installdir-data:=$(lm-install-prefix)/$(lm-data-dirname)
 endif
 export INSTALLDIR_DATA:=$(lm-installdir-data)
 
@@ -323,16 +323,16 @@ $(lm-installdir-data):
 
 #
 # lm-doc-dirname: Shared doc
-lm-doc-dirname:=share/hseq-doc
+lm-doc-dirname:=share/doc/hseq-doc
 
 # lm-objdir-doc: Doc directory in staging directory
-export lm-objdir-doc=$(OBJ_ROOT)/$(lm-doc-dirname)
+export lm-objdir-doc:=$(OBJ_ROOT)/$(lm-doc-dirname)
 
 # lm-installdir-doc: Document directory in installation directory
 ifdef DocDir
-export lm-installdir-doc=$(DocDir)
+export lm-installdir-doc:=$(DocDir)
 else
-export lm-installdir-doc=$(lm-install-prefix)/$(lm-doc-dirname)
+export lm-installdir-doc:=$(lm-install-prefix)/$(lm-doc-dirname)
 endif
 export INSTALLDIR_DOC:=$(lm-installdir-doc)
 

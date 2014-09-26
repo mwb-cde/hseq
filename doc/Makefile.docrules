@@ -19,22 +19,6 @@
 # with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
-########
-# Tools
-
-# MAKEINFO: The makeinfo program
-ifndef MAKEINFO
-MAKEINFO=makeinfo ${OPTIONS}
-endif
-
-# File tools
-ifndef CP
-CP=cp
-endif
-
-ifndef MKDIR
-MKDIR=mkdir -p
-endif
 
 ######################################################################
 # Toplevel build targets
@@ -43,9 +27,36 @@ endif
 .PHONY: all build clean install 
 all: build
 
-build: build-doc
-clean: clean-doc
-install: install-doc
+build: build-doc install-subdir
+clean: clean-doc install-subdir
+install: install-doc install-subdir
+
+###
+# Include common definitions
+
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
+endif
+include $(PROJ_ROOT)/Makefile.rules
+
+########
+# Tools
+
+# MAKEINFO: The makeinfo program
+ifndef MAKEINFO
+MAKEINFO=makeinfo ${OPTIONS}
+endif
+
+########
+# Variables
+
+# OBJDOCDIR: The documentation collection directory
+ifndef lm-objdir-doc
+$(error "Expected lm-objdir-doc to be defined")
+else
+OBJDOCDIR:=$(lm-objdir-doc)
+endif
 
 #####################
 # Documentation
@@ -89,9 +100,13 @@ $(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
 	$$(MAKEINFO) --html $$($(1)_INCLUDEDIR) -o $$($(1)_HTMLDIR) \
 		$$($(1)_TEXINFO)
 
+.PHONY: $(1)-install-html
+$(1)-install-html: $(1)-build-html $$(OBJDOCDIR)
+	$$(COPY) -r $$($(1)_HTMLDIR) $$(OBJDOCDIR)
+
 .PHONY: $(1)-clean-html
 $(1)-clean-html:
-	$(RM) -r $$($(1)_HTMLDIR)
+	$$(RM) -r $$($(1)_HTMLDIR)
 
 # The info directory
 $$($(1)_INFODIR):
@@ -102,13 +117,17 @@ $(1)-build-info: $$($(1)_INFODIR) $$($(1)_TEXINFO)
 	$$(MAKEINFO) --info $$($(1)_INCLUDEDIR) -o $$($(1)_INFODIR) \
 		$$($(1)_TEXINFO)
 
+.PHONY: $(1)-install-info
+$(1)-install-info: $(1)-build-info $$(OBJDOCDIR)
+	$$(COPY) -r $$($(1)_INFODIR) $$(OBJDOCDIR)
+
 .PHONY: $(1)-clean-info
 $(1)-clean-info:
-	$(RM) -r $$($(1)_INFODIR)
+	$$(RM) -r $$($(1)_INFODIR)
 
 ####
 # Toplevel rules
-.PHONY: build-$(1) clean-$(1)
+.PHONY: build-$(1) clean-$(1) install-$(1)
 
 # Build
 build-$(1): $(1)-build-info $(1)-build-html
@@ -116,7 +135,11 @@ build-$(1): $(1)-build-info $(1)-build-html
 # Clean
 clean-$(1): $(1)-clean-info $(1)-clean-html
 
+# install
+install-$(1): $(1)-install-info $(1)-install-html
+
 endef # doc_TEMPLATE
+
 
 ####################
 # Expand documents template
@@ -139,6 +162,11 @@ clean-doc: $(foreach doc,$(DOCUMENTS), clean-$(doc))
 clean-info: $(foreach doc,$(DOCUMENTS), $(doc)-clean-info)
 clean-html: $(foreach doc,$(DOCUMENTS), $(doc)-clean-html)
 
+# install
+.PHONY: install-doc install-info install-html
+install-doc: $(foreach doc,$(DOCUMENTS), install-$(doc)) 
+install-info: $(foreach doc,$(DOCUMENTS), $(doc)-install-info)
+install-html: $(foreach doc,$(DOCUMENTS), $(doc)-install-html)
 
 #####################
 # Documentation Subdirectories
@@ -150,35 +178,35 @@ define docsubdir_TEMPLATE
 ##
 # Build rules
 
-# The html directory
-$$($(1)_HTMLDIR):
-	$$(MKDIR) $$($(1)_HTMLDIR)
+# # The html directory
+# $$($(1)_HTMLDIR):
+# 	$$(MKDIR) $$($(1)_HTMLDIR)
 
-.PHONY: $(1)-build-html
-$(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
-	$$(MAKEINFO) --html $$($(1)_INCLUDEDIR) -o $$($(1)_HTMLDIR) \
-		$$($(1)_TEXINFO)
+# .PHONY: $(1)-build-html
+# $(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
+# 	$$(MAKEINFO) --html $$($(1)_INCLUDEDIR) -o $$($(1)_HTMLDIR) \
+# 		$$($(1)_TEXINFO)
 
-.PHONY: $(1)-clean-html
-$(1)-clean-html:
-	$(RM) -r $$($(1)_HTMLDIR)
+# .PHONY: $(1)-clean-html
+# $(1)-clean-html:
+# 	$(RM) -r $$($(1)_HTMLDIR)
 
-# The info directory
-$$($(1)_INFODIR):
-	$$(MKDIR) $$($(1)_INFODIR)
+# # The info directory
+# $$($(1)_INFODIR):
+# 	$$(MKDIR) $$($(1)_INFODIR)
 
-.PHONY: $(1)-build-info
-$(1)-build-info: $$($(1)_INFODIR) $$($(1)_TEXINFO)
-	$$(MAKEINFO) --info $$($(1)_INCLUDEDIR) -o $$($(1)_INFODIR) \
-		$$($(1)_TEXINFO)
+# .PHONY: $(1)-build-info
+# $(1)-build-info: $$($(1)_INFODIR) $$($(1)_TEXINFO)
+# 	$$(MAKEINFO) --info $$($(1)_INCLUDEDIR) -o $$($(1)_INFODIR) \
+# 		$$($(1)_TEXINFO)
 
-.PHONY: $(1)-clean-info
-$(1)-clean-info:
-	$(RM) -r $$($(1)_INFODIR)
+# .PHONY: $(1)-clean-info
+# $(1)-clean-info:
+# 	$(RM) -r $$($(1)_INFODIR)
 
 ####
 # Toplevel rules
-.PHONY: build-$(1) clean-$(1)
+.PHONY: build-$(1) clean-$(1) install-$(1)
 
 # Build
 build-$(1): 
@@ -187,6 +215,10 @@ build-$(1):
 # Clean
 clean-$(1): 
 	$(MAKE) -C $(1) clean
+
+# Install
+install-$(1):
+	$(MAKE) -C $(1) install
 
 endef # docsubdir_TEMPLATE
 
@@ -200,9 +232,14 @@ $(eval $(call docsubdir_TEMPLATE,$(subdir))))
 # Documentation subdir targets
 
 # Build
-.PHONY: build-subdir build-info build-html
+.PHONY: build-subdir
 build-subdir: $(foreach subdir,$(SUBDIRS), build-$(subdir))
+
+# Install
+.PHONY: install-subdir
+install-subdir: $(foreach subdir,$(SUBDIRS), install-$(subdir))
 
 # Clean
 .PHONY: clean-subdir
 clean-subdir: $(foreach subdir,$(SUBDIRS), clean-$(subdir))
+

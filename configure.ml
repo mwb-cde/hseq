@@ -115,7 +115,7 @@ let bin_d () = "hseq"
 let os_type = Sys.os_type
 
 (** The default values **)
-let prefix_d () = "/usr/local/lib/hseq"
+let prefix_d () = "/usr/local/"
 let basedir_d () = 
   get_opt !basedir (prefix_d())
 let bindir_d () = 
@@ -124,10 +124,10 @@ let libdir_d () =
   get_opt !libdir (filename (basedir_d()) "lib")
 let thysdir_d () = 
   get_opt !thysdir (filename (libdir_d()) "thys")
-let docdir_d () = 
-  get_opt !docdir (filename (basedir_d()) "doc")
 let datadir_d () = 
   get_opt !datadir (filename (basedir_d()) "share")
+let docdir_d () = 
+  get_opt !docdir (filename (datadir_d()) "doc")
 
 let has_fast_compilers = has_program "ocamlc.opt" 
 
