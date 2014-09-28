@@ -916,6 +916,7 @@ install-objdir-packed-$(1): \
 # Build
 .PHONY: build-packed-$(1)
 build-packed-$(1): $$(lm-packed-$(1)-targets)
+	$$(COPY) $$(lm-packed-$(1)-packdir)/*.mli $$(lm-module-objlib-dir)
 
 # clean
 .PHONY: clean-packed-$(1)-files

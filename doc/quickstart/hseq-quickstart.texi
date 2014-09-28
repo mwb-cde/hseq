@@ -27,6 +27,8 @@ Copyright @copyright{} 2005-2014, Matthew Wahab
 @insertcopying
 @end ifnottex
 
+@chapter Introduction
+
 @HSeq{} is a tactical theorem prover for a typed, higher order logic
 based on the sequent calculus. It is written in OCaml and can be used
 as an interactive proof tool, through the OCaml toplevel. It is also
@@ -39,31 +41,39 @@ program.
 Note that @HSeq{} is experimental, alpha-quality code that may have
 both soundness and correctness bugs.
 
-@chapter Programs
+@section Programs and Directories
 
-@HSeq{} is built as an extension to the OCaml toplevel (@code{ocaml}).
-
-@strong{@code{hseq @var{options}}} starts the interactive interpreter
-and makes the @HSeq{} extensions available @var{options} are the
-options to pass to the OCaml system.
-
-@strong{@code{hseqb @var{options} @var{file}}} executes @var{file} as a script.
-@strong{@code{hseqc @var{options} @var{file}}} compiles the OCaml file
-@var{file} against the @HSeq{} headers and libraries.
-
-@section Toplevel
-
-The usual way to interact with @HSeq{} is through the toplevel
-system. 
-
+The @HSeq{} programs are:
 @table @code
-@item @code{@strong{init()}}
-@itemx @code{@strong{reset()}}
-Resets the @HSeq{} system to its initial state.
+@item @code{@strong{hseq} @var{options}}
+Start the @HSeq{} toplevel. Starts an interactive session in the the OCaml
+toplevel with the @HSeq{} extensions loaded and ready for
+use. @var{options} are the options to pass to the OCaml system. This
+is the way in which @HSeq{} is normally used.
 
-@item @code{@strong{compile} @var{dirs} @var{f}}
-Compile file @var{f} against the @HSeq{} headers and libraries, with
-the list of directories @var{dirs} added to headers search path.
+@item @code{@strong{hseqb} @var{options} @var{file}} 
+Execute @var{file} as an @HSeq{} script.
+
+@item @code{@strong{hseqc} @var{options} @var{file}}
+Compile the OCaml source @var{file} against the @HSeq{} headers and libraries.
+@end table
+
+A standard installation of @HSeq{} in root directory @var{prefix} has
+the following directories:
+@table @file
+@item @var{prefix}/bin
+The binaries for the @HSeq{} programs.
+
+@item @var{prefix}/lib
+Source headers, compiled headers and compiled libraries for
+@HSeq{}. This directory also has file @file{hseqstart.ml} which is the
+start-up file for the toplevel environment.
+
+@item @var{prefix}/lib/thys
+Theory scripts, compiled files and their support libraries.
+
+@item @var{prefix}/share/doc/hseq-doc
+Documentation for @HSeq{}.
 @end table
 
 @chapter Overview
@@ -96,7 +106,7 @@ introduces an uninterpreted identifier, a definition introduces an
 identifier as a short-hand for a more complex term.
 
 @example
-For example, the following are formulas, theorems and definitons in @HSeq{}:
+For example, the following are formulas, theorems and definitions in @HSeq{}:
 Formulas:
   @code{!x: (true & x) = x}
   @code{!x y z: (x & y | z) = ((x & y) | (x & z))}
@@ -164,7 +174,7 @@ a sub-goal to be proved and is formed of a set of @emph{assumptions}
 and a set of @emph{conclusions}. 
 
 Sequents are displayed with the goal to prove, the number of subgoals
-still to prove and then the asssumptions above the conclusions.
+still to prove and then the assumptions above the conclusions.
 @example
 Goal @var{goal}
 @var{n} subgoal(s)
@@ -239,11 +249,11 @@ Goal !x y: x = y => x => (y & x)
 @end verbatim
 @end example
 
-Each sequent formula can be uniquely identified by the number assigned
-to it when the sequent is displayed. Assumptions are assigned negative
-numbers, conclusions are assigned positive numbers. These identifiers
-can be passed to tactics to specify the formulas that the tactic
-should operate on. 
+Each sequent formula is labelled by the number assigned to it when the
+sequent is displayed. Assumptions are assigned negative numbers,
+conclusions are assigned positive numbers. These identifiers can be
+passed to tactics to specify the formulas that the tactic should
+operate on.
 
 @example
 In the sequent
@@ -258,9 +268,10 @@ the conclusion has number @code{1}.
 @end example
 
 The operator @code{(!! @var{n})} (or @code{fnum @var{n}}) constructs
-the identifier for formula @var{n}. Arbitrary strings can be assigned
-as an identifier for a formula, using tactic @code{name_tac} but no
-attempt is made to keep the string identifiers unique.
+the label for formula @var{n}. Arbitrary strings can also be assigned
+as a label for a formula, using tactic @code{name_tac} but no attempt
+is made to keep the string identifiers unique. String labels are
+constructed by the @code{(!$ @var{str>})} (or @code{fstr @var{str}}).
 
 @example
 @verbatim
@@ -282,13 +293,34 @@ Goal !x y: (x & x = y) => (y & x)
 ----------------------
 [c2] _y & _x
 
+by (split_tac ~f:(!$ "c2"));;
+2 subgoals
+(Subgoal 1)
+[~1] _x
+[asm_a] _x = _y
+----------------------
+[c2] _y
+
+(Subgoal 2)
+[~1] _x
+[asm_a] _x = _y
+----------------------
+[c2] _x
+
+- : HSeq.Goals.Proof.t =
+Goal !x y: x = y => x => (y & x)
+2 subgoals
+[~1] _x
+[asm_a] _x = _y
+----------------------
+[c2] _y
 @end verbatim
 @end example
 
 In an interactive proof, the goal is stated first and the tactics
-given seperately in a sequence of steps. This makes finding a proof
-simpler since it is easier to match the tactics with the sub-goals to
-prove.
+given seperately in a sequence of steps. This makes it is easier to
+match the tactics with the sub-goals, which can make finding a proof
+simpler.
 
 @example
 An example of an interactive proof:
@@ -412,6 +444,94 @@ Type definition:
 
 @end example
 
+@chapter Implementation Details
+
+@HSeq{} is built as an extension to the OCaml toplevel and is
+structured as two main modules: @code{HSeq}, the main library, and
+@code{HSeqUser}, the application built on top of the OCaml toplevel.
+The @code{HSeq} library is the implementation of the theorem
+prover while The @code{HSeqUser} wraps the @code{HSeq} library with the
+structures needed to support interactive use. 
+
+The @code{HSeq} library is made up of a number of modules. The OCaml header
+files for the modules are installed in @file{<installation directory>/lib}.
+The most significant are:
+@table @code
+@item Gtypes
+@itemx Term
+@itemx Formula
+The types, terms and forumlas
+
+@item Logic
+The implementation of the core logic. Includes the basic declarations
+of goals, sequents, tactics and theorems as well as the core inference
+rules of the logic.
+
+@item Context
+Provides @code{Context.t}, the context in which library function operate.
+
+@item Tactics
+Tactics and other proof functions.  The definitions of the
+@code{Tactics} module are more useable implementations of those
+provided by module @code{Logic}.
+
+@item Parser
+@item Lexer
+@item Printer
+The parser and pretty printer implementations.
+
+@item Boollib
+The main collection of tactics and procedures for boolean reasoning.
+
+@item Rewritelib
+The main collection of tactics and procedures for rewriting.
+
+@item Simplib
+The simplifier.
+@end table
+
+The @code{HSeqUser} has two components:
+@table @code
+@item Userlib
+The user level definitions.
+
+@item Userstate
+The global state for the interactive application.
+@end table
+
+When the @HSeq{} interactive system begin, it loads the start
+up file @file{hseqstart.ml}, kept in the @file{lib} directory of the
+installation. This opens the @code{HSeq} and @code{HSeqUser} modules
+and installs default printers for the @HSeq{} objects.
+
+@section Toplevel
+
+The usual way to interact with @HSeq{} is through the toplevel
+system. The following functions and settings are useful to control the
+system:
+@table @code
+@item @code{@strong{init()}}
+@itemx @code{@strong{reset()}}
+Reset the @HSeq{} system to its initial state.
+
+@item @code{@strong{compile} @var{dirs} @var{f}}
+Compile file @var{f} against the @HSeq{} headers and libraries, with
+the list of directories @var{dirs} added to headers search path.
+
+@item Settings.long_identifier: bool ref
+Whether to print long (@code{@var{T}.@var{n}}) or short identifiers
+(@code{@var{n}}).
+
+@item Settings.print_type_level: int ref
+How much type information to print when printing terms. Initially set
+to [1], higher values mean print more type information.
+
+@item Settings.load_thy_leve: int ref
+How much information to print when loading a theory. Initially [0],
+higher values mean print more information.
+@end table
+
+
 @chapter @HSeq{} Types
 
 A type in the logic has OCaml type @code{Basic.gtype} and is a
@@ -487,7 +607,7 @@ The disjunction of terms @code{a} and @code{b}
 Implication for terms @code{a} and @code{b}
 
 @item @code{a @strong{iff} b}
-The boolean of terms @code{a} and @code{b}.
+The boolean equivalence of terms @code{a} and @code{b}.
 
 @item @code{a @strong{=} b}
 The equality of terms @code{a} and @code{b}.
@@ -582,7 +702,7 @@ a theory file.
 @item @strong{@code{add_file @var{n}}}
 Marks file @var{n} as a library to be loaded when the theory is
 loaded. If @var{n} ends with suffix @code{.ml}, it is loaded as a
-OCaml script (equivalento using @code{#use}). If @var{n} ends with
+OCaml script (equivalent to using @code{#use}). If @var{n} ends with
 suffix @code{.cmi} or @code{.cmo} it is loaded as an OCaml library.
 @end table
 
@@ -1036,7 +1156,7 @@ Begins a proof by induction on the quantified variable named @var{n},
 failing if there is no such variable in the conclusions or no
 appropriate induction theorem. The induction theorem used depends on
 the type of variable @var{n}: if @var{n} has type @var{ty}, the
-induction theorm is expected to be called @code{@var{ty}_induct}.
+induction theorem is expected to be called @code{@var{ty}_induct}.
 @end table
 
 @section Rewriting and Simplification
