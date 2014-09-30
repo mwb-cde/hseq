@@ -55,9 +55,9 @@ endif
 # Read $(CONFIGFILE)
 include $(CONFIGFILE)
 
-ifndef SrcDir
-$(error Error in $(CONFIGFILE): SrcDir not defined)
-endif
+#ifndef SrcDir
+#$(error Error in $(CONFIGFILE): SrcDir not defined)
+#endif
 
 ifndef BinDir
 $(error Error in $(CONFIGFILE): BinDir not defined)
@@ -67,19 +67,7 @@ endif
 # Feature tests
 #
 
-# Whether camlp4 is old.
-ifndef OLDCAMLP4
-# Get the version of camlp4
 export CAMLP4VERSION=OcamlVersion
-ifeq ($(findstring CAMLP4VERSION,3.11),'')
-$(info "Using OCaml 3.11.?")
-export OLDCAMLP4=true
-else
-$(info "Using OCaml 3.12+")
-export OLDCAMLP4=false
-endif
-endif # OLDCAMLP4
-
 
 #####
 # Compilers and Tools
