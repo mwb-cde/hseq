@@ -98,7 +98,55 @@ let ml_data = filename output_dir "configure.data"
 let make_data = filename output_dir "data.make"
 
 (** Settings *)
-class setting = 
+class type ['a] setting_ty = 
+object 
+  (* Variable description *)
+  val description: string
+  method get_description: unit -> string
+  (* Variable name *)
+  val variable: string
+  method get_variable: unit -> string
+
+  (* Variable value *)
+  val mutable value: 'a option
+  method get_value: unit -> 'a option
+
+  (* Whether the value has been set by a command line option *)
+  val mutable specified_value: bool
+  method is_specified: unit -> bool
+  method set_option_value: string option -> unit
+
+  (* Whether variable is optional or required *)
+  val required: bool
+  method is_required: unit -> bool
+
+  (* Command line option *)
+  val option: string option
+  method has_option: unit -> bool
+
+  (* Find: Try to deduce the value, return true iff successful. *)
+  method find: unit -> bool
+
+  (* Existence test *)
+  method test: unit -> bool
+    
+  (* Report value *)
+  method report: out_channel -> unit
+
+  (* Print help *)
+  val help_msg: string option
+  method make_help_msg: unit -> string
+  method help: out_channel -> unit
+
+  (* Get an Arg.spec object *)
+  method get_arg_spec: unit -> (string * Arg.spec * string)
+  (* Outputs *)
+  method print_var_ml: out_channel -> unit
+  method print_var_make: out_channel -> unit
+end
+
+
+class setting : [string]setting_ty = 
 object (self)
   (* Variable description *)
   val description = "<unknown>"
@@ -162,7 +210,6 @@ object (self)
     begin
       String.concat " "
         ["<str>"; msg;
-         (if (self#is_required()) then "(required)" else "");
          ("["^(get_str (self#get_value()))^"]")]
     end
 
@@ -200,16 +247,17 @@ object (self)
     end
 end
 
-class relative_directory base = 
-object 
+class dependent_setting base = 
+object (self)
   inherit setting
-  val base_dir = base
-  val description = "Directory relative to installation directory"
-  val mutable value = None
+  val base_setting = base
+  val description = "Dependent setting"
+
   method get_value () = 
-    let base_path = get_str (base_dir#get_value()) in
-    let rel_path = get_str value in
-    Some(Filename.concat base_path rel_path)
+    let bvalue = base_setting#get_value() in
+    if bvalue = None
+    then value
+    else bvalue
 end
 
 class base_directory =
@@ -220,6 +268,18 @@ object
   val mutable value = Some("/usr/local")
   val option = Some "--prefix"
   val required = true
+end
+
+class relative_directory base = 
+object 
+  inherit setting
+  val base_dir = base
+  val description = "Directory relative to installation directory"
+  val mutable value = None
+  method get_value () = 
+    let base_path = get_str (base_dir#get_value()) in
+    let rel_path = get_str value in
+    Some(Filename.concat base_path rel_path)
 end
 
 class bin_directory base =
@@ -270,10 +330,47 @@ object
   val required = true
 end
 
+(** A build tool **)
+
+(* Standard earch path for build tools *)
+
+let tool_search_path = ["/usr/bin"; "/usr/local/bin"]
+
+class tool = 
+object (self)
+  inherit setting
+  val description = "A build Tool"
+  val variable = "BULD-TOOL"
+  val mutable value = None
+  val option = Some "--tool"
+  val tool_name = "tool"
+
+  (* Directories to search for the tool *)
+  method private get_search_path() = tool_search_path
+  method find () =
+    if self#is_specified () 
+    then false
+    else
+      begin
+        let tool_exists dir = has_file (Filename.concat dir tool_name) in
+        let search_path = self#get_search_path() 
+        in
+        try 
+          let dir = List.find tool_exists search_path in
+          (value <- Some(Filename.concat dir tool_name);
+           true)
+        with Not_found -> false
+      end 
+
+  method test () = 
+    let btool = get_str value in
+    has_file btool 
+end
+
 (** An ocaml tool *)
 class octool = 
 object (self)
-  inherit setting
+  inherit tool
   val description = "An OCaml Tool"
   val variable = "OCAML-TOOL"
   val mutable value = None
@@ -346,23 +443,60 @@ object (self)
   val required = true
 end
 
+class tool_makeinfo =
+object (self)
+  inherit tool
+  val description = "MakeInfo"
+  val variable = "MAKEINFO"
+  val mutable value = None
+  val option = Some "--makeinfo"
+  val tool_name = "makeinfo"
+  val required = false
+end
+
+class build_docs_setting base =
+object (self)
+  inherit dependent_setting base
+  val description = "whether to build the documentation"
+  val variable = "ENABLE_BUILD_DOCS"
+  val mutable value = Some("true")
+  method get_value() = 
+    let bvalue = base_setting#get_value() in
+    if bvalue = None
+    then Some("false")
+    else value
+
+  val option = Some("--build-docs")
+  method get_arg_spec() = 
+    let set_value fl = 
+      Printf.printf "get_arg_spec().set_value";
+      if fl 
+      then ignore(self#set_option_value (Some("true"))) 
+      else ignore(self#set_option_value (Some("false"))) 
+    in
+    (get_str option, Arg.Bool set_value, 
+     "[true|false] whether to build the documentation [true]")
+end
+
 (** Settings *)
 
 (* Directories *)
-let base_dir = new base_directory
-let src_dir = new src_directory
-let bin_dir = new bin_directory base_dir
-let lib_dir = new lib_directory base_dir
-let thy_dir = new thy_directory lib_dir
-let doc_dir = new doc_directory base_dir
+let base_dir = new base_directory;;
+let src_dir = new src_directory;;
+let bin_dir = new bin_directory base_dir;;
+let lib_dir = new lib_directory base_dir;;
+let thy_dir = new thy_directory lib_dir;;
+let doc_dir = new doc_directory base_dir;;
 
 (* Tools *)
 let ocamlc_prog = new tool_ocamlc
 let camlp4_prog = new tool_camlp4
 let ocamlmktop_prog = new tool_ocamlmktop
 let ocamlopt_prog = new tool_ocamlopt
+let makeinfo_prog = new tool_makeinfo
+let build_docs_flag = new build_docs_setting makeinfo_prog
 
-let settings = 
+let (settings: setting list) = 
 [
   base_dir;
   src_dir;
@@ -375,6 +509,8 @@ let settings =
   camlp4_prog;
   ocamlmktop_prog;
   ocamlopt_prog;
+  makeinfo_prog;
+  build_docs_flag;
 ]
 
 let find_tools () = 

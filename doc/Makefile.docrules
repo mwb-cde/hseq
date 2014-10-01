@@ -26,9 +26,8 @@
 
 .PHONY: all build clean install 
 all: build
-
-build: build-doc install-subdir
-clean: clean-doc install-subdir
+build: build-doc clean-subdir
+clean: clean-doc clean-subdir
 install: install-doc install-subdir
 
 ###
@@ -152,9 +151,16 @@ $(eval $(call doc_TEMPLATE,$(doc))))
 
 # Build
 .PHONY: build-doc build-info build-html
+
+ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+build-doc:
+build-info:
+build-html:
+else
 build-doc: $(foreach doc,$(DOCUMENTS), build-$(doc))
 build-info: $(foreach doc,$(DOCUMENTS), $(doc)-build-info)
 build-html: $(foreach doc,$(DOCUMENTS), $(doc)-build-html)
+endif
 
 # Clean
 .PHONY: clean-doc clean-info clean-html
@@ -164,9 +170,15 @@ clean-html: $(foreach doc,$(DOCUMENTS), $(doc)-clean-html)
 
 # install
 .PHONY: install-doc install-info install-html
+ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+install-doc:
+install-info:
+install-html:
+else
 install-doc: $(foreach doc,$(DOCUMENTS), install-$(doc)) 
 install-info: $(foreach doc,$(DOCUMENTS), $(doc)-install-info)
 install-html: $(foreach doc,$(DOCUMENTS), $(doc)-install-html)
+endif
 
 #####################
 # Documentation Subdirectories
