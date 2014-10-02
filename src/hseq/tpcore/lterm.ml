@@ -173,19 +173,19 @@ let dest_equality t =
 (*** Quantified terms *)
 
 let is_all t = 
-  (is_qnt t) &
+  (is_qnt t) &&
     match get_binder_kind t with 
       | Basic.All -> true 
       | _ -> false
 
 let is_exists t = 
-  (is_qnt t) &
+  (is_qnt t) &&
     match get_binder_kind t with
       | Basic.Ex -> true 
       | _ -> false
 
 let is_lambda t = 
-  (is_qnt t) &
+  (is_qnt t) &&
     match get_binder_kind t with
       | Basic.Lambda -> true
       | _ -> false
@@ -413,7 +413,7 @@ let is_closed vs t =
   let env = 
     List.fold_left 
       (fun env x -> 
-	if (is_bound x) or (is_free x)
+	if (is_bound x) || (is_free x)
 	then bind x (mk_free "" (Gtypes.mk_null())) env
 	else env) 
       (empty_subst()) vs

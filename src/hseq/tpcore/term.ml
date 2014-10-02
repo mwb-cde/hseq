@@ -31,7 +31,7 @@ let rec equals x y =
   (x == y) || 
     (match (x, y) with
       | (App(f1, arg1), App(f2, arg2))->
-          (equals f1 f2) & (equals arg1 arg2)
+          (equals f1 f2) && (equals arg1 arg2)
       | (Bound(q1), Bound(q2)) -> q1 == q2
       | (Meta(q1), Meta(q2)) -> q1 == q2
       | (Qnt(qn1, b1), Qnt(qn2, b2)) -> 
@@ -264,7 +264,7 @@ let get_args t =
   in args
 
 let is_fun t =
-  (is_app t) & is_ident (get_fun t)
+  (is_app t) && is_ident (get_fun t)
 
 let rator t =
   match t with

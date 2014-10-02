@@ -137,7 +137,7 @@ let get_files thy = thy.lfiles
 let set_files thy x = { thy with lfiles = x }
 
 let add_parent n thy =
-  if (not thy.protection) & (n<>"") & (not (List.mem n (thy.parents)))
+  if (not thy.protection) && (n<>"") && (not (List.mem n (thy.parents)))
   then set_parents thy (n::(thy.parents))
   else raise (Report.error ("add_parent: "^n))
 
@@ -592,7 +592,7 @@ let save_theory thy fname=
   close_out oc
 
 let end_theory thy prot = 
-  if (get_protection thy) or (not prot)
+  if (get_protection thy) || (not prot)
   then thy
   else set_protection thy
 

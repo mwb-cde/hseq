@@ -222,7 +222,7 @@ struct
     let rec test_aux ls =
       match ls with
         | [] -> true
-        | (a, b)::xs -> (leq a b) & (test_aux xs)
+        | (a, b)::xs -> (leq a b) && (test_aux xs)
     in 
     test_aux s
 

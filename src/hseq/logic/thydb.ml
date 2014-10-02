@@ -191,7 +191,7 @@ let update_current thydb thy =
 
 let get_thy thdb name = 
   let curr_name = (current_name thdb) in
-  if (name == curr_name) or (name = curr_name)
+  if (name == curr_name) || (name = curr_name)
   then current thdb
   else Tree.find (table thdb) name
 let get_parents thdb s = Theory.get_parents (get_thy thdb s)

@@ -70,7 +70,7 @@ let conj_to_list x =
     match t with 
       | And(a, b) -> mk_clist a (mk_clist b rs)
       | Bool(b) -> 
-	if b & not (rs == [])
+	if b && not (rs == [])
 	then rs
 	else [t]
       | _ -> t::rs
@@ -81,7 +81,7 @@ let disj_to_list x =
     match t with 
       | Or(a, b) -> mk_dlist a (mk_dlist b rs)
       | Bool(b) -> 
-	if b or (rs == [])
+	if b || (rs == [])
 	then [t] 
         else rs
       | _ -> t::rs

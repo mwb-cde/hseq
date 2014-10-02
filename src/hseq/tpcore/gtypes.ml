@@ -39,7 +39,7 @@ let rec equals a b =
 	  args1 args2
       in
       begin
-        (f1 = f2) & (try (test_args(); true) with _ -> false)
+        (f1 = f2) && (try (test_args(); true) with _ -> false)
       end
     | (WeakVar(v1), WeakVar(v2)) -> gtype_id_equal v1 v2
     | (x, y) -> x = y
@@ -533,7 +533,7 @@ let rec check_term scp n vs t =
 
 let check_args args =
   let arg_itr env x =
-    if (is_var x) & (not (member x env))
+    if (is_var x) && (not (member x env))
     then (bind x true env)
     else raise Not_found
   in

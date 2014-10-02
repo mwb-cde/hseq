@@ -38,7 +38,7 @@ open Simputils
 let rec lt_var lvarp rvarp x y =
   let lt_aux lvarp rvarp t1 t2 = 
     let atom_lt (a1, ty1) (a2, ty2) = a1 < a2
-    and bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) & (q1 < q1)
+    and bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
     in 
     match (t1, t2) with
       | (Const c1, Const c2) -> Basic.const_lt c1 c2

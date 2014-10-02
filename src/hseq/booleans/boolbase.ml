@@ -275,7 +275,7 @@ and plain_asm_elim_rules_tac arules lbl_list ctxt goal =
                 chngs
             in
             let albls1 = List.rev_append albls rest in
-            asm_tac ((flag1 or flag), flist1, chngs1) albls1)) ctxt0 g
+            asm_tac ((flag1 || flag), flist1, chngs1) albls1)) ctxt0 g
   in
   asm_tac (false, [], Changes.empty()) lbl_list ctxt goal
 (* Iterate through the labels trying to apply one of the rules then
@@ -342,7 +342,7 @@ and plain_concl_elim_rules_tac crules lbl_list ctxt goal =
               in
               let clbls1 = List.rev_append clbls rest 
               in
-              concl_tac (flag1 or flag, flist1, chngs1) clbls1)) ctxt g
+              concl_tac (flag1 || flag, flist1, chngs1) clbls1)) ctxt g
   in
   concl_tac (false, [], Changes.empty()) lbl_list ctxt goal
 and base_concl_elim_rules_tac rules lbl_list ctxt goal = 

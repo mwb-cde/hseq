@@ -1275,7 +1275,7 @@ module SimpleTree =
       (struct 
         type key = A.key
         let equals x y = 
-	  ((x == y) or (Pervasives.compare x y) = 0)
+	  ((x == y) || (Pervasives.compare x y) = 0)
         let lessthan x y = 
 	  ((not (x == y)) && ((Pervasives.compare x y) < 0))
        end)

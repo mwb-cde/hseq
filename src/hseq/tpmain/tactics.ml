@@ -410,9 +410,9 @@ let foreach_concl tac ctxt goal =
 
 let foreach_form tac ctxt goal = 
   let asms_tac ok ctxt g = 
-    ((try_tac (foreach_asm tac)) >/ (fun x -> ok or x)) ctxt g
+    ((try_tac (foreach_asm tac)) >/ (fun x -> ok || x)) ctxt g
   and concls_tac ok ctxt g = 
-    ((try_tac (foreach_concl tac)) >/ (fun x -> ok or x)) ctxt g
+    ((try_tac (foreach_concl tac)) >/ (fun x -> ok || x)) ctxt g
   in 
   apply_tac 
     (fold_seq false [ asms_tac; concls_tac ])

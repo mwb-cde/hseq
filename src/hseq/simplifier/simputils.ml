@@ -37,7 +37,7 @@ let is_variable qnts x= Rewrite.is_free_binder qnts x
     lead to an infinite loop (e.g. |- (x and y) = (y and x) ).
 *)
 let rec equal_upto_vars varp x y =
-  if (varp x) & (varp y)
+  if (varp x) && (varp y)
   then true
   else 
     match (x, y) with

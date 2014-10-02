@@ -110,7 +110,7 @@ let initial_prep_tac ctrl lbl ctxt goal =
     - repeat until nothing works
 *)
 let simp_engine_tac data tag ctxt goal =
-  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_flag fl1 fl2 = fl1 || fl2 in
   let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
   let try_rule dt null ctxt1 g1 =
     try (dt >/ (fun x -> (true, x))) ctxt1 g1
@@ -210,7 +210,7 @@ let simpA0_tac data ?a ctxt goal =
 	in 
 	([atag], List.filter (not <+ (except_or atag)) asm_tags)
   in 
-  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_flag fl1 fl2 = fl1 || fl2 in
   let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
   let try_rule dt null ctxt0 g1 =
     try (dt >/ (fun x -> (true, x))) ctxt0 g1
@@ -296,7 +296,7 @@ let simpC0_tac data ?c ctxt goal =
 	in 
 	([ctag], List.filter (not <+ (except_or ctag)) concl_tags)
   in 
-  let sum_flag fl1 fl2 = fl1 or fl2 in
+  let sum_flag fl1 fl2 = fl1 || fl2 in
   let sum_fn fl1 (fl2, r2) = (sum_flag fl1 fl2, r2) in
   let try_rule dt null ctxt0 g1 =
     try (dt >/ (fun x -> (true, x))) ctxt0 g1
@@ -381,7 +381,7 @@ let full_simp0_tac data ctxt goal =
     try (dt >/ (fun x -> (true, x))) ctxt1 g1
     with _ -> ((false, null) >+ skip) ctxt1 g1
   in
-  let sum_fn fl1 (fl2, r2) = (fl1 or fl2, r2) 
+  let sum_fn fl1 (fl2, r2) = (fl1 || fl2, r2) 
   in
   let asm_tac ret tg ctxt0 g =
     fold_seq (false, ret)

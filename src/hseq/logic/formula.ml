@@ -387,7 +387,7 @@ let unify scp asmf conclf =
   in 
   let varp x = 
     match x with 
-      | Basic.Bound(q) -> (List.memq q avars) or (List.memq q cvars)
+      | Basic.Bound(q) -> (List.memq q avars) || (List.memq q cvars)
       | _ -> false
   in 
   Unify.unify scp varp abody cbody
@@ -401,7 +401,7 @@ let unify_env scp tyenv asmf conclf =
   in 
   let varp x = 
     match x with 
-      | Basic.Bound(q) -> (List.memq q avars) or (List.memq q cvars)
+      | Basic.Bound(q) -> (List.memq q avars) || (List.memq q cvars)
       | _ -> false
   in 
   Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody

@@ -260,11 +260,11 @@ let is_dot c = (c='.')
 let is_prime c = (c = '\'')
 
 let is_digit c =
-  ((c>= '0') & (c <='9'))
+  ((c>= '0') && (c <='9'))
 
 let is_alpha c =
-  ((c>= 'a') & (c <='z'))
-  || ((c>= 'A') & (c<='Z'))
+  ((c>= 'a') && (c <='z'))
+  || ((c>= 'A') && (c<='Z'))
     
 let is_identifier_char c 
     = (is_alpha c) || (is_special_alpha c) || (is_digit c)
@@ -319,7 +319,7 @@ let get_sep_list init_test body_test sep_test strm=
   let is_sep stm =
     match (Stream.npeek 2 stm) with
       [x; y] -> 
-	if(sep_test x) & (init_test y)
+	if(sep_test x) && (init_test y)
 	then 
 	  true
 	else false
@@ -364,7 +364,7 @@ let is_num str =
       (let cs=(Stream.npeek 2 str)
        in 
        match cs with
-	 [n; c] -> ((is_negate_char n) & (is_digit c))
+	 [n; c] -> ((is_negate_char n) && (is_digit c))
        |	 _ -> false)
     else false
 

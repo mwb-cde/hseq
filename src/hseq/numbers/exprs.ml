@@ -306,10 +306,10 @@ let add a b =
   match (a, b) with
     | (Val(x), Val(y)) -> Val(x +/ y)
     | _ -> 
-      if (a = PosInf & b = NegInf) or (a = NegInf & b = PosInf) 
+      if (a = PosInf && b = NegInf) || (a = NegInf && b = PosInf) 
       then Val(num_of_int 0)
-      else if a = PosInf or b = PosInf then PosInf
-      else if a = NegInf or b = NegInf then NegInf
+      else if a = PosInf || b = PosInf then PosInf
+      else if a = NegInf || b = NegInf then NegInf
       else Plus[a; b]
 
 (** [add_const c e]: Add constant [c] to [e] *)
@@ -368,7 +368,7 @@ let rec leq a b =
         | _ -> raise Unknown
     end
 
-let lt a b = (not (a = b)) & leq a b
+let lt a b = (not (a = b)) && leq a b
 
 (** Manipulating and Simplifying expressions
 *)
@@ -565,7 +565,7 @@ struct
 	  else (Mult(m, Var(a)))::(add_aux ys)
 	| Var(a)::ys -> add_aux ((Mult(one_num, Var(a)))::ys)
 	| y::ys ->
-	  if (is_any_val y) & (n = const_key)
+	  if (is_any_val y) && (n = const_key)
 	  then 
 	    let nb = add_expr v y
 	    in 
