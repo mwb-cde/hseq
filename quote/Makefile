@@ -86,7 +86,7 @@ LIBRARIES=buildquote tpquote
 MODULE_USE_OBJDIR=yes
 
 # Prepropcessor options.
-MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo" -I +camlp4
+MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo" -I $(CAMLPLIB)
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
 DISABLE_NATIVECODE=yes

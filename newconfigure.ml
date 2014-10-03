@@ -41,6 +41,7 @@
 
 #warnings "-13";;
 
+
 (** File name utilities **)
 
 let filename x y = 
@@ -53,6 +54,12 @@ let filename_opt x y =
     None -> y
   | (Some d) -> Filename.concat d y
 
+let cwd = Sys.getcwd()
+
+(** Names of output files **)
+let output_dir = cwd
+let ml_data = filename output_dir "configure.data"
+let make_data = filename output_dir "config.make"
 
 (** String utilities **)
 
@@ -89,13 +96,6 @@ let test_program s args =
 let has_file s = 
   Sys.file_exists s
 
-(** The current directory *)
-let cwd = Sys.getcwd()
-
-(** Names of output files **)
-let output_dir = cwd
-let ml_data = filename output_dir "configure.data"
-let make_data = filename output_dir "data.make"
 
 (** Settings *)
 class type ['a] setting_ty = 
@@ -241,7 +241,7 @@ object (self)
     begin
       match self#get_value() with
         Some(x) -> 
- 	  Printf.fprintf oc "%s=%s\n" 
+ 	  Printf.fprintf oc "export %s:=%s\n" 
             variable (String.escaped x) 
       | _ -> ()
     end
@@ -404,7 +404,7 @@ object (self)
   inherit octool
   val description = "OCaml byte-code compiler"
   val variable = "OCAMLC"
-  val mutable value = Some("/usr/bin/ocamlc")
+  val mutable value = Some("ocamlc")
   val option = Some "--ocamlc"
   val tool_name = "ocamlc"
   val required = true
@@ -415,7 +415,7 @@ object (self)
   inherit octool
   val description = "OCaml native-code compiler"
   val variable = "OCAMLOPT"
-  val mutable value = Some("/usr/bin/ocamlopt")
+  val mutable value = Some("ocamlopt")
   val option = Some "--ocamlopt"
   val tool_name = "ocamlopt"
   val required = false
@@ -426,19 +426,41 @@ object (self)
   inherit octool
   val description = "OCaml toplevel builder"
   val variable = "OCAMLMKTOP"
-  val mutable value = Some("/usr/bin/ocamlmktop")
+  val mutable value = Some("ocamlmktop")
   val option = Some "--ocamlmktop"
   val tool_name = "ocamlmktop"
   val required = true
 end
 
-class tool_camlp4 =
+class tool_ocamldep =
 object (self)
   inherit octool
-  val description = "Camlp4"
-  val variable = "CAMLP4"
-  val mutable value = Some("/usr/bin/camlp4")
-  val option = Some "--camlp4"
+  val description = "OCaml dependency generator"
+  val variable = "OCAMLDEP"
+  val mutable value = Some("ocamldep")
+  val option = Some "--ocamldep"
+  val tool_name = "ocamldep"
+  val required = true
+end
+
+class tool_ocamldoc =
+object (self)
+  inherit octool
+  val description = "OCaml documentation generator"
+  val variable = "OCAMLDOC"
+  val mutable value = Some("ocamldoc")
+  val option = Some "--ocamldoc"
+  val tool_name = "ocamldoc"
+  val required = false
+end
+
+class tool_camlp =
+object (self)
+  inherit octool
+  val description = "Camlp preprocessor"
+  val variable = "CAMLP"
+  val mutable value = Some("camlp4")
+  val option = Some "--camlp" 
   val tool_name = "camlp4"
   val required = true
 end
@@ -446,7 +468,7 @@ end
 class tool_makeinfo =
 object (self)
   inherit tool
-  val description = "MakeInfo"
+  val description = "MakeInfo for user documentation"
   val variable = "MAKEINFO"
   val mutable value = None
   val option = Some "--makeinfo"
@@ -490,9 +512,11 @@ let doc_dir = new doc_directory base_dir;;
 
 (* Tools *)
 let ocamlc_prog = new tool_ocamlc
-let camlp4_prog = new tool_camlp4
-let ocamlmktop_prog = new tool_ocamlmktop
 let ocamlopt_prog = new tool_ocamlopt
+let camlp_prog = new tool_camlp
+let ocamlmktop_prog = new tool_ocamlmktop
+let ocamldep_prog = new tool_ocamldep
+let ocamldoc_prog = new tool_ocamldoc
 let makeinfo_prog = new tool_makeinfo
 let build_docs_flag = new build_docs_setting makeinfo_prog
 
@@ -506,11 +530,13 @@ let (settings: setting list) =
   doc_dir;
 
   ocamlc_prog;
-  camlp4_prog;
-  ocamlmktop_prog;
   ocamlopt_prog;
+  camlp_prog;
+  ocamlmktop_prog;
+  ocamldep_prog;
   makeinfo_prog;
   build_docs_flag;
+(*  ocamldocs_prog; *)
 ]
 
 let find_tools () = 
