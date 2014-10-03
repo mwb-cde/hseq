@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc
+SUBDIRS=quote hseq hsequser tools thys doc 
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
@@ -190,7 +190,7 @@ EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
 #EXTRA_LIBCLEAN=
 
 # EXTRA_DISTCLEAN: Command to add to the clean target.
-EXTRA_DISTCLEAN=$(RM) configure.data data.make
+EXTRA_DISTCLEAN=$(RM) configure.data config.make
 
 #####
 # Sub-directory building options

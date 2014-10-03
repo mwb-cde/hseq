@@ -415,10 +415,34 @@ object (self)
   inherit octool
   val description = "OCaml native-code compiler"
   val variable = "OCAMLOPT"
-  val mutable value = Some("ocamlopt")
+  val mutable value = None
   val option = Some "--ocamlopt"
   val tool_name = "ocamlopt"
   val required = false
+end
+
+class build_natcode_setting base =
+object (self)
+  inherit dependent_setting base
+  val description = "whether to build native code libraries"
+  val variable = "CONFIG_ENABLE_NATIVECODE"
+  val mutable value = Some("true")
+  method get_value() = 
+    let bvalue = base_setting#get_value() in
+    if bvalue = None
+    then Some("false")
+    else value
+
+  val option = Some("--build-native-code")
+  method get_arg_spec() = 
+    let set_value fl = 
+      Printf.printf "get_arg_spec().set_value";
+      if fl 
+      then ignore(self#set_option_value (Some("true"))) 
+      else ignore(self#set_option_value (Some("false"))) 
+    in
+    (get_str option, Arg.Bool set_value, 
+     "[true|false] whether to build the native code libraries [true]")
 end
 
 class tool_ocamlmktop =
@@ -480,7 +504,7 @@ class build_docs_setting base =
 object (self)
   inherit dependent_setting base
   val description = "whether to build the documentation"
-  val variable = "ENABLE_BUILD_DOCS"
+  val variable = "CONFIG_ENABLE_BUILD_DOCS"
   val mutable value = Some("true")
   method get_value() = 
     let bvalue = base_setting#get_value() in
@@ -513,6 +537,7 @@ let doc_dir = new doc_directory base_dir;;
 (* Tools *)
 let ocamlc_prog = new tool_ocamlc
 let ocamlopt_prog = new tool_ocamlopt
+let build_natcode_flag = new build_natcode_setting ocamlopt_prog
 let camlp_prog = new tool_camlp
 let ocamlmktop_prog = new tool_ocamlmktop
 let ocamldep_prog = new tool_ocamldep
@@ -535,8 +560,10 @@ let (settings: setting list) =
   ocamlmktop_prog;
   ocamldep_prog;
   makeinfo_prog;
-  build_docs_flag;
 (*  ocamldocs_prog; *)
+
+  build_natcode_flag;
+  build_docs_flag;
 ]
 
 let find_tools () = 

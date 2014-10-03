@@ -107,6 +107,19 @@ endif
 export SKIP:=
 
 ####
+# Settings
+
+# Whether to build native code
+ifndef ENABLE_NATIVECODE
+ENABLE_NATIVECODE=$(CONFIG_ENABLE_NATIVECODE)
+endif
+
+# Whether to build the user documentation
+ifndef ENABLE_BUILD_DOCS
+ENABLE_BUILD_DOCS=$(CONFIG_ENABLE_BUILD_DOCS)
+endif
+
+####
 # Compiler tools selection
 #
 # Options:
@@ -381,7 +394,7 @@ install-toplevel-lib:
 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
 
 .PHONY: install-toplevel-doc
-install-toplevel-doc: 
+install-toplevel-doc:
 	if [ -d $(lm-objdir-doc) ] ; then \
 	$(INSTALL) -d $(lm-installdir-doc) ; \
 	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
@@ -390,11 +403,11 @@ install-toplevel-doc:
 
 .PHONY: install-toplevel-data
 install-toplevel-data:
-	if [ -d $(lm-objdir-data) ] ; then \
-	$(INSTALL) -d $(lm-installdir-data) ; \
-	$(COPY) -r $(lm-objdir-data)/* $(lm-installdir-data) ; \
-	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-data) ;\
-	fi
+#	if [ -d $(lm-objdir-data) ] ; then \
+# 	$(INSTALL) -d $(lm-installdir-data) ; \
+#	$(COPY) -r $(lm-objdir-data)/* $(lm-installdir-data) ; \
+#	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-data) ;\
+#	fi
 
 ####
 # HSeq building variables

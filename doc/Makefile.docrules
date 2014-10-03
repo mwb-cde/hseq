@@ -25,10 +25,14 @@
 #
 
 .PHONY: all build clean install 
-all: build
+all: install
 build: build-doc clean-subdir
 clean: clean-doc clean-subdir
+ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+install: 
+else
 install: install-doc install-subdir
+endif
 
 ###
 # Include common definitions
@@ -100,7 +104,7 @@ $(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
 		$$($(1)_TEXINFO)
 
 .PHONY: $(1)-install-html
-$(1)-install-html: $(1)-build-html $$(OBJDOCDIR)
+$(1)-install-html: $(1)-build-html $$(OBJDOCDIR) 
 	$$(COPY) -r $$($(1)_HTMLDIR) $$(OBJDOCDIR)
 
 .PHONY: $(1)-clean-html
@@ -129,7 +133,8 @@ $(1)-clean-info:
 .PHONY: build-$(1) clean-$(1) install-$(1)
 
 # Build
-build-$(1): $(1)-build-info $(1)-build-html
+#build-$(1): $(1)-build-info $(1)-build-html
+build-$(1): install-$(1)
 
 # Clean
 clean-$(1): $(1)-clean-info $(1)-clean-html
@@ -176,6 +181,7 @@ install-info:
 install-html:
 else
 install-doc: $(foreach doc,$(DOCUMENTS), install-$(doc)) 
+	echo "Installed docs"
 install-info: $(foreach doc,$(DOCUMENTS), $(doc)-install-info)
 install-html: $(foreach doc,$(DOCUMENTS), $(doc)-install-html)
 endif
@@ -245,11 +251,19 @@ $(eval $(call docsubdir_TEMPLATE,$(subdir))))
 
 # Build
 .PHONY: build-subdir
+ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+build-subdir: 
+else
 build-subdir: $(foreach subdir,$(SUBDIRS), build-$(subdir))
+endif
 
 # Install
 .PHONY: install-subdir
+ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+install-subdir: 
+else
 install-subdir: $(foreach subdir,$(SUBDIRS), install-$(subdir))
+endif
 
 # Clean
 .PHONY: clean-subdir
