@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../../..
+PROJ_ROOT=../..
 
 #####
 # Module building settings
@@ -103,7 +103,7 @@ PROJ_ROOT=../../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=HSeq
+#LIBRARIES=
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -123,7 +123,8 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=changes formula defn logic theory thydb
+HSeq_SOURCES=simputils simpconvs simpset simplifier \
+		   simptacs simplib
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -133,10 +134,6 @@ HSeq_SOURCES=changes formula defn logic theory thydb
 
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
-
-# object_PACK_FOR: Module to pack for (libraries only).
-#object_PACK_FOR=
-HSeq_PACK_FOR=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=

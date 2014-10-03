@@ -1,5 +1,5 @@
 ########################################################## --*- Makefile -*--
-# Makefile.module - Makefile to build modules
+# Makefile - Makefile to build modules
 # Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../../..
+PROJ_ROOT=../..
 
 #####
 # Module building settings
@@ -103,7 +103,7 @@ PROJ_ROOT=../../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=tpmain
+#LIBRARIES=HSeq
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -112,18 +112,14 @@ PROJ_ROOT=../../..
 PACKING=HSeq
 
 #####
-# Sub-directory building options
-
-# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
-#SUBDIR_MAKE_OPTIONS=
-
-#####
 # Object building settings
 #
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=context boolPP tactics goals commands display 
+HSeq_SOURCES=defaults settings ident basic printer \
+		report scope gtypes term lterm \
+		dbterm typing unify net rewrite 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -150,6 +146,11 @@ HSeq_PACK_DIR=../HSeqOBJS
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
 
+###
+# Special rules
+
+.INTERMEDIATE: defaults.ml
+
 #####
 # Module build tool settings
 
@@ -158,7 +159,7 @@ HSeq_PACK_DIR=../HSeqOBJS
 #MODULE_OBJ_PATH=
 
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
+#MODULE_USE_OBJDIR=yes
 
 # MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #MODULE_OCAMLC_FLAGS=
@@ -166,9 +167,6 @@ HSeq_PACK_DIR=../HSeqOBJS
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
 MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
-
-# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
-#MODULE_OCAMLCPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
@@ -184,19 +182,6 @@ INSTALL_LIBRARIES=
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=
 
-###
-# Makefile commands
-
-# EXTRA_CLEAN: Command to add to the clean target.
-#EXTRA_CLEAN=
-
-# EXTRA_LIBCLEAN: Command to add to the clean target.
-#EXTRA_LIBCLEAN=
-
-# EXTRA_DISTCLEAN: Command to add to the clean target.
-#EXTRA_DISTCLEAN=
-
-
 #####
 # Default settings
 
@@ -205,9 +190,6 @@ INSTALL_LIBRARIES=
 
 # LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
-#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)

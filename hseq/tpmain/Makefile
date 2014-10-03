@@ -93,7 +93,7 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../../..
+PROJ_ROOT=../..
 
 #####
 # Module building settings
@@ -103,7 +103,7 @@ PROJ_ROOT=../../..
 #SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=boollib
+#LIBRARIES=tpmain
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
@@ -123,8 +123,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=baseTheory boolutil boolbase \
-		rewritelib booltacs boolinduct boollib
+HSeq_SOURCES=context boolPP tactics goals commands display 
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
@@ -134,10 +133,6 @@ HSeq_SOURCES=baseTheory boolutil boolbase \
 
 # object_PACK: Name of packed module to generate (libraries only).
 #object_PACK=
-
-# object_PACK_GROUP: Name of packing group to build object for.
-#object_PACK_GROUP=
-HSeq_PACK_GROUP=boollib
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
@@ -184,7 +179,7 @@ MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I 
 # For src/* modules, install headers but not libraries.
 
 # INSTALL_LIBRARIES: Libraries to install
-#INSTALL_LIBRARIES=
+INSTALL_LIBRARIES=
 
 # INSTALL_HEADERS: Headers to install
 #INSTALL_HEADERS=

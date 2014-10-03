@@ -93,17 +93,23 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=../../..
-
-# The quotation parser to use.
-export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
+PROJ_ROOT=../..
 
 #####
 # Module building settings
 #
 
+# SUBDIRS: List of sub-directories to build.
+#SUBDIRS=
+
+# LIBRARIES: List of libraries to build.
+#LIBRARIES=HSeq
+
+# PROGRAMS: List of programs to build.
+#PROGRAMS=
+
 # PACKING: List of packing modules to build
-PACKING=HSeqUser
+PACKING=HSeq
 
 #####
 # Sub-directory building options
@@ -116,20 +122,25 @@ PACKING=HSeqUser
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-HSeqUser_SOURCES=userstate userlib
+#object_SOURCES=
+HSeq_SOURCES=changes formula defn logic theory thydb
 
 # object_INCLUDE: Directories to include when compiling [object].
-#HSeq_INCLUDE="+compiler-libs"
+#object_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
-#HSeq_LIBS=
+#object_LIBS=
 
 # object_PACK: Name of packed module to generate (libraries only).
-#object_PACK=Hs
+#object_PACK=
+
+# object_PACK_FOR: Module to pack for (libraries only).
+#object_PACK_FOR=
+HSeq_PACK_FOR=HSeq
 
 # object_PACK_DIR: Directory to use for packing.
 #object_PACK_DIR=
-HSeqUser_PACK_DIR=../HSeqUserOBJS
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
