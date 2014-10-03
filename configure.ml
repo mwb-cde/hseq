@@ -316,7 +316,7 @@ object
   inherit relative_directory lib
   val description = "theories directory"
   val variable = "ThyDir"
-  val mutable value = Some("thy")
+  val mutable value = Some("thys")
   val option = None
 end
 
