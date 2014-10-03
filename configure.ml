@@ -325,7 +325,7 @@ object
   inherit relative_directory base
   val description = "libraries directory"
   val variable = "DocDir"
-  val mutable value = Some("share/doc")
+  val mutable value = Some("share/doc/hseq")
   val option = Some "--docdir"
   val required = true
 end
