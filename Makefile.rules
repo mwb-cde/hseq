@@ -74,6 +74,7 @@ ifdef lm-DEBUG-MAKEFILE
 $(info lm-installdir-lib=$(lm-installdir-lib))
 $(info lm-installdir-bin=$(lm-installdir-bin))
 $(info lm-installdir-data=$(lm-installdir-data))
+$(info lm-installdir-doc=$(lm-installdir-doc))
 endif
 
 ####
@@ -155,18 +156,18 @@ lm-pack-filename:=PACKLIST_
 lm-pack-nat-filename:=PACKLIST_NAT_
 
 # lm-nativecode: Defined iff compile-to-native code is supported.
-ifneq ($(strip $(DISABLE_NATIVECODE)),yes)
-ifeq ($(strip $(NativeCompilers)),true)
+ifneq ($(strip "$(ENABLE_NATIVECODE)"),"false")
 lm-nativecode:=true
-endif
 endif
 
 ifdef lm-nativecode
-#ifdef lm-DEBUG-MAKEFILE
+ifdef lm-DEBUG-MAKEFILE
 $(info Compilation to native code is supported.)
-#endif
+endif
 else
+ifdef lm-DEBUG-MAKEFILE
 $(info Compilation to native code is not supported.)
+endif
 endif
 
 ####
@@ -397,7 +398,9 @@ endif
 # build
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-lib-$(1)-target+= $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
+endif
 endif
 
 ifdef lm-DEBUG-MAKEFILE
@@ -573,10 +576,12 @@ lm-packing-$(1)-targets:=$$(foreach obj,$$(lm-packing-$(1)-objects), \
 		$$(lm-packing-$(1)-dirprefix)$$(obj))
 
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-packing-$(1)-nattargets:=$$(foreach obj,$$(lm-packing-$(1)-natobjects), \
 		$$(lm-packing-$(1)-dirprefix)$$(obj))
 lm-packing-$(1)-ctargets:=$$(foreach obj,$$(lm-packing-$(1)-cobjects), \
 		$$(lm-packing-$(1)-dirprefix)$$(obj))
+endif
 endif # lm-nativecode
 
 ifdef lm-DEBUG-MAKEFILE
@@ -640,9 +645,11 @@ lm-packing-$(1)-build-targets:=$$(lm-packing-$(1)-interfaces) \
 				$$(lm-packing-$(1)-filelist)
 
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-packing-$(1)-build-targets+= $$(lm-packing-$(1)-nattargets) \
 				$$(lm-packing-$(1)-ctargets) \
 				$$(lm-packing-$(1)-nat-filelist)
+endif
 endif
 
 ifdef lm-DEBUG-MAKEFILE
@@ -821,7 +828,9 @@ endif
 # Targets to build and install
 lm-packed-$(1)-targets:=$$(lm-packed-$(1)-interface) $$(lm-packed-$(1)-bytelib)
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-packed-$(1)-targets+= $$(lm-packed-$(1)-natlib) $$(lm-packed-$(1)-clib)
+endif
 endif
 
 ifdef lm-DEBUG-MAKEFILE
@@ -915,6 +924,7 @@ install-objdir-packed-$(1): \
 # Build
 .PHONY: build-packed-$(1)
 build-packed-$(1): $$(lm-packed-$(1)-targets)
+	$$(COPY) $$(lm-packed-$(1)-packdir)/*.mli $$(lm-module-objlib-dir)
 
 # clean
 .PHONY: clean-packed-$(1)-files
@@ -995,9 +1005,11 @@ lm-module-install-packed:=\
 		$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
 
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-module-install-packed+=\
 	$$(foreach lib,$$(PACKED), \
 		$$(call natlib,$$(lib)) $$(call objlib,$$(lib)))
+endif
 endif
 
 # Calculate library files to install
@@ -1005,9 +1017,11 @@ lm-module-install-libfiles:=\
 	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib)))
 
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-module-install-libfiles+=\
 	$$(foreach lib,$$(lm-module-install-libs), \
 		$$(call natlib,$$(lib)) $$(call clib,$$(lib))) 
+endif
 endif
 
 lm-module-install-libfiles+=$$(lm-module-install-headers) \
@@ -1243,7 +1257,9 @@ endif
 
 lm-prog-$(1)-objdir-files:=$$(lm-prog-$(1)-program)
 ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-prog-$(1)-objdir-files+= $$(lm-prog-$(1)-natprogram)
+endif
 endif
 
 .PHONY: install-objdir-prog-$(1)

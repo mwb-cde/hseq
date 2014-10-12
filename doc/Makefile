@@ -1,6 +1,6 @@
-########################################################## --*- Makefile -*--
+# --*- Makefile -*--##################################################
 # Makefile.module - Makefile to build modules
-# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -21,7 +21,7 @@
 ######################################################################
 
 #####
-# Definitions and rules for building theories.
+# Definitions and rules for building the documentation
 #####
 
 #####
@@ -36,109 +36,18 @@ PROJ_ROOT=..
 ###
 
 # DOC_SUBDIRS: The sub-directories to build (in order)
-DOC_SUBDIRS = quickstart
+SUBDIRS=quickstart #hseq
 
 ####
 # Don't modify anything below this line
 ####
 
-# IDOCDIR: The documentation installation directory
-export OBJDOCDIR?=$(OBJ_ROOT)/doc
 
 # HTMLDIR: HTML Documentation directory
 export HTMLDIR?=$(OBJDOCDIR)/html
 
 # INFODIR: Info Documentation directory
 export INFODIR?=$(OBJDOCDIR)/info
-
-##
-# Read command definitions
-##
-
-##
-# Targets
-##
-
-.PHONY: all  # all: Build everything
-.PHONY: install 
-.PHONY: doc  #doc: Generate the documentation
-
-.PHONY: html
-.PHONY: info
-
-.PHONY: build
-.PHONY: build-html build-info
-
-.PHONY: install-html install-info
-
-.PHONY: clean
-.PHONY: libclean
-.PHONY: reallyclean
-.PHONY: docclean
-
-###
-# The build targets
-###
-
-CUSTOM_TARGET_build=
-CUSTOM_TARGET_install=
-
-# all: Build html
-all: build
-
-build: build-info build-html
-
-#
-# HTML
-# 
-
-build-html: $(DOCSRC) $(HTMLDIR)
-	$(foreach subdir, $(DOC_SUBDIRS), \
-	$(MAKE) -C $(subdir) \
-		DOC_DIR=$(SRC_ROOT)/doc HTMLDIR=$(HTMLDIR) build-html ;) $(SKIP)
-
-html: build-html
-
-#
-# GNU Info
-# 
-
-build-info: $(DOCSRC) $(INFODIR)
-	$(foreach subdir, $(DOC_SUBDIRS), \
-	$(MAKE) -C $(subdir) \
-		DOC_DIR=$(SRC_ROOT)/doc INFODIR=$(INFODIR) build-info ;) $(SKIP)
-
-info: build-info
-
-#
-# Directories
-#
-
-$(INFODIR):
-	$(MKDIR) $(INFODIR)
-
-$(HTMLDIR):
-	$(MKDIR) $(HTMLDIR)
-
-###
-# Installation targets
-###
-
-install-html: html $(HTMLDIR)
-	-cp -Rf html/* $(HTMLDIR)
-
-install-info: info $(INFODIR)
-	-cp -Rf info/* $(INFODIR)
-
-install: install-html install-info
-
-###
-# Clean up
-###
-
-EXTRA_CLEAN=$(RM) *~; \
-$(foreach subdir, $(DOC_SUBDIRS), $(MAKE) -C $(subdir) clean; ) \
-$(RM) info/*; $(RM) -r html/*
 
 ###
 # Include common definitions
@@ -147,8 +56,7 @@ $(RM) info/*; $(RM) -r html/*
 ifndef PROJ_ROOT
 $(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
-include $(PROJ_ROOT)/Makefile.rules
-
-ifndef RM
-$(error "RM is not defined")
-endif
+#include $(PROJ_ROOT)/Makefile.rules
+####
+# Include the documentation rules
+include Makefile.docrules

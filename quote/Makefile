@@ -85,13 +85,8 @@ LIBRARIES=buildquote tpquote
 # MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
 MODULE_USE_OBJDIR=yes
 
-# Use the camlp4 version to select the correct 
-# prepropcessor options.
-ifeq ($(OLDCAMLP4),true)
-MODULE_OCAMLPP_FLAGS=-pp "camlp4o q_MLast.cmo pa_extend.cmo" -I +camlp4 
-else
-MODULE_OCAMLPP_FLAGS=-pp camlp4of -I +camlp4
-endif
+# Prepropcessor options.
+MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo" -I $(CAMLPLIB)
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
 DISABLE_NATIVECODE=yes

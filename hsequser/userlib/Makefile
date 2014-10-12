@@ -1,6 +1,6 @@
-# --*- Makefile -*--#################################################
-# Makefile - Toplevel HSeq Makefile
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+########################################################## --*- Makefile -*--
+# Makefile.module - Makefile to build modules
+# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -93,33 +93,43 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=.
+PROJ_ROOT=../..
+
+# The quotation parser to use.
+export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 
 #####
 # Module building settings
 #
 
-# SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc 
+# PACKING: List of packing modules to build
+PACKING=HSeqUser
 
-# LIBRARIES: List of libraries to build.
-#LIBRARIES=
+#####
+# Sub-directory building options
 
-# PROGRAMS: List of programs to build.
-#PROGRAMS=
+# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
+#SUBDIR_MAKE_OPTIONS=
 
 #####
 # Object building settings
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-#object_SOURCES=
+HSeqUser_SOURCES=userstate userlib
 
 # object_INCLUDE: Directories to include when compiling [object].
-#object_INCLUDE=
+#HSeq_INCLUDE="+compiler-libs"
 
 # object_LIBS: Libraries to include when linking [object].
-#object_LIBS=
+#HSeq_LIBS=
+
+# object_PACK: Name of packed module to generate (libraries only).
+#object_PACK=Hs
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+HSeqUser_PACK_DIR=../HSeqUserOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -148,9 +158,37 @@ SUBDIRS=quote hseq hsequser tools thys doc
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
+MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
+
+# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
+#MODULE_OCAMLCPP_FLAGS=
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
+
+###
+# Installation options
+
+# For src/* modules, install headers but not libraries.
+
+# INSTALL_LIBRARIES: Libraries to install
+#INSTALL_LIBRARIES=
+
+# INSTALL_HEADERS: Headers to install
+#INSTALL_HEADERS=
+
+###
+# Makefile commands
+
+# EXTRA_CLEAN: Command to add to the clean target.
+#EXTRA_CLEAN=
+
+# EXTRA_LIBCLEAN: Command to add to the clean target.
+#EXTRA_LIBCLEAN=
+
+# EXTRA_DISTCLEAN: Command to add to the clean target.
+#EXTRA_DISTCLEAN=
+
 
 #####
 # Default settings
@@ -161,65 +199,11 @@ SUBDIRS=quote hseq hsequser tools thys doc
 # LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
+# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
+#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
+
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
-
-#####
-# Extra settings
-
-###
-# Installation options
-# (Defaults if undefined are as given.)
-
-# INSTALL_LIBRARIES: Libraries to install
-#INSTALL_LIBRARIES=<all built libraries>
-
-# INSTALL_PROGRAMS: Programs to install
-#INSTALL_PROGRAMS=<all built programs>
-
-# INSTALL_HEADERS: Headers to install
-#INSTALL_HEADERS=<all .mli files and all built .cmi files>
-
-###
-# Makefile commands
-
-# EXTRA_CLEAN: Command to add to the clean target.
-EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
-
-# EXTRA_LIBCLEAN: Command to add to the clean target.
-#EXTRA_LIBCLEAN=
-
-# EXTRA_DISTCLEAN: Command to add to the clean target.
-EXTRA_DISTCLEAN=$(RM) configure.data config.make
-
-#####
-# Sub-directory building options
-
-# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
-#SUBDIR_MAKE_OPTIONS=
-SUBDIR_MAKE_OPTIONS=
-
-####
-# Installation targets
-
-# Default target
-.PHONY: toplevel_target
-toplevel_target: all
-
-# CUSTOM_TARGET_install: If defined, use a custom install target.
-CUSTOM_TARGET_install=
-
-lm-file-permissions=755
-
-.PHONY: toplevel_target install-bin install-lib install-data install-doc
-install-bin: install-toplevel-bin
-install-lib: install-toplevel-lib
-install-data: install-toplevel-data
-install-doc: install-toplevel-doc
-
-install: build install-toplevel-bin install-toplevel-lib \
-	install-toplevel-doc install-toplevel-data
-
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE

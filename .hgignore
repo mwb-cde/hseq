@@ -17,6 +17,11 @@ syntax:glob
 # HSeq Patterns
 *.tho
 src/lib/*
-src/HSeqOBJS
+src/hseq/HSeqOBJS/*
+src/hsequser/HSeqUserOBJS/*
+doc/*/*.info/*
+doc/*/*.html/*
 obj/*
 *~
+configure.data
+data.make

@@ -1,6 +1,6 @@
-# --*- Makefile -*--#################################################
-# Makefile - Toplevel HSeq Makefile
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+########################################################## --*- Makefile -*--
+# Makefile - Makefile to build modules
+# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -93,20 +93,23 @@
 #  
 
 # PROJ_ROOT: Relative path to HSeq root.
-PROJ_ROOT=.
+PROJ_ROOT=../..
 
 #####
 # Module building settings
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc 
+#SUBDIRS=
 
 # LIBRARIES: List of libraries to build.
-#LIBRARIES=
+#LIBRARIES=util
 
 # PROGRAMS: List of programs to build.
 #PROGRAMS=
+
+# PACKING: List of packing modules to build
+PACKING=HSeq
 
 #####
 # Object building settings
@@ -114,12 +117,17 @@ SUBDIRS=quote hseq hsequser tools thys doc
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
+HSeq_SOURCES=lib treekit tag parserkit rewritekit
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
 
 # object_LIBS: Libraries to include when linking [object].
 #object_LIBS=
+
+# object_PACK_DIR: Directory to use for packing.
+#object_PACK_DIR=
+HSeq_PACK_DIR=../HSeqOBJS
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #object_OCAMLC_FLAGS=
@@ -133,6 +141,20 @@ SUBDIRS=quote hseq hsequser tools thys doc
 # object_INST_PATH: PATH to append to the relative installation path.
 #object_INST_PATH=
 
+###
+# Installation options
+
+# For src/* modules, install headers but not libraries.
+
+# INSTALL_LIBRARIES: Libraries to install
+INSTALL_LIBRARIES=
+
+# INSTALL_HEADERS: Headers to install
+INSTALL_HEADERS=
+
+# INSTALL_CODE: Intermediate objects to install
+#INSTALL_CODE=$(addsuffix .cmo,$(util_SOURCES))
+
 #####
 # Module build tool settings
 
@@ -144,13 +166,13 @@ SUBDIRS=quote hseq hsequser tools thys doc
 #MODULE_USE_OBJDIR=no
 
 # MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#MODULE_OCAMLC_FLAGS=
+#MODULE_OCAMLC_FLAGS=$(GLOBAL_OCAMLC_FLAGS) $(MODULE_OCAMLC_FLAGS)
 
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
-#MODULE_OCAMLPP_FLAGS=
+#MODULE_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
 
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
-#MODULE_LINK_FLAGS=
+#MODULE_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
 
 #####
 # Default settings
@@ -163,63 +185,6 @@ SUBDIRS=quote hseq hsequser tools thys doc
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)
-
-#####
-# Extra settings
-
-###
-# Installation options
-# (Defaults if undefined are as given.)
-
-# INSTALL_LIBRARIES: Libraries to install
-#INSTALL_LIBRARIES=<all built libraries>
-
-# INSTALL_PROGRAMS: Programs to install
-#INSTALL_PROGRAMS=<all built programs>
-
-# INSTALL_HEADERS: Headers to install
-#INSTALL_HEADERS=<all .mli files and all built .cmi files>
-
-###
-# Makefile commands
-
-# EXTRA_CLEAN: Command to add to the clean target.
-EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
-
-# EXTRA_LIBCLEAN: Command to add to the clean target.
-#EXTRA_LIBCLEAN=
-
-# EXTRA_DISTCLEAN: Command to add to the clean target.
-EXTRA_DISTCLEAN=$(RM) configure.data config.make
-
-#####
-# Sub-directory building options
-
-# SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
-#SUBDIR_MAKE_OPTIONS=
-SUBDIR_MAKE_OPTIONS=
-
-####
-# Installation targets
-
-# Default target
-.PHONY: toplevel_target
-toplevel_target: all
-
-# CUSTOM_TARGET_install: If defined, use a custom install target.
-CUSTOM_TARGET_install=
-
-lm-file-permissions=755
-
-.PHONY: toplevel_target install-bin install-lib install-data install-doc
-install-bin: install-toplevel-bin
-install-lib: install-toplevel-lib
-install-data: install-toplevel-data
-install-doc: install-toplevel-doc
-
-install: build install-toplevel-bin install-toplevel-lib \
-	install-toplevel-doc install-toplevel-data
-
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
