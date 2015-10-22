@@ -1,0 +1,6 @@
+22 October 2015
+---------------
+
+The Mercurial repository is no longer in use. Development should be done in
+the GIT repository only.
+
