@@ -1,6 +1,6 @@
 (*----
   Name: logic.mli
-  Copyright M Wahab 2005-2014
+  Copyright M Wahab 2005-2015
   Author: M Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
