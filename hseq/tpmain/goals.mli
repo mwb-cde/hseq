@@ -122,7 +122,7 @@ val apply:
   -> Context.t
   -> Tactics.tactic -> Logic.goal -> Logic.goal
 (** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
-    {!Logic.Subgoals.apply_to_goal}.
+    {!Logic.apply_to_goal}.
 
     Applies [tac] to the first subgoal [n] of [goal]. Returns the goal 
     with the subgoals [tac n] appended to the remaining subgoals of goal.

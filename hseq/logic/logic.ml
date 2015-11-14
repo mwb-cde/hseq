@@ -832,32 +832,8 @@ struct
     then raise No_subgoals
     else app_aux tyenv iv sqnts (Changes.empty()) []
 
-  (** [apply_to_goal tac goal]: Apply tactic [tac] to firat subgoal
-      of [goal] using [apply_to_first].  Replace original list of
-      subgoals with resulting subgoals.
 
-      raise [logic_error "Invalid Tactic"]
-      if tag of result doesn't match tag originaly assigned to it.
-
-      raises [No_subgoals] if goal is solved.
-  *)
-  let apply_to_goal ?report tac (Goal(sqnts, tyenv, f, chngs)) =
-    let g_tag = Tag.create() in
-    let branch = mk_branch g_tag tyenv sqnts chngs
-    in
-    let new_branch = apply_to_first ?report:report tac branch
-    in
-    if Tag.equal g_tag (branch_tag new_branch)
-    then
-      let new_tyenv = branch_tyenv new_branch
-      and new_sqnts = branch_sqnts new_branch
-      and new_chngs = branch_changes new_branch
-      in
-      Goal(new_sqnts, new_tyenv, f, new_chngs)
-    else raise
-      (logic_error "Subgoal.apply_to_goal: Invalid tactic" [])
-
-  (** [zip tacl branch]: Apply each of the tactics in [tacl] to the
+  (** [apply_zip tacl branch]: Apply each of the tactics in [tacl] to the
       corresponding subgoal in branch.  e.g. [zip [t1;t2;..;tn]
       (Branch [g1;g2; ..; gm])] is Branch([t1 g1; t2 g2; .. ;tn gn])
       (with [t1 g1] first and [tn gn] last) if n<m then untreated
@@ -866,7 +842,7 @@ struct
       branch is that produced by the last tactic ([tn gn] in the
       example).  tag of the branch is the tag of the original
       branch.  *)
-  let zip tacl (Branch(tg, tyenv, sqnts, chngs)) =
+  let apply_zip tacl (Branch(tg, tyenv, sqnts, chngs)) =
     let rec zip_aux ty tacs subgs cs lst =
       match (tacs, subgs) with
 	| (_, []) ->
@@ -885,6 +861,15 @@ struct
       | [] -> raise No_subgoals
       | _ -> zip_aux tyenv tacl sqnts (Changes.empty()) []
 
+end (* Subgoals *)
+
+type node = Subgoals.node
+type branch = Subgoals.branch
+
+(******************************************************************************)
+(** {5 Rule construction} *)
+(******************************************************************************)
+
   (** [rule_apply f g]: Apply function [f] to sequent [sg] and type
       environment of node [g] to get [(ng, tyenv)]. [ng] is the list
       of sequents produced by [f] from [sg].  [tyenv] is the new type
@@ -898,36 +883,53 @@ struct
 
       THIS FUNCTION MUST REMAIN PRIVATE TO MODULE LOGIC
   *)
-  let rule_apply r (Node(ntag, tyenv, sqnt, chngs)) =
+  let rule_apply r (Subgoals.Node(ntag, tyenv, sqnt, chngs)) =
     try
-      begin
-        let (rg, rtyenv, rchngs) = r tyenv sqnt
-        in
-        Branch(ntag, rtyenv, rg, rchngs)
-      end
-     with
+      let (rg, rtyenv, rchngs) = r tyenv sqnt in
+      Subgoals.Branch(ntag, rtyenv, rg, rchngs)
+    with
        | No_subgoals ->
-         Branch(ntag, tyenv, [], Changes.empty())
+          Subgoals.Branch(ntag, tyenv, [], Changes.empty())
        | Solved_subgoal ntyenv ->
-         Branch(ntag, ntyenv, [], Changes.empty())
+          Subgoals.Branch(ntag, ntyenv, [], Changes.empty())
 
-
-  (** [simple_rule_apply f g]: Apply function [f: sqnt -> sqnt list]
-      to the first subgoal of g Like sqnt_apply but does not change
-      [tyenv] of [g].  Used for rules which do not alter the type
-      environment.  *)
-  let simple_rule_apply r node =
-    let wrapper tyenv sq =
-      let (sbgl, chngs) = r sq
-      in
-      (sbgl, tyenv, chngs)
+(** [simple_rule_apply f g]: Apply function [f: sqnt -> sqnt list]
+    to the first subgoal of g Like sqnt_apply but does not change
+    [tyenv] of [g].  Used for rules which do not alter the type
+    environment.  *)
+let simple_rule_apply r node =
+  let wrapper tyenv sq =
+    let (sbgl, chngs) = r sq
     in
-    rule_apply wrapper node
+    (sbgl, tyenv, chngs)
+  in
+  rule_apply wrapper node
 
-end
 
-type node = Subgoals.node
-type branch = Subgoals.branch
+  (** [apply_to_goal tac goal]: Apply tactic [tac] to firat subgoal
+      of [goal] using [apply_to_first].  Replace original list of
+      subgoals with resulting subgoals.
+
+      raise [logic_error "Invalid Tactic"]
+      if tag of result doesn't match tag originaly assigned to it.
+
+      raises [No_subgoals] if goal is solved.
+  *)
+let apply_to_goal ?report tac (Goal(sqnts, tyenv, f, chngs)) =
+  let g_tag = Tag.create() in
+  let branch = Subgoals.mk_branch g_tag tyenv sqnts chngs
+  in
+  let new_branch = Subgoals.apply_to_first ?report:report tac branch
+  in
+  if Tag.equal g_tag (Subgoals.branch_tag new_branch)
+  then
+    let new_tyenv = Subgoals.branch_tyenv new_branch
+    and new_sqnts = Subgoals.branch_sqnts new_branch
+    and new_chngs = Subgoals.branch_changes new_branch
+    in
+    Goal(new_sqnts, new_tyenv, f, new_chngs)
+  else raise
+    (logic_error "Subgoal.apply_to_goal: Invalid tactic" [])
 
 (******************************************************************************)
 (** {5 Tactics} *)
@@ -1031,7 +1033,7 @@ struct
 
   (** [sqnt_apply f g]: apply function f to the first subgoal of
       [g] *)
-  let sqnt_apply r g = Subgoals.rule_apply r g
+  let sqnt_apply r g = rule_apply r g
 
   (** [simple_sqnt_apply f g]: apply function [(f: sqnt -> sqnt list)]
       to the first subgoal of g Like sqnt_apply but does not change
@@ -2275,8 +2277,8 @@ struct
       in
       Tactics.basic a concl g
     in
-    let gl1 = Subgoals.apply_to_goal tac1 gl in
-    let gl2 = Subgoals.apply_to_goal tac2 gl1
+    let gl1 = apply_to_goal tac1 gl in
+    let gl2 = apply_to_goal tac2 gl1
     in
     mk_thm gl2
 

@@ -252,7 +252,7 @@ let (//) tac1 tac2 ctxt g =
 
 let thenl tac rls ctxt sq = 
   let apply_tac r g = r ctxt g in 
-  Logic.Subgoals.zip (List.map apply_tac rls) (tac ctxt sq)
+  Logic.Subgoals.apply_zip (List.map apply_tac rls) (tac ctxt sq)
 let (--) = thenl
 
 let fold_seq data rls (ctxt: Context.t) (sq: Logic.node) =
@@ -1025,7 +1025,7 @@ let conv_rule (ctxt: Context.t) conv thm =
             end)
         ] ctxt1 g)
   in
-  mk_thm (Logic.Subgoals.apply_to_goal (tac ctxt) goal)
+  mk_thm (Logic.apply_to_goal (tac ctxt) goal)
 
 (** [pure_rewriteA info p l]: Rewrite assumption [l] with plan [p].
 *)
