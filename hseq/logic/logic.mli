@@ -640,36 +640,21 @@ sig
       @raise [No_subgoals] if [sqnts] is empty.
   *)
 
-  val apply_to_goal:
-    ?report:(node->branch->unit) -> (node->branch) -> goal -> goal
-  (** [apply_to_goal ?report tac goal]: Apply a tactic to a goal.
+  val apply_zip: (node -> branch) list -> branch -> branch
+  (** [apply_zip tacl branch]: Apply each of the tactics in [tacl] to the
+      corresponding subgoal in branch.
 
-      Apply tactic [tac] to first subgoal of [goal] using
-      [apply_to_first].  Replace original list of subgoals with resulting
-      subgoals and merge the type environments.
+      [zip [t1;t2;..;tn] (Branch [g1;g2; ..; gm])] is [Branch([t1 g1; t2
+      g2; .. ;tn gn])] (with [t1 g1] first and [tn gn] last). The type
+      environment from (t{_ i} g{_ i}) is used when evaluating (t{_ i+1}
+      g{_ i+1}). The type environment of the returned branch is the type
+      environment of [(tn gn)].
 
-      If [report] is given, apply to first subgoal and the branch
-      resulting from application of [tac]. (This is to allow interactive
-      proof support to print result of the tactic).
-
-      @raise [logicError "Invalid Tactic"] if tactic is invalid.
+      If there are more subgoals than tactics (n < m) then untreated
+      subgoals are attached to the end of the new branch. If there are
+      more tactics then subgoals (m < n) then the unused tactics are silently
+      discarded.
   *)
-
-  val zip: (node -> branch) list -> branch -> branch
-(** [zip tacl branch]: Apply each of the tactics in [tacl] to the
-    corresponding subgoal in branch.
-
-    [zip [t1;t2;..;tn] (Branch [g1;g2; ..; gm])] is [Branch([t1 g1; t2
-    g2; .. ;tn gn])] (with [t1 g1] first and [tn gn] last). The type
-    environment from (t{_ i} g{_ i}) is used when evaluating (t{_ i+1}
-    g{_ i+1}). The type environment of the returned branch is the type
-    environment of [(tn gn)].
-
-    If there are more subgoals than tactics (n < m) then untreated
-    subgoals are attached to the end of the new branch. If there are
-    more tactics then subgoals (m < n) then the unused tactics are silently
-    discarded.
-*)
 
   val apply_fold:
     ('a -> node -> ('a * branch))  -> 'a -> branch -> ('a * branch)
@@ -686,6 +671,21 @@ end
 
 type node = Subgoals.node
 type branch = Subgoals.branch
+
+val apply_to_goal:
+  ?report:(node -> branch -> unit) -> (node -> branch) -> goal -> goal
+(** [apply_to_goal ?report tac goal]: Apply a tactic to a goal.
+
+    Apply tactic [tac] to first subgoal of [goal] using
+    [apply_to_first].  Replace original list of subgoals with resulting
+    subgoals and merge the type environments.
+
+    If [report] is given, apply to first subgoal and the branch
+    resulting from application of [tac]. (This is to allow interactive
+    proof support to print result of the tactic).
+
+    @raise [logicError "Invalid Tactic"] if tactic is invalid.
+*)
 
 (** {5 Tactics} *)
 
