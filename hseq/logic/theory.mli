@@ -86,7 +86,7 @@ type thm_record =
 type thy
 
 (** Information stored in a theory.
-    
+
     Used to directly query parts of a theory (such as for printing or
     setting up proof tools) without being able to alter the theory.
 *)
@@ -173,7 +173,7 @@ val set_theorem_props: string -> property list -> thy -> thy
 
 (** {7 Type declarations and definitions} *)
 
-val get_type_rec: string -> thy -> Gtypes.typedef_record 
+val get_type_rec: string -> thy -> Gtypes.typedef_record
 (** Get the record of a type. @raise [Not_found] on failure. *)
 val add_type_rec: Logic.Defns.cdefn -> thy -> thy
 (** Add a type declaration or definition. *)
@@ -194,12 +194,12 @@ val set_defn_props: string -> property list -> thy -> thy
 (** Set the properties of a definition. *)
 
 val add_defn_rec:
-  string -> Basic.gtype 
-  -> Logic.thm option 
+  string -> Basic.gtype
+  -> Logic.thm option
   -> property list -> thy -> thy
 (** Add a term definition record. *)
 
-val add_decln_rec: 
+val add_decln_rec:
   string  -> Basic.gtype -> property list -> thy -> thy
 (** Add the declaration of a term. *)
 
@@ -207,20 +207,20 @@ val add_decln_rec:
 
 val get_term_pp_rec: string  -> thy -> (Printer.record * sym_pos)
 (** Get a term Printer-Parser record to a theory. *)
-val add_term_pp_rec: 
-  string 
+val add_term_pp_rec:
+  string
   -> (Printer.record * sym_pos)
   -> thy -> thy
 (** Add a term Printer-Parser record to a theory. *)
 val remove_term_pp_rec: string -> thy -> thy
 (** Remove term Printer-Parser record from a theory. *)
-val get_term_pplist: 
+val get_term_pplist:
   thy -> (Ident.t * (Printer.record * sym_pos)) list
 (** Get all term Printer-Parser records of a theory. *)
 
 val get_type_pp_rec: string  -> thy -> Printer.record
 (** Get a type Printer-Parser record to a theory. *)
-val add_type_pp_rec: 
+val add_type_pp_rec:
   string -> Printer.record
   -> thy -> thy
 (** Add a type Printer-Parser record to a theory. *)
@@ -243,7 +243,7 @@ val add_symbol: thy -> (string * string) -> thy
 (** Add a lexer symbol for the theory. *)
 
 
-(** {5 Theory Storage} 
+(** {5 Theory Storage}
 
     Although saving theories is straightforward, loading theories must
     be done in two stages. This is because formulas stored in a theory
@@ -288,7 +288,7 @@ val thm_from_save: Scope.t -> thm_save_record -> thm_record
 (** Convert theorem record from permanent storage record. *)
 
 (** Representation of a theory stored on disk. *)
-type saved_thy 
+type saved_thy
 
 val saved_name: saved_thy -> string
 (** Get the name of a theory in saved representation. *)
@@ -340,5 +340,3 @@ val print_properties: Printer.ppinfo -> property list -> unit
 
 val print: Printer.ppinfo -> thy -> unit
 (** Print a theory. *)
-
-

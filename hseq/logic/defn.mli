@@ -33,10 +33,10 @@ val mk_decln:
 (** {7 Term definition} *)
 
 val mk_defn:
-  Scope.t 
+  Scope.t
   -> (Ident.t * Basic.gtype)
-  -> Basic.term list 
-  -> Basic.term 
+  -> Basic.term list
+  -> Basic.term
   -> (Ident.t * Basic.gtype * Formula.t)
 (** [mk_defn scp id args t]: Construct a definition.
 
@@ -44,7 +44,7 @@ val mk_defn:
     [id] is the identifier being defined.
     [args] is the list of arguments, where each argument is a
     (universally) bound variable.
-    [t] is the body of the definition 
+    [t] is the body of the definition
 
     Returns a formula of the form [! id args: id args = t] together
     with the long identifier and type of the defined term.
@@ -71,11 +71,11 @@ val check_well_defined: Scope.t -> string list -> Basic.gtype -> unit
     constructor must be declared in [scp].
 *)
 
-(** {7 Subtype definition} 
+(** {7 Subtype definition}
 
     Define the subtype of a type constructing
     [A, args, T, set:(args)T->bool, rep, abs]
-    where 
+    where
     {ul
     {- [A] is the name of the subtype.}
 
@@ -94,7 +94,7 @@ val check_well_defined: Scope.t -> string list -> Basic.gtype -> unit
     {- representation function:  [rep:(args)T -> A]}
 
     {- abstraction function: [abs:A-> (args)T]}}
-    
+
     The axioms specifying the abstraction and representation functions are:
     {ul
 
@@ -108,7 +108,7 @@ val check_well_defined: Scope.t -> string list -> Basic.gtype -> unit
     all parameters to the subtype definition.
 *)
 
-type subtype_defn = 
+type subtype_defn =
     {
       id: Ident.t;
       args: string list;
@@ -119,7 +119,7 @@ type subtype_defn =
       rep_T_inverse: Basic.term;
       abs_T_inverse: Basic.term
     }
-(** 
+(**
     The result of constructing a subtype:
     {ul
     {- [id]: The name of the new type.}
@@ -139,7 +139,7 @@ val mk_subtype_exists: Basic.term -> Basic.term
     used to show that the subtype is not empty.
 *)
 
-val make_witness_type: 
+val make_witness_type:
   Scope.t -> Basic.gtype -> Basic.term -> Basic.term
 (** [make_witness_type scp ty setp]: Make a witness to the
     non-emptyness of the set defined by [setp] (which must be of type
@@ -148,7 +148,7 @@ val make_witness_type:
 
 
 val mk_subtype:
-  Scope.t -> string -> string list 
+  Scope.t -> string -> string list
   -> Basic.gtype -> Basic.term -> string -> string
   -> subtype_defn
 (** [mk_subtype scp n args ty set rep abs]: Make a subtype named [n]
@@ -167,7 +167,7 @@ sig
 
   (** Information to be returned by type definition parsers.  *)
   type typedef =
-    | NewType of (string * (string list)) 
+    | NewType of (string * (string list))
     (** A new type: the type name and its arguments. *)
     | TypeAlias of (string * (string list) * Basic.gtype)
     (** A type alias: the type name, its arguments and the type it
@@ -184,9 +184,9 @@ end
   sig
 
 (*
-  * HOL-like type definition. 
+  * HOL-like type definition.
   *  A, args, T, set:(args)T->bool
-  * 
+  *
   *  make declaration
   *   representation function rep = name:(args)T -> A
   *   and theorem
@@ -196,21 +196,21 @@ end
   * Everything needed to use subtyping is derived making this approach
   * the more intellectually rigorous. But this takes a lot of work,
   * so the standard typedef takes the easy way out.
-  * 
+  *
 *)
 
 (*
   [mk_subtype_prop setp rep]:
-  make the term 
+  make the term
   << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-  and 
+  and
   (!x: (P x) = (?x1: x=(rep x1)))>>
   to be used as the subtype theorem.
 
   [mk_subtype scp name args d setP rep]:
   - check name doesn't exist already
   - check all arguments in args are unique
-  - check def is well defined 
+  - check def is well defined
   (all constructors exist and variables are in the list of arguments)
   - ensure setP has type (d -> bool)
   - declare rep as a function of type (d -> n)
@@ -218,7 +218,7 @@ end
 *)
   val mk_subtype_prop: Basic.term -> Ident.t -> Basic.term
   val mk_subtype:
-  Scope.t -> string -> string list 
+  Scope.t -> string -> string list
   -> Basic.gtype -> Basic.term -> Ident.t
   -> (Basic.gtype * Basic.term * Basic.term)
 

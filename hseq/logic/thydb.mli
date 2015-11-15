@@ -19,7 +19,7 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** Theory databases 
+(** Theory databases
 
     A theory database is a table of theories, indexed by theory names,
     the current theory and a list of theory names (the {e importing
@@ -34,7 +34,7 @@
 
 class dbError: string -> string list ->
 object
-  inherit Report.error 
+  inherit Report.error
   val names: string list
   method get: unit -> string list
 end
@@ -45,14 +45,14 @@ val add_error: string -> string list -> exn -> 'a
 
 type table_t = (Theory.thy)Treekit.StringTree.t
 
-type thydb 
+type thydb
 (** The type of theory databases.
 
     A database has a {e table} of theories, a {e current theory} and
     an {e importing list}.
 *)
 
-val empty: unit ->  thydb 
+val empty: unit ->  thydb
 (** [empty thy]: Make a database with initial theory [thy], which is
     made the current theory. Fails if [thy] has parents.
 *)
@@ -85,7 +85,7 @@ val is_imported: string -> thydb -> bool
     scope).
 *)
 
-val is_loaded: string -> thydb -> bool 
+val is_loaded: string -> thydb -> bool
 (** Test whether a theory is loaded in the database (not necessarily
     in scope).
 *)
@@ -136,35 +136,35 @@ val get_type_rec: string -> string -> thydb -> Gtypes.typedef_record
     in theory [th]
 *)
 
-val thy_of_type: string -> string -> thydb -> string 
+val thy_of_type: string -> string -> thydb -> string
 (** [thy_of_type th n db]: Beginning with theory [th], try to find the
     theory containing a type declaration for name [n].
 *)
 
 (** {7 Definitions and Declarations} *)
 
-val add_decln_rec: 
+val add_decln_rec:
   Logic.Defns.cdefn -> Theory.property list
   -> thydb -> thydb
 (** [add_decln_rec d ps db]: Store declaration [d] with properties
     [ps] in the current theory.
 *)
 
-val add_decln: 
+val add_decln:
   Logic.Defns.cdefn
   -> Theory.property list -> thydb -> thydb
 (** [add_decln d ps db]: Store declaration [d] with properties [ps] in
     the current theory.
 *)
 
-val add_defn_rec: string-> Basic.gtype -> Logic.thm option 
+val add_defn_rec: string-> Basic.gtype -> Logic.thm option
   -> Theory.property list -> thydb -> thydb
 (** [add_defn_rec n ty th ps db]: Store definition [th] of name [n],
     typed [ty] with properties [ps] in the current theory.
 *)
 
-val add_defn: 
-  string -> Basic.gtype -> Logic.thm -> Theory.property list 
+val add_defn:
+  string -> Basic.gtype -> Logic.thm -> Theory.property list
   -> thydb -> thydb
 (** [add_defn n ty th ps db]: Store definition [th] of name [n], typed
     [ty] with properties [ps] in the current theory.
@@ -196,20 +196,20 @@ val id_exists: string -> string -> thydb -> bool
     theory [th] exists.
 *)
 
-val thy_of: string -> string -> thydb -> string 
+val thy_of: string -> string -> thydb -> string
 (** [thy_of th n db]: Beginning with theory [th], try to find the
     theory containing a term declaration for name [n].
 *)
 
 (** {7 Theorems} *)
 
-val add_axiom: 
+val add_axiom:
   string -> Logic.thm -> Theory.property list -> thydb -> thydb
 (** [add_axiom n th ps db]: Store axiom [th] under name [n] with
     properties [ps] in the current theory.
 *)
 
-val add_thm: 
+val add_thm:
   string -> Logic.thm -> Theory.property list -> thydb -> thydb
 (** [add_thm n th ps db]: Store theorem [th] under name [n] with
     properties [ps] in the current theory.
@@ -235,39 +235,39 @@ val get_lemma: string -> string -> thydb -> Logic.thm
 
 (** {7 Type Printer-Parser records} *)
 
-val add_type_pp_rec: 
+val add_type_pp_rec:
   string -> Printer.record -> thydb  -> thydb
 (** [add_type_pp_rec n r db]: Add PP record [r] for type identifier
     [n] in the current theory.
 *)
 
-val get_type_pp_rec: 
+val get_type_pp_rec:
   string  -> string -> thydb -> Printer.record
 (** [get_type_pp_rec th n db]: Get the PP record [r] for type
     identifier [n] in theory [th].
 *)
 
-val remove_type_pp_rec: 
+val remove_type_pp_rec:
   string -> string -> thydb -> thydb
 (** [remove_type_pp_rec th n db]: Remove the PP record [r] for type
     identifier [n] in theory [th].
 *)
 
-val get_type_pplist: 
+val get_type_pplist:
   string -> thydb -> (Ident.t * Printer.record) list
 (** [get_type_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)
-  
+
 (** {7 Term Printer-Parser records} *)
 
-val add_term_pp_rec: 
+val add_term_pp_rec:
   string -> (Printer.record * Theory.sym_pos) -> thydb  -> thydb
 (** [add_term_pp_rec n r db]: Add PP record [r] for term identifier
     [n] in the current theory.
 *)
 
-val get_term_pp_rec: 
+val get_term_pp_rec:
   string  -> string -> thydb -> (Printer.record * Theory.sym_pos)
 (** [get_term_pp_rec th n db]: Get the PP record [r] for term
     identifier [n] in theory [th].
@@ -278,8 +278,8 @@ val remove_term_pp_rec: string -> string -> thydb -> thydb
     identifier [n] in theory [th].
 *)
 
-val get_term_pplist: 
-  string -> thydb 
+val get_term_pplist:
+  string -> thydb
   -> (Ident.t * (Printer.record * Theory.sym_pos)) list
 (** [get_term_pplist n db]: Get the list of PP records for identifiers
     with name [n].
@@ -325,16 +325,16 @@ sig
 
   (** Information about a theory passed to file-handling functions. *)
   type info =
-    { 
-      name: string; 
+    {
+      name: string;
         (** The name of the theory. *)
-      date: float option; 
+      date: float option;
         (** The maximum date of the theory (optional). *)
       prot: bool option ;
         (** Whether the theory is protected (optional). *)
-      childn: Lib.StringSet.t 
-      (** 
-          Names of the theories of which name is a parent. 
+      childn: Lib.StringSet.t
+      (**
+          Names of the theories of which name is a parent.
           (If [name] is in [childn] then it is a circular importing.)
       *)
     }
@@ -364,7 +364,7 @@ sig
       the importing list or if any theory in the importing list of
       [db] is not in the table of [db'].
   *)
-  type data = 
+  type data =
     {
       load_fn: info -> Theory.saved_thy;
 	(** Function to find and load a theory file. *)
@@ -375,7 +375,7 @@ sig
 	  all theories that the newly built theory depends on.  *)
     }
 
-  val mk_data: 
+  val mk_data:
     (info -> Theory.saved_thy)
     -> (thydb -> string -> (thydb * Theory.thy list))
     -> data
@@ -384,7 +384,7 @@ sig
   val mk_empty: unit -> data
    (** Make empty loader data. *)
 
-  val make_current:  thydb -> data -> Theory.thy 
+  val make_current:  thydb -> data -> Theory.thy
     -> (thydb * (Theory.contents list))
   (** [make_current db thy]: Load the parents of [thy] into [db] and
       make theory [thy] the current theory.  *)
@@ -392,19 +392,19 @@ sig
   val load: thydb -> data -> info -> (thydb * (Theory.contents list))
     (** [load db info data]: Load a theory and, if neccessary, it parents from
         disc into the database. Make it the current theory. If no theory file is
-        available, try to build it from a theory script. 
+        available, try to build it from a theory script.
 
         Uses [data.load_fn] to try to load the theory and [data.build_fn] to try
         to build the theory. Returns the updated thydb and the contents of the
         loaded theories *)
 
-  val build_thy: 
+  val build_thy:
     data -> thydb -> info -> (Theory.thy list * Theory.thy * thydb)
   val load_aux: data -> thydb -> info -> bool -> (Theory.thy * thydb)
   val load_theory:
     thydb -> data -> info -> (thydb * (Theory.contents list))
 
-  val get_loaded_thy: data -> thydb -> Theory.thy list -> info 
+  val get_loaded_thy: data -> thydb -> Theory.thy list -> info
     -> (Theory.thy list * Theory.thy * thydb)
   val get_saved_thy: data -> thydb -> Theory.thy list -> info
     -> (Theory.thy list * Theory.thy * thydb)
@@ -413,19 +413,19 @@ sig
   val load_deps: data -> thydb -> Theory.thy list -> float -> info list
     -> (Theory.thy list * thydb * float)
 
-  val load_theory: 
+  val load_theory:
     thydb -> data -> info -> (thydb * Theory.thy * Theory.contents list)
-  val load_parents: 
+  val load_parents:
     thydb -> data -> info -> string list -> (thydb * Theory.contents list)
 
-  val load_main: 
+  val load_main:
     thydb -> data -> info -> Theory.contents list
     -> (thydb * Theory.contents list)
-  val load_parents_main: 
+  val load_parents_main:
     thydb -> data -> info -> string list -> Theory.contents list
     -> (thydb * Theory.contents list)
 
-  val load: 
+  val load:
     thydb -> data -> info
     -> (thydb * Theory.contents list)
 
@@ -449,14 +449,14 @@ end
 (** {5 Debugging information} *)
 module NameSet:
 sig
-  type t = 
+  type t =
     {
-      list: string list ; 
+      list: string list ;
       set: Lib.StringSet.t
     }
 
   val empty: t
-  val add: t -> string -> t 
+  val add: t -> string -> t
   val mem: t -> string -> bool
   val filter: (string -> bool) -> t -> t
   val to_list: t -> string list

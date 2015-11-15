@@ -29,7 +29,7 @@
 # Must set PROJ_ROOT.
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
 #
-# Must end with 
+# Must end with
 #    include $(PROJ_ROOT)/Makefile.common
 #
 #
@@ -37,7 +37,7 @@
 # ----------
 #
 # Module settings:
-# 
+#
 # SUBDIRS: List of sub-directories to recurse into.
 # LIBRARIES: List of libraries to build.
 # PROGRAMS: List of programs to build.
@@ -74,23 +74,23 @@
 #
 # Notes:
 #
-# The flags for each tool X are formed as 
+# The flags for each tool X are formed as
 #    (LOCAL_X_FLAGS) (object_X_FLAGS)
 #
 # If LOCAL_X_FLAGS is not defined, it defaults to
-#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
+#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS)
 #
 # The global flags for X passed to each sub-directory is
 #     (LOCAL_X_FLAGS)
 #
-# An object will be installed into the directory formed by 
+# An object will be installed into the directory formed by
 #      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
 #
 #####
 
 #####
 # Required definitions
-#  
+#
 
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=../..
@@ -229,5 +229,3 @@ $(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
 
 include $(PROJ_ROOT)/Makefile.rules
-
-
