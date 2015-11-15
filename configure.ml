@@ -29,7 +29,7 @@
    Makefile code is output to data.make
 
    Usage:
-   ocaml configure.ml [options] 
+   ocaml configure.ml [options]
    where main options are:
    --prefix: the prefix for directories.
    --basedir: the install directory
@@ -44,12 +44,12 @@
 
 (** File name utilities **)
 
-let filename x y = 
+let filename x y =
   if x != ""
   then Filename.concat x y
   else y
 
-let filename_opt x y = 
+let filename_opt x y =
   match x with
     None -> y
   | (Some d) -> Filename.concat d y
@@ -63,7 +63,7 @@ let make_data = filename output_dir "config.make"
 
 (** String utilities **)
 
-(** 
+(**
     [stringify str]: Make [str] suitable for passing to OCaml.
     Escapes the string using String.escaped.
     then replaces ' ' with '\ '.
@@ -84,22 +84,22 @@ let get_opt p d=
   | Some x -> x
 
 (** Test that a command exists *)
-let has_program s = 
+let has_program s =
   Sys.command s = 0
 
-let test_program s args = 
+let test_program s args =
   let cmd = List.fold_left (fun a b -> (a^" "^b)) s args
   in
   Sys.command cmd = 0
 
 (** Test that a file exists *)
-let has_file s = 
+let has_file s =
   Sys.file_exists s
 
 
 (** Settings *)
-class type ['a] setting_ty = 
-object 
+class type ['a] setting_ty =
+object
   (* Variable description *)
   val description: string
   method get_description: unit -> string
@@ -129,7 +129,7 @@ object
 
   (* Existence test *)
   method test: unit -> bool
-    
+
   (* Report value *)
   method report: out_channel -> unit
 
@@ -146,7 +146,7 @@ object
 end
 
 
-class setting : [string]setting_ty = 
+class setting : [string]setting_ty =
 object (self)
   (* Variable description *)
   val description = "<unknown>"
@@ -162,7 +162,7 @@ object (self)
   (* Whether the value has been set by a command line option *)
   val mutable specified_value = false
   method is_specified () = specified_value
-  method set_option_value v = 
+  method set_option_value v =
     begin
       value <- v;
       specified_value <- true
@@ -181,14 +181,14 @@ object (self)
 
   (* Existence test *)
   method test () = true
-    
+
   (* Report value *)
   method report oc =
     begin
       match self#get_value() with
       | Some(x) ->
           (Printf.fprintf oc "%s: %s\n" variable x)
-      | _ -> 
+      | _ ->
         if self#is_required()
         then
           begin
@@ -201,10 +201,10 @@ object (self)
 
   (* Print help *)
   val help_msg = None
-  method make_help_msg () = 
-    let msg = 
-      if help_msg = None 
-      then description 
+  method make_help_msg () =
+    let msg =
+      if help_msg = None
+      then description
       else (get_str help_msg)
     in
     begin
@@ -213,8 +213,8 @@ object (self)
          ("["^(get_str (self#get_value()))^"]")]
     end
 
-  method help oc = 
-    if option = None 
+  method help oc =
+    if option = None
     then ()
     else
       begin
@@ -223,7 +223,7 @@ object (self)
       end
 
   (* Get an Arg.spec object *)
-  method get_arg_spec() = 
+  method get_arg_spec() =
     let set_value str = ignore(self#set_option_value (Some(str))) in
     (get_str option, Arg.String set_value, self#make_help_msg())
 
@@ -231,29 +231,29 @@ object (self)
   method print_var_ml oc =
     begin
       match self#get_value() with
-        Some(x) -> 
- 	  Printf.fprintf oc 
-            "DEFINE %s=\"%s\"\n" variable (stringify x) 
+        Some(x) ->
+ 	  Printf.fprintf oc
+            "DEFINE %s=\"%s\"\n" variable (stringify x)
       | _ -> ()
     end
 
   method print_var_make oc =
     begin
       match self#get_value() with
-        Some(x) -> 
- 	  Printf.fprintf oc "export %s:=%s\n" 
-            variable (String.escaped x) 
+        Some(x) ->
+ 	  Printf.fprintf oc "export %s:=%s\n"
+            variable (String.escaped x)
       | _ -> ()
     end
 end
 
-class dependent_setting base = 
+class dependent_setting base =
 object (self)
   inherit setting
   val base_setting = base
   val description = "Dependent setting"
 
-  method get_value () = 
+  method get_value () =
     let bvalue = base_setting#get_value() in
     if bvalue = None
     then value
@@ -261,7 +261,7 @@ object (self)
 end
 
 class base_directory =
-object 
+object
   inherit setting
   val description = "root of installation directory"
   val variable = "BaseDir"
@@ -270,20 +270,20 @@ object
   val required = true
 end
 
-class relative_directory base = 
-object 
+class relative_directory base =
+object
   inherit setting
   val base_dir = base
   val description = "Directory relative to installation directory"
   val mutable value = None
-  method get_value () = 
+  method get_value () =
     let base_path = get_str (base_dir#get_value()) in
     let rel_path = get_str value in
     Some(Filename.concat base_path rel_path)
 end
 
 class bin_directory base =
-object 
+object
   inherit relative_directory base
   val description = "binaries directory"
   val variable = "BinDir"
@@ -293,7 +293,7 @@ object
 end
 
 class src_directory =
-object 
+object
   inherit setting
   val description = "Source directory"
   val variable = "SrcDir"
@@ -302,7 +302,7 @@ object
 end
 
 class lib_directory base =
-object 
+object
   inherit relative_directory base
   val description = "libraries directory"
   val variable = "LibDir"
@@ -312,7 +312,7 @@ object
 end
 
 class thy_directory lib =
-object 
+object
   inherit relative_directory lib
   val description = "theories directory"
   val variable = "ThyDir"
@@ -321,7 +321,7 @@ object
 end
 
 class doc_directory base =
-object 
+object
   inherit relative_directory base
   val description = "libraries directory"
   val variable = "DocDir"
@@ -336,7 +336,7 @@ end
 
 let tool_search_path = ["/usr/bin"; "/usr/local/bin"]
 
-class tool = 
+class tool =
 object (self)
   inherit setting
   val description = "A build Tool"
@@ -348,27 +348,27 @@ object (self)
   (* Directories to search for the tool *)
   method private get_search_path() = tool_search_path
   method find () =
-    if self#is_specified () 
+    if self#is_specified ()
     then false
     else
       begin
         let tool_exists dir = has_file (Filename.concat dir tool_name) in
-        let search_path = self#get_search_path() 
+        let search_path = self#get_search_path()
         in
-        try 
+        try
           let dir = List.find tool_exists search_path in
           (value <- Some(Filename.concat dir tool_name);
            true)
         with Not_found -> false
-      end 
+      end
 
-  method test () = 
+  method test () =
     let btool = get_str value in
-    has_file btool 
+    has_file btool
 end
 
 (** An ocaml tool *)
-class octool = 
+class octool =
 object (self)
   inherit tool
   val description = "An OCaml Tool"
@@ -380,21 +380,21 @@ object (self)
   (* Directories to search for the tool *)
   val search_path = ["/usr/bin"; "/usr/local/bin"]
   method find () =
-    if self#is_specified () 
+    if self#is_specified ()
     then false
     else
       begin
         let bin_dir = Filename.dirname (Sys.executable_name) in
         let tool_exists dir = has_file (Filename.concat dir tool_name)
         in
-        try 
+        try
           let dir = List.find tool_exists (bin_dir::search_path) in
           (value <- Some(Filename.concat dir tool_name);
            true)
         with Not_found -> false
-      end 
+      end
 
-  method test () = 
+  method test () =
     let ocamltool = get_str value in
     test_program ocamltool ["-v"]
 end
@@ -427,21 +427,21 @@ object (self)
   val description = "whether to build native code libraries"
   val variable = "CONFIG_ENABLE_NATIVECODE"
   val mutable value = Some("true")
-  method get_value() = 
+  method get_value() =
     let bvalue = base_setting#get_value() in
     if bvalue = None
     then Some("false")
     else value
 
   val option = Some("--build-native-code")
-  method get_arg_spec() = 
-    let set_value fl = 
+  method get_arg_spec() =
+    let set_value fl =
       Printf.printf "get_arg_spec().set_value";
-      if fl 
-      then ignore(self#set_option_value (Some("true"))) 
-      else ignore(self#set_option_value (Some("false"))) 
+      if fl
+      then ignore(self#set_option_value (Some("true")))
+      else ignore(self#set_option_value (Some("false")))
     in
-    (get_str option, Arg.Bool set_value, 
+    (get_str option, Arg.Bool set_value,
      "[true|false] whether to build the native code libraries [true]")
 end
 
@@ -484,7 +484,7 @@ object (self)
   val description = "Camlp preprocessor"
   val variable = "CAMLP"
   val mutable value = Some("camlp4")
-  val option = Some "--camlp" 
+  val option = Some "--camlp"
   val tool_name = "camlp4"
   val required = true
 end
@@ -506,21 +506,21 @@ object (self)
   val description = "whether to build the documentation"
   val variable = "CONFIG_ENABLE_BUILD_DOCS"
   val mutable value = Some("true")
-  method get_value() = 
+  method get_value() =
     let bvalue = base_setting#get_value() in
     if bvalue = None
     then Some("false")
     else value
 
   val option = Some("--build-docs")
-  method get_arg_spec() = 
-    let set_value fl = 
+  method get_arg_spec() =
+    let set_value fl =
       Printf.printf "get_arg_spec().set_value";
-      if fl 
-      then ignore(self#set_option_value (Some("true"))) 
-      else ignore(self#set_option_value (Some("false"))) 
+      if fl
+      then ignore(self#set_option_value (Some("true")))
+      else ignore(self#set_option_value (Some("false")))
     in
-    (get_str option, Arg.Bool set_value, 
+    (get_str option, Arg.Bool set_value,
      "[true|false] whether to build the documentation [true]")
 end
 
@@ -545,7 +545,7 @@ let ocamldoc_prog = new tool_ocamldoc
 let makeinfo_prog = new tool_makeinfo
 let build_docs_flag = new build_docs_setting makeinfo_prog
 
-let (settings: setting list) = 
+let (settings: setting list) =
 [
   base_dir;
   src_dir;
@@ -566,18 +566,18 @@ let (settings: setting list) =
   build_docs_flag;
 ]
 
-let find_tools () = 
+let find_tools () =
   let find_obj obj = ignore(obj#find()) in
   List.iter find_obj settings
 
-let help () = 
-  let print_obj obj = 
-    obj#help stdout;  
+let help () =
+  let print_obj obj =
+    obj#help stdout;
     Printf.fprintf stdout "\n"
   in
   List.iter print_obj settings
 
-let report () = 
+let report () =
   let print_obj obj = obj#report stdout in
   List.iter print_obj settings
 
@@ -587,43 +587,43 @@ let check () =
   not (List.exists test_obj settings)
 
 (** Emiiters *)
-let make_outfile n = 
-  if n = "" 
+let make_outfile n =
+  if n = ""
   then stdout
   else open_out n
 
 let emit_ml ()=
   let oc = make_outfile ml_data in
-  let print_obj oc obj = obj#print_var_ml oc 
-  in 
-    Printf.fprintf oc 
+  let print_obj oc obj = obj#print_var_ml oc
+  in
+    Printf.fprintf oc
       "(* Definitions for OCaml pre-processor (auto-generated) *)\n\n";
     List.iter (print_obj oc) settings;
     close_out oc;
     Printf.printf "Wrote file %s\n" ml_data
 
-let emit_make() = 
+let emit_make() =
   let oc = make_outfile make_data in
-  let print_obj oc obj = obj#print_var_make oc 
-  in 
-    Printf.fprintf oc 
+  let print_obj oc obj = obj#print_var_make oc
+  in
+    Printf.fprintf oc
       "# Definitions for makefiles (auto-generated) \n\n";
     List.iter (print_obj oc) settings;
     close_out oc;
     Printf.printf "Wrote file %s\n" make_data
 
-let emit () = 
+let emit () =
   emit_ml();
-  emit_make() 
+  emit_make()
 
 (** Command line arguments **)
 
 let get_options_list () =
-  let get_option lst obj = 
+  let get_option lst obj =
     if obj#has_option ()
     then (obj#get_arg_spec())::lst
     else lst
-  in 
+  in
   Arg.align
     (List.rev(List.fold_left get_option [] settings))
 
@@ -632,10 +632,8 @@ let anon_fun _ = raise (Arg.Bad "unknown option")
 let parse_args () = Arg.parse (get_options_list()) anon_fun usage_msg
 
 (** Main **)
-let _ = 
+let _ =
   find_tools();
   parse_args();
   report();
   emit()
-
-  
