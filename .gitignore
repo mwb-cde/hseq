@@ -1,0 +1,20 @@
+# File patterns to ignore
+syntax:glob
+
+# General
+*.d
+*.o
+*.a
+*.so
+
+# OCaml patterns
+*.cma
+*.cmi
+*.cmo
+*.cmx
+*.cmxa
+*.o
+*.a
+
+# Other
+*~
