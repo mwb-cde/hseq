@@ -20,7 +20,7 @@
   ----*)
 
 (*
- * Identifier and theorem records 
+ * Identifier and theorem records
  *)
 
 type property = string
@@ -28,10 +28,10 @@ let simp_property = "simp"
 type sym_pos = Ident.t Lib.position
 module Tree = Treekit.StringTree
 
-type id_record = 
+type id_record =
     {
-      typ: Basic.gtype; 
-      def: Logic.thm option; 
+      typ: Basic.gtype;
+      def: Logic.thm option;
       dprops: property list
     }
 
@@ -41,7 +41,7 @@ type thm_record =
       props: property list
     }
 
-type thy = 
+type thy =
     {
       name: string;
       marker: Scope.marker;
@@ -78,10 +78,10 @@ type contents=
 let get_date thy = thy.date
 let set_date thy = { thy with date = Lib.date() }
 
-let mk_thy n ps = 
-  let thy = 
-    { 
-      name = n; 
+let mk_thy n ps =
+  let thy =
+    {
+      name = n;
       marker = Scope.mk_marker n;
       protection = false;
       date = 0.0;
@@ -95,19 +95,19 @@ let mk_thy n ps =
       id_pps = [];
       pp_syms = [];
     }
-  in 
+  in
   set_date thy
 
 let flatten_list l =
   let rec flatten_aux ls rs =
-      match ls with 
+      match ls with
       | [] -> rs
       | (n::_)::xs -> flatten_aux xs (n::rs)
       | [] :: xs -> flatten_aux xs rs
   in
   flatten_aux l []
 
-let contents thy = 
+let contents thy =
   {
     cname = thy.name;
     cmarker = thy.marker;
@@ -144,16 +144,16 @@ let add_parent n thy =
 let rec add_parents ns thy =
   List.fold_left (fun th n -> add_parent n th) thy (List.rev ns)
 
-let set_protection thy = 
+let set_protection thy =
   let thy1 = { thy with protection = true } in
   set_date thy1
 
-let add_file f thy = 
+let add_file f thy =
   set_files thy (f::(get_files thy))
 
-let remove_file f thy = 
+let remove_file f thy =
   set_files thy
-    (List.filter 
+    (List.filter
        (fun x -> (String.compare x f) != 0) (get_files thy))
 
 (*
@@ -165,55 +165,55 @@ let remove_file f thy =
 let get_axioms thy = thy.axioms
 let set_axioms thy x = { thy with axioms = x }
 
-let get_axiom_rec n thy = 
+let get_axiom_rec n thy =
   try Tree.find thy.axioms n
-  with Not_found -> 
-    raise (Report.error 
+  with Not_found ->
+    raise (Report.error
 	     ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
 
-let get_axiom n thy = 
+let get_axiom n thy =
   let ar = get_axiom_rec n thy
   in
   ar.thm
 
 let add_axiom n ax ps thy =
   if not (get_protection thy)
-  then 
+  then
     if not (Tree.mem thy.axioms n)
-    then 
+    then
       let rcrd= { thm = ax; props = ps }
-      in 
+      in
       set_axioms thy (Tree.add (get_axioms thy) n rcrd)
     else raise (Report.error ("Axiom "^n^" exists"))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let set_axiom_props n ps thy =
   if not (get_protection thy)
-  then 
-    let ar = get_axiom_rec n thy in 
+  then
+    let ar = get_axiom_rec n thy in
     let nar= { ar with props=ps }
-    in 
+    in
     set_axioms thy (Tree.replace (thy.axioms) n nar)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let get_theorems thy = thy.theorems
 let set_theorems thy x = { thy with theorems = x }
 
-let get_theorem_rec n thy = 
+let get_theorem_rec n thy =
   Tree.find (get_theorems thy) n
 
-let get_theorem n thy = 
-  let tr = 
+let get_theorem n thy =
+  let tr =
     try get_theorem_rec n thy
-    with Not_found -> 
-      raise (Report.error 
+    with Not_found ->
+      raise (Report.error
 	       ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   in
   tr.thm
 
 let add_thm n t ps thy =
   if not (get_protection thy)
-  then 
+  then
     if not (Tree.mem thy.theorems n)
     then
       let rcrd= { thm = t; props = ps }
@@ -224,14 +224,14 @@ let add_thm n t ps thy =
 
 let set_theorem_props n ps thy =
   if not (get_protection thy)
-  then 
+  then
     match Lib.try_find (get_theorem_rec n) thy with
-      | Some(tr) -> 
+      | Some(tr) ->
 	  let ntr = { tr with props = ps }
-	  in 
+	  in
 	  set_theorems thy (Tree.replace (thy.theorems) n ntr)
-      | _ -> 
-	raise (Report.error 
+      | _ ->
+	raise (Report.error
                  ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -250,28 +250,28 @@ let add_type_rec tr thy =
       Scope.alias = d;
       Scope.characteristics = cs
     }
-  in 
-  let dest_tydef tydef =  
+  in
+  let dest_tydef tydef =
     if Logic.Defns.is_typealias tydef
     then Logic.Defns.dest_typealias tydef
     else
       if Logic.Defns.is_subtype tydef
-      then 
+      then
 	let ctyrec = Logic.Defns.dest_subtype tydef
-	in 
-	(ctyrec.Logic.Defns.type_name, 
-         ctyrec.Logic.Defns.type_args, 
+	in
+	(ctyrec.Logic.Defns.type_name,
+         ctyrec.Logic.Defns.type_args,
          None)
       else
-        raise 
+        raise
           (Report.error "Theory.add_type_rec: Expected a type definition")
-  in 
+  in
   if not (get_protection thy)
-  then 
-    let (lid, args, df) = dest_tydef tr in 
-    let id = Ident.name_of lid in 
+  then
+    let (lid, args, df) = dest_tydef tr in
+    let id = Ident.name_of lid in
     let tr = mk_typedef_rec id args df []
-    in 
+    in
     if not (Tree.mem (get_typs thy) id)
     then set_typs thy (Tree.add (get_typs thy) id tr)
     else raise (Report.error ("Type "^id^" exists"))
@@ -286,23 +286,23 @@ let type_exists n thy =
 let get_defns thy = thy.defns
 let set_defns thy xs = { thy with defns = xs }
 
-let get_defn_rec n thy = 
+let get_defn_rec n thy =
   let rcrd = Tree.find (get_defns thy) n
-  in 
+  in
   {
-    typ = Gtypes.rename_type_vars (rcrd.typ); 
-    def = rcrd.def; 
+    typ = Gtypes.rename_type_vars (rcrd.typ);
+    def = rcrd.def;
     dprops = rcrd.dprops
   }
-    
-let get_defn n thy = 
+
+let get_defn n thy =
   let r = get_defn_rec n thy
-  in 
+  in
   match r.def with
       None -> raise (Report.error ("No definition for "^n))
     | Some(d) -> d
 
-let get_id_type n thy = 
+let get_id_type n thy =
   let r = get_defn_rec n thy
   in
   r.typ
@@ -313,21 +313,21 @@ let id_exists n thy =
 
 let set_defn_props n ps thy =
   if not (get_protection thy)
-  then 
-    let dr = get_defn_rec n thy in 
+  then
+    let dr = get_defn_rec n thy in
     let ndr = { dr with dprops=ps }
-    in 
+    in
     set_defns thy (Tree.replace (get_defns thy) n ndr)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let add_defn_rec n ty d prop thy =
   if not (get_protection thy)
-  then 
+  then
     if id_exists n thy
     then raise (Report.error ("Identifier "^n^" already exists in theory"))
-    else 
+    else
       let new_record = { typ=ty; def=d; dprops=prop }
-      in 
+      in
       set_defns thy (Tree.add (get_defns thy) n new_record)
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -353,75 +353,75 @@ let get_term_pp_rec n thy = List.assoc n thy.id_pps
 
 let add_term_pp_rec n ppr thy=
   if not (get_protection thy)
-  then 
+  then
     if Tree.mem (get_defns thy) n
     then set_id_pps thy (Lib.insert (<) n ppr thy.id_pps)
-    else raise (Report.error 
+    else raise (Report.error
 		  ("No name "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
-let remove_term_pp_rec n thy = 
+let remove_term_pp_rec n thy =
   set_id_pps thy (Lib.filter (fun (x, _) -> x=n ) (get_id_pps thy))
-    
+
 let get_term_pplist thy =
   let ppl = get_id_pps thy
-  and tn = thy.name 
-  in 
+  and tn = thy.name
+  in
   List.map (fun (x, y) -> (Ident.mk_long tn x , y)) ppl
 
 let get_type_pp_rec n thy = List.assoc n thy.type_pps
 
 let add_type_pp_rec n ppr thy=
   if not (get_protection thy)
-  then 
+  then
     if Tree.mem thy.typs n
     then set_type_pps thy (Lib.insert (<) n ppr (get_type_pps thy))
     else raise (Report.error
 		  ("No type "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
-let remove_type_pp_rec n thy = 
+let remove_type_pp_rec n thy =
   set_type_pps thy (Lib.filter (fun (x, _) -> x = n) (get_type_pps thy))
 
 let get_type_pplist thy =
   let ppl = get_type_pps thy
-  and tn = thy.name 
+  and tn = thy.name
   in
   List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
 
 (*
- * Theory Storage 
+ * Theory Storage
  *)
 
 (** Representation for saving to disk. *)
 
-type id_save_record = 
+type id_save_record =
     {
-      sty: Gtypes.stype; 
-      sdef: Logic.saved_thm option; 
+      sty: Gtypes.stype;
+      sdef: Logic.saved_thm option;
       sdprops: property list
     }
 
 let to_save ir =
-  let sdef_record = 
-    match ir.def with 
-      | None -> None 
+  let sdef_record =
+    match ir.def with
+      | None -> None
       | Some(d) -> Some (Logic.to_save d)
-  in 
+  in
   {
-    sty=Gtypes.to_save ir.typ; 
+    sty=Gtypes.to_save ir.typ;
     sdef = sdef_record;
     sdprops = ir.dprops
   }
 
 let from_save scp sr =
-  let def_record = 
-    match sr.sdef with 
-      | None -> None 
+  let def_record =
+    match sr.sdef with
+      | None -> None
       | Some(d) -> Some(Logic.from_save scp d)
-  in 
+  in
   {
-    typ=Gtypes.from_save sr.sty; 
+    typ=Gtypes.from_save sr.sty;
     def = def_record;
     dprops = sr.sdprops
   }
@@ -434,14 +434,14 @@ type thm_save_record =
 
 let thm_to_save tr=
   {
-    sthm = Logic.to_save tr.thm; 
-    sprops = tr.props 
+    sthm = Logic.to_save tr.thm;
+    sprops = tr.props
   }
 
 let thm_from_save scp sr=
   {
-    thm = Logic.from_save scp sr.sthm; 
-    props = sr.sprops 
+    thm = Logic.from_save scp sr.sthm;
+    props = sr.sprops
   }
 
 (** Representation of a theory stored on disk. *)
@@ -472,45 +472,45 @@ let saved_date sthy = sthy.sdate
 let new_thy_scope thy scp =
   let mark = get_marker thy
   and name = get_name thy
-  in 
-  let test_thy_scope n = 
+  in
+  let test_thy_scope n =
     (String.compare name n) = 0 || Scope.in_scope scp n
-  and test_marker_scope m = 
+  and test_marker_scope m =
     Tag.equal mark m || Scope.in_scope_marker scp m
-  in 
-  { 
-    scp with 
+  in
+  {
+    scp with
     Scope.curr_thy = mark;
     thy_in_scope = test_thy_scope;
     marker_in_scope = test_marker_scope;
   }
 
 (** Make a theory from a saved theory. *)
-let from_saved scp sthy = 
-  let unsave f xs = 
-    List.fold_left 
+let from_saved scp sthy =
+  let unsave f xs =
+    List.fold_left
       (fun tr (k, d) -> Tree.add tr k d)
       Tree.nil
       (List.map (fun (x, y) -> (x, f y)) xs)
-  in 
-  let name = sthy.sname in 
+  in
+  let name = sthy.sname in
   let thy = mk_thy name (sthy.sparents)
-  and tydefs_list = 
+  and tydefs_list =
     List.map (fun (x, y) -> (x, Gtypes.from_save_rec y)) sthy.stypes
-  in 
-  let thy_scp = 
-    let scp1 = new_thy_scope thy scp 
-    and new_tydefs_list = 
+  in
+  let thy_scp =
+    let scp1 = new_thy_scope thy scp
+    and new_tydefs_list =
       List.map (fun (id, rd) -> (Ident.mk_long name id, rd)) tydefs_list
     in
-    let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in 
-    let new_defns = 
-      List.map 
+    let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in
+    let new_defns =
+      List.map
 	(fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
         sthy.sdefns
-    in 
+    in
     Scope.extend_with_terms scp2 new_defns
-  in 
+  in
   let prot = sthy.sprot
   and tim = sthy.sdate
   and prnts = sthy.sparents
@@ -518,17 +518,17 @@ let from_saved scp sthy =
   and axs = unsave (thm_from_save thy_scp) sthy.saxioms
   and thms = unsave (thm_from_save thy_scp) sthy.stheorems
   and defs = unsave (from_save thy_scp) sthy.sdefns
-  and tydefs_table = 
-    List.fold_left 
+  and tydefs_table =
+    List.fold_left
       (fun tr (k, d) -> Tree.add tr k d)
       Tree.nil tydefs_list
   and ntype_pps = sthy.stype_pps
   and nid_pps = sthy.sid_pps
   and npp_syms = sthy.spp_syms
-  in 
+  in
   {
     thy with
-      protection = prot; 
+      protection = prot;
       date = tim;
       parents = prnts;
       lfiles = lfls;
@@ -543,10 +543,10 @@ let from_saved scp sthy =
 
 (*** Primitive input/output of theories ***)
 
-let output_theory oc thy = 
+let output_theory oc thy =
   let tree_to_list xs = flatten_list (Tree.to_list xs) in
-  let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs 
-  in 
+  let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
+  in
   let saxs = mk_save thm_to_save (tree_to_list thy.axioms)
   and sthms = mk_save thm_to_save (tree_to_list thy.theorems)
   and sdefs = mk_save to_save (tree_to_list thy.defns)
@@ -554,18 +554,18 @@ let output_theory oc thy =
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
   and spp_syms = thy.pp_syms
-  in 
-  output_value oc 
+  in
+  output_value oc
     (thy.name, thy.protection, thy.date, thy.parents, thy.lfiles,
      saxs, sthms, sdefs, stypes, styp_pps, sid_pps, spp_syms)
 
-let input_theory ic = 
-  let (n, prot, tim, prnts, lfls, saxs, sthms, 
-       sdefs, stys, ntype_pps, nid_pps, npp_syms) = input_value ic 
-  in 
-  { 
+let input_theory ic =
+  let (n, prot, tim, prnts, lfls, saxs, sthms,
+       sdefs, stys, ntype_pps, nid_pps, npp_syms) = input_value ic
+  in
+  {
     sname = n;
-    sprot = prot; 
+    sprot = prot;
     sdate = tim;
     sparents = prnts;
     sfiles = lfls;
@@ -579,34 +579,34 @@ let input_theory ic =
   }
 
 (*** Toplevel input/output of theories ***)
-let load_theory fname = 
+let load_theory fname =
   let ic = open_in_bin fname in
-  let sthy = input_theory ic; 
+  let sthy = input_theory ic;
   in
   close_in ic; sthy
 
-let save_theory thy fname= 
+let save_theory thy fname=
   let oc = open_out_bin fname
-  in 
+  in
   output_theory oc thy;
   close_out oc
 
-let end_theory thy prot = 
+let end_theory thy prot =
   if (get_protection thy) || (not prot)
   then thy
   else set_protection thy
 
 (*
- * Pretty-Printer 
+ * Pretty-Printer
  *)
 
-let print_property pp p = 
+let print_property pp p =
   Format.printf "@[%s@]" p
 
 let print_properties pp ps =
   match ps with
     | [] -> ()
-    | _ -> 
+    | _ ->
       Format.printf "@[(";
       Printer.print_list
 	((fun p -> print_property pp p),
@@ -615,48 +615,48 @@ let print_properties pp ps =
 
 (** Theory printer **)
 
-let print_section title = 
+let print_section title =
   Format.printf "@[-----\n%s\n-----@]@," title
 
-let print_protection p = 
-  if p 
+let print_protection p =
+  if p
   then ()
   else Format.printf "@[read-write@]@,"
 and print_date d =
 (***
   let (y, mo, day, h, mi) = Lib.nice_date d
-  in 
+  in
   Format.printf "@[Date: %i/%i/%i %i:%i@]@," day (mo+1) y h mi
 ***)
   Format.printf "@[Date: %f@]@," d
-and print_parents ps = 
+and print_parents ps =
   Format.printf "@[<2>Parents: ";
   begin
     match ps with
       | [] -> (Format.printf "%s" "None")
-      | _ -> 
-        Printer.print_list 
+      | _ ->
+        Printer.print_list
 	  ((fun s -> Format.printf "%s" s),
 	   (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@,"
-and print_files ps = 
+and print_files ps =
   Format.printf "@[<2>Load Files: ";
   begin
     match ps with
       | [] -> (Format.printf "None")
-      | _ -> 
-        Printer.print_list 
+      | _ ->
+        Printer.print_list
 	  ((fun s -> Format.printf "%s" s),
 	   (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@,"
-and print_thms pp n ths = 
-  let sorted_ths = 
+and print_thms pp n ths =
+  let sorted_ths =
     let comp (x, _) (y, _) = compare x y
-    in 
+    in
     List.sort comp ths
-  in 
+  in
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -668,12 +668,12 @@ and print_thms pp n ths =
       Format.printf "@]"),
      (fun _ -> ())) sorted_ths;
   Format.printf "@]@,"
-and print_tydefs pp n tys = 
-  let sorted_tys = 
+and print_tydefs pp n tys =
+  let sorted_tys =
     let comp (x, _) (y, _) = compare x y
-    in 
+    in
     List.sort comp tys
-  in 
+  in
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -682,7 +682,7 @@ and print_tydefs pp n tys =
       begin
         match tyd.Scope.args with
 	  | [] -> ()
-          | _ -> 
+          | _ ->
 	    Format.printf "(";
 	    Printer.print_list
 	      ((fun s -> Format.printf "'%s" s),
@@ -694,19 +694,19 @@ and print_tydefs pp n tys =
       begin
         match tyd.Scope.alias with
 	  | None -> ()
-          | Some(gty) -> 
+          | Some(gty) ->
      	    Format.printf "=@,";
 	    Gtypes.print pp gty
       end;
       Format.printf "@]"),
      (fun _ -> ())) sorted_tys;
   Format.printf "@]@,"
-and print_defs pp n defs = 
-  let sorted_defs = 
+and print_defs pp n defs =
+  let sorted_defs =
     let comp (x, _) (y, _) = compare x y
-    in 
+    in
     List.sort comp defs
-  in 
+  in
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -726,30 +726,30 @@ and print_defs pp n defs =
      (fun _ -> ())) sorted_defs;
   Format.printf "@]@,"
 
-let print_term_pps n pps = 
-  let print_pos pos = 
-    match pos with 
+let print_term_pps n pps =
+  let print_pos pos =
+    match pos with
       | Lib.First -> ()
-      | Lib.Last -> 
+      | Lib.Last ->
 	Format.printf "@[position=@ Last@]"
-      | Lib.Before id -> 
+      | Lib.Before id ->
 	Format.printf "@[position=@ Before@ @[";
 	Printer.print_ident id;
 	Format.printf "@]@]@ "
-      | Lib.After id -> 
+      | Lib.After id ->
 	Format.printf "@[position=@ After@ @[";
 	Printer.print_ident id;
 	Format.printf "@]@]@ "
-      | Lib.Level id -> 
+      | Lib.Level id ->
 	Format.printf "@[position=@ Level@ @[";
 	Printer.print_ident id;
 	Format.printf "@]@]@ "
-  in 
-  let sorted_pps = 
+  in
+  let sorted_pps =
     let comp (x, _) (y, _) = compare x y
-    in 
+    in
     List.sort comp pps
-  in 
+  in
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -763,17 +763,17 @@ let print_term_pps n pps =
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
 	(Printer.fixity_to_string r.Printer.fixity);
-      print_pos p; 
+      print_pos p;
       Format.printf "@]"),
      (fun _ -> ())) sorted_pps;
   Format.printf "@]@,"
 
-let print_type_pps n pps = 
-  let sorted_pps = 
+let print_type_pps n pps =
+  let sorted_pps =
     let comp (x, _) (y, _) = compare x y
-    in 
+    in
     List.sort comp pps
-  in 
+  in
   print_section n;
   Format.printf "@[<v>";
   Printer.print_list
@@ -791,7 +791,7 @@ let print_type_pps n pps =
      (fun _ -> ())) sorted_pps;
   Format.printf "@]@,"
 
-let print_pp_syms n pps = 
+let print_pp_syms n pps =
   let print_sym (s, t) = Format.printf "\"%s\":\"%s\"" s t in
   begin
     print_section n;
@@ -800,9 +800,9 @@ let print_pp_syms n pps =
     Format.printf "@]@,"
   end
 
-let print ppstate thy = 
-  let content = contents thy 
-  in 
+let print ppstate thy =
+  let content = contents thy
+  in
   Format.printf "@[<v>";
   Format.printf "@[-------------@]@,";
   Format.printf "@[%s@]@," content.cname;
@@ -815,23 +815,22 @@ let print ppstate thy =
   print_defs ppstate "Definitions" content.cdefns;
   print_thms ppstate "Theorems" content.ctheorems;
   begin
-    match content.ctype_pps with 
-      | [] -> () 
-      | _ -> 
+    match content.ctype_pps with
+      | [] -> ()
+      | _ ->
         print_type_pps "Type printer/parser information" content.ctype_pps
   end;
   begin
-    match content.cid_pps with 
+    match content.cid_pps with
       | [] -> ()
-      | _ -> 
+      | _ ->
         print_term_pps "Term printer/parser information" content.cid_pps
   end;
   begin
-    match content.cpp_syms with 
+    match content.cpp_syms with
       | [] -> ()
-      | _ -> 
+      | _ ->
         print_pp_syms "Parser symbols" content.cpp_syms
   end;
   Format.printf "@[-------------@]@,";
   Format.printf "@]"
-    

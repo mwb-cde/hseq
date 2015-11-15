@@ -63,7 +63,7 @@
     assumption at position -1. A positive integer {i i} identifies the
     {i i}th conclusion with the first conclusion at position 1. Tags
     are intended for use in tactics, to identify a formula regardless
-    of its position (which can change). 
+    of its position (which can change).
 
     Integer labels are intended for interactive proof, where it is
     more convenient to use the position of a formula as the
@@ -123,17 +123,17 @@
 
     A theorem is written |- t
 
-    A subgoal is written 
-    {L g:\[A{_ ta{_ 1}}, ... , A{_ ta{_ n}} |- 
+    A subgoal is written
+    {L g:\[A{_ ta{_ 1}}, ... , A{_ ta{_ n}} |-
     C{_ tc{_ 1}}, ..., C{_ tc{_ n}}\]}
-    where 
+    where
     {ul {- g is the tag of the subgoal}
     {- ta{_ i} is the tag of assumption A{_ ta{_ i}}}
     {- tc{_ i} is the tag of conclusion C{_ tc{_ i}}}
-    {- A{_ i} are the assumptions} 
-    {- C{_ i} are the conclusions} 
-    {- A{_ ta{_ 1}} is the first assumption} 
-    {- C{_ tc{_ 1}} is the first conclusion}} 
+    {- A{_ i} are the assumptions}
+    {- C{_ i} are the conclusions}
+    {- A{_ ta{_ 1}} is the first assumption}
+    {- C{_ tc{_ 1}} is the first conclusion}}
     When the subgoal tag or a formula tag is irrelevant, they may be
     omitted. When the subgoal tag is omitted, the enclosing
     brackets ('\[' and '\]') may also be omitted.
@@ -143,15 +143,15 @@
 
     Where there is no ambiguity, labels and tags will be treated as
     the same.
-    
-    The information provided by tactics is written 
-    {L [info: goals = goal_tags, aforms=form_tags, cforms=form_tags, 
+
+    The information provided by tactics is written
+    {L [info: goals = goal_tags, aforms=form_tags, cforms=form_tags,
     terms = term_list]}
     where
     {ul {- [goal_tags] is a list of tags which identify subgoals.}
     {- [aform_tags] is a list of tags which identify subgoal assumptions.}
     {- [form_tags] is a list of tags which identify subgoal conclusions.}
-    {- [term_list] is a list of terms which have been introduced by 
+    {- [term_list] is a list of terms which have been introduced by
     the tactic.}}
 *)
 
@@ -163,7 +163,7 @@ type thm
 val mk_axiom: Formula.t -> thm
 (** Make an axiom. (Axioms do not need to be proved true.) *)
 
-val formula_of: thm -> Formula.t 
+val formula_of: thm -> Formula.t
 (** Convert a theorem to a formula. *)
 val term_of: thm -> Basic.term
 (** Convert a theorem to a term. *)
@@ -207,7 +207,7 @@ val addsqntError: string -> exn -> 'a
 
 (** {7 Types used in subgoals} *)
 
-(** 
+(**
     Labels for identifying sequent formulas.
 
     [FNum i]: The formula at position [i]. If [i] is negative, [i=-j],
@@ -218,7 +218,7 @@ val addsqntError: string -> exn -> 'a
 
     [FName n]: The formula with named [n] (Experimental).
 *)
-type label = 
+type label =
     FNum of int
   | FTag of Tag.t
   | FName of string
@@ -226,7 +226,7 @@ type label =
 type tagged_form = (Tag.t* Formula.t)
 (** Tagged formulas. Each formula in a subgoal has a tag. *)
 
-val form_tag: tagged_form -> Tag.t 
+val form_tag: tagged_form -> Tag.t
 (** The tag of a formula. *)
 val drop_tag: tagged_form -> Formula.t
 (** Drop the tag of a formula. *)
@@ -246,7 +246,7 @@ sig
 
       A skolem constant is initially assigned a weak type variable
       which is then unified with the type required of the
-      constant.  
+      constant.
   *)
 
   (** The record of an individual skolem constant. *)
@@ -276,8 +276,8 @@ sig
 	scope: Scope.t;
 	skolems: skolem_type;
 	tylist: (string*int) list
-      } 
-  (** 
+      }
+  (**
       [name]: The desired name of the skolem constant. The
       theory part must be the theory of the goal. The name
       part is usually the name of the bound variable being
@@ -286,19 +286,19 @@ sig
       [ty]: The type of the bound variable being instantiated.
 
       [tyenv]: The type environment of the subgoal.
-      
+
       [scope]: The scope of the subgoal.
 
       [tylist]: A list of type names already in use (used to
       generate the name of the type variable.
   *)
 
-  val mk_new_skolem: 
+  val mk_new_skolem:
     new_skolem_data
-    -> (Basic.term 
-	* Basic.gtype 
+    -> (Basic.term
+	* Basic.gtype
 	* skolem_type
-	* Gtypes.substitution 
+	* Gtypes.substitution
 	* (string * int) list)
 (** [mk_new_skolem data] constructs a new skolem. Returns [(sv,
     sty, skolems, tyenv, tylist]) where [sv] is the new skolem
@@ -312,7 +312,7 @@ end
 
 (** {6 Sequents} *)
 
-(** {7 Utility functions} 
+(** {7 Utility functions}
 
     Utility functions for use with sequents.
 *)
@@ -322,22 +322,22 @@ val join_up: 'a list -> 'a list -> 'a list
     it to [r].
 *)
 
-val split_at_tag: 
-  Tag.t -> (Tag.t * 'a) list 
+val split_at_tag:
+  Tag.t -> (Tag.t * 'a) list
   -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (** [split_at_tag t x]: Split [x] into [(l, c, r)] so that [x = join_up
     l (c::r)] and [c] is the first element of [x] tagged with [t].
 *)
 
-val split_at_label: 
-  label -> (Tag.t * 'a) list 
+val split_at_label:
+  label -> (Tag.t * 'a) list
   -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (** [split_at_label t x]: Split [x] into [(l, c, r)] so that [x =
     join_up l (c::r)] and [c] is the formula in [x] labelled [l].
 *)
 
-val split_at_asm: 
-  label -> (Tag.t * 'a) list 
+val split_at_asm:
+  label -> (Tag.t * 'a) list
   -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (** [split_at_asm lbl x]: Split [x] into [(l, c, r)] so that
     [x=join_up l (c::r)] and [c] is the assumption in [x] labelled [l].
@@ -345,8 +345,8 @@ val split_at_asm:
     @raise Not_found if [lbl = FNum i] and i >= 0.
 *)
 
-val split_at_concl: 
-  label -> (Tag.t * 'a) list 
+val split_at_concl:
+  label -> (Tag.t * 'a) list
   -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
 (** [split_at_concl lbl x]: Split [x] into [(l, c, r)] so that [x =
     join_up l (c::r)] and [c] is the conclusion in [x] labelled [l].
@@ -363,7 +363,7 @@ sig
 
   type t
   (** The type of sequents *)
-    
+
   (** {7 Components of a sequent} *)
 
   val asms: t -> tagged_form list
@@ -408,9 +408,9 @@ sig
 
   val tag_to_index: Tag.t -> t -> int
   (** Get the position of a formula from its tag. *)
-  val index_to_tag: int -> t -> Tag.t 
+  val index_to_tag: int -> t -> Tag.t
   (** Get the tag of a formula from its position. *)
-  val name_to_tag: string -> t -> Tag.t 
+  val name_to_tag: string -> t -> Tag.t
 (** Get the tag of a formula from its name. *)
 
 end
@@ -440,7 +440,7 @@ val get_label_form: label -> Sequent.t -> tagged_form
    {- The sub-goals still to be proved.}
    {- A type environment: the bindings of the shared type
    variables which occur in the goals sequents (all of these are weak
-   type variables).} 
+   type variables).}
    {- A formula: the theorem which is to be proved.}}
 *)
 type goal
@@ -475,13 +475,13 @@ val mk_thm: goal -> thm
 val goal_focus: Tag.t-> goal -> goal
 (** Put the tagged sqnt at the front. @raise [Not_found] if not found. *)
 
-val rotate_subgoals_left: int -> goal -> goal 
+val rotate_subgoals_left: int -> goal -> goal
 (** [rotate_subgoals_left n]: Rotate subgoals left.
 
     @raise [Failure] if no subgoals.
 *)
 val rotate_subgoals_right: int -> goal -> goal
-(** [rotate_subgoals_right n]: Rotate subgoals right [n] places. 
+(** [rotate_subgoals_right n]: Rotate subgoals right [n] places.
 
     @raise [Failure] if no subgoals.
 *)
@@ -530,7 +530,7 @@ exception No_subgoals
 
 module Subgoals:
 sig
-  
+
   (** {7 Notification of Result} *)
 
   (** {7 Nodes and branches} *)
@@ -562,13 +562,13 @@ sig
   (** {7 Utility functions} *)
 
   val merge_tyenvs:
-    Gtypes.substitution 
-    -> Gtypes.substitution	
+    Gtypes.substitution
+    -> Gtypes.substitution
     -> Gtypes.substitution
   (** [merge tyenv1 tyenv2]: Merge type environments.
 
       Create a type environment [env3] which has the binding of each weak
-      variable in [env1 + env2]. 
+      variable in [env1 + env2].
 
       Used to combine the type environment resulting from the application
       of a tactic with the original type environment of a goal.
@@ -604,17 +604,17 @@ sig
       {!Logic}, this should ensure that a tactic cannot fake a
       result.  *)
 
-  val apply_to_node: 
+  val apply_to_node:
     ?report:(node->branch->unit) -> (node->branch) -> node -> branch
   (** [apply_to_node ?report tac n]: A wrapper around [apply] to allow
       reporting of the argument and result of a tactic.
 
-      Evaluate [apply tac n] to get a branch [b] then, 
+      Evaluate [apply tac n] to get a branch [b] then,
       if [report] is given, evaluate [report n b]. Return [b].
   *)
 
-  val apply_to_first: 
-    ?report:(node->branch->unit) 
+  val apply_to_first:
+    ?report:(node->branch->unit)
     -> (node -> branch) -> branch -> branch
   (** [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]:
       Apply a tactic to the first subgoal in a branch.
@@ -636,12 +636,12 @@ sig
       Apply tactic [tac] to each subgoal in [sqnts] using
       [apply_to_node].  Collapse the resulting branches, merging the type
       environments, to form the branch which is returned.
-      
+
       @raise [No_subgoals] if [sqnts] is empty.
   *)
 
-  val apply_to_goal: 
-    ?report:(node->branch->unit) ->  (node->branch) -> goal -> goal
+  val apply_to_goal:
+    ?report:(node->branch->unit) -> (node->branch) -> goal -> goal
   (** [apply_to_goal ?report tac goal]: Apply a tactic to a goal.
 
       Apply tactic [tac] to first subgoal of [goal] using
@@ -663,23 +663,22 @@ sig
     g2; .. ;tn gn])] (with [t1 g1] first and [tn gn] last). The type
     environment from (t{_ i} g{_ i}) is used when evaluating (t{_ i+1}
     g{_ i+1}). The type environment of the returned branch is the type
-    environment of [(tn gn)]. 
+    environment of [(tn gn)].
 
     If there are more subgoals than tactics (n < m) then untreated
     subgoals are attached to the end of the new branch. If there are
     more tactics then subgoals (m < n) then the unused tactics are silently
-    discarded. 
+    discarded.
 *)
 
-  val apply_fold: 
-    ('a -> node -> ('a * branch)) 
-    -> 'a -> branch -> ('a * branch)
+  val apply_fold:
+    ('a -> node -> ('a * branch))  -> 'a -> branch -> ('a * branch)
 (** [apply_fold rl i (Branch(tg, tyenv, sqnts))]: Apply tactic [tac] to
     each subgoal in a branch, folding the initial value across the
     nodes in the branch. Returns [(x, g)] where [x] is the result of
     the fold and [g] the new goal. The new goal is produced in the
     same way as [apply_to_each].
-    
+
     @raise [No_subgoals] if [sqnts] is empty.
 *)
 
@@ -707,11 +706,11 @@ val first_only: tactic -> branch -> branch
 
 (** The type of rules to use with rewriting in the logic.
 *)
-type rr_type = 
+type rr_type =
   | RRThm of thm   (** A theorem *)
   | ORRThm of thm * Rewrite.order (** An ordered theorem *)
   | Asm of label  (** The label of an assumption *)
-  | OAsm of label * Rewrite.order 
+  | OAsm of label * Rewrite.order
 (** The label of an ordered assumption *)
 
 type plan = rr_type Rewrite.plan
@@ -736,7 +735,7 @@ sig
 
   val lift_asm: label -> tactic
   (** [lift_asm l sqnt]: Move assumption with label [l] to top of
-      the assumptions of subgoal [sqnt]. 
+      the assumptions of subgoal [sqnt].
 
       @raise [Not_found] if no assumption has label [l].
 
@@ -773,8 +772,8 @@ sig
   (** [copy_asm l]: Copy assumption [l].
 
       {L
-      A{_ l}, asms|- C 
-      ----> 
+      A{_ l}, asms|- C
+      ---->
       A{_ l'}, A{_ l}, asms |- C
       }
 
@@ -846,7 +845,7 @@ sig
       {L
       asms |- concls ----> asms |- concls
       }
-      
+
       info: [goals = [], aforms=[], cforms=[], terms = []]
 
       Useful for turning a node into a branch (e.g. for recursive
@@ -859,7 +858,7 @@ sig
       {L
       asms |- concls ----> th{_ l}, asms |- concls
       }
-      
+
       info: [goals = [], aforms=[l], cforms=[], terms = []]
   *)
 
@@ -868,9 +867,9 @@ sig
       alpha-equal to conclusion [j].
 
       {L
-      A{_ i}, asms |- C{_ j}, concls 
+      A{_ i}, asms |- C{_ j}, concls
 
-      ----> (if A{_ i} =alpha= C{_ j}) 
+      ----> (if A{_ i} =alpha= C{_ j})
 
       |- true
       }
@@ -880,11 +879,11 @@ sig
 
   val conjA: label -> tactic
   (** [conjA l sq]: Eliminate the conjunction at assumption [l].
-      
+
       {L
-      (A/\B){_ l1}, asm |- concl   
+      (A/\B){_ l1}, asm |- concl
       ---->
-      A{_ l1}, B{_ l2}, asm |- concl 
+      A{_ l1}, B{_ l2}, asm |- concl
       }
 
       info: [goals = [], aforms=[l1, l2], cforms=[], terms = []]
@@ -897,7 +896,7 @@ sig
       {L
       g:\[asms |- (A/\B){_ l}, concls\]
 
-      ----> 
+      ---->
 
       g1:\[asms |- A{_ l}, concls\]; g2:\[asms |- B{_ l}, concls\]
       }
@@ -912,7 +911,7 @@ sig
       {L
       g:\[(A\/B){_ l}, asms |- concls\]
 
-      ----> 
+      ---->
 
       g1:\[A{_ l}, asms |- concls\]; g2:\[asms |- B{_ l}, concls\]
       }
@@ -922,11 +921,11 @@ sig
 
   val disjC: label -> tactic
   (** [disjC l sq]: Eliminate the disjunction at conclusion [l].
-      
+
       {L
-      (asm |- A\/B){_ l1}, concl   
+      (asm |- A\/B){_ l1}, concl
       ---->
-      asm |- A{_ l1}, B{_ l2}, concl 
+      asm |- A{_ l1}, B{_ l2}, concl
       }
 
       info: [goals = [], aforms=[], cforms=[l1, l2], terms = []]
@@ -963,7 +962,7 @@ sig
       {L
       g:\[(A => B){_ l}, asms |- concls\]
 
-      ----> 
+      ---->
 
       g1:\[asms |- A{_ l}, concls\]; g2:\[B{_ l}, asms |- concls\]
       }
@@ -991,7 +990,7 @@ sig
       {L
       (! x. A){_ l}, asms |- concls
 
-      ----> 
+      ---->
 
       (A\[t/x\]){_ l}, asms |- concls
       }
@@ -1083,7 +1082,7 @@ sig
       must all be equalities of the form [L=R]. The substitution is
       A{_ l}\[R1, R2, ..., Rn/L1, L2, ..., Rn\]. The substitution
       is based on alpha-equality rather than syntactic equality.
-      
+
       {L
       A{_ l}, asms |- concl
 
@@ -1103,7 +1102,7 @@ sig
       must all be equalities of the form [L=R]. The substitution is
       C{_ l}\[R1, R2, ..., Rn/L1, L2, ..., Rn\]. The substitution
       is based on alpha-equality rather than syntactic equality.
-      
+
       {L
       asms |- C{_ l}, concl
 
@@ -1121,7 +1120,7 @@ sig
   (** [nameA ?info l name sq]: Rename the assumption labelled [l]
       as [name].  The previous name and tag of [l] are both
       discarded.
-      
+
       {L
       A{_ l1}, asms |- concl
 
@@ -1138,7 +1137,7 @@ sig
   val nameC: string -> label -> tactic
 (** [nameC ?info name l sq]: Rename the conclusion labelled [l] as
     [name].  The previous name and tag of [l] are both discarded.
-    
+
     {L
     asms |- C{_ l1}, concl
 
@@ -1158,7 +1157,7 @@ end
     equality.
 
     Although the logic is based on tactics, some rules are better
-    described as equalities (which can be used for rewriting). 
+    described as equalities (which can be used for rewriting).
 
     Module {!Logic.Conv} also provides a very small number of basic
     conversions which are generally useful and which would be too
@@ -1175,7 +1174,7 @@ sig
   val beta_conv: Scope.t -> conv
   (** [beta_conv scp term]: Apply beta reduction to [term].
 
-      Returns |- ((%x: F) y) = F' 
+      Returns |- ((%x: F) y) = F'
       where F' = F\[y/x\]
 
       Note that this beta reduces throughout the term, not just the top
@@ -1186,7 +1185,7 @@ sig
 (** [rewrite_conv plan scp trm]: rewrite term [trm] according to
     [plan] in scope [scp].
 
-    Returns |- trm = X 
+    Returns |- trm = X
     where [X] is the result of rewriting [trm]
 
     Discards any rule which is not a theorem or an ordered theorem.
@@ -1197,7 +1196,7 @@ sig
     rewrite tactic is invoked. By contrast, [rewrite_conv] only does
     one set of rewriting.
 *)
-end 
+end
 
 (** {5 Declarations and Definitions} *)
 
@@ -1231,7 +1230,7 @@ sig
 
   (** The representation of a checked definition for permanent storage.
   *)
-  type saved_cdefn 
+  type saved_cdefn
 
   (** The representation of a checked subtype definition for permanent
       storage.  *)
@@ -1239,7 +1238,7 @@ sig
       {
         stype_name: Ident.t;             (* name of new type *)
         stype_args: string list;         (* arguments of new type *)
-        stype_base: Gtypes.stype; 
+        stype_base: Gtypes.stype;
         stype_rep: saved_cdefn;          (* representation function *)
         stype_abs: saved_cdefn;          (* abstraction function *)
         stype_set: Formula.saved_form;   (* defining set *)
@@ -1251,34 +1250,34 @@ sig
   val to_saved_cdefn: cdefn -> saved_cdefn
   (** Convert a definition to the representation for permanent
       storage. *)
-  val from_saved_cdefn: Scope.t -> saved_cdefn -> cdefn 
+  val from_saved_cdefn: Scope.t -> saved_cdefn -> cdefn
   (** Convert a definition from the representation for permanent
       storage. *)
 
   (** {7 Term definition and declaration} *)
 
-  val is_termdef: cdefn -> bool 
+  val is_termdef: cdefn -> bool
   (** Recogniser for term definitions. *)
 
-  val dest_termdef: cdefn -> 
+  val dest_termdef: cdefn ->
     Ident.t * Basic.gtype * thm
   (** Get the components of a certified definition. *)
 
-  val mk_termdef: 
-    Scope.t 
-    -> (Ident.t * Basic.gtype) 
-    -> Basic.term list -> Basic.term 
+  val mk_termdef:
+    Scope.t
+    -> (Ident.t * Basic.gtype)
+    -> Basic.term list -> Basic.term
     -> cdefn
   (** [mk_termdef scp i args trm]: Make a certified definition.
 
-      Constructs the definition [! args. (i args) = trm]. 
+      Constructs the definition [! args. (i args) = trm].
   *)
 
-  val is_termdecln: cdefn -> bool 
+  val is_termdecln: cdefn -> bool
   (** Recogniser for term declarations. *)
 
-  val dest_termdecln: cdefn 
-    -> Ident.t * Basic.gtype 
+  val dest_termdecln: cdefn
+    -> Ident.t * Basic.gtype
   (** Get the components of a term declaration.  *)
 
   val mk_termdecln:
@@ -1294,16 +1293,16 @@ sig
       declaration and alias is that an alias has a definition (the
       type being aliased) while a declaration does not.  *)
 
-  val is_typealias: cdefn -> bool 
+  val is_typealias: cdefn -> bool
   (** Recogniser for definition of a type declaration or alias. *)
   val dest_typealias: cdefn ->
     Ident.t * string list * Basic.gtype option
   (** Get the components of a type declaration or alias.  *)
-  val mk_typealias: Scope.t 
+  val mk_typealias: Scope.t
     -> string -> string list -> Basic.gtype option -> cdefn
   (** [mk_typealias scp n args d]: Make a type declaration or alias.
 
-      {ul 
+      {ul
       {- Check n doesn't exist already.}
       {- check all arguments in args are unique.}
       {- if [d = Some x] then [n] is being defined as an alias for [x].
@@ -1313,20 +1312,20 @@ sig
 
   (** {7 Type definition: Subtypes} *)
 
-  val is_subtype: cdefn -> bool 
+  val is_subtype: cdefn -> bool
   (** Recognisers for subtype definition. *)
   val dest_subtype: cdefn -> ctypedef
   (** Get the components of a subtype definition. *)
 
-  val prove_subtype_exists: 
+  val prove_subtype_exists:
     Scope.t -> Basic.term -> thm -> thm
   (** [prove_subtype_exists scp setp thm]: Prove the existence
       theorem of a subtype.  Use [thm] to prove the goal <<
       ?x. setp x >> (built by {!Defn.mk_subtype_exists}.  *)
-  val mk_subtype: 
-    Scope.t -> string -> string list 
+  val mk_subtype:
+    Scope.t -> string -> string list
     -> Basic.gtype -> Basic.term -> string -> string
-    -> thm  
+    -> thm
     -> cdefn
 (**
    [mk_subtype scp name args d setP rep abs]: Define a subtype.
@@ -1362,5 +1361,3 @@ val print_branch: Printer.ppinfo -> branch -> unit
 (** [print_branch ppinfo branch]: Print branch [branch] using PP info
     [ppinfo].
 *)
-
-
