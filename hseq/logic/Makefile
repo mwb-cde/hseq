@@ -1,23 +1,23 @@
 ########################################################## --*- Makefile -*--
 # Makefile.module - Makefile to build modules
-# Copyright 16 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 16 March, 2011-20515, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
 # This file is part of HSeq.
 #
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
+# HSeq is free software; you can redistribute it and/or modify it under the
+# terms of the Lesser GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
 #
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
+# HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+# more details.
 #
-# You should have received a copy of the Lesser GNU General Public
-# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the Lesser GNU General Public License
+# along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
 #####
@@ -123,7 +123,7 @@ PACKING=HSeq
 
 # object_SOURCES: List of source file names, without suffixes.
 #object_SOURCES=
-HSeq_SOURCES=changes formula defn logic theory thydb
+HSeq_SOURCES=changes formula defn subgoalkit logic theory thydb
 
 # object_INCLUDE: Directories to include when compiling [object].
 #object_INCLUDE=
