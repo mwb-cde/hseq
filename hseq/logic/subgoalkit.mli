@@ -32,16 +32,25 @@ val add_subgoals_error: string -> Formula.t list -> exn -> 'a
 
 module type SQNTS =
 sig
+  (** Type of unique identifiers. *)
+  type tag_ty
+  (** Make a unique tag. *)
+  val tag_create: unit -> tag_ty
+  (** Compare tags for equality. *)
+  val tag_equals: tag_ty -> tag_ty -> bool
+
   (** Type of sequents. *)
   type sqnt_ty
   (** Tag of sequent. *)
-  val sqnt_tag : sqnt_ty -> Tag.t
+  val sqnt_tag : sqnt_ty -> tag_ty
+
   (** Exceptions. *)
   exception No_subgoals
 end
 
 module Make : functor (T: SQNTS) ->
 sig
+  type tag_ty = T.tag_ty
   type env_ty = (Gtypes.substitution * Changes.t)
   val mk_env : Gtypes.substitution -> Changes.t -> env_ty
 
@@ -51,9 +60,9 @@ sig
       environment of the goal. A node also holds a tag, which is not
       visible.  *)
   type node
-  val mk_node : Tag.t -> env_ty -> T.sqnt_ty -> node
+  val mk_node : tag_ty -> env_ty -> T.sqnt_ty -> node
 
-  val node_tag : node -> Tag.t
+  val node_tag : node -> tag_ty
   (** The tag of the node. *)
   val node_tyenv: node -> Gtypes.substitution
   (** The type environment of the goal. *)
@@ -66,9 +75,9 @@ sig
       environment of the goal. A branch also holds the tag of the
       node from which it was produced.  *)
   type branch
-  val mk_branch : Tag.t -> env_ty -> (T.sqnt_ty)list -> branch
+  val mk_branch : tag_ty -> env_ty -> (T.sqnt_ty)list -> branch
 
-  val branch_tag : branch -> Tag.t
+  val branch_tag : branch -> tag_ty
   (** The tag of the branch. *)
   val branch_tyenv: branch -> Gtypes.substitution
   (** The type environment of the branch. *)

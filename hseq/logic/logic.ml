@@ -639,6 +639,13 @@ exception Solved_subgoal of Gtypes.substitution
 
 module Sqnts =
 struct
+  (** Type of unique identifiers. *)
+  type tag_ty = Tag.t
+  (** Make a unique tag. *)
+  let tag_create = Tag.create
+  (** Compare tags for equality. *)
+  let tag_equals = Tag.equal
+
   (** Type of sequents. *)
   type sqnt_ty = Sequent.t
   (** Tag of sequent. *)

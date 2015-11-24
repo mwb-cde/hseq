@@ -26,16 +26,28 @@ let add_subgoals_error s t es =
 
 module type SQNTS =
 sig
+  (** Type of unique identifiers. *)
+  type tag_ty
+  (** Make a unique tag. *)
+  val tag_create: unit -> tag_ty
+  (** Compare tags for equality. *)
+  val tag_equals: tag_ty -> tag_ty -> bool
+
   (** Type of sequents. *)
   type sqnt_ty
   (** Tag of sequent. *)
-  val sqnt_tag : sqnt_ty -> Tag.t
+  val sqnt_tag : sqnt_ty -> tag_ty
+
   (** Exceptions. *)
   exception No_subgoals
 end
 
 module Make = functor (T: SQNTS) ->
 struct
+
+  type tag_ty = T.tag_ty
+  let tag_create = T.tag_create
+  let tag_equals = T.tag_equals
 
   type sqnt_ty = T.sqnt_ty
   let sqnt_tag = T.sqnt_tag
@@ -47,7 +59,7 @@ struct
   let dest_env (tyenv, chngs) = (tyenv, chngs)
 
   (** Subgoals: *)
-  type node = Node of (Tag.t * env_ty * sqnt_ty)
+  type node = Node of (tag_ty * env_ty * sqnt_ty)
   let mk_node tg env sqnt = Node(tg, env, sqnt)
   let node_tag (Node(tg, _, _)) = tg
   let node_env (Node(_, env, _)) = env
@@ -64,7 +76,7 @@ struct
     mk_node (node_tag nd) env1 (node_sqnt nd)
 
   type branch =
-      Branch of (Tag.t * env_ty * sqnt_ty list)
+      Branch of (tag_ty * env_ty * sqnt_ty list)
 
   let mk_branch tg env gs = Branch(tg, env, gs)
 
@@ -130,14 +142,14 @@ struct
       @raise [subgoals_error] on failure.
   *)
   let apply_basic tac d node =
-    let ticket = Tag.create() in
+    let ticket = tag_create() in
     let n1 =
       mk_node ticket
         (mk_env (node_tyenv node) (node_changes node)) (node_sqnt node)
     in
     let (value, new_branch) = tac d n1
     in
-    if not (Tag.equal ticket (branch_tag new_branch))
+    if not (tag_equals ticket (branch_tag new_branch))
     then
       raise (subgoals_error "apply_basic: Invalid result from tactic" [])
     else
