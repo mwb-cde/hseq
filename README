@@ -1,7 +1,6 @@
 HSeq Theorem Prover
-January 2010
-M. Wahab <mwb.cde@googlemail.com>
-==============
+October 2014
+M. Wahab <mwb.cde@gmail.com>
 
 HSeq is a tactical theorem prover for typed higher-order logic. It
 is experimental, alpha-quality code which may have soundness bugs.
@@ -9,7 +8,8 @@ is experimental, alpha-quality code which may have soundness bugs.
 HSeq is distributed under the terms of the Lesser GNU General Public
 License, see files COPYING and COPYING.LESSER for details.
 
-Requirements: OCaml 3.11 or later.
+Requirements: OCaml 4.01 or later, Camlp4.
+
 Building HSeq requires GNU Make in a Unix environment.
 
 For installation instructions, see file INSTALL.
