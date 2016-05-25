@@ -1,30 +1,30 @@
 ###################################################### --*- Makefile -*--
 # Makefile.rules - Common make rules for building HSeq modules
-# Copyright 12 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
 # This file is part of HSeq.
 #
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
+# HSeq is free software; you can redistribute it and/or modify it under the
+# terms of the Lesser GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
 #
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
+# HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+# more details.
 #
-# You should have received a copy of the Lesser GNU General Public
-# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the Lesser GNU General Public License
+# along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
 #####
 # Definitions and rules for Makefiles that build modules.
 #
-# This Makefile provides the necessary infrastructure for building modules
-# and should be included from instances of Makefile.module.
+# This Makefile provides the necessary infrastructure for building modules and
+# should be included from instances of Makefile.module.
 #
 # Requires:
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
@@ -114,9 +114,9 @@ export objlib=$(addsuffix .a,$(1))
 
 .SUFFIXES: .mli .cmi
 .SUFFIXES: .ml .cmo
-.SUFFIXES: .cma 
-.SUFFIXES: .cmx 
-.SUFFIXES: .cmxa 
+.SUFFIXES: .cma
+.SUFFIXES: .cmx
+.SUFFIXES: .cmxa
 .SUFFIXES: .mlp
 
 %.ml: %.mlp
@@ -250,6 +250,15 @@ endef
 
 ########
 # library-targets-template($1): Targets for library $(1).
+#
+# Arguments
+#  $(1): Library to build.
+#  $(1)_SOURCES: Source files [required].
+#  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
+#  $(1)_LIBS: Extra libraries to link in.
+#  $(1)_BYTELIBS: Extra libraries to in to the byte-code library variant.
+#  $(1)_NATLIBS: Extra libraries to in to the native-code library variant.
+
 define library-targets-template
 
 ifdef lm-DEBUG-MAKEFILE
@@ -308,7 +317,7 @@ endif
 # Build options
 lm-lib-$(1)-ocamlc-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
-	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS) 	
+	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS)
 
 lm-lib-$(1)-link-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -318,7 +327,7 @@ lm-lib-$(1)-link-options:=\
 lm-lib-$(1)-ocamlnat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-module-ocamlnat-options) \
-	$$($(1)_OCAMLNAT_FLAGS) 
+	$$($(1)_OCAMLNAT_FLAGS)
 
 lm-lib-$(1)-linknat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -361,15 +370,15 @@ $$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-objects)
 	$$(info Linking $(lm-lib-$(1)-bytelib))
 	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
 		-o $$(lm-lib-$(1)-bytelib) \
-		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects) 
+		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects)
 
 # Native-code library.
 $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): $$(lm-lib-$(1)-interfaces)\
-		$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects) 
+		$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
 	$$(info Linking $(lm-lib-$(1)-natlib))
 	$$(OCAMLNATLINK) $$(lm-lib-$(1)-linknat-options) \
 		-o $$(lm-lib-$(1)-natlib) \
-		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-natobjects) 
+		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-natobjects)
 endif
 
 # Bytecode library in staging directory.
@@ -416,7 +425,8 @@ clean-lib-$(1):
 	$$(RM) $$(lm-lib-$(1)-target)
 	$$(RM) $$(lm-lib-$(1)-interfaces) \
 		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
-	$$(RM) $$(lm-lib-$(1)-objects) $$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
+	$$(RM) $$(lm-lib-$(1)-objects) $$(lm-lib-$(1)-natobjects) \
+		$$(lm-lib-$(1)-cobjects)
 
 # libclean
 .PHONY: libclean-lib-$(1)
@@ -497,11 +507,13 @@ lm-packing-$(1)-nat-libs:=\
 
 lm-packing-$(1)-bytelib:=$(call bytelib,$(1))
 
-# The name of the file in which to store the packing group byte-code object list.
+# The name of the file in which to store the packing group byte-code object
+# list.
 lm-packing-$(1)-filelist:=\
 $$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-filename)$$(lm-packing-$(1)-group))
 
-# The name of the file in which to store the packing group native-code object list.
+# The name of the file in which to store the packing group native-code object
+# list.
 lm-packing-$(1)-nat-filelist:=\
 $$(strip $$(lm-packing-$(1)-dirprefix)$$(lm-pack-nat-filename)$$(lm-packing-$(1)-group))
 
@@ -529,7 +541,7 @@ lm-packing-$(1)-ocamlc-options:=\
 lm-packing-$(1)-link-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) 
+	$$($(1)_LINK_FLAGS)
 
 lm-packing-$(1)-ocamlnat-options:=\
 	-I $$($(1)_PACK_DIR) \
@@ -638,7 +650,7 @@ endif
 ###
 # Toplevel rules
 
-# Build 
+# Build
 
 lm-packing-$(1)-build-targets:=$$(lm-packing-$(1)-interfaces) \
 				$$(lm-packing-$(1)-targets) \
@@ -793,7 +805,7 @@ endif
 lm-packed-$(1)-ocamlc-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-module-ocamlc-options) \
-	$$($(1)_OCAMLC_FLAGS) 
+	$$($(1)_OCAMLC_FLAGS)
 
 lm-packed-$(1)-link-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -1020,7 +1032,7 @@ ifdef lm-nativecode
 ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-module-install-libfiles+=\
 	$$(foreach lib,$$(lm-module-install-libs), \
-		$$(call natlib,$$(lib)) $$(call clib,$$(lib))) 
+		$$(call natlib,$$(lib)) $$(call clib,$$(lib)))
 endif
 endif
 
@@ -1120,7 +1132,7 @@ ifneq ($$(strip $$(lm-module-install-docfiles)),)
 lm-$(1)-module-install-doc: $$(lm-module-objdoc-dir)
 	$$(COPY) $$(lm-module-install-docfiles) $$(lm-module-objdoc-dir)
 else
-lm-$(1)-module-install-doc: 
+lm-$(1)-module-install-doc:
 endif
 
 ifdef lm-DEBUG-MAKEFILE
@@ -1128,7 +1140,7 @@ $$(info lm-module-install-$(1)-target = $$(lm-module-install-$(1)-target))
 endif
 
 .PHONY: $(1)
-module-install-$(1): $$(lm-module-install-$(1)-target) 
+module-install-$(1): $$(lm-module-install-$(1)-target)
 endef
 ########
 
@@ -1196,7 +1208,7 @@ lm-prog-$(1)-ocamlc-options:=\
 lm-prog-$(1)-link-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS) 
+	$$($(1)_LINK_FLAGS)
 
 lm-prog-$(1)-ocamlnat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -1240,19 +1252,19 @@ $$(lm-prog-$(1)-objects): %.cmo: %.ml
 
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 # Bytecode program
-$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects) 
+$$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects)
 	$$(info Linking $(lm-prog-$(1)-program))
 	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) \
 		-o $$(lm-prog-$(1)-program) \
-		$$(lm-prog-$(1)-libs) $$(lm-prog-$(1)-objects) 
+		$$(lm-prog-$(1)-libs) $$(lm-prog-$(1)-objects)
 
 # Native-code program
 $$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
-		$$(lm-prog-$(1)-natobjects) $$(lm-prog-$(1)-cobjects) 
+		$$(lm-prog-$(1)-natobjects) $$(lm-prog-$(1)-cobjects)
 	$$(info Linking $(lm-prog-$(1)-natprogram))
 	$$(OCAMLNAT) $$(lm-prog-$(1)-ocamlnat-options) \
 		-o $$(lm-prog-$(1)-natprogram) \
-		$$(lm-prog-$(1)-nat-libs) $$(lm-prog-$(1)-natobjects) 
+		$$(lm-prog-$(1)-nat-libs) $$(lm-prog-$(1)-natobjects)
 endif
 
 lm-prog-$(1)-objdir-files:=$$(lm-prog-$(1)-program)
@@ -1299,7 +1311,7 @@ endef
 
 ###
 # Module settings
-# 
+#
 
 ##
 # If LOCAL_X_FLAGS is undefined, use the default.
@@ -1332,26 +1344,26 @@ ifndef LOCAL_OCAMLCPP_FLAGS
 LOCAL_OCAMLCPP_FLAGS:=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 endif
 
-# lm-module-ocamlpp-options: Module wide ocamlpp flags. 
+# lm-module-ocamlpp-options: Module wide ocamlpp flags.
 lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
-# lm-module-ocamldep-options: Module wide ocamldep flags. 
+# lm-module-ocamldep-options: Module wide ocamldep flags.
 lm-module-ocamldep-options=$(LOCAL_OCAMLDEP_FLAGS) $(lm-module-ocamlpp-options)
 
-# lm-module-ocamlc-options: Module wide ocamlc flags. 
+# lm-module-ocamlc-options: Module wide ocamlc flags.
 lm-module-ocamlc-options=$(LOCAL_OCAMLC_FLAGS) $(lm-module-ocamlpp-options)
 
-# lm-module-link-options: Module wide link flags. 
+# lm-module-link-options: Module wide link flags.
 lm-module-link-options=$(LOCAL_LINK_FLAGS)
 
-# lm-module-ocamlnat-options: Module wide native code compiler flags. 
+# lm-module-ocamlnat-options: Module wide native code compiler flags.
 lm-module-ocamlnat-options=$(LOCAL_OCAMLNAT_FLAGS) \
 	$(lm-module-ocamlpp-options)
 
-# lm-module-linknat-options: Module wide native code link flags. 
+# lm-module-linknat-options: Module wide native code link flags.
 lm-module-linknat-options=$(LOCAL_LINKNAT_FLAGS)
 
-# lm-module-ocamlcpp-options: Module wide macro-expander flags. 
+# lm-module-ocamlcpp-options: Module wide macro-expander flags.
 lm-module-ocamlcpp-options=$(LOCAL_OCAMLCPP_FLAGS)
 
 ##
