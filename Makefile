@@ -1,23 +1,23 @@
 # --*- Makefile -*--#################################################
 # Makefile - Toplevel HSeq Makefile
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
 # This file is part of HSeq.
 #
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
+# HSeq is free software; you can redistribute it and/or modify it under the
+# terms of the Lesser GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
 #
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
+# HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+# more details.
 #
-# You should have received a copy of the Lesser GNU General Public
-# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the Lesser GNU General Public License
+# along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
 #####
@@ -29,7 +29,7 @@
 # Must set PROJ_ROOT.
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
 #
-# Must end with 
+# Must end with
 #    include $(PROJ_ROOT)/Makefile.common
 #
 #
@@ -37,7 +37,7 @@
 # ----------
 #
 # Module settings:
-# 
+#
 # SUBDIRS: List of sub-directories to recurse into.
 # LIBRARIES: List of libraries to build.
 # PROGRAMS: List of programs to build.
@@ -74,23 +74,23 @@
 #
 # Notes:
 #
-# The flags for each tool X are formed as 
+# The flags for each tool X are formed as
 #    (LOCAL_X_FLAGS) (object_X_FLAGS)
 #
 # If LOCAL_X_FLAGS is not defined, it defaults to
-#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS) 
+#    LOCAL_X_FLAGS = (GLOBAL_X_FLAGS) (MODULE_X_FLAGS)
 #
 # The global flags for X passed to each sub-directory is
 #     (LOCAL_X_FLAGS)
 #
-# An object will be installed into the directory formed by 
+# An object will be installed into the directory formed by
 #      $(INST_PATH)/$(MODULE_INST_PATH)/$(OBJECT_INST_PATH)
 #
 #####
 
 #####
 # Required definitions
-#  
+#
 
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=.
@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc 
+SUBDIRS=quote hseq hsequser tools thys doc
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
@@ -234,5 +234,3 @@ $(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
 
 include $(PROJ_ROOT)/Makefile.rules
-
-

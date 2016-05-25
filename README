@@ -1,6 +1,7 @@
 HSeq Theorem Prover
 October 2014
-M. Wahab <mwb.cde@gmail.com>
+Matthew Wahab <mwb.cde@gmail.com>
+-----
 
 HSeq is a tactical theorem prover for typed higher-order logic. It
 is experimental, alpha-quality code which may have soundness bugs.

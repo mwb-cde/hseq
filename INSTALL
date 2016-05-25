@@ -2,7 +2,7 @@ Installation
 ============
 
 Requirements: 
-  OCaml version 3.11
+  OCaml version 4.01
 
 To build:
   GNU Make on Unix 
@@ -66,5 +66,3 @@ such as a directory in the system path.
 
 The installation directory can be changed after the system is built
 provided the environment variable "HSEQ" is set to the new directory.
-
-

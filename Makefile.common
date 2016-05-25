@@ -1,23 +1,23 @@
 ###################################################### --*- Makefile -*--
 # Makefile.common - Common make rules for HSeq
-# Copyright 11 March, 2011, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
 # This file is part of HSeq.
 #
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
+# HSeq is free software; you can redistribute it and/or modify it under the
+# terms of the Lesser GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
 #
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
+# HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+# more details.
 #
-# You should have received a copy of the Lesser GNU General Public
-# License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the Lesser GNU General Public License
+# along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
 #####
@@ -40,7 +40,7 @@ endif
 # CONFIGDIR: The configuration directory
 CONFIGDIR=
 
-# CONFIGFILE: Configuration data file 
+# CONFIGFILE: Configuration data file
 CONFIGFILE = $(PROJ_ROOT)/$(CONFIGDIR)/config.make
 
 ######
@@ -368,11 +368,11 @@ $(lm-objdir-code):
 
 ## build targets
 
-.PHONY: build-headers 
+.PHONY: build-headers
 .PHONY: build-code build-bytecode build-natcode
 .PHONY: build-bytelib build-natlib build-lib
 
-.PHONY: install-headers 
+.PHONY: install-headers
 .PHONY: install-code install-bytecode install-natcode
 .PHONY: install-bytelib install-natlib install-lib
 .PHONY: install-other
@@ -382,13 +382,13 @@ $(lm-objdir-code):
 
 
 .PHONY: install-toplevel-bin
-install-toplevel-bin: 
+install-toplevel-bin:
 	-$(MKDIR) $(lm-installdir-bin)
 	$(COPY) -r $(lm-objdir-bin)/* $(lm-installdir-bin)
 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-bin)
 
 .PHONY: install-toplevel-lib
-install-toplevel-lib: 
+install-toplevel-lib:
 	-$(MKDIR) $(lm-installdir-lib)
 	$(COPY) -r $(lm-objdir-lib)/* $(lm-installdir-lib)
 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
@@ -399,7 +399,7 @@ install-toplevel-doc:
 	$(INSTALL) -d $(lm-installdir-doc) ; \
 	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
-	fi 
+	fi
 
 .PHONY: install-toplevel-data
 install-toplevel-data:
@@ -439,5 +439,3 @@ GLOBAL_LINKNAT_FLAGS?=-I $(INSTALLDIR_LIB) -I $(INSTALLDIR_THYS) \
 # GLOBAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander (which
 # converts from .mlp to .ml files).
 GLOBAL_OCAMLCPP_FLAGS?=-I $(SRC_ROOT)/$(CONFIGDIR)
-
-
