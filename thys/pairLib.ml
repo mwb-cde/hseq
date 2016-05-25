@@ -1,22 +1,22 @@
 (*----
  Name: pairLib.ml
- Copyright M Wahab 2005-2013
- Author: M Wahab  <mwb.cde@gmail.com>
+ Copyright Matthew Wahab 2005-2016
+ Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
 (*
@@ -46,30 +46,32 @@ let pair_fixity = Printer.infixr
 let ppdata = (pair_fixity, pair_prec)
 
 let pair_printer ppstate prec (f, args)=
-  match args with 
-      (left::right::rest) -> 
-        Format.printf "@[<2>";
-        Printer.print_assoc_bracket prec ppdata "(";
-        Term.print_term ppstate ppdata left;
-        Format.printf ",@ ";
-        Term.print_term ppstate ppdata right;
-        Printer.print_assoc_bracket prec ppdata  ")";
-        Format.printf "@]";
-        (match rest with
-            [] -> 
-	      Format.printf "@[";
-	      Printer.print_identifier (Term.pplookup ppstate) pair_id;
-	      Format.printf "@]"
-          | _ -> 
+  match args with
+  | (left::right::rest) ->
+     begin
+       Format.printf "@[<2>";
+       Printer.print_assoc_bracket prec ppdata "(";
+       Term.print_term ppstate ppdata left;
+       Format.printf ",@ ";
+       Term.print_term ppstate ppdata right;
+       Printer.print_assoc_bracket prec ppdata  ")";
+       Format.printf "@]";
+       begin
+         match rest with
+         | [] -> ()
+         | _ ->
+            begin
 	      Format.printf "@[";
 	      Printer.print_list
-	        ((fun x ->
-	          Term.print_term ppstate prec x),
-	        (fun () -> Format.printf "@ "))
+	        (Term.print_term ppstate prec,
+	         (fun () -> Format.printf "@ "))
 	        rest;
-	      Format.printf "@]")
-    | _ -> 
-      Term.simple_print_fn_app ppstate ppdata (f, args)
+	      Format.printf "@]"
+            end
+       end
+     end
+  | _ ->
+     Term.simple_print_fn_app ppstate ppdata (f, args)
 
 let init_pair_printer()=
   let inf0 = Global.ppinfo () in
@@ -77,7 +79,6 @@ let init_pair_printer()=
   Global.set_ppinfo inf1
 
 let init_pair()=
-  init_pair_printer() 
+  init_pair_printer()
 
 let _ = init_pair()
-
