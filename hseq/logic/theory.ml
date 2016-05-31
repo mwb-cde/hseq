@@ -1,23 +1,23 @@
 (*----
   Name: theory.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
-  You should have received a copy of the Lesser GNU General Public
-  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-  ----*)
+  You should have received a copy of the Lesser GNU General Public License
+  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+----*)
 
 (*
  * Identifier and theorem records
@@ -616,19 +616,14 @@ let print_properties pp ps =
 (** Theory printer **)
 
 let print_section title =
-  Format.printf "@[-----\n%s\n-----@]@," title
+  Format.printf "@[-----\n%s\n-----@]@." title
 
 let print_protection p =
   if p
   then ()
   else Format.printf "@[read-write@]@,"
 and print_date d =
-(***
-  let (y, mo, day, h, mi) = Lib.nice_date d
-  in
-  Format.printf "@[Date: %i/%i/%i %i:%i@]@," day (mo+1) y h mi
-***)
-  Format.printf "@[Date: %f@]@," d
+  Format.printf "@[Date: %f@]@." d
 and print_parents ps =
   Format.printf "@[<2>Parents: ";
   begin
@@ -639,7 +634,7 @@ and print_parents ps =
 	  ((fun s -> Format.printf "%s" s),
 	   (fun _ -> Format.printf "@ ")) ps
   end;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 and print_files ps =
   Format.printf "@[<2>Load Files: ";
   begin
@@ -650,7 +645,7 @@ and print_files ps =
 	  ((fun s -> Format.printf "%s" s),
 	   (fun _ -> Format.printf "@ ")) ps
   end;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 and print_thms pp n ths =
   let sorted_ths =
     let comp (x, _) (y, _) = compare x y
@@ -661,13 +656,16 @@ and print_thms pp n ths =
   Format.printf "@[<v>";
   Printer.print_list
     ((fun (tn, t) ->
-      Format.printf "@[<2>%s:@ " tn;
-      print_properties pp t.props;
-      Format.printf "@ ";
-      Logic.print_thm pp t.thm;
-      Format.printf "@]"),
-     (fun _ -> ())) sorted_ths;
-  Format.printf "@]@,"
+      begin
+        Format.printf "@[<2>%s:@ " tn;
+        print_properties pp t.props;
+        Format.printf "@,";
+        Logic.print_thm pp t.thm;
+        Format.printf "@]@,"
+      end),
+     (fun _ -> ()))
+    sorted_ths;
+  Format.printf "@]@."
 and print_tydefs pp n tys =
   let sorted_tys =
     let comp (x, _) (y, _) = compare x y
@@ -698,9 +696,9 @@ and print_tydefs pp n tys =
      	    Format.printf "=@,";
 	    Gtypes.print pp gty
       end;
-      Format.printf "@]"),
+      Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 and print_defs pp n defs =
   let sorted_defs =
     let comp (x, _) (y, _) = compare x y
@@ -722,9 +720,9 @@ and print_defs pp n defs =
           | Some(df) ->
 	    Logic.print_thm pp df
       end;
-      Format.printf "@]"),
+      Format.printf "@]@."),
      (fun _ -> ())) sorted_defs;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 
 let print_term_pps n pps =
   let print_pos pos =
@@ -764,9 +762,9 @@ let print_term_pps n pps =
       Format.printf "fixity = %s@ "
 	(Printer.fixity_to_string r.Printer.fixity);
       print_pos p;
-      Format.printf "@]"),
+      Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 
 let print_type_pps n pps =
   let sorted_pps =
@@ -787,9 +785,9 @@ let print_type_pps n pps =
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
 	(Printer.fixity_to_string r.Printer.fixity);
-      Format.printf "@]"),
+      Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
-  Format.printf "@]@,"
+  Format.printf "@]@."
 
 let print_pp_syms n pps =
   let print_sym (s, t) = Format.printf "\"%s\":\"%s\"" s t in
@@ -797,15 +795,15 @@ let print_pp_syms n pps =
     print_section n;
     Format.printf "@[<v>";
     Printer.print_list (print_sym, (fun _ -> Format.printf "@ ")) pps;
-    Format.printf "@]@,"
+    Format.printf "@]@."
   end
 
 let print ppstate thy =
   let content = contents thy
   in
-  Format.printf "@[<v>";
-  Format.printf "@[-------------@]@,";
-  Format.printf "@[%s@]@," content.cname;
+  Format.printf "@[<v>@.";
+  Format.printf "@[-------------@]@.";
+  Format.printf "@[%s@]@." content.cname;
   print_parents content.cparents;
   print_files content.cfiles;
   print_date content.cdate;
@@ -832,5 +830,5 @@ let print ppstate thy =
       | _ ->
         print_pp_syms "Parser symbols" content.cpp_syms
   end;
-  Format.printf "@[-------------@]@,";
+  Format.printf "@[-------------@]";
   Format.printf "@]"
