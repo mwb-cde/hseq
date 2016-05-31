@@ -639,6 +639,203 @@ endef  # package
 ########
 
 ########
+# package-targets-template($1): Targets for package $(1).
+#
+# Arguments
+#  $(1): Package to build. $(1) Must be a proper Ocaml module name.
+#  $(1)_SOURCES: Source files [required].
+#  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
+#  $(1)_LIBS: Extra libraries to link in.
+#  $(1)_BYTELIBS: Extra libraries to link in to the byte-code package variant.
+#  $(1)_NATLIBS: Extra libraries to link in to the native-code package variant.
+
+define package-targets-template
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info Package $(1))
+$$(info $(1)_SOURCES=$$($(1)_SOURCES))
+$$(info $(1)_HEADERS=$$($(1)_HEADERS))
+$$(info $(1)_LIBS=$$($(1)_LIBS))
+$$(info $(1)_BYTELIBS=$$($(1)_BYTELIBS))
+$$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
+endif
+
+# Sources and objects
+ifneq ($$(origin $(1)_HEADERS),undefined)
+lm-pkg-$(1)-headers=$$($(1)_HEADERS)
+else
+lm-pkg-$(1)-headers=$$($(1)_SOURCES)
+endif
+
+lm-pkg-$(1)-mlheaders:=$$(foreach src,$$(lm-pkg-$(1)-headers),\
+				$$(call header,$$(src)))
+
+lm-pkg-$(1)-interfaces:=\
+	$$(foreach src,$$(lm-pkg-$(1)-headers),$$(call interface,$$(src)))
+
+lm-pkg-$(1)-objects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call bytecode,$$(src)))
+
+lm-pkg-$(1)-libs:=$$($(1)_LIBS)
+
+lm-pkg-$(1)-bytelib:=$(call bytelib,$(1))
+
+lm-pkg-$(1)-natobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call natcode,$$(src)))
+
+lm-pkg-$(1)-cobjects:=\
+	$$(foreach src,$$($(1)_SOURCES),$$(call objcode,$$(src)))
+
+lm-pkg-$(1)-nat-libs:=$$($(1)_NATLIBS)
+
+lm-pkg-$(1)-natlib:=$(call natlib,$(1))
+lm-pkg-$(1)-clib:=$(call objlib,$(1))
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-pkg-$(1)-headers=$$(lm-pkg-$(1)-headers))
+$$(info lm-pkg-$(1)-interfaces=$$(lm-pkg-$(1)-interfaces))
+$$(info lm-pkg-$(1)-objects=$$(lm-pkg-$(1)-objects))
+$$(info lm-pkg-$(1)-libs=$$(lm-pkg-$(1)-libs))
+$$(info lm-pkg-$(1)-bytelib=$$(lm-pkg-$(1)-bytelib))
+$$(info lm-pkg-$(1)-natobjects=$$(lm-pkg-$(1)-natobjects))
+$$(info lm-pkg-$(1)-cobjects=$$(lm-pkg-$(1)-cobjects))
+$$(info lm-pkg-$(1)-nat-libs=$$(lm-pkg-$(1)-nat-libs))
+$$(info lm-pkg-$(1)-natlib=$$(lm-pkg-$(1)-natlib))
+$$(info lm-pkg-$(1)-clib=$$(lm-pkg-$(1)-clib))
+endif
+
+# Build options
+lm-pkg-$(1)-ocamlc-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	-for-pack $(1) \
+	$$($(1)_OCAMLC_FLAGS) $$(lm-module-ocamlc-options)
+
+lm-pkg-$(1)-link-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$($(1)_LINK_FLAGS) \
+	$$(lm-module-link-options)
+
+lm-pkg-$(1)-ocamlnat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	-for-pack $(1) \
+	$$($(1)_OCAMLNAT_FLAGS)	$$(lm-module-ocamlnat-options)
+
+lm-pkg-$(1)-linknat-options:=\
+	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
+	$$($(1)_LINKNAT_FLAGS) $$(lm-module-linknat-options)
+
+lm-pkg-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
+
+lm-pkg-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-pkg-$(1)-ocamlc-options=$$(lm-pkg-$(1)-ocamlc-options))
+$$(info lm-pkg-$(1)-link-options=$$(lm-pkg-$(1)-link-options))
+$$(info lm-pkg-$(1)-ocamlnat-options=$$(lm-pkg-$(1)-ocamlnat-options))
+$$(info lm-pkg-$(1)-linknat-options=$$(lm-pkg-$(1)-linknat-options))
+$$(info lm-pkg-$(1)-ocamldep-options=$$(lm-pkg-$(1)-ocamldep-options))
+$$(info lm-pkg-$(1)-ocamlcpp-options=$$(lm-pkg-$(1)-ocamlcpp-options))
+endif
+
+###
+# Bytecode rules
+
+# Interfaces
+$$(lm-pkg-$(1)-interfaces): %.cmi: %.mli
+	$(OCAMLC) $$(lm-pkg-$(1)-ocamlc-options) -c $$<
+
+# Bytecode object files
+$$(lm-pkg-$(1)-objects): %.cmo: %.ml
+	$(OCAMLC) $$(lm-pkg-$(1)-ocamlc-options) -c $$<
+
+# Native-code object files
+$$(lm-pkg-$(1)-natobjects):%.cmx: %.ml
+	$(OCAMLNAT) $$(lm-pkg-$(1)-ocamlnat-options) -c $$<
+
+$$(lm-pkg-$(1)-cobjects):%.o: %.cmx
+
+ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
+# Bytecode package.
+$$(lm-pkg-$(1)-bytelib): $$(lm-pkg-$(1)-interfaces) $$(lm-pkg-$(1)-objects)
+	$$(info compiling $(1) byte-code package)
+	$$(OCAMLC) -pack -o $(1).cmo $$(lm-pkg-$(1)-objects)
+	$$(info linking $$(lm-pkg-$(1)-bytelib))
+	$$(OCAMLLINK) -a $$(lm-pkg-$(1)-link-options) \
+		-o $$(lm-pkg-$(1)-bytelib) \
+		$$(lm-pkg-$(1)-libs) $(1).cmo
+
+# Native-code package.
+$$(lm-pkg-$(1)-natlib) $$(lm-pkg-$(1)-clib): \
+		$$(lm-pkg-$(1)-interfaces) \
+		$$(lm-pkg-$(1)-natobjects) \
+		$$(lm-pkg-$(1)-cobjects)
+	$$(info compiling $(1) native-code package)
+	$$(OCAMLNAT) -pack -o $(1).cmx $$(lm-pkg-$(1)-natobjects)
+	$$(info Linking $$(lm-pkg-$(1)-natlib))
+	$$(OCAMLNATLINK) -a $$(lm-pkg-$(1)-linknat-options) \
+		-o $$(lm-pkg-$(1)-natlib) \
+		$$(lm-pkg-$(1)-nat-libs) $(1).cmx $(1).o
+endif
+
+# Bytecode package in staging directory.
+.PHONY: install-objdir-pkg-$(1)
+
+ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+$$(lm-module-objlib-dir)/$$(lm-pkg-$(1)-bytelib): $$(lm-pkg-$(1)-bytelib) \
+						$$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-pkg-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-pkg-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-pkg-$(1)-bytelib) $$(lm-module-objlib-dir)
+
+install-objdir-pkg-$(1): $$(lm-module-objlib-dir) $$(lm-pkg-$(1)-bytelib) \
+		$$(lm-pkg-$(1)-interfaces)
+	$$(COPY) $$(lm-pkg-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-pkg-$(1)-mlheaders) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-pkg-$(1)-bytelib) $$(lm-module-objlib-dir)
+else
+install-objdir-pkg-$(1):
+
+endif
+
+###
+# Toplevel rules
+
+# build
+lm-pkg-$(1)-target:=$$(lm-pkg-$(1)-bytelib)
+ifdef lm-nativecode
+ifneq ("$$(strip $$(lm-nativecode))","false")
+lm-pkg-$(1)-target+= $$(lm-pkg-$(1)-natlib) $$(lm-pkg-$(1)-clib)
+endif
+endif
+
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-pkg-$(1)-target=$$(lm-pkg-$(1)-target))
+endif
+
+.PHONY: build-pkg-$(1)
+build-pkg-$(1): $$(lm-pkg-$(1)-interfaces) $$(lm-pkg-$(1)-target)
+
+# clean
+.PHONY: clean-pkg-$(1)
+clean-pkg-$(1):
+	$$(RM) $$(lm-pkg-$(1)-target)
+	$$(RM) $$(lm-pkg-$(1)-interfaces) \
+		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
+	$$(RM) $$(lm-pkg-$(1)-objects) $$(lm-pkg-$(1)-natobjects) \
+		$$(lm-pkg-$(1)-cobjects)
+
+# libclean
+.PHONY: libclean-pkg-$(1)
+libclean-pkg-$(1): clean-pkg-$(1)
+
+# distclean
+.PHONY: build-pkg-$(1)
+distclean-pkg-$(1): libclean-pkg-$(1)
+
+endef  # package
+########
+
+########
 # packing-targets-template($1): Targets for packing $(1).
 # Requires $(1)_PACK_DIR to be defined.
 define packing-targets-template
