@@ -1827,6 +1827,11 @@ $(foreach lib,$(LIBRARIES),\
 $(eval $(call library-targets-template,$(lib))))
 
 ##
+# Instantiate build targets for each package target.
+$(foreach pkg,$(PACKAGES),\
+$(eval $(call package-targets-template,$(pkg))))
+
+##
 # Instantiate build targets for byte-code programs
 $(foreach prog,$(PROGRAMS),\
 $(eval $(call program-targets-template,$(prog))))
@@ -1861,7 +1866,8 @@ build-headers: $(lm-module-interfaces)
 
 # Libraries
 .PHONY: build-libs
-build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) )
+build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) ) \
+	 $(foreach pkg,$(PACKAGES),build-lib-$(pkg) )
 
 # Program
 .PHONY: build-programs
