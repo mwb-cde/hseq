@@ -1,7 +1,7 @@
 (*----
   Name: display.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab  <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -24,7 +24,7 @@ open Format
 open Report
 
 let cfun_string c =
-  match c with 
+  match c with
     | "not" -> Format.printf "@[not@ @]"
     | "and" -> Format.printf "@[and@ @]"
     | "or" -> Format.printf "@[or@ @]"
@@ -35,36 +35,36 @@ let cfun_string c =
 
 let print_fnident x = Printer.print_ident x
 
-let print_term ppinf x = 
+let print_term ppinf x =
   open_box 0;
   Term.print ppinf x;
   close_box()
 
-let print_formula ppinf x = 
+let print_formula ppinf x =
   open_box 0;
   Term.print ppinf (Formula.term_of x);
   close_box()
 
-let rec print_type ppinf x = 
+let rec print_type ppinf x =
   Format.printf "@[";
-  Gtypes.print ppinf x; 
+  Gtypes.print ppinf x;
   Format.printf "@]"
 
-let print_sqnt ppinf x = 
+let print_sqnt ppinf x =
   Logic.print_sqnt ppinf x
-let print_node ppinf x = 
+let print_node ppinf x =
   Logic.print_node ppinf x
-let print_branch ppinf x = 
+let print_branch ppinf x =
   Logic.print_branch ppinf x
-    
+
 let print_thm ppinf t = Logic.print_thm ppinf t
 
 let print_prf ppinf p = Goals.Proof.print ppinf p
 let print_prfstk ppinf p = Goals.ProofStack.print ppinf p
 
-let print_termdefn ppinf def = 
+let print_termdefn ppinf def =
   let n, ty, th = Logic.Defns.dest_termdef def
-  in 
+  in
   Format.printf "@[";
   Format.printf "@[";
   print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
@@ -74,27 +74,26 @@ let print_termdefn ppinf def =
   print_thm ppinf th;
   Format.printf "@]"
 
-let print_termdecln ppinf def = 
+let print_termdecln ppinf def =
   let n, ty = Logic.Defns.dest_termdecln def
-  in 
+  in
   Format.printf "@[";
   print_fnident (Ident.mk_long Ident.null_thy (Ident.name_of n));
   Format.printf ":@ ";
   print_type ppinf ty;
   Format.printf "@]"
 
-
 let print_defn ppinf def =
   Logic.Defns.print_cdefn ppinf def
-    
-let print_subst tenv f= 
+
+let print_subst tenv f=
   Format.printf "@[<2>";
-  Hashtbl.iter 
+  Hashtbl.iter
     (fun x y -> Format.printf "@[(%s =@ %s):@]@ " (f x) (f y))
     tenv;
   Format.printf "@]"
-    
+
 let print_error ppinf r = (r#print) ppinf
 
-let print_theory ppinf x = 
+let print_theory ppinf x =
   Theory.print ppinf x
