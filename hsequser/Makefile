@@ -33,32 +33,30 @@
 #    include $(PROJ_ROOT)/Makefile.common
 #####
 
-#
-# Building packed libraries (with option -pack) is complicated by the
-# ocaml compiler requiring that all objects making up the packed
-# library, together with their interfaces, must be in the same
-# directory. The native-code compilers also require that a objects
-# that is to be combined into a pack must be compiled with the
-# -for-pack option.
-#
-# To support packing, the build system allows a 'packed' library L to
-# be constructed from 'packing' objects O, with 'pack name' P. The
-# packing objects are built in 'groups', with each group G built in a
-# sub-directory, and marshalled into a packing directory named
-# P_PACK_DIR. The packing groups for P are found in the subdirectories
-# listed in P_GROUPS. The packed object P.cmo and its interface P.cmi
-# are built and linked, in P_PACK_DIR, to construt packed library L.
-
 #####
 # Required definitions
+#
 
-PROJ_ROOT=..
+# PROJ_ROOT: Relative path to HSeq root.
+PROJ_ROOT=../..
 
-# PACKED: List of packed libraries to build
-#PACKED=hsequser
+# The quotation parser to use.
+export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 
-# SUBDIRS: List of subdirectories to build.
-SUBDIRS=userlib
+#####
+# Module building settings
+#
+
+# PACKING: List of packing modules to build
+PACKAGES=hsequser
+
+#####
+# Object building settings
+#
+
+# object_SOURCES: List of source file names, without suffixes.
+hsequser_SOURCES=userstate userlib
+hsequser_PACK_NAME=HSeqUser
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
