@@ -577,11 +577,13 @@ ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 # Bytecode package.
 $$(lm-pkg-$(1)-bytelib): $$(lm-pkg-$(1)-interfaces) $$(lm-pkg-$(1)-objects)
 	$$(info compiling $(1) byte-code package)
-	$$(OCAMLC) -pack -o $(1).cmo $$(lm-pkg-$(1)-objects)
+	$$(OCAMLC) -pack -o $$(lm-pkg-$(1)-pack-name).cmo \
+		$$(lm-pkg-$(1)-objects)
 	$$(info linking $$(lm-pkg-$(1)-bytelib))
 	$$(OCAMLLINK) $$(lm-pkg-$(1)-link-options) \
 		-o $$(lm-pkg-$(1)-bytelib) \
-		$$(lm-pkg-$(1)-libs) $(1).cmo
+		$$(lm-pkg-$(1)-libs) $$(lm-pkg-$(1)-pack-name).cmo
+
 
 # Native-code package.
 $$(lm-pkg-$(1)-natlib) $$(lm-pkg-$(1)-clib): \
@@ -589,11 +591,13 @@ $$(lm-pkg-$(1)-natlib) $$(lm-pkg-$(1)-clib): \
 		$$(lm-pkg-$(1)-natobjects) \
 		$$(lm-pkg-$(1)-cobjects)
 	$$(info compiling $(1) native-code package)
-	$$(OCAMLNAT) -pack -o $(1).cmx $$(lm-pkg-$(1)-natobjects)
+	$$(OCAMLNAT) -pack -o $$(lm-pkg-$(1)-pack-name).cmx \
+		$$(lm-pkg-$(1)-natobjects)
 	$$(info Linking $$(lm-pkg-$(1)-natlib))
 	$$(OCAMLNATLINK) -a $$(lm-pkg-$(1)-linknat-options) \
 		-o $$(lm-pkg-$(1)-natlib) \
-		$$(lm-pkg-$(1)-nat-libs) $(1).cmx $(1).o
+		$$(lm-pkg-$(1)-nat-libs) \
+		$$(lm-pkg-$(1)-pack-name).cmx $$(lm-pkg-$(1)-pack-name).o
 endif
 
 # Bytecode package in staging directory.
