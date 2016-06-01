@@ -532,10 +532,10 @@ let substC rs l _ g =
 let instA0 l trms ctxt goal =
   let instf trm g =
     (?>
-        fun info ->
+        (fun info ->
           let alabel = get_one ~msg:"instA" (Info.aformulas info)
           in
-          allA ~a:(ftag alabel) trm) g
+          allA ~a:(ftag alabel) trm) g)
   in
   match trms with
     | [] -> raise (error "instA")
@@ -550,10 +550,10 @@ let instA ?a trms ctxt goal =
 let instC0 l trms ctxt goal =
   let instf trm ctxt0 g =
     (?>
-        fun info ->
+        (fun info ->
           let clabel = get_one ~msg:"instC" (Info.cformulas info)
           in
-          existC ~c:(ftag clabel) trm) ctxt0 g
+          existC ~c:(ftag clabel) trm)) ctxt0 g
   in
   match trms with
     | [] -> raise (error "instC")
@@ -575,9 +575,9 @@ let cut ?inst th ctxt goal =
     seq [
       (fun _ -> Logic.Tactics.cut th);
       (?>
-          fun info ->
+          (fun info ->
             let atag = get_one ~msg:"cut" (Info.aformulas info) in
-            instA ~a:(ftag atag) trms)
+            instA ~a:(ftag atag) trms))
     ] ctxt0 g
   in
   match inst with
@@ -598,17 +598,17 @@ let betaA ?a ctxt goal =
     seq
       [
 	cut thm;
-	(?> fun info1 g1 ->
+	(?> (fun info1 g1 ->
 	  let tlbl =
 	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
 	  in
 	  seq
 	    [
 	      substA [tlbl] albl;
-	      (?> fun info2 g2 ->
+	      (?> (fun info2 g2 ->
                 ((fun _ -> Logic.Tactics.deleteA tlbl)
-                 ++ set_changes_tac info2) g2)
-	    ] g1)
+                 ++ set_changes_tac info2) g2))
+	    ] g1))
       ] ctxt0 g
   in
   match a with
@@ -628,17 +628,17 @@ let betaC ?c ctxt goal =
     seq
       [
 	cut thm;
-	(?> fun info1 g1 ->
+	(?> (fun info1 g1 ->
 	  let tlbl =
 	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
 	  in
 	  seq
 	    [
 	      substC [tlbl] clbl;
-              (?> fun info2 g2 ->
+              (?> (fun info2 g2 ->
 	        ((fun _ -> Logic.Tactics.deleteA tlbl)
-                 ++ set_changes_tac info2) g2)
-	    ] g1)
+                 ++ set_changes_tac info2) g2))
+	    ] g1))
       ] ctxt1 g
   in
   match c with
@@ -903,46 +903,46 @@ let match_formula trm tac ctxt g =
 
 let specA ?a ctxt g =
   let existA_rule ?asm =
-    (?> fun info1 ->
+    (?> (fun info1 ->
       record_changes_tac
         (fun info2 -> Changes.combine info2 info1)
-        (existA ?a:asm))
+        (existA ?a:asm)))
   in
   alt
     [
       seq
         [
 	  repeat (existA_rule ?asm:a);
-          (?> fun info ->
+          (?> (fun info ->
             (set_changes_tac
                (Changes.make
                   []
                   [get_one (Info.aformulas info)]
                   []
-                  (List.rev (Info.constants info)))))
+                  (List.rev (Info.constants info))))))
         ];
       fail ~err:(error "specA")
     ] ctxt g
 
 let specC ?c ctxt g =
   let allC_rule ?conc =
-    (?> fun info1 ->
+    (?> (fun info1 ->
       record_changes_tac
         (fun info2 -> Changes.combine info2 info1)
-        (allC ?c:conc))
+        (allC ?c:conc)))
   in
   alt
     [
       seq
         [
 	  repeat (allC_rule ?conc:c);
-          (?> fun info ->
+          (?> (fun info ->
             (set_changes_tac
                (Changes.make
                   []
                   []
                   [get_one (Info.cformulas info)]
-                  (List.rev (Info.constants info)))))
+                  (List.rev (Info.constants info))))))
         ];
       fail ~err:(error "specC")
     ] ctxt g
@@ -996,14 +996,14 @@ let conv_rule (ctxt: Context.t) conv thm =
   let goal = mk_goal (scope_of ctxt) (Formula.make (scope_of ctxt) goal_term)
   in
   let tac  =
-    (?> fun info ctxt1 g ->
+    (?> (fun info ctxt1 g ->
       let ctag =
         Lib.get_one (Info.cformulas info) (Failure "pure_rewrite_rule")
       in
       seq
         [
 	  cut thm;
-          (?> fun info ->
+          (?> (fun info ->
             begin
 	      let atag =
 	        Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
@@ -1011,7 +1011,7 @@ let conv_rule (ctxt: Context.t) conv thm =
 	      seq
 	        [
 	          cut rule;
-                  (?> fun info ->
+                  (?> (fun info ->
 	            let rtag =
 		      Lib.get_one (Info.aformulas info)
 		        (error "pure_rewrite_rule: cut rule")
@@ -1020,10 +1020,10 @@ let conv_rule (ctxt: Context.t) conv thm =
 		      [
 		        substA [ftag rtag] (ftag atag);
 		        basic ~a:(ftag atag) ~c:(ftag ctag)
-		      ])
+		      ]))
 	        ]
-            end)
-        ] ctxt1 g)
+            end))
+        ] ctxt1 g))
   in
   mk_thm (Logic.apply_to_goal (tac ctxt) goal)
 
@@ -1040,16 +1040,16 @@ let pure_rewriteA ?term plan lbl ctxt goal =
     seq
       [
         (fun _ -> Logic.Tactics.rewrite_intro plan trm);
-        (?> fun inf1 ->
+        (?> (fun inf1 ->
           let rule_tag = get_one (Info.aformulas inf1) in
           seq
             [
               substA [ftag (rule_tag)] (ftag ltag);
-              (?> fun inf2 ->
+              (?> (fun inf2 ->
                 let asm_tag = get_one (Info.aformulas inf2) in
                 (((deleteA (ftag rule_tag)):tactic) ++
-                   set_changes_tac (Changes.make [] [asm_tag] [] [])))
-            ])
+                   set_changes_tac (Changes.make [] [asm_tag] [] []))))
+            ]))
       ] ctxt1 g
   in
   try tac ctxt goal
@@ -1070,17 +1070,17 @@ let pure_rewriteC ?term plan lbl ctxt goal =
     seq
       [
         (fun _ -> Logic.Tactics.rewrite_intro plan trm);
-        ?> fun inf1 ->
+        ?> (fun inf1 ->
          let rule_tag = get_one (Info.aformulas inf1) in
          seq
            [
              substC [ftag (rule_tag)] (ftag ltag);
-             ?> fun inf2 ->
+             ?> (fun inf2 ->
                let cncl_tag = get_one (Info.cformulas inf2)
                in
                (deleteA (ftag rule_tag) ++
-                  set_changes_tac (Changes.make [] [] [cncl_tag] []))
-           ]
+                  set_changes_tac (Changes.make [] [] [cncl_tag] [])))
+           ])
       ] g
   in
   try tac ctxt goal
