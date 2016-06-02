@@ -48,7 +48,7 @@ export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
 #
 
 # PACKING: List of packing modules to build
-PACKAGES=hsequser
+LIBRARIES=hsequser
 
 #####
 # Object building settings
