@@ -254,8 +254,9 @@ endef
 # Arguments
 #  $(1): Library to build.
 #  $(1)_SOURCES: Source files [required].
+#  $(1)_PACK_NAME: Pack name [optional].
 #  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
-#  $(1)_LIBS: Extra libraries to link in.
+#  $(1)_LIBS: Additional libraries to link in.
 #  $(1)_BYTELIBS: Extra libraries to in to the byte-code library variant.
 #  $(1)_NATLIBS: Extra libraries to in to the native-code library variant.
 
@@ -270,7 +271,7 @@ $$(info $(1)_BYTELIBS=$$($(1)_BYTELIBS))
 $$(info $(1)_NATLIBS=$$($(1)_NATLIBS))
 endif
 
-# Sources and objects
+# Sources and objects.
 ifneq ($$(origin $(1)_HEADERS),undefined)
 lm-lib-$(1)-headers=$$($(1)_HEADERS)
 else
@@ -316,23 +317,24 @@ endif
 
 # Build options
 lm-lib-$(1)-ocamlc-options:=\
+	$$($(1)_OCAMLC_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
-	$$(lm-module-ocamlc-options) $$($(1)_OCAMLC_FLAGS)
+	$$(lm-module-ocamlc-options)
 
 lm-lib-$(1)-link-options:=\
+	$$($(1)_LINK_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
-	$$(lm-module-link-options) \
-	$$($(1)_LINK_FLAGS)
+	$$(lm-module-link-options)
 
 lm-lib-$(1)-ocamlnat-options:=\
+	$$($(1)_OCAMLNAT_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
-	$$(lm-module-ocamlnat-options) \
-	$$($(1)_OCAMLNAT_FLAGS)
+	$$(lm-module-ocamlnat-options)
 
 lm-lib-$(1)-linknat-options:=\
+	$$($(1)_LINKNAT_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
-	$$(lm-module-linknat-options) \
-	$$($(1)_LINKNAT_FLAGS)
+	$$(lm-module-linknat-options)
 
 lm-lib-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
@@ -347,38 +349,84 @@ $$(info lm-lib-$(1)-ocamldep-options=$$(lm-lib-$(1)-ocamldep-options))
 $$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
 endif
 
+# Package objects and build ruiles.
+ifeq ($$(origin $(1)_PACK_NAME),undefined)
+# No packing. Empty object definitions and no build rules.
+lm-lib-$(1)-pack-intf:=
+lm-lib-$(1)-pack-object:=
+lm-lib-$(1)-pack-natobject:=
+lm-lib-$(1)-pack-cobject:=
+lm-lib-$(1)-for-pack-opt:=
+lm-lib-$(1)-final-intfs:=$$(lm-lib-$(1)-interfaces)
+lm-lib-$(1)-final-objects:=$$(lm-lib-$(1)-objects)
+lm-lib-$(1)-final-natobject:=\
+	$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
+else
+# Build a package.
+lm-lib-$(1)-pack-intf:=$$(call interface,$$($(1)_PACK_NAME))
+lm-lib-$(1)-pack-object:=$$(call bytecode,$$($(1)_PACK_NAME))
+lm-lib-$(1)-pack-natobject:=$$(call natcode,$$($(1)_PACK_NAME))
+lm-lib-$(1)-pack-cobject:=$$(call objcode,$$($(1)_PACK_NAME))
+lm-lib-$(1)-for-pack-opt:=-for-pack $$($(1)_PACK_NAME)
+lm-lib-$(1)-final-intfs:=$$(lm-lib-$(1)-pack-intf)
+lm-lib-$(1)-final-objects:=$$(lm-lib-$(1)-pack-object)
+lm-lib-$(1)-final-natobject:=$$(lm-lib-$(1)-pack-natobject)
+
+# Build rules.
+$$(lm-lib-$(1)-pack-object): $$(lm-lib-$(1)-interfaces) \
+				$$(lm-lib-$(1)-objects)
+	$$(info Compiling $(1) byte-code package $$(lm-lib-$(1)-pack-object))
+	$$(OCAMLC) -pack -o $$(lm-lib-$(1)-pack-object) \
+		$$(lm-lib-$(1)-objects)
+
+$$(lm-lib-$(1)-pack-intf): $$(lm-lib-$(1)-pack-object)
+
+$$(lm-lib-$(1)-pack-natobject): $$(lm-lib-$(1)-interfaces) \
+				$$(lm-lib-$(1)-natobjects) \
+				$$(lm-lib-$(1)-cobjects)
+	$$(info Compiling $(1) native-code package)
+	$$(OCAMLNAT) -pack -o $$(lm-lib-$(1)-pack-name).cmx \
+		$$(lm-lib-$(1)-natobjects)
+endif
+
 ###
-# Bytecode rules
+# Bytecode rules.
 
-# Interfaces
+# Interfaces.
 $$(lm-lib-$(1)-interfaces): %.cmi: %.mli
-	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+	$(OCAMLC) $$(lm-lib-$(1)-for-pack-opt) \
+		$$(lm-lib-$(1)-ocamlc-options) -c $$<
 
-# Bytecode object files
+# Bytecode object files.
 $$(lm-lib-$(1)-objects): %.cmo: %.ml
-	$(OCAMLC) $$(lm-lib-$(1)-ocamlc-options) -c $$<
+	$(OCAMLC) $$(lm-lib-$(1)-for-pack-opt) \
+		$$(lm-lib-$(1)-ocamlc-options) -c $$<
 
-# Native-code object files
-$$(lm-lib-$(1)-natobjects):%.cmx: %.ml
-	$(OCAMLNAT) $$(lm-lib-$(1)-ocamlnat-options) -c $$<
+# Native-code object files.
+$$(lm-lib-$(1)-natobjects): %.cmx: %.ml
+	$(OCAMLNAT) $$(lm-lib-$(1)-for-pack-opt) \
+		$$(lm-lib-$(1)-ocamlnat-options) -c $$<
 
-$$(lm-lib-$(1)-cobjects):%.o: %.cmx
+$$(lm-lib-$(1)-cobjects): %.o: %.cmx
 
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 # Bytecode library.
-$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-objects)
+$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-final-intfs) \
+				$$(lm-lib-$(1)-final-objects)
 	$$(info Linking $(lm-lib-$(1)-bytelib))
 	$$(OCAMLLINK) $$(lm-lib-$(1)-link-options) \
 		-o $$(lm-lib-$(1)-bytelib) \
-		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-objects)
+		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-final-objects)
 
-# Native-code library.
-$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): $$(lm-lib-$(1)-interfaces)\
-		$$(lm-lib-$(1)-natobjects) $$(lm-lib-$(1)-cobjects)
+# Native-code library..
+$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): \
+		$$(lm-lib-$(1)-final-intfs) \
+		$$(lm-lib-$(1)-final-natobjects) \
+		$$(lm-lib-$(1)-final-cobjects)
 	$$(info Linking $(lm-lib-$(1)-natlib))
 	$$(OCAMLNATLINK) $$(lm-lib-$(1)-linknat-options) \
 		-o $$(lm-lib-$(1)-natlib) \
-		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-natobjects)
+		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-final-natobjects)
 endif
 
 # Bytecode library in staging directory.
@@ -387,15 +435,19 @@ endif
 ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
 $$(lm-module-objlib-dir)/$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-bytelib) \
 						$$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
+			$$(lm-module-objlib-dir)
 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-bytelib) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
+		$$(lm-module-objlib-dir)
 
 install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-bytelib) \
 		$$(lm-lib-$(1)-interfaces)
-	$$(COPY) $$(lm-lib-$(1)-interfaces) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
+			 $$(lm-module-objlib-dir)
 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-bytelib) $$(lm-module-objlib-dir)
+	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
+			$$(lm-module-objlib-dir)
 else
 install-objdir-lib-$(1):
 
@@ -423,10 +475,11 @@ build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 .PHONY: clean-lib-$(1)
 clean-lib-$(1):
 	$$(RM) $$(lm-lib-$(1)-target)
-	$$(RM) $$(lm-lib-$(1)-interfaces) \
+	$$(RM) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces)\
 		$$(foreach src,$$($(1)_SOURCES),$$(call interface,$$(src)))
 	$$(RM) $$(lm-lib-$(1)-objects) $$(lm-lib-$(1)-natobjects) \
-		$$(lm-lib-$(1)-cobjects)
+		$$(lm-lib-$(1)-cobjects) $$(lm-lib-$(1)-pack-object) \
+		$$(lm-lib-$(1)-pack-natobject) $$(lm-lib-$(1)-pack-cobject)
 
 # libclean
 .PHONY: libclean-lib-$(1)
@@ -584,7 +637,6 @@ $$(lm-pkg-$(1)-bytelib): $$(lm-pkg-$(1)-interfaces) $$(lm-pkg-$(1)-objects)
 		-o $$(lm-pkg-$(1)-bytelib) \
 		$$(lm-pkg-$(1)-libs) $$(lm-pkg-$(1)-pack-name).cmo
 
-
 # Native-code package.
 $$(lm-pkg-$(1)-natlib) $$(lm-pkg-$(1)-clib): \
 		$$(lm-pkg-$(1)-interfaces) \
@@ -733,9 +785,11 @@ endif
 
 # Calculate library files to install
 lm-module-install-libfiles:=\
-	$$(foreach lib,$$(lm-module-install-libs), $$(call bytelib,$$(lib)))
+$$(foreach lib,$$(lm-module-install-libs),\
+	$$(call bytelib,$$(lib))\
+	$$(if $$(findstring undefined,$$(origin $$(lib)_PACK_NAME)),,\
+		$$(call interface,$$($$(lib)_PACK_NAME))))
 
-$$(info lm-module-pkgs = $$(lm-module-install-pkgs))
 lm-module-install-libfiles+=\
 	$$(foreach pkg,$$(lm-module-install-pkgs), $$(call bytelib,$$(pkg)))
 
