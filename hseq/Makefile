@@ -55,54 +55,16 @@ PROJ_ROOT=..
 # Module building settings
 #
 
-# SUBDIRS: List of sub-directories to build.
-#SUBDIRS=util tpcore logic parser tpmain booleans \
-#	simplifier numbers
-
-# Packages:List of packages to build.
-PACKAGES=HSeq
-
-# PACKED: List of packed libraries to build
-#PACKED=hseq
+# LIBRARIES:List of packages to build.
+LIBRARIES=hseq
 
 #####
 # Object building settings
 #
 
-# object_INCLUDE: Directories to include when compiling [object].
-#hseq_INCLUDE=util tpcore logic parser tpmain booleans \
-#	simplifier numbers
+# Library HSeq
 
-# object_LIBS: Libraries to include when linking [object].
-#hseq_LIBS=util/util tpcore/tpcore logic/logic parser/parser \
-#	tpmain/tpmain booleans/boollib simplifier/simplifier \
-#	numbers/numbers userlib/userlib
-
-#hseq_LIBS=util tpcore logic parser \
-#	tpmain boollib simplifier \
-#	numbers
-
-# object_PACK_NAME: Name of pack to build
-#object_PACK_NAME=
-#hseq_PACK_NAME=HSeq
-
-# object_PACK_DIR: Directory to use for packing.
-#object_PACK_DIR=
-#hseq_PACK_DIR=./HSeqOBJS
-
-# object_GROUPS: List of packing groups to use for packed library [object]
-#hseq_GROUPS=util tpcore logic parser \
-#	tpmain boollib simplifier \
-#	numbers
-
-
-# Package HSeq
-
-#HSeq_INCLUDE=.
-
-HSeq_LIBRARY=hseq
-
-HSeq_PACK_NAME=HSeq
+hseq_PACK_NAME=HSeq
 
 # HSeq sources
 MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
@@ -120,7 +82,7 @@ Numbers_SOURCES=prop exprs supinf nums
 Simplifier_SOURCES=simputils simpconvs simpset simplifier \
 		   simptacs simplib
 
-HSeq_SOURCES=$(Util_SOURCES) $(Tpcore_SOURCES) 	$(Logic_SOURCES) \
+hseq_SOURCES=$(Util_SOURCES) $(Tpcore_SOURCES) 	$(Logic_SOURCES) \
 		$(Parser_SOURCES) $(Tpmain_SOURCES) $(Booleans_SOURCES) \
 		$(Numbers_SOURCES) $(Simplifier_SOURCES)
 
