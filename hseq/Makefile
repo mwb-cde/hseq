@@ -67,7 +67,9 @@ LIBRARIES=hseq
 hseq_PACK_NAME=HSeq
 
 # HSeq sources
-MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(TPQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
+export BUILDQUOTELIB=$(SRC_ROOT)/quote/buildquote.cma
+
+MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(BUILDQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
 
 Util_SOURCES=lib treekit tag parserkit rewritekit
 Tpcore_SOURCES=defaults settings ident basic printer \
@@ -78,7 +80,7 @@ Parser_SOURCES=counter lexer pterm grammars parser
 Tpmain_SOURCES=context boolPP tactics goals commands display
 Booleans_SOURCES=baseTheory boolutil boolbase \
 		rewritelib booltacs boolinduct boollib
-Numbers_SOURCES=prop exprs supinf nums
+#Numbers_SOURCES=prop exprs supinf nums
 Simplifier_SOURCES=simputils simpconvs simpset simplifier \
 		   simptacs simplib
 
