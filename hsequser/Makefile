@@ -41,7 +41,7 @@
 PROJ_ROOT=..
 
 # The quotation parser to use.
-export TPQUOTELIB=$(SRC_ROOT)/$(OBJ_DIR)/lib/tpquote.cma
+export TPQUOTELIB=$(SRC_ROOT)/quote/tpquote.cma
 
 #####
 # Module building settings
@@ -57,6 +57,7 @@ LIBRARIES=hsequser
 # object_SOURCES: List of source file names, without suffixes.
 hsequser_SOURCES=userstate userlib
 hsequser_PACK_NAME=HSeqUser
+hsequser_INCLUDE=$(SRC_ROOT)/hseq
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
