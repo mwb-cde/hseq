@@ -254,7 +254,8 @@ endef
 # Arguments
 #  $(1): Library to build.
 #  $(1)_SOURCES: Source files [required].
-#  $(1)_PACK_NAME: Pack name [optional].
+#  $(1)_PACK_NAME: Pack name.
+#  $(1)_INCLUDE: Directories to add to the include list.
 #  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
 #  $(1)_LIBS: Additional libraries to link in.
 #  $(1)_BYTELIBS: Extra libraries to in to the byte-code library variant.
