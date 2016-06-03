@@ -147,14 +147,6 @@ lm-bin-dirname=bin
 # lm-doc-dirname: Document directory name
 lm-doc-dirname=doc
 
-# lm-pack-filename: Prefix for file storing list of byte-code objects to be
-# packed into a module using 'ocaml -pack'.
-lm-pack-filename:=PACKLIST_
-
-# lm-pack-nat-filename: Prefix for file storing list of native code objects to be
-# packed into a module using 'ocaml -pack'.
-lm-pack-nat-filename:=PACKLIST_NAT_
-
 # lm-nativecode: Defined iff compile-to-native code is supported.
 ifneq ($(strip "$(ENABLE_NATIVECODE)"),"false")
 lm-nativecode:=true
@@ -1218,17 +1210,6 @@ $(eval $(call package-targets-template,$(pkg))))
 # Instantiate build targets for byte-code programs
 $(foreach prog,$(PROGRAMS),\
 $(eval $(call program-targets-template,$(prog))))
-
-
-##
-# Instantiate packings build targets for each target.
-$(foreach lib,$(PACKING),\
-$(eval $(call packing-targets-template,$(lib))))
-
-
-# Instantiate packed build targets for each target.
-$(foreach lib,$(PACKED),\
-$(eval $(call packed-targets-template,$(lib))))
 
 ###
 # Directories
