@@ -98,7 +98,7 @@ build: thys install-thys-objdir
 # Clean up
 ###
 
-EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~
+EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~ local_thy_config.ml
 
 # clean:
 # 	$(RM) *.tho *.cmo *.cmi
@@ -112,7 +112,14 @@ EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~
 # Specialized targets
 ###
 
-thys:
+# The local configure data.
+local_thy_config.ml: Makefile
+	echo \
+	"let local_include_dirs = " \
+	"[\"$(SRC_ROOT)/hseq\"; \"$(SRC_ROOT)/hsequser\"]" > \
+	local_thy_config.ml
+
+thys: local_thy_config.ml
 	$(HSEQC) $(BUILDSCRIPT)
 
 .PHONY: install-thys-objdir

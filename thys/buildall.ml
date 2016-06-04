@@ -35,10 +35,19 @@ open HSeq
 open HSeqUser
 open Userlib
 
+(** Include the local configuration file. This is created by the Makefile in
+    this directory. It must have value (local_include_dirs:: ('string)list)
+    with the list of directories to include in the hseq search path. These
+    directories should have the hseq and hsequser libraries and their
+    dependencies (other than the OCaml standad libraries).
+*)
+
+#use "local_thy_config.ml";;
+
 (** Add the source include directories *)
 let _ =
   Settings.include_dirs :=
-    "../hseq"::"../hsequser"::(!Settings.include_dirs);;
+    List.append local_include_dirs (!Settings.include_dirs);;
 
 (** Initialise hseq *)
 #use "hseqstart.ml";;
