@@ -1,6 +1,6 @@
 # --*- Makefile -*--##################################################
 # Makefile.module - Makefile to build modules
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -46,7 +46,7 @@ hseq-quickstart_TEXINFO=hseq-quickstart.texi
 # Document output name [default: hseq-quickstart]
 #hseq-quickstart_OUTPUT=
 
-# Name of the output html directory 
+# Name of the output html directory
 #    [default: $(hseq-quickstart).html]
 #hseq-quickstart_HTMLDIR=
 
@@ -60,4 +60,3 @@ hseq-quickstart_TEXINFO=hseq-quickstart.texi
 
 # Include the standard template.
 include $(PROJ_ROOT)/doc/Makefile.docrules
-

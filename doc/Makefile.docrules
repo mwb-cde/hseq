@@ -1,6 +1,6 @@
 # -*- Makefile -*--##################################################
 # Makefile.module - Makefile to build documents
-# Copyright 2014, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2014-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -19,20 +19,21 @@
 # with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ######################################################################
 
-
 ######################################################################
 # Toplevel build targets
 #
 
-.PHONY: all build clean install 
-all: install
-build: build-doc clean-subdir
-clean: clean-doc clean-subdir
-ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
-install: 
+.PHONY: all build clean install
+all: build
+build: build-doc-subdir build-doc
+
+ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
+install:
 else
-install: install-doc install-subdir
+install: install-doc-subdir install-doc
 endif
+
+clean: clean-doc-subdir clean-doc
 
 ###
 # Include common definitions
@@ -51,16 +52,6 @@ ifndef MAKEINFO
 MAKEINFO=makeinfo ${OPTIONS}
 endif
 
-########
-# Variables
-
-# OBJDOCDIR: The documentation collection directory
-ifndef lm-objdir-doc
-$(error "Expected lm-objdir-doc to be defined")
-else
-OBJDOCDIR:=$(lm-objdir-doc)
-endif
-
 #####################
 # Documentation
 #
@@ -69,10 +60,10 @@ endif
 # Inputs:
 #   - $(1)_TEXINFO: Texinfo source files
 #   - $(1)_INCLUDE: Include directory
-#   - $(1)_OUTPUT: Name of the output [default: $(1)]
-#   - $(1)_HTMLDIR: Name of the output html directory 
+#   - $(1)_OUTPUT: Name of the document [default: $(1)]
+#   - $(1)_HTMLDIR: Name of the document html directory
 #		    [default: $($(1)_output).html]
-#   - $(1)_INFODIR: Name of the output info directory 
+#   - $(1)_INFODIR: Name of the document info directory
 #		    [default: $($(1)_output).info]
 define doc_TEMPLATE
 
@@ -80,70 +71,92 @@ define doc_TEMPLATE
 # Set variables
 
 # The output name
-$(1)_OUTPUT:=$$(or $$(strip $$($(1)_OUTPUT)),$$(strip $(1)))
+lm-doc-$(1)-output:=\
+	$$(or $$(strip $$($(1)_OUTPUT)),$$(strip $(1)))
 
 # The html directory
-$(1)_HTMLDIR:=$$(or $$(strip $$($(1)_HTMLDIR)),$$($(1)_OUTPUT).html)
+lm-doc-$(1)-htmldir:=\
+	$$(or $$(strip $$($(1)_HTMLDIR)),$$(lm-doc-$(1)-output).html)
 
 # The info directory
-$(1)_INFODIR:=$$(or $$(strip $$($(1)_INFODIR)),$$($(1)_OUTPUT).info)
+lm-doc-$(1)-infodir:=\
+	$$(or $$(strip $$($(1)_INFODIR)),$$(lm-doc-$(1)-output).info)
 
 # Directories to include
-$(1)_INCLUDEDIR:=$$(foreach dir,$$($(1)_INCLUDE) $$(MODULE_INCLUDE),-I $$(dir))
+lm-doc-$(1)-includedir:=\
+	$$(foreach dir,$$($(1)_INCLUDE) $$(MODULE_INCLUDE),-I $$(dir))
+
+# Document sources.
+lm-doc-$(1)-sources:= $$($(1)_TEXINFO)
+
+# The installation directory.
+lm-doc-$(1)-installdir:=$$(lm-installdir-doc)
 
 ##
 # Build rules
 
 # The html directory
-$$($(1)_HTMLDIR):
-	$$(MKDIR) $$($(1)_HTMLDIR)
+$$(lm-doc-$(1)-htmldir):
+	$$(MKDIR) $$(lm-doc-$(1)-htmldir)
 
-.PHONY: $(1)-build-html
-$(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
-	$$(MAKEINFO) --html $$($(1)_INCLUDEDIR) -o $$($(1)_HTMLDIR) \
-		$$($(1)_TEXINFO)
+$$(lm-doc-$(1)-htmldir)/README.txt: \
+		$$(lm-doc-lm-doc-$(1)-htmldir) $$(lm-doc-$(1)-sources)
+	$$(MAKEINFO) --html $$(lm-doc-$(1)-includedir) \
+		$$(lm-doc-$(1)-sources) \
+		-o $$(lm-doc-$(1)-htmldir)
+	echo "HTML documentation." > $$(lm-doc-$(1)-htmldir)/README.txt
 
-.PHONY: $(1)-install-html
-$(1)-install-html: $(1)-build-html $$(OBJDOCDIR) 
-	$$(COPY) -r $$($(1)_HTMLDIR) $$(OBJDOCDIR)
-
-.PHONY: $(1)-clean-html
-$(1)-clean-html:
-	$$(RM) -r $$($(1)_HTMLDIR)
+.PHONY: build-doc-$(1)-html
+build-doc-$(1)-html: $$(lm-doc-$(1)-htmldir)/README.txt
 
 # The info directory
-$$($(1)_INFODIR):
-	$$(MKDIR) $$($(1)_INFODIR)
+$$(lm-doc-$(1)-infodir):
+	$$(MKDIR) $$(lm-doc-$(1)-infodir)
 
-.PHONY: $(1)-build-info
-$(1)-build-info: $$($(1)_INFODIR) $$($(1)_TEXINFO)
-	$$(MAKEINFO) --info $$($(1)_INCLUDEDIR) -o $$($(1)_INFODIR) \
-		$$($(1)_TEXINFO)
+$$(lm-doc-$(1)-infodir)/README.txt: \
+	$$(lm-doc-$(1)-infodir) $$(lm-doc-$(1)-sources)
+	$$(MAKEINFO) --info $$(lm-doc-$(1)-includedir) \
+		$$(lm-doc-$(1)-sources) \
+		-o $$(lm-doc-$(1)-infodir)
+	echo "INFO documentation." > $$(lm-doc-$(1)-infodir)/README.txt
 
-.PHONY: $(1)-install-info
-$(1)-install-info: $(1)-build-info $$(OBJDOCDIR)
-	$$(COPY) -r $$($(1)_INFODIR) $$(OBJDOCDIR)
+.PHONY: build-doc-$(1)-info
+build-doc-$(1)-info: $$(lm-doc-$(1)-infodir)/README.txt
 
-.PHONY: $(1)-clean-info
-$(1)-clean-info:
-	$$(RM) -r $$($(1)_INFODIR)
+# Install rules.
+.PHONY: install-doc-$(1)-info
+install-doc-$(1)-info: build-doc-$(1)-info $$(lm-doc-$(1)-installdir)
+	$$(COPY) -r $$(lm-doc-$(1)-infodir) $$(lm-doc-$(1)-installdir)
+
+.PHONY: install-doc-$(1)-html
+install-doc-$(1)-html: build-doc-$(1)-html $$(lm-doc-$(1)-installdir)
+	$$(COPY) -r $$(lm-doc-$(1)-htmldir) $$(lm-doc-$(1)-installdir)
+
+# Clean
+.PHONY: clean-doc-$(1)-html
+clean-doc-$(1)-html:
+	$$(RM) -r $$(lm-doc-$(1)-htmldir)
+
+.PHONY: clean-doc-$(1)-info
+clean-doc-$(1)-info:
+	$$(RM) -r $$(lm-doc-$(1)-infodir)
 
 ####
 # Toplevel rules
-.PHONY: build-$(1) clean-$(1) install-$(1)
 
 # Build
-#build-$(1): $(1)-build-info $(1)-build-html
-build-$(1): install-$(1)
-
-# Clean
-clean-$(1): $(1)-clean-info $(1)-clean-html
+.PHONY: build-doc-$(1)
+build-doc-$(1): build-doc-$(1)-info build-doc-$(1)-html
 
 # install
-install-$(1): $(1)-install-info $(1)-install-html
+.PHONY: install-doc-$(1)
+install-doc-$(1): install-doc-$(1)-info install-doc-$(1)-html
+
+# Clean
+.PHONY: clean-doc-$(1)
+clean-doc-$(1): clean-doc-$(1)-info clean-doc-$(1)-html
 
 endef # doc_TEMPLATE
-
 
 ####################
 # Expand documents template
@@ -157,115 +170,96 @@ $(eval $(call doc_TEMPLATE,$(doc))))
 # Build
 .PHONY: build-doc build-info build-html
 
-ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
 build-doc:
 build-info:
 build-html:
 else
-build-doc: $(foreach doc,$(DOCUMENTS), build-$(doc))
-build-info: $(foreach doc,$(DOCUMENTS), $(doc)-build-info)
-build-html: $(foreach doc,$(DOCUMENTS), $(doc)-build-html)
+build-doc: $(foreach doc,$(DOCUMENTS), build-doc-$(doc))
+	@echo "Built docs."
+build-info: $(foreach doc,$(DOCUMENTS), build-doc-$(doc)-info)
+	@echo "Built info docs."
+build-html: $(foreach doc,$(DOCUMENTS), build-doc-$(doc)-html)
+	@echo "Built html docs."
 endif
-
-# Clean
-.PHONY: clean-doc clean-info clean-html
-clean-doc: $(foreach doc,$(DOCUMENTS), clean-$(doc))
-clean-info: $(foreach doc,$(DOCUMENTS), $(doc)-clean-info)
-clean-html: $(foreach doc,$(DOCUMENTS), $(doc)-clean-html)
 
 # install
 .PHONY: install-doc install-info install-html
-ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
+ifeq '$(strip $(ENABLE_BUILD_DOC))' 'false'
 install-doc:
 install-info:
 install-html:
 else
-install-doc: $(foreach doc,$(DOCUMENTS), install-$(doc)) 
-	echo "Installed docs"
-install-info: $(foreach doc,$(DOCUMENTS), $(doc)-install-info)
-install-html: $(foreach doc,$(DOCUMENTS), $(doc)-install-html)
+install-doc: $(foreach doc,$(DOCUMENTS), install-doc-$(doc))
+	@echo "Installed docs."
+install-info: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-info)
+	@echo "Installed info docs."
+install-html: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-html)
+	@echo "Installed html docs."
 endif
+
+# Clean
+.PHONY: clean-doc clean-info clean-html
+clean-doc: $(foreach doc,$(DOCUMENTS), clean-doc-$(doc))
+clean-info: $(foreach doc,$(DOCUMENTS), clean-$(doc)-info)
+clean-html: $(foreach doc,$(DOCUMENTS), clean-$(doc)-html)
+
 
 #####################
 # Documentation Subdirectories
 #
-# template docsubdir_TEMPLATE
-# Build rules for subdir $(1).
-define docsubdir_TEMPLATE
-
-##
-# Build rules
-
-# # The html directory
-# $$($(1)_HTMLDIR):
-# 	$$(MKDIR) $$($(1)_HTMLDIR)
-
-# .PHONY: $(1)-build-html
-# $(1)-build-html: $$($(1)_HTMLDIR) $$($(1)_TEXINFO)
-# 	$$(MAKEINFO) --html $$($(1)_INCLUDEDIR) -o $$($(1)_HTMLDIR) \
-# 		$$($(1)_TEXINFO)
-
-# .PHONY: $(1)-clean-html
-# $(1)-clean-html:
-# 	$(RM) -r $$($(1)_HTMLDIR)
-
-# # The info directory
-# $$($(1)_INFODIR):
-# 	$$(MKDIR) $$($(1)_INFODIR)
-
-# .PHONY: $(1)-build-info
-# $(1)-build-info: $$($(1)_INFODIR) $$($(1)_TEXINFO)
-# 	$$(MAKEINFO) --info $$($(1)_INCLUDEDIR) -o $$($(1)_INFODIR) \
-# 		$$($(1)_TEXINFO)
-
-# .PHONY: $(1)-clean-info
-# $(1)-clean-info:
-# 	$(RM) -r $$($(1)_INFODIR)
+# template doc-subdir_TEMPLATE
+# Build rules for subdir lm-doc-$(1).
+define doc-subdir_TEMPLATE
 
 ####
 # Toplevel rules
-.PHONY: build-$(1) clean-$(1) install-$(1)
 
 # Build
-build-$(1): 
+.PHONY: build-doc-subdir-$(1)
+build-doc-subdir-$(1):
 	$(MAKE) -C $(1) build
 
-# Clean
-clean-$(1): 
-	$(MAKE) -C $(1) clean
-
 # Install
-install-$(1):
+.PHONY:  install-doc-subdir-$(1)
+install-doc-subdir-$(1):
 	$(MAKE) -C $(1) install
 
-endef # docsubdir_TEMPLATE
+# Clean
+.PHONY: clean-doc-subdir-$(1)
+clean-doc-subdir-$(1):
+	$(MAKE) -C $(1) clean
+
+endef # doc-subdir_TEMPLATE
 
 ####################
 # Expand document subdirs template
 
-$(foreach subdir,$(SUBDIRS), \
-$(eval $(call docsubdir_TEMPLATE,$(subdir))))
+$(foreach subdir,$(DOCSUBDIRS), \
+$(eval $(call doc-subdir_TEMPLATE,$(subdir))))
 
 ####################
 # Documentation subdir targets
 
 # Build
-.PHONY: build-subdir
-ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
-build-subdir: 
+.PHONY: build-doc-subdir
+ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
+build-doc-subdir:
 else
-build-subdir: $(foreach subdir,$(SUBDIRS), build-$(subdir))
+build-doc-subdir: \
+	$(foreach subdir,$(DOCSUBDIRS), build-doc-subdir-$(subdir))
 endif
 
 # Install
-.PHONY: install-subdir
-ifeq '$(strip ${ENABLE_BUILD_DOCS})' 'false'
-install-subdir: 
+.PHONY: install-doc-subdir
+ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
+install-doc-subdir:
 else
-install-subdir: $(foreach subdir,$(SUBDIRS), install-$(subdir))
+install-doc-subdir: \
+	$(foreach subdir,$(DOCSUBDIRS), install-doc-subdir-$(subdir))
+
 endif
 
 # Clean
-.PHONY: clean-subdir
-clean-subdir: $(foreach subdir,$(SUBDIRS), clean-$(subdir))
-
+.PHONY: clean-doc-subdir
+clean-doc-subdir: $(foreach subdir,$(DOCSUBDIRS), clean-doc-subdir-$(subdir))

@@ -1,6 +1,6 @@
 # --*- Makefile -*--##################################################
 # Makefile.module - Makefile to build modules
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -26,7 +26,7 @@
 
 #####
 # Required definitions
-#  
+#
 
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=..
@@ -35,19 +35,13 @@ PROJ_ROOT=..
 # Variables
 ###
 
-# DOC_SUBDIRS: The sub-directories to build (in order)
-SUBDIRS=quickstart #hseq
+# DOCSUBDIRS: The sub-directories to build (in order)
+DOCSUBDIRS=quickstart #hseq
 
 ####
 # Don't modify anything below this line
 ####
 
-
-# HTMLDIR: HTML Documentation directory
-export HTMLDIR?=$(OBJDOCDIR)/html
-
-# INFODIR: Info Documentation directory
-export INFODIR?=$(OBJDOCDIR)/info
 
 ###
 # Include common definitions
