@@ -66,6 +66,9 @@ hseqb_LIBS=unix.cma
 # object_NATLIBS: Libraries to include when native-code linking [object].
 hseqb_NATLIBS=unix.cmxa
 
+hseqb_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq
+hseqc_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq
+
 #####
 # Module build tool settings
 
