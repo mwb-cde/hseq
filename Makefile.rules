@@ -361,7 +361,8 @@ lm-lib-$(1)-pack-object:=$$(call bytecode,$$($(1)_PACK_NAME))
 lm-lib-$(1)-pack-natobject:=$$(call natcode,$$($(1)_PACK_NAME))
 lm-lib-$(1)-pack-cobject:=$$(call objcode,$$($(1)_PACK_NAME))
 lm-lib-$(1)-for-pack-opt:=-for-pack $$($(1)_PACK_NAME)
-lm-lib-$(1)-final-intfs:=$$(lm-lib-$(1)-pack-intf)
+lm-lib-$(1)-final-intfs:=\
+	$$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces)
 lm-lib-$(1)-final-objects:=$$(lm-lib-$(1)-pack-object)
 lm-lib-$(1)-final-natobject:=$$(lm-lib-$(1)-pack-natobject)
 
@@ -423,28 +424,35 @@ $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): \
 endif
 
 # Bytecode library in staging directory.
-.PHONY: install-objdir-lib-$(1)
+#.PHONY: install-objdir-lib-$(1)
 
-ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-$$(lm-module-objlib-dir)/$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-bytelib) \
-						$$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
-			$$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
-		$$(lm-module-objlib-dir)
+# ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
+# $$(lm-module-objlib-dir)/$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-bytelib) \
+# 						$$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
+# 			$$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
+# 		$$(lm-module-objlib-dir)
 
-install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-bytelib) \
-		$$(lm-lib-$(1)-interfaces)
-	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
-			 $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
-			$$(lm-module-objlib-dir)
-else
-install-objdir-lib-$(1):
+# install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-bytelib) \
+# 		$$(lm-lib-$(1)-interfaces)
+# 	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
+# 			 $$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
+# 	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
+# 			$$(lm-module-objlib-dir)
+# else
+#install-objdir-lib-$(1):
 
-endif
+install-lib-$(1): $$(lm-lib-$(1)-final-intfs) \
+	$$(lm-lib-$(1)-final-objects) \
+	$$(lm-lib-$(1)-final-natobjects)
+	$(COPY) $$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-final-objects) \
+		$$(lm-lib-$(1)-final-natobjects) $$(lm-lib-$(1)-extra-libs) \
+		$$(lm-module-installdir-lib)
+
+#endif
 
 ###
 # Toplevel rules
@@ -1076,17 +1084,18 @@ distclean: distclean-subdirs distclean-dir
 .PHONY: build
 ifneq ($(strip CUSTOM_TARGET_build),yes)
 build: build-objdir build-subdirs \
-	build-pkgs \
 	build-libs \
 	build-programs \
-	build-packings \
-	build-packed \
 	module-install-objdir
 endif
 
-.PHONY: install
+.PHONY: install install-libs
 ifneq ($(strip CUSTOM_TARGET_install),yes)
-install: build
+install-libs: $(foreach lib,$(LIBS), install-lib-$(lib))
+endif
+
+ifneq ($(strip CUSTOM_TARGET_install),yes)
+install: build install-libs
 endif
 
 ##
