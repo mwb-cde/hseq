@@ -250,8 +250,10 @@ endef
 #  $(1)_INCLUDE: Directories to add to the include list.
 #  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
 #  $(1)_LIBS: Additional libraries to link in.
-#  $(1)_BYTELIBS: Extra libraries to in to the byte-code library variant.
-#  $(1)_NATLIBS: Extra libraries to in to the native-code library variant.
+#  $(1)_BYTELIBS: Extra libraries to add to the byte-code library variant.
+#  $(1)_NATLIBS: Extra libraries to add to the native-code library variant.
+#  $(1)_EXTRA_FILES: Extra files to install alongside the library.
+#  $(1)_INSTALLDIR: Installation directory. [default: $INSTALLDIR_LIB].
 
 define library-targets-template
 
@@ -271,8 +273,8 @@ else
 lm-lib-$(1)-headers=$$($(1)_SOURCES)
 endif
 
-lm-lib-$(1)-mlheaders:=$$(foreach src,$$(lm-lib-$(1)-headers),\
-				$$(call header,$$(src)))
+lm-lib-$(1)-mlheaders:=\
+	$$(foreach src,$$(lm-lib-$(1)-headers),$$(call header,$$(src)))
 
 lm-lib-$(1)-interfaces:=\
 	$$(foreach src,$$(lm-lib-$(1)-headers),$$(call interface,$$(src)))
@@ -295,6 +297,15 @@ lm-lib-$(1)-nat-libs:=$$($(1)_NATLIBS)
 lm-lib-$(1)-natlib:=$(call natlib,$(1))
 lm-lib-$(1)-clib:=$(call objlib,$(1))
 
+lm-lib-$(1)-extra-files:=$$($(1)_EXTRA_FILES)
+
+# The installation directory.
+ifneq ($$(origin $(1)_INSTALLDIR),undefined)
+lm-lib-$(1)-installdir-lib:=$$($(1)_INSTALLDIR)
+else
+lm-lib-$(1)-installdir-lib:=$$(lm-installdir-lib)
+endif
+
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-headers=$$(lm-lib-$(1)-headers))
 $$(info lm-lib-$(1)-interfaces=$$(lm-lib-$(1)-interfaces))
@@ -306,9 +317,10 @@ $$(info lm-lib-$(1)-cobjects=$$(lm-lib-$(1)-cobjects))
 $$(info lm-lib-$(1)-nat-libs=$$(lm-lib-$(1)-nat-libs))
 $$(info lm-lib-$(1)-natlib=$$(lm-lib-$(1)-natlib))
 $$(info lm-lib-$(1)-clib=$$(lm-lib-$(1)-clib))
+$$(info lm-lib-$(1)-extra-files=$$(lm-lib-$(1)-extra-files))
 endif
 
-# Build options
+# Build options.
 lm-lib-$(1)-ocamlc-options:=\
 	$$($(1)_OCAMLC_FLAGS) \
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -423,37 +435,6 @@ $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): \
 		$$(lm-lib-$(1)-nat-libs) $$(lm-lib-$(1)-final-natobjects)
 endif
 
-# Bytecode library in staging directory.
-#.PHONY: install-objdir-lib-$(1)
-
-# ifeq ($$(strip $$(lm-module-uses-objdir)), yes)
-# $$(lm-module-objlib-dir)/$$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-bytelib) \
-# 						$$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
-# 			$$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
-# 		$$(lm-module-objlib-dir)
-
-# install-objdir-lib-$(1): $$(lm-module-objlib-dir) $$(lm-lib-$(1)-bytelib) \
-# 		$$(lm-lib-$(1)-interfaces)
-# 	$$(COPY) $$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces) \
-# 			 $$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-lib-$(1)-mlheaders) $$(lm-module-objlib-dir)
-# 	$$(COPY) $$(lm-lib-$(1)-pack-object) $$(lm-lib-$(1)-bytelib) \
-# 			$$(lm-module-objlib-dir)
-# else
-#install-objdir-lib-$(1):
-
-install-lib-$(1): $$(lm-lib-$(1)-final-intfs) \
-	$$(lm-lib-$(1)-final-objects) \
-	$$(lm-lib-$(1)-final-natobjects)
-	$(COPY) $$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-final-objects) \
-		$$(lm-lib-$(1)-final-natobjects) $$(lm-lib-$(1)-extra-libs) \
-		$$(lm-module-installdir-lib)
-
-#endif
-
 ###
 # Toplevel rules
 
@@ -471,6 +452,17 @@ endif
 
 .PHONY: build-lib-$(1)
 build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
+
+# Install headers, interfaces and libraries to the lib install directory.
+ifdef lm-DEBUG-MAKEFILE
+$$(info lm-lib-$(1)-installdir-lib=$$(lm-lib-$(1)-installdir-lib))
+endif
+
+.PHONY: install-lib-$(1)
+install-lib-$(1): build-lib-$(1) $$(lm-lib-$(1)-installdir-lib)
+	$(COPY) $$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-target) \
+		$$(lm-lib-$(1)-extra-files) \
+		$$(lm-lib-$(1)-installdir-lib)
 
 # clean
 .PHONY: clean-lib-$(1)
@@ -490,216 +482,6 @@ libclean-lib-$(1): clean-lib-$(1)
 .PHONY: build-lib-$(1)
 distclean-lib-$(1): libclean-$(1)
 
-endef
-########
-
-########
-# install-module-template($1,$2):Install module files to directory
-# $(2) with build target $(1).
-define install-module-template
-
-###
-# Directories
-
-# Staging directories
-lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)
-lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)
-lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)
-lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)
-lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)
-
-# Installation directories
-lm-module-finallib-dir:=$$(lm-installdir-lib)
-lm-module-finalbin-dir:=$$(lm-installdir-bin)
-lm-module-finaldata-dir:=$$(lm-installdir-data)
-lm-module-finaldoc-dir:=$$(lm-installdir-doc)
-
-# List of libraries to install, use module definitions when given.
-ifneq ($$(origin INSTALL_LIBRARIES),undefined)
-lm-module-install-libs:=$$(strip $$(INSTALL_LIBRARIES))
-else
-lm-module-install-libs=$$(LIBRARIES)
-endif # INSTALL_LIBRARIES
-
-# List of packages to install, use module definitions when given.
-ifneq ($$(origin INSTALL_PACKAGES),undefined)
-lm-module-install-pkgs:=$$(strip $$(INSTALL_PACKAGES))
-else
-lm-module-install-pkgs:=\
-$$(foreach pkg,$$(PACKAGES),\
-	$$(if $$($$(pkg)_LIBRARY),$$($$(pkg)_LIBRARY) ,$$(pkg) ))
-endif # INSTALL_PACKAGES
-
-# List of headers to install, use module definitions when given.
-ifneq ($$(origin INSTALL_HEADERS),undefined)
-lm-module-install-headers:=$$(strip $$(INSTALL_HEADERS))
-else
-lm-module-install-headers:=\
-$$(foreach lib,$$(lm-module-install-libs),\
-	$$(if $$(findstring undefined,$$(origin $$(lib)_HEADERS)),\
-		$$(foreach src,$$($$(lib)_SOURCES),\
-			$$(call interface,$$(src)) $$(call header,$$(src))),\
-		$$(foreach src,$$($$(lib)_HEADERS),\
-			$$(call interface,$$(src)) $$(call header,$$(src)))))\
-$$(foreach pkg,$$(PACKAGES),\
-	$$(call interface,\
-		$$(if $$($$(pkg)_PACK_NAME),$$($$(pkg)_PACK_NAME),$$(pkg))) \
-	$$(if $$(findstring undefined,$$(origin $$(pkg)_HEADERS)),\
-		$$(foreach src,$$($$(pkg)_SOURCES),\
-			$$(call interface,$$(src)) $$(call header,$$(src))),\
-		$$(foreach src,$$($$(pkg)_HEADERS),\
-			$$(call interface,$$(src)) $$(call header,$$(src)))))
-endif # INSTALL_HEADERS
-
-# List of packings to install.
-lm-module-install-packed:=\
-	$$(foreach lib,$$(PACKED), \
-		$$(call bytelib,$$(lib)) $$(call interface,$$($$(lib)_PACK_NAME)))
-
-ifdef lm-nativecode
-ifneq ("$$(strip $$(lm-nativecode))","false")
-lm-module-install-packed+=\
-	$$(foreach lib,$$(PACKED), \
-		$$(call natlib,$$(lib)) $$(call objlib,$$(lib)))
-endif
-endif
-
-# Calculate library files to install
-lm-module-install-libfiles:=\
-$$(foreach lib,$$(lm-module-install-libs),\
-	$$(call bytelib,$$(lib))\
-	$$(if $$(findstring undefined,$$(origin $$(lib)_PACK_NAME)),,\
-		$$(call interface,$$($$(lib)_PACK_NAME))))
-
-lm-module-install-libfiles+=\
-	$$(foreach pkg,$$(lm-module-install-pkgs), $$(call bytelib,$$(pkg)))
-
-ifdef lm-nativecode
-ifneq ("$$(strip $$(lm-nativecode))","false")
-lm-module-install-libfiles+=\
-	$$(foreach lib,$$(lm-module-install-libs), \
-		$$(call natlib,$$(lib)) $$(call clib,$$(lib)))
-lm-module-install-libfiles+=\
-	$$(foreach pkg,$$(lm-module-install-pkgs), \
-		$$(call natlib,$$(pkg)) $$(call clib,$$(pkg)))
-endif
-endif
-
-
-lm-module-install-libfiles+=$$(lm-module-install-headers) \
-	$$(lm-module-install-packed) \
-	$$(INSTALL_EXTRA_LIBRARIES)
-
-
-# List of binariess to install, use module definitions when given.
-ifdef INSTALL_PROGRAMS
-lm-module-install-bins=$$(strip $$(INSTALL_PROGRAMS))
-else
-#lm-module-install-bins=$$(PROGRAMS)
-endif # INSTALL_PROGRAMS
-
-# Calculate binary files to install
-lm-module-install-binfiles:=$$(lm-module-install-bins) $$(INSTALL_EXTRA_PROGRAMS)
-
-# Make sure that required directories exist.
-ifneq ($$(strip $$(MODULE_INSTALL_PATH)),)
-lm-module-objlib-dir:=$(2)/$$(lm-lib-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-objbin-dir:=$(2)/$$(lm-bin-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-objcode-dir:=$(2)/$$(lm-code-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-objdata-dir:=$(2)/$$(lm-data-dirname)/$$(MODULE_INSTALL_PATH)
-lm-module-objdoc-dir:=$(2)/$$(lm-doc-dirname)/$$(MODULE_INSTALL_PATH)
-
-# Has a distinct installation path
-ifneq ($$(strip $$(lm-module-install-libfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-objlib-dir)))
-endif
-ifneq ($$(strip $$(lm-module-install-binfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-objbin-dir)))
-endif
-ifneq ($$(strip $$(lm-module-install-datafiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-objdata-dir)))
-endif
-ifneq ($$(strip $$(lm-module-install-docfiles)),)
-$$(eval $$(call make-dir-template,$$(lm-module-objdoc-dir)))
-endif
-endif # MODULE_INSTALL_PATH
-
-# Select targets
-ifneq ($$(strip $$(lm-module-install-libfiles)),)
-lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
-	lm-$(1)-module-install-lib
-endif
-
-ifneq ($$(strip $$(lm-module-install-binfiles)),)
-lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
-	lm-$(1)-module-install-bin
-endif
-
-ifneq ($$(strip $$(lm-module-install-datafiles)),)
-lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
-	lm-$(1)-module-install-data
-endif
-ifneq ($$(strip $$(lm-module-install-docfiles)),)
-lm-module-install-$(1)-target:=$$(lm-module-install-$(1)-target) \
-	lm-$(1)-module-install-doc
-endif
-
-## Copying
-$$(lm-module-objlib-dir)/%: % $$(lm-module-objlib-dir)
-	$$(COPY) % $$(lm-module-objlib-dir)
-
-$$(lm-module-objbin-dir)/%: % $$(lm-module-objbin-dir)
-	$$(COPY) % $$(lm-module-objbin-dir)
-
-# Install directories
-.PHONY: lm-$(1)-module-install-lib
-ifneq ($$(strip $$(lm-module-install-libfiles)),)
-lm-$(1)-module-install-lib: $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-module-install-libfiles) $$(lm-module-objlib-dir)
-else
-lm-$(1)-module-install-lib:
-
-endif
-
-.PHONY: lm-$(1)-module-install-pkg
-ifneq ($$(strip $$(lm-module-install-pkgfiles)),)
-lm-$(1)-module-install-pkg: $$(lm-module-objlib-dir)
-	$$(COPY) $$(lm-module-install-pkgfiles) $$(lm-module-objlib-dir)
-else
-lm-$(1)-module-install-pkg:
-
-endif
-
-.PHONY: lm-$(1)-module-install-bin
-ifneq ($$(strip $$(lm-module-install-binfiles)),)
-lm-$(1)-module-install-bin: $$(lm-module-objbin-dir)
-	$$(COPY) $$(lm-module-install-binfiles) $$(lm-module-objbin-dir)
-else
-lm-$(1)-module-install-bin:
-endif
-
-.PHONY: lm-$(1)-module-install-data
-ifneq ($$(strip $$(lm-module-install-datafiles)),)
-lm-$(1)-module-install-data: $$(lm-module-objdata-dir)
-	$$(COPY) $$(lm-module-install-datafiles) $$(lm-module-objdata-dir)
-else
-lm-$(1)-module-install-data:
-endif
-
-.PHONY: lm-$(1)-module-install-doc
-ifneq ($$(strip $$(lm-module-install-docfiles)),)
-lm-$(1)-module-install-doc: $$(lm-module-objdoc-dir)
-	$$(COPY) $$(lm-module-install-docfiles) $$(lm-module-objdoc-dir)
-else
-lm-$(1)-module-install-doc:
-endif
-
-ifdef lm-DEBUG-MAKEFILE
-$$(info lm-module-install-$(1)-target = $$(lm-module-install-$(1)-target))
-endif
-
-.PHONY: $(1)
-module-install-$(1): $$(lm-module-install-$(1)-target)
 endef
 ########
 
@@ -743,6 +525,15 @@ lm-prog-$(1)-nat-libs:=$$($(1)_NATLIBS)
 lm-prog-$(1)-program:=$(1)
 lm-prog-$(1)-natprogram:=$(1).opt
 
+lm-prog-$(1)-extra-files:=$$($(1)_EXTRA_FILES)
+
+# The installation directory.
+ifneq ($$(origin $(1)_INSTALLDIR),undefined)
+lm-prog-$(1)-installdir-bin:=$$($(1)_INSTALLDIR)
+else
+lm-prog-$(1)-installdir-bin:=$$(lm-installdir-bin)
+endif
+
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-prog-$(1)-headers=$$(lm-prog-$(1)-headers))
 $$(info lm-prog-$(1)-mlheaders=$$(lm-prog-$(1)-mlheaders))
@@ -754,6 +545,7 @@ $$(info lm-prog-$(1)-cobjects=$$(lm-prog-$(1)-cobjects))
 $$(info lm-prog-$(1)-nat-libs=$$(lm-prog-$(1)-nat-libs))
 $$(info lm-prog-$(1)-program=$$(lm-prog-$(1)-program))
 $$(info lm-prog-$(1)-natprogram=$$(lm-prog-$(1)-natprogram))
+$$(info lm-prog-$(1)-extra-files=$$(lm-prog-$(1)-extra-files))
 endif
 
 ##
@@ -803,12 +595,6 @@ $$(lm-prog-$(1)-interfaces): %.cmi: %.mli
 $$(lm-prog-$(1)-objects): %.cmo: %.ml
 	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) -c $$<
 
-# Native-code object files
-#$$(lm-prog-$(1)-natobjects): %.cmx: %.ml
-#	$$(OCAMLNAT) $$(lm-prog-$(1)-ocamlnat-options) -c $$<
-
-#$$(lm-prog-$(1)-cobjects): %.o: %.cmx
-
 ifneq ($$(strip $$($(1)_CUSTOM_BUILD)),yes)
 # Bytecode program
 $$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects)
@@ -826,23 +612,25 @@ $$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
 		$$(lm-prog-$(1)-nat-libs) $$(lm-prog-$(1)-natobjects)
 endif
 
-lm-prog-$(1)-objdir-files:=$$(lm-prog-$(1)-program)
+lm-prog-$(1)-install-files:=$$(lm-prog-$(1)-program)
 ifdef lm-nativecode
 ifneq ("$$(strip $$(lm-nativecode))","false")
-lm-prog-$(1)-objdir-files+= $$(lm-prog-$(1)-natprogram)
+lm-prog-$(1)-install-files+= $$(lm-prog-$(1)-natprogram)
 endif
 endif
-
-.PHONY: install-objdir-prog-$(1)
-install-objdir-prog-$(1): $$(lm-prog-$(1)-objdir-files) $$(lm-module-objbin-dir)
-	$$(COPY) $$(lm-prog-$(1)-objdir-files) $$(lm-module-objbin-dir)
 
 ###
 # Toplevel rules
 
 # build
 .PHONY: build-program-$(1)
-build-program-$(1): install-objdir-prog-$(1)
+build-program-$(1): $$(lm-prog-$(1)-install-files)
+
+# install
+.PHONY: install-program-$(1)
+install-program-$(1): $$(build-program-$(1)) $$(lm-prog-$(1)-installdir-bin)
+	$$(COPY) $$(lm-prog-$(1)-install-files) $$(lm-prog-$(1)-extra-files) \
+		$$(lm-prog-$(1)-installdir-bin)
 
 # clean
 .PHONY: clean-program-$(1)
@@ -937,20 +725,15 @@ lm-module-subdir-args=\
 	GLOBAL_OCAMLCPP_FLAGS='$(strip $(GLOBAL_OCAMLCPP_FLAGS))' \
 	$(SUBDIR_MAKE_OPTIONS)
 
-# lm-module-uses-objdir: Defined iff the module uses a staging directory.
-# lm-module-obj-dir: The staging directory to use.
-ifneq ($(strip $(MODULE_USE_OBJDIR)),no)
-lm-module-uses-objdir=yes
-lm-module-obj-dir=$(OBJ_ROOT)
-endif
-
 # lm-module-has-subdirs: Defined iff the module has sub-directories.
 ifneq ($(strip $(SUBDIRS)),)
 lm-module-has-subdirs=yes
 endif
 
-# lm-module-sources: All library and program sources, with library sources first
-lm-module-sources=$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
+# lm-module-sources: All library and program sources, with library
+# sources first.
+lm-module-sources=\
+	$(foreach lib,$(LIBRARIES),$($(lib)_SOURCES)) \
 	$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES))
 
 # lm-module-mlsources: All ml sources, with library sources first
@@ -976,10 +759,6 @@ endif
 #
 
 ##
-# Instantiate obj-dir install targets
-$(eval $(call install-module-template,objdir,$(OBJ_ROOT)))
-
-##
 # Instantiate targets for each sub-directory
 $(foreach sub,$(SUBDIRS),\
 $(eval $(call subdir-targets-template,$(sub))))
@@ -997,15 +776,6 @@ $(eval $(call program-targets-template,$(prog))))
 ###
 # Directories
 #
-ifeq ($(lm-module-uses-objdir),yes)
-lm-module-objdir=$(OBJ_ROOT)
-$(eval $(call make-dir-template,$(lm-module-objdir)))
-else
-lm-module-objdir=
-endif
-
-.PHONY: build-objdir
-build-objdir: $(lm-module-objdir)
 
 # Headers
 .PHONY: build-headers
@@ -1019,17 +789,19 @@ build-pkgs: $(foreach pkg,$(PACKAGES),build-pkg-$(pkg) )
 .PHONY: build-libs
 build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) )
 
+ifneq ($(strip CUSTOM_TARGET_install),yes)
+.PHONY: install-libs
+install-libs: $(foreach lib,$(LIBRARIES), install-lib-$(lib))
+endif
+
 # Program
 .PHONY: build-programs
 build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
 
-# Packings
-.PHONY: build-packings
-build-packings: $(foreach lib,$(PACKING),build-packing-$(lib) )
-
-# Packed
-.PHONY: build-packed
-build-packed: $(foreach lib,$(PACKED),build-packed-$(lib) )
+ifneq ($(strip CUSTOM_TARGET_install),yes)
+.PHONY: install-programs
+install-programs: $(foreach prog,$(PROGRAMS), install-program-$(prog))
+endif
 
 ifdef lm-DEBUG-MAKEFILE
 $(info LIBRARIES = $(LIBRARIES))
@@ -1054,7 +826,6 @@ clean-dir: $(foreach lib,$(LIBRARIES),clean-lib-$(lib) )  \
 	$(foreach prog,$(PROGRAMS),clean-program-$(prog) )
 	$(EXTRA_CLEAN)
 
-clean: 	clean-subdirs clean-dir
 
 .PHONY: libclean-subdirs
 libclean-subdirs:
@@ -1076,32 +847,28 @@ distclean-dir: libclean-dir
 	-$(RM) depend
 	$(EXTRA_DISTCLEAN)
 
-distclean: distclean-subdirs distclean-dir
-
 ###
 # Toplevel targets
 
-.PHONY: build
 ifneq ($(strip CUSTOM_TARGET_build),yes)
-build: build-objdir build-subdirs \
-	build-libs \
-	build-programs \
-	module-install-objdir
-endif
-
-.PHONY: install install-libs
-ifneq ($(strip CUSTOM_TARGET_install),yes)
-install-libs: $(foreach lib,$(LIBS), install-lib-$(lib))
+.PHONY: build
+build: build-subdirs build-libs build-programs
 endif
 
 ifneq ($(strip CUSTOM_TARGET_install),yes)
-install: build install-libs
+.PHONY: install
+install: build install-subdirs install-libs install-programs
 endif
+
+.PHONY: clean
+clean: clean-subdirs clean-dir
+
+.PHONY: distclean
+distclean: distclean-subdirs distclean-dir
 
 ##
 # Run the sub-directories.
 
-#ifdef lm-module-has-subdirs
 .PHONY: depend-subdirs
 lm-subdir-depend-target=$(foreach sub,$(SUBDIRS), depend-subdir-$(sub))
 depend-subdirs: $(lm-subdir-depend-target)
@@ -1125,17 +892,14 @@ libclean-subdirs: $(lm-subdir-libclean-target)
 .PHONY: distclean-subdirs
 lm-subdir-distclean-target=$(foreach sub,$(SUBDIRS), distclean-subdir-$(sub))
 distclean-subdirs: $(lm-subdir-distclean-target)
-#endif
 
-##
+###
 # Dependencies
-# Define NODEPEND to prevent using depend
-##
+# Define NODEPEND to not use depend.
+#
 
 ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
 ifndef NODEPEND
-#depend: $(lm-module-headers)
-#	-$(OCAMLDEP) $(lm-module-headers) $(lm-module-mlsources) > depend
 depend: $(lm-module-mlsources)
 	-$(OCAMLDEP) *.mli  $(lm-module-mlsources) > depend
 include depend
@@ -1144,6 +908,5 @@ endif
 
 
 ####
-# Variables that should not be exported
-unexport lm-module-uses-objdir
+# Variables that should not be exported.
 unexport lm-module-has-subdirs

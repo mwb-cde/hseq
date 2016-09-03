@@ -236,9 +236,6 @@ export INSTALLDIR_ROOT:=$(lm-install-prefix)
 # lm-lib-dirname: Libraries directory
 export lm-lib-dirname:=lib
 
-# lm-objdir-lib: Libraries directory in staging directory
-export lm-objdir-lib=$(OBJ_ROOT)/$(lm-lib-dirname)
-
 # lm-installdir-lib: Libraries directory in installation directory
 ifdef LibDir
 export lm-installdir-lib=$(LibDir)
@@ -247,18 +244,12 @@ export lm-installdir-lib=$(lm-install-prefix)/$(lm-lib-dirname)
 endif
 export INSTALLDIR_LIB:=$(lm-installdir-lib)
 
-$(lm-objdir-lib):
-	$(MKDIR) $(lm-objdir-lib)
-
 $(lm-installdir-lib):
 	$(MKDIR) $(lm-installdir-lib)
 
 #
 # lm-bin-dirname: Binaries
 lm-bin-dirname:=bin
-
-# lm-objdir-bin: Binaries directory in staging directory
-export lm-objdir-bin=$(OBJ_ROOT)/$(lm-bin-dirname)
 
 # lm-installdir-bin: Binaries directory in installation directory
 ifdef BinDir
@@ -268,18 +259,12 @@ export lm-installdir-bin=$(lm-install-prefix)/$(lm-bin-dirname)
 endif
 export INSTALLDIR_BIN:=$(lm-installdir-bin)
 
-$(lm-objdir-bin):
-	$(MKDIR) $(lm-objdir-bin)
-
 $(lm-installdir-bin):
 	$(MKDIR) $(lm-installdir-bin)
 
 #
 # lm-data-dirname: Shared data
 lm-data-dirname:=share/hseq-data
-
-# lm-objdir-data: Data directory in staging directory
-export lm-objdir-data:=$(OBJ_ROOT)/$(lm-data-dirname)
 
 # lm-installdir-data: Data directory in installation directory
 ifdef DataDir
@@ -289,18 +274,12 @@ export lm-installdir-data:=$(lm-install-prefix)/$(lm-data-dirname)
 endif
 export INSTALLDIR_DATA:=$(lm-installdir-data)
 
-$(lm-objdir-data):
-	$(MKDIR) $(lm-objdir-data)
-
 $(lm-installdir-data):
 	$(MKDIR) $(lm-installdir-data)
 
 #
 # lm-doc-dirname: Shared doc
 lm-doc-dirname:=share/doc/hseq-doc
-
-# lm-objdir-doc: Doc directory in staging directory
-export lm-objdir-doc:=$(OBJ_ROOT)/$(lm-doc-dirname)
 
 # lm-installdir-doc: Document directory in installation directory
 ifdef DocDir
@@ -310,17 +289,11 @@ export lm-installdir-doc:=$(lm-install-prefix)/$(lm-doc-dirname)
 endif
 export INSTALLDIR_DOC:=$(lm-installdir-doc)
 
-$(lm-objdir-doc):
-	$(MKDIR) $(lm-objdir-doc)
-
 $(lm-installdir-doc):
 	$(MKDIR) $(lm-installdir-doc)
 
 # lm-thys-dirname: Theories directory
 export lm-thys-dirname:=lib/thys
-
-# lm-objdir-thys: Theories directory in staging directory
-export lm-objdir-thys=$(OBJ_ROOT)/$(lm-thys-dirname)
 
 # lm-installdir-thys: Theories directory in installation directory
 ifdef ThyDir
@@ -330,22 +303,12 @@ export lm-installdir-thys=$(lm-install-prefix)/$(lm-thys-dirname)
 endif
 export INSTALLDIR_THYS:=$(lm-installdir-thys)
 
-$(lm-objdir-thys):
-	$(MKDIR) $(lm-objdir-thys)
-
 $(lm-installdir-thys):
 	$(MKDIR) $(lm-installdir-thys)
 
 #
 # lm-data-dirname: Intermediate objects, which are not installed
 export lm-code-dirname:=code
-
-# lm-objdir-code: Intermediate objects directory
-export lm-objdir-code=$(OBJ_ROOT)/$(lm-code-dirname)
-
-$(lm-objdir-code):
-	$(MKDIR) $(lm-objdir-code)
-
 
 #####
 # Build Targets
@@ -401,8 +364,8 @@ install-toplevel-doc:
 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
 	fi
 
-.PHONY: install-toplevel-data
-install-toplevel-data:
+#.PHONY: install-toplevel-data
+#install-toplevel-data:
 #	if [ -d $(lm-objdir-data) ] ; then \
 # 	$(INSTALL) -d $(lm-installdir-data) ; \
 #	$(COPY) -r $(lm-objdir-data)/* $(lm-installdir-data) ; \

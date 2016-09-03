@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc
+SUBDIRS=quote hseq hsequser tools thys #doc
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
@@ -139,9 +139,6 @@ SUBDIRS=quote hseq hsequser tools thys doc
 # MODULE_OBJ_PATH: PATH to append to the staging directory path for
 # this module and all its sub-directories.
 #MODULE_OBJ_PATH=
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-#MODULE_USE_OBJDIR=no
 
 # MODULE_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
 #MODULE_OCAMLC_FLAGS=
@@ -196,7 +193,6 @@ EXTRA_DISTCLEAN=$(RM) configure.data config.make
 # Sub-directory building options
 
 # SUBDIR_MAKE_OPTIONS: Options to pass to the sub-directory make.
-#SUBDIR_MAKE_OPTIONS=
 SUBDIR_MAKE_OPTIONS=
 
 ####
@@ -211,14 +207,7 @@ CUSTOM_TARGET_install=
 
 lm-file-permissions=755
 
-.PHONY: toplevel_target install-bin install-lib install-data install-doc
-install-bin: install-toplevel-bin
-install-lib: install-toplevel-lib
-install-data: install-toplevel-data
-install-doc: install-toplevel-doc
-
-install: build install-toplevel-bin install-toplevel-lib \
-	install-toplevel-doc install-toplevel-data
+all: build
 
 
 ######################################################################

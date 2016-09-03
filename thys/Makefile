@@ -89,10 +89,10 @@ HSEQC=$(HSEQB) --bin $(HSEQ) $(HSEQ_INCLUDE)
 
 # build: Build everything
 CUSTOM_TARGET=build=yes
-build: thys install-thys-objdir
+build: thys
 
 #install: Install everything
-#install: install-thys
+install: install-thys
 
 ###
 # Clean up
@@ -123,9 +123,9 @@ local_thy_config.ml: Makefile
 thys: local_thy_config.ml
 	$(HSEQC) $(BUILDSCRIPT)
 
-.PHONY: install-thys-objdir
-install-thys-objdir: thys $(lm-objdir-thys)
-	-$(COPY) *.tho $(lm-objdir-thys)
-	-$(COPY) *Script.ml $(lm-objdir-thys)
-	-$(COPY) *.cmi $(lm-objdir-thys)
-	-$(COPY) *.cmo $(lm-objdir-thys)
+.PHONY: install-thys
+install-thys: thys $(INSTALLDIR_THYS)
+	-$(COPY) *.tho $(INSTALLDIR_THYS)
+	-$(COPY) *Script.ml $(INSTALLDIR_THYS)
+	-$(COPY) *.cmi $(INSTALLDIR_THYS)
+	-$(COPY) *.cmo $(INSTALLDIR_THYS)
