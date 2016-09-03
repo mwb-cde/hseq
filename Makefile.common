@@ -344,25 +344,25 @@ export lm-code-dirname:=code
 # Toplevel installation targets
 
 
-.PHONY: install-toplevel-bin
-install-toplevel-bin:
-	-$(MKDIR) $(lm-installdir-bin)
-	$(COPY) -r $(lm-objdir-bin)/* $(lm-installdir-bin)
-	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-bin)
+# .PHONY: install-toplevel-bin
+# install-toplevel-bin:
+# 	-$(MKDIR) $(lm-installdir-bin)
+# 	$(COPY) -r $(lm-objdir-bin)/* $(lm-installdir-bin)
+# 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-bin)
 
-.PHONY: install-toplevel-lib
-install-toplevel-lib:
-	-$(MKDIR) $(lm-installdir-lib)
-	$(COPY) -r $(lm-objdir-lib)/* $(lm-installdir-lib)
-	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
+# .PHONY: install-toplevel-lib
+# install-toplevel-lib:
+# 	-$(MKDIR) $(lm-installdir-lib)
+# 	$(COPY) -r $(lm-objdir-lib)/* $(lm-installdir-lib)
+# 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-lib)
 
-.PHONY: install-toplevel-doc
-install-toplevel-doc:
-	if [ -d $(lm-objdir-doc) ] ; then \
-	$(INSTALL) -d $(lm-installdir-doc) ; \
-	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
-	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
-	fi
+# .PHONY: install-toplevel-doc
+# install-toplevel-doc:
+# 	if [ -d $(lm-objdir-doc) ] ; then \
+# 	$(INSTALL) -d $(lm-installdir-doc) ; \
+# 	$(COPY) -r $(lm-objdir-doc)/* $(lm-installdir-doc)  ; \
+# 	$(CHMOD) -R $(lm-file-permissions) $(lm-installdir-doc) ; \
+# 	fi
 
 #.PHONY: install-toplevel-data
 #install-toplevel-data:
