@@ -56,11 +56,14 @@ LIBRARIES=hseqtop
 hseqtop_SOURCES=unsafe init cli
 
 # object_HEADERS: List of headers, without suffixes. Default is object_SOURCES
-object_HEADERS=
+#hseqtop_HEADERS=
 
 # object_INCLUDE: Directories to include when compiling [object].
 hseqtop_INCLUDE=+compiler-libs -I $(SRC_ROOT)/quote \
 	-I $(SRC_ROOT)/hseq -I $(SRC_ROOT)/hsequser
+
+
+hseqtop_EXTRA_FILES=hseqstart.ml
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
