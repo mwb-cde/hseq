@@ -124,13 +124,23 @@ $$(lm-doc-$(1)-infodir)/README.txt: \
 build-doc-$(1)-info: $$(lm-doc-$(1)-infodir)/README.txt
 
 # Install rules.
+lm-doc-$(1)-info-installed-files:=\
+	$$(lm-doc-$(1)-installdir)/$$(lm-doc-$(1)-infodir)
+
+lm-doc-$(1)-html-installed-files:=\
+	$$(lm-doc-$(1)-installdir)/$$(lm-doc-$(1)-infodir)
+
 .PHONY: install-doc-$(1)-info
 install-doc-$(1)-info: build-doc-$(1)-info $$(lm-doc-$(1)-installdir)
 	$$(COPY) -r $$(lm-doc-$(1)-infodir) $$(lm-doc-$(1)-installdir)
+	$$(CHMOD) -R $$(lm-file-permissions) \
+			$$(lm-doc-$(1)-info-installed-files)
 
 .PHONY: install-doc-$(1)-html
 install-doc-$(1)-html: build-doc-$(1)-html $$(lm-doc-$(1)-installdir)
 	$$(COPY) -r $$(lm-doc-$(1)-htmldir) $$(lm-doc-$(1)-installdir)
+	$$(CHMOD) -R $$(lm-file-permissions) \
+			$$(lm-doc-$(1)-html-installed-files)
 
 # Clean
 .PHONY: clean-doc-$(1)-html

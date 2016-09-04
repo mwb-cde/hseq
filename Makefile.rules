@@ -458,11 +458,19 @@ ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-installdir-lib=$$(lm-lib-$(1)-installdir-lib))
 endif
 
+lm-lib-$(1)-install-files:=\
+	$$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-target)
+
+lm-lib-$(1)-installed-files:=\
+	$$(foreach file, $$(lm-lib-$(1)-install-files) \
+			 $$(lm-lib-$(1)-extra-files),\
+		$$(lm-lib-$(1)-installdir-lib)/$$(file) )
+
 .PHONY: install-lib-$(1)
 install-lib-$(1): build-lib-$(1) $$(lm-lib-$(1)-installdir-lib)
-	$(COPY) $$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-target) \
-		$$(lm-lib-$(1)-extra-files) \
+	$(COPY) $$(lm-lib-$(1)-install-files) $$(lm-lib-$(1)-extra-files) \
 		$$(lm-lib-$(1)-installdir-lib)
+	$(CHMOD) $$(lm-file-permissions) $$(lm-lib-$(1)-installed-files)
 
 # clean
 .PHONY: clean-lib-$(1)
@@ -619,6 +627,11 @@ lm-prog-$(1)-install-files+= $$(lm-prog-$(1)-natprogram)
 endif
 endif
 
+lm-prog-$(1)-installed-files:=\
+	$$(foreach file, $$(lm-prog-$(1)-install-files) \
+			 $$(lm-prog-$(1)-extra-files),\
+		$$(lm-prog-$(1)-installdir-bin)/$$(file) )
+
 ###
 # Toplevel rules
 
@@ -631,6 +644,7 @@ build-program-$(1): $$(lm-prog-$(1)-install-files)
 install-program-$(1): $$(build-program-$(1)) $$(lm-prog-$(1)-installdir-bin)
 	$$(COPY) $$(lm-prog-$(1)-install-files) $$(lm-prog-$(1)-extra-files) \
 		$$(lm-prog-$(1)-installdir-bin)
+	$(CHMOD) $$(lm-file-permissions) $$(lm-prog-$(1)-installed-files)
 
 # clean
 .PHONY: clean-program-$(1)

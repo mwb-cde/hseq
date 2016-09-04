@@ -211,6 +211,8 @@ OCAMLDOC+= $(OCAMLDOC_FLAGS)
 # Variable definitions
 #
 
+lm-file-permissions=755
+
 # SRC_ROOT: Absolute path to the root of the source tree. Defined in
 # config/data.make by configure.ml.
 export SRC_ROOT:=$(SrcDir)
