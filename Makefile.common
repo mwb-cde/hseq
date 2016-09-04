@@ -281,7 +281,7 @@ $(lm-installdir-data):
 
 #
 # lm-doc-dirname: Shared doc
-lm-doc-dirname:=share/doc/hseq-doc
+lm-doc-dirname:=share/hseq/doc
 
 # lm-installdir-doc: Document directory in installation directory
 ifdef DocDir
@@ -295,7 +295,7 @@ $(lm-installdir-doc):
 	$(MKDIR) $(lm-installdir-doc)
 
 # lm-thys-dirname: Theories directory
-export lm-thys-dirname:=lib/thys
+export lm-thys-dirname:=share/hseq/thys
 
 # lm-installdir-thys: Theories directory in installation directory
 ifdef ThyDir
