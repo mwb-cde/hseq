@@ -35,8 +35,8 @@ PROJ_ROOT=..
 # Variables
 ###
 
-# DOCSUBDIRS: The sub-directories to build (in order)
-DOCSUBDIRS=quickstart #hseq
+# SUBDIRS: The sub-directories to build (in order)
+SUBDIRS=quickstart #hseq
 
 ####
 # Don't modify anything below this line
@@ -50,7 +50,7 @@ DOCSUBDIRS=quickstart #hseq
 ifndef PROJ_ROOT
 $(error "PROJ_ROOT Must be set to relative path to HSeq root")
 endif
-#include $(PROJ_ROOT)/Makefile.rules
+include $(PROJ_ROOT)/Makefile.rules
 ####
 # Include the documentation rules
-include Makefile.docrules
+#include Makefile.docrules

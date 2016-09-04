@@ -177,6 +177,11 @@ ifndef OCAMLCPP
 export OCAMLCPP:=$(CAMLP) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
 endif
 
+# MAKEINFO: The makeinfo program
+#ifndef MAKEINFO
+#MAKEINFO=makeinfo ${OPTIONS}
+#endif
+
 # OCAMLDOC: The documentation generator
 ifndef OCAMLDOC
 export OCAMLDOC:=ocamldoc $(OCAMLDOC_FLAGS)
