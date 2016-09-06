@@ -177,6 +177,11 @@ ifndef OCAMLCPP
 export OCAMLCPP:=$(CAMLP) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
 endif
 
+# MAKEINFO: The makeinfo program
+#ifndef MAKEINFO
+#MAKEINFO=makeinfo ${OPTIONS}
+#endif
+
 # OCAMLDOC: The documentation generator
 ifndef OCAMLDOC
 export OCAMLDOC:=ocamldoc $(OCAMLDOC_FLAGS)
@@ -210,6 +215,8 @@ OCAMLDOC+= $(OCAMLDOC_FLAGS)
 ####
 # Variable definitions
 #
+
+lm-file-permissions=755
 
 # SRC_ROOT: Absolute path to the root of the source tree. Defined in
 # config/data.make by configure.ml.
@@ -279,7 +286,7 @@ $(lm-installdir-data):
 
 #
 # lm-doc-dirname: Shared doc
-lm-doc-dirname:=share/doc/hseq-doc
+lm-doc-dirname:=share/hseq/doc
 
 # lm-installdir-doc: Document directory in installation directory
 ifdef DocDir
@@ -293,7 +300,7 @@ $(lm-installdir-doc):
 	$(MKDIR) $(lm-installdir-doc)
 
 # lm-thys-dirname: Theories directory
-export lm-thys-dirname:=lib/thys
+export lm-thys-dirname:=share/hseq/thys
 
 # lm-installdir-thys: Theories directory in installation directory
 ifdef ThyDir

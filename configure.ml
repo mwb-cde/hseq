@@ -311,21 +311,41 @@ object
   val required = true
 end
 
-class thy_directory lib =
+class lib_directory base =
 object
-  inherit relative_directory lib
+  inherit relative_directory base
+  val description = "libraries directory"
+  val variable = "LibDir"
+  val mutable value = Some("lib")
+  val option = Some "--libdir"
+  val required = true
+end
+
+class data_directory base =
+object
+  inherit relative_directory base
+  val description = "data directory"
+  val variable = "DataDir"
+  val mutable value = Some("share/hseq")
+  val option = Some "--datadir"
+  val required = true
+end
+
+class thy_directory data =
+object
+  inherit relative_directory data
   val description = "theories directory"
   val variable = "ThyDir"
   val mutable value = Some("thys")
   val option = None
 end
 
-class doc_directory base =
+class doc_directory data =
 object
-  inherit relative_directory base
-  val description = "libraries directory"
+  inherit relative_directory data
+  val description = "documentation directory"
   val variable = "DocDir"
-  val mutable value = Some("share/doc/hseq")
+  val mutable value = Some("doc")
   val option = Some "--docdir"
   val required = true
 end
@@ -531,8 +551,9 @@ let base_dir = new base_directory;;
 let src_dir = new src_directory;;
 let bin_dir = new bin_directory base_dir;;
 let lib_dir = new lib_directory base_dir;;
-let thy_dir = new thy_directory lib_dir;;
-let doc_dir = new doc_directory base_dir;;
+let data_dir = new data_directory base_dir;;
+let thy_dir = new thy_directory data_dir;;
+let doc_dir = new doc_directory data_dir;;
 
 (* Tools *)
 let ocamlc_prog = new tool_ocamlc
@@ -551,6 +572,7 @@ let (settings: setting list) =
   src_dir;
   bin_dir;
   lib_dir;
+  data_dir;
   thy_dir;
   doc_dir;
 

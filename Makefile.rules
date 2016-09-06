@@ -458,11 +458,19 @@ ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-installdir-lib=$$(lm-lib-$(1)-installdir-lib))
 endif
 
+lm-lib-$(1)-install-files:=\
+	$$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-target)
+
+lm-lib-$(1)-installed-files:=\
+	$$(foreach file, $$(lm-lib-$(1)-install-files) \
+			 $$(lm-lib-$(1)-extra-files),\
+		$$(lm-lib-$(1)-installdir-lib)/$$(file) )
+
 .PHONY: install-lib-$(1)
 install-lib-$(1): build-lib-$(1) $$(lm-lib-$(1)-installdir-lib)
-	$(COPY) $$(lm-lib-$(1)-final-intfs) $$(lm-lib-$(1)-target) \
-		$$(lm-lib-$(1)-extra-files) \
+	$(COPY) $$(lm-lib-$(1)-install-files) $$(lm-lib-$(1)-extra-files) \
 		$$(lm-lib-$(1)-installdir-lib)
+	$(CHMOD) $$(lm-file-permissions) $$(lm-lib-$(1)-installed-files)
 
 # clean
 .PHONY: clean-lib-$(1)
@@ -482,7 +490,7 @@ libclean-lib-$(1): clean-lib-$(1)
 .PHONY: build-lib-$(1)
 distclean-lib-$(1): libclean-$(1)
 
-endef
+endef # library-targets-template
 ########
 
 ########
@@ -619,6 +627,11 @@ lm-prog-$(1)-install-files+= $$(lm-prog-$(1)-natprogram)
 endif
 endif
 
+lm-prog-$(1)-installed-files:=\
+	$$(foreach file, $$(lm-prog-$(1)-install-files) \
+			 $$(lm-prog-$(1)-extra-files),\
+		$$(lm-prog-$(1)-installdir-bin)/$$(file) )
+
 ###
 # Toplevel rules
 
@@ -631,6 +644,7 @@ build-program-$(1): $$(lm-prog-$(1)-install-files)
 install-program-$(1): $$(build-program-$(1)) $$(lm-prog-$(1)-installdir-bin)
 	$$(COPY) $$(lm-prog-$(1)-install-files) $$(lm-prog-$(1)-extra-files) \
 		$$(lm-prog-$(1)-installdir-bin)
+	$(CHMOD) $$(lm-file-permissions) $$(lm-prog-$(1)-installed-files)
 
 # clean
 .PHONY: clean-program-$(1)
@@ -649,7 +663,137 @@ libclean-program-$(1): clean-program-$(1)
 .PHONY: build-program-$(1)
 distclean-program-$(1): libclean-program-$(1)
 
-endef
+endef # program-targets-template
+########
+
+#####################
+# Documentation
+#
+# template doc_TEMPLATE
+# Build rules for document $(1).
+# Inputs:
+#   - $(1)_TEXINFO: Texinfo source files
+#   - $(1)_INCLUDE: Include directory
+#   - $(1)_OUTPUT: Name of the document [default: $(1)]
+#   - $(1)_HTMLDIR: Name of the document html directory
+#		    [default: $($(1)_output).html]
+#   - $(1)_INFODIR: Name of the document info directory
+#		    [default: $($(1)_output).info]
+define doc-targets-template
+
+##
+# Set variables
+
+# The output name
+lm-doc-$(1)-output:=\
+	$$(or $$(strip $$($(1)_OUTPUT)),$$(strip $(1)))
+
+# The html directory
+lm-doc-$(1)-htmldir:=\
+	$$(or $$(strip $$($(1)_HTMLDIR)),$$(lm-doc-$(1)-output).html)
+
+# The info directory
+lm-doc-$(1)-infodir:=\
+	$$(or $$(strip $$($(1)_INFODIR)),$$(lm-doc-$(1)-output).info)
+
+# Directories to include
+lm-doc-$(1)-includedir:=\
+	$$(foreach dir,$$($(1)_INCLUDE) $$(MODULE_INCLUDE),-I $$(dir))
+
+# Document sources.
+lm-doc-$(1)-sources:= $$($(1)_TEXINFO)
+
+# The installation directory.
+lm-doc-$(1)-installdir:=$$(lm-installdir-doc)
+
+# Whether to buid and install the documentation.
+ifndef MAKEINFO
+# No MAKEINFO program so no documentation.
+lm-doc-build-target:=
+lm-doc-install-target:=
+lm-doc-clean-target:=
+else
+# MAKEINFO program available so documentation.
+lm-doc-build-target:=build-doc
+lm-doc-install-target:=install-doc
+lm-doc-clean-target:=clean-doc
+endif
+
+##
+# Build rules
+
+# The html directory
+$$(lm-doc-$(1)-htmldir):
+	$$(MKDIR) $$(lm-doc-$(1)-htmldir)
+
+$$(lm-doc-$(1)-htmldir)/README.txt: \
+		$$(lm-doc-lm-doc-$(1)-htmldir) $$(lm-doc-$(1)-sources)
+	$$(MAKEINFO) --html $$(lm-doc-$(1)-includedir) \
+		$$(lm-doc-$(1)-sources) \
+		-o $$(lm-doc-$(1)-htmldir)
+	echo "HTML documentation." > $$(lm-doc-$(1)-htmldir)/README.txt
+
+.PHONY: build-doc-$(1)-html
+build-doc-$(1)-html: $$(lm-doc-$(1)-htmldir)/README.txt
+
+# The info directory
+$$(lm-doc-$(1)-infodir):
+	$$(MKDIR) $$(lm-doc-$(1)-infodir)
+
+$$(lm-doc-$(1)-infodir)/README.txt: \
+	$$(lm-doc-$(1)-infodir) $$(lm-doc-$(1)-sources)
+	$$(MAKEINFO) --info $$(lm-doc-$(1)-includedir) \
+		$$(lm-doc-$(1)-sources) \
+		-o $$(lm-doc-$(1)-infodir)
+	echo "INFO documentation." > $$(lm-doc-$(1)-infodir)/README.txt
+
+.PHONY: build-doc-$(1)-info
+build-doc-$(1)-info: $$(lm-doc-$(1)-infodir)/README.txt
+
+# Install rules.
+lm-doc-$(1)-info-installed-files:=\
+	$$(lm-doc-$(1)-installdir)/$$(lm-doc-$(1)-infodir)
+
+lm-doc-$(1)-html-installed-files:=\
+	$$(lm-doc-$(1)-installdir)/$$(lm-doc-$(1)-infodir)
+
+.PHONY: install-doc-$(1)-info
+install-doc-$(1)-info: build-doc-$(1)-info $$(lm-doc-$(1)-installdir)
+	$$(COPY) -r $$(lm-doc-$(1)-infodir) $$(lm-doc-$(1)-installdir)
+	$$(CHMOD) -R $$(lm-file-permissions) \
+			$$(lm-doc-$(1)-info-installed-files)
+
+.PHONY: install-doc-$(1)-html
+install-doc-$(1)-html: build-doc-$(1)-html $$(lm-doc-$(1)-installdir)
+	$$(COPY) -r $$(lm-doc-$(1)-htmldir) $$(lm-doc-$(1)-installdir)
+	$$(CHMOD) -R $$(lm-file-permissions) \
+			$$(lm-doc-$(1)-html-installed-files)
+
+# Clean
+.PHONY: clean-doc-$(1)-html
+clean-doc-$(1)-html:
+	$$(RM) -r $$(lm-doc-$(1)-htmldir)
+
+.PHONY: clean-doc-$(1)-info
+clean-doc-$(1)-info:
+	$$(RM) -r $$(lm-doc-$(1)-infodir)
+
+####
+# Toplevel rules
+
+# Build
+.PHONY: build-doc-$(1)
+build-doc-$(1): build-doc-$(1)-info build-doc-$(1)-html
+
+# install
+.PHONY: install-doc-$(1)
+install-doc-$(1): install-doc-$(1)-info install-doc-$(1)-html
+
+# Clean
+.PHONY: clean-doc-$(1)
+clean-doc-$(1): clean-doc-$(1)-info clean-doc-$(1)-html
+
+endef # doc-targets-template
 ########
 
 ######
@@ -759,32 +903,41 @@ endif
 #
 
 ##
-# Instantiate targets for each sub-directory
+# Instantiate targets for sub-directories.
 $(foreach sub,$(SUBDIRS),\
 $(eval $(call subdir-targets-template,$(sub))))
 
 ##
-# Instantiate bytelib build targets for each target.
+# Instantiate build targets for libraries.
 $(foreach lib,$(LIBRARIES),\
 $(eval $(call library-targets-template,$(lib))))
 
 ##
-# Instantiate build targets for byte-code programs
+# Instantiate build targets for programs.
 $(foreach prog,$(PROGRAMS),\
 $(eval $(call program-targets-template,$(prog))))
+
+##
+# Instantiate build targets for the documentation.
+$(foreach doc,$(DOCUMENTS), \
+$(eval $(call doc-targets-template,$(doc))))
+
 
 ###
 # Directories
 #
 
+####
 # Headers
 .PHONY: build-headers
 build-headers: $(lm-module-interfaces)
 
+####
 # Packages
 .PHONY: build-pkgs
 build-pkgs: $(foreach pkg,$(PACKAGES),build-pkg-$(pkg) )
 
+####
 # Libraries
 .PHONY: build-libs
 build-libs: $(foreach lib,$(LIBRARIES),build-lib-$(lib) )
@@ -794,7 +947,8 @@ ifneq ($(strip CUSTOM_TARGET_install),yes)
 install-libs: $(foreach lib,$(LIBRARIES), install-lib-$(lib))
 endif
 
-# Program
+####
+# Programs
 .PHONY: build-programs
 build-programs: $(foreach prog,$(PROGRAMS),build-program-$(prog) )
 
@@ -810,6 +964,38 @@ $(info PACKING = $(PACKING))
 $(info PACKED = $(PACKED))
 endif
 
+####
+# Documentation
+
+.PHONY: build-doc build-info build-html
+
+ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
+build-doc:
+build-info:
+build-html:
+else
+build-doc: $(foreach doc,$(DOCUMENTS), build-doc-$(doc))
+	@echo "Built docs."
+build-info: $(foreach doc,$(DOCUMENTS), build-doc-$(doc)-info)
+	@echo "Built info docs."
+build-html: $(foreach doc,$(DOCUMENTS), build-doc-$(doc)-html)
+	@echo "Built html docs."
+endif
+
+.PHONY: install-doc install-info install-html
+ifeq '$(strip $(ENABLE_BUILD_DOC))' 'false'
+install-doc:
+install-info:
+install-html:
+else
+install-doc: $(foreach doc,$(DOCUMENTS), install-doc-$(doc))
+	@echo "Installed docs."
+install-info: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-info)
+	@echo "Installed info docs."
+install-html: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-html)
+	@echo "Installed html docs."
+endif
+
 ###
 # Clean up
 ###
@@ -823,9 +1009,17 @@ clean-dir: $(foreach lib,$(LIBRARIES),clean-lib-$(lib) )  \
 	$(foreach pkg,$(PACKAGES),clean-pkg-$(pkg) ) \
 	$(foreach group,$(PACKING),clean-packing-$(group) ) \
 	$(foreach lib,$(PACKED),clean-packed-$(lib) ) \
-	$(foreach prog,$(PROGRAMS),clean-program-$(prog) )
+	$(foreach prog,$(PROGRAMS),clean-program-$(prog) ) \
+	$(foreach doc,$(DOCUMENTS),clean-doc-$(doc) )
 	$(EXTRA_CLEAN)
 
+
+.PHONY: clean-doc
+clean-doc: $(foreach doc,$(DOCUMENTS), clean-doc-$(doc))
+.PHONY: clean-info
+clean-info: $(foreach doc,$(DOCUMENTS), clean-$(doc)-info)
+.PHONY: clean-html
+clean-html: $(foreach doc,$(DOCUMENTS), clean-$(doc)-html)
 
 .PHONY: libclean-subdirs
 libclean-subdirs:
@@ -852,12 +1046,13 @@ distclean-dir: libclean-dir
 
 ifneq ($(strip CUSTOM_TARGET_build),yes)
 .PHONY: build
-build: build-subdirs build-libs build-programs
+build: build-subdirs build-libs build-programs $(lm-doc-build-target)
 endif
 
 ifneq ($(strip CUSTOM_TARGET_install),yes)
 .PHONY: install
-install: build install-subdirs install-libs install-programs
+install: build install-subdirs install-libs install-programs \
+	$(lm-doc-install-target)
 endif
 
 .PHONY: clean

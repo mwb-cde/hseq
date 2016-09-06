@@ -205,8 +205,6 @@ toplevel_target: all
 # CUSTOM_TARGET_install: If defined, use a custom install target.
 CUSTOM_TARGET_install=
 
-lm-file-permissions=755
-
 all: build
 
 

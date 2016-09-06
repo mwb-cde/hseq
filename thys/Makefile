@@ -123,9 +123,14 @@ local_thy_config.ml: Makefile
 thys: local_thy_config.ml
 	$(HSEQC) $(BUILDSCRIPT)
 
+lm-thys-installed-files:=\
+	$(foreach file, *.tho *Script.ml *.cmi *.cmo,\
+			$(INSTALLDIR_THYS)/$(file) )
+
 .PHONY: install-thys
 install-thys: thys $(INSTALLDIR_THYS)
 	-$(COPY) *.tho $(INSTALLDIR_THYS)
 	-$(COPY) *Script.ml $(INSTALLDIR_THYS)
 	-$(COPY) *.cmi $(INSTALLDIR_THYS)
 	-$(COPY) *.cmo $(INSTALLDIR_THYS)
+	$(CHMOD) $(lm-file-permissions) $(lm-thys-installed-files)

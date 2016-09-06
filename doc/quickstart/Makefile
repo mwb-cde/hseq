@@ -58,5 +58,9 @@ hseq-quickstart_TEXINFO=hseq-quickstart.texi
 # Don't edit anything below this line.
 #####
 
+# Test for PROJ_ROOT being defined.
+ifndef PROJ_ROOT
+$(error "PROJ_ROOT Must be set to relative path to HSeq root")
+endif
 # Include the standard template.
-include $(PROJ_ROOT)/doc/Makefile.docrules
+include $(PROJ_ROOT)/Makefile.rules
