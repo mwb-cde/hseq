@@ -520,14 +520,14 @@ object (self)
   val required = false
 end
 
-class build_docs_setting base =
+class build_docs_setting makeinfo =
 object (self)
-  inherit dependent_setting base
+  inherit dependent_setting makeinfo
   val description = "whether to build the documentation"
   val variable = "CONFIG_ENABLE_BUILD_DOCS"
   val mutable value = Some("true")
   method get_value() =
-    let bvalue = base_setting#get_value() in
+    let bvalue = makeinfo#get_value() in
     if bvalue = None
     then Some("false")
     else value
@@ -629,7 +629,7 @@ let emit_make() =
   let print_obj oc obj = obj#print_var_make oc
   in
     Printf.fprintf oc
-      "# Definitions for makefiles (auto-generated) \n\n";
+      "# Definitions for makefiles (auto-generated)\n\n";
     List.iter (print_obj oc) settings;
     close_out oc;
     Printf.printf "Wrote file %s\n" make_data

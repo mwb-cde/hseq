@@ -41,10 +41,6 @@
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=../..
 
-# DISABLE_NATIVECODE: If yes, don't generate native-code
-#DISABLE_NATIVECODE=yes
-ENABLE_NATIVECODE=false
-
 #####
 # Module building settings
 #
@@ -71,6 +67,9 @@ lm-hseq-include=$(foreach l,$(hseq_INCLUDE),-I $(l) )
 # object_LIBS: Libraries to include when linking [object].
 hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma\
 	hseq.cma hsequser.cma tpquote.cma hseqtop.cma
+
+# DISABLE_NATIVECODE: If yes, don't generate native-code
+hseq_DISABLE_NATIVECODE=true
 
 ###
 # Makefile commands
