@@ -148,7 +148,7 @@ lm-bin-dirname=bin
 lm-doc-dirname=doc
 
 # lm-nativecode: Defined iff compile-to-native code is supported.
-ifneq ($(strip "$(ENABLE_NATIVECODE)"),"false")
+ifneq ($(strip "$(CONFIG_ENABLE_NATIVECODE)"),"false")
 lm-nativecode:=true
 endif
 
@@ -441,9 +441,7 @@ endif
 # build
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
 ifdef lm-nativecode
-ifneq ("$$(strip $$(lm-nativecode))","false")
 lm-lib-$(1)-target+= $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
-endif
 endif
 
 ifdef lm-DEBUG-MAKEFILE
@@ -495,6 +493,19 @@ endef # library-targets-template
 
 ########
 # program-targets-template($1): Targets for program $(1).
+#
+# Arguments
+#  $(1): Program to build.
+#  $(1)_SOURCES: Source files [required].
+#  $(1)_INCLUDE: Directories to add to the include list.
+#  $(1)_HEADERS: Header files [default: $(1)_SOURCES].
+#  $(1)_LIBS: Additional libraries to link in.
+#  $(1)_NATLIBS: Additional libraries to link in.
+#  $(1)_EXTRA_FILES: Extra files to install alongside the program.
+#  $(1)_INSTALLDIR: Installation directory. [default: $INSTALLDIR_BIN].
+#  $(1)_DISABLE_NATIVECODE: If defined, don't try to build a native code
+# 	program.
+
 define program-targets-template
 
 ifdef lm-DEBUG-MAKEFILE
@@ -534,6 +545,13 @@ lm-prog-$(1)-program:=$(1)
 lm-prog-$(1)-natprogram:=$(1).opt
 
 lm-prog-$(1)-extra-files:=$$($(1)_EXTRA_FILES)
+
+# Whether to build the native code program.
+ifdef lm-nativecode
+ifndef $(1)_DISABLE_NATIVECODE
+lm-prog-$(1)-build-nativecode:=true
+endif
+endif
 
 # The installation directory.
 ifneq ($$(origin $(1)_INSTALLDIR),undefined)
@@ -621,10 +639,8 @@ $$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
 endif
 
 lm-prog-$(1)-install-files:=$$(lm-prog-$(1)-program)
-ifdef lm-nativecode
-ifneq ("$$(strip $$(lm-nativecode))","false")
+ifdef lm-prog-$(1)-build-nativecode
 lm-prog-$(1)-install-files+= $$(lm-prog-$(1)-natprogram)
-endif
 endif
 
 lm-prog-$(1)-installed-files:=\
@@ -707,16 +723,14 @@ lm-doc-$(1)-sources:= $$($(1)_TEXINFO)
 lm-doc-$(1)-installdir:=$$(lm-installdir-doc)
 
 # Whether to buid and install the documentation.
-ifndef MAKEINFO
-# No MAKEINFO program so no documentation.
-lm-doc-build-target:=
-lm-doc-install-target:=
-lm-doc-clean-target:=
-else
-# MAKEINFO program available so documentation.
+ifneq '$(strip $(CONFIG_ENABLE_BUILD_DOCS))' 'false'
 lm-doc-build-target:=build-doc
 lm-doc-install-target:=install-doc
 lm-doc-clean-target:=clean-doc
+else
+lm-doc-build-target:=
+lm-doc-install-target:=
+lm-doc-clean-target:=
 endif
 
 ##
@@ -919,9 +933,10 @@ $(eval $(call program-targets-template,$(prog))))
 
 ##
 # Instantiate build targets for the documentation.
+ifneq '$(strip $(CONFIG_ENABLE_BUILD_DOCS))' 'false'
 $(foreach doc,$(DOCUMENTS), \
 $(eval $(call doc-targets-template,$(doc))))
-
+endif
 
 ###
 # Directories
@@ -969,7 +984,7 @@ endif
 
 .PHONY: build-doc build-info build-html
 
-ifeq '$(strip $(ENABLE_BUILD_DOCS))' 'false'
+ifeq '$(strip $(CONFIG_ENABLE_BUILD_DOCS))' 'false'
 build-doc:
 build-info:
 build-html:
@@ -982,18 +997,17 @@ build-html: $(foreach doc,$(DOCUMENTS), build-doc-$(doc)-html)
 	@echo "Built html docs."
 endif
 
-.PHONY: install-doc install-info install-html
-ifeq '$(strip $(ENABLE_BUILD_DOC))' 'false'
+ifeq '$(strip $(CONFIG_ENABLE_BUILD_DOCS))' 'false'
 install-doc:
 install-info:
 install-html:
 else
 install-doc: $(foreach doc,$(DOCUMENTS), install-doc-$(doc))
-	@echo "Installed docs."
+	@echo "Built docs."
 install-info: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-info)
-	@echo "Installed info docs."
+	@echo "Built info docs."
 install-html: $(foreach doc,$(DOCUMENTS), install-doc-$(doc)-html)
-	@echo "Installed html docs."
+	@echo "Built html docs."
 endif
 
 ###
@@ -1010,7 +1024,7 @@ clean-dir: $(foreach lib,$(LIBRARIES),clean-lib-$(lib) )  \
 	$(foreach group,$(PACKING),clean-packing-$(group) ) \
 	$(foreach lib,$(PACKED),clean-packed-$(lib) ) \
 	$(foreach prog,$(PROGRAMS),clean-program-$(prog) ) \
-	$(foreach doc,$(DOCUMENTS),clean-doc-$(doc) )
+	$(lm-doc-clean-target)
 	$(EXTRA_CLEAN)
 
 
@@ -1051,8 +1065,8 @@ endif
 
 ifneq ($(strip CUSTOM_TARGET_install),yes)
 .PHONY: install
-install: build install-subdirs install-libs install-programs \
-	$(lm-doc-install-target)
+install: build install-subdirs install-libs \
+		install-programs $(lm-doc-install-target)
 endif
 
 .PHONY: clean
