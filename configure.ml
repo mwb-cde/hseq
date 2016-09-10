@@ -306,17 +306,7 @@ object
   inherit relative_directory base
   val description = "libraries directory"
   val variable = "LibDir"
-  val mutable value = Some("lib")
-  val option = Some "--libdir"
-  val required = true
-end
-
-class lib_directory base =
-object
-  inherit relative_directory base
-  val description = "libraries directory"
-  val variable = "LibDir"
-  val mutable value = Some("lib")
+  val mutable value = Some("lib/hseq")
   val option = Some "--libdir"
   val required = true
 end
