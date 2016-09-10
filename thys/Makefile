@@ -50,8 +50,7 @@ HSEQB=$(HSEQ_TOOLS)/scripts/hseqb
 
 # HSEQLIB: The include directory for $(HSEQ) (before installation).
 HSEQLIB=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
-	$(HSEQ_TOOLS)/hseqtop $(HSEQ_TOOLS)/quote \
-	../obj/lib
+	$(HSEQ_TOOLS)/hseqtop $(HSEQ_TOOLS)/quote
 
 ####
 # Don't modify anything below this line
