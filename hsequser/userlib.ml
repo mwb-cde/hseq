@@ -5,15 +5,15 @@
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under the
-  terms of the Lesser GNU General Public License as published by the Free
-  Software Foundation; either version 3, or (at your option) any later
-  version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by the
+  Free Software Foundation; either version 3, or (at your option) any
+  later version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
-  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
-  more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -27,10 +27,12 @@ open Lib.Ops
 (** {5 Variables } *)
 module Var =
 struct
+
   let (state_v: Userstate.State.t ref) = ref (Userstate.State.empty())
   let state () = !state_v
   let set_state st = state_v := st
   let init() = set_state (Userstate.State.empty())
+
 end
 
 (** {5 Global access } *)
@@ -142,6 +144,7 @@ end
 (** {5 File loader} *)
 module Loader =
 struct
+
   (** Remember loaded theories *)
   let record_thy_fn ctxt thy =
     let n = thy.Theory.cname in
@@ -157,10 +160,10 @@ struct
       let set = Userstate.simpset st in
       let set1 = Simplib.on_load ctxt set thy in
       Global.set_state (Userstate.set_simpset st set1);
-      record_thy_fn ctxt thy
+      ctxt
 
   (** List of functions to apply to a loaded theory *)
-  let thy_fn_list = [simp_thy_fn]
+  let thy_fn_list = [simp_thy_fn; record_thy_fn]
 
   (** {5 Theory building and loading} *)
   module Var =
@@ -270,6 +273,7 @@ struct
       let ctxt = set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
+
 end
 
 (** Parsers and printers *)
@@ -642,11 +646,6 @@ struct
   let print_prf p = Display.print_prf (Global.ppinfo()) p
   let print_prfstk p = Display.print_prfstk (Global.ppinfo()) p
 
-(***
-  let print_termdefn def = Display.print_termdefn (Global.ppinfo()) def
-  let print_termdecln def = Display.print_termdecln (Global.ppinfo()) def
-**)
-
   let print_defn def = Display.print_defn (Global.ppinfo()) def
   let print_subst = Display.print_subst
 
@@ -670,7 +669,6 @@ let init () =
   Global.set_state st1;
   (try ignore(load_theory (Context.base_name (Global.context())))
    with _ -> ())
-
 
 let reset = init
 
@@ -707,6 +705,7 @@ let simpA_tac ?cntrl ?ignore ?set ?add ?a rules =
 
     Simplify assumptions.
 *)
+
 let simpA ?set ?a rules =
   let set0 = Lib.get_option set (Global.simpset()) in
   Simplib.simpA_tac set0 ?a rules

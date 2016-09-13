@@ -1,7 +1,7 @@
 (**----
    Name: userlib.ml
-   Copyright M Wahab 2013-2014
-   Author: M Wahab  <mwb.cde@gmail.com>
+   Copyright Matthew Wahab 2013-2016
+   Author: Matthew Wahab  <mwb.cde@gmail.com>
 
    This file is part of HSeq
 
@@ -25,12 +25,12 @@ open HSeq
 module Default =
 struct
 
-  let context() = 
+  let context() =
     let ctxt = BaseTheory.context() in
     let ctxt1 = Context.set_obj_suffix ctxt [".cmo"; "cmi"] in
     let ctxt2 = Context.set_script_suffix ctxt1 (Settings.script_suffix) in
-    let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in  
-    let ctxt4 = Context.set_base_name ctxt3 (Context.Default.base_thy_name) in  
+    let ctxt3 = Context.set_thy_suffix ctxt2 (Settings.thy_suffix) in
+    let ctxt4 = Context.set_base_name ctxt3 (Context.Default.base_thy_name) in
     ctxt4
 
   let scope () = Thydb.mk_scope(Context.thydb(context()))
@@ -55,19 +55,19 @@ struct
 end
 
 (** {5 Global state} *)
-module State = 
-struct 
+module State =
+struct
   type t =
     {
       context_f : Context.t;
       simpset_f : Simpset.simpset;
-      proofstack_f: Goals.ProofStack.t; 
+      proofstack_f: Goals.ProofStack.t;
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
     }
 
   (** Initializer *)
-  let empty() = 
+  let empty() =
     {
       context_f = Default.context();
       simpset_f = Default.simpset();
@@ -77,58 +77,38 @@ struct
     }
 
   let context st = st.context_f
-  let set_context st ctxt = 
+  let set_context st ctxt =
     { st with context_f = ctxt }
 
   let scope st = Context.scope_of (context st)
-  let set_scope st scp = 
+  let set_scope st scp =
     set_context st (Context.set_scope (context st) scp)
 
   let ppinfo st = Context.ppinfo (context st)
-  let set_ppinfo st pp = 
+  let set_ppinfo st pp =
     let ctxt = context st in
     set_context st (Context.set_ppinfo ctxt pp)
 
   let parsers st = Context.parsers (context st)
-  let set_parsers st pp = 
+  let set_parsers st pp =
     set_context st (Context.set_parsers (context st) pp)
 
   let simpset st = st.simpset_f
-  let set_simpset st s = 
+  let set_simpset st s =
     { st with simpset_f = s }
 
   let proofstack st = st.proofstack_f
-  let set_proofstack st s = 
+  let set_proofstack st s =
     { st with proofstack_f = s }
 
   let base_thy_builder st = st.base_thy_builder_f
-  let set_base_thy_builder st f = 
+  let set_base_thy_builder st f =
     { st with base_thy_builder_f = f }
 
   let thyset st = st.thyset_f
   let set_thyset st s = { st with thyset_f = s }
 
 end
-
-(**
-(** {5 Variables } *)
-module Var = 
-struct
-  let (state_v: State.t ref) = ref (State.empty())
-
-  let state () = !state_v
-  let set st = state_v := st
-  let init() = set (State.empty())
-end
-  ***)
-
-(****
-(** The global state *)
-let state = Var.state
-let set_state = Var.set
-let init_state = Var.init
-***)
-
 
 (** The global context *)
 let context = State.context
@@ -162,60 +142,58 @@ let set_base_thy_builder = State.set_base_thy_builder
 let thyset = State.thyset
 let set_thyset = State.set_thyset
 
-let thyset_add st t = 
+let thyset_add st t =
   let set1 = Lib.StringSet.add t (thyset st) in
   set_thyset st set1
 let thyset_mem st t =
   Lib.StringSet.mem t (thyset st)
 
-(***
-***)
 
-module Init = 
+module Init =
 struct
 
 (** State initializer *)
-  let init_context st = 
+  let init_context st =
     let ctxt0 = Default.context() in
     let ctxt1 = Context.set_path ctxt0 [Settings.thys_dir()] in
     set_context st ctxt1
 
-  let init_scope st = 
+  let init_scope st =
     set_scope st (Default.scope())
 
-  let init_ppinfo st = 
+  let init_ppinfo st =
     let ppinf0 = BoolPP.init_bool_printers (Default.printers()) in
-    let ppinf1 = 
-      BoolPP.init_bool_ppinfo 
-        ppinf0 
-        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols) 
-    in 
+    let ppinf1 =
+      BoolPP.init_bool_ppinfo
+        ppinf0
+        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols)
+    in
     set_ppinfo st ppinf1
 
-  let init_parsers st = 
-    let ptable0 = BoolPP.init_bool_parsers (Parser.init ()) in 
-    let ptable1 = 
-      BoolPP.init_bool_tokens 
-        ptable0 
-        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols)       
-    in 
+  let init_parsers st =
+    let ptable0 = BoolPP.init_bool_parsers (Parser.init ()) in
+    let ptable1 =
+      BoolPP.init_bool_tokens
+        ptable0
+        (BoolPP.quote_type_symbols, BoolPP.quote_term_symbols)
+    in
     set_parsers st ptable1
 
-  let init_simpset st = 
+  let init_simpset st =
     set_simpset st (Default.simpset())
 
-  let init_proofstack st = 
+  let init_proofstack st =
     set_proofstack st (Default.proofstack())
 
   let init_base_thy_builder st = st
 
 (** {5 Initialising functions} *)
 
-  let init st = 
-    let st1 = 
+  let init st =
+    let st1 =
       List.fold_left (fun a f -> f a) (State.empty())
         [init_context; init_scope;
-         init_ppinfo; init_parsers; 
+         init_ppinfo; init_parsers;
          init_simpset; init_proofstack;
          init_base_thy_builder]
     in
