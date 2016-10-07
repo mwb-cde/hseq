@@ -5,19 +5,19 @@
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under the
-  terms of the Lesser GNU General Public License as published by the Free
-  Software Foundation; either version 3, or (at your option) any later
-  version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by the
+  Free Software Foundation; either version 3, or (at your option) any
+  later version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
-  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
-  more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
-  You should have received a copy of the Lesser GNU General Public License
-  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (*
  * Identifier and theorem records
@@ -366,7 +366,16 @@ let get_term_pplist thy =
   let ppl = get_id_pps thy
   and tn = thy.name
   in
-  List.map (fun (x, y) -> (Ident.mk_long tn x , y)) ppl
+  List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
+
+let add_term_ppinfo thy pp =
+  let ppl = get_id_pps thy
+  and tn = thy.name
+  in
+  List.fold_left
+    (fun ppi (i, r) ->
+      (Printer.add_term_record ppi (Ident.mk_long tn i) (fst r)))
+        pp ppl
 
 let get_type_pp_rec n thy = List.assoc n thy.type_pps
 
@@ -387,6 +396,15 @@ let get_type_pplist thy =
   and tn = thy.name
   in
   List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
+
+let add_type_ppinfo thy pp =
+  let ppl = get_type_pps thy
+  and tn = thy.name
+  in
+  List.fold_left
+    (fun ppi (i, r) ->
+      (Printer.add_type_record ppi (Ident.mk_long tn i) r))
+        pp ppl
 
 (*
  * Theory Storage

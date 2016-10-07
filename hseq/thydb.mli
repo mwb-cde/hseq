@@ -243,7 +243,13 @@ val add_type_pp_rec:
 
 val get_type_pp_rec:
   string  -> string -> thydb -> Printer.record
-(** [get_type_pp_rec th n db]: Get the PP record [r] for type
+(** [get_type_pp_rec th (***
+val state: unit -> State.t
+(** The global state *)
+val set_state: State.t -> unit
+(** Set the global state *)
+***)
+n db]: Get the PP record [r] for type
     identifier [n] in theory [th].
 *)
 
