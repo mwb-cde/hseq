@@ -74,13 +74,6 @@ sig
   val set_thyset: t -> Lib.StringSet.t -> t
 end
 
-(***
-val state: unit -> State.t
-(** The global state *)
-val set_state: State.t -> unit
-(** Set the global state *)
-***)
-
 val context: State.t -> Context.t
 (** The global context *)
 val set_context: State.t -> Context.t -> State.t

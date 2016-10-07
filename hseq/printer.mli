@@ -5,10 +5,10 @@
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under the
-  terms of the Lesser GNU General Public License as published by the Free
-  Software Foundation; either version 3, or (at your option) any later
-  version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by the
+  Free Software Foundation; either version 3, or (at your option) any
+  later version.
 
   HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -20,11 +20,11 @@
 ----*)
 
 (**
-    Pretty printer.
+   Pretty printer.
 
-    Support for pretty printing terms and types including printer
-    information records to store symbolic representations and user
-    defined printers.
+   Support for pretty printing terms and types including printer
+   information records to store symbolic representations and user
+   defined printers.
 *)
 
 open Basic
@@ -218,8 +218,8 @@ val remove_printer: ('a, 'b)info -> Ident.t -> ('a, 'b)info
 
 type ppinfo =
     {
-      terms:  (ppinfo, (Basic.term * (Basic.term)list)) info;
-      types:  (ppinfo, (Ident.t * (Basic.gtype)list)) info
+      terms: (ppinfo, (Basic.term * (Basic.term)list)) info;
+      types: (ppinfo, (Ident.t * (Basic.gtype)list)) info
     }
 
 (**
