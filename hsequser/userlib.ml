@@ -1,19 +1,19 @@
 (*----
   Name: userlib.ml
-  Copyright M Wahab 2013-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2013-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -25,7 +25,7 @@ open Parser
 open Lib.Ops
 
 (** {5 Variables } *)
-module Var = 
+module Var =
 struct
   let (state_v: Userstate.State.t ref) = ref (Userstate.State.empty())
   let state () = !state_v
@@ -47,27 +47,27 @@ struct
   let init st = set_state (Userstate.init (state()))
 
   let context () = Userstate.context (state())
-  let set_context ctxt = 
+  let set_context ctxt =
     set_state (Userstate.set_context (state()) ctxt)
 
   let scope () = Userstate.scope (state())
-  let set_scope ctxt = 
+  let set_scope ctxt =
     set_state (Userstate.set_scope (state()) ctxt)
 
   let ppinfo () = Userstate.ppinfo (state())
-  let set_ppinfo ctxt = 
+  let set_ppinfo ctxt =
     set_state (Userstate.set_ppinfo (state()) ctxt)
 
   let parsers () = Userstate.parsers (state())
-  let set_parsers ctxt = 
+  let set_parsers ctxt =
     set_state (Userstate.set_parsers (state()) ctxt)
 
   let simpset () = Userstate.simpset (state())
-  let set_simpset ctxt = 
+  let set_simpset ctxt =
     set_state (Userstate.set_simpset (state()) ctxt)
 
   let proofstack () = Userstate.proofstack (state())
-  let set_proofstack ctxt = 
+  let set_proofstack ctxt =
     set_state (Userstate.set_proofstack (state()) ctxt)
 
   let theories() = Context.thydb (context ())
@@ -75,9 +75,9 @@ struct
   let current_name () = Context.current_name (context ())
 
   let thyset() = Userstate.thyset (state())
-  let set_thyset s = 
+  let set_thyset s =
     set_state (Userstate.set_thyset (state()) s)
-  let thyset_add t = 
+  let thyset_add t =
     let set1 = Lib.StringSet.add t (thyset ()) in
     set_thyset set1
   let thyset_mem t = Userstate.thyset_mem (state()) t
@@ -93,43 +93,43 @@ let state_opt st =
     None -> Global.state()
   | Some(x) -> x
 
-module Access = 
+module Access =
 struct
   let context() = Userstate.context (Global.state())
-  let set_context ctxt = 
+  let set_context ctxt =
     Global.set_state (Userstate.set_context (Global.state()) ctxt)
   let init_context () = Global.set_context (Userstate.Default.context())
 
   let scope() = Userstate.scope (Global.state())
-  let set_scope scp = 
+  let set_scope scp =
     Global.set_state (Userstate.set_scope (Global.state()) scp)
   let init_scope () = Global.set_scope (Userstate.Default.scope())
 
   let ppinfo() = Userstate.ppinfo (Global.state())
-  let set_ppinfo pp = 
+  let set_ppinfo pp =
     Global.set_state (Userstate.set_ppinfo (Global.state()) pp)
   let init_ppinfo () = set_ppinfo (Userstate.Default.printers())
 
   let parsers() = Userstate.parsers (Global.state())
-  let set_parsers pp = 
+  let set_parsers pp =
     Global.set_state (Userstate.set_parsers (Global.state()) pp)
-  let init_parsers () = 
+  let init_parsers () =
     set_parsers (Userstate.Default.parsers())
 
   let thyset() = Userstate.thyset (Global.state())
-  let set_thyset s = 
+  let set_thyset s =
     Global.set_state (Userstate.set_thyset (Global.state()) s)
-  let init_thyset () = 
+  let init_thyset () =
     set_thyset (Userstate.Default.thyset())
-  let thyset_add t = 
+  let thyset_add t =
     let set1 = Lib.StringSet.add t (thyset ()) in
     set_thyset set1
   let thyset_mem t = Userstate.thyset_mem (Global.state()) t
 
   let simpset() = Userstate.simpset (Global.state())
-  let set_simpset s = 
+  let set_simpset s =
     Global.set_state (Userstate.set_simpset (Global.state()) s)
-  let init_simpset () = 
+  let init_simpset () =
     set_thyset (Userstate.Default.thyset());
     set_simpset (Userstate.Default.simpset())
 
@@ -143,13 +143,13 @@ end
 module Loader =
 struct
   (** Remember loaded theories *)
-  let record_thy_fn ctxt thy = 
+  let record_thy_fn ctxt thy =
     let n = thy.Theory.cname in
     Global.set_state (Userstate.thyset_add (Global.state()) n);
     ctxt
 
   (** Set up simpset from loaded theory *)
-  let simp_thy_fn ctxt thy = 
+  let simp_thy_fn ctxt thy =
     let thyname = thy.Theory.cname in
     let st = Global.state() in
     if Userstate.thyset_mem st thyname then ctxt
@@ -167,7 +167,7 @@ struct
   struct
     let null_load_file (fname: string) =
       raise (Failure ("Thyloader.null_load_file("^fname^")"))
-    let null_use_file ?silent:bool (fname: string) = 
+    let null_use_file ?silent:bool (fname: string) =
       raise (Failure ("Thyloader.null_use_file"^fname^")"))
 
     let load_file = ref null_load_file
@@ -179,33 +179,33 @@ struct
   let get_use_file() = !(Var.use_file)
   let set_use_file f = Var.use_file := f
 
-  let default_thy_fn 
+  let default_thy_fn
       (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
-    Report.report 
+    Report.report
       ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
     let thy_fn_list = (Context.load_functions ctxt) in
     let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
-    in 
+    in
     ignore(ctxt1)
 
   (** Generate the list of theories imported by a theory. For use in
       Thydb.Loader, when applying the theory functions *)
-  let rec thy_importing_list ret thydb thy = 
+  let rec thy_importing_list ret thydb thy =
     let ret = find_thy_parents ret thydb thy in
     ret
-  and work_thy ret thydb thyname = 
+  and work_thy ret thydb thyname =
     let thy = Thydb.get_thy thydb thyname in
     find_thy_parents (thy::ret) thydb thy
   and find_thy_parents ret thydb thy =
     let ps = Theory.get_parents thy in
-    let thylist = 
-      List.fold_left 
+    let thylist =
+      List.fold_left
         (fun tlst name -> work_thy tlst thydb name)
         ret ps
-    in 
+    in
     thylist
-      
-  let build_fn 
+
+  let build_fn
       (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
     let scripter = get_use_file() in
     let script_name = Context.Files.script_of_thy ctxt thyname in
@@ -220,51 +220,51 @@ struct
 
   let buildthy (ctxt: Context.t) (thyname: string) =
     let saved_state = Global.state() in
-    let db1 = 
+    let db1 =
       if (thyname = Lterm.base_thy)
-      then 
+      then
         begin
           let ctxt1 = BaseTheory.builder ~save:true ctxt in
           Context.thydb ctxt1
         end
       else build_fn ctxt (Context.thydb ctxt) thyname
-    in 
+    in
     (Global.set_state saved_state; db1)
 
-  let default_build_fn 
+  let default_build_fn
       (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
     let db1 = buildthy (Context.set_thydb ctxt db) thyname in
     let thy = Thydb.get_thy db1 thyname in
     let thylist = thy_importing_list [] db1 thy in
     (db1, thylist)
 
-  let default_load_fn 
+  let default_load_fn
       (ctxt: Context.t) (file_data: Thydb.Loader.info) =
     Context.Files.load_thy_file ctxt file_data
 
-  let default_loader ctxt = 
-    Thydb.Loader.mk_data 
+  let default_loader ctxt =
+    Thydb.Loader.mk_data
       (default_load_fn ctxt)
       (default_build_fn ctxt)
 
-  let load_file fname = 
+  let load_file fname =
     (get_load_file()) fname
 
-  let script_file ?(silent=false) fname = 
+  let script_file ?(silent=false) fname =
     (get_use_file()) ~silent fname
 
-  let set_file_handlers ctxt = 
+  let set_file_handlers ctxt =
     let ctxt1 = Context.set_loader ctxt load_file  in
     Context.set_scripter ctxt1 script_file
 
-  let set_load_file loader = 
+  let set_load_file loader =
     begin
       set_load_file loader;
       let ctxt = set_file_handlers (Global.context()) in
       Global.set_context ctxt
     end
 
-  let set_use_file scripter = 
+  let set_use_file scripter =
     begin
       set_use_file scripter;
       let ctxt = set_file_handlers (Global.context()) in
@@ -276,18 +276,18 @@ end
 module PP =
 struct
   (** Tables access *)
-  let overloads () = 
+  let overloads () =
     Parser.Table.overloads (Global.parsers ())
 
-  let catch_parse_error e a = 
+  let catch_parse_error e a =
     try (e a)
-    with 
+    with
     | Parser.ParsingError x -> raise (Report.error x)
     | Lexer.Lexing _ -> raise (Report.error ("Lexing error: "^a))
-      
+
   let mk_term = Context.PP.mk_term
 
-  let read str = 
+  let read str =
     Context.PP.read (Global.context ()) str
 
   let read_unchecked str =
@@ -298,51 +298,51 @@ struct
 
   let read_type_defn str =
     Context.PP.read_type_defn (Global.context ()) str
-      
-  let read_type str = 
+
+  let read_type str =
     Context.PP.read_type (Global.context ()) str
 
-  let read_identifier str = 
+  let read_identifier str =
     Context.PP.read_identifier (Global.context ()) str
 end
 
 (** {6 Utility functions} *)
 
-let load_file_func () = 
+let load_file_func () =
   Context.loader (Global.context())
-let set_load_file_func f = 
+let set_load_file_func f =
   Loader.set_load_file f
 
-let use_file_func () = 
+let use_file_func () =
   Context.scripter (Global.context())
-let set_use_file_func f = 
+let set_use_file_func f =
   Loader.set_use_file f
 
 let get_proof_hook () =
   Goals.save_hook (Global.proofstack ())
 
-let set_proof_hook f = 
+let set_proof_hook f =
   Global.set_proofstack (Goals.set_hook f (Global.proofstack()))
 
 (** String utilities **)
-let compile dirs name = 
+let compile dirs name =
   let compile_aux () =
-    let inc_dirs = 
+    let inc_dirs =
       Lib.list_string (fun x -> ("-I \""^x^"\"")) " " dirs
-    in 
+    in
     let inc_std_dirs =
-      Lib.list_string 
-	(fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
-    in 
-    let inc_string = inc_std_dirs^" "^inc_dirs in 
+      Lib.list_string
+        (fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
+    in
+    let inc_string = inc_std_dirs^" "^inc_dirs in
     let com_string = "ocamlc -c"
-    in 
+    in
     Sys.command (com_string ^" "^ inc_string ^" "^name)
-  in 
+  in
   if !Sys.interactive
   then compile_aux()
   else (-1)
-    
+
 let catch_errors x = Commands.catch_errors (Global.ppinfo()) x
 
 (** {6 Printing and parsing} *)
@@ -369,47 +369,47 @@ let before_pos s = Lib.Before (read_identifier s)
 let after_pos s = Lib.After (read_identifier s)
 let at_pos s = Lib.Level (read_identifier s)
 
-let add_symbol str sym = 
-  let nctxt = 
+let add_symbol str sym =
+  let nctxt =
     Commands.add_symbol (Global.context ()) str sym
-  in 
+  in
   Global.set_context nctxt
 
-let add_term_pp str ?(pos=Lib.First) pr fx sym = 
-  let nctxt = 
+let add_term_pp str ?(pos=Lib.First) pr fx sym =
+  let nctxt =
     Commands.add_term_pp (Global.context ())
       (Ident.mk_long (Global.current_name()) str) ~pos:pos pr fx sym
-  in 
+  in
   Global.set_context nctxt
 
-let get_term_pp s = 
+let get_term_pp s =
   Commands.get_term_pp (Global.context ())
     (Ident.mk_long (Global.current_name()) s)
 
-let remove_term_pp s = 
+let remove_term_pp s =
   let id = Ident.mk_long (Global.current_name()) s in
   let nctxt = Commands.remove_term_pp_rec (Global.context ()) id
   in
   Global.set_context nctxt
 
-let add_type_pp s prec fixity repr = 
+let add_type_pp s prec fixity repr =
   let id = Ident.mk_long (Global.current_name()) s in
   let ctxt0 = Global.context () in
   let ctxt1 = Commands.add_type_pp ctxt0 id prec fixity repr
-  in 
+  in
   Global.set_context ctxt1
 
-let get_type_pp s = 
-  Commands.get_type_pp 
+let get_type_pp s =
+  Commands.get_type_pp
     (Global.context ())
     (Ident.mk_long (Global.current_name()) s)
 
 let remove_type_pp s =
   let ctxt0 = Global.context () in
-  let nctxt = 
-    Commands.remove_type_pp ctxt0 
+  let nctxt =
+    Commands.remove_type_pp ctxt0
       (Ident.mk_long (Global.current_name()) s)
-  in 
+  in
   Global.set_context nctxt
 
 (** {6 Theories} *)
@@ -418,29 +418,29 @@ let begin_theory n ps =
   let nctxt = Commands.begin_theory (Global.context ()) n ps in
   Global.set_context nctxt
 
-let end_theory ?save () = 
+let end_theory ?save () =
   let nctxt = Commands.end_theory (Global.context ()) ?save:save () in
   Global.set_context nctxt
 
-let open_theory n = 
+let open_theory n =
   let nctxt = Commands.open_theory (Global.context ()) n  in
   Global.set_context nctxt
 
-let close_theory () = 
+let close_theory () =
   let nctxt = Commands.close_theory (Global.context ()) in
   Global.set_context nctxt
 
-let load_theory th = 
+let load_theory th =
   let nctxt = Commands.load_theory_as_cur (Global.context ()) th  in
   Global.set_context nctxt
-  
+
 (** {6 Theory properties} *)
 
-let parents ps = 
+let parents ps =
   let nctxt = Commands.parents (Global.context ()) ps in
   Global.set_context nctxt
 
-let add_file ?(use=false) n = 
+let add_file ?(use=false) n =
   let nctxt = Commands.add_file (Global.context ()) n in
   begin
     Global.set_context nctxt;
@@ -449,30 +449,30 @@ let add_file ?(use=false) n =
     else ()
   end
 
-let remove_file n = 
+let remove_file n =
   let nctxt = Commands.remove_file (Global.context ()) n in
   Global.set_context nctxt
 
 (** {6 Type declaration and definition} *)
 
-let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef = 
+let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
   let scpd = Global.context () in
-  let (scpd1, defn) = 
+  let (scpd1, defn) =
     Commands.typedef scpd ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
-  in 
+  in
   begin
     Global.set_context scpd1;
     if simp && (Logic.Defns.is_subtype defn)
-    then 
-      let tyrec = Logic.Defns.dest_subtype defn in 
+    then
+      let tyrec = Logic.Defns.dest_subtype defn in
       let rt_thm = tyrec.Logic.Defns.rep_type
       and rti_thm = tyrec.Logic.Defns.rep_type_inverse
       and ati_thm = tyrec.Logic.Defns.abs_type_inverse
-      in 
-      let nsimpset = 
+      in
+      let nsimpset =
         Simplib.add_simps scpd1 (Global.simpset ())
           [rt_thm; rti_thm; ati_thm]
-      in 
+      in
       Global.set_simpset nsimpset
     else ()
   end;
@@ -482,19 +482,19 @@ let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
 
 let define ?pp ?(simp=false) df =
   let scpd = Global.context () in
-  let scpd1, ret = Commands.define scpd ?pp ~simp:simp df in 
+  let scpd1, ret = Commands.define scpd ?pp ~simp:simp df in
   Global.set_context scpd1;
   if simp
-  then 
-    let (_, _, thm) = Logic.Defns.dest_termdef ret in 
-    let nsimpset = 
-      Simplib.add_simp scpd1 (Global.simpset ()) thm 
+  then
+    let (_, _, thm) = Logic.Defns.dest_termdef ret in
+    let nsimpset =
+      Simplib.add_simp scpd1 (Global.simpset ()) thm
     in
     (Global.set_simpset nsimpset); ret
-  else 
+  else
     ret
 
-let declare ?pp trm = 
+let declare ?pp trm =
   let nscpd, id, ty = Commands.declare (Global.context ()) ?pp trm in
   Global.set_context nscpd;
   (id, ty)
@@ -505,8 +505,8 @@ let axiom ?(simp=false) n t =
   let ctxt0, thm = Commands.axiom (Global.context ()) ~simp:simp n t in
   Global.set_context ctxt0;
   if simp
-  then 
-    let nsimp = 
+  then
+    let nsimp =
       Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
     in
     Global.set_simpset nsimp
@@ -515,11 +515,11 @@ let axiom ?(simp=false) n t =
 
 let save_thm ?(simp=false) n thm =
   let ctxt, ret = Commands.save_thm (Global.context ()) ~simp:simp n thm
-  in 
+  in
   Global.set_context ctxt;
-  if simp 
-  then 
-    let nsimp = 
+  if simp
+  then
+    let nsimp =
       Simplib.add_simp (Global.context ()) (Global.simpset ()) ret
     in
     Global.set_simpset nsimp
@@ -527,13 +527,13 @@ let save_thm ?(simp=false) n thm =
   ret
 
 let prove_thm ?(simp=false) n t tac =
-  let ctxt, thm = 
+  let ctxt, thm =
     Commands.prove_thm (Global.context ()) ~simp:simp n t tac
-  in 
+  in
   Global.set_context ctxt;
-  if simp 
-  then 
-    let nsimp = 
+  if simp
+  then
+    let nsimp =
       Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
     in
     Global.set_simpset nsimp
@@ -545,13 +545,13 @@ let lemma = theorem
 
 (** {6 Information access} *)
 
-let theory n = 
+let theory n =
   Commands.theory (Global.context ()) n
 
-let theories () = 
+let theories () =
   Commands.theories (Global.context ())
 
-let defn n = 
+let defn n =
   Commands.defn (Global.context ()) n
 
 let thm n =
@@ -572,17 +572,17 @@ let curr_sqnt () = Goals.curr_sqnt (proofstack())
 let get_asm i = Goals.get_asm (proofstack()) i
 let get_concl i = Goals.get_concl (proofstack()) i
 
-let prove a tac = 
+let prove a tac =
   Commands.prove (Global.context ()) a tac
 
-let prove_goal trm tac = 
+let prove_goal trm tac =
   Goals.prove_goal (Global.context()) trm tac
 
-let drop () = 
+let drop () =
   set_proofstack (Goals.drop (proofstack()));
   top()
 
-let lift i = 
+let lift i =
   set_proofstack (Goals.lift (proofstack()) i);
   top()
 
@@ -595,31 +595,31 @@ let postpone () =
   top()
 
 
-let goal trm = 
+let goal trm =
   set_proofstack (Goals.goal (proofstack()) (scope()) trm);
   top()
 
 let result () = Goals.result (proofstack())
 
-let by_com tac = 
-  let nprfstk = 
-    catch_errors 
+let by_com tac =
+  let nprfstk =
+    catch_errors
       (Goals.by_com (Global.context()) (Global.proofstack())) tac
   in
   set_proofstack nprfstk
 
-let by tac = 
+let by tac =
   by_com tac; top()
 
 let by_list trm tl = Goals.by_list (Global.context()) trm tl
 
-let qed n = 
-  let (ctxt, thm) = Commands.qed (Global.context()) (proofstack()) n 
+let qed n =
+  let (ctxt, thm) = Commands.qed (Global.context()) (proofstack()) n
   in
   Global.set_context ctxt;
   thm
 
-let apply ?report tac g = 
+let apply ?report tac g =
   Goals.apply ?report (Global.context()) tac g
 
 (** Top-level pretty printers *)
@@ -649,7 +649,7 @@ struct
 
   let print_defn def = Display.print_defn (Global.ppinfo()) def
   let print_subst = Display.print_subst
-      
+
   let print_error r = Display.print_error (Global.ppinfo()) r
 
   let print_theory x = Display.print_theory (Global.ppinfo()) x
@@ -660,12 +660,12 @@ end (* Display *)
 
 (** {6 Initialising functions} *)
 
-let init () = 
+let init () =
   let st0 = Userstate.init (Global.state()) in
   let ctxt0 = Userstate.context st0 in
   let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
   let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
-  let ctxt3 = Loader.set_file_handlers ctxt2 in 
+  let ctxt3 = Loader.set_file_handlers ctxt2 in
   let st1 = Userstate.set_context st0 ctxt3 in
   Global.set_state st1;
   (try ignore(load_theory (Context.base_name (Global.context())))
@@ -677,13 +677,13 @@ let reset = init
 (** {6 Simplifier} *)
 
 let add_simps thms =
-  let ctxt0 = Global.context() in 
+  let ctxt0 = Global.context() in
   let set0 = Global.simpset() in
   let set1 = Simplib.add_simps ctxt0 set0 thms in
   Global.set_simpset set1
-    
+
 let add_simp  thm =
-  let ctxt0 = Global.context() in 
+  let ctxt0 = Global.context() in
   let set0 = Global.simpset() in
   let set1 = Simplib.add_simp ctxt0 set0 thm in
   Global.set_simpset set1
@@ -702,22 +702,22 @@ let add_conv trms conv =
 
 let simpA_tac ?cntrl ?ignore ?set ?add ?a rules =
   let set0 = Lib.get_option set (Global.simpset()) in
-  Simplib.simpA_tac ?cntrl ?ignore set0 ?add ?a rules 
+  Simplib.simpA_tac ?cntrl ?ignore set0 ?add ?a rules
 (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
-    
+
     Simplify assumptions.
 *)
-let simpA ?set ?a rules = 
+let simpA ?set ?a rules =
   let set0 = Lib.get_option set (Global.simpset()) in
-  Simplib.simpA_tac set0 ?a rules 
+  Simplib.simpA_tac set0 ?a rules
 
 let simpC_tac ?cntrl ?ignore ?set ?add ?c rules =
   let set0 = Lib.get_option set (Global.simpset()) in
-  Simplib.simpC_tac ?cntrl ?ignore set0 ?add ?c rules 
+  Simplib.simpC_tac ?cntrl ?ignore set0 ?add ?c rules
 
-let simpC ?set ?c rules = 
+let simpC ?set ?c rules =
   let set0 = Lib.get_option set (Global.simpset()) in
-  Simplib.simpC_tac set0 ?c rules 
+  Simplib.simpC_tac set0 ?c rules
 
 let simp_all_tac ?cntrl ?ignore ?set ?add thms =
   let set0 = Lib.get_option set (Global.simpset()) in
@@ -727,7 +727,7 @@ let simp_all_tac ?cntrl ?ignore ?set ?add thms =
   let set0 = Lib.get_option set (Global.simpset()) in
   Simplib.simp_all_tac ?cntrl ?ignore set0 ?add thms
 (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
-    
+
     Simplify each formula in the subgoal.
 *)
 
@@ -735,7 +735,7 @@ let simp_all ?set thms =
   let set0 = Lib.get_option set (Global.simpset()) in
   Simplib.simp_all_tac set0 thms
 (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -744,7 +744,7 @@ let simp_tac ?cntrl ?ignore ?set ?add ?f thms =
   let set0 = Lib.get_option set (Global.simpset()) in
   Simplib.simp_tac ?cntrl ?ignore set0 ?add ?f thms
 (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
-    
+
     Simplifier tactic.
 *)
 
@@ -753,7 +753,6 @@ let simp ?set ?f g =
   let set0 = Lib.get_option set (Global.simpset()) in
   Simplib.simp set0 ?f g
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
-    
+
     @raise No_change If no change is made.
 *)
-

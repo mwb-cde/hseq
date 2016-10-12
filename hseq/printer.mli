@@ -1,25 +1,25 @@
 (*----
   Name: printer.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
-  You should have received a copy of the Lesser GNU General Public
-  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-  ----*)
+  You should have received a copy of the Lesser GNU General Public License
+  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+----*)
 
-(** 
+(**
     Pretty printer.
 
     Support for pretty printing terms and types including printer
@@ -52,8 +52,8 @@ val nonfix: fixity
 val prefix: fixity
 val suffix: fixity
 
-val infix: assoc -> fixity 
-(** 
+val infix: assoc -> fixity
+(**
     Infix operators take an associativity argument. Use one of
     [infixl], [infixr] or [infixn].
 *)
@@ -114,22 +114,22 @@ type 'a printer = 'a -> unit
     object [print obj].
 *)
 
-type record = 
+type record =
     {
-      prec: int; 
+      prec: int;
       fixity: fixity;
       repr: string option;
     }
 (** The print record of an identifier. *)
 
-val mk_record: int -> fixity -> string option -> record 
+val mk_record: int -> fixity -> string option -> record
 (** Make a print record *)
 val empty_record: unit -> record
 (** Make an empty print record *)
 
 (** {7 Printer information storage for identifiers} *)
 
-type ('a, 'b) info = 
+type ('a, 'b) info =
     {
       records: (record) Ident.tree;
       printers: ('a -> (fixity * int) -> ('b printer)) Ident.tree
@@ -144,13 +144,13 @@ type ('a, 'b) info =
     optional representation of an identifier.
 
     [printers]: User defined printers. A printer takes the current fixity
-    and precedence as an argument. 
+    and precedence as an argument.
 *)
 
 val mk_info: int ->  ('a, 'b) info
 (** Make an info store of size [sz]. *)
 
-val default_info_size: int 
+val default_info_size: int
 (** The size of the tables created by [empty_info].  *)
 
 val empty_info: unit-> ('a, 'b) info
@@ -164,7 +164,7 @@ val empty_info: unit-> ('a, 'b) info
 *)
 
 val get_record: ('a, 'b) info -> Ident.t -> record
-(** Get the pretty printing record for identifer [id].  
+(** Get the pretty printing record for identifer [id].
 
     @raise [Not_found] if no record.
 *)
@@ -186,8 +186,8 @@ val get_info: ('a, 'b)info -> Ident.t -> (int * fixity * string option)
     not found.
 *)
 
-val add_info: 
-  ('a, 'b)info -> Ident.t -> int -> fixity 
+val add_info:
+  ('a, 'b)info -> Ident.t -> int -> fixity
   -> string option -> ('a, 'b)info
 (**
    [add_info info id prec fixity repr]: Add pretty printing
@@ -200,13 +200,13 @@ val add_info:
 val remove_info: ('a, 'b)info -> Ident.t -> ('a, 'b)info
 (** Remove pretty printing information for identifer. *)
 
-val get_printer: 
-  ('a, 'b)info -> Ident.t 
+val get_printer:
+  ('a, 'b)info -> Ident.t
   -> ('a -> (fixity * int) -> (('b)printer))
 (** Get the user defined printer for an identifier *)
 
-val add_printer: 
-  ('a, 'b)info -> Ident.t -> ('a -> fixity * int -> 'b printer) 
+val add_printer:
+  ('a, 'b)info -> Ident.t -> ('a -> fixity * int -> 'b printer)
   -> ('a, 'b)info
 
 (** Add a user defined printer for an identifier *)
@@ -216,7 +216,7 @@ val remove_printer: ('a, 'b)info -> Ident.t -> ('a, 'b)info
 
 (** {5 Combined printer information tables} *)
 
-type ppinfo = 
+type ppinfo =
     {
       terms:  (ppinfo, (Basic.term * (Basic.term)list)) info;
       types:  (ppinfo, (Ident.t * (Basic.gtype)list)) info
@@ -247,7 +247,7 @@ val empty_ppinfo: unit-> ppinfo
 
 (** {7 Term printer information} *)
 
-type term_printer = 
+type term_printer =
   ppinfo -> (fixity * int) -> (Basic.term * (Basic.term list)) printer
 
 val get_term_info: ppinfo -> Ident.t -> (int * fixity * string option)
@@ -257,8 +257,8 @@ val get_term_info: ppinfo -> Ident.t -> (int * fixity * string option)
    None)] if id is not found.
 *)
 
-val add_term_info: 
-  ppinfo -> Ident.t -> int -> fixity 
+val add_term_info:
+  ppinfo -> Ident.t -> int -> fixity
   -> string option -> ppinfo
 (**
    [add_term_info ppinfo id prec fixity repr]
@@ -270,7 +270,7 @@ val add_term_info:
    @param repr representation (if any).
 *)
 
-val add_term_record: 
+val add_term_record:
   ppinfo -> Ident.t -> record -> ppinfo
 (**
    [add_term_record info id record]
@@ -289,8 +289,8 @@ val get_term_printer:
   ppinfo -> Ident.t -> term_printer
 (** Get the user defined printer for a term identifier. *)
 
-val add_term_printer: 
-  ppinfo -> Ident.t 
+val add_term_printer:
+  ppinfo -> Ident.t
   -> term_printer
   -> ppinfo
 (** Add a user defined printer for a term identifier. *)
@@ -300,16 +300,16 @@ val remove_term_printer: ppinfo -> Ident.t -> ppinfo
 
 (** {7 Gype printer information} *)
 
-type gtype_printer = 
+type gtype_printer =
   ppinfo -> (fixity * int) -> (Ident.t * (Basic.gtype list)) printer
 
-val get_type_info: 
+val get_type_info:
   ppinfo -> Ident.t -> (int * fixity * string option)
 (**
    Get pretty printing information for a type identifer.
 *)
 
-val add_type_info: 
+val add_type_info:
   ppinfo -> Ident.t -> int -> fixity -> string option -> ppinfo
 (**
    [add_type_info info id prec fixity repr]
@@ -340,7 +340,7 @@ val get_type_printer:
   ppinfo -> Ident.t -> gtype_printer
 (** Get the user defined printer for a type identifier *)
 
-val add_type_printer: 
+val add_type_printer:
   ppinfo -> Ident.t -> gtype_printer -> ppinfo
 (** Add a user defined printer for a type identifier *)
 
@@ -366,7 +366,7 @@ val print_space: 'a printer
 val print_bracket: int -> int -> string printer
 (** [print_bracket cpr prec br]: Print a precedence bracket.
 
-    Print bracket [br] using [print_string info prec br] 
+    Print bracket [br] using [print_string info prec br]
     if current precedence [cpr] is less than new precedence [prec].
 *)
 
@@ -402,9 +402,9 @@ val print_identifier: (Ident.t -> record) -> Ident.t printer
     just print the identifier.
 *)
 
-val print_infix: 
+val print_infix:
   ((int -> ('a) printer) * (int -> ('b list) printer))
-  -> int 
+  -> int
   -> ('a  * ('b) list) printer
 (** [print_infix (opr, tpr, spr) prec (op, trm)]: Infix Printer.
     Print first element [trm] using printer [tpr], print [op] using
@@ -412,7 +412,7 @@ val print_infix:
     [trm] is empty, just print [op].
 *)
 
-val print_suffix: 
+val print_suffix:
   ((int -> ('a)printer) * (int -> ('b list) printer))
   -> int
   ->  ('a * ('b) list) printer
@@ -421,9 +421,9 @@ val print_suffix:
     [opr].  If [trm] is empty, just print [op].
 *)
 
-val print_prefix: 
+val print_prefix:
   ((int -> ('a) printer) * (int -> (('b) list) printer))
-  -> int 
+  -> int
   -> ('a * ('b) list) printer
 (** [print_prefix (tpr, spr) prec (op, trm)]: Prefix printer.  Print
     [op] using [opr] print elements [trm] using [print_list (tpr prec,
@@ -434,7 +434,7 @@ val print_operator:
   ((int -> ('a)printer)
    * (int -> ('b list) printer)
    * ('a -> record))
-  -> int 
+  -> int
   -> ('a * ('b) list) printer
 (** [print_operator (opr, tpr, spr, info, printers) prec (op, trm)]:
     Printer for infix, suffix, prefix operators.

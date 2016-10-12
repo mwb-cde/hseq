@@ -1,30 +1,30 @@
 (*----
- Name: parser.ml
- Copyright M Wahab 2005-2014
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: parser.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public License
+  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (***
  * Parsers for terms and types.
  ***)
 
-(*** 
- * Token information 
+(***
+ * Token information
  ***)
 
 type associativity=Grammars.associativity
@@ -37,7 +37,7 @@ let nonfix=Grammars.nonfix
 let infix=Grammars.infix
 let prefix=Grammars.prefix
 let suffix=Grammars.suffix
-    
+
 (*** Default token information ***)
 
 let default_term_prec = Grammars.default_term_prec
@@ -50,7 +50,7 @@ let default_type_fixity= Grammars.default_type_fixity
 
 
 (***
-* Basic types used by the parsers. 
+* Basic types used by the parsers.
 ***)
 
 type input = Grammars.input
@@ -70,16 +70,16 @@ open Lterm
 
 type symbol_table = Lexer.symtable
 
-let core_symbols = 
+let core_symbols =
   [
-    (".", Sym DOT); 
+    (".", Sym DOT);
     ("(", Sym ORB);
-    (")", Sym CRB); 
+    (")", Sym CRB);
     (",", Sym comma_sym);
     ("'", Sym PRIME);
     (":", Sym COLON);
     ("true", BOOL true); ("false", BOOL false);
-    ("!", Key ALL); ("all", Key ALL); 
+    ("!", Key ALL); ("all", Key ALL);
     ("forall", Key ALL);
     ("?", Key EX); ("exists", Key EX);
     ("%", Key LAM); "lambda", Key LAM
@@ -90,13 +90,17 @@ let mk_symtable sz = Lexer.mk_symtable sz
 let clear_symtable tb = Lexer.clear_symtable tb
 
 (*** Overloading *)
+
 module OverloadTree = Treekit.StringTree
+
 type overload_table_t = ((Ident.t * Basic.gtype) list) OverloadTree.t
+type sym_pos = Ident.t Lib.position
+
 let default_overload_table_size = 127
 let mk_overload_table sz = OverloadTree.empty()
 
 (** Parser tables *)
-module Table = 
+module Table =
 struct
   type t =
       {
@@ -105,10 +109,10 @@ struct
         symbols_f: symbol_table;
         overloads_f: overload_table_t;
         term_parsers_f:
-          (string, 
+          (string,
            Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
-        type_parsers_f: 
-          (string, 
+        type_parsers_f:
+          (string,
            Grammars.parser_info -> (Basic.gtype phrase)) Lib.named_list;
       }
 
@@ -117,7 +121,7 @@ struct
                       default_symtable_size,
                       default_overload_table_size)
 
-  let empty (tok_size, tytok_size, stm_size, ov_size) = 
+  let empty (tok_size, tytok_size, stm_size, ov_size) =
     {
       tokens_f = Grammars.token_table_new tok_size;
       type_tokens_f = Grammars.token_table_new tytok_size;
@@ -127,17 +131,17 @@ struct
       type_parsers_f = Grammars.core_type_parsers;
     }
 
-  let init_symbols symtbl syms = 
-    List.fold_left 
-      (fun tbl (s, t) -> Lexer.add_sym tbl s t) 
+  let init_symbols symtbl syms =
+    List.fold_left
+      (fun tbl (s, t) -> Lexer.add_sym tbl s t)
       symtbl syms
 
-  let init tbl = 
+  let init tbl =
     let toks = Grammars.token_table_reset tbl.tokens_f
     and tytoks = Grammars.token_table_reset tbl.type_tokens_f
     and symtab = init_symbols tbl.symbols_f core_symbols;
     and ovltab = mk_overload_table default_overload_table_size
-    in 
+    in
     {
       tokens_f = toks; type_tokens_f = tytoks;
       symbols_f = symtab; overloads_f = ovltab;
@@ -147,7 +151,7 @@ struct
 
   let tokens t = t.tokens_f
   let set_tokens t x = {t with tokens_f = x}
-  let type_tokens t = t.type_tokens_f 
+  let type_tokens t = t.type_tokens_f
   let set_type_tokens t x = {t with type_tokens_f = x}
   let symbols t = t.symbols_f
   let set_symbols t x = {t with symbols_f = x}
@@ -158,24 +162,24 @@ struct
   let type_parsers t = t.type_parsers_f
   let set_type_parsers t x = {t with type_parsers_f = x}
 
-end 
+end
 
 let mk_info t =
-  Grammars.mk_info 
-    (Table.tokens t, Table.type_tokens t, 
+  Grammars.mk_info
+    (Table.tokens t, Table.type_tokens t,
      Table.term_parsers t, Table.type_parsers t)
 
 let add_symbol tbl sym tok =
   let syms1 = Lexer.add_sym (Table.symbols tbl) sym tok in
   Table.set_symbols tbl syms1
 
-let find_symbol tbl sym = 
+let find_symbol tbl sym =
   Lexer.find_sym (Table.symbols tbl) sym
 
 let remove_symbol tbl sym =
   Table.set_symbols tbl (Lexer.remove_sym (Table.symbols tbl) sym)
 
-let init_symtable tbl sz = 
+let init_symtable tbl sz =
   Table.set_symbols tbl (mk_symtable sz)
 
 (*** Tokens ***)
@@ -198,7 +202,7 @@ let remove_token_info tbl tok =
 let type_token_table = Grammars.token_table_new Grammars.default_table_size
 ***)
 let add_type_token_info tbl tok tok_info =
-  let toks0 = 
+  let toks0 =
     Grammars.token_table_add (Table.type_tokens tbl) tok tok_info
   in
   Table.set_type_tokens tbl toks0
@@ -207,7 +211,7 @@ let get_type_token_info tbl tok =
   Grammars.token_table_find (Table.type_tokens tbl) tok
 
 let remove_type_token_info tbl tok =
-  let toks0 = 
+  let toks0 =
     Grammars.token_table_remove (Table.type_tokens tbl) tok
   in
   Table.set_type_tokens tbl toks0
@@ -237,113 +241,113 @@ let remove_type_token tbl sym =
 (*** Overloading  *)
 let overload_table tbl = Table.overloads
 
-let init_overload tbl = 
+let init_overload tbl =
   Table.set_overloads tbl (mk_overload_table default_overload_table_size)
 
 let get_overload_list tbl sym =
   OverloadTree.find (Table.overloads tbl) sym
 
-let insert_pos pos d lst = 
+let insert_pos pos d lst =
   let rec split_at s l r =
-    match l with 
+    match l with
       [] -> (r, [])
-    | (x, ty)::ls -> 
-	if(x=s) 
-	then 
-	  (List.rev r, l)
-	else 
-	  split_at s ls ((x, ty)::r)
-  in 
+    | (x, ty)::ls ->
+        if(x=s)
+        then
+          (List.rev r, l)
+        else
+          split_at s ls ((x, ty)::r)
+  in
   match pos with
     Lib.First -> d::lst
   | Lib.Last -> List.rev (d::(List.rev lst))
-  | Lib.Before s -> 
+  | Lib.Before s ->
       let (lt, rt) = split_at s lst []
-      in 
+      in
       List.rev_append (List.rev lt) (d::rt)
   | Lib.After s ->
       let (lt, rt)=split_at s lst []
-      in 
+      in
       let nrt=
-	(match rt with
-	  [] ->  [d]
-	| x::rst -> x::d::rst)
-      in 
+        (match rt with
+          [] ->  [d]
+        | x::rst -> x::d::rst)
+      in
       List.rev_append (List.rev lt) nrt
-  | Lib.Level s -> 
+  | Lib.Level s ->
       let (lt, rt)=split_at s lst []
-      in 
+      in
       List.rev_append (List.rev lt) (d::rt)
 
 let add_overload tbl sym pos (id, ty) =
-  let list0 = 
+  let list0 =
     try get_overload_list tbl sym
     with Not_found -> []
-  in 
-  let list1 = insert_pos pos (id, ty) list0 in 
-  let ovltbl = Table.overloads tbl in 
+  in
+  let list1 = insert_pos pos (id, ty) list0 in
+  let ovltbl = Table.overloads tbl in
   let ovltbl1 = OverloadTree.replace ovltbl sym list1 in
   Table.set_overloads tbl ovltbl1
 
 let remove_overload tbl sym id =
-  let list0 = get_overload_list tbl sym in 
-  let list1 = List.remove_assoc id list0 in 
-  let ovltbl = Table.overloads tbl in 
-  let ovltbl1 = 
+  let list0 = get_overload_list tbl sym in
+  let list1 = List.remove_assoc id list0 in
+  let ovltbl = Table.overloads tbl in
+  let ovltbl1 =
     begin
       match list1 with
         [] -> OverloadTree.remove ovltbl sym
       | _ -> OverloadTree.replace ovltbl sym list1
-    end 
+    end
   in
   Table.set_overloads tbl ovltbl1
 
-let print_overloads tbl info = 
+let print_overloads tbl info =
   let table = Table.overloads tbl in
-  let print_fn sym list= 
+  let print_fn sym list=
     Format.printf "@[<2>%s@ " sym;
     List.iter
-      (fun (id, ty) -> 
-	Printer.print_ident id;
-	Format.printf ":@ ";
-	Gtypes.print info ty;
-	Format.printf ";@ ")
+      (fun (id, ty) ->
+        Printer.print_ident id;
+        Format.printf ":@ ";
+        Gtypes.print info ty;
+        Format.printf ";@ ")
       list;
     Format.printf "@]@,"
-  in 
+  in
   Format.printf "@[<v>";
   OverloadTree.iter print_fn table;
   Format.printf "@]"
 
 (*** Initialising functions ***)
 
-let init_symbols tbl = 
+let init_symbols tbl =
   let symtab = Table.init_symbols (Table.symbols tbl) core_symbols
-  in 
-  Table.set_symbols tbl symtab 
+  in
+  Table.set_symbols tbl symtab
 
 let init_token_table tbl =
   Table.set_tokens tbl (Grammars.token_table_reset (Table.tokens tbl))
 
 let init_type_token_table tbl =
-  Table.set_type_tokens tbl 
+  Table.set_type_tokens tbl
     (Grammars.token_table_reset (Table.type_tokens tbl))
-    
+
 let init_tables tbl =
   let tbl0 = init_symbols tbl in
   let tbl1 = init_token_table tbl0 in
   let tbl2 = init_type_token_table tbl1 in
   init_overload tbl2
 
-let init_parsers tbl = 
+let init_parsers tbl =
   let tbl0 = init_tables tbl in
   let tbl1 = Table.set_type_parsers tbl0 Grammars.core_type_parsers in
   let tbl2 = Table.set_term_parsers tbl1 Grammars.core_term_parsers in
   tbl2
 
-let init () = 
+let init () =
   init_parsers (Table.empty Table.default_size)
-  
+
 
 (**
    Parsers
@@ -363,27 +367,27 @@ let typedef_parser tbl inp =
 let term_parser tbl inp =
   parse (Grammars.form (mk_info tbl)) inp
 
-let defn_parser tbl inp = 
+let defn_parser tbl inp =
   parse (Grammars.defn (mk_info tbl)) inp
 
 (*** User defined parsers ***)
 
 let term_parser_list tbl = Table.term_parsers tbl
-let add_term_parser tbl pos n ph = 
-  let plist0 = Table.term_parsers tbl in 
+let add_term_parser tbl pos n ph =
+  let plist0 = Table.term_parsers tbl in
   Table.set_term_parsers tbl (Lib.named_add plist0 pos n ph)
 
 let remove_term_parser tbl n =
-  let plist0 = Table.term_parsers tbl in 
+  let plist0 = Table.term_parsers tbl in
   Table.set_term_parsers tbl (List.remove_assoc n plist0)
 
 let type_parser_list tbl = Table.type_parsers tbl
-let add_type_parser tbl pos n ph = 
-  let plist0 = Table.type_parsers tbl in 
+let add_type_parser tbl pos n ph =
+  let plist0 = Table.type_parsers tbl in
   Table.set_type_parsers tbl (Lib.named_add plist0 pos n ph)
 
-let remove_type_parser tbl n = 
-  let plist0 = Table.type_parsers tbl in 
+let remove_type_parser tbl n =
+  let plist0 = Table.type_parsers tbl in
   Table.set_type_parsers tbl (List.remove_assoc n plist0)
 
 (*** Readers: read and parse a string ***)
@@ -391,21 +395,19 @@ let remove_type_parser tbl n =
 let get_symtab tbl = Table.symbols tbl
 
 let read tbl ph str =
-  let symtab = get_symtab tbl in 
+  let symtab = get_symtab tbl in
   Lexer.reader (scan symtab) (ph tbl) str
 
-let read_term tbl str = 
+let read_term tbl str =
   read tbl term_parser str
 
-let read_type tbl str = 
+let read_type tbl str =
   read tbl type_parser str
 
-let test_lex tbl str = 
-  let symtab = get_symtab tbl in 
+let test_lex tbl str =
+  let symtab = get_symtab tbl in
   scan symtab (Stream.of_string str)
 
-let test tbl str =  
-  let symtab = get_symtab tbl in   
+let test tbl str =
+  let symtab = get_symtab tbl in
   reader (scan symtab) (term_parser tbl) str
-
-

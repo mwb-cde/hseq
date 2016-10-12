@@ -1,7 +1,7 @@
 (*----
   Name: theory.ml
   Copyright Matthew Wahab 2005-2016
-  Author: Matthew Wahab  <mwb.cde@gmail.com>
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -25,7 +25,6 @@
 
 type property = string
 let simp_property = "simp"
-type sym_pos = Ident.t Lib.position
 module Tree = Treekit.StringTree
 
 type id_record =
@@ -54,7 +53,7 @@ type thy =
       defns: (id_record) Tree.t;
       typs: (Gtypes.typedef_record) Tree.t;
       type_pps: (string * Printer.record) list;
-      id_pps: (string * (Printer.record * sym_pos)) list;
+      id_pps: (string * (Printer.record * Parser.sym_pos)) list;
       pp_syms: (string * string) list;
     }
 
@@ -71,7 +70,7 @@ type contents=
       cdefns: (string * id_record) list;
       ctyps: (string * Gtypes.typedef_record) list;
       ctype_pps: (string * Printer.record) list;
-      cid_pps: (string * (Printer.record * sym_pos)) list;
+      cid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       cpp_syms: (string * string) list;
     }
 
@@ -457,7 +456,7 @@ type saved_thy =
       sdefns: (string * id_save_record) list;
       stypes: (string * Gtypes.stypedef_record) list;
       stype_pps: (string * Printer.record) list;
-      sid_pps: (string * (Printer.record * sym_pos)) list;
+      sid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       spp_syms: (string * string) list;
     }
 

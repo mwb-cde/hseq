@@ -1,19 +1,19 @@
 (*----
   Name: commands.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -23,24 +23,24 @@
 
     Functions for specifying theories, including definitions,
     declarations, axioms, theorems and their proofs and printer and
-    parser information. 
+    parser information.
 *)
 
 (** {5 Utility functions} *)
 
 type fixity = Parserkit.Info.fixity
 (** Fixity of symbols for printers and parsers. *)
-val nonfix: fixity  
+val nonfix: fixity
 (** Non-fix. This is the default *)
 val prefix: fixity
 (** Prefix. *)
 val suffix: fixity
 (** Suffix. *)
-val infixl: fixity  
+val infixl: fixity
 (** Infix, left associative. *)
-val infixr: fixity  
+val infixr: fixity
 (** Infix, right associative. *)
-val infixn: fixity  
+val infixn: fixity
 (** infix, non-associative *)
 
 val catch_errors: Printer.ppinfo -> ('a -> 'b) -> 'a -> 'b
@@ -53,7 +53,7 @@ val catch_errors: Printer.ppinfo -> ('a -> 'b) -> 'a -> 'b
 val save_theory: Context.t -> Theory.thy -> unit
 (** [save_theory thy prot]: Save theory [thy] to disk. *)
 
-val load_theory_as_cur: 
+val load_theory_as_cur:
   Context.t -> string -> Context.t
 (** [load_theory_as_cur n]: Load the theory named [n] into the database,
     making it the current theory.
@@ -63,7 +63,7 @@ val read: ?ctxt:Context.t -> string -> Basic.term
 (** User level parsing of a string as a term. *)
 val read_unchecked: ?ctxt:Context.t -> string -> Basic.term
 (** User level parsing of a string as a raw term.. *)
-val read_defn: ?ctxt:Context.t -> string 
+val read_defn: ?ctxt:Context.t -> string
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
@@ -86,7 +86,7 @@ val theory: Context.t -> string -> Theory.thy
 
 (** {7 Begining and Ending theories} *)
 
-val begin_theory: 
+val begin_theory:
   Context.t -> string -> string list -> Context.t
 (** [begin_theory ctxt th ths]: Begin a new theory named [th] with
     parents [ths] and make it the current theory.
@@ -121,7 +121,7 @@ val parents: Context.t -> string list -> Context.t
 
 val add_file: Context.t -> string -> Context.t
 (** [add_file f]: Add file [f] to the list to be loaded/used when the theory is
-    loaded. 
+    loaded.
 
     A file is loaded if it is a byte-code library (with suffix .cmo)
     and used otherwise (see {!Global.Files.load_use_file}).
@@ -136,19 +136,19 @@ val remove_file: Context.t -> string -> Context.t
 
 (** {7 Basic PP functions} *)
 
-val add_type_pp_rec: Context.t -> Ident.t -> Printer.record -> Context.t 
+val add_type_pp_rec: Context.t -> Ident.t -> Printer.record -> Context.t
 (** Add a PP record for a type identifier. Updates Printer and Parser. *)
 val remove_type_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a type identifier. Updates Printer and
     Parser.
 *)
-val get_type_pp_rec: 
+val get_type_pp_rec:
   Context.t -> Ident.t -> (int * fixity * string option)
 (** Get the PP record for a type identifier. *)
 
-val add_term_pp_rec: 
-  Context.t -> Ident.t -> ?pos:Theory.sym_pos -> Printer.record 
-  -> Context.t 
+val add_term_pp_rec:
+  Context.t -> Ident.t -> ?pos:Parser.sym_pos -> Printer.record
+  -> Context.t
 (** Add a PP record for a term identifier. Updates Printer and Parser
     tables. (Experimental) Add overloading information to the parser
     with relative position [pos] (Default is [First]).
@@ -158,12 +158,12 @@ val remove_term_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a term identifier. Updates Printer and
     Parser tables.
 *)
-val get_term_pp_rec: 
+val get_term_pp_rec:
   Context.t -> Ident.t -> (int * fixity * string option)
 (** Get the PP record for a term identifier. *)
 
-val add_overload: 
-  Context.t -> string -> ?pos:Theory.sym_pos -> Ident.t -> Context.t
+val add_overload:
+  Context.t -> string -> ?pos:Parser.sym_pos -> Ident.t -> Context.t
 (** [add_overload sym ?post id]: Overload [sym] with term identifier
     [id]. Make identifier [id] have position [?pos] (default [First])
     in the list of options for symbol [sym]. (Experimental.)
@@ -180,7 +180,7 @@ val add_symbol: Context.t -> string -> string -> Context.t
 
 (** {7 Toplevel Printer and Parser information functions} *)
 
-val add_type_pp: 
+val add_type_pp:
   Context.t -> Ident.t -> int -> fixity -> string option -> Context.t
 (** Add a PP information for a type identifier. Updates Printer and
     Parser tables.
@@ -194,8 +194,8 @@ val remove_type_pp: Context.t -> Ident.t -> Context.t
 val get_type_pp: Context.t -> Ident.t -> (int * fixity * string option)
 (** Get PP information for a type identifier. *)
 
-val add_term_pp: 
-  Context.t -> Ident.t -> ?pos:Theory.sym_pos 
+val add_term_pp:
+  Context.t -> Ident.t -> ?pos:Parser.sym_pos
   -> int -> fixity -> string option -> Context.t
 (** Add a PP information for a term identifier. Updates Printer and
     Parser tables. (Experimental) Add overloading information to the
@@ -210,7 +210,7 @@ val remove_term_pp: Context.t -> Ident.t -> Context.t
 val get_term_pp: Context.t -> Ident.t -> (int * fixity * string option)
 (** Get PP information for a term identifier. *)
 
-(** {5 Axioms and theorems} 
+(** {5 Axioms and theorems}
 
     Functions to add and extract theorems from the current theory. The
     main user-level functions are {!Commands.lemma}, to get a theorem
@@ -234,8 +234,8 @@ val thm: Context.t -> string -> Logic.thm
     be a long identifier (of the form [th.name])
 *)
 
-val axiom: 
-  Context.t -> ?simp:bool -> string -> Basic.term 
+val axiom:
+  Context.t -> ?simp:bool -> string -> Basic.term
   -> (Context.t * Logic.thm)
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
@@ -245,15 +245,15 @@ val axiom:
     Returns the new axiom.
 *)
 
-val prove: 
+val prove:
   Context.t -> Basic.term -> Tactics.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
 *)
 
-val save_thm: 
-  Context.t -> ?simp:bool -> string ->  Logic.thm 
+val save_thm:
+  Context.t -> ?simp:bool -> string ->  Logic.thm
   -> (Context.t * Logic.thm)
 (** [save_thm n thm]: Add theorem [thm] to the current theory, storing
     it under name [n].
@@ -263,9 +263,9 @@ val save_thm:
     Returns the theorem.
 *)
 
-val prove_thm: 
+val prove_thm:
   Context.t ->
-  ?simp:bool -> string -> Basic.term -> Tactics.tactic list 
+  ?simp:bool -> string -> Basic.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -279,9 +279,9 @@ val prove_thm:
     Returns the new theorem.
 *)
 
-val theorem: 
-  Context.t 
-  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list 
+val theorem:
+  Context.t
+  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -299,20 +299,20 @@ val theorem:
 *)
 
 val lemma:
-  Context.t 
-  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list 
+  Context.t
+  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
-val qed: 
-  Context.t -> Goals.ProofStack.t -> string 
+val qed:
+  Context.t -> Goals.ProofStack.t -> string
   -> (Context.t * Logic.thm)
 (** Declare a proof results in a theorem and store this theorem under
     the given name.
 *)
 
-val get_or_prove: 
-  Context.t 
+val get_or_prove:
+  Context.t
   -> string -> Basic.term -> Tactics.tactic -> Logic.thm
 (** [get_or_prove n trm tacs ()]: Try to find the definition or
     theorem named [n], using {!Commands.thm}. If not found, prove
@@ -324,8 +324,8 @@ val get_or_prove:
 (** {5 Definitions and Declarations} *)
 
 val typedef:
-  Context.t 
-  -> ?pp:(int*fixity*string option) 
+  Context.t
+  -> ?pp:(int*fixity*string option)
   -> ?simp:bool
   -> ?thm:Logic.thm
   -> ?rep:string -> ?abs:string
@@ -373,9 +373,9 @@ val typedef:
     also added to the standard simpset.
 
     Function declarations:
-    {ul {- [REP: X -> Y]} 
+    {ul {- [REP: X -> Y]}
     {- [ABS: Y -> X]}}
-    
+
     Axioms:
     {ul
     {- [REP_X_mem: |- !x: set (REP x)]}
@@ -386,14 +386,14 @@ val typedef:
     {!Global.read_type_defn}.
 *)
 
-val define: 
+val define:
   Context.t
-  -> ?pp: (int * fixity * string option) 
+  -> ?pp: (int * fixity * string option)
   -> ?simp:bool
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
   -> (Context.t * Logic.Defns.cdefn)
 (**
-   [define ?simp term pp]: Define a term. 
+   [define ?simp term pp]: Define a term.
 
    A term definition is of the from [define <:def< f a1 .. an = X>>].
    The term identifier is [f], the arguments (if any) are [a1 .. an]
@@ -412,10 +412,10 @@ val define:
    The parser for term definitions is {!Global.read_defn}.
 *)
 
-val declare: 
-  Context.t 
-  -> ?pp:(int* fixity* string option) 
-  -> Basic.term 
+val declare:
+  Context.t
+  -> ?pp:(int* fixity* string option)
+  -> Basic.term
   -> (Context.t * Ident.t * Basic.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
@@ -433,13 +433,13 @@ val declare:
 
 (** {7 Debugging} *)
 
-val simple_typedef: 
-  Context.t 
-  -> (string * string list * Basic.gtype option) 
+val simple_typedef:
+  Context.t
+  -> (string * string list * Basic.gtype option)
   -> (Context.t * Logic.Defns.cdefn)
-val subtypedef: 
-  Context.t 
-  -> (string * string list * Basic.gtype * Basic.term) 
+val subtypedef:
+  Context.t
+  -> (string * string list * Basic.gtype * Basic.term)
   -> (string option * string option)
-  -> ?simp:bool -> Logic.thm 
+  -> ?simp:bool -> Logic.thm
   -> (Context.t * Logic.Defns.cdefn)

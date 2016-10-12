@@ -1,19 +1,19 @@
 (*----
   Name: context.mli
-  Copyright M Wahab 2012-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2012-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -100,7 +100,7 @@ type parser_t =
 val empty_pp_t: unit -> pp_t
 
 (** Top-level context *)
-type t = 
+type t =
   {
     (** Hooks for file handling functions *)
     file_f: file_t;
@@ -113,7 +113,7 @@ type t =
 
     (** Parsers *)
     parser_f: parser_t;
-    
+
     (** A list of functions to invoke on a theory when it is added
         to the data-base. *)
     load_functions_f: (t -> Theory.contents -> t) list;
@@ -208,7 +208,7 @@ val current_name: t -> string
 val set_current: t -> Theory.thy -> t
 (** Set the current theory. *)
 
-val set_loader_data : t -> (t -> Thydb.Loader.data) -> t 
+val set_loader_data : t -> (t -> Thydb.Loader.data) -> t
 (** [set_thydb db t]: Set the theory database in context [t] to [db]. *)
 
 val loader_data : t -> Thydb.Loader.data
@@ -244,7 +244,7 @@ val cache_thm: t -> Ident.t -> Logic.thm -> t
 val lookup_thm: t -> Ident.t -> Logic.thm
 (** Lookup a cached theorem, raising Not_found if not found. *)
 
-val find_thm: 
+val find_thm:
   t -> Ident.t -> (t -> Logic.thm) -> Logic.thm
 (** Lookup a cached theorem, creating and caching it if not found. *)
 
@@ -257,7 +257,7 @@ val anon_thy: unit -> Theory.thy
 
 (** {5 File-Handling} *)
 
-module Files: 
+module Files:
 sig
 
   (** The current working directory. *)
@@ -291,7 +291,7 @@ sig
   (** [find_file f p]: Find file [f] in the path [p].  Returns the
       full path to the file, raises [Not_found] if not found.  If [f]
       is an absolute file name, just returns [f].  *)
-    
+
   (** {7 Theory files} *)
 
   val file_of_thy: t -> string -> string
@@ -335,9 +335,9 @@ sig
 
   (** {7 Terms} *)
 
-  val add_term_parser: 
-    t -> (string) Lib.position -> string 
-    -> (Grammars.parser_info -> Pterm.t Grammars.phrase) 
+  val add_term_parser:
+    t -> (string) Lib.position -> string
+    -> (Grammars.parser_info -> Pterm.t Grammars.phrase)
     -> t
   (** Add a term parser *)
 
@@ -351,7 +351,7 @@ sig
       found.  *)
 
   val add_term_pp: t ->
-    Ident.t -> int -> Printer.fixity 
+    Ident.t -> int -> Printer.fixity
     -> string option -> t
   (** Add printer information for term identifer. *)
 
@@ -367,9 +367,9 @@ sig
 
   (** {7 Types} *)
 
-  val add_type_parser: 
-    t -> (string) Lib.position -> string 
-    -> (Grammars.parser_info -> Basic.gtype Grammars.phrase) 
+  val add_type_parser:
+    t -> (string) Lib.position -> string
+    -> (Grammars.parser_info -> Basic.gtype Grammars.phrase)
     -> t
   (** Add a type parser *)
 
@@ -380,13 +380,13 @@ sig
     t -> Ident.t -> (int * Printer.fixity * string option)
   (** Get PP information for type identifer. *)
 
-  val add_type_pp: 
-    t -> Ident.t 
-    -> int -> Printer.fixity -> string option 
+  val add_type_pp:
+    t -> Ident.t
+    -> int -> Printer.fixity -> string option
     -> t
   (** Add PP information for type identifer. *)
 
-  val add_type_pp_record: 
+  val add_type_pp_record:
     t -> Ident.t -> Printer.record -> t
   (** Add PP record for type identifer. *)
 
@@ -402,7 +402,7 @@ sig
     t -> Ident.t -> Printer.term_printer
   (** Get printer for terms. *)
 
-  val add_term_printer: 
+  val add_term_printer:
     t -> Ident.t -> Printer.term_printer -> t
   (** [add_term_printer id p]: Add printer p for terms. The
       printer is keyed by term identifier and triggered on a
@@ -419,7 +419,7 @@ sig
     t -> Ident.t -> Printer.gtype_printer
   (** Get printer for types *)
 
-  val add_type_printer: 
+  val add_type_printer:
     t -> Ident.t -> Printer.gtype_printer
     -> t
   (** [add_type_printer id p]: Add printer p for types. The
@@ -443,23 +443,23 @@ sig
       be overloaded on [s]. String [s] may be a symbol or the
       short name of a term.  *)
 
-  val add_overload: 
-    t -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) 
+  val add_overload:
+    t -> string -> Parser.sym_pos -> (Ident.t * Basic.gtype)
     -> t
-  (** 
+  (**
       [add_overload sym pos (id, ty)]: Overload identifier [id], with
-      type [ty] on symbol [sym]. Put [id] in position [pos]. 
+      type [ty] on symbol [sym]. Put [id] in position [pos].
   *)
 
   val remove_overload: t -> string -> Ident.t -> t
-  (** 
+  (**
       [remove_overload sym id]: Remove [id] from the list of identifiers
       overloading symbol [sym].
   *)
 
   (** {6 Parsing} *)
 
-  val expand_term: 
+  val expand_term:
     t -> Pterm.t -> Basic.term
   (** Resolve symbols and short names in terms and types, replacing
       them with long identifiers where possible. Also retype the term
@@ -467,18 +467,18 @@ sig
       to {!Formula.make}. Never fails but resulting term may be
       inconsistently typed.  *)
 
-  val expand_type_names: 
+  val expand_type_names:
     t -> Basic.gtype -> Basic.gtype
   (** Replace symbols and short names in a type with the long
       identifier, were possible.  *)
-  val expand_typedef_names: 
+  val expand_typedef_names:
     t -> Parser.typedef_data -> Defn.Parser.typedef
   (** Resolve symbols and short names in a type definition.  *)
 
   val mk_term: t -> Pterm.t -> Basic.term
   (** Resolve symbols and short names in a term, making a parsed term
       suitable for use.
-      
+
       Replaces short names and symbols with their long identifiers where
       possible. Also retypes the term if possible. Never fails but
       resulting term may be inconsistently typed.
@@ -493,7 +493,7 @@ sig
       expanding terms and resolving symbols.  *)
 
   val read_defn:
-    t -> string 
+    t -> string
     -> ((string * Basic.gtype) * Basic.term list) * Basic.term
   (** Parse a string as a term definition. *)
 
@@ -510,4 +510,3 @@ sig
   val catch_parse_error: (string -> 'a) -> string -> 'a
 
 end
-

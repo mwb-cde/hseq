@@ -69,7 +69,7 @@ hseq_PACK_NAME=HSeq
 # HSeq sources
 export BUILDQUOTELIB=$(SRC_ROOT)/quote/buildquote.cma
 
-MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(BUILDQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
+LOCAL_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo $(BUILDQUOTELIB) pa_extend.cmo" -I $(CAMLPLIB)
 
 Util_SOURCES=lib treekit tag parserkit rewritekit
 Tpcore_SOURCES=defaults settings ident basic printer \
