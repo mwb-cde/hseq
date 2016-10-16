@@ -1,7 +1,7 @@
 (*----
  Name: pairLib.mli
- Copyright M Wahab 2005-2013
- Author: M Wahab  <mwb.cde@gmail.com>
+ Copyright Matthew Wahab 2005-2016
+ Author: Matthew Wahab <mwb.cde@gmail.com>
 
  This file is part of HSeq
 
@@ -43,14 +43,14 @@ val pair_thy : string
 val pair_id : Ident.t
 (** [pair_id] The identifier of the pair constructor *)
 
-(** 
-   [pair_prec] The precedence of the pair identifier 
+(**
+   [pair_prec] The precedence of the pair identifier
 
-   [pair_fixity] The fixity of the pair identifier 
+   [pair_fixity] The fixity of the pair identifier
 *)
 val pair_prec: int
 val pair_fixity: Printer.fixity
 
 val pair_printer:
-    Printer.ppinfo -> (Printer.fixity * int) 
+    Printer.ppinfo -> (Printer.fixity * int)
       -> (Basic.term * Basic.term list) Printer.printer

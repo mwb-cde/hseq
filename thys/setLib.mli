@@ -1,22 +1,22 @@
 (*----
- Name: setLib.mli
- Copyright M Wahab 2005-2013
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: setLib.mli
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
 (*
@@ -48,10 +48,10 @@ val set_id : Ident.t
 
 val set_data:(Printer.fixity* int)
 (**
-   [set_data] The precedence and fixity of the set identifier 
+   [set_data] The precedence and fixity of the set identifier
 *)
 
-(** 
+(**
    [empty_id] The identifier of the set constructor
 
    [empty_data] PP data for the empty set.
@@ -59,29 +59,25 @@ val set_data:(Printer.fixity* int)
 val empty_id : Ident.t
 val empty_data:(Printer.fixity* int)
 
-
 module SetPP:
     sig
       val ocb_sym: string
       val ccb_sym: string
 
-      val main_parser: 
-	(Grammars.parser_info -> Pterm.t Parser.phrase)
+      val main_parser:
+        (Grammars.parser_info -> Pterm.t Parser.phrase)
+      val set_list:
+        (Grammars.parser_info -> Pterm.t Parser.phrase)
+      val set_body:
+        (Grammars.parser_info -> Pterm.t Parser.phrase)
 
-      val set_list: 
-	(Grammars.parser_info -> Pterm.t Parser.phrase)
-
-      val set_body: 
-	(Grammars.parser_info -> Pterm.t Parser.phrase)
-
-      val set_parser: 
-	(Grammars.parser_info -> Pterm.t Parser.phrase)
-      val set_printer : 
-	  unit 
-	-> Printer.ppinfo -> (Printer.fixity * int)
-	  -> (Basic.term * Basic.term list) Printer.printer
+      val set_parser:
+        (Grammars.parser_info -> Pterm.t Parser.phrase)
+      val set_printer :
+          unit
+        -> Printer.ppinfo -> (Printer.fixity * int)
+          -> (Basic.term * Basic.term list) Printer.printer
 
       val init_set_parser : unit -> unit
       val init_set_printer : unit -> unit
 end
-

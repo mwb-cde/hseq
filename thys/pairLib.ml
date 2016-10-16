@@ -1,7 +1,7 @@
 (*----
- Name: pairLib.ml
- Copyright Matthew Wahab 2005-2016
- Author: Matthew Wahab <mwb.cde@gmail.com>
+  Name: pairLib.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
