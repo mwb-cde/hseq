@@ -145,6 +145,23 @@ end
 module Loader =
 struct
 
+  (** {5 Theory building and loading} *)
+  module Var =
+  struct
+    let null_load_file (fname: string) =
+      raise (Failure ("Thyloader.null_load_file("^fname^")"))
+    let null_use_file ?silent:bool (fname: string) =
+      raise (Failure ("Thyloader.null_use_file"^fname^")"))
+
+    let load_file = ref null_load_file
+    let use_file = ref null_use_file
+  end
+
+  let get_load_file() = !(Var.load_file)
+  let set_load_file f = Var.load_file := f
+  let get_use_file() = !(Var.use_file)
+  let set_use_file f = Var.use_file := f
+
   (** Remember loaded theories *)
   let record_thy_fn ctxt thy =
     let n = thy.Theory.cname in
@@ -168,35 +185,34 @@ struct
   (** Set up term printer/parser recoreds from a loaded theory. *)
   let term_pp_thy_fn = Context.PP.add_theory_term_pp
 
+  (** Load files listed in the theory. *)
+  let load_files_thy_fn ctxt thy =
+    let file_list = thy.Theory.cfiles in
+    let path = Context.path ctxt in
+    let loader f =
+      let fqn =
+        try Context.Files.find_file f path
+        with Not_found ->
+          raise (Report.error ("Can't find file "^f^" in path."))
+      in
+      (Context.loader ctxt) fqn
+    in
+    List.iter loader file_list;
+    ctxt
+
   (** List of functions to apply to a loaded theory *)
   let thy_fn_list =
-    [ type_pp_thy_fn; term_pp_thy_fn; simp_thy_fn; record_thy_fn ]
-
-  (** {5 Theory building and loading} *)
-  module Var =
-  struct
-    let null_load_file (fname: string) =
-      raise (Failure ("Thyloader.null_load_file("^fname^")"))
-    let null_use_file ?silent:bool (fname: string) =
-      raise (Failure ("Thyloader.null_use_file"^fname^")"))
-
-    let load_file = ref null_load_file
-    let use_file = ref null_use_file
-  end
-
-  let get_load_file() = !(Var.load_file)
-  let set_load_file f = Var.load_file := f
-  let get_use_file() = !(Var.use_file)
-  let set_use_file f = Var.use_file := f
+    [ type_pp_thy_fn; term_pp_thy_fn; load_files_thy_fn;
+      simp_thy_fn; record_thy_fn ]
 
   let default_thy_fn
       (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
     Report.report
       ("Thyloader.default_thy_fn("^thy.Theory.cname^")");
-    let thy_fn_list = (Context.load_functions ctxt) in
-    let ctxt1 = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
+    let thy_fn_list = Context.load_functions ctxt in
+    let _ = List.fold_left (fun ctxt0 f -> f ctxt0 thy) ctxt thy_fn_list
     in
-    ignore(ctxt1)
+    ()
 
   (** Generate the list of theories imported by a theory. For use in
       Thydb.Loader, when applying the theory functions *)
