@@ -189,21 +189,28 @@ struct
   let load_files_thy_fn ctxt thy =
     let file_list = thy.Theory.cfiles in
     let path = Context.path ctxt in
-    let loader f =
+    let loader ctxt f =
       let fqn =
         try Context.Files.find_file f path
         with Not_found ->
           raise (Report.error ("Can't find file "^f^" in path."))
       in
-      (Context.loader ctxt) fqn
+      begin
+        Global.set_context ctxt;
+        Context.loader ctxt fqn;
+        Global.context()
+      end
     in
-    List.iter loader file_list;
-    ctxt
+    let ctxt0 = Global.context() in
+    let ctxt1 = List.fold_left loader ctxt file_list in
+    Global.set_context ctxt0;
+    ctxt1
 
   (** List of functions to apply to a loaded theory *)
   let thy_fn_list =
-    [ type_pp_thy_fn; term_pp_thy_fn; load_files_thy_fn;
-      simp_thy_fn; record_thy_fn ]
+    [ type_pp_thy_fn; term_pp_thy_fn;
+      simp_thy_fn; load_files_thy_fn;
+      record_thy_fn ]
 
   let default_thy_fn
       (ctxt: Context.t) (db: Thydb.thydb) (thy: Theory.contents) =
