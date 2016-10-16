@@ -162,8 +162,15 @@ struct
       Global.set_state (Userstate.set_simpset st set1);
       ctxt
 
+  (** Set up type  printer/parser recoreds from a loaded theory. *)
+  let type_pp_thy_fn = Context.PP.add_theory_type_pp
+
+  (** Set up term printer/parser recoreds from a loaded theory. *)
+  let term_pp_thy_fn = Context.PP.add_theory_term_pp
+
   (** List of functions to apply to a loaded theory *)
-  let thy_fn_list = [simp_thy_fn; record_thy_fn]
+  let thy_fn_list =
+    [ type_pp_thy_fn; term_pp_thy_fn; simp_thy_fn; record_thy_fn ]
 
   (** {5 Theory building and loading} *)
   module Var =
