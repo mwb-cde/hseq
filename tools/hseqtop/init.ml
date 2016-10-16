@@ -71,14 +71,13 @@ let set_base_dir()=
 (**
     [set_directorys()]: Add tp directories to the system search path.
 *)
-let set_directorys ()=
-  List.iter Unsafe.add_directory (!Settings.include_dirs);
+let set_directorys () =
   Unsafe.add_directory (Settings.libs_dir())
 
 (**
    [starting_mesg()]: Print a Start Up message.
 *)
-let starting_mesg()=
+let starting_mesg() =
   Format.printf "@[\tHSeq (%s)\n@]@." Defaults.version
 
 let load_init () =

@@ -73,6 +73,11 @@ sig
   val set_proofstack: Goals.ProofStack.t -> unit
   (** Set the global proofstack *)
 
+  val path: unit -> string list
+  (** The search path for theory files and libraries. *)
+  val set_path: string list -> unit
+  (** Set the search path for theory files libraries. *)
+
   (** Initialise the global state. *)
   val init: unit -> unit
 end

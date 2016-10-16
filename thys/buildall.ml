@@ -42,15 +42,13 @@ open Userlib
     dependencies (other than the OCaml standad libraries).
 *)
 
+(** Initialise hseq *)
 #use "local_thy_config.ml";;
 
-(** Add the source include directories *)
+(** Add the source include directories and reset the system. *)
 let _ =
-  Settings.include_dirs :=
-    List.append local_include_dirs (!Settings.include_dirs);;
-
-(** Initialise hseq *)
-#use "hseqstart.ml";;
+  Settings.set_include_dirs local_include_dirs;
+  reset();;
 
 (**
    This is part of the standard library so clear the theory base name.

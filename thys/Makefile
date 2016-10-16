@@ -1,4 +1,3 @@
-
 ########################################################## --*- Makefile -*--
 # Makefile.module - Makefile to build modules
 # Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
@@ -113,11 +112,12 @@ EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~ local_thy_config.ml
 
 # The local configure data.
 local_thy_config.ml: Makefile
-	echo \
-	"#use \"$(SRC_ROOT)/tools/hseqtop/hseqstart.ml\";;\n" \
+	echo "#use \"$(SRC_ROOT)/tools/hseqtop/hseqstart.ml\";;\n" \
 	"let local_include_dirs = " \
-	"[\"$(SRC_ROOT)/hseq\"; \"$(SRC_ROOT)/hsequser\"];;" > \
-	local_thy_config.ml
+	"[\"$(SRC_ROOT)/thys\" ; \"$(SRC_ROOT)/hseq\"; "\
+	"\"$(SRC_ROOT)/hsequser\"];;\n" \
+	>> local_thy_config.ml
+
 
 thys: local_thy_config.ml
 	$(HSEQC) $(BUILDSCRIPT)

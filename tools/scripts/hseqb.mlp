@@ -1,30 +1,30 @@
 (*----
- Name: hseqb.mlp
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: hseqb.mlp
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
 (**
    A script to run hseq as a batch compiler.
 
    Use as [hseqb ocaml-args file1 file2 ... filen]
-   where 
-   [ocaml-args] are the arguments to pass to ocaml 
+   where
+   [ocaml-args] are the arguments to pass to ocaml
    [file1], [file2], ..., [filen] are the files to compile.
 
    Each of the files is run through hseq, starting with [file1] and
@@ -40,10 +40,10 @@ let includedir = LibDir
 
 (** Default values *)
 
-let default_bin = 
+let default_bin =
   let hseq_name = Filename.concat bindir "hseq"
   in
-  let suffix = 
+  let suffix =
     if (Sys.os_type = "Win32")
     then ".exe"
     else ""
@@ -55,33 +55,33 @@ let default_libs = [includedir]
 let default_silent = false
 
 (** [use_command f]: make the command to use file [f] *)
-let use_command ?(silent=false) file = 
-  let use = 
-    if silent 
+let use_command ?(silent=false) file =
+  let use =
+    if silent
     then "Unsafe.use_file ~silent:true"
     else "Unsafe.use_file ~silent:false"
   and quote = "\""
   and eocl = ";;\n"
   and quit = "#quit"
-  in 
+  in
   use ^quote^ file ^quote ^eocl ^ quit ^eocl
 
 (**
    [run files]: Run each file in [files] as a script.
 *)
-let run silent bin args file = 
+let run silent bin args file =
   let prog = String.concat " " (bin::args)
-  in 
+  in
   let command = use_command ~silent:silent file
-  in 
-  let outstrm = 
+  in
+  let outstrm =
     Unix.open_process_out prog
-  in 
+  in
     output_string outstrm command;
     flush outstrm;
     ignore(Unix.close_process_out outstrm)
 
-(** 
+(**
     [process_args ()] Process the command line arguments.
 
     {ul
@@ -92,25 +92,25 @@ let run silent bin args file =
     {- + s: pass argument [s] to the binary}
     {- s: run file [s] as a script}}
 *)
-let process_args () = 
+let process_args () =
   let bin = ref default_bin
-  in 
+  in
   let lib_list = ref default_libs
-  in 
+  in
   let ocaml_args = ref default_bin_args
-  in 
+  in
   let file_list = ref []
-  in 
+  in
   let silent = ref default_silent
-  in 
+  in
   let add_to_list l s = (l:=s::(!l))
   in
-  let args = 
+  let args =
    Arg.align
     [
-      ("--bin", Arg.Set_string bin, 
+      ("--bin", Arg.Set_string bin,
        "<file> set the name of the binary to <file>");
-      ("--include", Arg.String (add_to_list lib_list), 
+      ("--include", Arg.String (add_to_list lib_list),
        "<dir> add directory <dir> to the search list");
       ("--quiet", Arg.Set silent,
        " don't echo the results of the script");
@@ -124,55 +124,55 @@ let process_args () =
     let files = List.rev (!file_list)
     and libs = List.rev (!lib_list)
     and bin_args = List.rev (!ocaml_args)
-    in 
+    in
     (!bin, files, libs, bin_args, !silent)
-    
+
 (** [test_bin b] Make sure that binary file b exists *)
-let test_bin b = 
-  if(Sys.file_exists b)
+let test_bin b =
+  if (Sys.file_exists b)
   then ()
   else
     (Format.printf "@[hseqb: can't find executable %s@]@." b;
      exit (-1))
 
 (** [test_files files]: make sure that there are files to process *)
-let test_files files = 
-  match files with 
-      [] -> 
-	(Format.printf "@[hseqb: no files@]@.";
-	 exit (-1))
+let test_files files =
+  match files with
+      [] ->
+        (Format.printf "@[hseqb: no files@]@.";
+         exit (-1))
     | _ -> ()
 
-(** 
-    [construct_args libs bin_args]: construct the 
+(**
+    [construct_args libs bin_args]: construct the
     argument array to pass to the binary.
 
     [libs] are set as the include directories
     [bin_args] are passed as is.
 *)
 let construct_args libs bin_args =
-  let rec make_include l rs=
-    match l with 
-	[] -> rs
+  let rec make_include l rs =
+    match l with
+        [] -> rs
       | (x::xs) -> make_include xs (x::"-I"::rs)
-  in 
+  in
   let full_list = ""::(List.rev_append (make_include libs []) bin_args)
-  in 
+  in
     full_list
 
 (**
    [main ()] The main function
 *)
-let main () = 
+let main () =
   let (bin, files, libs, bin_args, silent) = process_args()
-  in 
+  in
     let args = construct_args libs bin_args
-    in 
+    in
       test_bin bin;
       test_files files;
       List.iter (run silent bin args) files
-      
-let _ = 
+
+let _ =
   main();
-  Format.printf "@."; 
+  Format.printf "@.";
   exit 0

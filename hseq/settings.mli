@@ -1,7 +1,7 @@
 (*----
   Name: settings.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -48,12 +48,15 @@ val make_directory: string -> string
 *)
 
 val libs_dir : unit -> string
+val set_libs_dir : string -> unit
 (**  Directory of libraries (loadable modules). *)
 
 val thys_dir : unit -> string
+val set_thys_dir : string -> unit
 (**  Theories directory. *)
 
-val include_dirs : string list ref
+val include_dirs : unit -> string list
+val set_include_dirs : string list -> unit
 (** Directories to search for modules to include. Default: [ [libs_dir] ]. *)
 
 val init_file: string
@@ -61,8 +64,8 @@ val init_file: string
     used will be contructed as [libs_dir^init_file].
 *)
 
-(** 
-    {7 File suffixes} 
+(**
+    {7 File suffixes}
 
     Suffixes to add to a name to form a file name
 *)
@@ -101,4 +104,3 @@ val load_thy_level: int ref
 (** Amount of information to emit when loading a theory. Initially
     [0].
 *)
-

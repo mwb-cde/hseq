@@ -88,6 +88,9 @@ struct
   let set_proofstack s =
     set_state (Userstate.set_proofstack (state()) s)
 
+  let path () = Context.path (context())
+  let set_path p =
+    set_context (Context.set_path (context()) p)
 end
 
 let state_opt st =
@@ -366,7 +369,7 @@ let compile dirs name =
     in
     let inc_std_dirs =
       Lib.list_string
-        (fun x -> ("-I \""^x^"\"")) " " (!Settings.include_dirs)
+        (fun x -> ("-I \""^x^"\"")) " " (Global.path())
     in
     let inc_string = inc_std_dirs^" "^inc_dirs in
     let com_string = "ocamlc -c"

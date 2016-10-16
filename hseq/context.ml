@@ -579,7 +579,7 @@ struct
     set_path ctxt (Lib.filter (fun y -> x = y) pth)
 
   let init_thy_path ctxt =
-    set_path ctxt ["."; Settings.thys_dir()]
+    set_path ctxt ["."]
 
   let get_thy_path ctxt = path ctxt
   let add_thy_path ctxt x = add_path ctxt x

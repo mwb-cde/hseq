@@ -155,7 +155,7 @@ struct
 (** State initializer *)
   let init_context st =
     let ctxt0 = Default.context() in
-    let ctxt1 = Context.set_path ctxt0 [Settings.thys_dir()] in
+    let ctxt1 = Context.set_path ctxt0 (Settings.include_dirs()) in
     set_context st ctxt1
 
   let init_scope st =
