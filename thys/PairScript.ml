@@ -31,8 +31,9 @@ let _ = compile [] "pairLib.mli";;
 let _ = compile [] "pairLib.ml";;
 let _ = add_file ~use:true "pairLib.cmo";;
 
-let pair_prec = PairLib.pair_prec
-let pair_fixity = PairLib.pair_fixity
+(** [pair_prec] and [pair_fixity] must agree with the values in pairLib.ml. *)
+let pair_prec = 10
+let pair_fixity = Printer.infixr
 
 (** {5 Definition and basic properties of pairs} *)
 

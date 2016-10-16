@@ -37,20 +37,4 @@
 
 open HSeq
 
-val pair_thy : string
-(** [pair_thy]: The name of the theory of pairs *)
-
-val pair_id : Ident.t
-(** [pair_id] The identifier of the pair constructor *)
-
-(**
-   [pair_prec] The precedence of the pair identifier
-
-   [pair_fixity] The fixity of the pair identifier
-*)
-val pair_prec: int
-val pair_fixity: Printer.fixity
-
-val pair_printer:
-    Printer.ppinfo -> (Printer.fixity * int)
-      -> (Basic.term * Basic.term list) Printer.printer
+val init: unit -> unit
