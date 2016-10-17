@@ -1,5 +1,5 @@
 HSeq Theorem Prover
-October 2014
+October 2016
 Matthew Wahab <mwb.cde@gmail.com>
 ----
 
@@ -32,9 +32,10 @@ Directories
 -----------
 
 hseq     - Theorem prover source code.
-hsequser - Toplevel and user code.
+hsequser - Support code for.
 quote    - Preprocessor source code.
 thys     - Theory scripts, the generated files and their libraries.
+tools    - The toplevel and related scripts.
 doc      - Documentation
 examples - Examples
 
