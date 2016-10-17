@@ -230,6 +230,7 @@ object (self)
     (get_str option, Arg.String set_value, self#make_help_msg())
 
   (* Outputs *)
+
   method print_var_mli oc =
     begin
       match self#get_value() with
