@@ -34,6 +34,8 @@ open Boollib.Convs
 open Boollib.Rules
 open Tactics
 
+let term = BoolPP.read
+
 (*** Theorems and conversions used by the simplifier. ***)
 
 (*** Theorems ***)
@@ -42,9 +44,9 @@ open Tactics
 *)
 let cond_rule_true_id = Ident.mk_long "_simplifier" "cond_rule_true"
 let make_cond_rule_true_thm sctxt =
-  Commands.prove sctxt << !x y: (x => y) = (x => (y = true)) >>
+  Commands.prove sctxt (term "!x y: (x => y) = (x => (y = true))")
   (allC ++ allC ++
-     (?> fun info1 ->
+     (?> (fun info1 ->
        let y_term =
 	 Lib.get_one (Info.constants info1)
 	   (Failure "make_cond_rule_true_thm: y-term")
@@ -55,7 +57,7 @@ let make_cond_rule_true_thm sctxt =
            inst_tac [y_term];
 	   once_replace_tac;
 	   eq_tac
-         ]))
+         ])))
 
 let cond_rule_true_thm ctxt =
   Context.find_thm ctxt cond_rule_true_id make_cond_rule_true_thm
@@ -64,16 +66,16 @@ let cond_rule_true_thm ctxt =
 *)
 let cond_rule_false_id = Ident.mk_long "_simplifier" "cond_rule_false"
 let make_cond_rule_false_thm sctxt =
-  Commands.prove sctxt << !x y: (x=>(not y)) = (x => (y=false)) >>
+  Commands.prove sctxt (term "!x y: (x=>(not y)) = (x => (y=false))")
   (allC ++ allC ++
-     (?> fun info ->
+     (?> (fun info ->
        let y_term =
 	 Lib.get_one (Info.constants info)
 	   (Failure "make_cond_rule_false_thm: y-term")
        in
        (cut (rule_false_thm sctxt) ++ inst_tac [y_term]
 	++ once_replace_tac
-	++ eq_tac)))
+	++ eq_tac))))
 
 let cond_rule_false_thm ctxt =
   Context.find_thm ctxt cond_rule_false_id make_cond_rule_false_thm
@@ -83,7 +85,7 @@ let cond_rule_false_thm ctxt =
 let cond_rule_imp_false_id =
   Ident.mk_long "_simplifier" "cond_rule_imp_false"
 let make_cond_rule_imp_false_thm sctxt =
-  Commands.prove sctxt << !x: (x => false) = (not x) >>
+  Commands.prove sctxt (term "!x: (x => false) = (not x)")
   (allC ++ equals_tac ++ blast_tac)
 
 let cond_rule_imp_false_thm sctxt =
@@ -95,7 +97,7 @@ let cond_rule_imp_not_true_id =
   Ident.mk_long "_simplifier" "cond_rule_imp_not_true"
 
 let make_cond_rule_imp_not_true_thm sctxt =
-  Commands.prove sctxt << !x: (x => (not true)) = (not x) >>
+  Commands.prove sctxt (term "!x: (x => (not true)) = (not x)")
   (allC  ++ equals_tac ++ blast_tac)
 
 let cond_rule_imp_not_true_thm ctxt =
@@ -109,7 +111,7 @@ let neg_disj_id =
   Ident.mk_long "_simplifier" "neg_disj"
 
 let make_neg_disj_thm sctxt =
-  Commands.prove sctxt << !x y: (not (x or y)) = ((not x) and (not y)) >>
+  Commands.prove sctxt (term "!x y: (not (x or y)) = ((not x) and (not y))")
   (allC ++ allC ++ equals_tac ++ blast_tac)
 
 let neg_disj_thm ctxt =
@@ -121,27 +123,27 @@ let neg_eq_sym_id =
 let make_neg_eq_sym_thm sctxt =
   let thm = Boollib.Thms.eq_sym_thm sctxt in
   Commands.prove sctxt
-  << !x y: (not (x = y)) = (not (y = x)) >>
+  (term "!x y: (not (x = y)) = (not (y = x))")
     (seq
        [
 	 allC; allC; equals_tac;
          iffE
          --
 	   [
-	     (?> fun info ->
+	     (?> (fun info ->
 	       let (atg, _) =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
 	       in
 	       (once_rewrite_tac ~f:(ftag atg) [thm]
-	        ++ basic));
-	     (?> fun info ->
+	        ++ basic)));
+	     (?> (fun info ->
 	       let (_, atg) =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
 	       in
 	       (once_rewrite_tac ~f:(ftag atg) [thm]
-	        ++ basic))
+	        ++ basic)))
 	   ]
        ])
 
@@ -159,14 +161,14 @@ let make_cond_neg_eq_sym_thm sctxt=
   let thm = Boollib.Thms.eq_sym_thm sctxt
   in
   Commands.prove sctxt
-  << !c x y: (c => (not (x = y))) = (c => (not (y = x))) >>
+  (term "!c x y: (c => (not (x = y))) = (c => (not (y = x)))")
       (seq
          [
 	   allC; allC; allC; equals_tac;
-	   (iffE ++ (?> fun info -> implC ++ set_changes_tac info))
+	   (iffE ++ (?> (fun info -> implC ++ set_changes_tac info)))
 	   --
 	     [
-               (?> fun info ->
+               (?> (fun info ->
 	       implA --
 	         [
                    basic;
@@ -176,8 +178,8 @@ let make_cond_neg_eq_sym_thm sctxt=
                          (error "simpconvs.make_cond_neg_eq_sym_thm:1")
 		     in
 		     (once_rewrite_tac  ~f:(ftag atg) [thm]
-		      ++ basic) ctxt g)]);
-               (?> fun info ->
+		      ++ basic) ctxt g)]));
+               (?> (fun info ->
 	         implA --
 	           [basic;
 	            (fun ctxt g ->
@@ -186,7 +188,7 @@ let make_cond_neg_eq_sym_thm sctxt=
                           (error "simpconvs.make_cond_neg_eq_sym_thm:2")
 		      in
 		      (once_rewrite_tac ~f:(ftag atg) [thm]
-		       ++ basic) ctxt g)])
+		       ++ basic) ctxt g)]))
 	     ]
          ])
 
@@ -200,14 +202,14 @@ let make_cond_eq_sym_thm sctxt =
   let thm = Boollib.Thms.eq_sym_thm sctxt
   in
   Commands.prove sctxt
-  << !c x y: (c => (x = y)) = (c => (y = x)) >>
+  (term "!c x y: (c => (x = y)) = (c => (y = x))")
       (seq
          [
 	   allC; allC; allC; equals_tac;
-           (iffE ++ (?> fun info -> implC ++ set_changes_tac info))
+           (iffE ++ (?> (fun info -> implC ++ set_changes_tac info)))
 	   --
 	     [
-               (?> fun info ->
+               (?> (fun info ->
 	       implA
 	       --
 	         [basic;
@@ -217,8 +219,8 @@ let make_cond_eq_sym_thm sctxt =
                           (error "simpconvs.make_cond_eq_sym_thm:1")
 		    in
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) ctxt g)]);
-               (?> fun info ->
+		     ++ basic) ctxt g)]));
+               (?> (fun info ->
 	       implA
 	       --
 	         [basic;
@@ -228,7 +230,7 @@ let make_cond_eq_sym_thm sctxt =
                           (error "simpconvs.make_cond_eq_sym_thm:2")
 		    in
 		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) ctxt g)])
+		     ++ basic) ctxt g)]))
 	     ]
          ])
 
@@ -311,8 +313,8 @@ let negate_concl_tac clbl ctxt goal =
     [
       make_neg_concl clbl;
       Tactics.negC ~c:clbl;
-      (?> fun inf ->
-        set_changes_tac (Changes.make [] (Info.aformulas inf) [] []))
+      (?> (fun inf ->
+        set_changes_tac (Changes.make [] (Info.aformulas inf) [] [])))
     ] ctxt goal
 
 (*** Preparing simplifier rules. ***)
@@ -697,10 +699,10 @@ let solve_not_true_tac tg goal =
   seq
     [
       negA ~a:(ftag tg);
-      (?> fun info g ->
+      (?> (fun info g ->
 	let ctg = get_one ~msg:"solve_not_true_tac" (Info.cformulas info)
 	in
-	trueC ~c:(ftag ctg) g)
+	trueC ~c:(ftag ctg) g))
     ] goal
 
 (** Functions to convert an assumption
@@ -1192,11 +1194,11 @@ let prepare_concl data c ctxt goal =
         seq [
           (true_test --> Tactics.trueC ~c:(ftag c));
           copyC (ftag c);
-          (?> fun info ->
+          (?> (fun info ->
             let c1 = get_one ~msg:"Simplib.prepare_concl"
               (Info.cformulas info)
             in
-            negate_concl_tac (ftag c1))
+            negate_concl_tac (ftag c1)))
         ] +< l);
       (fun _ ctxt1 g1 ->
         let info = Info.changes g1 in

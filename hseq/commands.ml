@@ -59,6 +59,13 @@ let read_defn ?ctxt x =
   let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read_defn pctxt x
 
+let read_type ?ctxt (x: string) =
+  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  catch_errors (Context.ppinfo pctxt) Context.PP.read_type pctxt x
+let read_type_defn ?ctxt x =
+  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  catch_errors (Context.ppinfo pctxt) Context.PP.read_type_defn pctxt x
+
 (*
  * Theories
  *)

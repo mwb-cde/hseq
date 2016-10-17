@@ -1,7 +1,7 @@
 (*----
   Name: boolbase.mli
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -34,7 +34,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
     true{_ f}, C \].
 *)
 
-val cut_thm: 
+val cut_thm:
   ?inst:Basic.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
@@ -80,15 +80,15 @@ val eq_tac: ?c:Logic.label -> Tactics.tactic
 
 (**  {5 Eliminating boolean operators}  *)
 
-val direct_alt: 
-  'a -> ('a -> Tactics.tactic) list 
+val direct_alt:
+  'a -> ('a -> Tactics.tactic) list
   -> Tactics.tactic
 (** [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
     pass [info] and [l] to each tactic in [tacs].  **)
 
-val direct_map_some: 
+val direct_map_some:
   ('a -> Tactics.tactic)
-  -> 'a list 
+  -> 'a list
   -> ('a list)Tactics.data_tactic
 (** [direct_map_some tac lst]: Directed map_some. Like
     {!Tactics.map_some} but pass and [l] to [tac]. **)

@@ -1,7 +1,7 @@
 (*----
   Name: simplib.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -21,152 +21,154 @@
 
 open Tactics
 
+let term = BoolPP.read
+
 (** Simpset functions *)
 let empty_simp = Simpset.empty_set
-let add_simps = Simpset.simpset_add_thms 
+let add_simps = Simpset.simpset_add_thms
 let add_simp ctxt set thm = add_simps ctxt set [thm]
 
 let add_conv set terms conv =
-  let add_aux set trm = 
+  let add_aux set trm =
     let (vs, body) = Term.strip_qnt Basic.All trm
-    in 
+    in
     Simpset.add_conv (vs, body) conv set
-  in 
+  in
   List.fold_left add_aux set terms
 
 (** Initial simpset *)
 let init_std_ss () =
-  add_conv (empty_simp()) [ << !x A: (%y: A) x >> ] 
+  add_conv (empty_simp()) [ (term "!x A: (%y: A) x") ]
     (fun ctxt -> Logic.Conv.beta_conv (Context.scope_of ctxt))
 
 (** Global state *)
 
 (*** Toplevel simplification tactics ***)
 
-let simpC_tac 
+let simpC_tac
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     set ?add ?c rules ctxt goal =
   (** uset: The simpset to use. **)
-  let sctxt = goal_context ctxt goal in 
-  let uset = 
-    let uset1 = 
+  let sctxt = goal_context ctxt goal in
+  let uset =
+    let uset1 =
       match add with
-	| None -> set
+        | None -> set
         | Some s -> Simpset.join s set
-    in 
+    in
     (** If there are rules, make a simpset from them. **)
-    match rules with 
+    match rules with
       | [] -> uset1
       | _ -> Simpset.simpset_add_thms sctxt uset1 rules
-  in 
+  in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
-  let ignore_tags = 
-    let sqnt = Tactics.sequent goal in 
+  let ignore_tags =
+    let sqnt = Tactics.sequent goal in
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
-  in 
+  in
   (** simp_data: The simpset data. *)
-  let simp_data = 
+  let simp_data =
     let data1 = Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
-    in 
+    in
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
       uset
-  in 
+  in
   Simptacs.simpC_tac simp_data ?c ctxt goal
 
 let simpC set ?c ctxt goal = simpC_tac set ?c [] ctxt goal
 
-let simpA_tac 
+let simpA_tac
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     set ?add ?a rules ctxt goal =
-  let sctxt = goal_context ctxt goal in 
+  let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
-  let uset = 
-    let uset1 = 
+  let uset =
+    let uset1 =
       match add with
-	| None -> set
+        | None -> set
         | Some s -> Simpset.join s set
-    in 
+    in
     (** If there are rules, make a simpset from them. **)
-    match rules with 
+    match rules with
       | [] -> uset1
       | _ -> Simpset.simpset_add_thms sctxt uset1 rules
-  in 
+  in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
-  let ignore_tags = 
-    let sqnt = Tactics.sequent goal 
-    in 
+  let ignore_tags =
+    let sqnt = Tactics.sequent goal
+    in
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
-  in 
+  in
   (** simp_data: The simpset data. *)
-  let simp_data = 
+  let simp_data =
     let data1 = Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
-    in 
+    in
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
       uset
-  in 
+  in
   Simptacs.simpA_tac simp_data ?a ctxt goal
 
 let simpA set ?a ctxt goal = simpA_tac ?a set [] ctxt goal
 
-let simp_all_tac 
+let simp_all_tac
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     set ?add rules ctxt goal =
-  let sctxt = goal_context ctxt goal in 
+  let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
-  let uset = 
-    let uset1 = 
+  let uset =
+    let uset1 =
       match add with
-	| None -> set
+        | None -> set
         | Some s -> Simpset.join s set
-    in 
+    in
     (** If there are rules, make a simpset from them. **)
-    match rules with 
+    match rules with
       | [] -> uset1
       | _ -> Simpset.simpset_add_thms sctxt uset1 rules
-  in 
+  in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
-  let ignore_tags = 
-    let sqnt = Tactics.sequent goal 
-    in 
+  let ignore_tags =
+    let sqnt = Tactics.sequent goal
+    in
     List.map (fun l -> Logic.label_to_tag l sqnt) ignore
-  in 
+  in
   (** simp_data: The simpset data. *)
-  let simp_data = 
-    let data1 = 
+  let simp_data =
+    let data1 =
       Simplifier.Data.set_exclude Simptacs.default_data ignore_tags
-    in 
+    in
     Simplifier.Data.set_simpset
       (Simplifier.Data.set_control data1 cntrl)
       uset
-  in 
+  in
   Simptacs.full_simp_tac simp_data ctxt goal
 
 let simp_all set ctxt goal = simp_all_tac set [] ctxt goal
 
-let simp_tac 
+let simp_tac
     ?(cntrl = Formula.default_rr_control) ?(ignore = [])
     set ?add ?f rules (ctxt: Context.t) goal =
-  let sqnt = Tactics.sequent goal in 
+  let sqnt = Tactics.sequent goal in
   let tac =
-    match f with 
+    match f with
       | None ->
         simpC_tac ~cntrl:cntrl ~ignore:ignore set ?add rules
-      | Some(x) -> 
-	let tg = Logic.label_to_tag x sqnt in 
+      | Some(x) ->
+        let tg = Logic.label_to_tag x sqnt in
         begin
-	  match Lib.try_find (get_tagged_concl (ftag tg)) goal with
-	    | None -> 
-	      simpA_tac ~cntrl:cntrl ~ignore:ignore 
+          match Lib.try_find (get_tagged_concl (ftag tg)) goal with
+            | None ->
+              simpA_tac ~cntrl:cntrl ~ignore:ignore
                 set ?add ~a:(ftag tg)rules
-	    | _ -> 
-	      simpC_tac ~cntrl:cntrl ~ignore:ignore 
+            | _ ->
+              simpC_tac ~cntrl:cntrl ~ignore:ignore
                 set ?add ~c:(ftag tg)rules
         end
-  in 
+  in
   tac ctxt goal
-    
+
 let simp set ?f ctxt goal = simp_tac ?f set [] ctxt goal
 
 (*** Initialising functions ***)
@@ -185,20 +187,19 @@ let thm_is_simp ctxt set (_, tr) =
 let def_is_simp ctxt set (_, dr) =
   match dr.Theory.def with
     | None -> set
-    | Some(thm) -> 
+    | Some(thm) ->
       if has_property Theory.simp_property dr.Theory.dprops
-      then add_simp ctxt set thm 
+      then add_simp ctxt set thm
 (*
-        try add_simp ctxt set thm 
+        try add_simp ctxt set thm
         with _ -> set
 *)
       else set
-        
+
 (** Function to call when a theory is loaded **)
 
-let on_load (ctxt:Context.t) (set:Simpset.simpset) thy = 
-  let set1 = List.fold_left (thm_is_simp ctxt) set thy.Theory.caxioms in 
+let on_load (ctxt:Context.t) (set:Simpset.simpset) thy =
+  let set1 = List.fold_left (thm_is_simp ctxt) set thy.Theory.caxioms in
   let set2 = List.fold_left (thm_is_simp ctxt) set1 thy.Theory.ctheorems in
   let set3 = List.fold_left (def_is_simp ctxt) set2 thy.Theory.cdefns in
   set3
-

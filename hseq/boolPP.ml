@@ -1,7 +1,7 @@
 (*----
   Name: boolPP.ml
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -31,9 +31,9 @@ let negation_pprec = Printer.mk_record 205 Printer.prefix None
 let negation_printer ppstate ((fixity: Printer.fixity), prec) (f, args) =
   let cprec= negation_pprec.Printer.prec
   and fixity = negation_pprec.Printer.fixity
-  in 
-  match args with 
-    | t::rest -> 
+  in
+  match args with
+    | t::rest ->
       Format.printf "@[<2>";
       Printer.print_bracket prec cprec "(";
       Format.printf "~";
@@ -41,16 +41,16 @@ let negation_printer ppstate ((fixity: Printer.fixity), prec) (f, args) =
       Printer.print_bracket prec cprec ")";
       Format.printf "@]";
       begin
-	match rest with
-	  | [] -> ()
-	  | _ -> 
-	    Format.printf "@[";
-	    Printer.print_list
-	      ((fun x ->
-		Term.print_term ppstate (fixity, prec) x),
-	       (fun () -> Format.printf "@ "))
-	      rest;
-	    Format.printf "@]"
+        match rest with
+          | [] -> ()
+          | _ ->
+            Format.printf "@[";
+            Printer.print_list
+              ((fun x ->
+                Term.print_term ppstate (fixity, prec) x),
+               (fun () -> Format.printf "@ "))
+              rest;
+            Format.printf "@]"
         end
     | _ -> Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
 
@@ -77,20 +77,20 @@ let ifthenelse_parser inf =
        ?$(Lexer.Sym(Lexer.OTHER "ELSE"));
        Grammars.form inf])
    >>
-     (fun l -> 
-       match l with 
-	   [_; test; _; tbr; _; fbr] ->
-	     Pterm.mk_fun ifthenelse_id [test; tbr; fbr]
-	 | _ -> raise (ParsingError "Error parsing if-then-else")))
-    
-let ifthenelse_pprec = 
+     (fun l ->
+       match l with
+           [_; test; _; tbr; _; fbr] ->
+             Pterm.mk_fun ifthenelse_id [test; tbr; fbr]
+         | _ -> raise (ParsingError "Error parsing if-then-else")))
+
+let ifthenelse_pprec =
   let prec=Printer.default_term_prec
   and fixity = Printer.default_term_fixity
-  in 
+  in
   Printer.mk_record prec fixity None
 
-let init_ifthenelse_parser ppstate = 
-  let ite_syms = 
+let init_ifthenelse_parser ppstate =
+  let ite_syms =
     [
       ("if", (Sym(OTHER "IF")));
       ("then", (Sym(OTHER "THEN")));
@@ -98,7 +98,7 @@ let init_ifthenelse_parser ppstate =
     ]
   in
   let ppinf1 =
-    List.fold_left 
+    List.fold_left
       (fun t (x, y) -> Parser.add_symbol t x y)
       ppstate
       ite_syms
@@ -107,10 +107,10 @@ let init_ifthenelse_parser ppstate =
 
 (** Printer for if-then-else **)
 let ifthenelse_printer ppstate (fixity, prec) (f, args) =
-  let cfixity = Printer.default_term_fixity in 
-  let cprec = ifthenelse_pprec.Printer.prec in 
-  match args with 
-    | b::tbr::fbr::rest -> 
+  let cfixity = Printer.default_term_fixity in
+  let cprec = ifthenelse_pprec.Printer.prec in
+  match args with
+    | b::tbr::fbr::rest ->
       Format.printf "@[<2>";
       Printer.print_bracket prec cprec "(";
       Format.printf "if@ ";
@@ -124,15 +124,15 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
       Format.printf "@]";
       begin
         match rest with
-	  | [] -> ()
-	  | _ -> 
-	    Format.printf "@[";
-	    Printer.print_list
-	      ((fun x ->
-		Term.print_term ppstate (cfixity, prec) x),
-	       (fun () -> Format.printf "@ "))
-	      rest;
-	    Format.printf "@]"
+          | [] -> ()
+          | _ ->
+            Format.printf "@[";
+            Printer.print_list
+              ((fun x ->
+                Term.print_term ppstate (cfixity, prec) x),
+               (fun () -> Format.printf "@ "))
+              rest;
+            Format.printf "@]"
       end
     | _ -> Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
 
@@ -144,18 +144,18 @@ let init_ifthenelse_printer inf =
 
 let choice_ident = Ident.mk_long Lterm.base_thy "epsilon"
 let choice_sym = "@"
-let choice_pp = (Printer.default_term_fixity, Printer.default_term_prec) 
+let choice_pp = (Printer.default_term_fixity, Printer.default_term_prec)
 
 let choice_parser = Grammars.parse_as_binder choice_ident choice_sym
 
 let init_choice_parser tbl =
   let tbl0 =
     Parser.add_symbol tbl choice_sym (Lexer.Sym(Lexer.OTHER choice_sym))
-  in 
+  in
   Parser.add_term_parser tbl0
     (Lib.After "lambda") "epsilon" choice_parser
-    
-let choice_printer = 
+
+let choice_printer =
   Term.print_as_binder choice_pp choice_ident choice_sym
 
 let init_choice_printer inf =
@@ -163,70 +163,70 @@ let init_choice_printer inf =
 
 (* Support for printing/parsing [EXISTS_UNIQUE(%x: P)] as [?! x: P] *)
 
-let exists_unique_ident = 
+let exists_unique_ident =
   Ident.mk_long Lterm.base_thy "EXISTS_UNIQUE"
 let exists_unique_sym = "?!"
-let exists_unique_pp = 
-  (Printer.default_term_fixity, Printer.default_term_prec) 
+let exists_unique_pp =
+  (Printer.default_term_fixity, Printer.default_term_prec)
 
 let exists_unique_parser =
   Grammars.parse_as_binder exists_unique_ident exists_unique_sym
 
 let init_exists_unique_parser tbl =
-  let tbl0 = 
+  let tbl0 =
     Parser.add_symbol tbl
-      exists_unique_sym 
+      exists_unique_sym
       (Lexer.Sym(Lexer.OTHER exists_unique_sym))
   in
   Parser.add_term_parser tbl0
     (Lib.After "lambda") "exists_unique" exists_unique_parser
-    
+
 let exists_unique_printer  =
-  (Term.print_as_binder 
-    exists_unique_pp exists_unique_ident exists_unique_sym) 
+  (Term.print_as_binder
+    exists_unique_pp exists_unique_ident exists_unique_sym)
 
 let init_exists_unique_printer inf =
-  Printer.add_term_printer inf 
-    exists_unique_ident 
+  Printer.add_term_printer inf
+    exists_unique_ident
     exists_unique_printer
 
-let bool_parsers = 
+let bool_parsers =
   [ ifthenelse_parser; choice_parser; exists_unique_parser ]
 
-let bool_parsers_init = 
+let bool_parsers_init =
   [ init_ifthenelse_parser; init_choice_parser; init_exists_unique_parser ]
 
-let init_bool_parsers ptbl0 = 
-  let ptbl1 = 
+let init_bool_parsers ptbl0 =
+  let ptbl1 =
     List.fold_left (fun x f -> f x) ptbl0 bool_parsers_init
   in
   ptbl1
 
-let bool_printers_init = 
+let bool_printers_init =
   [
-    init_ifthenelse_printer; 
-    init_choice_printer; 
+    init_ifthenelse_printer;
+    init_choice_printer;
     init_exists_unique_printer;
   ]
 
-let init_bool_printers ppinfo = 
-  let ppinf1 = 
+let init_bool_printers ppinfo =
+  let ppinf1 =
     List.fold_left (fun x f -> f x) ppinfo bool_printers_init
   in
   ppinf1
 
 let add_type_token ptable id repr fixity prec =
-  Parser.add_type_token ptable 
-    id (Lib.get_option repr (Ident.name_of id)) fixity prec 
+  Parser.add_type_token ptable
+    id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
 let add_token ptable id repr fixity prec =
-  Parser.add_token ptable 
-    id (Lib.get_option repr (Ident.name_of id)) fixity prec 
+  Parser.add_token ptable
+    id (Lib.get_option repr (Ident.name_of id)) fixity prec
 
 let basethy_type_symbols =
   [
   ]
-and basethy_term_symbols = 
+and basethy_term_symbols =
   [
   ]
 
@@ -234,49 +234,49 @@ let quote_type_symbols =
   [
     (Lterm.fun_ty_id, 100, Printer.infixr, Some("->"));
   ]
-and quote_term_symbols = 
+and quote_term_symbols =
   [
-    (Lterm.notid, negation_pprec.Printer.prec, 
-     negation_pprec.Printer.fixity, 
+    (Lterm.notid, negation_pprec.Printer.prec,
+     negation_pprec.Printer.fixity,
      Some "not");
-    (Lterm.notid, negation_pprec.Printer.prec, 
-     negation_pprec.Printer.fixity, 
+    (Lterm.notid, negation_pprec.Printer.prec,
+     negation_pprec.Printer.fixity,
      Some "~");
     (Lterm.equalsid, 200, Printer.infixl, (Some "=")) ;
     (Lterm.andid, 185, Printer.infixr, Some "and") ;
     (Lterm.andid, 185, Printer.infixr, Some "&") ;
-    (Lterm.orid, 190, Printer.infixr, Some "or") ; 
+    (Lterm.orid, 190, Printer.infixr, Some "or") ;
     (Lterm.orid, 190, Printer.infixr, Some "|") ;
     (Lterm.impliesid, 195, Printer.infixr, Some "=>") ;
     (Lterm.iffid, 180, Printer.infixn, Some "iff") ;
   ]
 
-let init_bool_tokens ptable (tysyms, trmsyms) = 
-  let ptable1 = 
+let init_bool_tokens ptable (tysyms, trmsyms) =
+  let ptable1 =
     List.fold_left
       (fun infa (id, p, f, r) -> add_type_token infa id r f p)
       ptable tysyms
   in
-  let ptable2 = 
-    List.fold_left 
+  let ptable2 =
+    List.fold_left
       (fun infa (id, p, f, r) ->  add_token infa id r f p)
       ptable1 trmsyms
-  in 
+  in
   ptable2
 
 let init_bool_ppinfo ppinfo (tysyms, trmsyms) =
-  let ppinfo1 = 
+  let ppinfo1 =
     List.fold_left
       (fun infa (id, p, f, r) ->
         Printer.add_type_info infa id p f r)
       ppinfo tysyms
   in
-  let ppinfo2 = 
-    List.fold_left 
-      (fun infa (id, p, f, r) ->  
+  let ppinfo2 =
+    List.fold_left
+      (fun infa (id, p, f, r) ->
         Printer.add_term_info infa id p f r)
       ppinfo1 trmsyms
-  in 
+  in
   ppinfo2
 
 (** {7 OCaml Quotations support} *)
@@ -287,7 +287,7 @@ let basethy_context () =
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
   let ptbl3 = init_bool_tokens ptbl2 syms in
-  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
+  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in
   ctxt1
 
 let quote_context =
@@ -296,7 +296,7 @@ let quote_context =
   let ptbl1 = Parser.init_parsers (Context.parsers ctxt0) in
   let ptbl2 = init_bool_parsers ptbl1 in
   let ptbl3 = init_bool_tokens ptbl2 syms in
-  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in 
+  let ctxt1 = Context.set_parsers ctxt0 ptbl3 in
   let ppinf0 = Context.ppinfo ctxt1 in
   let ppinf1 = init_bool_ppinfo ppinf0 syms in
   Context.set_ppinfo ctxt1 ppinf1
@@ -319,4 +319,3 @@ let read_type str = Context.PP.read_type quote_context str
 (** Parse a string as a type definition. *)
 let read_type_defn str = Context.PP.read_type_defn quote_context str
 let read_identifier str = Context.PP.read_identifier quote_context str
-

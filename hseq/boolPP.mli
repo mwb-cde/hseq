@@ -1,7 +1,7 @@
 (*----
   Name: boolPP.mli
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -44,9 +44,9 @@ val ifthenelse_parser: parser_info -> Pterm.t phrase
     then t else f >>].
 *)
 
-val ifthenelse_printer: 
+val ifthenelse_printer:
   Printer.ppinfo
-  -> (Printer.fixity * int) 
+  -> (Printer.fixity * int)
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the conditional. *)
 
@@ -65,9 +65,9 @@ val choice_parser: parser_info -> Pterm.t phrase
 (** Parser for the choice operator. Syntax [<< @ x: P >>]
 *)
 
-val choice_printer: 
+val choice_printer:
   Printer.ppinfo
-  -> (Printer.fixity * int) 
+  -> (Printer.fixity * int)
   -> (Basic.term * Basic.term list) Printer.printer
 (** Printer for the choice operator. *)
 
@@ -80,9 +80,9 @@ val quote_term_symbols: symbol list
 
 val init_bool_parsers: Parser.Table.t -> Parser.Table.t
 val init_bool_printers: Printer.ppinfo -> Printer.ppinfo
-val init_bool_ppinfo: 
+val init_bool_ppinfo:
   Printer.ppinfo -> ((symbol list) * (symbol list)) -> Printer.ppinfo
-val init_bool_tokens: 
+val init_bool_tokens:
   Parser.Table.t -> ((symbol list) * (symbol list)) -> Parser.Table.t
 
 (** {7 Minimal printer and parser information} *)

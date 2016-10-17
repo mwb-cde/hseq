@@ -1,7 +1,7 @@
 (*----
   Name: booltacs.mli
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -34,8 +34,8 @@ val iffA: ?a:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[A{_ l1}, asms |- B{_ l2}, concl\]; 
-    g2:\[B{_ l3}, asms |- A{_ l4}, concl\]; 
+    g1:\[A{_ l1}, asms |- B{_ l2}, concl\];
+    g2:\[B{_ l3}, asms |- A{_ l4}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
@@ -49,8 +49,8 @@ val iffC: ?c:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[asms |- (A=>B){_ l}, concl\]; 
-    g2:\[asms |- (B=>A){_ l}, concl\]; 
+    g1:\[asms |- (A=>B){_ l}, concl\];
+    g2:\[asms |- (B=>A){_ l}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
@@ -64,8 +64,8 @@ val iffE: ?c:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[A{_ l1}, asms |- B{_ l2}, concl\]; 
-    g2:\[B{_ l3}, asms |- A{_ l4}, concl\]; 
+    g1:\[A{_ l1}, asms |- B{_ l2}, concl\];
+    g2:\[B{_ l3}, asms |- A{_ l4}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
@@ -86,18 +86,18 @@ val split_concl_rules:
   (Logic.label -> Tactics.tactic) list
 (** The rules used by {!Booltacs.split_tac} to conclusions assumptions *)
 
-val split_asms_tac: 
+val split_asms_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
-val split_concls_tac: 
+val split_concls_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which introduce new
     subgoals. Uses the same rules as {!Booltacs.split_tac}.
 *)
 
-val split_tac: 
+val split_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
     introduce new subgoals. Resulting tag information may contain
@@ -126,18 +126,18 @@ val flatter_concl_rules:
 (** The rules used by {!Booltacs.flatten_tac} to flatten conclusions.
 *)
 
-val flatter_asms_tac: 
+val flatter_asms_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
-val flatter_concls_tac: 
+val flatter_concls_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which don't introduce new
     subgoals. Uses the same rules as {!Booltacs.flatten_tac}.
 *)
 
-val flatten_tac: 
+val flatten_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which don't
     introduce new subgoals. Resulting tag information may contain
@@ -149,7 +149,7 @@ val flatten_tac:
     In the conclusions, eliminates [true], negation ([not]),
     disjunction ([|]), implication ([=>]), universal quantification
     ([!]).
-    
+
     Doesn't eliminate negation in the assumptions (to avoid
     introducing trivial conclusions).
 *)
@@ -168,7 +168,7 @@ val scatter_concl_rules:
 (** Rules used by {!Booltacs.scatter_tac} to scatter conclusions.
 *)
 
-val scatter_tac: 
+val scatter_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions.
 
@@ -190,7 +190,7 @@ val blast_concl_rules:
   (Logic.label -> Tactics.tactic) list
 (** Rules used by {!Booltacs.blast_tac}. *)
 
-val blast_tac: 
+val blast_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions
     then try to solve subgoals.
@@ -221,7 +221,7 @@ val cases_tac: Basic.term -> Tactics.tactic
     {L
     g:\[asms |- concls\]
 
-    ---> 
+    --->
 
     g1:\[asms |- x{_ t}, concls\]; g2:\[x{_ t}, asms |- concls\]
     }
@@ -229,14 +229,14 @@ val cases_tac: Basic.term -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[t], cforms=[t], terms = []]
 *)
 
-val show_tac: 
+val show_tac:
   Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
-val show: 
+val show:
   Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
@@ -245,7 +245,7 @@ val show:
     {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
 
-val cases_of: 
+val cases_of:
   ?thm:Logic.thm -> Basic.term -> Tactics.tactic
 (** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
@@ -256,14 +256,14 @@ val cases_of:
 
 (** {5 Modus Ponens} *)
 
-val mp_tac: 
+val mp_tac:
   ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
 (** [mp_tac ?a ?h]: Modus ponens.
 
     {L
     g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
 
-    ---> 
+    --->
 
     g:\[B{_ t}, A{_ h}, asms |- concls\]
     }
@@ -280,14 +280,14 @@ val mp_tac:
 
 val cut_mp_tac:
   ?inst:Basic.term list
-  -> Logic.thm 
+  -> Logic.thm
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
 
     {L
     g:\[A{_ a}, asms |- concls\]; thm: |- A => B
 
-    ---> 
+    --->
 
     g:\[B{_ t}, A{_ a}, asms |- concls\]
     }
@@ -305,14 +305,14 @@ val cut_mp_tac:
     are searched for a suitable formula.
 *)
 
-val back_tac: 
+val back_tac:
   ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
 (** [back_tac ~a ~c]: Match, backward tactic.
 
     {L
     g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
 
-    ---> 
+    --->
 
     g1:\[asms |- A{_ t}, concls\]
     }
@@ -328,14 +328,14 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?inst:Basic.term list 
+  ?inst:Basic.term list
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 
     {L
     g:\[asms |- B{_ c}, concls\]; thm: |- A => B
 
-    ---> 
+    --->
 
     g1:\[asms |- A{_ t}, concls\]
     }

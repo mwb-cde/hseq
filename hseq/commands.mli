@@ -67,6 +67,11 @@ val read_defn: ?ctxt:Context.t -> string
   -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
+val read_type: ?ctxt:Context.t -> string -> Basic.gtype
+(** User level parsing of a string as a type. *)
+val read_type_defn: ?ctxt:Context.t -> string -> Defn.Parser.typedef
+(** User level parsing of a string as a type definition. *)
+
 (** {5 Theories} *)
 
 val theories: Context.t -> Thydb.thydb

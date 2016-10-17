@@ -1,9 +1,9 @@
 (*----
- Name: buildquote.ml
- Copyright Matthew Wahab 2005-2016
- Author: Matthew Wahab <mwb.cde@googlemail.com>
+  Name: buildquote.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@googlemail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
   HSeq is free software; you can redistribute it and/or modify it under the
   terms of the Lesser GNU General Public License as published by the Free
@@ -15,7 +15,7 @@
   more details.
 
   You should have received a copy of the Lesser GNU General Public License
-  along with HSeq.  If not see <http://www.gnu.org/licenses/>.  
+  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
 (**
@@ -73,9 +73,9 @@ let std_check_string str =
       if is_space ch
       then check (i+1)
       else
-	if ch= (!type_char)
-	then (Type, String.sub str (i+1) (size - (i+1)))
-	else (Term, String.sub str i (size - i))
+        if ch= (!type_char)
+        then (Type, String.sub str (i+1) (size - (i+1)))
+        else (Term, String.sub str i (size - i))
     else (Unknown, str)
   in
   if size>0
@@ -93,11 +93,11 @@ let def_check_string str =
       if is_space ch
       then check (i+1)
       else
-	if ch= (!type_char)
-	then
-	  (Typedef, String.sub str (i+1) (size - (i+1)))
-	else
-	  (Def, String.sub str i (size - i))
+        if ch= (!type_char)
+        then
+          (Typedef, String.sub str (i+1) (size - (i+1)))
+        else
+          (Def, String.sub str i (size - i))
     else (Unknown, str)
   in
   if size>0
