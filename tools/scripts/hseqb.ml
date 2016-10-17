@@ -1,5 +1,5 @@
 (*----
-  Name: hseqb.mlp
+  Name: hseqb.ml
   Copyright Matthew Wahab 2005-2016
   Author: Matthew Wahab <mwb.cde@googlemail.com>
 
@@ -31,10 +31,8 @@
    continuing to [filen].
 *)
 
-INCLUDE "../../configure.data"
-
-let bindir = BinDir
-let includedir = LibDir
+let bindir = Hseqb_config.value_BinDir
+let includedir = Hseqb_config.value_LibDir
 
 (** Start of script *)
 

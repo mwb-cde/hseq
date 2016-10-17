@@ -1,5 +1,5 @@
 (*----
-  Name: hseqc.mlp
+  Name: hseqc.ml
   Copyright Matthew Wahab 2005-2016
   Author: Matthew Wahab <mwb.cde@googlemail.com>
 
@@ -33,13 +33,11 @@
      hseqc --native -- -o test test.ml
 *)
 
-INCLUDE "../../configure.data"
-
 (** [bindir]: The hseq binary directory *)
-let bindir = BinDir
+let bindir = Hseqc_config.value_BinDir
 
 (** [includedir]: location of the hseq libraries *)
-let includedir = LibDir
+let includedir = Hseqc_config.value_LibDir
 
 (** Start of script *)
 
