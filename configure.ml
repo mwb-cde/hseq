@@ -58,7 +58,6 @@ let cwd = Sys.getcwd()
 
 (** Names of output files **)
 let output_dir = cwd
-let mlp_data = filename output_dir "configure.data"
 let mli_data = filename output_dir "config.mli"
 let ml_data = filename output_dir "config.ml"
 let make_data = filename output_dir "config.make"
@@ -143,7 +142,6 @@ object
   (* Get an Arg.spec object *)
   method get_arg_spec: unit -> (string * Arg.spec * string)
   (* Outputs *)
-  method print_var_mlp: out_channel -> unit
   method print_var_mli: out_channel -> unit
   method print_var_ml: out_channel -> unit
   method print_var_make: out_channel -> unit
@@ -232,15 +230,6 @@ object (self)
     (get_str option, Arg.String set_value, self#make_help_msg())
 
   (* Outputs *)
-  method print_var_mlp oc =
-    begin
-      match self#get_value() with
-        Some(x) ->
- 	  Printf.fprintf oc
-            "DEFINE %s=\"%s\"\n" variable (stringify x)
-      | _ -> ()
-    end
-
   method print_var_mli oc =
     begin
       match self#get_value() with
@@ -625,16 +614,6 @@ let make_outfile n =
   then stdout
   else open_out n
 
-let emit_mlp ()=
-  let oc = make_outfile mlp_data in
-  let print_obj oc obj = obj#print_var_mlp oc
-  in
-    Printf.fprintf oc
-      "(* Definitions for OCaml pre-processor (auto-generated) *)\n\n";
-    List.iter (print_obj oc) settings;
-    close_out oc;
-    Printf.printf "Wrote file %s\n" mlp_data
-
 let emit_mli ()=
   let oc = make_outfile mli_data in
   let print_obj oc obj = obj#print_var_mli oc
@@ -668,7 +647,6 @@ let emit_make() =
 let emit () =
   emit_mli();
   emit_ml();
-  emit_mlp();
   emit_make()
 
 (** Command line arguments **)
