@@ -69,13 +69,6 @@ hseq_PACK_NAME=HSeq
 ##
 # HSeq sources
 
-# Settings for the preprocesors.
-export BUILDQUOTELIB=$(SRC_ROOT)/quote/buildquote.cma
-
-MODULE_OCAMLPP_FLAGS=\
-	-pp "$(CAMLPO) q_MLast.cmo $(BUILDQUOTELIB) pa_extend.cmo" \
-	-I $(CAMLPLIB)
-
 # Source for each of the HSeq component libraries.
 Util_SOURCES=lib treekit tag parserkit rewritekit
 Tpcore_SOURCES=config defaults settings ident basic printer \
