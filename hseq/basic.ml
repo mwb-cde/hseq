@@ -1,22 +1,22 @@
 (*----
- Name: basic.ml
- Copyright M Wahab 2005-2014
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: basic.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
 (*
@@ -24,7 +24,7 @@
  *)
 
 (*
- * Base Representation of logic types 
+ * Base Representation of logic types
  *)
 
 (** [typ_const]: Representation of user-defined type constructors
@@ -44,8 +44,8 @@ let mk_gtype_id s = ref s
 let gtype_id_string i = (!i)
 let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
 let gtype_id_equal x y = (x == y)
-let gtype_id_compare x y = 
-  if gtype_id_equal x y 
+let gtype_id_compare x y =
+  if gtype_id_equal x y
   then 0
   else Pervasives.compare x y
 
@@ -86,12 +86,12 @@ let const_leq x y =
       | Cnum(a), Cnum(b) -> a <= b
 
 let string_const c =
-  match c with 
+  match c with
     | Cnum n -> Num.string_of_num n
     | Cbool b -> string_of_bool b
 
 (*
- * Basis of quantified terms 
+ * Basis of quantified terms
  *)
 
 (** [quant]: Quantifiers for terms. *)
@@ -103,9 +103,9 @@ type quant =
 
 (** [quant_string q]: The string representation of [q]. *)
 let quant_string x =
-  match x with 
+  match x with
     | All -> "!"
-    | Ex -> "?" 
+    | Ex -> "?"
     | Lambda -> "%"
     | Gamma -> "_"
 
@@ -131,31 +131,28 @@ type q_type = {quant: quant; qvar: string; qtyp: gtype}
 type binders = q_type ref
 
 (*
- * Binder operations 
+ * Binder operations
  *)
 
 let binder_equality x y = (x == y)
 let mk_binding qn qv qt = ref {quant=qn; qvar=qv; qtyp=qt}
 let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
-let binder_kind b = 
+let binder_kind b =
   let (x, _, _) = dest_binding b
   in x
-let binder_name b = 
+let binder_name b =
   let (_, x, _) = dest_binding b
   in x
-let binder_type b = 
+let binder_type b =
   let (_, _, x) = dest_binding b
   in x
 
 (** The representation of a term *)
 type term =
-  | Id of Ident.t * gtype  
+  | Id of Ident.t * gtype
   | Bound of binders
   | Free of string * gtype
   | Meta of binders
   | App of term * term
-  | Qnt of binders * term 
+  | Qnt of binders * term
   | Const of const_ty
-
-
-

@@ -1,7 +1,7 @@
 (*----
-  Name: counter.ml 
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Name: counter.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -38,16 +38,16 @@ let is_empty l =
 *)
 let add x lst =
   let rec add_aux ls =
-    match ls with 
+    match ls with
     | [] -> [(x, 1)]
-    |	(s, nm)::xs -> 
+    |	(s, nm)::xs ->
       if s = x
       then (s, nm + 1)::xs
-      else 
-	if s > x
-	then (s, nm)::(add_aux xs)
-	else (x, 1)::(s, nm)::xs
-  in 
+      else
+        if s > x
+        then (s, nm)::(add_aux xs)
+        else (x, 1)::(s, nm)::xs
+  in
   add_aux lst
 
 (* [update x lst]: if x is in lst, increment the count and return
@@ -55,16 +55,16 @@ let add x lst =
    count to 1, return 0 with the new list *)
 let update x lst =
   let rec update_aux ls rst =
-    match ls with 
+    match ls with
     | [] -> (0, List.rev_append rst [(x, 1)])
-    |	(s, nm)::xs -> 
+    |	(s, nm)::xs ->
       if s = x
       then (nm, (s, nm + 1)::xs)
-      else 
-	if s > x
-	then update_aux xs ((s, nm)::rst)
-	else (0, (List.rev_append rst ((x, 1)::(s, nm)::xs)))
-  in 
+      else
+        if s > x
+        then update_aux xs ((s, nm)::rst)
+        else (0, (List.rev_append rst ((x, 1)::(s, nm)::xs)))
+  in
   update_aux lst []
 
 
@@ -75,19 +75,19 @@ let update x lst =
 *)
 let remove x lst =
   let rec remove_aux ls =
-    match ls with 
+    match ls with
     | [] -> []
-    |	(s, nm)::xs -> 
-      if s = x 
-      then 
-	if nm = 1
+    |	(s, nm)::xs ->
+      if s = x
+      then
+        if nm = 1
         then xs
-	else (s, nm-1)::xs
-      else 
-	if s > x 
-	then (s, nm)::(remove_aux xs)
-	else (s, nm)::xs
-  in 
+        else (s, nm-1)::xs
+      else
+        if s > x
+        then (s, nm)::(remove_aux xs)
+        else (s, nm)::xs
+  in
   remove_aux lst
 
 (* find x in list lst: if x is not in lst, raise Not_found
@@ -96,16 +96,16 @@ let remove x lst =
 *)
 let find x lst =
   let rec find_aux ls =
-    match ls with 
+    match ls with
     | [] -> raise Not_found
     | (s, nm)::xs ->
       if s = x
       then nm
       else
-	if s > x
-	then find_aux xs
-	else raise Not_found
-  in 
+        if s > x
+        then find_aux xs
+        else raise Not_found
+  in
   find_aux lst
 
 (* [find_after x lst]: if x is not in lst, raise Not_found if x is
@@ -113,20 +113,20 @@ let find x lst =
 
 let find_after x lst =
   let rec find_aux ls =
-    match ls with 
+    match ls with
     | [] -> raise Not_found
-    | (s, _)::[] -> 
+    | (s, _)::[] ->
       if x = s
-      then None 
+      then None
       else raise Not_found
     | (s1, _)::(s2, x2)::xs ->
-      if s1 = x 
+      if s1 = x
       then Some(s2)
       else
-	if s1 < x
-	then raise Not_found
-	else find_aux ((s2, x2)::xs)
-  in 
+        if s1 < x
+        then raise Not_found
+        else find_aux ((s2, x2)::xs)
+  in
   find_aux lst
 
 (* [find_before x lst]: if x is not in lst, raise Not_found if x is in
@@ -134,20 +134,20 @@ let find_after x lst =
 *)
 let find_before x lst =
   let rec find_aux p ls =
-    match ls with 
+    match ls with
     | [] -> raise Not_found
     | (s, _)::xs ->
       if s = x
       then Some(p)
       else
-	if s < x
-	then raise Not_found
-	else find_aux s xs
-  in 
+        if s < x
+        then raise Not_found
+        else find_aux s xs
+  in
   match lst with
   | [] -> raise Not_found
-  | (s, _)::[] -> 
+  | (s, _)::[] ->
     if x = s
-    then None 
+    then None
     else raise Not_found
   | (s, _)::xs -> find_aux s xs

@@ -1,7 +1,7 @@
 (*----
   Name: hident.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,8 +19,8 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** 
-    Identifiers for functions and types 
+(**
+    Identifiers for functions and types
 
     An identifier is made up of a theory identifier and a name. A {e
     short} identifier is an identifier without a theory identifier

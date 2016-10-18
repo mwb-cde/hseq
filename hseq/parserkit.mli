@@ -1,26 +1,26 @@
 (*----
- Name: parserkit.mli
- Copyright M Wahab 2005-2014
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: parserkit.mli
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
-(** 
-    Toolkit for top-down parsers 
+(**
+    Toolkit for top-down parsers
 
     Mostly based on the parser combinators described by Paulson ("ML
     for the working programmer", 1991, Cambridge University Press).
@@ -60,12 +60,12 @@ end
 (** [Info]: Precedence and associativity information for tokens. *)
 module Info :
 sig
-  type associativity = 
+  type associativity =
       Nonassoc | Leftassoc | Rightassoc
 
   type fixity =
       Nonfix | Prefix | Suffix | Infix of associativity
-	  
+
   val nonfix: fixity
   val infix: associativity -> fixity
   val prefix: fixity
@@ -89,11 +89,11 @@ end
 
 (** [Tokens]: Token values and matchings. *)
 module type TOKENS =
-sig 
+sig
 
-  type tokens 
+  type tokens
 
-  val matches: tokens -> tokens -> bool 
+  val matches: tokens -> tokens -> bool
   (** [matches t1 t2]: [true] iff token [t1] should be considered a
       match for token [t2]. *)
 
@@ -109,7 +109,7 @@ sig
 
   exception ParsingError of string
   exception No_match
-  type token 
+  type token
   and input = token Input.t
   and 'a phrase = input -> 'a * input
   val empty: 'a list phrase
@@ -162,8 +162,8 @@ sig
   (* [alt phs]: Try each of the parsers in [phs] in sequence, starting
      with the first, return the result of the first to suceed.  *)
 
-  val named_alt: 
-    ('x, 'a -> ('b)phrase) Lib.named_list 
+  val named_alt:
+    ('x, 'a -> ('b)phrase) Lib.named_list
     -> ('a -> ('b)phrase)
   (** [named_alt inf phs]: Try each of the named parsers of [phs] in
       sequence, starting with the first and applying each to [inf],
@@ -174,8 +174,8 @@ sig
       starting with the first, fail if any fails. Return the result as
       a list.  *)
 
-  val named_seq: 
-    ('x, 'a -> ('b)phrase) Lib.named_list 
+  val named_seq:
+    ('x, 'a -> ('b)phrase) Lib.named_list
     -> ('a -> ('b list)phrase)
   (** [named_seq phs]: Apply each of the named parsers of [phs] in
       sequence, starting with the first and applying each to [inf],
@@ -208,7 +208,7 @@ sig
   *)
 
   val binop_left:
-    ('a -> 'a -> 'a) 
+    ('a -> 'a -> 'a)
     -> ('b)phrase -> ('a)phrase
     -> ('a)phrase
   (** [binop_left f op ph]: Left associative binary operator.
@@ -221,7 +221,7 @@ sig
   *)
 
   val binop_right:
-    ('a -> 'a -> 'a) 
+    ('a -> 'a -> 'a)
     -> ('b)phrase -> ('a)phrase
     -> ('a)phrase
   (** [binop_right]: right associative binary operator.
@@ -236,10 +236,10 @@ sig
 
   (** [token_info]: Precedence and fixity information about
       tokens.  Used by operators parser.  *)
-  type token_info = 
-      { 
-	fixity: Info.fixity;
-	prec: int
+  type token_info =
+      {
+        fixity: Info.fixity;
+        prec: int
       }
 
   val operators :

@@ -1,7 +1,7 @@
 (*----
   Name: nums.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -35,8 +35,8 @@ val ltid: Ident.t
 val leqid: Ident.t
 
 val numterm_to_expr:
-  int * (int * Basic.term) list 
-  -> Scope.t -> Basic.term 
+  int * (int * Basic.term) list
+  -> Scope.t -> Basic.term
   -> (Exprs.expr * (int * (int * Basic.term) list) )
 
 val bool_type: Basic.gtype
@@ -124,7 +124,7 @@ val is_presburger: Scope.t -> Basic.term -> bool
 
 (** [arith_conv scp trm]: Use the decision procedure to simplify term
     [trm].
-    
+
     if [trm] satisfies [is_numterm], calls [reduce_conv] otherwise
     calls [decide_conv].
 
@@ -134,19 +134,19 @@ val arith_conv: Scope.t -> Basic.term -> Logic.thm
 
 (** Conversions for use with the simplifier.
 
-    [simp_reduce_conv scp asms trm]: call [reduce_conv] with [trm], 
+    [simp_reduce_conv scp asms trm]: call [reduce_conv] with [trm],
 
-    [simp_decide_conv scp asms trm]: call [decide_conv] with [asms => trm], 
+    [simp_decide_conv scp asms trm]: call [decide_conv] with [asms => trm],
     pulling topmost quantifiers of term to the outside.
 
-    [simp_arith_conv scp asms trm]: call [arith_conv] with [asms => trm], 
+    [simp_arith_conv scp asms trm]: call [arith_conv] with [asms => trm],
     pulling topmost quantifiers of term to the outside.
 *)
-val simp_reduce_conv: 
+val simp_reduce_conv:
   Scope.t -> Basic.term list -> Basic.term -> Logic.thm
-val simp_decide_conv: 
+val simp_decide_conv:
   Scope.t -> Basic.term list -> Basic.term -> Logic.thm
-val simp_arith_conv: 
+val simp_arith_conv:
   Scope.t -> Basic.term list -> Basic.term -> Logic.thm
 
 (** Debugging information
@@ -204,9 +204,9 @@ val is_bool_equals:
 
 val is_bool_app:
   Scope.t -> Ident.t -> Basic.term list -> bool
-val is_num_app: 
+val is_num_app:
   Scope.t -> Ident.t -> Basic.term list -> bool
-val is_comp_app: 
+val is_comp_app:
   Scope.t -> Ident.t -> Basic.term list -> bool
 
 val is_comp_fn: Ident.t -> bool
@@ -278,4 +278,3 @@ val reduce_conv: Scope.t -> Basic.term -> Logic.thm
 val decide_conv: Scope.t -> Basic.term -> Logic.thm
 
 val arith_conv: Scope.t -> Basic.term -> Logic.thm
-

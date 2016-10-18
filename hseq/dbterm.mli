@@ -1,7 +1,7 @@
 (*----
   Name: dbterm.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -21,10 +21,10 @@
 
 (** Term representation for permanent storage. *)
 
-(** 
+(**
     A term is stored as a de Bruijn term. Functions [of_term] and
     [to_term] convert between the de Bruijn and the standard
-    representation. 
+    representation.
 *)
 
 open Gtypes
@@ -53,6 +53,6 @@ type dbterm =
 val of_term : Basic.term -> dbterm
 (** Convert a term to its de Bruijn representation. *)
 
-val to_term: dbterm -> Basic.term 
+val to_term: dbterm -> Basic.term
 (** Convert a de Bruijn term to its reference carrying representation.
 *)

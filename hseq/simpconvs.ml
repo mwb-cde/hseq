@@ -48,15 +48,15 @@ let make_cond_rule_true_thm sctxt =
   (allC ++ allC ++
      (?> (fun info1 ->
        let y_term =
-	 Lib.get_one (Info.constants info1)
-	   (Failure "make_cond_rule_true_thm: y-term")
+         Lib.get_one (Info.constants info1)
+           (Failure "make_cond_rule_true_thm: y-term")
        in
        seq
          [
            cut (rule_true_thm sctxt);
            inst_tac [y_term];
-	   once_replace_tac;
-	   eq_tac
+           once_replace_tac;
+           eq_tac
          ])))
 
 let cond_rule_true_thm ctxt =
@@ -70,12 +70,12 @@ let make_cond_rule_false_thm sctxt =
   (allC ++ allC ++
      (?> (fun info ->
        let y_term =
-	 Lib.get_one (Info.constants info)
-	   (Failure "make_cond_rule_false_thm: y-term")
+         Lib.get_one (Info.constants info)
+           (Failure "make_cond_rule_false_thm: y-term")
        in
        (cut (rule_false_thm sctxt) ++ inst_tac [y_term]
-	++ once_replace_tac
-	++ eq_tac))))
+        ++ once_replace_tac
+        ++ eq_tac))))
 
 let cond_rule_false_thm ctxt =
   Context.find_thm ctxt cond_rule_false_id make_cond_rule_false_thm
@@ -126,25 +126,25 @@ let make_neg_eq_sym_thm sctxt =
   (term "!x y: (not (x = y)) = (not (y = x))")
     (seq
        [
-	 allC; allC; equals_tac;
+         allC; allC; equals_tac;
          iffE
          --
-	   [
-	     (?> (fun info ->
-	       let (atg, _) =
+           [
+             (?> (fun info ->
+               let (atg, _) =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
-	       in
-	       (once_rewrite_tac ~f:(ftag atg) [thm]
-	        ++ basic)));
-	     (?> (fun info ->
-	       let (_, atg) =
+               in
+               (once_rewrite_tac ~f:(ftag atg) [thm]
+                ++ basic)));
+             (?> (fun info ->
+               let (_, atg) =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
-	       in
-	       (once_rewrite_tac ~f:(ftag atg) [thm]
-	        ++ basic)))
-	   ]
+               in
+               (once_rewrite_tac ~f:(ftag atg) [thm]
+                ++ basic)))
+           ]
        ])
 
 (*
@@ -164,32 +164,32 @@ let make_cond_neg_eq_sym_thm sctxt=
   (term "!c x y: (c => (not (x = y))) = (c => (not (y = x)))")
       (seq
          [
-	   allC; allC; allC; equals_tac;
-	   (iffE ++ (?> (fun info -> implC ++ set_changes_tac info)))
-	   --
-	     [
+           allC; allC; allC; equals_tac;
+           (iffE ++ (?> (fun info -> implC ++ set_changes_tac info)))
+           --
+             [
                (?> (fun info ->
-	       implA --
-	         [
+               implA --
+                 [
                    basic;
-	           (fun ctxt g ->
-		     let (atg, _) =
+                   (fun ctxt g ->
+                     let (atg, _) =
                        Lib.get_two (Info.aformulas info)
                          (error "simpconvs.make_cond_neg_eq_sym_thm:1")
-		     in
-		     (once_rewrite_tac  ~f:(ftag atg) [thm]
-		      ++ basic) ctxt g)]));
+                     in
+                     (once_rewrite_tac  ~f:(ftag atg) [thm]
+                      ++ basic) ctxt g)]));
                (?> (fun info ->
-	         implA --
-	           [basic;
-	            (fun ctxt g ->
-		      let (_, atg) =
+                 implA --
+                   [basic;
+                    (fun ctxt g ->
+                      let (_, atg) =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_neg_eq_sym_thm:2")
-		      in
-		      (once_rewrite_tac ~f:(ftag atg) [thm]
-		       ++ basic) ctxt g)]))
-	     ]
+                      in
+                      (once_rewrite_tac ~f:(ftag atg) [thm]
+                       ++ basic) ctxt g)]))
+             ]
          ])
 
 let cond_neg_eq_sym_thm ctxt =
@@ -205,33 +205,33 @@ let make_cond_eq_sym_thm sctxt =
   (term "!c x y: (c => (x = y)) = (c => (y = x))")
       (seq
          [
-	   allC; allC; allC; equals_tac;
+           allC; allC; allC; equals_tac;
            (iffE ++ (?> (fun info -> implC ++ set_changes_tac info)))
-	   --
-	     [
+           --
+             [
                (?> (fun info ->
-	       implA
-	       --
-	         [basic;
-	          (fun ctxt g ->
-		    let (atg, _) =
+               implA
+               --
+                 [basic;
+                  (fun ctxt g ->
+                    let (atg, _) =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:1")
-		    in
-		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) ctxt g)]));
+                    in
+                    (once_rewrite_tac ~f:(ftag atg) [thm]
+                     ++ basic) ctxt g)]));
                (?> (fun info ->
-	       implA
-	       --
-	         [basic;
-	          (fun ctxt g ->
-		    let (_, atg) =
+               implA
+               --
+                 [basic;
+                  (fun ctxt g ->
+                    let (_, atg) =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:2")
-		    in
-		    (once_rewrite_tac ~f:(ftag atg) [thm]
-		     ++ basic) ctxt g)]))
-	     ]
+                    in
+                    (once_rewrite_tac ~f:(ftag atg) [thm]
+                     ++ basic) ctxt g)]))
+             ]
          ])
 
 let cond_eq_sym_thm ctxt =
@@ -390,15 +390,15 @@ let is_rr_rule (qs, c, l, r) =
     match r with
       | None -> None
       | Some(rhs) ->
-	try check_variables is_var vars rhs; Some(true)
-	with Not_found -> Some(false)
+        try check_variables is_var vars rhs; Some(true)
+        with Not_found -> Some(false)
   in
   let cret =
     match c with
       | None -> None
       | Some(cnd) ->
-	try check_variables is_var vars cnd; Some(true)
-	with Not_found -> Some(false)
+        try check_variables is_var vars cnd; Some(true)
+        with Not_found -> Some(false)
   in
   (cret, rret)
 
@@ -482,20 +482,20 @@ struct
     if Lterm.is_equality a
     then
       match is_rr_rule (qs, c, a, None) with
-	| (None, _) ->
-	    let thm1 = simple_rewrite_rule sctxt (eq_sym_thm sctxt) thm
-	    in
-	    (simple_rewrite_rule sctxt (rule_true_thm sctxt) thm)
-	    ::(simple_rewrite_rule sctxt (rule_true_thm sctxt) thm1)
-	    ::ret
+        | (None, _) ->
+            let thm1 = simple_rewrite_rule sctxt (eq_sym_thm sctxt) thm
+            in
+            (simple_rewrite_rule sctxt (rule_true_thm sctxt) thm)
+            ::(simple_rewrite_rule sctxt (rule_true_thm sctxt) thm1)
+            ::ret
         | (Some(true), _) ->
-	  let thm1 = simple_rewrite_rule sctxt (cond_eq_sym_thm sctxt) thm
-	  in
-	  (simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm)
-	  ::(simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm1)
-	  ::ret
+          let thm1 = simple_rewrite_rule sctxt (cond_eq_sym_thm sctxt) thm
+          in
+          (simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm)
+          ::(simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm1)
+          ::ret
         | _ ->
-	  failwith "do_eq_rule"
+          failwith "do_eq_rule"
     else
       failwith "do_eq_rule"
 
@@ -504,27 +504,27 @@ struct
     then
       match is_rr_rule (qs, c, a, None) with
         | (None, _) ->
- 	    if is_constant_true (qs, c, a)
- 	    then ret
- 	    else (simple_rewrite_rule sctxt (rule_true_thm sctxt) thm)::ret
+            if is_constant_true (qs, c, a)
+            then ret
+            else (simple_rewrite_rule sctxt (rule_true_thm sctxt) thm)::ret
         | (Some(true), _) ->
- 	  if is_constant_true (qs, c, a)
- 	  then ret
- 	  else
- 	    (** |- c => false -> |- not c*)
- 	    if is_constant_false (qs, c, a)
- 	    then
- 	      let thm1 =
+          if is_constant_true (qs, c, a)
+          then ret
+          else
+            (** |- c => false -> |- not c*)
+            if is_constant_false (qs, c, a)
+            then
+              let thm1 =
                 simple_rewrite_rule sctxt (cond_rule_imp_false_thm sctxt) thm
- 	      in
- 	      single_thm_to_rules sctxt ret thm1
- 	    else
-	      let thm1 =
- 	        simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm
-	      and thm2 =
-	        simple_rewrite_rule sctxt (rule_true_thm sctxt) thm
-	      in
-	      thm1::thm2::ret
+              in
+              single_thm_to_rules sctxt ret thm1
+            else
+              let thm1 =
+                simple_rewrite_rule sctxt (cond_rule_true_thm sctxt) thm
+              and thm2 =
+                simple_rewrite_rule sctxt (rule_true_thm sctxt) thm
+              in
+              thm1::thm2::ret
         | _ -> failwith "do_fact_rule"
     else
       do_eq_rule ret (sctxt, thm, (qs, c, a))
@@ -533,18 +533,18 @@ struct
     if (Lterm.is_neg a) && (Lterm.is_equality (Term.rand a))
     then
       match c with
-	| None ->
-	    let thm1 = simple_rewrite_rule sctxt (neg_eq_sym_thm sctxt) thm
-	    in
-	    (simple_rewrite_rule sctxt (rule_false_thm sctxt) thm)
-	    ::(simple_rewrite_rule sctxt (rule_false_thm sctxt) thm1)
-	    ::ret
+        | None ->
+            let thm1 = simple_rewrite_rule sctxt (neg_eq_sym_thm sctxt) thm
+            in
+            (simple_rewrite_rule sctxt (rule_false_thm sctxt) thm)
+            ::(simple_rewrite_rule sctxt (rule_false_thm sctxt) thm1)
+            ::ret
         | _ ->
-	  let thm1 = simple_rewrite_rule sctxt (cond_neg_eq_sym_thm sctxt) thm
-	  in
-	  (simple_rewrite_rule sctxt (cond_rule_false_thm sctxt) thm)
-	  ::(simple_rewrite_rule sctxt (cond_rule_false_thm sctxt) thm1)
-	  ::ret
+          let thm1 = simple_rewrite_rule sctxt (cond_neg_eq_sym_thm sctxt) thm
+          in
+          (simple_rewrite_rule sctxt (cond_rule_false_thm sctxt) thm)
+          ::(simple_rewrite_rule sctxt (cond_rule_false_thm sctxt) thm1)
+          ::ret
     else
       failwith "do_neg_eq_rule"
 
@@ -552,32 +552,32 @@ struct
     if Lterm.is_neg a
     then
       match is_rr_rule (qs, c, a, None) with
-	| (None, _) ->
-	    if Lterm.is_equality (Term.rand a)
-	    then (* Convert |- not (a = b) and |- c=> not (a = b) *)
-	      do_neg_eq_rule ret (sctxt, thm, (qs, c, a))
-	    else
-	      (simple_rewrite_rule sctxt (rule_false_thm sctxt) thm)::ret
+        | (None, _) ->
+            if Lterm.is_equality (Term.rand a)
+            then (* Convert |- not (a = b) and |- c=> not (a = b) *)
+              do_neg_eq_rule ret (sctxt, thm, (qs, c, a))
+            else
+              (simple_rewrite_rule sctxt (rule_false_thm sctxt) thm)::ret
         | (Some(true), _) ->
-	  (** |- c => not true -> |- not c *)
-	  if is_constant_true (qs, c, Term.rand a)
-	  then
-	    let thm1 =
-	      simple_rewrite_rule sctxt
+          (** |- c => not true -> |- not c *)
+          if is_constant_true (qs, c, Term.rand a)
+          then
+            let thm1 =
+              simple_rewrite_rule sctxt
                 (cond_rule_imp_not_true_thm sctxt) thm
-	    in
-	    single_thm_to_rules sctxt ret thm1
-	  else
-	    if Lterm.is_equality (Term.rand a)
-	    then
-	      (* Convert |- not (a = b) and |- c=> not (a = b) *)
-	      do_neg_eq_rule ret (sctxt, thm, (qs, c, a))
-	    else
-	      let thm1 =
+            in
+            single_thm_to_rules sctxt ret thm1
+          else
+            if Lterm.is_equality (Term.rand a)
+            then
+              (* Convert |- not (a = b) and |- c=> not (a = b) *)
+              do_neg_eq_rule ret (sctxt, thm, (qs, c, a))
+            else
+              let thm1 =
                 simple_rewrite_rule sctxt (cond_rule_false_thm sctxt) thm
-	      and thm2 =
+              and thm2 =
                 simple_rewrite_rule sctxt (rule_true_thm sctxt) thm
-	      in
+              in
               thm1::thm2::ret
         | _ -> failwith "do_neg_rule"
     else failwith "do_neg_rule"
@@ -587,26 +587,26 @@ struct
       | None ->
           if is_neg_all (qs, c, a)
           then
-	    let thm1= once_rewrite_rule sctxt [neg_all_conv sctxt a] thm
-	    in
-	    single_thm_to_rules sctxt ret thm1
+            let thm1= once_rewrite_rule sctxt [neg_all_conv sctxt a] thm
+            in
+            single_thm_to_rules sctxt ret thm1
           else failwith "do_neg_all_rule: Not a negated universal quantifier"
       | Some _ ->
         failwith
-	  "do_neg_all_rule: Not an unconditional negated universal quantifier"
+          "do_neg_all_rule: Not an unconditional negated universal quantifier"
 
   and do_neg_exists_rule ret (sctxt, thm, (qs, c, a)) =
     match c with
         None ->
           if is_neg_exists (qs, c, a)
           then
-	    let thm1 = once_rewrite_rule sctxt [neg_exists_conv sctxt a] thm
-	    in
-	    single_thm_to_rules sctxt ret thm1
+            let thm1 = once_rewrite_rule sctxt [neg_exists_conv sctxt a] thm
+            in
+            single_thm_to_rules sctxt ret thm1
           else
             failwith "do_neg_exists_rule: Not a negated existential quantifier"
       | Some _ ->  failwith
-	("do_neg_exists_rule: "
+        ("do_neg_exists_rule: "
          ^"Not an unconditional negated existential quantifier")
 
   and do_conj_rule ret (sctxt, thm, (qs, c, a)) =
@@ -700,9 +700,9 @@ let solve_not_true_tac tg goal =
     [
       negA ~a:(ftag tg);
       (?> (fun info g ->
-	let ctg = get_one ~msg:"solve_not_true_tac" (Info.cformulas info)
-	in
-	trueC ~c:(ftag ctg) g))
+        let ctg = get_one ~msg:"solve_not_true_tac" (Info.cformulas info)
+        in
+        trueC ~c:(ftag ctg) g))
     ] goal
 
 (** Functions to convert an assumption
@@ -802,34 +802,34 @@ struct
       let asm_info = is_rr_rule (qs, c, a, None) in
       let rr_thm =
         match asm_info with
- 	  | (None, _ ) -> eq_sym_thm gctxt
- 	  | (Some(true), _) -> cond_eq_sym_thm gctxt
- 	  | _ -> failwith "eq_asm"
+          | (None, _ ) -> eq_sym_thm gctxt
+          | (Some(true), _) -> cond_eq_sym_thm gctxt
+          | _ -> failwith "eq_asm"
       in
       let rr_truth_thm =
         match asm_info with
- 	  | (Some(true), _) -> cond_rule_true_thm gctxt
- 	  | (_, _) -> rule_true_thm gctxt
+          | (Some(true), _) -> cond_rule_true_thm gctxt
+          | (_, _) -> rule_true_thm gctxt
       in
       fold_seq []
         [
           (fun ret -> (ret >+ copyA (ftag tg)));
           (fun ret ctxt1 g1 ->
             let info = Info.changes g1 in
- 	    let atg = get_one ~msg:"eq_asm" (Info.aformulas info)
- 	    in
- 	    fold_seq ret
- 	      [
+            let atg = get_one ~msg:"eq_asm" (Info.aformulas info)
+            in
+            fold_seq ret
+              [
                 (fun l ->
- 		  (l >+ qnt_asm_rewrite_tac rr_thm atg));
+                  (l >+ qnt_asm_rewrite_tac rr_thm atg));
                 (fun l ->
- 		  (l >+ qnt_asm_rewrite_tac rr_truth_thm atg));
- 		(fun ret ctxt3 g3 ->
+                  (l >+ qnt_asm_rewrite_tac rr_truth_thm atg));
+                (fun ret ctxt3 g3 ->
                   (new_add_asm ret atg g3, skip ctxt3 g3));
-		(fun ret ctxt3 g3 ->
+                (fun ret ctxt3 g3 ->
                   (new_add_asm ret tg g3,
                    qnt_asm_rewrite_tac rr_truth_thm tg ctxt3 g3))
- 	      ] ctxt1 g1)
+              ] ctxt1 g1)
         ] ctxt g
     else failwith "eq_asm"
 
@@ -840,51 +840,51 @@ struct
       begin
         match is_rr_rule (qs, c, a, None) with
           | (None, _) ->
-	    if is_constant_true (qs, c, a)
-	    then
-	      (** Delete assumption true *)
-	      (ret, deleteA (ftag tg) gctxt g)
-	    else
-	      if is_constant_false (qs, c, a)
-	      then (** Solve assumption false *)
-	        (ret, falseA ~a:(ftag tg) gctxt g)
-	      else
- 	        asm_rewrite_add_tac ret (rule_true_thm gctxt) tg gctxt g
+            if is_constant_true (qs, c, a)
+            then
+              (** Delete assumption true *)
+              (ret, deleteA (ftag tg) gctxt g)
+            else
+              if is_constant_false (qs, c, a)
+              then (** Solve assumption false *)
+                (ret, falseA ~a:(ftag tg) gctxt g)
+              else
+                asm_rewrite_add_tac ret (rule_true_thm gctxt) tg gctxt g
           | (Some(true), _) ->
-	    if is_constant_true (qs, c, a)
-	    then
-	    (** Delete assumption true *)
-	      (ret, deleteA (ftag tg) gctxt g)
-	    else
-	    (** |- c => false -> |- not c*)
-	      if is_constant_false (qs, c, a)
-	      then
-	        fold_seq ret
+            if is_constant_true (qs, c, a)
+            then
+            (** Delete assumption true *)
+              (ret, deleteA (ftag tg) gctxt g)
+            else
+            (** |- c => false -> |- not c*)
+              if is_constant_false (qs, c, a)
+              then
+                fold_seq ret
                   [
                     (fun lst1 ->
                       (lst1 >+
                          (qnt_asm_rewrite_tac
                             (cond_rule_imp_false_thm gctxt) tg)));
                     (fun lst1 -> single_asm_to_rule lst1 tg)
-	        ] gctxt g
-	      else
-	        fold_seq ret
-	          [
-		    (fun lst -> (lst >+ copyA (ftag tg)));
-		    (fun lst ctxt1 g1 ->
+                ] gctxt g
+              else
+                fold_seq ret
+                  [
+                    (fun lst -> (lst >+ copyA (ftag tg)));
+                    (fun lst ctxt1 g1 ->
                       let info = Info.changes g1 in
-		      let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
-		      in
+                      let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
+                      in
                       fold_seq lst
-		        [
+                        [
                           (fun lst1 ->
-			    asm_rewrite_add_tac lst1
+                            asm_rewrite_add_tac lst1
                               (cond_rule_true_thm gctxt) tg);
                           (fun lst1 ->
-			    asm_rewrite_add_tac lst1
+                            asm_rewrite_add_tac lst1
                               (rule_true_thm gctxt) atg);
-		        ] ctxt1 g1)
-	          ] gctxt g
+                        ] ctxt1 g1)
+                  ] gctxt g
           | _ -> failwith "do_fact_asm"
       end
     else eq_asm ret (tg, (qs, c, a)) ctxt g
@@ -895,31 +895,31 @@ struct
     then
       let rr_thm =
         match c with
-	  | None -> neg_eq_sym_thm gctxt
-	  | _ -> cond_neg_eq_sym_thm gctxt
+          | None -> neg_eq_sym_thm gctxt
+          | _ -> cond_neg_eq_sym_thm gctxt
       in
       fold_seq ret
-	[
-	  (fun lst ctxt2 g2 -> lst, copyA (ftag tg) ctxt2 g2);
-	  (fun ret1 ctxt1 g1 ->
+        [
+          (fun lst ctxt2 g2 -> lst, copyA (ftag tg) ctxt2 g2);
+          (fun ret1 ctxt1 g1 ->
             let info = Info.changes g1 in
-	    let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
-	    in
+            let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
+            in
             let local_false_thm = rule_false_thm gctxt in
-	    fold_seq ret1
-	      [
-		(fun lst ctxt2 g2 ->
+            fold_seq ret1
+              [
+                (fun lst ctxt2 g2 ->
                   (lst, qnt_asm_rewrite_tac rr_thm atg ctxt2 g2));
                 (fun lst ctxt2 g2 ->
                   (lst,
-		   qnt_asm_rewrite_tac local_false_thm atg ctxt2 g2));
+                   qnt_asm_rewrite_tac local_false_thm atg ctxt2 g2));
                 (fun lst ctxt2 g2 ->
-		  (new_add_asm lst atg g2,
-		   qnt_asm_rewrite_tac local_false_thm tg ctxt2 g2));
+                  (new_add_asm lst atg g2,
+                   qnt_asm_rewrite_tac local_false_thm tg ctxt2 g2));
                 (fun lst ctxt2 g2 ->
-		  new_add_asm lst tg g2, skip ctxt2 g2)
-	      ] ctxt1 g1)
-	] ctxt g
+                  new_add_asm lst tg g2, skip ctxt2 g2)
+              ] ctxt1 g1)
+        ] ctxt g
     else
       failwith "neg_eq_asm"
 
@@ -928,19 +928,19 @@ struct
     if (Lterm.is_neg a) && (Lterm.is_disj (Term.rand a))
     then
       match c with
-	| None ->
+        | None ->
           begin
             try fold_seq ret
-		  [
+                  [
                     (fun lst ->
                       (lst >+ asm_rewrite_tac (neg_disj_thm gctxt) tg));
                     (fun lst -> single_asm_to_rule lst tg)
-		  ] ctxt g
+                  ] ctxt g
             with _ ->
               asm_rewrite_add_tac ret (rule_false_thm gctxt) tg ctxt g
           end
         | Some _ ->
-	  failwith "neg_disj_asm: Not an unconditional negated disjunction"
+          failwith "neg_disj_asm: Not an unconditional negated disjunction"
     else failwith "neg_disj_asm"
 
   and neg_rule_asm (ret: 'a list) (tg, (qs, c, a)) ctxt g =
@@ -950,63 +950,63 @@ struct
       let b = Term.rand a in
       begin
         match is_rr_rule (qs, c, a, None) with
-	  | (None, _) ->
-	    if is_constant_false (qs, c, b)
-	    then
-	      (** Delete assumption (not false) *)
-	      (ret, deleteA (ftag tg) ctxt g)
-	    else
-	      if is_constant_true (qs, c, b)
-	      then
+          | (None, _) ->
+            if is_constant_false (qs, c, b)
+            then
+              (** Delete assumption (not false) *)
+              (ret, deleteA (ftag tg) ctxt g)
+            else
+              if is_constant_true (qs, c, b)
+              then
                 (** Solve assumption (not true) *)
-		(ret, solve_not_true_tac tg ctxt g)
-	      else
-		if Lterm.is_equality b
-		then neg_eq_asm ret (tg, (qs, c, a)) ctxt g
-		else
-		  if Lterm.is_disj b
-		  then
+                (ret, solve_not_true_tac tg ctxt g)
+              else
+                if Lterm.is_equality b
+                then neg_eq_asm ret (tg, (qs, c, a)) ctxt g
+                else
+                  if Lterm.is_disj b
+                  then
                     neg_disj_asm ret (tg, (qs, c, a)) ctxt g
-		  else
+                  else
                     asm_rewrite_add_tac ret (rule_false_thm gctxt) tg ctxt g
-	  | (Some(true), _) ->
-	    if is_constant_false (qs, c, b)
-	    then (ret, deleteA (ftag tg) ctxt g)
-	    else
-	      (** |- c => not true -> |- not c*)
-	      if is_constant_true (qs, c, b)
-	      then
-	        fold_seq ret
+          | (Some(true), _) ->
+            if is_constant_false (qs, c, b)
+            then (ret, deleteA (ftag tg) ctxt g)
+            else
+              (** |- c => not true -> |- not c*)
+              if is_constant_true (qs, c, b)
+              then
+                fold_seq ret
                   [
                     (fun lst ->
                       (lst >+
                          qnt_asm_rewrite_tac
                          (cond_rule_imp_not_true_thm gctxt) tg));
-		    (fun lst -> single_asm_to_rule lst tg)
-	          ] ctxt g
-	      else
-	        if Lterm.is_equality b
-	        then neg_eq_asm ret (tg, (qs, c, a)) ctxt g
-	        else
-		  fold_seq ret
-		    [
-		      (fun lst -> (lst >+ copyA (ftag tg)));
+                    (fun lst -> single_asm_to_rule lst tg)
+                  ] ctxt g
+              else
+                if Lterm.is_equality b
+                then neg_eq_asm ret (tg, (qs, c, a)) ctxt g
+                else
+                  fold_seq ret
+                    [
+                      (fun lst -> (lst >+ copyA (ftag tg)));
                       (fun lst ctxt1 g1 ->
                         let info = Info.changes g1 in
-		        let atg =
-			  get_one ~msg:"neg_rule_asm" (Info.aformulas info)
-		        in
-		        fold_seq lst
-			  [
+                        let atg =
+                          get_one ~msg:"neg_rule_asm" (Info.aformulas info)
+                        in
+                        fold_seq lst
+                          [
                             (fun lst1 ->
-			      asm_rewrite_add_tac lst1
-			        (cond_rule_false_thm gctxt) tg);
+                              asm_rewrite_add_tac lst1
+                                (cond_rule_false_thm gctxt) tg);
                             (fun lst1 ->
-			      asm_rewrite_add_tac lst1
-			        (rule_true_thm gctxt) atg)
-			  ] ctxt1 g1)
-		    ] ctxt g
-	  | _ -> failwith "neg_rule_asm"
+                              asm_rewrite_add_tac lst1
+                                (rule_true_thm gctxt) atg)
+                          ] ctxt1 g1)
+                    ] ctxt g
+          | _ -> failwith "neg_rule_asm"
       end
     else failwith "neg_rule_asm"
 
@@ -1014,19 +1014,19 @@ struct
     if Lterm.is_conj a
     then
       fold_seq ret
-	[
-	  (fun lst -> (lst >+ conjA ~a:(ftag tg)));
+        [
+          (fun lst -> (lst >+ conjA ~a:(ftag tg)));
           (fun lst ctxt1 g1 ->
             let inf = Info.changes g1 in
-	    let ltg, rtg =
-	      get_two ~msg:"Simpconvs.conj_rule_asm" (Info.aformulas inf)
-	    in
-	    fold_seq lst
-	      [
-		(fun lst1 -> single_asm_to_rule lst1 ltg);
-		(fun lst1 -> single_asm_to_rule lst1 rtg)
-	      ] ctxt1 g1)
-	] ctxt g
+            let ltg, rtg =
+              get_two ~msg:"Simpconvs.conj_rule_asm" (Info.aformulas inf)
+            in
+            fold_seq lst
+              [
+                (fun lst1 -> single_asm_to_rule lst1 ltg);
+                (fun lst1 -> single_asm_to_rule lst1 rtg)
+              ] ctxt1 g1)
+        ] ctxt g
     else failwith "conj_rule_asm"
 
   and neg_all_rule_asm ret (tg, (qs, c, a)) (ctxt: Context.t) g =
@@ -1037,7 +1037,7 @@ struct
           then
             fold_seq ret
               [
-	        (fun lst ctxt1 g1 ->
+                (fun lst ctxt1 g1 ->
                   (lst,
                    asm_rewrite_tac (neg_all_conv gctxt a) tg ctxt1 g1));
                 (fun lst -> single_asm_to_rule lst tg)
@@ -1045,7 +1045,7 @@ struct
           else failwith "neg_all_rule_asm: Not a negated universal quantifier"
       | Some _ ->
         failwith
-	  "neg_all_rule_asm: Not an unconditional negated universal quantifier"
+          "neg_all_rule_asm: Not an unconditional negated universal quantifier"
 
   and neg_exists_rule_asm (ret: 'a list) (tg, (qs, c, a)) ctxt g =
     let gctxt = goal_context ctxt g in
@@ -1054,17 +1054,17 @@ struct
           if is_neg_exists (qs, c, a)
           then
             fold_seq ret
-	      [
+              [
                 (fun lst ctxt1 g1 ->
                   (lst,
                    asm_rewrite_tac (neg_exists_conv gctxt a) tg ctxt g1));
                 (fun lst -> single_asm_to_rule lst tg)
               ] ctxt g
           else
-	    failwith "neg_exists_rule_asm: Not a negated existential quantifier"
+            failwith "neg_exists_rule_asm: Not a negated existential quantifier"
       | Some _ ->
         failwith
-	  ("neg_exists_rule_asm: "
+          ("neg_exists_rule_asm: "
            ^"Not an unconditional negated existential quantifier")
 
   and single_asm_to_rule ret tg (ctxt: Context.t) goal =
@@ -1098,7 +1098,7 @@ type rule_data =
       src: Logic.tagged_form; (** The source of the rules. **)
       new_asm: Formula.t;
       (** The new assumption (e.g. when a conclusion is lifted into
-	  the assumptions) to add to the simp set.  **)
+          the assumptions) to add to the simp set.  **)
       new_rules: (Logic.tagged_form) list
     (** The rules formed fro the source. *)
     }

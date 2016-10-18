@@ -1,7 +1,7 @@
 (*----
   Name: report.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -29,13 +29,13 @@ open Format
 class message s=
 object (self)
   method msg () = s
-  method print (x: Printer.ppinfo) = 
+  method print (x: Printer.ppinfo) =
     Format.printf "@[%s@]" (self#msg())
 end
 
 (** Error objects, for reporting fatal information. *)
 class error s =
-object 
+object
   inherit message s
 end
 
@@ -62,26 +62,26 @@ let add_error e x =
 *)
 let print_error info depth errs =
   let rec print_aux ctr x =
-    if ctr = 1 
+    if ctr = 1
     then ()
-    else 
+    else
       begin
         match x with
-          | (Error e) -> 
-	    Format.printf "@[";
-	    e#print info;
-	    Format.printf "@]@,"
+          | (Error e) ->
+            Format.printf "@[";
+            e#print info;
+            Format.printf "@]@,"
           | (Errors errs) ->
             begin
               match errs with
                 | [] -> ()
-                | (e::es) -> 
+                | (e::es) ->
                   (ignore(print_aux (ctr - 1) e);
                    print_aux (ctr - 1) (Errors es))
             end
           | _ -> Format.printf "@[%s@]@," (Printexc.to_string x)
       end
-  in 
+  in
   Format.printf "@[<v>";
   List.iter (print_aux (depth + 1)) [errs];
   Format.printf "@]"
@@ -89,7 +89,7 @@ let print_error info depth errs =
 (** [catch_error info depth f a]: Apply [f a], catching any error and
     printing it with [print_error].
 *)
-let catch_error info depth f a = 
+let catch_error info depth f a =
   try (f a)
   with x -> print_error info depth x
 

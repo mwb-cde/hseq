@@ -1,7 +1,7 @@
 (*----
   Name: basic.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -30,7 +30,7 @@ type typ_const = Ident.t
 
 (** The base representation of types. *)
 type ('idtyp, 'tfun) pre_typ =
-  | Var of 'idtyp 
+  | Var of 'idtyp
   (** Type variables. *)
   | Constr of 'tfun * ('idtyp, 'tfun) pre_typ list
   (** User defined type constructors. *)
@@ -67,7 +67,7 @@ val string_tconst: typ_const -> string list -> string
 (** {5 Base Representation of logic terms} *)
 
 (** Built-in constants that can appear in terms  *)
-type const_ty =  
+type const_ty =
   | Cnum of Num.num    (* big numbers *)
   | Cbool of bool
 
@@ -81,8 +81,8 @@ val string_const: const_ty -> string
 (** {7 Basis of quantified terms} *)
 
 (** Quantifiers for terms. *)
-type quant =  
-  | All | Ex | Lambda 
+type quant =
+  | All | Ex | Lambda
   | Gamma (** Meta-constants *)
 
 val quant_string: quant -> string
@@ -93,7 +93,7 @@ val quant_string: quant -> string
 type binders
 (** Associating bound variables with their binding term. *)
 val mk_binding: quant -> string -> gtype -> binders
-(** 
+(**
     [mk_binding k n ty] makes a binder of kind [k], with name [n] and
     type [ty]. This binder will be distinct from any other under
     [binder_equality].
@@ -124,4 +124,3 @@ type term =
   | App of term * term    (** Function application *)
   | Qnt of binders * term (** Binding terms *)
   | Const of const_ty     (** Constants *)
-

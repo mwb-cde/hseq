@@ -273,9 +273,9 @@ let print_assoc_bracket cr nr br =
       (if (is_non_assoc cassoc || is_non_assoc nassoc)
        then ()
        else
-	  (if not (cassoc = nassoc)
-	   then Format.printf "%s" br
-	   else ()))
+          (if not (cassoc = nassoc)
+           then Format.printf "%s" br
+           else ()))
     else ()
 
 (** List printer *)
@@ -285,10 +285,10 @@ let print_list (term_printer, sep) x =
       | [] -> ()
       | p::[] -> term_printer p
       | p::ps ->
-	 begin
+         begin
            term_printer p;
-	   sep ();
-	   print_aux ps
+           sep ();
+           print_aux ps
          end
   in
   print_aux x
@@ -307,9 +307,9 @@ let print_identifier info x =
   let str =
     (match pprec.repr with
       | None ->
-	if (!Settings.long_identifier)
-	then Ident.string_of x
-	else Ident.name_of x
+        if (!Settings.long_identifier)
+        then Ident.string_of x
+        else Ident.name_of x
       | Some(s) -> s)
   in
   Format.printf "%s" str

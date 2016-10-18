@@ -1,7 +1,7 @@
 (*----
   Name: formula.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -71,13 +71,13 @@ let prepare ?(strict=false) scp tyenv trm =
   then
     raise
       (Term.term_error
-	 "Formula.make: Can't make formula, not a closed term" [trm])
+         "Formula.make: Can't make formula, not a closed term" [trm])
   else
     let tyenv1 =
       try Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
       with x ->
-	raise (Report.add_error x
-		 (Term.term_error "Formula.make: incorrect types" [t1]))
+        raise (Report.add_error x
+                 (Term.term_error "Formula.make: incorrect types" [t1]))
     in
     (lst, t1, tyenv1)
 
@@ -117,7 +117,7 @@ let mk_subterm f t =
   then {thy = thy_of f; term = t}
   else
     raise (add_error "Can't make a formula as a subterm of formula" [f]
-	     (Term.term_error "term isn't a subterm" [t]))
+             (Term.term_error "term isn't a subterm" [t]))
 
 (** [formula_in_scope scp f]: true if formula [f] is in scope
     [scp].  *)
@@ -132,8 +132,8 @@ let valid_forms scp fs =
   let test() =
     List.iter
       (fun f ->
-	if (formula_in_scope scp f)
-	then ()
+        if (formula_in_scope scp f)
+        then ()
         else raise (error "invalid formula" [f])) fs
   in
   try test(); true
@@ -304,7 +304,7 @@ let rec is_closed scp env t =
     | Basic.App(l, r) -> is_closed scp env l && is_closed scp env r
     | Basic.Qnt(q, b) ->
       let env1 = (Term.bind (Basic.Bound(q))
-	            (Term.mk_free "" (Gtypes.mk_null())) env)
+                    (Term.mk_free "" (Gtypes.mk_null())) env)
       in
       is_closed scp env1 b
     | Basic.Meta (q) -> Scope.is_meta scp q
@@ -322,12 +322,12 @@ let rec subst_closed scp qntenv sb trm =
   with Not_found ->
     (match trm with
       | Basic.Qnt(q, b) ->
-	  let qntenv1 =
-	    Term.bind (Bound q) (Term.mk_free "" (Gtypes.mk_null())) qntenv
-	  in
-	  Basic.Qnt(q, subst_closed scp qntenv1 sb b)
+          let qntenv1 =
+            Term.bind (Bound q) (Term.mk_free "" (Gtypes.mk_null())) qntenv
+          in
+          Basic.Qnt(q, subst_closed scp qntenv1 sb b)
       | Basic.App(f, a) ->
-	Basic.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
+        Basic.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
       | _ -> trm)
 
 let subst scp form lst =
@@ -360,7 +360,7 @@ let inst_env scp env f r =
       let (q, b) = Term.dest_qnt t in
       let t1 =
         Term.subst
-	  (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
+          (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
       in
       let t2 = fast_make scp [f; r] t1
       in

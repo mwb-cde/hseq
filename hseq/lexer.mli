@@ -1,25 +1,25 @@
 (*----
- Name: lexer.mli
- Copyright M Wahab 2005-2014
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: lexer.mli
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 ----*)
 
-(** 
+(**
    Lexer
 
    Match strings in a stream of characters, constructing a stream of
@@ -46,7 +46,7 @@ exception Lexing of (int * int)
 type symbols =
     DOT      (** String "." *)
   | ORB        (** String "(" *)
-  | CRB      (** String ")" *)  
+  | CRB      (** String ")" *)
   | PRIME      (** String "'" *)
   | COLON      (** String ":" *)
   | OTHER of string      (** An arbitrary (user-defined) symbol *)
@@ -56,12 +56,12 @@ val comma_sym: symbols
 (** The comma symbol (","). *)
 
 (** Keywords *)
-type keys = 
+type keys =
     ALL  (** Universal quantifier *)
   | EX   (** Existential quantifier *)
   | LAM  (** Lambda quantifier *)
 
-type token_info = 
+type token_info =
   (Ident.t * Parserkit.Info.fixity  * int)
 (** Identifier fixity and precdence information. *)
 
@@ -88,7 +88,7 @@ val mk_symbol : string -> tok
 (** Make a symbol token. *)
 
 val string_of_token : tok -> string
-(** 
+(**
    [string_of_token tok]: Make a string representation of token [tok].
  *)
 
@@ -99,18 +99,18 @@ val message_of_token : tok -> string
  *)
 
 val match_tokens : tok -> tok -> bool
-(** 
+(**
    [match_tokens x y]: Compare tokens [x] and [y], return [true] iff
    they are the same.
  *)
 
-(** {7 Symbol Tables} 
-   
+(** {7 Symbol Tables}
+
    A symbol table {!Lexer.symtable} stores strings and the tokens they
    map to. To assist in matching, the number of strings of each size
    [n] is also stored.
  *)
-    
+
 module SymbolTree: Treekit.SimpleTreeType with type key = string
 type symbol_table= (tok) SymbolTree.t
 type symtable = (char * int Counter.t) list * symbol_table
@@ -130,14 +130,14 @@ val remove_sym : symtable -> string -> symtable
 
 val find_sym : symtable -> string -> tok
 (**
-   [find_sym tbl s]: Find string [s] in symtable [tbl], 
+   [find_sym tbl s]: Find string [s] in symtable [tbl],
    returning associated token.
    Raise [Not_found] if [s] is not in [tbl].
  *)
 
 val lookup_sym :  symtable -> string -> int * tok
 (**
-   [lookup_sym tbl str]: 
+   [lookup_sym tbl str]:
    Try to match a symbol at the beginning of string [str],
    returning token and size of matched string.
    Raise [Not_found] if no matching symbol.
@@ -153,9 +153,9 @@ val lookup_sym :  symtable -> string -> int * tok
 val stream_empty : 'a Stream.t -> bool
 (** Test whether a stream is empty. *)
 val stream_peek : 'a Stream.t -> 'a
-(** 
+(**
    Get the first character in a stream. Raise [Not_found] if the
-   stream is empty. 
+   stream is empty.
  *)
 
 val stream_test : ('a -> bool) -> 'a Stream.t -> bool
@@ -164,7 +164,7 @@ val stream_test : ('a -> bool) -> 'a Stream.t -> bool
    stream [stm]. Returning [false] if the test fails or if the stream
    is empty.
  *)
-    
+
 
 val string_implode : char list -> string
 (** Make a string from a list of characters. *)
@@ -212,7 +212,7 @@ val get_while: (char -> bool) -> char Stream.t -> string
    characters satisfying [test].
  *)
 
-val get_sep_list: 
+val get_sep_list:
     (char->bool) -> (char->bool) -> (char->bool)
       ->  char Stream.t -> string list
 (**
@@ -237,8 +237,8 @@ val get_num : char Stream.t -> tok
 val skip_space : char Stream.t -> unit
 (** [skip_space stm]: Drop the leading white space from stream [stm]. *)
 
-(** 
-   {5 Lexer functions} 
+(**
+   {5 Lexer functions}
 
    Each lexer function tries to match the characters at the front
    of the input stream. If the match succeeds, the function removes
@@ -250,12 +250,12 @@ val skip_space : char Stream.t -> unit
 type ('a) matcher = symtable -> 'a Stream.t -> (bool * tok)
     (** Functions which match from a stream. *)
 
-val first_match: 
+val first_match:
     ('a) matcher list -> symtable -> 'a Stream.t -> (bool * tok)
-	(** 
-	   Apply each of the lexers in a list, in order, returning the result
-	   of the first to suceed. Returns [(false, null_tok)] on failure.
-	 *)
+        (**
+           Apply each of the lexers in a list, in order, returning the result
+           of the first to suceed. Returns [(false, null_tok)] on failure.
+         *)
 
 val match_number : char matcher
 (**
@@ -307,7 +307,7 @@ val scan : symtable -> char Stream.t -> tok Parserkit.Input.t
 
 val reader : (char Stream.t -> 'a) -> ('a -> 'b) -> string -> 'b
 (**
-   [reader lex ph str]: 
+   [reader lex ph str]:
    Parse string [str] using lexer [lex] and parser [ph].
  *)
 
@@ -324,4 +324,3 @@ val remove_char_info :
 val largest_sym : 'a -> ('a * ('b * 'c) list) list * 'd -> 'b
 
 val find_char_info : 'a -> ('a * 'b) list -> 'b
-

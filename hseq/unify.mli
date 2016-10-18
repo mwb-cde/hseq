@@ -1,7 +1,7 @@
 (*----
   Name: unify.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -39,11 +39,11 @@
 
 (** {5 General Unification} *)
 
-val unify_fullenv: 
-  Scope.t 
+val unify_fullenv:
+  Scope.t
   -> Gtypes.substitution
-  -> Term.substitution 
-  -> (Basic.term -> bool) -> Basic.term -> Basic.term 
+  -> Term.substitution
+  -> (Basic.term -> bool) -> Basic.term -> Basic.term
   -> (Gtypes.substitution * Term.substitution)
 (** [unify_fullenv scp tyenv env varp t1 t2]: Unify terms [t1] and
     [t2] in scope [scp] w.r.t to given type and term contexts.
@@ -60,17 +60,17 @@ val unify_fullenv:
     variables to make the unification type-correct. It is provided to
     allow continued operations w.r.t the updated type context.  *)
 
-val unify_env: 
+val unify_env:
   ?typenv:Gtypes.substitution
   -> Scope.t  -> Term.substitution
-  -> (Basic.term -> bool) -> Basic.term -> Basic.term 
-  -> Term.substitution 
+  -> (Basic.term -> bool) -> Basic.term -> Basic.term
+  -> Term.substitution
 (** Unify terms in a given context. This is equivalent to calling
     [unify_fullenv] with an empty type context.
 *)
 
 val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
-  -> Scope.t -> (Basic.term -> bool) 
+  -> Scope.t -> (Basic.term -> bool)
   -> Basic.term -> Basic.term -> Term.substitution
 (** [unify scp varp l r]: Unify terms [l] and [r] in scope scp.
 
@@ -82,10 +82,10 @@ val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
 
 (** {5 Matching} *)
 
-val matches_rewrite: 
-  Scope.t -> Gtypes.substitution  -> Term.substitution 
-  -> (Basic.term -> bool) 
-  -> Basic.term -> Basic.term 
+val matches_rewrite:
+  Scope.t -> Gtypes.substitution  -> Term.substitution
+  -> (Basic.term -> bool)
+  -> Basic.term -> Basic.term
   -> (Gtypes.substitution * Term.substitution)
 (** [matches_rewrite scp tyenv env varp trm1 trm2]: Matches term
     [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by
@@ -106,4 +106,3 @@ val matches_rewrite:
 
     Returns both type and term substitutions
 *)
-

@@ -1,7 +1,7 @@
 (*----
   Name: defaults.mli
-  Copyright M Wahab 2005-20
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 

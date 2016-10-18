@@ -168,7 +168,7 @@ let get_axiom_rec n thy =
   try Tree.find thy.axioms n
   with Not_found ->
     raise (Report.error
-	     ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
+             ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
 
 let get_axiom n thy =
   let ar = get_axiom_rec n thy
@@ -206,7 +206,7 @@ let get_theorem n thy =
     try get_theorem_rec n thy
     with Not_found ->
       raise (Report.error
-	       ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
+               ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   in
   tr.thm
 
@@ -226,11 +226,11 @@ let set_theorem_props n ps thy =
   then
     match Lib.try_find (get_theorem_rec n) thy with
       | Some(tr) ->
-	  let ntr = { tr with props = ps }
-	  in
-	  set_theorems thy (Tree.replace (thy.theorems) n ntr)
+          let ntr = { tr with props = ps }
+          in
+          set_theorems thy (Tree.replace (thy.theorems) n ntr)
       | _ ->
-	raise (Report.error
+        raise (Report.error
                  ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -256,9 +256,9 @@ let add_type_rec tr thy =
     else
       if Logic.Defns.is_subtype tydef
       then
-	let ctyrec = Logic.Defns.dest_subtype tydef
-	in
-	(ctyrec.Logic.Defns.type_name,
+        let ctyrec = Logic.Defns.dest_subtype tydef
+        in
+        (ctyrec.Logic.Defns.type_name,
          ctyrec.Logic.Defns.type_args,
          None)
       else
@@ -356,7 +356,7 @@ let add_term_pp_rec n ppr thy=
     if Tree.mem (get_defns thy) n
     then set_id_pps thy (Lib.insert (<) n ppr thy.id_pps)
     else raise (Report.error
-		  ("No name "^n^" defined in theory "^(get_name thy)))
+                  ("No name "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_term_pp_rec n thy =
@@ -385,7 +385,7 @@ let add_type_pp_rec n ppr thy=
     if Tree.mem thy.typs n
     then set_type_pps thy (Lib.insert (<) n ppr (get_type_pps thy))
     else raise (Report.error
-		  ("No type "^n^" defined in theory "^(get_name thy)))
+                  ("No type "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_type_pp_rec n thy =
@@ -523,7 +523,7 @@ let from_saved scp sthy =
     let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in
     let new_defns =
       List.map
-	(fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
+        (fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
         sthy.sdefns
     in
     Scope.extend_with_terms scp2 new_defns
@@ -626,8 +626,8 @@ let print_properties pp ps =
     | _ ->
       Format.printf "@[(";
       Printer.print_list
-	((fun p -> print_property pp p),
-	 (fun _ -> Format.printf ",@ ")) ps;
+        ((fun p -> print_property pp p),
+         (fun _ -> Format.printf ",@ ")) ps;
       Format.printf ")@]@,"
 
 (** Theory printer **)
@@ -648,8 +648,8 @@ and print_parents ps =
       | [] -> (Format.printf "%s" "None")
       | _ ->
         Printer.print_list
-	  ((fun s -> Format.printf "%s" s),
-	   (fun _ -> Format.printf "@ ")) ps
+          ((fun s -> Format.printf "%s" s),
+           (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@."
 and print_files ps =
@@ -659,8 +659,8 @@ and print_files ps =
       | [] -> (Format.printf "None")
       | _ ->
         Printer.print_list
-	  ((fun s -> Format.printf "%s" s),
-	   (fun _ -> Format.printf "@ ")) ps
+          ((fun s -> Format.printf "%s" s),
+           (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@."
 and print_thms pp n ths =
@@ -696,22 +696,22 @@ and print_tydefs pp n tys =
       Format.printf "@[<2>";
       begin
         match tyd.Scope.args with
-	  | [] -> ()
+          | [] -> ()
           | _ ->
-	    Format.printf "(";
-	    Printer.print_list
-	      ((fun s -> Format.printf "'%s" s),
-	       (fun _ -> Format.printf ",@ "))
-	      tyd.Scope.args;
-	    Format.printf ")"
+            Format.printf "(";
+            Printer.print_list
+              ((fun s -> Format.printf "'%s" s),
+               (fun _ -> Format.printf ",@ "))
+              tyd.Scope.args;
+            Format.printf ")"
       end;
       Format.printf "%s@," n;
       begin
         match tyd.Scope.alias with
-	  | None -> ()
+          | None -> ()
           | Some(gty) ->
-     	    Format.printf "=@,";
-	    Gtypes.print pp gty
+            Format.printf "=@,";
+            Gtypes.print pp gty
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;
@@ -733,9 +733,9 @@ and print_defs pp n defs =
       Format.printf "@ ";
       begin
         match d.def with
-	  | None -> ()
+          | None -> ()
           | Some(df) ->
-	    Logic.print_thm pp df
+            Logic.print_thm pp df
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_defs;
@@ -746,19 +746,19 @@ let print_term_pps n pps =
     match pos with
       | Lib.First -> ()
       | Lib.Last ->
-	Format.printf "@[position=@ Last@]"
+        Format.printf "@[position=@ Last@]"
       | Lib.Before id ->
-	Format.printf "@[position=@ Before@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ Before@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
       | Lib.After id ->
-	Format.printf "@[position=@ After@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ After@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
       | Lib.Level id ->
-	Format.printf "@[position=@ Level@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ Level@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
   in
   let sorted_pps =
     let comp (x, _) (y, _) = compare x y
@@ -772,12 +772,12 @@ let print_term_pps n pps =
       Format.printf "@[<2>%s@ " n;
       begin
         match (r.Printer.repr) with
-	    None -> ()
+            None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
-	(Printer.fixity_to_string r.Printer.fixity);
+        (Printer.fixity_to_string r.Printer.fixity);
       print_pos p;
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
@@ -796,12 +796,12 @@ let print_type_pps n pps =
       Format.printf "@[<2>%s@ " n;
       begin
         match (r.Printer.repr) with
-	  | None -> ()
+          | None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
-	(Printer.fixity_to_string r.Printer.fixity);
+        (Printer.fixity_to_string r.Printer.fixity);
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
   Format.printf "@]@."

@@ -1,7 +1,7 @@
 (*----
   Name: boolbase.ml
   Copyright Matthew Wahab 2006-2016
-  Author: Matthew Wahab  <mwb.cde@gmail.com>
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 

@@ -1,7 +1,7 @@
 (*----
   Name: scope.ml
-  Copyright M Wahab 2005-20014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-20016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -30,10 +30,10 @@ open Basic
 (** Theory markers. *)
 type marker = Tag.t
 let mk_marker = Tag.named
-let marker_name = Tag.name 
+let marker_name = Tag.name
 
 (** Meta variables *)
-type meta_db = (Basic.binders)Treekit.StringTree.t 
+type meta_db = (Basic.binders)Treekit.StringTree.t
 let empty_meta_db ()= Treekit.StringTree.nil
 let meta_db_add n b db =
   Treekit.StringTree.add db n b
@@ -44,23 +44,23 @@ let meta_db_find n db =
 (* Records for type definitions *)
 type type_record =
     {
-      name: string; 
-      args : string list; 
+      name: string;
+      args : string list;
       alias: gtype option;
       characteristics: string list
     }
 
 (** Scope records. *)
 type t=
-    { 
+    {
       curr_thy : marker;
-      term_type : Ident.t -> gtype; 
+      term_type : Ident.t -> gtype;
       term_thy : string -> Ident.thy_id;
       type_defn: Ident.t -> type_record;
       type_thy : string -> Ident.thy_id;
       thy_in_scope : Ident.thy_id -> bool;
       marker_in_scope : marker -> bool;
-      meta_vars: meta_db 
+      meta_vars: meta_db
     }
 
 (*
@@ -68,9 +68,9 @@ type t=
  *)
 
 (** Construct an empty scope *)
-let empty_scope () = 
+let empty_scope () =
   let dummy x = raise Not_found
-  in 
+  in
   {
     curr_thy = mk_marker Ident.null_thy;
     term_type = dummy;
@@ -101,7 +101,7 @@ let defn_of scp id = scp.type_defn id
 let thy_of_type scp id = scp.type_thy id
 
 (** Test whether a theory is in scope *)
-let in_scope scp th1 = scp.thy_in_scope th1 
+let in_scope scp th1 = scp.thy_in_scope th1
 
 (** Test whether a theory marker is in scope *)
 let in_scope_marker scp m =
@@ -115,35 +115,35 @@ let in_scope_marker scp m =
     Tn)]]. Each identifier [Ii] is given type [Ti].
 *)
 let extend_with_terms scp declns =
-  let ext_type x = 
+  let ext_type x =
     try (List.assoc x declns)
     with Not_found -> type_of scp x
-  and ext_thy x = 
-    try 
-      let (id, _) = 
+  and ext_thy x =
+    try
+      let (id, _) =
         List.find (fun (y, _) -> x = (Ident.name_of y)) declns
-      in 
+      in
       Ident.thy_of id
     with Not_found -> thy_of_term scp x
-  in 
-  {scp with 
+  in
+  {scp with
     term_type = ext_type; term_thy = ext_thy}
 
 (** Extend a scope with a list of type definitions [[(I1, D1); ...;
     (In, Dn)]]. Each identifier [Ii] has definition [Di].
 *)
 let extend_with_typedefs scp declns =
-  let ext_defn x = 
+  let ext_defn x =
     try (List.assoc x declns)
     with Not_found -> defn_of scp x
-  and ext_thy x = 
-    try 
-      let (id, _) = 
+  and ext_thy x =
+    try
+      let (id, _) =
         List.find (fun (y, _) -> x = (Ident.name_of y)) declns
-      in 
+      in
       Ident.thy_of id
     with Not_found -> thy_of_type scp x
-  in 
+  in
   {scp with type_defn = ext_defn; type_thy = ext_thy}
 
 (** Extend a scope with a list of type declarations [[(I1, A1); ...;
@@ -151,13 +151,13 @@ let extend_with_typedefs scp declns =
     definition.
 *)
 let extend_with_typedeclns scp declns=
-  let mk_def (id, args)=  
-    (id, 
-     {name = Ident.name_of id; 
-      args = args; 
+  let mk_def (id, args)=
+    (id,
+     {name = Ident.name_of id;
+      args = args;
       alias = None;
       characteristics = []})
-  in 
+  in
   extend_with_typedefs scp (List.map mk_def declns)
 
 
@@ -165,12 +165,12 @@ let extend_with_typedeclns scp declns=
     marker.
 *)
 let new_local_scope scp =
-  let n = marker_name scp.curr_thy in 
-  let m = mk_marker n in 
+  let n = marker_name scp.curr_thy in
+  let m = mk_marker n in
   let mfn x = (Tag.equal m x) || (scp.marker_in_scope x)
-  in 
+  in
   {
-    scp with 
+    scp with
       curr_thy = m;
       marker_in_scope = mfn
   }
@@ -178,21 +178,20 @@ let new_local_scope scp =
 (** [add_meta scp b]: Add [b] as a new meta variable. Fails if there
     is already a meta variable with the same name as [b].
 *)
-let add_meta scp v = 
-  let db = scp.meta_vars in 
-  let n = Basic.binder_name v in 
+let add_meta scp v =
+  let db = scp.meta_vars in
+  let n = Basic.binder_name v in
   match Lib.try_find (meta_db_find n) db with
-    | Some _ -> 
+    | Some _ ->
       raise (Failure ("add_meta: "^n^" is already a meta variable"))
     | _ -> {scp with meta_vars = meta_db_add n v db}
-        
-let find_meta scp n = 
+
+let find_meta scp n =
   let db = scp.meta_vars
-  in 
+  in
   meta_db_find n db
 
-let is_meta scp v = 
-  let n = Basic.binder_name v in 
+let is_meta scp v =
+  let n = Basic.binder_name v in
   try ignore(find_meta scp n); true
   with Not_found -> false
-

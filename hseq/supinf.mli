@@ -1,7 +1,7 @@
 (*----
   Name: supinf.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -24,8 +24,6 @@
   Based on Shostaks method.
   see R.E.Shostak, Journal of the ACM, vol 24, no 4, Oct. 1977
 *)
-
-
 
 type compfn = | Equals | Leq | Lt | Gt | Geq
 
@@ -50,12 +48,12 @@ val inf_aux:
   Exprs.expr -> Exprs.set -> Exprs.expr
 val sup: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
 val inf: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
-  
+
 val has_integer_solns: (Exprs.expr * Exprs.expr) list -> bool
-val solve_inequalities: 
+val solve_inequalities:
   (Exprs.expr * Exprs.expr) list list -> (Exprs.expr * Exprs.expr) list
 
-(* decide t: 
+(* decide t:
    top level function.
    convert negation of t to a set of ilps
    test for validity
@@ -63,7 +61,7 @@ val solve_inequalities:
    if valid raise Has_solutions with solutions.
    if undecidable raise Possible_solutions.
 *)
-val decide: 
+val decide:
   (compfn * Exprs.expr * Exprs.expr, 'a) Prop.boolexpr -> bool
 
 (* Debugging *)
@@ -80,10 +78,10 @@ sig
     ('a, 'b) Prop.boolexpr ->
     ('a, 'b) Prop.boolexpr -> ('a, 'b) Prop.boolexpr
   val expand_comp:
-    compfn * Exprs.expr * Exprs.expr 
+    compfn * Exprs.expr * Exprs.expr
     -> (compfn * Exprs.expr * Exprs.expr, 'a) Prop.boolexpr
   val expand_neg_comp:
-    compfn * Exprs.expr * Exprs.expr 
+    compfn * Exprs.expr * Exprs.expr
     -> (compfn * Exprs.expr * Exprs.expr, 'a) Prop.boolexpr
   val push_conj:
     ('a, 'b) Prop.boolexpr ->
@@ -103,59 +101,57 @@ sig
   val member: Exprs.expr -> Exprs.set -> bool
   val insert: Exprs.expr -> Exprs.set -> Exprs.set
   val remove_trivial_ineqs:
-    (Exprs.expr * Exprs.expr) list 
+    (Exprs.expr * Exprs.expr) list
     -> Exprs.set * (Exprs.expr * Exprs.expr) list
 
   val vars_of_env: Exprs.expr -> Exprs.set -> Exprs.set
   val vars_of: Exprs.expr -> Exprs.set
   val get_vars: (Exprs.expr * Exprs.expr) list -> Exprs.set
   val combine: Exprs.set -> Exprs.set -> Exprs.set
-  val solve_for_var: 
-    int -> (Exprs.expr * Exprs.expr) list 
-    -> ((Exprs.expr * Exprs.expr) list 
-	* (Exprs.expr * Exprs.expr) list 
-	* (Exprs.expr * Exprs.expr) list )
+  val solve_for_var:
+    int -> (Exprs.expr * Exprs.expr) list
+    -> ((Exprs.expr * Exprs.expr) list
+        * (Exprs.expr * Exprs.expr) list
+        * (Exprs.expr * Exprs.expr) list )
   val upper: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
   val lower: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
   exception Invalid of string * Exprs.expr
   val get_mult_var: Exprs.expr list -> Exprs.expr * Exprs.expr list
-  val get_mult_of: 
+  val get_mult_of:
     Exprs.expr -> Exprs.expr list -> Exprs.expr * Exprs.expr list
   val dest_multexpr: Exprs.expr * 'a -> Num.num * Exprs.expr * 'a
   val supp: Exprs.expr -> Exprs.expr -> Exprs.expr
   val inff: Exprs.expr -> Exprs.expr -> Exprs.expr
-  val sup_aux: 
-    (Exprs.expr * Exprs.expr) list 
+  val sup_aux:
+    (Exprs.expr * Exprs.expr) list
     -> Exprs.expr -> Exprs.set -> Exprs.expr
-  val inf_aux: 
-    (Exprs.expr * Exprs.expr) list 
+  val inf_aux:
+    (Exprs.expr * Exprs.expr) list
     -> Exprs.expr -> Exprs.set -> Exprs.expr
   val sup: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
   val inf: (Exprs.expr * Exprs.expr) list -> Exprs.expr -> Exprs.expr
 end
 
-module Shostak: 
+module Shostak:
 sig
 
   val chose_int: Num.num * Num.num -> Num.num
   val chose_val: Exprs.expr * Exprs.expr -> Exprs.expr
-  val elim_var: 
-    (Exprs.expr * Exprs.expr) list 
+  val elim_var:
+    (Exprs.expr * Exprs.expr) list
     -> int -> Exprs.expr * (Exprs.expr * Exprs.expr) list
-  val apply_elim: 
-    (Exprs.expr * Exprs.expr) list 
+  val apply_elim:
+    (Exprs.expr * Exprs.expr) list
     -> int list -> (Exprs.expr * Exprs.expr) list
   val is_integer: Exprs.expr -> bool
   val has_integer_solns: (Exprs.expr * Exprs.expr) list -> bool
-  val solve_ineq_conj: 
+  val solve_ineq_conj:
     (Exprs.expr * Exprs.expr) list -> (Exprs.expr * Exprs.expr) list
-  val solve_inequalities: (Exprs.expr * Exprs.expr) list list -> 
+  val solve_inequalities: (Exprs.expr * Exprs.expr) list list ->
     (Exprs.expr * Exprs.expr) list
   val decide: (compfn * Exprs.expr * Exprs.expr, 'a) Prop.boolexpr -> bool
-  val soln: 
-    ('a -> (Exprs.expr * Exprs.expr) list) 
+  val soln:
+    ('a -> (Exprs.expr * Exprs.expr) list)
     -> 'a -> (Exprs.expr * Exprs.expr) list
 
 end
-
-

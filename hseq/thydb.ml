@@ -136,9 +136,9 @@ let expunge db =
       match ls with
         | [] -> rs
         | ((n, _)::_)::xs ->
-	  if not (NameSet.mem used_list n)
-	  then flatten_list xs (n::rs)
-	  else flatten_list xs rs
+          if not (NameSet.mem used_list n)
+          then flatten_list xs (n::rs)
+          else flatten_list xs rs
         | [] :: xs -> flatten_list xs rs
     in
     flatten_list (Treekit.StringTree.to_list tbl) []
@@ -263,8 +263,8 @@ let mk_importing thdb =
     then rs
     else
       let thy_list =
-	try get_parents thdb name
-	with err -> raise (add_error "mk_importing, theory" [name] err)
+        try get_parents thdb name
+        with err -> raise (add_error "mk_importing, theory" [name] err)
       in
       let rs1 = List.fold_left (fun r n -> mk_aux n r) rs thy_list in
       List.fold_left NameSet.insert rs1 (List.rev thy_list)
@@ -303,7 +303,7 @@ let set_current thdb thy =
   try set_aux()
   with e ->
     raise (add_error
-	     ("Can't set theory "^name^" as the current theory.") [] e)
+             ("Can't set theory "^name^" as the current theory.") [] e)
 
 (*** Find functions ***)
 
@@ -316,8 +316,8 @@ let find f tdb =
     match ls with
       | [] -> raise Not_found
       | x::xs ->
-	try f (get_thy tdb x)
-	with Not_found -> find_aux xs
+        try f (get_thy tdb x)
+        with Not_found -> find_aux xs
   in
   find_aux (imported tdb)
 
@@ -405,13 +405,13 @@ let get_id_options n db =
       | [] -> List.rev r
       | x::xs ->
         begin
-	  match get_id x with
-	    | None -> get_aux xs r
-	    | Some(defn) ->
+          match get_id x with
+            | None -> get_aux xs r
+            | Some(defn) ->
               let new_id = Ident.mk_long x n
               and new_ty = defn.Theory.typ
               in
-	      get_aux xs ((new_id, new_ty)::r)
+              get_aux xs ((new_id, new_ty)::r)
         end
   in
   get_aux (imported db) []
@@ -466,8 +466,8 @@ let get_lemma th n tdb =
     with _ ->
       try Theory.get_axiom n cur
       with _ ->
-	try Theory.get_defn n cur
-	with _ -> raise Not_found
+        try Theory.get_defn n cur
+        with _ -> raise Not_found
   in
   if th = ""
   then find get_aux tdb
@@ -644,10 +644,10 @@ struct
   (** Information about a theory passed to file-handling functions. *)
   type info =
       {
-	name: string;
-	date : float option;
-	prot : bool option;
-	childn : Lib.StringSet.t
+        name: string;
+        date : float option;
+        prot : bool option;
+        childn : Lib.StringSet.t
       }
 
   let mk_info n d p =
@@ -675,9 +675,9 @@ struct
   (*** Data needed for loading a theory. ***)
   type data =
       {
-	load_fn: info -> Theory.saved_thy;
-	(** Function to find and load a theory file. *)
-	build_fn: thydb -> string -> (thydb * Theory.thy list)
+        load_fn: info -> Theory.saved_thy;
+        (** Function to find and load a theory file. *)
+        build_fn: thydb -> string -> (thydb * Theory.thy list)
       (** Function to build the theory if it can't be loaded. *)
       }
 
@@ -738,13 +738,13 @@ struct
     match tym with
       | None -> ()
       | Some(tim) ->
-	if time_lessthaneql thy_date tim
-	then ()
-	else (warning ("Imported theory "^name^" is more recent than"
-		       ^" its importing theory");
-	      raise (Report.error
-      		       ("Imported theory "^name^" is more recent than"
-		        ^" its importing theory")))
+        if time_lessthaneql thy_date tim
+        then ()
+        else (warning ("Imported theory "^name^" is more recent than"
+                       ^" its importing theory");
+              raise (Report.error
+                       ("Imported theory "^name^" is more recent than"
+                        ^" its importing theory")))
 
   (** [test_protection prot thy]: Ensure that the protection of theory
       [thy] is [prot].  *)
@@ -752,13 +752,13 @@ struct
     match prot with
       | None -> ()
       | (Some pval) ->
-	if pval
-	then
+        if pval
+        then
           if thy_prot then ()
-	  else (warning ("Imported theory "^name^" is not complete");
-	     raise
-	       (Report.error ("Imported theory "^name^" is not complete")))
-	else ()
+          else (warning ("Imported theory "^name^" is not complete");
+             raise
+               (Report.error ("Imported theory "^name^" is not complete")))
+        else ()
 
   (** [load_thy info ]: Load theory specified by [info], using
       [data.load_fn]. The protection and date of the theory must be as
@@ -800,13 +800,13 @@ struct
   let check_build db0 db thy =
     let check_first n l =
       match Lib.try_app List.hd l with
-	| None -> ()
-	| Some(x) ->
-	  if ((x == n) || (x = n))
+        | None -> ()
+        | Some(x) ->
+          if ((x == n) || (x = n))
           then ()
-	  else
-	    raise
-	      (error "Built theory not first in importing list." [n; x])
+          else
+            raise
+              (error "Built theory not first in importing list." [n; x])
     in
     let thy_list = imported db
     and name = Theory.get_name thy
@@ -858,8 +858,8 @@ struct
     let thy =
       try get_thy db info.name
       with err ->
-	add_error "Failed to rebuild theory. Theory not in database."
-	  [info.name] err
+        add_error "Failed to rebuild theory. Theory not in database."
+          [info.name] err
     in
     let build_aux() =
       test_protection (Theory.get_name thy)
@@ -872,7 +872,7 @@ struct
     try build_aux()
     with err ->
       add_error "Failed to rebuild theory. Can't make theory current."
-	[info.name] err
+        [info.name] err
 
     (** [load_thy spec loader thdb]: Load theory specified by [spec],
         using [loader.load_fn]. The protection and date of the theory

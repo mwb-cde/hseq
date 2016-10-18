@@ -1,7 +1,7 @@
 (*----
   Name: simptacs.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -54,13 +54,13 @@ val add_concls_tac:
 (** {5 Simplification engines} *)
 
 val simp_engine_tac:
-  Data.t -> Tag.t 
+  Data.t -> Tag.t
   -> (Data.t) Tactics.data_tactic
-(** The engine for [simp_tac]. 
+(** The engine for [simp_tac].
 
     [simp_engine_tac ret cntrl l goal]:
 
-    {ul 
+    {ul
     {- Eliminate toplevel universal quantifiers of [l].}
     {- Simplify [l], using {!Simplifier.basic_simp_tac}}
     {- Solve trivial goals}
@@ -70,14 +70,14 @@ val simp_engine_tac:
 *)
 
 val simpA_engine_tac:
-  Data.t -> Logic.label 
+  Data.t -> Logic.label
   -> (Data.t) Tactics.data_tactic
 (** [simpA_engine_tac cntrl ret chng l goal]: Simplify assumption [l],
     returning the updated data in [ret]. Sets [chng] to true on
     success. Doesn't clean-up.  *)
 
 val simpC_engine_tac:
-  Data.t -> Logic.label 
+  Data.t -> Logic.label
   -> (Data.t) Tactics.data_tactic
 (** [simpC_engine_tac cntrl ret chng l goal]: Simplify conclusion [l],
     returning the updated data in [ret]. Sets [chng] to true on
@@ -100,7 +100,7 @@ val simpA0_tac:
 *)
 
 val simpA_tac:
-  Data.t -> ?a:Logic.label 
+  Data.t -> ?a:Logic.label
   -> Tactics.tactic
 (** [simpA_tac cntrl ?a goal]: Simplify assumptions
 
@@ -156,7 +156,7 @@ val full_simp0_tac:
 
     Doesn't clean-up.
 *)
-  
+
 val full_simp_tac:
   Data.t -> Tactics.tactic
 (** [full_simp_tac cntrl ret goal]: Simplify subgoal
@@ -170,7 +170,7 @@ val full_simp_tac:
     This is the top-level tactic (for this module) for simplifying
     subgoals.
 *)
-  
+
 (** Debugging information **)
 
 val log: string -> Data.t -> unit

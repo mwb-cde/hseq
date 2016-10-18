@@ -1,7 +1,7 @@
 (*----
   Name: rewrite.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,11 +19,11 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** Term rewriting 
+(** Term rewriting
 
     Rewriting uses the rewriter from {!Rewritekit}, instantiated for
     {!Basic.term} together with an implementation of a generic term
-    rewrite planner {!Rewrite.Planner}. 
+    rewrite planner {!Rewrite.Planner}.
 
     Terms are rewritten with rules of the form [x=y], which may be
     ordered by a predicate. The rewrite planner can be controled to limit
@@ -91,7 +91,7 @@ val leftright: direction
 val rightleft: direction
 (** Rewrite from right to left (this reverses rewrite rules) *)
 
-type strategy = TopDown | BottomUp 
+type strategy = TopDown | BottomUp
 (** The rewriting strategy *)
 
 val topdown: strategy
@@ -107,18 +107,18 @@ val bottomup: strategy
 
 (** How the options are passed to the planner. *)
 type control =
-    { 
-      depth: int option; 
+    {
+      depth: int option;
       rr_dir: direction;
       rr_strat: strategy
     }
 
-val control: 
-  dir:direction 
-  -> strat: strategy 
+val control:
+  dir:direction
+  -> strat: strategy
   -> max:int option
   -> control
-(** Make a rewrite control. 
+(** Make a rewrite control.
 
     [strat] is the strategy to use.
 
@@ -150,7 +150,7 @@ exception Stop of exn
    (For hseq, a node is a term).
 *)
 
-(** 
+(**
     [term_key]: Keys identifying terms.
 *)
 type term_key =
@@ -183,8 +183,8 @@ val limit_reached: int option -> bool
 (**
    [TermData]: The data used to instantiate the generic rewriter.
 *)
-module TermData: 
-  (Rewritekit.Data 
+module TermData:
+  (Rewritekit.Data
    with type data = (Scope.t                (** Scope *)
                      * Term.substitution    (** Quantifier environment *)
                      * Gtypes.substitution) (** Type environment *)
@@ -198,9 +198,9 @@ type key = term_key
 
 
 (** The Rewriter *)
-module TermRewriter: 
-  (Rewritekit.T 
-   with type data = 
+module TermRewriter:
+  (Rewritekit.T
+   with type data =
     (Scope.t (** Scope *)
      * Term.substitution    (** Quantifier environment *)
      * Gtypes.substitution)  (** Type environment *)
@@ -216,28 +216,28 @@ type ('a)plan = (key, 'a)Rewritekit.plan
 
 val rewrite:
   data -> (rule)plan -> Basic.term -> (data * Basic.term)
-(** 
-    [rewrite data p t]: Rewrite term [t] with plan [t]. 
+(**
+    [rewrite data p t]: Rewrite term [t] with plan [t].
     This is the basic function provide by {!Rewritekit.Make}.
 *)
 
-val plan_rewrite_env: 
+val plan_rewrite_env:
   Scope.t -> ?dir:direction
-  -> Gtypes.substitution 
+  -> Gtypes.substitution
   -> Basic.term plan
-  -> Basic.term 
+  -> Basic.term
   -> (Basic.term * Gtypes.substitution)
 (** [plan_rewrite_env scp ?dir tyenv p t]: Rewrite term [t] with plan
     [p] in type environment [tyenv].
 
     The [term plan] is converted to a [rule plan], by extracting rules
-    from terms. 
+    from terms.
 *)
 
-val plan_rewrite: 
+val plan_rewrite:
   Scope.t -> ?dir:direction
   -> Basic.term plan
-  -> Basic.term 
+  -> Basic.term
   -> Basic.term
 (** [plan_rewrite scp ?dir tyenv p t]: Rewrite term [t] with plan [p].
 *)
@@ -253,8 +253,8 @@ sig
     type data (** Additional data to pass to the planning functions. *)
 
     (** [dest]: How to destruct rewrite rules. *)
-    val dest: data -> rule 
-	-> (Basic.binders list * Basic.term * Basic.term * order option)
+    val dest: data -> rule
+        -> (Basic.binders list * Basic.term * Basic.term * order option)
   end
     (** Data passed to a rewriter planner. *)
 
@@ -283,23 +283,23 @@ sig
 
     exception No_change
 
-    type a_rule 
+    type a_rule
     type rule_data
 
     val make:
-      rule_data -> 
-      Scope.t -> control -> a_rule list 
-      -> Basic.term 
+      rule_data ->
+      Scope.t -> control -> a_rule list
+      -> Basic.term
       -> (Basic.term * (a_rule)plan)
     (** Make a rewrite plan using a list of universally quantified
         rewrite rules.  *)
-      
-    val make_env: 
-      rule_data 
-      -> Scope.t 
-      -> control 
+
+    val make_env:
+      rule_data
+      -> Scope.t
+      -> control
       -> Gtypes.substitution
-      -> a_rule list -> Basic.term 
+      -> a_rule list -> Basic.term
       -> (Basic.term * Gtypes.substitution * (a_rule)plan)
     (** [make_env tyenv rules trm]: Make a rewrite plan for [trm]
         w.r.t type environment [tyenv] using [rules]. Return the new
@@ -308,50 +308,50 @@ sig
     (** {7 Exposed for debugging} *)
 
     type data = (Scope.t               (** Scope *)
-	         * Term.substitution   (** Quantifier environment *)
-	         * Gtypes.substitution) (** Type environment *)
+                 * Term.substitution   (** Quantifier environment *)
+                 * Gtypes.substitution) (** Type environment *)
 
-    type internal_rule = (Basic.binders list 
-	                  * Basic.term 
-	                  * Basic.term 
-	                  * order option
-	                  * a_rule)
+    type internal_rule = (Basic.binders list
+                          * Basic.term
+                          * Basic.term
+                          * order option
+                          * a_rule)
 
-    type rewrite_net = internal_rule Net.net 
+    type rewrite_net = internal_rule Net.net
 
     val src_of: internal_rule -> a_rule
 
-    val match_rewrite: 
-      control -> data -> internal_rule -> Basic.term 
+    val match_rewrite:
+      control -> data -> internal_rule -> Basic.term
       -> (a_rule * Basic.term * Gtypes.substitution)
 
     val match_rr_list:
       control -> data -> internal_rule list
       -> Basic.term -> a_rule list
       -> (Basic.term * Gtypes.substitution
-	  * control * (a_rule)list)
+          * control * (a_rule)list)
 
     val match_rewrite_list:
       control -> data -> rewrite_net -> Basic.term -> a_rule list
       -> (Basic.term * Gtypes.substitution
-	  * control * (a_rule)list)
+          * control * (a_rule)list)
 
     val check_change: ('a)plan -> unit
     val check_change2: ('a)plan -> ('a)plan -> unit
 
     val make_list_topdown:
       control -> rewrite_net -> data -> Basic.term
-      -> (Basic.term * Gtypes.substitution 
-	  * control * (a_rule)plan)
+      -> (Basic.term * Gtypes.substitution
+          * control * (a_rule)plan)
 
     val make_list_bottomup:
       control -> rewrite_net-> data -> Basic.term
-      -> (Basic.term * Gtypes.substitution 
-	  * control * (a_rule)plan)
+      -> (Basic.term * Gtypes.substitution
+          * control * (a_rule)plan)
 
     val make_rewrites: rule_data -> a_rule list -> rewrite_net
 
-    val make_list: 
+    val make_list:
       rule_data -> control -> Scope.t -> Gtypes.substitution
       -> a_rule list -> Basic.term
       -> (Basic.term * Gtypes.substitution * (a_rule)plan)
@@ -362,8 +362,8 @@ sig
 end
 (** The generic rewrite planner. *)
 
-module Make: 
-  functor (A: Planner.Data) -> 
+module Make:
+  functor (A: Planner.Data) ->
     (Planner.T with type a_rule = A.rule
                and type rule_data = A.data)
 (** Make a rewrite planner. *)
@@ -443,21 +443,21 @@ val constn_key: key
     experiments.
 *)
 
-module TermPlannerData:  
-  (Planner.Data 
-   with type rule = Basic.term 
+module TermPlannerData:
+  (Planner.Data
+   with type rule = Basic.term
    and type data = unit)
 (** Data used to instantiate the generic planner. *)
 
-module TermPlanner: 
-  (Planner.T 
-   with type a_rule = TermPlannerData.rule 
+module TermPlanner:
+  (Planner.T
+   with type a_rule = TermPlannerData.rule
    and type rule_data = unit)
 (** The rewriter planner instantiated for terms. *)
 
-val make_plan_full: 
+val make_plan_full:
   Scope.t -> control -> Gtypes.substitution
-  -> Basic.term list -> Basic.term 
+  -> Basic.term list -> Basic.term
   -> (Basic.term * Gtypes.substitution * (Basic.term) plan)
 (** [make_plan_full scp ctrl tyenv rules trm]: Make a rewrite plan for
     [trm] w.r.t type environment [tyenv] using rewrite rules
@@ -467,8 +467,8 @@ val make_plan_full:
     is top-down or bottom-up.
 *)
 
-val make_plan: 
-  Scope.t -> control -> Basic.term list -> Basic.term 
+val make_plan:
+  Scope.t -> control -> Basic.term list -> Basic.term
   -> (Basic.term * (Basic.term)plan)
 (** [make_plan_full scp ctrl tyenv rules trm]: Make a rewrite plan for
     [trm] using rewrite rules [rules]. Return the new term and the
@@ -476,5 +476,3 @@ val make_plan:
     rewrites to carry out and whether rewriting is top-down or
     bottom-up.
 *)
-  
-

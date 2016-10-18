@@ -1,7 +1,7 @@
 (*----
   Name: tag.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -20,12 +20,11 @@
   ----*)
 
 type tag_type = string ref
-type t= tag_type
+type t = tag_type
 
 let create() = ref ""
 let named x = ref x
 let equal x y = (x == y)
 
 let name x = !x
-let null=ref ""
-
+let null = ref ""

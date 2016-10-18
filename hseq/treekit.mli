@@ -1,7 +1,7 @@
 (*----
   Name: treekit.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -24,7 +24,7 @@
     A tree is built from less-than (<) and equality ( = ) relations. Each
     node of the tree is a list of items whose indices are equal under
     the less-than relation (not (x < y) and not (y < x)). The equality
-    gives the exact match for an item in the list. 
+    gives the exact match for an item in the list.
 
     The simplest trees, {!Treekit.SimpleTree}, use [Pervasive.compare]
     for both less-than and equality and behave like a standard
@@ -54,14 +54,14 @@ end
 module type TreeType=
 sig
 
-  type key 
+  type key
   (** Type of keys by which data is indexed. *)
 
   val eql: key -> key -> bool
   val lessthan: key -> key -> bool
 
-  type ('a)t= 
-    | Nil 
+  type ('a)t=
+    | Nil
     | Branch of ((key * 'a) list * ('a)t * ('a)t)
 
   val data: 'a t -> (key * 'a) list
@@ -95,7 +95,7 @@ sig
 
   val find_all: 'a t -> key -> 'a list
   (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.  
+      last binding first in list.
 
       @raise [Not_found] if there are no bindings in [tree].  *)
 
@@ -123,7 +123,7 @@ sig
 end
 
 (** Trees *)
-module Tree: 
+module Tree:
   functor (A: TreeData) -> (TreeType with type key = A.key)
 
 (** {5 Balanced trees} *)
@@ -132,15 +132,15 @@ module Tree:
 module type BTreeType=
 sig
 
-  type key 
+  type key
   (** Type of keys by which data is indexed. *)
 
   val eql: key -> key -> bool
   val lessthan: key -> key -> bool
 
   type depth_t = int
-  type ('a)t= 
-    | Nil 
+  type ('a)t=
+    | Nil
     | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
 
   val nil: 'a t
@@ -182,7 +182,7 @@ sig
 
   val find: 'a t -> key -> 'a
   (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.  
+      last binding first in list.
 
       @raise [Not_found] if [key] is not bound in [tree].  *)
 
@@ -213,11 +213,11 @@ sig
 end
 
 (** {7 Balanced Trees} *)
-module BTree: 
+module BTree:
   functor (A: TreeData) -> (BTreeType with type key = A.key)
 
 
-(** {5 Simple Trees} 
+(** {5 Simple Trees}
 
     Trees ordered by [Pervasives.compare]. Example: a balanced tree
     indexed by strings is constructed by [SimpleTree (struct type key
@@ -227,22 +227,22 @@ module BTree:
 (** The type of the index. *)
 module type Data =
 sig
-  type key 
+  type key
 end
 
 (** Balanced trees, ordered by [Pervasives.compare] *)
 module type SimpleTreeType =
 sig
 
-  type key 
+  type key
   (** Type of keys by which data is indexed. *)
 
   val eql: key -> key -> bool
   val lessthan: key -> key -> bool
 
   type depth_t = int
-  type ('a)t= 
-    | Nil 
+  type ('a)t=
+    | Nil
     | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
 
   val nil: 'a t
@@ -316,7 +316,7 @@ sig
 end
 
 (** Balanced Trees indexed by type A.key *)
-module SimpleTree: 
+module SimpleTree:
   functor (A:Data) -> (SimpleTreeType with type key = A.key)
 
 (** Balanced Trees indexed by strings *)
