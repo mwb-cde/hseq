@@ -1,20 +1,20 @@
 # --*- Makefile -*--##################################################
 # Makefile.module - Makefile to build modules
-# Copyright 2011-2014, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
 # This file is part of HSeq.
 #
-# HSeq is free software; you can redistribute it and/or modify it
-# under the terms of the Lesser GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
+# HSeq is free software; you can redistribute it and/or modify it under the
+# terms of the Lesser GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
 #
-# HSeq is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-# License for more details.
+# HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+# more details.
 #
 # You should have received a copy of the Lesser GNU General Public
 # License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -46,7 +46,7 @@ hseq_TEXINFO=hseq.texi
 # Document output name [default: hseq]
 #hseq_OUTPUT=
 
-# Name of the output html directory 
+# Name of the output html directory
 #    [default: $(hseq_output).html]
 #hseq_HTMLDIR=
 
@@ -60,4 +60,3 @@ hseq_TEXINFO=hseq.texi
 
 # Include the standard template.
 include $(PROJ_ROOT)/doc/Makefile.docrules
-

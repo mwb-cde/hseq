@@ -1,6 +1,22 @@
+@c localdefs.texi - Macro definitions for hseq documentation.
+@c Copyright 2014-2016, Matthew Wahab <mwb.cde@gmail.com>
 @c
-@c Macro definitions for hseq.texi
+@c Released under the Lesser GPLv3 license:
+@c ========================================
+@c This file is part of HSeq.
 @c
+@c HSeq is free software; you can redistribute it and/or modify it
+@c under the terms of the Lesser GNU General Public License as
+@c published by the Free Software Foundation; either version 3, or (at
+@c your option) any later version.
+@c
+@c HSeq is distributed in the hope that it will be useful, but WITHOUT
+@c ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+@c or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General
+@c Public License for more details.
+@c
+@c You should have received a copy of the Lesser GNU General Public
+@c License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
 
 @c @HSeq: the name of the program
 
@@ -59,4 +75,3 @@ HSeq
 @macro SeeAlso{}
 @heading See Also
 @end macro
-
