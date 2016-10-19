@@ -17,7 +17,7 @@
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  ----*)
 
 (**
    HSeq start-up file.
