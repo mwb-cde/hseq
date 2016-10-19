@@ -17,7 +17,7 @@
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  ----*)
 
 (*
    pairLib.ml:
@@ -63,12 +63,12 @@ struct
            | [] -> ()
            | _ ->
               begin
-	        Format.printf "@[";
-	        Printer.print_list
-	          (Term.print_term ppstate prec,
-	           (fun () -> Format.printf "@ "))
-	          rest;
-	        Format.printf "@]"
+                Format.printf "@[";
+                Printer.print_list
+                  (Term.print_term ppstate prec,
+                   (fun () -> Format.printf "@ "))
+                  rest;
+                Format.printf "@]"
               end
          end
        end

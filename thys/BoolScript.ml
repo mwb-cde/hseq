@@ -1,7 +1,7 @@
 (*----
   Name: BoolScript.ml
   Copyright Matthew Wahab 2005-2016
-  Author: Matthew Wahab  <mwb.cde@gmail.com>
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -17,7 +17,7 @@
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  ----*)
 
 (**
    Boolean operators and their basic properties.

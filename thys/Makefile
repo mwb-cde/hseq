@@ -99,8 +99,8 @@ install: install-thys
 EXTRA_CLEAN=$(RM) *.tho *.cmo *.cmi *~ local_thy_config.ml
 
 # clean:
-# 	$(RM) *.tho *.cmo *.cmi
-# 	$(RM) *~
+#	$(RM) *.tho *.cmo *.cmi
+#	$(RM) *~
 
 # libclean: clean
 

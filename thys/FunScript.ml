@@ -1,29 +1,29 @@
 (*----
- Name: FunScript.ml
- Copyright M Wahab 2005-2013
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: FunScript.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
-(** 
+(**
    Relations and Functions
 *)
 
-let _ = begin_theory "Fun" ["Relation"];; 
+let _ = begin_theory "Fun" ["Relation"];;
 
 (** {5 Equality of functions} *)
 
@@ -32,27 +32,27 @@ let function_eq =
     << !f g : (f = g) = (!x: (f x) = (g x))>>
   [
    flatten_tac ++ equals_tac ++ scatter_tac
-     -- 
+     --
      [
       replace_tac ++eq_tac;
       cut_back_tac (thm "extensionality")
-	++ basic
+        ++ basic
     ]
  ];;
 
 (** {5 Composition} *)
 
-let compose_def = 
-  define 
+let compose_def =
+  define
     <:def< compose f g = (%x : f (g x)) >>
   ~pp:(275, infixl, Some "++")
 
-let compose_thm = 
-theorem ~simp:true "compose_thm" 
+let compose_thm =
+theorem ~simp:true "compose_thm"
 << !f g x: ((f ++ g) x) = (f (g x)) >>
 [simp_tac [defn "compose"] ++ eq_tac];;
 
-let compose_assoc = 
+let compose_assoc =
 theorem ~simp:true "compose_assoc"
 << ! f g h: (f ++ (g ++h)) = ((f ++ g) ++ h) >>
 [flatten_tac; cut_back_tac (thm "extensionality"); simp];;
@@ -62,24 +62,24 @@ theorem ~simp:true "compose_abs_r"
 << ! f g : (f ++ (% x : g x)) = (% x : f (g x)) >>
 [flatten_tac; cut_back_tac (thm "extensionality"); simp];;
 
-(** 
-   {5 Combinators} 
+(**
+   {5 Combinators}
 
    These are from HOL CombinScript.
 *)
 
 (** {7 Definitions} *)
 
-let combinK_def = 
+let combinK_def =
 define <:def< cK = (% x y : x) >>;;
 
-let combinS_def = 
+let combinS_def =
 define <:def< cS = (% f g x : f x (g x)) >>;;
 
-let combinI_def = 
+let combinI_def =
 define <:def< cI = (cS cK cK) >>;;
 
-let combinC_def = 
+let combinC_def =
 define <:def< cC = % f x y: f y x >>;;
 
 let combinW_def =
@@ -110,13 +110,13 @@ theorem ~simp:true "combinS_abs_r"
 << ! f g: (cS f (%x : g x)) = (%x: f x ( g x)) >>
 [flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp];;
 
-let combinC_thm = 
+let combinC_thm =
 theorem ~simp:true "combinC_thm"
 << ! f x y : (cC f x y) = (f y x) >>
 [simp_tac [defn "cC"]];;
 
 let combinC_abs_l =
-theorem ~simp:true "combinC_abs_l" 
+theorem ~simp:true "combinC_abs_l"
 << ! f y: (cC (%x: f x) y) = (%x: f x y) >>
 [flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp];;
 
@@ -134,20 +134,20 @@ let combinI_compose_f =
 theorem ~simp:true "combinI_compose_f"
 << (!f : ((cI ++ f) = f)) & (!f : (f ++ cI) = f) >>
 [
- conjC 
-   ++ flatten_tac 
+ conjC
+   ++ flatten_tac
    ++ (cut_back_tac (thm "extensionality")) ++ simp
 ];;
 
 let combinK_compose_thm =
 theorem ~simp:true "combinK_compose_thm"
-<< 
+<<
   (!f v : ((cK v) ++ f) = (cK v))
     & (!f v: (f ++ (cK v)) = (cK (f v)))
 >>
 [
- conjC 
-   ++ flatten_tac 
+ conjC
+   ++ flatten_tac
    ++ (cut_back_tac (thm "extensionality")) ++ simp
 ];;
 
@@ -163,35 +163,35 @@ theorem ~simp:true "fail_thm"
 let id_def =
   define <:def< id = % x : x >>;;
 
-let domain_def = 
+let domain_def =
   define <:def< domain f = %x: ?y: y = (f x) >>;;
 
-let range_def = 
+let range_def =
   define <:def< range f = %x: ?y: x = (f y) >>;;
 
 (** [surj f]: [f] is surjective *)
-let surj_def = 
+let surj_def =
   define <:def< surj f = !y: ?x: y = (f x) >>;;
 
 (** [inj f]: [f] is surjective *)
-let inj_def = 
+let inj_def =
   define <:def< inj f = ! x y: ((f x) = (f y)) => (x = y) >>;;
 
-(** 
-   [inj_on f A]: Function [f] is injective on values [x] for which 
+(**
+   [inj_on f A]: Function [f] is injective on values [x] for which
    [A x] is true.
 
    (Note that [inj_on f A] is equivalent to [one_one f (%x: true)].)
 *)
-let inj_on = 
-  define 
+let inj_on =
+  define
     <:def<
-  inj_on f A 
-    = !x y: ((A x) and (A y)) => (((f x) = (f y)) => (x=y)) 
+  inj_on f A
+    = !x y: ((A x) and (A y)) => (((f x) = (f y)) => (x=y))
     >>;;
 
 (** [bij f]: [f] is bijective *)
-let bij_def = 
+let bij_def =
   define <:def< bij f = (inj f) & (surj f) >>;;
 
 (** [invf f g]: [g] is an inverse of function [f]. *)
@@ -211,13 +211,13 @@ let surj_intro =
   [
    flatten_tac
      ++ unfold "surj" ++ specC
-     ++ instC [ << _g _y >> ] 
+     ++ instC [ << _g _y >> ]
      ++ instA [ << _y >> ]
      ++ simp
  ];;
 
-let surj_compose = 
-  theorem "surj_compose" 
+let surj_compose =
+  theorem "surj_compose"
     << ! f g: ((surj f) & (surj g)) => (surj (f ++ g)) >>
   [
    flatten_tac
@@ -231,16 +231,16 @@ let surj_compose =
 let inj_compose =
   theorem "inj_compose"
     << ! f g: ((inj f) & (inj g)) => (inj f ++ g) >>
-  [ 
+  [
     unfold "inj"
-    ++ flatten_tac 
+    ++ flatten_tac
     ++ rewrite_tac [compose_thm]
     ++ mp_tac
     ++ mp_tac
     ++ basic
   ];;
 
-(** 
+(**
    [inj_on_inverse_intro]: For functions [f, g] and predicate [A], if
    [g] is an inverse for [f] on values for which [A] is true then [f]
    is injective on on [A].
@@ -260,8 +260,8 @@ let inj_on_inverse_intro =
 let invf_compose =
   theorem "inv_compose"
     << (! f g: (invf f g) => (g ++ f = id)) >>
-  [ 
-    flatten_tac 
+  [
+    flatten_tac
       ++ once_rewrite_tac [thm "function_eq"]
       ++ simp_all_tac [ defn "invf"]
   ];;
