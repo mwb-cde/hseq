@@ -74,9 +74,9 @@ let std_check_string str =
       if is_space ch
       then check (i+1)
       else
-	if ch = (!type_char)
-	then (Type, String.sub str (i+1) (size - (i+1)))
-	else (Term, String.sub str i (size - i))
+        if ch = (!type_char)
+        then (Type, String.sub str (i+1) (size - (i+1)))
+        else (Term, String.sub str i (size - i))
     else (Unknown, str)
   in
   if size>0
@@ -94,11 +94,11 @@ let def_check_string str =
       if is_space ch
       then check (i+1)
       else
-	if ch= (!type_char)
-	then
-	  (Typedef, String.sub str (i+1) (size - (i+1)))
-	else
-	  (Def, String.sub str i (size - i))
+        if ch= (!type_char)
+        then
+          (Typedef, String.sub str (i+1) (size - (i+1)))
+        else
+          (Def, String.sub str i (size - i))
     else (Unknown, str)
   in
   if size > 0
