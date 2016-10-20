@@ -1,7 +1,7 @@
 (*----
   Name: report.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -20,7 +20,7 @@
   ----*)
 
 (**
-   {5 Error and message reporting} 
+   {5 Error and message reporting}
 
    Errors and messages are objects, allowing new errors to be derived.
    An error is raised as an exception with  a list of one or more objects.
@@ -31,17 +31,17 @@
 (** Message objects, for reporting non-fatal information. *)
 class message:
   string ->
-object 
-  method msg: unit -> string 
-  method print: Printer.ppinfo -> unit 
+object
+  method msg: unit -> string
+  method print: Printer.ppinfo -> unit
 end
 
 (** Error objects, for reporting fatal information. *)
 class error:
   string ->
-object 
-  method msg: unit -> string 
-  method print: Printer.ppinfo -> unit 
+object
+  method msg: unit -> string
+  method print: Printer.ppinfo -> unit
 end
 
 (** {6 Exceptions for reporting errors} *)
@@ -57,7 +57,7 @@ val mk_error: error -> exn
 val add_error: exn -> exn -> exn
 (** Add an error to a list of errors. *)
 
-val print_error: Printer.ppinfo -> int -> exn -> unit 
+val print_error: Printer.ppinfo -> int -> exn -> unit
 (** [print_error info n err]: Print the first [n] errors from
     exception [err].
 *)

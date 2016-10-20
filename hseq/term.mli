@@ -1,7 +1,7 @@
 (*----
   Name: term.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -51,7 +51,7 @@ type ('a)tree = ('a)TermTree.t
 
 (** {7 Hashtables} *)
 
-type ('a)table 
+type ('a)table
 (** Tables with a term as the key. *)
 
 val empty_table: unit -> ('a) table
@@ -86,11 +86,11 @@ val mk_short_ident: string -> term
 
 (** {7 Destructors} *)
 
-val dest_qnt: term -> (binders * term) 
+val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
 val dest_free: term -> (string * gtype)
 val dest_app: term -> (term * term)
-val dest_const: term -> Basic.const_ty 
+val dest_const: term -> Basic.const_ty
 val dest_ident: term -> (Ident.t * gtype)
 
 (** {6 Specialised Manipulators} *)
@@ -135,7 +135,7 @@ val get_fun_args: term -> (term * term list)
 (** Get the function and arguments of a function application. *)
 
 val get_args: term -> term list
-(** Get the arguments of a function application. *) 
+(** Get the arguments of a function application. *)
 val get_fun: term -> term
 (** Get the function of a function application .*)
 val dest_fun: term-> Ident.t * term list
@@ -152,7 +152,7 @@ val rand: term -> term
 
 val dest_unop: Basic.term -> (Ident.t * Basic.term)
 (** [dest_unop t]: Destruct unary operator [t], return the identifier
-    and argument. 
+    and argument.
 
     @raise [Failure] if not enough arguments.
 *)
@@ -164,8 +164,8 @@ val dest_binop: Basic.term -> (Ident.t * Basic.term * Basic.term)
     @raise [Failure] if not enough arguments.
 *)
 
-val strip_fun_qnt: 
-  Ident.t -> Basic.term -> Basic.binders list 
+val strip_fun_qnt:
+  Ident.t -> Basic.term -> Basic.binders list
   -> (Basic.binders list * Basic.term)
 (** [strip_fun_qnt f term qs]: Strip applications of the form [f (% x:
     P)] returning the bound variables and P. ([qs] should be [[]]
@@ -234,13 +234,13 @@ val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
     [scp].
 *)
 
-val retype_pretty_env: 
+val retype_pretty_env:
   Gtypes.substitution -> term -> (term * Gtypes.substitution)
 (** [retype_pretty]: Like [retype], make substitution for type
     variables but also replace other type variables with new, prettier
     names
 *)
-val retype_pretty: Gtypes.substitution -> term -> term 
+val retype_pretty: Gtypes.substitution -> term -> term
 (** [retype_pretty_env]: Like [retype_pretty] but also return the
     substitution storing from the bindings/replacements generated
     during retyping.
@@ -252,11 +252,11 @@ val full_rename: Gtypes.substitution -> term -> (term * Gtypes.substitution)
 (** [full_rename env t]: Rename all type variables and bound variables
     in term [t]. *)
 
-val retype_index: 
+val retype_index:
   int -> term -> (term * int * Gtypes.substitution)
 (** [retype idx t]: Rename all type variables in term [t]. *)
 
-type substitution 
+type substitution
 (** The type of term substitutions. *)
 
 (** {7 Operations on a substitution} *)
@@ -278,7 +278,7 @@ val replace: substitution -> term -> term
 
 (** {7 Substitution functions} *)
 
-val subst: substitution -> term -> term 
+val subst: substitution -> term -> term
 (** [subst env t]: Substitute the bindings in [env] in term [t].
 *)
 
@@ -311,7 +311,7 @@ val chase_var: (term -> bool) -> term -> substitution -> term
     unification.)
 *)
 
-val subst_mgu: (term -> bool) -> substitution -> term -> term 
+val subst_mgu: (term -> bool) -> substitution -> term -> term
 (** [subst_mgu varp env t]: Construct the most general unifier from
     subsitution [env] and term [t]. Predicate [varp] determines which
     terms are considered variable by the unifier. This is only needed
@@ -329,7 +329,7 @@ val mk_qnt_name: Scope.t -> Basic.quant -> string -> term -> term
 (** [mk_qnt_name scp qnt n t]: Make a quantified term, with quantifier
     [qnt], from term [t], binding free variables named [n].
 *)
-val mk_typed_qnt_name: 
+val mk_typed_qnt_name:
   Scope.t -> Basic.quant -> Basic.gtype -> string -> term -> term
 (** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
     kind [qnt], from term [t], binding all free variables named
@@ -340,7 +340,7 @@ val mk_typed_qnt_name:
 
 val string_typed_name: string -> Basic.gtype -> string
 val string_term: term -> string
-val string_inf_term: 
+val string_inf_term:
   ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string
 val string_term_basic: term -> string
 
@@ -351,19 +351,19 @@ val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (** Get the printer record for a term identifier.
 *)
 
-val print_qnts: 
+val print_qnts:
   Printer.ppinfo -> (Printer.fixity * int)
-  -> (string * (Basic.binders list)) Printer.printer 
+  -> (string * (Basic.binders list)) Printer.printer
 (** [print_qnts ppstate prec (str, qnts)]: Print binders [qnts] using
     symbol [str].
 *)
 
 val print_typed_obj:
-  int 
+  int
   -> (Printer.ppinfo -> (Printer.fixity * int) -> ('a) Printer.printer)
   -> Printer.ppinfo
   -> (Printer.fixity * int)
-  -> ('a * Basic.gtype) Printer.printer 
+  -> ('a * Basic.gtype) Printer.printer
 (** [print_typed_obj level printer ppstate prec (obj, ty)]: If
     [Setting.print_type_level > level] print [obj] with [ty] as its
     type in the form [(obj: ty)] otherwise print [obj] only. Uses
@@ -377,36 +377,36 @@ val print_bracket:
 *)
 
 val print_ident_as_identifier:
-  Printer.ppinfo ->  (Printer.fixity * int) 
+  Printer.ppinfo ->  (Printer.fixity * int)
   -> term Printer.printer
 (** [print_ident_as_identifier ppstate]: Print a [Id(id, _)] term as
     an identifier using [Printer.print_identifier ppstate].
 *)
 
-val print_infix: 
+val print_infix:
   (((Printer.fixity * int) -> Ident.t Printer.printer)
    * ((Printer.fixity * int) -> term Printer.printer))
-  -> (Printer.fixity * int) 
+  -> (Printer.fixity * int)
   -> (Ident.t * (term)list) Printer.printer
 (** [print_infix]: print [(f, args)] as an infix operator. *)
 
-val print_prefix: 
+val print_prefix:
   (((Printer.fixity * int) -> Ident.t Printer.printer)
    * ((Printer.fixity * int) -> term Printer.printer))
-  -> (Printer.fixity * int) 
+  -> (Printer.fixity * int)
   -> (Ident.t * (term)list) Printer.printer
 (**
    [print_suffix]: Print [(f, args)] as a suffix operator.
-*)   
-val print_suffix: 
+*)
+val print_suffix:
   (((Printer.fixity * int) -> Ident.t Printer.printer)
    * ((Printer.fixity * int) -> term Printer.printer))
-  -> (Printer.fixity * int) 
+  -> (Printer.fixity * int)
   -> (Ident.t * (term)list) Printer.printer
 (** [print_prefix]: Print [(f, args)] as a prefix operator.  *)
 
 val print_fn_app:
-  Printer.ppinfo 
+  Printer.ppinfo
   -> (((Printer.fixity * int) -> term Printer.printer)
       * ((Printer.fixity * int) -> term Printer.printer))
   -> (Printer.fixity * int)
@@ -419,8 +419,8 @@ val print_fn_app:
     the [args].
 *)
 
-val simple_print_fn_app: 
-  Printer.ppinfo -> (Printer.fixity * int) 
+val simple_print_fn_app:
+  Printer.ppinfo -> (Printer.fixity * int)
   -> (term * term list) Printer.printer
 (** [simple_print_fn_app]: Print an application as [f a1 a2 .. an].
 
@@ -430,7 +430,7 @@ val simple_print_fn_app:
     used.
 *)
 
-val print_term: 
+val print_term:
   Printer.ppinfo -> (Printer.fixity * int) -> term Printer.printer
 (** [print_term]: Print a term. *)
 
@@ -446,7 +446,7 @@ val print_simple: term -> unit
 
 val print_as_binder:
   (Printer.fixity * int) -> Ident.t -> string
-  -> Printer.ppinfo 
+  -> Printer.ppinfo
   -> (Printer.fixity * int)
   -> (term * term list) Printer.printer
 (** [print_as_binder (sym_assoc, sym_prec) f sym]: Construct a printer
@@ -454,7 +454,7 @@ val print_as_binder:
     P].
 *)
 
-val print_qnt_body: 
+val print_qnt_body:
   Printer.ppinfo -> (Printer.fixity * int)
   -> ((Basic.binders)list * Basic.term) Printer.printer
 (** [print_qnt_body (assoc, prec) qs body]: Print term [body]
@@ -466,7 +466,7 @@ val print_qnt_body:
 
 class termError: string -> term list ->
 object
-  inherit Report.error 
+  inherit Report.error
   val trms: term list
   method get: unit -> term list
 end
@@ -475,7 +475,7 @@ val add_term_error: string -> term list -> exn -> 'a
 
 (** {5 Comparisons} *)
 
-val compare_term: term -> term -> int 
+val compare_term: term -> term -> int
 (** [compare_term x y]: Compare [x] and [y] using
     [Pervasives.compare].
 *)

@@ -1,19 +1,19 @@
 (*----
   Name: theory.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
   HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  the terms of the Lesser GNU General Public License as published by the
+  Free Software Foundation; either version 3, or (at your option) any
+  later version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -57,11 +57,6 @@ val simp_property: property
 (** Indicate that the theorem should be added to the standard
     simplification set.
 *)
-
-(** The precedence of a term identifier overloaded on a
-    symbol. (Default [First].)
-*)
-type sym_pos = Ident.t Lib.position
 
 (** Records of identifier declarations and definitions. *)
 type id_record =
@@ -108,7 +103,7 @@ type contents =
       (** Type definitions and declarations. *)
       ctype_pps: (string * Printer.record) list;
       (** Type printer and parser information. *)
-      cid_pps: (string * (Printer.record * sym_pos)) list;
+      cid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       (** Term printer and parser information. *)
       cpp_syms: (string * string) list;
     (** Lexer symbols and their matching token. *)
@@ -205,17 +200,17 @@ val add_decln_rec:
 
 (** {7 Printer-Parser records} *)
 
-val get_term_pp_rec: string  -> thy -> (Printer.record * sym_pos)
+val get_term_pp_rec: string  -> thy -> (Printer.record * Parser.sym_pos)
 (** Get a term Printer-Parser record to a theory. *)
 val add_term_pp_rec:
   string
-  -> (Printer.record * sym_pos)
+  -> (Printer.record * Parser.sym_pos)
   -> thy -> thy
 (** Add a term Printer-Parser record to a theory. *)
 val remove_term_pp_rec: string -> thy -> thy
 (** Remove term Printer-Parser record from a theory. *)
 val get_term_pplist:
-  thy -> (Ident.t * (Printer.record * sym_pos)) list
+  thy -> (Ident.t * (Printer.record * Parser.sym_pos)) list
 (** Get all term Printer-Parser records of a theory. *)
 
 val get_type_pp_rec: string  -> thy -> Printer.record

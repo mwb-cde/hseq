@@ -1,23 +1,23 @@
 (*----
   Name: theory.ml
   Copyright Matthew Wahab 2005-2016
-  Author: Matthew Wahab  <mwb.cde@gmail.com>
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under the
-  terms of the Lesser GNU General Public License as published by the Free
-  Software Foundation; either version 3, or (at your option) any later
-  version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by the
+  Free Software Foundation; either version 3, or (at your option) any
+  later version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
-  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
-  more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
-  You should have received a copy of the Lesser GNU General Public License
-  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (*
  * Identifier and theorem records
@@ -25,7 +25,6 @@
 
 type property = string
 let simp_property = "simp"
-type sym_pos = Ident.t Lib.position
 module Tree = Treekit.StringTree
 
 type id_record =
@@ -54,7 +53,7 @@ type thy =
       defns: (id_record) Tree.t;
       typs: (Gtypes.typedef_record) Tree.t;
       type_pps: (string * Printer.record) list;
-      id_pps: (string * (Printer.record * sym_pos)) list;
+      id_pps: (string * (Printer.record * Parser.sym_pos)) list;
       pp_syms: (string * string) list;
     }
 
@@ -71,7 +70,7 @@ type contents=
       cdefns: (string * id_record) list;
       ctyps: (string * Gtypes.typedef_record) list;
       ctype_pps: (string * Printer.record) list;
-      cid_pps: (string * (Printer.record * sym_pos)) list;
+      cid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       cpp_syms: (string * string) list;
     }
 
@@ -169,7 +168,7 @@ let get_axiom_rec n thy =
   try Tree.find thy.axioms n
   with Not_found ->
     raise (Report.error
-	     ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
+             ("Axiom "^n^" not found in theory "^(get_name thy)^"."))
 
 let get_axiom n thy =
   let ar = get_axiom_rec n thy
@@ -207,7 +206,7 @@ let get_theorem n thy =
     try get_theorem_rec n thy
     with Not_found ->
       raise (Report.error
-	       ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
+               ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   in
   tr.thm
 
@@ -227,11 +226,11 @@ let set_theorem_props n ps thy =
   then
     match Lib.try_find (get_theorem_rec n) thy with
       | Some(tr) ->
-	  let ntr = { tr with props = ps }
-	  in
-	  set_theorems thy (Tree.replace (thy.theorems) n ntr)
+          let ntr = { tr with props = ps }
+          in
+          set_theorems thy (Tree.replace (thy.theorems) n ntr)
       | _ ->
-	raise (Report.error
+        raise (Report.error
                  ("Theorem "^n^" not found in theory "^(get_name thy)^"."))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
@@ -257,9 +256,9 @@ let add_type_rec tr thy =
     else
       if Logic.Defns.is_subtype tydef
       then
-	let ctyrec = Logic.Defns.dest_subtype tydef
-	in
-	(ctyrec.Logic.Defns.type_name,
+        let ctyrec = Logic.Defns.dest_subtype tydef
+        in
+        (ctyrec.Logic.Defns.type_name,
          ctyrec.Logic.Defns.type_args,
          None)
       else
@@ -357,7 +356,7 @@ let add_term_pp_rec n ppr thy=
     if Tree.mem (get_defns thy) n
     then set_id_pps thy (Lib.insert (<) n ppr thy.id_pps)
     else raise (Report.error
-		  ("No name "^n^" defined in theory "^(get_name thy)))
+                  ("No name "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_term_pp_rec n thy =
@@ -367,7 +366,16 @@ let get_term_pplist thy =
   let ppl = get_id_pps thy
   and tn = thy.name
   in
-  List.map (fun (x, y) -> (Ident.mk_long tn x , y)) ppl
+  List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
+
+let add_term_ppinfo thy pp =
+  let ppl = get_id_pps thy
+  and tn = thy.name
+  in
+  List.fold_left
+    (fun ppi (i, r) ->
+      (Printer.add_term_record ppi (Ident.mk_long tn i) (fst r)))
+        pp ppl
 
 let get_type_pp_rec n thy = List.assoc n thy.type_pps
 
@@ -377,7 +385,7 @@ let add_type_pp_rec n ppr thy=
     if Tree.mem thy.typs n
     then set_type_pps thy (Lib.insert (<) n ppr (get_type_pps thy))
     else raise (Report.error
-		  ("No type "^n^" defined in theory "^(get_name thy)))
+                  ("No type "^n^" defined in theory "^(get_name thy)))
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_type_pp_rec n thy =
@@ -388,6 +396,15 @@ let get_type_pplist thy =
   and tn = thy.name
   in
   List.map (fun (x, y) -> (Ident.mk_long tn x, y)) ppl
+
+let add_type_ppinfo thy pp =
+  let ppl = get_type_pps thy
+  and tn = thy.name
+  in
+  List.fold_left
+    (fun ppi (i, r) ->
+      (Printer.add_type_record ppi (Ident.mk_long tn i) r))
+        pp ppl
 
 (*
  * Theory Storage
@@ -457,7 +474,7 @@ type saved_thy =
       sdefns: (string * id_save_record) list;
       stypes: (string * Gtypes.stypedef_record) list;
       stype_pps: (string * Printer.record) list;
-      sid_pps: (string * (Printer.record * sym_pos)) list;
+      sid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       spp_syms: (string * string) list;
     }
 
@@ -506,7 +523,7 @@ let from_saved scp sthy =
     let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in
     let new_defns =
       List.map
-	(fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
+        (fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
         sthy.sdefns
     in
     Scope.extend_with_terms scp2 new_defns
@@ -609,8 +626,8 @@ let print_properties pp ps =
     | _ ->
       Format.printf "@[(";
       Printer.print_list
-	((fun p -> print_property pp p),
-	 (fun _ -> Format.printf ",@ ")) ps;
+        ((fun p -> print_property pp p),
+         (fun _ -> Format.printf ",@ ")) ps;
       Format.printf ")@]@,"
 
 (** Theory printer **)
@@ -631,8 +648,8 @@ and print_parents ps =
       | [] -> (Format.printf "%s" "None")
       | _ ->
         Printer.print_list
-	  ((fun s -> Format.printf "%s" s),
-	   (fun _ -> Format.printf "@ ")) ps
+          ((fun s -> Format.printf "%s" s),
+           (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@."
 and print_files ps =
@@ -642,8 +659,8 @@ and print_files ps =
       | [] -> (Format.printf "None")
       | _ ->
         Printer.print_list
-	  ((fun s -> Format.printf "%s" s),
-	   (fun _ -> Format.printf "@ ")) ps
+          ((fun s -> Format.printf "%s" s),
+           (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]@."
 and print_thms pp n ths =
@@ -679,22 +696,22 @@ and print_tydefs pp n tys =
       Format.printf "@[<2>";
       begin
         match tyd.Scope.args with
-	  | [] -> ()
+          | [] -> ()
           | _ ->
-	    Format.printf "(";
-	    Printer.print_list
-	      ((fun s -> Format.printf "'%s" s),
-	       (fun _ -> Format.printf ",@ "))
-	      tyd.Scope.args;
-	    Format.printf ")"
+            Format.printf "(";
+            Printer.print_list
+              ((fun s -> Format.printf "'%s" s),
+               (fun _ -> Format.printf ",@ "))
+              tyd.Scope.args;
+            Format.printf ")"
       end;
       Format.printf "%s@," n;
       begin
         match tyd.Scope.alias with
-	  | None -> ()
+          | None -> ()
           | Some(gty) ->
-     	    Format.printf "=@,";
-	    Gtypes.print pp gty
+            Format.printf "=@,";
+            Gtypes.print pp gty
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;
@@ -716,9 +733,9 @@ and print_defs pp n defs =
       Format.printf "@ ";
       begin
         match d.def with
-	  | None -> ()
+          | None -> ()
           | Some(df) ->
-	    Logic.print_thm pp df
+            Logic.print_thm pp df
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_defs;
@@ -729,19 +746,19 @@ let print_term_pps n pps =
     match pos with
       | Lib.First -> ()
       | Lib.Last ->
-	Format.printf "@[position=@ Last@]"
+        Format.printf "@[position=@ Last@]"
       | Lib.Before id ->
-	Format.printf "@[position=@ Before@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ Before@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
       | Lib.After id ->
-	Format.printf "@[position=@ After@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ After@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
       | Lib.Level id ->
-	Format.printf "@[position=@ Level@ @[";
-	Printer.print_ident id;
-	Format.printf "@]@]@ "
+        Format.printf "@[position=@ Level@ @[";
+        Printer.print_ident id;
+        Format.printf "@]@]@ "
   in
   let sorted_pps =
     let comp (x, _) (y, _) = compare x y
@@ -755,12 +772,12 @@ let print_term_pps n pps =
       Format.printf "@[<2>%s@ " n;
       begin
         match (r.Printer.repr) with
-	    None -> ()
+            None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
-	(Printer.fixity_to_string r.Printer.fixity);
+        (Printer.fixity_to_string r.Printer.fixity);
       print_pos p;
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
@@ -779,12 +796,12 @@ let print_type_pps n pps =
       Format.printf "@[<2>%s@ " n;
       begin
         match (r.Printer.repr) with
-	  | None -> ()
+          | None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
       Format.printf "precedence = %i@ " r.Printer.prec;
       Format.printf "fixity = %s@ "
-	(Printer.fixity_to_string r.Printer.fixity);
+        (Printer.fixity_to_string r.Printer.fixity);
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
   Format.printf "@]@."

@@ -1,7 +1,7 @@
 (*----
   Name: simpset.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -25,7 +25,7 @@ open Lterm
 open Simputils
 
 (***
-    Simpsets 
+    Simpsets
 ***)
 
 (*** Utility functions ***)
@@ -36,10 +36,10 @@ open Simputils
     any other term.
 *)
 let rec lt_var lvarp rvarp x y =
-  let lt_aux lvarp rvarp t1 t2 = 
+  let lt_aux lvarp rvarp t1 t2 =
     let atom_lt (a1, ty1) (a2, ty2) = a1 < a2
     and bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
-    in 
+    in
     match (t1, t2) with
       | (Const c1, Const c2) -> Basic.const_lt c1 c2
       | (Const _ , _ ) -> true
@@ -66,11 +66,11 @@ let rec lt_var lvarp rvarp x y =
       | (App _, Meta _) -> false
       | (App _, Bound _) -> false
       | (App _, Free _) -> false
-      | (App(f1, a1), App (f2, a2)) -> 
-        if lt_var lvarp rvarp f1 f2 
+      | (App(f1, a1), App (f2, a2)) ->
+        if lt_var lvarp rvarp f1 f2
         then true
-        else 
-          if lt_var lvarp rvarp f2 f1 
+        else
+          if lt_var lvarp rvarp f2 f1
           then false
           else lt_var lvarp rvarp a1 a2
       | (App _, _) -> true
@@ -81,12 +81,12 @@ let rec lt_var lvarp rvarp x y =
       | (Qnt _, Free _) -> false
       | (Qnt _, App _) -> false
       | (Qnt(q1, b1), Qnt(q2, b2)) ->
-        if lt_var lvarp rvarp b1 b2 
+        if lt_var lvarp rvarp b1 b2
         then bound_lt (dest_binding q1) (dest_binding q2)
         else false
-  in 
+  in
   let (x_is_var, y_is_var) = (lvarp x, rvarp y)
-  in 
+  in
   match x_is_var, y_is_var with
     | (false, true) -> true
     | (true, _) -> false
@@ -114,9 +114,9 @@ let set_rr_order rr order =
 
 (** [rule]: Variables, optional condition, lhs , rhs , source of rule
 *)
-type rule = 
-    (binders list 
-     * term option * term * term 
+type rule =
+    (binders list
+     * term option * term * term
      * Rewrite.order option
      * Logic.rr_type)
 
@@ -130,10 +130,10 @@ let rule_src (vs, cnd, lhs, rhs, order, rr) = rr
 
 (** [termnet_lt]: Less-than ordering on simp rules.
 *)
-let termnet_lt x y = 
+let termnet_lt x y =
   let lvarp = is_variable (rule_binders x)
   and rvarp = is_variable (rule_binders y)
-  in 
+  in
   lt_var lvarp rvarp (rule_lhs y) (rule_lhs x)
 
 (** [dest_rr_rule trm]: Split rule [trm] into binders, condition, lhs,
@@ -141,30 +141,30 @@ let termnet_lt x y =
 *)
 let dest_rr_rule trm =
   (* Get leading quantifiers *)
-  let (qs, t1) = Term.strip_qnt Basic.All trm  in 
+  let (qs, t1) = Term.strip_qnt Basic.All trm  in
   (* test for conditional equalities *)
   let (cnd, rl) =
     if Lterm.is_implies t1
     then (* is conditional *)
       let (_, asm, cncl) = Term.dest_binop t1
-      in 
+      in
       (Some(asm), cncl)
     else (None, t1)
-  in 
+  in
   (* break the equality *)
   if Lterm.is_equality rl
-  then 
+  then
     let (lhs, rhs) = Lterm.dest_equality rl
     in
     (qs, cnd, lhs, rhs, None)
-  else 
+  else
     raise (Failure "Not an equality or a conditional equality\n")
 
 (** [make_rule rl src]: Make rule from theorem or assumption [src] in
     scope [scp].  *)
 let make_rule rl trm =
   let (qs, c, l, r, o) = dest_rr_rule trm
-  in 
+  in
   (qs, c, l, r, o, rl)
 
 (** [make_asm_rules ts except goal]
@@ -175,48 +175,48 @@ let make_rule rl trm =
 let make_asm_rule tform =
   let tg = Tactics.drop_formula tform
   and trm = Formula.term_of (Tactics.drop_tag tform)
-  in 
+  in
   make_rule (Logic.Asm (Tactics.ftag tg)) trm
 
-let make_asm_rules except forms = 
+let make_asm_rules except forms =
   let rec make_aux xs rslt =
     match xs with
       | [] -> List.rev rslt
-      | tf::fs -> 
-	if except tf 
-	then make_aux fs rslt
-	else 
-	  let nrslt =  
-	    try (make_asm_rule tf)::rslt
-	    with _ -> rslt
-	  in 
-	  make_aux fs nrslt
-  in 
+      | tf::fs ->
+        if except tf
+        then make_aux fs rslt
+        else
+          let nrslt =
+            try (make_asm_rule tf)::rslt
+            with _ -> rslt
+          in
+          make_aux fs nrslt
+  in
   make_aux forms []
 
 (*** Sets ***)
 
 (** [simpset]: set of simplifier rules
 *)
-type simpset = 
-    { 
+type simpset =
+    {
       convs: (Context.t -> Logic.conv) Net.net;
       basic: rule Net.net;          (* global rules *)
       next: simpset option          (* next simpset *)
-    } 
+    }
 
-let empty_set() = 
+let empty_set() =
   {
     convs = Net.empty();
-    basic=Net.empty(); 
+    basic=Net.empty();
     next=None
   }
 
 (** [join s t]: Join sets s and t together.  In the set [join s t],
     the set [s] will be searched before set [t]
 *)
-let rec join s1 s2 = 
-  match s1.next with 
+let rec join s1 s2 =
+  match s1.next with
     | None -> {s1 with next = Some(s2)}
     | Some x -> {s1 with next = Some(join x s2)}
 
@@ -224,27 +224,27 @@ let rec join s1 s2 =
     joined to another set.
 *)
 let split s1 =
-  match s1.next with 
+  match s1.next with
     | None -> raise (Failure "split")
     | Some x -> ({s1 with next = None}, x)
-	
+
 (** [add_rule rl set]: Add rule [rl = c => (l = r)] to [set]. If rule
     could lead to looping ([Simpconvs.equals_upto_vars l r] is true)
     then make rule an ordered rewrite (using {!Term.term_lt}).
 *)
 let add_rule rl s =
-  let (vs, cond, l, r, order, src) = rl in 
-  let varp = is_variable vs in 
+  let (vs, cond, l, r, order, src) = rl in
+  let varp = is_variable vs in
   if equal_upto_vars (Rewrite.is_free_binder vs) l r
-  then 
+  then
     let order =
       try get_rr_order src
       with _ -> Term.term_lt
-    in 
+    in
     let rl1 = (vs, cond, l, r, Some(order), set_rr_order src order)
-    in 
+    in
     {s with basic = Net.insert termnet_lt varp (s.basic) l rl1}
-  else 
+  else
     {s with basic = Net.insert termnet_lt varp (s.basic) l rl}
 
 (** [add_conv (vars, key) conv set]: Add conversion to [set], to
@@ -252,8 +252,8 @@ let add_rule rl s =
     [key].
 *)
 let add_conv (vars, key) conv s =
-  let varp = is_variable vars 
-  in 
+  let varp = is_variable vars
+  in
   {s with convs = Net.add varp (s.convs) key conv}
 
 (*** Look-up functions ***)
@@ -263,12 +263,12 @@ let add_conv (vars, key) conv s =
 *)
 let rec lookup_conv sctxt set trm list =
   let conv_list = Net.lookup set.convs trm
-  in 
-  try 
-    let thm = Lib.find_first (fun conv -> conv sctxt trm) conv_list in 
-    let (qs, conc, lhs, rhs, order, src) = 
+  in
+  try
+    let thm = Lib.find_first (fun conv -> conv sctxt trm) conv_list in
+    let (qs, conc, lhs, rhs, order, src) =
       make_rule thm (Logic.term_of thm)
-    in 
+    in
     (qs, conc, lhs, rhs, order, Logic.RRThm(src))::list
   with _ -> raise Not_found
 
@@ -277,15 +277,15 @@ let rec lookup_conv sctxt set trm list =
     the rewrite rules then the next set in the chain (if any). The
     rules are added, in the order they are found, to [lst].
 *)
-let rec lookup_all sctxt set term list = 
-  let list1 = 
+let rec lookup_all sctxt set term list =
+  let list1 =
     try lookup_conv sctxt set term list
     with Not_found -> list
-  in 
-  let list2 = 
+  in
+  let list2 =
     try List.rev_append (Net.lookup set.basic term) list1
     with Not_found -> list1
-  in 
+  in
   match set.next with
     | None -> List.rev list2
     | Some(s) -> lookup_all sctxt s term list2
@@ -316,14 +316,14 @@ let make_thm_rule thm =
     entries.  *)
 let thm_to_entries (sctxt: Context.t) (thm: Logic.thm) =
   let rules = Simpconvs.thm_to_rules sctxt thm
-  in 
+  in
   List.map make_thm_rule rules
 
 (** [simpset_add_thm scp set thm]: Add rewrites from [thm] to simpset
     [set].  *)
 let simpset_add_thm ctxt sset thm =
   let entries = thm_to_entries ctxt thm
-  in 
+  in
   simpset_add_rules sset entries
 
 (** [simpset_add_thms scp set thms]: Apply [simpset_add_thm] to each
@@ -334,13 +334,13 @@ let simpset_add_thms sctxt set thms =
 (*** Assumptions ***)
 
 let simpset_add_asm_rule sset tg g=
-  let trm = 
+  let trm =
     Formula.term_of
-      (Logic.drop_tag 
-	 (Logic.Sequent.get_tagged_asm tg (Tactics.sequent g)))
-  in 
+      (Logic.drop_tag
+         (Logic.Sequent.get_tagged_asm tg (Tactics.sequent g)))
+  in
   let rule = make_rule (Logic.Asm (Tactics.ftag tg)) trm
-  in 
+  in
   simpset_add_rules sset [rule]
 
 (** [add_context set trm]: Add [trm] as a new assumption in which
@@ -352,27 +352,27 @@ let add_context set trm = set
 
 (** [print_rule]: Printer for rules *)
 let print_rule ppinfo (vars, cond, lhs, rhs, order, src) =
-  let trm = 
-    let trm1 = 
+  let trm =
+    let trm1 =
       match cond with
-	  None -> Lterm.mk_equality lhs rhs
+          None -> Lterm.mk_equality lhs rhs
         | Some c -> Lterm.mk_implies c (Lterm.mk_equality lhs rhs)
     in
     Term.rebuild_qnt vars trm1
-  in 
+  in
   Format.printf "@[";
   begin
     match src with
-      | Logic.Asm _ -> 
+      | Logic.Asm _ ->
         Format.printf "Assumption: ";
         Term.print ppinfo trm;
-      | Logic.OAsm _ -> 
+      | Logic.OAsm _ ->
         Format.printf "Ordered assumption: ";
         Term.print ppinfo trm;
-      | Logic.RRThm thm -> 
+      | Logic.RRThm thm ->
         Format.printf "Theorem: ";
         Logic.print_thm ppinfo thm
-      | Logic.ORRThm (othm, _) -> 
+      | Logic.ORRThm (othm, _) ->
         Format.printf "Ordered theorem: ";
         Logic.print_thm ppinfo othm
   end;
@@ -381,22 +381,21 @@ let print_rule ppinfo (vars, cond, lhs, rhs, order, src) =
 (** [print_rule_net]: Printer for rule nets. *)
 let print_rule_net ppinfo net =
   let rule_printer r = print_rule ppinfo r; Format.printf "@,"
-  in 
+  in
   Format.printf "@[<v>";
   Net.iter rule_printer net;
   Format.printf "@]"
-    
-let rec print_aux ppinfo set = 
+
+let rec print_aux ppinfo set =
   print_rule_net ppinfo set.basic;
   match set.next with
     | None -> ()
-    | Some set1 -> 
+    | Some set1 ->
       Format.printf "@,";
       print_aux ppinfo set1
 
 (** [print]: Printer for simpsets. *)
-let print ppinfo set = 
+let print ppinfo set =
   Format.printf "@[<v>[{";
   print_aux ppinfo set;
   Format.printf "}]@]"
-

@@ -1,26 +1,26 @@
 (*----
- Name: parser.mli
- Copyright M Wahab 2005-2014
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: parser.mli
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public License
+  along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 (** Parsers for terms and types.
-   
+
    Top-down parsers for terms, types and their definitions using the
    ParserKit constructors, instantiated in the module {!Grammars.Pkit}.
    A parser applies the rules of a grammar to the token stream
@@ -32,7 +32,7 @@
    The grammars are grouped around terms and types, with some
    miscellaneous utlity parsers. The term parsers include the grammars
    for term definitions. The type parsers include the grammars for
-   type definitions. 
+   type definitions.
 
    This module holds the standard symbol tables and token information
    needed for the toplevel parsers. The toplevel function, for
@@ -43,7 +43,7 @@
    {!Pterm.t}. These can be converted to a {!Basic.term} using
    {!Pterm.to_term}.  Operator overloading is supported using
    {!Pterm.resolve}.
-       
+
    The toplevel term parser is made up of two parts: the first parses
    a string to construct an initial term. The second resolves
    names in this term, expanding short names by finding the theory
@@ -53,7 +53,7 @@
 *)
 
 (** {5 Token information} *)
-    
+
 type associativity = Grammars.associativity
 (** Token associativity (exactly the same as used by the lexer) *)
 val left_assoc : associativity
@@ -90,7 +90,6 @@ val default_type_assoc: associativity
 val default_type_fixity: fixity
     (** Default type fixity *)
 
-
 (** {7 Types used by the parsers. } *)
 
 type input = Grammars.input
@@ -109,12 +108,12 @@ exception ParsingError of string
 (** Exception for reporting parse errors *)
 
 
-(** {5 Parser Data} 
+(** {5 Parser Data}
 
    The standard lexers and parsers use tables of symbols and
    tokens. The symbol table is used by the lexer and maps strings to
    tokens. Two token tables hold fixity and precedence information
-   about tokens which can appearing in term and type parsers. 
+   about tokens which can appearing in term and type parsers.
 
    Symbols should be added to the symbol table if they are to
    recognised by the lexer. This includes any symbol used in a
@@ -140,10 +139,15 @@ val default_symtable_size: int
 val core_symbols : (string * Lexer.tok) list
 (** The list of builtin symbols *)
 
+type sym_pos = Ident.t Lib.position
+(** The precedence of a term identifier overloaded on a
+    symbol. (Default [First].)
+*)
+
 module OverloadTree : Treekit.SimpleTreeType with type key = string
 type overload_table_t = ((Ident.t * Basic.gtype) list) OverloadTree.t
 
-val default_overload_table_size : int 
+val default_overload_table_size : int
 (** The default size of the overloading table. *)
 
 (** {5 Parser Tables} *)
@@ -159,8 +163,8 @@ sig
         term_parsers_f:
           (string,
            Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
-        type_parsers_f: 
-          (string, 
+        type_parsers_f:
+          (string,
            Grammars.parser_info -> (Basic.gtype phrase)) Lib.named_list;
       }
 
@@ -174,7 +178,7 @@ sig
   val init: t -> t
 
   (** Accessors *)
-  val tokens: t -> Grammars.token_table 
+  val tokens: t -> Grammars.token_table
   val set_tokens: t -> Grammars.token_table -> t
   val type_tokens: t -> Grammars.token_table
   val set_type_tokens: t -> Grammars.token_table -> t
@@ -182,27 +186,27 @@ sig
   val set_symbols: t -> Lexer.symtable -> t
   val overloads: t -> overload_table_t
   val set_overloads: t -> overload_table_t -> t
-  val term_parsers: 
+  val term_parsers:
     t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
-  val set_term_parsers: 
-    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list 
+  val set_term_parsers:
+    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
     -> t
-  val type_parsers: 
+  val type_parsers:
     t -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
-  val set_type_parsers: 
-    t 
-    -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list 
+  val set_type_parsers:
+    t
+    -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
     -> t
 end
 
 (** {7 Toplevel symbol and token functions} *)
 
-val add_token: 
+val add_token:
   Table.t -> Ident.t -> string -> fixity -> int -> Table.t
-(** 
+(**
    [add_token id sym fix prec]: Add symbol [sym] as representation for
-   term identifier [id], with fixity [fix] and precedence [prec]. 
-   Updates term symbol and token tables. 
+   term identifier [id], with fixity [fix] and precedence [prec].
+   Updates term symbol and token tables.
 *)
 
 val remove_token: Table.t -> string -> Table.t
@@ -213,10 +217,10 @@ val remove_token: Table.t -> string -> Table.t
 
 val add_type_token:
   Table.t -> Ident.t -> string -> fixity -> int -> Table.t
-(** 
+(**
    [add_type_token id sym fix prec]: Add symbol [sym] as representation for
-   type identifier [id], with fixity [fix] and precedence [prec]. 
-   Updates type symbol and token tables. 
+   type identifier [id], with fixity [fix] and precedence [prec].
+   Updates type symbol and token tables.
 *)
 
 val remove_type_token : Table.t -> string -> Table.t
@@ -225,23 +229,23 @@ val remove_type_token : Table.t -> string -> Table.t
    from the type symbol and token tables.
 *)
 
-val add_overload: 
+val add_overload:
   Table.t
-  -> string -> Theory.sym_pos -> (Ident.t * Basic.gtype) 
+  -> string -> sym_pos -> (Ident.t * Basic.gtype)
   -> Table.t
-(** 
+(**
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
-   type [ty] on symbol [sym]. Put [id] in position [pos]. 
+   type [ty] on symbol [sym]. Put [id] in position [pos].
 *)
-val get_overload_list: 
+val get_overload_list:
   Table.t-> string -> (Ident.t * Basic.gtype) list
-(** 
+(**
    [get_overload_list sym]: Get the list of identifiers overloaded on
    symbol [sym].
 *)
 val remove_overload:
   Table.t -> string -> Ident.t -> Table.t
-(** 
+(**
    [remove_overload sym id]: Remove [id] from the list of identifiers
    overloading symbol [sym].
 *)
@@ -263,13 +267,13 @@ val init_parsers : Table.t -> Table.t
 (** Initialise the type and term parsers *)
 
 val init : unit -> Table.t
-(** 
+(**
    Initialise the parser tables (symbols, tokens and overloading).
    This must be called before any of the parsers are used.
 *)
 
 
-(** {5 Toplevel Parser functions} 
+(** {5 Toplevel Parser functions}
 
    Parsers to read a phrase followed by an end of file/string.
 *)
@@ -301,9 +305,9 @@ val remove_symbol: Table.t -> string -> Table.t
 
 (** {7 User defined parsers} *)
 
-val term_parser_list : 
+val term_parser_list :
     Table.t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
-(** 
+(**
    The list of user defined term parsers. Parsers added to this list are
    used by the term parser {!Grammars.form}.
  *)
@@ -323,14 +327,14 @@ val remove_term_parser: Table.t -> string -> Table.t
    {!Parser.term_parser_list}. Raise [Not_found] if not present.
  *)
 
-val type_parser_list : 
+val type_parser_list :
   Table.t -> (string, Grammars.parser_info -> Basic.gtype phrase) Lib.named_list
-(** 
+(**
    The list of user defined type parsers. Parsers added to this list are
    used by the term parser {!Grammars.types}.
  *)
 
-val add_type_parser:  
+val add_type_parser:
   Table.t -> (string)Lib.position -> string
   -> (Grammars.parser_info -> Basic.gtype phrase)
   -> Table.t
@@ -345,7 +349,7 @@ val remove_type_parser: Table.t -> string -> Table.t
    {!Parser.type_parser_list}. Raise [Not_found] if not present.
  *)
 
-(** {7 Readers} 
+(** {7 Readers}
 
    Read and parse a string
 *)

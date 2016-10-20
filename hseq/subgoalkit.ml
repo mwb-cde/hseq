@@ -1,23 +1,23 @@
 (*----
- Name: subgoalkit.ml
- Copyright Matthew Wahab 2015
- Author: Matthew Wahab <mwb.cde@gmail.com>
+  Name: subgoalkit.ml
+  Copyright Matthew Wahab 2015-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 let subgoals_error s t =
   Term.term_error s (List.map Formula.term_of t)
@@ -114,11 +114,11 @@ struct
   let merge_tyenvs env1 env2 =
     let assign x env z =
       try
-	let y = Gtypes.lookup_var x env2
-	in
-	if Gtypes.equals x y
-	then raise (Failure "Can't merge type environments")
-	else Gtypes.bind x y env
+        let y = Gtypes.lookup_var x env2
+        in
+        if Gtypes.equals x y
+        then raise (Failure "Can't merge type environments")
+        else Gtypes.bind x y env
       with Not_found -> env
     in
     Gtypes.subst_fold assign env1 env1
@@ -206,12 +206,12 @@ struct
     | [] -> raise T.No_subgoals
     | (x::xs) ->
        let branch1 =
-	 apply_to_node ?report:report tac
-	   (mk_node (sqnt_tag x) (mk_env tyenv chngs) x)
+         apply_to_node ?report:report tac
+           (mk_node (sqnt_tag x) (mk_env tyenv chngs) x)
        in
        mk_branch tg
-	 (branch_env branch1)
-	 ((branch_sqnts branch1) @ xs)
+         (branch_env branch1)
+         ((branch_sqnts branch1) @ xs)
 
   (** [apply_to_each tac (Branch(tg, tyenv, sqnts, chngs))]: Apply
       tactic [tac] to each sequent in [sqnts] using [apply_to_node].
@@ -229,17 +229,17 @@ struct
     let rec app_aux ty gs cs lst =
       begin
         match gs with
-	| [] ->
+        | [] ->
            mk_branch tg (mk_env ty (Changes.rev cs)) (List.rev lst)
-	| (x::xs) ->
-	   let branch1 =
+        | (x::xs) ->
+           let branch1 =
              apply_to_node tac
                (mk_node (sqnt_tag x) (mk_env ty  chngs) x)
-	   in
-	   app_aux
+           in
+           app_aux
              (branch_tyenv branch1) xs
              (Changes.rev_append (branch_changes branch1) cs)
-	     (List.rev_append (branch_sqnts branch1) lst)
+             (List.rev_append (branch_sqnts branch1) lst)
       end
     in
     if sqnts = []
@@ -263,16 +263,16 @@ struct
     let rec app_aux ty d gs cs lst =
       begin
         match gs with
-	| [] ->
+        | [] ->
            (d, mk_branch tg (mk_env ty (Changes.rev cs)) (List.rev lst))
-	| (x::xs) ->
-	   let (v, branch1) =
+        | (x::xs) ->
+           let (v, branch1) =
              fold tac d (mk_node (sqnt_tag x) (mk_env ty chngs) x)
-	   in
-	   app_aux
+           in
+           app_aux
              (branch_tyenv branch1) v xs
              (Changes.rev_append (branch_changes branch1) cs)
-	     (List.rev_append (branch_sqnts branch1) lst)
+             (List.rev_append (branch_sqnts branch1) lst)
       end
     in
     if sqnts = []
@@ -301,13 +301,13 @@ struct
       | ([], gs) ->
          mk_branch tg (mk_env ty (Changes.rev cs)) (List.rev_append lst gs)
       | (tac::ts, (g:sqnt_ty)::gs) ->
-	 let branch1 =
+         let branch1 =
            apply_to_node tac
              (mk_node (sqnt_tag g) (mk_env ty chngs) g)
-	 in
-	 zip_aux (branch_tyenv branch1) ts gs
+         in
+         zip_aux (branch_tyenv branch1) ts gs
            (Changes.rev_append (branch_changes branch1) cs)
-	   (List.rev_append (branch_sqnts branch1) lst)
+           (List.rev_append (branch_sqnts branch1) lst)
     in
     match sqnts with
     | [] -> raise T.No_subgoals

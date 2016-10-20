@@ -1,7 +1,7 @@
 (*----
   Name: scope.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,8 +19,8 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** 
-    Scope of terms and types. 
+(**
+    Scope of terms and types.
 
     A scope stores information about the term and type identifiers
     which are available for use, the type of each declared identifier,
@@ -44,7 +44,7 @@ val marker_name : marker -> string
 
 type meta_db  (* = (Basic.binders)Treekit.StringTree.t  *)
 (** Meta variables
-    
+
     A record of the meta variables in a particular scope. These are
     only needed by goal scopes.
 *)
@@ -65,18 +65,18 @@ val meta_db_find: string -> meta_db -> Basic.binders
 (** Records for type definitions *)
 type type_record =
     {
-      name: string; 
-      args : string list; 
+      name: string;
+      args : string list;
       alias: gtype option;
       characteristics: string list
     }
 
 (** Scope records. *)
 type t=
-    { 
+    {
       curr_thy : marker;
       (** The marker of the current theory. *)
-      term_type : Ident.t -> gtype; 
+      term_type : Ident.t -> gtype;
       (** The type of a term identifier. *)
       term_thy : string -> Ident.thy_id;
       (** The theory in which a term is declared. *)
@@ -88,7 +88,7 @@ type t=
       (** Whether a theory is in scope (identified by name). *)
       marker_in_scope : marker -> bool ;
       (** Whether a theory is in scope (identified by marker). *)
-      meta_vars: meta_db 
+      meta_vars: meta_db
     (** A record of meta variables in this scope. *)
     }
 (** All lookup functions raise [Not_found] on failure. *)
@@ -124,7 +124,7 @@ val in_scope_marker : t -> marker -> bool
 
 (** {5 Extending scopes} *)
 
-val extend_with_terms: t -> (Ident.t * gtype) list -> t 
+val extend_with_terms: t -> (Ident.t * gtype) list -> t
 (** Extend a scope with a list of identifiers [[(I1, T1); ...; (In,
     Tn)]]. Each identifier [Ii] is given type [Ti].
 *)
@@ -151,7 +151,7 @@ val add_meta: t -> Basic.binders -> t
 *)
 
 val find_meta: t -> string -> Basic.binders
-(** [find_meta scp n]: Find the meta-variable named [n].  
+(** [find_meta scp n]: Find the meta-variable named [n].
 
     @raise [Not_found] if no meta-variable named [n].
 *)
@@ -160,4 +160,3 @@ val is_meta: t -> Basic.binders -> bool
 (** [is_meta scp v]: Test whether [v] is a meta variable in scope
     [scp].
 *)
-

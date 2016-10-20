@@ -27,12 +27,12 @@
 @copying
 This manual is for @HSeq{}.
 
-Copyright @copyright{} 2005-2013, M. Wahab
+Copyright @copyright{} 2005-2016, Matthew Wahab
 @end copying
 
 @titlepage
 @title @HSeq{} Description
-@author M. Wahab <@email{mwb.cde@@gmail.com}>
+@author Matthew Wahab <@email{mwb.cde@@gmail.com}>
 
 @page
 @vskip 0pt plus lfill
@@ -60,26 +60,26 @@ A theorem prover for higher-logic based on the sequent calculus.
 @end menu
 
 @c Indices
-@c @menu 
+@c @menu
 @c * Tactics Index:: Tactics Index.
-@c * Tacticals Index:: Tacticals Index.  
-@c * Conversion Index:: Conversion Index.  
-@c * Rules Index:: Rules Index.  
-@c * Function Index:: Function Index.  
-@c * Variable Index:: Variable Index.  
-@c * Concept Index:: Concept Index.  
+@c * Tacticals Index:: Tacticals Index.
+@c * Conversion Index:: Conversion Index.
+@c * Rules Index:: Rules Index.
+@c * Function Index:: Function Index.
+@c * Variable Index:: Variable Index.
+@c * Concept Index:: Concept Index.
 @c @end menu
 
 @c
 @c Chapters
-@c 
+@c
 
 @include intro.texi
 @c @include qstart.texi
 @c @include tactics.texi
 
 @c
-@c Indices 
+@c Indices
 @c
 
 @c

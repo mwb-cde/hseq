@@ -1,7 +1,7 @@
 (*----
   Name: defn.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -29,7 +29,7 @@ let mk_decln scp name ty =
   let check_exists() =
     try ignore(Scope.type_of scp name);
         raise (Term.term_error "Name exists in scope"
-	         [Term.mk_typed_ident name ty])
+                 [Term.mk_typed_ident name ty])
     with Not_found -> ()
   in
   let new_ty() = Gtypes.set_name scp ty in
@@ -38,7 +38,7 @@ let mk_decln scp name ty =
     try check_exists(); check_type (new_ty())
     with err ->
       raise (Term.add_term_error
-	       "Invalid declaration " [(Term.mk_typed_ident name ty)] err)
+               "Invalid declaration " [(Term.mk_typed_ident name ty)] err)
   in
   (name, ret_ty)
 
@@ -60,7 +60,7 @@ let rec mk_all_from_list scp b qnts =
       else
         raise (Term.term_error
                  "Invalid argument: wrong quantifier in argument"
-	         qnts)
+                 qnts)
     | (Basic.Id(n, ty)::qs) ->
       raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
     | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
@@ -92,11 +92,11 @@ let check_args_unique ags =
     match ys with
       | [] -> ()
       | (x::xs) ->
-	if List.exists (fun a -> a = x) xs
-	then raise
-	  (Report.error
-	     ("Identifier "^x^" appears twice in argument list"))
-	else check_aux xs
+        if List.exists (fun a -> a = x) xs
+        then raise
+          (Report.error
+             ("Identifier "^x^" appears twice in argument list"))
+        else check_aux xs
   in
   check_aux ags
 
@@ -106,7 +106,7 @@ let check_args_unique ags =
 let check_type_name scp n =
   try (ignore(Scope.defn_of scp n);
        raise (Gtypes.type_error "Type already exists"
-	        [Gtypes.mk_constr n []]))
+                [Gtypes.mk_constr n []]))
   with Not_found -> ()
 
 let check_well_defined scp args ty =
@@ -183,7 +183,7 @@ let make_witness_type scp dtype setP =
   in
   if not (Lterm.is_fun_ty fty)
   then raise (Term.add_term_error "Expected a function" [setP]
-	        (Gtypes.type_error "Not a function type" [fty]))
+                (Gtypes.type_error "Not a function type" [fty]))
   else
     let tty = Lterm.mk_fun_ty dtype (Lterm.mk_bool_ty()) in
     try
@@ -192,7 +192,7 @@ let make_witness_type scp dtype setP =
       Term.retype sbs setP
     with err ->
       raise (Term.add_term_error "Badly typed term" [setP]
-	       (Gtypes.add_type_error "Invalid type" [tty] err))
+               (Gtypes.add_type_error "Invalid type" [tty] err))
 
 (**
    [mk_rep_T set rep]:
@@ -293,7 +293,7 @@ struct
     (** A type alias: the type name, its arguments and the type it
         aliases *)
     | Subtype of (string * (string list)
-		  * Basic.gtype * Basic.term)
+                  * Basic.gtype * Basic.term)
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
@@ -336,15 +336,15 @@ struct
       and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
       in
       let lhs =
-	Lterm.mk_equality (Term.mk_app rep_term x1)
-	  (Term.mk_app rep_term x2)
+        Lterm.mk_equality (Term.mk_app rep_term x1)
+          (Term.mk_app rep_term x2)
       and rhs = Lterm.mk_equality x1 x2
       in
       let body = Lterm.mk_implies lhs rhs
       in
       Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
     and
-	mk_subtype_2 (setP:Basic.term) (rep: Ident.t) =
+        mk_subtype_2 (setP:Basic.term) (rep: Ident.t) =
       let y_b = Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty")
       and y1_b = Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty")
       in
@@ -354,7 +354,7 @@ struct
       in
       let lhs = Term.mk_app setP y
       and rhs =
-	Basic.Qnt(y1_b, Lterm.mk_equality y (Term.mk_app rep_term y1))
+        Basic.Qnt(y1_b, Lterm.mk_equality y (Term.mk_app rep_term y1))
       in
       Basic.Qnt(y_b, Lterm.mk_equality lhs rhs)
     in

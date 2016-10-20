@@ -1,7 +1,7 @@
 (*----
   Name: goals.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2014
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -32,7 +32,7 @@
    list.  and earlier goals following in order. Each goal is produced
    from its predecessor by applying a tactic. A tactic is undone by
    popping the top goal off the list.  *)
-module Proof: 
+module Proof:
 sig
   type t
 
@@ -52,7 +52,7 @@ end
 *)
 module ProofStack :
 sig
-  type t 
+  type t
 
   val is_empty: t -> bool
   val empty: unit -> t
@@ -74,7 +74,7 @@ sig
 
   (* Printer *)
   val print: Printer.ppinfo -> t -> unit
-end 
+end
 
 (** {7 General operations} *)
 
@@ -92,7 +92,7 @@ val drop : ProofStack.t -> ProofStack.t
 
 val goal: ProofStack.t -> Scope.t -> Basic.term -> ProofStack.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
-    the proof stack. 
+    the proof stack.
 
     Info: [ subgoals=[gl] ] [ cformulas=[trm] ]
     Where [gl] is the tag of the goal and [trm] the conclusion.
@@ -117,21 +117,21 @@ val result: ProofStack.t -> Logic.thm
     if the current goal has subgoals and is therefore not a theorem.
 *)
 
-val apply: 
-  ?report:(Logic.node -> Logic.branch -> unit) 
+val apply:
+  ?report:(Logic.node -> Logic.branch -> unit)
   -> Context.t
   -> Tactics.tactic -> Logic.goal -> Logic.goal
 (** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
     {!Logic.apply_to_goal}.
 
-    Applies [tac] to the first subgoal [n] of [goal]. Returns the goal 
+    Applies [tac] to the first subgoal [n] of [goal]. Returns the goal
     with the subgoals [tac n] appended to the remaining subgoals of goal.
 *)
 
 (** {7 Batch proofs} *)
 
-val prove_goal: 
-  Context.t -> Basic.term -> Tactics.tactic 
+val prove_goal:
+  Context.t -> Basic.term -> Tactics.tactic
   -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
     using tactic [tac] in scope [scp]. Used for batch proofs. If
@@ -147,7 +147,7 @@ val by_com :
     [!save_hook]. Used for interactive proofs.
 *)
 
-val by_list : 
+val by_list :
   Context.t -> Basic.term -> Tactics.tactic list -> Logic.thm
 (** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
@@ -163,7 +163,7 @@ val by_list :
 
 (** {7 Support for proof recording} *)
 
-val save_hook: ProofStack.t -> (unit -> unit) 
+val save_hook: ProofStack.t -> (unit -> unit)
 (** User interface hook called when an application a proof command is
     successful.
 
@@ -187,5 +187,3 @@ val get_asm: ProofStack.t -> int -> (Tag.t * Basic.term)
 
 val get_concl: ProofStack.t -> int -> (Tag.t * Basic.term)
 (** Get a conclusion from the current sequent. *)
-
-

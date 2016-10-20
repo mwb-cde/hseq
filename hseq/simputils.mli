@@ -1,7 +1,7 @@
 (*----
   Name: simputils.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -27,7 +27,7 @@ val is_variable: Basic.binders list -> Basic.term -> bool
     in an entry.
 *)
 
-val equal_upto_vars: 
+val equal_upto_vars:
   (Basic.term -> bool) -> Basic.term -> Basic.term -> bool
 (** [equal_upto_vars varp x y]: Terms [x] and [y] are equal upto the
     position of the terms for which [varp] is true (which are
@@ -68,4 +68,3 @@ val simp_beta_conv: Scope.t -> Logic.conv
     [t] is of the form << (% x: F) a >>.  Raise [Failure] if [t] is not
     an application.
 *)
-

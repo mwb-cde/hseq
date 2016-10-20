@@ -1,7 +1,7 @@
 (*----
   Name: lterm.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -27,13 +27,13 @@ open Term
 
 (** {5 Theories} *)
 
-val base_thy: Ident.thy_id 
+val base_thy: Ident.thy_id
 (** The name of the base theory. This is the theory at the root of the
     theory tree. The basic types and functions must be defined or
     declared in this theory. [base_thy="base"]
 *)
 
-val nums_thy: Ident.thy_id 
+val nums_thy: Ident.thy_id
 (** The name of the nums theory. This is the theory in which numbers
     and their operators are defined.
 *)
@@ -87,7 +87,7 @@ val is_fun_ty: gtype -> bool
 (** Test for a function type *)
 
 val mk_fun_ty_from_list: gtype list -> gtype -> gtype
-(** 
+(**
     [mk_fun_ty_from_list [a1; a2; ...; an]]: Make type "a1->(a2-> ...
     -> an)"
 *)
@@ -113,11 +113,11 @@ val iffid: Ident.t
 val impliesid: Ident.t
 val equalsid: Ident.t
 val equalssym: string
-(** 
+(**
     PP symbol for equals. (Should be in some other, more appropriate, module.)
 *)
 
-val anyid: Ident.t 
+val anyid: Ident.t
 (** An arbitrary choice operator, [base.any=base.epsilon(%x: true)] *)
 
 (** {7 Recognisers} *)
@@ -188,9 +188,9 @@ val mk_lam_ty: Scope.t -> string -> Basic.gtype -> term -> term
 
 (** {7 Equality under alpha-conversion} *)
 
-val alpha_convp_full: 
-  Scope.t 
-  -> Gtypes.substitution -> term -> term 
+val alpha_convp_full:
+  Scope.t
+  -> Gtypes.substitution -> term -> term
   -> Gtypes.substitution
 (** Test for alpha-convertiblity of terms w.r.t a type context.
     [alpha_convp_full scp tyenv x y] succeeds, returning an updated
@@ -201,7 +201,7 @@ val alpha_convp_full:
 val alpha_convp: Scope.t -> term -> term -> Gtypes.substitution
 (** A top-level for [alpha_convp_full]. *)
 
-val alpha_equals: Scope.t -> term -> term -> bool 
+val alpha_equals: Scope.t -> term -> term -> bool
 (** Test for equality modulo renaming of bound variables. This is a
     wrapper for [alpha_convp].
 *)
@@ -224,7 +224,7 @@ val beta_reduce: term -> term
 
 (** {7 Eta conversion} *)
 
-val eta_conv: term list -> term -> term 
+val eta_conv: term list -> term -> term
 (** [eta_conv xs term]: Apply eta-conversion.  Return [ (((% a .. b:
     term) x) .. y) ] where [xs = [ x ; .. ; y] ].
 *)
@@ -245,7 +245,7 @@ val is_closed: Basic.term list -> Basic.term -> bool
     body of a quantifier or occur in [ts].
 *)
 
-val close_term: 
+val close_term:
   ?qnt:Basic.quant -> ?free:(Basic.term -> bool)
   -> term -> term
 (** [close_term ?qnt ?free trm]: Close term [trm]. Make variables
@@ -272,14 +272,14 @@ val gen_term: Basic.binders list -> Basic.term -> Basic.term
 
 (** {5 Resolving names} *)
 
-val in_scope: (string, bool)Lib.substype 
+val in_scope: (string, bool)Lib.substype
   -> Scope.t -> term -> bool
 (** [in_scope memo spc thy t]: Check that term is in scope.  All
     identifiers and types must be declared in the given scope.  [memo]
     is used to memoise the lookup of names of free variables.
 *)
 
-val binding_set_names: 
+val binding_set_names:
   ?strict:bool
   -> ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t
@@ -295,7 +295,7 @@ val set_names: Scope.t  -> term -> term
     types of term [t].
 
     Each free variable in [t] with the same name as an identifier
-    defined in scope [scp] is replaced by the identifier ([Id]). 
+    defined in scope [scp] is replaced by the identifier ([Id]).
 
     The type of the free variable is kept as a [Typed] construct around the
     new [Id].
@@ -304,15 +304,15 @@ val set_names: Scope.t  -> term -> term
     unlike {!Lterm.resolve_term} which replaces them with new
     binders.
 *)
-  
-val resolve_term: 
-  Scope.t 
+
+val resolve_term:
+  Scope.t
   -> Term.substitution -> (Basic.term * Basic.term) list
-  -> Basic.term 
+  -> Basic.term
   -> (Basic.term * Term.substitution * (Basic.term * Basic.term) list)
 (** [resolve_term scp vars varlist trm]: Resolve names and variables
     in term [trm].
-    
+
     {ul
     {- Replace each free variable [Var(x, _)] in [trm] with the term
     associated with [x] in scope [scp].}
@@ -320,7 +320,7 @@ val resolve_term:
     {- Expands all identifier terms ([Id]) to their long form
     (theory+name).}
     {- Looks up the type [ty'] of each identifier term ([Id(n,
-    ty)]). 
+    ty)]).
 
     [vars]: an environment binding unknown variables to their
     replacements. [varlist] is the list to which to add the record
@@ -345,7 +345,7 @@ val resolve_term:
     {- Any bound variable occurs outside its binding term.}}
 *)
 
-val resolve: 
+val resolve:
   Scope.t -> Basic.term -> (Basic.term * (Basic.term * Basic.term) list)
 (** [resolve scp trm]: Resolve names and variables in term [trm].
     [resolve scp trm] is {!Lterm.resolve_term} [scp (empty_subst()) []
@@ -354,9 +354,9 @@ val resolve:
 
 (** {5 Substitution} *)
 
-val subst_closed: 
+val subst_closed:
   substitution -> substitution
-  -> Basic.term -> Basic.term 
+  -> Basic.term -> Basic.term
 (** [subst_closed qntenv sb t]: Substitute the bindings in [sb] in
     term [t]. Fail, raising [Failure], if any of the substituted terms
     lead to the term not being closed.
@@ -367,5 +367,3 @@ val subst_equiv: Scope.t -> term -> (term * term) list -> term
     [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
     to [ti] in [f]. Slower than {!Term.subst}.
 *)
-
-

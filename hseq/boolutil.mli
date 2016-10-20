@@ -1,7 +1,7 @@
 (*----
   Name: boolutil.mli
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -21,11 +21,11 @@
 
 (** Utility functions for boolean reasoning *)
 
-val find_unifier: 
-  Scope.t ->  Gtypes.substitution 
+val find_unifier:
+  Scope.t ->  Gtypes.substitution
   -> (Basic.term -> bool)
   -> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
-  -> Logic.tagged_form list 
+  -> Logic.tagged_form list
   -> (Tag.t * Term.substitution)
 (** [find_unifier scp typenv varp trm ?exclude forms]: Find the first
     formula in [forms] which unifies with [trm]. Return the tag of the
@@ -67,10 +67,10 @@ val dest_qnt_opt:
     Raises [Not_found] if no formula can be found which satisfies all
     the conditions.
 *)
-val find_qnt_opt: 
-  Basic.quant 
+val find_qnt_opt:
+  Basic.quant
   -> (Basic.term -> bool)
-  -> Logic.tagged_form list 
+  -> Logic.tagged_form list
   -> (Tag.t * Basic.binders list * Basic.term)
 
 val fresh_thm: Scope.t -> Logic.thm -> bool
@@ -84,15 +84,15 @@ val get_type_name: Basic.gtype -> Ident.t
 *)
 
 val dest_qnt_implies:
-  Basic.term 
+  Basic.term
   -> (Basic.binders list * Basic.term * Basic.term)
 (** [dest_qnt_implies term]: Split a term of the form [! a .. b: asm
     => concl] into [( a .. b, asm, concl)].
 *)
 
 val unify_in_goal:
-  (Basic.term -> bool) 
-  -> Basic.term -> Basic.term -> Logic.node 
+  (Basic.term -> bool)
+  -> Basic.term -> Basic.term -> Logic.node
   -> Term.substitution
 (** [unify_in_goal varp atrm ctrm goal]: Unify [atrm] with [ctrm] in
     the scope and type environment of [goal].  [varp] identifies the
@@ -100,11 +100,10 @@ val unify_in_goal:
 *)
 
 val close_lambda_app:
-  Basic.binders list 
-  -> Basic.term 
+  Basic.binders list
+  -> Basic.term
   -> (Basic.term * Basic.term list)
 (** [close_lambda_app term]: From term [((% a1 .. an: B) v1 .. vn)],
     return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]] where the [x1
     .. xn] close unbound variables in [B].
 *)
-

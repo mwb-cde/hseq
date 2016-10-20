@@ -1,19 +1,19 @@
 (*----
   Name: thydb.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
+  HSeq is free software; you can redistribute it and/or modify it under the
+  terms of the Lesser GNU General Public License as published by the Free
+  Software Foundation; either version 3, or (at your option) any later
+  version.
 
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+  more details.
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -243,7 +243,13 @@ val add_type_pp_rec:
 
 val get_type_pp_rec:
   string  -> string -> thydb -> Printer.record
-(** [get_type_pp_rec th n db]: Get the PP record [r] for type
+(** [get_type_pp_rec th (***
+val state: unit -> State.t
+(** The global state *)
+val set_state: State.t -> unit
+(** Set the global state *)
+***)
+n db]: Get the PP record [r] for type
     identifier [n] in theory [th].
 *)
 
@@ -262,13 +268,13 @@ val get_type_pplist:
 (** {7 Term Printer-Parser records} *)
 
 val add_term_pp_rec:
-  string -> (Printer.record * Theory.sym_pos) -> thydb  -> thydb
+  string -> (Printer.record * Parser.sym_pos) -> thydb  -> thydb
 (** [add_term_pp_rec n r db]: Add PP record [r] for term identifier
     [n] in the current theory.
 *)
 
 val get_term_pp_rec:
-  string  -> string -> thydb -> (Printer.record * Theory.sym_pos)
+  string  -> string -> thydb -> (Printer.record * Parser.sym_pos)
 (** [get_term_pp_rec th n db]: Get the PP record [r] for term
     identifier [n] in theory [th].
 *)
@@ -280,7 +286,7 @@ val remove_term_pp_rec: string -> string -> thydb -> thydb
 
 val get_term_pplist:
   string -> thydb
-  -> (Ident.t * (Printer.record * Theory.sym_pos)) list
+  -> (Ident.t * (Printer.record * Parser.sym_pos)) list
 (** [get_term_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)
@@ -367,12 +373,12 @@ sig
   type data =
     {
       load_fn: info -> Theory.saved_thy;
-	(** Function to find and load a theory file. *)
+        (** Function to find and load a theory file. *)
       build_fn: thydb -> string -> (thydb * Theory.thy list)
       (** Function to build the theory if it can't be loaded. The function
-	  should take the database in which the theory is to be built and return
-	  the database with the new theory as the current theory and the list of
-	  all theories that the newly built theory depends on.  *)
+          should take the database in which the theory is to be built and return
+          the database with the new theory as the current theory and the list of
+          all theories that the newly built theory depends on.  *)
     }
 
   val mk_data:

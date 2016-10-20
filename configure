@@ -25,8 +25,9 @@
    Emits ML code (for configure.data)
    and definitions for use in a makefile.
 
-   ML code is output to configure.data
+   ML code is output to config.ml and config.mli
    Makefile code is output to data.make
+   ML preprocesosr code is output to configure.data
 
    Usage:
    ocaml configure.ml [options]
@@ -40,7 +41,6 @@
 *)
 
 #warnings "-13";;
-
 
 (** File name utilities **)
 
@@ -58,7 +58,8 @@ let cwd = Sys.getcwd()
 
 (** Names of output files **)
 let output_dir = cwd
-let ml_data = filename output_dir "configure.data"
+let mli_data = filename output_dir "config.mli"
+let ml_data = filename output_dir "config.ml"
 let make_data = filename output_dir "config.make"
 
 (** String utilities **)
@@ -141,6 +142,7 @@ object
   (* Get an Arg.spec object *)
   method get_arg_spec: unit -> (string * Arg.spec * string)
   (* Outputs *)
+  method print_var_mli: out_channel -> unit
   method print_var_ml: out_channel -> unit
   method print_var_make: out_channel -> unit
 end
@@ -228,12 +230,21 @@ object (self)
     (get_str option, Arg.String set_value, self#make_help_msg())
 
   (* Outputs *)
+
+  method print_var_mli oc =
+    begin
+      match self#get_value() with
+        Some(x) ->
+ 	  Printf.fprintf oc "val value_%s : string\n" variable
+      | _ -> ()
+    end
+
   method print_var_ml oc =
     begin
       match self#get_value() with
         Some(x) ->
  	  Printf.fprintf oc
-            "DEFINE %s=\"%s\"\n" variable (stringify x)
+            "let value_%s=\"%s\"\n" variable (stringify x)
       | _ -> ()
     end
 
@@ -604,12 +615,22 @@ let make_outfile n =
   then stdout
   else open_out n
 
+let emit_mli ()=
+  let oc = make_outfile mli_data in
+  let print_obj oc obj = obj#print_var_mli oc
+  in
+    Printf.fprintf oc
+      "(* Configuration settings (auto-generated) *)\n\n";
+    List.iter (print_obj oc) settings;
+    close_out oc;
+    Printf.printf "Wrote file %s\n" mli_data
+
 let emit_ml ()=
   let oc = make_outfile ml_data in
   let print_obj oc obj = obj#print_var_ml oc
   in
     Printf.fprintf oc
-      "(* Definitions for OCaml pre-processor (auto-generated) *)\n\n";
+      "(* Configuration settings (auto-generated) *)\n\n";
     List.iter (print_obj oc) settings;
     close_out oc;
     Printf.printf "Wrote file %s\n" ml_data
@@ -625,6 +646,7 @@ let emit_make() =
     Printf.printf "Wrote file %s\n" make_data
 
 let emit () =
+  emit_mli();
   emit_ml();
   emit_make()
 

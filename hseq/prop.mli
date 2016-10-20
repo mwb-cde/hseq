@@ -1,7 +1,7 @@
 (*----
   Name: prop.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -36,7 +36,7 @@ val mk_true: unit -> ('a, 'b) boolexpr
 val mk_false: unit -> ('a, 'b) boolexpr
 val mk_and: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr
 val mk_not: ('a, 'b) boolexpr -> ('a, 'b) boolexpr
-val mk_or: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr 
+val mk_or: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr
 val mk_implies: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr
 val mk_iff: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr
 val mk_equals: ('a, 'b) boolexpr -> ('a, 'b) boolexpr -> ('a, 'b) boolexpr

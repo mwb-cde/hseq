@@ -158,11 +158,11 @@ let extract_consts vars env=
     match qs with
       | [] -> cnsts
       | x::xs ->
-	try
-	  let nv = Term.find (Basic.Bound x) env
-	  in
-	  extract_aux xs (nv::cnsts)
-	with Not_found -> extract_aux xs cnsts
+        try
+          let nv = Term.find (Basic.Bound x) env
+          in
+          extract_aux xs (nv::cnsts)
+        with Not_found -> extract_aux xs cnsts
   in
   List.rev (extract_aux vars [])
 
@@ -227,9 +227,9 @@ let seq rls ctxt (sq: Logic.node) =
     match fs with
       | [] -> sqs
       | r::rs ->
-	if has_subgoals sqs
-	then seq_aux rs (foreach r ctxt sqs)
-	else sqs
+        if has_subgoals sqs
+        then seq_aux rs (foreach r ctxt sqs)
+        else sqs
   in
   match rls with
     | [] -> raise (error "seq: empty tactic list")
@@ -242,8 +242,8 @@ let alt tacl ctxt (g: Logic.node) =
     match ts with
       | [] -> raise (error "alt: No tactic succeeded")
       | x::xs ->
-	try x ctxt g
-	with _ -> alt_aux xs
+        try x ctxt g
+        with _ -> alt_aux xs
   in alt_aux tacl
 
 let (//) tac1 tac2 ctxt g =
@@ -260,13 +260,13 @@ let fold_seq data rls (ctxt: Context.t) (sq: Logic.node) =
     match fs with
       | [] -> (d, sqs)
       | tac::rest ->
-	if has_subgoals sqs
-	then
+        if has_subgoals sqs
+        then
           let (d1, sqs1) =
             Logic.Subgoals.apply_fold (fun x -> tac x ctxt) d sqs
           in
           fold_aux rest d1 sqs1
-	else
+        else
           (d, sqs)
   in
   fold_aux rls data (Logic.Tactics.skip sq)
@@ -279,12 +279,12 @@ let fold_data tac a0 blist ctxt goal =
     match blist with
       | [] -> (a, sqs)
       | (b::rest) ->
-	if has_subgoals sqs
+        if has_subgoals sqs
         then
           let (a1, sqs1) = apply_tac a b sqs
           in
           fold_aux a1 rest sqs1
-	else (a, sqs)
+        else (a, sqs)
   in
   fold_aux a0 blist (pass ctxt goal)
 
@@ -356,7 +356,7 @@ let map_first tac l ctxt goal =
     match ls with
       | [] -> fail ~err:(error "map_first: no tactic succeeded.") ctxt0 g
       | x::xs ->
-	(try tac x ctxt0 g
+        (try tac x ctxt0 g
          with _ -> every_aux xs ctxt0 g)
   in
   every_aux l ctxt goal
@@ -369,8 +369,8 @@ let map_some tac lst ctxt goal =
       | [] -> fail ~err:(error "map_some: no tactic succeeded.") ctxt0 g
       | x::[] -> tac x ctxt0 g
       | x::xs ->
-	(try (tac x ++ some_aux nofail_tac xs) ctxt0 g
-	 with _ -> some_aux tac xs ctxt0 g)
+        (try (tac x ++ some_aux nofail_tac xs) ctxt0 g
+         with _ -> some_aux tac xs ctxt0 g)
   in
   some_aux tac lst ctxt goal
 
@@ -381,8 +381,8 @@ let seq_some tacs ctxt goal =
     match ls with
       | [] -> fail ~err:(Report.error "seq_some: no tactic succeeded.") ctxt g
       | x::xs ->
-	(try (x ++ map_every nofail_tac xs) ctxt g
-	 with _ -> some_aux xs ctxt g)
+        (try (x ++ map_every nofail_tac xs) ctxt g
+         with _ -> some_aux xs ctxt g)
   in
   some_aux tacs ctxt goal
 
@@ -597,18 +597,18 @@ let betaA ?a ctxt goal =
     in
     seq
       [
-	cut thm;
-	(?> (fun info1 g1 ->
-	  let tlbl =
-	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
-	  in
-	  seq
-	    [
-	      substA [tlbl] albl;
-	      (?> (fun info2 g2 ->
+        cut thm;
+        (?> (fun info1 g1 ->
+          let tlbl =
+            ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
+          in
+          seq
+            [
+              substA [tlbl] albl;
+              (?> (fun info2 g2 ->
                 ((fun _ -> Logic.Tactics.deleteA tlbl)
                  ++ set_changes_tac info2) g2))
-	    ] g1))
+            ] g1))
       ] ctxt0 g
   in
   match a with
@@ -627,18 +627,18 @@ let betaC ?c ctxt goal =
     in
     seq
       [
-	cut thm;
-	(?> (fun info1 g1 ->
-	  let tlbl =
-	    ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
-	  in
-	  seq
-	    [
-	      substC [tlbl] clbl;
+        cut thm;
+        (?> (fun info1 g1 ->
+          let tlbl =
+            ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
+          in
+          seq
+            [
+              substC [tlbl] clbl;
               (?> (fun info2 g2 ->
-	        ((fun _ -> Logic.Tactics.deleteA tlbl)
+                ((fun _ -> Logic.Tactics.deleteA tlbl)
                  ++ set_changes_tac info2) g2))
-	    ] g1))
+            ] g1))
       ] ctxt1 g
   in
   match c with
@@ -650,8 +650,8 @@ let beta_tac ?f ctxt goal =
   try
     seq_some
       [
-	betaC ?c:f;
-	betaA ?a:f
+        betaC ?c:f;
+        betaA ?a:f
       ] ctxt goal
   with err -> raise (add_error "beta_tac" err)
 
@@ -686,10 +686,10 @@ let find_basic asm concl node =
       | [] -> raise Not_found
       | cform::cs ->
         begin
-	  match find_match (drop_tag cform) with
-	    | Some aform ->
-	      (ftag (drop_formula aform), ftag (drop_formula cform))
-	    | None -> find_basic_aux cs
+          match find_match (drop_tag cform) with
+            | Some aform ->
+              (ftag (drop_formula aform), ftag (drop_formula cform))
+            | None -> find_basic_aux cs
         end
   in
   find_basic_aux node_concls
@@ -704,7 +704,7 @@ let basic ?a ?c ctxt goal =
     | _ ->
       begin
         match Lib.try_find (find_basic a c) goal with
-	  | None -> raise (error "basic: failed")
+          | None -> raise (error "basic: failed")
           | Some(al, cl) ->
             Logic.Tactics.basic al cl goal
       end
@@ -733,11 +733,11 @@ let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
       try Unify.unify scope concl_varp asm concl_body
       with _ ->
         (* unify asm_body and concl with asm_vars *)
-	try Unify.unify scope asm_varp asm_body concl
-	with _ ->
+        try Unify.unify scope asm_varp asm_body concl
+        with _ ->
           (* unify asm_body and concl_body with all vars *)
-	  try Unify.unify scope asm_varp asm_body concl_body
-	  with _ -> raise (error "Can't unify formulas")
+          try Unify.unify scope asm_varp asm_body concl_body
+          with _ -> raise (error "Can't unify formulas")
   in
   let asm_consts = extract_consts asm_vars env1
   and concl_consts = extract_consts concl_vars env1
@@ -776,20 +776,20 @@ let unify_tac ?a ?c ctxt goal =
       | None -> asms_of sqnt
       | Some(l) ->
         begin
-	  try [get_tagged_asm l goal]
-	  with Not_found ->
-	    raise (error "unify_tac: No such assumption")
-	    | err -> raise (add_error "unify_tac" err)
+          try [get_tagged_asm l goal]
+          with Not_found ->
+            raise (error "unify_tac: No such assumption")
+            | err -> raise (add_error "unify_tac" err)
         end
   and concls =
     match c with
       | None -> concls_of sqnt
       | Some(l) ->
-	begin
+        begin
           try [get_tagged_concl l goal]
-	  with Not_found ->
-	    raise (error "unify_tac: No such conclusion")
-	    | err -> raise (add_error "unify_tac" err)
+          with Not_found ->
+            raise (error "unify_tac: No such conclusion")
+            | err -> raise (add_error "unify_tac" err)
         end
   in
   let tac c ctxt0 g = map_first (fun x -> unify_engine_tac x c) asms ctxt0 g
@@ -818,7 +818,7 @@ let named_tac tac anames cnames ctxt goal =
         let br1 = foreach (name_tac x y) ctxt br in
         let chng1 = Changes.rev_append (Info.branch_changes br1) chng
         in
-	name_list_tac xs ys chng1 br1
+        name_list_tac xs ys chng1 br1
   in
   let g1 = tac ctxt goal in
   let chng1 = Info.branch_changes g1 in
@@ -849,12 +849,12 @@ let find_match_formulas typenv scp varp t fs=
       | [] -> raise Not_found
       | tf::tfs ->
         begin
-	  try
-	    let tg, f = tf
-	    in
-	    ignore(Unify.unify ~typenv:typenv scp varp t (Formula.term_of f));
-	    tg
-	  with _ -> match_aux tfs
+          try
+            let tg, f = tf
+            in
+            ignore(Unify.unify ~typenv:typenv scp varp t (Formula.term_of f));
+            tg
+          with _ -> match_aux tfs
         end
   in
   Logic.FTag (match_aux fs)
@@ -912,7 +912,7 @@ let specA ?a ctxt g =
     [
       seq
         [
-	  repeat (existA_rule ?asm:a);
+          repeat (existA_rule ?asm:a);
           (?> (fun info ->
             (set_changes_tac
                (Changes.make
@@ -935,7 +935,7 @@ let specC ?c ctxt g =
     [
       seq
         [
-	  repeat (allC_rule ?conc:c);
+          repeat (allC_rule ?conc:c);
           (?> (fun info ->
             (set_changes_tac
                (Changes.make
@@ -1002,26 +1002,26 @@ let conv_rule (ctxt: Context.t) conv thm =
       in
       seq
         [
-	  cut thm;
+          cut thm;
           (?> (fun info ->
             begin
-	      let atag =
-	        Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
-	      in
-	      seq
-	        [
-	          cut rule;
+              let atag =
+                Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
+              in
+              seq
+                [
+                  cut rule;
                   (?> (fun info ->
-	            let rtag =
-		      Lib.get_one (Info.aformulas info)
-		        (error "pure_rewrite_rule: cut rule")
-	            in
-	            seq
-		      [
-		        substA [ftag rtag] (ftag atag);
-		        basic ~a:(ftag atag) ~c:(ftag ctag)
-		      ]))
-	        ]
+                    let rtag =
+                      Lib.get_one (Info.aformulas info)
+                        (error "pure_rewrite_rule: cut rule")
+                    in
+                    seq
+                      [
+                        substA [ftag rtag] (ftag atag);
+                        basic ~a:(ftag atag) ~c:(ftag ctag)
+                      ]))
+                ]
             end))
         ] ctxt1 g))
   in
@@ -1145,27 +1145,27 @@ let extract_rule node src=
   let (form, p) =
     match src with
       | Asm(x) ->
-	  let sq =
-	    Subgoals.node_sqnt
-	      (Lib.dest_option ~err:(error "extract_rule") node)
-	  in
-	  let asm =
-	    try drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	    with Not_found ->
-	      raise (error "extract_rule: can't find tagged assumption")
-	  in
- 	  (asm, None)
+          let sq =
+            Subgoals.node_sqnt
+              (Lib.dest_option ~err:(error "extract_rule") node)
+          in
+          let asm =
+            try drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
+            with Not_found ->
+              raise (error "extract_rule: can't find tagged assumption")
+          in
+          (asm, None)
       | OAsm(x, order) ->
-	let sq =
-	  Subgoals.node_sqnt
+        let sq =
+          Subgoals.node_sqnt
             (Lib.dest_option ~err:(error "extract_rule") node)
-	in
-	let asm=
-	  try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	  with Not_found ->
-	    raise (error "extract_rule: can't find tagged assumption")
-	in
-	(asm, Some(order))
+        in
+        let asm=
+          try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+          with Not_found ->
+            raise (error "extract_rule: can't find tagged assumption")
+        in
+        (asm, Some(order))
       | RRThm(x) -> (formula_of x, None)
       | ORRThm(x, order) -> (formula_of x, Some(order))
   in

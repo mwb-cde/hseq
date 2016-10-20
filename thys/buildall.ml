@@ -1,9 +1,9 @@
 (*----
- Name: buildall.ml
- Copyright Matthew Wahab 2005-2016
- Author: Matthew Wahab <mwb.cde@gmail.com>
+  Name: buildall.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
   HSeq is free software; you can redistribute it and/or modify it under the
   terms of the Lesser GNU General Public License as published by the Free
@@ -42,15 +42,13 @@ open Userlib
     dependencies (other than the OCaml standad libraries).
 *)
 
+(** Initialise hseq *)
 #use "local_thy_config.ml";;
 
-(** Add the source include directories *)
+(** Add the source include directories and reset the system. *)
 let _ =
-  Settings.include_dirs :=
-    List.append local_include_dirs (!Settings.include_dirs);;
-
-(** Initialise hseq *)
-#use "hseqstart.ml";;
+  Settings.set_include_dirs local_include_dirs;
+  reset();;
 
 (**
    This is part of the standard library so clear the theory base name.

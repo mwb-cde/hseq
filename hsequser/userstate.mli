@@ -1,7 +1,7 @@
 (**----
    Name: userlib.mli
-   Copyright M Wahab 2013-2014
-   Author: M Wahab  <mwb.cde@gmail.com>
+   Copyright Matthew Wahab 2013-2016
+   Author: Matthew Wahab  <mwb.cde@gmail.com>
 
    This file is part of HSeq
 
@@ -36,7 +36,7 @@ end
 
 (** {5 Global state} *)
 
-module State: 
+module State:
 sig
   type t =
     {
@@ -46,7 +46,7 @@ sig
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
     }
-      
+
   val empty: unit -> t
 
   val context: t -> Context.t
@@ -70,16 +70,9 @@ sig
   val base_thy_builder: t -> (t -> t)
   val set_base_thy_builder: t -> (t -> t) -> t
 
-  val thyset: t -> Lib.StringSet.t 
+  val thyset: t -> Lib.StringSet.t
   val set_thyset: t -> Lib.StringSet.t -> t
 end
-
-(***
-val state: unit -> State.t
-(** The global state *)
-val set_state: State.t -> unit
-(** Set the global state *)
-***)
 
 val context: State.t -> Context.t
 (** The global context *)
@@ -116,7 +109,7 @@ val base_thy_builder: State.t -> (State.t -> State.t)
 val set_base_thy_builder: State.t -> (State.t -> State.t) -> State.t
 (** Set the base theory builder *)
 
-val thyset: State.t -> Lib.StringSet.t 
+val thyset: State.t -> Lib.StringSet.t
 val set_thyset: State.t -> Lib.StringSet.t -> State.t
 val thyset_add: State.t -> string -> State.t
 val thyset_mem: State.t -> string -> bool
@@ -135,93 +128,6 @@ val init_proofstack: State.t -> State.t
 (** Initialize the global proofstack *)
 val init_base_thy_builder: State.t -> State.t
 (** Initialize the base theory builder *)
-
-(***
-module Access :
-sig
-  val context: unit -> Context.t
-  (** The global context *)
-  val set_context: Context.t -> unit
-  (** Set the global context *)
-  val init_context: unit -> unit
-  (** Initialize the global context *)
-
-  val scope: unit -> Scope.t
-  (** The global Scope *)
-  val set_scope: Scope.t -> unit
-  (** Set the global scope *)
-  val init_scope: unit -> unit
-  (** Initialize the global scope *)
-
-  val ppinfo: unit -> Printer.ppinfo
-  (** The global pretty printers *)
-  val set_ppinfo: Printer.ppinfo -> unit
-  (** Set the global pretty printers *)
-  val init_ppinfo: unit -> unit
-  (** Initialize the global pretty printers *)
-
-  val parsers: unit -> Parser.Table.t
-  (** The global parser tables *)
-  val set_parsers: Parser.Table.t -> unit
-  (** Set the global parser tables *)
-  val init_parsers: unit -> unit
-  (** Initialize the global parser tables *)
-
-  val simpset: unit -> Simpset.simpset
-  (** The standard simplifier set *)
-  val set_simpset: Simpset.simpset -> unit
-  (** Set the global simplifier set *)
-  val init_simpset: unit -> unit
-  (** Initialize the global simpset *)
-
-  val thyset: unit -> Lib.StringSet.t 
-  val set_thyset: Lib.StringSet.t -> unit
-  val thyset_add: string -> unit
-  val thyset_mem: string -> bool
-
-  val proofstack: unit -> Goals.ProofStack.t
-  (** The standard proofstack *)
-  val set_proofstack: Goals.ProofStack.t -> unit
-  (** Set the global proofstack *)
-  val init_proofstack: unit -> unit
-(** Initialize the global proofstack *)
-end
-***)
-
-(****
-module Loader :
-sig
-
-  (** {5 Theory building and loading} *)
-(***
-  (** Get and set functions to load/use a file *)
-  val set_load_file:
-    (string -> unit) -> unit
-  val get_load_file:
-    unit -> (string -> unit)
-  val set_use_file:
-    (?silent:bool -> string -> unit) -> unit
-  val get_use_file:
-    unit -> (?silent:bool -> string -> unit)
-***)
-
-  (** Update a context with the functions to load/use a file *)
-  val set_file_handlers: State.t -> State.t
-
-  (** Default functions *)
-  val default_thy_fn: 
-    Context.t -> Thydb.thydb -> Theory.contents -> unit
-  val default_load_fn: 
-    Context.t -> Thydb.Loader.info -> Theory.saved_thy
-  val default_build_fn: 
-    Context.t -> Thydb.thydb -> string 
-    -> (Thydb.thydb * Theory.thy list)
-  val default_loader: Context.t -> Thydb.Loader.data
-
-  val load_file: string -> unit
-  val script_file: ?silent:bool -> string -> unit
-end
-***)
 
 module Init :
 sig

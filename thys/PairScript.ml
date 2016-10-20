@@ -1,7 +1,7 @@
 (*----
- Name: PairScript.ml
- Copyright Matthew Wahab 2005-2016
- Author: Matthew Wahab <mwb.cde@gmail.com>
+  Name: PairScript.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -17,7 +17,7 @@
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  ----*)
 
 (**
    Product of types.
@@ -31,8 +31,9 @@ let _ = compile [] "pairLib.mli";;
 let _ = compile [] "pairLib.ml";;
 let _ = add_file ~use:true "pairLib.cmo";;
 
-let pair_prec = PairLib.pair_prec
-let pair_fixity = PairLib.pair_fixity
+(** [pair_prec] and [pair_fixity] must agree with the values in pairLib.ml. *)
+let pair_prec = 10
+let pair_fixity = Printer.infixr
 
 (** {5 Definition and basic properties of pairs} *)
 
@@ -83,19 +84,19 @@ let mk_pair_eq =
   [flatten_tac ++ equals_tac ++ iffE
       --
       [ (* cut_back_tac mk_pair_eq1 ++ basic; *)
-	(match_asm << X = Y >>
-	 (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
-	  ++ inst_tac [ << _a >> ]
-	  ++ (match_asm << L = R >>
-	      (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
-	  ++ inst_tac [ << _b >> ]
-	  ++ (match_asm << A = B >>
-	      (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))
-	  ++ unfold "mk_pair" ++ beta_tac
-	  ++ replace_tac
-	  ++ split_tac ++ eq_tac;
-	(* 2 *)
-	flatten_tac ++ replace_tac ++ eq_tac]
+        (match_asm << X = Y >>
+         (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
+          ++ inst_tac [ << _a >> ]
+          ++ (match_asm << L = R >>
+              (fun l -> once_rewrite_tac ?dir:None [thm "function_eq"] ~f:l))
+          ++ inst_tac [ << _b >> ]
+          ++ (match_asm << A = B >>
+              (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))
+          ++ unfold "mk_pair" ++ beta_tac
+          ++ replace_tac
+          ++ split_tac ++ eq_tac;
+        (* 2 *)
+        flatten_tac ++ replace_tac ++ eq_tac]
  ];;
 
 let rep_abs_pair=
@@ -141,24 +142,24 @@ let basic_pair_eq =
    flatten_tac
      ++ equals_tac
      ++ iffE
-	 --
-	 [
-	  (* 1 *)
-	  unfold "pair"
-	    ++ cut_thm "inj_on_make_PAIR"
-	    ++ unfold "inj_on"
-	    ++ inst_tac [ << mk_pair _a _b >>; << mk_pair _x _y >> ]
-	    ++ cut_thm "mk_pair_is_pair"
-	    ++ inst_tac [ << _a >> ; << _b >> ]
-	    ++ cut_thm "mk_pair_is_pair"
-	    ++ inst_tac [ << _x >> ; << _y >> ]
-	    ++ (implA -- [conjC ++ basic] )
-	    ++ (implA -- [basic])
-	    ++ rewrite_tac [thm "mk_pair_eq"]
-	    ++ basic;
-	  (* 2 *)
-	  flatten_tac++ replace_tac ++ eq_tac
-	]
+         --
+         [
+          (* 1 *)
+          unfold "pair"
+            ++ cut_thm "inj_on_make_PAIR"
+            ++ unfold "inj_on"
+            ++ inst_tac [ << mk_pair _a _b >>; << mk_pair _x _y >> ]
+            ++ cut_thm "mk_pair_is_pair"
+            ++ inst_tac [ << _a >> ; << _b >> ]
+            ++ cut_thm "mk_pair_is_pair"
+            ++ inst_tac [ << _x >> ; << _y >> ]
+            ++ (implA -- [conjC ++ basic] )
+            ++ (implA -- [basic])
+            ++ rewrite_tac [thm "mk_pair_eq"]
+            ++ basic;
+          (* 2 *)
+          flatten_tac++ replace_tac ++ eq_tac
+        ]
  ]
 ;;
 
@@ -176,10 +177,10 @@ let fst_thm =
      [
       inst_tac [ << _x >> ; << _y >> ] ++ eq_tac;
       flatten_tac
-	++ rewrite_tac [basic_pair_eq]
-	++ flatten_tac
-	++ (replace_tac ~dir:rightleft)
-	++ eq_tac
+        ++ rewrite_tac [basic_pair_eq]
+        ++ flatten_tac
+        ++ (replace_tac ~dir:rightleft)
+        ++ eq_tac
     ]
  ];;
 
@@ -196,10 +197,10 @@ let snd_thm =
      [
       inst_tac [ << _y >>; << _x >> ] ++ eq_tac;
       flatten_tac
-	++ rewrite_tac [basic_pair_eq]
-	++ flatten_tac
-	++ (replace_tac ~dir:rightleft)
-	++ eq_tac
+        ++ rewrite_tac [basic_pair_eq]
+        ++ flatten_tac
+        ++ (replace_tac ~dir:rightleft)
+        ++ eq_tac
     ]
  ];;
 
@@ -214,9 +215,9 @@ let pair_inj =
      ++ flatten_tac
      ++ inst_tac [ << _x >> ; << _y >> ]
      ++ (match_asm << (dest_PAIR x) = Y >>
-	 (fun l -> replace_tac ~dir:rightleft ~asms:[l] ?f:None))
+         (fun l -> replace_tac ~dir:rightleft ~asms:[l] ?f:None))
      ++ (match_asm << (make_PAIR (dest_PAIR x)) = Y >>
-	 (fun l -> replace_tac ?dir:None ~asms:[l] ?f:None))
+         (fun l -> replace_tac ?dir:None ~asms:[l] ?f:None))
      ++ eq_tac
  ];;
 
@@ -252,7 +253,7 @@ let pair_eq =
   [
    flatten_tac
      ++ cut ~inst:[ << fst _p >>; << snd _p >> ;
-	       << fst _q >>; << snd _q >> ] basic_pair_eq
+               << fst _q >>; << snd _q >> ] basic_pair_eq
      ++ rewrite_tac [surjective_pairing]
      ++ basic
  ];;

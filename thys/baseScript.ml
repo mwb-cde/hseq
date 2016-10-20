@@ -1,33 +1,33 @@
 (*----
- Name: baseScript.ml
- Copyright M Wahab 2005-2013
- Author: M Wahab  <mwb.cde@gmail.com>
+  Name: baseScript.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 begin_theory "base" [];;
 
 (** Types *)
 
-(** 
+(**
    Grammar:
-   type ::=  
-           bool           
-         | ind            
+   type ::=
+           bool
+         | ind
          | ('a ->'b)      (100, infixr, "FUN")
 
    Default precedence=10, assoc = non_assoc, fixity=non_fix
@@ -39,9 +39,9 @@ let _ = typedef <:def<: ind >>;;
 
 (** Terms *)
 
-(** 
+(**
    Grammar:
-   term ::=  
+   term ::=
     ~x                 (205, prefix, Lterm.negid) {Boollib.PP}
    | not x             (205, prefix, Lterm.negid) {Boollib.PP}
    | x = y             (200, infixl, Lterm.equalsid)
@@ -66,27 +66,27 @@ let _ = typedef <:def<: ind >>;;
 
 (**
    Negation:
-   Negation has its own printer [BoolLib.PP.negation_printer] 
+   Negation has its own printer [BoolLib.PP.negation_printer]
 *)
-let _ = 
+let _ =
   let prec = BoolPP.negation_pprec.Printer.prec
   and fixity = BoolPP.negation_pprec.Printer.fixity
-  in 
+  in
   declare
-    (Commands.read_unchecked 
+    (Commands.read_unchecked
        ((Ident.name_of Lterm.notid)^": bool -> bool"))
     ~pp:(prec, fixity, Some "~");;
 
-let _ = 
+let _ =
   let prec = BoolPP.negation_pprec.Printer.prec
   and fixity = BoolPP.negation_pprec.Printer.fixity
-  in 
+  in
   add_term_pp "not" prec fixity (Some "not");;
 
 (** Equality *)
 let _ =
 declare
-(Commands.read_unchecked 
+(Commands.read_unchecked
    ((Ident.name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
   ~pp:(200, infixl, (Some "="));;
 
@@ -94,7 +94,7 @@ declare
 let _ =
 declare
 (Commands.read_unchecked ((Ident.name_of Lterm.andid)^":bool->bool->bool"))
-  ~pp:(185, infixr, Some "and");; 
+  ~pp:(185, infixr, Some "and");;
 
 let _ = add_term_pp "and" 185 infixr (Some "&");;
 
@@ -102,24 +102,24 @@ let _ = add_term_pp "and" 185 infixr (Some "&");;
 let or_def =
 define
 (Commands.read_defn ((Ident.name_of Lterm.orid)
-	    ^" x y = (not ((not x) and (not y)))"))
+            ^" x y = (not ((not x) and (not y)))"))
   ~pp:(190, infixr, Some "or");;
 
 let _ = add_term_pp "or" 190 infixr (Some "|");;
 
 (** Implication *)
-let implies_def = 
+let implies_def =
 define
 (Commands.read_defn ((Ident.name_of Lterm.impliesid)
-	    ^" x y = (not x) or y"))
+            ^" x y = (not x) or y"))
   ~pp:(195, infixr, Some "=>");;
 
 (** Equivalance *)
 
-let iff_def = 
+let iff_def =
 define
 (Commands.read_defn ((Ident.name_of Lterm.iffid)
-	    ^" x y = (x => y) and (y => x)"))
+            ^" x y = (x => y) and (y => x)"))
   ~pp:(180, infixn, Some "iff");;
 
 
@@ -129,35 +129,35 @@ define
 let false_def = axiom "false_def" << false = (not true) >>;;
 
 (** Boolean cases *)
-let bool_cases_ax = 
+let bool_cases_ax =
   axiom "bool_cases" << !x: (x=true) or (x=false) >>;;
 
 (** Equality *)
 
-let eq_refl_ax = 
+let eq_refl_ax =
   axiom "eq_refl" << !x: x=x >>;;
 
 let one_one_def =
-  define 
+  define
     <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1=x2) >>;;
 
-let onto_def = 
+let onto_def =
   define <:def< onto f = !y: ?x: y=(f x) >>;;
 
-let infinity_ax = 
+let infinity_ax =
   axiom "infinity_ax" << ?(f: ind -> ind): (one_one f) and (onto f) >>;;
 
-let extensionality = 
+let extensionality =
   axiom "extensionality"  << !f g: (!x: (f x) = (g x)) => (f = g) >>;;
 
 (** Specification operator (epsilon) *)
 let _ = declare << epsilon: ('a -> bool) -> 'a >>;;
 
-let epsilon_ax = 
+let epsilon_ax =
   axiom "epsilon_ax" << !P: (?x: P x) => (P(epsilon P)) >>;;
 
 (** Conditional *)
-let cond_def = 
+let cond_def =
   define
     <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f)))) >>;;
 
@@ -166,11 +166,10 @@ let any_def = define <:def< any = epsilon (%a: true) >>;;
 
 (** Unique existence *)
 let exists_unique_def =
-  define 
+  define
     <:def<
-  EXISTS_UNIQUE p = 
+  EXISTS_UNIQUE p =
   (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
     >>;;
 
 end_theory();;
-

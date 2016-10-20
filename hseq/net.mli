@@ -1,7 +1,7 @@
 (*----
   Name: net.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -20,7 +20,7 @@
   ----*)
 
 (**
-   Term Nets, structures to store data indexed by a term.  
+   Term Nets, structures to store data indexed by a term.
 
    Look-up is by inexact matching of a term against the keys to get a
    list of possible matches. More exact mactching (such as
@@ -29,7 +29,7 @@
    A net is a tree having, at each level, a list of labels paired with
    trees. Each label corresponds to a part of a term. An index is
    formed by treating a term as a list of labels, this list describes
-   the path through the tree to the data. 
+   the path through the tree to the data.
 
    Nets are used to cut the number of elements that need to be
    considered by more expensive matching, particularly
@@ -38,20 +38,20 @@
    favour more exact matching. When a term matches both a constant and
    a unification variable, the constant will occur first in the list
    of possibilities returned by look-up operations.
-*) 
+*)
 
 (** {5 Labels} *)
 
-(** 
+(**
     Labels corresponding to the parts of terms considered during
     matching.
-*) 
+*)
 type label =
-  | Var 
+  | Var
   | App
   | Bound of Basic.quant
   | Quant of Basic.quant
-  | Const of Basic.const_ty 
+  | Const of Basic.const_ty
   | Cname of Ident.t
   | Cmeta of string
   | Cfree of string
@@ -68,7 +68,7 @@ type label =
    to [term_to_label]. Initially, it should be [[]].
 
    Examples:
-   
+
    [?y: ! x: (x | z) & y]  (with variable z)
    -->
    [[Qnt(?); Qnt(!); App; App; Bound(!); Var; Bound(?)]]
@@ -77,19 +77,19 @@ type label =
    -->
    [[Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]]
 *)
-val term_to_label: 
-  (Basic.term -> bool) -> Basic.term -> Basic.term list 
+val term_to_label:
+  (Basic.term -> bool) -> Basic.term -> Basic.term list
   -> (label * Basic.term list)
 
 (** {5 Nets} *)
 
-(** 
+(**
     Nets. Each node holds: data at this level, nets tagged by constant
     labels, nets tagged by [Var].
 *)
-type 'a net = Node of ('a list                  
-	               * (label * 'a net) list  
-	               * ('a net) option )
+type 'a net = Node of ('a list
+                       * (label * 'a net) list
+                       * ('a net) option )
 
 (** {7 Operations on nets} *)
 
@@ -100,7 +100,7 @@ val empty: unit -> 'a net
 val is_empty: 'a net -> bool
 
 val lookup: 'a net -> Basic.term -> 'a list
-(** 
+(**
     [lookup net t]: Return the list of items indexed by terms matching
     term [t].  Ordered with the best matches first.
 
@@ -111,10 +111,10 @@ val lookup: 'a net -> Basic.term -> 'a list
     rejected by exact matching more quickly than [t2] would be.)
 *)
 
-val update: 
-  ('a net -> 'a net) -> (Basic.term -> bool) 
+val update:
+  ('a net -> 'a net) -> (Basic.term -> bool)
   -> 'a net -> Basic.term -> 'a net
-(** 
+(**
     [update f net trm]: Apply function [f] to the subnet of [net]
     identified by [trm] to update the subnet. Propagate the changes
     through the net. If applying function [f] results in an empty
@@ -123,22 +123,22 @@ val update:
     interfaces to [update].
 *)
 
-val add: 
-  (Basic.term -> bool) -> 'a net 
+val add:
+  (Basic.term -> bool) -> 'a net
   -> Basic.term -> 'a
   -> 'a net
-(** 
+(**
     [add varp net t r]: Add [r], indexed by term [t] with variables
     identified by [varp] to [net].  Replaces but doesn't remove
     previous bindings of [t].
 *)
 
-val insert: 
+val insert:
   ('a -> 'a -> bool) ->
-  (Basic.term -> bool) -> 'a net 
+  (Basic.term -> bool) -> 'a net
   -> Basic.term -> 'a
   -> 'a net
-(** 
+(**
     [insert order varp net t r]: Add data [r], indexed by term [t] with
     variables identified by [varp] to [net]. Data [r] is stored in the
     order defined by order (smaller terms first).  Replaces but doesn't
@@ -147,11 +147,11 @@ val insert:
 
 val delete: (Basic.term -> bool) -> 'a net
   -> Basic.term -> ('a -> bool) -> 'a net
-(** 
+(**
     [delete varp net t test]: Remove data indexed by [t] in net and
     satisfying test.  Fails silently if [t] is not found.  Needs the
     same [varp] as used to add the term to the net.
-*) 
+*)
 
 val iter: ('a -> unit) -> 'a net -> unit
 (**
@@ -165,6 +165,6 @@ val print: ('a -> unit) -> 'a net -> unit
 
 (** {7 Debugging} *)
 
-val insert_in_list: 
+val insert_in_list:
   ('a -> 'a -> bool)
   -> 'a -> 'a list -> 'a list

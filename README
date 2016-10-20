@@ -1,5 +1,5 @@
 HSeq Theorem Prover
-October 2014
+October 2016
 Matthew Wahab <mwb.cde@gmail.com>
 ----
 
@@ -9,37 +9,14 @@ is experimental, alpha-quality code which may have soundness bugs.
 HSeq is distributed under the terms of the Lesser GNU General Public
 License, see files COPYING and COPYING.LESSER for details.
 
-Requirements: OCaml 4.01 or later, Camlp4.
-
-Building HSeq requires GNU Make in a Unix environment.
+Requirements:
+- OCaml 4.02 or later
+- Camlp4.
+- GNU Make.
+- Unix/Linux build
+- Texinfo, to build the documentaion (optional).
 
 For installation instructions, see file INSTALL.
-
-To start HSeq as a toplevel, run 'hseq'.
-
-To run HSeq on script n, run 'hseqb n'.
-
-The system looks in the installation directory for the libraries and
-theories needed for execution. If the environment variable HSEQ is
-set, it is used as the name of the installation directory.
-
-Some documentation is provided in directories doc/html or doc/info
-(for html or texinfo format). Quick-start documentation is in
-doc/html/quickstart. It's recommended that the source code
-documentation is built and installed (see file INSTALL).
-
-Directories
------------
-
-hseq     - Theorem prover source code.
-hsequser - Toplevel and user code.
-quote    - Preprocessor source code.
-thys     - Theory scripts, the generated files and their libraries.
-doc      - Documentation
-examples - Examples
-
-Files
-=====
 
 The system builds as a theorem prover library and an interface to the
 OCaml toplevel. 
@@ -51,76 +28,13 @@ hseq         - The interactive theorem prover.
 hseqb <file> - Run the theorem prover on script <file>
 hseqc <file> - Compile script <file> against the HSeq libraries.
 
+To start HSeq as a toplevel, run 'hseq'.
+To run HSeq on script n, run 'hseqb n'.
+
 Use option --help with hseqb and hseqc for all options.
 
-Libraries:
-----------
+Documentation:
+--------------
 
-The library is named hseq.cma and depends on the OCaml libraries Nums
-and Unix. The library is built by packing the code into a module named
-HSeq. The library should be opened, with 'open HSeq', and initialized
-before it is used, by calling Global.init().
-
-The handling of theories uses two file-loading functions, which are
-called if a theory needs to be rebuilt or if a theory has support
-libraries. In the interactive toplevel, these are set to functions in
-the OCaml top-level code. In a library, they need to be set
-explicitly. The file-handling functions are called through hooks:
-Global.Hooks.load_file, used to load byte code, and
-Global.Hooks.use_file, used to run script files. In library mode, both
-are set to do nothing except issue a warning. To silence the warnings,
-set them to the empty function (fun () -> ()). An lternative is to set
-load_file to Dynlink.loadfile, which will require the dynlink library
-to be linked in.
-
-The library does not depend on the toplevel interface. Using the
-library without the toplevel hasn't been very well tested.
-
-File examples/libtest.ml is a very simple example of using the library
-to build a stand-alone executable. A more complete example is given in
-examples/SumExample.ml.
-
-Toplevel:
----------
-
-The toplevel interface is made up of libraries tpquote.cma
-and hseqtop.cma.  Library tpquote.cma is the quotation expander and
-hseqtop.cma is the main toplevel code, mainly to initialize the
-system.
-
-Linking:
---------
-
-If the toplevel is not needed, program hseqc can be used to handle
-compiling a file against the HSeq libraries. (options --verbose or
---info will print the command line passed to the ocamlc compilers).
-
-Building a toplevel done with the OCaml tools and the HSeq libraries.
-The order in which libraries are linked is significant: library hseq
-which must come before hseqtop. The quotation expander is used with
-camlp4.
-
-The link order used to build the standard toplevel is:
-   nums.cma unix.cma camlp4.o.cma pa_extend.cmo q_MLast.cmo
-   hseq.cma tpquote.cma hseqtop.cma
-
-It should be possible to link with the HSeq library in the sequence
-   nums.cma unix.cma hseq.cma
-but note that the easiest way is to use hseqc.
-
-Native-code:
-------------
-
-There is experimental support for building native-code hseq libraries,
-where the platform supports the OCaml native-code compilers. The
-native code library uses the same hooks for loading files and scripts
-as the byte-code library. The native code compilers cannot be used in
-the interactive toplevel.
-
-As with the byte-code libraries, the easiest way to compile against
-the native code libraries is to use command 'hseq --native'. See the
-command line options for hseqc (printed by 'hseq --help').
-
-Use build option --native to build the native-code libraries (see file
-INSTALL).
-
+Basic documentation is provided in directories doc/html and doc/info
+(for html or texinfo format). By default, this is installed into 

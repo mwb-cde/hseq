@@ -1,7 +1,7 @@
 (*----
   Name: gtypes.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -61,7 +61,7 @@ val is_any_var: gtype -> bool
 val get_var_names: gtype -> string list
 (** Get names of variables occuring in type. *)
 
-val normalize_vars: gtype -> gtype  
+val normalize_vars: gtype -> gtype
 (** Make all type variables with the same string name be the same
     variable. Useful when constructing types from existing types.
 *)
@@ -166,7 +166,7 @@ val rename_index: int -> substitution -> gtype -> (gtype * int * substitution)
 val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
 (** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
 
-val print_type: 
+val print_type:
   Printer.ppinfo -> (Printer.fixity * int) -> gtype Printer.printer
 (** [print_type_inf ppstate tbl prec ty] Print type [ty] beginning
     with precedence [prec]. Rename type variables, using table [tbl],
@@ -201,7 +201,7 @@ val check_defn: Scope.t -> gtype -> gtype -> bool
 (** [check_defn l r]: Test definition of [l] as alias for [r]. *)
 
 val check_decln: gtype -> bool
-(**  [check_decln l]: Consistency check on declaration of type [l]. *) 
+(**  [check_decln l]: Consistency check on declaration of type [l]. *)
 
 val unfold: Scope.t -> gtype -> gtype
 (**
@@ -218,7 +218,7 @@ val well_defined: Scope.t -> (string)list -> gtype -> unit
     [ty].
 *)
 
-val quick_well_defined: Scope.t -> 
+val quick_well_defined: Scope.t ->
   (Ident.t *int, bool) Hashtbl.t -> gtype -> unit
 (** [quick_well_defined scp tbl ty]: Test [ty] to make sure it is
     well-defined.  weak variables can occur in [ty].
@@ -248,7 +248,7 @@ val occurs: gtype -> gtype -> unit
 val occurs_env: substitution-> gtype -> gtype -> unit
 (**
    [occurs_env env t r]: Occurs check w.r.t [env]. Chase [t] in [env]
-   to get [t'], chase [r] in [env] to get [r']. 
+   to get [t'], chase [r] in [env] to get [r'].
 
    @raise [typeError] if [t'] occurs in [r'], succeed silently
    otherwise.
@@ -279,13 +279,13 @@ val bind_occs: gtype -> gtype -> substitution -> substitution
     Unification functions raise [type_error] on failure.
 *)
 
-val unify_env: 
-  Scope.t -> gtype -> gtype 
-  -> substitution -> substitution 
+val unify_env:
+  Scope.t -> gtype -> gtype
+  -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
-val unify: Scope.t -> gtype -> gtype -> substitution 
+val unify: Scope.t -> gtype -> gtype -> substitution
 (** [unify]: unify two types, returning the substitution.
 *)
 
@@ -297,7 +297,7 @@ val mgu: gtype -> substitution -> gtype
     pushes the substitution into the replacement terms.
 *)
 
-val mgu_rename_env: (int * substitution) -> substitution 
+val mgu_rename_env: (int * substitution) -> substitution
   -> gtype -> (gtype * (int * substitution))
 (** [mgu_rename_env inf env nenv ty]: Replace variables in [ty] with
     their bindings in substitution [env].  If a variable isn't bound
@@ -309,12 +309,12 @@ val mgu_rename_env: (int * substitution) -> substitution
 
     Returns the new type and updated nenv.
 *)
-val mgu_rename: 
-  int -> substitution 
-  -> substitution -> gtype 
-  -> gtype 
+val mgu_rename:
+  int -> substitution
+  -> substitution -> gtype
+  -> gtype
 
-val mgu_rename_simple: int -> substitution -> substitution 
+val mgu_rename_simple: int -> substitution -> substitution
   -> gtype -> (gtype * int *substitution)
 (**
    [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
@@ -329,25 +329,25 @@ val mgu_rename_simple: int -> substitution -> substitution
 
 (** Toplevel for [mgu_rename_env]. *)
 
-(** {6 Matching functions} 
+(** {6 Matching functions}
 
     Matching of types [x] and [y] is the unification of [x] and [y] in
     which only the variables of [x] can be bound.
 *)
 
-val matching_env: 
-  Scope.t -> substitution 
+val matching_env:
+  Scope.t -> substitution
   -> gtype -> gtype -> substitution
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
-   type [t1] can be bound. 
+   type [t1] can be bound.
 
    Raises an exception if matching fails.
 *)
 
-val matches_env: 
-  Scope.t -> substitution 
+val matches_env:
+  Scope.t -> substitution
   -> gtype -> gtype -> substitution
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
@@ -366,11 +366,11 @@ type match_data =
     }
 (** Data for {!Gtypes.matches_rewrite} *)
 
-val matches_rewrite: 
-  Scope.t -> gtype -> gtype 
+val matches_rewrite:
+  Scope.t -> gtype -> gtype
   -> match_data -> match_data
 (** [matches_rewrite scp tyl tyr env]: Match type [tyl] with [tyr],
-    returning the substitutions for type variables in [tyl]. 
+    returning the substitutions for type variables in [tyl].
 *)
 
 (** [matches_rewrite scp tyl tyr env]: Match type [tyl'] with [tyr] in
@@ -378,11 +378,11 @@ val matches_rewrite:
     is the returned substitution, then the type [nty = (mgu tyr sb)]
     will not have any type variable in common with [tyl] (i.e. no type
     variable can occur in both [nyt] and [tyl].)
-    
+
     This function is used for term-rewriting, where there is a danger
     that the same type may occur in different contexts, such as the
     type of an identifier which occurs in different parts of the
-    term. 
+    term.
 *)
 
 (**
@@ -394,7 +394,7 @@ val copy_set_ty: gtype -> match_data -> (gtype * match_data)
 
 (** {5 More functions} *)
 
-val set_name: 
+val set_name:
   ?strict:bool
   -> ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t -> gtype -> gtype
@@ -406,17 +406,17 @@ val set_name:
     [memo] is the optional memoisation table.
 *)
 
-val in_scope: 
+val in_scope:
   (string, bool)Lib.substype -> Scope.t -> gtype -> bool
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
-    The function is memoised: if a constructor name is found to be 
+    The function is memoised: if a constructor name is found to be
     in scope, it is added to [memo].
 *)
 
 
-val extract_bindings: gtype list -> substitution -> substitution 
+val extract_bindings: gtype list -> substitution -> substitution
   -> substitution
 (** [extract_bindings vars src dst]: extract bindings variables in
     [var] from [src] substitution, store them in [dst] substitution
@@ -431,8 +431,8 @@ type stype = ((string * int), Basic.typ_const) pre_typ
 (** Representation of types for storage on disk. *)
 
 type stypedef_record =
-    {sname: string; 
-     sargs: string list; 
+    {sname: string;
+     sargs: string list;
      salias: stype option;
      scharacteristics: string list}
 (** Representation of typedef_records for disk storage. *)
@@ -452,7 +452,7 @@ val to_save: gtype -> stype
 type from_stype_env = ((string * int) * Basic.gtype_id) list
 (** Data needed to construct a type storage representation. *)
 
-val from_save_env: 
+val from_save_env:
   from_stype_env -> stype -> (gtype * from_stype_env)
 (** [from_save_env ty env]: Convert storage [ty] to [gtype]
     representation.  [env] store the names of type variables already
@@ -479,9 +479,9 @@ val from_save_rec: stypedef_record -> typedef_record
 val print_subst: substitution -> unit
 
 (** Debugging information *)
-val unify_aux: 
-  Scope.t -> gtype -> gtype 
-  -> substitution -> substitution 
+val unify_aux:
+  Scope.t -> gtype -> gtype
+  -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)

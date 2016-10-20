@@ -1,7 +1,7 @@
 (*----
   Name: boollib.mli
-  Copyright M Wahab 2006-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2006-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -22,7 +22,7 @@
 (** Support for boolean proofs.
 
     Many (but not all) of the values here are front-ends to
-    values defined elsewhere. 
+    values defined elsewhere.
 *)
 
 
@@ -90,15 +90,15 @@ sig
   (** [once_rewrite_rule scp rules thm]: Rewrite [thm] with [rules]
       once.  *)
 
-  val conjunctL: Context.t -> Logic.thm -> Logic.thm 
+  val conjunctL: Context.t -> Logic.thm -> Logic.thm
   (** [conjunctL scp thm]: Get the left hand side of conjunct [thm].
       [conjunctL scp << l and r >> = l] *)
 
-  val conjunctR: Context.t -> Logic.thm -> Logic.thm 
+  val conjunctR: Context.t -> Logic.thm -> Logic.thm
   (** [conjunctR scp thm]: Get the right hand side of conjunct [thm].
       [conjunctL scp << l and r >> = r] *)
 
-  val conjuncts: Context.t -> Logic.thm -> Logic.thm list 
+  val conjuncts: Context.t -> Logic.thm -> Logic.thm list
 (** [conjuncts scp thm]: Break theorem [thm] into the list of
     conjuncts.  [conjuncts scp << f1 and f2 and .. and fn>> = [f1; f2;
     ..; fn]]
@@ -130,7 +130,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
     true{_ f}, C \].  [info] is unchanged.
 *)
 
-val cut_thm: 
+val cut_thm:
   ?inst:Basic.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
@@ -166,7 +166,7 @@ val eq_tac: ?c:Logic.label -> Tactics.tactic
     be specified.
 *)
 
-val rewrite_conv: 
+val rewrite_conv:
   Context.t -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
 (** [rewrite_conv scp ctrl rules trm]: Rewrite term [trm] with
     theorems [rules] in scope [scp].
@@ -176,7 +176,7 @@ val rewrite_conv:
 *)
 
 val rewrite_rule:
-  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list 
+  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list
   -> Logic.thm -> Logic.thm
 (** [rewrite_rule scp ctrl rules thm]: Rewrite theorem [thm] with
     theorems [rules] in scope [scp].
@@ -184,11 +184,11 @@ val rewrite_rule:
     Returns [ |- X ] where [X] is the result of rewriting [thm]
 *)
 
-val gen_rewrite_tac: 
+val gen_rewrite_tac:
   ?asm:bool
   -> Rewrite.control
-  -> ?f:Logic.label 
-  -> Logic.rr_type list 
+  -> ?f:Logic.label
+  -> Logic.rr_type list
   -> Tactics.tactic
 (** [gen_rewrite_tac ?asm ctrl rules f]: General rewriting
     tactic.
@@ -203,62 +203,62 @@ val gen_rewrite_tac:
     rewrite both assumptions and conclusions in the sequent.
 *)
 
-val rewrite_tac: 
+val rewrite_tac:
   ?dir:Rewrite.direction
   -> ?f:Logic.label
-  -> Logic.thm list 
+  -> Logic.thm list
   -> Tactics.tactic
 (** [rewrite_tac info dir f thms]: Rewrite formula [f] with list of
     theorems [thms]. If [f] is not given, rewrite all formulas in
     sequent. [dir=leftright] by default.
 *)
 
-val once_rewrite_tac: 
-  ?dir:Rewrite.direction -> 
+val once_rewrite_tac:
+  ?dir:Rewrite.direction ->
   ?f:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir f thms]: Rewrite formula [f] once.  If
     [f] is not given, rewrite all formulas in sequent.
     [dir=leftright] by default.
 *)
 
-val rewriteC_tac: 
+val rewriteC_tac:
   ?dir:Rewrite.direction
   -> ?c:Logic.label
-  -> Logic.thm list 
+  -> Logic.thm list
   -> Tactics.tactic
 (** [rewriteC_tac dir c thms]: Rewrite conclusion [c] with list of
     theorems [thms]. If [c] is not given, rewrite all conclusions in
     sequent. [dir=leftright] by default.
 *)
 
-val once_rewriteC_tac: 
-  ?dir:Rewrite.direction -> 
+val once_rewriteC_tac:
+  ?dir:Rewrite.direction ->
   ?c:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir c thms]: Rewrite conclusion [c] once.  If
     [c] is not given, rewrite all conclusions in sequent.
     [dir=leftright] by default.
 *)
 
-val rewriteA_tac: 
+val rewriteA_tac:
   ?dir:Rewrite.direction
   -> ?a:Logic.label
-  -> Logic.thm list 
+  -> Logic.thm list
   -> Tactics.tactic
 (** [rewriteA_tac dir a thms]: Rewrite assumption [a] with list of
     theorems [thms]. If [a] is not given, rewrite all assumptions in
     sequent.  [dir=leftright] by default.
 *)
 
-val once_rewriteA_tac: 
-  ?dir:Rewrite.direction -> 
+val once_rewriteA_tac:
+  ?dir:Rewrite.direction ->
   ?a:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir a thms]: Rewrite assumption [a] once.
     If [a] is not given, rewrite all assumptions in sequent.
     [dir=leftright] by default.
 *)
 
-val gen_replace_tac: 
-  ?ctrl:Rewrite.control -> ?asms:Logic.label list 
+val gen_replace_tac:
+  ?ctrl:Rewrite.control -> ?asms:Logic.label list
   -> ?f:Logic.label -> Tactics.tactic
 (** [gen_replace_tac ctrl asms f]: Rewrite formula [f] with the
     assumptions in list [asms].  If [f] is not given, rewrite all
@@ -267,9 +267,9 @@ val gen_replace_tac:
     assumptions used as rewrite rules.
 *)
 
-val replace_tac: 
+val replace_tac:
   ?dir:Rewrite.direction
-  -> ?asms:Logic.label list 
+  -> ?asms:Logic.label list
   -> ?f:Logic.label -> Tactics.tactic
 (** [replace_tac dir asms f]: Rewrite formula [f] with
     assumptions in list [asms].  If [f] is not given, rewrite all
@@ -278,9 +278,9 @@ val replace_tac:
     assumptions.  [dir=leftright] by default.
 *)
 
-val once_replace_tac: 
+val once_replace_tac:
   ?dir:Rewrite.direction
-  -> ?asms:Logic.label list 
+  -> ?asms:Logic.label list
   -> ?f:Logic.label -> Tactics.tactic
 (** [once_replace_tac dir asms f]: Rewrite formula [f] with
     assumptions in list [asms] once. If [f] is not given, rewrite all
@@ -290,7 +290,7 @@ val once_replace_tac:
 *)
 
 
-val unfold: 
+val unfold:
   ?f:Logic.label -> string -> Tactics.tactic
 (** [unfold ?f n]: Unfold the definition of [n] at formula [?f].
 
@@ -309,8 +309,8 @@ val iffA: ?a:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[A{_ l1}, asms |- B{_ l2}, concl\]; 
-    g2:\[B{_ l3}, asms |- A{_ l4}, concl\]; 
+    g1:\[A{_ l1}, asms |- B{_ l2}, concl\];
+    g2:\[B{_ l3}, asms |- A{_ l4}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
@@ -324,8 +324,8 @@ val iffC: ?c:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[asms |- (A=>B){_ l}, concl\]; 
-    g2:\[asms |- (B=>A){_ l}, concl\]; 
+    g1:\[asms |- (A=>B){_ l}, concl\];
+    g2:\[asms |- (B=>A){_ l}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
@@ -339,8 +339,8 @@ val iffE: ?c:Logic.label -> Tactics.tactic
 
     ---->
 
-    g1:\[A{_ l1}, asms |- B{_ l2}, concl\]; 
-    g2:\[B{_ l3}, asms |- A{_ l4}, concl\]; 
+    g1:\[A{_ l1}, asms |- B{_ l2}, concl\];
+    g2:\[B{_ l3}, asms |- A{_ l4}, concl\];
     }
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
@@ -348,14 +348,14 @@ val iffE: ?c:Logic.label -> Tactics.tactic
 
 (**  {5 Eliminating boolean operators}  *)
 
-val direct_alt: 
-  'a -> ('a -> Tactics.tactic) list 
+val direct_alt:
+  'a -> ('a -> Tactics.tactic) list
   -> Tactics.tactic
 (** [direct_alt tacs info l]: Directed alt. Like {!Tactics.alt} but
     pass [info] and [l] to each tactic in [tacs].  **)
 
-val direct_map_some: 
-  ('a -> Tactics.tactic) -> 'a list 
+val direct_map_some:
+  ('a -> Tactics.tactic) -> 'a list
   ->('a list) Tactics.data_tactic
 (** [direct_map_some tac lst l]: Directed map_some. Like
     {!Tactics.map_some} but pass [info] and [l] to [tac]. If [tac]
@@ -421,18 +421,18 @@ val apply_elim_tac:
     will split formula [f].
 *)
 
-val split_asms_tac: 
+val split_asms_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which introduce new
     subgoals. Uses the same rules as {!Boollib.split_tac}.
 *)
-val split_concls_tac: 
+val split_concls_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which introduce new
     subgoals. Uses the same rules as {!Boollib.split_tac}.
 *)
 
-val split_tac: 
+val split_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
     introduce new subgoals. Resulting tag information may contain
@@ -452,18 +452,18 @@ val split_tac:
     [~a:f] flattens formal [f].
 *)
 
-val flatter_asms_tac: 
+val flatter_asms_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions which don't introduce new
     subgoals. Uses the same rules as {!Boollib.flatten_tac}.
 *)
-val flatter_concls_tac: 
+val flatter_concls_tac:
   Logic.label -> Tactics.tactic
 (** Eliminate operators in the conclusions which don't introduce new
     subgoals. Uses the same rules as {!Boollib.flatten_tac}.
 *)
 
-val flatten_tac: 
+val flatten_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which don't
     introduce new subgoals. Resulting tag information may contain
@@ -475,7 +475,7 @@ val flatten_tac:
     In the conclusions, eliminates [true], negation ([not]),
     disjunction ([|]), implication ([=>]), universal quantification
     ([!]).
-    
+
     Doesn't eliminate negation in the assumptions (to avoid
     introducing trivial conclusions).
 *)
@@ -485,7 +485,7 @@ val flatten_tac:
     Split and flatten subgoals.
 *)
 
-val scatter_tac: 
+val scatter_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions.
 
@@ -500,7 +500,7 @@ val scatter_tac:
     Resulting tag information may contain duplicates.
 *)
 
-val blast_tac: 
+val blast_tac:
   ?f:Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions
     then try to solve subgoals.
@@ -528,7 +528,7 @@ val cases_tac: Basic.term -> Tactics.tactic
     {L
     g:\[asms |- concls\]
 
-    ---> 
+    --->
 
     g1:\[asms |- x{_ t}, concls\]; g2:\[x{_ t}, asms |- concls\]
     }
@@ -536,14 +536,14 @@ val cases_tac: Basic.term -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[t], cforms=[t], terms = []]
 *)
 
-val show_tac: 
+val show_tac:
   Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
-val show: 
+val show:
   Basic.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
@@ -552,8 +552,8 @@ val show:
     {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
 
-val cases_of: 
-  ?thm:Logic.thm -> Basic.term 
+val cases_of:
+  ?thm:Logic.thm -> Basic.term
   -> Tactics.tactic
 (** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
@@ -563,14 +563,14 @@ val cases_of:
 
 (** {5 Modus Ponens} *)
 
-val mp_tac: 
+val mp_tac:
   ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
 (** [mp_tac ?a ?h]: Modus ponens.
 
     {L
     g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
 
-    ---> 
+    --->
 
     g:\[B{_ t}, A{_ h}, asms |- concls\]
     }
@@ -587,14 +587,14 @@ val mp_tac:
 
 val cut_mp_tac:
   ?inst:Basic.term list
-  -> Logic.thm 
+  -> Logic.thm
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?inst ?a ]: Cut theorem for Modus ponens.
 
     {L
     g:\[A{_ a}, asms |- concls\]; thm: |- A => B
 
-    ---> 
+    --->
 
     g:\[B{_ t}, A{_ a}, asms |- concls\]
     }
@@ -612,14 +612,14 @@ val cut_mp_tac:
     are searched for a suitable formula.
 *)
 
-val back_tac: 
+val back_tac:
   ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
 (** [back_tac ~a ~c]: Match, backward tactic.
 
     {L
     g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
 
-    ---> 
+    --->
 
     g1:\[asms |- A{_ t}, concls\]
     }
@@ -635,14 +635,14 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?inst:Basic.term list 
+  ?inst:Basic.term list
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 
     {L
     g:\[asms |- B{_ c}, concls\]; thm: |- A => B
 
-    ---> 
+    --->
 
     g1:\[asms |- A{_ t}, concls\]
     }
@@ -675,7 +675,7 @@ val asm_induct_tac:
     induction scheme.
 *)
 
-val induct_tac: 
+val induct_tac:
   ?c:Logic.label -> Logic.thm -> Tactics.tactic
 (** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
     [c] (or the first conclusion to succeed).
@@ -683,16 +683,16 @@ val induct_tac:
     Theorem [thm] must be in the form:
     {L ! P a .. b: (thm_asm P a .. b) => (thm_concl P a .. b)}
     where
-    {L 
+    {L
     thm_concl P d .. e = (! x .. y: (pred x .. y) => (P d .. e x .. y))
-    }   
-    The order of the outer-most bound variables is not relevant. 
-    
+    }
+    The order of the outer-most bound variables is not relevant.
+
     The conclusion must be in the form:
     {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
 *)
 
-val induct_on: 
+val induct_on:
   ?thm:Logic.thm -> ?c:Logic.label
   -> string -> Tactics.tactic
 (** [induct_on ?thm ?c n]: Apply induction to the first
@@ -704,14 +704,12 @@ val induct_on:
     Theorem [thm] must be in the form:
     {L ! P a .. b: (thm_asm P a .. b) => (thm_concl P a .. b)}
     where
-    {L 
+    {L
     thm_concl P a .. b= (! x: (P x a .. b))
-    }   
-    The order of the outer-most bound variables is not relevant. 
-    
+    }
+    The order of the outer-most bound variables is not relevant.
+
     The conclusion must be in the form:
     {L ! n f .. g: (C n f ..g) }
     [n] does not need to be the outermost quantifier.
 *)
-
-

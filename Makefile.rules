@@ -1110,7 +1110,8 @@ distclean-subdirs: $(lm-subdir-distclean-target)
 ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
 ifndef NODEPEND
 depend: $(lm-module-mlsources)
-	-$(OCAMLDEP) *.mli  $(lm-module-mlsources) > depend
+	-$(OCAMLDEP) $(lm-module-ocamldep-options) \
+		*.mli  $(lm-module-mlsources) > depend
 include depend
 endif # NODEPEND
 endif

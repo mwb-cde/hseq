@@ -1,7 +1,7 @@
 (*----
   Name: ident.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -48,11 +48,11 @@ let name_of (_, n) = n
 
 (*** Comparisons ***)
 
-let equals x y = 
+let equals x y =
   ((x == y) || (Pervasives.compare x y) = 0)
-let lessthan x y = 
+let lessthan x y =
   if (x == y) then false
-  else 
+  else
     begin
       let cmp = Pervasives.compare (thy_of x) (thy_of y) in
       if (cmp < 0) then true

@@ -1,6 +1,6 @@
 (*----
   Name: logic.ml
-  Copyright Matthew Wahab 2005-2015
+  Copyright Matthew Wahab 2005-2016
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -196,7 +196,7 @@ struct
         match (Lib.try_find (get_old_sklm info.name) info.skolems) with
         | Some(oldsk) ->
           (* Get next available skolem index for the name *)
-	   let nindx = (get_sklm_indx oldsk)+1 in
+           let nindx = (get_sklm_indx oldsk)+1 in
            (info.name, nindx)
         | _ -> (info.name, 0)
       end
@@ -230,9 +230,9 @@ struct
     (oname, (nindx, nty))::info.skolems,
     ntyenv, new_names)
     | Some(oldsk) ->
-	(* get new index for skolem named n *)
+        (* get new index for skolem named n *)
     let nindx = (get_sklm_indx oldsk)+1 in
-	(* make the new identifier *)
+        (* make the new identifier *)
     let oname = info.name in
     let nnam = make_skolem_name oname nindx	in
     let nty, ntyenv, new_names = mk_nty nnam
@@ -400,9 +400,9 @@ struct
       match ams with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-	 if Tag.equal xt t
+         if Tag.equal xt t
          then (xt, rename xf)
-	 else get_aux xs
+         else get_aux xs
     in
     get_aux (asms sq)
 
@@ -411,9 +411,9 @@ struct
       match ccs with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-	 if Tag.equal xt t
+         if Tag.equal xt t
          then (xt, rename xf)
-	 else get_aux xs
+         else get_aux xs
     in
     get_aux (concls sq)
 
@@ -426,9 +426,9 @@ struct
       match ams with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-	 if (Tag.name xt) = t
+         if (Tag.name xt) = t
          then (xt, rename xf)
-	 else get_aux xs
+         else get_aux xs
     in
     if t = ""
     then raise Not_found
@@ -439,9 +439,9 @@ struct
       match ccs with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-	 if (Tag.name xt) = t
+         if (Tag.name xt) = t
          then (xt, rename xf)
-	 else get_aux xs
+         else get_aux xs
     in
     if t = ""
     then raise Not_found
@@ -475,9 +475,9 @@ struct
       match fs with
       | [] -> raise Not_found
       | x::xs ->
-	 if Tag.equal (form_tag x) t
+         if Tag.equal (form_tag x) t
          then i
-	 else index_aux xs (i + 1)
+         else index_aux xs (i + 1)
     in
     try -(index_aux (asms sq) 1)
     with
@@ -488,9 +488,9 @@ struct
       match fs with
       | [] -> raise Not_found
       | x::xs ->
-	 if i = 1
+         if i = 1
          then (form_tag x)
-	 else index_aux xs (i - 1)
+         else index_aux xs (i - 1)
     in
     if (i < 0)
     then index_aux (asms sq)  (-i)
@@ -816,16 +816,16 @@ let extract_rules scp plan node=
     match src with
     | Asm(x) ->
        let asm =
-	 try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	 with Not_found ->
-	   raise (logic_error "Rewrite: can't find tagged assumption" [])
+         try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+         with Not_found ->
+           raise (logic_error "Rewrite: can't find tagged assumption" [])
        in
        asm
     | OAsm(x, order) ->
        let asm=
-	 try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
-	 with Not_found ->
-	   raise (logic_error "Rewrite: can't find tagged assumption" [])
+         try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)
+         with Not_found ->
+           raise (logic_error "Rewrite: can't find tagged assumption" [])
        in
        asm
     | RRThm(x) ->
@@ -898,7 +898,7 @@ struct
     let (t, nasms) = lift_tagged l (Sequent.asms sq) in
     let new_sqnt =
       Sequent.make (Sequent.sqnt_retag sq) (Sequent.sqnt_env sq)
-	nasms (Sequent.concls sq)
+        nasms (Sequent.concls sq)
     in
     let chngs = Changes.make [] [t] [] []
     in
@@ -911,8 +911,8 @@ struct
     let (t, nconcls) = lift_tagged f (Sequent.concls sq) in
     let new_sqnt =
       Sequent.make (Sequent.sqnt_retag sq)
-	(Sequent.sqnt_env sq) (Sequent.asms sq)
-	nconcls
+        (Sequent.sqnt_env sq) (Sequent.asms sq)
+        nconcls
     in
     let chngs = Changes.make [] [] [t] []
     in
@@ -942,8 +942,8 @@ struct
     in
     let chngs = Changes.make [] [nt] [] [] in
     let sbgl =  mk_subgoal (Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
-		            join_up lasms (nb::na::rasms),
-		            Sequent.concls sq)
+                            join_up lasms (nb::na::rasms),
+                            Sequent.concls sq)
     in
     (sbgl, chngs)
 
@@ -965,8 +965,8 @@ struct
     in
     let chngs = Changes.make [] [] [nt] [] in
     let sbgl = mk_subgoal(Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
-	                  Sequent.asms sq,
-	                  join_up lcncls (nb::nc::rcncls))
+                          Sequent.asms sq,
+                          join_up lcncls (nb::nc::rcncls))
     in
     (sbgl, chngs)
 
@@ -982,10 +982,10 @@ struct
     let sbgl =
       match hs with
       |	[] -> mk_subgoal(Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
-			 hs, Sequent.concls sq)
+                         hs, Sequent.concls sq)
       | h::hys -> mk_subgoal(Sequent.sqnt_retag sq,
-			     Sequent.sqnt_env sq, hys@[h],
-			     Sequent.concls sq)
+                             Sequent.sqnt_env sq, hys@[h],
+                             Sequent.concls sq)
     in
     (sbgl, chngs)
 
@@ -999,9 +999,9 @@ struct
     let sbgl =
       match cs with
       | [] -> mk_subgoal(Sequent.sqnt_retag sq,
-			 Sequent.sqnt_env sq, Sequent.asms sq, cs)
+                         Sequent.sqnt_env sq, Sequent.asms sq, cs)
       | c::cns -> mk_subgoal(Sequent.sqnt_retag sq,
-			     Sequent.sqnt_env sq, Sequent.asms sq, cns@[c])
+                             Sequent.sqnt_env sq, Sequent.asms sq, cns@[c])
     in
     (sbgl, chngs)
 
@@ -1057,9 +1057,9 @@ struct
     in
     try
       let ng = mk_subgoal(Sequent.sqnt_retag sq,
-		          Sequent.sqnt_env sq,
-		          nasm::(Sequent.asms sq),
-		          Sequent.concls sq)
+                          Sequent.sqnt_env sq,
+                          nasm::(Sequent.asms sq),
+                          Sequent.concls sq)
       in
       let chngs = Changes.make [] [ftag] [] []
       in
@@ -1086,13 +1086,13 @@ struct
             (drop_tag asm) (drop_tag concl)
       with _ ->
         raise (logic_error "Assumption not equal to conclusion"
-	         [drop_tag asm; drop_tag concl])
+                 [drop_tag asm; drop_tag concl])
     in
     let tyenv2 =
       try Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
       with _ ->
-	raise (logic_error "basic: Inconsistent types"
-		 [drop_tag asm; drop_tag concl])
+        raise (logic_error "basic: Inconsistent types"
+                 [drop_tag asm; drop_tag concl])
     in
     raise (Solved_subgoal tyenv2)
 
@@ -1121,8 +1121,8 @@ struct
       let chngs = Changes.make [] [ft1; ft2] [] [] in
       let sbgl =
         mk_subgoal (Sequent.sqnt_retag sq, Sequent.sqnt_env sq,
-		    asm1::asm2::(join_up lasms rasms),
-		    Sequent.concls sq)
+                    asm1::asm2::(join_up lasms rasms),
+                    Sequent.concls sq)
       in
       (sbgl, chngs)
     else raise (logic_error "Not a conjunction" [t])
@@ -1157,7 +1157,7 @@ struct
       let sbgl =
         [
           Sequent.make tagl (Sequent.sqnt_env sq) asms concll;
-	  Sequent.make tagr (Sequent.sqnt_env sq) asms conclr
+          Sequent.make tagr (Sequent.sqnt_env sq) asms conclr
         ]
       in
       (sbgl, chngs)
@@ -1191,7 +1191,7 @@ struct
       let sbgl =
         [
           Sequent.make tagl (Sequent.sqnt_env sq) asmsl (Sequent.concls sq);
-	  Sequent.make tagr (Sequent.sqnt_env sq) asmsr (Sequent.concls sq)
+          Sequent.make tagr (Sequent.sqnt_env sq) asmsr (Sequent.concls sq)
         ]
       in
       (sbgl, chngs)
@@ -1223,10 +1223,10 @@ struct
       let chngs = Changes.make [] [] [ft1; ft2] [] in
       let sbgl =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.sqnt_env sq,
-	   Sequent.asms sq,
-	   cncl1::cncl2::(join_up lconcls rconcls))
+          (Sequent.sqnt_retag sq,
+           Sequent.sqnt_env sq,
+           Sequent.asms sq,
+           cncl1::cncl2::(join_up lconcls rconcls))
       in
       (sbgl, chngs)
     else raise (logic_error "Not a disjunction" [t])
@@ -1254,9 +1254,9 @@ struct
       let chngs = Changes.make [] [] [ft] [] in
       let sbgl =
         mk_subgoal (Sequent.sqnt_retag sq,
-		    Sequent.sqnt_env sq,
-		    join_up lasms rasms,
-		    cncl1::(Sequent.concls sq))
+                    Sequent.sqnt_env sq,
+                    join_up lasms rasms,
+                    cncl1::(Sequent.concls sq))
       in
       (sbgl, chngs)
     else raise (logic_error "Not a negation"[t])
@@ -1283,9 +1283,9 @@ struct
       in
       let chngs = Changes.make [] [ft] [] [] in
       let sbgl =  mk_subgoal (Sequent.sqnt_retag sq,
-		              Sequent.sqnt_env sq,
-		              asm1::(Sequent.asms sq),
-		              join_up lconcls rconcls)
+                              Sequent.sqnt_env sq,
+                              asm1::(Sequent.asms sq),
+                              join_up lconcls rconcls)
       in
       (sbgl, chngs)
     else raise (logic_error "Not a negation"[t])
@@ -1324,7 +1324,7 @@ struct
       let sbgl =
         [
           Sequent.make tagl (Sequent.sqnt_env sq) asm1 cncl1;
-	  Sequent.make tagr (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)
+          Sequent.make tagr (Sequent.sqnt_env sq) asm2 (Sequent.concls sq)
         ]
       in
       (sbgl, chngs)
@@ -1355,10 +1355,10 @@ struct
       let chngs = Changes.make [] [ft2] [ft1] [] in
       let sbgl =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.sqnt_env sq,
-	   asm::(Sequent.asms sq),
-	   join_up lconcls (cncl::rconcls))
+          (Sequent.sqnt_retag sq,
+           Sequent.sqnt_env sq,
+           asm::(Sequent.asms sq),
+           join_up lconcls (cncl::rconcls))
       in
       (sbgl, chngs)
     else raise (logic_error "Not an implication" [t])
@@ -1381,23 +1381,23 @@ struct
     if Formula.is_all t
     then
       try
-	let ntrm, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
-	let gtyenv =
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
-	in
+        let ntrm, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
+        let gtyenv =
+          Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        in
         let new_subgoal =
-	  mk_subgoal
-	    (Sequent.sqnt_retag sq,
-	     Sequent.sqnt_env sq,
-	     join_up lasms ((ft, ntrm)::rasms),
-	     Sequent.concls sq)
+          mk_subgoal
+            (Sequent.sqnt_retag sq,
+             Sequent.sqnt_env sq,
+             join_up lasms ((ft, ntrm)::rasms),
+             Sequent.concls sq)
         in
-	let chngs = Changes.make [] [ft] [] []
+        let chngs = Changes.make [] [ft] [] []
         in
-	(new_subgoal, gtyenv, chngs)
+        (new_subgoal, gtyenv, chngs)
       with x ->
-	raise (Report.add_error
-		 (logic_error "allA: " [t]) x)
+        raise (Report.add_error
+                 (logic_error "allA: " [t]) x)
     else raise (logic_error "Not a universal quantifier" [t])
 
   let allA trm i g =
@@ -1421,29 +1421,29 @@ struct
       in
       let localscope = Scope.new_local_scope (Sequent.scope_of sq) in
       let sv, sty, nsklms, styenv, ntynms =
-	Skolem.mk_new_skolem
-	  {
-	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
-	    Skolem.ty = nty;
-	    Skolem.tyenv = tyenv;
+        Skolem.mk_new_skolem
+          {
+            Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
+            Skolem.ty = nty;
+            Skolem.tyenv = tyenv;
             Skolem.scope = localscope;
-	    Skolem.skolems = Sequent.sklm_cnsts sq;
-	    Skolem.tylist = Sequent.sqnt_tynames sq
-	  }
+            Skolem.skolems = Sequent.sklm_cnsts sq;
+            Skolem.tylist = Sequent.sqnt_tynames sq
+          }
       in
       let nscp = Scope.add_meta localscope (Term.dest_meta sv) in
       let nsqtys=
-	if Gtypes.is_weak sty
-	then sty::(Sequent.sqnt_tyvars sq)
-	else Sequent.sqnt_tyvars sq
+        if Gtypes.is_weak sty
+        then sty::(Sequent.sqnt_tyvars sq)
+        else Sequent.sqnt_tyvars sq
       in
       let ncncl, ntyenv = inst_term nscp tyenv t sv in
       let gtyenv = Gtypes.extract_bindings nsqtys ntyenv tyenv in
       let new_subgoal =
         mk_subgoal (Sequent.sqnt_retag sq,
-		    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
-		    Sequent.asms sq,
-		    join_up lconcls ((ft, ncncl)::rconcls))
+                    Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
+                    Sequent.asms sq,
+                    join_up lconcls ((ft, ncncl)::rconcls))
       in
       let chngs = Changes.make [] [] [ft] [sv]
       in
@@ -1471,30 +1471,30 @@ struct
       in
       let localscope = Scope.new_local_scope (Sequent.scope_of sq) in
       let sv, sty, nsklms, styenv, ntynms =
-	Skolem.mk_new_skolem
-	  {
-	    Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
-	    Skolem.ty = nty;
-	    Skolem.tyenv = tyenv;
-	    Skolem.scope = localscope;
-	    Skolem.skolems = Sequent.sklm_cnsts sq;
-	    Skolem.tylist = Sequent.sqnt_tynames sq
-	  }
+        Skolem.mk_new_skolem
+          {
+            Skolem.name = Ident.mk_long (Sequent.thy_of_sqnt sq) nv;
+            Skolem.ty = nty;
+            Skolem.tyenv = tyenv;
+            Skolem.scope = localscope;
+            Skolem.skolems = Sequent.sklm_cnsts sq;
+            Skolem.tylist = Sequent.sqnt_tynames sq
+          }
       in
       let nscp = Scope.add_meta localscope (Term.dest_meta sv) in
       let nsqtys=
-	if Gtypes.is_weak sty
-	then sty::(Sequent.sqnt_tyvars sq)
-	else Sequent.sqnt_tyvars sq
+        if Gtypes.is_weak sty
+        then sty::(Sequent.sqnt_tyvars sq)
+        else Sequent.sqnt_tyvars sq
       in
       let nasm, ntyenv = inst_term nscp styenv t sv in
       let gtyenv = Gtypes.extract_bindings nsqtys ntyenv tyenv in
       let new_subgoal =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
-	   join_up lasms ((ft, nasm)::rasms),
-	   Sequent.concls sq)
+          (Sequent.sqnt_retag sq,
+           Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
+           join_up lasms ((ft, nasm)::rasms),
+           Sequent.concls sq)
       in
       let chngs = Changes.make [] [ft] [] [sv]
       in
@@ -1520,22 +1520,22 @@ struct
     if Formula.is_exists t
     then
       try
-	let trm2, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
-	let gtyenv=
-	  Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
-	in
+        let trm2, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
+        let gtyenv=
+          Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        in
         let new_subgoal =
           mk_subgoal
-	    (Sequent.sqnt_retag sq,
-	     Sequent.sqnt_env sq,
-	     Sequent.asms sq,
-	     join_up lconcls ((ft, trm2)::rconcls))
+            (Sequent.sqnt_retag sq,
+             Sequent.sqnt_env sq,
+             Sequent.asms sq,
+             join_up lconcls ((ft, trm2)::rconcls))
         in
-	let chngs = Changes.make [] [] [ft] []
+        let chngs = Changes.make [] [] [ft] []
         in
-      	(new_subgoal, gtyenv, chngs)
+        (new_subgoal, gtyenv, chngs)
       with x -> raise (Report.add_error
-			 (logic_error "existC:" [t]) x)
+                         (logic_error "existC:" [t]) x)
     else raise (logic_error "Not an existential quantifier" [t])
 
   let existC trm i g =
@@ -1576,18 +1576,18 @@ struct
     let get_asm lbl =
       try drop_tag (Sequent.get_tagged_asm (label_to_tag lbl sq) sq)
       with Not_found ->
-	raise (logic_error "Rewrite: can't find tagged assumption" [])
+        raise (logic_error "Rewrite: can't find tagged assumption" [])
     in
     let extract src =
       match src with
       | Asm(x) -> get_asm x
       | OAsm(x, order) -> get_asm x
       | RRThm(x) ->
-	 check_term_memo memo scp (formula_of x);
- 	formula_of x
+         check_term_memo memo scp (formula_of x);
+        formula_of x
       | ORRThm(x, order) ->
-	 check_term_memo memo scp (formula_of x);
-	formula_of x
+         check_term_memo memo scp (formula_of x);
+        formula_of x
     in
     Rewrite.mapping extract plan
 
@@ -1610,18 +1610,18 @@ struct
     let do_rewrite () =
       let fplan = extract_rules scp plan sq in
       let nasm, ntyenv =
-	Formula.mk_rewrite_eq scp tyenv fplan trm
+        Formula.mk_rewrite_eq scp tyenv fplan trm
       in
       let asm_tag= Tag.create() in
       let gtyenv =
-	Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
+        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
       in
       let new_subgoal =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.sqnt_env sq,
-	   ((asm_tag, nasm)::(Sequent.asms sq)),
-	   Sequent.concls sq)
+          (Sequent.sqnt_retag sq,
+           Sequent.sqnt_env sq,
+           ((asm_tag, nasm)::(Sequent.asms sq)),
+           Sequent.concls sq)
       in
       let chngs = Changes.make [] [asm_tag] [] []
       in
@@ -1643,8 +1643,8 @@ struct
     in
     let ret_list =
       Lib.map_find
-	(fun f -> try Formula.dest_equality f with _ -> raise Not_found)
-	get_eq_list
+        (fun f -> try Formula.dest_equality f with _ -> raise Not_found)
+        get_eq_list
     in
     ret_list
 
@@ -1673,18 +1673,18 @@ struct
     let do_subst() =
       let form1= Formula.subst_equiv scp form eqs_list in
       let (form2, tyenv2) =
-	Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+        Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
       in
       let gtyenv=
-	Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
       in
       let new_asms = join_up lasms ((form_tag, form2)::rasms) in
       let new_subgoal =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.sqnt_env sq,
-	   new_asms,
-	   Sequent.concls sq)
+          (Sequent.sqnt_retag sq,
+           Sequent.sqnt_env sq,
+           new_asms,
+           Sequent.concls sq)
       in
       let chngs = Changes.make [] [form_tag] [] []
       in
@@ -1723,18 +1723,18 @@ struct
       let form1 = Formula.subst_equiv scp form eqs_list
       in
       let (form2, tyenv2) =
-	Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+        Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
       in
       let gtyenv =
-	Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
       in
       let new_concls = join_up lconcls ((form_tag, form2)::rconcls) in
       let new_subgoal =
         mk_subgoal
-	  (Sequent.sqnt_retag sq,
-	   Sequent.sqnt_env sq,
-	   Sequent.asms sq,
-	   new_concls)
+          (Sequent.sqnt_retag sq,
+           Sequent.sqnt_env sq,
+           Sequent.asms sq,
+           new_concls)
       in
       let chngs = Changes.make [] [] [form_tag] []
       in
@@ -1780,8 +1780,8 @@ struct
       let chngs = Changes.make [] [new_tag] [] [] in
       let new_sbgl =
         mk_subgoal
-	  (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
-	   new_asms, Sequent.concls sqnt)
+          (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
+           new_asms, Sequent.concls sqnt)
       in
       (new_sbgl, chngs)
     in
@@ -1808,7 +1808,7 @@ struct
     let name_aux () =
       check_name name sqnt;
       let (lconcls, concl, rconcls) =
-	split_at_concl lbl (Sequent.concls sqnt)
+        split_at_concl lbl (Sequent.concls sqnt)
       in
       let form_tag, form = concl in
       let new_tag = Tag.named name in
@@ -1817,8 +1817,8 @@ struct
       let chngs = Changes.make [] [] [new_tag] [] in
       let sbgl =
         mk_subgoal
-	  (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
-	   Sequent.asms sqnt, new_concls)
+          (Sequent.sqnt_retag sqnt, Sequent.sqnt_env sqnt,
+           Sequent.asms sqnt, new_concls)
       in
       (sbgl, chngs)
     in
@@ -1850,9 +1850,9 @@ struct
     try mk_theorem (eq_term term)
     with err ->
       raise (Report.add_error
-	       (logic_error "beta_conv" [])
-	       (Report.add_error
-		  (Term.term_error "beta_conv term: " [term]) err))
+               (logic_error "beta_conv" [])
+               (Report.add_error
+                  (Term.term_error "beta_conv term: " [term]) err))
 
   (** [rewrite_conv scp pl trm]: rewrite term [trm] with plan [pl]
       in scope [scp].
@@ -1864,7 +1864,7 @@ struct
     let plan1 = Rewrite.mapping formula_of plan in
     let conv_aux t =
       let (tform, _) =
-	Formula.mk_rewrite_eq scp (Gtypes.empty_subst()) plan1 t
+        Formula.mk_rewrite_eq scp (Gtypes.empty_subst()) plan1 t
       in
       mk_theorem tform
     in
@@ -2060,9 +2060,9 @@ struct
       match d with
       | None -> None
       | Some(a) ->
-	 try Gtypes.well_defined scp ags a; Some(a)
-	 with err ->
-	   raise (Gtypes.add_type_error "Badly formed definition" [a] err)
+         try Gtypes.well_defined scp ags a; Some(a)
+         with err ->
+           raise (Gtypes.add_type_error "Badly formed definition" [a] err)
     in
     TypeAlias((Ident.mk_long th n), ags, dfn)
 
@@ -2147,17 +2147,17 @@ struct
     in
     TypeDef
       {
-	type_name = subtype_def.Defn.id;
-	type_args = subtype_def.Defn.args;
-	type_base = dtype1;
-	type_rep = rep_decln;
-	type_abs = abs_decln;
-	type_set = Formula.make scp new_setp;
-	rep_type = mk_subtype_thm nscp1 subtype_def.Defn.rep_T;
-	rep_type_inverse =
-	  mk_subtype_thm nscp1 subtype_def.Defn.rep_T_inverse;
-	abs_type_inverse =
-	  mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
+        type_name = subtype_def.Defn.id;
+        type_args = subtype_def.Defn.args;
+        type_base = dtype1;
+        type_rep = rep_decln;
+        type_abs = abs_decln;
+        type_set = Formula.make scp new_setp;
+        rep_type = mk_subtype_thm nscp1 subtype_def.Defn.rep_T;
+        rep_type_inverse =
+          mk_subtype_thm nscp1 subtype_def.Defn.rep_T_inverse;
+        abs_type_inverse =
+          mk_subtype_thm nscp1 subtype_def.Defn.abs_T_inverse;
       }
 
   (** {5 Pretty printing} *)
@@ -2182,7 +2182,7 @@ struct
   let print_typealias ppinfo (n, args, ty) =
     let named_ty =
       Gtypes.mk_constr n
-	(List.map (fun x -> Gtypes.mk_var x) args)
+        (List.map (fun x -> Gtypes.mk_var x) args)
     in
     Format.printf "@[";
     Gtypes.print ppinfo named_ty;
@@ -2190,15 +2190,15 @@ struct
       match ty with
       | None -> ()
       | (Some t) ->
-	 Format.printf "=@,";
-	Gtypes.print ppinfo t
+         Format.printf "=@,";
+        Gtypes.print ppinfo t
     end;
     Format.printf "@]"
 
   let rec print_subtype ppinfo x =
     let named_ty =
       Gtypes.mk_constr x.type_name
-	(List.map (fun x -> Gtypes.mk_var x) x.type_args)
+        (List.map (fun x -> Gtypes.mk_var x) x.type_args)
     in
     Format.printf "@[<v>";
     Format.printf "@[";
@@ -2224,7 +2224,7 @@ struct
     begin
       match x with
       | TypeAlias (n, args, ty) ->
-	 print_typealias ppinfo (n, args, ty)
+         print_typealias ppinfo (n, args, ty)
       | TypeDef y -> print_subtype ppinfo y
       | TermDecln (n, ty) -> print_termdecln ppinfo (n, ty)
       | TermDef (n, ty, th) -> print_termdefn ppinfo (n, ty, th)
@@ -2254,10 +2254,10 @@ let print_sqnt ppinfo sq =
       match afl with
       | [] -> ()
       | (s::als) ->
-	 Format.printf "@[[%s] " (name_of_asm i (form_tag s));
-	Term.print ppinfo (Formula.term_of (drop_tag s));
-	Format.printf "@]@,";
-	print_asm (i-1) als
+         Format.printf "@[[%s] " (name_of_asm i (form_tag s));
+        Term.print ppinfo (Formula.term_of (drop_tag s));
+        Format.printf "@]@,";
+        print_asm (i-1) als
     end;
     Format.printf "@]"
   and print_cncl i cfl =
@@ -2266,10 +2266,10 @@ let print_sqnt ppinfo sq =
       match cfl with
       | [] -> ()
       | (s::cls) ->
-	 Format.printf "@[[%s] " (name_of_concl i (form_tag s));
-	Term.print ppinfo (Formula.term_of (drop_tag s));
-	Format.printf "@]@,";
-	print_cncl (i+1) cls
+         Format.printf "@[[%s] " (name_of_concl i (form_tag s));
+        Term.print ppinfo (Formula.term_of (drop_tag s));
+        Format.printf "@]@,";
+        print_cncl (i+1) cls
     end ;
     Format.printf "@]"
   in
@@ -2309,8 +2309,8 @@ let print_branch ppstate branch=
        let len=(List.length sqnts)
        in
        Format.printf "@[%i %s@]@,"
-	 len
-	 (if len > 1 then "subgoal" else "subgoals");
+         len
+         (if len > 1 then "subgoal" else "subgoals");
        print_subgoals 1 sqnts
   end;
   Format.printf "@]"

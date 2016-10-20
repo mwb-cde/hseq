@@ -1,7 +1,7 @@
 (*----
   Name: logic.mli
-  Copyright M Wahab 2005-2015
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -270,12 +270,12 @@ sig
   (** Information needed to generate a new skolem constant *)
   type new_skolem_data=
       {
-	name: Ident.t;
-	ty: Basic.gtype;
-	tyenv: Gtypes.substitution;
-	scope: Scope.t;
-	skolems: skolem_type;
-	tylist: (string*int) list
+        name: Ident.t;
+        ty: Basic.gtype;
+        tyenv: Gtypes.substitution;
+        scope: Scope.t;
+        skolems: skolem_type;
+        tylist: (string*int) list
       }
   (**
       [name]: The desired name of the skolem constant. The
@@ -296,10 +296,10 @@ sig
   val mk_new_skolem:
     new_skolem_data
     -> (Basic.term
-	* Basic.gtype
-	* skolem_type
-	* Gtypes.substitution
-	* (string * int) list)
+        * Basic.gtype
+        * skolem_type
+        * Gtypes.substitution
+        * (string * int) list)
 (** [mk_new_skolem data] constructs a new skolem. Returns [(sv,
     sty, skolems, tyenv, tylist]) where [sv] is the new skolem
     constant, [sty] is the type of the skolem constant, [skolems]

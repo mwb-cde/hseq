@@ -1,7 +1,7 @@
 (*----
   Name: simplib.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -27,19 +27,19 @@ val empty_simp: unit -> Simpset.simpset
 (** [empty_simp()]: Clear the standard simpset.
 *)
 
-val add_simps: 
+val add_simps:
   Context.t -> Simpset.simpset -> Logic.thm list
   -> Simpset.simpset
 (** [add_simps thms]: Add [thms] to the standard simpset. *)
 
-val add_simp: 
+val add_simp:
   Context.t -> Simpset.simpset -> Logic.thm
   -> Simpset.simpset
 (** [add_simp thm]: Add [thm] to the standard simpset.
 *)
 
-val add_conv: 
-  Simpset.simpset -> Basic.term list 
+val add_conv:
+  Simpset.simpset -> Basic.term list
   -> (Context.t -> Logic.conv) -> Simpset.simpset
 (** [add_conv trms conv]: Add conversion [conv] to the standard
     simpset, with [trms] as the representative keys.  Example:
@@ -61,7 +61,7 @@ val simpA_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
-    
+
     Simplify assumptions.
 
     If [a] is not given then all assumptions are to be simplified.
@@ -78,7 +78,7 @@ val simpA_tac:
     @param a The assumption to simplify. Default: all assumptions.
 
     @param cntrl The rewrite control to use (used to select top-down or
-    bottom up simplifying). Default: top-down.  
+    bottom up simplifying). Default: top-down.
 
     @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
@@ -87,17 +87,17 @@ val simpA_tac:
     @param add Add this simpset to the set specified with [set]. This
     allows extra simpsets to be used with the standard simpset.
 
-    @param rules Additional rewrite rules to use. 
+    @param rules Additional rewrite rules to use.
 
     @raise No_change If no change is made.
 *)
 
 val simpA:
-  Simpset.simpset 
+  Simpset.simpset
   -> ?a:Logic.label
   -> Tactics.tactic
 (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -110,7 +110,7 @@ val simpC_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
-    
+
     Simplify assumptions.
 
     If [c] is not given then all conclusions are to be simplified.
@@ -127,7 +127,7 @@ val simpC_tac:
     @param c The conclusion to simplify. Default: all conclusions
 
     @param cntrl The rewrite control to use (used to select top-down or
-    bottom up simplifying). Default: top-down.  
+    bottom up simplifying). Default: top-down.
 
     @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
@@ -136,16 +136,16 @@ val simpC_tac:
     @param add Add this simpset to the set specified with [set]. This
     allows extra simpsets to be used with the standard simpset.
 
-    [rules] are the additional rewrite rules to use. 
+    [rules] are the additional rewrite rules to use.
 
     @raise No_change If no change is made.
 *)
 
-val simpC: 
+val simpC:
   Simpset.simpset
   -> ?c:Logic.label ->  Tactics.tactic
 (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -157,10 +157,10 @@ val simp_all_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
-    
+
     Simplify each formula in the subgoal.
 
-    {ul 
+    {ul
     {- Simplify each assumption, starting with the first (most recent),
     adding it to the simpset}
     {- Simplify each conclusion, starting with the last (least recent),
@@ -169,7 +169,7 @@ val simp_all_tac:
     Don't use formulas identified by a label in [ignore].
 
     @param cntrl The rewrite control to use (used to select top-down or
-    bottom up simplifying). Default: top-down.  
+    bottom up simplifying). Default: top-down.
 
     @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
@@ -185,7 +185,7 @@ val simp_all_tac:
 
 val simp_all: Simpset.simpset -> Tactics.tactic
 (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -199,7 +199,7 @@ val simp_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
-    
+
     Simplifier tactic.
 
     If [f] is not given, simplify the the conclusions using
@@ -213,7 +213,7 @@ val simp_tac:
     @param f The formula to simplify. Default: all conclusions.
 
     @param cntrl The rewrite control to use (used to select top-down or
-    bottom up simplifying). Default: top-down.  
+    bottom up simplifying). Default: top-down.
 
     @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
@@ -225,23 +225,23 @@ val simp_tac:
     @param add Add this simpset to the set specified with [set]. This
     allows extra simpsets to be used with the standard simpset.
 
-    @param rules Additional rewrite rules to use. 
+    @param rules Additional rewrite rules to use.
 
     @raise No_change If no change is made.
 *)
 
 
-val simp: 
+val simp:
   Simpset.simpset -> ?f:Logic.label ->  Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
 
 (** {5 Initialising functions} *)
 
-val on_load: 
+val on_load:
   Context.t -> Simpset.simpset -> Theory.contents -> Simpset.simpset
 (** Function to call when a theory is loaded. *)
 
@@ -250,7 +250,7 @@ val on_load:
 
 (** {5 Debugging} *)
 val has_property: 'a -> 'a list -> bool
-val thm_is_simp: 
+val thm_is_simp:
   Context.t -> Simpset.simpset -> ('a * Theory.thm_record) -> Simpset.simpset
-val def_is_simp: 
+val def_is_simp:
   Context.t -> Simpset.simpset -> ('a * Theory.id_record) -> Simpset.simpset

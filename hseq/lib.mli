@@ -1,7 +1,7 @@
 (*----
   Name: lib.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -22,7 +22,7 @@
 (** General purpose functions *)
 
 (** Operators **)
-module Ops : 
+module Ops :
 sig
 
   val (<+) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
@@ -32,34 +32,34 @@ end
 
 (* Simple utility functions *)
 
-val iteri : (int -> 'a array -> 'b) -> 'a array -> unit 
-val list_string : ('a -> string) -> string -> 'a list -> string 
+val iteri : (int -> 'a array -> 'b) -> 'a array -> unit
+val list_string : ('a -> string) -> string -> 'a list -> string
 
-val take : int * 'a list -> 'a list 
-val drop : int * 'a list -> 'a list 
+val take : int * 'a list -> 'a list
+val drop : int * 'a list -> 'a list
 val delete_nth : int -> 'a list -> 'a list
 val replace_nth : int -> 'a list -> 'a -> 'a list
-val insert : ('a -> 'a -> bool) -> 'a -> 'b -> ('a * 'b) list 
+val insert : ('a -> 'a -> bool) -> 'a -> 'b -> ('a * 'b) list
   -> ('a * 'b) list
 val replace : 'a -> 'b -> ('a*'b) list -> ('a*'b) list
 val wrap_around: 'a list -> int -> int
 val get_nth: 'a list -> int -> 'a
 val splice_nth : int -> 'a list -> 'a list -> 'a list
-val move_right : 'a list * 'a list -> 'a list * 'a list 
-val move_left : 'a list * 'a list -> 'a list * 'a list 
+val move_right : 'a list * 'a list -> 'a list * 'a list
+val move_left : 'a list * 'a list -> 'a list * 'a list
 val index: ('a -> bool) -> 'a list -> int
 val filter: ('a -> bool) -> 'a list -> 'a list
 val assocp: ('a -> bool) -> ('a* 'b) list -> 'b
 
 type ('a, 'b) substype = ('a, 'b) Hashtbl.t
-val empty_env : unit -> ('a, 'b) substype 
-val env_size : int -> ('a, 'b) substype 
-val find : 'a -> ('a, 'b) substype -> 'b 
-val bind_env : 'a -> 'b -> ('a, 'b) substype -> unit 
-val bind : 'a -> 'b -> ('a, 'b) substype -> ('a, 'b) substype 
-val add : 'a -> 'b -> ('a, 'b) substype -> 'b 
+val empty_env : unit -> ('a, 'b) substype
+val env_size : int -> ('a, 'b) substype
+val find : 'a -> ('a, 'b) substype -> 'b
+val bind_env : 'a -> 'b -> ('a, 'b) substype -> unit
+val bind : 'a -> 'b -> ('a, 'b) substype -> ('a, 'b) substype
+val add : 'a -> 'b -> ('a, 'b) substype -> 'b
 val chase : ('a -> bool) -> 'a -> ('a, 'a) substype -> 'a
-val fullchase : ('a -> bool) -> 'a -> ('a, 'a) substype -> 'a 
+val fullchase : ('a -> bool) -> 'a -> ('a, 'a) substype -> 'a
 val member : 'a -> ('a, 'b)substype -> bool
 val remove: 'a -> ('a, 'b)substype -> unit
 val remove_dups: 'a list -> 'a list
@@ -70,7 +70,7 @@ val table_to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list
 val table_from_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 (** Convert from a list to a table. *)
 
-val find_char : char -> int -> string -> int 
+val find_char : char -> int -> string -> int
 (** [find_char c max str]: Find the the first index of character [c]
     in string [str], returning [max] if not found.. *)
 
@@ -91,7 +91,7 @@ val num_to_name: Num.num -> string
 *)
 
 (**
-   Named Lists 
+   Named Lists
 
    Lists in which elements are named and data can be
    added by relative position.
@@ -102,14 +102,14 @@ val num_to_name: Num.num -> string
 type ('a, 'b)named_list = ('a * 'b) list
 
 (** Relative position markers *)
-type ('a)position = 
+type ('a)position =
     First | Last | Before of 'a | After of 'a | Level of 'a
 
 
-val named_add: 
-  ('a, 'b)named_list->('a)position 
+val named_add:
+  ('a, 'b)named_list->('a)position
   -> 'a -> 'b -> ('a, 'b) named_list
-(** [named_add l p n x]: 
+(** [named_add l p n x]:
     add [(n, x)] to named list [l] at position [p].
 *)
 
@@ -199,13 +199,13 @@ val rotate_right : int -> 'a list -> 'a list
 *)
 
 val apply_nth : int -> ('a -> 'b) -> 'a list -> 'b -> 'b
-(** 
+(**
     [apply_nth n f l d]: Apply [f] to [n]th element of list.
     If list [l] is empty, return [d].
 *)
 
 (***
-val fold_map : 
+val fold_map :
   ('a -> 'b -> ('a * 'c )) -> 'a -> 'b list -> ('a * 'c list)
 (** Combined fold and map. [fold_map f a [b1; ... ; bn]] is [ (fst(f
     (std f a bn-1) bn), [snd(f a b1); snd(f (fst f a b1) b2) ; ... ;
@@ -232,7 +232,7 @@ val extract : ('a -> bool) -> 'a list -> ('a * 'a list)
 
 val least: ('a -> 'a -> bool) -> 'a list -> 'a
 (**
-   [least ord ls]: return least [x] in [ls]. 
+   [least ord ls]: return least [x] in [ls].
 
    @raise [Invalid_argument] if [ls] is empty.
 *)
@@ -270,7 +270,7 @@ val first: ('a -> bool) -> 'a list -> 'a
 *)
 
 val apply_first : ('a -> 'b) list -> 'a -> 'b
-(** 
+(**
     [apply_first lst x]: Apply each function in [lst], return the
     result of the first to succeed. Fail if all functions in [lst]
     fail.
@@ -297,7 +297,7 @@ module StringSet : Set.S with type elt=string
 (** {5 Lazy Evaluation} *)
 
 type ('a)deferred
-(** 
+(**
     The type of lazy evaluation. A deferred function is evaluated once
     and the result stored and used for subsequent evaluation.
 *)
@@ -306,7 +306,7 @@ val freeze: (unit -> 'a) -> ('a)deferred
 (** [freeze fn]: Defer the evaluation of [fn]. *)
 
 val thaw: ?fresh:('a -> bool) -> ('a) deferred -> 'a
-(** 
+(**
     Get the value [x] of the deferred function, evaluating the function
     if necessary or if [fresh x] is false.
 *)
@@ -317,4 +317,3 @@ val stringify : string -> string
    command line.  Escapes the string using [String.escaped] then
    replaces ' ' with '\ '.
 *)
-

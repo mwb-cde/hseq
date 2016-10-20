@@ -1,28 +1,27 @@
 (*----
- Name: init.ml
- Copyright M Wahab 2005-2010
- Author: M Wahab  <mwb.cde@googlemail.com>
+  Name: init.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
- This file is part of HSeq
+  This file is part of HSeq
 
- HSeq is free software; you can redistribute it and/or modify it under
- the terms of the Lesser GNU General Public License as published by
- the Free Software Foundation; either version 3, or (at your option)
- any later version.
+  HSeq is free software; you can redistribute it and/or modify it under
+  the terms of the Lesser GNU General Public License as published by
+  the Free Software Foundation; either version 3, or (at your option)
+  any later version.
 
- HSeq is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
- License for more details.
+  HSeq is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+  License for more details.
 
- You should have received a copy of the Lesser GNU General Public
- License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  You should have received a copy of the Lesser GNU General Public
+  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+  ----*)
 
 open HSeq
 open HSeqUser
 open Userlib
-
 
 (**
    Initialising TP for interactive use.
@@ -38,9 +37,9 @@ open Userlib
 (**
    [tp_init()]: Theorem Prover specific initialisation.
 *)
-let tp_init() = 
+let tp_init() =
   let tmp = !Settings.load_thy_level
-  in 
+  in
     Settings.load_thy_level := 0;
     Userlib.init();
     Userlib.set_load_file_func Unsafe.load_file;
@@ -54,14 +53,14 @@ let tp_init() =
 
 
 (** [set_hooks()]: Set the file-handling functions *)
-let set_hooks() = 
+let set_hooks() =
   Userlib.set_load_file_func (Unsafe.load_file);
   Userlib.set_use_file_func (Unsafe.use_file)
-      
+
 (** [set_base_dir()]: Get the installation directory *)
 let set_base_dir()=
-    try 
-      let d = Sys.getenv Settings.base_dir_var 
+    try
+      let d = Sys.getenv Settings.base_dir_var
       in Settings.set_base_dir d
     with Not_found -> ()
 
@@ -69,20 +68,19 @@ let set_base_dir()=
 * Set OCaml toplevel search path
 ***)
 
-(** 
+(**
     [set_directorys()]: Add tp directories to the system search path.
 *)
-let set_directorys ()=
-  List.iter Unsafe.add_directory (!Settings.include_dirs);
+let set_directorys () =
   Unsafe.add_directory (Settings.libs_dir())
-  
+
 (**
    [starting_mesg()]: Print a Start Up message.
 *)
-let starting_mesg()=
+let starting_mesg() =
   Format.printf "@[\tHSeq (%s)\n@]@." Defaults.version
 
-let load_init () = 
+let load_init () =
   let initfile=
     Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
   in
@@ -90,12 +88,12 @@ let load_init () =
   then Unsafe.use_file ~silent:false initfile
   else Report.warning ("Can't find initialising file "^initfile)
 
-let init() = 
-  starting_mesg(); 
+let init() =
+  starting_mesg();
   tp_init()
 
-(*** The code to run when this module is loaded. **)  
-let _ = 
+(*** The code to run when this module is loaded. **)
+let _ =
   set_base_dir();
   set_directorys();
   set_hooks();

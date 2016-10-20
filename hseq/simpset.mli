@@ -1,7 +1,7 @@
 (*----
   Name: simpset.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -31,7 +31,7 @@
 
 (** {7 Utility functions} *)
 
-val lt_var: 
+val lt_var:
   (Basic.term -> bool) -> (Basic.term -> bool)
   -> Basic.term -> Basic.term -> bool
 (** [lt_var x y xvarp yvarp]: Less-than ordering of terms for use with
@@ -55,14 +55,14 @@ val set_rr_order: Logic.rr_type -> Rewrite.order -> Logic.rr_type
 *)
 type rule =
     Basic.binders list
-     * Basic.term option * Basic.term * Basic.term    
+     * Basic.term option * Basic.term * Basic.term
      * Rewrite.order option
      * Logic.rr_type
 
-val dest_rule: 
-  rule -> 
-  (Basic.binders list 
-   * Basic.term option * Basic.term * Basic.term 
+val dest_rule:
+  rule ->
+  (Basic.binders list
+   * Basic.term option * Basic.term * Basic.term
    * Rewrite.order option
    * Logic.rr_type)
 (** Destructor for rules. *)
@@ -86,9 +86,9 @@ val termnet_lt: rule -> rule -> bool
     terms with variables larger than terms without.
 *)
 
-val dest_rr_rule: 
-  Basic.term -> 
-  (Basic.binders list 
+val dest_rr_rule:
+  Basic.term ->
+  (Basic.binders list
    * Basic.term option * Basic.term * Basic.term
    * Rewrite.order option)
 (** [dest_rr_rule trm]: Split term [trm] into binders, condition, lhs,
@@ -101,8 +101,8 @@ val make_rule: Logic.rr_type -> Basic.term -> rule
 *)
 
 val make_asm_rules:
-  (Logic.tagged_form  -> bool) 
-  -> Logic.tagged_form list 
+  (Logic.tagged_form  -> bool)
+  -> Logic.tagged_form list
   -> rule list
 (** [make_asm_rules except forms]: Make a list of simp rules from the
     tagged formulas [forms], excluding those for which [except] is
@@ -112,13 +112,13 @@ val make_asm_rules:
 (** {5 Sets} *)
 
 (** Simpsets *)
-type simpset = 
-    { 
+type simpset =
+    {
       convs: (Context.t -> Logic.conv) Net.net;
       (** Conversions **)
-      basic: rule Net.net; 
+      basic: rule Net.net;
       (** Rewrite-rules. *)
-      next: simpset option; 
+      next: simpset option;
     (** The next simpset in the list. *)
     }
 
@@ -141,8 +141,8 @@ val add_rule: rule -> simpset -> simpset
     make rule an ordered rewrite (using {!Term.term_lt}).
 *)
 
-val add_conv: 
-  (Basic.binders list * Basic.term) 
+val add_conv:
+  (Basic.binders list * Basic.term)
   -> (Context.t -> Logic.conv) -> simpset -> simpset
 (** [add_conv (vars, key) conv s]: Add conversion [conv] to set [s],
     indexed by terms of [key] in which [vars] are the list of unifiable
@@ -151,14 +151,14 @@ val add_conv:
 
 (** {7 Look-up functions} *)
 
-val lookup_conv: 
+val lookup_conv:
   Context.t -> simpset -> Basic.term -> rule list -> rule list
 (** [lookup_conv scp set trm lst]: Look up [trm] in the conversions of
     [set]. Add new rules to [lst], in the order they are found. Raise
     [Not_found] on failure.
 *)
 
-val lookup_all: 
+val lookup_all:
   Context.t -> simpset -> Basic.term -> rule list -> rule list
 (** [lookup_all scp set trm lst]: Lookup trm in [set], adding list of
     matches to list. First the conversions of [set] are searched then
@@ -166,7 +166,7 @@ val lookup_all:
     rules are added, in the order they are found, to [lst].
 *)
 
-val lookup: 
+val lookup:
   Context.t -> simpset -> Basic.term -> rule list
 (** [lookup trm set]: find list of possible matches for term [trm] in
     [set].  First the conversions of [set] are searched then the
@@ -201,7 +201,7 @@ val simpset_add_thms:
     [set].
 *)
 
-val simpset_add_asm_rule: 
+val simpset_add_asm_rule:
   simpset -> Tag.t -> Logic.node -> simpset
 (** [simpset_add_asm_rule scp asm node thms]: Add assumption [asm] of
     [node] to simpset [set] as a simplification rule.
@@ -228,4 +228,3 @@ val print: Printer.ppinfo -> simpset -> unit
 val make_thm_rule: Logic.thm -> rule
 val thm_to_entries: Context.t -> Logic.thm -> rule list
 val make_asm_rule: Logic.tagged_form -> rule
-

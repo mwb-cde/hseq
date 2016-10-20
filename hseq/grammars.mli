@@ -1,7 +1,7 @@
 (*----
   Name: grammars.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,7 +19,7 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** Parser constructors for types and terms 
+(** Parser constructors for types and terms
 
     Top-down parsers for terms, types and their definitions using the
     ParserKit constructors, instantiated in the module
@@ -72,14 +72,14 @@ val default_type_assoc: associativity
 (** Default type associativity *)
 val default_type_fixity: fixity
 (** Default type fixity *)
-  
+
 (** {5 Parser grammars} *)
 
 (** Parser constructors specialised to tokens from {!Lexer}. *)
-module Pkit: (Parserkit.T with type token = Lexer.tok) 
+module Pkit: (Parserkit.T with type token = Lexer.tok)
 
 (** Useful parser constructors  *)
-module Utility: 
+module Utility:
 sig
   open Pkit
 
@@ -87,7 +87,7 @@ sig
   (** [?$ sym]: Utility function for building term parsers using
       {!Parserkit.T.seq}.  Parse symbol [sym], return term
       [Pterm.mk_free (Lexer.string_of_token)].  *)
-    
+
   val (?%): Lexer.tok -> Basic.gtype phrase
 (** [?% sym]: Utility function for building type parsers using
     {!Parserkit.T.seq}. Parse symbol [sym], return term [Gtypes.mk_var
@@ -109,34 +109,34 @@ exception ParsingError of string
 (** Information returned by the type definition parsers.
 *)
 type typedef_data =
-  | NewType of (string * (string list)) 
+  | NewType of (string * (string list))
   (** A new type: the type name and its arguments. *)
   | TypeAlias of (string * (string list) * Basic.gtype)
   (** A type alias: the type name, its arguments and the type it
       aliases *)
-  | Subtype of (string * (string list) 
-		* Basic.gtype * Pterm.t)
-(** 
+  | Subtype of (string * (string list)
+                * Basic.gtype * Pterm.t)
+(**
     Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
 
 (** {7 Parser Grammars} *)
-      
+
 (** {7 Utility types and functions} *)
-      
+
 type token_info = (Ident.t * fixity * int) option
 
 val string_of_tok: Lexer.tok -> string
 val string_tokens: Lexer.tok list -> string
-  
-(** {7 Token tables} 
-    
+
+(** {7 Token tables}
+
     A token table stores information about tokens. A token in the
     table is the respresentation of a symbol which can occur in an
     input stream.
 *)
-  
+
 module TokenTree: Treekit.SimpleTreeType with type key = Pkit.token
 
 type token_table
@@ -150,7 +150,7 @@ val token_table_reset: token_table -> token_table
 (*
 val token_table_add: token_table -> Lexer.tok -> token_info -> unit
 *)
-val token_table_add: 
+val token_table_add:
   token_table -> Lexer.tok -> token_info -> token_table
 (** Add a token to token table *)
 val token_table_find: token_table -> Lexer.tok-> token_info
@@ -162,19 +162,19 @@ val token_table_remove: token_table -> Lexer.tok -> token_table
 (** Remove a token from a token table *)
 
 (** {7 Parser information}  *)
-  
+
 (** Information used by the parsers. Includes a record of the bound
     names found in a term and the names found in terms and types
 *)
-type parser_info = 
-    { 
+type parser_info =
+    {
       (* Term information *)
       bound_names: (string* Pterm.t) list ref;
       (** Names found in a term and the term they are to be replaced
-	  with *)
+          with *)
       token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a term *)
-      term_parsers: 
+      term_parsers:
         (string, parser_info -> Pterm.t phrase) Lib.named_list;
       (** Extra term parsers *)
 
@@ -184,16 +184,16 @@ type parser_info =
       (** Names found in a type and their replacements *)
       type_token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a type *)
-      type_parsers: 
+      type_parsers:
         (string, parser_info -> (Basic.gtype phrase)) Lib.named_list;
       (** Extra type parsers *)
     }
-      
-val mk_info: 
-  (token_table * token_table 
+
+val mk_info:
+  (token_table * token_table
      * (string, parser_info -> Pterm.t phrase) Lib.named_list
      * (string, parser_info -> (Basic.gtype phrase)) Lib.named_list)
-  -> 
+  ->
   parser_info
 (** [mk_inf tbl type_tbl]: Make parsing information from tables [tbl]
     and [type_tbl] of term and type token information.
@@ -203,7 +203,7 @@ val lookup_name: string -> parser_info -> Pterm.t
 (** [lookup_name n inf]: Look up [n] in [inf.bound_names].  raise
     [Not_found] if not found.
 *)
-  
+
 val add_name: string -> Pterm.t -> parser_info -> unit
 (** [add_name n trm inf]: Associate [trm] with name [n] in
     [inf.bound_names].  Used to associate variable name with a bound
@@ -232,7 +232,7 @@ val clear_names: parser_info -> parser_info
 val get_type_indx: parser_info -> int
 (** [mk_vartyp inf]: Get and increment the type index [inf.typ_indx].
 *)
-  
+
 val mk_vartyp: parser_info -> Basic.gtype
 (** [mk_vartyp inf]: Make a new, uniquely named, type variable.
     Increments [inf.typ_indx].
@@ -242,12 +242,12 @@ val lookup_type_name: string -> parser_info -> Basic.gtype
 (** [lookup_type_name n inf]: Lookup type variable name [n].  If not
     found, raise [Not_found].
 *)
-  
+
 val add_type_name: string -> Basic.gtype -> parser_info -> Basic.gtype
 (** [add_type_name n ty inf]: Add [n] as the string representation of
     gtype [ty].
 *)
-  
+
 val get_type: string -> parser_info -> Basic.gtype
 (** [get_type n inf]: Get the type variable represented by name [n].
     If not found, create a type variable [ty], with a unique name,
@@ -290,19 +290,19 @@ val type_error: string -> 'a phrase
 
 val comma_list: 'a phrase -> 'a list phrase
 (** [comma_list ph]: Parse a comma seperated list of phrases [ph] *)
-  
+
 val repeat_term: 'a phrase -> 'b phrase -> 'a list phrase
 (** [repeat_term ph1 ph2]: Repeatedly parse phrase [ph1], terminated
     by final phrase [ph2].
 *)
-  
+
 (** {5 Identifier Parsers} *)
 
 val id_parser: (Lexer.tok -> token_info) -> Ident.t phrase
 (** [id_parser info inp]: General identifier parser.  Matches
     identifiers and symbols which translate to identifiers.
 *)
-  
+
 val id_strict: (Lexer.tok -> token_info) -> Ident.t phrase
 (** [id_strict info inp]: Strict identifier parser.  Matches (possibly
     qualified) identifiers only, not symbols.  *)
@@ -311,8 +311,8 @@ val id_relaxed: parser_info -> Ident.t phrase
 (** [id_relaxed info inp]: Relaxed identifier parser.  Matches
     (possibly qualified) identifiers and symbols.  *)
 
-val named_id: 
-  parser_info 
+val named_id:
+  parser_info
   -> (parser_info -> Ident.t phrase)
   -> Ident.t -> Ident.t phrase
 (** [named_id info ph name inp]: Parse an identifier [name].  Fail if
@@ -320,7 +320,7 @@ val named_id:
     the identifier.
 *)
 
-val short_id: (parser_info -> Ident.t phrase) 
+val short_id: (parser_info -> Ident.t phrase)
   -> parser_info -> string phrase
 (** [short_id ph inf toks]: Parse a short (unqualified)
     identifier. Uses parser [ph inf] to parse the identifier.
@@ -337,30 +337,30 @@ val mk_short_id: (parser_info -> Ident.t phrase)
 (** [mk_short_id ph inf]: Parse a possibly qualified identifer with
     [ph inf], make it a short identifier.  *)
 
-(** 
-    {5 Type parsers} 
-    
+(**
+    {5 Type parsers}
+
     Types are parsed according to the following rules:
 
     {[
     types ::= inner_types
 
     inner_types ::= operators(atomic_types)
-    
+
     operators(atom) ::=
     op atom
     | atom op atom
     | atom op
 
     atomic_types ::=
-    type_parsers 
+    type_parsers
     | error
 
-    type_parsers ::= 
+    type_parsers ::=
     primed_id
-    | num_type 
+    | num_type
     | bool_type
-    | type_constructor = 
+    | type_constructor =
     [ '(' inner_types [ ',' inner_types ]* ')' ] long_id
     | bracketed_type = '(' inner_types ')'
     | User added parsers
@@ -379,14 +379,14 @@ val mk_type_binary_constr:
     from constructor [tok], left argument [l] and right argument [r].
 *)
 
-val mk_type_unary_constr: 	
+val mk_type_unary_constr:
   parser_info -> Lexer.tok -> Basic.gtype -> Basic.gtype
 (** [mk_type_unary_constr inf tok a]: Make a gtype from a unary type
     from constructor [tok] and argument [a].
 *)
-  
+
 (** {7 The parsers} *)
-  
+
 val type_id: parser_info -> Ident.t phrase
 (** [type_id]: Parse a type identifier. *)
 
@@ -397,7 +397,7 @@ val bool_type: parser_info -> Basic.gtype phrase
 (** [bool_type info]: Parse type "bool" *)
 val num_type: parser_info -> Basic.gtype phrase
 (** [num_type info]: Parse type "num" *)
-  
+
 val type_constructor_parser: parser_info -> Basic.gtype phrase
 (** [type_constructor_parser inf]: Parse "['(' <args> ')']<constructor>" *)
 
@@ -407,12 +407,12 @@ val bracketed_type_parser: parser_info -> Basic.gtype phrase
 
 val inner_types: parser_info -> Basic.gtype Pkit.phrase
 (** Parse infix/prefix/suffix type operators *)
-  
+
 val atomic_types: parser_info -> Basic.gtype phrase
 (** The atomic types (num, bool, etc) *)
 
-val type_parsers_list: 
-  parser_info -> 
+val type_parsers_list:
+  parser_info ->
   (string, parser_info -> (Basic.gtype phrase)) Lib.named_list
 (** A record of the type parsers used by {!Grammars.inner_types}.  Can
     be extended with user-defined parsers.
@@ -420,19 +420,19 @@ val type_parsers_list:
 
 val type_parsers: parser_info -> Basic.gtype phrase
 (** The parser made from {!Grammars.inner_types}) *)
-  
+
 val types: parser_info -> Basic.gtype phrase
 (** The main type parser. *)
 
-val core_type_parsers: 
+val core_type_parsers:
   (string, parser_info -> (Basic.gtype phrase)) Lib.named_list
 (** The built-in type parsers *)
-  
-val init_type_parsers: 
+
+val init_type_parsers:
   parser_info -> parser_info
 (** Initialise the type parsers *)
-  
-(** {7 Support for adding parsers} 
+
+(** {7 Support for adding parsers}
 
     Functions to add to and remove from the list of type parsers
     {!Grammars.type_parsers_list} used by {!Grammars.types}.
@@ -440,7 +440,7 @@ val init_type_parsers:
     Allows the use of user-defined type parsers.
 *)
 
-val add_type_parser:  
+val add_type_parser:
   parser_info -> (string)Lib.position -> string
   -> (parser_info -> Basic.gtype phrase)
   -> parser_info
@@ -453,7 +453,7 @@ val remove_type_parser: parser_info -> string -> parser_info
    [Not_found] if not present.
 *)
 
-(** {5 Term parsers} 
+(** {5 Term parsers}
 
     Terms are parsed according to the following grammar:
 
@@ -469,8 +469,8 @@ val remove_type_parser: parser_info -> string -> parser_info
 
     typed_primary ::= primary optional_type
 
-    primary ::= 
-    term_parsers 
+    primary ::=
+    term_parsers
     | error
 
     term_parsers ::=
@@ -483,26 +483,26 @@ val remove_type_parser: parser_info -> string -> parser_info
     | lambda = LAM (short_id optional_type)+ ':' form
     | User added parsers
     ]}
-    
+
     Note that the parser for terms is called 'form'
     ({!Grammars.form}).
 *)
-  
+
 (** {7 Utility functions} *)
-  
+
 val mk_conn :
   parser_info -> Lexer.tok -> Pterm.t -> Pterm.t -> Pterm.t
 (** [mk_conn inf tok l r]: Make a binary operator term from token
     [tok] with left argument [l] and right argument [r].
 *)
-  
+
 val mk_prefix : parser_info -> Lexer.tok -> Pterm.t -> Pterm.t
 (** [mk_prefix inf tok a]: Make a binary operator term from token
     [tok] with argument [a].
 *)
-  
-val qnt_setup_bound_names: 
-  parser_info -> Basic.quant -> (string * Basic.gtype) list 
+
+val qnt_setup_bound_names:
+  parser_info -> Basic.quant -> (string * Basic.gtype) list
   -> (string * Pterm.t) list
 (** [qnt_setup_bound_names inf qnt xs]: Make bound variables from the
     name-type pairs in [xs], add them to [inf.bound_names].  [qnt] is
@@ -510,13 +510,13 @@ val qnt_setup_bound_names:
 *)
 
 val qnt_term_remove_names:
-  parser_info -> (string * Pterm.t) list 
+  parser_info -> (string * Pterm.t) list
   -> Pterm.t -> Pterm.t
 (** [qnt_term_remove_names inf xs body]: Use bound names in [xs] to
     form a quantified term, with body as the initial term.
-    
+
     Simplified example: [[!x, ?y, !z] t] produces [(!x: (?y: (!z: t)))].
-    
+
     Removes each name in [xs] from [inf.bound_names] as it is used.
 *)
 
@@ -526,7 +526,7 @@ val qnt_term_remove_names:
     each constructed term.
 *)
 val make_term_remove_names:
-  parser_info 
+  parser_info
   -> (Pterm.t -> Pterm.t)
   -> (string * Pterm.t) list
   -> Pterm.t -> Pterm.t
@@ -535,11 +535,11 @@ val make_term_remove_names:
 
 val number : Num.num phrase
 (** Read a number constant. *)
-val boolean : bool phrase 
+val boolean : bool phrase
 (** Read a boolean constant. *)
-  
+
 val optional_type : parser_info -> Basic.gtype option phrase
-(** Parse an optional type. 
+(** Parse an optional type.
 
     [ optional_type ::= [ ':' types ] ]
 *)
@@ -550,7 +550,7 @@ val id: parser_info -> Ident.t phrase
 val id_type_opt:
   (parser_info -> 'a Pkit.phrase) ->
   parser_info -> ('a * Basic.gtype) phrase
-(** Parse an optionally typed identifier. 
+(** Parse an optionally typed identifier.
 
     [ id_type_opt ::= id optional_type ]
 *)
@@ -578,23 +578,23 @@ val term_parsers: parser_info ->Pterm.t phrase
 (** The parser built from the list of atomic term parsers *)
 val primary: parser_info -> Pterm.t phrase
 (** Parser for the atomic terms *)
-  
-val core_term_parsers: 
+
+val core_term_parsers:
   (string, parser_info -> (Pterm.t phrase)) Lib.named_list
 (** The built-in term parsers *)
-  
+
 val init_term_parsers: parser_info -> parser_info
 (** Initialise the term parsers *)
-  
+
 (** {7 Support functions} *)
-  
-val add_parser: 
+
+val add_parser:
   parser_info -> string Lib.position
   -> string -> (parser_info -> Pterm.t phrase) -> parser_info
 (** [add_parser pos n ph]: Add term parser [ph] with name [n] in
     position [pos] to {!Grammars.term_parsers_list}.
 *)
-  
+
 val remove_parser: parser_info -> string -> parser_info
 (** [remove_parser n]: Remove the term parser named [n] from
     {!Grammars.term_parsers_list}.
@@ -607,17 +607,17 @@ val parse_as_binder:
 
     Symbol [sym] should be added to the lexer seperately.
     (e.g. using [add_symbol sym (Lexer.Sym(Lexer.OTHER sym))]).
-*)   
+*)
 
 (** {5 Definitions} *)
 
-(** {7 Type definitions} 
+(** {7 Type definitions}
 
     A type definition is either a simple type definition (declaring a
     new type); an aliasing definition or a subtyping definition.
 
     {[
-    typedef ::= 
+    typedef ::=
     simple_typedef
     | subtypedef
 
@@ -625,35 +625,35 @@ val parse_as_binder:
     [ '(' primed_id  (',' primed_id)* ')' ] type_id [ '=' types ]
 
     subtypedef ::=
-    [ '(' primed_id  (',' primed_id)* ')' ] type_id 
+    [ '(' primed_id  (',' primed_id)* ')' ] type_id
     '=' types ':' form
     ]}
 *)
-  
+
 val simple_typedef:
   parser_info ->
   (string * string list option * Basic.gtype option)  phrase
 (** Parse a type declaration or alias. If the rhs of the definition is
     given, it is an aliasing definition.
 *)
-val subtypedef: 
-  parser_info -> 
+val subtypedef:
+  parser_info ->
   (string * string list option * Basic.gtype * Pterm.t)  phrase
 (** Parse a subtyping definition. The term is the defining predicate
     for the type.
 *)
-    
+
 val typedef: parser_info -> (typedef_data)  phrase
 (** Parse a type definition. *)
 
-(** {7 Term definitions} 
+(** {7 Term definitions}
 
     Term definitions.
 
-    {[ 
+    {[
     defn ::= short_id short_id* '=' form
     ]}
-    
+
     In the form [ f a1 ... an = rhs ], [f] is the identifier being
     defined, the [a1 ... an] are the parameters and the form [rhs] is
     the definition of [f]. Occurences of the parameters [a1 .. an] in
@@ -669,5 +669,3 @@ val defn:
   parser_info ->
   (((string * Basic.gtype) * Pterm.t list) * Pterm.t) phrase
 (** Parse a term definition. *)
-
-

@@ -1,7 +1,7 @@
 (*----
   Name: simputils.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -39,12 +39,12 @@ let is_variable qnts x= Rewrite.is_free_binder qnts x
 let rec equal_upto_vars varp x y =
   if (varp x) && (varp y)
   then true
-  else 
+  else
     match (x, y) with
       | (Basic.App(f1, arg1), Basic.App(f2, arg2))->
-	(equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
-      | (Basic.Qnt(qn1, b1), Basic.Qnt(qn2, b2)) -> 
-	(qn1 == qn2) && (equal_upto_vars varp b1 b2)
+        (equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
+      | (Basic.Qnt(qn1, b1), Basic.Qnt(qn2, b2)) ->
+        (qn1 == qn2) && (equal_upto_vars varp b1 b2)
       | (_, _) -> Term.equals x y
 
 (** [find_variables is_var vars trm]: find all subterms [t] of [trm]
@@ -55,14 +55,14 @@ let find_variables is_var vars trm =
     match t with
       | Basic.Qnt(_, b) -> find_aux env b
       | Basic.Bound(q) ->
-	if is_var q
-	then 
-	  try ignore(Term.find t env); env
-	  with Not_found -> Term.bind t t env
-	else env
-      | Basic.App(f, a) -> 
-	let nv = find_aux env f
-	in 
+        if is_var q
+        then
+          try ignore(Term.find t env); env
+          with Not_found -> Term.bind t t env
+        else env
+      | Basic.App(f, a) ->
+        let nv = find_aux env f
+        in
         find_aux nv a
       | _ -> env
   in find_aux vars trm
@@ -74,9 +74,9 @@ let check_variables is_var vars trm =
     match t with
       | Basic.Qnt(_, b) -> check_aux b
       | Basic.Bound(q) ->
-	if is_var q
-	then ignore(Term.find t vars)
-	else ()
+        if is_var q
+        then ignore(Term.find t vars)
+        else ()
       | Basic.App(f, a) -> check_aux f; check_aux a
       | _ -> ()
   in check_aux trm
@@ -86,11 +86,11 @@ let check_variables is_var vars trm =
 *)
 let strip_qnt_cond t =
   (* get leading quantifiers *)
-  let (qs, t1) = Term.strip_qnt (Basic.All) t in 
+  let (qs, t1) = Term.strip_qnt (Basic.All) t in
   if Lterm.is_implies t1  (* deal with conditional equalities *)
-  then 
+  then
     let (_, a, c) = Term.dest_binop t1
-    in 
+    in
     (qs, Some a, c)
   else (qs, None, t1)
 
@@ -98,18 +98,18 @@ let strip_qnt_cond t =
     and repeat for the resulting list. Concatenate the list of lists
     that result. If [f x] fails, keep [x] as the result.
 *)
-let apply_merge_list f ls = 
+let apply_merge_list f ls =
   let rec app_aux ys result =
-    match ys with 
+    match ys with
       | [] -> result
-      | x::xs -> 
+      | x::xs ->
         begin
-	  try 
-	    let nlst = f x in 
-	    let nresult = app_aux nlst result
-	    in 
-	    app_aux xs nresult
-	  with _ -> app_aux xs (x::result)
+          try
+            let nlst = f x in
+            let nresult = app_aux nlst result
+            in
+            app_aux xs nresult
+          with _ -> app_aux xs (x::result)
         end
   in
   app_aux ls []

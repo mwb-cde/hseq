@@ -1,4 +1,25 @@
-\input texinfo  @c -*-texinfo-*-
+@c -*-texinfo-*-
+@c hseq-quickstart.texi - Documentation for hseq.
+@c Copyright 2005-2016, Matthew Wahab <mwb.cde@gmail.com>
+@c
+@c Released under the Lesser GPLv3 license:
+@c ========================================
+@c This file is part of HSeq.
+@c
+@c HSeq is free software; you can redistribute it and/or modify it
+@c under the terms of the Lesser GNU General Public License as
+@c published by the Free Software Foundation; either version 3, or (at
+@c your option) any later version.
+@c
+@c HSeq is distributed in the hope that it will be useful, but WITHOUT
+@c ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+@c or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General
+@c Public License for more details.
+@c
+@c You should have received a copy of the Lesser GNU General Public
+@c License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+
+\input texinfo
 
 @c %**start of header
 @setfilename hseq-quickstart.info
@@ -9,7 +30,7 @@
 @include localdefs.texi
 
 @copying
-Copyright @copyright{} 2005-2014, Matthew Wahab
+Copyright @copyright{} 2005-2016, Matthew Wahab
 @end copying
 
 @titlepage
@@ -51,7 +72,7 @@ toplevel with the @HSeq{} extensions loaded and ready for
 use. @var{options} are the options to pass to the OCaml system. This
 is the way in which @HSeq{} is normally used.
 
-@item @code{@strong{hseqb} @var{options} @var{file}} 
+@item @code{@strong{hseqb} @var{options} @var{file}}
 Execute @var{file} as an @HSeq{} script.
 
 @item @code{@strong{hseqc} @var{options} @var{file}}
@@ -121,7 +142,7 @@ Type definitions:
   @code{('a)set='a -> bool}
 
 Definitions:
-  @code{in:  'a -> ('a)set -> bool 
+  @code{in:  'a -> ('a)set -> bool
         |- !x A: (in x A) = (A x)}
   @code{compose:  ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b
         |- !f g: (compose f g) = (%x: f g x)}
@@ -171,7 +192,7 @@ In @HSeq{}, a proof is made up of a @emph{goal} and one or more
 @emph{tactics} which implement the steps of the proof. A goal consists
 of the formula to be proved and a set of @emph{sequents}. A sequent is
 a sub-goal to be proved and is formed of a set of @emph{assumptions}
-and a set of @emph{conclusions}. 
+and a set of @emph{conclusions}.
 
 Sequents are displayed with the goal to prove, the number of subgoals
 still to prove and then the assumptions above the conclusions.
@@ -352,7 +373,7 @@ Subgoal solved
 @end example
 
 The command @code{qed @var{n}} stores the theorem under name
-@var{n}; it can be retrieved using command @code{thm @var{n}}. 
+@var{n}; it can be retrieved using command @code{thm @var{n}}.
 @example
 For example,
 @verbatim
@@ -369,7 +390,7 @@ theory.
 @example
 Example, proof for a theory definition:
 @verbatim
-# (lemma "l1" << !x y: (x = y) => (x => (y & x)) >> 
+# (lemma "l1" << !x y: (x = y) => (x => (y & x)) >>
    [allC;  allC ; implC ; implC ;split_tac ++ (replace_tac ++ blast_tac)]);;
   - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end verbatim
@@ -384,7 +405,7 @@ are too specific for general use.
 @example
 Example, a constructed proof:
 @verbatim
-# (prove << !x y: (x = y) => (x => (y & x)) >> 
+# (prove << !x y: (x = y) => (x => (y & x)) >>
    (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac));;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end verbatim
@@ -427,7 +448,7 @@ Parses @var{str} as a term without checking that the term is valid.
 @end table
 
 @example
-Terms: 
+Terms:
 @code{<< ! x: (not x) or x>>} (excluded_middle)
 @code{<< ! t f: (if true then t else f) = t >>}
 @code{read "! t f: (if true then t else f) = t"}
@@ -451,7 +472,7 @@ structured as two main modules: @code{HSeq}, the main library, and
 @code{HSeqUser}, the application built on top of the OCaml toplevel.
 The @code{HSeq} library is the implementation of the theorem
 prover while The @code{HSeqUser} wraps the @code{HSeq} library with the
-structures needed to support interactive use. 
+structures needed to support interactive use.
 
 The @code{HSeq} library is made up of a number of modules. The OCaml header
 files for the modules are installed in @file{<installation directory>/lib}.
@@ -541,14 +562,14 @@ variable}.
 The standard syntax for types is:
 @table @code
 @item @code{'a}
-a type variable of name @emph{a}.  
-@item @code{'_a} 
+a type variable of name @emph{a}.
+@item @code{'_a}
 a weak type variable of name @emph{a}.
 @item @code{(t1, @dots{}, t@var{n})f}
 a constructed type, with constructor @strong{@emph{identifier}} @var{f} and
 @var{n} arguments.
 @item @code{f}
-a constructed type, with constructor identifier @emph{f} and no arguments. 
+a constructed type, with constructor identifier @emph{f} and no arguments.
 @end table
 
 A type can have a specialized syntax, in addition to the standard
@@ -556,7 +577,7 @@ form. For example, the type of functions has the standard form
 @code{FUN('a, 'b)} but is normally written in its specialized form
 @code{'a -> 'b}.
 
-The core types are: 
+The core types are:
 @table @code
 @item @strong{@code{bool}}
 The booleans.
@@ -588,7 +609,7 @@ The core terms and their syntax are:
 @itemx @strong{@code{false}}
 The boolean true and false.
 @item @strong{@code{f a}}
-Function application. 
+Function application.
 
 @item @code{@strong{not} a}
 @itemx @code{@strong{~}a}
@@ -643,7 +664,7 @@ A lambda term.
 Universal quantification.
 
 @item @code{@strong{?} x@strong{:} F}
-Existential quantification. 
+Existential quantification.
 
 @item @code{@strong{?!} x@strong{:} F}.
 Unique existential binding (i.e. there exists one @code{x} such that
@@ -655,7 +676,7 @@ The choice operator (i.e. some @code{x} for which @code{F} is true)
 
 A variable @code{x} in a binding can be typed in which case it is
 written with brackets as @code{(x: ty)}.  For example
-@example 
+@example
 @code{! x (y: bool) z : ?  (A:('a)set): (y and z) | (x = A)}.
 @end example
 
@@ -718,14 +739,14 @@ Gets the defining theorem for term @var{x}. If @var{x} is in the form
 @code{@var{T}.@var{n}}, it identifies term @var{n} from theory
 @var{T}, otherwise the scope is searched for a definition of @var{x}.
 
-@item @strong{@code{thm @var{x}}} 
+@item @strong{@code{thm @var{x}}}
 Get the theorem named @var{x}. Note that axioms are theorems. If
 @var{x} is in the form @code{@var{T}.@var{n}}, it identifies theorem
 @var{n} from theory @var{T}, otherwise the scope is searched for a
 theorem named @var{x}.
 
 @item @strong{@code{scope()}}
-Get the current scope. 
+Get the current scope.
 
 @item @strong{@code{goal_scope()}}
 Get the scope of the current goal (in an interactive proof).
@@ -745,7 +766,7 @@ Example:
 @code{declare << and:(bool -> bool -> bool) >>}.
 @end example
 
-@item @strong{@code{define <:def< @var{D} >>}} 
+@item @strong{@code{define <:def< @var{D} >>}}
 Defines a term. @var{D} must be in the form @code{@var{n} @var{a1}
 @dots{} @var{an} = @var{T}} where @var{n} is the identifier being
 defined, @var{a1} @dots{}  @var{an} are the parameters and @var{T} the
@@ -756,7 +777,7 @@ Example:
 @code{define <:def< or x y = (not (not x) and (not y)) >>}.
 @end example
 
-@item @strong{@code{typedef <:def<: @var{D} >>}} 
+@item @strong{@code{typedef <:def<: @var{D} >>}}
 Declares or defines a type constructor.  @code{typedef <:def<:
 @var{ty} >>} declares the new type @var{ty} constructor. @code{typedef
 <:def<: @var{ty1} = @var{ty2} >>} declares @var{ty1} to be an alias
@@ -768,14 +789,14 @@ Example:
 (aliasing)    @code{typedef <:def<: ('a)set = ('a -> bool)>>}.
 @end example
 
-@item @strong{@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred} >>}} 
+@item @strong{@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred} >>}}
 Defines @var{ty1} as the subtype of type @var{ty2} containing elements
 which satisfy term @var{pred} (which should have type @code{@var{ty2}
 -> bool}). Existence theorem @var{T} must be in the form @code{?x:
 @var{pred} x}.
 
 Example
-@example 
+@example
 @code{typedef <:def<: ('a, 'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
 @end example
 
@@ -794,8 +815,8 @@ associative), @strong{@code{infixn}} (infix, non-associative) and
 @section Axioms and Theorems
 
 @table @code
-@item @strong{@code{axiom @var{T}}} 
-Declares term @var{T} as an axiom. 
+@item @strong{@code{axiom @var{T}}}
+Declares term @var{T} as an axiom.
 
 @item @strong{@code{theorem @var{T} [@var{tac1}; @dots{}; @var{tacn}]}}
 @itemx @strong{@code{lemma @var{T} [@var{tac1}; @dots{}; @var{tacn}]}}
@@ -826,16 +847,16 @@ the label is referred by the OCaml expression @code{!$
 replaces the integer normally displayed with the formula.
 
 @table @code
-@item @strong{@code{goal @var{t}}} 
+@item @strong{@code{goal @var{t}}}
 Set term @var{t} as the goal in an interactive proof.
 
-@item @strong{@code{by @var{tac}}} 
+@item @strong{@code{by @var{tac}}}
 Applies tactic @var{tac} to the current subgoal.
 
-@item @strong{@code{undo()}} 
+@item @strong{@code{undo()}}
 Drops the result of the last @code{by} command.
 
-@item @strong{@code{top()}} 
+@item @strong{@code{top()}}
 Displays the current sub-goal.
 
 @item @code{@strong{qed} @var{n}}
@@ -895,7 +916,7 @@ existential and universal quantifiers.
 For example,
 @example
 @table @code
-@item conjA reduces 
+@item conjA reduces
 @code{[@var{A} and @var{B}, @var{asms} |- @var{concls}]}
 to
 @code{[@var{A}, @var{B}, @var{asms} |- @var{concls}]}
@@ -908,49 +929,49 @@ and @code{[@var{asms} |- @var{B}, @var{concls}]}
 @end table
 @end example
 
-@item @strong{@code{betaA}}, @strong{@code{betaC}} and @strong{@code{beta_tac}} 
+@item @strong{@code{betaA}}, @strong{@code{betaC}} and @strong{@code{beta_tac}}
 Beta reduce formulas.
 
-For example, 
+For example,
 @example
 @table @code
-@item betaA reduces 
+@item betaA reduces
 @code{[(% x: (f x)) true, @var{asms} |- @var{concls}]}
 to
 @code{[(f true), @var{asms} |- @var{concls}]}
 @end table
 @end example
 
-@item @strong{@code{basic}} 
+@item @strong{@code{basic}}
 Solves sub-goals of the form @code{[@var{F}, @var{asm} |- @var{F},
 @var{concl}]} (a formula appearing in both assumptions and
 conclusions).
 
-@item @strong{@code{trivial}} 
+@item @strong{@code{trivial}}
 Solves subgoals in which @code{true} appears in the conclusions or
 @code{false} appears in the assumptions.
 
-@item @strong{@code{eq_tac}} 
+@item @strong{@code{eq_tac}}
 Solves subgoals in which term @code{x=x} appears in the conclusions.
 
-@item @strong{@code{equals_tac}} 
+@item @strong{@code{equals_tac}}
 Replaces equality (=) between booleans with boolean equivalence (iff).
 
-@item @strong{@code{iffA}}, @strong{@code{iffC}} 
+@item @strong{@code{iffA}}, @strong{@code{iffC}}
 Eliminate boolean equivalence.
 
-@item @strong{@code{instA}}, @strong{@code{instC}}, @strong{@code{inst_tac}} 
+@item @strong{@code{instA}}, @strong{@code{instC}}, @strong{@code{inst_tac}}
 Instantiate assumptions and conclusions with a given list of
-terms. 
+terms.
 
 @example
 @table @code
-@item @code{instA [@var{trm}]} reduces 
+@item @code{instA [@var{trm}]} reduces
 @code{[! x: f x, @var{asms} |- @var{concls}]}
 to
 @code{[f @var{trm}, @var{asms} |- @var{concls}]}
 
-@item @code{instC [@var{trm}]} reduces 
+@item @code{instC [@var{trm}]} reduces
 @code{[@var{asms} |- ? x: f x, @var{concls}]}
 to
 @code{[@var{asms} |- f @var{trm}, @var{concls}]}
@@ -958,18 +979,18 @@ to
 @end table
 @end example
 
-@item @strong{@code{specA}}, @strong{@code{specC}}, @strong{@code{spec_tac}} 
+@item @strong{@code{specA}}, @strong{@code{specC}}, @strong{@code{spec_tac}}
 Specialize assumptions and conclusions.
 
 @example
 @table @code
-@item @code{specA} reduces 
+@item @code{specA} reduces
 @code{[? x: f x, @var{asms} |- @var{concls}]}
 to
 @code{[f @var{trm}, @var{asms} |- @var{concls}]}
 where @var{trm} is a constructed, arbitrary constant.
 
-@item @code{specC [@var{trm}]} reduces 
+@item @code{specC [@var{trm}]} reduces
 @code{[@var{asms} |- ! x: f x, @var{concls}]}
 to
 @code{[@var{asms} |- f @var{trm}, @var{concls}]}
@@ -977,33 +998,33 @@ where @var{trm} is a constructed, arbitrary constant.
 @end table
 @end example
 
-@item @strong{@code{cut @var{thm}}} 
+@item @strong{@code{cut @var{thm}}}
 Introduces theorem @var{thm} as an assumption. The optional argument
 @code{?inst} can be used to instantiate the assumption with values.
 
-@item @strong{@code{flatten_tac}} 
+@item @strong{@code{flatten_tac}}
 Eliminates basic boolean operators without splitting the sub-goal.
 
-@item @strong{@code{split_tac}} 
+@item @strong{@code{split_tac}}
 Eliminates the basic boolean operators, splitting the sub-goal.
 
-@item @strong{@code{scatter_tac}} 
+@item @strong{@code{scatter_tac}}
 Combines @code{flatten_tac} and @code{split_tac}.
 
-@item @strong{@code{blast_tac}} 
+@item @strong{@code{blast_tac}}
 Applies @code{scatter_tac} followed by @code{basic}.
 
 @end table
 
 The order of assumptions and conclusions can be significant for
-tactics which search for a formula.  
+tactics which search for a formula.
 
 @table @code
-@item @strong{@code{liftA @var{l}}} and @strong{@code{liftC @var{l}}} 
+@item @strong{@code{liftA @var{l}}} and @strong{@code{liftC @var{l}}}
 Lift the assumption or conclusion labelled @var{l} to the top of the
 list of assumptions or conclusions.
 
-@item @strong{@code{copyA @var{l}}} and @strong{@code{copyC @var{l}}} 
+@item @strong{@code{copyA @var{l}}} and @strong{@code{copyC @var{l}}}
 Copy the assumption or conclusion with label @var{l}.
 
 @item @strong{@code{deleteA @var{l}}} and @strong{@code{deleteC @var{l}}}
@@ -1064,19 +1085,19 @@ Matches a possibly quantified assumption of the from @code{a => c}
 with an assumption of the form @code{a}, replacing it with assumption
 @code{c}.
 
-@item @strong{@code{cut_back_tac}} and @strong{@code{cut_mp_tac}} 
+@item @strong{@code{cut_back_tac}} and @strong{@code{cut_mp_tac}}
 Operate with theorems of the form @code{a=>c} (which may be
 universally quantified). The conclusion @code{c} is unified with an
 assumption and replaced with the assumption @code{a}.
 
-@item @strong{@code{show @var{t} @var{tac}}} 
+@item @strong{@code{show @var{t} @var{tac}}}
 Introduces term @var{t} as an assumption, using tactic @var{tac} to
 prove the truth of @var{t}.
 
-@item @strong{@code{cases_tac @var{t}}} 
+@item @strong{@code{cases_tac @var{t}}}
 Introduces a case split on the truth of term @var{t}.
 
-@item @strong{@code{case_of @var{t}}} 
+@item @strong{@code{case_of @var{t}}}
 Introduces a case split on the possible values of term @var{t}. The
 type of the term is used to determine the cases theorem used. If
 @var{ty} has type @var{ty}, the cases theorem named
@@ -1116,7 +1137,7 @@ Goal !x: x => false
 @end verbatim
 @end example
 
-@item @strong{@code{induct_tac @var{thm}}} 
+@item @strong{@code{induct_tac @var{thm}}}
 Begins a proof by induction on a conclusion of the form @code{! x .. y
 : R => A}.
 
@@ -1151,7 +1172,7 @@ Goal !A: (finite A) => (!B: (subset B A) => (finite B))
 @end verbatim
 @end example
 
-@item @strong{@code{induct_on @var{n}}} 
+@item @strong{@code{induct_on @var{n}}}
 Begins a proof by induction on the quantified variable named @var{n},
 failing if there is no such variable in the conclusions or no
 appropriate induction theorem. The induction theorem used depends on
@@ -1173,7 +1194,7 @@ specify the rewriting direction. The possible values are
 @table @code
 @item @strong{@code{rewriteA_tac}}
 @itemx @strong{@code{rewriteC_tac}}
-@itemx @strong{@code{rewrite_tac}} 
+@itemx @strong{@code{rewrite_tac}}
 Rewrite tactics for assumptions, conclusions and sequent formulas with
 rewrite rules provided as a list of theorems.
 
@@ -1206,7 +1227,7 @@ the sequent.
 
 @item @strong{@code{replace_tac}}
 @itemx @strong{@code{once_replace_tac}}
-Rewrite formulas with rules from the assumptions. 
+Rewrite formulas with rules from the assumptions.
 
 @example
 Example
@@ -1251,7 +1272,7 @@ Subgoal solved
 @end verbatim
 @end example
 
-@item @strong{@code{unfold @var{n}}} 
+@item @strong{@code{unfold @var{n}}}
 Unfold the definition of term @var{n}.
 @end table
 
@@ -1259,13 +1280,13 @@ The main simplification tactics are @code{simpA_tac},
 @code{simpC_tac}, @code{simp_all_tac} and @code{simp_tac}.
 
 @table @code
-@item @strong{@code{simpA_tac}} 
+@item @strong{@code{simpA_tac}}
 Simplifies the assumptions, starting with the first.
 
-@item @strong{@code{simpC_tac}} 
+@item @strong{@code{simpC_tac}}
 Simplifies the conclusions, starting with the last.
 
-@item @strong{@code{simp_all_tac}} 
+@item @strong{@code{simp_all_tac}}
 Simplifies the assumptions, starting with the first, and then the
 conclusions, starting with the last.
 
@@ -1288,7 +1309,7 @@ simp_tac []}).
 @section Tacticals
 
 @table @code
-@item @strong{@code{skip}} 
+@item @strong{@code{skip}}
 The tactic that does nothing and always succeeds.
 
 @item @strong{@code{fail}}
@@ -1299,7 +1320,7 @@ Alternation between tactics. Each tactic is tried in sequence,
 starting with @var{tac_1}, until one of the tactics succeeds. The
 alternation fails if all the tactics fail.
 
-@code{@var{tac_1}@strong{//}@var{tac_2}} 
+@code{@var{tac_1}@strong{//}@var{tac_2}}
 Shorthand for @code{alt[@var{tac_1}; @var{tac_2}]}.
 
 @item @code{@strong{seq}[@var{tac_1}; @var{tac_2}; @dots{}; @var{tac_n}]}
@@ -1316,7 +1337,7 @@ Shorthand for @code{seq[@var{tac_1}; @var{tac_2}]}.
 The @strong{branching} tactical. First applies tactic @var{tac} then
 each tactic @var{tac_i} is applied to the @var{i}'th resulting
 sub-goal. All sub-goals are then combined, in the order they were
-generated, to form the final list of sub-goals. 
+generated, to form the final list of sub-goals.
 
 If there are more sub-goals than tactics, the extra sub-goals are
 added to the end of the final list (as if the list of tactics was

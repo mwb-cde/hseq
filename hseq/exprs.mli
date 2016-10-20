@@ -1,7 +1,7 @@
 (*----
   Name: exprs.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -21,12 +21,12 @@
 
 (**
    [expr]: interface to decision procedure
-   integer expressions 
+   integer expressions
    made up of variables, constants, addition, multiplication, max and min
 
    Variables are represented by numbers.
-   A variable is therefore an index into a table of terms in the 
-   calling program. The calling program determines what is to be 
+   A variable is therefore an index into a table of terms in the
+   calling program. The calling program determines what is to be
    treated as a variable.
 
    The index identified by [const_key] is reserved for internal use.
@@ -126,9 +126,7 @@ sig
     (expr * expr) list ->
     int -> (expr * expr) list * (expr * expr) list * (expr * expr) list
   val solve_for:
-    int 
-    -> (expr * expr) list 
+    int
+    -> (expr * expr) list
     -> ((expr * expr) list  * (expr * expr) list * (expr * expr) list)
 end
-
-

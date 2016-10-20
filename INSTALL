@@ -2,7 +2,7 @@ Installation
 ============
 
 Requirements: 
-  OCaml version 4.01
+  OCaml version 4.02
 
 To build:
   GNU Make on Unix 
@@ -11,29 +11,28 @@ Build:
 ------
 
 From the toplevel directory: 
-1) Run the configuration script:
-	ocaml configure.ml
+1) Run the configuration script (this requires OCaml to be installed):
+	configure <options>
 
-   This generates files config/data.make and config/configure.data
+   Use --prefix <DIR> to install into the directory tree <DIR>
+       configure --prefix <DIR>
 
-   Options for configure.ml:
-	--help:      See the list of options and their default values.
-	--prefix d:  Set the installation directory to d
-                     default:/usr/local/lib/hseq
-	--bindir d:  Install the binary in directory d
-        --fast (true/false): 
-                     Use the fast compiler (ocamlc.opt)
-                     default:false (use ocamlc)
-        --native (true/false):
-                     Build native-code libraries.
+   By default, this will install into <DIR>/bin, <DIR>/lib/hseq and
+   <DIR>/share/hseq.
+
+   For the full list of options:
+        configure --help
+
+   The configure script generates files config.make, config.mli and config.ml,
+   which specify the install directories and other options for the build.
 
    Examples:
-	ocaml configure.ml --help,
+	configure --help,
 
-	ocaml configure.ml --bindir /usr/local/bin
+	configur --bindir /usr/local/bin
 	(put the binary in /usr/local/bin)
 
-	ocaml configure.ml --fast true --prefix `pwd` 
+	configure.ml --prefix `pwd`
 	(make the installation directory the same as the build directory
 	and use the fast compilers)
 
@@ -43,12 +42,8 @@ From the toplevel directory:
 3) Install the system and documentation.
 	make install
 
-4) Build and install source code documentation (optional)
-	make install-srcdoc
-
-5) Clean up
+4) Clean up
 	make clean
-
 
 Notes:
 ------
@@ -61,8 +56,98 @@ Notes:
 AFTER INSTALLATION
 ==================
 
-The binary is named "hseq" and can be moved to a different location,
-such as a directory in the system path.
+The binary is named "hseq" and can be moved to a different location, such as a
+directory in the system path.
 
-The installation directory can be changed after the system is built
-provided the environment variable "HSEQ" is set to the new directory.
+The installation directory can be changed after the system is built provided
+the environment variable "HSEQ" is set to the new directory.
+
+
+SOURCES
+=======
+
+Directories
+-----------
+
+hseq     - Theorem prover source code.
+hsequser - Support code for.
+quote    - Preprocessor source code.
+thys     - Theory scripts, the generated files and their libraries.
+tools    - The toplevel and related scripts.
+doc      - Documentation
+examples - Examples
+
+Installed Files
+===============
+
+Programs:
+---------
+
+hseq         - The interactive theorem prover.
+hseqb <file> - Run the theorem prover on script <file>
+hseqc <file> - Compile script <file> against the HSeq libraries.
+
+Libraries:
+----------
+
+The library is named hseq.cma and depends on the OCaml libraries Nums and
+Unix. The library is built by packing the code into a module named HSeq. The
+library should be opened, with 'open HSeq', and initialized before it is used,
+by calling Global.init().
+
+The handling of theories uses two file-loading functions, which are called if
+a theory needs to be rebuilt or if a theory has support libraries. In the
+interactive toplevel, these are set to functions in the OCaml top-level
+code. In a library, they need to be set explicitly.
+
+The file-handling functions are called through hooks: Global.Hooks.load_file,
+used to load byte code, and Global.Hooks.use_file, used to run script
+files. In library mode, both are set to do nothing except issue a warning. To
+silence the warnings, set them to the empty function (fun () -> ()). An
+lternative is to set load_file to Dynlink.loadfile, which will require the
+dynlink library to be linked in.
+
+The library does not depend on the toplevel interface but using the library
+without the toplevel hasn't been very well tested.
+
+File examples/libtest.ml is a very simple example of using the library to
+build a stand-alone executable. A more complete example is given in
+examples/SumExample.ml.
+
+Toplevel:
+---------
+
+The toplevel interface is made up of libraries tpquote.cma and hseqtop.cma.
+Library tpquote.cma is the quotation expander and hseqtop.cma is the main
+toplevel code, mainly to initialize the system.
+
+Linking:
+--------
+
+If the toplevel is not needed, program hseqc can be used to handle compiling a
+file against the HSeq libraries. (options --verbose or --info will print the
+command line passed to the ocamlc compilers).
+
+Building a toplevel done with the OCaml tools and the HSeq libraries.  The
+order in which libraries are linked is significant: library hseq which must
+come before hseqtop. The quotation expander is used with camlp4.
+
+The link order used to build the standard toplevel is:
+   nums.cma unix.cma camlp4.o.cma pa_extend.cmo q_MLast.cmo
+   hseq.cma tpquote.cma hseqtop.cma
+
+It should be possible to link with the HSeq library in the sequence
+   nums.cma unix.cma hseq.cma
+but note that the easiest way is to use hseqc.
+
+Native-code:
+------------
+
+There is experimental support for building native-code hseq libraries, where
+the platform supports the OCaml native-code compilers. The native code library
+uses the same hooks for loading files and scripts as the byte-code
+library. The native code compilers cannot be used in the interactive toplevel.
+
+As with the byte-code libraries, the easiest way to compile against the native
+code libraries is to use command 'hseq --native'. See the command line options
+for hseqc (printed by 'hseq --help').

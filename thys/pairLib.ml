@@ -1,7 +1,7 @@
 (*----
- Name: pairLib.ml
- Copyright Matthew Wahab 2005-2016
- Author: Matthew Wahab <mwb.cde@gmail.com>
+  Name: pairLib.ml
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -17,7 +17,7 @@
 
   You should have received a copy of the Lesser GNU General Public
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-----*)
+  ----*)
 
 (*
    pairLib.ml:
@@ -39,46 +39,50 @@ open HSeq
 open HSeqUser
 open Userlib
 
-let pair_thy = "Pair"
-let pair_id = Ident.mk_long pair_thy "pair"
-let pair_prec = 10
-let pair_fixity = Printer.infixr
-let ppdata = (pair_fixity, pair_prec)
+module PairLibImpl =
+struct
+  let pair_thy = "Pair"
+  let pair_id = Ident.mk_long pair_thy "pair"
+  let pair_prec = 10
+  let pair_fixity = Printer.infixr
+  let ppdata = (pair_fixity, pair_prec)
 
-let pair_printer ppstate prec (f, args)=
-  match args with
-  | (left::right::rest) ->
-     begin
-       Format.printf "@[<2>";
-       Printer.print_assoc_bracket prec ppdata "(";
-       Term.print_term ppstate ppdata left;
-       Format.printf ",@ ";
-       Term.print_term ppstate ppdata right;
-       Printer.print_assoc_bracket prec ppdata  ")";
-       Format.printf "@]";
+  let pair_printer ppstate prec (f, args) =
+    match args with
+    | (left::right::rest) ->
        begin
-         match rest with
-         | [] -> ()
-         | _ ->
-            begin
-	      Format.printf "@[";
-	      Printer.print_list
-	        (Term.print_term ppstate prec,
-	         (fun () -> Format.printf "@ "))
-	        rest;
-	      Format.printf "@]"
-            end
+         Format.printf "@[<2>";
+         Printer.print_assoc_bracket prec ppdata "(";
+         Term.print_term ppstate ppdata left;
+         Format.printf ",@ ";
+         Term.print_term ppstate ppdata right;
+         Printer.print_assoc_bracket prec ppdata  ")";
+         Format.printf "@]";
+         begin
+           match rest with
+           | [] -> ()
+           | _ ->
+              begin
+                Format.printf "@[";
+                Printer.print_list
+                  (Term.print_term ppstate prec,
+                   (fun () -> Format.printf "@ "))
+                  rest;
+                Format.printf "@]"
+              end
+         end
        end
-     end
-  | _ ->
-     Term.simple_print_fn_app ppstate ppdata (f, args)
+    | _ ->
+       Term.simple_print_fn_app ppstate ppdata (f, args)
 
-let init_pair_printer()=
-  let inf0 = Global.ppinfo () in
-  let inf1 = Printer.add_term_printer inf0 pair_id pair_printer in
-  Global.set_ppinfo inf1
+  let init_pair_printer() =
+    let inf0 = Global.ppinfo () in
+    let inf1 = Printer.add_term_printer inf0 pair_id pair_printer in
+    Global.set_ppinfo inf1
 
-let init_pair()=
-  init_pair_printer()
+end
 
-let _ = init_pair()
+let init() =
+  PairLibImpl.init_pair_printer()
+
+let _ = init()

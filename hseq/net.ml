@@ -1,7 +1,7 @@
 (*----
   Name: net.ml
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -19,10 +19,10 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(* 
+(*
    Term Nets
 
-   Store data indexed by a term.  
+   Store data indexed by a term.
 
    Lookup is by inexact matching of a given term against those
    indexing the data. Resulting list of terms-data pair would then be
@@ -31,18 +31,18 @@
 
    Used to cut the number of terms that need to be
    considered by (more expensive) exact matching.
-*) 
+*)
 
 (*
  * Labels
  *)
 
-type label = 
-  | Var 
+type label =
+  | Var
   | App
   | Bound of Basic.quant
   | Quant of Basic.quant
-  | Const of Basic.const_ty 
+  | Const of Basic.const_ty
   | Cname of Ident.t
   | Cmeta of string
   | Cfree of string
@@ -61,7 +61,7 @@ type label =
   to term_to_label. Initially, it should be [].
 
   Examples:
-  
+
   ?y: ! x: (x or z) and y  (with variable z)
   -->
   [Qnt(?); Qnt(!); App; App; Bound(!); Var; Bound(?)]
@@ -73,16 +73,16 @@ type label =
 let rec term_to_label varp trm rst =
   if varp trm
   then (Var, rst)
-  else 
+  else
     match trm with
       | Basic.Id(id, _) -> (Cname(id), rst)
       | Basic.Meta(q) -> (Cmeta(Term.get_binder_name trm), rst)
       | Basic.Free(n, _) -> (Cfree(n), rst)
       | Basic.Qnt(q, b) -> (Quant(Basic.binder_kind q), b::rst)
-      | Basic.Bound(q) -> 
-	let (qnt, _, _) = Basic.dest_binding q
-	in 
-	(Bound(qnt), rst)
+      | Basic.Bound(q) ->
+        let (qnt, _, _) = Basic.dest_binding q
+        in
+        (Bound(qnt), rst)
       | Basic.Const(c) -> (Const(c), rst)
       | Basic.App(l, r) -> (App, l::r::rst)
 
@@ -91,17 +91,17 @@ let rec term_to_label varp trm rst =
  *)
 
 (* 'a net : Node data, rest of net, Var tagged net (if any) *)
-type 'a net =  
+type 'a net =
     Node of ('a list                  (* data held at this node *)
-	     * (label * 'a net) list  
-	     * ('a net) option)       (* net tagged by Var *)
+             * (label * 'a net) list
+             * ('a net) option)       (* net tagged by Var *)
 
 
 (*** Operations ***)
 
 let empty() = Node([], [], None)
 
-let is_empty n = 
+let is_empty n =
   match n with
     | Node ([], [], None) -> true
     | _ -> false
@@ -115,7 +115,7 @@ let is_empty n =
 let rec get_from_list lbl netl =
   match netl with
     | [] -> raise Not_found
-    | ((key, d)::xs) -> 
+    | ((key, d)::xs) ->
       if lbl = key
       then d
       else get_from_list lbl xs
@@ -135,31 +135,31 @@ let get_from_net lbl net =
    structure than in t2.  terms are found first.  Returns the empty
    list if no data found
 *)
-let rec lookup_list varp net trms = 
+let rec lookup_list varp net trms =
   let rec lookup_aux nt tlist rslt =
     match (tlist, nt) with
       | ([], Node(data, _, _)) -> List.rev_append data rslt
       | (t::ts, Node(_, [], None)) -> rslt
       | (t::ts, Node(ds, ns, Some(vn))) ->
-	(* look up in the labels first *)
-	let slist = lookup_aux (Node(ds, ns, None)) (t::ts) rslt
-	in 
-	(* then lookup in the variable tagged net *)
-	lookup_aux vn ts slist
+        (* look up in the labels first *)
+        let slist = lookup_aux (Node(ds, ns, None)) (t::ts) rslt
+        in
+        (* then lookup in the variable tagged net *)
+        lookup_aux vn ts slist
       | (t::ts, Node(_, ns, _)) ->
-	let label, nxt = term_to_label varp t ts in 
-	let nnet = 
-	  try get_from_net label nt
-	  with Not_found -> empty()
-	in 
-	lookup_aux nnet nxt rslt
-  in 
+        let label, nxt = term_to_label varp t ts in
+        let nnet =
+          try get_from_net label nt
+          with Not_found -> empty()
+        in
+        lookup_aux nnet nxt rslt
+  in
   List.rev (lookup_aux net trms [])
 
 (* lookup net t:
 
    Return the list of items indexed by terms matching term t.
-   Orderd with the best matches first. 
+   Orderd with the best matches first.
 
    Term t1 is a better match than term t2 if
    variables in t1 occur deeper in its term structure than
@@ -178,7 +178,7 @@ let lookup net trm = lookup_list (fun x -> false) net [trm]
 (* update f net trm:
 
    Apply function f to the subnet of net identified by trm to update
-   the subnet. Propagate the changes through the net. 
+   the subnet. Propagate the changes through the net.
    If applying function f results in an empty subnet, than remove
    these subnets.
 *)
@@ -199,34 +199,34 @@ let lookup net trm = lookup_list (fun x -> false) net [trm]
 let update_label lbl (f: 'a net -> 'a net) net =
   let rec app_aux nl =
     match nl with
-      | [] ->  
+      | [] ->
         let nnet = f (empty())
-	in 
-	if is_empty nnet 
+        in
+        if is_empty nnet
         then []
-	else [(lbl, nnet)]
-      | (l, n)::rst -> 
-	if(l=lbl) 
-	then 
-	  let nnet = f n 
-	  in 
-	  if is_empty nnet 
-	  then rst
-	  else (l, nnet)::rst
-	else 
-	  (l, n)::(app_aux rst)
-  in 
+        else [(lbl, nnet)]
+      | (l, n)::rst ->
+        if(l=lbl)
+        then
+          let nnet = f n
+          in
+          if is_empty nnet
+          then rst
+          else (l, nnet)::rst
+        else
+          (l, n)::(app_aux rst)
+  in
   match (lbl, net) with
-    | (Var, Node(d, xs, Some (vn))) -> 
-        let nnet = f vn 
-        in 
-        if is_empty nnet 
+    | (Var, Node(d, xs, Some (vn))) ->
+        let nnet = f vn
+        in
+        if is_empty nnet
         then Node(d, xs, None)
         else Node(d, xs, Some nnet)
     | (Var, Node(d, xs, None)) ->
       let nnet = f (empty())
-      in 
-      if is_empty nnet 
+      in
+      if is_empty nnet
       then Node(d, xs, None)
       else Node(d, xs, Some nnet)
     | (_, Node(d, xs, vn)) -> Node(d, app_aux xs, vn)
@@ -235,49 +235,49 @@ let update f varp net trm =
   let rec update_aux rst nt =
     match rst with
       | [] -> f nt
-      | t::ts -> 
-	let lbl, nxt = term_to_label varp t ts
-	in 
-	update_label lbl (update_aux nxt) nt
-  in 
+      | t::ts ->
+        let lbl, nxt = term_to_label varp t ts
+        in
+        update_label lbl (update_aux nxt) nt
+  in
   update_aux [trm] net
 
-(* 
+(*
    add varp net t r: Add term r, indexed by term t with variables
    identified by varp to net.  Replaces but doesn't remove previous
    bindings of t
 *)
 let add_to_list t r ls = r::ls
 let add varp net t r=
-  let add_aux net = 
-    match net with 
-      | Node(ds, ls, vn) -> 
-	Node(add_to_list t r ds, ls, vn)
-  in 
-  update add_aux varp net t 
+  let add_aux net =
+    match net with
+      | Node(ds, ls, vn) ->
+        Node(add_to_list t r ds, ls, vn)
+  in
+  update add_aux varp net t
 
 (*
   insert order varp net t r: Add data r, indexed b term t with
   variables identified by varp to net. Store in order given by
   predicate order. Replaces but doesn't remove previous bindings of t
 *)
-let insert_in_list order r ls = 
+let insert_in_list order r ls =
   let rec insert_aux ts =
     match ts with
       | [] -> [r]
-      | x::tts -> 
-	if (order x r)  (* x<r *)
-	then x::(insert_aux tts)
-	else r::ts
+      | x::tts ->
+        if (order x r)  (* x<r *)
+        then x::(insert_aux tts)
+        else r::ts
   in insert_aux ls
 
 let insert order varp net t r =
-  let order_aux net = 
-    match net with 
-      | Node(ds, ls, vn) -> 
-	Node(insert_in_list order r ds, ls, vn)
-  in 
-  update order_aux varp net t 
+  let order_aux net =
+    match net with
+      | Node(ds, ls, vn) ->
+        Node(insert_in_list order r ds, ls, vn)
+  in
+  update order_aux varp net t
 
 (*
   delete varp net t test: Remove data indexed by t in net and
@@ -287,26 +287,26 @@ let insert order varp net t r =
 let rec delete_from_list trm test ls =
   match ls with
     | [] -> []
-    | (t::ts) -> 
+    | (t::ts) ->
       if (test t)
       then ts
       else t::(delete_from_list trm test ts)
 
-let delete varp net trm test = 
+let delete varp net trm test =
   let delete_aux nt=
     match nt with
-      | Node(ds, ls, vn) -> 
-	Node(delete_from_list trm test ds, ls, vn)
-  in 
+      | Node(ds, ls, vn) ->
+        Node(delete_from_list trm test ds, ls, vn)
+  in
   update delete_aux varp net trm
 
 (* [iter f net]: apply [f] to each data item stored in a net. *)
 let rec iter f (Node(ds, lnets, vnet)) =
   List.iter f ds;
   List.iter (fun (_, ln) -> iter f ln) lnets;
-  match vnet with 
+  match vnet with
     | None -> ()
     | Some vn -> iter f vn
-      
+
 (* [print p net] Print the contents of [net] using printer [p]. *)
 let print p net = iter p net

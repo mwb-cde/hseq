@@ -1,19 +1,19 @@
 (**----
    Name: userlib.mli
-   Copyright M Wahab 2005-2014
-   Author: M Wahab  <mwb.cde@gmail.com>
+   Copyright Matthew Wahab 2005-2016
+   Author: Matthew Wahab <mwb.cde@gmail.com>
 
    This file is part of HSeq
 
-   HSeq is free software; you can redistribute it and/or modify it under
-   the terms of the Lesser GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   HSeq is free software; you can redistribute it and/or modify it under the
+   terms of the Lesser GNU General Public License as published by the Free
+   Software Foundation; either version 3, or (at your option) any later
+   version.
 
-   HSeq is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-   License for more details.
+   HSeq is distributed in the hope that it will be useful, but WITHOUT ANY
+   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+   FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public License for
+   more details.
 
    You should have received a copy of the Lesser GNU General Public
    License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
@@ -22,7 +22,7 @@
 open HSeq
 (** {5 Global state} *)
 
-module Global: 
+module Global:
 sig
   type state_t = Userstate.State.t
 
@@ -63,7 +63,7 @@ sig
   val set_parsers: Parser.Table.t -> unit
   (** Set the global parser tables *)
 
-  val thyset: unit -> Lib.StringSet.t 
+  val thyset: unit -> Lib.StringSet.t
   val set_thyset: Lib.StringSet.t -> unit
   val thyset_add: string -> unit
   val thyset_mem: string -> bool
@@ -72,6 +72,11 @@ sig
   (** The standard proofstack *)
   val set_proofstack: Goals.ProofStack.t -> unit
   (** Set the global proofstack *)
+
+  val path: unit -> string list
+  (** The search path for theory files and libraries. *)
+  val set_path: string list -> unit
+  (** Set the search path for theory files libraries. *)
 
   (** Initialise the global state. *)
   val init: unit -> unit
@@ -98,7 +103,7 @@ val set_use_file_func: (?silent:bool -> string -> unit) -> unit
 (** Set the use file function *)
 
 val set_proof_hook: (unit -> unit) -> unit
-val get_proof_hook: unit -> (unit -> unit) 
+val get_proof_hook: unit -> (unit -> unit)
 (** Get/set proof hook *)
 
 (** {5 Utility functions} *)
@@ -111,7 +116,7 @@ val compile: string list -> string -> int
     "ocamlc -c -I base_include -I ../include test.ml"] where
     [base_include = Settings.include_dir()].
 *)
-  
+
 val catch_errors: ('a -> 'b) -> 'a -> 'b
 (** Error handling. [catch_errors f a] evaluates [f a]. If an
     exception is raised, it is printed and exception [Failure] raised.
@@ -122,31 +127,31 @@ val catch_errors: ('a -> 'b) -> 'a -> 'b
 (** Infixes *)
 type fixity = Printer.fixity
 (** Fixity of symbols for printers and parsers. *)
-val nonfix: fixity  
+val nonfix: fixity
 (** Non-fix. This is the default *)
 val prefix: fixity
 (** Prefix. *)
 val suffix: fixity
 (** Suffix. *)
-val infixl: fixity  
+val infixl: fixity
 (** Infix, left associative. *)
-val infixr: fixity  
+val infixr: fixity
 (** Infix, right associative. *)
-val infixn: fixity  
+val infixn: fixity
 (** infix, non-associative *)
 
-val first_pos: Theory.sym_pos
-val last_pos: Theory.sym_pos
-val before_pos: string -> Theory.sym_pos
-val after_pos: string -> Theory.sym_pos
-val at_pos: string -> Theory.sym_pos
+val first_pos: Parser.sym_pos
+val last_pos: Parser.sym_pos
+val before_pos: string -> Parser.sym_pos
+val after_pos: string -> Parser.sym_pos
+val at_pos: string -> Parser.sym_pos
 
 val add_symbol: string -> string -> unit
 (** [add_symbol sym tok]: Add symbol [sym] to produce lexical token [tok] *)
 
-val add_term_pp: 
-  string 
-  -> ?pos:Theory.sym_pos
+val add_term_pp:
+  string
+  -> ?pos:Parser.sym_pos
   -> int -> Printer.fixity -> string option -> unit
 (** [add_term_pp id ?pos prec fixity sym]: Add printer-parser
     information for term identifier [id]. Parser/print term identifier
@@ -164,7 +169,7 @@ val remove_term_pp: string -> unit
     for term identifier [id].
 *)
 
-val add_type_pp: 
+val add_type_pp:
   string -> int -> Printer.fixity -> string option -> unit
 (** [add_type_pp id prec fixity sym]: add printer-parser information
     for term identifier [id]. Parser/print term identifier [id] as
@@ -185,7 +190,7 @@ val read: string -> Basic.term
 (** User level parsing of a string as a term. *)
 val read_unchecked: string -> Basic.term
 (** User level parsing of a string as a raw term.. *)
-val read_defn: 
+val read_defn:
   string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
@@ -255,7 +260,7 @@ val remove_file: string -> unit
 (** {7 Type declaration and definition} *)
 
 val typedef:
-  ?pp:(int*fixity*string option) 
+  ?pp:(int*fixity*string option)
   -> ?simp:bool
   -> ?thm:Logic.thm
   -> ?rep:string -> ?abs:string
@@ -301,9 +306,9 @@ val typedef:
     also added to the standard simpset.
 
     Function declarations:
-    {ul {- [REP: X -> Y]} 
+    {ul {- [REP: X -> Y]}
     {- [ABS: Y -> X]}}
-    
+
     Axioms:
     {ul
     {- [REP_X_mem: |- !x: set (REP x)]}
@@ -316,10 +321,10 @@ val typedef:
 
 (** {7 Term Declaration and definition} *)
 
-val define: 
-  ?pp:(int*fixity*string option) 
+val define:
+  ?pp:(int*fixity*string option)
   -> ?simp:bool
-  -> (((string * Basic.gtype) * Basic.term list) * Basic.term) 
+  -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
   -> Logic.Defns.cdefn
 (** [define ?simp term pp]: Define a term.
 
@@ -339,8 +344,8 @@ val define:
     The parser for term definitions is {!Global.read_defn}.
 *)
 
-val declare: 
-  ?pp:(int* fixity* string option) 
+val declare:
+  ?pp:(int* fixity* string option)
   -> Basic.term -> (Ident.t * Basic.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
@@ -371,7 +376,7 @@ val axiom: ?simp:bool -> string -> Basic.term -> Logic.thm
 val save_thm: ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 (** Store a theorem under the given name in the current theory. *)
 
-val prove_thm: 
+val prove_thm:
   ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -388,7 +393,7 @@ val prove_thm:
     @deprecated Use [theorem] or [lemma].
 *)
 
-val theorem: 
+val theorem:
   ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -455,7 +460,7 @@ val drop : unit -> Goals.Proof.t
 
 val goal: Basic.term -> Goals.Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
-    the proof stack. 
+    the proof stack.
 
     Info: [ subgoals=[gl] ] [ cformulas=[trm] ]
     Where [gl] is the tag of the goal and [trm] the conclusion.
@@ -475,7 +480,7 @@ val undo : unit -> Goals.Proof.t
     one goal in the proof.
 *)
 
-(** {5 Proof commands} 
+(** {5 Proof commands}
 
     Note that most proof commands are in module {!Goals}.
 *)
@@ -486,7 +491,7 @@ val prove: Basic.term -> Tactics.tactic -> Logic.thm
     it is [scope()]. The theorem is not added to the theory.
 *)
 
-val prove_goal: 
+val prove_goal:
   Basic.term -> Tactics.tactic -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
     using tactic [tac] in scope [scp]. Used for batch proofs. If
@@ -519,18 +524,18 @@ val qed: string -> Logic.thm
     theory under the given name.
 *)
 
-val apply: 
-  ?report:(Logic.node -> Logic.branch -> unit) 
+val apply:
+  ?report:(Logic.node -> Logic.branch -> unit)
   -> Tactics.tactic -> Logic.goal -> Logic.goal
 (** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
     {!Logic.Subgoals.apply_to_goal}.
 
-    Applies [tac] to the first subgoal [n] of [goal]. Returns the goal 
+    Applies [tac] to the first subgoal [n] of [goal]. Returns the goal
     with the subgoals [tac n] appended to the remaining subgoals of goal.
 *)
 
 (** Top-level pretty printers *)
-module Display : 
+module Display :
 sig
   val print_term: Basic.term -> unit
   val print_formula: Formula.t -> unit
@@ -572,7 +577,7 @@ val add_simps: Logic.thm list -> unit
 val add_simp: Logic.thm -> unit
 (** [add_simp thm]: Add [thm] to the standard simpset. *)
 
-val add_conv: 
+val add_conv:
   Basic.term list -> (Context.t -> Logic.conv) -> unit
 (** [add_conv trms conv]: Add conversion [conv] to the standard
     simpset, with [trms] as the representative keys.  Example:
@@ -589,7 +594,7 @@ val simpA_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
-    
+
     Simplify assumptions.
 
     If [a] is not given then all assumptions are to be simplified.
@@ -608,7 +613,7 @@ val simpA:
   ?set:Simpset.simpset -> ?a:Logic.label -> Logic.thm list
   -> Tactics.tactic
 (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -621,7 +626,7 @@ val simpC_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
-    
+
     Simplify assumptions.
 
     If [c] is not given then all conclusions are to be simplified.
@@ -636,11 +641,11 @@ val simpC_tac:
     Doesn't use formulas identified by a label in [ignore].
 *)
 
-val simpC: 
+val simpC:
   ?set:Simpset.simpset -> ?c:Logic.label -> Logic.thm list
   ->  Tactics.tactic
 (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -652,10 +657,10 @@ val simp_all_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
-    
+
     Simplify each formula in the subgoal.
 
-    {ul 
+    {ul
     {- Simplify each assumption, starting with the first (most recent),
     adding it to the simpset}
     {- Simplify each conclusion, starting with the last (least recent),
@@ -664,10 +669,10 @@ val simp_all_tac:
     Don't use formulas identified by a label in [ignore].
 *)
 
-val simp_all: 
+val simp_all:
   ?set:Simpset.simpset -> Logic.thm list -> Tactics.tactic
 (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
-    
+
     @raise No_change If no change is made.
 *)
 
@@ -680,14 +685,13 @@ val simp_tac:
   -> Logic.thm list
   -> Tactics.tactic
 (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
-    
+
     Simplifier tactic.
 *)
 
-val simp: 
+val simp:
   ?set:Simpset.simpset -> ?f:Logic.label -> Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
-    
+
     @raise No_change If no change is made.
 *)
-

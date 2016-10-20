@@ -1,7 +1,7 @@
 (*----
   Name: tag.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright Matthew Wahab 2005-2016
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -28,7 +28,7 @@
 *)
 
 type tag_type
-type t=tag_type
+type t = tag_type
 (** The type of unique identifiers. *)
 
 val create: unit -> t
@@ -38,7 +38,7 @@ val create: unit -> t
 val named: string -> t
 (** [named s]: Make a new tag named [s]. The tag is guarenteed to be
     unique w.r.t function [Tag.equal]. *)
-  
+
 val equal: t -> t -> bool
 (** [equal]: Compare tags. [equal t1 t2] is true iff [t1] and [t2] are
     created by the same invocation of [create] or [named]. *)
@@ -48,4 +48,3 @@ val name: t -> string
 
 val null: t
 (** [null]: A constant, unnamed tag. [equal null null] is always true. *)
-

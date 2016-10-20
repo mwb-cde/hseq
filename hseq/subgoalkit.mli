@@ -1,6 +1,6 @@
 (*----
   Name: subgoalkit.mli
-  Copyright Matthew Wahab 2015
+  Copyright Matthew Wahab 2015-2016
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
