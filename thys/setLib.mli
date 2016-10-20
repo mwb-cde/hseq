@@ -36,17 +36,20 @@
 
 open HSeq
 
-val set_thy: string
+module SetPP:
+sig
+
+  val set_thy: string
 (**
    [set_thy]: The name of the theory of sets.
 *)
 
-val set_id : Ident.t
+  val set_id : Ident.t
 (**
    [set_id] The identifier of the set constructor
 *)
 
-val set_data:(Printer.fixity* int)
+  val set_data:(Printer.fixity* int)
 (**
    [set_data] The precedence and fixity of the set identifier
 *)
@@ -56,28 +59,26 @@ val set_data:(Printer.fixity* int)
 
    [empty_data] PP data for the empty set.
 *)
-val empty_id : Ident.t
-val empty_data:(Printer.fixity* int)
+  val empty_id : Ident.t
+  val empty_data:(Printer.fixity* int)
 
-module SetPP:
-    sig
-      val ocb_sym: string
-      val ccb_sym: string
+  val ocb_sym: string
+  val ccb_sym: string
 
-      val main_parser:
-        (Grammars.parser_info -> Pterm.t Parser.phrase)
-      val set_list:
-        (Grammars.parser_info -> Pterm.t Parser.phrase)
-      val set_body:
-        (Grammars.parser_info -> Pterm.t Parser.phrase)
+  val main_parser:
+    (Grammars.parser_info -> Pterm.t Parser.phrase)
+  val set_list:
+    (Grammars.parser_info -> Pterm.t Parser.phrase)
+  val set_body:
+    (Grammars.parser_info -> Pterm.t Parser.phrase)
 
-      val set_parser:
-        (Grammars.parser_info -> Pterm.t Parser.phrase)
-      val set_printer :
-          unit
-        -> Printer.ppinfo -> (Printer.fixity * int)
-          -> (Basic.term * Basic.term list) Printer.printer
+  val set_parser:
+    (Grammars.parser_info -> Pterm.t Parser.phrase)
+  val set_printer :
+    unit
+    -> Printer.ppinfo -> (Printer.fixity * int)
+    -> (Basic.term * Basic.term list) Printer.printer
 
-      val init_set_parser : unit -> unit
-      val init_set_printer : unit -> unit
+  val init_set_parser : unit -> unit
+  val init_set_printer : unit -> unit
 end

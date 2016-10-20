@@ -23,22 +23,22 @@ open HSeq
 open HSeqUser
 open Userlib
 
-let set_thy = "Set"
-let set_id = Ident.mk_long set_thy "SET"
-let set_data = (Printer.default_term_fixity, Printer.default_term_prec)
-let set_ty ()=
-  Gtypes.mk_def (Ident.mk_long set_thy "set") [Gtypes.mk_null()]
-
-let single_id = Ident.mk_long set_thy "single"
-let single_data = (Printer.default_term_fixity, Printer.default_term_prec)
-
-let empty_id = Ident.mk_long set_thy "empty"
-let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
-
-let add_id = Ident.mk_long set_thy "add"
-
 module SetPP =
 struct
+
+  let set_thy = "Set"
+  let set_id = Ident.mk_long set_thy "SET"
+  let set_data = (Printer.default_term_fixity, Printer.default_term_prec)
+  let set_ty ()=
+    Gtypes.mk_def (Ident.mk_long set_thy "set") [Gtypes.mk_null()]
+
+  let single_id = Ident.mk_long set_thy "single"
+  let single_data = (Printer.default_term_fixity, Printer.default_term_prec)
+
+  let empty_id = Ident.mk_long set_thy "empty"
+  let empty_data = (Printer.default_term_fixity, Printer.default_term_prec)
+
+  let add_id = Ident.mk_long set_thy "add"
 
   let (ocb_sym, ccb_sym) = ("{", "}")
   let semicolon_sym = ";"
@@ -180,9 +180,9 @@ struct
     in
     Global.set_ppinfo inf2
 
+  let init () =
+    init_set_printer();
+    init_set_parser()
 end
 
-open SetPP
-
-let _ = SetPP.init_set_printer()
-let _ = SetPP.init_set_parser()
+let _ = SetPP.init();
