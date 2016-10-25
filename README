@@ -36,5 +36,5 @@ Use option --help with hseqb and hseqc for all options.
 Documentation:
 --------------
 
-Basic documentation is provided in directories doc/html and doc/info
-(for html or texinfo format). By default, this is installed into 
+Basic documentation is provided in directories doc/html and doc/info. By
+default, the documentation is installed into <prefix>/share/hseq.
