@@ -181,7 +181,7 @@ SUBDIRS=quote hseq hsequser tools thys doc
 # Makefile commands
 
 # EXTRA_CLEAN: Command to add to the clean target.
-EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
+#EXTRA_CLEAN=$(RM) -rf $(PROJ_ROOT)/$(OBJ_DIR)
 
 # EXTRA_LIBCLEAN: Command to add to the clean target.
 #EXTRA_LIBCLEAN=
