@@ -19,12 +19,11 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-type tag_type = string ref
-type t = tag_type
+type t = (string)ref
 
-let create() = ref ""
+let create () = ref ""
 let named x = ref x
 let equal x y = (x == y)
 
-let name x = !x
-let null = ref ""
+let contents x = !x
+let name = contents

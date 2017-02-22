@@ -27,8 +27,7 @@
    unique identifiers.
 *)
 
-type tag_type
-type t = tag_type
+type t
 (** The type of unique identifiers. *)
 
 val create: unit -> t
@@ -45,6 +44,3 @@ val equal: t -> t -> bool
 
 val name: t -> string
 (** [name x]: Get the name of tag [x]. *)
-
-val null: t
-(** [null]: A constant, unnamed tag. [equal null null] is always true. *)

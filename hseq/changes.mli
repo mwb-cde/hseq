@@ -29,7 +29,7 @@
 *)
 type t =
     {
-      goal_tags:Tag.t list;
+      goal_tags: Tag.t list;
       (** new sub-goals produced by the tactic. *)
       asm_tags: Tag.t list;
       (** new assumption produced by the tactic. *)
