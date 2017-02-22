@@ -75,17 +75,8 @@ PROJ_ROOT=..
 # Module building settings
 #
 
-# SUBDIRS: List of sub-directories to build.
-#SUBDIRS=
-
 # LIBRARIES: List of libraries to build.
 LIBRARIES=tpquote
-
-# MODULE_USE_OBJDIR [yes/no]: Whether to use the staging directory.
-MODULE_USE_OBJDIR=yes
-
-# Prepropcessor options.
-MODULE_OCAMLPP_FLAGS=-pp "$(CAMLPO) q_MLast.cmo" -I $(CAMLPLIB)
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
 DISABLE_NATIVECODE=yes
@@ -95,28 +86,13 @@ DISABLE_NATIVECODE=yes
 #
 
 # object_SOURCES: List of source file names, without suffixes.
-#tpquote_SOURCES=tpquote
 tpquote_SOURCES=tpquote
 
 # object_INCLUDE: Directories to include when compiling [object].
-#object_INCLUDE=
-tpquote_INCLUDE=
-
-# object_LIBS: Libraries to include when linking [object].
-#object_LIBS=
+tpquote_INCLUDE=-I $(CAMLPLIB)
 
 # object_OCAMLC_FLAGS: Flags to pass to the compiler for [object].
-#object_OCAMLC_FLAGS=
-tpquote_OCAMLC_FLAGS=
-
-# object_OCAMLPP_FLAGS: Flags to pass to the preprocessor for [object].
-#object_OCAMLPP_FLAGS=
-
-# object_LINK_FLAGS: Flags to pass to the linker for [object].
-#object_LINK_FLAGS=
-
-# object_INST_PATH: PATH to append to the relative installation path.
-#object_INST_PATH=
+tpquote_OCAMLC_FLAGS=-pp "$(CAMLPO) q_MLast.cmo"
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
