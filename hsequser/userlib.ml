@@ -393,11 +393,24 @@ let infixr = Commands.infixr
 let infixn = Commands.infixn
 
 let mk_term = PP.mk_term
+
 let read = PP.read
+let hterm = read
+let (!%) = hterm
 let read_unchecked = PP.read_unchecked
+
 let read_defn = PP.read_defn
-let read_type_defn = PP.read_type_defn
+let hdefn = read_defn
+let (?<%) = hdefn
+
 let read_type = PP.read_type
+let htype = read_type
+let (!:) = htype
+
+let read_type_defn = PP.read_type_defn
+let htype_defn = read_type_defn
+let (?<:) = htype_defn
+
 let read_identifier = PP.read_identifier
 
 let first_pos = Lib.First

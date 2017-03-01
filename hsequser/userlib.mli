@@ -188,17 +188,44 @@ val remove_type_pp: string -> unit
 
 val read: string -> Basic.term
 (** User level parsing of a string as a term. *)
+
+val hterm: string -> Basic.term
+(** [hterm x] is [read x]. *)
+
+val (!%): string -> Basic.term
+(** [!% x] is [hterm x]. *)
+
 val read_unchecked: string -> Basic.term
+
 (** User level parsing of a string as a raw term.. *)
 val read_defn:
   string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
+val hdefn: string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+(** [hdefn x] is [read_defn x]. *)
+
+val (?<%): string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+(** [?<% x] is [hdefn x]. *)
+
 val read_type: string -> Basic.gtype
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
+
+val htype: string -> Basic.gtype
+(** [htype x] is [read_type x]. *)
+
+val (!:): string -> Basic.gtype
+(** [!: x] is [htype x]. *)
+
 val read_type_defn : string -> Defn.Parser.typedef
 (** Parse a string as a type definition. *)
+
+val htype_defn: string -> Defn.Parser.typedef
+(** [htype_defn x] is [read_type_defn x]. *)
+
+val (?<:): string -> Defn.Parser.typedef
+(** [?<: x] is [htype_defn x]. *)
 
 val read_identifier: string -> Ident.t
 (** Parse a string as an identifier. *)
