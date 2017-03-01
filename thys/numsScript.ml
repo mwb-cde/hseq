@@ -1,6 +1,6 @@
 (*----
   Name: numsScript.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -21,41 +21,40 @@
 
 begin_theory "nums" ["Bool"];;
 
-declare (Commands.read_unchecked
-           ((Basic.name Nums.plusid)^": num -> num -> num"))
+declare (read_unchecked ((Basic.name Nums.plusid)^": num -> num -> num"))
   ~pp:(9, infixl, Some "+");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.minusid)^": num -> num -> num"))
   ~pp:(10, infixl, Some "-");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.multid)^": num -> num -> num"))
   ~pp:(11, infixl, Some "*");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.negid)^":  num -> num"))
   ~pp:(12, prefix, Some "~");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.maxid)^": num -> num -> num"));;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.minid)^": num -> num -> num"));;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.gtid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some ">");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.geqid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some ">=");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.ltid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some "<");;
 
-declare (Commands.read_unchecked
+declare (read_unchecked
            ((Basic.name Nums.leqid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some "=<");;
 

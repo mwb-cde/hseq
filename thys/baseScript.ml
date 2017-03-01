@@ -1,6 +1,6 @@
 (*----
   Name: baseScript.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -110,66 +110,65 @@ let _ = add_term_pp "or" 190 infixr (Some "|");;
 (** Implication *)
 let implies_def =
 define
-(Commands.read_defn ((Ident.name_of Lterm.impliesid)
-            ^" x y = (not x) or y"))
+  (hdefn ((Ident.name_of Lterm.impliesid)^" x y = (not x) or y"))
   ~pp:(195, infixr, Some "=>");;
 
 (** Equivalance *)
 
 let iff_def =
 define
-(Commands.read_defn ((Ident.name_of Lterm.iffid)
-            ^" x y = (x => y) and (y => x)"))
+  (hdefn
+     ((Ident.name_of Lterm.iffid)
+      ^" x y = (x => y) and (y => x)"))
   ~pp:(180, infixn, Some "iff");;
 
 
 (** Axioms *)
 
 (** False definition *)
-let false_def = axiom "false_def" << false = (not true) >>;;
+let false_def = axiom "false_def" (!# " false = (not true) ");;
 
 (** Boolean cases *)
 let bool_cases_ax =
-  axiom "bool_cases" << !x: (x=true) or (x=false) >>;;
+  axiom "bool_cases" (!# " !x: (x=true) or (x=false) ");;
 
 (** Equality *)
 
 let eq_refl_ax =
-  axiom "eq_refl" << !x: x=x >>;;
+  axiom "eq_refl" (!# " !x: x=x ");;
 
 let one_one_def =
   define
-    <:def< one_one f = !x1 x2: ((f x1) = (f x2)) => (x1=x2) >>;;
+    (?<# "one_one f = !x1 x2: ((f x1) = (f x2)) => (x1=x2) ");;
 
 let onto_def =
-  define <:def< onto f = !y: ?x: y=(f x) >>;;
+  define (?<# "onto f = !y: ?x: y=(f x) ");;
 
 let infinity_ax =
-  axiom "infinity_ax" << ?(f: ind -> ind): (one_one f) and (onto f) >>;;
+  axiom "infinity_ax" (!# " ?(f: ind -> ind): (one_one f) and (onto f) ");;
 
 let extensionality =
-  axiom "extensionality"  << !f g: (!x: (f x) = (g x)) => (f = g) >>;;
+  axiom "extensionality"  (!# " !f g: (!x: (f x) = (g x)) => (f = g) ");;
 
 (** Specification operator (epsilon) *)
-let _ = declare << epsilon: ('a -> bool) -> 'a >>;;
+let _ = declare (!# " epsilon: ('a -> bool) -> 'a ");;
 
 let epsilon_ax =
-  axiom "epsilon_ax" << !P: (?x: P x) => (P(epsilon P)) >>;;
+  axiom "epsilon_ax" (!# " !P: (?x: P x) => (P(epsilon P)) ");;
 
 (** Conditional *)
 let cond_def =
   define
-    <:def< IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f)))) >>;;
+    (?<# "IF b t f = (epsilon (%z: (b => (z=t)) and ((not b) => (z=f)))) ");;
 
 (** Any value *)
-let any_def = define <:def< any = epsilon (%a: true) >>;;
+let any_def = define (?<# "any = epsilon (%a: true) ");;
 
 (** Unique existence *)
 let exists_unique_def =
   define
-    <:def<
-  EXISTS_UNIQUE p =
-  (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))
-    >>;;
+    (?<#
+       "EXISTS_UNIQUE p =
+        (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))");;
 
 end_theory();;
