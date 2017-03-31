@@ -6,7 +6,7 @@ is experimental, alpha-quality code which may have soundness bugs.
 
 **Requirements:**
 
-* OCaml 4.03 or later
+* OCaml 4.02.3 or later
 * GNU Make.
 * Unix/Linux build
 * Texinfo, to build the documentaion (optional).
