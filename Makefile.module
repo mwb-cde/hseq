@@ -203,9 +203,6 @@
 # MODULE_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #MODULE_OCAMLPP_FLAGS=
 
-# MODULE_OCAMLCPP_FLAGS: Flags to pass to the macro-expander.
-#MODULE_OCAMLCPP_FLAGS=
-
 # MODULE_LINK_FLAGS: Flags to pass to the linker for [object].
 #MODULE_LINK_FLAGS=
 
@@ -261,9 +258,6 @@
 
 # LOCAL_OCAMLPP_FLAGS: Flags to pass to the pre-processor for [object].
 #LOCAL_OCAMLPP_FLAGS=$(GLOBAL_OCAMLPP_FLAGS) $(MODULE_OCAMLPP_FLAGS)
-
-# LOCAL_OCAMLCPP_FLAGS: Flags to pass to the macro-expander for [object].
-#LOCAL_OCAMLCPP_FLAGS=$(GLOBAL_OCAMLCPP_FLAGS) $(MODULE_OCAMLCPP_FLAGS)
 
 # LOCAL_LINK_FLAGS: Flags to pass to the linker for [object].
 #LOCAL_LINK_FLAGS=$(GLOBAL_LINK_FLAGS) $(MODULE_LINK_FLAGS)

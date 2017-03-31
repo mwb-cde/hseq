@@ -176,20 +176,9 @@ ifndef OCAMLDEP
 export OCAMLDEP:=ocamldep
 endif
 
-# CAMLP: The Camlp4 preprocessor
-ifndef CAMLP
-export CAMLP:=camlp4
-export CAMLPO:=camlp4o
-export CAMLPLIB:=+camlp4
-else
-export CAMLPLIB:=$(shell $(CAMLP) -where)
-CAMLPO:=$(CAMLP) pa_o.cmo pa_op.cmo pr_dump.cmo
-endif
-
-
-# OCAMLCPP : the preprocesor
-ifndef OCAMLCPP
-export OCAMLCPP:=$(CAMLP) pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
+# OCAMLPP : the preprocesor
+ifndef OCAMLPP
+export OCAMLPP:=camlp4 pa_o.cmo pr_o.cmo pa_extend.cmo pa_macro.cmo
 endif
 
 # MAKEINFO: The makeinfo program
@@ -206,7 +195,7 @@ endif
 # Add flags to the build tools
 
 # OCAMLC: The OCaml byte code compiler
-OCAMLC+= $(OCAMLC_FLAGS) $(GLOBAL_OCAMLPP_FLAGS)
+OCAMLC+= $(OCAMLC_FLAGS) $(GLOBAL_OCAMLC_FLAGS)
 
 # OCAMLLINK: The OCaml byte-code linker
 OCAMLLINK+=-a $(OCAMLLINK_FLAGS) $(GLOBAL_LINK_FLAGS)
@@ -448,7 +437,7 @@ export objlib=$(addsuffix .a,$(1))
 .SUFFIXES: .mlp
 
 %.ml: %.mlp
-	$(OCAMLCPP) $(LOCAL_OCAMLPP_FLAGS) -impl $< -o $@
+	$(OCAMLPP) $(LOCAL_OCAMLPP_FLAGS) -impl $< -o $@
 
 %.cmi: %.mli
 	$(OCAMLC) -c $<
@@ -670,7 +659,7 @@ lm-lib-$(1)-linknat-options:=\
 
 lm-lib-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
-lm-lib-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+lm-lib-$(1)-ocamlpp-options:=$$(lm-module-ocamlpp-options)
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-ocamlc-options=$$(lm-lib-$(1)-ocamlc-options))
@@ -678,7 +667,7 @@ $$(info lm-lib-$(1)-link-options=$$(lm-lib-$(1)-link-options))
 $$(info lm-lib-$(1)-ocamlnat-options=$$(lm-lib-$(1)-ocamlnat-options))
 $$(info lm-lib-$(1)-linknat-options=$$(lm-lib-$(1)-linknat-options))
 $$(info lm-lib-$(1)-ocamldep-options=$$(lm-lib-$(1)-ocamldep-options))
-$$(info lm-lib-$(1)-ocamlcpp-options=$$(lm-lib-$(1)-ocamlcpp-options))
+$$(info lm-lib-$(1)-ocamlpp-options=$$(lm-lib-$(1)-ocamlpp-options))
 endif
 
 # Package objects and build ruiles.
@@ -926,7 +915,7 @@ lm-prog-$(1)-linknat-options:=\
 
 lm-prog-$(1)-ocamldep-options:=$$(lm-module-ocamldep-options)
 
-lm-prog-$(1)-ocamlcpp-options:=$$(lm-module-ocamlcpp-options)
+lm-prog-$(1)-ocamlpp-options:=$$(lm-module-ocamlpp-options)
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-prog-$(1)-ocamlc-options=$$(lm-prog-$(1)-ocamlc-options))
@@ -934,7 +923,7 @@ $$(info lm-prog-$(1)-link-options=$$(lm-prog-$(1)-link-options))
 $$(info lm-prog-$(1)-ocamlnat-options=$$(lm-prog-$(1)-ocamlnat-options))
 $$(info lm-prog-$(1)-linknat-options=$$(lm-prog-$(1)-linknat-options))
 $$(info lm-prog-$(1)-ocamldep-options=$$(lm-prog-$(1)-ocamldep-options))
-$$(info lm-prog-$(1)-ocamlcpp-options=$$(lm-prog-$(1)-ocamlcpp-options))
+$$(info lm-prog-$(1)-ocamlpp-options=$$(lm-prog-$(1)-ocamlpp-options))
 endif
 
 ###
@@ -1191,8 +1180,8 @@ lm-module-ocamlnat-options=$(LOCAL_OCAMLNAT_FLAGS) \
 # lm-module-linknat-options: Module wide native code link flags.
 lm-module-linknat-options=$(LOCAL_LINKNAT_FLAGS)
 
-# lm-module-ocamlcpp-options: Module wide macro-expander flags.
-lm-module-ocamlcpp-options=$(LOCAL_OCAMLPP_FLAGS)
+# lm-module-ocamlpp-options: Module wide macro-expander flags.
+lm-module-ocamlpp-options=$(LOCAL_OCAMLPP_FLAGS)
 
 ##
 # Options to pass to sub-directorys
@@ -1202,7 +1191,6 @@ lm-module-subdir-args=\
 	GLOBAL_LINK_FLAGS='$(strip $(GLOBAL_LINK_FLAGS))' \
 	GLOBAL_OCAMLNAT_FLAGS='$(strip $(GLOBAL_OCAMLNAT_FLAGS))' \
 	GLOBAL_LINKNAT_FLAGS='$(strip $(GLOBAL_LINKNAT_FLAGS))' \
-	GLOBAL_OCAMLPP_FLAGS='$(strip $(GLOBAL_OCAMLPP_FLAGS))' \
 	GLOBAL_OCAMLPP_FLAGS='$(strip $(GLOBAL_OCAMLPP_FLAGS))' \
 	$(SUBDIR_MAKE_OPTIONS)
 

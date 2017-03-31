@@ -100,7 +100,7 @@ PROJ_ROOT=.
 #
 
 # SUBDIRS: List of sub-directories to build.
-SUBDIRS=quote hseq hsequser tools thys doc
+SUBDIRS=hseq hsequser tools thys doc
 
 # LIBRARIES: List of libraries to build.
 #LIBRARIES=
