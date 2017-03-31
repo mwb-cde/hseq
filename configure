@@ -1,7 +1,7 @@
 #!/usr/bin/ocamlrun /usr/bin/ocaml
 (*----
  Name: configure.ml
- Copyright Matthew Wahab 2005-2016
+ Copyright Matthew Wahab 2005-2017
  Author: Matthew Wahab <mwb.cde@gmail.com>
 
  This file is part of HSeq
@@ -499,15 +499,15 @@ object (self)
   val required = false
 end
 
-class tool_camlp =
+class tool_camlpp =
 object (self)
   inherit octool
-  val description = "Camlp preprocessor"
-  val variable = "CAMLP"
+  val description = "OCaml preprocessor"
+  val variable = "OCAMLP"
   val mutable value = Some("camlp4")
-  val option = Some "--camlp"
+  val option = Some "--ocamlpp"
   val tool_name = "camlp4"
-  val required = true
+  val required = false
 end
 
 class tool_makeinfo =
@@ -560,7 +560,7 @@ let doc_dir = new doc_directory data_dir;;
 let ocamlc_prog = new tool_ocamlc
 let ocamlopt_prog = new tool_ocamlopt
 let build_natcode_flag = new build_natcode_setting ocamlopt_prog
-let camlp_prog = new tool_camlp
+let camlp_prog = new tool_camlpp
 let ocamlmktop_prog = new tool_ocamlmktop
 let ocamldep_prog = new tool_ocamldep
 let ocamldoc_prog = new tool_ocamldoc
