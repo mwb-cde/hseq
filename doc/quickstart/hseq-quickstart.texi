@@ -1,6 +1,6 @@
 @c -*-texinfo-*-
 @c hseq-quickstart.texi - Documentation for hseq.
-@c Copyright 2005-2016, Matthew Wahab <mwb.cde@gmail.com>
+@c Copyright 2005-2017, Matthew Wahab <mwb.cde@gmail.com>
 @c
 @c Released under the Lesser GPLv3 license:
 @c ========================================
@@ -30,7 +30,7 @@
 @include localdefs.texi
 
 @copying
-Copyright @copyright{} 2005-2016, Matthew Wahab
+Copyright @copyright{} 2005-2017, Matthew Wahab
 @end copying
 
 @titlepage
@@ -105,9 +105,8 @@ as a @emph{term} which is constructed from operators and values. Every
 term has a @emph{type}, formed from type constructors and constructors
 and primitive types.
 
-@example
 For example, the following are terms and types in @HSeq{}:
-
+@example
 Terms:
   @code{!x: x = x}
   @code{!f g: (!x: (f x) = (g x)) => f = g}
@@ -126,8 +125,8 @@ to introduce new constructors for terms or types. A declaration
 introduces an uninterpreted identifier, a definition introduces an
 identifier as a short-hand for a more complex term.
 
-@example
 For example, the following are formulas, theorems and definitions in @HSeq{}:
+@example
 Formulas:
   @code{!x: (true & x) = x}
   @code{!x y z: (x & y | z) = ((x & y) | (x & z))}
@@ -164,18 +163,18 @@ available. @HSeq{} theories are effectively a module system providing
 a means to structure the declarations, definitions and theorems that
 make up a logical theory.
 
-@example
 For example, the following defines a new theory @code{N}, which
 has two different definitions of a function:
+@example
 @verbatim
 begin_theory "N" []
 
 (* Declaration and axiom *)
-declare << aexamp : 'a -> 'a -> 'a >>
-axiom "aexamp_axiom" << !a b: (aexamp a b) = (if a then b else a) >>
+declare (!% "aexamp : 'a -> 'a -> 'a")
+axiom "aexamp_axiom" (!% " !a b: (aexamp a b) = (if a then b else a) ")
 
 (* Definition *)
-define <:def< bexamp x y = if x then y else x >>
+define (?<% "bexamp x y = if x then y else x")
 
 end_theory()
 @end verbatim
@@ -216,10 +215,10 @@ For brevity, a sequent with assumptions @var{asms} and conclusions
 Initially, a goal has one sequent which has no assumptions and the
 formula to be proved as the single conclusion.
 
-@example
 Example:
+@example
 @verbatim
-# goal << !x y: (x = y) => (x => (y & x)) >>;;
+# goal (!% " !x y: (x = y) => (x => (y & x)) ");;
 - : HSeq.Goals.Proof.t =
 Goal !x y: x = y => x => (y & x)
 1 subgoal
@@ -234,8 +233,8 @@ tactic to the current sequent, possibly introducing new sub-goals that
 are easier to prove. Tactics can be combined, using @emph{tacticals},
 allowing complex procedures to be built up from more basic rules.
 
-@example
 Example, continuing the proof started in the previous example:
+@example
 @verbatim
 # by (allC ++ allC ++ implC ++ implC);;
 - : HSeq.Goals.Proof.t =
@@ -343,10 +342,10 @@ given seperately in a sequence of steps. This makes it is easier to
 match the tactics with the sub-goals, which can make finding a proof
 simpler.
 
-@example
 An example of an interactive proof:
+@example
 @verbatim
-# goal << !x y: (x = y) => (x => (y & x)) >>;;
+# goal (!% " !x y: (x = y) => (x => (y & x)) ");;
 - : HSeq.Goals.Proof.t =
 Goal !x y: x = y => x => (y & x)
 1 subgoal
@@ -374,8 +373,9 @@ Subgoal solved
 
 The command @code{qed @var{n}} stores the theorem under name
 @var{n}; it can be retrieved using command @code{thm @var{n}}.
-@example
+
 For example,
+@example
 @verbatim
 # thm "t1";;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
@@ -387,10 +387,10 @@ justify a theorem. Once found, a more compact form, that is faster to
 process, can be used to repeat the proof in the script used to build a
 theory.
 
-@example
 Example, proof for a theory definition:
+@example
 @verbatim
-# (lemma "l1" << !x y: (x = y) => (x => (y & x)) >>
+# (lemma "l1" (!% " !x y: (x = y) => (x => (y & x)) ")
    [allC;  allC ; implC ; implC ;split_tac ++ (replace_tac ++ blast_tac)]);;
   - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end verbatim
@@ -402,10 +402,10 @@ tactic need to prove it can combined into a single command
 @code{prove}. This is useful for constructing specialized lemmas that
 are too specific for general use.
 
-@example
 Example, a constructed proof:
+@example
 @verbatim
-# (prove << !x y: (x = y) => (x => (y & x)) >>
+# (prove (!% " !x y: (x = y) => (x => (y & x)) ")
    (allC ++ allC ++ implC ++ implC ++ split_tac ++ replace_tac ++ blast_tac));;
 - : HSeq.Logic.thm = |- !x y: x = y => x => (y & x)
 @end verbatim
@@ -417,30 +417,33 @@ theorem of the form @code{T=true} (or @code{T=false}). A conversion
 works by generating a goal trying to construct a proof for the
 theorem. If the theorem can't be be proven, the conversion fails.
 
-@chapter Parsers and Quotations
+@chapter Parsers
 
-@HSeq{} Types and terms are read through OCaml parsers and through the
-quotation system. The main @HSeq{} syntactic forms are identifiers,
-terms, types and definitions.
+@HSeq{} Types and terms are read as string arguments to speifici
+parsers. The main @HSeq{} syntactic forms are identifiers, terms,
+types and definitions.
 
 The main parse functions are:
 @table @code
 
-@item @code{@strong{read} @var{str}}
-@itemx @code{<< @var{str} >>}
+@item @code{@strong{hterm} @var{str}}
+@itemx @code{(!% "@var{str}")}
+@itemx @code{@strong{read} @var{str}}
 Parses @var{str} as a term.
 
-@item @code{@strong{read_type} @var{str}}
-@itemx @code{<< : @var{str} >>}
-Parses @var{str} as a type. Note that the quotation must have a space
-(' ') after the opening @code{<<} quote.
+@item @code{@strong{htype} @var{str}}
+@itemx @code{(!: "@var{str}")}
+@itemx @code{@strong{read_type} @var{str}}
+Parses @var{str} as a type.
 
-@item @code{@strong{read_defn} @var{str}}
-@itemx @code{<:def< @var{str} >>}
+@item @code{@strong{hdefn} @var{str}}
+@itemx @code{(?<% "@var{str}")}
+@itemx @code{@strong{read_defn} @var{str}}
 Parses @var{str} as a term definition
 
-@item @code{@strong{read_type_defn} @var{str}}
-@itemx @code{<:def< : @var{str} >>}
+@item @code{@strong{htype_defn} @var{str}}
+@itemx @code{(?<: "@var{str}")}
+@itemx @code{@strong{read_type_defn} @var{str}}
 Parses @var{str} as a type definition or declaration.
 
 @item @code{@strong{read_unchecked} @var{str}}
@@ -449,19 +452,20 @@ Parses @var{str} as a term without checking that the term is valid.
 
 @example
 Terms:
-@code{<< ! x: (not x) or x>>} (excluded_middle)
-@code{<< ! t f: (if true then t else f) = t >>}
+@code{(!% " ! x: (not x) or x")}
+@code{hterm "! t f: (if true then t else f) = t"}
 @code{read "! t f: (if true then t else f) = t"}
 
 Types:
-@code{<< :bool >>}
+@code{(!: "bool")}
+@code{htype "bool -> bool"}
 @code{read_type "bool -> bool"}
 
 Term definition:
-@code{<:def< compose f g = (%x : f (g x)) >>} (function composition)
+@code{(?<% "compose f g = (%x : f (g x)) ")}
 
 Type definition:
-@code{<:def<: ('a, 'b)PAIR = ('a -> 'b -> bool): is_pair >>}
+@code{(?<: "('a, 'b)PAIR = ('a -> 'b -> bool): is_pair ")}
 
 @end example
 
@@ -566,8 +570,8 @@ a type variable of name @emph{a}.
 @item @code{'_a}
 a weak type variable of name @emph{a}.
 @item @code{(t1, @dots{}, t@var{n})f}
-a constructed type, with constructor @strong{@emph{identifier}} @var{f} and
-@var{n} arguments.
+a constructed type, with constructor @var{f} and arguments @var{t1},
+@dots{}, @var{t}@var{n}.
 @item @code{f}
 a constructed type, with constructor identifier @emph{f} and no arguments.
 @end table
@@ -755,18 +759,16 @@ Get the scope of the current goal (in an interactive proof).
 @section Declarations and Definitions
 
 @table @code
-@item @strong{@code{declare << @var{D} >>}}
+@item @strong{@code{declare (!% " @var{D} ")}}
 Declares a term. @var{D} should be in the form @code{@var{n}:@var{ty}}
-where @var{n} is the identifier and @var{ty} the type. Note that
-@code{declare} uses the term quotation parser (@code{<< @dots{} >>})
-not the definition quotation parser.
+where @var{n} is the identifier and @var{ty} the type.
 
 Example:
 @example
-@code{declare << and:(bool -> bool -> bool) >>}.
+@code{declare (!% "and:(bool -> bool -> bool)")}.
 @end example
 
-@item @strong{@code{define <:def< @var{D} >>}}
+@item @strong{@code{define (?<% "@var{D} ")}}
 Defines a term. @var{D} must be in the form @code{@var{n} @var{a1}
 @dots{} @var{an} = @var{T}} where @var{n} is the identifier being
 defined, @var{a1} @dots{}  @var{an} are the parameters and @var{T} the
@@ -774,22 +776,22 @@ body of the definition.
 
 Example:
 @example
-@code{define <:def< or x y = (not (not x) and (not y)) >>}.
+@code{define (?<% "or x y = (not (not x) and (not y)) ")}.
 @end example
 
-@item @strong{@code{typedef <:def<: @var{D} >>}}
-Declares or defines a type constructor.  @code{typedef <:def<:
-@var{ty} >>} declares the new type @var{ty} constructor. @code{typedef
-<:def<: @var{ty1} = @var{ty2} >>} declares @var{ty1} to be an alias
+@item @strong{@code{typedef (?<: " @var{D} ")}}
+Declares or defines a type constructor.  @code{typedef (?<: "
+@var{ty} ")} declares the new type @var{ty} constructor. @code{typedef
+(?<: " @var{ty1} = @var{ty2} ")} declares @var{ty1} to be an alias
 for type @var{ty2}.
 
 Example:
 @example
-(declaration) @code{typedef <:def<: bool >>}
-(aliasing)    @code{typedef <:def<: ('a)set = ('a -> bool)>>}.
+(declaration) @code{typedef (?<: " bool ")}
+(aliasing)    @code{typedef (?<: " ('a)set = ('a -> bool)")}.
 @end example
 
-@item @strong{@code{typedef ~thm:@var{T} <:def<: @var{ty1} = @var{ty2}:@var{pred} >>}}
+@item @strong{@code{typedef ~thm:@var{T} (?<: " @var{ty1} = @var{ty2}:@var{pred} ")}}
 Defines @var{ty1} as the subtype of type @var{ty2} containing elements
 which satisfy term @var{pred} (which should have type @code{@var{ty2}
 -> bool}). Existence theorem @var{T} must be in the form @code{?x:
@@ -797,7 +799,7 @@ which satisfy term @var{pred} (which should have type @code{@var{ty2}
 
 Example
 @example
-@code{typedef <:def<: ('a, 'b)PAIR = ('a -> 'b -> boo): is_pair>>}.
+@code{typedef (?<: " ('a, 'b)PAIR = ('a -> 'b -> boo): is_pair")}.
 @end example
 
 @end table
@@ -1055,7 +1057,7 @@ Goal !f x y z: (x | y | z & (f x y z) => (f z y x)) => false
 ----------------------
 [1] false
 
-# by (match_asm << A => C >> liftA);;
+# by (match_asm (!% " A => C ") liftA);;
 - : HSeq.Goals.Proof.t =
 Goal !f x y z: (x | y | z & (f x y z) => (f z y x)) => false
 1 subgoal
@@ -1104,7 +1106,7 @@ type of the term is used to determine the cases theorem used. If
 @code{@var{ty}_cases} is used.
 
 @example
-Example, for boolean term << _x >>
+Example, for boolean term (!% " _x ")
 @verbatim
 - : HSeq.Goals.Proof.t =
 Goal !x: x => false
@@ -1113,7 +1115,7 @@ Goal !x: x => false
 ----------------------
 [1] false
 
-# by (cases_of << _x >>);;
+# by (cases_of (!% " _x "));;
 2 subgoals
 (Subgoal 1)
 [~1] _x = true
@@ -1144,7 +1146,7 @@ Begins a proof by induction on a conclusion of the form @code{! x .. y
 @example
 Example:
 @verbatim
-# goal << !A: (finite A) => (!B : (subset B A) => (finite B)) >>;;
+# goal (!% " !A: (finite A) => (!B : (subset B A) => (finite B)) ");;
 - : HSeq.Goals.Proof.t =
 Goal !A: (finite A) => (!B: (subset B A) => (finite B))
 1 subgoal
@@ -1201,7 +1203,7 @@ rewrite rules provided as a list of theorems.
 @example
 Example
 @verbatim
-# goal << ! x y: (x iff y) => (x => y) >>;;
+# goal (!% " ! x y: (x iff y) => (x => y) ");;
 - : HSeq.Goals.Proof.t =
 Goal !x y: (x iff y) => x => y
 1 subgoal
@@ -1232,7 +1234,7 @@ Rewrite formulas with rules from the assumptions.
 @example
 Example
 @verbatim
-# goal << ! f g x: (f = g) => ((f x) = (g x)) >>;;
+# goal (!% " ! f g x: (f = g) => ((f x) = (g x)) ");;
 - : HSeq.Goals.Proof.t =
 Goal !f g x: f = g => (f x) = (g x)
 1 subgoal
