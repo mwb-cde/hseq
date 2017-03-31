@@ -117,9 +117,8 @@ examples/SumExample.ml.
 Toplevel:
 ---------
 
-The toplevel interface is made up of libraries tpquote.cma and hseqtop.cma.
-Library tpquote.cma is the quotation expander and hseqtop.cma is the main
-toplevel code, mainly to initialize the system.
+The toplevel interface is in library hseqtop.cma which also has the code to to
+initialize the system.
 
 Linking:
 --------
@@ -129,12 +128,11 @@ file against the HSeq libraries. (options --verbose or --info will print the
 command line passed to the ocamlc compilers).
 
 Building a toplevel done with the OCaml tools and the HSeq libraries.  The
-order in which libraries are linked is significant: library hseq which must
-come before hseqtop. The quotation expander is used with camlp4.
+order in which libraries are linked is significant: library hseq must come
+before hseqtop.
 
 The link order used to build the standard toplevel is:
-   nums.cma unix.cma camlp4.o.cma pa_extend.cmo q_MLast.cmo
-   hseq.cma tpquote.cma hseqtop.cma
+   nums.cma unix.cma hseq.cma hseqtop.cma
 
 It should be possible to link with the HSeq library in the sequence
    nums.cma unix.cma hseq.cma

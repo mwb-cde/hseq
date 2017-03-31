@@ -40,9 +40,6 @@
 # PROJ_ROOT: Relative path to HSeq root.
 PROJ_ROOT=..
 
-# The quotation parser to use.
-export TPQUOTELIB=$(SRC_ROOT)/quote/tpquote.cma
-
 #####
 # Module building settings
 #

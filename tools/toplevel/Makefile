@@ -49,24 +49,23 @@ PROJ_ROOT=../..
 PROGRAMS=hseq
 
 # Rule for building hseq toplevel is:
-#    ocamlmktop -custom $(GLOBAL_OCAMLC_FLAGS) -I +camlp4
-#		nums.cma unix.cma dynlink.cma camlp4o.cma
-#		hseq.cma tpquote.cma hseqtop.cma
+#    ocamlmktop -custom $(GLOBAL_OCAMLC_FLAGS)
+#		nums.cma unix.cma dynlink.cma
+#		hseq.cma hseqtop.cma
 #		-o hseq
 
 # hseq_SOURCES: List of source file names, without suffixes.
 #hseq_SOURCES=<no sources>
 
 # object_INCLUDE: Directories to include when compiling [object].
-hseq_INCLUDE=+camlp4 \
-	$(SRC_ROOT)/quote $(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
+hseq_INCLUDE=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
 	$(SRC_ROOT)/tools/hseqtop
 
 lm-hseq-include=$(foreach l,$(hseq_INCLUDE),-I $(l) )
 
 # object_LIBS: Libraries to include when linking [object].
-hseq_LIBS=nums.cma unix.cma dynlink.cma camlp4o.cma\
-	hseq.cma hsequser.cma tpquote.cma hseqtop.cma
+hseq_LIBS=nums.cma unix.cma dynlink.cma \
+	hseq.cma hsequser.cma hseqtop.cma
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
 hseq_DISABLE_NATIVECODE=true
@@ -82,9 +81,9 @@ hseq_CUSTOM_BUILD=yes
 hseq:
 	$(OCAMLMKTOP) -custom  $(GLOBAL_OCAMLC_FLAGS) \
 		$(lm-hseq-include) \
-		nums.cma unix.cma dynlink.cma camlp4o.cma \
+		nums.cma unix.cma dynlink.cma \
 		-o hseq \
-		hseq.cma hsequser.cma tpquote.cma hseqtop.cma
+		hseq.cma hsequser.cma hseqtop.cma
 
 
 ######################################################################

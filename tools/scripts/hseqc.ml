@@ -49,20 +49,15 @@ let hseq_include = [includedir]
 (** [hsq_libs]: The hseq libraries *)
 let hseq_libs = ["hseq"]
 
-(** [hseq_quoter]: The hseq quotation expander *)
-let hseq_quoter = "tpquote.cma"
-
 (** [pp_include]: Includes for the preprocessor *)
 let pp_include =
   String.concat " " (List.map (fun x -> "-I "^x) hseq_include)
 
 (** [hseq_pp]: The hseq preprocessor *)
-let hseq_pp =
-  String.concat " "
-  ["camlp4o"; pp_include; "q_MLast.cmo"; hseq_quoter; "pa_extend.cmo"]
+let hseq_pp = ""
 
 (** [ocamlc_include]: include directories for the ocamlc compiler (in order)*)
-let ocamlc_include = ["+camlp4"]
+let ocamlc_include = []
 
 (** [ocamlc_libs]: standard librariess for the ocamlc compiler (in order)*)
 let ocamlc_libs = ["nums"; "unix"]
