@@ -34,10 +34,10 @@
 *)
 
 (** [bindir]: The hseq binary directory *)
-let bindir = Hseqc_config.value_BinDir
+let bindir = HSeq.Config.value_BinDir
 
 (** [includedir]: location of the hseq libraries *)
-let includedir = Hseqc_config.value_LibDir
+let includedir = HSeq.Config.value_LibDir
 
 (** Start of script *)
 

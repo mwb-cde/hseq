@@ -55,11 +55,19 @@ let filename_opt x y =
   | (Some d) -> Filename.concat d y
 
 let cwd = Sys.getcwd()
+let srcdir =
+  let candidate = Filename.dirname (Sys.argv.(0)) in
+  (* Check the candidate is sane. *)
+  if (Sys.file_exists (filename candidate "configure"))
+     && (Sys.file_exists (filename candidate "hseq"))
+  then candidate
+  else cwd
 
 (** Names of output files **)
-let output_dir = cwd
-let mli_data = filename output_dir "config.mli"
-let ml_data = filename output_dir "config.ml"
+let output_dir = srcdir
+let ml_output_dir = filename srcdir "hseq"
+let mli_data = filename ml_output_dir "config.mli"
+let ml_data = filename ml_output_dir "config.ml"
 let make_data = filename output_dir "config.make"
 
 (** String utilities **)

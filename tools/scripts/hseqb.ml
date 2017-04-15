@@ -31,8 +31,8 @@
    continuing to [filen].
 *)
 
-let bindir = Hseqb_config.value_BinDir
-let includedir = Hseqb_config.value_LibDir
+let bindir = HSeq.Config.value_BinDir
+let includedir = HSeq.Config.value_LibDir
 
 (** Start of script *)
 
