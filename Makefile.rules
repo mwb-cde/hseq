@@ -692,7 +692,7 @@ lm-lib-$(1)-for-pack-opt:=-for-pack $$($(1)_PACK_NAME)
 lm-lib-$(1)-final-intfs:=\
 	$$(lm-lib-$(1)-pack-intf) $$(lm-lib-$(1)-interfaces)
 lm-lib-$(1)-final-objects:=$$(lm-lib-$(1)-pack-object)
-lm-lib-$(1)-final-natobject:=$$(lm-lib-$(1)-pack-natobject)
+lm-lib-$(1)-final-natobjects:=$$(lm-lib-$(1)-pack-natobject)
 
 # Build rules.
 $$(lm-lib-$(1)-pack-object): $$(lm-lib-$(1)-interfaces) \
@@ -707,7 +707,7 @@ $$(lm-lib-$(1)-pack-natobject): $$(lm-lib-$(1)-interfaces) \
 				$$(lm-lib-$(1)-natobjects) \
 				$$(lm-lib-$(1)-cobjects)
 	$$(info Compiling $(1) native-code package)
-	$$(OCAMLNAT) -pack -o $$(lm-lib-$(1)-pack-name).cmx \
+	$$(OCAMLNAT) -pack -o $$(lm-lib-$(1)-pack-natobject) \
 		$$(lm-lib-$(1)-natobjects)
 endif
 
@@ -741,8 +741,7 @@ $$(lm-lib-$(1)-bytelib): $$(lm-lib-$(1)-final-intfs) \
 		$$(lm-lib-$(1)-libs) $$(lm-lib-$(1)-final-objects)
 
 # Native-code library..
-$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): \
-		$$(lm-lib-$(1)-final-intfs) \
+$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib): $$(lm-lib-$(1)-final-intfs) \
 		$$(lm-lib-$(1)-final-natobjects) \
 		$$(lm-lib-$(1)-final-cobjects)
 	$$(info Linking $(lm-lib-$(1)-natlib))
@@ -756,9 +755,10 @@ endif
 
 # build
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
-ifdef lm-nativecode
-lm-lib-$(1)-target+= $$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
-endif
+#ifdef lm-nativecode
+lm-lib-$(1)-target:=$$(lm-lib-$(1)-target) \
+	$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
+#endif
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-target=$$(lm-lib-$(1)-target))
@@ -770,6 +770,8 @@ build-lib-$(1): $$(lm-lib-$(1)-interfaces) $$(lm-lib-$(1)-target)
 # Install headers, interfaces and libraries to the lib install directory.
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-installdir-lib=$$(lm-lib-$(1)-installdir-lib))
+$$(info lm-lib-$(1)-final-objects=$$(lm-lib-$(1)-pack-object))
+$$(info lm-lib-$(1)-final-natobject=$$(lm-lib-$(1)-pack-natobject))
 endif
 
 lm-lib-$(1)-install-files:=\
@@ -906,7 +908,7 @@ lm-prog-$(1)-link-options:=\
 lm-prog-$(1)-ocamlnat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
 	$$(lm-module-ocamlnat-options) \
-	$$($(1)_OCAMLnat_FLAGS)
+	$$($(1)_OCAMLNAT_FLAGS)
 
 lm-prog-$(1)-linknat-options:=\
 	$$(foreach dir,$$($(1)_INCLUDE),-I $$(dir)) \
@@ -944,6 +946,10 @@ $$(lm-prog-$(1)-program): $$(lm-prog-$(1)-interfaces) $$(lm-prog-$(1)-objects)
 	$$(OCAMLC) $$(lm-prog-$(1)-ocamlc-options) \
 		-o $$(lm-prog-$(1)-program) \
 		$$(lm-prog-$(1)-libs) $$(lm-prog-$(1)-objects)
+
+# nativecode object files
+$$(lm-prog-$(1)-natobjects): %.cmx: %.ml
+	$$(OCAMLNAT) $$(lm-prog-$(1)-ocamlnat-options) -c $$<
 
 # Native-code program
 $$(lm-prog-$(1)-natprogram): $$(lm-prog-$(1)-interfaces) \
