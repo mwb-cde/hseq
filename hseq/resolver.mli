@@ -1,7 +1,7 @@
 (*----
   Name: resolver.mli
-  Copyright M Wahab 2005-2014
-  Author: M Wahab  <mwb.cde@gmail.com>
+  Copyright M Wahab 2005-2017
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -28,7 +28,7 @@
     the name and the list of identifiers is searched for a matching
     type. The first matching identifier is used. If there is no match,
     the first identifier in the list is chosen.
-    
+
     The standard table for operator overloading is
     {!Parser.overload_table}, which maintains a list of identifiers and
     types for each overloaded symbols. Identifiers are normally added
@@ -60,10 +60,10 @@ val resolve_term:
     [env] must raise Not_found if [s] is not found.
 *)
 
-val make_lookup: 
+val make_lookup:
   Scope.t
-  -> (string -> (Ident.t * Basic.gtype) list) 
-  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype)) 
+  -> (string -> (Ident.t * Basic.gtype) list)
+  -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
 (** [make_lookup scp db]: Make an environment suitable for
     {!Resolver.resolve_term} from table [db].
 
@@ -75,16 +75,16 @@ val make_lookup:
 
     [make_lookup db s ty] raise Not_found if [s] is not found in [db].
 *)
-  
-  
+
+
 (** {7 Debugging} *)
 
-val default: 
+val default:
   string -> Basic.gtype -> (Ident.t * Basic.gtype) list
   -> (Ident.t * Basic.gtype) option
 
 type resolve_memo =
-    { 
+    {
       types: (Ident.t, Basic.gtype)Hashtbl.t;
       idents: (string, Ident.t)Hashtbl.t;
       symbols: (string, Ident.t)Hashtbl.t;
@@ -109,14 +109,12 @@ val resolve_aux:
 
 val memo_find:
   ('a, 'b)Hashtbl.t
-  -> ('a -> 'c -> 'b) 
-  -> 'c 
+  -> ('a -> 'c -> 'b)
+  -> 'c
   -> 'a -> 'b
 
-val find_type : 
-  Scope.t 
+val find_type :
+  Scope.t
   -> string
-  -> Basic.gtype -> (Ident.t * Basic.gtype) list 
+  -> Basic.gtype -> (Ident.t * Basic.gtype) list
   -> (Ident.t * Basic.gtype)
-
-
