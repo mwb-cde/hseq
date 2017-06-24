@@ -28,13 +28,5 @@ Use option --help with hseqb and hseqc for the list of supported options.
 Documentation
 -------------
 
-Basic documentation is installed in directories doc/html and doc/info. By
+Documentation is installed in directories doc/html and doc/info. By
 default, the documentation directories are installed into <prefix>/share/hseq.
-
-License
--------
-
-HSeq is distributed under the terms of the Lesser GNU General Public
-License, see files COPYING and COPYING.LESSER for details.
-
-Copyright Matthew Wahab, 2005-2006.
