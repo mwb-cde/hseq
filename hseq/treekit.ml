@@ -40,8 +40,7 @@ sig
   val lessthan : key -> key -> bool
 end
 
-
-module type TreeType=
+module type TreeType =
 sig
 
   type key
@@ -49,12 +48,11 @@ sig
   val eql : key -> key -> bool
   val lessthan : key -> key -> bool
 
-  type ('a)t=
-    Nil
-  | Branch of ( (key * 'a) list * ('a)t * ('a)t)
+  type ('a)t
+  (** Type of trees. *)
 
   (* data tr: get the data at the current branch *)
-  val data : 'a t -> (key * 'a) list
+  val data : 'a t -> (key * ('a) list)
 
   (* left tr: get left branch of tree *)
   val left : 'a t -> 'a t
@@ -65,11 +63,14 @@ sig
   (* nil: make an empty tree *)
   val nil : 'a t
 
+  (** Get the depth (number of levels) of the tree. *)
+  val depth: 'a t -> int
+
   val empty: unit -> 'a t
   (* Make an empty tree *)
 
   (* create: make a branch with data *)
-  val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
+  val create : (key * ('a) list) -> 'a t -> 'a t -> 'a t
 
   (*
     add tr k d:
@@ -108,7 +109,7 @@ sig
      false otherwise
   *)
 
-  val mem : 'a t -> key -> bool
+  val mem: 'a t -> key -> bool
 
   (*
     remove tree key
@@ -134,9 +135,9 @@ sig
      only the current key bindings are used.
   *)
 
-  val iter : (key -> 'a -> 'b) -> 'a t -> unit
+  val iter: (key -> 'a -> unit) -> 'a t -> unit
 
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  val fold: (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
       the current key bindings are used.  *)
 
@@ -144,11 +145,8 @@ sig
      return a list of the (lists of) elements in the
      tree in descending order
   *)
-  val to_list: 'a t -> (key * 'a) list list
-
+  val to_list: 'a t -> (key * 'a) list
 end
-
-
 
 module Tree = functor (A: TreeData)->
 struct
@@ -161,10 +159,9 @@ struct
   let eql = A.equals
   let lessthan = A.lessthan
 
-  type ('a)t=
+  type ('a)t =
     Nil
-  | Branch of ( (key * 'a) list * ('a)t * ('a)t)
-
+  | Branch of ((key * ('a) list) * ('a)t * ('a)t)
 
   let nil = Nil
   let create x l r = Branch(x, l, r)
@@ -172,9 +169,12 @@ struct
   let empty () = nil
   (** Make an empty tree *)
 
-  (*
-    tree information/manipulation
-  *)
+  (* Tree information/manipulation. *)
+
+  let rec depth tr =
+    match tr with
+    | Nil -> 0
+    | Branch(_, l, r) -> max (depth l) (depth r)
 
   let data tr =
     match tr with
@@ -198,20 +198,17 @@ struct
     but not removed
   *)
 
-  let list_add k d ys = (k, d)::ys
-
-  let add tree key data=
-    let rec add_aux tr=
+  let add tree key data =
+    let rec add_aux tr =
       match tr with
-        Nil -> Branch([(key, data)], Nil, Nil)
-      | Branch(((y, z)::ys), l, r) ->
-        if(eql key y)
-        then Branch(list_add key data ((y, z)::ys), l, r)
+        Nil -> Branch((key, [data]), Nil, Nil)
+      | Branch((k, ys), l, r) ->
+        if (eql key k)
+        then Branch((key, data::ys), l, r)
         else
-          if(lessthan key y)
-          then Branch(((y, z)::ys), (add_aux l), r)
-          else Branch(((y, z)::ys), l, (add_aux r))
-      | _ -> failwith "Tree.add"
+          if (lessthan key k)
+          then Branch((k, ys), (add_aux l), r)
+          else Branch((k, ys), l, add_aux r)
     in
     add_aux tree
 
@@ -223,30 +220,17 @@ struct
     add binding if necessary
   *)
 
-  let list_replace key data lst =
-    let rec replace_aux xs =
-      match xs with
-        [] -> [(key, data)]
-      | ((k, d)::ys) ->
-        if(A.equals key k)
-        then (k, data)::ys
-        else (k, d)::(replace_aux ys)
-    in
-    replace_aux lst
-
   let replace tree key data=
     let rec replace_aux tr=
       match tr with
-        Nil ->
-          Branch([(key, data)], Nil, Nil)
-      | Branch(((y, z)::ys), l, r) ->
-        if(eql key y)
-        then Branch(list_replace key data ((y, z)::ys), l, r)
+        Nil -> Branch((key, [data]), Nil, Nil)
+      | Branch((k, ys), l, r) ->
+        if (eql key k)
+        then Branch((key, data::ys), l, r)
         else
-          if(lessthan key y)
-          then Branch(((y, z)::ys), (replace_aux l), r)
-          else Branch(((y, z)::ys), l, (replace_aux r))
-      | _ -> failwith "Tree.replace"
+          if (lessthan key k)
+          then Branch((k, ys), (replace_aux l), r)
+          else Branch((k, ys), l, (replace_aux r))
     in
     replace_aux tree
 
@@ -255,59 +239,31 @@ struct
      finds the current binding of key in tree
   *)
 
-  let list_find key ys =
-    let rec find_aux xs =
-      match xs with
-        [] -> raise Not_found
-      | ((x, d)::ds) ->
-        if(A.equals key x)
-        then d
-        else find_aux ds
-    in
-    find_aux ys
-
   let find tree key =
     let rec find_aux tr =
       match tr with
-        Nil -> raise Not_found
-      | Branch((y, z)::ys, l, r) ->
-        if(eql key y)
-        then list_find key ((y, z)::ys)
+      | Nil -> raise Not_found
+      | Branch((k, ys), l, r) ->
+        if (eql key k)
+        then (List.hd ys)
         else
-          if(lessthan key y)
-          then (find_aux l )
+          if (lessthan key k)
+          then (find_aux l)
           else (find_aux r)
-      | _ -> failwith "Tree.find"
     in
     find_aux tree
-
-
-  let list_find_all key ys =
-    let rec find_aux xs fnd=
-      match xs with
-        [] ->
-          (match fnd with
-            [] -> raise Not_found
-          | _ -> List.rev fnd)
-      | ((x, d)::ds) ->
-        if(A.equals key x)
-        then find_aux ds (d::fnd)
-        else find_aux ds fnd
-    in
-    find_aux ys []
 
   let find_all tree key =
     let rec find_aux tr =
       match tr with
         Nil -> raise Not_found
-      | Branch((y, z)::ys, l, r) ->
-        if(eql key y)
-        then list_find_all key ((y, z)::ys)
+      | Branch((k, ys), l, r) ->
+        if (eql key k)
+        then ys
         else
-          if(lessthan key y)
-          then (find_aux l )
+          if (lessthan key k)
+          then (find_aux l)
           else (find_aux r)
-      | _ -> failwith "Tree.find_all"
     in
     find_aux tree
 
@@ -320,22 +276,6 @@ struct
     try (ignore(find tree key); true)
     with
       Not_found -> false
-
-  (* delete tree key
-
-     removes the data currently bound to key in tree
-     does nothing if key is not in tree
-  *)
-
-  let list_delete key ys =
-    let rec delete_aux xs=
-      match xs with
-        [] -> []
-      | (k, d):: ds ->
-        if(A.equals key k)
-        then ds
-        else (k, d)::(delete_aux ds)
-    in delete_aux ys
 
   (* split tr:
      remove greatest data d' from tree, giving tree tr'
@@ -371,20 +311,29 @@ struct
       in
       Branch(data, ntr, tr2)
 
+  (* delete tree key
+
+     removes the data currently bound to key in tree
+     does nothing if key is not in tree
+  *)
+
   let rec delete tr key =
     match tr with
       Nil -> tr
-    | Branch((k, y)::data, l, r) ->
+    | Branch((_, []), _, _) -> failwith ("Tree.delete")
+    | Branch((k, ys), l, r) ->
       if (eql key k)
       then
-        (match (list_delete key ((k, y)::data)) with
-          [] -> join l r
-        | nlst -> Branch(nlst, l, r))
+        begin
+          match ys with
+          | [] -> failwith ("Tree.delete: invalid tree.")
+          | (_::[]) -> join l r
+          | (_::nlst) -> Branch((k, nlst), l, r)
+        end
       else
-        if(lessthan key k)
-        then Branch((k, y)::data, delete l key, r)
-        else Branch((k, y)::data, l, delete r key)
-    | Branch([], _, _) -> failwith ("Tree.delete")
+        if (lessthan key k)
+        then Branch((k, ys), delete l key, r)
+        else Branch((k, ys), l, delete r key)
   let remove = delete
 
   (*
@@ -394,69 +343,39 @@ struct
      only the current key bindings are used.
   *)
 
-  let list_iter fn lst=
-    let key_mem k ls =
-      try(ignore(List.find (fun x -> A.equals k x) ls);
-          true)
-      with  Not_found -> false
-    in
-    let rec iter_aux xs seen=
-      match xs with
-        [] -> ()
-      | (k, d)::ys ->
-        if(key_mem k seen)   (* has key already been seen *)
-        then
-          iter_aux ys seen  (* if yes, ignore it *)
-        else
-          (fn k d;          (* if no, apply function *)
-           iter_aux ys (k::seen))
-    in
-    iter_aux lst []
-
-  let iter fn tree=
+  let iter fn tree =
     let rec iter_aux tr todo =
       match tr with
       | Nil ->
-        (match todo with
-        | [] ->()
-        | (t::ts) -> iter_aux t ts)
-      | Branch(data, Nil, r) ->
-        list_iter fn data;
-        iter_aux r todo
+         begin
+           match todo with
+           | [] -> ()
+           | (t::ts) -> iter_aux t ts
+         end
+      | Branch((k, data::_), Nil, r) ->
+         begin
+           fn k data;
+           iter_aux r todo
+         end
       | Branch(data, l, r) ->
         iter_aux l (Branch(data, Nil, r)::todo)
     in
     iter_aux tree []
 
-  let list_fold fn init lst=
-    let key_mem k ls =
-      try ignore(List.find (fun x -> A.equals k x) ls); true
-      with Not_found -> false
-    in
-    let rec lfold_aux total xs seen =
-      match xs with
-      | [] -> total
-      | (k, d)::ys ->
-        if key_mem k seen
-        then lfold_aux total ys seen
-        else
-          let new_total = fn k total d
-          in
-          lfold_aux new_total ys (k::seen)
-    in
-    lfold_aux init lst []
-
-  let fold fn init tree =
+  let fold fn tree init =
     let rec fold_aux total tr todo =
       match tr with
       | Nil ->
-        (match todo with
-        | [] -> total
-        | (t::ts) -> fold_aux total t ts)
-      | Branch(data, Nil, r) ->
-        let branch_total = list_fold fn total data
+         begin
+           match todo with
+           | [] -> total
+           | (t::ts) -> fold_aux total t ts
+         end
+      | Branch((k, data::_), Nil, r) ->
+        let branch_total = fn k data total
         in
         fold_aux branch_total r todo
+      | Branch((_, []), _, _) -> (failwith "Invalid tree.")
       | Branch(data, l, r) ->
         fold_aux total l (Branch(data, Nil, r)::todo)
     in
@@ -472,9 +391,11 @@ struct
   let to_list tree=
     let rec to_list_aux tr rslt=
       match tr with
-        Nil -> rslt
-      | Branch(data, l, r)
-        -> to_list_aux r (data::(to_list_aux l rslt))
+      | Nil -> rslt
+      | Branch((k, data::_), l, r)
+        -> to_list_aux r ((k, data)::(to_list_aux l rslt))
+      | Branch((_, []), _, _)
+        -> failwith "invalid tree"
     in
     to_list_aux tree []
 
@@ -483,124 +404,18 @@ end
 
 (* Balanced lookup trees *)
 
-module type BTreeType=
-sig
-  type key
-  val eql : key -> key -> bool
-  val lessthan : key -> key -> bool
+module type BTreeType = TreeType
 
-  type depth_t = int
-  type ('a)t=
-    Nil
-  | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
-
-
-  (* nil: make an empty tree *)
-  val nil : 'a t
-
-  (* make an empty tree *)
-  val empty : unit -> 'a t
-
-  (* create: make a branch with data *)
-  val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
-
-
-  (*
-    tree information/manipulation
-  *)
-
-  (* data tr: get the data at the current branch *)
-
-  val data : 'a t -> (key * 'a) list
-
-  (* left tr: get left branch of tree *)
-  val left : 'a t -> 'a t
-
-  (* right tr: get right branch of tree *)
-  val right : 'a t -> 'a t
-
-  (* depth: get depth of tree *)
-  val depth : 'a t -> depth_t
-
-  (* balance tr: balance tree tr *)
-  val balance : 'a t -> 'a t
-
-  (*
-    add tr k d:
-    add binding of d to k in tree tr
-    previous bindings to k are hidden
-    but not removed
-  *)
-  val add : 'a t -> key -> 'a -> 'a t
-
-
-  (*
-    replace tr k d:
-    replace binding of k with d in tree tr
-    previous bindings to k are hidden
-    but not removed
-    add binding if necessary
-  *)
-  val replace : 'a t -> key -> 'a -> 'a t
-
-  val delete : 'a t -> key -> 'a t
-  val remove : 'a t -> key -> 'a t
-
-  (*
-     find tree key
-     finds the current binding of key in tree
-  *)
-  val find : 'a t -> key -> 'a
-
-  (*
-     find_all tree key
-     finds all bindings of key in tree
-     with last binding first in list
-     raise Not_found if no bindings in tree
-  *)
-  val find_all : 'a t -> key -> 'a list
-
-  (* mem tree key:
-     return true if key is bound in tree
-     false otherwise
-  *)
-  val mem : 'a t -> key -> bool
-
-  (*
-     iter tree fn:
-
-     apply fn to the data bound to each key
-     only the current key bindings are used.
-  *)
-
-  val iter : (key -> 'a -> 'b) -> 'a t -> unit
-
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
-  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
-      the current key bindings are used.  *)
-
-  (* to_list tree:
-     return a list of the (lists of) elements in the
-     tree in descending order
-  *)
-  val to_list: 'a t -> (key * 'a) list list
-end
-
-
-module BTree=
-  functor (A: TreeData)->
+module BTree = functor (A: TreeData) ->
 struct
 
   type key = A.key
-  let eql =  A.equals
+  let eql = A.equals
   let lessthan = A.lessthan
-
-  type depth_t = int
 
   type ('a)t=
     Nil
-  | Branch of ((key * 'a) list * ('a)t * ('a)t
-               * depth_t)
+  | Branch of ((key * ('a) list) * ('a)t * ('a)t * int)
 
   let nil = Nil
   let create x l r = Branch(x, l, r, 1)
@@ -792,31 +607,25 @@ struct
     but not removed
   *)
 
-  let list_add k d ys = (k, d)::ys
-
   let add tree key data=
     let rec add_aux tr=
       match tr with
-        Nil ->
-          Branch([(key, data)], Nil, Nil, 1)
-      | Branch(((y, z)::ys), l, r, d) ->
-        if(eql key y)
+      | Nil -> Branch((key, [data]), Nil, Nil, 1)
+      | Branch((k, ys), l, r, d) ->
+        if (eql key k)
         then
-            (* add data to existing list, no rebalancing needed *)
-          Branch(list_add key data ((y, z)::ys), l, r, d)
+          (* Add data to existing list, no rebalancing needed. *)
+          Branch((k, data::ys), l, r, d)
         else
-          if(lessthan key y)
+          if (lessthan key k)
           then
-              (* add data to lhs tree, rebalancing may be needed *)
-            let nl=(add_aux l)
-            in
-            balance(Branch(((y, z)::ys), nl, r, (depth nl)+1))
+            (* Add data to lhs tree, rebalancing may be needed. *)
+            let nl = add_aux l in
+            balance (Branch((k, ys), nl, r, (depth nl) + 1))
           else
-              (* add data to rhs tree, rebalancing may be needed *)
-            let nr=add_aux r
-            in
-            balance(Branch(((y, z)::ys), l, nr, (depth nr)+1))
-      | _ -> failwith "Tree.add"
+            (* Add data to rhs tree, rebalancing may be needed. *)
+            let nr = add_aux r in
+            balance (Branch((k, ys), l, nr, (depth nr) + 1))
     in
     (* add data into tree *)
     add_aux tree
@@ -829,56 +638,34 @@ struct
     add binding if necessary
   *)
 
-  let list_replace key data lst =
-    let rec replace_aux xs =
-      match xs with
-        [] -> [(key, data)]
-      | ((k, d)::ys) ->
-        if(A.equals key k)
-        then (k, data)::ys
-        else (k, d)::(replace_aux ys)
+  let replace tree key data =
+    let swap_first x l =
+      match l with
+      | [] -> [x]
+      | (_::ys) -> (x::ys)
     in
-    replace_aux lst
-
-  let replace tree key data=
-    let rec replace_aux tr=
+    let rec replace_aux tr =
       match tr with
-        Nil ->
-          Branch([(key, data)], Nil, Nil, 1)
-      | Branch(((y, z)::ys), l, r, d) ->
-        if(eql key y)
-        then
-            (* replace data in existing list, no rebalancing needed *)
-          Branch(list_replace key data ((y, z)::ys), l, r, d)
-        else
-          if(lessthan key y)
-          then
-              (* replace data in lhs tree, rebalancing may be needed *)
-            balance(Branch(((y, z)::ys), (replace_aux l), r, d))
-          else
-              (* replace data in rhs tree, rebalancing may be needed *)
-            balance(Branch(((y, z)::ys), l, (replace_aux r), d))
-      | _ -> failwith "Tree.replace"
+        Nil -> Branch((key, [data]), Nil, Nil, 1)
+      | Branch((k, ys), l, r, d) ->
+         if (eql key k)
+         then
+           (* replace data in existing list, no rebalancing needed *)
+           Branch ((k, (swap_first data ys)), l, r, d)
+         else
+           begin
+             if (lessthan key k)
+             then
+               (* replace data in lhs tree, rebalancing may be needed *)
+               balance (Branch ((k, ys), (replace_aux l), r, d))
+             else
+               (* replace data in rhs tree, rebalancing
+                 may be needed *)
+               balance (Branch((k, ys), l, (replace_aux r), d))
+          end
     in
     (* replace data in tree *)
     replace_aux tree
-
-  (* delete tree key
-
-     removes the data currently bound to key in tree
-     does nothing if key is not in tree
-  *)
-
-  let list_delete key ys =
-    let rec remove_aux xs=
-      match xs with
-        [] -> []
-      | (k, d):: ds ->
-        if(A.equals key k)
-        then ds
-        else (k, d)::(remove_aux ds)
-    in remove_aux ys
-
 
   (* split tr:
      remove greatest data d' from tree, giving tree tr'
@@ -888,17 +675,16 @@ struct
      node n will never have a right branch since this would mean
      that there is an element greater than d'.
   *)
-
-  let rec split tr=
+  let rec split tr =
     match tr with
       Nil -> failwith "Tree.split"
-    | Branch(data, tr1, Nil, _) ->
-      (data, tr1)
-    | Branch(data, tr1, tr2, _) ->
-      let ndata, nright=split tr2
-      and nleft=tr1
+    | Branch((key, data), tr1, Nil, _) ->  ((key, data), tr1)
+    | Branch((key, data), tr1, tr2, _) ->
+      let ndata, nright = split tr2
+      and nleft = tr1
       in
-      let ntree=Branch(data, nleft, nright, (max_depth nleft nright)+1)
+      let ntree = Branch((key, data), nleft, nright,
+                         (max_depth nleft nright)+1)
       in
       (ndata, balance ntree)
 
@@ -914,36 +700,45 @@ struct
     match tr1 with
       Nil -> tr2
     | _ ->
-      let data, nleft=split tr1
-      and nright=tr2
+      let data, nleft = split tr1
+      and nright = tr2
       in
-      let ntree=Branch(data, nleft, nright,
-                       (max_depth nleft nright)+1)
+      let ntree = Branch(data, nleft, nright,
+                         (max_depth nleft nright)+1)
       in
       balance ntree
 
+  (* delete tree key
+
+     removes the data currently bound to key in tree
+     does nothing if key is not in tree
+  *)
   let delete tree key =
     let rec delete_aux tr =
       match tr with
         Nil -> Nil
-      | Branch((k, y)::data, l, r, dp) ->
-        let ntree=
-          if (eql key k)
-          then
-            (match (list_delete key ((k, y)::data)) with
-              [] -> join l r
-            | nlst -> Branch(nlst, l, r, dp))
-          else
-            (let nleft, nright=
-               if(lessthan key k)
-               then (delete_aux l, r)
-               else (l, delete_aux r)
-             in
-             Branch((k, y)::data, nleft, nright,
-                    (max_depth nleft nright)+1))
-        in
+      | Branch((k, data), l, r, dp) ->
+         let ntree=
+           if (eql key k)
+           then
+             begin
+               match data with
+               | [] -> failwith "Invalid tree."
+               | (_::[]) -> join l r
+               | (_::nlst) -> Branch((k, nlst), l, r, dp)
+             end
+           else
+             begin
+               let nleft, nright=
+                 if lessthan key k
+                 then delete_aux l, r
+                 else (l, delete_aux r)
+               in
+               Branch((k,data), nleft, nright,
+                      (max_depth nleft nright)+1)
+             end
+         in
         balance ntree
-      | Branch([], _, _, _) -> failwith ("Tree.delete")
     in
     delete_aux tree
   let remove = delete
@@ -953,32 +748,24 @@ struct
      finds the current binding of key in tree
   *)
 
-  let list_find key ys =
-    let rec find_aux xs =
-      match xs with
-        [] -> raise Not_found
-      | ((x, d)::ds) ->
-        if(A.equals key x)
-        then d
-        else find_aux ds
-    in
-    find_aux ys
-
   let find tree key =
     let rec find_aux tr =
       match tr with
         Nil -> raise Not_found
-      | Branch((y, z)::ys, l, r, _) ->
-        if(eql key y)
-        then list_find key ((y, z)::ys)
+      | Branch((k, ys), l, r, _) ->
+        if eql key k
+        then
+          begin
+            if ys == []
+            then failwith "Invalid tree."
+            else List.hd ys
+          end
         else
-          if(lessthan key y)
-          then (find_aux l )
+          if lessthan key k
+          then (find_aux l)
           else (find_aux r)
-      | _ -> failwith "Tree.find"
     in
     find_aux tree
-
 
   (*
      find_all tree key
@@ -987,32 +774,17 @@ struct
      raise Not_found if no bindings in tree
   *)
 
-  let list_find_all key ys =
-    let rec find_aux xs fnd=
-      match xs with
-        [] ->
-          (match fnd with
-            [] -> raise Not_found
-          | _ -> List.rev fnd)
-      | ((x, d)::ds) ->
-        if(A.equals key x)
-        then find_aux ds (d::fnd)
-        else find_aux ds fnd
-    in
-    find_aux ys []
-
   let find_all tree key =
     let rec find_aux tr =
       match tr with
         Nil -> raise Not_found
-      | Branch((y, z)::ys, l, r, _) ->
-        if(eql key y)
-        then list_find_all key ((y, z)::ys)
+      | Branch((k, ys), l, r, _) ->
+        if eql key k
+        then ys
         else
-          if(lessthan key y)
-          then (find_aux l )
-          else (find_aux r)
-      | _ -> failwith "Tree.find_all"
+          if lessthan key k
+          then find_aux l
+          else find_aux r
     in
     find_aux tree
 
@@ -1023,8 +795,7 @@ struct
   *)
   let mem tree key =
     try (ignore(find tree key); true)
-    with
-      Not_found -> false
+    with Not_found -> false
 
   (*
      iter tree fn:
@@ -1033,69 +804,36 @@ struct
      only the current key bindings are used.
   *)
 
-  let list_iter fn lst=
-    let key_mem k ls =
-      try(ignore(List.find (fun x -> A.equals k x) ls);
-          true)
-      with  Not_found -> false
-    in
-    let rec iter_aux xs seen=
-      match xs with
-        [] -> ()
-      | (k, d)::ys ->
-        if(key_mem k seen)   (* has key already been seen *)
-        then
-          iter_aux ys seen  (* if yes, ignore it *)
-        else
-          (fn k d;          (* if no, apply function *)
-           iter_aux ys (k::seen))
-    in
-    iter_aux lst []
-
   let iter fn tree=
     let rec iter_aux tr todo =
       match tr with
         Nil ->
-          (match todo with
-            [] ->()
-          | (t::ts) -> iter_aux t ts)
-      | Branch(data, Nil, r, _) ->
-        list_iter fn data;
+        begin
+          match todo with
+          |  [] ->()
+          | (t::ts) -> iter_aux t ts
+        end
+      | Branch((k, data::_), Nil, r, _) ->
+        fn k data;
         iter_aux r todo
+      | Branch((k, []), Nil, r, _) -> (failwith "Invalid tree.")
       | Branch(data, l, r, d) ->
         iter_aux l (Branch(data, Nil, r, d)::todo)
     in
     iter_aux tree []
 
-  let list_fold fn init lst=
-    let key_mem k ls =
-      try ignore(List.find (fun x -> A.equals k x) ls); true
-      with Not_found -> false
-    in
-    let rec lfold_aux total xs seen =
-      match xs with
-      | [] -> total
-      | (k, d)::ys ->
-        if key_mem k seen
-        then lfold_aux total ys seen
-        else
-          let new_total = fn k total d
-          in
-          lfold_aux new_total ys (k::seen)
-    in
-    lfold_aux init lst []
-
-  let fold fn init tree =
+  let fold fn tree init =
     let rec fold_aux total tr todo =
       match tr with
       | Nil ->
         (match todo with
         | [] -> total
         | (t::ts) -> fold_aux total t ts)
-      | Branch(data, Nil, r, _) ->
-        let branch_total = list_fold fn total data
+      | Branch((k, data::_), Nil, r, _) ->
+        let branch_total = fn k data total
         in
         fold_aux branch_total r todo
+      | Branch((_, []), _, _, _) -> failwith "Invalid tree."
       | Branch(data, l, r, d) ->
         fold_aux total l (Branch(data, Nil, r, d)::todo)
     in
@@ -1112,8 +850,10 @@ struct
     let rec to_list_aux tr rslt=
       match tr with
         Nil -> rslt
-      | Branch(data, l, r, _)
-        -> to_list_aux r (data::(to_list_aux l rslt))
+      | Branch((k, data::_), l, r, _)
+        -> to_list_aux r ((k, data)::(to_list_aux l rslt))
+      | Branch((_, []), _, _, _)
+        -> failwith "invalid tree"
     in
     to_list_aux tree []
 
@@ -1166,108 +906,14 @@ end
   let t4=right t3;;
 *)
 
-(***
-    * Simple trees, indexed by Pervasives.compare.
-***)
+(** Simple trees, indexed by Pervasives.compare. *)
 
 module type Data =
 sig
   type key
 end
 
-module type SimpleTreeType =
-sig
-
-  type key
-
-  val eql : key -> key -> bool
-  val lessthan : key -> key -> bool
-
-  type depth_t = int
-  type ('a)t=
-    Nil
-  | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
-
-
-  val nil : 'a t
-  (** The empty tree *)
-
-  val empty: unit -> 'a t
-  (** Make an empty tree *)
-
-  val create : (key * 'a) list -> 'a t -> 'a t -> 'a t
-  (** Make a branch with data *)
-
-  val data : 'a t -> (key * 'a) list
-  (** Get the data at the current branch *)
-
-  val left : 'a t -> 'a t
-  (** Get the left branch of tree *)
-
-  val right : 'a t -> 'a t
-  (** Get the right branch of tree *)
-
-  val depth : 'a t -> depth_t
-  (** Get the depth (number of levels) of the tree *)
-
-  val balance : 'a t -> 'a t
-  (** Balance the tree. *)
-
-  val add : 'a t -> key -> 'a -> 'a t
-  (**
-     [add tr k d]: Add binding of [d] to [k] in tree [tr].  Previous
-     bindings to [k] are hidden but not removed.
-  *)
-
-  val replace : 'a t -> key -> 'a -> 'a t
-  (**
-     [replace tr k d]: Replace binding of [k] with [d] in tree [tr].
-     Adds the binding even if [k] is not already bound in [tr].
-  *)
-
-  val delete : 'a t -> key -> 'a t
-  (**
-     [delete tree key]: Remove the data currently bound to [key] in
-     [tree].  Does nothing if key is not in tree
-  *)
-  val remove : 'a t -> key -> 'a t
-
-  val find : 'a t -> key -> 'a
-  (**
-     [find_all tree key]: Finds all bindings of [key] in [tree]
-     with last binding first in list.
-     Raise [Not_found] if no bindings in tree.
-  *)
-
-  val find_all : 'a t -> key -> 'a list
-  (**
-     [find_all tree key]: Finds all bindings of [key] in [tree]
-     with last binding first in list.
-     Raise [Not_found] if no bindings in tree.
-  *)
-
-  val mem : 'a t -> key -> bool
-  (**
-     [mem tree key]: test whether [key] is bound in [tree].
-  *)
-
-  val iter : (key -> 'a -> 'b) -> 'a t -> unit
-  (**
-     [iter tree fn]: Apply [fn] to the data bound to each key.
-     Only the current key bindings are used.
-  *)
-
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
-  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
-      the current key bindings are used.  *)
-
-  val to_list: 'a t -> (key * 'a) list list
-(**
-    [to_list tree]: Return a list of the (lists of) elements in the
-    tree, in descending order.
-*)
-
-end
+module type SimpleTreeType = TreeType
 
 module SimpleTree =
   functor (A:Data) ->

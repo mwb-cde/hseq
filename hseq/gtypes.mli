@@ -135,7 +135,7 @@ val member: gtype -> substitution -> bool
 (** [member t env]: True if [t] has a binding in [env]. *)
 val subst_iter: (gtype -> gtype -> unit) -> substitution -> unit
 (** [subst_iter f env]: Apply function [f] to each binding in [env]. *)
-val subst_fold: (gtype -> 'a -> gtype -> 'a) -> 'a -> substitution -> 'a
+val subst_fold: (gtype -> gtype -> 'a -> 'a) -> substitution -> 'a -> 'a
 (** [subst_fold f val env]: Fold function [f] over the bindings in [env]. *)
 val subst: gtype -> substitution -> gtype
 (** [subst env t]: Apply substitution [env] to gtype [t]. This is

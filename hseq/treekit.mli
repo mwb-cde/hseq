@@ -51,7 +51,7 @@ end
 (** {5 Trees} *)
 
 (** The type of trees *)
-module type TreeType=
+module type TreeType =
 sig
 
   type key
@@ -60,11 +60,9 @@ sig
   val eql: key -> key -> bool
   val lessthan: key -> key -> bool
 
-  type ('a)t=
-    | Nil
-    | Branch of ((key * 'a) list * ('a)t * ('a)t)
+  type ('a)t
 
-  val data: 'a t -> (key * 'a) list
+  val data: 'a t -> (key * ('a) list)
   (** Get the data at the current branch. *)
 
   val left: 'a t -> 'a t
@@ -76,10 +74,13 @@ sig
   val nil: 'a t
   (** The empty tree. *)
 
+  val depth: 'a t -> int
+  (** Get the depth (number of levels) of the tree. *)
+
   val empty: unit -> 'a t
   (** Make an empty tree. *)
 
-  val create: (key * 'a)list -> 'a t -> 'a t -> 'a t
+  val create: (key * ('a)list) -> 'a t -> 'a t -> 'a t
   (** Make a branch with data. *)
 
   val add: 'a t -> key -> 'a -> 'a t
@@ -107,15 +108,15 @@ sig
       [tree].  Does nothing if key is not in tree.  *)
   val remove: 'a t -> key -> 'a t
 
-  val iter: (key -> 'a -> 'b) -> 'a t -> unit
+  val iter: (key -> 'a -> unit) -> 'a t -> unit
   (** [iter tree fn]: Apply [fn] to the data bound to each key.  Only
       the current key bindings are used.  *)
 
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  val fold: (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
       the current key bindings are used.  *)
 
-  val to_list: 'a t -> ((key * 'a)list)list
+  val to_list: 'a t -> (key * 'a) list
 (** [to_list tree]: Return a list of the (lists of) elements in the
     tree, in descending order.
 *)
@@ -128,94 +129,10 @@ module Tree:
 
 (** {5 Balanced trees} *)
 
-(** The type of balanced trees *)
-module type BTreeType=
-sig
+module type BTreeType = TreeType
 
-  type key
-  (** Type of keys by which data is indexed. *)
-
-  val eql: key -> key -> bool
-  val lessthan: key -> key -> bool
-
-  type depth_t = int
-  type ('a)t=
-    | Nil
-    | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
-
-  val nil: 'a t
-  (** The empty tree. *)
-
-  val empty: unit -> 'a t
-  (** Make an empty tree. *)
-
-  val create: (key * 'a) list -> 'a t -> 'a t -> 'a t
-  (** Make a branch with data. *)
-
-  val data: 'a t -> (key * 'a) list
-  (** Get the data at the current branch. *)
-
-  val left: 'a t -> 'a t
-  (** Get the left branch of tree. *)
-
-  val right: 'a t -> 'a t
-  (** Get the right branch of tree. *)
-
-  val depth: 'a t -> depth_t
-  (** Get the depth (number of levels) of the tree. *)
-
-  val balance: 'a t -> 'a t
-  (** Balance the tree. *)
-
-  val add: 'a t -> key -> 'a -> 'a t
-  (** [add tr k d]: Add binding of [d] to [k] in tree [tr].  Previous
-      bindings to [k] are hidden but not removed.  *)
-
-  val replace: 'a t -> key -> 'a -> 'a t
-  (** [replace tr k d]: Replace binding of [k] with [d] in tree [tr].
-      Adds the binding even if [k] is not already bound in [tr].  *)
-
-  val delete: 'a t -> key -> 'a t
-  (** [delete tree key]: Remove the data currently bound to [key] in
-      [tree].  Does nothing if [key] is not in [tree]. *)
-  val remove: 'a t -> key -> 'a t
-
-  val find: 'a t -> key -> 'a
-  (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.
-
-      @raise [Not_found] if [key] is not bound in [tree].  *)
-
-  val find_all: 'a t -> key -> 'a list
-  (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.
-
-      @raise [Not_found] if [key] is not bound in [tree].  *)
-
-  val mem: 'a t -> key -> bool
-  (** [mem tree key]: Test whether [key] is bound in [tree].  *)
-
-  val iter: (key -> 'a -> 'b) -> 'a t -> unit
-  (**
-     [iter tree fn]: Apply [fn] to the data bound to each key.
-     Only the current key bindings are used.
-  *)
-
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
-  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
-      the current key bindings are used.  *)
-
-  val to_list: 'a t -> ((key * 'a)list) list
-(** [to_list tree]: Return a list of the (lists of) elements in the
-    tree, in descending order.
-*)
-
-end
-
-(** {7 Balanced Trees} *)
 module BTree:
   functor (A: TreeData) -> (BTreeType with type key = A.key)
-
 
 (** {5 Simple Trees}
 
@@ -231,89 +148,7 @@ sig
 end
 
 (** Balanced trees, ordered by [Pervasives.compare] *)
-module type SimpleTreeType =
-sig
-
-  type key
-  (** Type of keys by which data is indexed. *)
-
-  val eql: key -> key -> bool
-  val lessthan: key -> key -> bool
-
-  type depth_t = int
-  type ('a)t=
-    | Nil
-    | Branch of ((key * 'a) list * ('a)t * ('a)t * depth_t)
-
-  val nil: 'a t
-  (** The empty tree. *)
-
-  val empty: unit -> 'a t
-  (** Make an empty tree. *)
-
-  val create: (key * 'a)list -> 'a t -> 'a t -> 'a t
-  (** Make a branch with data. *)
-
-  val data: 'a t -> (key * 'a)list
-  (** Get the data at the current branch. *)
-
-  val left: 'a t -> 'a t
-  (** Get the left branch of tree. *)
-
-  val right: 'a t -> 'a t
-  (** Get the right branch of tree. *)
-
-  val depth: 'a t -> depth_t
-  (** Get the depth (number of levels) of the tree. *)
-
-  val balance: 'a t -> 'a t
-  (** Balance the tree. *)
-
-  val add: 'a t -> key -> 'a -> 'a t
-  (** [add tr k d]: Add binding of [d] to [k] in tree [tr].  Previous
-      bindings to [k] are hidden but not removed.  *)
-
-  val replace: 'a t -> key -> 'a -> 'a t
-  (** [replace tr k d]: Replace binding of [k] with [d] in tree [tr].
-      Adds the binding even if [k] is not already bound in [tr].  *)
-
-  val delete: 'a t -> key -> 'a t
-  (** [delete tree key]: Remove the data currently bound to [key] in
-      [tree].  Does nothing if key is not in tree. *)
-  val remove: 'a t -> key -> 'a t
-
-
-  val find: 'a t -> key -> 'a
-  (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.
-
-      @raise [Not_found] if [key] is not bound in [tree].
-  *)
-
-  val find_all: 'a t -> key -> 'a list
-  (** [find_all tree key]: Finds all bindings of [key] in [tree] with
-      last binding first in list.
-
-      @raise [Not_found] if [key] is not bound in [tree].
-  *)
-
-  val mem: 'a t -> key -> bool
-  (** [mem tree key]: test whether [key] is bound in [tree].  *)
-
-  val iter: (key -> 'a -> 'b) -> 'a t -> unit
-  (** [iter tree fn]: Apply [fn] to the data bound to each key.  Only
-      the current key bindings are used.  *)
-
-  val fold: (key -> 'a -> 'b -> 'a) -> 'a -> 'b t -> 'a
-  (** [fold tree fn]: Apply [fn] to the data bound to each key.  Only
-      the current key bindings are used.  *)
-
-  val to_list: 'a t -> (key * 'a) list list
-(** [to_list tree]: Return a list of the (lists of) elements in the
-    tree, in descending order.
-*)
-
-end
+module type SimpleTreeType = TreeType
 
 (** Balanced Trees indexed by type A.key *)
 module SimpleTree:

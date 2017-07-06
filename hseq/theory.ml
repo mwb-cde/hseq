@@ -114,10 +114,10 @@ let contents thy =
     cdate = thy.date;
     cparents = thy.parents;
     cfiles = thy.lfiles;
-    caxioms = flatten_list (Tree.to_list thy.axioms);
-    ctheorems = flatten_list (Tree.to_list thy.theorems);
-    cdefns = flatten_list (Tree.to_list thy.defns);
-    ctyps = flatten_list (Tree.to_list thy.typs);
+    caxioms = Tree.to_list thy.axioms;
+    ctheorems = Tree.to_list thy.theorems;
+    cdefns = Tree.to_list thy.defns;
+    ctyps = Tree.to_list thy.typs;
     ctype_pps = thy.type_pps;
     cid_pps = thy.id_pps;
     cpp_syms = thy.pp_syms;
@@ -561,7 +561,7 @@ let from_saved scp sthy =
 (*** Primitive input/output of theories ***)
 
 let output_theory oc thy =
-  let tree_to_list xs = flatten_list (Tree.to_list xs) in
+  let tree_to_list xs = Tree.to_list xs in
   let mk_save f xs = List.map (fun (x, y) -> (x, f y)) xs
   in
   let saxs = mk_save thm_to_save (tree_to_list thy.axioms)

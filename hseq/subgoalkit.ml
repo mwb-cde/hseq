@@ -112,7 +112,7 @@ struct
       @raise [Failure] if a variable ends up bound to itself.
   *)
   let merge_tyenvs env1 env2 =
-    let assign x env z =
+    let assign _ x env =
       try
         let y = Gtypes.lookup_var x env2
         in

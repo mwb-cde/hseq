@@ -129,19 +129,11 @@ let thys thdb = NameSet.to_set thdb.importing
 
 let expunge db =
   let used_list = db.importing
-  and tbl = table db
-  in
+  and tbl = table db in
   let not_used =
-    let rec flatten_list ls rs =
-      match ls with
-        | [] -> rs
-        | ((n, _)::_)::xs ->
-          if not (NameSet.mem used_list n)
-          then flatten_list xs (n::rs)
-          else flatten_list xs rs
-        | [] :: xs -> flatten_list xs rs
-    in
-    flatten_list (Treekit.StringTree.to_list tbl) []
+    List.filter
+    (fun k -> not (NameSet.mem used_list k))
+    (List.map (fun (k, _) -> k) (Treekit.StringTree.to_list tbl))
   in
   let tbl1 = List.fold_left Treekit.StringTree.delete tbl not_used
   in
@@ -212,7 +204,10 @@ let print db =
   Printer.print_sep_list (Format.print_string, ",") (imported db);
   Format.printf ";@]@ ";
   Format.printf "Table: @[<2>";
+  print_tbl (table_as_list db);
+  (*
   Printer.print_sep_list (print_tbl, ",") (table_as_list db);
+ *)
   Format.printf ";@]@,}@]"
 
 let message s db =
