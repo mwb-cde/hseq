@@ -74,6 +74,9 @@ val thy_of : t -> thy_id
 val name_of : t -> string
 (** The name portion of identifier [i]. *)
 
+val compare: t -> t -> Order.t
+(** Total order on identifiers. *)
+
 (** {7 Utility functions} *)
 
 val string_of: t -> string

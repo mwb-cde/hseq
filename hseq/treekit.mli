@@ -1,6 +1,6 @@
 (*----
   Name: treekit.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -37,15 +37,8 @@ sig
   type key
   (** Type of keys by which data is indexed. *)
 
-  val equals: key -> key -> bool
-  (** [equals x y]: True if [x] is the same as [y]. Must be accurate
-      since this is used to find the data associated with a key.  *)
-
-  val lessthan: key -> key -> bool
-(** [lessthan x y]: True if [x] is considered less-than [y]. Does not
-    need to be accurate since it is only used to narrow the list of
-    possible matches for a key.
-*)
+  val compare: key -> key -> Order.t
+(** [compare x y]: Compare [x] and [y], returning their order. *)
 end
 
 (** {5 Trees} *)
@@ -56,9 +49,7 @@ sig
 
   type key
   (** Type of keys by which data is indexed. *)
-
-  val eql: key -> key -> bool
-  val lessthan: key -> key -> bool
+  val compare: key -> key -> Order.t
 
   type ('a)t
 

@@ -24,87 +24,6 @@ open Basic
 open Gtypes
 open Report
 
-(*
- * Equality
- *)
-let rec equals x y =
-  (x == y) ||
-    (match (x, y) with
-      | (App(f1, arg1), App(f2, arg2))->
-          (equals f1 f2) && (equals arg1 arg2)
-      | (Bound(q1), Bound(q2)) -> q1 == q2
-      | (Meta(q1), Meta(q2)) -> q1 == q2
-      | (Qnt(qn1, b1), Qnt(qn2, b2)) ->
-        (qn1 == qn2) && (equals b1 b2)
-      | (_, _) -> x = y)
-
-(** [binder_equiv tyenv s t]: Equivalence of binders of quantified or
-    bound terms [s] and [t], w.r.t type substitution [tyenv].  *)
-let binder_equiv tyenv s t =
-  match (s, t) with
-    | (Bound(b1), Bound(b2)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | (Meta(b1), Meta(b2)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | (Qnt(b1, _), Qnt(b2, _)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | _ -> false
-
-(* [('a)tree]: Balanced trees indexed by terms *)
-module TermTreeData =
-struct
-  type key = term
-  let equals = equals
-  let lessthan x y = (Pervasives.compare x y) < 0
-end
-module TermTree = Treekit.BTree(TermTreeData)
-type ('a)tree = ('a) TermTree.t
-
-(* [('a)table]: Hashtables indexed by terms *)
-module type TERMHASHKEYS =
-sig
-  type t = term
-  val equal: t -> t -> bool
-  val hash: t -> int
-end
-
-module Termhashkeys:TERMHASHKEYS =
-struct
-  type t = term
-  let equal = equals
-  let hash= Hashtbl.hash
-end
-module type TERMHASH = (Hashtbl.S with type key = (term))
-module Termhash:TERMHASH = Hashtbl.Make(Termhashkeys)
-
-type ('a)table = ('a) Termhash.t
-let empty_table() = Termhash.create 5
-let table_find x env = Termhash.find env x
-let table_remove t env = Termhash.remove env t
-let table_add t r env = Termhash.add env t r
-let table_rebind t r env =
-  Termhash.remove env t;
-  Termhash.add env t r
-
-let table_member x env =
-  try ignore(table_find x env); true
-  with Not_found -> false
-
 (* Recognisers *)
 
 let is_qnt x =
@@ -293,6 +212,97 @@ let dest_binop t =
     | (id, x::y::_) -> (id, x, y)
     | _ -> raise (Failure "not a binary operator")
 
+(*
+ * Equality
+ *)
+let rec equals x y =
+  (x == y) ||
+    (match (x, y) with
+      | (App(f1, arg1), App(f2, arg2))->
+          (equals f1 f2) && (equals arg1 arg2)
+      | (Bound(q1), Bound(q2)) -> q1 == q2
+      | (Meta(q1), Meta(q2)) -> q1 == q2
+      | (Qnt(qn1, b1), Qnt(qn2, b2)) ->
+        (qn1 == qn2) && (equals b1 b2)
+      | (_, _) -> x = y)
+
+let less_than (t1: term) (t2: term) = (Pervasives.compare t1 t2) < 0
+
+let compare_term x y =
+  if equals x y then Order.Equal
+  else if less_than x y then Order.LessThan
+  else Order.GreaterThan
+
+let compare = compare_term
+
+(** [binder_equiv tyenv s t]: Equivalence of binders of quantified or
+    bound terms [s] and [t], w.r.t type substitution [tyenv].  *)
+let binder_equiv tyenv s t =
+  match (s, t) with
+    | (Bound(b1), Bound(b2)) ->
+      let (qnt1, _, ty1) = dest_binding b1
+      and (qnt2, _, ty2) = dest_binding b2
+      in
+      if qnt1 = qnt2
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+    | (Meta(b1), Meta(b2)) ->
+      let (qnt1, _, ty1) = dest_binding b1
+      and (qnt2, _, ty2) = dest_binding b2
+      in
+      if qnt1 = qnt2
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+    | (Qnt(b1, _), Qnt(b2, _)) ->
+      let (qnt1, _, ty1) = dest_binding b1
+      and (qnt2, _, ty2) = dest_binding b2
+      in
+      if qnt1 = qnt2
+      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
+      else false
+    | _ -> false
+
+(* [('a)tree]: Balanced trees indexed by terms *)
+module TermTreeData =
+struct
+  type key = term
+  let compare = compare
+end
+module TermTree = Treekit.BTree(TermTreeData)
+type ('a)tree = ('a) TermTree.t
+
+(* [('a)table]: Hashtables indexed by terms *)
+module type TERMHASHKEYS =
+sig
+  type t = term
+  val equal: t -> t -> bool
+  val hash: t -> int
+end
+
+module Termhashkeys:TERMHASHKEYS =
+struct
+  type t = term
+  let equal = equals
+  let hash= Hashtbl.hash
+end
+module type TERMHASH = (Hashtbl.S with type key = (term))
+module Termhash:TERMHASH = Hashtbl.Make(Termhashkeys)
+
+type ('a)table = ('a) Termhash.t
+let empty_table() = Termhash.create 5
+let table_find x env = Termhash.find env x
+let table_remove t env = Termhash.remove env t
+let table_add t r env = Termhash.add env t r
+let table_rebind t r env =
+  Termhash.remove env t;
+  Termhash.add env t r
+
+let table_member x env =
+  try ignore(table_find x env); true
+  with Not_found -> false
+
+(** More manipulators. *)
+
 let rec strip_fun_qnt f term qs =
   let is_ident_match t =
     if (is_ident t)
@@ -375,6 +385,7 @@ let get_qnt_body t =
   match t with
     | Qnt(_, b) -> b
     | _ -> raise (Failure "Not a quantified formula")
+
 
 let get_free_binders t =
   let memo = empty_table()
@@ -1362,9 +1373,9 @@ let add_term_error s t es = raise (add_error (term_error s t) es)
  * Comparisons and orderings
  *)
 
-let compare_term t1 t2 = compare t1 t2
-
-let less_than (t1: term) (t2: term) = (compare t1 t2) < 0
+(*
+let compare_term t1 t2 = Pervasives.compare t1 t2
+ *)
 
 let least ts =
   let rec less_aux l xs =

@@ -46,6 +46,15 @@ let rec equals a b =
   in
   (a == b) || (struct_equals (a, b))
 
+
+(* Ordering. *)
+let compare_gtype x y =
+  let lessthan x y = (Pervasives.compare x y) < 0
+  in
+  if equals x y then Order.Equal
+  else if lessthan x y then Order.LessThan
+  else Order.GreaterThan
+
 (* Recognisers *)
 
 let is_var t =
@@ -205,8 +214,7 @@ let get_typdef scp r =  Scope.defn_of scp r
 module TypeTreeData =
 struct
   type key = gtype
-  let equals = equals
-  let lessthan x y = (Pervasives.compare x y) < 0
+  let compare = compare_gtype
 end
 module TypeTree=Treekit.BTree(TypeTreeData)
 type ('a)tree = ('a)TypeTree.t

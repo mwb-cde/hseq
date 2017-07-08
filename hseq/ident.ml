@@ -50,6 +50,7 @@ let name_of (_, n) = n
 
 let equals x y =
   ((x == y) || (Pervasives.compare x y) = 0)
+
 let lessthan x y =
   if (x == y) then false
   else
@@ -61,6 +62,13 @@ let lessthan x y =
       else false
     end
 
+let compare_ident x y =
+  if equals x y then Order.Equal
+  else if lessthan x y then Order.LessThan
+  else Order.GreaterThan
+
+let compare = compare_ident
+
 (*** Utility functions ***)
 
 let string_of n =
@@ -68,12 +76,12 @@ let string_of n =
   then name_of n
   else (thy_of n)^"."^(name_of n)
 
+
 (* [('a)tree]: Balanced trees indexed by identifiers *)
 module IdentTreeData =
 struct
   type key = t
-  let equals x y = ((x == y) || (Pervasives.compare x y) = 0)
-  let lessthan x y = lessthan x y
+  let compare = compare_ident
 end
 module Tree = Treekit.BTree(IdentTreeData)
 type ('a)tree = ('a) Tree.t

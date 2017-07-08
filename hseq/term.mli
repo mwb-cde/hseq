@@ -33,6 +33,10 @@ val equals : term -> term -> bool
     (using [Pervasives.==]).
 *)
 
+val compare: term -> term -> Order.t
+(** [compare s t]: Ordering of [s] and [t]. It is always true that [compare s t
+    = 0] iff [equals s t ]. *)
+
 val binder_equiv : Scope.t -> term -> term -> bool
 (** [binder_equiv scp a b]: if [a] and [b] are both [Bound] or both
     [Qnt] terms then [true] if the binders of [a] and [b] are for the
@@ -475,7 +479,7 @@ val add_term_error: string -> term list -> exn -> 'a
 
 (** {5 Comparisons} *)
 
-val compare_term: term -> term -> int
+val compare_term: term -> term -> Order.t
 (** [compare_term x y]: Compare [x] and [y] using
     [Pervasives.compare].
 *)

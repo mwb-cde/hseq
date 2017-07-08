@@ -1,6 +1,6 @@
 (*----
   Name: treekit.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -26,27 +26,16 @@ sig
   (* Type of keys *)
   type key
 
-  (**
-      Comparisons between keys
-
-      [equals x y]: True if [x] is the same as [y]. Must be accurate
-      since this is used to find the data associated with a key.
-
-      [lessthan x y]: True if [x] is considered less-than [y]. Does not
-      need to be accurate since it is only used to narrow the list of
-      possible matches for a key.
-  *)
-  val equals : key -> key -> bool
-  val lessthan : key -> key -> bool
+  (** [compare x y]: Compare [x] and [y], returning their order. *)
+  val compare: key -> key -> Order.t
 end
 
 module type TreeType =
 sig
+  open Order
 
   type key
-
-  val eql : key -> key -> bool
-  val lessthan : key -> key -> bool
+  val compare: key -> key -> Order.t
 
   type ('a)t
   (** Type of trees. *)
@@ -154,14 +143,14 @@ end
 
 module Tree = functor (A: TreeData)->
 struct
+  open Order
 
   type key = A.key
   (*
     let eql x y =  (Pervasives.compare x y) = 0
     let lessthan x y= (Pervasives.compare x y) < 0
   *)
-  let eql = A.equals
-  let lessthan = A.lessthan
+  let compare = A.compare
 
   type ('a)t =
     Nil
@@ -206,12 +195,12 @@ struct
       match tr with
         Nil -> Branch((key, [data]), Nil, Nil)
       | Branch((k, ys), l, r) ->
-        if (eql key k)
-        then Branch((key, data::ys), l, r)
-        else
-          if (lessthan key k)
-          then Branch((k, ys), (add_aux l), r)
-          else Branch((k, ys), l, add_aux r)
+         begin
+           match compare key k with
+           | Equal -> Branch((key, data::ys), l, r)
+           | LessThan -> Branch((k, ys), (add_aux l), r)
+           | GreaterThan -> Branch((k, ys), l, add_aux r)
+         end
     in
     add_aux tree
 
@@ -223,17 +212,17 @@ struct
     add binding if necessary
   *)
 
-  let replace tree key data=
+  let replace tree key data =
     let rec replace_aux tr=
       match tr with
-        Nil -> Branch((key, [data]), Nil, Nil)
+      | Nil -> Branch((key, [data]), Nil, Nil)
       | Branch((k, ys), l, r) ->
-        if (eql key k)
-        then Branch((key, data::ys), l, r)
-        else
-          if (lessthan key k)
-          then Branch((k, ys), (replace_aux l), r)
-          else Branch((k, ys), l, (replace_aux r))
+         begin
+           match compare key k with
+           | Equal -> Branch((key, data::ys), l, r)
+           | LessThan -> Branch((k, ys), (replace_aux l), r)
+           | GreaterThan -> Branch((k, ys), l, (replace_aux r))
+         end
     in
     replace_aux tree
 
@@ -247,12 +236,12 @@ struct
       match tr with
       | Nil -> raise Not_found
       | Branch((k, ys), l, r) ->
-        if (eql key k)
-        then (List.hd ys)
-        else
-          if (lessthan key k)
-          then (find_aux l)
-          else (find_aux r)
+         begin
+           match compare key k with
+           | Equal -> List.hd ys
+           | LessThan -> find_aux l
+           | GreaterThan -> find_aux r
+         end
     in
     find_aux tree
 
@@ -261,12 +250,12 @@ struct
       match tr with
         Nil -> raise Not_found
       | Branch((k, ys), l, r) ->
-        if (eql key k)
-        then ys
-        else
-          if (lessthan key k)
-          then (find_aux l)
-          else (find_aux r)
+         begin
+           match compare key k with
+           | Equal -> ys
+           | LessThan -> find_aux l
+           | GreaterThan -> find_aux r
+         end
     in
     find_aux tree
 
@@ -289,12 +278,12 @@ struct
      that there is an element greater than d'.
   *)
 
-  let rec split tr=
+  let rec split tr =
     match tr with
-      Nil -> failwith "Tree.split"
+    | Nil -> failwith "Tree.split"
     | Branch(data, tr1, Nil) -> (data, tr1)
     | Branch(data, tr1, tr2) ->
-      let rdata, rtr=split tr2
+      let rdata, rtr = split tr2
       in
       (rdata, Branch(data, tr1, rtr))
 
@@ -308,9 +297,9 @@ struct
 
   let join tr1 tr2 =
     match tr1 with
-      Nil -> tr2
+    | Nil -> tr2
     | _ ->
-      let data, ntr=split tr1
+      let data, ntr = split tr1
       in
       Branch(data, ntr, tr2)
 
@@ -322,21 +311,21 @@ struct
 
   let rec delete tr key =
     match tr with
-      Nil -> tr
+    | Nil -> tr
     | Branch((_, []), _, _) -> failwith ("Tree.delete")
     | Branch((k, ys), l, r) ->
-      if (eql key k)
-      then
-        begin
-          match ys with
-          | [] -> failwith ("Tree.delete: invalid tree.")
-          | (_::[]) -> join l r
-          | (_::nlst) -> Branch((k, nlst), l, r)
-        end
-      else
-        if (lessthan key k)
-        then Branch((k, ys), delete l key, r)
-        else Branch((k, ys), l, delete r key)
+       begin
+         match compare key k with
+         | Equal ->
+            begin
+              match ys with
+              | [] -> failwith ("Tree.delete: invalid tree.")
+              | (_::[]) -> join l r
+              | (_::nlst) -> Branch((k, nlst), l, r)
+            end
+         | LessThan -> Branch((k, ys), delete l key, r)
+         | GreaterThan -> Branch((k, ys), l, delete r key)
+       end
   let remove = delete
 
   (*
@@ -411,10 +400,10 @@ module type BTreeType = TreeType
 
 module BTree = functor (A: TreeData) ->
 struct
+  open Order
 
   type key = A.key
-  let eql = A.equals
-  let lessthan = A.lessthan
+  let compare = A.compare
 
   type ('a)t=
     Nil
@@ -614,20 +603,20 @@ struct
       match tr with
       | Nil -> Branch((key, [data]), Nil, Nil, 1)
       | Branch((k, ys), l, r, d) ->
-        if (eql key k)
-        then
-          (* Add data to existing list, no rebalancing needed. *)
-          Branch((k, data::ys), l, r, d)
-        else
-          if (lessthan key k)
-          then
-            (* Add data to lhs tree, rebalancing may be needed. *)
-            let nl = add_aux l in
-            balance (Branch((k, ys), nl, r, (depth nl) + 1))
-          else
-            (* Add data to rhs tree, rebalancing may be needed. *)
-            let nr = add_aux r in
-            balance (Branch((k, ys), l, nr, (depth nr) + 1))
+         begin
+           match compare key k with
+           | Equal ->
+              (* Add data to existing list, no rebalancing needed. *)
+              Branch((k, data::ys), l, r, d)
+           | LessThan ->
+              (* Add data to lhs tree, rebalancing may be needed. *)
+              let nl = add_aux l in
+              balance (Branch((k, ys), nl, r, (depth nl) + 1))
+           | GreaterThan ->
+              (* Add data to rhs tree, rebalancing may be needed. *)
+              let nr = add_aux r in
+              balance (Branch((k, ys), l, nr, (depth nr) + 1))
+         end
     in
     (* add data into tree *)
     add_aux tree
@@ -648,23 +637,21 @@ struct
     in
     let rec replace_aux tr =
       match tr with
-        Nil -> Branch((key, [data]), Nil, Nil, 1)
+      | Nil -> Branch((key, [data]), Nil, Nil, 1)
       | Branch((k, ys), l, r, d) ->
-         if (eql key k)
-         then
-           (* replace data in existing list, no rebalancing needed *)
-           Branch ((k, (swap_first data ys)), l, r, d)
-         else
-           begin
-             if (lessthan key k)
-             then
-               (* replace data in lhs tree, rebalancing may be needed *)
-               balance (Branch ((k, ys), (replace_aux l), r, d))
-             else
-               (* replace data in rhs tree, rebalancing
+         begin
+           match compare key k with
+           | Equal ->
+              (* replace data in existing list, no rebalancing needed *)
+              Branch ((k, (swap_first data ys)), l, r, d)
+           | LessThan ->
+              (* replace data in lhs tree, rebalancing may be needed *)
+              balance (Branch ((k, ys), (replace_aux l), r, d))
+           | GreaterThan ->
+              (* replace data in rhs tree, rebalancing
                  may be needed *)
-               balance (Branch((k, ys), l, (replace_aux r), d))
-          end
+              balance (Branch((k, ys), l, (replace_aux r), d))
+         end
     in
     (* replace data in tree *)
     replace_aux tree
@@ -716,33 +703,35 @@ struct
      does nothing if key is not in tree
   *)
   let delete tree key =
-    let rec delete_aux tr =
+    let rec delete_node (k, data) l r dp =
+      begin
+        match data with
+        | [] -> failwith "Invalid tree."
+        | (_::[]) -> join l r
+        | (_::nlst) -> Branch((k, nlst), l, r, dp)
+      end
+    and delete_aux tr =
       match tr with
-        Nil -> Nil
+      | Nil -> Nil
       | Branch((k, data), l, r, dp) ->
-         let ntree=
-           if (eql key k)
-           then
-             begin
-               match data with
-               | [] -> failwith "Invalid tree."
-               | (_::[]) -> join l r
-               | (_::nlst) -> Branch((k, nlst), l, r, dp)
-             end
+         begin
+           let order = compare key k in
+           if order = Equal
+           then balance(delete_node (k,data) l r dp)
            else
              begin
-               let nleft, nright=
-                 if lessthan key k
+               let nleft, nright =
+                 if order = LessThan
                  then delete_aux l, r
                  else (l, delete_aux r)
                in
-               Branch((k,data), nleft, nright,
-                      (max_depth nleft nright)+1)
+               let ndepth = (max_depth nleft nright) + 1 in
+               balance(Branch((k,data), nleft, nright, ndepth))
              end
-         in
-        balance ntree
+         end
     in
     delete_aux tree
+
   let remove = delete
 
   (*
@@ -754,18 +743,14 @@ struct
     let rec find_aux tr =
       match tr with
         Nil -> raise Not_found
+      | Branch((_, []), _, _, _) -> failwith "Invalid tree."
       | Branch((k, ys), l, r, _) ->
-        if eql key k
-        then
-          begin
-            if ys == []
-            then failwith "Invalid tree."
-            else List.hd ys
-          end
-        else
-          if lessthan key k
-          then (find_aux l)
-          else (find_aux r)
+         begin
+           match compare key k with
+           | Equal -> List.hd ys
+           | LessThan -> find_aux l
+           | GreaterThan -> find_aux r
+         end
     in
     find_aux tree
 
@@ -779,14 +764,15 @@ struct
   let find_all tree key =
     let rec find_aux tr =
       match tr with
-        Nil -> raise Not_found
+      | Nil -> raise Not_found
+      | Branch((_, []), _, _, _) -> failwith "Invalid tree."
       | Branch((k, ys), l, r, _) ->
-        if eql key k
-        then ys
-        else
-          if lessthan key k
-          then find_aux l
-          else find_aux r
+         begin
+           match compare key k with
+           | Equal -> ys
+           | LessThan -> find_aux l
+           | GreaterThan -> find_aux r
+         end
     in
     find_aux tree
 
@@ -922,10 +908,7 @@ module SimpleTree =
     BTree
       (struct
         type key = A.key
-        let equals x y =
-          ((x == y) || (Pervasives.compare x y) = 0)
-        let lessthan x y =
-          ((not (x == y)) && ((Pervasives.compare x y) < 0))
+        let compare = Order.Util.compare
        end)
 
 
