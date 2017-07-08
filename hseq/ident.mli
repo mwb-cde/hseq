@@ -1,6 +1,6 @@
 (*----
-  Name: hident.mli
-  Copyright Matthew Wahab 2005-2016
+  Name: ident.mli
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -75,7 +75,9 @@ val name_of : t -> string
 (** The name portion of identifier [i]. *)
 
 val compare: t -> t -> Order.t
-(** Total order on identifiers. *)
+(** Total order on identifiers.
+    This is a pair-wise ordering with the [thy_id] the major component.
+*)
 
 (** {7 Utility functions} *)
 

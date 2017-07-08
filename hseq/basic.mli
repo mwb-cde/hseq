@@ -55,8 +55,11 @@ val gtype_id_copy: gtype_id -> gtype_id
 (** Make a new, unique with the same string representation as another. *)
 val gtype_id_equal: gtype_id -> gtype_id -> bool
 (** Equality of gtype_id. *)
-val gtype_id_compare: gtype_id -> gtype_id -> int
-(** Comparison of gtype_id. *)
+val gtype_id_compare: gtype_id -> gtype_id -> Order.t
+(** Total ordering on gtype_id.
+    Maintains the invariant
+    [gtype_id_compare x y = Order.Equal] iff [gtype_id_equal x y = true]
+ *)
 
 type gtype = (gtype_id, typ_const)pre_typ
 (** The actual representation of types. *)

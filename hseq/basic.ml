@@ -44,11 +44,16 @@ let mk_gtype_id s = ref s
 let gtype_id_string i = (!i)
 let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
 let gtype_id_equal x y = (x == y)
+
 let gtype_id_compare x y =
   if gtype_id_equal x y
-  then 0
-  else Pervasives.compare x y
-
+  then Order.Equal
+  else
+    begin
+      match Order.Util.compare (gtype_id_string x) (gtype_id_string y) with
+      | Order.GreaterThan -> Order.GreaterThan
+      | _ -> Order.LessThan
+    end
 
 (** [gtype]: The actual representation of types. *)
 type gtype = (gtype_id, typ_const)pre_typ

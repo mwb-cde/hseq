@@ -48,19 +48,24 @@ let name_of (_, n) = n
 
 (*** Comparisons ***)
 
+(*
 let equals x y =
   ((x == y) || (Pervasives.compare x y) = 0)
 
 let lessthan x y =
   if (x == y) then false
+ *)
+
+let compare x y =
+  if (x == y) then Order.Equal
   else
-    begin
-      let cmp = Pervasives.compare (thy_of x) (thy_of y) in
-      if (cmp < 0) then true
-      else if cmp = 0
-      then (Pervasives.compare (name_of x) (name_of y)) < 0
-      else false
-    end
+    let cmp = Order.Util.compare (thy_of x) (thy_of y) in
+    if cmp = Order.Equal
+    then Order.Util.compare (name_of x) (name_of y)
+    else cmp
+
+let equals x y = (compare x y) = Order.Equal
+let lessthan x y = (compare x y) = Order.LessThan
 
 let compare_ident x y =
   if equals x y then Order.Equal
