@@ -580,37 +580,35 @@ let thaw ?fresh var =
    command line.  Escapes the string using [String.escaped] then
    replaces ' ' with '\ '.
 *)
-let stringify str =
-  let rec stringify_aux str idx (len, rslt) =
-    if idx = 0
-    then (len, rslt)
+let stringify (arg: string) =
+  let str = String.escaped arg in
+  let str_len = String.length str
+  in
+  let rec stringify_aux first pos (rslt: (string)list) =
+    if pos >= str_len
+    then
+      begin
+        if pos = first
+        then rslt
+        else
+          let len =pos - first in
+          (String.sub str first len)::rslt
+      end
     else
-      let chr = String.get str (idx - 1)
-      in
-      if (chr = ' ')
-      then stringify_aux str (idx - 1) (len + 2, ('\\'::' '::rslt))
-      else stringify_aux str (idx - 1) (len + 1 , (chr::rslt))
+      begin
+        let chr = str.[pos]
+        in
+        if (chr = ' ')
+        then
+          let len = pos - first in
+          let rslt0 = (String.sub str first len)::rslt in
+          let rslt1 = "\\ "::rslt0
+          in
+          stringify_aux (pos + 1) (pos + 1) rslt1
+        else stringify_aux first (pos + 1) rslt
+      end
   in
-  let implode str chars =
-    let len = String.length str
-    in
-    let rec imp_aux idx lst =
-      if (idx < len)
-      then
-        (match lst with
-          | [] -> str
-          | (c::rst) ->
-            (String.set str idx c;
-             imp_aux (idx+1) rst))
-      else
-        str
-    in
-    imp_aux 0 chars
+  let rlst = stringify_aux 0 0 [] in
+  let lst = List.rev rlst
   in
-  let str1 = String.escaped str
-  in
-  let strlen = String.length str1
-  in
-  let (len, lst) = stringify_aux str1 strlen (0, [])
-  in
-  implode (String.make len '#') lst
+  String.concat "" lst
