@@ -1375,6 +1375,7 @@ let add_term_error s t es = raise (add_error (term_error s t) es)
 
 (*
 let compare_term t1 t2 = Pervasives.compare t1 t2
+let less_than (t1: term) (t2: term) = (compare_term t1 t2) < 0
  *)
 
 let least ts =

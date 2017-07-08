@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -25,6 +25,9 @@ open Basic
 open Lib
 
 (** {5 Basic Operations} *)
+
+val compare: gtype -> gtype -> Order.t
+(** Total order on types: Var < Constr < WeakVar. *)
 
 val equals: gtype -> gtype -> bool
 (** Syntactic equality between types. *)

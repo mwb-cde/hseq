@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -27,33 +27,69 @@ open Report
  * Basic Operations
  *)
 
-(* Equality *)
+(* Ordering. *)
+
+let rec compare_gtype a b =
+  let struct_cmp p =
+    match p with
+    | (Var(v1), Var(v2)) -> gtype_id_compare v1 v2
+    | (Var(_), _) -> Order.LessThan
+    | (Constr(_), Var(_)) -> Order.GreaterThan
+    | (Constr(f1, args1), Constr(f2, args2)) ->
+       begin
+         match Ident.compare f1 f2 with
+         | Order.Equal -> compare_list (args1, args2)
+         | x -> x
+       end
+    | (Constr(_), WeakVar(_)) -> Order.LessThan
+    | (WeakVar(v1), WeakVar(v2)) -> gtype_id_compare v1 v2
+    | (WeakVar(v1), _) -> Order.GreaterThan
+  in
+  if a == b then Order.Equal
+  else struct_cmp (a, b)
+and compare_list ps =
+  match ps with
+  | ([], []) -> Order.Equal
+  | ([], _) -> Order.LessThan
+  | (_, []) -> Order.GreaterThan
+  | (x::xs, y::ys) ->
+     let r = compare_gtype x y in
+     if r = Order.Equal
+     then compare_list (xs, ys)
+     else r
+
+let equals a b = (compare_gtype a b) = Order.Equal
+let lessthan a b = (compare_gtype a b) = Order.LessThan
+let compare = compare_gtype
+
+(*
 let rec equals a b =
   let struct_equals p =
     match p with
     | (Var(v1), Var(v2)) -> gtype_id_equal v1 v2
     | (Constr(f1, args1), Constr(f2, args2)) ->
-      let test_args () =
-        List.iter2
-          (fun a b -> if equals a b then () else raise (Failure ""))
-          args1 args2
-      in
-      begin
-        (f1 = f2) && (try (test_args(); true) with _ -> false)
-      end
+       let test_args () =
+         List.iter2
+           (fun a b -> if equals a b then () else raise (Failure ""))
+           args1 args2
+       in
+       begin
+         (f1 = f2) && (try (test_args(); true) with _ -> false)
+       end
     | (WeakVar(v1), WeakVar(v2)) -> gtype_id_equal v1 v2
     | (x, y) -> x = y
   in
   (a == b) || (struct_equals (a, b))
 
+let lessthan x y = (Pervasives.compare x y) < 0
 
-(* Ordering. *)
 let compare_gtype x y =
-  let lessthan x y = (Pervasives.compare x y) < 0
-  in
   if equals x y then Order.Equal
   else if lessthan x y then Order.LessThan
   else Order.GreaterThan
+       *)
+
+let compare = compare_gtype
 
 (* Recognisers *)
 
@@ -214,6 +250,7 @@ let get_typdef scp r =  Scope.defn_of scp r
 module TypeTreeData =
 struct
   type key = gtype
+
   let compare = compare_gtype
 end
 module TypeTree=Treekit.BTree(TypeTreeData)
