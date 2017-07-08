@@ -109,7 +109,7 @@ type thydb =
 
 let empty () =
   {
-    db = Tree.nil;
+    db = Tree.empty;
     curr = None;
     importing = NameSet.empty
   }

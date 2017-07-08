@@ -485,7 +485,7 @@ let sterm t a= ST(t, ref a)
 *)
 type substitution = (subst_terms)tree
 
-let empty_subst() = TermTree.nil
+let empty_subst() = TermTree.empty
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
 

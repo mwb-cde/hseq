@@ -34,7 +34,7 @@ let marker_name = Tag.name
 
 (** Meta variables *)
 type meta_db = (Basic.binders)Treekit.StringTree.t
-let empty_meta_db ()= Treekit.StringTree.nil
+let empty_meta_db ()= Treekit.StringTree.empty
 let meta_db_add n b db =
   Treekit.StringTree.add db n b
 

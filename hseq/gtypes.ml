@@ -222,8 +222,8 @@ let member t env =
   try lookup t env ; true
   with Not_found -> false
 
-let subst_sz s = TypeTree.nil
-let empty_subst () = TypeTree.nil
+let subst_sz s = TypeTree.empty
+let empty_subst () = TypeTree.empty
 let bind t r env = TypeTree.replace env t r
 let delete t env = TypeTree.delete env t
 let subst_iter = TypeTree.iter

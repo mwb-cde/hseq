@@ -124,8 +124,8 @@ module SymbolTree = Treekit.StringTree
 type symbol_table= (tok) SymbolTree.t
 type symtable = (char * int Counter.t) list * symbol_table
 
-let mk_symtable size = ([], SymbolTree.empty())
-let clear_symtable (_, tbl) = ([], SymbolTree.empty())
+let mk_symtable size = ([], SymbolTree.empty)
+let clear_symtable (_, tbl) = ([], SymbolTree.empty)
 
 let add_sym_size sz lst = Counter.add sz lst
 

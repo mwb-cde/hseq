@@ -86,10 +86,10 @@ let mk_thy n ps =
       date = 0.0;
       parents = ps;
       lfiles = [];
-      axioms = Tree.nil;
-      theorems = Tree.nil;
-      defns = Tree.nil;
-      typs = Tree.nil;
+      axioms = Tree.empty;
+      theorems = Tree.empty;
+      defns = Tree.empty;
+      typs = Tree.empty;
       type_pps = [];
       id_pps = [];
       pp_syms = [];
@@ -507,7 +507,7 @@ let from_saved scp sthy =
   let unsave f xs =
     List.fold_left
       (fun tr (k, d) -> Tree.add tr k d)
-      Tree.nil
+      Tree.empty
       (List.map (fun (x, y) -> (x, f y)) xs)
   in
   let name = sthy.sname in
@@ -538,7 +538,7 @@ let from_saved scp sthy =
   and tydefs_table =
     List.fold_left
       (fun tr (k, d) -> Tree.add tr k d)
-      Tree.nil tydefs_list
+      Tree.empty tydefs_list
   and ntype_pps = sthy.stype_pps
   and nid_pps = sthy.sid_pps
   and npp_syms = sthy.spp_syms

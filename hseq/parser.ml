@@ -97,7 +97,7 @@ type overload_table_t = ((Ident.t * Basic.gtype) list) OverloadTree.t
 type sym_pos = Ident.t Lib.position
 
 let default_overload_table_size = 127
-let mk_overload_table sz = OverloadTree.empty()
+let mk_overload_table sz = OverloadTree.empty
 
 (** Parser tables *)
 module Table =

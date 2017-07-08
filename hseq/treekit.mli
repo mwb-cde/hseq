@@ -62,6 +62,7 @@ sig
 
   type ('a)t
 
+(*
   val data: 'a t -> (key * ('a) list)
   (** Get the data at the current branch. *)
 
@@ -73,15 +74,18 @@ sig
 
   val nil: 'a t
   (** The empty tree. *)
+ *)
 
   val depth: 'a t -> int
   (** Get the depth (number of levels) of the tree. *)
 
-  val empty: unit -> 'a t
-  (** Make an empty tree. *)
+  val empty:  'a t
+  (** The empty tree. *)
 
+(*
   val create: (key * ('a)list) -> 'a t -> 'a t -> 'a t
   (** Make a branch with data. *)
+ *)
 
   val add: 'a t -> key -> 'a -> 'a t
   (** [add tr k d]: Add binding of [d] to [k] in tree [tr].  Previous

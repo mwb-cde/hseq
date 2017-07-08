@@ -118,10 +118,10 @@ type token_table =
     }
 
 let token_table_new sz =
-  { memo = None; table = TokenTree.empty() }
+  { memo = None; table = TokenTree.empty }
 
 let token_table_reset tbl =
-  { memo = None; table = TokenTree.empty() }
+  { memo = None; table = TokenTree.empty }
 
 (* token_table_add: should fail if token already exists (but doesn't
  *fixme* )

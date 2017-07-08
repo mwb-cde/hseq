@@ -51,6 +51,7 @@ sig
   type ('a)t
   (** Type of trees. *)
 
+(*
   (* data tr: get the data at the current branch *)
   val data : 'a t -> (key * ('a) list)
 
@@ -62,15 +63,18 @@ sig
 
   (* nil: make an empty tree *)
   val nil : 'a t
+ *)
 
   (** Get the depth (number of levels) of the tree. *)
   val depth: 'a t -> int
 
-  val empty: unit -> 'a t
-  (* Make an empty tree *)
+  val empty: 'a t
+  (* The empty tree *)
 
+(*
   (* create: make a branch with data *)
   val create : (key * ('a) list) -> 'a t -> 'a t -> 'a t
+ *)
 
   (*
     add tr k d:
@@ -163,10 +167,9 @@ struct
     Nil
   | Branch of ((key * ('a) list) * ('a)t * ('a)t)
 
-  let nil = Nil
   let create x l r = Branch(x, l, r)
 
-  let empty () = nil
+  let empty = Nil
   (** Make an empty tree *)
 
   (* Tree information/manipulation. *)
@@ -417,9 +420,8 @@ struct
     Nil
   | Branch of ((key * ('a) list) * ('a)t * ('a)t * int)
 
-  let nil = Nil
   let create x l r = Branch(x, l, r, 1)
-  let empty () = nil
+  let empty = Nil
 
   (*
     tree information/manipulation

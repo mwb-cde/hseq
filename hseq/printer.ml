@@ -141,7 +141,7 @@ type ('a, 'b) info =
     }
 
 let mk_info sz =
-  {records = Ident.Tree.empty(); printers = Ident.Tree.empty()}
+  {records = Ident.Tree.empty; printers = Ident.Tree.empty}
 
 let default_info_size = 53
 let empty_info() = mk_info default_info_size
