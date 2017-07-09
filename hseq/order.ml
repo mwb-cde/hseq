@@ -34,6 +34,16 @@ struct
     else if rslt < 0 then LessThan
     else GreaterThan
 
+  (** [order_to_int i]: Map an order to an integer. This is the reverse of
+      [int_to_order]. *)
+  let order_to_int rslt =
+    begin
+      match rslt with
+      | Equal -> 0
+      | LessThan -> -1
+      | GreaterThan -> 1
+    end
+
   (** [wrap cmp]: Wrap basic comparison function [cmp], making it return an
       [Order.t]. The mapping is [<0 -> LessThan], [=0 -> Equals] and [>0 ->
       GreaterThan]. *)

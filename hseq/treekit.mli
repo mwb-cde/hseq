@@ -129,6 +129,10 @@ module type BTreeType = TreeType
 module BTree:
   functor (A: TreeData) -> (BTreeType with type key = A.key)
 
+(** Fake trees based on maps. *)
+module MapTree:
+  functor (A: TreeData) -> (TreeType with type key = A.key)
+
 (** {5 Simple Trees}
 
     Trees ordered by [Pervasives.compare]. Example: a balanced tree

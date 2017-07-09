@@ -30,6 +30,10 @@ sig
       LessThan], [0 -> Equals] and [>0 -> GreaterThan]. *)
   val int_to_order: int -> t
 
+  (** [order_to_int i]: Map an order to an integer. This is the reverse of
+      [int_to_order]. *)
+  val order_to_int: t -> int
+
   (** [wrap cmp]: Wrap basic comparison function [cmp], making it return an
     [Order.t]. The mapping is [<0 -> LessThan], [=0 -> Equals] and [>0 ->
     GreaterThan]. *)

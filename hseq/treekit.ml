@@ -894,6 +894,39 @@ end
   let t4=right t3;;
 *)
 
+(** Fake trees based on maps. *)
+module MapTree = functor (A: TreeData) ->
+struct
+  type key = A.key
+  let compare = A.compare
+
+  module MTree =
+    Map.Make
+      (struct
+        type t = A.key
+        let compare x y= Order.Util.order_to_int (A.compare x y)
+      end)
+
+  type ('a)t = ('a)MTree.t
+
+  let depth _ = failwith "Wrong kind of tree."
+
+  let empty = MTree.empty
+  let add tr k v = MTree.add k v tr
+  let replace = add
+  let find tr k = MTree.find k tr
+  let find_all tr k = [find tr k]
+  let mem tr k = MTree.mem k tr
+  let remove tr k = MTree.remove k tr
+  let delete tr k = MTree.remove k tr
+  let iter fn tr = MTree.iter fn tr
+  let fold fn tr v = MTree.fold fn tr v
+  let to_list tr =
+    let fn key v lst = (key, v)::lst
+    in
+    fold fn tr []
+end
+
 (** Simple trees, indexed by Pervasives.compare. *)
 
 module type Data =
