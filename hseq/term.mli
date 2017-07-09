@@ -35,7 +35,11 @@ val equals : term -> term -> bool
 
 val compare: term -> term -> Order.t
 (** [compare s t]: Ordering of [s] and [t]. It is always true that [compare s t
-    = 0] iff [equals s t ]. *)
+    = 0] iff [equals s t ].
+
+    Defines the order Const < Id < Bound < App < Qnt and includes types in the
+    comparison.
+ *)
 
 val binder_equiv : Scope.t -> term -> term -> bool
 (** [binder_equiv scp a b]: if [a] and [b] are both [Bound] or both
@@ -479,24 +483,16 @@ val add_term_error: string -> term list -> exn -> 'a
 
 (** {5 Comparisons} *)
 
-val compare_term: term -> term -> Order.t
-(** [compare_term x y]: Compare [x] and [y] using
-    [Pervasives.compare].
-*)
-val less_than: term -> term  -> bool
-(** [less_than x y]: Less-Than defined in terms of [compare_term].
-*)
 val least: term list -> term
-(** [least ts]: The least term in [ts], using [less_than].
+(** [least ts]: The least term in [ts], using [term_lt].
 *)
 
 val term_lt: term -> term -> bool
-(** [term_lt]: more complex (and usefull) ordering on terms.  [Const <
-    Var < Bound < App < Qnt < t2 iff t1<t2]
-*)
+(** [term_lt]: Less-Than-or-Equal. Defines the same order as [compare], but
+    ignores types. *)
 
 val term_leq: term -> term -> bool
-(** [term_leq]: Less-Than-or-Equal. *)
+(** [term_leq]: Less-Than-or-Equal, ignores types. *)
 
 val term_gt: term -> term -> bool
 (** [term_gt]: Greater-Than, defined in terms of [term_leq].

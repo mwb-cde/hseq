@@ -74,6 +74,9 @@ type const_ty =
   | Cnum of Num.num    (* big numbers *)
   | Cbool of bool
 
+
+val const_compare: const_ty -> const_ty -> Order.t
+(** Total ordering on constants. *)
 val const_lt: const_ty -> const_ty -> bool
 (** Less-than ordering on constants. *)
 val const_leq: const_ty -> const_ty -> bool
@@ -112,6 +115,9 @@ val binder_name: binders -> string
 
 val binder_type: binders -> gtype
 (** [binder_type b]: The type of bound variable [b]. *)
+
+val binder_compare: binders -> binders -> Order.t
+(** Total ordering on binders. *)
 
 val binder_equality: binders -> binders -> bool
 (** Equality of binders. *)

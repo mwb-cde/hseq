@@ -212,28 +212,104 @@ let dest_binop t =
     | (id, x::y::_) -> (id, x, y)
     | _ -> raise (Failure "not a binary operator")
 
-(*
- * Equality
- *)
-let rec equals x y =
-  (x == y) ||
-    (match (x, y) with
-      | (App(f1, arg1), App(f2, arg2))->
-          (equals f1 f2) && (equals arg1 arg2)
-      | (Bound(q1), Bound(q2)) -> q1 == q2
-      | (Meta(q1), Meta(q2)) -> q1 == q2
-      | (Qnt(qn1, b1), Qnt(qn2, b2)) ->
-        (qn1 == qn2) && (equals b1 b2)
-      | (_, _) -> x = y)
 
-let less_than (t1: term) (t2: term) = (Pervasives.compare t1 t2) < 0
+(** Comparisons and orderings. *)
 
-let compare_term x y =
-  if equals x y then Order.Equal
-  else if less_than x y then Order.LessThan
-  else Order.GreaterThan
+(** Ordering on terms.  Const < Id < Bound < App < Qnt < t2 iff t1<t2 *)
+let rec compare_term_strict typed t1 t2 =
+  let compare_bound (x: Basic.binders) y = Basic.binder_compare x y
+  and compare_free (n1, ty1) (n2, ty2) =
+    begin
+      match Order.Util.compare n1 n2 with
+      | Order.Equal ->
+         if typed then Order.Util.compare ty1 ty2
+         else Order.Equal
+      | x -> x
+    end
+  in
+  match (t1, t2) with
+  | (Const c1, Const c2) -> Basic.const_compare c1 c2
+  | (Const _ , _ ) -> Order.LessThan
+  | (Id _, Const _) -> Order.GreaterThan
+  | (Id _, Id _) ->
+     begin
+       let id1, ty1 = dest_ident t1
+       and id2, ty2 = dest_ident t2
+       in
+       match Ident.compare id1 id2 with
+       | Order.Equal ->
+          if typed then Gtypes.compare ty1 ty2
+          else Order.Equal
+       | x -> x
+     end
+  | (Id _, _) -> Order.LessThan
+  | (Meta _, Const _) -> Order.GreaterThan
+  | (Meta _, Id _) -> Order.GreaterThan
+  | (Meta b1, Meta b2) -> compare_bound b1 b2
+  | (Meta _, _) -> Order.LessThan
+  | (Bound _, Const _) -> Order.GreaterThan
+  | (Bound _, Id _) -> Order.GreaterThan
+  | (Bound _, Meta _) -> Order.GreaterThan
+  | (Bound b1, Bound b2) -> compare_bound b1 b2
+  | (Bound _ , _ ) -> Order.LessThan
+  | (Free _, Const _) -> Order.GreaterThan
+  | (Free _, Id _) -> Order.GreaterThan
+  | (Free _, Meta _) -> Order.GreaterThan
+  | (Free _, Bound _) -> Order.GreaterThan
+  | (Free _, Free _) -> compare_free (dest_free t1) (dest_free t2)
+  | (Free _, _) -> Order.LessThan
+  | (App _, Const _) -> Order.GreaterThan
+  | (App _, Id _) -> Order.GreaterThan
+  | (App _, Meta _) -> Order.GreaterThan
+  | (App _, Bound _) -> Order.GreaterThan
+  | (App _, Free _) -> Order.GreaterThan
+  | (App(f1, a1), App (f2, a2)) ->
+     begin
+       match compare_term_strict typed f1 f2 with
+       | Order.Equal -> compare_term_strict typed a1 a2
+       | x -> x
+     end
+  | (App _, _) -> Order.LessThan
+  | (Qnt _, Const _) -> Order.GreaterThan
+  | (Qnt _, Id _) -> Order.GreaterThan
+  | (Qnt _, Meta _) -> Order.GreaterThan
+  | (Qnt _, Bound _) -> Order.GreaterThan
+  | (Qnt _, Free _) -> Order.GreaterThan
+  | (Qnt _, App _) -> Order.GreaterThan
+  | (Qnt(q1, b1), Qnt(q2, b2)) ->
+     begin
+       match compare_term_strict typed b1 b2 with
+       | Order.Equal -> compare_bound q1 q2
+       | x -> x
+     end
 
+let compare_term = compare_term_strict true
 let compare = compare_term
+
+(* Equality and relationships. *)
+
+let equals x y = (compare_term x y) = Order.Equal
+let term_leq x y =
+  match compare_term x y with
+  | Order.Equal | Order.LessThan -> true
+  | _ -> false
+
+let lessthan x y = (compare_term x y) = Order.LessThan
+let term_lt x y = (compare_term_strict false x y) = Order.LessThan
+let term_gt t1 t2 = not (term_leq t2 t1)
+let term_leq t1 t2 =
+  match compare_term_strict false t1 t2 with
+  | Order.Equal | Order.LessThan -> true
+  | _ -> false
+
+let rec is_subterm x y =
+  if (equals x y)
+  then true
+  else
+    match y with
+      | App (f, a) -> (is_subterm x f) || (is_subterm x a)
+      | Qnt (_, b) -> (is_subterm x b)
+      | _ -> false
 
 (** [binder_equiv tyenv s t]: Equivalence of binders of quantified or
     bound terms [s] and [t], w.r.t type substitution [tyenv].  *)
@@ -324,16 +400,12 @@ let rec strip_fun_qnt f term qs =
       else strip_fun_qnt f body (q::qs)
     | _ -> (List.rev qs, term)
 
-(*
- * Identifier (Id) terms
- *)
+(* Identifier (Id) terms *)
 
 let get_ident_id vt = fst (dest_ident vt)
 let get_ident_type vt = snd (dest_ident vt)
 
-(*
- * Free variables
- *)
+(* Free variables *)
 
 let get_free_name t =
   match t with
@@ -349,9 +421,7 @@ let get_free_vars trm =
       | _ -> ts
   in get_free_vars_aux trm []
 
-(*
- * Quantified and bound terms
- *)
+(* Quantified and bound terms *)
 
 let get_binder t =
   match t with
@@ -1369,133 +1439,15 @@ end
 let term_error s t = mk_error((new termError s t):>error)
 let add_term_error s t es = raise (add_error (term_error s t) es)
 
-(*
- * Comparisons and orderings
- *)
-
-(*
-let compare_term t1 t2 = Pervasives.compare t1 t2
-let less_than (t1: term) (t2: term) = (compare_term t1 t2) < 0
- *)
-
 let least ts =
   let rec less_aux l xs =
     match xs with
       | [] -> l
       | y::ys ->
-        if less_than y l
+        if term_lt y l
         then less_aux y ys
         else less_aux l ys
   in
   match ts with
     | [] -> raise (term_error "least: No arguments" [])
     | (x::xs) -> less_aux x xs
-
-(* [term_lt]: More complex ordering on terms.  Const < Id < Bound <
-   App < Qnt < t2 iff t1<t2
-*)
-let rec term_lt t1 t2 =
-  let atom_lt (a1, ty1) (a2, ty2) = a1 < a2
-  and bound_lt (q1, n1, _) (q2, n2, _) =  n1 < n2 && q1 < q1
-  in
-  match (t1, t2) with
-    | (Const c1, Const c2) -> Basic.const_lt c1 c2
-    | (Const _ , _ ) -> true
-    | (Id _, Const _) -> false
-    | (Id _, Id _) -> atom_lt (dest_ident t1) (dest_ident t2)
-    | (Id _, _) -> true
-    | (Meta _, Const _) -> false
-    | (Meta _, Id _) -> false
-    | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
-    | (Meta _, _) -> true
-    | (Bound _, Const _) -> false
-    | (Bound _, Id _) -> false
-    | (Bound _, Meta _) -> false
-    | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
-    | (Bound _ , _ ) -> true
-    | (Free _, Const _) -> false
-    | (Free _, Id _) -> false
-    | (Free _, Meta _) -> false
-    | (Free _, Bound _) -> false
-    | (Free (n1, _), Free (n2, _)) -> n1<n2
-    | (Free _, _) -> true
-    | (App _, Const _) -> false
-    | (App _, Id _) -> false
-    | (App _, Meta _) -> false
-    | (App _, Bound _) -> false
-    | (App _, Free _) -> false
-    | (App(f1, a1), App (f2, a2)) ->
-      if term_lt f1 f2
-      then true
-      else
-        if term_lt f2 f1
-        then false
-        else term_lt a1 a2
-    | (App _, _) -> true
-    | (Qnt _, Const _) -> false
-    | (Qnt _, Id _) -> false
-    | (Qnt _, Meta _) -> false
-    | (Qnt _, Bound _) -> false
-    | (Qnt _, Free _) -> false
-    | (Qnt _, App _) -> false
-    | (Qnt(q1, b1), Qnt(q2, b2)) ->
-      if term_lt b1 b2
-      then true
-      else bound_lt (dest_binding q1) (dest_binding q2)
-
-let rec term_leq t1 t2 =
-  let atom_leq (a1, ty1) (a2, ty2) = (a1 <= a2)
-  and bound_leq (q1, n1, ty1) (q2, n2, ty2) =  (n1 <= n2) && (q1 <= q2)
-  in
-  match (t1, t2) with
-    | (Const c1, Const c2) -> Basic.const_leq c1 c2
-    | (Const _ , _ ) -> true
-    | (Id _, Const _) -> false
-    | (Id _, Id _) -> atom_leq (dest_ident t1) (dest_ident t2)
-    | (Id _, _) -> true
-    | (Meta _, Const _) -> false
-    | (Meta _, Id _) -> false
-    | (Meta b1, Meta b2) -> bound_leq (dest_binding b1) (dest_binding b2)
-    | (Meta _, _) -> true
-    | (Bound _, Const _) -> false
-    | (Bound _, Id _) -> false
-    | (Bound _, Meta _) -> false
-    | (Bound b1, Bound b2) -> bound_leq (dest_binding b1) (dest_binding b2)
-    | (Bound _ , _ ) -> true
-    | (Free _, Const _) -> false
-    | (Free _, Id _) -> false
-    | (Free _, Meta _) -> false
-    | (Free _, Bound _) -> false
-    | (Free (n1, _), Free (n2, _)) -> n1<=n2
-    | (Free _, _) -> true
-    | (App _, Const _) -> false
-    | (App _, Id _) -> false
-    | (App _, Meta _) -> false
-    | (App _, Bound _) -> false
-    | (App _, Free _) -> false
-    | (App(f1, a1), App (f2, a2)) ->
-      if term_leq f1 f2
-      then term_leq a1 a2
-      else false
-    | (App _, _) -> true
-    | (Qnt _, Const _) -> false
-    | (Qnt _, Id _) -> false
-    | (Qnt _, Meta _) -> false
-    | (Qnt _, Bound _) -> false
-    | (Qnt _, Free _) -> false
-    | (Qnt _, App _) -> false
-    | (Qnt(q1, b1), Qnt(q2, b2)) ->
-      if term_leq b1 b2
-      then true
-      else bound_leq (dest_binding q1) (dest_binding q2)
-
-let term_gt t1 t2 = not (term_leq t2 t1)
-
-let rec is_subterm x y =
-  if (equals x y)
-  then true
-  else
-    match y with
-      | App (f, a) -> (is_subterm x f) || (is_subterm x a)
-      | Qnt (_, b) -> (is_subterm x b)
-      | _ -> false

@@ -74,6 +74,15 @@ type const_ty =
   | Cnum of Num.num    (* Arbitrary precision numbers. *)
   | Cbool of bool
 
+let const_compare x y =
+  if x = y then Order.Equal
+  else
+    match (x, y) with
+    | Cbool(a), Cbool(b) -> Order.Util.compare a b
+    | Cbool(_), _ -> Order.LessThan
+    | Cnum(_), Cbool(_) -> Order.GreaterThan
+    | Cnum(a), Cnum(b) -> Order.Util.compare a b
+
 let const_lt x y =
   match (x, y) with
     | Cbool(true), _ -> true
@@ -139,7 +148,6 @@ type binders = q_type ref
  * Binder operations
  *)
 
-let binder_equality x y = (x == y)
 let mk_binding qn qv qt = ref {quant=qn; qvar=qv; qtyp=qt}
 let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
 let binder_kind b =
@@ -151,6 +159,17 @@ let binder_name b =
 let binder_type b =
   let (_, _, x) = dest_binding b
   in x
+
+let binder_compare x y =
+  if x == y then Order.Equal
+  else
+    begin
+      match Order.Util.compare x y with
+      | Order.GreaterThan -> Order.GreaterThan
+      | _ -> Order.LessThan
+    end
+
+let binder_equality x y = (x == y)
 
 (** The representation of a term *)
 type term =
