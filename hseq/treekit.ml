@@ -40,30 +40,9 @@ sig
   type ('a)t
   (** Type of trees. *)
 
-(*
-  (* data tr: get the data at the current branch *)
-  val data : 'a t -> (key * ('a) list)
-
-  (* left tr: get left branch of tree *)
-  val left : 'a t -> 'a t
-
-  (* right tr: get right branch of tree *)
-  val right : 'a t -> 'a t
-
-  (* nil: make an empty tree *)
-  val nil : 'a t
- *)
-
-  (** Get the depth (number of levels) of the tree. *)
-  val depth: 'a t -> int
-
   val empty: 'a t
   (* The empty tree *)
 
-(*
-  (* create: make a branch with data *)
-  val create : (key * ('a) list) -> 'a t -> 'a t -> 'a t
- *)
 
   (*
     add tr k d:
@@ -88,14 +67,6 @@ sig
   *)
 
   val find : 'a t -> key -> 'a
-
-  (*
-     find_all tree key
-     finds all bindings of key in tree
-     with last binding first in list
-     raise Not_found if no bindings in tree
-  *)
-  val find_all : 'a t -> key -> 'a list
 
   (* mem tree key:
      return true if key is bound in tree
@@ -146,10 +117,6 @@ struct
   open Order
 
   type key = A.key
-  (*
-    let eql x y =  (Pervasives.compare x y) = 0
-    let lessthan x y= (Pervasives.compare x y) < 0
-  *)
   let compare = A.compare
 
   type ('a)t =
@@ -162,11 +129,6 @@ struct
   (** Make an empty tree *)
 
   (* Tree information/manipulation. *)
-
-  let rec depth tr =
-    match tr with
-    | Nil -> 0
-    | Branch(_, l, r) -> max (depth l) (depth r)
 
   let data tr =
     match tr with
@@ -380,16 +342,10 @@ struct
      tree in descending order
   *)
 
-  let to_list tree=
-    let rec to_list_aux tr rslt=
-      match tr with
-      | Nil -> rslt
-      | Branch((k, data::_), l, r)
-        -> to_list_aux r ((k, data)::(to_list_aux l rslt))
-      | Branch((_, []), _, _)
-        -> failwith "invalid tree"
+  let to_list tr =
+    let fn key v lst = (key, v)::lst
     in
-    to_list_aux tree []
+    fold fn tr []
 
 end
 
@@ -431,27 +387,15 @@ struct
       Nil -> (failwith "BTree.right: invalid argument")
     | Branch(_, _, r, _) -> r
 
+  (*
+    tree rotation
+  *)
+
   let depth t =
     match t with
       Nil -> 0
     | Branch(_, _, _, d) -> d
 
-  let inc_depth t i =
-    match t with
-      Nil -> (failwith "BTree.dec_depth: invalid argument")
-    | Branch(x, l, r, d) -> Branch(x, l, r, d+i)
-
-  let dec_depth t i =
-    match t with
-      Nil -> (failwith "BTree.dec_depth: invalid argument")
-    | Branch(x, l, r, d) -> Branch(x, l, r, d-i)
-
-
-  let max_depth t1 t2=max (depth t1) (depth t2)
-
-  (*
-    tree rotation
-  *)
 
   (*
     rotl: rotate left
@@ -673,7 +617,7 @@ struct
       and nleft = tr1
       in
       let ntree = Branch((key, data), nleft, nright,
-                         (max_depth nleft nright)+1)
+                         (max (depth nleft) (depth nright)) + 1)
       in
       (ndata, balance ntree)
 
@@ -693,7 +637,7 @@ struct
       and nright = tr2
       in
       let ntree = Branch(data, nleft, nright,
-                         (max_depth nleft nright)+1)
+                         (max (depth nleft) (depth nright)) + 1)
       in
       balance ntree
 
@@ -725,7 +669,7 @@ struct
                  then delete_aux l, r
                  else (l, delete_aux r)
                in
-               let ndepth = (max_depth nleft nright) + 1 in
+               let ndepth = (max (depth nleft) (depth nright)) + 1 in
                balance(Branch((k,data), nleft, nright, ndepth))
              end
          end
@@ -834,16 +778,10 @@ struct
      tree in descending order
   *)
 
-  let to_list tree=
-    let rec to_list_aux tr rslt=
-      match tr with
-        Nil -> rslt
-      | Branch((k, data::_), l, r, _)
-        -> to_list_aux r ((k, data)::(to_list_aux l rslt))
-      | Branch((_, []), _, _, _)
-        -> failwith "invalid tree"
+  let to_list tr =
+    let fn key v lst = (key, v)::lst
     in
-    to_list_aux tree []
+    fold fn tr []
 
 end
 
@@ -908,8 +846,6 @@ struct
       end)
 
   type ('a)t = ('a)MTree.t
-
-  let depth _ = failwith "Wrong kind of tree."
 
   let empty = MTree.empty
   let add tr k v = MTree.add k v tr
