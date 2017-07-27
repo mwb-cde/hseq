@@ -32,7 +32,8 @@ open Report
 let rec compare_gtype a b =
   let struct_cmp p =
     match p with
-    | (Var(v1), Var(v2)) -> gtype_id_compare v1 v2
+    | (Var(v1), Var(v2)) ->
+       Basic.gtype_id_compare v1 v2
     | (Var(_), _) -> Order.LessThan
     | (Constr(_), Var(_)) -> Order.GreaterThan
     | (Constr(f1, args1), Constr(f2, args2)) ->
@@ -42,7 +43,7 @@ let rec compare_gtype a b =
          | x -> x
        end
     | (Constr(_), WeakVar(_)) -> Order.LessThan
-    | (WeakVar(v1), WeakVar(v2)) -> gtype_id_compare v1 v2
+    | (WeakVar(v1), WeakVar(v2)) -> Basic.gtype_id_compare v1 v2
     | (WeakVar(v1), _) -> Order.GreaterThan
   in
   if a == b then Order.Equal

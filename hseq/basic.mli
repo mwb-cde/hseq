@@ -44,7 +44,7 @@ type ('idtyp, 'tfun) pre_typ =
    ML).
 *)
 
-type gtype_id = string ref
+type gtype_id
 (** Type identifers. *)
 
 val mk_gtype_id: string -> gtype_id
@@ -55,11 +55,17 @@ val gtype_id_copy: gtype_id -> gtype_id
 (** Make a new, unique with the same string representation as another. *)
 val gtype_id_equal: gtype_id -> gtype_id -> bool
 (** Equality of gtype_id. *)
+val gtype_id_greaterthan: gtype_id -> gtype_id -> bool
+val gtype_id_lessthan: gtype_id -> gtype_id -> bool
 val gtype_id_compare: gtype_id -> gtype_id -> Order.t
-(** Total ordering on gtype_id.
-    Maintains the invariant
-    [gtype_id_compare x y = Order.Equal] iff [gtype_id_equal x y = true]
- *)
+(** Orderings on gtype_id.
+
+    Maintains the invariant:
+    - [gtype_id_equal x y]
+      =>
+      [not (gtype_id_lessthan x y)] and [not (gtype_id_greaterthan x y)].
+    - [gtype_id_lessthan x y = not(gtype_id_greaterthan x y)]
+*)
 
 type gtype = (gtype_id, typ_const)pre_typ
 (** The actual representation of types. *)
@@ -73,7 +79,6 @@ val string_tconst: typ_const -> string list -> string
 type const_ty =
   | Cnum of Num.num    (* big numbers *)
   | Cbool of bool
-
 
 val const_compare: const_ty -> const_ty -> Order.t
 (** Total ordering on constants. *)
@@ -116,11 +121,20 @@ val binder_name: binders -> string
 val binder_type: binders -> gtype
 (** [binder_type b]: The type of bound variable [b]. *)
 
-val binder_compare: binders -> binders -> Order.t
-(** Total ordering on binders. *)
-
 val binder_equality: binders -> binders -> bool
 (** Equality of binders. *)
+
+val binder_greaterthan: binders -> binders -> bool
+val binder_lessthan: binders -> binders -> bool
+val binder_compare: binders -> binders -> Order.t
+(** Orderings on binders.
+
+    Maintains the invariant:
+    - [binder_equality x y]
+      =>
+      [not (binder_lessthan x y)] and [not (binder_greaterthan x y)].
+    - [binder_lessthan x y = not(binder_greaterthan x y)]
+*)
 
 (** {7 Terms} *)
 

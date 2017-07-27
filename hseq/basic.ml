@@ -23,9 +23,7 @@
  *   Basic constants and data structures
  *)
 
-(*
- * Base Representation of logic types
- *)
+(* Base Representation of logic types *)
 
 (** [typ_const]: Representation of user-defined type constructors
     (could merged into [pre_typ]). *)
@@ -38,22 +36,27 @@ type ('idtyp, 'tfun) pre_typ =
   | WeakVar of 'idtyp
 
 (** [gtype_id]: The type of gtype identifiers. *)
-type gtype_id = string ref
+type gtype_id = (string)Tag.t
 
-let mk_gtype_id s = ref s
-let gtype_id_string i = (!i)
+let mk_gtype_id s = Tag.make s
+let gtype_id_string i = Tag.contents i
 let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
-let gtype_id_equal x y = (x == y)
+
+let gtype_id_equal x y = Tag.equal x y
 
 let gtype_id_compare x y =
   if gtype_id_equal x y
   then Order.Equal
   else
-    begin
-      match Order.Util.compare (gtype_id_string x) (gtype_id_string y) with
-      | Order.GreaterThan -> Order.GreaterThan
-      | _ -> Order.LessThan
-    end
+    let xc = Tag.contents x
+    and yc = Tag.contents y
+    in
+    if (Order.Util.compare xc yc) = Order.GreaterThan
+    then Order.GreaterThan
+    else Order.LessThan
+
+let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
+let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
 
 (** [gtype]: The actual representation of types. *)
 type gtype = (gtype_id, typ_const)pre_typ
@@ -142,14 +145,17 @@ let quant_string x =
 *)
 
 type q_type = {quant: quant; qvar: string; qtyp: gtype}
-type binders = q_type ref
+type binders = (q_type)Tag.t
 
-(*
- * Binder operations
- *)
+(* Binder operations *)
 
-let mk_binding qn qv qt = ref {quant=qn; qvar=qv; qtyp=qt}
-let dest_binding b = ((!b.quant), (!b.qvar), (!b.qtyp))
+let mk_binding qn qv qt =
+  Tag.make { quant=qn; qvar=qv; qtyp=qt }
+let dest_binding b =
+  let q = Tag.contents b
+  in
+  (q.quant, q.qvar, q.qtyp)
+
 let binder_kind b =
   let (x, _, _) = dest_binding b
   in x
@@ -160,16 +166,20 @@ let binder_type b =
   let (_, _, x) = dest_binding b
   in x
 
+let binder_equality x y = Tag.equal x y
 let binder_compare x y =
-  if x == y then Order.Equal
+  if binder_equality x y
+  then Order.Equal
   else
-    begin
-      match Order.Util.compare x y with
-      | Order.GreaterThan -> Order.GreaterThan
-      | _ -> Order.LessThan
-    end
+    let xc = Tag.contents x
+    and yc = Tag.contents y
+    in
+    if (Order.Util.compare xc yc) = Order.GreaterThan
+    then Order.GreaterThan
+    else Order.LessThan
 
-let binder_equality x y = (x == y)
+let binder_greaterthan x y = (binder_compare x y) = Order.GreaterThan
+let binder_lessthan x y = (binder_compare x y) = Order.LessThan
 
 (** The representation of a term *)
 type term =
