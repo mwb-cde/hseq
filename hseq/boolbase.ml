@@ -379,7 +379,7 @@ and base_concl_elim_rules_tac rules lbl_list ctxt goal =
     the elimination rules fails is stored in arbitrary order.
 *)
 let elim_rules_tac rules albls clbls ctxt g =
-  if (albls != [])
+  if (albls <> [])
   then
     apply_tac
       (try_tac (map_some (asm_elim_rules_tac rules) albls))

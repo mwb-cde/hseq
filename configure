@@ -45,7 +45,7 @@
 (** File name utilities **)
 
 let filename x y =
-  if x != ""
+  if x <> ""
   then Filename.concat x y
   else y
 
@@ -184,7 +184,7 @@ object (self)
 
   (* Command line option *)
   val option = None
-  method has_option () = option != None
+  method has_option () = option <> None
 
   (* Find: Try to deduce the value, return true iff successful. *)
   method find() = false
@@ -203,7 +203,7 @@ object (self)
         then
           begin
             Printf.fprintf oc "%s: required but not set. " variable;
-            if (option != None)
+            if (option <> None)
             then Printf.fprintf oc "Use option --%s.\n" (get_str option)
             else ()
           end

@@ -153,7 +153,7 @@ let add_file f thy =
 let remove_file f thy =
   set_files thy
     (List.filter
-       (fun x -> (String.compare x f) != 0) (get_files thy))
+       (fun x -> (String.compare x f) <> 0) (get_files thy))
 
 (*
  * Theory Components
