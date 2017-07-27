@@ -72,7 +72,7 @@ val get_two: ?msg:string -> 'a list -> ('a * 'a)
 val drop_tag : Logic.tagged_form -> Formula.t
 (** Get the formula of a tagged formula. *)
 
-val drop_formula: Logic.tagged_form -> Tag.t
+val drop_formula: Logic.tagged_form -> Logic.ftag_ty
 (** Get the tag of a tagged formula. *)
 
 (** {7 Formula labels} *)
@@ -80,7 +80,7 @@ val drop_formula: Logic.tagged_form -> Tag.t
 val fnum: int -> Logic.label
 (** Make a label from an integer. *)
 
-val ftag: Tag.t -> Logic.label
+val ftag: Logic.ftag_ty -> Logic.label
 (** Make a label from a tag. *)
 
 val fname: string -> Logic.label
@@ -103,7 +103,7 @@ val asms_of: Logic.Sequent.t -> Logic.tagged_form list
 val concls_of: Logic.Sequent.t -> Logic.tagged_form list
 (** Get the conclusions of a sequent. *)
 
-val sqnt_tag: Logic.Sequent.t -> Tag.t
+val sqnt_tag: Logic.Sequent.t -> Logic.ftag_ty
 (** Get the tag of a sequent. *)
 
 (** {7 Nodes} *)
@@ -117,7 +117,7 @@ val scope_of_goal: Logic.node -> Scope.t
 val typenv_of: Logic.node -> Gtypes.substitution
 (** Get the type environment of a node. *)
 
-val node_tag: Logic.node -> Tag.t
+val node_tag: Logic.node -> Logic.ftag_ty
 (** Get the tag of a node. *)
 
 val get_tagged_asm: Logic.label -> Logic.node -> Logic.tagged_form
@@ -163,13 +163,13 @@ sig
   (** Get the changes record of a branch. Used to extract the changes
       after a tactic is applied. *)
 
-  val subgoals: t -> Tag.t list
+  val subgoals: t -> Logic.ftag_ty list
   (** [subgoals info]: Get subgoal tags of [info]. *)
 
-  val aformulas: t -> Tag.t list
+  val aformulas: t -> Logic.ftag_ty list
   (** [aformulas info]: Get tags of assumption formula tags from [info]. *)
 
-  val cformulas: t -> Tag.t list
+  val cformulas: t -> Logic.ftag_ty list
   (** [cformulas info]: Get tags of conclusion formula tags from [info]. *)
 
   val constants: t -> Basic.term list
@@ -637,7 +637,7 @@ val basic:
 *)
 
 val unify_engine_tac:
-  (Tag.t * Formula.t) -> (Tag.t * Formula.t) -> tactic
+  (Logic.ftag_ty * Formula.t) -> (Logic.ftag_ty * Formula.t) -> tactic
 
 val unify_tac:
   ?a:Logic.label -> ?c:Logic.label -> tactic

@@ -471,9 +471,9 @@ val goal_scope: unit -> Scope.t
 
 val curr_sqnt : unit -> Logic.Sequent.t
 (** The current sequent. *)
-val get_asm: int -> (Tag.t * Basic.term)
+val get_asm: int -> (Logic.ftag_ty * Basic.term)
 (** Get an assumption from the current sequent. *)
-val get_concl: int -> (Tag.t * Basic.term)
+val get_concl: int -> (Logic.ftag_ty * Basic.term)
 (** Get a conclusion from the current sequent. *)
 
 val top : unit -> Goals.Proof.t

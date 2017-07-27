@@ -35,7 +35,7 @@ open Basic
 (** {5 Data structures} *)
 
 (** Theory markers. *)
-type marker = Tag.t      (** The unique identifier of the theory. *)
+type marker = (string)Tag.t      (** The unique identifier of the theory. *)
 
 val mk_marker: string -> marker
 (** Marker constructor *)

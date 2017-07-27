@@ -59,7 +59,7 @@ sig
     (** The simpset being used. Assumptions may be added to this
         during the course of simplification.  *)
 
-    cond_tac: t -> Tag.t -> Tactics.tactic;
+    cond_tac: t -> Logic.ftag_ty -> Tactics.tactic;
     (** Tactic used to prove conditions of rewrite rules. Default:
         [skip].  *)
 
@@ -72,13 +72,13 @@ sig
     rr_depth: int option;
     (** Max. no. of rewrite rules to apply at one level. *)
 
-    asms: Tag.t list;
+    asms: Logic.ftag_ty list;
     (** Assumptions generated during the course of simplification. *)
 
-    visited: Tag.t list;
+    visited: Logic.ftag_ty list;
     (** Formulas visited during the course of simplification *)
 
-    exclude: Tag.t list;
+    exclude: Logic.ftag_ty list;
     (** Formulas not to be used as a rewrite rule. *)
 
     loopdb: loopDB
@@ -87,11 +87,11 @@ sig
 
   val make:
     (Simpset.simpset
-     * (t -> Tag.t -> Tactics.tactic)
+     * (t -> Logic.ftag_ty -> Tactics.tactic)
      * control
      * int option * int option
-     * Tag.t list * Tag.t list
-     * Tag.t list
+     * Logic.ftag_ty list * Logic.ftag_ty list
+     * Logic.ftag_ty list
      * Logic.rr_type list)
     -> t
   (** Make simp data. *)
@@ -99,7 +99,7 @@ sig
   val set_simpset: t -> Simpset.simpset -> t
   (** Set the simpset. *)
 
-  val set_tactic: t -> (t -> Tag.t -> Tactics.tactic) -> t
+  val set_tactic: t -> (t -> Logic.ftag_ty -> Tactics.tactic) -> t
   (** Set the condition prover tactic. *)
 
   val set_conds: t -> int option -> t
@@ -117,13 +117,13 @@ sig
   val set_control: t -> control -> t
   (** Set the rewriting control. *)
 
-  val set_asms: t -> Tag.t list -> t
+  val set_asms: t -> Logic.ftag_ty list -> t
   (** Set the assumptions list. *)
 
-  val set_visited: t -> Tag.t list -> t
+  val set_visited: t -> Logic.ftag_ty list -> t
   (** Set the visited formulas list. *)
 
-  val set_exclude: t -> Tag.t list -> t
+  val set_exclude: t -> Logic.ftag_ty list -> t
   (** Set the excluded formulas list. *)
 
   val get_simpset: t -> Simpset.simpset
@@ -141,22 +141,22 @@ sig
   val mem_loopdb: Scope.t -> t -> Basic.term -> bool
   (** Test whether a term is alpha-equal to a term in the loopdb *)
 
-  val get_tactic: t -> (t -> Tag.t -> Tactics.tactic)
+  val get_tactic: t -> (t -> Logic.ftag_ty -> Tactics.tactic)
   (** Get the condition prover tactic. *)
 
   val get_control: t -> control
   (** Get the rewriting control. *)
 
-  val get_asms: t -> Tag.t list
+  val get_asms: t -> Logic.ftag_ty list
   (** Get the list of assumptions. *)
 
-  val get_visited: t -> Tag.t list
+  val get_visited: t -> Logic.ftag_ty list
   (** Get the list of visited formulas. *)
 
-  val get_exclude: t -> Tag.t list
+  val get_exclude: t -> Logic.ftag_ty list
   (** Get the exclusion list. *)
 
-  val add_asm: t -> Tag.t -> t
+  val add_asm: t -> Logic.ftag_ty -> t
   (** Add an assumption. *)
 
   val dec_cond_depth: t -> t
@@ -183,7 +183,7 @@ val is_conditional: Simpset.rule -> bool
 val is_none: 'a option -> bool
 (** [is_none x]: true if [x = None], false otherwise. *)
 
-val is_excluded: Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
+val is_excluded: Logic.ftag_ty list -> Logic.Sequent.t -> Logic.rr_type -> bool
 (** [is_excluded excluded sqnt rl]: True if rewrite rule [rl] is an
     assumption in the excluded list.
 *)
@@ -230,7 +230,7 @@ val simp_rewrite_tac:
 
 (** {5 Conditional rule tactics} *)
 
-type tag_pair = (Tag.t * Tag.t)
+type tag_pair = (Logic.ftag_ty * Logic.ftag_ty)
 val prep_cond_tac:
   Data.t -> Basic.term list -> Logic.rr_type
   -> (Data.t * tag_pair * tag_pair) Tactics.data_tactic
@@ -391,7 +391,7 @@ val find_subterm_td_tac:
 *)
 
 val basic_simp_tac:
-  Data.t -> Tag.t -> (Data.t)Tactics.data_tactic
+  Data.t -> Logic.ftag_ty -> (Data.t)Tactics.data_tactic
 (** [basic_simp_tac data ret tag goal]: Main interface to the basic
     simplifier functions.
 
@@ -427,7 +427,7 @@ val simp_prep_tac:
 *)
 
 val cond_prover_tac:
-  Data.t -> Tag.t -> Tactics.tactic
+  Data.t -> Logic.ftag_ty -> Tactics.tactic
 (** [cond_prover_tac ctrl tg g]: The tactic used to prove the
     conditions of rewrite rules.
 
@@ -459,8 +459,8 @@ val check_change2: ('a)plan -> ('a)plan -> unit
 val cond_prover_trueC:
   Logic.label -> Tactics.tactic
 val cond_prover_worker_tac:
-  Data.t -> Tag.t -> (Data.t)Tactics.data_tactic
+  Data.t -> Logic.ftag_ty -> (Data.t)Tactics.data_tactic
 val is_excluded:
-  Tag.t list -> Logic.Sequent.t -> Logic.rr_type -> bool
+  Logic.ftag_ty list -> Logic.Sequent.t -> Logic.rr_type -> bool
 
 val simp_fail: ?err:exn -> Tactics.tactic

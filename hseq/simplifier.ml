@@ -87,7 +87,7 @@ struct
         simpset:Simpset.simpset;
         (** [cond_tac]: the tactic used to prove conditions of rewrite
             rules *)
-        cond_tac: t -> Tag.t -> Tactics.tactic;
+        cond_tac: t -> Logic.ftag_ty -> Tactics.tactic;
         (** [control]: rewrite control ([direction] is ignored *)
         control: Rewrite.control;
         (** conds: max. no. of conditions to try and prove at once *)
@@ -96,12 +96,12 @@ struct
         rr_depth: int option;
         (** asms: assumptions generated during the course of
             simplification *)
-        asms: Tag.t list;
+        asms: Logic.ftag_ty list;
         (** visited: formulas visited during the course of
             simplification *)
-        visited: Tag.t list;
+        visited: Logic.ftag_ty list;
         (** exclude: formulas not to use as a rewrite rule *)
-        exclude: Tag.t list;
+        exclude: Logic.ftag_ty list;
         (** loopdb: Terms already rewritten. *)
         loopdb: loopDB}
 
@@ -353,7 +353,7 @@ let simp_rewrite_tac is_concl plan trm lbl goal =
 
 (*** Conditional rule tactics ***)
 
-type tag_pair = (Tag.t * Tag.t)
+type tag_pair = (Logic.ftag_ty * Logic.ftag_ty)
 
 (** [prep_cond_tac cntrl values thm g]
 

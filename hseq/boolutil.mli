@@ -26,7 +26,7 @@ val find_unifier:
   -> (Basic.term -> bool)
   -> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
   -> Logic.tagged_form list
-  -> (Tag.t * Term.substitution)
+  -> (Logic.ftag_ty * Term.substitution)
 (** [find_unifier scp typenv varp trm ?exclude forms]: Find the first
     formula in [forms] which unifies with [trm]. Return the tag of the
     formula and the substitution cosntructed by unification. Ignore
@@ -51,7 +51,7 @@ val is_qnt_opt:
 
 val dest_qnt_opt:
   Basic.quant->
-  Logic.tagged_form -> (Tag.t * Basic.binders list * Basic.term)
+  Logic.tagged_form -> (Logic.ftag_ty * Basic.binders list * Basic.term)
 (** [dest_qnt_opt forms]: Destruct a possibly quantified tagged
     formula.  Returns the binders, the tag and the formula.
 *)
@@ -71,7 +71,7 @@ val find_qnt_opt:
   Basic.quant
   -> (Basic.term -> bool)
   -> Logic.tagged_form list
-  -> (Tag.t * Basic.binders list * Basic.term)
+  -> (Logic.ftag_ty * Basic.binders list * Basic.term)
 
 val fresh_thm: Scope.t -> Logic.thm -> bool
 (** [fresh_thm th]: Test whether theorem [th] is fresh (a formula of

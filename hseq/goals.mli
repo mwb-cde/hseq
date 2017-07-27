@@ -182,8 +182,8 @@ val curr_sqnt : ProofStack.t -> Logic.Sequent.t
 val goal_scope: ProofStack.t -> Scope.t
 (** The scope of the current subgoal. *)
 
-val get_asm: ProofStack.t -> int -> (Tag.t * Basic.term)
+val get_asm: ProofStack.t -> int -> (Logic.ftag_ty * Basic.term)
 (** Get an assumption from the current sequent. *)
 
-val get_concl: ProofStack.t -> int -> (Tag.t * Basic.term)
+val get_concl: ProofStack.t -> int -> (Logic.ftag_ty * Basic.term)
 (** Get a conclusion from the current sequent. *)

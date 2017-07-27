@@ -38,14 +38,14 @@ val add_rule_data:
 (** {7 Adding assumptions and conclusions} *)
 
 val add_asms_tac:
-  Data.t -> Tag.t list
+  Data.t -> Logic.ftag_ty list
   -> (Data.t) Tactics.data_tactic
 (** [add_asms_tac data tags g]: Prepare the assumptions in [tags] for
     use as simp-rules. Add them to [data].
 *)
 
 val add_concls_tac:
-  Data.t -> Tag.t list
+  Data.t -> Logic.ftag_ty list
   -> (Data.t) Tactics.data_tactic
 (** [add_concls_tac data tags g]: Prepare the conclusions in [tags]
     for use as simp-rules. Add them to [data].
@@ -54,7 +54,7 @@ val add_concls_tac:
 (** {5 Simplification engines} *)
 
 val simp_engine_tac:
-  Data.t -> Tag.t
+  Data.t -> Logic.ftag_ty
   -> (Data.t) Tactics.data_tactic
 (** The engine for [simp_tac].
 

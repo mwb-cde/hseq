@@ -28,7 +28,7 @@ open Basic
  *)
 
 (** Theory markers. *)
-type marker = Tag.t
+type marker = (string)Tag.t
 let mk_marker = Tag.named
 let marker_name = Tag.name
 

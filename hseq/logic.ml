@@ -100,12 +100,14 @@ let addsqntError s es =
  * Types used in subgoals
  *)
 
+type ftag_ty = (string)Tag.t
+
 type label =
   | FNum of int
-  | FTag of Tag.t
+  | FTag of ftag_ty
   | FName of string
 
-type tagged_form = (Tag.t * Formula.t)
+type tagged_form = (ftag_ty * Formula.t)
 
 let form_tag (t, _) = t
 let drop_tag (_, f) = f
@@ -350,7 +352,7 @@ struct
     }
 
   (** The type of sequents *)
-  type t = (Tag.t * sqnt_env * tagged_form list * tagged_form list)
+  type t = (ftag_ty * sqnt_env * tagged_form list * tagged_form list)
 
   let make tg env ps cs = (tg, env, ps, cs)
   let dest (tg, env, ps, cs) = (tg, env, ps, cs)
@@ -640,7 +642,7 @@ exception Solved_subgoal of Gtypes.substitution
 module Sqnts =
 struct
   (** Type of unique identifiers. *)
-  type tag_ty = Tag.t
+  type tag_ty = ftag_ty
   (** Make a unique tag. *)
   let tag_create = Tag.create
   (** Compare tags for equality. *)

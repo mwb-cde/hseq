@@ -202,7 +202,7 @@ val simpset_add_thms:
 *)
 
 val simpset_add_asm_rule:
-  simpset -> Tag.t -> Logic.node -> simpset
+  simpset -> Logic.ftag_ty -> Logic.node -> simpset
 (** [simpset_add_asm_rule scp asm node thms]: Add assumption [asm] of
     [node] to simpset [set] as a simplification rule.
 *)

@@ -207,6 +207,7 @@ val addsqntError: string -> exn -> 'a
 
 (** {7 Types used in subgoals} *)
 
+
 (**
     Labels for identifying sequent formulas.
 
@@ -218,15 +219,19 @@ val addsqntError: string -> exn -> 'a
 
     [FName n]: The formula with named [n] (Experimental).
 *)
+
+type ftag_ty = (string)Tag.t
+(** Tags for formulas in a goal. *)
+
 type label =
     FNum of int
-  | FTag of Tag.t
+  | FTag of ftag_ty
   | FName of string
 
-type tagged_form = (Tag.t* Formula.t)
+type tagged_form = (ftag_ty * Formula.t)
 (** Tagged formulas. Each formula in a subgoal has a tag. *)
 
-val form_tag: tagged_form -> Tag.t
+val form_tag: tagged_form -> ftag_ty
 (** The tag of a formula. *)
 val drop_tag: tagged_form -> Formula.t
 (** Drop the tag of a formula. *)
@@ -323,22 +328,22 @@ val join_up: 'a list -> 'a list -> 'a list
 *)
 
 val split_at_tag:
-  Tag.t -> (Tag.t * 'a) list
-  -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+  ftag_ty -> (ftag_ty * 'a) list
+  -> ((ftag_ty * 'a) list * (ftag_ty * 'a) * (ftag_ty * 'a) list)
 (** [split_at_tag t x]: Split [x] into [(l, c, r)] so that [x = join_up
     l (c::r)] and [c] is the first element of [x] tagged with [t].
 *)
 
 val split_at_label:
-  label -> (Tag.t * 'a) list
-  -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+  label -> (ftag_ty * 'a) list
+  -> ((ftag_ty * 'a) list * (ftag_ty * 'a) * (ftag_ty * 'a) list)
 (** [split_at_label t x]: Split [x] into [(l, c, r)] so that [x =
     join_up l (c::r)] and [c] is the formula in [x] labelled [l].
 *)
 
 val split_at_asm:
-  label -> (Tag.t * 'a) list
-  -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+  label -> (ftag_ty * 'a) list
+  -> ((ftag_ty * 'a) list * (ftag_ty * 'a) * (ftag_ty * 'a) list)
 (** [split_at_asm lbl x]: Split [x] into [(l, c, r)] so that
     [x=join_up l (c::r)] and [c] is the assumption in [x] labelled [l].
 
@@ -346,8 +351,8 @@ val split_at_asm:
 *)
 
 val split_at_concl:
-  label -> (Tag.t * 'a) list
-  -> ((Tag.t * 'a) list * (Tag.t * 'a) * (Tag.t * 'a) list)
+  label -> (ftag_ty * 'a) list
+  -> ((ftag_ty * 'a) list * (ftag_ty * 'a) * (ftag_ty * 'a) list)
 (** [split_at_concl lbl x]: Split [x] into [(l, c, r)] so that [x =
     join_up l (c::r)] and [c] is the conclusion in [x] labelled [l].
 
@@ -376,7 +381,7 @@ sig
   (** The skolem constants of the sequent. *)
   val sqnt_tyvars: t -> Basic.gtype list
   (** All weak type variables that were generated in the sequent. *)
-  val sqnt_tag: t->Tag.t
+  val sqnt_tag: t->ftag_ty
   (** The tag of the sequent. (This is the tag of the subgoal.) *)
 
 
@@ -387,11 +392,11 @@ sig
   val get_cncl: int -> t -> tagged_form
   (** Get a conclusion by position. *)
 
-  val get_tagged_asm: Tag.t -> t -> tagged_form
+  val get_tagged_asm: ftag_ty -> t -> tagged_form
   (** Get an assumption by tag. *)
-  val get_tagged_cncl: Tag.t -> t -> tagged_form
+  val get_tagged_cncl: ftag_ty -> t -> tagged_form
   (** Get a conclusion by tag. *)
-  val get_tagged_form: Tag.t -> t -> tagged_form
+  val get_tagged_form: ftag_ty -> t -> tagged_form
   (** Get a formula by tag. *)
 
   val get_named_asm: string -> t -> tagged_form
@@ -406,18 +411,18 @@ sig
   val delete_cncl: label -> t -> t
   (** Delete a conclusion by label. *)
 
-  val tag_to_index: Tag.t -> t -> int
+  val tag_to_index: ftag_ty -> t -> int
   (** Get the position of a formula from its tag. *)
-  val index_to_tag: int -> t -> Tag.t
+  val index_to_tag: int -> t -> ftag_ty
   (** Get the tag of a formula from its position. *)
-  val name_to_tag: string -> t -> Tag.t
+  val name_to_tag: string -> t -> ftag_ty
 (** Get the tag of a formula from its name. *)
 
 end
 
 (** {7 Operations on sequent formulas} *)
 
-val label_to_tag: label -> Sequent.t -> Tag.t
+val label_to_tag: label -> Sequent.t -> ftag_ty
 (** Convert a label to the tag of the formula it identifies. *)
 val label_to_index: label -> Sequent.t -> int
 (** Convert a label to the position of the formula it identifies. If
@@ -472,7 +477,7 @@ val mk_thm: goal -> thm
 
 (** {7 Manipulating goals} *)
 
-val goal_focus: Tag.t-> goal -> goal
+val goal_focus: ftag_ty-> goal -> goal
 (** Put the tagged sqnt at the front. @raise [Not_found] if not found. *)
 
 val rotate_subgoals_left: int -> goal -> goal
