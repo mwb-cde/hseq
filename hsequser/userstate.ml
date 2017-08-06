@@ -64,6 +64,8 @@ struct
       proofstack_f: Goals.ProofStack.t;
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
+      loader_f: (string -> unit) option;
+      scripter_f: (?silent:bool -> string -> unit) option;
     }
 
   (** Initializer *)
@@ -74,6 +76,8 @@ struct
       proofstack_f = Default.proofstack();
       base_thy_builder_f = Default.base_thy_builder();
       thyset_f = Default.thyset();
+      loader_f = None;
+      scripter_f = None;
     }
 
   let context st = st.context_f
@@ -108,6 +112,13 @@ struct
   let thyset st = st.thyset_f
   let set_thyset st s = { st with thyset_f = s }
 
+  let loader st = st.loader_f
+  let set_loader st ld =
+    { st with loader_f = ld }
+
+  let scripter st = st.scripter_f
+  let set_scripter st ld =
+    { st with scripter_f = ld }
 end
 
 (** The global context *)
@@ -148,6 +159,18 @@ let thyset_add st t =
 let thyset_mem st t =
   Lib.StringSet.mem t (thyset st)
 
+let loader st =
+  match State.loader st with
+  | None -> (fun _ -> ())
+  | Some(f) -> f
+
+let set_loader st f = State.set_loader st (Some(f))
+
+let scripter st =
+  match State.scripter st with
+  | None -> (fun ?silent _ -> ())
+  | Some(f) -> f
+let set_scripter st f = State.set_scripter st (Some(f))
 
 module Init =
 struct
@@ -157,6 +180,9 @@ struct
     let ctxt0 = Default.context() in
     let ctxt1 = Context.set_path ctxt0 (Settings.include_dirs()) in
     set_context st ctxt1
+
+  let init_loader st = State.set_loader st None
+  let init_scripter st = State.set_scripter st None
 
   let init_scope st =
     set_scope st (Default.scope())
@@ -190,20 +216,19 @@ struct
 (** {5 Initialising functions} *)
 
   let init st =
-    let st1 =
-      List.fold_left (fun a f -> f a) (State.empty())
-        [init_context; init_scope;
-         init_ppinfo; init_parsers;
-         init_simpset; init_proofstack;
-         init_base_thy_builder]
-    in
-    st1
+    List.fold_left
+      (fun a f -> f a) (State.empty())
+      [init_context; init_loader; init_scripter;
+       init_scope; init_ppinfo; init_parsers;
+       init_simpset; init_proofstack; init_base_thy_builder]
 
   let reset = init
 end
 
 let init_context = Init.init_context
 let init_scope = Init.init_scope
+let init_loader = Init.init_loader
+let init_scripter = Init.init_scripter
 let init_ppinfo = Init.init_ppinfo
 let init_parsers = Init.init_parsers
 let init_simpset = Init.init_simpset

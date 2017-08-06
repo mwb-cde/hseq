@@ -149,21 +149,6 @@ module Loader =
 struct
 
   (** {5 Theory building and loading} *)
-  module Var =
-  struct
-    let null_load_file (fname: string) =
-      raise (Failure ("Thyloader.null_load_file("^fname^")"))
-    let null_use_file ?silent:bool (fname: string) =
-      raise (Failure ("Thyloader.null_use_file"^fname^")"))
-
-    let load_file = ref null_load_file
-    let use_file = ref null_use_file
-  end
-
-  let get_load_file() = !(Var.load_file)
-  let set_load_file f = Var.load_file := f
-  let get_use_file() = !(Var.use_file)
-  let set_use_file f = Var.use_file := f
 
   (** Remember loaded theories *)
   let record_thy_fn ctxt thy =
@@ -241,9 +226,8 @@ struct
     in
     thylist
 
-  let build_fn
-      (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
-    let scripter = get_use_file() in
+  let build_fn (ctxt: Context.t) (db: Thydb.thydb) (thyname: string) =
+    let scripter = Context.scripter (Global.context()) in
     let script_name = Context.Files.script_of_thy ctxt thyname in
     let saved_state = Global.state() in
     let st1 = Userstate.set_context saved_state ctxt in
@@ -283,29 +267,19 @@ struct
       (default_load_fn ctxt)
       (default_build_fn ctxt)
 
-  let load_file fname =
-    (get_load_file()) fname
+  let set_load_file ctxt loader =
+    Context.set_loader ctxt loader
 
-  let script_file ?(silent=false) fname =
-    (get_use_file()) ~silent fname
+  let set_use_file ctxt scripter =
+    Context.set_scripter ctxt scripter
 
-  let set_file_handlers ctxt =
-    let ctxt1 = Context.set_loader ctxt load_file  in
-    Context.set_scripter ctxt1 script_file
-
-  let set_load_file loader =
-    begin
-      set_load_file loader;
-      let ctxt = set_file_handlers (Global.context()) in
-      Global.set_context ctxt
-    end
-
-  let set_use_file scripter =
-    begin
-      set_use_file scripter;
-      let ctxt = set_file_handlers (Global.context()) in
-      Global.set_context ctxt
-    end
+  let init ctxt =
+    let st = Global.state() in
+    let loader = Userstate.loader st
+    and scripter = Userstate.scripter st in
+    let ctxt1 = set_load_file ctxt loader
+    in
+    set_use_file ctxt1 scripter
 
 end
 
@@ -345,10 +319,12 @@ end
 
 (** {6 Utility functions} *)
 
-let load_file_func () =
-  Context.loader (Global.context())
-let set_load_file_func f =
-  Loader.set_load_file f
+let load_file_func () = Userstate.loader (Global.state())
+
+let set_load_file_func loader =
+  Global.set_state (Userstate.set_loader (Global.state()) loader);
+  Global.set_context
+    (Context.set_loader (Global.context()) (load_file_func()))
 
 let path = Global.path
 let set_path = Global.set_path
@@ -358,10 +334,12 @@ let add_to_path d =
   in
   Global.set_path p1
 
-let use_file_func () =
-  Context.scripter (Global.context())
-let set_use_file_func f =
-  Loader.set_use_file f
+let use_file_func () = Userstate.scripter (Global.state())
+
+let set_use_file_func scripter =
+  Global.set_state (Userstate.set_scripter (Global.state()) scripter);
+  Global.set_context
+    (Context.set_scripter (Global.context()) (use_file_func()))
 
 let get_proof_hook () =
   Goals.save_hook (Global.proofstack ())
@@ -718,7 +696,7 @@ let init () =
   let ctxt0 = Userstate.context st0 in
   let ctxt1 = Context.set_loader_data ctxt0 Loader.default_loader in
   let ctxt2 = Context.set_load_functions ctxt1 Loader.thy_fn_list in
-  let ctxt3 = Loader.set_file_handlers ctxt2 in
+  let ctxt3 = Loader.init ctxt2 in
   let st1 = Userstate.set_context st0 ctxt3 in
   Global.set_state st1;
   (try ignore(load_theory (Context.base_name (Global.context())))

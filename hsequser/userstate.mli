@@ -45,6 +45,8 @@ sig
       proofstack_f: Goals.ProofStack.t;
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
+      loader_f: (string -> unit) option;
+      scripter_f: (?silent:bool -> string -> unit) option;
     }
 
   val empty: unit -> t
@@ -72,6 +74,12 @@ sig
 
   val thyset: t -> Lib.StringSet.t
   val set_thyset: t -> Lib.StringSet.t -> t
+
+  val loader: t -> (string -> unit)option
+  val set_loader: t -> (string -> unit)option -> t
+
+  val scripter: t -> (?silent:bool -> string -> unit)option
+  val set_scripter: t -> (?silent:bool -> string -> unit)option -> t
 end
 
 val context: State.t -> Context.t
@@ -114,10 +122,25 @@ val set_thyset: State.t -> Lib.StringSet.t -> State.t
 val thyset_add: State.t -> string -> State.t
 val thyset_mem: State.t -> string -> bool
 
+val loader: State.t -> (string -> unit)
+(** The (optional) function to load a library. *)
+val set_loader: State.t -> (string -> unit) -> State.t
+(** Set function to load a library. *)
+
+val scripter: State.t -> (?silent:bool -> string -> unit)
+(** The (optional) function to run a theory script. *)
+val set_scripter:
+  State.t -> (?silent:bool -> string -> unit) -> State.t
+(** Set the function to run a theory script. *)
+
 val init_context: State.t -> State.t
 (** Initialize the global context *)
 val init_scope: State.t -> State.t
 (** Initialize the global scope *)
+val init_loader: State.t -> State.t
+(** Initialize the loader *)
+val init_scripter: State.t -> State.t
+(** Initialize the scripter *)
 val init_ppinfo: State.t -> State.t
 (** Initialize the global pretty printers *)
 val init_parsers: State.t -> State.t
