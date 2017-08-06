@@ -76,7 +76,7 @@ sig
   val path: unit -> string list
   (** The search path for theory files and libraries. *)
   val set_path: string list -> unit
-  (** Set the search path for theory files libraries. *)
+  (** Set the search path for theory files and libraries. *)
 
   (** Initialise the global state. *)
   val init: unit -> unit
@@ -105,6 +105,13 @@ val set_use_file_func: (?silent:bool -> string -> unit) -> unit
 val set_proof_hook: (unit -> unit) -> unit
 val get_proof_hook: unit -> (unit -> unit)
 (** Get/set proof hook *)
+
+val path: unit -> string list
+(** The search path for theory files and libraries. *)
+val set_path: string list -> unit
+(** Set the search path for theory files and libraries. *)
+val add_to_path: string -> unit
+(** Add a directory to the search path for theory files and libraries. *)
 
 (** {5 Utility functions} *)
 

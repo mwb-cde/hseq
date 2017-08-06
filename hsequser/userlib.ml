@@ -350,6 +350,14 @@ let load_file_func () =
 let set_load_file_func f =
   Loader.set_load_file f
 
+let path = Global.path
+let set_path = Global.set_path
+let add_to_path d =
+  let p0 = Global.path () in
+  let p1 = d::p0
+  in
+  Global.set_path p1
+
 let use_file_func () =
   Context.scripter (Global.context())
 let set_use_file_func f =
