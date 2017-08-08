@@ -1428,7 +1428,7 @@ ifneq ($(strip $(lm-module-headers) $(lm-module-mlsources)),)
 ifndef NODEPEND
 depend: $(lm-module-mlsources)
 	-$(OCAMLDEP) $(lm-module-ocamldep-options) \
-		*.mli  $(lm-module-mlsources) > depend
+		$(lm-module-headers) $(lm-module-mlsources) > depend
 include depend
 endif # NODEPEND
 endif
