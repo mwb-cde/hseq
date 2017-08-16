@@ -269,7 +269,11 @@ let member t env =
 
 let subst_sz s = TypeTree.empty
 let empty_subst () = TypeTree.empty
-let bind t r env = TypeTree.replace env t r
+let bind t r env =
+  match (t, r) with
+  | (WeakVar(_), Var(_)) ->
+     (failwith "Can't bind weak variable to a variable.")
+  | _ -> TypeTree.replace env t r
 let delete t env = TypeTree.delete env t
 let subst_iter = TypeTree.iter
 let subst_fold = TypeTree.fold
@@ -577,9 +581,10 @@ let rec check_term scp n vs t =
   | WeakVar _ -> raise Not_found
 
 let check_args args =
+  let null_type = mk_def "null" [] in
   let arg_itr env x =
     if (is_var x) && (not (member x env))
-    then (bind x true env)
+    then (bind x null_type env)
     else raise Not_found
   in
   try
