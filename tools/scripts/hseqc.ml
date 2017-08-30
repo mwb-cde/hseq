@@ -324,7 +324,7 @@ let make_compiler (opts: options) =
 let make_cmdline (opts: options) =
   let flags = make_cmdline_flags opts in
   let compiler = make_compiler opts in
-  compiler::flags
+  (compiler, flags)
 
 let print_info info args =
   let args_str = String.concat " " args
@@ -334,15 +334,13 @@ let print_info info args =
   (Format.printf "@[%s@]@." info_str); 0
 
 let compile (opts: options) =
-  let cmdline = make_cmdline opts in
-  let command = String.concat " " cmdline
-  in
+  let command, cmdline = make_cmdline opts in
   begin
     if opts.verbose || opts.dryrun
-    then Format.printf "@[%s@]@." command
+    then Format.printf "@[%s@]@." (String.concat " " (command::cmdline))
     else ();
     if not opts.dryrun
-    then Sys.command command
+    then Unix.execv command (Array.of_list (command::cmdline))
     else 0
   end
 
