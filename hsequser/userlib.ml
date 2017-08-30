@@ -362,9 +362,7 @@ let compile dirs name =
     in
     Sys.command (com_string ^" "^ inc_string ^" "^name)
   in
-  if !Sys.interactive
-  then compile_aux()
-  else (-1)
+  compile_aux()
 
 let catch_errors x = Commands.catch_errors (Global.ppinfo()) x
 
