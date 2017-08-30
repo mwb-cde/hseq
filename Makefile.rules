@@ -468,12 +468,10 @@ ifneq ($(strip "$(CONFIG_ENABLE_NATIVECODE)"),"false")
 lm-nativecode:=true
 endif
 
+ifdef lm-DEBUG-MAKEFILE
 ifdef lm-nativecode
-ifdef lm-DEBUG-MAKEFILE
 $(info Compilation to native code is supported.)
-endif
 else
-ifdef lm-DEBUG-MAKEFILE
 $(info Compilation to native code is not supported.)
 endif
 endif
@@ -755,10 +753,10 @@ endif
 
 # build
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-bytelib)
-#ifdef lm-nativecode
+ifdef lm-nativecode
 lm-lib-$(1)-target:=$$(lm-lib-$(1)-target) \
 	$$(lm-lib-$(1)-natlib) $$(lm-lib-$(1)-clib)
-#endif
+endif
 
 ifdef lm-DEBUG-MAKEFILE
 $$(info lm-lib-$(1)-target=$$(lm-lib-$(1)-target))
