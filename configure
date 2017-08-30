@@ -240,21 +240,35 @@ object (self)
   (* Outputs *)
 
   method print_var_mli oc =
-    begin
-      match self#get_value() with
-        Some(x) ->
- 	  Printf.fprintf oc "val value_%s : string\n" variable
-      | _ -> ()
-    end
+    let variable_str = String.concat "" [ "value_"; variable ]
+    in
+    let type_str =
+      if self#is_required()
+      then "string"
+      else "(string)option"
+    in
+    let line_str =
+      String.concat "" ["val "; variable_str; ": "; type_str]
+    in
+    Printf.fprintf oc "%s\n" line_str
 
   method print_var_ml oc =
+    let variable_str = String.concat "" [ "value_"; variable ]
+    in
+    let value_str =
     begin
       match self#get_value() with
-        Some(x) ->
- 	  Printf.fprintf oc
-            "let value_%s=\"%s\"\n" variable (stringify x)
-      | _ -> ()
+      | Some(x) ->
+         if (self#is_required())
+         then String.concat "" ["\""; stringify x; "\""]
+         else String.concat "" ["Some("; "\""; stringify x; "\""; ")"]
+      | _ -> "None"
     end
+    in
+    let line_str =
+      String.concat "" ["let "; variable_str; " = "; value_str ]
+    in
+    Printf.fprintf oc "%s\n" line_str
 
   method print_var_make oc =
     begin
@@ -347,6 +361,7 @@ object
   val variable = "ThyDir"
   val mutable value = Some("thys")
   val option = None
+  val required = true
 end
 
 class doc_directory data =
@@ -456,6 +471,7 @@ object (self)
   val description = "whether to build native code libraries"
   val variable = "CONFIG_ENABLE_NATIVECODE"
   val mutable value = Some("true")
+  val required = true
   method get_value() =
     let bvalue = base_setting#get_value() in
     if bvalue = None
@@ -535,6 +551,7 @@ object (self)
   val description = "whether to build the documentation"
   val variable = "CONFIG_ENABLE_BUILD_DOCS"
   val mutable value = Some("true")
+  val required = true
   method get_value() =
     let bvalue = makeinfo#get_value() in
     if bvalue = None
