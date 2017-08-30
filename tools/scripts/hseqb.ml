@@ -1,6 +1,6 @@
 (*----
   Name: hseqb.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2017
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -22,155 +22,229 @@
 (**
    A script to run hseq as a batch compiler.
 
-   Use as [hseqb ocaml-args file1 file2 ... filen]
+   Use as [hseqb <args> <script> <script-args>]
    where
-   [ocaml-args] are the arguments to pass to ocaml
-   [file1], [file2], ..., [filen] are the files to compile.
-
-   Each of the files is run through hseq, starting with [file1] and
-   continuing to [filen].
+   [args] are the arguments to hseqb,
+   [script] is the script to run,
+   [script-args] are the arguments to pass to the script.
 *)
 
-let bindir = HSeq.Config.value_BinDir
-let includedir = HSeq.Config.value_LibDir
+let program_name = "hseqb"
 
-(** Start of script *)
+let installdir_bin = HSeq.Config.value_BinDir
+let installdir_include = HSeq.Config.value_LibDir
 
 (** Default values *)
 
-let default_bin =
-  let hseq_name = Filename.concat bindir "hseq"
-  in
-  let suffix =
-    if (Sys.os_type = "Win32")
-    then ".exe"
-    else ""
-  in
-  hseq_name ^ suffix
+(* The default hseq binary. *)
+let default_hseq = Filename.concat installdir_bin "hseq"
 
-let default_bin_args = []
-let default_libs = [includedir]
-let default_silent = false
+(** Default values *)
 
-(** [use_command f]: make the command to use file [f] *)
-let use_command ?(silent=false) file =
-  let use =
-    if silent
-    then "Unsafe.use_file ~silent:true"
-    else "Unsafe.use_file ~silent:false"
-  and quote = "\""
-  and eocl = ";;\n"
-  and quit = "#quit"
-  in
-  use ^quote^ file ^quote ^eocl ^ quit ^eocl
+(** [hseq_include]: Includes to pass to hseq. *)
+let hseq_includes = [installdir_include]
 
-(**
-   [run files]: Run each file in [files] as a script.
-*)
-let run silent bin args file =
-  let prog = String.concat " " (bin::args)
-  in
-  let command = use_command ~silent:silent file
-  in
-  let outstrm =
-    Unix.open_process_out prog
-  in
-    output_string outstrm command;
-    flush outstrm;
-    ignore(Unix.close_process_out outstrm)
+(** [hseq_libs]: Libraries to pass to hseq. .*)
+let hseq_libs = []
 
-(**
-    [process_args ()] Process the command line arguments.
+(** [pp_include]: Includes for the preprocessor *)
+let pp_include =
+  String.concat " " (List.map (fun x -> "-I "^x) hseq_includes)
 
-    {ul
-    {- --bin s : use file [s] as the binary}
-    {- --include d: add directory [d] to the search path}
-    {- --quiet: don't echo the script }
-    {- --verbose: echo the script }
-    {- + s: pass argument [s] to the binary}
-    {- s: run file [s] as a script}}
-*)
-let process_args () =
-  let bin = ref default_bin
+(** [error s]: exit print error message [s] *)
+let error s =
+  Printf.fprintf stderr "%s: %s\n%!" program_name s;
+  exit (-1)
+
+let extract o =
+  match o with
+  | Some(x) -> x
+  | _ -> raise (Invalid_argument ("extract"))
+
+
+(** Argument processing *)
+
+type options =
+  {
+    hseq: string option;          (* The hseq binary to use. *)
+    hseq_includes: string list;   (* Include directories. *)
+    hseq_libs: string list;       (* Libraries to link in. *)
+    verbose: bool;                (* Print the compilation command-line. *)
+    dryrun: bool;                 (* Don't run the compilation. *)
+    pp: string option;            (* Preprocessor command. *)
+    rest: string list;            (* The remaining arguments. *)
+  }
+
+(** Initial option values *)
+let default_options ()=
+  {
+    hseq = None;
+    hseq_includes = [];
+    hseq_libs = [];
+    verbose = false;
+    dryrun = false;
+    pp = None;
+    rest = [];
+  }
+
+let set_hseq option p =
+   option := { (!option) with hseq = Some(p) }
+
+let set_verbose option () =
+   option := { (!option) with verbose = true }
+
+let set_dryrun option () =
+   option := { (!option) with dryrun = true }
+
+let set_pp option p =
+   option := { (!option) with pp = Some(p) }
+
+let add_include option d =
+  let incs = d::(!option).hseq_includes in
+  option := { (!option) with hseq_includes = incs }
+
+let add_lib option d =
+  let libs = d::(!option).hseq_libs in
+  option := { (!option) with hseq_libs = libs }
+
+let add_other option d =
+  let rs = d::(!option).rest in
+  option := { (!option) with rest = rs }
+
+(** The command line arguments *)
+
+let parse_args () =
+  let options = ref (default_options())
   in
-  let lib_list = ref default_libs
+  let cli_args =
+    Arg.align
+      [
+        ("--with-hseq", Arg.String (set_hseq options),
+         " <command> Use <command>");
+        ("--verbose", Arg.Unit (set_verbose options),
+         " print the command-line");
+        ("--dryrun", Arg.Unit (set_dryrun options),
+         " print but don't the command-line");
+        ("--pp", Arg.String (set_pp options),
+         "<command> Use preprocessor <command>");
+        ("-I", Arg.String (add_include options),
+         "<directory> Add <directory> to the list of"^
+           " include directories");
+        ("-L", Arg.String (add_lib options),
+         "<library> Add <library> to the list of libraries to link");
+      ]
   in
-  let ocaml_args = ref default_bin_args
+  let usage_msg =
+  String.concat ""
+  [
+    "hseq: Run a script with HSeq\n";
+    "  usage: hseq {hseq options} <script> {script-options}\n";
+    "hseq options:"
+  ]
   in
-  let file_list = ref []
+  let anon_fun s = add_other options s
   in
-  let silent = ref default_silent
+  begin
+    Arg.parse cli_args anon_fun usage_msg;
+    !options
+  end
+
+(** Check the validity of options. *)
+let check_options (opts: options) =
+  if opts.rest = []
+  then error "No script file given."
+  else ()
+
+
+(** Process the command line arguments. *)
+
+let print_cmdline cmd cmd_args script script_args =
+  Printf.fprintf stdout "%s %s\n%!"
+                 (String.concat " " (cmd::cmd_args))
+                 (String.concat " " (script::script_args))
+
+let rec zip_rev_add x lst rest =
+  match lst with
+  | [] -> rest
+  | y::ys -> zip_rev_add x ys (x::y::rest)
+
+let make_cmdline_args opts =
+  let lib_args = List.rev opts.hseq_libs in
+  let include_args = zip_rev_add "-I" opts.hseq_includes lib_args
   in
-  let add_to_list l s = (l:=s::(!l))
+  let hseq_args =
+    if opts.pp = None
+    then include_args
+    else (extract opts.pp)::include_args
   in
-  let args =
-   Arg.align
+  let script, script_args =
+    match opts.rest with
+    | [] -> error "No script to run."
+    | (s::a) -> (s, a)
+  in
+  (hseq_args, script, script_args)
+
+let make_cmdline opts =
+  let (cmd_args, script, script_args) = make_cmdline_args opts
+  in
+  let cmd =
+    if opts.hseq = None
+    then default_hseq
+    else extract opts.hseq
+  in
+  if not (Sys.file_exists cmd)
+  then error ("Can't find "^cmd)
+  else (cmd, cmd_args, script, script_args)
+
+let run_hseq_as_script (opts: options) cmd cmd_args script args =
+  let commands =
+    let quote = "\"" in
     [
-      ("--bin", Arg.Set_string bin,
-       "<file> set the name of the binary to <file>");
-      ("--include", Arg.String (add_to_list lib_list),
-       "<dir> add directory <dir> to the search list");
-      ("--quiet", Arg.Set silent,
-       " don't echo the results of the script");
-      ("--verbose", Arg.Clear silent,
-       " echo the results of the script");
-      ("+", Arg.String (add_to_list ocaml_args),
-       "<option> pass <option> directly to the binary")
+      String.concat
+        " "
+        [
+          "Unsafe.use_file"; "~silent:false";
+          quote ^ script ^ quote;
+          ";;\n"
+        ];
+      "#quit;;\n"
     ]
   in
-    Arg.parse args (add_to_list file_list) "";
-    let files = List.rev (!file_list)
-    and libs = List.rev (!lib_list)
-    and bin_args = List.rev (!ocaml_args)
-    in
-    (!bin, files, libs, bin_args, !silent)
+  let outstrm =
+    Unix.open_process_out (String.concat " " (cmd::cmd_args))
+  in
+  List.iter
+    (fun c -> output_string outstrm c)
+    commands;
+  flush outstrm;
+  ignore(Unix.close_process_out outstrm); 0
 
-(** [test_bin b] Make sure that binary file b exists *)
-let test_bin b =
-  if (Sys.file_exists b)
-  then ()
+let run_hseq (opts: options) cmd cmd_args script args =
+  let script_line = script::args in
+  let cmd_line = List.rev_append (List.rev cmd_args) script_line in
+  if opts.verbose || opts.dryrun
+  then
+    Printf.fprintf stdout "%s\n%!" (String.concat " " (cmd::cmd::cmd_line))
+  else ();
+  if opts.dryrun
+  then 0
+  else Unix.execv cmd (Array.of_list (cmd::cmd_line))
+
+let process_cmdline (opts: options) =
+  check_options opts;
+  let cmd, cmd_args, script, script_args = make_cmdline opts in
+(*
+  if opts.dryrun || opts.verbose
+  then print_cmdline cmd cmd_args script script_args
+  else ();
+  if opts.dryrun
+  then 0
   else
-    (Format.printf "@[hseqb: can't find executable %s@]@." b;
-     exit (-1))
+ *)
+  run_hseq opts cmd cmd_args script script_args
 
-(** [test_files files]: make sure that there are files to process *)
-let test_files files =
-  match files with
-      [] ->
-        (Format.printf "@[hseqb: no files@]@.";
-         exit (-1))
-    | _ -> ()
+let main() =
+  let options = parse_args() in
+  process_cmdline options
 
-(**
-    [construct_args libs bin_args]: construct the
-    argument array to pass to the binary.
-
-    [libs] are set as the include directories
-    [bin_args] are passed as is.
-*)
-let construct_args libs bin_args =
-  let rec make_include l rs =
-    match l with
-        [] -> rs
-      | (x::xs) -> make_include xs (x::"-I"::rs)
-  in
-  let full_list = ""::(List.rev_append (make_include libs []) bin_args)
-  in
-    full_list
-
-(**
-   [main ()] The main function
-*)
-let main () =
-  let (bin, files, libs, bin_args, silent) = process_args()
-  in
-    let args = construct_args libs bin_args
-    in
-      test_bin bin;
-      test_files files;
-      List.iter (run silent bin args) files
-
-let _ =
-  main();
-  Format.printf "@.";
-  exit 0
+let _ = exit (main())

@@ -48,8 +48,7 @@ HSEQ=$(HSEQ_TOOLS)/toplevel/hseq
 HSEQB=$(HSEQ_TOOLS)/scripts/hseqb
 
 # HSEQLIB: The include directory for $(HSEQ) (before installation).
-HSEQLIB=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
-	$(HSEQ_TOOLS)/hseqtop $(HSEQ_TOOLS)/quote
+HSEQLIB=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser $(HSEQ_TOOLS)/hseqtop
 
 ####
 # Don't modify anything below this line
@@ -66,10 +65,10 @@ include $(PROJ_ROOT)/Makefile.rules
 ##
 
 # INCLUDE: The include directives
-HSEQ_INCLUDE=$(foreach dir,$(HSEQLIB),--include $(dir) )
+HSEQ_INCLUDE=$(foreach dir,$(HSEQLIB),-I $(dir) )
 
 # HSEQC: The hseq compiler
-HSEQC=$(HSEQB) --bin $(HSEQ) $(HSEQ_INCLUDE)
+HSEQC=$(HSEQB) --verbose --with-hseq $(HSEQ) $(HSEQ_INCLUDE)
 
 ###
 # Required build targets
