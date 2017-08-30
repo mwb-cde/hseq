@@ -47,6 +47,9 @@ let installdir_thys = HSeq.Config.value_ThyDir
 (** Whether native builds are available. *)
 let can_build_native = HSeq.Config.value_CONFIG_ENABLE_NATIVECODE = "true"
 
+let default_ocamlc = HSeq.Config.value_OCAMLC
+let default_ocamlopt = HSeq.Config.value_OCAMLOPT
+
 (** Start of script *)
 
 (** Default values *)
@@ -88,13 +91,12 @@ let bytelib n = n^".cma"
 (** [natlib n]: Make the name of native-code library [n] *)
 let natlib n = n^".cmxa"
 
-let ocamlc = "ocamlc"
-let ocamlopt = "ocamlopt"
-
 (** Argument processing *)
 
 type options =
   {
+    ocamlc: string option;        (* The ocamlc binary to use. *)
+    ocamlopt: string option;      (* The ocamlopt binary to use. *)
     print_lib: bool;              (* Print the list of required libraries. *)
     print_include: bool;          (* Print the list of include directories. *)
     print_all: bool;              (* Print the libraries and includes. *)
@@ -113,6 +115,8 @@ type options =
 (** Initial option values *)
 let default_options ()=
   {
+    ocamlc = None;
+    ocamlopt = None;
     print_lib = false;
     print_include = false;
     print_all = false;
@@ -127,6 +131,12 @@ let default_options ()=
     sources = [];
     rest = None;
   }
+
+let set_ocamlc option p =
+   option := { (!option) with ocamlc = Some(p) }
+
+let set_ocamlopt option p =
+   option := { (!option) with ocamlopt = Some(p) }
 
 let set_print_all (option: (options)ref) () =
    option := { (!option) with print_all = true }
@@ -174,7 +184,7 @@ let set_rest option r =
 let check_options (opts: options) =
   if opts.native && (not can_build_native)
   then
-    error "@[can't build for native code (--native selected)@]"
+    error "can't build for native code (--native selected)"
   else ()
 
 (** The command line arguments *)
@@ -185,6 +195,10 @@ let parse_args () =
   let cli_args =
     Arg.align
       [
+        ("--with-ocamlc", Arg.String (set_ocamlc options),
+         " <command> Use <command> as the ocamlc compiler.");
+        ("--with-ocamlopt", Arg.String (set_ocamlopt options),
+         " <command> Use <command> as the ocamlopt compiler.");
         ("--native", Arg.Unit (set_native options),
          " native-code compilation");
         ("--verbose", Arg.Unit (set_verbose options),
@@ -289,10 +303,22 @@ let make_cmdline_flags (opts: options) =
   List.rev rest_part
 
 (** Choose a compiler. *)
+let choose_ocamlc (opts: options) =
+  if opts.ocamlc <> None
+  then extract opts.ocamlc
+  else default_ocamlc
+
+let choose_ocamlopt (opts: options) =
+  if opts.ocamlopt <> None
+  then extract opts.ocamlopt
+  else if default_ocamlopt <> None
+  then extract default_ocamlopt
+  else error "No ocamlopt known about. Try specifying with --with-ocamlopt."
+
 let make_compiler (opts: options) =
   if opts.native
-  then ocamlopt
-  else ocamlc
+  then choose_ocamlopt opts
+  else choose_ocamlc opts
 
 (** Make a command line. *)
 let make_cmdline (opts: options) =
