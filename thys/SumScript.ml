@@ -540,3 +540,5 @@ let map_thm =
     ];;
 
 let _ = end_theory();;
+
+let _ = Display.print_theory (theory "");;

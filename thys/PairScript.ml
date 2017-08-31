@@ -274,3 +274,6 @@ let pair_eq =
     ];;
 
 let _ = end_theory();;
+
+let _ = Display.print_theory (theory "");;
+ 

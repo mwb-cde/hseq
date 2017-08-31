@@ -636,3 +636,5 @@ theorem "eta" (!% " !f: (% x: f x) = f ")
 basic]];;
 
 end_theory();;  (* end of theory *)
+
+let _ = Display.print_theory (theory "");;

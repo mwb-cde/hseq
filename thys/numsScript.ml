@@ -74,3 +74,6 @@ axiom "strong_nat_induction"
 (!x: x>=0 => (P x)) >>;;
 
 close_theory();;
+
+let _ = Display.print_theory (theory "");;
+ 

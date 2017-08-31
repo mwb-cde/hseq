@@ -42,13 +42,14 @@ let mainScript_base_name =
 
 (** Build theory Main and the theories it depends on *)
 let _ =
-begin_theory "Main"
- ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];;
+  begin_theory
+    "Main"
+    ["Set"; "Sum"; "Pair"; "Fun"; "Relation"; "Bool"; "base"];;
 
 let _ = end_theory();;
+let _ = Display.print_theory (theory "");;
 
 (* Reset the base theory name *)
 let _ =
   Global.set_context(Context.set_base_name
-                       (Global.context())
-                       mainScript_base_name);;
+                       (Global.context()) mainScript_base_name);;

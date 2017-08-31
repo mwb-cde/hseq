@@ -172,3 +172,5 @@ let exists_unique_def =
         (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))");;
 
 end_theory();;
+
+let _ = Display.print_theory (theory "");;

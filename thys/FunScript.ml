@@ -266,3 +266,5 @@ let invf_compose =
   ];;
 
 let _ = end_theory ();;
+
+let _ = Display.print_theory (theory "");;
