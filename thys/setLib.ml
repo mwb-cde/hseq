@@ -89,7 +89,7 @@ struct
                   set_list inf
                 ]))
           >>
-            (fun s -> Lib.get_option s (empty_term()));
+            (fun s -> Lib.from_option s (empty_term()));
           ?$ ccb_tok]
        >>
          (fun l ->

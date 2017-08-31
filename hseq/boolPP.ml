@@ -217,11 +217,11 @@ let init_bool_printers ppinfo =
 
 let add_type_token ptable id repr fixity prec =
   Parser.add_type_token ptable
-    id (Lib.get_option repr (Ident.name_of id)) fixity prec
+    id (Lib.from_option repr (Ident.name_of id)) fixity prec
 
 let add_token ptable id repr fixity prec =
   Parser.add_token ptable
-    id (Lib.get_option repr (Ident.name_of id)) fixity prec
+    id (Lib.from_option repr (Ident.name_of id)) fixity prec
 
 let basethy_type_symbols =
   [

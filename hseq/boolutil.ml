@@ -36,7 +36,7 @@ open Lib.Ops
     unifiable formula is found.
 *)
 let find_unifier scp typenv varp trm ?exclude forms =
-  let not_this = Lib.get_option exclude (fun _ -> false) in
+  let not_this = Lib.from_option exclude (fun _ -> false) in
   let find_fn form =
     if not_this form
     then raise Not_found

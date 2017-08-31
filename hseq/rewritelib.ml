@@ -36,7 +36,7 @@ struct
       Returns |- trm = X where [X] is the result of rewriting [trm]
   *)
   let rewrite_conv ctxt ?ctrl (rls: Logic.rr_type list) term =
-    let c = Lib.get_option ctrl Rewrite.default_control in
+    let c = Lib.from_option ctrl Rewrite.default_control in
     let is_rl = c.Rewrite.rr_dir = rightleft in
     let mapper f x =
       match x with
@@ -60,7 +60,7 @@ struct
       Returns |- X where [X] is the result of rewriting [thm]
   *)
   let rewrite_rule ctxt ?ctrl rls thm =
-    let c = Lib.get_option ctrl Rewrite.default_control in
+    let c = Lib.from_option ctrl Rewrite.default_control in
     let is_rl = c.Rewrite.rr_dir=rightleft in
     let mapper f x =
       match x with

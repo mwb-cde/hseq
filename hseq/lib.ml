@@ -291,10 +291,15 @@ let named_add l p n x =
       in
       List.rev_append (List.rev lt) ((n, x)::rt)
 
-let get_option x d =
-  match x with
-    | None -> d
-    | Some(y) -> y
+let from_option a b =
+  match a with
+    | Some(x) -> x
+    | None -> b
+
+let from_some a =
+  match a with
+  | Some(x) -> x
+  | _ -> raise (Invalid_argument "fromSome")
 
 let set_option x data = x := Some(data)
 
@@ -305,7 +310,6 @@ let dest_option ?err x =
       (match err with
         | None -> failwith "dest_option"
         | (Some e) -> raise e)
-
 
 let set_int_option i = Some(i)
 let get_int_option x =

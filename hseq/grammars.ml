@@ -1119,12 +1119,12 @@ let subtypedef inf toks =
 let typedef inf toks =
   let simple_typedef_action (n, args, dtyp) =
     match dtyp with
-      | None -> NewType (n, Lib.get_option args [])
-      | (Some dt) -> TypeAlias(n, Lib.get_option args [], dt)
+      | None -> NewType (n, Lib.from_option args [])
+      | (Some dt) -> TypeAlias(n, Lib.from_option args [], dt)
   in
   (((subtypedef inf) >>
       (fun (n, args, dtyp, set) ->
-        Subtype(n, Lib.get_option args [], dtyp, set)))
+        Subtype(n, Lib.from_option args [], dtyp, set)))
    //
      ((simple_typedef inf) >> simple_typedef_action)) toks
 

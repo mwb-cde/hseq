@@ -323,7 +323,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_token (parsers ctxt0) id
-         (Lib.get_option repr (Ident.name_of id)) fixity prec)
+         (Lib.from_option repr (Ident.name_of id)) fixity prec)
 
   let add_term_pp_record ctxt id rcrd =
     let ctxt0 =
@@ -331,7 +331,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_token (parsers ctxt0) id
-         (Lib.get_option rcrd.Printer.repr (Ident.name_of id))
+         (Lib.from_option rcrd.Printer.repr (Ident.name_of id))
          (rcrd.Printer.fixity)
          (rcrd.Printer.prec))
 
@@ -342,7 +342,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.remove_token (parsers ctxt0)
-         (Lib.get_option sym (Ident.name_of id)))
+         (Lib.from_option sym (Ident.name_of id)))
 
   (*** Types ***)
 
@@ -364,7 +364,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_type_token (parsers ctxt0)
-         id (Lib.get_option repr (Ident.name_of id)) fixity prec)
+         id (Lib.from_option repr (Ident.name_of id)) fixity prec)
 
   let add_type_pp_record ctxt id rcrd =
     let ctxt0 =
@@ -372,7 +372,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_type_token (parsers ctxt0) id
-         (Lib.get_option rcrd.Printer.repr (Ident.name_of id))
+         (Lib.from_option rcrd.Printer.repr (Ident.name_of id))
          (rcrd.Printer.fixity)
          (rcrd.Printer.prec))
 
@@ -383,7 +383,7 @@ struct
     in
     set_parsers ctxt0
       (Parser.remove_type_token (parsers ctxt0)
-         (Lib.get_option sym (Ident.name_of id)))
+         (Lib.from_option sym (Ident.name_of id)))
 
   (*** User-defined printers ***)
 

@@ -50,20 +50,20 @@ let save_theory ctxt thy  =
 let load_theory_as_cur ctxt n =
   Context.Files.load_theory_as_cur ctxt n
 let read ?ctxt (x: string) =
-  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read pctxt x
 let read_unchecked ?ctxt x =
-  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read_unchecked pctxt x
 let read_defn ?ctxt x =
-  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read_defn pctxt x
 
 let read_type ?ctxt (x: string) =
-  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read_type pctxt x
 let read_type_defn ?ctxt x =
-  let pctxt = Lib.get_option ctxt (BoolPP.quote_context) in
+  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
   catch_errors (Context.ppinfo pctxt) Context.PP.read_type_defn pctxt x
 
 (*
@@ -329,8 +329,8 @@ let get_or_prove ctxt name trm tac =
 
 let subtypedef ctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   let scp = scope_of ctxt in
-  let rep_name = Lib.get_option rep ("REP_"^name)
-  and abs_name = Lib.get_option abs ("ABS_"^name)
+  let rep_name = Lib.from_option rep ("REP_"^name)
+  and abs_name = Lib.from_option abs ("ABS_"^name)
   in
   let tydef =
     Logic.Defns.mk_subtype scp

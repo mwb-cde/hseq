@@ -113,11 +113,13 @@ val named_add:
     add [(n, x)] to named list [l] at position [p].
 *)
 
-val get_option : 'a option -> 'a -> 'a
-(**
-   [get_option x default]:
-   If [x] is [Some(y)] then return [y], otherwise return [default].
-*)
+val from_option : 'a option -> 'a -> 'a
+(** [from_option a b]: if [a] is [Some(x)], return [x] otherwise return
+    [b]. *)
+
+val from_some: ('a)option -> 'a
+(** [from_some a]: if [a] is [Some(x)], returns [x] otherwise fails with an
+    exception. *)
 
 val set_option:  'a option ref -> 'a -> unit
 (**
