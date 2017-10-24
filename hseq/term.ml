@@ -872,8 +872,6 @@ let retype_index idx trm =
   in
   rename_aux trm idx (Gtypes.empty_subst()) (empty_subst())
 
-exception No_quantifier
-
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
     let qnt, qv, qty = Basic.dest_binding q in

@@ -122,12 +122,12 @@ let test_types() =
   EXPECT_TYPE_NEQ(Gtypes.subst a_wty sb_1, c_ty);
   EXPECT_TYPE_EQL(Gtypes.subst a_wty sb_1, a_wty);
 
-  EXPECT_TRUE(Gtypes.bind b_wty f1a_cty (Gtypes.empty_subst()); true);
+  EXPECT_TRUE(ignore(Gtypes.bind b_wty f1a_cty (Gtypes.empty_subst())); true);
 
-  EXPECT_TRUE(try Gtypes.bind b_wty a_ty (Gtypes.empty_subst()); false
+  EXPECT_TRUE(try ignore(Gtypes.bind b_wty a_ty (Gtypes.empty_subst())); false
               with Failure(_) -> true);
 
-  EXPECT_TRUE(Gtypes.bind b_wty c_wty (Gtypes.empty_subst()); true);
+  EXPECT_TRUE(ignore(Gtypes.bind b_wty c_wty (Gtypes.empty_subst())); true);
 
 
   TESTSUITE_END()
