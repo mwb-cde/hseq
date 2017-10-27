@@ -1,0 +1,49 @@
+[testdriver.py]
+directive-start = %%{
+directive-end = }%%
+
+[default]
+inherit = 
+file-suffix = 
+files = *
+object-suffix = .o
+executable-suffix = .exe
+compiler = 
+compiler-flags = 
+linker = 
+linker-flags = 
+libs = 
+runner = 
+runner-flags = 
+
+[c]
+file-suffix = c
+files = *.c
+object-suffix = .o
+compiler = gcc -c -o {object} {flags} {source}
+linker = gcc -o {program} {flags} {objects} {libs}
+comment-start = /*
+comment-end = */
+
+[c++]
+inherit = c
+file-suffix = cpp,cxx
+files = *.cpp
+object-suffix = .o
+compiler = g++ -c -o {object} {flags} {source}
+linker = g++ -o {program} {flags} {objects} {libs}
+
+[ocaml]
+file-suffix = ml
+files = *.ml
+object-suffix = .cmo
+compiler = ocamlc -pp 'cpp -w' -c {flags} {source} -o {object} -I ../hseq -I ../hsequser
+linker = ocamlc -o {program} -I ../hseq -I ../hsequser nums.cma unix.cma hseq.cma hsequser.cma {flags} {objects} {libs}
+
+[ocaml-native]
+file-suffix = ml
+files = *.ml
+object-suffix = .cmx
+compiler = ocamlopt -pp 'cpp -w' -c {flags} {source} -o {object} -I ../hseq -I ../hsequser
+linker = ocamlopt -o {program} -I ../hseq -I ../hsequser nums.cmxa unix.cmxa hseq.cmxa hsequser.cmxa {flags} {objects} {libs}
+
