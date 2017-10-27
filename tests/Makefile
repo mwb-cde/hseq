@@ -52,7 +52,7 @@
 PROJ_ROOT=..
 
 # Test programs to build and run.
-PROGRAMS=types terms
+#PROGRAMS=types terms
 
 #####
 # Module building settings
@@ -102,37 +102,11 @@ include $(PROJ_ROOT)/Makefile.rules
 # Toplevel rule: Build and run the test programs.
 # Assumes a BASH shell.
 
-define run-test
-for prog in $^; do ./$$prog ; done
-endef
-
-.PHONEY: test tests
-test: $(PROGRAMS)
-	$(run-test)
+.PHONY: test tests
+test:
+	$(PROJ_ROOT)/tests/testdriver.py --config config.txt
 
 tests: test
 
-.PHONEY: test.opt tests.opt
-test.opt: $(PROGRAMS)
-	$(run-test)
-
-tests.opt: test.opt
-
-
-####
-# Set the build tools to pre-process the source using CPP.
-
-# CPP: The C preprocessor with warnings disabled.
-CPP:='cpp -w'
-
-OCAMLDEP:=$(OCAMLDEP) -pp $(CPP)
-OCAMLC:=$(OCAMLC) -pp $(CPP)
-OCAMLNAT:=$(OCAMLNAT) -pp $(CPP)
-
-####
-# Local build rules.
-
-# Build missing .mli files from the .ml source.
-%.mli: %.ml
-	$(OCAMLC) -i $(LOCAL_OCAMLC_FLAGS) $< > $@
+EXTRA_CLEAN=$(RM) *.o *.exe *.cmi *.cmo *.cmxo *.cma *.cmxa *.log
 
