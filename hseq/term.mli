@@ -115,11 +115,7 @@ val dest_meta: term -> binders
 
 (** {7 Constants} *)
 
-val destnum: term -> Num.num
 val destbool: term -> bool
-
-val mk_num: Num.num -> term
-val mk_int: int -> term
 
 (** {7 Function application} *)
 

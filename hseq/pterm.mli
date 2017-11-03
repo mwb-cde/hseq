@@ -93,10 +93,7 @@ val dest_meta: t -> binders
 
 (** {7 Constants} *)
 
-val destnum: t -> Num.num
 val destbool: t -> bool
-
-val mk_num: Num.num -> t
 val mk_bool: bool -> t
 
 val mk_comb: t -> t list -> t

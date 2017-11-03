@@ -533,7 +533,6 @@ val make_term_remove_names:
 
 (** {7 The parsers} *)
 
-val number : Num.num phrase
 (** Read a number constant. *)
 val boolean : bool phrase
 (** Read a boolean constant. *)

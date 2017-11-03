@@ -964,8 +964,6 @@ let core_term_parsers =
   [
     (* id '(' id ':' type ')' *)
     "identifier", term_identifier;
-    (*   | number *)
-    "number", (fun _ -> (number >> (fun x -> Pterm.mk_num x)));
     (*   | boolean *)
     "boolean",
     (fun _ ->

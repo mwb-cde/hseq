@@ -158,7 +158,6 @@ val is_lambda: t-> bool
     binding terms or {!Formula.inst} to form a formula from a binding term.
 *)
 
-val dest_num: t -> Num.num
 val dest_neg: t -> t
 val dest_conj: t -> (t * t)
 val dest_disj: t -> (t * t)

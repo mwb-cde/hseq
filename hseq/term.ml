@@ -134,8 +134,6 @@ let destbool b =
     | (Cbool c) -> c
     | _ -> raise (Failure "Not a boolean")
 
-let mk_num n = mk_const(Cnum n)
-let mk_int n = mk_const(Cnum (Num.num_of_int n))
 let mk_bool b = mk_const(Cbool b)
 
 (*

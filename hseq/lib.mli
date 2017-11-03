@@ -85,11 +85,6 @@ val int_to_name: int -> string
     0 -> a, 25-> z, 26 -> a1, etc.
 *)
 
-val num_to_name: Num.num -> string
-(** [num_to_name i]: convert [i] to string, with
-    0 -> a, 25-> z, 26 -> a1, etc.
-*)
-
 (**
    Named Lists
 

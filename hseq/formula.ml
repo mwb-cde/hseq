@@ -198,7 +198,6 @@ let is_lambda x = Lterm.is_lambda (term_of x)
 
 (*** Destructors ***)
 
-let dest_num x = Term.destnum (term_of x)
 let dest_neg f =
   if is_neg f
   then
