@@ -1,14 +1,14 @@
 HSeq Theorem Prover
 ===================
 
-HSeq is a tactical theorem prover for typed higher-order logic. It
-is experimental, alpha-quality code which may have soundness bugs.
+HSeq is a tactical theorem prover for typed higher-order logic. It is
+experimental code and may have soundness bugs.
 
 **Requirements:**
 
-* OCaml 4.02.3 or later
+* OCaml 4.02.3 or 4.04.0.
 * GNU Make.
-* Unix/Linux build
+* Linux build environment.
 * Texinfo, to build the documentaion (optional).
 
 For installation instructions, see file INSTALL.
