@@ -1,6 +1,6 @@
 (*----
   Name: typing.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -24,27 +24,17 @@ open Term
 
 (*** Type Errors ***)
 
-class typingError s t ty expty =
-object (self)
-  inherit Report.error s
-  val trm = (t: term)
-  val typs = ((expty, ty): (Basic.gtype * Basic.gtype))
-  method get_term() = trm
-  method get_types() = typs
-  method print st =
-    Format.printf "@[";
-    Format.printf "%s@ " (self#msg());
-    Format.printf "expected type@ ";
-    Gtypes.print st (fst typs);
-    Format.printf "@ got type@ ";
-    Gtypes.print st (snd typs);
-    Format.printf "@ in term@ ";
-    Term.print st trm;
-    Format.printf "@]"
-end
+let print_type_error s tr expty ty fmt pinfo =
+    Format.fprintf fmt "@[%s@ expected type@ " s;
+    Gtypes.print pinfo expty;
+    Format.fprintf fmt "@ got type@ ";
+    Gtypes.print pinfo ty;
+    Format.fprintf fmt "@ in term@ ";
+    Term.print pinfo tr;
+    Format.fprintf fmt "@]"
 
 let typing_error s tr expty ty =
-  Report.mk_error((new typingError s tr expty ty):> Report.error)
+  Report.mk_error(print_type_error s tr expty ty)
 let add_typing_error s tr expty ty es =
   Report.add_error (typing_error s tr expty ty) es
 

@@ -1,6 +1,6 @@
 (*----
   Name: term.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -472,12 +472,6 @@ val print_qnt_body:
 
 (**  {5 Error handling}  *)
 
-class termError: string -> term list ->
-object
-  inherit Report.error
-  val trms: term list
-  method get: unit -> term list
-end
 val term_error: string -> term list -> exn
 val add_term_error: string -> term list -> exn -> 'a
 

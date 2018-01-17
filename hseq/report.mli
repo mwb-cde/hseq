@@ -1,6 +1,6 @@
 (*----
   Name: report.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -26,27 +26,11 @@
    An error is raised as an exception with  a list of one or more objects.
 *)
 
-(** {6 Objects for reporting information} *)
-
-(** Message objects, for reporting non-fatal information. *)
-class message:
-  string ->
-object
-  method msg: unit -> string
-  method print: Printer.ppinfo -> unit
-end
-
-(** Error objects, for reporting fatal information. *)
-class error:
-  string ->
-object
-  method msg: unit -> string
-  method print: Printer.ppinfo -> unit
-end
-
 (** {6 Exceptions for reporting errors} *)
 
+type error = Format.formatter ->Printer.ppinfo -> unit
 exception Error of error
+
 (** A single error. *)
 
 exception Errors of exn list
@@ -66,6 +50,9 @@ val catch_error: Printer.ppinfo -> int -> ('a -> unit ) -> 'a -> unit
 (** [catch_error info depth f a]: Apply [f a], catching any error and
     printing it with [print_error].
 *)
+
+val error_of_str: string -> error
+(** [error msg]: Raise exception [Error] with message [msg]. *)
 
 val error: string -> exn
 (** [error msg]: Raise exception [Error] with message [msg]. *)

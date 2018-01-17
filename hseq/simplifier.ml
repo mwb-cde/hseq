@@ -1,6 +1,6 @@
 (*----
   Name: simplifier.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -47,23 +47,12 @@ open Simpset
 
 (*** Error handling ***)
 
-class simpError s ts =
-object (self)
-  inherit Report.error s
-  val trms = (ts: term list)
-  method get() = trms
-  method print st =
-    Format.open_box 0;
-    print_string "Simplifier Error: ";
-    print_string ((self#msg())^" ");
-    Format.print_newline();
-    Format.open_box 0;
-    Printer.print_sep_list ((Term.print st), ",") (self#get());
-    Format.close_box();
-    Format.close_box();
-end
+let print_simp_error s ts fmt pinfo =
+    Format.fprintf fmt "@[simplifier error:@ %s @;@[" s;
+    Printer.print_sep_list ((Term.print pinfo), ",") ts;
+    Format.fprintf fmt "@]@]@."
 
-let error s t = Report.mk_error ((new simpError s t):>Report.error)
+let error s ts = Report.mk_error (print_simp_error s ts)
 let add_error s t e = Report.add_error e (error s t)
 
 exception No_change

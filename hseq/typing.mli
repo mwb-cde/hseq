@@ -1,6 +1,6 @@
 (*----
   Name: typing.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -36,25 +36,18 @@
 
 (** {7 Typing Errors} *)
 
-class typingError: string -> Basic.term -> Basic.gtype -> Basic.gtype ->
-object
-  inherit Report.error 
-  method get_term: unit -> Basic.term 
-  method get_types: unit -> Basic.gtype * Basic.gtype
-end
-
 val typing_error: string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn
 (** Construct a type error *)
 
-val add_typing_error: 
+val add_typing_error:
   string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn -> exn
 (** Add a type error to existing errors. *)
 
 (** {5 Typing a term} *)
 
-val typeof: 
-  Scope.t 
-  -> ?env:Gtypes.substitution 
+val typeof:
+  Scope.t
+  -> ?env:Gtypes.substitution
   -> Basic.term -> Basic.gtype
 (** Get the type of a term wrt type environment [env] (if given). *)
 
@@ -69,9 +62,9 @@ val typecheck: Scope.t -> Basic.term -> Basic.gtype -> unit
     in [scp].
 *)
 
-val typecheck_top: Scope.t  
+val typecheck_top: Scope.t
   -> Gtypes.substitution
-  -> Basic.term -> Basic.gtype 
+  -> Basic.term -> Basic.gtype
   -> Gtypes.substitution
 (** [typecheck_top tyenv scp t ty]: Check, w.r.t type context [tyenv],
     that term [t] has type [ty] in scope [scp]. Type variables in [t]
@@ -82,7 +75,7 @@ val typecheck_top: Scope.t
     in [scp].
 *)
 
-val settype: 
+val settype:
   Scope.t -> ?env:Gtypes.substitution
   -> Basic.term  -> Gtypes.substitution
 (** Type-check a term. The types of identifier terms (built from
@@ -93,10 +86,10 @@ val settype:
 
 (** {7 Debugging} *)
 val typeof_env:
-  Scope.t -> (int * Gtypes.substitution) 
+  Scope.t -> (int * Gtypes.substitution)
   -> Basic.term -> (Basic.gtype * (int * Gtypes.substitution))
 
-val settype_aux: 
+val settype_aux:
   Scope.t ->
   int * (Ident.t * int, bool) Hashtbl.t *
     (Gtypes.substitution ->
@@ -105,7 +98,7 @@ val settype_aux:
   Basic.term ->
   int * Gtypes.substitution -> int * Gtypes.substitution
 
-val test_type: 
+val test_type:
   Scope.t ->
   (Ident.t * int, bool) Hashtbl.t ->
   Gtypes.substitution ->

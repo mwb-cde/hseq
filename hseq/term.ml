@@ -1,6 +1,6 @@
 (*----
   Name: term.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -533,19 +533,12 @@ let print_simple trm =
   in
   print_aux trm
 
-class basictermError s ts =
-object (self)
-  inherit Report.error s
-  val trms = (ts :term list)
-  method get() = trms
-  method print st =
-    Format.printf "@[%s@ " (self#msg());
-    Printer.print_sep_list
-      (print_simple, ",")
-      (self#get());
-    Format.printf "@]"
-end
-let basic_error s t = mk_error((new basictermError s t):>error)
+let print_basic_error s ts fmt pinfo =
+  Format.fprintf fmt "@[%s@ " s;
+  Printer.print_sep_list (print_simple, ",") ts;
+  Format.fprintf fmt "@]@."
+
+let basic_error s ts = mk_error(print_basic_error s ts)
 
 (*
  * Substitution in terms
@@ -1423,18 +1416,12 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
  * Error handling
  *)
 
-class termError s ts =
-object (self)
-  inherit Report.error s
-  val trms = (ts: term list)
-  method get() = trms
-  method print st =
-    Format.printf "@[%s@ @[" (self#msg());
-    Printer.print_sep_list (print st, ",") (self#get());
-    Format.printf "@]@]"
-end
+let print_term_error s ts fmt pinfo =
+  Format.fprintf fmt "@[%s@ @[" s;
+  Printer.print_sep_list (print pinfo, ",") ts;
+  Format.fprintf fmt "@]@]"
 
-let term_error s t = mk_error((new termError s t):>error)
+let term_error s ts = mk_error(print_term_error s ts)
 let add_term_error s t es = raise (add_error (term_error s t) es)
 
 let least ts =

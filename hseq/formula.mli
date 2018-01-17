@@ -43,12 +43,6 @@ val thy_of: t -> Scope.marker
 
 (** {5 Error Reporting} *)
 
-class formError: string -> t list ->
-object
-  inherit Report.error
-  val forms: t list
-  method get: unit -> t list
-end
 val error: string -> t list -> exn
 val add_error: string -> t list -> exn -> 'a
 

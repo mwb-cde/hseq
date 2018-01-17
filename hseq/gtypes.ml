@@ -473,18 +473,12 @@ let print ppinfo x =
  * Error handling
  *)
 
-class typeError s ts =
-object (self)
-  inherit Report.error s
-  val trms = (ts: gtype list)
-  method get() = ts
-  method print st =
-    Format.printf "@[%s@ " (self#msg());
-    Printer.print_sep_list
-      (print st, ",") (self#get());
-    Format.printf "@]"
-end
-let type_error s t = mk_error((new typeError s t):>error)
+
+let print_type_error s ts fmt pinfo =
+    Format.fprintf fmt "@[%s@ " s;
+    Printer.print_sep_list (print pinfo, ",") ts;
+    Format.fprintf fmt "@]"
+let type_error s ts = mk_error(print_type_error s ts)
 let add_type_error s t es = raise (add_error (type_error s t) es)
 
 (* String representation of a type *)

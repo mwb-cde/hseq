@@ -86,8 +86,7 @@ let logic_error s t = Term.term_error s (List.map Formula.term_of t)
 let add_logic_error s t es =
   raise (Report.add_error (logic_error s t) es)
 
-let sqntError s =
-  Report.mk_error(new Report.error s)
+let sqntError s = Report.error s
 
 let addsqntError s es =
   raise (Report.add_error (sqntError s) es)

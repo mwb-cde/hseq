@@ -1,6 +1,6 @@
 (*----
   Name: thydb.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -32,12 +32,6 @@
 
 (** {5 Error Reporting} *)
 
-class dbError: string -> string list ->
-object
-  inherit Report.error
-  val names: string list
-  method get: unit -> string list
-end
 val error: string -> string list -> exn
 val add_error: string -> string list -> exn -> 'a
 

@@ -1,6 +1,6 @@
 (*----
   Name: thydb.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -27,18 +27,12 @@ exception Importing
  * Error handling
 *)
 
-class dbError s ns =
-object (self)
-  inherit Report.error s
-  val names = (ns: string list)
-  method get() = names
-  method print st =
-    Format.printf "@[%s@ @[" (self#msg());
-    Printer.print_sep_list (Format.print_string , ",") (self#get());
-    Format.printf "@]@]"
-end
+let print_db_error s ts fmt pinfo =
+  Format.fprintf fmt "@[%s@ @[" s;
+  Printer.print_sep_list (Format.print_string , ",") ts;
+  Format.fprintf fmt "@]@]"
 
-let error s t = mk_error ((new dbError s t):>Report.error)
+let error s ts = mk_error (print_db_error s ts)
 let add_error s t es = raise (Report.add_error (error s t) es)
 
 let log = Report.report

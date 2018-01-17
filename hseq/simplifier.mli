@@ -1,6 +1,6 @@
 (*----
   Name: simplifier.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -27,13 +27,6 @@ open Rewrite
 
 (** {5 Errors} *)
 
-class simpError: string -> Basic.term list ->
-object
-  val trms: Basic.term list
-  method get: unit -> Basic.term list
-  method msg: unit -> string
-  method print: Printer.ppinfo -> unit
-end
 val error: string -> Basic.term list -> exn
 val add_error: string -> Basic.term list -> exn -> exn
 

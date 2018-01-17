@@ -35,19 +35,13 @@ let thy_of x = x.thy
  * Error handling
  *)
 
-class formError s ts =
-object (self)
-  inherit Report.error s
-  val forms = (ts: t list)
-  method get() = forms
-  method print st =
-    Format.printf "@[%s@ @[" (self#msg());
+let print_form_error s ts fmt pinfo =
+    Format.fprintf fmt "@[%s@ @[" s;
     Printer.print_sep_list
-      ((fun f-> Term.print st (term_of f)), ",") (self#get());
-    Format.printf "@]@]"
-end
+      ((fun f-> Term.print pinfo (term_of f)), ",") ts;
+    Format.fprintf fmt "@]@]"
 
-let error s t = Report.mk_error((new formError s t):>Report.error)
+let error s ts = Report.mk_error(print_form_error s ts)
 let add_error s t es = raise (Report.add_error (error s t) es)
 
 (*

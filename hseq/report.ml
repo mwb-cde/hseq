@@ -1,6 +1,6 @@
 (*----
   Name: report.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -21,41 +21,27 @@
 
 open Format
 
-(*
- * Objects for reporting information
- *)
-
-(** Message objects, for reporting non-fatal information. *)
-class message s=
-object (self)
-  method msg () = s
-  method print (x: Printer.ppinfo) =
-    Format.printf "@[%s@]" (self#msg())
-end
-
-(** Error objects, for reporting fatal information. *)
-class error s =
-object
-  inherit message s
-end
+(* Objects for reporting information *)
 
 (*
  * Exceptions for reporting errors
  *)
 
 (** A single error. *)
+type error = Format.formatter ->Printer.ppinfo -> unit
 exception Error of error
+let mk_error (e: error) = Error e
+
 (** A list of errors. *)
 exception Errors of exn list
 
 (** Construct an error. *)
-let mk_error e = Error e
 
 (** Add an error to a list of errors. *)
 let add_error e x =
   match x with
-    | Errors es -> Errors(e::es)
-    | _ -> Errors[e; x]
+  | Errors es -> Errors(e::es)
+  | _ -> Errors[e; x]
 
 (** [print_error info depth err]: Print the first [depth] errors from
     the exception.
@@ -67,19 +53,21 @@ let print_error info depth errs =
     else
       begin
         match x with
-          | (Error e) ->
-            Format.printf "@[";
-            e#print info;
-            Format.printf "@]@,"
-          | (Errors errs) ->
-            begin
-              match errs with
-                | [] -> ()
-                | (e::es) ->
-                  (ignore(print_aux (ctr - 1) e);
-                   print_aux (ctr - 1) (Errors es))
-            end
-          | _ -> Format.printf "@[%s@]@," (Printexc.to_string x)
+        | (Error e) ->
+           begin
+             Format.fprintf Format.std_formatter "@[";
+             e std_formatter info;
+             Format.printf "@]@,"
+           end
+        | (Errors errs) ->
+           begin
+             match errs with
+             | [] -> ()
+             | (e::es) ->
+                (ignore(print_aux (ctr - 1) e);
+                 print_aux (ctr - 1) (Errors es))
+           end
+        | _ -> Format.printf "@[%s@]@," (Printexc.to_string x)
       end
   in
   Format.printf "@[<v>";
@@ -93,10 +81,13 @@ let catch_error info depth f a =
   try (f a)
   with x -> print_error info depth x
 
-let error s = Error (new error s)
+let error_of_str (str: string) (fmt: Format.formatter) (inf: Printer.ppinfo) =
+  Format.fprintf fmt "@[error: %s@]@." str
+
+let error s = Error (error_of_str s)
 
 let warning str =
-  Format.printf "@[Warning: @[%s@]@]@." str
+  Format.fprintf std_formatter "@[warning: @[%s@]@]@." str
 
 let report str =
-  Format.printf "@[%s@]@." str
+  Format.fprintf std_formatter "@[%s@]@." str

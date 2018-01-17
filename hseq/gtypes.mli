@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.mli
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -181,12 +181,6 @@ val print: Printer.ppinfo -> gtype Printer.printer
 
 (* {5 Error reporting} *)
 
-class typeError: string -> gtype list ->
-object
-  inherit Report.error
-  val trms: gtype list
-  method get: unit -> gtype list
-end
 val type_error: string -> gtype list -> exn
 val add_type_error: string ->gtype list -> exn -> 'a
 
