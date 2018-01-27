@@ -653,16 +653,16 @@ and print_parents ps =
   end;
   Format.printf "@]@."
 and print_files ps =
-  Format.printf "@[<2>Load Files: ";
   begin
     match ps with
-      | [] -> (Format.printf "None")
+      | [] -> ()
       | _ ->
+         Format.printf "@[<2>Libraries: ";
         Printer.print_list
           ((fun s -> Format.printf "%s" s),
            (fun _ -> Format.printf "@ ")) ps
   end;
-  Format.printf "@]@."
+  Format.printf "@]"
 and print_thms pp n ths =
   let sorted_ths =
     let comp (x, _) (y, _) = compare x y
@@ -682,7 +682,7 @@ and print_thms pp n ths =
       end),
      (fun _ -> ()))
     sorted_ths;
-  Format.printf "@]@."
+  Format.printf "@]"
 and print_tydefs pp n tys =
   let sorted_tys =
     let comp (x, _) (y, _) = compare x y
@@ -715,7 +715,7 @@ and print_tydefs pp n tys =
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;
-  Format.printf "@]@."
+  Format.printf "@]"
 and print_defs pp n defs =
   let sorted_defs =
     let comp (x, _) (y, _) = compare x y
@@ -739,7 +739,7 @@ and print_defs pp n defs =
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_defs;
-  Format.printf "@]@."
+  Format.printf "@]"
 
 let print_term_pps n pps =
   let print_pos pos =
@@ -781,7 +781,7 @@ let print_term_pps n pps =
       print_pos p;
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
-  Format.printf "@]@."
+  Format.printf "@]"
 
 let print_type_pps n pps =
   let sorted_pps =
@@ -804,7 +804,7 @@ let print_type_pps n pps =
         (Printer.fixity_to_string r.Printer.fixity);
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
-  Format.printf "@]@."
+  Format.printf "@]"
 
 let print_pp_syms n pps =
   let print_sym (s, t) = Format.printf "\"%s\":\"%s\"" s t in
@@ -816,6 +816,8 @@ let print_pp_syms n pps =
   end
 
 let print ppstate thy =
+  let print_list p l = if l <> [] then p l else ()
+  in
   let content = contents thy
   in
   Format.printf "@[<v>@.";
@@ -825,27 +827,14 @@ let print ppstate thy =
   print_files content.cfiles;
   print_date content.cdate;
   print_protection content.cprotection;
-  print_tydefs ppstate "Types" content.ctyps;
-  print_thms ppstate "Axioms" content.caxioms;
-  print_defs ppstate "Definitions" content.cdefns;
-  print_thms ppstate "Theorems" content.ctheorems;
-  begin
-    match content.ctype_pps with
-      | [] -> ()
-      | _ ->
-        print_type_pps "Type printer/parser information" content.ctype_pps
-  end;
-  begin
-    match content.cid_pps with
-      | [] -> ()
-      | _ ->
-        print_term_pps "Term printer/parser information" content.cid_pps
-  end;
-  begin
-    match content.cpp_syms with
-      | [] -> ()
-      | _ ->
-        print_pp_syms "Parser symbols" content.cpp_syms
-  end;
+  print_list (print_tydefs ppstate "Types") content.ctyps;
+  print_list (print_thms ppstate "Axioms") content.caxioms;
+  print_list (print_defs ppstate "Definitions") content.cdefns;
+  print_list (print_thms ppstate "Theorems") content.ctheorems;
+  print_list (print_type_pps "Type printer/parser information")
+             content.ctype_pps;
+  print_list (print_term_pps "Term printer/parser information")
+             content.cid_pps;
+  print_list (print_pp_syms "Parser symbols") content.cpp_syms;
   Format.printf "@[-------------@]";
   Format.printf "@]"
