@@ -1,6 +1,6 @@
 (*----
   Name: basic.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -25,14 +25,10 @@
 
 (* Base Representation of logic types *)
 
-(** [typ_const]: Representation of user-defined type constructors
-    (could merged into [pre_typ]). *)
-type typ_const = Ident.t
-
 (** [pre_typ]: The base representation of types. *)
-type ('idtyp, 'tfun) pre_typ =
+type ('idtyp) pre_typ =
   | Var of 'idtyp
-  | Constr of 'tfun * ('idtyp, 'tfun) pre_typ list
+  | Constr of Ident.t * ('idtyp) pre_typ list
   | WeakVar of 'idtyp
 
 (** [gtype_id]: The type of gtype identifiers. *)
@@ -59,7 +55,7 @@ let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
 let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
 
 (** [gtype]: The actual representation of types. *)
-type gtype = (gtype_id, typ_const)pre_typ
+type gtype = (gtype_id)pre_typ
 
 (** String representation of types *)
 let string_tconst n l =

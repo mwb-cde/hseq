@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -576,7 +576,7 @@ let rec check_term scp n vs t =
   | WeakVar _ -> raise Not_found
 
 let check_args args =
-  let null_type = mk_def "null" [] in
+  let null_type = mk_def (Ident.null) [] in
   let arg_itr env x =
     if (is_var x) && (not (member x env))
     then (bind x null_type env)
@@ -1148,7 +1148,7 @@ let extract_bindings tyvars src dst =
  *)
 
 (* [stype]: Representation of types for storage on disk *)
-type stype = ((string * int), typ_const) pre_typ
+type stype = (string * int) pre_typ
 
 type to_stype_env = (Basic.gtype_id * (string *int)) list
 (** Data needed to construct a type storage representation. *)

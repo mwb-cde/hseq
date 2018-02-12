@@ -42,7 +42,7 @@ val is_weak: gtype -> bool
 
 val mk_var: string -> gtype
 val mk_weak: string -> gtype
-val mk_constr: Basic.typ_const -> gtype list -> gtype
+val mk_constr: Ident.t -> gtype list -> gtype
 
 (** {7 Destructors} *)
 
@@ -52,7 +52,7 @@ val get_var_name: gtype -> string
 val dest_weak: gtype -> Basic.gtype_id
 val get_weak_name: gtype -> string
 
-val dest_constr: gtype -> (Basic.typ_const * gtype list)
+val dest_constr: gtype -> (Ident.t * gtype list)
 
 (** {6 Specialised Manipulators} *)
 
@@ -424,7 +424,7 @@ val extract_bindings: gtype list -> substitution -> substitution
 
 (** {5 Saving gtypes to disk storage} *)
 
-type stype = ((string * int), Basic.typ_const) pre_typ
+type stype = (string * int) pre_typ
 (** Representation of types for storage on disk. *)
 
 type stypedef_record =
