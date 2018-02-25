@@ -127,6 +127,45 @@ let fold_atomtype f c ty =
   in
   fold_aux c ty []
 
+let exists_atomtype p ty =
+  let rec exists_aux t stck =
+  match t with
+  | Atom(_) ->
+     if (p ty) then true
+     else exists_cont stck
+  | TApp(l, r) ->
+     exists_aux l (r::stck)
+  | Constr(_, args) ->
+     (List.exists (fun a -> exists_aux a []) args)
+     or (exists_cont stck)
+  and exists_cont stck =
+    match stck with
+    | [] -> false
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
+let exists_type p ty =
+  let rec exists_aux t stck =
+    if (p ty) then true
+    else
+      begin
+        match t with
+        | Atom(_) ->
+           exists_cont stck
+        | TApp(l, r) ->
+           exists_aux l (r::stck)
+        | Constr(_, args) ->
+           (List.exists (fun a -> exists_aux a []) args)
+           or (exists_cont stck)
+      end
+  and exists_cont stck =
+    match stck with
+    | [] -> false
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
 (** String representation of types *)
 let string_tconst n l =
   (Ident.string_of n)

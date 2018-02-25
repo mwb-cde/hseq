@@ -156,6 +156,8 @@ let split_app = Basic.split_apptype
    type. *)
 let map_atom = Basic.map_atomtype
 let fold_atom = Basic.fold_atomtype
+let exists_atom = Basic.exists_atomtype
+let exists = Basic.exists_type
 
 (*
  * Specialised Manipulators

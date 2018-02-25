@@ -109,6 +109,14 @@ val fold_atomtype: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
 (* [fold_atomtype f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
 
+val exists_atomtype: (gtype -> bool) -> gtype -> bool
+(* [exists_atomtype p ty] Apply [p] to each [Atom(x)] in [ty], return [true] if
+   any [Atom(x)] satisfies [p]. The check is top-down, left-to-right *)
+
+val exists_type: (gtype -> bool) -> gtype -> bool
+(* [exists_type p ty] Apply [p] to each sub-type of[ty], return [true] if any
+   satisfies [p]. The check is top-down, left-to-right *)
+
 (** String representation of types. *)
 val string_tconst: Ident.t -> string list -> string
 
