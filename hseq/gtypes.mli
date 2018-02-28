@@ -238,24 +238,21 @@ val check_decl_type: Scope.t -> Basic.gtype -> unit
 
 (** {5 Unification} *)
 
-exception Occurs
 exception Unify
 exception Match
 
 val lookup_var: gtype -> substitution -> gtype
 (** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
 
-(*
-val occurs: gtype -> gtype -> unit
- *)
+val occurs: gtype -> gtype -> bool
 (** [occurs t r]: Occurs check.
 
-    @raise [typeError] if atomic type [t] occurs in [r], succeed silently
-    otherwise.
+   return [true] iff atomic type [t] occurs in [r]
  *)
 
+(*
 val occurs_env: substitution-> gtype -> gtype -> unit
-
+ *)
 (**
    [occurs_env env t r]: Occurs check w.r.t [env]. Chase [t] in [env]
    to get [t'], chase [r] in [env] to get [r'].

@@ -786,7 +786,6 @@ let check_decl_type scp ty = well_defined scp [] ty
  * Unification
  *)
 
-exception Occurs
 exception Unify
 exception Match
 
@@ -799,35 +798,26 @@ let lookup_var ty env =
     else t
   in chase ty
 
-let rec occurs ty1 ty2 =
-  match (ty1, ty2) with
-  | (Atom(Var(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
-  | (Atom(Weak(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
-  | (Atom(_), TApp(l, r)) ->
-     ignore((occurs ty1 l); (occurs ty2 r))
-  | (Atom(_), Atom(_)) ->
-     if (equals ty1 ty2)
-     then raise (type_error ("occurs: ") [ty1;ty2])
-     else ()
-  | _ -> raise (type_error ("occurs: ") [ty1;ty2])
+let occurs atomty ty =
+  let checker t = equals atomty ty
+  in
+  begin
+  match atomty with
+  | Atom(_) -> not (exists_atom checker ty)
+  | _ -> false
+  end
 
 let rec occurs_env tenv ty1 ty2 =
   let nty1 = lookup_var ty1 tenv
   and nty2 = lookup_var ty2 tenv
   in
   match (nty1, nty2) with
+  | (Atom(_), Atom(_))-> equals nty1 nty2
   | (Atom(_), Constr(f, l)) ->
-     List.iter (occurs_env tenv nty1) l
+     List.exists (occurs_env tenv nty1) l
   | (Atom(_), TApp(l, r)) ->
-     begin
-       occurs_env tenv nty1 l;
-       occurs_env tenv nty1 r
-     end
-  | (Atom(_), Atom(_))->
-    if (equals nty1 nty2)
-    then raise (type_error ("occurs: ") [nty1;nty2])
-    else ()
-  | _ -> raise (type_error ("occurs: ") [nty1;nty2])
+     (occurs_env tenv nty1 l || occurs_env tenv nty1 r)
+  | _ -> raise (type_error ("occurs_env: expected a type variable") [nty1])
 
 let bind_occs t1 t2 env =
   if is_any_var t1
@@ -835,7 +825,11 @@ let bind_occs t1 t2 env =
     let r1 = lookup_var t1 env
     and r2 = lookup_var t2 env
     in
-    (occurs_env env r1 r2; bind_var r1 r2 env)
+    if not (occurs_env env r1 r2)
+    then bind_var r1 r2 env
+    else raise (type_error
+                  "bind_occs: variable occurs in binding type"
+                  [t1; t2])
   else
     raise (type_error "bind_occs: Can't bind a non variable" [t1; t2])
 
