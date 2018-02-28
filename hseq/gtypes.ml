@@ -780,21 +780,7 @@ let quick_well_defined scp cache ty =
 
    Fails if [ty] contains a weak variable.
 *)
-let check_decl_type scp ty =
-  let rec check_aux t =
-    match t with
-    | Constr(n, nargs) ->
-      (try
-         ignore(Scope.defn_of scp n);
-         List.iter check_aux nargs
-       with Not_found -> raise (type_error "Invalid type" [t]))
-    | Atom(Weak(v)) ->
-      raise (type_error "Invalid type, unexpected weak variable." [t])
-    | TApp(_) -> failwith "Gtypes.check_decl_type TApp(_) is not implemented"
-    | _ -> ()
-  in
-  check_aux ty
-
+let check_decl_type scp ty = well_defined scp [] ty
 
 (*
  * Unification
