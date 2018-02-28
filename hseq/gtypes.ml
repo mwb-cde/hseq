@@ -536,30 +536,6 @@ let has_defn tyenv n =
  * Weak variables are not permitted in any definition (type or term).
  *)
 
-(*
-  [check_term n vs t]: for definition [(n vs) = t], test name [n] and
-  arguments [vs] for definition [t].
-
-  Fails if a variable occurs in [t] which is not in the list [vs] or name
-  [n] occurs in [t] (a recursive definition)
-
-  [check_args args]: test that each [a] in [args] is a variable and
-  occurs only once.
-
-  Used by [check_defn].
-*)
-let rec check_term scp n vs t =
-  match t with
-  | Var(x) ->
-    if List.mem (Var x) vs
-    then ()
-    else raise Not_found
-  | Constr(m, args) ->
-    if n = m
-    then raise Not_found
-    else List.iter (check_term scp n vs) args
-  | WeakVar _ -> raise Not_found
-
 let check_args args =
   let null_type = mk_def (Ident.null) [] in
   let arg_itr env x =
@@ -571,28 +547,6 @@ let check_args args =
     ignore(List.fold_left arg_itr (empty_subst()) args);
     true
   with Not_found -> false
-
-(**
-   [check_defn l r]: test definition of [l] as alias for [r]
-
-   fails if the type is already defined,
-   or if the definition is recursive
-   or if the arguments occur on the lhs more than once
-   or if there are variables in the rhs which are not in the arguments
-*)
-let check_defn  scp l r =
-  if (is_def l) then
-    let n, largs = dest_def l
-    in
-    if has_defn scp n
-    then false
-    else
-      if check_args largs
-      then
-        try (check_term scp n largs r); true
-        with Not_found -> false
-      else false
-  else false
 
 (**
    [check_decln l]: consistency check on declaration of type [l]

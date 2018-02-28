@@ -186,9 +186,6 @@ val string_gtype: gtype -> string
     Weak variables are not permitted in any definition (type or term).
 *)
 
-val check_defn: Scope.t -> gtype -> gtype -> bool
-(** [check_defn l r]: Test definition of [l] as alias for [r]. *)
-
 val check_decln: gtype -> bool
 (**  [check_decln l]: Consistency check on declaration of type [l]. *)
 
