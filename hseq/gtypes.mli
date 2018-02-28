@@ -216,7 +216,7 @@ val unfold: Scope.t -> gtype -> gtype
 *)
 
 val well_defined: Scope.t -> (string)list -> gtype -> unit
-(** [well_defined scp args ty]: Test [ty] for well-definednes. every
+(** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]
     must have a name in [args] and weak variables are not permitted in
     [ty].

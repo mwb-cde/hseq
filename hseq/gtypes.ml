@@ -158,6 +158,7 @@ let map_atom = Basic.map_atomtype
 let fold_atom = Basic.fold_atomtype
 let exists_atom = Basic.exists_atomtype
 let exists = Basic.exists_type
+let exists_data = Basic.exists_type_data
 
 (*
  * Specialised Manipulators
@@ -629,26 +630,96 @@ let check_decln l =
 (**
    [well_defined scp args t]: ensure that all constructors in [t] are
    declared.
+
    [args]: check variables are in the list of args
+
+   A type is well-defined at depth [d] if it is one of:
+
+   - [Atom(Var(_))] at depth [d = 0]
+
+   - [Atom(Ident(f))] and [d] is the arity of [f]
+
+   - [Constr(f, args)] at depth [d = 0] and [len(args)] is the arity of [f]
+     and every [a] in [args] is well-defined at depth [0]
+
+   - [TApp(l, r)] and [l] is well-defined at depth [d + 1] and [r] is
+     well-defined at depth [0]
+
+   At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
+   type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+   element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
+   [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+
+   Specific constructors formed by [TApp]:
+
+   - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth [0].
+
+   - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+     depth [0].
 *)
-let rec well_defined scp args t =
-  let lookup_var x = List.find (fun y -> x = y) args in
-  let rec well_def t =
+let well_defined scp (args: (string)list) ty =
+  let var_is_arg n = List.exists (fun a -> n = a) args in
+  let rec well_aux depth t =
     match t with
-    | Constr(n, nargs) ->
-       if try_find (Scope.defn_of scp) n = None
-       then raise (type_error "well_defined: " [t])
-       else List.iter well_def nargs
     | Atom(Var(v)) ->
-       if try_find lookup_var (Basic.gtype_id_string v) = None
-       then raise (type_error "well_defined, unexpected variable." [t])
-       else ()
+       if depth <> 0 || (not (var_is_arg (Basic.gtype_id_string v)))
+       then (false, Some("unexpected variable.", t))
+       else (true, None)
     | Atom(Weak(v)) ->
-       raise (type_error "well_defined, unexpected weak variable." [t])
-    | TApp(_) ->
-       failwith "Gtypes.well_defined (TApp(_)) is not implemented"
+       (false, Some("unexpected weak variable.", t))
+    | Atom(Ident(n)) ->
+       let defn_opt = try_find (Scope.defn_of scp) n in
+       if defn_opt = None
+       then (false, Some("unknown type constructor", t))
+       else
+         let defn = from_some defn_opt in
+         let arity = List.length (defn.Scope.args) in
+         begin
+           if depth <> arity
+           then (false,
+                 Some(("invalid type constructor, expected "
+                       ^(string_of_int arity)
+                       ^" but got "^(string_of_int depth)),
+                      t))
+           else (true, None)
+         end
+    | TApp(l, r) ->
+       let (l_ok, lerr) = well_aux (depth + 1) l in
+       if not l_ok
+       then (l_ok, lerr)
+       else well_aux 0 r
+    | Constr(n, nargs) ->
+       if depth <> 0
+       then (false, Some("unexpected type constructor", t))
+       else
+         begin
+           let defn_opt = try_find (Scope.defn_of scp) n in
+           if defn_opt = None
+           then (false, Some("unknown type constructor", t))
+           else
+             let defn = from_some defn_opt in
+             let arity = List.length (defn.Scope.args) in
+             let arg_len = List.length nargs in
+             begin
+               if arity <> arg_len
+               then (false,
+                     Some(("invalid type constructor, expected "
+                           ^(string_of_int arity)
+                           ^" but got "^(string_of_int arg_len)),
+                          t))
+               else (true, None)
+             end
+         end
   in
-  well_def t
+  let rslt = well_aux 0 ty
+  in
+  if fst rslt
+  then ()
+  else
+    begin
+      let (msg, t) = from_some (snd rslt) in
+      raise (type_error ("well_defined: " ^ msg) [t])
+    end
 
 (**
    [quick_well_defined]: memoised, simpler version of well_defined without
