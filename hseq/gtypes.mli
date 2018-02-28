@@ -223,7 +223,7 @@ val well_defined: Scope.t -> (string)list -> gtype -> unit
 *)
 
 val quick_well_defined: Scope.t ->
-  (Ident.t *int, bool) Hashtbl.t -> gtype -> unit
+  (Ident.t * int, bool) Hashtbl.t -> gtype -> unit
 (** [quick_well_defined scp tbl ty]: Test [ty] to make sure it is
     well-defined.  weak variables can occur in [ty].
 

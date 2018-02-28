@@ -721,39 +721,58 @@ let well_defined scp (args: (string)list) ty =
       raise (type_error ("well_defined: " ^ msg) [t])
     end
 
-(**
-   [quick_well_defined]: memoised, simpler version of well_defined without
-   argument testing
+(** [quick_well_defined]: memoised, simpler version of well_defined. Only check
+    that type constructors are well-defined.
 *)
-let rec quick_well_defined scp cache t =
-  match t with
-  | Constr(n, args) ->
-     let nargs = List.length args in
-     let rslt = Lib.try_find (Hashtbl.find cache) (n, nargs)
-     in
-     begin
-       match rslt with
-       | Some _ -> List.iter (quick_well_defined scp cache) args
-       | None ->
-          begin
-            match Lib.try_find (get_typdef scp) n with
-            | Some(recrd) ->
-               if nargs = (List.length recrd.Scope.args)
-               then
-                 (Hashtbl.add cache (n, nargs) true;
-                  List.iter (quick_well_defined scp cache) args)
-               else
-                 raise (type_error "quick_well_defined: " [t])
-            | None ->
-               raise
-                 (type_error
-                    ("quick_well_defined, not found: "^(Ident.string_of n))
-                    [t])
-          end
+let quick_well_defined scp cache ty =
+  let lookup_constr f nargs =
+    (Lib.try_find (Hashtbl.find cache) (f, nargs)) <> None
+  and lookup_defn f =
+    let defn_opt = Lib.try_find (get_typdef scp) f in
+    if defn_opt = None
+    then None
+    else
+      begin
+        let defn = from_some defn_opt in
+        let nargs = List.length defn.Scope.args in
+        Some(nargs)
+      end
+  in
+  let rec well_aux depth t =
+    (* Check all constructors are either memoised or defined. *)
+    match t with
+    | Constr(f, args) ->
+       let nargs = List.length args in
+       if lookup_constr f nargs
+       then (true, None)
+       else
+         begin
+           let defn_opt = lookup_defn f in
+           if defn_opt <> None
+           then
+             let nargs = from_some defn_opt in
+             Hashtbl.add cache (f, nargs) true;
+             (true, None)
+           else
+             (false, Some("unknown constructor", t))
+         end
+    | TApp(l, r) ->
+       let l_ok, lerr = well_aux (depth + 1) l in
+       if not l_ok
+       then (l_ok, lerr)
+       else well_aux 0 r
+    | Atom(Var(_)) -> (true, None)
+    | Atom(Weak(_)) -> (true, None)
+  in
+  let rslt = well_aux 0 ty
+  in
+  if fst rslt
+  then ()
+  else
+    begin
+      let (msg, t) = from_some (snd rslt) in
+      raise (type_error ("well_defined: " ^ msg) [t])
     end
-  | TApp(_) ->
-     failwith "Gtypes.quick_well_defined (TApp(_)) is not implemented"
-  | _ -> ()
 
 (**
    [check_decl_type scp ty]: Ensure type [ty] is suitable for
