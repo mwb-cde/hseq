@@ -87,11 +87,6 @@ let is_weak t =
   | Atom(Weak(_)) -> true
   | _ -> false
 
-let is_ident t =
-  match t with
-  | Atom(Ident(_)) -> true
-  | _ -> false
-
 let is_constr t =
   match t with
   | Constr _ -> true
@@ -134,7 +129,6 @@ let get_weak_name t =
 let dest_constr ty =
   let rec dest_tapp t args =
     match t with
-    | Atom(Ident(f)) -> (f, args)
     | TApp(l, r) -> dest_tapp l (r::args)
     | _ -> raise (Failure "Invalid type constructor")
   in
@@ -637,25 +631,11 @@ let check_decln l =
 
    - [Atom(Var(_))] at depth [d = 0]
 
-   - [Atom(Ident(f))] and [d] is the arity of [f]
-
    - [Constr(f, args)] at depth [d = 0] and [len(args)] is the arity of [f]
      and every [a] in [args] is well-defined at depth [0]
 
    - [TApp(l, r)] and [l] is well-defined at depth [d + 1] and [r] is
      well-defined at depth [0]
-
-   At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
-   type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
-   element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
-   [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
-
-   Specific constructors formed by [TApp]:
-
-   - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth [0].
-
-   - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
-     depth [0].
 *)
 let well_defined scp (args: (string)list) ty =
   let var_is_arg n = List.exists (fun a -> n = a) args in
@@ -667,22 +647,6 @@ let well_defined scp (args: (string)list) ty =
        else (true, None)
     | Atom(Weak(v)) ->
        (false, Some("unexpected weak variable.", t))
-    | Atom(Ident(n)) ->
-       let defn_opt = try_find (Scope.defn_of scp) n in
-       if defn_opt = None
-       then (false, Some("unknown type constructor", t))
-       else
-         let defn = from_some defn_opt in
-         let arity = List.length (defn.Scope.args) in
-         begin
-           if depth <> arity
-           then (false,
-                 Some(("invalid type constructor, expected "
-                       ^(string_of_int arity)
-                       ^" but got "^(string_of_int depth)),
-                      t))
-           else (true, None)
-         end
     | TApp(l, r) ->
        let (l_ok, lerr) = well_aux (depth + 1) l in
        if not l_ok
@@ -786,9 +750,6 @@ let check_decl_type scp ty = well_defined scp [] ty
  * Unification
  *)
 
-exception Unify
-exception Match
-
 let lookup_var ty env =
   let rec chase t =
     if is_any_var t
@@ -822,14 +783,16 @@ let rec occurs_env tenv ty1 ty2 =
 let bind_occs t1 t2 env =
   if is_any_var t1
   then
-    let r1 = lookup_var t1 env
-    and r2 = lookup_var t2 env
-    in
-    if not (occurs_env env r1 r2)
-    then bind_var r1 r2 env
-    else raise (type_error
-                  "bind_occs: variable occurs in binding type"
-                  [t1; t2])
+    begin
+      let r1 = lookup_var t1 env
+      and r2 = lookup_var t2 env
+      in
+      if not (occurs_env env r1 r2)
+      then bind_var r1 r2 env
+      else raise (type_error
+                    "bind_occs: variable occurs in binding type"
+                    [t1; t2])
+    end
   else
     raise (type_error "bind_occs: Can't bind a non variable" [t1; t2])
 
@@ -837,7 +800,7 @@ let bind_occs t1 t2 env =
    * The main unification functions
    *)
 
-  (**
+(**
      [unify_env scp t1 t2 nenv]: Unify types [t1] and [t2], adding new
      bindings to substitution nenv.
 
@@ -845,67 +808,100 @@ let bind_occs t1 t2 env =
 
      Scope scp is used to look up definitions of constructors occuring
      in t1 or t2 (if necessary).
-  *)
+ *)
 let rec unify_aux scp ty1 ty2 env =
-  let s = lookup_var ty1 env
-  and t = lookup_var ty2 env
-  in
-  match (s, t) with
-      (* Constructors *)
-  | (Constr(f1, args1), Constr(f2, args2)) ->
-    begin
-      let expand_left x y =
-        let x1 = unfold scp x
-        in
-        unify_aux scp x1 y env
-      and expand_right x y =
-        let y1 = unfold scp y
-        in
-        unify_aux scp x y1 env
-      in
-      if f1 = f2
-      then
-            (* Matching constructors. *)
-        try unify_aux_list scp args1 args2 env
-        with x -> add_type_error "Can't unify types" [s; t] x
-      else
-            (* Different constructors, try for type aliasing. *)
-        try
-          (try expand_left s t
-           with _ -> expand_right s t)
-        with x -> add_type_error "x: Can't unify types" [s; t] x
-    end
-      (* Variables, bind if not equal, but test for occurence *)
-  | (Atom(Var(_)), Atom(Var(_))) ->
-    if equals s t
-    then env
-    else bind_occs s t env
-  | (Atom(Var(_)), _) -> bind_occs s t env
-  | (_, Atom(Var(_))) -> bind_occs t s env
-      (* Weak variables, don't bind to variables *)
-  | (Atom(Weak(_)), Atom(Weak(_))) ->
-    if equals s t
-    then env
-    else bind_occs s t env
-  | (Atom(Weak(_)), _) -> bind_occs s t env
-  | (_, Atom(Weak(_))) -> bind_occs t s env
-  | (TApp(_), _) ->
-     failwith "Gtypes.unify_aux (TApp(_)) is not implemented"
-  | (_, TApp(_)) ->
-     failwith "Gtypes.unify_aux (TApp(_)) is not implemented"
-and
-    unify_aux_list scp tyl1 tyl2 env =
+  begin
+    let s = lookup_var ty1 env
+    and t = lookup_var ty2 env
+    in
+    match (s, t) with
+    | (Constr(f1, args1), Constr(f2, args2)) ->
+       begin
+         if f1 = f2
+         then
+           (* Matching constructors. *)
+           try unify_aux_list scp args1 args2 env
+           with err -> add_type_error "Can't unify types" [s; t] err
+         else
+           (* Different constructors, try for type aliasing. *)
+           begin
+             let s1 = try_app (unfold scp) s
+             and t1 = try_app (unfold scp) t
+             in
+             if s1 = None && t1 = None
+             then raise (type_error "Can't unify types" [s; t])
+             else
+               let s2 = if s1 = None then s else from_some s1
+               and t2 = if t1 = None then t else from_some t1
+               in
+               unify_aux scp s2 t2 env
+           end
+       end
+    | (TApp(l1, r1), TApp(l2, r2)) ->
+       (* First try unifying the branches *)
+       let env1_opt = try_app (unify_aux scp l1 l2) env in
+       let env2_opt =
+         if env1_opt = None then None
+         else try_app (unify_aux scp r1 r2) (from_some env1_opt)
+       in
+       if env2_opt <> None
+       then from_some env2_opt
+       else
+         begin
+           try expand_unify scp s t env
+           with err -> (add_type_error "Can't unify types" [s; t] err)
+         end
+    (* Variables, bind if not equal, but test for occurence *)
+    | (Atom(Var(_)), Atom(Var(_))) ->
+       if equals s t
+       then env
+       else bind_occs s t env
+    | (Atom(Var(_)), _) -> bind_occs s t env
+    | (_, Atom(Var(_))) -> bind_occs t s env
+    (* Weak variables, don't bind to variables *)
+    | (Atom(Weak(_)), Atom(Weak(_))) ->
+       if equals s t
+       then env
+       else bind_occs s t env
+    | (Atom(Weak(_)), _) ->
+       if is_var t
+       then raise (type_error "Can't unify types" [s; t])
+       else bind_occs s t env
+    | (_, Atom(Weak(_))) ->
+       if is_var s
+       then raise (type_error "Can't unify types" [s; t])
+       else bind_occs t s env
+    | _ -> raise (type_error "Can't unify types" [s; t])
+  end
+and unify_aux_list scp tyl1 tyl2 env =
   begin
     match (tyl1, tyl2) with
     | ([], []) -> env
     | (ty1::l1, ty2::l2) ->
-      let env1 =
-        try unify_aux scp ty1 ty2 env
-        with x -> add_type_error "Can't unify types" [ty1; ty2] x
-      in
-      unify_aux_list scp l1 l2 env1
+       let env1 =
+         try unify_aux scp ty1 ty2 env
+         with x -> add_type_error "Can't unify types" [ty1; ty2] x
+       in
+       unify_aux_list scp l1 l2 env1
     | _ -> raise (type_error "Can't unbalanced constructor lists" [])
   end
+and expand_unify scp ty1 ty2 env =
+  (* Try to expand and unify type aliases *)
+  let expand t =
+    if (is_constr t) || (is_app t)
+    then try_app (unfold scp) t
+    else None
+  in
+  let s = expand ty1
+  and t = expand ty2
+  in
+  if s = None && t = None
+  then raise (type_error "Can't unify types" [ty1; ty2])
+  else
+    let s1 = if s = None then ty1 else from_some s
+    and t1 = if t = None then ty2 else from_some t
+    in
+    unify_aux scp s1 t1 env
 
 let unify_env scp t1 t2 nenv =
   unify_aux scp t1 t2 nenv
@@ -942,8 +938,8 @@ let rec mgu t env =
     else mgu nt env
   | Constr(f, l) ->
     Constr(f, List.map (fun x-> mgu x env) l)
-  | TApp(_) ->
-     failwith "Gtypes.mgu (TApp(_)) is not implemented"
+  | TApp(l, r) ->
+     TApp(mgu l env, mgu r env)
 
 (**
    [mgu_rename_env inf env env nenv typ]: Replace variables in [typ]
@@ -978,8 +974,10 @@ let mgu_rename_env (inf, tyenv) name_env typ =
         rename_aux_list ctr nenv args []
       in
       (Constr(f, nargs), (ctr1, nenv1))
-    | TApp(_) ->
-       failwith "Gtypes.mgu_rename_env (TApp(_)) is not implemented"
+    | TApp(l, r) ->
+       let l1, (ctr1, env1) = rename_aux (ctr, nenv) l in
+       let r1, (ctr2, env2) = rename_aux (ctr1, env1) r in
+       (TApp(l1, r1), (ctr2, env2))
   and
       rename_aux_list ctr env lst rslt =
     match lst with
@@ -1028,8 +1026,10 @@ let mgu_rename_simple inf tyenv name_env typ =
          rename_aux_list ctr nenv args []
        in
        (Constr(f, nargs), ctr1, nenv1)
-    | TApp(_) ->
-       failwith "Gtypes.mgu_rename_simple (TApp(_)) is not implemented"
+    | TApp(l, r) ->
+       let (l1, ctr1, env1) = rename_aux ctr nenv l in
+       let (r1, ctr2, env2) = rename_aux ctr1 env1 r in
+       (TApp(l1, r1), ctr2, env2)
     and
       rename_aux_list ctr env lst rslt =
       match lst with

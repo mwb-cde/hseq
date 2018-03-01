@@ -36,7 +36,6 @@ val equals: gtype -> gtype -> bool
 
 val is_var: gtype -> bool
 val is_weak: gtype -> bool
-val is_ident: gtype -> bool
 val is_constr: gtype -> bool
 val is_app: gtype -> bool
 
@@ -238,9 +237,6 @@ val check_decl_type: Scope.t -> Basic.gtype -> unit
 
 (** {5 Unification} *)
 
-exception Unify
-exception Match
-
 val lookup_var: gtype -> substitution -> gtype
 (** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
 
@@ -250,9 +246,6 @@ val occurs: gtype -> gtype -> bool
    return [true] iff atomic type [t] occurs in [r]
  *)
 
-(*
-val occurs_env: substitution-> gtype -> gtype -> unit
- *)
 (**
    [occurs_env env t r]: Occurs check w.r.t [env]. Chase [t] in [env]
    to get [t'], chase [r] in [env] to get [r'].
