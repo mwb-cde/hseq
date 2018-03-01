@@ -33,11 +33,9 @@ let rec compare_gtype a b =
   let rec atom_cmp x y =
     match (x, y) with
     | (Var(v1), Var(v2)) -> Basic.gtype_id_compare v1 v2
-    | (Var(_), _) -> Order.LessThan
-    | (_, Var(_)) -> Order.GreaterThan
+    | (Var(_), Weak(_)) -> Order.GreaterThan
     | (Weak(v1), Weak(v2)) -> Basic.gtype_id_compare v1 v2
-    | (Weak(_), _) -> Order.LessThan
-    | (_, Weak(_)) -> Order.GreaterThan
+    | (Weak(_), Var(_)) -> Order.LessThan
   and struct_cmp p =
     match p with
     | (Atom(x), Atom(y)) -> atom_cmp x y
@@ -51,7 +49,6 @@ let rec compare_gtype a b =
          | rslt -> rslt
        end
     | (TApp(_), Constr(_)) -> Order.LessThan
-    | (TApp(_), _) -> Order.GreaterThan
     | (Constr(_), Atom(_)) -> Order.GreaterThan
     | (Constr(_), TApp(_)) -> Order.GreaterThan
     | (Constr(f1, args1), Constr(f2, args2)) ->
@@ -540,23 +537,22 @@ let rewrite_subst t env =
     | Atom(Var(a)) ->
        begin
          try Lib.find (Basic.gtype_id_string a) env
-         with _ -> raise (type_error "rewrite_subst: Can't find parameter" [t])
+         with Not_found ->
+           raise (type_error "rewrite_subst: Can't find parameter" [t])
        end
     | _ -> ty
   in
   map_atom mapper t
 
-let rewrite_defn given_args rcrd_args t=
+let rewrite_defn given_args rcrd_args t =
   if (List.length rcrd_args) = (List.length given_args)
   then
-    let tenv = Lib.empty_env() in
-    let env_of_args() =
-      List.iter2
-        (fun x y -> Lib.bind_env x y tenv)
-        rcrd_args given_args
+    let tenv =
+      List.fold_left2 (fun env x y -> Lib.bind x y env)
+                      (Lib.empty_env())
+                      rcrd_args given_args
     in
-    (env_of_args();
-     rewrite_subst t tenv)
+    rewrite_subst t tenv
   else
     raise (type_error "rewrite_defn: Wrong number of arguments" [t])
 
@@ -569,7 +565,13 @@ let unfold scp t =
      then raise Not_found
      else
        rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
-  | TApp(_) -> failwith "Gtypes.unfold (TApp(_)) is not implemented"
+  | TApp(_) ->
+     let (n, args) = dest_constr t in
+     let recrd = get_typdef scp n in
+     if recrd.Scope.alias = None
+     then raise Not_found
+     else
+       rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
   | _ -> raise Not_found
 
 (**
@@ -998,10 +1000,9 @@ let matching_env scp env t1 t2 =
       if equals s t
       then env
       else bind_occs s t env
-    | (TApp(_), _) ->
-       failwith "Gtypes.matching_env (TApp(_)) is not implemented"
-    | (_, TApp(_)) ->
-       failwith "Gtypes.matching_env (TApp(_)) is not implemented"
+    | (TApp(l1, r1), TApp(l2, r2)) ->
+       let env1 = match_aux l1 l2 env in
+       match_aux r1 r2 env1
     | _ ->
       if equals s t
       then env
@@ -1071,6 +1072,9 @@ let matches_rewrite scp t1 t2 data =
         (try vbind s t env
          with err -> raise (add_type_error "Can't match types: " [s; t] err))
       (* Match constants *)
+    | (TApp(l1, r1), TApp(l2, r2)) ->
+       let env1 = matches_aux l1 l2 env in
+       matches_aux r1 r2 env1
     | (_, _) ->
       if equals s t
       then env
@@ -1114,6 +1118,7 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
       let nid = Ident.mk_long nth n
       in
       Constr(nid, List.map set_aux args)
+    | TApp(l, r) -> TApp(set_aux l, set_aux r)
     | _ -> t
   in set_aux trm
 
@@ -1139,6 +1144,7 @@ let in_scope memo scp ty =
       ignore(lookup_id (Ident.thy_of id));
       List.iter in_scp_aux args
     | Atom(Weak(_)) -> ()
+    | TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
   in
   try in_scp_aux ty; true
   with Not_found -> false
@@ -1200,6 +1206,10 @@ let rec to_save_aux tyenv ty =
     (Constr(f, args1), tyenv2)
   | Atom(Weak(_)) ->
     raise (type_error "Can't save a weak variable" [ty])
+  | TApp(l, r) ->
+     let l1, tyenv1 = to_save_aux tyenv l in
+     let r1, tyenv2 = to_save_aux tyenv1 r in
+     (TApp(l1, r1), tyenv2)
 and to_save_list tyenv lst rslt =
   match lst with
   | [] -> (tyenv, List.rev rslt)
@@ -1252,6 +1262,10 @@ let rec from_save_aux env (ty: stype) =
     let (env1, args1) = from_save_list env args []
     in
     (Constr(f, args1), env1)
+  | TApp(l, r) ->
+     let l1, env1 = from_save_aux env l in
+     let r1, env2 = from_save_aux env1 r in
+     (TApp(l1, r1), env2)
 and from_save_list env lst rslt =
   match lst with
   | [] -> (env, List.rev rslt)
