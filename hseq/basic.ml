@@ -57,12 +57,14 @@ let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
 type vartype =
   | Var of gtype_id
   | Weak of gtype_id
+  | Ident of Ident.t
 
 (** [gtype]: The actual representation of types. *)
 type gtype = (vartype)pre_typ
 
 let mk_vartype x = Atom(Var(x))
 let mk_weakvartype x = Atom(Weak(x))
+let mk_identtype x = Atom(Ident(x))
 
 (** String representation of types *)
 let string_tconst n l =

@@ -62,7 +62,8 @@ type ('a) pre_typ =
 type vartype =
   | Var of gtype_id
   | Weak of gtype_id
-(** [vartype] Kinds of type variable
+  | Ident of Ident.t
+(** [atomtype] Kinds of atomic type
 
    [Var(v)] is  type variable. Can be bind (in a type environment) to any other
    type.
@@ -71,6 +72,8 @@ type vartype =
    variable. They are used in a sequent calculus when a variable type 'x can
    occur in more than one sequent. If 'x is bound in one sequent, then it must
    have that binding in every sequent in which it occurs.
+
+   [Ident(i)] is the name of a type constructor.
  *)
 
 type gtype = (vartype)pre_typ
@@ -78,6 +81,7 @@ type gtype = (vartype)pre_typ
 
 val mk_vartype: gtype_id -> gtype
 val mk_weakvartype: gtype_id -> gtype
+val mk_identtype: Ident.t -> gtype
 
 (** String representation of types. *)
 val string_tconst: Ident.t -> string list -> string
