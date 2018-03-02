@@ -36,6 +36,7 @@ val equals: gtype -> gtype -> bool
 
 val is_var: gtype -> bool
 val is_weak: gtype -> bool
+val is_ident: gtype -> bool
 val is_constr: gtype -> bool
 val is_app: gtype -> bool
 
@@ -43,6 +44,7 @@ val is_app: gtype -> bool
 
 val mk_var: string -> gtype
 val mk_weak: string -> gtype
+val mk_ident: Ident.t -> gtype
 val mk_constr: Ident.t -> gtype list -> gtype
 val mk_app: gtype -> gtype -> gtype
 
@@ -428,7 +430,10 @@ val extract_bindings: gtype list -> substitution -> substitution
 
 (** {5 Saving gtypes to disk storage} *)
 
-type stype = (string * int) pre_typ
+type satom =
+  | SVar of (string * int) (* Variables *)
+  | SIdent of Ident.t      (* Identifier *)
+type stype = (satom) pre_typ
 (** Representation of types for storage on disk. *)
 
 type stypedef_record =

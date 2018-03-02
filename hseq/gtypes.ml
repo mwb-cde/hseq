@@ -34,8 +34,13 @@ let rec compare_gtype a b =
     match (x, y) with
     | (Var(v1), Var(v2)) -> Basic.gtype_id_compare v1 v2
     | (Var(_), Weak(_)) -> Order.GreaterThan
+    | (Var(_), Ident(_)) -> Order.GreaterThan
     | (Weak(v1), Weak(v2)) -> Basic.gtype_id_compare v1 v2
     | (Weak(_), Var(_)) -> Order.LessThan
+    | (Weak(_), Ident(_)) -> Order.GreaterThan
+    | (Ident(v1), Ident(v2)) -> Ident.compare v1 v2
+    | (Ident(_), Var(_)) -> Order.LessThan
+    | (Ident(_), Weak(_)) -> Order.LessThan
   and struct_cmp p =
     match p with
     | (Atom(x), Atom(y)) -> atom_cmp x y
@@ -87,6 +92,11 @@ let is_weak t =
   | Atom(Weak(_)) -> true
   | _ -> false
 
+let is_ident t =
+  match t with
+  | Atom(Ident(_)) -> true
+  | _ -> false
+
 let is_constr t =
   match t with
   | Constr _ -> true
@@ -101,6 +111,7 @@ let is_app t =
 
 let mk_var n = Atom(Var(Basic.mk_gtype_id n))
 let mk_weak n = Atom(Weak(Basic.mk_gtype_id n))
+let mk_ident n = Atom(Ident(n))
 let mk_constr f l = Constr(f, l)
 let mk_app x y = TApp(x, y)
 
@@ -126,9 +137,15 @@ let get_weak_name t =
   | Atom(Weak(n)) -> Basic.gtype_id_string n
   | _ -> raise (Failure "Not a weak variable")
 
+let dest_ident t =
+  match t with
+  | Atom(Ident(n)) -> n
+  | _ -> raise (Failure "Not an identifier")
+
 let dest_constr ty =
   let rec dest_tapp t args =
     match t with
+    | Atom(Ident(f)) -> (f, args)
     | TApp(l, r) -> dest_tapp l (r::args)
     | _ -> raise (Failure "Invalid type constructor")
   in
@@ -330,6 +347,7 @@ let rec rename_type_vars_env env trm =
        try (lookup trm env, env)
        with Not_found -> (trm, env)
      end
+  | Atom(Ident(_)) -> (trm, env)
   | TApp(x, y) ->
      let x1, env1 = rename_type_vars_env env x in
      let y1, env2 = rename_type_vars_env env1 y
@@ -371,6 +389,7 @@ let rename_index idx env top_type =
          try (lookup ty env, ctr, env)
          with Not_found -> (ty, ctr, env)
        end
+    | Atom(Ident(_)) -> (ty, ctr, env)
     | TApp(x, y) ->
        let x1, ctr1, env1 = rename_aux ctr env x in
        let y1, ctr2, env2 = rename_aux ctr1 env1 y
@@ -410,6 +429,7 @@ let rec print_type ppstate pr t =
     match x with
     | Atom(Var(_)) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
     | Atom(Weak(_)) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
+    | Atom(Ident(op)) -> print_constr ppstate pr (op, [])
     | TApp(_) -> print_app ppstate pr (split_app x)
     | Constr(op, args) -> print_constr ppstate pr (op, args)
   and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
@@ -521,6 +541,7 @@ let rec string_gtype x =
   match x with
   | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
   | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
+  | Atom(Ident(f)) -> string_tconst f []
   | TApp(l, r) ->
      (string_gtype l) ^ " " ^ (string_gtype r)
   | Constr(f, args) ->
@@ -631,11 +652,25 @@ let check_decln l =
 
    - [Atom(Var(_))] at depth [d = 0]
 
+   - [Atom(Ident(f))] and [d] is the arity of [f]
+
    - [Constr(f, args)] at depth [d = 0] and [len(args)] is the arity of [f]
      and every [a] in [args] is well-defined at depth [0]
 
    - [TApp(l, r)] and [l] is well-defined at depth [d + 1] and [r] is
      well-defined at depth [0]
+
+   At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
+   type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+   element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
+   [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+
+   Specific constructors formed by [TApp]:
+
+   - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth [0].
+
+   - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+     depth [0].
 *)
 let well_defined scp (args: (string)list) ty =
   let var_is_arg n = List.exists (fun a -> n = a) args in
@@ -647,11 +682,31 @@ let well_defined scp (args: (string)list) ty =
        else (true, None)
     | Atom(Weak(v)) ->
        (false, Some("unexpected weak variable.", t))
+    | Atom(Ident(n)) ->
+       let defn_opt = try_find (Scope.defn_of scp) n in
+       if defn_opt = None
+       then (false, Some("unknown type constructor", t))
+       else
+         let defn = from_some defn_opt in
+         let arity = List.length (defn.Scope.args) in
+         begin
+           if depth <> arity
+           then (false,
+                 Some(("invalid type constructor, expected "
+                       ^(string_of_int arity)
+                       ^" but got "^(string_of_int depth)),
+                      t))
+           else (true, None)
+         end
     | TApp(l, r) ->
        let (l_ok, lerr) = well_aux (depth + 1) l in
        if not l_ok
        then (l_ok, lerr)
        else well_aux 0 r
+    | Atom(Ident(n)) ->
+       if try_find (Scope.defn_of scp) n = None
+       then (false, Some("unknown type constructor", t))
+       else (true, None)
     | Constr(n, nargs) ->
        if depth <> 0
        then (false, Some("unexpected type constructor", t))
@@ -725,6 +780,22 @@ let quick_well_defined scp cache ty =
        if not l_ok
        then (l_ok, lerr)
        else well_aux 0 r
+    | Atom(Ident(f)) ->
+       begin
+         let defn = lookup_defn f in
+         if defn = None
+         then (false, Some("unknown type constructor", t))
+         else if (from_some defn) <> depth
+         then (false, Some("invalid type construtor,"
+                           ^" expected "^(string_of_int (from_some defn))
+                           ^" arguments, got "
+                           ^(string_of_int depth), t))
+         else
+           begin
+             Hashtbl.add cache (f, from_some defn) true;
+             (true, None)
+           end
+       end
     | Atom(Var(_)) -> (true, None)
     | Atom(Weak(_)) -> (true, None)
   in
@@ -871,6 +942,10 @@ let rec unify_aux scp ty1 ty2 env =
        if is_var s
        then raise (type_error "Can't unify types" [s; t])
        else bind_occs t s env
+    | (Atom(Ident(f1)), Atom(Ident(f2))) ->
+       if f1 = f2
+       then env
+       else expand_unify scp s t env
     | _ -> raise (type_error "Can't unify types" [s; t])
   end
 and unify_aux_list scp tyl1 tyl2 env =
@@ -888,7 +963,7 @@ and unify_aux_list scp tyl1 tyl2 env =
 and expand_unify scp ty1 ty2 env =
   (* Try to expand and unify type aliases *)
   let expand t =
-    if (is_constr t) || (is_app t)
+    if (is_constr t) || (is_app t) || (is_ident t)
     then try_app (unfold scp) t
     else None
   in
@@ -936,6 +1011,7 @@ let rec mgu t env =
     if is_any_var nt
     then nt
     else mgu nt env
+  | Atom(Ident(_)) -> t
   | Constr(f, l) ->
     Constr(f, List.map (fun x-> mgu x env) l)
   | TApp(l, r) ->
@@ -969,6 +1045,7 @@ let mgu_rename_env (inf, tyenv) name_env typ =
       if is_weak nt
       then (nt, (ctr, nenv))
       else rename_aux (ctr, nenv) nt
+    | Atom(Ident(_)) -> (ty, (ctr, nenv))
     | Constr(f, args) ->
       let (ctr1, nenv1, nargs) =
         rename_aux_list ctr nenv args []
@@ -1021,6 +1098,7 @@ let mgu_rename_simple inf tyenv name_env typ =
        if is_weak nt
        then (nt, ctr, nenv)
        else rename_aux ctr nenv nt
+    | Atom(Ident(_)) -> (ty, ctr, nenv)
     | Constr(f, args) ->
        let (ctr1, nenv1, nargs) =
          rename_aux_list ctr nenv args []
@@ -1083,16 +1161,20 @@ let matching_env scp env t1 t2 =
       if equals s t
       then env
       else bind_occs s t env
+    | (Atom(Ident(_)), Atom(Ident(_))) ->
+      if equals s t
+      then env
+      else raise (type_error "Can't match types" [s; t])
     | (TApp(l1, r1), TApp(l2, r2)) ->
        let env1 = match_aux l1 l2 env in
        match_aux r1 r2 env1
     | _ ->
       if equals s t
       then env
-      else (raise (type_error "Can't match types" [s; t]))
+      else raise (type_error "Can't match types" [s; t])
   in
   try match_aux t1 t2 env (* try to match t1 and t2 *)
-  with x -> raise (type_error "Can't match types" [t1; t2])
+  with x -> add_type_error "Can't match types" [t1; t2] x
 
 let matches_env scp tyenv t1 t2 =
   try matching_env scp tyenv t1 t2
@@ -1202,6 +1284,16 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
       in
       Constr(nid, List.map set_aux args)
     | TApp(l, r) -> TApp(set_aux l, set_aux r)
+    | Atom(Ident(id)) ->
+      let (th, n) = Ident.dest id in
+      let nth =
+        if th = Ident.null_thy
+        then lookup_id n
+        else th
+      in
+      let nid = Ident.mk_long nth n
+      in
+      (mk_ident nid)
     | _ -> t
   in set_aux trm
 
@@ -1223,10 +1315,12 @@ let in_scope memo scp ty =
   let rec in_scp_aux t =
     match t with
     | Atom(Var(_)) -> ()
+    | Atom(Weak(_)) -> ()
+    | Atom(Ident(f)) ->
+       ignore(lookup_id (Ident.thy_of f))
     | Constr(id, args) ->
       ignore(lookup_id (Ident.thy_of id));
       List.iter in_scp_aux args
-    | Atom(Weak(_)) -> ()
     | TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
   in
   try in_scp_aux ty; true
@@ -1251,9 +1345,12 @@ let extract_bindings tyvars src dst =
  *)
 
 (* [stype]: Representation of types for storage on disk *)
-type stype = (string * int) pre_typ
+type satom =
+  | SVar of (string * int) (* Variables *)
+  | SIdent of Ident.t      (* Identifier *)
+type stype = (satom) pre_typ
 
-type to_stype_env = (Basic.gtype_id * (string *int)) list
+type to_stype_env = (Basic.gtype_id * (string * int)) list
 (** Data needed to construct a type storage representation. *)
 
 type from_stype_env = ((string * int) * Basic.gtype_id) list
@@ -1261,10 +1358,12 @@ type from_stype_env = ((string * int) * Basic.gtype_id) list
 
 (* [stypedef]: Type definition/declaration records for disk storage *)
 type stypedef_record =
-  {sname: string;
-   sargs : string list;
-   salias: stype option;
-   scharacteristics: string list}
+  {
+    sname: string;
+    sargs: (string)list;
+    salias: (stype)option;
+    scharacteristics: (string)list
+  }
 
 let rec to_save_aux tyenv ty =
   let (ctr, env) = tyenv
@@ -1279,16 +1378,17 @@ let rec to_save_aux tyenv ty =
       (nid, (ctr1, env1))
     in
     let (nty, tyenv1) =
-      try (Lib.assocp (fun x -> id == x) env, tyenv)
+      try (Lib.assocp (gtype_id_equal id) env, tyenv)
       with Not_found -> make_new()
     in
-    (Atom(nty), tyenv1)
+    (Atom(SVar(nty)), tyenv1)
+  | Atom(Weak(_)) ->
+    raise (type_error "Can't save a weak variable" [ty])
+  | Atom(Ident(f)) -> (Atom(SIdent(f)), tyenv)
   | Constr(f, args) ->
     let (tyenv2, args1) = to_save_list tyenv args []
     in
     (Constr(f, args1), tyenv2)
-  | Atom(Weak(_)) ->
-    raise (type_error "Can't save a weak variable" [ty])
   | TApp(l, r) ->
      let l1, tyenv1 = to_save_aux tyenv l in
      let r1, tyenv2 = to_save_aux tyenv1 r in
@@ -1326,7 +1426,7 @@ let to_save_rec record =
 
 let rec from_save_aux env (ty: stype) =
   match ty with
-  | Atom(id) ->
+  | Atom(SVar(id)) ->
     let make() =
       let nid = Basic.mk_gtype_id (fst id) in
       let env1 = (id, nid)::env
@@ -1341,6 +1441,7 @@ let rec from_save_aux env (ty: stype) =
       with Not_found -> make()
     in
     (Atom(Var(nty)), env1)
+  | Atom(SIdent(f)) -> (Atom(Ident(f)), env)
   | Constr(f, args) ->
     let (env1, args1) = from_save_list env args []
     in
