@@ -476,22 +476,28 @@ let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
 let declare ctxt ?pp trm =
   let (ctxt2, val_name, val_type) =
     let declare_aux () =
-      let v, ty =
+      let (v, ty) =
         match trm with
-          | Basic.Free(i, t) -> (i, t)
-          | Basic.Id(i, t) -> (Ident.name_of i, t)
-          | _ -> raise (Failure "Badly formed declaration")
+        | Basic.Free(i, t) -> (i, t)
+        | Basic.Id(i, t) -> (Ident.name_of i, t)
+        | _ ->
+           raise (Report.error "expected an identifier or a free variable")
       in
       let id = Ident.mk_long (Context.current_name ctxt) v in
       let dcl = Logic.Defns.mk_termdecln (scope_of ctxt) v ty in
       let ctxt1 =
         Context.set_thydb ctxt
-          (Thydb.add_decln dcl [] (theories ctxt))
+                          (Thydb.add_decln dcl [] (theories ctxt))
       in
       (ctxt1, id, ty)
     in
-    try declare_aux ()
-    with _ -> raise (Report.error ("Badly formed declaration"))
+    begin
+      try declare_aux()
+      with err ->
+        raise (Report.add_error
+                 (Term.term_error "Badly formed declaration" [trm])
+                 err)
+    end
   in
   begin
     match pp with
