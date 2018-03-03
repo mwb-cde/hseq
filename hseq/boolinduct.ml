@@ -419,7 +419,7 @@ let induct_thm ctxt ?thm scp tyenv trm =
           in
           Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
         in
-        let (th, id) = Ident.dest (get_type_name ty) in
+        let (th, id) = Ident.dest (Gtypes.get_type_name ty) in
         let thm_name = id^"_induct"
         in
         try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))

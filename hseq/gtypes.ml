@@ -155,6 +155,13 @@ let dest_constr ty =
     | _ -> dest_tapp ty []
   end
 
+let rec get_type_name ty =
+  match ty with
+    | Constr (id, _) -> id
+    | TApp(l, _) -> get_type_name l
+    | Atom(Ident(id)) -> id
+    | _ -> failwith "get_type_name"
+
 let dest_app ty =
   match ty with
   | TApp(x, y) -> (x, y)

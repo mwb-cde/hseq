@@ -57,6 +57,10 @@ val dest_weak: gtype -> Basic.gtype_id
 val get_weak_name: gtype -> string
 
 val dest_constr: gtype -> (Ident.t * gtype list)
+val get_type_name: gtype -> Ident.t
+(** [get_type_name ty]: Get the identifier of the constructor of type
+    [ty].
+*)
 
 val map_atom: (gtype -> gtype) -> gtype -> gtype
 val dest_app: gtype -> (gtype * gtype)

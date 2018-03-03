@@ -78,11 +78,6 @@ val fresh_thm: Scope.t -> Logic.thm -> bool
     the current global scope).
 *)
 
-val get_type_name: Basic.gtype -> Ident.t
-(** [get_type_name ty]: Get the identifier of the constructor of type
-    [ty].
-*)
-
 val dest_qnt_implies:
   Basic.term
   -> (Basic.binders list * Basic.term * Basic.term)

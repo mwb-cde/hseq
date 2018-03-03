@@ -96,11 +96,6 @@ let find_qnt_opt kind pred forms =
 let fresh_thm scp th =
   Logic.is_fresh scp th
 
-let get_type_name ty =
-  match ty with
-    | Basic.Constr (id, _) -> id
-    | _ -> failwith "get_type_name"
-
 (** [dest_qnt_implies term]: Split a term of the form [! a .. b : asm
     => concl] into [( a .. b, asm, concl)].
 *)
