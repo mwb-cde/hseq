@@ -430,7 +430,9 @@ let rec print_type ppstate pr t =
     | Atom(Var(_)) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
     | Atom(Weak(_)) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
     | Atom(Ident(op)) -> print_constr ppstate pr (op, [])
-    | TApp(_) -> print_app ppstate pr (split_app x)
+    | TApp(_) ->
+       let op, args = dest_constr x in
+       print_app ppstate pr (op, args)
     | Constr(op, args) -> print_constr ppstate pr (op, args)
   and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
     begin
@@ -495,12 +497,6 @@ let rec print_type ppstate pr t =
     Printer.print_identifier (pplookup ppstate) f;
     Format.printf "@]"
   and print_app ppstate (assoc, prec) (f, args) =
-    Format.printf "@[<hov 2>";
-    Printer.print_list
-      (print_type ppstate (assoc, prec), Printer.print_space)
-      (f::args);
-    Format.printf "@]"
-  and print_constr ppstate (assoc, prec) (f, args) =
     let pprec = pplookup ppstate f in
     let nfixity = pprec.Printer.fixity in
     let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
@@ -517,6 +513,8 @@ let rec print_type ppstate pr t =
         if Printer.is_suffix nfixity
         then print_suffix (assoc, prec) (nassoc, nprec) (f, args)
         else print_prefix (assoc, prec) (nassoc, nprec) (f, args)
+  and print_constr ppstate (assoc, prec) (f, args) =
+    print_app ppstate (assoc, prec) (f, args)
   in
   print_aux ppstate pr t
 
