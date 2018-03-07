@@ -26,10 +26,9 @@
 (* Base Representation of logic types *)
 
 (** [pre_typ]: The base representation of types. *)
-type ('idtyp) pre_typ =
-  | Var of 'idtyp
-  | Constr of Ident.t * ('idtyp) pre_typ list
-  | WeakVar of 'idtyp
+type ('a) pre_typ =
+  | Atom of 'a
+  | Constr of Ident.t * (('a)pre_typ)list
 
 (** [gtype_id]: The type of gtype identifiers. *)
 type gtype_id = (string)Tag.t
@@ -54,8 +53,16 @@ let gtype_id_compare x y =
 let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
 let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
 
+(** [vartype] Kinds of type variable *)
+type vartype =
+  | Var of gtype_id
+  | Weak of gtype_id
+
 (** [gtype]: The actual representation of types. *)
-type gtype = (gtype_id)pre_typ
+type gtype = (vartype)pre_typ
+
+let mk_vartype x = Atom(Var(x))
+let mk_weakvartype x = Atom(Weak(x))
 
 (** String representation of types *)
 let string_tconst n l =

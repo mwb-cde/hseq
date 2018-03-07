@@ -32,19 +32,19 @@ open Report
 let rec compare_gtype a b =
   let struct_cmp p =
     match p with
-    | (Var(v1), Var(v2)) ->
+    | (Atom(Var(v1)), Atom(Var(v2))) ->
        Basic.gtype_id_compare v1 v2
-    | (Var(_), _) -> Order.LessThan
-    | (Constr(_), Var(_)) -> Order.GreaterThan
+    | (Atom(Var(_)), _) -> Order.LessThan
+    | (Constr(_), Atom(Var(_))) -> Order.GreaterThan
     | (Constr(f1, args1), Constr(f2, args2)) ->
        begin
          match Ident.compare f1 f2 with
          | Order.Equal -> compare_list (args1, args2)
          | x -> x
        end
-    | (Constr(_), WeakVar(_)) -> Order.LessThan
-    | (WeakVar(v1), WeakVar(v2)) -> Basic.gtype_id_compare v1 v2
-    | (WeakVar(v1), _) -> Order.GreaterThan
+    | (Constr(_), Atom(Weak(_))) -> Order.LessThan
+    | (Atom(Weak(v1)), Atom(Weak(v2))) -> Basic.gtype_id_compare v1 v2
+    | (Atom(Weak(v1)), _) -> Order.GreaterThan
   in
   if a == b then Order.Equal
   else struct_cmp (a, b)
@@ -96,7 +96,7 @@ let compare = compare_gtype
 
 let is_var t =
   match t with
-  | Var _ -> true
+  | Atom(Var(_)) -> true
   | _ -> false
 
 let is_constr t =
@@ -106,35 +106,35 @@ let is_constr t =
 
 let is_weak t =
   match t with
-  | WeakVar _ -> true
+  | Atom(Weak(_)) -> true
   | _ -> false
 
 (* Constructors *)
 
-let mk_var n = Var(Basic.mk_gtype_id n)
-let mk_weak n = WeakVar(Basic.mk_gtype_id n)
+let mk_var n = Atom(Var(Basic.mk_gtype_id n))
+let mk_weak n = Atom(Weak(Basic.mk_gtype_id n))
 let mk_constr f l = Constr(f, l)
 
 (* Destructors *)
 
 let dest_var t =
   match t with
-  | Var(n) -> n
+  | Atom(Var(n)) -> n
   | _ -> raise (Failure "Not a variable")
 
 let get_var_name t =
   match t with
-  | Var(n) -> Basic.gtype_id_string n
+  | Atom(Var(n)) -> Basic.gtype_id_string n
   | _ -> raise (Failure "Not a variable")
 
 let dest_weak t =
   match t with
-  | WeakVar(n) -> n
+  | Atom(Weak(n)) -> n
   | _ -> raise (Failure "Not a weak variable")
 
 let get_weak_name t =
   match t with
-  | WeakVar(n) -> Basic.gtype_id_string n
+  | Atom(Weak(n)) -> Basic.gtype_id_string n
   | _ -> raise (Failure "Not a weak variable")
 
 let dest_constr ty =
@@ -150,13 +150,13 @@ let dest_constr ty =
 let is_any_var t = (is_var t) || (is_weak t)
 
 let mk_typevar ctr =
-  let nty = Var(Basic.mk_gtype_id (int_to_name ctr))
+  let nty = Atom(Var(Basic.mk_gtype_id (int_to_name ctr)))
   in
   (ctr + 1, nty)
 
 let mk_plain_typevar ctr =
   let prefix = "type_" in
-  let nty = Var(Basic.mk_gtype_id (prefix^(string_of_int ctr)))
+  let nty = Atom(Var(Basic.mk_gtype_id (prefix^(string_of_int ctr))))
   in
   (ctr + 1, nty)
 
@@ -176,7 +176,7 @@ let normalize_vars typ=
   in
   let rec norm_aux tbl ty =
     match ty with
-    | Var(n) ->
+    | Atom(Var(n)) ->
       let (tbl1, n1) = lookup tbl (get_var_name ty)
       in
       (tbl1, n1)
@@ -257,7 +257,7 @@ let subst_sz s = TypeTree.empty
 let empty_subst () = TypeTree.empty
 let bind t r env =
   match (t, r) with
-  | (WeakVar(_), Var(_)) ->
+  | (Atom(Weak(_)), Atom(Var(_))) ->
      (failwith "Can't bind weak variable to a variable.")
   | _ -> TypeTree.replace env t r
 let delete t env = TypeTree.delete env t
@@ -276,8 +276,8 @@ let rec subst t env =
     (match t with
     | Constr(f, l) ->
       Constr(f, List.map (fun x-> subst x env) l)
-    | Var _ -> t
-    | WeakVar _ -> t)
+    | Atom(Var(_)) -> t
+    | Atom(Weak(_)) -> t)
 
 
 (*
@@ -296,7 +296,7 @@ let rec subst t env =
 *)
 let rec rename_type_vars_env env trm =
   match trm with
-  | Var(x) ->
+  | Atom(Var(x)) ->
     (try (lookup trm env, env)
      with Not_found ->
        let nt = mk_var (Basic.gtype_id_string x)
@@ -307,7 +307,7 @@ let rec rename_type_vars_env env trm =
       rename_vars_list env args []
     in
     (Constr(f, nargs), nenv)
-  | WeakVar(x) ->
+  | Atom(Weak(x)) ->
     (try (lookup trm env, env)
      with Not_found -> (trm, env))
 and
@@ -326,7 +326,7 @@ let rename_type_vars t =
 
 let rec rename_aux ctr env ty =
   match ty with
-  | Var(x) ->
+  | Atom(Var(x)) ->
     begin
       try (lookup ty env, ctr, env)
       with Not_found ->
@@ -340,7 +340,7 @@ let rec rename_aux ctr env ty =
       rename_index_list ctr env args []
     in
     (Constr(f, nargs), ctr1, nenv)
-  | WeakVar(x) ->
+  | Atom(Weak(x)) ->
     begin
       try (lookup ty env, ctr, env)
       with Not_found -> (ty, ctr, env)
@@ -374,8 +374,8 @@ let print_bracket = Printer.print_assoc_bracket
 let rec print_type ppstate pr t =
   let print_aux ppstate pr x =
     match x with
-    | Var(_) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
-    | WeakVar(_) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
+    | Atom(Var(_)) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
+    | Atom(Weak(_)) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
     | Constr(op, args) -> print_defined ppstate pr (op, args)
   in
   print_aux ppstate pr t;
@@ -470,10 +470,10 @@ let add_type_error s t es = raise (add_error (type_error s t) es)
 
 let rec string_gtype x =
   match x with
-  | Var(a) -> "'"^(Basic.gtype_id_string a)
+  | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
   | Constr(f, args) ->
     string_tconst f (List.map string_gtype args)
-  | WeakVar(a) -> "_"^(Basic.gtype_id_string a)
+  | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
 
 (*
  * Support functions to deal with type definitions.
@@ -490,7 +490,7 @@ let rec string_gtype x =
 *)
 let rec rewrite_subst t env =
   match t with
-  | Var(a) ->
+  | Atom(Var(a)) ->
     (try Lib.find (Basic.gtype_id_string a) env
      with _ -> raise (type_error "rewrite_subst: Can't find parameter" [t]))
   | Constr(f, l) -> Constr(f, List.map (fun x-> rewrite_subst x env) l)
@@ -575,11 +575,13 @@ let rec well_defined scp args t =
          List.iter well_def nargs
        with Not_found ->
          raise (type_error "well_defined: " [t]))
-    | Var(v) ->
-      (try ignore(lookup_var (Basic.gtype_id_string v))
-       with Not_found ->
-         raise (type_error "well_defined, unexpected variable." [t]))
-    | WeakVar(v) ->
+    | Atom(Var(v)) ->
+       begin
+         try ignore(lookup_var (Basic.gtype_id_string v))
+         with Not_found ->
+           raise (type_error "well_defined, unexpected variable." [t])
+       end
+    | Atom(Weak(v)) ->
       raise (type_error "well_defined, unexpected weak variable." [t])
   in
   well_def t
@@ -591,25 +593,30 @@ let rec well_defined scp args t =
 let rec quick_well_defined scp cache t =
   match t with
   | Constr(n, args) ->
-    let nargs = List.length args in
-    let rslt = Lib.try_find (Hashtbl.find cache) (n, nargs)
-    in
-    (match rslt with
-    | Some _ -> List.iter (quick_well_defined scp cache) args
-    | None ->
-      (match Lib.try_find (get_typdef scp) n with
-      | Some(recrd) ->
-        if nargs = (List.length recrd.Scope.args)
-        then
-          (Hashtbl.add cache (n, nargs) true;
-           List.iter (quick_well_defined scp cache) args)
-        else raise
-          (Invalid_argument ("quick_well_defined: "^(string_gtype t)))
-      | None ->
-        raise (Invalid_argument
-                 ("quick_well_defined, not found: "
-                  ^(Ident.string_of n)
-                  ^" in "^(string_gtype t)))))
+     let nargs = List.length args in
+     let rslt = Lib.try_find (Hashtbl.find cache) (n, nargs)
+     in
+     begin
+       match rslt with
+       | Some _ -> List.iter (quick_well_defined scp cache) args
+       | None ->
+          begin
+            match Lib.try_find (get_typdef scp) n with
+            | Some(recrd) ->
+               if nargs = (List.length recrd.Scope.args)
+               then
+                 (Hashtbl.add cache (n, nargs) true;
+                  List.iter (quick_well_defined scp cache) args)
+               else
+                 raise
+                   (Invalid_argument ("quick_well_defined: "^(string_gtype t)))
+            | None ->
+               raise (Invalid_argument
+                        ("quick_well_defined, not found: "
+                         ^(Ident.string_of n)
+                         ^" in "^(string_gtype t)))
+          end
+    end
   | _ -> ()
 
 (**
@@ -626,7 +633,7 @@ let check_decl_type scp ty =
          ignore(Scope.defn_of scp n);
          List.iter check_aux nargs
        with Not_found -> raise (type_error "Invalid type" [t]))
-    | WeakVar(v) ->
+    | Atom(Weak(v)) ->
       raise (type_error "Invalid type, unexpected weak variable." [t])
     | _ -> ()
   in
@@ -652,8 +659,8 @@ let lookup_var ty env =
 
 let rec occurs ty1 ty2 =
   match (ty1, ty2) with
-  | (Var(_), Constr(f, l)) ->  List.iter (occurs ty1) l
-  | (WeakVar(_), Constr(f, l)) ->  List.iter (occurs ty1) l
+  | (Atom(Var(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
+  | (Atom(Weak(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
   | (_, _) ->
     if equals ty1 ty2
     then raise (type_error ("occurs: ") [ty1;ty2])
@@ -664,13 +671,13 @@ let rec occurs_env tenv ty1 ty2 =
   and nty2 = lookup_var ty2 tenv
   in
   match (nty1, nty2) with
-  | (Var(_), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
-  | (Var(_), _)->
+  | (Atom(Var(_)), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
+  | (Atom(Var(_)), _)->
     if (equals nty1 nty2)
     then raise (type_error ("occurs: ") [nty1;nty2])
     else ()
-  | (WeakVar(_), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
-  | (WeakVar(_), _)->
+  | (Atom(Weak(_)), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
+  | (Atom(Weak(_)), _)->
     if equals nty1 nty2
     then raise (type_error ("occurs: ") [nty1;nty2])
     else ()
@@ -681,7 +688,7 @@ let bind_occs t1 t2 env =
   if is_any_var t1
   then
     let r1 = lookup_var t1 env
-    and r2 = (lookup_var t2 env)
+    and r2 = lookup_var t2 env
     in
     (occurs_env env r1 r2; bind_var r1 r2 env)
   else
@@ -730,19 +737,19 @@ let rec unify_aux scp ty1 ty2 env =
         with x -> add_type_error "x: Can't unify types" [s; t] x
     end
       (* Variables, bind if not equal, but test for occurence *)
-  | (Var(_), Var(_)) ->
+  | (Atom(Var(_)), Atom(Var(_))) ->
     if equals s t
     then env
     else bind_occs s t env
-  | (Var(_), _) -> bind_occs s t env
-  | (_, Var(_)) -> bind_occs t s env
+  | (Atom(Var(_)), _) -> bind_occs s t env
+  | (_, Atom(Var(_))) -> bind_occs t s env
       (* Weak variables, don't bind to variables *)
-  | (WeakVar(_), WeakVar(_)) ->
+  | (Atom(Weak(_)), Atom(Weak(_))) ->
     if equals s t
     then env
     else bind_occs s t env
-  | (WeakVar(_), _) -> bind_occs s t env
-  | (_, WeakVar(_)) -> bind_occs t s env
+  | (Atom(Weak(_)), _) -> bind_occs s t env
+  | (_, Atom(Weak(_))) -> bind_occs t s env
 and
     unify_aux_list scp tyl1 tyl2 env =
   begin
@@ -778,13 +785,13 @@ let unify scp t1 t2 = unify_env scp t1 t2 (empty_subst())
 *)
 let rec mgu t env =
   match t with
-  | Var(a) ->
+  | Atom(Var(a)) ->
     let nt = lookup_var t env
     in
     if is_var nt
     then nt
     else mgu nt env
-  | WeakVar(a) ->
+  | Atom(Weak(a)) ->
     let nt = lookup_var t env
     in
     if is_any_var nt
@@ -809,13 +816,13 @@ let mgu_rename_env (inf, tyenv) name_env typ =
   in
   let rec rename_aux (ctr, (nenv: substitution)) ty =
     match ty with
-    | Var(_) ->
+    | Atom(Var(_)) ->
       let nt = lookup_var ty tyenv
       in
       if equals ty nt
       then new_name_env (ctr, nenv) nt
       else rename_aux (ctr, nenv) nt
-    | WeakVar(_) ->
+    | Atom(Weak(_)) ->
       let nt = lookup_var ty tyenv
       in
       if is_weak nt
@@ -846,7 +853,7 @@ let mgu_rename_env (inf, tyenv) name_env typ =
    This does the same thing as mgu_rename_env except that it takes
    [inf] as a scalar, rather than a reference, and returns a new value
    for [inf].
-*)
+ *)
 let mgu_rename_simple inf tyenv name_env typ =
   let new_name_env ctr nenv x =
     try (lookup x nenv, ctr, nenv)
@@ -857,31 +864,31 @@ let mgu_rename_simple inf tyenv name_env typ =
   in
   let rec rename_aux ctr (nenv: substitution) ty =
     match ty with
-    | Var(_) ->
-      let nt = lookup_var ty tyenv
-      in
-      if equals ty nt
-      then new_name_env ctr nenv nt
-      else rename_aux ctr nenv nt
-    | WeakVar(_) ->
-      let nt = lookup_var ty tyenv
-      in
-      if is_weak nt
-      then (nt, ctr, nenv)
-      else rename_aux ctr nenv nt
+    | Atom(Var(_)) ->
+       let nt = lookup_var ty tyenv
+       in
+       if equals ty nt
+       then new_name_env ctr nenv nt
+       else rename_aux ctr nenv nt
+    | Atom(Weak(_)) ->
+       let nt = lookup_var ty tyenv
+       in
+       if is_weak nt
+       then (nt, ctr, nenv)
+       else rename_aux ctr nenv nt
     | Constr(f, args) ->
-      let (ctr1, nenv1, nargs) =
-        rename_aux_list ctr nenv args []
-      in
-      (Constr(f, nargs), ctr1, nenv1)
-  and
+       let (ctr1, nenv1, nargs) =
+         rename_aux_list ctr nenv args []
+       in
+       (Constr(f, nargs), ctr1, nenv1)
+    and
       rename_aux_list ctr env lst rslt =
-    match lst with
-    | [] -> (ctr, env, List.rev rslt)
-    | (ty::tyl) ->
-      let (ty1, ctr1, env1) = rename_aux ctr env ty
-      in
-      rename_aux_list ctr1 env1 tyl (ty1::rslt)
+      match lst with
+      | [] -> (ctr, env, List.rev rslt)
+      | (ty::tyl) ->
+         let (ty1, ctr1, env1) = rename_aux ctr env ty
+         in
+         rename_aux_list ctr1 env1 tyl (ty1::rslt)
   in
   rename_aux inf name_env typ
 
@@ -918,12 +925,12 @@ let matching_env scp env t1 t2 =
          with _ ->
            (try (match_aux s (unfold scp t) env)
             with x -> (add_type_error "Can't match types" [s; t] x)))
-    | (Var(_), _) ->
+    | (Atom(Var(_)), _) ->
       if equals s t
       then env
       else bind_occs s t env
-    | (_, Var(_)) -> env
-    | (WeakVar(_), _) ->
+    | (_, Atom(Var(_))) -> env
+    | (Atom(Weak(_)), _) ->
       if equals s t
       then env
       else bind_occs s t env
@@ -983,13 +990,13 @@ let matches_rewrite scp t1 t2 data =
          with _ ->
            (try matches_aux s (unfold scp t) env
             with _ -> raise (type_error "Can't match types: " [s; t])))
-    | (Var(_), _) ->
+    | (Atom(Var(_)), _) ->
       if equals s t
       then env
       else
         (try vbind s t env
          with err -> raise (add_type_error "Can't match types: " [s; t] err))
-    | (WeakVar(_), _) ->
+    | (Atom(Weak(_)), _) ->
       if equals s t
       then env
       else
@@ -1059,11 +1066,11 @@ let in_scope memo scp ty =
   in
   let rec in_scp_aux t =
     match t with
-    | Var(_) -> ()
+    | Atom(Var(_)) -> ()
     | Constr(id, args) ->
       ignore(lookup_id (Ident.thy_of id));
       List.iter in_scp_aux args
-    | WeakVar _ -> ()
+    | Atom(Weak(_)) -> ()
   in
   try in_scp_aux ty; true
   with Not_found -> false
@@ -1106,7 +1113,7 @@ let rec to_save_aux tyenv ty =
   let (ctr, env) = tyenv
   in
   match ty with
-  | Var(id) ->
+  | Atom(Var(id)) ->
     let make_new() =
       let ctr1 = ctr + 1 in
       let nid = (get_var_name ty, ctr1) in
@@ -1118,12 +1125,12 @@ let rec to_save_aux tyenv ty =
       try (Lib.assocp (fun x -> id == x) env, tyenv)
       with Not_found -> make_new()
     in
-    (Var(nty), tyenv1)
+    (Atom(nty), tyenv1)
   | Constr(f, args) ->
     let (tyenv2, args1) = to_save_list tyenv args []
     in
     (Constr(f, args1), tyenv2)
-  | WeakVar _ ->
+  | Atom(Weak(_)) ->
     raise (type_error "Can't save a weak variable" [ty])
 and to_save_list tyenv lst rslt =
   match lst with
@@ -1158,7 +1165,7 @@ let to_save_rec record =
 
 let rec from_save_aux env (ty: stype) =
   match ty with
-  | Var(id) ->
+  | Atom(id) ->
     let make() =
       let nid = Basic.mk_gtype_id (fst id) in
       let env1 = (id, nid)::env
@@ -1172,12 +1179,11 @@ let rec from_save_aux env (ty: stype) =
         (nid, env)
       with Not_found -> make()
     in
-    (Var(nty), env1)
+    (Atom(Var(nty)), env1)
   | Constr(f, args) ->
     let (env1, args1) = from_save_list env args []
     in
     (Constr(f, args1), env1)
-  | WeakVar _ -> raise (type_error "Can't load a weak variable" [])
 and from_save_list env lst rslt =
   match lst with
   | [] -> (env, List.rev rslt)

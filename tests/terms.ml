@@ -115,10 +115,10 @@ let test_basics() =
   EXPECT_EQL(Basic.gtype_id_compare ba b, Order.GreaterThan);
   EXPECT_EQL(Basic.gtype_id_compare bb ba, Order.GreaterThan);
 
-  let (a_ty: Basic.gtype) = Basic.Var(a)
-  and a1_ty = Basic.Var(a_1)
-  and b_ty = Basic.Var(b)
-  and b1_ty = Basic.Var(b_1)
+  let (a_ty: Basic.gtype) = Basic.mk_vartype a
+  and a1_ty = Basic.mk_vartype a_1
+  and b_ty = Basic.mk_vartype b
+  and b1_ty = Basic.mk_vartype b_1
   in
   let a_bnd = Basic.mk_binding Basic.All "a" a_ty
   and a1_bnd = Basic.mk_binding Basic.All "a" a1_ty

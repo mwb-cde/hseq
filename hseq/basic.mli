@@ -30,22 +30,6 @@ type typ_const = Ident.t
 *)
 *)
 
-(** The base representation of types. *)
-type ('idtyp) pre_typ =
-  | Var of 'idtyp
-  (** Type variables. *)
-  | Constr of Ident.t * ('idtyp) pre_typ list
-  (** User defined type constructors. *)
-  | WeakVar of 'idtyp
-(**
-   Weak type variables. These bind to anything except a
-   variable and aren't (normally) renamed. They are used in a sequent
-   calculus when a variable type 'x can occur in more than one
-   sequent. If 'x is bound in one sequent, then it must have that
-   binding in every sequent in which it occurs. (Like weak types in
-   ML).
-*)
-
 type gtype_id
 (** Type identifers. *)
 
@@ -69,8 +53,31 @@ val gtype_id_compare: gtype_id -> gtype_id -> Order.t
     - [gtype_id_lessthan x y = not(gtype_id_greaterthan x y)]
 *)
 
-type gtype = (gtype_id)pre_typ
+(** The base representation of types. *)
+type ('a) pre_typ =
+  | Atom of 'a
+  (** Atomic variables. *)
+  | Constr of Ident.t * ('a) pre_typ list
+
+type vartype =
+  | Var of gtype_id
+  | Weak of gtype_id
+(** [vartype] Kinds of type variable
+
+   [Var(v)] is  type variable. Can be bind (in a type environment) to any other
+   type.
+
+   [Weak(v)] is a weak type variable. Can bind to anything except a non-weak
+   variable. They are used in a sequent calculus when a variable type 'x can
+   occur in more than one sequent. If 'x is bound in one sequent, then it must
+   have that binding in every sequent in which it occurs.
+ *)
+
+type gtype = (vartype)pre_typ
 (** The actual representation of types. *)
+
+val mk_vartype: gtype_id -> gtype
+val mk_weakvartype: gtype_id -> gtype
 
 (** String representation of types. *)
 val string_tconst: Ident.t -> string list -> string
