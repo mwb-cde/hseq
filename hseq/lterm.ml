@@ -47,36 +47,32 @@ let num_ty_id = Ident.mk_long nums_thy "num"
 let ind_ty = Gtypes.mk_constr ind_ty_id []
 let mk_ind_ty () = ind_ty
 let is_ind_ty t =
-  match t with
-    | Constr(x, []) -> (x = ind_ty_id)
-    | _ -> false
+  let (f, args) = Gtypes.dest_constr t in
+  (f = ind_ty_id) && (args = [])
 
 (** The type nums.num *)
 
 let num_ty = Gtypes.mk_constr num_ty_id []
 let mk_num_ty () = num_ty
 let is_num_ty t =
-  match t with
-    | Constr(x, []) -> (x = num_ty_id)
-    | _ -> false
+  let (f, args) = Gtypes.dest_constr t in
+  (f = num_ty_id) && (args = [])
 
 (*** Type bool ***)
 
 let bool_ty = Gtypes.mk_constr bool_ty_id []
 let mk_bool_ty () = bool_ty
 let is_bool_ty t =
-  match t with
-    | Constr(x, []) -> (x = bool_ty_id)
-    | _ -> false
+  let (f, args) = Gtypes.dest_constr t in
+  (f = bool_ty_id) && (args = [])
 
 (*** Type of functions ***)
 
 let mk_fun_ty l r = Gtypes.mk_constr fun_ty_id [l; r]
 
 let is_fun_ty t =
-  match t with
-    | Constr (x, _) -> x = fun_ty_id
-    | _ -> false
+  let (f, _) = Gtypes.dest_constr t in
+  f = fun_ty_id
 
 let rec mk_fun_ty_from_list l r =
   match l with
@@ -87,8 +83,9 @@ let rec mk_fun_ty_from_list l r =
 let dest_fun_ty t =
   if (is_fun_ty t)
   then
-    match t with
-      | Constr(_, [a1; a2]) -> (a1, a2)
+    let (_, args) = Gtypes.dest_constr t in
+    match args with
+      | [a1; a2] -> (a1, a2)
       | _ -> raise (Failure "Not function type")
   else
     raise (Failure "Not function type")
