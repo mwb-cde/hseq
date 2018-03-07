@@ -102,6 +102,9 @@ val map_atomtype: (gtype -> gtype) -> gtype -> gtype
 (* [map_atomtype f ty] Apply [f] to each [Atom] in [ty] returning the resulting
    type. *)
 
+val iter_atomtype: (gtype -> unit) -> gtype -> unit
+(* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
+
 val fold_atomtype: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
 (* [fold_atomtype f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)

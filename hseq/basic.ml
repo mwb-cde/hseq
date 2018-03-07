@@ -93,6 +93,20 @@ let rec map_atomtype f ty =
   | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
   | Constr(x, args) -> Constr(x, List.map (map_atomtype f) args)
 
+(* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
+let rec iter_atomtype f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | TApp(l, r) ->
+     begin
+       iter_atomtype f l;
+       iter_atomtype f r
+     end
+  | Constr(x, args) ->
+     begin
+       List.iter (iter_atomtype f) args
+     end
+
 (* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
 let fold_atomtype f c ty =
