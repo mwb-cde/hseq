@@ -1,6 +1,6 @@
 (*----
   Name: lib.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@googlemail.com>
 
   This file is part of HSeq
