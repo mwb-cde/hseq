@@ -160,21 +160,6 @@ let mk_plain_typevar ctr =
   in
   (ctr + 1, nty)
 
-let get_var_names ty =
-  let seen = Lib.empty_env() in
-  let rec get_aux names typ =
-    match typ with
-    | Var n ->
-      let n_str = Basic.gtype_id_string n
-      in
-      if Lib.member n_str seen
-      then names
-      else (ignore(Lib.bind n_str true seen); (n_str::names))
-    | Constr(_, args) -> List.fold_left get_aux names args
-    | _ -> names
-  in
-  get_aux [] ty
-
 (**
    [normalize_vars ty]: Make all type variables in [ty] with the same
    string name be the same variable.

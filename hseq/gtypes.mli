@@ -61,9 +61,6 @@ val dest_constr: gtype -> (Ident.t * gtype list)
 val is_any_var: gtype -> bool
 (** [is_any_var t]: true if [t] is a variable or a weak variable. *)
 
-val get_var_names: gtype -> string list
-(** Get names of variables occuring in type. *)
-
 val normalize_vars: gtype -> gtype
 (** Make all type variables with the same string name be the same
     variable. Useful when constructing types from existing types.
@@ -81,11 +78,6 @@ val mk_plain_typevar: int -> (int * gtype)
     from [n] and return [(n + 1, t')]. Different values of [n] make
     different names. Names are constructed as numbers prefixed by a
     string.
-*)
-
-val get_var_names: gtype -> string list
-(** [get_var_names ty]: Get the names of variables in [ty]. Ignores
-    weak variables.
 *)
 
 (** {7 Unnamed type variables} *)
