@@ -83,6 +83,10 @@ val mk_vartype: gtype_id -> gtype
 val mk_weakvartype: gtype_id -> gtype
 val mk_identtype: Ident.t -> gtype
 
+val map_atomtype: (gtype -> gtype) -> gtype -> gtype
+(* [map_atomtype f ty] Apply [f] to each [Atom] in [ty] returning the resulting
+   type. *)
+
 (** String representation of types. *)
 val string_tconst: Ident.t -> string list -> string
 

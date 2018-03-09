@@ -54,6 +54,10 @@ val get_weak_name: gtype -> string
 
 val dest_constr: gtype -> (Ident.t * gtype list)
 
+val map_atom: (gtype -> gtype) -> gtype -> gtype
+(* [map_atom f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
+   type. *)
+
 (** {6 Specialised Manipulators} *)
 
 (** {7 Variable types} *)

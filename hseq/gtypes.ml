@@ -142,6 +142,10 @@ let dest_constr ty =
   | Constr(f, args) -> (f, args)
   | _ -> raise (Failure "Not a constructed type")
 
+(* [map f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
+   type. *)
+let map_atom = Basic.map_atomtype
+
 (*
  * Specialised Manipulators
  *)

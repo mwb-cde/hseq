@@ -66,6 +66,13 @@ let mk_vartype x = Atom(Var(x))
 let mk_weakvartype x = Atom(Weak(x))
 let mk_identtype x = Atom(Ident(x))
 
+(* [map_atomtype f ty] Apply [f] to each [Atom(x)] in [ty] returning the
+   resulting type. *)
+let rec map_atomtype f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | Constr(x, args) -> Constr(x, List.map (map_atomtype f) args)
+
 (** String representation of types *)
 let string_tconst n l =
   (Ident.string_of n)
