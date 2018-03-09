@@ -28,6 +28,7 @@
 (** [pre_typ]: The base representation of types. *)
 type ('a) pre_typ =
   | Atom of 'a
+  | TApp of (('a) pre_typ * ('a) pre_typ)
   | Constr of Ident.t * (('a)pre_typ)list
 
 (** [gtype_id]: The type of gtype identifiers. *)
@@ -53,24 +54,43 @@ let gtype_id_compare x y =
 let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
 let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
 
-(** [vartype] Kinds of type variable *)
-type vartype =
+(** [atomtype] Kinds of atomic type *)
+type atomtype =
   | Var of gtype_id
   | Weak of gtype_id
   | Ident of Ident.t
 
 (** [gtype]: The actual representation of types. *)
-type gtype = (vartype)pre_typ
+type gtype = (atomtype)pre_typ
 
 let mk_vartype x = Atom(Var(x))
 let mk_weakvartype x = Atom(Weak(x))
 let mk_identtype x = Atom(Ident(x))
+let mk_apptype x y = TApp(x, y)
+
+(**
+   [flatten_apptype ty]: flatten an application in [ty] to a list of
+   types.
+*)
+let rec flatten_apptype ty =
+  let rec flat_aux t rslt =
+    match t with
+      | TApp(l, r) -> flat_aux l (r::rslt)
+      | _ -> t::rslt
+  in
+  flat_aux ty []
+
+let split_apptype ty =
+  match flatten_apptype ty with
+  | x::xs -> (x, xs)
+  | _ -> raise (Invalid_argument "split_apptype")
 
 (* [map_atomtype f ty] Apply [f] to each [Atom(x)] in [ty] returning the
    resulting type. *)
 let rec map_atomtype f ty =
   match ty with
   | Atom(_) -> f ty
+  | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
   | Constr(x, args) -> Constr(x, List.map (map_atomtype f) args)
 
 (** String representation of types *)

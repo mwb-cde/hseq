@@ -1,6 +1,6 @@
 (*----
   Name: types.ml
-  Copyright Matthew Wahab 2017
+  Copyright Matthew Wahab 2017-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -42,6 +42,19 @@ MAKE_EXPECT_BINOP((TestSupport.make_pred_test Gtypes.equals), " = ", A, B)
 MAKE_EXPECT_BINOP\
 ((TestSupport.make_pred_test (fun x y -> not (Gtypes.equals x y))), \
 " <> ", A, B)
+
+(* Form the list of pairs P such that forall a, b in L, (a, b) in P *)
+let list_prod lst =
+  let rec inner x l rslt =
+    match l with
+    | [] -> rslt
+    | (y::ys) -> inner x ys ((x, y)::rslt)
+  and prod l rslt =
+    match l with
+    | [] -> rslt
+    | (x::xs) -> prod xs (inner x lst rslt)
+  in
+  prod lst []
 
 let test_types() =
   TESTSUITE_BEGIN("Types");
@@ -98,6 +111,29 @@ let test_types() =
 
   EXPECT_TYPE_NEQ(g2_cty, g1a_cty);
 
+  let h1_app = Gtypes.mk_app a_ty a_wty
+  and h2_app = Gtypes.mk_app g1_cty b_ty
+  and h3_app = Gtypes.mk_app c_ty g2_cty
+  in
+  List.iter
+    (fun x -> EXPECT_TYPE_EQL(x, x))
+    [h1_app; h2_app; h3_app];
+
+  List.iter2
+    (fun x y -> EXPECT_TYPE_NEQ(x, y))
+    [h1_app; h2_app; h3_app] [h2_app; h3_app; h1_app];
+
+  let full_list =
+    [a_ty; a_wty; a1_ty; a1_wty; b_ty; b_wty; c_ty; c_wty;
+     f1_cty; f1a_cty; f2_cty; g1_cty; g1a_cty; g2_cty;
+     h1_app; h2_app; h3_app]
+  in
+  let full_prod_list = list_prod full_list
+  in
+  List.iter
+    (fun (x, y) -> EXPECT_EQL((Gtypes.equals x y), (Gtypes.equals y x)))
+    full_prod_list;
+
   let types_1 = [a_ty; b_ty; f1_cty; f1a_cty]
   and types_2 = [b_wty; f2_cty; g1_cty; a1_ty]
   in
@@ -106,7 +142,6 @@ let test_types() =
                     (Gtypes.empty_subst())
                     types_1 types_2
   in
-
   List.iter2
     (fun x y -> EXPECT_TYPE_EQL(Gtypes.lookup x sb_1, y))
     [a_ty; b_ty; f1_cty; f1a_cty]

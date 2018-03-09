@@ -57,15 +57,17 @@ val gtype_id_compare: gtype_id -> gtype_id -> Order.t
 type ('a) pre_typ =
   | Atom of 'a
   (** Atomic variables. *)
+  | TApp of (('a) pre_typ * ('a) pre_typ)
+  (** Applications *)
   | Constr of Ident.t * ('a) pre_typ list
 
-type vartype =
+type atomtype =
   | Var of gtype_id
   | Weak of gtype_id
   | Ident of Ident.t
 (** [atomtype] Kinds of atomic type
 
-   [Var(v)] is  type variable. Can be bind (in a type environment) to any other
+   [Var(v)] is type variable. Can be bound (in a type environment) to any other
    type.
 
    [Weak(v)] is a weak type variable. Can bind to anything except a non-weak
@@ -76,12 +78,25 @@ type vartype =
    [Ident(i)] is the name of a type constructor.
  *)
 
-type gtype = (vartype)pre_typ
+type gtype = (atomtype)pre_typ
 (** The actual representation of types. *)
 
 val mk_vartype: gtype_id -> gtype
 val mk_weakvartype: gtype_id -> gtype
 val mk_identtype: Ident.t -> gtype
+val mk_apptype: gtype -> gtype -> gtype
+
+val flatten_apptype: gtype -> (gtype)list
+(**
+   [flatten_apptype ty]: flatten an application in [ty] to a list of
+   types.  [flatten_apptype (((f a1) a2) a3)] is [[f; a1; a2; a3]] and
+   [flatten_apptype (((f a1) (g a2)) a3)] is [[f; a1; (g a2); a3]]
+
+   If [ty] is not an applictaion then returns [[ty]].
+*)
+
+val split_apptype: gtype -> (gtype *(gtype)list)
+(** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
 val map_atomtype: (gtype -> gtype) -> gtype -> gtype
 (* [map_atomtype f ty] Apply [f] to each [Atom] in [ty] returning the resulting

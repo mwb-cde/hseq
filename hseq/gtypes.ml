@@ -30,21 +30,36 @@ open Report
 (* Ordering. *)
 
 let rec compare_gtype a b =
-  let struct_cmp p =
+  let rec atom_cmp x y =
+    match (x, y) with
+    | (Var(v1), Var(v2)) -> Basic.gtype_id_compare v1 v2
+    | (Var(_), _) -> Order.LessThan
+    | (_, Var(_)) -> Order.GreaterThan
+    | (Weak(v1), Weak(v2)) -> Basic.gtype_id_compare v1 v2
+    | (Weak(_), _) -> Order.LessThan
+    | (_, Weak(_)) -> Order.GreaterThan
+  and struct_cmp p =
     match p with
-    | (Atom(Var(v1)), Atom(Var(v2))) ->
-       Basic.gtype_id_compare v1 v2
-    | (Atom(Var(_)), _) -> Order.LessThan
-    | (Constr(_), Atom(Var(_))) -> Order.GreaterThan
+    | (Atom(x), Atom(y)) -> atom_cmp x y
+    | (Atom(_), TApp(_)) -> Order.LessThan
+    | (Atom(_), Constr(_)) -> Order.LessThan
+    | (TApp(_), Atom(_)) -> Order.GreaterThan
+    | (TApp(a, b), TApp(c, d)) ->
+       begin
+         match (compare_gtype a c) with
+         | Order.Equal -> compare_gtype b d
+         | rslt -> rslt
+       end
+    | (TApp(_), Constr(_)) -> Order.LessThan
+    | (TApp(_), _) -> Order.GreaterThan
+    | (Constr(_), Atom(_)) -> Order.GreaterThan
+    | (Constr(_), TApp(_)) -> Order.GreaterThan
     | (Constr(f1, args1), Constr(f2, args2)) ->
        begin
          match Ident.compare f1 f2 with
          | Order.Equal -> compare_list (args1, args2)
-         | x -> x
+         | rslt -> rslt
        end
-    | (Constr(_), Atom(Weak(_))) -> Order.LessThan
-    | (Atom(Weak(v1)), Atom(Weak(v2))) -> Basic.gtype_id_compare v1 v2
-    | (Atom(Weak(v1)), _) -> Order.GreaterThan
   in
   if a == b then Order.Equal
   else struct_cmp (a, b)
@@ -61,35 +76,6 @@ and compare_list ps =
 
 let equals a b = (compare_gtype a b) = Order.Equal
 let lessthan a b = (compare_gtype a b) = Order.LessThan
-let compare = compare_gtype
-
-(*
-let rec equals a b =
-  let struct_equals p =
-    match p with
-    | (Var(v1), Var(v2)) -> gtype_id_equal v1 v2
-    | (Constr(f1, args1), Constr(f2, args2)) ->
-       let test_args () =
-         List.iter2
-           (fun a b -> if equals a b then () else raise (Failure ""))
-           args1 args2
-       in
-       begin
-         (f1 = f2) && (try (test_args(); true) with _ -> false)
-       end
-    | (WeakVar(v1), WeakVar(v2)) -> gtype_id_equal v1 v2
-    | (x, y) -> x = y
-  in
-  (a == b) || (struct_equals (a, b))
-
-let lessthan x y = (Pervasives.compare x y) < 0
-
-let compare_gtype x y =
-  if equals x y then Order.Equal
-  else if lessthan x y then Order.LessThan
-  else Order.GreaterThan
-       *)
-
 let compare = compare_gtype
 
 (* Recognisers *)
@@ -114,6 +100,7 @@ let is_weak t =
 let mk_var n = Atom(Var(Basic.mk_gtype_id n))
 let mk_weak n = Atom(Weak(Basic.mk_gtype_id n))
 let mk_constr f l = Constr(f, l)
+let mk_app x y = TApp(x, y)
 
 (* Destructors *)
 
@@ -138,9 +125,25 @@ let get_weak_name t =
   | _ -> raise (Failure "Not a weak variable")
 
 let dest_constr ty =
+  let rec dest_tapp t args =
+    match t with
+    | Atom(Ident(f)) -> (f, args)
+    | TApp(l, r) -> dest_tapp l (r::args)
+    | _ -> raise (Failure "Invalid type constructor")
+  in
+  begin
+    match ty with
+    | Constr(f, args) -> (f, args)
+    | _ -> dest_tapp ty []
+  end
+
+let dest_app ty =
   match ty with
-  | Constr(f, args) -> (f, args)
-  | _ -> raise (Failure "Not a constructed type")
+  | TApp(x, y) -> (x, y)
+  | _ -> raise (Failure "Gtypes.dest_app: invalid type")
+
+let flatten_app = Basic.flatten_apptype
+let split_app = Basic.split_apptype
 
 (* [map f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
    type. *)
@@ -188,6 +191,10 @@ let normalize_vars typ=
       let (tbl1, args1) = norm_list tbl args []
       in
       (tbl1, Constr(n, args1))
+    | TApp(l, r) ->
+       let (tbl1, l1) = norm_aux tbl l in
+       let (tbl2, r1) = norm_aux tbl1 r in
+       (tbl2, TApp(l1, r1))
     | _ -> (tbl, ty)
   and norm_list tbl tys result =
     match tys with
@@ -277,12 +284,17 @@ let bind_var t r env =
 let rec subst t env =
   try lookup t env
   with Not_found ->
-    (match t with
-    | Constr(f, l) ->
-      Constr(f, List.map (fun x-> subst x env) l)
-    | Atom(Var(_)) -> t
-    | Atom(Weak(_)) -> t)
-
+    begin
+      match t with
+      | Atom(_) -> t
+      | TApp(x, y) ->
+         let x1 = subst x env
+         and y1 = subst y env
+         in
+         TApp(x1, y1)
+      | Constr(f, l) ->
+         Constr(f, List.map (fun x-> subst x env) l)
+    end
 
 (*
  * Operations which need substitution.
@@ -301,64 +313,77 @@ let rec subst t env =
 let rec rename_type_vars_env env trm =
   match trm with
   | Atom(Var(x)) ->
-    (try (lookup trm env, env)
-     with Not_found ->
-       let nt = mk_var (Basic.gtype_id_string x)
-       in
-       (nt, bind trm nt env))
-  | Constr(f, args) ->
-    let (nenv, (nargs: Basic.gtype list)) =
-      rename_vars_list env args []
-    in
-    (Constr(f, nargs), nenv)
+     begin
+       try (lookup trm env, env)
+       with Not_found ->
+         let nt = mk_var (Basic.gtype_id_string x)
+         in
+         (nt, bind trm nt env)
+     end
   | Atom(Weak(x)) ->
-    (try (lookup trm env, env)
-     with Not_found -> (trm, env))
-and
+     begin
+       try (lookup trm env, env)
+       with Not_found -> (trm, env)
+     end
+  | TApp(x, y) ->
+     let x1, env1 = rename_type_vars_env env x in
+     let y1, env2 = rename_type_vars_env env1 y
+     in
+     (TApp(x1, y1), env2)
+  | Constr(f, args) ->
+     let (nenv, (nargs: Basic.gtype list)) =
+       rename_vars_list env args []
+     in
+     (Constr(f, nargs), nenv)
+  and
     rename_vars_list env lst rslt =
-  match lst with
-  | [] -> (env, List.rev rslt)
-  | (ty::tyl) ->
-    let (ty1, env1) = rename_type_vars_env env ty
-    in
-    rename_vars_list env1 tyl (ty1::rslt)
+    match lst with
+    | [] -> (env, List.rev rslt)
+    | (ty::tyl) ->
+       let (ty1, env1) = rename_type_vars_env env ty
+       in
+       rename_vars_list env1 tyl (ty1::rslt)
 
 let rename_type_vars t =
   let (nty, _) = rename_type_vars_env (empty_subst()) t
   in
   nty
 
-let rec rename_aux ctr env ty =
-  match ty with
-  | Atom(Var(x)) ->
-    begin
-      try (lookup ty env, ctr, env)
-      with Not_found ->
-        let (ctr1, nt) = mk_typevar ctr in
-        let nenv = bind ty nt env
-        in
-        (nt, ctr1, nenv)
-    end
-  | Constr(f, args) ->
-    let (ctr1, nenv, nargs) =
-      rename_index_list ctr env args []
-    in
-    (Constr(f, nargs), ctr1, nenv)
-  | Atom(Weak(x)) ->
-    begin
-      try (lookup ty env, ctr, env)
-      with Not_found -> (ty, ctr, env)
-    end
-and
-    rename_index_list ctr env lst rslt =
-  match lst with
-  | [] -> (ctr, env, List.rev rslt)
-  | (ty::tyl) ->
-    let (ty1, ctr1, env1) = rename_aux ctr env ty
-    in
-    rename_index_list ctr1 env1 tyl (ty1::rslt)
-and
-    rename_index idx env top_type =
+let rename_index idx env top_type =
+  let rec rename_aux ctr env ty =
+    match ty with
+    | Atom(Var(x)) ->
+       begin
+         try (lookup ty env, ctr, env)
+         with Not_found ->
+           let (ctr1, nt) = mk_typevar ctr in
+           let nenv = bind ty nt env
+           in
+           (nt, ctr1, nenv)
+       end
+    | Atom(Weak(x)) ->
+       begin
+         try (lookup ty env, ctr, env)
+         with Not_found -> (ty, ctr, env)
+       end
+    | TApp(x, y) ->
+       let x1, ctr1, env1 = rename_aux ctr env x in
+       let y1, ctr2, env2 = rename_aux ctr1 env1 y
+       in
+       (TApp(x1, y1), ctr2, env2)
+    | Constr(f, args) ->
+       let (ctr1, nenv, nargs) =
+         rename_index_list ctr env args []
+       in
+       (Constr(f, nargs), ctr1, nenv)
+    and rename_index_list ctr env lst rslt =
+      match lst with
+      | [] -> (ctr, env, List.rev rslt)
+      | (ty::tyl) ->
+         let (ty1, ctr1, env1) = rename_aux ctr env ty
+         in
+         rename_index_list ctr1 env1 tyl (ty1::rslt)
+  in
   rename_aux idx env top_type
 
 (*
@@ -376,83 +401,99 @@ let pplookup ppstate id =
 let print_bracket = Printer.print_assoc_bracket
 
 let rec print_type ppstate pr t =
-  let print_aux ppstate pr x =
+  let rec print_aux ppstate pr x =
     match x with
     | Atom(Var(_)) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
     | Atom(Weak(_)) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
-    | Constr(op, args) -> print_defined ppstate pr (op, args)
-  in
-  print_aux ppstate pr t;
-and print_defined ppstate (assoc, prec) (f, args) =
-  let pprec = pplookup ppstate f in
-  let nfixity = pprec.Printer.fixity in
-  let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
-  in
-  try
-    let printer = Printer.get_printer (ppstate.Printer.types) f
-    in
-    printer ppstate (assoc, prec) (f, args)
-  with Not_found ->
-    if(Printer.is_infix nfixity)
-    then
-      (match args with
-      | [] -> ()
-      | (lf::lr::rs) ->
-        Format.printf "@[<hov 2>";
-        print_bracket (assoc, prec) (nassoc, nprec)
-          "(";
-        print_type ppstate (Printer.infixl, nprec) lf;
-        Printer.print_space();
-        Printer.print_identifier (pplookup ppstate) f;
-        Printer.print_space();
-        print_type ppstate (Printer.infixr, nprec) lr;
-        Printer.print_list
-          (print_type ppstate (nassoc, nprec),
-           Printer.print_space)
-          rs;
-        print_bracket (assoc, prec) (nassoc, nprec) ")";
-        Format.printf "@]"
-      | (lf::rs) ->
-        Format.printf "@[<hov 2>";
-        print_bracket (assoc, prec) (nassoc, nprec)
-          "(";
-        print_type ppstate (Printer.infixl, nprec) lf;
-        Printer.print_space();
-        Printer.print_identifier (pplookup ppstate) f;
-        Printer.print_space();
-        Printer.print_list
-          (print_type ppstate (nassoc, nprec),
-           Printer.print_space)
-          rs;
-        print_bracket (assoc, prec) (nassoc, nprec) ")";
-        Format.printf "@]")
-    else
-      if (Printer.is_suffix nfixity)
-      then
-        (Format.printf "@[<hov 2>";
-         print_bracket (assoc, prec) (nassoc, nprec) "(";
-         Printer.print_suffix
-           ((fun pr -> Printer.print_identifier (pplookup ppstate)),
-            (fun pr l->
-              match l with
-              | [] -> ()
-              | _ ->
-                Printer.print_sep_list
-                  (print_type ppstate (assoc, pr), ",") l))
-           nprec (f, args);
-         print_bracket (assoc, prec) (nassoc, nprec) ")";
-         Format.printf "@]")
-      else
-        (Format.printf "@[<hov 2>";
-         (match args with
-         | [] -> ()
-         | _ ->
-           (Printer.print_string "(";
-            Printer.print_sep_list
-              (print_type ppstate (assoc, prec), ",") args;
-            Format.printf ")@,"));
+    | TApp(_) -> print_app ppstate pr (split_app x)
+    | Constr(op, args) -> print_constr ppstate pr (op, args)
+  and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
+    begin
+      match args with
+      | [] ->
+         (* Print '(OP)' *)
+         Format.printf "@[";
          Printer.print_identifier (pplookup ppstate) f;
-         Format.printf "@]")
+         Format.printf "@]"
+      | (lf::lr::rs) ->
+         (* Print '(<arg> OP <arg>) <rest>' *)
+         Format.printf "@[<hov 2>";
+         print_bracket (assoc, prec) (nassoc, nprec) "(";
+         print_aux ppstate (Printer.infixl, nprec) lf;
+         Printer.print_space();
+         Printer.print_identifier (pplookup ppstate) f;
+         Printer.print_space();
+         print_aux ppstate (Printer.infixr, nprec) lr;
+         Printer.print_list
+           (print_type ppstate (nassoc, nprec),
+            Printer.print_space)
+           rs;
+         print_bracket (assoc, prec) (nassoc, nprec) ")";
+         Format.printf "@]"
+      | (lf::rs) ->
+         (* Print '(<arg> OP) <rest>' *)
+         Format.printf "@[<hov 2>";
+         print_bracket (assoc, prec) (nassoc, nprec) "(";
+         print_type ppstate (Printer.infixl, nprec) lf;
+         Printer.print_space();
+         Printer.print_identifier (pplookup ppstate) f;
+         Printer.print_list
+           (print_type ppstate (nassoc, nprec),
+            Printer.print_space)
+           rs;
+         print_bracket (assoc, prec) (nassoc, nprec) ")";
+         Format.printf "@]"
+    end
+  and print_suffix (assoc, prec) (nassoc, nprec) (f, args) =
+    begin
+      Format.printf "@[<hov 2>";
+      print_bracket (assoc, prec) (nassoc, nprec) "(";
+      Printer.print_suffix
+        ((fun pr -> Printer.print_identifier (pplookup ppstate)),
+         (fun pr l ->
+           if l = [] then ()
+           else
+             Printer.print_sep_list (print_type ppstate (assoc, pr), ",") l))
+        nprec (f, args);
+      print_bracket (assoc, prec) (nassoc, nprec) ")";
+      Format.printf "@]"
+    end
+  and print_prefix (assoc, prec) (nassoc, nprec) (f, args) =
+    Format.printf "@[<hov 2>";
+    if args = [] then ()
+    else
+      begin
+        Printer.print_string "(";
+        Printer.print_sep_list (print_type ppstate (assoc, prec), ",") args;
+        Format.printf ")@,"
+      end;
+    Printer.print_identifier (pplookup ppstate) f;
+    Format.printf "@]"
+  and print_app ppstate (assoc, prec) (f, args) =
+    Format.printf "@[<hov 2>";
+    Printer.print_list
+      (print_type ppstate (assoc, prec), Printer.print_space)
+      (f::args);
+    Format.printf "@]"
+  and print_constr ppstate (assoc, prec) (f, args) =
+    let pprec = pplookup ppstate f in
+    let nfixity = pprec.Printer.fixity in
+    let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
+    in
+    let some_printer =
+      try_find (Printer.get_printer (ppstate.Printer.types)) f
+    in
+    if some_printer <> None
+    then (from_some some_printer) ppstate (assoc, prec) (f, args)
+    else
+      if Printer.is_infix nfixity
+      then print_infix (assoc, prec) (nassoc, nprec) (f, args)
+      else
+        if Printer.is_suffix nfixity
+        then print_suffix (assoc, prec) (nassoc, nprec) (f, args)
+        else print_prefix (assoc, prec) (nassoc, nprec) (f, args)
+  in
+  print_aux ppstate pr t
 
 let print ppinfo x =
   print_type ppinfo
@@ -461,7 +502,6 @@ let print ppinfo x =
 (*
  * Error handling
  *)
-
 
 let print_type_error s ts fmt pinfo =
     Format.fprintf fmt "@[%s@ " s;
@@ -475,9 +515,11 @@ let add_type_error s t es = raise (add_error (type_error s t) es)
 let rec string_gtype x =
   match x with
   | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
+  | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
+  | TApp(l, r) ->
+     (string_gtype l) ^ " " ^ (string_gtype r)
   | Constr(f, args) ->
     string_tconst f (List.map string_gtype args)
-  | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
 
 (*
  * Support functions to deal with type definitions.
@@ -492,13 +534,17 @@ let rec string_gtype x =
    [rewrite_defn args params t]: Rewrite [t], substituting arguments
    [args] for the parameters [params] of the type definition.
 *)
-let rec rewrite_subst t env =
-  match t with
-  | Atom(Var(a)) ->
-    (try Lib.find (Basic.gtype_id_string a) env
-     with _ -> raise (type_error "rewrite_subst: Can't find parameter" [t]))
-  | Constr(f, l) -> Constr(f, List.map (fun x-> rewrite_subst x env) l)
-  | _ -> t
+let rewrite_subst t env =
+  let mapper ty =
+    match ty with
+    | Atom(Var(a)) ->
+       begin
+         try Lib.find (Basic.gtype_id_string a) env
+         with _ -> raise (type_error "rewrite_subst: Can't find parameter" [t])
+       end
+    | _ -> ty
+  in
+  map_atom mapper t
 
 let rewrite_defn given_args rcrd_args t=
   if (List.length rcrd_args) = (List.length given_args)
@@ -517,11 +563,13 @@ let rewrite_defn given_args rcrd_args t=
 let unfold scp t =
   match t with
   | Constr(n, args) ->
-    let recrd = get_typdef scp n
-    in
-    (match recrd.Scope.alias with
-    | None -> raise Not_found
-    | Some(gt) -> rewrite_defn args (recrd.Scope.args)  gt)
+     let recrd = get_typdef scp n
+     in
+     if recrd.Scope.alias = None
+     then raise Not_found
+     else
+       rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
+  | TApp(_) -> failwith "Gtypes.unfold (TApp(_)) is not implemented"
   | _ -> raise Not_found
 
 (**
@@ -529,11 +577,11 @@ let unfold scp t =
    is therefore an alias for a type).
 *)
 let has_defn tyenv n =
-  (try
-     (match (get_typdef tyenv n).Scope.alias with
-       None -> false
-     | _ -> true)
-   with Not_found -> false)
+  try
+     if (get_typdef tyenv n).Scope.alias = None
+     then false
+     else true
+  with Not_found -> false
 
 (*
  * Consistency tests.
@@ -560,8 +608,7 @@ let check_decln l =
   then
     let n, largs = dest_def l
     in
-    try (ignore(check_args largs); true)
-    with Not_found -> false
+    (Lib.try_find check_args largs) <> None
   else false
 
 (**
@@ -574,19 +621,17 @@ let rec well_defined scp args t =
   let rec well_def t =
     match t with
     | Constr(n, nargs) ->
-      (try
-         ignore(Scope.defn_of scp n);
-         List.iter well_def nargs
-       with Not_found ->
-         raise (type_error "well_defined: " [t]))
+       if try_find (Scope.defn_of scp) n = None
+       then raise (type_error "well_defined: " [t])
+       else List.iter well_def nargs
     | Atom(Var(v)) ->
-       begin
-         try ignore(lookup_var (Basic.gtype_id_string v))
-         with Not_found ->
-           raise (type_error "well_defined, unexpected variable." [t])
-       end
+       if try_find lookup_var (Basic.gtype_id_string v) = None
+       then raise (type_error "well_defined, unexpected variable." [t])
+       else ()
     | Atom(Weak(v)) ->
-      raise (type_error "well_defined, unexpected weak variable." [t])
+       raise (type_error "well_defined, unexpected weak variable." [t])
+    | TApp(_) ->
+       failwith "Gtypes.well_defined (TApp(_)) is not implemented"
   in
   well_def t
 
@@ -612,15 +657,16 @@ let rec quick_well_defined scp cache t =
                  (Hashtbl.add cache (n, nargs) true;
                   List.iter (quick_well_defined scp cache) args)
                else
-                 raise
-                   (Invalid_argument ("quick_well_defined: "^(string_gtype t)))
+                 raise (type_error "quick_well_defined: " [t])
             | None ->
-               raise (Invalid_argument
-                        ("quick_well_defined, not found: "
-                         ^(Ident.string_of n)
-                         ^" in "^(string_gtype t)))
+               raise
+                 (type_error
+                    ("quick_well_defined, not found: "^(Ident.string_of n))
+                    [t])
           end
     end
+  | TApp(_) ->
+     failwith "Gtypes.quick_well_defined (TApp(_)) is not implemented"
   | _ -> ()
 
 (**
@@ -639,6 +685,7 @@ let check_decl_type scp ty =
        with Not_found -> raise (type_error "Invalid type" [t]))
     | Atom(Weak(v)) ->
       raise (type_error "Invalid type, unexpected weak variable." [t])
+    | TApp(_) -> failwith "Gtypes.check_decl_type TApp(_) is not implemented"
     | _ -> ()
   in
   check_aux ty
@@ -665,28 +712,31 @@ let rec occurs ty1 ty2 =
   match (ty1, ty2) with
   | (Atom(Var(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
   | (Atom(Weak(_)), Constr(f, l)) ->  List.iter (occurs ty1) l
-  | (_, _) ->
-    if equals ty1 ty2
-    then raise (type_error ("occurs: ") [ty1;ty2])
-    else ()
+  | (Atom(_), TApp(l, r)) ->
+     ignore((occurs ty1 l); (occurs ty2 r))
+  | (Atom(_), Atom(_)) ->
+     if (equals ty1 ty2)
+     then raise (type_error ("occurs: ") [ty1;ty2])
+     else ()
+  | _ -> raise (type_error ("occurs: ") [ty1;ty2])
 
 let rec occurs_env tenv ty1 ty2 =
   let nty1 = lookup_var ty1 tenv
   and nty2 = lookup_var ty2 tenv
   in
   match (nty1, nty2) with
-  | (Atom(Var(_)), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
-  | (Atom(Var(_)), _)->
+  | (Atom(_), Constr(f, l)) ->
+     List.iter (occurs_env tenv nty1) l
+  | (Atom(_), TApp(l, r)) ->
+     begin
+       occurs_env tenv nty1 l;
+       occurs_env tenv nty1 r
+     end
+  | (Atom(_), Atom(_))->
     if (equals nty1 nty2)
     then raise (type_error ("occurs: ") [nty1;nty2])
     else ()
-  | (Atom(Weak(_)), Constr(f, l)) ->  List.iter (occurs_env tenv nty1) l
-  | (Atom(Weak(_)), _)->
-    if equals nty1 nty2
-    then raise (type_error ("occurs: ") [nty1;nty2])
-    else ()
-  | (Constr(_, l), _) ->
-    List.iter (fun x-> occurs_env tenv x nty2) l
+  | _ -> raise (type_error ("occurs: ") [nty1;nty2])
 
 let bind_occs t1 t2 env =
   if is_any_var t1
@@ -754,6 +804,10 @@ let rec unify_aux scp ty1 ty2 env =
     else bind_occs s t env
   | (Atom(Weak(_)), _) -> bind_occs s t env
   | (_, Atom(Weak(_))) -> bind_occs t s env
+  | (TApp(_), _) ->
+     failwith "Gtypes.unify_aux (TApp(_)) is not implemented"
+  | (_, TApp(_)) ->
+     failwith "Gtypes.unify_aux (TApp(_)) is not implemented"
 and
     unify_aux_list scp tyl1 tyl2 env =
   begin
@@ -803,6 +857,8 @@ let rec mgu t env =
     else mgu nt env
   | Constr(f, l) ->
     Constr(f, List.map (fun x-> mgu x env) l)
+  | TApp(_) ->
+     failwith "Gtypes.mgu (TApp(_)) is not implemented"
 
 (**
    [mgu_rename_env inf env env nenv typ]: Replace variables in [typ]
@@ -837,6 +893,8 @@ let mgu_rename_env (inf, tyenv) name_env typ =
         rename_aux_list ctr nenv args []
       in
       (Constr(f, nargs), (ctr1, nenv1))
+    | TApp(_) ->
+       failwith "Gtypes.mgu_rename_env (TApp(_)) is not implemented"
   and
       rename_aux_list ctr env lst rslt =
     match lst with
@@ -885,6 +943,8 @@ let mgu_rename_simple inf tyenv name_env typ =
          rename_aux_list ctr nenv args []
        in
        (Constr(f, nargs), ctr1, nenv1)
+    | TApp(_) ->
+       failwith "Gtypes.mgu_rename_simple (TApp(_)) is not implemented"
     and
       rename_aux_list ctr env lst rslt =
       match lst with
@@ -938,6 +998,10 @@ let matching_env scp env t1 t2 =
       if equals s t
       then env
       else bind_occs s t env
+    | (TApp(_), _) ->
+       failwith "Gtypes.matching_env (TApp(_)) is not implemented"
+    | (_, TApp(_)) ->
+       failwith "Gtypes.matching_env (TApp(_)) is not implemented"
     | _ ->
       if equals s t
       then env

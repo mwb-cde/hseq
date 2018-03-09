@@ -43,6 +43,7 @@ val is_weak: gtype -> bool
 val mk_var: string -> gtype
 val mk_weak: string -> gtype
 val mk_constr: Ident.t -> gtype list -> gtype
+val mk_app: gtype -> gtype -> gtype
 
 (** {7 Destructors} *)
 
@@ -53,6 +54,13 @@ val dest_weak: gtype -> Basic.gtype_id
 val get_weak_name: gtype -> string
 
 val dest_constr: gtype -> (Ident.t * gtype list)
+
+val map_atom: (gtype -> gtype) -> gtype -> gtype
+val dest_app: gtype -> (gtype * gtype)
+val flatten_app: gtype -> (gtype)list
+
+val split_app: gtype -> (gtype *(gtype)list)
+(** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
 val map_atom: (gtype -> gtype) -> gtype -> gtype
 (* [map_atom f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
@@ -230,19 +238,26 @@ exception Match
 
 val lookup_var: gtype -> substitution -> gtype
 (** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
+
+(*
 val occurs: gtype -> gtype -> unit
+ *)
 (** [occurs t r]: Occurs check.
 
-    @raise [typeError] if [t] occurs in [r], succeed silently otherwise.
-*)
+    @raise [typeError] if atomic type [t] occurs in [r], succeed silently
+    otherwise.
+ *)
+
 val occurs_env: substitution-> gtype -> gtype -> unit
+
 (**
    [occurs_env env t r]: Occurs check w.r.t [env]. Chase [t] in [env]
    to get [t'], chase [r] in [env] to get [r'].
 
-   @raise [typeError] if [t'] occurs in [r'], succeed silently
-   otherwise.
-*)
+   @raise [typeError] if [t'] is not atomic or if [t'] occurs in [r'], succeed
+   silently otherwise.
+  *)
+
 val bind_occs: gtype -> gtype -> substitution -> substitution
 (** [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs
     in [r].
