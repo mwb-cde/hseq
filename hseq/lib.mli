@@ -287,6 +287,9 @@ val apply_split: ('a -> ('b * 'c)) -> 'a list -> (('b list) * ('c list))
    splitting the resulting list of pairs.
 *)
 
+val list_exists_data:
+  ('a -> (bool * ('b)option)) -> ('a)list -> (bool * ('b)option)
+
 (** {5 Sets of strings} *)
 
 module StringSet : Set.S with type elt=string

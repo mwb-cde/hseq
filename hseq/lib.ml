@@ -535,6 +535,17 @@ let apply_split f lst =
   in
   app_aux lst ([], [])
 
+let list_exists_data (p: 'a -> (bool * ('b)option)) (lst: ('a)list) =
+  let rec exists_aux l =
+  match l with
+  | [] -> (false, None)
+  | (x::xs) ->
+     let rslt = p x in
+     if fst rslt then rslt
+     else exists_aux xs
+  in
+  exists_aux lst
+
 (*
  * Sets of strings
  *)
