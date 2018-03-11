@@ -136,8 +136,8 @@ let exists_atomtype p ty =
   | TApp(l, r) ->
      exists_aux l (r::stck)
   | Constr(_, args) ->
-     (List.exists (fun a -> exists_aux a []) args)
-     or (exists_cont stck)
+     ((List.exists (fun a -> exists_aux a []) args)
+      || (exists_cont stck))
   and exists_cont stck =
     match stck with
     | [] -> false
@@ -156,12 +156,36 @@ let exists_type p ty =
         | TApp(l, r) ->
            exists_aux l (r::stck)
         | Constr(_, args) ->
-           (List.exists (fun a -> exists_aux a []) args)
-           or (exists_cont stck)
+           ((List.exists (fun a -> exists_aux a []) args)
+            || (exists_cont stck))
       end
   and exists_cont stck =
     match stck with
     | [] -> false
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
+let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
+  let rec exists_aux t stck =
+    let rslt = p ty in
+    if (fst rslt) then rslt
+    else
+      begin
+        match t with
+        | Atom(_) ->
+           exists_cont stck
+        | TApp(l, r) ->
+           exists_aux l (r::stck)
+        | Constr(_, args) ->
+           let rslt = Lib.list_exists_data (fun a -> exists_aux a []) args
+           in
+           if fst rslt then rslt
+           else (exists_cont stck)
+      end
+  and exists_cont stck =
+    match stck with
+    | [] -> (false, None)
     | (x::xs) -> exists_aux x xs
   in
   exists_aux ty []

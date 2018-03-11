@@ -114,8 +114,13 @@ val exists_atomtype: (gtype -> bool) -> gtype -> bool
    any [Atom(x)] satisfies [p]. The check is top-down, left-to-right *)
 
 val exists_type: (gtype -> bool) -> gtype -> bool
-(* [exists_type p ty] Apply [p] to each sub-type of[ty], return [true] if any
+(* [exists_type p ty] Apply [p] to each sub-type of [ty], return [true] if any
    satisfies [p]. The check is top-down, left-to-right *)
+
+val exists_type_data:
+  (gtype -> (bool * ('a)option)) -> gtype -> (bool * ('a)option)
+(* [exists_type_data p ty] Apply [p] to each sub-type of [ty], return [true] if
+   any satisfies [p]. The check is top-down, left-to-right *)
 
 (** String representation of types. *)
 val string_tconst: Ident.t -> string list -> string
