@@ -35,8 +35,10 @@ val equals: gtype -> gtype -> bool
 (** {7 Recognisers} *)
 
 val is_var: gtype -> bool
-val is_constr: gtype -> bool
 val is_weak: gtype -> bool
+val is_ident: gtype -> bool
+val is_constr: gtype -> bool
+val is_app: gtype -> bool
 
 (** {7 Constructors} *)
 

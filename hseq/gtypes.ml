@@ -82,14 +82,24 @@ let is_var t =
   | Atom(Var(_)) -> true
   | _ -> false
 
+let is_weak t =
+  match t with
+  | Atom(Weak(_)) -> true
+  | _ -> false
+
+let is_ident t =
+  match t with
+  | Atom(Ident(_)) -> true
+  | _ -> false
+
 let is_constr t =
   match t with
   | Constr _ -> true
   | _ -> false
 
-let is_weak t =
+let is_app t =
   match t with
-  | Atom(Weak(_)) -> true
+  | TApp _ -> true
   | _ -> false
 
 (* Constructors *)
