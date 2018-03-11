@@ -93,6 +93,26 @@ let rec map_atomtype f ty =
   | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
   | Constr(x, args) -> Constr(x, List.map (map_atomtype f) args)
 
+(* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
+   result. The fold is top-down, left-to-right *)
+let fold_atomtype f c ty =
+  let rec fold_aux z t stck =
+    match t with
+    | Atom(_) -> fold_cont (f z ty) stck
+    | TApp(l, r) -> fold_aux z l (r::stck)
+    | Constr(_, args) ->
+       begin
+         let c1 = List.fold_left (fun x y -> fold_aux x y []) z args
+         in
+         fold_cont c1 stck
+       end
+  and fold_cont z stck =
+    match stck with
+    | [] -> z
+    | (x::xs) -> fold_aux z x xs
+  in
+  fold_aux c ty []
+
 (** String representation of types *)
 let string_tconst n l =
   (Ident.string_of n)

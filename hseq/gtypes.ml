@@ -155,6 +155,7 @@ let split_app = Basic.split_apptype
 (* [map f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
    type. *)
 let map_atom = Basic.map_atomtype
+let fold_atom = Basic.fold_atomtype
 
 (*
  * Specialised Manipulators

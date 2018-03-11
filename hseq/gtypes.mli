@@ -68,6 +68,10 @@ val map_atom: (gtype -> gtype) -> gtype -> gtype
 (* [map_atom f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
    type. *)
 
+val fold_atom: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
+(* [fold_atom f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
+   result. The fold is top-down, left-to-right *)
+
 (** {6 Specialised Manipulators} *)
 
 (** {7 Variable types} *)
