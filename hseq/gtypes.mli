@@ -362,39 +362,6 @@ val matches_env:
 val matches: Scope.t -> gtype -> gtype -> bool
 (** Toplevel for [matches_env]. *)
 
-type match_data =
-    {
-      vars: substitution; (** Unification variables *)
-      tyenv: substitution; (** Substitution *)
-    }
-(** Data for {!Gtypes.matches_rewrite} *)
-
-val matches_rewrite:
-  Scope.t -> gtype -> gtype
-  -> match_data -> match_data
-(** [matches_rewrite scp tyl tyr env]: Match type [tyl] with [tyr],
-    returning the substitutions for type variables in [tyl].
-*)
-
-(** [matches_rewrite scp tyl tyr env]: Match type [tyl'] with [tyr] in
-    given context [env], where [tyl' = rename_type_vars tyl]. If [sb]
-    is the returned substitution, then the type [nty = (mgu tyr sb)]
-    will not have any type variable in common with [tyl] (i.e. no type
-    variable can occur in both [nyt] and [tyl].)
-
-    This function is used for term-rewriting, where there is a danger
-    that the same type may occur in different contexts, such as the
-    type of an identifier which occurs in different parts of the
-    term.
-*)
-
-(**
-val copy_set_ty: gtype -> match_data -> (gtype * match_data)
-(** [copy_set_ty t d]: Copy type [t], adding any variables in [t] to
-    [d.vars].
-*)
-**)
-
 (** {5 More functions} *)
 
 val set_name:
