@@ -112,9 +112,7 @@ val is_null: gtype -> bool
 
 (** {7 Named typed constructors} *)
 
-val is_def: gtype -> bool
 val mk_def: Ident.t -> gtype list -> gtype
-val dest_def: gtype -> (Ident.t * gtype list)
 
 (** {5 Type Definitions} *)
 

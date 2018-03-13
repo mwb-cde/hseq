@@ -229,15 +229,9 @@ let is_null t = ((get_var_name t) = null_type_name)
 
 (* Named typed constructors *)
 
-let is_def t =
-  match t with
-  | _ -> false
-
-let mk_def n args = mk_constr n args
-
-let dest_def t =
-  match t with
-  | _ -> raise (Failure "Not a defined type")
+let mk_def = mk_constr
+let is_def t = (try_app dest_constr t) <> None
+let dest_def = dest_constr
 
 (*
  * Type definitions
