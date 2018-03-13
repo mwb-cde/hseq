@@ -220,6 +220,85 @@ val unfold: Scope.t -> gtype -> gtype
    @raise [Not_found] if no definition.
 *)
 
+val well_formed_full:
+  (gtype -> (string * gtype)option)
+  -> Scope.t -> gtype -> bool
+(** [well_formed_full pred scp t]: ensure that [t] is well-formed
+
+    [pred t] should return [None] for success and [Some(msg, errty)] for
+    failure, where [msg] is an error message and [errty] is the type causing the
+    error.
+
+    - [Atom(Var(v))] at depth [d = 0]
+
+    - [Atom(Weak(v))] at depth [d = 0]
+
+    - [Atom(Ident(f))] and
+    - [f] is in scope and
+    - [d] is the arity of [f]
+
+    - [Constr(f, args)] at depth [d = 0] and
+    - [f] is in scope and
+    - [len(args)] is the arity of [f] and
+    - every [a] in [args] is well-defined at depth [0]
+
+    - [TApp(l, r)] and
+    - [l] is well-defined at depth [d + 1] and
+    - [r] is  well-defined at depth [0]
+
+    At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
+    type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+    element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
+    [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+
+    Specific constructors formed by [TApp]:
+
+    - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
+    [0].
+
+    - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+    depth [0].
+*)
+
+val well_formed: Scope.t -> gtype -> bool
+(** [well_formed scp t]: ensure that [t] is well-formed in scope [scp] *)
+
+
+(** [well_formed_full scp pred t]: ensure that [t] is well-formed declared.
+
+    A type is well-formed at depth [d] if it satisifes [pred] and is one of:
+
+    - [Atom(Var(v))] at depth [d = 0]
+
+    - [Atom(Weak(v))] at depth [d = 0]
+
+    - [Atom(Ident(f))] and
+    - [f] is in scope and
+    - [d] is the arity of [f]
+
+    - [Constr(f, args)] at depth [d = 0] and
+    - [f] is in scope and
+    - [len(args)] is the arity of [f] and
+    - every [a] in [args] is well-defined at depth [0]
+
+    - [TApp(l, r)] and
+    - [l] is well-defined at depth [d + 1] and
+    - [r] is  well-defined at depth [0]
+
+    At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
+    type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+    element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
+    [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+
+    Specific constructors formed by [TApp]:
+
+    - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
+    [0].
+
+    - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+    depth [0].
+*)
+
 val well_defined: Scope.t -> (string)list -> gtype -> unit
 (** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]

@@ -655,111 +655,170 @@ let check_decln l =
     (Lib.try_find check_args largs) <> None
   else false
 
-(**
-   [well_defined scp args t]: ensure that all constructors in [t] are
-   declared.
+(** [well_formed_full scp pred t]: ensure that [t] is well-formed declared.
 
-   [args]: check variables are in the list of args
+    A type is well-formed at depth [d] if it satisifes [pred] and is one of:
 
-   A type is well-defined at depth [d] if it is one of:
+    - [Atom(Var(v))] at depth [d = 0]
 
-   - [Atom(Var(_))] at depth [d = 0]
+    - [Atom(Weak(v))] at depth [d = 0]
 
-   - [Atom(Ident(f))] and [d] is the arity of [f]
+    - [Atom(Ident(f))] and
+      - [f] is in scope and
+      - [d = arity(f)]
 
-   - [Constr(f, args)] at depth [d = 0] and [len(args)] is the arity of [f]
-     and every [a] in [args] is well-defined at depth [0]
+    - [Constr(f, args)] at depth [d = 0] and
+      - [f] is in scope and
+      - [len(args) = arity(f)] and
+      - every [a] in [args] is well-defined at depth [0]
 
-   - [TApp(l, r)] and [l] is well-defined at depth [d + 1] and [r] is
-     well-defined at depth [0]
+    - [TApp(l, r)] and
+      - depth [d > 0] and
+      - [l] is well-defined at depth [d + 1] and
+      - [r] is well-defined at depth [0]
 
-   At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
-   type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
-   element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
-   [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+    Type constructor [F/n] has arity [arity(F) = n]. With arguments [a_0, ..,
+    an], the type [(a_0, .., an)F] is formed with [TApp] by making [F] the
+    left-most element with the [a_i] as the right branches. For [(a_0, ..,
+    an)F], this is [TApp( .. (TApp(Atom(Ident(F)), a_0), a_1), a_n)].
 
-   Specific constructors formed by [TApp]:
+    Specific constructors formed by [TApp]:
 
-   - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth [0].
+    - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
+      [0].
 
-   - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+   - [(a)F = TApp(Atom(Ident(f)), a)]: [F] has arity [1] and is well-defined at
      depth [0].
-*)
-let well_defined scp (args: (string)list) ty =
-  let var_is_arg n = List.exists (fun a -> n = a) args in
+
+   - [(a, b)F = TApp(TApp(Atom(Ident(f)), a), b)]: [F] has arity [2] and is
+     well-defined at depth [0].  *)
+
+let well_formed_full pred scp ty =
+  let arity_of f =
+    (* Get the arity of [f]. Return [None] if [f] is unknown. *)
+    let defn_opt = try_find (Scope.defn_of scp) f in
+    if defn_opt = None
+    then None
+    else
+      let defn = from_some defn_opt in
+      let num_args = List.length (defn.Scope.args) in
+      Some(num_args)
+  in
   let rec well_aux depth t =
-    match t with
-    | Atom(Var(v)) ->
-       if depth <> 0 || (not (var_is_arg (Basic.gtype_id_string v)))
-       then (false, Some("unexpected variable.", t))
-       else (true, None)
-    | Atom(Weak(v)) ->
-       (false, Some("unexpected weak variable.", t))
-    | Atom(Ident(n)) ->
-       let defn_opt = try_find (Scope.defn_of scp) n in
-       if defn_opt = None
-       then (false, Some("unknown type constructor", t))
-       else
-         let defn = from_some defn_opt in
-         let arity = List.length (defn.Scope.args) in
-         begin
-           if depth <> arity
-           then (false,
-                 Some(("invalid type constructor, expected "
-                       ^(string_of_int arity)
-                       ^" but got "^(string_of_int depth)),
-                      t))
-           else (true, None)
-         end
-    | TApp(l, r) ->
-       let (l_ok, lerr) = well_aux (depth + 1) l in
-       if not l_ok
-       then (l_ok, lerr)
-       else well_aux 0 r
-    | Atom(Ident(n)) ->
-       if try_find (Scope.defn_of scp) n = None
-       then (false, Some("unknown type constructor", t))
-       else (true, None)
-    | Constr(n, nargs) ->
-       if depth <> 0
-       then (false, Some("unexpected type constructor", t))
-       else
-         begin
-           let defn_opt = try_find (Scope.defn_of scp) n in
-           if defn_opt = None
-           then (false, Some("unknown type constructor", t))
+    let prslt = pred t in
+    if prslt <> None then prslt
+    else
+      begin
+        match t with
+        | Atom(Var(v)) ->
+           if depth <> 0
+           then Some("unexpected variable", t)
+           else None
+        | Atom(Weak(v)) ->
+           if depth <> 0
+           then Some("unexpected weak variable", t)
+           else None
+        | Atom(Ident(n)) ->
+           let arity_opt = arity_of n in
+           if arity_opt = None
+           then Some("unknown type constructor", t)
+           else if depth = (from_some arity_opt)
+           then None
            else
-             let defn = from_some defn_opt in
-             let arity = List.length (defn.Scope.args) in
-             let arg_len = List.length nargs in
+             Some(("invalid type constructor, expected "
+                   ^(string_of_int (from_some arity_opt))
+                   ^" but got "^(string_of_int depth)),
+                  t)
+        | TApp(l, r) ->
+           let lerr = well_aux (depth + 1) l in
+           if lerr <> None
+           then lerr
+           else well_aux 0 r
+        | Constr(n, nargs) ->
+           if depth <> 0
+           then Some("unexpected type constructor", t)
+           else
              begin
-               if arity <> arg_len
-               then (false,
-                     Some(("invalid type constructor, expected "
-                           ^(string_of_int arity)
-                           ^" but got "^(string_of_int arg_len)),
-                          t))
-               else (true, None)
+               let arity_opt = arity_of n in
+               if arity_opt = None
+               then Some("unknown type constructor", t)
+               else
+                 let arity = from_some (arity_opt)
+                 and arg_len = List.length nargs in
+                 begin
+                   if arity <> arg_len
+                   then Some(("invalid type constructor, expected "
+                              ^(string_of_int arity)
+                              ^" but got "^(string_of_int arg_len)),
+                             t)
+                   else well_constr nargs
+                 end
              end
-         end
+      end
+  and well_constr args =
+    match args with
+    | [] -> None
+    | (x::xs) ->
+       let rslt = well_aux 0 x in
+       if rslt = None
+       then well_constr xs
+       else rslt
   in
   let rslt = well_aux 0 ty
   in
-  if fst rslt
-  then ()
+  if rslt = None
+  then true
   else
     begin
-      let (msg, t) = from_some (snd rslt) in
-      raise (type_error ("well_defined: " ^ msg) [t])
+      let (msg, t) = from_some rslt in
+      raise (type_error msg [t])
     end
+
+let well_formed scp ty =
+  well_formed_full (fun _ -> None) scp ty
+
+(** [well_defined scp args t]: check that t is well-formed and that every
+    variable in [t] is represented in [args].
+
+    A type is well-defined at depth [d] if it is one of:
+
+    - [Atom(Var(v))] at depth [d = 0] and
+      - the string representation of [v] is in [args]
+
+    - [Atom(Ident(f))] and
+    - [f] is in scope and
+    - [d] is the arity of [f]
+
+    - [Constr(f, args)] at depth [d = 0] and
+    - [f] is in scope and
+    - [len(args)] is the arity of [f] and
+    - every [a] in [args] is well-defined at depth [0]
+
+    - [TApp(l, r)] and
+    - [l] is well-defined at depth [d + 1] and
+    - [r] is  well-defined at depth [0]
+*)
+let well_defined scp (args: (string)list) ty =
+  let var_is_arg n = List.exists (fun a -> n = a) args in
+  let check_var t =
+    match t with
+    | Atom(Var(v)) ->
+       if not (var_is_arg (Basic.gtype_id_string v))
+       then Some("unexpected variable.", t)
+       else None
+    | Atom(Weak(v)) ->
+       Some("unexpected weak variable.", t)
+    | _ -> None
+  in
+  ignore(well_formed_full check_var scp ty)
+
 
 (** [quick_well_defined]: memoised, simpler version of well_defined. Only check
     that type constructors are well-defined.
 *)
 let quick_well_defined scp cache ty =
-  let lookup_constr f nargs =
-    (Lib.try_find (Hashtbl.find cache) (f, nargs)) <> None
-  and lookup_defn f =
+  let arity_of f =
+    (* Get the arity of [f]. Return [None] if [f] is unknown. *)
     let defn_opt = Lib.try_find (get_typdef scp) f in
     if defn_opt = None
     then None
@@ -774,52 +833,71 @@ let quick_well_defined scp cache ty =
     (* Check all constructors are either memoised or defined. *)
     match t with
     | Constr(f, args) ->
-       let nargs = List.length args in
-       if lookup_constr f nargs
-       then (true, None)
+       if depth <> 0
+       then Some("unexpected type constructor", t)
        else
+         let defn_opt = arity_of f in
          begin
-           let defn_opt = lookup_defn f in
-           if defn_opt <> None
-           then
-             let nargs = from_some defn_opt in
-             Hashtbl.add cache (f, nargs) true;
-             (true, None)
+           if defn_opt = None
+           then Some("unknown constructor", t)
            else
-             (false, Some("unknown constructor", t))
+             let nargs = from_some defn_opt
+             and arity = from_some defn_opt
+             in
+             if arity = nargs
+             then
+               begin
+                 Hashtbl.add cache (f, nargs) true;
+                 None
+               end
+             else
+               Some("invalid type constructor"
+                    ^" expected "^(string_of_int arity)
+                    ^" but got "^ (string_of_int nargs),
+                    t)
          end
     | TApp(l, r) ->
-       let l_ok, lerr = well_aux (depth + 1) l in
-       if not l_ok
-       then (l_ok, lerr)
+       let lerr = well_aux (depth + 1) l in
+       if lerr <> None
+       then lerr
        else well_aux 0 r
     | Atom(Ident(f)) ->
-       begin
-         let defn = lookup_defn f in
-         if defn = None
-         then (false, Some("unknown type constructor", t))
-         else if (from_some defn) <> depth
-         then (false, Some("invalid type construtor,"
-                           ^" expected "^(string_of_int (from_some defn))
-                           ^" arguments, got "
-                           ^(string_of_int depth), t))
-         else
-           begin
-             Hashtbl.add cache (f, from_some defn) true;
-             (true, None)
-           end
-       end
-    | Atom(Var(_)) -> (true, None)
-    | Atom(Weak(_)) -> (true, None)
+       let defn = arity_of f in
+       if defn = None
+       then
+         Some("unknown type constructor "^(Ident.string_of f), t)
+       else
+         begin
+           let arity = from_some defn in
+           if depth = arity
+           then
+             begin
+               Hashtbl.add cache (f, arity) true;
+               None
+             end
+           else
+             Some("invalid type constructor"
+                  ^" expected "^(string_of_int arity)
+                 ^" but got "^ (string_of_int depth),
+                  t)
+         end
+    | Atom(Var(_)) ->
+       if depth <> 0
+       then Some("unexpected number of arguments", t)
+       else None
+    | Atom(Weak(_)) ->
+       if depth <> 0
+       then Some("unexpected number of arguments", t)
+       else None
   in
   let rslt = well_aux 0 ty
   in
-  if fst rslt
+  if rslt = None
   then ()
   else
     begin
-      let (msg, t) = from_some (snd rslt) in
-      raise (type_error ("well_defined: " ^ msg) [t])
+      let (msg, t) = from_some rslt in
+      raise (type_error ("quick_well_defined: " ^ msg) [t])
     end
 
 (**
@@ -828,7 +906,14 @@ let quick_well_defined scp cache ty =
 
    Fails if [ty] contains a weak variable.
 *)
-let check_decl_type scp ty = well_defined scp [] ty
+let check_decl_type scp ty =
+  let check_var t =
+    match t with
+    | Atom(Weak(v)) ->
+       Some("unexpected weak variable.", t)
+    | _ -> None
+  in
+  ignore(well_formed_full check_var scp ty)
 
 (*
  * Unification
