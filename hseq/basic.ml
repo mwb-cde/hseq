@@ -29,7 +29,6 @@
 type ('a) pre_typ =
   | Atom of 'a
   | TApp of (('a) pre_typ * ('a) pre_typ)
-  | Constr of Ident.t * (('a)pre_typ)list
 
 (** [gtype_id]: The type of gtype identifiers. *)
 type gtype_id = (string)Tag.t
@@ -91,7 +90,6 @@ let rec map_atomtype f ty =
   match ty with
   | Atom(_) -> f ty
   | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
-  | Constr(x, args) -> Constr(x, List.map (map_atomtype f) args)
 
 (* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
 let rec iter_atomtype f ty =
@@ -102,10 +100,6 @@ let rec iter_atomtype f ty =
        iter_atomtype f l;
        iter_atomtype f r
      end
-  | Constr(x, args) ->
-     begin
-       List.iter (iter_atomtype f) args
-     end
 
 (* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
@@ -114,12 +108,6 @@ let fold_atomtype f c ty =
     match t with
     | Atom(_) -> fold_cont (f z ty) stck
     | TApp(l, r) -> fold_aux z l (r::stck)
-    | Constr(_, args) ->
-       begin
-         let c1 = List.fold_left (fun x y -> fold_aux x y []) z args
-         in
-         fold_cont c1 stck
-       end
   and fold_cont z stck =
     match stck with
     | [] -> z
@@ -135,9 +123,6 @@ let exists_atomtype p ty =
      else exists_cont stck
   | TApp(l, r) ->
      exists_aux l (r::stck)
-  | Constr(_, args) ->
-     ((List.exists (fun a -> exists_aux a []) args)
-      || (exists_cont stck))
   and exists_cont stck =
     match stck with
     | [] -> false
@@ -155,9 +140,6 @@ let exists_type p ty =
            exists_cont stck
         | TApp(l, r) ->
            exists_aux l (r::stck)
-        | Constr(_, args) ->
-           ((List.exists (fun a -> exists_aux a []) args)
-            || (exists_cont stck))
       end
   and exists_cont stck =
     match stck with
@@ -177,11 +159,6 @@ let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
            exists_cont stck
         | TApp(l, r) ->
            exists_aux l (r::stck)
-        | Constr(_, args) ->
-           let rslt = Lib.list_exists_data (fun a -> exists_aux a []) args
-           in
-           if fst rslt then rslt
-           else (exists_cont stck)
       end
   and exists_cont stck =
     match stck with

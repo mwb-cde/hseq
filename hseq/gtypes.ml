@@ -45,21 +45,11 @@ let rec compare_gtype a b =
     match p with
     | (Atom(x), Atom(y)) -> atom_cmp x y
     | (Atom(_), TApp(_)) -> Order.LessThan
-    | (Atom(_), Constr(_)) -> Order.LessThan
     | (TApp(_), Atom(_)) -> Order.GreaterThan
     | (TApp(a, b), TApp(c, d)) ->
        begin
          match (compare_gtype a c) with
          | Order.Equal -> compare_gtype b d
-         | rslt -> rslt
-       end
-    | (TApp(_), Constr(_)) -> Order.LessThan
-    | (Constr(_), Atom(_)) -> Order.GreaterThan
-    | (Constr(_), TApp(_)) -> Order.GreaterThan
-    | (Constr(f1, args1), Constr(f2, args2)) ->
-       begin
-         match Ident.compare f1 f2 with
-         | Order.Equal -> compare_list (args1, args2)
          | rslt -> rslt
        end
   in
@@ -99,7 +89,6 @@ let is_ident t =
 
 let is_constr t =
   match t with
-  | Constr _ -> true
   | _ -> false
 
 let is_app t =
@@ -159,13 +148,11 @@ let dest_constr ty =
   in
   begin
     match ty with
-    | Constr(f, args) -> (f, args)
     | _ -> dest_tapp ty []
   end
 
 let rec get_type_name ty =
   match ty with
-    | Constr (id, _) -> id
     | TApp(l, _) -> get_type_name l
     | Atom(Ident(id)) -> id
     | _ -> failwith "get_type_name"
@@ -224,22 +211,11 @@ let normalize_vars typ=
       let (tbl1, n1) = lookup tbl (get_var_name ty)
       in
       (tbl1, n1)
-    | Constr(n, args) ->
-      let (tbl1, args1) = norm_list tbl args []
-      in
-      (tbl1, Constr(n, args1))
     | TApp(l, r) ->
        let (tbl1, l1) = norm_aux tbl l in
        let (tbl2, r1) = norm_aux tbl1 r in
        (tbl2, TApp(l1, r1))
     | _ -> (tbl, ty)
-  and norm_list tbl tys result =
-    match tys with
-    | [] -> (tbl, List.rev result)
-    | (ty::xs) ->
-      let (tbl1, ty1) = norm_aux tbl ty
-      in
-      norm_list tbl1 xs (ty1::result)
   in
   let (_, typ1) = norm_aux (Lib.empty_env()) typ
   in
@@ -255,14 +231,12 @@ let is_null t = ((get_var_name t) = null_type_name)
 
 let is_def t =
   match t with
-  | Constr(_ , _) -> true
   | _ -> false
 
 let mk_def n args = mk_constr n args
 
 let dest_def t =
   match t with
-  | Constr(n, args) -> (n, args)
   | _ -> raise (Failure "Not a defined type")
 
 (*
@@ -329,8 +303,6 @@ let rec subst t env =
          and y1 = subst y env
          in
          TApp(x1, y1)
-      | Constr(f, l) ->
-         Constr(f, List.map (fun x-> subst x env) l)
     end
 
 (*
@@ -368,11 +340,6 @@ let rec rename_type_vars_env env trm =
      let y1, env2 = rename_type_vars_env env1 y
      in
      (TApp(x1, y1), env2)
-  | Constr(f, args) ->
-     let (nenv, (nargs: Basic.gtype list)) =
-       rename_vars_list env args []
-     in
-     (Constr(f, nargs), nenv)
   and
     rename_vars_list env lst rslt =
     match lst with
@@ -410,18 +377,6 @@ let rename_index idx env top_type =
        let y1, ctr2, env2 = rename_aux ctr1 env1 y
        in
        (TApp(x1, y1), ctr2, env2)
-    | Constr(f, args) ->
-       let (ctr1, nenv, nargs) =
-         rename_index_list ctr env args []
-       in
-       (Constr(f, nargs), ctr1, nenv)
-    and rename_index_list ctr env lst rslt =
-      match lst with
-      | [] -> (ctr, env, List.rev rslt)
-      | (ty::tyl) ->
-         let (ty1, ctr1, env1) = rename_aux ctr env ty
-         in
-         rename_index_list ctr1 env1 tyl (ty1::rslt)
   in
   rename_aux idx env top_type
 
@@ -448,7 +403,6 @@ let rec print_type ppstate pr t =
     | TApp(_) ->
        let op, args = dest_constr x in
        print_app ppstate pr (op, args)
-    | Constr(op, args) -> print_constr ppstate pr (op, args)
   and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
     begin
       match args with
@@ -556,7 +510,6 @@ let rec string_gtype x =
   | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
   | Atom(Ident(f)) -> string_tconst f []
   | TApp(_) -> string_app_args x []
-  | Constr(f, args) -> string_tconst f (List.map string_gtype args)
 and string_app_args t lst =
   match t with
   | Atom(Ident(f)) -> string_tconst f lst
@@ -603,13 +556,6 @@ let rewrite_defn given_args rcrd_args t =
 
 let unfold scp t =
   match t with
-  | Constr(n, args) ->
-     let recrd = get_typdef scp n
-     in
-     if recrd.Scope.alias = None
-     then raise Not_found
-     else
-       rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
   | TApp(_) ->
      let (n, args) = (try dest_constr t with _ -> raise Not_found)
      in
@@ -675,11 +621,6 @@ let check_decln l =
       - [f] is in scope and
       - [d = arity(f)]
 
-    - [Constr(f, args)] at depth [d = 0] and
-      - [f] is in scope and
-      - [len(args) = arity(f)] and
-      - every [a] in [args] is well-defined at depth [0]
-
     - [TApp(l, r)] and
       - depth [d > 0] and
       - [l] is well-defined at depth [d + 1] and
@@ -742,35 +683,7 @@ let well_formed_full pred scp ty =
            if lerr <> None
            then lerr
            else well_aux 0 r
-        | Constr(n, nargs) ->
-           if depth <> 0
-           then Some("unexpected type constructor", t)
-           else
-             begin
-               let arity_opt = arity_of n in
-               if arity_opt = None
-               then Some("unknown type constructor", t)
-               else
-                 let arity = from_some (arity_opt)
-                 and arg_len = List.length nargs in
-                 begin
-                   if arity <> arg_len
-                   then Some(("invalid type constructor, expected "
-                              ^(string_of_int arity)
-                              ^" but got "^(string_of_int arg_len)),
-                             t)
-                   else well_constr nargs
-                 end
-             end
       end
-  and well_constr args =
-    match args with
-    | [] -> None
-    | (x::xs) ->
-       let rslt = well_aux 0 x in
-       if rslt = None
-       then well_constr xs
-       else rslt
   in
   let rslt = well_aux 0 ty
   in
@@ -796,11 +709,6 @@ let well_formed scp ty =
     - [Atom(Ident(f))] and
     - [f] is in scope and
     - [d] is the arity of [f]
-
-    - [Constr(f, args)] at depth [d = 0] and
-    - [f] is in scope and
-    - [len(args)] is the arity of [f] and
-    - every [a] in [args] is well-defined at depth [0]
 
     - [TApp(l, r)] and
     - [l] is well-defined at depth [d + 1] and
@@ -840,30 +748,6 @@ let quick_well_defined scp cache ty =
   let rec well_aux depth t =
     (* Check all constructors are either memoised or defined. *)
     match t with
-    | Constr(f, args) ->
-       if depth <> 0
-       then Some("unexpected type constructor", t)
-       else
-         let defn_opt = arity_of f in
-         begin
-           if defn_opt = None
-           then Some("unknown constructor", t)
-           else
-             let nargs = from_some defn_opt
-             and arity = from_some defn_opt
-             in
-             if arity = nargs
-             then
-               begin
-                 Hashtbl.add cache (f, nargs) true;
-                 None
-               end
-             else
-               Some("invalid type constructor"
-                    ^" expected "^(string_of_int arity)
-                    ^" but got "^ (string_of_int nargs),
-                    t)
-         end
     | TApp(l, r) ->
        let lerr = well_aux (depth + 1) l in
        if lerr <> None
@@ -951,8 +835,6 @@ let rec occurs_env tenv ty1 ty2 =
   in
   match (nty1, nty2) with
   | (Atom(_), Atom(_))-> equals nty1 nty2
-  | (Atom(_), Constr(f, l)) ->
-     List.exists (occurs_env tenv nty1) l
   | (Atom(_), TApp(l, r)) ->
      (occurs_env tenv nty1 l || occurs_env tenv nty1 r)
   | _ -> raise (type_error ("occurs_env: expected a type variable") [nty1])
@@ -992,28 +874,6 @@ let rec unify_aux scp ty1 ty2 env =
     and t = lookup_var ty2 env
     in
     match (s, t) with
-    | (Constr(f1, args1), Constr(f2, args2)) ->
-       begin
-         if Ident.equals f1 f2
-         then
-           (* Matching constructors. *)
-           try unify_aux_list scp args1 args2 env
-           with err -> add_type_error "Can't unify types" [s; t] err
-         else
-           (* Different constructors, try for type aliasing. *)
-           begin
-             let s1 = try_app (unfold scp) s
-             and t1 = try_app (unfold scp) t
-             in
-             if s1 = None && t1 = None
-             then raise (type_error "Can't unify types" [s; t])
-             else
-               let s2 = if s1 = None then s else from_some s1
-               and t2 = if t1 = None then t else from_some t1
-               in
-               unify_aux scp s2 t2 env
-           end
-       end
     | (TApp(l1, r1), TApp(l2, r2)) ->
        (* First try unifying the branches *)
        let env1_opt = try_app (unify_aux scp l1 l2) env in
@@ -1119,8 +979,6 @@ let rec mgu t env =
     then nt
     else mgu nt env
   | Atom(Ident(_)) -> t
-  | Constr(f, l) ->
-    Constr(f, List.map (fun x-> mgu x env) l)
   | TApp(l, r) ->
      TApp(mgu l env, mgu r env)
 
@@ -1153,23 +1011,10 @@ let mgu_rename_env (inf, tyenv) name_env typ =
       then (nt, (ctr, nenv))
       else rename_aux (ctr, nenv) nt
     | Atom(Ident(_)) -> (ty, (ctr, nenv))
-    | Constr(f, args) ->
-      let (ctr1, nenv1, nargs) =
-        rename_aux_list ctr nenv args []
-      in
-      (Constr(f, nargs), (ctr1, nenv1))
     | TApp(l, r) ->
        let l1, (ctr1, env1) = rename_aux (ctr, nenv) l in
        let r1, (ctr2, env2) = rename_aux (ctr1, env1) r in
        (TApp(l1, r1), (ctr2, env2))
-  and
-      rename_aux_list ctr env lst rslt =
-    match lst with
-    | [] -> (ctr, env, List.rev rslt)
-    | (ty::tyl) ->
-      let (ty1, (ctr1, env1)) = rename_aux (ctr, env )ty
-      in
-      rename_aux_list ctr1 env1 tyl (ty1::rslt)
   in
   rename_aux (inf, name_env) typ
 
@@ -1206,23 +1051,10 @@ let mgu_rename_simple inf tyenv name_env typ =
        then (nt, ctr, nenv)
        else rename_aux ctr nenv nt
     | Atom(Ident(_)) -> (ty, ctr, nenv)
-    | Constr(f, args) ->
-       let (ctr1, nenv1, nargs) =
-         rename_aux_list ctr nenv args []
-       in
-       (Constr(f, nargs), ctr1, nenv1)
     | TApp(l, r) ->
        let (l1, ctr1, env1) = rename_aux ctr nenv l in
        let (r1, ctr2, env2) = rename_aux ctr1 env1 r in
        (TApp(l1, r1), ctr2, env2)
-    and
-      rename_aux_list ctr env lst rslt =
-      match lst with
-      | [] -> (ctr, env, List.rev rslt)
-      | (ty::tyl) ->
-         let (ty1, ctr1, env1) = rename_aux ctr env ty
-         in
-         rename_aux_list ctr1 env1 tyl (ty1::rslt)
   in
   rename_aux inf name_env typ
 
@@ -1252,16 +1084,6 @@ let matching_env scp env t1 t2 =
     and t = lookup_var ty2 env
     in
     match (s, t) with
-    | (Constr(f1, args1), Constr(f2, args2)) ->
-       if not (Ident.equals f1 f2)
-       then  raise (type_error "Can't match types" [s; t])
-       else
-         begin
-           let env1_opt = match_arg_lists args1 args2 env in
-           if env1_opt <> None
-           then from_some env1_opt
-           else expand_match s t env
-         end
     | (Atom(Var(_)), _) ->
       if equals s t
       then env
@@ -1294,13 +1116,6 @@ let matching_env scp env t1 t2 =
       if equals s t
       then env
       else raise (type_error "Can't match types" [s; t])
-  and match_arg_lists tyl1 tyl2 env =
-    try_app
-      (List.fold_left2
-         (fun e ty1 ty2 ->
-           try match_aux ty1 ty2 e
-           with err -> add_type_error "Can't match types" [ty1; ty2] err)
-         env tyl1) tyl2
   and expand_match ty1 ty2 env =
     let s = expand ty1
     and t = expand ty2
@@ -1349,16 +1164,6 @@ let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
   in
   let rec set_aux t =
     match t with
-    | Constr(id, args) ->
-      let (th, n) = Ident.dest id in
-      let nth =
-        if th = Ident.null_thy
-        then lookup_id n
-        else th
-      in
-      let nid = Ident.mk_long nth n
-      in
-      Constr(nid, List.map set_aux args)
     | TApp(l, r) -> TApp(set_aux l, set_aux r)
     | Atom(Ident(id)) ->
       let (th, n) = Ident.dest id in
@@ -1394,9 +1199,6 @@ let in_scope memo scp ty =
     | Atom(Weak(_)) -> ()
     | Atom(Ident(f)) ->
        ignore(lookup_id (Ident.thy_of f))
-    | Constr(id, args) ->
-      ignore(lookup_id (Ident.thy_of id));
-      List.iter in_scp_aux args
     | TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
   in
   try in_scp_aux ty; true
@@ -1461,10 +1263,6 @@ let rec to_save_aux tyenv ty =
   | Atom(Weak(_)) ->
     raise (type_error "Can't save a weak variable" [ty])
   | Atom(Ident(f)) -> (Atom(SIdent(f)), tyenv)
-  | Constr(f, args) ->
-    let (tyenv2, args1) = to_save_list tyenv args []
-    in
-    (Constr(f, args1), tyenv2)
   | TApp(l, r) ->
      let l1, tyenv1 = to_save_aux tyenv l in
      let r1, tyenv2 = to_save_aux tyenv1 r in
@@ -1518,10 +1316,6 @@ let rec from_save_aux env (ty: stype) =
     in
     (Atom(Var(nty)), env1)
   | Atom(SIdent(f)) -> (Atom(Ident(f)), env)
-  | Constr(f, args) ->
-    let (env1, args1) = from_save_list env args []
-    in
-    (Constr(f, args1), env1)
   | TApp(l, r) ->
      let l1, env1 = from_save_aux env l in
      let r1, env2 = from_save_aux env1 r in

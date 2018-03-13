@@ -59,7 +59,6 @@ type ('a) pre_typ =
   (** Atomic variables. *)
   | TApp of (('a) pre_typ * ('a) pre_typ)
   (** Applications *)
-  | Constr of Ident.t * ('a) pre_typ list
 
 type atomtype =
   | Var of gtype_id

@@ -237,11 +237,6 @@ val well_formed_full:
     - [f] is in scope and
     - [d] is the arity of [f]
 
-    - [Constr(f, args)] at depth [d = 0] and
-    - [f] is in scope and
-    - [len(args)] is the arity of [f] and
-    - every [a] in [args] is well-defined at depth [0]
-
     - [TApp(l, r)] and
     - [l] is well-defined at depth [d + 1] and
     - [r] is  well-defined at depth [0]
@@ -275,11 +270,6 @@ val well_formed: Scope.t -> gtype -> bool
     - [Atom(Ident(f))] and
     - [f] is in scope and
     - [d] is the arity of [f]
-
-    - [Constr(f, args)] at depth [d = 0] and
-    - [f] is in scope and
-    - [len(args)] is the arity of [f] and
-    - every [a] in [args] is well-defined at depth [0]
 
     - [TApp(l, r)] and
     - [l] is well-defined at depth [d + 1] and
