@@ -112,7 +112,15 @@ let is_app t =
 let mk_var n = Atom(Var(Basic.mk_gtype_id n))
 let mk_weak n = Atom(Weak(Basic.mk_gtype_id n))
 let mk_ident n = Atom(Ident(n))
-let mk_constr f l = Constr(f, l)
+
+let mk_constr f args =
+  let rec mk_tapp t args =
+    match args with
+    | [] -> t
+    | (x::xs) -> mk_tapp (TApp(t, x)) xs
+  in
+  mk_tapp (mk_ident f) args
+
 let mk_app x y = TApp(x, y)
 
 (* Destructors *)
