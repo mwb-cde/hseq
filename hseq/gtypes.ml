@@ -542,10 +542,14 @@ let rec string_gtype x =
   | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
   | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
   | Atom(Ident(f)) -> string_tconst f []
-  | TApp(l, r) ->
-     (string_gtype l) ^ " " ^ (string_gtype r)
-  | Constr(f, args) ->
-    string_tconst f (List.map string_gtype args)
+  | TApp(Atom(Ident(_)), args) -> string_app_args x []
+  | TApp(l, r) -> (string_gtype l) ^ " " ^ (string_gtype r)
+  | Constr(f, args) -> string_tconst f (List.map string_gtype args)
+and string_app_args t lst =
+  match t with
+  | Atom(Ident(f)) -> string_tconst f lst
+  | TApp(l, r) -> string_app_args l ((string_gtype r)::lst)
+  | _ -> String.concat " " ((string_gtype t)::lst)
 
 (*
  * Support functions to deal with type definitions.
@@ -595,12 +599,18 @@ let unfold scp t =
      else
        rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
   | TApp(_) ->
-     let (n, args) = dest_constr t in
+     let (n, args) = (try dest_constr t with _ -> raise Not_found)
+     in
      let recrd = get_typdef scp n in
      if recrd.Scope.alias = None
      then raise Not_found
      else
        rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
+  | Atom(Ident(n)) ->
+     let recrd = get_typdef scp n in
+     if recrd.Scope.alias = None
+     then raise Not_found
+     else rewrite_defn [] (recrd.Scope.args) (from_some recrd.Scope.alias)
   | _ -> raise Not_found
 
 (**
