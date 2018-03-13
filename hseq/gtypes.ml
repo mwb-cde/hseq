@@ -542,8 +542,7 @@ let rec string_gtype x =
   | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
   | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
   | Atom(Ident(f)) -> string_tconst f []
-  | TApp(Atom(Ident(_)), args) -> string_app_args x []
-  | TApp(l, r) -> (string_gtype l) ^ " " ^ (string_gtype r)
+  | TApp(_) -> string_app_args x []
   | Constr(f, args) -> string_tconst f (List.map string_gtype args)
 and string_app_args t lst =
   match t with
@@ -604,8 +603,7 @@ let unfold scp t =
      let recrd = get_typdef scp n in
      if recrd.Scope.alias = None
      then raise Not_found
-     else
-       rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
+     else rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
   | Atom(Ident(n)) ->
      let recrd = get_typdef scp n in
      if recrd.Scope.alias = None
@@ -898,7 +896,7 @@ let rec unify_aux scp ty1 ty2 env =
     match (s, t) with
     | (Constr(f1, args1), Constr(f2, args2)) ->
        begin
-         if f1 = f2
+         if Ident.equals f1 f2
          then
            (* Matching constructors. *)
            try unify_aux_list scp args1 args2 env
@@ -928,6 +926,7 @@ let rec unify_aux scp ty1 ty2 env =
        if env2_opt <> None
        then from_some env2_opt
        else
+         (* Try expanding type aliases before unifying *)
          begin
            try expand_unify scp s t env
            with err -> (add_type_error "Can't unify types" [s; t] err)
@@ -953,7 +952,7 @@ let rec unify_aux scp ty1 ty2 env =
        then raise (type_error "Can't unify types" [s; t])
        else bind_occs t s env
     | (Atom(Ident(f1)), Atom(Ident(f2))) ->
-       if f1 = f2
+       if Ident.equals f1 f2
        then env
        else expand_unify scp s t env
     | _ -> raise (type_error "Can't unify types" [s; t])
@@ -1145,23 +1144,26 @@ let mgu_rename inf env nenv typ =
    type [t1] can be bound.
 *)
 let matching_env scp env t1 t2 =
+  let expand t =
+    if (is_constr t) || (is_app t) || (is_ident t)
+    then try_app (unfold scp) t
+    else None
+  in
   let rec match_aux ty1 ty2 env =
     let s = lookup_var ty1 env
     and t = lookup_var ty2 env
     in
     match (s, t) with
     | (Constr(f1, args1), Constr(f2, args2)) ->
-      if f1 = f2
-      then
-        (try List.fold_left2
-               (fun ev x y -> match_aux x y ev)
-               env args1 args2
-         with x -> add_type_error "Can't match types" [s; t] x)
-      else
-        (try match_aux (unfold scp s) t env
-         with _ ->
-           (try (match_aux s (unfold scp t) env)
-            with x -> (add_type_error "Can't match types" [s; t] x)))
+       if not (Ident.equals f1 f2)
+       then  raise (type_error "Can't match types" [s; t])
+       else
+         begin
+           let env1_opt = match_arg_lists args1 args2 env in
+           if env1_opt <> None
+           then from_some env1_opt
+           else expand_match s t env
+         end
     | (Atom(Var(_)), _) ->
       if equals s t
       then env
@@ -1176,12 +1178,42 @@ let matching_env scp env t1 t2 =
       then env
       else raise (type_error "Can't match types" [s; t])
     | (TApp(l1, r1), TApp(l2, r2)) ->
-       let env1 = match_aux l1 l2 env in
-       match_aux r1 r2 env1
+       (* First try matching the branches *)
+       let env1_opt = try_app (match_aux l1 l2) env in
+       let env2_opt =
+         if env1_opt = None then None
+         else try_app (match_aux r1 r2) (from_some env1_opt)
+       in
+       if env2_opt <> None
+       then from_some env2_opt
+       else
+         (* Try expanding type aliases *)
+         begin
+           try expand_match s t env
+           with err -> (add_type_error "Can't match types" [s; t] err)
+         end
     | _ ->
       if equals s t
       then env
       else raise (type_error "Can't match types" [s; t])
+  and match_arg_lists tyl1 tyl2 env =
+    try_app
+      (List.fold_left2
+         (fun e ty1 ty2 ->
+           try match_aux ty1 ty2 e
+           with err -> add_type_error "Can't match types" [ty1; ty2] err)
+         env tyl1) tyl2
+  and expand_match ty1 ty2 env =
+    let s = expand ty1
+    and t = expand ty2
+    in
+    if (s = None) && t = None
+    then raise (type_error "Can't match types" [ty1; ty2])
+    else
+    let s1 = if s = None then ty1 else from_some s
+    and t1 = if t = None then ty2 else from_some t
+    in
+    match_aux s1 t1 env
   in
   try match_aux t1 t2 env (* try to match t1 and t2 *)
   with x -> add_type_error "Can't match types" [t1; t2] x
@@ -1217,23 +1249,26 @@ let vbind s t env =
 (* Note that it is no longer necessary to use matches_rewrite and it
    can now be replaced with matches_env. *)
 let matches_rewrite scp t1 t2 data =
+  let expand t =
+    if (is_constr t) || (is_app t) || (is_ident t)
+    then try_app (unfold scp) t
+    else None
+  in
   let rec matches_aux ty1 ty2 env =
     let s = lookup_var ty1 env.tyenv
     and t = lookup_var ty2 env.tyenv
     in
     match (s, t) with
     | Constr(f1, args1), Constr(f2, args2) ->
-      if f1 = f2
+      if Ident.equals f1 f2
       then
-        (try List.fold_left2
-               (fun ev x y -> matches_aux x y ev)
-               env args1 args2
-         with _ -> raise (type_error "Can't match types: " [s; t]))
+        try match_aux_list args1 args2 env
+        with err -> add_type_error "Can't match types " [s; t] err
       else
-        (try matches_aux (unfold scp s) t env
-         with _ ->
-           (try matches_aux s (unfold scp t) env
-            with _ -> raise (type_error "Can't match types: " [s; t])))
+        begin
+          try expand_match s t env
+          with err -> add_type_error "Can't match types " [s; t] err
+        end
     | (Atom(Var(_)), _) ->
       if equals s t
       then env
@@ -1254,6 +1289,30 @@ let matches_rewrite scp t1 t2 data =
       if equals s t
       then env
       else raise (type_error "Can't match types: " [s; t])
+  and match_aux_list tyl1 tyl2 data =
+  begin
+    match (tyl1, tyl2) with
+    | ([], []) -> data
+    | (ty1::l1, ty2::l2) ->
+       let data1 =
+         try matches_aux ty1 ty2 data
+         with x -> add_type_error "Can't match types" [ty1; ty2] x
+       in
+       match_aux_list l1 l2 data1
+    | _ -> raise (type_error "Can't match unbalanced constructor lists" [])
+  end
+  and expand_match ty1 ty2 data =
+  (* Try to expand and match type aliases *)
+  let s = expand ty1
+  and t = expand ty2
+  in
+  if s = None && t = None
+  then raise (type_error "Can't match types" [ty1; ty2])
+  else
+    let s1 = if s = None then ty1 else from_some s
+    and t1 = if t = None then ty2 else from_some t
+    in
+    matches_aux s1 t1 data
   in
   matches_aux t1 t2 data
 
