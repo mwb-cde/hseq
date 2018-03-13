@@ -79,6 +79,9 @@ val compare: t -> t -> Order.t
     This is a pair-wise ordering with the [thy_id] the major component.
 *)
 
+val equals: t -> t -> bool
+val lessthan: t -> t -> bool
+
 (** {7 Utility functions} *)
 
 val string_of: t -> string
