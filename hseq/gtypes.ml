@@ -603,7 +603,9 @@ let check_decln l =
     (Lib.try_find check_args largs) <> None
   else false
 
-(** [well_formed_full scp pred t]: ensure that [t] is well-formed declared.
+(** [well_formed_full pred cache scp t]: ensure that [t] is well-formed
+    declared. Apply [pred] to each sub-type of [t], failing if it is false. If
+    [cache] is given, use it as a cache of function names.
 
     A type is well-formed at depth [d] if it satisifes [pred] and is one of:
 
@@ -723,68 +725,15 @@ let well_defined scp (args: (string)list) ty =
   ignore(well_formed_full check_var scp ty)
 
 
-(** [quick_well_defined]: memoised, simpler version of well_defined. Only check
-    that type constructors are well-defined.
-*)
+(** [quick_well_defined]: Simpler version of well_defined. Only check that type
+    constructors are well-defined. [cache] is intednded to be a cache of
+    function identifiers and arities, shared across invocations of
+    [quick_well_defined] but is currently unused.
+ *)
 let quick_well_defined scp cache ty =
-  let arity_of f =
-    (* Get the arity of [f]. Return [None] if [f] is unknown. *)
-    let defn_opt = Lib.try_find (get_typdef scp) f in
-    if defn_opt = None
-    then None
-    else
-      begin
-        let defn = from_some defn_opt in
-        let nargs = List.length defn.Scope.args in
-        Some(nargs)
-      end
-  in
-  let rec well_aux depth t =
-    (* Check all constructors are either memoised or defined. *)
-    match t with
-    | TApp(l, r) ->
-       let lerr = well_aux (depth + 1) l in
-       if lerr <> None
-       then lerr
-       else well_aux 0 r
-    | Atom(Ident(f)) ->
-       let defn = arity_of f in
-       if defn = None
-       then
-         Some("unknown type constructor "^(Ident.string_of f), t)
-       else
-         begin
-           let arity = from_some defn in
-           if depth = arity
-           then
-             begin
-               Hashtbl.add cache (f, arity) true;
-               None
-             end
-           else
-             Some("invalid type constructor"
-                  ^" expected "^(string_of_int arity)
-                 ^" but got "^ (string_of_int depth),
-                  t)
-         end
-    | Atom(Var(_)) ->
-       if depth <> 0
-       then Some("unexpected number of arguments", t)
-       else None
-    | Atom(Weak(_)) ->
-       if depth <> 0
-       then Some("unexpected number of arguments", t)
-       else None
-  in
-  let rslt = well_aux 0 ty
-  in
-  if rslt = None
+  if well_formed scp ty
   then ()
-  else
-    begin
-      let (msg, t) = from_some rslt in
-      raise (type_error ("quick_well_defined: " ^ msg) [t])
-    end
+  else raise (type_error "invalid type" [ty])
 
 (**
    [check_decl_type scp ty]: Ensure type [ty] is suitable for
