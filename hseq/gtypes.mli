@@ -294,8 +294,9 @@ val well_defined: Scope.t -> (string)list -> gtype -> unit
     [ty].
 *)
 
-val quick_well_defined: Scope.t ->
-  (Ident.t * int, bool) Hashtbl.t -> gtype -> unit
+type arity_cache = (Ident.t * int, bool) Hashtbl.t
+val quick_well_defined:
+  Scope.t -> arity_cache -> gtype -> bool
 (** [quick_well_defined scp tbl ty]: Test [ty] to make sure it is
     well-defined.  weak variables can occur in [ty].
 

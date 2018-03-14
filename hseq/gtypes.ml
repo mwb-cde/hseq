@@ -730,10 +730,9 @@ let well_defined scp (args: (string)list) ty =
     function identifiers and arities, shared across invocations of
     [quick_well_defined] but is currently unused.
  *)
+type arity_cache = (Ident.t * int, bool) Hashtbl.t
 let quick_well_defined scp cache ty =
-  if well_formed scp ty
-  then ()
-  else raise (type_error "invalid type" [ty])
+  well_formed scp ty
 
 (**
    [check_decl_type scp ty]: Ensure type [ty] is suitable for
