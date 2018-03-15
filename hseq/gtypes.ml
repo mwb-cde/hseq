@@ -724,16 +724,6 @@ let well_defined scp (args: (string)list) ty =
   in
   ignore(well_formed_full check_var scp ty)
 
-
-(** [quick_well_defined]: Simpler version of well_defined. Only check that type
-    constructors are well-defined. [cache] is intednded to be a cache of
-    function identifiers and arities, shared across invocations of
-    [quick_well_defined] but is currently unused.
- *)
-type arity_cache = (Ident.t * int, bool) Hashtbl.t
-let quick_well_defined scp cache ty =
-  well_formed scp ty
-
 (**
    [check_decl_type scp ty]: Ensure type [ty] is suitable for
    a declaration.

@@ -294,16 +294,6 @@ val well_defined: Scope.t -> (string)list -> gtype -> unit
     [ty].
 *)
 
-type arity_cache = (Ident.t * int, bool) Hashtbl.t
-val quick_well_defined:
-  Scope.t -> arity_cache -> gtype -> bool
-(** [quick_well_defined scp tbl ty]: Test [ty] to make sure it is
-    well-defined.  weak variables can occur in [ty].
-
-    [tbl] is memo of found constructors (and the number of their
-    parameters.
-*)
-
 val check_decl_type: Scope.t -> Basic.gtype -> unit
 (** [check_decl_type scp ty]: Ensure type [ty] is suitable for the
     declaration of a term. Fails if [ty] contains a weak variable.

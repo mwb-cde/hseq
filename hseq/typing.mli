@@ -91,22 +91,15 @@ val typeof_env:
 
 val settype_aux:
   Scope.t ->
-  int * (Ident.t * int, bool) Hashtbl.t *
-    (Gtypes.substitution ->
-     Basic.gtype -> Basic.term -> Gtypes.substitution) ->
-  Basic.gtype ->
-  Basic.term ->
-  int * Gtypes.substitution -> int * Gtypes.substitution
+  (int
+   * (Gtypes.substitution -> Basic.gtype -> Basic.term
+      -> Gtypes.substitution))
+  -> Basic.gtype -> Basic.term ->
+  ((int * Gtypes.substitution) -> (int * Gtypes.substitution))
 
 val test_type:
-  Scope.t ->
-  (Ident.t * int, bool) Hashtbl.t ->
-  Gtypes.substitution ->
-  Basic.term ->
-  Basic.gtype ->
-  Basic.gtype ->
-  Gtypes.substitution
-
+  Scope.t -> Gtypes.substitution -> Basic.term -> Basic.gtype
+  -> Basic.gtype -> Gtypes.substitution
 
 type debugType = TermType of (string * Basic.term * (Basic.gtype list))
 val debug_flag: bool ref
