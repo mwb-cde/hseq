@@ -121,9 +121,6 @@ val exists_type_data:
 (* [exists_type_data p ty] Apply [p] to each sub-type of [ty], return [true] if
    any satisfies [p]. The check is top-down, left-to-right *)
 
-(** String representation of types. *)
-val string_tconst: Ident.t -> string list -> string
-
 (** {5 Base Representation of logic terms} *)
 
 (** Built-in constants that can appear in terms  *)

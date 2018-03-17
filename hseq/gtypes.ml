@@ -509,6 +509,12 @@ and string_app_args t lst =
   | Atom(Ident(f)) -> string_tconst f lst
   | TApp(l, r) -> string_app_args l ((string_gtype r)::lst)
   | _ -> String.concat " " ((string_gtype t)::lst)
+and string_tconst n l =
+  (Ident.string_of n)
+  ^"("
+  ^(Lib.list_string (fun x-> x) ", " l)
+  ^")"
+
 
 (*
  * Support functions to deal with type definitions.

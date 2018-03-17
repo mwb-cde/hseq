@@ -167,13 +167,6 @@ let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
   in
   exists_aux ty []
 
-(** String representation of types *)
-let string_tconst n l =
-  (Ident.string_of n)
-  ^"("
-  ^(Lib.list_string (fun x-> x) ", " l)
-  ^")"
-
 (*
  * Base Representation of logic terms
  *)
