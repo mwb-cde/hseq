@@ -2168,7 +2168,7 @@ struct
     Format.printf "@[";
     Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
     Format.printf ":@ ";
-    Gtypes.print ppinfo ty;
+    Printers.print_type ppinfo ty;
     Format.printf "@],@ ";
     print_thm ppinfo th;
     Format.printf "@]"
@@ -2177,7 +2177,7 @@ struct
     Format.printf "@[";
     Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
     Format.printf ":@ ";
-    Gtypes.print ppinfo ty;
+    Printers.print_type ppinfo ty;
     Format.printf "@]"
 
   let print_typealias ppinfo (n, args, ty) =
@@ -2186,13 +2186,13 @@ struct
         (List.map (fun x -> Gtypes.mk_var x) args)
     in
     Format.printf "@[";
-    Gtypes.print ppinfo named_ty;
+    Printers.print_type ppinfo named_ty;
     begin
       match ty with
       | None -> ()
       | (Some t) ->
          Format.printf "=@,";
-        Gtypes.print ppinfo t
+        Printers.print_type ppinfo t
     end;
     Format.printf "@]"
 
@@ -2203,9 +2203,9 @@ struct
     in
     Format.printf "@[<v>";
     Format.printf "@[";
-    Gtypes.print ppinfo named_ty;
+    Printers.print_type ppinfo named_ty;
     Format.printf "@ =@ ";
-    Gtypes.print ppinfo x.type_base;
+    Printers.print_type ppinfo x.type_base;
     Format.printf "@,:@ ";
     Formula.print ppinfo x.type_set;
     Format.printf "@]@,";

@@ -47,7 +47,7 @@ let print_formula ppinf x =
 
 let rec print_type ppinf x =
   Format.printf "@[";
-  Gtypes.print ppinf x;
+  Printers.print_type ppinf x;
   Format.printf "@]"
 
 let print_sqnt ppinf x =
@@ -97,7 +97,7 @@ let fprint_error fmt ppinf r = r fmt ppinf
 let print_error = fprint_error Format.std_formatter
 
 let print_type_error ppinf err =
-  Gtypes.print_type_error err Format.std_formatter ppinf
+  Printers.print_type_error err Format.std_formatter ppinf
 
 let print_theory ppinf x =
   Theory.print ppinf x

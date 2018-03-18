@@ -711,7 +711,7 @@ and print_tydefs pp n tys =
           | None -> ()
           | Some(gty) ->
             Format.printf "=@,";
-            Gtypes.print pp gty
+            Printers.print_type pp gty
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;
@@ -729,7 +729,7 @@ and print_defs pp n defs =
       Format.printf "@[<2>%s:@ " n;
       print_properties pp d.dprops;
       Format.printf "@ ";
-      Gtypes.print pp d.typ;
+      Printers.print_type pp d.typ;
       Format.printf "@ ";
       begin
         match d.def with

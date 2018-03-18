@@ -100,3 +100,124 @@ let assoc_qnt q =
 (** Fixity of Quantifiers *)
 let fixity_qnt q = nonfix
 
+(** {5 Type printers} *)
+
+module Types =
+  struct
+
+    let pplookup ppstate id =
+      try Printer.get_record (ppstate.Printer.types) id
+      with Not_found ->
+        Printer.mk_record
+          Printer.default_type_prec
+          Printer.default_type_fixity
+          None
+
+    let print_bracket = Printer.print_assoc_bracket
+
+    let rec print_type ppstate pr t =
+      let rec print_aux ppstate pr x =
+        match x with
+        | Atom(Var(_)) ->
+           Format.printf "@[<hov 2>'%s@]" (Gtypes.get_var_name x)
+        | Atom(Weak(_)) ->
+           Format.printf "@[<hov 2>_%s@]" (Gtypes.get_weak_name x)
+        | Atom(Ident(op)) -> print_app ppstate pr (op, [])
+        | TApp(_) ->
+           let op, args = Gtypes.dest_constr x in
+           print_app ppstate pr (op, args)
+      and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
+        begin
+          match args with
+          | [] ->
+             (* Print '(OP)' *)
+             Format.printf "@[";
+             Printer.print_identifier (pplookup ppstate) f;
+             Format.printf "@]"
+          | (lf::lr::rs) ->
+             (* Print '(<arg> OP <arg>) <rest>' *)
+             Format.printf "@[<hov 2>";
+             print_bracket (assoc, prec) (nassoc, nprec) "(";
+             print_aux ppstate (Printer.infixl, nprec) lf;
+             Printer.print_space();
+             Printer.print_identifier (pplookup ppstate) f;
+             Printer.print_space();
+             print_aux ppstate (Printer.infixr, nprec) lr;
+             Printer.print_list
+               (print_type ppstate (nassoc, nprec),
+                Printer.print_space)
+               rs;
+             print_bracket (assoc, prec) (nassoc, nprec) ")";
+             Format.printf "@]"
+          | (lf::rs) ->
+             (* Print '(<arg> OP) <rest>' *)
+             Format.printf "@[<hov 2>";
+             print_bracket (assoc, prec) (nassoc, nprec) "(";
+             print_type ppstate (Printer.infixl, nprec) lf;
+             Printer.print_space();
+             Printer.print_identifier (pplookup ppstate) f;
+             Printer.print_list
+               (print_type ppstate (nassoc, nprec),
+                Printer.print_space)
+               rs;
+             print_bracket (assoc, prec) (nassoc, nprec) ")";
+             Format.printf "@]"
+        end
+      and print_suffix (assoc, prec) (nassoc, nprec) (f, args) =
+        begin
+          Format.printf "@[<hov 2>";
+          print_bracket (assoc, prec) (nassoc, nprec) "(";
+          Printer.print_suffix
+            ((fun pr -> Printer.print_identifier (pplookup ppstate)),
+             (fun pr l ->
+               if l = [] then ()
+               else
+                 Printer.print_sep_list
+                   (print_type ppstate (assoc, pr), ",") l))
+            nprec (f, args);
+          print_bracket (assoc, prec) (nassoc, nprec) ")";
+          Format.printf "@]"
+        end
+      and print_prefix (assoc, prec) (nassoc, nprec) (f, args) =
+        Format.printf "@[<hov 2>";
+        if args = [] then ()
+        else
+          begin
+            Printer.print_string "(";
+            Printer.print_sep_list (print_type ppstate (assoc, prec), ",") args;
+            Format.printf ")@,"
+          end;
+        Printer.print_identifier (pplookup ppstate) f;
+        Format.printf "@]"
+      and print_app ppstate (assoc, prec) (f, args) =
+        let pprec = pplookup ppstate f in
+        let nfixity = pprec.Printer.fixity in
+        let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
+        in
+        let some_printer =
+          Lib.try_find (Printer.get_printer (ppstate.Printer.types)) f
+        in
+        if some_printer <> None
+        then (Lib.from_some some_printer) ppstate (assoc, prec) (f, args)
+        else
+          if Printer.is_infix nfixity
+          then print_infix (assoc, prec) (nassoc, nprec) (f, args)
+          else
+            if Printer.is_suffix nfixity
+            then print_suffix (assoc, prec) (nassoc, nprec) (f, args)
+            else print_prefix (assoc, prec) (nassoc, nprec) (f, args)
+      in
+      print_aux ppstate pr t
+
+  end
+
+let print_type ppinfo ty =
+  Types.print_type
+    ppinfo
+    (Printer.default_type_fixity, Printer.default_type_prec) ty
+
+let print_type_error err fmt pinfo =
+  Format.fprintf fmt "@[%s@ " err.Gtypes.msg;
+  Printer.print_sep_list (print_type pinfo, ",") err.Gtypes.typs;
+  Format.fprintf fmt "@]"
+

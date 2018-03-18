@@ -21,7 +21,6 @@
 
 open Basic
 open Lib
-open Report
 
 (*
  * Basic Operations
@@ -375,134 +374,15 @@ let rename_index idx env top_type =
   rename_aux idx env top_type
 
 (*
- * Pretty printing
- *)
-
-let pplookup ppstate id =
-  try Printer.get_record (ppstate.Printer.types) id
-  with Not_found ->
-    Printer.mk_record
-      Printer.default_type_prec
-      Printer.default_type_fixity
-      None
-
-let print_bracket = Printer.print_assoc_bracket
-
-let rec print_type ppstate pr t =
-  let rec print_aux ppstate pr x =
-    match x with
-    | Atom(Var(_)) -> Format.printf "@[<hov 2>'%s@]" (get_var_name x)
-    | Atom(Weak(_)) -> Format.printf "@[<hov 2>_%s@]" (get_weak_name x)
-    | Atom(Ident(op)) -> print_constr ppstate pr (op, [])
-    | TApp(_) ->
-       let op, args = dest_constr x in
-       print_app ppstate pr (op, args)
-  and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
-    begin
-      match args with
-      | [] ->
-         (* Print '(OP)' *)
-         Format.printf "@[";
-         Printer.print_identifier (pplookup ppstate) f;
-         Format.printf "@]"
-      | (lf::lr::rs) ->
-         (* Print '(<arg> OP <arg>) <rest>' *)
-         Format.printf "@[<hov 2>";
-         print_bracket (assoc, prec) (nassoc, nprec) "(";
-         print_aux ppstate (Printer.infixl, nprec) lf;
-         Printer.print_space();
-         Printer.print_identifier (pplookup ppstate) f;
-         Printer.print_space();
-         print_aux ppstate (Printer.infixr, nprec) lr;
-         Printer.print_list
-           (print_type ppstate (nassoc, nprec),
-            Printer.print_space)
-           rs;
-         print_bracket (assoc, prec) (nassoc, nprec) ")";
-         Format.printf "@]"
-      | (lf::rs) ->
-         (* Print '(<arg> OP) <rest>' *)
-         Format.printf "@[<hov 2>";
-         print_bracket (assoc, prec) (nassoc, nprec) "(";
-         print_type ppstate (Printer.infixl, nprec) lf;
-         Printer.print_space();
-         Printer.print_identifier (pplookup ppstate) f;
-         Printer.print_list
-           (print_type ppstate (nassoc, nprec),
-            Printer.print_space)
-           rs;
-         print_bracket (assoc, prec) (nassoc, nprec) ")";
-         Format.printf "@]"
-    end
-  and print_suffix (assoc, prec) (nassoc, nprec) (f, args) =
-    begin
-      Format.printf "@[<hov 2>";
-      print_bracket (assoc, prec) (nassoc, nprec) "(";
-      Printer.print_suffix
-        ((fun pr -> Printer.print_identifier (pplookup ppstate)),
-         (fun pr l ->
-           if l = [] then ()
-           else
-             Printer.print_sep_list (print_type ppstate (assoc, pr), ",") l))
-        nprec (f, args);
-      print_bracket (assoc, prec) (nassoc, nprec) ")";
-      Format.printf "@]"
-    end
-  and print_prefix (assoc, prec) (nassoc, nprec) (f, args) =
-    Format.printf "@[<hov 2>";
-    if args = [] then ()
-    else
-      begin
-        Printer.print_string "(";
-        Printer.print_sep_list (print_type ppstate (assoc, prec), ",") args;
-        Format.printf ")@,"
-      end;
-    Printer.print_identifier (pplookup ppstate) f;
-    Format.printf "@]"
-  and print_app ppstate (assoc, prec) (f, args) =
-    let pprec = pplookup ppstate f in
-    let nfixity = pprec.Printer.fixity in
-    let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
-    in
-    let some_printer =
-      try_find (Printer.get_printer (ppstate.Printer.types)) f
-    in
-    if some_printer <> None
-    then (from_some some_printer) ppstate (assoc, prec) (f, args)
-    else
-      if Printer.is_infix nfixity
-      then print_infix (assoc, prec) (nassoc, nprec) (f, args)
-      else
-        if Printer.is_suffix nfixity
-        then print_suffix (assoc, prec) (nassoc, nprec) (f, args)
-        else print_prefix (assoc, prec) (nassoc, nprec) (f, args)
-  and print_constr ppstate (assoc, prec) (f, args) =
-    print_app ppstate (assoc, prec) (f, args)
-  in
-  print_aux ppstate pr t
-
-let print ppinfo x =
-  print_type ppinfo
-    (Printer.default_type_fixity, Printer.default_type_prec) x
-
-(*
  * Error handling
  *)
 
-type error = { msg: string; typs: (gtype)list }
+type error = { msg: string; typs: (gtype)list; next: (exn)option }
 exception Error of error
-let type_error m ts = Error({ msg = m; typs = ts})
-let add_type_error msg typs err =
-      Report.add_error (type_error msg typs) err
 
-let print_type_error err fmt pinfo =
-    Format.fprintf fmt "@[%s@ " err.msg;
-    Printer.print_sep_list (print pinfo, ",") err.typs;
-    Format.fprintf fmt "@]"
-(*
-let old_type_error s ts = mk_error(print_type_error s ts)
-let old_add_type_error s t es = raise (add_error (type_error s t) es)
- *)
+let type_error m ts = Error({ msg = m; typs = ts; next = None })
+let add_type_error m ts err =
+  Error( {msg = m; typs = ts; next = Some(err)} )
 
 (* String representation of a type *)
 
@@ -1295,16 +1175,13 @@ let from_save_rec record =
 
 
 (* Debugging substitutions *)
+
 let print_subst tenv =
-  let ppinfo = Printer.empty_ppinfo()
-  in
   Format.printf "@[";
   subst_iter
     (fun x y ->
-      Format.printf "@[(";
-      print ppinfo x;
-      Format.printf "@ :=@ ";
-      print ppinfo y;
-      Format.printf "):@]")
+      Format.printf "@[(%s@ :=@ %s@):]"
+                    (string_gtype x)
+                    (string_gtype y))
     tenv;
   Format.printf "@]"

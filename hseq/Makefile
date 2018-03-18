@@ -72,8 +72,9 @@ hseq_PACK_NAME=HSeq
 # Source for each of the HSeq component libraries.
 Util_SOURCES=lib order treekit tag parserkit rewritekit
 Tpcore_SOURCES=config defaults settings ident basic printer \
-		printerkit printers \
-		report scope gtypes term lterm \
+		printerkit scope gtypes \
+		printers report \
+		term lterm \
 		dbterm typing unify net rewrite
 Logic_SOURCES=changes formula defn subgoalkit logic theory thydb
 Parser_SOURCES=counter lexer pterm grammars parser

@@ -1132,17 +1132,6 @@ let string_inf_term inf x = string_term_inf inf 0 x
  * Pretty Printing
  *)
 
-let rec print_termlist prenv x =
-  match x with
-    | [] -> ()
-    | [p] -> Format.printf "@[";print prenv p; Format.printf "@]"
-    | (p::ps) ->
-      (Format.printf "@[";
-       print prenv p;
-       Format.printf ",@ ";
-       print_termlist prenv ps;
-       Format.printf "@]")
-
 let print_bracket  = Printer.print_assoc_bracket
 
 let pplookup ppstate id =
@@ -1164,7 +1153,7 @@ let print_typed_obj level printer ppstate prec (obj, ty) =
     (Format.printf "@[<2>(";
      printer ppstate prec obj;
      Format.printf ":@ ";
-     Gtypes.print (ppstate) ty;
+     Printers.print_type (ppstate) ty;
      Format.printf ")@]")
   else
     (Format.printf "@[<2>";
@@ -1265,8 +1254,7 @@ let print_typed_term tpr ppstate (assoc, prec) (trm, ty)=
   Format.printf "@[<2>(";
   tpr ppstate (assoc, prec) trm;
   Format.printf ":@ ";
-  Gtypes.print_type ppstate
-    (Printer.default_type_fixity, Printer.default_type_prec) ty;
+  Printers.print_type ppstate ty;
   Format.printf ")@]"
 
 let print_qnt ppstate q =

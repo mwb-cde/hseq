@@ -176,35 +176,14 @@ val rename_index: int -> substitution -> gtype -> (gtype * int * substitution)
     generate the type names.
 *)
 
-(** {5 Pretty Printing} *)
-
-(** Make an empty printer information. *)
-val pplookup: Printer.ppinfo -> Ident.t -> Printer.record
-(** [pplookup ppstate id]: Find the printer record for [id] in [ppstate].*)
-
-val print_type:
-  Printer.ppinfo -> (Printer.fixity * int) -> gtype Printer.printer
-(** [print_type_inf ppstate tbl prec ty] Print type [ty] beginning
-    with precedence [prec]. Rename type variables, using table [tbl],
-    generating consistent pretty variable names. Update [tbl] with the
-    new substitution of new names for old.
-*)
-val print: Printer.ppinfo -> gtype Printer.printer
-(** Toplevel for [print_type_inf]. *)
-
 (* {5 Error reporting} *)
 
-type error = { msg: string; typs: (gtype)list }
+type error = { msg: string; typs: (gtype)list; next: (exn)option }
+
 exception Error of error
 
 val type_error: string -> gtype list -> exn
 val add_type_error: string ->gtype list -> exn -> exn
-val print_type_error: error -> Format.formatter -> Printer.ppinfo -> unit
-
-(*
-val old_type_error: string -> gtype list -> exn
-val old_add_type_error: string ->gtype list -> exn -> 'a
- *)
 
 val string_gtype: gtype -> string
 (** Make a string representation of a type. *)

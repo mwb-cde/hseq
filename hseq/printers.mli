@@ -172,3 +172,24 @@ val assoc_qnt: Basic.quant -> assoc
 (** Associativity of Quantifiers *)
 val fixity_qnt: Basic.quant -> fixity
 (** Fixity of Quantifiers *)
+
+(** {5 Type printers} *)
+
+module Types:
+sig
+  (** Implementation of type printers *)
+
+  (** Main type printer *)
+  val print_type:
+    Printer.ppinfo -> (fixity * int) -> (Basic.gtype)Printer.printer
+end
+
+(** Printer for types. This is an alias for [Types.print] *)
+val print_type: Printer.ppinfo -> (Basic.gtype)Printer.printer
+
+(** Printer for type error *)
+val print_type_error:
+  Gtypes.error -> Format.formatter -> Printer.ppinfo -> unit
+
+
+

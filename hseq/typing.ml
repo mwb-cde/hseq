@@ -26,9 +26,9 @@ open Term
 
 let print_typing_error s tr expty ty fmt pinfo =
     Format.fprintf fmt "@[%s@ expected type@ " s;
-    Gtypes.print pinfo expty;
+    Printers.print_type pinfo expty;
     Format.fprintf fmt "@ got type@ ";
-    Gtypes.print pinfo ty;
+    Printers.print_type pinfo ty;
     Format.fprintf fmt "@ in term@ ";
     Term.print pinfo tr;
     Format.fprintf fmt "@]"

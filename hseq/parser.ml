@@ -310,7 +310,7 @@ let print_overloads tbl info =
       (fun (id, ty) ->
         Printer.print_ident id;
         Format.printf ":@ ";
-        Gtypes.print info ty;
+        Printers.print_type info ty;
         Format.printf ";@ ")
       list;
     Format.printf "@]@,"
