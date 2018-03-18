@@ -189,7 +189,7 @@ val print_type: Printer.ppinfo -> (Basic.gtype)Printer.printer
 
 (** Printer for type error *)
 val print_type_error:
-  Gtypes.error -> Format.formatter -> Printer.ppinfo -> unit
+  Format.formatter -> Printer.ppinfo -> Gtypes.error -> unit
 
 
 

@@ -67,6 +67,15 @@ let print_error info depth errs =
                 (ignore(print_aux (ctr - 1) e);
                  print_aux (ctr - 1) (Errors es))
            end
+        | (Gtypes.Error(err)) ->
+           begin
+             Format.fprintf Format.std_formatter "@[";
+             Printers.print_type_error Format.std_formatter info err;
+             Format.printf "@]@,";
+             if err.Gtypes.next <> None
+             then print_aux (ctr - 1) (Lib.from_some err.Gtypes.next)
+             else ()
+           end
         | _ -> Format.printf "@[%s@]@," (Printexc.to_string x)
       end
   in

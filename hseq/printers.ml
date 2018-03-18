@@ -216,8 +216,8 @@ let print_type ppinfo ty =
     ppinfo
     (Printer.default_type_fixity, Printer.default_type_prec) ty
 
-let print_type_error err fmt pinfo =
+let print_type_error fmt pinfo err =
   Format.fprintf fmt "@[%s@ " err.Gtypes.msg;
   Printer.print_sep_list (print_type pinfo, ",") err.Gtypes.typs;
-  Format.fprintf fmt "@]"
+  Format.fprintf fmt "@]@."
 
