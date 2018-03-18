@@ -27,17 +27,19 @@
 *)
 
 (** {6 Exceptions for reporting errors} *)
-
-type error = Format.formatter ->Printer.ppinfo -> unit
+type error_printer = Format.formatter -> Printer.ppinfo -> unit
+type error =
+  {
+    printer: error_printer
+  }
 exception Error of error
 
-(** A single error. *)
-
-exception Errors of exn list
-(** A list of errors. *)
-
-val mk_error: error -> exn
+val mk_error: error_printer -> exn
 (** Construct an error. *)
+
+type errors = { err: exn; next: (exn)option }
+exception Errors of errors
+
 val add_error: exn -> exn -> exn
 (** Add an error to a list of errors. *)
 
@@ -51,8 +53,10 @@ val catch_error: Printer.ppinfo -> int -> ('a -> unit ) -> 'a -> unit
     printing it with [print_error].
 *)
 
+(*
 val error_of_str: string -> error
 (** [error msg]: Raise exception [Error] with message [msg]. *)
+ *)
 
 val error: string -> exn
 (** [error msg]: Raise exception [Error] with message [msg]. *)

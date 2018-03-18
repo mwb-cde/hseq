@@ -93,11 +93,14 @@ let print_subst tenv f=
     tenv;
   Format.printf "@]"
 
-let fprint_error fmt ppinf r = r fmt ppinf
+let fprint_error fmt ppinf r = r.Report.printer fmt ppinf
 let print_error = fprint_error Format.std_formatter
 
 let print_type_error ppinf err =
   Printers.print_type_error Format.std_formatter ppinf err
+
+let print_report ppinf depth err =
+  Report.print_error ppinf depth err
 
 let print_theory ppinf x =
   Theory.print ppinf x

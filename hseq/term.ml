@@ -1407,8 +1407,9 @@ let print_term_error s ts fmt pinfo =
   Printer.print_sep_list (print pinfo, ",") ts;
   Format.fprintf fmt "@]@]"
 
-let term_error s ts = mk_error(print_term_error s ts)
-let add_term_error s t es = raise (add_error (term_error s t) es)
+let term_error s ts = Report.mk_error (print_term_error s ts)
+let add_term_error s t es =
+  raise (Report.add_error (Report.mk_error (print_term_error s t)) es)
 
 let least ts =
   let rec less_aux l xs =

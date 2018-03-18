@@ -681,6 +681,7 @@ struct
 
   let print_error r = Display.print_error (Global.ppinfo()) r
   let print_type_error r = Display.print_type_error (Global.ppinfo()) r
+  let print_report depth r = Display.print_report (Global.ppinfo()) depth r
 
   let print_theory x = Display.print_theory (Global.ppinfo()) x
 

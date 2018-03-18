@@ -75,7 +75,7 @@ let sum_example () =
   in
   let sum_exists =
     theorem "sum_exists"
-            (!% " ? p: is_sum p ")
+            (!% " ? p: is_sum p")
             [
               unfold "is_sum"
               ++ inst_tac  [ (!% "mk_suml true "); (!% " true ") ;
@@ -551,19 +551,7 @@ let sum_example () =
 
 (** Printer for errors. *)
 let rec error_exn_printer e =
-  match e with
-  | Report.Error(err) ->
-     Format.open_box 0;
-     Display.print_error err;
-     Format.close_box();
-     Format.print_newline()
-  | Report.Errors(errs) ->
-     List.iter error_exn_printer errs
-  | _ ->
-     Format.open_box 0;
-     Format.print_string (Printexc.to_string e);
-     Format.close_box();
-     Format.print_newline()
+  Userlib.Display.print_report 5 e
 
 (** Top-level. *)
 let _ =

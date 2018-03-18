@@ -43,5 +43,5 @@ val print_fnident: Ident.t -> unit
 val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
 val fprint_error: Format.formatter -> Printer.ppinfo -> Report.error -> unit
 val print_error: Printer.ppinfo -> Report.error -> unit
-
+val print_report: Printer.ppinfo -> int -> exn -> unit
 val print_type_error: Printer.ppinfo -> Gtypes.error -> unit

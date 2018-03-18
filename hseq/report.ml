@@ -28,20 +28,18 @@ open Format
  *)
 
 (** A single error. *)
-type error = Format.formatter ->Printer.ppinfo -> unit
+type error_printer = Format.formatter -> Printer.ppinfo -> unit
+type error =
+  {
+    printer: error_printer;
+  }
 exception Error of error
-let mk_error (e: error) = Error e
+let mk_error p = Error{ printer = p }
 
-(** A list of errors. *)
-exception Errors of exn list
+type errors = { err: exn; next: (exn)option }
+exception Errors of errors
 
-(** Construct an error. *)
-
-(** Add an error to a list of errors. *)
-let add_error e x =
-  match x with
-  | Errors es -> Errors(e::es)
-  | _ -> Errors[e; x]
+let add_error e n = Errors ({err = e; next = Some(n) })
 
 (** [print_error info depth err]: Print the first [depth] errors from
     the exception.
@@ -53,19 +51,18 @@ let print_error info depth errs =
     else
       begin
         match x with
-        | (Error e) ->
+        | (Error err) ->
            begin
              Format.fprintf Format.std_formatter "@[";
-             e std_formatter info;
+             err.printer std_formatter info;
              Format.printf "@]@,"
            end
-        | (Errors errs) ->
+        | Errors(errs) ->
            begin
-             match errs with
-             | [] -> ()
-             | (e::es) ->
-                (ignore(print_aux (ctr - 1) e);
-                 print_aux (ctr - 1) (Errors es))
+             print_aux ctr (errs.err);
+             if errs.next <> None
+             then print_aux (ctr - 1) (Lib.from_some errs.next)
+             else ()
            end
         | (Gtypes.Error(err)) ->
            begin
@@ -90,10 +87,10 @@ let catch_error info depth f a =
   try (f a)
   with x -> print_error info depth x
 
-let error_of_str (str: string) (fmt: Format.formatter) (inf: Printer.ppinfo) =
-  Format.fprintf fmt "@[error: %s@]@." str
+let error_of_str (str: string) =
+  (fun fmt inf -> Format.fprintf fmt "@[error: %s@]@." str)
 
-let error s = Error (error_of_str s)
+let error s = mk_error(error_of_str s)
 
 let warning str =
   Format.fprintf std_formatter "@[warning: @[%s@]@]@." str
