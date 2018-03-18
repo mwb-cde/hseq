@@ -111,7 +111,8 @@ let check_type_name scp n =
 
 let check_well_defined scp args ty =
   try Gtypes.well_defined scp args ty;()
-  with err -> raise (Gtypes.add_type_error "Badly formed type" [ty] err)
+  with err -> raise (Gtypes.add_type_error
+                       "Badly formed type" [ty] err)
 
 (*** Type definition: aliasing ***)
 
@@ -191,8 +192,10 @@ let make_witness_type scp dtype setP =
       in
       Term.retype sbs setP
     with err ->
-      raise (Term.add_term_error "Badly typed term" [setP]
-               (Gtypes.add_type_error "Invalid type" [tty] err))
+      raise
+        (Term.add_term_error
+           "Badly typed term" [setP]
+           (Gtypes.add_type_error "Invalid type" [tty] err))
 
 (**
    [mk_rep_T set rep]:

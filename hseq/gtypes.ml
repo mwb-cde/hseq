@@ -489,12 +489,20 @@ let print ppinfo x =
  * Error handling
  *)
 
-let print_type_error s ts fmt pinfo =
-    Format.fprintf fmt "@[%s@ " s;
-    Printer.print_sep_list (print pinfo, ",") ts;
+type error = { msg: string; typs: (gtype)list }
+exception Error of error
+let type_error m ts = Error({ msg = m; typs = ts})
+let add_type_error msg typs err =
+      Report.add_error (type_error msg typs) err
+
+let print_type_error err fmt pinfo =
+    Format.fprintf fmt "@[%s@ " err.msg;
+    Printer.print_sep_list (print pinfo, ",") err.typs;
     Format.fprintf fmt "@]"
-let type_error s ts = mk_error(print_type_error s ts)
-let add_type_error s t es = raise (add_error (type_error s t) es)
+(*
+let old_type_error s ts = mk_error(print_type_error s ts)
+let old_add_type_error s t es = raise (add_error (type_error s t) es)
+ *)
 
 (* String representation of a type *)
 
@@ -825,7 +833,7 @@ let rec unify_aux scp ty1 ty2 env =
          (* Try expanding type aliases before unifying *)
          begin
            try expand_unify scp s t env
-           with err -> (add_type_error "Can't unify types" [s; t] err)
+           with err -> raise (add_type_error "Can't unify types" [s; t] err)
          end
     (* Variables, bind if not equal, but test for occurence *)
     | (Atom(Var(_)), Atom(Var(_))) ->
@@ -860,7 +868,8 @@ and unify_aux_list scp tyl1 tyl2 env =
     | (ty1::l1, ty2::l2) ->
        let env1 =
          try unify_aux scp ty1 ty2 env
-         with x -> add_type_error "Can't unify types" [ty1; ty2] x
+         with x ->
+           raise (add_type_error "Can't unify types" [ty1; ty2] x)
        in
        unify_aux_list scp l1 l2 env1
     | _ -> raise (type_error "Can't unbalanced constructor lists" [])
@@ -1048,7 +1057,7 @@ let matching_env scp env t1 t2 =
          (* Try expanding type aliases *)
          begin
            try expand_match s t env
-           with err -> (add_type_error "Can't match types" [s; t] err)
+           with err -> raise (add_type_error "Can't match types" [s; t] err)
          end
     | _ ->
       if equals s t
@@ -1067,7 +1076,7 @@ let matching_env scp env t1 t2 =
     match_aux s1 t1 env
   in
   try match_aux t1 t2 env (* try to match t1 and t2 *)
-  with x -> add_type_error "Can't match types" [t1; t2] x
+  with x -> raise (add_type_error "Can't match types" [t1; t2] x)
 
 let matches_env scp tyenv t1 t2 =
   try matching_env scp tyenv t1 t2

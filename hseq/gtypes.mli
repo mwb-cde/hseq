@@ -194,8 +194,17 @@ val print: Printer.ppinfo -> gtype Printer.printer
 
 (* {5 Error reporting} *)
 
+type error = { msg: string; typs: (gtype)list }
+exception Error of error
+
 val type_error: string -> gtype list -> exn
-val add_type_error: string ->gtype list -> exn -> 'a
+val add_type_error: string ->gtype list -> exn -> exn
+val print_type_error: error -> Format.formatter -> Printer.ppinfo -> unit
+
+(*
+val old_type_error: string -> gtype list -> exn
+val old_add_type_error: string ->gtype list -> exn -> 'a
+ *)
 
 val string_gtype: gtype -> string
 (** Make a string representation of a type. *)

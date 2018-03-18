@@ -38,6 +38,7 @@
 #install_printer HSeqUser.Userlib.Display.print_prfstk;;
 #install_printer HSeqUser.Userlib.Display.print_fnident;;
 #install_printer HSeqUser.Userlib.Display.print_error;;
+#install_printer HSeqUser.Userlib.Display.print_type_error;;
 #install_printer HSeqUser.Userlib.Display.print_defn;;
 #install_printer HSeqUser.Userlib.Display.print_theory;;
 #install_printer HSeqUser.Userlib.Display.print_simpset;;

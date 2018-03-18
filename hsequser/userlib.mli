@@ -590,6 +590,7 @@ sig
 
   val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
   val print_error: Report.error -> unit
+  val print_type_error: Gtypes.error -> unit
 
   val print_simpset: Simpset.simpset -> unit
 end (* Display *)

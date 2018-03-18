@@ -24,7 +24,7 @@ open Term
 
 (*** Type Errors ***)
 
-let print_type_error s tr expty ty fmt pinfo =
+let print_typing_error s tr expty ty fmt pinfo =
     Format.fprintf fmt "@[%s@ expected type@ " s;
     Gtypes.print pinfo expty;
     Format.fprintf fmt "@ got type@ ";
@@ -34,7 +34,7 @@ let print_type_error s tr expty ty fmt pinfo =
     Format.fprintf fmt "@]"
 
 let typing_error s tr expty ty =
-  Report.mk_error(print_type_error s tr expty ty)
+  Report.mk_error(print_typing_error s tr expty ty)
 let add_typing_error s tr expty ty es =
   Report.add_error (typing_error s tr expty ty) es
 
@@ -164,7 +164,8 @@ let typecheck_aux scp (inf, cache) typenv exty et =
                   raise (add_typing_error
                            "Typechecking: "
                            trm
-                           (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)
+                           (Gtypes.mgu expty env) (Gtypes.mgu bty env)
+                           err)
               in
               begin
                 try type_aux rty b (ctr1, env1)
@@ -177,7 +178,8 @@ let typecheck_aux scp (inf, cache) typenv exty et =
                 with err ->
                   raise (add_typing_error "Typechecking: " trm
                            (Gtypes.mgu expty env)
-                           (Gtypes.mgu (Lterm.mk_bool_ty()) env) err)
+                           (Gtypes.mgu (Lterm.mk_bool_ty()) env)
+                           err)
               in
               (ctr1, env2)
         end
@@ -212,7 +214,8 @@ let rec test_type scp env trm ty expty =
   try Gtypes.unify_env scp ty expty env
   with err ->
     raise (add_typing_error "Typechecking: " trm
-                            (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
+                            (Gtypes.mgu expty env) (Gtypes.mgu ty env)
+                            err)
 and settype_aux scp (inf, appfn) expty t tyenv =
   let (ctr, env) = tyenv in
   match t with
@@ -229,7 +232,8 @@ and settype_aux scp (inf, appfn) expty t tyenv =
              with err ->
                raise (add_typing_error "Typechecking: " t
                                        (Gtypes.mgu expty env)
-                                       (Gtypes.mgu ty env) err)
+                                       (Gtypes.mgu ty env)
+                                       err)
            end
 
        in
@@ -244,7 +248,8 @@ and settype_aux scp (inf, appfn) expty t tyenv =
        with err ->
          raise (add_typing_error
                   "Typechecking: " t
-                  (Gtypes.mgu expty env) (Gtypes.mgu ty env) err)
+                  (Gtypes.mgu expty env) (Gtypes.mgu ty env)
+                  err)
      in
      add_to_list (TermType("Free", t, [Gtypes.mgu expty env1])) debug_list;
      (ctr, env1)
@@ -298,7 +303,8 @@ and settype_aux scp (inf, appfn) expty t tyenv =
             with err ->
               raise (add_typing_error
                        "Typechecking: " t
-                       (Gtypes.mgu expty env) (Gtypes.mgu bty env) err)
+                       (Gtypes.mgu expty env) (Gtypes.mgu bty env)
+                       err)
           in
           let (ctr2, env2) =
             try settype_aux scp (inf, appfn) rty b (ctr1, env1)
@@ -320,7 +326,8 @@ and settype_aux scp (inf, appfn) expty t tyenv =
             with err ->
               raise (add_typing_error "Typechecking: " t
                                       (Gtypes.mgu expty env)
-                                      (Lterm.mk_bool_ty()) err)
+                                      (Lterm.mk_bool_ty())
+                                      err)
           in
           add_to_list
             (TermType("Qnt", t, [Gtypes.mgu expty env2])) debug_list;

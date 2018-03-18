@@ -680,6 +680,7 @@ struct
   let print_subst = Display.print_subst
 
   let print_error r = Display.print_error (Global.ppinfo()) r
+  let print_type_error r = Display.print_type_error (Global.ppinfo()) r
 
   let print_theory x = Display.print_theory (Global.ppinfo()) x
 
