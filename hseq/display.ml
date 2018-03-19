@@ -37,12 +37,12 @@ let print_fnident x = Printer.print_ident x
 
 let print_term ppinf x =
   open_box 0;
-  Term.print ppinf x;
+  Printers.print_term ppinf x;
   close_box()
 
 let print_formula ppinf x =
   open_box 0;
-  Term.print ppinf (Formula.term_of x);
+  Printers.print_term ppinf (Formula.term_of x);
   close_box()
 
 let rec print_type ppinf x =

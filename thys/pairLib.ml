@@ -53,9 +53,9 @@ struct
        begin
          Format.printf "@[<2>";
          Printer.print_assoc_bracket prec ppdata "(";
-         Term.print_term ppstate ppdata left;
+         Printers.Terms.print_term ppstate ppdata left;
          Format.printf ",@ ";
-         Term.print_term ppstate ppdata right;
+         Printers.Terms.print_term ppstate ppdata right;
          Printer.print_assoc_bracket prec ppdata  ")";
          Format.printf "@]";
          begin
@@ -65,7 +65,7 @@ struct
               begin
                 Format.printf "@[";
                 Printer.print_list
-                  (Term.print_term ppstate prec,
+                  (Printers.Terms.print_term ppstate prec,
                    (fun () -> Format.printf "@ "))
                   rest;
                 Format.printf "@]"
@@ -73,7 +73,7 @@ struct
          end
        end
     | _ ->
-       Term.simple_print_fn_app ppstate ppdata (f, args)
+       Printers.Terms.simple_print_fn_app ppstate ppdata (f, args)
 
   let init_pair_printer() =
     let inf0 = Global.ppinfo () in

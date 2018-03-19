@@ -38,7 +38,7 @@ let thy_of x = x.thy
 let print_form_error s ts fmt pinfo =
     Format.fprintf fmt "@[%s@ @[" s;
     Printer.print_sep_list
-      ((fun f-> Term.print pinfo (term_of f)), ",") ts;
+      ((fun f-> Printers.print_term pinfo (term_of f)), ",") ts;
     Format.fprintf fmt "@]@]"
 
 let error s ts = Report.mk_error(print_form_error s ts)
@@ -516,7 +516,7 @@ let mk_rewrite_eq scp tyenv plan trm =
  * Pretty printing
  *)
 
-let print inf x = Term.print inf (term_of x)
+let print inf x = Printers.print_term inf (term_of x)
 let string_form x = Term.string_term (term_of x)
 
 (*

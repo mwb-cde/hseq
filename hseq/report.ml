@@ -76,7 +76,7 @@ let print_error info depth errs =
         | Term.Error(err) ->
            begin
              Format.fprintf Format.std_formatter "@[";
-             Term.print_term_error Format.std_formatter info err;
+             Printers.print_term_error Format.std_formatter info err;
              Format.printf "@]@,";
              if err.Term.next <> None
              then print_aux (ctr - 1) (Lib.from_some err.Term.next)

@@ -54,7 +54,7 @@ struct
         in
         Format.printf "@[<v>Goal ";
         Format.printf "@[";
-        Term.print ppinfo (Formula.term_of (Logic.get_goal g));
+        Printers.print_term ppinfo (Formula.term_of (Logic.get_goal g));
         Format.printf "@]@,";
         begin
           match subgls with
@@ -153,7 +153,8 @@ struct
     let print_short prf idx =
       Format.printf "@[<v>Goal %i: " idx;
       Format.printf "@[";
-      Term.print ppinfo (Formula.term_of (Logic.get_goal (Proof.top prf)));
+      Printers.print_term
+        ppinfo (Formula.term_of (Logic.get_goal (Proof.top prf)));
       Format.printf "@]@]"
     and num_prfs = List.length stk.stck_f
     in

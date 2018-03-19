@@ -37,7 +37,7 @@ let negation_printer ppstate ((fixity: Printer.fixity), prec) (f, args) =
       Format.printf "@[<2>";
       Printer.print_bracket prec cprec "(";
       Format.printf "~";
-      Term.print_term ppstate (fixity, cprec) t;
+      Printers.Terms.print_term ppstate (fixity, cprec) t;
       Printer.print_bracket prec cprec ")";
       Format.printf "@]";
       begin
@@ -47,12 +47,14 @@ let negation_printer ppstate ((fixity: Printer.fixity), prec) (f, args) =
             Format.printf "@[";
             Printer.print_list
               ((fun x ->
-                Term.print_term ppstate (fixity, prec) x),
+                Printers.Terms.print_term ppstate (fixity, prec) x),
                (fun () -> Format.printf "@ "))
               rest;
             Format.printf "@]"
         end
-    | _ -> Term.simple_print_fn_app ppstate (fixity, cprec) (f, args)
+    | _ ->
+       Printers.Terms.simple_print_fn_app
+         ppstate (fixity, cprec) (f, args)
 
 
 let init_negation_printer inf =
@@ -114,11 +116,11 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
       Format.printf "@[<2>";
       Printer.print_bracket prec cprec "(";
       Format.printf "if@ ";
-      Term.print_term ppstate (cfixity, cprec) b;
+      Printers.Terms.print_term ppstate (cfixity, cprec) b;
       Format.printf "@ then@ ";
-      Term.print_term ppstate (cfixity, cprec) tbr;
+      Printers.Terms.print_term ppstate (cfixity, cprec) tbr;
       Format.printf "@ else@ ";
-      Term.print_term ppstate (cfixity, cprec) fbr;
+      Printers.Terms.print_term ppstate (cfixity, cprec) fbr;
       Printer.print_bracket prec cprec  ")";
       if (prec<cprec) then Format.printf "@ " else ();
       Format.printf "@]";
@@ -129,12 +131,14 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
             Format.printf "@[";
             Printer.print_list
               ((fun x ->
-                Term.print_term ppstate (cfixity, prec) x),
+                Printers.Terms.print_term ppstate (cfixity, prec) x),
                (fun () -> Format.printf "@ "))
               rest;
             Format.printf "@]"
       end
-    | _ -> Term.simple_print_fn_app ppstate (cfixity, cprec) (f, args)
+    | _ ->
+       Printers.Terms.simple_print_fn_app
+         ppstate (cfixity, cprec) (f, args)
 
 
 let init_ifthenelse_printer inf =
@@ -156,7 +160,7 @@ let init_choice_parser tbl =
     (Lib.After "lambda") "epsilon" choice_parser
 
 let choice_printer =
-  Term.print_as_binder choice_pp choice_ident choice_sym
+  Printers.Terms.print_as_binder choice_pp choice_ident choice_sym
 
 let init_choice_printer inf =
   Printer.add_term_printer inf choice_ident choice_printer
@@ -182,7 +186,7 @@ let init_exists_unique_parser tbl =
     (Lib.After "lambda") "exists_unique" exists_unique_parser
 
 let exists_unique_printer  =
-  (Term.print_as_binder
+  (Printers.Terms.print_as_binder
     exists_unique_pp exists_unique_ident exists_unique_sym)
 
 let init_exists_unique_printer inf =

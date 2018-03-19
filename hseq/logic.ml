@@ -74,7 +74,7 @@ let from_save scp t =
 
 let print_thm pp t =
   Format.printf "@[<3>|- ";
-  Term.print pp (term_of t);
+  Printers.print_term pp (term_of t);
   Format.printf "@]"
 
 let string_thm x = string_form (formula_of x)
@@ -2256,9 +2256,9 @@ let print_sqnt ppinfo sq =
       | [] -> ()
       | (s::als) ->
          Format.printf "@[[%s] " (name_of_asm i (form_tag s));
-        Term.print ppinfo (Formula.term_of (drop_tag s));
-        Format.printf "@]@,";
-        print_asm (i-1) als
+         Printers.print_term ppinfo (Formula.term_of (drop_tag s));
+         Format.printf "@]@,";
+         print_asm (i-1) als
     end;
     Format.printf "@]"
   and print_cncl i cfl =
@@ -2268,9 +2268,9 @@ let print_sqnt ppinfo sq =
       | [] -> ()
       | (s::cls) ->
          Format.printf "@[[%s] " (name_of_concl i (form_tag s));
-        Term.print ppinfo (Formula.term_of (drop_tag s));
-        Format.printf "@]@,";
-        print_cncl (i+1) cls
+         Printers.print_term ppinfo (Formula.term_of (drop_tag s));
+         Format.printf "@]@,";
+         print_cncl (i+1) cls
     end ;
     Format.printf "@]"
   in

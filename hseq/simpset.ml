@@ -365,10 +365,10 @@ let print_rule ppinfo (vars, cond, lhs, rhs, order, src) =
     match src with
       | Logic.Asm _ ->
         Format.printf "Assumption: ";
-        Term.print ppinfo trm;
+        Printers.print_term ppinfo trm;
       | Logic.OAsm _ ->
         Format.printf "Ordered assumption: ";
-        Term.print ppinfo trm;
+        Printers.print_term ppinfo trm;
       | Logic.RRThm thm ->
         Format.printf "Theorem: ";
         Logic.print_thm ppinfo thm

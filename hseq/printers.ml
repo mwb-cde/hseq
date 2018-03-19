@@ -221,3 +221,287 @@ let print_type_error fmt pinfo err =
   Printer.print_sep_list (print_type pinfo, ",") err.Gtypes.typs;
   Format.fprintf fmt "@]@."
 
+(** {5 Term printers} *)
+
+module Terms =
+  struct
+    let print_bracket  = Printer.print_assoc_bracket
+
+    let pplookup ppstate id =
+      try Printer.get_record ppstate.Printer.terms id
+      with Not_found ->
+        Printer.mk_record
+          Printer.default_term_prec
+          Printer.default_term_fixity
+          None
+
+    let print_meta qnt =
+      let _, qv, qty = dest_binding qnt
+      in
+      Format.printf "@[(_%s:@ %s)@]" qv (Gtypes.string_gtype qty)
+
+    let print_typed_obj level printer ppstate prec (obj, ty) =
+      if (!Settings.print_type_level > level)
+      then
+        (Format.printf "@[<2>(";
+         printer ppstate prec obj;
+         Format.printf ":@ ";
+         print_type (ppstate) ty;
+         Format.printf ")@]")
+      else
+        (Format.printf "@[<2>";
+         printer ppstate prec obj;
+         Format.printf "@]")
+
+    let print_typed_identifier ppstate (id, ty) =
+      let printer ppstate _ i =
+        Printer.print_identifier (pplookup ppstate) i
+      in
+      print_typed_obj 3 printer ppstate (Printer.nonfix, 0) (id, ty)
+
+    let print_typed_name ppstate (id, ty) =
+      let printer ppstate _ n = Format.print_string n
+      in
+      print_typed_obj 2 printer ppstate (Printer.nonfix, 0) (id, ty)
+
+    let print_ident_as_identifier ppstate (f, p) v =
+      let (id, ty) = Term.dest_ident v
+      in
+      Printer.print_identifier (pplookup ppstate) id
+
+    let print_prefix (opr, tpr) (assoc, prec) (f, args) =
+      Format.printf "@[<2>";
+      opr (assoc, prec) f;
+      Format.printf "@ ";
+      Printer.print_list (tpr (assoc, prec), Printer.print_space) args;
+      Format.printf "@]"
+
+    let print_suffix (opr, tpr) (assoc, prec) (f, args) =
+      Format.printf "@[<2>";
+      Printer.print_list (tpr (assoc, prec), Printer.print_space) args;
+      Format.printf "@ ";
+      opr (assoc, prec) f;
+      Format.printf "@]"
+
+    let rec print_infix (opr, tpr) (assoc, prec) (f, args) =
+      Format.printf "@[<2>";
+      begin
+        match args with
+        | [] ->
+           Format.printf "@[<2>";
+           opr (assoc, prec) f;
+           Format.printf "@]"
+        | l::r::rest ->
+           Format.printf "@[<2>";
+           tpr (Printer.infixl, prec) l;
+           Format.printf "@ ";
+           opr (assoc, prec) f;
+           Format.printf "@ ";
+           tpr (Printer.infixr, prec) r;
+           Printer.print_list (tpr (assoc, prec), Printer.print_space) rest;
+           Format.printf "@]"
+        | l::rest ->
+           Format.printf "@[<2>";
+           tpr (Printer.infixl, prec) l;
+           Format.printf "@ ";
+           opr (assoc, prec) f;
+           Printer.print_list (tpr (assoc, prec), Printer.print_space) rest;
+           Format.printf "@]"
+      end;
+      Format.printf "@]"
+
+    let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args) =
+      let (id, ty) = Term.dest_ident f in
+      let pprec =
+        try Printer.get_record ppstate.Printer.terms id
+        with Not_found ->
+          Printer.mk_record
+            Printer.fun_app_prec
+            Printer.default_term_fixity
+            None
+      in
+      let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec) in
+      let user_printer=
+        try Some (Printer.get_printer (ppstate.Printer.terms) id)
+        with Not_found -> None
+      and std_printer =
+        if (Printer.is_infix nfixity)
+        then print_infix (fnpr, argpr)
+        else
+          if (Printer.is_suffix nfixity)
+          then print_suffix (fnpr, argpr)
+          else print_prefix (fnpr, argpr)
+      in
+      Format.printf "@[<2>";
+      begin
+        match user_printer with
+        | None ->
+           print_bracket (assoc, prec) (nfixity, nprec) "(";
+           std_printer (nfixity, nprec) (f, args);
+           print_bracket (assoc, prec) (nfixity, nprec) ")"
+        | Some p -> p ppstate (assoc, prec) (f, args)
+      end;
+      Format.printf "@]"
+
+    let print_typed_term tpr ppstate (assoc, prec) (trm, ty)=
+      Format.printf "@[<2>(";
+      tpr ppstate (assoc, prec) trm;
+      Format.printf ":@ ";
+      print_type ppstate ty;
+      Format.printf ")@]"
+
+    let print_qnt ppstate q =
+      let _, qvar, qtyp = dest_binding q
+      in
+      print_typed_name ppstate (qvar, qtyp)
+
+    let print_qnts ppstate prec (qnt, qs) =
+      Format.printf "@[%s" qnt;
+      Printer.print_list (print_qnt ppstate, Printer.print_space) qs;
+      Format.printf":@]"
+
+    let rec print_term ppstate (assoc, prec) x =
+      match x with
+        Id(n, ty) ->
+        let user_printer=
+          try Some (Printer.get_printer (ppstate.Printer.terms) n)
+          with Not_found -> None
+        in
+        (match user_printer with
+           None -> print_typed_identifier ppstate (n, ty)
+         | Some(p) -> p ppstate (assoc, prec) (x, []))
+      | Free(n, ty) ->
+         print_typed_name ppstate (n, ty)
+      | Bound(n) ->
+         Format.printf "@[%s@]" ((Term.get_binder_name x))
+      | Meta(n) ->
+         Format.printf "@[%s@]" ((Term.get_binder_name x))
+      | Const(c) ->
+         Format.printf "@[%s@]" (Basic.string_const c);
+      | App(t1, t2) ->
+         let f, args = Term.get_fun_args x
+         in
+         if Term.is_ident f
+         then
+           begin
+             Format.printf "@[";
+             print_fn_app ppstate
+                          (print_ident_as_identifier ppstate,
+                           (fun (a, p) t-> print_term ppstate (a, p) t))
+                          (assoc, prec) (f, args);
+             Format.printf "@]"
+           end
+         else
+           begin
+             let (tassoc, tprec) =
+               (Printer.default_term_fixity, Printer.fun_app_prec)
+             in
+             Format.printf "@[<hov 2>";
+             print_bracket (assoc, prec) (tassoc, tprec) "(";
+             print_prefix
+               (print_term ppstate, print_term ppstate)
+               (tassoc, tprec) (f, args);
+             print_bracket (assoc, prec) (tassoc, tprec) ")";
+             Format.printf "@,@]"
+           end
+      | Qnt(q, body) ->
+         let (qnt, qvar, qtyp) = Basic.dest_binding q in
+         let (qnts, b) = Term.strip_qnt qnt x in
+         let (tassoc, tprec) =
+           (Printer.fixity_qnt qnt, Printer.prec_qnt qnt)
+         in
+         Format.printf "@[";
+         print_bracket (assoc, prec) (tassoc, tprec) "(";
+         Format.printf "@[<hov 3>";
+         print_qnts ppstate tprec (Basic.quant_string qnt, qnts);
+         Printer.print_space ();
+         print_term ppstate (tassoc, tprec) b;
+         Format.printf "@]";
+         print_bracket (assoc, prec) (tassoc, tprec) ")";
+         Format.printf "@]"
+
+    let print ppstate x =
+      Format.open_box 0;
+      print_term ppstate
+                 (Printer.default_term_fixity, Printer.default_term_prec)
+                 (Term.retype_pretty (Gtypes.empty_subst()) x);
+      Format.close_box()
+
+    let simple_print_fn_app ppstate (assoc, prec) (f, args) =
+      let (id, _) = Term.dest_ident f in
+      let pprec = pplookup ppstate id in
+      let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
+      in
+      let iprint (a, pr) = print_ident_as_identifier ppstate (a, pr)
+      and tprint (a, pr) = print_term ppstate (a, pr)
+      in
+      Format.printf "@[<2>";
+      print_bracket (assoc, prec) (nfixity, nprec) "(";
+      if(Printer.is_infix nfixity)
+      then print_infix (iprint, tprint) (assoc, prec) (f, args)
+      else
+        if Printer.is_suffix nfixity
+        then print_suffix (iprint, tprint) (assoc, prec) (f, args)
+        else print_prefix (iprint, tprint) (assoc, prec) (f, args);
+      print_bracket (assoc, prec) (nfixity, nprec) ")";
+      Format.printf "@]"
+
+    (** [print_as_binder (sym_assoc, sym_prec) f sym] Construct a printer
+    to print function applications of the form [f (%x: P)] as [sym x:
+    P].
+     *)
+    let print_qnt_body ppstate (assoc, prec) (qs, body) =
+      Format.printf "@[";
+      Printer.print_list (print_qnt ppstate, Printer.print_space) qs;
+      Format.printf ":@ ";
+      print_term ppstate (assoc, prec) body;
+      Format.printf"@]"
+
+    let print_as_binder (sym_assoc, sym_prec) ident sym =
+      let print_qnt ppstate (assoc, prec) arg =
+        let (qnts, body) =
+          Term.strip_fun_qnt ident (Term.mk_app (Term.mk_ident ident) arg) []
+        in
+        Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) "(";
+        Format.printf "@[<hov 3>";
+        print_qnts ppstate (sym_assoc, sym_prec) (sym, qnts);
+        Printer.print_space ();
+        print_term ppstate (assoc, sym_prec) body;
+        Format.printf "@]";
+        Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) ")"
+      in
+      let lambda_arg x =
+        match x with
+        | Basic.Qnt(q, body) -> (Basic.binder_kind q)=Basic.Lambda
+        | _ -> false
+      in
+      let printer ppstate prec (f, args) =
+        match args with
+        | (a::rest) ->
+           Format.printf "@[<2>";
+           if(lambda_arg a)
+           then print_qnt ppstate prec a
+           else simple_print_fn_app ppstate prec (f, args);
+           Printer.print_list
+             (print_term ppstate prec, Printer.print_space) rest;
+           Format.printf "@]"
+        | _ ->
+           Format.printf "@[";
+           print_ident_as_identifier ppstate prec f;
+           Format.printf "@]"
+      in
+      printer
+  end
+
+(** Term printer *)
+let print_term = Terms.print
+
+(** Print a term error *)
+let print_term_error fmt pinfo err =
+  Format.fprintf fmt "@[%s@ " err.Term.msg;
+  Printer.print_sep_list (print_term pinfo, ",") err.Term.terms;
+  Format.fprintf fmt "@]@."
+
+
+
+

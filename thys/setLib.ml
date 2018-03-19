@@ -133,18 +133,20 @@ struct
           (if(lambda_arg a)
            then
               (Format.printf "%s" ocb_sym;
-               Term.print_qnt_body ppstate (set_fix, set_prec) (qnts, body);
+               Printers.Terms.print_qnt_body
+                 ppstate (set_fix, set_prec) (qnts, body);
                Format.printf "%s" ccb_sym)
            else
-              Term.simple_print_fn_app
+              Printers.Terms.simple_print_fn_app
                 ppstate (set_fix, set_prec) (f, args));
           Printer.print_list
-            (Term.print_term ppstate
+            (Printers.Terms.print_term ppstate
                (fixity, prec), Printer.print_space) rest;
           Format.printf "@]"
       | _ ->
         Format.printf "@[";
-        Term.print_ident_as_identifier ppstate (fixity, prec) f;
+        Printers.Terms.print_ident_as_identifier
+          ppstate (fixity, prec) f;
         Format.printf "@]")
     in
     printer
@@ -153,7 +155,7 @@ struct
     Format.printf "@[<2>";
     Format.printf "%s%s" ocb_sym ccb_sym;
     Printer.print_list
-      (Term.print_term ppstate prec, Printer.print_space) args;
+      (Printers.Terms.print_term ppstate prec, Printer.print_space) args;
     Format.printf "@]"
 
   let single_set_printer ppstate prec (f, args) =
@@ -161,14 +163,16 @@ struct
       (a::rest) ->
         Format.printf "@[<2>";
         Format.printf "%s" ocb_sym;
-        Term.print_term ppstate prec a;
+        Printers.Terms.print_term ppstate prec a;
         Format.printf "%s" ccb_sym;
         Printer.print_list
-          (Term.print_term ppstate prec, Printer.print_space) rest;
+          (Printers.Terms.print_term ppstate prec,
+           Printer.print_space)
+          rest;
         Format.printf "@]"
     | _ ->
       Format.printf "@[<2>";
-      Term.print_ident_as_identifier ppstate prec f;
+      Printers.Terms.print_ident_as_identifier ppstate prec f;
       Format.printf "@]"
 
   let init_set_printer()=

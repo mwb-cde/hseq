@@ -30,7 +30,7 @@ let print_typing_error s tr expty ty fmt pinfo =
     Format.fprintf fmt "@ got type@ ";
     Printers.print_type pinfo ty;
     Format.fprintf fmt "@ in term@ ";
-    Term.print pinfo tr;
+    Printers.print_term pinfo tr;
     Format.fprintf fmt "@]"
 
 let typing_error s tr expty ty =
