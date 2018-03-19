@@ -22,7 +22,6 @@
 open Lib
 open Basic
 open Gtypes
-open Report
 
 (* Recognisers *)
 
@@ -499,7 +498,19 @@ let rec rebuild_qnt qs b =
 
 
 (*
- * Simple pretty printing and error handling
+ * Error handling
+ *)
+
+type error = { msg: string; terms: (term)list; next: (exn)option }
+exception Error of error
+
+let mk_error s ts = { msg = s; terms = ts; next = None }
+let term_error s ts = Error (mk_error s ts)
+let add_term_error s ts n =
+  Error{ msg = s; terms = ts; next = Some(n) }
+
+(*
+ * Simple pretty printing
  *)
 
 let print_simple trm =
@@ -530,13 +541,6 @@ let print_simple trm =
         Format.printf "@]"
   in
   print_aux trm
-
-let print_basic_error s ts fmt pinfo =
-  Format.fprintf fmt "@[%s@ " s;
-  Printer.print_sep_list (print_simple, ",") ts;
-  Format.fprintf fmt "@]@."
-
-let basic_error s ts = mk_error(print_basic_error s ts)
 
 (*
  * Substitution in terms
@@ -1398,18 +1402,10 @@ let print_as_binder (sym_assoc, sym_prec) ident sym =
   in
   printer
 
-(*
- * Error handling
- *)
-
-let print_term_error s ts fmt pinfo =
-  Format.fprintf fmt "@[%s@ @[" s;
-  Printer.print_sep_list (print pinfo, ",") ts;
-  Format.fprintf fmt "@]@]"
-
-let term_error s ts = Report.mk_error (print_term_error s ts)
-let add_term_error s t es =
-  raise (Report.add_error (Report.mk_error (print_term_error s t)) es)
+let print_term_error fmt pinfo err =
+  Format.fprintf fmt "@[%s@ " err.msg;
+  Printer.print_sep_list (print pinfo, ",") err.terms;
+  Format.fprintf fmt "@]@."
 
 let least ts =
   let rec less_aux l xs =

@@ -138,14 +138,14 @@ let typecheck_aux scp (inf, cache) typenv exty et =
         (* Check argument type *)
         let (ctr2, aenv) =
           try type_aux aty a (ctr1, env)
-          with err -> Term.add_term_error "Typechecking: " [trm] err
+          with err -> raise (Term.add_term_error "Typechecking: " [trm] err)
         in
         (* Expect a function type *)
         let fty = Lterm.mk_fun_ty aty expty in
         (* Check function type *)
         let (ctr3, fenv) =
           try type_aux fty f (ctr2, aenv)
-          with err -> Term.add_term_error "Typechecking:" [trm] err
+          with err -> raise (Term.add_term_error "Typechecking:" [trm] err)
         in
         (ctr3, fenv)
       | Qnt(q, b) ->
@@ -169,7 +169,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
               in
               begin
                 try type_aux rty b (ctr1, env1)
-                with err -> Term.add_term_error "Typecheck: " [trm] err
+                with err -> raise (Term.add_term_error "Typecheck: " [trm] err)
               end
             | _ ->
               let (ctr1, env1) = type_aux (Lterm.mk_bool_ty()) b tyenv in

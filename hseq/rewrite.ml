@@ -562,7 +562,7 @@ struct
           then (src, nt, tyenv1) (* accept nt *)
           else raise (Failure "No match") (* reject nt *)
     with err ->
-      (Term.add_term_error "match_rewrite: failed" [lhs; trm] err)
+      raise (Term.add_term_error "match_rewrite: failed" [lhs; trm] err)
 
 
   (**

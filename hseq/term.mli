@@ -217,6 +217,14 @@ val rebuild_qnt: binders list -> term -> term
     and body [b].
 *)
 
+(**  {5 Error handling}  *)
+
+type error = { msg: string; terms: (term)list; next: (exn)option }
+exception Error of error
+
+val term_error: string -> term list -> exn
+val add_term_error: string -> term list -> exn -> exn
+
 (** {5 Substitution in terms} *)
 
 val rename: term -> term
@@ -466,10 +474,9 @@ val print_qnt_body:
     body].
 *)
 
-(**  {5 Error handling}  *)
-
-val term_error: string -> term list -> exn
-val add_term_error: string -> term list -> exn -> 'a
+(** Print a term error *)
+val print_term_error:
+  Format.formatter -> Printer.ppinfo -> error -> unit
 
 (** {5 Comparisons} *)
 
