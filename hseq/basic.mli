@@ -97,27 +97,27 @@ val flatten_apptype: gtype -> (gtype)list
 val split_apptype: gtype -> (gtype *(gtype)list)
 (** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
-val map_atomtype: (gtype -> gtype) -> gtype -> gtype
+val map_atomtype: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
 (* [map_atomtype f ty] Apply [f] to each [Atom] in [ty] returning the resulting
    type. *)
 
-val iter_atomtype: (gtype -> unit) -> gtype -> unit
+val iter_atomtype: (('a)pre_typ -> unit) -> ('a)pre_typ -> unit
 (* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
 
-val fold_atomtype: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
+val fold_atomtype: ('a -> ('b)pre_typ -> 'a) -> 'a -> ('b)pre_typ -> 'a
 (* [fold_atomtype f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
 
-val exists_atomtype: (gtype -> bool) -> gtype -> bool
+val exists_atomtype: (('a)pre_typ -> bool) -> ('a)pre_typ -> bool
 (* [exists_atomtype p ty] Apply [p] to each [Atom(x)] in [ty], return [true] if
    any [Atom(x)] satisfies [p]. The check is top-down, left-to-right *)
 
-val exists_type: (gtype -> bool) -> gtype -> bool
+val exists_type: (('a)pre_typ -> bool) -> ('a)pre_typ -> bool
 (* [exists_type p ty] Apply [p] to each sub-type of [ty], return [true] if any
    satisfies [p]. The check is top-down, left-to-right *)
 
 val exists_type_data:
-  (gtype -> (bool * ('a)option)) -> gtype -> (bool * ('a)option)
+  (('a)pre_typ -> (bool * ('a)option)) -> ('a)pre_typ -> (bool * ('a)option)
 (* [exists_type_data p ty] Apply [p] to each sub-type of [ty], return [true] if
    any satisfies [p]. The check is top-down, left-to-right *)
 
