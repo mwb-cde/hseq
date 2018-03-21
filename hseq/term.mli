@@ -41,12 +41,6 @@ val compare: term -> term -> Order.t
     comparison.
  *)
 
-val binder_equiv : Scope.t -> term -> term -> bool
-(** [binder_equiv scp a b]: if [a] and [b] are both [Bound] or both
-    [Qnt] terms then [true] if the binders of [a] and [b] are for the
-    same quantifier kind and have the same type.
-*)
-
 (** {5 Data structures indexed by terms.} *)
 
 (** {7 Balanced Trees.} *)

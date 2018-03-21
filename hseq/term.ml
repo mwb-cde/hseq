@@ -308,33 +308,6 @@ let rec is_subterm x y =
       | Qnt (_, b) -> (is_subterm x b)
       | _ -> false
 
-(** [binder_equiv tyenv s t]: Equivalence of binders of quantified or
-    bound terms [s] and [t], w.r.t type substitution [tyenv].  *)
-let binder_equiv tyenv s t =
-  match (s, t) with
-    | (Bound(b1), Bound(b2)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | (Meta(b1), Meta(b2)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | (Qnt(b1, _), Qnt(b2, _)) ->
-      let (qnt1, _, ty1) = dest_binding b1
-      and (qnt2, _, ty2) = dest_binding b2
-      in
-      if qnt1 = qnt2
-      then (ignore(Gtypes.unify tyenv ty1 ty2); true)
-      else false
-    | _ -> false
-
 (* [('a)tree]: Balanced trees indexed by terms *)
 module TermTreeData =
 struct
