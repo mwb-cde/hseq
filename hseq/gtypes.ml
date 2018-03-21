@@ -242,6 +242,81 @@ type typedef_record = Scope.type_record
 (* Functions to access type definitions *)
 let get_typdef scp r =  Scope.defn_of scp r
 
+module NewScope =
+  struct
+
+    type type_record =
+      {
+        name: string;               (** Type name *)
+        args : string list;         (** Arguments appearing in the definition *)
+        alias: gtype option;        (** The definition *)
+      }
+
+    module IdentMap = Ident.Tree
+    module StringMap = Treekit.StringTree
+
+    (** Scope for type definitions *)
+    type t =
+      {
+        type_defn: Ident.t -> type_record;  (** Get the type definition *)
+        type_thy: string -> Ident.thy_id    (** Get the defining theory *)
+      }
+
+    let empty_scp =
+      {
+        type_defn = (fun _ -> raise Not_found);
+        type_thy = (fun _ -> raise Not_found)
+      }
+
+    let empty() = empty_scp
+
+    let defn_of scp i = scp.type_defn i
+    let thy_of scp i = scp.type_thy i
+
+    let add_defns scp lst =
+      let add_defn db n def = IdentMap.add db n def
+      and add_thy db n thy = StringMap.replace db n thy
+      in
+      let add db n def =
+        (add_defn (fst db) n def,
+         add_thy (snd db) (Ident.name_of n) (Ident.thy_of n))
+      in
+      let type_db =
+        List.fold_left
+          (fun s (n, def) -> add s n def)
+          (IdentMap.empty, StringMap.empty) lst
+      in
+      let defns = fst type_db
+      and thys = snd type_db
+      in
+      let get_defn i =
+        begin
+          try IdentMap.find defns i
+          with Not_found -> (defn_of scp i)
+        end
+      and get_thy n =
+        begin
+          try StringMap.find thys n
+          with Not_found -> (thy_of scp n)
+        end
+      in
+      {
+        type_defn = get_defn;
+        type_thy = get_thy
+      }
+
+    let add_declns scp lst =
+      let mk_decln n args =
+        {
+          name = Ident.name_of n;
+          args = args;
+          alias = None;
+        }
+      in
+      add_defns
+        scp
+        (List.map (fun (n, args) -> (n, mk_decln n args)) lst)
+  end
 
 (***
 * Data storage indexed by gtypes

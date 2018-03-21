@@ -832,7 +832,7 @@ end
   let t4=right t3;;
 *)
 
-(** Fake trees based on maps. *)
+(** Trees based on maps. *)
 module MapTree = functor (A: TreeData) ->
 struct
   type key = A.key
@@ -881,4 +881,7 @@ module SimpleTree =
        end)
 
 
-module StringTree = SimpleTree(struct type key = string end)
+module StringTree = MapTree(struct
+                             type key = string
+                             let compare = Order.Util.wrap Pervasives.compare
+                            end)

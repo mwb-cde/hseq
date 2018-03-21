@@ -90,3 +90,7 @@ struct
 end
 module Tree = Treekit.BTree(IdentTreeData)
 type ('a)tree = ('a) Tree.t
+
+(* [('a)map]: Maps indexed by identifiers *)
+module Map = Treekit.MapTree(IdentTreeData)
+type ('a)map = ('a)Map.t

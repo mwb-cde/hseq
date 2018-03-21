@@ -101,7 +101,7 @@ module type BTreeType = TreeType
 module BTree:
   functor (A: TreeData) -> (BTreeType with type key = A.key)
 
-(** Fake trees based on maps. *)
+(** Standard library maps. *)
 module MapTree:
   functor (A: TreeData) -> (TreeType with type key = A.key)
 

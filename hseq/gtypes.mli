@@ -122,6 +122,45 @@ type typedef_record = Scope.type_record
 val get_typdef: Scope.t -> Ident.t -> typedef_record
 (** Get definition of type named [n] from scope [scp]. *)
 
+module NewScope:
+sig
+
+  (** Records for type definitions *)
+  type type_record =
+    {
+      name: string;               (** Type name *)
+      args : string list;         (** Arguments appearing in the definition *)
+      alias: gtype option;        (** The definition *)
+    }
+
+  (** Scope for type definitions *)
+  type t =
+    {
+      type_defn: Ident.t -> type_record;  (** Get the type definition *)
+      type_thy: string -> Ident.thy_id    (** Get the defining theory *)
+    }
+
+  (** The empty scope *)
+  val empty: unit -> t
+
+  (** [defn_of scp i] Get the definition of [i] *)
+  val defn_of: t -> Ident.t -> type_record
+
+  (** [thy_of scp i] Get the theory defining of type [i] *)
+  val thy_of: t -> string -> Ident.thy_id
+
+  (** Extend a scope with a list of type definitions [[(I1, D1); ...;
+    (In, Dn)]]. Each identifier [Ii] has definition [Di].
+   *)
+  val add_defns: t -> (Ident.t * type_record) list -> t
+
+  (** Extend a scope with a list of type declarations [[(I1, A1); ...;
+    (In, An)]]. Each identifier [Ii] has arguments [Ai], but no
+    definition.
+   *)
+  val add_declns: t -> (Ident.t * (string) list) list -> t
+end
+
 (** {5 Data storage indexed by gtypes} *)
 
 (** {7 Balanced Trees} *)
