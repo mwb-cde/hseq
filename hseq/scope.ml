@@ -195,3 +195,18 @@ let is_meta scp v =
   let n = Basic.binder_name v in
   try ignore(find_meta scp n); true
   with Not_found -> false
+
+(** Relaxed scopes *)
+let relaxed scp =
+  let curr_thy = thy_of scp
+  in
+  let get_thy_of_type id =
+    begin
+    try thy_of_type scp id
+    with Not_found -> curr_thy
+    end
+  in
+  {
+    scp with
+    type_thy = get_thy_of_type
+  }

@@ -160,3 +160,7 @@ val is_meta: t -> Basic.binders -> bool
 (** [is_meta scp v]: Test whether [v] is a meta variable in scope
     [scp].
 *)
+
+(** Generate a scope that will associate any unknown identifier with the current
+    theory. (Only needed for [Gtypes.set_names]) *)
+val relaxed: t -> t
