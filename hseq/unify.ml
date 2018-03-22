@@ -192,7 +192,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
     in
     if qnt1 = qnt2
     then
-      try (true, Gtypes.matching_env scp tyenv qty1 qty2)
+      try (true, Gtypes.matching_env (Scope.types_scope scp) tyenv qty1 qty2)
       with _ -> (false, tyenv)
     else (false, tyenv)
   in
@@ -223,11 +223,11 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
             raise (term_error "matches_aux: qnt" [t1;t2])
         | (Id(n1, ty1), Id(n2, ty2)) ->
           if n1 = n2
-          then (Gtypes.matching_env scp tyenv ty1 ty2, env)
+          then (Gtypes.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
           else raise (term_error "matches_aux: var" [t1;t2])
         | (Free(n1, ty1), Free(n2, ty2)) ->
           if n1 = n2
-          then (Gtypes.matching_env scp tyenv ty1 ty2, env)
+          then (Gtypes.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
           else raise (term_error "matches_aux: var" [t1;t2])
         | (Meta(q1), Meta(q2)) ->
           if binder_equality q1 q2

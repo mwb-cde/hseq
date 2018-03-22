@@ -63,16 +63,20 @@ val meta_db_find: string -> meta_db -> Basic.binders
 *)
 
 (** Records for type definitions *)
+type type_record = Gtypes.typedef_record
+(*
 type type_record =
     {
       name: string;
       args : string list;
-      alias: gtype option;
-      characteristics: string list
+      alias: gtype option
     }
+ *)
+val mk_type_record: string -> string list -> gtype option -> type_record
+val dest_type_record: type_record -> (string * (string)list * (gtype)option)
 
 (** Scope records. *)
-type t=
+type t =
     {
       curr_thy : marker;
       (** The marker of the current theory. *)
@@ -80,10 +84,14 @@ type t=
       (** The type of a term identifier. *)
       term_thy : string -> Ident.thy_id;
       (** The theory in which a term is declared. *)
+      types: Gtypes.NewScope.t;
+      (** The types scope *)
+(*
       type_defn: Ident.t -> type_record;
       (** The definition (if any) of a type. *)
       type_thy : string -> Ident.thy_id;
       (** The theory in which a type is declared. *)
+ *)
       thy_in_scope : Ident.thy_id -> bool ;
       (** Whether a theory is in scope (identified by name). *)
       marker_in_scope : marker -> bool ;
@@ -109,6 +117,9 @@ val type_of : t -> Ident.t -> gtype
 
 val thy_of_term: t -> string -> Ident.thy_id
 (** Lookup the theory of an identifier. *)
+
+val types_scope: t -> Gtypes.NewScope.t
+(** Get the types scope *)
 
 val defn_of: t -> Ident.t -> type_record
 (** Get the definition of a type. *)

@@ -648,46 +648,6 @@ let retype tyenv t=
   in
   retype_aux t (empty_table())
 
-(**
-   [retype_with_check tyenv t]: Reset the types in term [t] using type
-   substitution [tyenv].  Substitutes variables with their concrete
-   type in [tyenv]. Check that the new types are in scope.
-*)
-let retype_with_check scp tyenv t=
-  let memo = Lib.empty_env() in
-  let mk_new_type ty =
-    let nty = Gtypes.mgu ty tyenv
-    in
-    if (Gtypes.in_scope memo scp nty)
-    then nty
-    else raise
-      (Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
-  in
-  let rec retype_aux t qenv =
-    match t with
-      | Id(n, ty) -> Id(n, mk_new_type ty)
-      | Free(n, ty) -> Free(n, mk_new_type ty)
-      | Bound(_) ->
-        (try table_find t qenv
-         with Not_found -> t)
-      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
-      | Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q
-        in
-        let nty = mk_new_type oqty
-        in
-        let nq = mk_binding oqnt oqnm nty
-        in
-        let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-        let new_term = Qnt(nq, retype_aux b qenv1 ) in
-        let _ = table_remove (Bound(q)) qenv1; qenv
-        in
-        new_term
-      | Meta(_) -> t
-      | Const(_) -> t
-  in
-  retype_aux t (empty_table())
-
 (* retype_pretty: as for retype, make substitution for type variables
    but also replace other type variables with new, prettier names
 *)
@@ -962,13 +922,15 @@ let subst_qnt_var scp env trm =
         (try
            let r = Lib.find n env
            in
-           ignore(Gtypes.unify scp ty (get_binder_type r)); r
+           ignore(Gtypes.unify
+                    (Scope.types_scope scp) ty (get_binder_type r)); r
            with _ -> t)
       | Free(n, ty) ->
         (try
            let r = Lib.find (Ident.mk_name n) env
            in
-           ignore(Gtypes.unify scp ty (get_binder_type r)); r
+           ignore(Gtypes.unify
+                    (Scope.types_scope scp) ty (get_binder_type r)); r
          with _ -> t)
       | (App(f, a)) -> App(subst_aux f, subst_aux a)
       | Qnt(q, b) -> Qnt(q, subst_aux b)

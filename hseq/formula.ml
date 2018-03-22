@@ -277,9 +277,49 @@ let typecheck scp f expty=
 
 let retype scp tenv x = make scp (Term.retype tenv (term_of x))
 
+(**
+   [retype_with_check tyenv t]: Reset the types in term [t] using type
+   substitution [tyenv].  Substitutes variables with their concrete
+   type in [tyenv]. Check that the new types are in scope.
+*)
+let term_retype_with_check scp tyenv t=
+  let memo = Lib.empty_env() in
+  let mk_new_type ty =
+    let nty = Gtypes.mgu ty tyenv
+    in
+    if (Ltype.in_scope memo scp nty)
+    then nty
+    else raise
+      (Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
+  in
+  let rec retype_aux t qenv =
+    match t with
+      | Id(n, ty) -> Id(n, mk_new_type ty)
+      | Free(n, ty) -> Free(n, mk_new_type ty)
+      | Bound(_) ->
+        (try Term.table_find t qenv
+         with Not_found -> t)
+      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
+      | Qnt(q, b) ->
+        let (oqnt, oqnm, oqty) = Basic.dest_binding q
+        in
+        let nty = mk_new_type oqty
+        in
+        let nq = mk_binding oqnt oqnm nty
+        in
+        let qenv1 = Term.table_add (Bound(q)) (Bound(nq)) qenv; qenv in
+        let new_term = Qnt(nq, retype_aux b qenv1 ) in
+        let _ = Term.table_remove (Bound(q)) qenv1; qenv
+        in
+        new_term
+      | Meta(_) -> t
+      | Const(_) -> t
+  in
+  retype_aux t (Term.empty_table())
+
 let retype_with_check scp tenv f =
   let nf =
-    try Term.retype_with_check scp tenv (term_of f)
+    try term_retype_with_check scp tenv (term_of f)
     with err -> raise (add_error "Formula.retype_with_check" [f] err)
   in
   fast_make scp [f] nf

@@ -236,12 +236,6 @@ let dest_def = dest_constr
  * Type definitions
  *)
 
-(* [typedef_record]: Records for type definitions/declarations *)
-type typedef_record = Scope.type_record
-
-(* Functions to access type definitions *)
-let get_typdef scp r =  Scope.defn_of scp r
-
 module NewScope =
   struct
 
@@ -269,6 +263,11 @@ module NewScope =
       }
 
     let empty() = empty_scp
+    let make ds ts =
+      {
+        type_defn = ds;
+        type_thy = ts;
+      }
 
     let defn_of scp i = scp.type_defn i
     let thy_of scp i = scp.type_thy i
@@ -317,6 +316,12 @@ module NewScope =
         scp
         (List.map (fun (n, args) -> (n, mk_decln n args)) lst)
   end
+
+(* [typedef_record]: Records for type definitions/declarations *)
+type typedef_record = NewScope.type_record
+
+(* Functions to access type definitions *)
+let get_typdef scp r =  NewScope.defn_of scp r
 
 (***
 * Data storage indexed by gtypes
@@ -523,14 +528,18 @@ let unfold scp t =
      let (n, args) = (try dest_constr t with _ -> raise Not_found)
      in
      let recrd = get_typdef scp n in
-     if recrd.Scope.alias = None
+     if recrd.NewScope.alias = None
      then raise Not_found
-     else rewrite_defn args (recrd.Scope.args) (from_some recrd.Scope.alias)
+     else rewrite_defn args
+                       (recrd.NewScope.args)
+                       (from_some recrd.NewScope.alias)
   | Atom(Ident(n)) ->
      let recrd = get_typdef scp n in
-     if recrd.Scope.alias = None
+     if recrd.NewScope.alias = None
      then raise Not_found
-     else rewrite_defn [] (recrd.Scope.args) (from_some recrd.Scope.alias)
+     else rewrite_defn []
+                       (recrd.NewScope.args)
+                       (from_some recrd.NewScope.alias)
   | _ -> raise Not_found
 
 (**
@@ -539,7 +548,7 @@ let unfold scp t =
 *)
 let has_defn tyenv n =
   try
-     if (get_typdef tyenv n).Scope.alias = None
+     if (get_typdef tyenv n).NewScope.alias = None
      then false
      else true
   with Not_found -> false
@@ -610,12 +619,12 @@ let check_decln l =
 let well_formed_full pred scp ty =
   let arity_of f =
     (* Get the arity of [f]. Return [None] if [f] is unknown. *)
-    let defn_opt = try_find (Scope.defn_of scp) f in
+    let defn_opt = try_find (NewScope.defn_of scp) f in
     if defn_opt = None
     then None
     else
       let defn = from_some defn_opt in
-      let num_args = List.length (defn.Scope.args) in
+      let num_args = List.length (defn.NewScope.args) in
       Some(num_args)
   in
   let rec well_aux depth t =
@@ -1055,7 +1064,7 @@ let set_name ?(memo=Lib.empty_env()) scp trm =
     try Lib.find n memo
     with Not_found ->
       let nth =
-        try Scope.thy_of_type scp n
+        try NewScope.thy_of scp n
         with Not_found ->
           raise  (type_error "Type doesn't occur in scope"
                              [mk_def (Ident.mk_name n) []])
@@ -1078,31 +1087,6 @@ let set_name ?(memo=Lib.empty_env()) scp trm =
     | _ -> t
   in set_aux trm
 
-(**
-   [in_scope memo scp ty]: Check that [ty] is in scope by checking
-   that every type constructor is decared or defined in scope [scp].
-
-   The function is memoised: if a constructor name is found to be
-   in scope, it is added to [memo].
-*)
-let in_scope memo scp ty =
-  let lookup_id n =
-    try Lib.find n memo
-    with Not_found ->
-      if Scope.in_scope scp n
-      then Lib.add n true memo
-      else raise Not_found
-  in
-  let rec in_scp_aux t =
-    match t with
-    | Atom(Var(_)) -> ()
-    | Atom(Weak(_)) -> ()
-    | Atom(Ident(f)) ->
-       ignore(lookup_id (Ident.thy_of f))
-    | TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
-  in
-  try in_scp_aux ty; true
-  with Not_found -> false
 
 let extract_bindings tyvars src dst =
   let rec extract_aux vs r=
@@ -1139,8 +1123,7 @@ type stypedef_record =
   {
     sname: string;
     sargs: (string)list;
-    salias: (stype)option;
-    scharacteristics: (string)list
+    salias: (stype)option
   }
 
 let rec to_save_aux tyenv ty =
@@ -1187,15 +1170,14 @@ let to_save_env env ty =
 
 let to_save_rec record =
   {
-    sname = record.Scope.name;
-    sargs = record.Scope.args;
+    sname = record.NewScope.name;
+    sargs = record.NewScope.args;
     salias =
       begin
-        match record.Scope.alias with
+        match record.NewScope.alias with
         | None -> None
         | Some(t) -> Some(to_save t)
-      end;
-    scharacteristics = record.Scope.characteristics
+      end
   }
 
 let rec from_save_aux env (ty: stype) =
@@ -1237,13 +1219,12 @@ let from_save_env env ty =  from_save_aux env ty
 
 let from_save_rec record =
   {
-    Scope.name=record.sname;
-    Scope.args = record.sargs;
-    Scope.alias =
+    NewScope.name=record.sname;
+    NewScope.args = record.sargs;
+    NewScope.alias =
       (match record.salias with
         None -> None
-      | Some(t) -> Some(from_save t));
-    Scope.characteristics = record.scharacteristics
+      | Some(t) -> Some(from_save t))
   }
 
 

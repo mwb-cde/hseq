@@ -549,11 +549,11 @@ let in_scope memo scp trm =
     match t with
       | Id(id, ty) ->
           ignore(lookup_id (Ident.thy_of id));
-          Gtypes.in_scope memo scp ty
+          Ltype.in_scope memo scp ty
       | Qnt(_, b) ->
-        ignore(Gtypes.in_scope memo scp (get_binder_type t));
+        ignore(Ltype.in_scope memo scp (get_binder_type t));
         in_scp_aux b
-      | Bound(_) -> Gtypes.in_scope memo scp (get_binder_type t)
+      | Bound(_) -> Ltype.in_scope memo scp (get_binder_type t)
       | Meta(q) ->
         if Scope.is_meta scp q
         then true

@@ -21,6 +21,15 @@
 
 (** Manipulating types of the logic. *)
 
+val in_scope:
+  (string, bool)Lib.substype -> Scope.t -> Basic.gtype -> bool
+(** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
+    that every type constructor is decared or defined in scope [scp].
+
+    The function is memoised: if a constructor name is found to be
+    in scope, it is added to [memo].
+*)
+
 val set_name:
   ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t -> Basic.gtype -> Basic.gtype

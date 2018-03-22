@@ -42,22 +42,31 @@ let meta_db_find n db =
   Treekit.StringTree.find db n
 
 (* Records for type definitions *)
-type type_record =
-    {
-      name: string;
-      args : string list;
-      alias: gtype option;
-      characteristics: string list
-    }
+type type_record = Gtypes.typedef_record
+
+let mk_type_record n xs al =
+  {
+    Gtypes.NewScope.name = n;
+    Gtypes.NewScope.args = xs;
+    Gtypes.NewScope.alias = al;
+  }
+
+let dest_type_record r =
+  (r.Gtypes.NewScope.name,
+   r.Gtypes.NewScope.args,
+   r.Gtypes.NewScope.alias)
 
 (** Scope records. *)
-type t=
+type t =
     {
       curr_thy : marker;
       term_type : Ident.t -> gtype;
       term_thy : string -> Ident.thy_id;
+      types: Gtypes.NewScope.t;
+(*
       type_defn: Ident.t -> type_record;
       type_thy : string -> Ident.thy_id;
+ *)
       thy_in_scope : Ident.thy_id -> bool;
       marker_in_scope : marker -> bool;
       meta_vars: meta_db
@@ -75,8 +84,11 @@ let empty_scope () =
     curr_thy = mk_marker Ident.null_thy;
     term_type = dummy;
     term_thy = dummy;
+    types = Gtypes.NewScope.empty();
+(*
     type_defn = dummy;
     type_thy = dummy;
+ *)
     thy_in_scope = (fun x -> false);
     marker_in_scope = (fun x -> false);
     meta_vars = empty_meta_db()
@@ -94,11 +106,14 @@ let type_of scp id = scp.term_type id
 (** Lookup the theory of an identifier *)
 let thy_of_term scp id = scp.term_thy id
 
+(** Get the types scope *)
+let types_scope scp = scp.types
+
 (** Get the definition of a type. *)
-let defn_of scp id = scp.type_defn id
+let defn_of scp id = Gtypes.NewScope.defn_of (types_scope scp) id
 
 (** Lookup the theory of a type. *)
-let thy_of_type scp id = scp.type_thy id
+let thy_of_type scp id = Gtypes.NewScope.thy_of (types_scope scp) id
 
 (** Test whether a theory is in scope *)
 let in_scope scp th1 = scp.thy_in_scope th1
@@ -133,33 +148,22 @@ let extend_with_terms scp declns =
     (In, Dn)]]. Each identifier [Ii] has definition [Di].
 *)
 let extend_with_typedefs scp declns =
-  let ext_defn x =
-    try (List.assoc x declns)
-    with Not_found -> defn_of scp x
-  and ext_thy x =
-    try
-      let (id, _) =
-        List.find (fun (y, _) -> x = (Ident.name_of y)) declns
-      in
-      Ident.thy_of id
-    with Not_found -> thy_of_type scp x
+  let tyscp = Gtypes.NewScope.add_defns (types_scope scp) declns
   in
-  {scp with type_defn = ext_defn; type_thy = ext_thy}
+  {
+    scp with types = tyscp
+  }
 
 (** Extend a scope with a list of type declarations [[(I1, A1); ...;
     (In, An)]]. Each identifier [Ii] has arguments [Ai], but no
     definition.
 *)
 let extend_with_typedeclns scp declns=
-  let mk_def (id, args)=
-    (id,
-     {name = Ident.name_of id;
-      args = args;
-      alias = None;
-      characteristics = []})
+  let tyscp = Gtypes.NewScope.add_declns (types_scope scp) declns
   in
-  extend_with_typedefs scp (List.map mk_def declns)
-
+  {
+    scp with types = tyscp
+  }
 
 (** Introduce a new local scope, derived from the current theory
     marker.
@@ -206,7 +210,11 @@ let relaxed scp =
     with Not_found -> curr_thy
     end
   in
+  let tyscp0 = types_scope scp in
+  let tyscp =
+    { tyscp0 with Gtypes.NewScope.type_thy = get_thy_of_type }
+  in
   {
     scp with
-    type_thy = get_thy_of_type
+    types = tyscp
   }

@@ -51,7 +51,7 @@ type thy =
       axioms: (thm_record) Tree.t;
       theorems: (thm_record) Tree.t;
       defns: (id_record) Tree.t;
-      typs: (Gtypes.typedef_record) Tree.t;
+      typs: (Scope.type_record) Tree.t;
       type_pps: (string * Printer.record) list;
       id_pps: (string * (Printer.record * Parser.sym_pos)) list;
       pp_syms: (string * string) list;
@@ -68,7 +68,7 @@ type contents=
       caxioms: (string * thm_record) list;
       ctheorems: (string * thm_record) list;
       cdefns: (string * id_record) list;
-      ctyps: (string * Gtypes.typedef_record) list;
+      ctyps: (string * Scope.type_record) list;
       ctype_pps: (string * Printer.record) list;
       cid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       cpp_syms: (string * string) list;
@@ -242,14 +242,6 @@ let set_typs thy x = { thy with typs = x }
 let get_type_rec n thy = Tree.find (get_typs thy) n
 
 let add_type_rec tr thy =
-  let mk_typedef_rec n ags d cs =
-    {
-      Scope.name = n;
-      Scope.args = ags;
-      Scope.alias = d;
-      Scope.characteristics = cs
-    }
-  in
   let dest_tydef tydef =
     if Logic.Defns.is_typealias tydef
     then Logic.Defns.dest_typealias tydef
@@ -269,7 +261,7 @@ let add_type_rec tr thy =
   then
     let (lid, args, df) = dest_tydef tr in
     let id = Ident.name_of lid in
-    let tr = mk_typedef_rec id args df []
+    let tr = Scope.mk_type_record id args df
     in
     if not (Tree.mem (get_typs thy) id)
     then set_typs thy (Tree.add (get_typs thy) id tr)
@@ -694,24 +686,29 @@ and print_tydefs pp n tys =
   Printer.print_list
     ((fun (n, tyd) ->
       Format.printf "@[<2>";
+      let (_, args, alias) = Scope.dest_type_record tyd in
       begin
-        match tyd.Scope.args with
-          | [] -> ()
-          | _ ->
+        if args = []
+        then ()
+        else
+          begin
             Format.printf "(";
             Printer.print_list
               ((fun s -> Format.printf "'%s" s),
                (fun _ -> Format.printf ",@ "))
-              tyd.Scope.args;
+              args;
             Format.printf ")"
+          end
       end;
       Format.printf "%s@," n;
       begin
-        match tyd.Scope.alias with
-          | None -> ()
-          | Some(gty) ->
+        if alias = None
+        then ()
+        else
+          begin
             Format.printf "=@,";
-            Printers.print_type pp gty
+            Printers.print_type pp (Lib.from_some alias)
+          end
       end;
       Format.printf "@]@."),
      (fun _ -> ())) sorted_tys;

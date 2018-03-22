@@ -35,12 +35,16 @@ let mk_decln scp name ty =
   let new_ty() = Ltype.set_name scp ty in
   let check_type typ =
     begin
-      Gtypes.check_decl_type scp typ;
+      Gtypes.check_decl_type (Scope.types_scope scp) typ;
       typ
     end
   in
   let ret_ty =
-    try check_exists(); check_type (new_ty())
+    try
+      begin
+        check_exists();
+        check_type (new_ty())
+      end
     with err ->
       raise (Term.add_term_error
                "Invalid declaration " [(Term.mk_typed_ident name ty)] err)
@@ -263,7 +267,7 @@ let mk_subtype scp name args dtype setP rep_name abs_name =
   check_type_name scp id;
   check_args_unique args;
   check_well_defined scp args dtype;
-  let setp0=Formula.term_of (Formula.make scp setP) in
+  let setp0 = Formula.term_of (Formula.make scp setP) in
   let new_setp = make_witness_type scp dtype setp0 in
   let rep_ty = Gtypes.normalize_vars (Lterm.mk_fun_ty ntype dtype)
   and abs_ty =

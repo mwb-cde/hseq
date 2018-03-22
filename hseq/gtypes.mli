@@ -116,12 +116,6 @@ val mk_def: Ident.t -> gtype list -> gtype
 
 (** {5 Type Definitions} *)
 
-type typedef_record = Scope.type_record
-(** Records for type definitions. *)
-
-val get_typdef: Scope.t -> Ident.t -> typedef_record
-(** Get definition of type named [n] from scope [scp]. *)
-
 module NewScope:
 sig
 
@@ -143,6 +137,12 @@ sig
   (** The empty scope *)
   val empty: unit -> t
 
+  (** Constructor *)
+  val make:
+    (Ident.t -> type_record)
+    -> (string -> Ident.thy_id)
+    -> t
+
   (** [defn_of scp i] Get the definition of [i] *)
   val defn_of: t -> Ident.t -> type_record
 
@@ -160,6 +160,12 @@ sig
    *)
   val add_declns: t -> (Ident.t * (string) list) list -> t
 end
+
+type typedef_record = NewScope.type_record
+(** Records for type definitions. *)
+
+val get_typdef: NewScope.t -> Ident.t -> typedef_record
+(** Get definition of type named [n] from scope [scp]. *)
 
 (** {5 Data storage indexed by gtypes} *)
 
@@ -237,7 +243,7 @@ val string_gtype: gtype -> string
 val check_decln: gtype -> bool
 (**  [check_decln l]: Consistency check on declaration of type [l]. *)
 
-val unfold: Scope.t -> gtype -> gtype
+val unfold: NewScope.t -> gtype -> gtype
 (**
    [unfold scp ty]: Unfold the definition of type [ty] from the scope
    [scp].
@@ -247,7 +253,7 @@ val unfold: Scope.t -> gtype -> gtype
 
 val well_formed_full:
   (gtype -> (string * gtype)option)
-  -> Scope.t -> gtype -> bool
+  -> NewScope.t -> gtype -> bool
 (** [well_formed_full pred scp t]: ensure that [t] is well-formed
 
     [pred t] should return [None] for success and [Some(msg, errty)] for
@@ -280,7 +286,7 @@ val well_formed_full:
     depth [0].
 *)
 
-val well_formed: Scope.t -> gtype -> bool
+val well_formed: NewScope.t -> gtype -> bool
 (** [well_formed scp t]: ensure that [t] is well-formed in scope [scp] *)
 
 
@@ -314,14 +320,14 @@ val well_formed: Scope.t -> gtype -> bool
     depth [0].
 *)
 
-val well_defined: Scope.t -> (string)list -> gtype -> unit
+val well_defined: NewScope.t -> (string)list -> gtype -> unit
 (** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]
     must have a name in [args] and weak variables are not permitted in
     [ty].
 *)
 
-val check_decl_type: Scope.t -> Basic.gtype -> unit
+val check_decl_type: NewScope.t -> Basic.gtype -> unit
 (** [check_decl_type scp ty]: Ensure type [ty] is suitable for the
     declaration of a term. Fails if [ty] contains a weak variable.
 *)
@@ -372,12 +378,12 @@ val bind_occs: gtype -> gtype -> substitution -> substitution
 *)
 
 val unify_env:
-  Scope.t -> gtype -> gtype
+  NewScope.t -> gtype -> gtype
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
-val unify: Scope.t -> gtype -> gtype -> substitution
+val unify: NewScope.t -> gtype -> gtype -> substitution
 (** [unify]: unify two types, returning the substitution.
 *)
 
@@ -428,7 +434,7 @@ val mgu_rename_simple: int -> substitution -> substitution
 *)
 
 val matching_env:
-  Scope.t -> substitution
+  NewScope.t -> substitution
   -> gtype -> gtype -> substitution
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
@@ -439,7 +445,7 @@ val matching_env:
 *)
 
 val matches_env:
-  Scope.t -> substitution
+  NewScope.t -> substitution
   -> gtype -> gtype -> substitution
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
@@ -448,14 +454,14 @@ val matches_env:
     Silently returns unchanged substitution on failure.
 *)
 
-val matches: Scope.t -> gtype -> gtype -> bool
+val matches: NewScope.t -> gtype -> gtype -> bool
 (** Toplevel for [matches_env]. *)
 
 (** {5 More functions} *)
 
 val set_name:
   ?memo:(string, Ident.thy_id)Hashtbl.t
-  -> Scope.t -> gtype -> gtype
+  -> NewScope.t -> gtype -> gtype
 (** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
     long form.
 
@@ -464,13 +470,15 @@ val set_name:
     [memo] is the optional memoisation table.
 *)
 
+(*
 val in_scope:
-  (string, bool)Lib.substype -> Scope.t -> gtype -> bool
+  (string, bool)Lib.substype -> NewScope.t -> gtype -> bool
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
     The function is memoised: if a constructor name is found to be
     in scope, it is added to [memo].
+*)
 *)
 
 val extract_bindings: gtype list -> substitution -> substitution
@@ -491,10 +499,11 @@ type stype = (satom) pre_typ
 (** Representation of types for storage on disk. *)
 
 type stypedef_record =
-    {sname: string;
-     sargs: string list;
-     salias: stype option;
-     scharacteristics: string list}
+  {
+    sname: string;
+    sargs: string list;
+    salias: stype option
+  }
 (** Representation of typedef_records for disk storage. *)
 
 type to_stype_env = (Basic.gtype_id * (string *int)) list
@@ -540,7 +549,7 @@ val print_subst: substitution -> unit
 
 (** Debugging information *)
 val unify_aux:
-  Scope.t -> gtype -> gtype
+  NewScope.t -> gtype -> gtype
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
