@@ -495,7 +495,7 @@ struct
     new_term
 
   let expand_type_names scpd t =
-    Gtypes.set_name ~strict:false (scope_of scpd) t
+    Gtypes.set_name (Scope.relaxed (scope_of scpd)) t
 
   let expand_typedef_names scpd t=
     match t with

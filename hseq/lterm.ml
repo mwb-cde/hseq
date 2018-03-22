@@ -574,7 +574,7 @@ let binding_set_names ?(strict=false) ?memo scp binding =
   let (qnt, qname, qtype) = Basic.dest_binding binding
   in
   Basic.mk_binding qnt qname
-    (Gtypes.set_name ~strict:false ?memo:memo scp qtype)
+    (Gtypes.set_name ?memo:memo (Scope.relaxed scp) qtype)
 
 (** [set_names scp thy trm] find and set long identifiers and types
     for variables in [trm] theory is [thy] if no long identifier can be
@@ -582,7 +582,7 @@ let binding_set_names ?(strict=false) ?memo scp binding =
 *)
 let set_names scp trm =
   let set_type_name memo s t =
-    Gtypes.set_name ~strict:false ~memo:memo s t
+    Gtypes.set_name ~memo:memo (Scope.relaxed s) t
   in
   let id_memo = Lib.empty_env()
   and type_memo = Lib.empty_env()
@@ -706,7 +706,7 @@ let resolve_term scp vars varlist trm =
     Id(nid, nty)
   in
   let set_type_name memo s t =
-    Gtypes.set_name ~strict:true ~memo:memo s t
+    Gtypes.set_name ~memo:memo s t
   in
   let lookup_var vars t =
     match Lib.try_find (find t) vars with

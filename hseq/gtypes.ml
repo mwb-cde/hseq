@@ -1050,17 +1050,15 @@ let matches scp t1 t2=
 
     If [strict=true], fail if any type name doesn't occur in scope [scp].
 *)
-let set_name ?(strict=false) ?(memo=Lib.empty_env()) scp trm =
+let set_name ?(memo=Lib.empty_env()) scp trm =
   let lookup_id n =
     try Lib.find n memo
     with Not_found ->
       let nth =
         try Scope.thy_of_type scp n
         with Not_found ->
-          if strict
-          then raise  (type_error "Type doesn't occur in scope"
-                         [mk_def (Ident.mk_name n) []])
-          else Scope.thy_of scp
+          raise  (type_error "Type doesn't occur in scope"
+                             [mk_def (Ident.mk_name n) []])
       in
       ignore(Lib.add n nth memo); nth
   in

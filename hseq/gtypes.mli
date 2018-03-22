@@ -454,8 +454,7 @@ val matches: Scope.t -> gtype -> gtype -> bool
 (** {5 More functions} *)
 
 val set_name:
-  ?strict:bool
-  -> ?memo:(string, Ident.thy_id)Hashtbl.t
+  ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t -> gtype -> gtype
 (** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
     long form.

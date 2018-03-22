@@ -2117,7 +2117,7 @@ struct
       - make subtype property from setp and rep.
   *)
   let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
-    let dtype1 = Gtypes.set_name ~strict:true scp dtype
+    let dtype1 = Gtypes.set_name scp dtype
     and setp1 = Lterm.set_names scp setp
     in
     let subtype_def =
