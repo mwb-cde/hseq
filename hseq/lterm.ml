@@ -203,7 +203,7 @@ let mk_lam_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.Lambda ty n b
 (*** Alpha conversion ***)
 
 let alpha_convp_full scp tenv t1 t2 =
-  let type_matches scp env x y = Gtypes.unify_env scp x y env
+  let type_matches scp env x y = Ltype.unify_env scp x y env
   in
   let rec alpha_aux t1 t2 tyenv trmenv =
     match (t1, t2) with
@@ -573,8 +573,9 @@ let in_scope memo scp trm =
 let binding_set_names ?(strict=false) ?memo scp binding =
   let (qnt, qname, qtype) = Basic.dest_binding binding
   in
-  Basic.mk_binding qnt qname
-    (Gtypes.set_name ?memo:memo (Scope.relaxed scp) qtype)
+  Basic.mk_binding
+    qnt qname
+    (Ltype.set_name ?memo:memo (Scope.relaxed scp) qtype)
 
 (** [set_names scp thy trm] find and set long identifiers and types
     for variables in [trm] theory is [thy] if no long identifier can be
@@ -582,7 +583,7 @@ let binding_set_names ?(strict=false) ?memo scp binding =
 *)
 let set_names scp trm =
   let set_type_name memo s t =
-    Gtypes.set_name ~memo:memo (Scope.relaxed s) t
+    Ltype.set_name ~memo:memo (Scope.relaxed s) t
   in
   let id_memo = Lib.empty_env()
   and type_memo = Lib.empty_env()
@@ -606,7 +607,7 @@ let set_names scp trm =
   in
   let unify_types ty1 ty2 =
     try
-      let env = Gtypes.unify scp ty1 ty2
+      let env = Ltype.unify scp ty1 ty2
       in
       Gtypes.mgu ty1 env
     with _ -> ty1
@@ -700,13 +701,13 @@ let resolve_term scp vars varlist trm =
       else ident
     in
     let ty0 = lookup_type ident in
-    let ntyenv = Gtypes.unify scp ty0 ty in
+    let ntyenv = Ltype.unify scp ty0 ty in
     let nty = Gtypes.mgu ty0 ntyenv
     in
     Id(nid, nty)
   in
   let set_type_name memo s t =
-    Gtypes.set_name ~memo:memo s t
+    Ltype.set_name ~memo:memo s t
   in
   let lookup_var vars t =
     match Lib.try_find (find t) vars with

@@ -61,7 +61,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
     in
     if qnt1 = qnt2
     then
-      try (true, Gtypes.unify_env scp qty1 qty2 tyenv)
+      try (true, Ltype.unify_env scp qty1 qty2 tyenv)
       with _ -> (false, tyenv)
     else (false, tyenv)
   in
@@ -95,11 +95,11 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
             else raise (term_error "unify_aux: qnt" [t1;t2])
           | (Id(n1, ty1), Id(n2, ty2)) ->
             if n1 = n2
-            then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
+            then (Ltype.unify_env scp ty1 ty2 tyenv, env)
             else raise (term_error "unify_aux: var" [t1;t2])
           | (Free(n1, ty1), Free(n2, ty2)) ->
             if n1 = n2
-            then (Gtypes.unify_env scp ty1 ty2 tyenv, env)
+            then (Ltype.unify_env scp ty1 ty2 tyenv, env)
             else raise (term_error "unify_aux: var" [t1;t2])
           | (Meta(q1), Meta(q2)) ->
             (if binder_equality q1 q2

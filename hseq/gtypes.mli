@@ -473,7 +473,6 @@ val in_scope:
     in scope, it is added to [memo].
 *)
 
-
 val extract_bindings: gtype list -> substitution -> substitution
   -> substitution
 (** [extract_bindings vars src dst]: extract bindings variables in

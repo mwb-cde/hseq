@@ -234,14 +234,15 @@ struct
     and binding_set_names binding rdata =
       let (qnt, qname, qtype) = Basic.dest_binding binding
       in
-      Basic.mk_binding qnt qname
-        (Gtypes.set_name ~memo:(rdata.memo.type_names) (rdata.scp) qtype)
+      Basic.mk_binding
+        qnt qname
+        (Ltype.set_name ~memo:(rdata.memo.type_names) (rdata.scp) qtype)
     and binding_set_types tyenv binding =
       let (qnt, qname, qtype) = Basic.dest_binding binding
       in
       Basic.mk_binding qnt qname (Gtypes.mgu qtype tyenv)
     and set_type_name t rdata =
-      Gtypes.set_name ~memo:(rdata.memo.type_names) rdata.scp t
+      Ltype.set_name ~memo:(rdata.memo.type_names) rdata.scp t
     and find_ident n rdata =
       let ident_find n s =
         let thy = Scope.thy_of_term s n
@@ -264,7 +265,7 @@ struct
       in
       Lib.try_find find_fn ty
     and unify_types ty1 ty2 env (rdata: resolve_arg) =
-      try Gtypes.unify_env rdata.scp ty1 ty2 env
+      try Ltype.unify_env rdata.scp ty1 ty2 env
       with _ -> env
     and mk_typevar_ref rdata =
       let (ctr, nty) = Gtypes.mk_typevar (rdata.inf) in
@@ -418,7 +419,7 @@ struct
   *)
   let find_type scp sym ty list =
     let matching_types t1 t2 =
-      try ignore(Gtypes.unify scp t1 t2); true
+      try ignore(Ltype.unify scp t1 t2); true
       with _ -> false
     in
     let rec find_aux l =
@@ -464,7 +465,7 @@ let from_term trm =
 let to_term ptrm =
   let scp = Scope.empty_scope() in
   let unify_types ty1 ty2 env =
-    try Gtypes.unify_env scp ty1 ty2 env
+    try Ltype.unify_env scp ty1 ty2 env
     with _ -> env
   in
   let rec to_aux typenv trmenv expty pt =

@@ -32,8 +32,13 @@ let mk_decln scp name ty =
                  [Term.mk_typed_ident name ty])
     with Not_found -> ()
   in
-  let new_ty() = Gtypes.set_name scp ty in
-  let check_type typ = Gtypes.check_decl_type scp typ; typ in
+  let new_ty() = Ltype.set_name scp ty in
+  let check_type typ =
+    begin
+      Gtypes.check_decl_type scp typ;
+      typ
+    end
+  in
   let ret_ty =
     try check_exists(); check_type (new_ty())
     with err ->
@@ -66,7 +71,7 @@ let rec mk_all_from_list scp b qnts =
     | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
 let mk_defn scp (name, namety) args rhs =
-  let nty = Gtypes.set_name scp namety in
+  let nty = Ltype.set_name scp namety in
   let lhs = Term.mk_comb (Term.mk_typed_ident name nty) args in
   let ndn0 =
     mk_all_from_list scp
@@ -110,7 +115,7 @@ let check_type_name scp n =
   with Not_found -> ()
 
 let check_well_defined scp args ty =
-  try Gtypes.well_defined scp args ty;()
+  try Ltype.well_defined scp args ty;()
   with err -> raise (Gtypes.add_type_error
                        "Badly formed type" [ty] err)
 
@@ -188,7 +193,7 @@ let make_witness_type scp dtype setP =
   else
     let tty = Lterm.mk_fun_ty dtype (Lterm.mk_bool_ty()) in
     try
-      let sbs = Gtypes.unify scp fty tty
+      let sbs = Ltype.unify scp fty tty
       in
       Term.retype sbs setP
     with err ->

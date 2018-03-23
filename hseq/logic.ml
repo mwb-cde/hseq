@@ -186,7 +186,7 @@ struct
       let ty_name, nnames = tyname x in
       let tty=Gtypes.mk_weak ty_name in
       (* unify the weak type with the given type *)
-      let ntyenv = Gtypes.unify_env info.scope tty info.ty info.tyenv
+      let ntyenv = Ltype.unify_env info.scope tty info.ty info.tyenv
       in
       (Gtypes.mgu tty ntyenv, ntyenv, nnames)
     in
@@ -2061,7 +2061,7 @@ struct
       match d with
       | None -> None
       | Some(a) ->
-         try Gtypes.well_defined scp ags a; Some(a)
+         try Ltype.well_defined scp ags a; Some(a)
          with err ->
            raise (Gtypes.add_type_error "Badly formed definition" [a] err)
     in
@@ -2117,7 +2117,7 @@ struct
       - make subtype property from setp and rep.
   *)
   let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
-    let dtype1 = Gtypes.set_name scp dtype
+    let dtype1 = Ltype.set_name scp dtype
     and setp1 = Lterm.set_names scp setp
     in
     let subtype_def =
