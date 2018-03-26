@@ -52,7 +52,7 @@ val gtype_id_compare: gtype_id -> gtype_id -> Order.t
 type ('a) pre_typ =
   | Atom of 'a
   (** Atomic variables. *)
-  | TApp of (('a) pre_typ * ('a) pre_typ)
+  | App of (('a) pre_typ * ('a) pre_typ)
   (** Applications *)
 
 type atomtype =
@@ -360,21 +360,21 @@ val well_formed_full:
     - [f] is in scope and
     - [d] is the arity of [f]
 
-    - [TApp(l, r)] and
+    - [App(l, r)] and
     - [l] is well-defined at depth [d + 1] and
     - [r] is  well-defined at depth [0]
 
-    At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
-    type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+    A type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
+    type [(a_0, .., an)F] is formed with [App] by making [F] the left-most
     element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
-    [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+    [Tapp(..(App(Atom(Ident(F), a_0), a_1), ..), a_n)].
 
-    Specific constructors formed by [TApp]:
+    Specific constructors formed by [App]:
 
     - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
     [0].
 
-    - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+    - [(a)F = App(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
     depth [0].
 *)
 
@@ -394,21 +394,21 @@ val well_formed: TypeScope.t -> gtype -> bool
     - [f] is in scope and
     - [d] is the arity of [f]
 
-    - [TApp(l, r)] and
+    - [App(l, r)] and
     - [l] is well-defined at depth [d + 1] and
     - [r] is  well-defined at depth [0]
 
     At type constructor [F/n] has arity [n]. With arguments [a_0, .., an], the
-    type [(a_0, .., an)F] is formed with [TApp] by making [F] the left-most
+    type [(a_0, .., an)F] is formed with [App] by making [F] the left-most
     element with the [a_i] as the right branches. For [(a_0, .., an)F], this is
-    [Tapp(..(TApp(Atom(Ident(F), a_0), a_1), ..), a_n)].
+    [Tapp(..(App(Atom(Ident(F), a_0), a_1), ..), a_n)].
 
-    Specific constructors formed by [TApp]:
+    Specific constructors formed by [App]:
 
     - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
     [0].
 
-    - [(a)F = TApp(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
+    - [(a)F = App(Atom(Ident(f)), a)] [F] has arity [1] and is well-defined at
     depth [0].
 *)
 

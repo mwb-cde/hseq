@@ -30,7 +30,7 @@ open Lib
 (** [pre_typ]: The base representation of types. *)
 type ('a) pre_typ =
   | Atom of 'a
-  | TApp of (('a) pre_typ * ('a) pre_typ)
+  | App of (('a) pre_typ * ('a) pre_typ)
 
 (** [gtype_id]: The type of gtype identifiers. *)
 type gtype_id = (string)Tag.t
@@ -67,7 +67,7 @@ type gtype = (atomtype)pre_typ
 let mk_vartype x = Atom(Var(x))
 let mk_weakvartype x = Atom(Weak(x))
 let mk_identtype x = Atom(Ident(x))
-let mk_apptype x y = TApp(x, y)
+let mk_apptype x y = App(x, y)
 
 (**
    [flatten_apptype ty]: flatten an application in [ty] to a list of
@@ -76,7 +76,7 @@ let mk_apptype x y = TApp(x, y)
 let rec flatten_apptype ty =
   let rec flat_aux t rslt =
     match t with
-      | TApp(l, r) -> flat_aux l (r::rslt)
+      | App(l, r) -> flat_aux l (r::rslt)
       | _ -> t::rslt
   in
   flat_aux ty []
@@ -91,13 +91,13 @@ let split_apptype ty =
 let rec map_atomtype f ty =
   match ty with
   | Atom(_) -> f ty
-  | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
+  | App(l, r) -> App(map_atomtype f l, map_atomtype f r)
 
 (* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
 let rec iter_atomtype f ty =
   match ty with
   | Atom(_) -> f ty
-  | TApp(l, r) ->
+  | App(l, r) ->
      begin
        iter_atomtype f l;
        iter_atomtype f r
@@ -109,7 +109,7 @@ let fold_atomtype f c ty =
   let rec fold_aux z t stck =
     match t with
     | Atom(_) -> fold_cont (f z ty) stck
-    | TApp(l, r) -> fold_aux z l (r::stck)
+    | App(l, r) -> fold_aux z l (r::stck)
   and fold_cont z stck =
     match stck with
     | [] -> z
@@ -123,7 +123,7 @@ let exists_atomtype p ty =
   | Atom(_) ->
      if (p ty) then true
      else exists_cont stck
-  | TApp(l, r) ->
+  | App(l, r) ->
      exists_aux l (r::stck)
   and exists_cont stck =
     match stck with
@@ -140,7 +140,7 @@ let exists_type p ty =
         match t with
         | Atom(_) ->
            exists_cont stck
-        | TApp(l, r) ->
+        | App(l, r) ->
            exists_aux l (r::stck)
       end
   and exists_cont stck =
@@ -159,7 +159,7 @@ let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
         match t with
         | Atom(_) ->
            exists_cont stck
-        | TApp(l, r) ->
+        | App(l, r) ->
            exists_aux l (r::stck)
       end
   and exists_cont stck =
@@ -186,9 +186,9 @@ let rec compare_gtype a b =
   and struct_cmp p =
     match p with
     | (Atom(x), Atom(y)) -> atom_cmp x y
-    | (Atom(_), TApp(_)) -> Order.LessThan
-    | (TApp(_), Atom(_)) -> Order.GreaterThan
-    | (TApp(a, b), TApp(c, d)) ->
+    | (Atom(_), App(_)) -> Order.LessThan
+    | (App(_), Atom(_)) -> Order.GreaterThan
+    | (App(a, b), App(c, d)) ->
        begin
          match (compare_gtype a c) with
          | Order.Equal -> compare_gtype b d
@@ -235,7 +235,7 @@ let is_constr t =
 
 let is_app t =
   match t with
-  | TApp _ -> true
+  | App _ -> true
   | _ -> false
 
 (* Constructors *)
@@ -248,11 +248,11 @@ let mk_constr f args =
   let rec mk_tapp t args =
     match args with
     | [] -> t
-    | (x::xs) -> mk_tapp (TApp(t, x)) xs
+    | (x::xs) -> mk_tapp (App(t, x)) xs
   in
   mk_tapp (mk_ident f) args
 
-let mk_app x y = TApp(x, y)
+let mk_app x y = App(x, y)
 
 (* Destructors *)
 
@@ -285,7 +285,7 @@ let dest_constr ty =
   let rec dest_tapp t args =
     match t with
     | Atom(Ident(f)) -> (f, args)
-    | TApp(l, r) -> dest_tapp l (r::args)
+    | App(l, r) -> dest_tapp l (r::args)
     | _ -> raise (Failure "Invalid type constructor")
   in
   begin
@@ -295,13 +295,13 @@ let dest_constr ty =
 
 let rec get_type_name ty =
   match ty with
-    | TApp(l, _) -> get_type_name l
+    | App(l, _) -> get_type_name l
     | Atom(Ident(id)) -> id
     | _ -> failwith "get_type_name"
 
 let dest_app ty =
   match ty with
-  | TApp(x, y) -> (x, y)
+  | App(x, y) -> (x, y)
   | _ -> raise (Failure "Gtypes.dest_app: invalid type")
 
 let flatten_app = flatten_apptype
@@ -353,10 +353,10 @@ let normalize_vars typ=
       let (tbl1, n1) = lookup tbl (get_var_name ty)
       in
       (tbl1, n1)
-    | TApp(l, r) ->
+    | App(l, r) ->
        let (tbl1, l1) = norm_aux tbl l in
        let (tbl2, r1) = norm_aux tbl1 r in
-       (tbl2, TApp(l1, r1))
+       (tbl2, App(l1, r1))
     | _ -> (tbl, ty)
   in
   let (_, typ1) = norm_aux (Lib.empty_env()) typ
@@ -514,11 +514,11 @@ let rec subst t env =
     begin
       match t with
       | Atom(_) -> t
-      | TApp(x, y) ->
+      | App(x, y) ->
          let x1 = subst x env
          and y1 = subst y env
          in
-         TApp(x1, y1)
+         App(x1, y1)
     end
 
 (*
@@ -551,11 +551,11 @@ let rec rename_type_vars_env env trm =
        with Not_found -> (trm, env)
      end
   | Atom(Ident(_)) -> (trm, env)
-  | TApp(x, y) ->
+  | App(x, y) ->
      let x1, env1 = rename_type_vars_env env x in
      let y1, env2 = rename_type_vars_env env1 y
      in
-     (TApp(x1, y1), env2)
+     (App(x1, y1), env2)
   and
     rename_vars_list env lst rslt =
     match lst with
@@ -588,11 +588,11 @@ let rename_index idx env top_type =
          with Not_found -> (ty, ctr, env)
        end
     | Atom(Ident(_)) -> (ty, ctr, env)
-    | TApp(x, y) ->
+    | App(x, y) ->
        let x1, ctr1, env1 = rename_aux ctr env x in
        let y1, ctr2, env2 = rename_aux ctr1 env1 y
        in
-       (TApp(x1, y1), ctr2, env2)
+       (App(x1, y1), ctr2, env2)
   in
   rename_aux idx env top_type
 
@@ -614,11 +614,11 @@ let rec string_gtype x =
   | Atom(Var(a)) -> "'"^(gtype_id_string a)
   | Atom(Weak(a)) -> "_"^(gtype_id_string a)
   | Atom(Ident(f)) -> string_tconst f []
-  | TApp(_) -> string_app_args x []
+  | App(_) -> string_app_args x []
 and string_app_args t lst =
   match t with
   | Atom(Ident(f)) -> string_tconst f lst
-  | TApp(l, r) -> string_app_args l ((string_gtype r)::lst)
+  | App(l, r) -> string_app_args l ((string_gtype r)::lst)
   | _ -> String.concat " " ((string_gtype t)::lst)
 and string_tconst n l =
   (Ident.string_of n)
@@ -667,7 +667,7 @@ let rewrite_defn given_args rcrd_args t =
 
 let unfold scp t =
   match t with
-  | TApp(_) ->
+  | App(_) ->
      let (n, args) = (try dest_constr t with _ -> raise Not_found)
      in
      let recrd = get_typdef scp n in
@@ -738,25 +738,25 @@ let check_decln l =
       - [f] is in scope and
       - [d = arity(f)]
 
-    - [TApp(l, r)] and
+    - [App(l, r)] and
       - depth [d > 0] and
       - [l] is well-defined at depth [d + 1] and
       - [r] is well-defined at depth [0]
 
     Type constructor [F/n] has arity [arity(F) = n]. With arguments [a_0, ..,
-    an], the type [(a_0, .., an)F] is formed with [TApp] by making [F] the
+    an], the type [(a_0, .., an)F] is formed with [App] by making [F] the
     left-most element with the [a_i] as the right branches. For [(a_0, ..,
-    an)F], this is [TApp( .. (TApp(Atom(Ident(F)), a_0), a_1), a_n)].
+    an)F], this is [App( .. (App(Atom(Ident(F)), a_0), a_1), a_n)].
 
-    Specific constructors formed by [TApp]:
+    Specific constructors formed by [App]:
 
     - [()F = Atom(Ident(F))]: [F] has arity [0] and is well-defined at depth
       [0].
 
-   - [(a)F = TApp(Atom(Ident(f)), a)]: [F] has arity [1] and is well-defined at
+   - [(a)F = App(Atom(Ident(f)), a)]: [F] has arity [1] and is well-defined at
      depth [0].
 
-   - [(a, b)F = TApp(TApp(Atom(Ident(f)), a), b)]: [F] has arity [2] and is
+   - [(a, b)F = App(App(Atom(Ident(f)), a), b)]: [F] has arity [2] and is
      well-defined at depth [0].  *)
 
 let well_formed_full pred scp ty =
@@ -795,7 +795,7 @@ let well_formed_full pred scp ty =
                    ^(string_of_int (from_some arity_opt))
                    ^" but got "^(string_of_int depth)),
                   t)
-        | TApp(l, r) ->
+        | App(l, r) ->
            let lerr = well_aux (depth + 1) l in
            if lerr <> None
            then lerr
@@ -827,7 +827,7 @@ let well_formed scp ty =
     - [f] is in scope and
     - [d] is the arity of [f]
 
-    - [TApp(l, r)] and
+    - [App(l, r)] and
     - [l] is well-defined at depth [d + 1] and
     - [r] is  well-defined at depth [0]
 *)
@@ -888,7 +888,7 @@ let rec occurs_env tenv ty1 ty2 =
   in
   match (nty1, nty2) with
   | (Atom(_), Atom(_))-> equals nty1 nty2
-  | (Atom(_), TApp(l, r)) ->
+  | (Atom(_), App(l, r)) ->
      (occurs_env tenv nty1 l || occurs_env tenv nty1 r)
   | _ -> raise (type_error ("occurs_env: expected a type variable") [nty1])
 
@@ -927,7 +927,7 @@ let rec unify_aux scp ty1 ty2 env =
     and t = lookup_var ty2 env
     in
     match (s, t) with
-    | (TApp(l1, r1), TApp(l2, r2)) ->
+    | (App(l1, r1), App(l2, r2)) ->
        (* First try unifying the branches *)
        let env1_opt = try_app (unify_aux scp l1 l2) env in
        let env2_opt =
@@ -1033,8 +1033,8 @@ let rec mgu t env =
     then nt
     else mgu nt env
   | Atom(Ident(_)) -> t
-  | TApp(l, r) ->
-     TApp(mgu l env, mgu r env)
+  | App(l, r) ->
+     App(mgu l env, mgu r env)
 
 (**
    [mgu_rename_env inf env env nenv typ]: Replace variables in [typ]
@@ -1065,10 +1065,10 @@ let mgu_rename_env (inf, tyenv) name_env typ =
       then (nt, (ctr, nenv))
       else rename_aux (ctr, nenv) nt
     | Atom(Ident(_)) -> (ty, (ctr, nenv))
-    | TApp(l, r) ->
+    | App(l, r) ->
        let l1, (ctr1, env1) = rename_aux (ctr, nenv) l in
        let r1, (ctr2, env2) = rename_aux (ctr1, env1) r in
-       (TApp(l1, r1), (ctr2, env2))
+       (App(l1, r1), (ctr2, env2))
   in
   rename_aux (inf, name_env) typ
 
@@ -1105,10 +1105,10 @@ let mgu_rename_simple inf tyenv name_env typ =
        then (nt, ctr, nenv)
        else rename_aux ctr nenv nt
     | Atom(Ident(_)) -> (ty, ctr, nenv)
-    | TApp(l, r) ->
+    | App(l, r) ->
        let (l1, ctr1, env1) = rename_aux ctr nenv l in
        let (r1, ctr2, env2) = rename_aux ctr1 env1 r in
-       (TApp(l1, r1), ctr2, env2)
+       (App(l1, r1), ctr2, env2)
   in
   rename_aux inf name_env typ
 
@@ -1151,7 +1151,7 @@ let matching_env scp env t1 t2 =
       if equals s t
       then env
       else raise (type_error "Can't match types" [s; t])
-    | (TApp(l1, r1), TApp(l2, r2)) ->
+    | (App(l1, r1), App(l2, r2)) ->
        (* First try matching the branches *)
        let env1_opt = try_app (match_aux l1 l2) env in
        let env2_opt =
@@ -1216,7 +1216,7 @@ let set_name ?(memo=Lib.empty_env()) scp trm =
   in
   let rec set_aux t =
     match t with
-    | TApp(l, r) -> TApp(set_aux l, set_aux r)
+    | App(l, r) -> App(set_aux l, set_aux r)
     | Atom(Ident(id)) ->
       let (th, n) = Ident.dest id in
       let nth =
@@ -1289,10 +1289,10 @@ let rec to_save_aux tyenv ty =
   | Atom(Weak(_)) ->
     raise (type_error "Can't save a weak variable" [ty])
   | Atom(Ident(f)) -> (Atom(SIdent(f)), tyenv)
-  | TApp(l, r) ->
+  | App(l, r) ->
      let l1, tyenv1 = to_save_aux tyenv l in
      let r1, tyenv2 = to_save_aux tyenv1 r in
-     (TApp(l1, r1), tyenv2)
+     (App(l1, r1), tyenv2)
 and to_save_list tyenv lst rslt =
   match lst with
   | [] -> (tyenv, List.rev rslt)
@@ -1341,10 +1341,10 @@ let rec from_save_aux env (ty: stype) =
     in
     (Atom(Var(nty)), env1)
   | Atom(SIdent(f)) -> (Atom(Ident(f)), env)
-  | TApp(l, r) ->
+  | App(l, r) ->
      let l1, env1 = from_save_aux env l in
      let r1, env2 = from_save_aux env1 r in
-     (TApp(l1, r1), env2)
+     (App(l1, r1), env2)
 and from_save_list env lst rslt =
   match lst with
   | [] -> (env, List.rev rslt)

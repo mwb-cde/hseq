@@ -21,7 +21,6 @@
 
 open Lib
 open Basic
-open Gtypes
 open Term
 
 (*

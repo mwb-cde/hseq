@@ -21,7 +21,6 @@
 
 open Lib
 open Basic
-open Gtypes
 
 (* Recognisers *)
 
@@ -556,7 +555,7 @@ exception No_quantifier
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
     let qnt, qv, qty = Basic.dest_binding q in
-    let nt, nev = rename_type_vars_env tyenv qty
+    let nt, nev = Gtypes.rename_type_vars_env tyenv qty
     in
     (mk_binding qnt qv nt, nev)
   in
@@ -713,7 +712,7 @@ let retype_pretty typenv trm =
     in term [t]. *)
 let full_rename_env type_env term_env trm =
   let rename_type tyenv trm =
-    rename_type_vars_env tyenv trm
+    Gtypes.rename_type_vars_env tyenv trm
   in
   let rename_binder q tyenv =
     let (qnt, qv, qty) = Basic.dest_binding q in
@@ -761,7 +760,7 @@ let full_rename tyenv trm =
 
 let retype_index idx trm =
   let rename_type ctr tyenv ty =
-    rename_index ctr tyenv ty
+    Gtypes.rename_index ctr tyenv ty
   in
   let rename_binder q ctr tyenv =
     let (qnt, qv, qty) = Basic.dest_binding q in
@@ -803,7 +802,7 @@ let retype_index idx trm =
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
     let qnt, qv, qty = Basic.dest_binding q in
-    let nt, nev = rename_type_vars_env tyenv qty
+    let nt, nev = Gtypes.rename_type_vars_env tyenv qty
     in
     (mk_binding qnt qv nt, nev)
   in

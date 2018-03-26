@@ -44,7 +44,7 @@ let in_scope memo scp ty =
     | Gtypes.Atom(Gtypes.Weak(_)) -> ()
     | Gtypes.Atom(Gtypes.Ident(f)) ->
        ignore(lookup_id (Ident.thy_of f))
-    | Gtypes.TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
+    | Gtypes.App(l, r) -> (in_scp_aux l; in_scp_aux r)
   in
   try in_scp_aux ty; true
   with Not_found -> false

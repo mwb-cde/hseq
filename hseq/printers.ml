@@ -123,7 +123,7 @@ module Types =
         | Gtypes.Atom(Gtypes.Weak(_)) ->
            Format.printf "@[<hov 2>_%s@]" (Gtypes.get_weak_name x)
         | Gtypes.Atom(Gtypes.Ident(op)) -> print_app ppstate pr (op, [])
-        | Gtypes.TApp(_) ->
+        | Gtypes.App(_) ->
            let op, args = Gtypes.dest_constr x in
            print_app ppstate pr (op, args)
       and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
