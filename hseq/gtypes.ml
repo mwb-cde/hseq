@@ -19,22 +19,165 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-open Basic
 open Lib
 
 (*
  * Basic Operations
  *)
 
+(* Base Representation of logic types *)
+
+(** [pre_typ]: The base representation of types. *)
+type ('a) pre_typ =
+  | Atom of 'a
+  | TApp of (('a) pre_typ * ('a) pre_typ)
+
+(** [gtype_id]: The type of gtype identifiers. *)
+type gtype_id = (string)Tag.t
+
+let mk_gtype_id s = Tag.make s
+let gtype_id_string i = Tag.contents i
+let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
+
+let gtype_id_equal x y = Tag.equal x y
+
+let gtype_id_compare x y =
+  if gtype_id_equal x y
+  then Order.Equal
+  else
+    let xc = Tag.contents x
+    and yc = Tag.contents y
+    in
+    if (Order.Util.compare xc yc) = Order.GreaterThan
+    then Order.GreaterThan
+    else Order.LessThan
+
+let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
+let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
+
+(** [atomtype] Kinds of atomic type *)
+type atomtype =
+  | Var of gtype_id
+  | Weak of gtype_id
+  | Ident of Ident.t
+
+(** [gtype]: The actual representation of types. *)
+type gtype = (atomtype)pre_typ
+
+let mk_vartype x = Atom(Var(x))
+let mk_weakvartype x = Atom(Weak(x))
+let mk_identtype x = Atom(Ident(x))
+let mk_apptype x y = TApp(x, y)
+
+(**
+   [flatten_apptype ty]: flatten an application in [ty] to a list of
+   types.
+*)
+let rec flatten_apptype ty =
+  let rec flat_aux t rslt =
+    match t with
+      | TApp(l, r) -> flat_aux l (r::rslt)
+      | _ -> t::rslt
+  in
+  flat_aux ty []
+
+let split_apptype ty =
+  match flatten_apptype ty with
+  | x::xs -> (x, xs)
+  | _ -> raise (Invalid_argument "split_apptype")
+
+(* [map_atomtype f ty] Apply [f] to each [Atom(x)] in [ty] returning the
+   resulting type. *)
+let rec map_atomtype f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
+
+(* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
+let rec iter_atomtype f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | TApp(l, r) ->
+     begin
+       iter_atomtype f l;
+       iter_atomtype f r
+     end
+
+(* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
+   result. The fold is top-down, left-to-right *)
+let fold_atomtype f c ty =
+  let rec fold_aux z t stck =
+    match t with
+    | Atom(_) -> fold_cont (f z ty) stck
+    | TApp(l, r) -> fold_aux z l (r::stck)
+  and fold_cont z stck =
+    match stck with
+    | [] -> z
+    | (x::xs) -> fold_aux z x xs
+  in
+  fold_aux c ty []
+
+let exists_atomtype p ty =
+  let rec exists_aux t stck =
+  match t with
+  | Atom(_) ->
+     if (p ty) then true
+     else exists_cont stck
+  | TApp(l, r) ->
+     exists_aux l (r::stck)
+  and exists_cont stck =
+    match stck with
+    | [] -> false
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
+let exists_type p ty =
+  let rec exists_aux t stck =
+    if (p ty) then true
+    else
+      begin
+        match t with
+        | Atom(_) ->
+           exists_cont stck
+        | TApp(l, r) ->
+           exists_aux l (r::stck)
+      end
+  and exists_cont stck =
+    match stck with
+    | [] -> false
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
+let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
+  let rec exists_aux t stck =
+    let rslt = p ty in
+    if (fst rslt) then rslt
+    else
+      begin
+        match t with
+        | Atom(_) ->
+           exists_cont stck
+        | TApp(l, r) ->
+           exists_aux l (r::stck)
+      end
+  and exists_cont stck =
+    match stck with
+    | [] -> (false, None)
+    | (x::xs) -> exists_aux x xs
+  in
+  exists_aux ty []
+
 (* Ordering. *)
 
 let rec compare_gtype a b =
   let rec atom_cmp x y =
     match (x, y) with
-    | (Var(v1), Var(v2)) -> Basic.gtype_id_compare v1 v2
+    | (Var(v1), Var(v2)) -> gtype_id_compare v1 v2
     | (Var(_), Weak(_)) -> Order.GreaterThan
     | (Var(_), Ident(_)) -> Order.GreaterThan
-    | (Weak(v1), Weak(v2)) -> Basic.gtype_id_compare v1 v2
+    | (Weak(v1), Weak(v2)) -> gtype_id_compare v1 v2
     | (Weak(_), Var(_)) -> Order.LessThan
     | (Weak(_), Ident(_)) -> Order.GreaterThan
     | (Ident(v1), Ident(v2)) -> Ident.compare v1 v2
@@ -97,8 +240,8 @@ let is_app t =
 
 (* Constructors *)
 
-let mk_var n = Atom(Var(Basic.mk_gtype_id n))
-let mk_weak n = Atom(Weak(Basic.mk_gtype_id n))
+let mk_var n = Atom(Var(mk_gtype_id n))
+let mk_weak n = Atom(Weak(mk_gtype_id n))
 let mk_ident n = Atom(Ident(n))
 
 let mk_constr f args =
@@ -120,7 +263,7 @@ let dest_var t =
 
 let get_var_name t =
   match t with
-  | Atom(Var(n)) -> Basic.gtype_id_string n
+  | Atom(Var(n)) -> gtype_id_string n
   | _ -> raise (Failure "Not a variable")
 
 let dest_weak t =
@@ -130,7 +273,7 @@ let dest_weak t =
 
 let get_weak_name t =
   match t with
-  | Atom(Weak(n)) -> Basic.gtype_id_string n
+  | Atom(Weak(n)) -> gtype_id_string n
   | _ -> raise (Failure "Not a weak variable")
 
 let dest_ident t =
@@ -161,16 +304,16 @@ let dest_app ty =
   | TApp(x, y) -> (x, y)
   | _ -> raise (Failure "Gtypes.dest_app: invalid type")
 
-let flatten_app = Basic.flatten_apptype
-let split_app = Basic.split_apptype
+let flatten_app = flatten_apptype
+let split_app = split_apptype
 
 (* [map f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
    type. *)
-let map_atom = Basic.map_atomtype
-let fold_atom = Basic.fold_atomtype
-let exists_atom = Basic.exists_atomtype
-let exists = Basic.exists_type
-let exists_data = Basic.exists_type_data
+let map_atom = map_atomtype
+let fold_atom = fold_atomtype
+let exists_atom = exists_atomtype
+let exists = exists_type
+let exists_data = exists_type_data
 
 (*
  * Specialised Manipulators
@@ -180,13 +323,13 @@ let exists_data = Basic.exists_type_data
 let is_any_var t = (is_var t) || (is_weak t)
 
 let mk_typevar ctr =
-  let nty = Atom(Var(Basic.mk_gtype_id (int_to_name ctr)))
+  let nty = Atom(Var(mk_gtype_id (int_to_name ctr)))
   in
   (ctr + 1, nty)
 
 let mk_plain_typevar ctr =
   let prefix = "type_" in
-  let nty = Atom(Var(Basic.mk_gtype_id (prefix^(string_of_int ctr))))
+  let nty = Atom(Var(mk_gtype_id (prefix^(string_of_int ctr))))
   in
   (ctr + 1, nty)
 
@@ -398,7 +541,7 @@ let rec rename_type_vars_env env trm =
      begin
        try (lookup trm env, env)
        with Not_found ->
-         let nt = mk_var (Basic.gtype_id_string x)
+         let nt = mk_var (gtype_id_string x)
          in
          (nt, bind trm nt env)
      end
@@ -468,8 +611,8 @@ let add_type_error m ts err =
 
 let rec string_gtype x =
   match x with
-  | Atom(Var(a)) -> "'"^(Basic.gtype_id_string a)
-  | Atom(Weak(a)) -> "_"^(Basic.gtype_id_string a)
+  | Atom(Var(a)) -> "'"^(gtype_id_string a)
+  | Atom(Weak(a)) -> "_"^(gtype_id_string a)
   | Atom(Ident(f)) -> string_tconst f []
   | TApp(_) -> string_app_args x []
 and string_app_args t lst =
@@ -502,7 +645,7 @@ let rewrite_subst t env =
     match ty with
     | Atom(Var(a)) ->
        begin
-         try Lib.find (Basic.gtype_id_string a) env
+         try Lib.find (gtype_id_string a) env
          with Not_found ->
            raise (type_error "rewrite_subst: Can't find parameter" [t])
        end
@@ -693,7 +836,7 @@ let well_defined scp (args: (string)list) ty =
   let check_var t =
     match t with
     | Atom(Var(v)) ->
-       if not (var_is_arg (Basic.gtype_id_string v))
+       if not (var_is_arg (gtype_id_string v))
        then Some("unexpected variable.", t)
        else None
     | Atom(Weak(v)) ->
@@ -1112,10 +1255,10 @@ type satom =
   | SIdent of Ident.t      (* Identifier *)
 type stype = (satom) pre_typ
 
-type to_stype_env = (Basic.gtype_id * (string * int)) list
+type to_stype_env = (gtype_id * (string * int)) list
 (** Data needed to construct a type storage representation. *)
 
-type from_stype_env = ((string * int) * Basic.gtype_id) list
+type from_stype_env = ((string * int) * gtype_id) list
 (** Data needed to construct a type storage representation. *)
 
 (* [stypedef]: Type definition/declaration records for disk storage *)
@@ -1184,7 +1327,7 @@ let rec from_save_aux env (ty: stype) =
   match ty with
   | Atom(SVar(id)) ->
     let make() =
-      let nid = Basic.mk_gtype_id (fst id) in
+      let nid = mk_gtype_id (fst id) in
       let env1 = (id, nid)::env
       in
       (nid, env1)

@@ -255,11 +255,11 @@ sig
   *)
 
   (** The record of an individual skolem constant. *)
-  type skolem_cnst = (Ident.t * (int * Basic.gtype))
+  type skolem_cnst = (Ident.t * (int * Gtypes.gtype))
 
   val get_sklm_name: skolem_cnst -> Ident.t
   val get_sklm_indx: skolem_cnst -> int
-  val get_sklm_type: skolem_cnst -> Basic.gtype
+  val get_sklm_type: skolem_cnst -> Gtypes.gtype
 
   val make_skolem_name: Ident.t -> int -> string
   (** [make_skolem_name i n]: Make the name of a skolem constant from
@@ -276,7 +276,7 @@ sig
   type new_skolem_data=
       {
         name: Ident.t;
-        ty: Basic.gtype;
+        ty: Gtypes.gtype;
         tyenv: Gtypes.substitution;
         scope: Scope.t;
         skolems: skolem_type;
@@ -301,7 +301,7 @@ sig
   val mk_new_skolem:
     new_skolem_data
     -> (Basic.term
-        * Basic.gtype
+        * Gtypes.gtype
         * skolem_type
         * Gtypes.substitution
         * (string * int) list)
@@ -379,7 +379,7 @@ sig
   (** The scope of a sequent. *)
   val sklm_cnsts: t -> Skolem.skolem_cnst list
   (** The skolem constants of the sequent. *)
-  val sqnt_tyvars: t -> Basic.gtype list
+  val sqnt_tyvars: t -> Gtypes.gtype list
   (** All weak type variables that were generated in the sequent. *)
   val sqnt_tag: t->ftag_ty
   (** The tag of the sequent. (This is the tag of the subgoal.) *)
@@ -1222,7 +1222,7 @@ sig
       {
         type_name: Ident.t;       (* name of new type *)
         type_args: string list;   (* arguments of new type *)
-        type_base: Basic.gtype;   (* the base type *)
+        type_base: Gtypes.gtype;   (* the base type *)
         type_rep: cdefn;          (* representation function *)
         type_abs: cdefn;          (* abstraction function *)
         type_set: Formula.t;      (* defining set *)
@@ -1265,12 +1265,12 @@ sig
   (** Recogniser for term definitions. *)
 
   val dest_termdef: cdefn ->
-    Ident.t * Basic.gtype * thm
+    Ident.t * Gtypes.gtype * thm
   (** Get the components of a certified definition. *)
 
   val mk_termdef:
     Scope.t
-    -> (Ident.t * Basic.gtype)
+    -> (Ident.t * Gtypes.gtype)
     -> Basic.term list -> Basic.term
     -> cdefn
   (** [mk_termdef scp i args trm]: Make a certified definition.
@@ -1282,11 +1282,11 @@ sig
   (** Recogniser for term declarations. *)
 
   val dest_termdecln: cdefn
-    -> Ident.t * Basic.gtype
+    -> Ident.t * Gtypes.gtype
   (** Get the components of a term declaration.  *)
 
   val mk_termdecln:
-    Scope.t -> string -> Basic.gtype -> cdefn
+    Scope.t -> string -> Gtypes.gtype -> cdefn
   (** [mk_termdecln scp name ty]: Declare identifier [name] of type
       [ty] in scope [scp].  Fails if identifier [name] is already
       defined in [scp] or if [ty] is not well defined.  *)
@@ -1301,10 +1301,10 @@ sig
   val is_typealias: cdefn -> bool
   (** Recogniser for definition of a type declaration or alias. *)
   val dest_typealias: cdefn ->
-    Ident.t * string list * Basic.gtype option
+    Ident.t * string list * Gtypes.gtype option
   (** Get the components of a type declaration or alias.  *)
   val mk_typealias: Scope.t
-    -> string -> string list -> Basic.gtype option -> cdefn
+    -> string -> string list -> Gtypes.gtype option -> cdefn
   (** [mk_typealias scp n args d]: Make a type declaration or alias.
 
       {ul
@@ -1329,7 +1329,7 @@ sig
       ?x. setp x >> (built by {!Defn.mk_subtype_exists}.  *)
   val mk_subtype:
     Scope.t -> string -> string list
-    -> Basic.gtype -> Basic.term -> string -> string
+    -> Gtypes.gtype -> Basic.term -> string -> string
     -> thm
     -> cdefn
 (**

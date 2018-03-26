@@ -64,10 +64,10 @@ val read: ?ctxt:Context.t -> string -> Basic.term
 val read_unchecked: ?ctxt:Context.t -> string -> Basic.term
 (** User level parsing of a string as a raw term.. *)
 val read_defn: ?ctxt:Context.t -> string
-  -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+  -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
-val read_type: ?ctxt:Context.t -> string -> Basic.gtype
+val read_type: ?ctxt:Context.t -> string -> Gtypes.gtype
 (** User level parsing of a string as a type. *)
 val read_type_defn: ?ctxt:Context.t -> string -> Defn.Parser.typedef
 (** User level parsing of a string as a type definition. *)
@@ -395,7 +395,7 @@ val define:
   Context.t
   -> ?pp: (int * fixity * string option)
   -> ?simp:bool
-  -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+  -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
   -> (Context.t * Logic.Defns.cdefn)
 (**
    [define ?simp term pp]: Define a term.
@@ -421,7 +421,7 @@ val declare:
   Context.t
   -> ?pp:(int* fixity* string option)
   -> Basic.term
-  -> (Context.t * Ident.t * Basic.gtype)
+  -> (Context.t * Ident.t * Gtypes.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -440,11 +440,11 @@ val declare:
 
 val simple_typedef:
   Context.t
-  -> (string * string list * Basic.gtype option)
+  -> (string * string list * Gtypes.gtype option)
   -> (Context.t * Logic.Defns.cdefn)
 val subtypedef:
   Context.t
-  -> (string * string list * Basic.gtype * Basic.term)
+  -> (string * string list * Gtypes.gtype * Basic.term)
   -> (string option * string option)
   -> ?simp:bool -> Logic.thm
   -> (Context.t * Logic.Defns.cdefn)

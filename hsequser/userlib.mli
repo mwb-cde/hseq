@@ -206,23 +206,23 @@ val read_unchecked: string -> Basic.term
 
 (** User level parsing of a string as a raw term.. *)
 val read_defn:
-  string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+  string -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
-val hdefn: string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+val hdefn: string -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
 (** [hdefn x] is [read_defn x]. *)
 
-val (?<%): string -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+val (?<%): string -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
 (** [?<% x] is [hdefn x]. *)
 
-val read_type: string -> Basic.gtype
+val read_type: string -> Gtypes.gtype
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
 
-val htype: string -> Basic.gtype
+val htype: string -> Gtypes.gtype
 (** [htype x] is [read_type x]. *)
 
-val (!:): string -> Basic.gtype
+val (!:): string -> Gtypes.gtype
 (** [!: x] is [htype x]. *)
 
 val read_type_defn : string -> Defn.Parser.typedef
@@ -358,7 +358,7 @@ val typedef:
 val define:
   ?pp:(int*fixity*string option)
   -> ?simp:bool
-  -> (((string * Basic.gtype) * Basic.term list) * Basic.term)
+  -> (((string * Gtypes.gtype) * Basic.term list) * Basic.term)
   -> Logic.Defns.cdefn
 (** [define ?simp term pp]: Define a term.
 
@@ -380,7 +380,7 @@ val define:
 
 val declare:
   ?pp:(int* fixity* string option)
-  -> Basic.term -> (Ident.t * Basic.gtype)
+  -> Basic.term -> (Ident.t * Gtypes.gtype)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -573,7 +573,7 @@ module Display :
 sig
   val print_term: Basic.term -> unit
   val print_formula: Formula.t -> unit
-  val print_type: Basic.gtype -> unit
+  val print_type: Gtypes.gtype -> unit
   val print_theory: Theory.thy -> unit
 
   val print_sqnt: Logic.Sequent.t -> unit

@@ -99,9 +99,9 @@ val read_unchecked: string -> Basic.term
 (** Parse a string as a term, resolving short names and
     symbols. *)
 val read_defn:
-  string -> ((string * Basic.gtype) * Basic.term list) * Basic.term
+  string -> ((string * Gtypes.gtype) * Basic.term list) * Basic.term
 (** Parse a string as a term definition. *)
-val read_type: string -> Basic.gtype
+val read_type: string -> Gtypes.gtype
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
 val read_type_defn : string -> Defn.Parser.typedef

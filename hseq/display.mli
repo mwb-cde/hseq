@@ -25,7 +25,7 @@ open Basic
 
 val print_term: Printer.ppinfo -> Basic.term -> unit
 val print_formula: Printer.ppinfo -> Formula.t -> unit
-val print_type: Printer.ppinfo -> Basic.gtype -> unit
+val print_type: Printer.ppinfo -> Gtypes.gtype -> unit
 val print_theory: Printer.ppinfo -> Theory.thy -> unit
 
 val print_sqnt: Printer.ppinfo -> Logic.Sequent.t -> unit

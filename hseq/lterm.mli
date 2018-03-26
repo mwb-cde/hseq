@@ -161,7 +161,7 @@ val mk_all: Scope.t -> string -> term -> term
 (** [mk_all scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_all_ty: Scope.t -> string -> Basic.gtype -> term -> term
+val mk_all_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
 (** [mk_all_ty scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n] with type [ty].
 *)
@@ -170,7 +170,7 @@ val mk_ex: Scope.t -> string -> term -> term
 (** [mk_ex scp n t]: Make an existentially quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_ex_ty: Scope.t -> string -> Basic.gtype -> term -> term
+val mk_ex_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
 (** [mk_ex_ty scp n t]: Make an existentially quantified term from
     [t], binding all free variables named [n] with type [ty].
 *)
@@ -179,7 +179,7 @@ val mk_lam: Scope.t -> string -> term -> term
 (** [mk_lam scp n t]: Make a lambda term from [t], binding all free
     variables named [n].
 *)
-val mk_lam_ty: Scope.t -> string -> Basic.gtype -> term -> term
+val mk_lam_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
 (** [mk_lam_ty scp n t]: Make a lambda term from [t], binding all free
     variables named [n] with type [ty].
 *)

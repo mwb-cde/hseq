@@ -165,7 +165,7 @@ val dest_implies: t -> (t * t)
 val dest_equality: t -> (t * t)
 
 val get_binder_name: t -> string
-val get_binder_type: t -> Basic.gtype
+val get_binder_type: t -> Gtypes.gtype
 
 (** {7 Constructors} *)
 
@@ -182,11 +182,11 @@ val mk_equality: Scope.t -> t -> t -> t
 
 (** {5 Typechecking} *)
 
-val typecheck: Scope.t -> t -> Basic.gtype ->t
+val typecheck: Scope.t -> t -> Gtypes.gtype ->t
 (** [typecheck scp f ty]: Check that [f] has type [ty] in scope [scp]. *)
 
 val typecheck_env: Scope.t -> Gtypes.substitution
-  -> t -> Basic.gtype -> Gtypes.substitution
+  -> t -> Gtypes.gtype -> Gtypes.substitution
 (**
     [typecheck_env scp tyenv f ty]: Check that [f] has type [ty] in
     scope [scp] w.r.t type context [tyenv]. Returns [tyenv] updated
@@ -198,7 +198,7 @@ val retype: Scope.t -> Gtypes.substitution -> t -> t
 
 val typecheck_retype:
   Scope.t -> Gtypes.substitution
-  -> t -> Basic.gtype
+  -> t -> Gtypes.gtype
   -> (t * Gtypes.substitution)
 (**
     [typecheck_retype scp tyenv f ty]: Check that [f] is correctly

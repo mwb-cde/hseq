@@ -84,9 +84,9 @@ exception ParsingError = Pkit.ParsingError
 *)
 type typedef_data =
   | NewType of (string * (string list))
-  | TypeAlias of (string * (string list) * Basic.gtype)
+  | TypeAlias of (string * (string list) * Gtypes.gtype)
   | Subtype of (string * (string list)
-                * Basic.gtype * Pterm.t)
+                * Gtypes.gtype * Pterm.t)
 
 
 (*** Grammars ***)
@@ -190,10 +190,10 @@ type parser_info =
         (string, parser_info -> Pterm.t phrase) Lib.named_list;
       (* type information *)
       typ_indx: int ref;
-      typ_names: (string* Basic.gtype) list ref;
+      typ_names: (string* Gtypes.gtype) list ref;
       type_token_info: (token ->token_info);
       type_parsers:
-        (string, parser_info -> (Basic.gtype phrase)) Lib.named_list;
+        (string, parser_info -> (Gtypes.gtype phrase)) Lib.named_list;
     }
 
 (** [mk_inf tbl type_tbl] Make parsing information from table [tbl]
@@ -736,7 +736,7 @@ let mk_prefix inf t=
     quantifier type (All, Ex or Lambda).
 *)
 let qnt_setup_bound_names
-    inf (qnt: Basic.quant) (xs : (string* Basic.gtype) list) =
+    inf (qnt: Basic.quant) (xs : (string * Gtypes.gtype) list) =
   let setup_aux (n, ty) =
     let b_id = Pterm.mk_bound(Basic.mk_binding qnt n ty)
     in

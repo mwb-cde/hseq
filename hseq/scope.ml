@@ -60,7 +60,7 @@ let dest_type_record r =
 type t =
     {
       curr_thy : marker;
-      term_type : Ident.t -> gtype;
+      term_type : Ident.t -> Gtypes.gtype;
       term_thy : string -> Ident.thy_id;
       types: Gtypes.TypeScope.t;
       thy_in_scope : Ident.thy_id -> bool;

@@ -36,11 +36,11 @@
 
 (** {7 Typing Errors} *)
 
-val typing_error: string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn
+val typing_error: string -> Basic.term -> Gtypes.gtype -> Gtypes.gtype -> exn
 (** Construct a type error *)
 
 val add_typing_error:
-  string -> Basic.term -> Basic.gtype -> Basic.gtype -> exn -> exn
+  string -> Basic.term -> Gtypes.gtype -> Gtypes.gtype -> exn -> exn
 (** Add a type error to existing errors. *)
 
 (** {5 Typing a term} *)
@@ -48,12 +48,12 @@ val add_typing_error:
 val typeof:
   Scope.t
   -> ?env:Gtypes.substitution
-  -> Basic.term -> Basic.gtype
+  -> Basic.term -> Gtypes.gtype
 (** Get the type of a term wrt type environment [env] (if given). *)
 
 (** {5 Type-checking functions} *)
 
-val typecheck: Scope.t -> Basic.term -> Basic.gtype -> unit
+val typecheck: Scope.t -> Basic.term -> Gtypes.gtype -> unit
 (** [typecheck scp t ty]: Check that term [t] has type [ty] in scope
     [scp].
 
@@ -64,7 +64,7 @@ val typecheck: Scope.t -> Basic.term -> Basic.gtype -> unit
 
 val typecheck_top: Scope.t
   -> Gtypes.substitution
-  -> Basic.term -> Basic.gtype
+  -> Basic.term -> Gtypes.gtype
   -> Gtypes.substitution
 (** [typecheck_top tyenv scp t ty]: Check, w.r.t type context [tyenv],
     that term [t] has type [ty] in scope [scp]. Type variables in [t]
@@ -87,20 +87,20 @@ val settype:
 (** {7 Debugging} *)
 val typeof_env:
   Scope.t -> (int * Gtypes.substitution)
-  -> Basic.term -> (Basic.gtype * (int * Gtypes.substitution))
+  -> Basic.term -> (Gtypes.gtype * (int * Gtypes.substitution))
 
 val settype_aux:
   Scope.t ->
   (int
-   * (Gtypes.substitution -> Basic.gtype -> Basic.term
+   * (Gtypes.substitution -> Gtypes.gtype -> Basic.term
       -> Gtypes.substitution))
-  -> Basic.gtype -> Basic.term ->
+  -> Gtypes.gtype -> Basic.term ->
   ((int * Gtypes.substitution) -> (int * Gtypes.substitution))
 
 val test_type:
-  Scope.t -> Gtypes.substitution -> Basic.term -> Basic.gtype
-  -> Basic.gtype -> Gtypes.substitution
+  Scope.t -> Gtypes.substitution -> Basic.term -> Gtypes.gtype
+  -> Gtypes.gtype -> Gtypes.substitution
 
-type debugType = TermType of (string * Basic.term * (Basic.gtype list))
+type debugType = TermType of (string * Basic.term * (Gtypes.gtype list))
 val debug_flag: bool ref
 val debug_list: (debugType list) ref

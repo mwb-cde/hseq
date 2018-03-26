@@ -23,150 +23,6 @@
  *   Basic constants and data structures
  *)
 
-(* Base Representation of logic types *)
-
-(** [pre_typ]: The base representation of types. *)
-type ('a) pre_typ =
-  | Atom of 'a
-  | TApp of (('a) pre_typ * ('a) pre_typ)
-
-(** [gtype_id]: The type of gtype identifiers. *)
-type gtype_id = (string)Tag.t
-
-let mk_gtype_id s = Tag.make s
-let gtype_id_string i = Tag.contents i
-let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
-
-let gtype_id_equal x y = Tag.equal x y
-
-let gtype_id_compare x y =
-  if gtype_id_equal x y
-  then Order.Equal
-  else
-    let xc = Tag.contents x
-    and yc = Tag.contents y
-    in
-    if (Order.Util.compare xc yc) = Order.GreaterThan
-    then Order.GreaterThan
-    else Order.LessThan
-
-let gtype_id_greaterthan x y = (gtype_id_compare x y) = Order.GreaterThan
-let gtype_id_lessthan x y = (gtype_id_compare x y) = Order.LessThan
-
-(** [atomtype] Kinds of atomic type *)
-type atomtype =
-  | Var of gtype_id
-  | Weak of gtype_id
-  | Ident of Ident.t
-
-(** [gtype]: The actual representation of types. *)
-type gtype = (atomtype)pre_typ
-
-let mk_vartype x = Atom(Var(x))
-let mk_weakvartype x = Atom(Weak(x))
-let mk_identtype x = Atom(Ident(x))
-let mk_apptype x y = TApp(x, y)
-
-(**
-   [flatten_apptype ty]: flatten an application in [ty] to a list of
-   types.
-*)
-let rec flatten_apptype ty =
-  let rec flat_aux t rslt =
-    match t with
-      | TApp(l, r) -> flat_aux l (r::rslt)
-      | _ -> t::rslt
-  in
-  flat_aux ty []
-
-let split_apptype ty =
-  match flatten_apptype ty with
-  | x::xs -> (x, xs)
-  | _ -> raise (Invalid_argument "split_apptype")
-
-(* [map_atomtype f ty] Apply [f] to each [Atom(x)] in [ty] returning the
-   resulting type. *)
-let rec map_atomtype f ty =
-  match ty with
-  | Atom(_) -> f ty
-  | TApp(l, r) -> TApp(map_atomtype f l, map_atomtype f r)
-
-(* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
-let rec iter_atomtype f ty =
-  match ty with
-  | Atom(_) -> f ty
-  | TApp(l, r) ->
-     begin
-       iter_atomtype f l;
-       iter_atomtype f r
-     end
-
-(* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
-   result. The fold is top-down, left-to-right *)
-let fold_atomtype f c ty =
-  let rec fold_aux z t stck =
-    match t with
-    | Atom(_) -> fold_cont (f z ty) stck
-    | TApp(l, r) -> fold_aux z l (r::stck)
-  and fold_cont z stck =
-    match stck with
-    | [] -> z
-    | (x::xs) -> fold_aux z x xs
-  in
-  fold_aux c ty []
-
-let exists_atomtype p ty =
-  let rec exists_aux t stck =
-  match t with
-  | Atom(_) ->
-     if (p ty) then true
-     else exists_cont stck
-  | TApp(l, r) ->
-     exists_aux l (r::stck)
-  and exists_cont stck =
-    match stck with
-    | [] -> false
-    | (x::xs) -> exists_aux x xs
-  in
-  exists_aux ty []
-
-let exists_type p ty =
-  let rec exists_aux t stck =
-    if (p ty) then true
-    else
-      begin
-        match t with
-        | Atom(_) ->
-           exists_cont stck
-        | TApp(l, r) ->
-           exists_aux l (r::stck)
-      end
-  and exists_cont stck =
-    match stck with
-    | [] -> false
-    | (x::xs) -> exists_aux x xs
-  in
-  exists_aux ty []
-
-let exists_type_data (p: 'a -> (bool * ('b)option)) (ty: 'a) =
-  let rec exists_aux t stck =
-    let rslt = p ty in
-    if (fst rslt) then rslt
-    else
-      begin
-        match t with
-        | Atom(_) ->
-           exists_cont stck
-        | TApp(l, r) ->
-           exists_aux l (r::stck)
-      end
-  and exists_cont stck =
-    match stck with
-    | [] -> (false, None)
-    | (x::xs) -> exists_aux x xs
-  in
-  exists_aux ty []
-
 (*
  * Base Representation of logic terms
  *)
@@ -243,7 +99,7 @@ let quant_string x =
    [binder_equality]: Equality of binders.
 *)
 
-type q_type = {quant: quant; qvar: string; qtyp: gtype}
+type q_type = {quant: quant; qvar: string; qtyp: Gtypes.gtype}
 type binders = (q_type)Tag.t
 
 (* Binder operations *)
@@ -282,9 +138,9 @@ let binder_lessthan x y = (binder_compare x y) = Order.LessThan
 
 (** The representation of a term *)
 type term =
-  | Id of Ident.t * gtype
+  | Id of Ident.t * Gtypes.gtype
   | Bound of binders
-  | Free of string * gtype
+  | Free of string * Gtypes.gtype
   | Meta of binders
   | App of term * term
   | Qnt of binders * term

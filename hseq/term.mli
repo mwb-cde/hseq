@@ -173,7 +173,7 @@ val strip_fun_qnt:
 (** {7 Identifier (Id) terms} *)
 
 val get_ident_id: term-> Ident.t
-val get_ident_type: term-> Basic.gtype
+val get_ident_type: term-> Gtypes.gtype
 
 (** {7 Free variables} *)
 
@@ -338,7 +338,7 @@ val mk_qnt_name: Scope.t -> Basic.quant -> string -> term -> term
     [qnt], from term [t], binding free variables named [n].
 *)
 val mk_typed_qnt_name:
-  Scope.t -> Basic.quant -> Basic.gtype -> string -> term -> term
+  Scope.t -> Basic.quant -> Gtypes.gtype -> string -> term -> term
 (** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
     kind [qnt], from term [t], binding all free variables named
     [n]. Set the type of the quantifier to [ty].
@@ -346,7 +346,7 @@ val mk_typed_qnt_name:
 
 (**  {5 Conversion of a term to a string} *)
 
-val string_typed_name: string -> Basic.gtype -> string
+val string_typed_name: string -> Gtypes.gtype -> string
 val string_term: term -> string
 val string_inf_term:
   ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string

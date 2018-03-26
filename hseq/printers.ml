@@ -30,7 +30,7 @@ open Basic
 type ppinfo =
     {
       terms: (ppinfo, (Basic.term * (Basic.term)list))info;
-      types: (ppinfo, (Ident.t * (Basic.gtype)list))info
+      types: (ppinfo, (Ident.t * (Gtypes.gtype)list))info
     }
 
 let mk_ppinfo sz =
@@ -62,7 +62,7 @@ let remove_term_printer info id =
 
 (** Operations involving type identifiers *)
 type gtype_printer =
-  ppinfo -> (fixity * int) -> (Ident.t * (Basic.gtype list)) printer
+  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.gtype list)) printer
 let get_type_info info x = get_info (info.types) x
 let set_type_info info x = {info with types = x}
 let add_type_info info id prec fixity repr =
@@ -118,12 +118,12 @@ module Types =
     let rec print_type ppstate pr t =
       let rec print_aux ppstate pr x =
         match x with
-        | Atom(Var(_)) ->
+        | Gtypes.Atom(Gtypes.Var(_)) ->
            Format.printf "@[<hov 2>'%s@]" (Gtypes.get_var_name x)
-        | Atom(Weak(_)) ->
+        | Gtypes.Atom(Gtypes.Weak(_)) ->
            Format.printf "@[<hov 2>_%s@]" (Gtypes.get_weak_name x)
-        | Atom(Ident(op)) -> print_app ppstate pr (op, [])
-        | TApp(_) ->
+        | Gtypes.Atom(Gtypes.Ident(op)) -> print_app ppstate pr (op, [])
+        | Gtypes.TApp(_) ->
            let op, args = Gtypes.dest_constr x in
            print_app ppstate pr (op, args)
       and print_infix (assoc, prec) (nassoc, nprec) (f, args) =

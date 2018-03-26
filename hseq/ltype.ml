@@ -40,11 +40,11 @@ let in_scope memo scp ty =
   in
   let rec in_scp_aux t =
     match t with
-    | Basic.Atom(Basic.Var(_)) -> ()
-    | Basic.Atom(Basic.Weak(_)) -> ()
-    | Basic.Atom(Basic.Ident(f)) ->
+    | Gtypes.Atom(Gtypes.Var(_)) -> ()
+    | Gtypes.Atom(Gtypes.Weak(_)) -> ()
+    | Gtypes.Atom(Gtypes.Ident(f)) ->
        ignore(lookup_id (Ident.thy_of f))
-    | Basic.TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
+    | Gtypes.TApp(l, r) -> (in_scp_aux l; in_scp_aux r)
   in
   try in_scp_aux ty; true
   with Not_found -> false

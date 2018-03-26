@@ -169,8 +169,8 @@ type subtype_defn =
     {
       id: Ident.t;
       args : string list;
-      rep : (Ident.t* Basic.gtype);
-      abs: (Ident.t* Basic.gtype);
+      rep : (Ident.t* Gtypes.gtype);
+      abs: (Ident.t* Gtypes.gtype);
       set: Basic.term;
       rep_T: Basic.term;
       rep_T_inverse: Basic.term;
@@ -301,11 +301,10 @@ struct
   type typedef =
     | NewType of (string * (string list))
     (** A new type: the type name and its arguments. *)
-    | TypeAlias of (string * (string list) * Basic.gtype)
+    | TypeAlias of (string * (string list) * Gtypes.gtype)
     (** A type alias: the type name, its arguments and the type it
         aliases *)
-    | Subtype of (string * (string list)
-                  * Basic.gtype * Basic.term)
+    | Subtype of (string * (string list) * Gtypes.gtype * Basic.term)
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)

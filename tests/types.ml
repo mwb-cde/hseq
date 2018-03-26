@@ -59,7 +59,7 @@ let list_prod lst =
 let test_types() =
   TESTSUITE_BEGIN("Types");
 
-  let (a_ty: Basic.gtype) = Gtypes.mk_var "a"
+  let (a_ty: Gtypes.gtype) = Gtypes.mk_var "a"
   and a_wty = Gtypes.mk_weak "a"
   and a1_ty = Gtypes.mk_var "a"
   and a1_wty = Gtypes.mk_weak "a"

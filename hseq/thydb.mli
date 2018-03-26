@@ -151,14 +151,14 @@ val add_decln:
     the current theory.
 *)
 
-val add_defn_rec: string-> Basic.gtype -> Logic.thm option
+val add_defn_rec: string-> Gtypes.gtype -> Logic.thm option
   -> Theory.property list -> thydb -> thydb
 (** [add_defn_rec n ty th ps db]: Store definition [th] of name [n],
     typed [ty] with properties [ps] in the current theory.
 *)
 
 val add_defn:
-  string -> Basic.gtype -> Logic.thm -> Theory.property list
+  string -> Gtypes.gtype -> Logic.thm -> Theory.property list
   -> thydb -> thydb
 (** [add_defn n ty th ps db]: Store definition [th] of name [n], typed
     [ty] with properties [ps] in the current theory.
@@ -174,12 +174,12 @@ val get_defn: string -> string -> thydb -> Logic.thm
     theory [th].
 *)
 
-val get_id_type: string -> string -> thydb -> Basic.gtype
+val get_id_type: string -> string -> thydb -> Gtypes.gtype
 (** [get_defn n th db]: Get the type of the term named [n] in theory
     [th].
 *)
 
-val get_id_options: string -> thydb -> (Ident.t * Basic.gtype) list
+val get_id_options: string -> thydb -> (Ident.t * Gtypes.gtype) list
 (** [get_id_options n db]: Get list of term identifiers with the name
     [n], together with their types.  The list is in the order of
     appearence in the importing list.
