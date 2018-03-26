@@ -116,7 +116,7 @@ val mk_def: Ident.t -> gtype list -> gtype
 
 (** {5 Type Definitions} *)
 
-module NewScope:
+module TypeScope:
 sig
 
   (** Records for type definitions *)
@@ -161,10 +161,10 @@ sig
   val add_declns: t -> (Ident.t * (string) list) list -> t
 end
 
-type typedef_record = NewScope.type_record
+type typedef_record = TypeScope.type_record
 (** Records for type definitions. *)
 
-val get_typdef: NewScope.t -> Ident.t -> typedef_record
+val get_typdef: TypeScope.t -> Ident.t -> typedef_record
 (** Get definition of type named [n] from scope [scp]. *)
 
 (** {5 Data storage indexed by gtypes} *)
@@ -243,7 +243,7 @@ val string_gtype: gtype -> string
 val check_decln: gtype -> bool
 (**  [check_decln l]: Consistency check on declaration of type [l]. *)
 
-val unfold: NewScope.t -> gtype -> gtype
+val unfold: TypeScope.t -> gtype -> gtype
 (**
    [unfold scp ty]: Unfold the definition of type [ty] from the scope
    [scp].
@@ -253,7 +253,7 @@ val unfold: NewScope.t -> gtype -> gtype
 
 val well_formed_full:
   (gtype -> (string * gtype)option)
-  -> NewScope.t -> gtype -> bool
+  -> TypeScope.t -> gtype -> bool
 (** [well_formed_full pred scp t]: ensure that [t] is well-formed
 
     [pred t] should return [None] for success and [Some(msg, errty)] for
@@ -286,7 +286,7 @@ val well_formed_full:
     depth [0].
 *)
 
-val well_formed: NewScope.t -> gtype -> bool
+val well_formed: TypeScope.t -> gtype -> bool
 (** [well_formed scp t]: ensure that [t] is well-formed in scope [scp] *)
 
 
@@ -320,14 +320,14 @@ val well_formed: NewScope.t -> gtype -> bool
     depth [0].
 *)
 
-val well_defined: NewScope.t -> (string)list -> gtype -> unit
+val well_defined: TypeScope.t -> (string)list -> gtype -> unit
 (** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]
     must have a name in [args] and weak variables are not permitted in
     [ty].
 *)
 
-val check_decl_type: NewScope.t -> Basic.gtype -> unit
+val check_decl_type: TypeScope.t -> Basic.gtype -> unit
 (** [check_decl_type scp ty]: Ensure type [ty] is suitable for the
     declaration of a term. Fails if [ty] contains a weak variable.
 *)
@@ -378,12 +378,12 @@ val bind_occs: gtype -> gtype -> substitution -> substitution
 *)
 
 val unify_env:
-  NewScope.t -> gtype -> gtype
+  TypeScope.t -> gtype -> gtype
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
-val unify: NewScope.t -> gtype -> gtype -> substitution
+val unify: TypeScope.t -> gtype -> gtype -> substitution
 (** [unify]: unify two types, returning the substitution.
 *)
 
@@ -434,7 +434,7 @@ val mgu_rename_simple: int -> substitution -> substitution
 *)
 
 val matching_env:
-  NewScope.t -> substitution
+  TypeScope.t -> substitution
   -> gtype -> gtype -> substitution
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
@@ -445,7 +445,7 @@ val matching_env:
 *)
 
 val matches_env:
-  NewScope.t -> substitution
+  TypeScope.t -> substitution
   -> gtype -> gtype -> substitution
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
@@ -454,14 +454,14 @@ val matches_env:
     Silently returns unchanged substitution on failure.
 *)
 
-val matches: NewScope.t -> gtype -> gtype -> bool
+val matches: TypeScope.t -> gtype -> gtype -> bool
 (** Toplevel for [matches_env]. *)
 
 (** {5 More functions} *)
 
 val set_name:
   ?memo:(string, Ident.thy_id)Hashtbl.t
-  -> NewScope.t -> gtype -> gtype
+  -> TypeScope.t -> gtype -> gtype
 (** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
     long form.
 
@@ -472,7 +472,7 @@ val set_name:
 
 (*
 val in_scope:
-  (string, bool)Lib.substype -> NewScope.t -> gtype -> bool
+  (string, bool)Lib.substype -> TypeScope.t -> gtype -> bool
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
@@ -549,7 +549,7 @@ val print_subst: substitution -> unit
 
 (** Debugging information *)
 val unify_aux:
-  NewScope.t -> gtype -> gtype
+  TypeScope.t -> gtype -> gtype
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.

@@ -236,7 +236,7 @@ let dest_def = dest_constr
  * Type definitions
  *)
 
-module NewScope =
+module TypeScope =
   struct
 
     type type_record =
@@ -318,10 +318,10 @@ module NewScope =
   end
 
 (* [typedef_record]: Records for type definitions/declarations *)
-type typedef_record = NewScope.type_record
+type typedef_record = TypeScope.type_record
 
 (* Functions to access type definitions *)
-let get_typdef scp r =  NewScope.defn_of scp r
+let get_typdef scp r =  TypeScope.defn_of scp r
 
 (***
 * Data storage indexed by gtypes
@@ -528,18 +528,18 @@ let unfold scp t =
      let (n, args) = (try dest_constr t with _ -> raise Not_found)
      in
      let recrd = get_typdef scp n in
-     if recrd.NewScope.alias = None
+     if recrd.TypeScope.alias = None
      then raise Not_found
      else rewrite_defn args
-                       (recrd.NewScope.args)
-                       (from_some recrd.NewScope.alias)
+                       (recrd.TypeScope.args)
+                       (from_some recrd.TypeScope.alias)
   | Atom(Ident(n)) ->
      let recrd = get_typdef scp n in
-     if recrd.NewScope.alias = None
+     if recrd.TypeScope.alias = None
      then raise Not_found
      else rewrite_defn []
-                       (recrd.NewScope.args)
-                       (from_some recrd.NewScope.alias)
+                       (recrd.TypeScope.args)
+                       (from_some recrd.TypeScope.alias)
   | _ -> raise Not_found
 
 (**
@@ -548,7 +548,7 @@ let unfold scp t =
 *)
 let has_defn tyenv n =
   try
-     if (get_typdef tyenv n).NewScope.alias = None
+     if (get_typdef tyenv n).TypeScope.alias = None
      then false
      else true
   with Not_found -> false
@@ -619,12 +619,12 @@ let check_decln l =
 let well_formed_full pred scp ty =
   let arity_of f =
     (* Get the arity of [f]. Return [None] if [f] is unknown. *)
-    let defn_opt = try_find (NewScope.defn_of scp) f in
+    let defn_opt = try_find (TypeScope.defn_of scp) f in
     if defn_opt = None
     then None
     else
       let defn = from_some defn_opt in
-      let num_args = List.length (defn.NewScope.args) in
+      let num_args = List.length (defn.TypeScope.args) in
       Some(num_args)
   in
   let rec well_aux depth t =
@@ -1064,7 +1064,7 @@ let set_name ?(memo=Lib.empty_env()) scp trm =
     try Lib.find n memo
     with Not_found ->
       let nth =
-        try NewScope.thy_of scp n
+        try TypeScope.thy_of scp n
         with Not_found ->
           raise  (type_error "Type doesn't occur in scope"
                              [mk_def (Ident.mk_name n) []])
@@ -1170,11 +1170,11 @@ let to_save_env env ty =
 
 let to_save_rec record =
   {
-    sname = record.NewScope.name;
-    sargs = record.NewScope.args;
+    sname = record.TypeScope.name;
+    sargs = record.TypeScope.args;
     salias =
       begin
-        match record.NewScope.alias with
+        match record.TypeScope.alias with
         | None -> None
         | Some(t) -> Some(to_save t)
       end
@@ -1219,9 +1219,9 @@ let from_save_env env ty =  from_save_aux env ty
 
 let from_save_rec record =
   {
-    NewScope.name=record.sname;
-    NewScope.args = record.sargs;
-    NewScope.alias =
+    TypeScope.name=record.sname;
+    TypeScope.args = record.sargs;
+    TypeScope.alias =
       (match record.salias with
         None -> None
       | Some(t) -> Some(from_save t))

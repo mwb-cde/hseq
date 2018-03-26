@@ -84,14 +84,8 @@ type t =
       (** The type of a term identifier. *)
       term_thy : string -> Ident.thy_id;
       (** The theory in which a term is declared. *)
-      types: Gtypes.NewScope.t;
+      types: Gtypes.TypeScope.t;
       (** The types scope *)
-(*
-      type_defn: Ident.t -> type_record;
-      (** The definition (if any) of a type. *)
-      type_thy : string -> Ident.thy_id;
-      (** The theory in which a type is declared. *)
- *)
       thy_in_scope : Ident.thy_id -> bool ;
       (** Whether a theory is in scope (identified by name). *)
       marker_in_scope : marker -> bool ;
@@ -118,7 +112,7 @@ val type_of : t -> Ident.t -> gtype
 val thy_of_term: t -> string -> Ident.thy_id
 (** Lookup the theory of an identifier. *)
 
-val types_scope: t -> Gtypes.NewScope.t
+val types_scope: t -> Gtypes.TypeScope.t
 (** Get the types scope *)
 
 val defn_of: t -> Ident.t -> type_record

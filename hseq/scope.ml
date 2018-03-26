@@ -46,15 +46,15 @@ type type_record = Gtypes.typedef_record
 
 let mk_type_record n xs al =
   {
-    Gtypes.NewScope.name = n;
-    Gtypes.NewScope.args = xs;
-    Gtypes.NewScope.alias = al;
+    Gtypes.TypeScope.name = n;
+    Gtypes.TypeScope.args = xs;
+    Gtypes.TypeScope.alias = al;
   }
 
 let dest_type_record r =
-  (r.Gtypes.NewScope.name,
-   r.Gtypes.NewScope.args,
-   r.Gtypes.NewScope.alias)
+  (r.Gtypes.TypeScope.name,
+   r.Gtypes.TypeScope.args,
+   r.Gtypes.TypeScope.alias)
 
 (** Scope records. *)
 type t =
@@ -62,11 +62,7 @@ type t =
       curr_thy : marker;
       term_type : Ident.t -> gtype;
       term_thy : string -> Ident.thy_id;
-      types: Gtypes.NewScope.t;
-(*
-      type_defn: Ident.t -> type_record;
-      type_thy : string -> Ident.thy_id;
- *)
+      types: Gtypes.TypeScope.t;
       thy_in_scope : Ident.thy_id -> bool;
       marker_in_scope : marker -> bool;
       meta_vars: meta_db
@@ -84,11 +80,7 @@ let empty_scope () =
     curr_thy = mk_marker Ident.null_thy;
     term_type = dummy;
     term_thy = dummy;
-    types = Gtypes.NewScope.empty();
-(*
-    type_defn = dummy;
-    type_thy = dummy;
- *)
+    types = Gtypes.TypeScope.empty();
     thy_in_scope = (fun x -> false);
     marker_in_scope = (fun x -> false);
     meta_vars = empty_meta_db()
@@ -110,10 +102,10 @@ let thy_of_term scp id = scp.term_thy id
 let types_scope scp = scp.types
 
 (** Get the definition of a type. *)
-let defn_of scp id = Gtypes.NewScope.defn_of (types_scope scp) id
+let defn_of scp id = Gtypes.TypeScope.defn_of (types_scope scp) id
 
 (** Lookup the theory of a type. *)
-let thy_of_type scp id = Gtypes.NewScope.thy_of (types_scope scp) id
+let thy_of_type scp id = Gtypes.TypeScope.thy_of (types_scope scp) id
 
 (** Test whether a theory is in scope *)
 let in_scope scp th1 = scp.thy_in_scope th1
@@ -148,7 +140,7 @@ let extend_with_terms scp declns =
     (In, Dn)]]. Each identifier [Ii] has definition [Di].
 *)
 let extend_with_typedefs scp declns =
-  let tyscp = Gtypes.NewScope.add_defns (types_scope scp) declns
+  let tyscp = Gtypes.TypeScope.add_defns (types_scope scp) declns
   in
   {
     scp with types = tyscp
@@ -159,7 +151,7 @@ let extend_with_typedefs scp declns =
     definition.
 *)
 let extend_with_typedeclns scp declns=
-  let tyscp = Gtypes.NewScope.add_declns (types_scope scp) declns
+  let tyscp = Gtypes.TypeScope.add_declns (types_scope scp) declns
   in
   {
     scp with types = tyscp
@@ -212,7 +204,7 @@ let relaxed scp =
   in
   let tyscp0 = types_scope scp in
   let tyscp =
-    { tyscp0 with Gtypes.NewScope.type_thy = get_thy_of_type }
+    { tyscp0 with Gtypes.TypeScope.type_thy = get_thy_of_type }
   in
   {
     scp with

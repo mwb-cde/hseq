@@ -618,7 +618,7 @@ let mk_scope db =
      Scope.term_type = scope_term_type db;
      Scope.term_thy = scope_term_thy thy_name db;
      Scope.types =
-       Gtypes.NewScope.make
+       Gtypes.TypeScope.make
          (scope_type_defn db)
          (scope_type_thy thy_name db);
      Scope.thy_in_scope  = scope_thy_in_scope db;
