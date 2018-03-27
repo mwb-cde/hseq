@@ -34,7 +34,7 @@ open Printerkit
 type ppinfo =
     {
       terms: (ppinfo, (Basic.term * (Basic.term)list))info;
-      types: (ppinfo, (Ident.t * (Gtypes.gtype)list))info
+      types: (ppinfo, (Ident.t * (Gtypes.t)list))info
     }
 
 (**
@@ -116,7 +116,7 @@ val remove_term_printer: ppinfo -> Ident.t -> ppinfo
 (** {7 Gype printer information} *)
 
 type gtype_printer =
-  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.gtype list)) printer
+  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.t list)) printer
 
 val get_type_info:
   ppinfo -> Ident.t -> (int * fixity * string option)
@@ -181,11 +181,11 @@ sig
 
   (** Main type printer *)
   val print_type:
-    Printer.ppinfo -> (fixity * int) -> (Gtypes.gtype)Printer.printer
+    Printer.ppinfo -> (fixity * int) -> (Gtypes.t)Printer.printer
 end
 
 (** Printer for types. This is an alias for [Types.print] *)
-val print_type: Printer.ppinfo -> (Gtypes.gtype)Printer.printer
+val print_type: Printer.ppinfo -> (Gtypes.t)Printer.printer
 
 (** Printer for type error *)
 val print_type_error:
@@ -213,7 +213,7 @@ sig
     -> (Printer.ppinfo -> (Printer.fixity * int) -> ('a) Printer.printer)
     -> Printer.ppinfo
     -> (Printer.fixity * int)
-    -> ('a * Gtypes.gtype) Printer.printer
+    -> ('a * Gtypes.t) Printer.printer
   (** [print_typed_obj level printer ppstate prec (obj, ty)]: If
     [Setting.print_type_level > level] print [obj] with [ty] as its
     type in the form [(obj: ty)] otherwise print [obj] only. Uses

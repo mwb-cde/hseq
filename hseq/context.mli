@@ -369,7 +369,7 @@ sig
 
   val add_type_parser:
     t -> (string) Lib.position -> string
-    -> (Grammars.parser_info -> Gtypes.gtype Grammars.phrase)
+    -> (Grammars.parser_info -> Gtypes.t Grammars.phrase)
     -> t
   (** Add a type parser *)
 
@@ -438,13 +438,13 @@ sig
   (** {7 Overloading} *)
 
   val overload_lookup:
-    t -> string -> (Ident.t * Gtypes.gtype) list
+    t -> string -> (Ident.t * Gtypes.t) list
   (** [overload_lookup s]: Find the list of identifiers which may
       be overloaded on [s]. String [s] may be a symbol or the
       short name of a term.  *)
 
   val add_overload:
-    t -> string -> Parser.sym_pos -> (Ident.t * Gtypes.gtype)
+    t -> string -> Parser.sym_pos -> (Ident.t * Gtypes.t)
     -> t
   (**
       [add_overload sym pos (id, ty)]: Overload identifier [id], with
@@ -468,7 +468,7 @@ sig
       inconsistently typed.  *)
 
   val expand_type_names:
-    t -> Gtypes.gtype -> Gtypes.gtype
+    t -> Gtypes.t -> Gtypes.t
   (** Replace symbols and short names in a type with the long
       identifier, were possible.  *)
   val expand_typedef_names:
@@ -494,10 +494,10 @@ sig
 
   val read_defn:
     t -> string
-    -> ((string * Gtypes.gtype) * Basic.term list) * Basic.term
+    -> ((string * Gtypes.t) * Basic.term list) * Basic.term
   (** Parse a string as a term definition. *)
 
-  val read_type: t -> string -> Gtypes.gtype
+  val read_type: t -> string -> Gtypes.t
   (** Parse a string a type, resolving short names and symbols where
       possible.  *)
   val read_type_defn: t -> string -> Defn.Parser.typedef

@@ -115,7 +115,7 @@ let test_basics() =
   EXPECT_EQL(Gtypes.gtype_id_compare ba b, Order.GreaterThan);
   EXPECT_EQL(Gtypes.gtype_id_compare bb ba, Order.GreaterThan);
 
-  let (a_ty: Gtypes.gtype) = Gtypes.mk_vartype a
+  let (a_ty: Gtypes.t) = Gtypes.mk_vartype a
   and a1_ty = Gtypes.mk_vartype a_1
   and b_ty = Gtypes.mk_vartype b
   and b1_ty = Gtypes.mk_vartype b_1
@@ -149,7 +149,7 @@ MAKE_EXPECT_BINOP((TestSupport.make_pred_test Term.equals), " = ", A, B)
 MAKE_EXPECT_BINOP\
 ((TestSupport.make_pred_test (fun x y -> not (Term.equals x y))), " <> ", A, B)
 
-  let (a_ty: Gtypes.gtype) = Gtypes.mk_var "a"
+  let (a_ty: Gtypes.t) = Gtypes.mk_var "a"
   and b_ty = Gtypes.mk_var "b"
   and c_ty = Gtypes.mk_var "c"
   in

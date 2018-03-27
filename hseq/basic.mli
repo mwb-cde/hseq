@@ -53,13 +53,13 @@ val quant_string: quant -> string
 
 type binders
 (** Associating bound variables with their binding term. *)
-val mk_binding: quant -> string -> gtype -> binders
+val mk_binding: quant -> string -> Gtypes.t -> binders
 (**
     [mk_binding k n ty] makes a binder of kind [k], with name [n] and
     type [ty]. This binder will be distinct from any other under
     [binder_equality].
 *)
-val dest_binding: binders -> (quant * string * gtype)
+val dest_binding: binders -> (quant * string * Gtypes.t)
 (** Destructor for binders. *)
 
 val binder_kind: binders -> quant
@@ -68,7 +68,7 @@ val binder_kind: binders -> quant
 val binder_name: binders -> string
 (** [binder_name b]: The name of bound variable [b]. *)
 
-val binder_type: binders -> gtype
+val binder_type: binders -> Gtypes.t
 (** [binder_type b]: The type of bound variable [b]. *)
 
 val binder_equality: binders -> binders -> bool
@@ -90,10 +90,10 @@ val binder_compare: binders -> binders -> Order.t
 
 (** The representation of a term *)
 type term =
-  | Id of Ident.t * gtype   (** Identifiers *)
-  | Bound of binders     (** Bound variables *)
-  | Free of string * gtype  (** Free variables *)
-  | Meta of binders       (** Meta variables (use for skolem constants) *)
-  | App of term * term    (** Function application *)
-  | Qnt of binders * term (** Binding terms *)
-  | Const of const_ty     (** Constants *)
+  | Id of Ident.t * Gtypes.t   (** Identifiers *)
+  | Bound of binders           (** Bound variables *)
+  | Free of string * Gtypes.t  (** Free variables *)
+  | Meta of binders            (** Meta variables (for skolem constants) *)
+  | App of term * term         (** Function application *)
+  | Qnt of binders * term      (** Binding terms *)
+  | Const of const_ty          (** Constants *)

@@ -88,7 +88,7 @@ sig
       {!Parserkit.T.seq}.  Parse symbol [sym], return term
       [Pterm.mk_free (Lexer.string_of_token)].  *)
 
-  val (?%): Lexer.tok -> Gtypes.gtype phrase
+  val (?%): Lexer.tok -> Gtypes.t phrase
 (** [?% sym]: Utility function for building type parsers using
     {!Parserkit.T.seq}. Parse symbol [sym], return term [Gtypes.mk_var
     (Lexer.string_of_token)].
@@ -111,11 +111,11 @@ exception ParsingError of string
 type typedef_data =
   | NewType of (string * (string list))
   (** A new type: the type name and its arguments. *)
-  | TypeAlias of (string * (string list) * Gtypes.gtype)
+  | TypeAlias of (string * (string list) * Gtypes.t)
   (** A type alias: the type name, its arguments and the type it
       aliases *)
   | Subtype of (string * (string list)
-                * Gtypes.gtype * Pterm.t)
+                * Gtypes.t * Pterm.t)
 (**
     Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
@@ -180,19 +180,19 @@ type parser_info =
 
       (* Type information *)
       typ_indx: int ref; (** Counter to generate type names *)
-      typ_names: (string* Gtypes.gtype)list ref;
+      typ_names: (string* Gtypes.t)list ref;
       (** Names found in a type and their replacements *)
       type_token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a type *)
       type_parsers:
-        (string, parser_info -> (Gtypes.gtype phrase)) Lib.named_list;
+        (string, parser_info -> (Gtypes.t phrase)) Lib.named_list;
       (** Extra type parsers *)
     }
 
 val mk_info:
   (token_table * token_table
      * (string, parser_info -> Pterm.t phrase) Lib.named_list
-     * (string, parser_info -> (Gtypes.gtype phrase)) Lib.named_list)
+     * (string, parser_info -> (Gtypes.t phrase)) Lib.named_list)
   ->
   parser_info
 (** [mk_inf tbl type_tbl]: Make parsing information from tables [tbl]
@@ -233,22 +233,22 @@ val get_type_indx: parser_info -> int
 (** [mk_vartyp inf]: Get and increment the type index [inf.typ_indx].
 *)
 
-val mk_vartyp: parser_info -> Gtypes.gtype
+val mk_vartyp: parser_info -> Gtypes.t
 (** [mk_vartyp inf]: Make a new, uniquely named, type variable.
     Increments [inf.typ_indx].
 *)
 
-val lookup_type_name: string -> parser_info -> Gtypes.gtype
+val lookup_type_name: string -> parser_info -> Gtypes.t
 (** [lookup_type_name n inf]: Lookup type variable name [n].  If not
     found, raise [Not_found].
 *)
 
-val add_type_name: string -> Gtypes.gtype -> parser_info -> Gtypes.gtype
+val add_type_name: string -> Gtypes.t -> parser_info -> Gtypes.t
 (** [add_type_name n ty inf]: Add [n] as the string representation of
     gtype [ty].
 *)
 
-val get_type: string -> parser_info -> Gtypes.gtype
+val get_type: string -> parser_info -> Gtypes.t
 (** [get_type n inf]: Get the type variable represented by name [n].
     If not found, create a type variable [ty], with a unique name,
     associate [n] with [ty] in [inf] and return [ty].
@@ -374,13 +374,13 @@ val mk_short_id: (parser_info -> Ident.t phrase)
 (** {7 Utility functions} *)
 
 val mk_type_binary_constr:
-  parser_info -> Lexer.tok -> Gtypes.gtype -> Gtypes.gtype -> Gtypes.gtype
+  parser_info -> Lexer.tok -> Gtypes.t -> Gtypes.t -> Gtypes.t
 (** [mk_type_binary_constr inf tok l r]: Make a gtype from binary type
     from constructor [tok], left argument [l] and right argument [r].
 *)
 
 val mk_type_unary_constr:
-  parser_info -> Lexer.tok -> Gtypes.gtype -> Gtypes.gtype
+  parser_info -> Lexer.tok -> Gtypes.t -> Gtypes.t
 (** [mk_type_unary_constr inf tok a]: Make a gtype from a unary type
     from constructor [tok] and argument [a].
 *)
@@ -390,42 +390,42 @@ val mk_type_unary_constr:
 val type_id: parser_info -> Ident.t phrase
 (** [type_id]: Parse a type identifier. *)
 
-val primed_id: parser_info -> Gtypes.gtype phrase
+val primed_id: parser_info -> Gtypes.t phrase
 (** [primed_id inf]: Read a type variable name. *)
 
-val bool_type: parser_info -> Gtypes.gtype phrase
+val bool_type: parser_info -> Gtypes.t phrase
 (** [bool_type info]: Parse type "bool" *)
-val num_type: parser_info -> Gtypes.gtype phrase
+val num_type: parser_info -> Gtypes.t phrase
 (** [num_type info]: Parse type "num" *)
 
-val type_constructor_parser: parser_info -> Gtypes.gtype phrase
+val type_constructor_parser: parser_info -> Gtypes.t phrase
 (** [type_constructor_parser inf]: Parse "['(' <args> ')']<constructor>" *)
 
-val bracketed_type_parser: parser_info -> Gtypes.gtype phrase
+val bracketed_type_parser: parser_info -> Gtypes.t phrase
 (** [bracketed_type_parser info]: Parse "'(' <type> ')'" *)
 
 
-val inner_types: parser_info -> Gtypes.gtype Pkit.phrase
+val inner_types: parser_info -> Gtypes.t Pkit.phrase
 (** Parse infix/prefix/suffix type operators *)
 
-val atomic_types: parser_info -> Gtypes.gtype phrase
+val atomic_types: parser_info -> Gtypes.t phrase
 (** The atomic types (num, bool, etc) *)
 
 val type_parsers_list:
   parser_info ->
-  (string, parser_info -> (Gtypes.gtype phrase)) Lib.named_list
+  (string, parser_info -> (Gtypes.t phrase)) Lib.named_list
 (** A record of the type parsers used by {!Grammars.inner_types}.  Can
     be extended with user-defined parsers.
 *)
 
-val type_parsers: parser_info -> Gtypes.gtype phrase
+val type_parsers: parser_info -> Gtypes.t phrase
 (** The parser made from {!Grammars.inner_types}) *)
 
-val types: parser_info -> Gtypes.gtype phrase
+val types: parser_info -> Gtypes.t phrase
 (** The main type parser. *)
 
 val core_type_parsers:
-  (string, parser_info -> (Gtypes.gtype phrase)) Lib.named_list
+  (string, parser_info -> (Gtypes.t phrase)) Lib.named_list
 (** The built-in type parsers *)
 
 val init_type_parsers:
@@ -442,7 +442,7 @@ val init_type_parsers:
 
 val add_type_parser:
   parser_info -> (string)Lib.position -> string
-  -> (parser_info -> Gtypes.gtype phrase)
+  -> (parser_info -> Gtypes.t phrase)
   -> parser_info
 (** [add_type_parser pos n ph]: Add type parser [ph] at position [pos]
     with name [n].
@@ -502,7 +502,7 @@ val mk_prefix : parser_info -> Lexer.tok -> Pterm.t -> Pterm.t
 *)
 
 val qnt_setup_bound_names:
-  parser_info -> Basic.quant -> (string * Gtypes.gtype) list
+  parser_info -> Basic.quant -> (string * Gtypes.t) list
   -> (string * Pterm.t) list
 (** [qnt_setup_bound_names inf qnt xs]: Make bound variables from the
     name-type pairs in [xs], add them to [inf.bound_names].  [qnt] is
@@ -537,7 +537,7 @@ val make_term_remove_names:
 val boolean : bool phrase
 (** Read a boolean constant. *)
 
-val optional_type : parser_info -> Gtypes.gtype option phrase
+val optional_type : parser_info -> Gtypes.t option phrase
 (** Parse an optional type.
 
     [ optional_type ::= [ ':' types ] ]
@@ -548,7 +548,7 @@ val id: parser_info -> Ident.t phrase
 
 val id_type_opt:
   (parser_info -> 'a Pkit.phrase) ->
-  parser_info -> ('a * Gtypes.gtype) phrase
+  parser_info -> ('a * Gtypes.t) phrase
 (** Parse an optionally typed identifier.
 
     [ id_type_opt ::= id optional_type ]
@@ -631,13 +631,13 @@ val parse_as_binder:
 
 val simple_typedef:
   parser_info ->
-  (string * string list option * Gtypes.gtype option)  phrase
+  (string * string list option * Gtypes.t option)  phrase
 (** Parse a type declaration or alias. If the rhs of the definition is
     given, it is an aliasing definition.
 *)
 val subtypedef:
   parser_info ->
-  (string * string list option * Gtypes.gtype * Pterm.t)  phrase
+  (string * string list option * Gtypes.t * Pterm.t)  phrase
 (** Parse a subtyping definition. The term is the defining predicate
     for the type.
 *)
@@ -666,5 +666,5 @@ val typedef: parser_info -> (typedef_data)  phrase
 
 val defn:
   parser_info ->
-  (((string * Gtypes.gtype) * Pterm.t list) * Pterm.t) phrase
+  (((string * Gtypes.t) * Pterm.t list) * Pterm.t) phrase
 (** Parse a term definition. *)

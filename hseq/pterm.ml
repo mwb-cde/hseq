@@ -26,14 +26,14 @@ open Basic
 
 (** The representation of a parsed term *)
 type t =
-  | PId of Ident.t* Gtypes.gtype   (** Identifiers *)
+  | PId of Ident.t* Gtypes.t   (** Identifiers *)
   | PBound of binders     (** Bound variables *)
-  | PFree of string * Gtypes.gtype  (** Free variables *)
+  | PFree of string * Gtypes.t  (** Free variables *)
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
   | PQnt of binders * t (** Binding terms *)
   | PConst of const_ty     (** Constants *)
-  | PTyped of t * Gtypes.gtype  (** Typed terms *)
+  | PTyped of t * Gtypes.t  (** Typed terms *)
 
 (*
  * Operations on terms
@@ -196,7 +196,7 @@ struct
   (** reolve_memo: Memoised tables *)
   type resolve_memo =
       {
-        types: (Ident.t, Gtypes.gtype)Hashtbl.t;
+        types: (Ident.t, Gtypes.t)Hashtbl.t;
         idents: (string, Ident.t)Hashtbl.t;
         symbols: (string, Ident.t)Hashtbl.t;
         type_names: (string, Ident.thy_id) Hashtbl.t
@@ -209,7 +209,7 @@ struct
         inf: int;
         memo: resolve_memo;
         qnts: Term.substitution;
-        lookup: (string -> Gtypes.gtype -> (Ident.t * Gtypes.gtype))
+        lookup: (string -> Gtypes.t -> (Ident.t * Gtypes.t))
       }
 
   (** [resolve_aux data env expty term]: Resolve names in [term].

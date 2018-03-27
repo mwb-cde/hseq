@@ -29,7 +29,7 @@ module Tree = Treekit.StringTree
 
 type id_record =
     {
-      typ: Gtypes.gtype;
+      typ: Gtypes.t;
       def: Logic.thm option;
       dprops: property list
     }

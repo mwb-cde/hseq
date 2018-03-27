@@ -61,7 +61,7 @@ val simp_property: property
 (** Records of identifier declarations and definitions. *)
 type id_record =
     {
-      typ: Gtypes.gtype;       (** The type of the identifier. *)
+      typ: Gtypes.t;       (** The type of the identifier. *)
       def: Logic.thm option;  (** The optional definition. *)
       dprops: property list   (** Properties of the identifier. *)
     }
@@ -181,7 +181,7 @@ val get_defn_rec: string -> thy -> id_record
 (** Get the definition record of a term. @raise [Not_found] on failure. *)
 val get_defn: string -> thy -> Logic.thm
 (** Get the definition of a term. @raise [Not_found] on failure. *)
-val get_id_type: string -> thy -> Gtypes.gtype
+val get_id_type: string -> thy -> Gtypes.t
 (** Get the type of an identifier. @raise [Not_found] on failure. *)
 val id_exists: string -> thy -> bool
 (** Test whether an identifier is declared in the theory. *)
@@ -189,13 +189,13 @@ val set_defn_props: string -> property list -> thy -> thy
 (** Set the properties of a definition. *)
 
 val add_defn_rec:
-  string -> Gtypes.gtype
+  string -> Gtypes.t
   -> Logic.thm option
   -> property list -> thy -> thy
 (** Add a term definition record. *)
 
 val add_decln_rec:
-  string  -> Gtypes.gtype -> property list -> thy -> thy
+  string  -> Gtypes.t -> property list -> thy -> thy
 (** Add the declaration of a term. *)
 
 (** {7 Printer-Parser records} *)

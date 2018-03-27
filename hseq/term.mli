@@ -78,10 +78,10 @@ val is_const: term -> bool
 
 val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
-val mk_free: string -> gtype -> term
+val mk_free: string -> Gtypes.t -> term
 val mk_app: term -> term -> term
 val mk_const: Basic.const_ty -> term
-val mk_typed_ident: Ident.t -> gtype -> term
+val mk_typed_ident: Ident.t -> Gtypes.t -> term
 
 val mk_ident: Ident.t -> term
 val mk_short_ident: string -> term
@@ -90,10 +90,10 @@ val mk_short_ident: string -> term
 
 val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
-val dest_free: term -> (string * gtype)
+val dest_free: term -> (string * Gtypes.t)
 val dest_app: term -> (term * term)
 val dest_const: term -> Basic.const_ty
-val dest_ident: term -> (Ident.t * gtype)
+val dest_ident: term -> (Ident.t * Gtypes.t)
 
 (** {6 Specialised Manipulators} *)
 
@@ -103,7 +103,7 @@ val dest_ident: term -> (Ident.t * gtype)
     variable is treated like a term identifier, not a bound variable.
 *)
 
-val mk_meta: string -> gtype -> term
+val mk_meta: string -> Gtypes.t -> term
 val is_meta: term -> bool
 val dest_meta: term -> binders
 
@@ -173,7 +173,7 @@ val strip_fun_qnt:
 (** {7 Identifier (Id) terms} *)
 
 val get_ident_id: term-> Ident.t
-val get_ident_type: term-> Gtypes.gtype
+val get_ident_type: term-> Gtypes.t
 
 (** {7 Free variables} *)
 
@@ -190,7 +190,7 @@ val get_binder: term -> binders
 
 val get_binder_name: term -> string
 (** [get_binder_name t]: The name of the variable bound in [t]. *)
-val get_binder_type: term -> gtype
+val get_binder_type: term -> Gtypes.t
 (** [get_binder_type t]: The type of the variable bound in [t]. *)
 val get_binder_kind: term -> quant
 (** [get_binder_kind t]: The kind of binder in [t]. *)
@@ -338,7 +338,7 @@ val mk_qnt_name: Scope.t -> Basic.quant -> string -> term -> term
     [qnt], from term [t], binding free variables named [n].
 *)
 val mk_typed_qnt_name:
-  Scope.t -> Basic.quant -> Gtypes.gtype -> string -> term -> term
+  Scope.t -> Basic.quant -> Gtypes.t -> string -> term -> term
 (** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
     kind [qnt], from term [t], binding all free variables named
     [n]. Set the type of the quantifier to [ty].
@@ -346,7 +346,7 @@ val mk_typed_qnt_name:
 
 (**  {5 Conversion of a term to a string} *)
 
-val string_typed_name: string -> Gtypes.gtype -> string
+val string_typed_name: string -> Gtypes.t -> string
 val string_term: term -> string
 val string_inf_term:
   ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string

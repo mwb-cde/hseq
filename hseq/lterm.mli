@@ -56,48 +56,48 @@ val num_ty_id: Ident.t
 
 (** {7 The type of individuals} *)
 
-val mk_ind_ty: unit -> gtype
+val mk_ind_ty: unit -> Gtypes.t
 (** Make an instance of the type of individuals. *)
 
-val is_ind_ty: gtype -> bool
+val is_ind_ty: Gtypes.t -> bool
 (** Test for an instance of the type of individuals. *)
 
 (** {7 The type of numbers} *)
 
-val mk_num_ty: unit -> gtype
+val mk_num_ty: unit -> Gtypes.t
 (** Make an instance of the type of num. *)
 
-val is_num_ty: gtype -> bool
+val is_num_ty: Gtypes.t -> bool
 (** Test for an instance of the type of num. *)
 
 (** {7 The type of booleans} *)
 
-val mk_bool_ty: unit -> gtype
+val mk_bool_ty: unit -> Gtypes.t
 (** Make an instance of the type of individuals. *)
 
-val is_bool_ty: gtype -> bool
+val is_bool_ty: Gtypes.t -> bool
 (** Test for an instance of the type of individuals. *)
 
 (** {7 Function types} *)
 
-val mk_fun_ty: gtype -> gtype -> gtype
+val mk_fun_ty: Gtypes.t -> Gtypes.t -> Gtypes.t
 (** [mk_fun_ty a b]: Make function type [a->b] *)
 
-val is_fun_ty: gtype -> bool
+val is_fun_ty: Gtypes.t -> bool
 (** Test for a function type *)
 
-val mk_fun_ty_from_list: gtype list -> gtype -> gtype
+val mk_fun_ty_from_list: Gtypes.t list -> Gtypes.t -> Gtypes.t
 (**
     [mk_fun_ty_from_list [a1; a2; ...; an]]: Make type "a1->(a2-> ...
     -> an)"
 *)
 
-val dest_fun_ty: gtype -> (gtype * gtype)
+val dest_fun_ty: Gtypes.t -> (Gtypes.t * Gtypes.t)
 (** Destructor for function types. *)
 
 (** {7 Other types} *)
 
-val typeof_cnst : Basic.const_ty -> gtype
+val typeof_cnst : Basic.const_ty -> Gtypes.t
 (** Get the type of a primitive construct *)
 
 (** {5 Terms} *)
@@ -161,7 +161,7 @@ val mk_all: Scope.t -> string -> term -> term
 (** [mk_all scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_all_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
+val mk_all_ty: Scope.t -> string -> Gtypes.t -> term -> term
 (** [mk_all_ty scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n] with type [ty].
 *)
@@ -170,7 +170,7 @@ val mk_ex: Scope.t -> string -> term -> term
 (** [mk_ex scp n t]: Make an existentially quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_ex_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
+val mk_ex_ty: Scope.t -> string -> Gtypes.t -> term -> term
 (** [mk_ex_ty scp n t]: Make an existentially quantified term from
     [t], binding all free variables named [n] with type [ty].
 *)
@@ -179,7 +179,7 @@ val mk_lam: Scope.t -> string -> term -> term
 (** [mk_lam scp n t]: Make a lambda term from [t], binding all free
     variables named [n].
 *)
-val mk_lam_ty: Scope.t -> string -> Gtypes.gtype -> term -> term
+val mk_lam_ty: Scope.t -> string -> Gtypes.t -> term -> term
 (** [mk_lam_ty scp n t]: Make a lambda term from [t], binding all free
     variables named [n] with type [ty].
 *)

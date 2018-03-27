@@ -73,16 +73,16 @@ type type_record =
     }
  *)
 val mk_type_record:
-  string -> string list -> Gtypes.gtype option -> type_record
+  string -> string list -> (Gtypes.t)option -> type_record
 val dest_type_record:
-  type_record -> (string * (string)list * (Gtypes.gtype)option)
+  type_record -> (string * (string)list * (Gtypes.t)option)
 
 (** Scope records. *)
 type t =
     {
       curr_thy : marker;
       (** The marker of the current theory. *)
-      term_type : Ident.t -> Gtypes.gtype;
+      term_type : Ident.t -> Gtypes.t;
       (** The type of a term identifier. *)
       term_thy : string -> Ident.thy_id;
       (** The theory in which a term is declared. *)
@@ -108,7 +108,7 @@ val marker_of : t -> marker
 val thy_of : t -> Ident.thy_id
 (** [thy_of scp]: Get the theory name of scope [scp]. *)
 
-val type_of : t -> Ident.t -> Gtypes.gtype
+val type_of : t -> Ident.t -> Gtypes.t
 (** Lookup the type of an identifier. *)
 
 val thy_of_term: t -> string -> Ident.thy_id
@@ -131,7 +131,7 @@ val in_scope_marker : t -> marker -> bool
 
 (** {5 Extending scopes} *)
 
-val extend_with_terms: t -> (Ident.t * Gtypes.gtype) list -> t
+val extend_with_terms: t -> (Ident.t * Gtypes.t) list -> t
 (** Extend a scope with a list of identifiers [[(I1, T1); ...; (In,
     Tn)]]. Each identifier [Ii] is given type [Ti].
 *)

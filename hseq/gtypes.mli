@@ -72,15 +72,15 @@ type atomtype =
    [Ident(i)] is the name of a type constructor.
  *)
 
-type gtype = (atomtype)pre_typ
+type t = (atomtype)pre_typ
 (** The actual representation of types. *)
 
-val mk_vartype: gtype_id -> gtype
-val mk_weakvartype: gtype_id -> gtype
-val mk_identtype: Ident.t -> gtype
-val mk_apptype: gtype -> gtype -> gtype
+val mk_vartype: gtype_id -> t
+val mk_weakvartype: gtype_id -> t
+val mk_identtype: Ident.t -> t
+val mk_apptype: t -> t -> t
 
-val flatten_apptype: gtype -> (gtype)list
+val flatten_apptype: t -> (t)list
 (**
    [flatten_apptype ty]: flatten an application in [ty] to a list of
    types.  [flatten_apptype (((f a1) a2) a3)] is [[f; a1; a2; a3]] and
@@ -89,7 +89,7 @@ val flatten_apptype: gtype -> (gtype)list
    If [ty] is not an applictaion then returns [[ty]].
 *)
 
-val split_apptype: gtype -> (gtype *(gtype)list)
+val split_apptype: t -> (t *(t)list)
 (** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
 val map_atomtype: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
@@ -118,54 +118,54 @@ val exists_type_data:
 
 (** {5 Basic Operations} *)
 
-val compare: gtype -> gtype -> Order.t
+val compare: t -> t -> Order.t
 (** Total order on types: Var < Constr < WeakVar. *)
 
-val equals: gtype -> gtype -> bool
+val equals: t -> t -> bool
 (** Syntactic equality between types. *)
 
 (** {7 Recognisers} *)
 
-val is_var: gtype -> bool
-val is_weak: gtype -> bool
-val is_ident: gtype -> bool
-val is_constr: gtype -> bool
-val is_app: gtype -> bool
+val is_var: t -> bool
+val is_weak: t -> bool
+val is_ident: t -> bool
+val is_constr: t -> bool
+val is_app: t -> bool
 
 (** {7 Constructors} *)
 
-val mk_var: string -> gtype
-val mk_weak: string -> gtype
-val mk_ident: Ident.t -> gtype
-val mk_constr: Ident.t -> gtype list -> gtype
-val mk_app: gtype -> gtype -> gtype
+val mk_var: string -> t
+val mk_weak: string -> t
+val mk_ident: Ident.t -> t
+val mk_constr: Ident.t -> t list -> t
+val mk_app: t -> t -> t
 
 (** {7 Destructors} *)
 
-val dest_var: gtype -> gtype_id
-val get_var_name: gtype -> string
+val dest_var: t -> gtype_id
+val get_var_name: t -> string
 
-val dest_weak: gtype -> gtype_id
-val get_weak_name: gtype -> string
+val dest_weak: t -> gtype_id
+val get_weak_name: t -> string
 
-val dest_constr: gtype -> (Ident.t * gtype list)
-val get_type_name: gtype -> Ident.t
+val dest_constr: t -> (Ident.t * t list)
+val get_type_name: t -> Ident.t
 (** [get_type_name ty]: Get the identifier of the constructor of type
     [ty].
 *)
 
-val map_atom: (gtype -> gtype) -> gtype -> gtype
-val dest_app: gtype -> (gtype * gtype)
-val flatten_app: gtype -> (gtype)list
+val map_atom: (t -> t) -> t -> t
+val dest_app: t -> (t * t)
+val flatten_app: t -> (t)list
 
-val split_app: gtype -> (gtype *(gtype)list)
+val split_app: t -> (t *(t)list)
 (** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
-val map_atom: (gtype -> gtype) -> gtype -> gtype
+val map_atom: (t -> t) -> t -> t
 (* [map_atom f ty] Apply [f] to each [Atom(x)] in [ty] returning the resulting
    type. *)
 
-val fold_atom: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
+val fold_atom: ('a -> t -> 'a) -> 'a -> t -> 'a
 (* [fold_atom f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
 
@@ -173,22 +173,22 @@ val fold_atom: ('a -> gtype -> 'a) -> 'a -> gtype -> 'a
 
 (** {7 Variable types} *)
 
-val is_any_var: gtype -> bool
+val is_any_var: t -> bool
 (** [is_any_var t]: true if [t] is a variable or a weak variable. *)
 
-val normalize_vars: gtype -> gtype
+val normalize_vars: t -> t
 (** Make all type variables with the same string name be the same
     variable. Useful when constructing types from existing types.
 *)
 
-val mk_typevar: int -> (int * gtype)
+val mk_typevar: int -> (int * t)
 (** [mk_typevar n]: Make a new type variable [t'] with a name derived
     from [n] and return [(n + 1, t')]. Different values of [n] make
     different names. Names are constructed as sequences of alphabetic
     characters.
 *)
 
-val mk_plain_typevar: int -> (int * gtype)
+val mk_plain_typevar: int -> (int * t)
 (** [mk_typevar n]: Make a new type variable [t'] with a name derived
     from [n] and return [(n + 1, t')]. Different values of [n] make
     different names. Names are constructed as numbers prefixed by a
@@ -197,14 +197,14 @@ val mk_plain_typevar: int -> (int * gtype)
 
 (** {7 Unnamed type variables} *)
 
-val mk_null: unit -> gtype
+val mk_null: unit -> t
 (** Make an unnamed type variable. *)
-val is_null: gtype -> bool
+val is_null: t -> bool
 (** Test for an unnamed type variable. *)
 
 (** {7 Named typed constructors} *)
 
-val mk_def: Ident.t -> gtype list -> gtype
+val mk_def: Ident.t -> t list -> t
 
 (** {5 Type Definitions} *)
 
@@ -214,9 +214,9 @@ sig
   (** Records for type definitions *)
   type type_record =
     {
-      name: string;               (** Type name *)
-      args : string list;         (** Arguments appearing in the definition *)
-      alias: gtype option;        (** The definition *)
+      name: string;            (** Type name *)
+      args : string list;      (** Arguments appearing in the definition *)
+      alias: (t)option;        (** The definition = (Gtypes.t)option *)
     }
 
   (** Scope for type definitions *)
@@ -231,9 +231,7 @@ sig
 
   (** Constructor *)
   val make:
-    (Ident.t -> type_record)
-    -> (string -> Ident.thy_id)
-    -> t
+    (Ident.t -> type_record) -> (string -> Ident.thy_id) -> t
 
   (** [defn_of scp i] Get the definition of [i] *)
   val defn_of: t -> Ident.t -> type_record
@@ -259,16 +257,16 @@ type typedef_record = TypeScope.type_record
 val get_typdef: TypeScope.t -> Ident.t -> typedef_record
 (** Get definition of type named [n] from scope [scp]. *)
 
-(** {5 Data storage indexed by gtypes} *)
+(** {5 Data storage indexed by ts} *)
 
 (** {7 Balanced Trees} *)
 module TypeTreeData: Treekit.TreeData
 
 module TypeTree:
-  (Treekit.BTreeType with type key = gtype)
+  (Treekit.BTreeType with type key = t)
 
 type ('a)tree = ('a)TypeTree.t
-(** Balanced trees indexed by gtypes *)
+(** Balanced trees indexed by ts *)
 
 
 (** {5 Substitution} *)
@@ -278,20 +276,20 @@ type substitution
 
 val empty_subst: unit -> substitution
 (** Make an empty substitution. *)
-val bind: gtype -> gtype -> substitution -> substitution
+val bind: t -> t -> substitution -> substitution
 (** [bind t r env]: Bind [r] to [t] in substitution [env]. *)
-val delete: gtype -> substitution -> substitution
+val delete: t -> substitution -> substitution
 (** [delete t env]: Delete the binding of [t] in [env]. *)
-val lookup: gtype -> substitution -> gtype
+val lookup: t -> substitution -> t
 (** [lookup t env]: Get the binding of [t] in [env]. *)
-val member: gtype -> substitution -> bool
+val member: t -> substitution -> bool
 (** [member t env]: True if [t] has a binding in [env]. *)
-val subst_iter: (gtype -> gtype -> unit) -> substitution -> unit
+val subst_iter: (t -> t -> unit) -> substitution -> unit
 (** [subst_iter f env]: Apply function [f] to each binding in [env]. *)
-val subst_fold: (gtype -> gtype -> 'a -> 'a) -> substitution -> 'a -> 'a
+val subst_fold: (t -> t -> 'a -> 'a) -> substitution -> 'a -> 'a
 (** [subst_fold f val env]: Fold function [f] over the bindings in [env]. *)
-val subst: gtype -> substitution -> gtype
-(** [subst env t]: Apply substitution [env] to gtype [t]. This is
+val subst: t -> substitution -> t
+(** [subst env t]: Apply substitution [env] to t [t]. This is
     simultaneous substitution: the substitution is not pushed into the
     replacement terms. This is therefore unsuitable for forming the
     most general unifier since unification can bind variables in both
@@ -300,14 +298,14 @@ val subst: gtype -> substitution -> gtype
 
 (** {6 Operations which depend on substitution} *)
 
-val rename_type_vars_env: substitution -> gtype -> (gtype * substitution)
+val rename_type_vars_env: substitution -> t -> (t * substitution)
 (** copy a type, making new variables in the type. *)
-val rename_type_vars: gtype -> gtype
+val rename_type_vars: t -> t
 (** [rename_type_vars t]: Make a type equivalent but not equal to [t],
     differing from [t] in the variable names.
 *)
 
-val rename_index: int -> substitution -> gtype -> (gtype * int * substitution)
+val rename_index: int -> substitution -> t -> (t * int * substitution)
 (** [rename_index t]: Make a type equivalent but not equal to [t],
     differing from [t] in the variable names. Use an integer to
     generate the type names.
@@ -315,14 +313,14 @@ val rename_index: int -> substitution -> gtype -> (gtype * int * substitution)
 
 (* {5 Error reporting} *)
 
-type error = { msg: string; typs: (gtype)list; next: (exn)option }
+type error = { msg: string; typs: (t)list; next: (exn)option }
 
 exception Error of error
 
-val type_error: string -> gtype list -> exn
-val add_type_error: string ->gtype list -> exn -> exn
+val type_error: string -> t list -> exn
+val add_type_error: string ->t list -> exn -> exn
 
-val string_gtype: gtype -> string
+val string_gtype: t -> string
 (** Make a string representation of a type. *)
 
 (** {5 Type definitions} *)
@@ -332,10 +330,10 @@ val string_gtype: gtype -> string
     Weak variables are not permitted in any definition (type or term).
 *)
 
-val check_decln: gtype -> bool
+val check_decln: t -> bool
 (**  [check_decln l]: Consistency check on declaration of type [l]. *)
 
-val unfold: TypeScope.t -> gtype -> gtype
+val unfold: TypeScope.t -> t -> t
 (**
    [unfold scp ty]: Unfold the definition of type [ty] from the scope
    [scp].
@@ -344,8 +342,8 @@ val unfold: TypeScope.t -> gtype -> gtype
 *)
 
 val well_formed_full:
-  (gtype -> (string * gtype)option)
-  -> TypeScope.t -> gtype -> bool
+  (t -> (string * t)option)
+  -> TypeScope.t -> t -> bool
 (** [well_formed_full pred scp t]: ensure that [t] is well-formed
 
     [pred t] should return [None] for success and [Some(msg, errty)] for
@@ -378,7 +376,7 @@ val well_formed_full:
     depth [0].
 *)
 
-val well_formed: TypeScope.t -> gtype -> bool
+val well_formed: TypeScope.t -> t -> bool
 (** [well_formed scp t]: ensure that [t] is well-formed in scope [scp] *)
 
 
@@ -412,24 +410,24 @@ val well_formed: TypeScope.t -> gtype -> bool
     depth [0].
 *)
 
-val well_defined: TypeScope.t -> (string)list -> gtype -> unit
+val well_defined: TypeScope.t -> (string)list -> t -> unit
 (** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]
     must have a name in [args] and weak variables are not permitted in
     [ty].
 *)
 
-val check_decl_type: TypeScope.t -> gtype -> unit
+val check_decl_type: TypeScope.t -> t -> unit
 (** [check_decl_type scp ty]: Ensure type [ty] is suitable for the
     declaration of a term. Fails if [ty] contains a weak variable.
 *)
 
 (** {5 Unification} *)
 
-val lookup_var: gtype -> substitution -> gtype
+val lookup_var: t -> substitution -> t
 (** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
 
-val occurs: gtype -> gtype -> bool
+val occurs: t -> t -> bool
 (** [occurs t r]: Occurs check.
 
    return [true] iff atomic type [t] occurs in [r]
@@ -443,14 +441,14 @@ val occurs: gtype -> gtype -> bool
    silently otherwise.
   *)
 
-val bind_occs: gtype -> gtype -> substitution -> substitution
+val bind_occs: t -> t -> substitution -> substitution
 (** [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs
     in [r].
 *)
 
 (** {6 Unification functions} *)
 
-(** Unification of gtypes [x] and [y] tries to create a substitution
+(** Unification of ts [x] and [y] tries to create a substitution
     with bindings for variables of [x] and [y] which make [x] and [y]
     equal.
 
@@ -470,25 +468,25 @@ val bind_occs: gtype -> gtype -> substitution -> substitution
 *)
 
 val unify_env:
-  TypeScope.t -> gtype -> gtype
+  TypeScope.t -> t -> t
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
-val unify: TypeScope.t -> gtype -> gtype -> substitution
+val unify: TypeScope.t -> t -> t -> substitution
 (** [unify]: unify two types, returning the substitution.
 *)
 
 (** {7 Most General Unifiers} *)
 
-val mgu: gtype -> substitution -> gtype
+val mgu: t -> substitution -> t
 (** [mgu ty env]: Construct the most general unifier for type [ty]
     from substitution [env]. This is a version of substitution which
     pushes the substitution into the replacement terms.
 *)
 
 val mgu_rename_env: (int * substitution) -> substitution
-  -> gtype -> (gtype * (int * substitution))
+  -> t -> (t * (int * substitution))
 (** [mgu_rename_env inf env nenv ty]: Replace variables in [ty] with
     their bindings in substitution [env].  If a variable isn't bound
     in [env], then it is renamed and bound to that name in [nenv]
@@ -501,11 +499,11 @@ val mgu_rename_env: (int * substitution) -> substitution
 *)
 val mgu_rename:
   int -> substitution
-  -> substitution -> gtype
-  -> gtype
+  -> substitution -> t
+  -> t
 
 val mgu_rename_simple: int -> substitution -> substitution
-  -> gtype -> (gtype * int *substitution)
+  -> t -> (t * int *substitution)
 (**
    [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
    with their bindings in substitution [env].  If a variable isn't bound
@@ -527,7 +525,7 @@ val mgu_rename_simple: int -> substitution -> substitution
 
 val matching_env:
   TypeScope.t -> substitution
-  -> gtype -> gtype -> substitution
+  -> t -> t -> substitution
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
@@ -538,7 +536,7 @@ val matching_env:
 
 val matches_env:
   TypeScope.t -> substitution
-  -> gtype -> gtype -> substitution
+  -> t -> t -> substitution
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
     type [t1] can be bound.
@@ -546,14 +544,14 @@ val matches_env:
     Silently returns unchanged substitution on failure.
 *)
 
-val matches: TypeScope.t -> gtype -> gtype -> bool
+val matches: TypeScope.t -> t -> t -> bool
 (** Toplevel for [matches_env]. *)
 
 (** {5 More functions} *)
 
 val set_name:
   ?memo:(string, Ident.thy_id)Hashtbl.t
-  -> TypeScope.t -> gtype -> gtype
+  -> TypeScope.t -> t -> t
 (** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
     long form.
 
@@ -564,7 +562,7 @@ val set_name:
 
 (*
 val in_scope:
-  (string, bool)Lib.substype -> TypeScope.t -> gtype -> bool
+  (string, bool)Lib.substype -> TypeScope.t -> t -> bool
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
@@ -573,7 +571,7 @@ val in_scope:
 *)
 *)
 
-val extract_bindings: gtype list -> substitution -> substitution
+val extract_bindings: t list -> substitution -> substitution
   -> substitution
 (** [extract_bindings vars src dst]: extract bindings variables in
     [var] from [src] substitution, store them in [dst] substitution
@@ -582,7 +580,7 @@ val extract_bindings: gtype list -> substitution -> substitution
     operations.
 *)
 
-(** {5 Saving gtypes to disk storage} *)
+(** {5 Saving ts to disk storage} *)
 
 type satom =
   | SVar of (string * int) (* Variables *)
@@ -598,29 +596,29 @@ type stypedef_record =
   }
 (** Representation of typedef_records for disk storage. *)
 
-type to_stype_env = (gtype_id * (string *int)) list
+type to_stype_env = (gtype_id * (string * int)) list
 (** Data needed to construct a type storage representation. *)
 
-val to_save_env: to_stype_env -> gtype -> (stype * to_stype_env)
+val to_save_env: to_stype_env -> t -> (stype * to_stype_env)
 (** [to_save_env ty env]: Convert [ty] to [stype] storage
     representation.  [env] store the names of type variables already
     encountered.
 *)
 
-val to_save: gtype -> stype
+val to_save: t -> stype
 (** Toplevel for [to_save_env]. *)
 
 type from_stype_env = ((string * int) * gtype_id) list
 (** Data needed to construct a type storage representation. *)
 
 val from_save_env:
-  from_stype_env -> stype -> (gtype * from_stype_env)
-(** [from_save_env ty env]: Convert storage [ty] to [gtype]
+  from_stype_env -> stype -> (t * from_stype_env)
+(** [from_save_env ty env]: Convert storage [ty] to [t]
     representation.  [env] store the names of type variables already
     encountered.
 *)
 
-val from_save: stype -> gtype
+val from_save: stype -> t
 (** Toplevel for [from_save_env]. *)
 
 val to_save_rec: typedef_record -> stypedef_record
@@ -641,7 +639,7 @@ val print_subst: substitution -> unit
 
 (** Debugging information *)
 val unify_aux:
-  TypeScope.t -> gtype -> gtype
+  TypeScope.t -> t -> t
   -> substitution -> substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.

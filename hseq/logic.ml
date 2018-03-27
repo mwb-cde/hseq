@@ -117,7 +117,7 @@ let drop_tag (_, f) = f
 module Skolem =
 struct
 
-  type skolem_cnst = (Ident.t * (int * Gtypes.gtype))
+  type skolem_cnst = (Ident.t * (int * Gtypes.t))
 
   let make_sklm x ty i = (x, (i, ty))
   let get_sklm_name (x, (_, _)) = x
@@ -146,7 +146,7 @@ struct
   type new_skolem_data=
     {
       name: Ident.t;
-      ty: Gtypes.gtype;
+      ty: Gtypes.t;
       tyenv: Gtypes.substitution;
       scope: Scope.t;
       skolems: skolem_type;
@@ -346,7 +346,7 @@ struct
     {
       sklms: Skolem.skolem_type;
       sqscp : Scope.t;
-      tyvars: Gtypes.gtype list;
+      tyvars: Gtypes.t list;
       tynames: (string * int) list;
     }
 
@@ -1894,15 +1894,15 @@ struct
   (** Checked and subtype definitions. Elements of [cdefn] and
       [ctypedef] have been correctly defined.  *)
   type cdefn =
-    | TypeAlias of Ident.t * string list * Gtypes.gtype option
+    | TypeAlias of Ident.t * string list * Gtypes.t option
     | TypeDef of ctypedef
-    | TermDecln of Ident.t * Gtypes.gtype
-    | TermDef of Ident.t * Gtypes.gtype	* thm
+    | TermDecln of Ident.t * Gtypes.t
+    | TermDef of Ident.t * Gtypes.t	* thm
   and ctypedef =
     {
       type_name: Ident.t;       (* name of new type *)
       type_args: string list;   (* arguments of new type *)
-      type_base: Gtypes.gtype;   (* the base type *)
+      type_base: Gtypes.t;      (* the base type *)
       type_rep: cdefn;          (* representation function *)
       type_abs: cdefn;          (* abstraction function *)
       type_set: Formula.t;      (* defining set *)

@@ -93,7 +93,7 @@ let clear_symtable tb = Lexer.clear_symtable tb
 
 module OverloadTree = Treekit.StringTree
 
-type overload_table_t = ((Ident.t * Gtypes.gtype) list) OverloadTree.t
+type overload_table_t = ((Ident.t * Gtypes.t) list) OverloadTree.t
 type sym_pos = Ident.t Lib.position
 
 let default_overload_table_size = 127
@@ -109,11 +109,9 @@ struct
         symbols_f: symbol_table;
         overloads_f: overload_table_t;
         term_parsers_f:
-          (string,
-           Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
+          (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
         type_parsers_f:
-          (string,
-           Grammars.parser_info -> (Gtypes.gtype phrase)) Lib.named_list;
+          (string, Grammars.parser_info -> (Gtypes.t phrase)) Lib.named_list;
       }
 
   let default_size = (Grammars.default_table_size,

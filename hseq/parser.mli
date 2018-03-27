@@ -145,7 +145,7 @@ type sym_pos = Ident.t Lib.position
 *)
 
 module OverloadTree : Treekit.SimpleTreeType with type key = string
-type overload_table_t = ((Ident.t * Gtypes.gtype) list) OverloadTree.t
+type overload_table_t = ((Ident.t * Gtypes.t) list) OverloadTree.t
 
 val default_overload_table_size : int
 (** The default size of the overloading table. *)
@@ -165,7 +165,7 @@ sig
            Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
         type_parsers_f:
           (string,
-           Grammars.parser_info -> (Gtypes.gtype phrase)) Lib.named_list;
+           Grammars.parser_info -> (Gtypes.t phrase)) Lib.named_list;
       }
 
   (** Default sizes *)
@@ -192,10 +192,10 @@ sig
     t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
     -> t
   val type_parsers:
-    t -> (string, Grammars.parser_info -> Gtypes.gtype phrase) Lib.named_list
+    t -> (string, Grammars.parser_info -> Gtypes.t phrase) Lib.named_list
   val set_type_parsers:
     t
-    -> (string, Grammars.parser_info -> Gtypes.gtype phrase) Lib.named_list
+    -> (string, Grammars.parser_info -> Gtypes.t phrase) Lib.named_list
     -> t
 end
 
@@ -231,14 +231,14 @@ val remove_type_token : Table.t -> string -> Table.t
 
 val add_overload:
   Table.t
-  -> string -> sym_pos -> (Ident.t * Gtypes.gtype)
+  -> string -> sym_pos -> (Ident.t * Gtypes.t)
   -> Table.t
 (**
    [add_overload sym pos (id, ty)]: Overload identifier [id], with
    type [ty] on symbol [sym]. Put [id] in position [pos].
 *)
 val get_overload_list:
-  Table.t-> string -> (Ident.t * Gtypes.gtype) list
+  Table.t-> string -> (Ident.t * Gtypes.t) list
 (**
    [get_overload_list sym]: Get the list of identifiers overloaded on
    symbol [sym].
@@ -284,7 +284,7 @@ val parse : 'a phrase -> 'a parse
 val identifier_parser: Table.t -> input -> Ident.t
 (** Read a possibly long identifier *)
 
-val type_parser : Table.t -> input -> Gtypes.gtype
+val type_parser : Table.t -> input -> Gtypes.t
 (** Read a type. *)
 
 val typedef_parser : Table.t -> input -> typedef_data
@@ -294,7 +294,7 @@ val term_parser : Table.t -> input -> Pterm.t
 (** Read a term *)
 
 val defn_parser :
-  Table.t -> input -> ((string * Gtypes.gtype) * Pterm.t list) * Pterm.t
+  Table.t -> input -> ((string * Gtypes.t) * Pterm.t list) * Pterm.t
 (** Read a term definition *)
 
 (** {7 Symbols} *)
@@ -329,7 +329,7 @@ val remove_term_parser: Table.t -> string -> Table.t
 
 val type_parser_list :
   Table.t
-  -> (string, Grammars.parser_info -> Gtypes.gtype phrase) Lib.named_list
+  -> (string, Grammars.parser_info -> Gtypes.t phrase) Lib.named_list
 (**
    The list of user defined type parsers. Parsers added to this list are
    used by the term parser {!Grammars.types}.
@@ -337,7 +337,7 @@ val type_parser_list :
 
 val add_type_parser:
   Table.t -> (string)Lib.position -> string
-  -> (Grammars.parser_info -> Gtypes.gtype phrase)
+  -> (Grammars.parser_info -> Gtypes.t phrase)
   -> Table.t
 (**
    [add_type_parser pos n ph]: Add the type parser [ph] at position
@@ -361,7 +361,7 @@ val read: Table.t -> (Table.t -> ('a)parse) -> string -> 'a
 val read_term : Table.t -> string -> Pterm.t
 (** [read_term str]: Parse string [str] using the standard term parser. *)
 
-val read_type : Table.t -> string -> Gtypes.gtype
+val read_type : Table.t -> string -> Gtypes.t
 (** [read_type str]: Parse string [str] using the standard term parser. *)
 
 (** {7 Debugging} *)

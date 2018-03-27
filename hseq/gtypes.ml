@@ -62,7 +62,7 @@ type atomtype =
   | Ident of Ident.t
 
 (** [gtype]: The actual representation of types. *)
-type gtype = (atomtype)pre_typ
+type t = (atomtype)pre_typ
 
 let mk_vartype x = Atom(Var(x))
 let mk_weakvartype x = Atom(Weak(x))
@@ -384,9 +384,9 @@ module TypeScope =
 
     type type_record =
       {
-        name: string;               (** Type name *)
-        args : string list;         (** Arguments appearing in the definition *)
-        alias: gtype option;        (** The definition *)
+        name: string;
+        args : string list;
+        alias: (t)option;
       }
 
     module IdentMap = Ident.Tree
@@ -473,7 +473,7 @@ let get_typdef scp r =  TypeScope.defn_of scp r
 (** [('a)tree]: Balanced trees indexed by gtypes *)
 module TypeTreeData =
 struct
-  type key = gtype
+  type key = t
 
   let compare = compare_gtype
 end
@@ -484,7 +484,7 @@ type ('a)tree = ('a)TypeTree.t
  *   Substitution.
  *)
 
-type substitution = (gtype)tree
+type substitution = (t)tree
 
 let lookup t env = TypeTree.find env t
 let member t env =
@@ -600,7 +600,7 @@ let rename_index idx env top_type =
  * Error handling
  *)
 
-type error = { msg: string; typs: (gtype)list; next: (exn)option }
+type error = { msg: string; typs: (t)list; next: (exn)option }
 exception Error of error
 
 let type_error m ts = Error({ msg = m; typs = ts; next = None })

@@ -219,7 +219,7 @@ val remove_printer: ('a, 'b)info -> Ident.t -> ('a, 'b)info
 type ppinfo =
     {
       terms: (ppinfo, (Basic.term * (Basic.term)list)) info;
-      types: (ppinfo, (Ident.t * (Gtypes.gtype)list)) info
+      types: (ppinfo, (Ident.t * (Gtypes.t)list)) info
     }
 
 (**
@@ -301,7 +301,7 @@ val remove_term_printer: ppinfo -> Ident.t -> ppinfo
 (** {7 Gype printer information} *)
 
 type gtype_printer =
-  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.gtype list)) printer
+  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.t)list)printer
 
 val get_type_info:
   ppinfo -> Ident.t -> (int * fixity * string option)
