@@ -51,8 +51,8 @@ val add_error: string -> t list -> exn -> 'a
 val make_full:
   ?strict:bool
   -> Scope.t
-  -> Gtypes.substitution
-  -> Basic.term -> (t * Gtypes.substitution)
+  -> Gtype.substitution
+  -> Basic.term -> (t * Gtype.substitution)
 (**
    [make_full ?(strict=false) scp tyenv trm]: Make a formula from term
    [trm] in scope [scp] w.r.t type environment [tyenv]. The theory of
@@ -77,7 +77,7 @@ val make_full:
 
 val make:
   ?strict:bool
-  -> ?tyenv:Gtypes.substitution
+  -> ?tyenv:Gtype.substitution
   -> Scope.t
   -> Basic.term -> t
 (**
@@ -165,7 +165,7 @@ val dest_implies: t -> (t * t)
 val dest_equality: t -> (t * t)
 
 val get_binder_name: t -> string
-val get_binder_type: t -> Gtypes.t
+val get_binder_type: t -> Gtype.t
 
 (** {7 Constructors} *)
 
@@ -182,24 +182,24 @@ val mk_equality: Scope.t -> t -> t -> t
 
 (** {5 Typechecking} *)
 
-val typecheck: Scope.t -> t -> Gtypes.t -> t
+val typecheck: Scope.t -> t -> Gtype.t -> t
 (** [typecheck scp f ty]: Check that [f] has type [ty] in scope [scp]. *)
 
-val typecheck_env: Scope.t -> Gtypes.substitution
-  -> t -> Gtypes.t -> Gtypes.substitution
+val typecheck_env: Scope.t -> Gtype.substitution
+  -> t -> Gtype.t -> Gtype.substitution
 (**
     [typecheck_env scp tyenv f ty]: Check that [f] has type [ty] in
     scope [scp] w.r.t type context [tyenv]. Returns [tyenv] updated
     with binding made during the typechecking.
 *)
 
-val retype: Scope.t -> Gtypes.substitution -> t -> t
+val retype: Scope.t -> Gtype.substitution -> t -> t
 (** [retype tyenv f]: Retype [f] with using type context [tyenv]. *)
 
 val typecheck_retype:
-  Scope.t -> Gtypes.substitution
-  -> t -> Gtypes.t
-  -> (t * Gtypes.substitution)
+  Scope.t -> Gtype.substitution
+  -> t -> Gtype.t
+  -> (t * Gtype.substitution)
 (**
     [typecheck_retype scp tyenv f ty]: Check that [f] is correctly
     typed and has type [ty] w.r.t type context [tyenv].  Retype [f]
@@ -226,8 +226,8 @@ val subst_equiv: Scope.t -> t -> (t*t) list -> t
 val rename: t -> t
 (** Rename bound variables *)
 
-val inst_env: Scope.t -> Gtypes.substitution
-  -> t -> t -> (t* Gtypes.substitution)
+val inst_env: Scope.t -> Gtype.substitution
+  -> t -> t -> (t* Gtype.substitution)
 (** Instantiation w.r.t a type substitution.  Instantiate a quantified
     formula with a given term succeeds only if the result is a formula.
 *)
@@ -248,8 +248,8 @@ val unify:
 
 val unify_env:
   Scope.t
-  -> Gtypes.substitution
-  -> t -> t -> (Gtypes.substitution * Term.substitution)
+  -> Gtype.substitution
+  -> t -> t -> (Gtype.substitution * Term.substitution)
 (** [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
     [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
     assumption of some sub-goal and [concl] is the conclusion. Returns
@@ -264,8 +264,8 @@ val alpha_equals: Scope.t -> t -> t -> bool
 (** Equality under alpha conversion *)
 
 val alpha_equals_match:
-  Scope.t -> Gtypes.substitution
-  -> t -> t -> Gtypes.substitution
+  Scope.t -> Gtype.substitution
+  -> t -> t -> Gtype.substitution
 (** Equality under alpha-conversion w.r.t a type environment. *)
 
 (** {7 Beta conversion} *)
@@ -280,8 +280,8 @@ val beta_reduce: Scope.t -> t -> t
 (** Reduce all sub-terms of the form [((%x. F) a)] to [F[a/x]]. *)
 
 val mk_beta_reduce_eq:
-  Scope.t -> Gtypes.substitution
-  -> Basic.term -> (t * Gtypes.substitution)
+  Scope.t -> Gtype.substitution
+  -> Basic.term -> (t * Gtype.substitution)
 (**
    [mk_beta_reduce_eq scp tyenv scp]: Make an equality expressing the
    result of beta-reducing [trm].
@@ -305,16 +305,16 @@ val rewrite:
 
 val rewrite_env:
   Scope.t -> ?dir:Rewrite.direction
-  -> Gtypes.substitution
+  -> Gtype.substitution
   -> t Rewrite.plan
-  -> t -> (t * Gtypes.substitution)
+  -> t -> (t * Gtype.substitution)
 (** Rewrite a formula w.r.t a type context. *)
 
 val mk_rewrite_eq:
   Scope.t
-  -> Gtypes.substitution
+  -> Gtype.substitution
   -> t Rewrite.plan
-  -> Basic.term -> (t * Gtypes.substitution)
+  -> Basic.term -> (t * Gtype.substitution)
 (**
     [mk_rewrite_eq scp tyenv plan trm]: Make an equality by rewriting a
     term w.r.t a type context.  Returns [(trm=t, ntyenv)] where [t] is

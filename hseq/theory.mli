@@ -61,7 +61,7 @@ val simp_property: property
 (** Records of identifier declarations and definitions. *)
 type id_record =
     {
-      typ: Gtypes.t;       (** The type of the identifier. *)
+      typ: Gtype.t;       (** The type of the identifier. *)
       def: Logic.thm option;  (** The optional definition. *)
       dprops: property list   (** Properties of the identifier. *)
     }
@@ -99,7 +99,7 @@ type contents =
       (** Theorems. *)
       cdefns: (string * id_record) list;
       (** Term definitions and declarations. *)
-      ctyps: (string * Gtypes.typedef_record) list;
+      ctyps: (string * Gtype.typedef_record) list;
       (** Type definitions and declarations. *)
       ctype_pps: (string * Printer.record) list;
       (** Type printer and parser information. *)
@@ -168,7 +168,7 @@ val set_theorem_props: string -> property list -> thy -> thy
 
 (** {7 Type declarations and definitions} *)
 
-val get_type_rec: string -> thy -> Gtypes.typedef_record
+val get_type_rec: string -> thy -> Gtype.typedef_record
 (** Get the record of a type. @raise [Not_found] on failure. *)
 val add_type_rec: Logic.Defns.cdefn -> thy -> thy
 (** Add a type declaration or definition. *)
@@ -181,7 +181,7 @@ val get_defn_rec: string -> thy -> id_record
 (** Get the definition record of a term. @raise [Not_found] on failure. *)
 val get_defn: string -> thy -> Logic.thm
 (** Get the definition of a term. @raise [Not_found] on failure. *)
-val get_id_type: string -> thy -> Gtypes.t
+val get_id_type: string -> thy -> Gtype.t
 (** Get the type of an identifier. @raise [Not_found] on failure. *)
 val id_exists: string -> thy -> bool
 (** Test whether an identifier is declared in the theory. *)
@@ -189,13 +189,13 @@ val set_defn_props: string -> property list -> thy -> thy
 (** Set the properties of a definition. *)
 
 val add_defn_rec:
-  string -> Gtypes.t
+  string -> Gtype.t
   -> Logic.thm option
   -> property list -> thy -> thy
 (** Add a term definition record. *)
 
 val add_decln_rec:
-  string  -> Gtypes.t -> property list -> thy -> thy
+  string  -> Gtype.t -> property list -> thy -> thy
 (** Add the declaration of a term. *)
 
 (** {7 Printer-Parser records} *)
@@ -260,7 +260,7 @@ val add_symbol: thy -> (string * string) -> thy
 (** The representation of an identifier record for disk storage. *)
 type id_save_record =
     {
-      sty: Gtypes.stype;
+      sty: Gtype.stype;
       sdef: Logic.saved_thm option;
       sdprops: property list
     }

@@ -30,7 +30,7 @@ struct
   let set_id = Ident.mk_long set_thy "SET"
   let set_data = (Printer.default_term_fixity, Printer.default_term_prec)
   let set_ty ()=
-    Gtypes.mk_def (Ident.mk_long set_thy "set") [Gtypes.mk_null()]
+    Gtype.mk_def (Ident.mk_long set_thy "set") [Gtype.mk_null()]
 
   let single_id = Ident.mk_long set_thy "single"
   let single_data = (Printer.default_term_fixity, Printer.default_term_prec)

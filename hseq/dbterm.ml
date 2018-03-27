@@ -19,9 +19,9 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-open Gtypes
+open Gtype
 
-type binder = {quant: Basic.quant; qvar: string; qtyp: Gtypes.stype}
+type binder = {quant: Basic.quant; qvar: string; qtyp: Gtype.stype}
 
 let mk_binder q v t = {quant=q; qvar=v; qtyp=t}
 let binder_kind q = q.quant
@@ -29,8 +29,8 @@ let binder_name q = q.qvar
 let binder_type q = q.qtyp
 
 type dbterm =
-  | Id of Ident.t * Gtypes.stype
-  | Free of string * Gtypes.stype
+  | Id of Ident.t * Gtype.stype
+  | Free of string * Gtype.stype
   | Qnt of binder * dbterm
   | Bound of int
   | App of dbterm * dbterm
@@ -41,11 +41,11 @@ type dbterm =
 let rec of_term_aux env qnts t =
   match t with
     | Basic.Id(n, ty) ->
-      let (ty1, env1) = Gtypes.to_save_env env ty
+      let (ty1, env1) = Gtype.to_save_env env ty
       in
       (Id(n, ty1), env1)
     | Basic.Free(n, ty) ->
-      let (ty1, env1) = Gtypes.to_save_env env ty
+      let (ty1, env1) = Gtype.to_save_env env ty
       in
       (Free(n, ty1), env1)
     | Basic.Const(c) -> (Const(c), env)
@@ -62,7 +62,7 @@ let rec of_term_aux env qnts t =
       let (tqnt, tqvar, tqtyp) = Basic.dest_binding q
       and (b1, env1) = of_term_aux env (q::qnts) b
       in
-      let (ty1, env2) = Gtypes.to_save_env env1 tqtyp in
+      let (ty1, env2) = Gtype.to_save_env env1 tqtyp in
       let q1 = mk_binder tqnt tqvar ty1
       in
       (Qnt(q1, b1), env2)
@@ -78,11 +78,11 @@ let of_term t =
 let rec to_term_aux env qnts t =
   match t with
     | Id(n, ty) ->
-      let (ty1, env1) = Gtypes.from_save_env env ty
+      let (ty1, env1) = Gtype.from_save_env env ty
       in
       (Basic.Id(n, ty1), env1)
     | Free(n, ty) ->
-      let (ty1, env1) = Gtypes.from_save_env env ty
+      let (ty1, env1) = Gtype.from_save_env env ty
       in
       (Basic.Free(n, ty1), env1)
     | Const(c) -> (Basic.Const(c), env)
@@ -96,7 +96,7 @@ let rec to_term_aux env qnts t =
       in
       (Basic.Bound(q_binder), env)
     | Qnt(q, b) ->
-      let (ty1, env1) = Gtypes.from_save_env env q.qtyp in
+      let (ty1, env1) = Gtype.from_save_env env q.qtyp in
       let q1 =
         Basic.mk_binding (binder_kind q) (binder_name q) ty1
       in

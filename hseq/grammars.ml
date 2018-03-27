@@ -69,7 +69,7 @@ struct
   let (?$) tok =
     ((!$ tok) >> (fun _ -> Pterm.mk_short_ident (Lexer.string_of_token tok)))
   let (?%) tok =
-    ((!$ tok) >> (fun _ -> Gtypes.mk_var (Lexer.string_of_token tok)))
+    ((!$ tok) >> (fun _ -> Gtype.mk_var (Lexer.string_of_token tok)))
 end
 
 (*** Basic types used by the parsers. ***)
@@ -84,9 +84,9 @@ exception ParsingError = Pkit.ParsingError
 *)
 type typedef_data =
   | NewType of (string * (string list))
-  | TypeAlias of (string * (string list) * Gtypes.t)
+  | TypeAlias of (string * (string list) * Gtype.t)
   | Subtype of (string * (string list)
-                * Gtypes.t * Pterm.t)
+                * Gtype.t * Pterm.t)
 
 
 (*** Grammars ***)
@@ -190,10 +190,10 @@ type parser_info =
         (string, parser_info -> Pterm.t phrase) Lib.named_list;
       (* type information *)
       typ_indx: int ref;
-      typ_names: (string* Gtypes.t) list ref;
+      typ_names: (string* Gtype.t) list ref;
       type_token_info: (token ->token_info);
       type_parsers:
-        (string, parser_info -> (Gtypes.t phrase)) Lib.named_list;
+        (string, parser_info -> (Gtype.t phrase)) Lib.named_list;
     }
 
 (** [mk_inf tbl type_tbl] Make parsing information from table [tbl]
@@ -250,7 +250,7 @@ let drop_name n inf =
 *)
 let get_term n inf =
   try lookup_name n inf
-  with Not_found -> Pterm.mk_free n (Gtypes.mk_null())
+  with Not_found -> Pterm.mk_free n (Gtype.mk_null())
 
 (**
    [clear_names inf]
@@ -265,7 +265,7 @@ let get_type_indx inf =
     Increments [inf.typ_indx].
 *)
 let mk_vartyp inf =
-  Gtypes.mk_var ("typ"^(string_of_int (get_type_indx inf)))
+  Gtype.mk_var ("typ"^(string_of_int (get_type_indx inf)))
 
 (** [lookup_type_name n inf]: Lookup type variable name [n].  if not
     found, raise [Not_found].
@@ -286,7 +286,7 @@ let add_type_name n ty inf =
 let get_type n inf =
   try lookup_type_name n inf
   with Not_found ->
-    add_type_name n (Gtypes.mk_var n) inf
+    add_type_name n (Gtype.mk_var n) inf
 
 (** [clear_type_names inf] Clear the record of type variable names.
 *)
@@ -498,12 +498,12 @@ let mk_type_binary_constr inf t =
     with Not_found -> None
   in
   match t with
-    | ID(s) -> (fun x y -> Gtypes.mk_def s [x; y])
+    | ID(s) -> (fun x y -> Gtype.mk_def s [x; y])
     | _ ->
       begin
         match lookup t with
           | Some(name, _, _) ->
-            (fun x y-> Gtypes.mk_def name [x; y])
+            (fun x y-> Gtype.mk_def name [x; y])
           | _ ->
             raise (ParsingError
                      ((string_of_tok t)
@@ -520,12 +520,12 @@ let mk_type_unary_constr inf t=
     with Not_found -> None
   in
     match t with
-      | ID(s) -> (fun x -> Gtypes.mk_def s [x])
+      | ID(s) -> (fun x -> Gtype.mk_def s [x])
       | _ ->
         begin
           match (lookup t) with
             | Some(name, _, _) ->
-              (fun x -> Gtypes.mk_def name [x])
+              (fun x -> Gtype.mk_def name [x])
             | _ ->
               raise (ParsingError
                        ((string_of_tok t)
@@ -636,8 +636,8 @@ let rec types inf toks =
 let type_constructor_parser inf toks =
   let form_type (a, i) =
     match a with
-      None -> Gtypes.mk_def i []
-    | Some(ts) -> Gtypes.mk_def i ts
+      None -> Gtype.mk_def i []
+    | Some(ts) -> Gtype.mk_def i ts
   in
   ((((optional
        (((!$(Sym ORB)
@@ -700,7 +700,7 @@ let mk_conn inf t =
           | Some (name, _, _) ->
             (fun x y ->
               let fty =
-                Gtypes.mk_var ("_"^(Ident.string_of name)^"_ty")
+                Gtype.mk_var ("_"^(Ident.string_of name)^"_ty")
               in
               let f = Pterm.mk_typed_ident name fty
               in
@@ -736,7 +736,7 @@ let mk_prefix inf t=
     quantifier type (All, Ex or Lambda).
 *)
 let qnt_setup_bound_names
-    inf (qnt: Basic.quant) (xs : (string * Gtypes.t) list) =
+    inf (qnt: Basic.quant) (xs : (string * Gtype.t) list) =
   let setup_aux (n, ty) =
     let b_id = Pterm.mk_bound(Basic.mk_binding qnt n ty)
     in
@@ -1087,7 +1087,7 @@ let parse_as_binder ident sym =
 let simple_typedef inf toks =
   (((optional
        ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-        >> (fun (_, (x, _)) -> List.map Gtypes.get_var_name x)))
+        >> (fun (_, (x, _)) -> List.map Gtype.get_var_name x)))
     --
        ((short_id type_id inf)
         --
@@ -1101,7 +1101,7 @@ let subtypedef inf toks =
   let lhs inp=
     ((optional
         ((!$(Sym ORB)-- ((comma_list (primed_id inf)) -- (!$(Sym CRB))))
-         >> (fun (_, (x, _)) -> List.map Gtypes.get_var_name x)))
+         >> (fun (_, (x, _)) -> List.map Gtype.get_var_name x)))
      --
        (short_id type_id inf)) inp
   and rhs inp =

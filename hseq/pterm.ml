@@ -26,14 +26,14 @@ open Basic
 
 (** The representation of a parsed term *)
 type t =
-  | PId of Ident.t* Gtypes.t   (** Identifiers *)
+  | PId of Ident.t* Gtype.t   (** Identifiers *)
   | PBound of binders     (** Bound variables *)
-  | PFree of string * Gtypes.t  (** Free variables *)
+  | PFree of string * Gtype.t  (** Free variables *)
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
   | PQnt of binders * t (** Binding terms *)
   | PConst of const_ty     (** Constants *)
-  | PTyped of t * Gtypes.t  (** Typed terms *)
+  | PTyped of t * Gtype.t  (** Typed terms *)
 
 (*
  * Operations on terms
@@ -91,8 +91,8 @@ let mk_typed t ty = PTyped(t, ty)
 let mk_const c = PConst c
 
 let mk_typed_ident n t = PId(n, t)
-let mk_ident n = mk_typed_ident n (Gtypes.mk_null ())
-let mk_short_ident n = mk_free n (Gtypes.mk_null())
+let mk_ident n = mk_typed_ident n (Gtype.mk_null ())
+let mk_short_ident n = mk_free n (Gtype.mk_null())
 
 (* Destructors *)
 
@@ -176,7 +176,7 @@ let rec mk_comb x y =
     | t::ts -> mk_comb (mk_app x t) ts
 
 let mk_fun f args =
-  mk_comb (PId(f, Gtypes.mk_var ("_"^(Ident.string_of f)^"_ty"))) args
+  mk_comb (PId(f, Gtype.mk_var ("_"^(Ident.string_of f)^"_ty"))) args
 
 (*** Operator Overloading ***)
 
@@ -196,7 +196,7 @@ struct
   (** reolve_memo: Memoised tables *)
   type resolve_memo =
       {
-        types: (Ident.t, Gtypes.t)Hashtbl.t;
+        types: (Ident.t, Gtype.t)Hashtbl.t;
         idents: (string, Ident.t)Hashtbl.t;
         symbols: (string, Ident.t)Hashtbl.t;
         type_names: (string, Ident.thy_id) Hashtbl.t
@@ -209,7 +209,7 @@ struct
         inf: int;
         memo: resolve_memo;
         qnts: Term.substitution;
-        lookup: (string -> Gtypes.t -> (Ident.t * Gtypes.t))
+        lookup: (string -> Gtype.t -> (Ident.t * Gtype.t))
       }
 
   (** [resolve_aux data env expty term]: Resolve names in [term].
@@ -224,7 +224,7 @@ struct
 
       Returns the renamed term, the actual type and a type
       substitution from which the exact type can be obtained
-      (using Gtypes.mgu).
+      (using Gtype.mgu).
 
       Never fails.
   *)
@@ -240,7 +240,7 @@ struct
     and binding_set_types tyenv binding =
       let (qnt, qname, qtype) = Basic.dest_binding binding
       in
-      Basic.mk_binding qnt qname (Gtypes.mgu qtype tyenv)
+      Basic.mk_binding qnt qname (Gtype.mgu qtype tyenv)
     and set_type_name t rdata =
       Ltype.set_name ~memo:(rdata.memo.type_names) rdata.scp t
     and find_ident n rdata =
@@ -254,21 +254,21 @@ struct
       let type_find n s = Scope.type_of s n
       in
       Lib.apply_option
-        (fun x -> Some (Gtypes.rename_type_vars x))
+        (fun x -> Some (Gtype.rename_type_vars x))
         (Lib.try_find (memo_find rdata.memo.types type_find rdata.scp) n)
         None
     and find_sym n ty rdata =
       let find_fn atyp =
         let (x, xty) = rdata.lookup n atyp
         in
-        (x, Gtypes.rename_type_vars xty)
+        (x, Gtype.rename_type_vars xty)
       in
       Lib.try_find find_fn ty
     and unify_types ty1 ty2 env (rdata: resolve_arg) =
       try Ltype.unify_env rdata.scp ty1 ty2 env
       with _ -> env
     and mk_typevar_ref rdata =
-      let (ctr, nty) = Gtypes.mk_typevar (rdata.inf) in
+      let (ctr, nty) = Gtype.mk_typevar (rdata.inf) in
       ({ rdata with inf = ctr }, nty)
     in
     match term with
@@ -285,12 +285,12 @@ struct
                 | None -> (ty0, env0)
                 | Some(d_ty) -> (d_ty, unify_types ty0 d_ty env0 data)
             in
-            (Id(n, Gtypes.mgu ty1 env1), ty1, env1, data)
+            (Id(n, Gtype.mgu ty1 env1), ty1, env1, data)
       | PFree(n, ty) ->
         let nty = set_type_name ty data in
         let (ty0, env0) = (nty, unify_types expty nty env data ) in
         let ty1=
-          try Gtypes.mgu ty0 env0
+          try Gtype.mgu ty0 env0
           with _ -> ty0
         in
         begin
@@ -338,12 +338,12 @@ struct
         let (rty1, env1) = (rty0, unify_types expty rty0 env data2) in
         let fty0 = Lterm.mk_fun_ty argty rty1 in
         let (atrm, aty, aenv, data3) =
-          resolve_aux data2 env1 (Gtypes.mgu argty env1) a
+          resolve_aux data2 env1 (Gtype.mgu argty env1) a
         in
         let (ftrm, fty, fenv, data4) =
-          resolve_aux data3 aenv (Gtypes.mgu fty0 aenv) lf
+          resolve_aux data3 aenv (Gtype.mgu fty0 aenv) lf
         in
-        (App(ftrm, atrm), Gtypes.mgu rty1 fenv, fenv, data4)
+        (App(ftrm, atrm), Gtype.mgu rty1 fenv, fenv, data4)
       | PQnt(qnt, body) ->
         begin
           match Basic.binder_kind qnt with
@@ -406,9 +406,9 @@ struct
         lookup = lookup
       }
     in
-    let expty = Gtypes.mk_null() in
+    let expty = Gtype.mk_null() in
     let (term1, _, subst, _) =
-      resolve_aux data (Gtypes.empty_subst()) expty term
+      resolve_aux data (Gtype.empty_subst()) expty term
     in
     (term1, subst)
 
@@ -475,11 +475,11 @@ let to_term ptrm =
       |	PId(n, ty) ->
           let env1 = unify_types expty ty tyenv
           in
-          (Id(n, Gtypes.mgu ty env1), (ctr, env1))
+          (Id(n, Gtype.mgu ty env1), (ctr, env1))
       | PFree(n, ty) ->
         let env1 = unify_types expty ty tyenv
         in
-        (Free(n, Gtypes.mgu ty env1), (ctr, env1))
+        (Free(n, Gtype.mgu ty env1), (ctr, env1))
       | PBound(q) ->
         let pt1, env1 =
           match (Lib.try_find (Term.find (Bound(q))) trmenv) with
@@ -502,10 +502,10 @@ let to_term ptrm =
         begin
           match qnt with
             | Lambda ->
-              let (ctr1, rty) = Gtypes.mk_typevar ctr in
+              let (ctr1, rty) = Gtype.mk_typevar ctr in
               let nty = Lterm.mk_fun_ty qty rty in
               let env1 = unify_types expty nty tyenv in
-              let q1 = mk_binding qnt qname (Gtypes.mgu qty env1) in
+              let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 = Term.bind (Bound(q)) (Bound(q1)) trmenv in
               let (b1, typenv1) = to_aux (ctr1, env1) trmenv1 nty b
               in
@@ -513,15 +513,15 @@ let to_term ptrm =
             | _ ->
               let nty = Lterm.mk_bool_ty() in
               let env1 = unify_types expty nty tyenv in
-              let q1 = mk_binding qnt qname (Gtypes.mgu qty env1) in
+              let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 = Term.bind (Bound(q)) (Bound(q1)) trmenv in
               let (b1, env2) = to_aux (ctr, env1) trmenv1 nty b
               in
               (Qnt(q1, b1), env2)
         end
       | PApp(f, a) ->
-        let (ctr1, arg_ty) = Gtypes.mk_typevar ctr in
-        let (ctr2, ret_ty) = Gtypes.mk_typevar ctr1 in
+        let (ctr1, arg_ty) = Gtype.mk_typevar ctr in
+        let (ctr2, ret_ty) = Gtype.mk_typevar ctr1 in
         let (a1, (ctr3, env1)) = to_aux (ctr2, tyenv) trmenv arg_ty a in
         let fn_ty = Lterm.mk_fun_ty arg_ty ret_ty in
         let env2 = unify_types expty ret_ty env1 in
@@ -539,9 +539,9 @@ let to_term ptrm =
         to_aux (ctr, env1) trmenv ty x
   in
   let tyvar_ctr = 0 in
-  let (tyvar_ctr1, typ1) = Gtypes.mk_typevar tyvar_ctr in
+  let (tyvar_ctr1, typ1) = Gtype.mk_typevar tyvar_ctr in
   let (trm1, _) =
-    to_aux (tyvar_ctr1, Gtypes.empty_subst()) (Term.empty_subst()) typ1 ptrm
+    to_aux (tyvar_ctr1, Gtype.empty_subst()) (Term.empty_subst()) typ1 ptrm
   in
   trm1
 

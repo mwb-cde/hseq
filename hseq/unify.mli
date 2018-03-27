@@ -41,10 +41,10 @@
 
 val unify_fullenv:
   Scope.t
-  -> Gtypes.substitution
+  -> Gtype.substitution
   -> Term.substitution
   -> (Basic.term -> bool) -> Basic.term -> Basic.term
-  -> (Gtypes.substitution * Term.substitution)
+  -> (Gtype.substitution * Term.substitution)
 (** [unify_fullenv scp tyenv env varp t1 t2]: Unify terms [t1] and
     [t2] in scope [scp] w.r.t to given type and term contexts.
 
@@ -61,7 +61,7 @@ val unify_fullenv:
     allow continued operations w.r.t the updated type context.  *)
 
 val unify_env:
-  ?typenv:Gtypes.substitution
+  ?typenv:Gtype.substitution
   -> Scope.t  -> Term.substitution
   -> (Basic.term -> bool) -> Basic.term -> Basic.term
   -> Term.substitution
@@ -69,7 +69,7 @@ val unify_env:
     [unify_fullenv] with an empty type context.
 *)
 
-val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
+val unify: ?typenv:Gtype.substitution -> ?initial:Term.substitution
   -> Scope.t -> (Basic.term -> bool)
   -> Basic.term -> Basic.term -> Term.substitution
 (** [unify scp varp l r]: Unify terms [l] and [r] in scope scp.
@@ -83,10 +83,10 @@ val unify: ?typenv:Gtypes.substitution -> ?initial:Term.substitution
 (** {5 Matching} *)
 
 val matches_rewrite:
-  Scope.t -> Gtypes.substitution  -> Term.substitution
+  Scope.t -> Gtype.substitution  -> Term.substitution
   -> (Basic.term -> bool)
   -> Basic.term -> Basic.term
-  -> (Gtypes.substitution * Term.substitution)
+  -> (Gtype.substitution * Term.substitution)
 (** [matches_rewrite scp tyenv env varp trm1 trm2]: Matches term
     [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by
     renaming all type variables in [trm1] with newly generated names.

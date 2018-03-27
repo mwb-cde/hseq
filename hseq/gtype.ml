@@ -302,7 +302,7 @@ let rec get_type_name ty =
 let dest_app ty =
   match ty with
   | App(x, y) -> (x, y)
-  | _ -> raise (Failure "Gtypes.dest_app: invalid type")
+  | _ -> raise (Failure "Gtype.dest_app: invalid type")
 
 let flatten_app = flatten_apptype
 let split_app = split_apptype

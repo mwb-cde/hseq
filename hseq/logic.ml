@@ -117,7 +117,7 @@ let drop_tag (_, f) = f
 module Skolem =
 struct
 
-  type skolem_cnst = (Ident.t * (int * Gtypes.t))
+  type skolem_cnst = (Ident.t * (int * Gtype.t))
 
   let make_sklm x ty i = (x, (i, ty))
   let get_sklm_name (x, (_, _)) = x
@@ -146,8 +146,8 @@ struct
   type new_skolem_data=
     {
       name: Ident.t;
-      ty: Gtypes.t;
-      tyenv: Gtypes.substitution;
+      ty: Gtype.t;
+      tyenv: Gtype.substitution;
       scope: Scope.t;
       skolems: skolem_type;
       tylist: (string*int) list
@@ -177,18 +177,18 @@ struct
     (* tyname: if ty is a variable then use its name for the weak
        variable otherwise use the empty string *)
     let tyname x =
-      if Gtypes.is_var info.ty
-      then new_weak_type (Gtypes.get_var_name info.ty) info.tylist
+      if Gtype.is_var info.ty
+      then new_weak_type (Gtype.get_var_name info.ty) info.tylist
       else new_weak_type (x^"_ty") info.tylist
     in
     (* make the weak type *)
     let mk_nty x =
       let ty_name, nnames = tyname x in
-      let tty=Gtypes.mk_weak ty_name in
+      let tty=Gtype.mk_weak ty_name in
       (* unify the weak type with the given type *)
       let ntyenv = Ltype.unify_env info.scope tty info.ty info.tyenv
       in
-      (Gtypes.mgu tty ntyenv, ntyenv, nnames)
+      (Gtype.mgu tty ntyenv, ntyenv, nnames)
     in
     (* Make a name not already associated with a skolem or meta variable *)
     let skname0, skindx0 =
@@ -207,7 +207,7 @@ struct
       let rec find_new_meta scp n idx =
         let nname = make_skolem_name n idx in
         if Scope.is_meta scp
-          (Term.dest_meta (Term.mk_meta nname (Gtypes.mk_weak "_ty")))
+          (Term.dest_meta (Term.mk_meta nname (Gtype.mk_weak "_ty")))
         then find_new_meta scp n (idx + 1)
         else (n, idx)
       in
@@ -339,14 +339,14 @@ struct
   let mk_sqnt_form f = (Tag.create(), f)
 
   (** A sqnt_env is made up of the shared type variables
-      (Gtypes.WeakVar) that may be used in the sequent information
+      (Gtype.WeakVar) that may be used in the sequent information
       for constructing names of weak types the skolem constants that
       may be used in the sequent the scope of the sequent. *)
   type sqnt_env =
     {
       sklms: Skolem.skolem_type;
       sqscp : Scope.t;
-      tyvars: Gtypes.t list;
+      tyvars: Gtype.t list;
       tynames: (string * int) list;
     }
 
@@ -562,7 +562,7 @@ let get_label_form t sq=
    {- A formula: the theorem which is to be proved.}}
 *)
 type goal =
-    Goal of (Sequent.t list * Gtypes.substitution * Formula.t * Changes.t)
+    Goal of (Sequent.t list * Gtype.substitution * Formula.t * Changes.t)
 
 let get_goal (Goal(_, _, f, _)) = f
 let get_subgoals (Goal(sq, _, _, _)) = sq
@@ -583,7 +583,7 @@ let mk_goal scp f =
   let sqnt_tag = form_tag sqnt_frm in
   let chngs = Changes.make [] [] [sqnt_tag] []
   in
-  Goal([sqnt], Gtypes.empty_subst(), goal_frm, chngs)
+  Goal([sqnt], Gtype.empty_subst(), goal_frm, chngs)
 
 let mk_thm g =
   match g with
@@ -633,7 +633,7 @@ exception No_subgoals
     expected subgoals.
 *)
 
-exception Solved_subgoal of Gtypes.substitution
+exception Solved_subgoal of Gtype.substitution
 (** [Solved_subgoal tyenv]: solved a subgoal, creating new goal type
     environment tyenv
 *)
@@ -666,8 +666,8 @@ type branch = Subgoals.branch
     environment for the goal.
 
     [f] must have type
-    [Gtypes.substitution -> Sequent.t
-    -> (Gtypes.substitution * Sequent.t list)]
+    [Gtype.substitution -> Sequent.t
+    -> (Gtype.substitution * Sequent.t list)]
 
     Resulting branch has the same tag as [sg].
 
@@ -697,8 +697,8 @@ let rule_apply r nd =
     environment for the goal.
 
     [f] must have type
-    [Gtypes.substitution -> Sequent.t
-    -> (Gtypes.substitution * Sequent.t list)]
+    [Gtype.substitution -> Sequent.t
+    -> (Gtype.substitution * Sequent.t list)]
 
     Resulting branch has the same tag as [sg].
 
@@ -1090,7 +1090,7 @@ struct
                  [drop_tag asm; drop_tag concl])
     in
     let tyenv2 =
-      try Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
+      try Gtype.extract_bindings (Sequent.sqnt_tyvars sq) tyenv1 tyenv
       with _ ->
         raise (logic_error "basic: Inconsistent types"
                  [drop_tag asm; drop_tag concl])
@@ -1384,7 +1384,7 @@ struct
       try
         let ntrm, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
         let gtyenv =
-          Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+          Gtype.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
         in
         let new_subgoal =
           mk_subgoal
@@ -1434,12 +1434,12 @@ struct
       in
       let nscp = Scope.add_meta localscope (Term.dest_meta sv) in
       let nsqtys=
-        if Gtypes.is_weak sty
+        if Gtype.is_weak sty
         then sty::(Sequent.sqnt_tyvars sq)
         else Sequent.sqnt_tyvars sq
       in
       let ncncl, ntyenv = inst_term nscp tyenv t sv in
-      let gtyenv = Gtypes.extract_bindings nsqtys ntyenv tyenv in
+      let gtyenv = Gtype.extract_bindings nsqtys ntyenv tyenv in
       let new_subgoal =
         mk_subgoal (Sequent.sqnt_retag sq,
                     Sequent.mk_sqnt_env nsklms nscp nsqtys ntynms,
@@ -1484,12 +1484,12 @@ struct
       in
       let nscp = Scope.add_meta localscope (Term.dest_meta sv) in
       let nsqtys=
-        if Gtypes.is_weak sty
+        if Gtype.is_weak sty
         then sty::(Sequent.sqnt_tyvars sq)
         else Sequent.sqnt_tyvars sq
       in
       let nasm, ntyenv = inst_term nscp styenv t sv in
-      let gtyenv = Gtypes.extract_bindings nsqtys ntyenv tyenv in
+      let gtyenv = Gtype.extract_bindings nsqtys ntyenv tyenv in
       let new_subgoal =
         mk_subgoal
           (Sequent.sqnt_retag sq,
@@ -1523,7 +1523,7 @@ struct
       try
         let trm2, tyenv2 = inst_term (Sequent.scope_of sq) tyenv t trm in
         let gtyenv=
-          Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+          Gtype.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
         in
         let new_subgoal =
           mk_subgoal
@@ -1615,7 +1615,7 @@ struct
       in
       let asm_tag= Tag.create() in
       let gtyenv =
-        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
+        Gtype.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
       in
       let new_subgoal =
         mk_subgoal
@@ -1674,10 +1674,10 @@ struct
     let do_subst() =
       let form1= Formula.subst_equiv scp form eqs_list in
       let (form2, tyenv2) =
-        Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+        Formula.typecheck_retype scp tyenv form1 (Gtype.mk_null())
       in
       let gtyenv=
-        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        Gtype.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
       in
       let new_asms = join_up lasms ((form_tag, form2)::rasms) in
       let new_subgoal =
@@ -1724,10 +1724,10 @@ struct
       let form1 = Formula.subst_equiv scp form eqs_list
       in
       let (form2, tyenv2) =
-        Formula.typecheck_retype scp tyenv form1 (Gtypes.mk_null())
+        Formula.typecheck_retype scp tyenv form1 (Gtype.mk_null())
       in
       let gtyenv =
-        Gtypes.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
+        Gtype.extract_bindings (Sequent.sqnt_tyvars sq) tyenv2 tyenv
       in
       let new_concls = join_up lconcls ((form_tag, form2)::rconcls) in
       let new_subgoal =
@@ -1846,7 +1846,7 @@ struct
   *)
   let beta_conv scp term =
     let eq_term t =
-      fst(Formula.mk_beta_reduce_eq scp (Gtypes.empty_subst()) t)
+      fst(Formula.mk_beta_reduce_eq scp (Gtype.empty_subst()) t)
     in
     try mk_theorem (eq_term term)
     with err ->
@@ -1865,7 +1865,7 @@ struct
     let plan1 = Rewrite.mapping formula_of plan in
     let conv_aux t =
       let (tform, _) =
-        Formula.mk_rewrite_eq scp (Gtypes.empty_subst()) plan1 t
+        Formula.mk_rewrite_eq scp (Gtype.empty_subst()) plan1 t
       in
       mk_theorem tform
     in
@@ -1894,15 +1894,15 @@ struct
   (** Checked and subtype definitions. Elements of [cdefn] and
       [ctypedef] have been correctly defined.  *)
   type cdefn =
-    | TypeAlias of Ident.t * string list * Gtypes.t option
+    | TypeAlias of Ident.t * string list * Gtype.t option
     | TypeDef of ctypedef
-    | TermDecln of Ident.t * Gtypes.t
-    | TermDef of Ident.t * Gtypes.t	* thm
+    | TermDecln of Ident.t * Gtype.t
+    | TermDef of Ident.t * Gtype.t	* thm
   and ctypedef =
     {
       type_name: Ident.t;       (* name of new type *)
       type_args: string list;   (* arguments of new type *)
-      type_base: Gtypes.t;      (* the base type *)
+      type_base: Gtype.t;      (* the base type *)
       type_rep: cdefn;          (* representation function *)
       type_abs: cdefn;          (* abstraction function *)
       type_set: Formula.t;      (* defining set *)
@@ -1914,15 +1914,15 @@ struct
   (*** Representations for permanent storage ***)
 
   type saved_cdefn =
-    | STypeAlias of Ident.t * string list * Gtypes.stype option
+    | STypeAlias of Ident.t * string list * Gtype.stype option
     | STypeDef of saved_ctypedef
-    | STermDecln of Ident.t * Gtypes.stype
-    | STermDef of Ident.t * Gtypes.stype * saved_thm
+    | STermDecln of Ident.t * Gtype.stype
+    | STermDef of Ident.t * Gtype.stype * saved_thm
   and saved_ctypedef =
     {
       stype_name: Ident.t;             (* name of new type *)
       stype_args: string list;         (* arguments of new type *)
-      stype_base: Gtypes.stype;
+      stype_base: Gtype.stype;
       stype_rep: saved_cdefn;          (* representation function *)
       stype_abs: saved_cdefn;          (* abstraction function *)
       stype_set: Formula.saved_form;   (* defining set *)
@@ -1939,11 +1939,11 @@ struct
     | TypeAlias (id, sl, ty) ->
        (match ty with
        | None -> STypeAlias (id, sl, None)
-       | Some t -> STypeAlias (id, sl, Some(Gtypes.to_save t)))
+       | Some t -> STypeAlias (id, sl, Some(Gtype.to_save t)))
     | TermDecln (id, ty) ->
-       STermDecln (id, Gtypes.to_save ty)
+       STermDecln (id, Gtype.to_save ty)
     | TermDef (id, ty, thm) ->
-       STermDef (id, Gtypes.to_save ty, to_save thm)
+       STermDef (id, Gtype.to_save ty, to_save thm)
     | TypeDef ctdef ->
        STypeDef (to_saved_ctypedef ctdef)
   and
@@ -1951,7 +1951,7 @@ struct
     {
       stype_name = x.type_name;
       stype_args = x.type_args;
-      stype_base = Gtypes.to_save x.type_base;
+      stype_base = Gtype.to_save x.type_base;
       stype_rep = to_saved_cdefn x.type_rep;
       stype_abs = to_saved_cdefn x.type_abs;
       stype_set = Formula.to_save x.type_set;
@@ -1965,11 +1965,11 @@ struct
     | STypeAlias (id, sl, ty) ->
        (match ty with
        | None -> TypeAlias (id, sl, None)
-       | Some t -> TypeAlias (id, sl, Some(Gtypes.from_save t)))
+       | Some t -> TypeAlias (id, sl, Some(Gtype.from_save t)))
     | STermDecln (id, ty) ->
-       TermDecln (id, Gtypes.from_save ty)
+       TermDecln (id, Gtype.from_save ty)
     | STermDef (id, ty, thm) ->
-       TermDef (id, Gtypes.from_save ty, from_save scp thm)
+       TermDef (id, Gtype.from_save ty, from_save scp thm)
     | STypeDef ctdef ->
        TypeDef (from_saved_ctypedef scp ctdef)
   and
@@ -1977,7 +1977,7 @@ struct
     {
       type_name = x.stype_name;
       type_args = x.stype_args;
-      type_base = Gtypes.from_save x.stype_base;
+      type_base = Gtype.from_save x.stype_base;
       type_rep = from_saved_cdefn scp x.stype_rep;
       type_abs = from_saved_cdefn scp x.stype_abs;
       type_set = Formula.from_save scp x.stype_set;
@@ -2063,7 +2063,7 @@ struct
       | Some(a) ->
          try Ltype.well_defined scp ags a; Some(a)
          with err ->
-           raise (Gtypes.add_type_error "Badly formed definition" [a] err)
+           raise (Gtype.add_type_error "Badly formed definition" [a] err)
     in
     TypeAlias((Ident.mk_long th n), ags, dfn)
 
@@ -2182,8 +2182,8 @@ struct
 
   let print_typealias ppinfo (n, args, ty) =
     let named_ty =
-      Gtypes.mk_constr n
-        (List.map (fun x -> Gtypes.mk_var x) args)
+      Gtype.mk_constr n
+        (List.map (fun x -> Gtype.mk_var x) args)
     in
     Format.printf "@[";
     Printers.print_type ppinfo named_ty;
@@ -2198,8 +2198,8 @@ struct
 
   let rec print_subtype ppinfo x =
     let named_ty =
-      Gtypes.mk_constr x.type_name
-        (List.map (fun x -> Gtypes.mk_var x) x.type_args)
+      Gtype.mk_constr x.type_name
+        (List.map (fun x -> Gtype.mk_var x) x.type_args)
     in
     Format.printf "@[<v>";
     Format.printf "@[";

@@ -128,7 +128,7 @@ let induct_tac_bindings typenv scp aterm cterm =
   let (concl_concl_eta, concl_conl_args) =
     (** Get the variables which don't appear in [concl_asm] *)
     let cvar_set =
-      let null_term = Term.mk_free "null" (Gtypes.mk_null()) in
+      let null_term = Term.mk_free "null" (Gtype.mk_null()) in
       let form_binders e x =
         if Term.is_bound x
         then Term.bind x null_term e
@@ -417,9 +417,9 @@ let induct_thm ctxt ?thm scp tyenv trm =
         let ty =
           let sb = Typing.settype scp ~env:tyenv trm
           in
-          Gtypes.mgu (Typing.typeof scp ~env:tyenv trm) sb
+          Gtype.mgu (Typing.typeof scp ~env:tyenv trm) sb
         in
-        let (th, id) = Ident.dest (Gtypes.get_type_name ty) in
+        let (th, id) = Ident.dest (Gtype.get_type_name ty) in
         let thm_name = id^"_induct"
         in
         try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))

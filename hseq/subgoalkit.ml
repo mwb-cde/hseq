@@ -52,7 +52,7 @@ struct
   type sqnt_ty = T.sqnt_ty
   let sqnt_tag = T.sqnt_tag
 
-  type tyenv_ty = Gtypes.substitution
+  type tyenv_ty = Gtype.substitution
 
   type env_ty = (tyenv_ty * Changes.t)
   let mk_env tyenv chngs = (tyenv, chngs)
@@ -114,14 +114,14 @@ struct
   let merge_tyenvs env1 env2 =
     let assign _ x env =
       try
-        let y = Gtypes.lookup_var x env2
+        let y = Gtype.lookup_var x env2
         in
-        if Gtypes.equals x y
+        if Gtype.equals x y
         then raise (Failure "Can't merge type environments")
-        else Gtypes.bind x y env
+        else Gtype.bind x y env
       with Not_found -> env
     in
-    Gtypes.subst_fold assign env1 env1
+    Gtype.subst_fold assign env1 env1
 
   (** [apply_basic tac node]: Apply tactic [tac] to [node].
 

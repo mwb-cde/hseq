@@ -63,7 +63,7 @@ val meta_db_find: string -> meta_db -> Basic.binders
 *)
 
 (** Records for type definitions *)
-type type_record = Gtypes.typedef_record
+type type_record = Gtype.typedef_record
 (*
 type type_record =
     {
@@ -73,20 +73,20 @@ type type_record =
     }
  *)
 val mk_type_record:
-  string -> string list -> (Gtypes.t)option -> type_record
+  string -> string list -> (Gtype.t)option -> type_record
 val dest_type_record:
-  type_record -> (string * (string)list * (Gtypes.t)option)
+  type_record -> (string * (string)list * (Gtype.t)option)
 
 (** Scope records. *)
 type t =
     {
       curr_thy : marker;
       (** The marker of the current theory. *)
-      term_type : Ident.t -> Gtypes.t;
+      term_type : Ident.t -> Gtype.t;
       (** The type of a term identifier. *)
       term_thy : string -> Ident.thy_id;
       (** The theory in which a term is declared. *)
-      types: Gtypes.TypeScope.t;
+      types: Gtype.TypeScope.t;
       (** The types scope *)
       thy_in_scope : Ident.thy_id -> bool ;
       (** Whether a theory is in scope (identified by name). *)
@@ -108,13 +108,13 @@ val marker_of : t -> marker
 val thy_of : t -> Ident.thy_id
 (** [thy_of scp]: Get the theory name of scope [scp]. *)
 
-val type_of : t -> Ident.t -> Gtypes.t
+val type_of : t -> Ident.t -> Gtype.t
 (** Lookup the type of an identifier. *)
 
 val thy_of_term: t -> string -> Ident.thy_id
 (** Lookup the theory of an identifier. *)
 
-val types_scope: t -> Gtypes.TypeScope.t
+val types_scope: t -> Gtype.TypeScope.t
 (** Get the types scope *)
 
 val defn_of: t -> Ident.t -> type_record
@@ -131,7 +131,7 @@ val in_scope_marker : t -> marker -> bool
 
 (** {5 Extending scopes} *)
 
-val extend_with_terms: t -> (Ident.t * Gtypes.t) list -> t
+val extend_with_terms: t -> (Ident.t * Gtype.t) list -> t
 (** Extend a scope with a list of identifiers [[(I1, T1); ...; (In,
     Tn)]]. Each identifier [Ii] is given type [Ti].
 *)
@@ -169,5 +169,5 @@ val is_meta: t -> Basic.binders -> bool
 *)
 
 (** Generate a scope that will associate any unknown identifier with the current
-    theory. (Only needed for [Gtypes.set_names]) *)
+    theory. (Only needed for [Gtype.set_names]) *)
 val relaxed: t -> t

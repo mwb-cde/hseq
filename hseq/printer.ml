@@ -191,7 +191,7 @@ let remove_printer info id =
 type ppinfo =
     {
       terms:  (ppinfo, Basic.term * (Basic.term)list) info;
-      types:  (ppinfo, Ident.t * (Gtypes.t)list) info
+      types:  (ppinfo, Ident.t * (Gtype.t)list) info
     }
 
 let mk_ppinfo sz =
@@ -224,7 +224,7 @@ let remove_term_printer info id =
 
 (** Operations involving type identifiers *)
 type gtype_printer =
-  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.t list)) printer
+  ppinfo -> (fixity * int) -> (Ident.t * (Gtype.t list)) printer
 let get_type_info info x = get_info (info.types) x
 let set_type_info info x = {info with types = x}
 let add_type_info info id prec fixity repr =

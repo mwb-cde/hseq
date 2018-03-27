@@ -114,7 +114,7 @@ val sequent: Logic.node -> Logic.Sequent.t
 val scope_of_goal: Logic.node -> Scope.t
 (** Get the scope of a node. *)
 
-val typenv_of: Logic.node -> Gtypes.substitution
+val typenv_of: Logic.node -> Gtype.substitution
 (** Get the type environment of a node. *)
 
 val node_tag: Logic.node -> Logic.ftag_ty
@@ -137,7 +137,7 @@ val get_form: Logic.label -> Logic.node -> Formula.t
 
 (** {7 Branches} *)
 
-val branch_tyenv: Logic.branch -> Gtypes.substitution
+val branch_tyenv: Logic.branch -> Gtype.substitution
 (** Type environment of a branch. *)
 
 val branch_subgoals: Logic.branch -> Logic.Sequent.t list
@@ -687,7 +687,7 @@ val named_tac:
 (** {8 Support functions} *)
 
 val find_match_formulas:
-  Gtypes.substitution
+  Gtype.substitution
   -> Scope.t -> (Basic.term -> bool)
   -> Basic.term -> Logic.tagged_form list -> Logic.label
 (** [find_match_formulas scp varp t fs]: Find a match for a term in
@@ -702,7 +702,7 @@ val find_match_formulas:
 *)
 
 val find_match_asm:
-  Gtypes.substitution
+  Gtype.substitution
   -> Basic.term -> Logic.Sequent.t -> Logic.label
 (** [find_match_asm tyenv t sq]: Find a match for [t] in the
     assumptions of [sq].  Return the tag of the first formula in the
@@ -711,7 +711,7 @@ val find_match_asm:
 *)
 
 val find_match_concl:
-  Gtypes.substitution
+  Gtype.substitution
   -> Basic.term -> Logic.Sequent.t -> Logic.label
 (** [match_concl t sq]: Find a match for [t] in the assumptions of
     [sq].  Return the tag of the first formula in the assumptions to

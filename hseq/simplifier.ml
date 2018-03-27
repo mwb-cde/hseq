@@ -266,7 +266,7 @@ let check_add_loop scp cntrl t =
   then raise (Failure "check_add_loop")
   else Data.add_loopdb cntrl t
 
-let null_term = Term.mk_free "" (Gtypes.mk_null())
+let null_term = Term.mk_free "" (Gtype.mk_null())
 
 (** [get_form t n]: Get formula tagged [t] from node [n].  First try
     conclusions, then try assumptions.  return the formula and a flag
@@ -473,7 +473,7 @@ type match_data =
       (** Simplifier data *)
       cntrl: Data.t;
       (** Type environment *)
-      tyenv: Gtypes.substitution;
+      tyenv: Gtype.substitution;
       (** Quantifier environment *)
       qntenv: Term.substitution;
     }

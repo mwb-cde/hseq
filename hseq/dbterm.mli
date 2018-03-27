@@ -27,13 +27,13 @@
     representation.
 *)
 
-open Gtypes
+open Gtype
 
 (** Binders for de Bruijn terms *)
 type binder =
     { quant: Basic.quant;
       qvar: string;
-      qtyp: Gtypes.stype }
+      qtyp: Gtype.stype }
 
 (**
    Representation of de Bruijn terms. This mirrors [Basic.term], the
@@ -41,8 +41,8 @@ type binder =
    and binders are not stored as references.
 *)
 type dbterm =
-  | Id of Ident.t * Gtypes.stype
-  | Free of string * Gtypes.stype
+  | Id of Ident.t * Gtype.stype
+  | Free of string * Gtype.stype
   | Qnt of binder * dbterm
   | Bound of int
   | App of dbterm * dbterm

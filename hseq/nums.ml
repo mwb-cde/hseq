@@ -63,7 +63,7 @@ let add_var (n, e) t =
    for arguments [a] and [b] of type [ty].
 *)
 let typing_typecheck scp x ty =
-  ignore (Typing.typecheck_top scp (Gtypes.empty_subst()) x ty)
+  ignore (Typing.typecheck_top scp (Gtype.empty_subst()) x ty)
 
 let is_equals scp ty f a b =
   if f = Lterm.equalsid

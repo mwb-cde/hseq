@@ -25,7 +25,7 @@ open Basic
 
 val print_term: Printer.ppinfo -> Basic.term -> unit
 val print_formula: Printer.ppinfo -> Formula.t -> unit
-val print_type: Printer.ppinfo -> Gtypes.t -> unit
+val print_type: Printer.ppinfo -> Gtype.t -> unit
 val print_theory: Printer.ppinfo -> Theory.thy -> unit
 
 val print_sqnt: Printer.ppinfo -> Logic.Sequent.t -> unit
@@ -44,4 +44,4 @@ val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
 val fprint_error: Format.formatter -> Printer.ppinfo -> Report.error -> unit
 val print_error: Printer.ppinfo -> Report.error -> unit
 val print_report: Printer.ppinfo -> int -> exn -> unit
-val print_type_error: Printer.ppinfo -> Gtypes.error -> unit
+val print_type_error: Printer.ppinfo -> Gtype.error -> unit

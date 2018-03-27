@@ -35,7 +35,7 @@ let mk_decln scp name ty =
   let new_ty() = Ltype.set_name scp ty in
   let check_type typ =
     begin
-      Gtypes.check_decl_type (Scope.types_scope scp) typ;
+      Gtype.check_decl_type (Scope.types_scope scp) typ;
       typ
     end
   in
@@ -86,7 +86,7 @@ let mk_defn scp (name, namety) args rhs =
   let tenv = Typing.settype scp ndn1 in
   let scp1 = Scope.extend_with_terms scp [(name, nty)] in
   let tenv1 =Typing.typecheck_top scp1 tenv ndn1 (Lterm.mk_bool_ty()) in
-  let nty1 = Gtypes.mgu_rename 0 tenv1 (Gtypes.empty_subst()) nty
+  let nty1 = Gtype.mgu_rename 0 tenv1 (Gtype.empty_subst()) nty
   in
   (name, nty1, Formula.make scp1 (Term.retype tenv1 ndn1))
 
@@ -114,13 +114,13 @@ let check_args_unique ags =
 *)
 let check_type_name scp n =
   try (ignore(Scope.defn_of scp n);
-       raise (Gtypes.type_error "Type already exists"
-                [Gtypes.mk_constr n []]))
+       raise (Gtype.type_error "Type already exists"
+                [Gtype.mk_constr n []]))
   with Not_found -> ()
 
 let check_well_defined scp args ty =
   try Ltype.well_defined scp args ty;()
-  with err -> raise (Gtypes.add_type_error
+  with err -> raise (Gtype.add_type_error
                        "Badly formed type" [ty] err)
 
 (*** Type definition: aliasing ***)
@@ -169,8 +169,8 @@ type subtype_defn =
     {
       id: Ident.t;
       args : string list;
-      rep : (Ident.t * Gtypes.t);
-      abs: (Ident.t * Gtypes.t);
+      rep : (Ident.t * Gtype.t);
+      abs: (Ident.t * Gtype.t);
       set: Basic.term;
       rep_T: Basic.term;
       rep_T_inverse: Basic.term;
@@ -181,7 +181,7 @@ type subtype_defn =
     to show that a subtype exists.
 *)
 let mk_subtype_exists setp=
-  let x_b=(Basic.mk_binding Basic.Ex "x" (Gtypes.mk_var "x_ty")) in
+  let x_b=(Basic.mk_binding Basic.Ex "x" (Gtype.mk_var "x_ty")) in
   let x= Term.mk_bound x_b in
   Basic.Qnt(x_b, Term.mk_app setp x)
 
@@ -193,7 +193,7 @@ let make_witness_type scp dtype setP =
   in
   if not (Lterm.is_fun_ty fty)
   then raise (Term.add_term_error "Expected a function" [setP]
-                (Gtypes.type_error "Not a function type" [fty]))
+                (Gtype.type_error "Not a function type" [fty]))
   else
     let tty = Lterm.mk_fun_ty dtype (Lterm.mk_bool_ty()) in
     try
@@ -204,7 +204,7 @@ let make_witness_type scp dtype setP =
       raise
         (Term.add_term_error
            "Badly typed term" [setP]
-           (Gtypes.add_type_error "Invalid type" [tty] err))
+           (Gtype.add_type_error "Invalid type" [tty] err))
 
 (**
    [mk_rep_T set rep]:
@@ -212,7 +212,7 @@ let make_witness_type scp dtype setP =
    |- !x: set (rep x)
 *)
 let mk_rep_T set rep =
-  let x_b = Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty") in
+  let x_b = Basic.mk_binding Basic.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let body = Term.mk_app set (Term.mk_app rep x)
   in
@@ -224,7 +224,7 @@ let mk_rep_T set rep =
    |- !x: (abs (rep x)) = x
 *)
 let mk_rep_T_inv rep abs =
-  let x_b = Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty") in
+  let x_b = Basic.mk_binding Basic.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let body = Lterm.mk_equality (Term.mk_app abs (Term.mk_app rep x)) x
   in
@@ -236,7 +236,7 @@ let mk_rep_T_inv rep abs =
    |- !x: (set x)=> (rep (abs x)) = x
 *)
 let mk_abs_T_inv set rep abs =
-  let x_b = Basic.mk_binding Basic.All "x" (Gtypes.mk_var "x_ty") in
+  let x_b = Basic.mk_binding Basic.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let lhs = Term.mk_app set x
   and rhs = Lterm.mk_equality (Term.mk_app rep (Term.mk_app abs x)) x
@@ -262,20 +262,20 @@ let mk_subtype scp name args dtype setP rep_name abs_name =
   and rep_id = Ident.mk_long th rep_name
   and abs_id = Ident.mk_long th abs_name
   in
-  let ntype = Gtypes.mk_constr id (List.map Gtypes.mk_var args)
+  let ntype = Gtype.mk_constr id (List.map Gtype.mk_var args)
   in
   check_type_name scp id;
   check_args_unique args;
   check_well_defined scp args dtype;
   let setp0 = Formula.term_of (Formula.make scp setP) in
   let new_setp = make_witness_type scp dtype setp0 in
-  let rep_ty = Gtypes.normalize_vars (Lterm.mk_fun_ty ntype dtype)
+  let rep_ty = Gtype.normalize_vars (Lterm.mk_fun_ty ntype dtype)
   and abs_ty =
-    Gtypes.rename_type_vars
-      (Gtypes.normalize_vars (Lterm.mk_fun_ty dtype ntype))
+    Gtype.rename_type_vars
+      (Gtype.normalize_vars (Lterm.mk_fun_ty dtype ntype))
   in
-  let abs_term = Term.mk_typed_ident abs_id (Gtypes.mk_var "abs_ty2")
-  and rep_term = Term.mk_typed_ident rep_id (Gtypes.mk_var "rep_ty2")
+  let abs_term = Term.mk_typed_ident abs_id (Gtype.mk_var "abs_ty2")
+  and rep_term = Term.mk_typed_ident rep_id (Gtype.mk_var "rep_ty2")
   in
   let rep_T_thm = mk_rep_T setP rep_term
   and rep_T_inv_thm = mk_rep_T_inv rep_term abs_term
@@ -301,10 +301,10 @@ struct
   type typedef =
     | NewType of (string * (string list))
     (** A new type: the type name and its arguments. *)
-    | TypeAlias of (string * (string list) * Gtypes.t)
+    | TypeAlias of (string * (string list) * Gtype.t)
     (** A type alias: the type name, its arguments and the type it
         aliases *)
-    | Subtype of (string * (string list) * Gtypes.t * Basic.term)
+    | Subtype of (string * (string list) * Gtype.t * Basic.term)
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
@@ -339,12 +339,12 @@ struct
     *)
   let mk_subtype_prop (setP: Basic.term) (rep: Ident.t) =
     let mk_subtype_1 (rep: Ident.t) =
-      let x1_b = Basic.mk_binding Basic.All "x1" (Gtypes.mk_var "x1_ty")
-      and x2_b = Basic.mk_binding Basic.All "x2" (Gtypes.mk_var "x2_ty")
+      let x1_b = Basic.mk_binding Basic.All "x1" (Gtype.mk_var "x1_ty")
+      and x2_b = Basic.mk_binding Basic.All "x2" (Gtype.mk_var "x2_ty")
       in
       let x1 = Term.mk_bound x1_b
       and x2 = Term.mk_bound x2_b
-      and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty1")
+      and rep_term = Term.mk_typed_ident rep (Gtype.mk_var "rep_ty1")
       in
       let lhs =
         Lterm.mk_equality (Term.mk_app rep_term x1)
@@ -356,12 +356,12 @@ struct
       Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
     and
         mk_subtype_2 (setP:Basic.term) (rep: Ident.t) =
-      let y_b = Basic.mk_binding Basic.All "y" (Gtypes.mk_var "y_ty")
-      and y1_b = Basic.mk_binding Basic.Ex "y1" (Gtypes.mk_var "y1_ty")
+      let y_b = Basic.mk_binding Basic.All "y" (Gtype.mk_var "y_ty")
+      and y1_b = Basic.mk_binding Basic.Ex "y1" (Gtype.mk_var "y1_ty")
       in
       let y = Term.mk_bound y_b
       and y1 = Term.mk_bound y1_b
-      and rep_term = Term.mk_typed_ident rep (Gtypes.mk_var "rep_ty2")
+      and rep_term = Term.mk_typed_ident rep (Gtype.mk_var "rep_ty2")
       in
       let lhs = Term.mk_app setP y
       and rhs =
@@ -384,13 +384,13 @@ struct
   let mk_subtype scp name args dtype setP rep =
     let th = Scope.thy_of scp in
     let id = Ident.mk_long th name in
-    let ntype = Gtypes.mk_constr id (List.map Gtypes.mk_var args)
+    let ntype = Gtype.mk_constr id (List.map Gtype.mk_var args)
     in
     check_type_name scp id;
     check_args_unique args;
     check_well_defined scp args dtype;
     let new_setp = make_witness_type scp dtype setP in
-    let rep_ty = Gtypes.normalize_vars (Lterm.mk_fun_ty ntype dtype) in
+    let rep_ty = Gtype.normalize_vars (Lterm.mk_fun_ty ntype dtype) in
     let subtype_prop = mk_subtype_prop setP rep
     in
     (rep_ty, new_setp, subtype_prop)

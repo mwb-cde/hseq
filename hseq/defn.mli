@@ -27,17 +27,17 @@
 
 val mk_decln:
   Scope.t ->
-  Ident.t -> Gtypes.t -> (Ident.t * Gtypes.t)
+  Ident.t -> Gtype.t -> (Ident.t * Gtype.t)
 (** Declare term identifier [(f:ty)]. *)
 
 (** {7 Term definition} *)
 
 val mk_defn:
   Scope.t
-  -> (Ident.t * Gtypes.t)
+  -> (Ident.t * Gtype.t)
   -> Basic.term list
   -> Basic.term
-  -> (Ident.t * Gtypes.t * Formula.t)
+  -> (Ident.t * Gtype.t * Formula.t)
 (** [mk_defn scp id args t]: Construct a definition.
 
     [scp] is the scope of the definition
@@ -64,7 +64,7 @@ val check_type_name: Scope.t -> Ident.t -> unit
     in scope [scp].
 *)
 
-val check_well_defined: Scope.t -> string list -> Gtypes.t -> unit
+val check_well_defined: Scope.t -> string list -> Gtype.t -> unit
 (** [check_well_defined scp args ty]: Make sure that type [ty] is well
     defined in scope [scp]. Every type variable in [ty] must have
     a name in [args], weak variables are not permitted and every
@@ -112,8 +112,8 @@ type subtype_defn =
     {
       id: Ident.t;
       args: string list;
-      rep: (Ident.t * Gtypes.t);
-      abs: (Ident.t * Gtypes.t);
+      rep: (Ident.t * Gtype.t);
+      abs: (Ident.t * Gtype.t);
       set: Basic.term;
       rep_T: Basic.term;
       rep_T_inverse: Basic.term;
@@ -140,7 +140,7 @@ val mk_subtype_exists: Basic.term -> Basic.term
 *)
 
 val make_witness_type:
-  Scope.t -> Gtypes.t -> Basic.term -> Basic.term
+  Scope.t -> Gtype.t -> Basic.term -> Basic.term
 (** [make_witness_type scp ty setp]: Make a witness to the
     non-emptyness of the set defined by [setp] (which must be of type
     [ty -> bool]).
@@ -149,7 +149,7 @@ val make_witness_type:
 
 val mk_subtype:
   Scope.t -> string -> string list
-  -> Gtypes.t -> Basic.term -> string -> string
+  -> Gtype.t -> Basic.term -> string -> string
   -> subtype_defn
 (** [mk_subtype scp n args ty set rep abs]: Make a subtype named [n]
     with parameters [args] from type [ty]. Term [set] is the defining
@@ -169,10 +169,10 @@ sig
   type typedef =
     | NewType of (string * (string list))
     (** A new type: the type name and its arguments. *)
-    | TypeAlias of (string * (string list) * Gtypes.t)
+    | TypeAlias of (string * (string list) * Gtype.t)
     (** A type alias: the type name, its arguments and the type it
         aliases *)
-    | Subtype of ((string * (string list) * Gtypes.t * Basic.term))
+    | Subtype of ((string * (string list) * Gtype.t * Basic.term))
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
@@ -219,8 +219,8 @@ end
   val mk_subtype_prop: Basic.term -> Ident.t -> Basic.term
   val mk_subtype:
   Scope.t -> string -> string list
-  -> Gtypes.t -> Basic.term -> Ident.t
-  -> (Gtypes.t * Basic.term * Basic.term)
+  -> Gtype.t -> Basic.term -> Ident.t
+  -> (Gtype.t * Basic.term * Basic.term)
 
   end
 *)

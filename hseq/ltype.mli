@@ -22,7 +22,7 @@
 (** Manipulating types of the logic. *)
 
 val in_scope:
-  (string, bool)Lib.substype -> Scope.t -> Gtypes.t -> bool
+  (string, bool)Lib.substype -> Scope.t -> Gtype.t -> bool
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
@@ -32,14 +32,14 @@ val in_scope:
 
 val set_name:
   ?memo:(string, Ident.thy_id)Hashtbl.t
-  -> Scope.t -> Gtypes.t -> Gtypes.t
+  -> Scope.t -> Gtype.t -> Gtype.t
 (** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
     long form.
 
     [memo] is an optional memoisation table.
 *)
 
-val unfold: Scope.t -> Gtypes.t -> Gtypes.t
+val unfold: Scope.t -> Gtype.t -> Gtype.t
 (**
    [unfold scp ty]: Unfold the definition of type [ty] from the scope
    [scp].
@@ -48,42 +48,42 @@ val unfold: Scope.t -> Gtypes.t -> Gtypes.t
 *)
 
 val well_formed_full:
-  (Gtypes.t -> (string * Gtypes.t)option)
-  -> Scope.t -> Gtypes.t -> bool
+  (Gtype.t -> (string * Gtype.t)option)
+  -> Scope.t -> Gtype.t -> bool
 (** [well_formed_full pred scp t]: ensure that [t] is well-formed
 
-   See [Gtypes.well_formed_full] for a description
+   See [Gtype.well_formed_full] for a description
 *)
 
-val well_formed: Scope.t -> Gtypes.t -> bool
+val well_formed: Scope.t -> Gtype.t -> bool
 (** [well_formed scp t]: ensure that [t] is well-formed in scope [scp] *)
 
-val well_defined: Scope.t -> (string)list -> Gtypes.t -> unit
+val well_defined: Scope.t -> (string)list -> Gtype.t -> unit
 (** [well_defined scp args ty]: Test [ty] for well-definedness. every
     constructor occuring in [ty] must be defined. Variables in [ty]
     must have a name in [args] and weak variables are not permitted in
     [ty].
 *)
 
-val check_decl_type: Scope.t -> Gtypes.t -> unit
+val check_decl_type: Scope.t -> Gtype.t -> unit
 (** [check_decl_type scp ty]: Ensure type [ty] is suitable for the
     declaration of a term. Fails if [ty] contains a weak variable.
 *)
 
 val unify_env:
-  Scope.t -> Gtypes.t -> Gtypes.t
-  -> Gtypes.substitution -> Gtypes.substitution
+  Scope.t -> Gtype.t -> Gtype.t
+  -> Gtype.substitution -> Gtype.substitution
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
 
-val unify: Scope.t -> Gtypes.t -> Gtypes.t -> Gtypes.substitution
+val unify: Scope.t -> Gtype.t -> Gtype.t -> Gtype.substitution
 (** [unify]: unify two types, returning the substitution.
 *)
 
 val matching_env:
-  Scope.t -> Gtypes.substitution
-  -> Gtypes.t -> Gtypes.t -> Gtypes.substitution
+  Scope.t -> Gtype.substitution
+  -> Gtype.t -> Gtype.t -> Gtype.substitution
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
@@ -93,8 +93,8 @@ val matching_env:
 *)
 
 val matches_env:
-  Scope.t -> Gtypes.substitution
-  -> Gtypes.t -> Gtypes.t -> Gtypes.substitution
+  Scope.t -> Gtype.substitution
+  -> Gtype.t -> Gtype.t -> Gtype.substitution
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
     type [t1] can be bound.
@@ -102,5 +102,5 @@ val matches_env:
     Silently returns unchanged substitution on failure.
 *)
 
-val matches: Scope.t -> Gtypes.t -> Gtypes.t -> bool
+val matches: Scope.t -> Gtype.t -> Gtype.t -> bool
 (** Toplevel for [matches_env]. *)

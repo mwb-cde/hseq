@@ -64,13 +64,13 @@ let print_error info depth errs =
              then print_aux (ctr - 1) (Lib.from_some errs.next)
              else ()
            end
-        | Gtypes.Error(err) ->
+        | Gtype.Error(err) ->
            begin
              Format.fprintf Format.std_formatter "@[";
              Printers.print_type_error Format.std_formatter info err;
              Format.printf "@]@,";
-             if err.Gtypes.next <> None
-             then print_aux (ctr - 1) (Lib.from_some err.Gtypes.next)
+             if err.Gtype.next <> None
+             then print_aux (ctr - 1) (Lib.from_some err.Gtype.next)
              else ()
            end
         | Term.Error(err) ->

@@ -61,7 +61,7 @@ type resolve_arg =
     variable type).
 
     Returns the renamed term, the actual type and a type substitution
-    from which the exact type can be obtained (using Gtypes.mgu).
+    from which the exact type can be obtained (using Gtype.mgu).
 
     Never fails.
 *)
@@ -73,10 +73,10 @@ let rec resolve_aux data env expty term =
     let (qnt, qname, qtype) = Basic.dest_binding binding
     in
     Basic.mk_binding qnt qname
-      (Gtypes.set_name ~memo:(data.memo.type_names) (data.scp) qtype)
+      (Gtype.set_name ~memo:(data.memo.type_names) (data.scp) qtype)
   in
   let set_type_name t =
-    Gtypes.set_name ~memo:(data.memo.type_names) data.scp t
+    Gtype.set_name ~memo:(data.memo.type_names) data.scp t
   in
   let find_ident n =
     let ident_find n s =
@@ -90,7 +90,7 @@ let rec resolve_aux data env expty term =
     let type_find n s = Scope.type_of s n
     in
     Lib.apply_option
-      (fun x -> Some (Gtypes.rename_type_vars x))
+      (fun x -> Some (Gtype.rename_type_vars x))
       (Lib.try_find (memo_find data.memo.types type_find data.scp) n)
       None
   in
@@ -98,7 +98,7 @@ let rec resolve_aux data env expty term =
     let find_fn atyp =
       let (x, xty) = data.lookup n atyp
       in
-      (x, Gtypes.rename_type_vars xty)
+      (x, Gtype.rename_type_vars xty)
     in
     Lib.try_find find_fn ty
   in
@@ -120,7 +120,7 @@ let rec resolve_aux data env expty term =
               try (d_ty, Ltype.unify_env data.scp ty0 d_ty env0)
               with _ -> (d_ty, env0)
          in
-        (Id(n, Gtypes.mgu ty1 env1), ty1, env1)
+        (Id(n, Gtype.mgu ty1 env1), ty1, env1)
     | Free(n, ty) ->
       let nty = set_type_name ty
       in
@@ -129,7 +129,7 @@ let rec resolve_aux data env expty term =
         with _ -> (nty, env)
       in
       let ty1=
-        try Gtypes.mgu ty0 env0
+        try Gtype.mgu ty0 env0
         with _ -> ty0
       in
       begin
@@ -182,20 +182,20 @@ let rec resolve_aux data env expty term =
       in
       (Typed(trm1, nty2), nty2, env2)
     | App(lf, a) ->
-      let argty = Gtypes.mk_typevar data.inf in
-      let rty0 = Gtypes.mk_typevar data.inf in
+      let argty = Gtype.mk_typevar data.inf in
+      let rty0 = Gtype.mk_typevar data.inf in
       let (rty1, env1)=
         try (rty0, Ltype.unify_env data.scp expty rty0 env)
         with _ -> (rty0, env)
       in
       let fty0 = Lterm.mk_fun_ty argty rty1 in
       let (atrm, aty, aenv) =
-        resolve_aux data env1 (Gtypes.mgu argty env1) a
+        resolve_aux data env1 (Gtype.mgu argty env1) a
       in
       let (ftrm, fty, fenv) =
-        resolve_aux data aenv (Gtypes.mgu fty0 aenv) lf
+        resolve_aux data aenv (Gtype.mgu fty0 aenv) lf
       in
-      (App(ftrm, atrm), Gtypes.mgu rty1 fenv, fenv)
+      (App(ftrm, atrm), Gtype.mgu rty1 fenv, fenv)
     | Qnt(qnt, body) ->
       begin
         match Basic.binder_kind qnt with
@@ -203,7 +203,7 @@ let rec resolve_aux data env expty term =
             let qnt1 = binding_set_names qnt in
             let data1 = bind_qnt (Bound(qnt)) (Bound(qnt1)) in
             let aty = Term.get_binder_type (Bound qnt1)
-            and rty = Gtypes.mk_typevar data1.inf
+            and rty = Gtype.mk_typevar data1.inf
             in
             let nty0 = Lterm.mk_fun_ty aty rty in
             let (nty1, env1) =
@@ -258,10 +258,10 @@ let resolve_term scp lookup term =
       lookup = lookup
     }
   in
-  let expty = Gtypes.mk_null()
+  let expty = Gtype.mk_null()
   in
   let (term1, ty1, subst) =
-    resolve_aux data (Gtypes.empty_subst()) expty term
+    resolve_aux data (Gtype.empty_subst()) expty term
   in
   (term1, subst)
 

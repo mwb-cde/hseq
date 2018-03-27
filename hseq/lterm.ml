@@ -43,34 +43,34 @@ let num_ty_id = Ident.mk_long nums_thy "num"
 
 (** The type ind *)
 
-let ind_ty = Gtypes.mk_constr ind_ty_id []
+let ind_ty = Gtype.mk_constr ind_ty_id []
 let mk_ind_ty () = ind_ty
 let is_ind_ty t =
-  let (f, args) = Gtypes.dest_constr t in
+  let (f, args) = Gtype.dest_constr t in
   (f = ind_ty_id) && (args = [])
 
 (** The type nums.num *)
 
-let num_ty = Gtypes.mk_constr num_ty_id []
+let num_ty = Gtype.mk_constr num_ty_id []
 let mk_num_ty () = num_ty
 let is_num_ty t =
-  let (f, args) = Gtypes.dest_constr t in
+  let (f, args) = Gtype.dest_constr t in
   (f = num_ty_id) && (args = [])
 
 (*** Type bool ***)
 
-let bool_ty = Gtypes.mk_constr bool_ty_id []
+let bool_ty = Gtype.mk_constr bool_ty_id []
 let mk_bool_ty () = bool_ty
 let is_bool_ty t =
-  let (f, args) = Gtypes.dest_constr t in
+  let (f, args) = Gtype.dest_constr t in
   (f = bool_ty_id) && (args = [])
 
 (*** Type of functions ***)
 
-let mk_fun_ty l r = Gtypes.mk_constr fun_ty_id [l; r]
+let mk_fun_ty l r = Gtype.mk_constr fun_ty_id [l; r]
 
 let is_fun_ty t =
-  let (f, _) = Gtypes.dest_constr t in
+  let (f, _) = Gtype.dest_constr t in
   f = fun_ty_id
 
 let rec mk_fun_ty_from_list l r =
@@ -82,7 +82,7 @@ let rec mk_fun_ty_from_list l r =
 let dest_fun_ty t =
   if (is_fun_ty t)
   then
-    let (_, args) = Gtypes.dest_constr t in
+    let (_, args) = Gtype.dest_constr t in
     match args with
       | [a1; a2] -> (a1, a2)
       | _ -> raise (Failure "Not function type")
@@ -248,7 +248,7 @@ let alpha_convp_full scp tenv t1 t2 =
   with _ -> raise (term_error "alpha_convp" [t1; t2])
 
 let alpha_convp scp t1 t2 =
-  let tyenv = Gtypes.empty_subst()
+  let tyenv = Gtype.empty_subst()
   in
   alpha_convp_full scp tyenv t1 t2
 
@@ -364,7 +364,7 @@ let eta_conv ts term=
       | [] -> (rslt, env)
       | (x::xss) ->
         let name = Lib.int_to_name ctr in
-        let ty = Gtypes.mk_var (name^"_ty") in
+        let ty = Gtype.mk_var (name^"_ty") in
         let binder = Basic.mk_binding Basic.Lambda name ty in
         let nv = Term.mk_bound binder in
         let env1 = Term.bind x nv env
@@ -396,7 +396,7 @@ let rec is_closed_env env t =
         (is_closed_env env l) && (is_closed_env env r)
     | Basic.Qnt(q, b) ->
       let env1 =
-        bind (Basic.Bound(q)) (mk_free "" (Gtypes.mk_null())) env
+        bind (Basic.Bound(q)) (mk_free "" (Gtype.mk_null())) env
       in
       is_closed_env env1 b
     | Basic.Meta(_) -> true
@@ -410,7 +410,7 @@ let is_closed vs t =
     List.fold_left
       (fun env x ->
         if (is_bound x) || (is_free x)
-        then bind x (mk_free "" (Gtypes.mk_null())) env
+        then bind x (mk_free "" (Gtype.mk_null())) env
         else env)
       (empty_subst()) vs
   in
@@ -452,7 +452,7 @@ let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
   let (nt, env, vars) =  close_aux (empty_subst()) [] trm in
   let make_qnts qnt (env, ctr, bs) t =
     let qname = Lib.int_to_name ctr in
-    let qty = Gtypes.mk_var qname in
+    let qty = Gtype.mk_var qname in
     let qbind = Basic.mk_binding qnt qname qty in
     let qtrm = mk_bound qbind
     in
@@ -596,11 +596,11 @@ let set_names scp trm =
       (ignore(Lib.add n nth id_memo); nth)
   in
   let lookup_type id =
-    try Gtypes.rename_type_vars (Lib.find id type_memo)
+    try Gtype.rename_type_vars (Lib.find id type_memo)
     with Not_found ->
       let nty =
         try Scope.type_of scp id
-        with Not_found -> Gtypes.mk_null()
+        with Not_found -> Gtype.mk_null()
       in
       (ignore(Lib.add id nty type_memo); nty)
   in
@@ -608,7 +608,7 @@ let set_names scp trm =
     try
       let env = Ltype.unify scp ty1 ty2
       in
-      Gtypes.mgu ty1 env
+      Gtype.mgu ty1 env
     with _ -> ty1
   in
   let rec set_aux qnts t=
@@ -685,11 +685,11 @@ let resolve_term scp vars varlist trm =
         (ignore(Lib.add n nth id_memo); nth)
     in
     let lookup_type id =
-      try Gtypes.rename_type_vars (Lib.find id type_memo)
+      try Gtype.rename_type_vars (Lib.find id type_memo)
       with Not_found ->
         let ty =
           try Scope.type_of scp id
-          with Not_found -> Gtypes.mk_null()
+          with Not_found -> Gtype.mk_null()
         in (ignore(Lib.add id ty type_memo); ty)
     in
     let (th, name) = Ident.dest ident
@@ -701,7 +701,7 @@ let resolve_term scp vars varlist trm =
     in
     let ty0 = lookup_type ident in
     let ntyenv = Ltype.unify scp ty0 ty in
-    let nty = Gtypes.mgu ty0 ntyenv
+    let nty = Gtype.mgu ty0 ntyenv
     in
     Id(nid, nty)
   in
@@ -717,7 +717,7 @@ let resolve_term scp vars varlist trm =
             | Free(n, ty) -> mk_bound (mk_binding All n ty)
             | Bound(q) ->
               mk_bound (mk_binding All (binder_name q) (binder_type q))
-            | _ -> mk_bound (mk_binding All "x" (Gtypes.mk_var "ty")))
+            | _ -> mk_bound (mk_binding All "x" (Gtype.mk_var "ty")))
         in
         (nt, bind t nt vars)
   in
@@ -792,7 +792,7 @@ let rec subst_closed qntenv sb trm =
   with Not_found ->
     (match trm with
       | Qnt(q, b) ->
-        let qntenv1 = bind (Bound q) (mk_free "" (Gtypes.mk_null())) qntenv
+        let qntenv1 = bind (Bound q) (mk_free "" (Gtype.mk_null())) qntenv
         in
         Qnt(q, subst_closed qntenv1 sb b)
       | App(f, a) ->

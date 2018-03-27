@@ -22,7 +22,7 @@
 (** Constructing and manipulating logic terms. *)
 
 open Basic
-open Gtypes
+open Gtype
 open Term
 
 (** {5 Theories} *)
@@ -56,48 +56,48 @@ val num_ty_id: Ident.t
 
 (** {7 The type of individuals} *)
 
-val mk_ind_ty: unit -> Gtypes.t
+val mk_ind_ty: unit -> Gtype.t
 (** Make an instance of the type of individuals. *)
 
-val is_ind_ty: Gtypes.t -> bool
+val is_ind_ty: Gtype.t -> bool
 (** Test for an instance of the type of individuals. *)
 
 (** {7 The type of numbers} *)
 
-val mk_num_ty: unit -> Gtypes.t
+val mk_num_ty: unit -> Gtype.t
 (** Make an instance of the type of num. *)
 
-val is_num_ty: Gtypes.t -> bool
+val is_num_ty: Gtype.t -> bool
 (** Test for an instance of the type of num. *)
 
 (** {7 The type of booleans} *)
 
-val mk_bool_ty: unit -> Gtypes.t
+val mk_bool_ty: unit -> Gtype.t
 (** Make an instance of the type of individuals. *)
 
-val is_bool_ty: Gtypes.t -> bool
+val is_bool_ty: Gtype.t -> bool
 (** Test for an instance of the type of individuals. *)
 
 (** {7 Function types} *)
 
-val mk_fun_ty: Gtypes.t -> Gtypes.t -> Gtypes.t
+val mk_fun_ty: Gtype.t -> Gtype.t -> Gtype.t
 (** [mk_fun_ty a b]: Make function type [a->b] *)
 
-val is_fun_ty: Gtypes.t -> bool
+val is_fun_ty: Gtype.t -> bool
 (** Test for a function type *)
 
-val mk_fun_ty_from_list: Gtypes.t list -> Gtypes.t -> Gtypes.t
+val mk_fun_ty_from_list: Gtype.t list -> Gtype.t -> Gtype.t
 (**
     [mk_fun_ty_from_list [a1; a2; ...; an]]: Make type "a1->(a2-> ...
     -> an)"
 *)
 
-val dest_fun_ty: Gtypes.t -> (Gtypes.t * Gtypes.t)
+val dest_fun_ty: Gtype.t -> (Gtype.t * Gtype.t)
 (** Destructor for function types. *)
 
 (** {7 Other types} *)
 
-val typeof_cnst : Basic.const_ty -> Gtypes.t
+val typeof_cnst : Basic.const_ty -> Gtype.t
 (** Get the type of a primitive construct *)
 
 (** {5 Terms} *)
@@ -161,7 +161,7 @@ val mk_all: Scope.t -> string -> term -> term
 (** [mk_all scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_all_ty: Scope.t -> string -> Gtypes.t -> term -> term
+val mk_all_ty: Scope.t -> string -> Gtype.t -> term -> term
 (** [mk_all_ty scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n] with type [ty].
 *)
@@ -170,7 +170,7 @@ val mk_ex: Scope.t -> string -> term -> term
 (** [mk_ex scp n t]: Make an existentially quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_ex_ty: Scope.t -> string -> Gtypes.t -> term -> term
+val mk_ex_ty: Scope.t -> string -> Gtype.t -> term -> term
 (** [mk_ex_ty scp n t]: Make an existentially quantified term from
     [t], binding all free variables named [n] with type [ty].
 *)
@@ -179,7 +179,7 @@ val mk_lam: Scope.t -> string -> term -> term
 (** [mk_lam scp n t]: Make a lambda term from [t], binding all free
     variables named [n].
 *)
-val mk_lam_ty: Scope.t -> string -> Gtypes.t -> term -> term
+val mk_lam_ty: Scope.t -> string -> Gtype.t -> term -> term
 (** [mk_lam_ty scp n t]: Make a lambda term from [t], binding all free
     variables named [n] with type [ty].
 *)
@@ -190,15 +190,15 @@ val mk_lam_ty: Scope.t -> string -> Gtypes.t -> term -> term
 
 val alpha_convp_full:
   Scope.t
-  -> Gtypes.substitution -> term -> term
-  -> Gtypes.substitution
+  -> Gtype.substitution -> term -> term
+  -> Gtype.substitution
 (** Test for alpha-convertiblity of terms w.r.t a type context.
     [alpha_convp_full scp tyenv x y] succeeds, returning an updated
     type context, iff [x] and [y] are equal up to the renaming of
     bound variables.
 *)
 
-val alpha_convp: Scope.t -> term -> term -> Gtypes.substitution
+val alpha_convp: Scope.t -> term -> term -> Gtype.substitution
 (** A top-level for [alpha_convp_full]. *)
 
 val alpha_equals: Scope.t -> term -> term -> bool

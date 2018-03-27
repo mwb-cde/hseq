@@ -125,7 +125,7 @@ val add_type_rec: Logic.Defns.cdefn -> thydb -> thydb
 (** [add_type_rec r db]: Store type record [r] in the current theory.
 *)
 
-val get_type_rec: string -> string -> thydb -> Gtypes.typedef_record
+val get_type_rec: string -> string -> thydb -> Gtype.typedef_record
 (** [get_type_rec th n db]: Get the type definition of type named [n]
     in theory [th]
 *)
@@ -151,14 +151,14 @@ val add_decln:
     the current theory.
 *)
 
-val add_defn_rec: string-> Gtypes.t -> Logic.thm option
+val add_defn_rec: string-> Gtype.t -> Logic.thm option
   -> Theory.property list -> thydb -> thydb
 (** [add_defn_rec n ty th ps db]: Store definition [th] of name [n],
     typed [ty] with properties [ps] in the current theory.
 *)
 
 val add_defn:
-  string -> Gtypes.t -> Logic.thm -> Theory.property list
+  string -> Gtype.t -> Logic.thm -> Theory.property list
   -> thydb -> thydb
 (** [add_defn n ty th ps db]: Store definition [th] of name [n], typed
     [ty] with properties [ps] in the current theory.
@@ -174,12 +174,12 @@ val get_defn: string -> string -> thydb -> Logic.thm
     theory [th].
 *)
 
-val get_id_type: string -> string -> thydb -> Gtypes.t
+val get_id_type: string -> string -> thydb -> Gtype.t
 (** [get_defn n th db]: Get the type of the term named [n] in theory
     [th].
 *)
 
-val get_id_options: string -> thydb -> (Ident.t * Gtypes.t) list
+val get_id_options: string -> thydb -> (Ident.t * Gtype.t) list
 (** [get_id_options n db]: Get list of term identifiers with the name
     [n], together with their types.  The list is in the order of
     appearence in the importing list.

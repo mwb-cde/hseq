@@ -216,7 +216,7 @@ sig
     {
       name: string;            (** Type name *)
       args : string list;      (** Arguments appearing in the definition *)
-      alias: (t)option;        (** The definition = (Gtypes.t)option *)
+      alias: (t)option;        (** The definition = (Gtype.t)option *)
     }
 
   (** Scope for type definitions *)

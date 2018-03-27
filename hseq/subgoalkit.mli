@@ -51,8 +51,8 @@ end
 module Make : functor (T: SQNTS) ->
 sig
   type tag_ty = T.tag_ty
-  type env_ty = (Gtypes.substitution * Changes.t)
-  val mk_env : Gtypes.substitution -> Changes.t -> env_ty
+  type env_ty = (Gtype.substitution * Changes.t)
+  val mk_env : Gtype.substitution -> Changes.t -> env_ty
 
   (** {7 Nodes and branches} *)
 
@@ -64,7 +64,7 @@ sig
 
   val node_tag : node -> tag_ty
   (** The tag of the node. *)
-  val node_tyenv: node -> Gtypes.substitution
+  val node_tyenv: node -> Gtype.substitution
   (** The type environment of the goal. *)
   val node_sqnt: node -> T.sqnt_ty
   (** The subgoal to be proved. *)
@@ -79,7 +79,7 @@ sig
 
   val branch_tag : branch -> tag_ty
   (** The tag of the branch. *)
-  val branch_tyenv: branch -> Gtypes.substitution
+  val branch_tyenv: branch -> Gtype.substitution
   (** The type environment of the branch. *)
   val branch_sqnts: branch -> T.sqnt_ty list
   (** The subgoals of the branch. *)
@@ -94,9 +94,9 @@ sig
   (** {7 Utility functions} *)
 
   val merge_tyenvs:
-    Gtypes.substitution
-    -> Gtypes.substitution
-    -> Gtypes.substitution
+    Gtype.substitution
+    -> Gtype.substitution
+    -> Gtype.substitution
   (** [merge tyenv1 tyenv2]: Merge type environments.
 
       Create a type environment [env3] which has the binding of each weak

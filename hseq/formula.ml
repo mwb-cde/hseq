@@ -68,7 +68,7 @@ let prepare ?(strict=false) scp tyenv trm =
          "Formula.make: Can't make formula, not a closed term" [trm])
   else
     let tyenv1 =
-      try Typing.typecheck_top scp tyenv t1 (Gtypes.mk_null())
+      try Typing.typecheck_top scp tyenv t1 (Gtype.mk_null())
       with x ->
         raise (Report.add_error x
                  (Term.term_error "Formula.make: incorrect types" [t1]))
@@ -87,7 +87,7 @@ let make_full ?(strict=false) scp tyenv t =
 let make ?strict ?tyenv scp t =
   let env =
     match tyenv with
-      | None -> Gtypes.empty_subst()
+      | None -> Gtype.empty_subst()
       | Some(x) -> x
   in
   let (form, _) = make_full ?strict scp env t
@@ -267,11 +267,11 @@ let mk_equality scp a b =
 let typecheck_env scp tenv f expty =
   let t = term_of f
   in
-  Typing.typecheck_top scp (Gtypes.empty_subst()) t expty
+  Typing.typecheck_top scp (Gtype.empty_subst()) t expty
 
 let typecheck scp f expty=
   let t = term_of f in
-  let tyenv = typecheck_env scp (Gtypes.empty_subst()) f expty
+  let tyenv = typecheck_env scp (Gtype.empty_subst()) f expty
   in
   make scp (Term.retype_pretty tyenv t)
 
@@ -285,12 +285,12 @@ let retype scp tenv x = make scp (Term.retype tenv (term_of x))
 let term_retype_with_check scp tyenv t=
   let memo = Lib.empty_env() in
   let mk_new_type ty =
-    let nty = Gtypes.mgu ty tyenv
+    let nty = Gtype.mgu ty tyenv
     in
     if (Ltype.in_scope memo scp nty)
     then nty
     else raise
-      (Gtypes.type_error "Term.retype_with_check: Invalid type" [nty])
+      (Gtype.type_error "Term.retype_with_check: Invalid type" [nty])
   in
   let rec retype_aux t qenv =
     match t with
@@ -337,7 +337,7 @@ let rec is_closed scp env t =
     | Basic.App(l, r) -> is_closed scp env l && is_closed scp env r
     | Basic.Qnt(q, b) ->
       let env1 = (Term.bind (Basic.Bound(q))
-                    (Term.mk_free "" (Gtypes.mk_null())) env)
+                    (Term.mk_free "" (Gtype.mk_null())) env)
       in
       is_closed scp env1 b
     | Basic.Meta (q) -> Scope.is_meta scp q
@@ -356,7 +356,7 @@ let rec subst_closed scp qntenv sb trm =
     (match trm with
       | Basic.Qnt(q, b) ->
           let qntenv1 =
-            Term.bind (Bound q) (Term.mk_free "" (Gtypes.mk_null())) qntenv
+            Term.bind (Bound q) (Term.mk_free "" (Gtype.mk_null())) qntenv
           in
           Basic.Qnt(q, subst_closed scp qntenv1 sb b)
       | Basic.App(f, a) ->
@@ -397,12 +397,12 @@ let inst_env scp env f r =
       in
       let t2 = fast_make scp [f; r] t1
       in
-      typecheck_retype scp env t2 (Gtypes.mk_var "inst_ty")
+      typecheck_retype scp env t2 (Gtype.mk_var "inst_ty")
     with err -> raise (add_error "inst: " [r] err)
   else raise (error "inst: not a quantified formula" [f])
 
 let inst scp t r =
-  let new_term, _ = inst_env scp (Gtypes.empty_subst()) t r
+  let new_term, _ = inst_env scp (Gtype.empty_subst()) t r
   in
   new_term
 
@@ -523,7 +523,7 @@ let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
 
 let rewrite scp ?(dir=Rewrite.leftright) plan f =
   let (new_term, ntyenv) =
-    rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
+    rewrite_env scp ~dir:dir (Gtype.empty_subst()) plan f
   in
   new_term
 

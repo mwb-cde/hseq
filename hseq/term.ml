@@ -68,7 +68,7 @@ let mk_app f a = (App(f, a))
 let mk_const c = (Const c)
 
 let mk_typed_ident n t = (Id(n, t))
-let mk_ident n = mk_typed_ident n (Gtypes.mk_null ())
+let mk_ident n = mk_typed_ident n (Gtype.mk_null ())
 let mk_short_ident n = mk_ident (Ident.mk_name n)
 
 (* Destructors *)
@@ -148,7 +148,7 @@ let rec mk_comb x y =
     | t::ts -> mk_comb (mk_app x t) ts
 
 let mk_fun f args =
-  let f_ty = Gtypes.mk_var ("_"^(Ident.string_of f)^"_ty")
+  let f_ty = Gtype.mk_var ("_"^(Ident.string_of f)^"_ty")
   in
   mk_comb (Id(f, f_ty)) args
 
@@ -234,7 +234,7 @@ let rec compare_term_strict typed t1 t2 =
        in
        match Ident.compare id1 id2 with
        | Order.Equal ->
-          if typed then Gtypes.compare ty1 ty2
+          if typed then Gtype.compare ty1 ty2
           else Order.Equal
        | x -> x
      end
@@ -428,7 +428,7 @@ let get_qnt_body t =
 
 let get_free_binders t =
   let memo = empty_table()
-  and trtrm = mk_free "" (Gtypes.mk_null())
+  and trtrm = mk_free "" (Gtype.mk_null())
   in
   let rec free_aux qnts x =
     match x with
@@ -508,7 +508,7 @@ let print_simple trm =
         Format.printf "@[<2>%s"  (Basic.quant_string (get_binder_kind t));
         Format.printf "(%s:@ %s) :@ "
           (binder_name q)
-          (Gtypes.string_gtype (binder_type q));
+          (Gtype.string_gtype (binder_type q));
         print_aux body;
         Format.printf "@]"
   in
@@ -555,7 +555,7 @@ exception No_quantifier
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
     let qnt, qv, qty = Basic.dest_binding q in
-    let nt, nev = Gtypes.rename_type_vars_env tyenv qty
+    let nt, nev = Gtype.rename_type_vars_env tyenv qty
     in
     (mk_binding qnt qv nt, nev)
   in
@@ -590,7 +590,7 @@ let rename_env typenv trmenv trm =
 *)
 let rename t =
   try
-    let new_term, _, _ = rename_env (Gtypes.empty_subst()) (empty_subst()) t
+    let new_term, _, _ = rename_env (Gtype.empty_subst()) (empty_subst()) t
     in
     new_term
   with No_quantifier -> t
@@ -598,8 +598,8 @@ let rename t =
 (* rename_silent t: silently rename term t *)
 
 let rename_silent env t =
-  try rename_env (Gtypes.empty_subst()) env  t
-  with No_quantifier -> (t, Gtypes.empty_subst(), env)
+  try rename_env (Gtype.empty_subst()) env  t
+  with No_quantifier -> (t, Gtype.empty_subst(), env)
 
 (* [do_rename t]: Get the term of subst_term [t], renaming if
    necessary.
@@ -627,15 +627,15 @@ let replace env x =  do_rename (basic_find x env)
 let retype tyenv t=
   let rec retype_aux t qenv =
     match t with
-      | Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
-      | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv)
+      | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
+      | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
       | Bound(q) ->
         (try table_find t qenv
          with Not_found -> t)
       | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
       | Qnt(q, b) ->
         let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-        let nty = Gtypes.mgu oqty tyenv in
+        let nty = Gtype.mgu oqty tyenv in
         let nq = mk_binding oqnt oqnm nty  in
         let qenv1 = (table_add (Bound(q)) (Bound(nq)) qenv; qenv) in
         let new_term = Qnt(nq, retype_aux b qenv1) in
@@ -655,12 +655,12 @@ let retype_pretty_env typenv trm =
     match t with
       | Id(n, ty) ->
         let (nt, (ctr1, nenv1)) =
-          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
+          Gtype.mgu_rename_env (ctr, typenv) name_env ty
         in
         (Id(n, nt), ctr1, nenv1, qenv)
       | Free(n, ty) ->
         let (nt, (ctr1, nenv1)) =
-          Gtypes.mgu_rename_env (ctr, typenv) name_env ty
+          Gtype.mgu_rename_env (ctr, typenv) name_env ty
         in
         (Free(n, nt), ctr, nenv1, qenv)
       | Meta(q) -> (t, ctr, name_env, qenv)
@@ -670,7 +670,7 @@ let retype_pretty_env typenv trm =
          with Not_found ->
            let (qnt, qnm, qty) = Basic.dest_binding q in
            let (nty, (ctr1, nenv1)) =
-             Gtypes.mgu_rename_env (ctr, typenv) name_env qty
+             Gtype.mgu_rename_env (ctr, typenv) name_env qty
            in
            let nq = mk_binding qnt qnm nty in
            let qenv1 = table_add (Bound q) (Bound nq) qenv; qenv
@@ -684,7 +684,7 @@ let retype_pretty_env typenv trm =
       | Qnt(q, b) ->
         let (oqnt, oqnm, oqty) = Basic.dest_binding q in
         let nty, (ctr1, nenv1) =
-          Gtypes.mgu_rename_env (ctr, typenv) name_env oqty
+          Gtype.mgu_rename_env (ctr, typenv) name_env oqty
         in
         let nq = mk_binding oqnt oqnm nty in
         let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
@@ -695,7 +695,7 @@ let retype_pretty_env typenv trm =
         (new_term, ctr2, nenv2, qenv3)
   in
   let (retyped, _, new_nenv, _) =
-    retype_aux trm 0 (Gtypes.empty_subst()) (empty_table())
+    retype_aux trm 0 (Gtype.empty_subst()) (empty_table())
   in
   (retyped, new_nenv)
 
@@ -712,7 +712,7 @@ let retype_pretty typenv trm =
     in term [t]. *)
 let full_rename_env type_env term_env trm =
   let rename_type tyenv trm =
-    Gtypes.rename_type_vars_env tyenv trm
+    Gtype.rename_type_vars_env tyenv trm
   in
   let rename_binder q tyenv =
     let (qnt, qv, qty) = Basic.dest_binding q in
@@ -760,7 +760,7 @@ let full_rename tyenv trm =
 
 let retype_index idx trm =
   let rename_type ctr tyenv ty =
-    Gtypes.rename_index ctr tyenv ty
+    Gtype.rename_index ctr tyenv ty
   in
   let rename_binder q ctr tyenv =
     let (qnt, qv, qty) = Basic.dest_binding q in
@@ -797,12 +797,12 @@ let retype_index idx trm =
         in
         (App(f1, a1), ctr2, tyenv2)
   in
-  rename_aux trm idx (Gtypes.empty_subst()) (empty_subst())
+  rename_aux trm idx (Gtype.empty_subst()) (empty_subst())
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
     let qnt, qv, qty = Basic.dest_binding q in
-    let nt, nev = Gtypes.rename_type_vars_env tyenv qty
+    let nt, nev = Gtype.rename_type_vars_env tyenv qty
     in
     (mk_binding qnt qv nt, nev)
   in
@@ -921,14 +921,14 @@ let subst_qnt_var scp env trm =
         (try
            let r = Lib.find n env
            in
-           ignore(Gtypes.unify
+           ignore(Gtype.unify
                     (Scope.types_scope scp) ty (get_binder_type r)); r
            with _ -> t)
       | Free(n, ty) ->
         (try
            let r = Lib.find (Ident.mk_name n) env
            in
-           ignore(Gtypes.unify
+           ignore(Gtype.unify
                     (Scope.types_scope scp) ty (get_binder_type r)); r
          with _ -> t)
       | (App(f, a)) -> App(subst_aux f, subst_aux a)
@@ -945,14 +945,14 @@ let mk_typed_qnt_name scp q ty n b =
   Qnt(t, nb)
 
 let mk_qnt_name tyenv q n b =
-  mk_typed_qnt_name tyenv q (Gtypes.mk_null()) n b
+  mk_typed_qnt_name tyenv q (Gtype.mk_null()) n b
 
 (*
  * Debugging and printing
  *)
 
 let string_typed_name n t =
-  ("("^n^": "^(Gtypes.string_gtype t)^")")
+  ("("^n^": "^(Gtype.string_gtype t)^")")
 
 let rec string_term_basic t =
   match t with

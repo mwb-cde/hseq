@@ -206,23 +206,23 @@ val read_unchecked: string -> Basic.term
 
 (** User level parsing of a string as a raw term.. *)
 val read_defn:
-  string -> (((string * Gtypes.t) * Basic.term list) * Basic.term)
+  string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
 (** User level parsing of a string as a term definition. *)
 
-val hdefn: string -> (((string * Gtypes.t) * Basic.term list) * Basic.term)
+val hdefn: string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
 (** [hdefn x] is [read_defn x]. *)
 
-val (?<%): string -> (((string * Gtypes.t) * Basic.term list) * Basic.term)
+val (?<%): string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
 (** [?<% x] is [hdefn x]. *)
 
-val read_type: string -> Gtypes.t
+val read_type: string -> Gtype.t
 (** Parse a string a type, resolving short names and symbols where
     possible.  *)
 
-val htype: string -> Gtypes.t
+val htype: string -> Gtype.t
 (** [htype x] is [read_type x]. *)
 
-val (!:): string -> Gtypes.t
+val (!:): string -> Gtype.t
 (** [!: x] is [htype x]. *)
 
 val read_type_defn : string -> Defn.Parser.typedef
@@ -358,7 +358,7 @@ val typedef:
 val define:
   ?pp:(int*fixity*string option)
   -> ?simp:bool
-  -> (((string * Gtypes.t) * Basic.term list) * Basic.term)
+  -> (((string * Gtype.t) * Basic.term list) * Basic.term)
   -> Logic.Defns.cdefn
 (** [define ?simp term pp]: Define a term.
 
@@ -380,7 +380,7 @@ val define:
 
 val declare:
   ?pp:(int* fixity* string option)
-  -> Basic.term -> (Ident.t * Gtypes.t)
+  -> Basic.term -> (Ident.t * Gtype.t)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -573,7 +573,7 @@ module Display :
 sig
   val print_term: Basic.term -> unit
   val print_formula: Formula.t -> unit
-  val print_type: Gtypes.t -> unit
+  val print_type: Gtype.t -> unit
   val print_theory: Theory.thy -> unit
 
   val print_sqnt: Logic.Sequent.t -> unit
@@ -591,7 +591,7 @@ sig
   val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
   val print_error: Report.error -> unit
   val print_report: int -> exn -> unit
-  val print_type_error: Gtypes.error -> unit
+  val print_type_error: Gtype.error -> unit
 
   val print_simpset: Simpset.simpset -> unit
 end (* Display *)

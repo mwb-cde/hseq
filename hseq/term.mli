@@ -22,7 +22,7 @@
 (** Term representation and basic functions. *)
 
 open Basic
-open Gtypes
+open Gtype
 
 (** {5 Very basic operations} *)
 
@@ -78,10 +78,10 @@ val is_const: term -> bool
 
 val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
-val mk_free: string -> Gtypes.t -> term
+val mk_free: string -> Gtype.t -> term
 val mk_app: term -> term -> term
 val mk_const: Basic.const_ty -> term
-val mk_typed_ident: Ident.t -> Gtypes.t -> term
+val mk_typed_ident: Ident.t -> Gtype.t -> term
 
 val mk_ident: Ident.t -> term
 val mk_short_ident: string -> term
@@ -90,10 +90,10 @@ val mk_short_ident: string -> term
 
 val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
-val dest_free: term -> (string * Gtypes.t)
+val dest_free: term -> (string * Gtype.t)
 val dest_app: term -> (term * term)
 val dest_const: term -> Basic.const_ty
-val dest_ident: term -> (Ident.t * Gtypes.t)
+val dest_ident: term -> (Ident.t * Gtype.t)
 
 (** {6 Specialised Manipulators} *)
 
@@ -103,7 +103,7 @@ val dest_ident: term -> (Ident.t * Gtypes.t)
     variable is treated like a term identifier, not a bound variable.
 *)
 
-val mk_meta: string -> Gtypes.t -> term
+val mk_meta: string -> Gtype.t -> term
 val is_meta: term -> bool
 val dest_meta: term -> binders
 
@@ -173,7 +173,7 @@ val strip_fun_qnt:
 (** {7 Identifier (Id) terms} *)
 
 val get_ident_id: term-> Ident.t
-val get_ident_type: term-> Gtypes.t
+val get_ident_type: term-> Gtype.t
 
 (** {7 Free variables} *)
 
@@ -190,7 +190,7 @@ val get_binder: term -> binders
 
 val get_binder_name: term -> string
 (** [get_binder_name t]: The name of the variable bound in [t]. *)
-val get_binder_type: term -> Gtypes.t
+val get_binder_type: term -> Gtype.t
 (** [get_binder_type t]: The type of the variable bound in [t]. *)
 val get_binder_kind: term -> quant
 (** [get_binder_kind t]: The kind of binder in [t]. *)
@@ -227,14 +227,14 @@ val rename: term -> term
 
 (** {5 Retyping} *)
 
-val retype: Gtypes.substitution -> term -> term
+val retype: Gtype.substitution -> term -> term
 (** [retype tyenv t]: Reset the types in term [t] using type
     substitution [tyenv].  Substitutes variables with their concrete
     type in [tyenv].
 *)
 
 (*
-val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
+val retype_with_check: Scope.t -> Gtype.substitution -> term -> term
 (** [retype_with_check scp tyenv t]: Reset the types in term [t] using
     type substitution [tyenv].  Substitutes variables with their
     concrete type in [tyenv]. Check that the new types are in scope
@@ -243,12 +243,12 @@ val retype_with_check: Scope.t -> Gtypes.substitution -> term -> term
 *)
 
 val retype_pretty_env:
-  Gtypes.substitution -> term -> (term * Gtypes.substitution)
+  Gtype.substitution -> term -> (term * Gtype.substitution)
 (** [retype_pretty]: Like [retype], make substitution for type
     variables but also replace other type variables with new, prettier
     names
 *)
-val retype_pretty: Gtypes.substitution -> term -> term
+val retype_pretty: Gtype.substitution -> term -> term
 (** [retype_pretty_env]: Like [retype_pretty] but also return the
     substitution storing from the bindings/replacements generated
     during retyping.
@@ -256,12 +256,12 @@ val retype_pretty: Gtypes.substitution -> term -> term
 
 (** {5 Combined type/binder renaming} *)
 
-val full_rename: Gtypes.substitution -> term -> (term * Gtypes.substitution)
+val full_rename: Gtype.substitution -> term -> (term * Gtype.substitution)
 (** [full_rename env t]: Rename all type variables and bound variables
     in term [t]. *)
 
 val retype_index:
-  int -> term -> (term * int * Gtypes.substitution)
+  int -> term -> (term * int * Gtype.substitution)
 (** [retype idx t]: Rename all type variables in term [t]. *)
 
 type substitution
@@ -338,7 +338,7 @@ val mk_qnt_name: Scope.t -> Basic.quant -> string -> term -> term
     [qnt], from term [t], binding free variables named [n].
 *)
 val mk_typed_qnt_name:
-  Scope.t -> Basic.quant -> Gtypes.t -> string -> term -> term
+  Scope.t -> Basic.quant -> Gtype.t -> string -> term -> term
 (** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
     kind [qnt], from term [t], binding all free variables named
     [n]. Set the type of the quantifier to [ty].
@@ -346,7 +346,7 @@ val mk_typed_qnt_name:
 
 (**  {5 Conversion of a term to a string} *)
 
-val string_typed_name: string -> Gtypes.t -> string
+val string_typed_name: string -> Gtype.t -> string
 val string_term: term -> string
 val string_inf_term:
   ((Ident.t -> int) * (Ident.t -> bool)) -> term -> string

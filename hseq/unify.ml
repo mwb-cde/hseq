@@ -126,7 +126,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 let unify_env ?typenv scp env varp trm1 trm2 =
   let tye =
     match typenv with
-      | None -> Gtypes.empty_subst()
+      | None -> Gtype.empty_subst()
       | Some x -> x
   in
   let (_, retenv) = unify_fullenv scp tye env varp trm1 trm2
@@ -138,7 +138,7 @@ let unify_env ?typenv scp env varp trm1 trm2 =
 let unify ?typenv ?initial scp varp trm1 trm2 =
   let tye =
     match typenv with
-      | None -> Gtypes.empty_subst()
+      | None -> Gtype.empty_subst()
       | Some x -> x
   and subst =
     match initial with
@@ -155,8 +155,8 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 let retype tyenv t=
   let rec retype_aux qenv t =
     match t with
-      | Id(n, ty) -> Id(n, Gtypes.mgu ty tyenv)
-      | Free(n, ty) -> Free(n, Gtypes.mgu ty tyenv)
+      | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
+      | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
       | Bound( _ ) ->
         (try table_find t qenv
          with Not_found -> t)
@@ -165,7 +165,7 @@ let retype tyenv t=
       | App(f, a) -> App(retype_aux qenv f, retype_aux qenv a)
       | Qnt(q, b) ->
         let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-        let nty = Gtypes.mgu oqty tyenv in
+        let nty = Gtype.mgu oqty tyenv in
         let nq = mk_binding oqnt oqnm nty
         in
         let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
@@ -192,7 +192,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
     in
     if qnt1 = qnt2
     then
-      try (true, Gtypes.matching_env (Scope.types_scope scp) tyenv qty1 qty2)
+      try (true, Gtype.matching_env (Scope.types_scope scp) tyenv qty1 qty2)
       with _ -> (false, tyenv)
     else (false, tyenv)
   in
@@ -223,11 +223,11 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
             raise (term_error "matches_aux: qnt" [t1;t2])
         | (Id(n1, ty1), Id(n2, ty2)) ->
           if n1 = n2
-          then (Gtypes.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
+          then (Gtype.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
           else raise (term_error "matches_aux: var" [t1;t2])
         | (Free(n1, ty1), Free(n2, ty2)) ->
           if n1 = n2
-          then (Gtypes.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
+          then (Gtype.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
           else raise (term_error "matches_aux: var" [t1;t2])
         | (Meta(q1), Meta(q2)) ->
           if binder_equality q1 q2

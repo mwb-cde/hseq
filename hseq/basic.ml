@@ -99,7 +99,7 @@ let quant_string x =
    [binder_equality]: Equality of binders.
 *)
 
-type q_type = {quant: quant; qvar: string; qtyp: Gtypes.t}
+type q_type = {quant: quant; qvar: string; qtyp: Gtype.t}
 type binders = (q_type)Tag.t
 
 (* Binder operations *)
@@ -138,9 +138,9 @@ let binder_lessthan x y = (binder_compare x y) = Order.LessThan
 
 (** The representation of a term *)
 type term =
-  | Id of Ident.t * Gtypes.t
+  | Id of Ident.t * Gtype.t
   | Bound of binders
-  | Free of string * Gtypes.t
+  | Free of string * Gtype.t
   | Meta of binders
   | App of term * term
   | Qnt of binders * term

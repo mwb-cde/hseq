@@ -29,7 +29,7 @@ module Tree = Treekit.StringTree
 
 type id_record =
     {
-      typ: Gtypes.t;
+      typ: Gtype.t;
       def: Logic.thm option;
       dprops: property list
     }
@@ -281,7 +281,7 @@ let get_defn_rec n thy =
   let rcrd = Tree.find (get_defns thy) n
   in
   {
-    typ = Gtypes.rename_type_vars (rcrd.typ);
+    typ = Gtype.rename_type_vars (rcrd.typ);
     def = rcrd.def;
     dprops = rcrd.dprops
   }
@@ -406,7 +406,7 @@ let add_type_ppinfo thy pp =
 
 type id_save_record =
     {
-      sty: Gtypes.stype;
+      sty: Gtype.stype;
       sdef: Logic.saved_thm option;
       sdprops: property list
     }
@@ -418,7 +418,7 @@ let to_save ir =
       | Some(d) -> Some (Logic.to_save d)
   in
   {
-    sty=Gtypes.to_save ir.typ;
+    sty=Gtype.to_save ir.typ;
     sdef = sdef_record;
     sdprops = ir.dprops
   }
@@ -430,7 +430,7 @@ let from_save scp sr =
       | Some(d) -> Some(Logic.from_save scp d)
   in
   {
-    typ=Gtypes.from_save sr.sty;
+    typ=Gtype.from_save sr.sty;
     def = def_record;
     dprops = sr.sdprops
   }
@@ -464,7 +464,7 @@ type saved_thy =
       saxioms: (string * thm_save_record) list;
       stheorems: (string * thm_save_record) list;
       sdefns: (string * id_save_record) list;
-      stypes: (string * Gtypes.stypedef_record) list;
+      stypes: (string * Gtype.stypedef_record) list;
       stype_pps: (string * Printer.record) list;
       sid_pps: (string * (Printer.record * Parser.sym_pos)) list;
       spp_syms: (string * string) list;
@@ -505,7 +505,7 @@ let from_saved scp sthy =
   let name = sthy.sname in
   let thy = mk_thy name (sthy.sparents)
   and tydefs_list =
-    List.map (fun (x, y) -> (x, Gtypes.from_save_rec y)) sthy.stypes
+    List.map (fun (x, y) -> (x, Gtype.from_save_rec y)) sthy.stypes
   in
   let thy_scp =
     let scp1 = new_thy_scope thy scp
@@ -515,7 +515,7 @@ let from_saved scp sthy =
     let scp2 = Scope.extend_with_typedefs scp1 new_tydefs_list in
     let new_defns =
       List.map
-        (fun (id, rd) -> Ident.mk_long name id, Gtypes.from_save rd.sty)
+        (fun (id, rd) -> Ident.mk_long name id, Gtype.from_save rd.sty)
         sthy.sdefns
     in
     Scope.extend_with_terms scp2 new_defns
@@ -559,7 +559,7 @@ let output_theory oc thy =
   let saxs = mk_save thm_to_save (tree_to_list thy.axioms)
   and sthms = mk_save thm_to_save (tree_to_list thy.theorems)
   and sdefs = mk_save to_save (tree_to_list thy.defns)
-  and stypes = mk_save Gtypes.to_save_rec (tree_to_list thy.typs)
+  and stypes = mk_save Gtype.to_save_rec (tree_to_list thy.typs)
   and styp_pps = thy.type_pps
   and sid_pps = thy.id_pps
   and spp_syms = thy.pp_syms

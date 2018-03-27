@@ -135,7 +135,7 @@ struct
   type data =
       (Scope.t                (** Scope *)
        * Term.substitution    (** Quantifier environment *)
-       * Gtypes.substitution) (** Type environment *)
+       * Gtype.substitution) (** Type environment *)
 
   type key = term_key
 
@@ -245,7 +245,7 @@ struct
           let qntenv1 =
             Term.bind
               (Basic.Bound q)
-              (Term.mk_free "" (Gtypes.mk_null()))
+              (Term.mk_free "" (Gtype.mk_null()))
               qntenv
           in
           (scope, qntenv1, tyenv)
@@ -298,7 +298,7 @@ let plan_rewrite_env scp ?(dir=leftright) tyenv plan f =
 
 let plan_rewrite scp ?(dir=leftright) plan f =
   let (nt, ntyenv) =
-    plan_rewrite_env scp ~dir:dir (Gtypes.empty_subst()) plan f
+    plan_rewrite_env scp ~dir:dir (Gtype.empty_subst()) plan f
   in
   nt
 
@@ -424,9 +424,9 @@ struct
       rule_data
       -> Scope.t
       -> control
-      -> Gtypes.substitution
+      -> Gtype.substitution
       -> a_rule list -> Basic.term
-      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
+      -> (Basic.term * Gtype.substitution * (a_rule)plan)
     (** [make_env tyenv rules trm]: Make a rewrite plan for [trm]
         w.r.t type environment [tyenv] using [rules]. Return the new
         term and the type environment contructed during rewriting.  *)
@@ -436,7 +436,7 @@ struct
     type data =
         (Scope.t
          * Term.substitution
-         * Gtypes.substitution)
+         * Gtype.substitution)
 
     type internal_rule =
         (Basic.binders list
@@ -454,7 +454,7 @@ struct
       -> data
       -> internal_rule
       -> Basic.term
-      -> (a_rule * Basic.term * Gtypes.substitution)
+      -> (a_rule * Basic.term * Gtype.substitution)
 
     val match_rr_list:
       control
@@ -462,7 +462,7 @@ struct
       -> internal_rule list
       -> Basic.term
       -> a_rule list
-      -> (Basic.term * Gtypes.substitution
+      -> (Basic.term * Gtype.substitution
           * control * (a_rule)list)
 
     val match_rewrite_list:
@@ -471,7 +471,7 @@ struct
       -> rewrite_net
       -> Basic.term
       -> a_rule list
-      -> (Basic.term * Gtypes.substitution
+      -> (Basic.term * Gtype.substitution
           * control * (a_rule)list)
 
     val check_change : ('a)plan -> unit
@@ -482,7 +482,7 @@ struct
       -> rewrite_net
       -> data
       -> Basic.term
-      -> (Basic.term * Gtypes.substitution
+      -> (Basic.term * Gtype.substitution
           * control * (a_rule)plan)
 
     val make_list_bottomup:
@@ -490,7 +490,7 @@ struct
       -> rewrite_net
       -> data
       -> Basic.term
-      -> (Basic.term * Gtypes.substitution
+      -> (Basic.term * Gtype.substitution
           * control * (a_rule)plan)
 
     val make_rewrites:
@@ -500,10 +500,10 @@ struct
       rule_data
       -> control
       -> Scope.t
-      -> Gtypes.substitution
+      -> Gtype.substitution
       -> a_rule list
       -> Basic.term
-      -> (Basic.term * Gtypes.substitution * (a_rule)plan)
+      -> (Basic.term * Gtype.substitution * (a_rule)plan)
 
   end
 end
@@ -519,7 +519,7 @@ struct
 
   type data = (Scope.t
                * Term.substitution
-               * Gtypes.substitution)
+               * Gtype.substitution)
 
   type internal_rule = (Basic.binders list
                         * Basic.term
@@ -533,7 +533,7 @@ struct
 
   exception No_change
 
-  let null_term = Term.mk_free "" (Gtypes.mk_null())
+  let null_term = Term.mk_free "" (Gtype.mk_null())
 
   (** [match_rewrite scp ctrl tyenv varp lhs rhs order trm]: Match
       [trm] with [lhs].
@@ -783,7 +783,7 @@ struct
 
   let make rule_data scope ctrl rrl trm =
     let (ret, _, plan) =
-      make_env rule_data scope ctrl (Gtypes.empty_subst()) rrl trm
+      make_env rule_data scope ctrl (Gtype.empty_subst()) rrl trm
     in (ret, plan)
 
 end

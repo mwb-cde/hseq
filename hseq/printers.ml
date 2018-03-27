@@ -30,7 +30,7 @@ open Basic
 type ppinfo =
     {
       terms: (ppinfo, (Basic.term * (Basic.term)list))info;
-      types: (ppinfo, (Ident.t * (Gtypes.t)list))info
+      types: (ppinfo, (Ident.t * (Gtype.t)list))info
     }
 
 let mk_ppinfo sz =
@@ -62,7 +62,7 @@ let remove_term_printer info id =
 
 (** Operations involving type identifiers *)
 type gtype_printer =
-  ppinfo -> (fixity * int) -> (Ident.t * (Gtypes.t list)) printer
+  ppinfo -> (fixity * int) -> (Ident.t * (Gtype.t list)) printer
 let get_type_info info x = get_info (info.types) x
 let set_type_info info x = {info with types = x}
 let add_type_info info id prec fixity repr =
@@ -118,13 +118,13 @@ module Types =
     let rec print_type ppstate pr t =
       let rec print_aux ppstate pr x =
         match x with
-        | Gtypes.Atom(Gtypes.Var(_)) ->
-           Format.printf "@[<hov 2>'%s@]" (Gtypes.get_var_name x)
-        | Gtypes.Atom(Gtypes.Weak(_)) ->
-           Format.printf "@[<hov 2>_%s@]" (Gtypes.get_weak_name x)
-        | Gtypes.Atom(Gtypes.Ident(op)) -> print_app ppstate pr (op, [])
-        | Gtypes.App(_) ->
-           let op, args = Gtypes.dest_constr x in
+        | Gtype.Atom(Gtype.Var(_)) ->
+           Format.printf "@[<hov 2>'%s@]" (Gtype.get_var_name x)
+        | Gtype.Atom(Gtype.Weak(_)) ->
+           Format.printf "@[<hov 2>_%s@]" (Gtype.get_weak_name x)
+        | Gtype.Atom(Gtype.Ident(op)) -> print_app ppstate pr (op, [])
+        | Gtype.App(_) ->
+           let op, args = Gtype.dest_constr x in
            print_app ppstate pr (op, args)
       and print_infix (assoc, prec) (nassoc, nprec) (f, args) =
         begin
@@ -217,8 +217,8 @@ let print_type ppinfo ty =
     (Printer.default_type_fixity, Printer.default_type_prec) ty
 
 let print_type_error fmt pinfo err =
-  Format.fprintf fmt "@[%s@ " err.Gtypes.msg;
-  Printer.print_sep_list (print_type pinfo, ",") err.Gtypes.typs;
+  Format.fprintf fmt "@[%s@ " err.Gtype.msg;
+  Printer.print_sep_list (print_type pinfo, ",") err.Gtype.typs;
   Format.fprintf fmt "@]@."
 
 (** {5 Term printers} *)
@@ -238,7 +238,7 @@ module Terms =
     let print_meta qnt =
       let _, qv, qty = dest_binding qnt
       in
-      Format.printf "@[(_%s:@ %s)@]" qv (Gtypes.string_gtype qty)
+      Format.printf "@[(_%s:@ %s)@]" qv (Gtype.string_gtype qty)
 
     let print_typed_obj level printer ppstate prec (obj, ty) =
       if (!Settings.print_type_level > level)
@@ -424,7 +424,7 @@ module Terms =
       Format.open_box 0;
       print_term ppstate
                  (Printer.default_term_fixity, Printer.default_term_prec)
-                 (Term.retype_pretty (Gtypes.empty_subst()) x);
+                 (Term.retype_pretty (Gtype.empty_subst()) x);
       Format.close_box()
 
     let simple_print_fn_app ppstate (assoc, prec) (f, args) =
