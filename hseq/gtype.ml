@@ -214,6 +214,11 @@ let compare = compare_gtype
 
 (* Recognisers *)
 
+let is_atom t =
+  match t with
+  | Atom(_) -> true
+  | _ -> false
+
 let is_var t =
   match t with
   | Atom(Var(_)) -> true
@@ -874,20 +879,16 @@ let lookup_var ty env =
   in chase ty
 
 let occurs atomty ty =
-  let checker t = equals atomty ty
+  let checker t = equals atomty t
   in
-  begin
-  match atomty with
-  | Atom(_) -> not (exists_atom checker ty)
-  | _ -> false
-  end
+  exists_atom checker ty
 
 let rec occurs_env tenv ty1 ty2 =
   let nty1 = lookup_var ty1 tenv
   and nty2 = lookup_var ty2 tenv
   in
   match (nty1, nty2) with
-  | (Atom(_), Atom(_))-> equals nty1 nty2
+  | (Atom(_), Atom(_)) -> equals nty1 nty2
   | (Atom(_), App(l, r)) ->
      (occurs_env tenv nty1 l || occurs_env tenv nty1 r)
   | _ -> raise (type_error ("occurs_env: expected a type variable") [nty1])
@@ -903,7 +904,7 @@ let bind_occs t1 t2 env =
       then bind_var r1 r2 env
       else raise (type_error
                     "bind_occs: variable occurs in binding type"
-                    [t1; t2])
+                    [t1; t2; r1; r2])
     end
   else
     raise (type_error "bind_occs: Can't bind a non variable" [t1; t2])
@@ -946,22 +947,22 @@ let rec unify_aux scp ty1 ty2 env =
     | (Atom(Var(_)), Atom(Var(_))) ->
        if equals s t
        then env
-       else bind_occs s t env
-    | (Atom(Var(_)), _) -> bind_occs s t env
-    | (_, Atom(Var(_))) -> bind_occs t s env
+       else bind_occs_var ty1 s t env
+    | (Atom(Var(_)), _) -> bind_occs_var ty1 s t env
+    | (_, Atom(Var(_))) -> bind_occs_var ty2 t s env
     (* Weak variables, don't bind to variables *)
     | (Atom(Weak(_)), Atom(Weak(_))) ->
        if equals s t
        then env
-       else bind_occs s t env
+       else bind_occs_var ty1 s t env
     | (Atom(Weak(_)), _) ->
        if is_var t
        then raise (type_error "Can't unify types" [s; t])
-       else bind_occs s t env
+       else bind_occs_var ty1 s t env
     | (_, Atom(Weak(_))) ->
        if is_var s
        then raise (type_error "Can't unify types" [s; t])
-       else bind_occs t s env
+       else bind_occs_var ty2 t s env
     | (Atom(Ident(f1)), Atom(Ident(f2))) ->
        if Ident.equals f1 f2
        then env
@@ -998,6 +999,33 @@ and expand_unify scp ty1 ty2 env =
     and t1 = if t = None then ty2 else from_some t
     in
     unify_aux scp s1 t1 env
+and bind_occs_var ty1 s t env0 =
+  (* Short-circuiting bind. Bind [s] to [t] in [env0] Also bind [ty1] so that
+     lookups of [ty1] don't involve long chains *)
+  begin
+    let env1 = bind_occs s t env0 in
+    if equals ty1 s
+    then env1
+    else
+      (* If [t] is not an atom, bind [ty1] to [s] instead. This still cuts the
+         lookup chain but avoids an expensive occurs check *)
+      let b = if is_atom t then t else s in
+      begin
+        assert(is_atom b);
+        assert(not (occurs ty1 b));
+        match (ty1, b) with
+        | (Atom(Var(_)), _) ->
+           if equals ty1 b
+           then env1
+           else bind ty1 b env1
+        | (Atom(Weak(_)), Atom(Var(_))) -> env1
+        | (Atom(Weak(_)), b) ->
+           if equals ty1 b
+           then env1
+           else bind ty1 b env1
+        | _ -> env1
+      end
+  end
 
 let unify_env scp t1 t2 nenv =
   unify_aux scp t1 t2 nenv

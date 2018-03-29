@@ -126,6 +126,7 @@ val equals: t -> t -> bool
 
 (** {7 Recognisers} *)
 
+val is_atom: t -> bool
 val is_var: t -> bool
 val is_weak: t -> bool
 val is_ident: t -> bool
