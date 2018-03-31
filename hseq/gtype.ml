@@ -93,6 +93,30 @@ let rec map_atomtype f ty =
   | Atom(_) -> f ty
   | App(l, r) -> App(map_atomtype f l, map_atomtype f r)
 
+(* [map_up f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   bottom (the atoms) and working up. *)
+let rec map_up f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | App(l, r) ->
+     let l1 = map_up f l
+     and r1 = map_up f r
+     in
+     f (App(l1, r1))
+
+(* [map_td f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   top and working down. *)
+let rec map_down f ty =
+  let ty1 = f ty
+  in
+  match ty1 with
+  | Atom(_) -> ty1
+  | App(l, r) ->
+     let l1 = map_down f l
+     and r1 = map_down f r
+     in
+     App(l1, r1)
+
 (* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
 let rec iter_atomtype f ty =
   match ty with
@@ -103,6 +127,30 @@ let rec iter_atomtype f ty =
        iter_atomtype f r
      end
 
+(* [iter_up f ty] Apply [f] to each subterm in [ty], working from the bottom
+   up. *)
+let rec iter_up f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | App(l, r) ->
+     begin
+       iter_up f l;
+       iter_up f r;
+       f ty
+     end
+
+(* [iter_down f ty] Apply [f] to each subterm in [ty], working from the top
+   down *)
+let rec iter_down f ty =
+  match ty with
+  | Atom(_) -> f ty
+  | App(l, r) ->
+     begin
+       f ty;
+       iter_down f l;
+       iter_down f r;
+     end
+
 (* [fold_atomtype f c ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
 let fold_atomtype f c ty =
@@ -110,6 +158,42 @@ let fold_atomtype f c ty =
     match t with
     | Atom(_) -> fold_cont (f z ty) stck
     | App(l, r) -> fold_aux z l (r::stck)
+  and fold_cont z stck =
+    match stck with
+    | [] -> z
+    | (x::xs) -> fold_aux z x xs
+  in
+  fold_aux c ty []
+
+(* [fold_up f ty] Apply [f] to each subterm in [ty], working from the bottom
+   up. *)
+let rec fold_up f c ty =
+  let rec fold_aux z t stck =
+    match t with
+    | Atom(_) ->
+       let z1 = f z t in
+       fold_cont z1 stck
+    | App(l, r) ->
+       let z1 = fold_aux z l (r::stck) in
+       f z1 t
+  and fold_cont z stck =
+    match stck with
+    | [] -> z
+    | (x::xs) -> fold_aux z x xs
+  in
+  fold_aux c ty []
+
+(* [fold_down f ty] Apply [f] to each subterm in [ty], working from the top
+   down *)
+let rec fold_down f c ty =
+  let rec fold_aux z t stck =
+    match t with
+    | Atom(_) ->
+       let z1 = f z t in
+       fold_cont z1 stck
+    | App(l, r) ->
+       let z1 = f z t in
+       fold_aux z1 l (r::stck)
   and fold_cont z stck =
     match stck with
     | [] -> z
@@ -879,9 +963,10 @@ let lookup_var ty env =
   in chase ty
 
 let occurs atomty ty =
-  let checker t = equals atomty t
+  let checker t =
+    if (is_atom t) then equals atomty t else false
   in
-  exists_atom checker ty
+  exists checker ty
 
 (* Calculate [occurs ty1 (subst ty2 env)] *)
 let rec occurs_env tenv ty1 ty2 =

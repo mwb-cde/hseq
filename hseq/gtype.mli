@@ -96,12 +96,36 @@ val map_atomtype: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
 (* [map_atomtype f ty] Apply [f] to each [Atom] in [ty] returning the resulting
    type. *)
 
+val map_up: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
+(* [map_up f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   bottom (the atoms) and working up. *)
+
+val map_down: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
+(* [map_down f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   top and working down. *)
+
 val iter_atomtype: (('a)pre_typ -> unit) -> ('a)pre_typ -> unit
 (* [iter_atomtype f ty] Apply [f] to each [Atom(x)] in [ty]. *)
+
+val iter_up: (('a)pre_typ -> unit) -> ('a)pre_typ -> unit
+(* [iter_down f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   bottom and working up. *)
+
+val iter_down: (('a)pre_typ -> unit) -> ('a)pre_typ -> unit
+(* [map_down f ty] Apply [f] to each subterm [t] of [ty], starting at the
+   top and working down. *)
 
 val fold_atomtype: ('a -> ('b)pre_typ -> 'a) -> 'a -> ('b)pre_typ -> 'a
 (* [fold_atomtype f z ty] Fold [f] over each [Atom(x)] in [ty] returning the
    result. The fold is top-down, left-to-right *)
+
+val fold_up: ('a -> ('b)pre_typ -> 'a) -> 'a -> ('b)pre_typ -> 'a
+(* [fold_up f ty] Apply [f] to each subterm in [ty], working from the bottom
+   up. ([fold_down] is more efficient) *)
+
+val fold_down: ('a -> ('b)pre_typ -> 'a) -> 'a -> ('b)pre_typ -> 'a
+(* [fold_down f ty] Apply [f] to each subterm in [ty], working from the top
+   down *)
 
 val exists_atomtype: (('a)pre_typ -> bool) -> ('a)pre_typ -> bool
 (* [exists_atomtype p ty] Apply [p] to each [Atom(x)] in [ty], return [true] if
