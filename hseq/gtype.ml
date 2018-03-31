@@ -883,15 +883,15 @@ let occurs atomty ty =
   in
   exists_atom checker ty
 
+(* Calculate [occurs ty1 (subst ty2 env)] *)
 let rec occurs_env tenv ty1 ty2 =
-  let nty1 = lookup_var ty1 tenv
-  and nty2 = lookup_var ty2 tenv
+  let nty2 = lookup_var ty2 tenv
   in
-  match (nty1, nty2) with
-  | (Atom(_), Atom(_)) -> equals nty1 nty2
+  match (ty1, nty2) with
+  | (Atom(_), Atom(_)) -> equals ty1 nty2
   | (Atom(_), App(l, r)) ->
-     (occurs_env tenv nty1 l || occurs_env tenv nty1 r)
-  | _ -> raise (type_error ("occurs_env: expected a type variable") [nty1])
+     (occurs_env tenv ty1 l || occurs_env tenv ty1 r)
+  | _ -> raise (type_error ("occurs_env: expected a type variable") [ty1])
 
 let bind_occs t1 t2 env =
   if is_any_var t1

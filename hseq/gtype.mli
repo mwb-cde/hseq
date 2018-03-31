@@ -435,16 +435,14 @@ val occurs: t -> t -> bool
  *)
 
 (**
-   [occurs_env env t r]: Occurs check w.r.t [env]. Chase [t] in [env]
-   to get [t'], chase [r] in [env] to get [r'].
+   [occurs_env env t r]: Calculate [occurs t (subst r env)]
 
-   @raise [typeError] if [t'] is not atomic or if [t'] occurs in [r'], succeed
-   silently otherwise.
-  *)
+   @raise [typeError] if [t] is not atomic or if [t] occurs in [(subst r env)],
+   succeed silently otherwise.  *)
 
 val bind_occs: t -> t -> substitution -> substitution
 (** [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs
-    in [r].
+    in [subst r env].
 *)
 
 (** {6 Unification functions} *)
