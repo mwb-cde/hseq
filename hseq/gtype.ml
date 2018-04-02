@@ -1201,12 +1201,12 @@ let matching_env scp env t1 t2 =
     | (Atom(Var(_)), _) ->
       if equals s t
       then env
-      else bind_occs s t env
+      else bind_occs_var ty1 s t env
     | (_, Atom(Var(_))) -> env
     | (Atom(Weak(_)), _) ->
       if equals s t
       then env
-      else bind_occs s t env
+      else bind_occs_var ty1 s t env
     | (Atom(Ident(_)), Atom(Ident(_))) ->
       if equals s t
       then env
@@ -1234,7 +1234,7 @@ let matching_env scp env t1 t2 =
     let s = expand ty1
     and t = expand ty2
     in
-    if (s = None) && t = None
+    if s = None && t = None
     then raise (type_error "Can't match types" [ty1; ty2])
     else
     let s1 = if s = None then ty1 else from_some s
@@ -1244,6 +1244,33 @@ let matching_env scp env t1 t2 =
   in
   try match_aux t1 t2 env (* try to match t1 and t2 *)
   with x -> raise (add_type_error "Can't match types" [t1; t2] x)
+and bind_occs_var ty1 s t env0 =
+  (* Short-circuiting bind. Bind [s] to [t] in [env0] Also bind [ty1] so that
+     lookups of [ty1] don't involve long chains *)
+  begin
+    let env1 = bind_occs s t env0 in
+    if equals ty1 s
+    then env1
+    else
+      (* If [t] is not an atom, bind [ty1] to [s] instead. This still cuts the
+         lookup chain but avoids an expensive occurs check *)
+      let b = if is_atom t then t else s in
+      begin
+        assert(is_atom b);
+        assert(not (occurs ty1 b));
+        match (ty1, b) with
+        | (Atom(Var(_)), _) ->
+           if equals ty1 b
+           then env1
+           else bind ty1 b env1
+        | (Atom(Weak(_)), Atom(Var(_))) -> env1
+        | (Atom(Weak(_)), b) ->
+           if equals ty1 b
+           then env1
+           else bind ty1 b env1
+        | _ -> env1
+      end
+  end
 
 let matches_env scp tyenv t1 t2 =
   try matching_env scp tyenv t1 t2
