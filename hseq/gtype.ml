@@ -172,14 +172,13 @@ let rec fold_down f c ty =
 
 let exists p ty =
   let rec exists_aux t stck =
-    if (p ty) then true
+    if p t
+    then true
     else
       begin
         match t with
-        | Atom(_) ->
-           exists_cont stck
-        | App(l, r) ->
-           exists_aux l (r::stck)
+        | Atom(_) -> exists_cont stck
+        | App(l, r) -> exists_aux l (r::stck)
       end
   and exists_cont stck =
     match stck with
@@ -903,27 +902,28 @@ let lookup_var ty env =
   let rec chase t =
     if is_any_var t
     then
-      try chase (lookup t env)
-      with Not_found -> t
+      begin
+        let t1 = try Some(lookup t env) with Not_found -> None
+        in
+        match t1 with
+        | Some(t2) -> chase t2
+        | _ -> t
+      end
     else t
   in chase ty
 
-let occurs atomty ty =
-  let checker t = equals atomty t
+(* Calculate [occurs ty1 (subst ty2 env)] *)
+let rec occurs_env tenv atomty ty =
+  let checker t =
+    let t1 = lookup_var t tenv in
+    equals atomty t1
   in
   if is_atom atomty
   then exists checker ty
-  else raise (Invalid_argument "Gtype.occurs")
+  else raise (type_error "occurs_env: expected a type_variable" [atomty; ty])
 
-(* Calculate [occurs ty1 (subst ty2 env)] *)
-let rec occurs_env tenv ty1 ty2 =
-  let nty2 = lookup_var ty2 tenv
-  in
-  match (ty1, nty2) with
-  | (Atom(_), Atom(_)) -> equals ty1 nty2
-  | (Atom(_), App(l, r)) ->
-     (occurs_env tenv ty1 l || occurs_env tenv ty1 r)
-  | _ -> raise (type_error ("occurs_env: expected a type variable") [ty1])
+let occurs atomty ty =
+  occurs_env (empty_subst()) atomty ty
 
 let bind_occs t1 t2 env =
   if is_any_var t1
