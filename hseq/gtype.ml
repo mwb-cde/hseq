@@ -86,29 +86,15 @@ let split_apptype ty =
   | x::xs -> (x, xs)
   | _ -> raise (Invalid_argument "split_apptype")
 
-(* [map_up f ty] Apply [f] to each subterm [t] of [ty], starting at the
-   bottom (the atoms) and working up. *)
-let rec map_up f ty =
+(* [map f ty] Apply [f] to each subterm [t] of [ty]. *)
+let rec map f ty =
   match ty with
   | Atom(_) -> f ty
   | App(l, r) ->
-     let l1 = map_up f l
-     and r1 = map_up f r
+     let l1 = map f l
+     and r1 = map f r
      in
      f (App(l1, r1))
-
-(* [map_td f ty] Apply [f] to each subterm [t] of [ty], starting at the
-   top and working down. *)
-let rec map_down f ty =
-  let ty1 = f ty
-  in
-  match ty1 with
-  | Atom(_) -> ty1
-  | App(l, r) ->
-     let l1 = map_down f l
-     and r1 = map_down f r
-     in
-     App(l1, r1)
 
 (* [iter_up f ty] Apply [f] to each subterm in [ty], working from the bottom
    up. *)
@@ -685,7 +671,7 @@ let rewrite_subst t env =
        end
     | _ -> ty
   in
-  map_down mapper t
+  map mapper t
 
 let rewrite_defn given_args rcrd_args t =
   if (List.length rcrd_args) = (List.length given_args)

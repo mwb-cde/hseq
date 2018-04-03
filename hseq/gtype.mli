@@ -92,13 +92,8 @@ val flatten_apptype: t -> (t)list
 val split_apptype: t -> (t *(t)list)
 (** Split an application [x a1 .. an] into [(x, [a1; .. an])] *)
 
-val map_up: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
-(* [map_up f ty] Apply [f] to each subterm [t] of [ty], starting at the
-   bottom (the atoms) and working up. *)
-
-val map_down: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
-(* [map_down f ty] Apply [f] to each subterm [t] of [ty], starting at the
-   top and working down. *)
+val map: (('a)pre_typ -> ('a)pre_typ) -> ('a)pre_typ -> ('a)pre_typ
+(* [map f ty] Apply [f] to each subterm [t] of [ty]. *)
 
 val iter_up: (('a)pre_typ -> unit) -> ('a)pre_typ -> unit
 (* [iter_down f ty] Apply [f] to each subterm [t] of [ty], starting at the
