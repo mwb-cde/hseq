@@ -52,8 +52,8 @@ type thy =
       theorems: (thm_record) Tree.t;
       defns: (id_record) Tree.t;
       typs: (Scope.type_record) Tree.t;
-      type_pps: (string * Printer.record) list;
-      id_pps: (string * (Printer.record * Parser.sym_pos)) list;
+      type_pps: (string * Printerkit.record) list;
+      id_pps: (string * (Printerkit.record * Parser.sym_pos)) list;
       pp_syms: (string * string) list;
     }
 
@@ -69,8 +69,8 @@ type contents=
       ctheorems: (string * thm_record) list;
       cdefns: (string * id_record) list;
       ctyps: (string * Scope.type_record) list;
-      ctype_pps: (string * Printer.record) list;
-      cid_pps: (string * (Printer.record * Parser.sym_pos)) list;
+      ctype_pps: (string * Printerkit.record) list;
+      cid_pps: (string * (Printerkit.record * Parser.sym_pos)) list;
       cpp_syms: (string * string) list;
     }
 
@@ -366,7 +366,7 @@ let add_term_ppinfo thy pp =
   in
   List.fold_left
     (fun ppi (i, r) ->
-      (Printer.add_term_record ppi (Ident.mk_long tn i) (fst r)))
+      (Printers.add_term_record ppi (Ident.mk_long tn i) (fst r)))
         pp ppl
 
 let get_type_pp_rec n thy = List.assoc n thy.type_pps
@@ -395,7 +395,7 @@ let add_type_ppinfo thy pp =
   in
   List.fold_left
     (fun ppi (i, r) ->
-      (Printer.add_type_record ppi (Ident.mk_long tn i) r))
+      (Printers.add_type_record ppi (Ident.mk_long tn i) r))
         pp ppl
 
 (*
@@ -465,8 +465,8 @@ type saved_thy =
       stheorems: (string * thm_save_record) list;
       sdefns: (string * id_save_record) list;
       stypes: (string * Gtype.stypedef_record) list;
-      stype_pps: (string * Printer.record) list;
-      sid_pps: (string * (Printer.record * Parser.sym_pos)) list;
+      stype_pps: (string * Printerkit.record) list;
+      sid_pps: (string * (Printerkit.record * Parser.sym_pos)) list;
       spp_syms: (string * string) list;
     }
 
@@ -617,7 +617,7 @@ let print_properties pp ps =
     | [] -> ()
     | _ ->
       Format.printf "@[(";
-      Printer.print_list
+      Printerkit.print_list
         ((fun p -> print_property pp p),
          (fun _ -> Format.printf ",@ ")) ps;
       Format.printf ")@]@,"
@@ -639,7 +639,7 @@ and print_parents ps =
     match ps with
       | [] -> (Format.printf "%s" "None")
       | _ ->
-        Printer.print_list
+        Printerkit.print_list
           ((fun s -> Format.printf "%s" s),
            (fun _ -> Format.printf "@ ")) ps
   end;
@@ -650,9 +650,9 @@ and print_files ps =
       | [] -> ()
       | _ ->
          Format.printf "@[<2>Libraries: ";
-        Printer.print_list
-          ((fun s -> Format.printf "%s" s),
-           (fun _ -> Format.printf "@ ")) ps
+         Printerkit.print_list
+           ((fun s -> Format.printf "%s" s),
+            (fun _ -> Format.printf "@ ")) ps
   end;
   Format.printf "@]"
 and print_thms pp n ths =
@@ -663,7 +663,7 @@ and print_thms pp n ths =
   in
   print_section n;
   Format.printf "@[<v>";
-  Printer.print_list
+  Printerkit.print_list
     ((fun (tn, t) ->
       begin
         Format.printf "@[<2>%s:@ " tn;
@@ -683,7 +683,7 @@ and print_tydefs pp n tys =
   in
   print_section n;
   Format.printf "@[<v>";
-  Printer.print_list
+  Printerkit.print_list
     ((fun (n, tyd) ->
       Format.printf "@[<2>";
       let (_, args, alias) = Scope.dest_type_record tyd in
@@ -693,7 +693,7 @@ and print_tydefs pp n tys =
         else
           begin
             Format.printf "(";
-            Printer.print_list
+            Printerkit.print_list
               ((fun s -> Format.printf "'%s" s),
                (fun _ -> Format.printf ",@ "))
               args;
@@ -721,7 +721,7 @@ and print_defs pp n defs =
   in
   print_section n;
   Format.printf "@[<v>";
-  Printer.print_list
+  Printerkit.print_list
     ((fun (n, d) ->
       Format.printf "@[<2>%s:@ " n;
       print_properties pp d.dprops;
@@ -746,15 +746,15 @@ let print_term_pps n pps =
         Format.printf "@[position=@ Last@]"
       | Lib.Before id ->
         Format.printf "@[position=@ Before@ @[";
-        Printer.print_ident id;
+        Printerkit.print_ident id;
         Format.printf "@]@]@ "
       | Lib.After id ->
         Format.printf "@[position=@ After@ @[";
-        Printer.print_ident id;
+        Printerkit.print_ident id;
         Format.printf "@]@]@ "
       | Lib.Level id ->
         Format.printf "@[position=@ Level@ @[";
-        Printer.print_ident id;
+        Printerkit.print_ident id;
         Format.printf "@]@]@ "
   in
   let sorted_pps =
@@ -764,17 +764,17 @@ let print_term_pps n pps =
   in
   print_section n;
   Format.printf "@[<v>";
-  Printer.print_list
+  Printerkit.print_list
     ((fun (n, (r, p)) ->
       Format.printf "@[<2>%s@ " n;
       begin
-        match (r.Printer.repr) with
+        match (r.Printerkit.repr) with
             None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
-      Format.printf "precedence = %i@ " r.Printer.prec;
+      Format.printf "precedence = %i@ " r.Printerkit.prec;
       Format.printf "fixity = %s@ "
-        (Printer.fixity_to_string r.Printer.fixity);
+        (Printerkit.fixity_to_string r.Printerkit.fixity);
       print_pos p;
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
@@ -788,17 +788,17 @@ let print_type_pps n pps =
   in
   print_section n;
   Format.printf "@[<v>";
-  Printer.print_list
+  Printerkit.print_list
     ((fun (n, r) ->
       Format.printf "@[<2>%s@ " n;
       begin
-        match (r.Printer.repr) with
+        match (r.Printerkit.repr) with
           | None -> ()
           | Some(s) -> Format.printf "\"%s\"@ " s
       end;
-      Format.printf "precedence = %i@ " r.Printer.prec;
+      Format.printf "precedence = %i@ " r.Printerkit.prec;
       Format.printf "fixity = %s@ "
-        (Printer.fixity_to_string r.Printer.fixity);
+        (Printerkit.fixity_to_string r.Printerkit.fixity);
       Format.printf "@]@,"),
      (fun _ -> ())) sorted_pps;
   Format.printf "@]"
@@ -808,7 +808,7 @@ let print_pp_syms n pps =
   begin
     print_section n;
     Format.printf "@[<v>";
-    Printer.print_list (print_sym, (fun _ -> Format.printf "@ ")) pps;
+    Printerkit.print_list (print_sym, (fun _ -> Format.printf "@ ")) pps;
     Format.printf "@]@."
   end
 

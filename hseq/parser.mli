@@ -254,7 +254,7 @@ val remove_overload:
 val mk_info: Table.t -> Grammars.parser_info
 (** Make parser information ([parser_info)] from a table.  *)
 
-val print_overloads: Table.t -> Printer.ppinfo -> unit
+val print_overloads: Table.t -> Printers.ppinfo -> unit
 (** Print the overloads table. *)
 
 

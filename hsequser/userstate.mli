@@ -26,7 +26,7 @@ module Default :
 sig
   val context: unit -> Context.t
   val scope: unit -> Scope.t
-  val printers: unit -> Printer.ppinfo
+  val printers: unit -> Printers.ppinfo
   val parsers: unit -> Parser.Table.t
   val simpset: unit -> Simpset.simpset
   val proofstack: unit -> Goals.ProofStack.t
@@ -57,8 +57,8 @@ sig
   val scope: t -> Scope.t
   val set_scope: t -> Scope.t -> t
 
-  val ppinfo: t -> Printer.ppinfo
-  val set_ppinfo: t -> Printer.ppinfo -> t
+  val ppinfo: t -> Printers.ppinfo
+  val set_ppinfo: t -> Printers.ppinfo -> t
 
   val parsers: t -> Parser.Table.t
   val set_parsers: t -> Parser.Table.t -> t
@@ -92,9 +92,9 @@ val scope: State.t -> Scope.t
 val set_scope: State.t -> Scope.t -> State.t
 (** Set the global scope *)
 
-val ppinfo: State.t -> Printer.ppinfo
+val ppinfo: State.t -> Printers.ppinfo
 (** The global pretty printers *)
-val set_ppinfo: State.t -> Printer.ppinfo -> State.t
+val set_ppinfo: State.t -> Printers.ppinfo -> State.t
 (** Set the global pretty printers *)
 
 val parsers: State.t -> Parser.Table.t

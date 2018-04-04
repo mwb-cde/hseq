@@ -45,7 +45,7 @@ let set_def =
 let empty_def =
   define
   (?<% " (empty:('a)set) = SET(% x: false) ")
-  ~pp:(Printer.default_term_prec, Printer.default_term_fixity, Some "{}");;
+  ~pp:(Printerkit.default_term_prec, Printerkit.default_term_fixity, Some "{}");;
 
 let in_def =
   define

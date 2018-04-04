@@ -214,13 +214,13 @@ val add_context: simpset -> Basic.term -> simpset
 
 (** {5 Printers} *)
 
-val print_rule: Printer.ppinfo -> rule -> unit
+val print_rule: Printers.ppinfo -> rule -> unit
 (** Printer for simp rules. *)
 
-val print_rule_net: Printer.ppinfo -> rule Net.net -> unit
+val print_rule_net: Printers.ppinfo -> rule Net.net -> unit
 (** Printer for rule nets. *)
 
-val print: Printer.ppinfo -> simpset -> unit
+val print: Printers.ppinfo -> simpset -> unit
 (** Printer for simp sets. *)
 
 (** {5 Debugging information} *)

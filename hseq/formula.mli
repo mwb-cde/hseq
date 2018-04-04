@@ -324,7 +324,7 @@ val mk_rewrite_eq:
 
 (** {5 Pretty printing} *)
 
-val print: Printer.ppinfo -> t -> unit
+val print: Printers.ppinfo -> t -> unit
 (** Print a formula in a given PP state *)
 
 val string_form: t -> string

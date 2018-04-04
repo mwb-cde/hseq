@@ -53,9 +53,9 @@ sig
 
       Global printer tables and functions to add, query and remove
       combined printer-parser information.  *)
-  val ppinfo: unit -> Printer.ppinfo
+  val ppinfo: unit -> Printers.ppinfo
   (** The global pretty printers *)
-  val set_ppinfo: Printer.ppinfo -> unit
+  val set_ppinfo: Printers.ppinfo -> unit
   (** Set the global pretty printers *)
 
   val parsers: unit -> Parser.Table.t
@@ -132,7 +132,7 @@ val catch_errors: ('a -> 'b) -> 'a -> 'b
 (** {5 Printing and Parsing} *)
 
 (** Infixes *)
-type fixity = Printer.fixity
+type fixity = Commands.fixity
 (** Fixity of symbols for printers and parsers. *)
 val nonfix: fixity
 (** Non-fix. This is the default *)
@@ -159,14 +159,14 @@ val add_symbol: string -> string -> unit
 val add_term_pp:
   string
   -> ?pos:Parser.sym_pos
-  -> int -> Printer.fixity -> string option -> unit
+  -> int -> fixity -> string option -> unit
 (** [add_term_pp id ?pos prec fixity sym]: Add printer-parser
     information for term identifier [id]. Parser/print term identifier
     [id] as [sym] with precedent [prec] and fixity [fixity].
 *)
 
 val get_term_pp:
-  string -> (int * Printer.fixity * string option)
+  string -> (int * fixity * string option)
 (** [get_term_pp id]: get printer-parser information for term
     identifier [id].
 *)
@@ -177,13 +177,13 @@ val remove_term_pp: string -> unit
 *)
 
 val add_type_pp:
-  string -> int -> Printer.fixity -> string option -> unit
+  string -> int -> fixity -> string option -> unit
 (** [add_type_pp id prec fixity sym]: add printer-parser information
     for term identifier [id]. Parser/print term identifier [id] as
     [sym] with precedent [prec] and fixity [fixity].
 *)
 
-val get_type_pp: string -> (int * Printer.fixity * string option)
+val get_type_pp: string -> (int * fixity * string option)
 (** [get_type_pp id]: get printer-parser information for term
     identifier [id].
 *)

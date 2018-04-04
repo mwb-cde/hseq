@@ -973,6 +973,14 @@ let rec string_term_basic t =
                (Basic.binder_type q))^"): "
       ^(string_term_basic body)
 
+(** Precedence of Quantifiers *)
+let prec_qnt q =
+  match q with
+      Lambda -> 60
+    | All -> 55
+    | Ex -> 55
+    | _ -> 55
+
 let rec string_term_prec i x =
   match x with
     | Id(n, ty) -> (Ident.string_of n)
@@ -982,7 +990,7 @@ let rec string_term_prec i x =
     | Const(c) -> Basic.string_const c
     | Qnt(q, body) ->
       let qnt = Basic.binder_kind q in
-      let ti = Printer.prec_qnt qnt
+      let ti = prec_qnt qnt
       in
       if ti <= i
       then ("("^(quant_string qnt)
@@ -1057,7 +1065,7 @@ let rec string_term_inf inf i x =
                          (Basic.binder_type x)))
             " " qnts)^": "
       in
-      let ti = Printer.prec_qnt qnt
+      let ti = prec_qnt qnt
       in
       if ti < i
       then ("("^qnts_str^(string_term_inf inf ti (b))^")")

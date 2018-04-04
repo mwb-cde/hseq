@@ -354,6 +354,7 @@ val string_identifier: Ident.t -> record -> string
     any.
 *)
 
+(*
 (* Printer constructors *)
 
 val print_string: string printer
@@ -445,4 +446,5 @@ val print_operator:
     appropriate.  Use chosen printer to printer [op] then print
     elements of using [tpr], with seperator printed by [spr] If [trm]
     is empty, just use [opr] to print [op]
+*)
 *)

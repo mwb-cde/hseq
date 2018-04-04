@@ -43,7 +43,7 @@ sig
   val pop : t -> t
 
   (* Printer *)
-  val print: Printer.ppinfo -> t -> unit
+  val print: Printers.ppinfo -> t -> unit
 end
 
 (**
@@ -73,7 +73,7 @@ sig
       is successful.  *)
 
   (* Printer *)
-  val print: Printer.ppinfo -> t -> unit
+  val print: Printers.ppinfo -> t -> unit
 end
 
 (** {7 General operations} *)

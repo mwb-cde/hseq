@@ -28,7 +28,7 @@ open Format
  *)
 
 (** A single error. *)
-type error_printer = Format.formatter -> Printer.ppinfo -> unit
+type error_printer = Format.formatter -> Printers.ppinfo -> unit
 type error =
   {
     printer: error_printer;

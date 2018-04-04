@@ -106,14 +106,14 @@ module Types =
   struct
 
     let pplookup ppstate id =
-      try Printer.get_record (ppstate.Printer.types) id
+      try Printerkit.get_record (ppstate.types) id
       with Not_found ->
-        Printer.mk_record
-          Printer.default_type_prec
-          Printer.default_type_fixity
+        Printerkit.mk_record
+          Printerkit.default_type_prec
+          Printerkit.default_type_fixity
           None
 
-    let print_bracket = Printer.print_assoc_bracket
+    let print_bracket = Printerkit.print_assoc_bracket
 
     let rec print_type ppstate pr t =
       let rec print_aux ppstate pr x =
@@ -132,20 +132,20 @@ module Types =
           | [] ->
              (* Print '(OP)' *)
              Format.printf "@[";
-             Printer.print_identifier (pplookup ppstate) f;
+             Printerkit.print_identifier (pplookup ppstate) f;
              Format.printf "@]"
           | (lf::lr::rs) ->
              (* Print '(<arg> OP <arg>) <rest>' *)
              Format.printf "@[<hov 2>";
              print_bracket (assoc, prec) (nassoc, nprec) "(";
-             print_aux ppstate (Printer.infixl, nprec) lf;
-             Printer.print_space();
-             Printer.print_identifier (pplookup ppstate) f;
-             Printer.print_space();
-             print_aux ppstate (Printer.infixr, nprec) lr;
-             Printer.print_list
+             print_aux ppstate (Printerkit.infixl, nprec) lf;
+             Printerkit.print_space();
+             Printerkit.print_identifier (pplookup ppstate) f;
+             Printerkit.print_space();
+             print_aux ppstate (Printerkit.infixr, nprec) lr;
+             Printerkit.print_list
                (print_type ppstate (nassoc, nprec),
-                Printer.print_space)
+                Printerkit.print_space)
                rs;
              print_bracket (assoc, prec) (nassoc, nprec) ")";
              Format.printf "@]"
@@ -153,12 +153,12 @@ module Types =
              (* Print '(<arg> OP) <rest>' *)
              Format.printf "@[<hov 2>";
              print_bracket (assoc, prec) (nassoc, nprec) "(";
-             print_type ppstate (Printer.infixl, nprec) lf;
-             Printer.print_space();
-             Printer.print_identifier (pplookup ppstate) f;
-             Printer.print_list
+             print_type ppstate (Printerkit.infixl, nprec) lf;
+             Printerkit.print_space();
+             Printerkit.print_identifier (pplookup ppstate) f;
+             Printerkit.print_list
                (print_type ppstate (nassoc, nprec),
-                Printer.print_space)
+                Printerkit.print_space)
                rs;
              print_bracket (assoc, prec) (nassoc, nprec) ")";
              Format.printf "@]"
@@ -167,12 +167,12 @@ module Types =
         begin
           Format.printf "@[<hov 2>";
           print_bracket (assoc, prec) (nassoc, nprec) "(";
-          Printer.print_suffix
-            ((fun pr -> Printer.print_identifier (pplookup ppstate)),
+          Printerkit.print_suffix
+            ((fun pr -> Printerkit.print_identifier (pplookup ppstate)),
              (fun pr l ->
                if l = [] then ()
                else
-                 Printer.print_sep_list
+                 Printerkit.print_sep_list
                    (print_type ppstate (assoc, pr), ",") l))
             nprec (f, args);
           print_bracket (assoc, prec) (nassoc, nprec) ")";
@@ -183,27 +183,27 @@ module Types =
         if args = [] then ()
         else
           begin
-            Printer.print_string "(";
-            Printer.print_sep_list (print_type ppstate (assoc, prec), ",") args;
+            Printerkit.print_string "(";
+            Printerkit.print_sep_list (print_type ppstate (assoc, prec), ",") args;
             Format.printf ")@,"
           end;
-        Printer.print_identifier (pplookup ppstate) f;
+        Printerkit.print_identifier (pplookup ppstate) f;
         Format.printf "@]"
       and print_app ppstate (assoc, prec) (f, args) =
         let pprec = pplookup ppstate f in
-        let nfixity = pprec.Printer.fixity in
-        let (nassoc, nprec) = (nfixity, pprec.Printer.prec)
+        let nfixity = pprec.Printerkit.fixity in
+        let (nassoc, nprec) = (nfixity, pprec.Printerkit.prec)
         in
         let some_printer =
-          Lib.try_find (Printer.get_printer (ppstate.Printer.types)) f
+          Lib.try_find (Printerkit.get_printer (ppstate.types)) f
         in
         if some_printer <> None
         then (Lib.from_some some_printer) ppstate (assoc, prec) (f, args)
         else
-          if Printer.is_infix nfixity
+          if Printerkit.is_infix nfixity
           then print_infix (assoc, prec) (nassoc, nprec) (f, args)
           else
-            if Printer.is_suffix nfixity
+            if Printerkit.is_suffix nfixity
             then print_suffix (assoc, prec) (nassoc, nprec) (f, args)
             else print_prefix (assoc, prec) (nassoc, nprec) (f, args)
       in
@@ -214,25 +214,25 @@ module Types =
 let print_type ppinfo ty =
   Types.print_type
     ppinfo
-    (Printer.default_type_fixity, Printer.default_type_prec) ty
+    (Printerkit.default_type_fixity, Printerkit.default_type_prec) ty
 
 let print_type_error fmt pinfo err =
   Format.fprintf fmt "@[%s@ " err.Gtype.msg;
-  Printer.print_sep_list (print_type pinfo, ",") err.Gtype.typs;
+  Printerkit.print_sep_list (print_type pinfo, ",") err.Gtype.typs;
   Format.fprintf fmt "@]@."
 
 (** {5 Term printers} *)
 
 module Terms =
   struct
-    let print_bracket  = Printer.print_assoc_bracket
+    let print_bracket  = Printerkit.print_assoc_bracket
 
     let pplookup ppstate id =
-      try Printer.get_record ppstate.Printer.terms id
+      try Printerkit.get_record ppstate.terms id
       with Not_found ->
-        Printer.mk_record
-          Printer.default_term_prec
-          Printer.default_term_fixity
+        Printerkit.mk_record
+          Printerkit.default_term_prec
+          Printerkit.default_term_fixity
           None
 
     let print_meta qnt =
@@ -255,30 +255,30 @@ module Terms =
 
     let print_typed_identifier ppstate (id, ty) =
       let printer ppstate _ i =
-        Printer.print_identifier (pplookup ppstate) i
+        Printerkit.print_identifier (pplookup ppstate) i
       in
-      print_typed_obj 3 printer ppstate (Printer.nonfix, 0) (id, ty)
+      print_typed_obj 3 printer ppstate (Printerkit.nonfix, 0) (id, ty)
 
     let print_typed_name ppstate (id, ty) =
       let printer ppstate _ n = Format.print_string n
       in
-      print_typed_obj 2 printer ppstate (Printer.nonfix, 0) (id, ty)
+      print_typed_obj 2 printer ppstate (Printerkit.nonfix, 0) (id, ty)
 
     let print_ident_as_identifier ppstate (f, p) v =
       let (id, ty) = Term.dest_ident v
       in
-      Printer.print_identifier (pplookup ppstate) id
+      Printerkit.print_identifier (pplookup ppstate) id
 
     let print_prefix (opr, tpr) (assoc, prec) (f, args) =
       Format.printf "@[<2>";
       opr (assoc, prec) f;
       Format.printf "@ ";
-      Printer.print_list (tpr (assoc, prec), Printer.print_space) args;
+      Printerkit.print_list (tpr (assoc, prec), Printerkit.print_space) args;
       Format.printf "@]"
 
     let print_suffix (opr, tpr) (assoc, prec) (f, args) =
       Format.printf "@[<2>";
-      Printer.print_list (tpr (assoc, prec), Printer.print_space) args;
+      Printerkit.print_list (tpr (assoc, prec), Printerkit.print_space) args;
       Format.printf "@ ";
       opr (assoc, prec) f;
       Format.printf "@]"
@@ -293,19 +293,19 @@ module Terms =
            Format.printf "@]"
         | l::r::rest ->
            Format.printf "@[<2>";
-           tpr (Printer.infixl, prec) l;
+           tpr (Printerkit.infixl, prec) l;
            Format.printf "@ ";
            opr (assoc, prec) f;
            Format.printf "@ ";
-           tpr (Printer.infixr, prec) r;
-           Printer.print_list (tpr (assoc, prec), Printer.print_space) rest;
+           tpr (Printerkit.infixr, prec) r;
+           Printerkit.print_list (tpr (assoc, prec), Printerkit.print_space) rest;
            Format.printf "@]"
         | l::rest ->
            Format.printf "@[<2>";
-           tpr (Printer.infixl, prec) l;
+           tpr (Printerkit.infixl, prec) l;
            Format.printf "@ ";
            opr (assoc, prec) f;
-           Printer.print_list (tpr (assoc, prec), Printer.print_space) rest;
+           Printerkit.print_list (tpr (assoc, prec), Printerkit.print_space) rest;
            Format.printf "@]"
       end;
       Format.printf "@]"
@@ -313,22 +313,22 @@ module Terms =
     let print_fn_app ppstate (fnpr, argpr) (assoc, prec) (f, args) =
       let (id, ty) = Term.dest_ident f in
       let pprec =
-        try Printer.get_record ppstate.Printer.terms id
+        try Printerkit.get_record ppstate.terms id
         with Not_found ->
-          Printer.mk_record
-            Printer.fun_app_prec
-            Printer.default_term_fixity
+          Printerkit.mk_record
+            fun_app_prec
+            Printerkit.default_term_fixity
             None
       in
-      let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec) in
+      let (nfixity, nprec) = (pprec.Printerkit.fixity, pprec.Printerkit.prec) in
       let user_printer=
-        try Some (Printer.get_printer (ppstate.Printer.terms) id)
+        try Some (Printerkit.get_printer (ppstate.terms) id)
         with Not_found -> None
       and std_printer =
-        if (Printer.is_infix nfixity)
+        if (Printerkit.is_infix nfixity)
         then print_infix (fnpr, argpr)
         else
-          if (Printer.is_suffix nfixity)
+          if (Printerkit.is_suffix nfixity)
           then print_suffix (fnpr, argpr)
           else print_prefix (fnpr, argpr)
       in
@@ -357,14 +357,14 @@ module Terms =
 
     let print_qnts ppstate prec (qnt, qs) =
       Format.printf "@[%s" qnt;
-      Printer.print_list (print_qnt ppstate, Printer.print_space) qs;
+      Printerkit.print_list (print_qnt ppstate, Printerkit.print_space) qs;
       Format.printf":@]"
 
     let rec print_term ppstate (assoc, prec) x =
       match x with
         Id(n, ty) ->
         let user_printer=
-          try Some (Printer.get_printer (ppstate.Printer.terms) n)
+          try Some (Printerkit.get_printer (ppstate.terms) n)
           with Not_found -> None
         in
         (match user_printer with
@@ -394,7 +394,7 @@ module Terms =
          else
            begin
              let (tassoc, tprec) =
-               (Printer.default_term_fixity, Printer.fun_app_prec)
+               (Printerkit.default_term_fixity, fun_app_prec)
              in
              Format.printf "@[<hov 2>";
              print_bracket (assoc, prec) (tassoc, tprec) "(";
@@ -408,13 +408,13 @@ module Terms =
          let (qnt, qvar, qtyp) = Basic.dest_binding q in
          let (qnts, b) = Term.strip_qnt qnt x in
          let (tassoc, tprec) =
-           (Printer.fixity_qnt qnt, Printer.prec_qnt qnt)
+           (fixity_qnt qnt, prec_qnt qnt)
          in
          Format.printf "@[";
          print_bracket (assoc, prec) (tassoc, tprec) "(";
          Format.printf "@[<hov 3>";
          print_qnts ppstate tprec (Basic.quant_string qnt, qnts);
-         Printer.print_space ();
+         Printerkit.print_space ();
          print_term ppstate (tassoc, tprec) b;
          Format.printf "@]";
          print_bracket (assoc, prec) (tassoc, tprec) ")";
@@ -423,24 +423,24 @@ module Terms =
     let print ppstate x =
       Format.open_box 0;
       print_term ppstate
-                 (Printer.default_term_fixity, Printer.default_term_prec)
+                 (Printerkit.default_term_fixity, Printerkit.default_term_prec)
                  (Term.retype_pretty (Gtype.empty_subst()) x);
       Format.close_box()
 
     let simple_print_fn_app ppstate (assoc, prec) (f, args) =
       let (id, _) = Term.dest_ident f in
       let pprec = pplookup ppstate id in
-      let (nfixity, nprec) = (pprec.Printer.fixity, pprec.Printer.prec)
+      let (nfixity, nprec) = (pprec.Printerkit.fixity, pprec.Printerkit.prec)
       in
       let iprint (a, pr) = print_ident_as_identifier ppstate (a, pr)
       and tprint (a, pr) = print_term ppstate (a, pr)
       in
       Format.printf "@[<2>";
       print_bracket (assoc, prec) (nfixity, nprec) "(";
-      if(Printer.is_infix nfixity)
+      if(Printerkit.is_infix nfixity)
       then print_infix (iprint, tprint) (assoc, prec) (f, args)
       else
-        if Printer.is_suffix nfixity
+        if Printerkit.is_suffix nfixity
         then print_suffix (iprint, tprint) (assoc, prec) (f, args)
         else print_prefix (iprint, tprint) (assoc, prec) (f, args);
       print_bracket (assoc, prec) (nfixity, nprec) ")";
@@ -452,7 +452,7 @@ module Terms =
      *)
     let print_qnt_body ppstate (assoc, prec) (qs, body) =
       Format.printf "@[";
-      Printer.print_list (print_qnt ppstate, Printer.print_space) qs;
+      Printerkit.print_list (print_qnt ppstate, Printerkit.print_space) qs;
       Format.printf ":@ ";
       print_term ppstate (assoc, prec) body;
       Format.printf"@]"
@@ -462,13 +462,13 @@ module Terms =
         let (qnts, body) =
           Term.strip_fun_qnt ident (Term.mk_app (Term.mk_ident ident) arg) []
         in
-        Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) "(";
+        Printerkit.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) "(";
         Format.printf "@[<hov 3>";
         print_qnts ppstate (sym_assoc, sym_prec) (sym, qnts);
-        Printer.print_space ();
+        Printerkit.print_space ();
         print_term ppstate (assoc, sym_prec) body;
         Format.printf "@]";
-        Printer.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) ")"
+        Printerkit.print_assoc_bracket (assoc, prec) (sym_assoc, sym_prec) ")"
       in
       let lambda_arg x =
         match x with
@@ -482,8 +482,8 @@ module Terms =
            if(lambda_arg a)
            then print_qnt ppstate prec a
            else simple_print_fn_app ppstate prec (f, args);
-           Printer.print_list
-             (print_term ppstate prec, Printer.print_space) rest;
+           Printerkit.print_list
+             (print_term ppstate prec, Printerkit.print_space) rest;
            Format.printf "@]"
         | _ ->
            Format.printf "@[";
@@ -499,7 +499,7 @@ let print_term = Terms.print
 (** Print a term error *)
 let print_term_error fmt pinfo err =
   Format.fprintf fmt "@[%s@ " err.Term.msg;
-  Printer.print_sep_list (print_term pinfo, ",") err.Term.terms;
+  Printerkit.print_sep_list (print_term pinfo, ",") err.Term.terms;
   Format.fprintf fmt "@]@."
 
 

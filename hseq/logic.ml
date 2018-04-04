@@ -2166,7 +2166,7 @@ struct
   let print_termdefn ppinfo (n, ty, th) =
     Format.printf "@[";
     Format.printf "@[";
-    Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+    Printerkit.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
     Format.printf ":@ ";
     Printers.print_type ppinfo ty;
     Format.printf "@],@ ";
@@ -2175,7 +2175,7 @@ struct
 
   let print_termdecln ppinfo (n, ty) =
     Format.printf "@[";
-    Printer.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
+    Printerkit.print_ident (Ident.mk_long Ident.null_thy (Ident.name_of n));
     Format.printf ":@ ";
     Printers.print_type ppinfo ty;
     Format.printf "@]"

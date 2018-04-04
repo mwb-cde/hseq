@@ -43,7 +43,7 @@ val infixr: fixity
 val infixn: fixity
 (** infix, non-associative *)
 
-val catch_errors: Printer.ppinfo -> ('a -> 'b) -> 'a -> 'b
+val catch_errors: Printers.ppinfo -> ('a -> 'b) -> 'a -> 'b
 (** Error handling. [catch_errors f a] evaluates [(f a)] catching any
     exception [e]. If [e] is {!Report.Error} then it is printed and
     exception [Failure] is raised. If [e] is not {!Report.Error} then
@@ -141,7 +141,7 @@ val remove_file: Context.t -> string -> Context.t
 
 (** {7 Basic PP functions} *)
 
-val add_type_pp_rec: Context.t -> Ident.t -> Printer.record -> Context.t
+val add_type_pp_rec: Context.t -> Ident.t -> Printerkit.record -> Context.t
 (** Add a PP record for a type identifier. Updates Printer and Parser. *)
 val remove_type_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a type identifier. Updates Printer and
@@ -152,7 +152,7 @@ val get_type_pp_rec:
 (** Get the PP record for a type identifier. *)
 
 val add_term_pp_rec:
-  Context.t -> Ident.t -> ?pos:Parser.sym_pos -> Printer.record
+  Context.t -> Ident.t -> ?pos:Parser.sym_pos -> Printerkit.record
   -> Context.t
 (** Add a PP record for a term identifier. Updates Printer and Parser
     tables. (Experimental) Add overloading information to the parser

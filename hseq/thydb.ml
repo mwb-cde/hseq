@@ -29,7 +29,7 @@ exception Importing
 
 let print_db_error s ts fmt pinfo =
   Format.fprintf fmt "@[%s@ @[" s;
-  Printer.print_sep_list (Format.print_string , ",") ts;
+  Printerkit.print_sep_list (Format.print_string , ",") ts;
   Format.fprintf fmt "@]@]"
 
 let error s ts = mk_error (print_db_error s ts)
@@ -88,7 +88,7 @@ struct
 
   let print s =
     Format.printf "@[<2>";
-    Printer.print_sep_list (Format.print_string, ",") (to_list s);
+    Printerkit.print_sep_list (Format.print_string, ",") (to_list s);
     Format.printf "@]";
 end
 
@@ -189,18 +189,18 @@ let get_parents thdb s = Theory.get_parents (get_thy thdb s)
 let print db =
   let table_as_list db0 = Treekit.StringTree.to_list (table db0)
   and print_tbl ths =
-    Printer.print_sep_list
+    Printerkit.print_sep_list
       ((fun (n, _) -> Format.print_string n), ",") ths
   and name = try current_name db with _ -> "(none)"
   in
   Format.printf "@[{@,Current theory: %s;@ " name;
   Format.printf "Importing: @[<2>";
-  Printer.print_sep_list (Format.print_string, ",") (imported db);
+  Printerkit.print_sep_list (Format.print_string, ",") (imported db);
   Format.printf ";@]@ ";
   Format.printf "Table: @[<2>";
   print_tbl (table_as_list db);
   (*
-  Printer.print_sep_list (print_tbl, ",") (table_as_list db);
+  Printerkit.print_sep_list (print_tbl, ",") (table_as_list db);
  *)
   Format.printf ";@]@,}@]"
 

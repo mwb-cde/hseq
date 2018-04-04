@@ -23,25 +23,25 @@
 
 open Basic
 
-val print_term: Printer.ppinfo -> Basic.term -> unit
-val print_formula: Printer.ppinfo -> Formula.t -> unit
-val print_type: Printer.ppinfo -> Gtype.t -> unit
-val print_theory: Printer.ppinfo -> Theory.thy -> unit
+val print_term: Printers.ppinfo -> Basic.term -> unit
+val print_formula: Printers.ppinfo -> Formula.t -> unit
+val print_type: Printers.ppinfo -> Gtype.t -> unit
+val print_theory: Printers.ppinfo -> Theory.thy -> unit
 
-val print_sqnt: Printer.ppinfo -> Logic.Sequent.t -> unit
-val print_node: Printer.ppinfo -> Logic.node -> unit
-val print_branch: Printer.ppinfo -> Logic.branch -> unit
+val print_sqnt: Printers.ppinfo -> Logic.Sequent.t -> unit
+val print_node: Printers.ppinfo -> Logic.node -> unit
+val print_branch: Printers.ppinfo -> Logic.branch -> unit
 
-val print_thm: Printer.ppinfo -> Logic.thm -> unit
-val print_defn: Printer.ppinfo -> Logic.Defns.cdefn -> unit
+val print_thm: Printers.ppinfo -> Logic.thm -> unit
+val print_defn: Printers.ppinfo -> Logic.Defns.cdefn -> unit
 
-val print_prf: Printer.ppinfo -> Goals.Proof.t -> unit
-val print_prfstk: Printer.ppinfo -> Goals.ProofStack.t -> unit
+val print_prf: Printers.ppinfo -> Goals.Proof.t -> unit
+val print_prfstk: Printers.ppinfo -> Goals.ProofStack.t -> unit
 
 val print_fnident: Ident.t -> unit
 
 val print_subst: ('a, 'a)Hashtbl.t -> ('a -> string) -> unit
-val fprint_error: Format.formatter -> Printer.ppinfo -> Report.error -> unit
-val print_error: Printer.ppinfo -> Report.error -> unit
-val print_report: Printer.ppinfo -> int -> exn -> unit
-val print_type_error: Printer.ppinfo -> Gtype.error -> unit
+val fprint_error: Format.formatter -> Printers.ppinfo -> Report.error -> unit
+val print_error: Printers.ppinfo -> Report.error -> unit
+val print_report: Printers.ppinfo -> int -> exn -> unit
+val print_type_error: Printers.ppinfo -> Gtype.error -> unit

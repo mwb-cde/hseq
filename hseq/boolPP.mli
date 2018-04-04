@@ -25,7 +25,7 @@ open Grammars
 open Pkit
 open Lexer
 
-val negation_pprec: Printer.record
+val negation_pprec: Printerkit.record
 (** Printer for negation (base.not). Prints [ << base.not x >> ] as
     [~x] rather than [~ x].
 *)
@@ -34,7 +34,7 @@ val ifthenelse_id: Ident.t
 (** [ifthenelse_id]: Identifier for the conditional.
 *)
 
-val ifthenelse_pprec: Printer.record
+val ifthenelse_pprec: Printerkit.record
 (**
    [ifthenelse_prec]: Precedence/fixity/associativity of the conditional.
 *)
@@ -45,9 +45,9 @@ val ifthenelse_parser: parser_info -> Pterm.t phrase
 *)
 
 val ifthenelse_printer:
-  Printer.ppinfo
-  -> (Printer.fixity * int)
-  -> (Basic.term * Basic.term list) Printer.printer
+  Printers.ppinfo
+  -> (Printerkit.fixity * int)
+  -> (Basic.term * Basic.term list) Printerkit.printer
 (** Printer for the conditional. *)
 
 val choice_ident: Ident.t
@@ -57,7 +57,7 @@ val choice_sym: string
 (** The symbol denoting the choice quantifier ([choice_sym = "@"])
 *)
 
-val choice_pp: Printer.fixity * int
+val choice_pp: Printerkit.fixity * int
 (** Precedence and fixity of the choice operator.
 *)
 
@@ -66,12 +66,12 @@ val choice_parser: parser_info -> Pterm.t phrase
 *)
 
 val choice_printer:
-  Printer.ppinfo
-  -> (Printer.fixity * int)
-  -> (Basic.term * Basic.term list) Printer.printer
+  Printers.ppinfo
+  -> (Printerkit.fixity * int)
+  -> (Basic.term * Basic.term list) Printerkit.printer
 (** Printer for the choice operator. *)
 
-type symbol = (Ident.t * int * Printer.fixity * string option)
+type symbol = (Ident.t * int * Printerkit.fixity * string option)
 
 val basethy_type_symbols: symbol list
 val basethy_term_symbols: symbol list
@@ -79,14 +79,14 @@ val quote_type_symbols: symbol list
 val quote_term_symbols: symbol list
 
 val init_bool_parsers: Parser.Table.t -> Parser.Table.t
-val init_bool_printers: Printer.ppinfo -> Printer.ppinfo
+val init_bool_printers: Printers.ppinfo -> Printers.ppinfo
 val init_bool_ppinfo:
-  Printer.ppinfo -> ((symbol list) * (symbol list)) -> Printer.ppinfo
+  Printers.ppinfo -> ((symbol list) * (symbol list)) -> Printers.ppinfo
 val init_bool_tokens:
   Parser.Table.t -> ((symbol list) * (symbol list)) -> Parser.Table.t
 
 (** {7 Minimal printer and parser information} *)
-val ppinfo: unit -> Printer.ppinfo
+val ppinfo: unit -> Printers.ppinfo
 
 (** {7 OCaml Quotations support} *)
 

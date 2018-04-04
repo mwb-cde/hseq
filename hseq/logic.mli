@@ -184,7 +184,7 @@ val from_save: Scope.t -> saved_thm -> thm
 
 (** {7 Pretty printing} *)
 
-val print_thm: Printer.ppinfo -> thm -> unit
+val print_thm: Printers.ppinfo -> thm -> unit
 (** Pretty printing of a theorem. *)
 
 val string_thm: thm -> string
@@ -1347,22 +1347,22 @@ sig
 
 (** {7 Pretty Printing} *)
 
-  val print_cdefn: Printer.ppinfo -> cdefn -> unit
+  val print_cdefn: Printers.ppinfo -> cdefn -> unit
 (** Print a definition *)
 
 end
 
 (** {5 Pretty Printing} *)
 
-val print_sqnt: Printer.ppinfo -> Sequent.t -> unit
+val print_sqnt: Printers.ppinfo -> Sequent.t -> unit
 (** [print_sqnt ppinfo sq]: Print sequent [sq] using PP info [ppinfo].
 *)
 
-val print_node: Printer.ppinfo -> node -> unit
+val print_node: Printers.ppinfo -> node -> unit
 (** [print_node ppinfo n]: Print node [n] using PP info [ppinfo].
 *)
 
-val print_branch: Printer.ppinfo -> branch -> unit
+val print_branch: Printers.ppinfo -> branch -> unit
 (** [print_branch ppinfo branch]: Print branch [branch] using PP info
     [ppinfo].
 *)

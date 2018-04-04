@@ -59,8 +59,8 @@ let builder ?(save=false) ctxt =
 
     (** Terms *)
     let (ctxt5, _, _) =
-      let prec = BoolPP.negation_pprec.Printer.prec
-      and fixity = BoolPP.negation_pprec.Printer.fixity
+      let prec = BoolPP.negation_pprec.Printerkit.prec
+      and fixity = BoolPP.negation_pprec.Printerkit.fixity
       in
       declare ctxt4
         (read ctxt4
@@ -68,8 +68,8 @@ let builder ?(save=false) ctxt =
         ~pp:(prec, fixity, Some "~")
     in
     let ctxt6 =
-        let prec = BoolPP.negation_pprec.Printer.prec
-        and fixity = BoolPP.negation_pprec.Printer.fixity
+        let prec = BoolPP.negation_pprec.Printerkit.prec
+        and fixity = BoolPP.negation_pprec.Printerkit.fixity
         in
         add_term_pp ctxt5 Lterm.notid prec fixity (Some "not")
     in

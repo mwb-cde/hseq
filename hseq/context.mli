@@ -87,7 +87,7 @@ val empty_thy_t: unit -> thy_t
 (** Pretty printer *)
 type pp_t =
   {
-    pp_info_f: Printer.ppinfo;
+    pp_info_f: Printers.ppinfo;
   }
 
   (** Parsers *)
@@ -226,10 +226,10 @@ val load_functions : t -> (t -> Theory.contents -> t) list
 
 (** {6 Pretty-printer handling} *)
 
-val set_ppinfo : t -> Printer.ppinfo -> t
+val set_ppinfo : t -> Printers.ppinfo -> t
 (** [set_ppinfo n t]: Update the PP data in context [t] to [n]. *)
 
-val ppinfo : t -> Printer.ppinfo
+val ppinfo : t -> Printers.ppinfo
 (** [ppinfo t]: Get the PP data in context [t]. *)
 
 val set_parsers : t-> Parser.Table.t -> t
@@ -345,18 +345,18 @@ sig
   (** Remove a term parser, rasing Not_found if no such parser *)
 
   val get_term_pp: t ->
-    Ident.t -> (int * Printer.fixity * string option)
+    Ident.t -> (int * Printerkit.fixity * string option)
   (** Get PP information for term identifer.  Returns
       [(default_term_prec, default_term_fixity, None)] if not
       found.  *)
 
   val add_term_pp: t ->
-    Ident.t -> int -> Printer.fixity
+    Ident.t -> int -> Printerkit.fixity
     -> string option -> t
   (** Add printer information for term identifer. *)
 
   val add_term_pp_record: t ->
-    Ident.t -> Printer.record -> t
+    Ident.t -> Printerkit.record -> t
   (** Add printer record for term identifer. *)
 
   val remove_term_pp: t -> Ident.t -> t
@@ -377,17 +377,17 @@ sig
   (** Remove a type parser, rasing Not_found if no such parser *)
 
   val get_type_pp:
-    t -> Ident.t -> (int * Printer.fixity * string option)
+    t -> Ident.t -> (int * Printerkit.fixity * string option)
   (** Get PP information for type identifer. *)
 
   val add_type_pp:
     t -> Ident.t
-    -> int -> Printer.fixity -> string option
+    -> int -> Printerkit.fixity -> string option
     -> t
   (** Add PP information for type identifer. *)
 
   val add_type_pp_record:
-    t -> Ident.t -> Printer.record -> t
+    t -> Ident.t -> Printerkit.record -> t
   (** Add PP record for type identifer. *)
 
   val remove_type_pp: t -> Ident.t -> t
@@ -399,11 +399,11 @@ sig
   (** {6 User-defined printers} *)
 
   val get_term_printer:
-    t -> Ident.t -> Printer.term_printer
+    t -> Ident.t -> Printers.term_printer
   (** Get printer for terms. *)
 
   val add_term_printer:
-    t -> Ident.t -> Printer.term_printer -> t
+    t -> Ident.t -> Printers.term_printer -> t
   (** [add_term_printer id p]: Add printer p for terms. The
       printer is keyed by term identifier and triggered on a
       function application (id args) (where args may be an empty
@@ -416,11 +416,11 @@ sig
   (** Remove printer for terms. *)
 
   val get_type_printer:
-    t -> Ident.t -> Printer.gtype_printer
+    t -> Ident.t -> Printers.gtype_printer
   (** Get printer for types *)
 
   val add_type_printer:
-    t -> Ident.t -> Printer.gtype_printer
+    t -> Ident.t -> Printers.gtype_printer
     -> t
   (** [add_type_printer id p]: Add printer p for types. The
       printer is keyed by type identifier and triggered on a

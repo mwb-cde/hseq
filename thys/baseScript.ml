@@ -69,8 +69,8 @@ let _ = typedef <:def<: ind >>;;
    Negation has its own printer [BoolLib.PP.negation_printer]
 *)
 let _ =
-  let prec = BoolPP.negation_pprec.Printer.prec
-  and fixity = BoolPP.negation_pprec.Printer.fixity
+  let prec = BoolPP.negation_pprec.Printerkit.prec
+  and fixity = BoolPP.negation_pprec.Printerkit.fixity
   in
   declare
     (Commands.read_unchecked
@@ -78,8 +78,8 @@ let _ =
     ~pp:(prec, fixity, Some "~");;
 
 let _ =
-  let prec = BoolPP.negation_pprec.Printer.prec
-  and fixity = BoolPP.negation_pprec.Printer.fixity
+  let prec = BoolPP.negation_pprec.Printerkit.prec
+  and fixity = BoolPP.negation_pprec.Printerkit.fixity
   in
   add_term_pp "not" prec fixity (Some "not");;
 

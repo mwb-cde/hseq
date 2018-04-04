@@ -49,7 +49,7 @@ open Simpset
 
 let print_simp_error s ts fmt pinfo =
     Format.fprintf fmt "@[simplifier error:@ %s @;@[" s;
-    Printer.print_sep_list ((Printers.print_term pinfo), ",") ts;
+    Printerkit.print_sep_list ((Printers.print_term pinfo), ",") ts;
     Format.fprintf fmt "@]@]@."
 
 let error s ts = Report.mk_error (print_simp_error s ts)

@@ -33,7 +33,7 @@ let cfun_string c =
     | "equals" -> Format.printf "@[=@ @]"
     | x -> Format.printf "@[%s@ @]" x
 
-let print_fnident x = Printer.print_ident x
+let print_fnident x = Printerkit.print_ident x
 
 let print_term ppinf x =
   open_box 0;

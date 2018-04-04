@@ -93,12 +93,12 @@ let empty_thy_t () =
 (** Printer info *)
 type pp_t =
   {
-    pp_info_f: Printer.ppinfo;
+    pp_info_f: Printers.ppinfo;
   }
 
 let empty_pp_t () =
   {
-    pp_info_f = Printer.empty_ppinfo()
+    pp_info_f = Printers.empty_ppinfo()
   }
 
 (** Parser info *)
@@ -314,12 +314,12 @@ struct
       (Parser.remove_term_parser (parsers ctxt) id)
 
   let get_term_pp ctxt id =
-    Printer.get_term_info (ppinfo ctxt) id
+    Printers.get_term_info (ppinfo ctxt) id
 
   let add_term_pp ctxt id prec fixity repr =
     let ctxt0 =
       set_ppinfo ctxt
-        (Printer.add_term_info (ppinfo ctxt) id prec fixity repr)
+        (Printers.add_term_info (ppinfo ctxt) id prec fixity repr)
     in
     set_parsers ctxt0
       (Parser.add_token (parsers ctxt0) id
@@ -327,18 +327,18 @@ struct
 
   let add_term_pp_record ctxt id rcrd =
     let ctxt0 =
-      set_ppinfo ctxt (Printer.add_term_record (ppinfo ctxt) id rcrd)
+      set_ppinfo ctxt (Printers.add_term_record (ppinfo ctxt) id rcrd)
     in
     set_parsers ctxt0
       (Parser.add_token (parsers ctxt0) id
-         (Lib.from_option rcrd.Printer.repr (Ident.name_of id))
-         (rcrd.Printer.fixity)
-         (rcrd.Printer.prec))
+         (Lib.from_option rcrd.Printerkit.repr (Ident.name_of id))
+         (rcrd.Printerkit.fixity)
+         (rcrd.Printerkit.prec))
 
   let remove_term_pp ctxt id =
     let (_, _, sym) = get_term_pp ctxt id in
     let ctxt0 =
-      set_ppinfo ctxt (Printer.remove_term_info (ppinfo ctxt) id)
+      set_ppinfo ctxt (Printers.remove_term_info (ppinfo ctxt) id)
     in
     set_parsers ctxt0
       (Parser.remove_token (parsers ctxt0)
@@ -355,12 +355,12 @@ struct
       (Parser.remove_type_parser (parsers ctxt) id)
 
   let get_type_pp ctxt id =
-    Printer.get_type_info (ppinfo ctxt) id
+    Printers.get_type_info (ppinfo ctxt) id
 
   let add_type_pp ctxt id prec fixity repr =
     let ctxt0 =
       set_ppinfo ctxt
-        (Printer.add_type_info (ppinfo ctxt) id prec fixity repr)
+        (Printers.add_type_info (ppinfo ctxt) id prec fixity repr)
     in
     set_parsers ctxt0
       (Parser.add_type_token (parsers ctxt0)
@@ -368,18 +368,18 @@ struct
 
   let add_type_pp_record ctxt id rcrd =
     let ctxt0 =
-      set_ppinfo ctxt (Printer.add_type_record (ppinfo ctxt) id rcrd)
+      set_ppinfo ctxt (Printers.add_type_record (ppinfo ctxt) id rcrd)
     in
     set_parsers ctxt0
       (Parser.add_type_token (parsers ctxt0) id
-         (Lib.from_option rcrd.Printer.repr (Ident.name_of id))
-         (rcrd.Printer.fixity)
-         (rcrd.Printer.prec))
+         (Lib.from_option rcrd.Printerkit.repr (Ident.name_of id))
+         (rcrd.Printerkit.fixity)
+         (rcrd.Printerkit.prec))
 
   let remove_type_pp ctxt id =
     let (_, _, sym) = get_type_pp ctxt id in
     let ctxt0 =
-      set_ppinfo ctxt (Printer.remove_type_info (ppinfo ctxt) id)
+      set_ppinfo ctxt (Printers.remove_type_info (ppinfo ctxt) id)
     in
     set_parsers ctxt0
       (Parser.remove_type_token (parsers ctxt0)
@@ -388,24 +388,24 @@ struct
   (*** User-defined printers ***)
 
   let get_term_printer ctxt id =
-    Printer.get_term_printer (ppinfo ctxt) id
+    Printers.get_term_printer (ppinfo ctxt) id
 
   let add_term_printer ctxt id printer =
-    set_ppinfo ctxt (Printer.add_term_printer (ppinfo ctxt) id printer)
+    set_ppinfo ctxt (Printers.add_term_printer (ppinfo ctxt) id printer)
 
   let remove_term_printer ctxt id =
-    set_ppinfo ctxt (Printer.remove_term_printer (ppinfo ctxt) id)
+    set_ppinfo ctxt (Printers.remove_term_printer (ppinfo ctxt) id)
 
   let get_type_printer ctxt id =
-    Printer.get_type_printer (ppinfo ctxt) id
+    Printers.get_type_printer (ppinfo ctxt) id
 
   let add_type_printer ctxt id printer =
     set_ppinfo ctxt
-      (Printer.add_type_printer (ppinfo ctxt) id printer)
+      (Printers.add_type_printer (ppinfo ctxt) id printer)
 
   let remove_type_printer ctxt id =
     set_ppinfo ctxt
-      (Printer.remove_type_printer (ppinfo ctxt) id)
+      (Printers.remove_type_printer (ppinfo ctxt) id)
 
   (** {7 Overloading} *)
 
@@ -431,13 +431,13 @@ struct
 
   let add_id_record ctxt id rcrd =
     let pr, fx, repr =
-      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+      (rcrd.Printerkit.prec, rcrd.Printerkit.fixity, rcrd.Printerkit.repr)
     in
     add_term_pp ctxt id pr fx repr
 
   let add_type_record ctxt id rcrd =
     let pr, fx, repr =
-      (rcrd.Printer.prec, rcrd.Printer.fixity, rcrd.Printer.repr)
+      (rcrd.Printerkit.prec, rcrd.Printerkit.fixity, rcrd.Printerkit.repr)
     in
     add_type_pp ctxt id pr fx repr
 
@@ -447,7 +447,7 @@ struct
     in
     let add_pp ctxt0 (id, (rcrd, pos)) =
       let ctxt1 = add_id_record ctxt0 (Ident.mk_long thy_name id) rcrd in
-      let repr = rcrd.Printer.repr
+      let repr = rcrd.Printerkit.repr
       in
       match repr with
       | None -> ctxt1

@@ -36,7 +36,7 @@ struct
   let scope () = Thydb.mk_scope(Context.thydb(context()))
 
   (* Printer tables *)
-  let printers () = Printer.empty_ppinfo()
+  let printers () = Printers.empty_ppinfo()
 
   (* Parser tables *)
   let parsers () = BoolPP.init_bool_parsers (Parser.init ())

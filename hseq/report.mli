@@ -27,7 +27,7 @@
 *)
 
 (** {6 Exceptions for reporting errors} *)
-type error_printer = Format.formatter -> Printer.ppinfo -> unit
+type error_printer = Format.formatter -> Printers.ppinfo -> unit
 type error =
   {
     printer: error_printer
@@ -43,12 +43,12 @@ exception Errors of errors
 val add_error: exn -> exn -> exn
 (** Add an error to a list of errors. *)
 
-val print_error: Printer.ppinfo -> int -> exn -> unit
+val print_error: Printers.ppinfo -> int -> exn -> unit
 (** [print_error info n err]: Print the first [n] errors from
     exception [err].
 *)
 
-val catch_error: Printer.ppinfo -> int -> ('a -> unit ) -> 'a -> unit
+val catch_error: Printers.ppinfo -> int -> ('a -> unit ) -> 'a -> unit
 (** [catch_error info depth f a]: Apply [f a], catching any error and
     printing it with [print_error].
 *)
