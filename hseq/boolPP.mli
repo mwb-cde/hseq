@@ -25,7 +25,7 @@ open Grammars
 open Pkit
 open Lexer
 
-val negation_pprec: Printerkit.record
+val negation_pprec: Printkit.record
 (** Printer for negation (base.not). Prints [ << base.not x >> ] as
     [~x] rather than [~ x].
 *)
@@ -34,7 +34,7 @@ val ifthenelse_id: Ident.t
 (** [ifthenelse_id]: Identifier for the conditional.
 *)
 
-val ifthenelse_pprec: Printerkit.record
+val ifthenelse_pprec: Printkit.record
 (**
    [ifthenelse_prec]: Precedence/fixity/associativity of the conditional.
 *)
@@ -46,8 +46,8 @@ val ifthenelse_parser: parser_info -> Pterm.t phrase
 
 val ifthenelse_printer:
   Printers.ppinfo
-  -> (Printerkit.fixity * int)
-  -> (Basic.term * Basic.term list) Printerkit.printer
+  -> (Printkit.fixity * int)
+  -> (Basic.term * Basic.term list) Printkit.printer
 (** Printer for the conditional. *)
 
 val choice_ident: Ident.t
@@ -57,7 +57,7 @@ val choice_sym: string
 (** The symbol denoting the choice quantifier ([choice_sym = "@"])
 *)
 
-val choice_pp: Printerkit.fixity * int
+val choice_pp: Printkit.fixity * int
 (** Precedence and fixity of the choice operator.
 *)
 
@@ -67,11 +67,11 @@ val choice_parser: parser_info -> Pterm.t phrase
 
 val choice_printer:
   Printers.ppinfo
-  -> (Printerkit.fixity * int)
-  -> (Basic.term * Basic.term list) Printerkit.printer
+  -> (Printkit.fixity * int)
+  -> (Basic.term * Basic.term list) Printkit.printer
 (** Printer for the choice operator. *)
 
-type symbol = (Ident.t * int * Printerkit.fixity * string option)
+type symbol = (Ident.t * int * Printkit.fixity * string option)
 
 val basethy_type_symbols: symbol list
 val basethy_term_symbols: symbol list

@@ -21,31 +21,31 @@
 
 (*** Printer-Parser for Boolean functions. ***)
 
-type symbol = Ident.t * int * Printerkit.fixity * (string option)
+type symbol = Ident.t * int * Printkit.fixity * (string option)
 
 (** Printer for negation. Prints [ << base.not x >> ] as [~x] rather
     than [~ x].
 *)
-let negation_pprec = Printerkit.mk_record 205 Printerkit.prefix None
+let negation_pprec = Printkit.mk_record 205 Printkit.prefix None
 
-let negation_printer ppstate ((fixity: Printerkit.fixity), prec) (f, args) =
-  let cprec= negation_pprec.Printerkit.prec
-  and fixity = negation_pprec.Printerkit.fixity
+let negation_printer ppstate ((fixity: Printkit.fixity), prec) (f, args) =
+  let cprec= negation_pprec.Printkit.prec
+  and fixity = negation_pprec.Printkit.fixity
   in
   match args with
     | t::rest ->
       Format.printf "@[<2>";
-      Printerkit.print_bracket prec cprec "(";
+      Printkit.print_bracket prec cprec "(";
       Format.printf "~";
       Printers.Terms.print_term ppstate (fixity, cprec) t;
-      Printerkit.print_bracket prec cprec ")";
+      Printkit.print_bracket prec cprec ")";
       Format.printf "@]";
       begin
         match rest with
           | [] -> ()
           | _ ->
             Format.printf "@[";
-            Printerkit.print_list
+            Printkit.print_list
               ((fun x ->
                 Printers.Terms.print_term ppstate (fixity, prec) x),
                (fun () -> Format.printf "@ "))
@@ -86,10 +86,10 @@ let ifthenelse_parser inf =
          | _ -> raise (ParsingError "Error parsing if-then-else")))
 
 let ifthenelse_pprec =
-  let prec=Printerkit.default_term_prec
-  and fixity = Printerkit.default_term_fixity
+  let prec=Printkit.default_term_prec
+  and fixity = Printkit.default_term_fixity
   in
-  Printerkit.mk_record prec fixity None
+  Printkit.mk_record prec fixity None
 
 let init_ifthenelse_parser ppstate =
   let ite_syms =
@@ -109,19 +109,19 @@ let init_ifthenelse_parser ppstate =
 
 (** Printer for if-then-else **)
 let ifthenelse_printer ppstate (fixity, prec) (f, args) =
-  let cfixity = Printerkit.default_term_fixity in
-  let cprec = ifthenelse_pprec.Printerkit.prec in
+  let cfixity = Printkit.default_term_fixity in
+  let cprec = ifthenelse_pprec.Printkit.prec in
   match args with
     | b::tbr::fbr::rest ->
       Format.printf "@[<2>";
-      Printerkit.print_bracket prec cprec "(";
+      Printkit.print_bracket prec cprec "(";
       Format.printf "if@ ";
       Printers.Terms.print_term ppstate (cfixity, cprec) b;
       Format.printf "@ then@ ";
       Printers.Terms.print_term ppstate (cfixity, cprec) tbr;
       Format.printf "@ else@ ";
       Printers.Terms.print_term ppstate (cfixity, cprec) fbr;
-      Printerkit.print_bracket prec cprec  ")";
+      Printkit.print_bracket prec cprec  ")";
       if (prec<cprec) then Format.printf "@ " else ();
       Format.printf "@]";
       begin
@@ -129,7 +129,7 @@ let ifthenelse_printer ppstate (fixity, prec) (f, args) =
           | [] -> ()
           | _ ->
             Format.printf "@[";
-            Printerkit.print_list
+            Printkit.print_list
               ((fun x ->
                 Printers.Terms.print_term ppstate (cfixity, prec) x),
                (fun () -> Format.printf "@ "))
@@ -148,7 +148,7 @@ let init_ifthenelse_printer inf =
 
 let choice_ident = Ident.mk_long Lterm.base_thy "epsilon"
 let choice_sym = "@"
-let choice_pp = (Printerkit.default_term_fixity, Printerkit.default_term_prec)
+let choice_pp = (Printkit.default_term_fixity, Printkit.default_term_prec)
 
 let choice_parser = Grammars.parse_as_binder choice_ident choice_sym
 
@@ -171,7 +171,7 @@ let exists_unique_ident =
   Ident.mk_long Lterm.base_thy "EXISTS_UNIQUE"
 let exists_unique_sym = "?!"
 let exists_unique_pp =
-  (Printerkit.default_term_fixity, Printerkit.default_term_prec)
+  (Printkit.default_term_fixity, Printkit.default_term_prec)
 
 let exists_unique_parser =
   Grammars.parse_as_binder exists_unique_ident exists_unique_sym
@@ -236,23 +236,23 @@ and basethy_term_symbols =
 
 let quote_type_symbols =
   [
-    (Lterm.fun_ty_id, 100, Printerkit.infixr, Some("->"));
+    (Lterm.fun_ty_id, 100, Printkit.infixr, Some("->"));
   ]
 and quote_term_symbols =
   [
-    (Lterm.notid, negation_pprec.Printerkit.prec,
-     negation_pprec.Printerkit.fixity,
+    (Lterm.notid, negation_pprec.Printkit.prec,
+     negation_pprec.Printkit.fixity,
      Some "not");
-    (Lterm.notid, negation_pprec.Printerkit.prec,
-     negation_pprec.Printerkit.fixity,
+    (Lterm.notid, negation_pprec.Printkit.prec,
+     negation_pprec.Printkit.fixity,
      Some "~");
-    (Lterm.equalsid, 200, Printerkit.infixl, (Some "=")) ;
-    (Lterm.andid, 185, Printerkit.infixr, Some "and") ;
-    (Lterm.andid, 185, Printerkit.infixr, Some "&") ;
-    (Lterm.orid, 190, Printerkit.infixr, Some "or") ;
-    (Lterm.orid, 190, Printerkit.infixr, Some "|") ;
-    (Lterm.impliesid, 195, Printerkit.infixr, Some "=>") ;
-    (Lterm.iffid, 180, Printerkit.infixn, Some "iff") ;
+    (Lterm.equalsid, 200, Printkit.infixl, (Some "=")) ;
+    (Lterm.andid, 185, Printkit.infixr, Some "and") ;
+    (Lterm.andid, 185, Printkit.infixr, Some "&") ;
+    (Lterm.orid, 190, Printkit.infixr, Some "or") ;
+    (Lterm.orid, 190, Printkit.infixr, Some "|") ;
+    (Lterm.impliesid, 195, Printkit.infixr, Some "=>") ;
+    (Lterm.iffid, 180, Printkit.infixn, Some "iff") ;
   ]
 
 let init_bool_tokens ptable (tysyms, trmsyms) =

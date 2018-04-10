@@ -306,7 +306,7 @@ let print_overloads tbl info =
     Format.printf "@[<2>%s@ " sym;
     List.iter
       (fun (id, ty) ->
-        Printerkit.print_ident id;
+        Printkit.print_ident id;
         Format.printf ":@ ";
         Printers.print_type info ty;
         Format.printf ";@ ")

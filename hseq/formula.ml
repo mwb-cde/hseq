@@ -37,7 +37,7 @@ let thy_of x = x.thy
 
 let print_form_error s ts fmt pinfo =
     Format.fprintf fmt "@[%s@ @[" s;
-    Printerkit.print_sep_list
+    Printkit.print_sep_list
       ((fun f-> Printers.print_term pinfo (term_of f)), ",") ts;
     Format.fprintf fmt "@]@]"
 

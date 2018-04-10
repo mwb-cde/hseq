@@ -28,18 +28,18 @@ module SetPP =
 
     let set_thy = "Set"
     let set_id = Ident.mk_long set_thy "SET"
-    let set_data = (Printerkit.default_term_fixity,
-                    Printerkit.default_term_prec)
+    let set_data = (Printkit.default_term_fixity,
+                    Printkit.default_term_prec)
     let set_ty ()=
       Gtype.mk_def (Ident.mk_long set_thy "set") [Gtype.mk_null()]
 
     let single_id = Ident.mk_long set_thy "single"
-    let single_data = (Printerkit.default_term_fixity,
-                       Printerkit.default_term_prec)
+    let single_data = (Printkit.default_term_fixity,
+                       Printkit.default_term_prec)
 
     let empty_id = Ident.mk_long set_thy "empty"
-    let empty_data = (Printerkit.default_term_fixity,
-                      Printerkit.default_term_prec)
+    let empty_data = (Printkit.default_term_fixity,
+                      Printkit.default_term_prec)
 
     let add_id = Ident.mk_long set_thy "add"
 
@@ -142,9 +142,9 @@ module SetPP =
             else
               Printers.Terms.simple_print_fn_app
                 ppstate (set_fix, set_prec) (f, args));
-           Printerkit.print_list
+           Printkit.print_list
              (Printers.Terms.print_term ppstate (fixity, prec),
-              Printerkit.print_space)
+              Printkit.print_space)
              rest;
            Format.printf "@]"
          | _ ->
@@ -158,8 +158,8 @@ module SetPP =
     let empty_set_printer ppstate prec (f, args) =
       Format.printf "@[<2>";
       Format.printf "%s%s" ocb_sym ccb_sym;
-      Printerkit.print_list
-        (Printers.Terms.print_term ppstate prec, Printerkit.print_space) args;
+      Printkit.print_list
+        (Printers.Terms.print_term ppstate prec, Printkit.print_space) args;
       Format.printf "@]"
 
     let single_set_printer ppstate prec (f, args) =
@@ -169,9 +169,9 @@ module SetPP =
         Format.printf "%s" ocb_sym;
         Printers.Terms.print_term ppstate prec a;
         Format.printf "%s" ccb_sym;
-        Printerkit.print_list
+        Printkit.print_list
           (Printers.Terms.print_term ppstate prec,
-           Printerkit.print_space)
+           Printkit.print_space)
           rest;
         Format.printf "@]"
       | _ ->

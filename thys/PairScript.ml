@@ -33,7 +33,7 @@ let _ = add_file ~use:true "pairLib.cmo";;
 
 (** [pair_prec] and [pair_fixity] must agree with the values in pairLib.ml. *)
 let pair_prec = 10
-let pair_fixity = Printerkit.infixr
+let pair_fixity = Printkit.infixr
 
 (** {5 Definition and basic properties of pairs} *)
 

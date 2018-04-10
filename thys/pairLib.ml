@@ -44,7 +44,7 @@ struct
   let pair_thy = "Pair"
   let pair_id = Ident.mk_long pair_thy "pair"
   let pair_prec = 10
-  let pair_fixity = Printerkit.infixr
+  let pair_fixity = Printkit.infixr
   let ppdata = (pair_fixity, pair_prec)
 
   let pair_printer ppstate prec (f, args) =
@@ -52,11 +52,11 @@ struct
     | (left::right::rest) ->
        begin
          Format.printf "@[<2>";
-         Printerkit.print_assoc_bracket prec ppdata "(";
+         Printkit.print_assoc_bracket prec ppdata "(";
          Printers.Terms.print_term ppstate ppdata left;
          Format.printf ",@ ";
          Printers.Terms.print_term ppstate ppdata right;
-         Printerkit.print_assoc_bracket prec ppdata  ")";
+         Printkit.print_assoc_bracket prec ppdata  ")";
          Format.printf "@]";
          begin
            match rest with
@@ -64,7 +64,7 @@ struct
            | _ ->
               begin
                 Format.printf "@[";
-                Printerkit.print_list
+                Printkit.print_list
                   (Printers.Terms.print_term ppstate prec,
                    (fun () -> Format.printf "@ "))
                   rest;

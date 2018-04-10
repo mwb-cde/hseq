@@ -212,7 +212,7 @@ let remove_overload ctxt sym id =
 
 (*** Types ***)
 let add_type_pp ctxt id prec fx repr =
-  let rcrd = Printerkit.mk_record prec fx repr
+  let rcrd = Printkit.mk_record prec fx repr
   in
   add_type_pp_rec ctxt id rcrd
 
@@ -222,7 +222,7 @@ let get_type_pp id = get_type_pp_rec id
 (*** Terms ***)
 
 let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
-  let rcrd = Printerkit.mk_record prec fx repr
+  let rcrd = Printkit.mk_record prec fx repr
   in
   let ctxt1 = add_term_pp_rec ctxt id ~pos:pos rcrd
   in

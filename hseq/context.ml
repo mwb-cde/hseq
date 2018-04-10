@@ -331,9 +331,9 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_token (parsers ctxt0) id
-         (Lib.from_option rcrd.Printerkit.repr (Ident.name_of id))
-         (rcrd.Printerkit.fixity)
-         (rcrd.Printerkit.prec))
+         (Lib.from_option rcrd.Printkit.repr (Ident.name_of id))
+         (rcrd.Printkit.fixity)
+         (rcrd.Printkit.prec))
 
   let remove_term_pp ctxt id =
     let (_, _, sym) = get_term_pp ctxt id in
@@ -372,9 +372,9 @@ struct
     in
     set_parsers ctxt0
       (Parser.add_type_token (parsers ctxt0) id
-         (Lib.from_option rcrd.Printerkit.repr (Ident.name_of id))
-         (rcrd.Printerkit.fixity)
-         (rcrd.Printerkit.prec))
+         (Lib.from_option rcrd.Printkit.repr (Ident.name_of id))
+         (rcrd.Printkit.fixity)
+         (rcrd.Printkit.prec))
 
   let remove_type_pp ctxt id =
     let (_, _, sym) = get_type_pp ctxt id in
@@ -431,13 +431,13 @@ struct
 
   let add_id_record ctxt id rcrd =
     let pr, fx, repr =
-      (rcrd.Printerkit.prec, rcrd.Printerkit.fixity, rcrd.Printerkit.repr)
+      (rcrd.Printkit.prec, rcrd.Printkit.fixity, rcrd.Printkit.repr)
     in
     add_term_pp ctxt id pr fx repr
 
   let add_type_record ctxt id rcrd =
     let pr, fx, repr =
-      (rcrd.Printerkit.prec, rcrd.Printerkit.fixity, rcrd.Printerkit.repr)
+      (rcrd.Printkit.prec, rcrd.Printkit.fixity, rcrd.Printkit.repr)
     in
     add_type_pp ctxt id pr fx repr
 
@@ -447,7 +447,7 @@ struct
     in
     let add_pp ctxt0 (id, (rcrd, pos)) =
       let ctxt1 = add_id_record ctxt0 (Ident.mk_long thy_name id) rcrd in
-      let repr = rcrd.Printerkit.repr
+      let repr = rcrd.Printkit.repr
       in
       match repr with
       | None -> ctxt1

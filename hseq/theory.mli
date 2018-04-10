@@ -101,9 +101,9 @@ type contents =
       (** Term definitions and declarations. *)
       ctyps: (string * Gtype.typedef_record) list;
       (** Type definitions and declarations. *)
-      ctype_pps: (string * Printerkit.record) list;
+      ctype_pps: (string * Printkit.record) list;
       (** Type printer and parser information. *)
-      cid_pps: (string * (Printerkit.record * Parser.sym_pos)) list;
+      cid_pps: (string * (Printkit.record * Parser.sym_pos)) list;
       (** Term printer and parser information. *)
       cpp_syms: (string * string) list;
     (** Lexer symbols and their matching token. *)
@@ -200,28 +200,28 @@ val add_decln_rec:
 
 (** {7 Printer-Parser records} *)
 
-val get_term_pp_rec: string  -> thy -> (Printerkit.record * Parser.sym_pos)
+val get_term_pp_rec: string  -> thy -> (Printkit.record * Parser.sym_pos)
 (** Get a term Printer-Parser record to a theory. *)
 val add_term_pp_rec:
   string
-  -> (Printerkit.record * Parser.sym_pos)
+  -> (Printkit.record * Parser.sym_pos)
   -> thy -> thy
 (** Add a term Printer-Parser record to a theory. *)
 val remove_term_pp_rec: string -> thy -> thy
 (** Remove term Printer-Parser record from a theory. *)
 val get_term_pplist:
-  thy -> (Ident.t * (Printerkit.record * Parser.sym_pos)) list
+  thy -> (Ident.t * (Printkit.record * Parser.sym_pos)) list
 (** Get all term Printer-Parser records of a theory. *)
 
-val get_type_pp_rec: string  -> thy -> Printerkit.record
+val get_type_pp_rec: string  -> thy -> Printkit.record
 (** Get a type Printer-Parser record to a theory. *)
 val add_type_pp_rec:
-  string -> Printerkit.record
+  string -> Printkit.record
   -> thy -> thy
 (** Add a type Printer-Parser record to a theory. *)
 val remove_type_pp_rec: string -> thy -> thy
 (** Remove type Printer-Parser record from a theory. *)
-val get_type_pplist: thy -> (Ident.t * Printerkit.record) list
+val get_type_pplist: thy -> (Ident.t * Printkit.record) list
 (** Get all type Printer-Parser records of a theory. *)
 
 val get_symbols: thy -> (string * string) list

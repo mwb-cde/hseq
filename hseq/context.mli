@@ -345,18 +345,18 @@ sig
   (** Remove a term parser, rasing Not_found if no such parser *)
 
   val get_term_pp: t ->
-    Ident.t -> (int * Printerkit.fixity * string option)
+    Ident.t -> (int * Printkit.fixity * string option)
   (** Get PP information for term identifer.  Returns
       [(default_term_prec, default_term_fixity, None)] if not
       found.  *)
 
   val add_term_pp: t ->
-    Ident.t -> int -> Printerkit.fixity
+    Ident.t -> int -> Printkit.fixity
     -> string option -> t
   (** Add printer information for term identifer. *)
 
   val add_term_pp_record: t ->
-    Ident.t -> Printerkit.record -> t
+    Ident.t -> Printkit.record -> t
   (** Add printer record for term identifer. *)
 
   val remove_term_pp: t -> Ident.t -> t
@@ -377,17 +377,17 @@ sig
   (** Remove a type parser, rasing Not_found if no such parser *)
 
   val get_type_pp:
-    t -> Ident.t -> (int * Printerkit.fixity * string option)
+    t -> Ident.t -> (int * Printkit.fixity * string option)
   (** Get PP information for type identifer. *)
 
   val add_type_pp:
     t -> Ident.t
-    -> int -> Printerkit.fixity -> string option
+    -> int -> Printkit.fixity -> string option
     -> t
   (** Add PP information for type identifer. *)
 
   val add_type_pp_record:
-    t -> Ident.t -> Printerkit.record -> t
+    t -> Ident.t -> Printkit.record -> t
   (** Add PP record for type identifer. *)
 
   val remove_type_pp: t -> Ident.t -> t

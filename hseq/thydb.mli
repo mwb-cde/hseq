@@ -230,13 +230,13 @@ val get_lemma: string -> string -> thydb -> Logic.thm
 (** {7 Type Printer-Parser records} *)
 
 val add_type_pp_rec:
-  string -> Printerkit.record -> thydb  -> thydb
+  string -> Printkit.record -> thydb  -> thydb
 (** [add_type_pp_rec n r db]: Add PP record [r] for type identifier
     [n] in the current theory.
 *)
 
 val get_type_pp_rec:
-  string  -> string -> thydb -> Printerkit.record
+  string  -> string -> thydb -> Printkit.record
 (** [get_type_pp_rec th (***
 val state: unit -> State.t
 (** The global state *)
@@ -254,7 +254,7 @@ val remove_type_pp_rec:
 *)
 
 val get_type_pplist:
-  string -> thydb -> (Ident.t * Printerkit.record) list
+  string -> thydb -> (Ident.t * Printkit.record) list
 (** [get_type_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)
@@ -262,13 +262,13 @@ val get_type_pplist:
 (** {7 Term Printer-Parser records} *)
 
 val add_term_pp_rec:
-  string -> (Printerkit.record * Parser.sym_pos) -> thydb  -> thydb
+  string -> (Printkit.record * Parser.sym_pos) -> thydb  -> thydb
 (** [add_term_pp_rec n r db]: Add PP record [r] for term identifier
     [n] in the current theory.
 *)
 
 val get_term_pp_rec:
-  string  -> string -> thydb -> (Printerkit.record * Parser.sym_pos)
+  string  -> string -> thydb -> (Printkit.record * Parser.sym_pos)
 (** [get_term_pp_rec th n db]: Get the PP record [r] for term
     identifier [n] in theory [th].
 *)
@@ -280,7 +280,7 @@ val remove_term_pp_rec: string -> string -> thydb -> thydb
 
 val get_term_pplist:
   string -> thydb
-  -> (Ident.t * (Printerkit.record * Parser.sym_pos)) list
+  -> (Ident.t * (Printkit.record * Parser.sym_pos)) list
 (** [get_term_pplist n db]: Get the list of PP records for identifiers
     with name [n].
 *)

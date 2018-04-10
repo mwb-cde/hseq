@@ -49,7 +49,7 @@ sig
    [set_id] The identifier of the set constructor
 *)
 
-  val set_data:(Printerkit.fixity * int)
+  val set_data:(Printkit.fixity * int)
 (**
    [set_data] The precedence and fixity of the set identifier
 *)
@@ -60,7 +60,7 @@ sig
    [empty_data] PP data for the empty set.
 *)
   val empty_id : Ident.t
-  val empty_data:(Printerkit.fixity* int)
+  val empty_data:(Printkit.fixity* int)
 
   val ocb_sym: string
   val ccb_sym: string
@@ -76,8 +76,8 @@ sig
     (Grammars.parser_info -> Pterm.t Parser.phrase)
   val set_printer :
     unit
-    -> Printers.ppinfo -> (Printerkit.fixity * int)
-    -> (Basic.term * Basic.term list) Printerkit.printer
+    -> Printers.ppinfo -> (Printkit.fixity * int)
+    -> (Basic.term * Basic.term list) Printkit.printer
 
   val init_set_parser : unit -> unit
   val init_set_printer : unit -> unit
