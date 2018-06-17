@@ -57,21 +57,21 @@ let mk_decln scp name ty =
 let rec mk_var_ty_list ls =
   match ls with
     | [] -> []
-    | (Basic.Id(n, ty)::ts) -> ((n, ty)::(mk_var_ty_list ts))
+    | (Atom(Id(n, ty))::ts) -> ((n, ty)::(mk_var_ty_list ts))
     | _ -> raise (Term.term_error "Non-variables not allowed" ls)
 
 let rec mk_all_from_list scp b qnts =
   match qnts with
     | [] -> b
-    | (Basic.Bound(q)::qs) ->
+    | (Atom(Bound(q))::qs) ->
       if (Basic.binder_kind q) = Basic.All
       then mk_all_from_list scp (Term.mk_qnt q b) qs
       else
         raise (Term.term_error
                  "Invalid argument: wrong quantifier in argument"
                  qnts)
-    | (Basic.Id(n, ty)::qs) ->
-      raise (Term.term_error "mk_all_from_list, got a Basic.Id" qnts)
+    | (Atom(Id(n, ty))::qs) ->
+      raise (Term.term_error "mk_all_from_list, unexpected Basic.Id" qnts)
     | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
 let mk_defn scp (name, namety) args rhs =

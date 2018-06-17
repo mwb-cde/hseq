@@ -127,12 +127,18 @@ let binder_compare x y =
 let binder_greaterthan x y = (binder_compare x y) = Order.GreaterThan
 let binder_lessthan x y = (binder_compare x y) = Order.LessThan
 
+
 (** The representation of a term *)
-type term =
+
+(** Atomic terms *)
+type baseterm =
   | Id of Ident.t * Gtype.t
   | Bound of binders
   | Free of string * Gtype.t
   | Meta of binders
+  | Const of const_ty
+
+type term =
+  | Atom of baseterm
   | App of term * term
   | Qnt of binders * term
-  | Const of const_ty

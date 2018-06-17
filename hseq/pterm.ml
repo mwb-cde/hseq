@@ -272,32 +272,37 @@ struct
             let (ty0, env0) = (nty, unify_types expty nty env data)
             in
             let (ty1, env1) =
-              match id_ty with
-                | None -> (ty0, env0)
-                | Some(d_ty) -> (d_ty, unify_types ty0 d_ty env0 data)
+              if id_ty = None
+              then (ty0, env0)
+              else
+                let d_ty = Lib.from_some id_ty in
+                (d_ty, unify_types ty0 d_ty env0 data)
             in
-            (Id(n, Gtype.mgu ty1 env1), ty1, env1, data)
+            (Term.mk_typed_ident n (Gtype.mgu ty1 env1), ty1, env1, data)
       | PFree(n, ty) ->
         let nty = set_type_name ty data in
         let (ty0, env0) = (nty, unify_types expty nty env data ) in
-        let ty1=
+        let ty1 =
           try Gtype.mgu ty0 env0
           with _ -> ty0
         in
         begin
-          match (find_sym n ty1 data) with
-            | None ->
+          let id2_opt = find_sym n ty1 data in
+          if id2_opt = None
+          then
               begin
-                match (find_ident n data) with
-                  | None -> (Free(n, ty1), ty1, env0, data)
-                  | Some(id3) ->
-                    resolve_aux data env0 ty1 (PId(id3, ty1))
+                let id3_opt = find_ident n data in
+                if id3_opt = None
+                then (Term.mk_free n ty1, ty1, env0, data)
+                else
+                  resolve_aux data env0 ty1 (PId(Lib.from_some id3_opt, ty1))
               end
-            | Some(id2, ty2) ->
-              resolve_aux data env0 ty1 (PId(id2, ty2))
+          else
+            let (id2, ty2) = Lib.from_some id2_opt in
+            resolve_aux data env0 ty1 (PId(id2, ty2))
         end
       | PBound(q) ->
-        let term0 = Bound(q) in
+        let term0 = Term.mk_bound(q) in
         let term1 =
           try Term.find term0 data.qnts
           with Not_found -> term0
@@ -310,12 +315,12 @@ struct
         let ty = binder_type q in
         let (ty0, env0) = (ty, unify_types expty ty env data)
         in
-        (Meta(q), ty0, env0, data)
+        (Atom(Meta(q)), ty0, env0, data)
       | PConst(c) ->
         let ty = Lterm.typeof_cnst c in
         let (ty0, env0) = (ty, unify_types expty ty env data)
         in
-        (Const(c), ty0, env0, data)
+        (Term.mk_const(c), ty0, env0, data)
       | PTyped(trm, ty) ->
         let nty = set_type_name ty data in
         let (ty0, env0) = (nty, unify_types expty nty env data) in
@@ -340,13 +345,15 @@ struct
           match Basic.binder_kind qnt with
             | Lambda ->
               let qnt1 = binding_set_names qnt data in
-              let aty = Term.get_binder_type (Bound qnt1)
+              let aty = Basic.binder_type qnt1
               and (data1, rty) = mk_typevar_ref data
               in
               let nty0 = Lterm.mk_fun_ty aty rty in
               let (nty1, env1) = (nty0, unify_types expty nty0 env data) in
               let qnt2 = binding_set_types env1 qnt1 in
-              let data2 = bind_qnt (Bound(qnt)) (Bound(qnt2)) data1 in
+              let data2 =
+                bind_qnt (Term.mk_bound qnt) (Term.mk_bound qnt2) data1
+              in
               let (body1, bty, benv, data3) =
                 resolve_aux data2 env1 rty body
               in
@@ -359,7 +366,9 @@ struct
               (bool_ty, unify_types expty bool_ty env data)
             in
             let qnt2 = binding_set_types env1 qnt1 in
-            let data1 = bind_qnt (Bound(qnt)) (Bound(qnt2)) data in
+            let data1 =
+              bind_qnt (Term.mk_bound qnt) (Term.mk_bound qnt2) data
+            in
             let (body1, bty, benv, data2) =
               resolve_aux data1 env1 nty1 body
             in
@@ -440,16 +449,21 @@ end
  * Conversion to-from terms
  *)
 
+
 let from_term trm =
-  let rec from_aux t =
-    match t with
+  let from_atom a =
+    match a with
       | Id(n, ty) -> PId (n, ty)
       | Bound(q) -> PBound(q)
       | Free(n, ty) -> PFree(n, ty)
       | Meta(q) -> PMeta(q)
+      | Const(c) -> PConst(c)
+  in
+  let rec from_aux t =
+    match t with
+      | Atom(a) -> from_atom a
       | App(f, a) -> PApp(from_aux f, from_aux a)
       | Qnt(q, b) -> PQnt(q, from_aux b)
-      | Const(c) -> PConst(c)
   in
   from_aux trm
 
@@ -466,19 +480,19 @@ let to_term ptrm =
       |	PId(n, ty) ->
           let env1 = unify_types expty ty tyenv
           in
-          (Id(n, Gtype.mgu ty env1), (ctr, env1))
+          (Term.mk_typed_ident n (Gtype.mgu ty env1), (ctr, env1))
       | PFree(n, ty) ->
         let env1 = unify_types expty ty tyenv
         in
-        (Free(n, Gtype.mgu ty env1), (ctr, env1))
+        (Term.mk_free n (Gtype.mgu ty env1), (ctr, env1))
       | PBound(q) ->
         let pt1, env1 =
-          match (Lib.try_find (Term.find (Bound(q))) trmenv) with
+          match (Lib.try_find (Term.find (Term.mk_bound(q))) trmenv) with
             | None ->
                 let ty = binder_type q in
                 let env1 = unify_types expty ty tyenv
                 in
-                (Bound(q), (ctr, env1))
+                (Term.mk_bound(q), (ctr, env1))
             | Some(x) -> (x, typenv)
         in
         (pt1, env1)
@@ -486,7 +500,7 @@ let to_term ptrm =
         let ty = binder_type q in
         let env1 = unify_types expty ty tyenv
         in
-        (Meta(q), (ctr, env1))
+        (Atom(Meta(q)), (ctr, env1))
       | PQnt(q, b) ->
         let qnt, qname, qty = dest_binding q
         in
@@ -497,7 +511,9 @@ let to_term ptrm =
               let nty = Lterm.mk_fun_ty qty rty in
               let env1 = unify_types expty nty tyenv in
               let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
-              let trmenv1 = Term.bind (Bound(q)) (Bound(q1)) trmenv in
+              let trmenv1 =
+                Term.bind (Term.mk_bound q) (Term.mk_bound q1) trmenv
+              in
               let (b1, typenv1) = to_aux (ctr1, env1) trmenv1 nty b
               in
               (Qnt(q1, b1), typenv1)
@@ -505,7 +521,9 @@ let to_term ptrm =
               let nty = Lterm.mk_bool_ty() in
               let env1 = unify_types expty nty tyenv in
               let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
-              let trmenv1 = Term.bind (Bound(q)) (Bound(q1)) trmenv in
+              let trmenv1 =
+                Term.bind (Term.mk_bound(q)) (Term.mk_bound(q1)) trmenv
+              in
               let (b1, env2) = to_aux (ctr, env1) trmenv1 nty b
               in
               (Qnt(q1, b1), env2)
@@ -523,7 +541,7 @@ let to_term ptrm =
         let ty = Lterm.typeof_cnst c in
         let env1 = unify_types expty ty tyenv
         in
-        (Const(c), (ctr, env1))
+        (Term.mk_const(c), (ctr, env1))
       | PTyped(x, ty) ->
         let env1 = unify_types expty ty tyenv
         in

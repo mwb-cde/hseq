@@ -53,13 +53,14 @@ let rec equal_upto_vars varp x y =
 let find_variables is_var vars trm =
   let rec find_aux env t =
     match t with
-      | Basic.Qnt(_, b) -> find_aux env b
-      | Basic.Bound(q) ->
+      | Basic.Atom(Basic.Bound(q)) ->
         if is_var q
         then
-          try ignore(Term.find t env); env
-          with Not_found -> Term.bind t t env
+          if Term.member t env
+          then env
+          else Term.bind t t env
         else env
+      | Basic.Qnt(_, b) -> find_aux env b
       | Basic.App(f, a) ->
         let nv = find_aux env f
         in
@@ -72,11 +73,11 @@ let find_variables is_var vars trm =
 let check_variables is_var vars trm =
   let rec check_aux t =
     match t with
-      | Basic.Qnt(_, b) -> check_aux b
-      | Basic.Bound(q) ->
+      | Basic.Atom(Basic.Bound(q)) ->
         if is_var q
         then ignore(Term.find t vars)
         else ()
+      | Basic.Qnt(_, b) -> check_aux b
       | Basic.App(f, a) -> check_aux f; check_aux a
       | _ -> ()
   in check_aux trm

@@ -477,7 +477,7 @@ let declare ctxt ?pp trm =
   let (ctxt2, val_name, val_type) =
     let declare_aux () =
       let (v, ty) =
-        match trm with
+        match (Term.dest_atom trm) with
         | Basic.Free(i, t) -> (i, t)
         | Basic.Id(i, t) -> (Ident.name_of i, t)
         | _ ->

@@ -67,6 +67,7 @@ val table_rebind : term -> 'a -> 'a table -> unit
 
 (** {7 Recognisers} *)
 
+val is_atom: term -> bool
 val is_qnt: term -> bool
 val is_app: term -> bool
 val is_bound: term -> bool
@@ -76,6 +77,7 @@ val is_const: term -> bool
 
 (** {7 Constructors} *)
 
+val mk_atom: Basic.baseterm -> term
 val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
 val mk_free: string -> Gtype.t -> term
@@ -87,7 +89,7 @@ val mk_ident: Ident.t -> term
 val mk_short_ident: string -> term
 
 (** {7 Destructors} *)
-
+val dest_atom: term -> Basic.baseterm
 val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
 val dest_free: term -> (string * Gtype.t)

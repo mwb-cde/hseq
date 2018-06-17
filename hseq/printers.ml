@@ -361,24 +361,28 @@ module Terms =
       Printkit.print_list (print_qnt ppstate, Printkit.print_space) qs;
       Format.printf":@]"
 
-    let rec print_term ppstate (assoc, prec) x =
+    let print_atom_term ppstate (assoc, prec) x =
       match x with
-        Id(n, ty) ->
-        let user_printer=
-          try Some (Printkit.get_printer (ppstate.terms) n)
-          with Not_found -> None
-        in
-        (match user_printer with
-           None -> print_typed_identifier ppstate (n, ty)
-         | Some(p) -> p ppstate (assoc, prec) (x, []))
+      | Id(n, ty) ->
+         let printer_opt =
+           try Some (Printkit.get_printer (ppstate.terms) n)
+           with Not_found -> None
+         in
+         if printer_opt = None
+         then print_typed_identifier ppstate (n, ty)
+         else (Lib.from_some printer_opt) ppstate (assoc, prec) (Atom(x), [])
       | Free(n, ty) ->
          print_typed_name ppstate (n, ty)
       | Bound(n) ->
-         Format.printf "@[%s@]" ((Term.get_binder_name x))
+         Format.printf "@[%s@]" ((Basic.binder_name n))
       | Meta(n) ->
-         Format.printf "@[%s@]" ((Term.get_binder_name x))
+         Format.printf "@[%s@]" ((Basic.binder_name n))
       | Const(c) ->
-         Format.printf "@[%s@]" (Basic.string_const c);
+         Format.printf "@[%s@]" (Basic.string_const c)
+
+    let rec print_term ppstate (assoc, prec) x =
+      match x with
+      | Atom(a) -> print_atom_term ppstate (assoc, prec) a
       | App(t1, t2) ->
          let f, args = Term.get_fun_args x
          in

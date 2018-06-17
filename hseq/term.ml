@@ -24,6 +24,11 @@ open Basic
 
 (* Recognisers *)
 
+let is_atom x =
+  match x with
+  | Atom(_) -> true
+  | _ -> false
+
 let is_qnt x =
   match x with
     | Qnt _ -> true
@@ -36,42 +41,50 @@ let is_app x =
 
 let is_bound x =
   match x with
-    | Bound _ -> true
+    | Atom(Bound _) -> true
     | _ -> false
 
 let is_free x =
   match x with
-    | Free _ -> true
+    | Atom(Free _) -> true
     | _ -> false
 
 let is_ident x =
   match x with
-    | Id _ -> true
+    | Atom(Id _) -> true
     | _ -> false
 
 let is_const x =
   match x with
-    | Const _ -> true
+    | Atom(Const _) -> true
     | _ -> false
 
 let is_true t =
   match t with
-    | Const (Cbool true) -> true
+    | Atom(Const (Cbool true)) -> true
     | _ -> false
 
 (* Constructors *)
 
-let mk_qnt b t = Qnt(b, t)
-let mk_bound n = (Bound n)
-let mk_free n ty = Free(n, ty)
-let mk_app f a = (App(f, a))
-let mk_const c = (Const c)
+let mk_atom x = Atom(x)
 
-let mk_typed_ident n t = (Id(n, t))
+let mk_qnt b t = Qnt(b, t)
+let mk_bound n = mk_atom (Bound n)
+let mk_free n ty = mk_atom (Free(n, ty))
+let mk_const c = mk_atom(Const c)
+
+let mk_app f a = (App(f, a))
+
+let mk_typed_ident n t = mk_atom (Id(n, t))
 let mk_ident n = mk_typed_ident n (Gtype.mk_null ())
 let mk_short_ident n = mk_ident (Ident.mk_name n)
 
 (* Destructors *)
+
+let dest_atom x =
+  match x with
+  | Atom(y) -> y
+  | _ -> raise (Failure "dest_atom: Not an atomic term")
 
 let dest_qnt t =
   match t with
@@ -80,17 +93,17 @@ let dest_qnt t =
 
 let dest_bound t =
   match t with
-    | Bound(n) -> n
+    | Atom(Bound(n)) -> n
     | _ -> raise (Failure "dest_bound: Not a binder")
 
 let dest_free t =
   match t with
-    | Free(n, ty) -> (n, ty)
+    | Atom(Free(n, ty)) -> (n, ty)
     | _ -> raise (Failure "Not a free variable")
 
 let dest_ident vt =
   match vt with
-    | (Id (n, t)) -> (n, t)
+    | Atom((Id (n, t))) -> (n, t)
     | _ -> raise (Failure "Not a variable")
 
 let dest_app t =
@@ -100,7 +113,7 @@ let dest_app t =
 
 let dest_const t =
   match t with
-    | Const c -> c
+    | Atom(Const c) -> c
     | _ -> raise (Failure "Not a constant")
 
 
@@ -110,14 +123,14 @@ let dest_const t =
 
 let is_meta trm =
   match trm with
-    | Meta _ -> true
+    | Atom(Meta _) -> true
     | _ -> false
 
-let mk_meta n ty = Meta (mk_binding Gamma n ty)
+let mk_meta n ty = mk_atom(Meta (mk_binding Gamma n ty))
 
 let dest_meta t  =
   match t with
-    | Meta(q) -> q
+    | Atom(Meta(q)) -> q
     | _ -> raise (Failure "Not a meta variable")
 
 (** Constants *)
@@ -126,7 +139,7 @@ let destbool b =
   match dest_const b with
     | (Cbool c) -> c
 
-let mk_bool b = mk_const(Cbool b)
+let mk_bool b = mk_const (Cbool b)
 
 (*
  * Function application
@@ -144,7 +157,7 @@ let rec mk_comb x y =
 let mk_fun f args =
   let f_ty = Gtype.mk_var ("_"^(Ident.string_of f)^"_ty")
   in
-  mk_comb (Id(f, f_ty)) args
+  mk_comb (mk_typed_ident f f_ty) args
 
 (**
    [flatten_app trm]: flatten an application in [trm] to a list of
@@ -205,33 +218,26 @@ let dest_binop t =
 
 (** Comparisons and orderings. *)
 
-(** Ordering on terms.  Const < Id < Bound < App < Qnt < t2 iff t1<t2 *)
-let rec compare_term_strict typed t1 t2 =
-  let compare_bound (x: Basic.binders) y = Basic.binder_compare x y
-  and compare_free (n1, ty1) (n2, ty2) =
-    begin
-      match Order.Util.compare n1 n2 with
-      | Order.Equal ->
-         if typed then Order.Util.compare ty1 ty2
-         else Order.Equal
-      | x -> x
-    end
+(** Ordering on atomic-terms: Const < Id < Bound *)
+let compare_bound (x: Basic.binders) y = Basic.binder_compare x y
+
+let compare_atom_strict typed t1 t2 =
+  let compare_types rslt ty1 ty2 =
+    if rslt <> Order.Equal
+    then rslt
+    else
+      begin
+        if typed
+        then Gtype.compare ty1 ty2
+        else Order.Equal
+      end
   in
   match (t1, t2) with
   | (Const c1, Const c2) -> Basic.const_compare c1 c2
-  | (Const _ , _ ) -> Order.LessThan
+  | (Const _ , _) -> Order.LessThan
   | (Id _, Const _) -> Order.GreaterThan
-  | (Id _, Id _) ->
-     begin
-       let id1, ty1 = dest_ident t1
-       and id2, ty2 = dest_ident t2
-       in
-       match Ident.compare id1 id2 with
-       | Order.Equal ->
-          if typed then Gtype.compare ty1 ty2
-          else Order.Equal
-       | x -> x
-     end
+  | (Id(n1, ty1), Id(n2, ty2)) ->
+     compare_types (Ident.compare n1 n2) ty1 ty2
   | (Id _, _) -> Order.LessThan
   | (Meta _, Const _) -> Order.GreaterThan
   | (Meta _, Id _) -> Order.GreaterThan
@@ -246,13 +252,15 @@ let rec compare_term_strict typed t1 t2 =
   | (Free _, Id _) -> Order.GreaterThan
   | (Free _, Meta _) -> Order.GreaterThan
   | (Free _, Bound _) -> Order.GreaterThan
-  | (Free _, Free _) -> compare_free (dest_free t1) (dest_free t2)
-  | (Free _, _) -> Order.LessThan
-  | (App _, Const _) -> Order.GreaterThan
-  | (App _, Id _) -> Order.GreaterThan
-  | (App _, Meta _) -> Order.GreaterThan
-  | (App _, Bound _) -> Order.GreaterThan
-  | (App _, Free _) -> Order.GreaterThan
+  | (Free(n1, ty1), Free(n2, ty2)) ->
+     compare_types (Order.Util.compare n1 n2) ty1 ty2
+
+(** Ordering on terms.  Const < Id < Bound < App < Qnt < t2 iff t1<t2 *)
+let rec compare_term_strict typed t1 t2 =
+  match (t1, t2) with
+  | (Atom(a1), Atom(a2)) -> compare_atom_strict typed a1 a2
+  | (Atom _, _) -> Order.LessThan
+  | (App _, Atom _) -> Order.GreaterThan
   | (App(f1, a1), App (f2, a2)) ->
      begin
        match compare_term_strict typed f1 f2 with
@@ -260,11 +268,7 @@ let rec compare_term_strict typed t1 t2 =
        | x -> x
      end
   | (App _, _) -> Order.LessThan
-  | (Qnt _, Const _) -> Order.GreaterThan
-  | (Qnt _, Id _) -> Order.GreaterThan
-  | (Qnt _, Meta _) -> Order.GreaterThan
-  | (Qnt _, Bound _) -> Order.GreaterThan
-  | (Qnt _, Free _) -> Order.GreaterThan
+  | (Qnt _, Atom _) -> Order.GreaterThan
   | (Qnt _, App _) -> Order.GreaterThan
   | (Qnt(q1, b1), Qnt(q2, b2)) ->
      begin
@@ -372,13 +376,13 @@ let get_ident_type vt = snd (dest_ident vt)
 
 let get_free_name t =
   match t with
-    | Free(n, ty) -> n
+    | Atom(Free(n, ty)) -> n
     | _ -> raise (Failure "Not a free variable")
 
 let get_free_vars trm =
   let rec get_free_vars_aux t ts =
     match t with
-      | Free(x, ty) -> t::ts
+      | Atom(Free(x, ty)) -> t::ts
       | Qnt(q, b) -> get_free_vars_aux b ts
       | App(f, a) -> get_free_vars_aux a (get_free_vars_aux f ts)
       | _ -> ts
@@ -388,30 +392,30 @@ let get_free_vars trm =
 
 let get_binder t =
   match t with
-    | Bound(b) -> b
+    | Atom(Bound(b)) -> b
     | Qnt(b, _) -> b
-    | Meta(b) -> b
+    | Atom(Meta(b)) -> b
     | _ -> raise (Failure "get_binder: No binder in term")
 
 let get_binder_name x =
   match x with
-    | Bound(n) -> binder_name n
+    | Atom(Bound(n)) -> binder_name n
     | Qnt(n, _) -> binder_name n
-    | Meta(n) -> binder_name n
+    | Atom(Meta(n)) -> binder_name n
     | _ -> raise (Failure "get_binder_name: Not a binder")
 
 let get_binder_type x =
   match x with
-    | Bound(n) -> Basic.binder_type n
+    | Atom(Bound(n)) -> Basic.binder_type n
     | Qnt(n, _) -> Basic.binder_type n
-    | Meta(n) -> Basic.binder_type n
+    | Atom(Meta(n)) -> Basic.binder_type n
     | _ -> raise (Failure "get_binder_type: Not a binder")
 
 let get_binder_kind x =
   match x with
-    | Bound(n) -> Basic.binder_kind n
+    | Atom(Bound(n)) -> Basic.binder_kind n
     | Qnt(n, _) -> Basic.binder_kind n
-    | Meta(n) -> Basic.binder_kind n
+    | Atom(Meta(n)) -> Basic.binder_kind n
     | _ -> raise (Failure "get_binder_kind: Not a binder")
 
 let get_qnt_body t =
@@ -427,9 +431,9 @@ let get_free_binders t =
   let rec free_aux qnts x =
     match x with
       | Qnt(q, b) ->
-        table_add (Bound q) (trtrm) memo;
+        table_add (Atom(Bound q)) (trtrm) memo;
         free_aux qnts b
-      | Bound(q) ->
+      | Atom(Bound(q)) ->
         (try (ignore(table_find x memo); qnts)
          with Not_found ->
            ignore(table_add x trtrm memo);
@@ -479,19 +483,24 @@ let add_term_error s ts n =
  * Simple pretty printing
  *)
 
+let print_atom_simple trm =
+  match trm with
+  | Id(n, ty) ->
+     let (th, x) = Ident.dest n
+     in
+     Format.printf "@[%s@]" (th^"."^x)
+  | Bound(n) ->
+     Format.printf "@[%s@]" (".."^(binder_name n))
+  | Free(n, ty) -> Format.printf "@[%s@]"  n
+  | Meta(n) ->
+     Format.printf "@[%s@]" (binder_name n)
+  | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
+
+
 let print_simple trm =
   let rec print_aux t =
     match t with
-      | Id(n, ty) ->
-        let (th, x) = Ident.dest n
-        in
-        Format.printf "@[%s@]" (th^"."^x)
-      | Bound(n) ->
-        Format.printf "@[%s@]" (".."^(binder_name n))
-      | Free(n, ty) -> Format.printf "@[%s@]"  n
-      | Meta(n) ->
-        Format.printf "@[%s@]" (binder_name n)
-      | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
+      | Atom(x) -> print_atom_simple x
       | App(t1, t2) ->
         Format.printf "@[<2>(";
         print_aux t1;
@@ -527,9 +536,11 @@ let sterm t a= ST(t, ref a)
 *)
 type substitution = (subst_terms)tree
 
-let empty_subst() = TermTree.empty
+let empty_subst() = ((TermTree.empty): substitution)
+let empty_tree() = TermTree.empty
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
+let basic_bind t r env = TermTree.replace env t r
 
 let find x env = st_term (basic_find x env)
 let bind t r env = TermTree.replace env t (sterm r Unknown)
@@ -557,12 +568,12 @@ let rename_env typenv trmenv trm =
     let (tyenv, env, qntd) = r_env
     in
     match t with
-      | Bound(_) ->
+      | Atom(Bound(_)) ->
         (try (find t env, tyenv, env, qntd)
          with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) ->
         let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = bind (Bound(q)) (Bound(nq)) env in
+        let env1 = bind (Atom(Bound(q))) (Atom(Bound(nq))) env in
         let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
         in
         (Qnt(nq, nb), tyenv2, env2, true)
@@ -618,34 +629,54 @@ let replace env x =  do_rename (basic_find x env)
    [retype tyenv t]: Retype term [t], substituting type variables
    occuring in [t] with types in type substitution [tyenv].
 *)
-let retype tyenv t=
+
+let retype_atom tyenv qenv t =
+  match t with
+  | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
+  | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
+  | Bound(q) ->
+     (try basic_find (Atom(t)) qenv with Not_found -> t)
+  | _ -> t
+
+let retype tyenv t =
   let rec retype_aux t qenv =
     match t with
-      | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
-      | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
-      | Bound(q) ->
-        (try table_find t qenv
-         with Not_found -> t)
-      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
-      | Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-        let nty = Gtype.mgu oqty tyenv in
-        let nq = mk_binding oqnt oqnm nty  in
-        let qenv1 = (table_add (Bound(q)) (Bound(nq)) qenv; qenv) in
-        let new_term = Qnt(nq, retype_aux b qenv1) in
-        let _ = table_remove (Bound(q)) qenv1; qenv
-        in
-        new_term
-      | Meta(_) -> t
-      | Const(_) -> t
+    | Atom(a) ->
+       let a1 = retype_atom tyenv qenv a
+       in
+       (Atom(a1), qenv)
+    | App(f, a) ->
+       let f1, env1 = retype_aux f qenv in
+       let a1, env2 = retype_aux a env1 in
+       (App(f1, a1), env2)
+    | Qnt(q, b) ->
+       let (oqnt, oqnm, oqty) = Basic.dest_binding q in
+       let nty = Gtype.mgu oqty tyenv in
+       let q1 = mk_binding oqnt oqnm nty
+       in
+       let qenv1 = basic_bind (Atom(Bound(q))) (Bound(q1)) qenv in
+       let (b1, _) = retype_aux b qenv1
+       in
+       (Qnt(q1, b1), qenv)
   in
-  retype_aux t (empty_table())
+  let (ret, _) = retype_aux t (empty_tree()) in
+  ret
 
 (* retype_pretty: as for retype, make substitution for type variables
    but also replace other type variables with new, prettier names
 *)
 let retype_pretty_env typenv trm =
-  let rec retype_aux t ctr name_env qenv =
+  let retype_binder q ctr name_env qenv =
+    let (qnt, qnm, qty) = Basic.dest_binding q in
+    let (nty, (ctr1, nenv1)) =
+      Gtype.mgu_rename_env (ctr, typenv) name_env qty
+    in
+    let q1 = mk_binding qnt qnm nty in
+    let qenv1 = basic_bind (Atom(Bound q)) (Bound q1) qenv
+    in
+    (q1, ctr1, nenv1, qenv1)
+  in
+  let retype_atom t ctr name_env qenv =
     match t with
       | Id(n, ty) ->
         let (nt, (ctr1, nenv1)) =
@@ -660,36 +691,35 @@ let retype_pretty_env typenv trm =
       | Meta(q) -> (t, ctr, name_env, qenv)
       | Const(c) -> (t, ctr, name_env, qenv)
       | Bound(q) ->
-        (try (table_find t qenv, ctr, name_env, qenv)
-         with Not_found ->
-           let (qnt, qnm, qty) = Basic.dest_binding q in
-           let (nty, (ctr1, nenv1)) =
-             Gtype.mgu_rename_env (ctr, typenv) name_env qty
-           in
-           let nq = mk_binding qnt qnm nty in
-           let qenv1 = table_add (Bound q) (Bound nq) qenv; qenv
-           in
-           (Bound(nq), ctr1, nenv1, qenv1))
+         begin
+           try (basic_find (Atom t) qenv, ctr, name_env, qenv)
+           with
+             Not_found ->
+              let (q1, ctr1, nenv1, qenv1) =
+                retype_binder q ctr name_env qenv
+              in
+              (Bound(q1), ctr1, nenv1, qenv1)
+         end
+  in
+  let rec retype_aux t ctr name_env qenv =
+    match t with
+    | Atom(a) ->
+       let (a1, ctr1, nenv1, qenv1) = retype_atom a ctr name_env qenv in
+       (Atom(a1), ctr1, nenv1, qenv1)
       | App(f, a) ->
         let nf, ctr1, nenv1, qenv1 = retype_aux f ctr name_env qenv in
         let na, ctr2, nenv2, qenv2 = retype_aux a ctr1 nenv1 qenv1
         in
         (App(nf, na), ctr2, nenv2, qenv2)
       | Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-        let nty, (ctr1, nenv1) =
-          Gtype.mgu_rename_env (ctr, typenv) name_env oqty
-        in
-        let nq = mk_binding oqnt oqnm nty in
-        let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-        let nb, ctr2, nenv2, qenv2 = retype_aux b ctr1 nenv1 qenv1 in
-        let new_term = Qnt(nq, nb) in
-        let qenv3 = table_remove (Bound(q)) qenv2; qenv2
-        in
-        (new_term, ctr2, nenv2, qenv3)
+         let (q1, ctr1, nenv1, qenv1) = retype_binder q ctr name_env qenv
+         in
+         let (b1, ctr2, nenv2, qenv2) = retype_aux b ctr1 nenv1 qenv1
+         in
+         (Qnt(q1, b1), ctr2, nenv2, qenv)
   in
   let (retyped, _, new_nenv, _) =
-    retype_aux trm 0 (Gtype.empty_subst()) (empty_table())
+    retype_aux trm 0 (Gtype.empty_subst()) (empty_tree())
   in
   (retyped, new_nenv)
 
@@ -714,25 +744,32 @@ let full_rename_env type_env term_env trm =
     in
     (mk_binding qnt qv nt, nev)
   in
+  let rename_atom t tyenv env =
+    match t with
+    | Id(n, ty) ->
+       let (ty1, tyenv1) = rename_type tyenv ty
+       in
+       (Id(n, ty1), tyenv1)
+    | Free(n, ty) ->
+       let (ty1, tyenv1) = rename_type tyenv ty
+       in
+       (Free(n, ty1), tyenv1)
+    | Meta(q) -> (t, tyenv)
+    | Const(c) -> (t, tyenv)
+    | Bound(q) ->
+       let t1 = try (basic_find (Atom(t)) env) with Not_found -> t
+       in
+       (t1, tyenv)
+  in
   let rec rename_aux t tyenv env =
     match t with
-      | Id(n, ty) ->
-        let (ty1, tyenv1) = rename_type tyenv ty
-        in
-        (Id(n, ty1), tyenv1)
-      | Free(n, ty) ->
-        let (ty1, tyenv1) = rename_type tyenv ty
-        in
-        (Free(n, ty1), tyenv1)
-      | Meta(q) -> (t, tyenv)
-      | Const(c) -> (t, tyenv)
-      | Bound(q) ->
-        let t1 = try (find t env) with Not_found -> t
-        in
-        (t1, tyenv)
+      | Atom(a) ->
+         let (a1, tyenv1) = rename_atom a tyenv env
+         in
+         (Atom(a1), tyenv1)
       | Qnt(q, b) ->
         let (q1, tyenv1) = rename_binder q tyenv in
-        let env1 = bind (Bound(q)) (Bound(q1)) env in
+        let env1 = basic_bind (Atom(Bound(q))) (Bound(q1)) env in
         let (b1, tyenv2) = rename_aux b tyenv1 env1
         in
         (Qnt(q1, b1), tyenv2)
@@ -745,7 +782,7 @@ let full_rename_env type_env term_env trm =
   rename_aux trm type_env term_env
 
 let full_rename tyenv trm =
-  let trmenv = empty_subst()
+  let trmenv = empty_tree()
   in
   let (ntrm, ntyenv) = full_rename_env tyenv trmenv trm
   in
@@ -763,7 +800,7 @@ let retype_index idx trm =
     in
     (nbnd, ctr1, tyenv1)
   in
-  let rec rename_aux t ctr tyenv env =
+  let rename_atom t ctr tyenv env =
     match t with
       | Id(n, ty) ->
         let (ty1, ctr1, tyenv1) = rename_type ctr tyenv ty
@@ -776,12 +813,19 @@ let retype_index idx trm =
       | Meta(q) -> (t, ctr, tyenv)
       | Const(c) -> (t, ctr, tyenv)
       | Bound(q) ->
-        let t1 = try (find t env) with Not_found -> t
+        let t1 = try (basic_find (Atom(t)) env) with Not_found -> t
         in
         (t1, ctr, tyenv)
+  in
+  let rec rename_aux t ctr tyenv env =
+    match t with
+      | Atom(a) ->
+         let (a1, ctr1, tyenv1) = rename_atom a ctr tyenv env
+         in
+         (Atom(a1), ctr1, tyenv1)
       | Qnt(q, b) ->
         let (q1, ctr1, tyenv1) = rename_binder q ctr tyenv in
-        let env1 = bind (Bound(q)) (Bound(q1)) env in
+        let env1 = basic_bind (Atom(Bound(q))) (Bound(q1)) env in
         let (b1, ctr2, tyenv2) = rename_aux b ctr1 tyenv1 env1
         in
         (Qnt(q1, b1), ctr2, tyenv2)
@@ -791,7 +835,7 @@ let retype_index idx trm =
         in
         (App(f1, a1), ctr2, tyenv2)
   in
-  rename_aux trm idx (Gtype.empty_subst()) (empty_subst())
+  rename_aux trm idx (Gtype.empty_subst()) (empty_tree())
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
@@ -804,12 +848,12 @@ let rename_env typenv trmenv trm =
     let (tyenv, env, qntd) = renv
     in
     match t with
-      | Bound(_) ->
+      | Atom(Bound(_)) ->
         (try (find t env, tyenv, env, qntd)
          with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) ->
         let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = bind (Bound(q)) (Bound(nq)) env in
+        let env1 = bind (Atom(Bound(q))) (Atom((Bound(nq)))) env in
         let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
         in
         (Qnt(nq, nb), tyenv2, env2, true)
@@ -901,7 +945,7 @@ let inst t r =
   then
     let (q, b) = dest_qnt t
     in
-    qsubst [(Bound(q), r)] b
+    qsubst [((mk_bound q), r)] b
   else raise (Failure "inst: not a quantified formula")
 
 (* [subst_qnt_var]: Specialised form of substitution for constructing
@@ -911,32 +955,37 @@ let inst t r =
 let subst_qnt_var scp env trm =
   let rec subst_aux t =
     match t with
-      | Id(n, ty) ->
-        (try
-           let r = Lib.find n env
-           in
-           ignore(Gtype.unify
-                    (Scope.types_scope scp) ty (get_binder_type r)); r
-           with _ -> t)
-      | Free(n, ty) ->
-        (try
-           let r = Lib.find (Ident.mk_name n) env
-           in
-           ignore(Gtype.unify
-                    (Scope.types_scope scp) ty (get_binder_type r)); r
-         with _ -> t)
-      | (App(f, a)) -> App(subst_aux f, subst_aux a)
-      | Qnt(q, b) -> Qnt(q, subst_aux b)
-      | _ -> t
+    | Atom(Id(n, ty)) ->
+       begin
+         try
+           let replacement = Ident.Tree.find env n in
+           ignore(Gtype.unify (Scope.types_scope scp)
+                    ty (Basic.binder_type replacement));
+           (mk_bound replacement)
+         with _ -> t
+       end
+    | Atom(Free(n, ty)) ->
+       begin
+         try
+           let replacement = Ident.Tree.find env (Ident.mk_name n) in
+           ignore(Gtype.unify (Scope.types_scope scp)
+                    ty (Basic.binder_type replacement));
+           (mk_bound replacement)
+         with _ -> t
+       end
+    | App(f, a) -> App(subst_aux f, subst_aux a)
+    | Qnt(q, b) -> Qnt(q, subst_aux b)
+    | _ -> t
   in
   subst_aux trm
 
 let mk_typed_qnt_name scp q ty n b =
-  let t = mk_binding q n ty in
-  let bnd_env = Lib.bind (Ident.mk_name n) (Bound t) (Lib.empty_env()) in
+  let bndr = mk_binding q n ty in
+  let bnd_env = Ident.Tree.add (Ident.Tree.empty) (Ident.mk_name n) bndr
+  in
   let nb = subst_qnt_var scp bnd_env b
   in
-  Qnt(t, nb)
+  Qnt(bndr, nb)
 
 let mk_qnt_name tyenv q n b =
   mk_typed_qnt_name tyenv q (Gtype.mk_null()) n b
@@ -948,24 +997,28 @@ let mk_qnt_name tyenv q n b =
 let string_typed_name n t =
   ("("^n^": "^(Gtype.string_gtype t)^")")
 
+let string_atom t =
+  match t with
+  | Id(n, ty) -> (Ident.string_of n)
+  | Free(n, ty) -> n
+  | Bound(q) -> "?"^(Basic.binder_name q)
+  | Meta(q) -> Basic.binder_name q
+  | Const(c) -> Basic.string_const c
+
 let rec string_term_basic t =
   match t with
-    | Id(n, ty) -> (Ident.string_of n) (*string_typed_name n ty*)
-    | Free(n, ty) -> n
-    | Bound(_) -> "?"^(get_binder_name t)
-    | Meta(q) -> get_binder_name t
-    | Const(c) -> string_const c
-    | App(t1, t2) ->
-      let f = get_fun t
-      and args = get_args t
-      in
-      ("("^(string_term_basic f)^" ("
-       ^(Lib.list_string (string_term_basic ) ", " args)^"))")
-    | Qnt(q, body) ->
-      (quant_string (get_binder_kind t))
-      ^" ("^(string_typed_name (Basic.binder_name q)
-               (Basic.binder_type q))^"): "
-      ^(string_term_basic body)
+  | Atom(a) -> string_atom a
+  | App(t1, t2) ->
+     let f = get_fun t
+     and args = get_args t
+     in
+     ("("^(string_term_basic f)^" ("
+      ^(Lib.list_string (string_term_basic ) ", " args)^"))")
+  | Qnt(q, body) ->
+     (quant_string (get_binder_kind t))
+     ^" ("^(string_typed_name (Basic.binder_name q)
+              (Basic.binder_type q))^"): "
+     ^(string_term_basic body)
 
 (** Precedence of Quantifiers *)
 let prec_qnt q =
@@ -977,32 +1030,28 @@ let prec_qnt q =
 
 let rec string_term_prec i x =
   match x with
-    | Id(n, ty) -> (Ident.string_of n)
-    | Free(n, ty) -> n
-    | Bound(_) -> "?"^(get_binder_name x)
-    | Meta(_) -> (get_binder_name x)
-    | Const(c) -> Basic.string_const c
-    | Qnt(q, body) ->
-      let qnt = Basic.binder_kind q in
-      let ti = prec_qnt qnt
-      in
-      if ti <= i
-      then ("("^(quant_string qnt)
-            ^" "^(string_typed_name
-                    (Basic.binder_name q)
-                    (Basic.binder_type q))^". "
-            ^(string_term_prec ti (body))^")")
-      else
-        ((quant_string qnt)
-         ^" "^(string_typed_name (Basic.binder_name q)
-                 (Basic.binder_type q))^". "
-         ^(string_term_prec ti (body)))
-    | App(t1, t2) ->
-      let f = get_fun x
-      and args = get_args x
-      in
-      ("("^(string_term_prec i f)^" "
-       ^(list_string (string_term_prec i) " " args)^")")
+  | Atom(a) -> string_atom a
+  | Qnt(q, body) ->
+     let qnt = Basic.binder_kind q in
+     let ti = prec_qnt qnt
+     in
+     if ti <= i
+     then ("("^(quant_string qnt)
+           ^" "^(string_typed_name
+                   (Basic.binder_name q)
+                   (Basic.binder_type q))^". "
+           ^(string_term_prec ti (body))^")")
+     else
+       ((quant_string qnt)
+        ^" "^(string_typed_name (Basic.binder_name q)
+                (Basic.binder_type q))^". "
+        ^(string_term_prec ti (body)))
+  | App(t1, t2) ->
+     let f = get_fun x
+     and args = get_args x
+     in
+     ("("^(string_term_prec i f)^" "
+      ^(list_string (string_term_prec i) " " args)^")")
 
 let string_term x = string_term_prec 0 x
 
@@ -1021,49 +1070,53 @@ let cfun_string c =
     | "equals" -> "="
     | x -> x
 
+let string_atom_inf t =
+  match t with
+  | Id(n, ty) -> cfun_string (Ident.string_of n)
+  | Free(n, ty) -> n
+  | Bound(q) -> (Basic.binder_name q)
+  | Meta(q) -> Basic.binder_name q
+  | Const(c) -> Basic.string_const c
+
 let rec string_term_inf inf i x =
   match x with
-    | Id(n, ty) -> cfun_string (Ident.string_of n)
-    | Free(n, ty) -> n
-    | Bound(_) -> (get_binder_name x)
-    | Meta(_) -> (get_binder_name x)
-    | Const(c) -> Basic.string_const c
-    | App(t1, t2) ->
-      let f=get_fun x
-      and args = get_args x
-      in
-      if is_ident f
-      then
-        let name = fst (dest_ident f) in
-        let pr = try (fst(inf) name) with _ -> -1 in
-        let ti = if pr <= i then pr else i
-        in
-        if try (snd(inf)) name with _ -> false
-        then
-            string_infix
-              (cfun_string (Ident.string_of name))
-              (List.map (string_term_inf inf ti) args)
-        else
-            ("("^(string_term_inf inf i f)^" "
-             ^(list_string (string_term_inf inf i) " " args)^")")
-      else
-          ("("^(string_term_inf inf i f)^" "
-           ^(list_string (string_term_inf inf i) " " args)^")")
-    | Qnt(q, body) ->
-      let qnt = Basic.binder_kind q in
-      let (qnts, b) = strip_qnt qnt x in
-      let qnts_str =
-        (quant_string qnt)
-        ^(list_string
-            (fun x -> (string_typed_name (Basic.binder_name x)
-                         (Basic.binder_type x)))
-            " " qnts)^": "
-      in
-      let ti = prec_qnt qnt
-      in
-      if ti < i
-      then ("("^qnts_str^(string_term_inf inf ti (b))^")")
-      else (qnts_str^(string_term_inf inf ti (b)))
+  | Atom(a) -> string_atom a
+  | App(t1, t2) ->
+     let f=get_fun x
+     and args = get_args x
+     in
+     if is_ident f
+     then
+       let name = fst (dest_ident f) in
+       let pr = try (fst(inf) name) with _ -> -1 in
+       let ti = if pr <= i then pr else i
+       in
+       if try (snd(inf)) name with _ -> false
+       then
+         string_infix
+           (cfun_string (Ident.string_of name))
+           (List.map (string_term_inf inf ti) args)
+       else
+         ("("^(string_term_inf inf i f)^" "
+          ^(list_string (string_term_inf inf i) " " args)^")")
+     else
+       ("("^(string_term_inf inf i f)^" "
+        ^(list_string (string_term_inf inf i) " " args)^")")
+  | Qnt(q, body) ->
+     let qnt = Basic.binder_kind q in
+     let (qnts, b) = strip_qnt qnt x in
+     let qnts_str =
+       (quant_string qnt)
+       ^(list_string
+           (fun x -> (string_typed_name (Basic.binder_name x)
+                        (Basic.binder_type x)))
+           " " qnts)^": "
+     in
+     let ti = prec_qnt qnt
+     in
+     if ti < i
+     then ("("^qnts_str^(string_term_inf inf ti (b))^")")
+     else (qnts_str^(string_term_inf inf ti (b)))
 
 let string_inf_term inf x = string_term_inf inf 0 x
 

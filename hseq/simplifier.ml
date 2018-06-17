@@ -666,7 +666,7 @@ let rec find_subterm_bu_tac data trm ctxt goal =
         in
         ({data1 with qntenv = qntenv0}, Qnt(q, btrm), subplan)
       in
-      let qntenv1 = Term.bind (Bound q) null_term qntenv0 in
+      let qntenv1 = Term.bind (Term.mk_bound q) null_term qntenv0 in
       let data1 = {data with qntenv = qntenv1}
       in
       begin
@@ -761,7 +761,7 @@ let rec find_subterm_td_tac data trm ctxt goal =
   let (_, _, qntenv) = dest_match_data data in
   match trm with
     | Basic.Qnt(q, b) ->
-      let qntenv2 = Term.bind (Basic.Bound(q)) null_term qntenv
+      let qntenv2 = Term.bind (Term.mk_bound q) null_term qntenv
       in
       begin
         (** Rewrite quantifier body, top-down **)

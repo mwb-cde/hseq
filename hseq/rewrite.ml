@@ -119,8 +119,8 @@ let decr_depth ctrl =
 
 let is_free_binder qs t =
   match t with
-    | Bound(q) -> List.exists (Basic.binder_equality q) qs
-    |	_ -> false
+    | Atom(Bound(q)) -> List.exists (Basic.binder_equality q) qs
+    | _ -> false
 
 (*
  *   [TermData]: The data used to instantiate the generic rewriter.
@@ -139,20 +139,26 @@ struct
 
   type key = term_key
 
+  let key_of_atom n =
+    match n with
+    | Basic.Id _ -> Ident
+    | Basic.Bound _ -> BVar
+    | Basic.Meta _ -> MVar
+    | Basic.Free _ -> FVar
+    | Basic.Const _ -> Constn
+
+  let key_of_binder q =
+    match q with
+    | Basic.All -> AllQ
+    | Basic.Ex -> ExQ
+    | Basic.Lambda -> LamQ
+    | _ -> Quant
+
   let key_of n =
     match n with
-      | Basic.Id _ -> Ident
-      | Basic.Bound _ -> BVar
-      | Basic.Meta _ -> MVar
-      | Basic.Free _ -> FVar
+      | Basic.Atom(a) -> key_of_atom a
+      | Basic.Qnt(q, _) -> key_of_binder (Basic.binder_kind q)
       | Basic.App _ -> Appln
-      | Basic.Const _ -> Constn
-      | Basic.Qnt(q, b) ->
-        (match (Basic.binder_kind q) with
-          | Basic.All -> AllQ
-          | Basic.Ex -> ExQ
-          | Basic.Lambda -> LamQ
-          | _ -> Quant)
 
   let rec is_key k n =
     match k with
@@ -178,13 +184,17 @@ struct
   let set_subnodes n xs =
     match n with
       | App(_, _) ->
-        (match xs with
-          | [l; r] -> App(l, r)
-          | _ -> raise (Quit (Failure "set_subnodes: App")))
+         begin
+           match xs with
+           | [l; r] -> App(l, r)
+           | _ -> raise (Quit (Failure "set_subnodes: App"))
+         end
       | Qnt(q, _) ->
-        (match xs with
-          | [b] -> Qnt(q, b)
-          | _ -> raise (Quit (Failure "set_subnodes: Qnt")))
+         begin
+           match xs with
+           | [b] -> Qnt(q, b)
+           | _ -> raise (Quit (Failure "set_subnodes: Qnt"))
+         end
       | _ -> raise (Quit (Failure "set_subnodes: other"))
 
   let get_subnode n i =
@@ -244,7 +254,7 @@ struct
           let (scope, qntenv, tyenv) = data in
           let qntenv1 =
             Term.bind
-              (Basic.Bound q)
+              (Term.mk_bound q)
               (Term.mk_free "" (Gtype.mk_null()))
               qntenv
           in
@@ -627,7 +637,7 @@ struct
     else
       (match t with
         | Basic.Qnt(q, b) ->
-            let qntenv1 = Term.bind (Basic.Bound q) null_term qntenv in
+            let qntenv1 = Term.bind (mk_bound q) null_term qntenv in
             let (nb, benv, bctrl, brslt) =
               rewrite_td_term ctrl (scope, qntenv1, tyenv) net b
             in
@@ -695,7 +705,7 @@ struct
       match t with
         | Basic.Qnt(q, b) ->
             let qntenv1 =
-              Term.bind (Basic.Bound(q)) null_term qntenv
+              Term.bind (Term.mk_bound(q)) null_term qntenv
             in
             let nb, benv, bctrl, brslt =
               rewrite_bu_subterm ctrl (scope, qntenv1, tyenv) net b

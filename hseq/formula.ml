@@ -292,13 +292,21 @@ let term_retype_with_check scp tyenv t=
     else raise
       (Gtype.type_error "Term.retype_with_check: Invalid type" [nty])
   in
-  let rec retype_aux t qenv =
+  let retype_atom t qenv =
     match t with
       | Id(n, ty) -> Id(n, mk_new_type ty)
       | Free(n, ty) -> Free(n, mk_new_type ty)
       | Bound(_) ->
-        (try Term.table_find t qenv
-         with Not_found -> t)
+         begin
+           try Term.table_find (Atom(t)) qenv
+           with Not_found -> t
+         end
+      | Meta(_) -> t
+      | Const(_) -> t
+  in
+  let rec retype_aux t qenv =
+    match t with
+      | Atom(a) -> Atom(retype_atom a qenv)
       | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
       | Qnt(q, b) ->
         let (oqnt, oqnm, oqty) = Basic.dest_binding q
@@ -307,13 +315,12 @@ let term_retype_with_check scp tyenv t=
         in
         let nq = mk_binding oqnt oqnm nty
         in
-        let qenv1 = Term.table_add (Bound(q)) (Bound(nq)) qenv; qenv in
+        let qenv1 = Term.table_add (Term.mk_bound(q)) (Bound(nq)) qenv; qenv
+        in
         let new_term = Qnt(nq, retype_aux b qenv1 ) in
-        let _ = Term.table_remove (Bound(q)) qenv1; qenv
+        let _ = Term.table_remove (Term.mk_bound(q)) qenv1; qenv
         in
         new_term
-      | Meta(_) -> t
-      | Const(_) -> t
   in
   retype_aux t (Term.empty_table())
 
@@ -336,13 +343,13 @@ let rec is_closed scp env t =
   match t with
     | Basic.App(l, r) -> is_closed scp env l && is_closed scp env r
     | Basic.Qnt(q, b) ->
-      let env1 = (Term.bind (Basic.Bound(q))
+      let env1 = (Term.bind (Term.mk_bound(q))
                     (Term.mk_free "" (Gtype.mk_null())) env)
       in
       is_closed scp env1 b
-    | Basic.Meta (q) -> Scope.is_meta scp q
-    | Basic.Bound(q) -> Term.member t env
-    | Basic.Free(_) -> Term.member t env
+    | Atom(Basic.Meta (q)) -> Scope.is_meta scp q
+    | Atom(Basic.Bound(q)) -> Term.member t env
+    | Atom(Basic.Free(_)) -> Term.member t env
     | _ -> true
 
 let rec subst_closed scp qntenv sb trm =
@@ -356,7 +363,8 @@ let rec subst_closed scp qntenv sb trm =
     (match trm with
       | Basic.Qnt(q, b) ->
           let qntenv1 =
-            Term.bind (Bound q) (Term.mk_free "" (Gtype.mk_null())) qntenv
+            Term.bind
+              (Term.mk_bound q) (Term.mk_free "" (Gtype.mk_null())) qntenv
           in
           Basic.Qnt(q, subst_closed scp qntenv1 sb b)
       | Basic.App(f, a) ->
@@ -393,7 +401,7 @@ let inst_env scp env f r =
       let (q, b) = Term.dest_qnt t in
       let t1 =
         Term.subst
-          (Term.bind (Basic.Bound(q)) r1 (Term.empty_subst())) b
+          (Term.bind (Term.mk_bound(q)) r1 (Term.empty_subst())) b
       in
       let t2 = fast_make scp [f; r] t1
       in
@@ -420,7 +428,7 @@ let unify scp asmf conclf =
   in
   let varp x =
     match x with
-      | Basic.Bound(q) -> (List.memq q avars) || (List.memq q cvars)
+      | Atom(Bound(q)) -> (List.memq q avars) || (List.memq q cvars)
       | _ -> false
   in
   Unify.unify scp varp abody cbody
@@ -434,7 +442,7 @@ let unify_env scp tyenv asmf conclf =
   in
   let varp x =
     match x with
-      | Basic.Bound(q) -> (List.memq q avars) || (List.memq q cvars)
+      | Atom(Bound(q)) -> (List.memq q avars) || (List.memq q cvars)
       | _ -> false
   in
   Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody

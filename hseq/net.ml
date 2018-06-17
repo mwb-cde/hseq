@@ -70,20 +70,25 @@ type label =
   -->
   [Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]
 *)
+
+let atom_to_label varp trm rst =
+  match trm with
+  | Basic.Id(id, _) -> (Cname(id), rst)
+  | Basic.Meta(q) -> (Cmeta(Basic.binder_name q), rst)
+  | Basic.Free(n, _) -> (Cfree(n), rst)
+  | Basic.Const(c) -> (Const(c), rst)
+  | Basic.Bound(q) ->
+     let (qnt, _, _) = Basic.dest_binding q
+     in
+     (Bound(qnt), rst)
+
 let rec term_to_label varp trm rst =
   if varp trm
   then (Var, rst)
   else
     match trm with
-      | Basic.Id(id, _) -> (Cname(id), rst)
-      | Basic.Meta(q) -> (Cmeta(Term.get_binder_name trm), rst)
-      | Basic.Free(n, _) -> (Cfree(n), rst)
+      | Basic.Atom(a) -> atom_to_label varp a rst
       | Basic.Qnt(q, b) -> (Quant(Basic.binder_kind q), b::rst)
-      | Basic.Bound(q) ->
-        let (qnt, _, _) = Basic.dest_binding q
-        in
-        (Bound(qnt), rst)
-      | Basic.Const(c) -> (Const(c), rst)
       | Basic.App(l, r) -> (App, l::r::rst)
 
 (*

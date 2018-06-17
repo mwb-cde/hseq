@@ -87,12 +87,16 @@ val binder_compare: binders -> binders -> Order.t
 
 (** {7 Terms} *)
 
+(** Atomic terms *)
+type baseterm =
+  | Id of Ident.t * Gtype.t
+  | Bound of binders
+  | Free of string * Gtype.t
+  | Meta of binders
+  | Const of const_ty
+
 (** The representation of a term *)
 type term =
-  | Id of Ident.t * Gtype.t    (** Identifiers *)
-  | Bound of binders           (** Bound variables *)
-  | Free of string * Gtype.t   (** Free variables *)
-  | Meta of binders            (** Meta variables (for skolem constants) *)
-  | App of term * term         (** Function application *)
-  | Qnt of binders * term      (** Binding terms *)
-  | Const of const_ty          (** Constants *)
+  | Atom of baseterm
+  | App of term * term
+  | Qnt of binders * term

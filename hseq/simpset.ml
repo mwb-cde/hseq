@@ -35,62 +35,58 @@ open Simputils
     Net.insert. Makes variables (for which [varp] is true) larger than
     any other term.
 *)
+let lt_atom x y =
+  let bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
+  in
+  match (x, y) with
+  | (Const c1, Const c2) -> Basic.const_lt c1 c2
+  | (Const _ , _ ) -> true
+  | (Id _, Const _) -> false
+  | (Id(a1, _), Id(a2, _)) -> Ident.lessthan a1 a2
+  | (Id _, _) -> true
+  | (Meta _, Const _) -> false
+  | (Meta _, Id _) -> false
+  | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Meta _, _) -> true
+  | (Bound _, Const _) -> false
+  | (Bound _, Id _) -> false
+  | (Bound _, Meta _) -> false
+  | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Bound _ , _ ) -> true
+  | (Free _, Const _) -> false
+  | (Free _, Id _) -> false
+  | (Free _, Bound _) -> false
+  | (Free _, Meta _) -> false
+  | (Free (n1, _), Free (n2, _)) -> n1 < n2
+
 let rec lt_var lvarp rvarp x y =
-  let lt_aux lvarp rvarp t1 t2 =
-    let atom_lt (a1, ty1) (a2, ty2) = a1 < a2
-    and bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
+  let lt_aux t1 t2 =
+    let bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
     in
     match (t1, t2) with
-      | (Const c1, Const c2) -> Basic.const_lt c1 c2
-      | (Const _ , _ ) -> true
-      | (Id _, Const _) -> false
-      | (Id _, Id _) -> atom_lt (dest_ident t1) (dest_ident t2)
-      | (Id _, _) -> true
-      | (Meta _, Const _) -> false
-      | (Meta _, Id _) -> false
-      | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
-      | (Meta _, _) -> true
-      | (Bound _, Const _) -> false
-      | (Bound _, Id _) -> false
-      | (Bound _, Meta _) -> false
-      | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
-      | (Bound _ , _ ) -> true
-      | (Free _, Const _) -> false
-      | (Free _, Id _) -> false
-      | (Free _, Bound _) -> false
-      | (Free _, Meta _) -> false
-      | (Free (n1, _), Free (n2, _)) -> n1<n2
-      | (Free _, _) -> true
-      | (App _, Const _) -> false
-      | (App _, Id _) -> false
-      | (App _, Meta _) -> false
-      | (App _, Bound _) -> false
-      | (App _, Free _) -> false
-      | (App(f1, a1), App (f2, a2)) ->
-        if lt_var lvarp rvarp f1 f2
-        then true
-        else
-          if lt_var lvarp rvarp f2 f1
-          then false
-          else lt_var lvarp rvarp a1 a2
-      | (App _, _) -> true
-      | (Qnt _, Const _) -> false
-      | (Qnt _, Id _) -> false
-      | (Qnt _, Meta _) -> false
-      | (Qnt _, Bound _) -> false
-      | (Qnt _, Free _) -> false
-      | (Qnt _, App _) -> false
-      | (Qnt(q1, b1), Qnt(q2, b2)) ->
-        if lt_var lvarp rvarp b1 b2
-        then bound_lt (dest_binding q1) (dest_binding q2)
-        else false
+    | (Atom(a1), Atom(a2)) -> lt_atom a1 a2
+    | (Atom(_), _) -> true
+    | (_, Atom(_)) -> false
+    | (App(f1, a1), App (f2, a2)) ->
+       if lt_var lvarp rvarp f1 f2
+       then true
+       else
+         if lt_var lvarp rvarp f2 f1
+         then false
+         else lt_var lvarp rvarp a1 a2
+    | (App _, _) -> true
+    | (Qnt _, App _) -> false
+    | (Qnt(q1, b1), Qnt(q2, b2)) ->
+       if lt_var lvarp rvarp b1 b2
+       then bound_lt (dest_binding q1) (dest_binding q2)
+       else false
   in
   let (x_is_var, y_is_var) = (lvarp x, rvarp y)
   in
   match x_is_var, y_is_var with
     | (false, true) -> true
     | (true, _) -> false
-    | _ -> lt_aux lvarp rvarp x y
+    | _ -> lt_aux x y
 
 (** [get_rr_order rl]: Get the ordering of rule [rl]. Fail if [rl] is
     not ordered.

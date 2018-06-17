@@ -114,12 +114,12 @@ let anyid = Ident.mk_long base_thy "any"
 
 let is_true t =
   match t with
-    | Const(Cbool true) -> true
+    | Atom(Const(Cbool true)) -> true
     | _ -> false
 
 let is_false t =
   match t with
-    | Const(Cbool false) -> true
+    | Atom(Const(Cbool false)) -> true
     | _ -> false
 
 let is_neg t =
@@ -203,19 +203,27 @@ let mk_lam_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.Lambda ty n b
 let alpha_convp_full scp tenv t1 t2 =
   let type_matches scp env x y = Ltype.unify_env scp x y env
   in
-  let rec alpha_aux t1 t2 tyenv trmenv =
+  let rec alpha_atom t1 t2 tyenv trmenv =
     match (t1, t2) with
       | (Id(n1, ty1), Id(n2, ty2)) ->
         if n1 = n2
         then (trmenv, type_matches scp tyenv ty1 ty2)
-        else raise (term_error "alpha_convp_aux" [t1;t2])
+        else raise (term_error "alpha_convp_aux" [Atom(t1); Atom(t2)])
       | (Bound(q1), Bound(q2)) ->
-        let q1trm = try Term.find t1 trmenv with Not_found -> t1
-        and q2trm = try Term.find t2 trmenv with Not_found -> t2
+        let q1trm = try Term.find (Atom t1) trmenv with Not_found -> Atom(t1)
+        and q2trm = try Term.find (Atom t2) trmenv with Not_found -> Atom(t2)
         in
         if equals q1trm q2trm
         then (trmenv, tyenv)
-        else raise (term_error "alpha_convp_aux" [t1;t2])
+        else raise (term_error "alpha_convp_aux" [Atom(t1); Atom(t2)])
+      | _ ->
+        if equals (Atom(t1)) (Atom(t2))
+        then (trmenv, tyenv)
+        else raise (term_error "alpha_convp_aux" [Atom(t1); Atom(t2)])
+  in
+  let rec alpha_aux t1 t2 tyenv trmenv =
+    match (t1, t2) with
+      | Atom(a1), Atom(a2) -> alpha_atom a1 a2 tyenv trmenv
       | (App(f1, a1), App(f2, a2)) ->
         let (trmenv1, tyenv1)=alpha_aux f1 f2 tyenv trmenv
         in
@@ -229,7 +237,7 @@ let alpha_convp_full scp tenv t1 t2 =
         if (qn1=qn2)
         then
           let tyenv1 = type_matches scp tyenv qty1 qty2
-          and trmenv1 = bind (Bound q1) (Bound q2) trmenv
+          and trmenv1 = bind (Atom(Bound q1)) (Atom(Bound q2)) trmenv
           in
           alpha_aux b1 b2 tyenv1 trmenv1
         else raise (term_error "alpha_convp_aux" [t1;t2])
@@ -269,7 +277,7 @@ let beta_conv t =
       then
         let (q, b) = dest_qnt f
         in
-        qsubst [(Bound(q), a)]  b
+        qsubst [Atom(Bound(q)), a]  b
       else raise (term_error "Can't apply beta-reduction" [t])
     | _ -> raise (term_error "Can't apply beta-reduction" [t])
 
@@ -282,7 +290,7 @@ let safe_beta_reduce trm =
         if is_lambda f
         then
           let (q, b) = dest_qnt f in
-          let env1 = bind (Bound q) na env in
+          let env1 = bind (Atom(Bound q)) na env in
           let (nb, _) = beta_aux b env1
           in
           (nb, true)
@@ -296,7 +304,7 @@ let safe_beta_reduce trm =
         let nb, chng = beta_aux b env
         in
         (Qnt(q, nb), chng)
-      | Bound(q) ->
+      | Atom(Bound(q)) ->
         (try (Term.find t env, true)
          with Not_found -> (t, false))
       | _ -> (t, false)
@@ -321,7 +329,7 @@ let beta_reduce trm =
         if (not (args = []) && (is_lambda t))
         then
           let (na, nargs) = (List.hd args, List.tl args) in
-          let env1 = bind (Bound q) na env in
+          let env1 = bind (Atom(Bound q)) na env in
           let (nb, _) = beta_app b env1 nargs
           in
           (nb, true)
@@ -344,7 +352,7 @@ let beta_reduce trm =
         let (nb, chng) = beta_aux b env
         in
         (Qnt(q, nb), chng)
-      | Bound(q) ->
+      | Atom(Bound(q)) ->
         (try (Term.find t env, true)
          with Not_found -> (t, false))
       | _ -> (t, false)
@@ -395,12 +403,12 @@ let rec is_closed_env env t =
         (is_closed_env env l) && (is_closed_env env r)
     | Basic.Qnt(q, b) ->
       let env1 =
-        bind (Basic.Bound(q)) (mk_free "" (Gtype.mk_null())) env
+        bind (Atom(Bound(q))) (mk_free "" (Gtype.mk_null())) env
       in
       is_closed_env env1 b
-    | Basic.Meta(_) -> true
-    | Basic.Bound(_) -> member t env
-    | Basic.Free(_) -> member t env
+    | Atom(Basic.Meta(_)) -> true
+    | Atom(Basic.Bound(_)) -> member t env
+    | Atom(Basic.Free(_)) -> member t env
     | _ -> true
 
 let is_closed vs t =
@@ -426,33 +434,33 @@ let ct_free _ = true
 let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
   let rec close_aux env vs t=
     match t with
-      | Basic.Id(_) -> (t, env, vs)
-      | Basic.Meta(_) -> (t, env, vs)
-      | Basic.Bound(_) ->
+      | Atom(Id(_)) -> (t, env, vs)
+      | Atom(Meta(_)) -> (t, env, vs)
+      | Atom(Bound(_)) ->
         if member t env
         then (t, env, vs)
         else
           if free t
           then (t, env, t::vs)
           else (t, env, vs)
-      | Basic.Free(_) -> (t, env, t::vs)
-      | Basic.App(f, a) ->
+      | Atom(Free(_)) -> (t, env, t::vs)
+      | Atom(Const _) -> (t, env, vs)
+      | App(f, a) ->
         let f1, env1, vs1 = close_aux env vs f in
         let a1, env2, vs2 = close_aux env1 vs1 a
         in
-        (Basic.App(f1, a1), env2, vs2)
-      | Basic.Qnt(q, b) ->
+        (App(f1, a1), env2, vs2)
+      | Qnt(q, b) ->
         let (b1, env1, vs1) =
-          close_aux (bind (Basic.Bound(q)) (Basic.Bound(q)) env) vs b
+          close_aux (bind (Atom(Bound(q))) (Atom(Bound(q))) env) vs b
         in
-        (Basic.Qnt(q, b1), env, vs1)
-      | Basic.Const _ -> (t, env, vs)
+        (Qnt(q, b1), env, vs1)
   in
   let (nt, env, vars) =  close_aux (empty_subst()) [] trm in
   let make_qnts qnt (env, ctr, bs) t =
     let qname = Lib.int_to_name ctr in
     let qty = Gtype.mk_var qname in
-    let qbind = Basic.mk_binding qnt qname qty in
+    let qbind = mk_binding qnt qname qty in
     let qtrm = mk_bound qbind
     in
     (bind t qtrm env, ctr+1, qbind::bs)
@@ -481,10 +489,10 @@ let gen_term bs trm =
           let (_, name, ty) = Basic.dest_binding q in
           let q1 = Basic.mk_binding Basic.All name ty
           in
-          (Basic.Bound(q1),
+          (Atom(Bound(q1)),
            q1::qnts,
            known,
-           Term.bind t (Basic.Bound(q1)) vars)
+           Term.bind t (Atom(Bound(q1))) vars)
     and get_free t =
       try (Term.find t known, qnts, known, vars)
       with Not_found ->
@@ -493,35 +501,35 @@ let gen_term bs trm =
           let (name, ty) = Term.dest_free t in
           let q = Basic.mk_binding Basic.All name ty
           in
-          (Basic.Bound(q),
+          (Atom(Bound(q)),
            q::qnts,
            known,
-           Term.bind t (Basic.Bound(q)) vars)
+           Term.bind t (Atom(Bound(q))) vars)
     in
     match t with
-      | Basic.Bound(_) -> get_bound t
-      | Basic.Free(_) -> get_free t
-      | Basic.Qnt(q, body) ->
+      | Atom(Bound(_)) -> get_bound t
+      | Atom(Free(_)) -> get_free t
+      | Qnt(q, body) ->
         let (body1, qnts1, known1, vars1) =
           gen_aux qnts
-            (Term.bind (Basic.Bound(q)) (Basic.Bound(q)) known)
+            (Term.bind (Atom(Bound(q))) (Atom(Bound(q))) known)
             vars body
         in
-        (Basic.Qnt(q, body1), qnts1, known, vars1)
-      | Basic.App(f, a) ->
+        (Qnt(q, body1), qnts1, known, vars1)
+      | App(f, a) ->
         let (f1, qnts1, known1, vars1) =
           gen_aux qnts known vars f
         in
         let (a1, qnts2, known2, vars2) =
           gen_aux qnts1 known1 vars1 a
         in
-        (Basic.App(f1, a1), qnts2, known2, vars2)
+        (App(f1, a1), qnts2, known2, vars2)
       | _ -> (t, qnts, known, vars)
   in
   let (trm1, qnts, _, vars) =
     gen_aux [] (Term.empty_subst())
       (List.fold_left
-         (fun s q -> Term.bind (Basic.Bound(q)) (Basic.Bound(q)) s)
+         (fun s q -> Term.bind (Atom(Bound(q))) (Atom(Bound(q))) s)
          (Term.empty_subst())
          bs)
       trm
@@ -545,21 +553,21 @@ let in_scope memo scp trm =
   in
   let rec in_scp_aux t =
     match t with
-      | Id(id, ty) ->
+      | Atom(Id(id, ty)) ->
           ignore(lookup_id (Ident.thy_of id));
           Ltype.in_scope memo scp ty
-      | Qnt(_, b) ->
-        ignore(Ltype.in_scope memo scp (get_binder_type t));
-        in_scp_aux b
-      | Bound(_) -> Ltype.in_scope memo scp (get_binder_type t)
-      | Meta(q) ->
+      | Atom(Bound(_)) -> Ltype.in_scope memo scp (get_binder_type t)
+      | Atom(Meta(q)) ->
         if Scope.is_meta scp q
         then true
         else raise Not_found
+      | Atom(Free(_)) -> raise Not_found
+      | Qnt(_, b) ->
+        ignore(Ltype.in_scope memo scp (get_binder_type t));
+        in_scp_aux b
       | App(a, b) ->
         ignore(in_scp_aux a);
         in_scp_aux b
-      | Free(_) -> raise Not_found
       | _ -> true
   in
   try ignore(in_scp_aux trm); true
@@ -612,55 +620,61 @@ let set_names scp trm =
   in
   let rec set_aux qnts t=
     match t with
-      | Id(id, ty) ->
-        let th, n = Ident.dest id in
-        let nid =
-          if(th = Ident.null_thy)
-            then Ident.mk_long (lookup_id n) n
-            else id
-        in
-        let ty1 = set_type_name type_thy_memo scp ty in
-        let nty =
-          try Some(lookup_type id)
-          with Not_found -> None
-        in
-        let ret_id =
-          match nty with
-            | None -> Id(nid, ty1)
-            | Some(xty) -> Id(nid, unify_types xty ty1)
-        in
-        ret_id
-      | Free(n, ty) ->
-        let ty1= set_type_name type_thy_memo scp ty
-        in
-        (match try_find (Scope.find_meta scp) n with
-          | Some(q) -> Meta(q)
-          | None ->
-            (match try_find lookup_id n with
-              | None -> Free(n, ty1)
+    | Atom(Id(id, ty)) ->
+       let th, n = Ident.dest id in
+       let nid =
+         if(th = Ident.null_thy)
+         then Ident.mk_long (lookup_id n) n
+         else id
+       in
+       let ty1 = set_type_name type_thy_memo scp ty in
+       let nty =
+         try Some(lookup_type id)
+         with Not_found -> None
+       in
+       let ret_id =
+         match nty with
+         | None -> Atom(Id(nid, ty1))
+         | Some(xty) -> Atom(Id(nid, unify_types xty ty1))
+       in
+       ret_id
+    | Atom(Free(n, ty)) ->
+       let ty1= set_type_name type_thy_memo scp ty
+       in
+       begin
+         match try_find (Scope.find_meta scp) n with
+         | Some(q) -> Atom(Meta(q))
+         | None ->
+            begin
+              match try_find lookup_id n with
+              | None -> Atom(Free(n, ty1))
               | Some (nth1) ->
-                let nid = Ident.mk_long nth1 n
-                in
-                match try_find lookup_type nid with
-                  | None -> Id(nid, ty1)
-                  | Some(xty) -> Id(nid, unify_types xty ty1)))
-      | Qnt(q, b) ->
-        let nq = binding_set_names ~memo:type_thy_memo scp q in
-        let qnts1 = bind (Bound(q)) (Bound(nq)) qnts
-        in
-        Qnt(nq, set_aux qnts1 b)
-      | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
-      | Meta(q) ->
-        if(Scope.is_meta scp q)
-        then t
-        else
-          raise (term_error "Meta variable occurs outside binding" [t])
-      | Bound(q) ->
-        (match Lib.try_find (find (Bound(q))) qnts with
-          | Some(x) -> x
-          | None ->
-            raise (term_error "Bound variable occurs outside binding" [t]))
-      | _ -> t
+                 let nid = Ident.mk_long nth1 n
+                 in
+                 match try_find lookup_type nid with
+                 | None -> Atom(Id(nid, ty1))
+                 | Some(xty) -> Atom(Id(nid, unify_types xty ty1))
+            end
+       end
+    | Qnt(q, b) ->
+       let nq = binding_set_names ~memo:type_thy_memo scp q in
+       let qnts1 = bind (Atom(Bound(q))) (Atom(Bound(nq))) qnts
+       in
+       Qnt(nq, set_aux qnts1 b)
+    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+    | Atom(Meta(q)) ->
+       if Scope.is_meta scp q
+       then t
+       else
+         raise (term_error "Meta variable occurs outside binding" [t])
+    | Atom(Bound(q)) ->
+       begin
+         match Lib.try_find (find (Atom(Bound(q)))) qnts with
+         | Some(x) -> x
+         | None ->
+            raise (term_error "Bound variable occurs outside binding" [t])
+       end
+    | _ -> t
   in
   set_aux (empty_subst()) trm
 
@@ -702,7 +716,7 @@ let resolve_term scp vars varlist trm =
     let ntyenv = Ltype.unify scp ty0 ty in
     let nty = Gtype.mgu ty0 ntyenv
     in
-    Id(nid, nty)
+    Term.mk_typed_ident nid nty
   in
   let set_type_name memo s t =
     Ltype.set_name ~memo:memo s t
@@ -713,8 +727,8 @@ let resolve_term scp vars varlist trm =
       | None ->
         let nt =
           (match t with
-            | Free(n, ty) -> mk_bound (mk_binding All n ty)
-            | Bound(q) ->
+            | Atom(Free(n, ty)) -> mk_bound (mk_binding All n ty)
+            | Atom(Bound(q)) ->
               mk_bound (mk_binding All (binder_name q) (binder_type q))
             | _ -> mk_bound (mk_binding All "x" (Gtype.mk_var "ty")))
         in
@@ -722,26 +736,27 @@ let resolve_term scp vars varlist trm =
   in
   let rec set_aux (qnts, vars) t lst =
     match t with
-      | Id(id, ty) ->
-          let ty1=
+      | Atom(Id(id, ty)) ->
+          let ty1 =
             try set_type_name type_thy_memo scp ty
             with err -> raise (add_term_error "Invalid type" [t] err)
           in
           let ret_id =
             match (Lib.try_find (lookup_id scp id) ty1) with
-              | Some x -> x
+              | Some x -> (x: Basic.term)
               | None -> raise (term_error "Term not in scope" [t])
           in
           if in_scope scope_memo scp ret_id
           then (ret_id, vars, lst)
           else raise (term_error "Term not in scope" [t])
-      | Free(n, ty) ->
+      | Atom(Free(n, ty)) ->
         (match Lib.try_find (Scope.find_meta scp) n with
-            Some(b) -> (Meta(b), vars, lst)
-          | None -> set_aux (qnts, vars) (Id (Ident.mk_name n, ty)) lst)
+            Some(b) -> (Atom(Meta b), vars, lst)
+          | None ->
+             set_aux (qnts, vars) (mk_typed_ident (Ident.mk_name n) ty) lst)
       | Qnt(q, b) ->
         let nq = binding_set_names ~memo:type_thy_memo scp q in
-        let qnts1 = bind (Bound(q)) (Bound(nq)) qnts in
+        let qnts1 = bind (mk_bound q) (mk_bound nq) qnts in
         let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
         in
         (Qnt(nq, nb), nvars, nlst)
@@ -750,15 +765,15 @@ let resolve_term scp vars varlist trm =
         let (na, avars, alst) = set_aux (qnts, fvars) a flst
         in
         (App(nf, na), avars, alst)
-      | Meta(q) ->
+      | Atom(Meta(q)) ->
         if Scope.is_meta scp q
         then (t, vars, lst)
         else
           let nt, nvars = lookup_var vars t
            in
           (nt, nvars, ((nt, t)::lst))
-      | Bound(q) ->
-        (match Lib.try_find (find (Bound(q))) qnts with
+      | Atom(Bound(q)) ->
+        (match Lib.try_find (find (mk_bound q)) qnts with
           | Some x -> (x, vars, lst)
           | None ->
             let (nt, nvars) = lookup_var vars t
@@ -791,7 +806,7 @@ let rec subst_closed qntenv sb trm =
   with Not_found ->
     (match trm with
       | Qnt(q, b) ->
-        let qntenv1 = bind (Bound q) (mk_free "" (Gtype.mk_null())) qntenv
+        let qntenv1 = bind (mk_bound q) (mk_free "" (Gtype.mk_null())) qntenv
         in
         Qnt(q, subst_closed qntenv1 sb b)
       | App(f, a) ->
@@ -811,9 +826,10 @@ let subst_equiv scp term lst =
       | None ->
         (match trm with
           | Qnt(q, b) ->
-            let qntenv1 = Term.bind (Bound q) (Term.mk_short_ident "") qntenv
-            in
-            Qnt(q, subst_aux qntenv1 b)
+             let qntenv1 =
+               Term.bind (mk_bound q) (Term.mk_short_ident "") qntenv
+             in
+             Qnt(q, subst_aux qntenv1 b)
           | App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
           | _ -> trm)
   in

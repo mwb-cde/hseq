@@ -38,7 +38,7 @@ type dbterm =
 
 (*** Conversion functions *)
 
-let rec of_term_aux env qnts t =
+let of_atom env qnts t =
   match t with
     | Basic.Id(n, ty) ->
       let (ty1, env1) = Gtype.to_save_env env ty
@@ -49,15 +49,24 @@ let rec of_term_aux env qnts t =
       in
       (Free(n, ty1), env1)
     | Basic.Const(c) -> (Const(c), env)
-    | Basic.App(f, a) ->
-      let f1, env1 = of_term_aux env qnts f in
-      let a1, env2 = of_term_aux env1 qnts a
-      in
-      (App(f1, a1), env2)
     | Basic.Bound(q) ->
       let q_idx = Lib.index (fun x -> (x == q)) qnts
       in
       (Bound(q_idx), env)
+    | Basic.Meta(q) ->
+      raise
+        (Term.term_error
+           "Can't convert meta variables to DB terms"
+           [Basic.Atom(t)])
+
+let rec of_term_aux env qnts t =
+  match t with
+  | Basic.(Atom(a)) -> of_atom env qnts a
+  | Basic.App(f, a) ->
+      let f1, env1 = of_term_aux env qnts f in
+      let a1, env2 = of_term_aux env1 qnts a
+      in
+      (App(f1, a1), env2)
     | Basic.Qnt(q, b) ->
       let (tqnt, tqvar, tqtyp) = Basic.dest_binding q
       and (b1, env1) = of_term_aux env (q::qnts) b
@@ -66,9 +75,6 @@ let rec of_term_aux env qnts t =
       let q1 = mk_binder tqnt tqvar ty1
       in
       (Qnt(q1, b1), env2)
-    | Basic.Meta(q) ->
-      raise
-        (Term.term_error "Can't convert meta variables to DB terms" [t])
 
 let of_term t =
   let (t1, _) = of_term_aux [] [] t
@@ -80,21 +86,21 @@ let rec to_term_aux env qnts t =
     | Id(n, ty) ->
       let (ty1, env1) = Gtype.from_save_env env ty
       in
-      (Basic.Id(n, ty1), env1)
+      (Term.mk_typed_ident n ty1, env1)
     | Free(n, ty) ->
       let (ty1, env1) = Gtype.from_save_env env ty
       in
-      (Basic.Free(n, ty1), env1)
-    | Const(c) -> (Basic.Const(c), env)
+      (Term.mk_free n ty1, env1)
+    | Const(c) -> (Term.mk_const c, env)
+    | Bound(q) ->
+      let q_binder = List.nth qnts q
+      in
+      (Term.mk_bound q_binder, env)
     | App(f, a) ->
       let (f1, env1) = to_term_aux env qnts f in
       let (a1, env2) = to_term_aux env1 qnts a
       in
-      (Basic.App(f1, a1), env2)
-    | Bound(q) ->
-      let q_binder = List.nth qnts q
-      in
-      (Basic.Bound(q_binder), env)
+      (Term.mk_app f1 a1, env2)
     | Qnt(q, b) ->
       let (ty1, env1) = Gtype.from_save_env env q.qtyp in
       let q1 =
@@ -102,7 +108,7 @@ let rec to_term_aux env qnts t =
       in
       let (b1, env2) = to_term_aux env1 (q1::qnts) b
       in
-      (Basic.Qnt(q1, b1), env2)
+      (Term.mk_qnt q1 b1, env2)
 
 let to_term t =
   let (t1, _) = to_term_aux [] [] t
