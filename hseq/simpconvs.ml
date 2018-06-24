@@ -387,18 +387,14 @@ let is_rr_rule (qs, c, l, r) =
   let is_var q = List.exists (Basic.binder_equality q) qs in
   let vars = Simputils.find_variables is_var (Term.empty_subst()) l in
   let rret =
-    match r with
-      | None -> None
-      | Some(rhs) ->
-        try check_variables is_var vars rhs; Some(true)
-        with Not_found -> Some(false)
+    if r = None
+    then None
+    else Some(check_variables is_var vars (Lib.from_some r))
   in
   let cret =
-    match c with
-      | None -> None
-      | Some(cnd) ->
-        try check_variables is_var vars cnd; Some(true)
-        with Not_found -> Some(false)
+    if c = None
+    then None
+    else Some(check_variables is_var vars (Lib.from_some c))
   in
   (cret, rret)
 

@@ -75,11 +75,11 @@ let check_variables is_var vars trm =
     match t with
       | Basic.Atom(Basic.Bound(q)) ->
         if is_var q
-        then ignore(Term.find t vars)
-        else ()
+        then Term.member t vars
+        else true
       | Basic.Qnt(_, b) -> check_aux b
-      | Basic.App(f, a) -> check_aux f; check_aux a
-      | _ -> ()
+      | Basic.App(f, a) -> check_aux f && check_aux a
+      | _ -> true
   in check_aux trm
 
 (** [strip_qnt_cond trm]: split rule [trm] into variable binders,

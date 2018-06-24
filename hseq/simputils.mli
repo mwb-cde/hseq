@@ -45,7 +45,7 @@ val find_variables:
 *)
 
 val check_variables:
-  (Basic.binders -> bool) -> Term.substitution -> Basic.term -> unit
+  (Basic.binders -> bool) -> Term.substitution -> Basic.term -> bool
 (** [check_variables is_var vars trm]: Check that all subterms [t] of
     [trm] s.t. [is_var t] are in [vars].
 *)
