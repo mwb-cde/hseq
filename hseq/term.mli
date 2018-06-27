@@ -205,11 +205,6 @@ val get_binder_kind: term -> quant
 val get_qnt_body: term -> term
 (** [get_qnt_body t]: Get the body quantified by term [t]. *)
 
-val get_free_binders: term -> binders list
-(** [get_free_binders t]: Get the list of bound variables loose in [t]
-    (those which occur outside their binding term).
-*)
-
 val strip_qnt: Basic.quant -> term -> binders list * term
 (** [strip_qnt q t]: remove outermost quantifiers of kind [k] from
     term [t].

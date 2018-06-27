@@ -163,33 +163,6 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 
 (*** Matching ***)
 
-(*
-let retype tyenv t =
-  let rec retype_aux qenv t =
-    match t with
-    | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
-    | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
-    | Bound( _ ) ->
-       (try table_find t qenv
-        with Not_found -> t)
-    | Meta( _ ) -> t
-    | Const( _ ) -> t
-    | App(f, a) -> App(retype_aux qenv f, retype_aux qenv a)
-    | Qnt(q, b) ->
-       let (oqnt, oqnm, oqty) = Basic.dest_binding q in
-       let nty = Gtype.mgu oqty tyenv in
-       let nq = mk_binding oqnt oqnm nty
-       in
-       let qenv1 = table_add (Bound(q)) (Bound(nq)) qenv; qenv in
-       let new_term = Qnt(nq, retype_aux qenv1 b)
-       in
-       let _ = table_remove (Bound(q)) qenv1; qenv
-       in
-       new_term
-  in
-  retype_aux (empty_table()) t
- *)
-
 (** Match terms w.r.t given type and term contexts *)
 let matches_full scp typenv trmenv varp trm1 trm2 =
   let lookup q sbs =

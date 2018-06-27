@@ -424,28 +424,6 @@ let get_qnt_body t =
     | _ -> raise (Failure "Not a quantified formula")
 
 
-let get_free_binders t =
-  let memo = empty_table()
-  and trtrm = mk_free "" (Gtype.mk_null())
-  in
-  let rec free_aux qnts x =
-    match x with
-      | Qnt(q, b) ->
-        table_add (Atom(Bound q)) (trtrm) memo;
-        free_aux qnts b
-      | Atom(Bound(q)) ->
-        (try (ignore(table_find x memo); qnts)
-         with Not_found ->
-           ignore(table_add x trtrm memo);
-           (q::qnts))
-      | App(f, a) ->
-        let fqnts = free_aux qnts f
-        in
-        free_aux fqnts a
-      | _ -> qnts
-  in
-  free_aux [] t
-
 let strip_qnt q trm =
   let rec strip_aux t qs =
     if is_qnt t

@@ -298,7 +298,7 @@ let term_retype_with_check scp tyenv t=
       | Free(n, ty) -> Free(n, mk_new_type ty)
       | Bound(_) ->
          begin
-           try Term.table_find (Atom(t)) qenv
+           try Term.basic_find (Atom(t)) qenv
            with Not_found -> t
          end
       | Meta(_) -> t
@@ -306,23 +306,23 @@ let term_retype_with_check scp tyenv t=
   in
   let rec retype_aux t qenv =
     match t with
-      | Atom(a) -> Atom(retype_atom a qenv)
-      | App(f, a) -> App(retype_aux f qenv, retype_aux a qenv)
+      | Atom(a) -> (Atom(retype_atom a qenv), qenv)
+      | App(f, a) ->
+         let (f1, qenv1) = retype_aux f qenv in
+         let (a1, qenv2) = retype_aux a qenv1 in
+         (App(f1, a1), qenv2)
       | Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q
+        let (oqnt, oqnm, oqty) = Basic.dest_binding q in
+        let nty = mk_new_type oqty in
+        let nq = mk_binding oqnt oqnm nty in
+        let qenv1 = Term.basic_bind (Term.mk_bound(q)) (Bound(nq)) qenv
         in
-        let nty = mk_new_type oqty
+        let (b1, _) = retype_aux b qenv1
         in
-        let nq = mk_binding oqnt oqnm nty
-        in
-        let qenv1 = Term.table_add (Term.mk_bound(q)) (Bound(nq)) qenv; qenv
-        in
-        let new_term = Qnt(nq, retype_aux b qenv1 ) in
-        let _ = Term.table_remove (Term.mk_bound(q)) qenv1; qenv
-        in
-        new_term
+        (Term.mk_qnt nq b1, qenv)
   in
-  retype_aux t (Term.empty_table())
+  let (new_term, _) = retype_aux t (Term.empty_tree()) in
+  new_term
 
 let retype_with_check scp tenv f =
   let nf =
