@@ -298,7 +298,7 @@ let term_retype_with_check scp tyenv t=
       | Free(n, ty) -> Free(n, mk_new_type ty)
       | Bound(_) ->
          begin
-           try Term.basic_find (Atom(t)) qenv
+           try Term.Tree.find (Atom(t)) qenv
            with Not_found -> t
          end
       | Meta(_) -> t
@@ -315,13 +315,13 @@ let term_retype_with_check scp tyenv t=
         let (oqnt, oqnm, oqty) = Basic.dest_binding q in
         let nty = mk_new_type oqty in
         let nq = mk_binding oqnt oqnm nty in
-        let qenv1 = Term.basic_bind (Term.mk_bound(q)) (Bound(nq)) qenv
+        let qenv1 = Term.Tree.bind (Term.mk_bound(q)) (Bound(nq)) qenv
         in
         let (b1, _) = retype_aux b qenv1
         in
         (Term.mk_qnt nq b1, qenv)
   in
-  let (new_term, _) = retype_aux t (Term.empty_tree()) in
+  let (new_term, _) = retype_aux t (Term.Tree.empty()) in
   new_term
 
 let retype_with_check scp tenv f =

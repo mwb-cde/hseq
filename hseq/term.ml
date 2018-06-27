@@ -457,24 +457,26 @@ let print_simple trm =
   print_aux trm
 
 
-(* [('a)tree]: Balanced trees indexed by terms *)
-module TermTreeData =
-struct
-  type key = term
-  let compare = compare
-end
-module TermTree = Treekit.BTree(TermTreeData)
-type ('a)tree = ('a) TermTree.t
+(* [('a)Tree.t]: Balanced trees indexed by terms *)
+module Tree =
+  struct
+    module TermTreeData =
+      struct
+        type key = term
+        let compare = compare
+      end
 
-let empty_tree() = TermTree.empty
-let basic_find x env = TermTree.find env x
-let basic_rebind t r env = TermTree.replace env t r
-let basic_bind t r env = TermTree.replace env t r
-let basic_remove t env = TermTree.delete env t
-let basic_member t env =
-  try ignore(basic_find t env); true
-  with Not_found -> false
+    module TermTree = Treekit.BTree(TermTreeData)
+    type ('a)t = ('a) TermTree.t
 
+    let empty() = TermTree.empty
+    let find x env = TermTree.find env x
+    let bind t r env = TermTree.replace env t r
+    let remove t env = TermTree.delete env t
+    let member t env =
+      try ignore(find t env); true
+      with Not_found -> false
+  end
 (*
  * Substitution in terms
  *)
@@ -492,13 +494,13 @@ let sterm t a= ST(t, ref a)
 (* [type substitution]: the data structure holding the substitution to
    be made in a term.
 *)
-type substitution = (subst_terms)tree
+type substitution = (subst_terms)Tree.t
 
-let empty_subst() = ((empty_tree()): substitution)
-let find x env = st_term (basic_find x env)
-let bind t r env = basic_bind t (sterm r Unknown) env
-let remove = basic_remove
-let member = basic_member
+let empty_subst() = ((Tree.empty()): substitution)
+let find x env = st_term (Tree.find x env)
+let bind t r env = Tree.bind t (sterm r Unknown) env
+let remove = Tree.remove
+let member = Tree.member
 
 (** [rename t], [rename_env tyenv trmenv t]: Rename terms.
 
@@ -572,7 +574,7 @@ let do_rename nb =
       with No_quantifier ->
         set_subst_alt nb No_rename; (st_term nb)
 
-let replace env x =  do_rename (basic_find x env)
+let replace env x =  do_rename (Tree.find x env)
 
 (**
    Retyping.
@@ -586,7 +588,7 @@ let retype_atom tyenv qenv t =
   | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
   | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
   | Bound(q) ->
-     (try basic_find (Atom(t)) qenv with Not_found -> t)
+     (try Tree.find (Atom(t)) qenv with Not_found -> t)
   | _ -> t
 
 let retype tyenv t =
@@ -605,12 +607,12 @@ let retype tyenv t =
        let nty = Gtype.mgu oqty tyenv in
        let q1 = mk_binding oqnt oqnm nty
        in
-       let qenv1 = basic_bind (Atom(Bound(q))) (Bound(q1)) qenv in
+       let qenv1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) qenv in
        let (b1, _) = retype_aux b qenv1
        in
        (Qnt(q1, b1), qenv)
   in
-  let (ret, _) = retype_aux t (empty_tree()) in
+  let (ret, _) = retype_aux t (Tree.empty()) in
   ret
 
 (* retype_pretty: as for retype, make substitution for type variables
@@ -623,7 +625,7 @@ let retype_pretty_env typenv trm =
       Gtype.mgu_rename_env (ctr, typenv) name_env qty
     in
     let q1 = mk_binding qnt qnm nty in
-    let qenv1 = basic_bind (Atom(Bound q)) (Bound q1) qenv
+    let qenv1 = Tree.bind (Atom(Bound q)) (Bound q1) qenv
     in
     (q1, ctr1, nenv1, qenv1)
   in
@@ -643,7 +645,7 @@ let retype_pretty_env typenv trm =
       | Const(c) -> (t, ctr, name_env, qenv)
       | Bound(q) ->
          begin
-           try (basic_find (Atom t) qenv, ctr, name_env, qenv)
+           try (Tree.find (Atom t) qenv, ctr, name_env, qenv)
            with
              Not_found ->
               let (q1, ctr1, nenv1, qenv1) =
@@ -670,7 +672,7 @@ let retype_pretty_env typenv trm =
          (Qnt(q1, b1), ctr2, nenv2, qenv)
   in
   let (retyped, _, new_nenv, _) =
-    retype_aux trm 0 (Gtype.empty_subst()) (empty_tree())
+    retype_aux trm 0 (Gtype.empty_subst()) (Tree.empty())
   in
   (retyped, new_nenv)
 
@@ -708,7 +710,7 @@ let full_rename_env type_env term_env trm =
     | Meta(q) -> (t, tyenv)
     | Const(c) -> (t, tyenv)
     | Bound(q) ->
-       let t1 = try (basic_find (Atom(t)) env) with Not_found -> t
+       let t1 = try (Tree.find (Atom(t)) env) with Not_found -> t
        in
        (t1, tyenv)
   in
@@ -720,7 +722,7 @@ let full_rename_env type_env term_env trm =
          (Atom(a1), tyenv1)
       | Qnt(q, b) ->
         let (q1, tyenv1) = rename_binder q tyenv in
-        let env1 = basic_bind (Atom(Bound(q))) (Bound(q1)) env in
+        let env1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) env in
         let (b1, tyenv2) = rename_aux b tyenv1 env1
         in
         (Qnt(q1, b1), tyenv2)
@@ -733,7 +735,7 @@ let full_rename_env type_env term_env trm =
   rename_aux trm type_env term_env
 
 let full_rename tyenv trm =
-  let trmenv = empty_tree()
+  let trmenv = Tree.empty()
   in
   let (ntrm, ntyenv) = full_rename_env tyenv trmenv trm
   in
@@ -764,7 +766,7 @@ let retype_index idx trm =
       | Meta(q) -> (t, ctr, tyenv)
       | Const(c) -> (t, ctr, tyenv)
       | Bound(q) ->
-        let t1 = try (basic_find (Atom(t)) env) with Not_found -> t
+        let t1 = try (Tree.find (Atom(t)) env) with Not_found -> t
         in
         (t1, ctr, tyenv)
   in
@@ -776,7 +778,7 @@ let retype_index idx trm =
          (Atom(a1), ctr1, tyenv1)
       | Qnt(q, b) ->
         let (q1, ctr1, tyenv1) = rename_binder q ctr tyenv in
-        let env1 = basic_bind (Atom(Bound(q))) (Bound(q1)) env in
+        let env1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) env in
         let (b1, ctr2, tyenv2) = rename_aux b ctr1 tyenv1 env1
         in
         (Qnt(q1, b1), ctr2, tyenv2)
@@ -786,7 +788,7 @@ let retype_index idx trm =
         in
         (App(f1, a1), ctr2, tyenv2)
   in
-  rename_aux trm idx (Gtype.empty_subst()) (empty_tree())
+  rename_aux trm idx (Gtype.empty_subst()) (Tree.empty())
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
@@ -864,7 +866,7 @@ let chase_var varp x env =
     in
     if varp y
     then
-      try chase_var_aux (basic_find y env)
+      try chase_var_aux (Tree.find y env)
       with Not_found -> r
     else r
   in

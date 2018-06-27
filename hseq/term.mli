@@ -45,17 +45,20 @@ val compare: term -> term -> Order.t
 
 (** {7 Balanced Trees.} *)
 
-module TermTreeData: Treekit.TreeData
-module TermTree: (Treekit.BTreeType with type key = term)
+module Tree:
+sig
+  module TermTreeData: Treekit.TreeData
+  module TermTree: (Treekit.BTreeType with type key = term)
 
-type ('a)tree = ('a)TermTree.t
-(** Trees indexed by terms *)
+  type ('a)t = ('a)TermTree.t
+  (** Trees indexed by terms *)
 
-val empty_tree: unit -> ('a)tree
-val basic_find: term -> ('a)tree -> 'a
-val basic_bind: term -> 'a -> ('a)tree -> ('a)tree
-val basic_remove: term -> ('a)tree -> ('a)tree
-val basic_member: term -> ('a)tree -> bool
+  val empty: unit -> ('a)t
+  val find: term -> ('a)t -> 'a
+  val bind: term -> 'a -> ('a)t -> ('a)t
+  val remove: term -> ('a)t -> ('a)t
+  val member: term -> ('a)t -> bool
+end
 
 (** {5 Operations on terms} *)
 
