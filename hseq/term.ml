@@ -541,13 +541,15 @@ let empty_tree() = TermTree.empty
 let basic_find x env = TermTree.find env x
 let basic_rebind t r env = TermTree.replace env t r
 let basic_bind t r env = TermTree.replace env t r
+let basic_remove t env = TermTree.delete env t
+let basic_member t env =
+  try ignore(basic_find t env); true
+  with Not_found -> false
 
 let find x env = st_term (basic_find x env)
 let bind t r env = TermTree.replace env t (sterm r Unknown)
-let remove t env = TermTree.delete env t
-let member t env =
-  try ignore(find t env); true
-  with Not_found -> false
+let remove = basic_remove
+let member = basic_member
 
 (** [rename t], [rename_env tyenv trmenv t]: Rename terms.
 

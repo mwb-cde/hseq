@@ -51,6 +51,12 @@ module TermTree: (Treekit.BTreeType with type key = term)
 type ('a)tree = ('a)TermTree.t
 (** Trees indexed by terms *)
 
+val empty_tree: unit -> ('a)tree
+val basic_find: term -> ('a)tree -> 'a
+val basic_bind: term -> 'a -> ('a)tree -> ('a)tree
+val basic_remove: term -> ('a)tree -> ('a)tree
+val basic_member: term -> ('a)tree -> bool
+
 (** {7 Hashtables} *)
 
 type ('a)table
