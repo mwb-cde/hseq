@@ -305,45 +305,6 @@ let rec is_subterm x y =
       | Qnt (_, b) -> (is_subterm x b)
       | _ -> false
 
-(* [('a)tree]: Balanced trees indexed by terms *)
-module TermTreeData =
-struct
-  type key = term
-  let compare = compare
-end
-module TermTree = Treekit.BTree(TermTreeData)
-type ('a)tree = ('a) TermTree.t
-
-(* [('a)table]: Hashtables indexed by terms *)
-module type TERMHASHKEYS =
-sig
-  type t = term
-  val equal: t -> t -> bool
-  val hash: t -> int
-end
-
-module Termhashkeys:TERMHASHKEYS =
-struct
-  type t = term
-  let equal = equals
-  let hash= Hashtbl.hash
-end
-module type TERMHASH = (Hashtbl.S with type key = (term))
-module Termhash:TERMHASH = Hashtbl.Make(Termhashkeys)
-
-type ('a)table = ('a) Termhash.t
-let empty_table() = Termhash.create 5
-let table_find x env = Termhash.find env x
-let table_remove t env = Termhash.remove env t
-let table_add t r env = Termhash.add env t r
-let table_rebind t r env =
-  Termhash.remove env t;
-  Termhash.add env t r
-
-let table_member x env =
-  try ignore(table_find x env); true
-  with Not_found -> false
-
 (** More manipulators. *)
 
 let rec strip_fun_qnt f term qs =
@@ -495,6 +456,25 @@ let print_simple trm =
   in
   print_aux trm
 
+
+(* [('a)tree]: Balanced trees indexed by terms *)
+module TermTreeData =
+struct
+  type key = term
+  let compare = compare
+end
+module TermTree = Treekit.BTree(TermTreeData)
+type ('a)tree = ('a) TermTree.t
+
+let empty_tree() = TermTree.empty
+let basic_find x env = TermTree.find env x
+let basic_rebind t r env = TermTree.replace env t r
+let basic_bind t r env = TermTree.replace env t r
+let basic_remove t env = TermTree.delete env t
+let basic_member t env =
+  try ignore(basic_find t env); true
+  with Not_found -> false
+
 (*
  * Substitution in terms
  *)
@@ -514,18 +494,9 @@ let sterm t a= ST(t, ref a)
 *)
 type substitution = (subst_terms)tree
 
-let empty_subst() = ((TermTree.empty): substitution)
-let empty_tree() = TermTree.empty
-let basic_find x env = TermTree.find env x
-let basic_rebind t r env = TermTree.replace env t r
-let basic_bind t r env = TermTree.replace env t r
-let basic_remove t env = TermTree.delete env t
-let basic_member t env =
-  try ignore(basic_find t env); true
-  with Not_found -> false
-
+let empty_subst() = ((empty_tree()): substitution)
 let find x env = st_term (basic_find x env)
-let bind t r env = TermTree.replace env t (sterm r Unknown)
+let bind t r env = basic_bind t (sterm r Unknown) env
 let remove = basic_remove
 let member = basic_member
 

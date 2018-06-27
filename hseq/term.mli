@@ -57,18 +57,6 @@ val basic_bind: term -> 'a -> ('a)tree -> ('a)tree
 val basic_remove: term -> ('a)tree -> ('a)tree
 val basic_member: term -> ('a)tree -> bool
 
-(** {7 Hashtables} *)
-
-type ('a)table
-(** Tables with a term as the key. *)
-
-val empty_table: unit -> ('a) table
-val table_find: term -> 'a table -> 'a
-val table_member: term -> 'a table -> bool
-val table_remove: term -> 'a table -> unit
-val table_add : term -> 'a -> 'a table -> unit
-val table_rebind : term -> 'a -> 'a table -> unit
-
 (** {5 Operations on terms} *)
 
 (** {7 Recognisers} *)
