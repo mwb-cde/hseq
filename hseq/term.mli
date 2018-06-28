@@ -231,15 +231,6 @@ val retype: Gtype.substitution -> term -> term
     type in [tyenv].
 *)
 
-(*
-val retype_with_check: Scope.t -> Gtype.substitution -> term -> term
-(** [retype_with_check scp tyenv t]: Reset the types in term [t] using
-    type substitution [tyenv].  Substitutes variables with their
-    concrete type in [tyenv]. Check that the new types are in scope
-    [scp].
-*)
-*)
-
 val retype_pretty_env:
   Gtype.substitution -> term -> (term * Gtype.substitution)
 (** [retype_pretty]: Like [retype], make substitution for type
