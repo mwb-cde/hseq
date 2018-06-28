@@ -477,6 +477,67 @@ module Tree =
       try ignore(find t env); true
       with Not_found -> false
   end
+
+
+(** [rename t], [rename_env tyenv trmenv t]: Rename terms.
+
+    Renames the variables in a term [t] which are bound by a binder in
+    [t] needs substitutions
+*)
+
+let rename_env typenv trmenv trm =
+  let copy_binder q tyenv =
+    let qnt, qv, qty = Basic.dest_binding q in
+    let nt, nev = Gtype.rename_type_vars_env tyenv qty
+    in
+    (mk_binding qnt qv nt, nev)
+  in
+  let rec rename_aux t r_env =
+    let (tyenv, env, qntd) = r_env
+    in
+    match t with
+      | Atom(Bound(_)) ->
+        (try (Tree.find t env, tyenv, env, qntd)
+         with Not_found -> (t, tyenv, env, qntd))
+      | Qnt(q, b) ->
+        let nq, tyenv1 = copy_binder q tyenv in
+        let env1 = Tree.bind (Atom(Bound(q))) (Atom(Bound(nq))) env in
+        let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
+        in
+        (Qnt(nq, nb), tyenv2, env2, true)
+      | App(f, a) ->
+        let (nf, tyenv1, env1, qntd1) = rename_aux f (tyenv, env, qntd) in
+        let (na, tyenv2, env2, qntd2) = rename_aux a (tyenv1, env1, qntd1)
+        in
+        (App(nf, na), tyenv2, env2, qntd2)
+      | _ -> (t, tyenv, env, qntd)
+  in
+  let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
+  in
+  if qntd
+  then Some(t, ntyenv, nenv)
+  else None
+
+(* [rename_opt t] Rename term [t] (carry out alpha conversion on [t]).
+   Return [None] if no change is needed (no binders or bound terms) *)
+let rename_opt t =
+  let rslt_opt = rename_env (Gtype.empty_subst()) (Tree.empty()) t
+  in
+  if rslt_opt = None
+  then None
+  else
+    begin
+      let new_term, _, _ = Lib.from_some rslt_opt in
+      Some(new_term)
+    end
+
+(* [rename t] Rename term [t] (carry out alpha conversion on [t]) *)
+let rename t =
+  let rslt_opt = rename_opt t in
+  if rslt_opt = None
+  then t
+  else Lib.from_some rslt_opt
+
 (*
  * Substitution in terms
  *)
@@ -502,63 +563,6 @@ let bind t r env = Tree.bind t (sterm r Unknown) env
 let remove = Tree.remove
 let member = Tree.member
 
-(** [rename t], [rename_env tyenv trmenv t]: Rename terms.
-
-    Renames the variables in a term [t] which are bound by a binder in
-    [t] needs substitutions
-*)
-
-exception No_quantifier
-
-let rename_env typenv trmenv trm =
-  let copy_binder q tyenv =
-    let qnt, qv, qty = Basic.dest_binding q in
-    let nt, nev = Gtype.rename_type_vars_env tyenv qty
-    in
-    (mk_binding qnt qv nt, nev)
-  in
-  let rec rename_aux t r_env =
-    let (tyenv, env, qntd) = r_env
-    in
-    match t with
-      | Atom(Bound(_)) ->
-        (try (find t env, tyenv, env, qntd)
-         with Not_found -> (t, tyenv, env, qntd))
-      | Qnt(q, b) ->
-        let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = bind (Atom(Bound(q))) (Atom(Bound(nq))) env in
-        let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
-        in
-        (Qnt(nq, nb), tyenv2, env2, true)
-      | App(f, a) ->
-        let (nf, tyenv1, env1, qntd1) = rename_aux f (tyenv, env, qntd) in
-        let (na, tyenv2, env2, qntd2) = rename_aux a (tyenv1, env1, qntd1)
-        in
-        (App(nf, na), tyenv2, env2, qntd2)
-      | _ -> (t, tyenv, env, qntd)
-  in
-  let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
-  in
-  if not qntd
-  then raise No_quantifier
-  else (t, ntyenv, nenv)
-
-(* [rename t] Rename term [t], raise [No_quantifier] if no change
-   (carry out alpha conversion on [t])
-*)
-let rename t =
-  try
-    let new_term, _, _ = rename_env (Gtype.empty_subst()) (empty_subst()) t
-    in
-    new_term
-  with No_quantifier -> t
-
-(* rename_silent t: silently rename term t *)
-
-let rename_silent env t =
-  try rename_env (Gtype.empty_subst()) env  t
-  with No_quantifier -> (t, Gtype.empty_subst(), env)
-
 (* [do_rename t]: Get the term of subst_term [t], renaming if
    necessary.
 *)
@@ -567,14 +571,13 @@ let do_rename nb =
     | Rename -> rename (st_term nb)
     | No_rename -> st_term nb
     | Unknown ->
-      try
-        let nt = rename (st_term nb)
+        let nt_opt = rename_opt (st_term nb)
         in
-        set_subst_alt nb Rename; nt
-      with No_quantifier ->
-        set_subst_alt nb No_rename; (st_term nb)
+        if nt_opt = None
+        then (set_subst_alt nb No_rename; (st_term nb))
+        else (set_subst_alt nb Rename; (Lib.from_some nt_opt))
 
-let replace env x =  do_rename (Tree.find x env)
+let replace env x = do_rename (Tree.find x env)
 
 (**
    Retyping.
@@ -820,8 +823,8 @@ let rename_env typenv trmenv trm =
   let (t, ntyenv, nenv, qntd) = rename_aux trm (typenv, trmenv, false)
   in
   if not qntd
-  then raise No_quantifier
-  else (t, ntyenv, nenv)
+  then None
+  else Some(t, ntyenv, nenv)
 
 (*
  * Substitution functions

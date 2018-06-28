@@ -215,9 +215,13 @@ val add_term_error: string -> term list -> exn -> exn
 
 (** {5 Substitution in terms} *)
 
+val rename_opt: term -> (term) option
+(** [rename_opt t] Rename bound variables in term [t] (carry out alpha
+    conversion on [t]).  Return [None] if no change is needed (no binders or
+    bound terms) *)
+
 val rename: term -> term
 (** [rename t]: Rename bound variables in term [t] (alpha-conversion). *)
-
 
 (** {5 Retyping} *)
 
