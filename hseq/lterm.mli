@@ -268,7 +268,7 @@ val gen_term: Basic.binders list -> Basic.term -> Basic.term
 
 (** {5 Resolving names} *)
 
-val in_scope: (string, bool)Lib.substype
+val in_scope: (string, bool)Lib.table
   -> Scope.t -> Basic.term -> bool
 (** [in_scope memo spc thy t]: Check that term is in scope.  All
     identifiers and types must be declared in the given scope.  [memo]
