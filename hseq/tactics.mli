@@ -197,7 +197,7 @@ val append_changes_tac: Info.t -> tactic
 (** {7 Utility functions} *)
 
 val extract_consts:
-  Basic.binders list -> Term.substitution -> Basic.term list
+  Basic.binders list -> Term.Subst.t -> Basic.term list
 (** [extract_consts qs sb]: [extract_consts qs sb] extracts the
     bindings for each of the binders in [qs] from substitution [sb],
     returning the terms in the same order as the binders. [qs] is

@@ -21,10 +21,6 @@
 
 (** Constructing and manipulating logic terms. *)
 
-open Basic
-open Gtype
-open Term
-
 (** {5 Theories} *)
 
 val base_thy: Ident.thy_id
@@ -122,64 +118,64 @@ val anyid: Ident.t
 
 (** {7 Recognisers} *)
 
-val is_true:term-> bool
-val is_false: term -> bool
-val is_neg: term -> bool
-val is_conj: term -> bool
-val is_disj: term -> bool
-val is_implies: term -> bool
-val is_equality: term -> bool
+val is_true: Basic.term-> bool
+val is_false: Basic.term -> bool
+val is_neg: Basic.term -> bool
+val is_conj: Basic.term -> bool
+val is_disj: Basic.term -> bool
+val is_implies: Basic.term -> bool
+val is_equality: Basic.term -> bool
 
 (** {7 Constructors} *)
 
-val mk_true: term
-val mk_false: term
-val mk_bool: bool -> term
-val mk_not: term -> term
-val mk_and: term -> term -> term
-val mk_or: term -> term -> term
-val mk_implies: term -> term -> term
-val mk_iff: term -> term -> term
-val mk_equality: term -> term -> term
-val mk_any: term
+val mk_true: Basic.term
+val mk_false: Basic.term
+val mk_bool: bool -> Basic.term
+val mk_not: Basic.term -> Basic.term
+val mk_and: Basic.term -> Basic.term -> Basic.term
+val mk_or: Basic.term -> Basic.term -> Basic.term
+val mk_implies: Basic.term -> Basic.term -> Basic.term
+val mk_iff: Basic.term -> Basic.term -> Basic.term
+val mk_equality: Basic.term -> Basic.term -> Basic.term
+val mk_any: Basic.term
 
 (** {7 Destructors} *)
 
-val dest_bool: term-> bool
-val dest_equality: term -> (term * term)
+val dest_bool: Basic.term-> bool
+val dest_equality: Basic.term -> (Basic.term * Basic.term)
 
-(** {7 Quantified terms} *)
+(** {7 Quantified Basic.terms} *)
 
-val is_all: term-> bool
+val is_all: Basic.term-> bool
 (** Test for a universally quantified term. *)
-val is_exists: term -> bool
+val is_exists: Basic.term -> bool
 (** Test for an existentially quantified term. *)
-val is_lambda: term-> bool
+val is_lambda: Basic.term-> bool
 (** Test for a lambda term. *)
 
-val mk_all: Scope.t -> string -> term -> term
+val mk_all: Scope.t -> string -> Basic.term -> Basic.term
 (** [mk_all scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_all_ty: Scope.t -> string -> Gtype.t -> term -> term
+val mk_all_ty: Scope.t -> string -> Gtype.t -> Basic.term -> Basic.term
 (** [mk_all_ty scp n t]: Make a universally quantified term from [t],
     binding all free variables named [n] with type [ty].
 *)
 
-val mk_ex: Scope.t -> string -> term -> term
+val mk_ex: Scope.t -> string -> Basic.term -> Basic.term
 (** [mk_ex scp n t]: Make an existentially quantified term from [t],
     binding all free variables named [n].
 *)
-val mk_ex_ty: Scope.t -> string -> Gtype.t -> term -> term
+val mk_ex_ty: Scope.t -> string -> Gtype.t -> Basic.term -> Basic.term
 (** [mk_ex_ty scp n t]: Make an existentially quantified term from
     [t], binding all free variables named [n] with type [ty].
 *)
 
-val mk_lam: Scope.t -> string -> term -> term
+val mk_lam: Scope.t -> string -> Basic.term -> Basic.term
 (** [mk_lam scp n t]: Make a lambda term from [t], binding all free
     variables named [n].
 *)
-val mk_lam_ty: Scope.t -> string -> Gtype.t -> term -> term
+val mk_lam_ty: Scope.t -> string -> Gtype.t -> Basic.term -> Basic.term
 (** [mk_lam_ty scp n t]: Make a lambda term from [t], binding all free
     variables named [n] with type [ty].
 *)
@@ -190,7 +186,7 @@ val mk_lam_ty: Scope.t -> string -> Gtype.t -> term -> term
 
 val alpha_convp_full:
   Scope.t
-  -> Gtype.substitution -> term -> term
+  -> Gtype.substitution -> Basic.term -> Basic.term
   -> Gtype.substitution
 (** Test for alpha-convertiblity of terms w.r.t a type context.
     [alpha_convp_full scp tyenv x y] succeeds, returning an updated
@@ -198,33 +194,33 @@ val alpha_convp_full:
     bound variables.
 *)
 
-val alpha_convp: Scope.t -> term -> term -> Gtype.substitution
+val alpha_convp: Scope.t -> Basic.term -> Basic.term -> Gtype.substitution
 (** A top-level for [alpha_convp_full]. *)
 
-val alpha_equals: Scope.t -> term -> term -> bool
+val alpha_equals: Scope.t -> Basic.term -> Basic.term -> bool
 (** Test for equality modulo renaming of bound variables. This is a
     wrapper for [alpha_convp].
 *)
 
 (** {7 Beta conversion} *)
 
-val beta_convp: term -> bool
+val beta_convp: Basic.term -> bool
 (** Test whether a term is beta-convertible *)
 
-val beta_conv: term -> term
+val beta_conv: Basic.term -> Basic.term
 (** Apply the beta-conversion rule to a term: [beta_conv ((%x. f) y)]
     is [f[y/x]]. This only reduces the top-most term: [beta_conv
     (%a. (% x. f) y)] is not reduced.
 *)
 
-val beta_reduce: term -> term
+val beta_reduce: Basic.term -> Basic.term
 (** Apply beta-conversion through-out a term, not just the top-level.
     [beta_reduce (%a. (% x. f) y)] is [(%a. (f[y/x]))].
 *)
 
 (** {7 Eta conversion} *)
 
-val eta_conv: term list -> term -> term
+val eta_conv: Basic.term list -> Basic.term -> Basic.term
 (** [eta_conv xs term]: Apply eta-conversion.  Return [ (((% a .. b:
     term) x) .. y) ] where [xs = [ x ; .. ; y] ].
 *)
@@ -235,7 +231,7 @@ val eta_conv: term list -> term -> term
     term.
 *)
 
-val is_closed_env: substitution -> Basic.term -> bool
+val is_closed_env: Term.Subst.t -> Basic.term -> bool
 (** [is_closed ts f] is true iff all bound variables in [f] are in the
     body of a quantifier or occur in [ts].
 *)
@@ -247,7 +243,7 @@ val is_closed: Basic.term list -> Basic.term -> bool
 
 val close_term:
   ?qnt:Basic.quant -> ?free:(Basic.term -> bool)
-  -> term -> term
+  -> Basic.term -> Basic.term
 (** [close_term ?qnt ?free trm]: Close term [trm]. Make variables
     bound to quantifiers of kind [qnt] to replace free variables and
     bound variables with no binding quantifier and for which [free] is
@@ -273,7 +269,7 @@ val gen_term: Basic.binders list -> Basic.term -> Basic.term
 (** {5 Resolving names} *)
 
 val in_scope: (string, bool)Lib.substype
-  -> Scope.t -> term -> bool
+  -> Scope.t -> Basic.term -> bool
 (** [in_scope memo spc thy t]: Check that term is in scope.  All
     identifiers and types must be declared in the given scope.  [memo]
     is used to memoise the lookup of names of free variables.
@@ -290,7 +286,7 @@ val binding_set_names:
     cause an error.
 *)
 
-val set_names: Scope.t  -> term -> term
+val set_names: Scope.t  -> Basic.term -> Basic.term
 (** [set_names scp t]: Get and set full identifiers in terms and and
     types of term [t].
 
@@ -307,9 +303,9 @@ val set_names: Scope.t  -> term -> term
 
 val resolve_term:
   Scope.t
-  -> Term.substitution -> (Basic.term * Basic.term) list
+  -> Term.Subst.t -> (Basic.term * Basic.term) list
   -> Basic.term
-  -> (Basic.term * Term.substitution * (Basic.term * Basic.term) list)
+  -> (Basic.term * Term.Subst.t * (Basic.term * Basic.term) list)
 (** [resolve_term scp vars varlist trm]: Resolve names and variables
     in term [trm].
 
@@ -355,14 +351,15 @@ val resolve:
 (** {5 Substitution} *)
 
 val subst_closed:
-  substitution -> substitution
+  Term.Subst.t -> Term.Subst.t
   -> Basic.term -> Basic.term
 (** [subst_closed qntenv sb t]: Substitute the bindings in [sb] in
     term [t]. Fail, raising [Failure], if any of the substituted terms
     lead to the term not being closed.
 *)
 
-val subst_equiv: Scope.t -> term -> (term * term) list -> term
+val subst_equiv:
+  Scope.t -> Basic.term -> (Basic.term * Basic.term) list -> Basic.term
 (** Substition of equivalents under alpha-conversion. [subst scp f
     [(t1, r1); ... ; (tn, rn)]]: Substitute [ri] for terms alpha-equal
     to [ti] in [f]. Slower than {!Term.subst}.

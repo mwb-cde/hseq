@@ -112,7 +112,7 @@ let induct_tac_bindings typenv scp aterm cterm =
     (Rewrite.is_free_binder hyp_vars x) || (is_thm_var x)
   in
   let (typenv1, hyp_var_bindings) =
-    try Unify.unify_fullenv scp typenv (Term.empty_subst())
+    try Unify.unify_fullenv scp typenv (Term.Subst.empty())
           is_hyp_var hyp_asm concl_asm
     with err ->
       raise (add_error "Can't unify induction theorem with formula" err)
@@ -131,17 +131,17 @@ let induct_tac_bindings typenv scp aterm cterm =
       let null_term = Term.mk_free "null" (Gtype.mk_null()) in
       let form_binders e x =
         if Term.is_bound x
-        then Term.bind x null_term e
+        then Term.Subst.bind x null_term e
         else e
       in
       let env1 =
-        List.fold_left form_binders (Term.empty_subst()) hyp_var_constants
+        List.fold_left form_binders (Term.Subst.empty()) hyp_var_constants
       in
       List.fold_left form_binders env1 thm_var_constants
     in
     let cvars =
       List.filter
-        (fun x -> Term.member (Term.mk_bound x) cvar_set)
+        (fun x -> Term.Subst.member (Term.mk_bound x) cvar_set)
         concl_vars
     in
     let concl_concl_trm =
@@ -467,7 +467,7 @@ let induct_on_bindings typenv scp nbind aterm cterm =
     close_lambda_app cvars concl_concl_trm
   in
   let (ret_typenv, ret_subst) =
-    try Unify.unify_fullenv scp typenv (Term.empty_subst())
+    try Unify.unify_fullenv scp typenv (Term.Subst.empty())
           is_thm_var prop_fun concl_body_eta
     with err ->
       raise (add_error "Can't unify induction theorem with formula" err)

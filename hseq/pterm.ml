@@ -199,7 +199,7 @@ struct
         scp: Scope.t;
         inf: int;
         memo: resolve_memo;
-        qnts: Term.substitution;
+        qnts: Term.Subst.t;
         lookup: (string -> Gtype.t -> (Ident.t * Gtype.t))
       }
 
@@ -221,7 +221,7 @@ struct
   *)
   let rec resolve_aux data env expty term =
     let bind_qnt t1 t2 rdata =
-      { rdata with qnts = Term.bind t1 t2 rdata.qnts }
+      { rdata with qnts = Term.Subst.bind t1 t2 rdata.qnts }
     and binding_set_names binding rdata =
       let (qnt, qname, qtype) = Basic.dest_binding binding
       in
@@ -304,7 +304,7 @@ struct
       | PBound(q) ->
         let term0 = Term.mk_bound(q) in
         let term1 =
-          try Term.find term0 data.qnts
+          try Term.Subst.find term0 data.qnts
           with Not_found -> term0
         in
         let ty = Term.get_binder_type term1 in
@@ -402,7 +402,7 @@ struct
         scp = scp;
         inf = 0;
         memo = rmemo;
-        qnts = Term.empty_subst();
+        qnts = Term.Subst.empty();
         lookup = lookup
       }
     in
@@ -487,7 +487,7 @@ let to_term ptrm =
         (Term.mk_free n (Gtype.mgu ty env1), (ctr, env1))
       | PBound(q) ->
         let pt1, env1 =
-          match (Lib.try_find (Term.find (Term.mk_bound(q))) trmenv) with
+          match (Lib.try_find (Term.Subst.find (Term.mk_bound(q))) trmenv) with
             | None ->
                 let ty = binder_type q in
                 let env1 = unify_types expty ty tyenv
@@ -512,7 +512,7 @@ let to_term ptrm =
               let env1 = unify_types expty nty tyenv in
               let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 =
-                Term.bind (Term.mk_bound q) (Term.mk_bound q1) trmenv
+                Term.Subst.bind (Term.mk_bound q) (Term.mk_bound q1) trmenv
               in
               let (b1, typenv1) = to_aux (ctr1, env1) trmenv1 nty b
               in
@@ -522,7 +522,7 @@ let to_term ptrm =
               let env1 = unify_types expty nty tyenv in
               let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 =
-                Term.bind (Term.mk_bound(q)) (Term.mk_bound(q1)) trmenv
+                Term.Subst.bind (Term.mk_bound(q)) (Term.mk_bound(q1)) trmenv
               in
               let (b1, env2) = to_aux (ctr, env1) trmenv1 nty b
               in
@@ -550,7 +550,7 @@ let to_term ptrm =
   let tyvar_ctr = 0 in
   let (tyvar_ctr1, typ1) = Gtype.mk_typevar tyvar_ctr in
   let (trm1, _) =
-    to_aux (tyvar_ctr1, Gtype.empty_subst()) (Term.empty_subst()) typ1 ptrm
+    to_aux (tyvar_ctr1, Gtype.empty_subst()) (Term.Subst.empty()) typ1 ptrm
   in
   trm1
 

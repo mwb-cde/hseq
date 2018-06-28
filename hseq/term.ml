@@ -541,44 +541,78 @@ let rename t =
 (*
  * Substitution in terms
  *)
+module Subst =
+  struct
 
-(** [type subst_terms]: Terms stored in a substitution.
-*)
-type subst_alt = Rename | No_rename | Unknown
-type subst_terms = ST of term * (subst_alt ref)
+    (** [type subst_terms]: Terms stored in a substitution.
+     *)
+    type subst_alt = Rename | No_rename | Unknown
+    type subst_terms = ST of term * (subst_alt ref)
 
-let set_subst_alt (ST(_, x)) a = x := a
-let st_term (ST(t, _)) = t
-let st_choice (ST(_, a)) = !a
-let sterm t a= ST(t, ref a)
+    let set_subst_alt (ST(_, x)) a = x := a
+    let st_term (ST(t, _)) = t
+    let st_choice (ST(_, a)) = !a
+    let sterm t a = ST(t, ref a)
 
-(* [type substitution]: the data structure holding the substitution to
-   be made in a term.
-*)
-type substitution = (subst_terms)Tree.t
+    (* [substitution]: the data structure holding the substitution to be
+       made in a term.  *)
+    type t = (subst_terms)Tree.t
 
-let empty_subst() = ((Tree.empty()): substitution)
-let find x env = st_term (Tree.find x env)
-let bind t r env = Tree.bind t (sterm r Unknown) env
-let remove = Tree.remove
-let member = Tree.member
+    let empty() = ((Tree.empty()): t)
+    let find x env = st_term (Tree.find x env)
+    let bind t r env = Tree.bind t (sterm r Unknown) env
+    let remove = Tree.remove
+    let member = Tree.member
 
-(* [do_rename t]: Get the term of subst_term [t], renaming if
+    (* [do_rename t]: Get the term of subst_term [t], renaming if
    necessary.
-*)
-let do_rename nb =
-  match st_choice nb with
-    | Rename -> rename (st_term nb)
-    | No_rename -> st_term nb
-    | Unknown ->
-        let nt_opt = rename_opt (st_term nb)
+     *)
+    let do_rename nb =
+      match st_choice nb with
+      | Rename -> rename (st_term nb)
+      | No_rename -> st_term nb
+      | Unknown ->
+         let nt_opt = rename_opt (st_term nb)
+         in
+         if nt_opt = None
+         then (set_subst_alt nb No_rename; (st_term nb))
+         else (set_subst_alt nb Rename; (Lib.from_some nt_opt))
+
+    let replace env x = do_rename (Tree.find x env)
+
+    (*
+     * Chase functions
+     *)
+    let rec chase varp x env =
+      try
+        let t = find x env
         in
-        if nt_opt = None
-        then (set_subst_alt nb No_rename; (st_term nb))
-        else (set_subst_alt nb Rename; (Lib.from_some nt_opt))
+        if (varp t)
+        then (chase varp t env)
+        else t
+      with Not_found -> x
 
-let replace env x = do_rename (Tree.find x env)
+    let fullchase varp x env =
+      let t1 = chase varp x env
+      in
+      if varp t1 then x else t1
 
+    let chase_var varp x env =
+      let rec chase_var_aux r =
+        let y = st_term r
+        in
+        if varp y
+        then
+          try chase_var_aux (Tree.find y env)
+          with Not_found -> r
+        else r
+      in
+      let nb = chase_var_aux (sterm x Unknown)
+      in
+      if not (equals x (st_term nb))
+      then do_rename nb
+      else x
+end
 (**
    Retyping.
 
@@ -831,7 +865,7 @@ let rename_env typenv trmenv trm =
  *)
 let rec subst env trm =
   try
-    let nt= replace env trm
+    let nt= Subst.replace env trm
     in
     subst env nt
   with Not_found ->
@@ -842,47 +876,14 @@ let rec subst env trm =
 
 let qsubst ts trm =
   let env =
-    List.fold_left (fun e (t, r) -> bind t r e) (empty_subst()) ts
+    List.fold_left (fun e (t, r) -> Subst.bind t r e) (Subst.empty()) ts
   in
   subst env trm
-
-(*
- * Chase functions
- *)
-let rec chase varp x env =
-  try
-    let t = find x env
-    in
-    if (varp t)
-    then (chase varp t env)
-    else t
-  with Not_found -> x
-
-let fullchase varp x env =
-  let t1 = chase varp x env
-  in
-  if varp t1 then x else t1
-
-let chase_var varp x env =
-  let rec chase_var_aux r =
-    let y = st_term r
-    in
-    if varp y
-    then
-      try chase_var_aux (Tree.find y env)
-      with Not_found -> r
-    else r
-  in
-  let nb = chase_var_aux (sterm x Unknown)
-  in
-  if not (equals x (st_term nb))
-  then do_rename nb
-  else x
 
 let subst_mgu varp env trm =
   let rec mgu_aux t=
     try
-      let nt = replace env (chase_var varp t env)
+      let nt = Subst.replace env (Subst.chase_var varp t env)
       in
       mgu_aux nt
     with Not_found ->

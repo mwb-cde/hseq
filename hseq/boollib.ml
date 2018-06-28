@@ -256,8 +256,8 @@ struct
       let eqbody =
         let nsubst =
           List.fold_left2
-            (fun s l r -> Term.bind l r s)
-            (Term.empty_subst())
+            (fun s l r -> Term.Subst.bind l r s)
+            (Term.Subst.empty())
             (List.map Term.mk_bound aqvars)
             (List.map Term.mk_bound eqvars)
         in
@@ -375,8 +375,8 @@ struct
       let aqbody =
         let nsubst =
           List.fold_left2
-            (fun s l r -> Term.bind l r s)
-            (Term.empty_subst())
+            (fun s l r -> Term.Subst.bind l r s)
+            (Term.Subst.empty())
             (List.map Term.mk_bound eqvars)
             (List.map Term.mk_bound aqvars)
         in

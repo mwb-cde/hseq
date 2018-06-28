@@ -56,9 +56,9 @@ let find_variables is_var vars trm =
       | Basic.Atom(Basic.Bound(q)) ->
         if is_var q
         then
-          if Term.member t env
+          if Term.Subst.member t env
           then env
-          else Term.bind t t env
+          else Term.Subst.bind t t env
         else env
       | Basic.Qnt(_, b) -> find_aux env b
       | Basic.App(f, a) ->
@@ -75,7 +75,7 @@ let check_variables is_var vars trm =
     match t with
       | Basic.Atom(Basic.Bound(q)) ->
         if is_var q
-        then Term.member t vars
+        then Term.Subst.member t vars
         else true
       | Basic.Qnt(_, b) -> check_aux b
       | Basic.App(f, a) -> check_aux f && check_aux a

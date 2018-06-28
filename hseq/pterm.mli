@@ -183,7 +183,7 @@ sig
         scp: Scope.t;
         inf: int;
         memo: resolve_memo;
-        qnts: Term.substitution;
+        qnts: Term.Subst.t;
         lookup: (string -> Gtype.t -> (Ident.t * Gtype.t))
       }
 

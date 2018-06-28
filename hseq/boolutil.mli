@@ -26,7 +26,7 @@ val find_unifier:
   -> (Basic.term -> bool)
   -> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
   -> Logic.tagged_form list
-  -> (Logic.ftag_ty * Term.substitution)
+  -> (Logic.ftag_ty * Term.Subst.t)
 (** [find_unifier scp typenv varp trm ?exclude forms]: Find the first
     formula in [forms] which unifies with [trm]. Return the tag of the
     formula and the substitution cosntructed by unification. Ignore
@@ -88,7 +88,7 @@ val dest_qnt_implies:
 val unify_in_goal:
   (Basic.term -> bool)
   -> Basic.term -> Basic.term -> Logic.node
-  -> Term.substitution
+  -> Term.Subst.t
 (** [unify_in_goal varp atrm ctrm goal]: Unify [atrm] with [ctrm] in
     the scope and type environment of [goal].  [varp] identifies the
     variables.

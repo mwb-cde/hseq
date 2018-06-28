@@ -186,11 +186,11 @@ val limit_reached: int option -> bool
 module TermData:
   (Rewritekit.Data
    with type data = (Scope.t                (** Scope *)
-                     * Term.substitution    (** Quantifier environment *)
+                     * Term.Subst.t    (** Quantifier environment *)
                      * Gtype.substitution) (** Type environment *)
    and type rule = rule
    and type node = Basic.term
-   and type substn = Term.substitution
+   and type substn = Term.Subst.t
    and type key = term_key)
 
 type data = TermData.data
@@ -202,10 +202,10 @@ module TermRewriter:
   (Rewritekit.T
    with type data =
     (Scope.t (** Scope *)
-     * Term.substitution    (** Quantifier environment *)
+     * Term.Subst.t    (** Quantifier environment *)
      * Gtype.substitution)  (** Type environment *)
    and type node = TermData.node
-   and type substn = Term.substitution
+   and type substn = Term.Subst.t
    and type rule = TermData.rule
    and type key = TermData.key)
 
@@ -308,7 +308,7 @@ sig
     (** {7 Exposed for debugging} *)
 
     type data = (Scope.t               (** Scope *)
-                 * Term.substitution   (** Quantifier environment *)
+                 * Term.Subst.t   (** Quantifier environment *)
                  * Gtype.substitution) (** Type environment *)
 
     type internal_rule = (Basic.binders list

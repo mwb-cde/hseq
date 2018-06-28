@@ -262,7 +262,7 @@ type match_data =
       (** Type environment *)
       tyenv: Gtype.substitution;
       (** Quantifier environment *)
-      qntenv: Term.substitution;
+      qntenv: Term.Subst.t;
     }
 
 (** Data passed between the simplifier functions *)
@@ -270,10 +270,10 @@ type match_data =
 val match_rewrite:
   Scope.t
   -> Gtype.substitution
-  -> Term.substitution
+  -> Term.Subst.t
   -> Simpset.rule
   -> Basic.term
-  -> (Logic.rr_type * Gtype.substitution * Term.substitution
+  -> (Logic.rr_type * Gtype.substitution * Term.Subst.t
       * Basic.term)
 (** [match_rewrite scp tyenv qntenv trmenv rule trm]: Try to match lhs
     of [rule] with [trm] in type envivornment [tyenv] and term bindings

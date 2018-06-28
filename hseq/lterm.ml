@@ -210,8 +210,10 @@ let alpha_convp_full scp tenv t1 t2 =
         then (trmenv, type_matches scp tyenv ty1 ty2)
         else raise (term_error "alpha_convp_aux" [Atom(t1); Atom(t2)])
       | (Bound(q1), Bound(q2)) ->
-        let q1trm = try Term.find (Atom t1) trmenv with Not_found -> Atom(t1)
-        and q2trm = try Term.find (Atom t2) trmenv with Not_found -> Atom(t2)
+        let q1trm =
+          try Term.Subst.find (Atom t1) trmenv with Not_found -> Atom(t1)
+        and q2trm =
+          try Term.Subst.find (Atom t2) trmenv with Not_found -> Atom(t2)
         in
         if equals q1trm q2trm
         then (trmenv, tyenv)
@@ -225,7 +227,7 @@ let alpha_convp_full scp tenv t1 t2 =
     match (t1, t2) with
       | Atom(a1), Atom(a2) -> alpha_atom a1 a2 tyenv trmenv
       | (App(f1, a1), App(f2, a2)) ->
-        let (trmenv1, tyenv1)=alpha_aux f1 f2 tyenv trmenv
+        let (trmenv1, tyenv1) = alpha_aux f1 f2 tyenv trmenv
         in
         alpha_aux a1 a2 tyenv1 trmenv1
       | (Qnt(q1, b1), Qnt(q2, b2)) ->
@@ -237,7 +239,8 @@ let alpha_convp_full scp tenv t1 t2 =
         if (qn1=qn2)
         then
           let tyenv1 = type_matches scp tyenv qty1 qty2
-          and trmenv1 = bind (Atom(Bound q1)) (Atom(Bound q2)) trmenv
+          and trmenv1 =
+            Term.Subst.bind (Atom(Bound q1)) (Atom(Bound q2)) trmenv
           in
           alpha_aux b1 b2 tyenv1 trmenv1
         else raise (term_error "alpha_convp_aux" [t1;t2])
@@ -246,7 +249,7 @@ let alpha_convp_full scp tenv t1 t2 =
         then (trmenv, tyenv)
         else raise (term_error "alpha_convp_aux" [t1;t2])
   in
-  let env = Term.empty_subst()
+  let env = Term.Subst.empty()
   in
   try
     let (_, ret) = alpha_aux t1 t2 tenv env
@@ -290,7 +293,7 @@ let safe_beta_reduce trm =
         if is_lambda f
         then
           let (q, b) = dest_qnt f in
-          let env1 = bind (Atom(Bound q)) na env in
+          let env1 = Term.Subst.bind (Atom(Bound q)) na env in
           let (nb, _) = beta_aux b env1
           in
           (nb, true)
@@ -305,11 +308,11 @@ let safe_beta_reduce trm =
         in
         (Qnt(q, nb), chng)
       | Atom(Bound(q)) ->
-        (try (Term.find t env, true)
+        (try (Term.Subst.find t env, true)
          with Not_found -> (t, false))
       | _ -> (t, false)
   in
-  let (nt, chng) = beta_aux trm (Term.empty_subst())
+  let (nt, chng) = beta_aux trm (Term.Subst.empty())
   in
   if chng
   then nt
@@ -329,7 +332,7 @@ let beta_reduce trm =
         if (not (args = []) && (is_lambda t))
         then
           let (na, nargs) = (List.hd args, List.tl args) in
-          let env1 = bind (Atom(Bound q)) na env in
+          let env1 = Term.Subst.bind (Atom(Bound q)) na env in
           let (nb, _) = beta_app b env1 nargs
           in
           (nb, true)
@@ -353,11 +356,11 @@ let beta_reduce trm =
         in
         (Qnt(q, nb), chng)
       | Atom(Bound(q)) ->
-        (try (Term.find t env, true)
+        (try (Term.Subst.find t env, true)
          with Not_found -> (t, false))
       | _ -> (t, false)
   in
-  let (nt, chng) = beta_aux trm (Term.empty_subst())
+  let (nt, chng) = beta_aux trm (Term.Subst.empty())
   in
   if chng
   then nt
@@ -374,11 +377,11 @@ let eta_conv ts term=
         let ty = Gtype.mk_var (name^"_ty") in
         let binder = Basic.mk_binding Basic.Lambda name ty in
         let nv = Term.mk_bound binder in
-        let env1 = Term.bind x nv env
+        let env1 = Term.Subst.bind x nv env
         in
         eta_aux (ctr + 1) xss ((x, nv)::rslt, env1)
   in
-  let (nvars, env) = eta_aux 0 (List.rev ts) ([], Term.empty_subst()) in
+  let (nvars, env) = eta_aux 0 (List.rev ts) ([], Term.Subst.empty()) in
   let body = Term.subst env term in
   let fterm =
     List.fold_left
@@ -403,12 +406,12 @@ let rec is_closed_env env t =
         (is_closed_env env l) && (is_closed_env env r)
     | Basic.Qnt(q, b) ->
       let env1 =
-        bind (Atom(Bound(q))) (mk_free "" (Gtype.mk_null())) env
+        Term.Subst.bind (Atom(Bound(q))) (mk_free "" (Gtype.mk_null())) env
       in
       is_closed_env env1 b
     | Atom(Basic.Meta(_)) -> true
-    | Atom(Basic.Bound(_)) -> member t env
-    | Atom(Basic.Free(_)) -> member t env
+    | Atom(Basic.Bound(_)) -> Term.Subst.member t env
+    | Atom(Basic.Free(_)) -> Term.Subst.member t env
     | _ -> true
 
 let is_closed vs t =
@@ -417,9 +420,9 @@ let is_closed vs t =
     List.fold_left
       (fun env x ->
         if (is_bound x) || (is_free x)
-        then bind x (mk_free "" (Gtype.mk_null())) env
+        then Term.Subst.bind x (mk_free "" (Gtype.mk_null())) env
         else env)
-      (empty_subst()) vs
+      (Term.Subst.empty()) vs
   in
   try is_closed_env env t
   with _ -> false
@@ -437,7 +440,7 @@ let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
       | Atom(Id(_)) -> (t, env, vs)
       | Atom(Meta(_)) -> (t, env, vs)
       | Atom(Bound(_)) ->
-        if member t env
+        if Term.Subst.member t env
         then (t, env, vs)
         else
           if free t
@@ -452,21 +455,21 @@ let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
         (App(f1, a1), env2, vs2)
       | Qnt(q, b) ->
         let (b1, env1, vs1) =
-          close_aux (bind (Atom(Bound(q))) (Atom(Bound(q))) env) vs b
+          close_aux (Subst.bind (Atom(Bound(q))) (Atom(Bound(q))) env) vs b
         in
         (Qnt(q, b1), env, vs1)
   in
-  let (nt, env, vars) =  close_aux (empty_subst()) [] trm in
+  let (nt, env, vars) = close_aux (Subst.empty()) [] trm in
   let make_qnts qnt (env, ctr, bs) t =
     let qname = Lib.int_to_name ctr in
     let qty = Gtype.mk_var qname in
     let qbind = mk_binding qnt qname qty in
     let qtrm = mk_bound qbind
     in
-    (bind t qtrm env, ctr+1, qbind::bs)
+    (Subst.bind t qtrm env, ctr+1, qbind::bs)
   in
   let (sb, _, binders) =
-    List.fold_left (make_qnts qnt) (empty_subst(), 0, []) vars
+    List.fold_left (make_qnts qnt) (Subst.empty(), 0, []) vars
   in
   rebuild_qnt (List.rev binders) (subst sb trm)
 
@@ -481,9 +484,9 @@ let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
 let gen_term bs trm =
   let rec gen_aux qnts known vars t =
     let get_bound t =
-      try (Term.find t known, qnts, known, vars)
+      try (Term.Subst.find t known, qnts, known, vars)
       with Not_found ->
-        try (Term.find t vars, qnts, known, vars)
+        try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let q = Term.dest_bound t in
           let (_, name, ty) = Basic.dest_binding q in
@@ -492,11 +495,11 @@ let gen_term bs trm =
           (Atom(Bound(q1)),
            q1::qnts,
            known,
-           Term.bind t (Atom(Bound(q1))) vars)
+           Term.Subst.bind t (Atom(Bound(q1))) vars)
     and get_free t =
-      try (Term.find t known, qnts, known, vars)
+      try (Term.Subst.find t known, qnts, known, vars)
       with Not_found ->
-        try (Term.find t vars, qnts, known, vars)
+        try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let (name, ty) = Term.dest_free t in
           let q = Basic.mk_binding Basic.All name ty
@@ -504,7 +507,7 @@ let gen_term bs trm =
           (Atom(Bound(q)),
            q::qnts,
            known,
-           Term.bind t (Atom(Bound(q))) vars)
+           Term.Subst.bind t (Atom(Bound(q))) vars)
     in
     match t with
       | Atom(Bound(_)) -> get_bound t
@@ -512,7 +515,7 @@ let gen_term bs trm =
       | Qnt(q, body) ->
         let (body1, qnts1, known1, vars1) =
           gen_aux qnts
-            (Term.bind (Atom(Bound(q))) (Atom(Bound(q))) known)
+            (Term.Subst.bind (Atom(Bound(q))) (Atom(Bound(q))) known)
             vars body
         in
         (Qnt(q, body1), qnts1, known, vars1)
@@ -527,10 +530,10 @@ let gen_term bs trm =
       | _ -> (t, qnts, known, vars)
   in
   let (trm1, qnts, _, vars) =
-    gen_aux [] (Term.empty_subst())
+    gen_aux [] (Term.Subst.empty())
       (List.fold_left
-         (fun s q -> Term.bind (Atom(Bound(q))) (Atom(Bound(q))) s)
-         (Term.empty_subst())
+         (fun s q -> Term.Subst.bind (Atom(Bound(q))) (Atom(Bound(q))) s)
+         (Term.Subst.empty())
          bs)
       trm
   in
@@ -623,7 +626,7 @@ let set_names scp trm =
     | Atom(Id(id, ty)) ->
        let th, n = Ident.dest id in
        let nid =
-         if(th = Ident.null_thy)
+         if th = Ident.null_thy
          then Ident.mk_long (lookup_id n) n
          else id
        in
@@ -658,7 +661,7 @@ let set_names scp trm =
        end
     | Qnt(q, b) ->
        let nq = binding_set_names ~memo:type_thy_memo scp q in
-       let qnts1 = bind (Atom(Bound(q))) (Atom(Bound(nq))) qnts
+       let qnts1 = Subst.bind (Atom(Bound(q))) (Atom(Bound(nq))) qnts
        in
        Qnt(nq, set_aux qnts1 b)
     | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
@@ -669,14 +672,14 @@ let set_names scp trm =
          raise (term_error "Meta variable occurs outside binding" [t])
     | Atom(Bound(q)) ->
        begin
-         match Lib.try_find (find (Atom(Bound(q)))) qnts with
+         match Lib.try_find (Subst.find (Atom(Bound(q)))) qnts with
          | Some(x) -> x
          | None ->
             raise (term_error "Bound variable occurs outside binding" [t])
        end
     | _ -> t
   in
-  set_aux (empty_subst()) trm
+  set_aux (Subst.empty()) trm
 
 (**
    [resolve_terms scp trmlist]: resolve names and types in each term
@@ -722,7 +725,7 @@ let resolve_term scp vars varlist trm =
     Ltype.set_name ~memo:memo s t
   in
   let lookup_var vars t =
-    match Lib.try_find (find t) vars with
+    match Lib.try_find (Subst.find t) vars with
       | Some(x) -> (x, vars)
       | None ->
         let nt =
@@ -732,7 +735,7 @@ let resolve_term scp vars varlist trm =
               mk_bound (mk_binding All (binder_name q) (binder_type q))
             | _ -> mk_bound (mk_binding All "x" (Gtype.mk_var "ty")))
         in
-        (nt, bind t nt vars)
+        (nt, Subst.bind t nt vars)
   in
   let rec set_aux (qnts, vars) t lst =
     match t with
@@ -756,7 +759,7 @@ let resolve_term scp vars varlist trm =
              set_aux (qnts, vars) (mk_typed_ident (Ident.mk_name n) ty) lst)
       | Qnt(q, b) ->
         let nq = binding_set_names ~memo:type_thy_memo scp q in
-        let qnts1 = bind (mk_bound q) (mk_bound nq) qnts in
+        let qnts1 = Subst.bind (mk_bound q) (mk_bound nq) qnts in
         let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
         in
         (Qnt(nq, nb), nvars, nlst)
@@ -773,7 +776,7 @@ let resolve_term scp vars varlist trm =
            in
           (nt, nvars, ((nt, t)::lst))
       | Atom(Bound(q)) ->
-        (match Lib.try_find (find (mk_bound q)) qnts with
+        (match Lib.try_find (Subst.find (mk_bound q)) qnts with
           | Some x -> (x, vars, lst)
           | None ->
             let (nt, nvars) = lookup_var vars t
@@ -781,16 +784,15 @@ let resolve_term scp vars varlist trm =
             (nt, nvars, ((nt, t)::lst)))
       | _ -> (t, vars, lst)
   in
-  set_aux (empty_subst(), vars) trm varlist
+  set_aux (Subst.empty(), vars) trm varlist
 
 (** [resolve scp trm]: resolve names and types in term [trm] in [lst]
     in scope [scp].
 *)
 let resolve scp trm =
-  let (ntrm, vars, lst) = resolve_term scp (empty_subst()) [] trm
+  let (ntrm, vars, lst) = resolve_term scp (Subst.empty()) [] trm
   in
   (ntrm, lst)
-
 
 (*
  * Substitution
@@ -798,7 +800,7 @@ let resolve scp trm =
 
 let rec subst_closed qntenv sb trm =
   try
-    let nt = replace sb trm
+    let nt = Subst.replace sb trm
     in
     if is_closed_env qntenv nt
     then subst_closed qntenv sb nt
@@ -806,7 +808,8 @@ let rec subst_closed qntenv sb trm =
   with Not_found ->
     (match trm with
       | Qnt(q, b) ->
-        let qntenv1 = bind (mk_bound q) (mk_free "" (Gtype.mk_null())) qntenv
+        let qntenv1 =
+          Subst.bind (mk_bound q) (mk_free "" (Gtype.mk_null())) qntenv
         in
         Qnt(q, subst_closed qntenv1 sb b)
       | App(f, a) ->
@@ -827,10 +830,10 @@ let subst_equiv scp term lst =
         (match trm with
           | Qnt(q, b) ->
              let qntenv1 =
-               Term.bind (mk_bound q) (Term.mk_short_ident "") qntenv
+               Term.Subst.bind (mk_bound q) (Term.mk_short_ident "") qntenv
              in
              Qnt(q, subst_aux qntenv1 b)
           | App(f, a) -> App(subst_aux qntenv f, subst_aux qntenv a)
           | _ -> trm)
   in
-  subst_aux (Term.empty_subst()) term
+  subst_aux (Term.Subst.empty()) term

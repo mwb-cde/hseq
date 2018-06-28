@@ -31,16 +31,17 @@ exception Unify of string
 (** Occurs check *)
 let rec occurs s t =
   if Term.equals s t
-  then raise Occurs
+  then true
   else
     match t with
-      | App(f, a) -> occurs s f; occurs s a
+      | App(f, a) -> (occurs s f) || (occurs s a)
       | Qnt(_, b) -> occurs s b
-      | _ -> ()
+      | _ -> false
 
 let bind_occs s t env =
-  try occurs t s; Term.bind s t env
-  with Occurs -> raise (term_error "occurs:" [t; s])
+  if not (occurs t s)
+  then Term.Subst.bind s t env
+  else raise (term_error "occurs:" [t; s])
 
 (*
  * General Unification
@@ -52,7 +53,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   let lookup q sbs =
     let r = Atom(Bound q)
     in
-    try Term.find r sbs
+    try Term.Subst.find r sbs
     with Not_found -> r
   in
   let eq_binder tyenv b1 b2 =
@@ -98,8 +99,8 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
        else raise (term_error "unify_aux: default" [trm1; trm2])
   in
   let rec unify_aux tyenv env qntenv t1 t2 =
-    let s = Term.chase_var varp t1 env
-    and t = Term.chase_var varp t2 env
+    let s = Term.Subst.chase_var varp t1 env
+    and t = Term.Subst.chase_var varp t2 env
     in
     if varp s
     then
@@ -114,7 +115,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
           | Atom(a1), Atom(a2) -> unify_atom tyenv env qntenv a1 a2
           | (App(f1, a1), App(f2, a2)) ->
             let tyenv1, env1 = unify_aux tyenv env qntenv f1 f2 in
-            let tyenv2, env2= unify_aux tyenv1 env1 qntenv a1 a2
+            let tyenv2, env2 = unify_aux tyenv1 env1 qntenv a1 a2
             in
             (tyenv2, env2)
           | (Qnt(q1, b1), Qnt(q2, b2)) ->
@@ -122,7 +123,8 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
             in
             if qtst
             then
-              let nqntenv = bind (Atom(Bound q1)) (Atom(Bound q2)) qntenv
+              let nqntenv =
+                Term.Subst.bind (Atom(Bound q1)) (Atom(Bound q2)) qntenv
               in
               unify_aux qtyenv env nqntenv b1 b2
             else raise (term_error "unify_aux: qnt" [t1; t2])
@@ -131,7 +133,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
             then (tyenv, env)
             else raise (term_error "unify_aux: default" [t1; t2])
   in
-  unify_aux typenv trmenv (Term.empty_subst()) trm1 trm2
+  unify_aux typenv trmenv (Term.Subst.empty()) trm1 trm2
 
 (**  Unify terms in a given term context. *)
 let unify_env ?typenv scp env varp trm1 trm2 =
@@ -153,7 +155,7 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
       | Some x -> x
   and subst =
     match initial with
-      | None -> Term.empty_subst()
+      | None -> Term.Subst.empty()
       | Some x -> x
   in
   let (_, retenv) =
@@ -168,7 +170,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
   let lookup q sbs =
     let r = Atom(Bound q)
     in
-    try Term.find r sbs
+    try Term.Subst.find r sbs
     with Not_found -> r
   in
   let eq_binder tyenv b1 b2 =
@@ -214,7 +216,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
        else raise (term_error "matches_aux: default" [trm1; trm2])
   in
   let rec matches_aux tyenv env qntenv t1 t2 =
-    let s = Term.chase_var varp t1 env
+    let s = Term.Subst.chase_var varp t1 env
     in
     if varp s
     then
@@ -234,7 +236,8 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
           in
           if qtst
           then
-            let nqntenv = bind (Atom(Bound q1)) (Atom(Bound q2)) qntenv
+            let nqntenv =
+              Term.Subst.bind (Term.mk_bound q1) (Term.mk_bound q2) qntenv
             in
             matches_aux qtyenv env nqntenv b1 b2
           else
@@ -244,7 +247,7 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
           then (tyenv, env)
           else raise (term_error "matches_aux: default" [t1; t2])
   in
-  matches_aux typenv trmenv (Term.empty_subst()) trm1 trm2
+  matches_aux typenv trmenv (Term.Subst.empty()) trm1 trm2
 
 let matches_rewrite scp typenv env varp trm1 trm2 =
   let (trm1, typenv1) = full_rename typenv trm1

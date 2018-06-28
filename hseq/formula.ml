@@ -343,18 +343,18 @@ let rec is_closed scp env t =
   match t with
     | Basic.App(l, r) -> is_closed scp env l && is_closed scp env r
     | Basic.Qnt(q, b) ->
-      let env1 = (Term.bind (Term.mk_bound(q))
+      let env1 = (Term.Subst.bind (Term.mk_bound(q))
                     (Term.mk_free "" (Gtype.mk_null())) env)
       in
       is_closed scp env1 b
     | Atom(Basic.Meta (q)) -> Scope.is_meta scp q
-    | Atom(Basic.Bound(q)) -> Term.member t env
-    | Atom(Basic.Free(_)) -> Term.member t env
+    | Atom(Basic.Bound(q)) -> Term.Subst.member t env
+    | Atom(Basic.Free(_)) -> Term.Subst.member t env
     | _ -> true
 
 let rec subst_closed scp qntenv sb trm =
   try
-    let nt = Term.replace sb trm
+    let nt = Term.Subst.replace sb trm
     in
     if (is_closed scp qntenv nt)
     then subst_closed scp qntenv sb nt
@@ -363,7 +363,7 @@ let rec subst_closed scp qntenv sb trm =
     (match trm with
       | Basic.Qnt(q, b) ->
           let qntenv1 =
-            Term.bind
+            Term.Subst.bind
               (Term.mk_bound q) (Term.mk_free "" (Gtype.mk_null())) qntenv
           in
           Basic.Qnt(q, subst_closed scp qntenv1 sb b)
@@ -374,8 +374,8 @@ let rec subst_closed scp qntenv sb trm =
 let subst scp form lst =
   let env =
     List.fold_left
-      (fun e (t, r) -> Term.bind (term_of t) (term_of r) e)
-      (Term.empty_subst()) lst
+      (fun e (t, r) -> Term.Subst.bind (term_of t) (term_of r) e)
+      (Term.Subst.empty()) lst
   in
   let nt = Term.subst env (term_of form)
   in
@@ -401,7 +401,7 @@ let inst_env scp env f r =
       let (q, b) = Term.dest_qnt t in
       let t1 =
         Term.subst
-          (Term.bind (Term.mk_bound(q)) r1 (Term.empty_subst())) b
+          (Term.Subst.bind (Term.mk_bound(q)) r1 (Term.Subst.empty())) b
       in
       let t2 = fast_make scp [f; r] t1
       in
@@ -445,7 +445,7 @@ let unify_env scp tyenv asmf conclf =
       | Atom(Bound(q)) -> (List.memq q avars) || (List.memq q cvars)
       | _ -> false
   in
-  Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp abody cbody
+  Unify.unify_fullenv scp tyenv (Term.Subst.empty()) varp abody cbody
 
 (*
  * Logic operations
@@ -461,7 +461,7 @@ let alpha_equals_match scp tyenv asmf conclf =
   and varp x = false
   in
   let (ret, _) =
-    Unify.unify_fullenv scp tyenv (Term.empty_subst()) varp asm concl
+    Unify.unify_fullenv scp tyenv (Term.Subst.empty()) varp asm concl
   in
   ret
 
@@ -517,7 +517,7 @@ let rec extract_check_rules scp dir pl =
 
 let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
   let plan1 = extract_check_rules scp dir plan in
-  let data = (scp, Term.empty_subst(), tyenv) in
+  let data = (scp, Term.Subst.empty(), tyenv) in
   let (data1, nt) =
     try Rewrite.rewrite data plan1 (term_of f)
     with
@@ -543,7 +543,7 @@ let rewrite scp ?(dir=Rewrite.leftright) plan f =
 let mk_rewrite_eq scp tyenv plan trm =
   let plan1 = extract_check_rules scp Rewrite.leftright plan in
   let (lhst, lst) = resolve_term scp trm in
-  let data = (scp, Term.empty_subst(), tyenv) in
+  let data = (scp, Term.Subst.empty(), tyenv) in
   let (data1, nt) =
     try Rewrite.rewrite data plan1 trm
     with

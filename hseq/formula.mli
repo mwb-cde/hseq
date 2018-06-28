@@ -240,7 +240,7 @@ val inst: Scope.t -> t -> t -> t
 (** {5 Unification functions} *)
 
 val unify:
-  Scope.t -> t -> t -> Term.substitution
+  Scope.t -> t -> t -> Term.Subst.t
 (** [unify scp asm concl]: Unify [asm] with [concl] in scope
     [scp]. Formula [asm] is normally the assumption of some sub-goal
     and [concl] is the conclusion.
@@ -249,7 +249,7 @@ val unify:
 val unify_env:
   Scope.t
   -> Gtype.substitution
-  -> t -> t -> (Gtype.substitution * Term.substitution)
+  -> t -> t -> (Gtype.substitution * Term.Subst.t)
 (** [unify_env tyenv scp asm concl]: Unify [asm] with [concl] in scope
     [scp] w.r.t type context [tyenv]. Formula [asm] is normally the
     assumption of some sub-goal and [concl] is the conclusion. Returns

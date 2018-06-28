@@ -475,7 +475,7 @@ type match_data =
       (** Type environment *)
       tyenv: Gtype.substitution;
       (** Quantifier environment *)
-      qntenv: Term.substitution;
+      qntenv: Term.Subst.t;
     }
 
 let mk_match_data acntrl atyenv aqntenv =
@@ -494,7 +494,7 @@ let match_rewrite scp tyenv qntenv rl trm =
   let (qs, _, lhs, rhs, order, src) = rl in
   let varp = Rewrite.is_free_binder qs in
   let find_match term1 term2 =
-    Unify.matches_rewrite scp tyenv (Term.empty_subst()) varp term1 term2
+    Unify.matches_rewrite scp tyenv (Term.Subst.empty()) varp term1 term2
   in
   try
     begin
@@ -666,7 +666,7 @@ let rec find_subterm_bu_tac data trm ctxt goal =
         in
         ({data1 with qntenv = qntenv0}, Qnt(q, btrm), subplan)
       in
-      let qntenv1 = Term.bind (Term.mk_bound q) null_term qntenv0 in
+      let qntenv1 = Term.Subst.bind (Term.mk_bound q) null_term qntenv0 in
       let data1 = {data with qntenv = qntenv1}
       in
       begin
@@ -761,7 +761,7 @@ let rec find_subterm_td_tac data trm ctxt goal =
   let (_, _, qntenv) = dest_match_data data in
   match trm with
     | Basic.Qnt(q, b) ->
-      let qntenv2 = Term.bind (Term.mk_bound q) null_term qntenv
+      let qntenv2 = Term.Subst.bind (Term.mk_bound q) null_term qntenv
       in
       begin
         (** Rewrite quantifier body, top-down **)
@@ -924,7 +924,7 @@ let basic_simp_tac cntrl ft ctxt goal =
   in
   let finalize (data, _, _) = (data.cntrl: Data.t) in
   let cntrl2 = Data.add_loopdb cntrl trm in
-  let data = mk_match_data cntrl2 (typenv_of goal) (Term.empty_subst())
+  let data = mk_match_data cntrl2 (typenv_of goal) (Term.Subst.empty())
   in
   try
     (fold_seq (data, trm, mk_skip)

@@ -39,13 +39,13 @@ val equal_upto_vars:
 
 val find_variables:
   (Basic.binders -> bool) ->
-  Term.substitution -> Basic.term -> Term.substitution
+  Term.Subst.t -> Basic.term -> Term.Subst.t
 (** [find_variables is_var vars trm]: Find all subterms [t] of [trm]
     s.t. [(is_var t)] is true. Add [t] to [vars] then return [vars].
 *)
 
 val check_variables:
-  (Basic.binders -> bool) -> Term.substitution -> Basic.term -> bool
+  (Basic.binders -> bool) -> Term.Subst.t -> Basic.term -> bool
 (** [check_variables is_var vars trm]: Check that all subterms [t] of
     [trm] s.t. [is_var t] are in [vars].
 *)

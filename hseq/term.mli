@@ -253,29 +253,57 @@ val retype_index:
   int -> term -> (term * int * Gtype.substitution)
 (** [retype idx t]: Rename all type variables in term [t]. *)
 
-type substitution
-(** The type of term substitutions. *)
+(** {6 Substitutions} *)
+module Subst:
+  sig
+    type t
+    (** The type of term substitutions. *)
 
-(** {7 Operations on a substitution} *)
+    (** {7 Operations on a substitution} *)
 
-val empty_subst: unit -> substitution
-(** Make an empty substitution. *)
-val find: term -> substitution -> term
-(** [find t env]: Find term [t] in substitution [env]. *)
-val bind: term -> term -> substitution -> substitution
-(** [bind t r env]: Bind term [r] to term [t] in [env]. *)
-val member: term -> substitution -> bool
-(** [member t env]: True if term [t] has a binding in [env]. *)
-val remove: term -> substitution -> substitution
-(** [remove t env]: Remove the binding for term [t] in [env].  *)
-val replace: substitution -> term -> term
-(** [replace env t]: Replace term [t] with its binding in [env],
-    renaming as necessary to ensure that binders are unique.
-*)
+    val empty: unit -> t
+    (** Make an empty substitution. *)
+    val find: term -> t -> term
+    (** [find t env]: Find term [t] in [env]. *)
+    val bind: term -> term -> t -> t
+    (** [bind t r env]: Bind term [r] to term [t] in [env]. *)
+    val member: term -> t -> bool
+    (** [member t env]: True if term [t] has a binding in [env]. *)
+    val remove: term -> t -> t
+    (** [remove t env]: Remove the binding for term [t] in [env].  *)
+    val replace: t -> term -> term
+    (** [replace env t]: Replace term [t] with its binding in [env],
+        renaming as necessary to ensure that binders are unique.
+     *)
+
+    (** {7 Chase functions, needed for unification (some redundancy).} *)
+
+    val chase: (term -> bool) -> term -> t -> term
+    (** [chase varp t env]: Follow the chain of bindings in [env]
+    beginning with term [t] and ending with the first term for which
+    [varp] is false or which has no binding in [env]. ([varp] is true
+    for terms which can be given a binding in [env] e.g. for
+    unification.)
+     *)
+
+    val fullchase: (term -> bool) -> term -> t -> term
+    (** [fullchase varp t env]: chase term [t] in [env]. If [varp] is true
+    for the result, return [t] otherwise return the result. This is
+    like [chase], but only returns terms which aren't variable.
+     *)
+
+    val chase_var: (term -> bool) -> term -> t -> term
+  (** [chase_var varp t env]: Follow the chain of bindings in [env]
+    beginning with term [t] and ending with the first term for which
+    [varp] is false or which has no binding in [env]. ([varp] is true
+    for terms which can be given a binding in [env] e.g. for
+    unification.)
+   *)
+  end
 
 (** {7 Substitution functions} *)
 
-val subst: substitution -> term -> term
+val subst: Subst.t -> term -> term
 (** [subst env t]: Substitute the bindings in [env] in term [t].
 *)
 
@@ -284,33 +312,9 @@ val qsubst: (term * term) list -> term -> term
     for term [vi] in term [t].
 *)
 
-(** {7 Chase functions, needed for unification (some redundancy).} *)
-
-val chase: (term -> bool) -> term -> substitution -> term
-(** [chase varp t env]: Follow the chain of bindings in [env]
-    beginning with term [t] and ending with the first term for which
-    [varp] is false or which has no binding in [env]. ([varp] is true
-    for terms which can be given a binding in [env] e.g. for
-    unification.)
-*)
-
-val fullchase: (term -> bool) -> term -> substitution -> term
-(** [fullchase varp t env]: chase term [t] in [env]. If [varp] is true
-    for the result, return [t] otherwise return the result. This is
-    like [chase], but only returns terms which aren't variable.
-*)
-
-val chase_var: (term -> bool) -> term -> substitution -> term
-(** [chase_var varp t env]: Follow the chain of bindings in [env]
-    beginning with term [t] and ending with the first term for which
-    [varp] is false or which has no binding in [env]. ([varp] is true
-    for terms which can be given a binding in [env] e.g. for
-    unification.)
-*)
-
-val subst_mgu: (term -> bool) -> substitution -> term -> term
+val subst_mgu: (term -> bool) -> Subst.t -> term -> term
 (** [subst_mgu varp env t]: Construct the most general unifier from
-    subsitution [env] and term [t]. Predicate [varp] determines which
+    substitution [env] and term [t]. Predicate [varp] determines which
     terms are considered variable by the unifier. This is only needed
     if variables in the unification of [x] and [y] can occur in both
     [x] and [y]. If the variables only occur in [x], then [subst env

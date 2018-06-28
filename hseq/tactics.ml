@@ -159,7 +159,7 @@ let extract_consts vars env=
       | [] -> cnsts
       | x::xs ->
         try
-          let nv = Term.find (Term.mk_bound x) env
+          let nv = Term.Subst.find (Term.mk_bound x) env
           in
           extract_aux xs (nv::cnsts)
         with Not_found -> extract_aux xs cnsts

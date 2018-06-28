@@ -236,20 +236,21 @@ MAKE_EXPECT_BINOP\
   in
   let sb1 =
     List.fold_left2
-      (fun sb x y -> Term.bind x y sb) (Term.empty_subst())
+      (fun sb x y -> Term.Subst.bind x y sb) (Term.Subst.empty())
       a_vars b_vars
   in
   EXPECT_TERM_EQL(Term.subst sb1 a_free, Term.subst sb1 a1_free);
   EXPECT_TERM_EQL(Term.subst sb1 a1_free, Term.subst sb1 a_free);
 
-  List.iter2 (fun x y -> EXPECT_TERM_EQL(Term.find x sb1, y)) a_vars b_vars;
+  List.iter2
+    (fun x y -> EXPECT_TERM_EQL(Term.Subst.find x sb1, y)) a_vars b_vars;
   List.iter
-    (fun x -> EXPECT_EXN(Term.find x, sb1, Not_found))
+    (fun x -> EXPECT_EXN(Term.Subst.find x, sb1, Not_found))
     [ a1_bnd; a1_ident; a1_meta; b_bnd; b_free; b_ident; b_meta ];
   List.iter
-    (fun x -> EXPECT_TRUE(Term.member x sb1)) a_vars;
+    (fun x -> EXPECT_TRUE(Term.Subst.member x sb1)) a_vars;
   List.iter
-    (fun x -> EXPECT_FALSE(Term.member x sb1))
+    (fun x -> EXPECT_FALSE(Term.Subst.member x sb1))
     [ a1_bnd; a1_ident; a1_meta; b_bnd; b_free; b_ident; b_meta ];
 
   List.iter2
@@ -262,7 +263,7 @@ MAKE_EXPECT_BINOP\
     [ a1_bnd; a1_ident; a1_meta; b_bnd; b_free; b_ident; b_meta ];
 
   let sb2 =
-    List.fold_left2 (fun sb x y -> Term.bind x y sb) sb1 b_vars c_vars
+    List.fold_left2 (fun sb x y -> Term.Subst.bind x y sb) sb1 b_vars c_vars
   in
 
   List.iter2 (fun x y -> EXPECT_TERM_EQL(Term.subst sb2 x, y)) a_vars c_vars;
