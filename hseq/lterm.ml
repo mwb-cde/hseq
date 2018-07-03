@@ -258,7 +258,7 @@ let alpha_convp_full scp tenv t1 t2 =
   with _ -> raise (term_error "alpha_convp" [t1; t2])
 
 let alpha_convp scp t1 t2 =
-  let tyenv = Gtype.empty_subst()
+  let tyenv = Gtype.Subst.empty()
   in
   alpha_convp_full scp tyenv t1 t2
 

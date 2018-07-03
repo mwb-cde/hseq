@@ -86,7 +86,7 @@ let mk_defn scp (name, namety) args rhs =
   let tenv = Typing.settype scp ndn1 in
   let scp1 = Scope.extend_with_terms scp [(name, nty)] in
   let tenv1 =Typing.typecheck_top scp1 tenv ndn1 (Lterm.mk_bool_ty()) in
-  let nty1 = Gtype.mgu_rename 0 tenv1 (Gtype.empty_subst()) nty
+  let nty1 = Gtype.mgu_rename 0 tenv1 (Gtype.Subst.empty()) nty
   in
   (name, nty1, Formula.make scp1 (Term.retype tenv1 ndn1))
 

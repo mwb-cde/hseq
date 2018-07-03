@@ -101,10 +101,10 @@ val induct_on:
 (** {7 Debugging information} *)
 
 val induct_tac_bindings:
-  Gtype.substitution -> Scope.t
+  Gtype.Subst.t -> Scope.t
   -> (Basic.binders list * 'a * Basic.term)
   -> Basic.term
-  -> (Gtype.substitution * Term.Subst.t)
+  -> (Gtype.Subst.t * Term.Subst.t)
 (** [induct_tac_bindings tyenv scp aterm cterm]: Extract bindings for
     the induction theorem in [aterm] from conclusion term [cterm] in
     type environment [tyenv] and scope [scp].
@@ -136,11 +136,11 @@ val induct_tac_solve_rh_tac:
 *)
 
 val induct_on_bindings:
-  Gtype.substitution -> Scope.t
+  Gtype.Subst.t -> Scope.t
   -> Basic.binders
   -> (Basic.binders list * 'a * Basic.term)
   -> Basic.term
-  -> (Gtype.substitution * Term.Subst.t)
+  -> (Gtype.Subst.t * Term.Subst.t)
 (** [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings
     for the induction theorem in [aterm] from conclusion term [cterm]
     in type environment [tyenv] and scope [scp], to induct on term

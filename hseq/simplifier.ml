@@ -473,7 +473,7 @@ type match_data =
       (** Simplifier data *)
       cntrl: Data.t;
       (** Type environment *)
-      tyenv: Gtype.substitution;
+      tyenv: Gtype.Subst.t;
       (** Quantifier environment *)
       qntenv: Term.Subst.t;
     }

@@ -225,19 +225,19 @@ val rename: term -> term
 
 (** {5 Retyping} *)
 
-val retype: Gtype.substitution -> term -> term
+val retype: Gtype.Subst.t -> term -> term
 (** [retype tyenv t]: Reset the types in term [t] using type
     substitution [tyenv].  Substitutes variables with their concrete
     type in [tyenv].
 *)
 
 val retype_pretty_env:
-  Gtype.substitution -> term -> (term * Gtype.substitution)
+  Gtype.Subst.t -> term -> (term * Gtype.Subst.t)
 (** [retype_pretty]: Like [retype], make substitution for type
     variables but also replace other type variables with new, prettier
     names
 *)
-val retype_pretty: Gtype.substitution -> term -> term
+val retype_pretty: Gtype.Subst.t -> term -> term
 (** [retype_pretty_env]: Like [retype_pretty] but also return the
     substitution storing from the bindings/replacements generated
     during retyping.
@@ -245,12 +245,12 @@ val retype_pretty: Gtype.substitution -> term -> term
 
 (** {5 Combined type/binder renaming} *)
 
-val full_rename: Gtype.substitution -> term -> (term * Gtype.substitution)
+val full_rename: Gtype.Subst.t -> term -> (term * Gtype.Subst.t)
 (** [full_rename env t]: Rename all type variables and bound variables
     in term [t]. *)
 
 val retype_index:
-  int -> term -> (term * int * Gtype.substitution)
+  int -> term -> (term * int * Gtype.Subst.t)
 (** [retype idx t]: Rename all type variables in term [t]. *)
 
 (** {6 Substitutions} *)

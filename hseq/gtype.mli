@@ -277,25 +277,29 @@ type ('a)tree = ('a)TypeTree.t
 
 
 (** {5 Substitution} *)
+module Subst:
+sig
+  (** The type of substitutions *)
+  type ty = t (* Gtype.t *)
+  type t
 
-type substitution
-(** The type of substitutions *)
+  val empty: unit -> t
+  (** Make an empty substitution. *)
+  val bind: ty -> ty -> t -> t
+  (** [bind t r env]: Bind [r] to [t] in substitution [env]. *)
+  val delete: ty -> t -> t
+  (** [delete t env]: Delete the binding of [t] in [env]. *)
+  val lookup: ty -> t -> ty
+  (** [lookup t env]: Get the binding of [t] in [env]. *)
+  val member: ty -> t -> bool
+  (** [member t env]: True if [t] has a binding in [env]. *)
+  val subst_iter: (ty -> ty -> unit) -> t -> unit
+  (** [subst_iter f env]: Apply function [f] to each binding in [env]. *)
+  val subst_fold: (ty -> ty -> 'a -> 'a) -> t -> 'a -> 'a
+  (** [subst_fold f val env]: Fold function [f] over the bindings in [env]. *)
+end
 
-val empty_subst: unit -> substitution
-(** Make an empty substitution. *)
-val bind: t -> t -> substitution -> substitution
-(** [bind t r env]: Bind [r] to [t] in substitution [env]. *)
-val delete: t -> substitution -> substitution
-(** [delete t env]: Delete the binding of [t] in [env]. *)
-val lookup: t -> substitution -> t
-(** [lookup t env]: Get the binding of [t] in [env]. *)
-val member: t -> substitution -> bool
-(** [member t env]: True if [t] has a binding in [env]. *)
-val subst_iter: (t -> t -> unit) -> substitution -> unit
-(** [subst_iter f env]: Apply function [f] to each binding in [env]. *)
-val subst_fold: (t -> t -> 'a -> 'a) -> substitution -> 'a -> 'a
-(** [subst_fold f val env]: Fold function [f] over the bindings in [env]. *)
-val subst: t -> substitution -> t
+val subst: t -> Subst.t -> t
 (** [subst env t]: Apply substitution [env] to t [t]. This is
     simultaneous substitution: the substitution is not pushed into the
     replacement terms. This is therefore unsuitable for forming the
@@ -305,14 +309,14 @@ val subst: t -> substitution -> t
 
 (** {6 Operations which depend on substitution} *)
 
-val rename_type_vars_env: substitution -> t -> (t * substitution)
+val rename_type_vars_env: Subst.t -> t -> (t * Subst.t)
 (** copy a type, making new variables in the type. *)
 val rename_type_vars: t -> t
 (** [rename_type_vars t]: Make a type equivalent but not equal to [t],
     differing from [t] in the variable names.
 *)
 
-val rename_index: int -> substitution -> t -> (t * int * substitution)
+val rename_index: int -> Subst.t -> t -> (t * int * Subst.t)
 (** [rename_index t]: Make a type equivalent but not equal to [t],
     differing from [t] in the variable names. Use an integer to
     generate the type names.
@@ -431,7 +435,7 @@ val check_decl_type: TypeScope.t -> t -> unit
 
 (** {5 Unification} *)
 
-val lookup_var: t -> substitution -> t
+val lookup_var: t -> Subst.t -> t
 (** [lookup_var ty env]: Look-up and chase var [ty] in env [environment]. *)
 
 val occurs: t -> t -> bool
@@ -446,7 +450,7 @@ val occurs: t -> t -> bool
    @raise [typeError] if [t] is not atomic or if [t] occurs in [(subst r env)],
    succeed silently otherwise.  *)
 
-val bind_occs: t -> t -> substitution -> substitution
+val bind_occs: t -> t -> Subst.t -> Subst.t
 (** [bind_occs t r env]: Bind [r] to [t] in [env]. Fails if [t] occurs
     in [subst r env].
 *)
@@ -474,24 +478,24 @@ val bind_occs: t -> t -> substitution -> substitution
 
 val unify_env:
   TypeScope.t -> t -> t
-  -> substitution -> substitution
+  -> Subst.t -> Subst.t
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
-val unify: TypeScope.t -> t -> t -> substitution
+val unify: TypeScope.t -> t -> t -> Subst.t
 (** [unify]: unify two types, returning the substitution.
 *)
 
 (** {7 Most General Unifiers} *)
 
-val mgu: t -> substitution -> t
+val mgu: t -> Subst.t -> t
 (** [mgu ty env]: Construct the most general unifier for type [ty]
     from substitution [env]. This is a version of substitution which
     pushes the substitution into the replacement terms.
 *)
 
-val mgu_rename_env: (int * substitution) -> substitution
-  -> t -> (t * (int * substitution))
+val mgu_rename_env: (int * Subst.t) -> Subst.t
+  -> t -> (t * (int * Subst.t))
 (** [mgu_rename_env inf env nenv ty]: Replace variables in [ty] with
     their bindings in substitution [env].  If a variable isn't bound
     in [env], then it is renamed and bound to that name in [nenv]
@@ -503,12 +507,12 @@ val mgu_rename_env: (int * substitution) -> substitution
     Returns the new type and updated nenv.
 *)
 val mgu_rename:
-  int -> substitution
-  -> substitution -> t
+  int -> Subst.t
+  -> Subst.t -> t
   -> t
 
-val mgu_rename_simple: int -> substitution -> substitution
-  -> t -> (t * int *substitution)
+val mgu_rename_simple: int -> Subst.t -> Subst.t
+  -> t -> (t * int *Subst.t)
 (**
    [mgu_rename_simple inf env env nenv typ]: Replace variables in [typ]
    with their bindings in substitution [env].  If a variable isn't bound
@@ -529,8 +533,8 @@ val mgu_rename_simple: int -> substitution -> substitution
 *)
 
 val matching_env:
-  TypeScope.t -> substitution
-  -> t -> t -> substitution
+  TypeScope.t -> Subst.t
+  -> t -> t -> Subst.t
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
@@ -540,8 +544,8 @@ val matching_env:
 *)
 
 val matches_env:
-  TypeScope.t -> substitution
-  -> t -> t -> substitution
+  TypeScope.t -> Subst.t
+  -> t -> t -> Subst.t
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
     type [t1] can be bound.
@@ -576,8 +580,8 @@ val in_scope:
 *)
 *)
 
-val extract_bindings: t list -> substitution -> substitution
-  -> substitution
+val extract_bindings: t list -> Subst.t -> Subst.t
+  -> Subst.t
 (** [extract_bindings vars src dst]: extract bindings variables in
     [var] from [src] substitution, store them in [dst] substitution
 
@@ -640,12 +644,12 @@ val from_save_rec: stypedef_record -> typedef_record
  * Debugging support
  *)
 
-val print_subst: substitution -> unit
+val print_subst: Subst.t -> unit
 
 (** Debugging information *)
 val unify_aux:
   TypeScope.t -> t -> t
-  -> substitution -> substitution
+  -> Subst.t -> Subst.t
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)

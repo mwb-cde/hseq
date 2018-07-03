@@ -138,12 +138,12 @@ let test_types() =
   and types_2 = [b_wty; f2_cty; g1_cty; a1_ty]
   in
   let sb_1 =
-    List.fold_left2 (fun sb x y -> Gtype.bind x y sb)
-                    (Gtype.empty_subst())
+    List.fold_left2 (fun sb x y -> Gtype.Subst.bind x y sb)
+                    (Gtype.Subst.empty())
                     types_1 types_2
   in
   List.iter2
-    (fun x y -> EXPECT_TYPE_EQL(Gtype.lookup x sb_1, y))
+    (fun x y -> EXPECT_TYPE_EQL(Gtype.Subst.lookup x sb_1, y))
     [a_ty; b_ty; f1_cty; f1a_cty]
     [b_wty; f2_cty; g1_cty; a1_ty];
 
@@ -153,16 +153,18 @@ let test_types() =
     [b_wty; a_wty; f2_cty; g1_cty; a1_ty];
 
   (* Weak variables don't bind to variables. *)
-  EXPECT_EXN(Gtype.lookup a_wty, sb_1, Not_found);
+  EXPECT_EXN(Gtype.Subst.lookup a_wty, sb_1, Not_found);
   EXPECT_TYPE_NEQ(Gtype.subst a_wty sb_1, c_ty);
   EXPECT_TYPE_EQL(Gtype.subst a_wty sb_1, a_wty);
 
-  EXPECT_TRUE(ignore(Gtype.bind b_wty f1a_cty (Gtype.empty_subst())); true);
+  EXPECT_TRUE(ignore(Gtype.Subst.bind b_wty f1a_cty
+                       (Gtype.Subst.empty())); true);
 
-  EXPECT_TRUE(try ignore(Gtype.bind b_wty a_ty (Gtype.empty_subst())); false
+  EXPECT_TRUE(try ignore(Gtype.Subst.bind b_wty a_ty (Gtype.Subst.empty()));
+                  false
               with Failure(_) -> true);
 
-  EXPECT_TRUE(ignore(Gtype.bind b_wty c_wty (Gtype.empty_subst())); true);
+  EXPECT_TRUE(ignore(Gtype.Subst.bind b_wty c_wty (Gtype.Subst.empty())); true);
 
 
   TESTSUITE_END()

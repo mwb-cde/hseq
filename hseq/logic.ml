@@ -147,7 +147,7 @@ struct
     {
       name: Ident.t;
       ty: Gtype.t;
-      tyenv: Gtype.substitution;
+      tyenv: Gtype.Subst.t;
       scope: Scope.t;
       skolems: skolem_type;
       tylist: (string*int) list
@@ -562,7 +562,7 @@ let get_label_form t sq=
    {- A formula: the theorem which is to be proved.}}
 *)
 type goal =
-    Goal of (Sequent.t list * Gtype.substitution * Formula.t * Changes.t)
+    Goal of (Sequent.t list * Gtype.Subst.t * Formula.t * Changes.t)
 
 let get_goal (Goal(_, _, f, _)) = f
 let get_subgoals (Goal(sq, _, _, _)) = sq
@@ -583,7 +583,7 @@ let mk_goal scp f =
   let sqnt_tag = form_tag sqnt_frm in
   let chngs = Changes.make [] [] [sqnt_tag] []
   in
-  Goal([sqnt], Gtype.empty_subst(), goal_frm, chngs)
+  Goal([sqnt], Gtype.Subst.empty(), goal_frm, chngs)
 
 let mk_thm g =
   match g with
@@ -633,7 +633,7 @@ exception No_subgoals
     expected subgoals.
 *)
 
-exception Solved_subgoal of Gtype.substitution
+exception Solved_subgoal of Gtype.Subst.t
 (** [Solved_subgoal tyenv]: solved a subgoal, creating new goal type
     environment tyenv
 *)
@@ -1846,7 +1846,7 @@ struct
   *)
   let beta_conv scp term =
     let eq_term t =
-      fst(Formula.mk_beta_reduce_eq scp (Gtype.empty_subst()) t)
+      fst(Formula.mk_beta_reduce_eq scp (Gtype.Subst.empty()) t)
     in
     try mk_theorem (eq_term term)
     with err ->
@@ -1865,7 +1865,7 @@ struct
     let plan1 = Rewrite.mapping formula_of plan in
     let conv_aux t =
       let (tform, _) =
-        Formula.mk_rewrite_eq scp (Gtype.empty_subst()) plan1 t
+        Formula.mk_rewrite_eq scp (Gtype.Subst.empty()) plan1 t
       in
       mk_theorem tform
     in

@@ -81,7 +81,7 @@ let typeof_env scp (inf, typenv) trm =
 let typeof scp ?env t =
   let tenv =
     match env with
-      | None -> Gtype.empty_subst()
+      | None -> Gtype.Subst.empty()
       | Some x -> x
   in
   let (ty, _) = typeof_env scp (0, tenv) t
@@ -206,7 +206,7 @@ let typecheck_top scp env t expty =
   env1
 
 let typecheck scp t expty =
-  ignore(typecheck_top scp (Gtype.empty_subst()) t expty)
+  ignore(typecheck_top scp (Gtype.Subst.empty()) t expty)
 
 (*** Settype based type checking ****)
 
@@ -335,7 +335,7 @@ let settype scp ?env t =
   in
   let tyenv =
     match env with
-      | None -> Gtype.empty_subst()
+      | None -> Gtype.Subst.empty()
       | Some(x) -> x
   in
   let (inf1, tyvar) = Gtype.mk_plain_typevar inf in

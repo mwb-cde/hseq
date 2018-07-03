@@ -504,32 +504,35 @@ type ('a)tree = ('a)TypeTree.t
  *   Substitution.
  *)
 
-type substitution = (t)tree
+module Subst =
+  struct
+    type ty = t
+    type t = (ty)tree
 
-let lookup t env = TypeTree.find env t
-let member t env =
-  try lookup t env ; true
-  with Not_found -> false
+    let lookup t env = TypeTree.find env t
+    let member t env =
+      try lookup t env ; true
+      with Not_found -> false
 
-let subst_sz s = TypeTree.empty
-let empty_subst () = TypeTree.empty
-let bind t r env =
-  match (t, r) with
-  | (Atom(Weak(_)), Atom(Var(_))) ->
-     (failwith "Can't bind weak variable to a variable.")
-  | _ -> TypeTree.replace env t r
-let delete t env = TypeTree.delete env t
-let subst_iter = TypeTree.iter
-let subst_fold = TypeTree.fold
+    let empty () = TypeTree.empty
+    let bind t r env =
+      match (t, r) with
+      | (Atom(Weak(_)), Atom(Var(_))) ->
+         (failwith "Can't bind weak variable to a variable.")
+      | _ -> TypeTree.replace env t r
+    let delete t env = TypeTree.delete env t
+    let subst_iter = TypeTree.iter
+    let subst_fold = TypeTree.fold
 
-let bind_var t r env =
-  if is_any_var t
-  then bind t r env
-  else
-    raise (Failure "bind_var: Can't bind a non variable")
+    let bind_var t r env =
+      if is_any_var t
+      then bind t r env
+      else
+        raise (Failure "bind_var: Can't bind a non variable")
+  end
 
 let rec subst t env =
-  try lookup t env
+  try Subst.lookup t env
   with Not_found ->
     begin
       match t with
@@ -559,15 +562,15 @@ let rec rename_type_vars_env env trm =
   match trm with
   | Atom(Var(x)) ->
      begin
-       try (lookup trm env, env)
+       try (Subst.lookup trm env, env)
        with Not_found ->
          let nt = mk_var (gtype_id_string x)
          in
-         (nt, bind trm nt env)
+         (nt, Subst.bind trm nt env)
      end
   | Atom(Weak(x)) ->
      begin
-       try (lookup trm env, env)
+       try (Subst.lookup trm env, env)
        with Not_found -> (trm, env)
      end
   | Atom(Ident(_)) -> (trm, env)
@@ -586,7 +589,7 @@ let rec rename_type_vars_env env trm =
        rename_vars_list env1 tyl (ty1::rslt)
 
 let rename_type_vars t =
-  let (nty, _) = rename_type_vars_env (empty_subst()) t
+  let (nty, _) = rename_type_vars_env (Subst.empty()) t
   in
   nty
 
@@ -595,16 +598,16 @@ let rename_index idx env top_type =
     match ty with
     | Atom(Var(x)) ->
        begin
-         try (lookup ty env, ctr, env)
+         try (Subst.lookup ty env, ctr, env)
          with Not_found ->
            let (ctr1, nt) = mk_typevar ctr in
-           let nenv = bind ty nt env
+           let nenv = Subst.bind ty nt env
            in
            (nt, ctr1, nenv)
        end
     | Atom(Weak(x)) ->
        begin
-         try (lookup ty env, ctr, env)
+         try (Subst.lookup ty env, ctr, env)
          with Not_found -> (ty, ctr, env)
        end
     | Atom(Ident(_)) -> (ty, ctr, env)
@@ -724,12 +727,12 @@ let has_defn tyenv n =
 let check_args args =
   let null_type = mk_def (Ident.null) [] in
   let arg_itr env x =
-    if (is_var x) && (not (member x env))
-    then (bind x null_type env)
+    if (is_var x) && (not (Subst.member x env))
+    then (Subst.bind x null_type env)
     else raise Not_found
   in
   try
-    ignore(List.fold_left arg_itr (empty_subst()) args);
+    ignore(List.fold_left arg_itr (Subst.empty()) args);
     true
   with Not_found -> false
 
@@ -889,7 +892,7 @@ let lookup_var ty env =
     if is_any_var t
     then
       begin
-        let t1 = try Some(lookup t env) with Not_found -> None
+        let t1 = try Some(Subst.lookup t env) with Not_found -> None
         in
         match t1 with
         | Some(t2) -> chase t2
@@ -909,7 +912,7 @@ let rec occurs_env tenv atomty ty =
   else raise (type_error "occurs_env: expected a type_variable" [atomty; ty])
 
 let occurs atomty ty =
-  occurs_env (empty_subst()) atomty ty
+  occurs_env (Subst.empty()) atomty ty
 
 let bind_occs t1 t2 env =
   if is_any_var t1
@@ -919,7 +922,7 @@ let bind_occs t1 t2 env =
       and r2 = lookup_var t2 env
       in
       if not (occurs_env env r1 r2)
-      then bind_var r1 r2 env
+      then Subst.bind_var r1 r2 env
       else raise (type_error
                     "bind_occs: variable occurs in binding type"
                     [t1; t2; r1; r2])
@@ -1035,12 +1038,12 @@ and bind_occs_var ty1 s t env0 =
         | (Atom(Var(_)), _) ->
            if equals ty1 b
            then env1
-           else bind ty1 b env1
+           else Subst.bind ty1 b env1
         | (Atom(Weak(_)), Atom(Var(_))) -> env1
         | (Atom(Weak(_)), b) ->
            if equals ty1 b
            then env1
-           else bind ty1 b env1
+           else Subst.bind ty1 b env1
         | _ -> env1
       end
   end
@@ -1054,7 +1057,7 @@ let unify_env scp t1 t2 nenv =
 
    @raise [type_error] if unification fails
 *)
-let unify scp t1 t2 = unify_env scp t1 t2 (empty_subst())
+let unify scp t1 t2 = unify_env scp t1 t2 (Subst.empty())
 
 (*
  * Most general unifiers.
@@ -1090,13 +1093,13 @@ let rec mgu t env =
 *)
 let mgu_rename_env (inf, tyenv) name_env typ =
   let new_name_env (ctr, nenv) x =
-    try (lookup x nenv, (ctr, nenv))
+    try (Subst.lookup x nenv, (ctr, nenv))
     with Not_found ->
       let (ctr1, newty) = mk_typevar ctr
       in
-      (newty, (ctr1, bind_var x newty nenv))
+      (newty, (ctr1, Subst.bind_var x newty nenv))
   in
-  let rec rename_aux (ctr, (nenv: substitution)) ty =
+  let rec rename_aux (ctr, (nenv: Subst.t)) ty =
     match ty with
     | Atom(Var(_)) ->
       let nt = lookup_var ty tyenv
@@ -1130,13 +1133,13 @@ let mgu_rename_env (inf, tyenv) name_env typ =
  *)
 let mgu_rename_simple inf tyenv name_env typ =
   let new_name_env ctr nenv x =
-    try (lookup x nenv, ctr, nenv)
+    try (Subst.lookup x nenv, ctr, nenv)
     with Not_found ->
       let (ctr1, newty) = mk_typevar ctr
       in
-      (newty, ctr1, bind_var x newty nenv)
+      (newty, ctr1, Subst.bind_var x newty nenv)
   in
-  let rec rename_aux ctr (nenv: substitution) ty =
+  let rec rename_aux ctr (nenv: Subst.t) ty =
     match ty with
     | Atom(Var(_)) ->
        let nt = lookup_var ty tyenv
@@ -1248,12 +1251,12 @@ and bind_occs_var ty1 s t env0 =
         | (Atom(Var(_)), _) ->
            if equals ty1 b
            then env1
-           else bind ty1 b env1
+           else Subst.bind ty1 b env1
         | (Atom(Weak(_)), Atom(Var(_))) -> env1
         | (Atom(Weak(_)), b) ->
            if equals ty1 b
            then env1
-           else bind ty1 b env1
+           else Subst.bind ty1 b env1
         | _ -> env1
       end
   end
@@ -1263,7 +1266,7 @@ let matches_env scp tyenv t1 t2 =
   with _ -> tyenv
 
 let matches scp t1 t2=
-  try ignore(matching_env scp (empty_subst()) t1 t2); true
+  try ignore(matching_env scp (Subst.empty()) t1 t2); true
   with _ -> false
 
 (*
@@ -1315,7 +1318,7 @@ let extract_bindings tyvars src dst =
       in
       if is_any_var y
       then extract_aux xs r
-      else extract_aux xs (bind x y r)
+      else extract_aux xs (Subst.bind x y r)
   in extract_aux tyvars dst
 
 (*
@@ -1448,7 +1451,7 @@ let from_save_rec record =
 
 let print_subst tenv =
   Format.printf "@[";
-  subst_iter
+  Subst.subst_iter
     (fun x y ->
       Format.printf "@[(%s@ :=@ %s@):]"
                     (string_gtype x)

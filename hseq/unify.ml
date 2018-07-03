@@ -139,7 +139,7 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
 let unify_env ?typenv scp env varp trm1 trm2 =
   let tye =
     match typenv with
-      | None -> Gtype.empty_subst()
+      | None -> Gtype.Subst.empty()
       | Some x -> x
   in
   let (_, retenv) = unify_fullenv scp tye env varp trm1 trm2
@@ -151,7 +151,7 @@ let unify_env ?typenv scp env varp trm1 trm2 =
 let unify ?typenv ?initial scp varp trm1 trm2 =
   let tye =
     match typenv with
-      | None -> Gtype.empty_subst()
+      | None -> Gtype.Subst.empty()
       | Some x -> x
   and subst =
     match initial with

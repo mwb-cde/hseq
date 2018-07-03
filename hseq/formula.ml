@@ -1,6 +1,6 @@
 (*----
   Name: formula.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -87,7 +87,7 @@ let make_full ?(strict=false) scp tyenv t =
 let make ?strict ?tyenv scp t =
   let env =
     match tyenv with
-      | None -> Gtype.empty_subst()
+      | None -> Gtype.Subst.empty()
       | Some(x) -> x
   in
   let (form, _) = make_full ?strict scp env t
@@ -267,11 +267,11 @@ let mk_equality scp a b =
 let typecheck_env scp tenv f expty =
   let t = term_of f
   in
-  Typing.typecheck_top scp (Gtype.empty_subst()) t expty
+  Typing.typecheck_top scp (Gtype.Subst.empty()) t expty
 
 let typecheck scp f expty=
   let t = term_of f in
-  let tyenv = typecheck_env scp (Gtype.empty_subst()) f expty
+  let tyenv = typecheck_env scp (Gtype.Subst.empty()) f expty
   in
   make scp (Term.retype_pretty tyenv t)
 
@@ -410,7 +410,7 @@ let inst_env scp env f r =
   else raise (error "inst: not a quantified formula" [f])
 
 let inst scp t r =
-  let new_term, _ = inst_env scp (Gtype.empty_subst()) t r
+  let new_term, _ = inst_env scp (Gtype.Subst.empty()) t r
   in
   new_term
 
@@ -531,7 +531,7 @@ let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
 
 let rewrite scp ?(dir=Rewrite.leftright) plan f =
   let (new_term, ntyenv) =
-    rewrite_env scp ~dir:dir (Gtype.empty_subst()) plan f
+    rewrite_env scp ~dir:dir (Gtype.Subst.empty()) plan f
   in
   new_term
 

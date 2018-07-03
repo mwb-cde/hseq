@@ -429,7 +429,7 @@ module Terms =
       Format.open_box 0;
       print_term ppstate
                  (Printkit.default_term_fixity, Printkit.default_term_prec)
-                 (Term.retype_pretty (Gtype.empty_subst()) x);
+                 (Term.retype_pretty (Gtype.Subst.empty()) x);
       Format.close_box()
 
     let simple_print_fn_app ppstate (assoc, prec) (f, args) =

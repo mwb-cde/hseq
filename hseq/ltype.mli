@@ -72,18 +72,18 @@ val check_decl_type: Scope.t -> Gtype.t -> unit
 
 val unify_env:
   Scope.t -> Gtype.t -> Gtype.t
-  -> Gtype.substitution -> Gtype.substitution
+  -> Gtype.Subst.t -> Gtype.Subst.t
 (** [unify_env scp ty1 ty2 env]: Unify two types in context [env],
     return a new subsitution.
 *)
 
-val unify: Scope.t -> Gtype.t -> Gtype.t -> Gtype.substitution
+val unify: Scope.t -> Gtype.t -> Gtype.t -> Gtype.Subst.t
 (** [unify]: unify two types, returning the substitution.
 *)
 
 val matching_env:
-  Scope.t -> Gtype.substitution
-  -> Gtype.t -> Gtype.t -> Gtype.substitution
+  Scope.t -> Gtype.Subst.t
+  -> Gtype.t -> Gtype.t -> Gtype.Subst.t
 (**
    [matching_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
    context [env]. This unifies [t1] and [t2], but only variables in
@@ -93,8 +93,8 @@ val matching_env:
 *)
 
 val matches_env:
-  Scope.t -> Gtype.substitution
-  -> Gtype.t -> Gtype.t -> Gtype.substitution
+  Scope.t -> Gtype.Subst.t
+  -> Gtype.t -> Gtype.t -> Gtype.Subst.t
 (** [matches_env scp env t1 t2]: Match type [t1] with type [t2] w.r.t
     context [env]. This unifies [t1] and [t2], but only variables in
     type [t1] can be bound.

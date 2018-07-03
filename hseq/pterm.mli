@@ -133,7 +133,7 @@ sig
     Scope.t
     -> (string -> Gtype.t -> (Ident.t * Gtype.t))
     -> t
-    -> (Basic.term * Gtype.substitution)
+    -> (Basic.term * Gtype.Subst.t)
   (** [resolve_term scp env t]: Resolve the symbols in term [t].
 
       For each free variable [Free(s, ty)] in [t], lookup
@@ -189,10 +189,10 @@ sig
 
   val resolve_aux:
     resolve_arg
-    -> Gtype.substitution
+    -> Gtype.Subst.t
     -> Gtype.t
     -> t
-    -> (Basic.term * Gtype.t * Gtype.substitution * resolve_arg)
+    -> (Basic.term * Gtype.t * Gtype.Subst.t * resolve_arg)
 
   val memo_find:
     ('a, 'b)Hashtbl.t
@@ -226,7 +226,7 @@ val resolve:
   Scope.t
   -> (string -> Gtype.t -> (Ident.t * Gtype.t))
   -> t
-  -> (Basic.term * Gtype.substitution)
+  -> (Basic.term * Gtype.Subst.t)
 (** [resolve scp env pt]: Construct the term represented by [pt],
     resolving overloaded operators and returning the type environment
     built up. The typing constructers ([PTyped]) in [pt] are removed

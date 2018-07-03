@@ -186,15 +186,15 @@ val mk_lam_ty: Scope.t -> string -> Gtype.t -> Basic.term -> Basic.term
 
 val alpha_convp_full:
   Scope.t
-  -> Gtype.substitution -> Basic.term -> Basic.term
-  -> Gtype.substitution
+  -> Gtype.Subst.t -> Basic.term -> Basic.term
+  -> Gtype.Subst.t
 (** Test for alpha-convertiblity of terms w.r.t a type context.
     [alpha_convp_full scp tyenv x y] succeeds, returning an updated
     type context, iff [x] and [y] are equal up to the renaming of
     bound variables.
 *)
 
-val alpha_convp: Scope.t -> Basic.term -> Basic.term -> Gtype.substitution
+val alpha_convp: Scope.t -> Basic.term -> Basic.term -> Gtype.Subst.t
 (** A top-level for [alpha_convp_full]. *)
 
 val alpha_equals: Scope.t -> Basic.term -> Basic.term -> bool

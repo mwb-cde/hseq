@@ -22,7 +22,7 @@
 (** Utility functions for boolean reasoning *)
 
 val find_unifier:
-  Scope.t ->  Gtype.substitution
+  Scope.t ->  Gtype.Subst.t
   -> (Basic.term -> bool)
   -> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
   -> Logic.tagged_form list

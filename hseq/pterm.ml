@@ -408,7 +408,7 @@ struct
     in
     let expty = Gtype.mk_null() in
     let (term1, _, subst, _) =
-      resolve_aux data (Gtype.empty_subst()) expty term
+      resolve_aux data (Gtype.Subst.empty()) expty term
     in
     (term1, subst)
 
@@ -550,7 +550,7 @@ let to_term ptrm =
   let tyvar_ctr = 0 in
   let (tyvar_ctr1, typ1) = Gtype.mk_typevar tyvar_ctr in
   let (trm1, _) =
-    to_aux (tyvar_ctr1, Gtype.empty_subst()) (Term.Subst.empty()) typ1 ptrm
+    to_aux (tyvar_ctr1, Gtype.Subst.empty()) (Term.Subst.empty()) typ1 ptrm
   in
   trm1
 

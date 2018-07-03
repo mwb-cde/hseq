@@ -277,7 +277,7 @@ sig
       {
         name: Ident.t;
         ty: Gtype.t;
-        tyenv: Gtype.substitution;
+        tyenv: Gtype.Subst.t;
         scope: Scope.t;
         skolems: skolem_type;
         tylist: (string*int) list
@@ -303,7 +303,7 @@ sig
     -> (Basic.term
         * Gtype.t
         * skolem_type
-        * Gtype.substitution
+        * Gtype.Subst.t
         * (string * int) list)
 (** [mk_new_skolem data] constructs a new skolem. Returns [(sv,
     sty, skolems, tyenv, tylist]) where [sv] is the new skolem
@@ -454,7 +454,7 @@ val get_goal: goal -> Formula.t
 (** The formula to be proved. *)
 val get_subgoals: goal -> Sequent.t list
 (** The subgoals of the goal. *)
-val goal_tyenv: goal -> Gtype.substitution
+val goal_tyenv: goal -> Gtype.Subst.t
 (** The type environment of the goal. *)
 val goal_changes: goal -> Changes.t
 (** The changes made to the goal. *)
@@ -545,7 +545,7 @@ sig
       visible.  *)
   type node
 
-  val node_tyenv: node -> Gtype.substitution
+  val node_tyenv: node -> Gtype.Subst.t
   (** The type environment of the goal. *)
   val node_sqnt: node -> Sequent.t
   (** The subgoal to be proved. *)
@@ -557,7 +557,7 @@ sig
       node from which it was produced.  *)
   type branch
 
-  val branch_tyenv: branch -> Gtype.substitution
+  val branch_tyenv: branch -> Gtype.Subst.t
   (** The type environment of the branch. *)
   val branch_sqnts: branch -> Sequent.t list
   (** The subgoals of the branch. *)
@@ -567,9 +567,9 @@ sig
   (** {7 Utility functions} *)
 
   val merge_tyenvs:
-    Gtype.substitution
-    -> Gtype.substitution
-    -> Gtype.substitution
+    Gtype.Subst.t
+    -> Gtype.Subst.t
+    -> Gtype.Subst.t
   (** [merge tyenv1 tyenv2]: Merge type environments.
 
       Create a type environment [env3] which has the binding of each weak

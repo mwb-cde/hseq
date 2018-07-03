@@ -521,7 +521,7 @@ let rename_env typenv trmenv trm =
 (* [rename_opt t] Rename term [t] (carry out alpha conversion on [t]).
    Return [None] if no change is needed (no binders or bound terms) *)
 let rename_opt t =
-  let rslt_opt = rename_env (Gtype.empty_subst()) (Tree.empty()) t
+  let rslt_opt = rename_env (Gtype.Subst.empty()) (Tree.empty()) t
   in
   if rslt_opt = None
   then None
@@ -709,7 +709,7 @@ let retype_pretty_env typenv trm =
          (Qnt(q1, b1), ctr2, nenv2, qenv)
   in
   let (retyped, _, new_nenv, _) =
-    retype_aux trm 0 (Gtype.empty_subst()) (Tree.empty())
+    retype_aux trm 0 (Gtype.Subst.empty()) (Tree.empty())
   in
   (retyped, new_nenv)
 
@@ -825,7 +825,7 @@ let retype_index idx trm =
         in
         (App(f1, a1), ctr2, tyenv2)
   in
-  rename_aux trm idx (Gtype.empty_subst()) (Tree.empty())
+  rename_aux trm idx (Gtype.Subst.empty()) (Tree.empty())
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
