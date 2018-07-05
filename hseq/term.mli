@@ -24,8 +24,25 @@
 open Basic
 open Gtype
 
-
 (** {7 Terms} *)
+
+(** Constants that can appear in terms  *)
+module Const:
+sig
+
+  type t =
+    | Cbool of bool
+
+  val compare: t -> t -> Order.t
+  (** Total ordering on constants. *)
+  val lt: t -> t -> bool
+  (** Less-than ordering on constants. *)
+  val leq: t -> t -> bool
+  (** Less-than-equal ordering on constants. *)
+  val to_string: t -> string
+  (** String representation of a constant. *)
+
+end
 
 (** Atomic terms *)
 type atom =
@@ -33,7 +50,7 @@ type atom =
   | Bound of binders
   | Free of string * Gtype.t
   | Meta of binders
-  | Const of const_ty
+  | Const of Const.t
 
 (** The representation of a term *)
 type term =
@@ -96,7 +113,7 @@ val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
 val mk_free: string -> Gtype.t -> term
 val mk_app: term -> term -> term
-val mk_const: Basic.const_ty -> term
+val mk_const: Const.t -> term
 val mk_typed_ident: Ident.t -> Gtype.t -> term
 
 val mk_ident: Ident.t -> term
@@ -108,7 +125,7 @@ val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
 val dest_free: term -> (string * Gtype.t)
 val dest_app: term -> (term * term)
-val dest_const: term -> Basic.const_ty
+val dest_const: term -> Const.t
 val dest_ident: term -> (Ident.t * Gtype.t)
 
 (** {6 Specialised Manipulators} *)

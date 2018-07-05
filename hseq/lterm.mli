@@ -93,7 +93,7 @@ val dest_fun_ty: Gtype.t -> (Gtype.t * Gtype.t)
 
 (** {7 Other types} *)
 
-val typeof_cnst : Basic.const_ty -> Gtype.t
+val typeof_cnst : Term.Const.t -> Gtype.t
 (** Get the type of a primitive construct *)
 
 (** {5 Terms} *)

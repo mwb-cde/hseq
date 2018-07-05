@@ -34,7 +34,7 @@ type dbterm =
   | Qnt of binder * dbterm
   | Bound of int
   | App of dbterm * dbterm
-  | Const of Basic.const_ty
+  | Const of Term.Const.t
 
 (*** Conversion functions *)
 

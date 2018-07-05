@@ -91,7 +91,7 @@ let dest_fun_ty t =
 
 let typeof_cnst c =
   match c with
-    | Cbool _ -> mk_bool_ty ()
+    | Const.Cbool _ -> mk_bool_ty ()
 
 (*
  * Terms
@@ -114,12 +114,12 @@ let anyid = Ident.mk_long base_thy "any"
 
 let is_true t =
   match t with
-    | Atom(Const(Cbool true)) -> true
+    | Atom(Const(Const.Cbool true)) -> true
     | _ -> false
 
 let is_false t =
   match t with
-    | Atom(Const(Cbool false)) -> true
+    | Atom(Const(Const.Cbool false)) -> true
     | _ -> false
 
 let is_neg t =
@@ -135,8 +135,8 @@ let is_equality t =
 
 (*** Constructors ***)
 
-let mk_true = mk_const(Cbool true)
-let mk_false = mk_const(Cbool false)
+let mk_true = mk_const(Const.Cbool true)
+let mk_false = mk_const(Const.Cbool false)
 let mk_bool b = if b then mk_true else mk_false
 
 let mk_not t = mk_fun notid [t]

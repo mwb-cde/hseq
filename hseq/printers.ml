@@ -380,7 +380,7 @@ module Terms =
       | Term.Meta(n) ->
          Format.printf "@[%s@]" ((Basic.binder_name n))
       | Term.Const(c) ->
-         Format.printf "@[%s@]" (Basic.string_const c)
+         Format.printf "@[%s@]" (Term.Const.to_string c)
 
     let rec print_term ppstate (assoc, prec) x =
       match x with

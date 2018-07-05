@@ -39,7 +39,7 @@ let lt_atom x y =
   let bound_lt (q1, n1, _) (q2, n2, _) =  (n1 < n2) && (q1 < q1)
   in
   match (x, y) with
-  | (Const c1, Const c2) -> Basic.const_lt c1 c2
+  | (Const c1, Const c2) -> Term.Const.lt c1 c2
   | (Const _ , _ ) -> true
   | (Id _, Const _) -> false
   | (Id(a1, _), Id(a2, _)) -> Ident.lessthan a1 a2

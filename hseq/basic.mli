@@ -25,19 +25,6 @@ open Gtype
 
 (** {5 Base Representation of logic terms} *)
 
-(** Built-in constants that can appear in terms  *)
-type const_ty =
-  | Cbool of bool
-
-val const_compare: const_ty -> const_ty -> Order.t
-(** Total ordering on constants. *)
-val const_lt: const_ty -> const_ty -> bool
-(** Less-than ordering on constants. *)
-val const_leq: const_ty -> const_ty -> bool
-(** Less-than-equal ordering on constants. *)
-val string_const: const_ty -> string
-(** String representation of a constant. *)
-
 (** {7 Basis of quantified terms} *)
 
 (** Quantifiers for terms. *)

@@ -42,7 +42,7 @@ type label =
   | App
   | Bound of Basic.quant
   | Quant of Basic.quant
-  | Const of Basic.const_ty
+  | Const of Term.Const.t
   | Cname of Ident.t
   | Cmeta of string
   | Cfree of string

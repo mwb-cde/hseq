@@ -32,7 +32,7 @@ type t =
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
   | PQnt of binders * t (** Binding terms *)
-  | PConst of const_ty     (** Constants *)
+  | PConst of Term.Const.t     (** Constants *)
   | PTyped of t * Gtype.t  (** Typed terms *)
 
 (*
@@ -78,7 +78,7 @@ let is_const x =
 
 let is_true t =
   match t with
-    | PConst(Cbool true) -> true
+    | PConst(Term.Const.Cbool true) -> true
     | _ -> false
 
 (* Constructors *)
@@ -150,9 +150,9 @@ let dest_meta t =
 
 let destbool b =
   match dest_const b with
-    | Cbool(c) -> c
+    | Term.Const.Cbool(c) -> c
 
-let mk_bool b = mk_const(Cbool b)
+let mk_bool b = mk_const(Term.Const.Cbool b)
 
 (*
  * Function application

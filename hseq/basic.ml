@@ -27,32 +27,6 @@
  * Base Representation of logic terms
  *)
 
-(** [const_ty]: Built-in constants that can appear in terms. *)
-type const_ty =
-  | Cbool of bool
-
-let const_compare x y =
-  if x = y then Order.Equal
-  else
-    match (x, y) with
-    | Cbool(a), Cbool(b) -> Order.Util.compare a b
-
-let const_lt x y =
-  match (x, y) with
-    | Cbool(true), _ -> true
-    | Cbool(false), _ -> true
-
-let const_leq x y =
-  if x = y then true
-  else
-    match (x, y) with
-      | Cbool(true), _ -> true
-      | Cbool(false), _ -> true
-
-let string_const c =
-  match c with
-    | Cbool b -> string_of_bool b
-
 (*
  * Basis of quantified terms
  *)

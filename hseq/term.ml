@@ -24,13 +24,42 @@ open Basic
 
 (** {6 Representation of a term} *)
 
+module Const =
+  struct
+    (** [const_ty]: Built-in constants that can appear in terms. *)
+    type t =
+      | Cbool of bool
+
+    let compare x y =
+      if x = y then Order.Equal
+      else
+        match (x, y) with
+        | Cbool(a), Cbool(b) -> Order.Util.compare a b
+
+    let lt x y =
+      match (x, y) with
+      | Cbool(true), _ -> true
+      | Cbool(false), _ -> true
+
+    let leq x y =
+      if x = y then true
+      else
+        match (x, y) with
+        | Cbool(true), _ -> true
+        | Cbool(false), _ -> true
+
+    let to_string c =
+      match c with
+      | Cbool b -> string_of_bool b
+end
+
 (** Atomic terms *)
 type atom =
   | Id of Ident.t * Gtype.t
   | Bound of binders
   | Free of string * Gtype.t
   | Meta of binders
-  | Const of const_ty
+  | Const of Const.t
 
 type term =
   | Atom of atom
@@ -76,7 +105,7 @@ let is_const x =
 
 let is_true t =
   match t with
-    | Atom(Const (Cbool true)) -> true
+    | Atom(Const (Const.Cbool true)) -> true
     | _ -> false
 
 (* Constructors *)
@@ -152,9 +181,9 @@ let dest_meta t  =
 
 let destbool b =
   match dest_const b with
-    | (Cbool c) -> c
+    | (Const.Cbool c) -> c
 
-let mk_bool b = mk_const (Cbool b)
+let mk_bool b = mk_const (Const.Cbool b)
 
 (*
  * Function application
@@ -248,7 +277,7 @@ let compare_atom_strict typed t1 t2 =
       end
   in
   match (t1, t2) with
-  | (Const c1, Const c2) -> Basic.const_compare c1 c2
+  | (Const c1, Const c2) -> Const.compare c1 c2
   | (Const _ , _) -> Order.LessThan
   | (Id _, Const _) -> Order.GreaterThan
   | (Id(n1, ty1), Id(n2, ty2)) ->
@@ -448,7 +477,7 @@ let print_atom_simple trm =
   | Free(n, ty) -> Format.printf "@[%s@]"  n
   | Meta(n) ->
      Format.printf "@[%s@]" (binder_name n)
-  | Const(c) -> Format.printf "@[%s@]" (Basic.string_const c)
+  | Const(c) -> Format.printf "@[%s@]" (Const.to_string c)
 
 
 let print_simple trm =
@@ -975,7 +1004,7 @@ let string_atom t =
   | Free(n, ty) -> n
   | Bound(q) -> "?"^(Basic.binder_name q)
   | Meta(q) -> Basic.binder_name q
-  | Const(c) -> Basic.string_const c
+  | Const(c) -> Const.to_string c
 
 let rec string_term_basic t =
   match t with
@@ -1048,7 +1077,7 @@ let string_atom_inf t =
   | Free(n, ty) -> n
   | Bound(q) -> (Basic.binder_name q)
   | Meta(q) -> Basic.binder_name q
-  | Const(c) -> Basic.string_const c
+  | Const(c) -> Const.to_string c
 
 let rec string_term_inf inf i x =
   match x with

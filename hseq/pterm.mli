@@ -45,7 +45,7 @@ type t =
   | PMeta of binders       (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
   | PQnt of binders * t (** Binding terms *)
-  | PConst of const_ty     (** Constants *)
+  | PConst of Term.Const.t     (** Constants *)
   | PTyped of t * Gtype.t  (** Typed terms *)
 
 
@@ -68,7 +68,7 @@ val mk_bound: binders -> t
 val mk_free: string -> Gtype.t -> t
 val mk_app: t -> t -> t
 val mk_typed: t -> Gtype.t -> t
-val mk_const: Basic.const_ty -> t
+val mk_const: Term.Const.t -> t
 val mk_typed_ident: Ident.t -> Gtype.t -> t
 val mk_ident: Ident.t -> t
 val mk_short_ident: string -> t
@@ -80,7 +80,7 @@ val dest_bound: t -> binders
 val dest_free:t -> (string * Gtype.t)
 val dest_app: t -> (t * t)
 val dest_typed: t -> (t * Gtype.t)
-val dest_const: t -> Basic.const_ty
+val dest_const: t -> Term.Const.t
 val dest_ident: t -> (Ident.t * Gtype.t)
 
 (** {6 Specialised Manipulators} *)
