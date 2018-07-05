@@ -28,9 +28,9 @@ open Report
  *)
 
 (** Rule ordering *)
-type order = (Basic.term -> Basic.term -> bool)
-type rule = (Basic.binders list * Basic.term * Basic.term)
-type orule = (Basic.binders list * Basic.term * Basic.term * order option)
+type order = (Term.term -> Term.term -> bool)
+type rule = (Basic.binders list * Term.term * Term.term)
+type orule = (Basic.binders list * Term.term * Term.term * order option)
 
 (*** Rewrite control ***)
 
@@ -129,7 +129,7 @@ type a_rule = rule
 
 module TermData =
 struct
-  type node = Basic.term
+  type node = Term.term
   type rule = a_rule
   type substn = Term.Subst.t
   type data =
@@ -141,11 +141,11 @@ struct
 
   let key_of_atom n =
     match n with
-    | Basic.Id _ -> Ident
-    | Basic.Bound _ -> BVar
-    | Basic.Meta _ -> MVar
-    | Basic.Free _ -> FVar
-    | Basic.Const _ -> Constn
+    | Term.Id _ -> Ident
+    | Term.Bound _ -> BVar
+    | Term.Meta _ -> MVar
+    | Term.Free _ -> FVar
+    | Term.Const _ -> Constn
 
   let key_of_binder q =
     match q with
@@ -156,9 +156,9 @@ struct
 
   let key_of n =
     match n with
-      | Basic.Atom(a) -> key_of_atom a
-      | Basic.Qnt(q, _) -> key_of_binder (Basic.binder_kind q)
-      | Basic.App _ -> Appln
+      | Term.Atom(a) -> key_of_atom a
+      | Term.Qnt(q, _) -> key_of_binder (Basic.binder_kind q)
+      | Term.App _ -> Appln
 
   let rec is_key k n =
     match k with
@@ -394,7 +394,7 @@ struct
     type rule
     type data
     val dest : data -> rule
-        -> (Basic.binders list * Basic.term * Basic.term * order option)
+        -> (Basic.binders list * Term.term * Term.term * order option)
   end
 
   module type T =
@@ -425,8 +425,8 @@ struct
     val make :
       rule_data
       -> Scope.t -> control -> a_rule list
-      -> Basic.term
-      -> (Basic.term * (a_rule)plan)
+      -> Term.term
+      -> (Term.term * (a_rule)plan)
     (** Make a rewrite plan using a list of universally quantified
         rewrite rules.  *)
 
@@ -435,8 +435,8 @@ struct
       -> Scope.t
       -> control
       -> Gtype.Subst.t
-      -> a_rule list -> Basic.term
-      -> (Basic.term * Gtype.Subst.t * (a_rule)plan)
+      -> a_rule list -> Term.term
+      -> (Term.term * Gtype.Subst.t * (a_rule)plan)
     (** [make_env tyenv rules trm]: Make a rewrite plan for [trm]
         w.r.t type environment [tyenv] using [rules]. Return the new
         term and the type environment contructed during rewriting.  *)
@@ -450,8 +450,8 @@ struct
 
     type internal_rule =
         (Basic.binders list
-         * Basic.term
-         * Basic.term
+         * Term.term
+         * Term.term
          * order option
          * a_rule)
 
@@ -463,24 +463,24 @@ struct
       control
       -> data
       -> internal_rule
-      -> Basic.term
-      -> (a_rule * Basic.term * Gtype.Subst.t)
+      -> Term.term
+      -> (a_rule * Term.term * Gtype.Subst.t)
 
     val match_rr_list:
       control
       -> data
       -> internal_rule list
-      -> Basic.term
+      -> Term.term
       -> a_rule list
-      -> (Basic.term * Gtype.Subst.t * control * (a_rule)list)
+      -> (Term.term * Gtype.Subst.t * control * (a_rule)list)
 
     val match_rewrite_list:
       control
       -> data
       -> rewrite_net
-      -> Basic.term
+      -> Term.term
       -> a_rule list
-      -> (Basic.term * Gtype.Subst.t * control * (a_rule)list)
+      -> (Term.term * Gtype.Subst.t * control * (a_rule)list)
 
     val check_change : ('a)plan -> unit
     val check_change2 : ('a)plan -> ('a)plan -> unit
@@ -489,15 +489,15 @@ struct
       control
       -> rewrite_net
       -> data
-      -> Basic.term
-      -> (Basic.term * Gtype.Subst.t * control * (a_rule)plan)
+      -> Term.term
+      -> (Term.term * Gtype.Subst.t * control * (a_rule)plan)
 
     val make_list_bottomup:
       control
       -> rewrite_net
       -> data
-      -> Basic.term
-      -> (Basic.term * Gtype.Subst.t * control * (a_rule)plan)
+      -> Term.term
+      -> (Term.term * Gtype.Subst.t * control * (a_rule)plan)
 
     val make_rewrites:
       rule_data -> a_rule list -> rewrite_net
@@ -508,8 +508,8 @@ struct
       -> Scope.t
       -> Gtype.Subst.t
       -> a_rule list
-      -> Basic.term
-      -> (Basic.term * Gtype.Subst.t * (a_rule)plan)
+      -> Term.term
+      -> (Term.term * Gtype.Subst.t * (a_rule)plan)
 
   end
 end
@@ -528,8 +528,8 @@ struct
                * Gtype.Subst.t)
 
   type internal_rule = (Basic.binders list
-                        * Basic.term
-                        * Basic.term
+                        * Term.term
+                        * Term.term
                         * order option
                         * a_rule)
 
@@ -632,7 +632,7 @@ struct
     then raise No_change
     else
       (match t with
-        | Basic.Qnt(q, b) ->
+        | Term.Qnt(q, b) ->
             let qntenv1 = Term.Subst.bind (mk_bound q) null_term qntenv in
             let (nb, benv, bctrl, brslt) =
               rewrite_td_term ctrl (scope, qntenv1, tyenv) net b
@@ -640,8 +640,8 @@ struct
             check_change brslt;
             let subplans = pack(mk_subnode 0 brslt)
             in
-            (Basic.Qnt(q, nb), benv, bctrl, subplans)
-        | Basic.App(f, a)->
+            (Term.Qnt(q, nb), benv, bctrl, subplans)
+        | Term.App(f, a)->
           let nf, fenv, fctrl, fplan =
             try rewrite_td_term ctrl data net f
             with No_change -> (f, tyenv, ctrl, mk_skip)
@@ -653,7 +653,7 @@ struct
           check_change2 fplan aplan;
           let subplans = pack(mk_branches[fplan; aplan])
           in
-          (Basic.App(nf, na), aenv, actrl, subplans)
+          (Term.App(nf, na), aenv, actrl, subplans)
         | _ -> (t, tyenv, ctrl, mk_skip))
   and
       rewrite_td_term ctrl data net t =
@@ -699,7 +699,7 @@ struct
       let (scope, qntenv, tyenv) = data
       in
       match t with
-        | Basic.Qnt(q, b) ->
+        | Term.Qnt(q, b) ->
             let qntenv1 =
               Term.Subst.bind (Term.mk_bound(q)) null_term qntenv
             in
@@ -713,8 +713,8 @@ struct
               with _ -> mk_skip
             in
             rewrite_bu_term ctrl
-              (scope, qntenv, benv) net (Basic.Qnt(q, nb)) subplans
-        | Basic.App(f, a)->
+              (scope, qntenv, benv) net (Term.Qnt(q, nb)) subplans
+        | Term.App(f, a)->
           let (nf, fenv, fctrl, frslt) =
             try rewrite_bu_subterm ctrl data net f
             with No_change -> (f, tyenv, ctrl, mk_skip)
@@ -730,7 +730,7 @@ struct
             with _ -> mk_skip
           in
           rewrite_bu_term actrl
-            (scope, qntenv, aenv) net (Basic.App(nf, na)) subplans
+            (scope, qntenv, aenv) net (Term.App(nf, na)) subplans
         | _ ->
           rewrite_bu_term ctrl data net t mk_skip
   and
@@ -798,7 +798,7 @@ end
 
 module TermPlannerData =
 struct
-  type rule = Basic.term
+  type rule = Term.term
   type data = unit
 
   let dest _ trm =

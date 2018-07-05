@@ -478,8 +478,8 @@ let declare ctxt ?pp trm =
     let declare_aux () =
       let (v, ty) =
         match (Term.dest_atom trm) with
-        | Basic.Free(i, t) -> (i, t)
-        | Basic.Id(i, t) -> (Ident.name_of i, t)
+        | Term.Free(i, t) -> (i, t)
+        | Term.Id(i, t) -> (Ident.name_of i, t)
         | _ ->
            raise (Report.error "expected an identifier or a free variable")
       in

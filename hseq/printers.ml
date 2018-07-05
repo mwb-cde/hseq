@@ -29,7 +29,7 @@ open Basic
 (** The combined printer information for terms and types. *)
 type ppinfo =
     {
-      terms: (ppinfo, (Basic.term * (Basic.term)list))info;
+      terms: (ppinfo, (Term.term * (Term.term)list))info;
       types: (ppinfo, (Ident.t * (Gtype.t)list))info
     }
 
@@ -43,7 +43,7 @@ let empty_ppinfo() = mk_ppinfo default_info_size
 (** Operations involving term identifiers *)
 
 type term_printer =
-  ppinfo -> (fixity * int) -> (Basic.term * Basic.term list) printer
+  ppinfo -> (fixity * int) -> (Term.term * Term.term list) printer
 
 let get_term_info info x = get_info (info.terms) x
 let set_term_info info x = {info with terms = x}
@@ -363,27 +363,29 @@ module Terms =
 
     let print_atom_term ppstate (assoc, prec) x =
       match x with
-      | Id(n, ty) ->
+      | Term.Id(n, ty) ->
          let printer_opt =
            try Some (Printkit.get_printer (ppstate.terms) n)
            with Not_found -> None
          in
          if printer_opt = None
          then print_typed_identifier ppstate (n, ty)
-         else (Lib.from_some printer_opt) ppstate (assoc, prec) (Atom(x), [])
-      | Free(n, ty) ->
+         else
+           (Lib.from_some printer_opt) ppstate
+             (assoc, prec) (Term.Atom(x), [])
+      | Term.Free(n, ty) ->
          print_typed_name ppstate (n, ty)
-      | Bound(n) ->
+      | Term.Bound(n) ->
          Format.printf "@[%s@]" ((Basic.binder_name n))
-      | Meta(n) ->
+      | Term.Meta(n) ->
          Format.printf "@[%s@]" ((Basic.binder_name n))
-      | Const(c) ->
+      | Term.Const(c) ->
          Format.printf "@[%s@]" (Basic.string_const c)
 
     let rec print_term ppstate (assoc, prec) x =
       match x with
-      | Atom(a) -> print_atom_term ppstate (assoc, prec) a
-      | App(t1, t2) ->
+      | Term.Atom(a) -> print_atom_term ppstate (assoc, prec) a
+      | Term.App(t1, t2) ->
          let f, args = Term.get_fun_args x
          in
          if Term.is_ident f
@@ -409,7 +411,7 @@ module Terms =
              print_bracket (assoc, prec) (tassoc, tprec) ")";
              Format.printf "@,@]"
            end
-      | Qnt(q, body) ->
+      | Term.Qnt(q, body) ->
          let (qnt, qvar, qtyp) = Basic.dest_binding q in
          let (qnts, b) = Term.strip_qnt qnt x in
          let (tassoc, tprec) =
@@ -477,7 +479,7 @@ module Terms =
       in
       let lambda_arg x =
         match x with
-        | Basic.Qnt(q, body) -> (Basic.binder_kind q)=Basic.Lambda
+        | Term.Qnt(q, body) -> (Basic.binder_kind q) = Basic.Lambda
         | _ -> false
       in
       let printer ppstate prec (f, args) =

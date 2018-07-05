@@ -315,7 +315,7 @@ struct
         let ty = binder_type q in
         let (ty0, env0) = (ty, unify_types expty ty env data)
         in
-        (Atom(Meta(q)), ty0, env0, data)
+        (Term.Atom(Term.Meta(q)), ty0, env0, data)
       | PConst(c) ->
         let ty = Lterm.typeof_cnst c in
         let (ty0, env0) = (ty, unify_types expty ty env data)
@@ -339,7 +339,7 @@ struct
         let (ftrm, fty, fenv, data4) =
           resolve_aux data3 aenv (Gtype.mgu fty0 aenv) lf
         in
-        (App(ftrm, atrm), Gtype.mgu rty1 fenv, fenv, data4)
+        (Term.App(ftrm, atrm), Gtype.mgu rty1 fenv, fenv, data4)
       | PQnt(qnt, body) ->
         begin
           match Basic.binder_kind qnt with
@@ -357,7 +357,7 @@ struct
               let (body1, bty, benv, data3) =
                 resolve_aux data2 env1 rty body
               in
-              (Qnt(qnt2, body1), nty1, benv, data3)
+              (Term.Qnt(qnt2, body1), nty1, benv, data3)
           | _ ->
             let qnt1 = binding_set_names qnt data in
             let (nty1, env1) =
@@ -372,7 +372,7 @@ struct
             let (body1, bty, benv, data2) =
               resolve_aux data1 env1 nty1 body
             in
-            (Qnt(qnt2, body1), nty1, benv, data2)
+            (Term.Qnt(qnt2, body1), nty1, benv, data2)
         end
 
   (** [default str ty lst]: Get the default identifier for symbol
@@ -453,17 +453,17 @@ end
 let from_term trm =
   let from_atom a =
     match a with
-      | Id(n, ty) -> PId (n, ty)
-      | Bound(q) -> PBound(q)
-      | Free(n, ty) -> PFree(n, ty)
-      | Meta(q) -> PMeta(q)
-      | Const(c) -> PConst(c)
+      | Term.Id(n, ty) -> PId (n, ty)
+      | Term.Bound(q) -> PBound(q)
+      | Term.Free(n, ty) -> PFree(n, ty)
+      | Term.Meta(q) -> PMeta(q)
+      | Term.Const(c) -> PConst(c)
   in
   let rec from_aux t =
     match t with
-      | Atom(a) -> from_atom a
-      | App(f, a) -> PApp(from_aux f, from_aux a)
-      | Qnt(q, b) -> PQnt(q, from_aux b)
+      | Term.Atom(a) -> from_atom a
+      | Term.App(f, a) -> PApp(from_aux f, from_aux a)
+      | Term.Qnt(q, b) -> PQnt(q, from_aux b)
   in
   from_aux trm
 
@@ -500,7 +500,7 @@ let to_term ptrm =
         let ty = binder_type q in
         let env1 = unify_types expty ty tyenv
         in
-        (Atom(Meta(q)), (ctr, env1))
+        (Term.Atom(Term.Meta(q)), (ctr, env1))
       | PQnt(q, b) ->
         let qnt, qname, qty = dest_binding q
         in
@@ -516,7 +516,7 @@ let to_term ptrm =
               in
               let (b1, typenv1) = to_aux (ctr1, env1) trmenv1 nty b
               in
-              (Qnt(q1, b1), typenv1)
+              (Term.Qnt(q1, b1), typenv1)
             | _ ->
               let nty = Lterm.mk_bool_ty() in
               let env1 = unify_types expty nty tyenv in
@@ -526,7 +526,7 @@ let to_term ptrm =
               in
               let (b1, env2) = to_aux (ctr, env1) trmenv1 nty b
               in
-              (Qnt(q1, b1), env2)
+              (Term.Qnt(q1, b1), env2)
         end
       | PApp(f, a) ->
         let (ctr1, arg_ty) = Gtype.mk_typevar ctr in
@@ -536,7 +536,7 @@ let to_term ptrm =
         let env2 = unify_types expty ret_ty env1 in
         let (f1, typenv1) = to_aux (ctr3, env2) trmenv fn_ty f
         in
-        (App(f1, a1), typenv1)
+        (Term.App(f1, a1), typenv1)
       | PConst(c) ->
         let ty = Lterm.typeof_cnst c in
         let env1 = unify_types expty ty tyenv

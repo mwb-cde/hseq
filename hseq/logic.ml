@@ -1830,7 +1830,7 @@ struct
     simple_sqnt_apply (nameC0 name l) g
 end
 
-type conv = Basic.term -> thm
+type conv = Term.term -> thm
 
 module Conv =
 struct

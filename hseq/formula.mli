@@ -35,7 +35,7 @@
 type t
 (** The type of formulas *)
 
-val term_of: t -> Basic.term
+val term_of: t -> Term.term
 (** The term of a formula *)
 
 val thy_of: t -> Scope.marker
@@ -52,7 +52,7 @@ val make_full:
   ?strict:bool
   -> Scope.t
   -> Gtype.Subst.t
-  -> Basic.term -> (t * Gtype.Subst.t)
+  -> Term.term -> (t * Gtype.Subst.t)
 (**
    [make_full ?(strict=false) scp tyenv trm]: Make a formula from term
    [trm] in scope [scp] w.r.t type environment [tyenv]. The theory of
@@ -79,7 +79,7 @@ val make:
   ?strict:bool
   -> ?tyenv:Gtype.Subst.t
   -> Scope.t
-  -> Basic.term -> t
+  -> Term.term -> t
 (**
    [make ?strict ?tyenv scp trm]: Make a formula from term [trm] in scope
    [scp] w.r.t type environment [tyenv] if given. If [tyenv] is not
@@ -280,7 +280,7 @@ val beta_reduce: Scope.t -> t -> t
 
 val mk_beta_reduce_eq:
   Scope.t -> Gtype.Subst.t
-  -> Basic.term -> (t * Gtype.Subst.t)
+  -> Term.term -> (t * Gtype.Subst.t)
 (**
    [mk_beta_reduce_eq scp tyenv scp]: Make an equality expressing the
    result of beta-reducing [trm].
@@ -313,7 +313,7 @@ val mk_rewrite_eq:
   Scope.t
   -> Gtype.Subst.t
   -> t Rewrite.plan
-  -> Basic.term -> (t * Gtype.Subst.t)
+  -> Term.term -> (t * Gtype.Subst.t)
 (**
     [mk_rewrite_eq scp tyenv plan trm]: Make an equality by rewriting a
     term w.r.t a type context.  Returns [(trm=t, ntyenv)] where [t] is

@@ -193,26 +193,26 @@ val remove_type_pp: string -> unit
     for term identifier [id].
 *)
 
-val read: string -> Basic.term
+val read: string -> Term.term
 (** User level parsing of a string as a term. *)
 
-val hterm: string -> Basic.term
+val hterm: string -> Term.term
 (** [hterm x] is [read x]. *)
 
-val (!%): string -> Basic.term
+val (!%): string -> Term.term
 (** [!% x] is [hterm x]. *)
 
-val read_unchecked: string -> Basic.term
+val read_unchecked: string -> Term.term
 
 (** User level parsing of a string as a raw term.. *)
 val read_defn:
-  string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+  string -> (((string * Gtype.t) * Term.term list) * Term.term)
 (** User level parsing of a string as a term definition. *)
 
-val hdefn: string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+val hdefn: string -> (((string * Gtype.t) * Term.term list) * Term.term)
 (** [hdefn x] is [read_defn x]. *)
 
-val (?<%): string -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+val (?<%): string -> (((string * Gtype.t) * Term.term list) * Term.term)
 (** [?<% x] is [hdefn x]. *)
 
 val read_type: string -> Gtype.t
@@ -358,7 +358,7 @@ val typedef:
 val define:
   ?pp:(int*fixity*string option)
   -> ?simp:bool
-  -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+  -> (((string * Gtype.t) * Term.term list) * Term.term)
   -> Logic.Defns.cdefn
 (** [define ?simp term pp]: Define a term.
 
@@ -380,7 +380,7 @@ val define:
 
 val declare:
   ?pp:(int* fixity* string option)
-  -> Basic.term -> (Ident.t * Gtype.t)
+  -> Term.term -> (Ident.t * Gtype.t)
 (** [declare trm pp]: Declare a term identifier.
 
     The term name and type is extracted from [trm] which must be a
@@ -397,7 +397,7 @@ val declare:
 
 (** {7 Axioms and theorems} *)
 
-val axiom: ?simp:bool -> string -> Basic.term -> Logic.thm
+val axiom: ?simp:bool -> string -> Term.term -> Logic.thm
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
 
@@ -411,7 +411,7 @@ val save_thm: ?simp:bool -> string ->  Logic.thm ->  Logic.thm
 (** Store a theorem under the given name in the current theory. *)
 
 val prove_thm:
-  ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
@@ -428,7 +428,7 @@ val prove_thm:
 *)
 
 val theorem:
-  ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
@@ -445,7 +445,7 @@ val theorem:
 *)
 
 val lemma:
-  ?simp:bool -> string -> Basic.term -> Tactics.tactic list -> Logic.thm
+  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
 (** A synonym for {!Userlib.theorem}. *)
 
 
@@ -478,9 +478,9 @@ val goal_scope: unit -> Scope.t
 
 val curr_sqnt : unit -> Logic.Sequent.t
 (** The current sequent. *)
-val get_asm: int -> (Logic.ftag_ty * Basic.term)
+val get_asm: int -> (Logic.ftag_ty * Term.term)
 (** Get an assumption from the current sequent. *)
-val get_concl: int -> (Logic.ftag_ty * Basic.term)
+val get_concl: int -> (Logic.ftag_ty * Term.term)
 (** Get a conclusion from the current sequent. *)
 
 val top : unit -> Goals.Proof.t
@@ -492,7 +492,7 @@ val top_goal : unit -> Logic.goal
 val drop : unit -> Goals.Proof.t
 (** Drop the current proof.  *)
 
-val goal: Basic.term -> Goals.Proof.t
+val goal: Term.term -> Goals.Proof.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack.
 
@@ -519,14 +519,14 @@ val undo : unit -> Goals.Proof.t
     Note that most proof commands are in module {!Goals}.
 *)
 
-val prove: Basic.term -> Tactics.tactic -> Logic.thm
+val prove: Term.term -> Tactics.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
 *)
 
 val prove_goal:
-  Basic.term -> Tactics.tactic -> Logic.thm
+  Term.term -> Tactics.tactic -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
     using tactic [tac] in scope [scp]. Used for batch proofs. If
     [?info] is given, the tag of the goal and conclusion ([trm]) are
@@ -548,7 +548,7 @@ val by_com : Tactics.tactic -> unit
     [save_hook]. Used for interactive proofs.
 *)
 
-val by_list : Basic.term -> Tactics.tactic list -> Logic.thm
+val by_list : Term.term -> Tactics.tactic list -> Logic.thm
 (** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 *)
@@ -571,7 +571,7 @@ val apply:
 (** Top-level pretty printers *)
 module Display :
 sig
-  val print_term: Basic.term -> unit
+  val print_term: Term.term -> unit
   val print_formula: Formula.t -> unit
   val print_type: Gtype.t -> unit
   val print_theory: Theory.thy -> unit
@@ -614,7 +614,7 @@ val add_simp: Logic.thm -> unit
 (** [add_simp thm]: Add [thm] to the standard simpset. *)
 
 val add_conv:
-  Basic.term list -> (Context.t -> Logic.conv) -> unit
+  Term.term list -> (Context.t -> Logic.conv) -> unit
 (** [add_conv trms conv]: Add conversion [conv] to the standard
     simpset, with [trms] as the representative keys.  Example:
     [add_conv [<< !x A: (%y: A) x >>] Logic.Conv.beta_conv] applies

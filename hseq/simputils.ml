@@ -41,9 +41,9 @@ let rec equal_upto_vars varp x y =
   then true
   else
     match (x, y) with
-      | (Basic.App(f1, arg1), Basic.App(f2, arg2))->
+      | (Term.App(f1, arg1), Term.App(f2, arg2))->
         (equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
-      | (Basic.Qnt(qn1, b1), Basic.Qnt(qn2, b2)) ->
+      | (Term.Qnt(qn1, b1), Term.Qnt(qn2, b2)) ->
         (qn1 == qn2) && (equal_upto_vars varp b1 b2)
       | (_, _) -> Term.equals x y
 
@@ -53,15 +53,15 @@ let rec equal_upto_vars varp x y =
 let find_variables is_var vars trm =
   let rec find_aux env t =
     match t with
-      | Basic.Atom(Basic.Bound(q)) ->
+      | Term.Atom(Term.Bound(q)) ->
         if is_var q
         then
           if Term.Subst.member t env
           then env
           else Term.Subst.bind t t env
         else env
-      | Basic.Qnt(_, b) -> find_aux env b
-      | Basic.App(f, a) ->
+      | Term.Qnt(_, b) -> find_aux env b
+      | Term.App(f, a) ->
         let nv = find_aux env f
         in
         find_aux nv a
@@ -73,12 +73,12 @@ let find_variables is_var vars trm =
 let check_variables is_var vars trm =
   let rec check_aux t =
     match t with
-      | Basic.Atom(Basic.Bound(q)) ->
+      | Term.Atom(Term.Bound(q)) ->
         if is_var q
         then Term.Subst.member t vars
         else true
-      | Basic.Qnt(_, b) -> check_aux b
-      | Basic.App(f, a) -> check_aux f && check_aux a
+      | Term.Qnt(_, b) -> check_aux b
+      | Term.App(f, a) -> check_aux f && check_aux a
       | _ -> true
   in check_aux trm
 
@@ -87,7 +87,7 @@ let check_variables is_var vars trm =
 *)
 let strip_qnt_cond t =
   (* get leading quantifiers *)
-  let (qs, t1) = Term.strip_qnt (Basic.All) t in
+  let (qs, t1) = Term.strip_qnt Basic.All t in
   if Lterm.is_implies t1  (* deal with conditional equalities *)
   then
     let (_, a, c) = Term.dest_binop t1
@@ -126,7 +126,7 @@ let fresh_thm scp th = Logic.is_fresh scp th
 *)
 let simp_beta_conv scp t =
   match t with
-    | Basic.App(Basic.Qnt(q, _), a) ->
+    | Term.App(Term.Qnt(q, _), a) ->
       if Basic.binder_kind q = Basic.Lambda
       then Logic.Conv.beta_conv scp t
       else failwith "simp_beta_conv"

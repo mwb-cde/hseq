@@ -24,6 +24,23 @@
 open Basic
 open Gtype
 
+
+(** {7 Terms} *)
+
+(** Atomic terms *)
+type atom =
+  | Id of Ident.t * Gtype.t
+  | Bound of binders
+  | Free of string * Gtype.t
+  | Meta of binders
+  | Const of const_ty
+
+(** The representation of a term *)
+type term =
+  | Atom of atom
+  | App of term * term
+  | Qnt of binders * term
+
 (** {5 Very basic operations} *)
 
 val equals : term -> term -> bool
@@ -74,7 +91,7 @@ val is_const: term -> bool
 
 (** {7 Constructors} *)
 
-val mk_atom: Basic.atom -> term
+val mk_atom: atom -> term
 val mk_qnt: binders -> term -> term
 val mk_bound: binders -> term
 val mk_free: string -> Gtype.t -> term
@@ -86,7 +103,7 @@ val mk_ident: Ident.t -> term
 val mk_short_ident: string -> term
 
 (** {7 Destructors} *)
-val dest_atom: term -> Basic.atom
+val dest_atom: term -> atom
 val dest_qnt: term -> (binders * term)
 val dest_bound: term -> binders
 val dest_free: term -> (string * Gtype.t)
@@ -147,14 +164,14 @@ val rand: term -> term
     [<< a >>].
 *)
 
-val dest_unop: Basic.term -> (Ident.t * Basic.term)
+val dest_unop: term -> (Ident.t * term)
 (** [dest_unop t]: Destruct unary operator [t], return the identifier
     and argument.
 
     @raise [Failure] if not enough arguments.
 *)
 
-val dest_binop: Basic.term -> (Ident.t * Basic.term * Basic.term)
+val dest_binop: term -> (Ident.t * term * term)
 (** [dest_binop t]: Destruct binary operator [t], return the
     identifier and two arguments.
 
@@ -162,8 +179,8 @@ val dest_binop: Basic.term -> (Ident.t * Basic.term * Basic.term)
 *)
 
 val strip_fun_qnt:
-  Ident.t -> Basic.term -> Basic.binders list
-  -> (Basic.binders list * Basic.term)
+  Ident.t -> term -> Basic.binders list
+  -> (Basic.binders list * term)
 (** [strip_fun_qnt f term qs]: Strip applications of the form [f (% x:
     P)] returning the bound variables and P. ([qs] should be [[]]
     initially).

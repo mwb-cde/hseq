@@ -165,7 +165,7 @@ val mk_axiom: Formula.t -> thm
 
 val formula_of: thm -> Formula.t
 (** Convert a theorem to a formula. *)
-val term_of: thm -> Basic.term
+val term_of: thm -> Term.term
 (** Convert a theorem to a term. *)
 
 val is_fresh: Scope.t -> thm -> bool
@@ -300,7 +300,7 @@ sig
 
   val mk_new_skolem:
     new_skolem_data
-    -> (Basic.term
+    -> (Term.term
         * Gtype.t
         * skolem_type
         * Gtype.Subst.t
@@ -987,7 +987,7 @@ sig
       info: [goals = [], aforms=[l1], cforms=[l], terms = []]
   *)
 
-  val allA: Basic.term -> label -> tactic
+  val allA: Term.term -> label -> tactic
   (** [allA t l sq]: Elminate the universal quantifier at
       assumption [l], instantiating it with [t].
 
@@ -1034,7 +1034,7 @@ sig
       info: [goals = [], aforms=[l], cforms=[], terms = [c]]
   *)
 
-  val existC: Basic.term -> label -> tactic
+  val existC: Term.term -> label -> tactic
   (** [existC t l sq]: Elminate the existential quantifier at
       conclusion [l], instantiating it with [t].
 
@@ -1063,7 +1063,7 @@ sig
 
 
   val rewrite_intro:
-    (rr_type)Rewrite.plan -> Basic.term -> tactic
+    (rr_type)Rewrite.plan -> Term.term -> tactic
   (** [rewrite_intro ?info ctrl plan trm sq]: Introduce an equality
       established by rewriting term [trm] with [plan].
 
@@ -1169,9 +1169,9 @@ end
     inefficient if written in terms of tactics.
 *)
 (*
-type conv = Scope.t -> Basic.term -> thm
+type conv = Scope.t -> Term.term -> thm
 *)
-type conv = Basic.term -> thm
+type conv = Term.term -> thm
 
 module Conv:
 sig
@@ -1271,7 +1271,7 @@ sig
   val mk_termdef:
     Scope.t
     -> (Ident.t * Gtype.t)
-    -> Basic.term list -> Basic.term
+    -> Term.term list -> Term.term
     -> cdefn
   (** [mk_termdef scp i args trm]: Make a certified definition.
 
@@ -1323,13 +1323,13 @@ sig
   (** Get the components of a subtype definition. *)
 
   val prove_subtype_exists:
-    Scope.t -> Basic.term -> thm -> thm
+    Scope.t -> Term.term -> thm -> thm
   (** [prove_subtype_exists scp setp thm]: Prove the existence
       theorem of a subtype.  Use [thm] to prove the goal <<
       ?x. setp x >> (built by {!Defn.mk_subtype_exists}.  *)
   val mk_subtype:
     Scope.t -> string -> string list
-    -> Gtype.t -> Basic.term -> string -> string
+    -> Gtype.t -> Term.term -> string -> string
     -> thm
     -> cdefn
 (**

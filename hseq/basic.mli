@@ -84,19 +84,3 @@ val binder_compare: binders -> binders -> Order.t
       [not (binder_lessthan x y)] and [not (binder_greaterthan x y)].
     - [binder_lessthan x y = not(binder_greaterthan x y)]
 *)
-
-(** {7 Terms} *)
-
-(** Atomic terms *)
-type atom =
-  | Id of Ident.t * Gtype.t
-  | Bound of binders
-  | Free of string * Gtype.t
-  | Meta of binders
-  | Const of const_ty
-
-(** The representation of a term *)
-type term =
-  | Atom of atom
-  | App of term * term
-  | Qnt of binders * term

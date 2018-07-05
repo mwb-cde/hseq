@@ -460,7 +460,7 @@ sig
   (** {6 Parsing} *)
 
   val expand_term:
-    t -> Pterm.t -> Basic.term
+    t -> Pterm.t -> Term.term
   (** Resolve symbols and short names in terms and types, replacing
       them with long identifiers where possible. Also retype the term
       if possible. Intended to make a parsed term suitable for passing
@@ -475,7 +475,7 @@ sig
     t -> Parser.typedef_data -> Defn.Parser.typedef
   (** Resolve symbols and short names in a type definition.  *)
 
-  val mk_term: t -> Pterm.t -> Basic.term
+  val mk_term: t -> Pterm.t -> Term.term
   (** Resolve symbols and short names in a term, making a parsed term
       suitable for use.
 
@@ -484,17 +484,17 @@ sig
       resulting term may be inconsistently typed.
   *)
 
-  val read: t -> string -> Basic.term
+  val read: t -> string -> Term.term
   (** Parse a string as a term, resolving short names and
       symbols. *)
 
-  val read_unchecked: t -> string -> Basic.term
+  val read_unchecked: t -> string -> Term.term
   (** Parse a string as a term, return the term as is, without
       expanding terms and resolving symbols.  *)
 
   val read_defn:
     t -> string
-    -> ((string * Gtype.t) * Basic.term list) * Basic.term
+    -> ((string * Gtype.t) * Term.term list) * Term.term
   (** Parse a string as a term definition. *)
 
   val read_type: t -> string -> Gtype.t

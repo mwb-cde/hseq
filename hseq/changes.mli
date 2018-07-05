@@ -37,7 +37,7 @@ type t =
       (** new assumption produced by the tactic. *)
       cncl_tags: ftag_ty list;
       (** new conclusions produced by the tactic. *)
-      term_list: Basic.term list
+      term_list: Term.term list
     (** new constants produced by the tactic. *)
     }
 
@@ -45,20 +45,20 @@ type t =
 val empty: unit -> t
 
 (** Accessors *)
-val dest: t -> (ftag_ty list * ftag_ty list * ftag_ty list * Basic.term list)
+val dest: t -> (ftag_ty list * ftag_ty list * ftag_ty list * Term.term list)
 val goals: t -> ftag_ty list
 val aforms: t -> ftag_ty list
 val cforms: t -> ftag_ty list
-val terms: t -> Basic.term list
+val terms: t -> Term.term list
 
 (** Construct a record of goal changes. *)
 val make:
-  ftag_ty list -> ftag_ty list -> ftag_ty list -> Basic.term list -> t
+  ftag_ty list -> ftag_ty list -> ftag_ty list -> Term.term list -> t
 
 (** [add chngs gs hs cs ts]: Append [gs], [hs], [cs] and [ts] to
     [r.goals], [r.aforms], [r.cforms] and [r.terms] respectively.  *)
 val add:
-  t -> ftag_ty list -> ftag_ty list -> ftag_ty list -> Basic.term list
+  t -> ftag_ty list -> ftag_ty list -> ftag_ty list -> Term.term list
   -> t
 
 (** [rev_append l r]: Reverse-append the fields of [l] to [r]. *)
@@ -80,4 +80,4 @@ val add_aforms: t -> ftag_ty list -> t
 (** [add_cforms: inf l]: Add list [l] to the conclusions of [inf] *)
 val add_cforms: t -> ftag_ty list -> t
 (** [add_terms: inf l]: Add list [l] to the constants of [inf] *)
-val add_terms: t -> Basic.term list -> t
+val add_terms: t -> Term.term list -> t

@@ -35,7 +35,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
 *)
 
 val cut_thm:
-  ?inst:Basic.term list -> string -> Tactics.tactic
+  ?inst:Term.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
 (** {7 Basic equality reasoning} *)

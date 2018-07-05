@@ -32,8 +32,8 @@
 (** {7 Utility functions} *)
 
 val lt_var:
-  (Basic.term -> bool) -> (Basic.term -> bool)
-  -> Basic.term -> Basic.term -> bool
+  (Term.term -> bool) -> (Term.term -> bool)
+  -> Term.term -> Term.term -> bool
 (** [lt_var x y xvarp yvarp]: Less-than ordering of terms for use with
     Net.insert. Makes variables (for which [xvarp] or [yvarp] is true)
     larger than any other term.
@@ -55,25 +55,25 @@ val set_rr_order: Logic.rr_type -> Rewrite.order -> Logic.rr_type
 *)
 type rule =
     Basic.binders list
-     * Basic.term option * Basic.term * Basic.term
+     * Term.term option * Term.term * Term.term
      * Rewrite.order option
      * Logic.rr_type
 
 val dest_rule:
   rule ->
   (Basic.binders list
-   * Basic.term option * Basic.term * Basic.term
+   * Term.term option * Term.term * Term.term
    * Rewrite.order option
    * Logic.rr_type)
 (** Destructor for rules. *)
 
 val rule_binders: rule -> Basic.binders list
 (** Get the rules variables. *)
-val rule_cond: rule -> Basic.term option
+val rule_cond: rule -> Term.term option
 (** Get the condition. *)
-val rule_lhs: rule -> Basic.term
+val rule_lhs: rule -> Term.term
 (** Get the left-hand-side. *)
-val rule_rhs: rule -> Basic.term
+val rule_rhs: rule -> Term.term
 (** Get the right-hand-side.*)
 val rule_order: rule -> Rewrite.order option
 (** Get the ordering.*)
@@ -87,15 +87,15 @@ val termnet_lt: rule -> rule -> bool
 *)
 
 val dest_rr_rule:
-  Basic.term ->
+  Term.term ->
   (Basic.binders list
-   * Basic.term option * Basic.term * Basic.term
+   * Term.term option * Term.term * Term.term
    * Rewrite.order option)
 (** [dest_rr_rule trm]: Split term [trm] into binders, condition, lhs,
     rhs. Rules must be of the form: [c=>(l=r)] or [l=r].
 *)
 
-val make_rule: Logic.rr_type -> Basic.term -> rule
+val make_rule: Logic.rr_type -> Term.term -> rule
 (** [make_rule src trm]: Make a rule from [trm], store as key for
     [src].  Term [trm] is assumed to be extracted from [src].
 *)
@@ -142,7 +142,7 @@ val add_rule: rule -> simpset -> simpset
 *)
 
 val add_conv:
-  (Basic.binders list * Basic.term)
+  (Basic.binders list * Term.term)
   -> (Context.t -> Logic.conv) -> simpset -> simpset
 (** [add_conv (vars, key) conv s]: Add conversion [conv] to set [s],
     indexed by terms of [key] in which [vars] are the list of unifiable
@@ -152,14 +152,14 @@ val add_conv:
 (** {7 Look-up functions} *)
 
 val lookup_conv:
-  Context.t -> simpset -> Basic.term -> rule list -> rule list
+  Context.t -> simpset -> Term.term -> rule list -> rule list
 (** [lookup_conv scp set trm lst]: Look up [trm] in the conversions of
     [set]. Add new rules to [lst], in the order they are found. Raise
     [Not_found] on failure.
 *)
 
 val lookup_all:
-  Context.t -> simpset -> Basic.term -> rule list -> rule list
+  Context.t -> simpset -> Term.term -> rule list -> rule list
 (** [lookup_all scp set trm lst]: Lookup trm in [set], adding list of
     matches to list. First the conversions of [set] are searched then
     the rewrite rules then the next set in the chain (if any). The
@@ -167,7 +167,7 @@ val lookup_all:
 *)
 
 val lookup:
-  Context.t -> simpset -> Basic.term -> rule list
+  Context.t -> simpset -> Term.term -> rule list
 (** [lookup trm set]: find list of possible matches for term [trm] in
     [set].  First the conversions of [set] are searched then the
     rewrite rules then the next set in the chain (if any). The rules
@@ -207,7 +207,7 @@ val simpset_add_asm_rule:
     [node] to simpset [set] as a simplification rule.
 *)
 
-val add_context: simpset -> Basic.term -> simpset
+val add_context: simpset -> Term.term -> simpset
 (** [add_context set trm]: Add [trm] as a new assumption in which
     decision procedures operate. This currently does nothing, in the
     future it will be used to notify conversions of new context.  *)

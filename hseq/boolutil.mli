@@ -23,8 +23,8 @@
 
 val find_unifier:
   Scope.t ->  Gtype.Subst.t
-  -> (Basic.term -> bool)
-  -> Basic.term -> ?exclude:(Logic.tagged_form -> bool)
+  -> (Term.term -> bool)
+  -> Term.term -> ?exclude:(Logic.tagged_form -> bool)
   -> Logic.tagged_form list
   -> (Logic.ftag_ty * Term.Subst.t)
 (** [find_unifier scp typenv varp trm ?exclude forms]: Find the first
@@ -43,7 +43,7 @@ val is_iff: Formula.t -> bool
 *)
 
 val is_qnt_opt:
-  Basic.quant -> (Basic.term -> bool)
+  Basic.quant -> (Term.term -> bool)
   -> Logic.tagged_form -> bool
 (** [is_qnt_opt kind pred form]: Test whether [form] satifies [pred].
     The formula may by quantified by binders of kind [kind].
@@ -51,7 +51,7 @@ val is_qnt_opt:
 
 val dest_qnt_opt:
   Basic.quant->
-  Logic.tagged_form -> (Logic.ftag_ty * Basic.binders list * Basic.term)
+  Logic.tagged_form -> (Logic.ftag_ty * Basic.binders list * Term.term)
 (** [dest_qnt_opt forms]: Destruct a possibly quantified tagged
     formula.  Returns the binders, the tag and the formula.
 *)
@@ -69,9 +69,9 @@ val dest_qnt_opt:
 *)
 val find_qnt_opt:
   Basic.quant
-  -> (Basic.term -> bool)
+  -> (Term.term -> bool)
   -> Logic.tagged_form list
-  -> (Logic.ftag_ty * Basic.binders list * Basic.term)
+  -> (Logic.ftag_ty * Basic.binders list * Term.term)
 
 val fresh_thm: Scope.t -> Logic.thm -> bool
 (** [fresh_thm th]: Test whether theorem [th] is fresh (a formula of
@@ -79,15 +79,15 @@ val fresh_thm: Scope.t -> Logic.thm -> bool
 *)
 
 val dest_qnt_implies:
-  Basic.term
-  -> (Basic.binders list * Basic.term * Basic.term)
+  Term.term
+  -> (Basic.binders list * Term.term * Term.term)
 (** [dest_qnt_implies term]: Split a term of the form [! a .. b: asm
     => concl] into [( a .. b, asm, concl)].
 *)
 
 val unify_in_goal:
-  (Basic.term -> bool)
-  -> Basic.term -> Basic.term -> Logic.node
+  (Term.term -> bool)
+  -> Term.term -> Term.term -> Logic.node
   -> Term.Subst.t
 (** [unify_in_goal varp atrm ctrm goal]: Unify [atrm] with [ctrm] in
     the scope and type environment of [goal].  [varp] identifies the
@@ -96,8 +96,8 @@ val unify_in_goal:
 
 val close_lambda_app:
   Basic.binders list
-  -> Basic.term
-  -> (Basic.term * Basic.term list)
+  -> Term.term
+  -> (Term.term * Term.term list)
 (** [close_lambda_app term]: From term [((% a1 .. an: B) v1 .. vn)],
     return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]] where the [x1
     .. xn] close unbound variables in [B].

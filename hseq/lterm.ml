@@ -402,16 +402,16 @@ let eta_conv ts term=
 
 let rec is_closed_env env t =
   match t with
-    | Basic.App(l, r) ->
+    | App(l, r) ->
         (is_closed_env env l) && (is_closed_env env r)
-    | Basic.Qnt(q, b) ->
+    | Qnt(q, b) ->
       let env1 =
         Term.Subst.bind (Atom(Bound(q))) (mk_free "" (Gtype.mk_null())) env
       in
       is_closed_env env1 b
-    | Atom(Basic.Meta(_)) -> true
-    | Atom(Basic.Bound(_)) -> Term.Subst.member t env
-    | Atom(Basic.Free(_)) -> Term.Subst.member t env
+    | Atom(Meta(_)) -> true
+    | Atom(Bound(_)) -> Term.Subst.member t env
+    | Atom(Free(_)) -> Term.Subst.member t env
     | _ -> true
 
 let is_closed vs t =
@@ -746,7 +746,7 @@ let resolve_term scp vars varlist trm =
           in
           let ret_id =
             match (Lib.try_find (lookup_id scp id) ty1) with
-              | Some x -> (x: Basic.term)
+              | Some x -> (x: Term.term)
               | None -> raise (term_error "Term not in scope" [t])
           in
           if in_scope scope_memo scp ret_id

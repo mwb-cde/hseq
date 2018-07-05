@@ -39,7 +39,7 @@ val add_simp:
 *)
 
 val add_conv:
-  Simpset.simpset -> Basic.term list
+  Simpset.simpset -> Term.term list
   -> (Context.t -> Logic.conv) -> Simpset.simpset
 (** [add_conv trms conv]: Add conversion [conv] to the standard
     simpset, with [trms] as the representative keys.  Example:

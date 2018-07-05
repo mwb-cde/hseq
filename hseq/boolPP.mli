@@ -47,7 +47,7 @@ val ifthenelse_parser: parser_info -> Pterm.t phrase
 val ifthenelse_printer:
   Printers.ppinfo
   -> (Printkit.fixity * int)
-  -> (Basic.term * Basic.term list) Printkit.printer
+  -> (Term.term * Term.term list) Printkit.printer
 (** Printer for the conditional. *)
 
 val choice_ident: Ident.t
@@ -68,7 +68,7 @@ val choice_parser: parser_info -> Pterm.t phrase
 val choice_printer:
   Printers.ppinfo
   -> (Printkit.fixity * int)
-  -> (Basic.term * Basic.term list) Printkit.printer
+  -> (Term.term * Term.term list) Printkit.printer
 (** Printer for the choice operator. *)
 
 type symbol = (Ident.t * int * Printkit.fixity * string option)
@@ -92,14 +92,14 @@ val ppinfo: unit -> Printers.ppinfo
 
 val basethy_context: unit -> Context.t
 val quote_context: Context.t
-val read: string -> Basic.term
+val read: string -> Term.term
 (** Parse a string as a term, resolving short names and
     symbols. *)
-val read_unchecked: string -> Basic.term
+val read_unchecked: string -> Term.term
 (** Parse a string as a term, resolving short names and
     symbols. *)
 val read_defn:
-  string -> ((string * Gtype.t) * Basic.term list) * Basic.term
+  string -> ((string * Gtype.t) * Term.term list) * Term.term
 (** Parse a string as a term definition. *)
 val read_type: string -> Gtype.t
 (** Parse a string a type, resolving short names and symbols where

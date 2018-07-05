@@ -77,7 +77,7 @@ sig
   val set_printer :
     unit
     -> Printers.ppinfo -> (Printkit.fixity * int)
-    -> (Basic.term * Basic.term list) Printkit.printer
+    -> (Term.term * Term.term list) Printkit.printer
 
   val init_set_parser : unit -> unit
   val init_set_printer : unit -> unit

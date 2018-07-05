@@ -23,7 +23,7 @@ open Basic
 exception Error
 
 (** The type for formulas *)
-type t =  {thy: Scope.marker; term: Basic.term}
+type t =  {thy: Scope.marker; term: Term.term}
 
 let term_of x = x.term
 (** Convert a formula to a term. *)
@@ -294,28 +294,28 @@ let term_retype_with_check scp tyenv t=
   in
   let retype_atom t qenv =
     match t with
-      | Id(n, ty) -> Id(n, mk_new_type ty)
-      | Free(n, ty) -> Free(n, mk_new_type ty)
-      | Bound(_) ->
+      | Term.Id(n, ty) -> Term.Id(n, mk_new_type ty)
+      | Term.Free(n, ty) -> Term.Free(n, mk_new_type ty)
+      | Term.Bound(_) ->
          begin
-           try Term.Tree.find (Atom(t)) qenv
+           try Term.Tree.find (Term.Atom(t)) qenv
            with Not_found -> t
          end
-      | Meta(_) -> t
-      | Const(_) -> t
+      | Term.Meta(_) -> t
+      | Term.Const(_) -> t
   in
   let rec retype_aux t qenv =
     match t with
-      | Atom(a) -> (Atom(retype_atom a qenv), qenv)
-      | App(f, a) ->
+      | Term.Atom(a) -> (Term.Atom(retype_atom a qenv), qenv)
+      | Term.App(f, a) ->
          let (f1, qenv1) = retype_aux f qenv in
          let (a1, qenv2) = retype_aux a qenv1 in
-         (App(f1, a1), qenv2)
-      | Qnt(q, b) ->
+         (Term.App(f1, a1), qenv2)
+      | Term.Qnt(q, b) ->
         let (oqnt, oqnm, oqty) = Basic.dest_binding q in
         let nty = mk_new_type oqty in
         let nq = mk_binding oqnt oqnm nty in
-        let qenv1 = Term.Tree.bind (Term.mk_bound(q)) (Bound(nq)) qenv
+        let qenv1 = Term.Tree.bind (Term.mk_bound(q)) (Term.Bound(nq)) qenv
         in
         let (b1, _) = retype_aux b qenv1
         in
@@ -341,15 +341,15 @@ let typecheck_retype scp tyenv f expty=
 
 let rec is_closed scp env t =
   match t with
-    | Basic.App(l, r) -> is_closed scp env l && is_closed scp env r
-    | Basic.Qnt(q, b) ->
+    | Term.App(l, r) -> is_closed scp env l && is_closed scp env r
+    | Term.Qnt(q, b) ->
       let env1 = (Term.Subst.bind (Term.mk_bound(q))
                     (Term.mk_free "" (Gtype.mk_null())) env)
       in
       is_closed scp env1 b
-    | Atom(Basic.Meta (q)) -> Scope.is_meta scp q
-    | Atom(Basic.Bound(q)) -> Term.Subst.member t env
-    | Atom(Basic.Free(_)) -> Term.Subst.member t env
+    | Term.Atom(Term.Meta (q)) -> Scope.is_meta scp q
+    | Term.Atom(Term.Bound(q)) -> Term.Subst.member t env
+    | Term.Atom(Term.Free(_)) -> Term.Subst.member t env
     | _ -> true
 
 let rec subst_closed scp qntenv sb trm =
@@ -361,14 +361,14 @@ let rec subst_closed scp qntenv sb trm =
     else raise (Failure "subst_closed: Not closed")
   with Not_found ->
     (match trm with
-      | Basic.Qnt(q, b) ->
+      | Term.Qnt(q, b) ->
           let qntenv1 =
             Term.Subst.bind
               (Term.mk_bound q) (Term.mk_free "" (Gtype.mk_null())) qntenv
           in
-          Basic.Qnt(q, subst_closed scp qntenv1 sb b)
-      | Basic.App(f, a) ->
-        Basic.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
+          Term.Qnt(q, subst_closed scp qntenv1 sb b)
+      | Term.App(f, a) ->
+        Term.App(subst_closed scp qntenv sb f, subst_closed scp qntenv sb a)
       | _ -> trm)
 
 let subst scp form lst =
@@ -428,8 +428,9 @@ let unify scp asmf conclf =
   in
   let varp x =
     match x with
-      | Atom(Bound(q)) -> (List.memq q avars) || (List.memq q cvars)
-      | _ -> false
+    | Term.Atom(Term.Bound(q))
+      -> (List.memq q avars) || (List.memq q cvars)
+    | _ -> false
   in
   Unify.unify scp varp abody cbody
 
@@ -442,8 +443,9 @@ let unify_env scp tyenv asmf conclf =
   in
   let varp x =
     match x with
-      | Atom(Bound(q)) -> (List.memq q avars) || (List.memq q cvars)
-      | _ -> false
+    | Term.Atom(Term.Bound(q)) ->
+       (List.memq q avars) || (List.memq q cvars)
+    | _ -> false
   in
   Unify.unify_fullenv scp tyenv (Term.Subst.empty()) varp abody cbody
 
@@ -574,7 +576,7 @@ let rec check_term p t =
   if (p t)
   then
     match t with
-      | Basic.Qnt(q, b) -> check_term p b
-      | Basic.App(f, a) -> check_term p f; check_term p a
+      | Term.Qnt(q, b) -> check_term p b
+      | Term.App(f, a) -> check_term p f; check_term p a
       | _ -> ()
   else raise (Term.term_error "Term check failed" [t])

@@ -36,7 +36,7 @@ type binder =
       qtyp: Gtype.stype }
 
 (**
-   Representation of de Bruijn terms. This mirrors [Basic.term], the
+   Representation of de Bruijn terms. This mirrors [Term.term], the
    difference being that bound variables are represented by indices
    and binders are not stored as references.
 *)
@@ -50,9 +50,9 @@ type dbterm =
 
 (** {5 Conversion to and from terms} *)
 
-val of_term : Basic.term -> dbterm
+val of_term : Term.term -> dbterm
 (** Convert a term to its de Bruijn representation. *)
 
-val to_term: dbterm -> Basic.term
+val to_term: dbterm -> Term.term
 (** Convert a de Bruijn term to its reference carrying representation.
 *)

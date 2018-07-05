@@ -59,12 +59,12 @@ val load_theory_as_cur:
     making it the current theory.
 *)
 
-val read: ?ctxt:Context.t -> string -> Basic.term
+val read: ?ctxt:Context.t -> string -> Term.term
 (** User level parsing of a string as a term. *)
-val read_unchecked: ?ctxt:Context.t -> string -> Basic.term
+val read_unchecked: ?ctxt:Context.t -> string -> Term.term
 (** User level parsing of a string as a raw term.. *)
 val read_defn: ?ctxt:Context.t -> string
-  -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+  -> (((string * Gtype.t) * Term.term list) * Term.term)
 (** User level parsing of a string as a term definition. *)
 
 val read_type: ?ctxt:Context.t -> string -> Gtype.t
@@ -240,7 +240,7 @@ val thm: Context.t -> string -> Logic.thm
 *)
 
 val axiom:
-  Context.t -> ?simp:bool -> string -> Basic.term
+  Context.t -> ?simp:bool -> string -> Term.term
   -> (Context.t * Logic.thm)
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
@@ -251,7 +251,7 @@ val axiom:
 *)
 
 val prove:
-  Context.t -> Basic.term -> Tactics.tactic -> Logic.thm
+  Context.t -> Term.term -> Tactics.tactic -> Logic.thm
 (** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
@@ -270,7 +270,7 @@ val save_thm:
 
 val prove_thm:
   Context.t ->
-  ?simp:bool -> string -> Basic.term -> Tactics.tactic list
+  ?simp:bool -> string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -286,7 +286,7 @@ val prove_thm:
 
 val theorem:
   Context.t
-  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list
+  -> ?simp:bool -> string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
@@ -305,7 +305,7 @@ val theorem:
 
 val lemma:
   Context.t
-  -> ?simp:bool -> string -> Basic.term -> Tactics.tactic list
+  -> ?simp:bool -> string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
@@ -318,7 +318,7 @@ val qed:
 
 val get_or_prove:
   Context.t
-  -> string -> Basic.term -> Tactics.tactic -> Logic.thm
+  -> string -> Term.term -> Tactics.tactic -> Logic.thm
 (** [get_or_prove n trm tacs ()]: Try to find the definition or
     theorem named [n], using {!Commands.thm}. If not found, prove
     theorem [trm] using tactic [tac]. This function allows tactic
@@ -395,7 +395,7 @@ val define:
   Context.t
   -> ?pp: (int * fixity * string option)
   -> ?simp:bool
-  -> (((string * Gtype.t) * Basic.term list) * Basic.term)
+  -> (((string * Gtype.t) * Term.term list) * Term.term)
   -> (Context.t * Logic.Defns.cdefn)
 (**
    [define ?simp term pp]: Define a term.
@@ -420,7 +420,7 @@ val define:
 val declare:
   Context.t
   -> ?pp:(int* fixity* string option)
-  -> Basic.term
+  -> Term.term
   -> (Context.t * Ident.t * Gtype.t)
 (** [declare trm pp]: Declare a term identifier.
 
@@ -444,7 +444,7 @@ val simple_typedef:
   -> (Context.t * Logic.Defns.cdefn)
 val subtypedef:
   Context.t
-  -> (string * string list * Gtype.t * Basic.term)
+  -> (string * string list * Gtype.t * Term.term)
   -> (string option * string option)
   -> ?simp:bool -> Logic.thm
   -> (Context.t * Logic.Defns.cdefn)

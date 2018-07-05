@@ -78,8 +78,8 @@ type label =
    [[Qnt(?); Qnt(!); App; App; Bound(!); Cname(z); Bound(?)]]
 *)
 val term_to_label:
-  (Basic.term -> bool) -> Basic.term -> Basic.term list
-  -> (label * Basic.term list)
+  (Term.term -> bool) -> Term.term -> Term.term list
+  -> (label * Term.term list)
 
 (** {5 Nets} *)
 
@@ -99,7 +99,7 @@ val empty: unit -> 'a net
 (** Test for an empty net. *)
 val is_empty: 'a net -> bool
 
-val lookup: 'a net -> Basic.term -> 'a list
+val lookup: 'a net -> Term.term -> 'a list
 (**
     [lookup net t]: Return the list of items indexed by terms matching
     term [t].  Ordered with the best matches first.
@@ -112,8 +112,8 @@ val lookup: 'a net -> Basic.term -> 'a list
 *)
 
 val update:
-  ('a net -> 'a net) -> (Basic.term -> bool)
-  -> 'a net -> Basic.term -> 'a net
+  ('a net -> 'a net) -> (Term.term -> bool)
+  -> 'a net -> Term.term -> 'a net
 (**
     [update f net trm]: Apply function [f] to the subnet of [net]
     identified by [trm] to update the subnet. Propagate the changes
@@ -124,8 +124,8 @@ val update:
 *)
 
 val add:
-  (Basic.term -> bool) -> 'a net
-  -> Basic.term -> 'a
+  (Term.term -> bool) -> 'a net
+  -> Term.term -> 'a
   -> 'a net
 (**
     [add varp net t r]: Add [r], indexed by term [t] with variables
@@ -135,8 +135,8 @@ val add:
 
 val insert:
   ('a -> 'a -> bool) ->
-  (Basic.term -> bool) -> 'a net
-  -> Basic.term -> 'a
+  (Term.term -> bool) -> 'a net
+  -> Term.term -> 'a
   -> 'a net
 (**
     [insert order varp net t r]: Add data [r], indexed by term [t] with
@@ -145,8 +145,8 @@ val insert:
     remove previous bindings of [t].
 *)
 
-val delete: (Basic.term -> bool) -> 'a net
-  -> Basic.term -> ('a -> bool) -> 'a net
+val delete: (Term.term -> bool) -> 'a net
+  -> Term.term -> ('a -> bool) -> 'a net
 (**
     [delete varp net t test]: Remove data indexed by [t] in net and
     satisfying test.  Fails silently if [t] is not found.  Needs the

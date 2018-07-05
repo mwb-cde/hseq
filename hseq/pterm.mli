@@ -26,7 +26,7 @@
     specify the type of a term.
 
     A parser constructs a term as element of type {!Pterm.t} which is
-    then converted to the representation {!Basic.term} used by the
+    then converted to the representation {!Term.term} used by the
     theorem prover by removing explicit type specifications and using
     them to infer the types required for identifiers and variables.
 
@@ -133,7 +133,7 @@ sig
     Scope.t
     -> (string -> Gtype.t -> (Ident.t * Gtype.t))
     -> t
-    -> (Basic.term * Gtype.Subst.t)
+    -> (Term.term * Gtype.Subst.t)
   (** [resolve_term scp env t]: Resolve the symbols in term [t].
 
       For each free variable [Free(s, ty)] in [t], lookup
@@ -192,7 +192,7 @@ sig
     -> Gtype.Subst.t
     -> Gtype.t
     -> t
-    -> (Basic.term * Gtype.t * Gtype.Subst.t * resolve_arg)
+    -> (Term.term * Gtype.t * Gtype.Subst.t * resolve_arg)
 
   val memo_find:
     ('a, 'b)Hashtbl.t
@@ -210,11 +210,11 @@ end
 
 (** {5 Conversion to-from terms} *)
 
-val from_term: term -> t
+val from_term: Term.term -> t
 (** [from_term trm]: Construct the represententation of [trm].
 *)
 
-val to_term: t -> term
+val to_term: t -> Term.term
 (** [to_term pt]: Construct the term represented by [pt].  The typing
     constructers ([PTyped]) in [pt] are removed and used to infer the
     expected types of the identifiers and variables in the result.
@@ -226,7 +226,7 @@ val resolve:
   Scope.t
   -> (string -> Gtype.t -> (Ident.t * Gtype.t))
   -> t
-  -> (Basic.term * Gtype.Subst.t)
+  -> (Term.term * Gtype.Subst.t)
 (** [resolve scp env pt]: Construct the term represented by [pt],
     resolving overloaded operators and returning the type environment
     built up. The typing constructers ([PTyped]) in [pt] are removed

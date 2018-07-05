@@ -64,7 +64,7 @@ type control = Rewrite.control
 module Data =
 struct
 
-  type loopDB = Basic.term Net.net
+  type loopDB = Term.term Net.net
   (** Structure used to store terms for looping rewriting detection *)
 
   (** [type Data.t] Information used by and built up during
@@ -659,7 +659,7 @@ let rec find_subterm_bu_tac data trm ctxt goal =
   let (ctrl, tyenv, qntenv0) = dest_match_data data
   in
   match trm with
-    | Basic.Qnt(q, b) ->
+    | Term.Qnt(q, b) ->
       let finalize (data1, btrm, plan1) =
         check_change plan1;
         let subplan = pack (mk_subnode 0 plan1)
@@ -673,7 +673,7 @@ let rec find_subterm_bu_tac data trm ctxt goal =
         (** Rewrite quantifier body **)
         (rw_term_tac (data1, mk_skip) b >/ finalize) ctxt goal
       end
-    | Basic.App(f, a)->
+    | Term.App(f, a)->
       let finalize (data, nf, na, fplan, aplan) =
         check_change2 fplan aplan;
         let subplan = pack(mk_branches [fplan; aplan])
@@ -760,7 +760,7 @@ and find_term_bu_tac data trm ctxt goal =
 let rec find_subterm_td_tac data trm ctxt goal =
   let (_, _, qntenv) = dest_match_data data in
   match trm with
-    | Basic.Qnt(q, b) ->
+    | Term.Qnt(q, b) ->
       let qntenv2 = Term.Subst.bind (Term.mk_bound q) null_term qntenv
       in
       begin
@@ -777,9 +777,9 @@ let rec find_subterm_td_tac data trm ctxt goal =
             let plan = pack (mk_subnode 0 plan1)
             in
             ({data1 with qntenv = qntenv},
-             Basic.Qnt(q, trm1), plan))) ctxt goal
+             Term.Qnt(q, trm1), plan))) ctxt goal
       end
-    | Basic.App(f, a)->
+    | Term.App(f, a)->
       let rw_term_tac ((data: match_data), plan) t ctxt1 g =
         try find_term_td_tac data t ctxt1 g
         with _ -> ((data, t, plan) >+ skip) ctxt1 g

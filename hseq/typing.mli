@@ -36,11 +36,11 @@
 
 (** {7 Typing Errors} *)
 
-val typing_error: string -> Basic.term -> Gtype.t -> Gtype.t -> exn
+val typing_error: string -> Term.term -> Gtype.t -> Gtype.t -> exn
 (** Construct a type error *)
 
 val add_typing_error:
-  string -> Basic.term -> Gtype.t -> Gtype.t -> exn -> exn
+  string -> Term.term -> Gtype.t -> Gtype.t -> exn -> exn
 (** Add a type error to existing errors. *)
 
 (** {5 Typing a term} *)
@@ -48,12 +48,12 @@ val add_typing_error:
 val typeof:
   Scope.t
   -> ?env:Gtype.Subst.t
-  -> Basic.term -> Gtype.t
+  -> Term.term -> Gtype.t
 (** Get the type of a term wrt type environment [env] (if given). *)
 
 (** {5 Type-checking functions} *)
 
-val typecheck: Scope.t -> Basic.term -> Gtype.t -> unit
+val typecheck: Scope.t -> Term.term -> Gtype.t -> unit
 (** [typecheck scp t ty]: Check that term [t] has type [ty] in scope
     [scp].
 
@@ -64,7 +64,7 @@ val typecheck: Scope.t -> Basic.term -> Gtype.t -> unit
 
 val typecheck_top: Scope.t
   -> Gtype.Subst.t
-  -> Basic.term -> Gtype.t
+  -> Term.term -> Gtype.t
   -> Gtype.Subst.t
 (** [typecheck_top tyenv scp t ty]: Check, w.r.t type context [tyenv],
     that term [t] has type [ty] in scope [scp]. Type variables in [t]
@@ -77,7 +77,7 @@ val typecheck_top: Scope.t
 
 val settype:
   Scope.t -> ?env:Gtype.Subst.t
-  -> Basic.term  -> Gtype.Subst.t
+  -> Term.term  -> Gtype.Subst.t
 (** Type-check a term. The types of identifier terms (built from
     [Id(n, ty)]) are taken from the scope ([ty] is discarded). (This is
     a primitive type-checking function.)
@@ -87,18 +87,18 @@ val settype:
 (** {7 Debugging} *)
 val typeof_env:
   Scope.t -> (int * Gtype.Subst.t)
-  -> Basic.term -> (Gtype.t * (int * Gtype.Subst.t))
+  -> Term.term -> (Gtype.t * (int * Gtype.Subst.t))
 
 val settype_aux:
   Scope.t ->
-  (int * (Gtype.Subst.t -> Gtype.t -> Basic.term -> Gtype.Subst.t))
-  -> Gtype.t -> Basic.term
+  (int * (Gtype.Subst.t -> Gtype.t -> Term.term -> Gtype.Subst.t))
+  -> Gtype.t -> Term.term
   -> ((int * Gtype.Subst.t) -> (int * Gtype.Subst.t))
 
 val test_type:
-  Scope.t -> Gtype.Subst.t -> Basic.term -> Gtype.t
+  Scope.t -> Gtype.Subst.t -> Term.term -> Gtype.t
   -> Gtype.t -> Gtype.Subst.t
 
-type debugType = TermType of (string * Basic.term * (Gtype.t list))
+type debugType = TermType of (string * Term.term * (Gtype.t list))
 val debug_flag: bool ref
 val debug_list: (debugType list) ref

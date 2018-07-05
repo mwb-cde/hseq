@@ -22,6 +22,21 @@
 open Lib
 open Basic
 
+(** {6 Representation of a term} *)
+
+(** Atomic terms *)
+type atom =
+  | Id of Ident.t * Gtype.t
+  | Bound of binders
+  | Free of string * Gtype.t
+  | Meta of binders
+  | Const of const_ty
+
+type term =
+  | Atom of atom
+  | App of term * term
+  | Qnt of binders * term
+
 (* Recognisers *)
 
 let is_atom x =
@@ -322,7 +337,7 @@ let rec strip_fun_qnt f term qs =
      q = Basic.Lambda)
   in
   match term with
-    | Basic.App(l, Basic.Qnt(q, body)) ->
+    | App(l, Qnt(q, body)) ->
       if not((is_ident_match l) && (is_lambda q))
       then (qs, term)
       else strip_fun_qnt f body (q::qs)
@@ -403,7 +418,7 @@ let strip_qnt q trm =
 let rec rebuild_qnt qs b =
   match qs with
     | [] -> b
-    | (x::xs) -> Basic.Qnt(x, rebuild_qnt xs b)
+    | (x::xs) -> Qnt(x, rebuild_qnt xs b)
 
 
 (*

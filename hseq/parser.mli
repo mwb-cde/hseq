@@ -40,7 +40,7 @@
    {!Lexer.reader} using the standard symbol table.
 
    The terms returned by the term parsers construct are represented by
-   {!Pterm.t}. These can be converted to a {!Basic.term} using
+   {!Pterm.t}. These can be converted to a {!Term.term} using
    {!Pterm.to_term}.  Operator overloading is supported using
    {!Pterm.resolve}.
 

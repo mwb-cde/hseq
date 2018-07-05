@@ -57,20 +57,20 @@ let mk_decln scp name ty =
 let rec mk_var_ty_list ls =
   match ls with
     | [] -> []
-    | (Atom(Id(n, ty))::ts) -> ((n, ty)::(mk_var_ty_list ts))
+    | (Term.Atom(Term.Id(n, ty))::ts) -> ((n, ty)::(mk_var_ty_list ts))
     | _ -> raise (Term.term_error "Non-variables not allowed" ls)
 
 let rec mk_all_from_list scp b qnts =
   match qnts with
     | [] -> b
-    | (Atom(Bound(q))::qs) ->
+    | (Term.Atom(Term.Bound(q))::qs) ->
       if (Basic.binder_kind q) = Basic.All
       then mk_all_from_list scp (Term.mk_qnt q b) qs
       else
         raise (Term.term_error
                  "Invalid argument: wrong quantifier in argument"
                  qnts)
-    | (Atom(Id(n, ty))::qs) ->
+    | (Term.Atom(Term.Id(n, ty))::qs) ->
       raise (Term.term_error "mk_all_from_list, unexpected Basic.Id" qnts)
     | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
@@ -171,10 +171,10 @@ type subtype_defn =
       args : string list;
       rep : (Ident.t * Gtype.t);
       abs: (Ident.t * Gtype.t);
-      set: Basic.term;
-      rep_T: Basic.term;
-      rep_T_inverse: Basic.term;
-      abs_T_inverse: Basic.term
+      set: Term.term;
+      rep_T: Term.term;
+      rep_T_inverse: Term.term;
+      abs_T_inverse: Term.term
     }
 
 (** [mk_subtype_exists setp] make the term << ?x. setp x >> to be used
@@ -183,7 +183,7 @@ type subtype_defn =
 let mk_subtype_exists setp=
   let x_b=(Basic.mk_binding Basic.Ex "x" (Gtype.mk_var "x_ty")) in
   let x= Term.mk_bound x_b in
-  Basic.Qnt(x_b, Term.mk_app setp x)
+  Term.Qnt(x_b, Term.mk_app setp x)
 
 (** [make_witness_type scp dtype setP]: Construct the actual type of
     the defining set.
@@ -216,7 +216,7 @@ let mk_rep_T set rep =
   let x = Term.mk_bound x_b in
   let body = Term.mk_app set (Term.mk_app rep x)
   in
-  Basic.Qnt(x_b, body)
+  Term.Qnt(x_b, body)
 
 (**
    [mk_rep_T_inv rep abs]:
@@ -228,7 +228,7 @@ let mk_rep_T_inv rep abs =
   let x = Term.mk_bound x_b in
   let body = Lterm.mk_equality (Term.mk_app abs (Term.mk_app rep x)) x
   in
-  Basic.Qnt(x_b, body)
+  Term.Qnt(x_b, body)
 
 (**
    [mk_abs_T_inv set rep abs]:
@@ -243,7 +243,7 @@ let mk_abs_T_inv set rep abs =
   in
   let body = Lterm.mk_implies lhs rhs
   in
-  Basic.Qnt(x_b, body)
+  Term.Qnt(x_b, body)
 
 (**
    [mk_subtype scp name args d setP rep]: Make a subtype.
@@ -304,7 +304,7 @@ struct
     | TypeAlias of (string * (string list) * Gtype.t)
     (** A type alias: the type name, its arguments and the type it
         aliases *)
-    | Subtype of (string * (string list) * Gtype.t * Basic.term)
+    | Subtype of (string * (string list) * Gtype.t * Term.term)
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
@@ -337,7 +337,7 @@ struct
       (!x: (P x) = (?x1: x=(rep x1)))>>
       to be used as the subtype theorem.
     *)
-  let mk_subtype_prop (setP: Basic.term) (rep: Ident.t) =
+  let mk_subtype_prop (setP: Term.term) (rep: Ident.t) =
     let mk_subtype_1 (rep: Ident.t) =
       let x1_b = Basic.mk_binding Basic.All "x1" (Gtype.mk_var "x1_ty")
       and x2_b = Basic.mk_binding Basic.All "x2" (Gtype.mk_var "x2_ty")
@@ -353,9 +353,9 @@ struct
       in
       let body = Lterm.mk_implies lhs rhs
       in
-      Basic.Qnt(x1_b, Basic.Qnt(x2_b, body))
+      Term.Qnt(x1_b, Term.Qnt(x2_b, body))
     and
-        mk_subtype_2 (setP:Basic.term) (rep: Ident.t) =
+        mk_subtype_2 (setP:Term.term) (rep: Ident.t) =
       let y_b = Basic.mk_binding Basic.All "y" (Gtype.mk_var "y_ty")
       and y1_b = Basic.mk_binding Basic.Ex "y1" (Gtype.mk_var "y1_ty")
       in
@@ -365,9 +365,9 @@ struct
       in
       let lhs = Term.mk_app setP y
       and rhs =
-        Basic.Qnt(y1_b, Lterm.mk_equality y (Term.mk_app rep_term y1))
+        Term.Qnt(y1_b, Lterm.mk_equality y (Term.mk_app rep_term y1))
       in
-      Basic.Qnt(y_b, Lterm.mk_equality lhs rhs)
+      Term.Qnt(y_b, Lterm.mk_equality lhs rhs)
     in
     Lterm.mk_and (mk_subtype_1 rep) (mk_subtype_2 setP rep)
 

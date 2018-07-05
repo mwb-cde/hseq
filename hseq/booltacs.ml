@@ -286,7 +286,7 @@ let make_cases_tac_thm ctxt =
 let cases_thm sctxt =
   Context.find_thm sctxt cases_thm_id make_cases_tac_thm
 
-let cases_tac (t: Basic.term) ctxt goal =
+let cases_tac (t: Term.term) ctxt goal =
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in
   seq
     [
@@ -313,7 +313,7 @@ let cases_tac (t: Basic.term) ctxt goal =
         ]
     ] ctxt goal
 
-let show_tac (trm: Basic.term) tac ctxt goal =
+let show_tac (trm: Term.term) tac ctxt goal =
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in
   seq
     [

@@ -390,7 +390,7 @@ let get_binder qnt n trm =
   let qnt = Basic.All in
   let rec get_aux t =
     match t with
-      | Basic.Qnt(b, body) ->
+      | Term.Qnt(b, body) ->
         if (Basic.binder_kind b) = qnt
         then
           if (Basic.binder_name b) = n

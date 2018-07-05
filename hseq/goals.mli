@@ -90,7 +90,7 @@ val top_goal : ProofStack.t -> Logic.goal
 val drop : ProofStack.t -> ProofStack.t
 (** Drop the current proof.  *)
 
-val goal: ProofStack.t -> Scope.t -> Basic.term -> ProofStack.t
+val goal: ProofStack.t -> Scope.t -> Term.term -> ProofStack.t
 (** Start a proof attempt. Creates a goal and pushes it on the top of
     the proof stack.
 
@@ -131,7 +131,7 @@ val apply:
 (** {7 Batch proofs} *)
 
 val prove_goal:
-  Context.t -> Basic.term -> Tactics.tactic
+  Context.t -> Term.term -> Tactics.tactic
   -> Logic.thm
 (** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
     using tactic [tac] in scope [scp]. Used for batch proofs. If
@@ -148,7 +148,7 @@ val by_com :
 *)
 
 val by_list :
-  Context.t -> Basic.term -> Tactics.tactic list -> Logic.thm
+  Context.t -> Term.term -> Tactics.tactic list -> Logic.thm
 (** [by_list trm tacl]: Apply the list of tactics [tacl] to the
     goal formed from term [trm] in the standard scope.
 
@@ -182,8 +182,8 @@ val curr_sqnt : ProofStack.t -> Logic.Sequent.t
 val goal_scope: ProofStack.t -> Scope.t
 (** The scope of the current subgoal. *)
 
-val get_asm: ProofStack.t -> int -> (Logic.ftag_ty * Basic.term)
+val get_asm: ProofStack.t -> int -> (Logic.ftag_ty * Term.term)
 (** Get an assumption from the current sequent. *)
 
-val get_concl: ProofStack.t -> int -> (Logic.ftag_ty * Basic.term)
+val get_concl: ProofStack.t -> int -> (Logic.ftag_ty * Term.term)
 (** Get a conclusion from the current sequent. *)

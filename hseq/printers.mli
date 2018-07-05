@@ -33,7 +33,7 @@ open Printkit
 
 type ppinfo =
     {
-      terms: (ppinfo, (Basic.term * (Basic.term)list))info;
+      terms: (ppinfo, (Term.term * (Term.term)list))info;
       types: (ppinfo, (Ident.t * (Gtype.t)list))info
     }
 
@@ -63,7 +63,7 @@ val empty_ppinfo: unit-> ppinfo
 (** {7 Term printer information} *)
 
 type term_printer =
-  ppinfo -> (fixity * int) -> (Basic.term * (Basic.term)list) printer
+  ppinfo -> (fixity * int) -> (Term.term * (Term.term)list) printer
 
 val get_term_info: ppinfo -> Ident.t -> (int * fixity * string option)
 (**
@@ -228,39 +228,39 @@ sig
 
   val print_ident_as_identifier:
     ppinfo ->  (Printkit.fixity * int)
-    -> (Basic.term)Printkit.printer
+    -> (Term.term)Printkit.printer
   (** [print_ident_as_identifier ppstate]: Print a [Id(id, _)] term as
     an identifier using [Printkit.print_identifier ppstate].
    *)
 
   val print_infix:
     (((Printkit.fixity * int) -> Ident.t Printkit.printer)
-     * ((Printkit.fixity * int) -> Basic.term Printkit.printer))
+     * ((Printkit.fixity * int) -> Term.term Printkit.printer))
     -> (Printkit.fixity * int)
-    -> (Ident.t * (Basic.term)list) Printkit.printer
+    -> (Ident.t * (Term.term)list) Printkit.printer
   (** [print_infix]: print [(f, args)] as an infix operator. *)
 
   val print_prefix:
     (((Printkit.fixity * int) -> Ident.t Printkit.printer)
-     * ((Printkit.fixity * int) -> Basic.term Printkit.printer))
+     * ((Printkit.fixity * int) -> Term.term Printkit.printer))
     -> (Printkit.fixity * int)
-    -> (Ident.t * (Basic.term)list) Printkit.printer
+    -> (Ident.t * (Term.term)list) Printkit.printer
   (**
    [print_suffix]: Print [(f, args)] as a suffix operator.
    *)
   val print_suffix:
     (((Printkit.fixity * int) -> Ident.t Printkit.printer)
-     * ((Printkit.fixity * int) -> Basic.term Printkit.printer))
+     * ((Printkit.fixity * int) -> Term.term Printkit.printer))
     -> (Printkit.fixity * int)
-    -> (Ident.t * (Basic.term)list) Printkit.printer
+    -> (Ident.t * (Term.term)list) Printkit.printer
   (** [print_prefix]: Print [(f, args)] as a prefix operator.  *)
 
   val print_fn_app:
     ppinfo
-    -> (((Printkit.fixity * int) -> Basic.term Printkit.printer)
-        * ((Printkit.fixity * int) -> Basic.term Printkit.printer))
+    -> (((Printkit.fixity * int) -> Term.term Printkit.printer)
+        * ((Printkit.fixity * int) -> Term.term Printkit.printer))
     -> (Printkit.fixity * int)
-    -> (Basic.term * (Basic.term)list) Printkit.printer
+    -> (Term.term * (Term.term)list) Printkit.printer
   (** [print_fn_app ppstate id_printer term_printer (f, args)]: Print
     [(f, args)] as a function application.
 
@@ -271,7 +271,7 @@ sig
 
   val simple_print_fn_app:
     ppinfo -> (Printkit.fixity * int)
-    -> (Basic.term * Basic.term list) Printkit.printer
+    -> (Term.term * Term.term list) Printkit.printer
   (** [simple_print_fn_app]: Print an application as [f a1 a2 .. an].
 
     Utility function for user defined pretty-printers. Unlike
@@ -283,7 +283,7 @@ sig
   val print_as_binder:
     (Printkit.fixity * int) -> Ident.t -> string
     -> ppinfo -> (Printkit.fixity * int)
-    -> (Basic.term * (Basic.term)list) Printkit.printer
+    -> (Term.term * (Term.term)list) Printkit.printer
   (** [print_as_binder (sym_assoc, sym_prec) f sym]: Construct a printer
     to print function applications of the form [f (%x: P)] as [sym x:
     P].
@@ -291,18 +291,18 @@ sig
 
   val print_qnt_body:
     ppinfo -> (Printkit.fixity * int)
-    -> ((Basic.binders)list * Basic.term) Printkit.printer
+    -> ((Basic.binders)list * Term.term) Printkit.printer
 (** [print_qnt_body (assoc, prec) qs body]: Print term [body]
     quantified by variables [qs=[x1; x2; ...; xn]] as [x1 x2 ... xn:
     body].
  *)
 
   val print_term:
-    ppinfo -> (Printkit.fixity * int) -> (Basic.term)Printkit.printer
+    ppinfo -> (Printkit.fixity * int) -> (Term.term)Printkit.printer
 end
 
 (** Term printer *)
-val print_term: ppinfo -> (Basic.term)Printkit.printer
+val print_term: ppinfo -> (Term.term)Printkit.printer
 
 (** Print a term error *)
 val print_term_error:

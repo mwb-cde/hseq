@@ -43,7 +43,7 @@ val unify_fullenv:
   Scope.t
   -> Gtype.Subst.t
   -> Term.Subst.t
-  -> (Basic.term -> bool) -> Basic.term -> Basic.term
+  -> (Term.term -> bool) -> Term.term -> Term.term
   -> (Gtype.Subst.t * Term.Subst.t)
 (** [unify_fullenv scp tyenv env varp t1 t2]: Unify terms [t1] and
     [t2] in scope [scp] w.r.t to given type and term contexts.
@@ -63,15 +63,15 @@ val unify_fullenv:
 val unify_env:
   ?typenv:Gtype.Subst.t
   -> Scope.t  -> Term.Subst.t
-  -> (Basic.term -> bool) -> Basic.term -> Basic.term
+  -> (Term.term -> bool) -> Term.term -> Term.term
   -> Term.Subst.t
 (** Unify terms in a given context. This is equivalent to calling
     [unify_fullenv] with an empty type context.
 *)
 
 val unify: ?typenv:Gtype.Subst.t -> ?initial:Term.Subst.t
-  -> Scope.t -> (Basic.term -> bool)
-  -> Basic.term -> Basic.term -> Term.Subst.t
+  -> Scope.t -> (Term.term -> bool)
+  -> Term.term -> Term.term -> Term.Subst.t
 (** [unify scp varp l r]: Unify terms [l] and [r] in scope scp.
 
     Toplevel for [unify_fullenv] which discards the updated type context.
@@ -84,8 +84,8 @@ val unify: ?typenv:Gtype.Subst.t -> ?initial:Term.Subst.t
 
 val matches_rewrite:
   Scope.t -> Gtype.Subst.t  -> Term.Subst.t
-  -> (Basic.term -> bool)
-  -> Basic.term -> Basic.term
+  -> (Term.term -> bool)
+  -> Term.term -> Term.term
   -> (Gtype.Subst.t * Term.Subst.t)
 (** [matches_rewrite scp tyenv env varp trm1 trm2]: Matches term
     [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by

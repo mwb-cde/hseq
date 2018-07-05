@@ -35,8 +35,8 @@ val mk_decln:
 val mk_defn:
   Scope.t
   -> (Ident.t * Gtype.t)
-  -> Basic.term list
-  -> Basic.term
+  -> Term.term list
+  -> Term.term
   -> (Ident.t * Gtype.t * Formula.t)
 (** [mk_defn scp id args t]: Construct a definition.
 
@@ -114,10 +114,10 @@ type subtype_defn =
       args: string list;
       rep: (Ident.t * Gtype.t);
       abs: (Ident.t * Gtype.t);
-      set: Basic.term;
-      rep_T: Basic.term;
-      rep_T_inverse: Basic.term;
-      abs_T_inverse: Basic.term
+      set: Term.term;
+      rep_T: Term.term;
+      rep_T_inverse: Term.term;
+      abs_T_inverse: Term.term
     }
 (**
     The result of constructing a subtype:
@@ -134,13 +134,13 @@ type subtype_defn =
 *)
 
 
-val mk_subtype_exists: Basic.term -> Basic.term
+val mk_subtype_exists: Term.term -> Term.term
 (** [mk_subtype_exists setp]: Make the term << ?x: setp x >> to be
     used to show that the subtype is not empty.
 *)
 
 val make_witness_type:
-  Scope.t -> Gtype.t -> Basic.term -> Basic.term
+  Scope.t -> Gtype.t -> Term.term -> Term.term
 (** [make_witness_type scp ty setp]: Make a witness to the
     non-emptyness of the set defined by [setp] (which must be of type
     [ty -> bool]).
@@ -149,7 +149,7 @@ val make_witness_type:
 
 val mk_subtype:
   Scope.t -> string -> string list
-  -> Gtype.t -> Basic.term -> string -> string
+  -> Gtype.t -> Term.term -> string -> string
   -> subtype_defn
 (** [mk_subtype scp n args ty set rep abs]: Make a subtype named [n]
     with parameters [args] from type [ty]. Term [set] is the defining
@@ -172,59 +172,13 @@ sig
     | TypeAlias of (string * (string list) * Gtype.t)
     (** A type alias: the type name, its arguments and the type it
         aliases *)
-    | Subtype of ((string * (string list) * Gtype.t * Basic.term))
+    | Subtype of ((string * (string list) * Gtype.t * Term.term))
 (** Subtype definition: The type name, its arguments, the type it
     subtypes and the defining predicate
 *)
 
 end
 
-(*
-  module HolLike:
-  sig
-
-(*
-  * HOL-like type definition.
-  *  A, args, T, set:(args)T->bool
-  *
-  *  make declaration
-  *   representation function rep = name:(args)T -> A
-  *   and theorem
-  *   |- ((!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-  *       and (!x: (P x) = (?x1: x=(rep x1))))
-  *
-  * Everything needed to use subtyping is derived making this approach
-  * the more intellectually rigorous. But this takes a lot of work,
-  * so the standard typedef takes the easy way out.
-  *
-*)
-
-(*
-  [mk_subtype_prop setp rep]:
-  make the term
-  << (!x1 x2: (((rep x1) = (rep x2)) => (x1 = x2)))
-  and
-  (!x: (P x) = (?x1: x=(rep x1)))>>
-  to be used as the subtype theorem.
-
-  [mk_subtype scp name args d setP rep]:
-  - check name doesn't exist already
-  - check all arguments in args are unique
-  - check def is well defined
-  (all constructors exist and variables are in the list of arguments)
-  - ensure setP has type (d -> bool)
-  - declare rep as a function of type (d -> n)
-  - make subtype property from setp and rep.
-*)
-  val mk_subtype_prop: Basic.term -> Ident.t -> Basic.term
-  val mk_subtype:
-  Scope.t -> string -> string list
-  -> Gtype.t -> Basic.term -> Ident.t
-  -> (Gtype.t * Basic.term * Basic.term)
-
-  end
-*)
-
 (** Debugging information. *)
 val mk_all_from_list:
-  Scope.t -> Basic.term -> Basic.term list -> Basic.term
+  Scope.t -> Term.term -> Term.term list -> Term.term

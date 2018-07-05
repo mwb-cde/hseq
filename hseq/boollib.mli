@@ -111,10 +111,10 @@ sig
   (** Conversions on boolean operators.  *)
 
   (** [neg_all_conv]: |- (not (!x..y: a)) = ?x..y: not a *)
-  val neg_all_conv: Context.t -> Basic.term -> Logic.thm
+  val neg_all_conv: Context.t -> Term.term -> Logic.thm
 
   (** [neg_exists_conv]: |- (not (?x..y: a)) = !x..y: not a *)
-  val neg_exists_conv: Context.t -> Basic.term -> Logic.thm
+  val neg_exists_conv: Context.t -> Term.term -> Logic.thm
 
 end
 
@@ -131,7 +131,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
 *)
 
 val cut_thm:
-  ?inst:Basic.term list -> string -> Tactics.tactic
+  ?inst:Term.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
 (** {7 Basic equality reasoning} *)
@@ -519,7 +519,7 @@ val blast_tac:
 
 (** {5 Cases} *)
 
-val cases_tac: Basic.term -> Tactics.tactic
+val cases_tac: Term.term -> Tactics.tactic
 (** [cases_tac x g]: Cases tactic.
 
     Add formula [x] to assumptions of [g] and create new subgoal in
@@ -537,14 +537,14 @@ val cases_tac: Basic.term -> Tactics.tactic
 *)
 
 val show_tac:
-  Basic.term -> Tactics.tactic -> Tactics.tactic
+  Term.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
 val show:
-  Basic.term -> Tactics.tactic -> Tactics.tactic
+  Term.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
     introduces [trm] as the conclusion of a new subgoal.
@@ -553,7 +553,7 @@ val show:
 *)
 
 val cases_of:
-  ?thm:Logic.thm -> Basic.term
+  ?thm:Logic.thm -> Term.term
   -> Tactics.tactic
 (** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
@@ -586,7 +586,7 @@ val mp_tac:
 *)
 
 val cut_mp_tac:
-  ?inst:Basic.term list
+  ?inst:Term.term list
   -> Logic.thm
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?inst ?a ]: Cut theorem for Modus ponens.
@@ -635,7 +635,7 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?inst:Basic.term list
+  ?inst:Term.term list
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 

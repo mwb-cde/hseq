@@ -22,13 +22,13 @@
 (** Utility functions for the simplifier. *)
 
 
-val is_variable: Basic.binders list -> Basic.term -> bool
+val is_variable: Basic.binders list -> Term.term -> bool
 (** [is_variable qnts x]: Test for variables (universal quantifiers)
     in an entry.
 *)
 
 val equal_upto_vars:
-  (Basic.term -> bool) -> Basic.term -> Basic.term -> bool
+  (Term.term -> bool) -> Term.term -> Term.term -> bool
 (** [equal_upto_vars varp x y]: Terms [x] and [y] are equal upto the
     position of the terms for which [varp] is true (which are
     considered to be variables).
@@ -39,19 +39,19 @@ val equal_upto_vars:
 
 val find_variables:
   (Basic.binders -> bool) ->
-  Term.Subst.t -> Basic.term -> Term.Subst.t
+  Term.Subst.t -> Term.term -> Term.Subst.t
 (** [find_variables is_var vars trm]: Find all subterms [t] of [trm]
     s.t. [(is_var t)] is true. Add [t] to [vars] then return [vars].
 *)
 
 val check_variables:
-  (Basic.binders -> bool) -> Term.Subst.t -> Basic.term -> bool
+  (Basic.binders -> bool) -> Term.Subst.t -> Term.term -> bool
 (** [check_variables is_var vars trm]: Check that all subterms [t] of
     [trm] s.t. [is_var t] are in [vars].
 *)
 
 val strip_qnt_cond:
-  Basic.term -> Basic.binders list * Basic.term option * Basic.term
+  Term.term -> Basic.binders list * Term.term option * Term.term
 (** [strip_qnt_cond trm]: Split rule [trm] into variable binders,
     condition, equality rules are of the form: [a=>c] or [c]
 *)

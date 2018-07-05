@@ -23,7 +23,7 @@
 
 open Basic
 
-val print_term: Printers.ppinfo -> Basic.term -> unit
+val print_term: Printers.ppinfo -> Term.term -> unit
 val print_formula: Printers.ppinfo -> Formula.t -> unit
 val print_type: Printers.ppinfo -> Gtype.t -> unit
 val print_theory: Printers.ppinfo -> Theory.thy -> unit

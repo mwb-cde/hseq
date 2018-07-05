@@ -40,34 +40,34 @@ type dbterm =
 
 let of_atom env qnts t =
   match t with
-    | Basic.Id(n, ty) ->
+    | Term.Id(n, ty) ->
       let (ty1, env1) = Gtype.to_save_env env ty
       in
       (Id(n, ty1), env1)
-    | Basic.Free(n, ty) ->
+    | Term.Free(n, ty) ->
       let (ty1, env1) = Gtype.to_save_env env ty
       in
       (Free(n, ty1), env1)
-    | Basic.Const(c) -> (Const(c), env)
-    | Basic.Bound(q) ->
+    | Term.Const(c) -> (Const(c), env)
+    | Term.Bound(q) ->
       let q_idx = Lib.index (fun x -> (x == q)) qnts
       in
       (Bound(q_idx), env)
-    | Basic.Meta(q) ->
+    | Term.Meta(q) ->
       raise
         (Term.term_error
            "Can't convert meta variables to DB terms"
-           [Basic.Atom(t)])
+           [Term.Atom(t)])
 
 let rec of_term_aux env qnts t =
   match t with
-  | Basic.(Atom(a)) -> of_atom env qnts a
-  | Basic.App(f, a) ->
+  | Term.(Atom(a)) -> of_atom env qnts a
+  | Term.App(f, a) ->
       let f1, env1 = of_term_aux env qnts f in
       let a1, env2 = of_term_aux env1 qnts a
       in
       (App(f1, a1), env2)
-    | Basic.Qnt(q, b) ->
+    | Term.Qnt(q, b) ->
       let (tqnt, tqvar, tqtyp) = Basic.dest_binding q
       and (b1, env1) = of_term_aux env (q::qnts) b
       in

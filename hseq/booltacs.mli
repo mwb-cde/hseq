@@ -212,7 +212,7 @@ val blast_tac:
 val cases_thm: Context.t -> Logic.thm
 (** [cases_thm]: |- !P: (~P) | P *)
 
-val cases_tac: Basic.term -> Tactics.tactic
+val cases_tac: Term.term -> Tactics.tactic
 (** [cases_tac x g]: Cases tactic.
 
     Add formula [x] to assumptions of [g] and create new subgoal in
@@ -230,14 +230,14 @@ val cases_tac: Basic.term -> Tactics.tactic
 *)
 
 val show_tac:
-  Basic.term -> Tactics.tactic -> Tactics.tactic
+  Term.term -> Tactics.tactic -> Tactics.tactic
 (** [show_tac trm tac]: Use [tac] to show that [trm] is true,
     introducing [trm] as a new assumption. If [tac] fails to prove
     [trm], introduces [trm] as the conclusion of a new subgoal.
 *)
 
 val show:
-  Basic.term -> Tactics.tactic -> Tactics.tactic
+  Term.term -> Tactics.tactic -> Tactics.tactic
 (** [show trm tac]: Use [tac] to show that [trm] is true, introducing
     [trm] as a new assumption. If [tac] fails to prove [trm],
     introduces [trm] as the conclusion of a new subgoal.
@@ -246,7 +246,7 @@ val show:
 *)
 
 val cases_of:
-  ?thm:Logic.thm -> Basic.term -> Tactics.tactic
+  ?thm:Logic.thm -> Term.term -> Tactics.tactic
 (** [cases_of ?thm trm]: Try to introduce a case split based on
     the type of term [trm]. If [thm] is given, it is used as the cases
     theorem. If [thm] is not given, the theorem named ["T_cases"] is
@@ -279,7 +279,7 @@ val mp_tac:
 *)
 
 val cut_mp_tac:
-  ?inst:Basic.term list
+  ?inst:Term.term list
   -> Logic.thm
   -> ?a:Logic.label -> Tactics.tactic
 (** [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
@@ -328,7 +328,7 @@ val back_tac:
 *)
 
 val cut_back_tac:
-  ?inst:Basic.term list
+  ?inst:Term.term list
   -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
 (** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
 

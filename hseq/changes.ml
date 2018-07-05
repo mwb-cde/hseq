@@ -37,7 +37,7 @@ type t =
       (** new assumption produced by the tactic. *)
     cncl_tags: ftag_ty list;
       (** new conclusions produced by the tactic. *)
-    term_list: Basic.term list
+    term_list: Term.term list
     (** new constants produced by the tactic. *)
   }
 

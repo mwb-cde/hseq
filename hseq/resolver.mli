@@ -46,8 +46,8 @@
 val resolve_term:
   Scope.t
   -> (string -> Basic.gtype -> (Ident.t * Basic.gtype))
-  -> Basic.term
-  -> (Basic.term * Gtype.substitution)
+  -> Term.term
+  -> (Term.term * Gtype.substitution)
 (** [resolve_term scp env t]: Resolve the symbols in term [t].
 
     For each free variable [Free(s, ty)] in [t], lookup [s] in [env]
@@ -104,8 +104,8 @@ val resolve_aux:
   resolve_arg
   -> Gtype.substitution
   -> Basic.gtype
-  -> Basic.term
-  -> (Basic.term * Basic.gtype * Gtype.substitution)
+  -> Term.term
+  -> (Term.term * Basic.gtype * Gtype.substitution)
 
 val memo_find:
   ('a, 'b)Hashtbl.t

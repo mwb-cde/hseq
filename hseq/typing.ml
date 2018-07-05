@@ -210,7 +210,7 @@ let typecheck scp t expty =
 
 (*** Settype based type checking ****)
 
-type debugType = TermType of (string * Basic.term * (Gtype.t list))
+type debugType = TermType of (string * Term.term * (Gtype.t list))
 let debug_flag = ref false
 let debug_list = ref []
 

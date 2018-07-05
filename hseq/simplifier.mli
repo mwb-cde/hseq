@@ -27,8 +27,8 @@ open Rewrite
 
 (** {5 Errors} *)
 
-val error: string -> Basic.term list -> exn
-val add_error: string -> Basic.term list -> exn -> exn
+val error: string -> Term.term list -> exn
+val add_error: string -> Term.term list -> exn -> exn
 
 exception No_change
 (** Raised if the simplifier makes no changes. *)
@@ -42,7 +42,7 @@ type control = Rewrite.control
 module Data:
 sig
 
-  type loopDB = Basic.term Net.net
+  type loopDB = Term.term Net.net
   (** Structure used to store terms for looping rewriting
       detection *)
 
@@ -128,10 +128,10 @@ sig
   val get_loopdb: t -> loopDB
   (** Get the loopdb *)
 
-  val add_loopdb: t -> Basic.term -> t
+  val add_loopdb: t -> Term.term -> t
   (** Add a term to the loopdb *)
 
-  val mem_loopdb: Scope.t -> t -> Basic.term -> bool
+  val mem_loopdb: Scope.t -> t -> Term.term -> bool
   (** Test whether a term is alpha-equal to a term in the loopdb *)
 
   val get_tactic: t -> (t -> Logic.ftag_ty -> Tactics.tactic)
@@ -192,7 +192,7 @@ val clean_up_tac: Data.t -> Tactics.tactic
 *)
 
 val copyA_inst_tac:
-  Basic.term list -> Logic.label
+  Term.term list -> Logic.label
   -> Tactics.tactic
 (** [copyA_inst_tac info vals x]: Copy assumption [x], instantiate the
     copy with [vals]. info: aformulas = [x1], where [x1] is the tag of
@@ -201,7 +201,7 @@ val copyA_inst_tac:
 *)
 
 val cut_rr_rule:
-  Basic.term list -> Logic.rr_type -> tactic
+  Term.term list -> Logic.rr_type -> tactic
 (** [cut_rr_rule info vals t g]: Cut rule [t] into goal [g],
     instantiating with [vals].  If [t] is a theorem, it is cut into
     the goal.  If [t] is an assumption, it is copied. Fails if there
@@ -212,7 +212,7 @@ val cut_rr_rule:
 
 val simp_rewrite_tac:
   bool -> Logic.rr_type Rewrite.plan
-  -> Basic.term -> Logic.label
+  -> Term.term -> Logic.label
   -> tactic
 (** [simp_rewrite_tac is_concl plan term lbl]: Local interface
     to the main rewriting tactics. If [is_concl] is true, call
@@ -225,7 +225,7 @@ val simp_rewrite_tac:
 
 type tag_pair = (Logic.ftag_ty * Logic.ftag_ty)
 val prep_cond_tac:
-  Data.t -> Basic.term list -> Logic.rr_type
+  Data.t -> Term.term list -> Logic.rr_type
   -> (Data.t * tag_pair * tag_pair) Tactics.data_tactic
 (** [prep_cond_tac cntrl ret values thm g]: Prepare [thm], which is
     assumed to be a conditional rules, for proof of condition and use.
@@ -240,7 +240,7 @@ val prep_cond_tac:
 *)
 
 val prove_cond_tac:
-  Data.t -> Basic.term list -> Simpset.rule
+  Data.t -> Term.term list -> Simpset.rule
   -> (Data.t * Logic.rr_type)Tactics.data_tactic
 (** [prove_cond_tac cntrl tac values entry g]: Prepare a conditional
     simp rule [entry] for use in rewriting.
@@ -272,8 +272,8 @@ val match_rewrite:
   -> Gtype.Subst.t
   -> Term.Subst.t
   -> Simpset.rule
-  -> Basic.term
-  -> (Logic.rr_type * Gtype.Subst.t * Term.Subst.t * Basic.term)
+  -> Term.term
+  -> (Logic.rr_type * Gtype.Subst.t * Term.Subst.t * Term.term)
 (** [match_rewrite scp tyenv qntenv trmenv rule trm]: Try to match lhs
     of [rule] with [trm] in type envivornment [tyenv] and term bindings
     [trmenv]. Return rhs of [rule], instantiated with the binding from
@@ -282,8 +282,8 @@ val match_rewrite:
 *)
 
 val find_basic:
-  match_data -> Simpset.rule -> Basic.term ->
-  (match_data * Basic.term * Logic.rr_type) Tactics.data_tactic
+  match_data -> Simpset.rule -> Term.term ->
+  (match_data * Term.term * Logic.rr_type) Tactics.data_tactic
 (** [find_basic ret data rl trm g]: Try to match simp rule [rl] with
     term [trm] in goal [g], with [data = (cntrl, tyenv, qntenv)]. If
     [rl] matches but is conditional, try to prove the condition using
@@ -297,8 +297,8 @@ val find_basic:
 *)
 
 val find_match_tac:
-  match_data -> Basic.term ->
-  (match_data * Basic.term * Logic.rr_type) Tactics.data_tactic
+  match_data -> Term.term ->
+  (match_data * Term.term * Logic.rr_type) Tactics.data_tactic
 (**
    [find_match_tac ret data trm g]: Find a rule in simpset [set] which
    matches term [trm] in goal [g], with [data = (cntrl, tyenv,
@@ -314,8 +314,8 @@ val find_match_tac:
 *)
 
 val find_all_matches_tac:
-  match_data -> Basic.term ->
-  (match_data * Basic.term * Logic.rr_type list)
+  match_data -> Term.term ->
+  (match_data * Term.term * Logic.rr_type list)
     Tactics.data_tactic
 (** [find_all_matches ret (cntrl, tyenv, qntenv) trm g]: Find all
     rules in simpset [cntrl.set] which can be used to rewrite term
@@ -327,8 +327,8 @@ val find_all_matches_tac:
 *)
 
 val find_term_bu_tac:
-  match_data -> Basic.term
-  -> (match_data * Basic.term
+  match_data -> Term.term
+  -> (match_data * Term.term
       * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_term_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
     [trm], bottom-up, constructing a rewrite plan.
@@ -340,8 +340,8 @@ val find_term_bu_tac:
 *)
 
 val find_subterm_bu_tac:
-  match_data-> Basic.term
-  -> (match_data * Basic.term
+  match_data-> Term.term
+  -> (match_data * Term.term
       * Logic.rr_type Rewrite.plan) Tactics.data_tactic
 (** [find_subterm_bu_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
     to rewrite, bottom-up, the subterms of [trm].
@@ -355,8 +355,8 @@ val find_subterm_bu_tac:
 *)
 
 val find_term_td_tac:
-  match_data -> Basic.term
-  -> (match_data * Basic.term
+  match_data -> Term.term
+  -> (match_data * Term.term
       * Logic.rr_type Rewrite.plan)Tactics.data_tactic
 (** [find_term_td_tac ret (ctrl, tyenv, qntenv) trm g]: Traverse term
     [trm], top-down, constructing a rewrite plan.
@@ -368,8 +368,8 @@ val find_term_td_tac:
 *)
 
 val find_subterm_td_tac:
-  match_data-> Basic.term
-  -> (match_data * Basic.term
+  match_data-> Term.term
+  -> (match_data * Term.term
       * Logic.rr_type Rewrite.plan)Tactics.data_tactic
 (** [find_subterm_td_tac ret (ctrl, tyenv, qntenv) trm g]: Make a plan
     to rewrite, top-down, the subterms of [trm].
@@ -429,7 +429,7 @@ val cond_prover_tac:
 (** {5 Debugging information} *)
 
 val check_add_loop:
-  Scope.t -> Data.t -> Basic.term ->  Data.t
+  Scope.t -> Data.t -> Term.term ->  Data.t
 (** [check_add_loop scp cntrl trm]: Test whether term [trm] is in
     [cntrl.loopDB]. If it is, raise [Failure] otherwise add it to
     [cntrl.loopDB].
