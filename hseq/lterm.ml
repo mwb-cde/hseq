@@ -20,7 +20,6 @@
   ----*)
 
 open Lib
-open Basic
 open Term
 
 (*

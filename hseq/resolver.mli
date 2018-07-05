@@ -1,6 +1,6 @@
 (*----
   Name: resolver.mli
-  Copyright M Wahab 2005-2017
+  Copyright M Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq

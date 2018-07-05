@@ -1,6 +1,6 @@
 (*----
   Name: logic.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -20,7 +20,6 @@
   ----*)
 
 open Lib.Ops
-open Basic
 open Formula
 
 (******************************************************************************)

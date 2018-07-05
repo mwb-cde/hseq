@@ -35,8 +35,6 @@
     based on the expected type of the identifier.
 *)
 
-open Basic
-
 (** The representation of a parsed term *)
 type t =
   | PId of Ident.t * Gtype.t   (** Identifiers *)

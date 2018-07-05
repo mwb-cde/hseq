@@ -1,6 +1,6 @@
 (*----
   Name: logic.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -244,7 +244,7 @@ sig
       instantiate a quantified formula.
 
       The generation of skolem constants uses information stored in
-      subgoals. Each skolem constant is a meta term, ([Basic.Meta]),
+      subgoals. Each skolem constant is a meta term, ([Term.Meta]),
       with a name which is unique in the subgoal. The identifier is
       added to the scope of the subgoal and can be used to instantiate
       a formula in the subgoal.

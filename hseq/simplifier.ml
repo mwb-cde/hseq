@@ -35,7 +35,6 @@
     the rule on failure.  If successfull apply the rule.
 *)
 
-open Basic
 open Term
 open Lterm
 open Tactics

@@ -21,8 +21,6 @@
 
 (*** Resolver for operator overloading ***)
 
-open Basic
-
 (** memo_find: Memoised lookup function. *)
 let memo_find cache find table n =
   try Lib.find n cache

@@ -41,7 +41,7 @@ val mk_marker: string -> marker
 val marker_name : marker -> string
 (** Marker destructor *)
 
-type meta_db  (* = (Basic.binders)Treekit.StringTree.t  *)
+type meta_db  (* = (Term.binders)Treekit.StringTree.t  *)
 (** Meta variables
 
     A record of the meta variables in a particular scope. These are

@@ -20,7 +20,6 @@
   ----*)
 
 open Lib
-open Basic
 
 (** {6 Representation of a term} *)
 

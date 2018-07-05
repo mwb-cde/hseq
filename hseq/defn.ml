@@ -19,8 +19,6 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-open Basic
-
 (** Term and subtype definition *)
 
 (*** Term declaration ***)

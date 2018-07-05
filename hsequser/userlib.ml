@@ -1,6 +1,6 @@
 (*----
   Name: userlib.ml
-  Copyright Matthew Wahab 2013-2016
+  Copyright Matthew Wahab 2013-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -20,7 +20,6 @@
   ----*)
 
 open HSeq
-open Basic
 open Parser
 open Lib.Ops
 

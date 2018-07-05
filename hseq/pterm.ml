@@ -22,8 +22,6 @@
 
 (*** Parsed terms ***)
 
-open Basic
-
 (** The representation of a parsed term *)
 type t =
   | PId of Ident.t* Gtype.t   (** Identifiers *)
@@ -173,8 +171,6 @@ let mk_fun f args =
 
 module Resolver =
 struct
-
-  open Basic
 
   (** memo_find: Memoised lookup function. *)
   let memo_find cache find table n =

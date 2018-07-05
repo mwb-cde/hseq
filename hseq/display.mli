@@ -1,6 +1,6 @@
 (*----
   Name: display.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -20,8 +20,6 @@
   ----*)
 
 (** Top-level pretty printers *)
-
-open Basic
 
 val print_term: Printers.ppinfo -> Term.term -> unit
 val print_formula: Printers.ppinfo -> Formula.t -> unit

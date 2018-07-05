@@ -21,7 +21,6 @@
 
 (** Term representation and basic functions. *)
 
-open Basic
 open Gtype
 
 (** {7 Terms} *)
@@ -179,7 +178,7 @@ val dest_ident: term -> (Ident.t * Gtype.t)
 
 (** {7 Meta variables}
 
-    qA meta variable is a Meta with quant [Basic.Meta]. A meta
+    qA meta variable is a Meta with quant [Term.Meta]. A meta
     variable is treated like a term identifier, not a bound variable.
 *)
 

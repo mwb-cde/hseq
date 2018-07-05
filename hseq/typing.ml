@@ -19,7 +19,6 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-open Basic
 open Term
 
 (*** Type Errors ***)

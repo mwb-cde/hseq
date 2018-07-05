@@ -91,8 +91,8 @@ val matches_rewrite:
     [trm1'] with [trm2] where [trm1'] is obtained from [trm1] by
     renaming all type variables in [trm1] with newly generated names.
 
-    The variables for matching must be either [Basic.Bound] or
-    [Basic.Free] terms.
+    The variables for matching must be either [Term.Bound] or
+    [Term.Free] terms.
 
     Because the type variables in [trm1] are all unique, it is safe to
     repeatedly match [trm1] in a type context constructed from [tyenv]
