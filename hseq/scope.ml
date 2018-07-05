@@ -21,8 +21,6 @@
 
 (* Scope of terms and types *)
 
-open Basic
-
 (*
  * Data structures
  *)

@@ -30,7 +30,6 @@
     scope if it is [th] or is a parent of [th].
 *)
 
-open Basic
 
 (** {5 Data structures} *)
 
@@ -64,14 +63,7 @@ val meta_db_find: string -> meta_db -> Basic.binders
 
 (** Records for type definitions *)
 type type_record = Gtype.typedef_record
-(*
-type type_record =
-    {
-      name: string;
-      args : string list;
-      alias: gtype option
-    }
- *)
+
 val mk_type_record:
   string -> string list -> (Gtype.t)option -> type_record
 val dest_type_record:

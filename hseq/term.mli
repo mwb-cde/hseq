@@ -360,17 +360,6 @@ val subst_mgu: (term -> bool) -> Subst.t -> term -> term
 val inst: term -> term -> term
 (** [inst t r]: Instantiate a quantified term [t] with term [r] *)
 
-val mk_qnt_name: Scope.t -> Basic.quant -> string -> term -> term
-(** [mk_qnt_name scp qnt n t]: Make a quantified term, with quantifier
-    [qnt], from term [t], binding free variables named [n].
-*)
-val mk_typed_qnt_name:
-  Scope.t -> Basic.quant -> Gtype.t -> string -> term -> term
-(** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
-    kind [qnt], from term [t], binding all free variables named
-    [n]. Set the type of the quantifier to [ty].
-*)
-
 (**  {5 Conversion of a term to a string} *)
 
 val string_typed_name: string -> Gtype.t -> string

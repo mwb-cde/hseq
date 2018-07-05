@@ -185,6 +185,55 @@ let is_lambda t =
       | Basic.Lambda -> true
       | _ -> false
 
+(* [subst_qnt_var]: Specialised form of substitution for constructing
+   quantified terms. Replaces only free variables and only if name and
+   type match the quantifying term.
+*)
+let subst_qnt_var scp env trm =
+  let rec subst_aux t =
+    match t with
+    | Atom(Id(n, ty)) ->
+       begin
+         try
+           let replacement = Ident.Tree.find env n in
+           ignore(Gtype.unify (Scope.types_scope scp)
+                    ty (Basic.binder_type replacement));
+           (mk_bound replacement)
+         with _ -> t
+       end
+    | Atom(Free(n, ty)) ->
+       begin
+         try
+           let replacement = Ident.Tree.find env (Ident.mk_name n) in
+           ignore(Gtype.unify (Scope.types_scope scp)
+                    ty (Basic.binder_type replacement));
+           (mk_bound replacement)
+         with _ -> t
+       end
+    | App(f, a) -> App(subst_aux f, subst_aux a)
+    | Qnt(q, b) -> Qnt(q, subst_aux b)
+    | _ -> t
+  in
+  subst_aux trm
+
+(** [mk_typed_qnt_name scp qnt ty n t]: Make a quantified term, of
+    kind [qnt], from term [t], binding all free variables named
+    [n]. Set the type of the quantifier to [ty].
+*)
+let mk_typed_qnt_name scp q ty n b =
+  let bndr = mk_binding q n ty in
+  let bnd_env = Ident.Tree.add (Ident.Tree.empty) (Ident.mk_name n) bndr
+  in
+  let nb = subst_qnt_var scp bnd_env b
+  in
+  Qnt(bndr, nb)
+
+(** [mk_qnt_name scp qnt n t]: Make a quantified term, with quantifier
+    [qnt], from term [t], binding free variables named [n].
+*)
+let mk_qnt_name tyenv q n b =
+  mk_typed_qnt_name tyenv q (Gtype.mk_null()) n b
+
 let mk_all tyenv n b = mk_qnt_name tyenv Basic.All n b
 let mk_all_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.All ty n b
 
