@@ -88,7 +88,7 @@ val binder_compare: binders -> binders -> Order.t
 (** {7 Terms} *)
 
 (** Atomic terms *)
-type baseterm =
+type atom =
   | Id of Ident.t * Gtype.t
   | Bound of binders
   | Free of string * Gtype.t
@@ -97,6 +97,6 @@ type baseterm =
 
 (** The representation of a term *)
 type term =
-  | Atom of baseterm
+  | Atom of atom
   | App of term * term
   | Qnt of binders * term
