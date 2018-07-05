@@ -1,6 +1,6 @@
 (*----
   Name: boollib.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -237,7 +237,7 @@ struct
     then failwith "neg_all_conv: not a negation"
     else
       let (_, trmbody) = Term.dest_unop trm in
-      let (aqvars, aqbody) = Term.strip_qnt Basic.All trmbody
+      let (aqvars, aqbody) = Term.strip_qnt Term.All trmbody
       in
       begin
         match aqvars with
@@ -249,8 +249,8 @@ struct
       let eqvars =
         List.map
           (fun b ->
-            let (_, n, ty) = Basic.dest_binding b in
-            Basic.mk_binding Basic.Ex n ty)
+            let (_, n, ty) = Term.dest_binding b in
+            Term.mk_binding Term.Ex n ty)
           aqvars
       in
       let eqbody =
@@ -357,7 +357,7 @@ struct
     then failwith "neg_exists_conv: not a negation"
     else
       let (_, trmbody) = Term.dest_unop trm in
-      let (eqvars, eqbody) = Term.strip_qnt Basic.Ex trmbody in
+      let (eqvars, eqbody) = Term.strip_qnt Term.Ex trmbody in
       begin
         match eqvars with
           | [] ->
@@ -368,8 +368,8 @@ struct
       let aqvars =
         List.map
           (fun b ->
-            let (_, n, ty) = Basic.dest_binding b
-            in Basic.mk_binding Basic.All n ty)
+            let (_, n, ty) = Term.dest_binding b
+            in Term.mk_binding Term.All n ty)
           eqvars
       in
       let aqbody =

@@ -24,7 +24,6 @@
  *)
 
 open Printkit
-open Basic
 
 (** The combined printer information for terms and types. *)
 type ppinfo =
@@ -84,17 +83,17 @@ let fun_app_prec = 90
 (** Precedence of Quantifiers *)
 let prec_qnt q =
   match q with
-      Lambda -> 60
-    | All -> 55
-    | Ex -> 55
+      Term.Lambda -> 60
+    | Term.All -> 55
+    | Term.Ex -> 55
     | _ -> 55
 
 (** Associativity of Quantifiers *)
 let assoc_qnt q =
   match q with
-      Lambda -> non_assoc
-    | All -> non_assoc
-    | Ex -> non_assoc
+      Term.Lambda -> non_assoc
+    | Term.All -> non_assoc
+    | Term.Ex -> non_assoc
     | _ -> non_assoc
 
 (** Fixity of Quantifiers *)
@@ -237,7 +236,7 @@ module Terms =
           None
 
     let print_meta qnt =
-      let _, qv, qty = dest_binding qnt
+      let _, qv, qty = Term.dest_binding qnt
       in
       Format.printf "@[(_%s:@ %s)@]" qv (Gtype.string_gtype qty)
 
@@ -352,7 +351,7 @@ module Terms =
       Format.printf ")@]"
 
     let print_qnt ppstate q =
-      let _, qvar, qtyp = dest_binding q
+      let _, qvar, qtyp = Term.dest_binding q
       in
       print_typed_name ppstate (qvar, qtyp)
 
@@ -376,9 +375,9 @@ module Terms =
       | Term.Free(n, ty) ->
          print_typed_name ppstate (n, ty)
       | Term.Bound(n) ->
-         Format.printf "@[%s@]" ((Basic.binder_name n))
+         Format.printf "@[%s@]" ((Term.binder_name n))
       | Term.Meta(n) ->
-         Format.printf "@[%s@]" ((Basic.binder_name n))
+         Format.printf "@[%s@]" ((Term.binder_name n))
       | Term.Const(c) ->
          Format.printf "@[%s@]" (Term.Const.to_string c)
 
@@ -412,7 +411,7 @@ module Terms =
              Format.printf "@,@]"
            end
       | Term.Qnt(q, body) ->
-         let (qnt, qvar, qtyp) = Basic.dest_binding q in
+         let (qnt, qvar, qtyp) = Term.dest_binding q in
          let (qnts, b) = Term.strip_qnt qnt x in
          let (tassoc, tprec) =
            (fixity_qnt qnt, prec_qnt qnt)
@@ -420,7 +419,7 @@ module Terms =
          Format.printf "@[";
          print_bracket (assoc, prec) (tassoc, tprec) "(";
          Format.printf "@[<hov 3>";
-         print_qnts ppstate tprec (Basic.quant_string qnt, qnts);
+         print_qnts ppstate tprec (Term.quant_string qnt, qnts);
          Printkit.print_space ();
          print_term ppstate (tassoc, tprec) b;
          Format.printf "@]";
@@ -479,7 +478,7 @@ module Terms =
       in
       let lambda_arg x =
         match x with
-        | Term.Qnt(q, body) -> (Basic.binder_kind q) = Basic.Lambda
+        | Term.Qnt(q, body) -> (Term.binder_kind q) = Term.Lambda
         | _ -> false
       in
       let printer ppstate prec (f, args) =

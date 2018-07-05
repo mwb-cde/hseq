@@ -1,6 +1,6 @@
 (*----
   Name: simputils.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -87,7 +87,7 @@ let check_variables is_var vars trm =
 *)
 let strip_qnt_cond t =
   (* get leading quantifiers *)
-  let (qs, t1) = Term.strip_qnt Basic.All t in
+  let (qs, t1) = Term.strip_qnt Term.All t in
   if Lterm.is_implies t1  (* deal with conditional equalities *)
   then
     let (_, a, c) = Term.dest_binop t1
@@ -127,7 +127,7 @@ let fresh_thm scp th = Logic.is_fresh scp th
 let simp_beta_conv scp t =
   match t with
     | Term.App(Term.Qnt(q, _), a) ->
-      if Basic.binder_kind q = Basic.Lambda
+      if Term.binder_kind q = Term.Lambda
       then Logic.Conv.beta_conv scp t
       else failwith "simp_beta_conv"
     | _ -> failwith "simp_beta_conv"

@@ -1,6 +1,6 @@
 (*----
   Name: setLib.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -68,7 +68,7 @@ module SetPP =
           -- (?$ colon))
          >>
            (fun (v, _) ->
-             Grammars.qnt_setup_bound_names inf Basic.Lambda [v]))
+             Grammars.qnt_setup_bound_names inf Term.Lambda [v]))
         -- (form inf))
        >>
          (fun (xs, body) ->
@@ -120,7 +120,7 @@ module SetPP =
     let set_printer () =
       let lambda_arg x =
         match x with
-          Term.Qnt(q, body) -> (Basic.binder_kind q) = Basic.Lambda
+          Term.Qnt(q, body) -> (Term.binder_kind q) = Term.Lambda
         | _ -> false
       in
       let printer ppstate (fixity, prec) (f, args) =

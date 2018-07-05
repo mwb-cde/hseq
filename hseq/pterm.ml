@@ -27,11 +27,11 @@ open Basic
 (** The representation of a parsed term *)
 type t =
   | PId of Ident.t* Gtype.t   (** Identifiers *)
-  | PBound of binders     (** Bound variables *)
-  | PFree of string * Gtype.t  (** Free variables *)
-  | PMeta of binders       (** Meta variables (use for skolem constants) *)
+  | PBound of Term.binders    (** Bound variables *)
+  | PFree of string * Gtype.t (** Free variables *)
+  | PMeta of Term.binders     (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
-  | PQnt of binders * t (** Binding terms *)
+  | PQnt of Term.binders * t (** Binding terms *)
   | PConst of Term.Const.t     (** Constants *)
   | PTyped of t * Gtype.t  (** Typed terms *)
 
@@ -138,7 +138,7 @@ let is_meta trm =
     | PMeta _ -> true
     | _ -> false
 
-let mk_meta n ty = PMeta (mk_binding Gamma n ty)
+let mk_meta n ty = PMeta (Term.mk_binding Term.Gamma n ty)
 
 let dest_meta t =
   match t with
@@ -223,15 +223,15 @@ struct
     let bind_qnt t1 t2 rdata =
       { rdata with qnts = Term.Subst.bind t1 t2 rdata.qnts }
     and binding_set_names binding rdata =
-      let (qnt, qname, qtype) = Basic.dest_binding binding
+      let (qnt, qname, qtype) = Term.dest_binding binding
       in
-      Basic.mk_binding
+      Term.mk_binding
         qnt qname
         (Ltype.set_name ~memo:(rdata.memo.type_names) (rdata.scp) qtype)
     and binding_set_types tyenv binding =
-      let (qnt, qname, qtype) = Basic.dest_binding binding
+      let (qnt, qname, qtype) = Term.dest_binding binding
       in
-      Basic.mk_binding qnt qname (Gtype.mgu qtype tyenv)
+      Term.mk_binding qnt qname (Gtype.mgu qtype tyenv)
     and set_type_name t rdata =
       Ltype.set_name ~memo:(rdata.memo.type_names) rdata.scp t
     and find_ident n rdata =
@@ -312,7 +312,7 @@ struct
         in
         (term1, ty0, env0, data)
       | PMeta(q) ->
-        let ty = binder_type q in
+        let ty = Term.binder_type q in
         let (ty0, env0) = (ty, unify_types expty ty env data)
         in
         (Term.Atom(Term.Meta(q)), ty0, env0, data)
@@ -342,10 +342,10 @@ struct
         (Term.App(ftrm, atrm), Gtype.mgu rty1 fenv, fenv, data4)
       | PQnt(qnt, body) ->
         begin
-          match Basic.binder_kind qnt with
-            | Lambda ->
+          match Term.binder_kind qnt with
+            | Term.Lambda ->
               let qnt1 = binding_set_names qnt data in
-              let aty = Basic.binder_type qnt1
+              let aty = Term.binder_type qnt1
               and (data1, rty) = mk_typevar_ref data
               in
               let nty0 = Lterm.mk_fun_ty aty rty in
@@ -489,7 +489,7 @@ let to_term ptrm =
         let pt1, env1 =
           match (Lib.try_find (Term.Subst.find (Term.mk_bound(q))) trmenv) with
             | None ->
-                let ty = binder_type q in
+                let ty = Term.binder_type q in
                 let env1 = unify_types expty ty tyenv
                 in
                 (Term.mk_bound(q), (ctr, env1))
@@ -497,20 +497,20 @@ let to_term ptrm =
         in
         (pt1, env1)
       | PMeta(q) ->
-        let ty = binder_type q in
+        let ty = Term.binder_type q in
         let env1 = unify_types expty ty tyenv
         in
         (Term.Atom(Term.Meta(q)), (ctr, env1))
       | PQnt(q, b) ->
-        let qnt, qname, qty = dest_binding q
+        let qnt, qname, qty = Term.dest_binding q
         in
         begin
           match qnt with
-            | Lambda ->
+            | Term.Lambda ->
               let (ctr1, rty) = Gtype.mk_typevar ctr in
               let nty = Lterm.mk_fun_ty qty rty in
               let env1 = unify_types expty nty tyenv in
-              let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
+              let q1 = Term.mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 =
                 Term.Subst.bind (Term.mk_bound q) (Term.mk_bound q1) trmenv
               in
@@ -520,7 +520,7 @@ let to_term ptrm =
             | _ ->
               let nty = Lterm.mk_bool_ty() in
               let env1 = unify_types expty nty tyenv in
-              let q1 = mk_binding qnt qname (Gtype.mgu qty env1) in
+              let q1 = Term.mk_binding qnt qname (Gtype.mgu qty env1) in
               let trmenv1 =
                 Term.Subst.bind (Term.mk_bound(q)) (Term.mk_bound(q1)) trmenv
               in

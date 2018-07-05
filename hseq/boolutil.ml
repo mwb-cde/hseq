@@ -100,7 +100,7 @@ let fresh_thm scp th =
     => concl] into [( a .. b, asm, concl)].
 *)
 let dest_qnt_implies term =
-  let thm_vars, body = Term.strip_qnt Basic.All term
+  let thm_vars, body = Term.strip_qnt Term.All term
   in
   if Lterm.is_implies body
   then
@@ -126,10 +126,10 @@ let unify_in_goal varp atrm ctrm goal =
 *)
 let close_lambda_app vars term  =
   let t1 = Lterm.gen_term vars term in
-  let nvars, t1 = Term.strip_qnt Basic.All t1 in
+  let nvars, t1 = Term.strip_qnt Term.All t1 in
   let c0, cargs = Term.get_fun_args t1 in
   let cvars, c1 =
-    let (vs, ct) = Term.strip_qnt Basic.Lambda c0
+    let (vs, ct) = Term.strip_qnt Term.Lambda c0
     in
     (List.rev vs, ct)
   in

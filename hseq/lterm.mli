@@ -242,21 +242,21 @@ val is_closed: Term.term list -> Term.term -> bool
 *)
 
 val close_term:
-  ?qnt:Basic.quant -> ?free:(Term.term -> bool)
+  ?qnt:Term.quant -> ?free:(Term.term -> bool)
   -> Term.term -> Term.term
 (** [close_term ?qnt ?free trm]: Close term [trm]. Make variables
     bound to quantifiers of kind [qnt] to replace free variables and
     bound variables with no binding quantifier and for which [free] is
     true.
 
-    If [?qnt] is not given, it is [Basic.All].
+    If [?qnt] is not given, it is [Term.All].
     If [?free] is not given, it is [(fun _ -> true)].
 *)
 
 
 (*** {7 Generalising terms} *)
 
-val gen_term: Basic.binders list -> Term.term -> Term.term
+val gen_term: Term.binders list -> Term.term -> Term.term
 (** [gen_term qnts trm]: generalise term [trm]. Replace bound
     variables occuring outside their binder and free variables with
     universally quantified variables.
@@ -279,8 +279,8 @@ val binding_set_names:
   ?strict:bool
   -> ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t
-  -> Basic.binders
-  -> Basic.binders
+  -> Term.binders
+  -> Term.binders
 (** [binding_set_names_types ?strict ?memo scp binding] Find and set
     names for types in a binding.  If [strict=true], unknown types
     cause an error.

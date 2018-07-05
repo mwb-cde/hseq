@@ -1,6 +1,6 @@
 (*----
   Name: rewrite.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -29,8 +29,8 @@ open Report
 
 (** Rule ordering *)
 type order = (Term.term -> Term.term -> bool)
-type rule = (Basic.binders list * Term.term * Term.term)
-type orule = (Basic.binders list * Term.term * Term.term * order option)
+type rule = (Term.binders list * Term.term * Term.term)
+type orule = (Term.binders list * Term.term * Term.term * order option)
 
 (*** Rewrite control ***)
 
@@ -119,7 +119,7 @@ let decr_depth ctrl =
 
 let is_free_binder qs t =
   match t with
-    | Atom(Bound(q)) -> List.exists (Basic.binder_equality q) qs
+    | Atom(Bound(q)) -> List.exists (Term.binder_equality q) qs
     | _ -> false
 
 (*
@@ -149,15 +149,15 @@ struct
 
   let key_of_binder q =
     match q with
-    | Basic.All -> AllQ
-    | Basic.Ex -> ExQ
-    | Basic.Lambda -> LamQ
+    | Term.All -> AllQ
+    | Term.Ex -> ExQ
+    | Term.Lambda -> LamQ
     | _ -> Quant
 
   let key_of n =
     match n with
       | Term.Atom(a) -> key_of_atom a
-      | Term.Qnt(q, _) -> key_of_binder (Basic.binder_kind q)
+      | Term.Qnt(q, _) -> key_of_binder (Term.binder_kind q)
       | Term.App _ -> Appln
 
   let rec is_key k n =
@@ -289,7 +289,7 @@ let rewrite = TermRewriter.rewrite
 
 let rec extract_check_rules scp dir pl =
   let get_test t =
-    let qs, b = Term.strip_qnt Basic.All t in
+    let qs, b = Term.strip_qnt Term.All t in
     let lhs, rhs = Lterm.dest_equality b
     in
     if dir = leftright
@@ -394,7 +394,7 @@ struct
     type rule
     type data
     val dest : data -> rule
-        -> (Basic.binders list * Term.term * Term.term * order option)
+        -> (Term.binders list * Term.term * Term.term * order option)
   end
 
   module type T =
@@ -449,7 +449,7 @@ struct
          * Gtype.Subst.t)
 
     type internal_rule =
-        (Basic.binders list
+        (Term.binders list
          * Term.term
          * Term.term
          * order option
@@ -527,7 +527,7 @@ struct
                * Term.Subst.t
                * Gtype.Subst.t)
 
-  type internal_rule = (Basic.binders list
+  type internal_rule = (Term.binders list
                         * Term.term
                         * Term.term
                         * order option
@@ -802,7 +802,7 @@ struct
   type data = unit
 
   let dest _ trm =
-    let qs, b = strip_qnt Basic.All trm in
+    let qs, b = strip_qnt Term.All trm in
     let lhs, rhs= Lterm.dest_equality b
     in
     (qs, lhs, rhs, None)

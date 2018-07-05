@@ -312,9 +312,9 @@ let term_retype_with_check scp tyenv t=
          let (a1, qenv2) = retype_aux a qenv1 in
          (Term.App(f1, a1), qenv2)
       | Term.Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Basic.dest_binding q in
+        let (oqnt, oqnm, oqty) = Term.dest_binding q in
         let nty = mk_new_type oqty in
-        let nq = mk_binding oqnt oqnm nty in
+        let nq = Term.mk_binding oqnt oqnm nty in
         let qenv1 = Term.Tree.bind (Term.mk_bound(q)) (Term.Bound(nq)) qenv
         in
         let (b1, _) = retype_aux b qenv1
@@ -423,8 +423,8 @@ let unify scp asmf conclf =
   let asm = term_of asmf
   and concl = term_of conclf
   in
-  let (avars, abody) = Term.strip_qnt Basic.All asm
-  and (cvars, cbody) = Term.strip_qnt Basic.Ex concl
+  let (avars, abody) = Term.strip_qnt Term.All asm
+  and (cvars, cbody) = Term.strip_qnt Term.Ex concl
   in
   let varp x =
     match x with
@@ -438,8 +438,8 @@ let unify_env scp tyenv asmf conclf =
   let asm = term_of asmf
   and concl = term_of conclf
   in
-  let (avars, abody) = Term.strip_qnt Basic.All asm
-  and (cvars, cbody) = Term.strip_qnt Basic.Ex concl
+  let (avars, abody) = Term.strip_qnt Term.All asm
+  and (cvars, cbody) = Term.strip_qnt Term.Ex concl
   in
   let varp x =
     match x with
@@ -506,7 +506,7 @@ let rec extract_check_rules scp dir pl =
     if (formula_in_scope scp x)
     then
       let t = term_of x in
-      let qs, b = Term.strip_qnt Basic.All t in
+      let qs, b = Term.strip_qnt Term.All t in
       let lhs, rhs = Lterm.dest_equality b
       in
       if dir = Rewrite.leftright

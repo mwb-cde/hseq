@@ -197,7 +197,7 @@ val append_changes_tac: Info.t -> tactic
 (** {7 Utility functions} *)
 
 val extract_consts:
-  Basic.binders list -> Term.Subst.t -> Term.term list
+  Term.binders list -> Term.Subst.t -> Term.term list
 (** [extract_consts qs sb]: [extract_consts qs sb] extracts the
     bindings for each of the binders in [qs] from substitution [sb],
     returning the terms in the same order as the binders. [qs] is
@@ -206,7 +206,7 @@ val extract_consts:
 *)
 
 val qnt_opt_of:
-  Basic.quant -> (Term.term -> bool) -> Term.term -> bool
+  Term.quant -> (Term.term -> bool) -> Term.term -> bool
 (** [qnt_opt_of k pred t]: Apply predicate [pred] to the body of
     possibly quantified term [t]. The outermost quantifiers of kind [k]
     are stripped off before [pred] is applied.

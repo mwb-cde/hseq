@@ -1,6 +1,6 @@
 (*----
   Name: boolinduct.mli
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -102,7 +102,7 @@ val induct_on:
 
 val induct_tac_bindings:
   Gtype.Subst.t -> Scope.t
-  -> (Basic.binders list * 'a * Term.term)
+  -> (Term.binders list * 'a * Term.term)
   -> Term.term
   -> (Gtype.Subst.t * Term.Subst.t)
 (** [induct_tac_bindings tyenv scp aterm cterm]: Extract bindings for
@@ -137,8 +137,8 @@ val induct_tac_solve_rh_tac:
 
 val induct_on_bindings:
   Gtype.Subst.t -> Scope.t
-  -> Basic.binders
-  -> (Basic.binders list * 'a * Term.term)
+  -> Term.binders
+  -> (Term.binders list * 'a * Term.term)
   -> Term.term
   -> (Gtype.Subst.t * Term.Subst.t)
 (** [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings

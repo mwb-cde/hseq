@@ -1,6 +1,6 @@
 (*----
   Name: dbterm.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -31,7 +31,7 @@ open Gtype
 
 (** Binders for de Bruijn terms *)
 type binder =
-    { quant: Basic.quant;
+    { quant: Term.quant;
       qvar: string;
       qtyp: Gtype.stype }
 

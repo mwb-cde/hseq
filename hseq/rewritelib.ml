@@ -1,6 +1,6 @@
 (*----
   Name: rewritelib.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -273,7 +273,7 @@ let gen_replace_tac
         let tg = drop_formula form
         in
         if (not (exclude tg))
-          && (qnt_opt_of Basic.All
+          && (qnt_opt_of Term.All
                 (Lterm.is_equality) (Formula.term_of (drop_tag form)))
         then find_equality_asms xs (tg::rst)
         else find_equality_asms xs rst

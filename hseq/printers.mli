@@ -166,11 +166,11 @@ val remove_type_printer: ppinfo -> Ident.t -> ppinfo
 
 val fun_app_prec: int
 (** Precedence of function application *)
-val prec_qnt: Basic.quant -> int
+val prec_qnt: Term.quant -> int
 (** Precedence of Quantifiers *)
-val assoc_qnt: Basic.quant -> assoc
+val assoc_qnt: Term.quant -> assoc
 (** Associativity of Quantifiers *)
-val fixity_qnt: Basic.quant -> fixity
+val fixity_qnt: Term.quant -> fixity
 (** Fixity of Quantifiers *)
 
 (** {5 Type printers} *)
@@ -203,7 +203,7 @@ sig
 
   val print_qnts:
     ppinfo -> (Printkit.fixity * int)
-    -> (string * (Basic.binders list)) Printkit.printer
+    -> (string * (Term.binders list)) Printkit.printer
   (** [print_qnts ppstate prec (str, qnts)]: Print binders [qnts] using
     symbol [str].
    *)
@@ -291,7 +291,7 @@ sig
 
   val print_qnt_body:
     ppinfo -> (Printkit.fixity * int)
-    -> ((Basic.binders)list * Term.term) Printkit.printer
+    -> ((Term.binders)list * Term.term) Printkit.printer
 (** [print_qnt_body (assoc, prec) qs body]: Print term [body]
     quantified by variables [qs=[x1; x2; ...; xn]] as [x1 x2 ... xn:
     body].

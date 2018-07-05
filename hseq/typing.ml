@@ -59,8 +59,8 @@ let typeof_env scp (inf, typenv) trm =
     | Atom(a) -> typeof_atom a tyenv
     | Qnt(q, b) ->
        begin
-         match Basic.binder_kind q with
-         | Basic.Lambda ->
+         match Term.binder_kind q with
+         | Term.Lambda ->
             let (btyp, (ctr1, benv)) = typeof_aux b (ctr, env)
             in
             (Lterm.mk_fun_ty (Term.get_binder_type t) btyp, (ctr1, benv))
@@ -161,8 +161,8 @@ let typecheck_aux scp (inf, cache) typenv exty et =
         (ctr3, fenv)
       | Qnt(q, b) ->
         begin
-          match Basic.binder_kind q with
-            | Basic.Lambda ->
+          match Term.binder_kind q with
+            | Term.Lambda ->
               let (ctr1, rty) = Gtype.mk_plain_typevar ctr     (* range *)
               and fty = Term.get_binder_type trm  (* domain *)
               in
@@ -292,8 +292,8 @@ and settype_aux scp (inf, appfn) expty t tyenv =
      (ctr3, env3)
   | Qnt(q, b) ->
      begin
-       match Basic.binder_kind q with
-       | Basic.Lambda ->
+       match Term.binder_kind q with
+       | Term.Lambda ->
           let (ctr1, rty) = Gtype.mk_plain_typevar ctr
           and fty = Term.get_binder_type t in
           let bty = Lterm.mk_fun_ty fty rty

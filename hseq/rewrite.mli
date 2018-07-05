@@ -1,6 +1,6 @@
 (*----
   Name: rewrite.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -50,13 +50,13 @@ type order = (Term.term -> Term.term -> bool)
     as true if [x] is less-than [y].
 *)
 
-type rule = (Basic.binders list * Term.term * Term.term)
+type rule = (Term.binders list * Term.term * Term.term)
 (** The representation used by the rewriting engine. An rule of the
     form [! v1 .. vn. lhs = rhs] for left-right rewriting is broken to
     [([v1; .. ; vn], lhs, rhs)].
 *)
 
-type orule = (Basic.binders list * Term.term * Term.term * order option)
+type orule = (Term.binders list * Term.term * Term.term * order option)
 (** The representation used by the rewriting engine. An rule of the
     form [! v1 .. vn. lhs = rhs] for left-right rewriting is broken to
     [([v1; .. ; vn], lhs, rhs, opt_order)]. If the rule is unordered,
@@ -170,7 +170,7 @@ type term_key =
   | Alt of term_key * term_key  (** Alternative keys *)
 
 
-val is_free_binder: Basic.binders list -> Term.term -> bool
+val is_free_binder: Term.binders list -> Term.term -> bool
 (** Utility function to construct a predicate which tests for
     variables in unification. [is_free_binder qs t] is true if [t] is
     a bound variable [Bound b] and [b] occurs in [qs].
@@ -254,7 +254,7 @@ sig
 
     (** [dest]: How to destruct rewrite rules. *)
     val dest: data -> rule
-        -> (Basic.binders list * Term.term * Term.term * order option)
+        -> (Term.binders list * Term.term * Term.term * order option)
   end
     (** Data passed to a rewriter planner. *)
 
@@ -311,7 +311,7 @@ sig
                  * Term.Subst.t   (** Quantifier environment *)
                  * Gtype.Subst.t) (** Type environment *)
 
-    type internal_rule = (Basic.binders list
+    type internal_rule = (Term.binders list
                           * Term.term
                           * Term.term
                           * order option
@@ -418,23 +418,23 @@ val alt_key: key -> key -> key
 val neg_key: key -> key
 (** [neg_key k]: Key not matching [k] *)
 val ident_key: key
-(** Key of [Basic.Id] *)
+(** Key of [Term.Id] *)
 val fvar_key: key
-(** Key of [Basic.Free] *)
+(** Key of [Term.Free] *)
 val bvar_key: key
-(** Key of [Basic.Bound] *)
+(** Key of [Term.Bound] *)
 val appln_key: key
-(** Key of [Basic.App] *)
+(** Key of [Term.App] *)
 val quant_key: key
-(** Key of [Basic.Qnt] *)
+(** Key of [Term.Qnt] *)
 val allq_key: key
-(** Key of [Basic.Qnt], with [Basic.All] *)
+(** Key of [Term.Qnt], with [Term.All] *)
 val exq_key: key
-(** Key of [Basic.Qnt], with [Basic.Ex] *)
+(** Key of [Term.Qnt], with [Term.Ex] *)
 val lamq_key: key
-(** Key of [Basic.Qnt], with [Basic.Lam] *)
+(** Key of [Term.Qnt], with [Term.Lam] *)
 val constn_key: key
-(** Key of [Basic.Constn] *)
+(** Key of [Term.Constn] *)
 
 
 (** {7 Term Rewrite Planner}

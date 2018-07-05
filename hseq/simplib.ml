@@ -1,6 +1,6 @@
 (*----
   Name: simplib.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -30,7 +30,7 @@ let add_simp ctxt set thm = add_simps ctxt set [thm]
 
 let add_conv set terms conv =
   let add_aux set trm =
-    let (vs, body) = Term.strip_qnt Basic.All trm
+    let (vs, body) = Term.strip_qnt Term.All trm
     in
     Simpset.add_conv (vs, body) conv set
   in

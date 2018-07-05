@@ -1,6 +1,6 @@
 (*----
   Name: booltacs.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -402,7 +402,7 @@ let mp0_tac a a1lbls ctxt g =
   and sqnt = Tactics.sequent g in
   let scp = Logic.Sequent.scope_of sqnt in
   let (a_label, mp_vars, mp_form) =
-    try find_qnt_opt Basic.All Lterm.is_implies [get_tagged_asm a g]
+    try find_qnt_opt Term.All Lterm.is_implies [get_tagged_asm a g]
     with Not_found ->
       raise (error "mp_tac: No implications in assumptions")
   and a1_forms =
@@ -500,7 +500,7 @@ let back0_tac a cs ctxt goal =
   and sqnt = Tactics.sequent goal in
   let scp = Logic.Sequent.scope_of sqnt in
   let (a_label, back_vars, back_form) =
-    try find_qnt_opt Basic.All Lterm.is_implies [get_tagged_asm a goal]
+    try find_qnt_opt Term.All Lterm.is_implies [get_tagged_asm a goal]
     with Not_found -> raise (error "back_tac: No assumption")
   and c_forms =
     try Lib.map_find (fun x -> get_tagged_concl x goal) cs

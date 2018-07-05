@@ -1,6 +1,6 @@
 (*----
   Name: net.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -40,8 +40,8 @@
 type label =
   | Var
   | App
-  | Bound of Basic.quant
-  | Quant of Basic.quant
+  | Bound of Term.quant
+  | Quant of Term.quant
   | Const of Term.Const.t
   | Cname of Ident.t
   | Cmeta of string
@@ -74,11 +74,11 @@ type label =
 let atom_to_label varp trm rst =
   match trm with
   | Term.Id(id, _) -> (Cname(id), rst)
-  | Term.Meta(q) -> (Cmeta(Basic.binder_name q), rst)
+  | Term.Meta(q) -> (Cmeta(Term.binder_name q), rst)
   | Term.Free(n, _) -> (Cfree(n), rst)
   | Term.Const(c) -> (Const(c), rst)
   | Term.Bound(q) ->
-     let (qnt, _, _) = Basic.dest_binding q
+     let (qnt, _, _) = Term.dest_binding q
      in
      (Bound(qnt), rst)
 
@@ -88,7 +88,7 @@ let rec term_to_label varp trm rst =
   else
     match trm with
       | Term.Atom(a) -> atom_to_label varp a rst
-      | Term.Qnt(q, b) -> (Quant(Basic.binder_kind q), b::rst)
+      | Term.Qnt(q, b) -> (Quant(Term.binder_kind q), b::rst)
       | Term.App(l, r) -> (App, l::r::rst)
 
 (*

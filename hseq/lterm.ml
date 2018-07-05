@@ -170,19 +170,19 @@ let dest_equality t =
 let is_all t =
   (is_qnt t) &&
     match get_binder_kind t with
-      | Basic.All -> true
+      | Term.All -> true
       | _ -> false
 
 let is_exists t =
   (is_qnt t) &&
     match get_binder_kind t with
-      | Basic.Ex -> true
+      | Term.Ex -> true
       | _ -> false
 
 let is_lambda t =
   (is_qnt t) &&
     match get_binder_kind t with
-      | Basic.Lambda -> true
+      | Term.Lambda -> true
       | _ -> false
 
 (* [subst_qnt_var]: Specialised form of substitution for constructing
@@ -197,7 +197,7 @@ let subst_qnt_var scp env trm =
          try
            let replacement = Ident.Tree.find env n in
            ignore(Gtype.unify (Scope.types_scope scp)
-                    ty (Basic.binder_type replacement));
+                    ty (Term.binder_type replacement));
            (mk_bound replacement)
          with _ -> t
        end
@@ -206,7 +206,7 @@ let subst_qnt_var scp env trm =
          try
            let replacement = Ident.Tree.find env (Ident.mk_name n) in
            ignore(Gtype.unify (Scope.types_scope scp)
-                    ty (Basic.binder_type replacement));
+                    ty (Term.binder_type replacement));
            (mk_bound replacement)
          with _ -> t
        end
@@ -234,14 +234,14 @@ let mk_typed_qnt_name scp q ty n b =
 let mk_qnt_name tyenv q n b =
   mk_typed_qnt_name tyenv q (Gtype.mk_null()) n b
 
-let mk_all tyenv n b = mk_qnt_name tyenv Basic.All n b
-let mk_all_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.All ty n b
+let mk_all tyenv n b = mk_qnt_name tyenv Term.All n b
+let mk_all_ty tyenv n ty b = mk_typed_qnt_name tyenv Term.All ty n b
 
-let mk_ex tyenv n b = mk_qnt_name tyenv Basic.Ex n b
-let mk_ex_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.Ex ty n b
+let mk_ex tyenv n b = mk_qnt_name tyenv Term.Ex n b
+let mk_ex_ty tyenv n ty b = mk_typed_qnt_name tyenv Term.Ex ty n b
 
-let mk_lam tyenv n b = mk_qnt_name tyenv Basic.Lambda n b
-let mk_lam_ty tyenv n ty b = mk_typed_qnt_name tyenv Basic.Lambda ty n b
+let mk_lam tyenv n b = mk_qnt_name tyenv Term.Lambda n b
+let mk_lam_ty tyenv n ty b = mk_typed_qnt_name tyenv Term.Lambda ty n b
 
 (*
  * Lambda Conversions
@@ -280,10 +280,10 @@ let alpha_convp_full scp tenv t1 t2 =
         in
         alpha_aux a1 a2 tyenv1 trmenv1
       | (Qnt(q1, b1), Qnt(q2, b2)) ->
-        let qty1 = Basic.binder_type q1
-        and qty2 = Basic.binder_type q2
-        and qn1 = Basic.binder_kind q1
-        and qn2 = Basic.binder_kind q2
+        let qty1 = Term.binder_type q1
+        and qty2 = Term.binder_type q2
+        and qn1 = Term.binder_kind q1
+        and qn2 = Term.binder_kind q2
         in
         if (qn1=qn2)
         then
@@ -424,7 +424,7 @@ let eta_conv ts term=
       | (x::xss) ->
         let name = Lib.int_to_name ctr in
         let ty = Gtype.mk_var (name^"_ty") in
-        let binder = Basic.mk_binding Basic.Lambda name ty in
+        let binder = Term.mk_binding Term.Lambda name ty in
         let nv = Term.mk_bound binder in
         let env1 = Term.Subst.bind x nv env
         in
@@ -483,7 +483,7 @@ let is_closed vs t =
 *)
 let ct_free _ = true
 
-let close_term ?(qnt=Basic.All) ?(free=ct_free) trm =
+let close_term ?(qnt=Term.All) ?(free=ct_free) trm =
   let rec close_aux env vs t=
     match t with
       | Atom(Id(_)) -> (t, env, vs)
@@ -538,8 +538,8 @@ let gen_term bs trm =
         try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let q = Term.dest_bound t in
-          let (_, name, ty) = Basic.dest_binding q in
-          let q1 = Basic.mk_binding Basic.All name ty
+          let (_, name, ty) = Term.dest_binding q in
+          let q1 = Term.mk_binding Term.All name ty
           in
           (Atom(Bound(q1)),
            q1::qnts,
@@ -551,7 +551,7 @@ let gen_term bs trm =
         try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let (name, ty) = Term.dest_free t in
-          let q = Basic.mk_binding Basic.All name ty
+          let q = Term.mk_binding Term.All name ty
           in
           (Atom(Bound(q)),
            q::qnts,
@@ -629,9 +629,9 @@ let in_scope memo scp trm =
     types in a binding.
 *)
 let binding_set_names ?(strict=false) ?memo scp binding =
-  let (qnt, qname, qtype) = Basic.dest_binding binding
+  let (qnt, qname, qtype) = Term.dest_binding binding
   in
-  Basic.mk_binding
+  Term.mk_binding
     qnt qname
     (Ltype.set_name ?memo:memo (Scope.relaxed scp) qtype)
 

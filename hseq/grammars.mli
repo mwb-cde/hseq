@@ -502,7 +502,7 @@ val mk_prefix : parser_info -> Lexer.tok -> Pterm.t -> Pterm.t
 *)
 
 val qnt_setup_bound_names:
-  parser_info -> Basic.quant -> (string * Gtype.t) list
+  parser_info -> Term.quant -> (string * Gtype.t) list
   -> (string * Pterm.t) list
 (** [qnt_setup_bound_names inf qnt xs]: Make bound variables from the
     name-type pairs in [xs], add them to [inf.bound_names].  [qnt] is
@@ -659,7 +659,7 @@ val typedef: parser_info -> (typedef_data)  phrase
     [rhs] are treated as short identifiers.
 
     Each of the arguments [ai] is converted to a bound variable [bi]
-    (of kind [Basic.All]) and replaced in [rhs] with [bi].
+    (of kind [Term.All]) and replaced in [rhs] with [bi].
 
     The parser returns the name [f], [b1 .. bi] and the body [rhs].
 *)

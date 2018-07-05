@@ -718,8 +718,8 @@ let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
   let asm = Formula.term_of aform
   and concl = Formula.term_of cform
   in
-  let asm_vars, asm_body = Term.strip_qnt Basic.All asm
-  and concl_vars, concl_body = Term.strip_qnt Basic.Ex concl
+  let asm_vars, asm_body = Term.strip_qnt Term.All asm
+  and concl_vars, concl_body = Term.strip_qnt Term.Ex concl
   in
   let asm_varp x = Rewrite.is_free_binder asm_vars x
   and concl_varp x = Rewrite.is_free_binder concl_vars x
@@ -972,7 +972,7 @@ let rewrite_control ?max ?(strat=Rewrite.topdown) dir =
   Rewrite.control ~max:max ~dir:dir ~strat:strat
 
 let is_rewrite_formula t =
-  let (_, t1) = Term.strip_qnt Basic.All t
+  let (_, t1) = Term.strip_qnt Term.All t
   in
   Lterm.is_equality t1
 
@@ -983,7 +983,7 @@ let conv_rule (ctxt: Context.t) conv thm =
   let term = Logic.term_of thm in
   let rule = conv ctxt term in
   let (qs, lhs, rhs) =
-    let (qs, body) = Term.strip_qnt Basic.All (Logic.term_of rule) in
+    let (qs, body) = Term.strip_qnt Term.All (Logic.term_of rule) in
     let (l, r) = Lterm.dest_equality body
     in
     (qs, l, r)
@@ -1124,7 +1124,7 @@ let pure_rewrite_rule plan (ctxt: Context.t) thm =
  *)
 
 let dest_term x p=
-  let qs, b = Term.strip_qnt Basic.All x in
+  let qs, b = Term.strip_qnt Term.All x in
   let lhs, rhs= Lterm.dest_equality b
   in
   (qs, lhs, rhs, p)

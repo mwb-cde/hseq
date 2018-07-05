@@ -1,6 +1,6 @@
 (*----
   Name: simpconvs.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -384,7 +384,7 @@ let is_neg_exists (qs, c, t) =
     [rhs = None] if no [rhs].
 *)
 let is_rr_rule (qs, c, l, r) =
-  let is_var q = List.exists (Basic.binder_equality q) qs in
+  let is_var q = List.exists (Term.binder_equality q) qs in
   let vars = Simputils.find_variables is_var (Term.Subst.empty()) l in
   let rret =
     if r = None

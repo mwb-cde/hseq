@@ -1,6 +1,6 @@
 (*----
   Name: boolinduct.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -223,7 +223,7 @@ let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
           try Formula.term_of (get_asm a3_lbl g1)
           with _ -> failwith "induct_tac_solve_rh_tac: can't get a3_trm"
         in
-        let (a3_vars, a3_body) = Term.strip_qnt Basic.All a3_trm in
+        let (a3_vars, a3_body) = Term.strip_qnt Term.All a3_trm in
         let a3_varp = Rewrite.is_free_binder a3_vars in
         let const_list =
           try
@@ -387,13 +387,13 @@ let induct_tac ?c thm ctxt goal =
     binder named [n] can be found.
 *)
 let get_binder qnt n trm =
-  let qnt = Basic.All in
+  let qnt = Term.All in
   let rec get_aux t =
     match t with
       | Term.Qnt(b, body) ->
-        if (Basic.binder_kind b) = qnt
+        if (Term.binder_kind b) = qnt
         then
-          if (Basic.binder_name b) = n
+          if (Term.binder_name b) = n
           then b
           else get_aux body
         else raise Not_found
@@ -453,11 +453,11 @@ let induct_on_bindings typenv scp nbind aterm cterm =
   let (thm_vars, thm_asm, thm_concl) = aterm in
   let is_thm_var = Rewrite.is_free_binder thm_vars in
   (** Split the theorem conclusion (the hypothesis) *)
-  let (hyp_vars, hyp_body) = Term.strip_qnt Basic.All thm_concl in
+  let (hyp_vars, hyp_body) = Term.strip_qnt Term.All thm_concl in
   (** Split the property application *)
   let prop_fun, prop_args = Term.get_fun_args hyp_body in
   (** Split the target conclusion *)
-  let (concl_vars, concl_body) = Term.strip_qnt Basic.All cterm in
+  let (concl_vars, concl_body) = Term.strip_qnt Term.All cterm in
   (** eta abstract the conclusion body, wrt [nbind], close the
       resulting term.  *)
   let (concl_body_eta, concl_concl_args) =
@@ -489,9 +489,9 @@ let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
     let (tg, cf) = get_tagged_concl c_lbl goal in
     (tg, Formula.term_of cf)
   in
-  let (c_vars, c_body) = Term.strip_qnt Basic.All c_trm
+  let (c_vars, c_body) = Term.strip_qnt Term.All c_trm
   and a_trm = Formula.term_of (get_asm a_lbl goal) in
-  let (a_vars, a_body) = Term.strip_qnt Basic.All a_trm in
+  let (a_vars, a_body) = Term.strip_qnt Term.All a_trm in
   let a_varp = Rewrite.is_free_binder a_vars
   in
   seq
@@ -540,7 +540,7 @@ let basic_induct_on ?thm name clabel ctxt goal =
   (** Get the top-most binder named [name] in [cterm] Fail if not
       found.  *)
   let nbinder =
-    try get_binder Basic.All name cterm
+    try get_binder Term.All name cterm
     with _ ->
       raise (Term.term_error
                ("No quantified variable named "^name^" in term")

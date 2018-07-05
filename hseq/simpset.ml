@@ -1,6 +1,6 @@
 (*----
   Name: simpset.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -137,7 +137,7 @@ let termnet_lt x y =
 *)
 let dest_rr_rule trm =
   (* Get leading quantifiers *)
-  let (qs, t1) = Term.strip_qnt Basic.All trm  in
+  let (qs, t1) = Term.strip_qnt Term.All trm  in
   (* test for conditional equalities *)
   let (cnd, rl) =
     if Lterm.is_implies t1

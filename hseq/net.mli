@@ -1,6 +1,6 @@
 (*----
   Name: net.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -49,8 +49,8 @@
 type label =
   | Var
   | App
-  | Bound of Basic.quant
-  | Quant of Basic.quant
+  | Bound of Term.quant
+  | Quant of Term.quant
   | Const of Term.Const.t
   | Cname of Ident.t
   | Cmeta of string

@@ -21,41 +21,41 @@
 
 begin_theory "nums" ["Bool"];;
 
-declare (read_unchecked ((Basic.name Nums.plusid)^": num -> num -> num"))
+declare (read_unchecked ((Term.name Nums.plusid)^": num -> num -> num"))
   ~pp:(9, infixl, Some "+");;
 
 declare (read_unchecked
-           ((Basic.name Nums.minusid)^": num -> num -> num"))
+           ((Term.name Nums.minusid)^": num -> num -> num"))
   ~pp:(10, infixl, Some "-");;
 
 declare (read_unchecked
-           ((Basic.name Nums.multid)^": num -> num -> num"))
+           ((Term.name Nums.multid)^": num -> num -> num"))
   ~pp:(11, infixl, Some "*");;
 
 declare (read_unchecked
-           ((Basic.name Nums.negid)^":  num -> num"))
+           ((Term.name Nums.negid)^":  num -> num"))
   ~pp:(12, prefix, Some "~");;
 
 declare (read_unchecked
-           ((Basic.name Nums.maxid)^": num -> num -> num"));;
+           ((Term.name Nums.maxid)^": num -> num -> num"));;
 
 declare (read_unchecked
-           ((Basic.name Nums.minid)^": num -> num -> num"));;
+           ((Term.name Nums.minid)^": num -> num -> num"));;
 
 declare (read_unchecked
-           ((Basic.name Nums.gtid)^": num -> num -> bool"))
+           ((Term.name Nums.gtid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some ">");;
 
 declare (read_unchecked
-           ((Basic.name Nums.geqid)^": num -> num -> bool"))
+           ((Term.name Nums.geqid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some ">=");;
 
 declare (read_unchecked
-           ((Basic.name Nums.ltid)^": num -> num -> bool"))
+           ((Term.name Nums.ltid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some "<");;
 
 declare (read_unchecked
-           ((Basic.name Nums.leqid)^": num -> num -> bool"))
+           ((Term.name Nums.leqid)^": num -> num -> bool"))
   ~pp:(15, infixl, Some "=<");;
 
 axiom "nat_induction"

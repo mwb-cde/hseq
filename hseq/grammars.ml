@@ -1,6 +1,6 @@
 (*----
   Name: grammars.ml
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2018
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -736,9 +736,9 @@ let mk_prefix inf t=
     quantifier type (All, Ex or Lambda).
 *)
 let qnt_setup_bound_names
-    inf (qnt: Basic.quant) (xs : (string * Gtype.t) list) =
+    inf (qnt: Term.quant) (xs : (string * Gtype.t) list) =
   let setup_aux (n, ty) =
-    let b_id = Pterm.mk_bound(Basic.mk_binding qnt n ty)
+    let b_id = Pterm.mk_bound(Term.mk_binding qnt n ty)
     in
     add_name n b_id inf;
     (n, b_id)
@@ -982,7 +982,7 @@ let core_term_parsers =
                     -- (!$(Sym COLON)))))
           >>
             (fun (_, (v, (vs, _))) ->
-               qnt_setup_bound_names inf Basic.All (v::vs)))
+               qnt_setup_bound_names inf Term.All (v::vs)))
          -- (form inf))
         >>
             (fun ((xs: (string*Pterm.t)list), body) ->
@@ -997,7 +997,7 @@ let core_term_parsers =
                     -- (!$(Sym COLON)))))
           >>
             (fun (_, (v, (vs, _))) ->
-               qnt_setup_bound_names inf Basic.Ex (v::vs)))
+               qnt_setup_bound_names inf Term.Ex (v::vs)))
          -- (form inf))
         >>
             (fun ((xs: (string*Pterm.t)list), body) ->
@@ -1011,7 +1011,7 @@ let core_term_parsers =
                     -- (!$(Sym COLON)))))
           >>
             (fun (_, (v, (vs, _))) ->
-               qnt_setup_bound_names inf Basic.Lambda (v::vs)))
+               qnt_setup_bound_names inf Term.Lambda (v::vs)))
          -- (form inf))
         >>
             (fun ((xs:(string*Pterm.t)list), body) ->
@@ -1058,7 +1058,7 @@ let parse_as_binder ident sym =
         -- (!$ colon))
        >>
         (fun (((_, v), vs), _) ->
-           qnt_setup_bound_names inf Basic.Lambda (v::vs)))
+           qnt_setup_bound_names inf Term.Lambda (v::vs)))
       --
         (form inf))
      >>
@@ -1146,7 +1146,7 @@ and defn inf toks =
   (
     ((((lhs inf) >>
          (fun (n, arg_ns) ->
-            (n, qnt_setup_bound_names inf Basic.All arg_ns)))
+            (n, qnt_setup_bound_names inf Term.All arg_ns)))
       --
          (form inf))
      >>
