@@ -45,12 +45,12 @@ let lt_atom x y =
   | (Id _, _) -> true
   | (Meta _, Const _) -> false
   | (Meta _, Id _) -> false
-  | (Meta b1, Meta b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Meta b1, Meta b2) -> bound_lt (Binder.dest b1) (Binder.dest b2)
   | (Meta _, _) -> true
   | (Bound _, Const _) -> false
   | (Bound _, Id _) -> false
   | (Bound _, Meta _) -> false
-  | (Bound b1, Bound b2) -> bound_lt (dest_binding b1) (dest_binding b2)
+  | (Bound b1, Bound b2) -> bound_lt (Binder.dest b1) (Binder.dest b2)
   | (Bound _ , _ ) -> true
   | (Free _, Const _) -> false
   | (Free _, Id _) -> false
@@ -77,7 +77,7 @@ let rec lt_var lvarp rvarp x y =
     | (Qnt _, App _) -> false
     | (Qnt(q1, b1), Qnt(q2, b2)) ->
        if lt_var lvarp rvarp b1 b2
-       then bound_lt (dest_binding q1) (dest_binding q2)
+       then bound_lt (Binder.dest q1) (Binder.dest q2)
        else false
   in
   let (x_is_var, y_is_var) = (lvarp x, rvarp y)
@@ -110,7 +110,7 @@ let set_rr_order rr order =
 (** [rule]: Variables, optional condition, lhs , rhs , source of rule
 *)
 type rule =
-    (binders list
+    (Binder.t list
      * term option * term * term
      * Rewrite.order option
      * Logic.rr_type)

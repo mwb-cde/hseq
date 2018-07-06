@@ -391,9 +391,9 @@ let get_binder qnt n trm =
   let rec get_aux t =
     match t with
       | Term.Qnt(b, body) ->
-        if (Term.binder_kind b) = qnt
+        if (Term.Binder.kind_of b) = qnt
         then
-          if (Term.binder_name b) = n
+          if (Term.Binder.name_of b) = n
           then b
           else get_aux body
         else raise Not_found

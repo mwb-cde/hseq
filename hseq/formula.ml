@@ -311,9 +311,9 @@ let term_retype_with_check scp tyenv t=
          let (a1, qenv2) = retype_aux a qenv1 in
          (Term.App(f1, a1), qenv2)
       | Term.Qnt(q, b) ->
-        let (oqnt, oqnm, oqty) = Term.dest_binding q in
+        let (oqnt, oqnm, oqty) = Term.Binder.dest q in
         let nty = mk_new_type oqty in
-        let nq = Term.mk_binding oqnt oqnm nty in
+        let nq = Term.Binder.make oqnt oqnm nty in
         let qenv1 = Term.Tree.bind (Term.mk_bound(q)) (Term.Bound(nq)) qenv
         in
         let (b1, _) = retype_aux b qenv1

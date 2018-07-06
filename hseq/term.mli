@@ -55,61 +55,68 @@ val quant_string: quant -> string
 
 (** {7 Binders} *)
 
-type binders
-(** Associating bound variables with their binding term. *)
-val mk_binding: quant -> string -> Gtype.t -> binders
-(**
+module Binder:
+sig
+
+  type t
+  (** Associating bound variables with their binding term. *)
+
+  val make: quant -> string -> Gtype.t -> t
+  (**
     [mk_binding k n ty] makes a binder of kind [k], with name [n] and
     type [ty]. This binder will be distinct from any other under
     [binder_equality].
-*)
-val dest_binding: binders -> (quant * string * Gtype.t)
-(** Destructor for binders. *)
+   *)
 
-val binder_kind: binders -> quant
-(** [binder_kind b]: The kind of binder binding variable [b]. *)
+  val dest: t -> (quant * string * Gtype.t)
+  (** Destructor *)
 
-val binder_name: binders -> string
-(** [binder_name b]: The name of bound variable [b]. *)
+  val kind_of: t -> quant
+  (** [binder_kind b]: The kind of binder binding variable [b] *)
 
-val binder_type: binders -> Gtype.t
-(** [binder_type b]: The type of bound variable [b]. *)
+  val name_of: t -> string
+  (** [binder_name b]: The name of bound variable [b] *)
 
-val binder_equality: binders -> binders -> bool
-(** Equality of binders. *)
+  val type_of: t -> Gtype.t
+  (** [type b]: The type of bound variable [b] *)
 
-val binder_greaterthan: binders -> binders -> bool
-val binder_lessthan: binders -> binders -> bool
-val binder_compare: binders -> binders -> Order.t
-(** Orderings on binders.
+  val equality: t -> t -> bool
+  (** Equality of binders *)
+
+  val greaterthan: t -> t -> bool
+  val lessthan: t -> t -> bool
+  val compare: t -> t -> Order.t
+(** Orderings on binders
 
     Maintains the invariant:
     - [binder_equality x y]
       =>
       [not (binder_lessthan x y)] and [not (binder_greaterthan x y)].
     - [binder_lessthan x y = not(binder_greaterthan x y)]
-*)
+ *)
+
+end
 
 (** Atomic terms *)
 type atom =
   | Id of Ident.t * Gtype.t
-  | Bound of binders
+  | Bound of Binder.t
   | Free of string * Gtype.t
-  | Meta of binders
+  | Meta of Binder.t
   | Const of Const.t
 
 (** The representation of a term *)
 type term =
   | Atom of atom
   | App of term * term
-  | Qnt of binders * term
+  | Qnt of Binder.t * term
 
 (** {5 Very basic operations} *)
 
 val equals : term -> term -> bool
 (** [equals s t]: Syntactic equality of terms [s] and [t]. This is
     essentially the same as [Pervasives.=] over terms except that
-    references (type [binders]) are compared as first class objects
+    references (type [Binder.t]) are compared as first class objects
     (using [Pervasives.==]).
 *)
 
@@ -155,8 +162,8 @@ val is_const: term -> bool
 (** {7 Constructors} *)
 
 val mk_atom: atom -> term
-val mk_qnt: binders -> term -> term
-val mk_bound: binders -> term
+val mk_qnt: Binder.t -> term -> term
+val mk_bound: Binder.t -> term
 val mk_free: string -> Gtype.t -> term
 val mk_app: term -> term -> term
 val mk_const: Const.t -> term
@@ -167,8 +174,8 @@ val mk_short_ident: string -> term
 
 (** {7 Destructors} *)
 val dest_atom: term -> atom
-val dest_qnt: term -> (binders * term)
-val dest_bound: term -> binders
+val dest_qnt: term -> (Binder.t * term)
+val dest_bound: term -> Binder.t
 val dest_free: term -> (string * Gtype.t)
 val dest_app: term -> (term * term)
 val dest_const: term -> Const.t
@@ -184,7 +191,7 @@ val dest_ident: term -> (Ident.t * Gtype.t)
 
 val mk_meta: string -> Gtype.t -> term
 val is_meta: term -> bool
-val dest_meta: term -> binders
+val dest_meta: term -> Binder.t
 
 (** {7 Constants} *)
 
@@ -242,8 +249,8 @@ val dest_binop: term -> (Ident.t * term * term)
 *)
 
 val strip_fun_qnt:
-  Ident.t -> term -> binders list
-  -> (binders list * term)
+  Ident.t -> term -> Binder.t list
+  -> (Binder.t list * term)
 (** [strip_fun_qnt f term qs]: Strip applications of the form [f (% x:
     P)] returning the bound variables and P. ([qs] should be [[]]
     initially).
@@ -265,7 +272,7 @@ val get_free_vars: term -> term list
 (** [get_binder t]: If [t] is [Qnt(q,_)] or [Bound(q)], return
     [q]. Otherwise raise [Failure].
 *)
-val get_binder: term -> binders
+val get_binder: term -> Binder.t
 
 val get_binder_name: term -> string
 (** [get_binder_name t]: The name of the variable bound in [t]. *)
@@ -276,11 +283,11 @@ val get_binder_kind: term -> quant
 val get_qnt_body: term -> term
 (** [get_qnt_body t]: Get the body quantified by term [t]. *)
 
-val strip_qnt: quant -> term -> binders list * term
+val strip_qnt: quant -> term -> Binder.t list * term
 (** [strip_qnt q t]: remove outermost quantifiers of kind [k] from
     term [t].
 *)
-val rebuild_qnt: binders list -> term -> term
+val rebuild_qnt: Binder.t list -> term -> term
 (** [rebuild_qnt qs t]: rebuild quantified term from quantifiers [qs]
     and body [b].
 *)
@@ -297,8 +304,8 @@ val add_term_error: string -> term list -> exn -> exn
 
 val rename_opt: term -> (term) option
 (** [rename_opt t] Rename bound variables in term [t] (carry out alpha
-    conversion on [t]).  Return [None] if no change is needed (no binders or
-    bound terms) *)
+   conversion on [t]).  Return [None] if no change is needed (no binders or
+   bound terms) *)
 
 val rename: term -> term
 (** [rename t]: Rename bound variables in term [t] (alpha-conversion). *)

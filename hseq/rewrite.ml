@@ -28,8 +28,8 @@ open Report
 
 (** Rule ordering *)
 type order = (Term.term -> Term.term -> bool)
-type rule = (Term.binders list * Term.term * Term.term)
-type orule = (Term.binders list * Term.term * Term.term * order option)
+type rule = (Term.Binder.t list * Term.term * Term.term)
+type orule = (Term.Binder.t list * Term.term * Term.term * order option)
 
 (*** Rewrite control ***)
 
@@ -118,7 +118,7 @@ let decr_depth ctrl =
 
 let is_free_binder qs t =
   match t with
-    | Atom(Bound(q)) -> List.exists (Term.binder_equality q) qs
+    | Atom(Bound(q)) -> List.exists (Term.Binder.equality q) qs
     | _ -> false
 
 (*
@@ -156,7 +156,7 @@ struct
   let key_of n =
     match n with
       | Term.Atom(a) -> key_of_atom a
-      | Term.Qnt(q, _) -> key_of_binder (Term.binder_kind q)
+      | Term.Qnt(q, _) -> key_of_binder (Term.Binder.kind_of q)
       | Term.App _ -> Appln
 
   let rec is_key k n =
@@ -393,7 +393,7 @@ struct
     type rule
     type data
     val dest : data -> rule
-        -> (Term.binders list * Term.term * Term.term * order option)
+        -> (Term.Binder.t list * Term.term * Term.term * order option)
   end
 
   module type T =
@@ -448,7 +448,7 @@ struct
          * Gtype.Subst.t)
 
     type internal_rule =
-        (Term.binders list
+        (Term.Binder.t list
          * Term.term
          * Term.term
          * order option
@@ -526,7 +526,7 @@ struct
                * Term.Subst.t
                * Gtype.Subst.t)
 
-  type internal_rule = (Term.binders list
+  type internal_rule = (Term.Binder.t list
                         * Term.term
                         * Term.term
                         * order option

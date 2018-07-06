@@ -69,73 +69,63 @@ let quant_string x =
     | Lambda -> "%"
     | Gamma -> "_"
 
-(**
-   [q_type]: The data stored in a binder.
-
-   [binders]: Associating bound variables with their binding term.
-
-   [mk_binding k n ty]: Make a binder of kind [k], with name [n] and
-   type [ty].
-   [dest_binding b]: Destructor for binders.
-
-   [binder_kind b]: The kind of binder binding variable [b].
-
-   [binder_name b]: The name of bound variable [b].
-
-   [binder_type b]: The type of bound variable [b].
-
-   [binder_equality]: Equality of binders.
-*)
 
 type q_type = {quant: quant; qvar: string; qtyp: Gtype.t}
-type binders = (q_type)Tag.t
+(** [q_type]: The data stored in a binder. *)
 
-(* Binder operations *)
 
-let mk_binding qn qv qt =
-  Tag.make { quant=qn; qvar=qv; qtyp=qt }
-let dest_binding b =
-  let q = Tag.contents b
-  in
-  (q.quant, q.qvar, q.qtyp)
+module Binder =
+  struct
+    type t = (q_type)Tag.t
 
-let binder_kind b =
-  let (x, _, _) = dest_binding b
-  in x
-let binder_name b =
-  let (_, x, _) = dest_binding b
-  in x
-let binder_type b =
-  let (_, _, x) = dest_binding b
-  in x
+    (* Binder operations *)
 
-let binder_equality x y = Tag.equal x y
-let binder_compare x y =
-  if binder_equality x y
-  then Order.Equal
-  else
-    let xc = Tag.contents x
-    and yc = Tag.contents y
-    in
-    if (Order.Util.compare xc yc) = Order.GreaterThan
-    then Order.GreaterThan
-    else Order.LessThan
+    let make qn qv qt =
+      Tag.make { quant=qn; qvar=qv; qtyp=qt }
 
-let binder_greaterthan x y = (binder_compare x y) = Order.GreaterThan
-let binder_lessthan x y = (binder_compare x y) = Order.LessThan
+    let dest b =
+      let q = Tag.contents b
+      in
+      (q.quant, q.qvar, q.qtyp)
+
+    let kind_of b =
+      let (x, _, _) = dest b
+      in x
+    let name_of b =
+      let (_, x, _) = dest b
+      in x
+    let type_of b =
+      let (_, _, x) = dest b
+      in x
+
+    let equality x y = Tag.equal x y
+    let compare x y =
+      if equality x y
+      then Order.Equal
+      else
+        let xc = Tag.contents x
+        and yc = Tag.contents y
+        in
+        if (Order.Util.compare xc yc) = Order.GreaterThan
+        then Order.GreaterThan
+        else Order.LessThan
+
+    let greaterthan x y = (compare x y) = Order.GreaterThan
+    let lessthan x y = (compare x y) = Order.LessThan
+end
 
 (** Atomic terms *)
 type atom =
   | Id of Ident.t * Gtype.t
-  | Bound of binders
+  | Bound of Binder.t
   | Free of string * Gtype.t
-  | Meta of binders
+  | Meta of Binder.t
   | Const of Const.t
 
 type term =
   | Atom of atom
   | App of term * term
-  | Qnt of binders * term
+  | Qnt of Binder.t * term
 
 (* Recognisers *)
 
@@ -241,7 +231,7 @@ let is_meta trm =
     | Atom(Meta _) -> true
     | _ -> false
 
-let mk_meta n ty = mk_atom(Meta (mk_binding Gamma n ty))
+let mk_meta n ty = mk_atom(Meta (Binder.make Gamma n ty))
 
 let dest_meta t  =
   match t with
@@ -334,8 +324,6 @@ let dest_binop t =
 (** Comparisons and orderings. *)
 
 (** Ordering on atomic-terms: Const < Id < Bound *)
-let compare_bound (x: binders) y = binder_compare x y
-
 let compare_atom_strict typed t1 t2 =
   let compare_types rslt ty1 ty2 =
     if rslt <> Order.Equal
@@ -356,12 +344,12 @@ let compare_atom_strict typed t1 t2 =
   | (Id _, _) -> Order.LessThan
   | (Meta _, Const _) -> Order.GreaterThan
   | (Meta _, Id _) -> Order.GreaterThan
-  | (Meta b1, Meta b2) -> compare_bound b1 b2
+  | (Meta b1, Meta b2) -> Binder.compare b1 b2
   | (Meta _, _) -> Order.LessThan
   | (Bound _, Const _) -> Order.GreaterThan
   | (Bound _, Id _) -> Order.GreaterThan
   | (Bound _, Meta _) -> Order.GreaterThan
-  | (Bound b1, Bound b2) -> compare_bound b1 b2
+  | (Bound b1, Bound b2) -> Binder.compare b1 b2
   | (Bound _ , _ ) -> Order.LessThan
   | (Free _, Const _) -> Order.GreaterThan
   | (Free _, Id _) -> Order.GreaterThan
@@ -388,7 +376,7 @@ let rec compare_term_strict typed t1 t2 =
   | (Qnt(q1, b1), Qnt(q2, b2)) ->
      begin
        match compare_term_strict typed b1 b2 with
-       | Order.Equal -> compare_bound q1 q2
+       | Order.Equal -> Binder.compare q1 q2
        | x -> x
      end
 
@@ -432,7 +420,7 @@ let rec strip_fun_qnt f term qs =
     else false
   in
   let is_lambda b =
-    (let (q, _, _) = dest_binding b
+    (let (q, _, _) = Binder.dest b
      in
      q = Lambda)
   in
@@ -475,23 +463,23 @@ let get_binder t =
 
 let get_binder_name x =
   match x with
-    | Atom(Bound(n)) -> binder_name n
-    | Qnt(n, _) -> binder_name n
-    | Atom(Meta(n)) -> binder_name n
+    | Atom(Bound(n)) -> Binder.name_of n
+    | Qnt(n, _) -> Binder.name_of n
+    | Atom(Meta(n)) -> Binder.name_of n
     | _ -> raise (Failure "get_binder_name: Not a binder")
 
 let get_binder_type x =
   match x with
-    | Atom(Bound(n)) -> binder_type n
-    | Qnt(n, _) -> binder_type n
-    | Atom(Meta(n)) -> binder_type n
+    | Atom(Bound(n)) -> Binder.type_of n
+    | Qnt(n, _) -> Binder.type_of n
+    | Atom(Meta(n)) -> Binder.type_of n
     | _ -> raise (Failure "get_binder_type: Not a binder")
 
 let get_binder_kind x =
   match x with
-    | Atom(Bound(n)) -> binder_kind n
-    | Qnt(n, _) -> binder_kind n
-    | Atom(Meta(n)) -> binder_kind n
+    | Atom(Bound(n)) -> Binder.kind_of n
+    | Qnt(n, _) -> Binder.kind_of n
+    | Atom(Meta(n)) -> Binder.kind_of n
     | _ -> raise (Failure "get_binder_kind: Not a binder")
 
 let get_qnt_body t =
@@ -506,7 +494,7 @@ let strip_qnt q trm =
     then
       let (bind, b) = dest_qnt t
       in
-      if (binder_kind bind) = q
+      if (Binder.kind_of bind) = q
       then (strip_aux b (bind::qs))
       else (qs, t)
     else (qs, t)
@@ -544,10 +532,10 @@ let print_atom_simple trm =
      in
      Format.printf "@[%s@]" (th^"."^x)
   | Bound(n) ->
-     Format.printf "@[%s@]" (".."^(binder_name n))
+     Format.printf "@[%s@]" (".."^(Binder.name_of n))
   | Free(n, ty) -> Format.printf "@[%s@]"  n
   | Meta(n) ->
-     Format.printf "@[%s@]" (binder_name n)
+     Format.printf "@[%s@]" (Binder.name_of n)
   | Const(c) -> Format.printf "@[%s@]" (Const.to_string c)
 
 
@@ -564,8 +552,8 @@ let print_simple trm =
       | Qnt(q, body) ->
         Format.printf "@[<2>%s"  (quant_string (get_binder_kind t));
         Format.printf "(%s:@ %s) :@ "
-          (binder_name q)
-          (Gtype.string_gtype (binder_type q));
+          (Binder.name_of q)
+          (Gtype.string_gtype (Binder.type_of q));
         print_aux body;
         Format.printf "@]"
   in
@@ -602,10 +590,10 @@ module Tree =
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
-    let qnt, qv, qty = dest_binding q in
+    let qnt, qv, qty = Binder.dest q in
     let nt, nev = Gtype.rename_type_vars_env tyenv qty
     in
-    (mk_binding qnt qv nt, nev)
+    (Binder.make qnt qv nt, nev)
   in
   let rec rename_aux t r_env =
     let (tyenv, env, qntd) = r_env
@@ -755,9 +743,9 @@ let retype tyenv t =
        let a1, env2 = retype_aux a env1 in
        (App(f1, a1), env2)
     | Qnt(q, b) ->
-       let (oqnt, oqnm, oqty) = dest_binding q in
+       let (oqnt, oqnm, oqty) = Binder.dest q in
        let nty = Gtype.mgu oqty tyenv in
-       let q1 = mk_binding oqnt oqnm nty
+       let q1 = Binder.make oqnt oqnm nty
        in
        let qenv1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) qenv in
        let (b1, _) = retype_aux b qenv1
@@ -772,11 +760,11 @@ let retype tyenv t =
 *)
 let retype_pretty_env typenv trm =
   let retype_binder q ctr name_env qenv =
-    let (qnt, qnm, qty) = dest_binding q in
+    let (qnt, qnm, qty) = Binder.dest q in
     let (nty, (ctr1, nenv1)) =
       Gtype.mgu_rename_env (ctr, typenv) name_env qty
     in
-    let q1 = mk_binding qnt qnm nty in
+    let q1 = Binder.make qnt qnm nty in
     let qenv1 = Tree.bind (Atom(Bound q)) (Bound q1) qenv
     in
     (q1, ctr1, nenv1, qenv1)
@@ -844,10 +832,10 @@ let full_rename_env type_env term_env trm =
     Gtype.rename_type_vars_env tyenv trm
   in
   let rename_binder q tyenv =
-    let (qnt, qv, qty) = dest_binding q in
+    let (qnt, qv, qty) = Binder.dest q in
     let (nt, nev) = rename_type tyenv qty
     in
-    (mk_binding qnt qv nt, nev)
+    (Binder.make qnt qv nt, nev)
   in
   let rename_atom t tyenv env =
     match t with
@@ -899,9 +887,9 @@ let retype_index idx trm =
     Gtype.rename_index ctr tyenv ty
   in
   let rename_binder q ctr tyenv =
-    let (qnt, qv, qty) = dest_binding q in
+    let (qnt, qv, qty) = Binder.dest q in
     let (nty, ctr1, tyenv1) = rename_type ctr tyenv qty in
-    let nbnd = mk_binding qnt qv nty
+    let nbnd = Binder.make qnt qv nty
     in
     (nbnd, ctr1, tyenv1)
   in
@@ -944,10 +932,10 @@ let retype_index idx trm =
 
 let rename_env typenv trmenv trm =
   let copy_binder q tyenv =
-    let qnt, qv, qty = dest_binding q in
+    let qnt, qv, qty = Binder.dest q in
     let nt, nev = Gtype.rename_type_vars_env tyenv qty
     in
-    (mk_binding qnt qv nt, nev)
+    (Binder.make qnt qv nt, nev)
   in
   let rec rename_aux t renv =
     let (tyenv, env, qntd) = renv
@@ -1031,8 +1019,8 @@ let string_atom t =
   match t with
   | Id(n, ty) -> (Ident.string_of n)
   | Free(n, ty) -> n
-  | Bound(q) -> "?"^(binder_name q)
-  | Meta(q) -> binder_name q
+  | Bound(q) -> "?"^(Binder.name_of q)
+  | Meta(q) -> Binder.name_of q
   | Const(c) -> Const.to_string c
 
 let rec string_term_basic t =
@@ -1046,8 +1034,8 @@ let rec string_term_basic t =
       ^(Lib.list_string (string_term_basic ) ", " args)^"))")
   | Qnt(q, body) ->
      (quant_string (get_binder_kind t))
-     ^" ("^(string_typed_name (binder_name q)
-              (binder_type q))^"): "
+     ^" ("^(string_typed_name (Binder.name_of q)
+              (Binder.type_of q))^"): "
      ^(string_term_basic body)
 
 (** Precedence of Quantifiers *)
@@ -1062,19 +1050,19 @@ let rec string_term_prec i x =
   match x with
   | Atom(a) -> string_atom a
   | Qnt(q, body) ->
-     let qnt = binder_kind q in
+     let qnt = Binder.kind_of q in
      let ti = prec_qnt qnt
      in
      if ti <= i
      then ("("^(quant_string qnt)
            ^" "^(string_typed_name
-                   (binder_name q)
-                   (binder_type q))^". "
+                   (Binder.name_of q)
+                   (Binder.type_of q))^". "
            ^(string_term_prec ti (body))^")")
      else
        ((quant_string qnt)
-        ^" "^(string_typed_name (binder_name q)
-                (binder_type q))^". "
+        ^" "^(string_typed_name (Binder.name_of q)
+                (Binder.type_of q))^". "
         ^(string_term_prec ti (body)))
   | App(t1, t2) ->
      let f = get_fun x
@@ -1104,8 +1092,8 @@ let string_atom_inf t =
   match t with
   | Id(n, ty) -> cfun_string (Ident.string_of n)
   | Free(n, ty) -> n
-  | Bound(q) -> (binder_name q)
-  | Meta(q) -> binder_name q
+  | Bound(q) -> (Binder.name_of q)
+  | Meta(q) -> Binder.name_of q
   | Const(c) -> Const.to_string c
 
 let rec string_term_inf inf i x =
@@ -1133,13 +1121,13 @@ let rec string_term_inf inf i x =
        ("("^(string_term_inf inf i f)^" "
         ^(list_string (string_term_inf inf i) " " args)^")")
   | Qnt(q, body) ->
-     let qnt = binder_kind q in
+     let qnt = Binder.kind_of q in
      let (qnts, b) = strip_qnt qnt x in
      let qnts_str =
        (quant_string qnt)
        ^(list_string
-           (fun x -> (string_typed_name (binder_name x)
-                        (binder_type x)))
+           (fun x -> (string_typed_name (Binder.name_of x)
+                        (Binder.type_of x)))
            " " qnts)^": "
      in
      let ti = prec_qnt qnt

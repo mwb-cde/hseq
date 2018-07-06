@@ -51,7 +51,7 @@ val is_qnt_opt:
 
 val dest_qnt_opt:
   Term.quant->
-  Logic.tagged_form -> (Logic.ftag_ty * Term.binders list * Term.term)
+  Logic.tagged_form -> (Logic.ftag_ty * Term.Binder.t list * Term.term)
 (** [dest_qnt_opt forms]: Destruct a possibly quantified tagged
     formula.  Returns the binders, the tag and the formula.
 *)
@@ -71,7 +71,7 @@ val find_qnt_opt:
   Term.quant
   -> (Term.term -> bool)
   -> Logic.tagged_form list
-  -> (Logic.ftag_ty * Term.binders list * Term.term)
+  -> (Logic.ftag_ty * Term.Binder.t list * Term.term)
 
 val fresh_thm: Scope.t -> Logic.thm -> bool
 (** [fresh_thm th]: Test whether theorem [th] is fresh (a formula of
@@ -80,7 +80,7 @@ val fresh_thm: Scope.t -> Logic.thm -> bool
 
 val dest_qnt_implies:
   Term.term
-  -> (Term.binders list * Term.term * Term.term)
+  -> (Term.Binder.t list * Term.term * Term.term)
 (** [dest_qnt_implies term]: Split a term of the form [! a .. b: asm
     => concl] into [( a .. b, asm, concl)].
 *)
@@ -95,7 +95,7 @@ val unify_in_goal:
 *)
 
 val close_lambda_app:
-  Term.binders list
+  Term.Binder.t list
   -> Term.term
   -> (Term.term * Term.term list)
 (** [close_lambda_app term]: From term [((% a1 .. an: B) v1 .. vn)],

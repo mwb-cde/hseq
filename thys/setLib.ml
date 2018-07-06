@@ -120,7 +120,7 @@ module SetPP =
     let set_printer () =
       let lambda_arg x =
         match x with
-          Term.Qnt(q, body) -> (Term.binder_kind q) = Term.Lambda
+          Term.Qnt(q, body) -> (Term.Binder.kind_of q) = Term.Lambda
         | _ -> false
       in
       let printer ppstate (fixity, prec) (f, args) =

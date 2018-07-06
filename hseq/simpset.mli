@@ -54,20 +54,20 @@ val set_rr_order: Logic.rr_type -> Rewrite.order -> Logic.rr_type
     lhs , rhs, source of the rule (theorem or assumption).
 *)
 type rule =
-    Term.binders list
+    Term.Binder.t list
      * Term.term option * Term.term * Term.term
      * Rewrite.order option
      * Logic.rr_type
 
 val dest_rule:
   rule ->
-  (Term.binders list
+  (Term.Binder.t list
    * Term.term option * Term.term * Term.term
    * Rewrite.order option
    * Logic.rr_type)
 (** Destructor for rules. *)
 
-val rule_binders: rule -> Term.binders list
+val rule_binders: rule -> Term.Binder.t list
 (** Get the rules variables. *)
 val rule_cond: rule -> Term.term option
 (** Get the condition. *)
@@ -88,7 +88,7 @@ val termnet_lt: rule -> rule -> bool
 
 val dest_rr_rule:
   Term.term ->
-  (Term.binders list
+  (Term.Binder.t list
    * Term.term option * Term.term * Term.term
    * Rewrite.order option)
 (** [dest_rr_rule trm]: Split term [trm] into binders, condition, lhs,
@@ -142,7 +142,7 @@ val add_rule: rule -> simpset -> simpset
 *)
 
 val add_conv:
-  (Term.binders list * Term.term)
+  (Term.Binder.t list * Term.term)
   -> (Context.t -> Logic.conv) -> simpset -> simpset
 (** [add_conv (vars, key) conv s]: Add conversion [conv] to set [s],
     indexed by terms of [key] in which [vars] are the list of unifiable

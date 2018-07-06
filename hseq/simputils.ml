@@ -127,7 +127,7 @@ let fresh_thm scp th = Logic.is_fresh scp th
 let simp_beta_conv scp t =
   match t with
     | Term.App(Term.Qnt(q, _), a) ->
-      if Term.binder_kind q = Term.Lambda
+      if Term.Binder.kind_of q = Term.Lambda
       then Logic.Conv.beta_conv scp t
       else failwith "simp_beta_conv"
     | _ -> failwith "simp_beta_conv"

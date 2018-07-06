@@ -31,7 +31,7 @@ let mk_marker = Tag.named
 let marker_name = Tag.name
 
 (** Meta variables *)
-type meta_db = (Term.binders)Treekit.StringTree.t
+type meta_db = (Term.Binder.t)Treekit.StringTree.t
 let empty_meta_db ()= Treekit.StringTree.empty
 let meta_db_add n b db =
   Treekit.StringTree.add db n b
@@ -174,7 +174,7 @@ let new_local_scope scp =
 *)
 let add_meta scp v =
   let db = scp.meta_vars in
-  let n = Term.binder_name v in
+  let n = Term.Binder.name_of v in
   match Lib.try_find (meta_db_find n) db with
     | Some _ ->
       raise (Failure ("add_meta: "^n^" is already a meta variable"))
@@ -186,7 +186,7 @@ let find_meta scp n =
   meta_db_find n db
 
 let is_meta scp v =
-  let n = Term.binder_name v in
+  let n = Term.Binder.name_of v in
   try ignore(find_meta scp n); true
   with Not_found -> false
 

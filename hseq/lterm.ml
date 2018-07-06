@@ -196,7 +196,7 @@ let subst_qnt_var scp env trm =
          try
            let replacement = Ident.Tree.find env n in
            ignore(Gtype.unify (Scope.types_scope scp)
-                    ty (Term.binder_type replacement));
+                    ty (Term.Binder.type_of replacement));
            (mk_bound replacement)
          with _ -> t
        end
@@ -205,7 +205,7 @@ let subst_qnt_var scp env trm =
          try
            let replacement = Ident.Tree.find env (Ident.mk_name n) in
            ignore(Gtype.unify (Scope.types_scope scp)
-                    ty (Term.binder_type replacement));
+                    ty (Term.Binder.type_of replacement));
            (mk_bound replacement)
          with _ -> t
        end
@@ -220,7 +220,7 @@ let subst_qnt_var scp env trm =
     [n]. Set the type of the quantifier to [ty].
 *)
 let mk_typed_qnt_name scp q ty n b =
-  let bndr = mk_binding q n ty in
+  let bndr = Binder.make q n ty in
   let bnd_env = Ident.Tree.add (Ident.Tree.empty) (Ident.mk_name n) bndr
   in
   let nb = subst_qnt_var scp bnd_env b
@@ -279,10 +279,10 @@ let alpha_convp_full scp tenv t1 t2 =
         in
         alpha_aux a1 a2 tyenv1 trmenv1
       | (Qnt(q1, b1), Qnt(q2, b2)) ->
-        let qty1 = Term.binder_type q1
-        and qty2 = Term.binder_type q2
-        and qn1 = Term.binder_kind q1
-        and qn2 = Term.binder_kind q2
+        let qty1 = Term.Binder.type_of q1
+        and qty2 = Term.Binder.type_of q2
+        and qn1 = Term.Binder.kind_of q1
+        and qn2 = Term.Binder.kind_of q2
         in
         if (qn1=qn2)
         then
@@ -423,7 +423,7 @@ let eta_conv ts term=
       | (x::xss) ->
         let name = Lib.int_to_name ctr in
         let ty = Gtype.mk_var (name^"_ty") in
-        let binder = Term.mk_binding Term.Lambda name ty in
+        let binder = Term.Binder.make Term.Lambda name ty in
         let nv = Term.mk_bound binder in
         let env1 = Term.Subst.bind x nv env
         in
@@ -511,7 +511,7 @@ let close_term ?(qnt=Term.All) ?(free=ct_free) trm =
   let make_qnts qnt (env, ctr, bs) t =
     let qname = Lib.int_to_name ctr in
     let qty = Gtype.mk_var qname in
-    let qbind = mk_binding qnt qname qty in
+    let qbind = Term.Binder.make qnt qname qty in
     let qtrm = mk_bound qbind
     in
     (Subst.bind t qtrm env, ctr+1, qbind::bs)
@@ -537,8 +537,8 @@ let gen_term bs trm =
         try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let q = Term.dest_bound t in
-          let (_, name, ty) = Term.dest_binding q in
-          let q1 = Term.mk_binding Term.All name ty
+          let (_, name, ty) = Term.Binder.dest q in
+          let q1 = Term.Binder.make Term.All name ty
           in
           (Atom(Bound(q1)),
            q1::qnts,
@@ -550,7 +550,7 @@ let gen_term bs trm =
         try (Term.Subst.find t vars, qnts, known, vars)
         with _ ->
           let (name, ty) = Term.dest_free t in
-          let q = Term.mk_binding Term.All name ty
+          let q = Term.Binder.make Term.All name ty
           in
           (Atom(Bound(q)),
            q::qnts,
@@ -628,9 +628,9 @@ let in_scope memo scp trm =
     types in a binding.
 *)
 let binding_set_names ?(strict=false) ?memo scp binding =
-  let (qnt, qname, qtype) = Term.dest_binding binding
+  let (qnt, qname, qtype) = Term.Binder.dest binding
   in
-  Term.mk_binding
+  Term.Binder.make
     qnt qname
     (Ltype.set_name ?memo:memo (Scope.relaxed scp) qtype)
 
@@ -778,10 +778,11 @@ let resolve_term scp vars varlist trm =
       | None ->
         let nt =
           (match t with
-            | Atom(Free(n, ty)) -> mk_bound (mk_binding All n ty)
+            | Atom(Free(n, ty)) -> mk_bound (Term.Binder.make All n ty)
             | Atom(Bound(q)) ->
-              mk_bound (mk_binding All (binder_name q) (binder_type q))
-            | _ -> mk_bound (mk_binding All "x" (Gtype.mk_var "ty")))
+               mk_bound (Term.Binder.make All
+                           (Term.Binder.name_of q) (Binder.type_of q))
+            | _ -> mk_bound (Term.Binder.make All "x" (Gtype.mk_var "ty")))
         in
         (nt, Subst.bind t nt vars)
   in

@@ -74,11 +74,11 @@ type label =
 let atom_to_label varp trm rst =
   match trm with
   | Term.Id(id, _) -> (Cname(id), rst)
-  | Term.Meta(q) -> (Cmeta(Term.binder_name q), rst)
+  | Term.Meta(q) -> (Cmeta(Term.Binder.name_of q), rst)
   | Term.Free(n, _) -> (Cfree(n), rst)
   | Term.Const(c) -> (Const(c), rst)
   | Term.Bound(q) ->
-     let (qnt, _, _) = Term.dest_binding q
+     let (qnt, _, _) = Term.Binder.dest q
      in
      (Bound(qnt), rst)
 
@@ -88,7 +88,7 @@ let rec term_to_label varp trm rst =
   else
     match trm with
       | Term.Atom(a) -> atom_to_label varp a rst
-      | Term.Qnt(q, b) -> (Quant(Term.binder_kind q), b::rst)
+      | Term.Qnt(q, b) -> (Quant(Term.Binder.kind_of q), b::rst)
       | Term.App(l, r) -> (App, l::r::rst)
 
 (*

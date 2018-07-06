@@ -738,7 +738,7 @@ let mk_prefix inf t=
 let qnt_setup_bound_names
     inf (qnt: Term.quant) (xs : (string * Gtype.t) list) =
   let setup_aux (n, ty) =
-    let b_id = Pterm.mk_bound(Term.mk_binding qnt n ty)
+    let b_id = Pterm.mk_bound(Term.Binder.make qnt n ty)
     in
     add_name n b_id inf;
     (n, b_id)

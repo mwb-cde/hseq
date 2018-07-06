@@ -120,22 +120,22 @@ let test_basics() =
   and b_ty = Gtype.mk_vartype b
   and b1_ty = Gtype.mk_vartype b_1
   in
-  let a_bnd = Term.mk_binding Term.All "a" a_ty
-  and a1_bnd = Term.mk_binding Term.All "a" a1_ty
-  and b_bnd = Term.mk_binding Term.All "b" b_ty
-  and b1_bnd = Term.mk_binding Term.All "b" b_ty
-  and b2_bnd = Term.mk_binding Term.All "b" b1_ty
-  and b3_bnd = Term.mk_binding Term.Ex "b" b1_ty
+  let a_bnd = Term.Binder.make Term.All "a" a_ty
+  and a1_bnd = Term.Binder.make Term.All "a" a1_ty
+  and b_bnd = Term.Binder.make Term.All "b" b_ty
+  and b1_bnd = Term.Binder.make Term.All "b" b_ty
+  and b2_bnd = Term.Binder.make Term.All "b" b1_ty
+  and b3_bnd = Term.Binder.make Term.Ex "b" b1_ty
   in
-  EXPECT_TRUE(Term.binder_equality a_bnd a_bnd);
-  EXPECT_FALSE(Term.binder_equality a_bnd a1_bnd);
-  EXPECT_FALSE(Term.binder_equality a_bnd b_bnd);
+  EXPECT_TRUE(Term.Binder.equality a_bnd a_bnd);
+  EXPECT_FALSE(Term.Binder.equality a_bnd a1_bnd);
+  EXPECT_FALSE(Term.Binder.equality a_bnd b_bnd);
 
-  EXPECT_TRUE(Term.binder_equality b_bnd b_bnd);
-  EXPECT_FALSE(Term.binder_equality b_bnd b1_bnd);
+  EXPECT_TRUE(Term.Binder.equality b_bnd b_bnd);
+  EXPECT_FALSE(Term.Binder.equality b_bnd b1_bnd);
 
-  EXPECT_FALSE(Term.binder_equality b1_bnd b2_bnd);
-  EXPECT_FALSE(Term.binder_equality b2_bnd b3_bnd);
+  EXPECT_FALSE(Term.Binder.equality b1_bnd b2_bnd);
+  EXPECT_FALSE(Term.Binder.equality b2_bnd b3_bnd);
 
   TESTSUITE_END()
 
@@ -153,10 +153,10 @@ MAKE_EXPECT_BINOP\
   and b_ty = Gtype.mk_var "b"
   and c_ty = Gtype.mk_var "c"
   in
-  let a_all = Term.mk_binding Term.All "a" a_ty
-  and a1_all = Term.mk_binding Term.All "a" a_ty
-  and b_all = Term.mk_binding Term.All "b" b_ty
-  and c_lam = Term.mk_binding Term.All "c" c_ty
+  let a_all = Term.Binder.make Term.All "a" a_ty
+  and a1_all = Term.Binder.make Term.All "a" a_ty
+  and b_all = Term.Binder.make Term.All "b" b_ty
+  and c_lam = Term.Binder.make Term.All "c" c_ty
   in
   let a_free = Term.mk_free "a" a_ty
   and a_bnd = Term.mk_bound a_all

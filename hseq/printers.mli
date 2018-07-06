@@ -203,7 +203,7 @@ sig
 
   val print_qnts:
     ppinfo -> (Printkit.fixity * int)
-    -> (string * (Term.binders list)) Printkit.printer
+    -> (string * (Term.Binder.t list)) Printkit.printer
   (** [print_qnts ppstate prec (str, qnts)]: Print binders [qnts] using
     symbol [str].
    *)
@@ -291,7 +291,7 @@ sig
 
   val print_qnt_body:
     ppinfo -> (Printkit.fixity * int)
-    -> ((Term.binders)list * Term.term) Printkit.printer
+    -> ((Term.Binder.t)list * Term.term) Printkit.printer
 (** [print_qnt_body (assoc, prec) qs body]: Print term [body]
     quantified by variables [qs=[x1; x2; ...; xn]] as [x1 x2 ... xn:
     body].

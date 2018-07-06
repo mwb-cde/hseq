@@ -51,12 +51,12 @@ type meta_db  (* = (Term.binders)Treekit.StringTree.t  *)
 val empty_meta_db: unit -> meta_db
 (** The empty [meta_db]. *)
 
-val meta_db_add: string -> Term.binders -> meta_db -> meta_db
+val meta_db_add: string -> Term.Binder.t -> meta_db -> meta_db
 (** Add a binder with the given name to a [meta_db].  Replaces any
     previous binder for the name.
 *)
 
-val meta_db_find: string -> meta_db -> Term.binders
+val meta_db_find: string -> meta_db -> Term.Binder.t
 (** Find the binder for the given name. Raise [Not_found] if no such
     binder.
 *)
@@ -144,18 +144,18 @@ val new_local_scope: t -> t
     marker.  The new marker is set as the current theory.
 *)
 
-val add_meta: t -> Term.binders -> t
+val add_meta: t -> Term.Binder.t -> t
 (** [add_meta scp v]: Add [v] as a new meta variable. Fails if there
     is already a meta variable with the same name as [v].
 *)
 
-val find_meta: t -> string -> Term.binders
+val find_meta: t -> string -> Term.Binder.t
 (** [find_meta scp n]: Find the meta-variable named [n].
 
     @raise [Not_found] if no meta-variable named [n].
 *)
 
-val is_meta: t -> Term.binders -> bool
+val is_meta: t -> Term.Binder.t -> bool
 (** [is_meta scp v]: Test whether [v] is a meta variable in scope
     [scp].
 *)

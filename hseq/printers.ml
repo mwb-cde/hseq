@@ -236,7 +236,7 @@ module Terms =
           None
 
     let print_meta qnt =
-      let _, qv, qty = Term.dest_binding qnt
+      let _, qv, qty = Term.Binder.dest qnt
       in
       Format.printf "@[(_%s:@ %s)@]" qv (Gtype.string_gtype qty)
 
@@ -351,7 +351,7 @@ module Terms =
       Format.printf ")@]"
 
     let print_qnt ppstate q =
-      let _, qvar, qtyp = Term.dest_binding q
+      let _, qvar, qtyp = Term.Binder.dest q
       in
       print_typed_name ppstate (qvar, qtyp)
 
@@ -375,9 +375,9 @@ module Terms =
       | Term.Free(n, ty) ->
          print_typed_name ppstate (n, ty)
       | Term.Bound(n) ->
-         Format.printf "@[%s@]" ((Term.binder_name n))
+         Format.printf "@[%s@]" ((Term.Binder.name_of n))
       | Term.Meta(n) ->
-         Format.printf "@[%s@]" ((Term.binder_name n))
+         Format.printf "@[%s@]" ((Term.Binder.name_of n))
       | Term.Const(c) ->
          Format.printf "@[%s@]" (Term.Const.to_string c)
 
@@ -411,7 +411,7 @@ module Terms =
              Format.printf "@,@]"
            end
       | Term.Qnt(q, body) ->
-         let (qnt, qvar, qtyp) = Term.dest_binding q in
+         let (qnt, qvar, qtyp) = Term.Binder.dest q in
          let (qnts, b) = Term.strip_qnt qnt x in
          let (tassoc, tprec) =
            (fixity_qnt qnt, prec_qnt qnt)
@@ -478,7 +478,7 @@ module Terms =
       in
       let lambda_arg x =
         match x with
-        | Term.Qnt(q, body) -> (Term.binder_kind q) = Term.Lambda
+        | Term.Qnt(q, body) -> (Term.Binder.kind_of q) = Term.Lambda
         | _ -> false
       in
       let printer ppstate prec (f, args) =

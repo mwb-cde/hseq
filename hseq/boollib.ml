@@ -249,8 +249,8 @@ struct
       let eqvars =
         List.map
           (fun b ->
-            let (_, n, ty) = Term.dest_binding b in
-            Term.mk_binding Term.Ex n ty)
+            let (_, n, ty) = Term.Binder.dest b in
+            Term.Binder.make Term.Ex n ty)
           aqvars
       in
       let eqbody =
@@ -368,8 +368,8 @@ struct
       let aqvars =
         List.map
           (fun b ->
-            let (_, n, ty) = Term.dest_binding b
-            in Term.mk_binding Term.All n ty)
+            let (_, n, ty) = Term.Binder.dest b
+            in Term.Binder.make Term.All n ty)
           eqvars
       in
       let aqbody =

@@ -62,7 +62,7 @@ let rec mk_all_from_list scp b qnts =
   match qnts with
     | [] -> b
     | (Term.Atom(Term.Bound(q))::qs) ->
-      if (Term.binder_kind q) = Term.All
+      if (Term.Binder.kind_of q) = Term.All
       then mk_all_from_list scp (Term.mk_qnt q b) qs
       else
         raise (Term.term_error
@@ -179,7 +179,7 @@ type subtype_defn =
     to show that a subtype exists.
 *)
 let mk_subtype_exists setp=
-  let x_b=(Term.mk_binding Term.Ex "x" (Gtype.mk_var "x_ty")) in
+  let x_b=(Term.Binder.make Term.Ex "x" (Gtype.mk_var "x_ty")) in
   let x= Term.mk_bound x_b in
   Term.Qnt(x_b, Term.mk_app setp x)
 
@@ -210,7 +210,7 @@ let make_witness_type scp dtype setP =
    |- !x: set (rep x)
 *)
 let mk_rep_T set rep =
-  let x_b = Term.mk_binding Term.All "x" (Gtype.mk_var "x_ty") in
+  let x_b = Term.Binder.make Term.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let body = Term.mk_app set (Term.mk_app rep x)
   in
@@ -222,7 +222,7 @@ let mk_rep_T set rep =
    |- !x: (abs (rep x)) = x
 *)
 let mk_rep_T_inv rep abs =
-  let x_b = Term.mk_binding Term.All "x" (Gtype.mk_var "x_ty") in
+  let x_b = Term.Binder.make Term.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let body = Lterm.mk_equality (Term.mk_app abs (Term.mk_app rep x)) x
   in
@@ -234,7 +234,7 @@ let mk_rep_T_inv rep abs =
    |- !x: (set x)=> (rep (abs x)) = x
 *)
 let mk_abs_T_inv set rep abs =
-  let x_b = Term.mk_binding Term.All "x" (Gtype.mk_var "x_ty") in
+  let x_b = Term.Binder.make Term.All "x" (Gtype.mk_var "x_ty") in
   let x = Term.mk_bound x_b in
   let lhs = Term.mk_app set x
   and rhs = Lterm.mk_equality (Term.mk_app rep (Term.mk_app abs x)) x
@@ -337,8 +337,8 @@ struct
     *)
   let mk_subtype_prop (setP: Term.term) (rep: Ident.t) =
     let mk_subtype_1 (rep: Ident.t) =
-      let x1_b = Term.mk_binding Term.All "x1" (Gtype.mk_var "x1_ty")
-      and x2_b = Term.mk_binding Term.All "x2" (Gtype.mk_var "x2_ty")
+      let x1_b = Term.Binder.make Term.All "x1" (Gtype.mk_var "x1_ty")
+      and x2_b = Term.Binder.make Term.All "x2" (Gtype.mk_var "x2_ty")
       in
       let x1 = Term.mk_bound x1_b
       and x2 = Term.mk_bound x2_b
@@ -354,8 +354,8 @@ struct
       Term.Qnt(x1_b, Term.Qnt(x2_b, body))
     and
         mk_subtype_2 (setP:Term.term) (rep: Ident.t) =
-      let y_b = Term.mk_binding Term.All "y" (Gtype.mk_var "y_ty")
-      and y1_b = Term.mk_binding Term.Ex "y1" (Gtype.mk_var "y1_ty")
+      let y_b = Term.Binder.make Term.All "y" (Gtype.mk_var "y_ty")
+      and y1_b = Term.Binder.make Term.Ex "y1" (Gtype.mk_var "y1_ty")
       in
       let y = Term.mk_bound y_b
       and y1 = Term.mk_bound y1_b

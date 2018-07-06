@@ -22,7 +22,7 @@
 (** Utility functions for the simplifier. *)
 
 
-val is_variable: Term.binders list -> Term.term -> bool
+val is_variable: Term.Binder.t list -> Term.term -> bool
 (** [is_variable qnts x]: Test for variables (universal quantifiers)
     in an entry.
 *)
@@ -38,20 +38,20 @@ val equal_upto_vars:
 *)
 
 val find_variables:
-  (Term.binders -> bool) ->
+  (Term.Binder.t -> bool) ->
   Term.Subst.t -> Term.term -> Term.Subst.t
 (** [find_variables is_var vars trm]: Find all subterms [t] of [trm]
     s.t. [(is_var t)] is true. Add [t] to [vars] then return [vars].
 *)
 
 val check_variables:
-  (Term.binders -> bool) -> Term.Subst.t -> Term.term -> bool
+  (Term.Binder.t -> bool) -> Term.Subst.t -> Term.term -> bool
 (** [check_variables is_var vars trm]: Check that all subterms [t] of
     [trm] s.t. [is_var t] are in [vars].
 *)
 
 val strip_qnt_cond:
-  Term.term -> Term.binders list * Term.term option * Term.term
+  Term.term -> Term.Binder.t list * Term.term option * Term.term
 (** [strip_qnt_cond trm]: Split rule [trm] into variable binders,
     condition, equality rules are of the form: [a=>c] or [c]
 *)

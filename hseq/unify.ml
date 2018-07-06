@@ -56,8 +56,8 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
     with Not_found -> r
   in
   let eq_binder tyenv b1 b2 =
-    let qnt1, _, qty1 = dest_binding b1
-    and qnt2, _, qty2 = dest_binding b2
+    let qnt1, _, qty1 = Binder.dest b1
+    and qnt2, _, qty2 = Binder.dest b2
     in
     if qnt1 = qnt2
     then
@@ -79,13 +79,13 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
        then (Ltype.unify_env scp ty1 ty2 tyenv, env)
        else raise (term_error "unify_aux: var" [trm1; trm2])
     | (Meta(q1), Meta(q2)) ->
-       (if binder_equality q1 q2
+       (if Binder.equality q1 q2
         then (tyenv, env)
         else raise (term_error"unify_aux: meta" [trm1; trm2]))
     | (Bound(q1), Bound(q2)) ->
        let nq1 = dest_bound (lookup q1 qntenv)
        in
-       if binder_equality nq1 q2
+       if Binder.equality nq1 q2
        then (tyenv, env)
        else raise (term_error "unify_aux: bound" [trm1; trm2])
     | (Const(c1), Const(c2)) ->
@@ -173,8 +173,8 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
     with Not_found -> r
   in
   let eq_binder tyenv b1 b2 =
-    let (qnt1, _, qty1) = dest_binding b1
-    and (qnt2, _, qty2) = dest_binding b2
+    let (qnt1, _, qty1) = Binder.dest b1
+    and (qnt2, _, qty2) = Binder.dest b2
     in
     if qnt1 = qnt2
     then
@@ -196,13 +196,13 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
        then (Gtype.matching_env (Scope.types_scope scp) tyenv ty1 ty2, env)
        else raise (term_error "matches_aux: var" [trm1; trm2])
     | (Meta(q1), Meta(q2)) ->
-       if binder_equality q1 q2
+       if Binder.equality q1 q2
        then (tyenv, env)
        else raise (term_error "matches_aux: meta" [trm1; trm2])
     | (Bound(q1), Bound(q2)) ->
        let nq1 = dest_bound (lookup q1 qntenv)
        in
-       if binder_equality nq1 q2
+       if Binder.equality nq1 q2
        then (tyenv, env)
        else raise (term_error "matches_aux: bound" [trm1; trm2])
     | (Const(c1), Const(c2)) ->

@@ -384,7 +384,7 @@ let is_neg_exists (qs, c, t) =
     [rhs = None] if no [rhs].
 *)
 let is_rr_rule (qs, c, l, r) =
-  let is_var q = List.exists (Term.binder_equality q) qs in
+  let is_var q = List.exists (Term.Binder.equality q) qs in
   let vars = Simputils.find_variables is_var (Term.Subst.empty()) l in
   let rret =
     if r = None

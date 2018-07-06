@@ -68,7 +68,7 @@ let rec of_term_aux env qnts t =
       in
       (App(f1, a1), env2)
     | Term.Qnt(q, b) ->
-      let (tqnt, tqvar, tqtyp) = Term.dest_binding q
+      let (tqnt, tqvar, tqtyp) = Term.Binder.dest q
       and (b1, env1) = of_term_aux env (q::qnts) b
       in
       let (ty1, env2) = Gtype.to_save_env env1 tqtyp in
@@ -104,7 +104,7 @@ let rec to_term_aux env qnts t =
     | Qnt(q, b) ->
       let (ty1, env1) = Gtype.from_save_env env q.qtyp in
       let q1 =
-        Term.mk_binding (binder_kind q) (binder_name q) ty1
+        Term.Binder.make (binder_kind q) (binder_name q) ty1
       in
       let (b1, env2) = to_term_aux env1 (q1::qnts) b
       in

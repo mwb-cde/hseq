@@ -256,7 +256,7 @@ val close_term:
 
 (*** {7 Generalising terms} *)
 
-val gen_term: Term.binders list -> Term.term -> Term.term
+val gen_term: Term.Binder.t list -> Term.term -> Term.term
 (** [gen_term qnts trm]: generalise term [trm]. Replace bound
     variables occuring outside their binder and free variables with
     universally quantified variables.
@@ -279,8 +279,8 @@ val binding_set_names:
   ?strict:bool
   -> ?memo:(string, Ident.thy_id)Hashtbl.t
   -> Scope.t
-  -> Term.binders
-  -> Term.binders
+  -> Term.Binder.t
+  -> Term.Binder.t
 (** [binding_set_names_types ?strict ?memo scp binding] Find and set
     names for types in a binding.  If [strict=true], unknown types
     cause an error.

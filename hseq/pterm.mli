@@ -38,11 +38,11 @@
 (** The representation of a parsed term *)
 type t =
   | PId of Ident.t * Gtype.t   (** Identifiers *)
-  | PBound of Term.binders     (** Bound variables *)
+  | PBound of Term.Binder.t     (** Bound variables *)
   | PFree of string * Gtype.t  (** Free variables *)
-  | PMeta of Term.binders      (** Meta variables (use for skolem constants) *)
+  | PMeta of Term.Binder.t      (** Meta variables (use for skolem constants) *)
   | PApp of t * t    (** Function application *)
-  | PQnt of Term.binders * t (** Binding terms *)
+  | PQnt of Term.Binder.t * t (** Binding terms *)
   | PConst of Term.Const.t     (** Constants *)
   | PTyped of t * Gtype.t  (** Typed terms *)
 
@@ -61,8 +61,8 @@ val is_const: t -> bool
 
 (** {7 Constructors} *)
 
-val mk_qnt: Term.binders -> t -> t
-val mk_bound: Term.binders -> t
+val mk_qnt: Term.Binder.t -> t -> t
+val mk_bound: Term.Binder.t -> t
 val mk_free: string -> Gtype.t -> t
 val mk_app: t -> t -> t
 val mk_typed: t -> Gtype.t -> t
@@ -73,8 +73,8 @@ val mk_short_ident: string -> t
 
 (** {7 Destructors} *)
 
-val dest_qnt: t -> (Term.binders * t)
-val dest_bound: t -> Term.binders
+val dest_qnt: t -> (Term.Binder.t * t)
+val dest_bound: t -> Term.Binder.t
 val dest_free:t -> (string * Gtype.t)
 val dest_app: t -> (t * t)
 val dest_typed: t -> (t * Gtype.t)
@@ -87,7 +87,7 @@ val dest_ident: t -> (Ident.t * Gtype.t)
 
 val mk_meta: string -> Gtype.t -> t
 val is_meta: t -> bool
-val dest_meta: t -> Term.binders
+val dest_meta: t -> Term.Binder.t
 
 (** {7 Constants} *)
 
