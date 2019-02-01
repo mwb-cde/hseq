@@ -1,7 +1,7 @@
-#!/usr/bin/ocamlrun /usr/bin/ocaml
+#!/usr/bin/env ocaml
 (*----
  Name: configure.ml
- Copyright Matthew Wahab 2005-2017
+ Copyright Matthew Wahab 2005-2019
  Author: Matthew Wahab <mwb.cde@gmail.com>
 
  This file is part of HSeq
@@ -378,7 +378,10 @@ end
 
 (* Standard earch path for build tools *)
 
-let tool_search_path = ["/usr/bin"; "/usr/local/bin"]
+let system_path =
+  match Sys.getenv_opt "PATH" with
+  | Some(path_str) -> String.split_on_char ':' path_str
+  | _ -> ["/usr/bin"; "/usr/local/bin"]
 
 class tool =
 object (self)
@@ -390,7 +393,7 @@ object (self)
   val tool_name = "tool"
 
   (* Directories to search for the tool *)
-  method private get_search_path() = tool_search_path
+  method private get_search_path() = system_path
   method find () =
     if self#is_specified ()
     then false
@@ -422,7 +425,7 @@ object (self)
   val tool_name = "ocaml-tool"
 
   (* Directories to search for the tool *)
-  val search_path = ["/usr/bin"; "/usr/local/bin"]
+  val search_path = system_path
   method find () =
     if self#is_specified ()
     then false
