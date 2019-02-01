@@ -1,6 +1,6 @@
 (*----
   Name: lterm.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq

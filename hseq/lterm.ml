@@ -1,6 +1,6 @@
 (*----
   Name: lterm.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -91,7 +91,6 @@ let dest_fun_ty t =
 
 let typeof_cnst c =
   match c with
-      Cnum _ -> mk_num_ty ()
     | Cbool _ -> mk_bool_ty ()
 
 (*

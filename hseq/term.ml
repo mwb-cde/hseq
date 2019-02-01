@@ -1,6 +1,6 @@
 (*----
   Name: term.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -122,15 +122,9 @@ let dest_meta t  =
 
 (** Constants *)
 
-let destnum n =
-  match dest_const n with
-    | (Cnum c) -> c
-    | _ -> raise (Failure "Not a number")
-
 let destbool b =
   match dest_const b with
     | (Cbool c) -> c
-    | _ -> raise (Failure "Not a boolean")
 
 let mk_bool b = mk_const(Cbool b)
 

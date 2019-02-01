@@ -1,6 +1,6 @@
 (*----
   Name: basic.mli
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -27,7 +27,6 @@ open Gtype
 
 (** Built-in constants that can appear in terms  *)
 type const_ty =
-  | Cnum of Num.num    (* big numbers *)
   | Cbool of bool
 
 val const_compare: const_ty -> const_ty -> Order.t

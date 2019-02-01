@@ -1,6 +1,6 @@
 (*----
   Name: grammars.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -789,7 +789,6 @@ let number inp =
   let comp x = match x with NUM _ -> true | _ -> false
   and mk x =
     match x with
-      | NUM s -> Num.num_of_string s
       | _ -> failwith "parser: number"
   in
     try get comp mk inp

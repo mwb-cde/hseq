@@ -1,6 +1,6 @@
 (*----
   Name: lib.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@googlemail.com>
 
   This file is part of HSeq
@@ -229,24 +229,6 @@ let int_to_name i =
     ld
   else
     ld^(string_of_int rm)
-
-let num_to_name (i:Num.num) =
-  let numchars = Num.num_of_int 26
-  and codea = Num.num_of_int (int_of_char 'a')
-  and zero = Num.num_of_int 0
-  in
-  let ch = Num.mod_num i numchars
-  and rm = Num.div_num i numchars
-  in
-  let ld =
-    String.make 1
-      (char_of_int (Num.int_of_num (Num.add_num codea ch)))
-  in
-  if (Num.eq_num rm zero)
-  then
-    ld
-  else
-    ld^(Num.string_of_num rm)
 
 (* Named Lists *)
 type ('a, 'b)named_list = ('a * 'b) list
