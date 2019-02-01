@@ -50,7 +50,7 @@ PROGRAMS=hseq
 
 # Rule for building hseq toplevel is:
 #    ocamlmktop -custom $(GLOBAL_OCAMLC_FLAGS)
-#		nums.cma unix.cma dynlink.cma
+#		unix.cma dynlink.cma
 #		hseq.cma hseqtop.cma
 #		-o hseq
 
@@ -64,7 +64,7 @@ hseq_INCLUDE=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
 lm-hseq-include=$(foreach l,$(hseq_INCLUDE),-I $(l) )
 
 # object_LIBS: Libraries to include when linking [object].
-hseq_LIBS=nums.cma unix.cma dynlink.cma \
+hseq_LIBS=unix.cma dynlink.cma \
 	hseq.cma hsequser.cma hseqtop.cma
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
@@ -81,7 +81,7 @@ hseq_CUSTOM_BUILD=yes
 hseq:
 	$(OCAMLMKTOP) -custom  $(GLOBAL_OCAMLC_FLAGS) \
 		$(lm-hseq-include) \
-		nums.cma unix.cma dynlink.cma \
+		unix.cma dynlink.cma \
 		-o hseq \
 		hseq.cma hsequser.cma hseqtop.cma
 

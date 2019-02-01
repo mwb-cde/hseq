@@ -24,7 +24,7 @@
 
   Compile with
    ocamlc -o test
-      -I HSEQLIB nums.cma unix.cma hseq.cma
+      -I HSEQLIB unix.cma hseq.cma
       libtest.ml
 
   where HSEQLIB is the installation directory for the the HSeq libraries.

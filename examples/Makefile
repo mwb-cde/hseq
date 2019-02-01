@@ -67,8 +67,8 @@ PROGRAMS=libtest sum
 # Program libtest
 
 libtest_INCLUDE=$(PROJ_ROOT)/hseq $(PROJ_ROOT)/hsequser
-libtest_LIBS=nums.cma unix.cma hseq.cma hsequser.cma
-libtest_NATLIBS=nums.cmxa unix.cmxa hseq.cmxa hsequser.cmxa
+libtest_LIBS=unix.cma hseq.cma hsequser.cma
+libtest_NATLIBS=unix.cmxa hseq.cmxa hsequser.cmxa
 libtest_SOURCES=libtest
 
 # Program sum

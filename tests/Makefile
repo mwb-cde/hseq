@@ -60,9 +60,9 @@ PROJ_ROOT=..
 
 LOCAL_OCAMLC_FLAGS:=\
 	-I $(PROJ_ROOT)/hseq -I $(PROJ_ROOT)/hsequser \
-	nums.cma unix.cma hseq.cma hsequser.cma
+	unix.cma hseq.cma hsequser.cma
 LOCAL_OCAMLNAT_FLAGS:=-I $(PROJ_ROOT)/hseq -I $(PROJ_ROOT)/hsequser \
-	nums.cmxa unix.cmxa hseq.cmxa hsequser.cmxa
+	unix.cmxa hseq.cmxa hsequser.cmxa
 
 #####
 # Object building settings

@@ -61,12 +61,12 @@ hseqb_HEADERS=
 hseqc_HEADERS=
 
 # object_LIBS: Libraries to include when linking [object].
-hseqb_LIBS=unix.cma nums.cma hseq.cma
-hseqc_LIBS=unix.cma nums.cma hseq.cma
+hseqb_LIBS=unix.cma hseq.cma
+hseqc_LIBS=unix.cma hseq.cma
 
 # object_NATLIBS: Libraries to include when native-code linking [object].
-hseqb_NATLIBS=unix.cmxa nums.cmxa hseq.cmxa
-hseqc_NATLIBS=unix.cmxa nums.cmxa hseq.cmxa
+hseqb_NATLIBS=unix.cmxa hseq.cmxa
+hseqc_NATLIBS=unix.cmxa hseq.cmxa
 
 hseqb_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq
 hseqc_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq

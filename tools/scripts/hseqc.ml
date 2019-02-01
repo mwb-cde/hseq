@@ -60,7 +60,7 @@ let hseq_includes = [installdir_include]
 
 (** [hseq_libs]: The base libraries need to compile against HSeq in the
     order that they should appear on the comand line.*)
-let hseq_libs = ["nums"; "unix"; "hseq"; "hsequser"]
+let hseq_libs = ["unix"; "hseq"; "hsequser"]
 
 (** [pp_include]: Includes for the preprocessor *)
 let pp_include =
@@ -70,7 +70,7 @@ let pp_include =
 let ocamlc_include = []
 
 (** [ocamlc_libs]: standard librariess for the ocamlc compiler (in order)*)
-let ocamlc_libs = ["nums"; "unix"]
+let ocamlc_libs = ["unix"]
 
 (** Functions *)
 

@@ -6,7 +6,7 @@ experimental code and may have soundness bugs.
 
 **Requirements:**
 
-* OCaml 4.02.3 or 4.04.0.
+* OCaml 4.05
 * GNU Make.
 * Linux build environment.
 * Texinfo, to build the documentaion (optional).

@@ -132,10 +132,10 @@ order in which libraries are linked is significant: library hseq must come
 before hseqtop.
 
 The link order used to build the standard toplevel is:
-   nums.cma unix.cma hseq.cma hseqtop.cma
+   unix.cma hseq.cma hseqtop.cma
 
 It should be possible to link with the HSeq library in the sequence
-   nums.cma unix.cma hseq.cma
+   unix.cma hseq.cma
 but note that the easiest way is to use hseqc.
 
 Native-code:

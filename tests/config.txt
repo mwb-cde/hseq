@@ -38,12 +38,12 @@ file-suffix = ml
 files = *.ml
 object-suffix = .cmo
 compiler = ocamlc -pp 'cpp -w'  -I ../hseq -I ../hsequser -c {flags} {source} -o {object}
-linker = ocamlc -o {program} -I ../hseq -I ../hsequser nums.cma unix.cma hseq.cma hsequser.cma {flags} {objects} {libs}
+linker = ocamlc -o {program} -I ../hseq -I ../hsequser unix.cma hseq.cma hsequser.cma {flags} {objects} {libs}
 
 [ocaml-native]
 file-suffix = ml
 files = *.ml
 object-suffix = .cmx
 compiler = ocamlopt -pp 'cpp -w'  -I ../hseq -I ../hsequser -c {flags} {source} -o {object}
-linker = ocamlopt -o {program} -I ../hseq -I ../hsequser nums.cmxa unix.cmxa hseq.cmxa hsequser.cmxa {flags} {objects} {libs}
+linker = ocamlopt -o {program} -I ../hseq -I ../hsequser unix.cmxa hseq.cmxa hsequser.cmxa {flags} {objects} {libs}
 

@@ -23,7 +23,7 @@
 
   Compile with
    ocamlc -pp cpp
-      -I BUILD_ROOT/hseq nums.cma unix.cma hseq.cma
+      -I BUILD_ROOT/hseq unix.cma hseq.cma
 
   where build_ROOT is the root of the hseq build directory.
   and   cpp is the C preproccessor
