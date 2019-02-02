@@ -1,6 +1,6 @@
 (*----
   Name: settings.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com.com>
 
   This file is part of HSeq

@@ -1,6 +1,6 @@
 (*----
   Name: defaults.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -29,4 +29,4 @@ let basedir = Config.value_BaseDir
 let libdir = Config.value_LibDir
 let thydir = Config.value_ThyDir
 
-let version = "Oct2017"
+let version = "Feb2019"
