@@ -1,6 +1,6 @@
 (*----
   Name: BoolScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -41,7 +41,7 @@ let bool_induct =
   (hterm " !P: ((P true) & (P false)) => (!(x:bool): P x) ")
   [
     flatten_tac
-    ++ cut (thm "bool_cases")
+    ++ cut [] (thm "bool_cases")
     ++ instA [ (hterm " _x ") ]
     ++ disjA ++ replace_tac ++ basic
   ]
@@ -54,7 +54,7 @@ theorem "true_l1" (!% " !x: (x=true) => x ")
 
 let true_l2 =
 theorem "true_l2" (!% " !x: x => (x=true) ")
-[flatten_tac ++ (cut_thm "bool_cases") ++ (allA (!% " _x ")) ++ disjA ;
+[flatten_tac ++ (cut_thm [] "bool_cases") ++ (allA (!% " _x ")) ++ disjA ;
 basic;
 rewrite_tac [thm "false_def"]++replace_tac ++ scatter_tac];;
 
@@ -64,28 +64,28 @@ let iff_l1 = theorem "iff_l1" (!% " !x y: (x = y ) => (x => y)")
 let iff_l2 = theorem "iff_l2"
 (!% " !x y: ((x => y) and (y => x)) => (x = y) ")
 [
-  (flatten_tac ++ (cut_thm ~inst:[ (!% " _x ") ] "bool_cases") ++ disjA);
-  cut ~inst:[ (!% " _x ") ] true_l1
+  (flatten_tac ++ (cut_thm [ (!% " _x ") ] "bool_cases") ++ disjA);
+  cut [ (!% " _x ") ] true_l1
     ++ (match_asm (!% " (A = B) => C ")
     (fun a ->
       (match_asm (!% " (A = B) ")
        (fun f -> mp_tac ~a:a ~h:f))))
 ++ mp_tac
-++ (cut true_l2) ++ (allA (!% "_y")) ++ mp_tac
+++ (cut [] true_l2) ++ (allA (!% "_y")) ++ mp_tac
 ++ replace_tac ++ eq_tac;
-(cut_thm "bool_cases") ++ (allA (!% " _y ")) ++ disjA;
-(cut true_l1) ++ (allA (!% " _y ")) ++ mp_tac
+(cut_thm [] "bool_cases") ++ (allA (!% " _y ")) ++ disjA;
+(cut [] true_l1) ++ (allA (!% " _y ")) ++ mp_tac
 ++ (match_asm (!% " (_y => C) ")
     (fun a ->
       (match_asm (!% " _y ")
        (fun f -> mp_tac ~a:a ~h:f))))
-++ (cut true_l2) ++ (allA (!% "_x")) ++ mp_tac
+++ (cut [] true_l2) ++ (allA (!% "_x")) ++ mp_tac
 ++ replace_tac ++ eq_tac;
 replace_tac ++ eq_tac];;
 
 let iff_equals = theorem "iff_equals" (!% " !x y: (x iff y) iff (x = y)")
   ([flatten_tac ++ (rewrite_tac [(defn "iff")]) ++ conjC;
-     ((flatten_tac ++ (cut iff_l2) ++ (inst_tac [ (!% " _x "); (!% " _y ") ])
+     ((flatten_tac ++ (cut [] iff_l2) ++ (inst_tac [ (!% " _x "); (!% " _y ") ])
       ++ implA)
      --
        [
@@ -100,10 +100,10 @@ let equals_iff=
 theorem "equals_iff" (!% " !x y: (x iff y) = (x = y)")
 ([
 flatten_tac
-++ (cut iff_l2) ++ (inst_tac [ (!% " _x iff _y "); (!% "_x = _y") ])
+++ (cut [] iff_l2) ++ (inst_tac [ (!% " _x iff _y "); (!% "_x = _y") ])
 ++ split_tac;
 flatten_tac ++ (unfold "iff")
-++ (cut_thm "iff_l2") ++ (inst_tac [ (!% " _x ");  (!% " _y ") ])
+++ (cut_thm [] "iff_l2") ++ (inst_tac [ (!% " _x ");  (!% " _y ") ])
 ++ mp_tac ++ basic;
 flatten_tac ++ replace_tac
 ++ (rewrite_tac [defn "iff"])
@@ -124,8 +124,8 @@ let true_prop =
 theorem "true_prop" (!% " !x : (x = true) = x ")
 [
   flatten_tac ++ equals_tac
-  ++ cut ~inst:[ (!% " _x ") ] true_l1
-  ++ cut ~inst:[ (!% " _x ") ] true_l2
+  ++ cut [ (!% " _x ") ] true_l1
+  ++ cut [ (!% " _x ") ] true_l2
   ++ blast_tac
 ];;
 
@@ -133,7 +133,7 @@ let false_prop =
 theorem "false_prop" (!% " !x : (x=false) = ~x ")
   [
    flatten_tac
-     ++ cut ~inst:[ (!% " _x ") ] (thm "bool_cases")
+     ++ cut [ (!% " _x ") ] (thm "bool_cases")
      ++ rewrite_tac [thm "false_def"]
      ++ equals_tac ++ blast_tac
      ++ (replace_tac ++ scatter_tac)
@@ -401,7 +401,7 @@ let if_true=
 theorem ~simp:true "if_true"
   (!% " ! t f: (if true then t else f) = t ")
 [
-flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
+flatten_tac ++ (unfold "IF")++ (cut_thm [] "epsilon_ax")
 ++ (allA (!% " (%(z:'a): ((true => (z=_t)) and ((not  true) => (z=_f)))) "))
 ++ implA;
 existC (!% "_t") ++ beta_tac
@@ -412,7 +412,7 @@ beta_tac ++ flatten_tac ++ implA -- [trivial; basic]
 let if_false=
 theorem ~simp:true "if_false" (!% " ! t f: (if false then t else f) = f")
 ([
-flatten_tac ++ (unfold "IF")++ (cut_thm "epsilon_ax")
+flatten_tac ++ (unfold "IF")++ (cut_thm [] "epsilon_ax")
 ++ (allA (!% " (%(z:'a): ((false => (z=_t)) and ((not false) => (z=_f)))) "))
 ++ implA;
 (existC (!% "_f")) ++ beta_tac
@@ -431,7 +431,7 @@ theorem ~simp:true "if_true1"
    flatten_tac
      ++
      show (!% " _x = true ")
-       (cut ~inst:[ (!% " _x ") ] true_prop
+       (cut [ (!% " _x ") ] true_prop
           ++ replace_tac
           ++ basic)
      ++ replace_tac
@@ -444,7 +444,7 @@ theorem ~simp:true "if_false1"
   [
    scatter_tac
      ++ (show (!% " _x = false")
-         (cut ~inst:[ (!% " _x ") ] false_prop
+         (cut [ (!% " _x ") ] false_prop
             ++ replace_tac ++ flatten_tac
             ++ basic))
      ++ replace_tac
@@ -457,7 +457,7 @@ theorem ~simp:false "if_expand"
 (!% " ! x a b : (if x then a else b) = ((x and a) or (not x and b)) ")
 [
  flatten_tac
-   ++ cut ~inst:[ (!% " _x ") ] (thm "bool_cases")
+   ++ cut [ (!% " _x ") ] (thm "bool_cases")
    ++ split_tac ++ replace_tac ++ rewrite_tac [if_true; if_false]
    ++ simp
 ];;
@@ -467,7 +467,7 @@ theorem ~simp:true "if_id"
 (!% " !x a: (if x then a else a) = a ")
 [
   flatten_tac
-    ++ cut ~inst:[ (!% " _x ") ] (thm "bool_cases")
+    ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
     ++ simp
 ];;
@@ -477,7 +477,7 @@ theorem ~simp:false "if_rand"
 (!% " !f x a b: (f (if x then a else b)) = (if x then f a else f b) ")
 [
   flatten_tac
-    ++ cut ~inst:[ (!% " _x ") ] (thm "bool_cases")
+    ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
     ++ simp
 ];;
@@ -487,7 +487,7 @@ theorem ~simp:false "if_rator"
 (!% " !v x a b : ((if x then a else b) v) = (if x then a v else b v) ")
 [
   flatten_tac
-    ++ cut ~inst:[ (!% " _x ") ] (thm "bool_cases")
+    ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
     ++ simp
 ];;
@@ -529,9 +529,9 @@ let exists_unique_or =
     (!% " ! P Q: (?! x : (P x) | (Q x)) => ((?! x: P x) | (?! x: Q x)) ")
   [
    flatten_tac
-     ++ cut ~inst:[ (!% " % x: (_P x) | (_Q x) ") ] exists_unique_thm
-     ++ cut ~inst:[ (!% " % x: (_P x) ") ] exists_unique_thm
-     ++ cut ~inst:[ (!% " % x: (_Q x) ") ] exists_unique_thm
+     ++ cut [ (!% " % x: (_P x) | (_Q x) ") ] exists_unique_thm
+     ++ cut [ (!% " % x: (_P x) ") ] exists_unique_thm
+     ++ cut [ (!% " % x: (_Q x) ") ] exists_unique_thm
      ++ beta_tac
      ++ replace_tac
      ++ scatter_tac ++ (unify_tac // skip)
@@ -543,7 +543,7 @@ let exists_unique_simp =
     (!% " ! P : (?! x : P) = (P & (! x y: x = y)) ")
   [
    flatten_tac
-     ++ cut ~inst:[ (!% " % x: _P ") ] exists_unique_thm
+     ++ cut [ (!% " % x: _P ") ] exists_unique_thm
      ++ beta_tac ++ replace_tac
      ++ simp_tac [exists_simp]
      ++ equals_tac ++ blast_tac
@@ -557,7 +557,7 @@ let choice_elim_thm =
   (!% " !P: (?x: P x) => (P (@x: P x))")
 [
  flatten_tac
-   ++ cut ~inst:[ (!% " (%x: _P x) ") ] (thm "epsilon_ax")
+   ++ cut [ (!% " (%x: _P x) ") ] (thm "epsilon_ax")
    ++ beta_tac ++ blast_tac
    ++ inst_tac [ (!% " _x ") ]
    ++ basic
@@ -568,7 +568,7 @@ theorem "choice_refl"
     (!% " !x: (@v: v=x) = x ")
 [
  flatten_tac
-   ++ cut ~inst:[ (!% " (%y: y = _x) ") ] choice_elim_thm
+   ++ cut [ (!% " (%y: y = _x) ") ] choice_elim_thm
    ++ split_tac
    --
    [
@@ -582,7 +582,7 @@ theorem "choice_refl2"
     (!% " !x: (@v: x=v) = x ")
 [
  flatten_tac
-   ++ cut ~inst:[ (!% " (%y: _x = y) ") ] choice_elim_thm
+   ++ cut [ (!% " (%y: _x = y) ") ] choice_elim_thm
    ++ split_tac
    --
    [
@@ -615,7 +615,7 @@ let choice_unique=
   [
    flatten_tac
      ++ replace_tac
-     ++ cut choice_refl ++ unify_tac
+     ++ cut [] choice_refl ++ unify_tac
  ];;
 
 
@@ -628,7 +628,7 @@ theorem "congruence"
 
 let eta=
 theorem "eta" (!% " !f: (% x: f x) = f ")
-[flatten_tac ++ cut_thm "extensionality"
+[flatten_tac ++ cut_thm [] "extensionality"
 ++ inst_tac [ (!% " % x: _f x ") ; (!% " _f") ]
 ++ split_tac
 --

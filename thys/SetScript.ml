@@ -1,6 +1,6 @@
 (*----
   Name: SetScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -666,7 +666,7 @@ let psubset_trans =
         ++ cut_back_tac subset_antisym
         ++ simp;
         (* 2 *)
-        cut ~inst:[ (!% " _A "); (!% " _B "); (!% " _C ") ] subset_trans
+        cut [ (!% " _A "); (!% " _B "); (!% " _C ") ] subset_trans
         ++ blast_tac
       ]
   ]
@@ -719,7 +719,7 @@ let psubset_member =
   [
     flatten_tac
     ++ (show (!% " _A <= _B ") (simp_tac [psubset_subset]))
-    ++ cut ~inst:[ (!% " _x "); (!% " _A "); (!% " _B ") ] subset_member
+    ++ cut [ (!% " _x "); (!% " _A "); (!% " _B ") ] subset_member
     ++ simp
   ]
 
@@ -741,7 +741,7 @@ let finite_add =
          (* 1 *)
          seq
            [
-             cut finite_rules ++ conjA;
+             cut [] finite_rules ++ conjA;
              back_tac;
              simp
            ];
@@ -800,7 +800,7 @@ let finite_subset_back =
   (!% " ! B : (?A: (finite A) & (B <= A)) => (finite B) ")
   [
     flatten_tac
-    ++ cut finite_subset
+    ++ cut [] finite_subset
     ++ mp_tac ++ mp_tac
     ++ basic
   ]
@@ -812,7 +812,7 @@ let finite_psubset =
     flatten_tac
     ++ rewriteA_tac [psubset_thm]
     ++ scatter_tac
-    ++ cut finite_subset
+    ++ cut [] finite_subset
     ++ mp_tac ++ mp_tac
     ++ basic
   ]
@@ -822,7 +822,7 @@ let finite_psubset_back =
   (!% " ! B : (?A: (finite A) & (B < A)) => (finite B) ")
   [
     flatten_tac
-    ++ cut finite_psubset
+    ++ cut [] finite_psubset
     ++ mp_tac ++ mp_tac
     ++ basic
   ]
@@ -841,7 +841,7 @@ let finite_inter =
         cut_back_tac finite_subset_back
         ++ instC [ (!% " _B ") ];
       ]
-    ++ cut subset_inter
+    ++ cut [] subset_inter
     ++ blast_tac
     ++ unify_tac
   ]
@@ -861,7 +861,7 @@ let finite_induct =
   ")
   [
     specC
-      ++ cut ~inst:[ (!% " (%x: (finite x) & (_P x)) ") ] finite_induct
+      ++ cut [ (!% " (%x: (finite x) & (_P x)) ") ] finite_induct
       ++ betaA
       ++ cut finite_rules
       ++ blast_tac ++ ((back_tac ++ blast_tac) // skip)

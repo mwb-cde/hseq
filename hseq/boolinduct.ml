@@ -1,6 +1,6 @@
 (*----
   Name: boolinduct.ml
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -328,7 +328,7 @@ let basic_induct_tac c thm ctxt goal =
   let main_tac c_lbl ctxt0 g =
     seq
       [
-        cut thm;
+        cut [] thm;
         (?> (fun tinfo ->
           let a_tag = get_one ~msg:"basic_induct_tac" (Info.aformulas tinfo)
           in
@@ -586,7 +586,7 @@ let basic_induct_on ?thm name clabel ctxt goal =
   let main_tac ctxt0 g =
     seq
       [
-        cut thm;
+        cut [] thm;
         (?> (fun inf1 ->
           let atag = get_one (Info.aformulas inf1) in
           (inst_split_asm_tac atag

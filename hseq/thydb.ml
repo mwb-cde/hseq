@@ -1,6 +1,6 @@
 (*----
   Name: thydb.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -112,7 +112,7 @@ let table thdb = thdb.db
 let set_table thdb tbl = { thdb with db = tbl }
 
 let current thdb =
-  Lib.dest_option ~err:(Failure "No current theory") thdb.curr
+  Lib.dest_option (Failure "No current theory") thdb.curr
 let set_current thdb c =
   { thdb with curr = c }
 

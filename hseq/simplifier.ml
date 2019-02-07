@@ -1,6 +1,6 @@
 (*----
   Name: simplifier.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -320,9 +320,9 @@ let copyA_inst_tac vals x ctxt goal =
 let cut_rr_rule vals t g =
   match t with
     | Logic.RRThm(th) ->
-      cut ~inst:vals th g
+      cut vals th g
     | Logic.ORRThm(th, _) ->
-      cut ~inst:vals th g
+      cut vals th g
     | Logic.Asm(x) ->
       copyA_inst_tac vals x g
     | Logic.OAsm(x, _) ->
@@ -422,7 +422,7 @@ let prove_cond_tac (cntrl: Data.t) values entry ctxt goal =
         (** Prove the condition. **)
         (fun (cond_data, data2) ctxt1 g1 ->
           let (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg)) =
-            Lib.dest_option ~err:(Failure "prove_cond_tac: 1") cond_data
+            Lib.dest_option (Failure "prove_cond_tac: 1") cond_data
           in
           let prover_tac = Data.get_tactic ncntrl
           in

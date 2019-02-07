@@ -182,14 +182,9 @@ let apply_option f x d =
     | None -> d
     | Some i -> f i
 
-let dest_option ?err x =
+let dest_option err x =
   if x = None
-  then
-    begin
-      match err with
-        | None -> failwith "dest_option"
-        | (Some e) -> raise e
-    end
+  then raise err
   else from_some x
 
 let set_int_option i = Some(i)

@@ -1,6 +1,6 @@
 (*----
   Name: tactics.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -570,7 +570,7 @@ let inst_tac ?f trms ctxt goal =
   try instA ?a:f trms ctxt goal
   with _ -> instC ?c:f trms ctxt goal
 
-let cut ?inst th ctxt goal =
+let cut trms th ctxt goal =
   let cut0 trms ctxt0 g =
     seq [
       (fun _ -> Logic.Tactics.cut th);
@@ -580,11 +580,13 @@ let cut ?inst th ctxt goal =
             instA ~a:(ftag atag) trms))
     ] ctxt0 g
   in
-  match inst with
-    | None -> Logic.Tactics.cut th goal
-    | Some(trms) ->
+  if trms = []
+  then Logic.Tactics.cut th goal
+  else
+    begin
       try cut0 trms ctxt goal
       with err -> raise (add_error "cut" err)
+    end
 
 let betaA ?a ctxt goal =
   let conv_tac (ft, form) ctxt0 g =
@@ -597,7 +599,7 @@ let betaA ?a ctxt goal =
     in
     seq
       [
-        cut thm;
+        cut [] thm;
         (?> (fun info1 g1 ->
           let tlbl =
             ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaA"))
@@ -627,7 +629,7 @@ let betaC ?c ctxt goal =
     in
     seq
       [
-        cut thm;
+        cut [] thm;
         (?> (fun info1 g1 ->
           let tlbl =
             ftag (Lib.get_one (Info.aformulas info1) (error "Tactics.betaC"))
@@ -1002,7 +1004,7 @@ let conv_rule (ctxt: Context.t) conv thm =
       in
       seq
         [
-          cut thm;
+          cut [] thm;
           (?> (fun info ->
             begin
               let atag =
@@ -1010,7 +1012,7 @@ let conv_rule (ctxt: Context.t) conv thm =
               in
               seq
                 [
-                  cut rule;
+                  cut [] rule;
                   (?> (fun info ->
                     let rtag =
                       Lib.get_one (Info.aformulas info)
@@ -1147,7 +1149,7 @@ let extract_rule node src=
       | Asm(x) ->
           let sq =
             Subgoals.node_sqnt
-              (Lib.dest_option ~err:(error "extract_rule") node)
+              (Lib.dest_option (error "extract_rule") node)
           in
           let asm =
             try drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
@@ -1158,7 +1160,8 @@ let extract_rule node src=
       | OAsm(x, order) ->
         let sq =
           Subgoals.node_sqnt
-            (Lib.dest_option ~err:(error "extract_rule") node)
+            (Lib.
+             dest_option (error "extract_rule") node)
         in
         let asm=
           try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)

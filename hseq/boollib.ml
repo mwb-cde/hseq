@@ -1,6 +1,6 @@
 (*----
   Name: boollib.ml
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -61,8 +61,8 @@ struct
                 (Failure "make_equals_iff_thm: y_term")
               in
               (flatten_tac
-               ++ (cut_thm "bool_cases" ++ allA x_term)
-               ++ (cut_thm "bool_cases" ++ allA y_term)
+               ++ (cut_thm [] "bool_cases" ++ allA x_term)
+               ++ (cut_thm [] "bool_cases" ++ allA y_term)
                ++ split_tac
                ++
                  alt
@@ -83,14 +83,14 @@ struct
               and y_term = Lib.get_one (Info.constants info2)
                 (Failure "make_equals_iff_thm: y_term")
               in
-              ((cut iff_l2)
+              ((cut [] iff_l2)
                ++ inst_tac [Lterm.mk_iff x_term y_term;
                             Lterm.mk_equality x_term y_term]
                ++ split_tac
                --
                  [
                    flatten_tac
-                   ++ cut iff_l2 ++ inst_tac [x_term; y_term]
+                   ++ cut [] iff_l2 ++ inst_tac [x_term; y_term]
                    ++ unfold "iff" ~f:(!~2)
                    ++ (implA --  [basic; basic]);
                    flatten_tac
@@ -162,7 +162,7 @@ struct
            Lib.get_one (Info.constants info) (Failure "rule_true_l2")
          in
          (flatten_tac
-          ++ (cut_thm "bool_cases")
+          ++ (cut_thm [] "bool_cases")
           ++ (allA x_term)
           ++ disjA
           --
@@ -174,8 +174,8 @@ struct
       Commands.prove ctxt (term "! x: x iff (x=true)")
         ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
          --
-           [cut rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1);
-            cut rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
+           [cut [] rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1);
+            cut [] rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
     in
     rewrite_rule ctxt [equals_iff_thm ctxt] rule_true_l3
 
@@ -201,7 +201,7 @@ struct
              ++ scatter_tac)
             --
               [
-                cut_thm "bool_cases" ++ inst_tac [x_term]
+                cut_thm [] "bool_cases" ++ inst_tac [x_term]
                 ++
                   (split_tac
                    ++ replace_tac
@@ -491,7 +491,7 @@ struct
     else
       let (_, lhs, rhs) = Term.dest_binop trm in
       let proof l g =
-        seq [Tactics.cut thm;
+        seq [Tactics.cut [] thm;
              (?> (fun info g1 ->
                let ttag =
                  Lib.get_one (Info.aformulas info)
@@ -516,7 +516,7 @@ struct
     else
       let (_, lhs, rhs) = Term.dest_binop trm in
       let proof l g =
-        seq [Tactics.cut thm;
+        seq [Tactics.cut [] thm;
              (?> (fun info g1 ->
                let ttag =
                  Lib.get_one (Info.aformulas info)

@@ -1,6 +1,6 @@
 (*----
   Name: commands.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -390,13 +390,11 @@ let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef =
       | Defn.Parser.Subtype(n, args, dtyp, set) ->
         let thm1=
           Lib.dest_option
-            ~err:(Report.error
-                    ("Subtype definition must have an existance theorem"))
+            (Report.error ("Subtype definition must have an existance theorem"))
             thm
         in
         let (ctxt1, def) =
-          subtypedef sctxt
-            (n, args, dtyp, set) (rep, abs) ?simp:simp thm1
+          subtypedef sctxt (n, args, dtyp, set) (rep, abs) ?simp:simp thm1
         in
         (n, (ctxt1, def))
   in

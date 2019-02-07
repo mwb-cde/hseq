@@ -1,6 +1,6 @@
 (*----
   Name: RelationScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -111,7 +111,7 @@ let tc_rule2=
   theorem
     "tc_rule2"
     (!% " (!R x y z: ((R x y) & (TC R y z)) => (TC R x z)) ")
-    [ cut (thm "tc_rules") ++ conjA ++ basic ];;
+    [ cut [] (thm "tc_rules") ++ conjA ++ basic ];;
 
 let tc_induct =
   theorem
@@ -158,7 +158,7 @@ let tc_cases0 =
                  instC [ (!% " _y ") ];
                  show
                    (!% " TC _R _y _z ")
-                   (cut ~inst:[ (!% " _R "); (!% " _y ");
+                   (cut [ (!% " _R "); (!% " _y ");
                                 (!% " _z1 "); (!% " _z ") ]
                         tc_rule2
                     ++ simp);
@@ -183,7 +183,7 @@ let tc_cases =
           --
             [
               cut_mp_tac (thm "tc_rule1") ++ basic;
-              cut ~inst:[ (!% "_R"); (!% " _x "); (!% " _z "); (!% " _y ") ]
+              cut [ (!% "_R"); (!% " _x "); (!% " _z "); (!% " _y ") ]
                   (thm "tc_rule2")
               ++ back_tac
               ++ simp
@@ -229,7 +229,7 @@ let rtc_rule2=
   theorem
     "rtc_rule2"
     (!% " (!R x y z: ((R x y) & (RTC R y z)) => (RTC R x z)) ")
-    [ cut (thm "rtc_rules") ++ conjA ++ basic ];;
+    [ cut [] (thm "rtc_rules") ++ conjA ++ basic ];;
 
 
 let rtc_induct =

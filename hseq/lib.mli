@@ -1,6 +1,6 @@
 (*----
   Name: lib.mli
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -95,8 +95,8 @@ val apply_option: ('a -> 'b) -> 'a option -> 'b -> 'b
     i] then return [f i] else return [d].
 *)
 
-val dest_option: ?err:exn -> 'a option -> 'a
-(** [dest_option ?err x]: If [x] is [Some(y)] then [y], otherwise
+val dest_option: exn -> 'a option -> 'a
+(** [dest_option err x]: If [x] is [Some(y)] then [y], otherwise
     raise [err] or [Failure].
 *)
 

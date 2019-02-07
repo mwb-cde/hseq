@@ -1,6 +1,6 @@
 (*----
   Name: boolinduct.mli
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq

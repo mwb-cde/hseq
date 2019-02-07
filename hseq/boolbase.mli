@@ -1,6 +1,6 @@
 (*----
   Name: boolbase.mli
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -34,8 +34,7 @@ val trivial: ?f:Logic.label -> Tactics.tactic
     true{_ f}, C \].
 *)
 
-val cut_thm:
-  ?inst:Term.term list -> string -> Tactics.tactic
+val cut_thm: Term.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
 
 (** {7 Basic equality reasoning} *)

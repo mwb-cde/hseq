@@ -1,6 +1,6 @@
 (*----
   Name: PairScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -112,7 +112,7 @@ let rep_abs_pair=
     (!% " !x y: (dest_PAIR(make_PAIR (mk_pair x y))) = (mk_pair x y) ")
     [
       flatten_tac
-      ++ cut_thm "mk_pair_is_pair"
+      ++ cut_thm [] "mk_pair_is_pair"
       ++ inst_tac [ (!% " _x ") ; (!% " _y ") ]
       ++ cut_mp_tac (thm "make_PAIR_inverse")
       ++ basic
@@ -124,7 +124,7 @@ let pair_thm =
     (!% " ! x y: (dest_PAIR (pair x y)) = (mk_pair x y) ")
     [
       flatten_tac ++ unfold "pair"
-      ++ cut_thm "epsilon_ax"
+      ++ cut_thm [] "epsilon_ax"
       ++ rewrite_tac [thm "rep_abs_pair"]
       ++ eq_tac
     ];;
@@ -135,9 +135,9 @@ let inj_on_make_PAIR =
     "inj_on_make_PAIR"
     (!% " inj_on make_PAIR is_pair ")
     [
-      cut_thm "inj_on_inverse_intro"
+      cut_thm [] "inj_on_inverse_intro"
       ++ inst_tac [ (!% "make_PAIR"); (!% "is_pair"); (!% "dest_PAIR") ]
-      ++ cut_thm "make_PAIR_inverse"
+      ++ cut_thm [] "make_PAIR_inverse"
       ++ split_tac
       -- [ basic; basic ]
     ];;
@@ -157,12 +157,12 @@ let basic_pair_eq =
         [
           (* 1 *)
           unfold "pair"
-          ++ cut_thm "inj_on_make_PAIR"
+          ++ cut_thm [] "inj_on_make_PAIR"
           ++ unfold "inj_on"
           ++ inst_tac [ (!% " mk_pair _a _b "); (!% " mk_pair _x _y ") ]
-          ++ cut_thm "mk_pair_is_pair"
+          ++ cut_thm [] "mk_pair_is_pair"
           ++ inst_tac [ (!% " _a ") ; (!% " _b ") ]
-          ++ cut_thm "mk_pair_is_pair"
+          ++ cut_thm [] "mk_pair_is_pair"
           ++ inst_tac [ (!% " _x ") ; (!% " _y ") ]
           ++ (implA -- [conjC ++ basic] )
           ++ (implA -- [basic])
@@ -180,7 +180,7 @@ let fst_thm =
     (!% " ! x y: (fst (pair x y)) = x ")
     [
       flatten_tac ++ unfold "fst"
-      ++ cut_thm "epsilon_ax"
+      ++ cut_thm [] "epsilon_ax"
       ++ inst_tac [ (!% " %a: ?b: (pair _x _y) = (pair a b) ") ]
       ++ beta_tac
       ++ split_tac
@@ -201,7 +201,7 @@ let snd_thm =
     (!% " ! x y: (snd (pair x y)) = y ")
     [
       flatten_tac ++ unfold "snd"
-      ++ cut_thm "epsilon_ax"
+      ++ cut_thm [] "epsilon_ax"
       ++ inst_tac [ (!% " %b: ?a: (pair _x _y) = (pair a b) ") ]
       ++ beta_tac
       ++ split_tac
@@ -222,8 +222,8 @@ let pair_inj =
     (!% " ! p: ?x y: p = (pair x y) ")
     [
       flatten_tac ++ unfold "pair"
-      ++ cut ~inst:[ (!% " _p ") ] (thm "dest_PAIR_mem")
-      ++ cut ~inst:[ (!% " _p ") ] (thm "dest_PAIR_inverse")
+      ++ cut [ (!% " _p ") ] (thm "dest_PAIR_mem")
+      ++ cut [ (!% " _p ") ] (thm "dest_PAIR_inverse")
       ++ unfold "is_pair"
       ++ flatten_tac
       ++ inst_tac [ (!% " _x ") ; (!% " _y ") ]
@@ -242,7 +242,7 @@ let pair_induct =
           (!% " !P: (! x y: (P (x, y))) => (!x: P x) ")
           [
             flatten_tac
-            ++ cut pair_cases
+            ++ cut [] pair_cases
             ++ instA [ (!% " _x ") ]
             ++ specA
             ++ replace_tac ++ unify_tac
@@ -254,7 +254,7 @@ let surjective_pairing =
     (!% " !p: (pair (fst p) (snd p)) = p ")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " _p ") ] pair_inj
+      ++ cut [ (!% " _p ") ] pair_inj
       ++ flatten_tac
       ++ replace_tac
       ++ rewrite_tac [basic_pair_eq; fst_thm; snd_thm]
@@ -267,7 +267,7 @@ let pair_eq =
     (!% "! p q : (p = q) = (((fst p) = (fst q)) and ((snd p) = (snd q)))")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " fst _p "); (!% " snd _p ") ;
+      ++ cut [ (!% " fst _p "); (!% " snd _p ") ;
                      (!% " fst _q "); (!% "snd _q ") ] basic_pair_eq
       ++ rewrite_tac [surjective_pairing]
       ++ basic
@@ -276,4 +276,3 @@ let pair_eq =
 let _ = end_theory();;
 
 let _ = Display.print_theory (theory "");;
- 

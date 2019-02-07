@@ -1,6 +1,6 @@
 (*----
   Name: simpconvs.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -53,7 +53,7 @@ let make_cond_rule_true_thm sctxt =
        in
        seq
          [
-           cut (rule_true_thm sctxt);
+           cut [] (rule_true_thm sctxt);
            inst_tac [y_term];
            once_replace_tac;
            eq_tac
@@ -73,7 +73,7 @@ let make_cond_rule_false_thm sctxt =
          Lib.get_one (Info.constants info)
            (Failure "make_cond_rule_false_thm: y-term")
        in
-       (cut (rule_false_thm sctxt) ++ inst_tac [y_term]
+       (cut [] (rule_false_thm sctxt) ++ inst_tac [y_term]
         ++ once_replace_tac
         ++ eq_tac))))
 

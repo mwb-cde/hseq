@@ -1,6 +1,6 @@
 (*----
   Name: tactics.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -580,12 +580,10 @@ val inst_tac:
     {!Tactics.instC}.
 *)
 
-val cut:
-  ?inst:Term.term list -> Logic.thm -> tactic
-(** [cut th]: Cut [th] into the sequent. If [~inst:trms] is given then
-    the top-most variables of the theorem are instantiated with
-    [trms].  Entry point to {!Logic.Tactics.cut}.
-*)
+val cut: Term.term list -> Logic.thm -> tactic
+(** [cut trms th]: Cut [th] into the sequent. The top-most variables of the
+   theorem are instantiated with [trms]. Entry point to {!Logic.Tactics.cut}.
+   *)
 
 val betaA: ?a:Logic.label -> tactic
 (** [betaA l sq]: beta conversion of assumption [l]

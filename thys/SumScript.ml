@@ -1,6 +1,6 @@
 (*----
   Name: SumScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -226,10 +226,10 @@ let inj_on_make_SUM =
     "inj_on_make_SUM"
     (!% " inj_on make_SUM is_sum ")
     [
-      cut_thm "inj_on_inverse_intro"
+      cut_thm [] "inj_on_inverse_intro"
       ++ inst_tac [ (!% " make_SUM "); (!% " is_sum ");
                     (!% " dest_SUM ") ]
-      ++ cut_thm "make_SUM_inverse"
+      ++ cut_thm [] "make_SUM_inverse"
       ++ split_tac
       -- [ basic; basic ]
     ];;
@@ -242,7 +242,7 @@ let inl_eq =
       --
         [
           unfold "inl"
-          ++ cut_thm "inj_on_make_SUM"
+          ++ cut_thm [] "inj_on_make_SUM"
           ++ unfold "inj_on"
           ++ inst_tac [ (!% " mk_suml _x ") ; (!% " mk_suml _y ") ]
           ++ blast_tac ++ (simpC_tac [mk_suml_is_sum] // skip)
@@ -260,7 +260,7 @@ let inr_eq =
       --
         [
           unfold "inr"
-          ++ cut_thm "inj_on_make_SUM"
+          ++ cut_thm [] "inj_on_make_SUM"
           ++ unfold "inj_on"
           ++ inst_tac [ (!% " mk_sumr _x ") ; (!% " mk_sumr _y ") ]
           ++ blast_tac ++ (simpC_tac [mk_sumr_is_sum] // skip)
@@ -282,7 +282,7 @@ let inr_not_inl =
                  ! x y: ((is_sum x) & (is_sum y))
                  => (((make_SUM x) = (make_SUM y)) => (x = y))
                  ")
-            (cut inj_on_make_SUM
+            (cut [] inj_on_make_SUM
              ++ unfold "inj_on"
              ++ basic))
       ++ inst_tac [ (!% " mk_sumr _x "); (!% " mk_suml _y ") ]
@@ -309,7 +309,7 @@ let inl_not_inr =
     (!% " !x y: ~((inl x) = (inr y)) ")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " _y "); (!% " _x ") ] inr_not_inl
+      ++ cut [ (!% " _y "); (!% " _x ") ] inr_not_inl
       ++ simpA []
     ];;
 
@@ -346,7 +346,7 @@ let make_SUM_onto =
      --
        [
          rewrite_tac [thm "dest_SUM_inverse"] ++ eq_tac;
-         cut (thm "dest_SUM_mem") ++ unify_tac
+         cut [] (thm "dest_SUM_mem") ++ unify_tac
     ]);;
 
 let sum_cases =
@@ -355,7 +355,7 @@ let sum_cases =
     (!% " !(a: ('a + 'b)): ((?x: a = (inl x)) | (?x: a = (inr x))) ")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " _a ") ] make_SUM_onto
+      ++ cut [ (!% " _a ") ] make_SUM_onto
       ++ unfold "is_sum"
       ++ flatten_tac
       ++ rewrite_tac [defn "inl"; defn "inr"]
@@ -428,7 +428,7 @@ let sum_fn_exists =
     (!% "! f g: ?h: (!x: (h(inl x)) = (f x)) & (!x: (h(inr x)) = (g x))")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " _f "); (!% " _g ") ] sum_axiom
+      ++ cut [ (!% " _f "); (!% " _g ") ] sum_axiom
       ++ unfold "EXISTS_UNIQUE"
       ++ betaA
       ++ flatten_tac
@@ -446,7 +446,7 @@ let sum_unique =
          (a = b)")
     [
       flatten_tac
-      ++ cut ~inst:[ (!% " _f "); (!% " _g ") ] sum_axiom
+      ++ cut [ (!% " _f "); (!% " _g ") ] sum_axiom
       ++ unfold "EXISTS_UNIQUE"
       ++ beta_tac
       ++ flatten_tac
@@ -478,7 +478,7 @@ let isr_thm =
       --
         [
           instC [ (!% " _x ") ] ++ eq_tac;
-          cut inl_not_inr
+          cut [] inl_not_inr
           ++ instA [ (!% " _x "); (!% " _x1 ") ]
           ++ blast_tac
         ]
@@ -494,7 +494,7 @@ let isl_outl =
       --
         [
           rewriteC_tac [outl_thm] ++ eq_tac;
-          cut isl_thm
+          cut [] isl_thm
           ++ flatten_tac
           ++ inst_tac [ (!% " _x1 ") ]
           ++ inst_tac [ (!% " _x1 ") ]
@@ -511,7 +511,7 @@ let isr_outr =
       ++ cases_of (!% " _x ") ++ replace_tac
       --
         [
-          cut isr_thm
+          cut [] isr_thm
           ++ flatten_tac
           ++ inst_tac [ (!% " _x1 ") ]
           ++ inst_tac [ (!% " _x1 ") ]

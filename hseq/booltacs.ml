@@ -1,6 +1,6 @@
 (*----
   Name: booltacs.ml
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -290,7 +290,7 @@ let cases_tac (t: Term.term) ctxt goal =
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in
   seq
     [
-      cut thm;
+      cut [] thm;
       (?> (fun inf ->
         let thm_tag = get_one ~msg:"cases_tac 1" (Info.aformulas inf) in
         allA t ~a:(ftag thm_tag)));
@@ -317,7 +317,7 @@ let show_tac (trm: Term.term) tac ctxt goal =
   let thm = cases_thm (set_scope ctxt (scope_of_goal goal)) in
   seq
     [
-      cut thm;
+      cut [] thm;
       (?> (fun inf1 ->
         let thm_tag = get_one ~msg:"show_tac 1" (Info.aformulas inf1) in
         allA trm ~a:(ftag thm_tag)));
@@ -376,7 +376,7 @@ let cases_of ?thm t ctxt goal =
   in
   try
     seq [
-        cut ~inst:[trm] case_thm;
+        cut [trm] case_thm;
         (?> (fun inf1 ->
           let a_tg = get_one (Info.aformulas inf1)
           in
@@ -475,7 +475,7 @@ let cut_mp_tac ?inst thm ?a ctxt goal =
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent goal))))
       a None
   in
-  (Tactics.cut ?inst:inst thm ++
+  (Tactics.cut (Lib.from_option inst []) thm ++
      (?> (fun inf1 ->
        let a_tag =
          Lib.get_one (Info.aformulas inf1)
@@ -569,7 +569,7 @@ let cut_back_tac ?inst thm ?c ctxt g =
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
       c None
   in
-  let tac1 = Tactics.cut ?inst:inst thm in
+  let tac1 = Tactics.cut (Lib.from_option inst []) thm in
   let tac2 =
     (?> (fun inf2 ->
       let a_tag =

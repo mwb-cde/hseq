@@ -1,6 +1,6 @@
 (*----
   Name: boolbase.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -67,7 +67,7 @@ let trivial ?f ctxt g =
   try (trueC ?c:f // falseA ?a:f) ctxt g
   with _ -> raise (error "trivial")
 
-let cut_thm ?inst str ctxt = cut ?inst (thm ctxt str) ctxt
+let cut_thm trms str ctxt = cut trms (thm ctxt str) ctxt
 
 (*** Basic equality reasoning ***)
 
@@ -102,33 +102,33 @@ let make_eq_sym_thm ctxt =
           prove ctxt (term "!x y : (x = y) => (y = x)")
           ((repeat allC) ++ implC
            ++ substC [!~1] (!! 1)
-           ++ cut ~inst:[ (term "_y") ] (eq_refl_thm ctxt) ++ basic)
+           ++ cut [ (term "_y") ] (eq_refl_thm ctxt) ++ basic)
         in
         let eq_l2 =
           prove ctxt (term "!x y : ((x => y) & (y => x)) => (x = y)")
           ((repeat allC)
-           ++ cut ~inst:[ (term "_x") ] (bool_cases_thm ctxt) ++ disjA
-           ++ cut ~inst:[ (term "_y") ] (bool_cases_thm ctxt) ++ disjA
+           ++ cut [ (term "_x") ] (bool_cases_thm ctxt) ++ disjA
+           ++ cut [ (term "_y") ] (bool_cases_thm ctxt) ++ disjA
            ++ substC [ !~ 1; !~ 2] (!! 1) ++ implC
            --
              [
-               cut ~inst:[ (term "true") ] (eq_refl_thm ctxt) ++ basic ;
+               cut [ (term "true") ] (eq_refl_thm ctxt) ++ basic ;
                conjA ++ implA ++ trivial;
                conjA ++ implA ++ implA ++ trivial;
-               cut ~inst:[ (term "false") ] (eq_refl_thm ctxt) ++ basic
+               cut [ (term "false") ] (eq_refl_thm ctxt) ++ basic
              ])
         in
         prove ctxt (term "!x y : (x = y) = (y = x)")
             ((repeat allC)
-             ++ cut ~inst:[ (term "_x = _y") ; (term "_y = _x")] eq_l2
+             ++ cut [ (term "_x = _y") ; (term "_y = _x")] eq_l2
              ++ implA
              --
                [
                  conjC
                  --
                    [
-                     cut ~inst:[ (term "_x") ; (term "_y") ] eq_l1 ++ basic ;
-                     cut ~inst:[ (term "_y") ; (term "_x") ] eq_l1 ++ basic
+                     cut [ (term "_x") ; (term "_y") ] eq_l1 ++ basic ;
+                     cut [ (term "_y") ; (term "_x") ] eq_l1 ++ basic
                    ] ;
                  basic
                ])
@@ -185,7 +185,7 @@ let eq_tac ?c ctxt goal =
   in
   seq
     [
-      Tactics.cut th;
+      Tactics.cut [] th;
       (?> (fun info1 g ->
         let af = get_one ~msg:"eq_tac" (Info.aformulas info1)
         in
