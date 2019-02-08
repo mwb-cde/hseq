@@ -85,7 +85,7 @@ let load_init () =
     Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
   in
   if Sys.file_exists initfile
-  then Unsafe.use_file ~silent:false initfile
+  then Unsafe.use_file false initfile
   else Report.warning ("Can't find initialising file "^initfile)
 
 let init() =

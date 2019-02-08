@@ -28,7 +28,7 @@ let use_string st =
  with _ -> failwith ("use_string "^st);;
 
 
-let use_file ?(silent=false) f =
+let use_file silent f =
   if silent
   then ignore(Toploop.use_silently Format.std_formatter f)
   else ignore(Toploop.use_file Format.std_formatter f)

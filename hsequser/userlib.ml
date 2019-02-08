@@ -232,7 +232,7 @@ struct
     let st1 = Userstate.set_context saved_state ctxt in
     begin
       Global.set_state st1;
-      scripter ~silent:false script_name;
+      scripter false script_name;
       let st2 = Global.state() in
       Context.thydb (Userstate.context st2)
     end

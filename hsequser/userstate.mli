@@ -46,7 +46,7 @@ sig
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
       loader_f: (string -> unit) option;
-      scripter_f: (?silent:bool -> string -> unit) option;
+      scripter_f: (bool -> string -> unit) option;
     }
 
   val empty: unit -> t
@@ -78,8 +78,8 @@ sig
   val loader: t -> (string -> unit)option
   val set_loader: t -> (string -> unit)option -> t
 
-  val scripter: t -> (?silent:bool -> string -> unit)option
-  val set_scripter: t -> (?silent:bool -> string -> unit)option -> t
+  val scripter: t -> (bool -> string -> unit)option
+  val set_scripter: t -> (bool -> string -> unit)option -> t
 end
 
 val context: State.t -> Context.t
@@ -127,10 +127,10 @@ val loader: State.t -> (string -> unit)
 val set_loader: State.t -> (string -> unit) -> State.t
 (** Set function to load a library. *)
 
-val scripter: State.t -> (?silent:bool -> string -> unit)
+val scripter: State.t -> (bool -> string -> unit)
 (** The (optional) function to run a theory script. *)
 val set_scripter:
-  State.t -> (?silent:bool -> string -> unit) -> State.t
+  State.t -> (bool -> string -> unit) -> State.t
 (** Set the function to run a theory script. *)
 
 val init_context: State.t -> State.t

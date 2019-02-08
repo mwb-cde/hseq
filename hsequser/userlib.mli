@@ -98,8 +98,8 @@ val load_file_func: unit -> (string -> unit)
 val set_load_file_func: (string -> unit) -> unit
 (** Set the load file function *)
 
-val use_file_func: unit -> (?silent:bool -> string -> unit)
-val set_use_file_func: (?silent:bool -> string -> unit) -> unit
+val use_file_func: unit -> (bool -> string -> unit)
+val set_use_file_func: (bool -> string -> unit) -> unit
 (** Set the use file function *)
 
 val set_proof_hook: (unit -> unit) -> unit

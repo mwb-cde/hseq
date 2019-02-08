@@ -65,7 +65,7 @@ struct
       base_thy_builder_f: t -> t;
       thyset_f: Lib.StringSet.t;
       loader_f: (string -> unit) option;
-      scripter_f: (?silent:bool -> string -> unit) option;
+      scripter_f: (bool -> string -> unit) option;
     }
 
   (** Initializer *)
@@ -168,7 +168,7 @@ let set_loader st f = State.set_loader st (Some(f))
 
 let scripter st =
   match State.scripter st with
-  | None -> (fun ?silent _ -> ())
+  | None -> (fun silent _ -> ())
   | Some(f) -> f
 let set_scripter st f = State.set_scripter st (Some(f))
 

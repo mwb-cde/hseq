@@ -28,8 +28,8 @@ sig
   (** [load n]: Load file [n]. *)
   val load : string -> unit
 
-  (** [use ?silent n]: Use script [n]. *)
-  val use : ?silent:bool -> string -> unit
+  (** [use silent n]: Use script [n]. *)
+  val use : bool -> string -> unit
 
   (** {6 Theories} *)
 
@@ -50,9 +50,9 @@ type file_t =
     (** [load f]: Load a byte-code file [f] into memory. *)
     load_f: string -> unit;
 
-    (** [use ?silent f]: Read file [f] as a script.  If
+    (** [use silent f]: Read file [f] as a script.  If
         [silent=true], do not report any information. *)
-    use_f: ?silent:bool -> string -> unit;
+    use_f: bool -> string -> unit;
 
     (** [path]: List of directories to search for theories,
         libraries and scripts.*)
@@ -149,10 +149,10 @@ val set_loader : t -> (string -> unit) -> t
 val loader : t -> (string -> unit)
 (** [loader t]: Get the file-loading function of context [t]. *)
 
-val set_scripter : t -> (?silent:bool -> string -> unit) -> t
+val set_scripter : t -> (bool -> string -> unit) -> t
 (** [set_use f t]: Set the script-loading function in context [t] to [f]. *)
 
-val scripter: t -> (?silent:bool -> string -> unit)
+val scripter: t -> (bool -> string -> unit)
 (** [use t]: Get the script-loading function of context [t]. *)
 
 val set_path : t-> string list -> t
@@ -263,8 +263,9 @@ sig
   (** The current working directory. *)
   val get_cdir: unit -> string
 
-  (** [load_use_file ?silent name]: Load or use file [n]. *)
-  val load_use_file: ?silent:bool -> t -> string -> unit
+  (** [load_use_file silent name]: Load or use file [n]. *)
+
+  val load_use_file: t -> string -> unit
 
   (** {7 Paths} *)
 

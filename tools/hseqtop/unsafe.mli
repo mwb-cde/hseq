@@ -29,7 +29,7 @@ val use_string: string -> unit
    Raises [Failure] if evaluating [str] fails for any reason.
 *)
 
-val use_file : ?silent:bool -> string -> unit
+val use_file : bool -> string -> unit
 (**
    [use_file ?silent name]: Use file [name] as a script. Equivalent to
    [#use name].  If [silent] is [true], no output, otherwise emits

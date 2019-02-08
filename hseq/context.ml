@@ -29,7 +29,7 @@ struct
   (** {6 File handling} *)
 
   let load f = Report.warning ("Context.load: Failed to load file "^f)
-  let use ?silent f = Report.warning ("Context.use: Failed to use file "^f)
+  let use silent f = Report.warning ("Context.use: Failed to use file "^f)
 
   (** {6 Theories} *)
 
@@ -47,7 +47,7 @@ type file_t =
 
     (** [use_file ?silent f]: Read file [f] as a script.  If
         [silent=true], do not report any information. *)
-    use_f: ?silent:bool -> string -> unit;
+    use_f: bool -> string -> unit;
 
     (** [path]: List of directories to search for theories,
         libraries and scripts.*)
@@ -559,11 +559,11 @@ module Files =
 struct
   let get_cdir () = Sys.getcwd ()
 
-  let load_use_file ?silent ctxt f =
+  let load_use_file ctxt f =
     try
       if List.exists (Filename.check_suffix f) (obj_suffix ctxt)
       then loader ctxt f
-      else scripter ctxt f
+      else scripter ctxt false f
     with
     | Not_found -> Report.warning ("Can't find file "^f)
     | _ -> Report.warning ("Failed to load file "^f)
