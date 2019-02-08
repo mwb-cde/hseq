@@ -48,10 +48,11 @@
    Open modules
 *)
 
+open HSeq;;
 open HSeq.Goals;;
 open HSeq.Tactics;;
 open HSeq.Boollib;;
 
-open HSeq;;
 open HSeqUser;;
 open HSeqUser.Userlib;;
+open HSeqUser.Userlib.Tactics;;

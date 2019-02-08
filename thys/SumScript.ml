@@ -23,12 +23,6 @@
    Open HSeq modules.
  *)
 
-open HSeq
-open Tactics
-open Boollib
-open Simplib
-open Userlib
-
 (**
    Sum of types.
 

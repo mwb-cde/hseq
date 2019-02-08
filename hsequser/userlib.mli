@@ -621,15 +621,17 @@ val add_conv:
     [beta_conv] on all terms matching [(%y: A) x].
 *)
 
-val simpA_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?a:Logic.label
-  -> Logic.thm list
-  -> Tactics.tactic
-(** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
+(** {5 Tactics} *)
+module Tactics: sig
+  val simpA_tac:
+    ?cntrl:Simplifier.control
+    -> ?ignore:Logic.label list
+    -> ?set:Simpset.simpset
+    -> ?add:Simpset.simpset
+    -> ?a:Logic.label
+    -> Logic.thm list
+    -> Tactics.tactic
+  (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
 
     Simplify assumptions.
 
@@ -643,25 +645,25 @@ val simpA_tac:
     Repeat for all assumptions to be simplified.}}
 
     Doesn't use formulas identified by a label in [ignore].
-*)
+   *)
 
-val simpA:
-  ?set:Simpset.simpset -> ?a:Logic.label -> Logic.thm list
-  -> Tactics.tactic
-(** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
+  val simpA:
+    ?set:Simpset.simpset -> ?a:Logic.label -> Logic.thm list
+    -> Tactics.tactic
+  (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
 
     @raise No_change If no change is made.
-*)
+   *)
 
-val simpC_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?c:Logic.label
-  -> Logic.thm list
-  -> Tactics.tactic
-(** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
+  val simpC_tac:
+    ?cntrl:Simplifier.control
+    -> ?ignore:Logic.label list
+    -> ?set:Simpset.simpset
+    -> ?add:Simpset.simpset
+    -> ?c:Logic.label
+    -> Logic.thm list
+    -> Tactics.tactic
+  (** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
 
     Simplify assumptions.
 
@@ -675,24 +677,24 @@ val simpC_tac:
     Repeat for all assumptions to be simplified.}}
 
     Doesn't use formulas identified by a label in [ignore].
-*)
+   *)
 
-val simpC:
-  ?set:Simpset.simpset -> ?c:Logic.label -> Logic.thm list
-  ->  Tactics.tactic
-(** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+  val simpC:
+    ?set:Simpset.simpset -> ?c:Logic.label -> Logic.thm list
+    ->  Tactics.tactic
+  (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
 
     @raise No_change If no change is made.
-*)
+   *)
 
-val simp_all_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> Logic.thm list
-  -> Tactics.tactic
-(** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+  val simp_all_tac:
+    ?cntrl:Simplifier.control
+    -> ?ignore:Logic.label list
+    -> ?set:Simpset.simpset
+    -> ?add:Simpset.simpset
+    -> Logic.thm list
+    -> Tactics.tactic
+  (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
 
     Simplify each formula in the subgoal.
 
@@ -703,31 +705,33 @@ val simp_all_tac:
     adding it to the simpset.}}
 
     Don't use formulas identified by a label in [ignore].
-*)
+   *)
 
-val simp_all:
-  ?set:Simpset.simpset -> Logic.thm list -> Tactics.tactic
-(** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
+  val simp_all:
+    ?set:Simpset.simpset -> Logic.thm list -> Tactics.tactic
+  (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
 
     @raise No_change If no change is made.
-*)
+   *)
 
-val simp_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> ?set:Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?f:Logic.label
-  -> Logic.thm list
-  -> Tactics.tactic
-(** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
+  val simp_tac:
+    ?cntrl:Simplifier.control
+    -> ?ignore:Logic.label list
+    -> ?set:Simpset.simpset
+    -> ?add:Simpset.simpset
+    -> ?f:Logic.label
+    -> Logic.thm list
+    -> Tactics.tactic
+  (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
 
     Simplifier tactic.
-*)
+   *)
 
-val simp:
-  ?set:Simpset.simpset -> ?f:Logic.label -> Tactics.tactic
+  val simp:
+    ?set:Simpset.simpset -> ?f:Logic.label -> Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
 
     @raise No_change If no change is made.
-*)
+ *)
+
+end

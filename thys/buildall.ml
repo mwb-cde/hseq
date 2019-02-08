@@ -34,6 +34,7 @@
 open HSeq
 open HSeqUser
 open Userlib
+open Userlib.Tactics
 
 (** Include the local configuration file. This is created by the Makefile in
     this directory. It must have value (local_include_dirs:: ('string)list)
