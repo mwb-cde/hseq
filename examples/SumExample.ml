@@ -35,11 +35,12 @@
  *)
 
 open HSeq
-open HSeqUser
-open Tactics
+open HSeq.Tactics
 open Boollib
 open Simplib
-open Userlib
+open HSeqUser
+open HSeqUser.Userlib
+open HSeqUser.Userlib.Tactics
 
 (** Initialise the system *)
 
@@ -232,10 +233,10 @@ let sum_example () =
     theorem "inj_on_make_SUM"
       (!% " inj_on make_SUM is_sum ")
       [
-        cut_thm "inj_on_inverse_intro"
+        cut_thm [] "inj_on_inverse_intro"
         ++ inst_tac [ (!% " make_SUM "); (!% " is_sum ");
                       (!% " dest_SUM ") ]
-        ++ cut_thm "make_SUM_inverse"
+        ++ cut_thm [] "make_SUM_inverse"
         ++ split_tac
         -- [ basic; basic ]
       ]
@@ -248,7 +249,7 @@ let sum_example () =
         --
           [
             unfold "inl"
-            ++ cut_thm "inj_on_make_SUM"
+            ++ cut_thm [] "inj_on_make_SUM"
             ++ unfold "inj_on"
             ++ inst_tac [ (!% " mk_suml _x ") ; (!% " mk_suml _y ") ]
             ++ blast_tac ++ (simpC_tac [mk_suml_is_sum] // skip)
@@ -266,7 +267,7 @@ let sum_example () =
         --
           [
             unfold "inr"
-            ++ cut_thm "inj_on_make_SUM"
+            ++ cut_thm [] "inj_on_make_SUM"
             ++ unfold "inj_on"
             ++ inst_tac [ (!% " mk_sumr _x ") ; (!% " mk_sumr _y ") ]
             ++ blast_tac ++ (simpC_tac [mk_sumr_is_sum] // skip)
@@ -288,7 +289,7 @@ let sum_example () =
                    ! x y: ((is_sum x) & (is_sum y))
                    => (((make_SUM x) = (make_SUM y)) => (x = y))
                    ")
-              (cut inj_on_make_SUM
+              (cut [] inj_on_make_SUM
                ++ unfold "inj_on"
                ++ basic))
         ++ inst_tac [ (!% " mk_sumr _x "); (!% " mk_suml _y ") ]
@@ -315,7 +316,7 @@ let sum_example () =
       (!% " !x y: ~((inl x) = (inr y)) ")
       [
         flatten_tac
-        ++ cut ~inst:[ (!% " _y "); (!% " _x ") ] inr_not_inl
+        ++ cut [ (!% " _y "); (!% " _x ") ] inr_not_inl
         ++ simpA []
       ]
   in
@@ -352,7 +353,7 @@ let sum_example () =
        --
          [
            rewrite_tac [thm "dest_SUM_inverse"] ++ eq_tac;
-           cut (thm "dest_SUM_mem") ++ unify_tac
+           cut [] (thm "dest_SUM_mem") ++ unify_tac
       ])
   in
 
@@ -361,7 +362,7 @@ let sum_example () =
       (!% " !(a: ('a + 'b)): ((?x: a = (inl x)) | (?x: a = (inr x))) ")
       [
         flatten_tac
-        ++ cut ~inst:[ (!% " _a ") ] make_SUM_onto
+        ++ cut [ (!% " _a ") ] make_SUM_onto
         ++ unfold "is_sum"
         ++ flatten_tac
         ++ rewrite_tac [defn "inl"; defn "inr"]
@@ -434,7 +435,7 @@ let sum_example () =
       (!% "! f g: ?h: (!x: (h(inl x)) = (f x)) & (!x: (h(inr x)) = (g x))")
       [
         flatten_tac
-        ++ cut ~inst:[ (!% " _f "); (!% " _g ") ] sum_axiom
+        ++ cut [ (!% " _f "); (!% " _g ") ] sum_axiom
         ++ unfold "EXISTS_UNIQUE"
         ++ betaA
         ++ flatten_tac
@@ -452,7 +453,7 @@ let sum_example () =
            (a = b)")
       [
         flatten_tac
-        ++ cut ~inst:[ (!% " _f "); (!% " _g ") ] sum_axiom
+        ++ cut [ (!% " _f "); (!% " _g ") ] sum_axiom
         ++ unfold "EXISTS_UNIQUE"
         ++ beta_tac
         ++ flatten_tac
@@ -484,7 +485,7 @@ let sum_example () =
         --
           [
             instC [ (!% " _x ") ] ++ eq_tac;
-            cut inl_not_inr
+            cut [] inl_not_inr
             ++ instA [ (!% " _x "); (!% " _x1 ") ]
             ++ blast_tac
           ]
@@ -500,7 +501,7 @@ let sum_example () =
         --
           [
             rewriteC_tac [outl_thm] ++ eq_tac;
-            cut isl_thm
+            cut [] isl_thm
             ++ flatten_tac
             ++ inst_tac [ (!% " _x1 ") ]
             ++ inst_tac [ (!% " _x1 ") ]
@@ -517,7 +518,7 @@ let sum_example () =
         ++ cases_of (!% " _x ") ++ replace_tac
         --
           [
-            cut isr_thm
+            cut [] isr_thm
             ++ flatten_tac
             ++ inst_tac [ (!% " _x1 ") ]
             ++ inst_tac [ (!% " _x1 ") ]
