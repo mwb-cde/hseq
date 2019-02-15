@@ -88,14 +88,17 @@ let load_init () =
   then Unsafe.use_file false initfile
   else Report.warning ("Can't find initialising file "^initfile)
 
+let setup_init() =
+  set_base_dir();
+  set_directorys();
+  set_hooks();
+  load_init()
+
 let init() =
   starting_mesg();
   tp_init()
 
 (*** The code to run when this module is loaded. **)
 let _ =
-  set_base_dir();
-  set_directorys();
-  set_hooks();
-  Unsafe.add_init load_init;
+  Unsafe.add_init setup_init;
   init()
