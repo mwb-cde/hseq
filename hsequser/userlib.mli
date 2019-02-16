@@ -624,12 +624,7 @@ val add_conv:
 (** {5 Tactics} *)
 module Tactics: sig
   val simpA_tac:
-    ?cntrl:Simplifier.control
-    -> ?ignore:Logic.label list
-    -> ?set:Simpset.simpset
-    -> ?add:Simpset.simpset
-    -> ?a:Logic.label
-    -> Logic.thm list
+    Simpset.simpset -> Logic.thm list -> Logic.label
     -> Tactics.tactic
   (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
 
@@ -647,21 +642,14 @@ module Tactics: sig
     Doesn't use formulas identified by a label in [ignore].
    *)
 
-  val simpA:
-    ?set:Simpset.simpset -> ?a:Logic.label -> Logic.thm list
-    -> Tactics.tactic
+  val simpA: Logic.thm list -> Tactics.tactic
   (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
 
     @raise No_change If no change is made.
    *)
 
   val simpC_tac:
-    ?cntrl:Simplifier.control
-    -> ?ignore:Logic.label list
-    -> ?set:Simpset.simpset
-    -> ?add:Simpset.simpset
-    -> ?c:Logic.label
-    -> Logic.thm list
+    Simpset.simpset -> Logic.thm list -> Logic.label
     -> Tactics.tactic
   (** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
 
@@ -679,21 +667,13 @@ module Tactics: sig
     Doesn't use formulas identified by a label in [ignore].
    *)
 
-  val simpC:
-    ?set:Simpset.simpset -> ?c:Logic.label -> Logic.thm list
-    ->  Tactics.tactic
+  val simpC: Logic.thm list ->  Tactics.tactic
   (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
 
     @raise No_change If no change is made.
    *)
 
-  val simp_all_tac:
-    ?cntrl:Simplifier.control
-    -> ?ignore:Logic.label list
-    -> ?set:Simpset.simpset
-    -> ?add:Simpset.simpset
-    -> Logic.thm list
-    -> Tactics.tactic
+  val simp_all_tac: Simpset.simpset -> Logic.thm list -> Tactics.tactic
   (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
 
     Simplify each formula in the subgoal.
@@ -707,28 +687,19 @@ module Tactics: sig
     Don't use formulas identified by a label in [ignore].
    *)
 
-  val simp_all:
-    ?set:Simpset.simpset -> Logic.thm list -> Tactics.tactic
+  val simp_all: Logic.thm list -> Tactics.tactic
   (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
 
     @raise No_change If no change is made.
    *)
 
-  val simp_tac:
-    ?cntrl:Simplifier.control
-    -> ?ignore:Logic.label list
-    -> ?set:Simpset.simpset
-    -> ?add:Simpset.simpset
-    -> ?f:Logic.label
-    -> Logic.thm list
-    -> Tactics.tactic
+  val simp_tac: Simpset.simpset -> Logic.thm list -> Tactics.tactic
   (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
 
     Simplifier tactic.
    *)
 
-  val simp:
-    ?set:Simpset.simpset -> ?f:Logic.label -> Tactics.tactic
+  val simp: (Logic.thm)list -> Tactics.tactic
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
 
     @raise No_change If no change is made.

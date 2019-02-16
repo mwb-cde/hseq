@@ -459,7 +459,7 @@ theorem ~simp:false "if_expand"
  flatten_tac
    ++ cut [ (!% " _x ") ] (thm "bool_cases")
    ++ split_tac ++ replace_tac ++ rewrite_tac [if_true; if_false]
-   ++ simp
+   ++ simp []
 ];;
 
 let if_id =
@@ -469,7 +469,7 @@ theorem ~simp:true "if_id"
   flatten_tac
     ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
-    ++ simp
+    ++ simp []
 ];;
 
 let if_rand =
@@ -479,7 +479,7 @@ theorem ~simp:false "if_rand"
   flatten_tac
     ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
-    ++ simp
+    ++ simp []
 ];;
 
 let if_rator =
@@ -489,7 +489,7 @@ theorem ~simp:false "if_rator"
   flatten_tac
     ++ cut [ (!% " _x ") ] (thm "bool_cases")
     ++ split_tac
-    ++ simp
+    ++ simp []
 ];;
 
 
@@ -504,7 +504,7 @@ let exists_unique_thm =
     ")
 [
  flatten_tac ++ unfold "EXISTS_UNIQUE"
-   ++ (show (!% " ! P a: ((% x: _P x) a) = (_P a) ") simp)
+   ++ (show (!% " ! P a: ((% x: _P x) a) = (_P a) ") (simp []))
    ++ replace_tac
    ++ eq_tac
 ];;
@@ -515,12 +515,12 @@ let exists_unique_refl =
   [
    flatten_tac
      ++ unfold "EXISTS_UNIQUE"
-     ++ simp
+     ++ simp []
      ++ scatter_tac
      --
      [
-       inst_tac [ (!% " _a ") ]++ simp;
-       simp
+       inst_tac [ (!% " _a ") ]++ simp [];
+       simp []
      ]
  ];;
 
@@ -535,7 +535,7 @@ let exists_unique_or =
      ++ beta_tac
      ++ replace_tac
      ++ scatter_tac ++ (unify_tac // skip)
-     ++ back_tac ++ simp
+     ++ back_tac ++ simp []
  ];;
 
 let exists_unique_simp =
@@ -545,9 +545,9 @@ let exists_unique_simp =
    flatten_tac
      ++ cut [ (!% " % x: _P ") ] exists_unique_thm
      ++ beta_tac ++ replace_tac
-     ++ simp_tac [exists_simp]
+     ++ simp [exists_simp]
      ++ equals_tac ++ blast_tac
-     ++ (back_tac // skip) ++ simp
+     ++ (back_tac // skip) ++ simp []
  ];;
 
 (** Epsilon (choice) *)

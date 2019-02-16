@@ -732,59 +732,46 @@ let add_conv trms conv =
 
 module Tactics = struct
 
-  let simpA_tac ?cntrl ?ignore ?set ?add ?a rules =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simpA_tac ?cntrl ?ignore set0 ?add ?a rules
+  let simpA_tac set rules a =
+    Simplib.simpA_tac set ~a:a rules
   (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
 
     Simplify assumptions.
    *)
 
-  let simpA ?set ?a rules =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simpA_tac set0 ?a rules
+  let simpA rules =
+    Simplib.simpA_tac (Global.simpset()) rules
 
-  let simpC_tac ?cntrl ?ignore ?set ?add ?c rules =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simpC_tac ?cntrl ?ignore set0 ?add ?c rules
+  let simpC_tac set rules c =
+    Simplib.simpC_tac set ~c:c rules
 
-  let simpC ?set ?c rules =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simpC_tac set0 ?c rules
+  let simpC rules =
+    Simplib.simpC_tac (Global.simpset()) rules
 
-  let simp_all_tac ?cntrl ?ignore ?set ?add thms =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simp_all_tac ?cntrl ?ignore set0 ?add thms
-
-  let simp_all_tac ?cntrl ?ignore ?set ?add thms =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simp_all_tac ?cntrl ?ignore set0 ?add thms
+  let simp_all_tac set thms =
+    Simplib.simp_all_tac set thms
   (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
 
     Simplify each formula in the subgoal.
    *)
 
-  let simp_all ?set thms =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simp_all_tac set0 thms
+  let simp_all thms =
+    Simplib.simp_all_tac (Global.simpset()) thms
   (** [simp_all]: Shorthand for {!Simplib.simp_all_tac}.
 
     @raise No_change If no change is made.
    *)
 
 
-  let simp_tac ?cntrl ?ignore ?set ?add ?f thms =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simp_tac ?cntrl ?ignore set0 ?add ?f thms
+  let simp_tac set thms =
+    Simplib.simp_tac set thms
   (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
 
     Simplifier tactic.
    *)
 
 
-  let simp ?set ?f g =
-    let set0 = Lib.from_option set (Global.simpset()) in
-    Simplib.simp set0 ?f g
+  let simp rules g = simp_tac (Global.simpset()) rules g
 (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
 
     @raise No_change If no change is made.

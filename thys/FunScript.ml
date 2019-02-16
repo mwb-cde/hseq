@@ -49,17 +49,17 @@ let compose_def =
 let compose_thm =
 theorem ~simp:true "compose_thm"
 (!% " !f g x: ((f ++ g) x) = (f (g x)) ")
-[simp_tac [defn "compose"] ++ eq_tac];;
+[simp [defn "compose"] ++ eq_tac];;
 
 let compose_assoc =
 theorem ~simp:true "compose_assoc"
 (!% " ! f g h: (f ++ (g ++h)) = ((f ++ g) ++ h) ")
-[flatten_tac; cut_back_tac (thm "extensionality"); simp];;
+[flatten_tac; cut_back_tac (thm "extensionality"); simp []];;
 
 let compose_abs_r =
 theorem ~simp:true "compose_abs_r"
 (!% " ! f g : (f ++ (% x : g x)) = (% x : f (g x)) ")
-[flatten_tac; cut_back_tac (thm "extensionality"); simp];;
+[flatten_tac; cut_back_tac (thm "extensionality"); simp []];;
 
 (**
    {5 Combinators}
@@ -92,42 +92,42 @@ define (?<% " fail = % x y: x ");;
 let combinK_thm =
 theorem ~simp:true "combinK_thm"
 (!% " ! x y: (cK x y) = x ")
-[simp_tac [defn "cK"]];;
+[simp [defn "cK"]];;
 
 let combinS_thm =
 theorem ~simp:true "combinS_thm"
 (!% " ! f g x : (cS f g x) = (f x (g x)) ")
-[simp_tac [defn "cS"]];;
+[simp [defn "cS"]];;
 
 let combinS_abs_l =
 theorem ~simp:true "combinS_abs_l"
 (!% " ! f g: (cS (%x : f x) g) = (%x: f x ( g x)) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp];;
+[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
 
 let combinS_abs_r =
 theorem ~simp:true "combinS_abs_r"
 (!% " ! f g: (cS f (%x : g x)) = (%x: f x ( g x)) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp];;
+[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
 
 let combinC_thm =
 theorem ~simp:true "combinC_thm"
 (!% " ! f x y : (cC f x y) = (f y x) ")
-[simp_tac [defn "cC"]];;
+[simp [defn "cC"]];;
 
 let combinC_abs_l =
 theorem ~simp:true "combinC_abs_l"
 (!% " ! f y: (cC (%x: f x) y) = (%x: f x y) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp];;
+[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
 
 let combinW_thm=
 theorem ~simp:true "combinW_thm"
 (!% " !f x : (cW f x) = (f x x)")
-[simp_tac [defn "cW"]];;
+[simp [defn "cW"]];;
 
 let combinI_thm=
 theorem ~simp:true "combinI_thm"
 (!% " ! x : (cI x) = x")
-[simp_tac [defn "cI"]];;
+[simp [defn "cI"]];;
 
 let combinI_compose_f =
 theorem ~simp:true "combinI_compose_f"
@@ -135,7 +135,7 @@ theorem ~simp:true "combinI_compose_f"
 [
  conjC
    ++ flatten_tac
-   ++ (cut_back_tac (thm "extensionality")) ++ simp
+   ++ (cut_back_tac (thm "extensionality")) ++ simp []
 ];;
 
 let combinK_compose_thm =
@@ -147,13 +147,13 @@ theorem ~simp:true "combinK_compose_thm"
 [
  conjC
    ++ flatten_tac
-   ++ (cut_back_tac (thm "extensionality")) ++ simp
+   ++ (cut_back_tac (thm "extensionality")) ++ simp []
 ];;
 
 let fail_thm =
 theorem ~simp:true "fail_thm"
 (!% " ! x y: (fail x y) = x ")
-[simp_tac [defn "fail"]] ;;
+[simp [defn "fail"]] ;;
 
 (** {5 Functions} *)
 
@@ -201,7 +201,7 @@ let invf_def =
 let id_thm =
   theorem ~simp:true
           "id_thm"  (!% " ! x : (id x) = x ")
-          [simp_tac [defn "id"]] ;;
+          [simp [defn "id"]] ;;
 
 let surj_intro =
   theorem
@@ -211,7 +211,7 @@ let surj_intro =
      ++ unfold "surj" ++ specC
      ++ instC [ (!% " _g _y ") ]
      ++ instA [ (!% " _y ") ]
-     ++ simp
+     ++ simp []
  ];;
 
 let surj_compose =
@@ -220,7 +220,7 @@ let surj_compose =
     (!% " ! f g: ((surj f) & (surj g)) => (surj (f ++ g)) ")
   [
    flatten_tac
-     ++ simp_all_tac [defn "surj"]
+     ++ simp_all [defn "surj"]
      ++ instA [ (!% " _y ") ] ++ specA
      ++ instA [ (!% " _x  ") ] ++ specA
      ++ instC [ (!% " _x1 ") ]
@@ -262,7 +262,7 @@ let invf_compose =
   [
     flatten_tac
       ++ once_rewrite_tac [thm "function_eq"]
-      ++ simp_all_tac [ defn "invf"]
+      ++ simp_all [ defn "invf"]
   ];;
 
 let _ = end_theory ();;

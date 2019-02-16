@@ -111,15 +111,10 @@ let mk_sumr_eq =
       flatten_tac ++ unfold "mk_sumr" ++ equals_tac ++ iffE
       --
         [
-          (match_asm
-             (!% " X = Y ")
-             (fun l ->
-               repeat
-                 (once_rewrite_tac ~f:l [thm "function_eq"]
-                  ++ beta_tac ~f:l)
-               ++ inst_tac ~f:l [ (!% " false "); (!% " any ") ;
-                                  (!% " _y ") ]
-               ++ simp ~f:l));
+          repeat
+            (once_rewriteA_tac [thm "function_eq"] ++ beta_tac)
+          ++ inst_tac [ (!% " false "); (!% " any "); (!% " _y ") ]
+          ++ simpA [];
           simpC []
         ]
     ];;
@@ -167,14 +162,14 @@ let dest_inl =
     (!% " !v: (dest_SUM (inl v)) = (mk_suml v) ")
     (flatten_tac
      ++ unfold "inl"
-     ++ simpC_tac [mk_suml_is_sum; thm "make_SUM_inverse"]);;
+     ++ simpC [mk_suml_is_sum; thm "make_SUM_inverse"]);;
 
 let dest_inr =
   prove
     (!% " !v: (dest_SUM (inr v)) = (mk_sumr v) ")
     (flatten_tac
      ++ unfold "inr"
-     ++ simpC_tac [mk_sumr_is_sum; thm "make_SUM_inverse"]);;
+     ++ simpC [mk_sumr_is_sum; thm "make_SUM_inverse"]);;
 
 
 let rep_abs_suml =
@@ -183,7 +178,7 @@ let rep_abs_suml =
     (!% " !x: (dest_SUM( make_SUM (mk_suml x))) = (mk_suml x) ")
     [
       flatten_tac
-      ++ simpC_tac [thm "mk_suml_is_sum"; thm "make_SUM_inverse"]
+      ++ simpC [thm "mk_suml_is_sum"; thm "make_SUM_inverse"]
     ];;
 
 let rep_abs_sumr =
@@ -192,7 +187,7 @@ let rep_abs_sumr =
     (!% " !x: (dest_SUM( make_SUM (mk_sumr x))) = (mk_sumr x) ")
     [
       flatten_tac
-      ++ simpC_tac [thm "mk_sumr_is_sum"; thm "make_SUM_inverse"]
+      ++ simpC [thm "mk_sumr_is_sum"; thm "make_SUM_inverse"]
     ];;
 
 let inl_thm =
@@ -239,10 +234,10 @@ let inl_eq =
           ++ cut_thm [] "inj_on_make_SUM"
           ++ unfold "inj_on"
           ++ inst_tac [ (!% " mk_suml _x ") ; (!% " mk_suml _y ") ]
-          ++ blast_tac ++ (simpC_tac [mk_suml_is_sum] // skip)
+          ++ blast_tac ++ (simpC [mk_suml_is_sum] // skip)
           ++ rewrite_tac [mk_suml_eq]
           ++ basic;
-          simp
+          simp []
         ]
     ];;
 
@@ -257,10 +252,10 @@ let inr_eq =
           ++ cut_thm [] "inj_on_make_SUM"
           ++ unfold "inj_on"
           ++ inst_tac [ (!% " mk_sumr _x ") ; (!% " mk_sumr _y ") ]
-          ++ blast_tac ++ (simpC_tac [mk_sumr_is_sum] // skip)
+          ++ blast_tac ++ (simpC [mk_sumr_is_sum] // skip)
           ++ rewrite_tac [mk_sumr_eq]
           ++ basic;
-          simp
+          simp []
         ]
     ];;
 
@@ -283,7 +278,7 @@ let inr_not_inl =
       ++ implA
       --
         [
-          simpC_tac  [mk_sumr_is_sum; mk_suml_is_sum];
+          simpC  [mk_sumr_is_sum; mk_suml_is_sum];
           mp_tac
           ++ unfold "mk_sumr" ++ unfold "mk_suml"
           ++ once_rewrite_tac [thm "function_eq"]
@@ -354,7 +349,7 @@ let sum_cases =
       ++ flatten_tac
       ++ rewrite_tac [defn "inl"; defn "inr"]
       ++ inst_tac [ (!% " _l ") ] ++ inst_tac [ (!% " _r ") ]
-      ++ split_tac ++ simp
+      ++ split_tac ++ simp []
     ];;
 
 let forall_sum =
@@ -365,7 +360,7 @@ let forall_sum =
     [
       flatten_tac ++ equals_tac ++ blast_tac
       ++ (unify_tac // skip)
-      ++ cases_of  (!% " _x ") ++ simp
+      ++ cases_of  (!% " _x ") ++ simp []
     ];;
 
 let sum_induct=
@@ -404,15 +399,15 @@ let sum_axiom =
           ++ split_tac ++ flatten_tac
           --
             [
-              simpC_tac [thm "choice_refl2"; inl_eq];
-              simpC_tac [thm "choice_refl2"; inl_eq; inr_eq; inr_not_inl]
+              simpC [thm "choice_refl2"; inl_eq];
+              simpC [thm "choice_refl2"; inl_eq; inr_eq; inr_not_inl]
             ];
           (* 2 *)
           once_rewriteC_tac [thm "function_eq"]
           ++ specC
           ++ cases_of (!% " _x1 ")
           ++ split_tac
-          ++ simp
+          ++ simp []
         ]
     ]
 
@@ -458,7 +453,7 @@ let isl_thm =
       --
         [
           instC [ (!% " _x ") ] ++ eq_tac;
-          simpA_tac [inr_not_inl]
+          simpA [inr_not_inl]
         ]
     ];;
 
@@ -530,7 +525,7 @@ let map_thm =
          ")
     [
       split_tac ++ flatten_tac ++ unfold "map"
-      ++ simpC_tac [isl_thm; outl_thm; outr_thm]
+      ++ simpC [isl_thm; outl_thm; outr_thm]
     ];;
 
 let _ = end_theory();;

@@ -86,7 +86,7 @@ let tc_rules =
       ++ flatten_tac
       --
         [
-          back_tac ++ simp;
+          back_tac ++ simp [];
           (match_asm (!% " TC R X Y ")
                      (fun l ->
                        once_rewrite_tac [defn "TC"]
@@ -95,7 +95,7 @@ let tc_rules =
           ++ (match_asm (!% " ! x y z: X ") liftA)
           ++ instA [ (!% " _x ") ; (!% " _y "); (!% " _z ") ]
           ++ back_tac
-          ++ simp
+          ++ simp []
         ]
     ];;
 
@@ -104,7 +104,7 @@ let tc_rule1=
     "tc_rule1"
     (!% " (!R x y: (R x y) => (TC R x y)) ")
     [
-      simp_tac [thm "tc_rules"]
+      simp [thm "tc_rules"]
     ];;
 
 let tc_rule2=
@@ -150,7 +150,7 @@ let tc_cases0 =
                    (!% " ?z: (_R _x z) & (TC _R z _z) ")
                    (nameC "c");
                  instC ~c:(!$ "c") [ (!% " _y ") ];
-                 simp_tac [tc_rule1]
+                 simp [tc_rule1]
                ];
              (* 3 *)
              seq
@@ -161,8 +161,8 @@ let tc_cases0 =
                    (cut [ (!% " _R "); (!% " _y ");
                                 (!% " _z1 "); (!% " _z ") ]
                         tc_rule2
-                    ++ simp);
-                 simp
+                    ++ simp []);
+                 simp []
                ]
            ]
     ]);;
@@ -177,7 +177,7 @@ let tc_cases =
       --
         [
           (* 1 *)
-          simp_tac [tc_cases0];
+          simp [tc_cases0];
           (* 2 *)
           scatter_tac
           --
@@ -186,7 +186,7 @@ let tc_cases =
               cut [ (!% "_R"); (!% " _x "); (!% " _z "); (!% " _y ") ]
                   (thm "tc_rule2")
               ++ back_tac
-              ++ simp
+              ++ simp []
             ]
         ]
     ];;
@@ -203,18 +203,18 @@ let rtc_rules=
       ++ flatten_tac
       --
         [
-          simp;
+          simp [];
           (match_asm
              (!% " RTC R Y Z ")
              (fun l ->
                once_rewrite_tac [defn "RTC"]
                ++ instA  ~a:l [ (!% " _P ") ]))
-          ++ (implA ++ (simp // skip))
+          ++ (implA ++ (simp [] // skip))
           ++ (match_asm
                 (!% " ! x y z: P ")
                 (fun l -> instA ~a:l [ (!% " _x ") ; (!% " _y ");
                                        (!% " _z ") ]))
-          ++ (back_tac ++ simp)
+          ++ (back_tac ++ simp [])
         ]
     ];;
 
@@ -223,7 +223,7 @@ let rtc_rule1=
   theorem
     "rtc_rule1"
     (!% " (!R x x: (R x x) => (RTC R x x)) ")
-    [ simp_tac [thm "rtc_rules"] ];;
+    [ simp [thm "rtc_rules"] ];;
 
 let rtc_rule2=
   theorem
