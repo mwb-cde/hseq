@@ -74,7 +74,7 @@ let prepare ?(strict=false) scp tyenv trm =
     in
     (lst, t1, tyenv1)
 
-let make_full ?(strict=false) scp tyenv t =
+let make_full strict scp tyenv t =
   let (lst, t1, tyenv1) = prepare ~strict:strict scp tyenv t in
   let t2 =
     List.fold_left
@@ -83,13 +83,13 @@ let make_full ?(strict=false) scp tyenv t =
   in
   (mk_scoped_formula scp (Term.retype tyenv1 t2), tyenv1)
 
-let make ?strict ?tyenv scp t =
-  let env =
-    match tyenv with
-      | None -> Gtype.Subst.empty()
-      | Some(x) -> x
+let make scp t =
+  let (form, _) = make_full false scp (Gtype.Subst.empty()) t
   in
-  let (form, _) = make_full ?strict scp env t
+  form
+
+let make_strict scp t =
+  let (form, _) = make_full true scp (Gtype.Subst.empty()) t
   in
   form
 
@@ -274,7 +274,8 @@ let typecheck scp f expty=
   in
   make scp (Term.retype_pretty tyenv t)
 
-let retype scp tenv x = make scp (Term.retype tenv (term_of x))
+let retype scp tenv x =
+  make scp (Term.retype tenv (term_of x))
 
 (**
    [retype_with_check tyenv t]: Reset the types in term [t] using type
@@ -469,8 +470,10 @@ let alpha_equals_match scp tyenv asmf conclf =
 (*** Beta conversion ***)
 
 let beta_convp x = Lterm.beta_convp (term_of x)
-let beta_conv scp x =  make scp (Lterm.beta_conv (term_of x))
-let beta_reduce scp x = make scp (Lterm.beta_reduce (term_of x))
+let beta_conv scp x =
+  make scp (Lterm.beta_conv (term_of x))
+let beta_reduce scp x =
+  make scp (Lterm.beta_reduce (term_of x))
 
 (** [mk_beta_reduce_eq scp tyenv trm]: Make an equality expressing the
     result of beta-reducing trm.
@@ -485,7 +488,7 @@ let mk_beta_reduce_eq scp tyenv trm =
       (fun b (q, _) -> Term.mk_qnt (Term.dest_bound q) b)
       eqtrm lst
   in
-  make_full scp tyenv rtrm
+  make_full false scp tyenv rtrm
 
 (*** Eta conversion ***)
 
@@ -516,7 +519,7 @@ let rec extract_check_rules scp dir pl =
   in
   Rewrite.mapping get_test pl
 
-let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
+let rewrite_env scp dir tyenv plan f =
   let plan1 = extract_check_rules scp dir plan in
   let data = (scp, Term.Subst.empty(), tyenv) in
   let (data1, nt) =
@@ -530,9 +533,9 @@ let rewrite_env scp ?(dir=Rewrite.leftright) tyenv plan f =
   in
   (fast_make scp [f] nt, tyenv1)
 
-let rewrite scp ?(dir=Rewrite.leftright) plan f =
+let rewrite scp dir plan f =
   let (new_term, ntyenv) =
-    rewrite_env scp ~dir:dir (Gtype.Subst.empty()) plan f
+    rewrite_env scp dir (Gtype.Subst.empty()) plan f
   in
   new_term
 
@@ -559,7 +562,7 @@ let mk_rewrite_eq scp tyenv plan trm =
       (fun b (q, _) -> Term.mk_qnt (Term.dest_bound q) b)
       eqtrm lst
   in
-  make_full scp tyenv2 rtrm
+  make_full false scp tyenv2 rtrm
 
 (*
  * Pretty printing

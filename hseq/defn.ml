@@ -86,7 +86,8 @@ let mk_defn scp (name, namety) args rhs =
   let tenv1 =Typing.typecheck_top scp1 tenv ndn1 (Lterm.mk_bool_ty()) in
   let nty1 = Gtype.mgu_rename 0 tenv1 (Gtype.Subst.empty()) nty
   in
-  (name, nty1, Formula.make scp1 (Term.retype tenv1 ndn1))
+  (name, nty1,
+   Formula.make scp1 (Term.retype tenv1 ndn1))
 
 (*
  * Type definition
@@ -265,7 +266,8 @@ let mk_subtype scp name args dtype setP rep_name abs_name =
   check_type_name scp id;
   check_args_unique args;
   check_well_defined scp args dtype;
-  let setp0 = Formula.term_of (Formula.make scp setP) in
+  let setp0 =
+    Formula.term_of (Formula.make scp setP) in
   let new_setp = make_witness_type scp dtype setp0 in
   let rep_ty = Gtype.normalize_vars (Lterm.mk_fun_ty ntype dtype)
   and abs_ty =

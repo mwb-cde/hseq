@@ -49,12 +49,9 @@ val add_error: string -> t list -> exn -> 'a
 (** {5 Conversion from a term} *)
 
 val make_full:
-  ?strict:bool
-  -> Scope.t
-  -> Gtype.Subst.t
-  -> Term.term -> (t * Gtype.Subst.t)
+  bool -> Scope.t -> Gtype.Subst.t -> Term.term -> (t * Gtype.Subst.t)
 (**
-   [make_full ?(strict=false) scp tyenv trm]: Make a formula from term
+   [make_full strict scp tyenv trm]: Make a formula from term
    [trm] in scope [scp] w.r.t type environment [tyenv]. The theory of
    the formula is the theory currently in scope. Return the new
    formula and the updated type environment.
@@ -75,27 +72,25 @@ val make_full:
    substitution obtained from typechecking.}}
 *)
 
-val make:
-  ?strict:bool
-  -> ?tyenv:Gtype.Subst.t
-  -> Scope.t
-  -> Term.term -> t
-(**
-   [make ?strict ?tyenv scp trm]: Make a formula from term [trm] in scope
-   [scp] w.r.t type environment [tyenv] if given. If [tyenv] is not
-   given, an empty type environment is used. The theory of the formula
-   is the theory currently in scope.
+val make: Scope.t -> Term.term -> t
+(** [make strict tyenv scp trm]: Make a formula from term [trm] in scope [scp]
+   and an empty type environment. The theory of the formula is the theory
+   currently in scope.
 
-   {ol
-   {- if [strict=true]: Fail if any bound variable in [trm] occurs
-   outside its binding term or any free variable doesn't resolve to an
-   identifier. }
-   {- if [strict=false]: Replace bound variables occuring outside
-   their binder and free variables which don't resolve to an
-   identifier with a universally quantified variable.}}
+   Bound variables occuring outside their binder and free variables which don't
+   resolve to an identifier are replaced with a universally quantified variable.
 
-   This is a front-end to {!Formula.make_full}.
-*)
+   This is a front-end to {!Formula.make_full}.  *)
+
+val make_strict: Scope.t -> Term.term -> t
+(** [make scp trm]: Make a formula from term [trm] in scope [scp] w.r.t type
+   environment [tyenv] if given. The theory of the formula is the theory
+   currently in scope.
+
+   Fails if any bound variable in [trm] occurs outside its binding term or any
+   free variable doesn't resolve to an identifier. }
+
+   This is a front-end to {!Formula.make_full true}.  *)
 
 (** {5 Representation for permanent storage} *)
 
@@ -297,13 +292,13 @@ val default_rr_control: Rewrite.control
 (** The default rewrite control. *)
 
 val rewrite:
-  Scope.t -> ?dir:Rewrite.direction
+  Scope.t -> Rewrite.direction
   -> t Rewrite.plan
   -> t -> t
 (** Rewrite a formula. *)
 
 val rewrite_env:
-  Scope.t -> ?dir:Rewrite.direction
+  Scope.t -> Rewrite.direction
   -> Gtype.Subst.t
   -> t Rewrite.plan
   -> t -> (t * Gtype.Subst.t)
