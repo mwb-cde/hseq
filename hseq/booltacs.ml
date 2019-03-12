@@ -49,7 +49,11 @@ let iff_def sctxt =
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
 let iffA ?a ctxt goal =
-  let af = first_asm_label a is_iff goal in
+  let af =
+    if a = None
+    then first_asm_label is_iff goal
+    else Lib.from_some a
+  in
   let sqnt = Tactics.sequent goal in
   let (t, f) =
     Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
@@ -77,8 +81,12 @@ let iffA ?a ctxt goal =
 **)
 
 let iffC ?c ctxt goal =
-  let cf = first_concl_label c is_iff goal in
-  let sqnt=sequent goal in
+  let cf =
+    if c = None
+    then first_concl_label is_iff goal
+    else Lib.from_some c
+  in
+  let sqnt = sequent goal in
   let (t, f) =
     Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt
   in
@@ -105,7 +113,10 @@ let iffC ?c ctxt goal =
 **)
 let iffE ?c ctxt goal =
   let sqnt = sequent goal
-  and cf = first_concl_label c is_iff goal
+  and cf =
+    if c = None
+    then first_concl_label is_iff goal
+    else Lib.from_some c
   in
   let (t, f) =
     Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt

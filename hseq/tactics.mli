@@ -242,29 +242,15 @@ val first_form:
     @raise [Not_found] if no formula found.
 *)
 
-val first_asm_label:
-  Logic.label option -> (Formula.t -> bool)
-  -> Logic.node -> Logic.label
-(** [first_asm_label ?c pred sq]: If a is [Some(x)] then return [x].
-    Otherwise, get the label of the first assumption whose formula
-    satisifies [pred]. Raise Not_found if no such assumption.
+val first_asm_label: (Formula.t -> bool) -> Logic.node -> Logic.label
+(** [first_asm_label pred sq]: Get the label of the first assumption whose
+   formula satisifies [pred]. Raise Not_found if no such assumption.
+ *)
 
-    Mostly used to unpack the argument to a tactic, where [a] is the
-    optional label identifying a formula and [pred] is used if [a] is
-    not given.
-*)
-
-val first_concl_label:
-  Logic.label option -> (Formula.t -> bool)
-  -> Logic.node -> Logic.label
-(** [first_concl_label ?c pred sq]: If c is [Some(x)] then return [x].
-    Otherwise, get the label of the first conclusion whose formula
-    satisifies [pred]. Raise Not_found if no such conclusion.
-
-    Mostly used to unpack the argument to a tactic, where [c] is the
-    optional label identifying a formula and [pred] is used if [c] is
-    not given.
-*)
+val first_concl_label: (Formula.t -> bool) -> Logic.node -> Logic.label
+(** [first_concl_label pred sq]: Get the label of the first conclusion whose
+   formula satisifies [pred]. Raise Not_found if no such conclusion.
+ *)
 
 (** {5 Basic tacticals and tactics}
 

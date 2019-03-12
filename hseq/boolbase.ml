@@ -38,7 +38,11 @@ let false_def sctxt =
   Context.find_thm sctxt false_id make_false_def
 
 let falseA ?a ctxt goal =
-  let af = first_asm_label a Formula.is_false goal in
+  let af =
+    if a = None
+    then first_asm_label Formula.is_false goal
+    else Lib.from_some a
+  in
   let th =
     try false_def ctxt
     with Not_found ->

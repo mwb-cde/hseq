@@ -180,23 +180,17 @@ let first_form p sq =
   try first_asm p sq
   with Not_found -> first_concl p sq
 
-let first_asm_label a pred sq =
-  match a with
-    | Some x -> x
-    | _ ->
-      let asm_pred f = pred (drop_tag f) in
-      let tag = drop_formula (first_asm asm_pred (sequent sq))
-      in
-      ftag tag
+let first_asm_label pred sq =
+  let asm_pred f = pred (drop_tag f) in
+  let tag = drop_formula (first_asm asm_pred (sequent sq))
+  in
+  ftag tag
 
-let first_concl_label c pred sq =
-  match c with
-    | Some x -> x
-    | _ ->
-      let concl_pred f = pred (drop_tag f) in
-      let tag = drop_formula (first_concl concl_pred (sequent sq))
-      in
-      ftag tag
+let first_concl_label pred sq =
+  let concl_pred f = pred (drop_tag f) in
+  let tag = drop_formula (first_concl concl_pred (sequent sq))
+  in
+  ftag tag
 
 let node_changes = Logic.Subgoals.node_changes
 let branch_changes = Logic.Subgoals.branch_changes
@@ -453,67 +447,106 @@ let deleten ns ctxt sq =
 (*** Logic Rules **)
 
 let trueC ?c _ sq =
-  let cf = first_concl_label c Formula.is_true sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_true sq
+    else Lib.from_some c
   in
   Logic.Tactics.trueC cf sq
 
 let conjC ?c _ sq =
-  let cf = first_concl_label c Formula.is_conj sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_conj sq
+    else Lib.from_some c
   in
   Logic.Tactics.conjC cf sq
 
 let conjA ?a _ sq =
-  let af = first_asm_label a Formula.is_conj sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_conj sq
+    else Lib.from_some a
   in
   Logic.Tactics.conjA af sq
 
 let disjC ?c _ sq =
-  let cf = first_concl_label c Formula.is_disj sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_disj sq
+    else Lib.from_some c
   in
   Logic.Tactics.disjC cf sq
 
 let disjA ?a _ sq =
-  let af = first_asm_label a Formula.is_disj sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_disj sq
+    else Lib.from_some a
   in
   Logic.Tactics.disjA af sq
 
 let negC ?c _ sq =
-  let cf = first_concl_label c Formula.is_neg sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_neg sq
+    else Lib.from_some c
   in
   Logic.Tactics.negC cf sq
 
 let negA ?a _ sq =
-  let af = first_asm_label a Formula.is_neg sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_neg sq
+    else Lib.from_some a
   in
   Logic.Tactics.negA af sq
 
 let implC ?c _ sq =
-  let cf = first_concl_label c Formula.is_implies sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_implies sq
+    else Lib.from_some c
   in
   Logic.Tactics.implC cf sq
 
 let implA ?a (_: Context.t) sq =
-  let af = first_asm_label a Formula.is_implies sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_implies sq
+    else Lib.from_some a
   in
   Logic.Tactics.implA af sq
 
 let existC ?c trm _ sq =
-  let cf = first_concl_label c Formula.is_exists sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_exists sq
+    else Lib.from_some c
   in
   Logic.Tactics.existC trm cf sq
 
 let existA ?a _ sq =
-  let af = first_asm_label a Formula.is_exists sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_exists sq
+    else Lib.from_some a
   in
   Logic.Tactics.existA af sq
 
 let allC ?c _ sq =
-  let cf = first_concl_label c Formula.is_all sq
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_all sq
+    else Lib.from_some c
   in
   Logic.Tactics.allC cf sq
 
 let allA ?a trm _ sq =
-  let af = first_asm_label a Formula.is_all sq
+  let af =
+    if a = None
+    then first_asm_label Formula.is_all sq
+    else Lib.from_some a
   in
   Logic.Tactics.allA trm af sq
 
@@ -543,7 +576,10 @@ let instA0 l trms ctxt goal =
       (allA ~a:l fst ++ map_every instf rest ) ctxt goal
 
 let instA ?a trms ctxt goal =
-  let af = first_asm_label a Formula.is_all goal
+  let af =
+    if a = None
+    then first_asm_label Formula.is_all goal
+    else Lib.from_some a
   in
   instA0 af trms ctxt goal
 
@@ -562,7 +598,10 @@ let instC0 l trms ctxt goal =
 
 
 let instC ?c trms ctxt goal=
-  let cf= first_concl_label c Formula.is_exists goal
+  let cf =
+    if c = None
+    then first_concl_label Formula.is_exists goal
+    else Lib.from_some c
   in
   instC0 cf trms ctxt goal
 
