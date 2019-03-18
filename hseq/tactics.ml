@@ -446,6 +446,7 @@ let deleten ns ctxt sq =
 
 (*** Logic Rules **)
 
+let trueC_at c _ sq = Logic.Tactics.trueC c sq
 let trueC ?c _ sq =
   let cf =
     if c = None
@@ -454,6 +455,7 @@ let trueC ?c _ sq =
   in
   Logic.Tactics.trueC cf sq
 
+let conjC_at c _ sq = Logic.Tactics.conjC c sq
 let conjC ?c _ sq =
   let cf =
     if c = None
@@ -462,6 +464,7 @@ let conjC ?c _ sq =
   in
   Logic.Tactics.conjC cf sq
 
+let conjA_at a _ sq = Logic.Tactics.conjA a sq
 let conjA ?a _ sq =
   let af =
     if a = None
@@ -470,6 +473,7 @@ let conjA ?a _ sq =
   in
   Logic.Tactics.conjA af sq
 
+let disjC_at c _ sq = Logic.Tactics.disjC c sq
 let disjC ?c _ sq =
   let cf =
     if c = None
@@ -478,6 +482,7 @@ let disjC ?c _ sq =
   in
   Logic.Tactics.disjC cf sq
 
+let disjA_at a _ sq = Logic.Tactics.disjA a sq
 let disjA ?a _ sq =
   let af =
     if a = None
@@ -486,6 +491,7 @@ let disjA ?a _ sq =
   in
   Logic.Tactics.disjA af sq
 
+let negC_at c _ sq = Logic.Tactics.negC c sq
 let negC ?c _ sq =
   let cf =
     if c = None
@@ -494,6 +500,7 @@ let negC ?c _ sq =
   in
   Logic.Tactics.negC cf sq
 
+let negA_at a _ sq = Logic.Tactics.negA a sq
 let negA ?a _ sq =
   let af =
     if a = None
@@ -502,6 +509,7 @@ let negA ?a _ sq =
   in
   Logic.Tactics.negA af sq
 
+let implC_at c _ sq = Logic.Tactics.implC c sq
 let implC ?c _ sq =
   let cf =
     if c = None
@@ -510,6 +518,7 @@ let implC ?c _ sq =
   in
   Logic.Tactics.implC cf sq
 
+let implA_at a _ sq = Logic.Tactics.implA a sq
 let implA ?a (_: Context.t) sq =
   let af =
     if a = None
@@ -518,6 +527,7 @@ let implA ?a (_: Context.t) sq =
   in
   Logic.Tactics.implA af sq
 
+let existC_at trm c _ sq = Logic.Tactics.existC trm c sq
 let existC ?c trm _ sq =
   let cf =
     if c = None
@@ -526,6 +536,7 @@ let existC ?c trm _ sq =
   in
   Logic.Tactics.existC trm cf sq
 
+let existA_at a _ sq = Logic.Tactics.existA a sq
 let existA ?a _ sq =
   let af =
     if a = None
@@ -534,6 +545,7 @@ let existA ?a _ sq =
   in
   Logic.Tactics.existA af sq
 
+let allC_at c _ sq = Logic.Tactics.allC c sq
 let allC ?c _ sq =
   let cf =
     if c = None
@@ -542,6 +554,7 @@ let allC ?c _ sq =
   in
   Logic.Tactics.allC cf sq
 
+let allA_at trm a _ sq = Logic.Tactics.allA trm a sq
 let allA ?a trm _ sq =
   let af =
     if a = None
@@ -568,13 +581,14 @@ let instA0 l trms ctxt goal =
         (fun info ->
           let alabel = get_one ~msg:"instA" (Info.aformulas info)
           in
-          allA ~a:(ftag alabel) trm) g)
+          allA_at trm (ftag alabel)) g)
   in
   match trms with
-    | [] -> raise (error "instA")
     | fst::rest ->
       (allA ~a:l fst ++ map_every instf rest ) ctxt goal
+    | _ -> raise (error "instA")
 
+let instA_at trms a ctxt goal = instA0 a trms ctxt goal
 let instA ?a trms ctxt goal =
   let af =
     if a = None
@@ -589,7 +603,7 @@ let instC0 l trms ctxt goal =
         (fun info ->
           let clabel = get_one ~msg:"instC" (Info.cformulas info)
           in
-          existC ~c:(ftag clabel) trm)) ctxt0 g
+          existC_at trm (ftag clabel))) ctxt0 g
   in
   match trms with
     | [] -> raise (error "instC")
@@ -597,13 +611,18 @@ let instC0 l trms ctxt goal =
       (existC ~c:l fst ++ map_every instf rest ) ctxt goal
 
 
-let instC ?c trms ctxt goal=
+let instC_at trms c ctxt goal = instC0 c trms ctxt goal
+let instC ?c trms ctxt goal =
   let cf =
     if c = None
     then first_concl_label Formula.is_exists goal
     else Lib.from_some c
   in
   instC0 cf trms ctxt goal
+
+let insC_at trms f ctxt goal =
+  try instC_at trms f ctxt goal
+  with _ -> instC_at trms f ctxt goal
 
 let inst_tac ?f trms ctxt goal =
   try instA ?a:f trms ctxt goal
@@ -627,7 +646,7 @@ let cut trms th ctxt goal =
       with err -> raise (add_error "cut" err)
     end
 
-let betaA ?a ctxt goal =
+let betaA_at a ctxt goal =
   let conv_tac (ft, form) ctxt0 g =
     let scp = scope_of_goal g in
     let thm =
@@ -651,13 +670,18 @@ let betaA ?a ctxt goal =
                  ++ set_changes_tac info2) g2))
             ] g1))
       ] ctxt0 g
-  in
-  match a with
-    | Some(x) -> conv_tac (get_tagged_asm x goal) ctxt goal
-    | None ->
-      map_some conv_tac (asms_of (sequent goal)) ctxt goal
 
-let betaC ?c ctxt goal =
+  in
+  conv_tac (get_tagged_asm a goal) ctxt goal
+
+let betaA ?a ctxt goal =
+  match a with
+    | Some(x) -> betaA_at x ctxt goal
+    | _ ->
+       map_some (fun x -> betaA_at (ftag (Logic.form_tag x)))
+         (asms_of (sequent goal)) ctxt goal
+
+let betaC_at c ctxt goal =
   let conv_tac (ft, form) ctxt1 g =
     let scp = scope_of_goal g in
     let thm =
@@ -682,10 +706,14 @@ let betaC ?c ctxt goal =
             ] g1))
       ] ctxt1 g
   in
+  conv_tac (get_tagged_concl c goal) ctxt goal
+
+let betaC ?c ctxt goal =
   match c with
-    | Some(x) -> conv_tac (get_tagged_concl x goal) ctxt goal
-    | None ->
-      map_some conv_tac (concls_of (sequent goal)) ctxt goal
+    | Some(x) -> betaC_at x ctxt goal
+    | _ ->
+       map_some (fun x -> betaC_at (ftag (Logic.form_tag x)))
+         (concls_of (sequent goal)) ctxt goal
 
 let beta_tac ?f ctxt goal =
   try
@@ -735,20 +763,21 @@ let find_basic asm concl node =
   in
   find_basic_aux node_concls
 
+let basic_at a c ctxt goal =
+  try Logic.Tactics.basic a c goal
+  with err -> raise (add_error "basic: failed" err)
+
 let basic ?a ?c ctxt goal =
   match (a, c) with
-    | (Some albl, Some clbl) ->
-      begin
-        try Logic.Tactics.basic albl clbl goal
-        with err -> raise (add_error "basic: failed" err)
-      end
-    | _ ->
-      begin
-        match Lib.try_find (find_basic a c) goal with
-          | None -> raise (error "basic: failed")
-          | Some(al, cl) ->
-            Logic.Tactics.basic al cl goal
-      end
+  | (Some albl, Some clbl) ->
+     basic_at albl clbl ctxt goal
+  | _ ->
+     begin
+       match Lib.try_find (find_basic a c) goal with
+       | None -> raise (error "basic: failed")
+       | Some(al, cl) ->
+          basic_at al cl ctxt goal
+     end
 
 let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
   let sqnt = sequent goal in
@@ -809,6 +838,12 @@ let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
            basic ~a:albl1 ~c:clbl1)))))
   ] ctxt goal
 
+let unify_at_tac a c ctxt goal =
+  try
+    unify_engine_tac
+      (get_tagged_asm a goal) (get_tagged_concl c goal) ctxt goal
+  with err -> raise (add_error "unify_at_tac" err)
+
 let unify_tac ?a ?c ctxt goal =
   let sqnt = sequent goal
   in
@@ -838,7 +873,6 @@ let unify_tac ?a ?c ctxt goal =
   try
     ((map_first tac concls) ++ set_changes_tac (Changes.empty())) ctxt goal
   with err -> raise (add_error "unify_tac" err)
-
 
 (*
  * Derived tactics and tacticals
@@ -942,6 +976,29 @@ let match_formula trm tac ctxt g =
     with Not_found ->
       raise (Term.term_error "No matching formula in sequent" [trm])
 
+let specA_at a ctxt g =
+  let existA_rule_at asm =
+    (?> (fun info1 ->
+      record_changes_tac
+        (fun info2 -> Changes.combine info2 info1)
+        (existA_at asm)))
+  in
+  alt
+    [
+      seq
+        [
+          repeat (existA_rule_at a);
+          (?> (fun info ->
+            (set_changes_tac
+               (Changes.make
+                  []
+                  [get_one (Info.aformulas info)]
+                  []
+                  (List.rev (Info.constants info))))))
+        ];
+      fail ~err:(error "specA_at")
+    ] ctxt g
+
 let specA ?a ctxt g =
   let existA_rule ?asm =
     (?> (fun info1 ->
@@ -963,6 +1020,29 @@ let specA ?a ctxt g =
                   (List.rev (Info.constants info))))))
         ];
       fail ~err:(error "specA")
+    ] ctxt g
+
+let specC_at c ctxt g =
+  let allC_rule_at conc =
+    (?> (fun info1 ->
+      record_changes_tac
+        (fun info2 -> Changes.combine info2 info1)
+        (allC_at conc)))
+  in
+  alt
+    [
+      seq
+        [
+          repeat (allC_rule_at c);
+          (?> (fun info ->
+            (set_changes_tac
+               (Changes.make
+                  []
+                  []
+                  [get_one (Info.cformulas info)]
+                  (List.rev (Info.constants info))))))
+        ];
+      fail ~err:(error "specC")
     ] ctxt g
 
 let specC ?c ctxt g =

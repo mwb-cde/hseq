@@ -319,30 +319,29 @@ theorem "exists_implies"
   ++ scatter_tac
   --
     [
-      match_concl (!% " ?x: not (_P1 x) ")
-        (fun l -> inst_tac [ (!% " _x ") ] ~f:l)
+      match_concl (!% " ?x: not (_P1 x) ") (instC_at [ (!% " _x ") ])
       ++ flatten_tac ++ basic;
 
-      match_concl (!% " ?x: (_Q1 x) ")
-        (fun l -> inst_tac [ (!% " _x ") ] ~f:l) ++ basic;
-      match_concl (!% " ?x:  (_P1 x) => X")
-        (fun l -> inst_tac [ (!% " _x ") ] ~f:l)++ flatten_tac ++ basic;
-      match_concl (!% " ?x: X => (_Q1 x) ")
-        (fun l -> inst_tac [ (!% " _x ") ] ~f:l) ++ flatten_tac ++ basic
+      match_concl (!% " ?x: (_Q1 x) ") (instC_at [ (!% " _x ") ])
+      ++ basic;
+      match_concl (!% " ?x:  (_P1 x) => X") (instC_at [ (!% " _x ")])
+      ++ flatten_tac ++ basic;
+      match_concl (!% " ?x: X => (_Q1 x) ") (instC_at [ (!% " _x ") ])
+      ++ flatten_tac ++ basic
     ]
 ];;
 
 
 let exists_and =
 theorem "exists_and"
- (!% " !P Q: (?x: (P x) and (Q x)) => ((?x: P x)  and (?x: Q x)) ")
-[flatten_tac ++ split_tac ++ inst_tac [ (!% " _x") ] ++ basic];;
+  (!% " !P Q: (?x: (P x) and (Q x)) => ((?x: P x)  and (?x: Q x)) ")
+  [flatten_tac ++ split_tac ++ inst_tac [ (!% " _x") ] ++ basic];;
 
 let exists_absorb =
 theorem ~simp:true "exists_absorb"
-(!% " ((? x: true) = true) and ((? x: false) = false) ")
-[ split_tac ++ equals_tac ++ scatter_tac
-++ inst_tac [ (!% " any ") ] ++ trivial];;
+  (!% " ((? x: true) = true) and ((? x: false) = false) ")
+  [ split_tac ++ equals_tac ++ scatter_tac
+    ++ inst_tac [ (!% " any ") ] ++ trivial];;
 
 let exists_simp =
 theorem ~simp:false "exists_simp"
@@ -418,10 +417,9 @@ flatten_tac ++ (unfold "IF")++ (cut_thm [] "epsilon_ax")
 (existC (!% "_f")) ++ beta_tac
 ++ split_tac
 -- [flatten_tac ; flatten_tac ++ eq_tac];
-beta_tac ++ flatten_tac ++
-  (match_asm (!% " (not false) => C ")
-   (fun l -> (implA ~a:l)))
-   -- [flatten_tac; basic]
+beta_tac ++ flatten_tac
+++ (match_asm (!% " (not false) => C ") implA_at)
+-- [flatten_tac; basic]
 ]);;
 
 let if_true1=

@@ -90,7 +90,7 @@ let tc_rules =
           (match_asm (!% " TC R X Y ")
                      (fun l ->
                        once_rewrite_tac [defn "TC"]
-                       ++ instA ~a: l[ (!% " _P ") ]))
+                       ++ instA_at [ (!% " _P ") ] l))
           ++ simpA []
           ++ (match_asm (!% " ! x y z: X ") liftA)
           ++ instA [ (!% " _x ") ; (!% " _y "); (!% " _z ") ]
@@ -149,7 +149,7 @@ let tc_cases0 =
                  match_concl
                    (!% " ?z: (_R _x z) & (TC _R z _z) ")
                    (nameC "c");
-                 instC ~c:(!$ "c") [ (!% " _y ") ];
+                 instC_at [ (!% " _y ") ] (!$ "c");
                  simp [tc_rule1]
                ];
              (* 3 *)
@@ -208,16 +208,16 @@ let rtc_rules=
              (!% " RTC R Y Z ")
              (fun l ->
                once_rewrite_tac [defn "RTC"]
-               ++ instA  ~a:l [ (!% " _P ") ]))
+               ++ instA_at [ (!% " _P ") ] l))
           ++ (implA ++ (simp [] // skip))
           ++ (match_asm
                 (!% " ! x y z: P ")
-                (fun l -> instA ~a:l [ (!% " _x ") ; (!% " _y ");
-                                       (!% " _z ") ]))
+                (fun l ->
+                  instA_at
+                    [ (!% " _x ") ; (!% " _y "); (!% " _z ") ] l))
           ++ (back_tac ++ simp [])
         ]
     ];;
-
 
 let rtc_rule1=
   theorem
@@ -230,7 +230,6 @@ let rtc_rule2=
     "rtc_rule2"
     (!% " (!R x y z: ((R x y) & (RTC R y z)) => (RTC R x z)) ")
     [ cut [] (thm "rtc_rules") ++ conjA ++ basic ];;
-
 
 let rtc_induct =
   theorem
