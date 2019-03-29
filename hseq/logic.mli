@@ -261,16 +261,8 @@ sig
   val get_sklm_indx: skolem_cnst -> int
   val get_sklm_type: skolem_cnst -> Gtype.t
 
-  val make_skolem_name: Ident.t -> int -> string
-  (** [make_skolem_name i n]: Make the name of a skolem constant from
-      [i] and [n]. *)
-
   (** The record of generated skolem constants. *)
   type skolem_type
-
-  val get_old_sklm: Ident.t -> skolem_type -> skolem_cnst
-  (** Get the record of the skolem constant previously generated
-      from an identifier.  *)
 
   (** Information needed to generate a new skolem constant *)
   type new_skolem_data=

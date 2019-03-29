@@ -217,30 +217,6 @@ struct
     (Term.mk_meta nnam nty, nty,
      (info.name, (skindx1, nty))::info.skolems, ntyenv, new_names)
 
-(***
-    (* see if name is already associated with a skolem *)
-    match (Lib.try_find (get_old_sklm info.name) info.skolems) with
-    | None ->
-    let nindx = 0 in
-    let oname = info.name in
-    let nnam = make_skolem_name oname nindx in
-    let nty, ntyenv, new_names = mk_nty nnam
-    in
-    (Term.mk_meta nnam nty, nty,
-    (oname, (nindx, nty))::info.skolems,
-    ntyenv, new_names)
-    | Some(oldsk) ->
-        (* get new index for skolem named n *)
-    let nindx = (get_sklm_indx oldsk)+1 in
-        (* make the new identifier *)
-    let oname = info.name in
-    let nnam = make_skolem_name oname nindx	in
-    let nty, ntyenv, new_names = mk_nty nnam
-    in
-    (Term.mk_meta nnam nty, nty,
-    (oname, (nindx, nty))::info.skolems,
-    ntyenv, new_names)
-***)
 end
 
 (******************************************************************************)
