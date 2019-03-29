@@ -184,7 +184,7 @@ let eq_tac ?c ctxt goal =
   let cforms = concls_of (sequent goal) in
   let tac albl (t, f) g =
     if Formula.is_equality f
-    then unify_tac ~a:albl ~c:(ftag t) g
+    then unify_at albl (ftag t) g
     else fail g
   in
   seq

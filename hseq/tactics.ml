@@ -838,35 +838,17 @@ let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
            basic ~a:albl1 ~c:clbl1)))))
   ] ctxt goal
 
-let unify_at_tac a c ctxt goal =
+let unify_at a c ctxt goal =
   try
     unify_engine_tac
       (get_tagged_asm a goal) (get_tagged_concl c goal) ctxt goal
-  with err -> raise (add_error "unify_at_tac" err)
+  with err -> raise (add_error "unify_at" err)
 
-let unify_tac ?a ?c ctxt goal =
+let unify_tac ctxt goal =
   let sqnt = sequent goal
   in
-  let asms =
-    match a with
-      | None -> asms_of sqnt
-      | Some(l) ->
-        begin
-          try [get_tagged_asm l goal]
-          with Not_found ->
-            raise (error "unify_tac: No such assumption")
-            | err -> raise (add_error "unify_tac" err)
-        end
-  and concls =
-    match c with
-      | None -> concls_of sqnt
-      | Some(l) ->
-        begin
-          try [get_tagged_concl l goal]
-          with Not_found ->
-            raise (error "unify_tac: No such conclusion")
-            | err -> raise (add_error "unify_tac" err)
-        end
+  let asms = asms_of sqnt
+  and concls = concls_of sqnt
   in
   let tac c ctxt0 g = map_first (fun x -> unify_engine_tac x c) asms ctxt0 g
   in

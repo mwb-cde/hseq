@@ -668,32 +668,24 @@ val basic: ?a:Logic.label -> ?c:Logic.label -> tactic
 (** Tries to find an assumption and conclusion that can be solved using
    {!Logic.Tactics.basic}.  *)
 
-val unify_engine_tac:
-  (Logic.ftag_ty * Formula.t) -> (Logic.ftag_ty * Formula.t) -> tactic
+val unify_at: Logic.label -> Logic.label -> tactic
+(** [unify_at a c g]: Try to unify assumption [a] with conclusion [c].
 
-val unify_at_tac: Logic.label -> Logic.label -> tactic
-(** [unify_at_tac a c g]: Try to unify assumption [a] with conclusion
-    [c].
+   Assumption [a] may be universally quantified.  Conclusion [c] may be
+   existentially quantified. Toplevel universal/existential quantifiers will be
+   stripped, and the bound variables treated as variable for the unification. If
+   unification succeeds, the toplevel quantifiers are instantiated with the
+   terms found by unification.
 
-    Assumption [a] may be universally quantified.  Conclusion [c] may
-    be existentially quantified. Toplevel universal/existential
-    quantifiers will be stripped, and the bound variables treated as
-    variable for the unification. If unification succeeds, the
-    toplevel quantifiers are instantiated with the terms found by
-    unification.
-
-    Final action is to apply [basic] to solve the goal if the terms
-    are alpha-equal.
-
-    Defaults: [a = (fnum -1)], [c = (fnum 1)].
+   Final action is to apply [basic] to solve the goal if the terms are
+   alpha-equal.
 *)
-val unify_tac:
-  ?a:Logic.label -> ?c:Logic.label -> tactic
-(** Like {!unify_engine_tac}, tries to find an assumption and conclusion that
-    can be unified using {!unify_engine_tac}.  *)
 
-val substA:
-  Logic.label list -> Logic.label -> tactic
+val unify_tac: tactic
+(** Like {!unify_at}, tries to find an assumption and conclusion that
+    can be unified.  *)
+
+val substA: Logic.label list -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.substA}. *)
 
 val substC: Logic.label list -> Logic.label -> tactic

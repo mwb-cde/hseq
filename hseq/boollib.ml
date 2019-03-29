@@ -174,8 +174,8 @@ struct
       Commands.prove ctxt (term "! x: x iff (x=true)")
         ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
          --
-           [cut [] rule_true_l2 ++ unify_tac ~a:(!~1) ~c:(!! 1);
-            cut [] rule_true_l1 ++ unify_tac ~a:(!~1) ~c:(!! 1)])
+           [cut [] rule_true_l2 ++ unify_at (!~1) (!! 1);
+            cut [] rule_true_l1 ++ unify_at (!~1) (!! 1)])
     in
     rewrite_rule ctxt [equals_iff_thm ctxt] rule_true_l3
 
