@@ -46,10 +46,10 @@ let add_error s err = Report.add_error (error s) err
 
 (*** Accessing elements of a list ***)
 
-let get_one ?(msg="Tactics.get_one failed") l =
+let msg_get_one msg l =
   Lib.get_one l (Failure msg)
 
-let get_two ?(msg="Tactics.get_two failed") l =
+let msg_get_two msg l =
   Lib.get_two l (Failure msg)
 
 (*** Formulas ***)
@@ -579,7 +579,7 @@ let instA0 l trms ctxt goal =
   let instf trm g =
     (?>
         (fun info ->
-          let alabel = get_one ~msg:"instA" (Info.aformulas info)
+          let alabel = msg_get_one "instA" (Info.aformulas info)
           in
           allA_at trm (ftag alabel)) g)
   in
@@ -601,7 +601,7 @@ let instC0 l trms ctxt goal =
   let instf trm ctxt0 g =
     (?>
         (fun info ->
-          let clabel = get_one ~msg:"instC" (Info.cformulas info)
+          let clabel = msg_get_one "instC" (Info.cformulas info)
           in
           existC_at trm (ftag clabel))) ctxt0 g
   in
@@ -634,7 +634,7 @@ let cut trms th ctxt goal =
       (fun _ -> Logic.Tactics.cut th);
       (?>
           (fun info ->
-            let atag = get_one ~msg:"cut" (Info.aformulas info) in
+            let atag = msg_get_one "cut" (Info.aformulas info) in
             instA ~a:(ftag atag) trms))
     ] ctxt0 g
   in
@@ -830,10 +830,10 @@ let unify_engine_tac (atg, aform) (ctg, cform) ctxt goal =
          (?> (fun inf2 ->
            let albl1 =
              if asm_consts = [] then albl
-             else ftag (get_one (Info.aformulas inf1))
+             else ftag (msg_get_one "unify_engine_tac" (Info.aformulas inf1))
            and clbl1 =
              if concl_consts = [] then clbl
-             else ftag (get_one (Info.cformulas inf2))
+             else ftag (msg_get_one "unify_engine_tac" (Info.cformulas inf2))
            in
            basic ~a:albl1 ~c:clbl1)))))
   ] ctxt goal
@@ -992,7 +992,7 @@ let specA_at a ctxt g =
             (set_changes_tac
                (Changes.make
                   []
-                  [get_one (Info.aformulas info)]
+                  [msg_get_one "specA_at" (Info.aformulas info)]
                   []
                   (List.rev (Info.constants info))))))
         ];
@@ -1015,7 +1015,7 @@ let specA ?a ctxt g =
             (set_changes_tac
                (Changes.make
                   []
-                  [get_one (Info.aformulas info)]
+                  [msg_get_one "specA" (Info.aformulas info)]
                   []
                   (List.rev (Info.constants info))))))
         ];
@@ -1039,7 +1039,7 @@ let specC_at c ctxt g =
                (Changes.make
                   []
                   []
-                  [get_one (Info.cformulas info)]
+                  [msg_get_one "specC_at" (Info.cformulas info)]
                   (List.rev (Info.constants info))))))
         ];
       fail ~err:(error "specC")
@@ -1062,7 +1062,7 @@ let specC ?c ctxt g =
                (Changes.make
                   []
                   []
-                  [get_one (Info.cformulas info)]
+                  [msg_get_one "specC" (Info.cformulas info)]
                   (List.rev (Info.constants info))))))
         ];
       fail ~err:(error "specC")
@@ -1119,7 +1119,7 @@ let conv_rule (ctxt: Context.t) conv thm =
   let tac  =
     (?> (fun info ctxt1 g ->
       let ctag =
-        Lib.get_one (Info.cformulas info) (Failure "pure_rewrite_rule")
+        Lib.get_one (Info.cformulas info) (Failure "conv_rule")
       in
       seq
         [
@@ -1127,7 +1127,7 @@ let conv_rule (ctxt: Context.t) conv thm =
           (?> (fun info ->
             begin
               let atag =
-                Lib.get_one (Info.aformulas info) (Failure "pure_rewrite_rule")
+                Lib.get_one (Info.aformulas info) (Failure "conv_rule")
               in
               seq
                 [
@@ -1135,7 +1135,7 @@ let conv_rule (ctxt: Context.t) conv thm =
                   (?> (fun info ->
                     let rtag =
                       Lib.get_one (Info.aformulas info)
-                        (error "pure_rewrite_rule: cut rule")
+                        (error "conv_rule: cut rule")
                     in
                     seq
                       [
@@ -1162,14 +1162,16 @@ let pure_rewriteA ?term plan lbl ctxt goal =
       [
         (fun _ -> Logic.Tactics.rewrite_intro plan trm);
         (?> (fun inf1 ->
-          let rule_tag = get_one (Info.aformulas inf1) in
+          let rule_tag = msg_get_one "pure_rewriteA" (Info.aformulas inf1) in
           seq
             [
               substA [ftag (rule_tag)] (ftag ltag);
               (?> (fun inf2 ->
-                let asm_tag = get_one (Info.aformulas inf2) in
-                (((deleteA (ftag rule_tag)):tactic) ++
-                   set_changes_tac (Changes.make [] [asm_tag] [] []))))
+                   let asm_tag =
+                     msg_get_one "pure_rewrit_A" (Info.aformulas inf2)
+                   in
+                   (((deleteA (ftag rule_tag)):tactic) ++
+                      set_changes_tac (Changes.make [] [asm_tag] [] []))))
             ]))
       ] ctxt1 g
   in
@@ -1192,12 +1194,12 @@ let pure_rewriteC ?term plan lbl ctxt goal =
       [
         (fun _ -> Logic.Tactics.rewrite_intro plan trm);
         ?> (fun inf1 ->
-         let rule_tag = get_one (Info.aformulas inf1) in
+         let rule_tag = msg_get_one "pure_rewriteC" (Info.aformulas inf1) in
          seq
            [
              substC [ftag (rule_tag)] (ftag ltag);
              ?> (fun inf2 ->
-               let cncl_tag = get_one (Info.cformulas inf2)
+               let cncl_tag = msg_get_one "pure_rewriteC" (Info.cformulas inf2)
                in
                (deleteA (ftag rule_tag) ++
                   set_changes_tac (Changes.make [] [] [cncl_tag] [])))

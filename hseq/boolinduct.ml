@@ -61,9 +61,9 @@ let mini_mp_tac asm1 asm2 ctxt goal =
         --
           [
             (?> (fun tinfo ->
-              let a1_tag = get_one (Info.aformulas tinfo) in
-              let c_tag = get_one (Info.cformulas tinfo) in
-              let (_, g_tag) = get_two (Info.subgoals tinfo)
+              let a1_tag = msg_get_one "mini_mp_tac" (Info.aformulas tinfo) in
+              let c_tag = msg_get_one "mini_mp_tac" (Info.cformulas tinfo) in
+              let (_, g_tag) = msg_get_two "mini_mp_tac" (Info.subgoals tinfo)
               in
               seq
                 [
@@ -191,54 +191,61 @@ let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
       (specC ~c:c_lbl
        // (set_changes_tac (Changes.make [] [] [c_tag] [])));
       (?> (fun inf1 ctxt0 g0 ->
-        let const_list =
-          extract_consts a_vars (unify_in_goal a_varp a_lhs c_lhs g0)
-        in
-        (instA ~a:a_lbl const_list ++
-           (?> (fun inf2 ->
-             (implC ~c:c_lbl ++
-             (?> (fun inf3 ->
-               set_changes_tac (Changes.combine inf3 inf2))))))) ctxt0 g0));
+           let const_list =
+             extract_consts a_vars (unify_in_goal a_varp a_lhs c_lhs g0)
+           in
+           (instA ~a:a_lbl const_list ++
+              (?> (fun inf2 ->
+                   (implC ~c:c_lbl ++
+                      (?> (fun inf3 ->
+                           set_changes_tac (Changes.combine inf3 inf2)))))))
+             ctxt0 g0));
       (?> (fun inf1 ->
-        let a1_tag, a_tag = get_two (Info.aformulas inf1)
-        in
-        (mini_mp_tac (ftag a_tag) (ftag a1_tag) ++
-           (?> (fun inf2 ->
-             let c1_tag = get_one (Info.cformulas inf1)
-             and a3_tag = get_one (Info.aformulas inf2)
-             in
-             ((specC ~c:(ftag c1_tag) // skip) ++
-                 (set_changes_tac
-                    (Changes.make [] [a3_tag] [c1_tag] []))))))));
+           let a1_tag, a_tag =
+             msg_get_two "induct_tac_solve_rh_tac" (Info.aformulas inf1)
+           in
+           (mini_mp_tac (ftag a_tag) (ftag a1_tag) ++
+              (?> (fun inf2 ->
+                   let c1_tag =
+                     msg_get_one "induct_tac_solve_rh_tac" (Info.cformulas inf1)
+                   and a3_tag =
+                     msg_get_one "induct_tac_solve_rh_tac" (Info.aformulas inf2)
+                   in
+                   ((specC ~c:(ftag c1_tag) // skip) ++
+                      (set_changes_tac
+                         (Changes.make [] [a3_tag] [c1_tag] []))))))));
       (?> (fun inf1 ctxt1 g1 ->
-        let c1_tag = get_one (Info.cformulas inf1)
-        and a3_tag = get_one (Info.aformulas inf1) in
-        let c1_lbl = ftag c1_tag in
-        let c1_trm =
-          try Formula.term_of (get_concl c1_lbl g1)
-          with _ -> failwith "induct_tac_solve_rh_tac: can't get c1_trm"
-        in
-        let a3_lbl = ftag a3_tag in
-        let a3_trm =
-          try Formula.term_of (get_asm a3_lbl g1)
-          with _ -> failwith "induct_tac_solve_rh_tac: can't get a3_trm"
-        in
-        let (a3_vars, a3_body) = Term.strip_qnt Term.All a3_trm in
-        let a3_varp = Rewrite.is_free_binder a3_vars in
-        let const_list =
-          try
-            extract_consts a3_vars (unify_in_goal a3_varp a3_body c1_trm g1)
-          with err ->
-            raise (add_error
-                     "induct_tac_solve_rh_tac: can't get const_list"
-                     err)
-        in
-        seq
-          [
-            (instA ~a:a3_lbl const_list // skip);
-            basic ~a:a3_lbl ~c:c1_lbl;
-            (fun g2 -> fail ~err:(error "induct_tac_solve_rh_goal") g2)
-          ] ctxt1 g1))
+           let c1_tag =
+             msg_get_one "induct_tac_solve_rh_tac" (Info.cformulas inf1)
+           and a3_tag =
+             msg_get_one "induct_tac_solve_rh_tac" (Info.aformulas inf1)
+           in
+           let c1_lbl = ftag c1_tag in
+           let c1_trm =
+             try Formula.term_of (get_concl c1_lbl g1)
+             with _ -> failwith "induct_tac_solve_rh_tac: can't get c1_trm"
+           in
+           let a3_lbl = ftag a3_tag in
+           let a3_trm =
+             try Formula.term_of (get_asm a3_lbl g1)
+             with _ -> failwith "induct_tac_solve_rh_tac: can't get a3_trm"
+           in
+           let (a3_vars, a3_body) = Term.strip_qnt Term.All a3_trm in
+           let a3_varp = Rewrite.is_free_binder a3_vars in
+           let const_list =
+             try
+               extract_consts a3_vars (unify_in_goal a3_varp a3_body c1_trm g1)
+             with err ->
+               raise (add_error
+                        "induct_tac_solve_rh_tac: can't get const_list"
+                        err)
+           in
+           seq
+             [
+               (instA ~a:a3_lbl const_list // skip);
+               basic ~a:a3_lbl ~c:c1_lbl;
+               (fun g2 -> fail ~err:(error "induct_tac_solve_rh_goal") g2)
+             ] ctxt1 g1))
     ] ctxt g
 
 let asm_induct_tac alabel clabel ctxt goal =
@@ -296,7 +303,7 @@ let asm_induct_tac alabel clabel ctxt goal =
           [
             (** Left-hand sub-goal *)
             (?> (fun tinfo ->
-              let c1_tag = get_one ~msg:"asm_induct_tac.main_tac:1"
+              let c1_tag = msg_get_one "asm_induct_tac.main_tac:1"
                 (Info.cformulas tinfo)
               in
               seq [
@@ -305,7 +312,7 @@ let asm_induct_tac alabel clabel ctxt goal =
               ]));
             (** Right-hand sub-goal *)
             (?> (fun tinfo ->
-              let a1_tag = get_one ~msg:"asm_induct_tac.main_tac:2"
+              let a1_tag = msg_get_one "asm_induct_tac.main_tac:2"
                 (Info.aformulas tinfo)
               in
               seq
@@ -330,7 +337,7 @@ let basic_induct_tac c thm ctxt goal =
       [
         cut [] thm;
         (?> (fun tinfo ->
-          let a_tag = get_one ~msg:"basic_induct_tac" (Info.aformulas tinfo)
+          let a_tag = msg_get_one "basic_induct_tac" (Info.aformulas tinfo)
           in
           asm_induct_tac (ftag a_tag) c_lbl))
       ] ctxt0 g
@@ -504,8 +511,10 @@ let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
         in
         (instA ~a:a_lbl const_list ++
            (?> (fun inf2 ->
-             let c_tag = get_one (Info.cformulas inf2)
-             and a_tag = get_one (Info.aformulas inf2)
+                let c_tag =
+                  msg_get_one "induct_on_solve_rh_tac" (Info.cformulas inf2)
+                and a_tag =
+                  msg_get_one "induct_on_solve_rh_tac" (Info.aformulas inf2)
              in
              basic ~a:(ftag a_tag) ~c:(ftag c_tag)))) ctxt1 g1))
     ] ctxt goal
@@ -568,7 +577,7 @@ let basic_induct_on ?thm name clabel ctxt goal =
       ---->
       t1: [asms |- c1, c, concls]; t2: [a1, asms |- c, concls]
       }
-  *)
+   *)
   let inst_split_asm_tac atag g =
     let albl = ftag atag in
     seq
@@ -588,26 +597,28 @@ let basic_induct_on ?thm name clabel ctxt goal =
       [
         cut [] thm;
         (?> (fun inf1 ->
-          let atag = get_one (Info.aformulas inf1) in
-          (inst_split_asm_tac atag
-           --
-             [
-               (** Left-hand sub-goal *)
-               (?> (fun inf2 ->
-                 (deleteC (ftag ctag) ++
-                 (fun g3 ->
-                   let c1_tag = get_one (Info.cformulas inf2) in
-                   split_lh_tac (ftag c1_tag) g3))));
-               (** Right-hand sub-goal *)
-               (?> (fun inf2 ->
-                 let a1_tag = get_one (Info.aformulas inf2) in
-                 seq
-                   [
-                     (specC // skip);
-                     induct_on_solve_rh_tac
-                       (ftag a1_tag) (ftag ctag)
-                   ]))
-             ])))
+             let atag = msg_get_one "split_lh_tac" (Info.aformulas inf1) in
+             (inst_split_asm_tac atag
+              --
+                [
+                  (** Left-hand sub-goal *)
+                  (?> (fun inf2 ->
+                       (deleteC (ftag ctag) ++
+                          (fun g3 ->
+                            let c1_tag =
+                              msg_get_one "split_lh_tac" (Info.cformulas inf2) in
+                            split_lh_tac (ftag c1_tag) g3))));
+                  (** Right-hand sub-goal *)
+                  (?> (fun inf2 ->
+                       let a1_tag =
+                         msg_get_one "split_lh_tac" (Info.aformulas inf2) in
+                       seq
+                         [
+                           (specC // skip);
+                           induct_on_solve_rh_tac
+                             (ftag a1_tag) (ftag ctag)
+                  ]))
+        ])))
       ] ctxt0 g
   in
   main_tac ctxt goal

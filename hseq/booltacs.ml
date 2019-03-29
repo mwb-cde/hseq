@@ -303,20 +303,20 @@ let cases_tac (t: Term.term) ctxt goal =
     [
       cut [] thm;
       (?> (fun inf ->
-        let thm_tag = get_one ~msg:"cases_tac 1" (Info.aformulas inf) in
+        let thm_tag = msg_get_one "cases_tac 1" (Info.aformulas inf) in
         allA t ~a:(ftag thm_tag)));
       (?> (fun inf ->
-        let thm_tag = get_one ~msg:"cases_tac 2" (Info.aformulas inf) in
+        let thm_tag = msg_get_one "cases_tac 2" (Info.aformulas inf) in
         disjA ~a:(ftag thm_tag)))
       --
         [
           (?> (fun inf1 ->
-            let asm_tag = get_one ~msg:"cases_tac 3" (Info.aformulas inf1)
-            and lgoal, rgoal = get_two ~msg:"cases_tac 4" (Info.subgoals inf1)
+            let asm_tag = msg_get_one "cases_tac 3" (Info.aformulas inf1)
+            and lgoal, rgoal = msg_get_two "cases_tac 4" (Info.subgoals inf1)
             in
             (negA ~a:(ftag asm_tag) ++
                (?> (fun inf2 g2 ->
-                 let nasm_tag = get_one ~msg:"cases_tac 5" (Info.cformulas inf2)
+                 let nasm_tag = msg_get_one "cases_tac 5" (Info.cformulas inf2)
                  in
                  set_changes_tac
                    (Changes.make [lgoal; rgoal] [asm_tag] [nasm_tag] []) g2)))));
@@ -330,20 +330,20 @@ let show_tac (trm: Term.term) tac ctxt goal =
     [
       cut [] thm;
       (?> (fun inf1 ->
-        let thm_tag = get_one ~msg:"show_tac 1" (Info.aformulas inf1) in
+        let thm_tag = msg_get_one "show_tac 1" (Info.aformulas inf1) in
         allA trm ~a:(ftag thm_tag)));
       (?> (fun inf1 ->
-        let thm_tag = get_one ~msg:"show_tac 2" (Info.aformulas inf1) in
+        let thm_tag = msg_get_one "show_tac 2" (Info.aformulas inf1) in
         disjA ~a:(ftag thm_tag)))
       --
         [
           (?> (fun inf1 ->
-            let asm_tag = get_one ~msg:"show_tac 3" (Info.aformulas inf1)
+            let asm_tag = msg_get_one "show_tac 3" (Info.aformulas inf1)
             in
             (negA ~a:(ftag asm_tag) ++ tac)));
           (?> (fun inf1 ->
-            let (_, gl_tag) = get_two (Info.subgoals inf1)
-            and asm_tag = get_one (Info.aformulas inf1)
+            let (_, gl_tag) = msg_get_two "show_tac" (Info.subgoals inf1)
+            and asm_tag = msg_get_one "show_tac" (Info.aformulas inf1)
             in
             set_changes_tac (Changes.make [gl_tag] [asm_tag] [] [])))
         ]
@@ -389,7 +389,7 @@ let cases_of ?thm t ctxt goal =
     seq [
         cut [trm] case_thm;
         (?> (fun inf1 ->
-          let a_tg = get_one (Info.aformulas inf1)
+          let a_tg = msg_get_one "cases_of" (Info.aformulas inf1)
           in
           seq [
             (disj_splitter_tac ~f:(ftag a_tg) // skip);
@@ -540,7 +540,7 @@ let back0_tac a cs ctxt goal =
   and tac2 = Tactics.implA ~a:(ftag a_label)
   and tac3 =
     (?> (fun inf3 g3 ->
-      let atag3 = get_one (Info.aformulas inf3) in
+      let atag3 = msg_get_one "back0_tac" (Info.aformulas inf3) in
       ((fun n ->
         (Lib.apply_nth 1
            (Tag.equal (Tactics.node_tag n))
@@ -555,8 +555,8 @@ let back0_tac a cs ctxt goal =
      (delete (ftag c_label) ++
         set_changes_tac
         (Changes.make
-           [get_one (Info.subgoals inf4)] []
-           [get_one (Info.cformulas inf4)] [])) g4))
+           [msg_get_one "back0_tac" (Info.subgoals inf4)] []
+           [msg_get_one "back0_tac" (Info.cformulas inf4)] [])) g4))
   in
   (tac1 ++ seq [tac2; tac3; tac4]) ctxt goal
 

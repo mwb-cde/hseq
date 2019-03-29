@@ -61,11 +61,13 @@ val add_error : string -> exn -> exn
     argument.
 *)
 
-val get_one: ?msg:string -> 'a list -> 'a
-(** Get the first element of a list. *)
+val msg_get_one: string -> 'a list -> 'a
+(** [msg_get_one msg lst] Get the first element of list [l], failing with [msg]
+    if not possible. *)
 
-val get_two: ?msg:string -> 'a list -> ('a * 'a)
-(** Get the first two elements of a list. *)
+val msg_get_two: string -> 'a list -> ('a * 'a)
+(** [msg_get_two msg lst] Get the first two elements of list [l], failing with
+    [msg] if not possible. *)
 
 (** {7 Formulas} *)
 

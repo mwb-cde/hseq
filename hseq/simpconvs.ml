@@ -696,7 +696,7 @@ let solve_not_true_tac tg goal =
     [
       negA ~a:(ftag tg);
       (?> (fun info g ->
-        let ctg = get_one ~msg:"solve_not_true_tac" (Info.cformulas info)
+        let ctg = msg_get_one "solve_not_true_tac" (Info.cformulas info)
         in
         trueC ~c:(ftag ctg) g))
     ] goal
@@ -767,7 +767,7 @@ struct
         (fun lst -> (lst >+ qnt_asm_rewrite_tac thm tg));
         (fun lst ctxt0 g ->
           let info = Info.changes g in
-          let tg1 = get_one ~msg:"Simpconvs.Asms.asm_rewrite_add_tac"
+          let tg1 = msg_get_one "Simpconvs.Asms.asm_rewrite_add_tac"
             (Info.aformulas info)
           in
           ((new_add_asm lst tg1 g) >+ skip) ctxt0 g)
@@ -812,7 +812,7 @@ struct
           (fun ret -> (ret >+ copyA (ftag tg)));
           (fun ret ctxt1 g1 ->
             let info = Info.changes g1 in
-            let atg = get_one ~msg:"eq_asm" (Info.aformulas info)
+            let atg = msg_get_one "eq_asm" (Info.aformulas info)
             in
             fold_seq ret
               [
@@ -869,7 +869,7 @@ struct
                     (fun lst -> (lst >+ copyA (ftag tg)));
                     (fun lst ctxt1 g1 ->
                       let info = Info.changes g1 in
-                      let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
+                      let atg = msg_get_one "neg_eq_asm" (Info.aformulas info)
                       in
                       fold_seq lst
                         [
@@ -899,7 +899,7 @@ struct
           (fun lst ctxt2 g2 -> lst, copyA (ftag tg) ctxt2 g2);
           (fun ret1 ctxt1 g1 ->
             let info = Info.changes g1 in
-            let atg = get_one ~msg:"neg_eq_asm" (Info.aformulas info)
+            let atg = msg_get_one "neg_eq_asm" (Info.aformulas info)
             in
             let local_false_thm = rule_false_thm gctxt in
             fold_seq ret1
@@ -990,7 +990,7 @@ struct
                       (fun lst ctxt1 g1 ->
                         let info = Info.changes g1 in
                         let atg =
-                          get_one ~msg:"neg_rule_asm" (Info.aformulas info)
+                          msg_get_one "neg_rule_asm" (Info.aformulas info)
                         in
                         fold_seq lst
                           [
@@ -1015,7 +1015,7 @@ struct
           (fun lst ctxt1 g1 ->
             let inf = Info.changes g1 in
             let ltg, rtg =
-              get_two ~msg:"Simpconvs.conj_rule_asm" (Info.aformulas inf)
+              msg_get_two "Simpconvs.conj_rule_asm" (Info.aformulas inf)
             in
             fold_seq lst
               [
@@ -1144,7 +1144,7 @@ let prepare_asm data atg (ctxt: Context.t) (goal: Logic.node) =
         ] +< l);
       (fun _ (ctxt1: Context.t) (g1: Logic.node) ->
         let info = Info.changes g1 in
-        let a1 = get_one ~msg:"Simplib.prepare_asm" (Info.aformulas info) in
+        let a1 = msg_get_one "Simplib.prepare_asm" (Info.aformulas info) in
         let a1form = drop_tag (get_tagged_asm (ftag a1) g1) in
         let mk_data rules =
           (mk_rule_data asm_form a1form rules)::data
@@ -1191,14 +1191,14 @@ let prepare_concl data c ctxt goal =
           (true_test --> Tactics.trueC ~c:(ftag c));
           copyC (ftag c);
           (?> (fun info ->
-            let c1 = get_one ~msg:"Simplib.prepare_concl"
+            let c1 = msg_get_one "Simplib.prepare_concl"
               (Info.cformulas info)
             in
             negate_concl_tac (ftag c1)))
         ] +< l);
       (fun _ ctxt1 g1 ->
         let info = Info.changes g1 in
-        let a = get_one ~msg:"Simplib.prepare_concl" (Info.aformulas info)
+        let a = msg_get_one "Simplib.prepare_concl" (Info.aformulas info)
         in
         let aform = drop_tag (get_tagged_asm (ftag a) g1) in
         let mk_data rules =

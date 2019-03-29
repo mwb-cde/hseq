@@ -191,7 +191,7 @@ let eq_tac ?c ctxt goal =
     [
       Tactics.cut [] th;
       (?> (fun info1 g ->
-        let af = get_one ~msg:"eq_tac" (Info.aformulas info1)
+        let af = msg_get_one "eq_tac" (Info.aformulas info1)
         in
         map_first (tac (ftag af)) cforms g))
     ] ctxt goal

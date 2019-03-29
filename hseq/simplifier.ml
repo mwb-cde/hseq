@@ -303,7 +303,7 @@ let copyA_inst_tac vals x ctxt goal =
     [
       copyA x;
       (?> (fun inf1 ctxt1 g1 ->
-        let asm_tg = get_one ~msg:"copyA_inst_tac" (Info.aformulas inf1) in
+        let asm_tg = msg_get_one "copyA_inst_tac" (Info.aformulas inf1) in
         let asm_form = drop_tag (get_tagged_asm (ftag asm_tg) g1)
         in
         if (Formula.is_all asm_form)
@@ -358,11 +358,11 @@ let prep_cond_tac cntrl values thm ctxt goal =
   let add_data cntrl rl_ftg (sgls, cforms) =
     (* (condition-goal, rule-goal) *)
     let (cnd_gltg, rl_gltg) =
-      get_two ~msg:"prep_cond_tac: goals" sgls
+      msg_get_two "prep_cond_tac: goals" sgls
     in
     (* condition-formula-tag *)
     let cnd_ftg =
-      get_one ~msg:"prep_cond_tac: forms" cforms
+      msg_get_one "prep_cond_tac: forms" cforms
     in
     (* new control data *)
     let ncntrl = Data.add_asm cntrl rl_ftg
