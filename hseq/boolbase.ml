@@ -37,12 +37,7 @@ let make_false_def sctxt =
 let false_def sctxt =
   Context.find_thm sctxt false_id make_false_def
 
-let falseA ?a ctxt goal =
-  let af =
-    if a = None
-    then first_asm_label Formula.is_false goal
-    else Lib.from_some a
-  in
+let falseA_at af ctxt goal =
   let th =
     try false_def ctxt
     with Not_found ->
@@ -59,16 +54,25 @@ let falseA ?a ctxt goal =
         in
         seq
           [
-            negA ~a:(ftag atag);
+            negA_at (ftag atag);
             (?> (fun inf g1  ->
               let ctag = Lib.get_one (Info.cformulas inf) (error "falseA")
               in
-              trueC ~c:(ftag ctag) g1))
+              trueC_at (ftag ctag) g1))
           ] g))
     ] ctxt goal
 
-let trivial ?f ctxt g =
-  try (trueC ?c:f // falseA ?a:f) ctxt g
+let falseA ctxt goal =
+  let af = first_asm_label Formula.is_false goal
+  in
+  falseA_at af ctxt goal
+
+let trivial_at f ctxt g =
+  try (trueC_at f // falseA_at f) ctxt g
+  with _ -> raise (error "trivial_at")
+
+let trivial ctxt g =
+  try (trueC // falseA) ctxt g
   with _ -> raise (error "trivial")
 
 let cut_thm trms str ctxt = cut trms (thm ctxt str) ctxt
@@ -182,10 +186,10 @@ let eq_tac ?c ctxt goal =
                      ^Lterm.base_thy^".eq_refl")))
   in
   let cforms = concls_of (sequent goal) in
-  let tac albl (t, f) g =
+  let tac albl (t, f) ctxt g =
     if Formula.is_equality f
-    then unify_at albl (ftag t) g
-    else fail g
+    then unify_at albl (ftag t) ctxt g
+    else fail (error "eq_tac") ctxt g
   in
   seq
     [
@@ -216,14 +220,14 @@ let direct_map_some tac lst ctxt goal =
     with _ -> ((flag, lbl::fail_list), skip ctxt node)
   in
   match lst with
-    | [] -> ([], fail ~err:(error "direct_map_some: no data.") ctxt goal)
+    | [] -> ([], fail (error "direct_map_some: no data.") ctxt goal)
     | _ ->
       let ((flag, fail_list), branch) =
         fold_data app (false, []) lst ctxt goal
       in
       if not flag
       then (fail_list,
-            fail ~err:(error "direct_map_some: no tactic suceeded") ctxt goal)
+            fail (error "direct_map_some: no tactic suceeded") ctxt goal)
       else (fail_list, branch)
 
 (** [asm_elim_rules (arules, crules) f goal]: Apply elimination rules
@@ -260,8 +264,7 @@ and plain_asm_elim_rules_tac arules lbl_list ctxt goal =
     | [] ->
       if not flag
       then
-        fail
-          ~err:(error "plain_asm_elim_rules_tac: No tactic suceeded.")
+        fail (error "plain_asm_elim_rules_tac: No tactic suceeded.")
           ctxt0 g
       else
         let chngs1 =
@@ -330,8 +333,7 @@ and plain_concl_elim_rules_tac crules lbl_list ctxt goal =
       | [] ->
         if not flag
         then
-          (fail
-             ~err:(error "plain_concl_elim_rules_tac: No tactic suceeded.")
+          (fail (error "plain_concl_elim_rules_tac: No tactic suceeded.")
              ctxt g)
         else
           let chngs1 = Changes.make (Info.subgoals chngs)
@@ -392,10 +394,10 @@ let elim_rules_tac rules albls clbls ctxt g =
         with _ ->
           if good
           then skip ctxt g1
-          else (fail ~err:(error "elim_rules_tac") ctxt1 g1)) ctxt g
+          else (fail (error "elim_rules_tac") ctxt1 g1)) ctxt g
   else
     try map_some (concl_elim_rules_tac rules) clbls ctxt g
-    with _ -> fail ~err:(error "elim_rules_tac") ctxt g
+    with _ -> fail (error "elim_rules_tac") ctxt g
 
 (** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
     formula [?f]. If [?f] is not given, use all formulas in the

@@ -99,8 +99,8 @@ let initial_prep_tac ctrl lbl ctxt goal =
     with _ -> false
   in
   if is_asm
-  then specA ~a:lbl ctxt goal
-  else specC ~c:lbl ctxt goal
+  then specA_at lbl ctxt goal
+  else specC_at lbl ctxt goal
 
 (** [simp_engine_tac cntrl ret l goal]: The engine for [simp_tac].
 
@@ -144,7 +144,7 @@ let simp_engine_tac data tag ctxt goal =
   in
   (** trivia_tac: Clean up trivial goals. **)
   let apply_trivial_tac arg ctxt1 g1 =
-    (arg >+ alt [Boollib.trivial ~f:(ftag tag); skip]) ctxt1 g1
+    (arg >+ alt [Boollib.trivial_at (ftag tag); skip]) ctxt1 g1
   in
   (fold_seq (false, data)
     [

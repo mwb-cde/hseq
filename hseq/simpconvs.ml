@@ -312,7 +312,7 @@ let negate_concl_tac clbl ctxt goal =
   seq
     [
       make_neg_concl clbl;
-      Tactics.negC ~c:clbl;
+      Tactics.negC_at clbl;
       (?> (fun inf ->
         set_changes_tac (Changes.make [] (Info.aformulas inf) [] [])))
     ] ctxt goal
@@ -694,11 +694,11 @@ let new_add_asm ret tg g =
 let solve_not_true_tac tg goal =
   seq
     [
-      negA ~a:(ftag tg);
+      negA_at (ftag tg);
       (?> (fun info g ->
         let ctg = msg_get_one "solve_not_true_tac" (Info.cformulas info)
         in
-        trueC ~c:(ftag ctg) g))
+        trueC_at (ftag ctg) g))
     ] goal
 
 (** Functions to convert an assumption
@@ -782,7 +782,7 @@ struct
     else
       if is_constant_false (qs, c, a)
       then (** Solve assumption false *)
-        (ret, falseA ~a:(ftag tg) sctxt goal)
+        (ret, falseA_at (ftag tg) sctxt goal)
       else
         asm_rewrite_add_tac ret (rule_true_thm sctxt) tg sctxt goal
 
@@ -843,7 +843,7 @@ struct
             else
               if is_constant_false (qs, c, a)
               then (** Solve assumption false *)
-                (ret, falseA ~a:(ftag tg) gctxt g)
+                (ret, falseA_at (ftag tg) gctxt g)
               else
                 asm_rewrite_add_tac ret (rule_true_thm gctxt) tg gctxt g
           | (Some(true), _) ->
@@ -1011,7 +1011,7 @@ struct
     then
       fold_seq ret
         [
-          (fun lst -> (lst >+ conjA ~a:(ftag tg)));
+          (fun lst -> (lst >+ conjA_at (ftag tg)));
           (fun lst ctxt1 g1 ->
             let inf = Info.changes g1 in
             let ltg, rtg =
@@ -1139,7 +1139,7 @@ let prepare_asm data atg (ctxt: Context.t) (goal: Logic.node) =
     [
       (fun l -> seq
         [
-          (false_test --> Boollib.falseA ~a:(ftag atg));
+          (false_test --> Boollib.falseA_at (ftag atg));
           copyA (ftag atg)
         ] +< l);
       (fun _ (ctxt1: Context.t) (g1: Logic.node) ->
@@ -1188,7 +1188,7 @@ let prepare_concl data c ctxt goal =
     [
       (fun l ->
         seq [
-          (true_test --> Tactics.trueC ~c:(ftag c));
+          (true_test --> Tactics.trueC_at (ftag c));
           copyC (ftag c);
           (?> (fun info ->
             let c1 = msg_get_one "Simplib.prepare_concl"

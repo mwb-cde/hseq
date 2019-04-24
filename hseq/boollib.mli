@@ -120,15 +120,21 @@ end
 
 (** {5 Tactics} *)
 
-val falseA: ?a:Logic.label -> Tactics.tactic
+val falseA_at: Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].  [info] is
     unchanged.
 *)
 
-val trivial: ?f:Logic.label -> Tactics.tactic
+val falseA: Tactics.tactic
+(** Apply [false_at] to the first instance of [false] in the assumptions *)
+
+val trivial_at: Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].  [info] is unchanged.
 *)
+
+val trivial: Tactics.tactic
+(** Apply [trivial_at] to the first formula that succeeds *)
 
 val cut_thm: Term.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
@@ -330,8 +336,8 @@ val iffC: ?c:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 *)
 
-val iffE: ?c:Logic.label -> Tactics.tactic
-(** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
+val iffE_at: Logic.label -> Tactics.tactic
+(** [iffE_at l sq]: Fully elminate the equivalence at conclusion [l]
 
     {L
     g:\[asms |- (A iff B){_ l}, concl\]
@@ -344,6 +350,9 @@ val iffE: ?c:Logic.label -> Tactics.tactic
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 *)
+
+val iffE: Tactics.tactic
+(** Apply [iffE_at] to the first conclusion that matches *)
 
 (**  {5 Eliminating boolean operators}  *)
 

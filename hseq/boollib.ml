@@ -270,12 +270,12 @@ struct
       let proof ctxt g =
         let sctxt1 = set_scope ctxt (scope_of_goal g) in
         seq [once_rewrite_tac [bool_eq_thm sctxt1] ~f:(fnum 1);
-             Tactics.conjC ~c:(fnum 1)
+             Tactics.conjC_at (fnum 1)
              --
                [
                  seq
                    [
-                     Tactics.implC ~c:(fnum 1);
+                     Tactics.implC_at (fnum 1);
                      (?> (fun info ->
                       let atag =
                         Lib.get_one (Info.aformulas info)
@@ -286,7 +286,7 @@ struct
                       in
                       seq
                         [
-                          Tactics.negA ~a:(ftag atag);
+                          Tactics.negA_at (ftag atag);
                           (?> (fun info ->
                             let ctag2 =
                               Lib.get_one (Info.cformulas info)
@@ -296,23 +296,23 @@ struct
                               [
                                 repeat
                                   (?> (fun info ->
-                                   (Tactics.allC ~c:(ftag ctag2)
+                                   (Tactics.allC_at (ftag ctag2)
                                     ++ append_changes_tac info)));
                                 (?> (fun info ->
-                                  instC ~c:(ftag ctag)
-                                    (List.rev (Info.constants info))));
-                                Tactics.negC ~c:(ftag ctag);
+                                  instC_at (List.rev (Info.constants info))
+                                     (ftag ctag)));
+                                Tactics.negC_at (ftag ctag);
                                 (?> (fun info ->
                                   let atag3 =
                                     Lib.get_one (Info.aformulas info)
                                       (Failure "neg_all_conv: 3")
                                   in
-                                  Tactics.basic
-                                    ~a:(ftag atag3) ~c:(ftag ctag2)))
+                                  Tactics.basic_at
+                                    (ftag atag3) (ftag ctag2)))
                               ]))]))];
                  seq
                    [
-                     Tactics.implC ~c:(fnum 1);
+                     Tactics.implC_at (fnum 1);
                      (?> (fun info ->
                        let atag =
                          Lib.get_one (Info.aformulas info)
@@ -323,7 +323,7 @@ struct
                       in
                       seq
                         [
-                          Tactics.negC ~c:(ftag ctag);
+                          Tactics.negC_at (ftag ctag);
                           (?> (fun info ->
                             let atag2 =
                               Lib.get_one (Info.aformulas info)
@@ -333,19 +333,20 @@ struct
                               [
                                 repeat
                                   (?> (fun info ->
-                                    (Tactics.existA ~a:(ftag atag)
+                                    (Tactics.existA_at (ftag atag)
                                     ++ append_changes_tac info)));
                                 (?> (fun info ->
-                                  instA ~a:(ftag atag2)
-                                    (List.rev (Info.constants info))));
-                                Tactics.negA ~a:(ftag atag);
+                                  instA_at
+                                    (List.rev (Info.constants info))
+                                    (ftag atag2)));
+                                Tactics.negA_at (ftag atag);
                                 (?> (fun info ->
                                  let ctag3 =
                                    Lib.get_one (Info.cformulas info)
                                      (Failure "neg_all_conv: 3")
                                  in
-                                 Tactics.basic
-                                   ~a:(ftag atag2) ~c:(ftag ctag3)))
+                                 Tactics.basic_at
+                                   (ftag atag2) (ftag ctag3)))
                               ]))]))]]
             ] sctxt g
       in
@@ -389,12 +390,12 @@ struct
       let proof ctxt g =
         let sctxt1 = set_scope ctxt (scope_of_goal g) in
         seq [once_rewrite_tac [bool_eq_thm sctxt1] ~f:(fnum 1);
-             Tactics.conjC ~c:(fnum 1)
+             Tactics.conjC_at (fnum 1)
              --
                [
                  seq
                    [
-                     Tactics.implC ~c:(fnum 1);
+                     Tactics.implC_at (fnum 1);
                      (?> (fun info ->
                       let atag =
                         Lib.get_one (Info.aformulas info)
@@ -405,7 +406,7 @@ struct
                       in
                       seq
                         [
-                          Tactics.negA ~a:(ftag atag);
+                          Tactics.negA_at (ftag atag);
                           (?> (fun info->
                             let ctag2 =
                               Lib.get_one (Info.cformulas info)
@@ -415,23 +416,24 @@ struct
                               [
                                 repeat
                                   (?> (fun info ->
-                                    (Tactics.allC ~c:(ftag ctag)
+                                    (Tactics.allC_at (ftag ctag)
                                      ++ append_changes_tac info)));
                                 (?> (fun info g3 ->
-                                  instC ~c:(ftag ctag2)
-                                    (List.rev (Info.constants info)) g3));
-                                Tactics.negC ~c:(ftag ctag);
+                                  instC_at
+                                    (List.rev (Info.constants info))
+                                    (ftag ctag2) g3));
+                                Tactics.negC_at (ftag ctag);
                                 (?> (fun info g3 ->
                                   let atag3 =
                                     Lib.get_one (Info.aformulas info)
                                       (Failure "neg_exists_conv: 3")
                                   in
-                                  Tactics.basic
-                                    ~a:(ftag atag3) ~c:(ftag ctag2) g3))
+                                  Tactics.basic_at
+                                    (ftag atag3) (ftag ctag2) g3))
                               ]))]))];
                  seq
                    [
-                     Tactics.implC ~c:(fnum 1);
+                     Tactics.implC_at (fnum 1);
                      (?> (fun info g1 ->
                       let atag =
                         Lib.get_one (Info.aformulas info)
@@ -442,7 +444,7 @@ struct
                       in
                       seq
                         [
-                          Tactics.negC ~c:(ftag ctag);
+                          Tactics.negC_at (ftag ctag);
                           (?> (fun info g2->
                             let atag2 =
                               Lib.get_one (Info.aformulas info)
@@ -452,19 +454,20 @@ struct
                               [
                                 repeat
                                   (?> (fun info ->
-                                    (Tactics.existA ~a:(ftag atag2)
+                                    (Tactics.existA_at (ftag atag2)
                                      ++ append_changes_tac info)));
                                (?> (fun info g3 ->
-                                 instA ~a:(ftag atag)
-                                   (List.rev (Info.constants info)) g3));
-                                Tactics.negA ~a:(ftag atag);
+                                 instA_at
+                                   (List.rev (Info.constants info))
+                                   (ftag atag) g3));
+                                Tactics.negA_at (ftag atag);
                                 (?> (fun info g3 ->
                                   let ctag3 =
                                     Lib.get_one (Info.cformulas info)
                                       (Failure "neg_exists_conv: 3")
                                   in
-                                  Tactics.basic
-                                    ~a:(ftag atag2) ~c:(ftag ctag3) g3))
+                                  Tactics.basic_at
+                                    (ftag atag2) (ftag ctag3) g3))
                               ] g2))] g1))]]
             ] sctxt g
       in
@@ -497,13 +500,13 @@ struct
                  Lib.get_one (Info.aformulas info)
                    (error "conjunctL")
                in
-               Tactics.conjA ~a:(ftag ttag) g1));
+               Tactics.conjA_at (ftag ttag) g1));
              (?> (fun info g1 ->
                let (ltag, rtag)=
                  Lib.get_two (Info.aformulas info)
                    (error "conjunctL")
                in
-               Tactics.basic ~a:(ftag ltag) ~c:l g1))] g
+               Tactics.basic_at (ftag ltag) l g1))] g
       in
       Commands.prove ctxt lhs (proof (fnum 1))
 
@@ -522,13 +525,13 @@ struct
                  Lib.get_one (Info.aformulas info)
                    (error "conjunctL")
                in
-               Tactics.conjA ~a:(ftag ttag) g1));
+               Tactics.conjA_at (ftag ttag) g1));
              (?> (fun info g1 ->
                let (ltag, rtag)=
                  Lib.get_two (Info.aformulas info)
                    (error "conjunctL")
                in
-               Tactics.basic ~a:(ftag rtag) ~c:l g1))] g
+               Tactics.basic_at (ftag rtag) l g1))] g
       in
       Commands.prove ctxt rhs (proof (fnum 1))
 
@@ -553,7 +556,10 @@ end
 
 (*** Tactics ***)
 
+let falseA_at  = Boolbase.falseA_at
 let falseA  = Boolbase.falseA
+
+let trivial_at = Boolbase.trivial_at
 let trivial = Boolbase.trivial
 let cut_thm = Boolbase.cut_thm
 
@@ -597,6 +603,7 @@ let apply_elim_tac = Boolbase.apply_elim_tac
 let iffA = Booltacs.iffA
 let iffC = Booltacs.iffC
 let iffE = Booltacs.iffE
+let iffE_at = Booltacs.iffE_at
 
 (*** Splitting formulas ***)
 
@@ -650,7 +657,7 @@ let equals_tac ?f ctxt goal =
         let test_tac (tg, form) ctxt1 g =
           if Formula.is_equality form
           then act_tac (ftag tg) ctxt1 g
-          else fail ctxt1 g
+          else fail (error "equals_tac") ctxt1 g
         in
         let sqnt = sequent gl
         in

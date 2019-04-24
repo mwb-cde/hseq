@@ -37,11 +37,11 @@ open Rewritelib
     [trueC], [implC] and [allC]
 *)
 let mini_scatter_tac c ctxt goal =
-  let asm_rules = [ (fun l -> falseA ~a:l) ] in
+  let asm_rules = [ (fun l -> falseA_at l) ] in
   let concl_rules =
     [
-      (fun l -> Tactics.trueC ~c:l);
-      (fun l -> Tactics.conjC ~c:l)
+      (fun l -> Tactics.trueC_at l);
+      (fun l -> Tactics.conjC_at l)
     ]
   in
   let main_tac ctxt0 g = elim_rules_tac (asm_rules, concl_rules) ctxt0 g
@@ -57,7 +57,7 @@ let mini_mp_tac asm1 asm2 ctxt goal =
   let tac =
     seq
       [
-        implA ~a:asm1
+        implA_at asm1
         --
           [
             (?> (fun tinfo ->
@@ -69,8 +69,8 @@ let mini_mp_tac asm1 asm2 ctxt goal =
                 [
                   set_changes_tac
                     (Changes.make [g_tag] [a1_tag] [] []);
-                  basic ~a:asm2 ~c:(ftag c_tag);
-                  (fun ctxt1 -> fail ~err:(error "mini_mp_tac") ctxt1)
+                  basic_at asm2 (ftag c_tag);
+                  fail (error "mini_mp_tac")
                 ]));
             skip
           ]
@@ -188,15 +188,15 @@ let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
   in
   seq
     [
-      (specC ~c:c_lbl
+      (specC_at c_lbl
        // (set_changes_tac (Changes.make [] [] [c_tag] [])));
       (?> (fun inf1 ctxt0 g0 ->
            let const_list =
              extract_consts a_vars (unify_in_goal a_varp a_lhs c_lhs g0)
            in
-           (instA ~a:a_lbl const_list ++
+           (instA_at const_list a_lbl ++
               (?> (fun inf2 ->
-                   (implC ~c:c_lbl ++
+                   (implC_at c_lbl ++
                       (?> (fun inf3 ->
                            set_changes_tac (Changes.combine inf3 inf2)))))))
              ctxt0 g0));
@@ -211,7 +211,7 @@ let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
                    and a3_tag =
                      msg_get_one "induct_tac_solve_rh_tac" (Info.aformulas inf2)
                    in
-                   ((specC ~c:(ftag c1_tag) // skip) ++
+                   ((specC_at (ftag c1_tag) // skip) ++
                       (set_changes_tac
                          (Changes.make [] [a3_tag] [c1_tag] []))))))));
       (?> (fun inf1 ctxt1 g1 ->
@@ -242,9 +242,9 @@ let induct_tac_solve_rh_tac a_lbl c_lbl ctxt g =
            in
            seq
              [
-               (instA ~a:a3_lbl const_list // skip);
-               basic ~a:a3_lbl ~c:c1_lbl;
-               (fun g2 -> fail ~err:(error "induct_tac_solve_rh_goal") g2)
+               (instA_at const_list a3_lbl // skip);
+               basic_at a3_lbl c1_lbl;
+               (fun g2 -> fail (error "induct_tac_solve_rh_goal") g2)
              ] ctxt1 g1))
     ] ctxt g
 
@@ -285,9 +285,9 @@ let asm_induct_tac alabel clabel ctxt goal =
     let albl = ftag atag in
     seq
       [
-        instA ~a:albl consts_list;
-        (betaA ~a:albl // skip);
-        implA ~a:albl
+        instA_at consts_list albl;
+        (betaA_at albl // skip);
+        implA_at albl
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand
@@ -503,20 +503,20 @@ let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
   in
   seq
     [
-      (specC ~c:c_lbl
+      (specC_at c_lbl
        // set_changes_tac (Changes.make [] [] [c_tag] []));
       (?> (fun inf1 ctxt1 g1 ->
         let const_list =
           extract_consts a_vars (unify_in_goal a_varp a_body c_body g1)
         in
-        (instA ~a:a_lbl const_list ++
+        (instA_at const_list a_lbl ++
            (?> (fun inf2 ->
                 let c_tag =
                   msg_get_one "induct_on_solve_rh_tac" (Info.cformulas inf2)
                 and a_tag =
                   msg_get_one "induct_on_solve_rh_tac" (Info.aformulas inf2)
              in
-             basic ~a:(ftag a_tag) ~c:(ftag c_tag)))) ctxt1 g1))
+             basic_at (ftag a_tag) (ftag c_tag)))) ctxt1 g1))
     ] ctxt goal
 
 (** [induct_on ?thm ?c n]: Apply induction to the first universally
@@ -582,9 +582,9 @@ let basic_induct_on ?thm name clabel ctxt goal =
     let albl = ftag atag in
     seq
       [
-        ((instA ~a:albl consts_list)
-         ++ (betaA ~a:albl // skip));
-        implA ~a:(ftag atag)
+        ((instA_at consts_list albl)
+         ++ (betaA_at albl // skip));
+        implA_at (ftag atag)
       ] g
   in
   (** [split_lh_tac c]: Split conclusion [c] of the left-hand

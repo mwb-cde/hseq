@@ -137,7 +137,7 @@ let finite_rules =
     [rewrite_tac [defn "finite"]
      ++ blast_tac
      ++ (match_asm (!% " !P: A => (P x) ")
-         (fun l -> instA ~a:l [ (!% " _P ") ]))
+         (instA_at [ (!% " _P ")]))
      ++ (implA -- [split_tac ++ basic])
      ++ back_tac
      ++ blast_tac];;

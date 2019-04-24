@@ -237,10 +237,6 @@ let get_form t sqnt =
   try Logic.Sequent.get_tagged_cncl t sqnt
   with Not_found -> Logic.Sequent.get_tagged_asm t sqnt
 
-(** [simp_fail]: A hook to allow failures to be traced.
-*)
-let simp_fail ?err g = Tactics.fail ?err g
-
 (** [check_change p]: Test whether plan [p] does anything. Raise
     [No_change] if it does not.
 *)
@@ -307,7 +303,7 @@ let copyA_inst_tac vals x ctxt goal =
         let asm_form = drop_tag (get_tagged_asm (ftag asm_tg) g1)
         in
         if (Formula.is_all asm_form)
-        then instA ~a:(ftag asm_tg) vals ctxt1 g1
+        then instA_at vals (ftag asm_tg) ctxt1 g1
         else skip ctxt1 g1))
     ] ctxt goal
 
@@ -379,7 +375,7 @@ let prep_cond_tac cntrl values thm ctxt goal =
           let info1 = Info.changes g1 in
           let rl_ftg = Lib.get_one (Info.aformulas info1) No_change
           in
-          ((data, rl_ftg) >+ Tactics.implA ~a:(ftag rl_ftg)) ctxt1 g1);
+          ((data, rl_ftg) >+ Tactics.implA_at (ftag rl_ftg)) ctxt1 g1);
         (* Extract the data from the subgoal *)
         (fun (data, rl_ftg) ctxt1 g1 ->
           let info1 = Info.changes g1 in
@@ -905,7 +901,7 @@ let basic_simp_tac cntrl ft ctxt goal =
     end;
     (** Check the rewrite plan **)
     if (Lib.try_app check_change plan1) = None
-    then ((data1, trm1, plan1) >+ Boollib.trivial ~f:(ftag ft)) ctxt1 g1
+    then ((data1, trm1, plan1) >+ Boollib.trivial_at (ftag ft)) ctxt1 g1
     else
       begin
         (** Reset the control data **)
@@ -949,10 +945,10 @@ let basic_simp_tac cntrl ft ctxt goal =
 *)
 
 let simp_asm_tac ctrl lbl goal =
-  (ctrl >+ (specA ~a:lbl // skip)) goal
+  (ctrl >+ (specA_at lbl // skip)) goal
 
 let simp_concl_tac ctrl lbl ctxt goal =
-  (ctrl >+ (specC ~c:lbl // skip)) ctxt goal
+  (ctrl >+ (specC_at lbl // skip)) ctxt goal
 
 let simp_prep_tac ctrl lbl ctxt goal =
   let is_asm =
@@ -976,7 +972,7 @@ let simp_prep_tac ctrl lbl ctxt goal =
     If not(ctrl.conds > 0) fail.
 *)
 
- let cond_prover_trueC l = Tactics.trueC ~c:l
+ let cond_prover_trueC l = Tactics.trueC_at l
 
  let cond_prover_worker_tac ctrl tg ctxt goal =
    let rec main_tac ctrl1 ctxt1 g1 =
@@ -1005,7 +1001,7 @@ let simp_prep_tac ctrl lbl ctxt goal =
      in
      alt
        [
-         Tactics.trueC ~c:(ftag tg);
+         Tactics.trueC_at (ftag tg);
          apply_tac
            (fold_seq data
               [
@@ -1014,7 +1010,7 @@ let simp_prep_tac ctrl lbl ctxt goal =
               ])
            (fun _ -> cond_prover_trueC (ftag tg))
        ] ctxt goal
-  else fail ~err:No_change ctxt goal
+  else fail No_change ctxt goal
 
 (** [inital_flatten_tac exclude g]: Prepare goal for simplification.
 
@@ -1024,16 +1020,16 @@ let simp_prep_tac ctrl lbl ctxt goal =
 
 let simp_asm_elims =
   [
-    (fun l -> Boollib.falseA ~a:l);
-    (fun l -> Tactics.negA ~a:l);
-    (fun l -> Tactics.conjA ~a:l);
-    (fun l -> Tactics.existA ~a:l)
+    (fun l -> Boollib.falseA_at l);
+    (fun l -> Tactics.negA_at l);
+    (fun l -> Tactics.conjA_at l);
+    (fun l -> Tactics.existA_at l)
   ]
 let simp_concl_elims =
   [
-    (fun l -> Tactics.trueC ~c:l);
-    (fun l -> Tactics.disjC ~c:l);
-    (fun l -> Tactics.allC ~c:l)
+    (fun l -> Tactics.trueC_at l);
+    (fun l -> Tactics.disjC_at l);
+    (fun l -> Tactics.allC_at l)
   ]
 
 let simp_flatten_asms_tac lst =

@@ -56,7 +56,7 @@ val iffC: ?c:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 *)
 
-val iffE: ?c:Logic.label -> Tactics.tactic
+val iffE_at: Logic.label -> Tactics.tactic
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
     {L
@@ -70,6 +70,9 @@ val iffE: ?c:Logic.label -> Tactics.tactic
 
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 *)
+
+val iffE: Tactics.tactic
+(** Applies [iffE] to the first [iff] forumula in the conclusions *)
 
 (** {5 Splitting subgoals}
 

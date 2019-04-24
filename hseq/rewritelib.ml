@@ -291,7 +291,7 @@ let gen_replace_tac
        avoid trying to rewrite a formula with itself.  ***)
   let filter_replace x =
     if List.exists (Tag.equal (Logic.label_to_tag x sqnt)) asm_tags
-    then fail ~err:(error "gen_replace")
+    then fail (error "gen_replace")
     else
       gen_rewrite_tac ?asm:None ctrl rules ~f:x
   in
@@ -305,7 +305,7 @@ let gen_replace_tac
   alt
     [
       tac;
-      fail ~err:(error "gen_replace")
+      fail (error "gen_replace")
     ] ctxt goal
 
 let replace_tac ?(dir=leftright) ?asms ?f ctxt goal =

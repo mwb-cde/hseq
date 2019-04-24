@@ -270,8 +270,8 @@ val pass: tactic
 (** The tactic that does nothing. Alway succeeds. Clears the
     change record. *)
 
-val fail: ?err:exn -> tactic
-(** The tactic that always fails. Raises [Failure] or [?err] if given. *)
+val fail: exn -> tactic
+(** [fail err]: The tactic that always fails. Raises [err]. *)
 
 (** {5 Tacticals} *)
 
@@ -455,9 +455,6 @@ val foreach_form: (Logic.label -> tactic) -> tactic
 
     The tactics in this module which abstract from those defined in
     {!Logic.Tactics} should be prefered to those in {!Logic.Tactics}.
-    Where tactics take an argument [?info] and the tag details aren't
-    given, they can be found in the equivalent tactic in
-    {!Logic.Tactics}.
 *)
 
 val rotateA: tactic
@@ -510,72 +507,72 @@ val deleten: Logic.label list -> tactic
 
 val trueC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.trueC}. *)
-val trueC: ?c:Logic.label -> tactic
+val trueC: tactic
 (** Apply {!Logic.Tactics.conjC} to the first instance of [true] in the
     conclusions. *)
 
 val conjC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjC}. *)
-val conjC: ?c: Logic.label -> tactic
+val conjC: tactic
 (** Apply {!Logic.Tactics.conjC} to the first conjunction in the conclusions. *)
 
 val conjA_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.conjA}. *)
-val conjA: ?a: Logic.label -> tactic
+val conjA: tactic
 (** Apply {!Logic.Tactics.conjA} to the first conjunction in the assumptions. *)
 
 val disjC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjC}. *)
-val disjC: ?c: Logic.label -> tactic
+val disjC: tactic
 (** Apply {!Logic.Tactics.disjC} to the first disjunction in the conclusions. *)
 
 val disjA_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.disjA}. *)
-val disjA: ?a: Logic.label -> tactic
+val disjA: tactic
 (** Apply {!Logic.Tactics.disjA} to the first diisjunction in the
     assumptions. *)
 
 val negC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negC}. *)
-val negC: ?c: Logic.label -> tactic
+val negC: tactic
 (** Apply {!Logic.Tactics.negC} to the first negation in the conclusions. *)
 
 val negA_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.negA}. *)
-val negA: ?a: Logic.label -> tactic
+val negA: tactic
 (** Apply {!Logic.Tactics.negA} to the first negation in the assumptions. *)
 
 val implC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implC}. *)
-val implC: ?c: Logic.label -> tactic
+val implC: tactic
 (** Apply {!Logic.Tactics.implC} to the first implication in the conclusions. *)
 
 val implA_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.implA}. *)
-val implA: ?a: Logic.label -> tactic
+val implA: tactic
 (** Apply {!Logic.Tactics.implA} to the first implication in the assumptions. *)
 
 val existC_at: Term.term -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.existC}. *)
-val existC: ?c: Logic.label -> Term.term -> tactic
+val existC: Term.term -> tactic
 (** Apply {!Logic.Tactics.existC} to the first existentially quantified
     conclusion. *)
 
 val existA_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.existA}. *)
-val existA: ?a: Logic.label -> tactic
+val existA: tactic
 (** Apply {!Logic.Tactics.existA} to the first existentially quantified
    assumption. *)
 
 val allC_at: Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.allC}. *)
-val allC: ?c: Logic.label -> tactic
+val allC: tactic
 (** Apply {!Logic.Tactics.allC} to the first universally quantified
     conclusion. *)
 
 val allA_at: Term.term -> Logic.label -> tactic
 (** Entry point to {!Logic.Tactics.allA}. *)
-val allA: ?a: Logic.label -> Term.term -> tactic
+val allA: Term.term -> tactic
 (** Apply {!Logic.Tactics.allA} to the first universally quantified
     assumption. *)
 
@@ -589,10 +586,9 @@ val nameA:
 val instA_at: Term.term list -> Logic.label -> tactic
 (** Instantiate a universally quantified assumption. Generalises
     [allA] to a list of terms. [instA a trms] applies [allA a t] for
-    each [t] in [trms]. [?info] is set to the result of the last
-    instantiation. Fails if there are more terms then variables.
+    each [t] in [trms]. Fails if there are more terms then variables.
 *)
-val instA: ?a:Logic.label -> Term.term list -> tactic
+val instA: Term.term list -> tactic
 (** Apply [instA_at] to the first universially quantified assumption *)
 
 val instC_at: Term.term list -> Logic.label -> tactic
@@ -601,11 +597,14 @@ val instC_at: Term.term list -> Logic.label -> tactic
     for each [t] in [trms]. Records the result of the last
     instantiation. Fails if there are more terms then variables.
 *)
-val instC: ?c:Logic.label -> Term.term list -> tactic
+val instC: Term.term list -> tactic
 (** Apply [instC_at] to the first universially quantified conclusion *)
 
-val inst_tac:
-  ?f:Logic.label -> Term.term list -> tactic
+val inst_at: Term.term list -> Logic.label -> tactic
+(** Instantiate a specific formula. Tries {!Tactics.instA_at} then
+   {!Tactics.instC_at}. *)
+
+val inst_tac: Term.term list -> tactic
 (** Instantiate a formula. Tries {!Tactics.instA} then {!Tactics.instC}. *)
 
 val cut: Term.term list -> Logic.thm -> tactic
@@ -624,11 +623,9 @@ val betaA_at: Logic.label -> tactic
 
     @raise [Not_found] if assumption not found.
 
-    If [?a] is not given, apply to each assumption.
-
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
-val betaA: ?a:Logic.label -> tactic
+val betaA: tactic
 (** Apply [betaA_at] to the first lambda quantified assumption *)
 
 val betaC_at: Logic.label -> tactic
@@ -642,29 +639,34 @@ val betaC_at: Logic.label -> tactic
 
     @raise [Not_found] if conclusion not found.
 
-    If [?c] is not given, apply to each conclusion
-
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
-val betaC: ?c:Logic.label -> tactic
+val betaC: tactic
 (** Apply [betaC_at] to the first lambda quantified conclusion *)
 
-val beta_tac: ?f:Logic.label -> tactic
-(** [beta_tac]: Apply beta conversion to a formula in the goal.  If
-    [?f] is not given, beta convert conclusions and then the
-    assumptions. Fails if no change is made.
-*)
+val beta_tac: tactic
+(** [beta_tac]: Apply beta conversion to a formula in the goal. Beta convert
+    conclusions and then the assumptions. Fails if no change is made.  *)
+
+val beta_at :Logic.label -> tactic
+(** [beta_tac]: Apply beta conversion to a specific formula in the goal. *)
 
 val name_tac: string -> Logic.label -> tactic
 (** [name_tac n lbl]: Name formula [lbl] with [n].  Entry point
     to {!Logic.Tactics.nameA} and {!Logic.Tactics.nameC}.
 *)
 
+val find_basic:
+  (Logic.label)option -> (Logic.label)option -> Logic.Subgoals.node
+  -> (Logic.label * Logic.label)
+(** Find an assumption and conclusion that make the goal basic. Raises
+   [Not_found] if there is no such pair *)
+
 val basic_at: Logic.label -> Logic.label -> tactic
 (** [basic_at a c] Proves the goal \[A{_ a}, asms |- B{_ c}, concls\] if A is
    alpha-equal to B.  Entry point to {!Logic.Tactics.basic}.  *)
 
-val basic: ?a:Logic.label -> ?c:Logic.label -> tactic
+val basic: tactic
 (** Tries to find an assumption and conclusion that can be solved using
    {!Logic.Tactics.basic}.  *)
 
@@ -797,7 +799,7 @@ val specA_at: Logic.label -> tactic
    assumption and [cs] are the constants generated by [existA], in the order
    they were generated.  *)
 
-val specA: ?a:Logic.label -> tactic
+val specA: tactic
 (** Specialize an existentially quantified assumption. [specA a trms]
     repeatedly applies [existA], failing if [a] is not an existentially
     quantified formula.
@@ -817,7 +819,7 @@ val specC_at: Logic.label -> tactic
     [allC], in the order they were generated.
 *)
 
-val specC: ?c:Logic.label -> tactic
+val specC: tactic
 (** Specialize a universally quantified assumption. [specC a trms]
     repeatedly applies [allC], failing if [c] is not universally
     quantified.
@@ -827,7 +829,16 @@ val specC: ?c:Logic.label -> tactic
     [allC], in the order they were generated.
 *)
 
-val spec_tac: ?f:Logic.label -> tactic
+val spec_at: Logic.label -> tactic
+(** Specialize a specfici formula. Tries {!Tactics.specC} then
+    {!Tactics.specA}.
+
+    info: [cforms=[tg], constants = cs] or [aforms=[tg], constants =
+    cs] where [tg] is the tag of the specialised formula and [cs] are
+    the new constants in the order they were generated.
+*)
+
+val spec_tac: tactic
 (** Specialize a formula. Tries {!Tactics.specC} then
     {!Tactics.specA}.
 

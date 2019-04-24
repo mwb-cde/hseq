@@ -454,5 +454,3 @@ val cond_prover_worker_tac:
   Data.t -> Logic.ftag_ty -> (Data.t)Tactics.data_tactic
 val is_excluded:
   Logic.ftag_ty list -> Logic.Sequent.t -> Logic.rr_type -> bool
-
-val simp_fail: ?err:exn -> Tactics.tactic

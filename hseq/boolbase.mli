@@ -25,14 +25,21 @@ val make_false_def: Context.t -> Logic.thm
 val false_def: Context.t -> Logic.thm
 (** Get the definition of [false]. *)
 
-val falseA: ?a:Logic.label -> Tactics.tactic
+val falseA_at: Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ a}, A |- C \].
 *)
 
-val trivial: ?f:Logic.label -> Tactics.tactic
+val falseA: Tactics.tactic
+(** Solve a goal of the form \[ false{_ a}, A |- C \]. Search for [false] in the
+    assumptions and then applies [falseA_at] *)
+
+val trivial_at: Logic.label -> Tactics.tactic
 (** Solve a goal of the form \[ false{_ f}, A |- C \] or \[ A |-
     true{_ f}, C \].
 *)
+
+val trivial: Tactics.tactic
+(** Search for assumptions and conclusions which satisfy [trivial_at] *)
 
 val cut_thm: Term.term list -> string -> Tactics.tactic
 (** Cut a named theorem, with optional instantiation. *)
