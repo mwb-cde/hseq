@@ -481,7 +481,7 @@ struct
   (** [once_rewrite_rule scp rules thm]: rewrite [thm] with [rules]
       once.  *)
   let once_rewrite_rule scp rules thm =
-    let ctrl = { Formula.default_rr_control with Rewrite.depth = Some(1) }
+    let ctrl = { Rewrite.default with Rewrite.depth = Some(1) }
     in
     rewrite_rule scp ~ctrl:ctrl rules thm
 

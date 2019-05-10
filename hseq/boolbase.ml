@@ -146,7 +146,7 @@ let eq_sym_thm sctxt =
   Context.find_thm sctxt eq_sym_thm_id make_eq_sym_thm
 
 let eq_sym_rule sctxt thm =
-  let ctrl = { Formula.default_rr_control with Rewrite.depth = Some 1} in
+  let ctrl = { Rewrite.default with Rewrite.depth = Some 1} in
   let term = Logic.term_of thm in
   let plan =
     Tactics.mk_thm_plan sctxt ~ctrl:ctrl
@@ -155,7 +155,7 @@ let eq_sym_rule sctxt thm =
   Tactics.pure_rewrite_rule plan sctxt thm
 
 let eq_symA a ctxt goal =
-  let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in
+  let ctrl = {Rewrite.default with Rewrite.depth = Some 1} in
   let (atag, form) = get_tagged_asm a goal in
   let term = Formula.term_of form in
   let sctxt = set_scope ctxt (scope_of_goal goal) in
@@ -165,7 +165,7 @@ let eq_symA a ctxt goal =
   Tactics.pure_rewriteA plan (ftag atag) ctxt goal
 
 let eq_symC c ctxt goal =
-  let ctrl = {Formula.default_rr_control with Rewrite.depth = Some 1} in
+  let ctrl = {Rewrite.default with Rewrite.depth = Some 1} in
   let (ctag, form) = (get_tagged_concl c goal) in
   let term = Formula.term_of form in
   let sctxt = set_scope ctxt (scope_of_goal goal) in

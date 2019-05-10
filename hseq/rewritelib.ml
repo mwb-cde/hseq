@@ -36,7 +36,7 @@ struct
       Returns |- trm = X where [X] is the result of rewriting [trm]
   *)
   let rewrite_conv ctxt ?ctrl (rls: Logic.rr_type list) term =
-    let c = Lib.from_option ctrl Rewrite.default_control in
+    let c = Lib.from_option ctrl Rewrite.default in
     let is_rl = c.Rewrite.rr_dir = rightleft in
     let mapper f x =
       match x with
@@ -60,7 +60,7 @@ struct
       Returns |- X where [X] is the result of rewriting [thm]
   *)
   let rewrite_rule ctxt ?ctrl rls thm =
-    let c = Lib.from_option ctrl Rewrite.default_control in
+    let c = Lib.from_option ctrl Rewrite.default in
     let is_rl = c.Rewrite.rr_dir=rightleft in
     let mapper f x =
       match x with
@@ -111,7 +111,7 @@ struct
     in
     fold_data mapping [] rules ctxt goal
 
-  let rewriteA_tac ?(ctrl=Formula.default_rr_control)
+  let rewriteA_tac ?(ctrl=Rewrite.default)
       rules albl ctxt goal =
     let (atag, aform) = get_tagged_asm albl goal in
     let aterm = Formula.term_of aform in
@@ -134,7 +134,7 @@ struct
     try apply_tac tac1 tac2 ctxt goal
     with err -> raise (add_error "Rewriter.rewriteA_tac" err)
 
-  let rewriteC_tac ?(ctrl=Formula.default_rr_control)
+  let rewriteC_tac ?(ctrl=Rewrite.default)
       rules clbl ctxt goal =
     let (ctag, cform) = get_tagged_concl clbl goal in
     let cterm = Formula.term_of cform in
@@ -162,7 +162,7 @@ struct
 
       If [l] is in the conclusions then call [rewriteC_tac] otherwise
       call [rewriteA_tac].  *)
-  let rewrite_tac ?(ctrl=Formula.default_rr_control) rls f ctxt g =
+  let rewrite_tac ?(ctrl=Rewrite.default) rls f ctxt g =
     try
       begin
         try rewriteA_tac ~ctrl:ctrl rls f ctxt g
@@ -221,7 +221,7 @@ let rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
   gen_rewrite_tac ctrl ?f:f rules ctxt goal
 
 let once_rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
-  let ctrl= rewrite_control ~max:1 dir in
+  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_tac ctrl rules ?f:f ctxt goal
@@ -233,7 +233,7 @@ let rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
   gen_rewrite_tac ~asm:true ctrl ?f:a rules ctxt goal
 
 let once_rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
-  let ctrl= rewrite_control ~max:1 dir in
+  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_tac ~asm:true ctrl rules ?f:a ctxt goal
@@ -245,13 +245,13 @@ let rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
   gen_rewrite_tac ~asm:false ctrl ?f:c rules ctxt goal
 
 let once_rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
-  let ctrl= rewrite_control ~max:1 dir in
+  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_tac ~asm:false ctrl rules ?f:c ctxt goal
 
 let gen_replace_tac
-    ?(ctrl=Formula.default_rr_control) ?asms ?f ctxt goal =
+    ?(ctrl=Rewrite.default) ?asms ?f ctxt goal =
   let sqnt = sequent goal in
   (*** ttag: The tag of tag of the target (if given) ***)
   let ttag =
@@ -314,7 +314,7 @@ let replace_tac ?(dir=leftright) ?asms ?f ctxt goal =
   gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f ctxt goal
 
 let once_replace_tac ?(dir=leftright) ?asms ?f ctxt goal =
-  let ctrl=rewrite_control ~max:1 dir
+  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir
   in
   gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f ctxt goal
 

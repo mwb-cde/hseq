@@ -288,9 +288,6 @@ val eta_conv: Scope.t -> t -> t -> t
 
 (** {5 Rewriting} *)
 
-val default_rr_control: Rewrite.control
-(** The default rewrite control. *)
-
 val rewrite:
   Scope.t -> Rewrite.direction
   -> t Rewrite.plan

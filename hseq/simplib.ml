@@ -46,7 +46,7 @@ let init_std_ss () =
 (*** Toplevel simplification tactics ***)
 
 let simpC_tac
-    ?(cntrl = Formula.default_rr_control) ?(ignore = [])
+    ?(cntrl = Rewrite.default) ?(ignore = [])
     set ?add ?c rules ctxt goal =
   (** uset: The simpset to use. **)
   let sctxt = goal_context ctxt goal in
@@ -79,7 +79,7 @@ let simpC_tac
 let simpC set ?c ctxt goal = simpC_tac set ?c [] ctxt goal
 
 let simpA_tac
-    ?(cntrl = Formula.default_rr_control) ?(ignore = [])
+    ?(cntrl = Rewrite.default) ?(ignore = [])
     set ?add ?a rules ctxt goal =
   let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
@@ -113,7 +113,7 @@ let simpA_tac
 let simpA set ?a ctxt goal = simpA_tac ?a set [] ctxt goal
 
 let simp_all_tac
-    ?(cntrl = Formula.default_rr_control) ?(ignore = [])
+    ?(cntrl = Rewrite.default) ?(ignore = [])
     set ?add rules ctxt goal =
   let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
@@ -148,7 +148,7 @@ let simp_all_tac
 let simp_all set ctxt goal = simp_all_tac set [] ctxt goal
 
 let simp_tac
-    ?(cntrl = Formula.default_rr_control) ?(ignore = [])
+    ?(cntrl = Rewrite.default) ?(ignore = [])
     set ?add ?f rules (ctxt: Context.t) goal =
   let sqnt = Tactics.sequent goal in
   let tac =

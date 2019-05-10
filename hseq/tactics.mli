@@ -859,12 +859,8 @@ val leftright: Rewrite.direction
 val rightleft: Rewrite.direction
 (** Right to left rewriting. *)
 
-val rewrite_control:
-  ?max:int -> ?strat:Rewrite.strategy
-  -> Rewrite.direction -> Rewrite.control
-(** [rewrite_control max strat dir]: Make a rewrite control. Default
-    strategy is top-down ([?strat = Rewrite.topdown]).
-*)
+val rewrite_control: Rewrite.direction -> Rewrite.control
+(** [rewrite_control dir]: Make a rewrite control with direction [dir] *)
 
 val conv_rule:
   Context.t -> conv -> Logic.thm -> Logic.thm
@@ -872,10 +868,12 @@ val conv_rule:
 
 (** {7 Tactics} *)
 
-val pure_rewriteA:
-  ?term:Term.term -> (rule)plan -> Logic.label
-  -> tactic
-(** [pure_rewriteA info p l]: Rewrite assumption [l] with plan
+val pure_term_rewriteA: (rule)plan -> Term.term -> Logic.label -> tactic
+(** [pure_term_rewriteA p trm l]: Rewrite term [trm] with plan [p], replace
+    assumption [l] with the resulting equality. *)
+
+val pure_rewriteA: (rule)plan -> Logic.label -> tactic
+(** [pure_rewriteA  l]: Rewrite assumption [l] with plan
     [p]. This is a front end to [rewrite_intro]/[substA].  If [term]
     is given, assumption [l] is replaced with the result of rewriting
     [term] otherwise it is the assumption that is rewritten.
@@ -889,10 +887,12 @@ val pure_rewriteA:
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
 
-val pure_rewriteC:
-  ?term:Term.term -> (rule)plan -> Logic.label
-  -> tactic
-(** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan
+val pure_term_rewriteC: (rule)plan -> Term.term -> Logic.label -> tactic
+(** [pure_term_rewriteC p trm l]: Rewrite term [trm] with plan [p], replace
+    conclution [l] using the resulting equality. *)
+
+val pure_rewriteC: (rule)plan -> Logic.label -> tactic
+(** [pure_rewriteC p l]: Rewrite conclusion [l] with plan
     [p]. This is a front end to [rewrite_intro]/[substC]. If [term] is
     given, conclusion [l] is replaced with the result of rewriting
     [term] otherwise it is the conclusion that is rewritten.
@@ -906,9 +906,7 @@ val pure_rewriteC:
     info: [goals = [], aforms=[], cforms=[l], terms = []]
 *)
 
-val pure_rewrite_tac:
-  ?term:Term.term -> (rule)plan -> Logic.label
-  -> tactic
+val pure_rewrite_tac: (rule)plan -> Logic.label -> tactic
 (** [pure_rewrite info p l]: Combination of [pure_rewriteC] and
     [pure_rewriteA]. First tries [pure_rewriteC] then tries
     [pure_rewriteA].

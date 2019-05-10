@@ -66,9 +66,8 @@ let control ~dir ~strat ~max =
   { depth = max; rr_dir = dir; rr_strat = strat }
 
 (** The default control *)
-let default_control=
+let default =
   control ~strat:TopDown ~dir:leftright ~max:None
-
 
 (*** Internal represenation of rewrite rules ***)
 

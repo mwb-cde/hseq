@@ -185,7 +185,7 @@ struct
       (** [default]: The default control information *)
       let default = make (Simpset.empty_set(),
                           (fun _ __ -> skip),
-                          Formula.default_rr_control,
+                          Rewrite.default,
                           (!default_cond_depth),
                           (!default_rr_depth),
                           [], [], [], [])
@@ -332,8 +332,8 @@ let cut_rr_rule vals t g =
 *)
 let simp_rewrite_tac is_concl plan trm lbl goal =
   if is_concl
-  then pure_rewriteC plan ~term:trm lbl goal
-  else pure_rewriteA plan ~term:trm lbl goal
+  then pure_term_rewriteC plan trm lbl goal
+  else pure_term_rewriteA plan trm lbl goal
 
 (*** Conditional rule tactics ***)
 

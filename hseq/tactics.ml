@@ -1030,8 +1030,8 @@ type rule = Logic.rr_type
 let leftright = Rewrite.leftright
 let rightleft = Rewrite.rightleft
 
-let rewrite_control ?max ?(strat=Rewrite.topdown) dir =
-  Rewrite.control ~max:max ~dir:dir ~strat:strat
+let rewrite_control dir =
+  { Rewrite.default with rr_dir = dir }
 
 let is_rewrite_formula t =
   let (_, t1) = Term.strip_qnt Term.All t
@@ -1089,15 +1089,10 @@ let conv_rule (ctxt: Context.t) conv thm =
   in
   mk_thm (Logic.apply_to_goal (tac ctxt) goal)
 
-(** [pure_rewriteA info p l]: Rewrite assumption [l] with plan [p].
-*)
-let pure_rewriteA ?term plan lbl ctxt goal =
+(** [pure_term_rewriteA p trm l]: Rewrite term [trm] with plan [p], replace
+    assumption [l] with the resulting equality. *)
+let pure_term_rewriteA plan trm lbl ctxt goal =
   let ltag = Logic.label_to_tag lbl (sequent goal) in
-  let trm =
-    match term with
-      | None -> Formula.term_of (get_asm lbl goal)
-      | Some(x) -> x
-  in
   let tac ctxt1 g =
     seq
       [
@@ -1121,15 +1116,16 @@ let pure_rewriteA ?term plan lbl ctxt goal =
     | Not_found -> raise Not_found
     | err -> raise (add_error "Tactics.Rewriter.pure_rewriteA" err)
 
-(** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan [p].
-*)
-let pure_rewriteC ?term plan lbl ctxt goal =
+let pure_rewriteA plan lbl ctxt goal =
   let ltag = Logic.label_to_tag lbl (sequent goal) in
-  let trm =
-    match term with
-      | None -> Formula.term_of (get_concl lbl goal)
-      | Some(x) -> x
+  let trm = Formula.term_of (get_asm lbl goal)
   in
+  pure_term_rewriteA plan trm lbl ctxt goal
+
+(** [pure_term_rewriteC p trm l]: Rewrite term [trm] with plan [p], replace
+    conclution [l] using the resulting equality. *)
+let pure_term_rewriteC plan trm lbl ctxt goal =
+  let ltag = Logic.label_to_tag lbl (sequent goal) in
   let tac g =
     seq
       [
@@ -1152,15 +1148,32 @@ let pure_rewriteC ?term plan lbl ctxt goal =
       Not_found -> raise Not_found
     | err -> raise (add_error "Tactics.Rewriter.pure_rewriteC" err)
 
+(** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan [p]. *)
+let pure_rewriteC plan lbl ctxt goal =
+  let ltag = Logic.label_to_tag lbl (sequent goal) in
+  let trm = Formula.term_of (get_concl lbl goal)
+  in
+  pure_term_rewriteC plan trm lbl ctxt goal
+
 (** [pure_rewrite info p l]: Combination of [pure_rewriteC] and
     [pure_rewriteA]. First tries [pure_rewriteC] then tries
     [pure_rewriteA].
 *)
-let pure_rewrite_tac ?term plan lbl goal =
+let pure_term_rewrite_tac plan term lbl goal =
   try
     begin
-      try pure_rewriteC ?term plan lbl goal
-      with Not_found -> (pure_rewriteA ?term plan lbl goal)
+      try pure_term_rewriteC plan term lbl goal
+      with Not_found -> (pure_term_rewriteA plan term lbl goal)
+    end
+  with
+    | Not_found -> raise Not_found
+    | err -> raise (add_error "Tactics.pure_rewrite_tac" err)
+
+let pure_rewrite_tac plan lbl goal =
+  try
+    begin
+      try pure_rewriteC plan lbl goal
+      with Not_found -> (pure_rewriteA plan lbl goal)
     end
   with
     | Not_found -> raise Not_found
@@ -1247,7 +1260,7 @@ end
 
 module Planner = Rewrite.Make(PlannerData)
 
-let mk_plan ?(ctrl=Formula.default_rr_control) goal rules term =
+let mk_plan ?(ctrl=Rewrite.default) goal rules term =
   let scp = scope_of_goal goal in
   let (_, plan) = Planner.make (Some(goal)) scp ctrl rules term
   in
@@ -1269,7 +1282,7 @@ let dest_rr_thm src =
 let to_thm_plan plan =
   mapping dest_rr_thm plan
 
-let mk_thm_plan ctxt ?(ctrl=Formula.default_rr_control) rules term =
+let mk_thm_plan ctxt ?(ctrl=Rewrite.default) rules term =
   let (_, plan) = Planner.make None (scope_of ctxt) ctrl rules term
   in
   to_thm_plan plan

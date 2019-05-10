@@ -499,8 +499,6 @@ let eta_conv scp f x =
  * Rewriting
  *)
 
-let default_rr_control= Rewrite.default_control
-
 (*** Rewriting functions ***)
 
 let rec extract_check_rules scp dir pl =

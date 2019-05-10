@@ -127,7 +127,7 @@ val control:
     [max] is the maximum number of times to rewrite in the term.
 *)
 
-val default_control: control
+val default: control
 (** The default rewrite control.
 
     [default_control = control ~strat:TopDown ~dir:leftright ~max:None]
