@@ -1,6 +1,6 @@
 ########################################################## --*- Makefile -*--
 # Makefile - Makefile to HSeq library
-# Copyright 2011-2016, Matthew Wahab <mwb.cde@gmail.com>
+# Copyright 2011-2019, Matthew Wahab <mwb.cde@gmail.com>
 #
 # Released under the Lesser GPLv3 license:
 # ========================================
@@ -76,7 +76,7 @@ Tpcore_SOURCES=config defaults settings ident printkit \
 		printers report \
 		ltype lterm \
 		dbterm typing unify net rewrite
-Logic_SOURCES=changes formula defn subgoalkit logic theory thydb
+Logic_SOURCES=changes formula defn subgoalkit skolem logic theory thydb
 Parser_SOURCES=counter lexer pterm grammars parser
 Tpmain_SOURCES=context boolPP tactics goals commands display
 Booleans_SOURCES=baseTheory boolutil boolbase \
