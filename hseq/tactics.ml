@@ -1117,7 +1117,6 @@ let pure_term_rewriteA plan trm lbl ctxt goal =
     | err -> raise (add_error "Tactics.Rewriter.pure_rewriteA" err)
 
 let pure_rewriteA plan lbl ctxt goal =
-  let ltag = Logic.label_to_tag lbl (sequent goal) in
   let trm = Formula.term_of (get_asm lbl goal)
   in
   pure_term_rewriteA plan trm lbl ctxt goal
@@ -1150,7 +1149,6 @@ let pure_term_rewriteC plan trm lbl ctxt goal =
 
 (** [pure_rewriteC info p l]: Rewrite conclusion [l] with plan [p]. *)
 let pure_rewriteC plan lbl ctxt goal =
-  let ltag = Logic.label_to_tag lbl (sequent goal) in
   let trm = Formula.term_of (get_concl lbl goal)
   in
   pure_term_rewriteC plan trm lbl ctxt goal

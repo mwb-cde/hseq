@@ -80,9 +80,11 @@ val eq_sym_tac: Logic.label -> Tactics.tactic
     [eq_symC f].
 *)
 
-val eq_tac: ?c:Logic.label -> Tactics.tactic
-(** Prove goals of the form \[A|- x = x{_ c}, C\].
-*)
+val eq_tac: Tactics.tactic
+(** Prove goals of the form \[A|- x = x{_ c}, C\]. *)
+
+val eq_at: Logic.label -> Tactics.tactic
+(** Apply [eq_tac} at a specific conclusion *)
 
 (**  {5 Eliminating boolean operators}  *)
 
@@ -105,11 +107,10 @@ val asm_elim_rules_tac:
    * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
-(** [asm_elim_rules ?info (arules, crules) f goal]: Apply elimination
+(** [asm_elim_rules (arules, crules) f goal]: Apply elimination
     rules to assumption [f] and to all resulting assumptions and
     conclusions. Assumptions are eliminated with [arules], conclusions
-    with [crules]. Any new tag which can't be eliminated is stored in
-    [?info] (in arbitrary order and may contain duplicates).
+    with [crules].
 *)
 
 val concl_elim_rules_tac:
@@ -117,12 +118,10 @@ val concl_elim_rules_tac:
    * (Logic.label -> Tactics.tactic) list)
   -> Logic.label
   -> Tactics.tactic
-(** [concl_elim_rules ?info (arules, crules) f goal]: Apply
+(** [concl_elim_rules  (arules, crules) f goal]: Apply
     elimination rules to conclusion [f] and to all resulting
     assumptions and conclusions. Assumptions are eliminated with
-    [arules], conclusions with [crules]. The tag of any new formula
-    for which the elimination rules fails is stored in [?info] (in
-    arbitrary order and may contain duplicates).
+    [arules], conclusions with [crules].
 *)
 
 val plain_concl_elim_rules_tac:

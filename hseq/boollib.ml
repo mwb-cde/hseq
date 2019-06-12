@@ -570,6 +570,7 @@ let eq_symA = Boolbase.eq_symA
 let eq_symC = Boolbase.eq_symC
 let eq_sym_tac = Boolbase.eq_sym_tac
 let eq_tac = Boolbase.eq_tac
+let eq_at = Boolbase.eq_at
 
 (*** Rewriting ***)
 
@@ -673,6 +674,7 @@ let equals_tac ?f ctxt goal =
 (*** induct_tac ***)
 
 let asm_induct_tac = Boolinduct.asm_induct_tac
+let induct_at = Boolinduct.induct_at
 let induct_tac = Boolinduct.induct_tac
 
 (*** induct_on ***)

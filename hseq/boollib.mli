@@ -159,9 +159,13 @@ val eq_sym_tac: Logic.label -> Tactics.tactic
     [eq_symC f].
 *)
 
-val eq_tac: ?c:Logic.label -> Tactics.tactic
+
+val eq_tac: Tactics.tactic
 (** Prove goals of the form \[A|- x=x{_ c}, C\].  [info] is unchanged.
 *)
+
+val eq_at: Logic.label -> Tactics.tactic
+(** Apply [eq_tac} at a specific conclusion *)
 
 (** {5 Generalised Rewriting}
 
@@ -683,10 +687,9 @@ val asm_induct_tac:
     induction scheme.
 *)
 
-val induct_tac:
-  ?c:Logic.label -> Logic.thm -> Tactics.tactic
-(** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
-    [c] (or the first conclusion to succeed).
+val induct_at: Logic.thm -> Logic.label -> Tactics.tactic
+(** [induct_at thm c]: Apply induction theorem [thm] to conclusion
+    [c].
 
     Theorem [thm] must be in the form:
     {L ! P a .. b: (thm_asm P a .. b) => (thm_concl P a .. b)}
@@ -699,6 +702,10 @@ val induct_tac:
     The conclusion must be in the form:
     {L ! a .. b f .. g: (pred a .. b) => (C a .. b f ..g) }
 *)
+
+val induct_tac: Logic.thm -> Tactics.tactic
+(** [induct_tac thm]: Apply [induct_at] to the each conclusion until it
+    succeeds. *)
 
 val induct_on:
   ?thm:Logic.thm -> ?c:Logic.label

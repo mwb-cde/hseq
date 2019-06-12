@@ -53,10 +53,8 @@ val asm_induct_tac:
     induction scheme.
 *)
 
-val induct_tac:
-  ?c:Logic.label -> Logic.thm -> Tactics.tactic
-(** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
-    [c] (or the first conclusion to succeed).
+val induct_at: Logic.thm -> Logic.label -> Tactics.tactic
+(** [induct_at thm c]: Apply induction theorem [thm] to conclusion [c]
 
     Theorem [thm] must be in the form:
     {L ! P a .. b: (thm_asm P a .. b) => (thm_concl P a .. b)}
@@ -73,6 +71,9 @@ val induct_tac:
     cformulas=the new conclusions (in arbitray order)
     subgoals=the new sub-goals (in arbitray order)
 *)
+
+val induct_tac: Logic.thm -> Tactics.tactic
+(** Apply [induct_at] to the each conclusion until it succeeds. *)
 
 (** {5 The induction tactic [induct_on]} *)
 
@@ -174,6 +175,3 @@ val induct_on_solve_rh_tac:
 
     Completely solves the goal or fails.
 *)
-
-val basic_induct_tac:
-  Logic.label -> Logic.thm -> Tactics.tactic

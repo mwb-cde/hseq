@@ -326,26 +326,25 @@ let asm_induct_tac alabel clabel ctxt goal =
   in
   main_tac ctxt goal
 
-(** [basic_induct_tac c thm]: Apply induction theorem [thm] to
+(** [induct_at c thm]: Apply induction theorem [thm] to
     conclusion [c].
 
     See {!Induct.induct_tac}.
 *)
-let basic_induct_tac c thm ctxt goal =
+let induct_at thm c ctxt goal =
   let main_tac c_lbl ctxt0 g =
     seq
       [
         cut [] thm;
         (?> (fun tinfo ->
-          let a_tag = msg_get_one "basic_induct_tac" (Info.aformulas tinfo)
+          let a_tag = msg_get_one "induct_at" (Info.aformulas tinfo)
           in
           asm_induct_tac (ftag a_tag) c_lbl))
       ] ctxt0 g
   in
   main_tac c ctxt goal
 
-(** [induct_tac ?c thm]: Apply induction theorem [thm] to conclusion
-    [c] (or the first conclusion to succeed).
+(** [induct_tac thm]: Apply [induct_at]
 
     Theorem [thm] must be in the form:
     {L ! P a .. b : (thm_asm P a .. b) => (thm_concl P a .. b)}
@@ -362,30 +361,17 @@ let basic_induct_tac c thm ctxt goal =
     cformulas=the new conclusions (in arbitray order).
     subgoals=the new sub-goals (in arbitray order).
 *)
-let induct_tac ?c thm ctxt goal =
-  let one_tac x ctxt0 g =
-    try basic_induct_tac x thm ctxt0 g
-    with err ->
-      raise (add_error "induct_tac: applying basic_induct_tac failed " err)
-  in
+let induct_tac thm ctxt goal =
   let all_tac targets ctxt0 g =
-    try
-      map_first (fun l -> basic_induct_tac l thm)
-        targets ctxt0 g
+    try map_first (induct_at thm) targets ctxt0 g
     with err ->
       raise (error ("induct_tac: failed to apply induction to"
                     ^" any formula in the conclusions."))
   in
-  match c with
-    | Some(x) -> one_tac x ctxt goal
-    | _ ->
-      begin
-        let targets =
-          List.map (ftag <+ drop_formula) (concls_of (sequent goal))
-        in
-        all_tac targets ctxt goal
-      end
-
+  let targets =
+    List.map (ftag <+ drop_formula) (concls_of (sequent goal))
+  in
+  all_tac targets ctxt goal
 
 (*** The induct-on tactic [induct_on]. ***)
 

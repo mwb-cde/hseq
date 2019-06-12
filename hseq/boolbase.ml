@@ -178,18 +178,12 @@ let eq_sym_tac f ctxt goal =
   try eq_symA f ctxt goal
   with Not_found -> eq_symC f ctxt goal
 
-let eq_tac ?c ctxt goal =
+let eq_at cncl ctxt goal =
   let th =
     try thm ctxt (Lterm.base_thy ^ ".eq_refl")
     with Not_found ->
       (raise (error ("eq_tac: Can't find required lemma "
                      ^Lterm.base_thy^".eq_refl")))
-  in
-  let cforms = concls_of (sequent goal) in
-  let tac albl (t, f) ctxt g =
-    if Formula.is_equality f
-    then unify_at albl (ftag t) ctxt g
-    else fail (error "eq_tac") ctxt g
   in
   seq
     [
@@ -197,9 +191,14 @@ let eq_tac ?c ctxt goal =
       (?> (fun info1 g ->
         let af = msg_get_one "eq_tac" (Info.aformulas info1)
         in
-        map_first (tac (ftag af)) cforms g))
+        unify_at (ftag af) cncl g))
     ] ctxt goal
 
+let eq_tac ctxt goal =
+  let ctags =
+    List.map (fun x -> ftag (Logic.form_tag x)) (concls_of (sequent goal))
+  in
+  map_first eq_at ctags ctxt goal
 
 (*** Eliminating boolean operators ***)
 
