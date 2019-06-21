@@ -160,7 +160,7 @@ val elim_rules_tac:
 
 val apply_elim_tac:
   (Logic.label list -> Logic.label list -> Tactics.tactic)
-  -> ?f:Logic.label -> Tactics.tactic
+  -> (Logic.label)option -> Tactics.tactic
 (** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
     formula [?f]. If [?f] is not given, use all formulas in the
     sequent. The tag of any new formula for which the elimination rules

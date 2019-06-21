@@ -46,7 +46,7 @@ let mini_scatter_tac c ctxt goal =
   in
   let main_tac ctxt0 g = elim_rules_tac (asm_rules, concl_rules) ctxt0 g
   in
-  apply_elim_tac main_tac ~f:c ctxt goal
+  apply_elim_tac main_tac (Some(c)) ctxt goal
 
 (** [mini_mp_tac asm1 asm2 goal]: Apply modus ponens to [asm1 =
     A => C] and [asm2 = A] to get [asm3 = C].  info: aformulas=[asm3];

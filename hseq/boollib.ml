@@ -610,20 +610,24 @@ let iffE_at = Booltacs.iffE_at
 
 let split_asms_tac = Booltacs.split_asms_tac
 let split_concls_tac = Booltacs.split_concls_tac
+let split_at = Booltacs.split_at
 let split_tac = Booltacs.split_tac
 
 (*** Flattening formulas. ***)
 
 let flatter_asms_tac = Booltacs.flatter_asms_tac
 let flatter_concls_tac = Booltacs.flatter_concls_tac
+let flatten_at = Booltacs.flatten_at
 let flatten_tac = Booltacs.flatten_tac
 
 (*** Scattering formulas ***)
 
+let scatter_at = Booltacs.scatter_at
 let scatter_tac = Booltacs.scatter_tac
 
 (*** Scattering, solving formulas ***)
 
+let blast_at = Booltacs.blast_at
 let blast_tac = Booltacs.blast_tac
 
 (*** Cases ***)

@@ -159,12 +159,19 @@ let split_asms_tac lst =
 let split_concls_tac lst =
   concl_elim_rules_tac ([], split_concl_rules) lst
 
-let splitter_tac ?f ctxt goal =
+let splitter_at f ctxt goal =
   let basic_splitter ctxt0 g =
     elim_rules_tac (split_asm_rules, split_concl_rules) ctxt0 g
   in
-  apply_elim_tac basic_splitter ?f ctxt goal
+  apply_elim_tac basic_splitter (Some(f)) ctxt goal
 
+let splitter_tac ctxt goal =
+  let basic_splitter ctxt0 g =
+    elim_rules_tac (split_asm_rules, split_concl_rules) ctxt0 g
+  in
+  apply_elim_tac basic_splitter None ctxt goal
+
+let split_at = splitter_at
 let split_tac = splitter_tac
 
 (*** Flattening formulas. ***)
@@ -192,13 +199,20 @@ let flatter_asms_tac lst ctxt g =
 let flatter_concls_tac lst ctxt g =
   concl_elim_rules_tac ([], flatter_concl_rules) lst ctxt g
 
-let flatter_tac ?f ctxt goal =
+let flatter_at f ctxt goal =
   let basic_flatter g  =
     elim_rules_tac (flatter_asm_rules, flatter_concl_rules) g
   in
-  apply_elim_tac basic_flatter ?f ctxt goal
+  apply_elim_tac basic_flatter (Some(f)) ctxt goal
 
-let flatten_tac ?f ctxt g = flatter_tac ?f:f ctxt g
+let flatter_tac ctxt goal =
+  let basic_flatter g  =
+    elim_rules_tac (flatter_asm_rules, flatter_concl_rules) g
+  in
+  apply_elim_tac basic_flatter None ctxt goal
+
+let flatten_at = flatter_at
+let flatten_tac = flatter_tac
 
 (*** Scattering formulas ***)
 
@@ -227,11 +241,17 @@ let scatter_concl_rules =
     (fun l -> iffE_at l)
   ]
 
-let scatter_tac ?f ctxt goal =
+let scatter_at f ctxt goal =
   let tac ctxt0 g =
     elim_rules_tac (scatter_asm_rules, scatter_concl_rules) ctxt0 g
   in
-  apply_elim_tac tac ?f ctxt goal
+  apply_elim_tac tac (Some(f)) ctxt goal
+
+let scatter_tac ctxt goal =
+  let tac ctxt0 g =
+    elim_rules_tac (scatter_asm_rules, scatter_concl_rules) ctxt0 g
+  in
+  apply_elim_tac tac None ctxt goal
 
 (*** Scattering, solving formulas ***)
 
@@ -275,11 +295,17 @@ let blast_concl_rules =
       end)
   ]
 
-let blast_tac ?f ctxt goal =
+let blast_at f ctxt goal =
   let tac ctxt0 g =
     elim_rules_tac (blast_asm_rules, blast_concl_rules) ctxt0 g
   in
-  apply_elim_tac tac ?f ctxt goal
+  apply_elim_tac tac (Some(f)) ctxt goal
+
+let blast_tac ctxt goal =
+  let tac ctxt0 g =
+    elim_rules_tac (blast_asm_rules, blast_concl_rules) ctxt0 g
+  in
+  apply_elim_tac tac None ctxt goal
 
 (*** Cases ***)
 
@@ -367,13 +393,13 @@ let show = show_tac
     used, where [T] is the name of the type of [trm].
 *)
 
-(** [disj_splitter_tac ?f]: Split an assumption using disjA
+(** [disj_splitter_at ?f]: Split an assumption using disjA
 *)
-let disj_splitter_tac ?f ctxt goal =
+let disj_splitter_at f ctxt goal =
   let tac =
     elim_rules_tac ([ (fun l -> Tactics.disjA_at l) ], [])
   in
-  apply_elim_tac tac ?f ctxt goal
+  apply_elim_tac tac (Some(f)) ctxt goal
 
 let cases_of ?thm t ctxt goal =
   let scp = Tactics.scope_of_goal goal
@@ -402,7 +428,7 @@ let cases_of ?thm t ctxt goal =
           let a_tg = msg_get_one "cases_of" (Info.aformulas inf1)
           in
           seq [
-            (disj_splitter_tac ~f:(ftag a_tg) // skip);
+            (disj_splitter_at (ftag a_tg) // skip);
             (?> (fun inf2 ->
               ((specA_at (ftag a_tg) // skip)
                ++ (?> (fun inf3 ->

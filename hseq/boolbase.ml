@@ -405,7 +405,7 @@ let elim_rules_tac rules albls clbls ctxt g =
 
     [apply_elim_tac] is a wrapper for [elim_rules_tac].
 *)
-let apply_elim_tac tac ?f ctxt goal =
+let apply_elim_tac tac f ctxt goal =
   let sqnt = sequent goal in
   let alst, clst =
     match f with

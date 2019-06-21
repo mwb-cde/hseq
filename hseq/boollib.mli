@@ -415,7 +415,7 @@ val elim_rules_tac:
 val apply_elim_tac:
   (Logic.label list -> Logic.label list
    -> Tactics.tactic)
-  -> ?f:Logic.label -> Tactics.tactic
+  -> (Logic.label)option -> Tactics.tactic
 (** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to formula
     [?f]. If [?f] is not given, use all formulas in the sequent. The
     tag of any new formula for which the elimination rules fails is
@@ -444,8 +444,7 @@ val split_concls_tac:
     subgoals. Uses the same rules as {!Boollib.split_tac}.
 *)
 
-val split_tac:
-  ?f:Logic.label -> Tactics.tactic
+val split_at: Logic.label -> Tactics.tactic
 (** Eliminate operators in the assumptions and conclusions which
     introduce new subgoals. Resulting tag information may contain
     duplicates.
@@ -455,6 +454,9 @@ val split_tac:
 
     In the conclusions, eliminates [true], conjunction ([&]).
 *)
+
+val split_tac: Tactics.tactic
+(** Apply {!split_at} to all formulas in a sequent *)
 
 (** {7 Flattening subgoals}
 
@@ -475,9 +477,8 @@ val flatter_concls_tac:
     subgoals. Uses the same rules as {!Boollib.flatten_tac}.
 *)
 
-val flatten_tac:
-  ?f:Logic.label -> Tactics.tactic
-(** Eliminate operators in the assumptions and conclusions which don't
+val flatten_tac: Logic.label -> Tactics.tactic
+(** Eliminate operators in a formulat which don't
     introduce new subgoals. Resulting tag information may contain
     duplicates.
 
@@ -492,13 +493,15 @@ val flatten_tac:
     introducing trivial conclusions).
 *)
 
+val flatten_tac: Tactics.tactic
+(** Apply {!flatten_at} to all formulas in a sequent *)
+
 (** {7 Scatter subgoals}
 
     Split and flatten subgoals.
 *)
 
-val scatter_tac:
-  ?f:Logic.label -> Tactics.tactic
+val scatter_at: Logic.label -> Tactics.tactic
 (** Eliminate boolean operators in the assumptions and conclusions.
 
     In the assumptions, eliminates [false], negation ([not]),
@@ -512,9 +515,11 @@ val scatter_tac:
     Resulting tag information may contain duplicates.
 *)
 
-val blast_tac:
-  ?f:Logic.label -> Tactics.tactic
-(** Eliminate boolean operators in the assumptions and conclusions
+val scatter_tac: Tactics.tactic
+(** Apply {!scatter_at} to all formulas in a sequent *)
+
+val blast_at: Logic.label -> Tactics.tactic
+(** Eliminate boolean operators in a formula
     then try to solve subgoals.
 
     In the assumptions, eliminates [false], negation ([not]),
@@ -528,6 +533,10 @@ val blast_tac:
 
     This is like {!Boollib.scatter_tac}, followed by {!Tactics.basic}.
 *)
+
+val blast_tac: Tactics.tactic
+(** Apply {!blast_at} to all formulas in a sequent *)
+
 
 (** {5 Cases} *)
 

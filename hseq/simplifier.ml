@@ -1038,18 +1038,11 @@ let simp_flatten_asms_tac lst =
 let simp_flatten_concls_tac lst =
   Boollib.concl_elim_rules_tac ([], simp_concl_elims) lst
 
-let simp_flatten_tac excluded ?f ctxt goal =
+let simp_flatten_tac excluded ctxt goal =
   let basic_flatter ctxt1 g1 =
     Boollib.elim_rules_tac (simp_asm_elims, simp_concl_elims) ctxt1 g1
   in
-  match f with
-    | None -> Boollib.apply_elim_tac basic_flatter ?f ctxt goal
-    | Some(l) ->
-      let tg = Logic.label_to_tag l (sequent goal)
-      in
-      if List.exists (Tag.equal tg) excluded
-      then skip ctxt goal
-      else Boollib.apply_elim_tac basic_flatter ?f ctxt goal
+  Boollib.apply_elim_tac basic_flatter None ctxt goal
 
 let initial_flatten_tac exclude ctxt goal =
   simp_flatten_tac exclude ctxt goal
