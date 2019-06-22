@@ -716,9 +716,7 @@ val induct_tac: Logic.thm -> Tactics.tactic
 (** [induct_tac thm]: Apply [induct_at] to the each conclusion until it
     succeeds. *)
 
-val induct_on:
-  ?thm:Logic.thm -> ?c:Logic.label
-  -> string -> Tactics.tactic
+val induct_on: string -> Tactics.tactic
 (** [induct_on ?thm ?c n]: Apply induction to the first
     universally quantified variable named [n] in conclusion [c] (or the
     first conclusion to succeed). The induction theorem is [thm], if
@@ -737,3 +735,15 @@ val induct_on:
     {L ! n f .. g: (C n f ..g) }
     [n] does not need to be the outermost quantifier.
 *)
+
+val induct_with: Logic.thm -> string -> Tactics.tactic
+(** [induct_with thm n]: Apply induction to the first universally quantified
+   variable named [n] in the first conclusion to succeed using induction
+   theorem [thm].
+
+    Theorem [thm] must be in the form: {L ! P a .. b: (thm_asm P a .. b) =>
+   (thm_concl P a .. b)} where {L thm_concl P a .. b= (! x: (P x a .. b)) }
+   The order of the outer-most bound variables is not relevant.
+
+    The conclusion must be in the form: {L ! n f .. g: (C n f ..g) } [n] does
+   not need to be the outermost quantifier.  *)

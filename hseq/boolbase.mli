@@ -161,12 +161,11 @@ val elim_rules_tac:
 val apply_elim_tac:
   (Logic.label list -> Logic.label list -> Tactics.tactic)
   -> (Logic.label)option -> Tactics.tactic
-(** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to
-    formula [?f]. If [?f] is not given, use all formulas in the
-    sequent. The tag of any new formula for which the elimination rules
-    fails is stored in arbitrary order and may contain
-    duplicates).
+(** [apply_elim_tac tac]: Apply elimination tactic
+    [tac] to all formulas in the sequent. The tag
+    of any new formula for which the elimination
+    rules fails is stored in arbitrary order and
+    may contain duplicates).
 
-    [apply_elim_tac] is intended to be used to wrap
-    {!Boolbase.elim_rules_tac}.
-*)
+[apply_elim_tac] is intended to be used to wrap {!Boolbase.elim_rules_tac}.
+ *)

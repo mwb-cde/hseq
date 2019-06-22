@@ -683,3 +683,4 @@ let induct_tac = Boolinduct.induct_tac
 
 (*** induct_on ***)
 let induct_on = Boolinduct.induct_on
+let induct_with = Boolinduct.induct_with

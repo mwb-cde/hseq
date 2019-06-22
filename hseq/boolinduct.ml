@@ -394,32 +394,6 @@ let get_binder qnt n trm =
   in
   get_aux trm
 
-(** [induct_thm ?thm scp tyenv trm]: Get the induction theorem for
-    [trm].  If [?thm] is given, return [thm].  Othewise, get the
-    theorem named "TY_induct" where [TY] is the type of [trm].
-
-    e.g. if [trm] has type [bool], the induction theorem is
-    [bool_induct] and if [trm] has type [('a, 'b)PAIR], the induction
-    theorem is [PAIR_induct].
-*)
-let induct_thm ctxt ?thm scp tyenv trm =
-  match thm with
-    | Some x -> x
-    | None ->
-      begin
-        let ty =
-          let sb = Typing.settype scp ~env:tyenv trm
-          in
-          Gtype.mgu (Typing.typeof scp ~env:tyenv trm) sb
-        in
-        let (th, id) = Ident.dest (Gtype.get_type_name ty) in
-        let thm_name = id^"_induct"
-        in
-        try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
-        with _ ->
-          (try Commands.thm ctxt thm_name
-           with _ -> failwith ("Can't find cases theorem "^thm_name))
-      end
 
 (** [induct_on_bindings tyenv scp nbind aterm cterm]: Extract bindings
     for the induction theorem in [aterm] from conclusion term [cterm]
@@ -505,7 +479,7 @@ let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
              basic_at (ftag a_tag) (ftag c_tag)))) ctxt1 g1))
     ] ctxt goal
 
-(** [induct_on ?thm ?c n]: Apply induction to the first universally
+(** [induct_on thm c n]: Apply induction to the first universally
     quantified variable named [n] in conclusion [c] (or the first
     conclusion to succeed). The induction theorem is [thm], if given or
     the theorem [thm "TY_induct"] where [TY] is the name of the type
@@ -524,7 +498,7 @@ let induct_on_solve_rh_tac a_lbl c_lbl ctxt goal =
     [n] does not need to be the outermost quantifier.
 *)
 
-let basic_induct_on ?thm name clabel ctxt goal =
+let basic_induct_on thm name clabel ctxt goal =
   let typenv = typenv_of goal
   and scp = scope_of_goal goal
   in
@@ -541,9 +515,6 @@ let basic_induct_on ?thm name clabel ctxt goal =
                ("No quantified variable named "^name^" in term")
                [cterm])
   in
-  let nterm = Term.mk_bound nbinder in
-  (** Get the theorem *)
-  let thm = induct_thm ctxt ?thm scp typenv nterm in
   let thm_term = Logic.term_of thm in
   (** Split the induction theorem *)
   let (thm_vars, thm_asm, thm_concl) = dest_qnt_implies thm_term in
@@ -609,19 +580,69 @@ let basic_induct_on ?thm name clabel ctxt goal =
   in
   main_tac ctxt goal
 
-let induct_on ?thm ?c n ctxt goal =
-  match c with
-    | Some(x) -> basic_induct_on ?thm n x ctxt goal
-    | _ ->
-      begin
-        let targets =
-          List.map (ftag <+ drop_formula) (concls_of (sequent goal))
-        in
-        let main_tac =
-          map_first
-            (fun l -> basic_induct_on ?thm n l)
-            targets
-        in
-        try main_tac ctxt goal
-        with _ -> raise (error "induct_on: Failed")
-      end
+
+(** [lookup_induct_thm scp tyenv trm]: Get the induction theorem for [trm].
+   Tries to find and return the theorem named "TY_induct" where [TY] is the
+   type of [trm].
+
+   e.g. if [trm] has type [bool], the induction theorem is [bool_induct] and
+   if [trm] has type [('a, 'b)PAIR], the induction theorem is [PAIR_induct].
+*)
+let lookup_induct_thm ctxt scp tyenv trm =
+  begin
+    let ty =
+      let sb = Typing.settype scp ~env:tyenv trm
+      in
+      Gtype.mgu (Typing.typeof scp ~env:tyenv trm) sb
+    in
+    let (th, id) = Ident.dest (Gtype.get_type_name ty) in
+    let thm_name = id^"_induct"
+    in
+    try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
+    with _ ->
+      (try Commands.thm ctxt thm_name
+       with _ -> failwith ("Can't find induction theorem "^thm_name))
+  end
+
+(** [get_induct_thm name clabel] Get the induction theorem for variable
+    [name] appearing in conclusion [clabel] *)
+let get_induct_thm name clabel ctxt goal =
+  let typenv = typenv_of goal
+  and scp = scope_of_goal goal
+  in
+  (** Get the conclusion *)
+  let (ctag, cform) = get_tagged_concl clabel goal in
+  (** Get conclusion as a term *)
+  let cterm = Formula.term_of cform in
+  (** Get the top-most binder named [name] in [cterm] Fail if not
+      found.  *)
+  let nbinder =
+    try get_binder Term.All name cterm
+    with _ ->
+      raise (Term.term_error
+               ("No quantified variable named "^name^" in term")
+               [cterm])
+  in
+  let nterm = Term.mk_bound nbinder in
+  (** Get the theorem *)
+  lookup_induct_thm ctxt scp typenv nterm
+
+let induct_on n ctxt goal =
+  let main_tac clbl =
+    let thm = get_induct_thm n clbl ctxt goal in
+    basic_induct_on thm n clbl
+  in
+  let targets =
+    List.map (ftag <+ drop_formula) (concls_of (sequent goal))
+  in
+  try (map_first main_tac targets) ctxt goal
+  with _ -> raise (error "induct_on: Failed")
+
+let induct_with thm n ctxt goal =
+  let main_tac clbl = basic_induct_on thm n clbl
+  in
+  let targets =
+    List.map (ftag <+ drop_formula) (concls_of (sequent goal))
+  in
+  try (map_first main_tac targets) ctxt goal
+  with _ -> raise (error "induct_with: Failed")
