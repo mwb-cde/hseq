@@ -591,9 +591,9 @@ let basic_induct_on thm name clabel ctxt goal =
 let lookup_induct_thm ctxt scp tyenv trm =
   begin
     let ty =
-      let sb = Typing.settype scp ~env:tyenv trm
+      let sb = Typing.settype_env scp tyenv trm
       in
-      Gtype.mgu (Typing.typeof scp ~env:tyenv trm) sb
+      Gtype.mgu (Typing.typeof_wrt scp tyenv trm) sb
     in
     let (th, id) = Ident.dest (Gtype.get_type_name ty) in
     let thm_name = id^"_induct"

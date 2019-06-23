@@ -1,6 +1,6 @@
 (*----
   Name: typing.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -77,14 +77,13 @@ let typeof_env scp (inf, typenv) trm =
   in
   typeof_aux trm (inf, typenv)
 
-let typeof scp ?env t =
-  let tenv =
-    match env with
-      | None -> Gtype.Subst.empty()
-      | Some x -> x
-  in
-  let (ty, _) = typeof_env scp (0, tenv) t
-  in ty
+let typeof_wrt scp env t =
+  let (ret, _) = typeof_env scp (0, env) t
+  in ret
+
+let typeof scp t =
+  let (ret, _) = typeof_env scp (0, Gtype.Subst.empty()) t
+  in ret
 
 (*
  * Type-checking
@@ -325,22 +324,19 @@ and settype_top scp inf errfn typenv exty et =
   init_list debug_list;
   settype_aux scp (inf, errfn) exty et (inf, typenv)
 
-let settype scp ?env t =
+let settype_env scp tyenv t =
   let inf = 0
   and f env expty trm =
     match trm with
       | Atom(Id(n, ty)) -> Ltype.unify_env scp ty expty env
       | _ -> env
   in
-  let tyenv =
-    match env with
-      | None -> Gtype.Subst.empty()
-      | Some(x) -> x
-  in
   let (inf1, tyvar) = Gtype.mk_plain_typevar inf in
-  let (_, env1) = settype_top scp inf1 f tyenv tyvar t
+  let (_, ret) = settype_top scp inf1 f tyenv tyvar t
   in
-  env1
+  ret
+
+let settype scp t = settype_env scp (Gtype.Subst.empty()) t
 
 (**
     [typecheck_env tyenv scp t ty]: Check, w.r.t type context [tyenv],

@@ -45,11 +45,13 @@ val add_typing_error:
 
 (** {5 Typing a term} *)
 
-val typeof:
-  Scope.t
-  -> ?env:Gtype.Subst.t
-  -> Term.term -> Gtype.t
-(** Get the type of a term wrt type environment [env] (if given). *)
+val typeof_wrt:
+  Scope.t -> Gtype.Subst.t -> Term.term -> Gtype.t
+(** [typeof_wrt scp env t] Get the type of term [t] in scope [scp] wrt type
+   environment [env]. *)
+
+val typeof: Scope.t -> Term.term -> Gtype.t
+(** Get the type of a term. *)
 
 (** {5 Type-checking functions} *)
 
@@ -75,14 +77,19 @@ val typecheck_top: Scope.t
     in [scp].
 *)
 
-val settype:
-  Scope.t -> ?env:Gtype.Subst.t
-  -> Term.term  -> Gtype.Subst.t
-(** Type-check a term. The types of identifier terms (built from
-    [Id(n, ty)]) are taken from the scope ([ty] is discarded). (This is
-    a primitive type-checking function.)
-*)
+val settype_env:
+  Scope.t -> Gtype.Subst.t -> Term.term  -> Gtype.Subst.t
+(** [settype_env scp env trm]: Type-check a term getting types from the
+    scope. That is, the type of identifier terms [Id(n, ty)] is taken from the
+    scope [scp] and [ty] is discarded. (This is a primitive type-checking
+    function.) Adds replacements to the substitution [env]. *)
 
+val settype:
+  Scope.t -> Term.term  -> Gtype.Subst.t
+(** Type-check a term getting types from the scope. That is, the type of
+   identifier terms [Id(n, ty)] is taken from the scope [scp] and [ty] is
+   discarded. (This is a primitive type-checking function.)  Returns the
+   substition that populates the term with its correct types *)
 
 (** {7 Debugging} *)
 val typeof_env:

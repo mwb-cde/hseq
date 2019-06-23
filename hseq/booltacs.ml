@@ -410,8 +410,8 @@ let cases_of ?thm t ctxt goal =
       | Some x -> x
       | _ ->
         begin
-          let sb = Typing.settype scp ~env:tyenv trm in
-          let ty = Gtype.mgu (Typing.typeof scp ~env:tyenv trm) sb
+          let sb = Typing.settype_env scp tyenv trm in
+          let ty = Gtype.mgu (Typing.typeof_wrt scp tyenv trm) sb
           in
           let (th, id) = Ident.dest (Gtype.get_type_name ty) in
           let thm_name = id^"_cases" in
