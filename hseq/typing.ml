@@ -48,7 +48,6 @@ let typeof_env scp (inf, typenv) trm =
     | Id(n, ty) -> (Gtype.mgu ty env, tyenv)
     | Free(n, ty) -> (Gtype.mgu ty env, tyenv)
     | Meta(q) -> (Gtype.mgu (Term.Binder.type_of q) env, tyenv)
-    | Bound(q) -> (Gtype.mgu (Term.Binder.type_of q) env, tyenv)
     | Const(c) -> (Lterm.typeof_cnst c, tyenv)
   in
   let rec typeof_aux t tyenv =
@@ -56,6 +55,7 @@ let typeof_env scp (inf, typenv) trm =
     in
     match t with
     | Atom(a) -> typeof_atom a tyenv
+    | Bound(q) -> (Gtype.mgu (Term.Binder.type_of q) env, tyenv)
     | Qnt(q, b) ->
        begin
          match Term.Binder.kind_of q with
@@ -127,10 +127,6 @@ let typecheck_aux scp (inf, cache) typenv exty et =
         let ty = Term.Binder.type_of q
         in
         (ctr, test_type scp env trm ty expty)
-      | Bound(q) ->
-        let ty = Term.Binder.type_of q
-        in
-        (ctr, test_type scp env trm ty expty)
       | Const(c) ->
         let ty = Lterm.typeof_cnst c
         in
@@ -141,6 +137,10 @@ let typecheck_aux scp (inf, cache) typenv exty et =
     in
     match trm with
       | Atom(a) -> type_atom expty a trm tyenv
+      | Bound(q) ->
+        let ty = Term.Binder.type_of q
+        in
+        (ctr, test_type scp env trm ty expty)
       | App(f, a) ->
         (* Make an argument type *)
         let (ctr1, aty) = Gtype.mk_plain_typevar ctr in
@@ -254,12 +254,6 @@ and settype_atom scp (inf, appfn) expty atm tyenv =
      in
      add_to_list (TermType("Meta", trm, [Gtype.mgu expty env1])) debug_list;
      (ctr, env1)
-  | Bound(q) ->
-     let ty = Binder.type_of q in
-     let env1 = test_type scp env trm ty expty
-     in
-     add_to_list (TermType("Bound", trm, [Gtype.mgu expty env1])) debug_list;
-     (ctr, env1)
   | Const(c) ->
      let ty = Lterm.typeof_cnst c in
      let env1 = test_type scp env trm ty expty
@@ -270,6 +264,12 @@ and settype_aux scp (inf, appfn) expty t tyenv =
   let (ctr, env) = tyenv in
   match t with
   | Atom(a) -> settype_atom scp (inf, appfn) expty a tyenv
+  | Bound(q) ->
+     let ty = Binder.type_of q in
+     let env1 = test_type scp env t ty expty
+     in
+     add_to_list (TermType("Bound", t, [Gtype.mgu expty env1])) debug_list;
+     (ctr, env1)
   | App(f, arg) ->
      (* Make an argument type. *)
      let (ctr1, arg_ty) = Gtype.mk_plain_typevar ctr in

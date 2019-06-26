@@ -374,8 +374,6 @@ module Terms =
              (assoc, prec) (Term.Atom(x), [])
       | Term.Free(n, ty) ->
          print_typed_name ppstate (n, ty)
-      | Term.Bound(n) ->
-         Format.printf "@[%s@]" ((Term.Binder.name_of n))
       | Term.Meta(n) ->
          Format.printf "@[%s@]" ((Term.Binder.name_of n))
       | Term.Const(c) ->
@@ -384,6 +382,8 @@ module Terms =
     let rec print_term ppstate (assoc, prec) x =
       match x with
       | Term.Atom(a) -> print_atom_term ppstate (assoc, prec) a
+      | Term.Bound(n) ->
+         Format.printf "@[%s@]" ((Term.Binder.name_of n))
       | Term.App(t1, t2) ->
          let f, args = Term.get_fun_args x
          in

@@ -117,13 +117,13 @@ end
 (** Atomic terms *)
 type atom =
   | Id of Ident.t * Gtype.t
-  | Bound of Binder.t
   | Free of string * Gtype.t
   | Meta of Binder.t
   | Const of Const.t
 
 type term =
   | Atom of atom
+  | Bound of Binder.t
   | App of term * term
   | Qnt of Binder.t * term
 
@@ -146,7 +146,7 @@ let is_app x =
 
 let is_bound x =
   match x with
-    | Atom(Bound _) -> true
+    | Bound(_) -> true
     | _ -> false
 
 let is_free x =
@@ -174,7 +174,7 @@ let is_true t =
 let mk_atom x = Atom(x)
 
 let mk_qnt b t = Qnt(b, t)
-let mk_bound n = mk_atom (Bound n)
+let mk_bound n =  Bound(n)
 let mk_free n ty = mk_atom (Free(n, ty))
 let mk_const c = mk_atom(Const c)
 
@@ -198,7 +198,7 @@ let dest_qnt t =
 
 let dest_bound t =
   match t with
-    | Atom(Bound(n)) -> n
+    | Bound(n) -> n
     | _ -> raise (Failure "dest_bound: Not a binder")
 
 let dest_free t =
@@ -346,15 +346,9 @@ let compare_atom_strict typed t1 t2 =
   | (Meta _, Id _) -> Order.GreaterThan
   | (Meta b1, Meta b2) -> Binder.compare b1 b2
   | (Meta _, _) -> Order.LessThan
-  | (Bound _, Const _) -> Order.GreaterThan
-  | (Bound _, Id _) -> Order.GreaterThan
-  | (Bound _, Meta _) -> Order.GreaterThan
-  | (Bound b1, Bound b2) -> Binder.compare b1 b2
-  | (Bound _ , _ ) -> Order.LessThan
   | (Free _, Const _) -> Order.GreaterThan
   | (Free _, Id _) -> Order.GreaterThan
   | (Free _, Meta _) -> Order.GreaterThan
-  | (Free _, Bound _) -> Order.GreaterThan
   | (Free(n1, ty1), Free(n2, ty2)) ->
      compare_types (Order.Util.compare n1 n2) ty1 ty2
 
@@ -363,6 +357,9 @@ let rec compare_term_strict typed t1 t2 =
   match (t1, t2) with
   | (Atom(a1), Atom(a2)) -> compare_atom_strict typed a1 a2
   | (Atom _, _) -> Order.LessThan
+  | (Bound _, Atom _) -> Order.GreaterThan
+  | (Bound(b1), Bound(b2)) -> Binder.compare b1 b2
+  | (Bound _ , _ ) -> Order.LessThan
   | (App _, Atom _) -> Order.GreaterThan
   | (App(f1, a1), App (f2, a2)) ->
      begin
@@ -372,6 +369,7 @@ let rec compare_term_strict typed t1 t2 =
      end
   | (App _, _) -> Order.LessThan
   | (Qnt _, Atom _) -> Order.GreaterThan
+  | (Qnt _, Bound _) -> Order.GreaterThan
   | (Qnt _, App _) -> Order.GreaterThan
   | (Qnt(q1, b1), Qnt(q2, b2)) ->
      begin
@@ -456,28 +454,28 @@ let get_free_vars trm =
 
 let get_binder t =
   match t with
-    | Atom(Bound(b)) -> b
+    | Bound(b) -> b
     | Qnt(b, _) -> b
     | Atom(Meta(b)) -> b
     | _ -> raise (Failure "get_binder: No binder in term")
 
 let get_binder_name x =
   match x with
-    | Atom(Bound(n)) -> Binder.name_of n
+    | Bound(n) -> Binder.name_of n
     | Qnt(n, _) -> Binder.name_of n
     | Atom(Meta(n)) -> Binder.name_of n
     | _ -> raise (Failure "get_binder_name: Not a binder")
 
 let get_binder_type x =
   match x with
-    | Atom(Bound(n)) -> Binder.type_of n
+    | Bound(n) -> Binder.type_of n
     | Qnt(n, _) -> Binder.type_of n
     | Atom(Meta(n)) -> Binder.type_of n
     | _ -> raise (Failure "get_binder_type: Not a binder")
 
 let get_binder_kind x =
   match x with
-    | Atom(Bound(n)) -> Binder.kind_of n
+    | Bound(n) -> Binder.kind_of n
     | Qnt(n, _) -> Binder.kind_of n
     | Atom(Meta(n)) -> Binder.kind_of n
     | _ -> raise (Failure "get_binder_kind: Not a binder")
@@ -531,8 +529,6 @@ let print_atom_simple trm =
      let (th, x) = Ident.dest n
      in
      Format.printf "@[%s@]" (th^"."^x)
-  | Bound(n) ->
-     Format.printf "@[%s@]" (".."^(Binder.name_of n))
   | Free(n, ty) -> Format.printf "@[%s@]"  n
   | Meta(n) ->
      Format.printf "@[%s@]" (Binder.name_of n)
@@ -543,6 +539,8 @@ let print_simple trm =
   let rec print_aux t =
     match t with
       | Atom(x) -> print_atom_simple x
+      | Bound(n) ->
+         Format.printf "@[%s@]" (".."^(Binder.name_of n))
       | App(t1, t2) ->
         Format.printf "@[<2>(";
         print_aux t1;
@@ -599,12 +597,12 @@ let rename_env typenv trmenv trm =
     let (tyenv, env, qntd) = r_env
     in
     match t with
-      | Atom(Bound(_)) ->
+      | Bound(_) ->
         (try (Tree.find t env, tyenv, env, qntd)
          with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) ->
         let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = Tree.bind (Atom(Bound(q))) (Atom(Bound(nq))) env in
+        let env1 = Tree.bind (Bound(q)) (Bound(nq)) env in
         let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
         in
         (Qnt(nq, nb), tyenv2, env2, true)
@@ -727,8 +725,6 @@ let retype_atom tyenv qenv t =
   match t with
   | Id(n, ty) -> Id(n, Gtype.mgu ty tyenv)
   | Free(n, ty) -> Free(n, Gtype.mgu ty tyenv)
-  | Bound(q) ->
-     (try Tree.find (Atom(t)) qenv with Not_found -> t)
   | _ -> t
 
 let retype tyenv t =
@@ -738,6 +734,11 @@ let retype tyenv t =
        let a1 = retype_atom tyenv qenv a
        in
        (Atom(a1), qenv)
+    | Bound(q) ->
+       begin
+         try (Tree.find t qenv, qenv)
+         with Not_found -> (t, qenv)
+       end
     | App(f, a) ->
        let f1, env1 = retype_aux f qenv in
        let a1, env2 = retype_aux a env1 in
@@ -747,7 +748,7 @@ let retype tyenv t =
        let nty = Gtype.mgu oqty tyenv in
        let q1 = Binder.make oqnt oqnm nty
        in
-       let qenv1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) qenv in
+       let qenv1 = Tree.bind (Bound(q)) (Bound(q1)) qenv in
        let (b1, _) = retype_aux b qenv1
        in
        (Qnt(q1, b1), qenv)
@@ -765,7 +766,7 @@ let retype_pretty_env typenv trm =
       Gtype.mgu_rename_env (ctr, typenv) name_env qty
     in
     let q1 = Binder.make qnt qnm nty in
-    let qenv1 = Tree.bind (Atom(Bound q)) (Bound q1) qenv
+    let qenv1 = Tree.bind (Bound q) (Bound q1) qenv
     in
     (q1, ctr1, nenv1, qenv1)
   in
@@ -783,22 +784,22 @@ let retype_pretty_env typenv trm =
         (Free(n, nt), ctr, nenv1, qenv)
       | Meta(q) -> (t, ctr, name_env, qenv)
       | Const(c) -> (t, ctr, name_env, qenv)
-      | Bound(q) ->
-         begin
-           try (Tree.find (Atom t) qenv, ctr, name_env, qenv)
-           with
-             Not_found ->
-              let (q1, ctr1, nenv1, qenv1) =
-                retype_binder q ctr name_env qenv
-              in
-              (Bound(q1), ctr1, nenv1, qenv1)
-         end
   in
   let rec retype_aux t ctr name_env qenv =
     match t with
     | Atom(a) ->
        let (a1, ctr1, nenv1, qenv1) = retype_atom a ctr name_env qenv in
        (Atom(a1), ctr1, nenv1, qenv1)
+    | Bound(q) ->
+       begin
+         try (Tree.find t qenv, ctr, name_env, qenv)
+         with
+           Not_found ->
+           let (q1, ctr1, nenv1, qenv1) =
+             retype_binder q ctr name_env qenv
+           in
+           (Bound(q1), ctr1, nenv1, qenv1)
+       end
       | App(f, a) ->
         let nf, ctr1, nenv1, qenv1 = retype_aux f ctr name_env qenv in
         let na, ctr2, nenv2, qenv2 = retype_aux a ctr1 nenv1 qenv1
@@ -849,10 +850,6 @@ let full_rename_env type_env term_env trm =
        (Free(n, ty1), tyenv1)
     | Meta(q) -> (t, tyenv)
     | Const(c) -> (t, tyenv)
-    | Bound(q) ->
-       let t1 = try (Tree.find (Atom(t)) env) with Not_found -> t
-       in
-       (t1, tyenv)
   in
   let rec rename_aux t tyenv env =
     match t with
@@ -860,9 +857,13 @@ let full_rename_env type_env term_env trm =
          let (a1, tyenv1) = rename_atom a tyenv env
          in
          (Atom(a1), tyenv1)
+      | Bound(q) ->
+         let t1 = try (Tree.find t env) with Not_found -> t
+         in
+         (t1, tyenv)
       | Qnt(q, b) ->
         let (q1, tyenv1) = rename_binder q tyenv in
-        let env1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) env in
+        let env1 = Tree.bind (Bound(q)) (Bound(q1)) env in
         let (b1, tyenv2) = rename_aux b tyenv1 env1
         in
         (Qnt(q1, b1), tyenv2)
@@ -905,10 +906,6 @@ let retype_index idx trm =
         (Free(n, ty1), ctr1, tyenv1)
       | Meta(q) -> (t, ctr, tyenv)
       | Const(c) -> (t, ctr, tyenv)
-      | Bound(q) ->
-        let t1 = try (Tree.find (Atom(t)) env) with Not_found -> t
-        in
-        (t1, ctr, tyenv)
   in
   let rec rename_aux t ctr tyenv env =
     match t with
@@ -916,9 +913,13 @@ let retype_index idx trm =
          let (a1, ctr1, tyenv1) = rename_atom a ctr tyenv env
          in
          (Atom(a1), ctr1, tyenv1)
+      | Bound(q) ->
+        let t1 = try (Tree.find t env) with Not_found -> t
+        in
+        (t1, ctr, tyenv)
       | Qnt(q, b) ->
         let (q1, ctr1, tyenv1) = rename_binder q ctr tyenv in
-        let env1 = Tree.bind (Atom(Bound(q))) (Bound(q1)) env in
+        let env1 = Tree.bind (Bound(q)) (Bound(q1)) env in
         let (b1, ctr2, tyenv2) = rename_aux b ctr1 tyenv1 env1
         in
         (Qnt(q1, b1), ctr2, tyenv2)
@@ -941,12 +942,12 @@ let rename_env typenv trmenv trm =
     let (tyenv, env, qntd) = renv
     in
     match t with
-      | Atom(Bound(_)) ->
+      | Bound(_) ->
         (try (find t env, tyenv, env, qntd)
          with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) ->
         let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = bind (Atom(Bound(q))) (Atom((Bound(nq)))) env in
+        let env1 = bind (Bound(q)) (Bound(nq)) env in
         let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
         in
         (Qnt(nq, nb), tyenv2, env2, true)
@@ -1019,13 +1020,13 @@ let string_atom t =
   match t with
   | Id(n, ty) -> (Ident.string_of n)
   | Free(n, ty) -> n
-  | Bound(q) -> "?"^(Binder.name_of q)
   | Meta(q) -> Binder.name_of q
   | Const(c) -> Const.to_string c
 
 let rec string_term_basic t =
   match t with
   | Atom(a) -> string_atom a
+  | Bound(q) -> "?"^(Binder.name_of q)
   | App(t1, t2) ->
      let f = get_fun t
      and args = get_args t
@@ -1049,6 +1050,7 @@ let prec_qnt q =
 let rec string_term_prec i x =
   match x with
   | Atom(a) -> string_atom a
+  | Bound(_) -> string_term_basic x
   | Qnt(q, body) ->
      let qnt = Binder.kind_of q in
      let ti = prec_qnt qnt
@@ -1092,13 +1094,13 @@ let string_atom_inf t =
   match t with
   | Id(n, ty) -> cfun_string (Ident.string_of n)
   | Free(n, ty) -> n
-  | Bound(q) -> (Binder.name_of q)
   | Meta(q) -> Binder.name_of q
   | Const(c) -> Const.to_string c
 
 let rec string_term_inf inf i x =
   match x with
   | Atom(a) -> string_atom a
+  | Bound(q) -> (Binder.name_of q)
   | App(t1, t2) ->
      let f=get_fun x
      and args = get_args x

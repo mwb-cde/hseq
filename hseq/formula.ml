@@ -296,17 +296,20 @@ let term_retype_with_check scp tyenv t=
     match t with
       | Term.Id(n, ty) -> Term.Id(n, mk_new_type ty)
       | Term.Free(n, ty) -> Term.Free(n, mk_new_type ty)
-      | Term.Bound(_) ->
-         begin
-           try Term.Tree.find (Term.Atom(t)) qenv
-           with Not_found -> t
-         end
       | Term.Meta(_) -> t
       | Term.Const(_) -> t
   in
   let rec retype_aux t qenv =
     match t with
       | Term.Atom(a) -> (Term.Atom(retype_atom a qenv), qenv)
+      | Term.Bound(_) ->
+         begin
+           let t1 =
+             (try Term.Tree.find t qenv
+              with Not_found -> t)
+           in
+           (t1, qenv)
+         end
       | Term.App(f, a) ->
          let (f1, qenv1) = retype_aux f qenv in
          let (a1, qenv2) = retype_aux a qenv1 in
@@ -348,7 +351,7 @@ let rec is_closed scp env t =
       in
       is_closed scp env1 b
     | Term.Atom(Term.Meta (q)) -> Scope.is_meta scp q
-    | Term.Atom(Term.Bound(q)) -> Term.Subst.member t env
+    | Term.Bound(q) -> Term.Subst.member t env
     | Term.Atom(Term.Free(_)) -> Term.Subst.member t env
     | _ -> true
 
@@ -428,7 +431,7 @@ let unify scp asmf conclf =
   in
   let varp x =
     match x with
-    | Term.Atom(Term.Bound(q))
+    | Term.Bound(q)
       -> (List.memq q avars) || (List.memq q cvars)
     | _ -> false
   in
@@ -443,7 +446,7 @@ let unify_env scp tyenv asmf conclf =
   in
   let varp x =
     match x with
-    | Term.Atom(Term.Bound(q)) ->
+    | Term.Bound(q) ->
        (List.memq q avars) || (List.memq q cvars)
     | _ -> false
   in

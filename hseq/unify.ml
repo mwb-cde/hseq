@@ -50,7 +50,7 @@ let bind_occs s t env =
 
 let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   let lookup q sbs =
-    let r = Atom(Bound q)
+    let r = (Bound q)
     in
     try Term.Subst.find r sbs
     with Not_found -> r
@@ -82,12 +82,6 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
        (if Binder.equality q1 q2
         then (tyenv, env)
         else raise (term_error"unify_aux: meta" [trm1; trm2]))
-    | (Bound(q1), Bound(q2)) ->
-       let nq1 = dest_bound (lookup q1 qntenv)
-       in
-       if Binder.equality nq1 q2
-       then (tyenv, env)
-       else raise (term_error "unify_aux: bound" [trm1; trm2])
     | (Const(c1), Const(c2)) ->
        if c1 = c2
        then (tyenv, env)
@@ -110,27 +104,35 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
       if varp t
       then (tyenv, bind_occs t s env)
       else
-        match (s, t) with
+        begin
+          match (s, t) with
           | Atom(a1), Atom(a2) -> unify_atom tyenv env qntenv a1 a2
           | (App(f1, a1), App(f2, a2)) ->
-            let tyenv1, env1 = unify_aux tyenv env qntenv f1 f2 in
-            let tyenv2, env2 = unify_aux tyenv1 env1 qntenv a1 a2
-            in
-            (tyenv2, env2)
+             let tyenv1, env1 = unify_aux tyenv env qntenv f1 f2 in
+             let tyenv2, env2 = unify_aux tyenv1 env1 qntenv a1 a2
+             in
+             (tyenv2, env2)
+          | (Bound(q1), Bound(q2)) ->
+             let nq1 = dest_bound (lookup q1 qntenv)
+             in
+             if Binder.equality nq1 q2
+             then (tyenv, env)
+             else raise (term_error "unify_aux: bound" [trm1; trm2])
           | (Qnt(q1, b1), Qnt(q2, b2)) ->
-            let qtst, qtyenv = eq_binder tyenv q1 q2
-            in
-            if qtst
-            then
-              let nqntenv =
-                Term.Subst.bind (Atom(Bound q1)) (Atom(Bound q2)) qntenv
-              in
-              unify_aux qtyenv env nqntenv b1 b2
-            else raise (term_error "unify_aux: qnt" [t1; t2])
+             let qtst, qtyenv = eq_binder tyenv q1 q2
+             in
+             if qtst
+             then
+               let nqntenv =
+                 Term.Subst.bind (Bound q1) (Bound q2) qntenv
+               in
+               unify_aux qtyenv env nqntenv b1 b2
+             else raise (term_error "unify_aux: qnt" [t1; t2])
           | (_, _) ->
-            if Term.equals s t
-            then (tyenv, env)
-            else raise (term_error "unify_aux: default" [t1; t2])
+             if Term.equals s t
+             then (tyenv, env)
+             else raise (term_error "unify_aux: default" [t1; t2])
+        end
   in
   unify_aux typenv trmenv (Term.Subst.empty()) trm1 trm2
 
@@ -167,7 +169,7 @@ let unify ?typenv ?initial scp varp trm1 trm2 =
 (** Match terms w.r.t given type and term contexts *)
 let matches_full scp typenv trmenv varp trm1 trm2 =
   let lookup q sbs =
-    let r = Atom(Bound q)
+    let r = (Bound q)
     in
     try Term.Subst.find r sbs
     with Not_found -> r
@@ -199,12 +201,6 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
        if Binder.equality q1 q2
        then (tyenv, env)
        else raise (term_error "matches_aux: meta" [trm1; trm2])
-    | (Bound(q1), Bound(q2)) ->
-       let nq1 = dest_bound (lookup q1 qntenv)
-       in
-       if Binder.equality nq1 q2
-       then (tyenv, env)
-       else raise (term_error "matches_aux: bound" [trm1; trm2])
     | (Const(c1), Const(c2)) ->
        if c1 = c2
        then (tyenv, env)
@@ -223,28 +219,36 @@ let matches_full scp typenv trmenv varp trm1 trm2 =
       then (tyenv, env)
       else (tyenv, bind_occs s t2 env)
     else
-      match (s, t2) with
+      begin
+        match (s, t2) with
         | (Atom(a1), Atom(a2)) -> match_atom tyenv env qntenv a1 a2
+        | (Bound(q1), Bound(q2)) ->
+           let nq1 = dest_bound (lookup q1 qntenv)
+           in
+           if Binder.equality nq1 q2
+           then (tyenv, env)
+           else raise (term_error "matches_aux: bound" [trm1; trm2])
         | (App(f1, a1), App(f2, a2)) ->
-            let (tyenv1, env1) = matches_aux tyenv env qntenv f1 f2 in
-            let (tyenv2, env2) = matches_aux tyenv1 env1 qntenv a1 a2
-            in
-            (tyenv2, env2)
+           let (tyenv1, env1) = matches_aux tyenv env qntenv f1 f2 in
+           let (tyenv2, env2) = matches_aux tyenv1 env1 qntenv a1 a2
+           in
+           (tyenv2, env2)
         | (Qnt(q1, b1), Qnt(q2, b2)) ->
-          let (qtst, qtyenv) = eq_binder tyenv q1 q2
-          in
-          if qtst
-          then
-            let nqntenv =
-              Term.Subst.bind (Term.mk_bound q1) (Term.mk_bound q2) qntenv
-            in
-            matches_aux qtyenv env nqntenv b1 b2
-          else
-            raise (term_error "matches_aux: qnt" [t1; t2])
+           let (qtst, qtyenv) = eq_binder tyenv q1 q2
+           in
+           if qtst
+           then
+             let nqntenv =
+               Term.Subst.bind (Term.mk_bound q1) (Term.mk_bound q2) qntenv
+             in
+             matches_aux qtyenv env nqntenv b1 b2
+           else
+             raise (term_error "matches_aux: qnt" [t1; t2])
         | (_, _) ->
-          if Term.equals s t2
-          then (tyenv, env)
-          else raise (term_error "matches_aux: default" [t1; t2])
+           if Term.equals s t2
+           then (tyenv, env)
+           else raise (term_error "matches_aux: default" [t1; t2])
+      end
   in
   matches_aux typenv trmenv (Term.Subst.empty()) trm1 trm2
 

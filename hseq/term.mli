@@ -100,7 +100,6 @@ end
 (** Atomic terms *)
 type atom =
   | Id of Ident.t * Gtype.t
-  | Bound of Binder.t
   | Free of string * Gtype.t
   | Meta of Binder.t
   | Const of Const.t
@@ -108,6 +107,7 @@ type atom =
 (** The representation of a term *)
 type term =
   | Atom of atom
+  | Bound of Binder.t
   | App of term * term
   | Qnt of Binder.t * term
 

@@ -49,10 +49,6 @@ let of_atom env qnts t =
       in
       (Free(n, ty1), env1)
     | Term.Const(c) -> (Const(c), env)
-    | Term.Bound(q) ->
-      let q_idx = Lib.index (fun x -> (x == q)) qnts
-      in
-      (Bound(q_idx), env)
     | Term.Meta(q) ->
       raise
         (Term.term_error
@@ -62,6 +58,10 @@ let of_atom env qnts t =
 let rec of_term_aux env qnts t =
   match t with
   | Term.(Atom(a)) -> of_atom env qnts a
+  | Term.Bound(q) ->
+     let q_idx = Lib.index (fun x -> (x == q)) qnts
+     in
+     (Bound(q_idx), env)
   | Term.App(f, a) ->
       let f1, env1 = of_term_aux env qnts f in
       let a1, env2 = of_term_aux env1 qnts a

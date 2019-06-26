@@ -117,7 +117,7 @@ let decr_depth ctrl =
 
 let is_free_binder qs t =
   match t with
-    | Atom(Bound(q)) -> List.exists (Term.Binder.equality q) qs
+    | (Bound(q)) -> List.exists (Term.Binder.equality q) qs
     | _ -> false
 
 (*
@@ -140,7 +140,6 @@ struct
   let key_of_atom n =
     match n with
     | Term.Id _ -> Ident
-    | Term.Bound _ -> BVar
     | Term.Meta _ -> MVar
     | Term.Free _ -> FVar
     | Term.Const _ -> Constn
@@ -155,6 +154,7 @@ struct
   let key_of n =
     match n with
       | Term.Atom(a) -> key_of_atom a
+      | Term.Bound _ -> BVar
       | Term.Qnt(q, _) -> key_of_binder (Term.Binder.kind_of q)
       | Term.App _ -> Appln
 

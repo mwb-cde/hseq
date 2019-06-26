@@ -47,14 +47,8 @@ let lt_atom x y =
   | (Meta _, Id _) -> false
   | (Meta b1, Meta b2) -> bound_lt (Binder.dest b1) (Binder.dest b2)
   | (Meta _, _) -> true
-  | (Bound _, Const _) -> false
-  | (Bound _, Id _) -> false
-  | (Bound _, Meta _) -> false
-  | (Bound b1, Bound b2) -> bound_lt (Binder.dest b1) (Binder.dest b2)
-  | (Bound _ , _ ) -> true
   | (Free _, Const _) -> false
   | (Free _, Id _) -> false
-  | (Free _, Bound _) -> false
   | (Free _, Meta _) -> false
   | (Free (n1, _), Free (n2, _)) -> n1 < n2
 
@@ -66,6 +60,9 @@ let rec lt_var lvarp rvarp x y =
     | (Atom(a1), Atom(a2)) -> lt_atom a1 a2
     | (Atom(_), _) -> true
     | (_, Atom(_)) -> false
+    | (Bound b1, Bound b2) -> bound_lt (Binder.dest b1) (Binder.dest b2)
+    | (Bound _ , _ ) -> true
+    | (_, Bound _) -> false
     | (App(f1, a1), App (f2, a2)) ->
        if lt_var lvarp rvarp f1 f2
        then true

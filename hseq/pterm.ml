@@ -450,7 +450,6 @@ let from_term trm =
   let from_atom a =
     match a with
       | Term.Id(n, ty) -> PId (n, ty)
-      | Term.Bound(q) -> PBound(q)
       | Term.Free(n, ty) -> PFree(n, ty)
       | Term.Meta(q) -> PMeta(q)
       | Term.Const(c) -> PConst(c)
@@ -458,6 +457,7 @@ let from_term trm =
   let rec from_aux t =
     match t with
       | Term.Atom(a) -> from_atom a
+      | Term.Bound(q) -> PBound(q)
       | Term.App(f, a) -> PApp(from_aux f, from_aux a)
       | Term.Qnt(q, b) -> PQnt(q, from_aux b)
   in

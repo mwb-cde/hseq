@@ -61,7 +61,7 @@ let rec mk_var_ty_list ls =
 let rec mk_all_from_list scp b qnts =
   match qnts with
     | [] -> b
-    | (Term.Atom(Term.Bound(q))::qs) ->
+    | (Term.Bound(q)::qs) ->
       if (Term.Binder.kind_of q) = Term.All
       then mk_all_from_list scp (Term.mk_qnt q b) qs
       else

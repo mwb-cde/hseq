@@ -53,7 +53,7 @@ let rec equal_upto_vars varp x y =
 let find_variables is_var vars trm =
   let rec find_aux env t =
     match t with
-      | Term.Atom(Term.Bound(q)) ->
+      | Term.Bound(q) ->
         if is_var q
         then
           if Term.Subst.member t env
@@ -73,7 +73,7 @@ let find_variables is_var vars trm =
 let check_variables is_var vars trm =
   let rec check_aux t =
     match t with
-      | Term.Atom(Term.Bound(q)) ->
+      | Term.Bound(q) ->
         if is_var q
         then Term.Subst.member t vars
         else true

@@ -77,10 +77,6 @@ let atom_to_label varp trm rst =
   | Term.Meta(q) -> (Cmeta(Term.Binder.name_of q), rst)
   | Term.Free(n, _) -> (Cfree(n), rst)
   | Term.Const(c) -> (Const(c), rst)
-  | Term.Bound(q) ->
-     let (qnt, _, _) = Term.Binder.dest q
-     in
-     (Bound(qnt), rst)
 
 let rec term_to_label varp trm rst =
   if varp trm
@@ -88,6 +84,10 @@ let rec term_to_label varp trm rst =
   else
     match trm with
       | Term.Atom(a) -> atom_to_label varp a rst
+      | Term.Bound(q) ->
+         let (qnt, _, _) = Term.Binder.dest q
+         in
+         (Bound(qnt), rst)
       | Term.Qnt(q, b) -> (Quant(Term.Binder.kind_of q), b::rst)
       | Term.App(l, r) -> (App, l::r::rst)
 
