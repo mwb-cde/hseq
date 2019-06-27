@@ -26,7 +26,8 @@
 val iff_def: Context.t -> Logic.thm
 (** Get the definition of [iff]. *)
 
-val iffA: ?a:Logic.label -> Tactics.tactic
+val iffA_at: Logic.label -> Tactics.tactic
+val iffA: Tactics.tactic
 (** [iffA l sq]: Elminate the equivalance at assumption [l].
 
     {L
@@ -41,7 +42,8 @@ val iffA: ?a:Logic.label -> Tactics.tactic
     info: [goals = [g1; g2], aforms=[l1; l3], cforms=[l2; l4], terms = []]
 *)
 
-val iffC: ?c:Logic.label -> Tactics.tactic
+val iffC_at: Logic.label -> Tactics.tactic
+val iffC: Tactics.tactic
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
 
     {L

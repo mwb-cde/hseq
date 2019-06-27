@@ -602,7 +602,9 @@ let apply_elim_tac = Boolbase.apply_elim_tac
 (*** Boolean equivalence ***)
 
 let iffA = Booltacs.iffA
+let iffA_at = Booltacs.iffA_at
 let iffC = Booltacs.iffC
+let iffC_at = Booltacs.iffC_at
 let iffE = Booltacs.iffE
 let iffE_at = Booltacs.iffE_at
 

@@ -48,12 +48,7 @@ let iff_def sctxt =
 
     info: [goals = [], aforms=[l1; l2], cforms=[], terms = []]
 *)
-let iffA ?a ctxt goal =
-  let af =
-    if a = None
-    then first_asm_label is_iff goal
-    else Lib.from_some a
-  in
+let iffA_at af ctxt goal =
   let sqnt = Tactics.sequent goal in
   let (t, f) =
     Logic.Sequent.get_tagged_asm (Logic.label_to_tag af sqnt) sqnt
@@ -68,6 +63,11 @@ let iffA ?a ctxt goal =
         Tactics.conjA_at (ftag t);
       ] sctxt goal
 
+let iffA ctxt goal =
+  let af = first_asm_label is_iff goal
+  in
+  iffA_at af ctxt goal
+
 (** [iffC l sq]: Elminate the equivalence at conclusion [l]
 
     {L
@@ -80,12 +80,7 @@ let iffA ?a ctxt goal =
     info: [goals = [g1; g2], aforms=[], cforms=[l], terms = []]
 **)
 
-let iffC ?c ctxt goal =
-  let cf =
-    if c = None
-    then first_concl_label is_iff goal
-    else Lib.from_some c
-  in
+let iffC_at cf ctxt goal =
   let sqnt = sequent goal in
   let (t, f) =
     Logic.Sequent.get_tagged_cncl (Logic.label_to_tag cf sqnt) sqnt
@@ -99,6 +94,11 @@ let iffC ?c ctxt goal =
         rewrite_tac [iff_def sctxt] ~f:(ftag t);
         Tactics.conjC_at (ftag t);
       ] sctxt goal
+
+let iffC ctxt goal =
+  let cf = first_concl_label is_iff goal
+  in
+  iffC_at cf ctxt goal
 
 (** [iffE l sq]: Fully elminate the equivalence at conclusion [l]
 
