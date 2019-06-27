@@ -258,13 +258,13 @@ val show:
     {!Boollib.show} is a synonym for {!Boollib.show_tac}.
 *)
 
-val cases_of:
-  ?thm:Logic.thm -> Term.term -> Tactics.tactic
-(** [cases_of ?thm trm]: Try to introduce a case split based on
-    the type of term [trm]. If [thm] is given, it is used as the cases
-    theorem. If [thm] is not given, the theorem named ["T_cases"] is
-    used, where [T] is the name of the type of [trm].
-*)
+val cases_of: Term.term -> Tactics.tactic
+(** [cases_of trm]: Try to introduce a case split based on the type of
+    term [trm]. The theorem named ["T_cases"] is used as the cases theorem,
+    where [T] is the name of the type of [trm].  *)
+
+val cases_with: Logic.thm -> Term.term -> Tactics.tactic
+(** Apply {!cases_of} wih the given theorem. *)
 
 
 (** {5 Modus Ponens} *)

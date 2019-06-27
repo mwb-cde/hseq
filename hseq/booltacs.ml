@@ -401,31 +401,14 @@ let disj_splitter_at f ctxt goal =
   in
   apply_elim_tac tac (Some(f)) ctxt goal
 
-let cases_of ?thm t ctxt goal =
-  let scp = Tactics.scope_of_goal goal
-  and tyenv = Tactics.typenv_of goal in
+let cases_with thm t ctxt goal =
+  let scp = Tactics.scope_of_goal goal in
   let trm = Lterm.set_names scp t in
-  let case_thm =
-    match thm with
-      | Some x -> x
-      | _ ->
-        begin
-          let sb = Typing.settype_env scp tyenv trm in
-          let ty = Gtype.mgu (Typing.typeof_wrt scp tyenv trm) sb
-          in
-          let (th, id) = Ident.dest (Gtype.get_type_name ty) in
-          let thm_name = id^"_cases" in
-          try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
-          with _ ->
-            try Commands.thm ctxt thm_name
-            with _ -> failwith ("Can't find cases theorem "^thm_name)
-        end
-  in
   try
     seq [
-        cut [trm] case_thm;
+        cut [trm] thm;
         (?> (fun inf1 ->
-          let a_tg = msg_get_one "cases_of" (Info.aformulas inf1)
+          let a_tg = msg_get_one "cases_thm" (Info.aformulas inf1)
           in
           seq [
             (disj_splitter_at (ftag a_tg) // skip);
@@ -441,6 +424,24 @@ let cases_of ?thm t ctxt goal =
     ] ctxt goal
   with err -> raise (add_error "cases_of" err)
 
+let cases_of t ctxt goal =
+  let scp = Tactics.scope_of_goal goal
+  and tyenv = Tactics.typenv_of goal in
+  let trm = Lterm.set_names scp t in
+  let case_thm =
+    begin
+      let sb = Typing.settype_env scp tyenv trm in
+      let ty = Gtype.mgu (Typing.typeof_wrt scp tyenv trm) sb
+      in
+      let (th, id) = Ident.dest (Gtype.get_type_name ty) in
+      let thm_name = id^"_cases" in
+      try Commands.thm ctxt (Ident.string_of (Ident.mk_long th thm_name))
+      with _ ->
+        try Commands.thm ctxt thm_name
+        with _ -> failwith ("Can't find cases theorem "^thm_name)
+    end
+  in
+  cases_with case_thm t ctxt goal
 
 (*** Modus Ponens ***)
 

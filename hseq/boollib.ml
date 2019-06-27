@@ -638,6 +638,7 @@ let cases_tac = Booltacs.cases_tac
 let show_tac = Booltacs.show_tac
 let show = Booltacs.show
 let cases_of = Booltacs.cases_of
+let cases_with = Booltacs.cases_with
 
 (*** Modus Ponens ***)
 
