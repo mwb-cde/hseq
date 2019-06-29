@@ -193,24 +193,39 @@ val rewrite_rule:
     Returns [ |- X ] where [X] is the result of rewriting [thm]
 *)
 
-val gen_rewrite_tac:
-  ?asm:bool
-  -> Rewrite.control
-  -> ?f:Logic.label
-  -> Logic.rr_type list
+val gen_rewrite_asm_tac:
+  Rewrite.control -> (Logic.label)option -> Logic.rr_type list
   -> Tactics.tactic
-(** [gen_rewrite_tac ?asm ctrl rules f]: General rewriting
-    tactic.
+(** [gen_rewrite_asm_tac ctrl f rules]: General assumption rewriting tactic.
 
-    Rewrite formula [f] with list of theorems and assumptions given in
+    Rewrite assumption [f] with list of theorems and assumptions given in
     [rules].
 
-    If [f] is not given, rewrite all assumptions and conclusions in in
-    sequent. If [f] is not given and [asm] is given then if [asm] is
-    true, rewrite only the assumptions, if [asm] is false then rewrite
-    only the conclusions. If neither [f] nor [asm] is given, the
-    rewrite both assumptions and conclusions in the sequent.
+    If [f] is not given, rewrite all assumptions and in the
+    sequent.
 *)
+
+val gen_rewrite_concl_tac:
+  Rewrite.control -> (Logic.label)option -> Logic.rr_type list
+  -> Tactics.tactic
+(** [gen_rewrite_concl_tac ctrl f rules]: General conclusion rewriting tactic.
+
+    Rewrite conclusion [f] with list of theorems and assumptions given in
+   [rules].
+
+    If [f] is not given, rewrite all conclusions in the sequent.  *)
+
+val gen_rewrite_tac:
+  Rewrite.control -> (Logic.label)option -> Logic.rr_type list
+  -> Tactics.tactic
+(** [gen_rewrite_tac ctrl rules f]: General rewriting tactic.
+
+    Rewrite formula [f] with list of theorems and assumptions given in
+   [rules].
+
+   If [f] is not given, rewrite all assumptions and conclusions in in
+   sequent. If [f] is not given then rewrite both assumptions and conclusions
+   in the sequent.  *)
 
 val rewrite_tac:
   ?dir:Rewrite.direction

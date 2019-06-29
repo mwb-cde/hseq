@@ -576,6 +576,8 @@ let eq_at = Boolbase.eq_at
 
 let rewrite_conv = Rewritelib.rewrite_conv
 let rewrite_rule = Rewritelib.rewrite_rule
+let gen_rewrite_asm_tac = Rewritelib.gen_rewrite_asm_tac
+let gen_rewrite_concl_tac = Rewritelib.gen_rewrite_concl_tac
 let gen_rewrite_tac = Rewritelib.gen_rewrite_tac
 let rewrite_tac = Rewritelib.rewrite_tac
 let once_rewrite_tac = Rewritelib.once_rewrite_tac

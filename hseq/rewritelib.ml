@@ -180,37 +180,50 @@ let rewrite_rule sctxt ?ctrl rls thm =
   Rewriter.rewrite_rule sctxt ?ctrl
     (List.map (fun x -> Logic.RRThm(x)) rls) thm
 
-let gen_rewrite_tac ?asm ctrl ?f rules ctxt goal =
+
+let gen_rewrite_asm_tac ctrl f rules ctxt goal =
+  (* Rewrite the assumptions and record the changes *)
+  let rewrite_asm l ct g =
+    (?> (fun inf1 ->
+         (Rewriter.rewriteA_tac ~ctrl:ctrl rules l
+          ++ append_changes_tac inf1))) ct g
+  in
+  if f = None
+  then foreach_asm rewrite_asm ctxt goal
+  else
+    Rewriter.rewrite_tac ~ctrl:ctrl rules (Lib.from_some f) ctxt goal
+
+let gen_rewrite_concl_tac ctrl f rules ctxt goal =
+  (* Rewrite the conclusions and record the changes *)
+  let rewrite_concl l ct g =
+    (?> (fun inf1 ->
+         (Rewriter.rewriteC_tac ~ctrl:ctrl rules l
+          ++ append_changes_tac inf1))) ct g
+  in
+  if f = None
+  then foreach_concl rewrite_concl ctxt goal
+  else
+    Rewriter.rewrite_tac ~ctrl:ctrl rules (Lib.from_some f) ctxt goal
+
+let gen_rewrite_tac ctrl f rules ctxt goal =
+  (* Rewrite the assumptions and record the changes *)
+  let rewrite_asm l ct g =
+    (?> (fun inf1 ->
+         (Rewriter.rewriteA_tac ~ctrl:ctrl rules l
+          ++ append_changes_tac inf1))) ct g
+  (* Rewrite the concluions and record the changes *)
+  and rewrite_concl l ct g =
+    (?> (fun inf1 ->
+         (Rewriter.rewriteC_tac ~ctrl:ctrl rules l
+          ++ append_changes_tac inf1))) ct g
+  in
   match f with
     | None ->
-      begin
-        match asm with
-          | None ->
-            seq_some
-              [
-                foreach_asm
-                  (fun l ->
-                    (?> (fun inf1 ->
-                      Rewriter.rewriteA_tac ~ctrl:ctrl rules l
-                      ++ append_changes_tac inf1)));
-                foreach_concl
-                  (fun l -> (?> (fun inf1 ->
-                    Rewriter.rewriteC_tac ~ctrl:ctrl rules l
-                    ++ append_changes_tac inf1)));
-              ] ctxt goal
-          | Some(x) ->
-            if x
-            then
-              foreach_asm
-                (fun l -> (?> (fun inf1 ->
-                  Rewriter.rewriteA_tac ~ctrl:ctrl rules l
-                    ++ append_changes_tac inf1)))
-                ctxt goal
-            else foreach_concl
-              (fun l -> (?> (fun inf1 ->
-                Rewriter.rewriteC_tac ~ctrl:ctrl rules l
-                ++ append_changes_tac inf1))) ctxt goal
-      end
+       seq_some
+         [
+           foreach_asm rewrite_asm;
+           foreach_concl rewrite_concl;
+         ] ctxt goal
     | Some (x) ->
       Rewriter.rewrite_tac ~ctrl:ctrl rules x ctxt goal
 
@@ -218,37 +231,37 @@ let rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
   let ctrl = rewrite_control dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ctrl ?f:f rules ctxt goal
+  gen_rewrite_tac ctrl f rules ctxt goal
 
 let once_rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
   let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ctrl rules ?f:f ctxt goal
+  gen_rewrite_tac ctrl f rules ctxt goal
 
 let rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
   let ctrl = rewrite_control dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ~asm:true ctrl ?f:a rules ctxt goal
+  gen_rewrite_asm_tac ctrl a rules ctxt goal
 
 let once_rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
   let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ~asm:true ctrl rules ?f:a ctxt goal
+  gen_rewrite_asm_tac ctrl a rules ctxt goal
 
 let rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
   let ctrl = rewrite_control dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ~asm:false ctrl ?f:c rules ctxt goal
+  gen_rewrite_concl_tac ctrl c rules ctxt goal
 
 let once_rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
   let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
-  gen_rewrite_tac ~asm:false ctrl rules ?f:c ctxt goal
+  gen_rewrite_concl_tac ctrl c rules  ctxt goal
 
 let gen_replace_tac
     ?(ctrl=Rewrite.default) ?asms ?f ctxt goal =
@@ -292,8 +305,7 @@ let gen_replace_tac
   let filter_replace x =
     if List.exists (Tag.equal (Logic.label_to_tag x sqnt)) asm_tags
     then fail (error "gen_replace")
-    else
-      gen_rewrite_tac ?asm:None ctrl rules ~f:x
+    else gen_rewrite_tac ctrl (Some(x)) rules
   in
   (*** tac: apply filter_replace to an identified formula or to all
        formulas in the sequent.  ***)
