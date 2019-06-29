@@ -318,7 +318,12 @@ let once_replace_tac ?(dir=leftright) ?asms ?f ctxt goal =
   in
   gen_replace_tac ~ctrl:ctrl ?asms:asms ?f:f ctxt goal
 
-let unfold ?f str ctxt g =
+let unfold_at str f ctxt g =
+  match Lib.try_find (defn ctxt) str with
+    | None -> raise (error ("unfold_at: Can't find definition of "^str))
+    | Some th -> rewrite_tac ~f:f [th] ctxt g
+
+let unfold str ctxt g =
   match Lib.try_find (defn ctxt) str with
     | None -> raise (error ("unfold: Can't find definition of "^str))
-    | Some th -> rewrite_tac ?f [th] ctxt g
+    | Some th -> rewrite_tac [th] ctxt g

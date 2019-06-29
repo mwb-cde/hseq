@@ -91,11 +91,11 @@ struct
                  [
                    flatten_tac
                    ++ cut [] iff_l2 ++ inst_tac [x_term; y_term]
-                   ++ unfold "iff" ~f:(!~2)
+                   ++ unfold_at "iff" (!~2)
                    ++ (implA --  [basic; basic]);
                    flatten_tac
                    ++ replace_tac
-                   ++ unfold "iff" ~f:(!! 1)
+                   ++ unfold_at "iff" (!! 1)
                    ++ split_tac ++ flatten_tac ++ basic;
                    replace_tac ++ eq_tac])))
           ]))])
@@ -172,7 +172,7 @@ struct
     in
     let rule_true_l3 =
       Commands.prove ctxt (term "! x: x iff (x=true)")
-        ((flatten_tac ++ unfold "iff" ~f:(!! 1) ++ conjC)
+        ((flatten_tac ++ unfold_at "iff" (!! 1) ++ conjC)
          --
            [cut [] rule_true_l2 ++ unify_at (!~1) (!! 1);
             cut [] rule_true_l1 ++ unify_at (!~1) (!! 1)])
@@ -586,6 +586,7 @@ let once_rewriteA_tac = Rewritelib.once_rewriteA_tac
 let gen_replace_tac = Rewritelib.gen_replace_tac
 let replace_tac = Rewritelib.replace_tac
 let once_replace_tac = Rewritelib.once_replace_tac
+let unfold_at = Rewritelib.unfold_at
 let unfold = Rewritelib.unfold
 
 (*** Eliminating boolean operators ***)

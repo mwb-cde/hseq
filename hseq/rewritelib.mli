@@ -250,11 +250,13 @@ val once_replace_tac:
 *)
 
 
-val unfold:
-  ?f:Logic.label -> string -> Tactics.tactic
-(** [unfold ?f n]: Unfold the definition of [n] at formula [?f].
+val unfold_at: string -> Logic.label -> Tactics.tactic
+(** [unfold_at n f]: Unfold the definition of [n] at formula [?f].
 
     info: [aforms=[f'], cforms=[]] or [aforms=[], cforms=[f']]
     depending on whether [f] is in the assumptions or conclusions.
     [f'] is the tag of the formula resulting from rewriting.
 *)
+
+val unfold: string -> Tactics.tactic
+(** [unfold_at f n]: Unfold the definition of [n] at formula [?f]. *)
