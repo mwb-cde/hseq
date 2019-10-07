@@ -175,8 +175,10 @@ val eq_at: Logic.label -> Tactics.tactic
     be specified.
 *)
 
+val gen_rewrite_conv:
+  Context.t -> Rewrite.control -> Logic.thm list -> Logic.conv
 val rewrite_conv:
-  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list -> Logic.conv
+  Context.t -> Logic.thm list -> Logic.conv
 (** [rewrite_conv scp ctrl rules trm]: Rewrite term [trm] with
     theorems [rules] in scope [scp].
 
@@ -184,9 +186,11 @@ val rewrite_conv:
     where [X] is the result of rewriting [trm]
 *)
 
-val rewrite_rule:
-  Context.t -> ?ctrl:Rewrite.control -> Logic.thm list
+val gen_rewrite_rule:
+  Context.t -> Rewrite.control -> Logic.thm list
   -> Logic.thm -> Logic.thm
+val rewrite_rule:
+  Context.t -> Logic.thm list -> Logic.thm -> Logic.thm
 (** [rewrite_rule scp ctrl rules thm]: Rewrite theorem [thm] with
     theorems [rules] in scope [scp].
 
@@ -228,8 +232,7 @@ val gen_rewrite_tac:
    in the sequent.  *)
 
 val rewrite_tac:
-  ?dir:Rewrite.direction
-  -> ?f:Logic.label
+  ?f:Logic.label
   -> Logic.thm list
   -> Tactics.tactic
 (** [rewrite_tac info dir f thms]: Rewrite formula [f] with list of
@@ -238,7 +241,6 @@ val rewrite_tac:
 *)
 
 val once_rewrite_tac:
-  ?dir:Rewrite.direction ->
   ?f:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir f thms]: Rewrite formula [f] once.  If
     [f] is not given, rewrite all formulas in sequent.
@@ -246,8 +248,7 @@ val once_rewrite_tac:
 *)
 
 val rewriteC_tac:
-  ?dir:Rewrite.direction
-  -> ?c:Logic.label
+  ?c:Logic.label
   -> Logic.thm list
   -> Tactics.tactic
 (** [rewriteC_tac dir c thms]: Rewrite conclusion [c] with list of
@@ -256,7 +257,6 @@ val rewriteC_tac:
 *)
 
 val once_rewriteC_tac:
-  ?dir:Rewrite.direction ->
   ?c:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir c thms]: Rewrite conclusion [c] once.  If
     [c] is not given, rewrite all conclusions in sequent.
@@ -264,8 +264,7 @@ val once_rewriteC_tac:
 *)
 
 val rewriteA_tac:
-  ?dir:Rewrite.direction
-  -> ?a:Logic.label
+  ?a:Logic.label
   -> Logic.thm list
   -> Tactics.tactic
 (** [rewriteA_tac dir a thms]: Rewrite assumption [a] with list of
@@ -274,7 +273,6 @@ val rewriteA_tac:
 *)
 
 val once_rewriteA_tac:
-  ?dir:Rewrite.direction ->
   ?a:Logic.label -> Logic.thm list -> Tactics.tactic
 (** [once_rewrite_tac dir a thms]: Rewrite assumption [a] once.
     If [a] is not given, rewrite all assumptions in sequent.

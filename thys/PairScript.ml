@@ -90,12 +90,10 @@ let mk_pair_eq =
     [flatten_tac ++ equals_tac ++ iffE
      --
        [ (match_asm (!% " X = Y ")
-                    (fun l -> once_rewrite_tac
-                                ?dir:None [thm "function_eq"] ~f:l))
+                    (fun l -> once_rewrite_tac [thm "function_eq"] ~f:l))
          ++ inst_tac [ (!% " _a ") ]
          ++ (match_asm (!% " L = R ")
-                       (fun l -> once_rewrite_tac
-                                   ?dir:None [thm "function_eq"] ~f:l))
+                       (fun l -> once_rewrite_tac [thm "function_eq"] ~f:l))
          ++ inst_tac [ (!% " _b ") ]
          ++ (match_asm (!% " A = B ")
                        (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))

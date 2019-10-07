@@ -1,6 +1,6 @@
 (*----
   Name: rewritelib.ml
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -30,14 +30,13 @@ open Lib.Ops
 module Rewriter =
 struct
 
-  (** [rewrite_conv scp ctrl rules trm]: rewrite term [trm] with rules
+  (** [gen_rewrite_conv scp ctrl rules trm]: rewrite term [trm] with rules
       [rrl] in scope [scp].
 
       Returns |- trm = X where [X] is the result of rewriting [trm]
   *)
-  let rewrite_conv ctxt ?ctrl (rls: Logic.rr_type list) term =
-    let c = Lib.from_option ctrl Rewrite.default in
-    let is_rl = c.Rewrite.rr_dir = rightleft in
+  let gen_rewrite_conv ctxt ctrl (rls: Logic.rr_type list) term =
+    let is_rl = ctrl.Rewrite.rr_dir = rightleft in
     let mapper f x =
       match x with
         | Logic.RRThm(t) -> Logic.RRThm(f t)
@@ -50,18 +49,20 @@ struct
       then List.map (mapper (eq_sym_rule ctxt)) rls
       else rls
     in
-    let plan = Tactics.mk_thm_plan ctxt ~ctrl:c rules term
+    let plan = Tactics.mk_thm_plan ctxt ~ctrl:ctrl rules term
     in
     Tactics.pure_rewrite_conv plan ctxt term
 
-  (** [rewrite_rule scp ctrl rules thm: rewrite theorem [thm] with rules
+  let rewrite_conv ctxt (rls: Logic.rr_type list) term =
+    gen_rewrite_conv ctxt Rewrite.default rls term
+
+  (** [gen_rewrite_rule scp ctrl rules thm: rewrite theorem [thm] with rules
       [rrl] in scope [scp].
 
       Returns |- X where [X] is the result of rewriting [thm]
   *)
-  let rewrite_rule ctxt ?ctrl rls thm =
-    let c = Lib.from_option ctrl Rewrite.default in
-    let is_rl = c.Rewrite.rr_dir=rightleft in
+  let gen_rewrite_rule ctxt ctrl rls thm =
+    let is_rl = ctrl.Rewrite.rr_dir=rightleft in
     let mapper f x =
       match x with
         | Logic.RRThm t -> Logic.RRThm(f t)
@@ -74,9 +75,12 @@ struct
       then List.map (mapper (eq_sym_rule ctxt)) rls
       else rls
     in
-    let plan = Tactics.mk_thm_plan ctxt ~ctrl:c rules (Logic.term_of thm)
+    let plan = Tactics.mk_thm_plan ctxt ~ctrl:ctrl rules (Logic.term_of thm)
     in
     Tactics.pure_rewrite_rule plan ctxt thm
+
+  let rewrite_rule ctxt rls thm =
+    gen_rewrite_rule ctxt Rewrite.default rls thm
 
   (** [map_sym_tac ret rules goal]: Apply [eq_sym] to each rule in
       [rules], returning the resulting list in [ret]. The list in
@@ -172,14 +176,21 @@ struct
 
 end
 
-let rewrite_conv sctxt ?ctrl rls trm =
-  Rewriter.rewrite_conv sctxt ?ctrl
+let gen_rewrite_conv ctxt ctrl rls trm =
+  Rewriter.gen_rewrite_conv ctxt ctrl
     (List.map (fun x -> Logic.RRThm(x)) rls) trm
 
-let rewrite_rule sctxt ?ctrl rls thm =
-  Rewriter.rewrite_rule sctxt ?ctrl
+let rewrite_conv ctxt rls trm =
+  Rewriter.rewrite_conv ctxt
+    (List.map (fun x -> Logic.RRThm(x)) rls) trm
+
+let gen_rewrite_rule ctxt ctrl rls thm =
+  Rewriter.gen_rewrite_rule ctxt ctrl
     (List.map (fun x -> Logic.RRThm(x)) rls) thm
 
+let rewrite_rule ctxt rls thm =
+  Rewriter.rewrite_rule ctxt
+    (List.map (fun x -> Logic.RRThm(x)) rls) thm
 
 let gen_rewrite_asm_tac ctrl f rules ctxt goal =
   (* Rewrite the assumptions and record the changes *)
@@ -227,44 +238,49 @@ let gen_rewrite_tac ctrl f rules ctxt goal =
     | Some (x) ->
       Rewriter.rewrite_tac ~ctrl:ctrl rules x ctxt goal
 
-let rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
-  let ctrl = rewrite_control dir in
+let rewrite_tac ?f ths ctxt goal =
+  let ctrl = Rewrite.default in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_tac ctrl f rules ctxt goal
 
-let once_rewrite_tac ?(dir=leftright) ?f ths ctxt goal =
-  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
+let once_rewrite_tac ?f ths ctxt goal =
+  let ctrl =
+    Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:leftright
+  in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_tac ctrl f rules ctxt goal
 
-let rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
-  let ctrl = rewrite_control dir in
+let rewriteA_tac ?a ths ctxt goal =
+  let ctrl = Rewrite.default in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_asm_tac ctrl a rules ctxt goal
 
-let once_rewriteA_tac ?(dir=leftright) ?a ths ctxt goal =
-  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
+let once_rewriteA_tac ?a ths ctxt goal =
+  let ctrl =
+    Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:leftright
+  in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_asm_tac ctrl a rules ctxt goal
 
-let rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
-  let ctrl = rewrite_control dir in
+let rewriteC_tac ?c ths ctxt goal =
+  let ctrl = Rewrite.default in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_concl_tac ctrl c rules ctxt goal
 
-let once_rewriteC_tac ?(dir=leftright) ?c ths ctxt goal =
-  let ctrl= Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:dir in
+let once_rewriteC_tac ?c ths ctxt goal =
+  let ctrl =
+    Rewrite.control ~strat:Rewrite.TopDown ~max:(Some 1) ~dir:leftright
+in
   let rules = List.map (fun x -> Logic.RRThm x) ths
   in
   gen_rewrite_concl_tac ctrl c rules  ctxt goal
 
-let gen_replace_tac
-    ?(ctrl=Rewrite.default) ?asms ?f ctxt goal =
+let gen_replace_tac ?(ctrl=Rewrite.default) ?asms ?f ctxt goal =
   let sqnt = sequent goal in
   (*** ttag: The tag of tag of the target (if given) ***)
   let ttag =

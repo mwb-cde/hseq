@@ -476,14 +476,14 @@ struct
 end
 
 (** Functions to construct theorems from other theorems. *)
-module Rules=
+module Rules =
 struct
   (** [once_rewrite_rule scp rules thm]: rewrite [thm] with [rules]
       once.  *)
   let once_rewrite_rule scp rules thm =
     let ctrl = { Rewrite.default with Rewrite.depth = Some(1) }
     in
-    rewrite_rule scp ~ctrl:ctrl rules thm
+    gen_rewrite_rule scp ctrl rules thm
 
   (** [conjunctL scp thm] Get the left hand side of conjunct [thm].
       [conjunctL scp << l and r >> = l] *)
@@ -574,7 +574,9 @@ let eq_at = Boolbase.eq_at
 
 (*** Rewriting ***)
 
+let gen_rewrite_conv = Rewritelib.gen_rewrite_conv
 let rewrite_conv = Rewritelib.rewrite_conv
+let gen_rewrite_rule = Rewritelib.gen_rewrite_rule
 let rewrite_rule = Rewritelib.rewrite_rule
 let gen_rewrite_asm_tac = Rewritelib.gen_rewrite_asm_tac
 let gen_rewrite_concl_tac = Rewritelib.gen_rewrite_concl_tac

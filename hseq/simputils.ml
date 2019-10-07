@@ -1,6 +1,6 @@
 (*----
   Name: simputils.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -40,12 +40,14 @@ let rec equal_upto_vars varp x y =
   if (varp x) && (varp y)
   then true
   else
-    match (x, y) with
+    begin
+      match (x, y) with
       | (Term.App(f1, arg1), Term.App(f2, arg2))->
-        (equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
+         (equal_upto_vars varp f1 f2) && (equal_upto_vars varp arg1 arg2)
       | (Term.Qnt(qn1, b1), Term.Qnt(qn2, b2)) ->
-        (qn1 == qn2) && (equal_upto_vars varp b1 b2)
-      | (_, _) -> Term.equals x y
+         (qn1 == qn2) && (equal_upto_vars varp b1 b2)
+      | _ -> Term.equals x y
+    end
 
 (** [find_variables is_var vars trm]: find all subterms [t] of [trm]
     s.t. [(is_var t)] is true, add [t] to [vars] then return [vars]
