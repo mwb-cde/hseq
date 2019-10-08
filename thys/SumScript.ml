@@ -479,7 +479,7 @@ let isl_outl =
     (!% " ! x: (isl x) => ((inl (outl x)) = x) ")
     [
       flatten_tac
-      ++ cases_of (!% " _x ") ++ replace_tac
+      ++ cases_of (!% " _x ") ++ replace_tac []
       --
         [
           rewriteC_tac [outl_thm] ++ eq_tac;
@@ -497,7 +497,7 @@ let isr_outr =
     (!% " ! x: (isr x) => ((inr (outr x)) = x) ")
     [
       flatten_tac
-      ++ cases_of (!% " _x ") ++ replace_tac
+      ++ cases_of (!% " _x ") ++ replace_tac []
       --
         [
           cut [] isr_thm

@@ -1,6 +1,6 @@
 (*----
   Name: rewrite.mli
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -114,10 +114,7 @@ type control =
     }
 
 val control:
-  dir:direction
-  -> strat: strategy
-  -> max:int option
-  -> control
+  direction -> strategy -> (int)option -> control
 (** Make a rewrite control.
 
     [strat] is the strategy to use.
@@ -130,7 +127,7 @@ val control:
 val default: control
 (** The default rewrite control.
 
-    [default_control = control ~strat:TopDown ~dir:leftright ~max:None]
+    [default_control = control TopDown leftright None]
 *)
 
 (** {5 The Rewriter} *)
@@ -176,9 +173,8 @@ val is_free_binder: Term.Binder.t list -> Term.term -> bool
     a bound variable [Bound b] and [b] occurs in [qs].
 *)
 
-val limit_reached: int option -> bool
-(** [limit_reached d] is [true] iff [d = Some 0].
-*)
+val limit_reached: (int)option -> bool
+(** [limit_reached d] is [true] iff [d = Some 0] *)
 
 (**
    [TermData]: The data used to instantiate the generic rewriter.

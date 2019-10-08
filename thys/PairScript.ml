@@ -90,18 +90,18 @@ let mk_pair_eq =
     [flatten_tac ++ equals_tac ++ iffE
      --
        [ (match_asm (!% " X = Y ")
-                    (fun l -> once_rewrite_tac [thm "function_eq"] ~f:l))
+            (once_rewrite_at [thm "function_eq"]))
          ++ inst_tac [ (!% " _a ") ]
          ++ (match_asm (!% " L = R ")
-                       (fun l -> once_rewrite_tac [thm "function_eq"] ~f:l))
+               (once_rewrite_at [thm "function_eq"]))
          ++ inst_tac [ (!% " _b ") ]
          ++ (match_asm (!% " A = B ")
-                       (fun l -> once_rewrite_tac [thm "eq_sym"] ~f:l))
+               (once_rewrite_at [thm "eq_sym"]))
          ++ unfold "mk_pair" ++ beta_tac
-         ++ replace_tac
+         ++ replace_tac []
          ++ split_tac ++ eq_tac;
          (* 2 *)
-         flatten_tac ++ replace_tac ++ eq_tac]
+         flatten_tac ++ replace_tac [] ++ eq_tac]
     ];;
 
 let rep_abs_pair=
@@ -167,7 +167,7 @@ let basic_pair_eq =
           ++ rewrite_tac [thm "mk_pair_eq"]
           ++ basic;
           (* 2 *)
-          flatten_tac++ replace_tac ++ eq_tac
+          flatten_tac ++ replace_tac [] ++ eq_tac
         ]
     ];;
 
@@ -188,7 +188,7 @@ let fst_thm =
           flatten_tac
           ++ rewrite_tac [basic_pair_eq]
           ++ flatten_tac
-          ++ (replace_tac ~dir:rightleft)
+          ++ (replace_rl_tac [])
           ++ eq_tac
         ]
     ];;
@@ -209,7 +209,7 @@ let snd_thm =
           flatten_tac
           ++ rewrite_tac [basic_pair_eq]
           ++ flatten_tac
-          ++ (replace_tac ~dir:rightleft)
+          ++ replace_rl_tac []
           ++ eq_tac
         ]
     ];;
@@ -226,9 +226,9 @@ let pair_inj =
       ++ flatten_tac
       ++ inst_tac [ (!% " _x ") ; (!% " _y ") ]
       ++ (match_asm (!% " (dest_PAIR x) = Y ")
-                    (fun l -> replace_tac ~dir:rightleft ~asms:[l] ?f:None))
+            (fun l -> replace_rl_tac [l]))
       ++ (match_asm (!% " (make_PAIR (dest_PAIR x)) = Y ")
-                    (fun l -> replace_tac ?dir:None ~asms:[l] ?f:None))
+            (fun l -> replace_tac [l]))
       ++ eq_tac
     ];;
 
@@ -237,14 +237,14 @@ let pair_cases =
 
 let pair_induct =
   theorem "PAIR_induct"
-          (!% " !P: (! x y: (P (x, y))) => (!x: P x) ")
-          [
-            flatten_tac
-            ++ cut [] pair_cases
-            ++ instA [ (!% " _x ") ]
-            ++ specA
-            ++ replace_tac ++ unify_tac
-          ]
+    (!% " !P: (! x y: (P (x, y))) => (!x: P x) ")
+    [
+      flatten_tac
+      ++ cut [] pair_cases
+      ++ instA [ (!% " _x ") ]
+      ++ specA
+      ++ replace_tac [] ++ unify_tac
+    ]
 
 let surjective_pairing =
   prove_thm
@@ -254,7 +254,7 @@ let surjective_pairing =
       flatten_tac
       ++ cut [ (!% " _p ") ] pair_inj
       ++ flatten_tac
-      ++ replace_tac
+      ++ replace_tac []
       ++ rewrite_tac [basic_pair_eq; fst_thm; snd_thm]
       ++ (split_tac ++ eq_tac)
     ];;

@@ -149,7 +149,7 @@ let eq_sym_rule sctxt thm =
   let ctrl = { Rewrite.default with Rewrite.depth = Some 1} in
   let term = Logic.term_of thm in
   let plan =
-    Tactics.mk_thm_plan sctxt ~ctrl:ctrl
+    Tactics.mk_thm_plan sctxt ctrl
       [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in
   Tactics.pure_rewrite_rule plan sctxt thm
@@ -160,7 +160,7 @@ let eq_symA a ctxt goal =
   let term = Formula.term_of form in
   let sctxt = set_scope ctxt (scope_of_goal goal) in
   let plan =
-    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
+    Tactics.mk_plan ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in
   Tactics.pure_rewriteA plan (ftag atag) ctxt goal
 
@@ -170,7 +170,7 @@ let eq_symC c ctxt goal =
   let term = Formula.term_of form in
   let sctxt = set_scope ctxt (scope_of_goal goal) in
   let plan =
-    Tactics.mk_plan ~ctrl:ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
+    Tactics.mk_plan ctrl goal [ Logic.RRThm (eq_sym_thm sctxt) ] term
   in
   Tactics.pure_rewriteC plan (ftag ctag) ctxt goal
 

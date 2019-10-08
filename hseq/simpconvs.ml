@@ -55,7 +55,7 @@ let make_cond_rule_true_thm sctxt =
          [
            cut [] (rule_true_thm sctxt);
            inst_tac [y_term];
-           once_replace_tac;
+           once_replace_tac [];
            eq_tac
          ])))
 
@@ -74,7 +74,7 @@ let make_cond_rule_false_thm sctxt =
            (Failure "make_cond_rule_false_thm: y-term")
        in
        (cut [] (rule_false_thm sctxt) ++ inst_tac [y_term]
-        ++ once_replace_tac
+        ++ once_replace_tac []
         ++ eq_tac))))
 
 let cond_rule_false_thm ctxt =
@@ -135,22 +135,16 @@ let make_neg_eq_sym_thm sctxt =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
                in
-               (once_rewrite_tac ~f:(ftag atg) [thm]
-                ++ basic)));
+               (once_rewrite_at [thm] (ftag atg) ++ basic)));
              (?> (fun info ->
                let (_, atg) =
                  Lib.get_two (Info.aformulas info)
                    (error "simpconvs.make_neg_eq_sym_thm:1")
                in
-               (once_rewrite_tac ~f:(ftag atg) [thm]
-                ++ basic)))
+               (once_rewrite_at [thm] (ftag atg) ++ basic)))
            ]
        ])
 
-(*
-let neg_eq_sym_var = Lib.freeze (make_neg_eq_sym_thm)
-let neg_eq_sym_thm () = Lib.thaw ~fresh:fresh_thm neg_eq_sym_var
-*)
 let neg_eq_sym_thm ctxt =
   Context.find_thm ctxt neg_eq_sym_id make_neg_eq_sym_thm
 
@@ -177,8 +171,7 @@ let make_cond_neg_eq_sym_thm sctxt=
                        Lib.get_two (Info.aformulas info)
                          (error "simpconvs.make_cond_neg_eq_sym_thm:1")
                      in
-                     (once_rewrite_tac  ~f:(ftag atg) [thm]
-                      ++ basic) ctxt g)]));
+                     (once_rewrite_at [thm] (ftag atg) ++ basic) ctxt g)]));
                (?> (fun info ->
                  implA --
                    [basic;
@@ -187,8 +180,7 @@ let make_cond_neg_eq_sym_thm sctxt=
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_neg_eq_sym_thm:2")
                       in
-                      (once_rewrite_tac ~f:(ftag atg) [thm]
-                       ++ basic) ctxt g)]))
+                      (once_rewrite_at [thm] (ftag atg) ++ basic) ctxt g)]))
              ]
          ])
 
@@ -218,8 +210,7 @@ let make_cond_eq_sym_thm sctxt =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:1")
                     in
-                    (once_rewrite_tac ~f:(ftag atg) [thm]
-                     ++ basic) ctxt g)]));
+                    (once_rewrite_at [thm] (ftag atg) ++ basic) ctxt g)]));
                (?> (fun info ->
                implA
                --
@@ -229,8 +220,7 @@ let make_cond_eq_sym_thm sctxt =
                         Lib.get_two (Info.aformulas info)
                           (error "simpconvs.make_cond_eq_sym_thm:2")
                     in
-                    (once_rewrite_tac ~f:(ftag atg) [thm]
-                     ++ basic) ctxt g)]))
+                    (once_rewrite_at [thm] (ftag atg) ++ basic) ctxt g)]))
              ]
          ])
 
@@ -290,7 +280,7 @@ let simple_asm_rewrite_tac rule asm ctxt node =
     then simple_rewrite_conv sctxt rule trm
     else rule
   in
-  once_rewrite_tac [thm] ~f:asm ctxt node
+  once_rewrite_at [thm] asm ctxt node
 
 (***
      Functions manipulating theorems, needed to
@@ -307,7 +297,7 @@ let negate_concl_tac clbl ctxt goal =
     let cform = get_concl c g in
     if (Formula.is_neg cform)
     then skip ctxt0 g
-    else once_rewrite_tac [double_not_thm sctxt] ~f:c ctxt0 g
+    else once_rewrite_at [double_not_thm sctxt] c ctxt0 g
   in
   seq
     [
@@ -658,7 +648,7 @@ let thm_to_rules sctxt thm =
     tg:b, asms |- concl
 *)
 let asm_rewrite_tac thm tg ctxt g =
-  once_rewriteA_tac [thm] ~a:(ftag tg) ctxt g
+  once_rewriteA_at [thm] (ftag tg) ctxt g
 
 (** [qnt_asm_rewrite_tac thm tg g]:
 

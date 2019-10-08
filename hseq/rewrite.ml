@@ -62,12 +62,11 @@ type control =
     }
 
 (** Construct a control *)
-let control ~dir ~strat ~max =
+let control dir strat max =
   { depth = max; rr_dir = dir; rr_strat = strat }
 
 (** The default control *)
-let default =
-  control ~strat:TopDown ~dir:leftright ~max:None
+let default = control leftright TopDown None
 
 (*** Internal represenation of rewrite rules ***)
 

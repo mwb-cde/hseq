@@ -54,13 +54,6 @@ sig
       rewrite tactic is invoked. By contrast, [rewrite_conv] only does
       one set of rewriting.  *)
 
-  val rewrite_conv:
-    Context.t -> Tactics.rule list-> Logic.conv
-  (** [rewrite_conv scp rules trm]: rewrite term [trm] with rules [rrl] in
-      scope [scp].
-
-      Applies [gen_rewrite_conv scp Rewrite.default rules trm]  *)
-
   val gen_rewrite_rule:
     Context.t
     -> Rewrite.control
@@ -70,16 +63,6 @@ sig
       rules [rrl] in scope [scp].
 
       Returns |- X where [X] is the result of rewriting [thm].
-  *)
-
-  val rewrite_rule:
-    Context.t
-    -> Logic.rr_type list
-    -> Logic.thm -> Logic.thm
-  (** [rewrite_rule scp ctrl rules thm]: rewrite theorem [thm] with
-      rules [rrl] in scope [scp].
-
-      Applies [gen_rewrite_rule ctxt Rewrite.default rules thm]
   *)
 
   (** {7 Tactics} *)
@@ -93,44 +76,11 @@ sig
       Used to set assumptions and theorems in the right form for
       right-left rewriting.
   *)
-  val rewriteA_tac:
-    ?ctrl:Rewrite.control
+
+  val gen_rewrite_tac:
+    Rewrite.control
     -> Tactics.rule list -> Logic.label -> Tactics.tactic
-  (** [rewriteA_tac ctrl rules l]: Rewrite the assumption at label [l]
-      with [rules], passing [ctrl] to the rewriter.
-
-      {L
-      A{_ l}, asms |- concls
-
-      ----> (B is the rewritten assumption)
-
-      B{_ l}, asms |- concls
-      }
-
-      info: [goals = [], aforms=[l], cforms=[], terms = []]
-  *)
-
-  val rewriteC_tac:
-    ?ctrl:Rewrite.control
-    -> Tactics.rule list -> Logic.label -> Tactics.tactic
-  (** [rewriteC_tac ctrl rules l]: Rewrite the conclusion at label [l]
-      with [rules], passing [ctrl] to the rewriter.
-
-      {L
-      asms |- A{_ l}, concls
-
-      ----> (B is the rewritten conclusion)
-
-      asms |- B{_ l}, concls
-      }
-
-      info: [goals = [], aforms=[], cforms=[l], terms = []]
-  *)
-
-  val rewrite_tac:
-    ?ctrl:Rewrite.control
-    -> Tactics.rule list -> Logic.label -> Tactics.tactic
-(** [rewrite_tac ?info ctrl rules l sq]: Rewrite formula [l] with
+(** [rewrite_tac ctrl rules l sq]: Rewrite formula [l] with
     [rules].
 
     If [l] is in the conclusions then call [rewriteC_tac]
@@ -197,53 +147,57 @@ val gen_rewrite_tac:
    sequent. If [f] is not given then rewrite both assumptions and conclusions
    in the sequent.  *)
 
+val rewrite_at:
+  Logic.thm list -> Logic.label -> Tactics.tactic
 val rewrite_tac:
-  ?f:Logic.label -> Logic.thm list -> Tactics.tactic
-(** [rewrite_tac f thms]: Rewrite formula [f] with list of
-    theorems [thms]. If [f] is not given, rewrite all formulas in
-    sequent.
-*)
-
+  Logic.thm list -> Tactics.tactic
+val once_rewrite_at:
+  Logic.thm list -> Logic.label -> Tactics.tactic
 val once_rewrite_tac:
-  ?f:Logic.label -> Logic.thm list -> Tactics.tactic
-(** [once_rewrite_tac f thms]: Rewrite formula [f] once.  If [f]
-    is not given, rewrite all formulas in sequent.
+  Logic.thm list -> Tactics.tactic
+(**
+    [rewrite_at thms f]: Rewrite formula [f] with theorems [thms].
+
+    [rewrite_tac thms]:  Rewrite all formulas.
+
+    [once_rewrite_at thms f]: Rewrite formula [f] with theorems [thms] once.
+
+    [once_rewrite_tac thms]:  Rewrite all formulas.
 *)
 
-val rewriteC_tac:
-  ?c:Logic.label -> Logic.thm list -> Tactics.tactic
-(** [rewriteC_tac c thms]: Rewrite conclusion [c] with list of
-    theorems [thms]. If [c] is not given, rewrite all conclusions in
-    sequent.
+val rewriteC_tac: Logic.thm list -> Tactics.tactic
+val rewriteC_at: Logic.thm list -> Logic.label -> Tactics.tactic
+val once_rewriteC_tac: Logic.thm list -> Tactics.tactic
+val once_rewriteC_at:
+  Logic.thm list -> Logic.label -> Tactics.tactic
+(**
+    [rewriteC_at thms c]: Rewrite conclusion [c] with theorems [thms]
+
+    [rewriteC_tac thms]:  Rewrite all conclusions
+
+    [once_rewriteC_at thms c]: Rewrite conclusion [c] with theorems [thms] once
+
+    [once_rewriteC_tac thms]:  Rewrite all conclusions once
 *)
 
-val once_rewriteC_tac:
-  ?c:Logic.label -> Logic.thm list -> Tactics.tactic
-(** [once_rewrite_tac c thms]: Rewrite conclusion [c] once.  If
-    [c] is not given, rewrite all conclusions in sequent.
-*)
+val rewriteA_tac: Logic.thm list -> Tactics.tactic
+val rewriteA_at: Logic.thm list -> Logic.label -> Tactics.tactic
+val once_rewriteA_tac: Logic.thm list -> Tactics.tactic
+val once_rewriteA_at:
+  Logic.thm list -> Logic.label -> Tactics.tactic
+(**
+    [rewriteA_at thms c]: Rewrite assumption [a] with theorems [thms]
 
-val rewriteA_tac:
-  ?a:Logic.label -> Logic.thm list
-  -> Tactics.tactic
-(** [rewrite_tac a thms]: Rewrite assumption [a] with list of
-    theorems [thms]. If [a] is not given, rewrite all assumptions in
-    sequent.
+    [rewriteA_tac thms]:  Rewrite all assumptions
 
-    [dir = leftright] by default.
-*)
+    [once_rewriteA_at thms c]: Rewrite assumption [a] with theorems [thms] once
 
-val once_rewriteA_tac:
-    ?a:Logic.label -> Logic.thm list -> Tactics.tactic
-(** [once_rewrite_tac a thms]: Rewrite assumption [a] once.  If
-    [a] is not given, rewrite all assumptions in sequent.
-
-    [dir = leftright] by default.
+    [once_rewriteA_tac thms]:  Rewrite all assumptions once
 *)
 
 val gen_replace_tac:
-  ?ctrl:Rewrite.control -> ?asms:Logic.label list
-  -> ?f:Logic.label -> Tactics.tactic
+  Rewrite.control -> Logic.label list
+  -> (Logic.label)option -> Tactics.tactic
 (** [gen_replace_tac ctrl asms f]: Rewrite formula [f] with the
     assumptions in list [asms].  If [f] is not given, rewrite all
     formulas in sequent. If [asms] is not given, use all assumptions of
@@ -251,29 +205,40 @@ val gen_replace_tac:
     assumptions used as rewrite rules.
 *)
 
-val replace_tac:
-  ?dir:Rewrite.direction -> ?asms:Logic.label list
-  -> ?f:Logic.label -> Tactics.tactic
-(** [replace_tac asms f]: Rewrite formula [f] with assumptions in
-    list [asms].  If [f] is not given, rewrite all formulas in
-    sequent.  If [asms] is not given, use all assumptions of the form
-    [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
-    assumptions.
+val replace_tac: Logic.label list -> Tactics.tactic
+val replace_at: Logic.label list -> Logic.label -> Tactics.tactic
+(**
+   [replace_at asms f]: Rewrite formula [f] with assumptions in
+   list [asms]
 
-    [dir = leftright] by default.
-*)
+   [replace_tac asms]: Rewrite all formulas with assumptions in
+   list [asms]
 
-val once_replace_tac:
-  ?dir:Rewrite.direction -> ?asms:Logic.label list
-  -> ?f:Logic.label -> Tactics.tactic
-(** [once_replace_tac asms f]: Rewrite formula [f] with
-    assumptions in list [asms] once. If [f] is not given, rewrite all
-    formulas in sequent.  If [asms] is not given, use all assumptions
-    of the form [l=r] or [!x1 .. xn: l = r].  Doesn't rewrite the used
-    assumptions.
+   If [asms] is empty, use all assumptions of the form [l=r] or [!x1
+   .. xn: l = r].  Doesn't rewrite the used assumptions. *)
 
-    [dir = leftright] by default.
-*)
+val replace_rl_tac: Logic.label list -> Tactics.tactic
+val replace_rl_at: Logic.label list -> Logic.label -> Tactics.tactic
+(** [replace_rl_at asms f]: Rewrite, right to left, formula [f] with
+   assumptions in list [asms]
+
+   [replace_rl_tac asms: Rewrite, right to left, all formulas with
+   assumptions in list [asms]
+
+   If [asms] is empty, use all assumptions of the form [l=r] or [!x1
+   .. xn: l = r].  Doesn't rewrite the used assumptions. *)
+
+val once_replace_tac: Logic.label list -> Tactics.tactic
+val once_replace_at: Logic.label list -> Logic.label -> Tactics.tactic
+(**
+   [once_replace_at asms f]: Rewrite formula [f] with assumptions in
+   list [asms] once.
+
+   [once_replace_tac asms f]: Rewrite all formulas with assumptions in
+   list [asms] once.
+
+   If [asms] is empty, use all assumptions of the form [l=r] or [!x1
+   .. xn: l = r].  Doesn't rewrite the used assumptions. *)
 
 
 val unfold_at: string -> Logic.label -> Tactics.tactic

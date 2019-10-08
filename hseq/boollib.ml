@@ -66,9 +66,9 @@ struct
                ++ split_tac
                ++
                  alt
-                 [(replace_tac ++ (basic // trivial));
+                 [(replace_tac [] ++ (basic // trivial));
                   (basic // trivial);
-                  (replace_tac ++ eq_tac)])))
+                  (replace_tac [] ++ eq_tac)])))
           ]))])
     in
     Commands.prove sctxt (term "!x y: (x iff y) = (x = y)")
@@ -94,10 +94,10 @@ struct
                    ++ unfold_at "iff" (!~2)
                    ++ (implA --  [basic; basic]);
                    flatten_tac
-                   ++ replace_tac
+                   ++ replace_tac []
                    ++ unfold_at "iff" (!! 1)
                    ++ split_tac ++ flatten_tac ++ basic;
-                   replace_tac ++ eq_tac])))
+                   replace_tac [] ++ eq_tac])))
           ]))])
 
 (*
@@ -152,7 +152,7 @@ struct
   let make_rule_true_thm ctxt =
     let rule_true_l1 =
       Commands.prove ctxt (term "!x: (x=true) => x")
-      (flatten_tac ++ replace_tac ++ trivial)
+      (flatten_tac ++ replace_tac [] ++ trivial)
     in
     let rule_true_l2 =
       Commands.prove ctxt (term "!x: x => (x=true)")
@@ -168,7 +168,7 @@ struct
           --
             [basic;
              rewrite_tac [Commands.thm ctxt "false_def"]
-             ++ replace_tac ++ negA ++ trueC]) g)))
+             ++ replace_tac [] ++ negA ++ trueC]) g)))
     in
     let rule_true_l3 =
       Commands.prove ctxt (term "! x: x iff (x=true)")
@@ -204,9 +204,9 @@ struct
                 cut_thm [] "bool_cases" ++ inst_tac [x_term]
                 ++
                   (split_tac
-                   ++ replace_tac
+                   ++ replace_tac []
                    ++ (trivial // eq_tac));
-                replace_tac ++ trivial]) g)))
+                replace_tac [] ++ trivial]) g)))
 
 (*
   let rule_false_thm_var = Lib.freeze make_rule_false_thm
@@ -269,7 +269,7 @@ struct
       let goal_term = Lterm.mk_equality trm newterm in
       let proof ctxt g =
         let sctxt1 = set_scope ctxt (scope_of_goal g) in
-        seq [once_rewrite_tac [bool_eq_thm sctxt1] ~f:(fnum 1);
+        seq [once_rewrite_at [bool_eq_thm sctxt1] (fnum 1);
              Tactics.conjC_at (fnum 1)
              --
                [
@@ -389,7 +389,7 @@ struct
       let goal_term = Lterm.mk_equality trm newterm in
       let proof ctxt g =
         let sctxt1 = set_scope ctxt (scope_of_goal g) in
-        seq [once_rewrite_tac [bool_eq_thm sctxt1] ~f:(fnum 1);
+        seq [once_rewrite_at [bool_eq_thm sctxt1] (fnum 1);
              Tactics.conjC_at (fnum 1)
              --
                [
@@ -581,15 +581,29 @@ let rewrite_rule = Rewritelib.rewrite_rule
 let gen_rewrite_asm_tac = Rewritelib.gen_rewrite_asm_tac
 let gen_rewrite_concl_tac = Rewritelib.gen_rewrite_concl_tac
 let gen_rewrite_tac = Rewritelib.gen_rewrite_tac
+
 let rewrite_tac = Rewritelib.rewrite_tac
+let rewrite_at = Rewritelib.rewriteC_at
 let once_rewrite_tac = Rewritelib.once_rewrite_tac
+let once_rewrite_at = Rewritelib.once_rewrite_at
+
 let rewriteC_tac = Rewritelib.rewriteC_tac
+let rewriteC_at = Rewritelib.rewriteC_at
 let once_rewriteC_tac = Rewritelib.once_rewriteC_tac
+let once_rewriteC_at = Rewritelib.once_rewriteC_at
+
 let rewriteA_tac = Rewritelib.rewriteA_tac
+let rewriteA_at = Rewritelib.rewriteA_at
 let once_rewriteA_tac = Rewritelib.once_rewriteA_tac
+let once_rewriteA_at = Rewritelib.once_rewriteA_at
+
 let gen_replace_tac = Rewritelib.gen_replace_tac
 let replace_tac = Rewritelib.replace_tac
+let replace_at = Rewritelib.replace_at
+let replace_rl_tac = Rewritelib.replace_rl_tac
+let replace_rl_at = Rewritelib.replace_rl_at
 let once_replace_tac = Rewritelib.once_replace_tac
+let once_replace_at = Rewritelib.once_replace_at
 let unfold_at = Rewritelib.unfold_at
 let unfold = Rewritelib.unfold
 
@@ -662,7 +676,7 @@ let equals_tac ?f ctxt goal =
       (raise (error "Can't find required lemma Bool.equals_bool"))
   in
   let sctxt = set_scope ctxt (scope_of_goal goal) in
-  let act_tac x ctxt0 g = once_rewrite_tac [thm] ~f:x sctxt g in
+  let act_tac x ctxt0 g = once_rewrite_at [thm] x sctxt g in
   let main_tac ctxt0 gl =
     match f with
       | Some x -> act_tac x ctxt0 goal

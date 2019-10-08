@@ -947,7 +947,7 @@ module Planner:
 *)
 
 val mk_plan:
-  ?ctrl:Rewrite.control -> Logic.node
+  Rewrite.control -> Logic.node
   -> rule list -> Term.term -> rule plan
 (** The rewrite planner, for use with tactics.
 
@@ -959,7 +959,7 @@ val mk_plan:
 *)
 
 val mk_thm_plan:
-  Context.t -> ?ctrl:Rewrite.control
+  Context.t -> Rewrite.control
   -> rule list -> Term.term -> Logic.thm plan
 (** The theorem rewrite planner, for use with conversions and rules.
 

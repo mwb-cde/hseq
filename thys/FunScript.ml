@@ -34,7 +34,7 @@ let function_eq =
    flatten_tac ++ equals_tac ++ scatter_tac
      --
      [
-      replace_tac ++eq_tac;
+      replace_tac [] ++eq_tac;
       cut_back_tac (thm "extensionality")
         ++ basic
     ]

@@ -1258,7 +1258,7 @@ end
 
 module Planner = Rewrite.Make(PlannerData)
 
-let mk_plan ?(ctrl=Rewrite.default) goal rules term =
+let mk_plan ctrl goal rules term =
   let scp = scope_of_goal goal in
   let (_, plan) = Planner.make (Some(goal)) scp ctrl rules term
   in
@@ -1280,7 +1280,7 @@ let dest_rr_thm src =
 let to_thm_plan plan =
   mapping dest_rr_thm plan
 
-let mk_thm_plan ctxt ?(ctrl=Rewrite.default) rules term =
+let mk_thm_plan ctxt ctrl rules term =
   let (_, plan) = Planner.make None (scope_of ctxt) ctrl rules term
   in
   to_thm_plan plan

@@ -662,7 +662,7 @@ let psubset_trans =
     --
       [
         (* 1 *)
-        replace_tac
+        replace_tac []
         ++ cut_back_tac subset_antisym
         ++ simp [];
         (* 2 *)
@@ -695,7 +695,7 @@ let psubset_add =
       ++ once_rewriteC_tac [set_equal]
       ++ simpC [add_thm]
       ++ scatter_tac
-      ++ once_replace_tac
+      ++ once_replace_tac []
       ++ flatten_tac
       ++ eq_tac
   ]

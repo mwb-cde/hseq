@@ -59,7 +59,7 @@ let iffA_at af ctxt goal =
     let sctxt = set_scope ctxt (scope_of_goal goal) in
     seq
       [
-        rewrite_tac [iff_def sctxt] ~f:(ftag t);
+        rewrite_at [iff_def sctxt] (ftag t);
         Tactics.conjA_at (ftag t);
       ] sctxt goal
 
@@ -91,7 +91,7 @@ let iffC_at cf ctxt goal =
     let sctxt = set_scope ctxt (scope_of_goal goal) in
     seq
       [
-        rewrite_tac [iff_def sctxt] ~f:(ftag t);
+        rewrite_at [iff_def sctxt] (ftag t);
         Tactics.conjC_at (ftag t);
       ] sctxt goal
 
@@ -121,7 +121,7 @@ let iffE_at cf ctxt goal =
   else
     let tac ctxt0 g =
       let sctxt = set_scope ctxt0 (scope_of_goal g) in
-      (rewrite_tac [iff_def sctxt] ~f:(ftag t) ++
+      (rewrite_at [iff_def sctxt] (ftag t) ++
         (?> (fun inf1 ->
           Tactics.conjC_at (ftag t) ++
             Tactics.implC_at (ftag t) ++
