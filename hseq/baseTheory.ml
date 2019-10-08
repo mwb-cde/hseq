@@ -1,6 +1,6 @@
 (*----
   Name: baseTheory.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -41,7 +41,7 @@ let read_type_defn ctxt x = Commands.read_type_defn ~ctxt:ctxt x
 
 let name_of = Ident.name_of
 
-let builder ?(save=false) ctxt =
+let builder save ctxt =
   begin
     let ctxt0 =
       Context.set_thy_suffix

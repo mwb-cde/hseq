@@ -243,7 +243,7 @@ struct
       if (thyname = Lterm.base_thy)
       then
         begin
-          let ctxt1 = BaseTheory.builder ~save:true ctxt in
+          let ctxt1 = BaseTheory.builder true ctxt in
           Context.thydb ctxt1
         end
       else build_fn ctxt (Context.thydb ctxt) thyname

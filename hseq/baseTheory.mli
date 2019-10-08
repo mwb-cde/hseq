@@ -1,6 +1,6 @@
 (*----
   Name: baseTheory.mli
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -21,12 +21,11 @@
 
 (** A minimal base theory, used if no other theory can be found. *)
 
-val context: unit -> Context.t
 (** The minimal context needed to build the base theory. Contains the parser
     and printer information needed to declare terms and types. *)
+val context: unit -> Context.t
 
 
-val builder: ?save:bool -> Context.t -> Context.t
-(** Build the minimal theory. If [?save] is true, save the theory.
-    (default: save=false)
-*)
+(** [builder save ctxt] Build the minimal theory. If [save] is true, save the
+    theory to file *)
+val builder: bool -> Context.t -> Context.t
