@@ -182,7 +182,7 @@ let tc_cases =
           scatter_tac
           --
             [
-              cut_mp_tac (thm "tc_rule1") ++ basic;
+              cut_mp_tac [] (thm "tc_rule1") ++ basic;
               cut [ (!% "_R"); (!% " _x "); (!% " _z "); (!% " _y ") ]
                   (thm "tc_rule2")
               ++ back_tac

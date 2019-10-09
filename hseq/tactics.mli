@@ -625,6 +625,7 @@ val betaA_at: Logic.label -> tactic
 
     info: [goals = [], aforms=[l], cforms=[], terms = []]
 *)
+
 val betaA: tactic
 (** Apply [betaA_at] to the first lambda quantified assumption *)
 

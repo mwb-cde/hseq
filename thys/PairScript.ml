@@ -112,7 +112,7 @@ let rep_abs_pair=
       flatten_tac
       ++ cut_thm [] "mk_pair_is_pair"
       ++ inst_tac [ (!% " _x ") ; (!% " _y ") ]
-      ++ cut_mp_tac (thm "make_PAIR_inverse")
+      ++ cut_mp_tac [] (thm "make_PAIR_inverse")
       ++ basic
     ];;
 

@@ -69,7 +69,7 @@ let iff_l2 = theorem "iff_l2"
     ++ (match_asm (!% " (A = B) => C ")
     (fun a ->
       (match_asm (!% " (A = B) ")
-       (fun f -> mp_tac ~a:a ~h:f))))
+       (fun f -> mp_at a f))))
 ++ mp_tac
 ++ (cut [] true_l2) ++ (allA (!% "_y")) ++ mp_tac
 ++ replace_tac [] ++ eq_tac;
@@ -78,7 +78,7 @@ let iff_l2 = theorem "iff_l2"
 ++ (match_asm (!% " (_y => C) ")
     (fun a ->
       (match_asm (!% " _y ")
-       (fun f -> mp_tac ~a:a ~h:f))))
+       (fun f -> mp_at a f))))
 ++ (cut [] true_l2) ++ (allA (!% "_x")) ++ mp_tac
 ++ replace_tac [] ++ eq_tac;
 replace_tac [] ++ eq_tac];;
@@ -384,7 +384,7 @@ theorem "eq_sym" (!% " !x y : (x = y) = (y = x) ")
 let eq_fact =
 theorem "eq_fact" ~simp:true
 (!% " ! x : (x = x) = true ")
-[ flatten_tac++ cut_back_tac true_l2 ++ eq_tac];;
+[ flatten_tac++ cut_back_tac [] true_l2 ++ eq_tac];;
 
 (***
    The simplifier now has enough information to be useful for boolean
@@ -601,7 +601,7 @@ let choice_thm =
        --
        [
          inst_tac [ (!% " @x: _P x ") ] ++ basic;
-         cut_back_tac choice_elim_thm
+         cut_back_tac [] choice_elim_thm
            ++ basic
        ]
 ];;

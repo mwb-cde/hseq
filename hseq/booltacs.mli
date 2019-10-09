@@ -1,6 +1,6 @@
 (*----
   Name: booltacs.mli
-  Copyright Matthew Wahab 2006-2018
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -80,8 +80,7 @@ val iffE: Tactics.tactic
 
     A subgoal formula constructed from an operator [op] {e split} is
     split if eliminating the operator results in more than one subgoal
-    (or proves the subgoal).  For example, {!Tactics.conjC} [~c:f]
-    will split formula [f].
+    (or proves the subgoal).
 *)
 
 val split_asm_rules:
@@ -120,8 +119,7 @@ val split_tac: Tactics.tactic
 
     A subgoal formula constructed from an operator [op] is {e
     flattened} if eliminating the operator results in at most one
-    subgoal (or proves the subgoal). For example, {!Tactics.conjA}
-    [~a:f] flattens formal [f].
+    subgoal (or proves the subgoal).
 *)
 
 val flatter_asm_rules:
@@ -269,81 +267,82 @@ val cases_with: Logic.thm -> Term.term -> Tactics.tactic
 
 (** {5 Modus Ponens} *)
 
-val mp_tac:
-  ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
-(** [mp_tac ?a ?h]: Modus ponens.
+val mp_search: (Logic.label)option -> (Logic.label)option -> Tactics.tactic
+val mp_at: Logic.label -> Logic.label -> Tactics.tactic
+val mp_tac: Tactics.tactic
+(** Modus ponens
 
-    {L
-    g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
+    {L g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
 
     --->
 
-    g:\[B{_ t}, A{_ h}, asms |- concls\]
-    }
+    g:\[B{_ t}, A{_ h}, asms |- concls\] }
 
     info: [goals = [], aforms=[t], cforms=[], terms = []]
 
-    If [a] is [! x1 .. xn: A => B] and [h] is [l], try to instantiate
-    all of the [x1 .. xn] with values from [h] (found by unification).
+    [mp_at a h]: If [a] is [! x1 .. xn: A => B] and [h] is [l], try to
+   instantiate all of the [x1 .. xn] with values from [h] (found by
+   unification).
 
-    If [?a] is not given, each (possibly quantified) implication in
-    the assumptions is tried, starting with the first. If [?h] is not
-    given, the assumptions are searched for a suitable formula.
-*)
+   [mp_tac] Each (possibly quantified) implication in the assumptions
+   is tried, starting with the first and the assumptions are searched
+   for a suitable formula.
 
-val cut_mp_tac:
-  ?inst:Term.term list
-  -> Logic.thm
-  -> ?a:Logic.label -> Tactics.tactic
-(** [cut_mp_tac ?info ?inst ?a ]: Cut theorem for Modus ponens.
+   [mp_search a h] If either [a] or [h] is None then search for suitable
+   assumpitons to use. If either is given, then use it
+ *)
 
-    {L
-    g:\[A{_ a}, asms |- concls\]; thm: |- A => B
+val cut_mp_at: Term.term list-> Logic.thm -> Logic.label -> Tactics.tactic
+val cut_mp_tac: Term.term list-> Logic.thm -> Tactics.tactic
+(** Cut theorem for Modus ponens.
+
+    {L g:\[A{_ a}, asms |- concls\]; thm: |- A => B
 
     --->
 
-    g:\[B{_ t}, A{_ a}, asms |- concls\]
-    }
+    g:\[B{_ t}, A{_ a}, asms |- concls\] }
 
     info: [goals = [], aforms=[t], cforms=[], terms = []]
 
     If [inst] is given, instantiate [thm] with the given terms.
 
-    If [thm] is [! x1 .. xn: A => B] and [a1] is [l], try to
-    instantiate all of the [x1 .. xn] with values from [a] (found by
-    unification).
+    If [thm] is [! x1 .. xn: A => B] and [a1] is [l], try to instantiate
+   all of the [x1 .. xn] with values from [a] (found by unification).
 
-    If [?a] is not given, the first (possibly quantified) implication
-    in the assumptions is used. If [?a1] is not given, the assumptions
-    are searched for a suitable formula.
-*)
+    [cut_mp_at inst a]: Apply modus-ponens to assumption [a].
 
-val back_tac:
-  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
-(** [back_tac ~a ~c]: Match, backward tactic.
+    [cut_mp_tac inst a]: Apply modus-ponens to the first (possibly
+   quantified) suitable assumption.  *)
 
-    {L
-    g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
+val back_search: (Logic.label)option -> (Logic.label)option -> Tactics.tactic
+val back_at: Logic.label -> Logic.label -> Tactics.tactic
+val back_tac: Tactics.tactic
+(** Match, backward tactic.
+
+    {L g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
 
     --->
 
-    g1:\[asms |- A{_ t}, concls\]
-    }
+    g1:\[asms |- A{_ t}, concls\] }
 
     info: [goals = [g1], aforms=[], cforms=[t], terms = []]
 
-    If [a] is [! x1 .. xn: A => B] and [a1] is [l], try to instantiate
-    all of the [x1 .. xn] with values from [c] (found by unification).
+    [back_at a c] If [a] is [! x1 .. xn: A => B] and [a1] is [l], try to
+   instantiate all of the [x1 .. xn] with values from [c] (found by
+   unification).
 
-    If [a] is not given, each (possibly quantified) implication in the
-    assumptions is tried, starting with the first. If [c] is not
-    given, the assumptions are searched for a suitable formula.
-*)
+    [back_tac] Each (possibly quantified) implication in the assumptions
+   is tried with each of the conclusions
 
-val cut_back_tac:
-  ?inst:Term.term list
-  -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
-(** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
+    [back_search a c] If [a] is not given then try each of the
+   assumptions, starting with the first. If [c] is not given then try
+   the assumption against each of the conclusions, starting with the
+   first.
+ *)
+
+val cut_back_at: Term.term list -> Logic.thm -> Logic.label -> Tactics.tactic
+val cut_back_tac: Term.term list -> Logic.thm -> Tactics.tactic
+(** Match, backward tactic.
 
     {L
     g:\[asms |- B{_ c}, concls\]; thm: |- A => B
@@ -361,6 +360,8 @@ val cut_back_tac:
     instantiate all of the [x1 .. xn] with values from [c] (found by
     unification).
 
-    If [c] is not given, the assumptions are searched for a suitable
+    [cut_back_at inst thm c]: Use assumption [c]
+
+    [cut_back_tac inst thm]: The assumptions are searched for a suitable
     formula.
 *)

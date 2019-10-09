@@ -325,7 +325,7 @@ val once_replace_at: Logic.label list -> Logic.label -> Tactics.tactic
    .. xn: l = r].  Doesn't rewrite the used assumptions. *)
 
 val unfold_at: string -> Logic.label -> Tactics.tactic
-(** [unfold f n]: Unfold the definition of [n] at formula [?f].
+(** [unfold f n]: Unfold the definition of [n] at formula [f].
 
     info: [aforms=[f'], cforms=[]] or [aforms=[], cforms=[f']]
     depending on whether [f] is in the assumptions or conclusions.
@@ -410,8 +410,7 @@ val asm_elim_rules_tac:
 (** [asm_elim_rules (arules, crules) f goal]: Apply elimination
     rules to assumption [f] and to all resulting assumptions and
     conclusions. Assumptions are eliminated with [arules], conclusions
-    with [crules]. Any new tag which can't be eliminated are stored in
-    [?info] (in arbitrary order and may contain duplicates).
+    with [crules]..
 *)
 
 val concl_elim_rules_tac:
@@ -445,8 +444,8 @@ val apply_elim_tac:
   (Logic.label list -> Logic.label list
    -> Tactics.tactic)
   -> (Logic.label)option -> Tactics.tactic
-(** [apply_elim_tac tac ?f]: Apply elimination tactic [tac] to formula
-    [?f]. If [?f] is not given, use all formulas in the sequent. The
+(** [apply_elim_tac tac f]: Apply elimination tactic [tac] to formula
+    [f]. If [f] is not given, use all formulas in the sequent. The
     tag of any new formula for which the elimination rules fails is
     stored in arbitrary order and may contain duplicates.
 
@@ -458,8 +457,7 @@ val apply_elim_tac:
 
     A subgoal formula constructed from an operator [op] {e split} is
     split if eliminating the operator results in more than one subgoal
-    (or proves the subgoal).  For example, {!Tactics.conjC} [~c:f]
-    will split formula [f].
+    (or proves the subgoal).
 *)
 
 val split_asms_tac:
@@ -491,8 +489,7 @@ val split_tac: Tactics.tactic
 
     A subgoal formula constructed from an operator [op] is {e
     flattened} if eliminating the operator results in at most one
-    subgoal (or proves the subgoal). For example, {!Tactics.conjA}
-    [~a:f] flattens formal [f].
+    subgoal (or proves the subgoal).
 *)
 
 val flatter_asms_tac:
@@ -613,81 +610,82 @@ val cases_with: Logic.thm -> Term.term -> Tactics.tactic
 
 (** {5 Modus Ponens} *)
 
-val mp_tac:
-  ?a:Logic.label -> ?h:Logic.label -> Tactics.tactic
-(** [mp_tac ?a ?h]: Modus ponens.
+val mp_search: (Logic.label)option -> (Logic.label)option -> Tactics.tactic
+val mp_at: Logic.label -> Logic.label -> Tactics.tactic
+val mp_tac: Tactics.tactic
+(** Modus ponens
 
-    {L
-    g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
+    {L g:\[(A=>B){_ a}, A{_ h}, asms |- concls\]
 
     --->
 
-    g:\[B{_ t}, A{_ h}, asms |- concls\]
-    }
+    g:\[B{_ t}, A{_ h}, asms |- concls\] }
 
     info: [goals = [], aforms=[t], cforms=[], terms = []]
 
-    If [a] is [! x1 .. xn: A => B] and [h] is [l], try to instantiate
-    all of the [x1 .. xn] with values from [h] (found by unification).
+    [mp_at a h]: If [a] is [! x1 .. xn: A => B] and [h] is [l], try to
+   instantiate all of the [x1 .. xn] with values from [h] (found by
+   unification).
 
-    If [?a] is not given, each (possibly quantified) implication in
-    the assumptions is tried, starting with the first. If [?h] is not
-    given, the assumptions are searched for a suitable formula.
-*)
+   [mp_tac] Each (possibly quantified) implication in the assumptions
+   is tried, starting with the first and the assumptions are searched
+   for a suitable formula.
 
-val cut_mp_tac:
-  ?inst:Term.term list
-  -> Logic.thm
-  -> ?a:Logic.label -> Tactics.tactic
-(** [cut_mp_tac ?inst ?a ]: Cut theorem for Modus ponens.
+   [mp_search a h] If either [a] or [h] is None then search for suitable
+   assumpitons to use. If either is given, then use it
+ *)
 
-    {L
-    g:\[A{_ a}, asms |- concls\]; thm: |- A => B
+val cut_mp_at: Term.term list-> Logic.thm -> Logic.label -> Tactics.tactic
+val cut_mp_tac: Term.term list-> Logic.thm -> Tactics.tactic
+(** Cut theorem for Modus ponens.
+
+    {L g:\[A{_ a}, asms |- concls\]; thm: |- A => B
 
     --->
 
-    g:\[B{_ t}, A{_ a}, asms |- concls\]
-    }
+    g:\[B{_ t}, A{_ a}, asms |- concls\] }
 
     info: [goals = [], aforms=[t], cforms=[], terms = []]
 
     If [inst] is given, instantiate [thm] with the given terms.
 
-    If [thm] is [! x1 .. xn: A => B] and [a1] is [l], try to
-    instantiate all of the [x1 .. xn] with values from [a] (found by
-    unification).
+    If [thm] is [! x1 .. xn: A => B] and [a1] is [l], try to instantiate
+   all of the [x1 .. xn] with values from [a] (found by unification).
 
-    If [?a] is not given, the first (possibly quantified) implication
-    in the assumptions is used. If [?a1] is not given, the assumptions
-    are searched for a suitable formula.
-*)
+    [cut_mp_at inst a]: Apply modus-ponens to assumption [a].
 
-val back_tac:
-  ?a:Logic.label -> ?c:Logic.label -> Tactics.tactic
-(** [back_tac ~a ~c]: Match, backward tactic.
+    [cut_mp_tac inst a]: Apply modus-ponens to the first (possibly
+   quantified) suitable assumption.  *)
 
-    {L
-    g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
+val back_search: (Logic.label)option -> (Logic.label)option -> Tactics.tactic
+val back_at: Logic.label -> Logic.label -> Tactics.tactic
+val back_tac: Tactics.tactic
+(** Match, backward tactic.
+
+    {L g:\[(A=>B){_ a}, asms |- B{_ c}, concls\]
 
     --->
 
-    g1:\[asms |- A{_ t}, concls\]
-    }
+    g1:\[asms |- A{_ t}, concls\] }
 
     info: [goals = [g1], aforms=[], cforms=[t], terms = []]
 
-    If [a] is [! x1 .. xn: A => B] and [a1] is [l], try to instantiate
-    all of the [x1 .. xn] with values from [c] (found by unification).
+    [back_at a c] If [a] is [! x1 .. xn: A => B] and [a1] is [l], try to
+   instantiate all of the [x1 .. xn] with values from [c] (found by
+   unification).
 
-    If [a] is not given, each (possibly quantified) implication in the
-    assumptions is tried, starting with the first. If [c] is not
-    given, the assumptions are searched for a suitable formula.
-*)
+    [back_tac] Each (possibly quantified) implication in the assumptions
+   is tried with each of the conclusions
 
-val cut_back_tac:
-  ?inst:Term.term list
-  -> Logic.thm -> ?c:Logic.label -> Tactics.tactic
-(** [cut_back_tac ?inst thm ~c]: Match, backward tactic.
+    [back_search a c] If [a] is not given then try each of the
+   assumptions, starting with the first. If [c] is not given then try
+   the assumption against each of the conclusions, starting with the
+   first.
+ *)
+
+val cut_back_at: Term.term list -> Logic.thm -> Logic.label -> Tactics.tactic
+val cut_back_tac: Term.term list -> Logic.thm -> Tactics.tactic
+(** Match, backward tactic.
 
     {L
     g:\[asms |- B{_ c}, concls\]; thm: |- A => B
@@ -705,13 +703,16 @@ val cut_back_tac:
     instantiate all of the [x1 .. xn] with values from [c] (found by
     unification).
 
-    If [c] is not given, the assumptions are searched for a suitable
+    [cut_back_at inst thm c]: Use assumption [c]
+
+    [cut_back_tac inst thm]: The assumptions are searched for a suitable
     formula.
 *)
 
 (** {5 More tactics} *)
 
-val equals_tac: ?f:Logic.label -> Tactics.tactic
+val equals_at: Logic.label -> Tactics.tactic
+val equals_tac: Tactics.tactic
 (** Convert boolean equality to iff *)
 
 (** {7 Induction tactics} *)
@@ -746,7 +747,7 @@ val induct_tac: Logic.thm -> Tactics.tactic
     succeeds. *)
 
 val induct_on: string -> Tactics.tactic
-(** [induct_on ?thm ?c n]: Apply induction to the first
+(** [induct_on n]: Apply induction to the first
     universally quantified variable named [n] in conclusion [c] (or the
     first conclusion to succeed). The induction theorem is [thm], if
     given or the theorem [thm "TY_induct"] where [TY] is the name of

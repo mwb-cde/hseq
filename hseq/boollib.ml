@@ -661,15 +661,23 @@ let cases_with = Booltacs.cases_with
 
 (*** Modus Ponens ***)
 
+let mp_at = Booltacs.mp_at
 let mp_tac = Booltacs.mp_tac
+let mp_search = Booltacs.mp_search
+
+let cut_mp_at = Booltacs.cut_mp_at
 let cut_mp_tac = Booltacs.cut_mp_tac
 
+let back_search = Booltacs.back_search
+let back_at = Booltacs.back_at
 let back_tac = Booltacs.back_tac
+
+let cut_back_at = Booltacs.cut_back_at
 let cut_back_tac = Booltacs.cut_back_tac
 
 (*** Equality ***)
 
-let equals_tac ?f ctxt goal =
+let gen_equals_tac f ctxt goal =
   let thm =
     try Thms.equals_bool_thm ctxt
     with Not_found ->
@@ -681,19 +689,23 @@ let equals_tac ?f ctxt goal =
     match f with
       | Some x -> act_tac x ctxt0 goal
       | _ ->
-        let test_tac (tg, form) ctxt1 g =
-          if Formula.is_equality form
-          then act_tac (ftag tg) ctxt1 g
-          else fail (error "equals_tac") ctxt1 g
-        in
-        let sqnt = sequent gl
-        in
-        ((map_first test_tac (concls_of sqnt))
-         // map_first test_tac (asms_of sqnt)) ctxt0 gl
+         begin
+           let test_tac (tg, form) ctxt1 g =
+             if Formula.is_equality form
+             then act_tac (ftag tg) ctxt1 g
+             else fail (error "equals_tac") ctxt1 g
+           in
+           let sqnt = sequent gl
+           in
+           ((map_first test_tac (concls_of sqnt))
+            // map_first test_tac (asms_of sqnt)) ctxt0 gl
+         end
   in
   try main_tac sctxt goal
   with err -> raise (add_error "equals_tac: Failed" err)
 
+let equals_at f = gen_equals_tac (Some(f))
+let equals_tac = gen_equals_tac None
 
 (** Induction tactics *)
 

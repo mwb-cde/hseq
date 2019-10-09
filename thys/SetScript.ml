@@ -172,7 +172,7 @@ let set_equal =
     --
       [
         simp [];
-        cut_back_tac (thm "extensionality")
+        cut_back_tac [] (thm "extensionality")
         ++ simp_all [defn "in"]
       ]
   ];;
@@ -663,7 +663,7 @@ let psubset_trans =
       [
         (* 1 *)
         replace_tac []
-        ++ cut_back_tac subset_antisym
+        ++ cut_back_tac [] subset_antisym
         ++ simp [];
         (* 2 *)
         cut [ (!% " _A "); (!% " _B "); (!% " _C ") ] subset_trans
@@ -771,7 +771,7 @@ let finite_union =
   (!% " ! A B : ((finite A) & (finite B)) => (finite (union A B)) ")
   [
     flatten_tac;
-    cut_mp_tac ~inst:[ (!% " _A "); (!% " _B ") ] finite_union0;
+    cut_mp_tac [ (!% " _A "); (!% " _B ") ] finite_union0;
     simp []
   ]
 
@@ -788,7 +788,7 @@ let finite_subset =
      (* 2 *)
      simp_all [subset_add_remove]
      ++ mp_tac
-     ++ cut_mp_tac ~inst:[ (!% " _x "); (!% " remove _x _B ") ] finite_add
+     ++ cut_mp_tac [ (!% " _x "); (!% " remove _x _B ") ] finite_add
      ++ simpA []
      ++ cases_tac (!% " _x in _B ")
      ++ simpA [remove_member; add_member]
@@ -835,10 +835,10 @@ let finite_inter =
     --
       [
         (* 1 *)
-        cut_back_tac finite_subset_back
+        cut_back_tac [] finite_subset_back
         ++ instC [ (!% " _A ") ];
         (* 2 *)
-        cut_back_tac finite_subset_back
+        cut_back_tac [] finite_subset_back
         ++ instC [ (!% " _B ") ];
       ]
     ++ cut [] subset_inter

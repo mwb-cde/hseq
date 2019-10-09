@@ -491,19 +491,27 @@ let mp0_tac a a1lbls ctxt g =
       set_changes_tac (Changes.make [] (Info.aformulas inf4) [] [])))
   ] ctxt g
 
-let mp_tac ?a ?h ctxt goal =
+let mp_search asm cncl ctxt goal =
   let sqnt = sequent goal
   in
   let albls =
-    match a with
-      | None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
-      | Some(x) -> [x]
+    match asm with
+    | Some(x) -> [x]
+    | _ -> List.map (ftag <+ drop_formula) (asms_of sqnt)
   and hlbls =
-    match h with
-      | None -> List.map (ftag <+ drop_formula) (asms_of sqnt)
-      | Some(x) -> [x]
+    match cncl with
+    | Some(x) -> [x]
+    | _ -> List.map (ftag <+ drop_formula) (asms_of sqnt)
   in
   try map_first (fun x -> mp0_tac x hlbls) albls ctxt goal
+  with err -> raise (error "mp_search: Failed")
+
+let mp_at a h ctxt goal =
+  try mp_search (Some(a)) (Some(h)) ctxt goal
+  with err -> raise (error "mp_at: Failed")
+
+let mp_tac ctxt goal =
+  try mp_search None None ctxt goal
   with err -> raise (error "mp_tac: Failed")
 
 (** [cut_mp_tac thm ?a]
@@ -518,24 +526,30 @@ let mp_tac ?a ?h ctxt goal =
     info: [] [thm_tag] [] [] where tag [thm_tag] identifies the theorem
     in the sequent.
 *)
-let cut_mp_tac ?inst thm ?a ctxt goal =
+let gen_cut_mp_tac inst thm a ctxt goal =
   let f_label =
     Lib.apply_option
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent goal))))
       a None
   in
-  (Tactics.cut (Lib.from_option inst []) thm ++
+  (Tactics.cut inst thm ++
      (?> (fun inf1 ->
        let a_tag =
          Lib.get_one (Info.aformulas inf1)
            (Logic.logic_error "cut_mp_tac: Failed to cut theorem"
               [Logic.formula_of thm])
        in
-       ((mp_tac ~a:(ftag a_tag) ?h:f_label) ++
+       ((mp_search (Some (ftag a_tag)) f_label) ++
            (?> (fun inf2 ->
              set_changes_tac
                (Changes.add_aforms inf1 (Info.aformulas inf2))))))))
     ctxt goal
+
+let cut_mp_tac inst thm ctxt goal =
+  gen_cut_mp_tac inst thm None ctxt goal
+
+let cut_mp_at inst thm a ctxt goal =
+  gen_cut_mp_tac inst thm (Some(a)) ctxt goal
 
 (** [back_tac]: Backward match tactic. [back0_tac] is the main engine.
 
@@ -595,7 +609,7 @@ let back0_tac a cs ctxt goal =
   in
   (tac1 ++ seq [tac2; tac3; tac4]) ctxt goal
 
-let back_tac ?a ?c ctxt goal =
+let back_search a c ctxt goal =
   let sqnt = sequent goal in
   let alabels =
     match a with
@@ -609,13 +623,19 @@ let back_tac ?a ?c ctxt goal =
   try map_first (fun x -> back0_tac x clabels) alabels ctxt goal
   with err -> raise (error "back_tac: Failed")
 
-let cut_back_tac ?inst thm ?c ctxt g =
+let back_at a c =
+  back_search (Some(a)) (Some(c))
+
+let back_tac =
+  back_search None None
+
+let gen_cut_back_tac inst thm c ctxt g =
   let c_label =
     Lib.apply_option
       (fun x -> Some (ftag (Logic.label_to_tag x (Tactics.sequent g))))
       c None
   in
-  let tac1 = Tactics.cut (Lib.from_option inst []) thm in
+  let tac1 = Tactics.cut inst thm in
   let tac2 =
     (?> (fun inf2 ->
       let a_tag =
@@ -624,6 +644,9 @@ let cut_back_tac ?inst thm ?c ctxt g =
           (Logic.logic_error "cut_back_tac: Failed to cut theorem"
              [Logic.formula_of thm])
       in
-      back_tac ~a:(ftag a_tag) ?c:c_label))
+      back_search (Some(ftag a_tag)) c_label))
   in
   (tac1 ++ tac2) ctxt g
+
+let cut_back_at inst thm c = gen_cut_back_tac inst thm (Some(c))
+let cut_back_tac inst thm = gen_cut_back_tac inst thm None

@@ -35,7 +35,7 @@ let function_eq =
      --
      [
       replace_tac [] ++eq_tac;
-      cut_back_tac (thm "extensionality")
+      cut_back_tac [] (thm "extensionality")
         ++ basic
     ]
  ];;
@@ -54,12 +54,12 @@ theorem ~simp:true "compose_thm"
 let compose_assoc =
 theorem ~simp:true "compose_assoc"
 (!% " ! f g h: (f ++ (g ++h)) = ((f ++ g) ++ h) ")
-[flatten_tac; cut_back_tac (thm "extensionality"); simp []];;
+[flatten_tac; cut_back_tac [] (thm "extensionality"); simp []];;
 
 let compose_abs_r =
 theorem ~simp:true "compose_abs_r"
 (!% " ! f g : (f ++ (% x : g x)) = (% x : f (g x)) ")
-[flatten_tac; cut_back_tac (thm "extensionality"); simp []];;
+[flatten_tac; cut_back_tac [] (thm "extensionality"); simp []];;
 
 (**
    {5 Combinators}
@@ -102,12 +102,12 @@ theorem ~simp:true "combinS_thm"
 let combinS_abs_l =
 theorem ~simp:true "combinS_abs_l"
 (!% " ! f g: (cS (%x : f x) g) = (%x: f x ( g x)) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
+[flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinS_abs_r =
 theorem ~simp:true "combinS_abs_r"
 (!% " ! f g: (cS f (%x : g x)) = (%x: f x ( g x)) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
+[flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinC_thm =
 theorem ~simp:true "combinC_thm"
@@ -117,7 +117,7 @@ theorem ~simp:true "combinC_thm"
 let combinC_abs_l =
 theorem ~simp:true "combinC_abs_l"
 (!% " ! f y: (cC (%x: f x) y) = (%x: f x y) ")
-[flatten_tac ++ (cut_back_tac (thm "extensionality")) ++ simp []];;
+[flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinW_thm=
 theorem ~simp:true "combinW_thm"
@@ -135,7 +135,7 @@ theorem ~simp:true "combinI_compose_f"
 [
  conjC
    ++ flatten_tac
-   ++ (cut_back_tac (thm "extensionality")) ++ simp []
+   ++ (cut_back_tac [] (thm "extensionality")) ++ simp []
 ];;
 
 let combinK_compose_thm =
@@ -147,7 +147,7 @@ theorem ~simp:true "combinK_compose_thm"
 [
  conjC
    ++ flatten_tac
-   ++ (cut_back_tac (thm "extensionality")) ++ simp []
+   ++ (cut_back_tac [] (thm "extensionality")) ++ simp []
 ];;
 
 let fail_thm =
