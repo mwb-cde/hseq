@@ -1,6 +1,6 @@
 (*----
   Name: userlib.ml
-  Copyright Matthew Wahab 2013-2018
+  Copyright Matthew Wahab 2013-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -408,10 +408,10 @@ let add_symbol str sym =
   in
   Global.set_context nctxt
 
-let add_term_pp str ?(pos=Lib.First) pr fx sym =
+let add_term_pp str pr fx sym =
   let nctxt =
     Commands.add_term_pp (Global.context ())
-      (Ident.mk_long (Global.current_name()) str) ~pos:pos pr fx sym
+      (Ident.mk_long (Global.current_name()) str) pr fx sym
   in
   Global.set_context nctxt
 
@@ -451,8 +451,8 @@ let begin_theory n ps =
   let nctxt = Commands.begin_theory (Global.context ()) n ps in
   Global.set_context nctxt
 
-let end_theory ?save () =
-  let nctxt = Commands.end_theory (Global.context ()) ?save:save () in
+let end_theory ?(save=true) () =
+  let nctxt = Commands.end_theory (Global.context ()) save in
   Global.set_context nctxt
 
 let open_theory n =
@@ -488,10 +488,18 @@ let remove_file n =
 
 (** {6 Type declaration and definition} *)
 
-let typedef ?pp ?(simp=true) ?thm ?rep ?abs tydef =
+let opt_symbol x = Commands.Option.Symbol x
+let opt_simp x = Commands.Option.Simp x
+let opt_repr x = Commands.Option.Repr x
+let opt_abs x = Commands.Option.Abs x
+let opt_thm x = Commands.Option.Thm x
+
+let typedef opts tydef =
   let scpd = Global.context () in
-  let (scpd1, defn) =
-    Commands.typedef scpd ?pp:pp ~simp:simp ?thm:thm ?rep:rep ?abs:abs tydef
+  let options = Commands.Option.interpret opts in
+  let simp = Lib.from_option options.simp false
+  in
+  let (scpd1, defn) = Commands.typedef scpd opts tydef
   in
   begin
     Global.set_context scpd1;
@@ -534,20 +542,12 @@ let declare ?pp trm =
 
 (** {6 Axioms and theorems} *)
 
-let axiom ?(simp=false) n t =
-  let ctxt0, thm = Commands.axiom (Global.context ()) ~simp:simp n t in
-  Global.set_context ctxt0;
-  if simp
-  then
-    let nsimp =
-      Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
-    in
-    Global.set_simpset nsimp
-  else ();
-  thm
+let axiom n t =
+  let ctxt0, thm = Commands.axiom (Global.context ()) n t in
+  Global.set_context ctxt0; thm
 
-let save_thm ?(simp=false) n thm =
-  let ctxt, ret = Commands.save_thm (Global.context ()) ~simp:simp n thm
+let save_thm simp n thm =
+  let ctxt, ret = Commands.save_thm (Global.context ()) simp n thm
   in
   Global.set_context ctxt;
   if simp
@@ -559,22 +559,25 @@ let save_thm ?(simp=false) n thm =
   else ();
   ret
 
-let prove_thm ?(simp=false) n t tac =
-  let ctxt, thm =
-    Commands.prove_thm (Global.context ()) ~simp:simp n t tac
+let theorem n t tac =
+  let (ctxt, thm) =
+    Commands.theorem (Global.context()) n t tac
   in
   Global.set_context ctxt;
-  if simp
-  then
-    let nsimp =
-      Simplib.add_simp (Global.context ()) (Global.simpset ()) thm
-    in
-    Global.set_simpset nsimp
-  else ();
   thm
 
-let theorem = prove_thm
 let lemma = theorem
+
+let rule n t tac =
+  let (ctxt, thm) =
+    Commands.rule (Global.context()) n t tac
+  in
+  let nsimp = Simplib.add_simp ctxt (Global.simpset ()) thm
+  in
+  Global.set_context ctxt;
+  Global.set_simpset nsimp;
+  thm
+
 
 (** {6 Information access} *)
 

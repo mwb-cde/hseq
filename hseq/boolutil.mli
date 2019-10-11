@@ -1,6 +1,6 @@
 (*----
   Name: boolutil.mli
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -24,17 +24,17 @@
 val find_unifier:
   Scope.t ->  Gtype.Subst.t
   -> (Term.term -> bool)
-  -> Term.term -> ?exclude:(Logic.tagged_form -> bool)
+  -> Term.term -> (Logic.tagged_form -> bool)
   -> Logic.tagged_form list
   -> (Logic.ftag_ty * Term.Subst.t)
-(** [find_unifier scp typenv varp trm ?exclude forms]: Find the first
+(** [find_unifier scp typenv varp trm exclude forms]: Find the first
     formula in [forms] which unifies with [trm]. Return the tag of the
     formula and the substitution cosntructed by unification. Ignore
-    those formulas for which [?exclude] is true (if it is given).
+    those formulas for which [exclude] is true.
 
     [varp] determines what is a bindable variable for unification.
     [typenv] is the type environment, to pass to the unifier.  [scp]
-    is the scope, to pass to the unifier.  Raise Not_found if no
+    is the scope, to pass to the unifier.  Raise [Not_found] if no
     unifiable formula is found.
 *)
 
@@ -56,13 +56,11 @@ val dest_qnt_opt:
     formula.  Returns the binders, the tag and the formula.
 *)
 
-(** [find_qnt_opt kind ?f pred forms]
+(** [find_qnt_opt kind f pred forms]
 
     Find the first formula in [forms] to satisfy [pred].  The formula
     may by quantified by binders of kind [kind].  Returns the binders,
     the tag and the formula.
-
-    If [f] is given, the formula must be tagged with [f].
 
     Raises [Not_found] if no formula can be found which satisfies all
     the conditions.

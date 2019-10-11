@@ -59,17 +59,17 @@ val load_theory_as_cur:
     making it the current theory.
 *)
 
-val read: ?ctxt:Context.t -> string -> Term.term
+val read: Context.t -> string -> Term.term
 (** User level parsing of a string as a term. *)
-val read_unchecked: ?ctxt:Context.t -> string -> Term.term
+val read_unchecked: Context.t -> string -> Term.term
 (** User level parsing of a string as a raw term.. *)
-val read_defn: ?ctxt:Context.t -> string
-  -> (((string * Gtype.t) * Term.term list) * Term.term)
+val read_defn:
+  Context.t -> string -> (((string * Gtype.t) * Term.term list) * Term.term)
 (** User level parsing of a string as a term definition. *)
 
-val read_type: ?ctxt:Context.t -> string -> Gtype.t
+val read_type: Context.t -> string -> Gtype.t
 (** User level parsing of a string as a type. *)
-val read_type_defn: ?ctxt:Context.t -> string -> Defn.Parser.typedef
+val read_type_defn: Context.t -> string -> Defn.Parser.typedef
 (** User level parsing of a string as a type definition. *)
 
 (** {5 Theories} *)
@@ -98,11 +98,11 @@ val begin_theory:
 *)
 
 val end_theory:
-  Context.t -> ?save:bool -> unit -> Context.t
-(** [end_theory ~save ()]: End the current theory (protect it from
+  Context.t -> bool -> Context.t
+(** [end_theory ctxt save]: End the current theory (protect it from
     being extended) and save it to disk (if [save=true]).Calling
     [end_theory] allows the theory to be used as a parent to subsequent
-    theories. [save] is [true] by default.
+    theories.
 *)
 
 val open_theory: Context.t -> string -> Context.t
@@ -152,12 +152,10 @@ val get_type_pp_rec:
 (** Get the PP record for a type identifier. *)
 
 val add_term_pp_rec:
-  Context.t -> Ident.t -> ?pos:Parser.sym_pos -> Printkit.record
+  Context.t -> Ident.t -> (Parser.sym_pos)option -> Printkit.record
   -> Context.t
-(** Add a PP record for a term identifier. Updates Printer and Parser
-    tables. (Experimental) Add overloading information to the parser
-    with relative position [pos] (Default is [First]).
-*)
+(** Add a PP record for a term identifier at an overloading position. Updates
+    Printer and Parser tables *)
 
 val remove_term_pp_rec: Context.t -> Ident.t -> Context.t
 (** Remove the PP record for a term identifier. Updates Printer and
@@ -168,11 +166,11 @@ val get_term_pp_rec:
 (** Get the PP record for a term identifier. *)
 
 val add_overload:
-  Context.t -> string -> ?pos:Parser.sym_pos -> Ident.t -> Context.t
-(** [add_overload sym ?post id]: Overload [sym] with term identifier
-    [id]. Make identifier [id] have position [?pos] (default [First])
-    in the list of options for symbol [sym]. (Experimental.)
-*)
+  Context.t -> string -> (Parser.sym_pos)option -> Ident.t -> Context.t
+(** [add_overload sym pos id]: Overload [sym] with term identifier
+   [id]. Make identifier [id] have position [pos] in the list of options for
+   symbol [sym], or [Lib.first] if not given.  *)
+
 val remove_overload: Context.t -> string -> Ident.t -> Context.t
 (** [remove_overload sym id]: Remove overloading of term identifier
     [id] for [sym]. (Experimental.)
@@ -200,12 +198,9 @@ val get_type_pp: Context.t -> Ident.t -> (int * fixity * string option)
 (** Get PP information for a type identifier. *)
 
 val add_term_pp:
-  Context.t -> Ident.t -> ?pos:Parser.sym_pos
-  -> int -> fixity -> string option -> Context.t
+  Context.t -> Ident.t -> int -> fixity -> string option -> Context.t
 (** Add a PP information for a term identifier. Updates Printer and
-    Parser tables. (Experimental) Add overloading information to the
-    parser.
-*)
+    Parser tables. *)
 
 val remove_term_pp: Context.t -> Ident.t -> Context.t
 (** Remove PP information for a term identifier. Updates Printer and
@@ -221,7 +216,7 @@ val get_term_pp: Context.t -> Ident.t -> (int * fixity * string option)
     main user-level functions are {!Commands.lemma}, to get a theorem
     or definition, {!Commands.axiom} to assert an axiom.
 
-    Batch proofs are supported by {!Commands.prove_thm} to prove and
+    Batch proofs are supported by {!theorem} and {!rule} to prove and
     add a theorem to a theory.
 
     Interactive proofs are supported by {!Commands.qed} to extract a
@@ -240,72 +235,70 @@ val thm: Context.t -> string -> Logic.thm
 *)
 
 val axiom:
-  Context.t -> ?simp:bool -> string -> Term.term
-  -> (Context.t * Logic.thm)
-(** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
+  Context.t -> string -> Term.term -> (Context.t * Logic.thm)
+(** [axiom n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
-
-    [?simp]: Wether to use the axiom as a simplifier rule (default: false).
 
     Returns the new axiom.
 *)
 
 val prove:
   Context.t -> Term.term -> Tactics.tactic -> Logic.thm
-(** [prove ?scp trm tac]: Prove [trm] is a theorem using tactic [tac]
+(** [prove trm tac]: Prove [trm] is a theorem using tactic [tac]
     in scope [scp]. This is a structured proof. If [scp] is not given,
     it is [scope()]. The theorem is not added to the theory.
 *)
 
 val save_thm:
-  Context.t -> ?simp:bool -> string ->  Logic.thm
-  -> (Context.t * Logic.thm)
-(** [save_thm n thm]: Add theorem [thm] to the current theory, storing
-    it under name [n].
+  Context.t -> bool -> string -> Logic.thm -> (Context.t * Logic.thm)
+(** [save_thm simp n thm]: Add theorem [thm] to the current theory,
+   storing it under name [n]. If [simp] is true, use the theeorem as a
+   simplifier rule.
 
-    [?simp]: whether to use the theorem as a simplifier rule (default: false).
+    Returns the theorem.  *)
 
-    Returns the theorem.
-*)
-
+(*
 val prove_thm:
-  Context.t ->
-  ?simp:bool -> string -> Term.term -> Tactics.tactic list
+  Context.t -> bool ->
+  string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
-(** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
+ *)
+(** [prove_thm simp n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
     The list of tactics is treated as an unstructured proof, using
     {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to prove
     a theorem using a structured proof.
 
-    [?simp]: whether to use the theorem as a simplifier rule (default: false).
+    [simp] Whether to use the theorem as a simplifier rule.
 
     Returns the new theorem.
 *)
 
 val theorem:
   Context.t
-  -> ?simp:bool -> string -> Term.term -> Tactics.tactic list
+  -> string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
-(** [theorem n trm tacs]: Prove theorem [trm] using the list of
-    tactics [tacs] and add it to the current theory under name [n].
+val rule:
+  Context.t
+  -> string -> Term.term -> Tactics.tactic list
+  -> (Context.t * Logic.thm)
+(** [theorem n trm tacs]: Prove theorem [trm] using the list of tactics
+   [tacs] and add it to the current theory under name [n].
+
+    [rule n trm tacs]: Like [theorem] but also use the theorem as a
+   simplifier rule.
 
     The list of tactics is treated as an unstructured proof, using
-    {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to
-    prove a theorem using a structured proof.
-
-    [?simp]: whether to use the theorem as a simplifier rule (default:
-    false).
+   {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to prove
+   a theorem using a structured proof.
 
     Returns the new theorem.
-
-    A synonym for {!Commands.prove_thm}.
-*)
+ *)
 
 val lemma:
   Context.t
-  -> ?simp:bool -> string -> Term.term -> Tactics.tactic list
+  -> string -> Term.term -> Tactics.tactic list
   -> (Context.t * Logic.thm)
 (** A synonym for {!Commands.theorem}. *)
 
@@ -328,15 +321,47 @@ val get_or_prove:
 
 (** {5 Definitions and Declarations} *)
 
+
+(** Options for definitions *)
+module Option:
+sig
+
+  type t =
+    | Symbol of (int * fixity * (string)option) (** The symbol to use *)
+    | Simp of bool (** Whether to use as a simplifier rule *)
+    | Repr of string  (** The name of a representation function *)
+    | Abs of string  (** The name of an abstraction function *)
+    | Thm of Logic.thm (** A theorem *)
+
+  type record =
+    {
+      symbol: (int * fixity * (string)option)option;
+      simp: (bool)option;
+      repr: (string)option;
+      abs: (string)option;
+      thm: (Logic.thm)option;
+    }
+
+  (** The default option setting *)
+  val default: record
+
+  (** Set an option in a  record *)
+  val set: record -> t -> record
+
+  (** Update data a record from a list of options *)
+  val update: record -> (t)list -> record
+
+
+  (** Construct a record from the default and a list of options *)
+  val interpret: (t)list -> record
+
+end
+
 val typedef:
   Context.t
-  -> ?pp:(int*fixity*string option)
-  -> ?simp:bool
-  -> ?thm:Logic.thm
-  -> ?rep:string -> ?abs:string
+  -> (Option.t)list
   -> Defn.Parser.typedef
   -> (Context.t * Logic.Defns.cdefn)
-
 (** Define or declare a type. The exact behaviour of [typedef] depends
     on the form of its argument and is either a declaration, a alias
     definition or a subtype definition. In all cases, the PP

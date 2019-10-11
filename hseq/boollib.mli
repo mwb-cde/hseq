@@ -421,11 +421,8 @@ val concl_elim_rules_tac:
 (** [concl_elim_rules (arules, crules) f goal]: Apply
     elimination rules to conclusion [f] and to all resulting
     assumptions and conclusions. Assumptions are eliminated with
-    [arules], conclusions with [crules]. The tag of any new formula
-    for which the elimination rules fails is stored in [?info] (in
-    arbitrary order and may contain duplicates).
+    [arules], conclusions with [crules].
 *)
-
 
 val elim_rules_tac:
   ((Logic.label -> Tactics.tactic) list

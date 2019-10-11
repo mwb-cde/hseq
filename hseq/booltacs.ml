@@ -461,8 +461,7 @@ let mp0_tac a a1lbls ctxt g =
   let varp = Rewrite.is_free_binder mp_vars in
   let (a1_label, a1_env) =
     let exclude (t, _) = (Tag.equal t a_label) in
-    try find_unifier scp typenv varp mp_lhs
-          ~exclude:exclude a1_forms
+    try find_unifier scp typenv varp mp_lhs exclude a1_forms
     with Not_found ->
       raise
         (Term.term_error ("mp_tac: no matching formula in assumptions")
@@ -575,8 +574,7 @@ let back0_tac a cs ctxt goal =
   let (c_label, c_env) =
     let exclude (t, _) = (Tag.equal t a_label)
     in
-    try find_unifier scp typenv varp back_rhs
-          ~exclude:exclude c_forms
+    try find_unifier scp typenv varp back_rhs exclude c_forms
     with Not_found ->
       raise (Term.term_error
                ("back_tac: no matching formula in conclusion")

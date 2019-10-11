@@ -47,17 +47,17 @@ let compose_def =
   ~pp:(275, infixl, Some "++")
 
 let compose_thm =
-theorem ~simp:true "compose_thm"
+rule "compose_thm"
 (!% " !f g x: ((f ++ g) x) = (f (g x)) ")
 [simp [defn "compose"] ++ eq_tac];;
 
 let compose_assoc =
-theorem ~simp:true "compose_assoc"
+rule "compose_assoc"
 (!% " ! f g h: (f ++ (g ++h)) = ((f ++ g) ++ h) ")
 [flatten_tac; cut_back_tac [] (thm "extensionality"); simp []];;
 
 let compose_abs_r =
-theorem ~simp:true "compose_abs_r"
+rule "compose_abs_r"
 (!% " ! f g : (f ++ (% x : g x)) = (% x : f (g x)) ")
 [flatten_tac; cut_back_tac [] (thm "extensionality"); simp []];;
 
@@ -90,47 +90,47 @@ define (?<% " fail = % x y: x ");;
 (** {7 Theorems} *)
 
 let combinK_thm =
-theorem ~simp:true "combinK_thm"
+rule "combinK_thm"
 (!% " ! x y: (cK x y) = x ")
 [simp [defn "cK"]];;
 
 let combinS_thm =
-theorem ~simp:true "combinS_thm"
+rule "combinS_thm"
 (!% " ! f g x : (cS f g x) = (f x (g x)) ")
 [simp [defn "cS"]];;
 
 let combinS_abs_l =
-theorem ~simp:true "combinS_abs_l"
+rule "combinS_abs_l"
 (!% " ! f g: (cS (%x : f x) g) = (%x: f x ( g x)) ")
 [flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinS_abs_r =
-theorem ~simp:true "combinS_abs_r"
+rule "combinS_abs_r"
 (!% " ! f g: (cS f (%x : g x)) = (%x: f x ( g x)) ")
 [flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinC_thm =
-theorem ~simp:true "combinC_thm"
+rule "combinC_thm"
 (!% " ! f x y : (cC f x y) = (f y x) ")
 [simp [defn "cC"]];;
 
 let combinC_abs_l =
-theorem ~simp:true "combinC_abs_l"
+rule "combinC_abs_l"
 (!% " ! f y: (cC (%x: f x) y) = (%x: f x y) ")
 [flatten_tac ++ (cut_back_tac [] (thm "extensionality")) ++ simp []];;
 
 let combinW_thm=
-theorem ~simp:true "combinW_thm"
+rule "combinW_thm"
 (!% " !f x : (cW f x) = (f x x)")
 [simp [defn "cW"]];;
 
 let combinI_thm=
-theorem ~simp:true "combinI_thm"
+rule "combinI_thm"
 (!% " ! x : (cI x) = x")
 [simp [defn "cI"]];;
 
 let combinI_compose_f =
-theorem ~simp:true "combinI_compose_f"
+rule "combinI_compose_f"
 (!% " (!f : ((cI ++ f) = f)) & (!f : (f ++ cI) = f) ")
 [
  conjC
@@ -139,7 +139,7 @@ theorem ~simp:true "combinI_compose_f"
 ];;
 
 let combinK_compose_thm =
-theorem ~simp:true "combinK_compose_thm"
+rule "combinK_compose_thm"
 (!% "
   (!f v : ((cK v) ++ f) = (cK v))
     & (!f v: (f ++ (cK v)) = (cK (f v)))
@@ -151,7 +151,7 @@ theorem ~simp:true "combinK_compose_thm"
 ];;
 
 let fail_thm =
-theorem ~simp:true "fail_thm"
+rule "fail_thm"
 (!% " ! x y: (fail x y) = x ")
 [simp [defn "fail"]] ;;
 
@@ -199,7 +199,7 @@ let invf_def =
 (** {7 Theorems} *)
 
 let id_thm =
-  theorem ~simp:true
+  rule
           "id_thm"  (!% " ! x : (id x) = x ")
           [simp [defn "id"]] ;;
 

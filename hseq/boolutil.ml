@@ -1,6 +1,6 @@
 (*----
   Name: boolutil.ml
-  Copyright Matthew Wahab 2006-2016
+  Copyright Matthew Wahab 2006-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -25,7 +25,7 @@ open Commands
 open Tactics
 open Lib.Ops
 
-(** [find_unifier scp typenv varp trm ?exclude ?f forms]: Find the
+(** [find_unifier scp typenv varp trm exclude forms]: Find the
     first formula in forms which unifies with trm. Return the tag of
     the formula and the substitution cosntructed by unification. Ignore
     those formulas for which [?exclude] is true (if it is given).
@@ -35,15 +35,14 @@ open Lib.Ops
     is the scope, to pass to the unifier.  Raise Not_found if no
     unifiable formula is found.
 *)
-let find_unifier scp typenv varp trm ?exclude forms =
-  let not_this = Lib.from_option exclude (fun _ -> false) in
+let find_unifier scp typenv varp trm exclude forms =
   let find_fn form =
-    if not_this form
+    if exclude form
     then raise Not_found
     else
-      Tactics.drop_formula form,
-      Unify.unify ~typenv:typenv scp varp trm
-        (Formula.term_of (Tactics.drop_tag form))
+      (Tactics.drop_formula form,
+       Unify.unify ~typenv:typenv scp varp trm
+         (Formula.term_of (Tactics.drop_tag form)))
   in
   Lib.find_first find_fn forms
 

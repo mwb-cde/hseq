@@ -226,8 +226,8 @@ let seq rls ctxt (sq: Logic.node) =
         else sqs
   in
   match rls with
-    | [] -> raise (error "seq: empty tactic list")
-    | tac::xs -> seq_aux xs (tac ctxt sq)
+  | [] -> raise (error "seq: empty tactic list")
+  | tac::xs -> seq_aux xs (tac ctxt sq)
 
 let (++) tac1 tac2 ctxt g = seq [tac1; tac2] ctxt g
 

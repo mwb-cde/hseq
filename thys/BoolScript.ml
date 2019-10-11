@@ -140,12 +140,12 @@ theorem "false_prop" (!% " !x : (x=false) = ~x ")
  ];;
 
 let true_not_false =
-theorem "true_not_false" ~simp:true
+rule "true_not_false"
     (!% " (true = false) = false ")
 [ rewrite_tac [false_prop] ++ scatter_tac ];;
 
 let false_not_true =
-theorem "false_not_true" ~simp:true
+rule "false_not_true"
     (!% " (false = true) = false ")
 [ rewrite_tac [true_prop] ++ eq_tac ];;
 
@@ -153,33 +153,33 @@ theorem "false_not_true" ~simp:true
 (** Negation *)
 
 let not_not =
-theorem ~simp:true "not_not"
+rule "not_not"
 (!% " !x: (not not x) = x ")
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let not_absorb=
-theorem ~simp:true "not_absorb"
+rule "not_absorb"
 (!% " ((not true) = false) and ((not false) = true) ")
 [split_tac ++ equals_tac ++ blast_tac];;
 
 let not_conj =
-theorem ~simp:true "not_conj"
+rule "not_conj"
 (!% " !x y: (not (x and y)) = (not x or not y) ")
 [flatten_tac ++ equals_tac ++ blast_tac];;
 
 let not_disj =
-theorem ~simp:true "not_disj"
+rule "not_disj"
 (!% " !x y: (not (x or y)) = (not x and not y) ")
 [flatten_tac ++ equals_tac ++ blast_tac];;
 
 let not_forall=
-theorem ~simp:true "not_forall"
+rule "not_forall"
     (!% " !P: (not (!x: (P x))) = (?x: not (P x)) ")
 [flatten_tac ++ equals_tac ++ scatter_tac
 ++ inst_tac [ (!% " _x ") ] ++ blast_tac];;
 
 let not_exists=
-theorem ~simp:true "not_exists"
+rule "not_exists"
   (!% " !P: (not (?x: P x)) = (! x: not (P x)) ")
 [flatten_tac ++ equals_tac ++ scatter_tac
 ++ inst_tac [ (!% " _x ") ] ++ blast_tac];;
@@ -188,28 +188,28 @@ theorem ~simp:true "not_exists"
 
 (*
 let conj_assoc=
-theorem ~simp:true "conj_assoc"
+rule "conj_assoc"
 (!% " !x y z: (x and (y and z))=((x and y) and z)")
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 *)
 
 let conj_assoc=
-theorem ~simp:true "conj_assoc"
+rule "conj_assoc"
 (!% " !x y z: ((x and y) and z)=(x and (y and z))")
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let conj_comm=
-theorem ~simp:false "conj_comm"
+theorem "conj_comm"
 (!% " !x y: (x and y) = (y and x) ")
 [ flatten_tac ++ equals_tac ++ blast_tac] ;;
 
 let conj_lcomm=
-theorem ~simp:true "conj_lcomm"
+rule "conj_lcomm"
 (!% " !x y z: (x and (y and z)) = (y and (x and z)) ")
 [ flatten_tac ++ equals_tac ++ blast_tac] ;;
 
 let conj_absorb =
-theorem ~simp:true "conj_absorb"
+rule "conj_absorb"
 (!% "
   (! x: (true and x) = x)
   and (! x: (x and true) = x)
@@ -220,12 +220,12 @@ theorem ~simp:true "conj_absorb"
 [ split_tac ++ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let conj_trivial =
-theorem ~simp:true "conj_trivial"
+rule "conj_trivial"
 (!% " !x : (x & x) = x ")
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let conj_disj_distrib=
-theorem ~simp:false "conj_disj_distrib"
+theorem "conj_disj_distrib"
 (!% " !x y z: (x and (y or z)) = ((x and y) or (x and z)) ")
 [ flatten_tac  ++ equals_tac ++ blast_tac];;
 
@@ -233,28 +233,28 @@ theorem ~simp:false "conj_disj_distrib"
 
 (*
 let disj_assoc =
-theorem ~simp:true "disj_assoc"
+rule "disj_assoc"
 (!% " !x y z: (x or (y or z)) = ((x or y) or z) ")
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 *)
 
 let disj_assoc =
-theorem ~simp:true "disj_assoc"
+rule "disj_assoc"
 (!% " !x y z: ((x or y) or z) = (x or (y or z)) ")
 [ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let disj_comm=
-theorem ~simp:false "disj_comm"
+theorem "disj_comm"
 (!% " !x y: (x or y) = (y or x) ")
 [ flatten_tac ++ equals_tac ++ blast_tac ];;
 
 let disj_lcomm=
-theorem ~simp:true "disj_lcomm"
+rule "disj_lcomm"
 (!% " !x y z: (x or (y or z)) = (y or (x or z)) ")
 [ flatten_tac ++ equals_tac ++ blast_tac ];;
 
 let disj_absorb =
-theorem ~simp:true "disj_absorb"
+rule "disj_absorb"
 (!% "
 (! x: (true or x) = true)
 and (! x: (x or true) = true)
@@ -264,24 +264,24 @@ and (! x: (x or false) = x)
 [ split_tac ++ flatten_tac ++ equals_tac ++ blast_tac];;
 
 let disj_trivial =
-theorem ~simp:true "disj_trivial"
+rule "disj_trivial"
 (!% " !x : (x | x) = x ")
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let disj_conj_distrib=
-theorem ~simp:false "disj_conj_distrib"
+theorem "disj_conj_distrib"
 (!% " !x y z: (x or (y and z)) = ((x or y) and (x or z)) ")
 [ flatten_tac  ++ equals_tac ++ blast_tac ];;
 
 (** Implication *)
 
 let implies_trivial =
-theorem ~simp:true "implies_trivial"
+rule "implies_trivial"
 (!% " !x : (x => x) = true ")
 [flatten_tac ++equals_tac ++ blast_tac];;
 
 let implies_absorb =
-theorem ~simp:true "implies_absorb"
+rule "implies_absorb"
 (!% "
 (! x: (true => x) = x)
 and (!x: (x => true) = true)
@@ -293,7 +293,7 @@ and (!x: (x => false) = not x)
 (** Iff *)
 
 let iff_trivial =
-theorem ~simp:true "iff_trivial"
+rule "iff_trivial"
 (!% " !x : (x iff x) = true ")
 [flatten_tac ++equals_tac ++ blast_tac ];;
 
@@ -338,13 +338,13 @@ theorem "exists_and"
   [flatten_tac ++ split_tac ++ inst_tac [ (!% " _x") ] ++ basic];;
 
 let exists_absorb =
-theorem ~simp:true "exists_absorb"
+rule "exists_absorb"
   (!% " ((? x: true) = true) and ((? x: false) = false) ")
   [ split_tac ++ equals_tac ++ scatter_tac
     ++ inst_tac [ (!% " any ") ] ++ trivial];;
 
 let exists_simp =
-theorem ~simp:false "exists_simp"
+theorem "exists_simp"
 (!% " !P: (? x: P) = P ")
 [ flatten_tac ++ equals_tac ++ blast_tac
     ++ inst_tac [ (!% " any ") ] ++ basic ];;
@@ -364,7 +364,7 @@ theorem "forall_or"
 [flatten_tac ++ split_tac ++ inst_tac [ (!% " _x ") ] ++ basic];;
 
 let forall_absorb =
-theorem ~simp:true "forall_absorb"
+rule "forall_absorb"
 (!% " ((! x: true) = true) and ((! x: false) = false) ")
 [ split_tac ++ equals_tac ++ blast_tac
 ++ inst_tac [ (!% " any ") ] ++ trivial];;
@@ -382,7 +382,7 @@ theorem "eq_sym" (!% " !x y : (x = y) = (y = x) ")
    ++ scatter_tac ++ replace_tac [] ++ eq_tac];;
 
 let eq_fact =
-theorem "eq_fact" ~simp:true
+rule "eq_fact"
 (!% " ! x : (x = x) = true ")
 [ flatten_tac++ cut_back_tac [] true_l2 ++ eq_tac];;
 
@@ -397,7 +397,7 @@ theorem "eq_fact" ~simp:true
 (** Conditional *)
 
 let if_true=
-theorem ~simp:true "if_true"
+rule "if_true"
   (!% " ! t f: (if true then t else f) = t ")
 [
 flatten_tac ++ (unfold "IF")++ (cut_thm [] "epsilon_ax")
@@ -409,7 +409,7 @@ beta_tac ++ flatten_tac ++ implA -- [trivial; basic]
 ];;
 
 let if_false=
-theorem ~simp:true "if_false" (!% " ! t f: (if false then t else f) = f")
+rule "if_false" (!% " ! t f: (if false then t else f) = f")
 ([
 flatten_tac ++ (unfold "IF")++ (cut_thm [] "epsilon_ax")
 ++ (allA (!% " (%(z:'a): ((false => (z=_t)) and ((not false) => (z=_f)))) "))
@@ -423,7 +423,7 @@ beta_tac ++ flatten_tac
 ]);;
 
 let if_true1=
-theorem ~simp:true "if_true1"
+rule "if_true1"
 (!% " !x a b: x => ((if x then a else b) =a)")
   [
    flatten_tac
@@ -437,7 +437,7 @@ theorem ~simp:true "if_true1"
  ];;
 
 let if_false1=
-theorem ~simp:true "if_false1"
+rule "if_false1"
 (!% " !x a b: (not x)=> ((if x then a else b)=b) ")
   [
    scatter_tac
@@ -451,7 +451,7 @@ theorem ~simp:true "if_false1"
 
 
 let if_expand =
-theorem ~simp:false "if_expand"
+theorem "if_expand"
 (!% " ! x a b : (if x then a else b) = ((x and a) or (not x and b)) ")
 [
  flatten_tac
@@ -461,7 +461,7 @@ theorem ~simp:false "if_expand"
 ];;
 
 let if_id =
-theorem ~simp:true "if_id"
+rule "if_id"
 (!% " !x a: (if x then a else a) = a ")
 [
   flatten_tac
@@ -471,7 +471,7 @@ theorem ~simp:true "if_id"
 ];;
 
 let if_rand =
-theorem ~simp:false "if_rand"
+theorem "if_rand"
 (!% " !f x a b: (f (if x then a else b)) = (if x then f a else f b) ")
 [
   flatten_tac
@@ -481,7 +481,7 @@ theorem ~simp:false "if_rand"
 ];;
 
 let if_rator =
-theorem ~simp:false "if_rator"
+theorem "if_rator"
 (!% " !v x a b : ((if x then a else b) v) = (if x then a v else b v) ")
 [
   flatten_tac

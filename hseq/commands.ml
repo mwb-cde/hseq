@@ -49,22 +49,17 @@ let save_theory ctxt thy  =
 
 let load_theory_as_cur ctxt n =
   Context.Files.load_theory_as_cur ctxt n
-let read ?ctxt (x: string) =
-  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
-  catch_errors (Context.ppinfo pctxt) Context.PP.read pctxt x
-let read_unchecked ?ctxt x =
-  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
-  catch_errors (Context.ppinfo pctxt) Context.PP.read_unchecked pctxt x
-let read_defn ?ctxt x =
-  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
-  catch_errors (Context.ppinfo pctxt) Context.PP.read_defn pctxt x
+let read ctxt (x: string) =
+  catch_errors (Context.ppinfo ctxt) Context.PP.read ctxt x
+let read_unchecked ctxt x =
+  catch_errors (Context.ppinfo ctxt) Context.PP.read_unchecked ctxt x
+let read_defn ctxt x =
+  catch_errors (Context.ppinfo ctxt) Context.PP.read_defn ctxt x
 
-let read_type ?ctxt (x: string) =
-  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
-  catch_errors (Context.ppinfo pctxt) Context.PP.read_type pctxt x
-let read_type_defn ?ctxt x =
-  let pctxt = Lib.from_option ctxt (BoolPP.quote_context) in
-  catch_errors (Context.ppinfo pctxt) Context.PP.read_type_defn pctxt x
+let read_type ctxt (x: string) =
+  catch_errors (Context.ppinfo ctxt) Context.PP.read_type ctxt x
+let read_type_defn ctxt x =
+  catch_errors (Context.ppinfo ctxt) Context.PP.read_type_defn ctxt x
 
 (*
  * Theories
@@ -96,7 +91,7 @@ let begin_theory ctxt n parents =
     let thy = Theory.mk_thy n importing in
     Context.Files.make_current ctxt thy
 
-let end_theory ctxt ?(save=true) () =
+let end_theory ctxt save =
   if (curr_theory_name ctxt) = ""
   then raise (Report.error "At base theory")
   else
@@ -180,11 +175,12 @@ let add_symbol ctxt str sym =
 
 (*** Terms ***)
 
-let add_term_pp_rec ctxt id ?(pos=Lib.First) rcrd =
+let add_term_pp_rec ctxt id pos rcrd =
+  let ppos = Lib.from_option pos Lib.First in
   let ctxt1 =
     Context.set_thydb
       ctxt
-      (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, pos)
+      (Thydb.add_term_pp_rec (Ident.name_of id) (rcrd, ppos)
          (Context.thydb ctxt))
   in
   Context.PP.add_term_pp_record ctxt1 id rcrd
@@ -199,11 +195,12 @@ let remove_term_pp_rec ctxt id =
   let ctxt1 = Context.set_thydb ctxt db1 in
   Context.PP.remove_term_pp ctxt1 id
 
-let add_overload ctxt sym ?(pos=Lib.First) id =
+let add_overload ctxt sym pos id =
+  let ppos = Lib.from_option pos Lib.First in
   let ty =
     Thydb.get_id_type (Ident.thy_of id) (Ident.name_of id) (theories ctxt)
   in
-  Context.PP.add_overload ctxt sym pos (id, ty)
+  Context.PP.add_overload ctxt sym ppos (id, ty)
 
 let remove_overload ctxt sym id =
   Context.PP.remove_overload ctxt sym id
@@ -221,15 +218,15 @@ let get_type_pp id = get_type_pp_rec id
 
 (*** Terms ***)
 
-let add_term_pp ctxt id ?(pos=Lib.First) prec fx repr =
+let add_term_pp ctxt id prec fx repr =
   let rcrd = Printkit.mk_record prec fx repr
   in
-  let ctxt1 = add_term_pp_rec ctxt id ~pos:pos rcrd
+  let ctxt1 = add_term_pp_rec ctxt id None rcrd
   in
   begin
     match repr with
       | None -> ctxt1
-      | Some(sym) -> add_overload ctxt1 sym ~pos:pos id
+      | Some(sym) -> add_overload ctxt1 sym None id
   end
 
 let remove_term_pp ctxt id = remove_term_pp_rec ctxt id
@@ -256,10 +253,9 @@ let thm ctxt id =
   in
   Thydb.get_lemma t n thys
 
-let axiom sctxt ?(simp=false) n trm =
+let axiom sctxt n trm =
   let thm = Logic.mk_axiom (Formula.make (Context.scope_of sctxt) trm)
-  and props = if simp then [Theory.simp_property] else []
-  in
+  and props = [] in
   let nctxt =
   begin
     match Lib.try_find (Theory.get_theorem_rec n) (Context.current sctxt) with
@@ -275,7 +271,7 @@ let axiom sctxt ?(simp=false) n trm =
 let prove sctxt trm tac =
   Goals.prove_goal sctxt trm tac
 
-let save_thm ctxt ?(simp=false) n th =
+let save_thm ctxt simp n th =
   let props = if simp then [Theory.simp_property] else []
   in
   catch_errors (Context.ppinfo ctxt)
@@ -283,7 +279,7 @@ let save_thm ctxt ?(simp=false) n th =
       (Context.set_thydb ctxt (Thydb.add_thm n th props x), th))
     (Context.thydb ctxt)
 
-let prove_thm ctxt ?(simp=false) n t tacs =
+let prove_save_thm ctxt simp n t tacs =
   let prove_aux _ =
     let thm =
       try Goals.by_list ctxt t tacs
@@ -291,12 +287,13 @@ let prove_thm ctxt ?(simp=false) n t tacs =
         raise (Report.add_error
                  (Report.error ("Failed to prove theorem "^n)) err)
     in
-    let (cntxt1, _) = save_thm ctxt ~simp:simp n thm in
+    let (cntxt1, _) = save_thm ctxt simp n thm in
     (cntxt1, thm)
   in
   catch_errors (Context.ppinfo ctxt) prove_aux ()
 
-let theorem = prove_thm
+let theorem ctxt = prove_save_thm ctxt false
+let rule ctxt = prove_save_thm ctxt true
 let lemma = theorem
 
 let qed ctxt pstk n =
@@ -322,6 +319,50 @@ let get_or_prove ctxt name trm tac =
 (*
  * Definitions and Declarations
  *)
+
+module Option =
+struct
+
+  type t =
+    | Symbol of (int * fixity * (string)option) (** The symbol to use *)
+    | Simp of bool (** Whether to use as a simplifier rule *)
+    | Repr of string  (** The name of a representation function *)
+    | Abs of string  (** The name of an abstraction function *)
+    | Thm of Logic.thm (** A theorem *)
+
+  type record =
+    {
+      symbol: (int * fixity * (string)option)option;
+      simp: (bool)option;
+      repr: (string)option;
+      abs: (string)option;
+      thm: (Logic.thm)option;
+    }
+
+  let default =
+    {
+      symbol = None;
+      simp = None;
+      repr = None;
+      abs = None;
+      thm = None;
+    }
+
+  let set rcrd opt =
+    match opt with
+    | Symbol(p, f, n) -> { rcrd with symbol = Some(p, f, n) }
+    | Simp(f) -> { rcrd with simp = Some(f) }
+    | Repr(s) -> { rcrd with repr = Some(s) }
+    | Abs(s) -> { rcrd with abs = Some(s) }
+    | Thm(t) -> { rcrd with thm = Some(t) }
+
+  let rec update rcrd opts =
+    match opts with
+    | (x::xs) -> update (set rcrd x) xs
+    | _ -> rcrd
+
+  let interpret opts = update default opts
+end
 
 (*** Type declarations and definitions ***)
 
@@ -360,9 +401,9 @@ let subtypedef ctxt (name, args, dtype, set) (rep, abs) ?(simp=true) thm =
   and abs_type_inverse = tyrec.Logic.Defns.abs_type_inverse
   and ati_name = abs_name^"_inverse"
   in
-  let (ctxt2, _) = save_thm ctxt1 ~simp:simp rt_name rep_type in
-  let (ctxt3, _) = save_thm ctxt2 ~simp:simp rti_name rep_type_inverse in
-  let (ctxt4, _) = save_thm ctxt3 ~simp:simp ati_name abs_type_inverse in
+  let (ctxt2, _) = save_thm ctxt1 simp rt_name rep_type in
+  let (ctxt3, _) = save_thm ctxt2 simp rti_name rep_type_inverse in
+  let (ctxt4, _) = save_thm ctxt3 simp ati_name abs_type_inverse in
   (ctxt4, tydef)
 
 (*** Simple type definitions ***)
@@ -380,7 +421,15 @@ let simple_typedef ctxt (n, args, def) =
   (ctxt1, tydef)
 
 (*** Toplevel type definitions and declarations ***)
-let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef =
+(*let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef = *)
+let typedef sctxt opts tydef =
+  let options = Option.interpret opts in
+  let pp = options.symbol
+  and simp = options.simp
+  and rep = options.repr
+  and abs = options.abs
+  and thm = options.thm
+  in
   let (name, (sctxt1, ret_def)) =
     match tydef with
       | Defn.Parser.NewType (n, args) ->
@@ -399,14 +448,14 @@ let typedef sctxt ?pp ?simp ?thm ?rep ?abs tydef =
         (n, (ctxt1, def))
   in
   let sctxt2 =
+    if (pp == None) then sctxt1
+    else
     begin
-      match pp with
-        | None -> sctxt1
-        | Some(prec, fx, repr) ->
-          let lname =
-            Ident.mk_long (Theory.get_name (Context.current sctxt1)) name
-          in
-          add_type_pp sctxt1 lname prec fx repr
+      let (prec, fx, repr) = Lib.from_some pp in
+      let lname =
+        Ident.mk_long (Theory.get_name (Context.current sctxt1)) name
+      in
+      add_type_pp sctxt1 lname prec fx repr
     end
   in
   (sctxt2, ret_def)

@@ -1,6 +1,6 @@
 (**----
    Name: userlib.mli
-   Copyright Matthew Wahab 2005-2018
+   Copyright Matthew Wahab 2005-2019
    Author: Matthew Wahab <mwb.cde@gmail.com>
 
    This file is part of HSeq
@@ -88,7 +88,7 @@ end
     well as useful functions.
 
     UserLib is needed to allow simplification rules to be added by
-    commands such as prove_thm.
+    commands such as prove_rule.
 
     Most commands here simply call the necessary function in a
     different module.
@@ -157,10 +157,8 @@ val add_symbol: string -> string -> unit
 (** [add_symbol sym tok]: Add symbol [sym] to produce lexical token [tok] *)
 
 val add_term_pp:
-  string
-  -> ?pos:Parser.sym_pos
-  -> int -> fixity -> string option -> unit
-(** [add_term_pp id ?pos prec fixity sym]: Add printer-parser
+  string -> int -> fixity -> string option -> unit
+(** [add_term_pp id prec fixity sym]: Add printer-parser
     information for term identifier [id]. Parser/print term identifier
     [id] as [sym] with precedent [prec] and fixity [fixity].
 *)
@@ -293,13 +291,17 @@ val remove_file: string -> unit
 
 (** {7 Type declaration and definition} *)
 
+(** Options for definitions and declarations. Mirror those in
+   Commands.Option *)
+
+val opt_symbol: (int * fixity * (string)option) -> Commands.Option.t
+val opt_simp: bool -> Commands.Option.t
+val opt_repr: string -> Commands.Option.t
+val opt_abs: string -> Commands.Option.t
+val opt_thm: Logic.thm -> Commands.Option.t
+
 val typedef:
-  ?pp:(int*fixity*string option)
-  -> ?simp:bool
-  -> ?thm:Logic.thm
-  -> ?rep:string -> ?abs:string
-  -> Defn.Parser.typedef
-  -> Logic.Defns.cdefn
+  (Commands.Option.t)list -> Defn.Parser.typedef -> Logic.Defns.cdefn
 (** Define or declare a type. The exact behaviour of [typedef] depends
     on the form of its argument and is either a declaration, a alias
     definition or a subtype definition. In all cases, the PP
@@ -397,7 +399,7 @@ val declare:
 
 (** {7 Axioms and theorems} *)
 
-val axiom: ?simp:bool -> string -> Term.term -> Logic.thm
+val axiom: string -> Term.term -> Logic.thm
 (** [axiom ?simp n thm]: Assert [thm] as an axiom and add it to the
     current theory under the name [n].
 
@@ -407,31 +409,34 @@ val axiom: ?simp:bool -> string -> Term.term -> Logic.thm
     Returns the new axiom.
 *)
 
-val save_thm: ?simp:bool -> string ->  Logic.thm ->  Logic.thm
+val save_thm: bool -> string ->  Logic.thm ->  Logic.thm
 (** Store a theorem under the given name in the current theory. *)
 
-val prove_thm:
-  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
-(** [prove_thm n trm tacs]: Prove theorem [trm] using the list of
-    tactics [tacs] and add it to the current theory under name [n].
+(*
+val prove_thm: string -> Term.term -> Tactics.tactic list -> Logic.thm
+val prove_rule: string -> Term.term -> Tactics.tactic list -> Logic.thm
+ *)
+(** [prove_thm simp n trm tacs]: Prove theorem [trm] using the list of
+   tactics [tacs] and add it to the current theory under name [n].
+
+    [[prove_rule simp n trm tacs]: Like [prove_thm] but also use the theorem
+   as a simplifier rule.
 
     The list of tactics is treated as an unstructured proof, using
-    {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to
-    prove a theorem using a structured proof.
-
-    [?simp]: whether to use the theorem as a simplifier rule (default:
-    false).
+   {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to prove a
+   theorem using a structured proof.
 
     Returns the new theorem.
 
-    @deprecated Use [theorem] or [lemma].
-*)
+    @deprecated Use [theorem] or [lemma].  *)
 
-val theorem:
-  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
+val theorem: string -> Term.term -> Tactics.tactic list -> Logic.thm
+val rule: string -> Term.term -> Tactics.tactic list -> Logic.thm
 (** [theorem n trm tacs]: Prove theorem [trm] using the list of
     tactics [tacs] and add it to the current theory under name [n].
 
+    [rule n trm tacs]: Like [theorem] but also use as a simplifier rule.
+
     The list of tactics is treated as an unstructured proof, using
     {!Goals.by_list} to prove the theorem. Use {!Commands.prove} to
     prove a theorem using a structured proof.
@@ -440,14 +445,10 @@ val theorem:
     false).
 
     Returns the new theorem.
-
-    A synonym for {!Commands.prove_thm}.
 *)
 
-val lemma:
-  ?simp:bool -> string -> Term.term -> Tactics.tactic list -> Logic.thm
+val lemma: string -> Term.term -> Tactics.tactic list -> Logic.thm
 (** A synonym for {!Userlib.theorem}. *)
-
 
 (** {5 Information access} *)
 

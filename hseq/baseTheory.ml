@@ -33,11 +33,11 @@ let context() = BoolPP.basethy_context()
 (*** A minimal base theory ***)
 
 let swap f = (fun x y -> f y x)
-let read ctxt x = Commands.read ~ctxt:ctxt x
-let read_type ctxt x = Commands.read_type ~ctxt:ctxt x
+let read ctxt x = Commands.read ctxt x
+let read_type ctxt x = Commands.read_type ctxt x
 
-let read_defn ctxt x = Commands.read_defn ~ctxt:ctxt x
-let read_type_defn ctxt x = Commands.read_type_defn ~ctxt:ctxt x
+let read_defn ctxt x = Commands.read_defn ctxt x
+let read_type_defn ctxt x = Commands.read_type_defn ctxt x
 
 let name_of = Ident.name_of
 
@@ -51,11 +51,11 @@ let builder save ctxt =
     in
     (** Types *)
     let (ctxt2, _) =
-      typedef ctxt1 (read_type_defn ctxt1 "('a, 'b)FUN")
-        ~pp:(100, infixr, Some("->"))
+      typedef ctxt1 [Option.Symbol(100, infixr, Some("->"))]
+        (read_type_defn ctxt1 "('a, 'b)FUN")
     in
-    let (ctxt3, _) = typedef ctxt2 (read_type_defn ctxt2 "bool") in
-    let (ctxt4, _) = typedef ctxt3 (read_type_defn ctxt3 "ind")  in
+    let (ctxt3, _) = typedef ctxt2 [] (read_type_defn ctxt2 "bool") in
+    let (ctxt4, _) = typedef ctxt3 [] (read_type_defn ctxt3 "ind")  in
 
     (** Terms *)
     let (ctxt5, _, _) =
@@ -76,7 +76,7 @@ let builder save ctxt =
     (** Equality *)
     let (ctxt7, _, _) =
       declare ctxt6
-        (Commands.read ~ctxt:ctxt6
+        (Commands.read ctxt6
            ((name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
         ~pp:(200, infixl, (Some "="))
     in
@@ -181,7 +181,7 @@ let builder save ctxt =
            ("EXISTS_UNIQUE p "
             ^"= (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))"))
     in
-    let ctxt26 = end_theory ctxt25 ~save:save ()
+    let ctxt26 = end_theory ctxt25 save
     in
     ctxt26
 

@@ -44,7 +44,7 @@ let is_pair_def =
   define (?<% " is_pair p = (?x y: p = (mk_pair x y)) ");;
 
 let pair_exists =
-  prove_thm
+  theorem
     "pair_exists" (!% " ? p: is_pair p ")
     [
       unfold "is_pair";
@@ -53,7 +53,7 @@ let pair_exists =
     ];;
 
 let mk_pair_is_pair =
-  prove_thm
+  theorem
     "mk_pair_is_pair" (!% " !x y : is_pair (mk_pair x y) ")
     [
       flatten_tac; unfold "is_pair" ;
@@ -62,9 +62,10 @@ let mk_pair_is_pair =
     ];;
 
 let pair_tydef =
-  typedef ~pp:(pair_prec, infixr, Some("*"))
-          ~thm:pair_exists
-          ~rep:"dest_PAIR" ~abs:"make_PAIR"
+  typedef [opt_symbol (pair_prec, infixr, Some("*"));
+           opt_thm pair_exists;
+           opt_repr "dest_PAIR";
+           opt_abs "make_PAIR"]
           (?<: "('a, 'b)PAIR = ('a -> 'b -> bool): is_pair ");;
 
 let pair_def =
@@ -81,7 +82,7 @@ let snd_def =
     (?<% " snd p = epsilon(% y: ?x: p = (pair x y)) ");;
 
 let mk_pair_eq =
-  prove_thm
+  theorem
     "mk_pair_eq"
     (!% "! a b x y:
          ((mk_pair a b) = (mk_pair x y))
@@ -105,7 +106,7 @@ let mk_pair_eq =
     ];;
 
 let rep_abs_pair=
-  prove_thm
+  theorem
     "rep_abs_pair"
     (!% " !x y: (dest_PAIR(make_PAIR (mk_pair x y))) = (mk_pair x y) ")
     [
@@ -117,7 +118,7 @@ let rep_abs_pair=
     ];;
 
 let pair_thm =
-  prove_thm
+  theorem
     "pair_thm"
     (!% " ! x y: (dest_PAIR (pair x y)) = (mk_pair x y) ")
     [
@@ -129,7 +130,7 @@ let pair_thm =
 
 
 let inj_on_make_PAIR =
-  prove_thm
+  theorem
     "inj_on_make_PAIR"
     (!% " inj_on make_PAIR is_pair ")
     [
@@ -144,7 +145,7 @@ let inj_on_make_PAIR =
 (** {5 Properties} *)
 
 let basic_pair_eq =
-  prove_thm
+  theorem
     "basic_pair_eq"
     (!% "! a b x y: ((pair a b) = (pair x y)) = ((a = x) and (b = y))")
     [
@@ -173,8 +174,8 @@ let basic_pair_eq =
 
 
 let fst_thm =
-  prove_thm
-    "fst_thm" ~simp:true
+  rule
+    "fst_thm"
     (!% " ! x y: (fst (pair x y)) = x ")
     [
       flatten_tac ++ unfold "fst"
@@ -194,8 +195,8 @@ let fst_thm =
     ];;
 
 let snd_thm =
-  prove_thm
-    "snd_thm" ~simp:true
+  rule
+    "snd_thm"
     (!% " ! x y: (snd (pair x y)) = y ")
     [
       flatten_tac ++ unfold "snd"
@@ -215,7 +216,7 @@ let snd_thm =
     ];;
 
 let pair_inj =
-  prove_thm
+  theorem
     "pair_inj"
     (!% " ! p: ?x y: p = (pair x y) ")
     [
@@ -233,7 +234,7 @@ let pair_inj =
     ];;
 
 let pair_cases =
-  save_thm "PAIR_cases" pair_inj
+  save_thm false "PAIR_cases" pair_inj
 
 let pair_induct =
   theorem "PAIR_induct"
@@ -247,8 +248,8 @@ let pair_induct =
     ]
 
 let surjective_pairing =
-  prove_thm
-    "surjective_pairing" ~simp:true
+  rule
+    "surjective_pairing"
     (!% " !p: (pair (fst p) (snd p)) = p ")
     [
       flatten_tac
@@ -260,7 +261,7 @@ let surjective_pairing =
     ];;
 
 let pair_eq =
-  prove_thm
+  theorem
     "pair_eq"
     (!% "! p q : (p = q) = (((fst p) = (fst q)) and ((snd p) = (snd q)))")
     [

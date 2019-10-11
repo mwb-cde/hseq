@@ -63,9 +63,10 @@ let sum_exists =
 
 let sum_tydef =
   typedef
-    ~pp:(sum_prec, infixr, Some("+"))
-    ~thm:sum_exists
-    ~rep:"dest_SUM" ~abs:"make_SUM"
+    [opt_symbol (sum_prec, infixr, Some("+"));
+     opt_thm sum_exists;
+     opt_repr "dest_SUM";
+     opt_abs "make_SUM"]
     (?<: "('a, 'b)SUM = (bool -> 'a -> 'b -> bool): is_sum");;
 
 let mk_suml_is_sum =

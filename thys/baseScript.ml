@@ -33,9 +33,9 @@ begin_theory "base" [];;
    Default precedence=10, assoc = non_assoc, fixity=non_fix
 *)
 
-let _ = typedef <:def<: ('a, 'b)FUN >> ~pp:(100, infixr, Some("->"));;
-let _ = typedef <:def<: bool >> ;;
-let _ = typedef <:def<: ind >>;;
+let _ = typedef [] <:def<: ('a, 'b)FUN >> ~pp:(100, infixr, Some("->"));;
+let _ = typedef [] <:def<: bool >> ;;
+let _ = typedef [] <:def<: ind >>;;
 
 (** Terms *)
 

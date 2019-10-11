@@ -37,7 +37,7 @@ let _ = add_file ~use:true "setLib.cmo";;
 * Main Definitions
 ***)
 
-let set_typedef = typedef (?<: "('a) set = ('a -> bool)");;
+let set_typedef = typedef [] (?<: "('a) set = ('a -> bool)");;
 
 let set_def =
   define (?<% " SET (A:('a)set) = (A:('a)set) ");;
@@ -129,7 +129,7 @@ let finite_induct =
 
 
 let finite_rules =
-  theorem ~simp:false "finite_rules"
+  theorem "finite_rules"
   (!% "
     (finite empty)
   & (!x A: (~(x in A) & (finite A)) => (finite (add x A)))
@@ -148,7 +148,7 @@ let finite_rules =
 ***)
 
 let set_simp=
-  prove_thm ~simp:true "set_simp"
+  rule "set_simp"
   (!% " !x A: ((SET A) x) = (A x) ")
   [
     flatten_tac
@@ -157,7 +157,7 @@ let set_simp=
   ];;
 
 let in_simp =
-  prove_thm ~simp:true "in_simp"
+  rule "in_simp"
   (!% " !x A: (x in (SET(A)))  = (A x) ")
   [
     flatten_tac ++ unfold "in" ++ unfold "SET"
@@ -165,7 +165,7 @@ let in_simp =
   ];;
 
 let set_equal =
-  prove_thm "set_equal"
+  theorem "set_equal"
   (!% " ! A B: (A = B) = (!x: (x in A) = (x in B)) ")
   [
     flatten_tac ++ equals_tac ++ scatter_tac
@@ -204,7 +204,7 @@ let remove_thm =
   [ flatten_tac ++ simp [ defn "remove" ] ];;
 
 let neg_thm =
-  theorem ~simp:true "neg_thm"
+  rule "neg_thm"
     (!% " ! x A: (x in (neg A)) = ~(x in A) ")
   [ simp [defn "neg"] ];;
 
@@ -234,7 +234,7 @@ let psubset_thm =
 ***)
 
 let not_in_empty =
-  prove_thm ~simp:true "not_in_empty"
+  rule "not_in_empty"
   (!% " !x: not (x in {}) ")
     [
       unfold "empty"
@@ -243,17 +243,17 @@ let not_in_empty =
     ];;
 
 let in_univ=
-  prove_thm ~simp:true "in_univ"
+  rule "in_univ"
   (!% " !x: (x in univ) ")
     [ simp [defn "univ"] ];;
 
 let in_single =
-  prove_thm ~simp:true "in_single"
+  rule "in_single"
   (!% " !x a: (x in (single a)) = (x = a) ")
   [ simp [defn "single" ] ];;
 
 let in_add =
-  prove_thm ~simp:true "in_add"
+  rule "in_add"
   (!% "
     (!x a S: (x = a) => (x in (add a S)))
     &
@@ -275,7 +275,7 @@ let in_add =
   ]
 
 let in_remove=
-  theorem ~simp:true "in_remove"
+  rule "in_remove"
   (!% "
     (!x  A: ~(x in (remove x A)))
   & (!x y A: ~(x=y) => ((x in (remove y A)) = (x in A)))
@@ -288,7 +288,7 @@ let in_remove=
 (*** Properties of Add *)
 
 let add_member =
-  prove_thm ~simp:true "add_member"
+  rule "add_member"
   (!% " !x A: (x in A) => ((add x A) = A) ")
   [
     flatten_tac
@@ -298,7 +298,7 @@ let add_member =
   ];;
 
 let add_remove =
-  theorem ~simp:true "add_remove"
+  rule "add_remove"
     (!% " !x A: (add x (remove x A)) = (add x A) ")
   [
     simp [set_equal]
@@ -310,7 +310,7 @@ let add_remove =
 (** Properties of Remove *)
 
 let remove_member =
-  theorem ~simp:true "remove_member"
+  rule "remove_member"
     (!% " ! x A: ~(x in A) => ((remove x A) = A) ")
   [
     simp [set_equal] ++ simp [remove_thm]
@@ -320,7 +320,7 @@ let remove_member =
   ]
 
 let remove_add =
-  theorem ~simp:true "remove_add"
+  rule "remove_add"
     (!% " !x A: (remove x (add x A)) = (remove x A) ")
   [
     simp [set_equal] ++ simp [add_thm; remove_thm]
@@ -330,17 +330,17 @@ let remove_add =
 (** Properties of neg *)
 
 let neg_univ =
-  theorem ~simp:true "neg_univ"
+  rule "neg_univ"
     (!% " (neg univ) = empty ")
   [ once_rewrite_tac [thm "set_equal"] ++ simp [] ];;
 
 let neg_empty =
-  theorem ~simp:true "neg_empty"
+  rule "neg_empty"
     (!% " (neg empty) = univ ")
   [ once_rewrite_tac [thm "set_equal"] ++ simp [] ];;
 
 let neg_union =
-  theorem ~simp:true "neg_union"
+  rule "neg_union"
     (!% " ! A B : (neg (union A B)) = (inter (neg A) (neg B)) ")
   [
     once_rewrite_tac [thm "set_equal"]
@@ -348,7 +348,7 @@ let neg_union =
   ];;
 
 let neg_inter =
-  theorem ~simp:true "neg_inter"
+  rule "neg_inter"
     (!% " ! A B : (neg (inter A B)) = (union (neg A) (neg B)) ")
   [
     once_rewrite_tac [thm "set_equal"]
@@ -359,7 +359,7 @@ let neg_inter =
 (** Union **)
 
 let union_assoc =
-    theorem ~simp:true "union_assoc"
+    rule "union_assoc"
       (!% " ! A B C: (union A (union B C)) = (union (union A B) C) ")
   [
     simp [set_equal; union_thm]
@@ -367,7 +367,7 @@ let union_assoc =
   ];;
 
 let union_comm =
-  theorem ~simp:true "union_comm"
+  rule "union_comm"
     (!% " ! A B: (union A B) = (union B A) ")
   [
     simp [set_equal; union_thm]
@@ -375,7 +375,7 @@ let union_comm =
   ];;
 
 let union_lcomm =
-  theorem ~simp:true "union_lcomm"
+  rule "union_lcomm"
     (!% " ! A B C: (union A (union B C)) = (union B (union A C)) ")
   [
     simp [set_equal; union_thm]
@@ -383,7 +383,7 @@ let union_lcomm =
   ];;
 
 let union_trivial =
-  theorem ~simp:true "union_trivial"
+  rule "union_trivial"
     (!% " ! A: (union A A) = A ")
   [
     simp [set_equal; union_thm]
@@ -391,7 +391,7 @@ let union_trivial =
   ];;
 
 let union_absorb =
-  theorem ~simp:true "union_absorb"
+  rule "union_absorb"
     (!% "
     (! A: (union A empty) = A)
     & (! A: (union empty A) = A)
@@ -422,7 +422,7 @@ let union_add_right =
 (** Intersection *)
 
 let inter_assoc =
-  theorem ~simp:true "inter_assoc"
+  rule "inter_assoc"
   (!% " ! A B C: (inter A (inter B C)) = (inter (inter A B) C) ")
   [
     simp [set_equal; inter_thm]
@@ -430,7 +430,7 @@ let inter_assoc =
   ];;
 
 let inter_comm =
-  theorem ~simp:true "inter_comm"
+  rule "inter_comm"
     (!% " ! A B: (inter A B) = (inter B A) ")
   [
     simp [set_equal; inter_thm]
@@ -438,7 +438,7 @@ let inter_comm =
   ];;
 
 let inter_lcomm =
-  theorem ~simp:true "inter_lcomm"
+  rule "inter_lcomm"
     (!% " ! A B C: (inter A (inter B C)) = (inter B (inter A C)) ")
   [
     simp [set_equal; inter_thm]
@@ -446,7 +446,7 @@ let inter_lcomm =
   ];;
 
 let inter_absorb =
-  theorem ~simp:true "inter_absorb"
+  rule "inter_absorb"
     (!% "
     (! A: (inter A empty) = empty)
   & (! A: (inter empty A) = empty)
@@ -480,12 +480,12 @@ let subset_cases =
   ]
 
 let subset_trival =
-  theorem ~simp:true "subset_trivial"
+  rule "subset_trivial"
   (!% " ! A: (A <= A) = true ")
   [ unfold "subset" ++ flatten_tac ++ equals_tac ++ blast_tac ];;
 
 let subset_absorb =
-theorem ~simp:true "subset_absorb"
+rule "subset_absorb"
   (!% "
   (! A: (empty <= A) = true)
   & (! A: (A <= univ) = true)
@@ -493,7 +493,7 @@ theorem ~simp:true "subset_absorb"
   [unfold "subset" ++ split_tac ++ simp [] ++ equals_tac ++ blast_tac];;
 
 let subset_refl =
-  theorem ~simp:true "subset_refl"
+  rule "subset_refl"
   (!% " ! A : A <= A ")
     [ unfold "subset" ++ flatten_tac ++ basic]
 
@@ -517,7 +517,7 @@ let subset_antisym =
   ]
 
 let subset_empty =
-  theorem ~simp:true "subset_empty"
+  rule "subset_empty"
     (!% " ! A: (A <= {}) = (A = {}) ")
   [
     flatten_tac ++ equals_tac ++ iffC
@@ -535,7 +535,7 @@ let subset_empty =
   ]
 
 let subset_add =
-  theorem "subset_add" ~simp:true
+  rule "subset_add"
   (!% " ! x S T: ~(x in S) => ((S <= (add x T)) = (S <= T)) ")
   [
     flatten_tac
@@ -583,7 +583,7 @@ let subset_add_remove =
   ]
 
 let subset_remove =
-  theorem "subset_remove" ~simp:true
+  rule "subset_remove"
     (!% " ! x S: (remove x S) <= S ")
     [
       unfold "subset" ++ scatter_tac
@@ -591,7 +591,7 @@ let subset_remove =
     ]
 
 let subset_inter =
-  theorem "subset_inter" ~simp:true
+  rule "subset_inter"
     (!% "
     (! A B : (inter A B) <= A)
     & (! A B : (inter A B) <= B)
@@ -631,7 +631,7 @@ let psubset_cases =
   ]
 
 let psubset_empty =
-  theorem "psubset_empty" ~simp:true
+  rule "psubset_empty"
     (!% " ! A : ~(A < {}) ")
     [
       simp [psubset_thm]
@@ -648,7 +648,7 @@ let psubset_subset =
   ]
 
 let psubset_irrefl =
-  theorem "psubset_irrefl" ~simp:true
+  rule "psubset_irrefl"
     (!% " ! A : ~(A < A) ")
     [
       simp [defn "psubset"]
@@ -673,7 +673,7 @@ let psubset_trans =
 
 
 let psubset_remove =
-  theorem "psubset_remove" ~simp:true
+  rule "psubset_remove"
     (!% " !x A: (x in A) => ((remove x A) < A) ")
   [
     simp [defn "psubset"]
@@ -687,7 +687,7 @@ let psubset_remove =
   ]
 
 let psubset_add =
-  theorem "psubset_add" ~simp:true
+  rule "psubset_add"
     (!% " !x A: ~(x in A) => (A < (add x A)) ")
   [
     simp [defn "psubset"]
@@ -726,12 +726,12 @@ let psubset_member =
 (** Finite *)
 
 let finite_empty =
-  theorem ~simp:true "finite_empty"
+  rule "finite_empty"
   (!% " (finite {}) ")
     [simp [finite_rules]]
 
 let finite_add =
-  theorem ~simp:true "finite_add"
+  rule "finite_add"
   (!% " !x A: (finite A) => (finite (add x A)) ")
   [
     flatten_tac;
@@ -767,7 +767,7 @@ let finite_union0 =
       ])
 
 let finite_union =
-  theorem ~simp:true "finite_union"
+  rule "finite_union"
   (!% " ! A B : ((finite A) & (finite B)) => (finite (union A B)) ")
   [
     flatten_tac;
@@ -828,7 +828,7 @@ let finite_psubset_back =
   ]
 
 let finite_inter =
-  theorem "finite_inter" ~simp:true
+  rule "finite_inter"
     (!% " ! A B: ((finite A) | (finite B)) => (finite (inter A B)) ")
   [
     scatter_tac
