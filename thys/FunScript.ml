@@ -1,6 +1,6 @@
 (*----
   Name: FunScript.ml
-  Copyright Matthew Wahab 2005-2017
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -43,8 +43,8 @@ let function_eq =
 (** {5 Composition} *)
 
 let compose_def =
-  define (?<% " compose f g = (%x : f (g x)) ")
-  ~pp:(275, infixl, Some "++")
+  define [opt_symbol(275, infixl, Some "++")]
+    (?<% " compose f g = (%x : f (g x)) ")
 
 let compose_thm =
 rule "compose_thm"
@@ -70,22 +70,22 @@ rule "compose_abs_r"
 (** {7 Definitions} *)
 
 let combinK_def =
-define (?<% " cK = (% x y : x) ");;
+define [] (?<% " cK = (% x y : x) ");;
 
 let combinS_def =
-define (?<% " cS = (% f g x : f x (g x)) ");;
+define [] (?<% " cS = (% f g x : f x (g x)) ");;
 
 let combinI_def =
-define (?<% " cI = (cS cK cK) ");;
+define [] (?<% " cI = (cS cK cK) ");;
 
 let combinC_def =
-define (?<% " cC = % f x y: f y x ");;
+define [] (?<% " cC = % f x y: f y x ");;
 
 let combinW_def =
-define (?<% " cW = % f x : f x x ");;
+define [] (?<% " cW = % f x : f x x ");;
 
 let fail_def =
-define (?<% " fail = % x y: x ");;
+define [] (?<% " fail = % x y: x ");;
 
 (** {7 Theorems} *)
 
@@ -160,21 +160,21 @@ rule "fail_thm"
 (** {7 Definitions} *)
 
 let id_def =
-  define (?<% " id = % x : x ");;
+  define [] (?<% " id = % x : x ");;
 
 let domain_def =
-  define (?<% " domain f = %x: ?y: y = (f x) ");;
+  define [] (?<% " domain f = %x: ?y: y = (f x) ");;
 
 let range_def =
-  define (?<% " range f = %x: ?y: x = (f y) ");;
+  define [] (?<% " range f = %x: ?y: x = (f y) ");;
 
 (** [surj f]: [f] is surjective *)
 let surj_def =
-  define (?<% " surj f = !y: ?x: y = (f x) ");;
+  define [] (?<% " surj f = !y: ?x: y = (f x) ");;
 
 (** [inj f]: [f] is surjective *)
 let inj_def =
-  define (?<% " inj f = ! x y: ((f x) = (f y)) => (x = y) ");;
+  define [] (?<% " inj f = ! x y: ((f x) = (f y)) => (x = y) ");;
 
 (**
    [inj_on f A]: Function [f] is injective on values [x] for which
@@ -183,18 +183,18 @@ let inj_def =
    (Note that [inj_on f A] is equivalent to [one_one f (%x: true)].)
 *)
 let inj_on =
-  define
+  define []
     (?<%
        "inj_on f A
         = !x y: ((A x) and (A y)) => (((f x) = (f y)) => (x=y))");;
 
 (** [bij f]: [f] is bijective *)
 let bij_def =
-  define (?<% " bij f = (inj f) & (surj f) ");;
+  define [] (?<% " bij f = (inj f) & (surj f) ");;
 
 (** [invf f g]: [g] is an inverse of function [f]. *)
 let invf_def =
-  define (?<% "invf f g = ! x: ((g (f x)) = x) ");;
+  define [] (?<% "invf f g = ! x: ((g (f x)) = x) ");;
 
 (** {7 Theorems} *)
 

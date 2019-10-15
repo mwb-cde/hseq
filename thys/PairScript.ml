@@ -38,10 +38,10 @@ let pair_fixity = Printkit.infixr
 (** {5 Definition and basic properties of pairs} *)
 
 let mk_pair_def =
-  define (?<% " mk_pair x y = (%a b: (a=x) and (b=y)) ");;
+  define [] (?<% " mk_pair x y = (%a b: (a=x) and (b=y)) ");;
 
 let is_pair_def =
-  define (?<% " is_pair p = (?x y: p = (mk_pair x y)) ");;
+  define [] (?<% " is_pair p = (?x y: p = (mk_pair x y)) ");;
 
 let pair_exists =
   theorem
@@ -69,16 +69,15 @@ let pair_tydef =
           (?<: "('a, 'b)PAIR = ('a -> 'b -> bool): is_pair ");;
 
 let pair_def =
-  define
-    ~pp:(pair_prec, pair_fixity, Some(","))
+  define [opt_symbol(pair_prec, pair_fixity, Some(","))]
     (?<% " pair x y = make_PAIR (mk_pair x y) ") ;;
 
 let fst_def =
-  define
+  define []
     (?<% " fst p = (epsilon(% x: ?y: p = (pair x y))) ");;
 
 let snd_def =
-  define
+  define []
     (?<% " snd p = epsilon(% y: ?x: p = (pair x y)) ");;
 
 let mk_pair_eq =

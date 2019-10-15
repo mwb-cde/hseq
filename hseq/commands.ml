@@ -493,7 +493,11 @@ let dest_defn_term trm =
 
 (*** Term definitions ***)
 
-let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
+let define ctxt opts (((name, nty), args), rhs) =
+  let options = Option.interpret opts in
+  let pp = options.symbol
+  and simp = Lib.from_option options.simp false
+  in
   let scp = scope_of ctxt in
   let new_def =
     let curr_thy_name =
@@ -520,7 +524,10 @@ let define ctxt ?pp ?(simp=false) (((name, nty), args), rhs) =
 
 (*** Term declarations ***)
 
-let declare ctxt ?pp trm =
+let declare ctxt opts trm =
+  let options = Option.interpret opts in
+  let pp = options.symbol
+  in
   let (ctxt2, val_name, val_type) =
     let declare_aux () =
       let (v, ty) =

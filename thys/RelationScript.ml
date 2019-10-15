@@ -28,45 +28,45 @@ let _ = begin_theory "Relation" ["Bool"]
 (** {5 Definitions} *)
 
 let empty =
-  define (?<% " empty x y = false ");;
+  define [] (?<% " empty x y = false ");;
 
 let inv_def =
-  define (?<% " inv R x y = R y x ");;
+  define [] (?<% " inv R x y = R y x ");;
 
 let refl_def =
-  define (?<% " refl R = ! x: R x x ");;
+  define [] (?<% " refl R = ! x: R x x ");;
 
 let sym_def =
-  define (?<% " sym R = ! x y: (R x y) => (R y x) ");;
+  define [] (?<% " sym R = ! x y: (R x y) => (R y x) ");;
 
 let trans_def =
-  define (?<% " trans R = ! x y z: ((R x y) & (R y z)) => (R x z) ");;
+  define [] (?<% " trans R = ! x y z: ((R x y) & (R y z)) => (R x z) ");;
 
 let antisym_def =
-  define (?<% " antisym R = ! x y: ((R x y) & (R y x)) => (x = y) ");;
+  define [] (?<% " antisym R = ! x y: ((R x y) & (R y x)) => (x = y) ");;
 
 let equiv_rel_def =
-  define (?<% " equiv_rel R = (refl R) & (sym R) & (trans R) ");;
+  define [] (?<% " equiv_rel R = (refl R) & (sym R) & (trans R) ");;
 
 let partial_order_def =
-  define (?<% " partial_order R = (refl R) & (trans R) & (antisym R) ");;
+  define [] (?<% " partial_order R = (refl R) & (trans R) & (antisym R) ");;
 
 let total_order_def =
-  define
+  define []
     (?<% "total_order R = (partial_order R) & (! x y: (R x y) | (R y x))");;
 
 let refl_closure_def =
-  define (?<% " RC R x y = ((x = y) | (R x y)) ");;
+  define [] (?<% " RC R x y = ((x = y) | (R x y)) ");;
 
 let refl_trans_closure_def =
-  define
+  define []
     (?<% "RTC R a b =
           !P: ((! x: (P x x))
           & (! x y z: ((R x y) & (P y z)) => (P x z)))
           => (P a b)");;
 
 let trans_closure_def =
-  define
+  define []
     (?<% "TC R a b =
           !P:
           ((! x y: (R x y) => (P x y))

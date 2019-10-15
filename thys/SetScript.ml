@@ -40,60 +40,57 @@ let _ = add_file ~use:true "setLib.cmo";;
 let set_typedef = typedef [] (?<: "('a) set = ('a -> bool)");;
 
 let set_def =
-  define (?<% " SET (A:('a)set) = (A:('a)set) ");;
+  define [] (?<% " SET (A:('a)set) = (A:('a)set) ");;
 
 let empty_def =
   define
+    [opt_symbol (Printkit.default_term_prec,
+                 Printkit.default_term_fixity,
+                 Some "{}")]
   (?<% " (empty:('a)set) = SET(% x: false) ")
-  ~pp:(Printkit.default_term_prec, Printkit.default_term_fixity, Some "{}");;
 
 let in_def =
-  define
+  define [opt_symbol(220, infixn, None)]
   (?<% " in x (A: ('a)set) = A x ")
-      ~pp:(220, infixn, None)
 
 let univ_def =
-  define (?<% " univ = { x: true } ");;
+  define [] (?<% " univ = { x: true } ")
 
 let add_def =
-  define (?<% " add x A = {y: (y = x) | (y in A)}");;
+  define [] (?<% " add x A = {y: (y = x) | (y in A)}")
 
 let remove_def =
-  define (?<% " remove x A = {y: (y in A) & ~(y = x) }");;
+  define [] (?<% " remove x A = {y: (y in A) & ~(y = x) }");;
 
 let single_def =
-  define (?<% " single x  = {y: (y = x)}");;
+  define [] (?<% " single x  = {y: (y = x)}");;
 
 let union_def =
-  define (?<% " union A B = {x: (x in A) | (x in B) } ") ;;
+  define [] (?<% " union A B = {x: (x in A) | (x in B) } ") ;;
 
 let unions_def =
-  define (?<% " Union A = {x: ? B: B in A | x in B } ");;
+  define [] (?<% " Union A = {x: ? B: B in A | x in B } ");;
 
 let inter_def =
-  define (?<% " inter A B = {x: (x in A) & (x in B) } ");;
+  define [] (?<% " inter A B = {x: (x in A) & (x in B) } ");;
 
 let inters_def =
-  define (?<% " Inter A = {x: ? B: B in A & x in B } ");;
+  define [] (?<% " Inter A = {x: ? B: B in A & x in B } ");;
 
 let neg_def =
-  define (?<% " neg A = { x: ~(x in A) } ");;
+  define [] (?<% " neg A = { x: ~(x in A) } ");;
 
 let diff_def =
-  define
+  define [opt_symbol(230, infixr, Some("/"))]
   (?<% " diff A B = {x: x in A & ~x in B } ")
-  ~pp:(230, infixr, Some("/"));;
 
 let subset_def =
-  define
+  define [opt_symbol(225, infixr, Some("<="))]
   (?<% " subset A B = !x: x in A => (x in B) ")
-      ~pp:(225, infixr, Some("<=")) ;;
 
 let psubset_def =
-  define
+  define [opt_symbol(225, infixr, Some("<"))]
   (?<% " psubset A B = ~(A=B) & (A <= B) ")
-  ~pp:(225, infixr, Some("<"));;
-
 
 
 (***
@@ -105,7 +102,7 @@ let psubset_def =
 *)
 
 let finite_def=
-  define
+  define []
   (?<% "finite X =
         !P:
         ((P empty)

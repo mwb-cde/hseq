@@ -358,8 +358,7 @@ val typedef:
 (** {7 Term Declaration and definition} *)
 
 val define:
-  ?pp:(int*fixity*string option)
-  -> ?simp:bool
+  (Commands.Option.t)list
   -> (((string * Gtype.t) * Term.term list) * Term.term)
   -> Logic.Defns.cdefn
 (** [define ?simp term pp]: Define a term.
@@ -369,19 +368,20 @@ val define:
     and (f a1 .. an) is defined by axiom as [X]. Term [X] must be
     closed, w.r.t. the arguments [a1 .. an].
 
-    [?pp]: Printer-Parser information for the defined identifier.
-
-    [?simp]: Whether to use the definition as a simplifier rule
-    (default: false).
-
     The axiom defining [f] is added to the current theory, as a
     definition, with the name [f].
 
     The parser for term definitions is {!Global.read_defn}.
+
+    Options:
+    [symbol]: Printer-Parser information for the defined identifier.
+
+    [simp]: Whether to use the definition as a simplifier rule
+    (default: false).
 *)
 
 val declare:
-  ?pp:(int* fixity* string option)
+  (Commands.Option.t)list
   -> Term.term -> (Ident.t * Gtype.t)
 (** [declare trm pp]: Declare a term identifier.
 
@@ -390,11 +390,15 @@ val declare:
     [Typed(Free(n, _), ty)], an identifier ([Id(n, ty)]) or a typed
     identifier ([Typed(Id(n, _), ty)]).
 
-    [?pp]: Printer-Parser information for the defined identifier.
-
     Returns the name [n] and type [ty] of the term.
 
     The parser for term definitions is {!Global.read}.
+
+    Options:
+    [symbol]: Printer-Parser information for the defined identifier.
+
+    [simp]: Whether to use the definition as a simplifier rule
+    (default: false).
 *)
 
 (** {7 Axioms and theorems} *)

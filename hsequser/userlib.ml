@@ -521,9 +521,12 @@ let typedef opts tydef =
 
 (** {6 Term declaration and definition} *)
 
-let define ?pp ?(simp=false) df =
+let define opts df =
+  let options = Commands.Option.interpret opts in
+  let simp = Lib.from_option options.simp false
+  in
   let scpd = Global.context () in
-  let scpd1, ret = Commands.define scpd ?pp ~simp:simp df in
+  let scpd1, ret = Commands.define scpd opts df in
   Global.set_context scpd1;
   if simp
   then
@@ -535,8 +538,8 @@ let define ?pp ?(simp=false) df =
   else
     ret
 
-let declare ?pp trm =
-  let nscpd, id, ty = Commands.declare (Global.context ()) ?pp trm in
+let declare opts trm =
+  let nscpd, id, ty = Commands.declare (Global.context ()) opts trm in
   Global.set_context nscpd;
   (id, ty)
 

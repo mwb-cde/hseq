@@ -62,10 +62,9 @@ let builder save ctxt =
       let prec = BoolPP.negation_pprec.Printkit.prec
       and fixity = BoolPP.negation_pprec.Printkit.fixity
       in
-      declare ctxt4
+      declare ctxt4 [Option.Symbol(prec, fixity, Some "~")]
         (read ctxt4
            ((name_of Lterm.notid)^": bool -> bool"))
-        ~pp:(prec, fixity, Some "~")
     in
     let ctxt6 =
         let prec = BoolPP.negation_pprec.Printkit.prec
@@ -76,16 +75,16 @@ let builder save ctxt =
     (** Equality *)
     let (ctxt7, _, _) =
       declare ctxt6
+        [Option.Symbol(200, infixl, Some "=")]
         (Commands.read ctxt6
            ((name_of Lterm.equalsid)^": 'a -> 'a -> bool"))
-        ~pp:(200, infixl, (Some "="))
     in
     (** Conjunction *)
     let (ctxt8, _, _) =
       declare ctxt7
+        [Option.Symbol(185, infixr, Some "and")]
         (read ctxt7
            ((name_of Lterm.andid)^": bool -> bool -> bool"))
-        ~pp:(185, infixr, Some "and")
     in
     let ctxt9 =
       add_term_pp ctxt8 Lterm.andid 185 infixr (Some "&")
@@ -93,10 +92,10 @@ let builder save ctxt =
     (** Disjunction *)
     let (ctxt10, _) =
       define ctxt9
+        [Option.Symbol(190, infixr, Some "or")]
         (read_defn ctxt9
            ((name_of Lterm.orid)
             ^" x y = (not ((not x) and (not y)))"))
-        ~pp:(190, infixr, Some "or")
     in
     let ctxt11 =
       add_term_pp ctxt10 Lterm.orid 190 infixr (Some "|")
@@ -105,16 +104,16 @@ let builder save ctxt =
     (** Implication *)
     let (ctxt12, _) =
       define ctxt11
+        [Option.Symbol(195, infixr, Some "=>")]
         (read_defn ctxt11
            ((name_of Lterm.impliesid)^" x y = (or (not x) y)"))
-        ~pp:(195, infixr, Some "=>")
     in
     (** Equivalance *)
     let (ctxt13, _) =
       define ctxt12
+        [Option.Symbol(180, infixn, Some "iff")]
         (read_defn ctxt12
            ((name_of Lterm.iffid)^" x y = (x => y) and (y => x)"))
-        ~pp:(180, infixn, Some "iff")
     in
 
     (** Axioms *)
@@ -138,12 +137,12 @@ let builder save ctxt =
     in
 
     let (ctxt17, _) =
-      define ctxt16
+      define ctxt16 []
         (read_defn ctxt16 "one_one f = !x1 x2: ((f x1) = (f x2)) => (x1 = x2)")
     in
 
     let (ctxt18, _) =
-      define ctxt17
+      define ctxt17 []
         (read_defn ctxt17 "onto f = !y: ?x: y = (f x)")
     in
     let (ctxt19, _) =
@@ -156,7 +155,7 @@ let builder save ctxt =
     in
     (** Specification operator (epsilon) *)
     let (ctxt21, _, _) =
-      declare ctxt20
+      declare ctxt20 []
         (read ctxt20 "epsilon: ('a -> bool) -> 'a")
     in
     let (ctxt22, _) =
@@ -165,18 +164,18 @@ let builder save ctxt =
     in
     (** Conditional *)
     let (ctxt23, _) =
-      define ctxt22
+      define ctxt22 []
       (read_defn ctxt22
          "IF b t f = (epsilon (%z: (b => (z = t)) and ((not b) => (z = f))))")
     in
     (** Any value *)
     let (ctxt24, _) =
-      define ctxt23
+      define ctxt23 []
         (read_defn ctxt23 "any = epsilon (%a: true)")
     in
     (** Unique existence *)
     let (ctxt25, _) =
-      define ctxt24
+      define ctxt24 []
         (read_defn ctxt24
            ("EXISTS_UNIQUE p "
             ^"= (? x: (p x)) and (! x y : ((p x) and (p y)) => (x = y))"))

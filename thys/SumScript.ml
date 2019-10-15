@@ -37,17 +37,17 @@ let sum_fixity = infixr;;
 (** {5 Definition and basic properties of Sum types} *)
 
 let mk_suml_def =
-  define
+  define []
     (?<% " mk_suml v = (% sel l r: ((l = v) & sel)) ");;
 
 let mk_sumr_def =
-  define
+  define []
     (?<% "
           mk_sumr v = (%sel l r: ((r = v) & not sel))
           ");;
 
 let is_sum_def =
-  define
+  define []
     (?<% "is_sum f =
           ?l r: (f = (mk_suml l)) | (f = (mk_sumr r))") ;;
 
@@ -137,26 +137,26 @@ let mk_sumr_eq =
  *)
 
 let inl_def =
-  define
+  define []
     (?<% " inl a = make_SUM (mk_suml a) ");;
 
 let inr_def =
-  define
+  define []
     (?<% " inr b = make_SUM (mk_sumr b) ");;
 
 let isl_def =
-  define
+  define []
     (?<% " isl a = ?x: a = (inl x) ");;
 
 let isr_def =
-  define
+  define []
     (?<% " isr a = ?x: a = (inr x) ");;
 
 let outl_def =
-  define (?<% " outl x = (@v: x = (inl v)) ");;
+  define [] (?<% " outl x = (@v: x = (inl v)) ");;
 
 let outr_def =
-  define (?<% " outr x = (@v: x = (inr v)) ");;
+  define [] (?<% " outr x = (@v: x = (inr v)) ");;
 
 let dest_inl =
   prove
@@ -511,7 +511,7 @@ let isr_outr =
     ];;
 
 let sum_map =
-  define
+  define []
     (?<% "map f g x
           =
           if (isl x) then (inl (f (outl x))) else (inr (g (outr x)))");;

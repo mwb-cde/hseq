@@ -384,7 +384,7 @@ val typedef:
     trm x]. The expression [Defn.mk_subtype_exists trm] constructs the
     formula stating the existance property.
 
-    [?rep], [?abs]: (optional) the names for the representation and
+    [?repr], [?abs]: (optional) the names for the representation and
     abstraction functions. Default: [rep = REP_T] and [abs = ABS_T]
     where [T] is the name of the type being defined.
 
@@ -418,8 +418,7 @@ val typedef:
 
 val define:
   Context.t
-  -> ?pp: (int * fixity * string option)
-  -> ?simp:bool
+  -> (Option.t)list
   -> (((string * Gtype.t) * Term.term list) * Term.term)
   -> (Context.t * Logic.Defns.cdefn)
 (**
@@ -431,9 +430,10 @@ val define:
    defined by axiom as [X]. Term [X] must be closed, w.r.t. the
    arguments [a1 .. an].
 
-   [?pp]: Printer-Parser information for the defined identifier.
+   Options:
+   [symbol]: Printer-Parser information for the defined identifier.
 
-   [?simp]: Whether to use the definition as a simplifier rule
+   [simp]: Whether to use the definition as a simplifier rule
    (default: false).
 
    The axiom defining [f] is added to the current theory, as a
@@ -444,7 +444,7 @@ val define:
 
 val declare:
   Context.t
-  -> ?pp:(int* fixity* string option)
+  -> (Option.t)list
   -> Term.term
   -> (Context.t * Ident.t * Gtype.t)
 (** [declare trm pp]: Declare a term identifier.
@@ -454,7 +454,8 @@ val declare:
     [Typed(Free(n, _), ty)], an identifier ([Id(n, ty)]) or a typed
     identifier ([Typed(Id(n, _), ty)]).
 
-    [?pp]: Printer-Parser information for the defined identifier.
+    Options:
+    [symbol]: Printer-Parser information for the defined identifier.
 
     Returns the name [n] and type [ty] of the term.
 
