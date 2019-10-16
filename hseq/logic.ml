@@ -1,6 +1,6 @@
 (*----
   Name: logic.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -605,11 +605,11 @@ let simple_rule_apply r node =
 
     raises [No_subgoals] if goal is solved.
 *)
-let apply_to_goal ?report tac (Goal(sqnts, tyenv, f, chngs)) =
+let apply_to_goal report tac (Goal(sqnts, tyenv, f, chngs)) =
   let g_tag = Tag.create() in
   let branch = Subgoals.mk_branch g_tag (Subgoals.mk_env tyenv chngs) sqnts
   in
-  let new_branch = Subgoals.apply_to_first ?report:report tac branch
+  let new_branch = Subgoals.apply_to_first report tac branch
   in
   if Tag.equal g_tag (Subgoals.branch_tag new_branch)
   then
@@ -631,7 +631,7 @@ let foreach rule branch =
   Subgoals.apply_to_each rule branch
 
 let first_only rule branch =
-  Subgoals.apply_to_first rule branch
+  Subgoals.apply_to_first None rule branch
 
 (** {7 Support for rewriting} *)
 
@@ -1967,8 +1967,8 @@ struct
       in
       Tactics.basic a concl g
     in
-    let gl1 = apply_to_goal tac1 gl in
-    let gl2 = apply_to_goal tac2 gl1
+    let gl1 = apply_to_goal None tac1 gl in
+    let gl2 = apply_to_goal None tac2 gl1
     in
     mk_thm gl2
 

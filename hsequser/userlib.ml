@@ -658,8 +658,8 @@ let qed n =
   Global.set_context ctxt;
   thm
 
-let apply ?report tac g =
-  Goals.apply ?report (Global.context()) tac g
+let apply tac g =
+  Goals.apply (Global.context()) tac g
 
 (** Top-level pretty printers *)
 module Display =

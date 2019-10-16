@@ -220,8 +220,8 @@ let undo pstk =
 
 let result ptsk = mk_thm (top_goal ptsk)
 
-let apply ?report ctxt tac goal =
-  Logic.apply_to_goal ?report (tac ctxt) goal
+let apply ctxt tac goal =
+  Logic.apply_to_goal None (tac ctxt) goal
 
 let prove_goal ctxt trm tac =
   mk_thm (apply ctxt tac
@@ -271,7 +271,7 @@ let by_com ctxt pstk tac =
   let p = top_goal pstk in
   let g =
     Logic.apply_to_goal
-      ~report:(report (Context.ppinfo ctxt)) (tac ctxt) p
+      (Some (report (Context.ppinfo ctxt))) (tac ctxt) p
   in
   ProofStack.push_goal g pstk
 

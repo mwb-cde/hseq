@@ -1,6 +1,6 @@
 (*----
   Name: subgoalkit.mli
-  Copyright Matthew Wahab 2015-2016
+  Copyright Matthew Wahab 2015-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -137,8 +137,8 @@ sig
       result.  *)
 
   val apply_to_node:
-    ?report:(node->branch->unit) -> (node->branch) -> node -> branch
-  (** [apply_to_node ?report tac n]: A wrapper around [apply] to allow
+    (node->branch->unit)option -> (node->branch) -> node -> branch
+  (** [apply_to_node report tac n]: A wrapper around [apply] to allow
       reporting of the argument and result of a tactic.
 
       Evaluate [apply tac n] to get a branch [b] then,
@@ -146,9 +146,9 @@ sig
   *)
 
   val apply_to_first:
-    ?report:(node->branch->unit)
+    (node->branch->unit)option
     -> (node -> branch) -> branch -> branch
-  (** [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]:
+  (** [apply_to_first report tac (Branch(tg, tyenv, sqnts))]:
       Apply a tactic to the first subgoal in a branch.
 
       Apply tactic [tac] to [List.hd sqnts] using [apply_to_node].

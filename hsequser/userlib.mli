@@ -563,10 +563,8 @@ val qed: string -> Logic.thm
     theory under the given name.
 *)
 
-val apply:
-  ?report:(Logic.node -> Logic.branch -> unit)
-  -> Tactics.tactic -> Logic.goal -> Logic.goal
-(** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
+val apply: Tactics.tactic -> Logic.goal -> Logic.goal
+(** [apply tac goal]: Apply tactic [tac] to [goal] using
     {!Logic.Subgoals.apply_to_goal}.
 
     Applies [tac] to the first subgoal [n] of [goal]. Returns the goal

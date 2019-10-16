@@ -1,6 +1,6 @@
 (*----
   Name: subgoalkit.ml
-  Copyright Matthew Wahab 2015-2016
+  Copyright Matthew Wahab 2015-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -173,17 +173,16 @@ struct
   let fold tac d node =
     apply_basic tac d node
 
-
   (** [apply_to_node tac (Node(tyenv, sqnt))]: Apply tactic [tac] to
       node, getting [result].  If tag of result is the same as the
       tag of sqnt, then return result.  Otherwise raise
       subgoals_error.  *)
   let apply_report report node branch =
     match report with
-    | None -> ()
     | Some f -> f node branch
+    | _ -> ()
 
-  let apply_to_node ?report tac node =
+  let apply_to_node report tac node =
     let result = apply tac node
     in
     apply_report report node result;
@@ -196,7 +195,7 @@ struct
 
       @raise No_subgoals if [sqnts] is empty.
   *)
-  let apply_to_first ?report tac br =
+  let apply_to_first report tac br =
     let tg = branch_tag br
     and tyenv = branch_tyenv br
     and sqnts = branch_sqnts br
@@ -206,7 +205,7 @@ struct
     | [] -> raise T.No_subgoals
     | (x::xs) ->
        let branch1 =
-         apply_to_node ?report:report tac
+         apply_to_node report tac
            (mk_node (sqnt_tag x) (mk_env tyenv chngs) x)
        in
        mk_branch tg
@@ -233,7 +232,7 @@ struct
            mk_branch tg (mk_env ty (Changes.rev cs)) (List.rev lst)
         | (x::xs) ->
            let branch1 =
-             apply_to_node tac
+             apply_to_node None tac
                (mk_node (sqnt_tag x) (mk_env ty  chngs) x)
            in
            app_aux
@@ -302,7 +301,7 @@ struct
          mk_branch tg (mk_env ty (Changes.rev cs)) (List.rev_append lst gs)
       | (tac::ts, (g:sqnt_ty)::gs) ->
          let branch1 =
-           apply_to_node tac
+           apply_to_node None tac
              (mk_node (sqnt_tag g) (mk_env ty chngs) g)
          in
          zip_aux (branch_tyenv branch1) ts gs

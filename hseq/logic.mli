@@ -532,8 +532,8 @@ sig
       result.  *)
 
   val apply_to_node:
-    ?report:(node->branch->unit) -> (node->branch) -> node -> branch
-  (** [apply_to_node ?report tac n]: A wrapper around [apply] to allow
+    (node -> branch -> unit)option -> (node -> branch) -> node -> branch
+  (** [apply_to_node report tac n]: A wrapper around [apply] to allow
       reporting of the argument and result of a tactic.
 
       Evaluate [apply tac n] to get a branch [b] then,
@@ -541,9 +541,9 @@ sig
   *)
 
   val apply_to_first:
-    ?report:(node->branch->unit)
+    (node -> branch -> unit)option
     -> (node -> branch) -> branch -> branch
-  (** [apply_to_first ?report tac (Branch(tg, tyenv, sqnts))]:
+  (** [apply_to_first report tac (Branch(tg, tyenv, sqnts))]:
       Apply a tactic to the first subgoal in a branch.
 
       Apply tactic [tac] to [List.hd sqnts] using [apply_to_node].
@@ -600,8 +600,8 @@ type node = Subgoals.node
 type branch = Subgoals.branch
 
 val apply_to_goal:
-  ?report:(node -> branch -> unit) -> (node -> branch) -> goal -> goal
-(** [apply_to_goal ?report tac goal]: Apply a tactic to a goal.
+  (node -> branch -> unit)option -> (node -> branch) -> goal -> goal
+(** [apply_to_goal report tac goal]: Apply a tactic to a goal.
 
     Apply tactic [tac] to first subgoal of [goal] using
     [apply_to_first].  Replace original list of subgoals with resulting
@@ -986,7 +986,7 @@ sig
 
   val rewrite_intro:
     (rr_type)Rewrite.plan -> Term.term -> tactic
-  (** [rewrite_intro ?info ctrl plan trm sq]: Introduce an equality
+  (** [rewrite_intro ctrl plan trm sq]: Introduce an equality
       established by rewriting term [trm] with [plan].
 
       The rewriting plan is made up of theorems or the labels of the
@@ -1004,7 +1004,7 @@ sig
   *)
 
   val substA: label list -> label -> tactic
-  (** [substA ?info eqs l sq]: Substitute, using the assumptions
+  (** [substA eqs l sq]: Substitute, using the assumptions
       in [eq], into the assumption [l].  The assumptions in [eq]
       must all be equalities of the form [L=R]. The substitution is
       A{_ l}\[R1, R2, ..., Rn/L1, L2, ..., Rn\]. The substitution
@@ -1024,7 +1024,7 @@ sig
   *)
 
   val substC: label list -> label -> tactic
-  (** [substC ?info eqs l sq]: Substitute, using the assumptions
+  (** [substC eqs l sq]: Substitute, using the assumptions
       in [eq], into the conclusion [l].  The assumptions in [eq]
       must all be equalities of the form [L=R]. The substitution is
       C{_ l}\[R1, R2, ..., Rn/L1, L2, ..., Rn\]. The substitution
@@ -1044,7 +1044,7 @@ sig
   *)
 
   val nameA: string -> label -> tactic
-  (** [nameA ?info l name sq]: Rename the assumption labelled [l]
+  (** [nameA l name sq]: Rename the assumption labelled [l]
       as [name].  The previous name and tag of [l] are both
       discarded.
 
@@ -1062,7 +1062,7 @@ sig
   *)
 
   val nameC: string -> label -> tactic
-(** [nameC ?info name l sq]: Rename the conclusion labelled [l] as
+(** [nameC name l sq]: Rename the conclusion labelled [l] as
     [name].  The previous name and tag of [l] are both discarded.
 
     {L

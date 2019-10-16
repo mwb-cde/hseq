@@ -118,10 +118,9 @@ val result: ProofStack.t -> Logic.thm
 *)
 
 val apply:
-  ?report:(Logic.node -> Logic.branch -> unit)
-  -> Context.t
+  Context.t
   -> Tactics.tactic -> Logic.goal -> Logic.goal
-(** [apply ?report tac goal]: Apply tactic [tac] to [goal] using
+(** [apply ctxt tac goal]: Apply tactic [tac] to [goal] using
     {!Logic.apply_to_goal}.
 
     Applies [tac] to the first subgoal [n] of [goal]. Returns the goal
@@ -133,10 +132,8 @@ val apply:
 val prove_goal:
   Context.t -> Term.term -> Tactics.tactic
   -> Logic.thm
-(** [prove_goal ?info scp trm tac]: Prove the goal formed from [trm]
-    using tactic [tac] in scope [scp]. Used for batch proofs. If
-    [?info] is given, the tag of the goal and conclusion ([trm]) are
-    stored in it before the tactic [tac] is applied.
+(** [prove_goal scp trm tac]: Prove the goal formed from [trm]
+    using tactic [tac] in scope [scp]. Used for batch proofs.
 *)
 
 (** {7 Interactive proofs} *)

@@ -1087,7 +1087,7 @@ let conv_rule (ctxt: Context.t) conv thm =
             end))
         ] ctxt1 g))
   in
-  mk_thm (Logic.apply_to_goal (tac ctxt) goal)
+  mk_thm (Logic.apply_to_goal None (tac ctxt) goal)
 
 (** [pure_term_rewriteA p trm l]: Rewrite term [trm] with plan [p], replace
     assumption [l] with the resulting equality. *)
