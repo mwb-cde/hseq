@@ -865,7 +865,7 @@ let find_match_formulas typenv scp varp t fs=
           try
             let tg, f = tf
             in
-            ignore(Unify.unify ~typenv:typenv scp varp t (Formula.term_of f));
+            ignore(Unify.unify_typed typenv scp varp t (Formula.term_of f));
             tg
           with _ -> match_aux tfs
         end

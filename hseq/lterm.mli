@@ -241,16 +241,17 @@ val is_closed: Term.term list -> Term.term -> bool
     body of a quantifier or occur in [ts].
 *)
 
-val close_term:
-  ?qnt:Term.quant -> ?free:(Term.term -> bool)
-  -> Term.term -> Term.term
-(** [close_term ?qnt ?free trm]: Close term [trm]. Make variables
+val generic_close_term:
+  Term.quant -> (Term.term -> bool) -> Term.term -> Term.term
+val close_term: Term.term -> Term.term
+(**
+    [generic_close_term qnt free trm]: Close term [trm]. Make variables
     bound to quantifiers of kind [qnt] to replace free variables and
     bound variables with no binding quantifier and for which [free] is
     true.
 
-    If [?qnt] is not given, it is [Term.All].
-    If [?free] is not given, it is [(fun _ -> true)].
+    [close_term trm]: Call {!generic_close_term} with [qnt = Term.All]
+    and [free = (fun _ -> true)]
 *)
 
 
@@ -276,14 +277,12 @@ val in_scope: (string, bool)Lib.table
 *)
 
 val binding_set_names:
-  ?strict:bool
-  -> ?memo:(string, Ident.thy_id)Hashtbl.t
+  ((string, Ident.thy_id)Hashtbl.t)option
   -> Scope.t
   -> Term.Binder.t
   -> Term.Binder.t
-(** [binding_set_names_types ?strict ?memo scp binding] Find and set
-    names for types in a binding.  If [strict=true], unknown types
-    cause an error.
+(** [binding_set_names_types memo scp binding] Find and set
+    names for types in a binding.
 *)
 
 val set_names: Scope.t  -> Term.term -> Term.term

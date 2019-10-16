@@ -1,6 +1,6 @@
 (*----
   Name: ltype.mli
-  Copyright Matthew Wahab 2018
+  Copyright Matthew Wahab 2018-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -31,9 +31,9 @@ val in_scope:
 *)
 
 val set_name:
-  ?memo:(string, Ident.thy_id)Hashtbl.t
+  ((string, Ident.thy_id)Hashtbl.t)option
   -> Scope.t -> Gtype.t -> Gtype.t
-(** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
+(** [set_name memo scp ty]: set names in type [ty] to their
     long form.
 
     [memo] is an optional memoisation table.

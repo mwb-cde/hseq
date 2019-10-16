@@ -223,13 +223,13 @@ struct
       in
       Term.Binder.make
         qnt qname
-        (Ltype.set_name ~memo:(rdata.memo.type_names) (rdata.scp) qtype)
+        (Ltype.set_name (Some(rdata.memo.type_names)) (rdata.scp) qtype)
     and binding_set_types tyenv binding =
       let (qnt, qname, qtype) = Term.Binder.dest binding
       in
       Term.Binder.make qnt qname (Gtype.mgu qtype tyenv)
     and set_type_name t rdata =
-      Ltype.set_name ~memo:(rdata.memo.type_names) rdata.scp t
+      Ltype.set_name (Some(rdata.memo.type_names)) rdata.scp t
     and find_ident n rdata =
       let ident_find n s =
         let thy = Scope.thy_of_term s n

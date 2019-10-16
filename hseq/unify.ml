@@ -1,6 +1,6 @@
 (*----
   Name: unify.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -137,11 +137,11 @@ let unify_fullenv scp typenv trmenv varp trm1 trm2 =
   unify_aux typenv trmenv (Term.Subst.empty()) trm1 trm2
 
 (**  Unify terms in a given term context. *)
-let unify_env ?typenv scp env varp trm1 trm2 =
+let unify_env typenv scp env varp trm1 trm2 =
   let tye =
     match typenv with
-      | None -> Gtype.Subst.empty()
       | Some x -> x
+      | _ -> Gtype.Subst.empty()
   in
   let (_, retenv) = unify_fullenv scp tye env varp trm1 trm2
   in
@@ -149,18 +149,32 @@ let unify_env ?typenv scp env varp trm1 trm2 =
 
 (** Unify terms and in scope. *)
 
-let unify ?typenv ?initial scp varp trm1 trm2 =
+(* let unify typenv ?initial scp varp trm1 trm2 = *)
+let unify scp varp trm1 trm2 =
+(*
   let tye =
     match typenv with
-      | None -> Gtype.Subst.empty()
       | Some x -> x
+      | _ -> Gtype.Subst.empty()
   and subst =
     match initial with
       | None -> Term.Subst.empty()
       | Some x -> x
   in
+ *)
+  let tye = Gtype.Subst.empty()
+  and subst = Term.Subst.empty()
+  in
   let (_, retenv) =
     unify_fullenv scp tye subst varp trm1 trm2
+  in
+  retenv
+
+let unify_typed tyenv scp varp trm1 trm2 =
+  let subst = Term.Subst.empty()
+  in
+  let (_, retenv) =
+    unify_fullenv scp tyenv subst varp trm1 trm2
   in
   retenv
 

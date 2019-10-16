@@ -412,7 +412,7 @@ let simple_typedef ctxt (n, args, def) =
   let def1 =
     match def with
       | None -> None
-      | Some(x) -> Some(Ltype.set_name scp x)
+      | Some(x) -> Some(Ltype.set_name None scp x)
   in
   let tydef = Logic.Defns.mk_typealias scp n args def1 in
   let ctxt1 =

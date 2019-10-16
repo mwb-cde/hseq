@@ -1737,7 +1737,7 @@ struct
     in
     try conv_aux trm
     with x -> raise
-      (Report.add_error (Term.term_error "plan_rewrite_conv" [trm]) x)
+      (Report.add_error (Term.term_error "rewrite_conv" [trm]) x)
 
 end
 
@@ -1983,7 +1983,7 @@ struct
       - make subtype property from setp and rep.
   *)
   let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
-    let dtype1 = Ltype.set_name scp dtype
+    let dtype1 = Ltype.set_name None scp dtype
     and setp1 = Lterm.set_names scp setp
     in
     let subtype_def =

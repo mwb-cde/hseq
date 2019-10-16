@@ -217,27 +217,6 @@ val rewrite:
     This is the basic function provide by {!Rewritekit.Make}.
 *)
 
-val plan_rewrite_env:
-  Scope.t -> ?dir:direction
-  -> Gtype.Subst.t
-  -> Term.term plan
-  -> Term.term
-  -> (Term.term * Gtype.Subst.t)
-(** [plan_rewrite_env scp ?dir tyenv p t]: Rewrite term [t] with plan
-    [p] in type environment [tyenv].
-
-    The [term plan] is converted to a [rule plan], by extracting rules
-    from terms.
-*)
-
-val plan_rewrite:
-  Scope.t -> ?dir:direction
-  -> Term.term plan
-  -> Term.term
-  -> Term.term
-(** [plan_rewrite scp ?dir tyenv p t]: Rewrite term [t] with plan [p].
-*)
-
 (** {5 Generic Rewrite Planner} *)
 
 module Planner:

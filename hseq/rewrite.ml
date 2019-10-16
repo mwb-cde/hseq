@@ -284,7 +284,7 @@ type ('a)plan = (key, 'a)Rewritekit.plan
 let rewrite = TermRewriter.rewrite
 (** [rewrite data p t]: Rewrite term [t] with plan [t]. *)
 
-let rec extract_check_rules scp dir pl =
+let extract_check_rules scp dir pl =
   let get_test t =
     let qs, b = Term.strip_qnt Term.All t in
     let lhs, rhs = Lterm.dest_equality b
@@ -294,20 +294,6 @@ let rec extract_check_rules scp dir pl =
     else (qs, rhs, lhs)
   in
   Rewritekit.mapping get_test pl
-
-let plan_rewrite_env scp ?(dir=leftright) tyenv plan f =
-  let plan1 = extract_check_rules scp dir plan in
-  let data = (scp, Term.Subst.empty(), tyenv) in
-  let (data1, nt) = rewrite data plan1 f in
-  let (scp1, qntenv1, tyenv1) = data1
-  in
-  (nt, tyenv1)
-
-let plan_rewrite scp ?(dir=leftright) plan f =
-  let (nt, ntyenv) =
-    plan_rewrite_env scp ~dir:dir (Gtype.Subst.empty()) plan f
-  in
-  nt
 
 (*** Rewrite Plans ***)
 

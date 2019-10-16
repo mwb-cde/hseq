@@ -30,7 +30,7 @@ let mk_decln scp name ty =
                  [Term.mk_typed_ident name ty])
     with Not_found -> ()
   in
-  let new_ty() = Ltype.set_name scp ty in
+  let new_ty() = Ltype.set_name None scp ty in
   let check_type typ =
     begin
       Gtype.check_decl_type (Scope.types_scope scp) typ;
@@ -73,7 +73,7 @@ let rec mk_all_from_list scp b qnts =
     | _ -> raise (Term.term_error "Invalid argument, mk_all_from_list" qnts)
 
 let mk_defn scp (name, namety) args rhs =
-  let nty = Ltype.set_name scp namety in
+  let nty = Ltype.set_name None scp namety in
   let lhs = Term.mk_comb (Term.mk_typed_ident name nty) args in
   let ndn0 =
     mk_all_from_list scp

@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -1273,22 +1273,28 @@ let matches scp t1 t2=
  * More functions
  *)
 
-(** [set_name ?strict ?memo scp typ]: Set names in type [typ] to their
+(** [set_name memo scp typ]: Set names in type [typ] to their
     long form.
 
     If [strict=true], fail if any type name doesn't occur in scope [scp].
 *)
-let set_name ?(memo=Lib.empty_env()) scp trm =
+let set_name umemo scp trm =
+  let memo =
+    if umemo = None then (Lib.empty_env()) else from_some umemo
+  in
   let lookup_id n =
-    try Lib.find n memo
-    with Not_found ->
-      let nth =
-        try TypeScope.thy_of scp n
-        with Not_found ->
-          raise  (type_error "Type doesn't occur in scope"
-                             [mk_def (Ident.mk_name n) []])
-      in
-      ignore(Lib.add n nth memo); nth
+    match try_find (Lib.find n) memo with
+    | Some(x) -> x
+    | _  ->
+       begin
+         let nth =
+           try TypeScope.thy_of scp n
+           with Not_found ->
+             raise  (type_error "Type doesn't occur in scope"
+                       [mk_def (Ident.mk_name n) []])
+         in
+         ignore(Lib.add n nth memo); nth
+       end
   in
   let rec set_aux t =
     match t with

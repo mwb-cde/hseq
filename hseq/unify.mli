@@ -1,6 +1,6 @@
 (*----
   Name: unify.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -61,7 +61,7 @@ val unify_fullenv:
     allow continued operations w.r.t the updated type context.  *)
 
 val unify_env:
-  ?typenv:Gtype.Subst.t
+  (Gtype.Subst.t) option
   -> Scope.t  -> Term.Subst.t
   -> (Term.term -> bool) -> Term.term -> Term.term
   -> Term.Subst.t
@@ -69,15 +69,21 @@ val unify_env:
     [unify_fullenv] with an empty type context.
 *)
 
-val unify: ?typenv:Gtype.Subst.t -> ?initial:Term.Subst.t
-  -> Scope.t -> (Term.term -> bool)
+val unify:
+  Scope.t -> (Term.term -> bool)
   -> Term.term -> Term.term -> Term.Subst.t
+
+val unify_typed:
+  Gtype.Subst.t -> Scope.t -> (Term.term -> bool)
+  -> Term.term -> Term.term -> Term.Subst.t
+
 (** [unify scp varp l r]: Unify terms [l] and [r] in scope scp.
+
+    [unify_typed tyenv scp varp l r]: Unify terms [l] and [r] in scope scp.
 
     Toplevel for [unify_fullenv] which discards the updated type context.
 
-    If [?typenv] is not given, the empty type substitution is used.
-    If [?initial] is not given, the empty term substitution is used.
+    If [tyenv] is not given, the empty type substitution is used.
 *)
 
 (** {5 Matching} *)

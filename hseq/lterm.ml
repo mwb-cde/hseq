@@ -480,9 +480,8 @@ let is_closed vs t =
    to quantifiers of kind [qnt] to replace free variables and bound
    variables with no binding quantifier and for which [free] is true.
 *)
-let ct_free _ = true
 
-let close_term ?(qnt=Term.All) ?(free=ct_free) trm =
+let generic_close_term qnt free trm =
   let rec close_aux env vs t=
     match t with
       | Atom(Id(_)) -> (t, env, vs)
@@ -520,6 +519,8 @@ let close_term ?(qnt=Term.All) ?(free=ct_free) trm =
     List.fold_left (make_qnts qnt) (Subst.empty(), 0, []) vars
   in
   rebuild_qnt (List.rev binders) (subst sb trm)
+
+let close_term = generic_close_term Term.All (fun _ -> true)
 
 (*** Generalising terms ***)
 
@@ -623,12 +624,12 @@ let in_scope memo scp trm =
 (** [binding_set_names_types ?memo scp binding] Find and set names for
     types in a binding.
 *)
-let binding_set_names ?(strict=false) ?memo scp binding =
+let binding_set_names memo scp binding =
   let (qnt, qname, qtype) = Term.Binder.dest binding
   in
   Term.Binder.make
     qnt qname
-    (Ltype.set_name ?memo:memo (Scope.relaxed scp) qtype)
+    (Ltype.set_name memo (Scope.relaxed scp) qtype)
 
 (** [set_names scp thy trm] find and set long identifiers and types
     for variables in [trm] theory is [thy] if no long identifier can be
@@ -636,7 +637,7 @@ let binding_set_names ?(strict=false) ?memo scp binding =
 *)
 let set_names scp trm =
   let set_type_name memo s t =
-    Ltype.set_name ~memo:memo (Scope.relaxed s) t
+    Ltype.set_name (Some(memo)) (Scope.relaxed s) t
   in
   let id_memo = Lib.empty_env()
   and type_memo = Lib.empty_env()
@@ -704,7 +705,7 @@ let set_names scp trm =
             end
        end
     | Qnt(q, b) ->
-       let nq = binding_set_names ~memo:type_thy_memo scp q in
+       let nq = binding_set_names (Some(type_thy_memo)) scp q in
        let qnts1 = Subst.bind (Bound(q)) (Bound(nq)) qnts
        in
        Qnt(nq, set_aux qnts1 b)
@@ -765,8 +766,7 @@ let resolve_term scp vars varlist trm =
     in
     Term.mk_typed_ident nid nty
   in
-  let set_type_name memo s t =
-    Ltype.set_name ~memo:memo s t
+  let set_type_name memo s t = Ltype.set_name (Some(memo)) s t
   in
   let lookup_var vars t =
     match Lib.try_find (Subst.find t) vars with
@@ -803,7 +803,7 @@ let resolve_term scp vars varlist trm =
           | None ->
              set_aux (qnts, vars) (mk_typed_ident (Ident.mk_name n) ty) lst)
       | Qnt(q, b) ->
-        let nq = binding_set_names ~memo:type_thy_memo scp q in
+        let nq = binding_set_names (Some(type_thy_memo)) scp q in
         let qnts1 = Subst.bind (mk_bound q) (mk_bound nq) qnts in
         let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
         in

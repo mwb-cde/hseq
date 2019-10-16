@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.mli
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -559,25 +559,12 @@ val matches: TypeScope.t -> t -> t -> bool
 (** {5 More functions} *)
 
 val set_name:
-  ?memo:(string, Ident.thy_id)Hashtbl.t
+  ((string, Ident.thy_id)Hashtbl.t)option
   -> TypeScope.t -> t -> t
-(** [set_name ?strict ?memo scp ty]: set names in type [ty] to their
+(** [set_name memo scp ty]: set names in type [ty] to their
     long form.
 
-    If [strict] then fail if any type name doesn't occur in scope [scp].
-
     [memo] is the optional memoisation table.
-*)
-
-(*
-val in_scope:
-  (string, bool)Lib.substype -> TypeScope.t -> t -> bool
-(** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
-    that every type constructor is decared or defined in scope [scp].
-
-    The function is memoised: if a constructor name is found to be
-    in scope, it is added to [memo].
-*)
 *)
 
 val extract_bindings: t list -> Subst.t -> Subst.t

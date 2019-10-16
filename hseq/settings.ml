@@ -29,11 +29,11 @@ let base_dir = ref Defaults.basedir
 let get_base_dir () = !base_dir
 let set_base_dir d = base_dir := d
 
-let make_filename ?dir f =
+let make_filename dir f =
   let d =
     match dir with
-      | None -> (get_base_dir())
       | Some x -> x
+      | _ -> (get_base_dir())
   in
   (d^"/"^f)
 

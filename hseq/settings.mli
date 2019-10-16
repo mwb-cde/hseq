@@ -37,9 +37,9 @@ val get_base_dir: unit -> string
 val set_base_dir: string -> unit
 (** Set the base directory. *)
 
-val make_filename: ?dir:string -> string -> string
-(** [make_filename ?dir f]: make file name [f] relative to the
-    directory [dir]. If [?dir] is not given, use the base directory.
+val make_filename: (string)option -> string -> string
+(** [make_filename dir f]: make file name [f] relative to the
+    directory [dir]. If [dir] is not giiven, use the base directory.
 *)
 
 val make_directory: string -> string

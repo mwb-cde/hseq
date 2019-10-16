@@ -82,7 +82,7 @@ let starting_mesg() =
 
 let load_init () =
   let initfile=
-    Settings.make_filename ~dir:(Settings.libs_dir()) Settings.init_file
+    Settings.make_filename (Some(Settings.libs_dir())) Settings.init_file
   in
   if Sys.file_exists initfile
   then Unsafe.use_file false initfile

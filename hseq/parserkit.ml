@@ -1,6 +1,6 @@
 (*----
   Name: parserkit.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -141,7 +141,7 @@ sig
 
   val empty: ('a list)phrase
   val next_token: token phrase
-  val error: ?msg:string -> (token -> string) -> 'a phrase
+  val error: string -> (token -> string) -> 'a phrase
 
   val get: (token -> bool) -> (token -> 'a) -> 'a phrase
   val (!$): token -> token phrase
@@ -235,17 +235,12 @@ module Make =
     let next_token inp  =
       get (fun t -> true) (fun t -> t) inp
 
-    let error ?msg tok_to_str inp =
-      let str=
-        match msg with
-          | None -> ""
-          | Some(m) -> (": "^m)
-      in
+    let error msg tok_to_str inp =
+      let str = (": "^msg) in
       try
         let (tok, _) = next_token inp
         in
-        raise (ParsingError
-                 ("Error at "^(tok_to_str tok)^str))
+        raise (ParsingError ("Error at "^(tok_to_str tok)^str))
       with _ -> raise (ParsingError str)
 
     let (//) ph1 ph2 =

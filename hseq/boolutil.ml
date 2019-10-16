@@ -41,7 +41,7 @@ let find_unifier scp typenv varp trm exclude forms =
     then raise Not_found
     else
       (Tactics.drop_formula form,
-       Unify.unify ~typenv:typenv scp varp trm
+       Unify.unify_typed typenv scp varp trm
          (Formula.term_of (Tactics.drop_tag form)))
   in
   Lib.find_first find_fn forms
@@ -117,7 +117,7 @@ let unify_in_goal varp atrm ctrm goal =
   let tyenv = typenv_of goal
   and scp = scope_of_goal goal
   in
-  Unify.unify ~typenv:tyenv scp varp atrm ctrm
+  Unify.unify_typed tyenv scp varp atrm ctrm
 
 (** [close_lambda_app term]: Form term [((% a1 .. an: B) v1 .. vn)],
     return [(% a1 .. an: (!x1 .. xn: B)), [v1; .. ; vn]) where the [x1

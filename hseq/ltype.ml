@@ -1,6 +1,6 @@
 (*----
   Name: ltype.ml
-  Copyright Matthew Wahab 2018
+  Copyright Matthew Wahab 2018-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -54,8 +54,8 @@ let in_scope memo scp ty =
 
     If [strict=true], fail if any type name doesn't occur in scope [scp].
 *)
-let set_name ?(memo=Lib.empty_env()) scp trm =
-  Gtype.set_name ~memo:memo (Scope.types_scope scp) trm
+let set_name memo scp trm =
+  Gtype.set_name memo (Scope.types_scope scp) trm
 
 let unfold scp ty = Gtype.unfold (Scope.types_scope scp) ty
 

@@ -1,6 +1,6 @@
 (*----
   Name: parserkit.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -116,7 +116,7 @@ sig
   val next_token: token phrase
 
   (** {7 Parser Constructors} *)
-  val error: ?msg:string -> (token -> string) -> 'a phrase
+  val error: string -> (token -> string) -> 'a phrase
   (** [error msg strtok]: Error reporting.  Read a token, fail,
       raising ParsingError. *)
 
