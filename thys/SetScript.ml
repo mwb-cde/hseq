@@ -31,7 +31,7 @@ let _ = compile [] "setLib.ml";;
 let _ = add_symbol "{" "{";;
 let _ = add_symbol "}" "}";;
 
-let _ = add_file ~use:true "setLib.cmo";;
+let _ = add_file true "setLib.cmo";;
 
 (***
 * Main Definitions

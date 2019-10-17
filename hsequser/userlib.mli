@@ -275,8 +275,8 @@ val parents: string list -> unit
     necessary .
 *)
 
-val add_file: ?use:bool -> string -> unit
-(** [add_file ?(use=false) f]: Add file [f] to the list to be
+val add_file: bool -> string -> unit
+(** [add_file use f]: Add file [f] to the list to be
     loaded/used when the theory is loaded. If [use=true] then also
     load/use [f] immediately.
 

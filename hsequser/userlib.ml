@@ -473,7 +473,7 @@ let parents ps =
   let nctxt = Commands.parents (Global.context ()) ps in
   Global.set_context nctxt
 
-let add_file ?(use=false) n =
+let add_file use n =
   let nctxt = Commands.add_file (Global.context ()) n in
   begin
     Global.set_context nctxt;

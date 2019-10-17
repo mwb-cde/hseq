@@ -29,7 +29,7 @@ let _ = begin_theory "Pair" ["Fun"];;
 
 let _ = compile [] "pairLib.mli";;
 let _ = compile [] "pairLib.ml";;
-let _ = add_file ~use:true "pairLib.cmo";;
+let _ = add_file true "pairLib.cmo";;
 
 (** [pair_prec] and [pair_fixity] must agree with the values in pairLib.ml. *)
 let pair_prec = 10
