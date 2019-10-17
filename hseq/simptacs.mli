@@ -1,6 +1,6 @@
 (*----
   Name: simptacs.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -87,9 +87,8 @@ val simpC_engine_tac:
 (** {5 Simplifying assumptions} *)
 
 val simpA0_tac:
-  Data.t -> ?a:Logic.label
-  -> (Data.t) Tactics.data_tactic
-(** [simpA1_tac cntrl ret ?a goal]: Simplify assumptions
+  Data.t -> (Logic.label)option -> (Data.t)Tactics.data_tactic
+(** [simpA1_tac cntrl ret a goal]: Simplify assumptions
 
     If [a] is given, add other assumptions to the simpset and then
     simplify [a]. If [a] is not given, simplify each assumption,
@@ -100,9 +99,8 @@ val simpA0_tac:
 *)
 
 val simpA_tac:
-  Data.t -> ?a:Logic.label
-  -> Tactics.tactic
-(** [simpA_tac cntrl ?a goal]: Simplify assumptions
+  Data.t -> (Logic.label)option -> Tactics.tactic
+(** [simpA_tac cntrl a goal]: Simplify assumptions
 
     If [a] is given, add other assumptions to the simpset and then
     simplify [a]. If [a] is not given, simplify each assumption,
@@ -116,9 +114,8 @@ val simpA_tac:
 (** {5 Simplifying conclusions} *)
 
 val simpC0_tac:
-  Data.t -> ?c:Logic.label
-  -> (Data.t) Tactics.data_tactic
-(** [simpC1_tac cntrl ret ?c goal]: Simplify conclusions.
+  Data.t -> (Logic.label)option -> (Data.t) Tactics.data_tactic
+(** [simpC1_tac cntrl ret c goal]: Simplify conclusions.
 
     If [c] is given, add other conclusions to the simpset and simplify
     [c]. Otherwise, simplify each conclusion, starting with the last,
@@ -129,9 +126,8 @@ val simpC0_tac:
 *)
 
 val simpC_tac:
-  Data.t -> ?c:Logic.label
-  -> Tactics.tactic
-(** [simpC_tac cntrl ?c goal]: Simplify conclusions.
+  Data.t -> (Logic.label)option -> Tactics.tactic
+(** [simpC_tac cntrl c goal]: Simplify conclusions.
 
     If [c] is given, add other conclusions to the simpset and simplify
     [c]. Otherwise, simplify each conclusion, starting with the last,

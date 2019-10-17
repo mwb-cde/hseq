@@ -627,9 +627,12 @@ val add_conv:
 (** {5 Tactics} *)
 module Tactics: sig
   val simpA_tac:
-    Simpset.simpset -> Logic.thm list -> Logic.label
-    -> Tactics.tactic
-  (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
+    Simpset.simpset -> Logic.thm list -> Tactics.tactic
+  val simpA_at_tac:
+    Simpset.simpset -> Logic.thm list -> Logic.label -> Tactics.tactic
+
+  (** [simpA_tac set rules]
+      [simpA_at set rules a]
 
     Simplify assumptions.
 
@@ -646,15 +649,19 @@ module Tactics: sig
    *)
 
   val simpA: Logic.thm list -> Tactics.tactic
-  (** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
+  val simpA_at: Logic.thm list -> Logic.label -> Tactics.tactic
+  (** [simpA]: Shorthand for {!Simplib.simpA}
 
     @raise No_change If no change is made.
    *)
 
   val simpC_tac:
-    Simpset.simpset -> Logic.thm list -> Logic.label
-    -> Tactics.tactic
-  (** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
+    Simpset.simpset -> Logic.thm list -> Tactics.tactic
+  val simpC_at_tac:
+    Simpset.simpset -> Logic.thm list -> Logic.label -> Tactics.tactic
+
+  (** [simpC_tac set rules goal]
+      [simpC_at_tac set rules c goal]
 
     Simplify assumptions.
 
@@ -671,13 +678,15 @@ module Tactics: sig
    *)
 
   val simpC: Logic.thm list ->  Tactics.tactic
-  (** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+  val simpC_at: Logic.thm list -> Logic.label ->  Tactics.tactic
+  (** [simp]: Shorthand for {!Simplib.simpC_tac}.
+      [simp_at]: Shorthand for {!Simplib.simpC_at_tac}.
 
     @raise No_change If no change is made.
    *)
 
   val simp_all_tac: Simpset.simpset -> Logic.thm list -> Tactics.tactic
-  (** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+  (** [simp_all_tac cntrl ignore asms set rules goal]
 
     Simplify each formula in the subgoal.
 
@@ -697,13 +706,13 @@ module Tactics: sig
    *)
 
   val simp_tac: Simpset.simpset -> Logic.thm list -> Tactics.tactic
-  (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
+  (** [simp_tac cntrl ignore asms set f rules goal]
 
     Simplifier tactic.
    *)
 
   val simp: (Logic.thm)list -> Tactics.tactic
-(** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+(** [simp]: Shorthand for {!Simplib.simp_tac}.
 
     @raise No_change If no change is made.
  *)

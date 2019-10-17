@@ -1,6 +1,6 @@
 (*----
   Name: simplib.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -45,26 +45,23 @@ let init_std_ss () =
 
 (*** Toplevel simplification tactics ***)
 
-let simpC_tac
-    ?(cntrl = Rewrite.default) ?(ignore = [])
-    set ?add ?c rules ctxt goal =
+let gen_simpC_tac
+      arg_cntrl arg_ignore arg_cncl
+      set rules ctxt goal =
   (** uset: The simpset to use. **)
+  let cntrl = Lib.from_option arg_cntrl Rewrite.default
+  and ignore_cncls = Lib.from_option arg_ignore []
+  in
   let sctxt = goal_context ctxt goal in
   let uset =
-    let uset1 =
-      match add with
-        | None -> set
-        | Some s -> Simpset.join s set
-    in
-    (** If there are rules, make a simpset from them. **)
-    match rules with
-      | [] -> uset1
-      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
+    if rules = []
+    then set
+    else Simpset.simpset_add_thms sctxt set rules
   in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags =
     let sqnt = Tactics.sequent goal in
-    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore_cncls
   in
   (** simp_data: The simpset data. *)
   let simp_data =
@@ -74,31 +71,31 @@ let simpC_tac
       (Simplifier.Data.set_control data1 cntrl)
       uset
   in
-  Simptacs.simpC_tac simp_data ?c ctxt goal
+  Simptacs.simpC_tac simp_data arg_cncl ctxt goal
 
-let simpC set ?c ctxt goal = simpC_tac set ?c [] ctxt goal
+let simpC_tac set rules = gen_simpC_tac None None None set rules
+let simpC_at_tac set rules c = gen_simpC_tac None None (Some(c)) set rules
 
-let simpA_tac
-    ?(cntrl = Rewrite.default) ?(ignore = [])
-    set ?add ?a rules ctxt goal =
+let simpC set ctxt goal = simpC_tac set [] ctxt goal
+let simpC_at set c ctxt goal = simpC_at_tac set [] c ctxt goal
+
+let gen_simpA_tac arg_cntrl arg_ignore arg_a set rules ctxt goal =
+  let cntrl = Lib.from_option arg_cntrl Rewrite.default
+  and ignore_asms = Lib.from_option arg_ignore []
+  in
   let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
   let uset =
-    let uset1 =
-      match add with
-        | None -> set
-        | Some s -> Simpset.join s set
-    in
     (** If there are rules, make a simpset from them. **)
-    match rules with
-      | [] -> uset1
-      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
+    if rules = []
+    then set
+    else Simpset.simpset_add_thms sctxt set rules
   in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags =
     let sqnt = Tactics.sequent goal
     in
-    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore_asms
   in
   (** simp_data: The simpset data. *)
   let simp_data =
@@ -108,31 +105,32 @@ let simpA_tac
       (Simplifier.Data.set_control data1 cntrl)
       uset
   in
-  Simptacs.simpA_tac simp_data ?a ctxt goal
+  Simptacs.simpA_tac simp_data arg_a ctxt goal
 
-let simpA set ?a ctxt goal = simpA_tac ?a set [] ctxt goal
+let simpA_tac set rules =
+  gen_simpA_tac None None None set rules
+let simpA_at_tac set rules a =
+  gen_simpA_tac None None (Some(a)) set rules
 
-let simp_all_tac
-    ?(cntrl = Rewrite.default) ?(ignore = [])
-    set ?add rules ctxt goal =
+let simpA set = simpA_tac set []
+let simpA_at set a = simpA_at_tac set [] a
+
+let gen_simp_all_tac arg_cntrl arg_ignore set rules ctxt goal =
+  let cntrl = Lib.from_option arg_cntrl Rewrite.default
+  and ignore_asms = Lib.from_option arg_ignore []
+  in
   let sctxt = goal_context ctxt goal in
   (** uset: The simpset to use. **)
   let uset =
-    let uset1 =
-      match add with
-        | None -> set
-        | Some s -> Simpset.join s set
-    in
-    (** If there are rules, make a simpset from them. **)
-    match rules with
-      | [] -> uset1
-      | _ -> Simpset.simpset_add_thms sctxt uset1 rules
+    if rules = []
+    then set
+    else Simpset.simpset_add_thms sctxt set rules
   in
   (** ignore_tags: The tags of sequent formulas to be left alone. **)
   let ignore_tags =
     let sqnt = Tactics.sequent goal
     in
-    List.map (fun l -> Logic.label_to_tag l sqnt) ignore
+    List.map (fun l -> Logic.label_to_tag l sqnt) ignore_asms
   in
   (** simp_data: The simpset data. *)
   let simp_data =
@@ -145,31 +143,41 @@ let simp_all_tac
   in
   Simptacs.full_simp_tac simp_data ctxt goal
 
-let simp_all set ctxt goal = simp_all_tac set [] ctxt goal
+let simp_all_tac set rules ctxt goal =
+  gen_simp_all_tac None None set rules ctxt goal
 
-let simp_tac
-    ?(cntrl = Rewrite.default) ?(ignore = [])
-    set ?add ?f rules (ctxt: Context.t) goal =
+let simp_all set ctxt goal = gen_simp_all_tac None None set [] ctxt goal
+
+let gen_simp_tac arg_cntrl arg_ignore arg_f set rules ctxt goal =
+  let cntrl = Lib.from_option arg_cntrl Rewrite.default
+  and ignore_asms = Lib.from_option arg_ignore []
+  in
   let sqnt = Tactics.sequent goal in
   let tac =
-    match f with
-      | None ->
-        simpC_tac ~cntrl:cntrl ~ignore:ignore set ?add rules
+    match arg_f with
       | Some(x) ->
         let tg = Logic.label_to_tag x sqnt in
         begin
           match Lib.try_find (get_tagged_concl (ftag tg)) goal with
             | None ->
-              simpA_tac ~cntrl:cntrl ~ignore:ignore
-                set ?add ~a:(ftag tg)rules
+              gen_simpA_tac (Some(cntrl)) (Some(ignore_asms)) (Some(ftag tg))
+                set rules
             | _ ->
-              simpC_tac ~cntrl:cntrl ~ignore:ignore
-                set ?add ~c:(ftag tg)rules
+              gen_simpC_tac (Some(cntrl)) (Some(ignore_asms)) (Some(ftag tg))
+                set rules
         end
+      | _ ->
+        gen_simpC_tac (Some(cntrl)) (Some(ignore_asms)) None set rules
   in
   tac ctxt goal
 
-let simp set ?f ctxt goal = simp_tac ?f set [] ctxt goal
+let simp_tac set rules ctxt goal =
+  gen_simp_tac None None None set rules ctxt goal
+let simp_at_tac set rules f ctxt goal =
+  gen_simp_tac None None (Some(f)) set rules ctxt goal
+
+let simp set ctxt goal = simp_tac set [] ctxt goal
+let simp_at set f ctxt goal = simp_at_tac set [] f ctxt goal
 
 (*** Initialising functions ***)
 

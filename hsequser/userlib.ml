@@ -738,21 +738,25 @@ let add_conv trms conv =
 
 module Tactics = struct
 
-  let simpA_tac set rules a =
-    Simplib.simpA_tac set ~a:a rules
-  (** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
-
-    Simplify assumptions.
-   *)
+  let simpA_tac =
+    Simplib.simpA_tac
+  let simpA_at_tac =
+    Simplib.simpA_at_tac
 
   let simpA rules =
     Simplib.simpA_tac (Global.simpset()) rules
+  let simpA_at rules =
+    Simplib.simpA_at_tac (Global.simpset()) rules
 
-  let simpC_tac set rules c =
-    Simplib.simpC_tac set ~c:c rules
+  let simpC_tac =
+    Simplib.simpC_tac
+  let simpC_at_tac =
+    Simplib.simpC_at_tac
 
   let simpC rules =
     Simplib.simpC_tac (Global.simpset()) rules
+  let simpC_at rules =
+    Simplib.simpC_at_tac (Global.simpset()) rules
 
   let simp_all_tac set thms =
     Simplib.simp_all_tac set thms
@@ -768,7 +772,6 @@ module Tactics = struct
     @raise No_change If no change is made.
    *)
 
-
   let simp_tac set thms =
     Simplib.simp_tac set thms
   (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
@@ -776,9 +779,8 @@ module Tactics = struct
     Simplifier tactic.
    *)
 
-
   let simp rules g = simp_tac (Global.simpset()) rules g
-(** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+  (** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
 
     @raise No_change If no change is made.
  *)

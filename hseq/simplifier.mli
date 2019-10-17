@@ -218,7 +218,6 @@ val simp_rewrite_tac:
     to the main rewriting tactics. If [is_concl] is true, call
     [Tactics.pure_rewriteC plan ~term:trm lbl goal] otherwise
     call [Tactics.pure_rewriteA plan ~term:trm lbl goal].
-
 *)
 
 (** {5 Conditional rule tactics} *)

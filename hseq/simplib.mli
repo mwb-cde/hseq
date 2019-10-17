@@ -1,6 +1,6 @@
 (*----
   Name: simplib.mli
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -52,15 +52,26 @@ val init_std_ss: unit -> Simpset.simpset
 
 (** {5 User level simplification tactics} *)
 
-val simpA_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
+val gen_simpA_tac:
+  (Simplifier.control)option
+  -> ((Logic.label)list)option
+  -> (Logic.label)option
   -> Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?a:Logic.label
   -> Logic.thm list
   -> Tactics.tactic
-(** [simpA_tac ?cntrl ?ignore ?asms ?set ?add ?a rules goal]
+
+val simpA_tac:
+  Simpset.simpset -> Logic.thm list -> Tactics.tactic
+val simpA_at_tac:
+  Simpset.simpset -> Logic.thm list -> Logic.label -> Tactics.tactic
+
+(** [gen_simpA_tac cntrl ignore a set rules goal]
+
+    [simpA_tac set rules goal]: Equiavlent to
+        [gen_simpA_tac None None None set rules goal]
+
+    [simpA_at set rules a goal]: Equiavlent to
+        [gen_simpA_tac None None (Some(a)) set rules goal]
 
     Simplify assumptions.
 
@@ -82,10 +93,7 @@ val simpA_tac:
 
     @param ignore List of assumptions/conclusions to ignore. Default: [[]].
 
-    @param set The simpset to use. Default: [std_ss].
-
-    @param add Add this simpset to the set specified with [set]. This
-    allows extra simpsets to be used with the standard simpset.
+    @param set The simpset to use.
 
     @param rules Additional rewrite rules to use.
 
@@ -93,23 +101,31 @@ val simpA_tac:
 *)
 
 val simpA:
-  Simpset.simpset
-  -> ?a:Logic.label
-  -> Tactics.tactic
-(** [simp ?a]: Shorthand for {!Simplib.simpA_tac}.
+  Simpset.simpset -> Tactics.tactic
+val simpA_at:  Simpset.simpset -> Logic.label -> Tactics.tactic
+
+(** [simpA set]: Shorthand for {!Simplib.simpA_tac std_ss []}
+    [simpA_at set a ]: Shorthand for {!Simplib.simpA_at set [] a}
 
     @raise No_change If no change is made.
 *)
 
-val simpC_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
+val gen_simpC_tac:
+  (Simplifier.control)option
+  -> ((Logic.label)list)option
+  -> (Logic.label)option
   -> Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?c:Logic.label
   -> Logic.thm list
   -> Tactics.tactic
-(** [simpC_tac ?cntrl ?ignore ?asms ?set ?add ?c rules goal]
+
+val simpC_tac: Simpset.simpset -> Logic.thm list -> Tactics.tactic
+val simpC_at_tac:
+  Simpset.simpset -> Logic.thm list -> Logic.label -> Tactics.tactic
+(** [gen_simpC_tac ?cntrl ?ignore ?asms ?c set rules goal]
+
+    [simpC_tac set rules goal] is [gen_simpC_tac set rules goal]
+
+    [simpC_at_tac set rules c goal] is [gen_simp_tac c set rules goal]
 
     Simplify assumptions.
 
@@ -141,22 +157,23 @@ val simpC_tac:
     @raise No_change If no change is made.
 *)
 
-val simpC:
-  Simpset.simpset
-  -> ?c:Logic.label ->  Tactics.tactic
-(** [simp ?c]: Shorthand for {!Simplib.simpC_tac}.
+val simpC: Simpset.simpset ->  Tactics.tactic
+val simpC_at: Simpset.simpset -> Logic.label ->  Tactics.tactic
+(** [simp c]: Shorthand for {!Simplib.simpC_tac}
+    [simp_at c]: Shorthand for {!Simplib.simpC_at_tac}
 
     @raise No_change If no change is made.
 *)
 
+val gen_simp_all_tac:
+  (Simplifier.control)option -> ((Logic.label)list)option
+  -> Simpset.simpset -> Logic.thm list -> Tactics.tactic
 val simp_all_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> Logic.thm list
-  -> Tactics.tactic
-(** [simp_all_tac ?cntrl ?ignore ?asms ?set ?add rules goal]
+  Simpset.simpset -> Logic.thm list -> Tactics.tactic
+(**
+    [gen_simp_all_tac cntrl ignore asms set rules goal]
+
+    [simp_all_tac set rules goal]
 
     Simplify each formula in the subgoal.
 
@@ -190,14 +207,14 @@ val simp_all: Simpset.simpset -> Tactics.tactic
 *)
 
 
-val simp_tac:
-  ?cntrl:Simplifier.control
-  -> ?ignore:Logic.label list
-  -> Simpset.simpset
-  -> ?add:Simpset.simpset
-  -> ?f:Logic.label
-  -> Logic.thm list
+val gen_simp_tac:
+  (Simplifier.control)option -> ((Logic.label)list)option
+  -> (Logic.label)option -> Simpset.simpset -> Logic.thm list
   -> Tactics.tactic
+val simp_tac:
+  Simpset.simpset -> Logic.thm list -> Tactics.tactic
+val simp_at_tac:
+  Simpset.simpset -> Logic.thm list -> Logic.label -> Tactics.tactic
 (** [simp_tac ?cntrl ?ignore ?asms ?set ?add ?f rules goal]
 
     Simplifier tactic.
@@ -230,14 +247,15 @@ val simp_tac:
     @raise No_change If no change is made.
 *)
 
-
 val simp:
-  Simpset.simpset -> ?f:Logic.label ->  Tactics.tactic
-(** [simp ?f]: Shorthand for {!Simplib.simp_tac}.
+  Simpset.simpset ->  Tactics.tactic
+val simp_at:
+  Simpset.simpset -> Logic.label ->  Tactics.tactic
+(** [simp]: Shorthand for {!Simplib.simp_tac}.
+    [simp_at]: Shorthand for {!Simplib.simp_at_tac}.
 
     @raise No_change If no change is made.
 *)
-
 
 (** {5 Initialising functions} *)
 

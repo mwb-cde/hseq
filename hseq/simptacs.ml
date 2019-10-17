@@ -1,6 +1,6 @@
 (*----
   Name: simptacs.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2019
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -192,7 +192,7 @@ let simpC_engine_tac cntrl l ctxt goal =
 
     Doesn't clean-up.
 *)
-let simpA0_tac data ?a ctxt goal =
+let simpA0_tac data a ctxt goal =
   let sqnt = sequent goal in
   let excluded_tags = Data.get_exclude data in
   let except_tag x = List.exists (Tag.equal x) excluded_tags in
@@ -255,7 +255,7 @@ let simpA0_tac data ?a ctxt goal =
     else raise No_change
   with _ -> raise No_change
 
-(** [simpA_tac ret cntrl ?a goal]: Simplify conclusion.
+(** [simpA_tac ret cntrl a goal]: Simplify conclusion.
 
     If [l] is given, just simplify conclusion [l]. Otherwise, simplify
     each conclusion, starting with the last, adding it to the
@@ -263,8 +263,8 @@ let simpA0_tac data ?a ctxt goal =
 
     Doesn't clean-up.
 *)
-let simpA_tac cntrl ?a ctxt goal =
-  try apply_tac (simpA0_tac cntrl ?a) clean_up_tac ctxt goal
+let simpA_tac cntrl a ctxt goal =
+  try apply_tac (simpA0_tac cntrl a) clean_up_tac ctxt goal
   with _ -> raise No_change
 
 (***
@@ -278,7 +278,7 @@ let simpA_tac cntrl ?a ctxt goal =
 
     Doesn't clean-up.
 *)
-let simpC0_tac data ?c ctxt goal =
+let simpC0_tac data c ctxt goal =
   let sqnt = sequent goal in
   let excluded_tags = Data.get_exclude data in
   let except_tag x = List.exists (Tag.equal x) excluded_tags in
@@ -343,14 +343,14 @@ let simpC0_tac data ?c ctxt goal =
     else raise No_change
   with _ -> raise No_change
 
-(** [simpC_tac ret cntrl ?l goal]: Simplify conclusion.
+(** [simpC_tac ret cntrl l goal]: Simplify conclusion.
 
     If [l] is given, just simplify conclusion [l]. Otherwise, simplify
     each conclusion, starting with the last, adding it to the
     assumptions after it is simplified.
 *)
-let simpC_tac cntrl ?c ctxt goal =
-  try apply_tac (simpC0_tac cntrl ?c) clean_up_tac ctxt goal
+let simpC_tac cntrl c ctxt goal =
+  try apply_tac (simpC0_tac cntrl c) clean_up_tac ctxt goal
   with _ -> raise No_change
 
 (***
