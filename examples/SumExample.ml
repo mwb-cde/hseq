@@ -62,15 +62,15 @@ let sum_example () =
   (** {5 Definition and basic properties of Sum types} *)
 
   let _ =
-    define
+    define []
       (?<% "mk_suml v = (% sel l r: ((l = v) & sel)) ");
   in
   let _ =
-    define
+    define []
       (?<% "mk_sumr v = (%sel l r: ((r = v) & not sel))");
   in
   let _ =
-    define
+    define []
       (?<% " is_sum f =
             ?l r: (f = (mk_suml l)) | (f = (mk_sumr r))");
   in
@@ -85,10 +85,12 @@ let sum_example () =
             ]
   in
   let _ =
-    typedef ~pp:(sum_prec, infixr, Some("+"))
-            ~thm:sum_exists
-            ~rep:"dest_SUM" ~abs:"make_SUM"
-            (?<: "('a, 'b)SUM = (bool -> 'a -> 'b -> bool): is_sum")
+    typedef
+      [opt_symbol (sum_prec, infixr, Some("+"));
+       opt_thm sum_exists;
+       opt_repr "dest_SUM";
+       opt_abs "make_SUM"]
+      (?<: "('a, 'b)SUM = (bool -> 'a -> 'b -> bool): is_sum")
   in
   let mk_suml_is_sum =
     theorem "mk_suml_is_sum"
@@ -153,22 +155,22 @@ let sum_example () =
    [outr a]: Destructor for [inr]
    *)
 
-  let _ = define (?<% " inl a = make_SUM (mk_suml a) ")
+  let _ = define [] (?<% " inl a = make_SUM (mk_suml a) ")
   in
 
-  let _ = define (?<% " inr b = make_SUM (mk_sumr b) ")
+  let _ = define [] (?<% " inr b = make_SUM (mk_sumr b) ")
   in
 
-  let _ = define (?<% " isl a = ?x: a = (inl x) ")
+  let _ = define [] (?<% " isl a = ?x: a = (inl x) ")
   in
 
-  let _ = define (?<% " isr a = ?x: a = (inr x) ")
+  let _ = define [] (?<% " isr a = ?x: a = (inr x) ")
   in
 
-  let _ = define (?<% " outl x = (@v: x = (inl v)) ")
+  let _ = define [] (?<% " outl x = (@v: x = (inl v)) ")
   in
 
-  let _ = define (?<% " outr x = (@v: x = (inr v)) ")
+  let _ = define [] (?<% " outr x = (@v: x = (inr v)) ")
   in
 
   let _ =
@@ -493,7 +495,7 @@ let sum_example () =
       (!% " ! x: (isl x) => ((inl (outl x)) = x) ")
       [
         flatten_tac
-        ++ cases_of (!% " _x ") ++ replace_tac
+        ++ cases_of (!% " _x ") ++ replace_tac []
         --
           [
             rewriteC_tac [outl_thm] ++ eq_tac;
@@ -511,7 +513,7 @@ let sum_example () =
       (!% " ! x: (isr x) => ((inr (outr x)) = x) ")
       [
         flatten_tac
-        ++ cases_of (!% " _x ") ++ replace_tac
+        ++ cases_of (!% " _x ") ++ replace_tac []
         --
           [
             cut [] isr_thm
@@ -525,7 +527,7 @@ let sum_example () =
   in
 
   let _ =
-    define (?<% "map f g x
+    define [] (?<% "map f g x
                  =
                  if (isl x) then (inl (f (outl x))) else (inr (g (outr x)))")
   in

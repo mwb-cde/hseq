@@ -53,7 +53,7 @@ open Userlib
 (** Initialise HSeq (quietly) *)
 let initialize() =
   Global.init();
-  Global.set_context (BaseTheory.builder (Global.context()))
+  Global.set_context (BaseTheory.builder false (Global.context()))
 
 let run () =
   prove (hterm "! x y z: ((x | y) & z) => ((x & z) | (y & z)) ")
