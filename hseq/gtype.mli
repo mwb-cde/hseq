@@ -19,8 +19,6 @@
   License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
   ----*)
 
-(** Types and their manipulation *)
-
 open Lib
 
 (** {5 Base representation of logic types} *)
