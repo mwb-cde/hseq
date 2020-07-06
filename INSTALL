@@ -2,7 +2,7 @@ Installation
 ============
 
 Requirements: 
-  OCaml version 4.02
+  OCaml version 4.08
 
 To build:
   GNU Make on Unix 
