@@ -366,16 +366,11 @@ let apply_split f lst =
  * Sets of strings
  *)
 
-let string_compare x y =
-  if x == y
-  then 0
-  else Pervasives.compare x y
-
 module StringSet =
   Set.Make
     (struct
       type t = string
-      let compare = string_compare
+      let compare = Stdlib.compare
      end)
 
 (**

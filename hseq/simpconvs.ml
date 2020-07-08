@@ -344,9 +344,7 @@ let is_constant clst (qs, c, t) = List.exists (Term.equals t) clst
 let is_constant_true (qs, c, t) = Lterm.is_true t
 let is_constant_false (qs, c, t) = Lterm.is_false t
 let is_constant_bool (qs, c, t) =
-  Pervasives.(||)
-    (is_constant_true (qs, c, t))
-    (is_constant_true (qs, c, t))
+  ((is_constant_true (qs, c, t)) || (is_constant_false (qs, c, t)))
 
 let is_neg_all (qs, c, t) =
   if Lterm.is_neg t

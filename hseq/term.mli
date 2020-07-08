@@ -115,9 +115,9 @@ type term =
 
 val equals : term -> term -> bool
 (** [equals s t]: Syntactic equality of terms [s] and [t]. This is
-    essentially the same as [Pervasives.=] over terms except that
+    essentially the same as [Stdlib.=] over terms except that
     references (type [Binder.t]) are compared as first class objects
-    (using [Pervasives.==]).
+    (using [Stdlib.==]).
 *)
 
 val compare: term -> term -> Order.t

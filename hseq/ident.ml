@@ -48,14 +48,6 @@ let name_of (_, n) = n
 
 (*** Comparisons ***)
 
-(*
-let equals x y =
-  ((x == y) || (Pervasives.compare x y) = 0)
-
-let lessthan x y =
-  if (x == y) then false
- *)
-
 let compare x y =
   if (x == y) then Order.Equal
   else

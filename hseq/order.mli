@@ -39,6 +39,6 @@ sig
     GreaterThan]. *)
   val wrap: ('a -> 'a -> int) -> 'a -> 'a -> t
 
-  (** [compare x y]: This is [wrap Pervasives.compare x y]. *)
+  (** [compare x y]: This is [wrap Stdlib.compare x y]. *)
   val compare: 'a -> 'a -> t
 end

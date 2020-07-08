@@ -107,7 +107,7 @@ module MapTree:
 
 (** {5 Simple Trees}
 
-    Trees ordered by [Pervasives.compare]. Example: a balanced tree
+    Trees ordered by [Stdlib.compare]. Example: a balanced tree
     indexed by strings is constructed by [SimpleTree (struct type key
     = string end)].
 *)
@@ -118,7 +118,7 @@ sig
   type key
 end
 
-(** Balanced trees, ordered by [Pervasives.compare] *)
+(** Balanced trees, ordered by [Stdlib.compare] *)
 module type SimpleTreeType = TreeType
 
 (** Balanced Trees indexed by type A.key *)

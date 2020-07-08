@@ -49,8 +49,8 @@ struct
       GreaterThan]. *)
   let wrap cmp x y = int_to_order (cmp x y)
 
-(** [compare x y]: This is [wrap Pervasives.compare x y]. *)
+(** [compare x y]: This is [wrap compare x y]. *)
   let compare x y =
-    wrap Pervasives.compare x y
+    wrap Stdlib.compare x y
 
 end

@@ -863,7 +863,7 @@ struct
     fold fn tr []
 end
 
-(** Simple trees, indexed by Pervasives.compare. *)
+(** Simple trees, indexed by Stdlib.compare. *)
 
 module type Data =
 sig
@@ -883,5 +883,5 @@ module SimpleTree =
 
 module StringTree = MapTree(struct
                              type key = string
-                             let compare = Order.Util.wrap Pervasives.compare
+                             let compare = Order.Util.compare
                             end)
