@@ -1221,8 +1221,9 @@ let extract_rule node src=
     match src with
       | Asm(x) ->
           let sq =
-            Subgoals.node_sqnt
-              (Lib.dest_option (error "extract_rule") node)
+            if node = None
+            then raise (error "extract_rule")
+            else Subgoals.node_sqnt (Lib.from_some node)
           in
           let asm =
             try drop_tag(Sequent.get_tagged_asm (label_to_tag x sq) sq)
@@ -1232,9 +1233,10 @@ let extract_rule node src=
           (asm, None)
       | OAsm(x, order) ->
         let sq =
-          Subgoals.node_sqnt
-            (Lib.
-             dest_option (error "extract_rule") node)
+          if node = None
+          then raise (error "extract_rule")
+          else
+          Subgoals.node_sqnt (Lib.from_some node)
         in
         let asm=
           try drop_tag (Sequent.get_tagged_asm (label_to_tag x sq) sq)

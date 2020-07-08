@@ -112,7 +112,9 @@ let table thdb = thdb.db
 let set_table thdb tbl = { thdb with db = tbl }
 
 let current thdb =
-  Lib.dest_option (Failure "No current theory") thdb.curr
+  if thdb.curr = None
+  then raise (Failure "No current theory")
+  else Lib.from_some (thdb.curr)
 let set_current thdb c =
   { thdb with curr = c }
 

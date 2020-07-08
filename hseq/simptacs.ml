@@ -443,7 +443,11 @@ let full_simp0_tac data ctxt goal =
 *)
 let full_simp_tac cntrl ctxt goal =
   let clean_tac cntrl1 ctxt0 g =
-    let ncntrl = Lib.dest_option (Failure "full_simp_tac") cntrl1 in
+    let ncntrl =
+      if cntrl1 = None
+      then raise (Failure "full_simp_tac")
+      else Lib.from_some cntrl1
+    in
     clean_up_tac ncntrl ctxt0 g
   in
   try

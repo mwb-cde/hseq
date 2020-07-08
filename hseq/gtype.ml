@@ -359,7 +359,7 @@ let mk_plain_typevar ctr =
 
    Useful when constructing types from existing types.
 *)
-let normalize_vars typ=
+let normalize_vars typ =
   let lookup tbl str =
     try (tbl, Lib.find str tbl)
     with Not_found ->

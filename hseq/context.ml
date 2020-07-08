@@ -575,7 +575,7 @@ struct
   let add_path ctxt x = set_path ctxt (x::(get_path ctxt))
   let remove_path ctxt x =
     let pth = get_path ctxt in
-    set_path ctxt (Lib.filter (fun y -> x = y) pth)
+    set_path ctxt (List.filter (fun y -> x = y) pth)
 
   let init_thy_path ctxt =
     set_path ctxt ["."]

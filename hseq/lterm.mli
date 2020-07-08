@@ -271,6 +271,7 @@ val gen_term: Term.Binder.t list -> Term.term -> Term.term
 
 val in_scope: (string, bool)Lib.table
   -> Scope.t -> Term.term -> bool
+
 (** [in_scope memo spc thy t]: Check that term is in scope.  All
     identifiers and types must be declared in the given scope.  [memo]
     is used to memoise the lookup of names of free variables.

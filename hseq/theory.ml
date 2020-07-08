@@ -352,7 +352,7 @@ let add_term_pp_rec n ppr thy=
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_term_pp_rec n thy =
-  set_id_pps thy (Lib.filter (fun (x, _) -> x=n ) (get_id_pps thy))
+  set_id_pps thy (List.filter (fun (x, _) -> x=n ) (get_id_pps thy))
 
 let get_term_pplist thy =
   let ppl = get_id_pps thy
@@ -381,7 +381,7 @@ let add_type_pp_rec n ppr thy=
   else raise (Report.error ("Theory "^(get_name thy)^" is protected"))
 
 let remove_type_pp_rec n thy =
-  set_type_pps thy (Lib.filter (fun (x, _) -> x = n) (get_type_pps thy))
+  set_type_pps thy (List.filter (fun (x, _) -> x = n) (get_type_pps thy))
 
 let get_type_pplist thy =
   let ppl = get_type_pps thy

@@ -438,9 +438,10 @@ let typedef sctxt opts tydef =
         (n, simple_typedef sctxt (n, args, Some(d)))
       | Defn.Parser.Subtype(n, args, dtyp, set) ->
         let thm1=
-          Lib.dest_option
-            (Report.error ("Subtype definition must have an existance theorem"))
-            thm
+          if thm = None
+          then raise (Report.error
+                        ("Subtype definition must have an existance theorem"))
+          else Lib.from_some thm
         in
         let (ctxt1, def) =
           subtypedef sctxt (n, args, dtyp, set) (rep, abs) ?simp:simp thm1

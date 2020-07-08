@@ -418,7 +418,9 @@ let prove_cond_tac (cntrl: Data.t) values entry ctxt goal =
         (** Prove the condition. **)
         (fun (cond_data, data2) ctxt1 g1 ->
           let (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg)) =
-            Lib.dest_option (Failure "prove_cond_tac: 1") cond_data
+            if cond_data = None
+            then raise (Failure "prove_cond_tac: 1")
+            else Lib.from_some cond_data
           in
           let prover_tac = Data.get_tactic ncntrl
           in
@@ -599,7 +601,7 @@ let rec find_all_matches_tac data trm ctxt goal =
     let (cntrl1, tyenv1, qntenv1) = dest_match_data data in
     let cntrl2 = Data.dec_rr_depth cntrl1
     in
-    if Lib.compare_int_option (Data.get_rr_depth cntrl2) 0
+    if (Lib.from_option (Data.get_rr_depth cntrl2) 1) = 0
     then ((data1, trm1, rrlist1) >+ skip) ctxt1 g1
     else
       begin

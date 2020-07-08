@@ -1,6 +1,6 @@
 (*----
   Name: lib.mli
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -30,21 +30,30 @@ sig
 
 end
 
-(* Simple utility functions *)
+(** Lists  *)
+
+(** [list_string f sep l] Make a string by applying [f] to each item in [l]
+   with [sep] as the separator *)
 val list_string : ('a -> string) -> string -> 'a list -> string
-val insert : ('a -> 'a -> bool) -> 'a -> 'b -> ('a * 'b) list
+
+(** [insert p a b l] Insert [(a, b)] before the first item [(k, v)] in
+   association list [l] for which [p k] is true. If key is true then the new
+   pair is appended to the end of [l] *)
+val insert :
+  ('a -> 'a -> bool) -> 'a -> 'b -> ('a * 'b) list
   -> ('a * 'b) list
+(** [replace a b l] Replace with [b] the first value associated with [a] in [l] *)
 val replace : 'a -> 'b -> ('a * 'b) list -> ('a * 'b) list
+(** [index p l] The index of the first item in [l] to satisfy [p] *)
 val index: ('a -> bool) -> 'a list -> int
-val filter: ('a -> bool) -> 'a list -> 'a list
+(** [assocp p l] The first value in association list [l] with a key satisfying [p] *)
 val assocp: ('a -> bool) -> ('a * 'b) list -> 'b
 
 (** Hash tables *)
+
 type ('a, 'b)table = ('a, 'b) Hashtbl.t
 val empty_env : unit -> ('a, 'b)table
-val env_size : int -> ('a, 'b)table
 val find : 'a -> ('a, 'b)table -> 'b
-val bind_env : 'a -> 'b -> ('a, 'b)table -> unit
 val bind : 'a -> 'b -> ('a, 'b)table -> ('a, 'b)table
 val add : 'a -> 'b -> ('a, 'b)table -> 'b
 val member : 'a -> ('a, 'b)table -> bool
@@ -95,14 +104,7 @@ val apply_option: ('a -> 'b) -> 'a option -> 'b -> 'b
     i] then return [f i] else return [d].
 *)
 
-val dest_option: exn -> 'a option -> 'a
-(** [dest_option err x]: If [x] is [Some(y)] then [y], otherwise
-    raise [err] or [Failure].
-*)
-
 val set_int_option : int -> int option
-val get_int_option : int option -> int
-val compare_int_option: int option -> int -> bool
 val dec_int_option: int option -> int option
 
 (** {6 Dates} *)

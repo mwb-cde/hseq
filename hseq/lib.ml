@@ -63,11 +63,6 @@ let rec assocp p ls =
     | [] -> raise Not_found
     | (a, b)::ys -> if (p a) then b else assocp p ys
 
-let rec filter p ls =
-  match ls with
-    | [] -> []
-    | y::ys -> if (p y) then filter p ys else (y::filter p ys)
-
 let index p xs =
   let rec index_aux xs i =
     match xs with
@@ -75,15 +70,11 @@ let index p xs =
       | y::ys -> if (p y) then i else index_aux ys (i + 1)
   in index_aux xs 0
 
-(** {5 Substitutions} *)
+(** {5 Hash tables} *)
 
 type ('a,'b)table = ('a, 'b)Hashtbl.t
-
 let empty_env() = Hashtbl.create 13
-let env_size i = Hashtbl.create i
-
 let find x env = Hashtbl.find env x
-let bind_env t r env = (Hashtbl.remove env t; Hashtbl.add env t r)
 let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
 let add t r env =
   try (Hashtbl.find env t)
@@ -175,27 +166,14 @@ let from_option a b =
 let from_some a =
   match a with
   | Some(x) -> x
-  | _ -> raise (Invalid_argument "fromSome")
+  | _ -> raise (Invalid_argument "from_some")
 
 let apply_option f x d =
   match x with
     | None -> d
     | Some i -> f i
 
-let dest_option err x =
-  if x = None
-  then raise err
-  else from_some x
-
 let set_int_option i = Some(i)
-let get_int_option x =
-  match x with
-    | None -> raise (Invalid_argument "get_int_option")
-    | Some i -> i
-let compare_int_option x n =
-  match x with
-    | None -> false
-    | Some i -> i = n
 let dec_int_option x =
   match x with
     | None -> x
