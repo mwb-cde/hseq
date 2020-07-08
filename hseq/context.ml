@@ -1,6 +1,6 @@
 (*----
   Name: context.ml
-  Copyright Matthew Wahab 2012-2016
+  Copyright Matthew Wahab 2012-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -595,15 +595,20 @@ struct
   let find_file f path =
     let rec find_aux ths =
       match ths with
-      | [] -> raise Not_found
       | (t::ts) ->
         let nf = Filename.concat t f in
-        if Sys.file_exists nf then nf
+        if Sys.file_exists nf
+        then Some(nf)
         else find_aux ts
+      | _ -> None
     in
     if Sys.file_exists f
     then f
-    else find_aux path
+    else
+      let nf_opt = find_aux path in
+      if nf_opt = None
+      then raise Not_found
+      else Lib.from_some nf_opt
 
   let find_thy_file ctxt f =
     try find_file (file_of_thy ctxt f) (get_thy_path ctxt)
