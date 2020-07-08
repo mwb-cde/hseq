@@ -1,6 +1,6 @@
 (*----
   Name: lterm.mli
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -269,19 +269,23 @@ val gen_term: Term.Binder.t list -> Term.term -> Term.term
 
 (** {5 Resolving names} *)
 
-val in_scope: (string, bool)Lib.table
-  -> Scope.t -> Term.term -> bool
+val in_scope: Scope.t -> Term.term -> bool
+val in_scope_memoized:
+  (string, bool)Lib.table
+  -> Scope.t -> Term.term
+  -> (bool * (string, bool)Lib.table)
+(** [in_scope spc thy t]: Check that term is in scope.  All identifiers and
+    types must be declared in the given scope.
 
-(** [in_scope memo spc thy t]: Check that term is in scope.  All
-    identifiers and types must be declared in the given scope.  [memo]
-    is used to memoise the lookup of names of free variables.
-*)
+   [in_scope_memoized] is the memoized version  *)
 
+(*
 val binding_set_names:
   ((string, Ident.thy_id)Hashtbl.t)option
   -> Scope.t
   -> Term.Binder.t
   -> Term.Binder.t
+ *)
 (** [binding_set_names_types memo scp binding] Find and set
     names for types in a binding.
 *)

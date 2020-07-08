@@ -494,7 +494,7 @@ struct
     new_term
 
   let expand_type_names scpd t =
-    Ltype.set_name None (Scope.relaxed (scope_of scpd)) t
+    Ltype.set_name (Scope.relaxed (scope_of scpd)) t
 
   let expand_typedef_names scpd t=
     match t with
@@ -675,15 +675,14 @@ struct
 
   let apply_thy_fns ctxt thylist =
     let thyfns = load_functions ctxt in
-    let uthylist =
-      begin
-        let thyset = Lib.empty_env() in
-        List.filter
-          (fun x ->
-            if Lib.member (x.Theory.cname) thyset then false
-            else Lib.add (x.Theory.cname) true thyset)
-          thylist
-      end
+    let (uthylist, _) =
+      List.fold_left
+        (fun (lst, thyset) th ->
+          if Lib.member (th.Theory.cname) thyset
+          then (lst, thyset)
+          else ((th::lst), Lib.add (th.Theory.cname) true thyset))
+        ([], Lib.empty_env())
+        thylist
     in
     let rthylist = List.rev uthylist in
     let apply_thy_fn fnlist (ct0: t) (thy: Theory.contents) =

@@ -1,6 +1,6 @@
 (*----
   Name: ltype.mli
-  Copyright Matthew Wahab 2018-2019
+  Copyright Matthew Wahab 2018-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -21,8 +21,13 @@
 
 (** Manipulating types of the logic. *)
 
-val in_scope:
-  (string, bool)Lib.table -> Scope.t -> Gtype.t -> bool
+val in_scope: Scope.t -> Gtype.t -> bool
+
+val in_scope_memoized:
+  (string, bool)Lib.table
+  -> Scope.t
+  -> Gtype.t
+  -> (bool * (string, bool)Lib.table)
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
@@ -30,13 +35,15 @@ val in_scope:
     in scope, it is added to [memo].
 *)
 
-val set_name:
-  ((string, Ident.thy_id)Hashtbl.t)option
-  -> Scope.t -> Gtype.t -> Gtype.t
-(** [set_name memo scp ty]: set names in type [ty] to their
+val set_name: Scope.t -> Gtype.t -> Gtype.t
+val set_name_memoized:
+  (string, Ident.thy_id)Lib.table
+  -> Scope.t -> Gtype.t
+  -> (Gtype.t * (string, Ident.thy_id)Lib.table)
+(** [set_name scp ty]: set names in type [ty] to their
     long form.
 
-    [memo] is an optional memoisation table.
+    [set_name_memoized] is the memoized form
 *)
 
 val unfold: Scope.t -> Gtype.t -> Gtype.t

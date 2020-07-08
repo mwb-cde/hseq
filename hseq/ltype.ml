@@ -1,6 +1,6 @@
 (*----
   Name: ltype.ml
-  Copyright Matthew Wahab 2018-2019
+  Copyright Matthew Wahab 2018-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -30,32 +30,49 @@ open Gtype
    The function is memoised: if a constructor name is found to be
    in scope, it is added to [memo].
 *)
-let in_scope memo scp ty =
+let in_scope_memoized memo scp ty =
   let lookup_id n =
-    try Lib.find n memo
-    with Not_found ->
-      if Scope.in_scope scp n
-      then Lib.add n true memo
-      else raise Not_found
+    try Some(Lib.find n memo)
+    with Not_found -> None
   in
-  let rec in_scp_aux t =
+  let rec in_scp_aux t tbl =
     match t with
-    | Gtype.Atom(Gtype.Var(_)) -> ()
-    | Gtype.Atom(Gtype.Weak(_)) -> ()
+    | Gtype.Atom(Gtype.Var(_)) -> (true, tbl)
+    | Gtype.Atom(Gtype.Weak(_)) -> (true, tbl)
     | Gtype.Atom(Gtype.Ident(f)) ->
-       ignore(lookup_id (Ident.thy_of f))
-    | Gtype.App(l, r) -> (in_scp_aux l; in_scp_aux r)
+       let thy_id = Ident.thy_of f in
+       let rslt_opt = lookup_id thy_id in
+       if rslt_opt <> None
+       then (true, tbl)
+       else
+         begin
+           if Scope.in_scope scp thy_id
+           then (true, Lib.add thy_id true tbl)
+           else (false, tbl)
+         end
+    | Gtype.App(l, r) ->
+       let (lrslt, ltbl) = in_scp_aux l tbl in
+       if lrslt
+       then in_scp_aux r ltbl
+       else (lrslt, ltbl)
   in
-  try in_scp_aux ty; true
-  with Not_found -> false
+  in_scp_aux ty memo
+
+let in_scope scp t =
+  let (ret, _) = in_scope_memoized (Lib.empty_env()) scp t in
+  ret
+
 
 (** [set_name ?strict ?memo scp typ]: Set names in type [typ] to their
     long form.
 
     If [strict=true], fail if any type name doesn't occur in scope [scp].
 *)
-let set_name memo scp trm =
-  Gtype.set_name memo (Scope.types_scope scp) trm
+let set_name scp trm =
+  Gtype.set_name (Scope.types_scope scp) trm
+
+let set_name_memoized memo scp trm =
+  Gtype.set_name_memoized memo (Scope.types_scope scp) trm
 
 let unfold scp ty = Gtype.unfold (Scope.types_scope scp) ty
 

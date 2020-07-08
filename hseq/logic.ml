@@ -658,12 +658,11 @@ type plan = rr_type Rewrite.plan
    [trm] is in the scope [scp].
 *)
 let check_term_memo memo scp frm =
-  if Formula.in_scope_memo memo scp frm
-  then ()
-  else raise (logic_error "Badly formed formula" [frm])
+  Formula.in_scope_memo memo scp frm
 
 let check_term scp frm =
-  check_term_memo (Lib.empty_env()) scp frm
+  let (ret, _) = check_term_memo (Lib.empty_env()) scp frm in
+  ret
 
 (** [extract_rules scp rls l sg]: Filter the rewrite rules [rls].
 
@@ -677,7 +676,6 @@ let check_term scp frm =
     Fails if any rule in [rls] is not in scope.
 *)
 let extract_rules scp plan node=
-  let memo = Lib.empty_env() in
   let sq = Subgoals.node_sqnt node in
   let extract src =
     match src with
@@ -696,11 +694,13 @@ let extract_rules scp plan node=
        in
        asm
     | RRThm(x) ->
-       check_term_memo memo scp (formula_of x);
-      formula_of x
+       if check_term scp (formula_of x)
+       then formula_of x
+       else raise (logic_error "Rewrite: Invalid theorem" [])
     | ORRThm(x, order) ->
-       check_term_memo memo scp (formula_of x);
-      formula_of x
+       if check_term scp (formula_of x)
+       then formula_of x
+       else raise (logic_error "Rewrite: Invalid theorem" [])
   in
   Rewrite.mapping extract plan
 
@@ -1438,8 +1438,6 @@ struct
       Fails if any rule in [rls] is not in scope.
   *)
   let extract_rules scp plan sq =
-    let memo = Lib.empty_env()
-    in
     let get_asm lbl =
       try drop_tag (Sequent.get_tagged_asm (label_to_tag lbl sq) sq)
       with Not_found ->
@@ -1450,11 +1448,15 @@ struct
       | Asm(x) -> get_asm x
       | OAsm(x, order) -> get_asm x
       | RRThm(x) ->
-         check_term_memo memo scp (formula_of x);
-        formula_of x
+         if check_term scp (formula_of x)
+         then formula_of x
+         else
+           raise (logic_error "Rewrite: Invalid theorem" [])
       | ORRThm(x, order) ->
-         check_term_memo memo scp (formula_of x);
-        formula_of x
+         if check_term scp (formula_of x)
+         then formula_of x
+         else
+           raise (logic_error "Rewrite: Invalid theorem" [])
     in
     Rewrite.mapping extract plan
 
@@ -1983,7 +1985,7 @@ struct
       - make subtype property from setp and rep.
   *)
   let mk_subtype scp name args dtype setp rep_name abs_name exist_thm =
-    let dtype1 = Ltype.set_name None scp dtype
+    let dtype1 = Ltype.set_name scp dtype
     and setp1 = Lterm.set_names scp setp
     in
     let subtype_def =

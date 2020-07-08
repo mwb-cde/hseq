@@ -556,14 +556,16 @@ val matches: TypeScope.t -> t -> t -> bool
 
 (** {5 More functions} *)
 
-val set_name:
-  ((string, Ident.thy_id)Hashtbl.t)option
-  -> TypeScope.t -> t -> t
 (** [set_name memo scp ty]: set names in type [ty] to their
     long form.
 
-    [memo] is the optional memoisation table.
+    [set_name_memoized] is the memoized version
 *)
+val set_name: TypeScope.t -> t -> t
+val set_name_memoized:
+  (string, Ident.thy_id)Lib.table
+  -> TypeScope.t -> t
+  -> (t * (string, Ident.thy_id)Lib.table)
 
 val extract_bindings: t list -> Subst.t -> Subst.t
   -> Subst.t

@@ -1,6 +1,6 @@
 (*----
   Name: lterm.ml
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -591,35 +591,49 @@ let gen_term bs trm =
 
 (** [in_scope]: Check that term is in scope.
 *)
-let in_scope memo scp trm =
-  let lookup_id n =
-    try Lib.find n memo
-    with Not_found ->
-      if (Scope.in_scope scp n)
-      then Lib.add n true memo
-      else raise Not_found
+let in_scope_memoized memo scp trm =
+  let lookup_id n tbl =
+    try Some(Lib.find n tbl)
+    with Not_found -> None
   in
-  let rec in_scp_aux t =
+  let rec in_scp_aux t tbl =
     match t with
       | Atom(Id(id, ty)) ->
-          ignore(lookup_id (Ident.thy_of id));
-          Ltype.in_scope memo scp ty
-      | Bound(_) -> Ltype.in_scope memo scp (get_binder_type t)
+         let thy_nm = Ident.thy_of id in
+         let repl_opt = lookup_id thy_nm tbl in
+         if repl_opt <> None
+         then (true, tbl)
+         else
+           begin
+             if (Scope.in_scope scp thy_nm)
+             then
+               let itbl = Lib.add thy_nm true tbl in
+               Ltype.in_scope_memoized itbl scp ty
+             else (false, tbl)
+           end
+      | Bound(_) -> Ltype.in_scope_memoized tbl scp (get_binder_type t)
       | Atom(Meta(q)) ->
-        if Scope.is_meta scp q
-        then true
-        else raise Not_found
-      | Atom(Free(_)) -> raise Not_found
+         (Scope.is_meta scp q, tbl)
+      | Atom(Free(_)) -> (false, tbl)
       | Qnt(_, b) ->
-        ignore(Ltype.in_scope memo scp (get_binder_type t));
-        in_scp_aux b
-      | App(a, b) ->
-        ignore(in_scp_aux a);
-        in_scp_aux b
-      | _ -> true
+         let (ty_ok, tytbl) =
+           Ltype.in_scope_memoized tbl scp (get_binder_type t)
+         in
+         if ty_ok
+         then in_scp_aux b tytbl
+         else (ty_ok, tytbl)
+      | App(l, r) ->
+         let (lrslt, ltbl) = in_scp_aux l tbl in
+         if lrslt
+         then in_scp_aux r ltbl
+         else (lrslt, ltbl)
+      | _ -> (true, tbl)
   in
-  try ignore(in_scp_aux trm); true
-  with Not_found -> false
+  in_scp_aux trm memo
+
+let in_scope scp trm =
+  let (ret, _) = in_scope_memoized (Lib.empty_env()) scp trm in
+  ret
 
 (** [binding_set_names_types ?memo scp binding] Find and set names for
     types in a binding.
@@ -627,104 +641,129 @@ let in_scope memo scp trm =
 let binding_set_names memo scp binding =
   let (qnt, qname, qtype) = Term.Binder.dest binding
   in
-  Term.Binder.make
-    qnt qname
-    (Ltype.set_name memo (Scope.relaxed scp) qtype)
+  let (renamed, tbl) = Ltype.set_name_memoized memo (Scope.relaxed scp) qtype
+  in
+  (Term.Binder.make qnt qname renamed, tbl)
 
 (** [set_names scp thy trm] find and set long identifiers and types
     for variables in [trm] theory is [thy] if no long identifier can be
     found in scope [scp]
 *)
+type memos_t =
+  {
+    type_thy: (string, Ident.thy_id)Lib.table;
+    ids: (string, Ident.thy_id)Lib.table;
+    tys: (Ident.t, Gtype.t)Lib.table;
+    scope: (Ident.thy_id, bool)Lib.table;
+  }
+
+let empty_memos() =
+  {
+    type_thy = Lib.empty_env();
+    ids = Lib.empty_env();
+    tys = Lib.empty_env();
+    scope = Lib.empty_env();
+  }
+
+let lookup_name scp n memos =
+  try (Lib.find n (memos.ids), memos)
+  with Not_found ->
+    let nth = Scope.thy_of_term scp n
+    in
+    (nth, {memos with ids = (Lib.add n nth (memos.ids))})
+
+let lookup_type scp id memos =
+  try (Gtype.rename_type_vars (Lib.find id (memos.tys)), memos)
+  with Not_found ->
+    let nty =
+      try (Scope.type_of scp id)
+      with Not_found -> Gtype.mk_null()
+    in
+    (nty, {memos with tys = (Lib.add id nty (memos.tys))})
+
 let set_names scp trm =
-  let set_type_name memo s t =
-    Ltype.set_name (Some(memo)) (Scope.relaxed s) t
-  in
-  let id_memo = Lib.empty_env()
-  and type_memo = Lib.empty_env()
-  and type_thy_memo = Lib.empty_env()
-  in
-  let lookup_id n =
-    try Lib.find n id_memo
-    with Not_found ->
-      let nth = Scope.thy_of_term scp n
-      in
-      (ignore(Lib.add n nth id_memo); nth)
-  in
-  let lookup_type id =
-    try Gtype.rename_type_vars (Lib.find id type_memo)
-    with Not_found ->
-      let nty =
-        try Scope.type_of scp id
-        with Not_found -> Gtype.mk_null()
-      in
-      (ignore(Lib.add id nty type_memo); nty)
+  let set_type_name s t memos =
+    let (rty, rmemo) =
+      Ltype.set_name_memoized (memos.type_thy) (Scope.relaxed s) t
+    in
+    (rty, {memos with type_thy = rmemo})
   in
   let unify_types ty1 ty2 =
     try
-      let env = Ltype.unify scp ty1 ty2
-      in
+      let env = Ltype.unify scp ty1 ty2 in
       Gtype.mgu ty1 env
     with _ -> ty1
   in
-  let rec set_aux qnts t=
+  let rec set_aux qnts t memos =
     match t with
     | Atom(Id(id, ty)) ->
-       let th, n = Ident.dest id in
-       let nid =
-         if th = Ident.null_thy
-         then Ident.mk_long (lookup_id n) n
-         else id
+       let (th, n) = Ident.dest id in
+       let (nid, imemos) =
+         if th <> Ident.null_thy
+         then (id, memos)
+         else
+           begin
+             let (thy, thymemos) = lookup_name scp n memos
+             in
+             (Ident.mk_long thy n, thymemos)
+           end
        in
-       let ty1 = set_type_name type_thy_memo scp ty in
-       let nty =
-         try Some(lookup_type id)
-         with Not_found -> None
+       let ty1, memos1 = set_type_name scp ty imemos in
+       let (idty, memos2) = lookup_type scp id memos1
        in
-       let ret_id =
-         match nty with
-         | None -> Atom(Id(nid, ty1))
-         | Some(xty) -> Atom(Id(nid, unify_types xty ty1))
+       let ret = Atom(Id(nid, unify_types idty ty1))
        in
-       ret_id
+       (ret, memos2)
     | Atom(Free(n, ty)) ->
-       let ty1= set_type_name type_thy_memo scp ty
+       let (ty1, tymemos) = set_type_name scp ty memos
        in
        begin
          match try_find (Scope.find_meta scp) n with
-         | Some(q) -> Atom(Meta(q))
-         | None ->
+         | Some(q) -> (Atom(Meta(q)), tymemos)
+         | _ ->
+            let nid_opt = try_find (lookup_name scp n) tymemos in
             begin
-              match try_find lookup_id n with
-              | None -> Atom(Free(n, ty1))
-              | Some (nth1) ->
-                 let nid = Ident.mk_long nth1 n
-                 in
-                 match try_find lookup_type nid with
-                 | None -> Atom(Id(nid, ty1))
-                 | Some(xty) -> Atom(Id(nid, unify_types xty ty1))
+              if nid_opt = None
+              then (Atom(Free(n, ty1)), tymemos)
+              else
+                let (nth, nmemos) = from_some nid_opt in
+                let nid = Ident.mk_long nth n
+                in
+                let nidty_opt = try_find (lookup_type scp nid) nmemos in
+                if nidty_opt = None
+                then (Atom(Id(nid, ty1)), nmemos)
+                else
+                  let (nid_ty, nidmemos) = from_some nidty_opt in
+                  (Atom(Id(nid, unify_types nid_ty ty1)), nidmemos)
             end
        end
     | Qnt(q, b) ->
-       let nq = binding_set_names (Some(type_thy_memo)) scp q in
+       let (nq, qmemos) = binding_set_names (memos.type_thy) scp q in
        let qnts1 = Subst.bind (Bound(q)) (Bound(nq)) qnts
        in
-       Qnt(nq, set_aux qnts1 b)
-    | App(f, a) -> App(set_aux qnts f, set_aux qnts a)
+       let (nb, bmemos) = set_aux qnts1 b {memos with type_thy = qmemos} in
+       (Qnt(nq, nb), bmemos)
+    | App(f, a) ->
+       let (ftrm, fmemos) = set_aux qnts f memos in
+       let (atrm, amemos) = set_aux qnts a fmemos
+       in
+       (App(ftrm, atrm), amemos)
     | Atom(Meta(q)) ->
        if Scope.is_meta scp q
-       then t
-       else
-         raise (term_error "Meta variable occurs outside binding" [t])
+       then (t, memos)
+       else raise (term_error "Meta variable occurs outside binding" [t])
     | Bound(q) ->
        begin
-         match Lib.try_find (Subst.find (Bound(q))) qnts with
-         | Some(x) -> x
-         | None ->
-            raise (term_error "Bound variable occurs outside binding" [t])
+         let rslt =  Lib.try_find (Subst.find (Bound(q))) qnts in
+         if rslt <> None
+         then (from_some rslt, memos)
+         else
+           raise (term_error "Bound variable occurs outside binding" [t])
        end
-    | _ -> t
+    | _ -> (t, memos)
   in
-  set_aux (Subst.empty()) trm
+  let (ret, _) = set_aux (Subst.empty()) trm (empty_memos()) in
+  ret
 
 (**
    [resolve_terms scp trmlist]: resolve names and types in each term
@@ -732,112 +771,104 @@ let set_names scp trm =
    resolved as if they were all parts of the same term.
 *)
 let resolve_term scp vars varlist trm =
-  let id_memo = Lib.empty_env()
-  and scope_memo = Lib.empty_env()
-  and type_memo = Lib.empty_env()
-  and type_thy_memo = Lib.empty_env()
-  in
-  let lookup_id scp ident ty =
-    let lookup_name n =
-      try Lib.find n id_memo
-      with Not_found ->
-        let nth = Scope.thy_of_term scp n
-        in
-        (ignore(Lib.add n nth id_memo); nth)
-    in
-    let lookup_type id =
-      try Gtype.rename_type_vars (Lib.find id type_memo)
-      with Not_found ->
-        let ty =
-          try Scope.type_of scp id
-          with Not_found -> Gtype.mk_null()
-        in (ignore(Lib.add id ty type_memo); ty)
-    in
+  let lookup_ident scp ident ty memos =
     let (th, name) = Ident.dest ident
     in
-    let nid =
+    let (nid, nmemos) =
       if th = Ident.null_thy
-      then Ident.mk_long (lookup_name name) name
-      else ident
+      then
+        let (thy, memos1) = lookup_name scp name memos in
+        (Ident.mk_long thy name, memos1)
+      else (ident, memos)
     in
-    let ty0 = lookup_type ident in
+    let (ty0, tymemos) = lookup_type scp ident nmemos in
     let ntyenv = Ltype.unify scp ty0 ty in
     let nty = Gtype.mgu ty0 ntyenv
     in
-    Term.mk_typed_ident nid nty
+    (Term.mk_typed_ident nid nty, tymemos)
   in
-  let set_type_name memo s t = Ltype.set_name (Some(memo)) s t
+  let set_type_name memo s t = Ltype.set_name_memoized memo s t
   in
   let lookup_var vars t =
     match Lib.try_find (Subst.find t) vars with
-      | Some(x) -> (x, vars)
+    | Some(x) -> (x, vars)
       | None ->
         let nt =
           (match t with
             | Atom(Free(n, ty)) -> mk_bound (Term.Binder.make All n ty)
             | Bound(q) ->
-               mk_bound (Term.Binder.make All
-                           (Term.Binder.name_of q) (Binder.type_of q))
+               mk_bound (Term.Binder.make All (Term.Binder.name_of q)
+                           (Binder.type_of q))
             | _ -> mk_bound (Term.Binder.make All "x" (Gtype.mk_var "ty")))
         in
         (nt, Subst.bind t nt vars)
   in
-  let rec set_aux (qnts, vars) t lst =
+  let rec set_aux (qnts, vars) t lst memos =
     match t with
       | Atom(Id(id, ty)) ->
-          let ty1 =
-            try set_type_name type_thy_memo scp ty
+          let (ty1, ty1memos) =
+            try set_type_name (memos.type_thy) scp ty
             with err -> raise (add_term_error "Invalid type" [t] err)
           in
-          let ret_id =
-            match (Lib.try_find (lookup_id scp id) ty1) with
-              | Some x -> (x: Term.term)
-              | None -> raise (term_error "Term not in scope" [t])
+          let tymemos = {memos with type_thy = ty1memos} in
+          let (ret_id, thymemos) =
+            let thy_opt = Lib.try_find (lookup_ident scp id ty1) tymemos in
+            if thy_opt <> None
+            then from_some thy_opt
+            else raise (term_error "Term not in scope" [t])
           in
-          if in_scope scope_memo scp ret_id
-          then (ret_id, vars, lst)
+          let (scp_ok, scp1memo) = in_scope_memoized (thymemos.scope) scp ret_id
+          in
+          let scpmemo = {memos with scope = scp1memo} in
+          if scp_ok
+          then (ret_id, vars, lst, scpmemo)
           else raise (term_error "Term not in scope" [t])
       | Atom(Free(n, ty)) ->
-        (match Lib.try_find (Scope.find_meta scp) n with
-            Some(b) -> (Atom(Meta b), vars, lst)
-          | None ->
-             set_aux (qnts, vars) (mk_typed_ident (Ident.mk_name n) ty) lst)
+         let rslt_opt = Lib.try_find (Scope.find_meta scp) n in
+         if rslt_opt <> None
+         then  (Atom(Meta (from_some rslt_opt)), vars, lst, memos)
+         else
+             set_aux (qnts, vars) (mk_typed_ident (Ident.mk_name n) ty) lst memos
       | Qnt(q, b) ->
-        let nq = binding_set_names (Some(type_thy_memo)) scp q in
-        let qnts1 = Subst.bind (mk_bound q) (mk_bound nq) qnts in
-        let (nb, nvars, nlst) = set_aux (qnts1, vars) b lst
-        in
-        (Qnt(nq, nb), nvars, nlst)
+         let (nq, bnd1memo) = binding_set_names (memos.type_thy) scp q in
+         let bndmemos = {memos with type_thy = bnd1memo} in
+         let qnts1 = Subst.bind (mk_bound q) (mk_bound nq) qnts in
+         let (nb, nvars, nlst, qmemos) = set_aux (qnts1, vars) b lst bndmemos
+         in
+         (Qnt(nq, nb), nvars, nlst, qmemos)
       | App(f, a) ->
-        let (nf, fvars, flst) = set_aux (qnts, vars) f lst in
-        let (na, avars, alst) = set_aux (qnts, fvars) a flst
+        let (nf, fvars, flst, fmemos) = set_aux (qnts, vars) f lst memos in
+        let (na, avars, alst, amemos) = set_aux (qnts, fvars) a flst fmemos
         in
-        (App(nf, na), avars, alst)
+        (App(nf, na), avars, alst, amemos)
       | Atom(Meta(q)) ->
         if Scope.is_meta scp q
-        then (t, vars, lst)
+        then (t, vars, lst, memos)
         else
           let nt, nvars = lookup_var vars t
-           in
-          (nt, nvars, ((nt, t)::lst))
+          in
+          (nt, nvars, ((nt, t)::lst), memos)
       | Bound(q) ->
          begin
-           match Lib.try_find (Subst.find (mk_bound q)) qnts with
-           | Some x -> (x, vars, lst)
-           | None ->
-              let (nt, nvars) = lookup_var vars t
-              in
-              (nt, nvars, ((nt, t)::lst))
+           let rslt_opt = Lib.try_find (Subst.find (mk_bound q)) qnts in
+           if rslt_opt <> None
+           then (from_some rslt_opt, vars, lst, memos)
+           else
+             let (nt, nvars) = lookup_var vars t in
+             (nt, nvars, ((nt, t)::lst), memos)
          end
-      | _ -> (t, vars, lst)
+      | _ -> (t, vars, lst, memos)
   in
-  set_aux (Subst.empty(), vars) trm varlist
+  let (ntrm, vars, lst, _) =
+    set_aux (Subst.empty(), vars) trm varlist (empty_memos())
+  in
+  (ntrm, vars, lst)
 
 (** [resolve scp trm]: resolve names and types in term [trm] in [lst]
     in scope [scp].
 *)
 let resolve scp trm =
-  let (ntrm, vars, lst) = resolve_term scp (Subst.empty()) [] trm
+  let (ntrm, _, lst) = resolve_term scp (Subst.empty()) [] trm
   in
   (ntrm, lst)
 

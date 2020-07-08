@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.ml
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -1278,40 +1278,47 @@ let matches scp t1 t2=
 
     If [strict=true], fail if any type name doesn't occur in scope [scp].
 *)
-let set_name umemo scp trm =
-  let memo =
-    if umemo = None then (Lib.empty_env()) else from_some umemo
-  in
-  let lookup_id n =
-    match try_find (Lib.find n) memo with
-    | Some(x) -> x
+let set_name_memoized memo scp trm =
+  let lookup_id n tbl =
+    match try_find (Lib.find n) tbl with
+    | Some(x) -> (x, tbl)
     | _  ->
        begin
          let nth =
            try TypeScope.thy_of scp n
            with Not_found ->
-             raise  (type_error "Type doesn't occur in scope"
-                       [mk_def (Ident.mk_name n) []])
+             raise
+               (type_error "Type doesn't occur in scope"
+                  [mk_def (Ident.mk_name n) []])
          in
-         ignore(Lib.add n nth memo); nth
+         (nth, Lib.add n nth tbl)
        end
   in
-  let rec set_aux t =
+  let rec set_aux t tbl =
     match t with
-    | App(l, r) -> App(set_aux l, set_aux r)
+    | App(l, r) ->
+       let (ltrm, ltbl) = set_aux l tbl in
+       let (rtrm, rtbl) = set_aux r ltbl
+       in
+       (App(ltrm, rtrm), rtbl)
     | Atom(Ident(id)) ->
       let (th, n) = Ident.dest id in
-      let nth =
+      let (nth, itbl) =
         if th = Ident.null_thy
-        then lookup_id n
-        else th
+        then lookup_id n tbl
+        else (th, tbl)
       in
       let nid = Ident.mk_long nth n
       in
-      (mk_ident nid)
-    | _ -> t
-  in set_aux trm
+      ((mk_ident nid), itbl)
+    | _ -> (t, tbl)
+  in set_aux trm memo
 
+let set_name scp trm =
+  let memo = Lib.empty_env()
+  in
+  let (rslt, _) = set_name_memoized memo scp trm in
+  rslt
 
 let extract_bindings tyvars src dst =
   let rec extract_aux vs r=

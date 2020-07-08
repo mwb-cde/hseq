@@ -72,15 +72,13 @@ let index p xs =
 
 (** {5 Hash tables} *)
 
-type ('a,'b)table = ('a, 'b)Hashtbl.t
+type ('a, 'b)table = ('a, 'b)Hashtbl.t
 let empty_env() = Hashtbl.create 13
 let find x env = Hashtbl.find env x
 let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
-let add t r env =
-  try (Hashtbl.find env t)
-  with Not_found -> ((Hashtbl.add env t r); r)
+let add t r env =  (Hashtbl.add env t r); env
 let member t env = try (Hashtbl.find env t; true) with Not_found -> false
-let remove t env = Hashtbl.remove env t
+let remove t env = (Hashtbl.remove env t); env
 
 (* Remove duplicates from a list *)
 let remove_dups ls =
@@ -348,6 +346,13 @@ module StringSet =
   Set.Make
     (struct
       type t = string
+      let compare = Stdlib.compare
+     end)
+
+module Set(A: sig type a end) =
+  Stdlib.Set.Make
+    (struct
+      type t = A.a
       let compare = Stdlib.compare
      end)
 

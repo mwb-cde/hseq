@@ -173,12 +173,12 @@ module Resolver =
 struct
 
   (** memo_find: Memoised lookup function. *)
-  let memo_find cache find table n =
-    try Lib.find n cache
+  let memo_find (cache: ('a, 'b)Hashtbl.t) finder table (n: 'a) =
+    try Hashtbl.find cache n
     with Not_found ->
-      let ret = find n table
+      let ret = finder n table
       in
-      ignore(Lib.bind n ret cache); ret
+      ((Hashtbl.add cache n ret); ret)
 
   (** reolve_memo: Memoised tables *)
   type resolve_memo =
@@ -186,7 +186,7 @@ struct
         types: (Ident.t, Gtype.t)Hashtbl.t;
         idents: (string, Ident.t)Hashtbl.t;
         symbols: (string, Ident.t)Hashtbl.t;
-        type_names: (string, Ident.thy_id) Hashtbl.t
+        type_names: (string, Ident.thy_id)Hashtbl.t;
       }
 
   (** resolve_arg: The argument to the resolver *)
@@ -221,22 +221,20 @@ struct
     and binding_set_names binding rdata =
       let (qnt, qname, qtype) = Term.Binder.dest binding
       in
-      Term.Binder.make
-        qnt qname
-        (Ltype.set_name (Some(rdata.memo.type_names)) (rdata.scp) qtype)
+      Term.Binder.make qnt qname (Ltype.set_name (rdata.scp) qtype)
     and binding_set_types tyenv binding =
       let (qnt, qname, qtype) = Term.Binder.dest binding
       in
       Term.Binder.make qnt qname (Gtype.mgu qtype tyenv)
     and set_type_name t rdata =
-      Ltype.set_name (Some(rdata.memo.type_names)) rdata.scp t
-    and find_ident n rdata =
-      let ident_find n s =
-        let thy = Scope.thy_of_term s n
+      Ltype.set_name rdata.scp t
+    and find_ident (n: string) rdata =
+      let finder n scp =
+        let thy = Scope.thy_of_term scp n
         in
         Ident.mk_long thy n
       in
-      Lib.try_find (memo_find rdata.memo.idents ident_find rdata.scp) n
+      (Lib.try_find (memo_find (rdata.memo.idents) finder rdata.scp) n)
     and find_type n rdata =
       let type_find n s = Scope.type_of s n
       in
@@ -387,10 +385,10 @@ struct
   let resolve_term scp lookup term =
     let rmemo =
       {
-        types = Lib.empty_env();
-        idents = Lib.empty_env();
-        symbols = Lib.empty_env();
-        type_names = Lib.empty_env()
+        types = Hashtbl.create 13;
+        idents = Hashtbl.create 13;
+        symbols = Hashtbl.create 13;
+        type_names = Hashtbl.create 13;
       }
     in
     let data =

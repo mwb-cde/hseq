@@ -1,6 +1,6 @@
 (*----
   Name: formula.ml
-  Copyright Matthew Wahab 2005-2018
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -161,13 +161,20 @@ let equals x y = Term.equals (term_of x) (term_of y)
 (*** General tests ***)
 
 let in_scope_memo memo scp f =
-  if (formula_in_scope scp f) || (Lterm.in_scope memo scp (term_of f))
-  then true
+  if (formula_in_scope scp f)
+  then
+    begin
+      let (scp_ok, scpmemo) = Lterm.in_scope_memoized memo scp (term_of f) in
+      if scp_ok
+      then (true, scpmemo)
+      else raise (Term.term_error "Badly formed formula" [term_of f])
+    end
   else raise (Term.term_error "Badly formed formula" [term_of f])
+
 
 let in_scope scp f =
   if (formula_in_scope scp f)
-    || (Lterm.in_scope (Lib.empty_env()) scp (term_of f))
+    || (Lterm.in_scope  scp (term_of f))
   then true
   else raise (Term.term_error "Badly formed formula" [term_of f])
 
@@ -283,11 +290,10 @@ let retype scp tenv x =
    type in [tyenv]. Check that the new types are in scope.
 *)
 let term_retype_with_check scp tyenv t=
-  let memo = Lib.empty_env() in
   let mk_new_type ty =
     let nty = Gtype.mgu ty tyenv
     in
-    if (Ltype.in_scope memo scp nty)
+    if (Ltype.in_scope scp nty)
     then nty
     else raise
       (Gtype.type_error "Term.retype_with_check: Invalid type" [nty])

@@ -51,13 +51,13 @@ val assocp: ('a -> bool) -> ('a * 'b) list -> 'b
 
 (** Hash tables *)
 
-type ('a, 'b)table = ('a, 'b) Hashtbl.t
+type ('a, 'b)table
 val empty_env : unit -> ('a, 'b)table
 val find : 'a -> ('a, 'b)table -> 'b
 val bind : 'a -> 'b -> ('a, 'b)table -> ('a, 'b)table
-val add : 'a -> 'b -> ('a, 'b)table -> 'b
+val add : 'a -> 'b -> ('a, 'b)table -> ('a, 'b)table
 val member : 'a -> ('a, 'b)table -> bool
-val remove: 'a -> ('a, 'b)table -> unit
+val remove: 'a -> ('a, 'b)table -> ('a, 'b)table
 
 val remove_dups: 'a list -> 'a list
 (** [remove_dups l]: Remove duplicates from list [l] *)
@@ -229,7 +229,11 @@ val apply_split: ('a -> ('b * 'c)) -> 'a list -> (('b list) * ('c list))
 
 (** {6 Strings} *)
 
-module StringSet : Set.S with type elt=string
+(** Sets indexed by [Stdlib.compare] *)
+module Set(A: sig type a end): Stdlib.Set.S with type elt = A.a
+
+(** Sets of strings *)
+module StringSet: Stdlib.Set.S with type elt = string
 
 val stringify : string -> string
 (**
