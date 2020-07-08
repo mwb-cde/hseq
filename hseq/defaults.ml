@@ -29,4 +29,4 @@ let basedir = Config.value_BaseDir
 let libdir = Config.value_LibDir
 let thydir = Config.value_ThyDir
 
-let version = "Nov19"
+let version = "2020.07"
