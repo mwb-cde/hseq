@@ -175,12 +175,12 @@ struct
   (** Load files listed in the theory. *)
   let load_files_thy_fn ctxt thy =
     let file_list = thy.Theory.cfiles in
-    let path = Context.path ctxt in
     let loader ctxt f =
       let fqn =
+        let path = Context.path ctxt in
         try Context.Files.find_file f path
         with Not_found ->
-          raise (Report.error ("Can't find file "^f^" in path."))
+          raise (Report.error ("Can't find file "^f^" in path"))
       in
       begin
         Global.set_context ctxt;
@@ -323,7 +323,7 @@ let load_file_func () = Userstate.loader (Global.state())
 let set_load_file_func loader =
   Global.set_state (Userstate.set_loader (Global.state()) loader);
   Global.set_context
-    (Context.set_loader (Global.context()) (load_file_func()))
+    (Context.set_loader (Global.context()) loader)
 
 let path = Global.path
 let set_path = Global.set_path
