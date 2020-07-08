@@ -1,6 +1,6 @@
 (*----
   Name: SetScript.ml
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
