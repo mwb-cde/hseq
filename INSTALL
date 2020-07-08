@@ -1,15 +1,6 @@
 Installation
 ============
 
-Requirements: 
-  OCaml version 4.08
-
-To build:
-  GNU Make on Unix 
-
-Build:
-------
-
 From the toplevel directory: 
 1) Run the configuration script (this requires OCaml to be installed):
 	configure <options>
