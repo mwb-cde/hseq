@@ -41,8 +41,7 @@ open HSeq
    value once {!Init.init} has been called.
    *)
 
-
-val load_init: unit -> unit
+val load_init_file: unit -> unit
 (**
    [load_init()]: Load the initialising file named
    {!Settings.init_file}, found in directory {!Settings.libs_dir}.

@@ -1,6 +1,6 @@
 (*----
   Name: init.ml
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -34,28 +34,12 @@ open Userlib
 
 (* Theorem Prover initialising functions *)
 
-(**
-   [tp_init()]: Theorem Prover specific initialisation.
-*)
-let tp_init() =
-  let tmp = !Settings.load_thy_level
-  in
-    Settings.load_thy_level := 0;
-    Userlib.init();
-    Userlib.set_load_file_func Unsafe.load_file;
-    Userlib.set_use_file_func Unsafe.use_file;
-    Settings.load_thy_level := tmp
 
-(**
-   [init()]:  Start up function, called when system first begins.
-   Initialise TP and load the startup file.
-*)
-
-
-(** [set_hooks()]: Set the file-handling functions *)
-let set_hooks() =
+(**Set the file-handling functions *)
+let set_file_hooks() =
   Userlib.set_load_file_func (Unsafe.load_file);
   Userlib.set_use_file_func (Unsafe.use_file)
+
 
 (** [set_base_dir()]: Get the installation directory *)
 let set_base_dir()=
@@ -64,14 +48,11 @@ let set_base_dir()=
       in Settings.set_base_dir d
     with Not_found -> ()
 
-(***
-* Set OCaml toplevel search path
-***)
-
 (**
     [set_directorys()]: Add tp directories to the system search path.
 *)
 let set_directorys () =
+  set_base_dir();
   Unsafe.add_directory (Settings.libs_dir())
 
 (**
@@ -80,7 +61,7 @@ let set_directorys () =
 let starting_mesg() =
   Format.printf "@[\tHSeq (%s)\n@]@." Defaults.version
 
-let load_init () =
+let load_init_file () =
   let initfile=
     Settings.make_filename (Some(Settings.libs_dir())) Settings.init_file
   in
@@ -88,17 +69,33 @@ let load_init () =
   then Unsafe.use_file false initfile
   else Report.warning ("Can't find initialising file "^initfile)
 
-let setup_init() =
-  set_base_dir();
+(**
+   [user_state_init()]: Initialise the default HSeq user-state
+*)
+let user_state_init() =
+  let tmp_thy_level = !Settings.load_thy_level
+  in
+  Settings.load_thy_level := 0;
+  Userlib.init();
+  Settings.load_thy_level := tmp_thy_level
+
+(**
+   Start up function, called when system first begins.
+   Initialise TP and load the startup file.
+*)
+let basic_init() =
+  user_state_init();
   set_directorys();
-  set_hooks();
-  load_init()
+  set_file_hooks();
+  load_init_file()
 
 let init() =
-  starting_mesg();
-  tp_init()
+  basic_init();
+  starting_mesg()
 
 (*** The code to run when this module is loaded. **)
 let _ =
-  Unsafe.add_init setup_init;
+  Unsafe.add_init basic_init;
   init()
+
+

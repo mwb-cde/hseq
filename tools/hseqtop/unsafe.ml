@@ -34,10 +34,10 @@ let use_file silent f =
   else ignore(Toploop.use_file Format.std_formatter f)
 
 (* Dynlink.loadfile causes a segmentation fault in some circumstances. *)
-let load_file f = Dynlink.loadfile f
-(*
-let load_file f = ignore (Topdirs.load_file Format.std_formatter f)
-*)
+let load_file f =
+  if (!Sys.interactive)
+  then ignore (Topdirs.dir_load Format.std_formatter f)
+  else Dynlink.loadfile f
 
 let add_directory s = Topdirs.dir_directory s
 
