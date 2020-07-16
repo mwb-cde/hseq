@@ -563,9 +563,9 @@ val matches: TypeScope.t -> t -> t -> bool
 *)
 val set_name: TypeScope.t -> t -> t
 val set_name_memoized:
-  (string, Ident.thy_id)Lib.table
+  (string, Ident.thy_id)Lib.Table.t
   -> TypeScope.t -> t
-  -> (t * (string, Ident.thy_id)Lib.table)
+  -> (t * (string, Ident.thy_id)Lib.Table.t)
 
 val extract_bindings: t list -> Subst.t -> Subst.t
   -> Subst.t

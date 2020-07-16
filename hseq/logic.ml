@@ -661,7 +661,7 @@ let check_term_memo memo scp frm =
   Formula.in_scope_memo memo scp frm
 
 let check_term scp frm =
-  let (ret, _) = check_term_memo (Lib.empty_env()) scp frm in
+  let (ret, _) = check_term_memo (Lib.Table.empty_env()) scp frm in
   ret
 
 (** [extract_rules scp rls l sg]: Filter the rewrite rules [rls].

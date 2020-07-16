@@ -361,11 +361,11 @@ let mk_plain_typevar ctr =
 *)
 let normalize_vars typ =
   let lookup tbl str =
-    try (tbl, Lib.find str tbl)
+    try (tbl, Lib.Table.find str tbl)
     with Not_found ->
       let nvar = mk_var str
       in
-      (Lib.bind str nvar tbl, nvar)
+      (Lib.Table.bind str nvar tbl, nvar)
   in
   let rec norm_aux tbl ty =
     match ty with
@@ -379,7 +379,7 @@ let normalize_vars typ =
        (tbl2, App(l1, r1))
     | _ -> (tbl, ty)
   in
-  let (_, typ1) = norm_aux (Lib.empty_env()) typ
+  let (_, typ1) = norm_aux (Lib.Table.empty_env()) typ
   in
   typ1
 
@@ -409,7 +409,7 @@ module TypeScope =
         alias: (t)option;
       }
 
-    module IdentMap = Ident.Tree
+    module IdentMap = Ident.Map
     module StringMap = Treekit.StringTree
 
     (** Scope for type definitions *)
@@ -436,8 +436,8 @@ module TypeScope =
     let thy_of scp i = scp.type_thy i
 
     let add_defns scp lst =
-      let add_defn db n def = IdentMap.add db n def
-      and add_thy db n thy = StringMap.replace db n thy
+      let add_defn db n def = IdentMap.add n def db
+      and add_thy db n thy = StringMap.add db n thy
       in
       let add db n def =
         (add_defn (fst db) n def,
@@ -453,7 +453,7 @@ module TypeScope =
       in
       let get_defn i =
         begin
-          try IdentMap.find defns i
+          try IdentMap.find i defns
           with Not_found -> (defn_of scp i)
         end
       and get_thy n =
@@ -668,7 +668,7 @@ let rewrite_subst t env =
     match ty with
     | Atom(Var(a)) ->
        begin
-         try Lib.find (gtype_id_string a) env
+         try Lib.Table.find (gtype_id_string a) env
          with Not_found ->
            raise (type_error "rewrite_subst: Can't find parameter" [t])
        end
@@ -680,8 +680,8 @@ let rewrite_defn given_args rcrd_args t =
   if (List.length rcrd_args) = (List.length given_args)
   then
     let tenv =
-      List.fold_left2 (fun env x y -> Lib.bind x y env)
-                      (Lib.empty_env())
+      List.fold_left2 (fun env x y -> Lib.Table.bind x y env)
+                      (Lib.Table.empty_env())
                       rcrd_args given_args
     in
     rewrite_subst t tenv
@@ -1280,7 +1280,7 @@ let matches scp t1 t2=
 *)
 let set_name_memoized memo scp trm =
   let lookup_id n tbl =
-    match try_find (Lib.find n) tbl with
+    match try_find (Lib.Table.find n) tbl with
     | Some(x) -> (x, tbl)
     | _  ->
        begin
@@ -1291,7 +1291,7 @@ let set_name_memoized memo scp trm =
                (type_error "Type doesn't occur in scope"
                   [mk_def (Ident.mk_name n) []])
          in
-         (nth, Lib.add n nth tbl)
+         (nth, Lib.Table.add n nth tbl)
        end
   in
   let rec set_aux t tbl =
@@ -1315,7 +1315,7 @@ let set_name_memoized memo scp trm =
   in set_aux trm memo
 
 let set_name scp trm =
-  let memo = Lib.empty_env()
+  let memo = Lib.Table.empty_env()
   in
   let (rslt, _) = set_name_memoized memo scp trm in
   rslt

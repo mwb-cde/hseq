@@ -51,15 +51,18 @@ val assocp: ('a -> bool) -> ('a * 'b) list -> 'b
 
 (** Hash tables *)
 
-type ('a, 'b)table
-val empty_env : unit -> ('a, 'b)table
-val find : 'a -> ('a, 'b)table -> 'b
-val bind : 'a -> 'b -> ('a, 'b)table -> ('a, 'b)table
-val add : 'a -> 'b -> ('a, 'b)table -> ('a, 'b)table
-val member : 'a -> ('a, 'b)table -> bool
-val remove: 'a -> ('a, 'b)table -> ('a, 'b)table
+module Table:
+  sig
+    type ('a, 'b)t
+    val empty_env : unit -> ('a, 'b)t
+    val find : 'a -> ('a, 'b)t -> 'b
+    val bind : 'a -> 'b -> ('a, 'b)t -> ('a, 'b)t
+    val add : 'a -> 'b -> ('a, 'b)t -> ('a, 'b)t
+    val member : 'a -> ('a, 'b)t -> bool
+    val remove: 'a -> ('a, 'b)t -> ('a, 'b)t
+  end
 
-val remove_dups: 'a list -> 'a list
+val remove_dups: (string)list -> (string)list
 (** [remove_dups l]: Remove duplicates from list [l] *)
 
 val int_to_name: int -> string

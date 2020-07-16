@@ -72,27 +72,44 @@ let index p xs =
 
 (** {5 Hash tables} *)
 
-type ('a, 'b)table = ('a, 'b)Hashtbl.t
-let empty_env() = Hashtbl.create 13
-let find x env = Hashtbl.find env x
-let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
-let add t r env =  (Hashtbl.add env t r); env
-let member t env = try (Hashtbl.find env t; true) with Not_found -> false
-let remove t env = (Hashtbl.remove env t); env
+module Table =
+  struct
+    type ('a, 'b)t = ('a, 'b)Hashtbl.t
+    let empty_env() = Hashtbl.create 13
+    let find x env = Hashtbl.find env x
+    let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
+    let add t r env =  (Hashtbl.add env t r); env
+    let member t env = try (Hashtbl.find env t; true) with Not_found -> false
+    let remove t env = (Hashtbl.remove env t); env
+end
+
+(* Sets of strings *)
+
+module StringSet =
+  Set.Make
+    (struct
+      type t = string
+      let compare = Stdlib.compare
+     end)
+
+module Set(A: sig type a end) =
+  Stdlib.Set.Make
+    (struct
+      type t = A.a
+      let compare = Stdlib.compare
+     end)
+
 
 (* Remove duplicates from a list *)
 let remove_dups ls =
-  let cache = Hashtbl.create (List.length ls)
-  in
-  let rec remove_aux xs rs =
+  let rec remove_aux xs rs set =
     match xs with
       |	[] -> List.rev rs
       | (y::ys) ->
-        if member y cache
-        then remove_aux ys rs
-        else (Hashtbl.add cache y None;
-              remove_aux ys (y::rs))
-  in remove_aux ls []
+        if StringSet.mem (y: string) (set: StringSet.t)
+        then remove_aux ys rs set
+        else remove_aux ys (y::rs) (StringSet.add y set)
+  in remove_aux ls [] StringSet.empty
 
 (*
  * String functions
@@ -336,21 +353,6 @@ let apply_split f lst =
   in
   app_aux lst ([], [])
 
-(* Sets of strings *)
-
-module StringSet =
-  Set.Make
-    (struct
-      type t = string
-      let compare = Stdlib.compare
-     end)
-
-module Set(A: sig type a end) =
-  Stdlib.Set.Make
-    (struct
-      type t = A.a
-      let compare = Stdlib.compare
-     end)
 
 (**
    [stringify str]: Make [str] suitable for passing to OCaml on the

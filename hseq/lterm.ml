@@ -194,7 +194,7 @@ let subst_qnt_var scp env trm =
     | Atom(Id(n, ty)) ->
        begin
          try
-           let replacement = Ident.Tree.find env n in
+           let replacement = Ident.Map.find n env in
            ignore(Gtype.unify (Scope.types_scope scp)
                     ty (Term.Binder.type_of replacement));
            (mk_bound replacement)
@@ -203,7 +203,7 @@ let subst_qnt_var scp env trm =
     | Atom(Free(n, ty)) ->
        begin
          try
-           let replacement = Ident.Tree.find env (Ident.mk_name n) in
+           let replacement = Ident.Map.find (Ident.mk_name n) env in
            ignore(Gtype.unify (Scope.types_scope scp)
                     ty (Term.Binder.type_of replacement));
            (mk_bound replacement)
@@ -221,7 +221,7 @@ let subst_qnt_var scp env trm =
 *)
 let mk_typed_qnt_name scp q ty n b =
   let bndr = Binder.make q n ty in
-  let bnd_env = Ident.Tree.add (Ident.Tree.empty) (Ident.mk_name n) bndr
+  let bnd_env = Ident.Map.add (Ident.mk_name n) bndr (Ident.Map.empty)
   in
   let nb = subst_qnt_var scp bnd_env b
   in
@@ -593,7 +593,7 @@ let gen_term bs trm =
 *)
 let in_scope_memoized memo scp trm =
   let lookup_id n tbl =
-    try Some(Lib.find n tbl)
+    try Some(Lib.Table.find n tbl)
     with Not_found -> None
   in
   let rec in_scp_aux t tbl =
@@ -607,7 +607,7 @@ let in_scope_memoized memo scp trm =
            begin
              if (Scope.in_scope scp thy_nm)
              then
-               let itbl = Lib.add thy_nm true tbl in
+               let itbl = Lib.Table.add thy_nm true tbl in
                Ltype.in_scope_memoized itbl scp ty
              else (false, tbl)
            end
@@ -632,7 +632,7 @@ let in_scope_memoized memo scp trm =
   in_scp_aux trm memo
 
 let in_scope scp trm =
-  let (ret, _) = in_scope_memoized (Lib.empty_env()) scp trm in
+  let (ret, _) = in_scope_memoized (Lib.Table.empty_env()) scp trm in
   ret
 
 (** [binding_set_names_types ?memo scp binding] Find and set names for
@@ -651,35 +651,35 @@ let binding_set_names memo scp binding =
 *)
 type memos_t =
   {
-    type_thy: (string, Ident.thy_id)Lib.table;
-    ids: (string, Ident.thy_id)Lib.table;
-    tys: (Ident.t, Gtype.t)Lib.table;
-    scope: (Ident.thy_id, bool)Lib.table;
+    type_thy: (string, Ident.thy_id)Lib.Table.t;
+    ids: (string, Ident.thy_id)Lib.Table.t;
+    tys: (Ident.t, Gtype.t)Lib.Table.t;
+    scope: (Ident.thy_id, bool)Lib.Table.t;
   }
 
 let empty_memos() =
   {
-    type_thy = Lib.empty_env();
-    ids = Lib.empty_env();
-    tys = Lib.empty_env();
-    scope = Lib.empty_env();
+    type_thy = Lib.Table.empty_env();
+    ids = Lib.Table.empty_env();
+    tys = Lib.Table.empty_env();
+    scope = Lib.Table.empty_env();
   }
 
 let lookup_name scp n memos =
-  try (Lib.find n (memos.ids), memos)
+  try (Lib.Table.find n (memos.ids), memos)
   with Not_found ->
     let nth = Scope.thy_of_term scp n
     in
-    (nth, {memos with ids = (Lib.add n nth (memos.ids))})
+    (nth, {memos with ids = (Lib.Table.add n nth (memos.ids))})
 
 let lookup_type scp id memos =
-  try (Gtype.rename_type_vars (Lib.find id (memos.tys)), memos)
+  try (Gtype.rename_type_vars (Lib.Table.find id (memos.tys)), memos)
   with Not_found ->
     let nty =
       try (Scope.type_of scp id)
       with Not_found -> Gtype.mk_null()
     in
-    (nty, {memos with tys = (Lib.add id nty (memos.tys))})
+    (nty, {memos with tys = (Lib.Table.add id nty (memos.tys))})
 
 let set_names scp trm =
   let set_type_name s t memos =

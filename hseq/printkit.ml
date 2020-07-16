@@ -113,12 +113,12 @@ let empty_record() = mk_record (-1) nonfix None
 (** The table of records and printers for a set of identifiers. *)
 type ('a, 'b)info =
     {
-      records: (record)Ident.tree;
-      printers: ('a -> (fixity * int) -> ('b)printer) Ident.tree
+      records: (record)Ident.map;
+      printers: ('a -> (fixity * int) -> ('b)printer) Ident.map
     }
 
 let mk_info sz =
-  {records = Ident.Tree.empty; printers = Ident.Tree.empty}
+  {records = Ident.Map.empty; printers = Ident.Map.empty}
 
 let default_info_size = 53
 let empty_info() = mk_info default_info_size
@@ -126,17 +126,17 @@ let empty_info() = mk_info default_info_size
 (** Add/access printer records *)
 
 let get_record info id =
-  Ident.Tree.find info.records id
+  Ident.Map.find id info.records
 let add_record info id rcrd =
-  { info with records = Ident.Tree.replace info.records id rcrd }
+  { info with records = Ident.Map.add id rcrd info.records }
 let remove_record info id  =
-  { info with records = Ident.Tree.remove info.records id }
+  { info with records = Ident.Map.remove id info.records }
 
 (** Construct printer records to be added/accessed from [info] *)
 
 let get_info info id =
   try
-    let r = Ident.Tree.find (info.records) id in
+    let r = Ident.Map.find id (info.records) in
     (r.prec, r.fixity, r.repr)
   with Not_found -> (default_term_prec, default_term_fixity, None)
 
@@ -146,18 +146,18 @@ let add_info (inf:('a, 'b)info) id pr fx rp =
   add_record inf id r
 
 let remove_info info id =
-  { info with records = Ident.Tree.remove info.records id }
+  { info with records = Ident.Map.remove id info.records }
 
 (** User defined printers *)
 
 let get_printer info id =
-  Ident.Tree.find info.printers id
+  Ident.Map.find id info.printers
 
 let add_printer info id prntr =
-  { info with printers = Ident.Tree.add info.printers id prntr }
+  { info with printers = Ident.Map.add id prntr info.printers }
 
 let remove_printer info id =
-  { info with printers = Ident.Tree.remove info.printers id }
+  { info with printers = Ident.Map.remove id info.printers }
 
 (*
  * Pretty-printing utility functions

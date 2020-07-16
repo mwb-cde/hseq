@@ -59,12 +59,14 @@ let compare x y =
 let equals x y = (compare x y) = Order.Equal
 let lessthan x y = (compare x y) = Order.LessThan
 
-let compare_ident x y =
-  if equals x y then Order.Equal
-  else if lessthan x y then Order.LessThan
+(*
+let compare x y =
+  if equals x y
+  then Order.Equal
+  else if lessthan x y
+  then Order.LessThan
   else Order.GreaterThan
-
-let compare = compare_ident
+ *)
 
 (*** Utility functions ***)
 
@@ -74,6 +76,26 @@ let string_of n =
   else (thy_of n)^"."^(name_of n)
 
 
+(** Maps indexed by identifiers *)
+type ident_t = t
+module Map =
+  Map.Make(struct
+      type t = ident_t
+      let compare x y = Order.Util.order_to_int (compare x y)
+    end)
+
+type ('a)map = ('a)Map.t
+
+(* Sets indexed by identifiers *)
+module Set =
+  Set.Make(struct
+      type t = ident_t
+      let compare x y = Order.Util.order_to_int (compare x y)
+    end)
+
+type set = Set.t
+
+(*
 (* [('a)tree]: Balanced trees indexed by identifiers *)
 module IdentTreeData =
 struct
@@ -86,3 +108,6 @@ type ('a)tree = ('a) Tree.t
 (* [('a)map]: Maps indexed by identifiers *)
 module Map = Treekit.MapTree(IdentTreeData)
 type ('a)map = ('a)Map.t
+
+ *)
+

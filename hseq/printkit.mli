@@ -120,8 +120,8 @@ val empty_record: unit -> record
 
 type ('a, 'b)info =
     {
-      records: (record) Ident.tree;
-      printers: ('a -> (fixity * int) -> ('b)printer)Ident.tree
+      records: (record)Ident.map;
+      printers: ('a -> (fixity * int) -> ('b)printer)Ident.map;
     }
 
 (** The table of records and printers for a set of identifiers. There

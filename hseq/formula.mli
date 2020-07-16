@@ -113,8 +113,8 @@ val in_scope:  Scope.t -> t -> bool
 (** Check that a formula is in scope. *)
 
 val in_scope_memo:
-  (string, bool)Lib.table -> Scope.t ->  t
-  -> (bool * (string, bool)Lib.table)
+  (string, bool)Lib.Table.t -> Scope.t ->  t
+  -> (bool * (string, bool)Lib.Table.t)
 (** Memoised version of [in_scope]. *)
 
 val is_fresh:  Scope.t -> t -> bool

@@ -24,10 +24,10 @@
 val in_scope: Scope.t -> Gtype.t -> bool
 
 val in_scope_memoized:
-  (string, bool)Lib.table
+  (string, bool)Lib.Table.t
   -> Scope.t
   -> Gtype.t
-  -> (bool * (string, bool)Lib.table)
+  -> (bool * (string, bool)Lib.Table.t)
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 
@@ -37,9 +37,9 @@ val in_scope_memoized:
 
 val set_name: Scope.t -> Gtype.t -> Gtype.t
 val set_name_memoized:
-  (string, Ident.thy_id)Lib.table
+  (string, Ident.thy_id)Lib.Table.t
   -> Scope.t -> Gtype.t
-  -> (Gtype.t * (string, Ident.thy_id)Lib.table)
+  -> (Gtype.t * (string, Ident.thy_id)Lib.Table.t)
 (** [set_name scp ty]: set names in type [ty] to their
     long form.
 

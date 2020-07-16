@@ -271,9 +271,9 @@ val gen_term: Term.Binder.t list -> Term.term -> Term.term
 
 val in_scope: Scope.t -> Term.term -> bool
 val in_scope_memoized:
-  (string, bool)Lib.table
+  (string, bool)Lib.Table.t
   -> Scope.t -> Term.term
-  -> (bool * (string, bool)Lib.table)
+  -> (bool * (string, bool)Lib.Table.t)
 (** [in_scope spc thy t]: Check that term is in scope.  All identifiers and
     types must be declared in the given scope.
 

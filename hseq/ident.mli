@@ -87,7 +87,22 @@ val lessthan: t -> t -> bool
 val string_of: t -> string
 (** String representation of identifier [i]. *)
 
-(* [('a)tree]: Balanced trees indexed by identifiers *)
+(** Maps indexed by identifiers *)
+module Map: (Map.S with type key = t)
+type ('a)map = ('a)Map.t
+
+(*Sets indexed by identifiers *)
+module Set: (Set.S with type elt = t)
+type set = Set.t
+
+(*
 module IdentTreeData: Treekit.TreeData
 module Tree: (Treekit.BTreeType with type key = t)
 type ('a)tree = ('a) Tree.t
+*)
+
+(*
+module Tree: (Treekit.BTreeType with type key = t)
+type ('a)tree = ('a) Tree.t
+ *)
+
