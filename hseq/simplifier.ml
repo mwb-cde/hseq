@@ -116,7 +116,7 @@ struct
         {cntrl with conds=d}
 
       let set_conds_val cntrl d =
-        {cntrl with conds = Lib.set_int_option d}
+        {cntrl with conds = Some(d)}
 
       let set_control cntrl c =
         {cntrl with control = c}
@@ -125,7 +125,7 @@ struct
         {cntrl with rr_depth = d}
 
       let set_rr_depth_val cntrl d =
-        {cntrl with rr_depth = Lib.set_int_option d}
+        {cntrl with rr_depth = Some(d)}
 
       let set_asms cntrl ds =
         {cntrl with asms = ds}
@@ -167,12 +167,12 @@ struct
       let get_exclude cntrl = cntrl.exclude
 
       let dec_cond_depth cntrl =
-        set_conds cntrl (Lib.dec_int_option (cntrl.conds))
+        set_conds cntrl (Lib.map_option (fun x -> x - 1) cntrl.conds)
 
       let get_cond_depth cntrl = cntrl.conds
 
       let dec_rr_depth cntrl =
-        set_conds cntrl (Lib.dec_int_option (cntrl.rr_depth))
+        set_conds cntrl (Lib.map_option (fun x -> x - 1) (cntrl.rr_depth))
 
       let get_rr_depth cntrl = cntrl.rr_depth
 

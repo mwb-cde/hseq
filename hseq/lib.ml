@@ -169,11 +169,11 @@ let apply_option f x d =
     | None -> d
     | Some i -> f i
 
-let set_int_option i = Some(i)
-let dec_int_option x =
+let map_option f x =
   match x with
-    | None -> x
-    | Some i -> Some (i - 1)
+  | None -> None
+  | Some(i) -> Some(f i)
+
 
 let date () = Unix.time()
 let nice_date f =
@@ -336,9 +336,7 @@ let apply_split f lst =
   in
   app_aux lst ([], [])
 
-(*
- * Sets of strings
- *)
+(* Sets of strings *)
 
 module StringSet =
   Set.Make

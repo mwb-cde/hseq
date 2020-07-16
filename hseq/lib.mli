@@ -92,8 +92,9 @@ val apply_option: ('a -> 'b) -> 'a option -> 'b -> 'b
     i] then return [f i] else return [d].
 *)
 
-val set_int_option : int -> int option
-val dec_int_option: int option -> int option
+val map_option: ('a -> 'b) -> ('a)option -> ('b)option
+(** [map_option f a] If [a] is [Some(x)] return [Some(f x)] otherwise return
+    [None] *)
 
 (** {6 Dates} *)
 val date: unit -> float

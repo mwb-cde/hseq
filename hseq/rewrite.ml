@@ -112,7 +112,7 @@ let limit_reached d =
 let decr_depth ctrl =
   match ctrl.depth with
     | None -> ctrl
-    | Some x -> {ctrl with depth=Lib.set_int_option(x-1)}
+    | Some x -> {ctrl with depth = Some(x - 1)}
 
 let is_free_binder qs t =
   match t with
