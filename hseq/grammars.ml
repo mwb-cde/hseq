@@ -187,13 +187,13 @@ type parser_info =
       bound_names: (string* Pterm.t) list ref;
       token_info: (token -> token_info);
       term_parsers:
-        (string, parser_info -> Pterm.t phrase) Lib.named_list;
+        (string, parser_info -> Pterm.t phrase) Lib.assoc_list;
       (* type information *)
       typ_indx: int ref;
       typ_names: (string* Gtype.t) list ref;
       type_token_info: (token ->token_info);
       type_parsers:
-        (string, parser_info -> (Gtype.t phrase)) Lib.named_list;
+        (string, parser_info -> (Gtype.t phrase)) Lib.assoc_list;
     }
 
 (** [mk_inf tbl type_tbl] Make parsing information from table [tbl]
@@ -670,7 +670,7 @@ let init_type_parsers inf =
 *)
 let add_type_parser inf pos n ph =
   { inf with
-    type_parsers = (Lib.named_add (type_parsers_list inf) pos n ph) }
+    type_parsers = (Lib.add_at_pos (type_parsers_list inf) pos n ph) }
 
 (** [remove_type_parser n]: Remove the type parser named [n].
 *)
@@ -1031,7 +1031,7 @@ let init_term_parsers inf =
 *)
 let add_parser inf pos n ph =
   { inf with
-    term_parsers = (Lib.named_add (term_parsers_list inf) pos n ph) }
+    term_parsers = (Lib.add_at_pos (term_parsers_list inf) pos n ph) }
 
 (** [remove_parser n]: Remove term parser named [n].
 *)

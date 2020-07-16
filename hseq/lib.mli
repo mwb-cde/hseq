@@ -67,27 +67,15 @@ val int_to_name: int -> string
     0 -> a, 25-> z, 26 -> a1, etc.
 *)
 
-(**
-   {6 Named Lists}
-
-   Lists in which elements are named and data can be
-   added by relative position.
-
-   Note that it is better to use association lists functions for
-   operations other than add.
-*)
-type ('a, 'b)named_list = ('a * 'b) list
+(** Synonym for convenience *)
+type ('a, 'b)assoc_list = ('a * 'b)list
 
 (** Relative position markers *)
 type ('a)position =
-    First | Last | Before of 'a | After of 'a | Level of 'a
+  First | Last | Before of 'a | After of 'a | Level of 'a
 
-val named_add:
-  ('a, 'b)named_list->('a)position
-  -> 'a -> 'b -> ('a, 'b) named_list
-(** [named_add l p n x]:
-    add [(n, x)] to named list [l] at position [p].
-*)
+(** [add_at_pos l p n x] Add [(n, x)] to named list [l] at position [p].  *)
+val add_at_pos: ('a * 'b)list -> ('a)position -> 'a -> 'b -> ('a * 'b)list
 
 (** {6 Options} *)
 

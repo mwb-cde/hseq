@@ -158,10 +158,10 @@ sig
 
   val (//): 'a phrase -> 'a phrase -> 'a phrase
   val alt: ('b)phrase list -> ('b)phrase
-  val named_alt: ('x, ('a -> ('b)phrase))Lib.named_list
+  val named_alt: ('x, ('a -> ('b)phrase))Lib.assoc_list
     -> ('a -> ('b)phrase)
   val seq: ('b phrase) list -> ('b list)phrase
-  val named_seq: ('x, ('a -> ('b)phrase))Lib.named_list
+  val named_seq: ('x, ('a -> ('b)phrase))Lib.assoc_list
     -> ('a -> ('b list)phrase)
 
   val unop_prefix:

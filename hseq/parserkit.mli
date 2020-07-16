@@ -163,7 +163,7 @@ sig
      with the first, return the result of the first to suceed.  *)
 
   val named_alt:
-    ('x, 'a -> ('b)phrase) Lib.named_list
+    ('x, 'a -> ('b)phrase)Lib.assoc_list
     -> ('a -> ('b)phrase)
   (** [named_alt inf phs]: Try each of the named parsers of [phs] in
       sequence, starting with the first and applying each to [inf],
@@ -175,8 +175,7 @@ sig
       a list.  *)
 
   val named_seq:
-    ('x, 'a -> ('b)phrase) Lib.named_list
-    -> ('a -> ('b list)phrase)
+    ('x, 'a -> ('b)phrase)Lib.assoc_list -> ('a -> ('b list)phrase)
   (** [named_seq phs]: Apply each of the named parsers of [phs] in
       sequence, starting with the first and applying each to [inf],
       fail if any fails. Return the result of as a list.  *)

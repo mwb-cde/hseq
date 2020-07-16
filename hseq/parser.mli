@@ -1,6 +1,6 @@
 (*----
   Name: parser.mli
-  Copyright Matthew Wahab 2005-2016
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -139,7 +139,7 @@ val default_symtable_size: int
 val core_symbols : (string * Lexer.tok) list
 (** The list of builtin symbols *)
 
-type sym_pos = Ident.t Lib.position
+type sym_pos = (Ident.t)Lib.position
 (** The precedence of a term identifier overloaded on a
     symbol. (Default [First].)
 *)
@@ -162,10 +162,10 @@ sig
         overloads_f: overload_table_t;
         term_parsers_f:
           (string,
-           Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
+           Grammars.parser_info -> Pterm.t phrase) Lib.assoc_list;
         type_parsers_f:
           (string,
-           Grammars.parser_info -> (Gtype.t phrase)) Lib.named_list;
+           Grammars.parser_info -> (Gtype.t phrase)) Lib.assoc_list;
       }
 
   (** Default sizes *)
@@ -187,15 +187,15 @@ sig
   val overloads: t -> overload_table_t
   val set_overloads: t -> overload_table_t -> t
   val term_parsers:
-    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
+    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.assoc_list
   val set_term_parsers:
-    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
+    t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.assoc_list
     -> t
   val type_parsers:
-    t -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.named_list
+    t -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.assoc_list
   val set_type_parsers:
     t
-    -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.named_list
+    -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.assoc_list
     -> t
 end
 
@@ -306,7 +306,7 @@ val remove_symbol: Table.t -> string -> Table.t
 (** {7 User defined parsers} *)
 
 val term_parser_list :
-    Table.t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list
+    Table.t -> (string, Grammars.parser_info -> Pterm.t phrase) Lib.assoc_list
 (**
    The list of user defined term parsers. Parsers added to this list are
    used by the term parser {!Grammars.form}.
@@ -328,7 +328,7 @@ val remove_term_parser: Table.t -> string -> Table.t
  *)
 
 val type_parser_list :
-  Table.t -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.named_list
+  Table.t -> (string, Grammars.parser_info -> Gtype.t phrase) Lib.assoc_list
 (**
    The list of user defined type parsers. Parsers added to this list are
    used by the term parser {!Grammars.types}.

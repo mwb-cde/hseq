@@ -1,7 +1,7 @@
 (*----
   Name: lib.ml
-  Copyright Matthew Wahab 2005-2019
-  Author: Matthew Wahab <mwb.cde@googlemail.com>
+  Copyright Matthew Wahab 2005-2020
+  Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
 
@@ -113,48 +113,46 @@ let int_to_name i =
   else
     ld^(string_of_int rm)
 
-(* Named Lists *)
-type ('a, 'b)named_list = ('a * 'b) list
+(* Short-cut synonym *)
+type ('a, 'b)assoc_list = ('a * 'b)list
 
 (* Position markers *)
 type ('a)position =
-    First | Last | Before of 'a | After of 'a | Level of 'a
+  First | Last | Before of 'a | After of 'a | Level of 'a
 
-(**
-    [split_at s nl]: split named list nl at s name s
-    returning the list upto s and the list beginning with s
-*)
-let split_at_name s nl =
+(* [split_at s nl] Split named list [nl] at name [s] returning the list upto s
+       and the list beginning with s *)
+let split_at_key s nl =
   let rec split_aux l r =
     match l with
-      | [] -> (r, [])
-      | (x, y)::ls ->
-        if (x = s)
-        then (List.rev r, l)
-        else split_aux ls ((x, y)::r)
+    | [] -> (r, [])
+    | (x, y)::ls ->
+       if (x = s)
+       then (List.rev r, l)
+       else split_aux ls ((x, y)::r)
   in split_aux nl []
 
-let named_add l p n x =
+let add_at_pos l p n x =
   match p with
-    | First -> (n, x)::l
-    | Last -> List.rev ((n, x)::(List.rev l))
-    | Before s ->
-      let (lt, rt) = split_at_name s l
-      in
-      List.rev_append (List.rev lt) ((n, x)::rt)
-    | After s ->
-      let (lt, rt) = split_at_name s l
-      in
-      let nrt =
-        (match rt with
-          | [] ->  [(n, x)]
-          | d::rst -> d::(n, x)::rst)
-      in
-      List.rev_append (List.rev lt) nrt
-    | Level s ->
-      let (lt, rt) = split_at_name s l
-      in
-      List.rev_append (List.rev lt) ((n, x)::rt)
+  | First -> (n, x)::l
+  | Last -> List.rev ((n, x)::(List.rev l))
+  | Before s ->
+     let (lt, rt) = split_at_key s l
+     in
+     List.rev_append (List.rev lt) ((n, x)::rt)
+  | After s ->
+     let (lt, rt) = split_at_key s l
+     in
+     let nrt =
+       (match rt with
+        | [] ->  [(n, x)]
+        | d::rst -> d::(n, x)::rst)
+     in
+     List.rev_append (List.rev lt) nrt
+  | Level s ->
+     let (lt, rt) = split_at_key s l
+     in
+     List.rev_append (List.rev lt) ((n, x)::rt)
 
 let from_option a b =
   match a with

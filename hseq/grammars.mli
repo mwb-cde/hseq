@@ -175,7 +175,7 @@ type parser_info =
       token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a term *)
       term_parsers:
-        (string, parser_info -> Pterm.t phrase) Lib.named_list;
+        (string, parser_info -> Pterm.t phrase) Lib.assoc_list;
       (** Extra term parsers *)
 
       (* Type information *)
@@ -185,14 +185,14 @@ type parser_info =
       type_token_info: Pkit.token -> token_info;
       (** Get the information for a token found in a type *)
       type_parsers:
-        (string, parser_info -> (Gtype.t phrase)) Lib.named_list;
+        (string, parser_info -> (Gtype.t phrase)) Lib.assoc_list;
       (** Extra type parsers *)
     }
 
 val mk_info:
   (token_table * token_table
-     * (string, parser_info -> Pterm.t phrase) Lib.named_list
-     * (string, parser_info -> (Gtype.t phrase)) Lib.named_list)
+     * (string, parser_info -> Pterm.t phrase) Lib.assoc_list
+     * (string, parser_info -> (Gtype.t phrase)) Lib.assoc_list)
   ->
   parser_info
 (** [mk_inf tbl type_tbl]: Make parsing information from tables [tbl]
@@ -413,7 +413,7 @@ val atomic_types: parser_info -> Gtype.t phrase
 
 val type_parsers_list:
   parser_info ->
-  (string, parser_info -> (Gtype.t phrase)) Lib.named_list
+  (string, parser_info -> (Gtype.t phrase)) Lib.assoc_list
 (** A record of the type parsers used by {!Grammars.inner_types}.  Can
     be extended with user-defined parsers.
 *)
@@ -425,7 +425,7 @@ val types: parser_info -> Gtype.t phrase
 (** The main type parser. *)
 
 val core_type_parsers:
-  (string, parser_info -> (Gtype.t phrase)) Lib.named_list
+  (string, parser_info -> (Gtype.t phrase)) Lib.assoc_list
 (** The built-in type parsers *)
 
 val init_type_parsers:
@@ -569,7 +569,7 @@ val typed_primary: parser_info -> Pterm.t phrase
 (** Parse a possibly typed atomic term *)
 
 val term_parsers_list:
-  parser_info -> (string, parser_info -> (Pterm.t)phrase) Lib.named_list
+  parser_info -> (string, parser_info -> (Pterm.t)phrase) Lib.assoc_list
 (** The list of atomic term parsers. Can be extended with user-defined
     parsers.
 *)
@@ -579,7 +579,7 @@ val primary: parser_info -> Pterm.t phrase
 (** Parser for the atomic terms *)
 
 val core_term_parsers:
-  (string, parser_info -> (Pterm.t phrase)) Lib.named_list
+  (string, parser_info -> (Pterm.t phrase)) Lib.assoc_list
 (** The built-in term parsers *)
 
 val init_term_parsers: parser_info -> parser_info
@@ -588,7 +588,7 @@ val init_term_parsers: parser_info -> parser_info
 (** {7 Support functions} *)
 
 val add_parser:
-  parser_info -> string Lib.position
+  parser_info -> (string)Lib.position
   -> string -> (parser_info -> Pterm.t phrase) -> parser_info
 (** [add_parser pos n ph]: Add term parser [ph] with name [n] in
     position [pos] to {!Grammars.term_parsers_list}.

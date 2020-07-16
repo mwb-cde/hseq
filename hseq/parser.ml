@@ -109,9 +109,9 @@ struct
         symbols_f: symbol_table;
         overloads_f: overload_table_t;
         term_parsers_f:
-          (string, Grammars.parser_info -> Pterm.t phrase) Lib.named_list;
+          (string, Grammars.parser_info -> Pterm.t phrase) Lib.assoc_list;
         type_parsers_f:
-          (string, Grammars.parser_info -> (Gtype.t phrase)) Lib.named_list;
+          (string, Grammars.parser_info -> (Gtype.t phrase)) Lib.assoc_list;
       }
 
   let default_size = (Grammars.default_table_size,
@@ -373,7 +373,7 @@ let defn_parser tbl inp =
 let term_parser_list tbl = Table.term_parsers tbl
 let add_term_parser tbl pos n ph =
   let plist0 = Table.term_parsers tbl in
-  Table.set_term_parsers tbl (Lib.named_add plist0 pos n ph)
+  Table.set_term_parsers tbl (Lib.add_at_pos plist0 pos n ph)
 
 let remove_term_parser tbl n =
   let plist0 = Table.term_parsers tbl in
@@ -382,7 +382,7 @@ let remove_term_parser tbl n =
 let type_parser_list tbl = Table.type_parsers tbl
 let add_type_parser tbl pos n ph =
   let plist0 = Table.type_parsers tbl in
-  Table.set_type_parsers tbl (Lib.named_add plist0 pos n ph)
+  Table.set_type_parsers tbl (Lib.add_at_pos plist0 pos n ph)
 
 let remove_type_parser tbl n =
   let plist0 = Table.type_parsers tbl in
