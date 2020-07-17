@@ -678,10 +678,10 @@ struct
     let (uthylist, _) =
       List.fold_left
         (fun (lst, thyset) th ->
-          if Lib.member (th.Theory.cname) thyset
+          if Lib.StringSet.mem (th.Theory.cname) thyset
           then (lst, thyset)
-          else ((th::lst), Lib.add (th.Theory.cname) true thyset))
-        ([], Lib.empty_env())
+          else ((th::lst), Lib.StringSet.add (th.Theory.cname) thyset))
+        ([], Lib.StringSet.empty)
         thylist
     in
     let rthylist = List.rev uthylist in
