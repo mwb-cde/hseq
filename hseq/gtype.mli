@@ -1,6 +1,6 @@
 (*----
   Name: gtypes.mli
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -563,9 +563,9 @@ val matches: TypeScope.t -> t -> t -> bool
 *)
 val set_name: TypeScope.t -> t -> t
 val set_name_memoized:
-  (string, Ident.thy_id)Lib.Table.t
+  (string)Lib.StringMap.t
   -> TypeScope.t -> t
-  -> (t * (string, Ident.thy_id)Lib.Table.t)
+  -> (t * (string)Lib.StringMap.t)
 
 val extract_bindings: t list -> Subst.t -> Subst.t
   -> Subst.t

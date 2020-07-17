@@ -361,11 +361,11 @@ let mk_plain_typevar ctr =
 *)
 let normalize_vars typ =
   let lookup tbl str =
-    try (tbl, Lib.Table.find str tbl)
+    try (tbl, Lib.StringMap.find str tbl)
     with Not_found ->
       let nvar = mk_var str
       in
-      (Lib.Table.bind str nvar tbl, nvar)
+      (Lib.StringMap.add str nvar tbl, nvar)
   in
   let rec norm_aux tbl ty =
     match ty with
@@ -379,7 +379,7 @@ let normalize_vars typ =
        (tbl2, App(l1, r1))
     | _ -> (tbl, ty)
   in
-  let (_, typ1) = norm_aux (Lib.Table.empty_env()) typ
+  let (_, typ1) = norm_aux Lib.StringMap.empty typ
   in
   typ1
 
@@ -663,12 +663,12 @@ and string_tconst n l =
    [rewrite_defn args params t]: Rewrite [t], substituting arguments
    [args] for the parameters [params] of the type definition.
 *)
-let rewrite_subst t env =
-  let mapper ty =
+let rewrite_subst t tbl =
+  let mapper ty  =
     match ty with
     | Atom(Var(a)) ->
        begin
-         try Lib.Table.find (gtype_id_string a) env
+         try Lib.StringMap.find (gtype_id_string a) tbl
          with Not_found ->
            raise (type_error "rewrite_subst: Can't find parameter" [t])
        end
@@ -679,12 +679,12 @@ let rewrite_subst t env =
 let rewrite_defn given_args rcrd_args t =
   if (List.length rcrd_args) = (List.length given_args)
   then
-    let tenv =
-      List.fold_left2 (fun env x y -> Lib.Table.bind x y env)
-                      (Lib.Table.empty_env())
-                      rcrd_args given_args
+    let tbl =
+      List.fold_left2 (fun env x y -> Lib.StringMap.add x y env)
+        Lib.StringMap.empty
+        rcrd_args given_args
     in
-    rewrite_subst t tenv
+    rewrite_subst t tbl
   else
     raise (type_error "rewrite_defn: Wrong number of arguments" [t])
 
@@ -1280,7 +1280,7 @@ let matches scp t1 t2=
 *)
 let set_name_memoized memo scp trm =
   let lookup_id n tbl =
-    match try_find (Lib.Table.find n) tbl with
+    match try_find (Lib.StringMap.find n) tbl with
     | Some(x) -> (x, tbl)
     | _  ->
        begin
@@ -1291,7 +1291,7 @@ let set_name_memoized memo scp trm =
                (type_error "Type doesn't occur in scope"
                   [mk_def (Ident.mk_name n) []])
          in
-         (nth, Lib.Table.add n nth tbl)
+         (nth, Lib.StringMap.add n nth tbl)
        end
   in
   let rec set_aux t tbl =
@@ -1315,7 +1315,7 @@ let set_name_memoized memo scp trm =
   in set_aux trm memo
 
 let set_name scp trm =
-  let memo = Lib.Table.empty_env()
+  let memo = Lib.StringMap.empty
   in
   let (rslt, _) = set_name_memoized memo scp trm in
   rslt

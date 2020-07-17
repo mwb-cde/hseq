@@ -1,6 +1,6 @@
 (*----
   Name: term.mli
-  Copyright Matthew Wahab 2005-2019
+  Copyright Matthew Wahab 2005-2020
   Author: Matthew Wahab <mwb.cde@gmail.com>
 
   This file is part of HSeq
@@ -339,6 +339,12 @@ val full_rename: Gtype.Subst.t -> term -> (term * Gtype.Subst.t)
 val retype_index:
   int -> term -> (term * int * Gtype.Subst.t)
 (** [retype idx t]: Rename all type variables in term [t]. *)
+
+(** Sets, using compare *)
+module Set: Set.S with type elt = term
+
+(** Maps, using compare *)
+module Map: Map.S with type key = term
 
 (** {6 Substitutions} *)
 module Subst:

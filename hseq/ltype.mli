@@ -35,9 +35,9 @@ val in_scope_memoized:
 
 val set_name: Scope.t -> Gtype.t -> Gtype.t
 val set_name_memoized:
-  (string, Ident.thy_id)Lib.Table.t
+  (string)Lib.StringMap.t
   -> Scope.t -> Gtype.t
-  -> (Gtype.t * (string, Ident.thy_id)Lib.Table.t)
+  -> (Gtype.t * (string)Lib.StringMap.t)
 (** [set_name scp ty]: set names in type [ty] to their
     long form.
 

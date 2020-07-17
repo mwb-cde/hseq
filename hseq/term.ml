@@ -579,6 +579,15 @@ module Tree =
       with Not_found -> false
   end
 
+(* Sets and Maps *)
+module TermOrder =
+  struct
+    type t = term
+    let compare x y = Order.Util.order_to_int (compare x y)
+  end
+
+module Set = Stdlib.Set.Make(TermOrder)
+module Map = Stdlib.Map.Make(TermOrder)
 
 (** [rename t], [rename_env tyenv trmenv t]: Rename terms.
 
@@ -943,11 +952,11 @@ let rename_env typenv trmenv trm =
     in
     match t with
       | Bound(_) ->
-        (try (Table.find t env, tyenv, env, qntd)
+        (try (Map.find t env, tyenv, env, qntd)
          with Not_found -> (t, tyenv, env, qntd))
       | Qnt(q, b) ->
         let nq, tyenv1 = copy_binder q tyenv in
-        let env1 = Table.bind (Bound(q)) (Bound(nq)) env in
+        let env1 =Map.add (Bound(q)) (Bound(nq)) env in
         let (nb, tyenv2, env2, _) = rename_aux b (tyenv1, env1, qntd)
         in
         (Qnt(nq, nb), tyenv2, env2, true)

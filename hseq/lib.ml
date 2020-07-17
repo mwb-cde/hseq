@@ -100,6 +100,13 @@ module Set(A: sig type a end) =
      end)
 
 
+module StringMap =
+  Map.Make
+    (struct
+      type t = string
+      let compare = Stdlib.compare
+     end)
+
 (* Remove duplicates from a list *)
 let remove_dups ls =
   let rec remove_aux xs rs set =

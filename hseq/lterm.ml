@@ -651,35 +651,35 @@ let binding_set_names memo scp binding =
 *)
 type memos_t =
   {
-    type_thy: (string, Ident.thy_id)Lib.Table.t;
-    ids: (string, Ident.thy_id)Lib.Table.t;
-    tys: (Ident.t, Gtype.t)Lib.Table.t;
+    type_thy: (string)Lib.StringMap.t;
+    ids: (string)Lib.StringMap.t;
+    tys: (Gtype.t)Ident.Map.t;
     scope: Lib.StringSet.t;
   }
 
 let empty_memos() =
   {
-    type_thy = Lib.Table.empty_env();
-    ids = Lib.Table.empty_env();
-    tys = Lib.Table.empty_env();
+    type_thy = Lib.StringMap.empty;
+    ids = Lib.StringMap.empty;
+    tys = Ident.Map.empty;
     scope = Lib.StringSet.empty;
   }
 
 let lookup_name scp n memos =
-  try (Lib.Table.find n (memos.ids), memos)
+  try (Lib.StringMap.find n (memos.ids), memos)
   with Not_found ->
     let nth = Scope.thy_of_term scp n
     in
-    (nth, {memos with ids = (Lib.Table.add n nth (memos.ids))})
+    (nth, {memos with ids = (Lib.StringMap.add n nth (memos.ids))})
 
 let lookup_type scp id memos =
-  try (Gtype.rename_type_vars (Lib.Table.find id (memos.tys)), memos)
+  try (Gtype.rename_type_vars (Ident.Map.find id (memos.tys)), memos)
   with Not_found ->
     let nty =
       try (Scope.type_of scp id)
       with Not_found -> Gtype.mk_null()
     in
-    (nty, {memos with tys = (Lib.Table.add id nty (memos.tys))})
+    (nty, {memos with tys = (Ident.Map.add id nty (memos.tys))})
 
 let set_names scp trm =
   let set_type_name s t memos =

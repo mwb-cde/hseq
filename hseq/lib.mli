@@ -227,6 +227,9 @@ module Set(A: sig type a end): Stdlib.Set.S with type elt = A.a
 (** Sets of strings *)
 module StringSet: Stdlib.Set.S with type elt = string
 
+(** String Maps *)
+module StringMap: Stdlib.Map.S with type key = string
+
 val stringify : string -> string
 (**
    [stringify str]: Make [str] suitable for passing to OCaml on the

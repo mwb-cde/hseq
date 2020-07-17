@@ -106,7 +106,7 @@ let check_type_valid scp ty =
 
 (*** typecheck based type checking ****)
 
-let typecheck_aux scp (inf, cache) typenv exty et =
+let typecheck_aux scp inf typenv exty et =
   let test_type scope env trm ty expty =
     (* Check given type is valid *)
     check_type_valid scope ty;
@@ -198,8 +198,7 @@ let typecheck_aux scp (inf, cache) typenv exty et =
     raise (Term.add_term_error "Typecheck: badly typed" [et] err)
 
 let typecheck_top scp env t expty =
-  let inf = (0, Lib.Table.empty_env()) in
-  let (_, env1) = typecheck_aux scp inf env expty t
+  let (_, env1) = typecheck_aux scp 0 env expty t
   in
   env1
 
