@@ -24,10 +24,8 @@
 val in_scope: Scope.t -> Gtype.t -> bool
 
 val in_scope_memoized:
-  (string, bool)Lib.Table.t
-  -> Scope.t
-  -> Gtype.t
-  -> (bool * (string, bool)Lib.Table.t)
+  Lib.StringSet.t -> Scope.t -> Gtype.t
+  -> (bool * Lib.StringSet.t)
 (** [in_scope memo scp th ty]: Check that [ty] is in scope by checking
     that every type constructor is decared or defined in scope [scp].
 

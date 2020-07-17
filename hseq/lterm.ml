@@ -592,8 +592,8 @@ let gen_term bs trm =
 (** [in_scope]: Check that term is in scope.
 *)
 let in_scope_memoized memo scp trm =
-  let lookup_id n tbl =
-    try Some(Lib.Table.find n tbl)
+  let lookup_id n set =
+    try Some(Lib.StringSet.find n set)
     with Not_found -> None
   in
   let rec in_scp_aux t tbl =
@@ -607,7 +607,7 @@ let in_scope_memoized memo scp trm =
            begin
              if (Scope.in_scope scp thy_nm)
              then
-               let itbl = Lib.Table.add thy_nm true tbl in
+               let itbl = Lib.StringSet.add thy_nm tbl in
                Ltype.in_scope_memoized itbl scp ty
              else (false, tbl)
            end
@@ -632,7 +632,7 @@ let in_scope_memoized memo scp trm =
   in_scp_aux trm memo
 
 let in_scope scp trm =
-  let (ret, _) = in_scope_memoized (Lib.Table.empty_env()) scp trm in
+  let (ret, _) = in_scope_memoized (Lib.StringSet.empty) scp trm in
   ret
 
 (** [binding_set_names_types ?memo scp binding] Find and set names for
@@ -654,7 +654,7 @@ type memos_t =
     type_thy: (string, Ident.thy_id)Lib.Table.t;
     ids: (string, Ident.thy_id)Lib.Table.t;
     tys: (Ident.t, Gtype.t)Lib.Table.t;
-    scope: (Ident.thy_id, bool)Lib.Table.t;
+    scope: Lib.StringSet.t;
   }
 
 let empty_memos() =
@@ -662,7 +662,7 @@ let empty_memos() =
     type_thy = Lib.Table.empty_env();
     ids = Lib.Table.empty_env();
     tys = Lib.Table.empty_env();
-    scope = Lib.Table.empty_env();
+    scope = Lib.StringSet.empty;
   }
 
 let lookup_name scp n memos =
@@ -817,7 +817,7 @@ let resolve_term scp vars varlist trm =
             then from_some thy_opt
             else raise (term_error "Term not in scope" [t])
           in
-          let (scp_ok, scp1memo) = in_scope_memoized (thymemos.scope) scp ret_id
+          let (scp_ok, scp1memo) = in_scope_memoized thymemos.scope scp ret_id
           in
           let scpmemo = {memos with scope = scp1memo} in
           if scp_ok

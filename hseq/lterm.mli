@@ -271,24 +271,10 @@ val gen_term: Term.Binder.t list -> Term.term -> Term.term
 
 val in_scope: Scope.t -> Term.term -> bool
 val in_scope_memoized:
-  (string, bool)Lib.Table.t
-  -> Scope.t -> Term.term
-  -> (bool * (string, bool)Lib.Table.t)
+  Lib.StringSet.t -> Scope.t -> Term.term
+  -> (bool * Lib.StringSet.t)
 (** [in_scope spc thy t]: Check that term is in scope.  All identifiers and
-    types must be declared in the given scope.
-
-   [in_scope_memoized] is the memoized version  *)
-
-(*
-val binding_set_names:
-  ((string, Ident.thy_id)Hashtbl.t)option
-  -> Scope.t
-  -> Term.Binder.t
-  -> Term.Binder.t
- *)
-(** [binding_set_names_types memo scp binding] Find and set
-    names for types in a binding.
-*)
+    types must be declared in the given scope.*)
 
 val set_names: Scope.t  -> Term.term -> Term.term
 (** [set_names scp t]: Get and set full identifiers in terms and and

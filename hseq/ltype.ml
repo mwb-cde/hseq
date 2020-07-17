@@ -32,7 +32,7 @@ open Gtype
 *)
 let in_scope_memoized memo scp ty =
   let lookup_id n =
-    try Some(Lib.Table.find n memo)
+    try Some(Lib.StringSet.find n memo)
     with Not_found -> None
   in
   let rec in_scp_aux t tbl =
@@ -47,7 +47,7 @@ let in_scope_memoized memo scp ty =
        else
          begin
            if Scope.in_scope scp thy_id
-           then (true, Lib.Table.add thy_id true tbl)
+           then (true, Lib.StringSet.add thy_id tbl)
            else (false, tbl)
          end
     | Gtype.App(l, r) ->
@@ -59,7 +59,7 @@ let in_scope_memoized memo scp ty =
   in_scp_aux ty memo
 
 let in_scope scp t =
-  let (ret, _) = in_scope_memoized (Lib.Table.empty_env()) scp t in
+  let (ret, _) = in_scope_memoized Lib.StringSet.empty scp t in
   ret
 
 

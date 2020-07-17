@@ -91,18 +91,6 @@ val string_of: t -> string
 module Map: (Map.S with type key = t)
 type ('a)map = ('a)Map.t
 
-(*Sets indexed by identifiers *)
+(** Sets indexed by identifiers *)
 module Set: (Set.S with type elt = t)
 type set = Set.t
-
-(*
-module IdentTreeData: Treekit.TreeData
-module Tree: (Treekit.BTreeType with type key = t)
-type ('a)tree = ('a) Tree.t
-*)
-
-(*
-module Tree: (Treekit.BTreeType with type key = t)
-type ('a)tree = ('a) Tree.t
- *)
-
