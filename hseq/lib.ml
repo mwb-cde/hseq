@@ -70,19 +70,6 @@ let index p xs =
       | y::ys -> if (p y) then i else index_aux ys (i + 1)
   in index_aux xs 0
 
-(** {5 Hash tables} *)
-
-module Table =
-  struct
-    type ('a, 'b)t = ('a, 'b)Hashtbl.t
-    let empty_env() = Hashtbl.create 13
-    let find x env = Hashtbl.find env x
-    let bind t r env = (Hashtbl.remove env t; Hashtbl.add env t r; env)
-    let add t r env =  (Hashtbl.add env t r); env
-    let member t env = try (Hashtbl.find env t; true) with Not_found -> false
-    let remove t env = (Hashtbl.remove env t); env
-end
-
 (* Sets of strings *)
 
 module StringSet =
@@ -98,7 +85,6 @@ module Set(A: sig type a end) =
       type t = A.a
       let compare = Stdlib.compare
      end)
-
 
 module StringMap =
   Map.Make

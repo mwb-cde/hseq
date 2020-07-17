@@ -49,19 +49,6 @@ val index: ('a -> bool) -> 'a list -> int
 (** [assocp p l] The first value in association list [l] with a key satisfying [p] *)
 val assocp: ('a -> bool) -> ('a * 'b) list -> 'b
 
-(** Hash tables *)
-
-module Table:
-  sig
-    type ('a, 'b)t
-    val empty_env : unit -> ('a, 'b)t
-    val find : 'a -> ('a, 'b)t -> 'b
-    val bind : 'a -> 'b -> ('a, 'b)t -> ('a, 'b)t
-    val add : 'a -> 'b -> ('a, 'b)t -> ('a, 'b)t
-    val member : 'a -> ('a, 'b)t -> bool
-    val remove: 'a -> ('a, 'b)t -> ('a, 'b)t
-  end
-
 val remove_dups: (string)list -> (string)list
 (** [remove_dups l]: Remove duplicates from list [l] *)
 
