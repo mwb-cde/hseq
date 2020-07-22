@@ -1,23 +1,9 @@
 @c -*-texinfo-*-
-@c hseq-quickstart.texi - Documentation for hseq.
-@c Copyright 2005-2017, Matthew Wahab <mwb.cde@gmail.com>
+@c Copyright (c) 2005-2021 Matthew Wahab <mwb.cde@gmail.com>
 @c
-@c Released under the Lesser GPLv3 license:
-@c ========================================
-@c This file is part of HSeq.
-@c
-@c HSeq is free software; you can redistribute it and/or modify it
-@c under the terms of the Lesser GNU General Public License as
-@c published by the Free Software Foundation; either version 3, or (at
-@c your option) any later version.
-@c
-@c HSeq is distributed in the hope that it will be useful, but WITHOUT
-@c ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-@c or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General
-@c Public License for more details.
-@c
-@c You should have received a copy of the Lesser GNU General Public
-@c License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
+@c This Source Code Form is subject to the terms of the Mozilla Public
+@c License, v. 2.0. If a copy of the MPL was not distributed with this
+@c file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 \input texinfo
 

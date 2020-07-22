@@ -1,23 +1,10 @@
 (*----
-  Name: logic.mli
-  Copyright Matthew Wahab 2005-2019
-  Author: Matthew Wahab <mwb.cde@gmail.com>
+  Copyright (c) 2005-2021 Matthew Wahab <mwb.cde@gmail.com>
 
-  This file is part of HSeq
-
-  HSeq is free software; you can redistribute it and/or modify it under
-  the terms of the Lesser GNU General Public License as published by
-  the Free Software Foundation; either version 3, or (at your option)
-  any later version.
-
-  HSeq is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
-  License for more details.
-
-  You should have received a copy of the Lesser GNU General Public
-  License along with HSeq.  If not see <http://www.gnu.org/licenses/>.
-  ----*)
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+----*)
 
 (** Theorems and rules of the logic.
 
