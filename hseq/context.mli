@@ -100,33 +100,7 @@ type parser_t =
 val empty_pp_t: unit -> pp_t
 
 (** Top-level context *)
-type t =
-  {
-    (** Hooks for file handling functions *)
-    file_f: file_t;
-
-    (** Theory data *)
-    thys_f: thy_t;
-
-    (** Pretty printer *)
-    pp_f: pp_t;
-
-    (** Parsers *)
-    parser_f: parser_t;
-
-    (** A list of functions to invoke on a theory when it is added
-        to the data-base. *)
-    load_functions_f: (t -> Theory.contents -> t) list;
-
-    (** Information needed for the theory database loader. *)
-    loader_data_f: (t -> Thydb.Loader.data);
-
-    (** Theorems caches *)
-    thm_cache_f: (Ident.t, Logic.thm) Hashtbl.t;
-
-    (** Scope attached to this context. *)
-    scope_f: Scope.t;
-  }
+type t
 
 (** [empty()]: The empty context. *)
 val empty: unit -> t
