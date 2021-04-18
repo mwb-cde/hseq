@@ -447,7 +447,7 @@ let mp0_tac a a1lbls ctxt g =
   let (_, mp_lhs, mp_rhs) = Term.dest_binop mp_form in
   let varp = Rewrite.is_free_binder mp_vars in
   let (a1_label, a1_env) =
-    let exclude (t, _) = (Tag.equal t a_label) in
+    let exclude (t, _) = (Unique.equal t a_label) in
     try find_unifier scp typenv varp mp_lhs exclude a1_forms
     with Not_found ->
       raise
@@ -465,7 +465,7 @@ let mp0_tac a a1lbls ctxt g =
     Tactics.implA_at (ftag a_label);
     (?> (fun inf1 ->
       ((fun n ->
-        Lib.apply_nth 0 (Tag.equal (Tactics.node_tag n))
+        Lib.apply_nth 0 (Unique.equal (Tactics.node_tag n))
           (Info.subgoals inf1) false)
        -->
          (Tactics.basic_at
@@ -559,7 +559,7 @@ let back0_tac a cs ctxt goal =
   let varp = Rewrite.is_free_binder back_vars in
   (* find, get the conclusion and substitution *)
   let (c_label, c_env) =
-    let exclude (t, _) = (Tag.equal t a_label)
+    let exclude (t, _) = (Unique.equal t a_label)
     in
     try find_unifier scp typenv varp back_rhs exclude c_forms
     with Not_found ->
@@ -579,7 +579,7 @@ let back0_tac a cs ctxt goal =
       let atag3 = msg_get_one "back0_tac" (Info.aformulas inf3) in
       ((fun n ->
         (Lib.apply_nth 1
-           (Tag.equal (Tactics.node_tag n))
+           (Unique.equal (Tactics.node_tag n))
            (Info.subgoals inf3) false))
        -->
        (Tactics.basic_at (ftag atag3) (ftag c_label))) g3))

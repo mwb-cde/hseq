@@ -559,7 +559,7 @@ let marker_in_scope m db =
     try
       let thy_mark = get_mark name db
       in
-      Tag.equal thy_mark m
+      Unique.equal thy_mark m
     with Not_found -> false
   else false
 

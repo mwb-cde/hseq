@@ -472,7 +472,7 @@ let new_thy_scope thy scp =
   let test_thy_scope n =
     (String.compare name n) = 0 || Scope.in_scope scp n
   and test_marker_scope m =
-    Tag.equal mark m || Scope.in_scope_marker scp m
+    Unique.equal mark m || Scope.in_scope_marker scp m
   in
   {
     scp with

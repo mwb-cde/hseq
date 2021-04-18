@@ -182,12 +182,12 @@ let simpC_engine_tac cntrl l ctxt goal =
 let simpA0_tac data a ctxt goal =
   let sqnt = sequent goal in
   let excluded_tags = Data.get_exclude data in
-  let except_tag x = List.exists (Tag.equal x) excluded_tags in
+  let except_tag x = List.exists (Unique.equal x) excluded_tags in
   let concls =
     List.filter (not <+ except_tag) (List.map drop_formula (concls_of sqnt))
   in
   let (targets, asms) =
-    let except_or y x = ((Tag.equal y x) || except_tag x) in
+    let except_or y x = ((Unique.equal y x) || except_tag x) in
     let asm_tags = List.map drop_formula (asms_of sqnt)
     in
     match a with
@@ -268,12 +268,12 @@ let simpA_tac cntrl a ctxt goal =
 let simpC0_tac data c ctxt goal =
   let sqnt = sequent goal in
   let excluded_tags = Data.get_exclude data in
-  let except_tag x = List.exists (Tag.equal x) excluded_tags in
+  let except_tag x = List.exists (Unique.equal x) excluded_tags in
   let asms =
     List.filter (not <+ except_tag) (List.map drop_formula (asms_of sqnt))
   in
   let (targets, concls) =
-    let except_or y x = ((Tag.equal y x) || except_tag x) in
+    let except_or y x = ((Unique.equal y x) || except_tag x) in
     let concl_tags = List.map drop_formula (concls_of sqnt)
     in
     match c with
@@ -356,7 +356,7 @@ let simpC_tac cntrl c ctxt goal =
 *)
 let full_simp0_tac data ctxt goal =
   let excluded = Data.get_exclude data in
-  let except x = List.exists (Tag.equal x) excluded
+  let except x = List.exists (Unique.equal x) excluded
   and sqnt = sequent goal
   in
   let asms =

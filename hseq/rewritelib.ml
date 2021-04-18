@@ -311,7 +311,7 @@ let gen_replace_tac ctrl asms f ctxt goal =
   let exclude =
     match ttag with
       | None -> (fun _ -> false)
-      | Some(x) -> (Tag.equal x)
+      | Some(x) -> (Unique.equal x)
   in
   (*** find_equality_asms: Find the assumptions which are equalities ***)
   let rec find_equality_asms sqasms rst =
@@ -338,7 +338,7 @@ let gen_replace_tac ctrl asms f ctxt goal =
   (*** filter_replace: The replacment tactics, filtering the target to
        avoid trying to rewrite a formula with itself.  ***)
   let filter_replace x =
-    if List.exists (Tag.equal (Logic.label_to_tag x sqnt)) asm_tags
+    if List.exists (Unique.equal (Logic.label_to_tag x sqnt)) asm_tags
     then fail (error "gen_replace")
     else gen_rewrite_tac ctrl (Some(x)) rules
   in

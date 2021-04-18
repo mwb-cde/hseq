@@ -13,9 +13,9 @@
  *)
 
 (** Theory markers. *)
-type marker = (string)Tag.t
-let mk_marker = Tag.named
-let marker_name = Tag.name
+type marker = (string)Unique.t
+let mk_marker = Unique.named
+let marker_name = Unique.name
 
 (** Meta variables *)
 type meta_db = (Term.Binder.t)Treekit.StringTree.t
@@ -148,7 +148,7 @@ let extend_with_typedeclns scp declns=
 let new_local_scope scp =
   let n = marker_name scp.curr_thy in
   let m = mk_marker n in
-  let mfn x = (Tag.equal m x) || (scp.marker_in_scope x)
+  let mfn x = (Unique.equal m x) || (scp.marker_in_scope x)
   in
   {
     scp with

@@ -46,22 +46,22 @@ let test_testsupport() =
 let test_tags() =
   TESTSUITE_BEGIN("Tags");
 
-  let a = Tag.make "a"
-  and a1 = Tag.make "a"
-  and b = Tag.make "b"
-  and b1 = Tag.make "b"
+  let a = Unique.make "a"
+  and a1 = Unique.make "a"
+  and b = Unique.make "b"
+  and b1 = Unique.make "b"
   in
-  EXPECT_TRUE(Tag.equal a a);
-  EXPECT_FALSE(Tag.equal a b);
-  EXPECT_FALSE(Tag.equal a a1);
-  EXPECT_TRUE(Tag.equal a1 a1);
-  EXPECT_FALSE(Tag.equal b b1);
+  EXPECT_TRUE(Unique.equal a a);
+  EXPECT_FALSE(Unique.equal a b);
+  EXPECT_FALSE(Unique.equal a a1);
+  EXPECT_TRUE(Unique.equal a1 a1);
+  EXPECT_FALSE(Unique.equal b b1);
 
-  EXPECT_EQL(Tag.contents a, "a");
-  EXPECT_EQL(Tag.contents a1, "a");
+  EXPECT_EQL(Unique.contents a, "a");
+  EXPECT_EQL(Unique.contents a1, "a");
 
-  EXPECT_EQL(Tag.contents b, "b");
-  EXPECT_EQL(Tag.contents b1, "b");
+  EXPECT_EQL(Unique.contents b, "b");
+  EXPECT_EQL(Unique.contents b1, "b");
 
   TESTSUITE_END()
 

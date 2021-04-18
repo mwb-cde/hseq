@@ -21,7 +21,7 @@
 (** {5 Data structures} *)
 
 (** Theory markers. *)
-type marker = (string)Tag.t      (** The unique identifier of the theory. *)
+type marker = (string)Unique.t      (** The unique identifier of the theory. *)
 
 val mk_marker: string -> marker
 (** Marker constructor *)

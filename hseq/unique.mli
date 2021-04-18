@@ -26,7 +26,7 @@ val create: unit -> (string)t
 (** [create]: Make a new, unit tag using [make] . *)
 
 (** [named s]: Make a new tag named [s], using [make]. The tag is guarenteed to
-    be unique w.r.t function [Tag.equal]. *)
+    be unique w.r.t function [Unique.equal]. *)
 
 val contents: ('a)t -> 'a
 (** [contents tag]: Extract the data from the tag. *)

@@ -20,20 +20,20 @@ type ('a) pre_typ =
   | App of (('a) pre_typ * ('a) pre_typ)
 
 (** [gtype_id]: The type of gtype identifiers. *)
-type gtype_id = (string)Tag.t
+type gtype_id = (string)Unique.t
 
-let mk_gtype_id s = Tag.make s
-let gtype_id_string i = Tag.contents i
+let mk_gtype_id s = Unique.make s
+let gtype_id_string i = Unique.contents i
 let gtype_id_copy i = mk_gtype_id (gtype_id_string i)
 
-let gtype_id_equal x y = Tag.equal x y
+let gtype_id_equal x y = Unique.equal x y
 
 let gtype_id_compare x y =
   if gtype_id_equal x y
   then Order.Equal
   else
-    let xc = Tag.contents x
-    and yc = Tag.contents y
+    let xc = Unique.contents x
+    and yc = Unique.contents y
     in
     if (Order.Util.compare xc yc) = Order.GreaterThan
     then Order.GreaterThan

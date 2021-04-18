@@ -207,7 +207,7 @@ val addsqntError: string -> exn -> 'a
     [FName n]: The formula with named [n] (Experimental).
 *)
 
-type ftag_ty = (string)Tag.t
+type ftag_ty = (string)Unique.t
 (** Tags for formulas in a goal. *)
 
 type label =

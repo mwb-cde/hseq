@@ -210,11 +210,11 @@ let is_excluded  excluded sqnt x =
     | Logic.Asm l ->
       let tag = Logic.label_to_tag l sqnt
       in
-      List.exists (Tag.equal tag) excluded
+      List.exists (Unique.equal tag) excluded
     | Logic.OAsm(l, _) ->
       let tag = Logic.label_to_tag l sqnt
       in
-      List.exists (Tag.equal tag) excluded
+      List.exists (Unique.equal tag) excluded
     | _ -> false
 
 (** [get_form t n]: Get formula tagged [t] from node [n].  First try
@@ -353,7 +353,7 @@ let prep_cond_tac cntrl values thm ctxt goal =
     (ncntrl, (cnd_gltg, rl_gltg), (cnd_ftg, rl_ftg))
   in
   let main_tac ctxt0 g =
-    fold_seq (None, Tag.create())
+    fold_seq (None, Unique.create())
       [
         (* Add the theorem to the sequent. *)
         (fun fold_data -> (fold_data >+ cut_rr_rule values thm));
@@ -413,7 +413,7 @@ let prove_cond_tac (cntrl: Data.t) values entry ctxt goal =
           in
           (** Apply the prover to the sub-goal with the condition to
               prove. *)
-          if (Tag.equal cnd_gltg (node_tag g1))
+          if (Unique.equal cnd_gltg (node_tag g1))
           then ((cond_data, data2) >+ prover_tac ncntrl cnd_ftg) ctxt1 g1
           else
             (** Get the rule-data from the other sub-goal.*)

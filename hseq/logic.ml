@@ -85,7 +85,7 @@ let addsqntError s es =
  * Types used in subgoals
  *)
 
-type ftag_ty = (string)Tag.t
+type ftag_ty = (string)Unique.t
 
 type label =
   | FNum of int
@@ -108,7 +108,7 @@ let drop_tag (_, f) = f
 let join_up l r = List.rev_append l r
 
 let split_at_tag t x =
-  let test (l, _) = Tag.equal t l
+  let test (l, _) = Unique.equal t l
   in
   Lib.full_split_at test x
 (** [split_at_tag t x]: Split [x] into [(l, c, r)] so that
@@ -117,7 +117,7 @@ let split_at_tag t x =
 *)
 
 let split_at_name n x =
-  let test (l, _) = (String.compare n (Tag.name l)) = 0
+  let test (l, _) = (String.compare n (Unique.name l)) = 0
   in
   Lib.full_split_at test x
 (** [split_at_name n x]: Split [x] into [(l, c, r)] so that
@@ -189,7 +189,7 @@ struct
   *)
 
   (** [mk_sqnt_form x]: make the subgoal |- x  (with x to be proved) *)
-  let mk_sqnt_form f = (Tag.create(), f)
+  let mk_sqnt_form f = (Unique.create(), f)
 
   (** A sqnt_env is made up of the shared type variables
       (Gtype.WeakVar) that may be used in the sequent information
@@ -216,7 +216,7 @@ struct
   let sqnt_env (_, e, _, _) = e
 
   let sqnt_tag (t, _, _, _) = t
-  let sqnt_retag _ = Tag.create()
+  let sqnt_retag _ = Unique.create()
 
   let sklm_cnsts (_, e, _, _) = e.sklms
   let scope_of (_, e, _, _) = e.sqscp
@@ -230,7 +230,7 @@ struct
 
   let new_sqnt scp x =
     let env = mk_sqnt_env [] scp [] []
-    and gtag = Tag.create()
+    and gtag = Unique.create()
     and cform = mk_sqnt_form x
     in
     (make gtag env [] [cform], cform)
@@ -254,7 +254,7 @@ struct
       match ams with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-         if Tag.equal xt t
+         if Unique.equal xt t
          then (xt, rename xf)
          else get_aux xs
     in
@@ -265,7 +265,7 @@ struct
       match ccs with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-         if Tag.equal xt t
+         if Unique.equal xt t
          then (xt, rename xf)
          else get_aux xs
     in
@@ -280,7 +280,7 @@ struct
       match ams with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-         if (Tag.name xt) = t
+         if (Unique.name xt) = t
          then (xt, rename xf)
          else get_aux xs
     in
@@ -293,7 +293,7 @@ struct
       match ccs with
       | [] -> raise Not_found
       | (xt, xf)::xs ->
-         if (Tag.name xt) = t
+         if (Unique.name xt) = t
          then (xt, rename xf)
          else get_aux xs
     in
@@ -329,7 +329,7 @@ struct
       match fs with
       | [] -> raise Not_found
       | x::xs ->
-         if Tag.equal (form_tag x) t
+         if Unique.equal (form_tag x) t
          then i
          else index_aux xs (i + 1)
     in
@@ -351,7 +351,7 @@ struct
     else index_aux (concls sq) i
 
   let name_to_tag n sq =
-    let test x = (String.compare n (Tag.name (fst x)) = 0) in
+    let test x = (String.compare n (Unique.name (fst x)) = 0) in
     let first ls =
       let (_, f, _) = Lib.full_split_at test ls
       in
@@ -450,7 +450,7 @@ let goal_focus t (Goal(sqnts, tyenv, f, chngs)) =
     match sqs with
     | [] -> raise Not_found
     | (x::xs) ->
-       if Tag.equal t (Sequent.sqnt_tag x)
+       if Unique.equal t (Sequent.sqnt_tag x)
        then x::((List.rev rslt) @ xs)
        else focus xs (x::rslt)
   in
@@ -496,9 +496,9 @@ struct
   (** Type of unique identifiers. *)
   type tag_ty = ftag_ty
   (** Make a unique tag. *)
-  let tag_create = Tag.create
+  let tag_create = Unique.create
   (** Compare tags for equality. *)
-  let tag_equals = Tag.equal
+  let tag_equals = Unique.equal
 
   (** Type of sequents. *)
   type sqnt_ty = Sequent.t
@@ -593,12 +593,12 @@ let simple_rule_apply r node =
     raises [No_subgoals] if goal is solved.
 *)
 let apply_to_goal report tac (Goal(sqnts, tyenv, f, chngs)) =
-  let g_tag = Tag.create() in
+  let g_tag = Unique.create() in
   let branch = Subgoals.mk_branch g_tag (Subgoals.mk_env tyenv chngs) sqnts
   in
   let new_branch = Subgoals.apply_to_first report tac branch
   in
-  if Tag.equal g_tag (Subgoals.branch_tag new_branch)
+  if Unique.equal g_tag (Subgoals.branch_tag new_branch)
   then
     let new_tyenv = Subgoals.branch_tyenv new_branch
     and new_sqnts = Subgoals.branch_sqnts new_branch
@@ -790,7 +790,7 @@ struct
   *)
   let copy_asm0 l sq =
     let (lasms, na, rasms) = split_at_asm l (Sequent.asms sq)
-    and nt = Tag.create()
+    and nt = Unique.create()
     in
     let nb = (nt, drop_tag na)
     in
@@ -813,7 +813,7 @@ struct
   *)
   let copy_cncl0 l sq =
     let (lcncls, nc, rcncls) = split_at_concl l (Sequent.concls sq)
-    and nt = Tag.create()
+    and nt = Unique.create()
     in
     let nb = (nt, drop_tag nc)
     in
@@ -903,7 +903,7 @@ struct
   *)
   let cut0 x sq=
     let scp = Sequent.scope_of sq
-    and ftag = Tag.create()
+    and ftag = Unique.create()
     in
     let nf = formula_of x in
     let nt = Formula.term_of nf in
@@ -967,7 +967,7 @@ struct
     if Formula.is_conj t
     then
       let (t1, t2) = Formula.dest_conj t
-      and ft2 = Tag.create()
+      and ft2 = Unique.create()
       in
       let asm1 = (ft1, t1)
       and asm2 = (ft2, t2)
@@ -1003,8 +1003,8 @@ struct
       in
       let concll = join_up lcncls ((ft1, t1)::rcncls)
       and conclr = join_up lcncls ((ft1, t2)::rcncls)
-      and tagl = Tag.create()
-      and tagr = Tag.create()
+      and tagl = Unique.create()
+      and tagr = Unique.create()
       and asms = Sequent.asms sq
       in
       let chngs = Changes.make [tagl; tagr] [] [ft1] [] in
@@ -1038,8 +1038,8 @@ struct
       in
       let asmsl= join_up lasms ((ft, t1)::rasms)
       and asmsr = join_up lasms ((ft, t2)::rasms)
-      and tagl = Tag.create()
-      and tagr = Tag.create()
+      and tagl = Unique.create()
+      and tagr = Unique.create()
       in
       let chngs = Changes.make [tagl; tagr] [ft] [] [] in
       let sbgl =
@@ -1069,7 +1069,7 @@ struct
     if Formula.is_disj t
     then
       let (t1, t2) = (Formula.dest_disj t)
-      and ft2 = Tag.create()
+      and ft2 = Unique.create()
       in
       let cncl1 = (ft1, t1)
       and cncl2 = (ft2, t2)
@@ -1171,8 +1171,8 @@ struct
       let asm2 = join_up lasms ((ft, t2)::rasms)
       and asm1 = join_up lasms rasms
       and cncl1 = (ft, t1)::(Sequent.concls sq)
-      and tagl = Tag.create()
-      and tagr = Tag.create()
+      and tagl = Unique.create()
+      and tagr = Unique.create()
       in
       let chngs = Changes.make [tagl; tagr] [ft] [ft] [] in
       let sbgl =
@@ -1201,7 +1201,7 @@ struct
     if Formula.is_implies t
     then
       let  (t1, t2) = (Formula.dest_implies t)
-      and ft2 = Tag.create()
+      and ft2 = Unique.create()
       in
       let asm =(ft2, t1)
       and cncl = (ft1, t2)
@@ -1468,7 +1468,7 @@ struct
       let nasm, ntyenv =
         Formula.mk_rewrite_eq scp tyenv fplan trm
       in
-      let asm_tag= Tag.create() in
+      let asm_tag= Unique.create() in
       let gtyenv =
         Gtype.extract_bindings (Sequent.sqnt_tyvars sq) ntyenv tyenv
       in
@@ -1631,7 +1631,7 @@ struct
       check_name name sqnt;
       let (lasms, asm, rasms) = split_at_asm lbl (Sequent.asms sqnt) in
       let form_tag, form = asm in
-      let new_tag = Tag.named name in
+      let new_tag = Unique.named name in
       let new_asms = join_up lasms ((new_tag, form)::rasms) in
       let chngs = Changes.make [] [new_tag] [] [] in
       let new_sbgl =
@@ -1667,7 +1667,7 @@ struct
         split_at_concl lbl (Sequent.concls sqnt)
       in
       let form_tag, form = concl in
-      let new_tag = Tag.named name in
+      let new_tag = Unique.named name in
       let new_concls = join_up lconcls ((new_tag, form)::rconcls)
       in
       let chngs = Changes.make [] [] [new_tag] [] in
@@ -2096,13 +2096,13 @@ let print_sqnt ppinfo sq =
     else "-"
   in
   let name_of_asm i tg =
-    if (Tag.name tg) = ""
+    if (Unique.name tg) = ""
     then (nice_prefix^(string_of_int (-i)))
-    else Tag.name tg
+    else Unique.name tg
   and name_of_concl i tg =
-    if (Tag.name tg) = ""
+    if (Unique.name tg) = ""
     then string_of_int i
-    else Tag.name tg
+    else Unique.name tg
   in
   let rec print_asm i afl =
     Format.printf "@[<v>";

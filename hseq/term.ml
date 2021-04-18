@@ -63,15 +63,15 @@ type q_type = {quant: quant; qvar: string; qtyp: Gtype.t}
 
 module Binder =
   struct
-    type t = (q_type)Tag.t
+    type t = (q_type)Unique.t
 
     (* Binder operations *)
 
     let make qn qv qt =
-      Tag.make { quant=qn; qvar=qv; qtyp=qt }
+      Unique.make { quant=qn; qvar=qv; qtyp=qt }
 
     let dest b =
-      let q = Tag.contents b
+      let q = Unique.contents b
       in
       (q.quant, q.qvar, q.qtyp)
 
@@ -85,13 +85,13 @@ module Binder =
       let (_, _, x) = dest b
       in x
 
-    let equality x y = Tag.equal x y
+    let equality x y = Unique.equal x y
     let compare x y =
       if equality x y
       then Order.Equal
       else
-        let xc = Tag.contents x
-        and yc = Tag.contents y
+        let xc = Unique.contents x
+        and yc = Unique.contents y
         in
         if (Order.Util.compare xc yc) = Order.GreaterThan
         then Order.GreaterThan
