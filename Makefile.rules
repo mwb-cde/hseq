@@ -7,10 +7,7 @@
 ######################################################################
 
 #####
-# Definitions and rules for Makefiles that build modules.
-#
-# This Makefile provides the necessary infrastructure for building modules and
-# should be included from instances of Makefile.module.
+# Generic build definitions and rules
 #
 # Requires:
 # PROJ_ROOT: Variable containing relative path to top of the source tree.
