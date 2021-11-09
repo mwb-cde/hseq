@@ -22,7 +22,7 @@ PROJ_ROOT=..
 ###
 
 # SUBDIRS: The sub-directories to build (in order)
-SUBDIRS=quickstart #hseq
+SUBDIRS= #quickstart hseq
 
 ####
 # Don't modify anything below this line
