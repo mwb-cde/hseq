@@ -619,7 +619,8 @@ let print_protection p =
   then ()
   else Format.printf "@[read-write@]@,"
 and print_date d =
-  Format.printf "@[Date: %f@]@." d
+  let (year, month, day, hour, mn) = Lib.nice_date d in
+  Format.printf "@[Date: %d/%d/%d:%d:%d@]@." year month day hour mn
 and print_parents ps =
   Format.printf "@[<2>Parents: ";
   begin
