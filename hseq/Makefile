@@ -74,6 +74,7 @@ hseq_SOURCES=$(Util_SOURCES) $(Tpcore_SOURCES) $(Logic_SOURCES) \
 		$(Parser_SOURCES) $(Tpmain_SOURCES) $(Booleans_SOURCES) \
 		$(Simplifier_SOURCES)
 
+hseq_INCLUDE=+unix
 
 ######################################################################
 # DO NOT CHANGE ANYTHING IN THIS SECTION

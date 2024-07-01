@@ -54,8 +54,8 @@ hseqc_LIBS=unix.cma hseq.cma
 hseqb_NATLIBS=unix.cmxa hseq.cmxa
 hseqc_NATLIBS=unix.cmxa hseq.cmxa
 
-hseqb_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq
-hseqc_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq
+hseqb_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq +unix
+hseqc_INCLUDE=$(SRC_ROOT)/hsequser $(SRC_ROOT)/hseq +unix
 
 #####
 # Module build tool settings

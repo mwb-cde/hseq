@@ -45,13 +45,12 @@ PROGRAMS=hseq
 
 # object_INCLUDE: Directories to include when compiling [object].
 hseq_INCLUDE=$(SRC_ROOT)/hseq $(SRC_ROOT)/hsequser \
-	$(SRC_ROOT)/tools/hseqtop
+	$(SRC_ROOT)/tools/hseqtop +unix +dynlink
 
 lm-hseq-include=$(foreach l,$(hseq_INCLUDE),-I $(l) )
 
 # object_LIBS: Libraries to include when linking [object].
-hseq_LIBS=unix.cma dynlink.cma \
-	hseq.cma hsequser.cma hseqtop.cma
+hseq_LIBS=hseq.cma hsequser.cma hseqtop.cma
 
 # DISABLE_NATIVECODE: If yes, don't generate native-code
 hseq_DISABLE_NATIVECODE=true

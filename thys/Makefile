@@ -51,7 +51,7 @@ include $(PROJ_ROOT)/Makefile.rules
 ##
 
 # INCLUDE: The include directives
-HSEQ_INCLUDE=$(foreach dir,$(HSEQLIB),-I $(dir) )
+HSEQ_INCLUDE=+unix $(foreach dir,$(HSEQLIB),-I $(dir) )
 
 # HSEQC: The hseq compiler
 HSEQC=$(HSEQB) --verbose --with-hseq $(HSEQ) $(HSEQ_INCLUDE)

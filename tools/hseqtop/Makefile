@@ -45,7 +45,7 @@ hseqtop_SOURCES=unsafe init cli
 #hseqtop_HEADERS=
 
 # object_INCLUDE: Directories to include when compiling [object].
-hseqtop_INCLUDE=+compiler-libs -I $(SRC_ROOT)/quote \
+hseqtop_INCLUDE=+compiler-libs +unix -I $(SRC_ROOT)/quote \
 	-I $(SRC_ROOT)/hseq -I $(SRC_ROOT)/hsequser
 
 

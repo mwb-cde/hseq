@@ -40,7 +40,7 @@ LIBRARIES=hsequser
 # object_SOURCES: List of source file names, without suffixes.
 hsequser_SOURCES=userstate userlib
 hsequser_PACK_NAME=HSeqUser
-hsequser_INCLUDE=$(SRC_ROOT)/hseq
+hsequser_INCLUDE=$(SRC_ROOT)/hseq +unix
 
 ######################################################################
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
