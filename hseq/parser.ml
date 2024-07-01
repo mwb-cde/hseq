@@ -50,7 +50,7 @@ exception ParsingError = Grammars.ParsingError
 * Parser data
 ***)
 
-open Lexer
+(* open Lexer *)
 open Lterm
 
 (*** Symbols ***)
@@ -58,6 +58,7 @@ open Lterm
 type symbol_table = Lexer.symtable
 
 let core_symbols =
+  let open Lexer in
   [
     (".", Sym DOT);
     ("(", Sym ORB);
@@ -381,7 +382,8 @@ let get_symtab tbl = Table.symbols tbl
 
 let read tbl ph str =
   let symtab = get_symtab tbl in
-  Lexer.reader (scan symtab) (ph tbl) str
+  let ret = Lexer.reader (Lexer.scan symtab) (ph tbl) str in
+  ret
 
 let read_term tbl str =
   read tbl term_parser str
@@ -391,8 +393,8 @@ let read_type tbl str =
 
 let test_lex tbl str =
   let symtab = get_symtab tbl in
-  scan symtab (Stream.of_string str)
+  Lexer.scan symtab (Lexer.Stream.of_string str)
 
 let test tbl str =
   let symtab = get_symtab tbl in
-  reader (scan symtab) (term_parser tbl) str
+  Lexer.reader (Lexer.scan symtab) (term_parser tbl) str

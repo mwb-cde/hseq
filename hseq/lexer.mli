@@ -1,5 +1,5 @@
 (*----
-  Copyright (c) 2005-2021 Matthew Wahab <mwb.cde@gmail.com>
+  Copyright (c) 2005-2024 Matthew Wahab <mwb.cde@gmail.com>
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -122,7 +122,14 @@ val find_sym : symtable -> string -> tok
    Raise [Not_found] if [s] is not in [tbl].
  *)
 
-val lookup_sym :  symtable -> string -> int * tok
+val find_sym_opt : symtable -> string -> (tok)option
+(**
+   [find_sym tbl s]: Find string [s] in symtable [tbl],
+   returning associated token.
+   Return [None] if [s] is not in [tbl].
+ *)
+
+val lookup_sym :  symtable -> string -> (int * tok)option
 (**
    [lookup_sym tbl str]:
    Try to match a symbol at the beginning of string [str],
@@ -137,27 +144,27 @@ val lookup_sym :  symtable -> string -> int * tok
 
 (** {5 Utility functions} *)
 
-val stream_empty : 'a Stream.t -> bool
-(** Test whether a stream is empty. *)
-val stream_peek : 'a Stream.t -> 'a
-(**
-   Get the first character in a stream. Raise [Not_found] if the
-   stream is empty.
- *)
+module Stream:
+sig
+  type ('a) t
 
-val stream_test : ('a -> bool) -> 'a Stream.t -> bool
-(**
-   [stream_test tst stm]: Apply test [tst] to the first character of
-   stream [stm]. Returning [false] if the test fails or if the stream
-   is empty.
- *)
+  val is_empty: ('a)t -> bool
+  val uncons: ('a)t -> ('a * ('a)t)option
+  val cons: 'a -> ('a)t -> ('a)t
 
+  val push_front: ('a)list -> ('a)t -> ('a)t
+  val first: int -> ('a)t -> (('a)list * ('a)t)
+  val look: int -> ('a)t -> (('a)list * ('a)t)
+
+  val apply: ('a -> 'b) -> ('a)t -> ('b * ('a)t)option
+  val test: ('a -> bool) -> ('a)t -> (bool * ('a)t)
+  val drop: int -> ('a)t -> ('a)t
+
+  val of_string: string -> (char)t
+end
 
 val string_implode : char list -> string
 (** Make a string from a list of characters. *)
-
-val junkn : int -> 'a Stream.t -> unit
-(** [junkn n stm]: Drop the first [n] characters from stream [stm]. *)
 
 (** {5 Matching functions} *)
 
@@ -193,15 +200,13 @@ val is_identifier_char : char  -> bool
 val is_identifier_start : char  -> bool
 (** [is_identifier_start c]: character [c] can start an identifier. *)
 
-val get_while: (char -> bool) -> char Stream.t -> string
+val get_while: ('a -> bool) -> ('a)Stream.t -> (('a)list * ('a)Stream.t)
 (**
-   [get_while test stm]: Read the initial string made up of the
-   characters satisfying [test].
- *)
+   [get_while test stm]: Read the initial elements satisfying [test].  *)
 
 val get_sep_list:
     (char->bool) -> (char->bool) -> (char->bool)
-      ->  char Stream.t -> string list
+      ->  (char)Stream.t -> ((string)list * (char)Stream.t)
 (**
    [get_sep_list init body sep stm]: Read a list of strings from [stm].
    Each string must begin with character satisfying [init]
@@ -212,16 +217,17 @@ val get_sep_list:
    in the stream (e.g. "abcd.efgh" -> ["abcd"; "efgh"] )
  *)
 
-val get_alpha : char Stream.t -> string
+val get_alpha : (char)Stream.t -> ((char)list * (char)Stream.t)
 (**  Get the alpha-numeric string at the front of the stream. *)
 
-val is_num : char Stream.t -> bool
+val is_num : (char)Stream.t -> (bool * (char)Stream.t)
 (** [is_num stm]: There is a number at the start of stream [stm]. *)
 
-val get_num : char Stream.t -> tok
-(** [get_num stm]: Get the number at the start of stream [stm]. *)
+val get_num : (char)Stream.t -> ((string)option * (char)Stream.t)
+(** [get_num stm]: Get the string representation of the number at the start
+    of stream [stm]. *)
 
-val skip_space : char Stream.t -> unit
+val skip_space : (char)Stream.t -> (char)Stream.t
 (** [skip_space stm]: Drop the leading white space from stream [stm]. *)
 
 (**
@@ -234,22 +240,22 @@ val skip_space : char Stream.t -> unit
    returns [(false, tok)] where [tok] is an arbitrary token.
  *)
 
-type ('a) matcher = symtable -> 'a Stream.t -> (bool * tok)
+type ('a) matcher = symtable -> ('a)Stream.t -> ((tok)option * ('a)Stream.t)
     (** Functions which match from a stream. *)
 
 val first_match:
-    ('a) matcher list -> symtable -> 'a Stream.t -> (bool * tok)
+    ('a) matcher list -> symtable -> ('a)Stream.t -> ((tok)option * ('a)Stream.t)
         (**
            Apply each of the lexers in a list, in order, returning the result
            of the first to suceed. Returns [(false, null_tok)] on failure.
          *)
 
-val match_number : char matcher
+val match_number : (char)matcher
 (**
    [match_number stm]: Match a number.
  *)
 
-val match_other : char matcher
+val match_other : (char)matcher
 (**
    [match_other stm]: General matching function, tries standard
    lexers. Currently, only tries {!Lexer.match_number}.
@@ -280,19 +286,20 @@ val match_empty : 'a matcher
 
 (** {5 Toplevel functions} *)
 
-val lex : symtable -> char Stream.t -> tok
+val lex : symtable -> (char)Stream.t -> (tok * (char)Stream.t)option
 (**
    [lex symtab strm]: The main lexing function. Reads a token from stream
    [stm], with symbol table [symtab].
  *)
 
-val scan : symtable -> char Stream.t -> tok Parserkit.Input.t
+val scan : symtable -> (char)Stream.t -> (tok)Parserkit.Input.t
 (**
    [scan symtab stm]: make token input stream from a char stream with
    symbol table symtab.
  *)
 
-val reader : (char Stream.t -> 'a) -> ('a -> 'b) -> string -> 'b
+val reader :
+  ((char)Stream.t -> 'a) -> ('a -> 'b) -> string -> 'b
 (**
    [reader lex ph str]:
    Parse string [str] using lexer [lex] and parser [ph].
@@ -308,6 +315,6 @@ val add_char_info :
 val remove_sym_size : 'a -> ('a * int) list -> ('a * int) list
 val remove_char_info :
     'a -> 'b -> ('a * ('b * int) list) list -> ('a * ('b * int) list) list
-val largest_sym : 'a -> ('a * ('b * 'c) list) list * 'd -> 'b
+val largest_sym : 'a -> ('a * ('b * 'c) list) list * 'd -> ('b)option
 
 val find_char_info : 'a -> ('a * 'b) list -> 'b

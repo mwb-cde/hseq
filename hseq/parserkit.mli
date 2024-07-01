@@ -18,6 +18,26 @@
 (** [Input]: Input streams for parsers *)
 module Input:
 sig
+  type ('a)t
+
+  (** [is_empty inp]: true iff [inp] is empty. *)
+  val is_empty : ('a)t -> bool
+
+  (** [look n inp]: get first n elements in input inp but don't remove it
+      from input.  *)
+  val look: int -> ('a)t -> (('a)list * ('a)t)
+
+  (** [accept inp]: Get a new input, formed by dropping the first element of
+     [inp].  This is non-destructive, the first element will still be
+     available in [inp].  *)
+  val accept: ('a)t -> ('a)t
+
+  val make: ('a -> ('b * 'a)option) -> 'a -> ('b)t
+end
+
+(*
+module Input:
+sig
     (** Streams which can deal with backtracking *)
 
   exception Empty
@@ -43,6 +63,7 @@ sig
     element of [inp].  This is non-destructive, the first element
     will still be available in [inp].  *)
 end
+ *)
 
 (** [Info]: Precedence and associativity information for tokens. *)
 module Info :
@@ -97,10 +118,11 @@ sig
   exception ParsingError of string
   exception No_match
   type token
-  and input = token Input.t
-  and 'a phrase = input -> 'a * input
-  val empty: 'a list phrase
-  val next_token: token phrase
+  type input = (token)Input.t
+  type ('a)phrase = input -> 'a * input
+
+  val empty: (('a)list) phrase
+  val next_token: (token) phrase
 
   (** {7 Parser Constructors} *)
   val error: string -> (token -> string) -> 'a phrase

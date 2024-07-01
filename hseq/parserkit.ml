@@ -6,6 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ----*)
 
+(*
 module Input =
 struct
 
@@ -55,6 +56,22 @@ struct
       except that first token is dropped. *)
   let accept inp = tail inp
 end
+*)
+
+module Input =
+struct
+  type ('a)t = ('a)ListSeq.t
+
+  let is_empty inp = ListSeq.is_empty inp
+
+  let look n inp = ListSeq.look n inp
+  let first n inp = ListSeq.first n inp
+  let drop n inp = ListSeq.drop n inp
+  let accept inp = ListSeq.accept inp
+
+  let make = ListSeq.of_fun
+end
+
 
 (*
  * Symbol parsing and pretty printing attributes.
@@ -123,14 +140,14 @@ sig
   exception No_match
 
   type token
-  type input=token Input.t
-  type ('a)phrase= input -> ('a* input)
+  type input = (token)Input.t
+  type ('a)phrase = input -> ('a * input)
 
   val empty: ('a list)phrase
   val next_token: token phrase
   val error: string -> (token -> string) -> 'a phrase
 
-  val get: (token -> bool) -> (token -> 'a) -> 'a phrase
+  val get: (token -> bool) -> (token -> 'a) -> ('a)phrase
   val (!$): token -> token phrase
   val (!!): 'a phrase -> 'a phrase
   val (--): ('a)phrase -> ('b)phrase -> ('a*'b)phrase
@@ -177,7 +194,7 @@ sig
      * (token -> token_info)
      * (token -> 'a -> 'a -> 'a)
      * (token -> 'a -> 'a))
-    -> 'a phrase
+    -> ('a) phrase
 
   val parse: ('a)phrase -> token -> input -> 'a
 end
@@ -205,16 +222,16 @@ module Make =
     let empty inp = ([], inp)
 
     let get test fn inp =
-      let t =
-        try Input.look inp
-        with Input.Empty -> raise (ParsingError "Unexpected end of input")
-      in
-      if test t
-      then (fn t, Input.accept inp)
-      else
-        raise
-          (ParsingError
-             ("Unexpected symbol: \""^(A.string_of_token t)^"\""))
+      let (ts, inp1) = Input.look 1 inp in
+      match ts with
+      | [t] ->
+         if test t
+         then (fn t, Input.accept inp)
+         else raise
+                (ParsingError
+                   ("Unexpected symbol: \""^(A.string_of_token t)^"\""))
+      | _ -> raise
+               (ParsingError "Unexpected input")
 
     let (!$) tok inp =
       get (fun t -> matches tok t) (fun t -> t) inp
@@ -393,42 +410,44 @@ module Make =
       (* [token_look inp]: Look at the token at the front of input
          [inp]. *)
       let token_look inp =
-        let tok = Input.look inp in
-        let inf = info tok
-        in
-        (tok, inf)
+        let (toks, inp1) = Input.look 1 inp in
+        match toks with
+        | [tok] ->
+           let inf = info tok
+           in
+           ((tok, inf), inp1)
+        | _ -> raise (ParsingError "operators")
       in
       (* [chunk prec inp]: Parser the argument to a binary operator. *)
       let rec chunk inp =
-        let (tok, inf) = token_look inp
+        let ((tok, inf), inp1) = token_look inp
         in
         if Info.is_prefix inf.fixity
-        then list_prefix inf.prec tok (Input.accept inp)
-        else ph inp
+        then list_prefix inf.prec tok (Input.accept inp1)
+        else ph inp1
       and list_binary prec (x, inp) =
         if Input.is_empty inp
         then (x, inp)
         else
-          let (tok, inf) = token_look inp
-          in
-          if (inf.prec < prec)
-          then (x, inp)
+          let ((tok, inf), inp1) = token_look inp in
+          if inf.prec < prec
+          then (x, inp1)
           else
             if Info.is_suffix inf.fixity
             then
               list_binary prec
-                (list_suffix inf.prec tok (x, Input.accept inp))
+                (list_suffix inf.prec tok (x, Input.accept inp1))
             else
               if Info.is_right_assoc inf.fixity
               then
                 list_binary prec
-                  (list_right inf.prec tok (x, Input.accept inp))
+                  (list_right inf.prec tok (x, Input.accept inp1))
               else
                 if Info.is_infix inf.fixity
                 then
                   list_binary prec
-                    (list_left inf.prec tok (x, Input.accept inp))
-                else (x, inp)
+                    (list_left inf.prec tok (x, Input.accept inp1))
+                else (x, inp1)
       and list_left prec tok (x, inp) =
         let (nx, ninp) = list_binary prec ((chunk >>binop tok x) inp)
         in
@@ -448,6 +467,7 @@ module Make =
 
     let parse ph eof inp =
       let (x, toks) = ((ph -- (!$eof))>> fun (x, _) -> x) inp
-      in x
+      in
+      x
 
   end
