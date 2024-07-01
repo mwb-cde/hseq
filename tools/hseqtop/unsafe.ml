@@ -15,10 +15,10 @@ let use_string st =
  with _ -> failwith ("use_string "^st);;
 
 
-let use_file silent f =
+let use_file silent fname =
   if silent
-  then ignore(Toploop.use_silently Format.std_formatter f)
-  else ignore(Toploop.use_file Format.std_formatter f)
+  then ignore(Toploop.use_silently Format.std_formatter (Toploop.File(fname)))
+  else ignore(Toploop.use_input Format.std_formatter (Toploop.File(fname)))
 
 (* Dynlink.loadfile causes a segmentation fault in some circumstances. *)
 let load_file f =
@@ -29,17 +29,13 @@ let load_file f =
 let add_directory s = Topdirs.dir_directory s
 
 (** [add_init f]: Setup function [f] to be called when OCaml
-    starts.
-
-    Use Toploop.parse_toplevel_phrase to call function [f] then
-    restore Toploop.parse_toplevel_phrase to original (ocaml) value
-    once init() has been called.
+    starts up.
 *)
 let add_init f =
-  let ocaml_init = !Toploop.parse_toplevel_phrase
-  in
-  Toploop.parse_toplevel_phrase :=
-    (fun l ->
-      ignore(f());
-      Toploop.parse_toplevel_phrase:=ocaml_init;
-      ocaml_init l)
+  let module Persistent_signature = Persistent_env.Persistent_signature in
+  let toplevel_hook = (function
+    | Toploop.After_setup -> f()
+    | _ -> ())
+  in 
+  Toploop.add_hook toplevel_hook
+
