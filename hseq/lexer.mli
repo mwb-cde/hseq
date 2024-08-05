@@ -315,6 +315,6 @@ val add_char_info :
 val remove_sym_size : 'a -> ('a * int) list -> ('a * int) list
 val remove_char_info :
     'a -> 'b -> ('a * ('b * int) list) list -> ('a * ('b * int) list) list
-val largest_sym : 'a -> ('a * ('b * 'c) list) list * 'd -> ('b)option
+val largest_sym : 'a -> ('a * (int)Counter.t) list * 'd -> (int)option
 
-val find_char_info : 'a -> ('a * 'b) list -> 'b
+val find_char_info : 'a -> ('a * (int)Counter.t) list -> (int)Counter.t

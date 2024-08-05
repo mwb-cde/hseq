@@ -109,7 +109,7 @@ let match_tokens x y=
 
 module SymbolTree = Treekit.StringTree
 type symbol_table= (tok) SymbolTree.t
-type symtable = (char * int Counter.t) list * symbol_table
+type symtable = (char * (int)Counter.t) list * symbol_table
 
 let mk_symtable size = ([], SymbolTree.empty)
 let clear_symtable (_, tbl) = ([], SymbolTree.empty)
@@ -119,7 +119,7 @@ let add_sym_size sz lst = Counter.add sz lst
 let add_char_info c sz lst=
   let rec add_aux ls =
     match ls with
-      [] -> [(c, add_sym_size sz (Counter.empty()))]
+    | [] -> [(c, add_sym_size sz (Counter.empty()))]
     | (ch, sizes) :: xs ->
        if(ch=c)
        then (ch, add_sym_size sz sizes)::xs
@@ -132,12 +132,17 @@ let add_char_info c sz lst=
   in
   add_aux lst
 
+let find_char_info c (lst: ('b * (int)Counter.t)list) =
+  match List.assoc_opt c lst with
+  | Some(x) -> x
+  | _ -> Counter.empty()
+
 let remove_sym_size sz lst=Counter.remove sz lst
 
 let remove_char_info c sz lst=
   let rec remove_aux ls =
     match ls with
-      [] -> []
+    | [] -> []
     | (ch, sizes) :: xs ->
        if(ch=c)
        then
@@ -181,12 +186,10 @@ let remove_sym (ls, tbl) s=
   (remove_char_info (String.get s 0) (String.length s) ls,
    SymbolTree.remove tbl s)
 
-let find_char_info c lst = List.assoc c lst
-
 let largest_sym c (ls, _) =
   match find_char_info c ls with
-    [] -> None
   | (sz, _)::_ -> Some(sz)
+  | _ -> None
 
 let lookup_sym ((cinfo, tbl):symtable) strng=
   let str_sz = String.length strng
@@ -194,7 +197,7 @@ let lookup_sym ((cinfo, tbl):symtable) strng=
   let rec lookup_aux ls =
     match ls with
     | [] -> None
-    | (sz, nm)::xs ->
+    | (sz, _)::(xs:((int)Counter.t)) ->
        if sz > str_sz
        then lookup_aux xs
        else
@@ -204,7 +207,9 @@ let lookup_sym ((cinfo, tbl):symtable) strng=
          | _ -> lookup_aux xs)
   in
   if str_sz > 0
-  then lookup_aux (find_char_info (String.get strng 0) cinfo)
+  then
+    let lst = find_char_info (String.get strng 0) cinfo in
+    lookup_aux lst
   else None
 
 (***

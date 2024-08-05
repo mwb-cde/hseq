@@ -150,6 +150,8 @@ SUBDIRS=hseq hsequser tools thys doc
 #####
 # Extra settings
 
+#GLOBAL_OCAMLC_FLAGS=-g
+
 ###
 # Installation options
 # (Defaults if undefined are as given.)
