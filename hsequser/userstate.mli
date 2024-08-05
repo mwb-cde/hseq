@@ -28,10 +28,10 @@ sig
   type t =
     {
       context_f : Context.t;
-      simpset_f : Simpset.simpset;
-      proofstack_f: Goals.ProofStack.t;
-      base_thy_builder_f: t -> t;
-      thyset_f: Lib.StringSet.t;
+      simpset_f : (Simpset.simpset)option;
+      proofstack_f: (Goals.ProofStack.t)option;
+      base_thy_builder_f: (t -> t)option;
+      thyset_f: (Lib.StringSet.t)option;
       loader_f: (string -> unit) option;
       scripter_f: (bool -> string -> unit) option;
     }
@@ -50,21 +50,27 @@ sig
   val parsers: t -> Parser.Table.t
   val set_parsers: t -> Parser.Table.t -> t
 
+  val has_simpset: t -> bool
   val simpset: t -> Simpset.simpset
   val set_simpset: t -> Simpset.simpset -> t
 
+  val has_proofstack: t -> bool
   val proofstack: t -> Goals.ProofStack.t
   val set_proofstack: t -> Goals.ProofStack.t -> t
 
+  val has_base_thy_builder: t -> bool
   val base_thy_builder: t -> (t -> t)
   val set_base_thy_builder: t -> (t -> t) -> t
 
+  val has_thyset: t -> bool
   val thyset: t -> Lib.StringSet.t
   val set_thyset: t -> Lib.StringSet.t -> t
 
+  val has_loader: t -> bool
   val loader: t -> (string -> unit)option
   val set_loader: t -> (string -> unit)option -> t
 
+  val has_scripter: t -> bool
   val scripter: t -> (bool -> string -> unit)option
   val set_scripter: t -> (bool -> string -> unit)option -> t
 end
@@ -89,35 +95,41 @@ val parsers: State.t -> Parser.Table.t
 val set_parsers: State.t -> Parser.Table.t -> State.t
 (** Set the global parser tables *)
 
+val has_simpset: State.t -> bool
 val simpset: State.t -> Simpset.simpset
 (** The standard simplifier set *)
 val set_simpset: State.t -> Simpset.simpset -> State.t
 (** Set the global simplifier set *)
 
+val has_proofstack: State.t -> bool
 val proofstack: State.t -> Goals.ProofStack.t
 (** The standard simplifier set *)
 val set_proofstack: State.t -> Goals.ProofStack.t -> State.t
 (** Set the global simplifier set *)
 
+val has_base_thy_builder: State.t -> bool
 val base_thy_builder: State.t -> (State.t -> State.t)
 (** The base theory builder *)
 val set_base_thy_builder: State.t -> (State.t -> State.t) -> State.t
 (** Set the base theory builder *)
 
+val has_thyset: State.t -> bool
 val thyset: State.t -> Lib.StringSet.t
 val set_thyset: State.t -> Lib.StringSet.t -> State.t
 val thyset_add: State.t -> string -> State.t
 val thyset_mem: State.t -> string -> bool
 
+val has_loader: State.t -> bool
 val loader: State.t -> (string -> unit)
 (** The (optional) function to load a library. *)
-val set_loader: State.t -> (string -> unit) -> State.t
+val set_loader: State.t -> (string -> unit)option -> State.t
 (** Set function to load a library. *)
 
+val has_scripter: State.t -> bool
 val scripter: State.t -> (bool -> string -> unit)
 (** The (optional) function to run a theory script. *)
 val set_scripter:
-  State.t -> (bool -> string -> unit) -> State.t
+  State.t -> (bool -> string -> unit)option -> State.t
 (** Set the function to run a theory script. *)
 
 val init_context: State.t -> State.t

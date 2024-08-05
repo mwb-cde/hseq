@@ -47,10 +47,10 @@ struct
   type t =
     {
       context_f : Context.t;
-      simpset_f : Simpset.simpset;
-      proofstack_f: Goals.ProofStack.t;
-      base_thy_builder_f: t -> t;
-      thyset_f: Lib.StringSet.t;
+      simpset_f : (Simpset.simpset)option;
+      proofstack_f: (Goals.ProofStack.t)option;
+      base_thy_builder_f: (t -> t)option;
+      thyset_f: (Lib.StringSet.t)option;
       loader_f: (string -> unit) option;
       scripter_f: (bool -> string -> unit) option;
     }
@@ -59,10 +59,10 @@ struct
   let empty() =
     {
       context_f = Default.context();
-      simpset_f = Default.simpset();
-      proofstack_f = Default.proofstack();
-      base_thy_builder_f = Default.base_thy_builder();
-      thyset_f = Default.thyset();
+      simpset_f = None;
+      proofstack_f = None;
+      base_thy_builder_f = None;
+      thyset_f = None;
       loader_f = None;
       scripter_f = None;
     }
@@ -84,25 +84,31 @@ struct
   let set_parsers st pp =
     set_context st (Context.set_parsers (context st) pp)
 
-  let simpset st = st.simpset_f
+  let has_simpset st = Option.is_some (st.simpset_f)
+  let simpset st = Option.get (st.simpset_f)
   let set_simpset st s =
-    { st with simpset_f = s }
+    { st with simpset_f = Some(s) }
 
-  let proofstack st = st.proofstack_f
+  let has_proofstack st = Option.is_some (st.proofstack_f)
+  let proofstack st = Option.get (st.proofstack_f)
   let set_proofstack st s =
-    { st with proofstack_f = s }
+    { st with proofstack_f = Some(s) }
 
-  let base_thy_builder st = st.base_thy_builder_f
+  let has_base_thy_builder st = Option.is_some (st.base_thy_builder_f)
+  let base_thy_builder st = Option.get (st.base_thy_builder_f)
   let set_base_thy_builder st f =
-    { st with base_thy_builder_f = f }
+    { st with base_thy_builder_f = Some(f) }
 
-  let thyset st = st.thyset_f
-  let set_thyset st s = { st with thyset_f = s }
+  let has_thyset st = Option.is_some (st.thyset_f)
+  let thyset st = Option.get (st.thyset_f)
+  let set_thyset st s = { st with thyset_f = Some(s) }
 
+  let has_loader st = Option.is_some (st.loader_f)
   let loader st = st.loader_f
   let set_loader st ld =
     { st with loader_f = ld }
 
+  let has_scripter st = Option.is_some (st.scripter_f)
   let scripter st = st.scripter_f
   let set_scripter st ld =
     { st with scripter_f = ld }
@@ -125,18 +131,22 @@ let parsers = State.parsers
 let set_parsers = State.set_parsers
 
 (** The simpset *)
+let has_simpset = State.has_simpset
 let simpset = State.simpset
 let set_simpset = State.set_simpset
 
 (** The proofstack *)
+let has_proofstack = State.has_proofstack
 let proofstack = State.proofstack
 let set_proofstack = State.set_proofstack
 
 (** The base theory builder *)
+let has_base_thy_builder = State.has_base_thy_builder
 let base_thy_builder = State.base_thy_builder
 let set_base_thy_builder = State.set_base_thy_builder
 
 (** Theory set *)
+let has_thyset = State.has_thyset
 let thyset = State.thyset
 let set_thyset = State.set_thyset
 
@@ -146,18 +156,19 @@ let thyset_add st t =
 let thyset_mem st t =
   Lib.StringSet.mem t (thyset st)
 
+let has_loader = State.has_loader
 let loader st =
-  match State.loader st with
-  | None -> (fun _ -> ())
-  | Some(f) -> f
+  if has_loader st
+  then Option.get (State.loader st)
+  else (fun _ -> ())
+let set_loader = State.set_loader
 
-let set_loader st f = State.set_loader st (Some(f))
-
+let has_scripter = State.has_scripter
 let scripter st =
-  match State.scripter st with
-  | None -> (fun silent _ -> ())
-  | Some(f) -> f
-let set_scripter st f = State.set_scripter st (Some(f))
+  if has_scripter st
+  then Option.get (State.scripter st)
+  else (fun silent _ -> ())
+let set_scripter st f = State.set_scripter st f
 
 module Init =
 struct

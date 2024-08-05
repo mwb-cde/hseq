@@ -308,7 +308,7 @@ end
 let load_file_func () = Userstate.loader (Global.state())
 
 let set_load_file_func loader =
-  Global.set_state (Userstate.set_loader (Global.state()) loader);
+  Global.set_state (Userstate.set_loader (Global.state()) (Some(loader)));
   Global.set_context
     (Context.set_loader (Global.context()) loader)
 
@@ -323,7 +323,7 @@ let add_to_path d =
 let use_file_func () = Userstate.scripter (Global.state())
 
 let set_use_file_func scripter =
-  Global.set_state (Userstate.set_scripter (Global.state()) scripter);
+  Global.set_state (Userstate.set_scripter (Global.state()) (Some(scripter)));
   Global.set_context
     (Context.set_scripter (Global.context()) (use_file_func()))
 
