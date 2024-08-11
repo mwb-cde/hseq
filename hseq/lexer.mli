@@ -261,13 +261,13 @@ val match_other : (char)matcher
    lexers. Currently, only tries {!Lexer.match_number}.
  *)
 
-val match_primed_identifier : char matcher
+val match_primed_identifier : (char)matcher
 (**
    Match a primed identifier. An identifier begins with a prime ("'")
    and is made up of alpha-numeric characters.
  *)
 
-val match_identifier : char matcher
+val match_identifier : (char)matcher
     (**
        Match identifiers. An identifier begins with a alphabetic
        character or underscore ("_") and is made up of alpha-numeric

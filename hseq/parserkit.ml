@@ -416,7 +416,8 @@ module Make =
            let inf = info tok
            in
            ((tok, inf), inp1)
-        | _ -> raise (ParsingError "operators")
+        | [] -> raise (ParsingError "Unexpected end of input.")
+        | (_::_) -> raise (ParsingError "Unexpected number of tokens")
       in
       (* [chunk prec inp]: Parser the argument to a binary operator. *)
       let rec chunk inp =

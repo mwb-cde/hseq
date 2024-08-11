@@ -71,8 +71,7 @@ let first n ls =
 let look n ls =
   let rec get_front ctr buff lsq =
     if ctr = 0
-    then
-      (0, buff, lsq)
+    then (0, buff, lsq)
     else
       (match lsq with
        | (x::xs, nsq) -> get_front (ctr - 1) (x::buff) (xs, nsq)
@@ -82,7 +81,7 @@ let look n ls =
   in
   let rsq = read_ahead remaining nsq in
   let (_, elems, nsq) = get_front remaining buff rsq in
-  (elems, push_front_reversed elems nsq)
+  (List.rev elems, push_front_reversed elems nsq)
 
 let drop n ls =
   let (_, ret) = first n ls in

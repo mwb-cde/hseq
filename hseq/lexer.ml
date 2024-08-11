@@ -162,7 +162,7 @@ let remove_char_info c sz lst=
 
 let find_sym (_, tbl) s = SymbolTree.find tbl s
 
-let find_sym_opt (_, tbl) s =
+let find_sym_opt (x, tbl) s =
   try Some(SymbolTree.find tbl s)
   with Not_found -> None
 
@@ -278,13 +278,13 @@ let is_digit c =
   ((c>= '0') && (c <='9'))
 
 let is_alpha c =
-  ((c>= 'a') && (c <='z'))
-  || ((c>= 'A') && (c<='Z'))
+  ((c >= 'a') && (c <='z'))
+  || ((c >= 'A') && (c <='Z'))
 
 let is_identifier_char c
   = (is_alpha c) || (is_special_alpha c) || (is_digit c)
 
-let is_identifier_start c = (is_alpha c) || (c='_')
+let is_identifier_start c = (is_alpha c) || (c = '_')
 
 (***
  * Matching functions
@@ -322,7 +322,7 @@ let get_sep_list init_test body_test sep_test inp =
   (*
     get_sep: look for a seperator followed by
     an initial character.
-   *)
+  *)
   let get_sep strm =
     let (chrs, strm1) = Stream.look 2 strm in
     match chrs with
@@ -335,19 +335,26 @@ let get_sep_list init_test body_test sep_test inp =
   let rec get_aux buff strm =
     (* get the identifier from the stream *)
     let (chrs, (strm1: (char)Stream.t)) = get_while body_test strm in
+    (* add to the buffer *)
+    let buff1 = 
+      if chrs = [] 
+      then buff 
+      else 
+        let cstr = string_implode chrs in
+        (cstr::buff)
+    in
     (* test for a seperator *)
     match get_sep strm1 with
     | (Some(_), strm2) ->
-       let cstr = string_implode chrs in
-       get_aux (cstr::buff) strm2
-    | (_, strm2) -> (List.rev buff, strm2)
+       get_aux buff1 strm2
+    | (_, strm2) -> (List.rev buff1, strm2)
   in
   match Stream.test init_test inp with
-  | (true, strm1) -> get_aux [] strm1 (* got an identifier *)
+  | (true, strm1) -> get_aux [] strm1  (* got an identifier *)
   | (_, strm1)-> ([], strm1)
 
 let get_alpha str =
-  let test c= (is_alpha c) || (is_special_alpha c) || (is_digit c)
+  let test c = (is_alpha c) || (is_special_alpha c) || (is_digit c)
   in
   get_while test str
 
@@ -444,31 +451,26 @@ let match_primed_identifier symtable inp =
    string may have more than one identifier, seperated
    by character satisfying is_dot
  *)
-let match_identifier symtable inp =
-  let (ok, inp1) = Stream.test is_identifier_start inp in
-  if ok
-  then
-    let (sep_list, inp2) =
-      get_sep_list is_identifier_start is_identifier_char is_dot inp1
-    in
-    match sep_list with
-    | [] -> (None, inp2)
-    | [n] ->
-       (*
-         Unqualified identifier may be a symbol/keyword
-         so check in the symbol table for a token to return
-         if not found, make an unqualified identifier token
-        *)
-       let rtok =
-         (try
-            find_sym symtable n
-          with Not_found -> mk_ident(Ident.mk_name n))
-       in
-       (Some(rtok), inp2)
-    | [th;n] -> (Some(mk_ident (Ident.mk_long th n)), inp2)
-    | _ -> raise (Lexing(0, 0))
-  else (None, inp1)
-
+let match_identifier symtable inp=
+  let (sep_list, inp2) =
+    get_sep_list is_identifier_start is_identifier_char is_dot inp
+  in
+  match sep_list with
+  | [] -> (None, inp2)
+  | [n] ->
+     (*
+       Unqualified identifier may be a symbol/keyword
+       so check in the symbol table for a token to return
+       if not found, make an unqualified identifier token
+     *)
+     let rtok =
+      (match find_sym_opt symtable n with
+      | Some(x) -> x
+      | _ -> mk_ident(Ident.mk_name n))
+     in
+     (Some(rtok), inp2)
+  | [th;n] -> (Some(mk_ident (Ident.mk_long th n)), inp2)
+  | _ -> raise (Lexing(0, 0))
 
 (**
    match_keywords tbl strm
@@ -504,7 +506,7 @@ let std_lexers =
   [
     match_empty;
     match_primed_identifier;
-    match_identifier;
+    (match_identifier: (char)matcher);
     match_keywords;
     match_number;
     match_other
