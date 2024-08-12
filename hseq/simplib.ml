@@ -1,5 +1,5 @@
 (*----
-  Copyright (c) 2005-2021 Matthew Wahab <mwb.cde@gmail.com>
+  Copyright (c) 2005-2024 Matthew Wahab <mwb.cde@gmail.com>
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,7 +25,22 @@ let add_conv set terms conv =
 
 (** Initial simpset *)
 let init_std_ss () =
-  add_conv (empty_simp()) [ (term "!x A: (%y: A) x") ]
+  let trm =
+    let type_a = Gtype.mk_vartype (Gtype.mk_gtype_id "a") in
+    let type_b = Gtype.mk_vartype (Gtype.mk_gtype_id "b") in
+    let type_c = Gtype.mk_vartype (Gtype.mk_gtype_id "c") in
+    let binder_x = Term.Binder.make Term.All "x" type_a in
+    let binder_A = Term.Binder.make Term.All "A" type_b in
+    let binder_y = Term.Binder.make Term.Lambda "y" type_c in
+    let open Term in
+    (* term "!x A: (%y: A) x" *)
+    mk_qnt binder_x
+      (mk_qnt binder_A
+         (mk_app
+            (mk_qnt binder_y (mk_bound binder_A))
+            (mk_bound binder_x)))
+  in
+  add_conv (empty_simp()) [ trm ]
     (fun ctxt -> Logic.Conv.beta_conv (Context.scope_of ctxt))
 
 (** Global state *)
