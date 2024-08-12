@@ -14,7 +14,6 @@ let use_string st =
              ((!Toploop.parse_toplevel_phrase) (Lexing.from_string st)))
  with _ -> failwith ("use_string "^st);;
 
-
 let use_file silent fname =
   if silent
   then ignore(Toploop.use_silently Format.std_formatter (Toploop.File(fname)))
@@ -24,7 +23,10 @@ let use_file silent fname =
 let load_file f =
   if (!Sys.interactive)
   then ignore (Topdirs.dir_load Format.std_formatter f)
-  else Dynlink.loadfile f
+  else
+    try Dynlink.loadfile f
+    with Dynlink.Error(Dynlink.Module_already_loaded(_)) -> ()
+    | e -> raise e
 
 let add_directory s = Topdirs.dir_directory s
 
@@ -36,6 +38,6 @@ let add_init f =
   let toplevel_hook = (function
     | Toploop.After_setup -> f()
     | _ -> ())
-  in 
+  in
   Toploop.add_hook toplevel_hook
 
