@@ -23,10 +23,7 @@ let use_file silent fname =
 let load_file f =
   if (!Sys.interactive)
   then ignore (Topdirs.dir_load Format.std_formatter f)
-  else
-    try Dynlink.loadfile f
-    with Dynlink.Error(Dynlink.Module_already_loaded(_)) -> ()
-    | e -> raise e
+  else Dynlink.loadfile_private f
 
 let add_directory s = Topdirs.dir_directory s
 

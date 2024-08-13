@@ -336,10 +336,10 @@ let get_sep_list init_test body_test sep_test inp =
     (* get the identifier from the stream *)
     let (chrs, (strm1: (char)Stream.t)) = get_while body_test strm in
     (* add to the buffer *)
-    let buff1 = 
-      if chrs = [] 
-      then buff 
-      else 
+    let buff1 =
+      if chrs = []
+      then buff
+      else
         let cstr = string_implode chrs in
         (cstr::buff)
     in
